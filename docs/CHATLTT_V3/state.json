@@ -86,11 +86,11 @@
     {
       "id": "P04",
       "ten": "duyet ben + tien",
-      "trang_thai": "DANG LAM",
+      "trang_thai": "XONG (tru R2b)",
       "chan": [
         "P03"
       ],
-      "phan_tram": 95
+      "phan_tram": 100
     },
     {
       "id": "P05",
@@ -348,8 +348,8 @@
     "don_vi": "ngay cong (8h)",
     "lan_A": {
       "uoc": 17.0,
-      "xong": 12.7,
-      "phan_tram": 75
+      "xong": 13.0,
+      "phan_tram": 76
     },
     "lan_B": {
       "uoc": 20.0,
@@ -363,7 +363,7 @@
     },
     "toan_chuong_trinh": {
       "uoc": 51.0,
-      "xong": 12.7,
+      "xong": 13.0,
       "phan_tram": 25
     },
     "ma_san_pham_da_sua": "9 tep: 6 moi trong apps/chatltt/services + frontend ThongDiepView.tsx + governance.py + luot.py",
@@ -578,8 +578,8 @@
     "p.write_text() voi mot chuoi mang lone surrogate (do escape \\ud83d trong nguon Python) NEM giua chung — nhung tep da bi TRUNCATE ve 0 byte truoc khi nem. Vitest bao 'No test suite found', khong bao 'tep rong'. Cach chan: viet tep co emoji bang Write, dung ghep escape trong chuoi Python."
   ],
   "p04": {
-    "trang_thai": "DANG LAM",
-    "phan_tram": 95,
+    "trang_thai": "XONG (tru R2b — cho thanh_toan.py)",
+    "phan_tram": 100,
     "da_xong": [
       "duyet.py — phieu duyet BEN + test_809 (30)",
       "quyet dinh di bang UPDATE CO DIEU KIEN (WHERE quyet_dinh='cho'), khong bang if trong Python",
@@ -604,13 +604,16 @@
       "test_813 (8) — mot luot agentic di qua DUNG CUA nguoi dung di",
       "luu_run.dung_lai() — dung lai Run TU CSDL, khong them cot nao + test_814 (11)",
       "luot_v3.tiep_sau_duyet() — chay tiep sau khi nguoi dung bam, tu mot phien CSDL moi",
-      "_dem_bam duoc dung lai => tran 'goi trung' song sot qua lan cho duyet"
+      "_dem_bam duoc dung lai => tran 'goi trung' song sot qua lan cho duyet",
+      "luot_v3.chay_tiep_nen() — bam duyet xong thi luot CHAY TIEP (luong nen, phien CSDL rieng)",
+      "dang ky `dang_chay` duoi EXECUTION DAU TIEN cua run, khong duoi mot khoa moi",
+      "nen_chay_tiep(): 3 dieu kien — run cua minh, dang AWAITING_APPROVAL, het phieu cho",
+      "truong `chay_tiep` cua phan hoi noi THAT (truoc do no co nghia 'da tao mot luong')"
     ],
     "con_lai": [
-      "cua HTTP goi tiep_sau_duyet sau khi duyet (route hien chi ghi quyet dinh)",
-      "UI duyet o frontend (P09)",
-      "R2b: mot request_id cho ca run (can thanh_toan.py)",
-      "doi soat chatltt_run vs credit_entries"
+      "UI duyet o frontend — P09",
+      "R2b: mot request_id cho ca run — can thanh_toan.py (khoa cua phien dieu phoi)",
+      "doi soat chatltt_run vs credit_entries — P04b sau khi R2b chot"
     ],
     "dot_bien_da_thu": [
       "go unique=True khoi ux_chatltt_approval_step => test_809::test_RANG_BUOC_CSDL_chan_hai_phieu_cho_mot_buoc DO (1 failed / 29 passed). Hop dong 02 §6 doi dung phep dot bien nay.",

@@ -289,3 +289,64 @@ def test_CHUA_quyet_thi_chay_tiep_NEM(db):
         DP.tiep_tuc(lai, ket_qua_duyet=kq, goi_model=_model(_chu("x")),
                     chay_tool=B.tao(db, user_id=U, run_id=run_id,
                                     khoi_tools=TOOLS, bao_gia=_gia))
+
+
+# ── 4. Khi nào ĐƯỢC chạy tiếp ──────────────────────────────────────────────
+
+def test_nen_chay_tiep_dung_khi_da_bam_het(db):
+    from apps.chatltt.services import luot_v3 as V3
+    run_id, _ = _chay_toi_khi_cho_duyet(db)
+    assert V3.nen_chay_tiep(db, user_id=U, run_id=run_id) is False, "con phieu cho"
+    D.duyet(db, user_id=U,
+            approval_id=D.dang_cho(db, user_id=U, run_id=run_id)[0]["approval_id"])
+    assert V3.nen_chay_tiep(db, user_id=U, run_id=run_id) is True
+
+
+def test_con_MOT_phieu_chua_bam_thi_CHUA_chay_tiep(db):
+    """🔴 Một lượt có hai lời gọi có phí thì có hai phiếu. Chạy tiếp khi mới một
+    phiếu được bấm là chạy một việc người dùng chưa nhìn tới."""
+    from apps.chatltt.services import luot_v3 as V3
+    run_id, _ = _chay_toi_khi_cho_duyet(db, model=_model(
+        _goi(("image.ltt", '{"prompt":"meo"}'), ("image.ltt", '{"prompt":"cho"}'))))
+    ds = D.dang_cho(db, user_id=U, run_id=run_id)
+    assert len(ds) == 2
+    D.duyet(db, user_id=U, approval_id=ds[0]["approval_id"])
+    assert V3.nen_chay_tiep(db, user_id=U, run_id=run_id) is False
+    D.tu_choi(db, user_id=U, approval_id=ds[1]["approval_id"])
+    assert V3.nen_chay_tiep(db, user_id=U, run_id=run_id) is True
+
+
+def test_nguoi_khac_khong_khoi_dong_lai_duoc_run_cua_toi(db):
+    from apps.chatltt.services import luot_v3 as V3
+    run_id, _ = _chay_toi_khi_cho_duyet(db)
+    D.duyet(db, user_id=U,
+            approval_id=D.dang_cho(db, user_id=U, run_id=run_id)[0]["approval_id"])
+    assert V3.nen_chay_tiep(db, user_id="u-nguoi-la", run_id=run_id) is False
+
+
+def test_run_DA_XONG_khong_chay_tiep_duoc(db):
+    """⛔ Một run đã `COMPLETED` mà chạy lại được là một run có thể tính tiền
+    hai lần."""
+    from apps.chatltt.services import luot_v3 as V3
+    from apps.chatltt.tables import ChatlttRun
+    run_id, _ = _chay_toi_khi_cho_duyet(db)
+    D.duyet(db, user_id=U,
+            approval_id=D.dang_cho(db, user_id=U, run_id=run_id)[0]["approval_id"])
+    db.get(ChatlttRun, run_id).trang_thai = DP.COMPLETED
+    db.flush()
+    assert V3.nen_chay_tiep(db, user_id=U, run_id=run_id) is False
+
+
+def test_phieu_HET_HAN_khong_chan_viec_chay_tiep(db):
+    """Hết hạn là một quyết định (`het_han`), không phải "vẫn đang chờ". Coi nó
+    là đang chờ thì run kẹt vĩnh viễn — không ai bấm được nữa."""
+    from datetime import datetime, timedelta, timezone
+
+    from apps.chatltt.services import luot_v3 as V3
+    from apps.chatltt.tables import ChatlttApproval
+    run_id, _ = _chay_toi_khi_cho_duyet(db)
+    for p in db.query(ChatlttApproval).all():
+        p.created_at = datetime.now(timezone.utc) - timedelta(
+            minutes=D.HAN_CHO_PHUT + 1)
+    db.flush()
+    assert V3.nen_chay_tiep(db, user_id=U, run_id=run_id) is True

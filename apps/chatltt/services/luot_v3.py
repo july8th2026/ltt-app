@@ -169,6 +169,111 @@ def tiep_sau_duyet(db, *, run_id: str, user_id: str, so) -> DP.Run:
     return run
 
 
+def chay_tiep_nen(run_id: str, *, user_id: str):
+    """Thân luồng nền cho lần chạy tiếp sau duyệt. Mở phiên CSDL của riêng nó.
+
+    ⛔ Không dùng phiên của request đã trả lời xong. Một `Session` SQLAlchemy
+       không an toàn đa luồng, và request kết thúc sẽ đóng nó ngay dưới chân
+       luồng này.
+    """
+    import threading
+
+    from apps.chatltt.services import dang_chay
+    from apps.chatltt.tables import ChatlttRun
+    from platform_core.db import get_session
+
+    def than():
+        gen = get_session()
+        db = next(gen)
+        so = None
+        try:
+            r = db.get(ChatlttRun, str(run_id))
+            if r is None or r.user_id != str(user_id):
+                return
+            # 🔴 ĐĂNG KÝ DƯỚI EXECUTION ĐẦU TIÊN của run, không dưới một khoá mới.
+            #
+            #    Sổ `dang_chay` đánh theo `execution_id`, và trình duyệt đang mở
+            #    `/api/luot/<id>/stream` với **cái id nó nhận ở phản hồi 202** — tức
+            #    execution đầu tiên. Đăng ký dưới bất kỳ khoá nào khác thì sự kiện
+            #    vẫn phát, vẫn ghi CSDL, và **không ai nhận** — người dùng thấy
+            #    một lượt đứng im rồi tự xong khi họ tải lại trang.
+            dau = _execution_dau(db, run_id=r.id)
+            if dau is None:
+                return
+            so = dang_chay.bat_dau(dau, user_id)
+            tiep_sau_duyet(db, run_id=run_id, user_id=user_id, so=so)
+        except KhongChayTiepDuoc:
+            log.info("run %s khong chay tiep duoc", str(run_id)[-8:])
+        except Exception:                                       # noqa: BLE001
+            log.exception("chay tiep run %s vo", str(run_id)[-8:])
+            db.rollback()
+        finally:
+            if so is not None:
+                dang_chay.ket_thuc(so.execution_id)
+            try:
+                next(gen)
+            except StopIteration:
+                pass
+
+    t = threading.Thread(target=than, name=f"chatltt-tiep-{str(run_id)[-8:]}",
+                         daemon=True)
+    t.start()
+    return t
+
+
+def _execution_dau(db, *, run_id: str):
+    """Id `chatltt_execution` đầu tiên của một run — khoá mà trình duyệt đang nghe."""
+    from sqlalchemy import select
+
+    from apps.chatltt.tables import ChatlttExecution
+
+    return db.execute(
+        select(ChatlttExecution.id)
+        .where(ChatlttExecution.run_id == str(run_id))
+        .order_by(ChatlttExecution.created_at, ChatlttExecution.id)
+        .limit(1)).scalar_one_or_none()
+
+
+def con_cho_duyet(db, *, user_id: str, run_id: str) -> bool:
+    """Còn phiếu nào chưa quyết trong run này không."""
+    from sqlalchemy import select
+
+    from apps.chatltt.services import duyet as D
+    from apps.chatltt.tables import ChatlttApproval
+
+    ds = db.execute(select(ChatlttApproval).where(
+        ChatlttApproval.run_id == str(run_id),
+        ChatlttApproval.user_id == str(user_id),
+        ChatlttApproval.quyet_dinh == D.CHO)).scalars().all()
+    return any(not D.da_het_han(p) for p in ds)
+
+
+def nen_chay_tiep(db, *, user_id: str, run_id: str) -> bool:
+    """Lượt này có thực sự chạy tiếp được ngay bây giờ không.
+
+    Ba điều kiện, và điều kiện thứ ba là điều kiện hay bị quên:
+
+      1. Run có thật và thuộc người này.
+      2. Nó đang ở `AWAITING_APPROVAL`.
+      3. **Không còn phiếu nào chưa quyết.** Một lượt có hai lời gọi có phí
+         thì có hai phiếu; chạy tiếp khi mới một phiếu được bấm là chạy một
+         việc người dùng chưa nhìn tới.
+
+    ⛔ Hàm này tồn tại để cửa HTTP **không nói dối**. Trước nó, trường
+       `chay_tiep` của phản hồi có nghĩa *"tôi đã tạo một luồng"*, chứ không
+       phải *"lượt đang chạy tiếp"* — và hai câu đó khác nhau đúng trong trường
+       hợp không có run nào để chạy.
+    """
+    from apps.chatltt.tables import ChatlttRun
+
+    r = db.get(ChatlttRun, str(run_id))
+    if r is None or r.user_id != str(user_id):
+        return False
+    if r.trang_thai != DP.AWAITING_APPROVAL:
+        return False
+    return not con_cho_duyet(db, user_id=user_id, run_id=run_id)
+
+
 def _dong(db, *, run_row, run: DP.Run, tra_loi) -> None:
     """Đóng sổ một lượt: trạng thái run, tiền dẫn xuất, khối nội dung."""
     LR.dong_run(db, run_row, run)
@@ -233,4 +338,6 @@ def nen_dung_v3(db, *, user_id: str) -> list:
     return chieu_tool.chieu(db, user_id=user_id)
 
 
-__all__ = ["chay_run", "tiep_sau_duyet", "nen_dung_v3", "KhongChayTiepDuoc"]
+__all__ = ["chay_run", "tiep_sau_duyet", "chay_tiep_nen", "con_cho_duyet",
+           "nen_chay_tiep",
+           "nen_dung_v3", "KhongChayTiepDuoc"]

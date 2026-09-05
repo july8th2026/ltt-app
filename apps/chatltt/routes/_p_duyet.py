@@ -22,12 +22,17 @@ cửa tải ảnh ra đời.
 """
 from __future__ import annotations
 
+import logging
+
 from fastapi import Depends, Request
 
 from apps.chatltt.routes._chung import doc_json, json_ok, kiem_csrf, loi, router, uid
 from apps.chatltt.services import duyet as D
+from apps.chatltt.services import luot_v3
 from server.auth.session import require_login
 from server.deps import get_db
+
+log = logging.getLogger("ltt.chatltt.duyet")
 
 
 @router.get("/api/duyet/dang-cho")
@@ -92,4 +97,25 @@ async def quyet(request: Request, approval_id: str,
         return loi(409, "da_quyet", str(e))
 
     db.commit()
-    return json_ok(D.su_kien_quyet(p))
+
+    # ── Bấm xong thì lượt phải CHẠY TIẾP ─────────────────────────────────
+    #
+    # ⛔ Không có khúc này thì "duyệt" chỉ ghi một hàng: người dùng bấm đồng ý,
+    #    thấy nút biến mất, và lượt đứng im mãi mãi. Đó không phải một cổng
+    #    duyệt, đó là một cái nút không nối vào đâu.
+    #
+    # 🔴 Và phải kiểm CÒN PHIẾU NÀO CHƯA QUYẾT KHÔNG. Một lượt có hai lời gọi có
+    #    phí thì có hai phiếu; chạy tiếp khi mới một phiếu được bấm là chạy một
+    #    việc người dùng chưa nhìn tới.
+    tiep = False
+    if luot_v3.nen_chay_tiep(db, user_id=user_id, run_id=p.run_id):
+        try:
+            luot_v3.chay_tiep_nen(p.run_id, user_id=user_id)
+            tiep = True
+        except Exception:                                       # noqa: BLE001
+            # Quyết định ĐÃ ghi và đã commit. Không khởi động lại được lượt là
+            # một sự cố, nhưng không được biến nó thành "duyệt thất bại" —
+            # người dùng sẽ bấm lại và nhận 409.
+            log.exception("khong khoi dong lai duoc run %s", str(p.run_id)[-8:])
+
+    return json_ok(dict(D.su_kien_quyet(p), chay_tiep=tiep))

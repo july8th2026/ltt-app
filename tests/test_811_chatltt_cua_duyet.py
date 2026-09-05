@@ -191,8 +191,26 @@ def test_duyet_thanh_cong(web):
     ap = _phieu(uid)
     r = c.post(f"/chatltt/api/duyet/{ap}", json={"quyet_dinh": "duyet"}, headers=h)
     assert r.status_code == 200
-    assert r.json() == {"type": "approval.granted", "approval_id": ap}
+    than = r.json()
+    assert than["type"] == "approval.granted" and than["approval_id"] == ap
+    # `chay_tiep` nói lượt có được khởi động lại không. Ở đây phiếu được tạo
+    # thẳng bằng service, không có `chatltt_run` nào, nên nó là `False` — và
+    # điều đáng chốt là **cửa vẫn trả 200**, không biến một sự cố khởi động lại
+    # thành "duyệt thất bại".
+    assert than["chay_tiep"] is False
     assert c.get("/chatltt/api/duyet/dang-cho", headers=h).json()["items"] == []
+
+
+def test_con_phieu_KHAC_chua_bam_thi_CHUA_chay_tiep(web):
+    """🔴 Một lượt có hai lời gọi có phí thì có hai phiếu. Chạy tiếp khi mới một
+    phiếu được bấm là chạy một việc người dùng chưa nhìn tới."""
+    uid, email = _user()
+    c, h = _phien(web.app, email)
+    a = _phieu(uid, step="st_a")
+    _phieu(uid, step="st_b")
+    r = c.post(f"/chatltt/api/duyet/{a}", json={"quyet_dinh": "duyet"}, headers=h)
+    assert r.json()["chay_tiep"] is False
+    assert len(c.get("/chatltt/api/duyet/dang-cho", headers=h).json()["items"]) == 1
 
 
 def test_tu_choi_thanh_cong(web):
