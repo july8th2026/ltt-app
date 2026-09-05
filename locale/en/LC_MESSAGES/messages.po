@@ -13237,3 +13237,12 @@ msgstr "Previous page"
 
 msgid "Tạo giọng của bạn"
 msgstr "Create your voice"
+
+msgid "Một lượt có dùng công cụ: số vòng đã chạy, lý do dừng, và tổng credit đã giữ/thu/hoàn của cả lượt."
+msgstr "One turn that used tools: how many model rounds ran, why it stopped, and the total credit held/charged/refunded for the turn."
+
+msgid "Từng bước trong một lượt: công cụ nào được gọi, với tham số gì, và nó trả về gì. Tham số bắt nguồn từ câu hỏi của người dùng."
+msgstr "Each step within a turn: which tool was called, with what parameters, and what it returned. The parameters originate from the user's question."
+
+msgid "Lần người dùng bấm duyệt cho một công cụ tốn credit: tham số đã duyệt, báo giá lúc đó, và quyết định. Bằng chứng của một lần đồng ý tiêu tiền."
+msgstr "Each time a user approves a credit-charging tool: the approved parameters, the price quoted at that moment, and the decision. Evidence of one consent to spend."
