@@ -30,7 +30,7 @@ import logging
 from platform_core.db import get_session
 from platform_core.models import JOB_CANCELLED, JOB_DONE, JOB_ERROR, Job
 
-from . import features, pipeline, thi_hanh
+from . import assets, features, pipeline, su_dung, sua_chua, thi_hanh
 from .tables import (RUN_DONE, RUN_ERROR, RUN_QUEUED, RUN_RUNNING, RUN_TERMINAL,
                      STAGE_FAILED_RETRYABLE,
                      STAGE_FAILED_TERMINAL, STAGE_PENDING, STAGE_QUEUED,
@@ -94,6 +94,18 @@ def _advance(db, *, run_id: str, owner_id: str, ctx=None) -> dict:
         return {"run_id": run.id, "status": run.status}
 
     if len(da_xong) == len(pipeline.CHUOI):
+        # 🔑 Cong cuoi cung TRUOC khi giao hang: chuoi da chay het, nhung "chay
+        #    het" khong dong nghia "dat". Neu con khiem khuyet sua duoc thi sua,
+        #    va chi khi khong con gi de sua moi quyet toan.
+        dat_lai, het_vong = _sua_chua_neu_can(db, run, theo_ten)
+        if het_vong:
+            features.quyet_toan(db, run, trang_thai_cuoi=RUN_ERROR)
+            return {"run_id": run.id, "status": run.status}
+        if dat_lai:
+            hau_to = getattr(ctx, "job_id", None) or "tay"
+            features._nop_dieu_phoi(db, run, ly_do=f"sua:{hau_to}")
+            return {"run_id": run.id, "status": run.status,
+                    "sua_chua": sorted(set(dat_lai))}
         features.quyet_toan(db, run, trang_thai_cuoi=RUN_DONE)
         return {"run_id": run.id, "status": run.status}
 
@@ -106,6 +118,125 @@ def _advance(db, *, run_id: str, owner_id: str, ctx=None) -> dict:
 
     return {"run_id": run.id, "status": run.status,
             "da_nop": da_nop, "da_xong": sorted(da_xong)}
+
+
+#: Don vi viec mang so cai cua CHINH vong sua. Khong phai mot doan tieng nao.
+#:
+#: ⭐ Vong sua duoc dem bang SO DONG SO CAI, khong bang mot bo dem. `su_dung.ghi`
+#:    co `UNIQUE(run_id, ma_dispatch)`, nen mot vong khong the duoc dem hai lan
+#:    ke ca khi hai luot advance chay chong nhau — va no thanh mot dong nguoi ho
+#:    tro doc duoc khi khach hoi "vi sao lan chay nay lau the".
+DON_VI_SUA = "__sua_chua__"
+
+
+def _cac_nan(db, run) -> list[dict]:
+    """Phan quyet NAN cua tung doan tieng, doc tu so cai.
+
+    🔴 **Doc tu so cai chu khong mo kho.** `giai_doan_giong` ghi
+       `ghi_chu={"trang_thai_nan": ...}` cho MOI doan ngay luc no tinh tien doan
+       do, nen so cai da mang du du lieu. Mo artifact o day se bat dieu phoi vien
+       — thu chay o MOI luot advance cua MOI lan chay — phai doc mot tep tu kho
+       chi de tra loi mot cau hoi ma CSDL da tra loi duoc.
+    """
+    ra = []
+    for d in su_dung.cac_dong(db, run, stage=pipeline.VOICE_SYNTHESIS):
+        gc = dict(getattr(d, "ghi_chu", None) or {})
+        tt = str(gc.get("trang_thai_nan") or "")
+        if not tt:
+            continue
+        ra.append({"ma": d.item_key, "trang_thai_nan": tt,
+                   "giay": float(getattr(d, "so_luong", 0) or 0),
+                   "khe": gc.get("khe")})
+    return ra
+
+
+def _sua_chua_neu_can(db, run, theo_ten) -> tuple[list[str], bool]:
+    """Thi hanh ke hoach sua. Tra ve `(giai_doan da dat lai, het vong)`.
+
+    🔴 **Day la nua thu hai cua pha 19, va no da nam cho suot tu pha 19 toi
+       pha 29 duoi dang ba nang luc mo coi.**
+
+       `sua_chua.py` tinh ra **cai gi** phai lam lai va **o dau**; `qc_ai.py` bo
+       sung them nguon khiem khuyet; `assets.vo_hieu_theo_day_chuyen` danh dau
+       artifact ha nguon; `ITEM_INVALIDATED` la trang thai danh cho don vi bi bo
+       ket qua. Bon thu do deu co test, deu xanh, va **khong thu nao co nguoi
+       goi trong ma san pham**. Bao cao pha 19 goi dung ten no: *"The repair
+       loop is planned, not yet driven."*
+
+    ⭐ Va khiem khuyet ma no bo sot la mot khiem khuyet THAT, khong phai gia
+       dinh: `nan_cho_vua` danh dau `CAN_SUA` cho mot doan khong vua khe **ke ca
+       sau khi da het bac thang co gian**, `giai_doan_giong` ghi dau do vao so
+       cai — va khong dong ma nao doc no. Tuc san pham BIET mot doan khong vua,
+       ghi lai, roi giao hang.
+
+    ⛔ Khong co giai doan moi va khong co bo dieu phoi thu hai. Vong sua dung
+       dung co che da co: dat lai giai doan som nhat sua duoc, vo hieu ha nguon,
+       roi de `_advance` chay tiep nhu no van chay. Them mot bo dieu phoi rieng
+       cho viec sua la tao chu so huu thu hai cho cung mot chuoi.
+
+    🔑 **Tran vong nam o `su_dung.ghi`, khong nam o mot bien.** Mot bien dem
+       trong bo nho khong song qua mot lan worker chet; mot cot dem co the bi
+       hai luot advance cung tang. Rang buoc `UNIQUE(run_id, ma_dispatch)` thi
+       khong — no la mot tran ma CSDL cuong che.
+    """
+    vong = len(su_dung.cac_dong(db, run, stage=pipeline.QC,
+                                item_key=DON_VI_SUA))
+    ke = sua_chua.lap_ke_hoach(cac_nan=_cac_nan(db, run), vong=vong)
+    if not ke.can_sua:
+        return [], False
+
+    if not ke.con_vong():
+        # ⚠️ That bai CO BIEN, dung nhu cong thoat pha 19 doi: "until pass or
+        #    bounded terminal failure". Va no phai NOI RA doan nao, vi khach se
+        #    hoi — mot lan chay hong ma khong noi hong o dau la mot lan chay
+        #    hong hai lan.
+        ma = ", ".join(sorted(k.ma for k in ke.dang_tin if k.ma)[:5])
+        run.error = (f"sua_chua: het {sua_chua.VONG_SUA_TOI_DA} vong ma "
+                     f"{len(ke.dang_tin)} doan van khong dat ({ma})")[:2000]
+        log.warning("asv: run %s het vong sua, %d khiem khuyet con lai",
+                    run.id[:8], len(ke.dang_tin))
+        return [], True
+
+    # 🔑 Ghi so TRUOC khi dat lai. Neu dao thu tu, mot lan hong giua chung se de
+    #    lai mot chuoi da bi dat lai ma khong co dong nao dem no — tuc tran vong
+    #    mat hieu luc dung o lan chay can no nhat.
+    try:
+        su_dung.ghi(db, run, stage=pipeline.QC, item_key=DON_VI_SUA,
+                    su_dung=su_dung.SuDung(
+                        nang_luc="sua_chua", app_chu="auto_scan_video",
+                        trang_thai=su_dung.DA_GIAO, don_vi=su_dung.LUOT,
+                        so_luong=1, credit=0,
+                        ma_dispatch=f"sua:{vong}",
+                        ghi_chu=ke.sang_dict()))
+    except su_dung.DaGhiRoi:
+        # Mot luot advance khac vua lam dung vong nay. Khong lam lai.
+        return [], False
+
+    gon = sua_chua.gon_theo_don_vi(ke)          # {ma: giai_doan som nhat}
+    theo_giai_doan: dict[str, list[str]] = {}
+    for ma, gd in gon.items():
+        theo_giai_doan.setdefault(gd, []).append(ma)
+
+    dat_lai: list[str] = []
+    for gd, cac_ma in sorted(theo_giai_doan.items()):
+        for ma in cac_ma:
+            su_dung.mo_lai_don_vi(db, run, stage=gd, item_key=ma)
+        s = theo_ten.get(gd)
+        if s is None:
+            continue
+        try:
+            features._dat_lai_giai_doan(db, s)
+        except features.XungDot:
+            continue
+        dat_lai.append(gd)
+        dat_lai += features.vo_hieu_ha_nguon(db, run, gd)
+
+    if dat_lai:
+        assets.vo_hieu_theo_day_chuyen(db, run.id, sorted(set(dat_lai)))
+        log.warning("asv: run %s vao vong sua %d, dat lai %s (%d don vi)",
+                    run.id[:8], vong + 1, ",".join(sorted(set(dat_lai))),
+                    len(gon))
+    return dat_lai, False
 
 
 def _vo_hieu_giai_doan_da_lech(db, run) -> list[str]:

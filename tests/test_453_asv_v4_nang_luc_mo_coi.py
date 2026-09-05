@@ -79,9 +79,25 @@ MO_COI_DA_BIET = frozenset({
     #    Nua kia la chinh `qc_ai` cung khong co nguoi goi nao.
     #    ⛔ Noi chung vao mach la mo rong tinh nang — ngoai pham vi pha 27
     #       ("no feature expansion"). Ban giao cho pha 28.
+    #
+    #    ✅ **`gon_theo_don_vi` da RA khoi danh sach nay.** Vong sua duoc noi vao
+    #       mach o `jobs._sua_chua_neu_can`, va cung voi no la
+    #       `vo_hieu_theo_day_chuyen` (xem duoi). Hai ten con lai cua `sua_chua`
+    #       (`lap_ke_hoach`, `tu_nan`) chua bao gio o trong danh sach vi chung
+    #       duoc goi tu trong chinh module.
+    #
+    #    🔴 Va viec noi vao mach **khong** phai mo rong tinh nang, du pha 27 da
+    #       goi no nhu vay. Cong thoat cua pha 19 doi dung chu: *"repairs rerun
+    #       the smallest safe scope until pass or bounded terminal failure"*.
+    #       Bao cao pha 19 tu ghi phan thi hanh la NO. Nen day la tra no, khong
+    #       phai them tinh nang — mot phan biet quyet dinh viec no duoc lam hay
+    #       bi hoan them mot pha nua, va no da bi hoan bon pha.
+    #
+    #    ⚠️ Sau ten QC-bang-AI o duoi VAN mo coi: chung can mot giai doan moi va
+    #       mot khoan chi moi cho moi lan chay, tuc mot quyet dinh ve gia. Khac
+    #       han vong sua, thu chi dung lai co che da co.
     "doc_hinh", "doc_ngu_nghia", "loi_nhac_hinh", "loi_nhac_ngu_nghia",
     "moc_cho_noi", "so_khop_doc",
-    "gon_theo_don_vi",
 
     # ── HO SO NOI DUNG — nang luc nay duoc KHAI CHO KHACH la chua san sang.
     #    `gia.py` bay `CHE_DO_GIONG_TU_KHOP` kem cau "tinh nang nay dang duoc
@@ -96,7 +112,11 @@ MO_COI_DA_BIET = frozenset({
     "dich_ban_ghi",
 
     # ── Tien ich co nguoi goi trong TUONG LAI gan, hoac chi dung tu test/tool.
-    "asset_cua", "don_theo_run", "vo_hieu_theo_day_chuyen",
+    # ✅ `vo_hieu_theo_day_chuyen` da ra khoi day cung luc voi `gon_theo_don_vi`:
+    #    no la buoc cuoi cua vong sua — danh dau artifact ha nguon la khong con
+    #    dung. No tung nam trong nhom "co nguoi goi trong TUONG LAI gan", va
+    #    tuong lai gan do dai bon pha.
+    "asset_cua", "don_theo_run",
     "cua_chan_cho_lo", "giai_quyet_mo_ho", "loi_khong_du_ngan_sach",
     "tong_credit", "tom_tat_cho_khach",
     "cua_so_ngu_canh", "dung_gpu", "van_tay_che_do", "van_tay_van_ban",

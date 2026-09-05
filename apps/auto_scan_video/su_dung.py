@@ -58,8 +58,8 @@ from sqlalchemy.orm import Session
 from platform_core.i18n import _ as _t
 
 from .tables import (DUNG_DA_GIAO, DUNG_MO_HO, DUNG_TRANG_THAI, DUNG_TU_CHOI,
-                     ITEM_PENDING, ITEM_SUCCEEDED, AsvRun, AsvUsage,
-                     AsvWorkItem)
+                     ITEM_INVALIDATED, ITEM_PENDING, ITEM_SUCCEEDED, AsvRun,
+                     AsvUsage, AsvWorkItem)
 
 # ⭐ Tai xuat tu `tables`, KHONG khai lai. Ba hang so nay quyet dinh cai gi duoc
 #    tinh tien; hai ban sao cua chung la hai cau tra loi cho mot cau hoi tien.
@@ -298,6 +298,43 @@ def danh_dau_xong(db: Session, run: AsvRun, *, stage: str, item_key: str,
     db.flush()
     db.expire(it)
     return it
+
+
+def mo_lai_don_vi(db: Session, run: AsvRun, *, stage: str,
+                  item_key: str) -> bool:
+    """Mo lai MOT don vi da xong de no duoc lam lai. Tra ve co doi gi khong.
+
+    🔴 **Day la ngoai le DUY NHAT cua luat "chi tien len" o `danh_dau_xong`.**
+
+       Luat do noi: *"mot don vi da `succeeded` khong bi keo ve `running` boi mot
+       lan chay lai"*, va no dung — no la thu lam cho viec cham diem tung doan co
+       nghia. Nhung no duoc viet cho mot lan chay lai **mu**: mot luot advance
+       chay lai ca giai doan va khong biet doan nao con dung.
+
+    ⭐ Vong sua thi biet. No cam ten mot doan cu the va mot ly do cu the, nen no
+       khong phai "chay lai" — no la "**cai nay** sai, lam lai **cai nay**". Hai
+       viec do trong y het nhau o cap giai doan va khac han nhau o cap don vi.
+
+    ⛔ Vi vay ham nay **khong** nhan `stage` roi mo tat: no doi dung mot
+       `item_key`. Mot ham mo lai theo giai doan se lam dung cai ma pha 19 cam
+       bang chu — *"No full-run automatic rerun"* — chi la o mot cap thap hon va
+       kho nhin thay hon.
+
+    🔑 Trang thai la `ITEM_INVALIDATED`, khong phai `ITEM_PENDING`. Hai thu chay
+       giong nhau (`da_xong` loc theo `ITEM_SUCCEEDED` nen ca hai deu bi lam
+       lai), nhung chung tra loi hai cau khac nhau khi co nguoi doc so sau su co:
+       `pending` noi *"chua bao gio chay"*, `invalidated` noi *"da chay, va ta
+       da bo ket qua do"*. Cau thu hai la cau giai thich duoc hoa don.
+    """
+    it = db.execute(select(AsvWorkItem).where(
+        AsvWorkItem.run_id == run.id, AsvWorkItem.stage == stage,
+        AsvWorkItem.item_key == item_key)).scalar_one_or_none()
+    if it is None or it.status == ITEM_INVALIDATED:
+        return False
+    it.status = ITEM_INVALIDATED
+    it.revision = int(it.revision or 1) + 1
+    db.flush()
+    return True
 
 
 def da_xong(db: Session, run: AsvRun, *, stage: str,
