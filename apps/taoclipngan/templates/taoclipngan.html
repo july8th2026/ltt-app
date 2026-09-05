@@ -53,7 +53,7 @@
             <label>{{ _("Thể loại") }}<select name="genre">{% for id, label in genres %}<option value="{{ id }}">{{ label }}</option>{% endfor %}</select></label>
             <label>{{ _("Ngôn ngữ") }}<select name="language">{% for id, label in langs %}<option value="{{ id }}">{{ label }}</option>{% endfor %}</select></label>
           </div>
-          <div class="clip-two"><label>{{ _("Tối thiểu (giây)") }}<input type="number" name="min_clip_duration_sec" value="15" min="5" max="120"></label><label>{{ _("Tối đa (giây)") }}<input type="number" name="max_clip_duration_sec" value="60" min="10" max="180"></label></div>
+          <div class="clip-two"><label>{{ _("Tối thiểu (giây)") }}<input type="number" inputmode="numeric" name="min_clip_duration_sec" value="15" min="5" max="120"></label><label>{{ _("Tối đa (giây)") }}<input type="number" inputmode="numeric" name="max_clip_duration_sec" value="60" min="10" max="180"></label></div>
         </div>
       </details>
       <div class="clip-actions"><div><span>{{ _("CHI PHÍ ƯỚC TÍNH") }}</span><strong id="est">{{ _("Chọn video") }}</strong></div><button type="submit" class="btn" id="submitbtn">{{ _("Tạo clip") }}</button></div>
