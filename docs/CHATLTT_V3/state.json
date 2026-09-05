@@ -99,7 +99,7 @@
       "chan": [
         "P04"
       ],
-      "phan_tram": 85
+      "phan_tram": 90
     },
     {
       "id": "P06",
@@ -350,8 +350,8 @@
     "don_vi": "ngay cong (8h)",
     "lan_A": {
       "uoc": 17.0,
-      "xong": 15.9,
-      "phan_tram": 94
+      "xong": 16.1,
+      "phan_tram": 95
     },
     "lan_B": {
       "uoc": 20.0,
@@ -365,8 +365,8 @@
     },
     "toan_chuong_trinh": {
       "uoc": 51.0,
-      "xong": 15.9,
-      "phan_tram": 31
+      "xong": 16.1,
+      "phan_tram": 32
     },
     "ma_san_pham_da_sua": "9 tep: 6 moi trong apps/chatltt/services + frontend ThongDiepView.tsx + governance.py + luot.py",
     "ghi_chu": "dem theo NGAY CONG, khong theo so pha — P00 nua ngay, P03 nam ngay"
@@ -611,7 +611,8 @@
       "luot_v3.chay_tiep_nen() — bam duyet xong thi luot CHAY TIEP (luong nen, phien CSDL rieng)",
       "dang ky `dang_chay` duoi EXECUTION DAU TIEN cua run, khong duoi mot khoa moi",
       "nen_chay_tiep(): 3 dieu kien — run cua minh, dang AWAITING_APPROVAL, het phieu cho",
-      "truong `chay_tiep` cua phan hoi noi THAT (truoc do no co nghia 'da tao mot luong')"
+      "truong `chay_tiep` cua phan hoi noi THAT (truoc do no co nghia 'da tao mot luong')",
+      "test_817 (10) — tiep_sau_duyet(): MOI NOI, khong phai manh. Ba ham khau cac manh lai (tiep_sau_duyet/chay_tiep_nen/_danh_thuc_run) truoc do co 0 phep kiem."
     ],
     "con_lai": [
       "UI duyet o frontend — P09",
@@ -631,7 +632,7 @@
   },
   "p05": {
     "trang_thai": "DANG LAM",
-    "phan_tram": 85,
+    "phan_tram": 90,
     "E2": {
       "cau": "image.edit co backend that khong",
       "tra_loi": "KHONG",
@@ -655,7 +656,9 @@
       "bo_chay_tool.ket_qua_job() — job chua xong thi VANG MAT (tiep_tuc se nem)",
       "tao_media.dong_bo: NOI THEM khoi thay vi thay het khi ex.run_id (khong xoa khoi tool)",
       "_danh_thuc_run(): job xong -> chay_tiep_nen",
-      "CHO_MODEL_GOI mo image.ltt + speech.ltt (buoc cuoi)"
+      "CHO_MODEL_GOI mo image.ltt + speech.ltt (buoc cuoi)",
+      "LOAI_KHOI khai `tool_call` o CA HAI phia (tables.py + kieu.ts) + test_807 muc 8",
+      "Kiem TRINH DUYET THAT: bon nhan trang thai V3 dung, 0 loi console, bundle main-Db3wVmJH.js dung ma bam"
     ],
     "con_lai": [
       "test dau-cuoi qua luot.chay cho duong job (can hang doi job that)",
@@ -667,6 +670,10 @@
     },
     "dot_bien_da_thu": [
       "test_802 doi HAI lan (P03 rong->2 tool; P05 'khong can duyet'->co can duyet). Menh de thay the khong doi theo tap hop: voi MOI ten trong CHO_MODEL_GOI, hoac no khong can duyet, hoac goi qua thi_hanh khong co phep ro rang thi BI TU CHOI."
-    ]
+    ],
+    "phat_hien": {
+      "tool_call_khong_nam_trong_LOAI_KHOI": "hoi_thoai.kiem_khoi() TU CHOI khoi tool_call. V3 van ghi duoc vi luot_v3._them_khoi gan thang tra_loi.blocks, VONG QUA kiem_khoi. Nen loi khong no o duong V3 — no nam cho o hoi_thoai.cap_nhat_khoi(), tuc luong SUA/TAO LAI se tu choi dung tin nhan ma V3 vua tao. Khong phep kiem nao trong 250 cai bat duoc vi TAT CA deu di duong V3 — duong duy nhat khong kiem. Chi mot lan chay THAT moi loi ra.",
+      "moi_noi_khong_ai_kiem": "Do 05/09: tiep_sau_duyet / chay_tiep_nen / _danh_thuc_run co 0 tep test nhac toi, trong khi moi manh chung khau lai deu xanh rieng le. Cung hinh dang voi loi LOAI_KHOI: manh duoc kiem ky, MOI NOI thi khong — va moi noi la cho duy nhat biet ca hai ben."
+    }
   }
 }
