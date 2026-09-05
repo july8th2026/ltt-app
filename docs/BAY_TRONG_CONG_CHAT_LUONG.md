@@ -888,9 +888,20 @@ người **nhận** phải đo lại ngay trước khi bấm — đừng coi nó
 chỗ. Đây là dòng 3 của giao ước, áp cho **cả hai đầu** của tin nhắn chứ không
 chỉ đầu người gửi.
 
-⛔ Và một giao ước **ba** người không bảo vệ được một cái máy có **bốn** phiên.
-`mobile-v1` không đọc tin của ai, và không có gì trong kho cưỡng chế được nó —
-mỗi worktree chạy một bản `gate.py` riêng.
+⛔ Và **không phải** vì thiếu người trong danh sách — tôi đã viết thế và **sai**.
+
+Bản đầu của mục này ghi *"`mobile-v1` không đọc tin của ai"*. Tôi **không đo điều
+đó**; tôi suy nó từ việc chính tôi chưa từng nhắn họ. Phiên VIDEO AI đính chính:
+họ trao đổi với `mobile-v1` cả tối, và chính `mobile-v1` kiểm chéo hộ đợt đổi tên
+`test_700→710` và tìm ra bốn tham chiếu sót trong `docs/NHAT_KY.md`.
+
+🔴 Giao ước có **bốn** người, và bốn người đều báo nhau, và máy **vẫn** chồng ba
+lượt. Nên cái hỏng không phải *"thiếu người trong danh sách"* — nếu là thế thì
+bản vá sẽ là thêm tên vào danh sách, và bản vá ấy **không sửa được gì**. Cái hỏng
+là **độ trễ**: mỗi người bấm dựa trên ảnh chụp của một phút trước.
+
+⭐ Cùng lỗi với thứ mục này đang mô tả, chỉ đổi chiều: tôi **suy từ sự vắng mặt**
+trong hộp thư của chính mình rồi phát biểu nó như một sự thật về máy.
 
 ### Luật
 
