@@ -903,6 +903,41 @@ là **độ trễ**: mỗi người bấm dựa trên ảnh chụp của một p
 ⭐ Cùng lỗi với thứ mục này đang mô tả, chỉ đổi chiều: tôi **suy từ sự vắng mặt**
 trong hộp thư của chính mình rồi phát biểu nó như một sự thật về máy.
 
+### Chồng gate làm nó CHẬM, không làm nó SAI — đo được, 06/09
+
+Câu hỏi thật khi thấy ba lượt chồng nhau không phải *"có nguy hiểm không"* mà
+*"nguy hiểm KIỂU GÌ"*. Hai kiểu khác hẳn nhau và cần hai phản ứng khác hẳn:
+
+| Kiểu | Phản ứng đúng |
+|---|---|
+| làm lượt **SAI** (đỏ giả, timeout, lease hết hạn) | phải dừng, kết quả vô giá trị |
+| làm lượt **CHẬM** | chạy nốt — dừng rồi chạy lại làm **tổng tải tăng** |
+
+Đo được, cùng một bước, cùng một cây:
+
+```
+490,0s   chay mot minh
+613,6s   chay cung HAI luot gate khac   -> cham 25%, va VAN XANH
+```
+
+⇒ **Chậm, không sai.** Ba bộ test Python thuần bão hoà CPU thì các lượt chia
+nhau lõi; chúng không đầu độc kết quả của nhau.
+
+⛔ Và đây là chỗ phải phân biệt cho đúng với 03/09 — ngày máy **reset cứng hai
+lần**. Cấu hình hôm ấy là **12 tiến trình `demucs`, mỗi cái 460–984 % CPU**, tức
+mỗi worker pytest tự nở thành một bầy luồng torch (`-n 6` đếm **worker**, không
+đếm thứ mỗi worker sinh ra). Gọi ba lượt test Python thuần là *"đúng cấu hình
+03/09"* là **nói quá** — và nói quá thì lần sau người ta bỏ qua lời cảnh báo
+thật.
+
+🔑 Nên khi thấy chồng lượt, hỏi: **có tiến trình nào NẠP MODEL không?** Đó mới là
+biến phân biệt hai kiểu nguy hiểm, chứ không phải số lượt.
+
+⭐ Ngưỡng tự dừng nên đặt **trước khi biết kết quả**. Phiên VIDEO AI đặt "tự dừng
+nếu RAM < 6 GiB" lúc RAM còn 9,6 GiB; nó không bao giờ bị chạm. Đặt sau khi nhìn
+số thì con số ấy trôi theo điều mình muốn — họ tự nói: *"nếu tôi đặt sau khi
+thấy 9,6 thì tôi đã đặt 5"*.
+
 ### Luật
 
 🔑 **`cua_so_yen trang-thai` là điều kiện CẦN, không đủ. Vế quyết định là CÂY
