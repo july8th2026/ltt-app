@@ -716,56 +716,63 @@ chẩn đoán đi sai hướng ngay từ câu đầu tiên.
 
 ---
 
-## Bẫy 21 — `--vong-lap` nhanh khi bạn đang ĐỎ, chậm ngay sau mỗi lượt XANH
+## Bẫy 21 — Cache `--lf` có id nhưng **không id nào còn sống**: trạng thái thứ ba
 
-**2026-09-05.** `CLAUDE.md:115` bán `gate.py --vong-lap` là *"sau MỖI lần sửa
-(~15 giây)"*. **Đo được: 531 giây** cho riêng bước `bo test --lf` — gấp 35 lần.
-Một phiên khác đo `113 giây` ở một lượt khác. Không lượt nào gần 15 giây.
+**2026-09-05.** `--vong-lap` tốn **531 giây** thay vì ~15 giây (một phiên khác đo
+`113 giây` ở lượt khác). Nhưng nguyên nhân **không** phải cái tôi viết lần đầu.
 
-### Cơ chế: `--lfnf=all`, mặc định của pytest
+### ⚠️ Đính chính chính bản ghi đầu tiên của mục này
 
-`--lf` thu hẹp **khi và chỉ khi** còn ít nhất một id trong
-`.pytest_cache/v/cache/lastfailed` **phân giải được**. Không id nào sống ⇒ nó
-**chạy toàn bộ, im lặng, không một dòng nào nói**.
-
-Đo trực tiếp trên hai cây, bốn tình huống:
-
-| cache `lastfailed` | `--lf` thu hẹp? |
-|---|---|
-| **rỗng** (lượt trước xanh) | ❌ 61/61 |
-| có id nhưng **tất cả đã chết** | ❌ 61/61 |
-| có **một** id sống | ✅ 1/14 (13 deselected) |
-| một sống + một chết | ✅ 1/14 — id chết bị bỏ lặng lẽ |
-
-⛔ **Đừng rút ra "đổi tên test làm hỏng `--lf`"** — hàng cuối bác điều đó. Một id
-chết cạnh một id sống thì `--lf` **vẫn** thu hẹp. Đổi tên chỉ gây hại khi nó
-giết **id sống cuối cùng**. *(Đây là chẩn đoán đầu tiên của tôi, và nó sai.)*
-
-### Vì sao đáng ghi hơn cả con số
-
-`--vong-lap` nhanh **đúng lúc ta đang đỏ**, chậm **ngay sau mỗi lượt xanh** —
-tức nhanh nhất lúc ít cần nhất, chậm nhất lúc vừa làm đúng. Và **hai đường dẫn
-tới cùng một chỗ** đều lành mạnh: lượt trước xanh, hoặc pha vừa rồi **gỡ những
-chốt đã hết lý do tồn tại** (việc kho này khuyến khích). Nghĩa là `--lf` tự
-xuống cấp **như một hệ quả của việc làm đúng**.
-
-⚠️ Và nó làm hỏng một suy luận dễ mắc: *"`--vong-lap` xanh"* **không** có nghĩa
-một lượt hẹp đã xanh. Xanh vẫn là xanh — nó chạy *nhiều hơn*, tức fail-safe —
-nhưng **thời gian tưởng tiết kiệm được thì không có thật**, và một lý lẽ dựa
-trên "nó rẻ" là một lý lẽ sai dù kết luận đúng.
-
-### Bản vá rẻ nhất không phải bỏ `--lf`
-
-Chỉ cần bước ấy **nói ra** khi nó suy biến:
+Tôi viết: *"nguyên nhân là `--lfnf=all`, mặc định của pytest"* và *"`--vong-lap`
+chậm ngay sau mỗi lượt xanh"*. **Cả hai đều sai với kho này** — vì tôi đọc dòng
+**mô tả** `--lf` trong `gate.py` thay vì đọc **lệnh nó thật sự chạy**:
 
 ```
-[--lf] khong thu hep duoc (0 id song), dang chay TOAN BO
+tools/test_nhanh.py --lf --lf-rong-thi-khong-chay
 ```
 
-Không đổi hành vi, chỉ gỡ sự im lặng — cùng họ với `[BOQUA]` và dòng
-*"`--lf` khong phai bang chung"* mà gate đã tự khai ở chỗ khác.
+Ca *"sau mỗi lượt xanh"* **đã được vá 27/08**: `test_nhanh._doc_lastfailed()`
+phân biệt ba trạng thái trên đĩa (vắng mặt / đọc được / đọc hỏng) và có hẳn khối
+chú thích kể lại đúng lần hỏng ấy (đo 27/08: 3 phút 35 thay vì 15 giây).
 
-🔑 **Chưa vá.** Ba phiên đang chạy song song hôm đó, và `tools/gate.py` là hạ
-tầng dùng chung — sửa giữa chừng là mời va chạm. Ghi ở đây, để chủ dự án quyết.
+⇒ Tôi mô tả lại một cái bẫy **đã có bánh cóc**, và bỏ sót cái đang cắn. Đúng
+hình dạng của cả tài liệu này: đọc một **bản tóm tắt** thay vì đọc thứ thật —
+lần này bản tóm tắt là một dòng tài liệu trong chính công cụ.
 
----
+### Trạng thái thứ ba, đo trên hai cây
+
+| cache `lastfailed` | `--lf` trần | `--lf --lfnf=none` | `--lf-rong-thi-khong-chay` |
+|---|---|---|---|
+| **vắng mặt / rỗng** | ❌ chạy tất | ✅ deselect tất | ✅ không chạy |
+| **có id, TẤT CẢ chết** | ❌ chạy tất | ❌ **chạy tất** | ❌ **chạy tất** |
+| có ≥1 id sống | ✅ 1/14 | ✅ 1/14 | ✅ thu hẹp |
+| 1 sống + 1 chết | ✅ 1/14 | — | — |
+
+🔑 **Cả hai lớp bảo vệ chỉ đếm "có bao nhiêu id", không hỏi "id nào còn phân giải
+được".** Cache có 4 id ⇒ trông như có việc ⇒ truyền xuống pytest ⇒ pytest không
+phân giải được cái nào ⇒ chạy toàn bộ, **im lặng**.
+
+⛔ **Đừng rút ra "đổi tên test làm hỏng `--lf`"** — hàng cuối bác điều đó: một id
+chết cạnh một id sống thì vẫn thu hẹp. Đổi tên chỉ hại khi nó giết **id sống
+cuối cùng**. Và id chết theo cách **lành mạnh**: gỡ một chốt đã hết lý do tồn
+tại là việc kho này khuyến khích.
+
+### Vì sao khó thấy
+
+`--lf` nhanh **đúng khi đang đỏ**, và ca hỏng này chỉ hiện khi **mọi** id đỏ cũ
+đã biến mất — tức đúng sau một pha dọn dẹp thành công. Nó thưởng cho việc làm
+đúng bằng một lượt 9 phút mang tên "15 giây".
+
+### Bản vá: gỡ im lặng, không đổi hành vi
+
+Phiên ASV V4 đã vá ở cây họ (`aa0dce89`):
+
+```
+[--lf] N id trong cache va KHONG id nao con phan giai duoc ... se chay TOAN BO
+```
+
+⭐ **Không** cho chạy rỗng — một id không phân giải được vẫn có thể là lỗi thu
+gom tạm thời, và chính `test_nhanh.py` cảnh báo ở chỗ khác rằng *"chạy rỗng và
+chạy hết rồi xanh in ra gần giống nhau"*.
+
+🔑 **Chưa vá ở cây này.** `CLAUDE.md:115` và `gate.py:6,14` vẫn ghi "~15 giây".
