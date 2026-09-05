@@ -97,10 +97,7 @@ def _advance(db, *, run_id: str, owner_id: str, ctx=None) -> dict:
         # 🔑 Cong cuoi cung TRUOC khi giao hang: chuoi da chay het, nhung "chay
         #    het" khong dong nghia "dat". Neu con khiem khuyet sua duoc thi sua,
         #    va chi khi khong con gi de sua moi quyet toan.
-        dat_lai, het_vong = _sua_chua_neu_can(db, run, theo_ten)
-        if het_vong:
-            features.quyet_toan(db, run, trang_thai_cuoi=RUN_ERROR)
-            return {"run_id": run.id, "status": run.status}
+        dat_lai = _sua_chua_neu_can(db, run, theo_ten)
         if dat_lai:
             hau_to = getattr(ctx, "job_id", None) or "tay"
             features._nop_dieu_phoi(db, run, ly_do=f"sua:{hau_to}")
@@ -128,6 +125,12 @@ def _advance(db, *, run_id: str, owner_id: str, ctx=None) -> dict:
 #:    tro doc duoc khi khach hoi "vi sao lan chay nay lau the".
 DON_VI_SUA = "__sua_chua__"
 
+#: Hai loai dong cung dung `DON_VI_SUA`, va chung phai phan biet duoc:
+#: mot VONG sua da chay, va mot ghi nhan khiem khuyet CON LAI sau khi het
+#: vong. Dem lan nhau la an mat mot vong.
+NANG_LUC_VONG_SUA = "sua_chua"
+NANG_LUC_CON_LAI = "sua_chua_con_lai"
+
 
 def _cac_nan(db, run) -> list[dict]:
     """Phan quyet NAN cua tung doan tieng, doc tu so cai.
@@ -150,7 +153,7 @@ def _cac_nan(db, run) -> list[dict]:
     return ra
 
 
-def _sua_chua_neu_can(db, run, theo_ten) -> tuple[list[str], bool]:
+def _sua_chua_neu_can(db, run, theo_ten) -> list[str]:
     """Thi hanh ke hoach sua. Tra ve `(giai_doan da dat lai, het vong)`.
 
     🔴 **Day la nua thu hai cua pha 19, va no da nam cho suot tu pha 19 toi
@@ -174,28 +177,68 @@ def _sua_chua_neu_can(db, run, theo_ten) -> tuple[list[str], bool]:
        roi de `_advance` chay tiep nhu no van chay. Them mot bo dieu phoi rieng
        cho viec sua la tao chu so huu thu hai cho cung mot chuoi.
 
+    🔴 **Va ham nay KHONG lam hong lan chay khi het vong. Ban dau no co lam, va
+       do la mot loi thiet ke cua toi ma so lieu that da bac.**
+
+       Luot nghiem thu THAT gan nhat — luot toi vua goi la "xanh hoan toan" —
+       giao hang voi `so_can_sua: 3` tren preset giu hinh (mot NUA so doan) va
+       `1` tren preset cat. Ban dau nhanh "het vong" cua ham nay dua ca hai luot
+       do ve `error`.
+
+    ⭐ Nhung `CAN_SUA` khong dong nghia "video hong", va he thong da biet dieu
+       do tu truoc: `thoi_gian` hap thu phan vuot bang **no troi**, co tran
+       `TRAN_TROI_SO_DOAN`; va QC do dung hau qua cua no — **T7** (troi cua mot
+       doan so voi vi tri da hoach dinh) va **T11** (troi tich luy). Ca hai DAT
+       tren chinh ban giao ay.
+
+    ⇒ Hau qua da co cong gac. Them mot cong nua o tang nan la gac hai lan cung
+      mot thu, va lan thu hai dung mot nguong ma chinh ma nguon ghi la **chua
+      do** (`DUNG_SAI_DAI = 0.08`, "CHUA DO tren du lieu that ... Pha 21 do
+      lai" — pha 21 khong do).
+
+    ⚠️ Va cong thoat pha 19 chi doi "bounded terminal failure" cho **QC failures**;
+       `CAN_SUA` la phan quyet cua tang NAN, khong phai mot muc QC hong. Toi da
+       gop hai thu do lam mot.
+
+    ⇒ Nen: sua mot vong (co gia tri that — doc lai doan do de no vua hon), roi
+      neu van con thi GHI LAI va giao hang, de QC lam cong gac nhu no von la.
+
     🔑 **Tran vong nam o `su_dung.ghi`, khong nam o mot bien.** Mot bien dem
        trong bo nho khong song qua mot lan worker chet; mot cot dem co the bi
        hai luot advance cung tang. Rang buoc `UNIQUE(run_id, ma_dispatch)` thi
        khong — no la mot tran ma CSDL cuong che.
     """
-    vong = len(su_dung.cac_dong(db, run, stage=pipeline.QC,
-                                item_key=DON_VI_SUA))
+    # ⛔ Loc theo `nang_luc`, KHONG chi theo `item_key`. Hai loai dong dung chung
+    #    item_key nay: mot vong sua (`sua_chua`) va mot ghi nhan khiem khuyet CON
+    #    LAI (`sua_chua_con_lai`). Dem ca hai thi dong "con lai" tu no an mat mot
+    #    vong — vo hai hom nay vi tran la 1, va hong ngay khi ai do nang tran len.
+    vong = len([d for d in su_dung.cac_dong(db, run, stage=pipeline.QC,
+                                            item_key=DON_VI_SUA)
+                if d.nang_luc == NANG_LUC_VONG_SUA])
     ke = sua_chua.lap_ke_hoach(cac_nan=_cac_nan(db, run), vong=vong)
     if not ke.can_sua:
-        return [], False
+        return []
 
     if not ke.con_vong():
-        # ⚠️ That bai CO BIEN, dung nhu cong thoat pha 19 doi: "until pass or
-        #    bounded terminal failure". Va no phai NOI RA doan nao, vi khach se
-        #    hoi — mot lan chay hong ma khong noi hong o dau la mot lan chay
-        #    hong hai lan.
-        ma = ", ".join(sorted(k.ma for k in ke.dang_tin if k.ma)[:5])
-        run.error = (f"sua_chua: het {sua_chua.VONG_SUA_TOI_DA} vong ma "
-                     f"{len(ke.dang_tin)} doan van khong dat ({ma})")[:2000]
-        log.warning("asv: run %s het vong sua, %d khiem khuyet con lai",
-                    run.id[:8], len(ke.dang_tin))
-        return [], True
+        # 🔑 Het vong: GHI LAI roi di tiep. Khong giet lan chay — xem docstring.
+        #
+        # ⭐ Ghi vao SO CAI chu khong chi log: mot dong log bien mat sau mot tuan,
+        #    va cau hoi "vi sao doan nay nghe hoi don" se duoc hoi sau do lau hon
+        #    the. So cai la thu con lai.
+        try:
+            su_dung.ghi(db, run, stage=pipeline.QC, item_key=DON_VI_SUA,
+                        su_dung=su_dung.SuDung(
+                            nang_luc=NANG_LUC_CON_LAI,
+                            app_chu="auto_scan_video",
+                            trang_thai=su_dung.DA_GIAO, don_vi=su_dung.LUOT,
+                            so_luong=len(ke.dang_tin), credit=0,
+                            ma_dispatch=f"sua-con-lai:{vong}",
+                            ghi_chu=ke.sang_dict()))
+        except su_dung.DaGhiRoi:
+            pass
+        log.warning("asv: run %s het vong sua, %d khiem khuyet CON LAI — giao "
+                    "hang va de QC lam cong gac", run.id[:8], len(ke.dang_tin))
+        return []
 
     # 🔑 Ghi so TRUOC khi dat lai. Neu dao thu tu, mot lan hong giua chung se de
     #    lai mot chuoi da bi dat lai ma khong co dong nao dem no — tuc tran vong
@@ -203,14 +246,15 @@ def _sua_chua_neu_can(db, run, theo_ten) -> tuple[list[str], bool]:
     try:
         su_dung.ghi(db, run, stage=pipeline.QC, item_key=DON_VI_SUA,
                     su_dung=su_dung.SuDung(
-                        nang_luc="sua_chua", app_chu="auto_scan_video",
+                        nang_luc=NANG_LUC_VONG_SUA,
+                        app_chu="auto_scan_video",
                         trang_thai=su_dung.DA_GIAO, don_vi=su_dung.LUOT,
                         so_luong=1, credit=0,
                         ma_dispatch=f"sua:{vong}",
                         ghi_chu=ke.sang_dict()))
     except su_dung.DaGhiRoi:
         # Mot luot advance khac vua lam dung vong nay. Khong lam lai.
-        return [], False
+        return []
 
     gon = sua_chua.gon_theo_don_vi(ke)          # {ma: giai_doan som nhat}
     theo_giai_doan: dict[str, list[str]] = {}
@@ -236,7 +280,7 @@ def _sua_chua_neu_can(db, run, theo_ten) -> tuple[list[str], bool]:
         log.warning("asv: run %s vao vong sua %d, dat lai %s (%d don vi)",
                     run.id[:8], vong + 1, ",".join(sorted(set(dat_lai))),
                     len(gon))
-    return dat_lai, False
+    return dat_lai
 
 
 def _vo_hieu_giai_doan_da_lech(db, run) -> list[str]:

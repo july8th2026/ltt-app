@@ -29,11 +29,14 @@ hong:
 """
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from apps.auto_scan_video import features, jobs, pipeline, su_dung, sua_chua
 from apps.auto_scan_video.tables import (ITEM_INVALIDATED, ITEM_SUCCEEDED,
                                          RUN_DONE, RUN_ERROR, RUN_RUNNING,
+                                         STAGE_FAILED_TERMINAL,
                                          STAGE_SUCCEEDED, AsvRun, AsvStage)
 from apps.auto_scan_video.nan_cho_vua import CAN_SUA, VUA
 
@@ -208,33 +211,82 @@ def test_CHI_doan_hong_bi_mo_lai_doan_lanh_van_con_xong(db):
 #  §3  Vong sua co TRAN
 # ══════════════════════════════════════════════════════════════════════════════
 
-def test_HET_VONG_thi_that_bai_CO_BIEN_chu_khong_lap_mai(db):
-    """⛔ Mot vong "sua roi kiem lai" tren dich vu tra tien la hoa don khong day.
+def test_HET_VONG_thi_KHONG_lap_mai_va_KHONG_giet_lan_chay(db):
+    """⛔ Vong "sua roi kiem lai" tren dich vu tra tien la hoa don khong day —
+    nen phai dung. Nhung dung KHONG duoc bien thanh giet.
 
-    Cong thoat pha 19 doi dung chu: *"until pass or bounded terminal failure"*.
-    Nen sau khi het tran, lan chay phai HONG — va phai noi ra doan nao.
+    🔴 **Ban dau bai nay chot dieu nguoc lai, va so lieu that da bac no.**
+
+       Toi viet nhanh "het vong -> `RUN_ERROR`" vi cong thoat pha 19 co chu
+       "bounded terminal failure". Roi doc bang chung cua luot nghiem thu THAT
+       gan nhat — luot vua duoc goi la xanh hoan toan:
+
+           giu hinh        so_vua 3 | so_co_gian 0 | **so_can_sua 3**
+           cat thong minh  so_vua 5 | so_co_gian 0 | **so_can_sua 1**
+
+       Ca hai luot deu se ve `error` duoi ban dau tien cua toi. Mot ban va lam
+       hong luot chay xanh nhat tung co la mot ban va sai, khong phai mot cong
+       nghiem ngat.
+
+    ⭐ Vi `CAN_SUA` khong dong nghia "video hong": `thoi_gian` hap thu phan vuot
+       bang no troi (tran `TRAN_TROI_SO_DOAN`), va QC do dung hau qua do —
+       **T7** (troi cua mot doan) va **T11** (troi tich luy). Ca hai DAT tren
+       chinh ban giao ay. Hau qua da co cong gac; them mot cong o tang nan la
+       gac hai lan cung mot thu, bang mot nguong ma chinh ma nguon ghi la CHUA
+       DO (`DUNG_SAI_DAI`).
+
+    ⚠️ Va "bounded terminal failure" trong cong thoat pha 19 noi ve **QC
+       failures**. `CAN_SUA` la phan quyet cua tang NAN. Toi da gop hai thu do.
     """
     run = _run_da_chay_het(db)
     _doan_tieng(db, run, "seg_0009", trang_thai_nan=CAN_SUA)
 
-    # Vong 1: sua.
     kq1 = _advance(db, run)
     assert kq1.get("sua_chua"), "vong dau phai sua"
 
-    # Dua lan chay tro lai trang thai "da chay het" — y nhu worker da lam lai
-    # xong ma doan van khong vua.
+    # Dua lan chay tro lai "da chay het" — y nhu worker da lam lai xong ma doan
+    # van khong vua.
     for s in features.cac_giai_doan(db, run):
         s.status = STAGE_SUCCEEDED
     db.flush()
 
     kq2 = _advance(db, run)
-    assert kq2["status"] == RUN_ERROR, (
-        "het vong ma van con khiem khuyet thi phai hong, khong duoc giao hang")
+    assert kq2["status"] == RUN_DONE, (
+        "het vong ma van giet lan chay: QC da la cong gac cho hau qua cua "
+        "`CAN_SUA` (T7/T11), day la gac hai lan")
+    assert not kq2.get("sua_chua"), "khong duoc sua them vong nao nua"
+
+    # ⭐ Nhung khiem khuyet con lai phai de lai DAU VET — im lang la thu dua ta
+    #    vao day ngay tu dau.
+    con_lai = [d for d in su_dung.cac_dong(db, run, stage=pipeline.QC,
+                                           item_key=jobs.DON_VI_SUA)
+               if d.nang_luc == "sua_chua_con_lai"]
+    assert len(con_lai) == 1, (
+        "khiem khuyet con lai sau khi het vong phai duoc ghi vao so cai")
+    assert "seg_0009" in json.dumps(con_lai[0].ghi_chu, ensure_ascii=False), (
+        "dau vet phai goi TEN doan — mot ghi chu khong ten khong tra loi duoc "
+        "cau hoi se duoc hoi sau do")
+
+
+def test_lan_chay_QC_HONG_van_hong_nhu_cu(db):
+    """⛔ Bo duong giet cua vong sua khong duoc lam mem cong QC that.
+
+    Bai nay ton tai vi ban sua tren de lai mot rui ro ro rang: neu ai do doc no
+    thanh "vong sua khong bao gio lam hong lan chay", buoc tiep theo de nghi la
+    lam mem ca QC. Mot giai doan hong han van phai giet lan chay.
+    """
+    run = _run_da_chay_het(db)
+    _doan_tieng(db, run, "seg_0001", trang_thai_nan=CAN_SUA)
+    qc = [s for s in features.cac_giai_doan(db, run)
+          if s.stage == pipeline.QC][0]
+    qc.status = STAGE_FAILED_TERMINAL
+    qc.error = "T5: dinh that vuot tran"
+    db.flush()
+
+    kq = _advance(db, run)
+    assert kq["status"] == RUN_ERROR
     db.refresh(run)
-    assert "seg_0009" in run.error, (
-        "loi phai goi ten doan hong — mot lan chay hong ma khong noi hong o dau "
-        "la hong hai lan")
-    assert str(sua_chua.VONG_SUA_TOI_DA) in run.error
+    assert "T5" in run.error
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -257,8 +309,9 @@ def test_VONG_SUA_duoc_GHI_VAO_SO_CAI_va_khong_dem_hai_lan(db):
 
     _advance(db, run)
 
-    dong = su_dung.cac_dong(db, run, stage=pipeline.QC,
-                            item_key=jobs.DON_VI_SUA)
+    dong = [d for d in su_dung.cac_dong(db, run, stage=pipeline.QC,
+                                        item_key=jobs.DON_VI_SUA)
+            if d.nang_luc == jobs.NANG_LUC_VONG_SUA]
     assert len(dong) == 1, "mot vong sua phai de lai dung mot dong so cai"
     assert dong[0].credit == 0, "vong sua tu no khong duoc tinh tien"
     assert dong[0].ghi_chu.get("giai_doan_sua"), (
@@ -267,8 +320,13 @@ def test_VONG_SUA_duoc_GHI_VAO_SO_CAI_va_khong_dem_hai_lan(db):
     # Goi lai chinh nhanh do: tran phai giu, khong sinh dong thu hai.
     theo_ten = {s.stage: s for s in features.cac_giai_doan(db, run)}
     jobs._sua_chua_neu_can(db, run, theo_ten)
-    assert len(su_dung.cac_dong(db, run, stage=pipeline.QC,
-                                item_key=jobs.DON_VI_SUA)) == 1
+    # ⚠️ Dem theo `nang_luc`: luot goi thu hai het vong nen no ghi mot dong
+    #    `sua_chua_con_lai` dung chung `item_key`. Neu bai nay dem ca hai, no se
+    #    xanh ngay ca khi bo dem cua san pham cung dem ca hai — tuc no khong con
+    #    do duoc dieu no noi.
+    assert len([d for d in su_dung.cac_dong(db, run, stage=pipeline.QC,
+                                            item_key=jobs.DON_VI_SUA)
+                if d.nang_luc == jobs.NANG_LUC_VONG_SUA]) == 1
 
 
 def test_ma_dispatch_cua_vong_sua_KHAC_NHAU_giua_cac_vong(db):
