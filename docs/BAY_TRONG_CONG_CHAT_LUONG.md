@@ -1083,6 +1083,41 @@ tên**, vì cái tên là thứ đi vào câu nói và vào trí nhớ.
 ⇒ **Chỗ nào cái tên hứa rộng hơn thứ công cụ đo được, chỗ đó sẽ có người đọc
 nhầm — và người đọc nhầm sẽ là ta, vào lúc mệt.**
 
+#### Và thứ hứa quá nhiều không phải lúc nào cũng là một cái TÊN
+
+`returncode` cũng vậy, và nó lừa được **cả hai phiên trong cùng một giờ** — dù
+đó đúng là kênh ta vừa khuyên nhau dùng thay cho việc khớp mẫu stdout.
+
+Console của công cụ Bash trên máy này là **cp1252**. Một `print` chứa emoji hay
+tiếng Việt có dấu ném `UnicodeEncodeError` ⇒ **`returncode=1`**, trong khi
+**việc thật đã xong**:
+
+| Ca | Việc thật | `returncode` |
+|---|---|---|
+| H44, script tiêm `con_cho_job` | đo xong, đã kết luận, đã khôi phục **khớp từng byte** | **1** (chết ở dòng in `✅`) |
+| Mobile V1, lệnh ghi bộ nhớ | ghi **3 tệp thành công** | **1** (chết ở `print` cuối) |
+
+🔴 Ca thứ hai nguy hiểm hơn: đọc mã trả về rồi kết luận *"ghi hỏng"* dẫn tới
+**ghi đè lại một tệp đã đúng**.
+
+🔑 `returncode` **gộp** *"việc hỏng"* với *"báo cáo hỏng"* thành **cùng một số**.
+Nó vẫn hơn hẳn khớp mẫu stdout — nhưng nó không phải một kênh sạch, nó là một
+kênh **hẹp hơn**, và ta lại đang đọc nó rộng hơn thứ nó đo.
+
+⇒ Bản vá có **hai** vế, và vế thứ hai mới là vế cứu:
+
+```python
+import io, sys
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
+```
+
+**và đặt mọi `print` SAU khi việc đã xong**, để tầng báo cáo chết thì nó không
+kéo theo mã trả về của tầng làm việc.
+
+⚠️ Vế thứ nhất có bẫy riêng, đã ghi ở kho này: một công cụ trong `tools/` đổi
+`sys.stdout` thành `TextIOWrapper` làm **vỡ pytest** khi bản gốc bị thu gom rác.
+Dùng trong **script dùng một lần**, đừng nhét vào công cụ dùng chung.
+
 ### Luật
 
 🔑 **`cua_so_yen trang-thai` là điều kiện CẦN, không đủ. Vế quyết định là CÂY
