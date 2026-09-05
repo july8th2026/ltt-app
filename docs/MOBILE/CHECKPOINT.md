@@ -3,7 +3,7 @@
 Tệp này là **thứ duy nhất** prompt `09_RECOVERY_AFTER_COMPACTION.txt` cần đọc để
 nối lại việc. Cập nhật cuối mỗi phase, không cuối mỗi lệnh.
 
-Cập nhật lần cuối: **2026-09-05, sau Phase H (cổng đầy đủ PASS).**
+Cập nhật lần cuối: **2026-09-05 23:45 — ĐÃ DEPLOY và đã đẩy GitHub.**
 
 ## Bối cảnh phiên
 
@@ -14,7 +14,7 @@ Cập nhật lần cuối: **2026-09-05, sau Phase H (cổng đầy đủ PASS).
 | commit gần nhất | xem `git log` |
 | nguồn quy trình | `G:\My Drive\AI\A LTT AII\LTT_MOBILE_AUTONOMOUS_PROMPT_PACK_V1` |
 | kế hoạch | `docs/MOBILE/00_KE_HOACH.md` |
-| dải số test | **700–799** (đã dùng 700, 701, 702, 703, 704, 705) |
+| dải số test | **900–906** ⚠️ đổi từ 700–706: dải 700–799 đã cấp cho LTT VIDEO AI V3 từ 04/09 |
 | máy chủ đo | `python tools\studio_dev.py --cong 8123 --giu` |
 | dựng dữ liệu đo | `mobile_qa.py bang` · `chat-seed <uid>` · `wav-dai <uid>` |
 | trình duyệt | `playwright-cli` — Chromium + WebKit 26.5 |
@@ -36,7 +36,7 @@ frontend của gate tự bỏ qua và in "KHÔNG PHẢI BẰNG CHỨNG".
 | **E** editor phức tạp | 🟢 **~75%** | `06_EDITOR.md` · seed canvas · 4 vòng React · nút ±0,1s |
 | **F** bề mặt chuẩn | 🟢 **~85%** | `07_BE_MAT_CHUAN.md` |
 | **G** harness + ma trận | ✅ **PASS** | `mobile_qa.py quet` · `mobile_quet.js` · `test_906` |
-| **H** cổng phát hành | 🟢 **~85%** | `08_BAO_CAO.md` · `gate.py` **PASS 26/26** · còn deploy để chốt URL công khai |
+| **H** cổng phát hành | ✅ **XONG** | deploy `EXITCODE=0` · 510 tệp `.py` 0 lệch · công khai 200 · đã push |
 
 ---
 
