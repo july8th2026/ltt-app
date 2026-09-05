@@ -299,7 +299,23 @@
     "con_phai_lam": [
       "npm ci frontend/chatltt o cay chinh",
       "them frontend/*/node_modules vao luat 1b QUY_TRINH_WORKTREE.md"
-    ]
+    ],
+    "luot_chot": {
+      "ket_qua": "PASS",
+      "ho_so": "test-results/gates/20260905T181119Z-12404.json",
+      "sha": "4a55620f",
+      "tong_buoc": 26,
+      "so_fail": 0,
+      "cay_da_doi_giua_chung": false,
+      "buoc_bo_qua": [
+        "frontend agent-canvas",
+        "frontend autosub-studio",
+        "frontend prompt-ai-ommi"
+      ],
+      "vi_sao_bo_qua": "CAY NAY thieu node_modules cho ba app do — KHONG phai vi chung khong ap dung. Do doi chieu 06/09: o cay chinh ca ba deu PASS (14,8s / 4,1s / 4,5s). `npm ci` ba thu muc la go han.",
+      "canh_bao": "Mot buoc bo qua ON DINH nguy hiem hon mot buoc bo qua THAT THUONG: ba luot lien tiep cung bo dung ba buoc nay, va on dinh la thu nguoi ta ngung doc. Ngay ai do cham vao agent-canvas tren cay nay, buoc phu no se VAN bo qua — im lang, dung luc no can noi nhat.",
+      "frontend_chatltt": "PASS 8,2s — buoc phu dung phan da sua, CO chay"
+    }
   },
   "template_may_b": {
     "duong_dan": "H:/LTT_LLM/models/chat_template.jinja",

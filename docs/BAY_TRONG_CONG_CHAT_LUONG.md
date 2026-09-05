@@ -602,6 +602,38 @@ biến một máy không có PostgreSQL thành một máy không chạy được
 một lời nói dối lấy một cản trở. Sửa đúng là cho gate có trạng thái thứ ba
 (`BOQUA`) tách khỏi `PASS`, và cho dòng `RESULT` nói ra số bước đã bỏ qua.
 
+### 🔴 Một bước bỏ qua ỔN ĐỊNH nguy hiểm hơn một bước bỏ qua THẤT THƯỜNG
+
+*(phiên Mobile V1 đối chiếu hai cây, 06/09)*
+
+Cùng ba bước ấy, ở **cây chính**, chúng **chạy được**:
+
+```
+frontend agent-canvas    PASS 14,8s
+frontend autosub-studio  PASS  4,1s
+frontend prompt-ai-ommi  PASS  4,5s
+```
+
+⇒ `BOQUA` ở một worktree là thuộc tính của **cây đó** (thiếu `node_modules`),
+**không** phải một giới hạn của kho. `npm ci` ba thư mục là gỡ hẳn.
+
+⚠️ Và đây là chỗ nó thành bẫy: **nguyên nhân bỏ qua không liên quan gì tới nội
+dung đang sửa.** Nên ba lượt gate liên tiếp cùng bỏ đúng ba bước ấy là một trạng
+thái **ổn định** — và **ổn định là thứ người ta ngừng đọc**. Ngày ai đó chạm vào
+`agent-canvas` trên cây ấy, bước phủ nó sẽ **vẫn** bỏ qua, im lặng, đúng lúc nó
+cần nói nhất.
+
+🔑 So hai ca cho rõ:
+
+| Ca | Bỏ bước | Vì sao nó sống lâu |
+|---|---|---|
+| Mobile V1 | **đúng** bước phủ phần vừa sửa (77 phép kiểm) | đập vào mặt ⇒ bị bắt ngay |
+| H44 | ba bước **không liên quan** | không đập vào mặt ⇒ **sống lâu hơn** |
+
+⇒ Ghi trong hồ sơ bàn giao của mỗi cây: *"ba bước này bỏ qua vì cây thiếu
+bundle, **không phải** vì chúng không áp dụng"* — để người sau không đọc `BOQUA`
+thành *"không liên quan"*.
+
 ---
 
 ## Bẫy 18 — Bánh cóc số tệp test không thấy tệp **chưa được git theo dõi**

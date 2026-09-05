@@ -27,7 +27,7 @@
 
 | # | Điều kiện | Trạng thái |
 |---|---|---|
-| 1 | Gate đầy đủ PASS trên cây này | ✅ `20260905T052942Z-17052.json` |
+| 1 | Gate đầy đủ PASS trên cây này | ✅ `20260905T181119Z-12404.json` — 26 bước · 0 FAIL · `cay_da_doi_giua_chung=False` · sha `4a55620f` |
 | 2 | **Mở trình duyệt thật, xem bốn nhãn trạng thái V3 hiện đúng** | ✅ **05/09** — xem §dưới |
 | 3 | Kiểm trên URL công khai, không chỉ loopback (`CLAUDE.md` 5b) | ❌ chưa |
 | 4 | R2b được chủ dự án chốt | ❌ đang chạy theo giả định (b) |
@@ -74,6 +74,26 @@ là một loại sẽ bị chính mình từ chối.
 Khối `tool_call` hiện **chưa được vẽ gì cả** — người dùng thấy phần chữ và nhãn
 trạng thái, không thấy dấu vết lời gọi công cụ. Đó **đúng A5** (bỏ qua khối chưa
 có bộ vẽ, không vỡ), nhưng nghĩa là **P09 vẫn phải dựng bộ hiển thị tool_call**.
+
+### ⚠️ Ba bước `BOQUA` của cây này là thuộc tính CÂY, không phải của kho
+
+Lượt gate chốt bỏ qua `frontend agent-canvas`, `autosub-studio`,
+`prompt-ai-ommi`. **Không** phải vì chúng không áp dụng — mà vì **cây này thiếu
+`node_modules`** cho ba app đó. Đối chiếu 06/09 ở **cây chính**: cả ba đều
+**PASS** (14,8s / 4,1s / 4,5s). `npm ci` ba thư mục là gỡ hẳn.
+
+🔴 **Và một bước bỏ qua ỔN ĐỊNH nguy hiểm hơn một bước bỏ qua thất thường.**
+Nguyên nhân bỏ qua ở đây **không liên quan gì** tới nội dung H44 sửa, nên ba
+lượt gate liên tiếp cùng bỏ đúng ba bước ấy — và **ổn định là thứ người ta ngừng
+đọc**. Ngày ai đó dùng cây này để chạm vào `agent-canvas`, bước phủ nó sẽ **vẫn**
+bỏ qua, im lặng, đúng lúc nó cần nói nhất.
+
+⭐ So với ca ngược lại (phiên Mobile V1): họ bỏ **đúng** bước phủ phần vừa sửa —
+77 phép kiểm không chạy — nên nó **đập vào mặt** và bị bắt ngay. Cái không đập
+vào mặt thì sống lâu hơn.
+
+⇒ `frontend chatltt` — bước phủ đúng phần H44 đổi — **PASS 8,2s**. Nên lượt này
+đứng vững; cảnh báo trên là cho **phiên sau dùng cây này**, không phải cho H44.
 
 ## Quyết định của chủ dự án (2026-09-04)
 
