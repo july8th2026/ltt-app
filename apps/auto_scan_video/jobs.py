@@ -279,7 +279,15 @@ def _sua_chua_neu_can(db, run, theo_ten) -> list[str]:
     ha_nguon: list[str] = []
     for gd, cac_ma in sorted(theo_giai_doan.items()):
         for ma in cac_ma:
-            su_dung.mo_lai_don_vi(db, run, stage=gd, item_key=ma)
+            try:
+                su_dung.mo_lai_don_vi(db, run, stage=gd, item_key=ma)
+            except su_dung.XungDotDonVi:
+                # ⚠️ Mot tien trinh khac dang cham don vi nay ngay luc nay. Bo
+                #    qua **rieng no**, dung giet ca vong sua: nhung don vi khac
+                #    van sua duoc, va don vi nay se hien lai o ban ghi "con lai"
+                #    neu no van hong.
+                log.warning("asv: run %s bo qua don vi %s/%s — dang bi tien "
+                            "trinh khac cham", run.id[:8], gd, ma)
         s = theo_ten.get(gd)
         if s is None:
             continue

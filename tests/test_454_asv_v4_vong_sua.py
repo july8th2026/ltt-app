@@ -32,6 +32,7 @@ from __future__ import annotations
 import json
 
 import pytest
+import sqlalchemy as sa
 
 from apps.auto_scan_video import features, jobs, pipeline, su_dung, sua_chua
 from apps.auto_scan_video.tables import (ASSET_MISSING, ASSET_OK,
@@ -39,7 +40,7 @@ from apps.auto_scan_video.tables import (ASSET_MISSING, ASSET_OK,
                                          RUN_DONE, RUN_ERROR, RUN_RUNNING,
                                          STAGE_FAILED_TERMINAL,
                                          STAGE_SUCCEEDED, AsvAsset, AsvRun,
-                                         AsvStage)
+                                         AsvStage, AsvWorkItem)
 from apps.auto_scan_video.nan_cho_vua import CAN_SUA, VUA
 
 
@@ -415,3 +416,85 @@ def test_ARTIFACT_cua_chinh_giai_doan_duoc_sua_KHONG_bi_danh_dau_mat(db):
     assert ban_dung.integrity == ASSET_MISSING, (
         "artifact HA NGUON phai bi vo hieu: no duoc dung tu mot ban tieng sap "
         "bi thay")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Moi noi: hai duong ghi cua CUNG mot bang phai co CUNG mot rao
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_mo_lai_don_vi_KHONG_ghi_de_mot_ban_ghi_vua_doi(db):
+    """🔴 **Duong ghi cua toi di vong qua chinh lop bao ve cua ham anh em.**
+
+    `su_dung.danh_dau_xong` dung `UPDATE ... WHERE revision = :r` roi nem
+    `XungDotDonVi` khi `rowcount != 1`, va `tables.py` noi ro cot `revision` sinh
+    ra de lam gi: *"bien mot cuoc dua thanh mot xung dot NHIN THAY DUOC thay vi
+    mot ban ghi de"*.
+
+    Ban dau `mo_lai_don_vi` — viet ngay canh no — lai la mot phep gan ORM tran.
+
+    ⛔ Cuoc dua that: mot tien trinh khac vua doc lai doan nay va `danh_dau_xong`
+       no voi van tay moi; ta cam mot ban doc CU roi ghi `invalidated` de len.
+       **Mot lan doc lai da tra tien bien mat, va khong ai thay.**
+
+    ⭐ Khong phep kiem nao truoc do bat duoc, vi ca hai duong ghi deu xanh RIENG
+       LE. Cho hong la **moi noi** — thu duy nhat biet ca hai ben.
+    """
+    import platform_core.db as dbmod
+
+    run = _run_da_chay_het(db)
+    _doan_tieng(db, run, "seg_dua", trang_thai_nan=CAN_SUA)
+    db.commit()
+
+    # ⛔ **Phai dung HAI phien, va ban dau toi da lam sai cho nay.**
+    #
+    #    Ban dau toi tang `revision` ngay tren `db` roi goi ham. Bai xanh — vi
+    #    ham DOC LAI truoc khi ghi, nen no thay dung con so vua doi va `UPDATE`
+    #    khop. Do khong phai mot cuoc dua; do la mot lan doc va mot lan ghi
+    #    trong cung mot dong thoi gian.
+    #
+    # ⭐ Cuoc dua that can mot ban doc CU con song trong identity map cua phien
+    #    nay, trong khi phien KHAC da ghi de duoi CSDL. Luc do `select` tra ve
+    #    doi tuong da nap (SQLAlchemy khong ghi de thuoc tinh da nap), nen `rev`
+    #    la so CU va `UPDATE ... WHERE revision = rev` khop **khong dong nao**.
+    it = features.don_vi_theo_khoa(db, run.id, pipeline.VOICE_SYNTHESIS,
+                                   "seg_dua")
+    assert it is not None and int(it.revision) >= 1
+
+    khac = next(dbmod.get_session())
+    try:
+        khac.execute(sa.update(AsvWorkItem)
+                     .where(AsvWorkItem.id == it.id)
+                     .values(revision=int(it.revision) + 5))
+        khac.commit()
+    finally:
+        khac.close()
+
+    with pytest.raises(su_dung.XungDotDonVi):
+        su_dung.mo_lai_don_vi(db, run, stage=pipeline.VOICE_SYNTHESIS,
+                              item_key="seg_dua")
+
+
+def test_don_vi_bi_TRANH_CHAP_khong_giet_ca_vong_sua(db, monkeypatch):
+    """⚠️ Va mot xung dot o MOT don vi khong duoc lam hong ca lan chay.
+
+    Nhung don vi khac van sua duoc; don vi nay se hien lai o ban ghi "con lai"
+    neu no van hong. Bai nay chot rang ban va tren khong doi mot cuoc dua tam
+    thoi thanh mot lan chay hong.
+    """
+    run = _run_da_chay_het(db)
+    _doan_tieng(db, run, "seg_a", trang_thai_nan=CAN_SUA)
+    _doan_tieng(db, run, "seg_b", trang_thai_nan=CAN_SUA)
+
+    that = su_dung.mo_lai_don_vi
+
+    def gia(db_, run_, *, stage, item_key):
+        if item_key == "seg_a":
+            raise su_dung.XungDotDonVi("tien trinh khac dang cham")
+        return that(db_, run_, stage=stage, item_key=item_key)
+
+    monkeypatch.setattr(su_dung, "mo_lai_don_vi", gia)
+
+    kq = _advance(db, run)
+    assert kq.get("sua_chua"), "mot don vi tranh chap da giet ca vong sua"
+    assert features.don_vi_theo_khoa(
+        db, run.id, pipeline.VOICE_SYNTHESIS, "seg_b").status == ITEM_INVALIDATED

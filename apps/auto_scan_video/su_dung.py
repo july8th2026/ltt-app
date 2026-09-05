@@ -331,9 +331,31 @@ def mo_lai_don_vi(db: Session, run: AsvRun, *, stage: str,
         AsvWorkItem.item_key == item_key)).scalar_one_or_none()
     if it is None or it.status == ITEM_INVALIDATED:
         return False
-    it.status = ITEM_INVALIDATED
-    it.revision = int(it.revision or 1) + 1
+
+    # 🔴 **`UPDATE ... WHERE revision = :r`, cung khuon voi `danh_dau_xong`.**
+    #
+    #    Ban dau doan nay la mot phep gan ORM tran: doc `it`, dat `status`, roi
+    #    `flush`. No **di vong qua** dung lop bao ve ma ham anh em ngay ben duoi
+    #    co — va `tables.py:327` noi ro cot `revision` sinh ra de lam gi: *"bien
+    #    mot cuoc dua thanh mot xung dot NHIN THAY DUOC thay vi mot ban ghi de"*.
+    #
+    # ⛔ Cuoc dua that: mot tien trinh khac vua `danh_dau_xong` don vi nay (doc
+    #    lai xong, van tay moi), con ta cam mot ban doc CU roi ghi `invalidated`
+    #    de len. Mot lan doc lai da tra tien bien mat, va khong ai thay.
+    #
+    # ⭐ Tim ra bang cach doi chieu HAI DUONG GHI cua cung mot bang, chu khong
+    #    bang mot phep kiem: ca hai deu xanh rieng le, va cho hong la **moi noi**
+    #    — thu duy nhat biet ca hai ben.
+    rev = int(it.revision or 1)
+    ket_qua = db.execute(
+        update(AsvWorkItem)
+        .where(AsvWorkItem.id == it.id, AsvWorkItem.revision == rev)
+        .values(revision=rev + 1, status=ITEM_INVALIDATED))
+    if ket_qua.rowcount != 1:
+        raise XungDotDonVi(
+            _t('Đơn vị việc đã được cập nhật ở tiến trình khác.'))
     db.flush()
+    db.expire(it)
     return True
 
 
