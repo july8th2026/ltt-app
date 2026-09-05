@@ -170,7 +170,51 @@ phân biệt được gì.
 - Không đụng `data/`, `secrets/`, `cloudflare/`; không migration Alembic nào.
 - Sau deploy: `C:\LTTPlatform\app.previous\` giữ bản trước.
 
-## 11. Điều kiện còn lại để chốt trên URL công khai
+## 11. Deploy — ĐÃ CHẠY, 2026-09-05 23:41
+
+| | |
+|---|---|
+| commit deploy | `1320e9d12f04` |
+| `EXITCODE` | **0** (không rỗng — rỗng nghĩa là chưa chạy) |
+| nghiệm thu băm | **510 tệp `.py`, 0 lệch, 0 thiếu** |
+| bundle 4 frontend | `source_sha256` **khớp cả bốn** |
+| `/health/ready` loopback | **200** |
+| `/health/ready` công khai | **200** |
+| `asset_ver` | `54914535` → **`9a4f4744`** — cache-bust chạy |
+
+⭐ Phiên này **đã có quyền Administrator sẵn** (`ConsentPromptBehaviorAdmin = 0`),
+nên `deploy_nang_quyen.ps1` chạy thẳng, không cần ai bấm UAC. Memory ghi "user
+bấm UAC" — điều đó đúng ở thời điểm ghi, không đúng ở máy này hôm nay.
+
+### Chốt trên URL công khai — cái đo được và cái không
+
+Chạy harness thẳng vào `https://app.lttstudios.com` (qua Cloudflare):
+
+| route | 320 · 390 · ngang · desktop |
+|---|---|
+| `/` · `/huong-dan` · `/gia-api` | **0 tràn, 0 console error** |
+| `/login` | ⛔ **không đo được** |
+
+`/login` trả **403** với `<title>Just a moment...</title>` và
+`cdn-cgi/challenge-platform` — **trang chặn của Cloudflare**, không phải trang
+của ta. `curl` cũng bị 403, tức đó là luật WAF trên đường đăng nhập chứ không
+riêng trình duyệt tự động.
+
+⚠️ Nên con số "tràn 89px ở `/login`" mà lượt quét in ra là của **trang chặn**.
+Ghi nó vào báo cáo như một lỗi sản phẩm sẽ là một kết luận sai — cùng lớp lỗi
+"đọc thứ đại diện thay vì đọc thứ thật" đã gặp bốn lần trong phiên này.
+
+⇒ Mọi route **sau đăng nhập** trên URL công khai vẫn **chưa đo được bằng trình
+duyệt tự động**. Chúng đã đo đầy đủ ở loopback (23 route × 6 khung × 2 trình
+duyệt), và CSS mới đã xác nhận ra tới biên Cloudflare — nhưng đó là hai bằng
+chứng khác nhau, đừng gộp làm một.
+
+## 12. Đẩy mã
+
+`git push origin admin-mvp-v3` → `0aa848ea..1320e9d1`; nhánh `phien/mobile-v1`
+đẩy mới. Secret scan trước khi đẩy: **Findings: 0** / 490.300 dòng.
+
+## 13. Điều kiện còn lại
 
 `CLAUDE.md` quy tắc 5b bắt chốt trên `https://app.lttstudios.com`, mà tới đó phải
 deploy. Deploy chép **cả cây**, nên phải ff-merge về `admin-mvp-v3` trước và hỏi
