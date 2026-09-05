@@ -192,6 +192,73 @@ def chat_seed(uid: str) -> str:
             pass
 
 
+def _mo_moi_truong_dev() -> None:
+    os.environ["LTT_DATABASE_URL"] = "sqlite:///" + str(CSDL_DEV).replace("\\", "/")
+    os.environ.setdefault("LTT_ENV", "development")
+    os.environ.setdefault("LTT_SESSION_SECRET", "studio-dev-khong-bi-mat")
+
+
+def _phien_dev():
+    """Trả `(session, dọn)` trên sqlite của `studio_dev`, bảng đã dựng đủ."""
+    _mo_moi_truong_dev()
+    import platform_core.db as dbmod
+    import platform_core.models  # noqa: F401
+    from platform_core import registry
+
+    dbmod.reset_engine()
+    registry.load_app_tables()
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+    gen = dbmod.get_session()
+    db = next(gen)
+
+    def don():
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    return db, don
+
+
+def agent_seed(uid: str) -> str:
+    """Dựng một workflow Agent Canvas **có node**. Trả `workflow_id`.
+
+    🔴 VÌ SAO LỆNH NÀY TỒN TẠI — một phép đo trên canvas RỖNG không kết luận
+       được gì. Ngày 05/09 tôi đo "kéo bằng ngón tay không pan được canvas" và
+       suýt ghi nó thành một lỗi. Nhưng trong cùng lượt đo, **chuột giữa cũng
+       không pan** — mà cấu hình `panOnDrag={[1,2]}` thì chuột giữa *phải* pan.
+       Một phép đo trả lời "không" cho mọi đầu vào thì nó đang đo bộ đo.
+
+    ⭐ Dùng chính `workflows.plan_to_canvas` của máy chủ chứ không tự bịa hình
+       dạng `document`: hình dạng ấy là hợp đồng của app, và một bản chép tay sẽ
+       lệch ngay khi app đổi.
+    """
+    from platform_core.agent import workflows
+
+    ke_hoach = {
+        "version": 1, "goal": "Do giao dien mobile", "budget_max_credit": 1000,
+        "steps": [
+            {"id": "source", "tool": "video.generate", "after": [], "fanout": 1,
+             "max_retry": 0, "on_fail": "regenerate", "verify": None,
+             "params": {"prompt": "Rung ban mai", "model": "seedance-2.0-mini",
+                        "resolution": "720p", "duration": 5,
+                        "aspect_ratio": "16:9", "generate_audio": True}},
+            {"id": "upscale", "tool": "video.upscale", "after": ["source"],
+             "fanout": 1, "max_retry": 0, "on_fail": "retry_same", "verify": None,
+             "params": {"video_key": "$source.video_key", "preset": "fast",
+                        "target_height": 1080, "codec": "h264", "preview": False}},
+        ],
+    }
+    db, don = _phien_dev()
+    try:
+        row = workflows.create(db, user_id=uid, name="Canvas mau cho do mobile",
+                               canvas=workflows.plan_to_canvas(ke_hoach))
+        db.commit()
+        return row.id
+    finally:
+        don()
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     con = ap.add_subparsers(dest="lenh", required=True)
@@ -206,6 +273,9 @@ def main(argv=None) -> int:
 
     c = con.add_parser("chat-seed", help="dung mot hoi thoai chatltt co noi dung that")
     c.add_argument("uid", help="uid cua tai khoan seed")
+
+    g = con.add_parser("agent-seed", help="dung mot workflow Agent Canvas CO node")
+    g.add_argument("uid", help="uid cua tai khoan seed")
 
     a = ap.parse_args(argv)
 
@@ -230,6 +300,10 @@ def main(argv=None) -> int:
         da_nap, so = du_bang()
         print(f"app co tables.py: {da_nap}")
         print(f"tong bang: {so}")
+        return 0
+
+    if a.lenh == "agent-seed":
+        print("workflow_id:", agent_seed(a.uid))
         return 0
 
     if a.lenh == "chat-seed":

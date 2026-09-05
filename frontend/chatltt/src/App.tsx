@@ -74,6 +74,33 @@ function xoaHash(): void {
     window.location.pathname + window.location.search)
 }
 
+
+/* ⭐ `khiHien` — chay `viec` theo nhip, nhung KHONG chay khi tab dang an, va
+ *    chay lai NGAY khi tab hien lai.
+ *
+ *    Do 05/09: nam vong hoi trang thai job trong kho, khong vong nao biet tab
+ *    dang an. Tren dien thoai do la pin va dung luong 3G cua khach chay trong
+ *    khi ho dang lam viec khac — con job thi van chay o may chu du khong ai hoi.
+ *
+ * ⚠️ CO Y khong dung mot hook dung chung: hai app React o kho nay la hai goi
+ *    npm rieng, khong co thu muc nguon chung. Mot "hook dung chung" o day se la
+ *    HAI BAN CHEP — dung cai da sinh ra nam ban Range trong `apps/`. Muoi dong
+ *    lap lai, khong co truu tuong nao de troi.
+ *
+ * ⛔ Trang thai job o MAY CHU la chan ly. Tab an chi GIAM nhip hoi. */
+function khiHien(viec: () => void, nhip: number): () => void {
+  const chay = () => { if (!document.hidden) viec() }
+  const h = window.setInterval(chay, nhip)
+  const lai = () => { if (!document.hidden) viec() }
+  document.addEventListener('visibilitychange', lai)
+  window.addEventListener('online', lai)
+  return () => {
+    window.clearInterval(h)
+    document.removeEventListener('visibilitychange', lai)
+    window.removeEventListener('online', lai)
+  }
+}
+
 export function App({ api }: AppProps) {
   const [nangLuc, datNangLuc] = useState<NangLuc[]>([])
   const [dsHoiThoai, datDsHoiThoai] = useState<HoiThoai[]>([])
@@ -156,8 +183,7 @@ export function App({ api }: AppProps) {
   useEffect(() => {
     const thieu = nangLuc.some((n) => n.san_sang !== 'san_sang')
     if (!nangLuc.length || !thieu) return undefined
-    const h = window.setInterval(() => { void napDanhMuc().catch(() => {}) }, 20_000)
-    return () => window.clearInterval(h)
+    return khiHien(() => { void napDanhMuc().catch(() => {}) }, 20_000)
   }, [nangLuc, napDanhMuc])
 
   const napSoDu = useCallback(() => {
@@ -259,7 +285,7 @@ export function App({ api }: AppProps) {
     )
     if (!dangCho.length || !convId) return
     let dung = false
-    const h = window.setInterval(async () => {
+    const huy = khiHien(() => { void (async () => {
       if (dung) return
       try {
         await Promise.all(dangCho.map((m) => api.trangThai(m.execution!.id)))
@@ -268,8 +294,8 @@ export function App({ api }: AppProps) {
       } catch {
         // Mot nhip hong khong lam hong ca man hinh; nhip sau thu lai.
       }
-    }, 2000)
-    return () => { dung = true; window.clearInterval(h) }
+    })() }, 2000)
+    return () => { dung = true; huy() }
   }, [api, convId, suThat, napSuThat, napSoDu])
 
   // ── Phim tat ────────────────────────────────────────────────────────────

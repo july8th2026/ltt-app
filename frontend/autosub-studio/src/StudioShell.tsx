@@ -25,6 +25,34 @@ export function friendlyStudioError(error: unknown) {
     : message
 }
 
+
+/* ⭐ `khiHien` — chay `viec` theo nhip, nhung KHONG chay khi tab dang an, va
+ *    chay lai NGAY khi tab hien lai.
+ *
+ *    Do 05/09: nam vong hoi trang thai job trong kho, khong vong nao biet tab
+ *    dang an. Tren dien thoai do la pin va dung luong 3G cua khach chay trong
+ *    khi ho dang lam viec khac — con job thi van chay o may chu du khong ai hoi.
+ *
+ * ⚠️ CO Y khong dung mot thu vien hay mot hook dung chung: hai app React o kho
+ *    nay la hai goi npm rieng, khong co thu muc nguon chung. Mot "hook dung
+ *    chung" o day se la HAI BAN CHEP — dung cai da sinh ra nam ban Range trong
+ *    `apps/`. Muoi dong lap lai, khong co truu tuong nao de troi.
+ *
+ * ⛔ Trang thai job o MAY CHU la chan ly. Tab an chi GIAM nhip hoi; no khong
+ *    quyet dinh job con song hay khong. */
+function khiHien(viec: () => void, nhip: number): () => void {
+  const chay = () => { if (!document.hidden) viec() }
+  const h = window.setInterval(chay, nhip)
+  const lai = () => { if (!document.hidden) viec() }
+  document.addEventListener('visibilitychange', lai)
+  window.addEventListener('online', lai)
+  return () => {
+    window.clearInterval(h)
+    document.removeEventListener('visibilitychange', lai)
+    window.removeEventListener('online', lai)
+  }
+}
+
 export function StudioShell({ csrfToken }: { csrfToken: string }) {
   const [project, setProject] = useState<StudioProject | null>(null)
   const projectRef = useRef<StudioProject | null>(null)
@@ -56,17 +84,17 @@ export function StudioShell({ csrfToken }: { csrfToken: string }) {
   useEffect(()=>{loadStyles().then(setPresets).catch(()=>setMessage('Không tải được preset'))},[])
   useEffect(()=>{loadCapabilities().then(setCapabilities).catch(()=>setCapabilities(null))},[])
   useEffect(()=>{if(!auxJob||!['queued','running'].includes(auxJob.status))return
-    const timer=window.setInterval(()=>{void loadStudioJob(auxJob.id).then(async job=>{setAuxJob(job);upsertJob(setJobHistory,job)
+    const timer=khiHien(()=>{void loadStudioJob(auxJob.id).then(async job=>{setAuxJob(job);upsertJob(setJobHistory,job)
       setMessage(`${job.message||studioJobStatusLabel(job.status)} · ${job.progress}%`)
       if(job.status==='done'&&projectRef.current){const fresh=await loadProject(projectRef.current.id);projectRef.current=fresh;setProject(fresh);setSelectedTrackId(fresh.payload.tracks.at(-1)?.id||'');setMessage('AI auxiliary hoàn tất · 0 credit')}
       if(job.status==='error')setMessage(job.error||'Job lỗi')})},1200)
-    return()=>window.clearInterval(timer)},[auxJob?.id,auxJob?.status])
+    return timer},[auxJob?.id,auxJob?.status])
   useEffect(()=>{if(!renderJob||!['queued','running'].includes(renderJob.status))return
-    const timer=window.setInterval(()=>{void loadStudioJob(renderJob.id).then(job=>{setRenderJob(job);upsertJob(setJobHistory,job)
+    const timer=khiHien(()=>{void loadStudioJob(renderJob.id).then(job=>{setRenderJob(job);upsertJob(setJobHistory,job)
       setMessage(`${job.message||studioJobStatusLabel(job.status)} · ${job.progress}%`)
       if(job.status==='done')setMessage('Render hoàn tất · sẵn sàng tải xuống')
       if(job.status==='error')setMessage(job.error||'Render lỗi')})},1200)
-    return()=>window.clearInterval(timer)},[renderJob?.id,renderJob?.status])
+    return timer},[renderJob?.id,renderJob?.status])
 
   const autosave = useMemo(() => createAutosave<StudioProject>(async (draft) => {
     setState('saving'); setMessage('Đang lưu…')
@@ -171,7 +199,20 @@ export function StudioShell({ csrfToken }: { csrfToken: string }) {
         <div className="video-canvas">{source.key?<><video ref={videoRef} controls playsInline preload="metadata" src={sourceUrl} onTimeUpdate={e=>setCurrentTime(e.currentTarget.currentTime)}/>{selectedCue&&currentTime>=selectedCue.start&&currentTime<=selectedCue.end&&<SubtitlePreview cue={selectedCue} currentTime={currentTime} rawStyle={project.payload.style}/>}</>:<div className="empty-preview"><span>▶</span><strong>Video preview</strong><small>Upload video để bắt đầu</small></div>}</div>
         <div className="transport"><button aria-label="Về đầu" onClick={()=>seek(0)}>|◀</button><button aria-label="Phát hoặc dừng" onClick={()=>videoRef.current?.paused?void videoRef.current.play():videoRef.current?.pause()}>▶</button><button aria-label="Tới cuối" onClick={()=>seek(source.duration_s)}>▶|</button><span>{formatTime(currentTime)} / {formatTime(source.duration_s)}</span></div>
         <EditorTimeline tracks={project.payload.tracks} duration={source.duration_s} currentTime={currentTime} sourceUrl={sourceUrl} selectedCueId={selectedCueId} onSelect={setSelectedCueId} onSeek={seek} onCueChange={cueChange}/>
-        <div className="cue-editor"><div className="cue-editor-tools"><button onClick={addCue} disabled={!selectedTrack}>＋ Cue</button><button onClick={splitCue} disabled={!selectedCue}>Tách</button><button onClick={mergeNext} disabled={!selectedCue}>Gộp sau</button><button onClick={removeCue} disabled={!selectedCue}>Xóa</button></div>{selectedCue?<><textarea aria-label="Nội dung cue" value={selectedCue.text} onChange={e=>cueChange(selectedTrack.id,selectedCue.id,{text:e.target.value})}/><div className="timing-inputs"><label>Bắt đầu<input aria-label="Thời gian bắt đầu" type="number" inputMode="decimal" min="0" step="0.01" value={selectedCue.start} onChange={e=>cueChange(selectedTrack.id,selectedCue.id,{start:Number(e.target.value)})}/></label><label>Kết thúc<input aria-label="Thời gian kết thúc" type="number" inputMode="decimal" min="0.05" step="0.01" value={selectedCue.end} onChange={e=>cueChange(selectedTrack.id,selectedCue.id,{end:Number(e.target.value)})}/></label><label>Speaker<input aria-label="Speaker" value={selectedCue.speaker} onChange={e=>cueChange(selectedTrack.id,selectedCue.id,{speaker:e.target.value})}/></label></div></>:<p>Chọn một cue trên timeline hoặc thêm cue mới.</p>}</div>
+        <div className="cue-editor"><div className="cue-editor-tools"><button onClick={addCue} disabled={!selectedTrack}>＋ Cue</button><button onClick={splitCue} disabled={!selectedCue}>Tách</button><button onClick={mergeNext} disabled={!selectedCue}>Gộp sau</button><button onClick={removeCue} disabled={!selectedCue}>Xóa</button></div>{selectedCue?<><textarea aria-label="Nội dung cue" value={selectedCue.text} onChange={e=>cueChange(selectedTrack.id,selectedCue.id,{text:e.target.value})}/><div className="timing-inputs"><label>Bắt đầu<input aria-label="Thời gian bắt đầu" type="number" inputMode="decimal" min="0" step="0.01" value={selectedCue.start} onChange={e=>cueChange(selectedTrack.id,selectedCue.id,{start:Number(e.target.value)})}/></label><label>Kết thúc<input aria-label="Thời gian kết thúc" type="number" inputMode="decimal" min="0.05" step="0.01" value={selectedCue.end} onChange={e=>cueChange(selectedTrack.id,selectedCue.id,{end:Number(e.target.value)})}/></label><label>Speaker<input aria-label="Speaker" value={selectedCue.speaker} onChange={e=>cueChange(selectedTrack.id,selectedCue.id,{speaker:e.target.value})}/></label></div>
+        {/* ⭐ WCAG 2.5.7: DOI CA CUE ma GIU nguyen do dai la thao tac duy nhat
+            con phai keo. Hai o so o tren doi duoc start va end RIENG LE, nhung
+            doi ca cue thi phai sua hai o va tu cong tru — mot duong thay the co
+            ton tai nhung khong dung duoc bang mot lan cham.
+            Bon nut nay lam dung viec do: doi ca hai moc cung mot luong. */}
+        <div className="cue-nudge" role="group" aria-label="Dời cả cue">
+          {[-0.5, -0.1, 0.1, 0.5].map(delta=><button type="button" key={delta}
+            aria-label={`Dời cue ${delta > 0 ? "sau" : "trước"} ${Math.abs(delta)} giây`}
+            onClick={()=>{const d=Math.max(delta, -selectedCue.start)
+              cueChange(selectedTrack.id,selectedCue.id,
+                {start:+(selectedCue.start+d).toFixed(2),end:+(selectedCue.end+d).toFixed(2)})}}>
+            {delta > 0 ? `+${delta}s` : `${delta}s`}</button>)}
+        </div></>:<p>Chọn một cue trên timeline hoặc thêm cue mới.</p>}</div>
       </section>
       <aside className="studio-right">{project.payload.active_step==='render'?<RenderPanel project={project} csrf={csrfToken} job={renderJob} onJob={job=>{setRenderJob(job);upsertJob(setJobHistory,job)}} onMessage={setMessage} onChange={fn=>mutate(fn)}/>:<StyleInspector tab={styleTab} setTab={setStyleTab}
         style={normalizeStyle(project.payload.style)} presets={presets}

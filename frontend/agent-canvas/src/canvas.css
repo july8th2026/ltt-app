@@ -271,3 +271,38 @@ body.agent-canvas-immersive .canvas-shell[data-presentation=creative] .canvas-bo
 .run-history-details { margin-top:14px; border-top:1px solid var(--border-subtle); }.run-history-details>summary { min-height:44px; display:flex; align-items:center; color:var(--text-secondary); cursor:pointer; }
 .run-history-details .run-inspector { margin:0; padding-top:8px; border:0; }
 .theme-light .node-customer-composer { background:#f7f8fa; }.theme-light .node-customer-composer :is(textarea,input,select) { background:#fff; color:#17191d; }.theme-light .node-footer-actions .node-run { border-color:#dc2f2a; background:#dc2f2a; color:#fff; }
+
+/* ── Vùng chạm trên màn cảm ứng ───────────────────────────────────────────────
+ *
+ * Đo 05/09 ở 390×844 với một canvas **có node** (canvas rỗng không đo được gì).
+ * Điều quan trọng nhất tìm ra: phải tách hai nhóm, vì chúng hỏng theo hai kiểu.
+ *
+ *   TRONG `.react-flow__viewport` — bị chính canvas thu phóng (đo được zoom
+ *   0,648). `.react-flow__handle` đo 29px nhưng CSS là **44px** — đã đạt sàn;
+ *   nó nhỏ đi vì người dùng đang thu nhỏ canvas, và phóng to là thao tác sẵn có.
+ *
+ *   NGOÀI viewport — thanh công cụ, **không** bị thu phóng, nên số đo là số
+ *   thật: nút chính "Chạy" (`.run-primary`) cao **38px**, nút chọn trang cao
+ *   **36px**. Đây mới là lỗi.
+ *
+ * ⭐ Nên luật dưới đây chỉ nâng nhóm THỨ HAI. Nâng nhóm thứ nhất bằng chiều cao
+ *    sẽ phình các thẻ node ra ở mọi mức zoom để chữa một triệu chứng chỉ xuất
+ *    hiện khi thu nhỏ.
+ *
+ * ⚠️ `.canvas-top-actions button` khai `min-height:38px` — một lớp đơn, nên luật
+ *    `:where(button){min-height:44px}` của `ltt.css` (độ đặc hiệu 0) thua nó.
+ *    Đây đúng là cái bẫy `:where()` đã ghi trong `docs/MOBILE/CHECKPOINT.md`,
+ *    lần thứ hai. */
+@media (pointer: coarse) {
+  .canvas-top-actions button,
+  .page-dock button,
+  .page-panel button { min-height: 44px; }
+
+  /* Hai nút này nằm TRONG canvas nhưng đứng một mình, quanh chúng là chỗ trống
+   * — nên nới vùng chạm bằng lớp giả là an toàn, không đè lên nút bên cạnh.
+   * Nới vùng CHẠM chứ không nới kích thước NHÌN: hình vẫn y nguyên. */
+  .edge-insert, .node-more { position: relative; }
+  .edge-insert::after, .node-more::after {
+    content: ''; position: absolute; inset: -10px;
+  }
+}

@@ -44,3 +44,9 @@
 @media (max-width:900px) { .studio-shell { min-height:calc(100vh - 70px); }.studio-topbar { grid-template-columns:1fr auto; padding:8px 12px; }.studio-steps { grid-column:1/-1; order:3; }.history-tools { grid-column:2; grid-row:1; }.studio-grid { grid-template-columns:220px minmax(0,1fr); }.studio-right { grid-column:1/-1; border-top:1px solid var(--line); border-left:0; }.studio-stage { grid-template-rows:36px minmax(260px,1fr) 42px 210px 160px; } }
 @media (max-width:640px) { .studio-topbar { min-height:92px; }.studio-brand strong { font-size:11px; }.studio-save { max-width:96px; }.studio-steps { overflow-x:auto; justify-content:flex-start; }.studio-steps li:not(:last-child)::after { width:18px; }.studio-steps button { font-size:9px; padding:3px; }.studio-grid { display:flex; flex-direction:column; min-height:calc(100vh - 170px); }.studio-left { order:2; border-right:0; border-top:1px solid var(--line); }.studio-right { order:3; }.studio-stage { min-height:850px; grid-template-rows:36px 290px 42px 260px 210px; }.project-label { grid-template-columns:55px 1fr; }.quick-actions { grid-template-columns:1fr; }.video-canvas video { max-height:290px; }.timeline-editor { overflow-x:auto; }.timing-inputs { grid-template-columns:1fr 1fr; }.timing-inputs label:last-child { grid-column:1/-1; } }
 @media (prefers-reduced-motion:reduce) { .studio-shell * { transition:none!important; scroll-behavior:auto!important; } }
+
+/* Bon nut doi ca cue (WCAG 2.5.7). Xem chu thich o `StudioShell.tsx`. */
+.cue-nudge { display:flex; gap:6px; margin-top:8px; }
+.cue-nudge button { flex:1; min-height:44px; border:1px solid #4b2a2e; border-radius:4px;
+  background:#171216; color:#d5a2a5; font-size:11px; font-variant-numeric:tabular-nums; }
+.cue-nudge button:hover { border-color:#7a3a40; color:#f0c8ca; }
