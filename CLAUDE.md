@@ -295,5 +295,5 @@ cloudflare/config.yml cloudflare/*.json
 | `docs/PUBLIC_API/APP_API_COVERAGE_FINAL.md` | app/tool/model nào mở, nào đóng, **vì sao** |
 | `docs/PUBLIC_API/API_PLATFORM_FULL_RELEASE_READINESS.md` | trạng thái Public API + điều kiện còn lại |
 | `docs/_luutru/PROJECT_MEMORY.md` | nhật ký — **cập nhật cuối mỗi phiên** |
-| `docs/BAY_TRONG_CONG_CHAT_LUONG.md` | sáu cái bẫy trong chính cổng chất lượng — đọc trước khi tin một dòng `RESULT: PASS` |
+| `docs/BAY_TRONG_CONG_CHAT_LUONG.md` | những cái bẫy trong chính cổng chất lượng — đọc trước khi tin một dòng `RESULT: PASS` |
 | `AGENTS.md` | quy ước kỹ thuật chi tiết |

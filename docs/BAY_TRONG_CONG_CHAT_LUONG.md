@@ -1,7 +1,7 @@
-# Hai mươi mốt cái bẫy trong chính cổng chất lượng
+# Những cái bẫy trong chính cổng chất lượng
 
-**2026-08-25.** Không phải bẫy trong sản phẩm — bẫy trong **thứ dùng để chứng
-minh sản phẩm đúng**. Tất cả đều cùng một hình dạng:
+**2026-08-25, cập nhật 2026-09-06.** Không phải bẫy trong sản phẩm — bẫy trong
+**thứ dùng để chứng minh sản phẩm đúng**. Tất cả đều cùng một hình dạng:
 
 > Một phép kiểm **tồn tại**, nên không ai viết lại nó.
 > Nó **không đo thứ nó có vẻ đang đo**, nên nó không cảnh gì cả.
@@ -10,6 +10,15 @@ minh sản phẩm đúng**. Tất cả đều cùng một hình dạng:
 Sáu cái đầu lộ ra trong một ngày, vì trong ngày đó có **hai phiên làm việc song
 song trên cùng một cây nguồn** — điều kiện làm mọi giả định "chỉ có một người"
 gãy cùng lúc.
+
+⭐ **Bẫy 22–24 đến từ một đêm có BỐN phiên song song** (05→06/09), và chúng khác
+ba nhóm trước ở một điểm: không cái nào là bẫy của **một** phiên. Cả bốn phiên
+đều đo trước, đều báo nhau, đều tuân luật — và máy vẫn chồng ba lượt gate. Ba
+mục ấy được ghép từ phép đo của cả bốn, và mỗi phần ghi rõ nguồn.
+
+⛔ **Tiêu đề tệp này từng là một con số** ("Hai mươi mốt cái bẫy"), và nó đã cũ
+đi ngay lần thêm mục kế tiếp — tức nó vướng đúng **Bẫy 1** của chính nó: chốt
+**số lượng** thay vì chốt **tập hợp**. Đã bỏ con số khỏi tiêu đề.
 
 ---
 
@@ -938,6 +947,45 @@ nếu RAM < 6 GiB" lúc RAM còn 9,6 GiB; nó không bao giờ bị chạm. Đ�
 số thì con số ấy trôi theo điều mình muốn — họ tự nói: *"nếu tôi đặt sau khi
 thấy 9,6 thì tôi đã đặt 5"*.
 
+### Kiểm RỒI MỚI chạy — `check && run` biến phép kiểm thành lời bình luận
+
+*(phiên Mobile V1, đo 06/09)*
+
+Họ gọi `cua_so_yen.py trang-thai` **và** phóng lệnh nặng trong **cùng một dòng
+shell**. Cảnh báo `[cpu_nhieu] pid 19272 ... 4 phút` in ra **sau khi** quyết định
+đã bấm.
+
+🔑 Đây **không** phải một biến thể của *"hãy đo trước"* — nó là lỗi **nhân quả**.
+`check && run` trông y hệt một quy trình đúng; thứ hỏng là **thời điểm câu trả
+lời tới nơi**, không phải tính trung thực của nó. Cùng gốc với mọi thứ trong bẫy
+này.
+
+⇒ Hai lệnh **tách rời**, đọc kết quả giữa chừng. Gộp một dòng thì phép kiểm biến
+thành lời bình luận.
+
+### RSS trả lời được câu "tiến trình này có NẠP MODEL không"
+
+*(phiên VIDEO AI, đo 06/09; H44 xác nhận một mẫu độc lập)*
+
+Biến phân biệt hai kiểu nguy hiểm là *"có nạp model không"*, nhưng câu ấy khó hỏi
+trực tiếp. `p.memory_info().rss` trả lời được:
+
+```
+0,08-0,10 GiB   worker pytest thuan      (3 mau, 3 cay khac nhau)
+0,09-0,15 GiB   worker pytest cua H44    (mau doc lap)
+   tinh bang GiB   worker da nap torch + mot model that
+```
+
+⇒ Chênh **một bậc độ lớn**, nên ngưỡng không cần chính xác — và đó là điều làm nó
+dùng được.
+
+⭐ RSS hơn hai cách đoán kia ở chỗ nó đo **thứ đã thực sự được nạp**: nó miễn
+nhiễm với `-n` (đếm worker, không đếm bầy luồng mỗi worker sinh) **và** với tên
+tệp test (một tên vô hại vẫn có thể `import torch`).
+
+⚠️ Mẫu của H44 chỉ có 1–2 tiến trình, chưa phải lúc cả 6 worker đã lên. Nó xác
+nhận **bậc độ lớn của một tiến trình**, chưa xác nhận **tổng RSS khi đủ worker**.
+
 ### Luật
 
 🔑 **`cua_so_yen trang-thai` là điều kiện CẦN, không đủ. Vế quyết định là CÂY
@@ -957,3 +1005,163 @@ lượt nghiệm thu của phiên khác — lượt mà phiên kia **đã báo t
 
 ⭐ Cùng họ với Bẫy 17 và Bẫy 21: một công cụ trả lời **thành thật** cho câu hỏi
 hẹp của nó, và cái hỏng nằm ở khoảng cách giữa câu hỏi ấy với câu ta đang hỏi.
+
+
+---
+
+## Bẫy 23 — Kết dòng: bánh cóc bảo vệ CÂY LÀM VIỆC, không bảo vệ LỊCH SỬ
+
+**Và khi lịch sử sai thì nó quay ra cản bản sửa.**
+
+`tools/gate.py:530` **có** bước `kieu xuong dong` → `tools/check_xuong_dong.py`.
+
+⛔ Bản đầu của tài liệu này viết ngược lại — *"gate không có bước kiểm kết dòng
+nào"* — và đã bị commit hai lần. Nguyên nhân: `grep gate.py` bằng **tên hiện
+tượng** (`crlf`, `ket dong`) chứ không bằng **tên bước** (`xuong_dong`).
+
+🔑 Một `grep` không thấy chỉ chứng minh **chuỗi ấy** không có. Nó **không** chứng
+minh **năng lực ấy** không có. Câu này áp được cho cả `test_453` (bánh cóc mồ
+côi tìm người gọi bằng AST — một năng lực gọi qua chuỗi hay `getattr` sẽ vô hình
+y hệt).
+
+### Lưới ấy căng ở đâu
+
+`check_xuong_dong.py` soi tệp **đang sửa** (`git status --porcelain`), so **kiểu
+thuần** (LF/CRLF/trộn) với bản ở `HEAD`, bỏ qua tệp mới và tệp nhị phân. Luật của
+nó **không** phải *"cả kho dùng LF"* mà *"khớp đúng thứ git đang giữ cho từng
+tệp"* — vì vài tệp **vốn là CRLF** (`DEVELOPER_GUIDE.md` do công cụ sinh,
+`i18n_baseline.json`), ép chúng về LF là mở một vòng lặp không ai thắng.
+
+⇒ Nó bắt **cú lật kết dòng trong cây làm việc**. Nó **không** thấy nội dung đã
+được **commit** kèm CRLF — lúc ấy `git status` sạch, không có gì để so.
+
+🔴 **Hai phiên cùng lọt qua đúng khe đó trong một đêm** (H44: 17 tệp docs rồi 3
+tệp mã; ASV: 4 tệp) — cùng một cách: **commit trong cùng nhịp với lúc ghi**, nên
+không bao giờ đi qua lưới. Không phải lưới thủng; là ta bước qua trước khi lưới
+được căng.
+
+### Đo hậu quả bằng số, không bằng cảm giác
+
+Cách đo: `git diff --numstat` so với `git diff --ignore-cr-at-eol --numstat`.
+
+| tệp | ở BASE | diff thô | thật | **nhiễu** |
+|---|---|---|---|---|
+| `apps/chatltt/services/tao_media.py` | **LF** | 703 | 111 | **592** |
+| `luot_v3.py`, `test_819.py` | (mới) | — | — | 0 |
+
+Cùng ca với hai lần trước mà docstring đã ghi: 26/08 `messages.po` lệch **10.465
+dòng**; 30/08 **25 tệp**, trong đó `CLAUDE.md` hiện **919 dòng đổi cho 1 dòng
+thật**.
+
+### 🔴 Công cụ CHỐNG LẠI bản sửa
+
+Sau khi trả ba tệp về LF, `check_xuong_dong.py` ra **`RESULT: FAIL`**:
+
+```
+tao_media.py   HEAD=CRLF -> hien tai=LF   (thay doi THAT: 0 dong)
+```
+
+Vì nó neo vào `HEAD`, mà `HEAD` đang giữ bản sai. ⇒ **Một khi kết dòng hỏng đã
+commit, cái bánh cóc trở thành lực cản.**
+
+⭐ Nhưng chính nó cũng in ra bằng chứng bản sửa an toàn: **"thay đổi THẬT: 0
+dòng"**. Đổi kết dòng không chạm một ký tự nội dung nào. Commit xong thì nó `PASS`
+lại — nên đường đi đúng là **sửa và commit trong một nhịp**, đừng chạy gate ở
+giữa.
+
+### Hai nguồn sinh CRLF, và bản vá cho cái này không chữa cái kia
+
+| Nguồn | Kết dòng sinh ra | Bản vá |
+|---|---|---|
+| `pathlib.write_text` (mặc định `newline=None`) | 🔴 **CRLF** | `write_bytes(s.encode())`, hoặc `newline="\n"` (Python ≥ 3.10) |
+| **Công cụ `Write` của harness** | 🔴 **CRLF** | **không có cờ** — phải đo lại bằng byte sau khi ghi |
+| **Công cụ `Edit` của harness** | ✅ **giữ nguyên** | — |
+| `sed -i` trong Git Bash | ✅ LF | — |
+
+⭐ **Hai dòng cuối là lối thoát rẻ nhất, và đều đo được:** `bo_chay_tool.py` tối
+05/09 từng là CRLF (ghi bằng `write_text`) rồi **tự lành** khi tôi chạy một
+`sed -i` sửa lỗi chính tả. Và một lần `Edit` vào `CLAUDE.md` (299 dòng LF) giữ
+nguyên **0 CRLF**.
+
+⇒ **Sửa tệp có sẵn thì dùng `Edit`, đừng đọc-sửa-ghi-đè cả tệp.** Nó tránh cùng
+lúc **ba** thứ: lật kết dòng · cắt trắng tệp khi phép mã hoá vỡ · và một diff
+toàn tệp. Chỉ dùng `Write`/`write_bytes` cho tệp **mới**, rồi đo lại bằng byte.
+
+⚠️ Ghi chú cũ khuyên *"dùng `Write` thay heredoc"* để tránh bẫy nuốt backslash.
+**Đúng cho bẫy đó, và không bảo vệ gì trước kết dòng.** Hai bẫy khác nhau; một
+bản vá không chữa được cả hai.
+
+### Vì sao có tài liệu mà vẫn dính — trục CƠ CHẾ và trục THÓI QUEN
+
+*(phiên ASV)*
+
+Cả memory lẫn docstring đều nằm ở trục **"cơ chế"**: chúng trả lời *"chuyện gì đã
+xảy ra"*. Thứ thiếu nằm ở trục **"thói quen kiểm"** — nhìn *nội dung* tệp sau mỗi
+lần ghi, chưa bao giờ nhìn *byte*.
+
+🔑 **Bài học nằm đúng chỗ mà vẫn không chặn được, vì nó không nằm trong động
+tác.** Hai phiên, cùng một tài liệu, cùng một đêm, cùng dính — trong đó một phiên
+đã **trích dẫn chính docstring ấy** cho phiên kia rồi vẫn viết như thể vừa phát
+hiện.
+
+⇒ Bản vá dùng được không phải "ghi thêm một mục" (đã có ba mục) mà là **đổi động
+tác mặc định** thành bốn dòng:
+
+```python
+data = s.encode("utf-8")                    # ma hoa TRUOC khi cham tep
+assert b"\r\n" not in data                  # kiem TRUOC
+p.write_bytes(data)                         # ghi
+assert p.read_bytes() == data               # do lai bang BYTE
+```
+
+Ba trong bốn dòng ấy sửa **ba lỗi khác nhau** đã gặp: kết dòng · tệp bị cắt trắng
+khi phép mã hoá vỡ · `read_text` dịch ngược nên không kiểm được phép ghi.
+
+
+---
+
+## Bẫy 24 — Một kết quả ÂM không có đối chứng trông giống một PHÁT HIỆN
+
+*(phiên Mobile V1, 06/09)*
+
+Họ kéo bằng cảm ứng trên canvas React Flow. **Không pan.** Kết luận:
+*"`panOnDrag` dạng mảng chặn cảm ứng"* — kèm một lý thuyết đẹp đọc được trong mã
+`@xyflow/system`.
+
+Canvas đang **rỗng**. Chuột trái cũng không pan. Chuột giữa cũng không. **Ba đầu
+vào, ba số 0** — không phải vì đầu vào bị chặn, mà vì **không có gì để dịch
+chuyển**. Sau khi gieo 2 nút, cảm ứng pan được ngay.
+
+🔴 **Chỗ nguy hiểm hơn mọi bẫy khác trong tệp này:** một kết quả âm **không trông
+giống một giới hạn** — nó trông giống một **thành quả**. *"Tôi tìm ra một lỗi
+mobile"* có hình dạng của việc đã làm được, nên nó đi thẳng vào báo cáo và không
+ai chất vấn. Các bẫy khác gây khó chịu khi đọc lại; cái này đọc lại thấy **hài
+lòng**.
+
+### Luật
+
+⇒ Trước khi ghi một kết quả âm thành phát hiện, hỏi: **"điều kiện nào ĐÁNG LẼ
+phải cho kết quả DƯƠNG ở đây?"** rồi chạy đúng điều kiện đó.
+
+Không nghĩ ra được một điều kiện như thế ⇒ **phép đo không phân biệt được**, và
+số 0 chưa nói gì. Lúc ấy ghi **"CHƯA ĐO ĐƯỢC"**, đừng ghi "không có lỗi".
+
+### Cùng luật, áp cho PHÉP KIỂM
+
+`test_819::test_nguoi_KHAC_khong_thay_buoc_cho_job` chỉ khẳng định
+`con_cho_job(user_id="u-nguoi-la") is False`. Nó **vẫn xanh** nếu `con_cho_job`
+hỏng và luôn trả `False` — không phân biệt được *"chặn đúng người lạ"* với
+*"chặn tất cả"*. Đối chứng dương **có** tồn tại, nhưng ở một hàm khác; xoá hàm ấy
+thì phép kiểm này thành rỗng mà không ai biết.
+
+⇒ **Đối chứng dương phải nằm trong CÙNG phép kiểm.** Đã sửa: chủ sở hữu `True`,
+người lạ `False`, cùng một hàm.
+
+### Và một biến thể khi ĐẾM
+
+*(cùng phiên)* `grep -r` không phân biệt **thứ sẽ merge** với **thứ tự sinh ra**:
+nó trả `Binary file ... matches` từ `.pyc`, và cho một phiên khác **129/133 dòng
+là cache** (`.pytest_cache/v/cache/nodeids`, `.playwright-cli/*.yml`).
+
+⇒ Dùng **`git grep`** — ranh giới *"git có theo dõi không"* chính là ranh giới ta
+cần.
