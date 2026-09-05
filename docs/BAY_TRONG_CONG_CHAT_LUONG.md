@@ -1,4 +1,4 @@
-# Hai mươi cái bẫy trong chính cổng chất lượng
+# Hai mươi mốt cái bẫy trong chính cổng chất lượng
 
 **2026-08-25.** Không phải bẫy trong sản phẩm — bẫy trong **thứ dùng để chứng
 minh sản phẩm đúng**. Tất cả đều cùng một hình dạng:
@@ -709,9 +709,63 @@ trước khi ai đó đo CPU và thấy không có lấy một `python.exe` nào
 
 ---
 
-⚠️ Bẫy 7, 8, 10, 18 và 20 **chưa có bánh cóc** (Bẫy 17 và 19 đã có, vá 31/08).
+⚠️ Bẫy 7, 8, 10, 18, 20 và 21 **chưa có bánh cóc** (Bẫy 17 và 19 đã có, vá 31/08).
 Chúng được ghi ở đây vì cả năm đều là
 loại chỉ nhận ra khi đã biết trước — và cái giá của việc không biết là một vòng
 chẩn đoán đi sai hướng ngay từ câu đầu tiên.
+
+---
+
+## Bẫy 21 — `--vong-lap` nhanh khi bạn đang ĐỎ, chậm ngay sau mỗi lượt XANH
+
+**2026-09-05.** `CLAUDE.md:115` bán `gate.py --vong-lap` là *"sau MỖI lần sửa
+(~15 giây)"*. **Đo được: 531 giây** cho riêng bước `bo test --lf` — gấp 35 lần.
+Một phiên khác đo `113 giây` ở một lượt khác. Không lượt nào gần 15 giây.
+
+### Cơ chế: `--lfnf=all`, mặc định của pytest
+
+`--lf` thu hẹp **khi và chỉ khi** còn ít nhất một id trong
+`.pytest_cache/v/cache/lastfailed` **phân giải được**. Không id nào sống ⇒ nó
+**chạy toàn bộ, im lặng, không một dòng nào nói**.
+
+Đo trực tiếp trên hai cây, bốn tình huống:
+
+| cache `lastfailed` | `--lf` thu hẹp? |
+|---|---|
+| **rỗng** (lượt trước xanh) | ❌ 61/61 |
+| có id nhưng **tất cả đã chết** | ❌ 61/61 |
+| có **một** id sống | ✅ 1/14 (13 deselected) |
+| một sống + một chết | ✅ 1/14 — id chết bị bỏ lặng lẽ |
+
+⛔ **Đừng rút ra "đổi tên test làm hỏng `--lf`"** — hàng cuối bác điều đó. Một id
+chết cạnh một id sống thì `--lf` **vẫn** thu hẹp. Đổi tên chỉ gây hại khi nó
+giết **id sống cuối cùng**. *(Đây là chẩn đoán đầu tiên của tôi, và nó sai.)*
+
+### Vì sao đáng ghi hơn cả con số
+
+`--vong-lap` nhanh **đúng lúc ta đang đỏ**, chậm **ngay sau mỗi lượt xanh** —
+tức nhanh nhất lúc ít cần nhất, chậm nhất lúc vừa làm đúng. Và **hai đường dẫn
+tới cùng một chỗ** đều lành mạnh: lượt trước xanh, hoặc pha vừa rồi **gỡ những
+chốt đã hết lý do tồn tại** (việc kho này khuyến khích). Nghĩa là `--lf` tự
+xuống cấp **như một hệ quả của việc làm đúng**.
+
+⚠️ Và nó làm hỏng một suy luận dễ mắc: *"`--vong-lap` xanh"* **không** có nghĩa
+một lượt hẹp đã xanh. Xanh vẫn là xanh — nó chạy *nhiều hơn*, tức fail-safe —
+nhưng **thời gian tưởng tiết kiệm được thì không có thật**, và một lý lẽ dựa
+trên "nó rẻ" là một lý lẽ sai dù kết luận đúng.
+
+### Bản vá rẻ nhất không phải bỏ `--lf`
+
+Chỉ cần bước ấy **nói ra** khi nó suy biến:
+
+```
+[--lf] khong thu hep duoc (0 id song), dang chay TOAN BO
+```
+
+Không đổi hành vi, chỉ gỡ sự im lặng — cùng họ với `[BOQUA]` và dòng
+*"`--lf` khong phai bang chung"* mà gate đã tự khai ở chỗ khác.
+
+🔑 **Chưa vá.** Ba phiên đang chạy song song hôm đó, và `tools/gate.py` là hạ
+tầng dùng chung — sửa giữa chừng là mời va chạm. Ghi ở đây, để chủ dự án quyết.
 
 ---
