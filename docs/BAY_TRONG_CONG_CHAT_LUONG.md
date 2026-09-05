@@ -970,11 +970,37 @@ thành lời bình luận.
 Biến phân biệt hai kiểu nguy hiểm là *"có nạp model không"*, nhưng câu ấy khó hỏi
 trực tiếp. `p.memory_info().rss` trả lời được:
 
+**Cách đo — và cách đo SAI đã lừa cả hai phiên:**
+
+⛔ Đừng lọc theo cmdline. `pytest-xdist` sinh worker qua `execnet`, và cmdline
+của chúng **không chứa chữ `pytest`**. Lấy **cây con của `gate.py`** bằng
+`children(recursive=True)`.
+
+Đo đỉnh một lượt gate thật (06/09 00:49:20, phiên VIDEO AI) — **10 tiến trình,
+tổng RSS 0,94 GiB**:
+
 ```
-0,08-0,10 GiB   tien trinh DIEU PHOI pytest   (3 mau, 3 cay khac nhau)
-0,09-0,15 GiB   tien trinh DIEU PHOI pytest   (mau doc lap cua H44)
-   tinh bang GiB   mot tien trinh da nap torch + mot model that
+0,359 GiB   tien trinh lon nhat trong cay
+0,119 / 0,119 / 0,115 / 0,099 GiB
+0,051 / 0,050 GiB
+0,022 GiB   gate.py
+0,005 / 0,005 GiB
+─────────
+0,94 GiB    TONG mot luot gate
+   tinh bang GiB (mot tien trinh)   neu da nap torch + mot model that
 ```
+
+🔴 **Ba con số từng trao đổi giữa hai phiên đều SAI, và đây là bản đo thay
+chúng:** một lượt gate là **0,94 GiB** chứ không phải ~0,6 (phép nhân
+`6 × 0,1` thiếu **1,6 lần**, vì đếm sai cả **số** tiến trình — 10 chứ không phải
+6 — lẫn **cỡ**); và tiến trình lớn nhất là **0,359 GiB**, không phải 0,10 —
+mẫu 0,08–0,10 mà cả hai phiên lấy là **tiến trình điều phối**, và nó **không**
+phải cái to nhất trong cây.
+
+⭐ **Nhưng kết luận sống sót, và nó sống sót vì đúng lý do làm biến này dùng
+được:** khoảng cách tới một tiến trình đã nạp torch + model thật vẫn là **một
+bậc độ lớn** (0,36 GiB so với hàng GiB). **Một phép đo sai 3,5 lần vẫn không lật
+được kết luận** — đó là dấu hiệu của một ngưỡng chọn đúng chỗ.
 
 ⇒ Chênh **một bậc độ lớn**, nên ngưỡng không cần chính xác — và đó là điều làm nó
 dùng được.
@@ -983,20 +1009,23 @@ dùng được.
 nhiễm với `-n` (đếm worker, không đếm bầy luồng mỗi worker sinh) **và** với tên
 tệp test (một tên vô hại vẫn có thể `import torch`).
 
-🔴 **CHƯA ĐO ĐƯỢC: worker.** Cả hai bộ mẫu trên là tiến trình **điều phối**, không
-phải worker. `pytest-xdist` sinh worker qua `execnet`, và **cmdline của chúng
-không chứa chữ `pytest`** — nên mọi phép lọc theo cmdline (của cả hai phiên) đều
-bỏ sót đúng thứ cần đo. Ba lượt đo tiếp theo vẫn không bắt được cửa sổ sáu
-worker.
+### 🔑 `cmdline` nói dối theo CẢ HAI chiều — trong cùng một đêm
 
-⛔ Nên con số `3 × 6 × 0,1 = 1,8 GiB` từng được nêu là một **phép nhân**, không
-phải phép đo, và việc nó khớp với RAM tụt 0,9 GiB rồi hồi là một **sự phù hợp**.
-Ghi là *chưa đo được* thay vì gửi lại phép nhân dưới dạng phép đo — cùng luật
-Bẫy 24.
+Đây là lần thứ **hai** một phép lọc theo cmdline lừa được cả nhóm, và hai lần
+lệch **ngược nhau**:
 
-⭐ Nhưng vế **dùng được** của RSS thì không phụ thuộc con số worker: một cây có
-bất kỳ tiến trình nào RSS tính bằng GiB là một cây đang nạp model, và đó là câu
-ta cần trả lời trước khi bấm.
+| Cơ chế | Sai chiều nào | Hậu quả suýt xảy ra |
+|---|---|---|
+| `timeout.exe` tự fork một bản sao | đếm **THỪA** — 3 dòng cho 1 lượt gate | giết "gate mồ côi", tức giết cái phanh của lượt đang chạy |
+| `execnet` không mang chữ `pytest` | đếm **THIẾU** — bỏ sót mọi worker | báo "worker chỉ 0,1 GiB" trong khi cái to nhất là 0,36 |
+
+⇒ Cùng một nguyên nhân: **`cmdline` là thứ ĐẠI DIỆN; cây tiến trình là thứ
+THẬT.** Hỏi bằng `ppid` / `children(recursive=True)`, đừng hỏi bằng chuỗi.
+
+⛔ Và con số `3 × 6 × 0,1 = 1,8 GiB` từng được trao đổi giữa hai phiên là một
+**phép nhân**, không phải phép đo. Việc nó "khớp" với RAM tụt 0,9 GiB rồi hồi là
+một **sự phù hợp** — đúng thứ [[gia-thuyet-khop-qua-vua-ket-thuc-dieu-tra]] cảnh
+báo: một con số khớp làm người ta **thôi đo**.
 
 ### 🔴 Khe giữa ĐO và BẤM không có đáy — nên nhắn tin không phải cơ chế loại trừ
 
@@ -1031,6 +1060,28 @@ Bản vá một lớp lỗi mà bốn phiên đã trả tiền suốt một bu�
 
 ⇒ Việc này thuộc về chủ dự án hoặc phiên giữ `tools/`. Ghi ở đây để nó không
 biến mất cùng cửa sổ chat đã tìm ra nó.
+
+### 🔑 Luật khái quát: CÁI TÊN đi xa hơn dòng chữ
+
+*(phiên Mobile V1 đúc, 06/09 — và nó gom được cả bốn ca của đêm)*
+
+Mỗi công cụ ở đây đều **nói thật**, và mỗi công cụ đều có một **cái tên hứa rộng
+hơn thứ nó đo**. Dòng chữ đính kèm thì đúng, nhưng **cái tên là thứ người ta
+nhớ**:
+
+| Cái tên hứa | Thứ công cụ thật sự đo | Ai đọc nhầm |
+|---|---|---|
+| `cua_so_yen trang-thai` → *"máy có rảnh không"* | có **tệp khoá** nào không | 3 phiên, 3 lần |
+| `--vong-lap` → *"15 giây"* | `--lf`, và **chạy toàn bộ** khi cache toàn id chết | H44, 300+ giây |
+| `master` → *"nhánh chính"* | một nhãn đi **sau trunk 125 commit**; bản đang phục vụ khách **không nằm trên nó** | VIDEO AI |
+| `RESULT: PASS` | PASS **của những bước đã chạy** | Mobile V1, 77 phép kiểm frontend |
+
+⭐ Cả bốn đều **có** một dòng chữ nói đúng ngay cạnh: `--vong-lap` in thẳng rằng
+nó không phải bằng chứng; `RESULT` in thẳng tên bước bỏ qua. **Dòng chữ thua cái
+tên**, vì cái tên là thứ đi vào câu nói và vào trí nhớ.
+
+⇒ **Chỗ nào cái tên hứa rộng hơn thứ công cụ đo được, chỗ đó sẽ có người đọc
+nhầm — và người đọc nhầm sẽ là ta, vào lúc mệt.**
 
 ### Luật
 
