@@ -120,8 +120,8 @@ mới của mọi app đều phải khai ở đó, `test_211` cưỡng chế.
 |---|---|
 | **Toàn chương trình (P00→P12)** | **≈ 31 %** |
 | **Làn A** (phần phát hành được một mình) | **≈ 94 %** |
-| Mã sản phẩm đã sửa | 14 tệp · 16 tệp test · 1 migration |
-| Phép kiểm mới | **250** (backend 800–816: 241 · frontend A5: 9) |
+| Mã sản phẩm đã sửa | 16 tệp · 19 tệp test · 1 migration |
+| Phép kiểm mới | **383** (backend 800–819: **374** đếm bằng `--collect-only` · frontend A5: 9) |
 
 ## Pha đã đóng
 
@@ -155,10 +155,11 @@ mới của mọi app đều phải khai ở đó, `test_211` cưỡng chế.
 | Nộp job sau duyệt + `tao_media.tao(tin_nhan=…)` | test_816 (10) | P05 ✅ |
 | `CHO_MODEL_GOI` mở `image.ltt` · `speech.ltt` | test_802 | P05 ✅ |
 | **R2b** — một `request_id` cho cả run | — | P04 ⏸ **chờ `thanh_toan.py`** |
-| Đường **ĐẨY** khi job xong (móc `job_runner`) | — | P05 ⏸ ngoài ranh giới app |
+| **Mối nối đường job** — `dong_bo` → `_danh_thuc_run` → vòng model sau | test_819 (22) | P05 ✅ |
+| Đường **ĐẨY** khi job xong (móc `job_runner`) | test_819 (ghim giới hạn KÉO) | P05 ⏸ ngoài ranh giới app |
 | UI duyệt ở frontend | — | P09 |
 
-### Năm phát hiện mà kế hoạch không có
+### Bảy phát hiện mà kế hoạch không có
 
 **1. Một mã thô suýt rơi ra màn hình người dùng.** `ThongDiepView.tsx` dựng nhãn
 bằng `NHAN_TRANG_THAI[ma] ?? ma`, và bốn lý do kết của V3 đều **chưa có nhãn** —
@@ -184,6 +185,35 @@ một lần **xoá sạch** bộ đếm trùng, và một model kẹt vòng lặ
 (mỗi lần tạo là một tin nhắn riêng). Với V3 thì tin nhắn ấy đang mang khối
 `tool_call` của cả lượt và phần chữ model đã nói — thay toàn bộ là **xoá sạch**
 chúng, và người dùng thấy một bức ảnh xuất hiện thay chỗ câu trả lời vừa đọc.
+
+**6. Vòng model SAU MỘT JOB được mở bằng `image.ltt`.** `su_kien.mo_execution()`
+**ghi đè** `message.execution_id` mỗi lần nó mở một hàng mới — và `tao_media.tao`
+cũng gọi nó, với `tool_name="image.ltt", mode="job"`. `tiep_sau_duyet` lại đọc
+đúng trường ấy để biết mở luồng bằng năng lực nào, còn `luot.dong_su_kien`
+truyền `ex.tool_name` **thẳng** vào `L.mo_luong()`.
+
+⛔ Nên đây không phải một cái nhãn sai: lượt vỡ ngay ở `for_tool()` với
+`RuntimeError: tool 'image.ltt' has no sync executor` — hỏi cỗ máy vẽ ảnh một
+câu hỏi chữ. Sửa: lấy **execution đầu của run** (`_execution_dau`, thứ
+`chay_tiep_nen` đã dùng cho đúng câu hỏi này) thay vì một con trỏ mà đường job
+ghi đè.
+
+**7. Model chưa bao giờ biết bức ảnh nó vừa vẽ có id gì.** `ket_qua_job` **đoán**
+tên cổng ra: `kq.get("files") or kq.get("outputs") or kq.get("keys")`. Không tên
+nào trong ba cái đó tồn tại — `image.ltt` khai `image_keys`, `speech.ltt` khai
+`audio_key`. Nên model luôn đọc `{"tao_xong": true, "tep": []}`: một câu **tự
+mâu thuẫn**, và là lý do nó không thể tham chiếu ảnh cũ ở lượt sau — đúng thứ
+P05 đòi (*"bằng id artifact, không bằng đoán tên tệp"*).
+
+⭐ Bản sửa không thêm một bảng tra thứ hai: `khoi_artifact()` (thứ dựng khối cho
+**người dùng** xem) được công khai và dùng chung. Hai nguồn cho câu hỏi *"job này
+đẻ ra những gì"* là hai nguồn sẽ lệch — và chỗ chúng lệch là chỗ người dùng thấy
+một bức ảnh trong khi model nói nó không tạo được gì.
+
+🔑 Cả hai đều **chỉ sống ở mối nối**: `test_815`/`test_816` kiểm khúc nộp job
+nhưng **thay `tao_media.tao` bằng hàm giả**, nên hàng `chatltt_execution` của job
+chưa từng tồn tại trong một phép kiểm nào — và nó chính là thứ ghi đè con trỏ.
+Cùng hình dạng với lỗi `LOAI_KHOI` mà trình duyệt bắt được.
 
 ### Hai lần phải viết lại phép kiểm của chính mình
 

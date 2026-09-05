@@ -216,8 +216,15 @@ def _danh_thuc_run(db, ex) -> None:
         _log.exception("khong danh thuc duoc run %s", str(ex.run_id)[-8:])
 
 
-def _khoi_artifact(ten: str, result: dict) -> list:
-    """Ket qua job -> khoi noi dung. Khong doan: chi doc dung cong ra da khai."""
+def khoi_artifact(ten: str, result: dict) -> list:
+    """Ket qua job -> khoi noi dung. Khong doan: chi doc dung cong ra da khai.
+
+    ⭐ CÔNG KHAI vì `bo_chay_tool.ket_qua_job` cần **cùng một câu trả lời**:
+       thiết bị hiển thị và model phải nhìn thấy đúng một tập artifact. Hai
+       phiên bản của câu hỏi *"job này đẻ ra những gì"* là hai phiên bản sẽ
+       lệch — và chỗ chúng lệch là chỗ người dùng thấy một bức ảnh trong khi
+       model nói rằng nó không tạo được gì.
+    """
     from platform_core.runtime_noi_bo.tim import tim_tool
 
     _m, tool = tim_tool(ten)
@@ -259,7 +266,7 @@ def dong_bo(db, *, user_id: str, execution_id: str) -> dict:
 
     if tt == "done":
         result = dict(getattr(job, "result", None) or {})
-        khoi = _khoi_artifact(ex.tool_name, result)
+        khoi = khoi_artifact(ex.tool_name, result)
         S.ap_dung(ex, {"type": "execution.completed"}, message=tin)
         thu = int(result.get("credit_cost") or 0)
         S.ap_dung(ex, {"type": "billing.updated", "credit_giu": ex.credit_giu,

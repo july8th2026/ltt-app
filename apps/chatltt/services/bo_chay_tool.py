@@ -25,12 +25,15 @@ tiến trình chết đúng lúc đó, người dùng thấy nút, bấm, và nh
 """
 from __future__ import annotations
 
+import logging
 from typing import Callable, Optional
 
 from apps.chatltt.services import chieu_tool
 from apps.chatltt.services import dieu_phoi as DP
 from apps.chatltt.services import duyet as D
 from apps.chatltt.services import thi_hanh
+
+log = logging.getLogger("ltt.chatltt.bo_chay_tool")
 
 #: Chữ ký bộ báo giá: `(ten, doi_so) -> (credit, phien_ban_gia)`.
 BaoGia = Callable[[str, dict], tuple]
@@ -181,11 +184,19 @@ def ket_qua_job(db, *, user_id: str, run: DP.Run) -> dict:
         tt = str(getattr(job, "status", ""))
         if tt == "done":
             kq = dict(getattr(job, "result", None) or {})
-            # ⭐ Trả cho model thứ nó **dùng được**: đường tới tệp và số lượng.
+            # ⭐ Trả cho model thứ nó **dùng được**: id artifact và số lượng.
             #    Không đổ cả `result` thô — nó mang khoá nội bộ và số liệu máy B.
+            #
+            # 🔴 Và **ĐỌC CỔNG RA ĐÃ KHAI**, không đoán tên khoá. Bản cũ dò
+            #    `files`/`outputs`/`keys` — không tên nào trong ba cái đó tồn tại:
+            #    `image.ltt` khai `image_keys`, `speech.ltt` khai `audio_key`.
+            #    Nên model luôn đọc `{"tao_xong": true, "tep": []}` — một câu
+            #    **tự mâu thuẫn**, và nó không bao giờ tham chiếu được bức ảnh
+            #    vừa vẽ ở lượt sau (P05: *"bằng id artifact, không bằng đoán tên
+            #    tệp"*). Cùng lý do `khoi_artifact` đã viết từ đầu:
+            #    *"Khong doan: chi doc dung cong ra da khai."*
             ra[b.cho_job] = thi_hanh.KetQua(
-                True, noi_dung={"tao_xong": True, "tep": kq.get("files")
-                                or kq.get("outputs") or kq.get("keys") or []})
+                True, noi_dung={"tao_xong": True, "tep": _tep_cua(b.ten, kq)})
         elif tt in ("error", "cancelled"):
             ra[b.cho_job] = thi_hanh.KetQua(
                 False, ma_loi=("huy" if tt == "cancelled" else "job_that_bai"),
@@ -193,6 +204,19 @@ def ket_qua_job(db, *, user_id: str, run: DP.Run) -> dict:
                            or f"job {tt}")
         # chưa xong ⇒ không đưa vào `ra`
     return ra
+
+
+def _tep_cua(ten: str, result: dict) -> list:
+    """Id artifact một job đẻ ra — cùng nguồn với thứ người dùng nhìn thấy."""
+    from apps.chatltt.services import tao_media
+
+    try:
+        return [k["key"] for k in tao_media.khoi_artifact(str(ten), result)]
+    except Exception:                                           # noqa: BLE001
+        # Tool không còn trong registry là chuyện có thật (gỡ app, đổi tên).
+        # Mất danh sách tệp không được phép giết cả lượt.
+        log.exception("khong doc duoc cong ra cua %r", ten)
+        return []
 
 
 def _nop_job(db, *, user_id: str, p, b: DP.Buoc, ds: dict, tin_nhan, conv_id: str):

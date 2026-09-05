@@ -152,8 +152,22 @@ def tiep_sau_duyet(db, *, run_id: str, user_id: str, so) -> DP.Run:
     # Hai nguồn câu trả lời, một từ điển. `dang_treo()` đòi đủ cả hai loại.
     kq.update(bo_chay_tool.ket_qua_job(db, user_id=user_id, run=run))
 
-    ex_cu = (db.get(ChatlttExecution, tra_loi.execution_id)
-             if tra_loi.execution_id else None)
+    # 🔴 EXECUTION ĐẦU CỦA RUN, KHÔNG PHẢI `tra_loi.execution_id`.
+    #
+    #    `su_kien.mo_execution()` **ghi đè** `message.execution_id` mỗi lần nó mở
+    #    một hàng mới — và `tao_media.tao()` cũng gọi nó, với
+    #    `tool_name="image.ltt", mode="job"`. Nên sau khi một job được nộp,
+    #    trường ấy trỏ vào hàng của **job**, không còn trỏ vào lượt chat.
+    #
+    # ⛔ Và hậu quả không phải một cái nhãn sai: `luot.dong_su_kien` truyền
+    #    `ex.tool_name` thẳng vào `L.mo_luong()`. Vòng model **sau một job** sẽ
+    #    được mở bằng `image.ltt` — tức hỏi cỗ máy vẽ ảnh một câu hỏi chữ, và
+    #    nó vỡ ngay ở `for_tool()`: *"tool 'image.ltt' has no sync executor"*.
+    #
+    # ⭐ `_execution_dau` đã là câu trả lời đúng cho đúng câu hỏi này ở
+    #    `chay_tiep_nen` (*"hàng nào là danh tính của run"*). Dùng chung một nguồn
+    #    thay vì hai — hai nguồn cho cùng một câu hỏi là hai nguồn sẽ lệch.
+    ex_cu = db.get(ChatlttExecution, _execution_dau(db, run_id=run_row.id) or "")
     if ex_cu is None:
         raise KhongChayTiepDuoc("khong tim thay execution goc")
     params = {"model": tra_loi.model_alias, "messages": goc}
