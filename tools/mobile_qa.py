@@ -2,6 +2,26 @@ r"""mobile_qa.py — bộ khung đo mobile, lái bằng registry.
 
     python tools\mobile_qa.py kiem-ke [--ra ho_so.json]   # liet ke surface khach
     python tools\mobile_qa.py bang                        # du bang cho studio_dev
+    python tools\mobile_qa.py chat-seed  <uid>            # mot hoi thoai co noi dung
+    python tools\mobile_qa.py agent-seed <uid>            # mot canvas CO node
+    python tools\mobile_qa.py wav-dai    <uid>            # WAV 10..600 giay
+    python tools\mobile_qa.py quet --cookie "session=..." # quet mobile moi route
+
+## Mot luot do day du, tu dau
+
+    python tools\studio_dev.py --cong 8123          # may chu + du lieu Voice
+    python tools\mobile_qa.py bang                  # bang cua MOI app
+    python tools\mobile_qa.py chat-seed  <uid>
+    python tools\mobile_qa.py agent-seed <uid>
+    python tools\studio_dev.py --cong 8123 --cookie # lay cookie phien
+    playwright-cli -s=mobileqa open --browser=chrome
+    python tools\mobile_qa.py quet --cookie "<cookie>" --ra ket_qua.json
+
+⛔ **Dung do tren mot trang RONG.** `studio_dev.py` da ghi bay nay cho Voice:
+   *"so mot trang rong voi mot anh mau co du lieu -> moi khac biet deu doc len
+   nhu mot loi bo cuc"*. Voi chat va canvas con nang hon — mot trang rong khong
+   the tran ngang, va mot canvas rong thi khong pan duoc cho BAT KY dau vao nao,
+   nen phep do khong phan biet duoc gi. Ba lenh `*-seed` ton tai vi ly do do.
 
 ## Vì sao không gõ cứng danh sách app
 
@@ -259,6 +279,147 @@ def agent_seed(uid: str) -> str:
         don()
 
 
+#: Khung nhìn mặc định của một lượt quét.
+#:
+#: ⭐ **320 phải có mặt.** Ngày 05/09 nó bắt được hai lỗi mà 390px bỏ lọt, và
+#:    một trong hai là do chính bản vá vùng chạm 44px sinh ra. Một bộ đo chỉ
+#:    chạy ở khổ "chuẩn" là một bộ đo không bao giờ thấy mép.
+KHUNG_MAC_DINH = ("p320", "p390", "p430", "tab768", "land844", "desk1440")
+
+
+def route_khach(goc: str, cookie: str) -> list[str]:
+    """Route khách hàng, lấy từ **registry + trang chủ đang chạy**, không gõ tay.
+
+    ⛔ Một danh sách route chép tay là một danh sách sẽ cũ đi trong im lặng —
+       đúng cơ chế đã làm bảng trong `CLAUDE.md` nói sai năm lần. Nguồn ở đây là
+       `registry.discover()` cho phần app, cộng chính HTML trang chủ cho phần
+       chrome nền tảng (nav là thứ duy nhất biết đủ các trang không thuộc app).
+    """
+    import re
+    import urllib.request
+
+    ra = []
+    for x in kiem_ke():
+        if x["surface"] != "customer" or not x["enabled"]:
+            continue
+        ra.append(x["route_prefix"])
+
+    req = urllib.request.Request(goc + "/", headers={"Cookie": cookie} if cookie else {})
+    try:
+        with urllib.request.urlopen(req, timeout=15) as r:
+            html = r.read().decode("utf-8", "replace")
+    except OSError:
+        html = ""
+    for m in re.finditer(r'href="(/[^"#?]*)"', html):
+        d = m.group(1)
+        if d.startswith("/static/") or d in ra:
+            continue
+        ra.append(d)
+
+    # Bỏ route trả 404 (app `capability-only`, app `enabled=False`) — giữ chúng
+    # lại chỉ làm mọi bảng kết quả có một cột nhiễu.
+    #
+    # ⚠️ Dùng **GET**, không dùng `HEAD`. FastAPI chỉ đăng ký `HEAD` cho route
+    #    nào khai nó, nên `HEAD /ltt-voice` trả **405** — và một bộ lọc "bỏ mọi
+    #    thứ >= 400" sẽ vứt sạch 20 route rồi báo "quét 0 route" một cách rất
+    #    tự tin. Đã xảy ra đúng như vậy ở lượt chạy đầu tiên.
+    song = []
+    for d in ra:
+        try:
+            rq = urllib.request.Request(
+                goc + d, headers={"Cookie": cookie} if cookie else {})
+            with urllib.request.urlopen(rq, timeout=15) as r:
+                if r.status < 400:
+                    song.append(d)
+        except Exception as e:  # noqa: BLE001 - 404/timeout deu la "bo qua"
+            # ⚠️ Không ném: một route 404 ở đây là **chuyện thường** (app
+            #    capability-only, app `enabled=False`). Nhưng cũng không im:
+            #    một route biến mất khỏi lượt quét mà không ai biết là cách một
+            #    bề mặt khách hàng lặng lẽ rơi ra khỏi mọi phép đo.
+            print(f"  [bo qua] {d}: {type(e).__name__}")
+            continue
+    return sorted(set(song))
+
+
+def quet(goc: str, cookie: str, khung, routes=None) -> dict:
+    """Chạy một lượt quét, trả `{ "<khung> <route>": {…số đo…} }`.
+
+    Gọi `playwright-cli run-code` với `tools/mobile_quet.js` — dòng `CAU_HINH`
+    trong tệp ấy được **thay** bằng cấu hình thật rồi ghi ra một tệp tạm.
+    """
+    import json as _json
+    import re
+    import subprocess
+    import tempfile
+
+    mau = (GOC / "tools" / "mobile_quet.js").read_text(encoding="utf-8")
+    cau_hinh = {"goc": goc.rstrip("/"), "cookie": cookie,
+                "routes": list(routes or []), "khung": list(khung)}
+    moi, so = re.subn(r"const CAU_HINH = \{.*?\};",
+                      "const CAU_HINH = " + _json.dumps(cau_hinh) + ";",
+                      mau, count=1, flags=re.S)
+    if so != 1:
+        raise SystemExit("khong tim thay dong `const CAU_HINH = {...};` trong mobile_quet.js")
+
+    with tempfile.NamedTemporaryFile("w", suffix=".js", delete=False,
+                                     encoding="utf-8") as f:
+        f.write(moi)
+        tam = f.name
+    # ⚠️ Tren Windows, `playwright-cli` cai bang npm la mot bo ba tep
+    #    (khong duoi, `.cmd`, `.ps1`) va `subprocess` KHONG tu chon `.cmd` —
+    #    no bao `WinError 2: khong tim thay tep`. `shutil.which` thi biet, vi no
+    #    doc `PATHEXT`.
+    import shutil
+
+    lenh = shutil.which("playwright-cli")
+    if not lenh:
+        raise SystemExit("khong tim thay `playwright-cli` trong PATH. "
+                         "Cai: npm install -g @playwright/cli@latest")
+    try:
+        r = subprocess.run(
+            [lenh, "-s=mobileqa", "--raw", "run-code", f"--filename={tam}"],
+            capture_output=True, text=True, encoding="utf-8", timeout=1800)
+    finally:
+        os.unlink(tam)
+    out = (r.stdout or "").strip()
+    if not out.startswith('"'):
+        raise SystemExit("playwright-cli khong tra JSON:\n" + (out or r.stderr)[:600])
+    return _json.loads(_json.loads(out))
+
+
+def tom_tat(kq: dict) -> list[str]:
+    """Bảng tóm tắt ASCII — stdout Windows là cp1252, một dấu tiếng Việt làm vỡ."""
+    import collections
+
+    gom = collections.defaultdict(lambda: [0, 0, 0, 0, 0, 0])
+    for k, v in kq.items():
+        x = gom[k.split(" ")[0]]
+        x[0] += 1
+        x[1] += 1 if v.get("tran_ngang", 0) > 1 else 0
+        x[2] += v.get("input_nho", 0)
+        x[3] += v.get("target_be", 0)
+        x[4] += v.get("console_loi", 0)
+        x[5] += v.get("video_thieu_psi", 0)
+    dong = [f"{'khung':<10}{'route':>6}{'tran':>6}{'inp<16':>8}"
+            f"{'tgt<44':>8}{'console':>9}{'psi!':>6}"]
+    for ten, x in gom.items():
+        dong.append(f"{ten:<10}{x[0]:>6}{x[1]:>6}{x[2]:>8}{x[3]:>8}{x[4]:>9}{x[5]:>6}")
+    for k, v in sorted(kq.items()):
+        if v.get("tran_ngang", 0) > 1:
+            dong.append(f"  TRAN     {k}: {v['tran_ngang']}px")
+        if v.get("console_loi"):
+            dong.append(f"  CONSOLE  {k}: {v.get('console_mau')}")
+        if v.get("status") != 200:
+            dong.append(f"  STATUS   {k}: {v.get('status')}")
+        if v.get("video_thieu_psi"):
+            dong.append(f"  PSI      {k}: {v['video_thieu_psi']} the")
+        if v.get("bang_tran"):
+            dong.append(f"  BANG     {k}: {v['bang_tran']} bang tran ma khong cuon duoc")
+        if v.get("cot_an"):
+            dong.append(f"  COT AN   {k}: {v['cot_an']}")
+    return dong
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     con = ap.add_subparsers(dest="lenh", required=True)
@@ -276,6 +437,15 @@ def main(argv=None) -> int:
 
     g = con.add_parser("agent-seed", help="dung mot workflow Agent Canvas CO node")
     g.add_argument("uid", help="uid cua tai khoan seed")
+
+    q = con.add_parser("quet", help="quet mobile moi route khach hang")
+    q.add_argument("--goc", default="http://127.0.0.1:8123",
+                   help="goc may chu do (mac dinh cong 8123 cua studio_dev)")
+    q.add_argument("--cookie", default="", help="cookie phien, vd `session=...`")
+    q.add_argument("--khung", default=",".join(KHUNG_MAC_DINH),
+                   help="danh sach khung nhin, ngan bang dau phay")
+    q.add_argument("--route", default="", help="chi quet nhung route nay (phay)")
+    q.add_argument("--ra", help="ghi JSON day du ra tep")
 
     a = ap.parse_args(argv)
 
@@ -300,6 +470,19 @@ def main(argv=None) -> int:
         da_nap, so = du_bang()
         print(f"app co tables.py: {da_nap}")
         print(f"tong bang: {so}")
+        return 0
+
+    if a.lenh == "quet":
+        goc = a.goc.rstrip("/")
+        rt = [x for x in a.route.split(",") if x] or route_khach(goc, a.cookie)
+        print(f"quet {len(rt)} route x {len(a.khung.split(','))} khung nhin ...")
+        kq = quet(goc, a.cookie, a.khung.split(","), rt)
+        if a.ra:
+            pathlib.Path(a.ra).write_text(
+                json.dumps(kq, ensure_ascii=False, indent=1), encoding="utf-8")
+            print("da ghi", a.ra)
+        for d in tom_tat(kq):
+            print(d)
         return 0
 
     if a.lenh == "agent-seed":
