@@ -2674,6 +2674,14 @@ button.lv-the-song.dang-phat .lv-nghe-dau::before{width:4px;height:14px;
 .lv-st-giua .lv-dem{margin:7px 0 0;justify-content:flex-end}
 /* Sap cham tran: doi mau TRUOC khi bi cat, chu khong bao sau. */
 .sap-tran{color:var(--warn)!important;font-weight:600}
+/* DA vuot tran. Khac `.sap-tran` mot bac mau, vi day la hai trang thai
+   khac nhau: mot cai la "sap", mot cai la "khong nop duoc". */
+.vuot-tran{color:var(--err)!important;font-weight:700}
+/* Dong giai thich vi sao nut Tao dang tat. Mot nut tat khong loi giai la
+   mot nguo cut; khoi nay la loi giai ay, va no chiem cho chu khong chen. */
+.lv-vuot{margin:7px 0 0;padding:8px 10px;border-radius:var(--radius-md);
+  border:1px solid var(--err-line);background:var(--err-bg);color:var(--err);
+  font-size:12.5px;line-height:1.6}
 
 /* Xem truoc cach doc */
 .lv-xt{border-color:var(--brand-border);background:var(--brand-soft)}

@@ -119,10 +119,14 @@ def duong_tieng(db, cac, tien_to: str) -> dict:
        thẳng `audio_key` thì trang dựng một trình phát trỏ vào hư không: khách
        bấm play, không có gì xảy ra, không có câu nào giải thích.
 
-    ⛔ VÀ VÌ SAO NÓ LÀ MỘT HÀM chứ không phải một điều kiện chép ở mỗi chỗ. Có
-       NĂM chỗ dựng đường nghe (hai ở Dự án, ba ở Chạy lô, kể cả nút tải ZIP).
-       Trước hàm này cả năm đều viết `if k.audio_key` — tức để sửa đúng thì phải
-       nhớ đủ năm, và chỗ thứ sáu sẽ lại quên. Một luật cho cả lớp.
+    ⛔ VÀ VÌ SAO NÓ LÀ MỘT HÀM chứ không phải một điều kiện chép ở mỗi chỗ. Khi
+       hàm này ra đời có **năm** chỗ dựng đường nghe (hai ở Dự án, ba ở Chạy lô,
+       kể cả nút tải ZIP), và cả năm đều viết `if k.audio_key` — tức để sửa đúng
+       thì phải nhớ đủ năm, và chỗ thứ sáu sẽ lại quên. Một luật cho cả lớp.
+
+    ⚠️ Nay chỉ còn **hai** chỗ gọi, cả hai ở `routes/_p_du_an.py`: màn Chạy lô đã
+       gỡ 05/09/2026 (xem `manifest.py`). Con số nhỏ đi **không** làm lập luận
+       yếu đi — nó vẫn đúng ở lượt thứ ba, và lượt thứ ba là lượt sẽ quên.
 
     ⚠️ Một truy vấn cho cả danh sách, không một truy vấn mỗi khối: một lô 500
        dòng sẽ thành 500 lượt hỏi CSDL trên đúng con đường được hỏi lại mỗi vài
@@ -225,7 +229,11 @@ def sua_khoi(db, khoi, *, text=None, giong=None) -> None:
 
 #: Cỡ một khối khi kịch bản KHÔNG có ngắt đoạn.
 #:
-#: 🔴 VÌ SAO NÓ KHÁC `TRAN_KY_TU_CONG_KHAI` (1.500), VÀ ĐÂY LÀ MỘT LỖI ĐÃ ĐO.
+#: 🔴 VÌ SAO NÓ KHÁC `TRAN_MOI_LUOT_SINH` (1.500), VÀ ĐÂY LÀ MỘT LỖI ĐÃ ĐO.
+#:
+#: ⚠️ Chú thích này từng ghi `TRAN_KY_TU_CONG_KHAI` — đúng khi hai trần còn là
+#:    MỘT con số, sai từ 31/08 khi chúng tách ra. Con số 1.500 nói ở đây luôn
+#:    luôn là trần của một **lượt sinh**, không phải trần của một yêu cầu.
 #:
 #:    Bản đầu của `nhap_van_ban` gọi `chia_doan(tran_moi_doan=1500)` — đúng con
 #:    số mà một **lượt inference** chịu được. Đo thật trên trình duyệt: một kịch

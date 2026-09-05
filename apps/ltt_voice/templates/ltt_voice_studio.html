@@ -253,8 +253,14 @@
         {# ⛔ `aria-labelledby` chu khong phai placeholder: placeholder bien mat
            ngay khi khach go chu dau tien, va nhieu trinh doc man hinh khong
            doc no. Day la o nhap CHINH cua ca app. #}
+        {# ⛔ KHONG `maxlength`. No dem DON VI MA UTF-16 trong khi may chu
+             chan bang `len()` (DIEM MA), nen mot bai day emoji bi o nhap cat
+             trong khi may chu van nhan — khach mat chu ma khong loi nao bao.
+             Tran nay do `voice.js::dem()` cuong che bang `demKyTu`, va no chan
+             o CHO NOP chu khong o cho go: van ban dan vao van con nguyen de
+             khach tu cat. Nguon chan ly cuoi cung van la may chu
+             (`routes/_p_tao.py`), khong phai thuoc tinh nay. #}
         <textarea name="text" id="lv-text" rows="12" required
-                  maxlength="{{ tran_ky_tu }}"
                   aria-labelledby="lv-nh-text" aria-describedby="lv-dem"
                   placeholder="{{ _('Nhập đoạn văn bản bạn muốn đọc thành tiếng…') }}"></textarea>
         {# ⭐ Ô đếm nói BA điều, không phải một.
@@ -271,13 +277,18 @@
               đúng `chia_doan`); ở đây chỉ là phép chia để khách không bị bất
               ngờ. Đừng để hai chỗ nói hai con số mà không nói cái nào là ước. #}
         <p class="lv-dem" id="lv-dem">
-          <span id="lv-so">0</span> / {{ "{:,}".format(tran_ky_tu).replace(",", ".") }} {{ _("ký tự") }}
+          <span id="lv-so">0</span> / {{ tran_ky_tu|so }} {{ _("ký tự") }}
           <span id="lv-uoc-dai" class="dim" hidden></span>
           {# Cho bao rieng cho phep NHAP TXT. Khong dung `baoLoi`: no
              chuyen ca khoi ket qua sang trang thai LOI, trong nhu job
              hong — trong khi day chi la mot ghi chu ve viec cat bot. #}
           <span id="lv-nhap-bao" class="dim" hidden></span>
         </p>
+        {# ⛔ VUOT TRAN — `role="alert"` chu khong phai mot dong chu mo.
+             Day la ly do DUY NHAT nut Tao bi tat; mot nut tat ma khong noi vi
+             sao la mot nguo cut. Trinh doc man hinh phai nghe duoc no ngay,
+             vi nguoi dung no khong "thay" nut vua doi mau. #}
+        <p class="lv-vuot" id="lv-vuot" role="alert" hidden></p>
       </div>
 
       {# ⭐ XEM TRƯỚC CÁCH ĐỌC — không phải trang trí.
@@ -590,7 +601,8 @@ LttVoice.studio({
     uocNhieuDoan: {{ _("≈ {t} — {n} đoạn, ghép liền mạch") | tojson }},
     daLuuVao:  {{ _("Đã lưu vào") | tojson }},
     xoaMuc:    {{ _("Xoá mục") | tojson }},
-    nhapBiCat: {{ _("Tệp dài {n} ký tự, đã cắt còn {t}.") | tojson }},
+    vuotTran:  {{ _("Đang thừa {d} ký tự — {n} / {t}. Bớt bớt, hoặc đưa sang Dự án để đọc theo từng khối.") | tojson }},
+    nhapQuaDai: {{ _("Tệp dài {n} ký tự, vượt giới hạn {t} cho một lượt đọc. Văn bản được giữ nguyên — bạn tự cắt, hoặc đưa sang Dự án.") | tojson }},
     nhapHong:  {{ _("Không đọc được tệp này.") | tojson }},
     loiMang:   {{ _("Không gửi được yêu cầu. Thử lại nhé.") | tojson }}
   }

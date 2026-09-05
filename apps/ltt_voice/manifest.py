@@ -35,7 +35,8 @@ from platform_core.i18n import N_
 from platform_core.registry import AppManifest, NavEntry, ToolSpec
 
 from . import gia, nghe_thu, sidecar_client
-from .tham_so_cong_khai import SO_LAN_THU_JOB, TRAN_KY_TU_CONG_KHAI
+from .tham_so_cong_khai import (SO_LAN_THU_JOB, TRAN_KY_TU_CONG_KHAI,
+                                TRAN_MOI_LUOT_SINH)
 
 
 def _gia(params: dict) -> int:
@@ -81,9 +82,24 @@ MANIFEST = AppManifest(
     group=N_('Âm thanh'),
     badge=N_('MỚI'),
 
-    # ⭐ SÁU TAB, và từ P8 **cả sáu đều đã xây** — không tab nào còn
+    # ⭐ NĂM TAB, và từ P8 **cả năm đều đã xây** — không tab nào còn
     #    `built=False`. Cơ chế badge "đang xây" của nền tảng vẫn còn nguyên và
     #    vẫn dùng được; thứ đã biến mất là những màn cần tới nó.
+    #
+    # 🔴 TỪNG LÀ SÁU, VÀ TAB THỨ SÁU KHÔNG ĐƯỢC XÂY — có chủ ý.
+    #
+    #    "Chạy lô" được thiết kế khi một lượt sinh trần ở 1.500 ký tự: muốn
+    #    đọc nhiều hơn thì phải nộp nhiều dòng. Đường tài liệu dài (03/09) lấy
+    #    mất chính nhu cầu đó: một ô nhập duy nhất nay nhận `TRAN_KY_TU_CONG_KHAI`
+    #    và tự chia, nên "nộp hai mươi dòng rồi ghép tay" không còn là việc
+    #    khách phải làm. Phần còn lại — soạn nhiều khối, mỗi khối một giọng,
+    #    sửa lại từng khối — là đúng định nghĩa của **Dự án**.
+    #
+    # ⛔ ĐỪNG DỰNG LẠI "Chạy lô" để một chú thích nói "sáu tab" thành đúng.
+    #    Nó chỉ quay lại nếu có một năng lực lô THẬT khác cả Dự án lẫn tài liệu
+    #    dài — ví dụ `infer_batch` của sidecar (xem `tables_du_an.py`), thứ gộp
+    #    nhiều đoạn vào MỘT lượt GPU. Mô hình cũ — mỗi dòng một job — không
+    #    phải năng lực đó, nó chỉ là một vòng lặp có giao diện.
     #
     # ⛔ Nếu một ngày thêm tab thứ bảy chưa xây: đặt `built=False` chứ ĐỪNG giấu
     #    tab đi. Hai thứ đó nói hai điều khác nhau — giấu nói *"sản phẩm không
@@ -188,6 +204,25 @@ MANIFEST = AppManifest(
     # kieu so trong khi `User.id` la UUID chuoi.
     lifecycle="released",
     capabilities=("audio",),
+
+    # 🔴 HAI TRẦN, KHAI RA CHO CHẨN ĐOÁN VẬN HÀNH.
+    #
+    #    Ngày 05/09/2026 bản deploy đứng ở một commit cũ hơn kho 94 lượt, nên
+    #    trần công khai **đang chạy** là 1.500 trong khi mã nguồn ghi 100.000.
+    #    Không ai phát hiện, vì không có chỗ nào hỏi được máy chủ *"hợp đồng mày
+    #    đang thi hành là gì"*. `/health/version` nay trả lời được.
+    #
+    # ⛔ THAM CHIẾU HẰNG SỐ, KHÔNG GÕ LẠI SỐ. Một bản chép ở đây sẽ trôi — và nó
+    #    trôi ngay bên trong công cụ dựng ra để phát hiện trôi, tức nó sẽ xác
+    #    nhận trạng thái sai một cách rất thuyết phục.
+    #
+    # ⚠️ Chỉ những thứ ĐÃ công khai ở nơi khác: cả hai con số này đã in trên màn
+    #    Studio và màn API cho mọi khách đọc. `/health/version` không có xác
+    #    thực, nên đây không phải chỗ cho bất cứ thứ gì khác.
+    hop_dong_cong_khai={
+        "tran_ky_tu_cong_khai": TRAN_KY_TU_CONG_KHAI,
+        "tran_moi_luot_sinh": TRAN_MOI_LUOT_SINH,
+    },
     table_prefix="voice",
 
     blocker_titles=(N_('Dịch vụ giọng nói (LTTStudioVoice)'),),

@@ -11,7 +11,7 @@ from ._chung import (MANIFEST, SO_LAN_THU_JOB, TRAN_KY_TU_CONG_KHAI, Depends, Fi
                      router, templates,
                      tham_chieu, tu_dien_rieng, user_hien_tai,
                      verify_csrf_token, vo,
-                     NHAN_NGUON)
+                     NHAN_NGUON, so_viet)
 
 
 # ── Tạo tiếng nói ────────────────────────────────────────────────────────────
@@ -186,7 +186,7 @@ def xem_truoc(request: Request, text: str = Form(""),
     if len(tho) > TRAN_KY_TU_CONG_KHAI:
         return JSONResponse({"ok": False, "loi": _t(
             "Văn bản dài {n} ký tự, vượt giới hạn {t} cho một lượt đọc."
-        ).format(n=len(tho), t=TRAN_KY_TU_CONG_KHAI)}, status_code=400)
+        ).format(n=so_viet(len(tho)), t=so_viet(TRAN_KY_TU_CONG_KHAI))}, status_code=400)
 
     # 🔴 TỪ ĐIỂN RIÊNG PHẢI CÓ Ở ĐÂY, và thiếu nó biến bảng xem trước thành
     #    một lời nói dối.
@@ -303,7 +303,7 @@ def tao(request: Request, text: str = Form(""), voice_id: str = Form(""),
     if len(yc.text) > TRAN_KY_TU_CONG_KHAI:
         return JSONResponse({"ok": False, "loi": _t(
             "Văn bản dài {n} ký tự, vượt giới hạn {t} cho một lượt đọc."
-        ).format(n=len(yc.text), t=TRAN_KY_TU_CONG_KHAI)}, status_code=400)
+        ).format(n=so_viet(len(yc.text)), t=so_viet(TRAN_KY_TU_CONG_KHAI))}, status_code=400)
 
     tool = MANIFEST.tools[0]
     gen = _db()

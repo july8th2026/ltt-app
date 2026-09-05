@@ -438,6 +438,34 @@ $global:LASTEXITCODE = 0
 $n = (Get-ChildItem $appDir -Recurse -File).Count
 Ok "Da copy $n file vao $appDir"
 
+# ---- Dau van tay: BAN NAO dang chay ----------------------------------------
+#
+# .git bi loai khoi robocopy o tren (co y: ~1 GB lich su ma production khong
+# dung). Nen ban deploy KHONG tra loi duoc "toi la commit nao" bang git, va
+# ngay 05/09/2026 dieu do ton gan tron mot buoi: kho ghi 100.000, web hien
+# 1.500, va cach duy nhat de biet vi sao la so md5 cua /static/voice.js giua
+# hai thu muc. Ben deploy GHI ra; server/routes/health.py chi doc.
+#
+# !! Write-NoBom, KHONG Out-File. Quy tac 1 cua CLAUDE.md: PowerShell 5.1 chen
+#    BOM, json.load() vo, va /health/ready tra 503 trong khi dich vu van chay.
+#    Loi do da that su lam production sap o du an nay.
+$vanTay = Join-Path $appDir "dau_van_tay.json"
+$sha = ""
+try { $sha = (& git -C $src rev-parse HEAD 2>$null) } catch { $sha = "" }
+if ($LASTEXITCODE -ne 0) { $sha = "" }
+$global:LASTEXITCODE = 0
+if ($sha) {
+    $obj = [ordered]@{ commit = $sha.Trim()
+                       luc    = (Get-Date).ToString("s") }
+    Write-NoBom $vanTay ($obj | ConvertTo-Json -Compress)
+    Ok "Dau van tay: $($sha.Substring(0,12))"
+} else {
+    # Khong doc duoc git thi XOA marker cu. Mot marker cu la mot cau tra loi
+    # SAI ma trong nhu that - te hon han khong co cau tra loi nao.
+    if (Test-Path $vanTay) { Remove-Item $vanTay -Force }
+    Canh "Khong doc duoc commit tu cay nguon - /health/version bao khong-ro"
+}
+
 # Canvas is prebuilt in the release with pinned Node 22.12.0. Production does
 # not run Node/Vite and must never depend on a development server.
 $canvasManifest = Join-Path $appDir 'server\static\agent-canvas\.vite\manifest.json'

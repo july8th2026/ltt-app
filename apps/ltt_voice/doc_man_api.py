@@ -13,8 +13,15 @@ bộ lý do màn này có mặt:
    lại — hoặc đoán.
 2. **Tên giọng dựng sẵn nào hợp lệ?** Hai mươi tên, và gõ sai một chữ thì lỗi
    hiện ra ở tận lúc gọi, dưới dạng "không tìm thấy giọng".
-3. **Trần 1.500 ký tự là trần gì?** Nó là trần **chất lượng**, không phải trần
-   kỹ thuật (Q118) — và một dòng trong bảng tham số không nói được điều đó.
+3. **Trần ký tự của một lượt gọi là bao nhiêu, và nó là trần gì?** Từ 03/09 nó
+   là `TRAN_KY_TU_CONG_KHAI` — một trần **ngân sách tài nguyên** (một job giữ
+   GPU bao lâu thì còn công bằng), không phải trần chất lượng. Trần chất lượng
+   của model (`TRAN_MOI_LUOT_SINH`) vẫn còn nhưng không còn rò ra thành trần
+   sản phẩm: bài dài được chia rồi ghép. Một dòng trong bảng tham số của
+   `/developers/tools` nói được con số, không nói được điều đó.
+
+   ⛔ ĐỪNG gõ lại con số vào đây. Màn hình đọc `TRAN_KY_TU_CONG_KHAI` và hiện
+      nó qua filter `|so`; một bản sao trong tài liệu là một bản sao sẽ trôi.
 
 ⛔ **KHÔNG chép lại bất cứ thứ gì khu Lập trình viên đã có.** Không bảng giá thứ
    hai, không danh sách khoá thứ hai, không nhật ký thứ hai. Hai bản của cùng

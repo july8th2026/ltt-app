@@ -49,11 +49,22 @@ Việt, XTTS bằng giọng tiếng Anh.** Chính tệp này đã đo và số l
    được, đừng viết ra cách giải thích nó** — số liệu 24/24 ở trên đúng từ đầu,
    chỉ có câu kết luận cạnh nó là sai.
 
-⚠️ Hệ quả thi hành, và nó không hiển nhiên: engine mới **không nói được tiếng
-   Anh**. `vieneu_utils/phonemize_text.py` khoá cứng `SEAPipeline(lang="vi")` +
-   `G2P(lang="vi")` ở tầng singleton — mọi văn bản đi qua G2P tiếng Việt. Nên 17
-   giọng XTTS chỉ dùng được như **nguồn âm sắc**, không phải như "giọng tiếng
-   Anh của nền tảng".
+⛔ ĐOẠN NÀY TỪNG KẾT LUẬN: *"engine mới không nói được tiếng Anh, nên 17 giọng
+   XTTS chỉ dùng được như nguồn âm sắc"*. **SAI** — bác bỏ bằng phép đo cùng
+   ngày, xem `tools/do_engine_co_noi_tieng_anh.py`: ASR nghe lại tiếng Anh đúng
+   từng chữ (0,996). `lang` của `sea-g2p` chọn ngôn ngữ nền Đông Nam Á, không
+   phải danh sách ngôn ngữ đầu ra.
+
+⚠️ Và câu sai ấy sống sót MỘT GIỜ sau khi bị bác bỏ: bản bác bỏ commit lúc
+   12:25, tệp này sửa lúc 13:25 mà không ai quét lại đoạn trên. Đó là lý do
+   mục dưới đây tồn tại.
+
+⭐ NGUỒN CHUẨN cho câu hỏi "engine làm được gì":
+   `tools/do_engine_co_noi_tieng_anh.py` (phép đo).
+   NGUỒN CHUẨN cho "sản phẩm quyết định thế nào": `apps/ltt_voice/lan_ngon_ngu.py`
+   — làn `vi`/`en` là một chốt **chất lượng** do chủ sản phẩm đặt, và nó
+   **cảnh báo chứ không chặn**. Hai câu hỏi khác nhau; đừng trả lời câu này
+   bằng tài liệu của câu kia.
 
 ## Cách chấm
 

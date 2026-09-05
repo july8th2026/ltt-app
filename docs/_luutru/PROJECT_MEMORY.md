@@ -1753,3 +1753,70 @@ Hai thu chong len nhau, moi thu mot minh da du chan:
 
 Con lai sau khi mo duoc dang nhap: **5.2, 5.3** (tao anh) va **6.2** (giong nhan
 ban — tai khoan kiem chua nhan ban giong nao).
+
+---
+
+## 2026-09-05 — LTT Voice: "giao dien hien 1500" hoa ra la BAN DEPLOY CU
+
+Trieu chung: kho ghi `TRAN_KY_TU_CONG_KHAI = 100_000`, web hien `0 / 1500 ky tu`.
+
+⛔ **Khong phai cache, va khong phai loi ma nguon.** `C:\LTTPlatform\app` giu mot
+ban chep tu thoi `master`, con `admin-mvp-v3` da di truoc **94 commit**. Bang
+chung phan biet duoc hai gia thuyet: md5 cua `/static/voice.js` may chu **phuc
+vu** khop **chinh xac** ban tren dia o thu muc deploy (79.040 B) chu khong khop
+ban trong kho (91.281 B). Cache thi dia phai moi ma phuc vu moi cu.
+
+⭐ Dieu dang giu khong phai "nho deploy". La: **khong co cho nao hoi duoc may chu
+dang chay ma nao.** `/health/version` khi ay tra `"v1.0"` — doc tu `version.py`
+cua *LTTStudios VideoBot*, hang so go tay tu 2025, khong doi qua bat ky lan
+deploy nao. Nen cau hoi chi tra loi duoc bang cach so md5 hai thu muc bang tay.
+
+⇒ `/health/version` nay tra **ba truong bat ba kieu troi DOC LAP**: `commit` (ma
+nguon), `asset_ver` (tai san tinh qua CF), `ltt_voice` (hop dong tran). Chung
+hong rieng re, nen gop lai mot truong thi khong phan biet duoc — ma phan biet
+chinh la toan bo gia tri. `setup/2-cai-dat.ps1` ghi `dau_van_tay.json` (bang
+`Write-NoBom`) vi ban deploy **khong** co `.git`.
+
+### Bon loi TIM THEM khi dieu tra, khong ai bao
+
+1. 🔴 **JS dem UTF-16, Python dem diem ma.** `maxlength` cung dem don vi ma, nen
+   50.001 emoji = 50.001 ky tu voi may chu nhung **100.002 don vi ma** voi o
+   nhap ⇒ trinh duyet **cat mat mot nua** mot van ban may chu hoan toan chap
+   nhan, khong loi nao bao. Da go `maxlength`; `voice.js::demKyTu()` dem bang
+   `Array.from` va chan o **cho NOP** (tat nut Tao + `role="alert"`), khong chan
+   o cho go — van ban o nguyen de khach tu cat.
+2. **Nhap TXT `s.slice(0, tran)`** — mat phan duoi ngay luc nhap, khong hoan tac
+   duoc. Nay giu nguyen ca tep (da bo BOM).
+3. **Song am `decodeAudioData` ca tep.** O tran moi: ~483 MB tai + ~967 MB PCM.
+   Chu thich cu ngay tren `veSong` **da du bao dung** ("neu tran ky tu duoc noi
+   thi cho nay phai doi") — tran noi 03/09, cho ay thi khong. Nay co
+   `TRAN_GIAY_SONG = 600` + `songDeu()` (track PHANG, khong phai song bia ra).
+4. **`100000` vs `100.000` tren cung mot luong**: o dem hien co dau cham, thong
+   diep loi cua **chinh cua ay** thi khong. Filter `|so` chi toi duoc noi co
+   Jinja ⇒ tach than ham ra `platform_core/dinh_dang.py::so_viet()`.
+
+### Residue "Chay lo" — man chua bao gio duoc xay
+
+`taoLo()` + `motLo()` trong `voice.js`: **236 dong**, export qua `window.LttVoice`,
+**khong khuon mau nao goi**, gui toi moi khach cua moi trang Voice. `manifest.py`
+ghi *"SAU TAB, va tu P8 ca sau deu da xay"* trong khi nav co **NAM**.
+
+⛔ Da go, va ghi ro **dieu kien de no duoc phep quay lai**: mot nang luc lo THAT
+nhu `infer_batch` (gop nhieu doan vao MOT luot GPU, do 01/09 cho 3,47x thong
+luong), chu khong phai "moi dong mot job" — mo hinh cu chi la mot vong lap co
+giao dien. **Dung dung lai no de mot chu thich noi "sau tab" thanh dung.**
+
+⚠️ Giu nguyen nhung cho nhac Chay lo o **thi qua khu co ghi ngay**
+(`tables_du_an.py`, `vo.py:106`, `ltt_voice_thongbao.html`) — viet lai lich su
+cho khop hien tai la xoa mat chinh thu khien tai lieu ay co gia.
+
+### Hai cai bay gap lai trong lot nay
+
+- **Bo do quet trung phat viec giai thich.** Ban dau cua
+  `test_nhap_txt_khong_cat_lang_le` tim `s.slice(0, tran)` trong ca tep va **do
+  ngay** — chinh chu thich giai thich cai bay da trich dan doan ma ay. Ai muon
+  no xanh se phai *xoa loi giai thich*. ⇒ `_bo_chu_thich()` + `test__..._tu_kiem`
+  (mot bo loc hong ma khong tu-kiem se lam moi phep kiem dung no xanh vinh vien).
+- **Heredoc Bash nuot `\n`** — lai mot lan nua. Dung `chr(10)` hoac Edit.
+
+Tai lieu day du: `docs/LTT_VOICE/AUTONOMOUS_AUDIT/` (00–07).

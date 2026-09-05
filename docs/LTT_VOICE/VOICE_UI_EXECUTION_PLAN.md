@@ -1,5 +1,22 @@
 # LTT VOICE STUDIO — KẾ HOẠCH THI HÀNH GIAO DIỆN (prompt pack V1)
 
+> ## ⛔ TỆP NÀY LÀ MỘT **KẾ HOẠCH ĐÃ THI HÀNH**, KHÔNG PHẢI HỢP ĐỒNG HIỆN HÀNH
+>
+> Lập **2026-08-31**. Từ đó tới nay hai thứ trong đây đã đổi, và đổi theo cách làm
+> mọi câu nhắc tới "trần 1.500" ở dưới **sai nếu đọc như trần sản phẩm**:
+>
+> · 31/08 — `TRAN_KY_TU_CONG_KHAI` tách khỏi `TRAN_MOI_LUOT_SINH`;
+> · 03/09 — trần yêu cầu của khách mở lên, đường tài liệu dài hấp thụ trần model.
+>
+> ⭐ 1.500 **vẫn đúng** — nhưng nó là trần của **một lượt sinh**, không phải thứ
+> khách gõ được. Hai câu hỏi khác nhau dùng chung một con số chính là lỗi mà
+> `docs/LTT_VOICE/03_TAI_LIEU_DAI.md` mô tả.
+>
+> ⇒ Câu hỏi nào đọc ở đâu: **`docs/LTT_VOICE/NGUON_CHAN_LY.md`**.
+> Giữ tệp này nguyên văn làm hồ sơ *"lúc ấy ta nghĩ gì"* — đừng sửa số bên trong.
+
+
+
 > Lập: **2026-08-31**. Nhánh `admin-mvp-v3`. Máy này **LÀ máy chủ** (`C:\LTTPlatform` có thật).
 > Nguồn yêu cầu: `G:\My Drive\AI\A LTT AII\LTT_VOICE_UI_PROMPT_PACK_V1`
 > (12 prompt · 6 ảnh tham chiếu · `specs/FEATURE_MATRIX.md` · `specs/VISUAL_REFERENCE_NOTES.md`).

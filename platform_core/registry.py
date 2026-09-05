@@ -289,6 +289,33 @@ class AppManifest:
     # từ slug/tên app. Phần tử đầu tiên là nhóm chính để chọn ảnh cover.
     capabilities: tuple = ()
 
+    # 🔴 HẰNG SỐ HỢP ĐỒNG mà app muốn khai ra cho chẩn đoán vận hành.
+    #
+    #    Sinh ra 05/09/2026 từ một sự cố cụ thể: bản deploy đứng ở một commit cũ
+    #    hơn kho 94 lượt, nên trần ký tự công khai của `ltt_voice` **đang chạy**
+    #    là 1.500 trong khi mã nguồn ghi 100.000. Không ai phát hiện ra, vì
+    #    không có chỗ nào hỏi được máy chủ *"hợp đồng mày đang thi hành là gì"*.
+    #
+    # ⭐ VÌ SAO NÓ NẰM Ở BẢN KHAI CHỨ KHÔNG PHẢI Ở `server/routes/health.py`.
+    #
+    #    Bản vá đầu import thẳng `apps.ltt_voice.tham_so_cong_khai` vào
+    #    `health.py`. `tests/test_147_layering.py` đỏ ngay, và nó đúng:
+    #    *"Nền tảng KHÔNG được biết tên app nào tồn tại."* Một endpoint chẩn
+    #    đoán biết tên một app là một endpoint sẽ phải sửa mỗi lần thêm app —
+    #    tức chính cái ràng buộc mà hợp đồng app sinh ra để gỡ.
+    #
+    # ⇒ App **khai**; nền tảng **đọc**. Cùng khuôn với `doctor_muc` và
+    #   `capabilities` ngay trên đây.
+    #
+    # ⚠️ Chỉ đặt vào đây thứ ĐÃ công khai ở nơi khác. `/health/version` không có
+    #    xác thực (reverse proxy dựa vào điều đó), nên một khoá bí mật hay một
+    #    đường dẫn nội bộ đặt ở đây là một lượt rò, không phải một lượt chẩn đoán.
+    #
+    # ⛔ Và nó phải là GIÁ TRỊ TĨNH đọc từ chính hằng số app đang dùng, không
+    #    phải một bản chép gõ tay. Một bản chép ở đây sẽ trôi — ngay trong công
+    #    cụ dựng ra để phát hiện trôi.
+    hop_dong_cong_khai: dict = field(default_factory=dict)
+
     # App con vẫn giữ route/job/history riêng nhưng không tạo card/nav độc lập.
     # Dùng khi hai executor cùng nằm dưới một sản phẩm customer-facing, ví dụ
     # một mode chuyên biệt trong shell của app cha. Route cũ vẫn được mount để

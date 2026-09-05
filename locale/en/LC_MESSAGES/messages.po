@@ -12835,8 +12835,11 @@ msgstr "New project name…"
 msgid "Tải MP3"
 msgstr "Download MP3"
 
-msgid "Tệp dài {n} ký tự, đã cắt còn {t}."
-msgstr "File was {n} characters, trimmed to {t}."
+msgid "Tệp dài {n} ký tự, vượt giới hạn {t} cho một lượt đọc. Văn bản được giữ nguyên — bạn tự cắt, hoặc đưa sang Dự án."
+msgstr "File is {n} characters, over the {t} limit for one read. The text was kept in full — trim it yourself, or move it to a Project."
+
+msgid "Đang thừa {d} ký tự — {n} / {t}. Bớt bớt, hoặc đưa sang Dự án để đọc theo từng khối."
+msgstr "{d} characters over — {n} / {t}. Trim it, or move it to a Project to read block by block."
 
 msgid "Đang tải…"
 msgstr "Loading…"
