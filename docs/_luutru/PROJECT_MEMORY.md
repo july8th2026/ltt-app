@@ -1820,3 +1820,61 @@ cho khop hien tai la xoa mat chinh thu khien tai lieu ay co gia.
 - **Heredoc Bash nuot `\n`** — lai mot lan nua. Dung `chr(10)` hoac Edit.
 
 Tai lieu day du: `docs/LTT_VOICE/AUTONOMOUS_AUDIT/` (00–07).
+
+### Ket qua 05/09: DA DEPLOY, va bon loi cua chinh ban va
+
+Ba noi khop nhau o `fca8833e`: kho = GitHub = production.
+
+    /health/version cong khai:  commit=fca8833ee57f  nguon=marker
+    voice.js khach nhan:        63c7c169…  (truoc deploy: 7ace0b84…)
+    tran dang chay:             100.000 / 1.500
+
+25 giong kho chung da doi ten (public_id NGUYEN, nen hop dong API khong doi mot
+chu). Bang doi khoa theo `ma_cu` chu khong theo ten hien thi — va quyet dinh do
+CUU ca luot: `-Xem` lo ra 5 giong mang ten khac bang, trong do hai cai giu dung
+ten toi dinh gan cho giong khac (`Ethan`, `Ivy`). Do `sua_luc` truoc khi ghi:
+ca bon cung MOT GIAY (01/09 12:43:12) va `tao_luc` som hon ca nhom => do la bon
+giong nhap dot dau ma luot nhap 01/09 chi va xuat xu, khong doi ten. Khong phai
+phien nao dang lam song song.
+
+## ⛔ BON LOI CUA CHINH BAN VA, VA MOT CAI DA VAO PRODUCTION
+
+  ① nhanh `!AudioContext` van `return` tran => `songGia` (song ngau nhien) nam
+    lai VINH VIEN — dung thu cai tran sinh ra de tranh. Tu bat khi soat diff.
+  ② `/health/version` khong xac thuc ma `doc()` fork `git` moi luot goi. Tu bat.
+  ③ bang doi ten khoa theo ten hien thi — thu troi duoc. Tu bat.
+  ④ `songDeu` TU GOI LAI CHINH NO (de quy vo han). **Lot qua gate day du 6000
+    test, vao production.** Phien Mobile V1 tim ra khi doc ma.
+
+⭐ ④ dang ghi nhat, vi hai le:
+
+  · Nguyen nhan la mot `str.replace` TOAN CUC cho dong `if (!canvas) return;` —
+    dong ay co o HAI noi, va toi doc lai "cho toi nghi da sua" chu khong doc lai
+    CA THAN HAM.
+  · No CHUA BAO GIO NO (moi cho goi deu truyen canvas that). Nhung duong DUY
+    NHAT kich hoat no lai chinh la nhanh phong thu — tuc dong viet ra de tu bao
+    ve se la dong giet ca handler bang `RangeError`.
+
+⇒ **Mot loi khong bao gio no van la mot loi**, va loai nguy hiem nhat la loai
+  chi no o dung nhanh hiem ma nguoi ta viet ra de phong than.
+
+⚠️ Va phep kiem dau tien toi viet de chot ④ CUNG SAI: cat tu chinh dong khai
+   ham nen `"songDeu(" in than` luon dung, do tren mot ma da sach. Ban sua cat
+   SAU chu ky, va da kiem nguoc bang cach tiem lai loi cu.
+
+Memory moi: `thay-chuoi-toan-cuc-cham-dong-phong-thu`,
+`hoi-may-chu-dang-chay-ban-nao`.
+
+## Con lai, KHONG duoc doc thanh "da xong"
+
+  1. Bug mobile (`/audio` thieu `Range` => Safari tu choi phat) da sua o
+     `phien/mobile-v1`, **CHUA merge**. Do tren cay vua deploy: `grep -c "Range"
+     _p_audio.py` -> 0. Can mot chuyen deploy rieng.
+  2. O dem hien `100.000` la SUY RA tu ba manh da xac minh trong ban deploy
+     (hang so, `|so`, khong con `maxlength`) — **chua mo trang bang mat**, vi
+     dang nhap production tu may nay bi Cloudflare chan.
+  3. `TRAN_GIAY_SONG = 600` co lap luan moi de ha (phien Mobile do: o 35 cot thi
+     mot cot ganh 17 giay tieng). Co y KHONG gop vao chuyen nay.
+
+Tai lieu: `docs/LTT_VOICE/NGUON_CHAN_LY.md` (chi muc), `AUTONOMOUS_AUDIT/00-08`,
+`KHO_GIONG/00-01`.

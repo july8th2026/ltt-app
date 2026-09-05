@@ -894,14 +894,15 @@
   }
 
   function songDeu(canvas) {
-    /* ⛔ Dong nay tung la `songDeu(canvas)` — tu goi lai chinh no voi cung mot
-     *    `canvas` rong, tuc DE QUY VO HAN. Mot nhanh phong thu bien thanh mot
-     *    `RangeError: Maximum call stack size exceeded` giet ca handler.
+    /* [!] `return`, KHONG phai `songDeu(canvas)`. Mot ban va 05/09 dung mot
+     *     phep thay chuoi TOAN CUC cho dong `if (!canvas) return;` — dong ay
+     *     co o CA `veSong` (noi can ve truoc khi thoat) va o CHINH day, nen
+     *     ham nay thanh tu goi lai minh: de quy vo han.
      *
-     * ⚠️ No chua bao gio no ra vi moi noi goi deu truyen canvas that. Nhung
-     *    `veSong` co dung mot nhanh `if (!canvas) { songDeu(canvas); return; }`
-     *    — tuc duong duy nhat kich hoat no chinh la duong duoc viet ra de tu
-     *    bao ve. Sua 05/09. */
+     * [!] No chua bao gio no, vi moi cho goi deu truyen mot canvas that. Nhung
+     *     duong DUY NHAT kich hoat no lai chinh la nhanh phong thu `if (!canvas)`
+     *     trong `veSong` — tuc dong viet ra de tu bao ve se la dong giet ca
+     *     handler bang `RangeError`. Phien Mobile V1 tim ra, 05/09. */
     if (!canvas) return;
     var rong = canvas.clientWidth || 300;
     var dpr = window.devicePixelRatio || 1;

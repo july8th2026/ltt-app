@@ -264,6 +264,42 @@ def test_song_am_co_tran_thoi_luong():
         "lieu that cua ban thu")
 
 
+def test_songDeu_KHONG_tu_goi_lai_chinh_no():
+    """⛔ `songDeu` phải `return`, không được gọi lại chính nó.
+
+    🔴 MỘT LỖI TÔI GHI VÀO PRODUCTION, VÀ PHIÊN MOBILE V1 TÌM RA (05/09).
+
+       Bản vá "mọi đường thoát đều phải vẽ" dùng một phép **thay chuỗi toàn
+       cục** cho dòng `if (!canvas) return;`. Dòng ấy có ở **hai** nơi — trong
+       `veSong` (đúng chỗ cần vẽ trước khi thoát) và trong **chính `songDeu`**.
+       Nên `songDeu` thành:
+
+           if (!canvas) { songDeu(canvas); return; }   // de quy vo han
+
+    ⭐ Và nó **chưa bao giờ nổ**, vì mọi chỗ gọi đều truyền một canvas thật.
+       Nhưng đường **duy nhất** kích hoạt nó lại chính là nhánh phòng thủ
+       `if (!canvas)` trong `veSong` — tức dòng viết ra để tự bảo vệ sẽ là dòng
+       giết cả handler bằng `RangeError`.
+
+    ⇒ Hai bài học, và cái thứ hai đắt hơn:
+       · `str.replace` mặc định thay **mọi** lần xuất hiện — một dòng phòng thủ
+         phổ biến như `if (!x) return;` gần như chắc chắn có ở nhiều nơi;
+       · **một lỗi không bao giờ nổ vẫn là một lỗi**, và loại nguy hiểm nhất là
+         loại chỉ nổ ở đúng nhánh hiếm mà người ta viết ra để phòng thân.
+    """
+    js = _bo_chu_thich(VOICE_JS.read_text(encoding="utf-8"))
+    dau = "function songDeu("
+    # ⚠️ CẮT SAU dòng khai hàm. Bản đầu của chính phép kiểm này cắt TỪ nó, nên
+    #    `"songDeu(" in than` luôn đúng vì bắt phải chữ ký — nó đỏ trên một mã
+    #    đã sạch. Đúng lớp lỗi mà `doc-thu-dai-dien` mô tả: đọc một lát cắt
+    #    **chứa** thứ cần đo thay vì đọc đúng thứ cần đo.
+    than = js[js.index(dau) + len(dau):]
+    than = than[:than.index("function veSong(")]
+    assert "songDeu(" not in than, (
+        "songDeu TU GOI LAI CHINH NO — de quy vo han. Nhanh `!canvas` phai "
+        "`return` tran.")
+
+
 def test_moi_duong_thoat_cua_veSong_deu_ve_song_deu():
     """⛔ MỌI nhánh `return` trong `veSong` phải vẽ `songDeu` trước.
 
