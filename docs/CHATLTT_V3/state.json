@@ -90,7 +90,7 @@
       "chan": [
         "P03"
       ],
-      "phan_tram": 55
+      "phan_tram": 80
     },
     {
       "id": "P05",
@@ -348,8 +348,8 @@
     "don_vi": "ngay cong (8h)",
     "lan_A": {
       "uoc": 17.0,
-      "xong": 10.8,
-      "phan_tram": 64
+      "xong": 11.9,
+      "phan_tram": 70
     },
     "lan_B": {
       "uoc": 20.0,
@@ -363,8 +363,8 @@
     },
     "toan_chuong_trinh": {
       "uoc": 51.0,
-      "xong": 10.8,
-      "phan_tram": 21
+      "xong": 11.9,
+      "phan_tram": 23
     },
     "ma_san_pham_da_sua": "9 tep: 6 moi trong apps/chatltt/services + frontend ThongDiepView.tsx + governance.py + luot.py",
     "ghi_chu": "dem theo NGAY CONG, khong theo so pha — P00 nua ngay, P03 nam ngay"
@@ -579,7 +579,7 @@
   ],
   "p04": {
     "trang_thai": "DANG LAM",
-    "phan_tram": 55,
+    "phan_tram": 80,
     "da_xong": [
       "duyet.py — phieu duyet BEN + test_809 (30)",
       "quyet dinh di bang UPDATE CO DIEU KIEN (WHERE quyet_dinh='cho'), khong bang if trong Python",
@@ -590,17 +590,28 @@
       "dieu_phoi: CanDuyet (GIA TRI tra ve, khong phai ngoai le) + tiep_tuc() + test_810 (16)",
       "chay() tach thanh chay() + _vong(); lich_su chuyen vao Run de song qua lan dung",
       "kiem cho-duyet SAU CA LO: hai loi goi song song thi ca hai duoc hoi",
-      "thieu mot ket qua duyet => NEM, khong doan"
+      "thieu mot ket qua duyet => NEM, khong doan",
+      "routes/_p_duyet.py — GET /api/duyet/dang-cho + POST /api/duyet/{id} + test_811 (29)",
+      "quyet_dinh la ENUM DONG khop CHINH XAC (khong .lower()) — chuan co_v3.BAT",
+      "bo_chay_tool.py — chay_tool hai ket cuc (KetQua | CanDuyet) + test_812 (17)",
+      "NgoCanhGoi: chay_tool biet loi goi nay la loi goi nao (thu_tu/goi_id/bam/step_id)",
+      "buoc duoc GHI TRUOC KHI CHAY tool; ghi_buoc lan hai CAP NHAT chu khong chen",
+      "trang thai buoc: 4 gia tri (dang_chay/cho_duyet/ok/loi), khong gop cho_duyet vao ok",
+      "khong bao gia duoc => KHONG mo phieu (fail-closed), model nhan loi doc duoc"
     ],
     "con_lai": [
-      "noi duyet.py <-> dieu_phoi.CanDuyet trong luot.py (chay_tool that)",
-      "route + UI duyet",
-      "R2b: mot request_id cho ca run (can thanh_toan.py — khoa cua phien dieu phoi)",
+      "noi dieu_phoi vao luot.chay (goi_model qua mo_luong moi vong — R1 gianh lai suat)",
+      "UI duyet o frontend",
+      "R2b: mot request_id cho ca run (can thanh_toan.py)",
       "doi soat chatltt_run vs credit_entries"
     ],
     "dot_bien_da_thu": [
-      "go unique=True khoi ux_chatltt_approval_step => test_809::test_RANG_BUOC_CSDL_chan_hai_phieu_cho_mot_buoc DO (1 failed / 29 passed). Hop dong 02 §6 doi dung phep dot bien nay."
+      "go unique=True khoi ux_chatltt_approval_step => test_809::test_RANG_BUOC_CSDL_chan_hai_phieu_cho_mot_buoc DO (1 failed / 29 passed). Hop dong 02 §6 doi dung phep dot bien nay.",
+      "go lazy-import trong thi_hanh._nap_noi_bo => test_808::..MOT_TIEN_TRINH_MOI DO"
     ],
-    "ghi_chu": "Phep kiem rang buoc DI VONG QUA `xin_duyet` va chen thang hang thu hai. Goi ham hai lan chi chung minh HAM tu kiem — khong chung minh RANG BUOC con do."
+    "ghi_chu": "Phep kiem rang buoc DI VONG QUA `xin_duyet` va chen thang hang thu hai. Goi ham hai lan chi chung minh HAM tu kiem — khong chung minh RANG BUOC con do.",
+    "phat_hien": {
+      "so_handler_phu_thuoc_thu_tu_import": "Handler tool noi bo dang ky bang TAC DUNG PHU cua import. Chi `chieu()` nhap `tool_noi_bo`, nen moi duong KHONG di qua `chieu()` (chay tiep sau duyet, job nen, lenh CLI) thay LOI_CHUA_CAI cho mot tool binh thuong. test_812 do 3 phep kiem vi dung chuyen nay; chay rieng thi xanh hay do tuy TEP NAO CHAY TRUOC. Sua: thi_hanh._nap_noi_bo() goi truoc moi dispatch. Chot bang mot phep kiem chay TIEN TRINH MOI — la phep kiem duy nhat tai hien duoc."
+    }
   }
 }

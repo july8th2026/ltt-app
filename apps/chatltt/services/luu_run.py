@@ -51,7 +51,26 @@ def _ket_qua_json(kq) -> dict:
 
 def ghi_buoc(db, run: ChatlttRun, b: DP.Buoc,
              *, execution_id: Optional[str] = None) -> ChatlttStep:
-    """Một `Buoc` → một hàng `chatltt_step`. Không commit."""
+    """Một `Buoc` → một hàng `chatltt_step`. **Gọi lại thì CẬP NHẬT.** Không commit.
+
+    🔴 Mỗi bước được ghi **hai lần**: một lần lúc mở (trước khi chạy tool), một
+    lần lúc có kết quả. Nếu lần thứ hai `INSERT` thì mỗi bước thành hai hàng, và
+    `ux_chatltt_step_thu_tu` sẽ ném — nhưng ném ở tận lúc `commit`, xa chỗ gây
+    ra, và sau khi tool đã chạy xong (tức đã có thể đã tiêu tiền).
+
+    ⭐ `b.step_id` là thứ nối hai lần ghi ấy. Nó được điền ở lần đầu, nên bộ thi
+       hành đọc được id trước khi nó quyết định hỏi duyệt hay chạy thẳng.
+    """
+    if b.step_id:
+        st = db.get(ChatlttStep, b.step_id)
+        if st is not None:
+            st.ket_qua = _ket_qua_json(b.ket_qua)
+            st.trang_thai = _trang_thai(b)
+            if execution_id:
+                st.execution_id = execution_id
+            db.flush()
+            return st
+
     st = ChatlttStep(
         run_id=run.id, user_id=run.user_id, thu_tu=int(b.thu_tu), loai=b.loai,
         execution_id=execution_id, tool_name=b.ten or "",
@@ -59,11 +78,24 @@ def ghi_buoc(db, run: ChatlttRun, b: DP.Buoc,
         # Chuỗi TRƯỚC khi gộp — không dựng lại được từ `doi_so` (test_800).
         doi_so_tho=(b.doi_so_tho or "")[:20000],
         ket_qua=_ket_qua_json(b.ket_qua),
-        trang_thai=("ok" if (b.ket_qua is None or b.ket_qua.ok) else "loi"),
-        bam_trung=b.bam or "")
+        trang_thai=_trang_thai(b),
+        bam_trung=b.bam or "", tool_call_id=b.goi_id or "")
     db.add(st)
     db.flush()
+    b.step_id = st.id          # để lần ghi thứ hai CẬP NHẬT chứ không chèn mới
     return st
+
+
+def _trang_thai(b: DP.Buoc) -> str:
+    """Bốn trạng thái, không phải hai.
+
+    ⛔ `cho_duyet` **không phải** `ok`. Gộp chúng làm một thì một truy vấn
+       "bước nào đang treo" không viết được, và đó chính là truy vấn cần khi đi
+       tìm những run kẹt ở `AWAITING_APPROVAL`.
+    """
+    if b.ket_qua is None:
+        return "cho_duyet" if b.cho_duyet else "dang_chay"
+    return "ok" if b.ket_qua.ok else "loi"
 
 
 def dong_run(db, run: ChatlttRun, r: DP.Run) -> ChatlttRun:

@@ -8,7 +8,7 @@ dieu_phoi.py — máy trạng thái của MỘT run: vòng model → tool → v�
 `chay()` nhận hai hàm từ ngoài:
 
     goi_model(messages, tools) -> Iterator[su kien canonical]
-    chay_tool(ten, doi_so)     -> thi_hanh.KetQua
+    chay_tool(ten, doi_so, ctx) -> thi_hanh.KetQua | CanDuyet
 
 ⭐ Không phải để "dễ test" — mà vì nó là **ranh giới đúng**. `luot.py` biết
 `mo_luong` và phiên CSDL; tệp này biết **luật của một lượt**. Trộn hai thứ lại
@@ -105,6 +105,31 @@ class CanDuyet:
 
 
 @dataclass
+class NgoCanhGoi:
+    """Tham số thứ ba của `chay_tool`: **lời gọi này là lời gọi nào**.
+
+    ## Vì sao bộ thi hành cần biết, chứ không chỉ cần `(tên, đối số)`
+
+    Hai việc bắt buộc phải có nó, và cả hai đều là chuyện tiền:
+
+    - **Phiếu duyệt** gắn vào một bước cụ thể (`UNIQUE(step_id)`). Không có
+      danh tính bước thì hai lần gọi cùng một tool trong một run không phân
+      biệt được, và phiếu thứ hai đụng ràng buộc của phiếu thứ nhất.
+    - **`chatltt_execution.step_id`** nối một bút toán với bước sinh ra nó.
+
+    ⛔ Đừng thay nó bằng một bộ đếm riêng bên gọi tự giữ. Hai bộ đếm cho cùng
+       một thứ là hai bộ đếm sẽ lệch — và chúng lệch đúng lúc có nhánh lạ xảy
+       ra, tức đúng lúc khó lần nhất.
+    """
+
+    thu_tu: int
+    goi_id: str = ""
+    bam: str = ""
+    #: Id hàng `chatltt_step` đã ghi. Rỗng khi không ai lưu (test thuần).
+    step_id: str = ""
+
+
+@dataclass
 class Buoc:
     """Một bước đã chạy — ánh xạ 1-1 sang `chatltt_step`."""
 
@@ -119,6 +144,8 @@ class Buoc:
     cho_duyet: str = ""
     #: `tool_call_id` model đã dùng — cần để dựng lại `role="tool"` khi chạy tiếp.
     goi_id: str = ""
+    #: Id hàng `chatltt_step` — `luu_run.ghi_buoc` điền vào lần ghi đầu.
+    step_id: str = ""
 
 
 @dataclass
@@ -174,7 +201,7 @@ def _tin_nhan_assistant(loi_goi: list) -> dict:
 
 def chay(*, messages: list, tools: list,
          goi_model: Callable[[list, list], Iterable[dict]],
-         chay_tool: Callable[[str, dict], thi_hanh.KetQua],
+         chay_tool: Callable[[str, dict, "NgoCanhGoi"], thi_hanh.KetQua],
          tran_vong: int = TRAN_VONG_MODEL,
          tran_tool: int = TRAN_LOI_GOI_TOOL,
          phat: Optional[Callable[[dict], None]] = None,
@@ -273,13 +300,16 @@ def _vong(run: Run, *, goi_model, chay_tool, tran_vong, tran_tool,
         cham_tran_trung = False
         for lg in loi_goi:
             run.so_loi_goi_tool += 1
+            goi_id = lg.id or f"call_{lg.index}"
+            bam = ""
+            som = None                  # kết quả biết trước khi chạy, nếu có
             try:
                 ds = lg.doi_so()
             except gop_manh.DoiSoHong as e:
                 # Đối số hỏng là DỮ LIỆU cho model sửa (`02_HOP_DONG.md` §1).
-                kq = thi_hanh.KetQua(False, ma_loi=thi_hanh.LOI_DOI_SO,
-                                     thong_diep=str(e))
                 ds = {}
+                som = thi_hanh.KetQua(False, ma_loi=thi_hanh.LOI_DOI_SO,
+                                      thong_diep=str(e))
             else:
                 bam = gop_manh.bam_trung(lg.ten, ds)
                 n = run._dem_bam.get(bam, 0) + 1
@@ -287,32 +317,42 @@ def _vong(run: Run, *, goi_model, chay_tool, tran_vong, tran_tool,
                 if n > TRAN_TRUNG:
                     # ⛔ Không chạy lần thứ ba. Nói cho model biết vì sao, để nó
                     #    đổi cách thay vì gọi mãi.
-                    kq = thi_hanh.KetQua(
+                    som = thi_hanh.KetQua(
                         False, ma_loi="trung",
                         thong_diep=(f"da goi {lg.ten!r} voi cung doi so {n-1} lan. "
                                     f"Hay doi cach tiep can hoac tra loi truc tiep."))
                     cham_tran_trung = True
-                else:
-                    _phat({"type": "tool.requested", "tool_name": lg.ten,
-                           "policy_class": chieu_tool.lop_chinh_sach(lg.ten)})
-                    kq = chay_tool(lg.ten, ds)
 
-            goi_id = lg.id or f"call_{lg.index}"
+            # ⭐ GHI BƯỚC TRƯỚC KHI CHẠY NÓ. Hai lý do, và lý do thứ hai mới là
+            #    lý do bắt buộc:
+            #
+            #    1. Một tiến trình chết GIỮA lúc tool chạy vẫn để lại dấu vết
+            #       "đã định chạy cái này". Ghi sau thì cái chết là im lặng.
+            #    2. Phiếu duyệt gắn vào `step_id` (`UNIQUE`), nên bộ thi hành phải
+            #       có id ấy **trước** khi nó quyết định hỏi hay chạy.
+            b = _them(Buoc(thu_tu=len(run.buoc) + 1, loai="tool", ten=lg.ten,
+                           doi_so=ds, doi_so_tho=lg.doi_so_tho, bam=bam,
+                           goi_id=goi_id, ket_qua=None))
+
+            if som is not None:
+                kq = som
+            else:
+                _phat({"type": "tool.requested", "tool_name": lg.ten,
+                       "policy_class": chieu_tool.lop_chinh_sach(lg.ten)})
+                kq = chay_tool(lg.ten, ds, NgoCanhGoi(
+                    thu_tu=b.thu_tu, goi_id=goi_id, bam=bam, step_id=b.step_id))
+
             if isinstance(kq, CanDuyet):
                 # ⭐ Bước được GHI ngay, với `ket_qua` còn `None`. Nếu chờ tới lúc
                 #    duyệt xong mới ghi thì một tiến trình chết trong lúc chờ sẽ
                 #    làm biến mất cả việc đang hỏi — và người dùng nhận một phiếu
                 #    duyệt trỏ tới một bước không tồn tại.
-                _them(Buoc(thu_tu=len(run.buoc) + 1, loai="tool", ten=lg.ten,
-                           doi_so=ds, doi_so_tho=lg.doi_so_tho, ket_qua=None,
-                           bam=gop_manh.bam_trung(lg.ten, ds),
-                           cho_duyet=kq.approval_id, goi_id=goi_id))
+                b.cho_duyet = kq.approval_id
+                _ghi(b)
                 continue
 
-            _them(Buoc(thu_tu=len(run.buoc) + 1, loai="tool",
-                       ten=lg.ten, doi_so=ds,
-                       doi_so_tho=lg.doi_so_tho, ket_qua=kq,
-                       bam=gop_manh.bam_trung(lg.ten, ds), goi_id=goi_id))
+            b.ket_qua = kq
+            _ghi(b)
             _phat({"type": "tool.result" if kq.ok else "tool.failed",
                    "tool_name": lg.ten, "tom_tat": kq.tom_tat()})
             run.lich_su = run.lich_su + [_tin_nhan_tool(lg, kq)]
@@ -406,7 +446,7 @@ def tiep_tuc(run: Run, *, ket_qua_duyet: dict, goi_model, chay_tool,
                  phat=phat, ghi=ghi, nen_dung=nen_dung)
 
 
-__all__ = ["chay", "tiep_tuc", "CanDuyet", "Run", "Buoc", "ChuyenTrangThaiSai",
+__all__ = ["chay", "tiep_tuc", "CanDuyet", "NgoCanhGoi", "Run", "Buoc", "ChuyenTrangThaiSai",
            "CHUYEN_HOP_LE",
            "TRAN_VONG_MODEL", "TRAN_LOI_GOI_TOOL", "TRAN_TRUNG",
            "CREATED", "MODEL_RUNNING", "TOOL_REQUESTED", "AWAITING_APPROVAL",

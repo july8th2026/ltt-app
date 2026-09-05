@@ -58,7 +58,7 @@ def _model(*luot):
 
 
 def _ok(noi="42"):
-    return lambda ten, ds: T.KetQua(True, noi_dung=noi)
+    return lambda ten, ds, c: T.KetQua(True, noi_dung=noi)
 
 
 # ── Đường ra thường nhất: không tool ───────────────────────────────────────
@@ -129,7 +129,7 @@ def test_doi_so_cat_manh_duoc_gop_truoc_khi_chay():
     thay = []
     gm = _model(manh, _chu("xong"))
     D.chay(messages=[], tools=TOOLS, goi_model=gm,
-           chay_tool=lambda t, ds: (thay.append(ds), T.KetQua(True, "ok"))[1])
+           chay_tool=lambda t, ds, c: (thay.append(ds), T.KetQua(True, "ok"))[1])
     assert thay == [{"e": "8123*4471"}], "phai gop TRUOC khi chay tool"
 
 
@@ -144,7 +144,7 @@ def test_doi_so_hong_thanh_ket_qua_va_run_DI_TIEP():
 
 
 def test_tool_nem_thi_run_van_di_tiep():
-    def no(ten, ds):
+    def no(ten, ds, c):
         return T.KetQua(False, ma_loi=T.LOI_HANDLER, thong_diep="ValueError: x")
     gm = _model(_tool(_goi("calc", '{"e":"1"}')), _chu("toi noi lai"))
     run = D.chay(messages=[], tools=TOOLS, goi_model=gm, chay_tool=no)
@@ -242,6 +242,6 @@ def test_su_kien_tool_result_chi_mang_TOM_TAT():
     sk = []
     gm = _model(_tool(_goi("calc", '{"e":"1"}')), _chu("xong"))
     D.chay(messages=[], tools=TOOLS, goi_model=gm,
-           chay_tool=lambda t, ds: T.KetQua(True, "z" * 40_000), phat=sk.append)
+           chay_tool=lambda t, ds, c: T.KetQua(True, "z" * 40_000), phat=sk.append)
     r = [s for s in sk if s["type"] == "tool.result"][0]
     assert len(r["tom_tat"]) <= 161 and "noi_dung" not in r

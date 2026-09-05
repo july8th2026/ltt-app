@@ -107,7 +107,27 @@ def dang_ky(ten: str) -> Callable:
     return bao
 
 
+def _nap_noi_bo() -> None:
+    """Nạp `tool_noi_bo` để các handler tự đăng ký. Rẻ, và `import` tự nhớ.
+
+    🔴 Không có hàm này thì sổ handler phụ thuộc **thứ tự import**: các
+    handler chỉ tồn tại nếu ai đó đã nhập `tool_noi_bo` trước đó — và duy nhất
+    `chieu()` làm việc đó. Mọi đường **không** đi qua `chieu()` (chạy tiếp một
+    run sau khi duyệt, một job nền, một lệnh CLI) sẽ thấy `LOI_CHUA_CAI` cho một
+    tool hoàn toàn bình thường.
+
+    ⭐ Đo thật: `test_812` đỏ ba phép kiểm vì chính chuyện này. Chạy riêng từng
+       tệp thì xanh hay đỏ tùy **tệp nào chạy trước** — đúng họ với
+       `bay-trang-thai-ngoai-ro-vao-test`.
+
+    ⛔ Nhập trong hàm, có chủ ý: `tool_noi_bo` nhập tệp này, nên nhập ở đầu
+       tệp là một vòng.
+    """
+    from apps.chatltt.services import tool_noi_bo  # noqa: F401
+
+
 def da_cai(ten: str) -> bool:
+    _nap_noi_bo()
     return str(ten) in _SO_HANDLER
 
 
@@ -124,6 +144,7 @@ def thi_hanh(db, *, user_id: str, ten: str, doi_so: dict,
     """
     ten = str(ten or "")
     lop = chieu_tool.lop_chinh_sach(ten)
+    _nap_noi_bo()
 
     # 1. Tên — cổng thứ tư. Rào này phải đứng cả khi model tệ đi.
     try:
@@ -186,5 +207,15 @@ def _kiem_schema(doi_so: dict, schema: Optional[dict]) -> str:
     return ""
 
 
-__all__ = ["KetQua", "thi_hanh", "dang_ky", "da_cai", "TRAN_KY_TU_KET_QUA",
+#: Tên công khai của `_kiem_schema`. `bo_chay_tool` phải kiểm đối số **trước**
+#: khi mở phiếu duyệt — hỏi người dùng có đồng ý chạy một lời gọi sai hợp đồng
+#: là bắt họ đọc một thứ chắc chắn sẽ hỏng.
+#:
+#: ⛔ Một **tên khác cho cùng một hàm**, không phải một bản chép. Hai bản kiểm
+#:    đối số là hai bản sẽ lệch, và chúng lệch ở chỗ tốn tiền.
+kiem_doi_so = _kiem_schema
+
+__all__ = ["KetQua", "thi_hanh", "dang_ky", "da_cai", "kiem_doi_so",
+           "_nap_noi_bo",
+           "TRAN_KY_TU_KET_QUA",
            "LOI_TEN_LA", "LOI_DOI_SO", "LOI_CAN_DUYET", "LOI_HANDLER", "LOI_CHUA_CAI"]

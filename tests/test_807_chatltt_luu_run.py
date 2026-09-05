@@ -269,7 +269,7 @@ def test_chay_voi_ghi_dat_MOI_BUOC_xuong_CSDL(db):
     run = DP.chay(
         messages=[{"role": "user", "content": "may do?"}], tools=[],
         goi_model=_model(_goi_tool("thoi_tiet", '{"tp":"ha noi"}'), _chu("30 do")),
-        chay_tool=lambda t, d: thi_hanh.KetQua(ok=True, noi_dung="30"),
+        chay_tool=lambda t, d, c: thi_hanh.KetQua(ok=True, noi_dung="30"),
         ghi=lambda b: LR.ghi_buoc(db, r, b))
     LR.dong_run(db, r, run)
 
@@ -288,7 +288,7 @@ def test_ghi_thay_DUNG_so_buoc_ma_run_giu(db):
     run = DP.chay(
         messages=[], tools=[],
         goi_model=_model(_goi_tool("a", "{}"), _goi_tool("b", "{}"), _chu("xong")),
-        chay_tool=lambda t, d: thi_hanh.KetQua(ok=True, noi_dung="1"),
+        chay_tool=lambda t, d, c: thi_hanh.KetQua(ok=True, noi_dung="1"),
         ghi=lambda b: LR.ghi_buoc(db, r, b))
     from apps.chatltt.tables import ChatlttStep
     assert db.query(ChatlttStep).count() == len(run.buoc) == 5
@@ -298,7 +298,7 @@ def test_KHONG_truyen_ghi_thi_may_trang_thai_van_chay(db):
     """⛔ `ghi` tuỳ chọn là điều kiện để `test_803` kiểm được máy trạng thái bằng
     số học thuần, không cần CSDL."""
     run = DP.chay(messages=[], tools=[], goi_model=_model(_chu("chao")),
-                  chay_tool=lambda t, d: thi_hanh.KetQua(ok=True))
+                  chay_tool=lambda t, d, c: thi_hanh.KetQua(ok=True))
     assert run.trang_thai == DP.COMPLETED
     from apps.chatltt.tables import ChatlttStep
     assert db.query(ChatlttStep).count() == 0

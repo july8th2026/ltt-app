@@ -205,3 +205,34 @@ def test_lop_khai_o_chieu_tool_khop_voi_tool_noi_bo():
 def test_tool_noi_bo_KHONG_thuoc_lop_can_duyet():
     for ten in TN.LOP:
         assert not C.can_duyet(ten)
+
+
+# ── 7. Sổ handler KHÔNG phụ thuộc thứ tự import ────────────────────────────
+
+def test_handler_co_mat_trong_MOT_TIEN_TRINH_MOI_chi_nhap_thi_hanh():
+    """🔴 Phép kiểm duy nhất tái hiện được lỗi này, và nó cần một **tiến trình
+    mới**.
+
+    Trong tiến trình pytest, một tệp chạy trước có thể đã nhập `tool_noi_bo`,
+    và khi ấy mọi phép kiểm ở đây xanh — kể cả khi `thi_hanh` hoàn toàn không tự
+    nạp. Đó là lý do `test_812` đỏ ba phép kiểm rồi xanh lại chỉ vì đổi thứ tự.
+
+    ⭐ Đo cái thật: khởi động Python sạch, nhập **đúng một** module, và hỏi.
+    """
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    ma = (
+        "from apps.chatltt.services import thi_hanh as T\n"
+        "assert T.da_cai('noi_bo.tinh'), 'da_cai khong tu nap'\n"
+        "kq = T.thi_hanh(None, user_id='u', ten='noi_bo.tinh',\n"
+        "                doi_so={'bieu_thuc': '6*7'})\n"
+        "assert kq.ok and kq.noi_dung['ket_qua'] == 42, kq.thong_diep\n"
+        "print('OK')\n"
+    )
+    goc = Path(__file__).resolve().parents[1]
+    r = subprocess.run([sys.executable, "-c", ma], cwd=str(goc),
+                       capture_output=True, text=True, timeout=120)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "OK" in r.stdout
