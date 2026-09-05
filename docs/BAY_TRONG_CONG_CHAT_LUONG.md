@@ -1071,21 +1071,52 @@ giữa.
 
 ### Hai nguồn sinh CRLF, và bản vá cho cái này không chữa cái kia
 
+⛔ **Bản đầu của mục này đổ tội cho công cụ `Write`, và ĐÓ LÀ MỘT CHẨN ĐOÁN
+CHƯA ĐO.** Tôi suy nó ra: `test_819.py` do `Write` tạo, tệp ấy CRLF ⇒ `Write`
+sinh CRLF. Phiên Mobile V1 chất vấn, và phép đo bác bỏ:
+
+```
+Write tao tep MOI          ->  b'dong mot\ndong hai\ndong ba\n'   CRLF 0
+Write GHI DE len tep CRLF  ->  b'moi mot\nmoi hai\n'              CRLF 0
+write_text len tep LF      ->  b'X\r\ny\r\n'                      <- thu pham THAT
+```
+
+`test_819.py` thành CRLF vì sau khi `Write` tạo nó, tôi sửa nó **hai lần bằng
+`pathlib.write_text`**. Thủ phạm chỉ có một, và nó là cái đã biết từ đầu.
+
 | Nguồn | Kết dòng sinh ra | Bản vá |
 |---|---|---|
 | `pathlib.write_text` (mặc định `newline=None`) | 🔴 **CRLF** | `write_bytes(s.encode())`, hoặc `newline="\n"` (Python ≥ 3.10) |
-| **Công cụ `Write` của harness** | 🔴 **CRLF** | **không có cờ** — phải đo lại bằng byte sau khi ghi |
-| **Công cụ `Edit` của harness** | ✅ **giữ nguyên** | — |
+| Công cụ `Write` của harness | ⚠️ **cưỡng chế LF** | xem cảnh báo dưới |
+| Công cụ `Edit` của harness | ✅ **giữ nguyên** | — |
 | `sed -i` trong Git Bash | ✅ LF | — |
 
-⭐ **Hai dòng cuối là lối thoát rẻ nhất, và đều đo được:** `bo_chay_tool.py` tối
-05/09 từng là CRLF (ghi bằng `write_text`) rồi **tự lành** khi tôi chạy một
-`sed -i` sửa lỗi chính tả. Và một lần `Edit` vào `CLAUDE.md` (299 dòng LF) giữ
-nguyên **0 CRLF**.
+⚠️ **`Write` cưỡng chế LF, và nó không hỏi ai.** Với ~90 % tệp trong kho thì đó
+là thứ ta muốn. Nhưng vài tệp **vốn là CRLF trong git** — `DEVELOPER_GUIDE.md`
+(công cụ sinh ra), `i18n_baseline.json` — và `Write` lên chúng là **lật ngược
+chúng, im lặng**. Nên câu đúng không phải *"`Write` không bảo vệ gì"* mà:
+**`Write` an toàn cho tệp LF và nguy hiểm cho đúng những tệp phải giữ CRLF.**
+
+⭐ **Hai dòng cuối bảng là lối thoát rẻ nhất, và đều đo được:**
+`bo_chay_tool.py` từng là CRLF (ghi bằng `write_text`) rồi **tự lành** khi tôi
+chạy một `sed -i` sửa lỗi chính tả. Và một `Edit` vào `CLAUDE.md` (299 dòng LF)
+để lại **0 CRLF**.
 
 ⇒ **Sửa tệp có sẵn thì dùng `Edit`, đừng đọc-sửa-ghi-đè cả tệp.** Nó tránh cùng
 lúc **ba** thứ: lật kết dòng · cắt trắng tệp khi phép mã hoá vỡ · và một diff
 toàn tệp. Chỉ dùng `Write`/`write_bytes` cho tệp **mới**, rồi đo lại bằng byte.
+
+### 🔑 Và cách cái sai này sống được là bài học riêng của nó
+
+Chẩn đoán sai (**`Write`**) nhưng lời khuyên kèm theo đúng (*"đo lại bằng
+byte"*), nên **không có gì đỏ để lộ nó ra**. Phiên Mobile V1 vừa bị đúng thế ở
+một mục khác: họ viết *"heredoc nuốt backslash"*, đo lại thì thủ phạm là đường
+truyền `command` của công cụ Bash — **chẩn đoán sai, lời khuyên vẫn đúng, nên nó
+sống ba tuần**.
+
+⇒ Một mục tài liệu nêu **nguyên nhân** thì phải kèm **phép đo tái hiện được**,
+đúng như mọi mục khác trong tệp này. Nếu chỉ có lời khuyên mà chưa có phép đo,
+ghi thẳng **"CHƯA ĐO ĐƯỢC"** — cùng luật với Bẫy 24.
 
 ⚠️ Ghi chú cũ khuyên *"dùng `Write` thay heredoc"* để tránh bẫy nuốt backslash.
 **Đúng cho bẫy đó, và không bảo vệ gì trước kết dòng.** Hai bẫy khác nhau; một
