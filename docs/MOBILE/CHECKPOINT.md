@@ -3,7 +3,7 @@
 Tệp này là **thứ duy nhất** prompt `09_RECOVERY_AFTER_COMPACTION.txt` cần đọc để
 nối lại việc. Cập nhật cuối mỗi phase, không cuối mỗi lệnh.
 
-Cập nhật lần cuối: **2026-09-05, sau Phase D + B6.**
+Cập nhật lần cuối: **2026-09-05, sau Phase E (khảo sát) + F.**
 
 ## Bối cảnh phiên
 
@@ -11,7 +11,7 @@ Cập nhật lần cuối: **2026-09-05, sau Phase D + B6.**
 |---|---|
 | cây | `D:\LTTSTUDIOSAPP\.claude\worktrees\mobile-v1` |
 | nhánh | `phien/mobile-v1`, đã merge `admin-mvp-v3` @ `b44da56a` |
-| commit gần nhất | `76bb448b` |
+| commit gần nhất | `8a1bc185` |
 | nguồn quy trình | `G:\My Drive\AI\A LTT AII\LTT_MOBILE_AUTONOMOUS_PROMPT_PACK_V1` |
 | kế hoạch | `docs/MOBILE/00_KE_HOACH.md` |
 | dải số test | **700–799** (đã dùng 700, 701, 702, 703, 704, 705) |
@@ -33,8 +33,8 @@ frontend của gate tự bỏ qua và in "KHÔNG PHẢI BẰNG CHỨNG".
 | **B** hợp đồng shared | ✅ PASS | `04_SHARED_CONTRACT.md` — 7/7 |
 | **C** shared media + P0 | ✅ **PASS** | `phat_media` · voice.js · `05_SONG_AM.md` · vỏ ChatLTT |
 | **D** media generator | 🟢 **~70%** | 5 bản chép Range đã gộp · `playsinline` · nhịp job |
-| E editor phức tạp | 🟡 ~30% | `06_EDITOR.md` — khảo sát xong, hai giả thuyết của tôi bị bác bỏ |
-| F bề mặt chuẩn | 🟡 ~40% | tràn ngang = 0 ở 6 khung nhìn; còn bảng/destructive/zoom 200% |
+| E editor phức tạp | 🟡 ~30% | `06_EDITOR.md` — khảo sát xong; hai giả thuyết của tôi bị bác bỏ |
+| F bề mặt chuẩn | 🟢 **~75%** | `07_BE_MAT_CHUAN.md` — bảng/menu/destructive/EN đều sạch; `inputmode` 11→4; zoom 200% **đo được nhưng chưa sửa được** |
 | G harness + ma trận | 🟡 ~25% | có bộ đo, chưa thành harness trong kho |
 | H cổng phát hành | ⬜ | |
 
@@ -99,13 +99,11 @@ thích coi `accept="image/*"` là `/*` rồi nuốt 31.605 ký tự.
 
 ## Việc tiếp theo (thứ tự)
 
-1. **Phase E** — Autosub timeline · Agent Canvas (React Flow) · OMMI storyboard.
-   WCAG 2.5.7: mọi kéo-thả chính phải có đường thay thế bằng chạm.
-   Kèm luôn: 4 vòng `setInterval` trong React (`autosub-studio`, `chatltt`) cần
-   một hook tương đương `LTT.nhipJob`; và vài **nút thật** < 44px trong app React
-   (`run-primary`, `blank-flow`, `primary`, `canvas-home`) — cùng bẫy `:where()`.
-2. **Phase F** — bảng → thẻ/cuộn theo nghĩa · thao tác phá huỷ · copy IP/token ·
-   zoom 200% · nhãn VI/EN dài.
+1. **Seed dữ liệu cho ba editor** — không có nó thì mọi phép đo tương tác của
+   Phase E rơi vào "không kết luận được" (xem `06_EDITOR.md` §2c). Làm giống
+   `mobile_qa.py chat-seed`.
+2. **Phase E còn lại** — nút `±0,1s` cho cue Autosub · 3 nút React < 44px ·
+   3 vòng `setInterval` trong React cần hook tương đương `LTT.nhipJob`.
 3. **Phase G** — biến bộ đo trong scratchpad thành harness trong kho, lái bằng
    registry, **gồm khung 320px** (nó đã bắt được 2 lỗi mà 390px bỏ lọt).
 4. **Phase H** — `gate.py` đầy đủ · build 4 frontend đúng thứ tự · cache-bust ·
