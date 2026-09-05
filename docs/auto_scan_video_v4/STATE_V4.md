@@ -23,7 +23,13 @@
     (`D:\LTTSTUDIOSAPP-asv`), and not the production tree — is satisfied. Recorded here
     rather than silently diverging.
   - ⛔ **This machine IS production** (`C:\LTTPlatform` exists). Never deploy from here.
-- **current_phase**: 29
+- **current_phase**: 28 was the pack's last phase. 🔴 **"Phase 29" in this
+  file is MY OWN label, not a pack phase** — `prompts/` ends at
+  `28_independent_re-audit_and_rc_freeze.md`, and anyone looking for
+  `prompts/29_*.md` will not find it. The work labelled 29 is: remove every
+  substitution and run for real, then pay down what that exposed.
+  ⚠️ Recorded because a handoff SSOT that invents a phase number sends the
+  next reader looking for a document that does not exist.
 - **phase_status**: Phase 29 `PASS`. 🔑 **G9 is now PASS**, and it fell to exactly
   the sentence Phase 28 used to block it: *"No live `ltt_llm_vision` call has ever
   been made."* One has now been made — many, on machine B, in a run with **no
@@ -61,6 +67,22 @@
   runs predated `9ff469e`, which changes `cache_dung_duoc`, code that executes in
   every stage of every E2E run. Evidence recorded before that commit does not
   describe this RC.
+- **repair loop is LIVE as of 2026-09-05**: a run whose dubbing has a segment
+  that cannot be fitted no longer ships. It repairs the smallest safe scope —
+  the offending segment only, at the earliest stage that can actually fix it —
+  and on the second failure ends in a **bounded terminal failure** naming the
+  segment. 🔑 The cycle cap lives in the DB, not in a variable: each round writes
+  one ledger row with `ma_dispatch=f"sua:{vong}"`, so `UNIQUE(run_id,
+  ma_dispatch)` both counts the rounds and blocks a double count — a variable
+  dies with the worker, and a counter column can be incremented by two
+  concurrent advances.
+  ⚠️ `AsvStage.attempt` was the obvious counter and is **wrong** for this: it
+  counts transient retries *and* repair rounds in one number.
+- **G14 is still PARTIAL, but for a smaller reason.** Phase 26 marked it
+  *"repair plan computed but never driven"*. It is driven now, for the defect
+  source that exists today (`khong_vua`). What remains is that three of the five
+  defect *sources* (`doc_sai`, `dich_sai`, `cat_sai`) have no producer wired,
+  because those need the AI-QC stage.
 - **known red on this branch, NOT a defect**: `test_177_system_profile.py` (2 tests) fails here because `ho_so_he_thong.txt` is a whole-tree snapshot that goes stale the moment anyone edits anything — and this phase edited a lot. 🔑 It is **already deleted on `admin-mvp-v3`**, the branch this work merges into (verified: `git ls-tree admin-mvp-v3 -- ho_so_he_thong.txt` is empty), so it resolves by merging, not by fixing. ⛔ Do **not** regenerate the snapshot to make the gate green: `build_system_profile.py` is a heavy command and the artifact it produces is on its way out. This is branch lag, and naming it here is cheaper than someone rediscovering it under time pressure.
 - **last_green_invariant_command**: declared in `tests/bo_bat_bien_v4.py`, two rounds —
   `VONG_NHANH` (9 files, **~12.5 s**, run after every edit) and
@@ -258,8 +280,25 @@
     of the habit Phase 26 counted five times, and it was found by the check that
     audit asked Phase 27 to build (`tests/test_453`). G14 was marked PARTIAL for
     *"repair plan computed but never driven"* — that was half of it.
-    ⛔ Wiring them is feature expansion, which Phase 27 forbids. Held by the
-    ratchet with a written reason. **Owner: Phase 28 to schedule.**
+    🔴 **HALF CLOSED 2026-09-05, and Phase 27's classification of it was
+    wrong.** Phase 27 called wiring these "feature expansion" and deferred.
+    But Phase 19's exit gate in the pack asks, in words: *"repairs rerun the
+    smallest safe scope until pass or bounded terminal failure"* — and Phase
+    19's own report records the execution half as **debt**, not as out of
+    scope. So this was **repayment**, not expansion; that distinction is what
+    decided whether it got done or deferred a fifth time.
+    ⭐ And the defect it was hiding is real, not hypothetical: `nan_cho_vua`
+    marks a segment `CAN_SUA` when it will not fit its slot **even after the
+    whole stretch ladder**, `giai_doan_giong` writes that verdict into the
+    ledger, and the only reader was the orphan. The product **knew** a segment
+    did not fit, recorded it, and shipped.
+    ✅ Wired in `jobs._sua_chua_neu_can` (+ `su_dung.mo_lai_don_vi`), closing
+    `sua_chua.gon_theo_don_vi`, `assets.vo_hieu_theo_day_chuyen` and
+    `ITEM_INVALIDATED`. `tests/test_454`, 7 tests, two mutations red.
+    ⛔ **Still open: the AI-QC half** (`qc_ai.py` — the `doc_sai`/`dich_sai`/
+    `cat_sai` defect sources). That one genuinely *is* an expansion: it needs a
+    new pipeline stage and a new per-run charge, i.e. **a pricing decision**,
+    where the repair loop only reused machinery that already existed.
   * **A27-02 (P3)** — `tests/fixtures/asv_e2e.vung_co_tieng` estimated the noise
     floor with the **median**, on a premise stated in its own docstring: *"a dub
     speaks about a third of the duration, so the median falls on the bed."* That
