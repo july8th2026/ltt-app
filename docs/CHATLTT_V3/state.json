@@ -284,19 +284,21 @@
   },
   "cap_nhat_luc": "2026-09-05",
   "cong_chat_luong": {
-    "gate_day_du": "CHO — lan cuoi PASS luc 20260904T140608Z, sau do da them 6 tep",
-    "ho_so": "test-results/gates/20260904T140608Z-10420.json",
+    "gate_day_du": "PASS",
+    "ho_so": "test-results/gates/20260905T052942Z-17052.json",
+    "ngay": "2026-09-05",
     "buoc_bo_qua": [
+      "bat bien da tien trinh (thieu LTT_TEST_DATABASE_URL Postgres)",
       "frontend agent-canvas",
       "frontend autosub-studio",
       "frontend prompt-ai-ommi"
     ],
-    "nguyen_nhan": "node_modules bi gitignore, cay moi khong co",
-    "canh_bao": "DA SUA o cay nay: 87 vitest cua chatltt chay. Cay CHINH van thieu frontend/chatltt/node_modules.",
-    "phai_sua_truoc": "P03",
+    "frontend_chatltt": "PASS 7,6s — 87 vitest CHAY THAT, ke ca 9 phep kiem A5",
+    "ghi_chu": "Truoc phien nay `frontend chatltt` bi BO QUA o MOI cay, tuc 87 phep kiem giao dien chua bao gio chay o dau. Da cai node_modules o cay nay.",
     "con_phai_lam": [
       "npm ci frontend/chatltt o cay chinh",
-      "them frontend/*/node_modules vao luat 1b QUY_TRINH_WORKTREE.md"
+      "them frontend/*/node_modules vao luat 1b QUY_TRINH_WORKTREE.md",
+      "dat LTT_TEST_DATABASE_URL de buoc `bat bien da tien trinh` chay"
     ]
   },
   "template_may_b": {
@@ -575,7 +577,8 @@
   },
   "bay_da_dinh": [
     "ghi tep bang python p.write_text tren Windows sinh CRLF -> gate 'kieu xuong dong' DO. Dinh 2 lan trong mot phien. Cach chan: sau moi lan ghi bang python, chuan hoa LF.",
-    "p.write_text() voi mot chuoi mang lone surrogate (do escape \\ud83d trong nguon Python) NEM giua chung — nhung tep da bi TRUNCATE ve 0 byte truoc khi nem. Vitest bao 'No test suite found', khong bao 'tep rong'. Cach chan: viet tep co emoji bang Write, dung ghep escape trong chuoi Python."
+    "p.write_text() voi mot chuoi mang lone surrogate (do escape \\ud83d trong nguon Python) NEM giua chung — nhung tep da bi TRUNCATE ve 0 byte truoc khi nem. Vitest bao 'No test suite found', khong bao 'tep rong'. Cach chan: viet tep co emoji bang Write, dung ghep escape trong chuoi Python.",
+    "Them mot muc `N_()` moi (vd mot hang `Store` trong governance.py) lam `test_306` DO: chuoi chua co ban dich EN. Phai THEM TAY vao locale/en/.../messages.po (msgid+msgstr) roi `i18n.py bien-dich`. DUNG chay `i18n.py trich` — msgmerge se DOAN ban dich, va mot ban dich doan la ban dich sai ma khong ai kiem."
   ],
   "p04": {
     "trang_thai": "XONG (tru R2b — cho thanh_toan.py)",
