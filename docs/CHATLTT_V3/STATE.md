@@ -15,7 +15,7 @@
 | **BASE_SHA** | `72a484c5f281f4d909e72927648df7dd62e5e196` (`admin-mvp-v3` = `origin/admin-mvp-v3`, 0/0) |
 | FINAL_SHA | *(chưa)* |
 | Dải test | **800–899** |
-| Pha hiện tại | P00–P04 ✅ (P04 trừ **R2b**) · **P05 85 %** → Làn A còn ~1 ngày công |
+| Pha hiện tại | P00–P03 ✅ · **P05 ✅** · P04 trừ **R2b** → Làn A còn **nửa ngày công, và nó là một QUYẾT ĐỊNH chứ không phải mã** |
 | Deploy | ⛔ chương trình này **chưa deploy**. Làn A phát hành sau cờ `LTT_CHATLTT_V3_TOOLS` |
 
 🔑 **Cờ `LTT_CHATLTT_V3_TOOLS` và `LTT_CHATLTT_V3_PAID_TOOLS` đều đang TẮT, và
@@ -108,20 +108,34 @@ mới của mọi app đều phải khai ở đó, `test_211` cưỡng chế.
 | **A** | P02 ADR điều phối | 1,0 | **1,0** ✅ | — |
 | **A** | P03 kernel điều phối | 5,0 | **5,0** ✅ | — |
 | **A** | P04 duyệt bền + tiền | 4,5 | **4,0** (trừ R2b) | 0,5 |
-| **A** | P05 ảnh/tiếng thành tool | 3,5 | **3,0** (85 %) | 0,5 |
-| | **Làn A** | **17,0** | **15,9** | **1,1** |
+| **A** | P05 ảnh/tiếng thành tool | 3,5 | **3,5** ✅ | — |
+| | **Làn A** | **17,0** | **16,4** | **0,5** (chỉ còn R2b — chờ chủ dự án) |
 | **B** | P06 · P07 · P08 | 20,0 | 0 | 20,0 |
 | **C** | P09 · P10 · P11 · P12 | 14,0 | 0 | 14,0 |
-| | **TOÀN CHƯƠNG TRÌNH** | **51,0** | **15,9** | **35,1** |
+| | **TOÀN CHƯƠNG TRÌNH** | **51,0** | **16,4** | **34,6** |
 
 ### Con số
 
 | | |
 |---|---|
-| **Toàn chương trình (P00→P12)** | **≈ 31 %** |
-| **Làn A** (phần phát hành được một mình) | **≈ 94 %** |
+| **Toàn chương trình (P00→P12)** | **≈ 32 %** |
+| **Làn A** (phần phát hành được một mình) | **≈ 97 %** — phần còn lại **không phải việc viết mã**: R2b cần chủ dự án chốt |
 | Mã sản phẩm đã sửa | 16 tệp · 19 tệp test · 1 migration |
 | Phép kiểm mới | **383** (backend 800–819: **374** đếm bằng `--collect-only` · frontend A5: 9) |
+
+### P05 đóng bằng cái gì
+
+Phần 0,5 ngày còn thiếu của P05 là **phép kiểm đầu-cuối cho đường job** — và nó
+không phải thủ tục: `test_819` moi ra hai lỗi, một cái làm **vỡ hẳn** lượt
+(`RuntimeError: tool 'image.ltt' has no sync executor`). Chi tiết ở §"Bảy phát
+hiện" và `05_E2_ANH_TIENG_THANH_TOOL.md` §5.
+
+⛔ Hai thứ của P05 **cố ý** không tính là xong, và cả hai đã ghi rõ chứ không im:
+
+| Hạng mục | Vì sao chưa |
+|---|---|
+| Đường **ĐẨY** khi job xong | Cần một móc trong `job_runner` — `platform_core`, **ngoài ranh giới app**. Đường KÉO hiện tại không mất dữ liệu; `test_819` ghim giới hạn ấy bằng một phép kiểm |
+| Kiểm trên **URL công khai** | Cần deploy — một trong ba ranh giới phải có người |
 
 ## Pha đã đóng
 

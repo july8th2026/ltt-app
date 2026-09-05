@@ -11,7 +11,7 @@
     800,
     899
   ],
-  "pha_hien_tai": "P03",
+  "pha_hien_tai": "P05",
   "co_tinh_nang": {
     "LTT_CHATLTT_V3_TOOLS": "mac dinh TAT",
     "LTT_CHATLTT_V3_PAID_TOOLS": "mac dinh TAT, DOC LAP voi co tren"
@@ -77,11 +77,11 @@
     {
       "id": "P03",
       "ten": "kernel dieu phoi (tool gia)",
-      "trang_thai": "DANG LAM",
+      "trang_thai": "PASS",
       "chan": [
         "P02"
       ],
-      "phan_tram": 95
+      "phan_tram": 100
     },
     {
       "id": "P04",
@@ -95,11 +95,11 @@
     {
       "id": "P05",
       "ten": "anh + tieng thanh tool",
-      "trang_thai": "DANG LAM",
+      "trang_thai": "XONG (tru duong DAY — ngoai ranh gioi app)",
       "chan": [
         "P04"
       ],
-      "phan_tram": 90
+      "phan_tram": 100
     },
     {
       "id": "P06",
@@ -282,7 +282,7 @@
     "phien_ban_gia": "ltt-vlm-2026-08-22",
     "lam_tron": "len credit nguyen moi luot goi, toi thieu 1"
   },
-  "cap_nhat_luc": "2026-09-05",
+  "cap_nhat_luc": "2026-09-06",
   "cong_chat_luong": {
     "gate_day_du": "PASS",
     "ho_so": "test-results/gates/20260905T162820Z-20472.json",
@@ -350,8 +350,8 @@
     "don_vi": "ngay cong (8h)",
     "lan_A": {
       "uoc": 17.0,
-      "xong": 16.1,
-      "phan_tram": 95
+      "xong": 16.4,
+      "phan_tram": 96
     },
     "lan_B": {
       "uoc": 20.0,
@@ -365,11 +365,12 @@
     },
     "toan_chuong_trinh": {
       "uoc": 51.0,
-      "xong": 16.1,
+      "xong": 16.4,
       "phan_tram": 32
     },
-    "ma_san_pham_da_sua": "9 tep: 6 moi trong apps/chatltt/services + frontend ThongDiepView.tsx + governance.py + luot.py",
-    "ghi_chu": "dem theo NGAY CONG, khong theo so pha — P00 nua ngay, P03 nam ngay"
+    "ma_san_pham_da_sua": "16 tep san pham, 19 tep test, 1 migration",
+    "ghi_chu": "dem theo NGAY CONG, khong theo so pha — P00 nua ngay, P03 nam ngay",
+    "con_lai_lan_A": "0,5 ngay, va no la mot QUYET DINH chu khong phai ma: R2b cho chu du an chot"
   },
   "lo_chinh": {
     "trang_thai": "PASS",
@@ -553,9 +554,7 @@
       "3 bang khai hang giu du lieu trong governance.py (deu CONTENT)",
       "npm ci frontend/chatltt: 87 vitest gio CHAY o cay nay"
     ],
-    "con_lai": [
-      "MOT luot gate day du de chot (cho dieu phoi bao HANG DOI TRONG)"
-    ],
+    "con_lai": [],
     "dong_ma_san_pham_dau_tien": "apps/chatltt/services/gop_manh.py",
     "cong_thu_tu": "CHO_MODEL_GOI — hep hon chinh_sach.CONG_CU_CHO_PHEP. Nguoi dung BAM NUT tao anh la mot chuyen; model TU QUYET tieu 3-12 credit cua ho la chuyen khac.",
     "dot_bien_da_thu": [
@@ -563,11 +562,12 @@
       "bo message assistant mang tool_calls   => test DO",
       "go nhan `tran_vong` khoi NHAN_TRANG_THAI => KhoiLa.test.tsx DO (xac nhan phep kiem A5 khong phai trang tri)"
     ],
-    "phan_tram": 95,
+    "phan_tram": 100,
     "phat_hien": {
       "ma_tho_roi_ra_man_hinh": "`NHAN_TRANG_THAI[ma] ?? ma` khien mot ma thieu nhan hien NGUYEN cho nguoi dung. Bon ly do ket V3 deu thieu nhan. Khong nem, khong do, nen khong co canh bao nao — chi lam san pham trong nhu chua lam xong.",
       "run_khong_the_la_OPERATIONAL": "chatltt_run khong chua chu cua ai nen OPERATIONAL nghe hop ly, va sai: OPERATIONAL tu gia di theo han rieng => run bi don trong khi hoi thoai van con => nguoi dung mo lai mot luot cu va thay cac buoc bien mat."
-    }
+    },
+    "ghi_chu_dong": "Dong bang gate day du PASS 2026-09-05 (test-results/gates/20260905T162820Z-20472.json)"
   },
   "migration": {
     "revision": "4b8e21c6d907",
@@ -631,8 +631,8 @@
     }
   },
   "p05": {
-    "trang_thai": "DANG LAM",
-    "phan_tram": 90,
+    "trang_thai": "XONG (tru duong DAY — ngoai ranh gioi app)",
+    "phan_tram": 100,
     "E2": {
       "cau": "image.edit co backend that khong",
       "tra_loi": "KHONG",
@@ -658,11 +658,15 @@
       "_danh_thuc_run(): job xong -> chay_tiep_nen",
       "CHO_MODEL_GOI mo image.ltt + speech.ltt (buoc cuoi)",
       "LOAI_KHOI khai `tool_call` o CA HAI phia (tables.py + kieu.ts) + test_807 muc 8",
-      "Kiem TRINH DUYET THAT: bon nhan trang thai V3 dung, 0 loi console, bundle main-Db3wVmJH.js dung ma bam"
+      "Kiem TRINH DUYET THAT: bon nhan trang thai V3 dung, 0 loi console, bundle main-Db3wVmJH.js dung ma bam",
+      "test_819 (22) — MOI NOI duong job chay tron: model goi image.ltt -> phieu duyet -> NOP JOB THAT (J.nop_job, giu tien that) -> WAITING_BACKGROUND -> job xong -> dong_bo -> _danh_thuc_run -> vong model sau -> COMPLETED",
+      "SUA: tiep_sau_duyet lay execution DAU CUA RUN (_execution_dau) thay vi tra_loi.execution_id — truong do bi tao_media.tao ghi de sang hang cua job",
+      "SUA: ket_qua_job doc CONG RA DA KHAI (tao_media.khoi_artifact) thay vi doan ten khoa files/outputs/keys",
+      "Ghim GIOI HAN KEO bang mot phep kiem — ngay ai do lam duong DAY thi no do"
     ],
     "con_lai": [
-      "test dau-cuoi qua luot.chay cho duong job (can hang doi job that)",
-      "duong DAY that: moc trong job_runner (platform_core — ngoai ranh gioi app)"
+      "duong DAY that: moc trong job_runner (platform_core — ngoai ranh gioi app)",
+      "kiem tren URL cong khai (can deploy — mot trong ba ranh gioi phai co nguoi)"
     ],
     "ghi_chu": "Hinh dang da co san va giong het cong duyet: WAITING_BACKGROUND da nam trong CHUYEN_HOP_LE tu P03, chatltt_step.job_id da co trong migration, va luu_run.dung_lai da dung lai duoc mot run tu CSDL.",
     "gioi_han_da_biet": {
@@ -673,7 +677,10 @@
     ],
     "phat_hien": {
       "tool_call_khong_nam_trong_LOAI_KHOI": "hoi_thoai.kiem_khoi() TU CHOI khoi tool_call. V3 van ghi duoc vi luot_v3._them_khoi gan thang tra_loi.blocks, VONG QUA kiem_khoi. Nen loi khong no o duong V3 — no nam cho o hoi_thoai.cap_nhat_khoi(), tuc luong SUA/TAO LAI se tu choi dung tin nhan ma V3 vua tao. Khong phep kiem nao trong 250 cai bat duoc vi TAT CA deu di duong V3 — duong duy nhat khong kiem. Chi mot lan chay THAT moi loi ra.",
-      "moi_noi_khong_ai_kiem": "Do 05/09: tiep_sau_duyet / chay_tiep_nen / _danh_thuc_run co 0 tep test nhac toi, trong khi moi manh chung khau lai deu xanh rieng le. Cung hinh dang voi loi LOAI_KHOI: manh duoc kiem ky, MOI NOI thi khong — va moi noi la cho duy nhat biet ca hai ben."
+      "moi_noi_khong_ai_kiem": "Do 05/09: tiep_sau_duyet / chay_tiep_nen / _danh_thuc_run co 0 tep test nhac toi, trong khi moi manh chung khau lai deu xanh rieng le. Cung hinh dang voi loi LOAI_KHOI: manh duoc kiem ky, MOI NOI thi khong — va moi noi la cho duy nhat biet ca hai ben.",
+      "vong_model_sau_job_mo_bang_image_ltt": "su_kien.mo_execution() GHI DE message.execution_id moi lan mo hang moi, va tao_media.tao cung goi no voi tool_name='image.ltt', mode='job'. tiep_sau_duyet lai doc dung truong ay, con luot.dong_su_kien truyen ex.tool_name THANG vao L.mo_luong(). Hau qua khong phai nhan sai — luot VO: RuntimeError: tool 'image.ltt' has no sync executor. Tuc hoi co may ve anh mot cau hoi chu. Sua bang _execution_dau — nguon ma chay_tiep_nen DA dung cho dung cau hoi nay.",
+      "model_chua_bao_gio_biet_id_buc_anh": "ket_qua_job DOAN ten cong ra: kq.get('files') or kq.get('outputs') or kq.get('keys'). KHONG ten nao trong ba cai do ton tai — image.ltt khai image_keys, speech.ltt khai audio_key. Nen model LUON doc {'tao_xong': true, 'tep': []}: mot cau TU MAU THUAN, va la ly do no khong tham chieu duoc anh cu o luot sau — dung thu P05 doi. Sua bang cach dung chung khoi_artifact() voi thu NGUOI DUNG nhin thay: hai nguon cho cung mot cau hoi la hai nguon se lech.",
+      "vi_sao_250_phep_kiem_cu_khong_thay": "test_815/test_816 THAY tao_media.tao bang mot ham gia — quyet dinh DUNG cho pham vi cua chung. He qua: hang chatltt_execution cua job chua tung ton tai trong mot phep kiem nao, va no chinh la thu ghi de con tro."
     }
   },
   "r2b": {
