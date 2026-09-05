@@ -49,15 +49,39 @@
   ⭐ Recorded rather than quietly re-freezing, because the freeze was a **claim
   about the artifact** and the claim stopped being true.
 - **rc_sha (docs head)**: `88c50f59` — evidence rename + this entry.
-- **first fully-real acceptance run** (2026-09-05): `thay_the: []` — **no door
-  substituted at all**. Real `qwen38-vision` on machine B, real `LTTStudioVoice`
-  on machine A `:8120`, scratch PostgreSQL. **20 passed in 15:44.**
+- ✅ **FIRST FULLY-REAL ACCEPTANCE RUN *WITH THE REPAIR LOOP LIVE*** (2026-09-06
+  00:02, `d2d66ad0`): `thay_the: []` - no door substituted at all. Real
+  `qwen38-vision` on machine B, real `LTTStudioVoice` on machine A `:8120`,
+  scratch PostgreSQL. **20 passed, 1 skipped, 21:25.**
 
-      giu hinh         run=done  so_cat=0  master -3.42 -> ban ra -3.27  T5 dat  QC True
-      cat thong minh   run=done  so_cat=1  master -3.48 -> ban ra -3.28  T5 dat  QC True
+      preserve   done  6 seg | fit 3 | stretched 1 | needs-fix 2 | reads 9  | REUSED 2
+      smart      done  6 seg | fit 4 | stretched 0 | needs-fix 2 | reads 10 | REUSED 2
+      preserve   1 scene              | out 32.17 s | QC pass | -14.53 LUFS, peak -2.01
+      smart      4 scenes, 4 read, CUT 1 | out 27.29 s | QC pass | -14.49 LUFS, peak -2.20
 
-  🔑 `so_cat=1` on the smart preset is the load-bearing number: the cutting preset
-  actually cut, which is what A26-05 said it never did.
+  🔑 **The load-bearing number is not "green" - it is `REUSED 2`.** Two segments
+  were reused rather than re-synthesised, which is the *smallest safe scope*
+  actually holding on the real path. In **every** earlier run that number was
+  **0**, so those green runs proved the repair loop was never triggered.
+  ⭐ And `stretched 1` is the first non-zero ever recorded: the middle rung of
+  the fitting ladder (`CO_GIAN`) was finally reached. Every prior measurement
+  jumped straight `VUA` -> `CAN_SUA`, which is the exact symptom the comment on
+  `DUNG_SAI_DAI` describes as a bug that *had already been fixed*. Recorded, not
+  concluded - it may be rare rather than broken.
+  🔑 Two segments remained `CAN_SUA` after the repair round and the run **still
+  delivered**. Under my first design (out of rounds -> `RUN_ERROR`) this run
+  would be **red** - which is what the measured data had already said.
+- **the three acceptance runs, in order** - the sequence is the evidence:
+
+      03:00  green, but BEFORE the repair loop was wired; reused 0
+      13:44  RED - machine B returned 429 to every call while a full gate ran
+      00:02  green, repair loop LIVE, reused 2
+
+- **gate at RC**: `RESULT: PASS` at `d2d66ad0` (2026-09-06), **4** steps BOQUA -
+  all frontend. ⭐ One fewer than the previous PASS: `bat bien da tien trinh`
+  actually **ran** this time, so this verdict covers one more invariant than the
+  last one did. ⚠️ Why it ran is **not measured** - this session runs elevated
+  and may carry `LTT_TEST_DATABASE_URL`; that is a hypothesis, not a measurement.
 - **gate at RC**: `python tools/gate.py --phien asv-v4` → **`RESULT: PASS`**, run
   at `747ca28`, `50e8083`, and now **`998018d3`** (2026-09-05, evidence
   `test-results/gates/20260905T060709Z-19316.json`).
