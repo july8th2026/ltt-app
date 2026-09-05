@@ -68,16 +68,44 @@
   every stage of every E2E run. Evidence recorded before that commit does not
   describe this RC.
 - **repair loop is LIVE as of 2026-09-05**: a run whose dubbing has a segment
-  that cannot be fitted no longer ships. It repairs the smallest safe scope —
-  the offending segment only, at the earliest stage that can actually fix it —
-  and on the second failure ends in a **bounded terminal failure** naming the
-  segment. 🔑 The cycle cap lives in the DB, not in a variable: each round writes
-  one ledger row with `ma_dispatch=f"sua:{vong}"`, so `UNIQUE(run_id,
-  ma_dispatch)` both counts the rounds and blocks a double count — a variable
-  dies with the worker, and a counter column can be incremented by two
-  concurrent advances.
+  that will not fit now repairs the smallest safe scope — that segment only, at
+  the earliest stage that can actually fix it — before delivery.
+  🔑 The cycle cap lives in the DB, not in a variable: each round writes one
+  ledger row with `ma_dispatch=f"sua:{vong}"`, so `UNIQUE(run_id, ma_dispatch)`
+  both counts the rounds and blocks a double count — a variable dies with the
+  worker, and a counter column can be incremented by two concurrent advances.
   ⚠️ `AsvStage.attempt` was the obvious counter and is **wrong** for this: it
   counts transient retries *and* repair rounds in one number.
+- 🔴 **The first version of that loop killed the run when rounds ran out, and
+  the measured data disproved it — recorded because the STATE entry above said
+  the opposite for one commit.** The most recent fully-real acceptance run, the
+  one called green with no substitutions, delivered with:
+
+      preserve   so_vua 3 | so_co_gian 0 | **so_can_sua 3**   (half the segments)
+      smart      so_vua 5 | so_co_gian 0 | **so_can_sua 1**
+
+  Both runs would have gone to `error` under that first version. A patch that
+  fails the greenest run this project has ever had is a wrong patch, not a
+  strict gate.
+  ⭐ `CAN_SUA` does not mean "broken video", and the system already knew that:
+  `thoi_gian` absorbs the overrun as drift debt under `TRAN_TROI_SO_DOAN`, and
+  technical QC measures the **consequence** — **T7** (one segment's drift from
+  its planned position) and **T11** (cumulative drift). Both passed on that very
+  delivery. Adding a second gate at the fitting layer guards the same thing
+  twice, and the second guard uses a threshold the source itself marks as
+  unmeasured (`DUNG_SAI_DAI = 0.08`, *"CHUA DO ... Pha 21 do lai"* — Phase 21
+  did not).
+  ⚠️ And Phase 19's exit gate asks for a bounded terminal failure on **QC
+  failures**; `CAN_SUA` is a fitting verdict, not a failed QC item. I merged the
+  two.
+  ⇒ Now: repair one round, then if defects remain, **record them in the ledger
+  and deliver**, leaving QC as the gate it was designed to be.
+- ⚠️ **Open product question the above surfaced, worth the owner's attention:**
+  three of six segments on the preserve preset overran their slot by more than
+  the 15 % stretch ceiling even after two rewrites. The delivery is within QC
+  tolerance, so this is not a defect — but it is the first real measurement of
+  how often Vietnamese dubbing overruns English source timing, and both
+  `DUNG_SAI_DAI` and `TRAN_TANG_TOC` are still borrowed/unmeasured numbers.
 - **G14 is still PARTIAL, but for a smaller reason.** Phase 26 marked it
   *"repair plan computed but never driven"*. It is driven now, for the defect
   source that exists today (`khong_vua`). What remains is that three of the five
