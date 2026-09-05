@@ -63,10 +63,9 @@ Theo đúng thứ tự, không bỏ bước:
    với nó thì nó đúng.
 2. `docs/KE_HOACH_TRIEN_KHAI.md` — hạng mục đang làm và tiêu chí hoàn thành.
 3. `docs/NHAT_KY.md` — hai mục gần nhất.
-4. `ho_so_he_thong.txt` — bản đồ kiến trúc + snapshot đầy đủ source text được
-   sinh tự động; dùng để học/định vị nhưng không được coi cao hơn quyết định/
-   code/test. Nếu stale, chạy
-   `python tools/build_system_profile.py` rồi review diff.
+4. Định vị code bằng `grep`/`Glob` trên chính cây nguồn.
+   *(`ho_so_he_thong.txt` đã gỡ 2026-09-04: một ảnh chụp toàn cây cũ đi sau
+   mỗi lần bất kỳ ai sửa bất kỳ tệp nào.)*
 5. Đọc chính các file sắp sửa, **trước khi** sửa.
 6. `git status` — biết cây làm việc đang sạch hay bẩn.
 
@@ -618,8 +617,7 @@ không chạm khu kia. Cụ thể theo khu, không nói chung chung.
 
 **③ Tệp DẪN XUẤT: người commit SAU CÙNG mới sinh.**
 
-`tools/gui/ltt.css` (`tools/dong_goi_gui.py`) và `ho_so_he_thong.txt`
-(`tools/build_system_profile.py`) chụp **cả cây**. Sinh giữa chừng là commit một
+`tools/gui/ltt.css` (`tools/dong_goi_gui.py`) chụp **cả cây**. Sinh giữa chừng là commit một
 nửa công việc đang dở của phiên kia, **dưới tên đợt của mình**.
 
 Quy tắc: mỗi bên commit **mã nguồn** của mình, không kèm hai tệp đó. Khi mọi
@@ -741,9 +739,10 @@ qua — đó là đường cài hợp lệ từ một bản chép. `test_362` ca
 
 ### 10.7 Tệp dẫn xuất: người chạy lượt cuối sinh lại
 
-`ho_so_he_thong.txt` đổi theo **mọi** thay đổi mã nguồn của **bất kỳ ai**. Sinh
-lại nó giữa chừng chỉ tạo một phiên bản sẽ cũ trong vài phút — đã đo đúng vậy
-ngày 31/08: sinh lại xong, phiên khác thêm một tệp, nó cũ lại ngay.
+`tools/gui/ltt.css` chụp **cả cây**, nên nó đổi theo thay đổi của **bất kỳ ai**.
+Sinh lại giữa chừng chỉ tạo một phiên bản sẽ cũ trong vài phút — đã đo đúng vậy
+ngày 31/08 với `ho_so_he_thong.txt`: sinh lại xong, phiên khác thêm một tệp, nó
+cũ lại ngay. *(Hồ sơ đã gỡ 04/09; luật này còn nguyên cho `ltt.css`.)*
 
 ⇒ Để **người chạy lượt gate làm bằng chứng cuối cùng** sinh lại, một lần, trên
 một cây đứng yên.

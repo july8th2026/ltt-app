@@ -8,8 +8,8 @@ costs a developer an afternoon. So the one part that must match the code exactly
 — the published tools and their inputs — is generated from the same catalog the
 API serves, between two markers in ``docs/PUBLIC_API/DEVELOPER_GUIDE.md``.
 
-``--check`` is wired into the test suite, the same way ``build_system_profile``
-guards the architecture dossier.
+``--check`` is wired into the test suite, so a catalog change that nobody
+regenerated the guide for turns the suite red instead of shipping quietly.
 """
 from __future__ import annotations
 

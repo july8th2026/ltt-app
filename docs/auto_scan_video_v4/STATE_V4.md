@@ -111,7 +111,18 @@
   source that exists today (`khong_vua`). What remains is that three of the five
   defect *sources* (`doc_sai`, `dich_sai`, `cat_sai`) have no producer wired,
   because those need the AI-QC stage.
-- **known red on this branch, NOT a defect**: `test_177_system_profile.py` (2 tests) fails here because `ho_so_he_thong.txt` is a whole-tree snapshot that goes stale the moment anyone edits anything — and this phase edited a lot. 🔑 It is **already deleted on `admin-mvp-v3`**, the branch this work merges into (verified: `git ls-tree admin-mvp-v3 -- ho_so_he_thong.txt` is empty), so it resolves by merging, not by fixing. ⛔ Do **not** regenerate the snapshot to make the gate green: `build_system_profile.py` is a heavy command and the artifact it produces is on its way out. This is branch lag, and naming it here is cheaper than someone rediscovering it under time pressure.
+- ✅ **`test_177_system_profile.py` no longer exists here — the branch lag it
+  came from is gone.** It failed because `ho_so_he_thong.txt` is a whole-tree
+  snapshot that goes stale the moment anyone edits anything, and this phase
+  edited a lot. 🔑 The fix was not to regenerate the snapshot (a heavy command
+  for an artifact on its way out) but to take trunk's own removal: cherry-picked
+  `e85020eb` from `admin-mvp-v3`, which deletes the file, its builder, its test
+  **and its gate step** in one commit. So this was a sync, not a decision of
+  mine — trunk had already settled it.
+  ⚠️ Two conflicts, both expected and both recorded in the plan beforehand:
+  `ho_so_he_thong.txt` was modify/delete (resolution **is** deletion), and
+  `docs/NHAT_KY.md` conflicted on a hunk where my side was **empty** — verified
+  by counting: zero of my lines were dropped.
 - **last_green_invariant_command**: declared in `tests/bo_bat_bien_v4.py`, two rounds —
   `VONG_NHANH` (9 files, **~12.5 s**, run after every edit) and
   `VONG_DU` (+ `test_417`, **~78 s**, run before closing a phase).
