@@ -1104,19 +1104,43 @@ tiếng Việt có dấu ném `UnicodeEncodeError` ⇒ **`returncode=1`**, trong
 Nó vẫn hơn hẳn khớp mẫu stdout — nhưng nó không phải một kênh sạch, nó là một
 kênh **hẹp hơn**, và ta lại đang đọc nó rộng hơn thứ nó đo.
 
-⇒ Bản vá có **hai** vế, và vế thứ hai mới là vế cứu:
+⇒ Bản vá có **hai** vế, và **thứ tự này là cố ý**:
+
+**1. Đặt mọi `print` SAU khi việc đã xong.** Không cần thư viện, không đổi trạng
+thái toàn cục, **không có ngoại lệ** — nó chỉ là *thứ tự*. Tầng báo cáo chết thì
+nó không kéo theo mã trả về của tầng làm việc.
+
+**2.** *(chỉ trong script dùng một lần)* ép luồng ra về UTF-8:
 
 ```python
 import io, sys
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 ```
 
-**và đặt mọi `print` SAU khi việc đã xong**, để tầng báo cáo chết thì nó không
-kéo theo mã trả về của tầng làm việc.
+⚠️ Vế 2 **có bẫy riêng đã trả giá ở kho này**: một công cụ trong `tools/` đổi
+`sys.stdout` thành `TextIOWrapper` làm **vỡ pytest**, vì bản gốc bị thu gom rác
+và đóng luôn buffer thật. Đừng nhét nó vào công cụ dùng chung.
 
-⚠️ Vế thứ nhất có bẫy riêng, đã ghi ở kho này: một công cụ trong `tools/` đổi
-`sys.stdout` thành `TextIOWrapper` làm **vỡ pytest** khi bản gốc bị thu gom rác.
-Dùng trong **script dùng một lần**, đừng nhét vào công cụ dùng chung.
+🔑 **Và thứ tự hai vế là một bài học riêng.** Bản đầu của mục này kê vế 2 trước —
+tức đặt một lời khuyên **có ngoại lệ** trước một lời khuyên **không ngoại lệ**.
+Người đọc vội lấy cái đầu tiên, nên cách kê ấy phát cái nguy hiểm hơn cho đúng
+người ít thời gian nhất. *(phiên Mobile V1 chỉ ra)*
+
+### Phân loại một phép đọc sai: nó GỢI RA HÀNH ĐỘNG GÌ?
+
+Hai ca `returncode` ở trên có **cùng** một sai số, và khác nhau ở hệ quả:
+
+| Ca | Phép đọc sai dẫn tới |
+|---|---|
+| H44 — script tiêm | **kết luận sai** (*"script thất bại"* trong khi nó thành công). Mất công, dừng ở đó |
+| Mobile V1 — lệnh ghi bộ nhớ | **hành động phá hoại**: *"ghi hỏng"* là một lời mời **ghi lại**, và lần ghi lại đè lên một tệp **đã đúng** |
+
+🔑 Nên câu phân loại đáng nhớ không phải *"đọc sai nặng hay nhẹ"* mà **"phép đọc
+sai ấy gợi ra hành động gì?"** Cùng một sai số, nếu nó đẩy về phía **hành động**
+thì nó thuộc nhóm đắt nhất.
+
+⇒ Cùng họ với luật đã có của kho: **một phép đo lệch chiều thì phải BỎ, không
+phải SỬA** — vì sai số đẩy về phía hành động không có bản vá nào cứu được.
 
 ### Luật
 
