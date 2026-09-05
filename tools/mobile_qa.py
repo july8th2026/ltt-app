@@ -80,6 +80,47 @@ def du_bang() -> tuple[list[str], int]:
     return da_nap, len(dbmod.Base.metadata.tables)
 
 
+def wav_do_dai(uid: str, giay_list=(10, 60, 180, 300, 600)) -> list[tuple[int, int]]:
+    """Sinh WAV nhieu do dai vao kho cua `studio_dev`, tra [(giay, byte)].
+
+    Dung de do chi phi ve song (`docs/MOBILE/05_SONG_AM.md`). Dat 48 kHz mono
+    16-bit vi do la dau ra that cua sidecar Voice.
+
+    ⛔ KHONG ghi tep im lang. Mot tep toan `\\x00` nen rat tot va co the di duong
+       tat trong bo giai ma — phep do se dep hon su that. Dung sin + nhieu de
+       bien do that.
+    """
+    import math
+    import random
+    import struct
+    import wave
+
+    kho = GOC / "tmp" / "studio_dev" / "kho"
+    sr = 48_000
+    ra = []
+    for giay in giay_list:
+        p = kho / "voice" / "out" / uid / f"do-{giay}s" / "tieng.wav"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        rnd = random.Random(1234)
+        with wave.open(str(p), "wb") as f:
+            f.setnchannels(1)
+            f.setsampwidth(2)
+            f.setframerate(sr)
+            con, t = int(sr * giay), 0
+            while con > 0:                       # ghi tung giay, khong dung
+                khoi = min(sr, con)              # 100 MB RAM cho tep 600 giay
+                mau = bytearray()
+                for i in range(khoi):
+                    v = math.sin(2 * math.pi * 220 * (t + i) / sr) * 0.4
+                    v += (rnd.random() - 0.5) * 0.2
+                    mau += struct.pack("<h", int(max(-1, min(1, v)) * 32767))
+                f.writeframes(bytes(mau))
+                con -= khoi
+                t += khoi
+        ra.append((giay, p.stat().st_size))
+    return ra
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     con = ap.add_subparsers(dest="lenh", required=True)
@@ -88,6 +129,9 @@ def main(argv=None) -> int:
     k.add_argument("--ra", help="ghi JSON ra tep (mac dinh: in bang tom tat)")
 
     con.add_parser("bang", help="du bang cua moi app vao sqlite cua studio_dev")
+
+    w = con.add_parser("wav-dai", help="sinh WAV nhieu do dai de do chi phi ve song")
+    w.add_argument("uid", help="uid cua tai khoan seed (ten thu muc trong kho)")
 
     a = ap.parse_args(argv)
 
@@ -112,6 +156,12 @@ def main(argv=None) -> int:
         da_nap, so = du_bang()
         print(f"app co tables.py: {da_nap}")
         print(f"tong bang: {so}")
+        return 0
+
+    if a.lenh == "wav-dai":
+        for giay, byte in wav_do_dai(a.uid):
+            print(f"{giay:>4}s -> {byte // 1024:>7} KB   "
+                  f"voice/out/{a.uid}/do-{giay}s/tieng.wav")
         return 0
 
     return 1

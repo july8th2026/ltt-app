@@ -877,8 +877,32 @@
    * [*] Nen o dai ta ve mot day cot DEU NHAU. No khong gia vo mo ta am thanh —
    *     no chi la mot thanh tien do co dot, va `veLaiSong` van to mau theo
    *     tien do phat nen no lam dung viec ma khach thuc su dung o day. */
+  /* So cot ma `canvas` VE DUOC that su. `0` nghia la khong ve duoc gi:
+   * rong 0 px, hoac `display:none`, hoac chua nam trong bo cuc.
+   *
+   * ⛔ Co y KHONG co mac dinh `|| 300`. Ham nay tra loi cau hoi *"co dang giai
+   *    ma khong"*, va o do mot mac dinh la mot cau tra loi bia. */
+  function soCotVe(canvas) {
+    var r = canvas ? canvas.clientWidth : 0;
+    return r > 0 ? Math.max(1, Math.floor(r / 3)) : 0;
+  }
+
+  /* Man hinh cam ung that. `matchMedia` vang mat o vai WebView cu — khi ay coi
+   * nhu KHONG cam ung, tuc giu nguyen hanh vi cu thay vi that chat nham. */
+  function matChamThuc() {
+    return !!(window.matchMedia && window.matchMedia("(pointer: coarse)").matches);
+  }
+
   function songDeu(canvas) {
-    if (!canvas) { songDeu(canvas); return; }
+    /* ⛔ Dong nay tung la `songDeu(canvas)` — tu goi lai chinh no voi cung mot
+     *    `canvas` rong, tuc DE QUY VO HAN. Mot nhanh phong thu bien thanh mot
+     *    `RangeError: Maximum call stack size exceeded` giet ca handler.
+     *
+     * ⚠️ No chua bao gio no ra vi moi noi goi deu truyen canvas that. Nhung
+     *    `veSong` co dung mot nhanh `if (!canvas) { songDeu(canvas); return; }`
+     *    — tuc duong duy nhat kich hoat no chinh la duong duoc viet ra de tu
+     *    bao ve. Sua 05/09. */
+    if (!canvas) return;
     var rong = canvas.clientWidth || 300;
     var dpr = window.devicePixelRatio || 1;
     var cao = canvas.clientHeight || 40;
@@ -931,13 +955,61 @@
      *     va no khong phai gia thuyet: ba nhanh duoi day deu co that.
      *
      *       · dai hon tran            -> co y khong giai ma
+     *       · canvas khong ve duoc    -> ve cho mot cho khong ai nhin
      *       · khong co `au`           -> khong biet dai bao nhieu
      *       · khong co `AudioContext` -> khong giai ma duoc (Safari cu, WebView)
      *
-     *     Nhanh thu ba la nhanh de quen nhat, vi no khong bao gio xay ra tren
+     *     Nhanh thu tu la nhanh de quen nhat, vi no khong bao gio xay ra tren
      *     may cua nguoi viet no. */
     if (au && au.duration > TRAN_GIAY_SONG) { songDeu(canvas); return; }
     if (!au) { songDeu(canvas); return; }
+
+    /* ── Cong duy nhat: canvas ve duoc bao nhieu cot ────────────────────────
+     *
+     * 🔴 DO NGAY 05/09, VA NO LA MOT PHEP DO CHU KHONG PHAI MOT UOC LUONG.
+     *
+     *    Tren man Studio co **nam** trinh phat, va o MOI khung nhin chi **mot**
+     *    canvas that su hien; bon cai con lai co `display:none` (danh sach
+     *    "Gan day" thu gon). Nhung `veSong` van chay cho ca nam.
+     *
+     *    Do bang mang: bam ▶ mot dong "Gan day" sinh HAI luot tai cung mot tep
+     *    401.324 byte — mot cho `<audio>` (206, `bytes=0-`) va mot cho `fetch`
+     *    cua ham nay (200). Luot thu hai duoc giai ma ra PCM roi ve vao mot
+     *    canvas `display:none`.
+     *
+     *    Chi phi do tuyen tinh, do duoc: **~275 KB moi giay tieng** (tai + PCM
+     *    float32). O tran 600 giay do la **55 MB tai + 110 MB PCM = 165 MB**
+     *    cho mot lan ve — va o bon trong nam trinh phat, cho mot thu KHONG AI
+     *    NHIN THAY.
+     *
+     * ⭐ Nen cong khong phai mot hang so moi. No la mot cau hoi ve HINH HOC:
+     *    canvas rong `r` px ve duoc `floor(r/3)` cot. Rong 0 px ⇒ 0 cot ⇒ khong
+     *    co gi de ve ⇒ khong giai ma. Cung mot luat xu ly luon ca truong hop
+     *    `display:none`, khong can mot phep kiem thu hai.
+     *
+     * ⚠️ KHONG dung `clientWidth || 300` nhu `songGia`/`songDeu`. O do 300 la
+     *    mot mac dinh de VE cho tu te; o day no se bien "khong ve duoc gi" thanh
+     *    "ve duoc 100 cot" va lam hong dung quyet dinh ta can. */
+    if (soCotVe(canvas) === 0) { songDeu(canvas); return; }
+
+    /* ⭐ Tren cam ung, tran con phai chat hon nua — va con so cung den tu hinh
+     *    hoc, khong tu cam tinh: mot cot phai gánh khong qua MOT giay tieng.
+     *    Do duoc 05/09, be ngang canvas THAT:
+     *
+     *        390px Studio  106px -> 35 cot      390px Lich su  240px -> 80 cot
+     *        768px Studio  476px -> 158 cot     1440px Lich su 112px -> 37 cot
+     *
+     *    O tran 600 giay voi 35 cot, MOT cot gánh 17 giay tieng. Am tiet tieng
+     *    Viet dai ~0,2 giay, nen mot cot 17 giay luon cham dinh — hinh song
+     *    thanh mot khoi dac. No khong con mo ta gi, no chi ton 165 MB.
+     *
+     * ⛔ Chi ap tren `pointer:coarse`. Tran 600 tren desktop la quyet dinh cua
+     *    phien Voice, dua tren chi phi bo nho; phep do mat do thong tin o day
+     *    la mot lap luan MOI va viec doi no la quyet dinh cua ho, khong phai
+     *    cua lượt soat mobile nay. Da bao ho kem so do. */
+    if (matChamThuc() && au.duration > soCotVe(canvas)) {
+      songDeu(canvas); return;
+    }
     if (!url || !(window.AudioContext || window.webkitAudioContext)) {
       songDeu(canvas); return;
     }

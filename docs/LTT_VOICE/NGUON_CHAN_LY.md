@@ -22,7 +22,7 @@ năm đều về phía nguy hiểm. Đừng gõ một con số nào vào đây.
 | Chất lượng từng giọng kho cũ | `tools/soi_kho_giong_cu.py` | DNSMOS + ASR |
 | Giá / credit | `apps/ltt_voice/gia.py` | |
 | Đường tài liệu dài | `apps/ltt_voice/ban_doc_dai.py` | |
-| Cửa tải audio có nhận `Range` không | `apps/ltt_voice/routes/_p_audio.py` | ⚠️ **chưa** — đang sửa ở `phien/mobile-v1` |
+| Cửa tải audio có nhận `Range` không | `platform_core/phat_media.py` | ✅ **có, từ 05/09** — xem ca ⑤ |
 
 ---
 
