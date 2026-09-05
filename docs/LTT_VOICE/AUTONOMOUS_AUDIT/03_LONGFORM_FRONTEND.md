@@ -156,6 +156,35 @@ thật**: phép kiểm trên ghi đè `duration` nên nó luôn hữu hạn ngay
 Với một tệp 483 MB đó là 483 MB RSS mỗi lượt tải. Ngoài phạm vi lượt này, nhưng
 nó là cùng một lớp lỗi ở phía máy chủ và **chưa được xử lý**.
 
+### 🔴 VÀ TÔI ĐÃ ĐỌC RỦI RO ẤY THIẾU MỘT NỬA — phiên Mobile V1 chỉ ra (05/09)
+
+Tôi đọc `f.read()` thành **một vấn đề bộ nhớ**. Nó còn là một vấn đề **giao thức**:
+không đọc theo luồng thì cũng **không có `Accept-Ranges`**, và Safari/WebKit
+**từ chối phát** một nguồn audio mà máy chủ không hỗ trợ `Range`.
+
+    grep -c "Range|accept-ranges" apps/ltt_voice/routes/_p_audio.py  ->  0
+
+⭐ Hai cách đọc dẫn tới hai mức ưu tiên khác hẳn nhau:
+
+  · *"tốn RAM"*      ⇒ máy chủ chậm khi có bài dài — khó chịu, chưa chết ai;
+  · *"thiếu Range"*  ⇒ **khách mobile bấm Play không chạy** — hỏng tính năng.
+
+Và triệu chứng đã được báo từ trước: *"tải về được nhưng bấm Play trên mobile
+không chạy"*. Tôi có cả hai mảnh — dòng `f.read()` và triệu chứng — mà không nối
+chúng lại, vì tôi đã dán nhãn "bộ nhớ" cho dòng mã ấy ngay từ đầu và không đọc
+lại nó nữa.
+
+⇒ Bài học, hẹp và dùng được: **một dòng mã có thể hỏng theo nhiều đường độc lập.
+  Dán nhãn nguyên nhân cho nó là đóng cửa với những đường còn lại.**
+
+Đang sửa ở `phien/mobile-v1` (media transport dùng chung ở `platform_core`, giữ
+nguyên phép kiểm sở hữu của app).
+
+⚠️ Khi bản ấy vào, chú thích ở `server/static/voice.js` (~dòng 849) nói *"`/audio`
+   … không nhận `Range`"* sẽ **thành sai** và phải dọn theo. Bản vá sóng âm của
+   lượt này vẫn chạy đúng — nó lấy độ dài từ `au.duration`, không từ
+   `Content-Length` — nhưng lý do ghi cạnh nó thì hết đúng.
+
 ## STATUS
 
 ✅ Bẫy treo tab đã chặn — đo được rằng nhánh dài **không gọi mạng**.

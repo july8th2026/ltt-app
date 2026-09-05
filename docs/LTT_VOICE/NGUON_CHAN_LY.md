@@ -22,6 +22,7 @@ năm đều về phía nguy hiểm. Đừng gõ một con số nào vào đây.
 | Chất lượng từng giọng kho cũ | `tools/soi_kho_giong_cu.py` | DNSMOS + ASR |
 | Giá / credit | `apps/ltt_voice/gia.py` | |
 | Đường tài liệu dài | `apps/ltt_voice/ban_doc_dai.py` | |
+| Cửa tải audio có nhận `Range` không | `apps/ltt_voice/routes/_p_audio.py` | ⚠️ **chưa** — đang sửa ở `phien/mobile-v1` |
 
 ---
 
@@ -136,6 +137,20 @@ chỗ đã chép nó.** Một tài liệu sai đã bị bác bỏ mà không đ�
 lại, và lần trích sau không mang theo lời bác bỏ.
 
 ---
+
+## ⚠️ MỘT CÂU SẮP THÀNH SAI — dọn khi `phien/mobile-v1` vào
+
+`server/static/voice.js` (~dòng 849) ghi: *"`/audio` trả `StreamingResponse` nên
+không có `Content-Length`, và nó cũng **không nhận `Range`**."*
+
+Hôm nay câu ấy **đúng** (`grep -c "Range" _p_audio.py` → 0). Nhánh
+`phien/mobile-v1` đang thêm `Range` — vì thiếu nó thì Safari/WebKit **từ chối
+phát**, đó là root cause của *"tải về được nhưng bấm Play trên mobile không
+chạy"*. Khi bản ấy vào, câu trên hết đúng và phải dọn.
+
+⭐ Ghi ra đây **trước** khi nó sai, vì mục ① dưới đây đã cho thấy hình dạng của
+   việc không làm thế: một câu bị bác bỏ mà không ai quét lại sẽ được trích lại,
+   và lần trích sau không mang theo lời bác bỏ.
 
 ## Quy ước cho tài liệu Voice về sau
 
