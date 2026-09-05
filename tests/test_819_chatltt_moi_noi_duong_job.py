@@ -651,12 +651,27 @@ def test_job_BIEN_MAT_khong_lam_run_ket_vinh_vien(web, may, bat_co, kho_job):
 
 
 def test_nguoi_KHAC_khong_thay_buoc_cho_job(web, may, bat_co, kho_job):
+    """⛔ ĐỐI CHỨNG DƯƠNG NẰM TRONG CÙNG PHÉP KIỂM, không ở hàm khác.
+
+    Một phép kiểm chỉ khẳng định `is False` cho người lạ **vẫn xanh** khi
+    `con_cho_job` hỏng và luôn trả `False` — nó không phân biệt được *"chặn
+    đúng người lạ"* với *"chặn tất cả"*. Đối chứng có tồn tại ở một hàm khác,
+    nhưng xoá hàm ấy thì phép kiểm này thành rỗng mà không ai biết.
+
+    ⭐ Luật do phiên Mobile V1 nêu 06/09 sau khi một kết quả âm của họ —
+    "cảm ứng không pan được" trên một canvas **rỗng** — suýt thành một phát
+    hiện: trước khi ghi một kết quả âm, hỏi *điều kiện nào đáng lẽ phải cho
+    kết quả DƯƠNG ở đây*, rồi chạy đúng điều kiện đó.
+    """
     from apps.chatltt.services import luot_v3
 
-    _uid, rid, jid, _ex, _mid = _cho_job(web, may)
+    uid, rid, jid, _ex, _mid = _cho_job(web, may)
     kho_job[jid] = JobGia(jid, status="running")
     gen, db = _phien_db()
     try:
+        # DƯƠNG: chủ sở hữu THẤY bước đang chờ.
+        assert luot_v3.con_cho_job(db, user_id=uid, run_id=rid) is True
+        # ÂM: người lạ không thấy gì.
         assert luot_v3.con_cho_job(db, user_id="u-nguoi-la", run_id=rid) is False
         assert luot_v3.nen_chay_tiep(db, user_id="u-nguoi-la", run_id=rid) is False
     finally:
