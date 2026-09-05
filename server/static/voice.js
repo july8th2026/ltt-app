@@ -831,7 +831,16 @@
    *     no chi la mot thanh tien do co dot, va `veLaiSong` van to mau theo
    *     tien do phat nen no lam dung viec ma khach thuc su dung o day. */
   function songDeu(canvas) {
-    if (!canvas) { songDeu(canvas); return; }
+    /* [!] `return`, KHONG phai `songDeu(canvas)`. Mot ban va 05/09 dung mot
+     *     phep thay chuoi TOAN CUC cho dong `if (!canvas) return;` — dong ay
+     *     co o CA `veSong` (noi can ve truoc khi thoat) va o CHINH day, nen
+     *     ham nay thanh tu goi lai minh: de quy vo han.
+     *
+     * [!] No chua bao gio no, vi moi cho goi deu truyen mot canvas that. Nhung
+     *     duong DUY NHAT kich hoat no lai chinh la nhanh phong thu `if (!canvas)`
+     *     trong `veSong` — tuc dong viet ra de tu bao ve se la dong giet ca
+     *     handler bang `RangeError`. Phien Mobile V1 tim ra, 05/09. */
+    if (!canvas) return;
     var rong = canvas.clientWidth || 300;
     var dpr = window.devicePixelRatio || 1;
     var cao = canvas.clientHeight || 40;
