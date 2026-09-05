@@ -91,7 +91,7 @@ Cùng lượt: `manifest.py` sửa "SÁU TAB" → **NĂM**, gỡ nhãn `NHAN_NGU
 tồn tại. Đây là **chốt mạnh hơn thứ nó đo**: nó không chứng minh được ngưỡng
 đúng, nhưng nó làm bản sửa không thể lặng lẽ biến mất.
 
-## VERIFIED — trình duyệt thật, hai phía của ngưỡng
+## VERIFIED — trình duyệt thật (**Chromium**), hai phía của ngưỡng
 
 Dựng một `<audio>` với WAV thật 0,1 giây, ghi đè `duration` để đứng hai bên
 `TRAN_GIAY_SONG`, rồi bấm phát và đọc lại `canvas.__dinh`:
@@ -117,6 +117,16 @@ Dựng một `<audio>` với WAV thật 0,1 giây, ghi đè `duration` để đ�
 ⚠️ Vì `blob:` bị CSP chặn, ca 0,1 giây **không** chạy trọn `decodeAudioData` —
    nó chỉ chứng minh nhánh ngắn *có* gọi mạng. Đường giải mã thật là mã **không
    đổi** trong lượt này.
+
+⛔ **Và cả ba dòng trên đo bằng Chromium.** Nhánh `!AudioContext` được kiểm bằng
+   cách **xoá `window.AudioContext`** trong Chromium, không phải bằng cách chạy
+   Safari thật. Nó chứng minh *"nếu API vắng mặt thì mã đi đúng nhánh"* — không
+   chứng minh *"Safari cũ hành xử như thế"*. Hai mệnh đề khác nhau, và chỉ
+   mệnh đề thứ nhất được đo.
+
+⚠️ Kiểm phát tiếng trên WebKit **không làm được bằng Playwright trên Windows**:
+   nó không giải mã nổi audio kể cả từ một `data:` URI (đo 05/09, phiên Mobile
+   V1). Muốn xác nhận Safari phát được thì phải dùng **thiết bị thật**.
 
 ## 🔴 MỘT LỖI TÔI TỰ TẠO RA, VÀ TỰ BẮT KHI SOÁT DIFF
 
@@ -155,6 +165,35 @@ thật**: phép kiểm trên ghi đè `duration` nên nó luôn hữu hạn ngay
 ⚠️ `/audio` đọc **cả tệp vào RAM máy chủ** (`StreamingResponse(io.BytesIO(data))`).
 Với một tệp 483 MB đó là 483 MB RSS mỗi lượt tải. Ngoài phạm vi lượt này, nhưng
 nó là cùng một lớp lỗi ở phía máy chủ và **chưa được xử lý**.
+
+### 🔴 VÀ TÔI ĐÃ ĐỌC RỦI RO ẤY THIẾU MỘT NỬA — phiên Mobile V1 chỉ ra (05/09)
+
+Tôi đọc `f.read()` thành **một vấn đề bộ nhớ**. Nó còn là một vấn đề **giao thức**:
+không đọc theo luồng thì cũng **không có `Accept-Ranges`**, và Safari/WebKit
+**từ chối phát** một nguồn audio mà máy chủ không hỗ trợ `Range`.
+
+    grep -c "Range|accept-ranges" apps/ltt_voice/routes/_p_audio.py  ->  0
+
+⭐ Hai cách đọc dẫn tới hai mức ưu tiên khác hẳn nhau:
+
+  · *"tốn RAM"*      ⇒ máy chủ chậm khi có bài dài — khó chịu, chưa chết ai;
+  · *"thiếu Range"*  ⇒ **khách mobile bấm Play không chạy** — hỏng tính năng.
+
+Và triệu chứng đã được báo từ trước: *"tải về được nhưng bấm Play trên mobile
+không chạy"*. Tôi có cả hai mảnh — dòng `f.read()` và triệu chứng — mà không nối
+chúng lại, vì tôi đã dán nhãn "bộ nhớ" cho dòng mã ấy ngay từ đầu và không đọc
+lại nó nữa.
+
+⇒ Bài học, hẹp và dùng được: **một dòng mã có thể hỏng theo nhiều đường độc lập.
+  Dán nhãn nguyên nhân cho nó là đóng cửa với những đường còn lại.**
+
+Đang sửa ở `phien/mobile-v1` (media transport dùng chung ở `platform_core`, giữ
+nguyên phép kiểm sở hữu của app).
+
+⚠️ Khi bản ấy vào, chú thích ở `server/static/voice.js` (~dòng 849) nói *"`/audio`
+   … không nhận `Range`"* sẽ **thành sai** và phải dọn theo. Bản vá sóng âm của
+   lượt này vẫn chạy đúng — nó lấy độ dài từ `au.duration`, không từ
+   `Content-Length` — nhưng lý do ghi cạnh nó thì hết đúng.
 
 ## STATUS
 

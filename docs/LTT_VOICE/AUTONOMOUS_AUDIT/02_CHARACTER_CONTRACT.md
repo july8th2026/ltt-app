@@ -51,7 +51,13 @@ tiếng Việt NFC — là mẫu mà hai thước **trùng nhau**.
 4. **Máy chủ vẫn là nguồn chân lý cuối cùng** (`routes/_p_tao.py`). Phía trình
    duyệt là tiện ích, không phải hàng rào.
 
-## VERIFIED — trình duyệt thật, `127.0.0.1:8127`, cây nguồn
+## VERIFIED — trình duyệt thật (**Playwright / Chromium**), `127.0.0.1:8127`
+
+⚠️ **Chromium**, không phải WebKit — và nay điều đó phải ghi ra. Phiên Mobile V1
+đo 05/09: **Playwright WebKit trên Windows không giải mã nổi audio**, kể cả một
+WAV `data:` URI 0,1 giây không qua HTTP (`MediaError.code = 4`), trong khi
+`canPlayType('audio/wav')` vẫn trả `"probably"`. Nên "trình duyệt thật" ở đây
+**không** bao gồm Safari/WebKit.
 
 Ô đếm so với `so_ky_tu_tho` mà `POST /ltt-voice/xem-truoc` trả về:
 
