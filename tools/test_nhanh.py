@@ -54,6 +54,7 @@ nguyên — nhiều tệp ở đây dựa vào điều đó.
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import os
 import pathlib
@@ -101,6 +102,88 @@ def _ep_utf8() -> None:
             luong.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
         except (AttributeError, ValueError):
             pass
+
+
+def _con_id_song(cac_id: set[str]) -> tuple[int, int]:
+    """`(so id con phan giai duoc, tong)`. Doc AST, khong nap module.
+
+    🔴 **Trang thai thu BA cua `--lf`, va no la trang thai KHONG duoc canh bao.**
+
+       `_da_do` ben duoi ke ba trang thai cua tep cache: vang mat, doc duoc,
+       doc hong. Nhung con mot truc khac han: cache doc duoc, DAY id, va **khong
+       id nao con phan giai duoc**. Luc do pytest thay "co failure da biet" nen
+       `--lfnf=none` khong ap; roi khong id nao khop nen no khong deselect gi;
+       ket qua la mot luot **day du** duoi cai ten `--vong-lap`.
+
+    ⭐ Va id chet theo mot cach hoan toan lanh manh: kho nay **khuyen khich** go
+       nhung chot da het ly do ton tai (mot `xfail(strict)` tu thong bao khi
+       khiem khuyet cua no chet). Nen `--lf` tu xuong cap nhu **he qua cua viec
+       lam dung**.
+
+       Do 05/09 tren `phien/asv-v4`: 20 id trong cache, **ca 20 deu chet** — 5
+       mat tep, 15 mat ham, phan lon do pha 27 go cac chot da xong viec.
+
+    ⚠️ Mot id chet KHONG dau doc nhung id con song: chi can **mot** id phan giai
+       duoc thi `--lf` van thu hep binh thuong (do bang thuc nghiem). Nen dieu
+       kien canh bao la "khong con id nao", khong phai "co id chet".
+
+    ⛔ Ham nay CHI de canh bao, khong de doi hanh vi. Bo chay rong o day se lam
+       dung cai tep nay canh bao o cho khac: *"chay rong va chay het roi xanh in
+       ra gan giong nhau"*. Mot id khong phan giai duoc con co the la loi thu
+       gom tam thoi, va khi do chay rong la mot mau xanh doi tra.
+    """
+    song = 0
+    for k in cac_id:
+        tep, _, ham = k.partition("::")
+        f = GOC / tep
+        if not f.is_file():
+            continue
+        if not ham:
+            song += 1
+            continue
+        ten = ham.split("::")[-1].split("[")[0]
+        try:
+            cay = ast.parse(f.read_text(encoding="utf-8", errors="replace"))
+        except SyntaxError:
+            # Khong doc duoc thi KHONG ket toi la chet — dem no la song de
+            # canh bao nay khong tu bao dong tren mot tep dang sua do.
+            song += 1
+            continue
+        if ten in {n.name for n in ast.walk(cay)
+                   if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef,
+                                     ast.ClassDef))}:
+            song += 1
+    return song, len(cac_id)
+
+
+def _canh_bao_lf(cac_id: set[str]) -> list[str]:
+    """Cac dong can in vi `--lf` sap chay TOAN BO. Rong = khong co gi de noi.
+
+    🔑 **Tach ra khoi cho no duoc in, de chot duoc dieu no QUYET DINH.**
+
+       `_con_id_song` do mot dai luong; ham nay ra mot phan quyet. Neu chi chot
+       phep do thi mot ban sua doi `song == 0` thanh `song < tong` van xanh —
+       va luc do canh bao se bat o moi luot co bat ky id chet nao, tuc bat gan
+       nhu luon, tuc bi tat trong dau nguoi doc.
+
+    ⛔ Va dieu kien la "khong con id nao SONG", khong phai "co id CHET". Do bang
+       thuc nghiem: mot id chet nam canh mot id song thi `--lf` van thu hep binh
+       thuong.
+    """
+    if not cac_id:
+        return []
+    song, tong = _con_id_song(cac_id)
+    if song:
+        return []
+    return [
+        f"",
+        f"[--lf] {tong} id trong cache va KHONG id nao con phan giai duoc",
+        "       (tep hoac ham da doi ten / da bi go). pytest coi day la",
+        "       'co failure da biet' nen `--lfnf=none` khong ap, roi khong",
+        "       id nao khop nen no khong deselect gi.",
+        "  ==>  Luot nay se chay TOAN BO, khong phai mot vong hep.",
+        "       Ket qua van dung; chi co thoi gian la khong nhu ten goi.",
+    ]
 
 
 def _da_do() -> tuple[set[str], set[str]] | None:
@@ -208,6 +291,12 @@ def main() -> int:
             print("       Day KHONG phai mot luot test xanh. Do la mot luot")
             print("       test RONG. Muon chay that: bo `--lf`.")
             return 0
+        # ⭐ Trang thai thu BA — xem `_canh_bao_lf`. Khong doi hanh vi, chi GO
+        #    SU IM LANG: mot luot day du chay duoi ten `--vong-lap` van xanh
+        #    dung, nhung nguoi doc tuong minh vua ton 15 giay.
+        if biet is not None:
+            for dong in _canh_bao_lf(biet[0]):
+                print(dong)
 
     if args.noi_tiep:
         ma, _ = _chay(chung, "MOT TIEN TRINH (doi chieu)")
