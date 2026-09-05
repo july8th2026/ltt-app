@@ -11,7 +11,7 @@ Cập nhật lần cuối: **2026-09-05, sau Phase C phần 1.**
 |---|---|
 | cây | `D:\LTTSTUDIOSAPP\.claude\worktrees\mobile-v1` |
 | nhánh | `phien/mobile-v1`, fork từ `admin-mvp-v3` @ `911cd142` |
-| commit gần nhất | `bec5643d` (Phase B+C), trước đó `65926fc9` (Phase A) |
+| commit gần nhất | `cef1afd3` (dọn chú thích) · `d87b92b9` (checkpoint) · `bec5643d` (Phase B+C) · `65926fc9` (Phase A) |
 | nguồn quy trình | `G:\My Drive\AI\A LTT AII\LTT_MOBILE_AUTONOMOUS_PROMPT_PACK_V1` |
 | kế hoạch | `docs/MOBILE/00_KE_HOACH.md` |
 | dải số test | **700–799** (đã dùng 700, 701) |
