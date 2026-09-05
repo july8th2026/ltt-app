@@ -90,7 +90,7 @@
       "chan": [
         "P03"
       ],
-      "phan_tram": 80
+      "phan_tram": 95
     },
     {
       "id": "P05",
@@ -348,8 +348,8 @@
     "don_vi": "ngay cong (8h)",
     "lan_A": {
       "uoc": 17.0,
-      "xong": 11.9,
-      "phan_tram": 70
+      "xong": 12.7,
+      "phan_tram": 75
     },
     "lan_B": {
       "uoc": 20.0,
@@ -363,8 +363,8 @@
     },
     "toan_chuong_trinh": {
       "uoc": 51.0,
-      "xong": 11.9,
-      "phan_tram": 23
+      "xong": 12.7,
+      "phan_tram": 25
     },
     "ma_san_pham_da_sua": "9 tep: 6 moi trong apps/chatltt/services + frontend ThongDiepView.tsx + governance.py + luot.py",
     "ghi_chu": "dem theo NGAY CONG, khong theo so pha — P00 nua ngay, P03 nam ngay"
@@ -579,7 +579,7 @@
   ],
   "p04": {
     "trang_thai": "DANG LAM",
-    "phan_tram": 80,
+    "phan_tram": 95,
     "da_xong": [
       "duyet.py — phieu duyet BEN + test_809 (30)",
       "quyet dinh di bang UPDATE CO DIEU KIEN (WHERE quyet_dinh='cho'), khong bang if trong Python",
@@ -597,11 +597,18 @@
       "NgoCanhGoi: chay_tool biet loi goi nay la loi goi nao (thu_tu/goi_id/bam/step_id)",
       "buoc duoc GHI TRUOC KHI CHAY tool; ghi_buoc lan hai CAP NHAT chu khong chen",
       "trang thai buoc: 4 gia tri (dang_chay/cho_duyet/ok/loi), khong gop cho_duyet vao ok",
-      "khong bao gia duoc => KHONG mo phieu (fail-closed), model nhan loi doc duoc"
+      "khong bao gia duoc => KHONG mo phieu (fail-closed), model nhan loi doc duoc",
+      "luot.dong_su_kien() — tach khuc streaming ra khoi chay() de V1 va V3 dung MOT ban",
+      "luot_v3.py — vong lap agentic that: moi vong mot chatltt_execution cung run_id (R2)",
+      "luot.chay dispatch sang V3 CHI KHI co bat VA co tool that",
+      "test_813 (8) — mot luot agentic di qua DUNG CUA nguoi dung di",
+      "luu_run.dung_lai() — dung lai Run TU CSDL, khong them cot nao + test_814 (11)",
+      "luot_v3.tiep_sau_duyet() — chay tiep sau khi nguoi dung bam, tu mot phien CSDL moi",
+      "_dem_bam duoc dung lai => tran 'goi trung' song sot qua lan cho duyet"
     ],
     "con_lai": [
-      "noi dieu_phoi vao luot.chay (goi_model qua mo_luong moi vong — R1 gianh lai suat)",
-      "UI duyet o frontend",
+      "cua HTTP goi tiep_sau_duyet sau khi duyet (route hien chi ghi quyet dinh)",
+      "UI duyet o frontend (P09)",
       "R2b: mot request_id cho ca run (can thanh_toan.py)",
       "doi soat chatltt_run vs credit_entries"
     ],
@@ -611,7 +618,9 @@
     ],
     "ghi_chu": "Phep kiem rang buoc DI VONG QUA `xin_duyet` va chen thang hang thu hai. Goi ham hai lan chi chung minh HAM tu kiem — khong chung minh RANG BUOC con do.",
     "phat_hien": {
-      "so_handler_phu_thuoc_thu_tu_import": "Handler tool noi bo dang ky bang TAC DUNG PHU cua import. Chi `chieu()` nhap `tool_noi_bo`, nen moi duong KHONG di qua `chieu()` (chay tiep sau duyet, job nen, lenh CLI) thay LOI_CHUA_CAI cho mot tool binh thuong. test_812 do 3 phep kiem vi dung chuyen nay; chay rieng thi xanh hay do tuy TEP NAO CHAY TRUOC. Sua: thi_hanh._nap_noi_bo() goi truoc moi dispatch. Chot bang mot phep kiem chay TIEN TRINH MOI — la phep kiem duy nhat tai hien duoc."
+      "so_handler_phu_thuoc_thu_tu_import": "Handler tool noi bo dang ky bang TAC DUNG PHU cua import. Chi `chieu()` nhap `tool_noi_bo`, nen moi duong KHONG di qua `chieu()` (chay tiep sau duyet, job nen, lenh CLI) thay LOI_CHUA_CAI cho mot tool binh thuong. test_812 do 3 phep kiem vi dung chuyen nay; chay rieng thi xanh hay do tuy TEP NAO CHAY TRUOC. Sua: thi_hanh._nap_noi_bo() goi truoc moi dispatch. Chot bang mot phep kiem chay TIEN TRINH MOI — la phep kiem duy nhat tai hien duoc.",
+      "khong_them_cot_lich_su": "Lich su da nam san trong CSDL, chi o dang khac: duong hoi thoai + chatltt_step (doi_so_tho + ket_qua). Them mot cot chep lai no la tao BAN THU HAI cua cung mot su that, va hai ban thi som muon lech o dung cho kho thay nhat. Phep kiem manh nhat viet duoc: so TUNG BYTE lich su dung lai voi ban goc con trong bo nho — neu khac thi thu dang thieu la mot cot THAT SU can.",
+      "bo_dem_trung_bi_xoa_khi_cho_duyet": "Tran 'goi trung 2 lan' dem theo bam_trung trong `Run._dem_bam` — mot dict trong RAM. Khong dung lai no thi moi lan cho duyet la mot lan xoa sach, va mot model ket vong lap chi can xin duyet MOT lan la thoat tran, mai mai."
     }
   }
 }

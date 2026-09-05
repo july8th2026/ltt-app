@@ -160,6 +160,108 @@ def su_that(db, *, user_id: str, run_id: str) -> dict:
                  for b in buoc]}
 
 
+def dung_lai(db, *, user_id: str, run_row: ChatlttRun, messages_goc: list,
+             tools: list) -> DP.Run:
+    """Dựng lại một `dieu_phoi.Run` **từ CSDL**, để chạy tiếp sau khi duyệt.
+
+    ## Vì sao KHÔNG thêm một cột `lich_su`
+
+    Lịch sử đã nằm sẵn trong CSDL, chỉ là ở dạng khác: `messages_goc` là đường
+    hội thoại, và `chatltt_step` giữ từng lời gọi kèm `doi_so_tho` + `ket_qua`.
+    Thêm một cột chép lại nó là tạo **bản thứ hai của cùng một sự thật** — và
+    hai bản thì sớm muộn lệch, ở đúng chỗ khó thấy nhất.
+
+    ⭐ Dựng lại cũng là một phép kiểm tự nó: nếu dựng ra khác bản gốc thì thứ
+       đang thiếu là một cột thật sự cần, chứ không phải một tiện tay.
+
+    ## `_dem_bam` phải sống sót
+
+    🔴 Trần "gọi trùng 2 lần" đếm theo `bam_trung`. Không dựng lại bộ đếm ấy thì
+    mỗi lần chờ duyệt là một lần **xoá sạch** nó — và một model kẹt vòng lặp chỉ
+    cần xin duyệt một lần là thoát được trần, mãi mãi.
+    """
+    from sqlalchemy import select
+
+    from apps.chatltt.tables import ChatlttApproval
+
+    hang = db.execute(select(ChatlttStep).where(
+        ChatlttStep.run_id == run_row.id,
+        ChatlttStep.user_id == str(user_id)).order_by(ChatlttStep.thu_tu)).scalars().all()
+
+    run = DP.Run(trang_thai=run_row.trang_thai, so_vong_model=run_row.so_vong_model,
+                 so_loi_goi_tool=run_row.so_loi_goi_tool,
+                 lich_su=list(messages_goc), tools=list(tools))
+
+    i = 0
+    while i < len(hang):
+        st = hang[i]
+        if st.loai != "model":
+            i += 1
+            continue
+        run.buoc.append(DP.Buoc(thu_tu=st.thu_tu, loai="model", step_id=st.id))
+
+        j = i + 1
+        nhom = []
+        while j < len(hang) and hang[j].loai == "tool":
+            nhom.append(hang[j])
+            j += 1
+        i = j
+        if not nhom:
+            continue
+
+        # Một message `assistant` mang TẤT CẢ lời gọi của vòng ấy — đúng hình
+        # dạng `_tin_nhan_assistant` đã dựng lần đầu (llama.cpp issue #27588:
+        # một `role="tool"` mồ côi đi vào đường xử lý không đáng tin).
+        run.lich_su.append({
+            "role": "assistant", "content": "",
+            "tool_calls": [{"id": s.tool_call_id or f"call_{s.thu_tu}",
+                            "type": "function",
+                            "function": {"name": s.tool_name,
+                                         "arguments": s.doi_so_tho or "{}"}}
+                           for s in nhom]})
+
+        for s in nhom:
+            b = DP.Buoc(thu_tu=s.thu_tu, loai="tool", ten=s.tool_name,
+                        doi_so=dict(s.doi_so or {}), doi_so_tho=s.doi_so_tho or "",
+                        bam=s.bam_trung or "", goi_id=s.tool_call_id or "",
+                        step_id=s.id)
+            if s.bam_trung:
+                run._dem_bam[s.bam_trung] = run._dem_bam.get(s.bam_trung, 0) + 1
+            if s.trang_thai == "cho_duyet":
+                p = db.execute(select(ChatlttApproval).where(
+                    ChatlttApproval.step_id == s.id,
+                    ChatlttApproval.user_id == str(user_id))).scalar_one_or_none()
+                # ⛔ Không có phiếu ⇒ bước treo mãi. Đánh dấu bằng chính `step_id`
+                #    để `tiep_tuc` ném "thiếu kết quả" thay vì im lặng bỏ qua.
+                b.cho_duyet = p.id if p is not None else s.id
+            else:
+                b.ket_qua = _tu_json(s.ket_qua)
+                run.lich_su.append({
+                    "role": "tool", "tool_call_id": b.goi_id or f"call_{s.thu_tu}",
+                    "content": (s.ket_qua or {}).get("cho_model", "")})
+            run.buoc.append(b)
+
+    return run
+
+
+def _tu_json(g: Optional[dict]):
+    """JSON đã lưu → `thi_hanh.KetQua`. Ngược của `_ket_qua_json`.
+
+    ⚠️ `noi_dung` **không** dựng lại được — ta chỉ lưu chuỗi model đã đọc, cố ý
+       (xem `_ket_qua_json`). Nên bản dựng lại mang chuỗi ấy làm `noi_dung`:
+       thứ duy nhất còn dùng tới nó là việc dựng lại lịch sử cho model.
+    """
+    from apps.chatltt.services import thi_hanh
+
+    g = g or {}
+    if not g:
+        return None
+    return thi_hanh.KetQua(bool(g.get("ok")), noi_dung=g.get("cho_model", ""),
+                           ma_loi=g.get("ma_loi", ""),
+                           thong_diep=g.get("thong_diep", ""),
+                           da_cat=bool(g.get("da_cat")), lop=g.get("lop", ""))
+
+
 def khoi_cho_message(r: DP.Run) -> list:
     """`Run` → các khối nội dung nối vào `chatltt_message.blocks`.
 

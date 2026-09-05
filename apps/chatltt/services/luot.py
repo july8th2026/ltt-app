@@ -27,7 +27,8 @@ from typing import Optional
 
 from sqlalchemy import select
 
-from apps.chatltt.services import chieu_tool, chinh_sach, co_v3, dang_chay
+from apps.chatltt.services import (chieu_tool, chinh_sach, co_v3, dang_chay,
+                                   luot_v3)
 from apps.chatltt.services import hoi_thoai as H
 from apps.chatltt.services import su_kien as S
 from apps.chatltt.tables import ChatlttExecution, ChatlttMessage
@@ -203,6 +204,63 @@ def _da_huy_trong_csdl(db, execution_id: str) -> bool:
     return tt == "cancelled"
 
 
+def dong_su_kien(db, *, ex, tra_loi, so, params: dict, user_id: str,
+                 phat: bool = True):
+    """Mở một lượt model và **sinh ra** từng sự kiện, đồng thời ghi CSDL theo nhịp.
+
+    Tách ra khỏi `chay()` để đường V3 (`luot_v3.py`) dùng **cùng một bản**,
+    không phải một bản chép.
+
+    ⛔ Một bản chép ở đây sẽ lệch, và nơi nó lệch là **nhịp ghi CSDL** và
+       **đường huỷ** — hai thứ chỉ sai khi có sự cố, tức chỉ sai lúc không ai
+       đang nhìn. Đây cũng là khúc đã được `test_627`/`test_629` tra tấn; về một
+       chỗ thì lưới đỡ đó che cả hai đường.
+
+    Sinh ra từng sự kiện canonical để bên gọi đọc thêm nếu cần
+    (`dieu_phoi` cần `tool_call.delta` và `response.completed`).
+    """
+    from platform_core.runtime_noi_bo import luong as L
+
+    ghi_nhan: dict = {}
+    it = L.mo_luong(db, user_id=user_id, tool_name=ex.tool_name, params=params,
+                    correlation_id=ex.id, holder_id=ex.id, ghi_nhan=ghi_nhan)
+    luc_ghi = time.monotonic()
+    ky_tu = 0
+    try:
+        for sk in it:
+            ket = S.ap_dung(ex, sk, message=tra_loi)
+            if sk.get("type") == "response.delta":
+                ky_tu += len(sk.get("text") or "")
+            if phat:
+                so.phat(sk)
+            yield sk
+            bay_gio = time.monotonic()
+            if S.nen_ghi(luc_ghi_cuoi=luc_ghi, bay_gio=bay_gio, ky_tu_moi=ky_tu,
+                         ket_thuc=ket):
+                if ket:
+                    S.dong_bo_khoi_text(tra_loi, ex)
+                db.commit()
+                luc_ghi, ky_tu = bay_gio, 0
+                if not ket and (so.dung.is_set() or _da_huy_trong_csdl(db, ex.id)):
+                    it.close()
+                    _huy(db, ex, tra_loi, so, ghi_nhan)
+                    return
+            elif so.dung.is_set():
+                it.close()
+                _huy(db, ex, tra_loi, so, ghi_nhan)
+                return
+    except L.LoiCuaLuong as e:
+        # Lỗi TRƯỚC byte đầu: chưa giữ tiền (trừ DangBan/ThieuCredit đã dọn).
+        sk = {"type": "response.failed", "code": _ma_loi(e), "ly_do": str(e)}
+        if isinstance(e, L.DangBan):
+            sk["retry_after_s"] = e.thu_lai_sau_s
+        S.ap_dung(ex, sk, message=tra_loi)
+        S.dong_bo_khoi_text(tra_loi, ex)
+        if phat:
+            so.phat(sk)
+        yield sk
+
+
 def chay(execution_id: str, *, user_id: str) -> None:
     """Thân luồng nền. Mọi kết cục đều để lại execution ở trạng thái kết thúc."""
     from platform_core.db import get_session
@@ -238,46 +296,26 @@ def chay(execution_id: str, *, user_id: str) -> None:
         # ⭐ [U] `docs/function-calling.md:24`: `parallel_tool_calls` TẮT mặc
         #    định ở llama.cpp. Không gửi cờ thì gọi song song không bao giờ xảy
         #    ra — P01 đo 18/18 ra đúng 2 lời gọi, nhưng chỉ KHI có cờ.
+        khoi_tools: list = []
         if co_v3.tool_bat():
             khoi_tools = chieu_tool.chieu(db, user_id=user_id)
             if khoi_tools:
                 params["tools"] = khoi_tools
                 params["parallel_tool_calls"] = True
 
-        ghi_nhan: dict = {}
-        it = L.mo_luong(db, user_id=user_id, tool_name=ex.tool_name, params=params,
-                        correlation_id=ex.id, holder_id=ex.id, ghi_nhan=ghi_nhan)
-        luc_ghi = time.monotonic()
-        ky_tu = 0
-        try:
-            for sk in it:
-                ket = S.ap_dung(ex, sk, message=tra_loi)
-                if sk.get("type") == "response.delta":
-                    ky_tu += len(sk.get("text") or "")
-                so.phat(sk)
-                bay_gio = time.monotonic()
-                if S.nen_ghi(luc_ghi_cuoi=luc_ghi, bay_gio=bay_gio, ky_tu_moi=ky_tu,
-                             ket_thuc=ket):
-                    if ket:
-                        S.dong_bo_khoi_text(tra_loi, ex)
-                    db.commit()
-                    luc_ghi, ky_tu = bay_gio, 0
-                    if not ket and (so.dung.is_set() or _da_huy_trong_csdl(db, ex.id)):
-                        it.close()
-                        _huy(db, ex, tra_loi, so, ghi_nhan)
-                        break
-                elif so.dung.is_set():
-                    it.close()
-                    _huy(db, ex, tra_loi, so, ghi_nhan)
-                    break
-        except L.LoiCuaLuong as e:
-            # Lỗi TRƯỚC byte đầu: chưa giữ tiền (trừ DangBan/ThieuCredit đã dọn).
-            sk = {"type": "response.failed", "code": _ma_loi(e), "ly_do": str(e)}
-            if isinstance(e, L.DangBan):
-                sk["retry_after_s"] = e.thu_lai_sau_s
-            S.ap_dung(ex, sk, message=tra_loi)
-            S.dong_bo_khoi_text(tra_loi, ex)
-            so.phat(sk)
+        if khoi_tools:
+            # Đường V3: nhiều vòng model, có tool, có duyệt (`luot_v3.py`).
+            #
+            # ⛔ Nhánh này chỉ với được khi cờ bật **và** có tool thật. Cờ tắt
+            #    ⇒ không một dòng nào của V3 chạy, và hàm này giữ nguyên hình dạng
+            #    V1 — đó là điều kiện của đường lùi (`02_ADR` §7), và `test_806`
+            #    đọc chính mã nguồn này để chốt.
+            luot_v3.chay_run(db, ex=ex, tra_loi=tra_loi, so=so, params=params,
+                             user_id=user_id, khoi_tools=khoi_tools)
+        else:
+            for _sk in dong_su_kien(db, ex=ex, tra_loi=tra_loi, so=so, params=params,
+                                    user_id=user_id):
+                pass
         if ex.status in ("streaming", "queued"):
             # Luồng cạn mà không có sự kiện kết thúc — không được để "đang chảy" mãi.
             sk = {"type": "response.failed", "code": "luong_cat", "ly_do": "luong ket thuc som"}
