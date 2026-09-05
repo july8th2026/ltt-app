@@ -285,7 +285,7 @@
   "cap_nhat_luc": "2026-09-05",
   "cong_chat_luong": {
     "gate_day_du": "PASS",
-    "ho_so": "test-results/gates/20260905T052942Z-17052.json",
+    "ho_so": "test-results/gates/20260905T073314Z-19544.json",
     "ngay": "2026-09-05",
     "buoc_bo_qua": [
       "bat bien da tien trinh (thieu LTT_TEST_DATABASE_URL Postgres)",
@@ -299,7 +299,8 @@
       "npm ci frontend/chatltt o cay chinh",
       "them frontend/*/node_modules vao luat 1b QUY_TRINH_WORKTREE.md",
       "dat LTT_TEST_DATABASE_URL de buoc `bat bien da tien trinh` chay"
-    ]
+    ],
+    "ghi_chu_luot_truoc": "Luot 20260905T071549Z ra FAIL (1/26) — DO CHINH TOI giet worker pytest cua mot luot dang chay, khong phai do ma. Da chay lai sach: PASS."
   },
   "template_may_b": {
     "duong_dan": "H:/LTT_LLM/models/chat_template.jinja",
@@ -675,5 +676,24 @@
       "tool_call_khong_nam_trong_LOAI_KHOI": "hoi_thoai.kiem_khoi() TU CHOI khoi tool_call. V3 van ghi duoc vi luot_v3._them_khoi gan thang tra_loi.blocks, VONG QUA kiem_khoi. Nen loi khong no o duong V3 — no nam cho o hoi_thoai.cap_nhat_khoi(), tuc luong SUA/TAO LAI se tu choi dung tin nhan ma V3 vua tao. Khong phep kiem nao trong 250 cai bat duoc vi TAT CA deu di duong V3 — duong duy nhat khong kiem. Chi mot lan chay THAT moi loi ra.",
       "moi_noi_khong_ai_kiem": "Do 05/09: tiep_sau_duyet / chay_tiep_nen / _danh_thuc_run co 0 tep test nhac toi, trong khi moi manh chung khau lai deu xanh rieng le. Cung hinh dang voi loi LOAI_KHOI: manh duoc kiem ky, MOI NOI thi khong — va moi noi la cho duy nhat biet ca hai ben."
     }
+  },
+  "r2b": {
+    "trang_thai": "DE XUAT — cho chu du an chot",
+    "tai_lieu": "docs/CHATLTT_V3/04_ADR_R2B_TINH_TIEN_LUOT.md",
+    "ngay_do": "2026-09-05",
+    "ket_luan": "Bang gia 50/10/400 credit/1M DUNG, khong doi. Thu hong la RANH GIOI LAM TRON. De xuat C3: tich luy mcredit theo NGUOI DUNG, thu phan nguyen, giu phan le.",
+    "neo_thi_truong_do_lai": {
+      "model": "qwen/qwen3.8-27b (dung model nha)",
+      "vao_credit_1m": 110.5,
+      "ra_credit_1m": 789.0,
+      "nguon": "openrouter.ai/api/v1/models, 431 model, quy doi 26.300d/USD",
+      "so_voi_neo_thang_8": "105/789 -> 110,5/789: lech +5% vao, 0% ra. NEO KHONG TROI.",
+      "vi_tri_cua_ta": "45% gia vao, 51% gia ra cua thi truong"
+    },
+    "hai_van_de": {
+      "1_C1_lam_tron_moi_LUOT_GOI": "luot 4 vong: that 0,92cr -> thu 4cr (4,0x)",
+      "2_san_1_credit_luy_thoai": "chat rat ngan: ta thu 1cr, thi truong 0,21cr => ta DAT HON 4,84x. Hoi thoai 20 luot: san thu 20cr, chi phi that 3,13cr, thi truong 17,18cr."
+    },
+    "gioi_han": "Moi con so tu MO HINH, khong phai luot chay that — artefact P01 ghi do tre va dat/truot, KHONG ghi token. Truoc khi bat thu tien that phai ghi usage cua 20-50 luot that roi chay lai."
   }
 }
