@@ -104,7 +104,7 @@ def test_video_range_stream_supports_non_seekable_r2_body():
 def test_autosubvideo_khong_con_tu_viet_bo_range():
     """Va app that su di qua lop dung chung, khong chi "co import".
 
-    Neu ai do chep lai bo phan tich Range vao day, `test_704` do truoc — nhung
+    Neu ai do chep lai bo phan tich Range vao day, `test_904` do truoc — nhung
     phep kiem nay do o dung tep cua app, tuc dung cho nguoi sua no dang nhin.
     """
     import pathlib

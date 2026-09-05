@@ -16107,7 +16107,7 @@ theo RFC 9110. Trước đó `apps/` có **năm** bản chép gần như giống
 và cả năm mang cùng bốn khiếm khuyết: không bao giờ trả `416`; `bytes=-500` trả
 501 byte **đầu** thay vì 500 byte cuối; `bytes=0-` nuốt cả tệp vào RAM;
 `start > end` xử lý mỗi nơi một kiểu. Sau lượt này: **0 bản chép**, 7 app dùng
-chung, và `test_704` đọc AST để chặn bản thứ sáu.
+chung, và `test_904` đọc AST để chặn bản thứ sáu.
 
 `server/static/nhip_job.js` — một vòng hỏi job biết tab đang ẩn, rút từ bản đúng
 vốn đã nằm im trong `job_detail.html`.
