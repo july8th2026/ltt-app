@@ -662,6 +662,26 @@ def test_nguoi_KHAC_khong_thay_buoc_cho_job(web, may, bat_co, kho_job):
     "cảm ứng không pan được" trên một canvas **rỗng** — suýt thành một phát
     hiện: trước khi ghi một kết quả âm, hỏi *điều kiện nào đáng lẽ phải cho
     kết quả DƯƠNG ở đây*, rồi chạy đúng điều kiện đó.
+
+    ## ĐÃ TIÊM BẢN HỎNG ĐỂ CHỨNG MINH PHÉP KIỂM NÀY ĐỎ ĐƯỢC (06/09)
+
+    Khẳng định hai chiều chứng minh nó **phân biệt được**; nó chưa chứng minh
+    nó phân biệt **bằng đúng thứ ta nghĩ** — hàm có thể đang so một trường khác
+    mà tình cờ khớp trong fixture. Nên đã đo:
+
+        ban goc                          -> returncode=0   1 passed
+        `con_cho_job` luon tra False     -> returncode=1   1 failed
+        khoi phuc                        -> KHOP TUNG BYTE (sha256 bdd64e9a)
+
+    ⛔ Đọc `returncode`, **không** khớp mẫu stdout: *"không thấy chữ FAILED"* và
+       *"không chạy được"* trông y hệt nhau. Chính script tiêm ở trên đã chết ở
+       dòng **in kết luận** (emoji vs bảng mã cp1252 của console) — nếu phán
+       đoán bằng đầu ra thì đã kết luận thất bại, trong khi `returncode` đã trả
+       lời xong từ trước.
+
+    🔑 Làm phép này cho `con_cho_job` chứ không cho mọi phép kiểm, vì nó là
+       **cổng phân quyền**: hỏng ở đó thì người lạ đọc được job của người khác,
+       và triệu chứng là **không có triệu chứng**.
     """
     from apps.chatltt.services import luot_v3
 
