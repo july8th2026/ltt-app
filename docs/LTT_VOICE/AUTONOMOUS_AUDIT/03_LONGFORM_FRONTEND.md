@@ -91,7 +91,7 @@ Cùng lượt: `manifest.py` sửa "SÁU TAB" → **NĂM**, gỡ nhãn `NHAN_NGU
 tồn tại. Đây là **chốt mạnh hơn thứ nó đo**: nó không chứng minh được ngưỡng
 đúng, nhưng nó làm bản sửa không thể lặng lẽ biến mất.
 
-## VERIFIED — trình duyệt thật, hai phía của ngưỡng
+## VERIFIED — trình duyệt thật (**Chromium**), hai phía của ngưỡng
 
 Dựng một `<audio>` với WAV thật 0,1 giây, ghi đè `duration` để đứng hai bên
 `TRAN_GIAY_SONG`, rồi bấm phát và đọc lại `canvas.__dinh`:
@@ -117,6 +117,16 @@ Dựng một `<audio>` với WAV thật 0,1 giây, ghi đè `duration` để đ�
 ⚠️ Vì `blob:` bị CSP chặn, ca 0,1 giây **không** chạy trọn `decodeAudioData` —
    nó chỉ chứng minh nhánh ngắn *có* gọi mạng. Đường giải mã thật là mã **không
    đổi** trong lượt này.
+
+⛔ **Và cả ba dòng trên đo bằng Chromium.** Nhánh `!AudioContext` được kiểm bằng
+   cách **xoá `window.AudioContext`** trong Chromium, không phải bằng cách chạy
+   Safari thật. Nó chứng minh *"nếu API vắng mặt thì mã đi đúng nhánh"* — không
+   chứng minh *"Safari cũ hành xử như thế"*. Hai mệnh đề khác nhau, và chỉ
+   mệnh đề thứ nhất được đo.
+
+⚠️ Kiểm phát tiếng trên WebKit **không làm được bằng Playwright trên Windows**:
+   nó không giải mã nổi audio kể cả từ một `data:` URI (đo 05/09, phiên Mobile
+   V1). Muốn xác nhận Safari phát được thì phải dùng **thiết bị thật**.
 
 ## 🔴 MỘT LỖI TÔI TỰ TẠO RA, VÀ TỰ BẮT KHI SOÁT DIFF
 
