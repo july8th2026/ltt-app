@@ -53,11 +53,17 @@ cũ đi khi có phép đo mới bác bỏ nó. Chưa có.
 
 ---
 
-## 🔴 BỐN KHẲNG ĐỊNH ĐÃ BỊ BÁC BỎ — đừng dựng lại chúng
+## 🔴 NĂM KHẲNG ĐỊNH KHÔNG CÒN ĐÚNG — đừng dựng lại chúng
 
-Cả bốn đều **nghe rất thuyết phục** khi mới đọc, và cả bốn đều sai. Ghi ra vì
-một phiên sau đọc phải bản cũ sẽ đi "sửa" những thứ vốn đúng — và sẽ làm vậy
-một cách tự tin, vì đoạn văn ấy tự xưng là kết quả phân tích.
+Bốn cái đầu (①–④) **nghe rất thuyết phục** khi mới đọc, và cả bốn đều sai **ngay
+từ lúc viết**. Ghi ra vì một phiên sau đọc phải bản cũ sẽ đi "sửa" những thứ vốn
+đúng — và sẽ làm vậy một cách tự tin, vì đoạn văn ấy tự xưng là kết quả phân tích.
+
+⚠️ Cái thứ năm (⑤) **khác loại**, và để chung ở đây là có chủ ý: nó **đúng lúc
+viết** rồi mới thành sai khi hệ thống đổi. Hai loại này cần hai cách phòng khác
+nhau — ①–④ cần *đo trước khi khẳng định*, còn ⑤ cần *quét lại chú thích khi sửa
+thứ mà chú thích đang mô tả*. Nhưng hậu quả thì giống hệt: người sau đọc một câu
+tự tin và suy tiếp từ nó.
 
 ### ① *"Engine không nói được tiếng Anh"* — SAI
 
@@ -117,9 +123,31 @@ nào tự nói rằng nó đã cũ**.
 
 → commit `7de8a461`
 
+### ⑤ *"`/audio` không nhận `Range`"* — ĐÚNG lúc viết, SAI từ **05/09**
+
+Chú thích ở `server/static/voice.js` (trên `veSong`) từng ghi: *"`/audio` trả
+`StreamingResponse` nên KHÔNG có `Content-Length`, và nó cũng không nhận
+`Range`"*. Cả hai vế đều đúng ở thời điểm viết.
+
+⭐ Nhưng vế thứ hai không chỉ là một chi tiết kỹ thuật — **nó chính là một nửa
+của bug P0 mobile**: Safari/WebKit quyết định một nguồn âm thanh có tua được hay
+không từ chính lượt 200 đầu tiên; không thấy `Accept-Ranges` thì nó bỏ phát,
+trong khi `<a download>` vẫn tải bình thường. Đó đúng là hình dạng lỗi người
+dùng báo — *"tải về được nhưng bấm Play trên điện thoại không chạy"*.
+
+Từ 05/09 `/audio` đi qua `platform_core.phat_media`: khai `Accept-Ranges`, trả
+`Content-Length` ở lượt 200, `206` cho dải hợp lệ, `416` cho dải vô nghĩa.
+Đo trên máy chủ: `bytes=0-99` → `206 bytes 0-99/401324`.
+
+⚠️ Dòng mã dùng `au.duration` **vẫn đúng** — nó chưa bao giờ phụ thuộc vào
+`Content-Length`. Một lý do sai vẫn có thể dẫn tới một quyết định đúng, và khi
+ấy thứ phải sửa là **lý do**, không phải dòng mã.
+
+→ `docs/MOBILE/02_BASELINE.md` §1a · commit `bec5643d` (phiên `phien/mobile-v1`)
+
 ---
 
-## ⭐ MỘT HÌNH DẠNG CHUNG cho cả bốn
+## ⭐ MỘT HÌNH DẠNG CHUNG cho ①–④
 
     mot hang so / mot ten / mot tep doc rat thuyet phuc
       + mot tien de ngam chua ai kiem
@@ -134,6 +162,12 @@ nó **chạy** ra sao.
 ⚠️ Và luật thứ hai, rút từ ca ①: **bác bỏ một câu chưa đủ — phải đi quét những
 chỗ đã chép nó.** Một tài liệu sai đã bị bác bỏ mà không được dọn sẽ được trích
 lại, và lần trích sau không mang theo lời bác bỏ.
+
+⚠️ Luật thứ ba, rút từ ca ⑤ và **không suy ra được từ ①–④**: một chú thích mô tả
+*hành vi hiện thời của một hệ con khác* là một khẳng định **có hạn dùng**. Nó
+không sai lúc viết, nên không phép đo nào lúc viết bắt được nó. Thứ bắt được nó
+là **người sửa hệ con ấy đi quét lại các chú thích mô tả nó** — nên việc đó phải
+nằm trong cùng commit với bản sửa, không phải trong một lượt dọn dẹp về sau.
 
 ---
 

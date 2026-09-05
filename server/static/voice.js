@@ -891,11 +891,21 @@
     veLaiSong(canvas, 0);
   }
 
-  /* `au` la phan tu <audio> dang phat, va no la THU DUY NHAT biet ban doc dai
-   * bao nhieu ma khong phai tai gi them: `/audio` tra `StreamingResponse` nen
-   * KHONG co `Content-Length`, va no cung khong nhan `Range` — tuc mot lan
-   * HEAD hay mot lan doc dau tep deu khong tra loi duoc cau hoi nay. Trinh
-   * duyet thi da doc metadata roi (`preload="metadata"`). */
+  /* `au` la phan tu <audio> dang phat, va ta lay do dai tu `au.duration` chu
+   * KHONG tu `Content-Length`. Trinh duyet da doc metadata roi
+   * (`preload="metadata"`) nen con so ay khong ton them mot luot mang nao.
+   *
+   * ⚠️ CHU THICH CU O DAY DA SAI TU 05/09 — giu lai de khong ai suy lai tu no.
+   *    No tung ghi: *"`/audio` tra `StreamingResponse` nen KHONG co
+   *    `Content-Length`, va no cung khong nhan `Range`"*. Ve KHONG NHAN RANGE
+   *    thi dung o thoi diem viet, va chinh no la mot nua cua bug P0 mobile.
+   *    Nhung tu 05/09 `/audio` di qua `platform_core.phat_media`: no khai
+   *    `Accept-Ranges`, tra `Content-Length` o luot 200, `206` cho dai hop le
+   *    va `416` cho dai vo nghia. Ca hai ve deu khong con dung.
+   *
+   * ⭐ Va do la ly do dong chon `au.duration` VAN dung: no chua bao gio phu
+   *    thuoc vao `Content-Length`. Mot ly do sai co the dan toi mot quyet dinh
+   *    dung — nen thu phai sua la LY DO, khong phai dong ma. */
   function veSong(canvas, url, au) {
     /* Chua biet dai bao nhieu thi HOI, dung doan. `duration` la NaN cho toi
        khi metadata ve; quyet dinh luc ay la quyet dinh tren mot con so trong. */
