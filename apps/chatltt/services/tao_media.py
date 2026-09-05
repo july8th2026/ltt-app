@@ -26,6 +26,8 @@ from __future__ import annotations
 import logging
 from typing import Optional
 
+_log = logging.getLogger("ltt.chatltt.media")
+
 from apps.chatltt.services import chinh_sach
 from apps.chatltt.services import hoi_thoai as H
 from apps.chatltt.services import su_kien as S
@@ -96,11 +98,27 @@ def _giong_cho_luot(db, *, user_id: str, conv_id: str, params: dict):
 
 def tao(db, *, user_id: str, conv_id: str, ten: str, params: dict,
         credit_da_bao: Optional[int] = None,
-        parent_id=None) -> dict:
+        parent_id=None, tin_nhan=None,
+        run_id: str = "", step_id: str = "") -> dict:
     """Nop mot job tao anh/tieng gan vao hoi thoai. COMMIT truoc khi tra ve.
 
     `credit_da_bao` la so nguoi dung DA NHIN THAY. Lech voi gia tinh lai ⇒ tu
     choi: nguoi dung phai duoc bao lai, khong bi tru mot so khac voi so ho dong y.
+
+    ## `tin_nhan` — hai duong vao, mot ban logic (H44 P05)
+
+    Duong NUT BAM (V1): khong truyen `tin_nhan` ⇒ ham tu tao mot tin nhan
+    assistant moi. Do la dung: nguoi dung bam "tao anh" thi ket qua la mot luot
+    rieng trong cay hoi thoai.
+
+    Duong MODEL TU GOI (V3): truyen `tin_nhan` cua run dang chay ⇒ job gan vao
+    ĐUNG tin nhan ay. Khong co tham so nay thi mot lan model goi `image.ltt`
+    sinh ra mot tin nhan thu hai — va cau tra loi cua no roi vao mot cho khac
+    voi cho no dang noi.
+
+    ⛔ Va lua chon thay the — goi thang `J.nop_job` tu V3 — la chep lai bao gia,
+       kiem tham so, va ghi `giong` da dung. Ba ban chep se lech, va chung lech
+       o cho tinh tien.
     """
     from platform_core.runtime_noi_bo import job as J
 
@@ -114,12 +132,21 @@ def tao(db, *, user_id: str, conv_id: str, ten: str, params: dict,
         raise ThamSoSai(
             f"gia da doi: bao {credit_da_bao}, tinh lai {bg.credit}")
 
-    cha = hoi.current_leaf_id if parent_id is None else parent_id
-    tra_loi = H.them_thong_diep(db, user_id=user_id, conv_id=conv_id,
-                                role="assistant", blocks=[], parent_id=cha,
-                                status="queued")
+    if tin_nhan is None:
+        cha = hoi.current_leaf_id if parent_id is None else parent_id
+        tra_loi = H.them_thong_diep(db, user_id=user_id, conv_id=conv_id,
+                                    role="assistant", blocks=[], parent_id=cha,
+                                    status="queued")
+    else:
+        tra_loi = tin_nhan
     ex = S.mo_execution(db, message=tra_loi, tool_name=ten, mode="job")
     ex.credit_giu = bg.credit
+    # Noi but toan nay voi buoc sinh ra no. Ca hai deu `nullable` nen duong V1
+    # (nut bam) van hop le voi ca hai NULL.
+    if run_id:
+        ex.run_id = str(run_id)
+    if step_id:
+        ex.step_id = str(step_id)
     # ⭐ GHI LAI GIONG DA DUNG. Day la thu `chon_giong.giong_da_dung()` doc o
     #    luot sau de KHONG phai hoi model lai — mot lan hoi ton 1 credit, va mot
     #    hoi thoai doi giong giua chung cung nghe nhu doi nguoi doc.
@@ -136,6 +163,57 @@ def tao(db, *, user_id: str, conv_id: str, ten: str, params: dict,
     db.commit()
     return {"conversation_id": hoi.id, "message_id": tra_loi.id,
             "execution_id": ex.id, "job_id": job.id, "credit": bg.credit}
+
+
+def _dat_khoi(tin, khoi: list, *, noi_them: bool) -> None:
+    """Đặt kết quả job vào `blocks`. **NỐI THÊM** khi job thuộc một run V3.
+
+    🔴 Đường V1 (nút bấm) tạo một tin nhắn RIÊNG cho mỗi lần tạo, nên thay
+    toàn bộ `blocks` là đúng — tin nhắn ấy không có gì khác.
+
+    ⛔ Đường V3 thì không: tin nhắn đó đang mang khối `tool_call` của cả lượt
+       và phần chữ model đã nói. Thay toàn bộ là **xoá sạch** chúng, và người
+       dùng thấy một bức ảnh xuất hiện thay chỗ câu trả lời vừa đọc.
+    """
+    if not noi_them:
+        tin.blocks = list(khoi)
+        return
+    cu = list(tin.blocks or [])
+    # Ảnh/tiếng đứng TRƯỚC phần chữ cuối: model sẽ nói về chúng ở vòng sau,
+    # nên câu ấy phải nằm dưới thứ nó nói tới.
+    i = next((n for n, k in enumerate(cu) if k.get("type") == "text"), len(cu))
+    cu[i:i] = [k for k in khoi if k not in cu]
+    tin.blocks = cu
+
+
+def _danh_thuc_run(db, ex) -> None:
+    """Job của một run V3 vừa xong ⇒ chạy tiếp lượt đó.
+
+    ## ⚠️ Giới hạn đã biết: đây là đường **KÉO**, không phải đường ĐẨY
+
+    `dong_bo` chạy khi **client hỏi** (`/api/luot/{id}/trang-thai`, nhịp 2 giây).
+    Không ai hỏi thì run không tự chạy tiếp — nó nằm im ở `WAITING_BACKGROUND`
+    cho tới lần ai đó mở lại hội thoại.
+
+    ⭐ Chấp nhận được cho bản đầu, và **không mất dữ liệu**: job đã xong, tiền
+       đã quyết toán, kết quả đã nằm trong `blocks`. Thứ chưa xảy ra chỉ là vòng
+       model **nói về** bức ảnh đó.
+
+    ⛔ Đường ĐẨY thật phải là một chỗ móc trong `job_runner` — `platform_core`,
+       ngoài ranh giới của app này. Ghi lại ở `05_E2_*.md` để không ai tưởng
+       thiếu sót này đã được giải quyết.
+    """
+    if not getattr(ex, "run_id", None):
+        return
+    try:
+        from apps.chatltt.services import luot_v3
+        if luot_v3.nen_chay_tiep(db, user_id=ex.user_id, run_id=ex.run_id):
+            luot_v3.chay_tiep_nen(ex.run_id, user_id=ex.user_id)
+    except Exception:                                           # noqa: BLE001
+        # Job ĐÃ xong và tiền ĐÃ quyết toán. Không đánh thức được run là một
+        # sự cố, nhưng biến nó thành lỗi của `dong_bo` là làm hỏng cả việc
+        # **đọc tiến độ** — thứ duy nhất đang hoạt động.
+        _log.exception("khong danh thuc duoc run %s", str(ex.run_id)[-8:])
 
 
 def _khoi_artifact(ten: str, result: dict) -> list:
@@ -188,8 +266,10 @@ def dong_bo(db, *, user_id: str, execution_id: str) -> dict:
                        "credit_thu": thu,
                        "credit_hoan": max(0, ex.credit_giu - thu)}, message=tin)
         if tin is not None:
-            tin.blocks = khoi or [{"type": "status", "code": "khong_co_ket_qua"}]
+            _dat_khoi(tin, khoi or [{"type": "status", "code": "khong_co_ket_qua"}],
+                      noi_them=bool(ex.run_id))
         db.commit()
+        _danh_thuc_run(db, ex)
     elif tt in ("error", "cancelled"):
         ma = "huy" if tt == "cancelled" else "that_bai"
         S.ap_dung(ex, {"type": "execution.failed", "code": ma,
@@ -199,9 +279,11 @@ def dong_bo(db, *, user_id: str, execution_id: str) -> dict:
                        "credit_thu": 0, "credit_hoan": ex.credit_giu},
                   message=tin)
         if tin is not None:
-            tin.blocks = [{"type": "error", "code": ma,
-                           "text": str(getattr(job, "error", "") or "")[:500]}]
+            _dat_khoi(tin, [{"type": "error", "code": ma,
+                             "text": str(getattr(job, "error", "") or "")[:500]}],
+                      noi_them=bool(ex.run_id))
         db.commit()
+        _danh_thuc_run(db, ex)
     else:
         moi = int(getattr(job, "progress", 0) or 0)
         cu = int((ex.usage or {}).get("progress") or 0)

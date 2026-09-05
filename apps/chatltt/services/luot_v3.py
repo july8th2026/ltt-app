@@ -131,7 +131,7 @@ def tiep_sau_duyet(db, *, run_id: str, user_id: str, so) -> DP.Run:
     run_row = db.get(ChatlttRun, str(run_id))
     if run_row is None or run_row.user_id != str(user_id):
         raise KhongChayTiepDuoc("khong tim thay run")
-    if run_row.trang_thai != DP.AWAITING_APPROVAL:
+    if run_row.trang_thai not in DP.CHO_DUOC:
         raise KhongChayTiepDuoc(f"run dang o {run_row.trang_thai}")
 
     tra_loi = db.get(ChatlttMessage, run_row.message_id)
@@ -146,8 +146,11 @@ def tiep_sau_duyet(db, *, run_id: str, user_id: str, so) -> DP.Run:
 
     run = LR.dung_lai(db, user_id=user_id, run_row=run_row,
                       messages_goc=goc, tools=khoi_tools)
-    kq = bo_chay_tool.ket_qua_sau_duyet(db, user_id=user_id, run=run,
-                                        khoi_tools=khoi_tools)
+    kq = bo_chay_tool.ket_qua_sau_duyet(
+        db, user_id=user_id, run=run, khoi_tools=khoi_tools,
+        tin_nhan=tra_loi, conv_id=run_row.conversation_id)
+    # Hai nguồn câu trả lời, một từ điển. `dang_treo()` đòi đủ cả hai loại.
+    kq.update(bo_chay_tool.ket_qua_job(db, user_id=user_id, run=run))
 
     ex_cu = (db.get(ChatlttExecution, tra_loi.execution_id)
              if tra_loi.execution_id else None)
@@ -269,9 +272,42 @@ def nen_chay_tiep(db, *, user_id: str, run_id: str) -> bool:
     r = db.get(ChatlttRun, str(run_id))
     if r is None or r.user_id != str(user_id):
         return False
-    if r.trang_thai != DP.AWAITING_APPROVAL:
+    if r.trang_thai not in DP.CHO_DUOC:
         return False
-    return not con_cho_duyet(db, user_id=user_id, run_id=run_id)
+    if con_cho_duyet(db, user_id=user_id, run_id=run_id):
+        return False
+    return not con_cho_job(db, user_id=user_id, run_id=run_id)
+
+
+def con_cho_job(db, *, user_id: str, run_id: str) -> bool:
+    """Còn bước nào đang chờ một job chưa xong không.
+
+    🔴 Một lượt gọi cả `image.ltt` và `speech.ltt` có **hai** job. Chạy tiếp
+    khi mới một cái xong là đưa cho model một lịch sử thiếu một kết quả — và
+    nó sẽ gọi lại cái đang chạy.
+    """
+    from sqlalchemy import select
+
+    from apps.chatltt.tables import ChatlttStep
+
+    ds = db.execute(select(ChatlttStep.job_id).where(
+        ChatlttStep.run_id == str(run_id),
+        ChatlttStep.user_id == str(user_id),
+        ChatlttStep.trang_thai == "cho_job")).scalars().all()
+    if not ds:
+        return False
+
+    from platform_core import job_history
+
+    for jid in ds:
+        if not jid:
+            continue
+        job = job_history.get_owned(db, str(user_id), jid)
+        if job is None:
+            continue
+        if str(getattr(job, "status", "")) not in ("done", "error", "cancelled"):
+            return True
+    return False
 
 
 def _dong(db, *, run_row, run: DP.Run, tra_loi) -> None:
@@ -339,5 +375,6 @@ def nen_dung_v3(db, *, user_id: str) -> list:
 
 
 __all__ = ["chay_run", "tiep_sau_duyet", "chay_tiep_nen", "con_cho_duyet",
+           "con_cho_job",
            "nen_chay_tiep",
            "nen_dung_v3", "KhongChayTiepDuoc"]

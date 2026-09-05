@@ -107,7 +107,18 @@ def tao(db, *, user_id: str, run_id: str, khoi_tools: list,
     return chay_tool
 
 
-def ket_qua_sau_duyet(db, *, user_id: str, run: DP.Run, khoi_tools: list) -> dict:
+#: Nang luc chay bang JOB NEN, khong tra ket qua trong mot loi goi ham.
+#:
+#: ⛔ Doc tu `chinh_sach` chu khong go lai hai chuoi. Hai ban chep cua cung mot
+#:    danh sach la hai ban se lech, va o day lech nghia la mot tool ton tien
+#:    duoc chay DONG BO trong luong web — tuc mot 524 cua Cloudflare.
+def _tool_job() -> frozenset:
+    from apps.chatltt.services import chinh_sach
+    return frozenset({chinh_sach.NANG_LUC_ANH, chinh_sach.NANG_LUC_TIENG})
+
+
+def ket_qua_sau_duyet(db, *, user_id: str, run: DP.Run, khoi_tools: list,
+                      tin_nhan=None, conv_id: str = "") -> dict:
     """`{approval_id: KetQua}` cho `dieu_phoi.tiep_tuc`.
 
     Mỗi bước đang treo được tra phiếu của nó: **duyệt** ⇒ chạy tool bằng
@@ -135,10 +146,87 @@ def ket_qua_sau_duyet(db, *, user_id: str, run: DP.Run, khoi_tools: list) -> dic
         # ⭐ `doi_so_cuoi()`, KHÔNG `p.doi_so`. Người dùng sửa tham số rồi bấm
         #    đồng ý mà ta chạy bản gốc là chạy một việc không ai duyệt.
         ds = D.doi_so_cuoi(p)
+
+        if p.tool_name in _tool_job():
+            # Ảnh và tiếng không trả kết quả trong một lời gọi hàm — chúng nộp
+            # một **job**. Nên duyệt xong là bước đi từ "chờ người" sang "chờ
+            # máy", chứ chưa có kết quả.
+            ra[b.cho_duyet] = _nop_job(db, user_id=user_id, p=p, b=b, ds=ds,
+                                       tin_nhan=tin_nhan, conv_id=conv_id)
+            continue
+
         ra[b.cho_duyet] = thi_hanh.thi_hanh(
             db, user_id=user_id, ten=p.tool_name, doi_so=ds,
             schema=schema.get(p.tool_name), cho_chay_co_phi=True)
     return ra
 
 
-__all__ = ["tao", "ket_qua_sau_duyet", "BaoGia"]
+def ket_qua_job(db, *, user_id: str, run: DP.Run) -> dict:
+    """`{job_id: KetQua}` cho các bước đang chờ job. Job **chưa xong ⇒ vắng mặt**.
+
+    ⛔ Vắng mặt là đúng: `tiep_tuc` sẽ ném "thiếu kết quả", và đó là hàng rào
+       chặn việc chạy tiếp khi job còn đang vẽ. Trả một `KetQua` rỗng ở đây là
+       nói với model rằng tool đã chạy xong và không ra gì.
+    """
+    from platform_core import job_history
+
+    ra: dict = {}
+    for b in run.dang_cho_job():
+        job = job_history.get_owned(db, str(user_id), b.cho_job)
+        if job is None:
+            ra[b.cho_job] = thi_hanh.KetQua(
+                False, ma_loi="job_bien_mat",
+                thong_diep=f"khong tim thay job {b.cho_job!r} cho {b.ten!r}.")
+            continue
+        tt = str(getattr(job, "status", ""))
+        if tt == "done":
+            kq = dict(getattr(job, "result", None) or {})
+            # ⭐ Trả cho model thứ nó **dùng được**: đường tới tệp và số lượng.
+            #    Không đổ cả `result` thô — nó mang khoá nội bộ và số liệu máy B.
+            ra[b.cho_job] = thi_hanh.KetQua(
+                True, noi_dung={"tao_xong": True, "tep": kq.get("files")
+                                or kq.get("outputs") or kq.get("keys") or []})
+        elif tt in ("error", "cancelled"):
+            ra[b.cho_job] = thi_hanh.KetQua(
+                False, ma_loi=("huy" if tt == "cancelled" else "job_that_bai"),
+                thong_diep=str(getattr(job, "error", "") or "")[:400]
+                           or f"job {tt}")
+        # chưa xong ⇒ không đưa vào `ra`
+    return ra
+
+
+def _nop_job(db, *, user_id: str, p, b: DP.Buoc, ds: dict, tin_nhan, conv_id: str):
+    """Nộp job cho một bước đã duyệt. Trả `ChoJob`, hoặc `KetQua` lỗi.
+
+    ⛔ `credit_da_bao=p.bao_gia_credit` — **số người dùng ĐÃ NHÌN THẤY**.
+       `tao_media.tao` tính lại và từ chối nếu lệch. Đó không phải thừa: giữa
+       lúc báo giá và lúc bấm đồng ý có thể vài phút, và người dùng phải
+       được báo lại chứ không bị trừ một số khác với số họ đã đồng ý.
+
+    🔴 Và đó cũng là lý do `doi_so_da_sua` phải đi qua đây: người dùng sửa
+       `so_luong` từ 4 xuống 1 thì giá đổi, và phiếu mang giá của bản **đề
+       nghị**. `tao_media.tao` sẽ từ chối — đúng, và model đọc được lý do.
+    """
+    from apps.chatltt.services import tao_media
+
+    if tin_nhan is None:
+        return thi_hanh.KetQua(
+            False, ma_loi="khong_gan_duoc", lop=p.policy_class,
+            thong_diep=(f"khong nop duoc job cho {p.tool_name!r}: thieu tin nhan "
+                        f"de gan ket qua vao."))
+    try:
+        r = tao_media.tao(db, user_id=user_id, conv_id=conv_id or "",
+                          ten=p.tool_name, params=ds,
+                          credit_da_bao=int(p.bao_gia_credit),
+                          tin_nhan=tin_nhan, run_id=p.run_id, step_id=b.step_id)
+    except Exception as e:                                      # noqa: BLE001
+        # Nộp job hỏng là **dữ liệu** — cùng luật `thi_hanh` mục 4. Không nuốt:
+        # kiểu ngoại lệ đi vào thông điệp để model nói lại được cho người dùng.
+        return thi_hanh.KetQua(
+            False, ma_loi="nop_job_hong", lop=p.policy_class,
+            thong_diep=f"khong nop duoc job {p.tool_name!r}: "
+                       f"{type(e).__name__}: {e}"[:400])
+    return DP.ChoJob(job_id=str(r["job_id"]), tool_name=p.tool_name, doi_so=ds)
+
+
+__all__ = ["tao", "ket_qua_sau_duyet", "ket_qua_job", "BaoGia"]

@@ -50,6 +50,9 @@ CANCELLED = "CANCELLED"
 
 KET_THUC = frozenset({COMPLETED, FAILED, CANCELLED})
 
+#: Trạng thái mà `tiep_tuc()` vào lại được — hai kiểu chờ, một cơ chế.
+CHO_DUOC = frozenset({AWAITING_APPROVAL, WAITING_BACKGROUND})
+
 #: Bảng chuyển đổi HỢP LỆ. Mọi cặp ngoài đây là lỗi lập trình.
 CHUYEN_HOP_LE: dict = {
     CREATED: {MODEL_RUNNING, WAITING_SLOT, CANCELLED},
@@ -105,6 +108,28 @@ class CanDuyet:
 
 
 @dataclass
+class ChoJob:
+    """`chay_tool` trả cái này ⇒ run **dừng** chờ một job nền xong. (P05)
+
+    Anh em của `CanDuyet`, và cố ý giống nhau: hai lý do dừng khác nhau (chờ
+    **người** vs chờ **máy**) nhưng cùng một cơ chế — ghi bước, trả về, rồi
+    `tiep_tuc()` khi có câu trả lời.
+
+    ⛔ **Không chờ bằng một vòng `while` trong luồng của run.** `job_runner.py`
+       đã có vòng đời job và `leases.py` đã có lease; một vòng chờ ở đây là bộ
+       đợi thứ hai — và nó giữ một luồng qua cả những lần khởi động lại mà
+       `job_runner` chịu được còn nó thì không.
+
+    ⭐ Và nó giải quyết trần 100 giây của Cloudflare miễn phí: run không giữ
+       request nào, nên một job 5 phút không làm ai 524.
+    """
+
+    job_id: str
+    tool_name: str = ""
+    doi_so: dict = field(default_factory=dict)
+
+
+@dataclass
 class NgoCanhGoi:
     """Tham số thứ ba của `chay_tool`: **lời gọi này là lời gọi nào**.
 
@@ -142,6 +167,8 @@ class Buoc:
     bam: str = ""
     #: `approval_id` khi bước này đang chờ duyệt. `ket_qua` còn `None`.
     cho_duyet: str = ""
+    #: `job_id` khi bước này đang chờ một job nền. `ket_qua` còn `None`.
+    cho_job: str = ""
     #: `tool_call_id` model đã dùng — cần để dựng lại `role="tool"` khi chạy tiếp.
     goi_id: str = ""
     #: Id hàng `chatltt_step` — `luu_run.ghi_buoc` điền vào lần ghi đầu.
@@ -168,6 +195,24 @@ class Run:
     def dang_cho_duyet(self) -> list:
         """Các bước còn treo chờ người duyệt."""
         return [b for b in self.buoc if b.cho_duyet and b.ket_qua is None]
+
+    def dang_cho_job(self) -> list:
+        """Các bước còn treo chờ một job nền."""
+        return [b for b in self.buoc if b.cho_job and b.ket_qua is None]
+
+    def dang_treo(self) -> list:
+        """Mọi bước chưa có kết quả, dù chờ người hay chờ máy.
+
+        ⛔ Một hàm, không hai. `tiep_tuc` phải đòi **đủ** câu trả lời cho mọi
+           bước treo; tách thành hai danh sách là để một lần quên kiểm danh sách
+           thứ hai biến một lời gọi tool thành im lặng.
+        """
+        return [b for b in self.buoc
+                if (b.cho_duyet or b.cho_job) and b.ket_qua is None]
+
+    def khoa_treo(self, b: "Buoc") -> str:
+        """Khoá tra câu trả lời cho một bước treo: `approval_id` hoặc `job_id`."""
+        return b.cho_duyet or b.cho_job
 
     def chuyen(self, toi: str) -> None:
         cho_phep = CHUYEN_HOP_LE.get(self.trang_thai)
@@ -351,6 +396,13 @@ def _vong(run: Run, *, goi_model, chay_tool, tran_vong, tran_tool,
                 _ghi(b)
                 continue
 
+            if isinstance(kq, ChoJob):
+                b.cho_job = kq.job_id
+                _ghi(b)
+                _phat({"type": "task.queued", "job_id": kq.job_id,
+                       "tool_name": lg.ten})
+                continue
+
             b.ket_qua = kq
             _ghi(b)
             _phat({"type": "tool.result" if kq.ok else "tool.failed",
@@ -362,11 +414,18 @@ def _vong(run: Run, *, goi_model, chay_tool, tran_vong, tran_tool,
         #    Kiểm SAU cả lô, không phải ngay khi gặp cái đầu tiên: một lượt có hai
         #    lời gọi song song thì cả hai đều phải được hỏi, không phải hỏi cái
         #    này rồi bỏ quên cái kia tới vòng sau.
-        if run.dang_cho_duyet():
-            run.chuyen(AWAITING_APPROVAL)
-            for b in run.dang_cho_duyet():
-                _phat({"type": "approval.required", "approval_id": b.cho_duyet,
-                       "tool_name": b.ten, "doi_so": b.doi_so})
+        if run.dang_treo():
+            # ⛔ Một lô có thể vừa chờ người vừa chờ máy. Chọn `AWAITING_APPROVAL`
+            #    khi có phiếu: đó là trạng thái cần **người** làm gì đó, và việc
+            #    nó hiện ra quan trọng hơn — một job tự xong, một phiếu thì không.
+            if run.dang_cho_duyet():
+                run.chuyen(AWAITING_APPROVAL)
+                for b in run.dang_cho_duyet():
+                    _phat({"type": "approval.required", "approval_id": b.cho_duyet,
+                           "tool_name": b.ten, "doi_so": b.doi_so})
+            else:
+                run.chuyen(TOOL_RUNNING)
+                run.chuyen(WAITING_BACKGROUND)
             return run
 
         if run.trang_thai == TOOL_REQUESTED:
@@ -405,19 +464,35 @@ def tiep_tuc(run: Run, *, ket_qua_duyet: dict, goi_model, chay_tool,
        câu trả lời mà vẫn đi tiếp là một lời gọi tool biến mất khỏi lịch sử —
        model thấy nó đã hỏi mà không ai trả lời, và sẽ hỏi lại.
     """
-    if run.trang_thai != AWAITING_APPROVAL:
+    if run.trang_thai not in CHO_DUOC:
         raise ChuyenTrangThaiSai(
-            f"tiep_tuc chi vao duoc tu {AWAITING_APPROVAL}, dang o {run.trang_thai}")
+            f"tiep_tuc chi vao duoc tu {sorted(CHO_DUOC)}, dang o {run.trang_thai}")
 
     _phat = phat or (lambda sk: None)
     _ghi = ghi or (lambda b: None)
-    treo = run.dang_cho_duyet()
-    thieu = [b.cho_duyet for b in treo if b.cho_duyet not in ket_qua_duyet]
+    treo = run.dang_treo()
+    thieu = [run.khoa_treo(b) for b in treo if run.khoa_treo(b) not in ket_qua_duyet]
     if thieu:
         raise ValueError(f"thieu ket qua duyet cho: {thieu}")
 
     for b in treo:
-        kq = ket_qua_duyet[b.cho_duyet]
+        kq = ket_qua_duyet[run.khoa_treo(b)]
+
+        if isinstance(kq, ChoJob):
+            # ⭐ Duyệt xong KHÔNG có nghĩa là xong việc. `image.ltt` và
+            #    `speech.ltt` nộp một **job**, nên bước ấy đi thẳng từ "chờ
+            #    người" sang "chờ máy" — vẫn treo, chỉ đổi lý do.
+            #
+            # ⛔ Xoá `cho_duyet` khi đặt `cho_job`: một bước mang cả hai là một
+            #    bước mà `khoa_treo()` trả về khoá của phiếu duyệt **đã quyết
+            #    rồi**, và vòng sau sẽ đòi lại một câu trả lời đã có.
+            b.cho_duyet = ""
+            b.cho_job = kq.job_id
+            _ghi(b)
+            _phat({"type": "task.queued", "job_id": kq.job_id,
+                   "tool_name": b.ten})
+            continue
+
         b.ket_qua = kq
         _ghi(b)
         _phat({"type": "tool.result" if kq.ok else "tool.failed",
@@ -426,10 +501,25 @@ def tiep_tuc(run: Run, *, ket_qua_duyet: dict, goi_model, chay_tool,
             {"role": "tool", "tool_call_id": b.goi_id or f"call_{b.thu_tu}",
              "content": kq.cho_model()}]
 
-    # `TOOL_RUNNING` rồi `TOOL_RESULT_READY` — đi đúng bảng chuyển đổi, không
-    # nhảy tắt. Một bước nhảy tắt hôm nay là một trạng thái không ai đợi được
-    # ở đó ngày mai.
-    run.chuyen(TOOL_RUNNING)
+    if run.dang_treo():
+        # Còn treo ⇒ chưa đi tiếp được. Từ `AWAITING_APPROVAL` sang chờ job phải
+        # đi qua `TOOL_RUNNING` (bảng chuyển đổi không có đường tắt).
+        if run.trang_thai == AWAITING_APPROVAL:
+            run.chuyen(TOOL_RUNNING)
+        if run.trang_thai != WAITING_BACKGROUND:
+            run.chuyen(WAITING_BACKGROUND)
+        return run
+
+    # Đi ĐÚNG bảng chuyển đổi, không nhảy tắt — và hai lối ra khác nhau:
+    #
+    #     AWAITING_APPROVAL -> TOOL_RUNNING -> TOOL_RESULT_READY
+    #     WAITING_BACKGROUND ------------->  TOOL_RESULT_READY
+    #
+    # ⛔ `WAITING_BACKGROUND -> TOOL_RUNNING` **không** có trong `CHUYEN_HOP_LE`,
+    #    và đó là cố ý: job đã chạy xong rồi, quay lại "đang chạy" là nói sai
+    #    về thứ vừa xảy ra.
+    if run.trang_thai == AWAITING_APPROVAL:
+        run.chuyen(TOOL_RUNNING)
     run.chuyen(TOOL_RESULT_READY)
 
     if run.so_vong_model >= tran_vong:
@@ -446,7 +536,8 @@ def tiep_tuc(run: Run, *, ket_qua_duyet: dict, goi_model, chay_tool,
                  phat=phat, ghi=ghi, nen_dung=nen_dung)
 
 
-__all__ = ["chay", "tiep_tuc", "CanDuyet", "NgoCanhGoi", "Run", "Buoc", "ChuyenTrangThaiSai",
+__all__ = ["chay", "tiep_tuc", "CanDuyet", "ChoJob", "NgoCanhGoi", "CHO_DUOC",
+           "Run", "Buoc", "ChuyenTrangThaiSai",
            "CHUYEN_HOP_LE",
            "TRAN_VONG_MODEL", "TRAN_LOI_GOI_TOOL", "TRAN_TRUNG",
            "CREATED", "MODEL_RUNNING", "TOOL_REQUESTED", "AWAITING_APPROVAL",

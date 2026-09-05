@@ -49,9 +49,12 @@ def db(tmp_path, monkeypatch):
 
 U = "u-chu"
 
+#: Nang luc gia: lop PAID (nen can duyet) nhung chay DONG BO, khong qua job.
+THU_CO_PHI = "thu.ve_anh"
+
 TOOLS = [
     {"type": "function", "function": {
-        "name": "image.ltt", "description": "ve mot buc anh",
+        "name": THU_CO_PHI, "description": "ve mot buc anh",
         "parameters": {"type": "object",
                        "properties": {"prompt": {"type": "string"},
                                       "so_luong": {"type": "integer"}},
@@ -66,15 +69,23 @@ TOOLS = [
 
 @pytest.fixture(autouse=True)
 def _mo_cong(monkeypatch):
-    """Mở cổng thứ tư cho `image.ltt` và cài một handler giả cho nó.
+    """Mở cổng thứ tư cho một tool `PAID` **không chạy bằng job**, và cài handler.
+
+    ⚠️ Tệp này kiểm **cổng duyệt**, không kiểm hàng đợi job. Dùng `image.ltt`
+       ở đây thì mỗi phép kiểm phải kéo theo cả `job_runner` — và khi một
+       phép kiểm đỏ, không ai biết đỏ vì duyệt hay vì job.
+
+    ⭐ `THU_CO_PHI` là một năng lực giả thuộc lớp `PAID` nhưng chạy đồng bộ.
+       Đường job thật kiểm ở `test_815`/`test_816`.
 
     ⚠️ `monkeypatch.setitem` chứ không gán thẳng vào `T._SO_HANDLER` — gán thẳng
        để lại rác trong sổ đăng ký cho mọi tệp chạy sau, và đó đúng là cái bẫy
        `bay-trang-thai-ngoai-ro-vao-test`.
     """
-    monkeypatch.setattr(C, "CHO_MODEL_GOI", ("image.ltt", "noi_bo.tinh"))
+    monkeypatch.setattr(C, "CHO_MODEL_GOI", (THU_CO_PHI, "noi_bo.tinh"))
+    monkeypatch.setitem(C.LOP_CUA, THU_CO_PHI, C.PAID)
     da_chay = []
-    monkeypatch.setitem(T._SO_HANDLER, "image.ltt",
+    monkeypatch.setitem(T._SO_HANDLER, THU_CO_PHI,
                         lambda db, uid, ds: (da_chay.append(ds),
                                              {"url": f"anh/{ds.get('so_luong', 1)}.png"})[1])
     return da_chay
@@ -116,30 +127,30 @@ def _bat_dau(db, *, model, bao_gia=_gia, co_phi=False):
 # ── 1. Đường chính: hỏi → đồng ý → chạy ────────────────────────────────────
 
 def test_tool_co_phi_lam_run_dung_va_MO_PHIEU_that(db):
-    r, run, _ = _bat_dau(db, model=_model(_goi(("image.ltt", '{"prompt":"meo"}'))))
+    r, run, _ = _bat_dau(db, model=_model(_goi((THU_CO_PHI, '{"prompt":"meo"}'))))
     assert run.trang_thai == DP.AWAITING_APPROVAL
 
     ds = D.dang_cho(db, user_id=U, run_id=r.id)
     assert len(ds) == 1
-    assert ds[0]["tool_name"] == "image.ltt" and ds[0]["credit"] == 12
+    assert ds[0]["tool_name"] == THU_CO_PHI and ds[0]["credit"] == 12
 
 
 def test_phieu_gan_dung_vao_HANG_step_that(db):
     """🔴 `step_id` phải là id hàng `chatltt_step` thật, không phải một chuỗi
     bịa. Nếu không, `UNIQUE(step_id)` bảo vệ một thứ không tồn tại."""
     from apps.chatltt.tables import ChatlttApproval, ChatlttStep
-    r, _run, _ = _bat_dau(db, model=_model(_goi(("image.ltt", '{"prompt":"meo"}'))))
+    r, _run, _ = _bat_dau(db, model=_model(_goi((THU_CO_PHI, '{"prompt":"meo"}'))))
     p = db.query(ChatlttApproval).one()
     st = db.get(ChatlttStep, p.step_id)
     assert st is not None
-    assert st.run_id == r.id and st.tool_name == "image.ltt"
+    assert st.run_id == r.id and st.tool_name == THU_CO_PHI
     assert st.trang_thai == "cho_duyet", "cho_duyet KHONG duoc gop vao 'ok'"
 
 
 def test_phieu_da_COMMIT_truoc_khi_run_tra_ve(db):
     """⛔ Phát `approval.required` cho một hàng chưa commit là mời người dùng
     bấm vào một thứ có thể biến mất. Kiểm bằng một **phiên CSDL khác**."""
-    r, _run, _ = _bat_dau(db, model=_model(_goi(("image.ltt", '{"prompt":"meo"}'))))
+    r, _run, _ = _bat_dau(db, model=_model(_goi((THU_CO_PHI, '{"prompt":"meo"}'))))
     from platform_core.db import get_session
     gen = get_session()
     db2 = next(gen)
@@ -153,7 +164,7 @@ def test_phieu_da_COMMIT_truoc_khi_run_tra_ve(db):
 
 
 def test_dong_y_thi_tool_chay_va_run_ket_thuc(db, _mo_cong):
-    r, run, ct = _bat_dau(db, model=_model(_goi(("image.ltt", '{"prompt":"meo"}'))))
+    r, run, ct = _bat_dau(db, model=_model(_goi((THU_CO_PHI, '{"prompt":"meo"}'))))
     ap = D.dang_cho(db, user_id=U, run_id=r.id)[0]["approval_id"]
     D.duyet(db, user_id=U, approval_id=ap)
 
@@ -169,7 +180,7 @@ def test_SUA_doi_so_thi_tool_chay_ban_DA_SUA(db, _mo_cong):
     """🔴 Mệnh đề đắt nhất của cả P04. Chạy bản gốc sau khi người dùng đã sửa
     là chạy một việc **không ai duyệt** — và ở đây `so_luong` là số nhân giá."""
     r, run, ct = _bat_dau(db, model=_model(
-        _goi(("image.ltt", '{"prompt":"meo","so_luong":4}'))))
+        _goi((THU_CO_PHI, '{"prompt":"meo","so_luong":4}'))))
     ap = D.dang_cho(db, user_id=U, run_id=r.id)[0]
     assert ap["credit"] == 48, "bao gia phai theo doi so model DE NGHI"
 
@@ -182,7 +193,7 @@ def test_SUA_doi_so_thi_tool_chay_ban_DA_SUA(db, _mo_cong):
 
 
 def test_ket_qua_tool_di_vao_lich_su_cho_model(db):
-    r, run, ct = _bat_dau(db, model=_model(_goi(("image.ltt", '{"prompt":"meo"}'))))
+    r, run, ct = _bat_dau(db, model=_model(_goi((THU_CO_PHI, '{"prompt":"meo"}'))))
     D.duyet(db, user_id=U,
             approval_id=D.dang_cho(db, user_id=U, run_id=r.id)[0]["approval_id"])
     thay = {}
@@ -199,7 +210,7 @@ def test_ket_qua_tool_di_vao_lich_su_cho_model(db):
 # ── 2. Đường từ chối ───────────────────────────────────────────────────────
 
 def test_TU_CHOI_thi_tool_KHONG_chay_va_run_van_ket_tu_te(db, _mo_cong):
-    r, run, ct = _bat_dau(db, model=_model(_goi(("image.ltt", '{"prompt":"meo"}'))))
+    r, run, ct = _bat_dau(db, model=_model(_goi((THU_CO_PHI, '{"prompt":"meo"}'))))
     D.tu_choi(db, user_id=U,
               approval_id=D.dang_cho(db, user_id=U, run_id=r.id)[0]["approval_id"])
 
@@ -215,7 +226,7 @@ def test_HET_HAN_cung_khong_chay_tool(db, _mo_cong):
     from datetime import datetime, timedelta, timezone
 
     from apps.chatltt.tables import ChatlttApproval
-    r, run, ct = _bat_dau(db, model=_model(_goi(("image.ltt", '{"prompt":"meo"}'))))
+    r, run, ct = _bat_dau(db, model=_model(_goi((THU_CO_PHI, '{"prompt":"meo"}'))))
     p = db.query(ChatlttApproval).one()
     p.created_at = datetime.now(timezone.utc) - timedelta(minutes=D.HAN_CHO_PHUT + 1)
     D.quet_het_han(db)
@@ -229,7 +240,7 @@ def test_HET_HAN_cung_khong_chay_tool(db, _mo_cong):
 def test_CHUA_quyet_thi_khong_co_ket_qua_va_tiep_tuc_NEM(db):
     """⛔ Chạy tiếp khi người dùng chưa trả lời là chạy một việc không ai duyệt.
     `ket_qua_sau_duyet` trả rỗng, và `tiep_tuc` ném vì thiếu — hai lớp."""
-    _r, run, ct = _bat_dau(db, model=_model(_goi(("image.ltt", '{"prompt":"meo"}'))))
+    _r, run, ct = _bat_dau(db, model=_model(_goi((THU_CO_PHI, '{"prompt":"meo"}'))))
     assert B.ket_qua_sau_duyet(db, user_id=U, run=run, khoi_tools=TOOLS) == {}
     with pytest.raises(ValueError, match="thieu ket qua duyet"):
         DP.tiep_tuc(run, ket_qua_duyet={}, goi_model=_model(_chu("x")), chay_tool=ct)
@@ -238,7 +249,7 @@ def test_CHUA_quyet_thi_khong_co_ket_qua_va_tiep_tuc_NEM(db):
 def test_phieu_cua_NGUOI_KHAC_khong_duoc_dung_de_chay(db, _mo_cong):
     """🔴 `ket_qua_sau_duyet` tra phiếu **kèm `user_id`**. Không thì một
     `approval_id` đoán được là một đường chạy tool bằng tiền người khác."""
-    _r, run, _ct = _bat_dau(db, model=_model(_goi(("image.ltt", '{"prompt":"meo"}'))))
+    _r, run, _ct = _bat_dau(db, model=_model(_goi((THU_CO_PHI, '{"prompt":"meo"}'))))
     assert B.ket_qua_sau_duyet(db, user_id="u-nguoi-la", run=run,
                                khoi_tools=TOOLS) == {}
 
@@ -249,7 +260,7 @@ def test_KHONG_bao_gia_duoc_thi_KHONG_mo_phieu(db):
     """⛔ Một thẻ duyệt ghi "đồng ý tiêu 0 credit" tệ hơn không có thẻ duyệt."""
     from apps.chatltt.tables import ChatlttApproval
     _r, run, _ = _bat_dau(db, bao_gia=None,
-                          model=_model(_goi(("image.ltt", '{"prompt":"meo"}')),
+                          model=_model(_goi((THU_CO_PHI, '{"prompt":"meo"}')),
                                        _chu("khong dung duoc tool do")))
     assert db.query(ChatlttApproval).count() == 0
     assert run.trang_thai == DP.COMPLETED, "khong treo — model nhan loi va noi tiep"
@@ -262,7 +273,7 @@ def test_bao_gia_NEM_thi_thanh_du_lieu_cho_model_khong_giet_run(db):
         raise RuntimeError("bang gia chua nap")
 
     _r, run, _ = _bat_dau(db, bao_gia=hong,
-                          model=_model(_goi(("image.ltt", '{"prompt":"meo"}')),
+                          model=_model(_goi((THU_CO_PHI, '{"prompt":"meo"}')),
                                        _chu("thu cach khac")))
     b = [x for x in run.buoc if x.loai == "tool"][0]
     assert b.ket_qua.ma_loi == "bao_gia_hong"
@@ -274,7 +285,7 @@ def test_doi_so_SAI_HOP_DONG_bi_chan_TRUOC_khi_mo_phieu(db):
     """Hỏi người dùng có đồng ý chạy một lời gọi chắc chắn hỏng là bắt họ đọc
     một thứ vô nghĩa — và tính công cho một quyết định không đáng có."""
     from apps.chatltt.tables import ChatlttApproval
-    _r, run, _ = _bat_dau(db, model=_model(_goi(("image.ltt", '{"so_luong":2}')),
+    _r, run, _ = _bat_dau(db, model=_model(_goi((THU_CO_PHI, '{"so_luong":2}')),
                                            _chu("thieu prompt")))
     assert db.query(ChatlttApproval).count() == 0
     b = [x for x in run.buoc if x.loai == "tool"][0]
@@ -285,7 +296,7 @@ def test_co_TU_CHAY_TOOL_CO_PHI_bat_thi_khong_hoi(db, _mo_cong):
     """⭐ Đường thứ hai, và nó phải đi được — nhưng chỉ khi cờ RIÊNG bật."""
     from apps.chatltt.tables import ChatlttApproval
     _r, run, _ = _bat_dau(db, co_phi=True,
-                          model=_model(_goi(("image.ltt", '{"prompt":"meo"}')),
+                          model=_model(_goi((THU_CO_PHI, '{"prompt":"meo"}')),
                                        _chu("xong")))
     assert db.query(ChatlttApproval).count() == 0
     assert run.trang_thai == DP.COMPLETED
@@ -307,7 +318,7 @@ def test_tool_MIEN_PHI_chay_thang_khong_hoi(db):
 def test_MOT_mien_phi_MOT_co_phi_trong_cung_mot_luot(db):
     """Lời gọi song song trộn hai lớp: cái miễn phí chạy xong, cái có phí treo."""
     _r, run, _ = _bat_dau(db, model=_model(_goi(("noi_bo.tinh", '{"bieu_thuc":"6*7"}'),
-                                               ("image.ltt", '{"prompt":"meo"}'))))
+                                               (THU_CO_PHI, '{"prompt":"meo"}'))))
     tool_buoc = [b for b in run.buoc if b.loai == "tool"]
     assert tool_buoc[0].ket_qua.noi_dung["ket_qua"] == 42
     assert tool_buoc[1].cho_duyet and tool_buoc[1].ket_qua is None

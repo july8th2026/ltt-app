@@ -61,11 +61,21 @@ LOP_CUA: dict = {
 
 #: Năng lực MODEL được phép tự gọi. Hẹp hơn `chinh_sach.CONG_CU_CHO_PHEP`.
 #:
-#: ⚠️ V3 làn A: **chỉ tool nội bộ miễn phí** (gói prompt: *"Implement P02 with
-#:    fake/free tools only"*). `image.ltt` và `speech.ltt` chỉ vào đây ở **P05**,
-#:    sau khi P04 dựng xong duyệt bền — trước đó `thi_hanh` chặn chúng ở bước 3
-#:    dù có ai thêm vào đây, nhưng "chặn ở tầng sau" không phải lý do để mời.
-CHO_MODEL_GOI: tuple = ("noi_bo.thoi_gian", "noi_bo.tinh")
+#: ✅ **P05 mở `image.ltt` và `speech.ltt`.** Điều kiện để mở đã đủ từ P04:
+#:    phiếu duyệt bền, báo giá trước khi hỏi, chạy tiếp sau khi bấm, và job nền.
+#:
+#: 🔴 Hai tên này thuộc lớp `PAID` (`LOP_CUA`), nên mặt định chúng **không
+#:    chạy thẳng**: `thi_hanh` bước 3 chặn, và `bo_chay_tool` mở một phiếu
+#:    duyệt. Cổng thứ tư (tệp này) nói *"model được phép ĐỀ NGHỊ"*, không nói
+#:    *"model được phép TIÊU TIỀN"*. Hai câu khác nhau, và cái thứ hai cần
+#:    `LTT_CHATLTT_V3_PAID_TOOLS` — một cờ **riêng**, mặc định tắt.
+#:
+#: ⛔ `image.edit` KHÔNG có ở đây vì nó **không tồn tại**: không `manifest.py`
+#:    nào khai nó (đo 05/09, `05_E2_ANH_TIENG_THANH_TOOL.md` §1). Mời một tool
+#:    nền tảng không làm được là bảo đảm model sẽ gọi nó — P01 đo 98,8 % chọn
+#:    đúng tool **trong số được mời**.
+CHO_MODEL_GOI: tuple = ("noi_bo.thoi_gian", "noi_bo.tinh",
+                        "image.ltt", "speech.ltt")
 
 
 class KhongChoModelGoi(PermissionError):

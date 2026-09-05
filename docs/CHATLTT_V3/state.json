@@ -99,7 +99,7 @@
       "chan": [
         "P04"
       ],
-      "phan_tram": 10
+      "phan_tram": 85
     },
     {
       "id": "P06",
@@ -348,8 +348,8 @@
     "don_vi": "ngay cong (8h)",
     "lan_A": {
       "uoc": 17.0,
-      "xong": 13.4,
-      "phan_tram": 79
+      "xong": 15.9,
+      "phan_tram": 94
     },
     "lan_B": {
       "uoc": 20.0,
@@ -363,8 +363,8 @@
     },
     "toan_chuong_trinh": {
       "uoc": 51.0,
-      "xong": 13.4,
-      "phan_tram": 26
+      "xong": 15.9,
+      "phan_tram": 31
     },
     "ma_san_pham_da_sua": "9 tep: 6 moi trong apps/chatltt/services + frontend ThongDiepView.tsx + governance.py + luot.py",
     "ghi_chu": "dem theo NGAY CONG, khong theo so pha — P00 nua ngay, P03 nam ngay"
@@ -628,7 +628,7 @@
   },
   "p05": {
     "trang_thai": "DANG LAM",
-    "phan_tram": 10,
+    "phan_tram": 85,
     "E2": {
       "cau": "image.edit co backend that khong",
       "tra_loi": "KHONG",
@@ -644,14 +644,26 @@
       "ly_do": "P01 do 98,8% chon dung tool TRONG SO DUOC MOI, nen moi sai la bao dam model se goi sai. Chi phi phat hien: mot lenh grep. Chi phi KHONG phat hien: mot tool hong dung trong danh muc toi khi co khach."
     },
     "da_xong": [
-      "05_E2_ANH_TIENG_THANH_TOOL.md — E2 tra loi bang do, va thu tu 4 buoc"
+      "05_E2_ANH_TIENG_THANH_TOOL.md — E2 tra loi bang do, va thu tu 4 buoc",
+      "ChoJob (anh em CanDuyet) + tiep_tuc nhan ca hai kieu cho + test_815 (27)",
+      "tiep_tuc: mot buoc di tu CHO NGUOI sang CHO MAY (duyet xong != xong viec)",
+      "tao_media.tao(tin_nhan=...) — job gan vao DUNG tin nhan cua run, khong tao tin moi",
+      "bo_chay_tool nop job sau duyet, credit_da_bao = so TREN PHIEU + test_816 (10)",
+      "bo_chay_tool.ket_qua_job() — job chua xong thi VANG MAT (tiep_tuc se nem)",
+      "tao_media.dong_bo: NOI THEM khoi thay vi thay het khi ex.run_id (khong xoa khoi tool)",
+      "_danh_thuc_run(): job xong -> chay_tiep_nen",
+      "CHO_MODEL_GOI mo image.ltt + speech.ltt (buoc cuoi)"
     ],
     "con_lai": [
-      "ChoJob (anh em cua CanDuyet) + tiep_tuc(ket_qua_job=...)",
-      "nop job tu bo_chay_tool (dung tao_media.tao, KHONG viet lai)",
-      "moc job-xong -> chay_tiep_nen",
-      "mo CHO_MODEL_GOI cho image.ltt + speech.ltt — BUOC CUOI"
+      "test dau-cuoi qua luot.chay cho duong job (can hang doi job that)",
+      "duong DAY that: moc trong job_runner (platform_core — ngoai ranh gioi app)"
     ],
-    "ghi_chu": "Hinh dang da co san va giong het cong duyet: WAITING_BACKGROUND da nam trong CHUYEN_HOP_LE tu P03, chatltt_step.job_id da co trong migration, va luu_run.dung_lai da dung lai duoc mot run tu CSDL."
+    "ghi_chu": "Hinh dang da co san va giong het cong duyet: WAITING_BACKGROUND da nam trong CHUYEN_HOP_LE tu P03, chatltt_step.job_id da co trong migration, va luu_run.dung_lai da dung lai duoc mot run tu CSDL.",
+    "gioi_han_da_biet": {
+      "danh_thuc_run_la_duong_KEO": "`dong_bo` chay khi CLIENT HOI (nhip 2 giay). Khong ai hoi thi run nam im o WAITING_BACKGROUND toi lan ai do mo lai hoi thoai. KHONG mat du lieu: job da xong, tien da quyet toan, ket qua da nam trong blocks — thu chua xay ra chi la vong model NOI VE buc anh do. Duong DAY that phai la mot cho moc trong job_runner, thuoc platform_core, ngoai ranh gioi app nay."
+    },
+    "dot_bien_da_thu": [
+      "test_802 doi HAI lan (P03 rong->2 tool; P05 'khong can duyet'->co can duyet). Menh de thay the khong doi theo tap hop: voi MOI ten trong CHO_MODEL_GOI, hoac no khong can duyet, hoac goi qua thi_hanh khong co phep ro rang thi BI TU CHOI."
+    ]
   }
 }

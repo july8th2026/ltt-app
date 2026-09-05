@@ -66,6 +66,8 @@ def ghi_buoc(db, run: ChatlttRun, b: DP.Buoc,
         if st is not None:
             st.ket_qua = _ket_qua_json(b.ket_qua)
             st.trang_thai = _trang_thai(b)
+            if b.cho_job:
+                st.job_id = b.cho_job
             if execution_id:
                 st.execution_id = execution_id
             db.flush()
@@ -79,7 +81,8 @@ def ghi_buoc(db, run: ChatlttRun, b: DP.Buoc,
         doi_so_tho=(b.doi_so_tho or "")[:20000],
         ket_qua=_ket_qua_json(b.ket_qua),
         trang_thai=_trang_thai(b),
-        bam_trung=b.bam or "", tool_call_id=b.goi_id or "")
+        bam_trung=b.bam or "", tool_call_id=b.goi_id or "",
+        job_id=b.cho_job or None)
     db.add(st)
     db.flush()
     b.step_id = st.id          # để lần ghi thứ hai CẬP NHẬT chứ không chèn mới
@@ -89,12 +92,15 @@ def ghi_buoc(db, run: ChatlttRun, b: DP.Buoc,
 def _trang_thai(b: DP.Buoc) -> str:
     """Bốn trạng thái, không phải hai.
 
-    ⛔ `cho_duyet` **không phải** `ok`. Gộp chúng làm một thì một truy vấn
-       "bước nào đang treo" không viết được, và đó chính là truy vấn cần khi đi
-       tìm những run kẹt ở `AWAITING_APPROVAL`.
+    ⛔ `cho_duyet` và `cho_job` **không phải** `ok`, và cũng không phải một
+       trạng thái chung. Gộp chúng làm một thì truy vấn "run nào đang đợi
+       **người**" không viết được — và đó là truy vấn đáng lo, vì một job tự
+       xong còn một phiếu duyệt thì không.
     """
     if b.ket_qua is None:
-        return "cho_duyet" if b.cho_duyet else "dang_chay"
+        if b.cho_duyet:
+            return "cho_duyet"
+        return "cho_job" if b.cho_job else "dang_chay"
     return "ok" if b.ket_qua.ok else "loi"
 
 
@@ -227,7 +233,11 @@ def dung_lai(db, *, user_id: str, run_row: ChatlttRun, messages_goc: list,
                         step_id=s.id)
             if s.bam_trung:
                 run._dem_bam[s.bam_trung] = run._dem_bam.get(s.bam_trung, 0) + 1
-            if s.trang_thai == "cho_duyet":
+            if s.trang_thai == "cho_job":
+                # Job đã nộp, `job_id` là khoá tra kết quả. Không có ⇒ dùng
+                # `step_id` để `tiep_tuc` ném "thiếu kết quả", không im lặng bỏ qua.
+                b.cho_job = s.job_id or s.id
+            elif s.trang_thai == "cho_duyet":
                 p = db.execute(select(ChatlttApproval).where(
                     ChatlttApproval.step_id == s.id,
                     ChatlttApproval.user_id == str(user_id))).scalar_one_or_none()

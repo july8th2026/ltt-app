@@ -39,32 +39,56 @@ def _cho_phep(monkeypatch, *ten):
 
 # ── Cổng thứ tư hẹp hơn cổng thứ ba ────────────────────────────────────────
 
-def test_mac_dinh_MODEL_chi_duoc_goi_TOOL_NOI_BO_mien_phi(monkeypatch):
-    """⭐ Làn A của P03 chạy **tool miễn phí** trước (gói prompt nói vậy).
+def test_model_goi_duoc_ca_tool_NOI_BO_lan_ANH_TIENG(monkeypatch):
+    """⚠️ Phép kiểm này đã đổi **hai lần**, và lần nào cũng vì tập hợp thật sự
+    rộng ra, không phải vì ai đó hạ mốc:
 
-    ⚠️ Phép kiểm này trước đây ghim *"mặc định rỗng"*. P03 mở hai tool nội bộ
-       (`tool_noi_bo.py`), nên mệnh đề cũ không còn đúng. Thứ thay nó **chặt
-       hơn**, không lỏng hơn: không phải *"mặc định có hai tool"* (một câu đếm),
-       mà là *"mọi thứ model tự gọi được đều thuộc lớp KHÔNG cần duyệt"* — một
-       câu về **tập hợp**, vẫn đỏ nếu ngày mai ai đó thêm `image.ltt` vào.
+      P03 ghim *"mặc định rỗng"* → mở hai tool nội bộ miễn phí.
+      P04 ghim *"mọi thứ model gọi được đều KHÔNG cần duyệt"* → P05 mở
+      `image.ltt` và `speech.ltt`, hai tool **cần duyệt**.
+
+    🔴 Nên mệnh đề giữ lại phải là mệnh đề **không đổi theo tập hợp**, và đó
+       là mệnh đề về **tiền**: xem `test_khong_tool_nao_TIEU_TIEN_duoc_ma_khong_qua_duyet`.
+       Câu ở đây chỉ còn chốt đúng một thứ: `chieu()` chiếu ĐÚNG những tên
+       trong `CHO_MODEL_GOI`, không thừa một cái nào.
     """
-    _dat_danh_muc(monkeypatch, [_NangLucGia("image.ltt")])
-    khoi = C.chieu(None, user_id="u1")
-    ten = {t["function"]["name"] for t in khoi}
-    assert ten == {"noi_bo.thoi_gian", "noi_bo.tinh"}
-    assert "image.ltt" not in ten, "nang luc CO PHI khong duoc chieu o P03"
-    for t in ten:
-        assert not C.can_duyet(t), f"{t} can duyet ma van duoc model tu goi"
+    _dat_danh_muc(monkeypatch, [_NangLucGia("image.ltt"), _NangLucGia("la_hoac")])
+    ten = {t["function"]["name"] for t in C.chieu(None, user_id="u1")}
+    assert ten <= set(C.CHO_MODEL_GOI), "chieu KHONG duoc them ten ngoai cong bon"
+    assert "la_hoac" not in ten, "nang luc ngoai cong bon khong duoc chieu"
+    assert "image.ltt" in ten, "P05 da mo image.ltt"
 
 
-def test_khong_co_tool_nao_MO_MA_can_duyet(monkeypatch):
-    """🔴 Biến thể của mệnh đề trên, đọc thẳng từ hằng số thay vì qua `chieu()`.
+def test_khong_tool_nao_TIEU_TIEN_duoc_ma_khong_qua_duyet():
+    """🔴 Mệnh đề thay thế, và nó **không đổi** khi tập hợp rộng ra.
 
-    Hai phép kiểm vì chúng hỏng theo hai cách khác nhau: `chieu()` có thể lọc
-    đúng trong khi hằng số đã sai, và lúc ấy mọi tầng sau phải tự nhớ lọc.
+    Cổng thứ tư nói *"model được phép ĐỀ NGHỊ"*, không nói *"model được phép
+    TIÊU TIỀN"*. Với **mọi** tên trong `CHO_MODEL_GOI`, một trong hai phải đúng:
+
+      - nó không thuộc lớp cần duyệt (chạy thẳng được), **hoặc**
+      - gọi nó qua `thi_hanh` mà không có phép rõ ràng thì bị **từ chối**.
+
+    ⛔ Thêm một tool `PAID` vào cổng bốn mà quên đường duyệt ⇒ phép kiểm này
+       đỏ. Đó là thứ hai mệnh đề cũ định bảo vệ, phát biểu sao cho nó sống
+       được qua việc mở thêm tool.
     """
+    from apps.chatltt.services import thi_hanh as T
+
     for ten in C.CHO_MODEL_GOI:
-        assert not C.can_duyet(ten), f"{ten!r} nam trong CHO_MODEL_GOI ma can duyet"
+        if not C.can_duyet(ten):
+            continue
+        kq = T.thi_hanh(None, user_id="u1", ten=ten, doi_so={})
+        assert kq.ok is False, f"{ten!r} can duyet ma CHAY THANG duoc"
+        assert kq.ma_loi == T.LOI_CAN_DUYET, (
+            f"{ten!r} bi chan vi ly do KHAC ({kq.ma_loi!r}) — mot ngay ly do do "
+            f"bien mat thi no chay thang")
+
+
+def test_moi_ten_trong_cong_bon_deu_KHAI_LOP_ro_rang():
+    """⛔ Không khai lớp ⇒ `DESTRUCTIVE` (fail-closed), tức nó sẽ đòi duyệt mãi
+    mà không ai hiểu vì sao. Mời một tool thì phải khai lớp cho nó."""
+    for ten in C.CHO_MODEL_GOI:
+        assert ten in C.LOP_CUA, f"{ten!r} nam trong CHO_MODEL_GOI ma khong khai lop"
 
 
 def test_nang_luc_duoc_MOI_nhung_khong_duoc_MODEL_GOI_thi_khong_chieu(monkeypatch):
