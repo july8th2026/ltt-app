@@ -33,7 +33,7 @@ frontend của gate tự bỏ qua và in "KHÔNG PHẢI BẰNG CHỨNG".
 | **B** hợp đồng shared | ✅ PASS | `04_SHARED_CONTRACT.md` — 7/7 |
 | **C** shared media + P0 | ✅ **PASS** | `phat_media` · voice.js · `05_SONG_AM.md` · vỏ ChatLTT |
 | **D** media generator | 🟢 **~70%** | 5 bản chép Range đã gộp · `playsinline` · nhịp job |
-| E editor phức tạp | ⬜ | |
+| E editor phức tạp | 🟡 ~30% | `06_EDITOR.md` — khảo sát xong, hai giả thuyết của tôi bị bác bỏ |
 | F bề mặt chuẩn | 🟡 ~40% | tràn ngang = 0 ở 6 khung nhìn; còn bảng/destructive/zoom 200% |
 | G harness + ma trận | 🟡 ~25% | có bộ đo, chưa thành harness trong kho |
 | H cổng phát hành | ⬜ | |
