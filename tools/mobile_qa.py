@@ -121,6 +121,77 @@ def wav_do_dai(uid: str, giay_list=(10, 60, 180, 300, 600)) -> list[tuple[int, i
     return ra
 
 
+#: Nội dung một hội thoại mẫu. Cố ý gồm đúng những thứ mà `03_VOICE_CHAT_MEDIA`
+#: bắt phải kiểm trên màn hẹp: **câu dài không có chỗ ngắt**, **khối mã**, và
+#: **bảng** — ba thứ duy nhất trong một trang chat có thể đẩy `<body>` tràn ngang.
+_CHAT_MAU = [
+    ("user", "Chao ban"),
+    ("assistant", "Chao anh! Toi co the giup gi?"),
+    ("user", "Cho toi mot doan lenh curl goi API cua LTT"),
+    ("assistant",
+     "Duoi day la vi du:\n\n"
+     "```bash\n"
+     "curl -X POST https://app.lttstudios.com/api/v1/tools/ltt_voice.tao_tieng/run "
+     "-H 'Authorization: Bearer sk-ltt-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' "
+     "-H 'Content-Type: application/json' "
+     "-d '{\"van_ban\":\"xin chao\",\"giong\":\"nu-mien-bac\"}'\n"
+     "```\n\n"
+     "| Tham so | Kieu | Bat buoc |\n"
+     "|---|---|---|\n"
+     "| van_ban | string | co |\n"
+     "| giong | string | co |\n"
+     "| toc_do | number | khong |\n"),
+    ("user",
+     "URL nay bi sao vay https://app.lttstudios.com/api/v1/tools/"
+     "ltt_voice.tao_tieng/run?tham_so_rat_dai_khong_co_cho_ngat_nao_ca=gia_tri_cung_rat_dai"),
+    ("assistant",
+     "Do la mot duong dan dai. " + ("Mot cau tra loi dai de trang phai cuon. " * 40)),
+]
+
+
+def chat_seed(uid: str) -> str:
+    """Dựng một hội thoại có nội dung thật. Trả `conv_id`.
+
+    ⛔ Đừng đo giao diện chat trên một trang RỖNG. `studio_dev.py` đã ghi đúng
+       bẫy này cho Voice: *"so mot trang rong voi mot anh mau co du lieu -> moi
+       khac biet deu doc len nhu mot loi bo cuc"*. Với chat nó còn nặng hơn —
+       một trang chat rỗng **không có** tin nhắn, nên nó không thể tràn ngang,
+       và một phép đo "0 px tràn" trên đó là một phép đo về sự trống rỗng.
+    """
+    os.environ["LTT_DATABASE_URL"] = "sqlite:///" + str(CSDL_DEV).replace("\\", "/")
+    os.environ.setdefault("LTT_ENV", "development")
+    os.environ.setdefault("LTT_SESSION_SECRET", "studio-dev-khong-bi-mat")
+
+    import platform_core.db as dbmod
+    import platform_core.models  # noqa: F401
+    from platform_core import registry
+
+    dbmod.reset_engine()
+    registry.load_app_tables()
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+
+    from apps.chatltt.services import hoi_thoai as H
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        hoi = H.tao_hoi_thoai(db, user_id=uid, model_alias="")
+        H.doi_ten(db, user_id=uid, conv_id=hoi.id, title="Hoi thoai mau cho do mobile")
+        cha = None
+        for vai, van in _CHAT_MAU:
+            m = H.them_thong_diep(db, user_id=uid, conv_id=hoi.id, role=vai,
+                                  blocks=[{"type": "text", "text": van}],
+                                  parent_id=cha)
+            cha = m.id
+        db.commit()
+        return hoi.id
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     con = ap.add_subparsers(dest="lenh", required=True)
@@ -132,6 +203,9 @@ def main(argv=None) -> int:
 
     w = con.add_parser("wav-dai", help="sinh WAV nhieu do dai de do chi phi ve song")
     w.add_argument("uid", help="uid cua tai khoan seed (ten thu muc trong kho)")
+
+    c = con.add_parser("chat-seed", help="dung mot hoi thoai chatltt co noi dung that")
+    c.add_argument("uid", help="uid cua tai khoan seed")
 
     a = ap.parse_args(argv)
 
@@ -156,6 +230,10 @@ def main(argv=None) -> int:
         da_nap, so = du_bang()
         print(f"app co tables.py: {da_nap}")
         print(f"tong bang: {so}")
+        return 0
+
+    if a.lenh == "chat-seed":
+        print("conv_id:", chat_seed(a.uid))
         return 0
 
     if a.lenh == "wav-dai":

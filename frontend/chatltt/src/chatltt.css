@@ -51,6 +51,21 @@
 @media (max-height: 610px) { #chatltt-root { min-height: 420px; } }
 @media (min-height: 1190px) { #chatltt-root { min-height: 1000px; } }
 
+/* 🔴 VA CONG THUC MOBILE PHAI DUOC CHEP XUONG DAY, KHONG DUOC QUEN.
+ *
+ *    Chu thich o tren noi "Ba con so phai KHOP voi `.ltc` ben duoi" — va do
+ *    chinh la thu toi suyt pha ngay 05/09. Khi `.ltc` duoi 860px doi sang
+ *    `calc(100dvh - 77px)`, cho nay van con giu `calc(100vh - 190px)`.
+ *
+ *    O 390x844 do la 654px danh cho, trong khi `.ltc` chiem 767px ⇒ chan trang
+ *    NHAY 113px ngay khi React mount. Dung cai CLS 0,0749 ma chu thich tren mo
+ *    ta, chi la lan nay chi xay ra tren dien thoai — tuc kho thay hon nua.
+ *
+ * ⚠️ Nen luat that o day khong phai "nho ba con so", ma la: **doi chieu cao cua
+ *    `.ltc` o bat ky diem ngat nao thi PHAI them mot dong o day cho dung diem
+ *    ngat ay.** `test_703` chot dieu do. */
+@media (max-width: 860px) { #chatltt-root { min-height: calc(100dvh - 77px); } }
+
 .ltc {
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
@@ -333,16 +348,82 @@
 
 /* ── Man hep ───────────────────────────────────────────────────────────── */
 
+/*
+ * 🔴 DO NGAY 05/09 — `height: auto` o day bien mot UNG DUNG thanh mot TRANG.
+ *
+ *    Ban cu dat `height: auto; max-height: none` cho `.ltc` duoi 860px. Hau qua
+ *    do duoc voi mot hoi thoai 27 tin nhan tren khung 390x844:
+ *
+ *        `.ltc` cao 2412px, `<body>` cao 2648px, TRANG tu cuon
+ *        `.ltc-luong` cao 1970px — `overflow-y:auto` cua no KHONG BAO GIO chay
+ *        o soan nam o y=929 trong mot khung cao 844  ->  DUOI MAN HINH
+ *
+ *    Tren desktop cung hoi thoai ay: `.ltc` cao 710, `.ltc-luong` cuon trong
+ *    (ch=511 sh=1430), o soan luon o tren man. Tuc chi ban mobile hong.
+ *
+ * ⭐ Va no hong theo mot kieu de bo qua: KHONG co gi bi cat, khong tran ngang,
+ *    khong loi console. Chi la sau moi cau tra loi, nguoi dung phai cuon mot
+ *    trang dai de tim lai o nhap. Mot phep kiem "khong tran / khong loi" xanh
+ *    het — day la ly do phep do phai hoi *"o soan co nam tren man khong"*.
+ *
+ * ⚠️ `overflow-y: auto` tren mot hang grid cao `auto` la mot cau lenh CHET: mot
+ *    vung khong bi gioi han chieu cao thi khong co gi de tran. Chinh tep nay da
+ *    ghi bai hoc `min-height: 0` cho cung lop loi ay o tren — o day la ve con
+ *    lai cua no.
+ *
+ * ⭐ 77px = 61px header dinh (`.hdr` la `position:sticky`) + 16px `padding-top`
+ *    cua `main.page`. **Do duoc, khong uoc luong** — va do la ly do no khong
+ *    trung 190px cua ban desktop: desktop tru ca chan trang de chan trang nam
+ *    trong man, con o day chan trang cao 61-127px tuy khung nhin (no XUONG DONG
+ *    o 390px) nen tru no la tru mot so khong on dinh. Ung dung chiem tron man;
+ *    chan trang o ngay duoi, cuon mot nhip la toi.
+ *
+ * ⛔ `dvh` chu khong phai `vh`: tren dien thoai thanh dia chi thu vao/nho ra,
+ *    va `100vh` giu nguyen gia tri LON NHAT — tuc o soan bi day xuong duoi mep
+ *    man dung luc thanh dia chi dang hien. Day la dung cho ma `dvh` sinh ra de
+ *    giai, va la mot trong so it cho trong ca kho that su co ngu nghia app-shell.
+ */
 @media (max-width: 860px) {
-  .ltc { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto;
-         height: auto; max-height: none; }
+  .ltc {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    height: calc(100dvh - 77px);
+    /* ⛔ KHONG giu `min-height: 420px` cua ban desktop o day. Do lai o
+     *    844x390 (dien thoai xoay ngang): chi con 313px kha dung, nen mot san
+     *    420px lam chinh cai no dinh chua — o soan bi day xuong duoi mep man
+     *    lai. Mot san chieu cao trong mot bo cuc lay chieu cao lam gioi han la
+     *    mot mau thuan, khong phai mot bien phap an toan. */
+    min-height: 0;
+    max-height: none;
+  }
   .ltc-ben {
     border-right: none;
     border-bottom: 1px solid var(--border-subtle);
-    max-height: 220px;
+    /* ⭐ 132px = nut "Moi" 44 + o tim 44 + mot dong danh sach 44, do duoc.
+     *    Ban cu de 220px; tren 767px kha dung do la 29% man hinh cho mot thanh
+     *    ben, trong khi `.ltc-ds` von da tu cuon nen no khong mat muc nao ca. */
+    max-height: 132px;
   }
   .ltc-luong { padding: 12px 10px; }
   .ltc-tin { padding: 10px 12px; }
+  /* Le an toan cho o soan khi no cham mep duoi man (iPhone co thanh Home). */
+  .ltc-soan { padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* ── Man RAT THAP: dien thoai xoay ngang ────────────────────────────────────
+ *
+ * Do o 844x390: sau khi tru 77px chrome chi con **313px**. Thanh ben 132 + thanh
+ * tren 65 + o soan 99 = 296px, tuc vung tin nhan con 17px.
+ *
+ * ⭐ Nen o day thanh ben rut ve dung hai hang dieu khien (nut "Moi" + o tim);
+ *    `.ltc-ds` von da tu cuon nen KHONG mat muc hoi thoai nao — no chi ngan hon.
+ *    Doi lai vung tin nhan tu 17px len ~61px, va o soan van nam tren man.
+ *
+ * ⚠️ Nguong 500px chon theo hinh hoc chu khong theo mau may: mot khung cao
+ *    500px tru 77px chrome con 423px, tuc vua du cho 132+65+99 = 296px khung
+ *    ung dung va ~127px tin nhan. Duoi muc do thi phai rut. */
+@media (max-width: 860px) and (max-height: 500px) {
+  .ltc-ben { max-height: 88px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
