@@ -971,9 +971,9 @@ Biến phân biệt hai kiểu nguy hiểm là *"có nạp model không"*, nhưn
 trực tiếp. `p.memory_info().rss` trả lời được:
 
 ```
-0,08-0,10 GiB   worker pytest thuan      (3 mau, 3 cay khac nhau)
-0,09-0,15 GiB   worker pytest cua H44    (mau doc lap)
-   tinh bang GiB   worker da nap torch + mot model that
+0,08-0,10 GiB   tien trinh DIEU PHOI pytest   (3 mau, 3 cay khac nhau)
+0,09-0,15 GiB   tien trinh DIEU PHOI pytest   (mau doc lap cua H44)
+   tinh bang GiB   mot tien trinh da nap torch + mot model that
 ```
 
 ⇒ Chênh **một bậc độ lớn**, nên ngưỡng không cần chính xác — và đó là điều làm nó
@@ -983,8 +983,54 @@ dùng được.
 nhiễm với `-n` (đếm worker, không đếm bầy luồng mỗi worker sinh) **và** với tên
 tệp test (một tên vô hại vẫn có thể `import torch`).
 
-⚠️ Mẫu của H44 chỉ có 1–2 tiến trình, chưa phải lúc cả 6 worker đã lên. Nó xác
-nhận **bậc độ lớn của một tiến trình**, chưa xác nhận **tổng RSS khi đủ worker**.
+🔴 **CHƯA ĐO ĐƯỢC: worker.** Cả hai bộ mẫu trên là tiến trình **điều phối**, không
+phải worker. `pytest-xdist` sinh worker qua `execnet`, và **cmdline của chúng
+không chứa chữ `pytest`** — nên mọi phép lọc theo cmdline (của cả hai phiên) đều
+bỏ sót đúng thứ cần đo. Ba lượt đo tiếp theo vẫn không bắt được cửa sổ sáu
+worker.
+
+⛔ Nên con số `3 × 6 × 0,1 = 1,8 GiB` từng được nêu là một **phép nhân**, không
+phải phép đo, và việc nó khớp với RAM tụt 0,9 GiB rồi hồi là một **sự phù hợp**.
+Ghi là *chưa đo được* thay vì gửi lại phép nhân dưới dạng phép đo — cùng luật
+Bẫy 24.
+
+⭐ Nhưng vế **dùng được** của RSS thì không phụ thuộc con số worker: một cây có
+bất kỳ tiến trình nào RSS tính bằng GiB là một cây đang nạp model, và đó là câu
+ta cần trả lời trước khi bấm.
+
+### 🔴 Khe giữa ĐO và BẤM không có đáy — nên nhắn tin không phải cơ chế loại trừ
+
+Đo 06/09: hai phiên bấm gate cách nhau **25 giây**, và **cả hai đều vừa đo thấy
+máy trống**. Không ai sai, không ai bỏ bước.
+
+⛔ Dù nhắn nhanh tới đâu, khoảng thời gian giữa *đo* và *bấm* của hai người vẫn
+có thể chồng. **25 giây chỉ là con số gặp phải tối nay; nó có thể là 2 giây.**
+Suốt buổi, bốn phiên dùng tin nhắn **như thể** nó là một cơ chế loại trừ lẫn
+nhau. Nó không phải, và không thể trở thành.
+
+⇒ Thứ duy nhất đóng được khe ấy là **một cái khoá lấy trước khi chạy**. Mà lượt
+nặng nhất trên máy này — `tools/test_nhanh.py` — **không xin khoá dòng nào**.
+
+### 💡 ĐỀ XUẤT (chưa làm): cho `test_nhanh.py` xin khoá
+
+*(phiên VIDEO AI nêu; H44 ghi lại, KHÔNG tự thi hành)*
+
+Bản vá một lớp lỗi mà bốn phiên đã trả tiền suốt một buổi tối: bọc thân
+`test_nhanh.py` trong `CuaSoYen` y như `gate.py:1384` đang làm.
+
+⛔ **Cố ý chưa làm, và lý do nên nằm bằng chữ:**
+
+1. `tools/` là **hạ tầng dùng chung**, ngoài ranh giới của bất kỳ chương trình
+   ứng dụng nào. `CLAUDE.md` yêu cầu dừng lại và nói rõ vì sao trước khi sửa nền
+   tảng — đây là chỗ dừng.
+2. **Mỗi worktree chạy một bản `tools/` riêng.** Sửa ở một cây thì bốn cây kia
+   không đổi, nên nó **không** giải quyết vấn đề chung mà chỉ đẻ ra phân kỳ —
+   đúng cơ chế đã ghi ở `~/.claude/CLAUDE.md` (bốn cây cũ vẫn `-n 14` trong khi
+   `auto` = 10).
+3. Một phiên khác **đề nghị** không phải một phiên khác **cho phép**.
+
+⇒ Việc này thuộc về chủ dự án hoặc phiên giữ `tools/`. Ghi ở đây để nó không
+biến mất cùng cửa sổ chat đã tìm ra nó.
 
 ### Luật
 
