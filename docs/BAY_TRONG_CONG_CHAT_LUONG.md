@@ -857,6 +857,41 @@ và chỉ đếm gốc. Và phân biệt cho được **cùng một lượt** v�
 `gate.py` khác pid, mỗi cái có `test_nhanh` con riêng và `-n` khác nhau, thì đó
 là hai lượt thật — fork của `timeout.exe` chỉ nhân đôi lớp `timeout.exe`.
 
+### Ba phiên báo nhau tử tế, và vẫn chồng lên nhau
+
+Đo **06/09 00:09:31**, lọc `Name='python.exe'` trước nên không có `timeout.exe`
+nào lọt vào:
+
+```
+00:03:04  ltt-llm-api-http-guide  gate.py            -> test_nhanh.py -n 6 -> pytest
+00:04:56  auto-scan-video-v4-mvp  gate.py --phien... -> test_nhanh.py -n 6 -> pytest
+00:07:36  mobile-v1               gate.py --vong-lap -> test_nhanh --lf   -> pytest
+
+CPU toan may: 93,2 %      RAM trong: 10,3 GiB
+```
+
+Ba lượt × `-n 6` = tới **18 worker trên 10 lõi** — đúng cấu hình đã làm máy
+production **reset cứng hai lần** ngày 03/09.
+
+🔴 Và điều đáng học là **không ai làm sai luật**. Cả ba phiên đều đo trước, đều
+nhắn trước, đều nhắn lại khi xong. Thứ hỏng là **tin nhắn cũ đi nhanh hơn ta
+gõ**:
+
+| Tin | Đúng lúc gõ | Sai lúc đọc |
+|---|---|---|
+| *"tôi cần một lượt gate, xếp sau bạn"* | ✅ | đọc thành *"nó sắp chạy"* |
+| *"gate của BẠN đang chạy, tôi đang nhường"* | ❌ ngay lúc gõ | lượt ấy đã dừng 4 phút trước |
+| *"xong tôi nhắn ngay, máy là của bạn"* | ✅ | không ai biết phiên **thứ tư** tồn tại |
+
+⇒ **Một lời NHƯỜNG máy cũng có hạn sử dụng.** Nó chỉ đúng tại thời điểm gõ, và
+người **nhận** phải đo lại ngay trước khi bấm — đừng coi nó là một suất đã đặt
+chỗ. Đây là dòng 3 của giao ước, áp cho **cả hai đầu** của tin nhắn chứ không
+chỉ đầu người gửi.
+
+⛔ Và một giao ước **ba** người không bảo vệ được một cái máy có **bốn** phiên.
+`mobile-v1` không đọc tin của ai, và không có gì trong kho cưỡng chế được nó —
+mỗi worktree chạy một bản `gate.py` riêng.
+
 ### Luật
 
 🔑 **`cua_so_yen trang-thai` là điều kiện CẦN, không đủ. Vế quyết định là CÂY
