@@ -3283,3 +3283,33 @@ button.lv-the-song.dang-phat .lv-nghe-dau::before{width:4px;height:14px;
  *    nguyên dòng và cuộn ngang. Bẻ dòng một lệnh `curl` giữa chừng làm người ta
  *    chép nhầm — một lỗi tệ hơn cái ta đang sửa. */
 :not(pre) > code{overflow-wrap:anywhere}
+
+/* ── Man RAT hep (320px — iPhone SE doi 1) ───────────────────────────────────
+ *
+ * Do 05/09 o 320x720, sau khi 390px da sach: **hai** route con tran ngang.
+ *
+ * ⭐ Va mot trong hai la do CHINH ban va cua toi. Nhom nut toc do doc
+ *    (`.lv-loc-nhom`) gom nam nut; luat vung cham 44px o tren lam moi nut rong
+ *    it nhat 44px, nen ca nhom thanh 305px trong mot khung 320px. Mot ban va
+ *    kha nang tiep can vua sinh ra mot loi bo cuc — va no chi lo ra o khung hep
+ *    nhat, tuc cho it ai do nhat.
+ *
+ * ⚠️ Bo cuon ngang cho nhom nay chu khong bo 44px: 44px la san WCAG cho ngon
+ *    tay, con cuon ngang chi la mot thao tac quen thuoc. Danh doi dung chieu. */
+.lv-loc-nhom{max-width:100%;overflow-x:auto;scrollbar-width:thin}
+
+/*
+ * Route con lai la `/huong-dan`: `<h3>` co `clientWidth 234` ma
+ * `scrollWidth 293` — mot dinh danh dai khong co cho ngat (ten endpoint API)
+ * trong mot the khoi. Chu khong ngat duoc thi trang phai no ra.
+ *
+ * ⭐ `break-word` chu khong `anywhere`: `break-word` chi ngat khi mot TU DON
+ *    khong vua mot dong, nen no khong dong toi cach xuong dong cua van ban
+ *    tieng Viet binh thuong. `anywhere` con doi ca be rong noi tai — manh hon
+ *    muc can thiet o day, va no cat chu giua chung o nhung cho khong dang.
+ *
+ * ⛔ Chi duoi 360px. Tren khung rong hon, mot tu dai tran ra la dau hieu bo cuc
+ *    co van de that su — giau no di la giau mot phep do. */
+@media(max-width:360px){
+  :where(h1,h2,h3,h4,dt,dd,p,li,td,th,figcaption){overflow-wrap:break-word}
+}
