@@ -262,6 +262,21 @@ def _sua_chua_neu_can(db, run, theo_ten) -> list[str]:
         theo_giai_doan.setdefault(gd, []).append(ma)
 
     dat_lai: list[str] = []
+    #: 🔴 **Ha nguon giu RIENG, va mot bo do 3 phut da chung minh vi sao.**
+    #:
+    #:    Ban dau doan duoi truyen ca `dat_lai` — tuc CA giai doan dang duoc sua
+    #:    — vao `assets.vo_hieu_theo_day_chuyen`. Hau qua: artifact cua CHINH
+    #:    `voice_synthesis` bi danh dau mat, ke ca tieng cua nhung doan con LANH.
+    #:    Luot chay lai khong tai dung duoc chung nua, nen `timing_align` phai co
+    #:    gian **3,304 lan** va hong han:
+    #:
+    #:        timing_align failed_terminal
+    #:        "He so co gian 3.304 ngoai khoang mot lan `atempo`"
+    #:
+    #: ⛔ Tuc chinh buoc don dep da pha "pham vi nho nhat an toan" ma ham nay ton
+    #:    tai de bao ve. Giai doan duoc sua CAN artifact cua no con nguyen — do
+    #:    la thu cho phep no bo qua nhung don vi da xong.
+    ha_nguon: list[str] = []
     for gd, cac_ma in sorted(theo_giai_doan.items()):
         for ma in cac_ma:
             su_dung.mo_lai_don_vi(db, run, stage=gd, item_key=ma)
@@ -273,10 +288,13 @@ def _sua_chua_neu_can(db, run, theo_ten) -> list[str]:
         except features.XungDot:
             continue
         dat_lai.append(gd)
-        dat_lai += features.vo_hieu_ha_nguon(db, run, gd)
+        moi_ha = features.vo_hieu_ha_nguon(db, run, gd)
+        dat_lai += moi_ha
+        ha_nguon += moi_ha
 
     if dat_lai:
-        assets.vo_hieu_theo_day_chuyen(db, run.id, sorted(set(dat_lai)))
+        # ⚠️ Chi HA NGUON. Xem ghi chu tren.
+        assets.vo_hieu_theo_day_chuyen(db, run.id, sorted(set(ha_nguon)))
         log.warning("asv: run %s vao vong sua %d, dat lai %s (%d don vi)",
                     run.id[:8], vong + 1, ",".join(sorted(set(dat_lai))),
                     len(gon))

@@ -34,10 +34,12 @@ import json
 import pytest
 
 from apps.auto_scan_video import features, jobs, pipeline, su_dung, sua_chua
-from apps.auto_scan_video.tables import (ITEM_INVALIDATED, ITEM_SUCCEEDED,
+from apps.auto_scan_video.tables import (ASSET_MISSING, ASSET_OK,
+                                         ITEM_INVALIDATED, ITEM_SUCCEEDED,
                                          RUN_DONE, RUN_ERROR, RUN_RUNNING,
                                          STAGE_FAILED_TERMINAL,
-                                         STAGE_SUCCEEDED, AsvRun, AsvStage)
+                                         STAGE_SUCCEEDED, AsvAsset, AsvRun,
+                                         AsvStage)
 from apps.auto_scan_video.nan_cho_vua import CAN_SUA, VUA
 
 
@@ -343,3 +345,48 @@ def test_ma_dispatch_cua_vong_sua_KHAC_NHAU_giua_cac_vong(db):
           if isinstance(n, ast.keyword) and n.arg == "ma_dispatch"
           and isinstance(n.value, ast.JoinedStr)]
     assert ma, "`ma_dispatch` cua vong sua phai la f-string mang so vong"
+
+def _asset(db, run, stage: str, khoa: str) -> AsvAsset:
+    a = AsvAsset(owner_id=run.owner_id, run_id=run.id, created_by_stage=stage,
+                 kind="audio", storage_key=khoa, integrity=ASSET_OK)
+    db.add(a)
+    db.flush()
+    return a
+
+
+def test_ARTIFACT_cua_chinh_giai_doan_duoc_sua_KHONG_bi_danh_dau_mat(db):
+    """🔴 **Bo tam bai kiem cua tep nay tung XANH trong khi E2E hong vi dieu nay.**
+
+    Ban dau `_sua_chua_neu_can` truyen ca danh sach `dat_lai` — tuc CA
+    `voice_synthesis` — vao `assets.vo_hieu_theo_day_chuyen`. Artifact cua chinh
+    giai doan dang duoc sua bi danh dau `missing`, ke ca tieng cua nhung doan con
+    LANH. Luot chay lai khong tai dung duoc chung nua, va hau qua lo ra o mot cho
+    khong ai ngo:
+
+        timing_align failed_terminal
+        "He so co gian 3.304 ngoai khoang mot lan `atempo`"
+
+    ⛔ Tuc chinh buoc don dep pha "pham vi nho nhat an toan" ma ca co che nay ton
+       tai de bao ve. Va khong mot bai don vi nao thay: chung do TRANG THAI cua
+       giai doan va don vi, khong do ARTIFACT.
+
+    ⭐ Nen bai nay do dung thu con thieu — mot ban do 3 phut moi thay duoc, gio
+       thay trong mot giay.
+    """
+    run = _run_da_chay_het(db)
+    _doan_tieng(db, run, "seg_lanh", trang_thai_nan=VUA)
+    _doan_tieng(db, run, "seg_hong", trang_thai_nan=CAN_SUA)
+
+    tieng = _asset(db, run, pipeline.VOICE_SYNTHESIS, "asv/u1/tieng/seg_lanh.wav")
+    ban_dung = _asset(db, run, pipeline.COMPOSE, "asv/u1/dung/ban.json")
+
+    _advance(db, run)
+    db.refresh(tieng)
+    db.refresh(ban_dung)
+
+    assert tieng.integrity == ASSET_OK, (
+        "artifact cua CHINH giai doan duoc sua bi danh dau mat — luot chay lai "
+        "se phai lam lai ca nhung doan con lanh")
+    assert ban_dung.integrity == ASSET_MISSING, (
+        "artifact HA NGUON phai bi vo hieu: no duoc dung tu mot ban tieng sap "
+        "bi thay")
