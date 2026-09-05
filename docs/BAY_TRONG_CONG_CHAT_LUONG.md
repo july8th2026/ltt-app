@@ -776,3 +776,78 @@ gom tạm thời, và chính `test_nhanh.py` cảnh báo ở chỗ khác rằng 
 chạy hết rồi xanh in ra gần giống nhau"*.
 
 🔑 **Chưa vá ở cây này.** `CLAUDE.md:115` và `gate.py:6,14` vẫn ghi "~15 giây".
+
+
+---
+
+## Bẫy 22 — `cua_so_yen` chỉ thấy ai **XIN** khoá, và `test_nhanh.py` không xin
+
+**Đo 2026-09-05, 23:30–23:59.** Ba phiên, hai lần suýt reset máy, và cả ba lần
+cùng một câu trả lời sai:
+
+```
+python tools\cua_so_yen.py trang-thai
+RANH - khong tai nguyen nao dang bi giu.
+```
+
+...trong khi máy đang chạy một lượt nghiệm thu `demucs + Whisper + NVENC`, hoặc
+hai lượt gate đầy đủ.
+
+⛔ **Câu trả lời ấy KHÔNG sai về mặt kỹ thuật.** Nó trả lời đúng câu hỏi của nó —
+*"có tệp khoá nào trong `gettempdir()` không"* — và người đọc nghe thành *"máy có
+rảnh không"*. Hai câu khác nhau, và chúng khác nhau ở đúng chỗ nguy hiểm.
+
+### Ba đường đi vòng qua khoá, đọc được từ mã
+
+| # | Đường | Dòng |
+|---|---|---|
+| 1 | **`tools/test_nhanh.py` không lấy khoá — không một dòng nào** | `grep cua_so_yen tools/test_nhanh.py` → rỗng |
+| 2 | `python -m pytest` gõ tay: cũng không | — |
+| 3 | `gate.py` có đường **chạy KHÔNG khoá, cố ý** | `cua_so_yen.py:298-314` |
+
+Đường 3 đáng đọc kỹ: `CuaSoYen.chay_khong_khoa` — hết `--cho` mà khoá vẫn bị giữ
+thì lượt sau **chèn**, chạy tiếp mà **không giữ gì**, chỉ in
+`[cua so yen] dang CHEN`. Ngân sách lõi tự tụt bằng phép trừ per-máy nên về lõi
+nó không ẩu; nhưng hệ quả là **một lượt gate đang chạy có thể không có tệp khoá
+nào cả**.
+
+⇒ Chỉ `gate.py` (dòng 1384, `with CuaSoYen(...)`) xin khoá, và cả nó cũng có
+đường không xin. Mọi thứ khác — `test_nhanh.py`, `pytest` trần, `demucs` do
+người chạy tay — **vô hình**.
+
+### Một đường xoá khoá của người đang sống — đọc được, CHƯA tái hiện
+
+`thu_giu` (`cua_so_yen.py:165-180`) tạo tệp bằng `O_EXCL` **rỗng**, rồi mới ghi
+nội dung. Giữa hai mốc ấy tệp **tồn tại nhưng rỗng**; một lượt khác đọc vào đó
+thì `_doc` trả `None`, và nhánh `if cu is None:` **`tep.unlink()` rồi giành
+khoá** — tức xoá khoá của một lượt đang sống, không cần `--ep`.
+
+⛔ Cửa sổ tính bằng micro-giây và **chưa ai tái hiện được**. Ghi ở đây vì nó là
+đường duy nhất trong mã xoá được khoá không phải của mình mà không ai gọi `nha`.
+
+### Không phải lệch thư mục TEMP — đã đo và loại
+
+Nghi ngờ hợp lý: `dang_giu()` glob `tempfile.gettempdir()`, mà `TEMP` là biến
+**của từng tiến trình**, nên hai phiên có thể nhìn hai thư mục. Đo:
+`C:\Users\THANGT~1\...\Temp` và `C:\Users\Thang Tuong\...\Temp` là **cùng
+một thư mục** (tên 8.3), và cả ba nơi đều 0 tệp khoá. Giả thuyết chết.
+
+### Luật
+
+🔑 **`cua_so_yen trang-thai` là điều kiện CẦN, không đủ. Vế quyết định là CÂY
+TIẾN TRÌNH.** Trước lệnh nặng phải hỏi cả hai, và vế thứ hai mới có quyền phủ
+quyết.
+
+⚠️ Và đọc cây tiến trình cũng có hai cách đọc sai — cả hai xảy ra thật tối 05/09:
+
+| Đọc | Vì sao lừa được |
+|---|---|
+| `cpu_percent()` một nhát | mẫu **tức thời**: không phân biệt "đã chết" với "đang chờ I/O". Một lượt nghiệm thu đang chạy đo ra **0,0 %** |
+| `create_time` in ra `23:41:22` | **không có ngày** — người đọc tự điền, và điền thành "đêm qua". Nó là 15 phút trước |
+
+⇒ In `create_time` **kèm ngày**, và dùng `cpu_times()` **tích luỹ** thay vì lấy
+một mẫu. Hai thứ này đã làm một phiên kết luận "máy rảnh" rồi bấm gate chồng lên
+lượt nghiệm thu của phiên khác — lượt mà phiên kia **đã báo trước 15 phút**.
+
+⭐ Cùng họ với Bẫy 17 và Bẫy 21: một công cụ trả lời **thành thật** cho câu hỏi
+hẹp của nó, và cái hỏng nằm ở khoảng cách giữa câu hỏi ấy với câu ta đang hỏi.
