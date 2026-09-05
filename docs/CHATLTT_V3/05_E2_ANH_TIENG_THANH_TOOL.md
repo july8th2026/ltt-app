@@ -87,3 +87,74 @@ một bộ đợi thứ hai — và nó sẽ giữ luồng qua cả những lầ
 
 🔑 Bước 4 cuối cùng là cố ý: ba bước đầu không đổi một hành vi nào mà người dùng
 thấy được. Nếu chúng sai, cái sai nằm trong test, không nằm trong sản phẩm.
+
+---
+
+## §5 — Bốn bước ấy đã làm xong. Và bước 3 giấu hai lỗi.
+
+Bước 1–2–4 đúng như dự liệu: `ChoJob` kiểm được bằng số học thuần (`test_815`),
+nộp job dùng lại `tao_media.tao` (`test_816`), cổng thứ tư mở cuối (`test_802`).
+
+**Bước 3 — "móc job-xong → `chay_tiep_nen`" — là chỗ mọi thứ thật sự chạm nhau,
+và không phép kiểm nào đi qua nó cho tới `test_819`.** Đo 05/09: `_dat_khoi`
+0 tệp nhắc tên, `con_cho_job` 0 tệp, `tao_media.dong_bo` chỉ xuất hiện ở dải 600
+— tức đường V1 nút bấm, không phải đường V3.
+
+Lý do khoảng trống ấy tồn tại rất bình thường: `test_816` **thay `tao_media.tao`
+bằng một hàm giả** để khỏi kéo cả hàng đợi job vào một phép kiểm về máy trạng
+thái. Quyết định đúng cho phạm vi của nó. Hệ quả là hàng `chatltt_execution` của
+job **chưa từng tồn tại** trong một phép kiểm nào — và nó chính là thứ hỏng.
+
+### Lỗi 1 — vòng model sau một job được mở bằng `image.ltt`
+
+`su_kien.mo_execution()` ghi `message.execution_id = ex.id` **mỗi lần** nó mở một
+hàng mới. `tao_media.tao` gọi nó với `tool_name="image.ltt", mode="job"`. Nên sau
+khi nộp job, con trỏ ấy trỏ vào hàng của **job**.
+
+`tiep_sau_duyet` lại đọc đúng trường ấy để biết mở luồng bằng năng lực nào, và
+`luot.dong_su_kien` truyền `ex.tool_name` **thẳng** vào `L.mo_luong()`:
+
+```
+RuntimeError: tool 'image.ltt' has no sync executor
+```
+
+⛔ Không phải một cái nhãn sai — **lượt vỡ**. Hỏi cỗ máy vẽ ảnh một câu hỏi chữ.
+
+⭐ Bản sửa không thêm khái niệm nào: `_execution_dau(run_id)` đã là câu trả lời
+đúng cho **đúng câu hỏi này** ở `chay_tiep_nen` (*"hàng nào là danh tính của
+run"* — thứ trình duyệt đang nghe). Dùng chung một nguồn thay vì hai.
+
+### Lỗi 2 — model chưa bao giờ biết id bức ảnh nó vừa vẽ
+
+`ket_qua_job` **đoán** tên cổng ra:
+
+```python
+kq.get("files") or kq.get("outputs") or kq.get("keys") or []
+```
+
+Không tên nào trong ba cái đó tồn tại. `image.ltt` khai `image_keys`;
+`speech.ltt` khai `audio_key`. Nên với **cả hai** tool job, model luôn đọc:
+
+```json
+{"tao_xong": true, "tep": []}
+```
+
+🔴 Một câu **tự mâu thuẫn** — "xong rồi, và không có gì cả" — và là lý do nó
+không thể tham chiếu ảnh cũ ở lượt sau, đúng thứ §2 đòi: *"bằng id artifact,
+không bằng đoán tên tệp"*.
+
+⭐ Bản sửa dùng lại `khoi_artifact()` — thứ dựng khối cho **người dùng** xem, và
+đã viết đúng luật từ đầu: *"Khong doan: chi doc dung cong ra da khai."* Hai nguồn
+cho câu hỏi *"job này đẻ ra những gì"* là hai nguồn sẽ lệch, và chỗ chúng lệch là
+chỗ người dùng thấy một bức ảnh trong khi model nói nó không tạo được gì.
+
+### Giới hạn KÉO — ghim lại, không vá vội
+
+`dong_bo` chỉ chạy khi **client hỏi**. Không ai mở hội thoại thì run nằm im ở
+`WAITING_BACKGROUND`. Chấp nhận được cho bản đầu và **không mất dữ liệu**: job đã
+xong, tiền đã quyết toán, kết quả đã nằm trong `blocks`; thứ chưa xảy ra chỉ là
+vòng model **nói về** bức ảnh.
+
+Đường ĐẨY thật là một chỗ móc trong `job_runner` — `platform_core`, ngoài ranh
+giới app này. `test_819` ghim giới hạn ấy bằng một phép kiểm, để ngày ai đó làm
+đường đẩy thì phép kiểm đó **đỏ** và buộc người ta đọc lại đoạn này.
