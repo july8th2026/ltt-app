@@ -182,8 +182,17 @@ def test_media_progress_parse(monkeypatch):
             return 0
 
     class _Empty:
-        def read(self):
-            return ""
+        """Gia `proc.stderr` RONG: van phai LAP DUOC, khong phai `read()`.
+
+        ⚠️ Ban cu chi co `read()` nen `_drain_err` nem `TypeError` trong luong
+           con. Phep kiem van xanh — no chi doc `seen`, khong dinh gi toi stderr
+           — nhung mot ngoai le im lang trong luong nen la thu khong duoc de lai
+           trong bo test: no lam nhieu moi lan doc log, va no day nguoi doc toi
+           cho quen rang canh bao luong la mot tin hieu that.
+        """
+
+        def __iter__(self):
+            return iter([])
 
     monkeypatch.setattr(media.subprocess, "Popen", lambda *a, **k: _FakeProc())
     seen = []
@@ -194,7 +203,37 @@ def test_media_progress_parse(monkeypatch):
 
 
 def test_media_progress_loi_thi_nem(monkeypatch):
+    """`ffmpeg` hong thi nem MediaError, VA thong bao phai mang duoi stderr.
+
+    🔴 BAN CU CUA PHEP KIEM NAY XANH VI MOT LY DO SAI — phien LTT Video AI chi ra
+       06/09 khi doc canh bao luong trong log gate cua ho:
+
+           PytestUnhandledThreadExceptionWarning: Exception in thread ...
+           File platform_core/media.py, line 223, in _drain_err
+               for ln in proc.stderr:
+           TypeError: '_Err' object is not iterable
+
+       `_drain_err` LAP tren `proc.stderr`, con `_Err` cu chi co `read()`. Luong
+       chet ngay dong dau, `tail` rong — va phep kiem van xanh, vi `MediaError`
+       duoc nem tu `returncode != 0`, khong lien quan gi toi stderr.
+
+    ⭐ Tuc nhanh duy nhat ma phep kiem nay ton tai de bao ve —
+       `raise MediaError(... + " | ".join(tail))` — CHUA BAO GIO duoc chay. Va no
+       khong the do duoc: ngoai le chet trong luong con, khong noi len luong
+       chinh; pytest chi ghi mot canh bao ma khong ai doc.
+
+    ⚠️ Nen ban nay sua HAI thu, thieu mot trong hai thi phep kiem lai rong:
+       (1) `_Err` LAP DUOC, dung nhu `proc.stderr` that;
+       (2) khang dinh thong bao MANG duoi stderr — chi sua (1) thi luong co chay
+           nhung khong ai kiem ket qua cua no.
+    """
     from platform_core import media
+
+    class _Err:
+        """Gia `proc.stderr`: mot doi tuong LAP theo dong, khong phai `read()`."""
+
+        def __iter__(self):
+            return iter(["boom\n", "fatal error\n"])
 
     class _FakeProc:
         returncode = 1
@@ -206,13 +245,14 @@ def test_media_progress_loi_thi_nem(monkeypatch):
         def wait(self, timeout=None):
             return 1
 
-    class _Err:
-        def read(self):
-            return "boom\nfatal error"
-
     monkeypatch.setattr(media.subprocess, "Popen", lambda *a, **k: _FakeProc())
-    with pytest.raises(media.MediaError):
+    with pytest.raises(media.MediaError) as loi:
         media.run_with_progress(["ffmpeg"], total_duration=0)
+    van = str(loi.value)
+    assert "code 1" in van
+    assert "boom" in van and "fatal error" in van, (
+        f"thong bao khong mang duoi stderr: {van!r} — `_drain_err` khong chay, "
+        "hoac `tail` khong toi duoc cho nem")
 
 
 def test_autosub_burn_kills_ffmpeg_when_progress_callback_cancels(monkeypatch):
