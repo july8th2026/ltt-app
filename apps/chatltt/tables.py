@@ -60,7 +60,15 @@ VAI = ("user", "assistant", "system")
 #: Trạng thái của một message. MỘT enum cho cả message lẫn execution.
 TRANG_THAI = ("draft", "streaming", "queued", "done", "failed", "cancelled")
 #: Loại khối nội dung mà bộ hiển thị biết vẽ (kế hoạch §5.2).
-LOAI_KHOI = ("text", "reasoning", "image", "audio", "file", "status", "error")
+# ⚠️ `tool_call` thêm ở H44 P05. V3 GHI khối này (`luot_v3._them_khoi`), nên hợp
+#    đồng phải khai nó — nếu không thì `hoi_thoai.cap_nhat_khoi()` **từ chối**
+#    chính tin nhắn mà V3 vừa tạo, và lỗi ấy chỉ nổ ở luồng sửa/tạo-lại.
+#
+# ⛔ Điều này KHÔNG mâu thuẫn với A5 ("bộ hiển thị bỏ qua khối lạ"): A5 nói về
+#    loại **chưa ai định nghĩa**, còn đây là loại ta CHỦ ĐỘNG sinh ra. Một loại
+#    mình tự ghi mà không khai là một loại sẽ bị chính mình từ chối.
+LOAI_KHOI = ("text", "reasoning", "image", "audio", "file", "status", "error",
+             "tool_call")
 
 
 class ChatlttConversation(Base):

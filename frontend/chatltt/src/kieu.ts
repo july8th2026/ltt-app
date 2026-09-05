@@ -7,6 +7,9 @@
 
 export type LoaiKhoi =
   | 'text' | 'reasoning' | 'image' | 'audio' | 'file' | 'status' | 'error'
+  // H44 P05 — khoi V3 sinh ra. Phai co o day cho khop `tables.LOAI_KHOI`;
+  // hai danh sach lech nhau thi may chu ghi duoc mot thu giao dien khong khai.
+  | 'tool_call'
 
 export type Khoi = {
   type: LoaiKhoi

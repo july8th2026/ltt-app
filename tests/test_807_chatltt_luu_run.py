@@ -302,3 +302,40 @@ def test_KHONG_truyen_ghi_thi_may_trang_thai_van_chay(db):
     assert run.trang_thai == DP.COMPLETED
     from apps.chatltt.tables import ChatlttStep
     assert db.query(ChatlttStep).count() == 0
+
+
+# ── 8. Khối V3 phải HỢP LỆ với chính hợp đồng của app ──────────────────────
+
+def test_khoi_V3_di_qua_duoc_kiem_khoi(db):
+    """🔴 `luot_v3` ghi thẳng `tra_loi.blocks`, vòng qua `kiem_khoi()`. Nên nếu
+    `tool_call` không nằm trong `LOAI_KHOI` thì nó vẫn **ghi được** — và chỉ nổ
+    ở luồng khác: `hoi_thoai.cap_nhat_khoi()` kiểm lại và **từ chối chính tin
+    nhắn mà V3 vừa tạo**.
+
+    ⭐ Phát hiện 05/09 khi dựng dữ liệu để xem bằng trình duyệt. Không phép kiểm
+       nào trong 250 cái bắt được, vì tất cả đều đi đường V3 — đường duy nhất
+       không kiểm.
+    """
+    from apps.chatltt.services import hoi_thoai as H
+
+    run = DP.Run(trang_thai=DP.COMPLETED, ly_do_ket=DP.KET_XONG, van_ban_cuoi="xong")
+    run.buoc = [_buoc(ket_qua=thi_hanh.KetQua(ok=True, noi_dung="36317933"))]
+    khoi = LR.khoi_cho_message(run)
+
+    # Không được ném. Đây chính là phép kiểm mà `cap_nhat_khoi` sẽ chạy.
+    assert H.kiem_khoi(khoi) == khoi
+
+
+def test_moi_loai_khoi_V3_sinh_ra_deu_duoc_KHAI(db):
+    """⛔ Chốt TẬP HỢP: mọi `type` mà `khoi_cho_message` có thể sinh ra phải nằm
+    trong `LOAI_KHOI`. Thêm một loại khối mới mà quên khai ⇒ phép kiểm đỏ."""
+    from apps.chatltt.tables import LOAI_KHOI
+
+    run = DP.Run(trang_thai=DP.COMPLETED, ly_do_ket=DP.KET_TRAN_VONG,
+                 van_ban_cuoi="cham tran")
+    run.buoc = [_buoc(ket_qua=thi_hanh.KetQua(ok=True, noi_dung="x")),
+                _buoc(thu_tu=2, ket_qua=thi_hanh.KetQua(ok=False, ma_loi="loi"))]
+    loai = {k["type"] for k in LR.khoi_cho_message(run)}
+    assert loai == {"tool_call", "text", "status"}
+    thieu = loai - set(LOAI_KHOI)
+    assert not thieu, f"loai khoi V3 sinh ra ma chua khai trong LOAI_KHOI: {thieu}"

@@ -28,28 +28,52 @@
 | # | Điều kiện | Trạng thái |
 |---|---|---|
 | 1 | Gate đầy đủ PASS trên cây này | ✅ `20260905T052942Z-17052.json` |
-| 2 | **Mở trình duyệt thật, xem bốn nhãn trạng thái V3 hiện đúng** | ❌ **CHƯA LÀM** |
+| 2 | **Mở trình duyệt thật, xem bốn nhãn trạng thái V3 hiện đúng** | ✅ **05/09** — xem §dưới |
 | 3 | Kiểm trên URL công khai, không chỉ loopback (`CLAUDE.md` 5b) | ❌ chưa |
 | 4 | R2b được chủ dự án chốt | ❌ đang chạy theo giả định (b) |
 
-### Điều kiện 2 — vì sao nó phải nằm ở đây chứ không phải một dòng ghi chú
+### Điều kiện 2 — ĐÃ GỠ, và nó bắt được một lỗi trước khi trình duyệt kịp mở
 
-Tôi sửa `ThongDiepView.tsx` (thêm bốn nhãn cho `tran_vong` · `tran_tool` ·
-`tran_trung` · `huy`) và **chưa mở trình duyệt lần nào**. `CLAUDE.md` mục 5 nói
-thẳng: *"test xanh không chứng minh trang hiển thị đúng"*.
+**Đã kiểm 05/09** trên tiến trình riêng (cổng **8199**, CSDL vứt đi, cờ V3 BẬT)
+— không đụng bản production đang chạy ở 8100. Kết quả:
 
-⭐ Có một bào chữa **đúng**: cờ V3 đang tắt nên bốn mã ấy chưa thể xuất hiện
-với người dùng thật, và 9 phép kiểm A5 chạy qua jsdom là **render thật** chứ
-không phải so trạng thái. Thứ chưa phủ hẹp hơn nhiều so với *"chưa kiểm giao
-diện"*: trình duyệt thật + CSS thật + Cloudflare.
+| mã | nhãn người dùng thật sự đọc |
+|---|---|
+| `tran_vong` | Đã dừng sau số vòng tối đa — hãy hỏi tiếp nếu còn thiếu |
+| `tran_tool` | Đã dừng vì gọi công cụ quá nhiều lần trong một lượt |
+| `tran_trung` | Đã dừng vì công cụ được gọi lặp lại với cùng tham số |
+| `huy` | Đã dừng theo yêu cầu |
 
-🔴 **Nhưng bào chữa đó có HẠN SỬ DỤNG.** Nó đúng cho tới đúng ngày ai đó bật
-cờ — và ngày đó không ai nhớ lại câu này. Viết nó thành **điều kiện gỡ**
-thay vì một dòng ghi chú là cách duy nhất để món nợ này **tự đòi** thay vì
-chờ ai đó nhớ ra.
+**Không mã thô nào rơi ra màn hình.** 0 lỗi console, mọi API 200, và bundle được
+phục vụ là `main-Db3wVmJH.js` — đúng mã băm build sau khi thêm nhãn, nên đây là
+mã của tôi chứ không phải bản cũ trong cache.
 
-*(Đề xuất của phiên ASV V4, 05/09 — tôi định chỉ ghi vào mục "chưa chứng
-minh", họ chỉ ra rằng như thế là chưa đủ.)*
+### 🔴 Và nó bắt được một lỗi mà 250 phép kiểm không thấy
+
+Khi **gieo dữ liệu** để xem, `hoi_thoai.kiem_khoi()` **từ chối** khối `tool_call`:
+
+```
+ThamSoSai: khoi khong hop le: {'type': 'tool_call', ...}
+```
+
+`LOAI_KHOI` không khai `tool_call`. V3 vẫn **ghi được** vì `luot_v3._them_khoi`
+gán thẳng `tra_loi.blocks`, **vòng qua** `kiem_khoi()`. Nên lỗi không nổ ở đường
+V3 — nó nằm chờ ở `hoi_thoai.cap_nhat_khoi()`, tức luồng **sửa / tạo lại** sẽ từ
+chối đúng tin nhắn mà V3 vừa tạo.
+
+⭐ Không phép kiểm nào trong 250 cái bắt được, vì **tất cả đều đi đường V3** —
+đường duy nhất không kiểm. Đã khai `tool_call` ở **cả hai phía** (`tables.LOAI_KHOI`
+và `kieu.ts LoaiKhoi`) và ghim bằng `test_807` mục 8.
+
+⛔ Điều này **không** mâu thuẫn với A5: A5 nói về loại khối **chưa ai định
+nghĩa**; đây là loại ta **chủ động sinh ra**. Một loại mình tự ghi mà không khai
+là một loại sẽ bị chính mình từ chối.
+
+### Còn lại của điều kiện 2
+
+Khối `tool_call` hiện **chưa được vẽ gì cả** — người dùng thấy phần chữ và nhãn
+trạng thái, không thấy dấu vết lời gọi công cụ. Đó **đúng A5** (bỏ qua khối chưa
+có bộ vẽ, không vỡ), nhưng nghĩa là **P09 vẫn phải dựng bộ hiển thị tool_call**.
 
 ## Quyết định của chủ dự án (2026-09-04)
 
