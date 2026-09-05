@@ -95,11 +95,11 @@
     {
       "id": "P05",
       "ten": "anh + tieng thanh tool",
-      "trang_thai": "CHUA",
+      "trang_thai": "DANG LAM",
       "chan": [
         "P04"
       ],
-      "phan_tram": 0
+      "phan_tram": 10
     },
     {
       "id": "P06",
@@ -348,8 +348,8 @@
     "don_vi": "ngay cong (8h)",
     "lan_A": {
       "uoc": 17.0,
-      "xong": 13.0,
-      "phan_tram": 76
+      "xong": 13.4,
+      "phan_tram": 79
     },
     "lan_B": {
       "uoc": 20.0,
@@ -363,8 +363,8 @@
     },
     "toan_chuong_trinh": {
       "uoc": 51.0,
-      "xong": 13.0,
-      "phan_tram": 25
+      "xong": 13.4,
+      "phan_tram": 26
     },
     "ma_san_pham_da_sua": "9 tep: 6 moi trong apps/chatltt/services + frontend ThongDiepView.tsx + governance.py + luot.py",
     "ghi_chu": "dem theo NGAY CONG, khong theo so pha — P00 nua ngay, P03 nam ngay"
@@ -625,5 +625,33 @@
       "khong_them_cot_lich_su": "Lich su da nam san trong CSDL, chi o dang khac: duong hoi thoai + chatltt_step (doi_so_tho + ket_qua). Them mot cot chep lai no la tao BAN THU HAI cua cung mot su that, va hai ban thi som muon lech o dung cho kho thay nhat. Phep kiem manh nhat viet duoc: so TUNG BYTE lich su dung lai voi ban goc con trong bo nho — neu khac thi thu dang thieu la mot cot THAT SU can.",
       "bo_dem_trung_bi_xoa_khi_cho_duyet": "Tran 'goi trung 2 lan' dem theo bam_trung trong `Run._dem_bam` — mot dict trong RAM. Khong dung lai no thi moi lan cho duyet la mot lan xoa sach, va mot model ket vong lap chi can xin duyet MOT lan la thoat tran, mai mai."
     }
+  },
+  "p05": {
+    "trang_thai": "DANG LAM",
+    "phan_tram": 10,
+    "E2": {
+      "cau": "image.edit co backend that khong",
+      "tra_loi": "KHONG",
+      "do_bang": "grep -rn 'name=\"image\\.' apps/*/manifest.py",
+      "nang_luc_that": [
+        "image.ltt (anhnoibo)",
+        "speech.ltt (ltt_voice)",
+        "image.generate + image.batch_generate (taoanh)",
+        "image.thumbnail (thumbnail)",
+        "image.upscale (upscalevideo)"
+      ],
+      "quyet_dinh": "HOAN — khong khai mot tool nen tang khong lam duoc",
+      "ly_do": "P01 do 98,8% chon dung tool TRONG SO DUOC MOI, nen moi sai la bao dam model se goi sai. Chi phi phat hien: mot lenh grep. Chi phi KHONG phat hien: mot tool hong dung trong danh muc toi khi co khach."
+    },
+    "da_xong": [
+      "05_E2_ANH_TIENG_THANH_TOOL.md — E2 tra loi bang do, va thu tu 4 buoc"
+    ],
+    "con_lai": [
+      "ChoJob (anh em cua CanDuyet) + tiep_tuc(ket_qua_job=...)",
+      "nop job tu bo_chay_tool (dung tao_media.tao, KHONG viet lai)",
+      "moc job-xong -> chay_tiep_nen",
+      "mo CHO_MODEL_GOI cho image.ltt + speech.ltt — BUOC CUOI"
+    ],
+    "ghi_chu": "Hinh dang da co san va giong het cong duyet: WAITING_BACKGROUND da nam trong CHUYEN_HOP_LE tu P03, chatltt_step.job_id da co trong migration, va luu_run.dung_lai da dung lai duoc mot run tu CSDL."
   }
 }
