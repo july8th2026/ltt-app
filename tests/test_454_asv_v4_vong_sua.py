@@ -331,20 +331,45 @@ def test_VONG_SUA_duoc_GHI_VAO_SO_CAI_va_khong_dem_hai_lan(db):
                 if d.nang_luc == jobs.NANG_LUC_VONG_SUA]) == 1
 
 
-def test_ma_dispatch_cua_vong_sua_KHAC_NHAU_giua_cac_vong(db):
+def test_ma_dispatch_cua_vong_sua_KHAC_NHAU_giua_cac_vong(db, monkeypatch):
     """⚠️ Neu ma dispatch khong doi theo vong, tran se la MOT vong vinh vien.
 
-    Bai nay chot mot dieu de tuot: `UNIQUE(run_id, ma_dispatch)` vua la thu dem
-    vong vua la thu chan trung. Hai vai do chi song chung khi ma mang so vong.
-    """
-    import ast
-    from pathlib import Path
+    `UNIQUE(run_id, ma_dispatch)` giu HAI vai cung luc: no dem vong, va no chan
+    ghi trung. Hai vai do chi song chung duoc khi ma mang so vong.
 
-    cay = ast.parse(Path(jobs.__file__).read_text(encoding="utf-8"))
-    ma = [n for n in ast.walk(cay)
-          if isinstance(n, ast.keyword) and n.arg == "ma_dispatch"
-          and isinstance(n.value, ast.JoinedStr)]
-    assert ma, "`ma_dispatch` cua vong sua phai la f-string mang so vong"
+    🔴 **Ban dau bai nay doc AST va no YEU — day la ban thay the.**
+
+       Ban cu chi doi *"co it nhat mot `ma_dispatch` la f-string"*. No khong doi
+       f-string ay mang so vong, va no xanh ca khi ai do viet `f"sua:{0}"` — tuc
+       xanh trong khi lam hong dung cai no duoc viet ra de canh.
+
+    ⭐ Do la mot phep do tra loi cau *"co dung dinh dang khong"* trong khi cau
+       can hoi la *"hai vong co ra hai ma khac nhau khong"*. Nen ban nay chay
+       THAT hai vong va doi hai ma — mot cau hoi ma dinh dang khong tra loi ho
+       duoc.
+    """
+    # Noi tran len 2 de co vong thu hai that su xay ra.
+    monkeypatch.setattr(sua_chua, "VONG_SUA_TOI_DA", 2)
+
+    run = _run_da_chay_het(db)
+    _doan_tieng(db, run, "seg_0007", trang_thai_nan=CAN_SUA)
+
+    def _mot_vong():
+        for s in features.cac_giai_doan(db, run):
+            s.status = STAGE_SUCCEEDED
+        db.flush()
+        return _advance(db, run)
+
+    assert _mot_vong().get("sua_chua"), "vong 1 phai sua"
+    assert _mot_vong().get("sua_chua"), (
+        "vong 2 KHONG chay — dau hieu ma dispatch khong doi theo vong, nen "
+        "`UNIQUE(run_id, ma_dispatch)` coi vong 2 la mot ban ghi trung")
+
+    ma = [d.ma_dispatch for d in su_dung.cac_dong(db, run, stage=pipeline.QC,
+                                                  item_key=jobs.DON_VI_SUA)
+          if d.nang_luc == jobs.NANG_LUC_VONG_SUA]
+    assert len(ma) == 2, f"phai co dung hai dong vong sua, dang co {len(ma)}"
+    assert len(set(ma)) == 2, f"hai vong dung CHUNG mot ma dispatch: {ma}"
 
 def _asset(db, run, stage: str, khoa: str) -> AsvAsset:
     a = AsvAsset(owner_id=run.owner_id, run_id=run.id, created_by_stage=stage,
