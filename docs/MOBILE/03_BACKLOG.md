@@ -15,10 +15,6 @@ Mỗi mục trỏ tới bằng chứng trong `02_BASELINE.md`. Không có mục 
 `CHECKPOINT.md`). Phát thật đã chứng minh trên **Chromium**; Safari phải chờ
 thiết bị thật.
 
-⚠️ P0-1 mới chốt được vế *"máy chủ không phát ra Range"*. Vế *"vì thế Safari không
-phát"* **phải đo bằng phát thật trên WebKit ở Phase C** trước khi được gọi là root
-cause. Một giải thích khớp hoàn hảo mà chưa đo là cách kết thúc điều tra quá sớm.
-
 ## P1 — hỏng trải nghiệm trên mọi trang, hoặc rủi ro dữ liệu
 
 | # | Vấn đề | Bằng chứng | Phase |
@@ -49,10 +45,16 @@ template có điều kiện. Trình duyệt và mã nguồn bắt được hai t
 
 ## Chưa đo — không được viết vào bất kỳ báo cáo nào là PASS hay FAIL
 
-- Waveform Voice: mức tiêu thụ bộ nhớ/thời gian khi decode audio dài.
-- Bàn phím ảo che composer (`chatltt`, `chataistudio`) — Playwright không dựng
-  được OSK thật.
-- Vòng đời job dài khi ẩn tab / tải lại / quay lại.
+- ~~Waveform Voice: bộ nhớ/thời gian khi decode audio dài~~ → **đã đo**,
+  `05_SONG_AM.md`: ~275 KB mỗi giây tiếng, 164,8 MB ở trần 600 giây.
+- ~~Vòng đời job khi ẩn tab~~ → **đã đo và sửa** cho 2/5 vòng, `test_705`.
+  Ba vòng còn lại nằm trong React (`autosub-studio`, `chatltt`) — Phase E.
+- **Bàn phím ảo thật che composer** — vẫn chưa đo được. Playwright không dựng
+  được OSK; phép đo thay thế (thu nhỏ khung nhìn 844→464) cho thấy composer vẫn
+  hiện, nhưng iOS thu nhỏ `visualViewport` chứ không thu nhỏ layout viewport và
+  khác biệt ấy chỉ thiết bị thật trả lời được.
+- **Tải lại / quay lại sau khi khoá máy**: chưa dựng được job thật (môi trường đo
+  không có provider nào `san_sang`).
 - Kéo-thả trong `autosubvideo` (timeline) và `prompt_ai_ommi` (sắp xếp cảnh):
   có đường thay thế bằng chạm hay không.
 - React Flow trong `agent`: nối node bằng chạm.
