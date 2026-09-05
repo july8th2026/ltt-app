@@ -212,7 +212,7 @@ tool nền tảng không làm được là **bảo đảm** model sẽ gọi nó
 |---|---|---|---|
 | **R1** | Cả nền tảng chỉ **một suất LLM đồng thời** ⇒ vòng N bước = N lần giành/nhả | `apps/ltt_llm/manifest.py:197` + yaml `--parallel 1` | ✅ P02 chọn **C** (giành lại mỗi vòng, `WAITING_SLOT`) |
 | **R2** | Tiền tính theo **một lần gọi model**, không theo **một lượt** | `chatltt_execution` 3 cột vô hướng | ✅ P02: tổng hợp theo `run_id`, **không** dựng sổ thứ hai |
-| **R2b** | 🔴 **Làm tròn C1** biến lượt 8 vòng từ 2,3 credit thật thành **8 credit thu** | `platform_core/llm/thanh_toan.py` §C1 | ⚠️ chạy theo giả định **(b) C2-trong-run**; quyết định vĩnh viễn **chờ chủ dự án**. Đường đi được là **một `request_id` cho cả run** ⇒ **P04** |
+| **R2b** | 🔴 **Làm tròn C1** thu gấp 2–6 lần giá niêm yết trên lượt agentic **và** trên chat ngắn | `platform_core/llm/thanh_toan.py` | ✅ **đã nghiên cứu, đo, cài xong** — `04_ADR_R2B_TINH_TIEN_LUOT.md`. **OPT-IN** (`LTT_TINH_TIEN_TICH_LUY=1`), mặc định vẫn C1 vì nó đổi **điều khoản công bố** ⇒ chủ dự án chốt |
 | **U-1** | llama.cpp gọi đích danh `-ctk q4_0` *"substantially degrade"* tool calling | `docs/function-calling.md:332-333` | ✅ đo 22/22 tới 128K ⇒ **không tái hiện**; A/B hạ ưu tiên |
 | **U-2** | `parallel_tool_calls` **tắt mặc định** ở llama.cpp | `function-calling.md:24` | ✅ đã gửi cờ; test_806 chốt |
 | **M-1** | Handler tool-call là Native hay Generic | `chat.cpp:3597-3601` | ✅ **NATIVE** (Qwen3-Coder PEG) — chứng minh bằng mã **và** bằng đo |
@@ -264,6 +264,29 @@ không bằng **TRÍCH LẠI**.
 1. `npm ci` trong `frontend/chatltt` ở **cây chính** — ở đó vẫn thiếu.
 2. Thêm `frontend/*/node_modules` vào luật 1b của `QUY_TRINH_WORKTREE.md`
    (luật đó hiện **chỉ nói** `apps/*/vendor`).
+
+## 💰 R2b — cách tính tiền một lượt (05/09, đã đo và đã cài)
+
+Chủ dự án giao: *"nghiên cứu sâu sắc, tính theo token input/output, tự đề xuất
+con số tối ưu"*. Kết luận:
+
+> 🔑 **Bảng giá 50 / 10 / 400 credit/1M là ĐÚNG — đừng đổi.** Neo thị trường đo
+> lại hôm nay: `qwen/qwen3.8-27b` = **110,5 / 789**, ta ở **45 % / 51 %**. Thứ
+> hỏng là **ranh giới làm tròn**, ở một tầng khác.
+
+| Kịch bản | ta thu | chi phí theo bảng giá | mua lẻ ngoài |
+|---|---|---|---|
+| hội thoại 20 lượt ngắn | 🔴 **20** | 3,13 | 17,18 |
+| chat rất ngắn | 1 | 0,10 | 0,21 (**ta đắt 4,84×**) |
+| lượt agentic 4 vòng | 4 | 0,92 | — |
+
+**Đã cài `C3`** (tích luỹ phần lẻ theo người dùng) + migration chỉ-thêm + 20
+phép kiểm. **Để OPT-IN** vì nó đổi `toi_thieu_moi_luot_credit` — một **điều
+khoản công bố**. Bật bằng `LTT_TINH_TIEN_TICH_LUY=1`.
+
+⚠️ Mọi con số trên đến từ **mô hình**, không phải lượt chạy thật (artefact P01
+ghi độ trễ, **không ghi token**). Trước khi bật thu tiền thật: ghi `usage` của
+20–50 lượt thật rồi chạy lại. Chi tiết: `04_ADR_R2B_TINH_TIEN_LUOT.md`.
 
 ## Chặn ngoài đang mở
 

@@ -285,22 +285,21 @@
   "cap_nhat_luc": "2026-09-05",
   "cong_chat_luong": {
     "gate_day_du": "PASS",
-    "ho_so": "test-results/gates/20260905T073314Z-19544.json",
+    "ho_so": "test-results/gates/20260905T162820Z-20472.json",
     "ngay": "2026-09-05",
+    "pham_vi": "sau khi cai R2b (doi ma tinh tien nen tang)",
     "buoc_bo_qua": [
-      "bat bien da tien trinh (thieu LTT_TEST_DATABASE_URL Postgres)",
       "frontend agent-canvas",
       "frontend autosub-studio",
       "frontend prompt-ai-ommi"
     ],
-    "frontend_chatltt": "PASS 7,6s — 87 vitest CHAY THAT, ke ca 9 phep kiem A5",
-    "ghi_chu": "Truoc phien nay `frontend chatltt` bi BO QUA o MOI cay, tuc 87 phep kiem giao dien chua bao gio chay o dau. Da cai node_modules o cay nay.",
+    "moi_lan_nay": "CHI 3 buoc bo qua, khong phai 4: `bat bien da tien trinh` DA CHAY (138,6s PASS) — truoc do no bi bo qua vi thieu LTT_TEST_DATABASE_URL. Bat bien da tien trinh gio da duoc chung minh, khong con la lo hong.",
+    "frontend_chatltt": "PASS 9,7s",
+    "bo_test": "PASS 536,8s",
     "con_phai_lam": [
       "npm ci frontend/chatltt o cay chinh",
-      "them frontend/*/node_modules vao luat 1b QUY_TRINH_WORKTREE.md",
-      "dat LTT_TEST_DATABASE_URL de buoc `bat bien da tien trinh` chay"
-    ],
-    "ghi_chu_luot_truoc": "Luot 20260905T071549Z ra FAIL (1/26) — DO CHINH TOI giet worker pytest cua mot luot dang chay, khong phai do ma. Da chay lai sach: PASS."
+      "them frontend/*/node_modules vao luat 1b QUY_TRINH_WORKTREE.md"
+    ]
   },
   "template_may_b": {
     "duong_dan": "H:/LTT_LLM/models/chat_template.jinja",
