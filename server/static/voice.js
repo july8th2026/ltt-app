@@ -260,11 +260,58 @@
         for (var i = 0; i < khac.length; i++) {
           if (khac[i] !== au && !khac[i].paused) khac[i].pause();
         }
-        au.play();
+        /* == `play()` tra mot Promise, va no CO the bi tu choi ==============
+         *
+         * ⛔ `au.play();` tran la cach cu, va no hong theo kieu te nhat: KHONG
+         *    CO GI XAY RA. Nut khong doi (trang thai nut den tu su kien `play`,
+         *    ma su kien do khong bao gio ban), khong loi nao trong console,
+         *    khong dong nao trong log may chu. Nguoi dung bam, roi bam lai,
+         *    roi nghi may ho hong.
+         *
+         * ⭐ Do 05/09: cung tep nay, dong ~395 (nghe thu giong) DA bat Promise
+         *    dung cach tu dau. Chi trinh phat ket qua/lich su/du an la khong.
+         *    Mot tep, hai cach — nen day khong phai chuyen "chua ai biet luat",
+         *    ma la chuyen mot cho bi bo sot.
+         *
+         * ⚠️ Tu choi khong dong nghia voi hong. Truong hop pho bien nhat la
+         *    chinh sach tu dong phat cua trinh duyet. Nen ta khong bao "loi
+         *    server" — ta tra dieu khien lai cho trinh duyet.
+         */
+        var hua = au.play();
+        if (hua && hua.catch) hua.catch(function () { boCuoc(); });
         if (!daVe) { daVe = true; veSong(song, au.src, au); }
       } else {
         au.pause();
       }
+    });
+
+    /* == Duong lui: tra ve trinh phat goc cua trinh duyet =================
+     *
+     * ⭐ Mot trinh phat tu dung khong phat duoc thi te hon thanh dieu khien mac
+     *    dinh cua trinh duyet, du no xau hon. Bat `controls` len la thu duy
+     *    nhat o day chac chan con hoat dong khi moi thu khac da that bai —
+     *    va no cho nguoi dung mot duong DI TIEP thay vi mot nut cam.
+     *
+     * ⛔ Khong hien mot thong bao ky thuat. Nguoi dung khong sua duoc "NotAllowed
+     *    Error", va noi ten loi ra chi lam ho lo lang ve du lieu cua ho. */
+    function boCuoc() {
+      dungLai();
+      au.controls = true;
+      hop.classList.add("lv-phat-lui");
+      nut.hidden = true;
+    }
+    au.addEventListener("error", boCuoc);
+
+    /* ⚠️ Va duong lui phai CO DUONG VE. Mot loi mang thoang qua o lan phat dau
+     *    khong duoc phep ha cap trinh phat vinh vien cho ca phien lam viec —
+     *    nhat la o man Giong, noi MOT the <audio> dung chung cho hai muoi giong
+     *    va `src` doi moi lan bam. `loadstart` bao mot nguon MOI bat dau nap,
+     *    tuc lan that bai truoc do khong con noi gi ve nguon nay nua. */
+    au.addEventListener("loadstart", function () {
+      if (!hop.classList.contains("lv-phat-lui")) return;
+      hop.classList.remove("lv-phat-lui");
+      au.controls = false;
+      nut.hidden = false;
     });
 
     /* == Doi `src` thi phai VE LAI song ==================================
