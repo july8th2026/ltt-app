@@ -15,7 +15,7 @@
 | **BASE_SHA** | `72a484c5f281f4d909e72927648df7dd62e5e196` (`admin-mvp-v3` = `origin/admin-mvp-v3`, 0/0) |
 | FINAL_SHA | *(chưa)* |
 | Dải test | **800–899** |
-| Pha hiện tại | P00 ✅ · P01 ✅ · P02 ✅ · **P03 95 %** → còn **một lượt gate đầy đủ** |
+| Pha hiện tại | P00–P04 ✅ (P04 trừ **R2b**) · **P05 85 %** → Làn A còn ~1 ngày công |
 | Deploy | ⛔ chương trình này **chưa deploy**. Làn A phát hành sau cờ `LTT_CHATLTT_V3_TOOLS` |
 
 🔑 **Cờ `LTT_CHATLTT_V3_TOOLS` và `LTT_CHATLTT_V3_PAID_TOOLS` đều đang TẮT, và
@@ -52,22 +52,22 @@ mới của mọi app đều phải khai ở đó, `test_211` cưỡng chế.
 | **A** | P00 nguồn chân lý | 0,5 | **0,5** ✅ | — |
 | **A** | P01 qualification Qwen | 2,5 | **2,5** ✅ | — |
 | **A** | P02 ADR điều phối | 1,0 | **1,0** ✅ | — |
-| **A** | P03 kernel điều phối | 5,0 | **4,3** (95 %) | 0,7 |
-| **A** | P04 duyệt bền + tiền | 4,5 | 0 | 4,5 |
-| **A** | P05 ảnh/tiếng thành tool | 3,5 | 0 | 3,5 |
-| | **Làn A** | **17,0** | **8,3** | **8,7** |
+| **A** | P03 kernel điều phối | 5,0 | **5,0** ✅ | — |
+| **A** | P04 duyệt bền + tiền | 4,5 | **4,0** (trừ R2b) | 0,5 |
+| **A** | P05 ảnh/tiếng thành tool | 3,5 | **3,0** (85 %) | 0,5 |
+| | **Làn A** | **17,0** | **15,9** | **1,1** |
 | **B** | P06 · P07 · P08 | 20,0 | 0 | 20,0 |
 | **C** | P09 · P10 · P11 · P12 | 14,0 | 0 | 14,0 |
-| | **TOÀN CHƯƠNG TRÌNH** | **51,0** | **8,3** | **42,7** |
+| | **TOÀN CHƯƠNG TRÌNH** | **51,0** | **15,9** | **35,1** |
 
 ### Con số
 
 | | |
 |---|---|
-| **Toàn chương trình (P00→P12)** | **≈ 16 %** |
-| **Làn A** (phần phát hành được một mình) | **≈ 49 %** |
-| Mã sản phẩm đã sửa | 9 tệp · 8 tệp test · 1 migration |
-| Phép kiểm mới | **136** (backend 800–808: 127 · frontend A5: 9) |
+| **Toàn chương trình (P00→P12)** | **≈ 31 %** |
+| **Làn A** (phần phát hành được một mình) | **≈ 94 %** |
+| Mã sản phẩm đã sửa | 14 tệp · 16 tệp test · 1 migration |
+| Phép kiểm mới | **250** (backend 800–816: 241 · frontend A5: 9) |
 
 ## Pha đã đóng
 
@@ -77,39 +77,80 @@ mới của mọi app đều phải khai ở đó, `test_211` cưỡng chế.
 | **P01** qualification Qwen3.8 | **PASS** — 581 lượt gọi · **0 hỏng** · **0 credit** · 40 phút GPU. Bốn cổng: Cổng 0 20/20 · lô chính 9/9 chỉ số · ngữ cảnh sâu 22/22 tới 128K · đường ống LTT 7/7 | `01_M1_*.md` · `01_NGUONG_VA_MA_TRAN.md` · `01_*_KET_QUA.md` · `01_PHAN_QUYET.md` |
 | **P02** ADR điều phối | **PASS** — phương án **A** (ChatLTT tự sở hữu bộ điều phối) 47 điểm, trên B 37 · LangGraph 32 · LibreChat 22 | `02_ADR_ORCHESTRATION.md` · `02_ADR_R1_MOT_SUAT.md` · `02_HOP_DONG.md` |
 
-## P03 — bóc chi tiết 95 %
+## P03 · P04 · P05 — đã xây gì
 
-| Hạng mục | Phép kiểm | Trạng thái |
+| Hạng mục | Phép kiểm | Pha |
 |---|---|---|
-| `gop_manh.py` — gộp mảnh `tool_call.delta` | test_801 (15) | ✅ |
-| `chieu_tool.py` — **cổng thứ tư** `CHO_MODEL_GOI` | test_802 (14) | ✅ |
-| Bất biến tiền C2 (số học thuần, 100.000 dãy) | test_803 (10) | ✅ |
-| `thi_hanh.py` — lỗi là kết quả, không phải ngoại lệ | test_804 (14) | ✅ |
-| `dieu_phoi.py` — máy trạng thái 12 trạng thái + 3 trần | test_805 (18) | ✅ |
-| Ba bảng + migration `4b8e21c6d907` (chỉ thêm) | test_616 | ✅ |
-| `co_v3.py` + nối vào `luot.py` | test_806 (19) | ✅ |
-| `luu_run.py` — run/step xuống CSDL | test_807 (20) | ✅ |
-| `tool_noi_bo.py` — `noi_bo.thoi_gian` · `noi_bo.tinh` | test_808 (46) | ✅ |
-| **A5** — bộ hiển thị bỏ qua khối lạ | `KhoiLa.test.tsx` (9) | ✅ |
-| Ba bảng khai hạng giữ dữ liệu | test_211 | ✅ |
-| **Một lượt gate đầy đủ để chốt** | — | ⏳ chờ **"HÀNG ĐỢI TRỐNG"** |
+| `gop_manh.py` — gộp mảnh `tool_call.delta` | test_801 (15) | P03 ✅ |
+| `chieu_tool.py` — **cổng thứ tư** `CHO_MODEL_GOI` | test_802 (14) | P03 ✅ |
+| Bất biến tiền C2 (số học thuần, 100.000 dãy) | test_803 (10) | P03 ✅ |
+| `thi_hanh.py` — lỗi là kết quả, không phải ngoại lệ | test_804 (15) | P03 ✅ |
+| `dieu_phoi.py` — máy trạng thái + 3 trần | test_805 (18) | P03 ✅ |
+| Ba bảng + migration `4b8e21c6d907` (chỉ thêm) | test_616 · test_211 | P03 ✅ |
+| `co_v3.py` + nối vào `luot.py` | test_806 (19) | P03 ✅ |
+| `luu_run.py` — run/step xuống CSDL | test_807 (20) | P03 ✅ |
+| `tool_noi_bo.py` — đồng hồ + máy tính (AST whitelist) | test_808 (47) | P03 ✅ |
+| **A5** — bộ hiển thị bỏ qua khối lạ | `KhoiLa.test.tsx` (9) | P03 ✅ |
+| `duyet.py` — phiếu duyệt **bền** | test_809 (30) | P04 ✅ |
+| `dieu_phoi.CanDuyet` + `tiep_tuc()` | test_810 (16) | P04 ✅ |
+| Hai cửa HTTP `/api/duyet/*` | test_811 (29) | P04 ✅ |
+| `bo_chay_tool.py` — `chay_tool` hai kết cục | test_812 (17) | P04 ✅ |
+| `luot_v3.py` — vòng lặp agentic **chạy thật** | test_813 (8) | P04 ✅ |
+| `luu_run.dung_lai()` — dựng lại `Run` từ CSDL | test_814 (16) | P04 ✅ |
+| `dieu_phoi.ChoJob` — chờ job nền | test_815 (27) | P05 ✅ |
+| Nộp job sau duyệt + `tao_media.tao(tin_nhan=…)` | test_816 (10) | P05 ✅ |
+| `CHO_MODEL_GOI` mở `image.ltt` · `speech.ltt` | test_802 | P05 ✅ |
+| **R2b** — một `request_id` cho cả run | — | P04 ⏸ **chờ `thanh_toan.py`** |
+| Đường **ĐẨY** khi job xong (móc `job_runner`) | — | P05 ⏸ ngoài ranh giới app |
+| UI duyệt ở frontend | — | P09 |
 
-### Hai phát hiện của P03 mà kế hoạch không có
+### Năm phát hiện mà kế hoạch không có
 
-**1. Một mã thô suýt rơi ra màn hình người dùng.** `ThongDiepView.tsx` dựng
-nhãn trạng thái bằng `NHAN_TRANG_THAI[ma] ?? ma`. Bốn lý do kết của V3
-(`tran_vong` · `tran_tool` · `tran_trung` · `huy`) đều **chưa có nhãn**, nên
-người dùng sẽ đọc thấy đúng chuỗi `tran_vong` giữa câu trả lời. Không ném,
-không đỏ, nên không cảnh báo nào kêu — nó chỉ làm sản phẩm trông như bản chưa
-làm xong. Đã thêm bốn câu, và **kiểm bằng đột biến**: gỡ một nhãn ra thì phép
-kiểm đỏ.
+**1. Một mã thô suýt rơi ra màn hình người dùng.** `ThongDiepView.tsx` dựng nhãn
+bằng `NHAN_TRANG_THAI[ma] ?? ma`, và bốn lý do kết của V3 đều **chưa có nhãn** —
+người dùng sẽ đọc thấy đúng chuỗi `tran_vong` giữa câu trả lời. Không ném, không
+đỏ, nên không cảnh báo nào kêu. Đã thêm bốn câu, **kiểm bằng đột biến**.
 
-**2. `chatltt_run` không thể là `OPERATIONAL`.** Bảng ấy không chứa chữ của ai —
-chỉ số đếm và ba cột tiền — nên xếp `OPERATIONAL` nghe hợp lý. Và sai:
-`OPERATIONAL` **tự già đi theo hạn riêng**, nghĩa là một ngày các `run` bị dọn
-trong khi hội thoại chứa chúng vẫn còn, và người dùng mở lại một lượt cũ thấy
-các bước biến mất khỏi một tin nhắn vẫn nguyên vẹn. Một hội thoại phải có **một**
-lời hứa giữ dữ liệu, không phải hai lời hứa lệch nhau bên trong nó.
+**2. `chatltt_run` không thể là `OPERATIONAL`.** Bảng ấy chỉ có số đếm nên xếp
+`OPERATIONAL` nghe hợp lý — và sai: nó **tự già đi theo hạn riêng**, nên một ngày
+các `run` bị dọn trong khi hội thoại vẫn còn, và người dùng mở lại lượt cũ thấy
+các bước biến mất khỏi một tin nhắn nguyên vẹn.
+
+**3. Sổ handler tool nội bộ phụ thuộc THỨ TỰ IMPORT.** Chỉ `chieu()` nhập
+`tool_noi_bo`, nên mọi đường **không** đi qua nó — chạy tiếp sau duyệt, job nền,
+lệnh CLI — thấy `LOI_CHUA_CAI` cho một tool bình thường. `test_812` đỏ ba phép
+kiểm vì đúng chuyện này; chạy riêng thì xanh hay đỏ tuỳ **tệp nào chạy trước**.
+Chốt bằng một phép kiểm chạy **tiến trình mới** — cách duy nhất tái hiện được.
+
+**4. `_dem_bam` là một dict trong RAM.** Không dựng lại thì mỗi lần chờ duyệt là
+một lần **xoá sạch** bộ đếm trùng, và một model kẹt vòng lặp chỉ cần xin duyệt
+**một** lần là thoát trần, mãi mãi.
+
+**5. `dong_bo` THAY TOÀN BỘ `tin.blocks` khi job xong.** Đúng cho đường nút bấm
+(mỗi lần tạo là một tin nhắn riêng). Với V3 thì tin nhắn ấy đang mang khối
+`tool_call` của cả lượt và phần chữ model đã nói — thay toàn bộ là **xoá sạch**
+chúng, và người dùng thấy một bức ảnh xuất hiện thay chỗ câu trả lời vừa đọc.
+
+### Hai lần phải viết lại phép kiểm của chính mình
+
+`test_802` đổi **hai lần**, và lần nào cũng vì tập hợp thật sự rộng ra:
+
+| Ghim ban đầu | Vì sao không còn đúng |
+|---|---|
+| P03: *"mặc định rỗng"* | P03 mở hai tool nội bộ miễn phí |
+| P04: *"mọi thứ model gọi được đều KHÔNG cần duyệt"* | P05 mở `image.ltt`/`speech.ltt` — **có** cần duyệt |
+
+🔑 Nên mệnh đề giữ lại phải **không đổi theo tập hợp**, và đó là mệnh đề về tiền:
+với **mọi** tên trong `CHO_MODEL_GOI`, hoặc nó không cần duyệt, hoặc gọi qua
+`thi_hanh` mà không có phép rõ ràng thì **bị từ chối**. Thêm một tool `PAID` mà
+quên đường duyệt ⇒ phép kiểm đỏ.
+
+### E2 — trả lời bằng một lệnh `grep`
+
+`image.edit` **không tồn tại**: không `manifest.py` nào khai nó
+(`05_E2_ANH_TIENG_THANH_TOOL.md` §1). ⇒ **HOÃN**, đúng luật của
+`00_GAP_MATRIX.md`. P01 đo 98,8 % chọn đúng tool *trong số được mời*, nên mời một
+tool nền tảng không làm được là **bảo đảm** model sẽ gọi nó.
 
 ## Phát hiện của P00 mà gói prompt KHÔNG có
 
@@ -138,17 +179,33 @@ lời hứa giữ dữ liệu, không phải hai lời hứa lệch nhau bên tr
 
 ## Cổng chất lượng — trạng thái thật, không chỉ chữ PASS
 
-| | |
-|---|---|
-| Lượt gate đầy đủ gần nhất | `test-results/gates/20260904T140608Z-10420.json` — **PASS** |
-| Từ đó tới nay | thêm 6 tệp mã + 3 tệp test ⇒ **cần một lượt nữa để chốt P03** |
-| Lượt `--vong-lap` gần nhất | 6.103 xanh / 5 đỏ → **cả 5 đã sửa**, xanh lại (89/89) |
+**Gate đầy đủ: `RESULT: PASS`** — `test-results/gates/20260905T052942Z-17052.json`
+(05/09). Chạy sau khi P05 đóng, trên đúng cây này.
 
-⭐ **`frontend/chatltt/node_modules` đã cài ở cây này.** 87 phép kiểm vitest của
-ChatLTT **thật sự chạy** — trước đó gate tự khai là `[BOQUA]` và **không cây nào**
-chạy chúng. Trong 87 có 9 phép kiểm A5 mới.
+⭐ **`frontend chatltt` đã CHẠY** (7,6 s, PASS) — 87 phép kiểm vitest, kể cả 9
+phép kiểm A5 mới. Trước phiên này nó bị `[BOQUA]` ở **mọi cây**, tức 87 phép kiểm
+giao diện chưa bao giờ chạy ở đâu cả.
 
-🔴 **Còn hai việc thuộc hạ tầng, không thuộc H44:**
+🔴 **Bốn bước gate TỰ KHAI là bỏ qua — không phải bằng chứng:**
+
+| Bước | Vì sao | Ai gỡ được |
+|---|---|---|
+| `bat bien da tien trinh` | thiếu `LTT_TEST_DATABASE_URL` (Postgres) | đặt biến môi trường; **chưa chạy ⇒ đừng tính là đã chứng minh** |
+| `frontend agent-canvas` | thiếu `node_modules` ở cây riêng | `npm ci` |
+| `frontend autosub-studio` | 〃 | 〃 |
+| `frontend prompt-ai-ommi` | 〃 | 〃 |
+
+### Một cái bẫy đã trả giá trong phiên này
+
+Thêm một mục `N_()` mới (ba hàng `Store` trong `governance.py`) làm `test_306`
+**đỏ**: chuỗi chưa có bản dịch EN. Cách đúng là **THÊM TAY** vào
+`locale/en/LC_MESSAGES/messages.po` (msgid + msgstr) rồi `i18n.py bien-dich`.
+
+⛔ **Đừng chạy `i18n.py trich`** — `msgmerge` sẽ **đoán** bản dịch cho chúng, và
+một bản dịch đoán là một bản dịch sai mà không ai kiểm. Hạ mốc bằng **DỊCH**,
+không bằng **TRÍCH LẠI**.
+
+### Còn phải làm (hạ tầng, không thuộc H44)
 
 1. `npm ci` trong `frontend/chatltt` ở **cây chính** — ở đó vẫn thiếu.
 2. Thêm `frontend/*/node_modules` vào luật 1b của `QUY_TRINH_WORKTREE.md`
@@ -158,8 +215,21 @@ chạy chúng. Trong 87 có 9 phép kiểm A5 mới.
 
 | Chặn | Ảnh hưởng | Ai gỡ |
 |---|---|---|
-| Một lượt gate đầy đủ | P03 không chốt được | phiên điều phối báo **"HÀNG ĐỢI TRỐNG"** |
-| `platform_core/llm/thanh_toan.py` đang bị phiên khác giữ | R2b/P04 | điều phối — đã mở theo điều kiện Đ1–Đ4 |
-| R2b: quyết định vĩnh viễn | P04 tính tiền lượt agentic | **chủ dự án** *(đang chạy theo giả định (b))* |
+| ~~Một lượt gate đầy đủ~~ | ~~P03~~ | ✅ **đã chạy 05/09, PASS** |
+| **R2b: quyết định vĩnh viễn** | cách tính tiền một lượt agentic | 🔴 **chủ dự án** — đang chạy theo giả định **(b) C2-trong-run** |
+| `platform_core/llm/thanh_toan.py` bị phiên khác giữ | phần R2b còn lại của P04 | phiên điều phối (đã mở theo điều kiện Đ1–Đ4) |
 | Ngưỡng credit tự chạy (§6b-5) · `image.generate` mây (§6b-6) · Làn B có chạy hết không (§6b-7) | P05 · Làn B | **chủ dự án** |
 | Deploy + kiểm URL công khai (bấm UAC) | P12 | **chủ dự án** |
+
+### ⚠️ Một giới hạn đã biết, không phải một thiếu sót bị bỏ quên
+
+`_danh_thuc_run` (đánh thức run khi job xong) là đường **KÉO**, không phải đường
+**ĐẨY**: `tao_media.dong_bo` chỉ chạy khi **client hỏi** (nhịp 2 giây). Không ai
+mở hội thoại thì run nằm im ở `WAITING_BACKGROUND`.
+
+⭐ **Không mất dữ liệu:** job đã xong, tiền đã quyết toán, kết quả đã nằm trong
+`blocks`. Thứ chưa xảy ra chỉ là **vòng model nói về** bức ảnh đó.
+
+⛔ Đường ĐẨY thật phải là một chỗ móc trong `job_runner` — `platform_core`, ngoài
+ranh giới của app này. Ghi ở đây để phiên sau **không tưởng nó đã được giải
+quyết**, và cũng không tưởng đó là một lỗi bị bỏ sót.
