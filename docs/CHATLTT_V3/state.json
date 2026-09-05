@@ -678,7 +678,7 @@
     }
   },
   "r2b": {
-    "trang_thai": "DE XUAT — cho chu du an chot",
+    "trang_thai": "DA CAI XONG — OPT-IN, mac dinh van la C1, cho chu du an chot",
     "tai_lieu": "docs/CHATLTT_V3/04_ADR_R2B_TINH_TIEN_LUOT.md",
     "ngay_do": "2026-09-05",
     "ket_luan": "Bang gia 50/10/400 credit/1M DUNG, khong doi. Thu hong la RANH GIOI LAM TRON. De xuat C3: tich luy mcredit theo NGUOI DUNG, thu phan nguyen, giu phan le.",
@@ -694,6 +694,15 @@
       "1_C1_lam_tron_moi_LUOT_GOI": "luot 4 vong: that 0,92cr -> thu 4cr (4,0x)",
       "2_san_1_credit_luy_thoai": "chat rat ngan: ta thu 1cr, thi truong 0,21cr => ta DAT HON 4,84x. Hoi thoai 20 luot: san thu 20cr, chi phi that 3,13cr, thi truong 17,18cr."
     },
-    "gioi_han": "Moi con so tu MO HINH, khong phai luot chay that — artefact P01 ghi do tre va dat/truot, KHONG ghi token. Truoc khi bat thu tien that phai ghi usage cua 20-50 luot that roi chay lai."
+    "gioi_han": "Moi con so tu MO HINH, khong phai luot chay that — artefact P01 ghi do tre va dat/truot, KHONG ghi token. Truoc khi bat thu tien that phai ghi usage cua 20-50 luot that roi chay lai.",
+    "cach_bat": "LTT_TINH_TIEN_TICH_LUY=1",
+    "da_cai": [
+      "users.mcredit_du + migration 9f3a71b4c2e8 (chi them)",
+      "credit.da_quyet_toan() + credit.khoa_user() — ten cong khai, khong chep lai phep dem",
+      "thanh_toan._quyet_toan_tich_luy(): tru theo so THAT SU THU, khong theo so de nghi",
+      "gia_token.bang_gia() tu khai dung chinh sach dang chay (dieu khoan khong the lech)",
+      "test_818 (20) + test_253 viet lai (dieu khoan KHOP cach thu, dung ca hai chinh sach)"
+    ],
+    "ban_kinh_do_duoc": "Doi mac dinh sang C3 lam 10 phep kiem o 5 tep nen tang do. Phan lon dung 'luot nho van thu > 0' lam DOI CHUNG cho mot menh de khac, khong phai de ghim chinh sach lam tron. Da xanh lai ca 10; ba trong so do duoc NANG KICH BAN de dung o CA HAI chinh sach."
   }
 }

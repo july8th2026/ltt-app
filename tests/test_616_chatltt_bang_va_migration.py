@@ -34,6 +34,11 @@ def test_ba_bang_mang_dung_tien_to_va_registry_nap_duoc():
     assert ten == BANG_V1 | BANG_V3
 
 
+#: Revision cua migration H44 (ba bang dieu phoi tool). Ghim theo ID chu
+#: khong theo "head" — head doi moi khi ai do them migration.
+REV_H44 = "4b8e21c6d907"
+
+
 def test_alembic_mot_head_va_migration_chatltt_noi_dung_chuoi():
     from alembic.config import Config
     from alembic.script import ScriptDirectory
@@ -41,10 +46,14 @@ def test_alembic_mot_head_va_migration_chatltt_noi_dung_chuoi():
     scripts = ScriptDirectory.from_config(Config("alembic.ini"))
     heads = scripts.get_heads()
     assert len(heads) == 1, heads
-    rev = scripts.get_revision(heads[0])
+    # ⚠️ KHÔNG giả định migration H44 **là** head. Nó là head lúc viết phép kiểm
+    #    này (05/09), rồi `9f3a71b4c2e8` (users.mcredit_du) chồng lên. Ghim theo
+    #    **revision id** thì phép kiểm nói đúng thứ nó định nói, và không đỏ mỗi
+    #    lần có ai thêm một migration khác.
+    rev = scripts.get_revision(REV_H44)
     assert "chatltt" in (rev.doc or "").lower()
     # Head nay la migration H44; no phai noi TIEP migration H43, khong thay the.
-    assert rev.revision == "4b8e21c6d907"
+    assert rev.revision == REV_H44
     assert rev.down_revision == "7d2c1e9f4a03"
 
 
@@ -65,7 +74,10 @@ def test_upgrade_head_roi_downgrade_mot_buoc_sach(tmp_path, monkeypatch):
     from alembic.config import Config
 
     cfg = Config("alembic.ini")
-    command.upgrade(cfg, "head")
+    # Len DUNG moc H44, khong len "head": phep kiem duoi do bat bien cua
+    # migration NAY, nen no phai dung o day du sau nay co bao nhieu
+    # migration khac chong len.
+    command.upgrade(cfg, REV_H44)
     insp = inspect(create_engine(url))
     bang = set(insp.get_table_names())
     assert (BANG_V1 | BANG_V3) <= bang

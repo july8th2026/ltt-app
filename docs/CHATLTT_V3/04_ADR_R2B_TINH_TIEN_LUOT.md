@@ -163,3 +163,49 @@ phải lượt chạy thật — artefact P01 ghi độ trễ và đạt/trượ
 Tham số mô hình lấy từ mã (`TRAN_KY_TU_KET_QUA`, khối `tools` đo thật) nhưng
 ngữ cảnh đầu 2.000 token và phân bố độ dài là **giả định**. Việc cần làm trước
 khi bật thu tiền thật: ghi `usage` của 20–50 lượt thật rồi chạy lại §3–§4.
+
+---
+
+## §7 — Trạng thái cài đặt (05/09/2026)
+
+**Đã cài xong và đo xong. Mặc định vẫn là C1 — C3 là opt-in.**
+
+```
+LTT_TINH_TIEN_TICH_LUY=1        # bat C3
+```
+
+| Thành phần | Trạng thái |
+|---|---|
+| `users.mcredit_du` + migration `9f3a71b4c2e8` (chỉ thêm) | ✅ |
+| `credit.da_quyet_toan()` · `credit.khoa_user()` — tên công khai | ✅ |
+| `thanh_toan._quyet_toan_tich_luy()` | ✅ |
+| `gia_token.bang_gia()` tự khai đúng chính sách đang chạy | ✅ |
+| `test_818` (20 phép kiểm) + `test_253` (điều khoản khớp cách thu) | ✅ |
+
+### ⛔ Vì sao opt-in chứ không phải mặc định
+
+Tôi cài nó làm **mặc định** trước, rồi tự đảo lại. Lý do đảo:
+
+1. Chính tài liệu này ghi *"ĐỀ XUẤT — chờ chủ dự án chốt"*. Đặt nó làm mặc định
+   là **tự chốt hộ** một quyết định giá.
+2. Nó đổi `toi_thieu_moi_luot_credit` — một **điều khoản CÔNG BỐ** qua
+   `public_api/dieu_khoan.py`. Đổi điều khoản không phải việc của một bản vá.
+3. Bán kính đo được: **10 phép kiểm** ở 5 tệp nền tảng đỏ khi đổi mặc định — và
+   phần lớn trong đó dùng *"lượt nhỏ vẫn thu > 0"* làm **đối chứng** cho một
+   mệnh đề khác, không phải để ghim chính sách làm tròn.
+
+⭐ Cả 10 đã xanh lại, và ba trong số đó được **nâng kịch bản** cho đủ lớn để
+đúng ở **cả hai** chính sách — nên ngày bật C3 chúng không đỏ lần nữa.
+
+### Hai chốt chặn của phần cài đặt, cả hai là chuyện tiền
+
+- **Phát lại không cộng phần lẻ lần hai.** `credit.quyet_toan` idempotent theo
+  `request_id`, nhưng `mcredit_du` **không tự biết** — hỏi `da_quyet_toan()` trước.
+- **Trừ theo số THẬT SỰ THU, không theo số đề nghị.** `quyet_toan` cap ở mức đã
+  giữ; trừ theo số đề nghị làm phần bị cap **bốc hơi** — mất doanh thu im lặng.
+
+### Việc còn lại trước khi bật
+
+1. Ghi `usage` của **20–50 lượt thật** rồi chạy lại §3–§4 — mọi con số hiện tại
+   đến từ **mô hình**, không phải lượt chạy thật.
+2. Chủ dự án chốt, vì nó đổi điều khoản công bố.
