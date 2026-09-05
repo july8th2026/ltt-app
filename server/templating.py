@@ -57,7 +57,7 @@ _STATIC_DIR = pathlib.Path(__file__).resolve().parent / "static"
 #    được đính version, rồi đòi danh sách này phủ hết. Thêm tệp mới mà quên khai
 #    là đỏ ngay — một luật cho cả lớp, không phải một danh sách được nhớ tay.
 TAI_SAN_CO_VERSION = ("ltt.css", "sao_chep.js", "cam_chon.js", "chon_tep.js",
-                      "voice.js", "dev_playground.js")
+                      "voice.js", "dev_playground.js", "nhip_job.js")
 
 
 def _tinh_asset_ver() -> str:
