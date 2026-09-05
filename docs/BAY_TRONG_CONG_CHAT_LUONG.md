@@ -832,6 +832,31 @@ Nghi ngờ hợp lý: `dang_giu()` glob `tempfile.gettempdir()`, mà `TEMP` là 
 `C:\Users\THANGT~1\...\Temp` và `C:\Users\Thang Tuong\...\Temp` là **cùng
 một thư mục** (tên 8.3), và cả ba nơi đều 0 tệp khoá. Giả thuyết chết.
 
+### `timeout.exe` tự fork một bản sao — một lượt gate hiện ra BA dòng
+
+⚠️ `timeout.exe` của Git for Windows tạo **hai** tiến trình, cái sau là con của
+cái trước, rồi mới exec lệnh con. Cả hai mang **nguyên** cmdline. Đo trên một
+lượt `timeout 2400 python tools/gate.py` thật:
+
+```
+25128  ppid=21576  timeout.exe 2400 python tools/gate.py
+26396  ppid=25128  timeout.exe 2400 python tools/gate.py   <- CON cua 25128
+21592  ppid=26396  python.exe   tools/gate.py              <- gate THAT, chi MOT
+```
+
+🔴 Ai khớp chuỗi con `gate.py` trong cmdline mà **không lọc `Name='python.exe'`
+trước** sẽ đếm ra **hai lượt gate mồ côi** cho một lượt duy nhất. Và "cái mồ
+côi" ấy là `timeout.exe` **cha** — giết nó là gỡ mất cái phanh của một lượt đang
+chạy, hoặc giết luôn cả lượt.
+
+05/09 một phiên đã đếm kiểu ấy và gần kết luận có một gate vô chủ đang ăn lõi.
+Thứ cứu họ là luật *"đừng giết theo một bản tóm tắt"*.
+
+⭐ Lọc `Name == "python.exe"` **rồi mới** khớp cmdline; hoặc dựng cây bằng `ppid`
+và chỉ đếm gốc. Và phân biệt cho được **cùng một lượt** với **hai lượt**: hai
+`gate.py` khác pid, mỗi cái có `test_nhanh` con riêng và `-n` khác nhau, thì đó
+là hai lượt thật — fork của `timeout.exe` chỉ nhân đôi lớp `timeout.exe`.
+
 ### Luật
 
 🔑 **`cua_so_yen trang-thai` là điều kiện CẦN, không đủ. Vế quyết định là CÂY
