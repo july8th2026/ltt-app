@@ -93,14 +93,14 @@ và tự đổi theo bố cục.
 | 1440px chuột | 37 | 600s | sóng thật | 1 |
 | 390px, canvas `display:none` | 0 | 4s | track phẳng | **0** |
 
-Chốt bởi `tests/test_702_voice_song_khong_ve_cho_khong.py`.
+Chốt bởi `tests/test_902_voice_song_khong_ve_cho_khong.py`.
 
 ## 5. Hai thứ **không** làm, và vì sao
 
 **a. Không đổi `TRAN_GIAY_SONG = 600`.** Đó là quyết định của phiên Voice, dựa
 trên chi phí bộ nhớ. Phép đo mật độ thông tin ở mục 3 là một lập luận **mới** —
 đã báo cho họ kèm số. Đổi hay không là quyết định của chủ hệ con, không phải của
-một lượt soát mobile. `test_702` chốt luôn điều này: nếu 600 đổi, phép kiểm đỏ và
+một lượt soát mobile. `test_902` chốt luôn điều này: nếu 600 đổi, phép kiểm đỏ và
 người đổi phải nói rõ đó là quyết định của ai.
 
 **b. Không dựng peaks tiền tính.** Chính `voice.js` đã ghi đường nâng cấp đúng:

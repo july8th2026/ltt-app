@@ -1,6 +1,6 @@
 """701 — hai cua media DA migrate that su phat ra Range, do qua HTTP.
 
-`test_700` chot hop dong cua `platform_core.phat_media` o muc module. Tep nay do
+`test_900` chot hop dong cua `platform_core.phat_media` o muc module. Tep nay do
 thu khac: **route that co goi no khong**. Mot module dung ma khong ai goi thi
 khong cuu duoc ai — va do dung la trang thai cua kho nay truoc 2026-09-05.
 

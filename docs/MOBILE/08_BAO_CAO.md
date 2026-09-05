@@ -111,7 +111,7 @@ Năm bản chép mang **cùng** bốn lỗi. Đo trên máy chủ thật sau khi
 |---|---|
 | không bao giờ trả `416` | `bytes=999999-` → **416** + `bytes */102400` |
 | `bytes=-500` trả 501 byte **đầu** | đối chiếu byte: khớp 100 byte **cuối** = True, khớp 101 byte đầu = False |
-| `bytes=0-` nuốt cả tệp vào RAM | phát theo khối 1 MiB, `test_700` chốt `read()` không quá `KHOI` |
+| `bytes=0-` nuốt cả tệp vào RAM | phát theo khối 1 MiB, `test_900` chốt `read()` không quá `KHOI` |
 | `start > end` mỗi nơi một kiểu | `bytes=500-100` → **416** ở cả ba app |
 
 ## 7. Kiểm thử
@@ -120,7 +120,7 @@ Năm bản chép mang **cùng** bốn lỗi. Đo trên máy chủ thật sau khi
 |---|---|
 | `python tools\test_nhanh.py` | **6097 passed / 32 skipped / 0 failed** + 67 test frontend |
 | `python tools\gate.py` | ✅ **PASS 26/26** — gồm cả 4 bộ test frontend |
-| test mới | `test_700`…`test_706` — 7 tệp, ~90 phép kiểm |
+| test mới | `test_900`…`test_906` — 7 tệp, ~90 phép kiểm |
 
 **Ma trận trình duyệt sau lần build cuối** — 23 route:
 

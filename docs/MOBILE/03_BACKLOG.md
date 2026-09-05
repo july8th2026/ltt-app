@@ -47,7 +47,7 @@ template có điều kiện. Trình duyệt và mã nguồn bắt được hai t
 
 - ~~Waveform Voice: bộ nhớ/thời gian khi decode audio dài~~ → **đã đo**,
   `05_SONG_AM.md`: ~275 KB mỗi giây tiếng, 164,8 MB ở trần 600 giây.
-- ~~Vòng đời job khi ẩn tab~~ → **đã đo và sửa** cho 2/5 vòng, `test_705`.
+- ~~Vòng đời job khi ẩn tab~~ → **đã đo và sửa** cho 2/5 vòng, `test_905`.
   Ba vòng còn lại nằm trong React (`autosub-studio`, `chatltt`) — Phase E.
 - **Bàn phím ảo thật che composer** — vẫn chưa đo được. Playwright không dựng
   được OSK; phép đo thay thế (thu nhỏ khung nhìn 844→464) cho thấy composer vẫn

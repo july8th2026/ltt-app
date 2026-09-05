@@ -35,7 +35,7 @@ frontend của gate tự bỏ qua và in "KHÔNG PHẢI BẰNG CHỨNG".
 | **D** media generator | 🟢 **~85%** | 5 bản chép Range → 0 · `playsinline` 7 thẻ · nhịp job |
 | **E** editor phức tạp | 🟢 **~75%** | `06_EDITOR.md` · seed canvas · 4 vòng React · nút ±0,1s |
 | **F** bề mặt chuẩn | 🟢 **~85%** | `07_BE_MAT_CHUAN.md` |
-| **G** harness + ma trận | ✅ **PASS** | `mobile_qa.py quet` · `mobile_quet.js` · `test_706` |
+| **G** harness + ma trận | ✅ **PASS** | `mobile_qa.py quet` · `mobile_quet.js` · `test_906` |
 | **H** cổng phát hành | 🟢 **~85%** | `08_BAO_CAO.md` · `gate.py` **PASS 26/26** · còn deploy để chốt URL công khai |
 
 ---
