@@ -341,7 +341,7 @@ def route_khach(goc: str, cookie: str) -> list[str]:
     return sorted(set(song))
 
 
-def quet(goc: str, cookie: str, khung, routes=None) -> dict:
+def quet(goc: str, cookie: str, khung, routes=None, phien: str = "mobileqa") -> dict:
     """Chạy một lượt quét, trả `{ "<khung> <route>": {…số đo…} }`.
 
     Gọi `playwright-cli run-code` với `tools/mobile_quet.js` — dòng `CAU_HINH`
@@ -377,7 +377,7 @@ def quet(goc: str, cookie: str, khung, routes=None) -> dict:
                          "Cai: npm install -g @playwright/cli@latest")
     try:
         r = subprocess.run(
-            [lenh, "-s=mobileqa", "--raw", "run-code", f"--filename={tam}"],
+            [lenh, f"-s={phien}", "--raw", "run-code", f"--filename={tam}"],
             capture_output=True, text=True, encoding="utf-8", timeout=1800)
     finally:
         os.unlink(tam)
@@ -446,6 +446,8 @@ def main(argv=None) -> int:
                    help="danh sach khung nhin, ngan bang dau phay")
     q.add_argument("--route", default="", help="chi quet nhung route nay (phay)")
     q.add_argument("--ra", help="ghi JSON day du ra tep")
+    q.add_argument("--phien", default="mobileqa",
+                   help="ten phien playwright-cli (mo truoc bang `open --browser=...`)")
 
     a = ap.parse_args(argv)
 
@@ -476,7 +478,7 @@ def main(argv=None) -> int:
         goc = a.goc.rstrip("/")
         rt = [x for x in a.route.split(",") if x] or route_khach(goc, a.cookie)
         print(f"quet {len(rt)} route x {len(a.khung.split(','))} khung nhin ...")
-        kq = quet(goc, a.cookie, a.khung.split(","), rt)
+        kq = quet(goc, a.cookie, a.khung.split(","), rt, a.phien)
         if a.ra:
             pathlib.Path(a.ra).write_text(
                 json.dumps(kq, ensure_ascii=False, indent=1), encoding="utf-8")

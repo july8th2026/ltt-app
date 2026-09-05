@@ -3,7 +3,7 @@
 Tệp này là **thứ duy nhất** prompt `09_RECOVERY_AFTER_COMPACTION.txt` cần đọc để
 nối lại việc. Cập nhật cuối mỗi phase, không cuối mỗi lệnh.
 
-Cập nhật lần cuối: **2026-09-05, sau Phase E (khảo sát) + F.**
+Cập nhật lần cuối: **2026-09-05, sau Phase H (cổng đầy đủ PASS).**
 
 ## Bối cảnh phiên
 
@@ -11,7 +11,7 @@ Cập nhật lần cuối: **2026-09-05, sau Phase E (khảo sát) + F.**
 |---|---|
 | cây | `D:\LTTSTUDIOSAPP\.claude\worktrees\mobile-v1` |
 | nhánh | `phien/mobile-v1`, đã merge `admin-mvp-v3` @ `b44da56a` |
-| commit gần nhất | `8a1bc185` |
+| commit gần nhất | xem `git log` |
 | nguồn quy trình | `G:\My Drive\AI\A LTT AII\LTT_MOBILE_AUTONOMOUS_PROMPT_PACK_V1` |
 | kế hoạch | `docs/MOBILE/00_KE_HOACH.md` |
 | dải số test | **700–799** (đã dùng 700, 701, 702, 703, 704, 705) |
@@ -32,11 +32,11 @@ frontend của gate tự bỏ qua và in "KHÔNG PHẢI BẰNG CHỨNG".
 | **A** kiểm kê + baseline | ✅ PASS | `01_MATRIX.md`, `02_BASELINE.md`, `03_BACKLOG.md` |
 | **B** hợp đồng shared | ✅ PASS | `04_SHARED_CONTRACT.md` — 7/7 |
 | **C** shared media + P0 | ✅ **PASS** | `phat_media` · voice.js · `05_SONG_AM.md` · vỏ ChatLTT |
-| **D** media generator | 🟢 **~70%** | 5 bản chép Range đã gộp · `playsinline` · nhịp job |
-| E editor phức tạp | 🟡 ~30% | `06_EDITOR.md` — khảo sát xong; hai giả thuyết của tôi bị bác bỏ |
-| F bề mặt chuẩn | 🟢 **~75%** | `07_BE_MAT_CHUAN.md` — bảng/menu/destructive/EN đều sạch; `inputmode` 11→4; zoom 200% **đo được nhưng chưa sửa được** |
-| G harness + ma trận | 🟡 ~25% | có bộ đo, chưa thành harness trong kho |
-| H cổng phát hành | ⬜ | |
+| **D** media generator | 🟢 **~85%** | 5 bản chép Range → 0 · `playsinline` 7 thẻ · nhịp job |
+| **E** editor phức tạp | 🟢 **~75%** | `06_EDITOR.md` · seed canvas · 4 vòng React · nút ±0,1s |
+| **F** bề mặt chuẩn | 🟢 **~85%** | `07_BE_MAT_CHUAN.md` |
+| **G** harness + ma trận | ✅ **PASS** | `mobile_qa.py quet` · `mobile_quet.js` · `test_706` |
+| **H** cổng phát hành | 🟢 **~85%** | `08_BAO_CAO.md` · `gate.py` **PASS 26/26** · còn deploy để chốt URL công khai |
 
 ---
 
