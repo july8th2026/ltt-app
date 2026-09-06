@@ -169,6 +169,15 @@ def _chay(argv: list[str], nhan: str) -> tuple[int, float]:
 #:    co nhap khong, khai dung tai nguyen khong — deu mu voi lop loi ay.
 _SO_LAN_CHAY = 0
 
+#: Luot nay CO Y khong chay gi (vd `--lf` ma khong co test nao do lan truoc).
+#:
+#: 🔴 Phai tach khoi `_SO_LAN_CHAY == 0`, vi hai trang thai ay NHIN GIONG NHAU
+#:    tu ben ngoai — ca hai deu la "khong tien trinh pytest nao chay" — nhung
+#:    mot cai la QUYET DINH con cai kia la TAI NAN. Gop chung lam mot thi hoac
+#:    ta bao dong gia moi lan `--vong-lap` chay sau mot luot xanh, hoac ta phai
+#:    noi long cong den muc no bo lot ca tai nan 06/09.
+_CO_Y_KHONG_CHAY = False
+
 
 #: Tài nguyên khai với `cua_so_yen`. Cùng tên gate dùng cho bước `bo test`
 #: (`gate.py` khai `tai_nguyen=("cpu_nhieu",)` ở ba chỗ) — hai bên phải khai
@@ -287,7 +296,7 @@ def _chot(ma: int) -> int:
        *"co test do"* voi *"khong test nao chay"*. Hai chuyen do doi hoi hai hanh
        dong khac han nhau, va gop chung vao mot ma la bat nguoi sau di doan.
     """
-    if ma == 0 and _SO_LAN_CHAY == 0:
+    if ma == 0 and _SO_LAN_CHAY == 0 and not _CO_Y_KHONG_CHAY:
         print(NL_IN + "=" * 70)
         print("  KHONG MOT TIEN TRINH pytest NAO DUOC PHONG.")
         print("  Day KHONG phai mot luot xanh — day la mot luot RONG.")
@@ -403,6 +412,12 @@ def _than(args, con_lai: list[str]) -> int:
             print("\n[--lf] KHONG test nao do o luot truoc => khong chay lai gi.")
             print("       Day KHONG phai mot luot test xanh. Do la mot luot")
             print("       test RONG. Muon chay that: bo `--lf`.")
+            # Khai voi `gate.py` bang dau BO QUA o DAU DONG: mot buoc co y
+            # khong lam gi phai hien ra o dong RESULT, khong duoc lan vao
+            # mot chu PASS tran.
+            print("BO QUA: --lf khong co test nao do o luot truoc")
+            global _CO_Y_KHONG_CHAY
+            _CO_Y_KHONG_CHAY = True
             return 0
 
     if args.noi_tiep:

@@ -472,8 +472,9 @@ def test_luot_KHONG_chay_test_nao_thi_KHONG_duoc_xanh():
     """
     import test_nhanh as tn                       # noqa: PLC0415
 
-    cu = tn._SO_LAN_CHAY
+    cu, cu_coy = tn._SO_LAN_CHAY, tn._CO_Y_KHONG_CHAY
     try:
+        tn._CO_Y_KHONG_CHAY = False
         tn._SO_LAN_CHAY = 0
         assert tn._chot(0) == tn.MA_KHONG_CHAY_GI, (
             "luot RONG ma van tra 0 — cong cuoi khong hoat dong")
@@ -481,8 +482,24 @@ def test_luot_KHONG_chay_test_nao_thi_KHONG_duoc_xanh():
         assert tn._chot(0) == 0, "luot CO chay bi cong cuoi chan nham"
         tn._SO_LAN_CHAY = 0
         assert tn._chot(1) == 1, "ma loi that phai di qua nguyen ven"
+
+        # ⛔ Miễn trừ CỐ Ý phải còn nguyên, nếu không `gate --vong-lap` đỏ oan.
+        #
+        #    Sau một lượt xanh hết, cache `lastfailed` rỗng ⇒ `--lf` **cố ý**
+        #    không chạy gì và trả 0. Trạng thái ấy nhìn từ ngoài **giống hệt**
+        #    tai nạn 06/09 — cả hai đều là "không tiến trình pytest nào chạy".
+        #    Nhưng một cái là QUYẾT ĐỊNH, cái kia là TAI NẠN.
+        #
+        # ⭐ Gộp hai trạng thái ấy làm một thì hoặc ta báo động giả mỗi lần
+        #    `--vong-lap` chạy sau một lượt xanh, hoặc phải nới cổng đến mức
+        #    nó bỏ lọt chính tai nạn nó sinh ra để bắt.
+        tn._SO_LAN_CHAY = 0
+        tn._CO_Y_KHONG_CHAY = True
+        assert tn._chot(0) == 0, (
+            "luot CO Y khong chay (vd `--lf` cache rong) bi chan nham - "
+            "`gate --vong-lap` se do oan sau moi luot xanh")
     finally:
-        tn._SO_LAN_CHAY = cu
+        tn._SO_LAN_CHAY, tn._CO_Y_KHONG_CHAY = cu, cu_coy
 
     assert tn.MA_KHONG_CHAY_GI not in (0, 1, 5), (
         "ma phai KHAC 0/1/5 de phan biet 'khong chay gi' voi 'co test do' "

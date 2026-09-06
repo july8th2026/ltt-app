@@ -366,7 +366,7 @@ TEP_KHONG_DUOC_DOC_SONG_SONG = {
 class Step:
     def __init__(self, name: str, argv: list[str], cwd: Path,
                  nhom: str = "tinh", tai_nguyen: tuple[str, ...] = (),
-                 so_loi: int = 1):
+                 so_loi: int = 1, giay_toi_thieu: float = 0.0):
         assert nhom in NHOM, nhom
         self.name = name
         self.argv = argv
@@ -403,6 +403,26 @@ class Step:
         #: ⛔ Hai phien doc cung mot dong RESULT theo hai cach trai nguoc trong
         #:    cung mot ngay, va ca hai deu tuong minh dung. Do la cai gia that:
         #:    mot buoc khong chay ma trong nhu da chay thi khong ai di tim no.
+        #: San thoi gian: buoc nay KHONG THE xong nhanh hon ngan nay giay.
+        #:
+        #: 🔴 Vi sao can. Ngay 06/09 mot phep tach ham lam hai pha pytest roi
+        #:    vao ma chet sau mot `return`. `tools/test_nhanh.py` thoat sau
+        #:    **0,114 giay**, ma **0**, KHONG chay mot test nao — va dong nay
+        #:    in ra: `[PASS] bo test (song song) 0.1s`.
+        #:
+        #:    Ca NAM banh coc AST luc ay van xanh, vi chung hoi *hinh dang ma*
+        #:    con hinh dang thi van dung khi cong cu da chet. Dau hieu duy nhat
+        #:    la CON SO GIAY — thu gate VAN IN RA nhung khong ai doc.
+        #:
+        #: ⭐ Nen bien no thanh mot PHAN QUYET. Day la lop bao ve TONG QUAT:
+        #:    no khong can biet buoc lam gi, chi can biet buoc do khong the
+        #:    xong trong tich tac. Mot banh coc rieng cho tung cong cu thi
+        #:    phai viet lai moi lan them cong cu; cai nay thi khong.
+        #:
+        #: ⚠️ Buoc TU KHAI bo qua (`DAU_BO_QUA`) duoc mien: "khong lam duoc
+        #:    viec va noi ra" la mot trang thai HOP LE, khac han "trong nhu da
+        #:    lam ma khong lam".
+        self.giay_toi_thieu = max(0.0, float(giay_toi_thieu))
         self.bo_qua = False
         self.seconds = 0.0
         self.tail = ""
@@ -687,7 +707,7 @@ def _steps(quick: bool, noi_tiep: bool = False) -> list[Step]:
         steps.append(Step("bat bien da tien trinh",
                           [sys.executable, "tools/check_multiproc.py"], ROOT,
                           nhom="nang", tai_nguyen=("postgres_test",),
-                          so_loi=2))
+                          so_loi=2, giay_toi_thieu=3.0))
     npm = _npm()
     for name in FRONTENDS:
         folder = ROOT / "frontend" / name
@@ -768,14 +788,14 @@ def _steps(quick: bool, noi_tiep: bool = False) -> list[Step]:
                                "--noi-tiep"], ROOT,
                               nhom="nang",
                               tai_nguyen=("cpu_nhieu", "postgres_test"),
-                              so_loi=1))
+                              so_loi=1, giay_toi_thieu=3.0))
         else:
             steps.append(Step("bo test (song song)",
                               [sys.executable, "tools/test_nhanh.py",
                                "-n", str(loi_bo_test)], ROOT,
                               nhom="nang",
                               tai_nguyen=("cpu_nhieu", "postgres_test"),
-                              so_loi=loi_bo_test))
+                              so_loi=loi_bo_test, giay_toi_thieu=3.0))
     return steps
 
 
@@ -791,7 +811,7 @@ def _steps_pham_vi(tep_test: list[str]) -> list[Step]:
     return [Step("bo test (pham vi)",
                  [sys.executable, "tools/test_nhanh.py", *sorted(tep_test)],
                  ROOT, nhom="nang",
-                 tai_nguyen=("cpu_nhieu", "postgres_test"))]
+                 tai_nguyen=("cpu_nhieu", "postgres_test"), giay_toi_thieu=3.0)]
 
 
 #: HO SO — moi ho so mot HOP DONG viet ra thanh chu.
@@ -863,6 +883,7 @@ HO_SO: dict[str, dict] = {
 #: Buoc nao KHONG lam duoc viec cua no thi mo dau mot dong bang chuoi nay.
 #: Quy uoc, khong phai ma thoat — vi ma thoat 0 o cac buoc do la co chu y.
 DAU_BO_QUA = "BO QUA"
+NL_GATE = chr(10)
 
 
 def _tu_khai_bo_qua(output: str) -> bool:
@@ -903,6 +924,14 @@ def _run(step: Step) -> None:
         output = f"khong chay duoc: {exc}"
     step.seconds = time.monotonic() - started
     step.bo_qua = bool(step.ok) and _tu_khai_bo_qua(output)
+    if (step.ok and not step.bo_qua and step.giay_toi_thieu > 0
+            and step.seconds < step.giay_toi_thieu):
+        step.ok = False
+        output += (f"{NL_GATE}[san thoi gian] buoc `{step.name}` xong trong "
+                   f"{step.seconds:.2f}s, duoi san {step.giay_toi_thieu:.1f}s.{NL_GATE}"
+                   f"Mot buoc nang xong trong tich tac la mot buoc KHONG CHAY."
+                   f" Neu no co y khong lam gi thi phai TU KHAI bang dong"
+                   f" bat dau bang `{DAU_BO_QUA}`.")
     lines = [line for line in output.splitlines() if line.strip()]
     # 🔴 GIU 40 DONG, KHONG PHAI 4 — day la mot sua loi QUY TRINH, khong phai
     #    mot con so tuy chinh.
@@ -988,7 +1017,7 @@ def _rut_gon_vong_lap(steps: list[Step]) -> list[Step]:
     ra.append(Step("bo test --lf",
                    [sys.executable, "tools/test_nhanh.py", "--lf",
                     "--lf-rong-thi-khong-chay"], ROOT, nhom="nang",
-                   tai_nguyen=("cpu_nhieu", "postgres_test")))
+                   tai_nguyen=("cpu_nhieu", "postgres_test"), giay_toi_thieu=3.0))
     return ra
 
 

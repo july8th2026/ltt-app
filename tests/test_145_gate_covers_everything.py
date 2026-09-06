@@ -555,3 +555,43 @@ def test_moi_buoc_NANG_deu_phai_khai_tai_nguyen():
     assert not thieu, (
         "buoc nhom=\"nang\" KHONG khai tai_nguyen => vo hinh voi cua_so_yen: "
         + "; ".join(thieu))
+
+def test_moi_buoc_NANG_deu_phai_khai_SAN_THOI_GIAN():
+    """Mot buoc nang xong trong tich tac la mot buoc KHONG CHAY.
+
+    🔴 Đo 06/09: một phép tách hàm làm hai pha pytest rơi vào **mã chết sau một
+       `return`**. `tools/test_nhanh.py` thoát sau **0,114 giây**, mã **0**,
+       không chạy một test nào — và `gate.py` in:
+
+           [PASS] bo test (song song)   0.1s
+
+       Bước nặng nhất kho, **xanh**, trong một phần mười giây. Cả **năm** bánh
+       cóc AST lúc ấy đều xanh, vì chúng hỏi *hình dạng mã* — mà hình dạng vẫn
+       đúng khi công cụ đã chết.
+
+    ⭐ `giay_toi_thieu` biến **con số giây gate vẫn in ra mà không ai đọc** thành
+       một phán quyết. Nó là lớp bảo vệ **tổng quát**: không cần biết bước làm
+       gì, chỉ cần biết nó không thể xong trong tích tắc. Một bánh cóc riêng cho
+       từng công cụ thì phải viết lại mỗi lần thêm công cụ; cái này thì không.
+
+    ⚠️ Bước **tự khai** bỏ qua (`DAU_BO_QUA`) được miễn trong `_run` — "không làm
+       được việc và nói ra" là trạng thái hợp lệ, khác hẳn "trông như đã làm".
+    """
+    import ast                                   # noqa: PLC0415
+
+    ma = (ROOT / "tools" / "gate.py").read_text(encoding="utf-8")
+    thieu = []
+    for n in ast.walk(ast.parse(ma)):
+        if not (isinstance(n, ast.Call) and getattr(n.func, "id", "") == "Step"):
+            continue
+        nhom = next((k.value for k in n.keywords if k.arg == "nhom"), None)
+        if not (isinstance(nhom, ast.Constant) and nhom.value == "nang"):
+            continue
+        g = next((k.value for k in n.keywords if k.arg == "giay_toi_thieu"), None)
+        ten = n.args[0].value if n.args and isinstance(n.args[0], ast.Constant) else "?"
+        if g is None or not isinstance(g, ast.Constant) or not g.value:
+            thieu.append(f"{ten} (dong {n.lineno})")
+
+    assert not thieu, (
+        "buoc `nhom=nang` khong khai `giay_toi_thieu` - mot luot bat dong cua no "
+        f"se bao PASS: {thieu}")
