@@ -72,9 +72,9 @@ test 8 phút thì không thể chạy toàn kho. ⇒ Chỉ chạy trên **tệp 
 | **S1** | Safari thật · bàn phím ảo thật | `REAL_DEVICE=PENDING` | **thiết bị vật lý** — ~30 phút của chủ dự án |
 | **S2** | `prompt_ai_ommi` view con | seed **đã có**, vỏ app đo sạch; view con là nút React không `href` | cần kịch bản điều hướng riêng |
 | **S3** | Tải lại / nối lại job | không có provider `san_sang` trong môi trường đo | cần provider giả |
-| **S4** | `reduced-motion` ở 4 app React | chưa đo | |
-| **S5** | Copy IP/token `/vps`, `/developers` | chưa đo (VPS `enabled=False`) | |
-| **S6** | Trạng thái loading/empty/error từng bề mặt | chưa đo có hệ thống | |
+| **S4** ✅ | `reduced-motion` ở 4 app React | **đã đo và chốt** `3124848b` — 26 transition → **0** khi `reduce` | |
+| **S5** ✅ | Copy IP/token `/vps`, `/developers` | **đã sửa** `f9d41dbc` — `<code data-chep>` chưa từng có nút, dù tài liệu nói có | |
+| **S6** ✅ | Trạng thái loading/empty/error từng bề mặt | **đã đo 07/09 — 12/12 bề mặt đều có**; hai cái bị phép đo tố cáo đều là **dương tính giả** | phép đo sai **ba kiểu** — xem §4d |
 | **S7** | Trôi giữa kho chính ↔ kho worker | rủi ro tiềm ẩn, thuộc phiên VIDEO AI | |
 
 ## 4. Lộ trình — xếp theo *thứ chặn thứ khác*, không theo độ khó
