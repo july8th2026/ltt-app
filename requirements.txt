@@ -47,6 +47,18 @@ pypdf>=6.17.0,<7.0
 #
 # ⭐ `magika` (nhan dien kieu tep cua Google) di kem loi, va no dung
 #    `onnxruntime` DA CO SAN tren ca hai venv (ngan video).
+#
+# 🔴 NHUNG `magika` TAI MO HINH TU MANG LUC CAI. Do 06/09 trong log deploy:
+#      Fetching 15 files: 100%|##########| 15/15 [00:00<00:00, 1290.69it/s]
+#    Toi da doan sai truoc do rang "onnxruntime co san nen no khong tai gi".
+#    `onnxruntime` la bo CHAY mo hinh; ban than MO HINH thi van phai tai ve.
+#
+# ⇒ Hai he qua that:
+#    1. Mot may chu KHONG co duong ra Internet se CAI HONG o dong nay.
+#    2. Lan cai dau tien cham hon binh thuong, va no cham o cho khong ai ngo.
+#
+#    Neu ngay nao can cai offline: `huggingface_hub` cho phep tro
+#    `HF_HOME`/`HF_HUB_OFFLINE` toi mot ban sao da tai san.
 markitdown[docx,pptx,outlook]>=0.1.7,<0.2
 
 # --- Phu thuoc chi dung cho TEST ---
