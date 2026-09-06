@@ -288,3 +288,144 @@ trích**.
 
 ⭐ Đúng ranh giới app: thêm một bảng có `table_prefix` là việc của app, không
 phải sửa nền tảng.
+
+---
+
+## §8 — Bước 2 đã làm xong: cái gì tồn tại, và cái gì CỐ TÌNH chưa tồn tại
+
+| Thứ | Ở đâu |
+|---|---|
+| Bảng `chatltt_tep` (không byte nào) | `apps/chatltt/tables.py` |
+| Migration chỉ-thêm `a3f92c5d7e14` | `alembic/versions/20260906_1100_chatltt_tep.py` |
+| Bề mặt quyền `gan` / `cua_hoi_thoai` / `mot` / `danh_dau` | `apps/chatltt/services/kho_tep.py` |
+| Hàng governance **CONTENT** | `platform_core/public_api/governance.py` |
+| 15 phép kiểm ACL, viết **trước** mã | `tests/test_822_chatltt_kho_tep_so_huu.py` |
+
+### Ba cửa quyền, và bằng chứng từng cửa CHỊU LỰC
+
+15 phép kiểm xanh ngay lượt đầu là thứ **đáng nghi**, không đáng mừng — nên đo
+bằng đột biến, gỡ đúng một dòng mỗi lần:
+
+| Gỡ gì khỏi `kho_tep.py` | Kết quả |
+|---|---|
+| dòng lọc `user_id` ở `cua_hoi_thoai` | `test_nguoi_KHAC_khong_liet_ke_duoc…` **đỏ** |
+| `danh_dau` không gọi `mot()` mà `db.get` thẳng | `test_nguoi_KHAC_khong_doi_duoc_trang_thai…` **đỏ** |
+| bỏ cửa `status not in SAN_SANG` | `test_upload_CHUA_promote_thi_KHONG_gan_duoc` **đỏ** |
+
+⭐ Mỗi lần chỉ **một** phép kiểm đỏ. Đó là dấu hiệu ba cửa độc lập, không phải
+một cửa được đếm ba lần.
+
+### Một phép kiểm đã tự mạnh hơn thứ nó đo, và đã bị sửa
+
+Bản đầu của `test_migration_…` quét AST **cả module** và cấm `drop_table`. Nó sẽ
+đỏ vì `downgrade()` — một dòng **đúng**, và chính là dòng chứng minh migration
+này hạ lại được mà không mất hàng nào. Mệnh đề thật là *"**`upgrade`** chỉ
+thêm"*, nên phép kiểm giờ đọc riêng thân `upgrade()`, và chốt thêm rằng
+`downgrade()` **phải** có `drop_table`.
+
+### Cái CỐ TÌNH chưa có
+
+- **Chưa có route.** Không HTTP nào gọi được `kho_tep` — người dùng chưa đính
+  tệp được. Đúng luật §4: không bước nào đổi hành vi người dùng thấy cho tới
+  bước 6.
+- **Chưa trích chữ.** `trang_thai_trich` mới chỉ là một cột; thứ đổi nó là job ở
+  bước 3.
+- **`chatltt_doan` chưa tồn tại.** Nó thuộc bước 3, và tạo trước là tạo một bảng
+  rỗng không ai ghi vào — thứ trông như tính năng đã có.
+
+---
+
+## §9 — 🔴 Bước 3 dựa trên một câu SAI, và phép đo bác nó
+
+§4 dòng 3 viết: *"Tái dùng `pypdf` **đã có**, không thêm phụ thuộc mới nếu chưa
+cần"*. Câu ấy dựa vào việc `apps/chataistudio/features.py:48` có dòng
+`from pypdf import PdfReader` — tức tôi đọc **một lời gọi** và kết luận về **một
+thứ được cài**. Hai chuyện khác nhau.
+
+Đo 06/09 lúc ~10:46:
+
+| Hỏi | Trả lời |
+|---|---|
+| `grep -in pypdf requirements*.txt` (cả 4 tệp) | **không dòng nào** |
+| `C:\LTTPlatform\venv\Scripts\python.exe -c "import pypdf"` | `ModuleNotFoundError` |
+| Dịch vụ web thật chạy venv nào | pid 14476 / 26056 → đúng `C:\LTTPlatform\venv` |
+| `python -c "import pypdf"` (trình chạy test) | `ModuleNotFoundError` |
+
+⇒ **`pypdf` không tồn tại ở đâu cả.** Bước 3 không "tái dùng" được thứ gì; nó
+phải **thêm một phụ thuộc**, và điều đó đổi hình dạng bước 3: có một bước cài
+đặt trên máy chủ, tức chạm vào ranh giới cần chủ dự án.
+
+### Và nó lôi ra một lỗi ĐANG SỐNG, không thuộc P06
+
+`chataistudio` khai `enabled=True, public=True`, còn ô chọn tệp
+(`templates/chataistudio.html:44`) có `accept=...,application/pdf` — giao diện
+**mời** khách chọn PDF. Nhánh PDF bọc `except Exception` rồi báo lại *"Không đọc
+được nội dung PDF."* ⇒ `ImportError` bị nuốt và trình bày thành **lỗi của tệp
+khách**, trong khi nguyên nhân là máy chủ thiếu thư viện.
+
+⛔ Không sửa ở đây. Nó nằm ngoài P06 và thuộc một app khác đang phục vụ khách —
+gộp vào một commit H44 là trộn hai việc có mức rủi ro khác nhau. Đã tách thành
+một việc riêng.
+
+### Bài học, và nó lặp lại một dòng đã có trong memory
+
+*"Đọc thứ đại diện thay vì đọc thứ thật"* — một câu `import` là **đại diện** cho
+một phụ thuộc, không phải **bản thân** phụ thuộc. Cách hỏi đúng là hỏi chính
+trình thông dịch **đang chạy dịch vụ**, và đó là cùng một luật CLAUDE.md đã đặt
+cho câu "hiện giờ cái gì đang sống": **hỏi máy chủ, đừng đọc tài liệu**.
+
+### Đo rộng ra: **không** thư viện trích chữ nào tồn tại
+
+Hỏi thẳng venv sản phẩm, chín tên một lượt:
+
+    pypdf  PyPDF2  fitz  pdfminer  pdfplumber  docx  openpyxl  markitdown  unstructured
+      -      -      -       -          -        -       -          -            -
+
+Và `grep -rln "extract_text\|PdfReader\|pdfminer" apps/ platform_core/` trả về
+**đúng một** tệp: `apps/chataistudio/features.py`. Tức nền tảng chưa từng trích
+chữ khỏi tệp được lần nào — dòng mã trông như một năng lực đã có chỉ là một lời
+gọi chưa bao giờ chạy tới.
+
+### Hệ quả cho thứ tự làm
+
+Bước 3 **bị chặn** bởi một lần cài đặt trên máy chủ, và lần cài ấy trùng với bản
+vá của việc đã tách ra. Hai việc, một phụ thuộc ⇒ ai cài trước thì mở đường cho
+người kia; không ai được cài **hai** thư viện khác nhau cho cùng một bài.
+
+⛔ Vẫn không gộp hai việc vào một commit: bản vá `chataistudio` chạm một app
+**đang phục vụ khách** và phải deploy, còn P06 nằm sau cờ tắt. Gộp là trộn hai
+mức rủi ro, và khi cần hạ lại thì hạ luôn cả thứ không hỏng.
+
+---
+
+## §10 — Hình dạng bước 3 sau khi §9 bác một giả định
+
+### `chatltt` hiện KHÔNG có job của riêng nó
+
+Đo: `apps/chatltt/manifest.py:47` khai `job_types=()`, và thư mục app **không có
+`jobs.py`**. ChatLTT tới nay chỉ **nộp** job sang app khác (`anhnoibo`,
+`ltt_voice`) qua `tao_media`. Trích văn bản là việc đầu tiên ChatLTT tự chạy.
+
+⇒ Bước 3 mở một thứ chưa từng có: một loại job **thuộc về** ChatLTT. Đó không
+phải chi tiết kỹ thuật — nó thêm một dòng vào `job_types`, tức thêm một thứ
+`job_runner` biết chạy, tức một bề mặt mới cho `leases` và cho sổ tiền.
+
+### Bốn thứ phải quyết trước khi viết một dòng nào
+
+| Câu hỏi | Vì sao không hoãn được |
+|---|---|
+| Thư viện trích nào | §9 đo: **không có cái nào**. Chọn = thêm phụ thuộc = chạm máy chủ |
+| Giá của một lần trích | P06 §7 đã chấm *tốn credit*; giá phải hiện **trước** khi bấm (đường P04) |
+| Trích hỏng thì tính tiền thế nào | Hoàn, hay thu? PDF ảnh scan là ca **thường**, không phải góc hiếm |
+| `chatltt_doan` giữ **chữ của khách** | ⇒ CONTENT, và lần này đừng đợi bánh cóc nhắc |
+
+⛔ Câu thứ ba là câu dễ bỏ quên nhất và tốn nhất. Một job trích chạy hết CPU rồi
+   phát hiện PDF không có lớp chữ thì **đã tiêu tài nguyên thật**, nhưng khách
+   không nhận được gì. Thu tiền cho một kết quả rỗng là thứ khách nhớ rất lâu.
+   Đây đúng ca `credit_hoan_tong` đã có ở `chatltt_run` — dùng, đừng nghĩ lại.
+
+### Điều kiện dừng của bước 3
+
+Bước 3 xong **không** có nghĩa là người dùng trích được tệp. Nó có nghĩa là:
+job chạy được, ghi `chatltt_doan`, đổi `trang_thai_trich`, và **hoàn tiền đúng**
+khi trích ra rỗng. Vẫn chưa route, vẫn chưa `CHO_MODEL_GOI` — theo §4.

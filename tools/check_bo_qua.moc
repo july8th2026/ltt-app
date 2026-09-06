@@ -13,3 +13,4 @@ test_334_ngan_sach_ltt_llm.py::_health
 test_362_cay_rieng_va_deploy.py::test_cay_lien_ket_co_dot_git_la_TEP
 test_73_dong_thoi_pg.py::pytestmark
 test_74_smoke_playwright.py::pytestmark
+test_821_unaccent_tim_kiem_tieng_viet.py::pg

@@ -288,3 +288,80 @@ class ChatlttApproval(Base):
                                                  nullable=False)
     quyet_luc: Mapped[datetime | None] = mapped_column(DateTime(timezone=True),
                                                        nullable=True)
+
+
+#: Vòng đời TRÍCH của một tệp đã gắn vào hội thoại.
+#: ⭐ Bốn trạng thái, không ba: `"loi"` phải là một trạng thái **đích** chứ không
+#:    phải sự vắng mặt của `"xong"`. PDF ảnh scan là ca thường; một tệp nằm im ở
+#:    `"moi"` mãi mãi không nói được cho người dùng biết vì sao nó im.
+TRANG_THAI_TRICH = ("moi", "dang_trich", "xong", "loi")
+
+
+class ChatlttTep(Base):
+    """Một TỆP đã gắn vào một hội thoại — bảng LIÊN KẾT, không giữ byte nào.
+
+    ## Vì sao là một bảng riêng chứ không phải `Job.params`
+
+    `Job.params` là JSON nên **về mặt kỹ thuật** nó chứa được `conversation_id`.
+    P06 §7 vẫn bác, và lý do không phải kỹ thuật: `governance.py` xếp `jobs` là
+    **OPERATIONAL** — tự già đi theo hạn riêng — còn `chatltt_*` là **CONTENT**.
+    Treo tri thức của khách vào một bảng tự dọn là hẹn ngày người dùng mở lại
+    hội thoại cũ và thấy tệp đã biến mất khỏi một cuộc trò chuyện vẫn nguyên vẹn.
+
+    🔴 Đây là lần **thứ ba** cùng một ca. P03 đã ghi `chatltt_run` **không thể**
+       là OPERATIONAL vì đúng lý do ấy. Ghi lại ở đây vì cái bẫy không nằm ở chỗ
+       khó hiểu — nó nằm ở chỗ *"bảng này chỉ chứa siêu dữ liệu"* nghe rất hợp lý.
+
+    ## Vì sao KHÔNG có cột nào chứa nội dung
+
+    Byte nằm ở `storage`, và vé vào là `upload_sessions` như mọi tệp khác của
+    nền tảng. Cửa *"phải giữ credit mới được lưu file"* tồn tại — theo đúng lời
+    `upload_sessions.py` tự viết — để **không ai biến input của job thành kho
+    lưu trữ miễn phí**. Một cột nhị phân ở đây đi vòng qua đúng cái cửa ấy.
+    `test_822` chốt điều này ở tầng schema, chỗ không quên được.
+
+    ## Vì sao `unique` là CẶP chứ không phải riêng `upload_id`
+
+    Hỏi cùng một tài liệu ở hai hội thoại là việc bình thường. Ràng buộc riêng
+    `upload_id` biến việc bình thường ấy thành lỗi 500 — chặt hơn không phải là
+    an toàn hơn. Ràng buộc đúng là *"một tệp không xuất hiện hai lần **trong
+    cùng một** hội thoại"*, và nó phải ở tầng CSDL vì bấm hai lần / F5 giữa
+    chừng là ca thường (cùng luật `ux_chatltt_approval_step`).
+    """
+
+    __tablename__ = "chatltt_tep"
+    __table_args__ = (
+        Index("ux_chatltt_tep_conv_upload", "conversation_id", "upload_id",
+              unique=True),
+        Index("ix_chatltt_tep_user", "user_id", "created_at"),
+        Index("ix_chatltt_tep_trich", "trang_thai_trich"),
+    )
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True,
+                                    default=lambda: sinh_id("tep_"))
+    #: ⛔ `String(36)` — cùng bài học `apps/ltt_voice/tables.py:66-75`: khai số
+    #:    ⇒ mọi khách thành chủ số 0, và triệu chứng là "ai cũng thấy tệp của
+    #:    người khác" chứ không phải một lỗi kiểu.
+    user_id: Mapped[str] = mapped_column(String(36), index=True, nullable=False)
+    conversation_id: Mapped[str] = mapped_column(String(40), index=True,
+                                                 nullable=False)
+    #: Vé upload của nền tảng (`upload_sessions.id`, `String(36)`). Byte ở đó.
+    upload_id: Mapped[str] = mapped_column(String(36), index=True, nullable=False)
+    #: Tên người dùng thấy. Chép lại để hiện danh sách mà không phải join —
+    #: và vì `upload_sessions` có vòng đời riêng, không hứa sống cùng hội thoại.
+    ten_tep: Mapped[str] = mapped_column(String(255), default="", nullable=False)
+    content_type: Mapped[str] = mapped_column(String(128), default="", nullable=False)
+    kich_thuoc: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    trang_thai_trich: Mapped[str] = mapped_column(String(16), default="moi",
+                                                  nullable=False)
+    #: Job trích văn bản (bước 3). Rỗng cho tới khi nộp.
+    job_id: Mapped[str] = mapped_column(String(36), default="", nullable=False)
+    so_doan: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    #: Vì sao trích hỏng, viết cho **người dùng** đọc, không cho log.
+    ly_do_loi: Mapped[str] = mapped_column(Text, default="", nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now,
+                                                 nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now,
+                                                 onupdate=_now, nullable=False)
