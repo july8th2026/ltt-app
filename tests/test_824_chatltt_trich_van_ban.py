@@ -187,6 +187,122 @@ def test_byte_KHONG_phai_PDF_la_KhongDocDuoc():
         T.trich(b"day khong phai PDF", content_type="application/pdf")
 
 
+# ── 3b. docx / pptx qua `markitdown` (H44 B2) ─────────────────────────────
+#
+# ⭐ **Lắp thay vì tự viết.** Trước B2 bộ trích này chỉ đọc PDF + chữ thuần.
+#    `markitdown` (MIT, 6 phụ thuộc lõi nhẹ) đọc thêm docx/pptx/outlook và
+#    trích cả bảng biểu — ~3 ngày tự viết đổi lấy nửa ngày lắp.
+
+DOCX_MIME = ("application/vnd.openxmlformats-officedocument"
+             ".wordprocessingml.document")
+
+
+def _docx_that(doan: list[str]) -> bytes:
+    """Dựng một `.docx` **hợp lệ thật** — nó là một ZIP chứa XML OOXML.
+
+    ⛔ Không dùng `python-docx`: `markitdown[docx]` đi qua `mammoth`, nên thêm
+       một thư viện chỉ để **dựng** dữ liệu thử là thêm một phụ thuộc test cho
+       một việc `zipfile` làm được. Và cùng luật Bẫy 24 như `_pdf_that`: đầu vào
+       phải là thứ một trình đọc bất kỳ cũng mở được.
+    """
+    import zipfile
+
+    p = "".join(f"<w:p><w:r><w:t>{d}</w:t></w:r></w:p>" for d in doan)
+    ra = io.BytesIO()
+    with zipfile.ZipFile(ra, "w", zipfile.ZIP_DEFLATED) as z:
+        z.writestr("[Content_Types].xml",
+                   '<?xml version="1.0"?><Types xmlns="http://schemas.openxml'
+                   'formats.org/package/2006/content-types">'
+                   '<Default Extension="xml" ContentType="application/xml"/>'
+                   '<Default Extension="rels" ContentType="application/vnd.open'
+                   'xmlformats-package.relationships+xml"/>'
+                   '<Override PartName="/word/document.xml" ContentType="applic'
+                   'ation/vnd.openxmlformats-officedocument.wordprocessingml.'
+                   'document.main+xml"/></Types>')
+        z.writestr("_rels/.rels",
+                   '<?xml version="1.0"?><Relationships xmlns="http://schemas.'
+                   'openxmlformats.org/package/2006/relationships">'
+                   '<Relationship Id="rId1" Type="http://schemas.openxmlformats'
+                   '.org/officeDocument/2006/relationships/officeDocument" '
+                   'Target="word/document.xml"/></Relationships>')
+        z.writestr("word/document.xml",
+                   '<?xml version="1.0"?><w:document xmlns:w="http://schemas.'
+                   'openxmlformats.org/wordprocessingml/2006/main">'
+                   f'<w:body>{p}</w:body></w:document>')
+    return ra.getvalue()
+
+
+def test_docx_THAT_doc_duoc_va_trang_bang_0():
+    """🟢 Đường thật, đi qua chính `markitdown` sẽ chạy trên máy chủ.
+
+    ⭐ `trang = 0` vì `.docx` **không có khái niệm trang** — nó rơi vào đúng
+       nhánh *"không biết"* hợp đồng đã định nghĩa từ P06, không phải một thoả
+       hiệp mới.
+    """
+    trang = T.trich(_docx_that(["Dieu khoan ve credit va token.",
+                                "Phan le duoc cong don sang luot sau."]),
+                    content_type=DOCX_MIME)
+    assert [so for so, _ in trang] == [0]
+    van = trang[0][1]
+    assert "credit" in van and "cong don" in van
+
+
+def test_PDF_van_giu_duong_RIENG_co_so_trang():
+    """🔴 Mệnh đề phân biệt của B2, và là lý do **không** lắp `markitdown[pdf]`.
+
+    `_pdf_converter.py` của họ duyệt theo trang bên trong nhưng API trả về **một
+    khối markdown** — số trang không ra tới ngoài. Mà `(tep_id, doan_id, trang)`
+    là toàn bộ lý do bước 5 của P06 tồn tại.
+
+    ⇒ Phép kiểm này chốt rằng PDF **vẫn** ra nhiều trang 1-based. Ngày ai đó
+      "dọn dẹp" bằng cách cho PDF đi chung đường markitdown, nó đỏ.
+    """
+    trang = T.trich(_pdf_that(["Trang mot", "Trang hai", "Trang ba"]),
+                    content_type="application/pdf")
+    assert [so for so, _ in trang] == [1, 2, 3]
+
+
+def test_zip_KHONG_phai_OOXML_la_KhongDocDuoc():
+    """⛔ Cửa nền tảng chỉ kiểm được magic `PK` — nó không phân biệt được docx
+    với một zip bất kỳ. Nên bộ trích phải là hàng phòng thủ thứ hai, và nó phải
+    từ chối bằng **đúng loại lỗi**: lỗi của TỆP, không phải của máy chủ."""
+    import zipfile
+
+    ra = io.BytesIO()
+    with zipfile.ZipFile(ra, "w") as z:
+        z.writestr("khong-phai-ooxml.txt", "gi do")
+    with pytest.raises(T.KhongDocDuoc):
+        T.trich(ra.getvalue(), content_type=DOCX_MIME)
+
+
+def test_THIEU_markitdown_KHONG_bi_bao_thanh_tep_hong(monkeypatch):
+    """🔴 Cùng mệnh đề với `test_THIEU_THU_VIEN_...` cho PDF: máy chủ thiếu thư
+    viện là việc **vận hành**, không phải lỗi của tệp khách."""
+    import builtins
+    that = builtins.__import__
+
+    def gia(ten, *a, **k):
+        if ten == "markitdown":
+            raise ImportError("No module named 'markitdown'")
+        return that(ten, *a, **k)
+
+    # ⛔ Phai dung mot docx HOP LE. Bo kiem OOXML chay TRUOC phep kiem thu vien,
+    #    va thu tu do dung: loi cua TEP la viec cua khach, thieu thu vien la
+    #    viec cua ta — bao cai cua khach truoc thi ho sua duoc ngay.
+    du = _docx_that(["noi dung"])
+    monkeypatch.setattr(builtins, "__import__", gia)
+    with pytest.raises(T.ThieuThuVien) as e:
+        T.trich(du, content_type=DOCX_MIME)
+    assert "khong phai loi cua tep" in str(e.value)
+
+
+def test_tap_DUOC_NHAN_rong_ra_dung_bang_cac_kieu_qua_markitdown():
+    """⭐ Bánh cóc nhỏ: `DUOC_NHAN` phải bằng **hợp** của ba nhóm, không hơn.
+    Một kiểu lọt vào đây mà không có nhánh xử lý là một lời mời hỏng."""
+    assert set(T.DUOC_NHAN) == ({T.PDF} | set(T.CHU_THUAN)
+                                | set(T.QUA_MARKITDOWN))
+
+
 # ── 4. Trần ───────────────────────────────────────────────────────────────
 
 def test_tai_lieu_qua_dai_bi_TU_CHOI_chu_khong_bi_CAT_LANG_LE(monkeypatch):

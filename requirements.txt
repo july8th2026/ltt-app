@@ -33,6 +33,22 @@ cryptography>=46.0.7,<47.0   # 46.0.6 dinh GHSA-p423-j2cm-9vmq. Bon advisory con
 #   va loi dang song lan P06 buoc 3.
 pypdf>=6.17.0,<7.0
 
+# Doc docx/pptx/outlook/html. MIT, 6 phu thuoc LOI nhe. Do 06/09:
+#   [docx] lxml + mammoth   [pptx] python-pptx   [outlook] olefile
+#
+# ⛔ KHONG lay extra `xlsx`/`xls`: chung keo theo `pandas`, va `pandas`
+#    KHONG co o ca hai venv. Mot khoi lon cho mot dinh dang chua co phep do
+#    nao noi khach can — them mot dong `[xlsx]` la du khi co nhu cau that.
+#
+# ⛔ KHONG lay extra `pdf`: `_pdf_converter.py` duyet theo trang ben trong
+#    nhung API tra ve MOT KHOI markdown, tuc mat so trang — ma
+#    (tep_id, doan_id, trang) la toan bo ly do buoc 5 cua P06 ton tai.
+#    PDF giu duong `pypdf` theo trang.
+#
+# ⭐ `magika` (nhan dien kieu tep cua Google) di kem loi, va no dung
+#    `onnxruntime` DA CO SAN tren ca hai venv (ngan video).
+markitdown[docx,pptx,outlook]>=0.1.7,<0.2
+
 # --- Phu thuoc chi dung cho TEST ---
 #
 # `boto3` da co trong requirements-server.txt voi ghi chu "import luoi nen khong
