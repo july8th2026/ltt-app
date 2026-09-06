@@ -43,5 +43,5 @@ cosmic-ray==8.7.0            # kiem thu dot bien
 psutil==7.2.2                # tools/may_ban.py, tools/cua_so_yen.py
 filelock==3.25.2
 portalocker==2.10.1
-pre-commit==4.5.1            # CHUA bat: .git/hooks dung chung 4 worktree
+pre-commit==4.5.1            # DA bat 06/09; hook co rao cho cay chua dong bo
 selenium==4.41.0

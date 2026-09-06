@@ -234,3 +234,49 @@ def test_buoc_DO_giu_TRON_dau_ra_ra_tep_chu_khong_chi_40_dong(tmp_path):
 
     con_lai = set(thu_muc.glob("loi-*.log")) - truoc
     assert not con_lai, f"phep kiem de lai rac: {con_lai}"
+
+
+# ── pre-commit: hook DUNG CHUNG, cong cu thi MOI CAY MOT BAN ──────────────
+
+def test_pre_commit_config_chi_goi_cong_cu_CO_THAT():
+    """Mot hook goi tep khong ton tai la mot hook chan MOI commit."""
+    import re
+    noi_dung = (GOC / ".pre-commit-config.yaml").read_text(encoding="utf-8")
+    goi = re.findall(r"entry:\s*python\s+(tools/[\w./]+)", noi_dung)
+    assert goi, "khong doc duoc `entry:` nao — mau cau hinh da doi?"
+    for t in goi:
+        assert (GOC / t).is_file(), f"`.pre-commit-config.yaml` goi {t} khong ton tai"
+
+
+def test_hook_KHONG_duoc_lam_hong_commit_o_cay_CHUA_dong_bo(tmp_path):
+    """🔴 `.git/hooks` DUNG CHUNG ca sau worktree, nhung `tools/` va
+       `.pre-commit-config.yaml` thi MOI CAY MOT BAN.
+
+       Do 06/09/2026: nam cay con lai deu THIEU it nhat mot cong cu, va khong
+       cay nao co `.pre-commit-config.yaml`. Chay `pre-commit` o mot cay nhu
+       vay tra **rc=1** (`InvalidConfigError: .pre-commit-config.yaml is not a
+       file`) — tuc cai thang framework vao `.git/hooks` se lam MOI COMMIT o
+       nam cay ay hong ngay, ke ca ba phien dang lam viec.
+
+    ⇒ §4c cau 2: duong SUY BIEN phai tuong minh. Cay chua co cau hinh thi hook
+      IM LANG di qua. Khong cay nao bi phat vi chua kip dong bo.
+    """
+    hook = GOC / ".git" / "hooks" / "pre-commit"
+    if not hook.is_file():
+        import pytest
+        pytest.skip("chua cai hook o may nay")
+
+    ma = hook.read_text(encoding="utf-8", errors="replace")
+    assert ".pre-commit-config.yaml" in ma and "exit 0" in ma, (
+        "hook khong co rao 'chua co cau hinh thi thoat 0' — no se chan commit "
+        "o cac cay chua dong bo")
+
+    # Doi chung SONG: chay hook trong mot thu muc KHONG co cau hinh.
+    import subprocess
+    r = subprocess.run(["sh", str(hook)], cwd=tmp_path,
+                       capture_output=True, text=True,
+                       encoding="utf-8", errors="replace")
+    assert r.returncode == 0, (
+        f"hook chan commit o mot cay khong co cau hinh (rc={r.returncode}):\n"
+        f"{r.stdout}{r.stderr}")
+    assert not r.stdout.strip(), f"hook on ao o cay khong lien quan: {r.stdout!r}"
