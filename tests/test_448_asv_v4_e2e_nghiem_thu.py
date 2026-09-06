@@ -521,10 +521,64 @@ def test_NGHIEM_THU_ca_hai_preset_ra_video_dung_duoc(moi_truong, tmp_path,
 #  B. DOC BAO CAO — chay moi luot gate
 # ══════════════════════════════════════════════════════════════════════════════
 
+#: Dau hieu mot luot chet vi TAI NGUYEN BAN chu khong vi san pham.
+#: `_chay_hang_doi` ghi tien to nay khi da hoan het `NGAN_SACH_HOAN_S` giay ma
+#: tai nguyen van ban.
+DAU_HET_NGAN_SACH = "HET NGAN SACH HOAN"
+
+
+def _chan_tai_nguyen_ban(bc: dict) -> None:
+    """Dung ngay neu bao cao den tu mot lan chay bi TAI NGUYEN BAN giet.
+
+    \U0001F534 **Xay ra that, ba lan: 05/09 13:44, 06/09 09:14 va 09:20.** Ca ba
+       lan may B tra "ban" vi mot phien khac dang dung `ltt_llm`,
+       `content_process` chet, va chin bai do voi nhung cau nhu
+       `assert 404 == 200` va `('giu_hinh', [])`.
+
+    \u26d4 Chin cau do **doc y het chin khiem khuyet san pham**, va khong cau nao
+       nhac toi may B. Lan dau chu du an phai hoi thang *"toi can lam gi"* — do
+       la cai gia that cua mot bao cao khong phan biet duoc "san pham hong" voi
+       "khong chay duoc".
+
+    \u2b50 Va cac bai phia sau **khong the** tra loi dung: chung do giai doan 6-11
+       cua mot lan chay dung o giai doan 5. Mot bao cao nhu vay khong phai bang
+       chung yeu — no khong phai bang chung ve dieu chung hoi. Nen cho dung de
+       chan la tai NGUON, mot lan, voi mot cau noi ro chuyen gi da xay ra.
+
+    \u26a0\ufe0f Khong `skip`: mot luot nghiem thu khong chay duoc **phai** do. Thu
+       duoc doi la LY DO no do, khong phai phan quyet cua no.
+    """
+    ban = []
+    for luot in bc.get("luot") or []:
+        for j in luot.get("nhat_ky_job") or []:
+            if str(j.get("loi") or "").startswith(DAU_HET_NGAN_SACH):
+                ban.append((luot.get("nhan"), j.get("job_type"),
+                            str(j.get("loi"))[:160]))
+    if not ban:
+        return
+    nl = chr(10)
+    dong = [f"    {n} | {jt} | {lo}" for n, jt, lo in ban]
+    pytest.fail(nl.join([
+        "LUOT NGHIEM THU NAY KHONG CHAY DUOC — tai nguyen dung chung BAN,",
+        "khong phai san pham hong.",
+        "",
+        *dong,
+        "",
+        "  Nghia la: mot phien khac dang dung `ltt_llm` tren may B, va bo chay",
+        "  da cho het ngan sach hoan roi moi bo cuoc. Bao cao nay KHONG noi",
+        "  duoc gi ve san pham.",
+        "",
+        "  Lam gi: hoi cac phien khac ai dang dung may B, doi ho xong, chay lai.",
+        "  Mot luot hong vi ban chi ton ~2 phut, khong ton 21 phut.",
+    ]))
+
+
 def _bao_cao() -> dict:
     if not BAO_CAO.exists():
         pytest.fail(f"chua co bao cao nghiem thu {BAO_CAO}")
-    return json.loads(BAO_CAO.read_text(encoding="utf-8"))
+    bc = json.loads(BAO_CAO.read_text(encoding="utf-8"))
+    _chan_tai_nguyen_ban(bc)
+    return bc
 
 
 @pytest.fixture(scope="module")

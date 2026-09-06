@@ -176,11 +176,21 @@
   tolerance, so this is not a defect — but it is the first real measurement of
   how often Vietnamese dubbing overruns English source timing, and both
   `DUNG_SAI_DAI` and `TRAN_TANG_TOC` are still borrowed/unmeasured numbers.
-- **G14 is still PARTIAL, but for a smaller reason.** Phase 26 marked it
-  *"repair plan computed but never driven"*. It is driven now, for the defect
-  source that exists today (`khong_vua`). What remains is that three of the five
-  defect *sources* (`doc_sai`, `dich_sai`, `cat_sai`) have no producer wired,
-  because those need the AI-QC stage.
+- **G14 is still PARTIAL, and the remainder is now two sources, not three.**
+  Phase 26 marked it *"repair plan computed but never driven"*. It is driven
+  now, for `khong_vua` (05/09) and for **`dich_sai`** (06/09, the new `qc_ai`
+  stage). What remains is `doc_sai` and `cat_sai`.
+  ⭐ The two that remain are not waiting on the same thing the first two were.
+  `dich_sai` needed only a switch and a prompt, because the dubbing document
+  already carries **both** the source line and the Vietnamese one — the question
+  can be asked without opening any other artifact. `doc_sai` needs ASR over the
+  rendered output and `cat_sai` needs frames pulled around each join: both are
+  new machinery reading a **different** artifact, and both are measurements the
+  fixture cannot calibrate.
+  ⚠️ **And "driven" is not the same as "calibrated".** `dich_sai` is proven
+  end-to-end on the fixture and against seven mutations, but nothing here fixes
+  what confidence should be high enough to pay for a retranslation. That number
+  needs real footage — the same blocker as G17.
 - ✅ **`test_177_system_profile.py` no longer exists here — the branch lag it
   came from is gone.** It failed because `ho_so_he_thong.txt` is a whole-tree
   snapshot that goes stale the moment anyone edits anything, and this phase

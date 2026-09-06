@@ -143,10 +143,19 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     if bao:
         bao(10, _t('Đang soát nghĩa bản dịch'))
 
+    # 🔴 Chia lo TRUOC vong lap, va giu lai danh sach.
+    #
+    #    Ban dau `so_lo` duoc tang o dau moi vong roi dung lam MAU SO cua vach
+    #    tien do: `80 * (i + 1) / so_lo`. O vong thu `i`, `so_lo` da bang
+    #    `i + 1` — nen phan so luon bang 1 va vach nhay thang len 90% o lo dau
+    #    roi dung yen den het. Dung o 90% suot phan lau nhat doc y het treo.
+    #
+    # ⛔ Khong truyen `moi_lo=`: `qc_ai.DOAN_MOI_LO` la cho DUY NHAT quyet
+    #    dinh co lo, va chinh `qc_ai` ghi ro dieu do o cho khai bao hang so.
+    cac_lo = qc_ai.chia_lo(muc)
+    so_lo = len(cac_lo)
     phan: list[dict] = []
-    so_lo = 0
-    for i, lo in enumerate(qc_ai.chia_lo(muc, moi_lo=qc_ai.DOAN_MOI_LO)):
-        so_lo += 1
+    for i, lo in enumerate(cac_lo):
         ma_lo = f"lo_{i:03d}"
         ma_trong_lo = {str(d["ma"]) for d in lo}
         # 🔑 Giu lai cau nguon/cau dich de dinh vao phan quyet ben duoi.

@@ -65,6 +65,12 @@ PHIEN_BAN_PROMPT = 1
 PHIEN_BAN_LUOC_DO = 1
 
 
+# 🔑 Nhap tu `giong_noi`: `MayBan` la lop DUNG CHUNG cho "may dang
+#    ban" cua ca app, va `loi.phan_loai` doc dung no. Dinh nghia mot lop
+#    ban thu hai o day se tao ra mot duong ban ma `phan_loai` khong biet.
+from .giong_noi import MayBan  # noqa: E402
+
+
 class AiError(RuntimeError):
     """Loi khi goi model. Bao gom ca ket qua sai hinh dang."""
 
@@ -297,6 +303,28 @@ def goi(db, thao_tac: ThaoTac, messages: list, *, ctx=None,
     except Exception as exc:  # noqa: BLE001
         if _la_mo_ho(exc):
             raise AiMoHo(str(exc)) from exc
+        # 🔴 **BAN phai hoi TRUOC `AiError`.** `giong_noi.MayBan` da ghi
+        #    thang bai hoc nay cho duong GIONG: *"boc `DangBanTam` thanh mot loi
+        #    hong la bien 'may dang ban' thanh 'job hong'"*. Duong AI hoc no
+        #    muon hon — dong duoi day tung la `raise AiError(...)` cho MOI thu.
+        #
+        # ⛔ Hau qua do duoc, hai lan (05/09 13:44 va 06/09 09:14/09:20):
+        #    may B tra "ban" vi mot phien khac dang dung `ltt_llm`,
+        #    `KhongCoProviderNao(busy_only=True)` bi lam phang thanh `AiError`,
+        #    va tu do moi tang duoi deu doc sai:
+        #
+        #      `loi.phan_loai`            -> TAM_THOI (khong phai BAN)
+        #      `loi.dich_sang_loi_nen_tang` -> tra ve nguyen `AiError`
+        #      `job_runner._provider_failure_kind` -> "retry", khong "resource_wait"
+        #
+        #    tuc job **khong bao gio duoc hoan**. Lan chay chet o giai doan 5, va
+        #    bay muoi phan tram bo nghiem thu do voi nhung cau nhu `assert 404 ==
+        #    200` — khong cau nao nhac toi may B.
+        #
+        # ⭐ Thong diep van giu nguyen, chi LOP doi. Phan loai di theo lop; mot
+        #    ban va doi chuoi se hong lai ngay lan sau ai do sua mot thong bao.
+        if _la_ban(exc):
+            raise MayBan(str(exc)) from exc
         raise AiError(str(exc)) from exc
 
     return {
@@ -382,6 +410,26 @@ def goi_tinh_tien(db, run, thao_tac: ThaoTac, messages: list, *,
         _ghi(sd.DA_GIAO, sd.LUOT, 1.0, 0, khong_do_duoc=True,
              model=kq.get("model", ""))
     return kq
+
+
+def _la_ban(exc: BaseException) -> bool:
+    """Provider dang BAN — khong phai hong, va tuyet doi khong phai that bai.
+
+    ⚠️ Nhan dien theo LOP, chuoi la lop cuoi — cung nguyen tac voi
+       `_la_mo_ho`, va vi cung mot ly do: mot phep do chuoi doi nghia trong im
+       lang ngay khi ai do sua mot thong bao loi.
+
+    ⭐ `KhongCoProviderNao` chi tinh la ban khi `busy_only` — tuc **moi**
+       provider trong danh sach deu ban. Neu mot cai ban con mot cai thieu
+       `base_url` thi do la mot loi cau hinh dang nap minh sau mot chu "ban",
+       va hoan lai mai se khong bao gio sua duoc no.
+    """
+    ten = type(exc).__name__
+    if ten in ("BanError", "DangBan"):
+        return True
+    if ten == "KhongCoProviderNao":
+        return bool(getattr(exc, "busy_only", False))
+    return False
 
 
 def _la_mo_ho(exc: BaseException) -> bool:

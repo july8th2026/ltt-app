@@ -377,3 +377,81 @@ def test_co_phien_ban_prompt_va_luoc_do():
     khach."""
     assert isinstance(ai.PHIEN_BAN_PROMPT, int) and ai.PHIEN_BAN_PROMPT >= 1
     assert isinstance(ai.PHIEN_BAN_LUOC_DO, int) and ai.PHIEN_BAN_LUOC_DO >= 1
+
+# =============================================================================
+#  BAN khong duoc bien thanh HONG tren duong AI
+# =============================================================================
+
+def test_provider_BAN_di_het_duong_thanh_resource_wait(monkeypatch):
+    """🔴 **Bai nay noi BON tang, va do la ly do no ton tai.**
+
+    Ngay 05/09 va 06/09, hai luot nghiem thu THAT chet vi may B tra "ban":
+    `content_process failed_terminal`, roi chin bai do voi nhung cau nhu
+    `assert 404 == 200`. Khong cau nao nhac toi may B.
+
+    Nguyen nhan: `ai.goi` boc MOI ngoai le thanh `AiError`, lam mat lop
+    `KhongCoProviderNao`. Tu do ba tang duoi deu doc sai, va job **khong bao
+    gio duoc hoan**.
+
+    ⛔ Da co mot chot cho dieu nay o `test_448`, va no **xanh trong khi san
+       pham hong**: no dung `KhongCoProviderNao` TU DUNG BANG TAY, tuc no bo qua
+       dung cai lop da lam mat tin hieu. Mot bai kiem tu dung dau vao chi kiem
+       duoc phia tieu thu.
+
+    ⭐ Nen bai nay bat dau tu **ranh gioi that** (`dieu_phoi.goi`) va di het
+       duong toi phan quyet cua nen tang. No khong duoc phep biet ten lop trung
+       gian nao.
+    """
+    from platform_core.job_runner import _provider_failure_kind
+    from platform_core.llm.dieu_phoi import KhongCoProviderNao
+
+    from apps.auto_scan_video import ai, loi
+
+    def ban(*a, **kw):
+        raise KhongCoProviderNao(["ltt_llm: ban"])
+
+    # `ai.goi` nhap `dieu_phoi` BEN TRONG ham, nen va vao chinh module do
+    #  — do cung la ranh gioi that: moi thu ben trong no la thu ta dang do.
+    from platform_core.llm import dieu_phoi
+    monkeypatch.setattr(dieu_phoi, "goi", ban)
+
+    with pytest.raises(Exception) as ei:
+        ai.goi(None, ai.QC_NGU_NGHIA, [{"role": "user", "content": "x"}])
+    exc = ei.value
+
+    assert loi.phan_loai(exc) == loi.BAN, (
+        f"ASV phan loai mot provider BAN thanh {loi.phan_loai(exc)!r} — "
+        "'ban' se di tiep nhu mot lan chay hong")
+
+    nen = loi.dich_sang_loi_nen_tang(exc)
+    assert _provider_failure_kind(nen, provider_state="") == ("resource_wait", 20), (
+        "nen tang khong doc ra 'cho tai nguyen' — job se tieu luot thu va "
+        "chet thay vi ve hang doi")
+
+
+def test_ban_MOT_PHAN_khong_duoc_tinh_la_ban(monkeypatch):
+    """⚠️ Nua khong the thieu: chi `busy_only` moi la ban.
+
+    Neu mot provider ban con mot cai thieu `base_url`, do la mot loi **cau
+    hinh** dang nap minh sau chu "ban". Hoan lai mai se khong bao gio sua duoc
+    no — lan chay se treo den het ngan sach roi chet, va thong bao se do loi
+    cho mot may dang ranh.
+    """
+    from platform_core.llm.dieu_phoi import KhongCoProviderNao
+
+    from apps.auto_scan_video import ai, loi
+
+    def lung_tung(*a, **kw):
+        raise KhongCoProviderNao(["ltt_llm: ban",
+                                  "gemini: thieu base_url (ca o khoa lan o registry)"])
+
+    from platform_core.llm import dieu_phoi
+    monkeypatch.setattr(dieu_phoi, "goi", lung_tung)
+
+    with pytest.raises(Exception) as ei:
+        ai.goi(None, ai.QC_NGU_NGHIA, [{"role": "user", "content": "x"}])
+
+    assert loi.phan_loai(ei.value) != loi.BAN, (
+        "mot loi cau hinh duoc doc thanh 'ban' — lan chay se cho mai mot thu "
+        "khong bao gio tu het")
+
