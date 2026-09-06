@@ -57,6 +57,7 @@ import argparse
 import json
 import os
 import pathlib
+import socket
 import subprocess
 import sys
 import time
@@ -152,7 +153,127 @@ def _chay(argv: list[str], nhan: str) -> tuple[int, float]:
     return ma, time.monotonic() - t0
 
 
+#: Tài nguyên khai với `cua_so_yen`. Cùng tên gate dùng cho bước `bo test`
+#: (`gate.py` khai `tai_nguyen=("cpu_nhieu",)` ở ba chỗ) — hai bên phải khai
+#: **cùng một chuỗi**, nếu không thì hai lượt cùng ăn CPU mà không thấy nhau.
+TAI_NGUYEN = ("cpu_nhieu", "postgres_test")
+
+
+def _to_tien_la_gate(to_tien: list[tuple] | None = None) -> bool:
+    """Lượt này có đang chạy DƯỚI một `gate.py` không?
+
+    🔴 **Vì sao phải hỏi, thay vì cứ xin khoá.** `gate.py` gọi tệp này như một
+       tiến trình con ở **bốn** chỗ (dòng 763, 769, 786, 978) và nó **đang giữ**
+       `cpu_nhieu` lúc gọi. Khoá của `cua_so_yen` là **một tệp `O_EXCL`**, không
+       tái nhập — nên nếu ta cũng xin thì ta chờ chính tổ tiên của mình, hết
+       `cho_toi_da_s` rồi **chèn**. Tức bản vá sẽ làm mọi lượt gate chậm thêm
+       đúng bằng thời gian chờ, rồi quay về đúng trạng thái cũ.
+
+    ⭐ Hỏi **quan hệ** (`ppid`), đừng hỏi **nhãn**. Đó là luật đã trả giá ba lần
+       trong đêm 05–06/09: `timeout.exe` tự fork làm phép lọc cmdline đếm
+       **thừa**, `execnet` làm nó đếm **thiếu**. Cây tiến trình là thứ thật.
+
+    ⛔ Và ta hỏi *"tổ tiên có phải gate không"*, **không** hỏi *"ai đang giữ khoá
+       có phải tổ tiên không"*. Khác biệt quan trọng: gate có đường
+       `cua_so_yen.chay_khong_khoa` — hết `--cho` thì nó **chèn** và chạy mà
+       **không giữ gì**. Hỏi theo khoá thì trong đúng ca ấy ta lại đi xin khoá
+       của phiên kia và làm chậm một lượt gate đang chạy. Chính sách khoá là
+       việc của gate; việc của ta là **đừng xen vào**.
+
+    ⭐ `to_tien` (danh sách `(ten, argv)`) là **cửa tiêm cho phép kiểm**, và nó có mặt vì một lỗi
+       thật: bản đầu của hàm này không có nó, nên phép kiểm phải khẳng định
+       `_to_tien_la_gate() is False` — tức chốt một **sự thật môi trường** thay
+       vì một **tính chất của mã**. Nó xanh khi chạy `pytest` tay và **đỏ khi
+       gate chạy bộ test**, vì lúc ấy pytest *thật sự* đang ở dưới `gate.py`.
+       Đúng bẫy "chạy riêng xanh mà gate đỏ".
+
+    ⚠️ Không có `psutil` thì trả `True` — tức **không khoá**, hành vi y như
+       trước bản vá này. Chọn chiều đó có chủ ý: đoán nhầm sang "có khoá" làm
+       **hỏng** một lượt gate, đoán nhầm sang "không khoá" chỉ **không sửa được
+       gì**. `psutil` là thứ `gate.py` cũng import, nên khi có gate thì có nó.
+    """
+    if to_tien is None:
+        try:
+            import psutil
+        except ImportError:
+            return True
+        try:
+            to_tien = [(t.name(), t.cmdline() or [])
+                       for t in psutil.Process().parents()]
+        except (psutil.Error, OSError):
+            return True                 # khong doc duoc cay -> khong khoa
+    return any(_la_gate(ten, argv) for ten, argv in to_tien)
+
+
+def _la_gate(ten: str, argv) -> bool:
+    """Tien trinh nay CO PHAI mot luot `gate.py` dang chay khong.
+
+    🔴 **Dung khop CHUOI CON tren ca dong lenh.** Ban truoc hoi
+       `any("gate.py" in c for c in cmdline_to_tien)` voi `c` la ca dong lenh da
+       noi lai. To tien cua pytest la `bash.exe -c "<CA cau lenh>"`, nen **bat
+       ky** cau lenh nao nhac ten cong cu — mot `grep`, mot ghi chu, mot
+       docstring trong heredoc — cung lam ham nay tra `True`, va `test_nhanh`
+       **lang le bo khoa**.
+
+       Do 06/09, hai lenh giong het nhau tru mot dong `echo` vo hai:
+
+           lenh KHONG chua chu `gate.py`  ->  1 passed
+           lenh CO   chua chu do          ->  1 failed
+
+    ⛔ Va no hong theo huong de chiu, dung cho dau nhat: nhung phien hay nhac
+       `gate.py` nhat la nhung phien **dang phoi hop voi nhau**.
+
+    ⭐ Nen hoi TEN TEP DUOC THI HANH, dung hoi van ban cua cau lenh. Doi so cua
+       mot tien trinh python la mot **duong dan**; doi so cua mot vo `-c` la
+       **mot chuoi dai chua ca cau lenh** — `basename` phan biet duoc hai thu do,
+       `in` thi khong. Loc them theo ten tien trinh vi mot chuoi ket thuc dung
+       bang `tools/gate.py` van co `basename` la `gate.py`.
+    """
+    if not (ten or "").lower().startswith("python"):
+        return False
+    return any(os.path.basename(str(d).replace(chr(92), "/")) == "gate.py"
+               for d in list(argv or [])[1:])
+
+
+def _so_loi_se_dung(n: str) -> int:
+    """Số lõi lượt này sẽ chiếm — khai cho `cua_so_yen` để lượt KHÁC trừ đúng.
+
+    ⛔ Khai 0 làm cả cơ chế vô dụng một cách im lặng: lượt khác đọc bản ghi, thấy
+       "giữ 0 lõi", và kết luận máy còn trống. `cua_so_yen.SO_LOI_KHI_KHONG_KHAI`
+       tồn tại cho đúng lỗi đó, nhưng khai đúng vẫn hơn để nó đoán.
+    """
+    if n.isdigit():
+        return max(1, int(n))
+    # `-n auto`: xdist doc so nhan VAT LY.
+    try:
+        import psutil
+        return max(1, psutil.cpu_count(logical=False) or os.cpu_count() or 1)
+    except ImportError:
+        return max(1, os.cpu_count() or 1)
+
+
 def main() -> int:
+    """Vo mong: doc doi so, quyet dinh CO XIN KHOA hay khong, roi goi `_than`.
+
+    🔴 **Vi sao tep nay phai xin khoa — do duoc dem 05-06/09/2026.**
+
+       `cua_so_yen.py trang-thai` bao `RANH` trong khi may dang chay **ba** luot
+       gate. No khong sai: no tra loi cau *"co ai XIN khoa khong"*, khong tra
+       loi cau *"co gi dang CHAY khong"*. Va truoc ban va nay, tep nay **khong
+       co mot dong nao** xin khoa (`grep cua_so_yen tools/test_nhanh.py` -> rong)
+       — nen `python tools/test_nhanh.py` va `pytest` go tay chay hoan toan
+       **vo hinh** voi moi phien khac.
+
+    ⭐ **Nhan tin KHONG phai co che loai tru lan nhau.** Do duoc dem ay: hai
+       phien bam gate cach nhau **25 giay**, ca hai deu do truoc khi bam, ca hai
+       deu thay may trong, ca hai deu dung luc do. Khe giua *do* va *bam*
+       **khong co day** — 25 giay chi la con so gap phai, no co the la 2. Thu
+       dong duoc khe do la mot cai khoa, khong phai mot giao uoc.
+
+    ⚠️ Bon phien da tra tien cho lo hong nay trong mot dem: mot luot gate bi
+       `timeout` cat o buoc 22/27 (mat trang 21 buoc), va mot luot khac chay
+       cham 25% (613,6s so voi 490s).
+    """
     _ep_utf8()
     p = argparse.ArgumentParser(description="Chay pytest song song, ket qua y het.")
     p.add_argument("-n", default="auto",
@@ -165,8 +286,38 @@ def main() -> int:
     p.add_argument("-k", default="", help="loc theo ten test")
     p.add_argument("--noi-tiep", action="store_true",
                    help="chay mot tien trinh — de doi chieu ket qua")
+    p.add_argument("--cho", type=float, default=15.0,
+                   help="phut cho khoa truoc khi CHEN (mac dinh 15, y het gate)")
+    p.add_argument("--khong-khoa", action="store_true",
+                   help="chay ma khong xin khoa — chi dung khi biet ro vi sao")
     args, con_lai = p.parse_known_args()
 
+    # ⛔ Duoi gate thi KHONG xin: gate da giu `cpu_nhieu` va khoa khong tai nhap.
+    if args.khong_khoa or _to_tien_la_gate():
+        return _than(args, con_lai)
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from cua_so_yen import CuaSoYen
+
+    phien = (os.environ.get("LTT_PHIEN")
+             or f"{socket.gethostname()}:{os.getpid()}")
+    with CuaSoYen(phien, "test_nhanh",
+                  cho_toi_da_s=args.cho * 60,
+                  tai_nguyen=TAI_NGUYEN,
+                  so_loi=_so_loi_se_dung(args.n)) as khoa:
+        # ⭐ CHEN thi VAN CHAY, chi phai NOI RA — day la chinh sach da co cua
+        #    `CuaSoYen`, khong phai lua chon moi cua tep nay: *"mot cong chat
+        #    luong tu choi chay vi ban la mot cong khong ai dung"*.
+        if getattr(khoa, "chay_khong_khoa", False):
+            print("  [cua so yen] dang CHEN - mot luot khac van giu khoa. "
+                  "Ket qua lan nay co the bi nhieu (may dang chia CPU).")
+        elif khoa.da_cho_s > 1:
+            print(f"  [cua so yen] da cho {khoa.da_cho_s:.0f} giay de den luot.")
+        return _than(args, con_lai)
+
+
+def _than(args, con_lai: list[str]) -> int:
+    """Than that su cua luot chay. Tach ra de `main` boc duoc khoi `with`."""
     chung = [sys.executable, "-m", "pytest", "-q", *BO_QUA, *con_lai]
     if args.lf:
         chung.append("--lf")

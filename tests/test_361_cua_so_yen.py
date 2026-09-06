@@ -15,6 +15,7 @@ lượt `gate.py` chạy gần nhau đều cho **đỏ giả**: mỗi lượt th
 """
 from __future__ import annotations
 
+import ast
 import json
 import os
 import subprocess
@@ -189,8 +190,6 @@ def test_moi_chuoi_IN_RA_deu_thuan_ASCII():
     ⛔ Một emoji trong stdout của một công cụ đã từng làm cổng đỏ — ghi trong
        CLAUDE.md. Chú thích tiếng Việt thì thoải mái; thứ đi ra `stdout` thì không.
     """
-    import ast
-
     ma = (GOC / "tools" / "cua_so_yen.py").read_text(encoding="utf-8")
     xau = [a.value for n in ast.walk(ast.parse(ma))
            if isinstance(n, ast.Call) and getattr(n.func, "id", "") == "print"
@@ -198,3 +197,220 @@ def test_moi_chuoi_IN_RA_deu_thuan_ASCII():
            if isinstance(a, ast.Constant) and isinstance(a.value, str)
            and not a.value.isascii()]
     assert not xau, f"chuoi in ra khong thuan ASCII: {xau}"
+
+# ── 4. `test_nhanh.py` phải XIN khoá — và phải BIẾT khi nào đừng xin ────────
+#
+# 🔴 Trước 06/09/2026 `tools/test_nhanh.py` **không có một dòng nào** xin khoá.
+#    Hệ quả đo được đêm 05–06/09: `cua_so_yen trang-thai` báo `RẢNH` trong khi
+#    máy đang chạy **ba** lượt gate — `test_nhanh` và `pytest` gõ tay chạy hoàn
+#    toàn **vô hình** với cơ chế này.
+#
+# ⭐ Và nhắn tin **không** đóng được lỗ hổng ấy: hai phiên bấm cách nhau **25
+#    giây**, cả hai đều đo trước khi bấm, cả hai đều thấy máy trống, cả hai đều
+#    đúng lúc đo. Khe giữa *đo* và *bấm* **không có đáy**.
+
+def _cay_test_nhanh() -> ast.Module:
+    return ast.parse((GOC / "tools" / "test_nhanh.py").read_text(encoding="utf-8"))
+
+
+def test_test_nhanh_CO_xin_khoa():
+    """Mệnh đề: tệp ấy phải **dùng** `CuaSoYen`, không chỉ nhắc tên nó.
+
+    ⛔ Đọc AST chứ không `grep`: một chú thích *"nên xin khoá"* cũng khớp `grep`,
+       và đó đúng là trạng thái tệp này ở trước bản vá — biết mà không làm.
+    """
+    cay = _cay_test_nhanh()
+    nhap = {a.name for n in ast.walk(cay) if isinstance(n, ast.ImportFrom)
+            for a in n.names}
+    assert "CuaSoYen" in nhap, "test_nhanh.py khong nhap CuaSoYen"
+
+    goi = {getattr(n.func, "id", "") for n in ast.walk(cay)
+           if isinstance(n, ast.Call)}
+    assert "CuaSoYen" in goi, "co nhap ma khong goi - khoa khong duoc xin"
+
+
+def test_test_nhanh_khai_CUNG_tai_nguyen_voi_gate():
+    """Hai bên phải khai **cùng một chuỗi**, nếu không thì không thấy nhau.
+
+    🔴 Hai lượt cùng ăn CPU mà khai hai tên tài nguyên khác nhau thì
+       `cua_so_yen` coi chúng là hai việc **độc lập** và cho cả hai chạy. Khoá vẫn
+       hoạt động đúng; nó chỉ đang bảo vệ nhầm thứ.
+    """
+    import test_nhanh as tn                       # noqa: PLC0415
+
+    import ast as _ast                           # noqa: PLC0415
+
+    # 🔴 ĐỌC AST, đừng khớp CHUỖI. Bản trước khẳng định
+    #    `'tai_nguyen=("cpu_nhieu",)' in ma_gate` — nó đỏ ngay khi gate thêm một
+    #    tài nguyên thứ hai, **kể cả khi hai bên vẫn khớp nhau**, và cũng đỏ nếu
+    #    ai đó chỉ đổi khoảng trắng. Đã xảy ra thật: `ff4bd527` thêm
+    #    `postgres_test` vào gate và phép kiểm này đỏ, trong khi lỗi THẬT là
+    #    `TAI_NGUYEN` chưa đổi theo. Mệnh đề cần chốt là "hai bên khai CÙNG MỘT
+    #    TẬP", không phải "gate có chứa đúng chuỗi này".
+    ma_gate = (GOC / "tools" / "gate.py").read_text(encoding="utf-8")
+    cua_gate = set()
+    for n in _ast.walk(_ast.parse(ma_gate)):
+        if not (isinstance(n, _ast.Call) and getattr(n.func, "id", "") == "Step"):
+            continue
+        ten = n.args[0].value if n.args and isinstance(n.args[0], _ast.Constant) else ""
+        if not ten.startswith("bo test"):
+            continue
+        kw = next((k.value for k in n.keywords if k.arg == "tai_nguyen"), None)
+        assert kw is not None, f"buoc `{ten}` cua gate khong khai tai nguyen"
+        cua_gate |= {e.value for e in kw.elts}
+
+    assert cua_gate, "khong tim thay buoc `bo test` nao trong gate.py"
+    assert set(tn.TAI_NGUYEN) == cua_gate, (
+        f"test_nhanh khai {sorted(tn.TAI_NGUYEN)} nhung gate khai "
+        f"{sorted(cua_gate)} cho buoc `bo test` - hai ben khong thay nhau")
+
+
+def test_duoi_gate_thi_KHONG_xin_khoa():
+    """`_to_tien_la_gate` phai tra True khi CO to tien la gate, False khi khong.
+
+    ⛔ Khoa la mot tep `O_EXCL`, **khong tai nhap**. `gate.py` goi
+    `test_nhanh.py` nhu tien trinh con o bon cho **trong khi dang giu**
+    `cpu_nhieu`. Neu tep con cung xin thi no cho chinh to tien cua minh, het
+    `--cho` roi chen — tuc ban va lam **moi** luot gate cham them dung bang
+    thoi gian cho roi quay ve trang thai cu.
+
+    ⭐ Hoi **quan he** (`ppid`), dung hoi **nhan**.
+
+    🔴 **Ban dau cua phep kiem nay SAI, va gate bat duoc.** No khang dinh
+       `_to_tien_la_gate() is False` — tuc chot mot **su that moi truong** chu
+       khong phai mot **tinh chat cua ma**. Chay `pytest` tay thi xanh; nhung khi
+       **gate** chay bo test thi pytest THAT SU dang o duoi `gate.py`, nen no do:
+
+           FAILED test_361::test_duoi_gate_thi_KHONG_xin_khoa
+
+       Dung bay 'chay rieng xanh ma gate do'. Ban nay tiem to tien vao thay vi
+       doc to tien that, nen no dung o CA HAI noi.
+    """
+    import test_nhanh as tn                       # noqa: PLC0415
+
+    PY = ("python.exe", ["python.exe", "tools/gate.py", "--ho-so", "day-du"])
+    assert tn._to_tien_la_gate([PY]) is True
+    assert tn._to_tien_la_gate([]) is False
+    assert tn._to_tien_la_gate([("bash.exe", ["bash.exe", "-c", "ls"]),
+                                ("explorer.exe", ["explorer.exe"])]) is False
+
+    # 🔴 Ca da tra gia 06/09: mot cau lenh chi NHAC ten cong cu.
+    #
+    #    To tien cua pytest la `bash.exe -c "<CA cau lenh>"`. Ban truoc khop
+    #    chuoi con nen bat ky cau lenh nao co chu `gate.py` — mot `grep`, mot
+    #    ghi chu — cung lam `test_nhanh` LANG LE bo khoa. Do duoc: hai lenh
+    #    giong het nhau tru mot `echo` vo hai, mot ben passed mot ben failed.
+    vo = ("bash.exe", ["bash.exe", "-c",
+                       "grep -n gate.py tools/*.py && python tools/test_nhanh.py"])
+    assert tn._to_tien_la_gate([vo]) is False, (
+        "van ban cau lenh bi doc thanh 'dang chay duoi gate'")
+
+    assert tn._la_gate("python.exe", ["python.exe", "tools/gate.py"]) is True
+    assert tn._la_gate("python.exe",
+                       ["python.exe", "D:" + chr(92) + "x" + chr(92) + "gate.py"]) is True
+    assert tn._la_gate("python.exe", ["python.exe", "-m", "pytest"]) is False
+    assert tn._la_gate("timeout.exe",
+                       ["timeout.exe", "2400", "python", "tools/gate.py"]) is False, (
+        "vo `timeout` khong phai gate; tien trinh python ben duoi no moi la")
+
+def test_so_loi_khai_ra_KHONG_bao_gio_la_khong():
+    """⛔ Khai 0 làm cả cơ chế vô dụng một cách **im lặng**.
+
+    Lượt khác đọc bản ghi, thấy "giữ 0 lõi", rồi kết luận máy còn trống. Ngân
+    sách per-MÁY của `loi_phien_khac_dang_giu` dựa hẳn vào con số này.
+    """
+    import test_nhanh as tn                       # noqa: PLC0415
+
+    assert tn._so_loi_se_dung("6") == 6
+    assert tn._so_loi_se_dung("auto") >= 1
+    assert tn._so_loi_se_dung("") >= 1            # rac cung phai ra >= 1
+
+
+def test_bo_khoa_thi_phep_kiem_tren_PHAI_do():
+    """SELF-TEST hai chiều: một phép kiểm chưa chứng minh nó **đỏ được** thì chưa
+    phải phép kiểm.
+
+    Dựng lại **hình dạng cũ** của tệp (không nhập, không gọi `CuaSoYen`) và
+    khẳng định `test_test_nhanh_CO_xin_khoa` sẽ đỏ với nó.
+    """
+    cu = ast.parse(chr(10).join(["import argparse", "", "def main():", "    return 0"]))
+    nhap = {a.name for n in ast.walk(cu) if isinstance(n, ast.ImportFrom)
+            for a in n.names}
+    goi = {getattr(n.func, "id", "") for n in ast.walk(cu)
+           if isinstance(n, ast.Call)}
+    assert "CuaSoYen" not in nhap and "CuaSoYen" not in goi, (
+        "phep kiem tren KHONG phan biet duoc ban cu voi ban moi => vo dung")
+
+
+def _bat_chay(monkeypatch):
+    """Thay `_chay` bang ham ghi nhan. Tra ve danh sach cac lan goi."""
+    import test_nhanh as tn                       # noqa: PLC0415
+
+    goi: list[tuple[list, str]] = []
+
+    def gia(argv, nhan):
+        goi.append((argv, nhan))
+        return 0, 0.0
+
+    monkeypatch.setattr(tn, "_chay", gia)
+    return goi
+
+
+def test_main_cua_test_nhanh_THUC_SU_chay_pha_1(monkeypatch):
+    """🔴 Phep kiem HANH VI — va nam phep kiem AST tren KHONG thay duoc no.
+
+    06/09/2026 mot phien khac tach ham trong chinh tep nay va cat nham cho:
+    hai pha pytest roi vao **ma chet sau mot `return`**. Ket qua:
+
+        python tools/test_nhanh.py -n 2 ...  ->  thoat 0,114s, ma 0, KHONG chay gi
+        gate.py                             ->  [PASS] bo test (song song)  0.1s
+
+    Buoc nang nhat kho, **xanh**, trong mot phan muoi giay.
+
+    ⛔ Va **nam banh coc AST deu xanh suot** luc ay — ke ca cai vua duoc chung
+       minh la *do duoc* bang self-test hai chieu. Chung hoi *"ma co con khoi
+       `with CuaSoYen` khong"*, tuc hoi **hinh dang** — va hinh dang van dung
+       khi cong cu da chet.
+
+    ⭐ Bai hoc tong quat hon ca ban va: **"do duoc" va "do dung thu can do" la
+       HAI cau hoi.** Tiem lai ban cu chung minh phep kiem **phan biet duoc hai
+       ban**; no khong chung minh phep kiem **quan sat thu ta can**.
+    """
+    import test_nhanh as tn                       # noqa: PLC0415
+
+    goi = _bat_chay(monkeypatch)
+    # Bo qua duong xin khoa: phep kiem nay hoi MOT cau — main co cham toi viec
+    # that khong. Duong khoa da co bon phep kiem khac canh.
+    monkeypatch.setattr(tn, "_to_tien_la_gate", lambda: True)
+    monkeypatch.setattr(sys, "argv", ["test_nhanh.py", "-n", "2"])
+
+    tn.main()
+
+    assert goi, "main() KHONG cham toi `_chay` - cong cu chet ma van tra 0"
+    assert any("PHA 1" in nhan for _, nhan in goi), (
+        f"khong co pha 1 trong cac lan goi: {[n for _, n in goi]}")
+
+
+def test_duong_XIN_KHOA_cung_phai_cham_toi_pha_1(monkeypatch):
+    """Cung menh de, nhung **di qua khoi `with CuaSoYen`**.
+
+    ⚠️ Thieu phep kiem nay thi mot loi **chi xay ra tren nhanh co khoa** se lot:
+       phep kiem tren di duong tat, nen no mu voi dung nhanh ban va them vao.
+
+    ⛔ Khoa di vao `tmp_path` nho fixture `khoa_rieng` — **khong** dung khoa
+       that. Mot luot gate cua phien khac co the dang giu no ngay luc bo test
+       nay chay.
+    """
+    import test_nhanh as tn                       # noqa: PLC0415
+
+    goi = _bat_chay(monkeypatch)
+    monkeypatch.setattr(tn, "_to_tien_la_gate", lambda: False)
+    monkeypatch.setattr(sys, "argv",
+                        ["test_nhanh.py", "-n", "2", "--cho", "0.01"])
+
+    tn.main()
+
+    assert any("PHA 1" in nhan for _, nhan in goi), (
+        "duong CO khoa khong cham toi pha 1")
+    # Va khoa phai duoc NHA sau khi xong.
+    assert cy._doc() is None, "khoa khong duoc nha sau khi main() xong"
