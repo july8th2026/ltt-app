@@ -72,12 +72,27 @@ import apps.ltt_voice.tables  # noqa: E402,F401  isort:skip
 #:    so tu tep nay; sau pha 29 nhung so do khong con o trong no nua — lien ket
 #:    van song, noi dung van dung, chi la no khong con la thu bao cao 22 mo ta.
 #:    Doi ten de cai ten thoi hua mot dieu ma tep khong giu.
-BAO_CAO = (Path(__file__).resolve().parents[1]
-           / "docs" / "auto_scan_video_v4" / "evidence"
-           / "nghiem_thu_hien_hanh.json")
-
 #: Noi luot chay ghi bao cao. Khong dat = thu muc tam.
 BIEN_RA = "LTT_ASV_E2E_RA"
+
+#: 🔴 **DOC va GHI phai cung mot cho.** Truoc 06/09 hang so nay neo cung vao
+#:    duong dan trong kho trong khi cho GHI doc `BIEN_RA`, nen
+#:    `nghiem_thu_asv.ps1 -BaoCao <cho khac>` chuyen huong GHI ma **khong**
+#:    chuyen huong DOC.
+#:
+#: ⛔ Hau qua do duoc, 06/09 11:25: mot luot chan doan ghi ra tep rieng va
+#:    XANH ca hai preset, nhung cac bai doc bao cao lai doc tep CU trong kho va
+#:    bao `cat_thong_minh ... T5`. Hai nguon, mot cau hoi, va khong gi trong
+#:    thong bao noi rang chung khac nhau — toi da suyt ket luan rang luot chan
+#:    doan tai hien duoc khiem khuyet, trong khi no vua chung minh dieu nguoc lai.
+#:
+#: ⭐ Mot co "ghi ra cho khac" ma khong keo theo "doc tu cho khac" thi khong
+#:    phai mot co bi thieu — no la mot co **noi doi**, vi no hua mot su co lap
+#:    ma no khong tao ra.
+BAO_CAO = (Path(os.environ[BIEN_RA]) if os.environ.get(BIEN_RA)
+           else (Path(__file__).resolve().parents[1]
+                 / "docs" / "auto_scan_video_v4" / "evidence"
+                 / "nghiem_thu_hien_hanh.json"))
 
 SCHEMA = "asv.v4.nghiem_thu.1"
 
