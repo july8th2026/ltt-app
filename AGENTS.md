@@ -155,6 +155,71 @@ credential, kể cả khi mọi bước riêng lẻ trông đều hợp lý.
   được.** Chỉ dựa trên kết quả chạy thật.
 - Thay đổi rủi ro: viết trước cách lùi lại, rồi mới làm.
 
+## 4c. Sửa hạ tầng dùng chung — **ba câu bắt buộc trước dòng mã đầu tiên**
+
+Áp cho mọi thay đổi trong `tools/`, `platform_core/`, `tests/conftest.py` — tức
+mọi thứ **nhiều cây cùng chạy**. Ba câu này không phải nghi thức: mỗi câu tương
+ứng một bản vá đã hỏng thật trong kho này.
+
+### 1. Nếu chỉ MỘT SỐ cây nhận bản vá, chuyện gì xảy ra?
+
+Mỗi worktree chạy bản `tools/` của **riêng nó**. Một bản vá điều phối chỉ có
+hiệu lực khi **mọi** cây đều nhận — và trong khoảng chuyển tiếp nó thường
+**phạt người sửa đúng**: cây đã khai thì chờ, cây chưa khai chạy tự do.
+
+```
+03/09  tran `-n 6` sua o MOT nhanh   -> bon cay con lai van chay -n 14
+06/09  gate khai `postgres_test`     -> cay chua ff van drop_all() vao giua
+```
+
+⛔ Nếu câu trả lời là *"tệ hơn trước khi vá"* thì **thiết kế sai**, không phải
+"chấp nhận được trong lúc lan". Một bản vá mà chế độ hỏng của nó tệ hơn bệnh nó
+chữa thì không phải một bản vá.
+
+### 2. Đường SUY BIẾN của cơ chế này là gì?
+
+Mọi cơ chế điều phối đều có một nhánh "không giữ được gì". Hỏi thẳng: **trên
+nhánh ấy, bản vá còn đúng không?**
+
+```
+`cua_so_yen.chay_khong_khoa`  -> gate CHEN, giu ZERO tai nguyen
+`--lf` cache rong             -> CO Y khong chay gi
+thieu `psutil`                -> khong dem duoc, khong phai "may ranh"
+```
+
+⭐ Và **cố ý** phải phân biệt được với **tai nạn**: hai trạng thái ấy nhìn từ
+ngoài thường giống hệt nhau, nhưng gộp chúng làm một thì hoặc báo động giả liên
+tục, hoặc phải nới cổng đến mức nó bỏ lọt chính thứ nó sinh ra để bắt.
+
+### 3. Tôi đang hỏi một NHÃN hay một QUAN HỆ?
+
+```
+NHAN    ten tep · chuoi trong cmdline · bien moi truong · ten nhanh
+QUAN HE cha-con · cwd · ai dang giu khoa · commit nao la to tien
+```
+
+Nhãn thì rẻ và **sai im lặng**. Ba cách đếm tiến trình theo nhãn đều hỏng trong
+một đêm — thiếu (`execnet` không mang từ khoá), thừa (`bash -c` mang cả câu
+lệnh), và mù với mồ côi (mất gốc thì rơi khỏi cây con).
+
+⛔ Và điều kiện phải là thứ tiến trình đang hỏi **không thể tự thoả**: shell của
+chính nó cũng có `cwd` đúng bằng cây ấy. Loại `os.getpid()` **và** `parents()`.
+
+### Sau khi vá: banh cóc phải hỏi HÀNH VI, không hỏi hình dạng
+
+🔴 Ngày 06/09 `tools/test_nhanh.py` thoát sau **0,114 giây**, mã **0**, không
+chạy một test nào — và **cả năm** bánh cóc AST vẫn xanh, vì chúng hỏi *"còn khối
+`with` không"*, *"còn nhập không"*. Hình dạng mã vẫn đúng khi công cụ đã chết.
+
+⇒ Câu để tự hỏi: **thứ tôi đang khẳng định có tồn tại được nếu chương trình
+không chạy không?** Có ⇒ nó không kiểm hành vi, dù nó **đỏ được** khi bị tiêm.
+
+⚠️ *"Đỏ được"* và *"đo đúng thứ cần đo"* là **hai** câu hỏi. Tiêm lại bản cũ
+chứng minh phép kiểm **phân biệt được** hai bản; nó không chứng minh phép kiểm
+**quan sát thứ ta cần**. Ba lần trong một buổi, cùng một người viết luật này
+vẫn tự vi phạm nó — nên nó phải là một **động tác** trong quy trình, không phải
+một điều để nhớ.
+
 ## 4b. Chạy test — ba lệnh, và **đừng gọi `pytest` trực tiếp**
 
 | Lệnh | Dùng khi | Thời gian |
