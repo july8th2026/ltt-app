@@ -82,7 +82,27 @@ GOC = pathlib.Path(__file__).resolve().parent.parent
 _PO_THU = __import__("os").environ.get("LTT_PO_FILE")
 TEP_PO = (pathlib.Path(_PO_THU) if _PO_THU
           else GOC / "locale" / "en" / "LC_MESSAGES" / "messages.po")
-TEP_MOC = pathlib.Path(__file__).with_name("check_dich_thieu.moc")
+
+#: ⛔ CUNG MOT BAI voi `LTT_PO_FILE` o tren, va no da du dieu kien de dinh HAI
+#:    lan trong mot phien (06/09):
+#:
+#:      tien trinh BI GIET  -> `finally` khong chay, `.moc` o lai ban trong cay
+#:      HAI tien trinh      -> worker A tiem vao `.moc`, worker B doc phai ban
+#:                             tiem ay -> ba phep kiem `test_306` do
+#:
+#:    Docstring cua chinh `test_KHONG_test_nao_duoc_GHI_vao_messages_po_THAT`
+#:    da viet ra nguyen ly: *"mot test ghi vao tep that thi KHONG THE an toan"*.
+#:    No moi chi duoc ap cho `.po`; `.moc` va template la cung mot lop van de.
+#:
+#: ⛔ Hai bien duoi CHI de test dung. Ma chay that khong bao gio dat chung.
+_MOC_THU = __import__("os").environ.get("LTT_MOC_FILE")
+TEP_MOC = (pathlib.Path(_MOC_THU) if _MOC_THU
+           else pathlib.Path(__file__).with_name("check_dich_thieu.moc"))
+
+#: Goc de babel TRICH msgid. Tach khoi `GOC` vi `GOC` con quyet dinh cho cua
+#: `.po` mac dinh — gop lam mot thi doi cai nay keo theo cai kia.
+_MA_THU = __import__("os").environ.get("LTT_SRC_ROOT")
+GOC_MA = pathlib.Path(_MA_THU) if _MA_THU else GOC
 DAU_HIEU = "# tap-hop-muc-chua-dich"
 
 
@@ -118,7 +138,7 @@ def _msgid_trong_ma_nguon() -> set:
     from babel.messages import extract
     from babel.messages.frontend import parse_mapping_cfg
 
-    cau_hinh = GOC / "babel.cfg"
+    cau_hinh = GOC_MA / "babel.cfg"
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         fh = io.StringIO(cau_hinh.read_text(encoding="utf-8"))
@@ -126,7 +146,7 @@ def _msgid_trong_ma_nguon() -> set:
         tu_khoa = {**extract.DEFAULT_KEYWORDS, "N_": None, "_t": None}
         ra = set()
         for _tep, _dong, msg, _c, _x in extract.extract_from_dir(
-                str(GOC), method_map=method_map, options_map=options_map,
+                str(GOC_MA), method_map=method_map, options_map=options_map,
                 keywords=tu_khoa):
             if isinstance(msg, (tuple, list)):
                 msg = msg[0] if msg else ""

@@ -21,7 +21,9 @@ GOC = pathlib.Path(__file__).resolve().parent.parent
 
 
 def _chay(cong_cu: str, *doi_so: str, cwd: pathlib.Path | None = None,
-          po: pathlib.Path | None = None):
+          po: pathlib.Path | None = None, moc: pathlib.Path | None = None,
+          src: pathlib.Path | None = None, thu_muc: pathlib.Path | None = None,
+          bo_qua_moc: pathlib.Path | None = None):
     """Chay CHINH cong do. `po` tro no sang mot BAN SAO cua `messages.po`.
 
     🔴 VI SAO CAN `po` — VA VI SAO BA LAN VA TRUOC DEU KHONG DU.
@@ -53,6 +55,14 @@ def _chay(cong_cu: str, *doi_so: str, cwd: pathlib.Path | None = None,
     env = dict(os.environ)
     if po is not None:
         env["LTT_PO_FILE"] = str(po)
+    if moc is not None:
+        env["LTT_MOC_FILE"] = str(moc)
+    if src is not None:
+        env["LTT_SRC_ROOT"] = str(src)
+    if thu_muc is not None:
+        env["LTT_TEST_DIR"] = str(thu_muc)
+    if bo_qua_moc is not None:
+        env["LTT_BO_QUA_MOC"] = str(bo_qua_moc)
     return subprocess.run([sys.executable, f"tools/{cong_cu}", *doi_so],
                           cwd=cwd or GOC, capture_output=True, text=True,
                           encoding="utf-8", errors="replace", env=env)
@@ -64,6 +74,44 @@ def _po_ban_sao(tmp_path: pathlib.Path, them: str = "") -> pathlib.Path:
     ban = tmp_path / "messages.po"
     ban.write_bytes(goc.read_bytes() + them.encode("utf-8"))
     return ban
+
+
+def _moc_ban_sao(tmp_path: pathlib.Path) -> pathlib.Path:
+    """Bản sao của `check_dich_thieu.moc`. KHÔNG chạm tệp thật.
+
+    ⛔ Cùng lý do với `_po_ban_sao`, và nó đã đủ điều kiện để dính **hai** lần
+       trong một phiên (06/09): một lượt gate bị giết để lại `.moc` bẩn trong
+       cây, rồi một lượt khác chạy `-n 6` khiến worker này đọc phải bản mà
+       worker kia vừa tiêm — ba phép kiểm đỏ vì một cuộc đua, không vì một lỗi.
+    """
+    ban = tmp_path / "check_dich_thieu.moc"
+    ban.write_bytes((GOC / "tools" / "check_dich_thieu.moc").read_bytes())
+    return ban
+
+
+def _bo_qua_moc_ban_sao(tmp_path: pathlib.Path) -> pathlib.Path:
+    """Bản sao của `check_bo_qua.moc`. KHÔNG chạm tệp thật."""
+    ban = tmp_path / "check_bo_qua.moc"
+    ban.write_bytes((GOC / "tools" / "check_bo_qua.moc").read_bytes())
+    return ban
+
+
+def _cay_ma_gia(tmp_path: pathlib.Path, chuoi: str) -> pathlib.Path:
+    """Một CÂY MÃ tí hon để babel trích: `babel.cfg` thật + đúng một template.
+
+    ⭐ Mạnh hơn bản cũ chứ không yếu hơn. Bản cũ tiêm một chuỗi vào
+       `server/templates/vps_dieu_khoan.html` **thật**, nên nó vừa ghi vào cây,
+       vừa phụ thuộc vào nội dung một trang đang phục vụ khách. Ở đây phép kiểm
+       tự dựng đủ và **chỉ** thứ nó cần, nên nó đo đúng cơ chế trích chứ không
+       đo trạng thái của kho.
+    """
+    goc = tmp_path / "cay_ma"
+    (goc / "server" / "templates").mkdir(parents=True)
+    (goc / "babel.cfg").write_bytes((GOC / "babel.cfg").read_bytes())
+    (goc / "server" / "templates" / "thu.html").write_text(
+        '<!-- {{ _("%s") }} -->\n' % chuoi,
+        encoding="utf-8", newline="\n")
+    return goc
 
 
 # ── 1. Banh coc BO QUA IM LANG ─────────────────────────────────────────────
@@ -84,19 +132,31 @@ def test_bo_qua_IN_HET_danh_sach_chu_khong_chi_in_khi_do():
 
 
 def test_bo_qua_MOI_lam_do(tmp_path):
-    """Bang chung. Khong co phep kiem nay thi banh coc chi la mot y dinh."""
-    thu = GOC / "tests" / "zz_thu_banh_coc_bo_qua.py"
-    thu.write_text(
+    """Bang chung. Khong co phep kiem nay thi banh coc chi la mot y dinh.
+
+    🔴 Bản trước tạo **thật** `tests/zz_thu_banh_coc_bo_qua.py` rồi xoá trong
+       `finally`. Đo 06/09 dưới `-n 6`: trong khoảng tệp ấy tồn tại, một worker
+       khác chạy cùng công cụ và thấy thừa một chỗ bỏ qua ⇒
+       `test_bo_qua_hien_tai_dat_moc` đỏ **4/4 lượt**. Một tiến trình bị giết
+       còn tệ hơn — tệp ở lại trong `tests/`, và từ đó **mọi** lượt gate của
+       **mọi** cây đều đỏ, vì một tệp không ai gõ.
+
+    ⭐ Nay dựng thư mục test trong `tmp_path`: một tệp, đúng thứ cần đo. Không
+       còn gì để dọn, nên cũng không còn gì để quên dọn.
+    """
+    thu_muc = tmp_path / "tests_gia"
+    thu_muc.mkdir()
+    (thu_muc / "zz_thu_banh_coc_bo_qua.py").write_text(
         "import pytest\n\n\n"
         '@pytest.mark.skipif(True, reason="thu banh coc")\n'
-        "def test_gia_vo():\n    assert True\n", encoding="utf-8")
-    try:
-        r = _chay("check_bo_qua.py")
-        assert r.returncode == 1, "them mot cho bo qua MOI ma van PASS"
-        assert "CHO BO QUA MOI" in r.stdout
-        assert "zz_thu_banh_coc_bo_qua.py::test_gia_vo" in r.stdout
-    finally:
-        thu.unlink(missing_ok=True)
+        "def test_gia_vo():\n    assert True\n",
+        encoding="utf-8", newline="\n")
+
+    r = _chay("check_bo_qua.py", thu_muc=thu_muc,
+              bo_qua_moc=_bo_qua_moc_ban_sao(tmp_path))
+    assert r.returncode == 1, "them mot cho bo qua MOI ma van PASS"
+    assert "CHO BO QUA MOI" in r.stdout
+    assert "zz_thu_banh_coc_bo_qua.py::test_gia_vo" in r.stdout
 
 
 # ── 2. Banh coc DICH THIEU BAN EN ──────────────────────────────────────────
@@ -107,13 +167,18 @@ def test_dich_thieu_hien_tai_dat_moc():
     assert "RESULT: PASS" in r.stdout
 
 
-def test_fuzzy_duoc_DEM_NHU_CHUA_DICH():
+def test_fuzzy_duoc_DEM_NHU_CHUA_DICH(tmp_path):
     """`msgfmt` bo qua moi muc `#, fuzzy` khi sinh `.mo`. Mot ban dich fuzzy
     khong bao gio toi mat nguoi dung — no giong het `msgstr` rong khi chay, chi
-    khac la no TRONG NHU da lam xong khi doc tep `.po`."""
+    khac la no TRONG NHU da lam xong khi doc tep `.po`.
+
+    ⭐ Phép kiểm này chỉ **đọc** `.moc`, và tôi đã bỏ sót nó khi chuyển sang bản
+       sao — phép quét tay của tôi lọc theo *ghi*. Bánh cóc bên dưới bắt được.
+       Đọc cũng đua: worker khác đang tiêm thì bản đọc được không phải bản thật.
+    """
     r = _chay("check_dich_thieu.py")
     assert "fuzzy" in r.stdout, "phai noi ro co bao nhieu muc fuzzy"
-    moc = (GOC / "tools" / "check_dich_thieu.moc").read_text(encoding="utf-8")
+    moc = _moc_ban_sao(tmp_path).read_text(encoding="utf-8")
     assert "FUZZY\t" in moc, "muc fuzzy phai nam trong moc, khong duoc mien"
 
 
@@ -203,8 +268,9 @@ def test_HOAN_DOI_van_lam_do_du_TONG_KHONG_DOI(tmp_path):
     """
     # Ban sao. KHONG cham tep that.
     po = _po_ban_sao(tmp_path)
+    moc_ban = _moc_ban_sao(tmp_path)
     goc = po.read_text(encoding="utf-8")
-    moc = (GOC / "tools" / "check_dich_thieu.moc").read_text(encoding="utf-8")
+    moc = moc_ban.read_text(encoding="utf-8")
     mot = next(d.split("\t", 1)[1]
                for d in moc.splitlines() if d.startswith("TRONG\t"))
     truoc = f'msgid "{mot}"\nmsgstr ""'
@@ -214,7 +280,7 @@ def test_HOAN_DOI_van_lam_do_du_TONG_KHONG_DOI(tmp_path):
     po.write_text(moi + '\n#: server/templates/khong_co_that.html:1\n'
                         'msgid "Chuoi thu banh coc"\nmsgstr ""\n',
                   encoding="utf-8")
-    r = _chay("check_dich_thieu.py", po=po)
+    r = _chay("check_dich_thieu.py", po=po, moc=moc_ban)
     assert r.returncode == 1, (
         "hoan doi mot-doi-mot lot qua — moc dang dem SO LUONG chu khong "
         "phai TAP HOP")
@@ -222,20 +288,22 @@ def test_HOAN_DOI_van_lam_do_du_TONG_KHONG_DOI(tmp_path):
 
 
 def test_accept_TU_CHOI_khi_con_muc_moi(tmp_path):
-    """`--accept` phai la duong HA moc, khong duoc thanh duong im lang nang no."""
-    # Ban sao. KHONG cham tep that.
+    """`--accept` phai la duong HA moc, khong duoc thanh duong im lang nang no.
+
+    ⭐ Trước 06/09 phép kiểm này chạy `--accept` lên `.moc` **thật** rồi khôi
+       phục cả byte lẫn `mtime` trong thân hàm. Nó đúng về kỹ thuật và vẫn hỏng
+       hai kiểu: `finally` không chạy khi tiến trình bị giết, và dưới `-n 6`
+       một worker khác đọc phải bản đang bị tiêm. Nay ghi vào **bản sao**, nên
+       không còn gì để khôi phục — và không còn gì để hỏng.
+    """
     po = _po_ban_sao(tmp_path)
+    moc_ban = _moc_ban_sao(tmp_path)
     goc = po.read_text(encoding="utf-8")
-    moc_truoc = (GOC / "tools" / "check_dich_thieu.moc").read_bytes()
-    moc_mtime = (GOC / "tools" / "check_dich_thieu.moc").stat().st_mtime_ns
     po.write_text(goc + '\n#: server/templates/khong_co_that.html:1\n'
                         'msgid "Chuoi thu banh coc"\nmsgstr ""\n',
                   encoding="utf-8")
-    r = _chay("check_dich_thieu.py", "--accept", po=po)
+    r = _chay("check_dich_thieu.py", "--accept", po=po, moc=moc_ban)
     assert r.returncode == 1, "--accept nang moc len duoc"
-    moc_tep = GOC / "tools" / "check_dich_thieu.moc"
-    moc_tep.write_bytes(moc_truoc)
-    os.utime(moc_tep, ns=(moc_mtime, moc_mtime))
 
 
 # ── 3. Ca hai phai nam TRONG gate ──────────────────────────────────────────
@@ -276,24 +344,26 @@ def test_dem_ca_ba_lop():
         assert tu in r.stdout, f"dong tom tat khong ke ra {tu!r}"
 
 
-def test_chuoi_DA_BOC_ma_VANG_khoi_catalog_lam_do():
-    """Bang chung cho lop thu ba. Khong co phep kiem nay thi no chi la mot y dinh."""
-    mau = GOC / "server" / "templates" / "vps_dieu_khoan.html"
-    _bat_buoc_khong_con_rac(mau)
-    goc = mau.read_text(encoding="utf-8")
-    goc_mtime = mau.stat().st_mtime_ns
-    try:
-        mau.write_text(
-            goc.replace("{% block noi_dung %}",
-                        '{% block noi_dung %}\n'
-                        '<!-- {{ _("Chuoi thu banh coc VANG") }} -->', 1),
-            encoding="utf-8", newline="\n")
-        r = _chay("check_dich_thieu.py")
-        assert r.returncode == 1, "chuoi boc `_()` ma vang khoi catalog van PASS"
-        assert "VANG" in r.stdout
-    finally:
-        mau.write_text(goc, encoding="utf-8", newline="\n")
-        os.utime(mau, ns=(goc_mtime, goc_mtime))
+def test_chuoi_DA_BOC_ma_VANG_khoi_catalog_lam_do(tmp_path):
+    """Bang chung cho lop thu ba. Khong co phep kiem nay thi no chi la mot y dinh.
+
+    🔴 Bản trước tiêm chuỗi vào `server/templates/vps_dieu_khoan.html` **thật**
+       rồi khôi phục trong `finally`. Ngày 06/09 nó dính đúng chế độ hỏng mà
+       docstring của `test_KHONG_test_nao_duoc_GHI_vao_messages_po_THAT` đã kể
+       tên: một lượt gate bị giết giữa chừng, `finally` không chạy, và tệp
+       template ở lại trong cây với chuỗi tiêm — cây bẩn ở một trang **đang
+       phục vụ khách**.
+
+    ⭐ Bản này **mạnh hơn**, không phải nhẹ hơn. Nó tự dựng một cây mã tí hon
+       chứa đúng và chỉ thứ nó cần, nên nó đo cơ chế trích chứ không đo trạng
+       thái của kho — và kết quả không còn phụ thuộc vào việc ai vừa sửa trang
+       nào.
+    """
+    cay = _cay_ma_gia(tmp_path, "Chuoi thu banh coc VANG")
+    r = _chay("check_dich_thieu.py", po=_po_ban_sao(tmp_path),
+              moc=_moc_ban_sao(tmp_path), src=cay)
+    assert r.returncode == 1, "chuoi boc `_()` ma vang khoi catalog van PASS"
+    assert "VANG" in r.stdout
 
 
 def test_khoi_tao_loai_KHONG_nuot_duoc_loai_khac(tmp_path):
@@ -302,23 +372,27 @@ def test_khoi_tao_loai_KHONG_nuot_duoc_loai_khac(tmp_path):
     Mot cua thoat khong gioi han se thanh cach nguoi ta lam im lang moi thu
     khac — nen no chi nhan muc CUA DUNG MOT LOAI duoc goi ten.
     """
-    # Bản sao cho `.po`. `.moc` vẫn là tệp thật — nó nhỏ, được trả lại
-    # byte-exact, và quan trọng hơn: nó không phải thứ người khác đang sửa.
+    # 🔴 Ghi chú cũ ở đúng chỗ này viết: *"`.moc` vẫn là tệp thật — nó nhỏ, được
+    #    trả lại byte-exact, và quan trọng hơn: nó không phải thứ người khác
+    #    đang sửa."* Đo 06/09 bác vế cuối, và vế cuối mới là vế chịu lực.
+    #
+    #    "Người khác" không phải một con người. Dưới `-n 6`, ba phép kiểm trong
+    #    **chính tệp này** chạy ở ba worker cùng lúc, và chúng sửa đúng tệp ấy.
+    #    Một trong ba đọc phải bản mà một trong hai kia vừa tiêm ⇒ ba phép kiểm
+    #    đỏ vì một cuộc đua, không vì một lỗi. `git status` sau đó còn lại một
+    #    dòng `TRONG\tChuoi thu banh coc` không ai gõ.
+    #
+    # ⇒ "Nhỏ" và "trả lại byte-exact" không cứu được: cả hai đều nói về **một**
+    #   tiến trình. Bản sao thì đúng cho mọi số tiến trình.
     po = _po_ban_sao(tmp_path)
-    moc_tep = GOC / "tools" / "check_dich_thieu.moc"
+    moc_ban = _moc_ban_sao(tmp_path)
     goc = po.read_bytes()
-    moc = moc_tep.read_bytes()
-    moc_mtime = moc_tep.stat().st_mtime_ns
-    try:
-        po.write_bytes(goc.rstrip(b"\n") + b'\n\nmsgid "Chuoi thu loai TRONG"\n'
-                                           b'msgstr ""\n')
-        r = _chay("check_dich_thieu.py", "--khoi-tao-loai", "VANG", po=po)
-        assert r.returncode == 1, (
-            "khoi tao loai VANG da nuot mot muc TRONG moi")
-        assert "ngoai loai VANG" in (r.stdout + r.stderr)
-    finally:
-        moc_tep.write_bytes(moc)
-        os.utime(moc_tep, ns=(moc_mtime, moc_mtime))
+    po.write_bytes(goc.rstrip(b"\n") + b'\n\nmsgid "Chuoi thu loai TRONG"\n'
+                                       b'msgstr ""\n')
+    r = _chay("check_dich_thieu.py", "--khoi-tao-loai", "VANG",
+              po=po, moc=moc_ban)
+    assert r.returncode == 1, "khoi tao loai VANG da nuot mot muc TRONG moi"
+    assert "ngoai loai VANG" in (r.stdout + r.stderr)
 
 
 def test_KHONG_test_nao_duoc_GHI_vao_messages_po_THAT():
@@ -357,20 +431,48 @@ def test_KHONG_test_nao_duoc_GHI_vao_messages_po_THAT():
     # ⭐ Chốt ĐƯỜNG DẪN, không chốt tên hàm ghi. `po.write_text(...)` bây giờ là
     #    hợp lệ — `po` là bản sao. Thứ không được phép là **chạm tới tệp thật**,
     #    và tệp thật chỉ được xuất hiện ở đúng một chỗ: hàm tạo bản sao.
-    cho_phep = "_po_ban_sao"
+    # 🔴 MỞ RỘNG 06/09. Bánh cóc này chỉ canh `locale/`, và trong cùng một ngày
+    #    **cả hai** lớp còn lại đều nổ, theo đúng hai chế độ hỏng mà docstring
+    #    trên vừa kể tên:
+    #
+    #      `tools/check_dich_thieu.moc`      -> HAI tien trinh (`-n 6`), 3 do
+    #      `server/templates/*.html`         -> tien trinh BI GIET, cay ban
+    #
+    # ⭐ Nguyên lý đã đúng từ đầu; thứ thiếu là **phạm vi**. Một bánh cóc chỉ
+    #    bảo vệ thứ nó nhìn thấy, nên nguyên lý đúng mà phạm vi hẹp thì vẫn để
+    #    lọt đúng cái nó sinh ra để chặn.
+    CHO_PHEP = {"_po_ban_sao", "_moc_ban_sao", "_bo_qua_moc_ban_sao",
+                "_cay_ma_gia",
+                "test_KHONG_test_nao_duoc_GHI_vao_messages_po_THAT"}
+    #: đường-dẫn-tệp-thật → hàm tạo bản sao thay thế nó
+    #:
+    #: ⛔ Lớp thứ tư (`GOC / "tests"`) **lọt** ở bản mở rộng đầu tiên, và nó lọt
+    #:    vì tôi liệt kê ba đường dẫn mình vừa thấy chứ không hỏi *"còn tệp thật
+    #:    nào khác không"*. Chính lượt `-n 6` chỉ ra nó — 4/4 lượt đỏ ở
+    #:    `test_bo_qua_hien_tai_dat_moc`. Một danh sách chép tay chỉ bảo vệ thứ
+    #:    người viết nhớ ra.
+    CAM = {
+        'GOC / "locale"': "_po_ban_sao(tmp_path)",
+        '"check_dich_thieu.moc"': "_moc_ban_sao(tmp_path)",
+        '"check_bo_qua.moc"': "_bo_qua_moc_ban_sao(tmp_path)",
+        'GOC / "server" / "templates"': "_cay_ma_gia(tmp_path, ...)",
+        'GOC / "tests"': "mot thu muc trong `tmp_path` + `thu_muc=`",
+    }
+    cho_phep = " / ".join(sorted(CHO_PHEP - {
+        "test_KHONG_test_nao_duoc_GHI_vao_messages_po_THAT"}))
     xau = []
     for nut in ast.walk(ast.parse(van)):
         if not isinstance(nut, ast.FunctionDef):
             continue
-        # Bo qua chinh ham nay: no PHAI nhac duong dan de tim ra duong dan.
-        # Mot banh coc bat chinh no thi khong dung duoc.
-        if nut.name in (cho_phep,
-                        "test_KHONG_test_nao_duoc_GHI_vao_messages_po_THAT"):
+        # Bo qua chinh ham nay va cac ham tao ban sao: chung PHAI nhac duong dan
+        # de tim ra duong dan. Mot banh coc bat chinh no thi khong dung duoc.
+        if nut.name in CHO_PHEP:
             continue
         for d in (ast.get_source_segment(van, nut) or "").splitlines():
-            if 'GOC / "locale"' in d:
-                xau.append(f"{nut.name}: {d.strip()}")
+            for dau, thay in CAM.items():
+                if dau in d:
+                    xau.append(f"{nut.name}: {d.strip()}   => dung `{thay}`")
     assert not xau, (
-        "Cac ham sau cham toi `messages.po` THAT:\n  " + "\n  ".join(xau)
-        + f"\nChi `{cho_phep}()` duoc phep. Dung `_po_ban_sao(tmp_path)` roi "
+        "Cac ham sau cham toi TEP THAT trong kho:\n  " + "\n  ".join(xau)
+        + f"\nChi `{cho_phep}` duoc phep cham. Dung ban sao roi "
           "`_chay(..., po=po)`.")
