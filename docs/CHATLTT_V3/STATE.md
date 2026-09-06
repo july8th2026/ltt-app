@@ -15,7 +15,7 @@
 | **BASE_SHA** | `72a484c5f281f4d909e72927648df7dd62e5e196` (`admin-mvp-v3` = `origin/admin-mvp-v3`, 0/0) |
 | FINAL_SHA | *(chưa)* |
 | Dải test | **800–899** |
-| Pha hiện tại | Làn A (P00–P05) ✅ · **P06 ✅ 6/6** · B1–B3 ✅ · **B4 ✅ 5/6 bước (06/09)** → còn **B4 bước 6 · B5 · B6 · làn C** |
+| Pha hiện tại | Làn A ✅ · **P06 ✅ 6/6** · B1–B3 ✅ · **B4 5/6** · **P09 5/6 (06/09)** → còn **B4 bước 6 · B5 · B6 · P10–P12** |
 | Deploy | ⛔ chương trình này **chưa deploy**. Làn A phát hành sau cờ `LTT_CHATLTT_V3_TOOLS` |
 
 🔑 **Cờ `LTT_CHATLTT_V3_TOOLS` và `LTT_CHATLTT_V3_PAID_TOOLS` đều đang TẮT, và
@@ -60,7 +60,7 @@ chưa thấy một thay đổi nào.
 | 3 | tiêm vào `luot.dung_ngu_canh()` sau cờ | `test_831` (11) |
 | 4 | 4 route `/api/ghi-nho` + `cong_ghi_nho` | `test_832` (11) |
 | 5 | tool `noi_bo.ghi_nho` (`FREE`) — **cửa 4 CÒN ĐÓNG** | `test_833` (15) |
-| 6 | giao diện quản lý | ⏳ **sau P09** |
+| 6 | giao diện quản lý | ⏳ **đã mở khoá** — P09 xong 06/09 |
 
 **62 phép kiểm mới.** Kế hoạch + §0 đối chiếu cộng đồng:
 `10_KE_HOACH_B4_GHI_NHO.md`.
@@ -79,6 +79,23 @@ chưa thấy một thay đổi nào.
    chỉ mang chữ, **không mang `id`** (cố ý: `id` tốn token ở mọi lượt). Kế hoạch
    đã khai `noi_bo.quen` trước khi có cơ chế cho nó; hai phép ấy ở lại phía
    người dùng.
+
+---
+
+## P09 — UX V3 (bước 1–5 đóng 06/09, commit `d2175f7c`)
+
+Kế hoạch + §0: `11_KE_HOACH_P09_UX.md`. Bước 6 (kiểm URL công khai) **còn chặn**
+vì cờ V3 chưa bật trên production.
+
+🔴 **P09 lộ ra một lỗ ở BACKEND trước khi chạm tới giao diện.** Khối `tool_call`
+mang ba cờ rời và bỏ hẳn `cho_job`, nên một bước **đang chờ job** tuần tự hoá y
+hệt một bước **đã xong** — hai ca chỉ khác nhau một chuỗi `tom_tat` rỗng. Chưa
+ai thấy vì chưa ai vẽ nó. Nay khối mang một trường `trang_thai` **một chiều**;
+`ok`/`cho_duyet` giữ lại **chỉ để đọc ngược** khối cũ.
+
+⭐ Và trình duyệt bắt được thứ bốn phép kiểm đơn vị không thấy: tên khả truy cập
+của nút là *"Tính toánĐang chờ bạn duyệt"* — dính liền, vì `gap` của flexbox
+tách hai chữ trên **màn hình** chứ không tách trong **chuỗi**.
 
 ---
 
@@ -107,7 +124,7 @@ phải "tiêm một khối rỗng".
 
 | # | Điều kiện | Vì sao |
 |---|---|---|
-| M1 | **P09 vẽ được khối `tool_call`** | `noi_bo.ghi_nho` là `FREE` (không phiếu duyệt), và điều đó chỉ chấp nhận được vì người dùng **sửa lại được** — mà "sửa lại được" đòi họ **nhìn thấy** nó đã xảy ra |
+| M1 | ~~P09 vẽ được khối `tool_call`~~ | ✅ **XONG 06/09** (`d2175f7c`) — bốn trạng thái, kiểm trên trình duyệt thật |
 | M2 | **Giao diện quản lý (bước 6)** | bật đường tiêm trước khi có chỗ xem/xoá là cho một kho ghi nhớ chạy mà chủ của nó không mở ra được |
 | M3 | **Đo lại trần 2.000 ký tự/phạm vi** trên 20–50 người dùng thật | hằng số hiện tại là một **neo tự suy** (4 × trần một mẩu), không phải phép đo — và nó tự khai như vậy trong mã |
 
