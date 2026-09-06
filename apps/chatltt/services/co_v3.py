@@ -32,6 +32,18 @@ import os
 CO_TOOLS = "LTT_CHATLTT_V3_TOOLS"
 CO_TOOL_CO_PHI = "LTT_CHATLTT_V3_PAID_TOOLS"
 
+#: 🔴 Co cua NHOM P06 (tep/tri thuc/tim kiem). Them 06/09 (B3).
+#:
+#:    Ke hoach tong ghi "Lan B — moi nhom mot co", va toi bo sot no suot
+#:    ca P06 lan B1/B2. Hau qua neu deploy nguyen trang: bat NGAY mot tinh
+#:    nang TINH TIEN o mot gia con tam (`gia_trich.CHU_DU_AN_DA_CHOT` =
+#:    False).
+#:
+#: ⛔ KHONG dung lai `CO_TOOLS`: co do gac VONG LAP TOOL. Dinh mot tai lieu
+#:    la mot nang luc khac — no ton tien ngay ca khi vong lap tool tat.
+#:    Mot co gac hai thu khac nhau la mot co khong ai bat duoc dung.
+CO_TEP = "LTT_CHATLTT_V3_FILES"
+
 #: Giá trị được coi là BẬT. Fail-closed: mọi thứ khác là tắt, kể cả `"true"`
 #: viết hoa lạ hay `"yes"` — một cờ nhận nhiều cách viết là một cờ mà người ta
 #: tưởng đã bật trong khi chưa.
@@ -55,9 +67,19 @@ def tool_co_phi_bat() -> bool:
     return _bat(CO_TOOL_CO_PHI)
 
 
+def tep_bat() -> bool:
+    """Dinh tai lieu vao hoi thoai co mo khong. **Mac dinh TAT.**
+
+    ⭐ Doc MOI LAN, khong chup mot lan — cung ly do `tool_bat()`: tat gap
+       phai an ngay, ke ca giua mot luot dang chay.
+    """
+    return _bat(CO_TEP)
+
+
 def trang_thai() -> dict:
     """Cho `/api/danh-muc` và log — để người trực biết cờ nào đang bật."""
-    return {"tools": tool_bat(), "tool_co_phi": tool_co_phi_bat()}
+    return {"tools": tool_bat(), "tool_co_phi": tool_co_phi_bat(),
+            "tep": tep_bat()}
 
 
 __all__ = ["tool_bat", "tool_co_phi_bat", "trang_thai", "CO_TOOLS", "CO_TOOL_CO_PHI"]

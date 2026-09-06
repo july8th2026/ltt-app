@@ -15,6 +15,24 @@ router = APIRouter(tags=["chatltt"])
 NO_STORE = {"Cache-Control": "no-store"}
 
 
+def cong_tep() -> None:
+    """Cong co cho nhom P06 (dinh tai lieu). Tat => 404, khong phai 403.
+
+    🔴 PHAI dat TRUOC `require_login` trong danh sach tham so. `Depends`
+       chay theo thu tu khai bao, va `require_login` **chuyen huong 303 ve
+       /login** — nen dat sau thi mot route "da dong" van tra 303 cho khach
+       chua dang nhap, tuc no van noi rang duong nay ton tai. Ca nay da xay
+       ra that o kho nay.
+
+    ⛔ 404 chu khong 403: mot tinh nang chua mo thi khong nen tu khai rang
+       no ton tai va dang bi cam.
+    """
+    from apps.chatltt.services import co_v3
+
+    if not co_v3.tep_bat():
+        raise HTTPException(status_code=404)
+
+
 def uid(request: Request) -> str:
     u = user_hien_tai(request)
     if u is None:

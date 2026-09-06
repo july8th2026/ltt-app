@@ -337,6 +337,77 @@ def test_BON_route_da_gan_va_dung_phuong_thuc():
     assert (("DELETE",), "/api/tep/{tep_id}") in co
 
 
+def test_CO_TEP_mac_dinh_TAT(monkeypatch):
+    """🔴 Kế hoạch tổng ghi *"Làn B — mỗi nhóm một cờ"*, và tôi bỏ sót nó suốt
+    cả P06 lẫn B1/B2.
+
+    Hậu quả nếu deploy nguyên trạng: bật **ngay** một tính năng **tính tiền**, ở
+    một giá còn tạm (`gia_trich.CHU_DU_AN_DA_CHOT` = False). Đúng thứ danh mục
+    điều kiện bật cờ sinh ra để chặn — và nó lọt vì tôi đọc danh mục ấy **sau**
+    khi viết route thay vì trước.
+    """
+    from apps.chatltt.services import co_v3
+
+    monkeypatch.delenv(co_v3.CO_TEP, raising=False)
+    assert co_v3.tep_bat() is False
+    assert co_v3.trang_thai()["tep"] is False
+
+
+def test_CO_TEP_KHONG_dung_chung_voi_co_vong_lap_tool(monkeypatch):
+    """⛔ Bật cờ tool **không** được kéo theo cờ tệp. Đính một tài liệu tốn tiền
+    ngay cả khi vòng lặp tool tắt — một cờ gác hai thứ khác nhau là một cờ không
+    ai bật được đúng."""
+    from apps.chatltt.services import co_v3
+
+    monkeypatch.setenv(co_v3.CO_TOOLS, "1")
+    monkeypatch.delenv(co_v3.CO_TEP, raising=False)
+    assert co_v3.tool_bat() is True
+    assert co_v3.tep_bat() is False
+
+
+def test_cong_co_dat_TRUOC_require_login():
+    """🔴 `Depends` chạy **theo thứ tự khai báo**, và `require_login` chuyển
+    hướng 303 về `/login`.
+
+    ⇒ Đặt cổng cờ **sau** nó thì một route "đã đóng" vẫn trả 303 cho khách chưa
+      đăng nhập — tức nó **vẫn nói rằng đường này tồn tại**. Ca này đã xảy ra
+      thật ở kho này, nên phép kiểm chốt **thứ tự trong mã**, không chốt hành vi
+      của một request (hành vi ấy chỉ lộ ra với đúng một loại khách).
+    """
+    import pathlib
+    import re
+
+    ma = (pathlib.Path(__file__).resolve().parents[1] / "apps" / "chatltt"
+          / "routes" / "_p_tep.py").read_text(encoding="utf-8")
+    dong = [d for d in ma.splitlines() if "Depends(" in d]
+    assert dong, "khong tim thay route nao"
+    for d in dong:
+        i_co = d.find("Depends(cong_tep)")
+        i_login = d.find("Depends(require_login)")
+        assert i_co >= 0, f"route thieu cong co: {d.strip()[:70]}"
+        assert i_co < i_login, (
+            f"cong co dat SAU require_login: {d.strip()[:70]}")
+    assert len(re.findall(r"Depends\(cong_tep\)", ma)) == 4, (
+        "phai du BON route deu co cong")
+
+
+def test_cong_co_tra_404_chu_khong_403(monkeypatch):
+    """⛔ 404 chứ không 403: một tính năng chưa mở thì không nên tự khai rằng nó
+    tồn tại và đang bị cấm."""
+    from fastapi import HTTPException
+
+    from apps.chatltt.routes._chung import cong_tep
+    from apps.chatltt.services import co_v3
+
+    monkeypatch.delenv(co_v3.CO_TEP, raising=False)
+    with pytest.raises(HTTPException) as e:
+        cong_tep()
+    assert e.value.status_code == 404
+
+    monkeypatch.setenv(co_v3.CO_TEP, "1")
+    assert cong_tep() is None
+
+
 def test_route_KHONG_chua_nghiep_vu():
     """⛔ `routes/` chỉ lo HTTP (`AGENTS.md` §8.1). Một quy tắc rơi vào route là
     một quy tắc không ai test được nếu không dựng một request.

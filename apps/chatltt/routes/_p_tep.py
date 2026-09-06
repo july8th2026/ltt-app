@@ -24,7 +24,8 @@ import logging
 
 from fastapi import Depends, Request
 
-from apps.chatltt.routes._chung import json_ok, kiem_csrf, loi, router, uid
+from apps.chatltt.routes._chung import (cong_tep, json_ok, kiem_csrf, loi,
+                                        router, uid)
 from apps.chatltt.services import dinh_tep as DT
 from server.auth.session import require_login
 from server.deps import get_db
@@ -34,7 +35,7 @@ log = logging.getLogger(__name__)
 
 @router.post("/api/hoi-thoai/{conv_id}/tep")
 async def tai_len(conv_id: str, request: Request,
-                  _=Depends(require_login), db=Depends(get_db)):
+                  __=Depends(cong_tep), _=Depends(require_login), db=Depends(get_db)):
     """Tải một tài liệu lên và **hiện giá**. Chưa thu, chưa nộp job.
 
     ⚠️ `multipart/form-data`, không phải JSON base64 — cùng lý do đã ghi ở
@@ -66,7 +67,7 @@ async def tai_len(conv_id: str, request: Request,
 
 @router.post("/api/hoi-thoai/{conv_id}/tep/{upload_id}/trich")
 async def trich(conv_id: str, upload_id: str, request: Request,
-                _=Depends(require_login), db=Depends(get_db)):
+                __=Depends(cong_tep), _=Depends(require_login), db=Depends(get_db)):
     """Khách đã đọc giá và bấm đồng ý ⇒ giữ credit, promote, gắn, nộp job."""
     if not kiem_csrf(request):
         return loi(403, "csrf")
@@ -86,7 +87,7 @@ async def trich(conv_id: str, upload_id: str, request: Request,
 
 @router.get("/api/hoi-thoai/{conv_id}/tep")
 async def danh_sach(conv_id: str, request: Request,
-                    _=Depends(require_login), db=Depends(get_db)):
+                    __=Depends(cong_tep), _=Depends(require_login), db=Depends(get_db)):
     try:
         return json_ok({"tep": DT.danh_sach(db, user_id=uid(request),
                                             conversation_id=conv_id)})
@@ -96,7 +97,7 @@ async def danh_sach(conv_id: str, request: Request,
 
 @router.delete("/api/tep/{tep_id}")
 async def go(tep_id: str, request: Request,
-             _=Depends(require_login), db=Depends(get_db)):
+             __=Depends(cong_tep), _=Depends(require_login), db=Depends(get_db)):
     """Gỡ một tệp: xoá liên kết **và** các đoạn đã trích.
 
     ⛔ Trả 404 cho cả "không có" lẫn "không phải của bạn" — phân biệt hai ca là

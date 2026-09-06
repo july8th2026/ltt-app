@@ -51,7 +51,20 @@ chưa thấy một thay đổi nào.
 
 ---
 
-## 🔒 Điều kiện để BẬT `LTT_CHATLTT_V3_TOOLS` — món nợ tự đòi
+## 🔒 Điều kiện để BẬT các cờ V3 — món nợ tự đòi
+
+⚠️ **BA cờ, không phải hai** (06/09). Kế hoạch tổng ghi *"làn B — mỗi nhóm
+một cờ"*, và cờ nhóm P06 bị bỏ sót suốt P06 lẫn B1/B2:
+
+| Cờ | Gác cái gì | Mặc định |
+|---|---|---|
+| `LTT_CHATLTT_V3_TOOLS` | vòng lặp tool | TẮT |
+| `LTT_CHATLTT_V3_PAID_TOOLS` | model **tự** gọi tool có phí | TẮT |
+| `LTT_CHATLTT_V3_FILES` | đính tài liệu (P06/B1) — **tốn credit** | TẮT |
+
+⛔ Ba cờ **độc lập**. Bật cờ tool không kéo theo cờ tệp: đính một tài liệu
+tốn tiền ngay cả khi vòng lặp tool tắt.
+
 
 ⛔ **Đọc mục này trước khi bật cờ, kể cả bật để thử.**
 
