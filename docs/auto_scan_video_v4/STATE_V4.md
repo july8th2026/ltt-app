@@ -171,6 +171,49 @@
   runs predated `9ff469e`, which changes `cache_dung_duoc`, code that executes in
   every stage of every E2E run. Evidence recorded before that commit does not
   describe this RC.
+- 🟡 **Acceptance 2026-09-06 10:03 — `19 passed, 3 failed` in 14:51, and the
+  three failures are ONE cause.** This supersedes the 09:20 entry below.
+
+  ✅ **`giu_hinh` ran the full ELEVEN-stage chain green**: `run=done`,
+  `thay_the: []`, QC pass, and `qc_ai` reporting `qc_ai_bat: false` with its
+  reason — exactly the designed off-path. So the chain change is proven on a
+  real run; the earlier "not yet proven" caveat is discharged for this preset.
+
+  🔴 **`cat_thong_minh` failed QC check T5 (true peak).** Not machine B, not the
+  chain — an audio result. All three test failures trace to it: the run errored,
+  so `qc_ai` never ran (`pending`), so the chain-coverage test failed too.
+
+  **The measurement, both presets, mix vs delivered:**
+
+  | preset | mix | delivered | overshoot | ceiling |
+  |---|---|---|---|---|
+  | `giu_hinh` | −3,43 | −2,10 | **1,33 dB** | −1,5 ✅ |
+  | `cat_thong_minh` | −3,46 | −0,68 | **2,78 dB** | −1,5 ❌ |
+
+  ⭐ **Mastering is correct on both** (target −3,5, hit −3,43/−3,46). The
+  overshoot is entirely in the AAC encode.
+
+  🔴 **And it contradicts the explanation currently written at
+  `am_master.BIEN_CHO_CODEC_DB`.** That comment records overshoot of **0,15 and
+  0,20 dB** at this same mix level, and explains the variation as "depends on how
+  hard the limiter is pressing". Today, at an essentially identical mix level
+  (−3,45), overshoot is **1,33 and 2,78** — nine to fourteen times larger, on
+  **both** presets. Same mix level, so the limiter-pressure explanation does not
+  account for it.
+
+  ⛔ **`BIEN_CHO_CODEC_DB` deliberately NOT raised.** Two reasons, and the second
+  is the real one: (1) the margin is 2,0 and `giu_hinh` now uses 1,33 of it, so a
+  raise would be guessing at a number; (2) the recorded explanation for *why*
+  overshoot varies is now disproven, and changing a constant whose mechanism you
+  have just falsified is how a number gets tuned until the test goes green while
+  the cause stays put. The constant's own docstring predicted this moment: *"it
+  is still a number measured from ONE source. It needs re-measuring on several
+  different sources before anyone believes it is enough."* Today is source two,
+  and it says 2,0 is not enough — but not yet why.
+
+  ⚠️ **No customer exposure**: ASV has no production rows. This is a shipping
+  blocker, not a live defect.
+
 - 🔴 **`evidence/nghiem_thu_hien_hanh.json` at HEAD is a FAILED run
   (2026-09-06 09:20), not the 20-passed one.** Read this before citing it.
   Acceptance was attempted **three times** on 06/09 and did not run to

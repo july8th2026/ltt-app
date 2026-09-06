@@ -35,6 +35,16 @@ from __future__ import annotations
 #: Bat bien tang 2 -> tep chung minh no. Khoa la ten trong
 #: `V4_TEST_REVIEW_PROTOCOL.md`; gia tri la tep test that.
 #:
+#: ⚠️ **`V4_TEST_REVIEW_PROTOCOL.md` KHONG co trong kho** (do 2026-09-06). No
+#:    duoc nhac o ba ban bao cao va o chinh docstring nay, nhung khong tep nao
+#:    ton tai. Tuc "khoa la ten trong protocol" hien la mot rang buoc **khong ai
+#:    kiem duoc** — khac han rang buoc hai chieu BAT_BIEN <-> VONG_DU ma
+#:    `test_428` cuong che that.
+#:
+#: ⭐ Ghi ra thay vi im lang them khoa: mot rang buoc chi ton tai trong mot cau
+#:    van la thu se bi vi pham ma khong ai biet, va nguoi doc sau xung dang biet
+#:    khoa nao co goc ro rang va khoa nao do mot phien tu dat.
+#:
 #: ⭐ Ban do nay la mot rang buoc HAI CHIEU: xoa mot tep thi mot bat bien mat
 #:    nguoi chung minh, va `test_428` do. Them mot bat bien ma khong co tep thi
 #:    cung do.
@@ -55,6 +65,20 @@ BAT_BIEN: dict[str, str] = {
     "product contract frozen":   "tests/test_425_asv_v4_hop_dong_san_pham.py",
     "capability inventory true": "tests/test_426_asv_v4_kiem_ke_nang_luc.py",
     "no second queue/scheduler": "tests/test_427_asv_v4_kien_truc.py",
+    # 🔴 Hai cai duoi them 2026-09-06, va ca hai la BAT BIEN SAN PHAM chu
+    #    khong phai chi tiet cai dat — do la tieu chuan de vao bang nay.
+    #
+    #    "busy is not failure": mot tin hieu BAN tu mot tai nguyen dung chung
+    #    khong duoc bien thanh that bai cuoi cung. Vi pham no thi job hong, va
+    #    `giong_noi.MayBan` ghi thang hau qua: **TRU CREDIT cho viec chua tung
+    #    chay**. Da vi pham that tren duong AI cho toi 06/09.
+    #
+    #    "repair smallest safe scope": mot doan bi bao hong phai duoc lam lai o
+    #    giai doan SOM NHAT sua duoc no, va **chi doan do**. Vi pham theo mot
+    #    chieu la dich lai ca phim de sua mot cau; theo chieu kia la doc lai mot
+    #    cau dich sai va giao dung y sai do.
+    "busy is not failure":       "tests/test_434_asv_v4_ranh_gioi_ai.py",
+    "repair smallest safe scope": "tests/test_454_asv_v4_vong_sua.py",
 }
 
 #: Chay sau MOI lan sua. ~12,5 giay.
@@ -68,6 +92,10 @@ VONG_NHANH: tuple[str, ...] = (
     "tests/test_426_asv_v4_kiem_ke_nang_luc.py",
     "tests/test_427_asv_v4_kien_truc.py",
     "tests/test_428_asv_v4_rao_chan_nang.py",
+    # Do 2026-09-06: test_434 ~1,0s | test_454 ~2,0s. Du re cho vong NHANH, va
+    # ca hai phu bat bien san pham nen chung thuoc ve cho duoc chay that.
+    "tests/test_434_asv_v4_ranh_gioi_ai.py",
+    "tests/test_454_asv_v4_vong_sua.py",
 )
 
 #: Chay TRUOC KHI DONG MOT PHA. ~80 giay. Vong nhanh + phan cham.
