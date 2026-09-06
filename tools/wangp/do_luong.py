@@ -71,12 +71,13 @@ def _lay_mau():
                         if ln.startswith("MemAvailable"):
                             ram = ln.split()[1]
                             break
-                except Exception:
-                    pass
+                except Exception as e:            # noqa: BLE001
+                    ram = "loi:" + type(e).__name__
                 fh.write(f"{time.time():.1f},{vram.strip()},{gpu.strip()},{ram}\n")
                 fh.flush()
-            except Exception:
-                pass
+            except Exception as e:                # noqa: BLE001
+                fh.write("%.1f,,,loi:%s%s" % (time.time(), type(e).__name__, chr(10)))
+                fh.flush()
             time.sleep(1)
 
 

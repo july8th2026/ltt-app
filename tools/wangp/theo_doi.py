@@ -1,7 +1,6 @@
 """Theo doi luot do tren Pod — doc /data qua S3, khong can shell."""
 import os
 import sys
-import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path.cwd()))
@@ -24,7 +23,8 @@ def doc(key, duoi=2500):
     try:
         b = s3.get_object(Bucket=BUCKET, Key=key)["Body"].read()
         return b.decode("utf-8", "replace")[-duoi:]
-    except Exception:
+    except Exception as e:                    # noqa: BLE001
+        print(f"  (khong doc duoc {key}: {type(e).__name__})")
         return None
 
 

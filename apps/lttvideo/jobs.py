@@ -69,7 +69,9 @@ def handle(params: dict, ctx=None, *, _client=None, _kho=None) -> dict:
         giay = 5.0
 
     h = ho_so.lay(HO_SO_BASELINE)
-    doi = {"prompt": prompt, "video_length": f"{int(max(giay, 1))}s"}
+    # Kieu tuong minh: gia tri vua la chuoi vua la so nguyen (seed).
+    doi: dict[str, object] = {"prompt": prompt,
+                              "video_length": f"{int(max(giay, 1))}s"}
     if params.get("seed") is not None:
         doi["seed"] = int(params["seed"])
     if params.get("resolution"):

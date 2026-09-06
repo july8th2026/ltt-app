@@ -13267,3 +13267,12 @@ msgstr "A single call usually costs a fractional amount. Fractions below one cre
 
 msgid "Phần lẻ dưới một credit không bị làm tròn lên mà được cộng dồn sang lượt sau, nên số tiền thực trả bám sát giá niêm yết kể cả với những lượt gọi rất nhỏ."
 msgstr "Fractions below one credit are not rounded up; they carry over to the next call, so what you actually pay tracks the listed price even for very small calls."
+
+msgid "Video AI (máy nhà)"
+msgstr "Video AI (in-house)"
+
+msgid "Video AI"
+msgstr "Video AI"
+
+msgid "Tạo video từ mô tả bằng model chạy trên máy thuê của LTT Studios."
+msgstr "Generate video from a description using a model running on LTT Studios' rented machine."
