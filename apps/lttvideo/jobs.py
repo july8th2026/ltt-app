@@ -97,7 +97,7 @@ def handle(params: dict, ctx=None, *, _client=None, _kho=None) -> dict:
     if not kq.thanh_cong:
         if kq.da_huy:
             client.cleanup(job_id)
-            return {"trang_thai": "da_huy", "tep": [], "job_wangp": job_id}
+            return {"trang_thai": "da_huy", "video_keys": [], "job_wangp": job_id}
         raise LoiJob(_t("Sinh video thất bại.") + " " + "; ".join(kq.loi[:2]))
 
     if not kq.tep:
@@ -124,7 +124,12 @@ def handle(params: dict, ctx=None, *, _client=None, _kho=None) -> dict:
     giay_chay = time.time() - t0
     return {
         "trang_thai": "xong",
-        "tep": da_luu,
+        # ⛔ TEN KHOA LA MOT HOP DONG, khong phai mot lua chon phong cach.
+        #    `server/routes/jobs.py:_artifacts()` chi nhat khoa co ten tan cung
+        #    `_key` (chuoi) hoac `_keys` (danh sach). Ten cu la `tep` => job
+        #    XONG, video nam trong R2, va nguoi dung KHONG TAI DUOC — mot that
+        #    bai khong co dau hieu nao o phia may chu.
+        "video_keys": da_luu,
         "job_wangp": job_id,
         "giay_chay": round(giay_chay, 1),
         # Giao du so giay da dat => tru dung khoan da giu cho.

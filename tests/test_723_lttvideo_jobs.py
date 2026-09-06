@@ -93,7 +93,7 @@ def test_job_CHUA_xong_cho_toi_khi_tep_nam_trong_kho():
     kho = KhoGia()
     ra = _chay(kho=kho)
     assert ra["trang_thai"] == "xong"
-    assert kho.exists(ra["tep"][0])
+    assert kho.exists(ra["video_keys"][0])
 
 
 def test_wangp_hong_thi_job_hong_va_KHONG_luu_gi():
@@ -118,3 +118,26 @@ def test_don_rac_tren_c_cloud_sau_khi_keo_ve():
 def test_khong_co_prompt_thi_tu_choi_TRUOC_khi_cham_GPU():
     with pytest.raises(jobs.LoiJob):
         _chay(params={"prompt": "  ", "duration_s": 5, "nguoi_dung_id": 1})
+
+
+def test_khoa_ket_qua_PHAI_hop_khuon_ma_nen_tang_nhat_duoc():
+    """`_artifacts()` của nền tảng chỉ nhặt khoá tên `*_key` / `*_keys`.
+
+    ⛔ Đặt tên khác thì job vẫn **XONG**, tệp vẫn nằm trong R2, và người dùng
+       **không tải được** — một thất bại không để lại dấu hiệu nào ở phía máy
+       chủ. Chốt ở đây để tên khoá không trôi trở lại.
+    """
+    import ast
+    import pathlib
+
+    ma = (pathlib.Path(__file__).parent.parent / "apps" / "lttvideo" / "jobs.py"
+          ).read_text(encoding="utf-8")
+    cay = ast.parse(ma)
+    khoa: set[str] = set()
+    for n in ast.walk(cay):
+        if isinstance(n, ast.Dict):
+            for k in n.keys:
+                if isinstance(k, ast.Constant) and isinstance(k.value, str):
+                    khoa.add(k.value)
+    assert "video_keys" in khoa, "kết quả không mang khoá tên `*_keys`"
+    assert "tep" not in khoa, "tên `tep` quay lại — nền tảng sẽ không nhặt được"
