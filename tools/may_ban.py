@@ -146,6 +146,45 @@ def cay_khac_dang_ban(bang: dict | None = None) -> list[str]:
                   if not m["la_cay_toi"] and m["cpu"] >= PHAN_TRAM_COI_LA_LAM)
 
 
+def khoa_dang_giu() -> list[str]:
+    """Ai dang giu khoa `cua_so_yen`. Rong neu khong ai giu.
+
+    🔴 VI SAO HAM NAY NAM O DAY, TRONG `may_ban`.
+
+       `may_ban` do **CPU theo tung cay**. `cua_so_yen` do **KHOA**. Hai thu
+       do hai dai luong khac nhau, va do 06/09/2026 chung KHONG trung nhau:
+
+           may_ban       ca hai cay `dang cho`, 3,1% va 2,1% CPU
+           cua_so_yen    mot `pytest go tay` giu `cpu_nhieu` + `postgres_test`
+                         da 3,6 phut
+
+       Mot luot pytest dang o pha I/O (cho CSDL, thu don, pha tuan tu) doc ra
+       **y het mot may ranh**. Toi bo qua `trang-thai` vi tuong `may_ban` da du,
+       roi phong `gate.py` — va no xep hang 9,5 phut.
+
+    ⇒ Cong cu tra loi CA HAI thi khong ai phai nho chay hai lenh. Do la co che,
+      khong phai mot luat trong tai lieu.
+    """
+    try:
+        from cua_so_yen import _mo_ta, dang_giu
+    except ImportError:
+        return []
+    try:
+        ds = dang_giu()
+    except (OSError, ValueError):
+        return []
+    dong: list[str] = []
+    for bg in ds:
+        if bg.get("hong"):
+            dong.append(f"[{bg.get('tai_nguyen', '?')}] TEP KHOA HONG")
+            continue
+        d = f"[{bg['tai_nguyen']}] {_mo_ta(bg)}"
+        if bg.get("treo"):
+            d += f"  (TREO: {bg['treo']} - luot sau tu doat)"
+        dong.append(d)
+    return dong
+
+
 def dong_canh_bao() -> str:
     """Mot dong ASCII cho `gate.py` / `test_nhanh.py` in ra. Rong neu may ranh.
 
@@ -153,15 +192,18 @@ def dong_canh_bao() -> str:
        khong. Mot cong cu tu in vao stdout cua tien trinh khac da lam vo pytest
        o kho nay mot lan roi.
     """
+    ve = []
     bang = quet()
-    if not bang:
-        return ""
-    khac = cay_khac_dang_ban(bang)
-    if not khac:
-        return ""
-    chi_tiet = ", ".join(f"{t} ({bang[t]['so']} tien trinh, "
-                         f"{bang[t]['cpu']:.0f}% CPU)" for t in khac)
-    return f"  [may ban] cay KHAC dang lam viec: {chi_tiet}"
+    khac = cay_khac_dang_ban(bang) if bang else []
+    if khac:
+        chi_tiet = ", ".join(f"{t} ({bang[t]['so']} tien trinh, "
+                             f"{bang[t]['cpu']:.0f}% CPU)" for t in khac)
+        ve.append(f"  [may ban] cay KHAC dang lam viec: {chi_tiet}")
+    # ⛔ Ve thu HAI, va no doc lap voi ve tren: mot luot giu khoa ma it CPU
+    #    khong hien o `cay_khac_dang_ban`. Xem `khoa_dang_giu`.
+    for d in khoa_dang_giu():
+        ve.append(f"  [khoa]    {d}")
+    return "\n".join(ve)
 
 
 def main() -> int:
@@ -185,10 +227,22 @@ def main() -> int:
                   f"{m['cpu']:>6.1f}% CPU  ({m['tich_luy']:>5.0f}s tich luy)  {lam}")
         print("    (* = cay nay)")
 
+    khoa = khoa_dang_giu()
+    if khoa and not a.im:
+        print("  --- khoa cua_so_yen ---")
+        for d in khoa:
+            print(f"    {d}")
+
     khac = cay_khac_dang_ban(bang)
-    if khac:
+    # ⛔ Ma thoat phai tinh CA HAI. Truoc 06/09 no chi tinh CPU, nen no tra
+    #    0 ("ranh") trong khi mot luot nang dang giu khoa — xem
+    #    `khoa_dang_giu` va `docs/QUY_TAC_CHAY_LENH_NANG.md`.
+    if khac or khoa:
         if not a.im:
-            print(f"  => CAY KHAC DANG BAN: {', '.join(khac)}")
+            if khac:
+                print(f"  => CAY KHAC DANG BAN: {', '.join(khac)}")
+            if khoa:
+                print("  => CO KHOA DANG BI GIU: dung phong lenh nang.")
         return 1
     return 0
 

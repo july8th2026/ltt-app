@@ -273,6 +273,55 @@ assert "parents()" in ma             -> grep ma nguon, xanh ca khi go bo chan
 môi trường**; ② tiêm lại bản cũ để chắc nó **đỏ được**.
 Xem §4c: *"đỏ được" và "đo đúng thứ cần đo" là HAI câu hỏi*.
 
+#### ⛔ Nhưng "tiêm hai chiều" CHƯA ĐỦ — đo được 06/09/2026
+
+`cosmic-ray` chạy **97 đột biến** trên `tools/check_ruff.py`, với bốn phép kiểm
+mà tôi *đã* tiêm hai chiều đàng hoàng:
+
+```
+SURVIVED     43
+INCOMPETENT  54
+KILLED        0        <- không giết được cái nào
+```
+
+Một đột biến sống sót nói hết:
+
+```
+dem[ma] = dem.get(ma, 0) + 1   ->   dem[ma] = dem.get(ma, 0) ** 1
+```
+
+`0 ** 1` luôn là 0 ⇒ mọi số đếm thành 0 ⇒ `tang` luôn rỗng ⇒ bánh cóc báo
+**PASS vĩnh viễn**. Nó mù hoàn toàn, và không phép kiểm nào thấy.
+
+🔴 **Hai bài học, cái thứ hai mới là cái chung:**
+
+1. **Tôi tiêm ĐÚNG CHỖ mình đang nghĩ tới.** Tôi tiêm vào *phép so sánh* nên
+   tôi chứng minh được phép so sánh. Cái hỏng nằm ở *phép đếm* nuôi nó — chỗ
+   tôi không nghĩ tới, nên không tiêm. Tiêm tay chỉ phủ được trí tưởng tượng
+   của người tiêm; đột biến máy phủ **mọi nhánh**.
+
+2. **Mọi kiểu hỏng của một bánh cóc đều đi về phía BÁO PASS DỄ HƠN.** Một phép
+   kiểm chỉ khẳng định *"bánh cóc báo PASS"* thì không kiểm gì cả — nó xanh với
+   cả bản mù. Đúng lớp `B017` (assert quá rộng) mà chính `ruff` đang đếm.
+
+⇒ **Cơ chế bổ sung:** một phép kiểm phải đối chiếu với **sự thật ĐỘC LẬP**,
+  không phải với số do chính công cụ ấy sinh ra. Bốn phép kiểm cũ lấy mốc bằng
+  `--accept`, mà `--accept` gọi `quet()`: **hỏng so với hỏng thì vẫn bằng
+  nhau**. Bản sửa đặt trước một cây mẫu đếm tay (`LTT_RUFF_GOC` /
+  `LTT_MYPY_GOC`) rồi hỏi lại.
+
+⭐ Và khi nghi một cụm phép kiểm là lớp C, **đừng suy đoán — chạy đột biến**:
+
+```
+py -m cosmic_ray.cli init <cấu-hình>.toml <phiên>.sqlite
+py -m cosmic_ray.cli exec <cấu-hình>.toml <phiên>.sqlite
+```
+
+⚠️ `cosmic-ray` **sửa tệp tại chỗ**, nên phải chạy trong một cây riêng
+(`git worktree add --detach`) — bốn phiên dùng chung cây này, và một lượt gate
+song song sẽ thấy "CÂY ĐÃ ĐỔI TRONG LÚC CHẠY". Đọc `docs/QUY_TRINH_WORKTREE.md`
+trước. `mutmut` **không chạy được trên Windows** (nó bảo dùng WSL).
+
 ### Lớp D — commit vào trunk trước khi có gate xanh
 
 Bốn commit không gate làm **5 lượt đỏ ở cây của phiên khác**. Đây không phải

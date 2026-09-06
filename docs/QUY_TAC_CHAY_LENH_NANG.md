@@ -42,6 +42,33 @@ python tools/cua_so_yen.py trang-thai   # phiên khác có đang chạy không
 
 1. **Đọc mã trước.** Câu hỏi này có trả lời được bằng đọc không? Nếu có, đọc.
 2. **Đo tải.** `QUÁ TẢI` ⇒ không chạy. `BẬN` ⇒ hoãn hoặc chạy cụm nhỏ.
+
+> ### ⛔ HAI LỆNH TRÊN TRẢ LỜI HAI CÂU KHÁC NHAU — ĐỪNG THAY CÁI NÀY BẰNG CÁI KIA
+>
+> Đo 06/09/2026. Tôi chạy `may_ban.py` (đo **CPU theo từng cây**) và nó nói cả
+> hai cây `dang cho`, 3,1% và 2,1% CPU. Tôi bỏ qua `cua_so_yen trang-thai` vì
+> tưởng đã đủ, rồi phóng `gate.py`.
+>
+> Lúc ấy một `pytest go tay` của phiên khác **đã chạy được 3,6 phút** và đang
+> giữ cả `cpu_nhieu` lẫn `postgres_test`. Gate của tôi **xếp hàng 9,5 phút**.
+>
+> ⭐ Không có gì hỏng — khoá làm đúng việc của nó, và xếp hàng đúng là hành vi
+>    mong muốn. Cái sai là **phép đo tôi chọn không trả lời được câu tôi hỏi**:
+>
+> | Lệnh | Trả lời được | KHÔNG trả lời được |
+> |---|---|---|
+> | `may_ban.py` / `tai_may.py` | máy có đang **đốt CPU** không | một lượt nặng **đang giữ khoá** mà lúc ấy ít CPU (chờ CSDL, pha tuần tự, đang thu dọn) |
+> | `cua_so_yen.py trang-thai` | ai **đang giữ khoá** | việc nặng chạy **không xin khoá** (gõ tay `pytest` một tệp, `demucs` rời) |
+>
+> ⇒ Một lượt pytest đang ở pha I/O đọc ra y hệt một máy rảnh. Phải chạy **cả
+>   hai**, và đó là lý do mục này liệt kê hai lệnh chứ không phải một.
+>
+> ⚠️ Và **đừng suy từ một `pid` chết rằng khoá đã treo.** Cùng buổi ấy tôi bắt
+>    được `pid` chủ khoá vừa thoát và suýt chạy `nha --ep`. Nó không treo — nó
+>    đang **đổi chủ**. `cua_so_yen` tự đoạt khoá treo (`_treo()` + "doat khoa
+>    treo"); nếu `trang-thai` **không** in `CANH BAO: TREO` thì khoá còn hiệu
+>    lực, dù `pid` bạn vừa nhìn đã biến mất.
+
 3. **Báo trước** cho các phiên khác nếu lượt kéo dài > 2 phút.
 4. **Chạy qua nhật ký**, không chạy trần:
 

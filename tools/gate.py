@@ -580,6 +580,46 @@ def _steps(quick: bool, noi_tiep: bool = False) -> list[Step]:
         # Banh coc: khong cho THEM cho nuot loi lang le. Xem
         # tools/check_silent_except.py vi sao khong doi ve 0 ngay.
         Step("nuot loi lang le", [sys.executable, "tools/check_silent_except.py"], ROOT),
+        # 🔴 `ruff` đã nằm sẵn trong máy nhiều tháng mà **không có cấu hình** và
+        #    không nằm trong gate. Đo 06/09 nó bắt một bộ phát hiện lớn với bộ luật
+        #    `F,B` (đã bỏ `B008` vì nó là `Depends()` của FastAPI) — trong đó có
+        #    những lớp lỗi THẬT mà các bước viết tay không soi:
+        #
+        #        F811  hai ham cung ten, cai sau che cai truoc
+        #        B023  bay closure trong vong lap
+        #        B017  phep kiem khang dinh QUA RONG
+        #        B904  raise khong `from` -> mat traceback goc
+        #
+        # ⚠️ SO LUONG tung ma nam o `tools/check_ruff.moc`, KHONG chep vao day.
+        #    Chep mot con so vao chu thich la tao ra mot con so se troi —
+        #    dung luc viet ba cho nay no DA lech (B904: 22 o ruff.toml, 26 o moc).
+        #
+        # ⭐ `B017` đáng chú ý riêng: nó bắt đúng lớp lỗi đã cắn bốn lần trong
+        #    một buổi ngày 06/09 — một phép kiểm trông như đang đo, mà khẳng
+        #    định của nó rộng đến mức nó xanh với cả bản hỏng. Xem `AGENTS.md`
+        #    mục 4d lớp C.
+        #
+        # ⛔ Là BÁNH CÓC, không phải cổng "phải sạch": 512 lỗi thì một cổng
+        #    tuyệt đối sẽ bị tắt ngay lượt đầu. Và chốt theo **mã luật** chứ
+        #    không theo **tổng** — một mốc tổng có cửa hoán đổi một-đổi-một đi
+        #    lọt (xoá một `F401`, thêm một `F811` thì tổng không đổi).
+        Step("ruff", [sys.executable, "tools/check_ruff.py"], ROOT),
+        # `mypy` cung nam san trong may nhieu thang ma KHONG co cau hinh.
+        # Do 06/09: 590 phat hien / 14 ma loi, ~45 giay.
+        #
+        #    attr-defined   cham thuoc tinh KHONG TON TAI  -> AttributeError
+        #    union-attr     cham thuoc tinh tren thu co the None
+        #    arg-type       truyen sai KIEU cho tham so
+        #
+        # Ba ma tren bat dung lop A trong AGENTS.md muc 4d: DOAN hinh dang
+        # API thay vi DOC no. So luong tung ma o `tools/check_mypy.moc`,
+        # khong chep vao day.
+        #
+        # Dong quan trong nhat cua `mypy.ini` la `plugins = pydantic.mypy`:
+        # thieu no thi mypy coi moi truong Pydantic co `Field(mac_dinh)` la
+        # BAT BUOC va de ra 58 `call-arg` SAI. Do 06/09 tren mot tep:
+        # khong plugin 60 loi, co plugin 1 loi — va cai 1 do la loi that.
+        Step("mypy", [sys.executable, "tools/check_mypy.py"], ROOT),
         # PowerShell khong phan biet hoa thuong o ten bien, va tham so cua script
         # chi la mot bien thuong. Nen mot vong lap gan `$ten` ghi de tham so
         # `-Ten` — khong loi, khong canh bao. Da xay ra 31/08/2026: giong tao ra

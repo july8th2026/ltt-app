@@ -18,7 +18,14 @@ from typing import Literal, Optional
 from apps.autosubvideo.schemas import SubtitleStyleConfig, StylePreset
 
 
-HighlightMode = Literal["none", "word", "underline", "bg_flash"]
+# ⚠️ Danh sach nay phai KHOP `SubtitleStyleConfig.highlight_mode` trong
+#    `schemas.py` (thu CO kiem tra that luc chay) va cac nhanh `mode ==`
+#    trong `ass_builder.py`. Truoc 06/09 no thieu `all_text` va `keyword`,
+#    trong khi preset `_register(... highlight_mode="all_text")` o duoi VAN
+#    chay — vi `FullStylePreset` la `dataclass`, khong kiem tra gi luc chay.
+#    `mypy` bat duoc; khong ai thay gi hong truoc do.
+HighlightMode = Literal["none", "word", "underline", "bg_flash",
+                        "all_text", "keyword"]
 
 
 @dataclass

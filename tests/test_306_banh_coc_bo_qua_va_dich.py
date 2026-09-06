@@ -1,4 +1,7 @@
-"""Hai banh coc them ngay 25/08/2026 — va bang chung rang chung CHAN THAT.
+"""Ba banh coc, va bang chung rang chung CHAN THAT.
+
+   `check_bo_qua` + `check_dich_thieu` them 25/08/2026; `check_ruff` them
+   06/09/2026.
 
 ⭐ Vi sao mot banh coc phai co test rieng: mot banh coc hong khong bao gi ca. No
    bao PASS, va cai PASS do doc y het mot cai PASS that. Da xay ra dung nhu vay
@@ -23,7 +26,12 @@ GOC = pathlib.Path(__file__).resolve().parent.parent
 def _chay(cong_cu: str, *doi_so: str, cwd: pathlib.Path | None = None,
           po: pathlib.Path | None = None, moc: pathlib.Path | None = None,
           src: pathlib.Path | None = None, thu_muc: pathlib.Path | None = None,
-          bo_qua_moc: pathlib.Path | None = None):
+          bo_qua_moc: pathlib.Path | None = None,
+          ruff_moc: pathlib.Path | None = None,
+          mypy_moc: pathlib.Path | None = None,
+          ruff_goc: pathlib.Path | None = None,
+          mypy_goc: pathlib.Path | None = None,
+          mypy_thu_muc: str | None = None):
     """Chay CHINH cong do. `po` tro no sang mot BAN SAO cua `messages.po`.
 
     🔴 VI SAO CAN `po` — VA VI SAO BA LAN VA TRUOC DEU KHONG DU.
@@ -63,6 +71,16 @@ def _chay(cong_cu: str, *doi_so: str, cwd: pathlib.Path | None = None,
         env["LTT_TEST_DIR"] = str(thu_muc)
     if bo_qua_moc is not None:
         env["LTT_BO_QUA_MOC"] = str(bo_qua_moc)
+    if ruff_moc is not None:
+        env["LTT_RUFF_MOC"] = str(ruff_moc)
+    if mypy_moc is not None:
+        env["LTT_MYPY_MOC"] = str(mypy_moc)
+    if ruff_goc is not None:
+        env["LTT_RUFF_GOC"] = str(ruff_goc)
+    if mypy_goc is not None:
+        env["LTT_MYPY_GOC"] = str(mypy_goc)
+    if mypy_thu_muc is not None:
+        env["LTT_MYPY_THU_MUC"] = mypy_thu_muc
     return subprocess.run([sys.executable, f"tools/{cong_cu}", *doi_so],
                           cwd=cwd or GOC, capture_output=True, text=True,
                           encoding="utf-8", errors="replace", env=env)
@@ -395,6 +413,271 @@ def test_khoi_tao_loai_KHONG_nuot_duoc_loai_khac(tmp_path):
     assert "ngoai loai VANG" in (r.stdout + r.stderr)
 
 
+# ── 5. Banh coc thu BA: `ruff` (them 06/09/2026) ───────────────────────────
+#
+# ⭐ Ba phep kiem duoi day khong ghi MOT BYTE nao vao cay. Chung khong tiem loi
+#    vao ma nguon (lam vay la vi pham dung dieu `test_306` ra doi de chan) — ma
+#    ha MOC xuong tren mot BAN SAO. Phep so sanh banh coc thuc hien la
+#    `hien[ma] > moc[ma]`, nen ha moc mot bac va nang ma len mot bac la CUNG
+#    MOT phep toan; chi khac o cho khong ai phai dong vao kho.
+
+
+def _ruff_moc_that(tmp_path: pathlib.Path) -> dict[str, int]:
+    """Chup so lieu ruff HIEN TAI ra `tmp_path`, tra ve {ma: so}."""
+    ban = tmp_path / "ruff_goc.moc"
+    r = _chay("check_ruff.py", "--accept", ruff_moc=ban)
+    assert r.returncode == 0, f"khong chup duoc moc ruff:\n{r.stdout}\n{r.stderr}"
+    dem: dict[str, int] = {}
+    for d in ban.read_text(encoding="utf-8").splitlines():
+        d = d.strip()
+        if d and not d.startswith("#"):
+            ma, _, so = d.partition("=")
+            dem[ma.strip()] = int(so.strip())
+    assert dem, "moc ruff rong — cau hinh `ruff.toml` khong con bat luat nao?"
+    return dem
+
+
+def _ghi_moc(tep: pathlib.Path, dem: dict[str, int]) -> pathlib.Path:
+    tep.write_text("".join(f"{ma} = {so}\n" for ma, so in sorted(dem.items())),
+                   encoding="utf-8")
+    return tep
+
+
+def test_ruff_hien_tai_dat_moc():
+    """Moc da commit phai khop cay hien tai — neu khong, gate do ngay lap tuc."""
+    r = _chay("check_ruff.py")
+    assert r.returncode == 0, (
+        "moc `check_ruff.moc` khong con khop cay:\n" + r.stdout + r.stderr)
+
+
+def test_ruff_TANG_o_mot_ma_thi_DO(tmp_path):
+    """Doi chung cho ca banh coc: no PHAI do khi mot ma vuot moc.
+
+    ⛔ Khong co phep kiem nay thi mot banh coc hong se bao PASS, va cai PASS do
+       doc y het mot cai PASS that — dung ca `check_so_test.py` da mac.
+    """
+    that = _ruff_moc_that(tmp_path)
+    ma = sorted(that)[0]
+    thap = dict(that, **{ma: that[ma] - 1})       # ha moc mot bac
+    r = _chay("check_ruff.py", ruff_moc=_ghi_moc(tmp_path / "thap.moc", thap))
+    assert r.returncode == 1, f"vuot moc o {ma} ma van xanh — banh coc khong can"
+    assert ma in r.stdout, f"do roi nhung khong noi ma nao ({ma}) trong:\n{r.stdout}"
+
+
+def test_ruff_HOAN_DOI_van_do_du_TONG_KHONG_DOI(tmp_path):
+    """🔴 Cua ma mot moc dem TONG di lot — cung cua da lam `check_so_test` im.
+
+    Xoa mot `F401` roi them mot `F811` thi TONG khong doi. Mot moc "tong <= N"
+    noi PASS. Moc chot theo MA LUAT phai noi FAIL, vi `F811` (hai ham cung ten,
+    cai sau che cai truoc) la mot loi THAT.
+    """
+    that = _ruff_moc_that(tmp_path)
+    if len(that) < 2:
+        return                                     # khong co gi de hoan doi
+    tang, giam = sorted(that)[0], sorted(that)[1]
+    lech = dict(that)
+    lech[tang] -= 1                                # ma nay se VUOT moc
+    lech[giam] += 1                                # ma kia se duoi moc
+    assert sum(lech.values()) == sum(that.values()), "phep dung khong giu TONG"
+    r = _chay("check_ruff.py", ruff_moc=_ghi_moc(tmp_path / "lech.moc", lech))
+    assert r.returncode == 1, (
+        "hoan doi mot-doi-mot lot qua — moc ruff dang dem TONG chu khong phai "
+        "tung MA LUAT")
+
+
+def test_ruff_nam_trong_gate_VA_chay_ca_o_quick():
+    """Dung tu DANH SACH BUOC gate dung that, khong tu `grep` ma nguon.
+
+    ⭐ Khac biet co that: mot phep `grep` van xanh khi dong `Step(...)` bi day
+       ra sau `if not quick:`, hoac khi no nam trong mot nhanh khong bao gio
+       chay. Dung `_steps()` thi khong.
+    """
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("gate_de_soi", GOC / "tools" / "gate.py")
+    gate = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(gate)
+    for quick in (True, False):
+        ten = [s.name for s in gate._steps(quick=quick)]
+        assert "ruff" in ten, f"buoc `ruff` vang mat khi quick={quick}: {ten}"
+
+
+# ── 6. Banh coc thu TU: `mypy` (them 06/09/2026) ───────────────────────────
+#
+# ⭐ Cung khuon voi cum `ruff` o tren: ha MOC tren mot BAN SAO, khong tiem loi
+#    vao cay. Xem chu thich cua muc 5.
+
+
+def _mypy_moc_that(tmp_path: pathlib.Path) -> dict[str, int]:
+    ban = tmp_path / "mypy_goc.moc"
+    r = _chay("check_mypy.py", "--accept", mypy_moc=ban)
+    assert r.returncode == 0, f"khong chup duoc moc mypy:\n{r.stdout}\n{r.stderr}"
+    dem: dict[str, int] = {}
+    for d in ban.read_text(encoding="utf-8").splitlines():
+        d = d.strip()
+        if d and not d.startswith("#"):
+            ma, _, so = d.partition("=")
+            dem[ma.strip()] = int(so.strip())
+    assert dem, "moc mypy rong — `mypy.ini` hong hay mypy chet im lang?"
+    return dem
+
+
+def test_mypy_hien_tai_dat_moc():
+    r = _chay("check_mypy.py")
+    assert r.returncode == 0, (
+        "moc `check_mypy.moc` khong con khop cay:\n" + r.stdout + r.stderr)
+
+
+def test_mypy_TANG_o_mot_ma_thi_DO(tmp_path):
+    """Doi chung: banh coc PHAI do khi mot ma vuot moc."""
+    that = _mypy_moc_that(tmp_path)
+    ma = sorted(that)[0]
+    thap = dict(that, **{ma: that[ma] - 1})
+    r = _chay("check_mypy.py", mypy_moc=_ghi_moc(tmp_path / "thap.moc", thap))
+    assert r.returncode == 1, f"vuot moc o {ma} ma van xanh — banh coc khong can"
+    assert ma in r.stdout, f"do roi nhung khong noi ma nao ({ma}):\n{r.stdout}"
+
+
+def test_mypy_HOAN_DOI_van_do_du_TONG_KHONG_DOI(tmp_path):
+    """Xoa mot `var-annotated` (vo hai) + them mot `attr-defined`
+    (`AttributeError` luc chay) = tong khong doi. Moc dem TONG se im."""
+    that = _mypy_moc_that(tmp_path)
+    if len(that) < 2:
+        return
+    tang, giam = sorted(that)[0], sorted(that)[1]
+    lech = dict(that)
+    lech[tang] -= 1
+    lech[giam] += 1
+    assert sum(lech.values()) == sum(that.values()), "phep dung khong giu TONG"
+    r = _chay("check_mypy.py", mypy_moc=_ghi_moc(tmp_path / "lech.moc", lech))
+    assert r.returncode == 1, (
+        "hoan doi mot-doi-mot lot qua — moc mypy dang dem TONG chu khong phai "
+        "tung MA LOI")
+
+
+def test_mypy_ini_THUAN_ASCII():
+    """🔴 `mypy` doc `mypy.ini` bang `configparser`, va ham do mo tep theo bang
+       ma HE THONG (cp1252 tren may nay) chu khong phai UTF-8.
+
+       Do 06/09: mot ban `mypy.ini` co emoji lam mypy chet han
+       `UnicodeDecodeError ... byte 0x90`, rc=2, truoc khi kiem MOT DONG ma
+       nao. Va `check_mypy.py` khong the coi rc=2 la "0 loi" — nen luot gate
+       se do, khong im lang; nhung trieu chung se tro ve mot tep .ini chu
+       khong ve ma nguon, va do la cho rat kho doan.
+
+    ⭐ Cung mot lop voi luat `.ps1 phai thuan ASCII` trong `CLAUDE.md` quy
+       tac 2.
+    """
+    b = (GOC / "mypy.ini").read_bytes()
+    xau = [(i, by) for i, by in enumerate(b) if by > 127]
+    assert not xau, (
+        f"`mypy.ini` co {len(xau)} byte ngoai ASCII (dau tien o vi tri "
+        f"{xau[0][0]}, byte 0x{xau[0][1]:02x}) — configparser doc no bang "
+        f"cp1252 va se chet")
+
+
+def test_mypy_nam_trong_gate_VA_chay_ca_o_quick():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("gate_de_soi_mypy",
+                                                  GOC / "tools" / "gate.py")
+    gate = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(gate)
+    for quick in (True, False):
+        ten = [s.name for s in gate._steps(quick=quick)]
+        assert "mypy" in ten, f"buoc `mypy` vang mat khi quick={quick}: {ten}"
+
+
+def test_mypy_va_ruff_MIEN_cung_mot_danh_sach():
+    """Hai cong cu nhin cung pham vi thi mot tep duoc mien o cho nay khong
+    bat ngo bi bat o cho kia. `core/` va `cutclipshort/` la hai cai dat nhat:
+    mot la 15.668 dong dong bang, mot la engine VENDOR."""
+    ruff = (GOC / "ruff.toml").read_text(encoding="utf-8")
+    mypy = (GOC / "mypy.ini").read_text(encoding="utf-8")
+    for thu_muc in ("core", "cutclipshort"):
+        assert thu_muc in ruff, f"`{thu_muc}` khong con duoc mien trong ruff.toml"
+        assert thu_muc in mypy, f"`{thu_muc}` khong con duoc mien trong mypy.ini"
+
+
+# ── 7. `quet()` phai dem DUNG — doi chieu voi mot su that DOC LAP ──────────
+#
+# 🔴 HAI PHEP KIEM DUOI DAY RA DOI TU MOT KET QUA DO DUOC, khong tu suy doan.
+#
+#    Ngay 06/09 `cosmic-ray` chay 97 dot bien tren `tools/check_ruff.py`. Mot
+#    trong so do doi
+#
+#        dem[ma] = dem.get(ma, 0) + 1     ->     dem[ma] = dem.get(ma, 0) ** 1
+#
+#    `0 ** 1` luon la 0, nen MOI so dem thanh 0, `tang` luon rong, va banh coc
+#    bao PASS **vinh vien**. No mu hoan toan.
+#
+# ⛔ Bon phep kiem o muc 5 KHONG thay. Ly do la mot khiem khuyet trong chinh
+#    chung: ca bon lay moc bang `--accept`, ma `--accept` goi `quet()`. Khi
+#    `quet()` hong, moc hong **y het** — va hong so voi hong thi van bang nhau.
+#    Chung chot duoc PHEP SO SANH, nhung khong chot duoc PHEP DEM.
+#
+# ⭐ Nen hai phep kiem nay khong hoi cong cu "may dem duoc bao nhieu", ma dat
+#    truoc mot cay co so loi DA BIET roi hoi lai. Do la su that doc lap.
+
+
+def _cay_mau_ruff(tmp_path: pathlib.Path) -> pathlib.Path:
+    """3 x F401, 2 x F541, 1 x F811 — dem tay, khong hoi cong cu."""
+    d = tmp_path / "cay_ruff"
+    d.mkdir()
+    (GOC / "ruff.toml").read_bytes()          # bao dam cau hinh that con do
+    (d / "ruff.toml").write_bytes((GOC / "ruff.toml").read_bytes())
+    (d / "a.py").write_text("import os\nimport sys\nimport json\n", encoding="utf-8")
+    (d / "b.py").write_text("def f():\n    pass\n\n\ndef f():\n    pass\n",
+                            encoding="utf-8")
+    (d / "c.py").write_text("x = f''\ny = f'khong co gi'\n", encoding="utf-8")
+    return d
+
+
+def test_ruff_quet_DEM_DUNG_tren_cay_da_biet_truoc(tmp_path):
+    """Dot bien `+ 1` -> `** 1` lam moi so dem thanh 0. Phep kiem nay giet no."""
+    d = _cay_mau_ruff(tmp_path)
+    moc = tmp_path / "mau.moc"
+    r = _chay("check_ruff.py", "--accept", ruff_goc=d, ruff_moc=moc)
+    assert r.returncode == 0, f"{r.stdout}\n{r.stderr}"
+
+    dem = {}
+    for dong in moc.read_text(encoding="utf-8").splitlines():
+        dong = dong.strip()
+        if dong and not dong.startswith("#"):
+            ma, _, so = dong.partition("=")
+            dem[ma.strip()] = int(so.strip())
+
+    assert dem == {"F401": 3, "F541": 2, "F811": 1}, (
+        f"`quet()` dem SAI tren mot cay da biet truoc.\n"
+        f"  mong doi: {{'F401': 3, 'F541': 2, 'F811': 1}}\n"
+        f"  nhan duoc: {dem}\n"
+        f"Neu moi gia tri deu 0 thi phep CONG trong `quet()` da hong — dung ca"
+        f" `cosmic-ray` bat duoc 06/09.")
+
+
+def test_mypy_quet_DEM_DUNG_tren_cay_da_biet_truoc(tmp_path):
+    """Cung menh de cho `check_mypy`: 1 attr-defined + 1 union-attr."""
+    d = tmp_path / "cay_mypy"
+    (d / "apps").mkdir(parents=True)
+    (d / "mypy.ini").write_bytes((GOC / "mypy.ini").read_bytes())
+    (d / "apps" / "x.py").write_text(
+        "class A:\n    ten: str = 'x'\n\n\n"
+        "def g(a: A) -> None:\n    print(a.khong_co_gi)\n\n\n"
+        "def h(x: int | None) -> int:\n    return x.bit_length()\n",
+        encoding="utf-8")
+    moc = tmp_path / "mau_mypy.moc"
+    r = _chay("check_mypy.py", "--accept", mypy_goc=d, mypy_thu_muc="apps", mypy_moc=moc)
+    assert r.returncode == 0, f"{r.stdout}\n{r.stderr}"
+
+    dem = {}
+    for dong in moc.read_text(encoding="utf-8").splitlines():
+        dong = dong.strip()
+        if dong and not dong.startswith("#"):
+            ma, _, so = dong.partition("=")
+            dem[ma.strip()] = int(so.strip())
+
+    assert dem == {"attr-defined": 1, "union-attr": 1}, (
+        f"`quet()` dem SAI tren mot cay da biet truoc: {dem}")
+
+
 def test_KHONG_test_nao_duoc_GHI_vao_messages_po_THAT():
     """Bánh cóc — và nó đóng lại một chỗ đã vá **ba lần** mà chưa lần nào tới gốc.
 
@@ -476,3 +759,71 @@ def test_KHONG_test_nao_duoc_GHI_vao_messages_po_THAT():
         "Cac ham sau cham toi TEP THAT trong kho:\n  " + "\n  ".join(xau)
         + f"\nChi `{cho_phep}` duoc phep cham. Dung ban sao roi "
           "`_chay(..., po=po)`.")
+
+
+# ── 8. Hai lo do CHINH `cosmic-ray` chi ra (06/09) ────────────────────────
+#
+# ⭐ Hai phep kiem duoi day khong den tu suy doan. Chung den tu hai dot bien
+#    SONG SOT trong luot thu hai, moi cai la mot cau hoi that ma bo phep kiem
+#    chua ai hoi.
+
+
+def test_ruff_GIAM_thi_van_XANH_chu_khong_bao_la_TANG(tmp_path):
+    """Dot bien `so > moc` -> `so != moc` song sot.
+
+    🔴 Voi `!=`, mot lan DON BOT loi cung bi bao la "TANG" va gate do. Mot banh
+       coc phat nguoi sua dung thi se bi tat — dung co che da ghi trong
+       `khoa-khai-thieu-tai-nguyen`: **ban va MOT PHIA phat nguoi sua dung**.
+
+    ⇒ Dat moc CAO hon thuc te: phai XANH.
+    """
+    that = _ruff_moc_that(tmp_path)
+    ma = sorted(that)[0]
+    cao = dict(that, **{ma: that[ma] + 5})
+    r = _chay("check_ruff.py", ruff_moc=_ghi_moc(tmp_path / "cao.moc", cao))
+    assert r.returncode == 0, (
+        f"moc CAO hon thuc te ma van do — banh coc dang bao ca chieu GIAM la "
+        f"loi:\n{r.stdout}")
+    assert "GIAM" in r.stdout, "giam that ma khong noi gi"
+
+
+def test_ruff_KHONG_CO_MOC_thi_DO_chu_khong_lang_le_XANH(tmp_path):
+    """Dot bien `return 1` -> `return 0` o nhanh "CHUA CO MOC" song sot.
+
+    ⛔ Mot banh coc khong tim thay moc ma tra 0 la mot banh coc TU TAT: xoa tep
+       `.moc` di thi gate xanh tro lai, va khong ai thay gi. Do dung kieu hong
+       ma `docs/BAY_TRONG_CONG_CHAT_LUONG.md` canh bao.
+    """
+    r = _chay("check_ruff.py", ruff_moc=tmp_path / "khong_ton_tai.moc")
+    assert r.returncode == 1, (
+        f"khong co moc ma van XANH — xoa tep .moc la tat duoc banh coc:\n{r.stdout}")
+    assert "CHUA CO MOC" in r.stdout
+
+
+def test_ruff_CAY_SACH_khong_lam_cong_cu_chet(tmp_path):
+    """Ba dot bien quanh `if r.returncode not in (0, 1)` song sot 06/09.
+
+    🔴 Ly do: MOI phep kiem khac deu chay tren mot cay CO loi, nen `ruff` luon
+       tra 1. Nhanh `ruff tra 0` (cay sach) chua bao gio duoc chay — va do
+       chinh la nhanh se chay dau tien tren mot kho da don xong.
+
+    ⚠️ Phep kiem nay cung ghi lai mot GOC KHUAT co that: tren mot cay SACH,
+       `quet()` tra `{}`, `--accept` ghi mot moc RONG, va luot sau `doc_moc()`
+       doc ra `{}` -> cong cu bao "CHUA CO MOC" va do. Tuc no khong phan biet
+       duoc "sach" voi "chua co moc".
+
+       KHONG sua o day: kho nay co 513 phat hien, trang thai ay khong voi toi
+       duoc, va them nhanh cho mot trang thai khong the xay ra la them cho de
+       hong. Ghi lai de nguoi sau khong phai kham pha lai.
+    """
+    d = tmp_path / "cay_sach"
+    d.mkdir()
+    (d / "ruff.toml").write_bytes((GOC / "ruff.toml").read_bytes())
+    (d / "sach.py").write_text("def f(x: int) -> int:\n    return x + 1\n",
+                               encoding="utf-8")
+    moc = tmp_path / "sach.moc"
+    r = _chay("check_ruff.py", "--accept", ruff_goc=d, ruff_moc=moc)
+    assert r.returncode == 0, (
+        f"`ruff` tra 0 (cay sach) ma cong cu chet — nhanh nay chua tung duoc "
+        f"chay:\n{r.stdout}\n{r.stderr}")
+    assert "0 phat hien" in r.stdout, r.stdout
