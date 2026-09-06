@@ -23,9 +23,15 @@ import pytest
 #: và đó là chủ ý.
 BANG_V1 = {"chatltt_conversation", "chatltt_message", "chatltt_execution"}
 BANG_V3 = {"chatltt_run", "chatltt_step", "chatltt_approval"}
-#: ⚠️ CẬP NHẬT 06/09 (H44 P06 bước 2). `chatltt_tep` nối tệp đã tải lên với hội
-#:    thoại. Bánh cóc đã làm đúng việc: nó bắt tôi quay lại đây khai tên mới.
-BANG_P06 = {"chatltt_tep"}
+#: ⚠️ CẬP NHẬT 06/09 (H44 P06 bước 2+3). `chatltt_tep` nối tệp đã tải lên với
+#:    hội thoại; `chatltt_doan` giữ văn bản đã trích. Bánh cóc đã làm đúng việc
+#:    **hai lần**: mỗi lần bắt tôi quay lại đây khai tên mới.
+#:
+#: 🔴 Hai bảng này ngược nhau ở đúng chỗ quan trọng: `chatltt_tep` **không được**
+#:    chứa byte (test_822 chốt ở tầng schema), còn `chatltt_doan` **phải** chứa
+#:    chữ — chỉ số tìm kiếm chạy trên chính nó. Byte gốc ở ngoài, chữ dẫn xuất
+#:    ở trong.
+BANG_P06 = {"chatltt_tep", "chatltt_doan"}
 
 TAT_CA = BANG_V1 | BANG_V3 | BANG_P06
 

@@ -364,6 +364,15 @@ STORES: tuple = (
              "cỡ, và trạng thái trích văn bản. Nội dung tệp nằm ở kho lưu trữ, "
              "không nằm ở đây."),
           purged_by=N_("theo hội thoại chứa nó")),
+    # ⚠️ Bảng dưới thì NGƯỢC LẠI: nó **giữ chữ của khách**. Đó là chủ đích, không
+    #    phải rò rỉ — chỉ số tìm kiếm phải chạy trên chính chữ ấy. Nhưng nó làm
+    #    bảng này thành thứ nhạy cảm nhất trong nhóm: nội dung tài liệu riêng
+    #    của khách, đã tách nhỏ và đánh chỉ số để tìm được.
+    Store("chatltt_doan", CONTENT, None, N_("chủ tài khoản"),
+          N_("Văn bản đã trích từ tài liệu người dùng đính vào hội thoại, cắt "
+             "thành từng đoạn kèm số trang để trích dẫn lại được. Đây là nội "
+             "dung tài liệu của khách, không phải bản ghi kỹ thuật."),
+          purged_by=N_("theo tệp và hội thoại chứa nó")),
     Store("ommi_resource", CONTENT, None, N_("chủ tài khoản"),
           N_("Tài nguyên (ảnh, tệp) người dùng tải lên PROMPT AI OMMI.")),
     Store("ommi_resource_variant", CONTENT, None, N_("chủ tài khoản"),

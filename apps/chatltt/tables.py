@@ -365,3 +365,61 @@ class ChatlttTep(Base):
                                                  nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now,
                                                  onupdate=_now, nullable=False)
+
+
+class ChatlttDoan(Base):
+    """Một ĐOẠN văn bản trích từ một tệp — đơn vị của truy hồi và của trích dẫn.
+
+    ## Vì sao bảng NÀY giữ chữ, còn `chatltt_tep` thì không
+
+    Trông như mâu thuẫn, nhưng hai bảng trả lời hai câu khác nhau:
+
+    * `chatltt_tep` nói **tệp nào thuộc hội thoại nào**. Byte gốc nằm ở
+      `storage`, và giữ chúng ở CSDL là dựng một kho lưu trữ thứ hai đi vòng
+      qua cửa credit của `upload_sessions`.
+    * `chatltt_doan` giữ **chữ đã trích** — một biểu diễn *dẫn xuất* và *có
+      trần*. Chỉ số FTS phải chạy trên chính chữ ấy; đẩy nó ra ngoài CSDL rồi
+      lại kéo về mỗi lần tìm là làm chậm đúng thao tác nóng nhất.
+
+    ⇒ Bất biến ngắn gọn: **byte gốc ở ngoài, chữ dẫn xuất ở trong.**
+
+    ## `trang` là cột của TRÍCH DẪN, không phải của gỡ lỗi
+
+    Bước 5 của P06 đòi mỗi câu trả lời trỏ được về `(tep_id, doan_id, trang)`.
+    Không có `trang` từ lúc trích thì sau này không dựng lại được — số trang chỉ
+    tồn tại trong lúc đọc tệp, không suy ra được từ chuỗi chữ.
+
+    ⭐ `trang = 0` nghĩa là **không biết** (định dạng không có khái niệm trang,
+       ví dụ `.txt`), không phải "trang đầu". Đó là lý do nó bắt đầu từ 1.
+
+    ## Vì sao có `bam` (hash) của nội dung đoạn
+
+    Trích lại cùng một tệp phải cho cùng kết quả. `bam` làm phép "đã trích rồi,
+    đừng thu tiền lần nữa" kiểm được ở tầng dữ liệu chứ không phải bằng niềm tin
+    vào một cờ trạng thái.
+    """
+
+    __tablename__ = "chatltt_doan"
+    __table_args__ = (
+        Index("ux_chatltt_doan_tep_thu_tu", "tep_id", "thu_tu", unique=True),
+        Index("ix_chatltt_doan_conv", "conversation_id"),
+        Index("ix_chatltt_doan_user", "user_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True,
+                                    default=lambda: sinh_id("dn_"))
+    #: ⛔ `String(36)` — cùng bài học `apps/ltt_voice/tables.py:66-75`.
+    user_id: Mapped[str] = mapped_column(String(36), index=True, nullable=False)
+    #: Chép xuống để lọc theo hội thoại mà không phải join — và vì cửa quyền
+    #: không được vay bất biến của bảng bên cạnh (cùng luật `kho_tep`).
+    conversation_id: Mapped[str] = mapped_column(String(40), index=True,
+                                                 nullable=False)
+    tep_id: Mapped[str] = mapped_column(String(40), index=True, nullable=False)
+    thu_tu: Mapped[int] = mapped_column(Integer, nullable=False)
+    #: 1-based. `0` = định dạng không có khái niệm trang.
+    trang: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    noi_dung: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    so_ky_tu: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    bam: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now,
+                                                 nullable=False)
