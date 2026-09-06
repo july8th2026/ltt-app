@@ -159,7 +159,7 @@ def _chay(argv: list[str], nhan: str) -> tuple[int, float]:
 TAI_NGUYEN = ("cpu_nhieu", "postgres_test")
 
 
-def _to_tien_la_gate() -> bool:
+def _to_tien_la_gate(to_tien: list[tuple] | None = None) -> bool:
     """Lượt này có đang chạy DƯỚI một `gate.py` không?
 
     🔴 **Vì sao phải hỏi, thay vì cứ xin khoá.** `gate.py` gọi tệp này như một
@@ -180,52 +180,59 @@ def _to_tien_la_gate() -> bool:
        của phiên kia và làm chậm một lượt gate đang chạy. Chính sách khoá là
        việc của gate; việc của ta là **đừng xen vào**.
 
+    ⭐ `to_tien` (danh sách `(ten, argv)`) là **cửa tiêm cho phép kiểm**, và nó có mặt vì một lỗi
+       thật: bản đầu của hàm này không có nó, nên phép kiểm phải khẳng định
+       `_to_tien_la_gate() is False` — tức chốt một **sự thật môi trường** thay
+       vì một **tính chất của mã**. Nó xanh khi chạy `pytest` tay và **đỏ khi
+       gate chạy bộ test**, vì lúc ấy pytest *thật sự* đang ở dưới `gate.py`.
+       Đúng bẫy "chạy riêng xanh mà gate đỏ".
+
     ⚠️ Không có `psutil` thì trả `True` — tức **không khoá**, hành vi y như
        trước bản vá này. Chọn chiều đó có chủ ý: đoán nhầm sang "có khoá" làm
        **hỏng** một lượt gate, đoán nhầm sang "không khoá" chỉ **không sửa được
        gì**. `psutil` là thứ `gate.py` cũng import, nên khi có gate thì có nó.
     """
-    try:
-        import psutil
-    except ImportError:
-        return True
-    try:
-        p = psutil.Process()
-        for to in p.parents():
-            try:
-                if _la_gate(to.name(), to.cmdline()):
-                    return True
-            except (psutil.Error, OSError):
-                continue                # mot to tien khong doc duoc != ca cay
-    except (psutil.Error, OSError):
-        return True                     # khong doc duoc cay -> khong khoa
-    return False
+    if to_tien is None:
+        try:
+            import psutil
+        except ImportError:
+            return True
+        try:
+            to_tien = [(t.name(), t.cmdline() or [])
+                       for t in psutil.Process().parents()]
+        except (psutil.Error, OSError):
+            return True                 # khong doc duoc cay -> khong khoa
+    return any(_la_gate(ten, argv) for ten, argv in to_tien)
 
 
-def _la_gate(ten: str, dong_lenh) -> bool:
-    """Tien trinh nay CO PHAI la mot luot `gate.py` khong.
+def _la_gate(ten: str, argv) -> bool:
+    """Tien trinh nay CO PHAI mot luot `gate.py` dang chay khong.
 
-    🔴 **Dung khop CHUOI CON tren ca dong lenh.** Ban dau ham nay hoi
-       `"gate.py" in " ".join(cmdline)` cho moi to tien. Do 06/09, hai lenh
-       giong het nhau tru mot dong `echo` vo hai:
+    🔴 **Dung khop CHUOI CON tren ca dong lenh.** Ban truoc hoi
+       `any("gate.py" in c for c in cmdline_to_tien)` voi `c` la ca dong lenh da
+       noi lai. To tien cua pytest la `bash.exe -c "<CA cau lenh>"`, nen **bat
+       ky** cau lenh nao nhac ten cong cu — mot `grep`, mot ghi chu, mot
+       docstring trong heredoc — cung lam ham nay tra `True`, va `test_nhanh`
+       **lang le bo khoa**.
+
+       Do 06/09, hai lenh giong het nhau tru mot dong `echo` vo hai:
 
            lenh KHONG chua chu `gate.py`  ->  1 passed
            lenh CO   chua chu do          ->  1 failed
 
-       Vi to tien la `bash.exe -c "<ca cau lenh>"`, nen **bat ky** cau lenh nao
-       nhac ten cong cu — mot ghi chu, mot `grep`, mot docstring trong heredoc —
-       cung lam ham nay tra `True`, va `test_nhanh` **lang le bo khoa**.
+    ⛔ Va no hong theo huong de chiu, dung cho dau nhat: nhung phien hay nhac
+       `gate.py` nhat la nhung phien **dang phoi hop voi nhau**.
 
-    ⇒ Hoi TEN TEP DUOC THI HANH, dung hoi van ban cua cau lenh. Doi so cua mot
-      tien trinh python la duong dan; doi so cua mot vo `-c` la mot chuoi dai
-      chua ca cau lenh — phan biet duoc bang `basename`.
+    ⭐ Nen hoi TEN TEP DUOC THI HANH, dung hoi van ban cua cau lenh. Doi so cua
+       mot tien trinh python la mot **duong dan**; doi so cua mot vo `-c` la
+       **mot chuoi dai chua ca cau lenh** — `basename` phan biet duoc hai thu do,
+       `in` thi khong. Loc them theo ten tien trinh vi mot chuoi ket thuc dung
+       bang `tools/gate.py` van co `basename` la `gate.py`.
     """
     if not (ten or "").lower().startswith("python"):
         return False
-    for doi in list(dong_lenh or [])[1:]:
-        if os.path.basename(str(doi).replace(chr(92), "/")) == "gate.py":
-            return True
-    return False
+    return any(os.path.basename(str(d).replace(chr(92), "/")) == "gate.py"
+               for d in list(argv or [])[1:])
 
 
 def _so_loi_se_dung(n: str) -> int:
