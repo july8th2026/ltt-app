@@ -1,0 +1,26 @@
+# LTT VIDEO V2.1 PROJECT STATE
+
+- phase:
+- status:
+- branch:
+- worktree:
+- head:
+- wangp_upstream_sha:
+- wangp_patch_sha:
+- video_engine_target: WanGP
+- new_v2_runtime_fallback_to_legacy: FORBIDDEN
+- commercial_gate: CLOSED
+- b_lan: UNTOUCHED
+- legacy_runtime_source: PRESENT|DELETED
+- legacy_restore_ref:
+- integration_transport:
+- cloud_resources:
+- baseline_profiles:
+- max_quality_profiles:
+- spend_phase:
+- tests:
+- gates:
+- browser_checks:
+- blockers:
+- decisions:
+- exact_next_action:
