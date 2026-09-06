@@ -40,7 +40,9 @@
 - **max_quality_profiles:** *(chưa — sinh ở P07)*
 - **spend_phase:** **$0,00** — P00 không dùng GPU, không gọi API tính tiền
 - **tests:** không thêm/sửa test ở P00 (thay đổi chỉ là tài liệu)
-- **gates:** xem *Cổng nghiệm thu P00*
+- **gates:** `gate.py` đầy đủ trong worktree V2 → **`FAIL (3/26)`**, nhưng **cả
+  ba bước đỏ đỏ y hệt trên trunk** khi không có nhánh này (đối chứng đã chạy).
+  Nhánh V2 thêm 0 lỗi. Chi tiết + lệnh tái hiện: *Cổng chất lượng kho*.
 - **browser_checks:** **N/A** — P00 không đổi GUI, route hay tài sản tĩnh
 - **blockers:** xem *Blockers*
 - **decisions:** `DECISIONS.md`
@@ -82,21 +84,41 @@ runtime không đổi."*
 
 ### Cổng chất lượng kho
 
-⚠️ Lúc P00 chạy, **một phiên khác đang giữ `cua_so_yen`** (`cpu_nhieu` +
-`postgres_test`, pid 7772, `gate --ho-so day-du`). Theo `CLAUDE.md` và
-`docs/QUY_TAC_CHAY_LENH_NANG.md`, phiên này **chờ**, không chạy gate chồng lên.
+Đã chạy `python tools\gate.py` trong worktree V2 sau khi cửa sổ yên rảnh
+(phiên khác giữ khoá lúc 11:44 đã xong).
 
-P00 không sửa một dòng mã thực thi nào — thay đổi nằm trọn trong `docs/`. Lượt
-gate của phase này phải chạy **trước khi bắt đầu P01**, khi cửa sổ yên rảnh:
+**`RESULT: FAIL (3/26)`** — sổ: `test-results/gates/20260906T061946Z-6764.json`,
+489 giây.
+
+🔴 **Cả ba bước đỏ đều đỏ y hệt trên trunk `admin-mvp-v3` khi KHÔNG có nhánh
+này.** Nhánh V2 thêm **0** lỗi. Đối chứng đã chạy, không suy luận:
+
+| Bước đỏ | Trên nhánh V2 | Đối chứng trên trunk |
+|---|---|---|
+| `bo qua im lang` | 15 chỗ / mốc 14 | **15 / mốc 14** — y hệt |
+| `nuot loi lang le` | 64 chỗ / mốc 62 | **64 / mốc 62** — y hệt |
+| `test_306::test_bo_qua_hien_tai_dat_moc` | FAIL | **FAIL** — y hệt |
+
+Gốc của cả ba là **hai** thay đổi của phiên khác trên trunk hôm nay:
+① commit `ae1c23f5` thêm một chỗ `skip` mới trong `tests/test_361_cua_so_yen.py`
+(`test_may_ban_KHONG_dem_chinh_no_va_chuoi_cha`) mà chưa `--accept` bánh cóc;
+② +2 chỗ `except Exception` nuốt lỗi.
+
+⇒ Việc gỡ ba bước này thuộc **phiên đang làm trên trunk**, không thuộc P00.
+P00 chỉ thêm `docs/`, không chạm `apps/ platform_core/ server/ tools/ tests/`.
+
+⛔ Ghi rõ để phiên sau không đọc nhầm: đây **không** phải một lượt `RESULT: PASS`.
+Tiêu chuẩn của P00 (phase chỉ có tài liệu) là **không đỏ thêm so với trunk**, và
+tiêu chuẩn đó đạt bằng đối chứng ở trên. **P01 trở đi có sửa mã ⇒ phải có
+`RESULT: PASS` thật**, nên trunk cần xanh lại trước khi P01 báo xong.
+
+Lệnh tái hiện đối chứng:
 
 ```
-python tools\cua_so_yen.py trang-thai   # phải trống
-python tools\gate.py                    # trong worktree V2
+cd D:\LTTSTUDIOSAPP && python tools\check_bo_qua.py
+cd D:\LTTSTUDIOSAPP && python tools\check_silent_except.py
+cd D:\LTTSTUDIOSAPP && python -m pytest tests\test_306_banh_coc_bo_qua_va_dich.py -q
 ```
-
-⛔ Không được báo `PASS` cho một phase **có sửa mã** mà chưa có `RESULT: PASS`
-của gate đầy đủ. Với P00 (chỉ tài liệu) điều kiện là gate **không đỏ thêm** so
-với trunk.
 
 ## Blockers
 
@@ -105,6 +127,7 @@ với trunk.
 | **B-1** | **Hai chương trình cùng nhắm một sản phẩm.** Nhánh V3 `claude/ltt-video-ai-v3-p00-3f5713` vẫn có commit **hôm nay 06/09 09:50** (`e21faf6a`). Pack V2.1 xếp đúng nhánh đó vào diện `DELETE_AT_P06`. Nếu V3 tiếp tục được xây thì công sức đó sẽ bị xoá ở P06. | **Chủ dự án** — dừng V3 hay dừng V2.1 |
 | **B-2** | `O-001` chưa chốt: MCP trực tiếp vs cầu HTTP mỏng. Không chặn P01. | Bằng chứng P02 |
 | **B-3** | Chưa có tài khoản/hạ tầng **C-CLOUD** cho WanGP trong tay. P01 cần biết nhà cung cấp + GPU + vùng. | P01 preflight |
+| **B-4** | **Trunk đang đỏ 3/26 bước gate** vì việc đang dở của phiên khác (chỗ `skip` mới chưa `--accept`, +2 chỗ nuốt lỗi). Không chặn P00; **chặn P01 báo xong**, vì P01 có sửa mã nên cần `RESULT: PASS` thật. | phiên đang làm trên `admin-mvp-v3` |
 
 🔴 **B-1 là thứ đắt nhất.** V3 đã đóng 8/8 pha và tiêu tiền thật; V2.1 tuyên bố
 nó là legacy. Không ai ngoài chủ dự án quyết được cái nào sống.
