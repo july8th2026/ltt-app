@@ -19,6 +19,8 @@ sự thật — đúng cơ chế đã gỡ bảng 280 dòng khỏi `CLAUDE.md`.
 """
 from __future__ import annotations
 
+from platform_core.i18n import N_, _
+
 #: Năng lực đang mở cho baseline.
 #:
 #: ⭐ Mở **hẹp có chủ đích**. WanGP hỗ trợ rất nhiều thứ (video edit, character
@@ -34,7 +36,7 @@ VAI_DUOC_DUNG: frozenset[str] = frozenset({"nhan_vien", "admin"})
 
 #: Tên hiển thị bằng ngôn ngữ sản phẩm, để thông báo từ chối không rò tên nội bộ.
 _TEN_THAN_THIEN = {
-    "tao_video": "tạo video từ mô tả",
+    "tao_video": N_("tạo video từ mô tả"),
 }
 
 
@@ -49,11 +51,11 @@ def kiem(nang_luc: str, *, vai: str) -> tuple[bool, str]:
     báo từ chối là bề mặt công khai, nó không được kể ra ta có những gì.
     """
     if vai not in VAI_DUOC_DUNG:
-        return False, "Bạn chưa có quyền dùng công cụ này."
+        return False, _("Bạn chưa có quyền dùng công cụ này.")
     if nang_luc not in NANG_LUC_MO:
-        return False, "Tính năng này chưa mở. Hiện tại chỉ tạo video từ mô tả."
+        return False, _("Tính năng này chưa mở. Hiện tại chỉ tạo video từ mô tả.")
     return True, ""
 
 
 def ten_than_thien(nang_luc: str) -> str:
-    return _TEN_THAN_THIEN.get(nang_luc, "tính năng này")
+    return _TEN_THAN_THIEN.get(nang_luc, N_("tính năng này"))

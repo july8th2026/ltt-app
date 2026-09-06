@@ -97,7 +97,7 @@ class WanGPClient:
                         timeout=60.0)
         jid = dap.get("job_id")
         if not jid:
-            raise LoiWanGP(f"/submit không trả job_id: {json.dumps(dap)[:200]}")
+            raise LoiWanGP(f"/submit returned no job_id: {json.dumps(dap)[:200]}")
         return str(jid)
 
     def progress(self, job_id: str) -> dict:

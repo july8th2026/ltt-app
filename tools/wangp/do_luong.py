@@ -104,7 +104,7 @@ class Doan:
         nhat_ky(f"<-- {self.nhan}: {t1 - self.t0:.1f} giay")
 
 
-KET_QUA = {"lan_chay": [], "loi": []}
+KET_QUA: dict[str, list] = {"lan_chay": [], "loi": []}
 
 
 def luu():
