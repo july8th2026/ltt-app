@@ -1888,6 +1888,17 @@ ef68cf51 (admin-mvp-v3, nơi ĐƯA bánh cóc này vào)  ->  y hệt
    *"một bảng tóm tắt có đủ dữ liệu để tố giác vẫn vô dụng nếu không ai nhìn vào
    cột đó."*
 
+⛔ **SỬA NGAY TRONG NGÀY: đừng đọc bảng trên thành luật *"dưới 6 giây là đáng
+   nghi"*.** Một lượt gate sau đó (`20260906T172328Z`) báo `mypy` **FAIL trong
+   4,3 giây** — tức nhanh mà **đúng**. `check_mypy.py` chạy tăng dần, nên một
+   lượt sau khi cache đã ấm hoàn toàn có thể vừa nhanh vừa thật.
+
+⇒ Con số giây **không** phân biệt được "đo thật" với "không đo". Nó chỉ là một
+  thứ **đáng nhìn khi đã có mâu thuẫn khác** — ở đây là *"PASS ba lần rồi FAIL
+  trên cùng mã"*. ⭐ Và bài học chung: **tôi vừa suýt đúc một quan sát ĐƠN LẺ
+  thành một ngưỡng.** Cùng hình dạng với mọi lần "một con số tóm tắt" khác trong
+  tệp này — chỉ khác là lần này con số do chính tôi đặt ra.
+
 ⛔ Giả thuyết đầu của tôi — *"mypy chết sớm thì bánh cóc đếm ra ít lỗi nên
    XANH"* — **bị bác bằng thí nghiệm**: dựng một cây làm `mypy` chết sớm thật
    (`errors prevented further checking`) rồi chạy bánh cóc ⇒ `RETURNCODE=1`.
@@ -1909,5 +1920,7 @@ cd <thu-muc-tam> && python tools/<banh-coc>.py
    ai truy được nó đến từ đâu. Cùng luật đã ghi: *"hạ mốc dịch bằng DỊCH, không
    bằng TRÍCH LẠI."*
 
-3. ⭐ **Một bước gate xanh NHANH BẤT THƯỜNG là một bước cần nghi**, ngang với một
-   bước đỏ. Ba lượt PASS ở 2,8–5,3 giây đã đứng đó suốt buổi và không ai hỏi.
+3. ⭐ **Thứ đáng nghi không phải "nhanh", mà là "PASS ba lần rồi FAIL trên cùng
+   một mã".** Con số giây chỉ hữu ích **sau** khi đã có mâu thuẫn ấy — nó giúp
+   chọn lượt nào để tin, không giúp phát hiện. (Xem đoạn ⛔ ở §trên: một lượt
+   `mypy` FAIL đúng chỉ mất 4,3 giây.)

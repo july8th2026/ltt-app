@@ -75,8 +75,17 @@ def khoi_ghi_nho_neu_bat(db, *, user_id: str, conv_id: str) -> str:
     """
     if not co_v3.ghi_nho_bat():
         return ""
-    from apps.chatltt.services import ghi_nho
-    return ghi_nho.khoi_ngu_canh(db, user_id=str(user_id), conv_id=str(conv_id))
+    from apps.chatltt.services import du_an, ghi_nho
+    # ⭐ H44 B5 bước 4. Tầng `du_an` của `ghi_nho` đã có từ B4 bước 1 và đã có
+    #    phép kiểm; nó chỉ chưa có ai truyền `du_an_id` vào. Đây là sợi dây ấy.
+    #
+    # ⛔ Và đó là lý do dự án **không** có trường chỉ dẫn riêng: hai cơ chế cùng
+    #    tiêm chữ vào system prompt là hai cơ chế sẽ lệch nhau, rồi người dùng
+    #    sửa nhầm chỗ. Xem `services/du_an.py::SCHEMA`.
+    return ghi_nho.khoi_ngu_canh(
+        db, user_id=str(user_id), conv_id=str(conv_id),
+        du_an_id=du_an.du_an_cua_hoi_thoai(db, user_id=str(user_id),
+                                           conv_id=str(conv_id)))
 
 
 def dung_ngu_canh(duong: list, *, doc_anh: bool = False,

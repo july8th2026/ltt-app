@@ -249,6 +249,16 @@
   font-size: 13px;
 }
 
+/* ── Bang du an (H44 B5) ───────────────────────────────────────────────── */
+/* ⭐ Dung chung the voi `.ltc-ghinho`: hai bang cung mot hinh dang (hop noi,
+   danh sach, nut im). Chep mot ban CSS thu hai la de hai bang troi khoi nhau. */
+.ltc-duan__ghi { color: var(--text-muted); font-size: 12px; white-space: nowrap; }
+.ltc-duan__ten {
+  flex: 1; text-align: left;
+  background: none !important; border: none !important;
+  color: var(--text-primary) !important;
+}
+
 /* ── Bang ghi nho (H44 B4) ─────────────────────────────────────────────── */
 
 /* ⚠️ `.ltc-nut.ltc-nut--ghinho` chu KHONG `.ltc-nut--ghinho`. Hai lop don co
@@ -269,7 +279,7 @@
 /* ⭐ Nut trong bang phai IM. Mot bang toan nut do doc thanh mot mang canh bao,
    trong khi "Sua"/"Xoa" la thao tac binh thuong tren du lieu cua chinh minh.
    Chi nut "Luu" (submit) duoc noi to hon mot chut. */
-.ltc-ghinho button {
+.ltc-ghinho button, .ltc-duan button {
   padding: 4px 10px;
   background: var(--surface-overlay);
   border: 1px solid var(--border-subtle);
@@ -278,10 +288,10 @@
   font: inherit;
   cursor: pointer;
 }
-.ltc-ghinho button:disabled { opacity: .45; cursor: default; }
+.ltc-ghinho button:disabled, .ltc-duan button:disabled { opacity: .45; cursor: default; }
 .ltc-ghinho__them button[type="submit"] { color: var(--text-primary); }
 
-.ltc-ghinho {
+.ltc-ghinho, .ltc-duan {
   position: fixed; inset: 10% 50% auto 50%;
   transform: translateX(-50%);
   width: min(680px, 92vw);
@@ -293,14 +303,14 @@
   border-radius: var(--radius-sm);
   box-shadow: 0 12px 40px rgb(0 0 0 / .5);
 }
-.ltc-ghinho__dau { display: flex; align-items: center; gap: 12px; }
-.ltc-ghinho__tieude { margin: 0; font-size: 16px; }
-.ltc-ghinho__dong { margin-left: auto; }
-.ltc-ghinho__them { display: flex; gap: 8px; margin: 12px 0 6px; }
-.ltc-ghinho__nhan {
+.ltc-ghinho__dau, .ltc-duan__dau { display: flex; align-items: center; gap: 12px; }
+.ltc-ghinho__tieude, .ltc-duan__tieude { margin: 0; font-size: 16px; }
+.ltc-ghinho__dong, .ltc-duan__dong { margin-left: auto; }
+.ltc-ghinho__them, .ltc-duan__them { display: flex; gap: 8px; margin: 12px 0 6px; }
+.ltc-ghinho__nhan, .ltc-duan__nhan {
   position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%);
 }
-.ltc-ghinho__o {
+.ltc-ghinho__o, .ltc-duan__o {
   flex: 1;
   padding: 6px 8px;
   background: var(--surface-overlay);
@@ -309,13 +319,13 @@
   border-radius: var(--radius-sm);
 }
 .ltc-ghinho__tran { margin: 0 0 10px; color: var(--text-muted); font-size: 12px; }
-.ltc-ghinho__loi { color: var(--status-danger); }
-.ltc-ghinho__rong, .ltc-ghinho__cho { color: var(--text-muted); }
+.ltc-ghinho__loi, .ltc-duan__loi { color: var(--status-danger); }
+.ltc-ghinho__rong, .ltc-ghinho__cho, .ltc-duan__rong, .ltc-duan__cho { color: var(--text-muted); }
 .ltc-ghinho__nhomten {
   margin: 14px 0 6px; font-size: 13px; color: var(--text-muted); font-weight: 400;
 }
-.ltc-ghinho__ds { list-style: none; margin: 0; padding: 0; }
-.ltc-ghinho__mau {
+.ltc-ghinho__ds, .ltc-duan__ds { list-style: none; margin: 0; padding: 0; }
+.ltc-ghinho__mau, .ltc-duan__muc {
   display: flex; align-items: center; gap: 8px;
   padding: 6px 0;
   border-top: 1px solid var(--border-subtle);

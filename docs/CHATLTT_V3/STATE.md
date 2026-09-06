@@ -15,7 +15,7 @@
 | **BASE_SHA** | `72a484c5f281f4d909e72927648df7dd62e5e196` (`admin-mvp-v3` = `origin/admin-mvp-v3`, 0/0) |
 | FINAL_SHA | *(chưa)* |
 | Dải test | **800–899** |
-| Pha hiện tại | Làn A ✅ · **P06 ✅ 6/6** · B1–B3 ✅ · **B4 5/6** · **P09 5/6 (06/09)** → còn **B4 bước 6 · B5 · B6 · P10–P12** |
+| Pha hiện tại | Làn A ✅ · **P06 ✅** · B1–B3 ✅ · **B4 ✅ 6/6** · **B5 ✅ 6/6** · **P09 5/6** → còn **B6 · P10–P12** |
 | Deploy | ⛔ chương trình này **chưa deploy**. Làn A phát hành sau cờ `LTT_CHATLTT_V3_TOOLS` |
 
 🔑 **Cờ `LTT_CHATLTT_V3_TOOLS` và `LTT_CHATLTT_V3_PAID_TOOLS` đều đang TẮT, và
@@ -99,9 +99,36 @@ tách hai chữ trên **màn hình** chứ không tách trong **chuỗi**.
 
 ---
 
+## B5 — dự án (đóng 06/09)
+
+Kế hoạch + §0: `12_KE_HOACH_B5_DU_AN.md`. **44 phép kiểm** (`test_836` 19 ·
+`test_837` 13 · `BangDuAn.test.tsx` 12).
+
+⭐ **B5 là LẮP, không phải XÂY.** `platform_core/app_projects.py` đã có đủ vòng
+đời và ba app đang dùng; ChatLTT chỉ thêm một cột `project_id` **nullable** và
+một tệp service mỏng. Và `ix_app_projects_owner_app_updated` **chính là** chỉ số
+mà `lastConversationAt` phi chuẩn hoá của LibreChat sinh ra để phục vụ — nên ta
+mượn phép sắp xếp mà **không** mượn bộ đếm.
+
+🔴 Ba ràng buộc đã trả giá:
+
+1. **Xoá dự án KHÔNG xoá hội thoại.** `project_id` về `NULL`, hội thoại ở lại.
+   Người dùng nghĩ mình đang dọn một cái *nhãn*; nếu thao tác ấy đốt luôn nội
+   dung thì không lấy lại được, và họ chỉ phát hiện **sau khi đã bấm**. Đó cũng
+   là lý do không có khoá ngoại `ON DELETE CASCADE`.
+2. **Dự án KHÔNG có trường chỉ dẫn riêng** — `chatltt_ghi_nho.pham_vi = "du_an"`
+   đã có từ B4. Hai cơ chế cùng tiêm chữ vào system prompt là hai cơ chế sẽ lệch
+   nhau, rồi người dùng sửa nhầm chỗ. (LibreChat cũng không có trường ấy.)
+3. **Hover không phải một cử chỉ ai cũng có.** Cảnh báo *"N cuộc trò chuyện sẽ ở
+   lại"* ban đầu gắn vào `onMouseEnter` — 12 phép kiểm jsdom xanh sạch, và trình
+   duyệt thật cho thấy người dùng cảm ứng không bao giờ thấy nó. Đổi sang **hai
+   nhịp bấm**.
+
+---
+
 ## 🔒 Điều kiện để BẬT các cờ V3 — món nợ tự đòi
 
-⚠️ **BỐN cờ** (cập nhật 06/09). Kế hoạch tổng ghi *"làn B — mỗi nhóm một cờ"*;
+⚠️ **NĂM cờ** (cập nhật 06/09). Kế hoạch tổng ghi *"làn B — mỗi nhóm một cờ"*;
 cờ nhóm P06 bị bỏ sót suốt P06 lẫn B1/B2, cờ B4 thì khai ngay từ bước 3:
 
 | Cờ | Gác cái gì | Mặc định |
@@ -110,8 +137,9 @@ cờ nhóm P06 bị bỏ sót suốt P06 lẫn B1/B2, cờ B4 thì khai ngay t�
 | `LTT_CHATLTT_V3_PAID_TOOLS` | model **tự** gọi tool có phí | TẮT |
 | `LTT_CHATLTT_V3_FILES` | đính tài liệu (P06/B1) — **tốn credit** | TẮT |
 | `LTT_CHATLTT_V3_MEMORY` | kho ghi nhớ (B4) — đổi **ngữ cảnh mọi lượt** | TẮT |
+| `LTT_CHATLTT_V3_PROJECTS` | dự án gom hội thoại (B5) | TẮT |
 
-⛔ Bốn cờ **độc lập**. Bật cờ tool không kéo theo cờ tệp: đính một tài liệu
+⛔ **NĂM** cờ, tất cả **độc lập**. Bật cờ tool không kéo theo cờ tệp: đính một tài liệu
 tốn tiền ngay cả khi vòng lặp tool tắt.
 
 🔴 Và cờ thứ tư khác ba cờ kia về **bề rộng**: ba cờ đầu gác một **cửa** (tắt thì

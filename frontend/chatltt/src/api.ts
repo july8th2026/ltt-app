@@ -5,7 +5,7 @@
  *    `khong_tim_thay`, `csrf`…), khong phai mot chuoi. Giao dien re nhanh theo
  *    ma; chuoi chi de hien.
  */
-import type { AnhChup, GhiNho, HoiThoai, NangLuc, SuThat } from './kieu'
+import type { AnhChup, DuAn, GhiNho, HoiThoai, NangLuc, SuThat } from './kieu'
 
 export class LoiApi extends Error {
   code: string
@@ -68,7 +68,10 @@ export class Api {
    */
   danhMuc(): Promise<{
     nang_luc: NangLuc[]
-    co_v3?: { tools: boolean; tool_co_phi: boolean; tep: boolean; ghi_nho: boolean }
+    co_v3?: {
+      tools: boolean; tool_co_phi: boolean; tep: boolean
+      ghi_nho: boolean; du_an: boolean
+    }
   }> {
     return this.goi('/danh-muc')
   }
@@ -91,6 +94,39 @@ export class Api {
   xoa(convId: string): Promise<unknown> {
     return this.goi(`/hoi-thoai/${encodeURIComponent(convId)}/xoa`, {
       method: 'POST', body: '{}',
+    })
+  }
+
+  // ── Du an (H44 B5) ───────────────────────────────────────────────────
+
+  duAnLietKe(): Promise<{ du_an: DuAn[] }> {
+    return this.goi('/du-an')
+  }
+
+  duAnTao(ten: string): Promise<{ du_an: DuAn }> {
+    return this.goi('/du-an', { method: 'POST', body: JSON.stringify({ ten }) })
+  }
+
+  /** ⛔ `revision` BAT BUOC — khoa lac quan cua loi. Thieu no thi may chu tra
+   *  400, va do la hanh vi dung: mot mac dinh o day la tat khoa di. */
+  duAnDoiTen(id: string, ten: string, revision: number): Promise<{ du_an: DuAn }> {
+    return this.goi(`/du-an/${encodeURIComponent(id)}`, {
+      method: 'PATCH', body: JSON.stringify({ ten, revision }),
+    })
+  }
+
+  duAnHoiThoai(id: string): Promise<{ hoi_thoai: { id: string; title: string }[] }> {
+    return this.goi(`/du-an/${encodeURIComponent(id)}/hoi-thoai`)
+  }
+
+  duAnXoa(id: string): Promise<{ da_xoa: boolean }> {
+    return this.goi(`/du-an/${encodeURIComponent(id)}`, { method: 'DELETE' })
+  }
+
+  /** `duAnId` rong = GO khoi du an. Mot duong cho ca hai — xem `_p_du_an`. */
+  duAnGan(convId: string, duAnId: string): Promise<{ du_an_id: string }> {
+    return this.goi(`/hoi-thoai/${encodeURIComponent(convId)}/du-an`, {
+      method: 'POST', body: JSON.stringify({ du_an_id: duAnId }),
     })
   }
 

@@ -61,6 +61,16 @@ export function trangThaiTool(k: KhoiToolCall): TrangThaiTool {
   return k.ok === false ? 'loi' : 'xong'
 }
 
+/** Mot du an. Anh xa 1-1 voi `_p_du_an._bay()`. `payload` KHONG ra ngoai. */
+export type DuAn = {
+  id: string
+  ten: string
+  /** Khoa lac quan cua loi. Gui lai nguyen ven khi doi ten. */
+  revision: number
+  created_at: string
+  updated_at: string
+}
+
 /** Mot mau ghi nho. Anh xa 1-1 voi `_p_ghi_nho._bay()`. */
 export type GhiNho = {
   id: string
@@ -115,6 +125,8 @@ export type HoiThoai = {
   title: string
   model_alias: string
   current_leaf_id: string | null
+  /** `''` = khong thuoc du an nao. H44 B5. */
+  project_id?: string
   archived: boolean
   created_at: string
   updated_at: string

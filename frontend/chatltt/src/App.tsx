@@ -12,6 +12,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Api, docSSE, LoiApi } from './api'
 import { duongToiLa, laKhiChuyenNhanh } from './cay'
+import { BangDuAn } from './BangDuAn'
 import { BangGhiNho } from './BangGhiNho'
 import { SoanThao } from './SoanThao'
 import { TaoMedia } from './TaoMedia'
@@ -151,6 +152,10 @@ export function App({ api }: AppProps) {
   )
 
   const [coGhiNho, datCoGhiNho] = useState(false)
+  const [coDuAn, datCoDuAn] = useState(false)
+  const [moDuAn, datMoDuAn] = useState(false)
+  const [dsDuAn, datDsDuAn] = useState<{ id: string; ten: string }[]>([])
+  const [duAnCuaConv, datDuAnCuaConv] = useState('')
   const [moGhiNho, datMoGhiNho] = useState(false)
 
   const napDanhMuc = useCallback(() => api.danhMuc()
@@ -159,6 +164,7 @@ export function App({ api }: AppProps) {
       // ⛔ Vang => TAT. Mot may chu cu hon frontend khong khai `co_v3`, va doan
       //    "khong khai tuc la co" se hien mot nut dan thang toi 404.
       datCoGhiNho(!!d.co_v3?.ghi_nho)
+      datCoDuAn(!!d.co_v3?.du_an)
       const text = d.nang_luc.find((n) => n.ten === 'text.chat')
       // ⛔ `model_mac_dinh` chu KHONG `Object.keys(models)[0]`. Ban cu lay
       //    phan tu dau cua mot dict, tuc mac dinh la THU TU KHAI trong
@@ -171,6 +177,15 @@ export function App({ api }: AppProps) {
     }), [api])
 
   useEffect(() => { napDanhMuc().catch((e) => datLoi(nhanLoi(e))) }, [napDanhMuc])
+
+  // ⭐ Chi hoi khi co BAT. Mot request toi mot route 404 moi lan mo trang
+  //    khong hong gi, nhung no lam log nhieu va day nguoi truc di sai huong.
+  useEffect(() => {
+    if (!coDuAn) return
+    api.duAnLietKe()
+      .then((r) => datDsDuAn(r.du_an.map((d) => ({ id: d.id, ten: d.ten }))))
+      .catch(() => datDsDuAn([]))
+  }, [api, coDuAn, moDuAn])
 
   // ── Nang luc chua san sang thi HOI LAI, dung doi F5 ──────────────────────
   //
@@ -229,6 +244,10 @@ export function App({ api }: AppProps) {
     const st = await api.suThat(id)
     datSuThat(st)
     if (dongBoAlias && st.conversation.model_alias) datAlias(st.conversation.model_alias)
+    // ⛔ `?? ''` chu khong `|| ''` roi de undefined: may chu CU khong khai
+    //    `project_id`, va mot `undefined` o day lam `<select>` thanh
+    //    khong-kiem-soat — React canh bao, roi o chon nhay gia tri.
+    datDuAnCuaConv(st.conversation.project_id ?? '')
     return st
   }, [api])
 
@@ -534,6 +553,15 @@ export function App({ api }: AppProps) {
              tat la dan nguoi dung toi mot route tra 404 — mot loi hua hong, va
              la dung ly do `cong_ghi_nho` tra 404 chu khong 403.
         */}
+        {coDuAn && (
+          <button
+            type="button"
+            className="ltc-nut ltc-nut--ghinho"
+            onClick={() => datMoDuAn(true)}
+          >
+            Dự án
+          </button>
+        )}
         {coGhiNho && (
           <button
             type="button"
@@ -545,6 +573,9 @@ export function App({ api }: AppProps) {
         )}
       </aside>
 
+      {moDuAn && (
+        <BangDuAn api={api} onDong={() => datMoDuAn(false)} />
+      )}
       {moGhiNho && (
         <BangGhiNho api={api} onDong={() => datMoGhiNho(false)} />
       )}
@@ -563,6 +594,37 @@ export function App({ api }: AppProps) {
               ))}
             </select>
           </label>
+          {/*
+            🔴 Mot o chon cho CA gan lan go: chon "— khong thuoc du an nao —"
+               gui `du_an_id` rong, va may chu hieu do la GO. Hai nut rieng bat
+               giao dien tu chon dong tu, roi mot ngay no chon sai.
+          */}
+          {coDuAn && convId && (
+            <label className="ltc-model">
+              <span>Dự án</span>
+              <select
+                value={duAnCuaConv}
+                aria-label="Dự án của cuộc trò chuyện"
+                onChange={(e) => {
+                  const moi = e.target.value
+                  datDuAnCuaConv(moi)
+                  api.duAnGan(convId, moi)
+                    .then(() => napSuThat(convId))
+                    .catch((err) => {
+                      // Tra o chon ve gia tri CU: mot o hien mot thu chua duoc
+                      // luu la mot o noi doi.
+                      datDuAnCuaConv(duAnCuaConv)
+                      datLoi(nhanLoi(err))
+                    })
+                }}
+              >
+                <option value="">— không thuộc dự án nào —</option>
+                {dsDuAn.map((d) => (
+                  <option key={d.id} value={d.id}>{d.ten}</option>
+                ))}
+              </select>
+            </label>
+          )}
           {chuaSanSang && (
             <span className="ltc-chip ltc-chip--tat" role="status">
               Model chưa sẵn sàng

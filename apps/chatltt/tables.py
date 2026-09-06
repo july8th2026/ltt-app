@@ -90,6 +90,8 @@ class ChatlttConversation(Base):
     __tablename__ = "chatltt_conversation"
     __table_args__ = (
         Index("ix_chatltt_conv_user_updated", "user_id", "deleted_at", "updated_at"),
+        #: Liệt kê hội thoại của MỘT dự án. (H44 B5)
+        Index("ix_chatltt_conv_project", "user_id", "project_id"),
     )
 
     id: Mapped[str] = mapped_column(String(40), primary_key=True,
@@ -99,6 +101,17 @@ class ChatlttConversation(Base):
     model_alias: Mapped[str] = mapped_column(String(64), default="", nullable=False)
     #: Lá của nhánh đang xem. NULL khi chưa có message nào.
     current_leaf_id: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    #: Dự án chứa hội thoại này — `app_projects.id`. (H44 B5)
+    #:
+    #: 🔴 **NULLABLE, và đó là bắt buộc chứ không phải tiện.** 220 hội thoại đang
+    #:    sống không thuộc dự án nào và sẽ tiếp tục không thuộc dự án nào. Dự án
+    #:    là **tuỳ chọn**, không phải một tầng mọc thêm trên đầu mọi người.
+    #:
+    #: ⛔ KHÔNG khoá ngoại `ON DELETE CASCADE`. Xoá một dự án phải trả cột này về
+    #:    `NULL` và **giữ nguyên hội thoại**: một cái thư mục bị xoá không được
+    #:    mang theo thứ nó đựng. Người dùng nghĩ mình đang dọn nhãn, không phải
+    #:    đốt nội dung.
+    project_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     #: Xoá MỀM. Dọn thật theo retention (Q75) là việc của vòng bảo trì, không của route.
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

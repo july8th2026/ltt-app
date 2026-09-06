@@ -55,6 +55,13 @@ CO_TEP = "LTT_CHATLTT_V3_FILES"
 #:    tra loi sau do, khong phai mot cau.
 CO_GHI_NHO = "LTT_CHATLTT_V3_MEMORY"
 
+#: Co cua nhom B5 (du an). Them 06/09.
+#:
+#: ⭐ Khac `_MEMORY` o be rong: du an gac mot CUA (tat thi route 404, phan
+#:    con lai y nguyen). No dung nhom voi `_FILES`, khong dung nhom voi
+#:    `_MEMORY` — va do la ly do no la mot co RIENG chu khong an theo.
+CO_DU_AN = "LTT_CHATLTT_V3_PROJECTS"
+
 #: Giá trị được coi là BẬT. Fail-closed: mọi thứ khác là tắt, kể cả `"true"`
 #: viết hoa lạ hay `"yes"` — một cờ nhận nhiều cách viết là một cờ mà người ta
 #: tưởng đã bật trong khi chưa.
@@ -97,14 +104,21 @@ def ghi_nho_bat() -> bool:
     return _bat(CO_GHI_NHO)
 
 
+def du_an_bat() -> bool:
+    """Du an co mo khong. **Mac dinh TAT.**"""
+    return _bat(CO_DU_AN)
+
+
 def trang_thai() -> dict:
     """Cho `/api/danh-muc` và log — để người trực biết cờ nào đang bật."""
     return {"tools": tool_bat(), "tool_co_phi": tool_co_phi_bat(),
-            "tep": tep_bat(), "ghi_nho": ghi_nho_bat()}
+            "tep": tep_bat(), "ghi_nho": ghi_nho_bat(),
+            "du_an": du_an_bat()}
 
 
 #: ⚠️ Sua 06/09: ban truoc thieu `tep_bat`/`CO_TEP` — `__all__` da troi khoi
 #:    module tu B3. Mot `__all__` thieu khong bao loi, no chi lam
 #:    `from ... import *` im lang bo qua thu moi.
 __all__ = ["tool_bat", "tool_co_phi_bat", "tep_bat", "ghi_nho_bat",
-           "trang_thai", "CO_TOOLS", "CO_TOOL_CO_PHI", "CO_TEP", "CO_GHI_NHO"]
+           "du_an_bat", "trang_thai", "CO_TOOLS", "CO_TOOL_CO_PHI",
+           "CO_TEP", "CO_GHI_NHO", "CO_DU_AN"]
