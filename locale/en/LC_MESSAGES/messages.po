@@ -13249,3 +13249,12 @@ msgstr "Each step within a turn: which tool was called, with what parameters, an
 
 msgid "Lần người dùng bấm duyệt cho một công cụ tốn credit: tham số đã duyệt, báo giá lúc đó, và quyết định. Bằng chứng của một lần đồng ý tiêu tiền."
 msgstr "Each time a user approves a credit-charging tool: the approved parameters, the price quoted at that moment, and the decision. Evidence of one consent to spend."
+
+msgid "Phần lẻ dưới một credit được giữ lại, không làm tròn lên"
+msgstr "Fractions below one credit are carried over, not rounded up"
+
+msgid "Chi phí một lượt gọi thường là số lẻ. Phần lẻ dưới một credit không bị làm tròn lên mà được cộng dồn sang lượt sau, nên số tiền thực trả bám sát giá niêm yết kể cả với những lượt gọi rất nhỏ."
+msgstr "A single call usually costs a fractional amount. Fractions below one credit are not rounded up; they carry over to the next call, so what you actually pay tracks the listed price even for very small calls."
+
+msgid "Phần lẻ dưới một credit không bị làm tròn lên mà được cộng dồn sang lượt sau, nên số tiền thực trả bám sát giá niêm yết kể cả với những lượt gọi rất nhỏ."
+msgstr "Fractions below one credit are not rounded up; they carry over to the next call, so what you actually pay tracks the listed price even for very small calls."
