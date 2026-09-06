@@ -138,6 +138,25 @@ def ghi(tep: str, noi_dung: str) -> None:
         raise AssertionError("tep tren dia khac thu vua ghi")
 
 
+def _kich_ban(cl: list) -> str:
+    """Ten thu dang duoc CHAY, tu `cmdline`. Rong neu khong xac dinh duoc.
+
+    ⛔ KHONG tra ve ca dong lenh. Do la khac biet giua "tien trinh nay LA gate"
+       va "tien trinh nay co NHAC chu gate o dau do trong tham so".
+
+        python tools/gate.py --quick   -> "gate.py"
+        python -m pytest -q tests/...  -> "pytest"
+        python -c "... 'gate.py' ..."  -> ""        <- khong con thoa
+    """
+    if len(cl) < 2:
+        return ""
+    if cl[1] == "-m":
+        return cl[2] if len(cl) > 2 else ""
+    if cl[1].startswith("-"):
+        return ""
+    return os.path.basename(cl[1])
+
+
 def tien_trinh(chua: str = "", *, ten_tien_trinh: str = "python.exe") -> list:
     """Tien trinh khop `chua`, DA LOAI TRU chinh minh va toan bo chuoi cha.
 
@@ -149,6 +168,22 @@ def tien_trinh(chua: str = "", *, ten_tien_trinh: str = "python.exe") -> list:
     ⛔ Loc theo `cwd` KHONG cuu duoc ca nay: shell cua nguoi dang hoi cung co
        `cwd` dung bang cay ay. Dieu kien phai la thu tien trinh do KHONG THE TU
        THOA — tuc loai `os.getpid()` VA `parents()`.
+
+    ⚠️ VA `parents()` VAN CHUA DU — lo thu tu cua cung mot ho bay, do 06/09 sau
+       khi phien LTTCHAT V3 chi ra:
+
+           loc ca dong lenh   4 tien trinh  (3 la `bash.exe` ANH EM)
+           loc kich ban       1 tien trinh
+
+       Ba cai thua la shell cua nhung lenh nen TRUOC DO trong cung phien. Chung
+       khong phai to tien, nen `parents()` khong cham toi. Va rao
+       `ten_tien_trinh="python.exe"` chi thu hep chu khong dong: mot script
+       PYTHON chi NHAC chuoi ay trong ma nguon van bi dem — da dung mot tien
+       trinh moi de xac nhan, no bi dem that.
+
+    ⇒ Nen phep khop khong hoi CA DONG LENH nua, ma hoi **kich ban dang chay**:
+      `python tools/gate.py` -> "gate.py";  `python -m pytest` -> "pytest".
+      Mot tien trinh chi NHAC ten thi khong thoa, vi ten ay nam o argv[2+].
     """
     import psutil
 
@@ -165,7 +200,7 @@ def tien_trinh(chua: str = "", *, ten_tien_trinh: str = "python.exe") -> list:
                 continue
             if ten_tien_trinh and (p.info["name"] or "").lower() != ten_tien_trinh:
                 continue
-            if chua and chua not in " ".join(p.info["cmdline"] or []):
+            if chua and chua not in _kich_ban(p.info["cmdline"] or []):
                 continue
             ra_ds.append(p)
         except psutil.Error:
