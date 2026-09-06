@@ -108,6 +108,40 @@
   files with their own `jobs.claim` loops. **Not fixed**: they use substitutes
   that never return "busy", so it is latent there. Only the acceptance suite
   calls real providers.
+  ✅ **Re-measured 2026-09-06 and the claim holds**: of the six ASV files
+  carrying `jobs.fail(..., retry=False)`, **none** reads `LTT_ASV_MODEL_THAT`.
+  The real-model door opens only through `tests/fixtures/asv_e2e.py`. So this is
+  latent, not live, and no blanket patch is warranted.
+
+  🔴 **But the 05/09 fix above was HALF of one, and the missing half was in the
+  PRODUCT.** Found 06/09 when acceptance failed three times running with the
+  same `content_process failed_terminal | ltt_llm: ban` the harness fix was
+  written to stop.
+
+  `ai.goi` wrapped **every** exception into `AiError`, destroying the
+  `KhongCoProviderNao` class before any classifier saw it:
+
+      loi.phan_loai                     -> TAM_THOI, not BAN
+      loi.dich_sang_loi_nen_tang        -> returns AiError unchanged
+      job_runner._provider_failure_kind -> "retry", not "resource_wait"
+
+  ⇒ the job was **never deferred**. The report's own `hoan_s=None` said so,
+  and that field — what the runner records about its *decision* — is what
+  finally distinguished "waiting on B" from "gave up instantly". No amount of
+  process counting can tell those apart; both look like low CPU.
+
+  ⛔ **And the pinning tests could not see it**, because they construct
+  `KhongCoProviderNao` **by hand** — skipping the exact layer that was
+  destroying the signal. A test that builds its own input only exercises the
+  consuming side. It reported green while the product was broken, which is worse
+  than no test: it *retired* the question.
+
+  ⭐ `giong_noi.MayBan` had recorded this precise lesson for the VOICE path
+  long before: *"wrapping `DangBanTam` as a failure turns 'machine busy' into
+  'job failed', and a failed job CHARGES CREDIT for work that never ran"*. The
+  AI path did the thing that docstring forbids. Fixed at `74c2372b` by reusing
+  that same class; the new pin starts at the real boundary (`dieu_phoi.goi`) and
+  is not allowed to name any intermediate class. Two mutations red.
       00:02  green, repair loop LIVE, reused 2
 
 - **gate at RC**: `RESULT: PASS` at `d2d66ad0` (2026-09-06), **4** steps BOQUA -
