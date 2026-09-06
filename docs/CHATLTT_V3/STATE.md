@@ -15,7 +15,7 @@
 | **BASE_SHA** | `72a484c5f281f4d909e72927648df7dd62e5e196` (`admin-mvp-v3` = `origin/admin-mvp-v3`, 0/0) |
 | FINAL_SHA | *(chưa)* |
 | Dải test | **800–899** |
-| Pha hiện tại | Làn A (P00–P05) ✅ · **P06 ✅ 6/6 bước (06/09)** → làn B còn **P07 · P08** |
+| Pha hiện tại | Làn A (P00–P05) ✅ · **P06 ✅ 6/6** · B1–B3 ✅ · **B4 ✅ 5/6 bước (06/09)** → còn **B4 bước 6 · B5 · B6 · làn C** |
 | Deploy | ⛔ chương trình này **chưa deploy**. Làn A phát hành sau cờ `LTT_CHATLTT_V3_TOOLS` |
 
 🔑 **Cờ `LTT_CHATLTT_V3_TOOLS` và `LTT_CHATLTT_V3_PAID_TOOLS` đều đang TẮT, và
@@ -51,19 +51,68 @@ chưa thấy một thay đổi nào.
 
 ---
 
+## B4 — ghi nhớ (bước 1–5 đóng 06/09, commit `8c368ed7`)
+
+| # | Bước | Kết quả |
+|---|---|---|
+| 1 | `chatltt_ghi_nho` | migration `d1a7f4c9b620` |
+| 2 | `services/ghi_nho.py` — 4 phép, `user_id` là **điều kiện** | `test_830` (25) |
+| 3 | tiêm vào `luot.dung_ngu_canh()` sau cờ | `test_831` (11) |
+| 4 | 4 route `/api/ghi-nho` + `cong_ghi_nho` | `test_832` (11) |
+| 5 | tool `noi_bo.ghi_nho` (`FREE`) — **cửa 4 CÒN ĐÓNG** | `test_833` (15) |
+| 6 | giao diện quản lý | ⏳ **sau P09** |
+
+**62 phép kiểm mới.** Kế hoạch + §0 đối chiếu cộng đồng:
+`10_KE_HOACH_B4_GHI_NHO.md`.
+
+🔴 Ba ràng buộc đã trả giá trong B4:
+
+1. **`muc_tieu_id` là `""`, không `NULL`.** Trong SQL `NULL != NULL` nên một
+   `UNIQUE` chứa cột `NULL` **không chặn trùng** — triệu chứng là kho tự nhân
+   đôi, không phải một lỗi ràng buộc. `NULLS NOT DISTINCT` chỉ có ở PostgreSQL
+   15+, **không có ở SQLite** tức đường chạy test.
+2. **Model không được nêu ĐỊA CHỈ, chỉ được đề nghị ĐỘ BỀN.** `ghi_boi_model()`
+   không nhận `user_id`/`conv_id`/`pham_vi`; `cho_phep_lau_dai` của bên gọi là
+   **trần** cho cờ `lau_dai` model xin, và bị hạ trần thì hàm **nói ra** qua
+   `pham_vi` thật.
+3. **`quen`/`thay` không mở cho model được** — khối ghi nhớ tiêm vào ngữ cảnh
+   chỉ mang chữ, **không mang `id`** (cố ý: `id` tốn token ở mọi lượt). Kế hoạch
+   đã khai `noi_bo.quen` trước khi có cơ chế cho nó; hai phép ấy ở lại phía
+   người dùng.
+
+---
+
 ## 🔒 Điều kiện để BẬT các cờ V3 — món nợ tự đòi
 
-⚠️ **BA cờ, không phải hai** (06/09). Kế hoạch tổng ghi *"làn B — mỗi nhóm
-một cờ"*, và cờ nhóm P06 bị bỏ sót suốt P06 lẫn B1/B2:
+⚠️ **BỐN cờ** (cập nhật 06/09). Kế hoạch tổng ghi *"làn B — mỗi nhóm một cờ"*;
+cờ nhóm P06 bị bỏ sót suốt P06 lẫn B1/B2, cờ B4 thì khai ngay từ bước 3:
 
 | Cờ | Gác cái gì | Mặc định |
 |---|---|---|
 | `LTT_CHATLTT_V3_TOOLS` | vòng lặp tool | TẮT |
 | `LTT_CHATLTT_V3_PAID_TOOLS` | model **tự** gọi tool có phí | TẮT |
 | `LTT_CHATLTT_V3_FILES` | đính tài liệu (P06/B1) — **tốn credit** | TẮT |
+| `LTT_CHATLTT_V3_MEMORY` | kho ghi nhớ (B4) — đổi **ngữ cảnh mọi lượt** | TẮT |
 
-⛔ Ba cờ **độc lập**. Bật cờ tool không kéo theo cờ tệp: đính một tài liệu
+⛔ Bốn cờ **độc lập**. Bật cờ tool không kéo theo cờ tệp: đính một tài liệu
 tốn tiền ngay cả khi vòng lặp tool tắt.
+
+🔴 Và cờ thứ tư khác ba cờ kia về **bề rộng**: ba cờ đầu gác một **cửa** (tắt thì
+một route 404, phần còn lại y nguyên). `_MEMORY` gác **ngữ cảnh của mọi lượt**,
+kể cả lượt không đính tệp và không gọi tool. Bật nhầm nó là đổi hành vi toàn sản
+phẩm. `test_831` chốt rằng cờ tắt ⇒ `messages` **không đổi một byte**, chứ không
+phải "tiêm một khối rỗng".
+
+### Ba điều kiện riêng để bật `LTT_CHATLTT_V3_MEMORY`
+
+| # | Điều kiện | Vì sao |
+|---|---|---|
+| M1 | **P09 vẽ được khối `tool_call`** | `noi_bo.ghi_nho` là `FREE` (không phiếu duyệt), và điều đó chỉ chấp nhận được vì người dùng **sửa lại được** — mà "sửa lại được" đòi họ **nhìn thấy** nó đã xảy ra |
+| M2 | **Giao diện quản lý (bước 6)** | bật đường tiêm trước khi có chỗ xem/xoá là cho một kho ghi nhớ chạy mà chủ của nó không mở ra được |
+| M3 | **Đo lại trần 2.000 ký tự/phạm vi** trên 20–50 người dùng thật | hằng số hiện tại là một **neo tự suy** (4 × trần một mẩu), không phải phép đo — và nó tự khai như vậy trong mã |
+
+⛔ Thêm `noi_bo.ghi_nho` vào `chieu_tool.CHO_MODEL_GOI` là một bước **riêng**,
+sau cả M1–M3. `test_833::test_CHUA_mo_cua_thu_tu` chốt sự vắng mặt ấy.
 
 
 ⛔ **Đọc mục này trước khi bật cờ, kể cả bật để thử.**
