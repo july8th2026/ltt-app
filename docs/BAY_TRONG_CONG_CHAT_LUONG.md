@@ -1450,6 +1450,38 @@ thì phép kiểm này thành rỗng mà không ai biết.
 ⇒ **Đối chứng dương phải nằm trong CÙNG phép kiểm.** Đã sửa: chủ sở hữu `True`,
 người lạ `False`, cùng một hàm.
 
+### Chụp ảnh SAU khi sự kiện bắt đầu ⇒ bộ canh không thể thấy nó
+
+*(H44, lượt deploy 06/09)*
+
+Vòng canh deploy chụp danh sách tệp `.ket.txt` **hiện có** rồi rình tệp **MỚI**:
+
+```
+08:51:59   deploy bat dau, tao deploy-20260906-085159.ket.txt
+08:52:26   vong canh chup anh -> tep ay nam trong tap "CU"
+08:53:55   deploy xong, ghi EXITCODE=0 vao dung tep do
+09:12:26   vong canh HET GIO (20 phut), thoat ma 2
+```
+
+⛔ Nó **không có khả năng** thấy lượt ấy — không phải vì chờ chưa đủ, mà vì thứ
+nó rình (**tệp mới**) không bao giờ xuất hiện. Chờ thêm một tiếng cũng vậy.
+
+🔑 Lỗi nằm ở **thứ tự**: ảnh chụp "trạng thái trước" được lấy **sau** khi sự kiện
+đã bắt đầu, nên sự kiện nằm sẵn trong nền. Cùng họ với `check && run` (Bẫy 22):
+ở đó phép kiểm chạy **sau** quyết định; ở đây mốc so chụp **sau** sự kiện.
+
+⭐ **Thứ cứu ở đây là một luật đã viết sẵn:** vòng canh có hạn và **thoát mã 2**,
+nên im lặng **không** trông giống thành công. Không có nó thì 20 phút im lặng đã
+thành *"deploy hỏng"*, và câu trả lời đúng đã bị một câu sai che mất.
+
+⇒ Sửa: đừng rình **tệp mới**, hãy rình **nội dung của tệp mới nhất**, hoặc ghi
+mốc thời gian **trước** khi kích hoạt rồi tìm tệp có `mtime` sau mốc ấy.
+
+⛔ Và bài học lớn hơn: **câu trả lời thật đến từ một kênh khác** — đối chiếu băm
+523 tệp `.py` và `curl /health/version`. Một kênh chuyên trách (`EXITCODE`) im
+lặng, còn hai phép đo độc lập trả lời dứt khoát. Đừng để một kênh chuyên trách
+làm nguồn duy nhất chỉ vì nó *có vẻ* được sinh ra cho câu hỏi ấy.
+
 ### 🔑 Ước BÁN KÍNH theo NGUYÊN NHÂN bỏ sót đúng những phép kiểm TỐT NHẤT
 
 *(H44 đo 05→06/09 khi đổi chính sách làm tròn tiền; phiên Mobile V1 khái quát)*
