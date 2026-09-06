@@ -137,6 +137,28 @@
   runs predated `9ff469e`, which changes `cache_dung_duoc`, code that executes in
   every stage of every E2E run. Evidence recorded before that commit does not
   describe this RC.
+- 🔴 **`evidence/nghiem_thu_hien_hanh.json` at HEAD is a FAILED run
+  (2026-09-06 09:20), not the 20-passed one.** Read this before citing it.
+  Acceptance was attempted **three times** on 06/09 and did not run to
+  completion any of them: machine B's `ltt_llm` answered `429` continuously
+  from ~09:12 to ~09:30, so `content_process` (then `edit_plan`) could not
+  proceed. The last **green** report is in commit `d2d66ad0`.
+
+  ⛔ It is left in place deliberately rather than reverted to the green one.
+  Restoring the 05/09 report would assert 20-passed evidence for a SHA at which
+  acceptance never ran — a stale-but-green file is more misleading than a
+  current-and-red one, because nothing about it looks wrong.
+
+  ⭐ And it can no longer be misread: `test_448._chan_tai_nguyen_ban` refuses
+  to serve a report produced by a resource-starved run, naming machine B and
+  what to do. Before that guard, this same situation produced nine failures
+  reading `assert 404 == 200` and `('giu_hinh', [])`.
+
+  ⚠️ **So the 11-stage chain has NOT yet been proven on a real run.** Every
+  claim here about `qc_ai` rests on fixtures plus seven mutations, which is
+  real but is not the same evidence as the 10-stage chain has. `test_448::
+  test_moi_luot_di_HET_chuoi_giai_doan` stays red until acceptance runs green.
+
 - **repair loop is LIVE as of 2026-09-05**: a run whose dubbing has a segment
   that will not fit now repairs the smallest safe scope — that segment only, at
   the earliest stage that can actually fix it — before delivery.

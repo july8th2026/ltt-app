@@ -1,6 +1,6 @@
 {
   "schema": "asv.v4.nghiem_thu.1",
-  "ghi_luc": "2026-09-06T09:20:20",
+  "ghi_luc": "2026-09-06T09:30:08",
   "may": {
     "os": "Windows-10-10.0.19045-SP0",
     "python": "3.13.12",
@@ -84,7 +84,7 @@
       "che_do_giong": "USER_SELECTED",
       "giong_id": "Minh Đức",
       "trang_thai_run": "error",
-      "giay_tong": 40.2,
+      "giay_tong": 129.0,
       "giai_doan": [
         {
           "ten": "media_prepare",
@@ -119,8 +119,8 @@
               "bass",
               "other"
             ],
-            "lufs": -13.92,
-            "dinh_that": -1.56,
+            "lufs": -13.94,
+            "dinh_that": -1.5,
             "thoi_luong": 32.192018
           }
         },
@@ -137,7 +137,7 @@
             "ngon_ngu": "en",
             "engine": "whisperx",
             "canh_chinh": "aligned",
-            "phu_song": 16.17
+            "phu_song": 16.15
           }
         },
         {
@@ -221,7 +221,7 @@
         },
         {
           "job_type": "asv_media.media_prepare",
-          "giay": 0.19,
+          "giay": 0.18,
           "loi": ""
         },
         {
@@ -231,7 +231,7 @@
         },
         {
           "job_type": "asv_gpu.audio_prepare",
-          "giay": 22.3,
+          "giay": 20.91,
           "loi": ""
         },
         {
@@ -241,7 +241,7 @@
         },
         {
           "job_type": "asv_gpu.transcribe",
-          "giay": 16.14,
+          "giay": 15.74,
           "loi": ""
         },
         {
@@ -256,13 +256,14 @@
         },
         {
           "job_type": "auto_scan_video.advance",
-          "giay": 0.02,
+          "giay": 0.01,
           "loi": ""
         },
         {
           "job_type": "auto_scan_video.content_process",
-          "giay": 0.37,
-          "loi": "AiError: khong provider nao phuc vu duoc: ltt_llm: ban"
+          "giay": 20.36,
+          "loi": "HOAN BanError: khong provider nao phuc vu duoc: ltt_llm: ban",
+          "hoan_s": 20.0
         },
         {
           "job_type": "auto_scan_video.advance",
@@ -271,23 +272,27 @@
         },
         {
           "job_type": "auto_scan_video.content_process",
-          "giay": 0.33,
-          "loi": "AiError: khong provider nao phuc vu duoc: ltt_llm: ban"
-        },
-        {
-          "job_type": "auto_scan_video.advance",
-          "giay": 0.02,
-          "loi": ""
+          "giay": 20.32,
+          "loi": "HOAN BanError: khong provider nao phuc vu duoc: ltt_llm: ban",
+          "hoan_s": 20.0
         },
         {
           "job_type": "auto_scan_video.content_process",
-          "giay": 0.33,
-          "loi": "AiError: khong provider nao phuc vu duoc: ltt_llm: ban"
+          "giay": 20.32,
+          "loi": "HOAN BanError: khong provider nao phuc vu duoc: ltt_llm: ban",
+          "hoan_s": 20.0
         },
         {
-          "job_type": "auto_scan_video.advance",
-          "giay": 0.02,
-          "loi": ""
+          "job_type": "auto_scan_video.content_process",
+          "giay": 20.35,
+          "loi": "HOAN BanError: khong provider nao phuc vu duoc: ltt_llm: ban",
+          "hoan_s": 20.0
+        },
+        {
+          "job_type": "auto_scan_video.content_process",
+          "giay": 10.31,
+          "loi": "HOAN BanError: khong provider nao phuc vu duoc: ltt_llm: ban",
+          "hoan_s": 10.0
         }
       ],
       "asr": {
@@ -365,7 +370,7 @@
       "che_do_giong": "USER_SELECTED",
       "giong_id": "Minh Đức",
       "trang_thai_run": "error",
-      "giay_tong": 41.2,
+      "giay_tong": 131.0,
       "giai_doan": [
         {
           "ten": "media_prepare",
@@ -400,8 +405,8 @@
               "bass",
               "other"
             ],
-            "lufs": -13.92,
-            "dinh_that": -1.56,
+            "lufs": -13.94,
+            "dinh_that": -1.5,
             "thoi_luong": 32.192018
           }
         },
@@ -418,32 +423,23 @@
             "ngon_ngu": "en",
             "engine": "whisperx",
             "canh_chinh": "aligned",
-            "phu_song": 16.17
+            "phu_song": 16.15
           }
         },
         {
           "ten": "edit_plan",
-          "trang_thai": "succeeded",
+          "trang_thai": "failed_terminal",
           "phien_ban_engine": "ban_bien_tap/2/1/0.4",
           "credit": 0,
-          "loi": "",
-          "tom_tat": {
-            "stage": "edit_plan",
-            "preset": "smart_localize",
-            "so_canh": 4,
-            "so_giu": 4,
-            "so_cat": 0,
-            "so_canh_da_doc": 0,
-            "so_co_bang_chung": 0,
-            "ti_le_giu": 1.0
-          }
+          "loi": "khong provider nao phuc vu duoc: ltt_llm: ban",
+          "tom_tat": {}
         },
         {
           "ten": "content_process",
-          "trang_thai": "failed_terminal",
+          "trang_thai": "pending",
           "phien_ban_engine": "noi_dung/1/ltt_llm:qwen38-api",
           "credit": 0,
-          "loi": "khong provider nao phuc vu duoc: ltt_llm: ban",
+          "loi": "",
           "tom_tat": {}
         },
         {
@@ -513,8 +509,14 @@
         },
         {
           "job_type": "asv_gpu.audio_prepare",
-          "giay": 21.88,
+          "giay": 22.48,
           "loi": ""
+        },
+        {
+          "job_type": "auto_scan_video.content_process",
+          "giay": 20.34,
+          "loi": "HOAN BanError: khong provider nao phuc vu duoc: ltt_llm: ban",
+          "hoan_s": 20.0
         },
         {
           "job_type": "auto_scan_video.advance",
@@ -523,28 +525,14 @@
         },
         {
           "job_type": "asv_gpu.transcribe",
-          "giay": 15.81,
-          "loi": ""
-        },
-        {
-          "job_type": "auto_scan_video.advance",
-          "giay": 0.01,
-          "loi": ""
-        },
-        {
-          "job_type": "auto_scan_video.edit_plan",
-          "giay": 1.82,
-          "loi": ""
-        },
-        {
-          "job_type": "auto_scan_video.advance",
-          "giay": 0.01,
+          "giay": 15.76,
           "loi": ""
         },
         {
           "job_type": "auto_scan_video.content_process",
-          "giay": 0.32,
-          "loi": "AiError: khong provider nao phuc vu duoc: ltt_llm: ban"
+          "giay": 20.32,
+          "loi": "HOAN BanError: khong provider nao phuc vu duoc: ltt_llm: ban",
+          "hoan_s": 20.0
         },
         {
           "job_type": "auto_scan_video.advance",
@@ -553,8 +541,9 @@
         },
         {
           "job_type": "auto_scan_video.content_process",
-          "giay": 0.32,
-          "loi": "AiError: khong provider nao phuc vu duoc: ltt_llm: ban"
+          "giay": 20.33,
+          "loi": "HOAN BanError: khong provider nao phuc vu duoc: ltt_llm: ban",
+          "hoan_s": 20.0
         },
         {
           "job_type": "auto_scan_video.advance",
@@ -563,8 +552,30 @@
         },
         {
           "job_type": "auto_scan_video.content_process",
-          "giay": 0.34,
-          "loi": "AiError: khong provider nao phuc vu duoc: ltt_llm: ban"
+          "giay": 20.31,
+          "loi": "HOAN BanError: khong provider nao phuc vu duoc: ltt_llm: ban",
+          "hoan_s": 20.0
+        },
+        {
+          "job_type": "auto_scan_video.advance",
+          "giay": 0.01,
+          "loi": ""
+        },
+        {
+          "job_type": "auto_scan_video.content_process",
+          "giay": 10.31,
+          "loi": "HOAN BanError: khong provider nao phuc vu duoc: ltt_llm: ban",
+          "hoan_s": 10.0
+        },
+        {
+          "job_type": "auto_scan_video.advance",
+          "giay": 0.01,
+          "loi": ""
+        },
+        {
+          "job_type": "auto_scan_video.edit_plan",
+          "giay": 0.52,
+          "loi": "HET NGAN SACH HOAN sau 90s (tai nguyen ban): BanError: khong provider nao phuc vu duoc: ltt_llm: ban"
         },
         {
           "job_type": "auto_scan_video.advance",
@@ -584,16 +595,7 @@
           "That is a much better order than translating everything before looking at it."
         ]
       },
-      "ban_bien_tap": {
-        "stage": "edit_plan",
-        "preset": "smart_localize",
-        "so_canh": 4,
-        "so_giu": 4,
-        "so_cat": 0,
-        "so_canh_da_doc": 0,
-        "so_co_bang_chung": 0,
-        "ti_le_giu": 1.0
-      },
+      "ban_bien_tap": {},
       "ban_dung": {},
       "ket_xuat": {},
       "ban_long_tieng": {
@@ -607,72 +609,33 @@
         "muc": []
       },
       "so_ke": {
-        "theo_nang_luc": [
-          {
-            "app_chu": "ltt_llm",
-            "nang_luc": "doc_canh",
-            "don_vi": "",
-            "so_luong": 0.0,
-            "credit": 0,
-            "da_giao": 0,
-            "tu_choi": 4,
-            "mo_ho": 0
-          }
-        ],
+        "theo_nang_luc": [],
         "tong": {
           "credit": 0,
           "da_giao": 0,
-          "tu_choi": 4,
+          "tu_choi": 0,
           "mo_ho": 0
         },
         "mo_ho_chua_giai_quyet": 0
       },
       "doi_soat": {
         "khop": true,
-        "so_don_vi": 4,
+        "so_don_vi": 1,
         "so_dong_da_giao": 0,
         "don_vi_co_tien_khong_co_so_cai": [],
         "so_cai_khong_co_don_vi": []
       },
       "tom_tat_khach": {
         "trang_thai": "error",
-        "so_buoc_xong": 4,
+        "so_buoc_xong": 3,
         "so_buoc": 11,
-        "phan_tram": 36,
+        "phan_tram": 27,
         "credit_da_giu": 5,
         "credit_da_tinh": 0,
-        "chi_phi_theo_nang_luc": [
-          {
-            "nang_luc": "doc_canh",
-            "don_vi": "",
-            "so_luong": 0.0,
-            "credit": 0
-          }
-        ],
-        "loi": "content_process: giai doan nay khong hoan tat"
+        "chi_phi_theo_nang_luc": [],
+        "loi": "edit_plan: giai doan nay khong hoan tat"
       },
-      "vi_sao_hong": [
-        {
-          "nang_luc": "doc_canh",
-          "trang_thai": "tu_choi",
-          "ly_do": "khong provider nao phuc vu duoc: ltt_llm: ban"
-        },
-        {
-          "nang_luc": "doc_canh",
-          "trang_thai": "tu_choi",
-          "ly_do": "khong provider nao phuc vu duoc: ltt_llm: ban"
-        },
-        {
-          "nang_luc": "doc_canh",
-          "trang_thai": "tu_choi",
-          "ly_do": "khong provider nao phuc vu duoc: ltt_llm: ban"
-        },
-        {
-          "nang_luc": "doc_canh",
-          "trang_thai": "tu_choi",
-          "ly_do": "khong provider nao phuc vu duoc: ltt_llm: ban"
-        }
-      ],
+      "vi_sao_hong": [],
       "credit_con_lai": 1000,
       "ra": {},
       "tai_ve": {
