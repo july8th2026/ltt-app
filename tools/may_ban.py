@@ -84,7 +84,11 @@ def quet() -> dict:
     try:
         _me = psutil.Process()
         bo_qua = {_me.pid} | {t.pid for t in _me.parents()}
-    except Exception:  # noqa: BLE001
+    except psutil.Error:
+        # ⛔ HEP, khong `except Exception`: banh coc `nuot loi lang le` cam THEM
+        #    cho nuot lang le, va no dung. Neu `psutil.Process()` hong vi mot ly
+        #    do KHONG phai psutil (vd thieu quyen o tang khac), thu ta muon la
+        #    no NO chu khong phai am tham dem thua mot dong.
         bo_qua = {os.getpid()}
 
     cay_toi = _ten_cay(str(GOC))
@@ -101,7 +105,9 @@ def quet() -> dict:
             muc = ra.setdefault(ten, {"so": 0, "cpu": 0.0, "la_cay_toi": ten == cay_toi})
             muc["so"] += 1
             muc["cpu"] += sum(p.cpu_times()[:2])
-        except Exception:  # noqa: BLE001 - moi loi psutil deu la "khong doc duoc"
+        except psutil.Error:
+            # Tien trinh chet giua chung / khong doc duoc `cwd` deu la chuyen
+            # binh thuong khi quet ca may. Bat HEP de mot loi KHAC van noi ra.
             continue
     return ra
 
