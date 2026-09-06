@@ -19,7 +19,7 @@
 """
 from __future__ import annotations
 
-from platform_core.i18n import _
+from platform_core.i18n import _ as _t
 
 import time
 import uuid
@@ -48,7 +48,7 @@ def _client_that():
     goc = (os.environ.get("LTTV_WANGP_URL") or "").strip()
     khoa = (os.environ.get("LTTV_WANGP_KEY") or "").strip()
     if not goc:
-        raise LoiJob(_("Chưa cấu hình máy dựng video."))
+        raise LoiJob(_t("Chưa cấu hình máy dựng video."))
     from .wangp_client import WanGPClient
 
     return WanGPClient(goc=goc, khoa=khoa)
@@ -61,7 +61,7 @@ def handle(params: dict, ctx=None, *, _client=None, _kho=None) -> dict:
     """
     prompt = str(params.get("prompt") or "").strip()
     if not prompt:
-        raise LoiJob(_("Thiếu mô tả video."))
+        raise LoiJob(_t("Thiếu mô tả video."))
 
     nguoi_dung_id = params.get("nguoi_dung_id") or params.get("user_id") or "vo_danh"
 
@@ -98,10 +98,10 @@ def handle(params: dict, ctx=None, *, _client=None, _kho=None) -> dict:
         if kq.da_huy:
             client.cleanup(job_id)
             return {"trang_thai": "da_huy", "tep": [], "job_wangp": job_id}
-        raise LoiJob(_("Sinh video thất bại.") + " " + "; ".join(kq.loi[:2]))
+        raise LoiJob(_t("Sinh video thất bại.") + " " + "; ".join(kq.loi[:2]))
 
     if not kq.tep:
-        raise LoiJob(_("Máy dựng báo xong nhưng không trả về tệp nào."))
+        raise LoiJob(_t("Máy dựng báo xong nhưng không trả về tệp nào."))
 
     # ── Kéo về kho của LTT. Job chưa xong cho tới khi bước này xong. ──
     da_luu: list[str] = []
@@ -110,10 +110,10 @@ def handle(params: dict, ctx=None, *, _client=None, _kho=None) -> dict:
         khoa = _khoa_kho(nguoi_dung_id, duoi)
         with_tai = getattr(client, "tai_ve", None)
         if with_tai is None:
-            raise LoiJob(_("Không tải được kết quả về."))
+            raise LoiJob(_t("Không tải được kết quả về."))
         kho.put(khoa, with_tai(duong), "video/mp4")
         if not kho.exists(khoa):
-            raise LoiJob(_("Lưu kết quả thất bại.") + f" ({khoa})")
+            raise LoiJob(_t("Lưu kết quả thất bại.") + f" ({khoa})")
         da_luu.append(khoa)
 
     client.cleanup(job_id)

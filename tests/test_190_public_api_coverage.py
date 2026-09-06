@@ -107,6 +107,15 @@ DISPOSITION = {
     # to drift apart. H43, docs/CHATLTT/.
     "chatltt": (DEFER, ()),
 
+    # Video AI chay bang WanGP tren C-CLOUD (V2.1). INTERNAL_ONLY, va lan nay
+    # ly do KHONG phai ke hoach ma la GIAY PHEP: `WanGP Community License 2.0`
+    # §5.2(g) cam "exposing the Software to customers or end users as a paid
+    # feature, add-on, or monetized backend component" neu khong co giay phep
+    # thuong mai rieng. Xem `docs/VIDEO_AI_V2/P01_UPSTREAM_PIN.md` muc 2.
+    # ⇒ Mo tool o day khong phai mot quyet dinh san pham, no la mot quyet dinh
+    #   PHAP LY, va no chua duoc dua ra.
+    "lttvideo": (INTERNAL_ONLY, ()),
+
     "qualitylab": (INTERNAL_ONLY, ()),
 }
 
