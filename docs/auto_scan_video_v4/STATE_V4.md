@@ -74,7 +74,40 @@
 - **the three acceptance runs, in order** - the sequence is the evidence:
 
       03:00  green, but BEFORE the repair loop was wired; reused 0
-      13:44  RED - machine B returned 429 to every call while a full gate ran
+      13:44  RED - and the RED WAS THE HARNESS, not the product (see below)
+- 🔴 **The 13:44 red was a harness artifact, and I reported it to the owner as a
+  product gap. Correcting that here because the wrong version is more
+  believable than the right one.**
+  What I said: *"machine B says busy for ~2 minutes, three retries back to back,
+  the run dies; and `BanError` carries `retry_after_s` which `dieu_phoi`
+  discards."* **Both halves wrong.** The platform handles busy fully:
+
+      job_runner:590   busy_only        -> ("resource_wait", 20)
+      job_runner:523   resource_wait    -> jobq.defer_resource(...)
+      jobs:300         defer_resource   -> back to QUEUED, next_run_at + delay,
+                                           NO attempt consumed, NO money touched
+      _cho_lai_s       reads `retry_after_s`, floor 1, default 20
+
+  ⇒ I read `dieu_phoi.py` and concluded about the **whole handling path**, while
+  the deciding layer is `job_runner`. Same shape counted all night: read one
+  layer, state a fact about the system.
+  🔴 The real defect was in **the acceptance harness itself** —
+  `test_448._chay_hang_doi` did `jobs.fail(..., retry=False)` for **every**
+  exception, while its own docstring says *"plays the REAL worker"*.
+  ⭐ This is the substitute rule at its sharpest: a substitute only answers
+  questions that do not depend on the thing it replaces. That harness replaces
+  the **worker**, and was then used to answer *"how does the product handle a
+  busy resource"* — the very thing it replaced. So it did not answer slightly
+  wrong; it answered **backwards**.
+  ✅ Fixed (`9427ad97`): it now calls **the real worker's own**
+  `_provider_failure_kind` rather than a copy, defers on `resource_wait` with a
+  **90 s budget**, and when the budget runs out it still fails but says the
+  failure came from a busy resource. Two pinning tests, both directions;
+  mutation red on the busy one, green on the real-error one.
+  ⚠️ The same flaw exists in `test_402._chay_het_hang_doi` and ~10 other test
+  files with their own `jobs.claim` loops. **Not fixed**: they use substitutes
+  that never return "busy", so it is latent there. Only the acceptance suite
+  calls real providers.
       00:02  green, repair loop LIVE, reused 2
 
 - **gate at RC**: `RESULT: PASS` at `d2d66ad0` (2026-09-06), **4** steps BOQUA -
