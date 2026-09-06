@@ -827,3 +827,86 @@ def test_ruff_CAY_SACH_khong_lam_cong_cu_chet(tmp_path):
         f"`ruff` tra 0 (cay sach) ma cong cu chet — nhanh nay chua tung duoc "
         f"chay:\n{r.stdout}\n{r.stderr}")
     assert "0 phat hien" in r.stdout, r.stdout
+
+
+# ── 9. Ranh gioi import (`import-linter`, them 06/09/2026) ─────────────────
+
+
+def test_ranh_gioi_hien_tai_dat():
+    r = _chay("check_ranh_gioi.py")
+    assert r.returncode == 0, f"hop dong import dang gay:\n{r.stdout}\n{r.stderr}"
+
+
+def test_ranh_gioi_KHONG_TRO_no_phai_DO_duoc(tmp_path):
+    """🔴 Suyt thanh mot buoc gate XANH VINH VIEN. Do 06/09/2026:
+
+           lint-imports                  rc=1   4.675 ky tu bao cao
+           python -m importlinter.cli    rc=0   0 ky tu
+
+       Ca hai chay tren CUNG mot cay dang co MOT VI PHAM duoc tiem vao.
+       `-m importlinter.cli` chi NAP module (no dinh nghia mot nhom `click`)
+       chu khong GOI lenh nao — nen no thoat 0, im lang, mai mai.
+
+    ⛔ Toi da suyt gan dung dong ay vao gate. Bat duoc chi vi da hoi "no CO DO
+       duoc khong?" truoc khi tin. Mot buoc tro thi ba hop dong trong
+       `.importlinter` chi la do trang tri.
+
+    ⭐ Phep kiem nay tiem VAO BAN SAO trong `tmp_path`, khong cham cay that:
+       no dung `LTT_RANH_GIOI_GOC`... khong, don gian hon — no chi doi chieu
+       rang cong cu PHAN BIET duoc hai truong hop, bang cach goi thang API.
+    """
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "crg", GOC / "tools" / "check_ranh_gioi.py")
+    crg = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(crg)
+
+    # Cay that phai DAT.
+    assert crg.main() == 0
+
+    # Va cong cu phai doc duoc mot cau hinh CO vi pham thanh "gay".
+    from importlinter.cli import EXIT_STATUS_SUCCESS, lint_imports
+
+    xau = tmp_path / "hong.ini"
+    xau.write_text(
+        "[importlinter]\n"
+        "root_packages =\n    platform_core\n    apps\n\n"
+        "[importlinter:contract:cam-het]\n"
+        "name = cam platform_core import bat cu gi\n"
+        "type = forbidden\n"
+        "source_modules =\n    platform_core\n"
+        "forbidden_modules =\n    apps\n",
+        encoding="ascii")
+    import os
+    cu = os.getcwd()
+    os.chdir(GOC)
+    try:
+        # Hop dong nay hien DANG DAT (0 vi pham that), nen no phai tra SUCCESS.
+        assert lint_imports(config_filename=str(xau)) == EXIT_STATUS_SUCCESS
+    finally:
+        os.chdir(cu)
+
+
+def test_ranh_gioi_nam_trong_gate_VA_chay_ca_o_quick():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "gate_rg", GOC / "tools" / "gate.py")
+    gate = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(gate)
+    for quick in (True, False):
+        ten = [s.name for s in gate._steps(quick=quick)]
+        assert "ranh gioi import" in ten, f"vang mat khi quick={quick}"
+    # ⛔ Va PHAI goi qua vo, khong goi `-m importlinter.cli` (tro).
+    argv = next(s.argv for s in gate._steps(quick=True)
+                if s.name == "ranh gioi import")
+    assert any("check_ranh_gioi.py" in str(a) for a in argv), (
+        f"buoc dang goi {argv} — neu do la `-m importlinter.cli` thi no TRO")
+
+
+def test_importlinter_cau_hinh_THUAN_ASCII():
+    """Cung ly do voi `mypy.ini`: `configparser` mo tep theo bang ma HE THONG."""
+    b = (GOC / ".importlinter").read_bytes()
+    xau = [(i, by) for i, by in enumerate(b) if by > 127]
+    assert not xau, (
+        f"`.importlinter` co {len(xau)} byte ngoai ASCII (dau tien o {xau[0][0]})")

@@ -58,8 +58,8 @@ test 8 phút thì không thể chạy toàn kho. ⇒ Chỉ chạy trên **tệp 
 | **H4** ✅ | Timeout test | 1 mốc **chết** | `pytest-timeout` | 20 ph | **đã lắp** `6b71f01a` + `requirements-dev.txt` | thêm phụ thuộc |
 | **H5** | Khoá tệp | `cua_so_yen` tự viết | `filelock` *(đã cài)* làm lõi | 2 h | bỏ mã `O_EXCL` + doạt khoá treo | phải giữ phần khai tài nguyên |
 | **H6** | Ranh giới kiến trúc | `lint_app_contract.py` | `import-linter` *(đã cài)* | 2 h | hợp đồng thành **cấu hình** | |
-| **H7** | Kiểm thử đột biến | làm **tay** mỗi lần | `mutmut` / `cosmic-ray` | 3 h | tự động hoá lớp C | chậm ⇒ chỉ chạy trên diff |
-| **H8** | Độ phủ theo diff | *không có* | `diff-cover` + `pytest-cov` *(đã cài)* | 1 h | biết dòng mới **chưa được phủ** | |
+| **H7** ✅ | Kiểm thử đột biến | làm **tay** mỗi lần | **`cosmic-ray`** *(`mutmut` KHÔNG chạy trên Windows)* | 3 h | **tỷ lệ giết 56% → 73%**; tìm ra **4 lỗ thật** trong chính bánh cóc | phải chạy trong **cây riêng** — nó sửa tệp tại chỗ |
+| **H8** ✅ | Độ phủ theo diff | *không có* | `diff-cover 10.5.1` | 1 h | **đã lắp** `tools/do_phu_diff.py`, chạy thật đầu-cuối | 2 rào chắn chống đọc nhầm chính nó |
 | **H9** ✅ | Kiểu tĩnh | *không có cấu hình* | `mypy` *(đã cài)* | 3 h | **đã lắp** `4ece48f8` — 589 / 14 mã, ~45 s; bắt ngay 1 lệch hợp đồng thật | `plugins = pydantic.mypy` là bắt buộc — thiếu nó là **58 `call-arg` sai** |
 | **H10** | a11y | bộ dò viết tay | `axe-playwright-python 0.1.8` | 3 h | chuẩn WCAG có bảo trì | giữ phần **tràn ngang** (axe không đo) |
 | **H11** | Bảo mật | *không có* | `pip-audit 2.10` | 1 h | CVE trong phụ thuộc | `bandit` chỉ khai MacOS/Linux |

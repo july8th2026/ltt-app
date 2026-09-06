@@ -621,6 +621,16 @@ def _steps(quick: bool, noi_tiep: bool = False) -> list[Step]:
         # BAT BUOC va de ra 58 `call-arg` SAI. Do 06/09 tren mot tep:
         # khong plugin 60 loi, co plugin 1 loi — va cai 1 do la loi that.
         Step("mypy", [sys.executable, "tools/check_mypy.py"], ROOT),
+        # Ranh gioi IMPORT giua cac tang -- xem `.importlinter`. 0,3 giay.
+        #
+        # ⛔ KHONG thay `lint_app_contract.py`. Hai cong cu giai hai bai
+        #    toan khac nhau: cai kia kiem CO HOC hop dong app (manifest,
+        #    CSRF, co route), cai nay kiem AI DUOC IMPORT AI. Plan ban dau
+        #    ghi "thay the" va do la sai -- da sua trong `.importlinter`.
+        #
+        # ⭐ Do 06/09: 3 hop dong, 0 gay. Hai mon no con lai nam duoi dang
+        #    `ignore_imports` CO TEN va CO LY DO, khong phai mot con so.
+        Step("ranh gioi import", [sys.executable, "tools/check_ranh_gioi.py"], ROOT),
         # PowerShell khong phan biet hoa thuong o ten bien, va tham so cua script
         # chi la mot bien thuong. Nen mot vong lap gan `$ten` ghi de tham so
         # `-Ten` — khong loi, khong canh bao. Da xay ra 31/08/2026: giong tao ra
