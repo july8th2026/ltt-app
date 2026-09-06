@@ -301,6 +301,22 @@ def goi(db, thao_tac: ThaoTac, messages: list, *, ctx=None,
             temperature=temperature,
             on_dispatch=on_dispatch, on_rejected=on_rejected)
     except Exception as exc:  # noqa: BLE001
+        # 🔑 **BAN hoi TRUOC MO HO, va thu tu nay co ly do.**
+        #
+        #    `_la_ban` thuan LOP: `BanError` chi sinh ra tu `ma == 429`, tuc may
+        #    B **da tu choi** — khong co gi chay, khong co gi bi tinh tien. Do la
+        #    mot su that dut khoat.
+        #
+        #    `_la_mo_ho` co mot lop cuoi la DO CHUOI ("timeout" / "mat ket noi").
+        #    De no chay truoc thi mot tin hieu YEU (chuoi con) thang mot tin hieu
+        #    MANH (lop chinh xac) — va do la nghich the.
+        #
+        # ⛔ Do duoc: `BanError("upstream timeout, dang ban")` — mot than 429
+        #    hoan toan hop ly cua mot `llama-server` dang tai — bi doc thanh MO
+        #    HO. Hau qua lech ve phia SAI: mo ho thi dung lan chay va cho nguoi
+        #    quyet dinh, trong khi viec dung la **doi roi chay tiep**.
+        if _la_ban(exc):
+            raise MayBan(str(exc)) from exc
         if _la_mo_ho(exc):
             raise AiMoHo(str(exc)) from exc
         # 🔴 **BAN phai hoi TRUOC `AiError`.** `giong_noi.MayBan` da ghi
@@ -323,8 +339,6 @@ def goi(db, thao_tac: ThaoTac, messages: list, *, ctx=None,
         #
         # ⭐ Thong diep van giu nguyen, chi LOP doi. Phan loai di theo lop; mot
         #    ban va doi chuoi se hong lai ngay lan sau ai do sua mot thong bao.
-        if _la_ban(exc):
-            raise MayBan(str(exc)) from exc
         raise AiError(str(exc)) from exc
 
     return {

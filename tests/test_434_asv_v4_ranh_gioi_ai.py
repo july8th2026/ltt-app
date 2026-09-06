@@ -455,3 +455,53 @@ def test_ban_MOT_PHAN_khong_duoc_tinh_la_ban(monkeypatch):
         "mot loi cau hinh duoc doc thanh 'ban' — lan chay se cho mai mot thu "
         "khong bao gio tu het")
 
+def test_ban_thang_mo_ho_khi_than_429_co_chu_timeout(monkeypatch):
+    """🔑 TIN HIEU MANH (lop) phai thang TIN HIEU YEU (chuoi con).
+
+    `_la_ban` thuan LOP: `BanError` chi sinh ra tu `ma == 429`, tuc may B **da
+    tu choi** — khong gi chay, khong gi bi tinh tien. Dut khoat.
+
+    `_la_mo_ho` co mot lop cuoi la do CHUOI ("timeout" / "mat ket noi"). Neu no
+    duoc hoi truoc, mot than 429 nhu `"upstream timeout, dang ban"` — hoan toan
+    hop ly voi mot `llama-server` dang tai — se bi doc thanh MO HO.
+
+    ⛔ Va hau qua lech ve phia SAI: mo ho thi **dung lan chay** va cho nguoi
+       quyet dinh, trong khi viec dung la **doi roi chay tiep**. Mot lan chay bi
+       dung vi mot chu trong thong bao cua ben kia.
+    """
+    from platform_core.llm import dieu_phoi
+    from platform_core.llm.cong_vlm import BanError
+
+    from apps.auto_scan_video import ai, loi
+
+    def ban(*a, **kw):
+        raise BanError("upstream timeout, dang ban")
+
+    monkeypatch.setattr(dieu_phoi, "goi", ban)
+
+    with pytest.raises(Exception) as ei:
+        ai.goi(None, ai.QC_NGU_NGHIA, [{"role": "user", "content": "x"}])
+
+    assert loi.phan_loai(ei.value) == loi.BAN, (
+        "mot than 429 co chu 'timeout' bi doc thanh mo ho — lan chay se dung "
+        "lai va doi nguoi, thay vi doi may B roi chay tiep")
+
+
+def test_MAT_KET_NOI_that_van_la_MO_HO(monkeypatch):
+    """⚠️ Nua khong the thieu cua bai tren: dao thu tu khong duoc nuot mo ho.
+
+    Mat ket noi SAU khi gui la truong hop **that su** khong biet model da chay
+    chua. Doc no thanh "ban" roi thu lai la co the tra tien hai lan cho mot viec.
+    """
+    from platform_core.llm import dieu_phoi
+
+    from apps.auto_scan_video import ai, loi
+
+    def mo_ho(*a, **kw):
+        raise dieu_phoi.AmbiguousProviderError("mat ket noi sau khi bat dau gui")
+
+    monkeypatch.setattr(dieu_phoi, "goi", mo_ho)
+
+    with pytest.raises(ai.AiMoHo):
+        ai.goi(None, ai.QC_NGU_NGHIA, [{"role": "user", "content": "x"}])
+
