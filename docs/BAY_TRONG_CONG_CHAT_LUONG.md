@@ -1041,6 +1041,64 @@ dùng được.
 nhiễm với `-n` (đếm worker, không đếm bầy luồng mỗi worker sinh) **và** với tên
 tệp test (một tên vô hại vẫn có thể `import torch`).
 
+### 🔑 MỘT KHOẢNG LẶNG KHÔNG PHẢI GIẤY PHÉP
+
+*(phiên Mobile V1 đúc, 06/09, từ một lần H44 **không** bấm)*
+
+Đo 09:18:31, đếm mọi tiến trình (không chỉ `python`), CPU tích luỹ ≥ 5s:
+
+```
+CPU 7,2 %  |  RAM trong 18,5 GiB  |  cay ASV: 0 tien trinh
+RSS lon nhat toan may: 0,16 GiB   <- bac pytest thuan, khong phai torch
+```
+
+Số ấy **nói thật**. Nhưng một khoảng lặng có **ba** nguyên nhân trông y hệt nhau:
+
+| | Nguyên nhân | Hệ quả nếu ta bấm |
+|---|---|---|
+| 1 | lượt kia đang **chờ máy B** | tải bung lên **sau** khi ta đã cam kết |
+| 2 | lượt kia đã **chết** | máy thật sự rảnh — **chỉ ca này là giấy phép** |
+| 3 | lượt kia **chưa bắt đầu** | rảnh bây giờ, bận một phút nữa |
+
+🔴 Ca 1 tệ nhất: dừng **sau khi đã bấm** đắt hơn hẳn không bấm — lượt bị bỏ dở
+phải chạy lại, nên tổng tải **tăng**.
+
+⇒ Cùng hình dạng đếm cả đêm — *một số 0 không phân biệt được hai nguyên nhân* —
+nhưng ở một trục mới: **thứ hết hạn không phải một CON SỐ, mà là SỰ IM LẶNG.**
+
+⭐ Và phần khó không phải biết luật, mà là: **có số đo ủng hộ việc bấm và vẫn
+không bấm**, vì hỏi *"số này trả lời được câu nào"* thay vì *"số này có đẹp
+không"*. Một phiên khác cùng sáng ấy bấm gate khi còn 11 tiến trình ở hai cây
+khác, và tự biện minh bằng chính phép đo 490s→613s.
+
+### ⛔ "KHẨN" cũng bị lạm phát — và bản vá là một ĐỘNG TÁC
+
+06/09, H44 gọi việc *"trang `/gia-api` hứa sai"* là **thiệt hại đang xảy ra**,
+nghe ngang hạng một lỗi thu tiền. Phân biệt đúng:
+
+| | |
+|---|---|
+| tiền thu sai | **không** xảy ra — C3 thu đúng từ 08:53 |
+| trang tài liệu hứa sai | có, phải sửa, nhưng **không ai mất tiền** |
+
+Và chiều lệch còn nghiêng về phía khách: trang hứa *"tối thiểu 1 credit"* trong
+khi ta thu **ít hơn** thế.
+
+🔴 Chưa đầy **mười tiếng** trước đó, chính H44 viết vào tệp này rằng *"nói quá
+thì lần sau người ta bỏ qua lời cảnh báo thật"*, sau khi gọi ba lượt gate chồng
+nhau là *"đúng cấu hình 03/09"*. Cùng người, cùng lỗi, trục khác: lần đầu lạm
+phát **mức nguy hiểm**, lần sau lạm phát **mức khẩn**.
+
+⇒ Nên bản vá **không** phải *"nhớ kỹ hơn"* — tri thức đã có và vẫn thua. Nó phải
+là một **động tác**:
+
+> Trước khi gọi thứ gì là **khẩn**, viết ra: **AI mất GÌ, trong BAO LÂU, nếu
+> chờ thêm một giờ.** Không điền được cả ba ô ⇒ **nó không khẩn.**
+
+⭐ Cùng khuôn với bản vá CRLF (*đọc kiểu hiện có rồi ép theo nó trong cùng một
+thao tác ghi*): cả hai đổi **cái tay làm**, không thêm một dòng cho **cái đầu
+nhớ**.
+
 ### 🔴 ĐẾM trả lời "AI"; chỉ CPU TÍCH LUỸ trả lời "CÓ ĐANG LÀM VIỆC KHÔNG"
 
 *(phiên ASV nêu 06/09, từ một phép đo của H44)*
