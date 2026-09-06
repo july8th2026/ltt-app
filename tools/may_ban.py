@@ -67,10 +67,32 @@ def quet() -> dict:
     except ImportError:
         return {}
 
+    # ⛔ LOAI TRU chinh minh VA toan bo chuoi cha.
+    #
+    # 🔴 Phien H44 do duoc 06/09: mot bo loc theo tien trinh khop vao **chinh
+    #    cong cu do**, vi vo `bash -c` mang ca ma nguon minh truyen cho no. Ho
+    #    dung bo loc ay de GIET, va `kill` di nguoc len cay cha cua chinh no —
+    #    script thoat ma 15 (SIGTERM).
+    #
+    # ⚠️ `cwd` bac 3 KHONG cuu duoc ca nay: shell cua nguoi dang hoi cung co
+    #    `cwd` dung bang cay ay. Dieu kien phai la thu tien trinh do **khong the
+    #    tu thoa** — tuc loai `os.getpid()` va `parents()`.
+    #
+    # ⭐ Tep nay chi DEM, khong giet, nen hau qua chi la dem thua mot. Nhung mot
+    #    bo dem tu dem minh la mot bo dem noi doi ve chinh cau hoi no tra loi,
+    #    va ngay nao co nguoi them che do giet thi lo hong da nam san o day.
+    try:
+        _me = psutil.Process()
+        bo_qua = {_me.pid} | {t.pid for t in _me.parents()}
+    except Exception:  # noqa: BLE001
+        bo_qua = {os.getpid()}
+
     cay_toi = _ten_cay(str(GOC))
     ra: dict = {}
-    for p in psutil.process_iter(["name", "cwd"]):
+    for p in psutil.process_iter(["pid", "name", "cwd"]):
         try:
+            if p.info["pid"] in bo_qua:
+                continue
             if (p.info["name"] or "").lower() not in ("python.exe", "python", "py.exe"):
                 continue
             ten = _ten_cay(p.info["cwd"] or "")

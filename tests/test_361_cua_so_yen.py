@@ -549,3 +549,67 @@ def test_pytest_GO_TAY_luot_lon_thi_XIN_khoa(tmp_path, monkeypatch):
     assert not cpu.exists(), (
         "luot NHO ma van xin khoa - vong lap sua-roi-thu se bi cham va nguoi "
         "ta se tat co nay di")
+
+def test_may_ban_KHONG_dem_chinh_no_va_chuoi_cha():
+    """⛔ Điều kiện phải là thứ tiến trình đo **không thể tự thoả**.
+
+    🔴 Phiên H44 đo được 06/09: một bộ lọc tiến trình khớp vào **chính công cụ
+       đo**, vì vỏ `bash -c` mang cả mã nguồn được truyền cho nó. Họ dùng bộ
+       lọc ấy để `kill`, và lệnh giết đi **ngược lên cây cha của chính nó** —
+       script thoát mã 15 (SIGTERM).
+
+    ⚠️ `cwd` bậc 3 **không** cứu được ca này: shell của người đang hỏi cũng có
+       `cwd` đúng bằng cây ấy. Đó là lý do điều kiện phải loại `os.getpid()`
+       **và toàn bộ `parents()`**, chứ không chỉ lọc theo cây.
+
+    ⭐ `may_ban.py` chỉ ĐẾM nên hậu quả hiện tại chỉ là đếm thừa một. Nhưng một
+       bộ đếm tự đếm mình là một bộ đếm **nói dối về chính câu hỏi nó trả lời**,
+       và ngày nào có người thêm chế độ giết thì lỗ hổng đã nằm sẵn ở đó.
+    """
+    import os                                    # noqa: PLC0415
+    import psutil                                # noqa: PLC0415
+
+    sys.path.insert(0, str(GOC / "tools"))
+    import may_ban                               # noqa: PLC0415
+
+    me = psutil.Process()
+    chuoi = {me.pid} | {t.pid for t in me.parents()}
+    assert os.getpid() in chuoi
+
+    # Tien trinh dang chay phep kiem nay CHINH la mot python.exe trong cay kho.
+    trong_cay = bool(may_ban._ten_cay(os.getcwd()))
+    if not trong_cay:
+        import pytest as _pt                     # noqa: PLC0415
+        _pt.skip("khong chay tu trong cay kho - phep do nay khong phan biet duoc")
+
+    thay = []
+    for p in psutil.process_iter(["pid", "name", "cwd"]):
+        try:
+            if p.info["pid"] in chuoi and (p.info["name"] or "").lower() == "python.exe":
+                if may_ban._ten_cay(p.info["cwd"] or ""):
+                    thay.append(p.info["pid"])
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
+    assert thay, "phep kiem nay chi co nghia khi chinh no nam trong cay kho"
+
+    # ⇒ Hoi HANH VI, dung grep ma nguon.
+    #
+    # ⛔ Ban dau cua phep kiem nay khang dinh `"parents()" in ma and "bo_qua" in ma`
+    #    — tuc lai la mot banh coc HINH DANG. Tiem "bo dong loai tru" thi no VAN
+    #    XANH, vi hai chu ay con nguyen trong tep. Do dung lop loi ma ca tep nay
+    #    ton tai de chan.
+    ten = may_ban._ten_cay(os.getcwd())
+    tho = 0
+    for p in psutil.process_iter(["pid", "name", "cwd"]):
+        try:
+            if (p.info["name"] or "").lower() != "python.exe":
+                continue
+            if may_ban._ten_cay(p.info["cwd"] or "") == ten:
+                tho += 1
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
+
+    tinh = may_ban.quet().get(ten, {"so": 0})["so"]
+    assert tinh < tho, (
+        f"quet() dem {tinh} tren tong {tho} python.exe cua cay `{ten}` - "
+        "no dang dem ca chinh tien trinh dang hoi")
