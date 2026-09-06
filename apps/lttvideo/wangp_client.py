@@ -60,10 +60,17 @@ class KetQua:
         )
 
 
-def _goi_that(method: str, duong: str, than=None, timeout: float = 30.0):
+#: Header mang khoá — để đường `GET` cũng xác thực được.
+HEADER_KHOA = "X-LTTV-Key"
+
+
+def _goi_that(method: str, duong: str, than=None, timeout: float = 30.0,
+              khoa: str = ""):
     du_lieu = json.dumps(than).encode("utf-8") if than is not None else None
     req = urllib.request.Request(duong, data=du_lieu, method=method)
     req.add_header("Content-Type", "application/json")
+    if khoa:
+        req.add_header(HEADER_KHOA, khoa)
     with urllib.request.urlopen(req, timeout=timeout) as r:
         tho = r.read().decode("utf-8")
     return json.loads(tho) if tho else {}
@@ -80,7 +87,8 @@ class WanGPClient:
 
     def _hoi(self, method: str, duong: str, than=None, timeout: float = 30.0):
         try:
-            return self._goi(method, f"{self.goc}{duong}", than, timeout=timeout)
+            return self._goi(method, f"{self.goc}{duong}", than,
+                             timeout=timeout, khoa=self.khoa)
         except LoiWanGP:
             raise
         except Exception as e:  # noqa: BLE001 — boc lai, khong nuot

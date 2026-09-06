@@ -27,7 +27,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from fastapi import Body, FastAPI, HTTPException
+from fastapi import Body, FastAPI, Header, HTTPException
 
 KHO_WANGP = Path(os.environ.get("LTTV_WANGP_ROOT", "/data/Wan2GP"))
 KHOA = (os.environ.get("LTTV_WANGP_KEY") or "").strip()
@@ -40,6 +40,22 @@ _khoa_phien = threading.Lock()
 _phien: Any = None
 #: job_id -> {"job": SessionJob, "tien_do": dict, "bat_dau": float}
 _JOB: dict[str, dict] = {}
+
+
+#: Tên header mang khoá. Dùng header thay vì thân yêu cầu để **đường `GET`
+#: cũng kiểm được** — ba đường đọc (`progress`, `result`, `tai`) trước đây
+#: không đòi khoá, và cộng với `job_id` đoán được thì đó là một đường tải
+#: video của người khác mà không cần khoá nào.
+HEADER_KHOA = "X-LTTV-Key"
+
+
+def sinh_job_id() -> str:
+    """`job_id` sinh bằng CSPRNG.
+
+    ⛔ Bản đầu dùng `f"j{int(time.time()*1000)}{len(_JOB)}"` — đoán ra được
+       trong vài lượt thử vì nó chỉ là đồng hồ cộng một bộ đếm.
+    """
+    return "j" + secrets.token_urlsafe(16)
 
 
 def _kiem_khoa(khoa: str) -> None:
@@ -92,7 +108,7 @@ def submit(than: dict = Body(...)) -> dict:
 
     s = _lay_phien()
     job = s.submit_task(settings)          # ⛔ nguyen van — khong sua gi
-    jid = f"j{int(time.time() * 1000)}{len(_JOB)}"
+    jid = sinh_job_id()
     _JOB[jid] = {"job": job, "tien_do": {}, "bat_dau": time.time()}
 
     def _theo_doi() -> None:
@@ -115,7 +131,8 @@ def submit(than: dict = Body(...)) -> dict:
 
 
 @app.get("/progress/{job_id}")
-def progress(job_id: str) -> dict:
+def progress(job_id: str, x_lttv_key: str = Header(default="")) -> dict:
+    _kiem_khoa(x_lttv_key)
     m = _JOB.get(job_id)
     if m is None:
         raise HTTPException(status_code=404, detail="unknown job")
@@ -135,9 +152,10 @@ def cancel(job_id: str, than: dict = Body(default={})) -> dict:
 
 
 @app.get("/result/{job_id}")
-def result(job_id: str) -> dict:
+def result(job_id: str, x_lttv_key: str = Header(default="")) -> dict:
     """Chờ xong rồi trả. Huỷ trả `success=False` + một mục lỗi huỷ — đúng khuôn
     `docs/API.md`, và LTT phân biệt huỷ với hỏng bằng chính mục đó."""
+    _kiem_khoa(x_lttv_key)
     m = _JOB.get(job_id)
     if m is None:
         raise HTTPException(status_code=404, detail="unknown job")
@@ -151,10 +169,11 @@ def result(job_id: str) -> dict:
 
 
 @app.get("/tai/{job_id}/{chi_so}")
-def tai_ve(job_id: str, chi_so: int):
+def tai_ve(job_id: str, chi_so: int, x_lttv_key: str = Header(default="")):
     """Trả byte của tệp thứ `chi_so`. LTT kéo về rồi đẩy lên R2."""
     from fastapi.responses import FileResponse
 
+    _kiem_khoa(x_lttv_key)
     m = _JOB.get(job_id)
     if m is None:
         raise HTTPException(status_code=404, detail="unknown job")

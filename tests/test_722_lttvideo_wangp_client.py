@@ -16,9 +16,13 @@ class GoiGia:
     def __init__(self, dap: dict | None = None):
         self.dap = dap or {}
         self.da_goi: list[tuple[str, str, dict | None]] = []
+        #: Khoa di kem TUNG luot goi — de kiem duong GET cung mang khoa.
+        self.khoa_da_gui: list[str] = []
 
-    def __call__(self, method: str, duong: str, than=None, timeout: float = 30.0):
+    def __call__(self, method: str, duong: str, than=None, timeout: float = 30.0,
+                 khoa: str = ""):
         self.da_goi.append((method, duong, than))
+        self.khoa_da_gui.append(khoa)
         for mau, gia_tri in self.dap.items():
             if mau in duong:
                 if isinstance(gia_tri, Exception):
@@ -95,10 +99,19 @@ def test_result_thanh_cong_tra_danh_sach_tep():
     assert kq.thanh_cong is True and kq.tep == ["/data/out/a.mp4"]
 
 
-def test_khoa_endpoint_di_theo_moi_lenh_goi():
-    c, g = _client({"/health": {}})
+def test_khoa_endpoint_di_theo_MOI_lenh_goi_ke_ca_GET():
+    """🔴 Ba duong DOC (progress/result/tai) truoc day khong doi khoa.
+
+    Cong voi `job_id` doan duoc, do la mot duong tai video cua nguoi khac ma
+    khong can khoa nao. Khoa gio di o header nen `GET` cung xac thuc duoc.
+    """
+    c, g = _client({"/health": {}, "/progress": {}, "/result": {"success": True}})
     c.health()
-    assert c.khoa == "KHOA"
+    c.progress("J1")
+    c.result("J1")
+    assert g.khoa_da_gui == ["KHOA", "KHOA", "KHOA"], (
+        f"khoa phai di kem MOI luot goi, thuc te: {g.khoa_da_gui}"
+    )
 
 
 def test_loi_mang_duoc_boc_thanh_loi_CUA_APP():
