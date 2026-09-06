@@ -52,10 +52,10 @@ test 8 phút thì không thể chạy toàn kho. ⇒ Chỉ chạy trên **tệp 
 
 | # | Hạng mục | Đang làm | Lắp bằng | Công | Lợi ích đo được | Rủi ro |
 |---|---|---|---|---|---|---|
-| **H1** | Lint tĩnh | ≥4 bước gate viết tay | `ruff` *(đã cài)* | 1,5 h | 1.149 lỗi; 323 tự sửa | gate đỏ ngay ⇒ phải chốt mốc |
-| **H2** | Mốc kết dòng | `check_xuong_dong.py` | `.editorconfig` + `.gitattributes` | 1 h | xoá **cả lớp** lỗi CRLF | `.gitattributes` sai làm **viết lại cả kho** |
+| **H1** ✅ | Lint tĩnh | ≥4 bước gate viết tay | `ruff` *(đã cài)* | 1,5 h | **đã lắp** `d8c9e65f` — bánh cóc theo **mã luật** | gate đỏ ngay ⇒ phải chốt mốc |
+| **H2** ⚠️ | Mốc kết dòng | `check_xuong_dong.py` | `.editorconfig` **mình nó** | 1 h | **đã lắp** `d8c9e65f`; `.gitattributes` **RÚT** — đo được nó viết lại **429 tệp** | chính rủi ro ở cột này đã xảy ra |
 | **H3** | Cổng trước commit | *không có* | `pre-commit 4.5.1` *(đã cài)* | 1 h | cưỡng chế lớp D | **`.git/hooks` dùng chung 4 worktree** |
-| **H4** | Timeout test | 1 mốc **chết** | `pytest-timeout` | 20 ph | test treo sẽ **đỏ** thay vì treo | thêm phụ thuộc |
+| **H4** ✅ | Timeout test | 1 mốc **chết** | `pytest-timeout` | 20 ph | **đã lắp** `6b71f01a` + `requirements-dev.txt` | thêm phụ thuộc |
 | **H5** | Khoá tệp | `cua_so_yen` tự viết | `filelock` *(đã cài)* làm lõi | 2 h | bỏ mã `O_EXCL` + doạt khoá treo | phải giữ phần khai tài nguyên |
 | **H6** | Ranh giới kiến trúc | `lint_app_contract.py` | `import-linter` *(đã cài)* | 2 h | hợp đồng thành **cấu hình** | |
 | **H7** | Kiểm thử đột biến | làm **tay** mỗi lần | `mutmut` / `cosmic-ray` | 3 h | tự động hoá lớp C | chậm ⇒ chỉ chạy trên diff |
