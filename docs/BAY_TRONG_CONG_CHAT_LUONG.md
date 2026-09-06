@@ -1041,6 +1041,36 @@ dùng được.
 nhiễm với `-n` (đếm worker, không đếm bầy luồng mỗi worker sinh) **và** với tên
 tệp test (một tên vô hại vẫn có thể `import torch`).
 
+### 🔴 ĐẾM trả lời "AI"; chỉ CPU TÍCH LUỸ trả lời "CÓ ĐANG LÀM VIỆC KHÔNG"
+
+*(phiên ASV nêu 06/09, từ một phép đo của H44)*
+
+Bậc 3 (đếm mọi `python` theo `cwd`) sửa được chuyện *đếm thiếu / đếm thừa*. Nó
+**không** sửa được chuyện phân biệt **bận** với **đông cứng**:
+
+```
+chatltt-v3-agentic   7 tien trinh /   30 giay CPU trong 22-46 phut  -> RAC
+CAY-CHINH           10 tien trinh / 1842 giay CPU trong  6 phut     -> DANG CAY
+```
+
+⇒ Hai con số **7 và 10 gần như nhau**, hai kết luận **ngược nhau**. Không có cột
+CPU tích luỹ thì cả hai đọc thành *"cây kia đang bận"*.
+
+🔴 **Và hệ quả lệch về phía nguy hiểm theo một chiều rất khó thấy.** Phiên ASV
+**chờ 8 phút** một phần vì 6–7 tiến trình `chatltt` mà H44 vừa chứng minh là
+**xác chết** — cặn của ba lượt `check_multiproc`.
+
+⛔ Cái giá của lỗi này là **thời gian không xảy ra chuyện gì**, nên nó **không
+để lại dấu vết nào**: không ai đỏ, không ai treo, không ai than. Mọi phiên sẽ
+nhường nhầm, **đều đặn**, và không ai biết.
+
+⭐ Cùng cơ chế với *"lỗi không phạt người gây ra là lỗi sống rất dai"* — chỉ
+khác: ở đây **không ai** bị phạt cả, kể cả người sau. Đó là loại lỗi bền nhất.
+
+⇒ Bậc 3 đủ **ba** cột, không phải một: **cây · số tiến trình · CPU tích luỹ**.
+Và đọc CPU **tích luỹ** chứ không phải một mẫu `cpu_percent` — một lượt đang chờ
+I/O đo ra 0 %, còn một xác chết cũng đo ra 0 %.
+
 ### 🔑 `cmdline` nói dối theo CẢ HAI chiều — trong cùng một đêm
 
 Đây là lần thứ **hai** một phép lọc theo cmdline lừa được cả nhóm, và hai lần
