@@ -95,6 +95,72 @@ danh sách xoá chỉ vì nó khớp tiền tố chuỗi `tests/test_71`.
 
 ---
 
+## C-bis. Quyết định phát sinh ở P01
+
+### P01-D-01 — KHÔNG lấy GUI của WanGP làm GUI app video LTT
+
+Câu hỏi của chủ dự án 06/09: *"lấy code GUI của WanGP về làm GUI app video LTT
+đúng không?"* — **Không.** Ba lý do, lý do đầu là lý do đóng đinh:
+
+**① Không có GUI để lấy.** Đo ở SHA ghim: kho **không có** `frontend/`, `web/`,
+`ui/`, `static/`, `templates/` hay `client/`. Giao diện là **Gradio 5.29.0 dựng
+bằng Python nằm trong chính tệp engine**:
+
+| `wgp.py` | 825.038 byte · **14.000 dòng** · 375 hàm cấp đầu |
+|---|---|
+| lời gọi `gr.*` **trong cùng tệp** | **1.053** (150 `gr.Button`, 51 `gr.Dropdown`, 46 `gr.Tab`, 23 `gr.Slider`) |
+| `gr.Blocks` / `launch()` | 1 / 1 |
+
+⇒ "Lấy GUI" = fork một tệp 14.000 dòng **vừa là UI vừa là engine**. Ngược hẳn
+mục tiêu "một engine, client mỏng".
+
+**② Phá ranh giới kiến trúc.** UI của WanGP không biết auth LTT, sổ credit, quyền
+sở hữu media hay R2. Kiến trúc V2.1 §2.D: *"LTT browser never sends arbitrary
+WanGP widget/settings blobs"* — trình duyệt gửi `profile_id`. Đặt UI engine lên
+đường người dùng là bỏ đúng lớp `D-V2-004` bảo vệ.
+
+**③ Giấy phép nêu đích danh lớp UI.** `WanGP Community License 2.0` liệt kê thứ
+Licensor sở hữu, gồm *"**UI and queueing layers**, API and headless interfaces"*.
+Nhúng vào sản phẩm có thu tiền rơi vào `5.2(d)`/`5.2(g)`. Nội bộ vẫn miễn phí,
+nhưng nó **đóng** cửa thương mại thay vì để ngỏ.
+
+### P01-D-02 — Thứ ĐÁNG lấy từ giao diện họ là THAM SỐ, không phải widget
+
+Giá trị thật trong UI ấy là *tác giả đã chỉnh sẵn model/template/settings nào cho
+từng tác vụ*. Đó đúng là **Verified Baseline Profile** của `D-V2-006`, và P02 có
+việc chụp nó lại thành `profile_id`. **Widget vứt, số giữ.**
+
+WebUI vẫn dùng — làm **bàn điều khiển vận hành** (`D-V2-003`), không nằm trên
+đường khách đi.
+
+### P01-D-03 — Có một "đường nhanh", ghi lại để không phải nghĩ lại
+
+Nếu mục tiêu trước mắt chỉ là **vài nhân viên dùng được ngay**: dựng WanGP WebUI
+sau lớp auth LTT là việc **vài ngày**, và giấy phép cho phép (internal use).
+
+Giá phải trả: không đo credit · không sở hữu theo người dùng · không đi ra thương
+mại được · tới lúc muốn bán thì làm lại.
+
+⭐ Hai đường **không loại trừ nhau**: WebUI nội bộ chạy trước, GUI native xây
+song song, **cùng một engine**. Mặc định vẫn là đường dài (`D-V2-002`); đổi thì
+phải là quyết định của chủ dự án, ghi vào đây.
+
+### P01-D-04 — SHA thượng nguồn được ghim
+
+`1e1dd2757f24923f008593d9d4ec09062234be20` (2026-09-05). Hash từng tệp ở
+`P01_UPSTREAM_PIN.md`. Đổi SHA là một quyết định, phải ghi vào sổ này.
+
+### P01-D-05 — Cổng giấy phép: PASS nội bộ, CHẶN thương mại
+
+Chi tiết + trích dẫn điều khoản: `P01_UPSTREAM_PIN.md` mục 2.
+
+🔴 **Giấy phép là cổng thứ hai, độc lập với cổng kinh tế.** V3 chết ở `V-018` vì
+giá vốn > giá bán của đối thủ. Kể cả khi V2.1 giải xong bài toán giá, nó **vẫn**
+còn cổng này. Phải hỏi tư vấn pháp lý **trước** khi mở cổng thương mại — liên hệ
+cấp phép ghi ở `5.4`: `deepbeepmeep@yahoo.com`.
+
+---
+
 ## D. Xung đột B-1 — ĐÃ GỠ
 
 ### P00-D-07 — V3 dừng phát triển; V2.1 là đường duy nhất đi tiếp

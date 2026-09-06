@@ -11,8 +11,14 @@
 
 ## Trạng thái
 
-- **phase:** `P00` — Recover + Audit Legacy + Fresh V2 Baseline
-- **status:** **PASS** (xem mục *Cổng nghiệm thu P00*)
+- **phase:** `P01` — Pin + Vanilla WanGP C-CLOUD POC
+  *(P00 đã đóng PASS — mục `Cổng nghiệm thu P00` giữ nguyên bên dưới)*
+- **status:** **P01 nửa không tốn tiền XONG · nửa tốn GPU CHỜ DUYỆT CHI**
+  — xem *Kế hoạch chi P01*. Hồ sơ: `P01_UPSTREAM_PIN.md`.
+- **luật một-phase-một-chat:** ⛔ **ĐÃ GỠ 06/09** theo yêu cầu chủ dự án. Các
+  phase chạy liên tục trong một phiên. ⚠️ Tệp state này **quan trọng hơn** chứ
+  không kém đi: nó vẫn là thứ phiên sau đọc, và giờ không còn ranh giới chat để
+  ép cập nhật — nên **cập nhật ngay khi có kết quả**, đừng dồn tới cuối.
 - **branch:** `phien/video-v2-wangp`
 - **worktree:** `D:\LTTSTUDIOSAPP\.claude\worktrees\video-v2-wangp`
 - **base_commit (trunk lúc tách):** `06017841` trên `admin-mvp-v3`
@@ -21,8 +27,14 @@
   — đo được: `git rev-list --left-right --count master...admin-mvp-v3` → `0 216`.
   `master` đứng ở `d225a480` (03/09), tụt sau trunk **216 commit**.
   ⇒ Worktree V2 tạo từ `admin-mvp-v3` theo `docs/QUY_TRINH_WORKTREE.md` luật 1.
-- **wangp_upstream_sha:** *(chưa — P01 ghim)*
-- **wangp_patch_sha:** *(chưa — P01/P03)*
+- **wangp_upstream_sha:** ✅ **`1e1dd2757f24923f008593d9d4ec09062234be20`**
+  — `deepbeepmeep/Wan2GP`, commit 2026-09-05. Hash từng tệp:
+  `P01_UPSTREAM_PIN.md` mục 1.
+- **wangp_patch_sha:** *(chưa — chưa fork, chưa vá. `P01-D-01`: không lấy GUI)*
+- **wangp_license:** 🔴 **`WanGP Community License 2.0`** — **không** phải
+  Apache-2.0 (GitHub gắn nhãn `NOASSERTION`). **PASS cho dùng nội bộ**
+  (§1.8, §1.9(i), §3.3, §7.1); **CHẶN việc bán ra ngoài** (§5.2(g), §7.2).
+  Trích dẫn đầy đủ: `P01_UPSTREAM_PIN.md` mục 2. Quyết định: `P01-D-05`.
 - **video_engine_target:** **WanGP** (D-V2-001)
 - **new_v2_runtime_fallback_to_legacy:** **FORBIDDEN** (D-V2-010)
 - **commercial_gate:** **CLOSED** (D-V2-011) — nội bộ, `public=False`,
@@ -47,11 +59,13 @@
 - **browser_checks:** **N/A** — P00 không đổi GUI, route hay tài sản tĩnh
 - **blockers:** xem *Blockers*
 - **decisions:** `DECISIONS.md`
-- **exact_next_action:** **P01** — `P01_PIN_VANILLA_WanGP_C_CLOUD_POC.md`,
-  trong **chat mới**, từ worktree này.
-  ➕ **Việc phụ bắt buộc của P01:** chốt giữ hay bỏ volume RunPod `uizchbiet5`
-  (~$21/tháng, của V3 đã dừng) — quyết được ngay khi biết BOM model của WanGP.
-  Xem `DECISIONS.md` `P00-D-07`.
+- **exact_next_action:** **chờ chủ dự án duyệt chi ~$2,80 (trần $5,00)** cho
+  lượt POC GPU của P01 — xem *Kế hoạch chi P01*. Duyệt xong thì chạy tiếp P01
+  mục 5–9; **không** nhảy sang P02.
+  ➕ Kèm theo lượt đó: chốt **giữ hay bỏ volume `uizchbiet5`** (~$21/tháng), vì
+  chỉ lúc boot WanGP thật mới biết nó cần model nào. `P00-D-07`.
+- **spend_phase (P01):** **$0,00 tới lúc này** — mọi việc đã làm đều là đọc API
+  công khai và truy vấn RunPod chỉ-đọc.
 
 ## Cloud — tài nguyên trả tiền đang sống (thừa kế từ V3)
 
@@ -59,17 +73,95 @@
 đòi kiểm kê **trước** khi có compute trả tiền, và vì hai tài nguyên này đang
 tính tiền trong lúc chương trình V2.1 khởi động.
 
-| Tài nguyên | ID | Trạng thái | Tiền |
-|---|---|---|---|
-| Network volume RunPod | `uizchbiet5` (`lttvideo-models-v1`) | 300 GB standard, `US-KS-2` | ~**$21/tháng**, cố định |
-| Endpoint Serverless | `uwzftpd3utftfn` (`lttvideo-worker`) | `workersMin=0` | ~$0 khi rảnh |
+Kiểm kê **đo lại ở P01** bằng `python tools\video_cloud.py kiem-ke` (chỉ đọc,
+chạy từ worktree V3 nơi có công cụ + khoá):
+
+| Tài nguyên | ID | Tên **thật** | Trạng thái | Tiền |
+|---|---|---|---|---|
+| Network volume | `uizchbiet5` | **`lttv-models-v1`** | 300 GB, `US-KS-2` | ~**$21/tháng**, cố định |
+| Endpoint Serverless | `uwzftpd3utftfn` | **`lttv-worker`** | `workersMin=0` | ~$0 khi rảnh |
+| **Pod** | — | — | **0 — không compute nào chạy** ✅ | $0 |
+| Tài nguyên mồ côi | — | — | **0** ✅ | — |
+
+⚠️ **Sửa lỗi của chính tệp này ở P00:** tôi từng ghi volume tên
+`lttvideo-models-v1` và endpoint `lttvideo-worker` — **chép từ tài liệu V3**. Tên
+thật là **`lttv-models-v1`** và **`lttv-worker`**; tiền tố đã đổi thành `lttv-`
+từ `V-002` mà tài liệu V3 không cập nhật hết. Đúng lỗi *"đọc thứ đại diện thay vì
+đọc thứ thật"*, và nó lọt vào chính tệp tôi viết ra để chống điều đó.
 
 - Số dư RunPod và mức chi **không chép vào đây** — hỏi
-  `python tools\video_theo_doi.py tom-tat` **trên nhánh V3** (công cụ chỉ tồn
-  tại ở đó), và chỉ tin dòng `Hoa don`.
+  `python tools\video_cloud.py trang-thai` **trên nhánh V3** (công cụ chỉ tồn
+  tại ở đó). Ảnh chụp có ngày tháng: `P01_UPSTREAM_PIN.md` mục 4.
 - 🔴 **Sàn credit:** số dư RunPod về $0 thì volume bị **xoá không khôi phục
   được**. Quyết định giữ hay bỏ volume 300 GB là một quyết định **của chủ dự
   án**, thuộc P06 (cutover), không phải của P00.
+
+## Kế hoạch chi P01 — CHỜ DUYỆT
+
+P01 mục 5–9 (boot WanGP thật, kiểm WebUI/API/MCP/queue/cancel, rồi tắt) cần thuê
+GPU thật. Luật thường trực của dự án giữ lại ba ranh giới — *deploy, **bút toán
+tiền**, UAC* — nên phiên này dừng ở đây.
+
+### Tiền thật (đo 2026-09-06, kỳ 01/09→06/09)
+
+| | |
+|---|---|
+| Số dư | **$45,35** |
+| Sàn credit **không được tiêu** | **$31,50** — về $0 là RunPod **xoá volume vĩnh viễn** |
+| ⇒ tiêu được | **≈ $13,85** |
+| Đang chảy | **$0,0290/giờ** = volume, liên tục, kể cả khi không ai dùng |
+
+🔴 **Đừng dùng dòng "2,9 giờ GPU mua được"** của công cụ V3: nó chia $13,85 cho
+hằng số **$4,79/giờ** (giá **Serverless Flex** mà `V-017` đo). P01 thuê **Pod**,
+giá khác hẳn — cùng số tiền mua được **~10 giờ** A100. Cùng cơ chế `V-017`: một
+hằng số đúng cho ngữ cảnh này bị dùng cho ngữ cảnh khác, không có gì đỏ lên.
+
+### 🔴 Ràng buộc quyết định giá: US-KS-2 chỉ còn HAI loại GPU
+
+Volume nằm ở `US-KS-2` và `dataCenterId` **không sửa được** ⇒ Pod muốn gắn volume
+thì phải ở đúng đó.
+
+| Có ở US-KS-2 | VRAM | Giá/giờ | Tồn kho |
+|---|---:|---:|---|
+| A100 SXM | 80 GB | **$1,390** | **Low** |
+| H100 NVL | 94 GB | $2,590 | **Low** |
+
+Toàn cầu thì có 40/48 loại, rẻ nhất $0,130/giờ (RTX 3070 8 GB); A5000 24 GB
+$0,160; RTX 4090 24 GB $0,340; A40 48 GB $0,350.
+
+### Hai phương án
+
+| | **A — gắn volume (đề xuất)** | **B — rẻ nhất, không volume** |
+|---|---|---|
+| Máy | A100 SXM 80 GB, `US-KS-2` | RTX A5000 24 GB hoặc RTX 4090, DC bất kỳ |
+| Giá/giờ | **$1,390** | **$0,160 – $0,340** |
+| Thời lượng dự kiến | ~2 giờ | ~2 giờ |
+| **Chi dự kiến** | **≈ $2,80** | **≈ $0,35–0,70** + phí ổ container |
+| Trần cứng đề nghị | **$5,00** — vượt thì tắt máy, không xin thêm | **$2,00** |
+| Được gì thêm | dùng 300 GB **đã trả tiền rồi**; và **trả lời được câu "giữ hay bỏ volume"** bằng bằng chứng | không trả lời được câu volume |
+| Rủi ro | tồn kho **Low** — có thể không thuê được lúc cần | model phải tải mới, ổ container tính tiền |
+
+⭐ **Đề xuất A.** Đắt hơn ~$2 nhưng nó đồng thời đóng một khoản **định kỳ
+$21/tháng** đang chảy — mà `P00-D-07` đã hẹn chốt ở đúng P01 này.
+
+### Luật an toàn cho lượt chi (từ `COST_AND_SAFETY` + bài học V3)
+
+- ghi **ID tài nguyên vào sổ NGAY khi tạo**, trước cả dòng `print` kế tiếp —
+  V3 từng suýt để một pod tính tiền mà không có trong sổ vì `print` ném lỗi
+  cp1252 trước khi kịp ghi;
+- **không** `--share`, **không** cổng WebUI/MCP trần không xác thực;
+- **không** khoá R2/DB/session của LTT lên C-CLOUD;
+- tắt máy ngay sau khi có bằng chứng, rồi **kiểm lại bằng `kiem-ke`** rằng
+  `pods` về 0;
+- ⚠️ hoá đơn RunPod **trễ 20–60 phút** — số chi cuối cùng phải đọc lại sau.
+
+### Câu duy nhất cần chủ dự án trả lời
+
+> Duyệt chi **≈ $2,80 (trần $5,00)** để thuê A100 80 GB ở US-KS-2 khoảng 2 giờ,
+> chạy lượt POC WanGP nguyên bản, rồi tắt?
+
+Chưa có câu trả lời thì P01 dừng ở trạng thái hiện tại — mọi phần không tốn tiền
+đã xong và đã commit.
 
 ## Cổng nghiệm thu P00
 
