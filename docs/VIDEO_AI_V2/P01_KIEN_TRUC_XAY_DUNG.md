@@ -250,3 +250,93 @@ Pack giữ nguyên khung P01→P09; thứ đổi là **nội dung từng pha**, 
 | **O-008** | Serverless giữ được `WanGPSession` ấm giữa các request tới mức nào? | P02 | quyết `idleTimeout` |
 
 ⛔ Cả ba đều là **phép đo**, không phải quyết định. Đừng chốt bằng suy luận.
+
+---
+
+## 9. Bổ sung 06/09 — bốn câu hỏi của chủ dự án về RunPod
+
+### 9.1 Hệ thống V3 là Serverless, và Pod lợi ở đâu
+
+Đo: `workersMin=0`, `workersMax=1` ⇒ **Serverless**.
+
+| | Serverless A100 80 GB | Pod A100 |
+|---|---|---|
+| Giá | **$0,00076/giây = $2,736/giờ** *(V3, `VAN_HANH_MAY_C` §2)* | **$1,39/giờ** *(đo 06/09, `US-KS-2`)* |
+| Khi rảnh | **$0** | tính đủ |
+
+⇒ Serverless **đắt gấp ~2 lần mỗi giờ chạy thật**, nhưng về không khi rảnh.
+
+**Điểm hoà vốn:** Pod rẻ hơn khi GPU **bận > 51%** thời gian máy bật
+($1,39 ÷ $2,736 = 0,508). Cộng phí cold start thì ngưỡng còn tụt.
+
+| Nhịp dùng | Rẻ hơn |
+|---|---|
+| dựng liên tục 3 giờ | **Pod** — $4,17, model nạp **một lần** (Serverless: $8,21 + cold start) |
+| vài job rải rác trong ngày | **Serverless** — rẻ hơn nhiều lần |
+
+⛔ Đừng lẫn hai bảng giá. GraphQL trả **giá Pod**; `pricing.md` của RunPod là
+**giá Serverless**. `V-017` đã sập một lần vì lẫn đúng chỗ này.
+
+### 9.2 🔴 Sửa một con số hay bị phóng đại: một job KHÔNG dùng "mấy trăm GB"
+
+V3 đo chuỗi T2V thật = **68,78 GB**. Con số **170,51 GB** trên ổ đĩa là **toàn
+bộ BOM cho cả ba mode** (t2v + i2v + control) cộng lại, **không phải một lượt
+chạy**.
+
+Giữ ấm: giữ 1 giây $0,00076 so với cold start $0,13–0,26 ⇒ **có lãi nếu job kế
+tới trong 171–342 giây**. V3 chốt `idleTimeout = 60`.
+
+### 9.3 WanGP CÓ lời giải sẵn cho việc đổi model — và nó giải ở tầng RAM
+
+`docs/CLI.md` của WanGP tại SHA ghim, năm hồ sơ bộ nhớ:
+
+| Profile | Cách làm |
+|---|---|
+| **1** | model hiện tại nằm trọn VRAM + **model không dùng giữ ở RAM dự trữ** |
+| **2** | nạp từng phần, **model không dùng vẫn ở RAM dự trữ** |
+| **3** | nạp trọn vào VRAM — **cần 24 GB cho model 14B** |
+| **4** | *mặc định* — nạp từng phần, linh hoạt nhất |
+| 4+ (4.5) | tiết kiệm tới 1 GB VRAM, chậm hơn chút |
+| 5 | ít RAM nhất |
+
+🔑 **Profile 1/2 là lời giải cho bài toán "nạp qua lại giữa nhiều model".** Model
+không dùng **không trả về ổ đĩa** mà nằm ở **RAM hệ thống** ⇒ đổi model là
+**RAM→VRAM** (hàng chục GB/s), không phải **ổ đĩa→VRAM** (200–400 MB/s — chính
+là bài toán 300 giây).
+
+Cờ liên quan: `--preload <MB>` · `--quantize-transformer` **mặc định True**
+(INT8) · `--perc-reserved-mem-max` · `--attention sage2`.
+Cỗ máy thật là thư viện riêng của tác giả: **`mmgp` 3.7.14** — *Memory
+Management for the GPU Poor* (`wgp.py:158`).
+
+### 9.4 🔴 Nguồn cho `O-006`: 24 GB so với 59,8 GB
+
+WanGP: *"Profile 3: Load entire current model in VRAM (**requires 24GB for 14B
+model**)"*. ComfyUI của V3 đo đỉnh **59,8 GB** (`V-008`).
+
+Nếu 24 GB đúng thì **không cần card 80 GB**: A40 48 GB rẻ hơn **2,2 lần** ở
+serverless ($1,224/giờ so với $2,736/giờ).
+
+⛔ **Nhưng chính WanGP cấm đọc bảng thay cho đo** — `docs/MODELS.md:107`:
+*"Model size alone does not determine whether a checkpoint will run. Resolution,
+frame count, attention backend, quantization, memory profile, tiling,
+sliding-window size, and enabled controls all affect RAM and VRAM use. The old
+fixed '6 GB / 12 GB / 20 GB' model tiers are therefore **not reliable**."*
+
+⇒ `O-006` giờ có **nguồn**, chưa có **phép đo**. Đo ở lượt Pod đầu tiên.
+
+### 9.5 Phiên bản: dùng bản mới nhất — đã làm
+
+`wgp.py:159` → **`WanGP_version = "12.71"`** tại SHA ghim. Đúng bản mới nhất.
+
+⚠️ Phân biệt hai thứ hay bị gọi chung là "phiên bản":
+
+| | |
+|---|---|
+| **WanGP** — *ứng dụng* | 12.71 · dùng bản mới nhất là đúng |
+| **Wan** — *model* | 2.1 / 2.2, và WanGP còn chạy LTX-2, Qwen Image, Hunyuan, Flux |
+
+Với **model**, "mới nhất" không tự động là "tốt nhất" — phải đo. Và ở đây có
+bẫy `V-014` của V3: **không pha nào so sánh nhiều lựa chọn**; kế hoạch so sánh
+model đã bị lập rồi giết **ba lần** dưới ba cái tên khác nhau. Chọn một đường,
+đo nó, đi tiếp.
