@@ -102,6 +102,37 @@
     {{ _('Một video mất khoảng vài chục phút. Bạn có thể đóng trang — kết quả sẽ nằm trong Lịch sử.') }}
   </p>
 
+  {#
+    Video gần đây — KHONG phai mot trang lich su thu hai. Lich su la
+    `/jobs?app=lttvideo` cua nen tang. Day la cho dat HANH DONG RIENG CUA APP,
+    thu ma trang job dung chung khong co moc de cam vao (`job_detail.html`
+    khong khai block nao cho app). Theo `CLAUDE.md`, sua `server/` de them moc
+    la dau hieu hop dong thieu — nen ta dung trong pham vi app va noi ro vi sao.
+  #}
+  {% if video_gan_day %}
+  <section class="ltt-card" aria-labelledby="ltt-gan-day">
+    <h2 id="ltt-gan-day" class="ltt-label">{{ _('Video gần đây') }}</h2>
+    <ul class="ltt-list">
+      {% for v in video_gan_day %}
+      <li class="row" style="align-items:center;gap:10px;justify-content:space-between;">
+        <span class="muted" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+          {{ v.prompt or _('(không có mô tả)') }}
+        </span>
+        <a class="ltt-link" href="/jobs/{{ v.job_id }}">{{ _('Xem') }}</a>
+        <form method="post" action="nang-net" style="margin:0">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <input type="hidden" name="job_id" value="{{ v.job_id }}">
+          <button type="submit" class="ltt-btn">{{ _('Nâng nét') }}</button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+    <p class="ltt-hint">
+      {{ _('Nâng nét chạy trên máy của LTT và tính credit riêng.') }}
+    </p>
+  </section>
+  {% endif %}
+
   {% endif %}
 </div>
 

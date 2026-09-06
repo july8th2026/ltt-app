@@ -13363,3 +13363,21 @@ msgstr "The attached video exceeds the 80 MB limit."
 
 msgid "Chỉ nhận ảnh PNG/JPEG/WebP hoặc video MP4."
 msgstr "Only PNG/JPEG/WebP images or MP4 video are accepted."
+
+msgid "Video gần đây"
+msgstr "Recent videos"
+
+msgid "Xem"
+msgstr "View"
+
+msgid "Nâng nét"
+msgstr "Enhance"
+
+msgid "Nâng nét chạy trên máy của LTT và tính credit riêng."
+msgstr "Enhancing runs on LTT's own machine and is charged separately."
+
+msgid "(không có mô tả)"
+msgstr "(no description)"
+
+msgid "Không tìm thấy video để nâng nét."
+msgstr "No video found to enhance."

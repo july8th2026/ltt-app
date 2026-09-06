@@ -147,7 +147,8 @@ def _uoc_gia() -> dict[int, int]:
 
 @router.get("", response_class=HTMLResponse)
 @router.get("/", response_class=HTMLResponse)
-async def trang_chinh(request: Request, user=Depends(require_login)):
+async def trang_chinh(request: Request, user=Depends(require_login),
+                      db=Depends(get_db)):
     duoc, ly_do = kha_nang.kiem("tao_video", vai=getattr(user, "vai", "nhan_vien"))
     return templates.TemplateResponse(
         request,
@@ -160,6 +161,7 @@ async def trang_chinh(request: Request, user=Depends(require_login)):
             "uoc_gia": _uoc_gia(),
             "duoc_dung": duoc,
             "ly_do_tu_choi": ly_do,
+            "video_gan_day": _video_gan_day(db, user.id) if duoc else [],
         },
     )
 
@@ -220,6 +222,85 @@ async def tao_video(
     # ⭐ Di thang toi trang job CUA NEN TANG: o do da co tien do tu dieu nhip,
     #    nut huy, dong thoi gian va o tai ket qua. Dung tu dung mot man cho.
     return RedirectResponse(f"/jobs/{getattr(job, 'id', '')}", status_code=303)
+
+
+def _job_video_cua_toi(db, user_id, job_id: str):
+    """Job `lttvideo` ĐÃ XONG và thuộc về `user_id`, hoặc `None`.
+
+    ⛔ Kiểm **cả ba**: đúng chủ, đúng app, đã xong. Thiếu vế "đúng app" thì một
+       `job_id` của app khác cũng qua được, và ta sẽ đem khoá của nó đi nâng cấp.
+    """
+    from platform_core.models import Job  # noqa: PLC0415
+
+    j = db.get(Job, (job_id or "")[:36])
+    if j is None or str(j.user_id) != str(user_id):
+        return None
+    if j.app_slug != "lttvideo" or j.status != "done":
+        return None
+    return j
+
+
+def _khoa_video(job) -> str:
+    """Khoá video đầu tiên trong kết quả, hoặc rỗng."""
+    ds = (job.result or {}).get("video_keys") or []
+    return str(ds[0]) if ds else ""
+
+
+def _video_gan_day(db, user_id, gioi_han: int = 12) -> list[dict]:
+    """Vài video mới nhất của chính chủ, để trang app có chỗ bấm Nâng nét.
+
+    📌 Đây **không** phải một trang lịch sử thứ hai — lịch sử là
+       `/jobs?app=lttvideo` của nền tảng. Đây là chỗ đặt **hành động riêng của
+       app**, thứ trang job dùng chung không có móc để cắm vào.
+    """
+    from platform_core.models import Job  # noqa: PLC0415
+    from sqlalchemy import select  # noqa: PLC0415
+
+    rows = db.execute(
+        select(Job).where(Job.user_id == user_id, Job.app_slug == "lttvideo",
+                          Job.status == "done")
+        .order_by(Job.created_at.desc()).limit(gioi_han)
+    ).scalars().all()
+    ra = []
+    for j in rows:
+        khoa = _khoa_video(j)
+        if khoa:
+            ra.append({"job_id": j.id, "khoa": khoa,
+                       "prompt": (j.params or {}).get("prompt", ""),
+                       "luc": j.created_at})
+    return ra
+
+
+@router.post("/nang-net")
+async def nang_net(request: Request, job_id: str = Form(""),
+                   csrf_token: str = Form(""),
+                   user=Depends(require_login), db=Depends(get_db)):
+    """Nâng nét một video đã có — chạy trên **GPU máy A**, không đụng C-CLOUD.
+
+    ⭐ Dùng `apps.upscalevideo.service.submit_upscale_job` — bề mặt **đã được
+       hợp đồng app khai** (`tools/lint_app_contract.py`) cho đúng việc này, và
+       `taovideo` đã đi đường đó cho nút "Nâng cấp 4K". Ta bám tiền lệ thay vì
+       tự dựng tham số.
+    """
+    verify_csrf_token(request, csrf_token)
+
+    from apps.upscalevideo.service import submit_upscale_job  # noqa: PLC0415
+    from platform_core import credit  # noqa: PLC0415
+
+    j = _job_video_cua_toi(db, user.id, job_id)
+    khoa = _khoa_video(j) if j is not None else ""
+    if not khoa:
+        return RedirectResponse(f"?loi={_t('Không tìm thấy video để nâng nét.')}",
+                                status_code=303)
+    try:
+        moi = submit_upscale_job(db, user_id=user.id, video_key=khoa,
+                                 preset="fast", target_height=1080,
+                                 duration_s=float((j.params or {}).get("duration_s") or 0))
+        db.commit()
+    except credit.ThieuCreditError as e:
+        db.rollback()
+        return RedirectResponse(f"?loi={e}", status_code=303)
+    return RedirectResponse(f"/jobs/{getattr(moi, 'id', '')}", status_code=303)
 
 
 @router.get("/video/{key:path}")
