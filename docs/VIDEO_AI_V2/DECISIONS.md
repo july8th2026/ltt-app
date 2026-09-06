@@ -292,3 +292,57 @@ Nhưng **đừng vội xoá**, vì ba lý do đo được:
 
 ⇒ **Chốt việc này ở P01**, khi đã biết BOM model của WanGP — không sớm hơn, và
 không muộn hơn. Ghi thành `exact_next_action` phụ của P01.
+
+---
+
+## E. Quyết định từ lượt audit 06/09
+
+### P01-D-09 — BỎ "private operator WebUI" và "MCP entrypoint" khỏi nghiệm thu P01
+
+Chủ dự án hỏi: *"ta triển khai GUI web từ máy A app LTT, máy C-CLOUD thực thi
+WanGP, tại sao cần xây WebUI/MCP trên C-CLOUD nữa?"*
+
+**Câu hỏi đúng, và hai mục đó bị bỏ.**
+
+Tôi đưa chúng vào vì `ACCEPTANCE_MATRIX.md` của pack ghi thế, **không phải vì
+kiến trúc của ta cần**. Soi lại:
+
+| Mục | Vì sao bỏ |
+|---|---|
+| **WebUI vận hành** | `D-V2-003` đã nói nó không nằm trên đường người dùng. Đường sản phẩm là **A-CONTROL → API Python của WanGP** trong worker. Nghiệm thu WebUI = xác minh một bề mặt **đã quyết định không dùng**, mà nó là Gradio **không có xác thực** nên còn phải mở thêm cổng trần trên máy trả tiền. |
+| **MCP entrypoint** | `O-001` kết luận đường sản phẩm **không cần cầu mới**: RunPod Serverless *chính là* cầu, khoá endpoint *chính là* lớp xác thực mà MCP thiếu. |
+
+⭐ Thứ duy nhất WebUI làm mà `docs/API.md` có nhắc là nút **Export Settings** để
+lấy khuôn tham số. Ta **đã lấy được bằng cách tốt hơn**: `get_default_settings()`
+gọi trong script — tái lập được, không phải bấm tay. Log 09:24:01 xác nhận bắt
+được cả `t2v_2_2` lẫn `i2v_2_2`.
+
+📌 **MCP quay lại ở P07**, khi làm Deepy — đó mới là chỗ của nó.
+
+⛔ Đây là **thay đổi so với ma trận của pack**. Ghi ra đây chứ không lặng lẽ bỏ,
+theo đúng giao thức đổi quyết định.
+
+### P01-D-10 — Dữ liệu sinh video của lượt này là "bằng chứng thu sớm", KHÔNG phải P02 PASS
+
+`do_luong.py` chạy 7 lượt sinh 1280×720/81 khung/20 bước qua ba hồ sơ bộ nhớ.
+Đó là phạm vi **P02**, không phải P01.
+
+Vì luật *"một phase một chat"* đã gỡ và chương trình chạy liên tục, việc thu sớm
+này **không bị coi là vi phạm**. Nhưng ranh giới phải giữ:
+
+- ✅ dùng để chốt **`O-006`** (VRAM đỉnh → chọn lớp GPU) — câu hỏi **P01 buộc
+  phải trả lời** để tiêu tiền đúng ở mọi pha sau;
+- ⛔ **không** dùng để tuyên bố P02 PASS. P02 có ma trận riêng — T2V, I2V,
+  subject/reference, motion/control, character animation, video edit — mà lượt
+  này không chạm tới.
+
+### P01-D-11 — Xoá 183 GB model ComfyUI: ghi nhận rủi ro đã chấp nhận
+
+Không vi phạm chữ của `D-V2-009` (runtime **source** của V3 còn nguyên trên
+nhánh, trunk vẫn 0 tham chiếu), nhưng **có chạm tinh thần**: nó làm yếu đường
+lui của V3.
+
+Giảm nhẹ đã có: chủ dự án duyệt · bảng kê khôi phục (`repo` + `revision` ghim +
+`sha256`) commit **trước** khi xoá (`4e209c08`) · tái tạo ≈ 63 phút + ~$0,20.
+
+⇒ Ghi nhận là **rủi ro đã chấp nhận có ý thức**, không phải sơ suất.

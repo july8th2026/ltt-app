@@ -13,8 +13,16 @@
 
 - **phase:** `P01` — Pin + Vanilla WanGP C-CLOUD POC
   *(P00 đã đóng PASS — mục `Cổng nghiệm thu P00` giữ nguyên bên dưới)*
-- **status:** **P01 nửa không tốn tiền XONG · nửa tốn GPU CHỜ DUYỆT CHI**
-  — xem *Kế hoạch chi P01*. Hồ sơ: `P01_UPSTREAM_PIN.md`.
+- **status:** **P01 ĐANG CHẠY lượt GPU.** Chủ dự án duyệt chi 06/09.
+  Pod `bly29qwp5bum3r` (A100 80 GB, `US-KS-2`, 251 GB RAM, 32 vCPU) —
+  ⚠️ giá **THẬT $1,59/giờ**, không phải $1,39 như `lowestPrice` báo trước.
+  Trần đã duyệt **$6,00**. Hồ sơ: `P01_UPSTREAM_PIN.md`,
+  `P01_TRIEN_KHAI_THEO_WANGP.md`.
+  ✅ Cài đặt XONG trên volume (`_CAI_DAT_XONG`): torch 2.10.0+cu128 ·
+  `mmgp` 3.7.14 · `sageattention` 2.2.0 · A100 sm 8.0 · 85,09 GB VRAM.
+  ✅ Đã bắt được `settings_t2v_2_2.json` + `settings_i2v_2_2.json` —
+  **chính là Verified Baseline Profile**, lấy bằng `get_default_settings()`
+  chứ không phải bấm tay trong WebUI.
 - **luật một-phase-một-chat:** ⛔ **ĐÃ GỠ 06/09** theo yêu cầu chủ dự án. Các
   phase chạy liên tục trong một phiên. ⚠️ Tệp state này **quan trọng hơn** chứ
   không kém đi: nó vẫn là thứ phiên sau đọc, và giờ không còn ranh giới chat để
@@ -64,8 +72,19 @@
   mục 5–9; **không** nhảy sang P02.
   ➕ Kèm theo lượt đó: chốt **giữ hay bỏ volume `uizchbiet5`** (~$21/tháng), vì
   chỉ lúc boot WanGP thật mới biết nó cần model nào. `P00-D-07`.
-- **spend_phase (P01):** **$0,00 tới lúc này** — mọi việc đã làm đều là đọc API
-  công khai và truy vấn RunPod chỉ-đọc.
+- **spend_phase (P01):** ⚙️ hỏi `python toolsideo_cloud.py trang-thai` —
+  đừng chép số vào đây. Mốc: pod tạo `2026-09-06T08:30:28Z`, $1,59/giờ.
+  ⚠️ Hoá đơn RunPod **trễ 20–60 phút**; số cuối cùng phải đọc lại sau.
+- **legacy_cloud_data:** 🔴 **ĐÃ XOÁ 06/09** — 10 đối tượng / **183,09 GB** model
+  ComfyUI của V3 xoá khỏi volume để lấy chỗ cho WanGP (chủ dự án duyệt).
+  Lưới khôi phục commit **trước** khi xoá: `4e209c08`,
+  `docs/VIDEO_AI_V2/khoi_phuc/`. Tái tạo ≈ 63 phút + ~$0,20. Xem `P01-D-11`.
+- **audit 06/09:** **LOGIC AUDIT: PASS.** 43 tệp đổi, **0 tệp** trong
+  `apps/`/`platform_core/`/`server/`. Không vi phạm quyết định khoá nào.
+  Hai mục nghiệm thu của pack đã **bỏ có căn cứ** (`P01-D-09`): WebUI vận hành
+  và MCP entrypoint — chúng xác minh bề mặt mà kiến trúc này đã quyết không dùng.
+  Dữ liệu sinh video của lượt này là **bằng chứng thu sớm**, ⛔ không phải
+  P02 PASS (`P01-D-10`).
 
 ## Cloud — tài nguyên trả tiền đang sống (thừa kế từ V3)
 
