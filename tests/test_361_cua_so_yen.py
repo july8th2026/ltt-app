@@ -743,3 +743,45 @@ def test_may_ban_do_DELTA_chu_khong_do_CPU_tich_luy(tmp_path, monkeypatch):
     finally:
         con.terminate()
         con.wait(timeout=10)
+
+
+def test_may_ban_BAO_ca_KHOA_chu_khong_chi_bao_CPU(tmp_path, monkeypatch):
+    """🔴 Hai phep do tra loi HAI cau khac nhau, va chung KHONG trung nhau.
+
+       Do 06/09/2026: `may_ban` bao ca hai cay `dang cho` (3,1% va 2,1% CPU)
+       trong khi mot `pytest go tay` da giu `cpu_nhieu` + `postgres_test` duoc
+       3,6 phut. Toi thay `cua_so_yen trang-thai` bang `may_ban` vi tuong the
+       la du, roi phong gate — no xep hang **9,5 phut**
+       (`cho_khoa_giay = 555,4` trong ban ghi cua luot ay).
+
+       Mot luot pytest o pha I/O doc ra y het mot may ranh. Nen ma thoat cua
+       `may_ban` phai tinh CA HAI ve, khong chi ve CPU.
+
+    ⭐ Phep kiem nay KHONG do CPU — no chot dung mot menh de: **co khoa thi
+       phai bao**, ke ca khi khong cay nao ban. Dat CPU ra ngoai bang cach
+       ep `cay_khac_dang_ban` tra ve rong.
+    """
+    sys.path.insert(0, str(GOC / "tools"))
+    import cua_so_yen
+    import may_ban
+
+    # Khoa di noi khac: mot phep kiem KHONG duoc cham khoa that cua may.
+    # Xem `AGENTS.md` — "chot khong duoc ghi vao cay".
+    monkeypatch.setattr(cua_so_yen, "TEP_KHOA", tmp_path / "ltt_khoa_cpu_nhieu.json")
+    monkeypatch.setattr(cua_so_yen.tempfile, "gettempdir", lambda: str(tmp_path))
+
+    # Khong cay nao ban -> ve CPU im hoan toan.
+    monkeypatch.setattr(may_ban, "cay_khac_dang_ban", lambda bang=None: [])
+
+    assert may_ban.khoa_dang_giu() == [], "chua ai giu ma da bao co khoa"
+
+    with cua_so_yen.CuaSoYen("PHEP-KIEM", "giu de thu", tai_nguyen=("cpu_nhieu",)):
+        dong = may_ban.khoa_dang_giu()
+        assert dong, (
+            "CO khoa dang bi giu ma `may_ban` im — day dung la lo da lam gate "
+            "xep hang 9,5 phut ma toi khong biet vi sao")
+        assert "cpu_nhieu" in dong[0]
+        assert "  [khoa]" in may_ban.dong_canh_bao(), (
+            "`dong_canh_bao` (thu gate/test_nhanh in ra) khong nhac gi den khoa")
+
+    assert may_ban.khoa_dang_giu() == [], "nha roi ma van bao con khoa"
