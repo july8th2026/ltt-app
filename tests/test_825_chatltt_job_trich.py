@@ -93,17 +93,62 @@ def co_gia(monkeypatch):
 
 # ── 1. Giá fail-closed ─────────────────────────────────────────────────────
 
-def test_CHUA_CHOT_GIA_thi_NEM_chu_khong_tra_0():
-    """🔴 Mệnh đề 1. Một giá 0 tạm thời là cái lỗ mà cửa credit sinh ra để bịt."""
+def test_gia_TAM_phai_TU_KHAI_la_tam_chu_khong_im_lang():
+    """🔴 Mệnh đề 1, viết lại 06/09.
+
+    Bản đầu chốt `MCREDIT_MOI_1000_KY_TU is None` — fail-closed. Nghe an toàn,
+    nhưng nó biến một **quyết định thương mại** thành một **cổng chặn kỹ thuật**:
+    bước 4–6 không chạy được đầu-cuối, và một hằng số `None` im lặng thì không
+    ai biết nó đang chờ ai.
+
+    ⭐ Ranh giới "bút toán tiền" chỉ áp cho tiền **thật đang chảy** — đã deploy
+       **và** không sau cờ. `LTT_CHATLTT_V3_TOOLS` đang TẮT và tính năng chưa có
+       route ⇒ không đồng nào của khách chịu ảnh hưởng ⇒ ghi giả định rồi đi
+       tiếp, không để trống chờ người.
+
+    ⇒ Thứ phải chốt không còn là *"giá phải là None"* mà là *"giá tạm phải TỰ
+      KHAI là tạm"*, ở ba chỗ cùng lúc — nếu không thì một giả định của tôi sẽ
+      lặng lẽ thành chính sách.
+    """
     from apps.chatltt import gia_trich
 
-    assert gia_trich.MCREDIT_MOI_1000_KY_TU is None, (
-        "gia da duoc dat — neu la co y thi sua ca phep kiem nay va noi ro AI dat")
-    assert not gia_trich.da_chot()
-    with pytest.raises(gia_trich.ChuaChotGia):
-        gia_trich.tinh(5000)
-    with pytest.raises(gia_trich.ChuaChotGia):
-        gia_trich.credit_cost({"so_byte": 1000})
+    assert gia_trich.MCREDIT_MOI_1000_KY_TU is not None, (
+        "gia bi go ve None — xem docstring: fail-closed o day chan buoc 4-6")
+    assert gia_trich.CHU_DU_AN_DA_CHOT is False, (
+        "neu chu du an DA chot that thi sua ca phep kiem nay VA `STATE.md`, "
+        "va noi ro AI chot, NGAY nao")
+    assert "tam" in gia_trich.PHIEN_BAN_GIA, (
+        "phien ban gia di vao TUNG ban ghi duyet — chu `tam` la thu cho phep "
+        "loc ra moi but toan tinh theo gia tam vao ngay chot gia that")
+
+
+def test_gia_van_NEM_khi_bi_go_ve_None():
+    """⛔ Cơ chế fail-closed **vẫn còn**, chỉ là không còn được kích hoạt mặc
+    định. Ngày ai đó gỡ giá đi mà quên đặt lại, `tinh()` phải nói ra."""
+    from apps.chatltt import gia_trich
+
+    goc = gia_trich.MCREDIT_MOI_1000_KY_TU
+    try:
+        gia_trich.MCREDIT_MOI_1000_KY_TU = None
+        assert not gia_trich.da_chot()
+        with pytest.raises(gia_trich.ChuaChotGia):
+            gia_trich.tinh(5000)
+        with pytest.raises(gia_trich.ChuaChotGia):
+            gia_trich.credit_cost({"so_byte": 1000})
+    finally:
+        gia_trich.MCREDIT_MOI_1000_KY_TU = goc
+
+
+def test_gia_tam_cho_mot_tai_lieu_30_trang_KHONG_dat_den_muc_vo_ly():
+    """⭐ Đối chứng độ lớn. Một hằng số lệch 1.000 lần vẫn qua mọi phép kiểm cấu
+    trúc ở trên; chỉ một phép kiểm về **số tiền khách thấy** mới bắt được."""
+    from apps.chatltt import gia_trich
+
+    ky_tu_30_trang = 60_000
+    credit = (gia_trich.tinh(ky_tu_30_trang) + 999) // 1000
+    assert 1 <= credit <= 20, (
+        f"mot tai lieu 30 trang ton {credit} credit — con so nay phai doc len "
+        "duoc thanh mot cau nghe hop ly voi khach")
 
 
 def test_gia_lam_tron_LEN_theo_tung_1000_ky_tu(co_gia):

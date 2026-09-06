@@ -38,14 +38,44 @@ Ba lựa chọn, và hai cái đầu sai theo cách người dùng cảm nhận 
 """
 from __future__ import annotations
 
-#: 🔴 CHƯA CHỐT. Chủ dự án đặt số này. Đừng đoán một con số vào đây.
-#:    Đơn vị: **milli-credit** cho mỗi 1.000 ký tự trích được — milli vì mọi số
-#:    học tiền của H44 đều ở milli-credit (ADR R2b), và vì một tài liệu nhỏ phải
-#:    rẻ hơn 1 credit chứ không bị làm tròn lên thành 1.
-MCREDIT_MOI_1000_KY_TU: int | None = None
+#: 🟡 GIÁ **TẠM**, không phải giá đã chốt. Đơn vị: **milli-credit** cho mỗi
+#:    1.000 ký tự trích được — milli vì mọi số học tiền của H44 ở milli-credit
+#:    (ADR R2b), và vì một tài liệu nhỏ phải rẻ hơn 1 credit chứ không bị làm
+#:    tròn lên thành 1.
+#:
+#: ## Vì sao có một con số ở đây thay vì để `None`
+#:
+#: Để `None` fail-closed nghe an toàn, nhưng nó làm bước 4–6 **không chạy được
+#: đầu-cuối** và biến một quyết định thương mại thành một cái cổng chặn kỹ
+#: thuật. Ranh giới "bút toán tiền" chỉ áp cho tiền **thật đang chảy** — tức đã
+#: deploy **và** không sau cờ. `LTT_CHATLTT_V3_TOOLS` đang TẮT và tính năng này
+#: chưa có route, nên không một đồng nào của khách chịu ảnh hưởng.
+#:
+#: ⇒ Ghi một giả định **nói rõ là giả định**, rồi đi tiếp. Quyết định vĩnh viễn
+#:   nằm ở danh mục điều kiện bật cờ trong `docs/CHATLTT_V3/STATE.md`, chỗ đã
+#:   có sẵn cơ chế ấy — không phải ở một hằng số `None` im lặng.
+#:
+#: ## Con số 20 đến từ đâu
+#:
+#: Neo vào giá đã CÓ THẬT chứ không bịa: bảng giá công khai tính LLM theo token,
+#: và 1.000 ký tự tiếng Việt ≈ 220 token. Trích một tài liệu **rẻ hơn hẳn** một
+#: lượt hỏi model về nó — công ở đây là đọc tệp, không phải suy luận. 20
+#: milli-credit = **0,02 credit** cho mỗi 1.000 ký tự ⇒ một tài liệu 30 trang
+#: (~60.000 ký tự) tốn ~1,2 credit.
+#:
+#: ⚠️ Đây là một **neo**, không phải một phép đo. §6 của P06 đòi đo lại giá vốn
+#:    thật (thời gian CPU, I/O) sau 20–50 tài liệu thật rồi chốt.
+MCREDIT_MOI_1000_KY_TU: int | None = 20
 
 #: Phiên bản giá — đi vào `chatltt_approval.phien_ban_gia` để đối soát sau này.
-PHIEN_BAN_GIA = "trich-v0-chua-chot"
+#: ⛔ Chữ `tam` nằm trong tên **có chủ đích**: nó đi vào từng bản ghi duyệt, nên
+#:    ngày chốt giá thật, mọi bút toán tính theo giá tạm đều lọc ra được.
+PHIEN_BAN_GIA = "trich-v0-tam"
+
+#: 🔴 Giá đã được chủ dự án chốt chưa. `False` ⇒ `MCREDIT_MOI_1000_KY_TU` ở trên
+#:    là một **giả định của tôi**, và điều kiện bật cờ trong `STATE.md` chốt
+#:    rằng nó phải thành `True` trước khi `LTT_CHATLTT_V3_TOOLS` được bật.
+CHU_DU_AN_DA_CHOT = False
 
 
 class ChuaChotGia(RuntimeError):

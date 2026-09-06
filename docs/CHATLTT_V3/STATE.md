@@ -31,6 +31,7 @@
 | 2 | **Mở trình duyệt thật, xem bốn nhãn trạng thái V3 hiện đúng** | ✅ **05/09** — xem §dưới |
 | 3 | Kiểm trên URL công khai, không chỉ loopback (`CLAUDE.md` 5b) | ❌ chưa |
 | 4 | R2b được chủ dự án chốt | ✅ **06/09 — chốt C3**, đã deploy (`334004d4`), đang thu thật |
+| 5 | **Giá trích tài liệu** được chủ dự án chốt | 🟡 **06/09 — đang chạy giá TẠM** `20` mcredit/1.000 ký tự (`apps/chatltt/gia_trich.py`). Cơ chế chạy đầu-cuối; `CHU_DU_AN_DA_CHOT = False` cho tới khi có người chốt. |
 
 ⛔ **Và một sự thật không nằm trong bảng trên: hai cờ VẪN TẮT trên
 production.** Đo 06/09 sau deploy `334004d4`:
