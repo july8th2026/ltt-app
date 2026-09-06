@@ -414,3 +414,41 @@ def test_duong_XIN_KHOA_cung_phai_cham_toi_pha_1(monkeypatch):
         "duong CO khoa khong cham toi pha 1")
     # Va khoa phai duoc NHA sau khi xong.
     assert cy._doc() is None, "khoa khong duoc nha sau khi main() xong"
+
+
+def test_nhac_TEN_gate_trong_cau_lenh_KHONG_bi_coi_la_dang_o_duoi_gate():
+    """🔴 Lỗi nặng nhất của bản vá, phiên Mobile V1 tìm ra.
+
+    Tổ tiên của `pytest` thường là một vỏ `bash.exe -c "<cả câu lệnh>"`. Bản đầu
+    của `_to_tien_la_gate` làm `"gate.py" in " ".join(cmdline)`, nên **bất kỳ**
+    câu lệnh nào **nhắc tên** `gate.py` — một `echo`, một `grep`, một docstring
+    — cũng làm `test_nhanh` **lặng lẽ bỏ khoá**.
+
+    ⚠️ Nó đau đúng cho ai hay nhắc tên công cụ nhất: **các phiên đang phối hợp
+       với nhau**, tức đúng lúc cần khoá nhất.
+
+    ⭐ Tôi viết luật *"hỏi quan hệ, đừng hỏi nhãn"* rồi khớp một **chuỗi con**
+       trên cmdline của quan hệ ấy. Siết thêm một bậc: hỏi **tên tệp được thi
+       hành**, đừng hỏi **văn bản câu lệnh**.
+    """
+    import test_nhanh as tn                       # noqa: PLC0415
+
+    BS = chr(92)
+    vo_bash = [
+        ("bash.exe", ["C:/Program Files/Git/bin/bash.exe", "-c",
+                      'echo "xem tools/gate.py roi chay test"'])]
+    assert tn._to_tien_la_gate(vo_bash) is False, (
+        "mot cau lenh NHAC ten gate.py bi doc thanh dang o duoi gate")
+
+    # Va gate THAT van phai nhan ra duoc, ca hai kieu duong dan.
+    assert tn._to_tien_la_gate(
+        [("python.exe", ["C:/py/python.exe", "tools/gate.py", "--ho-so", "day-du"])]
+    ) is True
+    assert tn._to_tien_la_gate(
+        [("python.exe", ["C:/py/python.exe", "D:" + BS + "t" + BS + "gate.py"])]
+    ) is True
+
+    # Mot tien trinh python KHAC thi khong.
+    assert tn._to_tien_la_gate(
+        [("python.exe", ["C:/py/python.exe", "tools/test_nhanh.py", "-n", "6"])]
+    ) is False
