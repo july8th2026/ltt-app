@@ -18,10 +18,22 @@ from __future__ import annotations
 import pytest
 
 
-#: Ba bảng V1 (H43) + ba bảng điều phối tool (H44). CHỐT CỨNG — thêm bảng
-#: `chatltt_*` mà không sửa dòng này thì phép kiểm đỏ, và đó là chủ ý.
+#: Ba bảng V1 (H43) + ba bảng điều phối tool (H44) + bảng tệp (H44 P06).
+#: CHỐT CỨNG — thêm bảng `chatltt_*` mà không sửa dòng này thì phép kiểm đỏ,
+#: và đó là chủ ý.
 BANG_V1 = {"chatltt_conversation", "chatltt_message", "chatltt_execution"}
 BANG_V3 = {"chatltt_run", "chatltt_step", "chatltt_approval"}
+#: ⚠️ CẬP NHẬT 06/09 (H44 P06 bước 2+3). `chatltt_tep` nối tệp đã tải lên với
+#:    hội thoại; `chatltt_doan` giữ văn bản đã trích. Bánh cóc đã làm đúng việc
+#:    **hai lần**: mỗi lần bắt tôi quay lại đây khai tên mới.
+#:
+#: 🔴 Hai bảng này ngược nhau ở đúng chỗ quan trọng: `chatltt_tep` **không được**
+#:    chứa byte (test_822 chốt ở tầng schema), còn `chatltt_doan` **phải** chứa
+#:    chữ — chỉ số tìm kiếm chạy trên chính nó. Byte gốc ở ngoài, chữ dẫn xuất
+#:    ở trong.
+BANG_P06 = {"chatltt_tep", "chatltt_doan"}
+
+TAT_CA = BANG_V1 | BANG_V3 | BANG_P06
 
 
 def test_ba_bang_mang_dung_tien_to_va_registry_nap_duoc():
@@ -31,7 +43,41 @@ def test_ba_bang_mang_dung_tien_to_va_registry_nap_duoc():
     da_nap = load_app_tables()
     assert "chatltt" in da_nap
     ten = {t for t in Base.metadata.tables if t.startswith("chatltt_")}
-    assert ten == BANG_V1 | BANG_V3
+    assert ten == TAT_CA
+
+
+def test_moi_bang_chatltt_deu_co_hang_trong_governance():
+    """⭐ Mệnh đề này **khó xanh hơn** danh sách tên ở trên, không dễ hơn.
+
+    Danh sách tên chỉ hỏi *"có đúng bảng này không"*. Nó **không** bắt được ca
+    thật sự nguy hiểm: một bảng `chatltt_*` mới được khai đúng tên nhưng **quên**
+    khai lời hứa giữ dữ liệu — và mặc định của "quên" là không ai biết bảng ấy
+    chứa gì của khách, nên không ai dọn nó khi khách xoá tài khoản.
+
+    🔴 Thêm ở 06/09 vì `chatltt_tep` vừa mở đúng cái khe đó: nó "chỉ chứa siêu
+       dữ liệu", và đó chính là câu nghe hợp lý dẫn tới xếp sai hạng.
+    """
+    from platform_core.public_api import governance as G
+
+    da_khai = {s.table for s in G.STORES if s.table.startswith("chatltt_")}
+    assert TAT_CA - da_khai == set(), f"thieu hang governance: {TAT_CA - da_khai}"
+    assert da_khai - TAT_CA == set(), f"khai bang khong ton tai: {da_khai - TAT_CA}"
+
+
+def test_khong_bang_chatltt_nao_bi_xep_OPERATIONAL():
+    """🔴 Ba lần cùng một ca — P03 (`chatltt_run`), P06 §7 (bác `Job.params` vì
+    `jobs` LÀ operational), P06 bước 2 (`chatltt_tep`). Ba lần thì thôi ghi chú,
+    dựng một phép kiểm.
+
+    OPERATIONAL **tự già đi** theo hạn riêng. Một bảng `chatltt_*` bị xếp vào đó
+    nghĩa là một phần của hội thoại biến mất trong khi hội thoại vẫn còn — người
+    dùng mở lại và thấy thứ mình từng đính vào nay không còn ở đó.
+    """
+    from platform_core.public_api import governance as G
+
+    sai = [s.table for s in G.STORES
+           if s.table.startswith("chatltt_") and s.klass == G.OPERATIONAL]
+    assert sai == [], sai
 
 
 #: Revision cua migration H44 (ba bang dieu phoi tool). Ghim theo ID chu

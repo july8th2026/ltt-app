@@ -15,11 +15,41 @@
 | **BASE_SHA** | `72a484c5f281f4d909e72927648df7dd62e5e196` (`admin-mvp-v3` = `origin/admin-mvp-v3`, 0/0) |
 | FINAL_SHA | *(chưa)* |
 | Dải test | **800–899** |
-| Pha hiện tại | P00–P03 ✅ · **P05 ✅** · P04 trừ **R2b** → Làn A còn **nửa ngày công, và nó là một QUYẾT ĐỊNH chứ không phải mã** |
+| Pha hiện tại | Làn A (P00–P05) ✅ · **P06 ✅ 6/6 bước (06/09)** → làn B còn **P07 · P08** |
 | Deploy | ⛔ chương trình này **chưa deploy**. Làn A phát hành sau cờ `LTT_CHATLTT_V3_TOOLS` |
 
 🔑 **Cờ `LTT_CHATLTT_V3_TOOLS` và `LTT_CHATLTT_V3_PAID_TOOLS` đều đang TẮT, và
 độc lập với nhau.** Không một dòng nào đã viết chạm tới một người dùng thật.
+
+## P06 — tệp/tri thức/tìm kiếm (đóng 06/09)
+
+| # | Bước | Kết quả |
+|---|---|---|
+| 1 | `unaccent` | migration `c7d41e8a2b93`; đo trên Postgres thật |
+| 2 | `chatltt_tep` — bảng LIÊN KẾT, **không giữ byte** | `a3f92c5d7e14` |
+| 3 | Trích văn bản → `chatltt_doan`, job `chatltt.trich_tep` | `e5b2d9c4a71f` |
+| 4 | Chỉ số FTS (`f_unaccent` IMMUTABLE + GIN) | `b8c31f6e9d24` |
+| 5 | Trích dẫn `(tep_id, doan_id, trang)` dính liền chữ | `tim_doan.cho_tool` |
+| 6 | Mở `noi_bo.tim_tai_lieu` cho model | `CHO_MODEL_GOI`, lớp `READ_ONLY` |
+
+**101 phép kiểm mới** (`test_821`→`test_828`), 4.034 dòng.
+
+⛔ **"Mở cho model" nghĩa là SẴN SÀNG, không phải ĐANG CHẠY.** Vẫn chưa có route
+để khách đính tệp, và `LTT_CHATLTT_V3_TOOLS` vẫn TẮT trên production. Người dùng
+chưa thấy một thay đổi nào.
+
+🔴 Ba ràng buộc đã trả giá trong P06, ghi lại vì chúng sẽ quay lại:
+
+1. **`unaccent` là STABLE, không IMMUTABLE** ⇒ không index trực tiếp được. Và
+   phương án "bỏ dấu ở Python" bị loại vì **hành vi**: Postgres ánh xạ `đ → d`,
+   `NFD` thì không — `"đầu tư"`, `"đồng"`, `"điện thoại"` đều lệch.
+2. **Thân hàm bọc phải chỉ đích danh schema cho CẢ hàm lẫn từ điển**
+   (`public.unaccent('public.unaccent'::regdictionary, $1)`) — Postgres chạy
+   biểu thức chỉ số với `search_path` hạn chế. Ba biến thể, chỉ một cái chạy.
+3. **Phạm vi hội thoại không được là tham số của model.** `thi_hanh()` nay mang
+   `boi_canh` do người gọi đặt, không đi qua schema.
+
+---
 
 ## 🔒 Điều kiện để BẬT `LTT_CHATLTT_V3_TOOLS` — món nợ tự đòi
 
@@ -30,7 +60,20 @@
 | 1 | Gate đầy đủ PASS trên cây này | ✅ `20260905T181119Z-12404.json` — 26 bước · 0 FAIL · `cay_da_doi_giua_chung=False` · sha `4a55620f` |
 | 2 | **Mở trình duyệt thật, xem bốn nhãn trạng thái V3 hiện đúng** | ✅ **05/09** — xem §dưới |
 | 3 | Kiểm trên URL công khai, không chỉ loopback (`CLAUDE.md` 5b) | ❌ chưa |
-| 4 | R2b được chủ dự án chốt | ❌ đang chạy theo giả định (b) |
+| 4 | R2b được chủ dự án chốt | ✅ **06/09 — chốt C3**, đã deploy (`334004d4`), đang thu thật |
+| 5 | **Giá trích tài liệu** được chủ dự án chốt | 🟡 **06/09 — đang chạy giá TẠM** `20` mcredit/1.000 ký tự (`apps/chatltt/gia_trich.py`). Cơ chế chạy đầu-cuối; `CHU_DU_AN_DA_CHOT = False` cho tới khi có người chốt. |
+
+⛔ **Và một sự thật không nằm trong bảng trên: hai cờ VẪN TẮT trên
+production.** Đo 06/09 sau deploy `334004d4`:
+
+```
+grep -c LTT_CHATLTT_V3  C:/LTTPlatform/secrets/app.env   ->  0
+```
+
+⇒ Mã Làn A **đã lên production và đã qua gate**, nhưng `LTT_CHATLTT_V3_TOOLS`
+mặc định TẮT nên **vòng lặp agentic chưa chạm một người dùng nào**. "100 % mã"
+và "0 % tới khách" là hai con số **cùng đúng**, và trộn chúng lại là cách một
+báo cáo tiến độ nói dối mà không có câu nào sai.
 
 ### Điều kiện 2 — ĐÃ GỠ, và nó bắt được một lỗi trước khi trình duyệt kịp mở
 
@@ -132,14 +175,14 @@ mới của mọi app đều phải khai ở đó, `test_211` cưỡng chế.
 | | **Làn A** | **17,0** | **17,0** ✅ | — (R2b đã chốt 06/09) |
 | **B** | P06 · P07 · P08 | 20,0 | 0 | 20,0 |
 | **C** | P09 · P10 · P11 · P12 | 14,0 | 0 | 14,0 |
-| | **TOÀN CHƯƠNG TRÌNH** | **51,0** | **16,4** | **34,6** |
+| | **TOÀN CHƯƠNG TRÌNH** | **51,0** | **17,0** | **34,0** |
 
 ### Con số
 
 | | |
 |---|---|
-| **Toàn chương trình (P00→P12)** | **≈ 32 %** |
-| **Làn A** (phần phát hành được một mình) | **≈ 97 %** — phần còn lại **không phải việc viết mã**: R2b cần chủ dự án chốt |
+| **Toàn chương trình (P00→P12)** | **≈ 33 %** (17,0 / 51,0 ngày công) |
+| **Làn A** (phần phát hành được một mình) | **100 % MÃ** — nhưng ⛔ **chưa tới người dùng nào**: hai cờ vẫn TẮT, xem bảng điều kiện |
 | Mã sản phẩm đã sửa | 16 tệp · 19 tệp test · 1 migration |
 | Phép kiểm mới | **383** (backend 800–819: **374** đếm bằng `--collect-only` · frontend A5: 9) |
 

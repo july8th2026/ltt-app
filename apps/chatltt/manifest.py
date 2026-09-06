@@ -34,6 +34,7 @@ from __future__ import annotations
 from platform_core.i18n import N_
 from platform_core.registry import AppManifest
 
+from apps.chatltt import gia_trich as _gia_trich
 from apps.chatltt.services import hoi_thoai as _hoi_thoai
 
 MANIFEST = AppManifest(
@@ -44,9 +45,20 @@ MANIFEST = AppManifest(
     icon="💬",
     accent="#0F62FE",
 
-    job_types=(),
+    # ⚠️ CAP NHAT 06/09 (H44 P06 buoc 3). Truoc do la `()`: ChatLTT chi NOP job
+    #    sang app khac (`anhnoibo`, `ltt_voice`) qua `tao_media`. `trich_tep` la
+    #    viec DAU TIEN app nay tu chay trong worker — nen no them mot thu
+    #    `job_runner` biet chay, tuc mot be mat moi cho `leases` va cho so tien.
+    #
+    # ⛔ No CHUA duoc mo cho model goi. `chinh_sach.CONG_CU_CHO_PHEP` va
+    #    `chieu_tool.CHO_MODEL_GOI` van dong — buoc 6 moi mo, theo dung §4.
+    job_types=("chatltt.trich_tep",),
     requires=(),
-    credit_cost=None,
+    # ⛔ GIA CHUA CHOT — `gia_trich.credit_cost` NEM cho toi khi chu du an dat
+    #    so. Fail-closed co chu dich: mot gia 0 tam thoi CHINH LA cai lo ma
+    #    cua credit cua `upload_sessions` sinh ra de bit, chi khac la no trong
+    #    nhu mot mac dinh vo hai. Xem `apps/chatltt/gia_trich.py`.
+    credit_cost=_gia_trich.credit_cost,
 
     enabled=True,
     public=True,

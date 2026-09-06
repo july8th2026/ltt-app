@@ -16,6 +16,23 @@ pytz>=2024.1
 tzdata>=2024.1
 cryptography>=46.0.7,<47.0   # 46.0.6 dinh GHSA-p423-j2cm-9vmq. Bon advisory con lai doi 48-50, tuc phai NOI TRAN <47 - quyet dinh rieng
 
+# Trich chu tu PDF. Do 06/09: KHONG mot thu vien trich nao ton tai tren may chu
+# (pypdf / PyPDF2 / fitz / pdfminer / pdfplumber / docx / openpyxl / markitdown /
+# unstructured deu vang o `C:\LTTPlatform\venv`), du `apps/chataistudio/
+# features.py:48` DA GOI `from pypdf import PdfReader` tu lau. `except Exception`
+# o do nuot `ImportError` roi bao lai thanh "Khong doc duoc noi dung PDF." — tuc
+# may chu thieu thu vien ma thong bao do loi cho TEP CUA KHACH.
+#
+# ⛔ Tieu chi LOAI la giay phep, khong phai toc do: `pymupdf` la AGPL-3.0 hoac
+#    thuong mai, va phuc vu qua mang thi AGPL kich hoat nghia vu cong bo ma
+#    nguon. `pdfminer.six` (MIT) gioi bo cuc hon nhung nang hon, va chua co
+#    phep do nao noi ta can do trung thuc bo cuc.
+#
+# ⇒ `pypdf`: BSD-3-Clause, THUAN Python (khong can trinh bien dich tren Windows),
+#   va la dung thu vien `chataistudio` da goi san — mot phu thuoc phuc vu ca ban
+#   va loi dang song lan P06 buoc 3.
+pypdf>=6.17.0,<7.0
+
 # --- Phu thuoc chi dung cho TEST ---
 #
 # `boto3` da co trong requirements-server.txt voi ghi chu "import luoi nen khong

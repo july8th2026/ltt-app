@@ -529,6 +529,29 @@ def test_pytest_GO_TAY_luot_lon_thi_XIN_khoa(tmp_path, monkeypatch):
     import conftest as cf                        # noqa: PLC0415
     monkeypatch.setattr(cf, "_KHOA_PHIEN", None)
 
+    # 🔴 Cửa ở `conftest.py:95-104` có BA điều kiện thoát sớm, và **cả ba** đều
+    #    được môi trường mà phép kiểm này đang đứng tự thoả:
+    #
+    #      _KHOA_PHIEN is not None        phiên trước đã xin
+    #      PYTEST_XDIST_WORKER            dưới gate, MỌI test ở trong một worker
+    #      to_tien_da_giu_khoa()          dưới gate, tổ tiên CHÍNH LÀ `gate.py`
+    #
+    #    Không vô hiệu đủ cả ba thì thân hàm không bao giờ chạy tới, nên phép
+    #    kiểm này **chưa từng xanh được trong gate** — nó chỉ xanh khi gõ tay.
+    #
+    # ⭐ Hình dạng đáng nhớ: phép kiểm canh một **cửa chặn**, mà điều kiện của
+    #    cửa ấy lại chính là môi trường phép kiểm đang đứng. Nó không "khi xanh
+    #    khi đỏ" — nó **luôn** đỏ ở đúng nơi duy nhất người ta đọc kết quả.
+    #
+    # ⛔ Và tôi đã sửa nó HAI LẦN mới đủ: lần đầu chỉ gỡ `PYTEST_XDIST_WORKER`,
+    #    rồi `-n 6` cục bộ xanh 3/3 nên tôi tưởng xong — nhưng `-n 6` cục bộ
+    #    **không có `gate.py` làm tổ tiên**. Một phép đo thiếu đúng cái điều
+    #    kiện đang hỏi thì nó xác nhận, không kiểm chứng.
+    monkeypatch.delenv("PYTEST_XDIST_WORKER", raising=False)
+    sys.path.insert(0, str(GOC / "tools"))
+    import test_nhanh as tn                      # noqa: PLC0415
+    monkeypatch.setattr(tn, "to_tien_da_giu_khoa", lambda *a, **k: False)
+
     lon = [types.SimpleNamespace(fspath=f"t{i}.py")
            for i in range(cf._NGUONG_TEP_NANG + 5)]
     nho = [types.SimpleNamespace(fspath=f"t{i}.py") for i in range(3)]
@@ -549,6 +572,40 @@ def test_pytest_GO_TAY_luot_lon_thi_XIN_khoa(tmp_path, monkeypatch):
     assert not cpu.exists(), (
         "luot NHO ma van xin khoa - vong lap sua-roi-thu se bi cham va nguoi "
         "ta se tat co nay di")
+
+    # ── Chiều thứ TƯ, và nó thiếu ở bản gốc ────────────────────────────────
+    #
+    # 🔴 Docstring trên kể ba chiều (lớn xin · nhỏ không xin · `sessionfinish`
+    #    nhả) và nói *"thiếu chiều nào cũng để lại một lỗ"*. Có một chiều thứ tư
+    #    mà nó không kể: **worker con KHÔNG được xin**. Đó là dòng ĐẦU của cửa
+    #    (`conftest.py:96`), và cũng đúng là dòng đã làm phép kiểm này không bao
+    #    giờ chạy tới thân hàm khi ở trong gate.
+    #
+    # ⭐ Nếu worker con cũng xin, thì một lượt `-n 6` sinh **sáu** người xin
+    #    cùng một khoá `O_EXCL`: năm cái sau chờ hết `--cho` rồi CHÈN — tệ hơn
+    #    hẳn trước bản vá, đúng câu hỏi 1 của AGENTS.md §4c.
+    monkeypatch.setattr(cf, "_KHOA_PHIEN", None)
+    monkeypatch.setenv("PYTEST_XDIST_WORKER", "gw3")
+    cf.pytest_collection_modifyitems(None, None, lon)
+    assert not cpu.exists() and not pg.exists(), (
+        "worker con cung xin khoa - mot luot `-n 6` se co SAU nguoi tranh mot "
+        "khoa O_EXCL, va nam cai sau se CHEN sau khi het gio cho")
+
+    # ── Chiều thứ NĂM: tổ tiên đã giữ khoá hộ thì KHÔNG xin nữa ────────────
+    #
+    # 🔴 Đây đúng là điều kiện đã làm phép kiểm này đỏ trong gate, và nó chưa
+    #    từng được đo theo chiều của nó. `gate.py` và `test_nhanh.py` đã xin
+    #    khoá trước khi gọi `pytest`; nếu `conftest` xin thêm một lần nữa thì
+    #    khoá là tệp `O_EXCL` **không tái nhập** ⇒ tiến trình tự chờ chính mình
+    #    tới hết `--cho` rồi CHÈN. Gate treo 15 phút ở bốn chỗ, đã xảy ra 06/09.
+    monkeypatch.delenv("PYTEST_XDIST_WORKER", raising=False)
+    monkeypatch.setattr(cf, "_KHOA_PHIEN", None)
+    monkeypatch.setattr(tn, "to_tien_da_giu_khoa", lambda *a, **k: True)
+    cf.pytest_collection_modifyitems(None, None, lon)
+    assert not cpu.exists() and not pg.exists(), (
+        "to tien da giu khoa ho ma van xin them - khoa O_EXCL khong tai nhap, "
+        "nen tien trinh se tu cho chinh minh toi het `--cho` roi CHEN")
+
 
 def test_may_ban_KHONG_dem_chinh_no_va_chuoi_cha():
     """⛔ Điều kiện phải là thứ tiến trình đo **không thể tự thoả**.
@@ -613,3 +670,118 @@ def test_may_ban_KHONG_dem_chinh_no_va_chuoi_cha():
     assert tinh < tho, (
         f"quet() dem {tinh} tren tong {tho} python.exe cua cay `{ten}` - "
         "no dang dem ca chinh tien trinh dang hoi")
+
+def test_may_ban_do_DELTA_chu_khong_do_CPU_tich_luy(tmp_path, monkeypatch):
+    """🔴 Đo 06/09: công cụ báo hai cây **ĐANG LÀM** trong khi CPU toàn máy 4,6 %.
+
+    Ngưỡng ban đầu đặt trên **CPU tích luỹ**, nên một tiến trình sống lâu tích đủ
+    5 giây CPU **một lần** rồi nằm không sẽ **mãi mãi** trông như đang làm.
+
+    ⛔ Hai cách đo đều sai, mỗi cách một chiều:
+         `cpu_percent()` một nhát  -> mẫu TỨC THỜI; không phân biệt "đã chết"
+                                      với "đang chờ I/O" (đo 05/09: 0,0 %)
+         CPU TÍCH LUỸ              -> không phân biệt "đang làm" với "đã làm
+                                      xong từ lâu"
+
+    ⚠️ Hậu quả nếu sai: công cụ báo bận vĩnh viễn ⇒ không ai chạy gate được ⇒
+       người ta thôi đọc nó. **Một cảnh báo luôn bật là một cảnh báo đã tắt.**
+
+    ## Vì sao phép kiểm này phải TỰ DỰNG tập tiến trình của nó
+
+    🔴 Hai bản trước đều chốt một **sự thật môi trường** và đỏ dưới gate:
+
+         `assert cpu < NGUONG`      -> dưới gate cây chính chạy 6 worker,
+                                       delta là hàng trăm phần trăm
+         `assert cpu < tich_luy`    -> `cpu` là **phần trăm**, `tich_luy` là
+                                       **giây**; phép so chỉ đúng nhờ tình cờ
+                                       khi máy rảnh, và đỏ ngay khi có tải
+
+    ⭐ Nên phép kiểm **thay `_ten_cay`** để chỉ đúng tiến trình con của nó rơi
+       vào bảng. Khi ấy khẳng định không còn phụ thuộc vào máy đang bận hay rảnh
+       — đó là khác biệt giữa *chốt một tính chất của mã* và *chốt một sự thật
+       môi trường*.
+    """
+    import subprocess                            # noqa: PLC0415
+    import time as _t                            # noqa: PLC0415
+
+    sys.path.insert(0, str(GOC / "tools"))
+    import may_ban                               # noqa: PLC0415
+
+    thu_muc = tmp_path / "cay_gia"
+    thu_muc.mkdir()
+    ma = ("import time" + chr(10) +
+          "t=time.time()" + chr(10) +
+          "while time.time()-t < 6.0: pass" + chr(10) +
+          "time.sleep(30)")
+    con = subprocess.Popen([sys.executable, "-c", ma], cwd=str(thu_muc),
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    try:
+        # CHI tien trinh con nay roi vao bang. Moi thu khac -> "" -> bi bo qua.
+        goc_gia = str(thu_muc).lower()
+        monkeypatch.setattr(
+            may_ban, "_ten_cay",
+            lambda cwd: "CAY THU" if (cwd or "").lower().startswith(goc_gia) else "")
+
+        _t.sleep(7.0)                            # de no dot xong roi ngu
+        bang = may_ban.quet()
+        muc = bang.get("CAY THU")
+        assert muc is not None and muc["so"] == 1, (
+            f"phai thay DUNG mot tien trinh con, thay: {bang}")
+        # 🔴 Phai dot LAU HON nguong o duoi, neu khong phep kiem khong phan
+        #    biet duoc: ban dau dot 1,2 giay thi ca hai cach do deu < 5 va phep
+        #    tiem VAN XANH. Mot phep kiem khong phan biet duoc thi khong do gi.
+        assert muc["tich_luy"] >= 5.5, (
+            f"tien trinh con moi tich {muc['tich_luy']:.1f}s CPU - phai VUOT "
+            "nguong o duoi thi phep kiem moi phan biet duoc hai cach do")
+
+        # ⭐ Ve DUY NHAT phan biet duoc, va no dung o MOI muc tai cua may:
+        #      delta    -> ~0 %  cho mot tien trinh DANG NGU
+        #      tich luy -> >= 1,2 (giay da dot truoc do)
+        assert muc["cpu"] < 5.0, (
+            f"delta {muc['cpu']:.1f}% cho mot tien trinh DANG NGU - bo do dang "
+            f"doc CPU tich luy ({muc['tich_luy']:.1f}s) chu khong doc delta")
+    finally:
+        con.terminate()
+        con.wait(timeout=10)
+
+
+def test_may_ban_BAO_ca_KHOA_chu_khong_chi_bao_CPU(tmp_path, monkeypatch):
+    """🔴 Hai phep do tra loi HAI cau khac nhau, va chung KHONG trung nhau.
+
+       Do 06/09/2026: `may_ban` bao ca hai cay `dang cho` (3,1% va 2,1% CPU)
+       trong khi mot `pytest go tay` da giu `cpu_nhieu` + `postgres_test` duoc
+       3,6 phut. Toi thay `cua_so_yen trang-thai` bang `may_ban` vi tuong the
+       la du, roi phong gate — no xep hang **9,5 phut**
+       (`cho_khoa_giay = 555,4` trong ban ghi cua luot ay).
+
+       Mot luot pytest o pha I/O doc ra y het mot may ranh. Nen ma thoat cua
+       `may_ban` phai tinh CA HAI ve, khong chi ve CPU.
+
+    ⭐ Phep kiem nay KHONG do CPU — no chot dung mot menh de: **co khoa thi
+       phai bao**, ke ca khi khong cay nao ban. Dat CPU ra ngoai bang cach
+       ep `cay_khac_dang_ban` tra ve rong.
+    """
+    sys.path.insert(0, str(GOC / "tools"))
+    import cua_so_yen
+    import may_ban
+
+    # Khoa di noi khac: mot phep kiem KHONG duoc cham khoa that cua may.
+    # Xem `AGENTS.md` — "chot khong duoc ghi vao cay".
+    monkeypatch.setattr(cua_so_yen, "TEP_KHOA", tmp_path / "ltt_khoa_cpu_nhieu.json")
+    monkeypatch.setattr(cua_so_yen.tempfile, "gettempdir", lambda: str(tmp_path))
+
+    # Khong cay nao ban -> ve CPU im hoan toan.
+    monkeypatch.setattr(may_ban, "cay_khac_dang_ban", lambda bang=None: [])
+
+    assert may_ban.khoa_dang_giu() == [], "chua ai giu ma da bao co khoa"
+
+    with cua_so_yen.CuaSoYen("PHEP-KIEM", "giu de thu", tai_nguyen=("cpu_nhieu",)):
+        dong = may_ban.khoa_dang_giu()
+        assert dong, (
+            "CO khoa dang bi giu ma `may_ban` im — day dung la lo da lam gate "
+            "xep hang 9,5 phut ma toi khong biet vi sao")
+        assert "cpu_nhieu" in dong[0]
+        assert "  [khoa]" in may_ban.dong_canh_bao(), (
+            "`dong_canh_bao` (thu gate/test_nhanh in ra) khong nhac gi den khoa")
+
+    assert may_ban.khoa_dang_giu() == [], "nha roi ma van bao con khoa"

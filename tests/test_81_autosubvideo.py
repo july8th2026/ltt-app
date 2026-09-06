@@ -282,3 +282,42 @@ def test_autosub_burn_kills_ffmpeg_when_progress_callback_cancels(monkeypatch):
         burn._run_with_cleanup(["ffmpeg"], total_duration=10,
             on_progress=cancel, timeout=30, cwd=".")
     assert process.killed
+
+
+def test_HighlightMode_khop_ca_SCHEMA_lan_RENDERER():
+    """Ba noi khai cung mot tap gia tri, va truoc 06/09 chung da lech.
+
+    🔴 `FullStylePreset` la `dataclass` nen no KHONG kiem tra gi luc chay.
+       Preset `_register(... highlight_mode="all_text")` chay binh thuong trong
+       khi `HighlightMode` khong he co `all_text` — mot lech hop dong song IM
+       LANG, khong ai thay gi hong. `mypy` bat duoc no.
+
+    ⭐ Phep kiem doc CA BA nguon chu khong chot mot danh sach chep tay. Chot
+       mot danh sach chep tay o day chinh la tao ra nguon thu TU se troi.
+    """
+    import pathlib
+    import re as _re
+    import typing
+
+    from apps.autosubvideo import ass_builder, style_registry
+    from apps.autosubvideo.schemas import SubtitleStyleConfig
+
+    bi_danh = set(typing.get_args(style_registry.HighlightMode))
+
+    # Nguon 2: `pattern` cua truong da duoc Pydantic kiem that luc chay.
+    khuon = SubtitleStyleConfig.model_fields["highlight_mode"]
+    mau = next(getattr(m, "pattern", None) for m in khuon.metadata
+               if getattr(m, "pattern", None))
+    schema = set(_re.fullmatch(r"\^\((.+)\)\$", mau).group(1).split("|"))
+
+    # Nguon 3: cac nhanh `mode == "..."` that su duoc dung trong bo dung ASS.
+    ma = (pathlib.Path(ass_builder.__file__)).read_text(encoding="utf-8")
+    renderer = set(_re.findall(r'mode == "([a-z_]+)"', ma))
+
+    assert bi_danh == schema, (
+        f"`HighlightMode` lech voi `pattern` cua schema:\n"
+        f"  chi co o bi danh: {sorted(bi_danh - schema)}\n"
+        f"  chi co o schema : {sorted(schema - bi_danh)}")
+    assert schema <= renderer, (
+        f"schema cho phep mode ma bo dung ASS KHONG xu ly: "
+        f"{sorted(schema - renderer)}")

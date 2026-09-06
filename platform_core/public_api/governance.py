@@ -348,6 +348,31 @@ STORES: tuple = (
              "duyệt, báo giá lúc đó, và quyết định. Bằng chứng của một lần "
              "đồng ý tiêu tiền."),
           purged_by=N_("theo hội thoại chứa nó")),
+    # ── ChatLTT V3 — tệp đính vào hội thoại (H44 P06) ───────────────────────
+    #
+    # ⭐ Bảng này **không chứa byte nào** — byte nằm ở `storage`, vé vào là
+    #    `upload_sessions`. Nó chỉ nói *tệp nào thuộc hội thoại nào*.
+    #
+    # 🔴 Và chính vì thế nó là cái bẫy. "Chỉ siêu dữ liệu" nghe như OPERATIONAL,
+    #    nhưng OPERATIONAL **tự già đi**: một ngày liên kết bị dọn trong khi hội
+    #    thoại và tệp đều còn, và người dùng thấy tài liệu mình đã đính biến mất
+    #    khỏi một cuộc trò chuyện vẫn nguyên vẹn. Đây là lần **thứ ba** cùng ca
+    #    ấy — P03 với `chatltt_run`, P06 §7 khi bác `Job.params` (vì `jobs` LÀ
+    #    OPERATIONAL), và bây giờ.
+    Store("chatltt_tep", CONTENT, None, N_("chủ tài khoản"),
+          N_("Tài liệu người dùng đính vào một hội thoại để hỏi: tên tệp, kiểu, "
+             "cỡ, và trạng thái trích văn bản. Nội dung tệp nằm ở kho lưu trữ, "
+             "không nằm ở đây."),
+          purged_by=N_("theo hội thoại chứa nó")),
+    # ⚠️ Bảng dưới thì NGƯỢC LẠI: nó **giữ chữ của khách**. Đó là chủ đích, không
+    #    phải rò rỉ — chỉ số tìm kiếm phải chạy trên chính chữ ấy. Nhưng nó làm
+    #    bảng này thành thứ nhạy cảm nhất trong nhóm: nội dung tài liệu riêng
+    #    của khách, đã tách nhỏ và đánh chỉ số để tìm được.
+    Store("chatltt_doan", CONTENT, None, N_("chủ tài khoản"),
+          N_("Văn bản đã trích từ tài liệu người dùng đính vào hội thoại, cắt "
+             "thành từng đoạn kèm số trang để trích dẫn lại được. Đây là nội "
+             "dung tài liệu của khách, không phải bản ghi kỹ thuật."),
+          purged_by=N_("theo tệp và hội thoại chứa nó")),
     Store("ommi_resource", CONTENT, None, N_("chủ tài khoản"),
           N_("Tài nguyên (ảnh, tệp) người dùng tải lên PROMPT AI OMMI.")),
     Store("ommi_resource_variant", CONTENT, None, N_("chủ tài khoản"),

@@ -153,6 +153,12 @@ data/translations/desktop.ini
 /tmp/
 /test-results/
 
+# Artefact cua `coverage` (tools/do_phu_diff.py). `.coverage` la CSDL
+# sqlite sinh ra moi luot do; ban XML di vao /test-results/ o tren.
+.coverage
+.coverage.*
+htmlcov/
+
 # App vendor binaries (Real-ESRGAN engine + models) — copy tu BOT GEMINI, khong commit
 apps/*/vendor/
 

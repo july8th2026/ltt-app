@@ -43,8 +43,26 @@ import sys
 import warnings
 
 GOC = pathlib.Path(__file__).resolve().parent.parent
-THU_MUC = GOC / "tests"
-TEP_MOC = pathlib.Path(__file__).with_name("check_bo_qua.moc")
+
+#: ⛔ HAI BIEN DUOI CHI DE TEST DUNG. Ma chay that khong bao gio dat chung —
+#:    cung khuon voi `LTT_PO_FILE` cua `check_dich_thieu.py`, va cung mot ly do.
+#:
+#: 🔴 Do 06/09: `test_bo_qua_MOI_lam_do` tao THAT mot tep
+#:    `tests/zz_thu_banh_coc_bo_qua.py` roi xoa trong `finally`. Duoi `-n 6`,
+#:    trong khoang tep ay ton tai, mot worker khac chay chinh cong cu nay va
+#:    thay thua mot cho bo qua ⇒ `test_bo_qua_hien_tai_dat_moc` do **4/4 luot**.
+#:    Mot tien trinh bi giet thi con te hon: tep o lai trong `tests/`, va tu do
+#:    MOI luot gate cua MOI cay deu do.
+#:
+#: ⭐ Nguyen ly da viet san o `test_KHONG_test_nao_duoc_GHI_vao_messages_po_THAT`:
+#:    *"mot test ghi vao tep that thi khong the an toan"*. Cho nay chi thieu
+#:    duong de KHONG phai ghi vao tep that.
+_THU_MUC_THU = __import__("os").environ.get("LTT_TEST_DIR")
+THU_MUC = pathlib.Path(_THU_MUC_THU) if _THU_MUC_THU else GOC / "tests"
+
+_MOC_THU = __import__("os").environ.get("LTT_BO_QUA_MOC")
+TEP_MOC = (pathlib.Path(_MOC_THU) if _MOC_THU
+           else pathlib.Path(__file__).with_name("check_bo_qua.moc"))
 DAU_HIEU = "# tap-hop-cho-bo-qua"
 
 

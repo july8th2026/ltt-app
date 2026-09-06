@@ -32,50 +32,88 @@ gian cue của Autosub).
 Bốn ô còn lại đều là `type="search"` — bàn phím của nó vốn đã đúng và có phím
 "Tìm", nên `inputmode="search"` là thừa. **Cố ý không thêm.**
 
-## 3. 🔴 Phóng to 200% — đo được, và tôi KHÔNG sửa được
+## 3. ✅ Phóng to 200% — ĐÃ SỬA 06/09, và vì sao ba lần trước "không đổi"
 
-Phóng to 200% trên máy 390px cho khung nhìn CSS **195px**. Ở đó **15/15 route
-tràn ngang** 2–101px, với con số **56px lặp lại ở chín route**.
+Phóng to 200% trên máy 390px cho khung nhìn CSS **195px**. Trước 06/09, ở đó
+**15/15 route tràn ngang**.
 
-### Ba lần sửa, ba lần không đổi một pixel
+Đo lại sau bản vá (`tools/mobile_qa.py quet`, ba route công khai):
 
-| tôi nghĩ thủ phạm là | đã sửa | kết quả đo lại |
+| khung | trước | sau |
 |---|---|---|
-| `.dropdown{min-width:214px}` | `min(214px, calc(100vw - 16px))` | **56px, không đổi** |
-| `.dropdown.right{min-width:252px}` | `min(252px, …)` | **56px, không đổi** |
-| hình học dropdown neo theo cha | `@media(max-width:240px)` → `position:fixed` | **56px, không đổi** |
+| **p195** | `/` 117px · `/gia-api` 84px · `/huong-dan` 62px | **0 · 0 · 0** |
+| p320 · p390 · p430 · tab768 · desk1440 | 0 | **0** (không hồi quy) |
 
-Lượt cuối đã kiểm tận nơi rằng CSS **thực sự tới trang**: `min-width` tính ra
-`0px`, `position` tính ra `fixed`. Luật chạy. Triệu chứng không đổi.
+### 🔑 Vì sao ba lần sửa trước đo ra "không đổi một pixel"
 
-⛔ **Nên cả ba thay đổi đã được hoàn tác.** Một luật CSS không dời được phép đo
-nào là một luật sẽ bị người sau đọc như một lời giải thích — và nó sẽ giải thích
-sai. Kho này đã có năm ca "luật tồn tại mà không làm gì" ghi trong `CHECKPOINT.md`;
-không thêm ca thứ sáu bằng chính tay mình.
+Các bản vá ấy **đúng**, nhưng chúng nhắm vào **thủ phạm phụ**. Chừng nào thủ
+phạm **chính** còn đó, `document.scrollWidth` không nhúc nhích — nên một bản vá
+đúng và một bản vá vô ích cho **cùng một con số**.
 
-### Vì sao dừng ở đây, và nó có thật sự quan trọng không
+Đo 06/09 chứng minh điều đó từng bước:
 
-WCAG 1.4.10 (Reflow) đòi nội dung chạy lại ở bề ngang **320 CSS px**. Ở 320px
-nền tảng này **đạt: 0/20 route tràn**. 195px là chặt hơn tiêu chuẩn.
+```
+sua .grid minmax(288px)      ->  `/` 312 -> 257   (co doi)
+sua .dropdown min-width      ->  257 -> 257       (KHONG doi)
+sua .dropdown position:fixed ->  257 -> 257       (KHONG doi)
+sua .hdr-right flex-wrap     ->  257 -> 195       (SACH)
+```
 
-⇒ Ghi lại là **phát hiện đã đo, chưa sửa, ngoài phạm vi bắt buộc** — không phải
-một lỗi đang chờ, cũng không phải một thứ đã xong.
+⇒ **"Đo lại không đổi" không chứng minh bản vá sai.** Nó chỉ chứng minh còn một
+thứ khác lớn hơn. Hoàn tác dựa trên tín hiệu ấy là bỏ đi một bản vá đúng — và
+đó chính là điều đã xảy ra ba lần.
 
-### Cái đã loại trừ, để người sau không đo lại
+### Cách khoanh được thủ phạm: ẩn từng con, đọc `scrollWidth`
 
-- ✗ không phải `.dropdown` / `.dropdown.right` (đã thử, không đổi)
-- ✗ không phải bảng — `.tablewrap` cuộn trong chính nó (`w=147, sw=680`)
-- ✗ không phải bản dịch — `/en` sạch ở mọi route
-- ✓ `header.hdr` có `scrollWidth 250` trong khi `clientWidth 195`, và
-  `main.page` có `scrollWidth 208`. `document.scrollWidth` = 251 ⇒ **header là
-  phần đóng góp chính**, nhưng bốn con trực tiếp của nó kết thúc ở x=185 (vừa).
-  Phần dôi ra đến từ một hậu duệ định vị tuyệt đối mà tôi chưa khoanh được.
+Thứ phá được thế bế tắc không phải một giả thuyết hay hơn, mà là một **phép đo
+phân biệt được**:
 
-⚠️ Và một ghi chú về **bộ đo**: bộ dò tràn xếp theo `getBoundingClientRect().right`
-đã chỉ nhầm thủ phạm **ba lần** trong phiên này, vì nó báo cả phần đã bị một tổ
-tiên `overflow-x:auto` hấp thụ. Bản lọc theo tổ tiên cuộn được sửa ở
-`76bb448b` giúp cho ca 320px, nhưng ở 195px thủ phạm là một hậu duệ tuyệt đối —
-một lớp mà bộ lọc ấy chưa xử lý.
+```
+header.hdr scrollWidth = 257   (main va footer deu 195/195 -> sach)
+
+an hdr-logo    -> 213
+an hdr-nav     -> 257   (da display:none, khong doi)
+an hdr-burger  -> 209
+an hdr-right   -> 195   <- SACH
+```
+
+⭐ Phép ẩn-từng-con trả lời **trực tiếp** câu "ai gây ra", trong khi mọi phép đo
+trước đó chỉ trả lời "ai trông rộng" — và hai câu ấy khác nhau, vì một hộp rộng
+nằm trong một tổ tiên cuộn thì không đóng góp gì.
+
+### Bốn bản vá, và ba trong bốn là cùng một hình dạng
+
+| chỗ | trước | sau |
+|---|---|---|
+| `.grid` | `minmax(288px,1fr)` | `minmax(min(288px,100%),1fr)` |
+| `.catbar .search` | `min-width:200px` | `min-width:min(200px,100%)` |
+| `.dev-loc .dev-field.rong` | `min-width:200px` | `min-width:min(200px,100%)` |
+| `.dropdown` / `.dropdown.right` | `min-width:214px` / `252px` | `min(…,calc(100vw - 20px))`, và **ghim theo khung nhìn** dưới 320px |
+| `.hdr-right` | flex một hàng, không co được | `flex-wrap:wrap` dưới 320px |
+| `.table` (`_kieu_chung.html`) | không vỏ cuộn, 45 chỗ / 22 template | `display:block;overflow-x:auto` dưới 320px |
+
+🔑 Hình dạng lặp lại: **một `min-width` cứng lớn hơn khung nhìn**. Quét toàn bộ
+`ltt.css` tìm `min-width:` > 195px ra **12** chỗ; 6 là `@media(min-width:…)`
+(không phải lỗi), 2 nằm trong vỏ `overflow-x:auto` (**cố ý** —
+`.ui-table` trong `.tablewrap`, `.lv-lo-bang` trong `.lv-lo-bang-boc`), 1 đã
+được ghi đè ở `max-width:760px`, còn **3** là lỗi thật.
+
+⚠️ Ngưỡng **320px** cho hai luật cuối là cố ý: WCAG 1.4.10 đòi reflow ở 320px và
+nền tảng **đạt** ở đó. Dưới ngưỡng ấy là vùng ngoài chuẩn, nơi một bảng cuộn
+được vẫn hơn một trang tràn ngang — còn đặt ngưỡng rộng hơn sẽ đổi hành vi trên
+điện thoại thật (390px) mà không được lợi gì.
+
+### Bộ dò cũng phải sửa — nó đang giấu chính thủ phạm
+
+`tools/mobile_quet.js` lọc bỏ mọi phần tử có tổ tiên `overflow-x:auto`. Với
+phần tử **`position:absolute`** thì luật ấy **sai**: chỉ **khối chứa** (tổ tiên
+đã định vị gần nhất) mới cắt được nó, một tổ tiên `static` có `overflow-x` nằm
+giữa thì không. Đó là lý do `.dropdown` không bao giờ xuất hiện trong danh sách
+nghi can, dù nó rộng 214px trên một khung 195px.
+
+Sửa thêm: bảng nay có thể **tự cuộn trong chính nó**, nên phép kiểm `bang_tran`
+phải hỏi cả `overflow-x` của **chính** phần tử, không chỉ của tổ tiên — nếu
+không nó báo "6 bảng không cuộn được" ngay sau khi cả sáu vừa được cho cuộn.
 
 ## 4. Còn lại của Phase F
 

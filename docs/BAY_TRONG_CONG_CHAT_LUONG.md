@@ -1129,6 +1129,35 @@ khác: ở đây **không ai** bị phạt cả, kể cả người sau. Đó l�
 Và đọc CPU **tích luỹ** chứ không phải một mẫu `cpu_percent` — một lượt đang chờ
 I/O đo ra 0 %, còn một xác chết cũng đo ra 0 %.
 
+### Bậc 5 — KẾT NỐI TCP phân biệt "đang chờ" với "đã chết"
+
+*(phiên ASV, 06/09)*
+
+CPU tích luỹ (bậc 3) phân biệt được **đang cày** với **xác chết**. Nó **không**
+phân biệt được **đang chờ mạng** với **đã chết** — cả hai đều 0 %.
+
+```
+ESTABLISHED -> 192.168.2.66:8299     <- dang SINH CHU tren may B, khong treo
+khong ket noi nao                    <- da chet, hoac chua bat dau
+```
+
+⇒ Năm bậc, mỗi bậc trả một câu **khác**:
+
+| Bậc | Trả lời |
+|---|---|
+| 1 khớp cmdline | *"có tên công cụ nào không"* — đếm **thừa** (`timeout.exe`) |
+| 2 cây con | *"cây con của gốc nào"* — đếm **thiếu** (mồ côi rơi khỏi cây) |
+| 3 `cwd` + CPU tích luỹ | *"cây nào, và có cày không"* |
+| 4 nhật ký quyết định | *"nó **định** làm gì"* (`hoan_s=None` = chưa từng hoãn) |
+| **5 kết nối TCP** | *"nó đang **chờ ai**"* |
+
+⛔ Và không bậc nào thấy được **deploy** — PowerShell chép tệp, không tiến trình
+mang tên công cụ nào, không kết nối nào. Kênh duy nhất là tệp `.ket.txt` của
+chính nó, tức lại là bậc 4.
+
+⭐ Bài học chung: **mỗi bậc trả lời một câu hẹp, và không bậc nào là "phép đo
+đúng"** — thứ sai là hỏi một bậc câu của bậc khác.
+
 ### 🔑 `cmdline` nói dối theo CẢ HAI chiều — trong cùng một đêm
 
 Đây là lần thứ **hai** một phép lọc theo cmdline lừa được cả nhóm, và hai lần
@@ -1670,3 +1699,74 @@ là cache** (`.pytest_cache/v/cache/nodeids`, `.playwright-cli/*.yml`).
 
 ⇒ Dùng **`git grep`** — ranh giới *"git có theo dõi không"* chính là ranh giới ta
 cần.
+
+---
+
+## Bẫy 25 — `short test summary` của pytest **không phải** bảng kết quả của gate
+
+Đo 06/09. Một lượt `gate.py --vong-lap` kết thúc, tôi đọc phần đuôi và thấy:
+
+    FAILED tests/test_299_khu_api_da_dich.py::...
+    FAILED tests/test_616_chatltt_bang_va_migration.py::...
+    2 failed, 6517 passed, 48 skipped ... in 415.07s
+    RESULT: FAIL (3/21)
+
+Tôi sửa **hai** thứ rồi chạy gate đầy đủ để chốt. Nó đỏ.
+
+⭐ Câu trả lời nằm ngay trong dòng tôi vừa đọc: **`(3/21)`**, không phải `(2/21)`.
+Gate có **21 bước**; `pytest` chỉ là **một** trong số đó. `short test summary`
+liệt kê những phép kiểm đỏ **bên trong bước ấy** — nó không biết gì về hai mươi
+bước còn lại. Bước thứ ba đỏ là `bo qua im lang`, một bánh cóc chốt tập hợp lượt
+bỏ qua, và nó **không xuất hiện** trong bất kỳ dòng `FAILED` nào.
+
+### Vì sao cái nhầm này dễ tới thế
+
+Cả hai đều là "danh sách những thứ đỏ", cùng nằm ở đuôi cùng một luồng ra, và
+danh sách của pytest **dài hơn** nên nó trông đầy đủ hơn. Thứ ngắn hơn — một cặp
+số trong ngoặc — mới là thứ nói đúng.
+
+### Cách hỏi đúng
+
+Gate ghi bảng bước ra JSON. Đọc nó, đừng đọc đuôi stdout:
+
+    ls -t test-results/gates/*.json | head -1     # luot gan nhat
+    # moi hang: {'ten': ..., 'ket': 'PASS'|'FAIL', 'giay': ...}
+
+Bảng ấy trả lời **bước nào** đỏ. `short test summary` trả lời **phép kiểm nào**
+đỏ, và chỉ khi bước đỏ tình cờ là bước chạy pytest.
+
+### Cái giá, và nó không phải thời gian
+
+Lượt gate đầy đủ ấy tốn ~7 phút và **không dùng được làm bằng chứng** — vì tôi
+đã sửa `check_bo_qua.moc` **trong lúc nó đang chạy**. Gate tự phát hiện và nói
+thẳng:
+
+    CAY DA DOI TRONG LUC CHAY:  M tools/check_bo_qua.moc (891 -> 936 byte)
+    Ket qua duoi day noi ve cay luc BAT DAU, khong phai cay hien tai.
+
+⇒ Hai luật, và luật thứ hai là hệ quả của luật thứ nhất:
+
+1. Đọc **bảng bước**, không đọc đuôi pytest. Sửa cho **hết** rồi mới chạy.
+2. Gate là công cụ ra **phán quyết**. Một phán quyết về một cây **đang đổi** thì
+   không phán quyết gì cả — đúng như chính nó tự in ra.
+
+### Phụ lục — bộ lọc khớp vào **chính nó**, và nó tự giết cha mình
+
+Ngay sau khi viết mục trên, tôi dừng lượt gate hỏng bằng một đoạn Python lọc
+tiến trình theo `'gate.py' in cmdline`. Đoạn ấy thoát với mã **15** (SIGTERM), và
+ba tiến trình `gate.py` vẫn "còn". Đo tiếp thì cả ba là **shell của chính tôi**:
+
+    pid=23712 ppid=27464  bash.exe -c source '/c/Users/.../snapshot-bash...'
+    pid=27464 ppid=27748  bash.exe -c ...
+    pid=27748 ppid=10944  bash.exe -c ...
+
+Chuỗi `gate.py` nằm trong **mã nguồn** tôi truyền cho shell, nên nó có mặt trong
+`cmdline` của shell. Bộ lọc khớp vào công cụ đo, và lệnh `kill` đi ngược lên cây
+cha của chính nó.
+
+⭐ Đây là Bẫy 22 tầng 1 (*khớp `cmdline` đếm thừa*) ở một hình dạng mới: không
+phải `timeout.exe` tự nhân bản, mà **câu hỏi xuất hiện bên trong câu hỏi**.
+
+⇒ Lọc tiến trình để **giết** thì `cmdline` không đủ. Điều kiện phải là thứ tiến
+trình đo *không thể tự thoả*: `cwd` bằng đúng cây, **và** `pid` khác `os.getpid()`
+cùng toàn bộ chuỗi cha của nó.

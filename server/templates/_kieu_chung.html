@@ -153,6 +153,33 @@
     .table th { border-bottom:1px solid var(--line); }
     .table td, .table th { padding:8px 12px 8px 0; }
 
+    /* 🔴 PHÓNG TO SÂU: bảng tự cuộn thay vì đẩy cả trang tràn ngang.
+     *
+     * Đo 06/09 ở khung nhìn CSS 195px (một máy 390px phóng 200%):
+     *
+     *     /gia-api    bang w=236  ->  scrollWidth 279, tran 84px
+     *     /huong-dan  bang w=212  ->  scrollWidth 257, tran 62px
+     *     15/15 bang do duoc: KHONG cai nao co to tien `overflow-x:auto`
+     *
+     * `.tablewrap` trong `ltt.css` giải đúng bài này, nhưng nó cần một thẻ bọc
+     * trong HTML — mà `class="table"` xuất hiện ~45 lần trên 22 template. Sửa
+     * ở đây là một chỗ thay cho 45 chỗ.
+     *
+     * ⚠️ Ngưỡng 320px là CỐ Ý, không phải một con số tròn: WCAG 1.4.10 đòi
+     *    reflow ở 320px và nền tảng này ĐẠT ở đó (0/20 route tràn). Dưới 320px
+     *    là vùng ngoài chuẩn, nơi một bảng cuộn được vẫn hơn một trang tràn.
+     *    Đặt ngưỡng rộng hơn sẽ đổi hành vi trên điện thoại thật (390px) mà
+     *    không được lợi gì — ở đó bảng đã vừa.
+     *
+     * ⭐ `display:block` vẫn giữ cột thẳng hàng: trình duyệt sinh hộp bảng ẩn
+     *    danh cho các hàng bên trong. Đây là kỹ thuật `table-responsive` quen
+     *    thuộc, áp thẳng lên bảng thay vì lên một thẻ bọc.
+     */
+    @media (max-width: 320px) {
+      .table { display:block; overflow-x:auto; max-width:100%;
+               overscroll-behavior-inline:contain; }
+    }
+
     /* Nút sao chép, do `sao_chep.js` gắn vào. Không có JS thì không có nút —
        và trang vẫn đọc được bình thường. */
     .khoi-ma { position:relative; }

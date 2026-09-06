@@ -51,7 +51,8 @@ def _schema_theo_ten(khoi_tools: list) -> dict:
 
 def tao(db, *, user_id: str, run_id: str, khoi_tools: list,
         bao_gia: Optional[BaoGia] = None,
-        cho_chay_co_phi: Optional[Callable[[], bool]] = None) -> Callable:
+        cho_chay_co_phi: Optional[Callable[[], bool]] = None,
+        conv_id: str = "") -> Callable:
     """Dựng `chay_tool` cho một run.
 
     `cho_chay_co_phi` đọc **mỗi lần**, không chụp một lần: cờ tắt gấp phải ăn
@@ -59,6 +60,10 @@ def tao(db, *, user_id: str, run_id: str, khoi_tools: list,
     """
     schema = _schema_theo_ten(khoi_tools)
     _co_phi = cho_chay_co_phi or (lambda: False)
+    # 🔴 Boi canh: thu NGUOI GOI biet ma model KHONG duoc dat. `conversation_id`
+    #    la mot RANH GIOI PHAM VI — de model tu truyen no trong `doi_so` la mo
+    #    duong doc cheo hoi thoai, vi model doc duoc id khac tu chinh lich su.
+    _boi_canh = {"conversation_id": str(conv_id or "")}
 
     def chay_tool(ten: str, doi_so: dict, ctx: DP.NgoCanhGoi):
         lop = chieu_tool.lop_chinh_sach(ten)
@@ -67,13 +72,14 @@ def tao(db, *, user_id: str, run_id: str, khoi_tools: list,
             # READ_ONLY / FREE — chạy thẳng. Cổng thứ tư (`CHO_MODEL_GOI`) và
             # kiểm schema đều nằm trong `thi_hanh`, không lặp lại ở đây.
             return thi_hanh.thi_hanh(db, user_id=user_id, ten=ten, doi_so=doi_so,
-                                     schema=schema.get(ten))
+                                     schema=schema.get(ten), boi_canh=_boi_canh)
 
         if _co_phi():
             # Người dùng đã bật "tự chạy tool có phí" ⇒ không hỏi từng lần.
             # ⚠️ Cờ này KHÔNG tự bật theo cờ tool (`co_v3` §"Hai cờ").
             return thi_hanh.thi_hanh(db, user_id=user_id, ten=ten, doi_so=doi_so,
-                                     schema=schema.get(ten), cho_chay_co_phi=True)
+                                     schema=schema.get(ten), cho_chay_co_phi=True,
+                                     boi_canh=_boi_canh)
 
         # ── Cần duyệt ────────────────────────────────────────────────────
         # Kiểm đối số TRƯỚC khi mở phiếu: hỏi người dùng có đồng ý chạy một lời
@@ -160,7 +166,8 @@ def ket_qua_sau_duyet(db, *, user_id: str, run: DP.Run, khoi_tools: list,
 
         ra[b.cho_duyet] = thi_hanh.thi_hanh(
             db, user_id=user_id, ten=p.tool_name, doi_so=ds,
-            schema=schema.get(p.tool_name), cho_chay_co_phi=True)
+            schema=schema.get(p.tool_name), cho_chay_co_phi=True,
+            boi_canh={"conversation_id": str(conv_id or "")})
     return ra
 
 
