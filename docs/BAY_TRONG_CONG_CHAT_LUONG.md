@@ -1835,3 +1835,74 @@ findstr /C:"postgres_test" <cây>\tools\gate.py
 ⭐ Đây là mặt còn lại của **Bẫy 24**: ở đó một kết quả ÂM không đối chứng trông
    giống một phát hiện; ở đây một kết quả ĐỎ không đối chứng trông giống một
    lỗi hồi quy.
+
+## Bẫy 28 — Một lần nâng phụ thuộc dời mốc của **mọi worktree cùng lúc**
+
+Đo 06/09/2026. Tôi nâng `pillow 10.4.0 → 12.3.0` trong `site-packages` của
+**python hệ thống** — thứ cả sáu worktree dùng chung. Trong vòng vài phút, gate
+ở một cây khác đỏ với:
+
+```
+arg-type     119 -> 120
+assignment    59 ->  61
+```
+
+Phiên bên ấy làm đúng mọi bước điều tra: chạy bánh cóc trên `git archive` của
+commit merge **và cả hai cha**, A/B `apps platform_core server` giữa commit
+trước việc của họ và HEAD. Kết luận của họ chính xác — *"mã tôi thêm 0 lỗi"* —
+và họ **không** `--accept` một cái mốc mình không làm lệch. Đúng phản xạ.
+
+🔴 Nhưng họ không thể tìm ra nguyên nhân trong lịch sử git, **vì nó không nằm
+   trong bất kỳ commit nào**. `pillow 12` đổi stub kiểu: `Image.open()` nay trả
+   `ImageFile`, nên mọi chỗ gán vào biến kiểu `Image` thành lỗi:
+
+```
+apps/taovideo/refs.py:45          Image -> ImageFile
+apps/chataistudio/features.py:37  Image -> ImageFile
+tools/danh_gia_vision.py:117      FreeTypeFont | ImageFont
+```
+
+### Vì sao lớp này khó thấy hơn mọi lớp khác trong tệp này
+
+Mọi bẫy trước đều **ở trong kho**: một tệp, một dòng, một cấu hình. Cái này ở
+**bên ngoài kho** và **dùng chung**, nên:
+
+- `git bisect` không tìm ra — không commit nào gây ra nó;
+- A/B giữa hai commit cho kết quả **giống nhau**, vì cả hai cùng chạy trên
+  site-packages MỚI;
+- cây nào có mốc cũ thì đỏ, cây nào đã `--accept` thì xanh — **cùng một mã**.
+
+### ⛔ Và một suy luận SAI mà chính tôi suýt tin
+
+Quan sát bên kia: `mypy` xanh trong 2,8–5,3 giây ở các lượt gate, còn lượt đo
+thật mất 15,2 giây và ra đỏ ⇒ giả thuyết *"xanh dưới ~6 giây là đáng nghi"*.
+
+Đo hai chiều thì **bác được**:
+
+| cache | thời gian | phát hiện |
+|---|---|---|
+| nguội | 47,5 s | **592 / 14 mã** |
+| nóng | 2,6 s | **592 / 14 mã** |
+
+⭐ Giống **hệt** nhau. Cache nóng không làm `mypy` báo thiếu.
+
+Tương quan là thật nhưng **ngược chiều nhân quả**: đổi một gói trong
+site-packages **làm mất hiệu lực cache của mypy**, nên lượt kế tiếp vừa **chậm**
+(phải tính lại) vừa **đỏ** (thấy stub mới). "Chậm" và "đỏ" cùng là *hệ quả* của
+việc nâng gói; cái này không gây ra cái kia.
+
+⛔ Nếu tin giả thuyết ấy, bản vá sẽ là một cái sàn thời gian cho bước `mypy` —
+   một `giay_toi_thieu` cho thứ không cần nó — và nó sẽ **đỏ giả mỗi lượt cache
+   nóng** trong khi nguyên nhân thật vẫn nguyên.
+
+### Luật
+
+⚠️ Nâng một gói trong `site-packages` dùng chung là **sửa hạ tầng dùng chung**,
+   đúng nghĩa §4c của `AGENTS.md`, dù không có dòng mã nào đổi.
+
+1. Trước khi nâng: chạy các bánh cóc để có mốc **trước**;
+2. Sau khi nâng: chạy lại, và nếu mốc đổi thì **nói cho các phiên khác biết** —
+   họ sẽ thấy đỏ mà không có gì trong lịch sử giải thích;
+3. Cây nào đỏ vì việc này thì **ff lên trunk** để lấy cái mốc đã cập nhật, chứ
+   đừng `--accept` riêng ở cây mình: hai cái mốc lệch nhau còn tệ hơn một cái
+   mốc cũ.
