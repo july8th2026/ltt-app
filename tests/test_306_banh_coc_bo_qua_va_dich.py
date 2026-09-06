@@ -1051,8 +1051,12 @@ def test_sao_chep_js_CO_xu_ly_o_mot_dong():
     assert "code[data-chep]" in js, (
         "`sao_chep.js` khong xu ly `<code data-chep>` — trong khi `_vps_mac.html` "
         "sinh ra chung va `vps_base.html` hua co nut")
-    mac = (GOC / "server" / "templates" / "_vps_mac.html").read_text(encoding="utf-8")
-    assert "data-chep" in mac, "macro thoi khong danh dau o sao chep nua?"
+    # ⚠️ Nua con lai cua hop dong — "macro CON dat `data-chep`" — nam o
+    #    `test_365::test_macro_o_sao_chep_van_dat_dau_data_chep`, KHONG o day.
+    #    Banh coc `test_KHONG_test_nao_duoc_GHI...` trong chinh tep nay cam moi
+    #    tham chieu toi `server/templates/`, va no cam CO Y: luat cua no la "tep
+    #    that chi duoc xuat hien o dung mot cho — ham tao ban sao". Toi khong
+    #    noi mot cai cong chi vi no bat toi.
 
 
 def test_co_da_xu_ly_KHONG_trung_ten_voi_dau_danh_dau():
