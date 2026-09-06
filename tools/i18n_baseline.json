@@ -40,7 +40,7 @@
     "apps/prompt_ai_ommi/services/resources.py": 15,
     "apps/prompt_ai_ommi/services/retention.py": 1,
     "apps/prompt_ai_ommi/services/storyboard.py": 10,
-    "apps/prompt_ai_ommi/templates/prompt_ai_ommi.html": 27,
+    "apps/prompt_ai_ommi/templates/prompt_ai_ommi.html": 7,
     "apps/prompt_ai_ommi/templates/prompt_ai_ommi_workspace.html": 2,
     "apps/taoanh/jobs.py": 5,
     "apps/taoanh/manifest.py": 2,
@@ -115,5 +115,5 @@
     "server/templating.py": 6,
     "server/usage_rate_limit.py": 1
   },
-  "tong": 774
+  "tong": 754
 }

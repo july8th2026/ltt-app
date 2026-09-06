@@ -13276,3 +13276,36 @@ msgstr "Video AI"
 
 msgid "Tạo video từ mô tả bằng model chạy trên máy thuê của LTT Studios."
 msgstr "Generate video from a description using a model running on LTT Studios' rented machine."
+
+msgid "Bạn chưa có quyền dùng công cụ này."
+msgstr "You do not have permission to use this tool."
+
+msgid "Tính năng này chưa mở. Hiện tại chỉ tạo video từ mô tả."
+msgstr "This feature is not available yet. For now you can only generate video from a description."
+
+msgid "tạo video từ mô tả"
+msgstr "generate video from a description"
+
+msgid "tính năng này"
+msgstr "this feature"
+
+msgid "Thiếu mô tả video."
+msgstr "Please describe the video you want."
+
+msgid "Chưa cấu hình máy dựng video."
+msgstr "The video machine is not configured yet."
+
+msgid "Sinh video thất bại."
+msgstr "Video generation failed."
+
+msgid "Máy dựng báo xong nhưng không trả về tệp nào."
+msgstr "The video machine reported success but returned no file."
+
+msgid "Không tải được kết quả về."
+msgstr "Could not download the result."
+
+msgid "Lưu kết quả thất bại."
+msgstr "Saving the result failed."
+
+msgid "Chuẩn 720p"
+msgstr "Standard 720p"

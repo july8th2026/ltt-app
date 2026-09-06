@@ -49,7 +49,7 @@ def uoc_credit(*, giay_video: float) -> int:
        khi video đã sinh xong.
     """
     if giay_video <= 0:
-        raise ValueError("giay_video phải lớn hơn 0")
+        raise ValueError("giay_video must be > 0")
     giay_gpu = giay_video * GIAY_GPU_MOI_GIAY_VIDEO
     usd = giay_gpu / 3600.0 * USD_MOI_GIO_GPU * HE_SO_BAN
     return _usd_sang_credit(usd)
@@ -63,7 +63,7 @@ def quyet_toan_credit(*, giay_gpu: float, tran: int | None = None) -> int:
     của khách.
     """
     if giay_gpu < 0:
-        raise ValueError("giay_gpu không được âm")
+        raise ValueError("giay_gpu must not be negative")
     usd = giay_gpu / 3600.0 * USD_MOI_GIO_GPU * HE_SO_BAN
     credit = _usd_sang_credit(usd)
     if tran is not None:

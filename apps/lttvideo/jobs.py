@@ -19,7 +19,7 @@
 """
 from __future__ import annotations
 
-from platform_core.i18n import N_, _
+from platform_core.i18n import _
 
 import time
 import uuid

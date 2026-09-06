@@ -25,6 +25,8 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
+from platform_core.i18n import N_
+
 #: SHA thượng nguồn mà mọi hồ sơ dưới đây được rút ra từ đó.
 #: ⛔ Đổi SHA WanGP ⇒ phải rút lại hồ sơ và đổi hằng số này. Không sửa một vế.
 WANGP_SHA = "1e1dd2757f24923f008593d9d4ec09062234be20"
@@ -82,7 +84,7 @@ class HoSo:
         thua = set(doi) - KHOA_NGUOI_DUNG_DOI_DUOC
         if thua:
             raise KhoaKhongDuocPhep(
-                "khoá không được phép đổi: " + ", ".join(sorted(thua))
+                "settings keys not allowed here: " + ", ".join(sorted(thua))
             )
         tham_so = self.doc_tham_so()
         tham_so.update(doi)
@@ -94,12 +96,13 @@ class HoSo:
 _SO: tuple[HoSo, ...] = (
     HoSo(
         profile_id="ltt.video.chuan.v1",
-        ten="Chuẩn 720p",
+        ten=N_("Chuẩn 720p"),
         tep="ltt.video.chuan.v1.json",
         wangp_sha=WANGP_SHA,
         ghi_chu=(
-            "Rút từ get_default_settings('t2v_2_2') trên C-CLOUD 06/09. "
-            "Đặt 1280x720 và 20 bước để so được với phép đo của V3."
+            "Extracted from get_default_settings('t2v_2_2') on C-CLOUD "
+            "2026-09-06. Set to 1280x720 / 20 steps to stay comparable with "
+            "the V3 measurement."
         ),
     ),
 )
@@ -116,6 +119,6 @@ def lay(profile_id: str) -> HoSo:
         return _THEO_ID[profile_id]
     except KeyError:
         raise KhongCoHoSo(
-            f"không có hồ sơ {profile_id!r}; "
-            f"đang có: {', '.join(sorted(_THEO_ID))}"
+            f"no such profile {profile_id!r}; "
+            f"available: {', '.join(sorted(_THEO_ID))}"
         ) from None
