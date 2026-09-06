@@ -30,12 +30,26 @@ CREDIT_MOI_USD: float = 260.0
 #: Hệ số giá bán trên giá vốn (`V-003` của V3: bán = 2 × giá vốn).
 HE_SO_BAN: float = 2.0
 
-#: Thời gian sinh mỗi giây video, đo ở P01: 20 bước × 79,8 giây cho 5,06 giây
-#: video ⇒ ~316 giây GPU mỗi giây video, ở `profile 4`.
-#: 🔴 Đây là số của `profile 4` — hồ sơ CHẬM NHẤT. `profile 3` (đã chốt) chưa đo
-#:    được vì `US-KS-2` hết A100. Dùng số này để **ước cao**, đúng vai trò của
-#:    giữ chỗ; quyết toán vẫn theo giây GPU thật.
+#: Thời gian sinh mỗi giây video.
+#:
+#: 🔴 SỐ NÀY ĐÃ VÔ HIỆU — giữ lại để ước CAO, không phải để tin.
+#:
+#:    Đo ở P01: 20 bước × 79,8 giây cho 5,06 giây video ⇒ ~316 giây GPU mỗi
+#:    giây video. Nhưng phép đo ấy chạy ở **ba tham số nay đều đã đổi**:
+#:
+#:      · profile 4   -> đã chốt profile 1  (`P01-D-15`)
+#:      · 1280x720    -> đã trả về 832x480  (mặc định thật của WanGP)
+#:      · 20 bước     -> đã trả về 30 bước
+#:
+#:    Hai cái đầu làm số này ước CAO, cái thứ ba làm nó ước THẤP, nên không suy
+#:    ra được chiều sai lệch — phải đo lại ở đúng cấu hình (`E1`).
+#:
+#: ⭐ Vì sao vẫn để nó chạy: quyết toán đi theo **giây GPU thật**
+#:    (`quyet_toan_credit`), nên hằng số này chỉ định cỡ khoản GIỮ CHỖ. Một số
+#:    ước cao thì giữ chỗ thừa rồi hoàn lại; xoá nó đi thì không giữ chỗ được gì.
 GIAY_GPU_MOI_GIAY_VIDEO: float = 316.0
+#: Đặt False khi `E1` đo lại xong. Phép kiểm đọc cờ này để không ai quên.
+DA_DO_LAI_SAU_KHI_DOI_THAM_SO: bool = False
 
 
 def _usd_sang_credit(usd: float) -> int:

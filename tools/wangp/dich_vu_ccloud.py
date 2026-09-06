@@ -16,7 +16,13 @@
    phục vụ **đúng một cấu hình**. Muốn hai cấu hình thì hai tiến trình.
 
 Chạy:
-    /data/venv/bin/python -m uvicorn dich_vu_ccloud:app --host 0.0.0.0 --port 8188
+    /data/venv/bin/python -m uvicorn dich_vu_ccloud:app --host 0.0.0.0 --port 8888
+
+⛔ **8888, không phải 8188.** Cổng phải nằm trong danh sách pod ĐÃ MỞ lúc tạo;
+   pod `bly29qwp5bum3r` khai `ports: ['8888/http', '22/tcp']`. Nghe ở cổng
+   không khai thì dịch vụ vẫn chạy, log vẫn sạch, và máy A vẫn **không gọi tới
+   được** — một kiểu hỏng không để lại dấu vết ở phía máy chủ. Đường công khai
+   RunPod dựng theo khuôn `https://<pod-id>-<cong>.proxy.runpod.net`.
 """
 from __future__ import annotations
 

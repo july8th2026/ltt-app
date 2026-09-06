@@ -13307,8 +13307,8 @@ msgstr "Could not download the result."
 msgid "Lưu kết quả thất bại."
 msgstr "Saving the result failed."
 
-msgid "Chuẩn 720p"
-msgstr "Standard 720p"
+msgid "Chuẩn WanGP"
+msgstr "WanGP standard"
 
 msgid "Hãy mô tả video bạn muốn."
 msgstr "Please describe the video you want."

@@ -20,13 +20,39 @@ phần lớn thứ bạn định tạo **đã có rồi**.
 ```
 /data/Wan2GP/      ma nguon WanGP @ 1e1dd275... (v12.71)
 /data/venv/        torch 2.10.0+cu128 · mmgp 3.7.14 · sageattention 2.2.0
-/data/ckpts/       model WanGP tu tai ve
+/data/hf/          model tai ve nam O DAY (HF_HOME), khong phai o ckpts/
+/data/ckpts/       ⚠️ do duoc 06/09: RONG (1 tep, 0 GB)
 /data/lttv/        script: cai_dat.sh · khoi_dong.sh · do_luong*.py
 /data/ket_qua/     ket qua do + log + vram*.csv
 ```
 
-🔑 **Cài đặt mất ~40 phút và nó nằm trên volume.** `cai_dat.sh` có cổng bỏ qua:
-thấy `/data/ket_qua/_CAI_DAT_XONG` là thoát ngay. ⇒ **Đừng cài lại.**
+⚠️ Bản trước của tệp này ghi *"`/data/ckpts/` model WanGP tự tải về"*. **Sai** —
+đo bằng S3 ngày 06/09 thấy nó rỗng. `khoi_dong.sh` đặt `HF_HOME=/data/hf`, nên
+Hugging Face tải về `hf/`. Đừng suy vị trí model từ **tên thư mục**.
+
+🔑 **Cài đặt mất ~40 phút và phần lớn nằm trên volume — nhưng KHÔNG phải tất cả.**
+
+### 🔴 Cài đặt trải trên HAI hệ tệp có tuổi thọ khác nhau
+
+| Nửa | Ở đâu | Gồm gì | Sống bao lâu |
+|---|---|---|---|
+| **TẠM** | `/usr` — ổ container | `python3`, `ffmpeg`, `git`, `cmake` (apt) | **mất mỗi lần pod khởi động lại** |
+| **BỀN** | `/data` — volume | venv, torch, WanGP, model | qua cả lần xoá pod |
+
+Ảnh container là `nvidia/cuda:12.8.1-cudnn-devel-ubuntu22.04` — **không có
+Python**. Python chỉ tồn tại vì `apt-get install` đặt nó vào nửa tạm. Mà
+`venv/bin/python3` là symlink **tuyệt đối** tới `/usr/bin/python3` ⇒ nửa bền
+**phụ thuộc** nửa tạm.
+
+⛔ Mốc `_CAI_DAT_XONG` (bản cũ) nằm ở nửa bền nên nó khẳng định một tính chất mà
+nó **chỉ nhìn thấy một nửa**. Pod khởi động lại → nửa tạm bay hơi → mốc vẫn còn
+→ cổng bỏ qua cài đặt → `python` thành symlink treo, và bash báo dangling
+symlink đúng bằng câu `No such file or directory`, nên lỗi **trông như venv bị
+xoá** trong khi venv còn nguyên. Đã đốt một buổi ngày 06/09.
+
+⇒ Mốc đã **bỏ hẳn**. `cai_dat.sh` nay có hai cổng, mỗi nửa một cổng, và cả hai
+đều kiểm **thứ chạy được** (`command -v python3`, `-x venv/bin/python`,
+`import torch, mmgp`) chứ không kiểm một tệp mốc.
 
 ---
 
@@ -133,6 +159,24 @@ về theo đường này **sau khi pod đã xoá**.
 
 ⚠️ Lượt `list_objects_v2` có thể timeout khi pod đang ghi nặng vào volume. Đặt
 `read_timeout` và bắt lỗi; đừng coi timeout là "không có gì".
+
+---
+
+## 6b. ⛔ Cổng mạng: chỉ **8888** gọi được từ ngoài
+
+```
+ports: ['8888/http', '22/tcp']      portMappings: {'22': 11191}
+```
+
+Cổng phải khai **lúc tạo pod**. Dịch vụ nghe ở cổng không khai vẫn chạy bình
+thường, log vẫn sạch, và máy A vẫn không gọi tới được — hỏng mà **không để lại
+dấu vết nào ở phía máy chủ**. Đường công khai:
+
+```
+https://<pod-id>-8888.proxy.runpod.net
+```
+
+⚠️ `22/tcp` có ánh xạ nhưng **chưa nạp khoá SSH** ⇒ chưa dùng được (xem §7).
 
 ---
 

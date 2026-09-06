@@ -96,13 +96,20 @@ class HoSo:
 _SO: tuple[HoSo, ...] = (
     HoSo(
         profile_id="ltt.video.chuan.v1",
-        ten=N_("Chuẩn 720p"),
+        ten=N_("Chuẩn WanGP"),
         tep="ltt.video.chuan.v1.json",
         wangp_sha=WANGP_SHA,
         ghi_chu=(
             "Extracted from get_default_settings('t2v_2_2') on C-CLOUD "
-            "2026-09-06. Set to 1280x720 / 20 steps to stay comparable with "
-            "the V3 measurement."
+            "2026-09-06, kept byte-for-byte at WanGP's own factory values "
+            "(832x480, 30 steps).\n"
+            "An earlier revision forced 1280x720 / 20 steps to stay comparable "
+            "with the V3 measurement. That was a local convenience, never a "
+            "WanGP recommendation: wgp.py:3219 picks 720p only when the model "
+            "type name contains '720', and t2v_2_2 does not. WanGP's own route "
+            "to a high-resolution result is README.md:234 -- generate at 480p, "
+            "then upsample -- via the spatial_upsampling key already present in "
+            "these settings."
         ),
     ),
 )

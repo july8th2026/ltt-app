@@ -57,10 +57,20 @@ def khoa_hop_le(key: str, user_id) -> bool:
 #: Ánh xạ sang `resolution` nằm ở `_DO_PHAN_GIAI` bên dưới, một chỗ duy nhất.
 TI_LE = ("16:9", "9:16", "1:1")
 
+#: ⛔ Ba giá trị này lấy **nguyên văn** từ nhóm `# 480p` của
+#:   `Wan2GP/shared/resolutions.py:DEFAULT_RESOLUTION_CHOICES`. Không tự tính
+#:   ra từ tỉ lệ: WanGP chọn kích thước chia hết cho `vae_block_size`, nên một
+#:   con số "đúng tỉ lệ" mà không có trong danh sách của nó là một con số WanGP
+#:   sẽ phải làm tròn lại.
+#:
+#: 🔴 Bản trước dùng nhóm **720p** (`1280x720` · `720x1280` · `960x960`). Nó đi
+#:   CỬA TRƯỚC — route gửi `resolution` như khoá người dùng đổi được, nên nó ghi
+#:   đè hồ sơ. Tức chữa hồ sơ về 480p mà quên chỗ này thì 720p vẫn quay lại,
+#:   lặng lẽ, và hồ sơ trông vẫn đúng.
 _DO_PHAN_GIAI = {
-    "16:9": "1280x720",
-    "9:16": "720x1280",
-    "1:1": "960x960",
+    "16:9": "832x480",
+    "9:16": "480x832",
+    "1:1": "720x720",
 }
 
 #: Độ dài cho chọn, theo giây. Trần 10 giây cho baseline.
