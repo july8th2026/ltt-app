@@ -261,10 +261,13 @@ def test_hook_KHONG_duoc_lam_hong_commit_o_cay_CHUA_dong_bo(tmp_path):
     ⇒ §4c cau 2: duong SUY BIEN phai tuong minh. Cay chua co cau hinh thi hook
       IM LANG di qua. Khong cay nao bi phat vi chua kip dong bo.
     """
-    hook = GOC / ".git" / "hooks" / "pre-commit"
-    if not hook.is_file():
-        import pytest
-        pytest.skip("chua cai hook o may nay")
+    # ⛔ Doc ban DUOC THEO DOI, khong doc `.git/hooks/`. Tep trong `.git/` khong
+    #    nam trong git: khong ai review, khong cay nao khac co, va mot phep kiem
+    #    dua vao no phai `skip` khi chua cai -- ma mot test bi bo qua la mot test
+    #    KHONG canh gi ca. Buoc gate `bo qua im lang` bat dung dieu do 06/09,
+    #    va do la ly do than hook duoc chuyen ra `setup/`.
+    hook = GOC / "setup" / "pre-commit-hook.sh"
+    assert hook.is_file(), "than hook phai duoc THEO DOI, khong chi song o .git/"
 
     ma = hook.read_text(encoding="utf-8", errors="replace")
     assert ".pre-commit-config.yaml" in ma and "exit 0" in ma, (
