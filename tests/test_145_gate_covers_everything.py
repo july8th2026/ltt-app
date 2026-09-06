@@ -508,3 +508,50 @@ def test_ba_tep_ghi_vao_cay_deu_tra_lai_CA_DAU_THOI_GIAN():
     assert not doi, (
         f"ba tep pha 2 lam ban cay: {sorted(doi)}. Xem `finally:` cua chung — "
         f"khoi phuc phai co ca `os.utime`, khong chi noi dung.")
+def test_moi_buoc_NANG_deu_phai_khai_tai_nguyen():
+    """`nhom="nang"` ma khong khai `tai_nguyen` la tu chon ra khoi khoa, IM LANG.
+
+    🔴 Do 06/09/2026: tren 29 `Step()` trong `gate.py`, chi 3 khai tai nguyen —
+       va HAI trong so cac buoc `nang` khong khai gi ca:
+
+           bat bien da tien trinh   -> dung PostgreSQL, goi `drop_all()`
+           bo test --lf             -> KHONG khai gi, ke ca `cpu_nhieu`
+
+       Hai luot gate o hai worktree cung do trong mot dem, hai trieu chung khac
+       nhau, mot nguyen nhan: mot ben xoa schema giua luc ben kia dang ghi.
+
+           relation "api_metric_samples" does not exist
+           assert 0 == 9   (9 job bien mat khoi bang)
+
+    ⛔ `bo test --lf` la ca te nhat vi no **doi lot mot buoc nhanh**:
+       `gate --vong-lap` duoc quang cao la vong lap 15 giay, nhung `--lf` chay
+       TOAN BO bo test khi cache `lastfailed` rong hoac toan id chet (do that:
+       393 giay). Mot luot nang vo hinh hoan toan voi khoa.
+
+    ⭐ Khoa **khong doan duoc** buoc lam gi; no chi giu thu duoc KHAI. Nen them
+       mot buoc nang ma quen `tai_nguyen=` la tu chon ra khoi khoa — khong co gi
+       do, khong co gi vang mat, chi co mot cai ten khong duoc nhac toi.
+
+    ⚠️ Phep kiem nay doc AST va menh de cua no noi ve **hinh dang ma**, nen AST
+       la cong cu DUNG o day — khac han truong hop
+       `test_main_cua_test_nhanh_THUC_SU_chay_pha_1`, noi menh de noi ve **hanh vi**
+       va AST mu voi no.
+    """
+    import ast
+
+    cay = ast.parse((ROOT / "tools" / "gate.py").read_text(encoding="utf-8"))
+    thieu = []
+    for n in ast.walk(cay):
+        if not (isinstance(n, ast.Call) and getattr(n.func, "id", "") == "Step"):
+            continue
+        kw = {k.arg: k.value for k in n.keywords}
+        nhom = getattr(kw.get("nhom"), "value", "tinh")
+        if nhom != "nang" or "tai_nguyen" in kw:
+            continue
+        ten = (n.args[0].value if n.args and isinstance(n.args[0], ast.Constant)
+               else "?")
+        thieu.append(f"dong {n.lineno}: {ten}")
+
+    assert not thieu, (
+        "buoc nhom=\"nang\" KHONG khai tai_nguyen => vo hinh voi cua_so_yen: "
+        + "; ".join(thieu))
