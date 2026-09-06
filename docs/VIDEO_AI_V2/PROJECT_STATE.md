@@ -11,7 +11,9 @@
 
 ## Trạng thái
 
-- **phase:** `P01` — Pin + Vanilla WanGP C-CLOUD POC
+- **phase:** **Phase D ĐÓNG** (app LTT tối thiểu) · **Phase E chặn bởi GPU**
+  *(P00, P01 nửa không tốn tiền, Phase B, Phase D đã xong)*
+- **phase_cu:** `P01` — Pin + Vanilla WanGP C-CLOUD POC
   *(P00 đã đóng PASS — mục `Cổng nghiệm thu P00` giữ nguyên bên dưới)*
 - **status:** **P01 ĐANG CHẠY lượt GPU.** Chủ dự án duyệt chi 06/09.
   Pod `bly29qwp5bum3r` (A100 80 GB, `US-KS-2`, 251 GB RAM, 32 vCPU) —
@@ -67,6 +69,14 @@
 - **browser_checks:** **N/A** — P00 không đổi GUI, route hay tài sản tĩnh
 - **blockers:** xem *Blockers*
 - **decisions:** `DECISIONS.md`
+- **phase_D:** ✅ **ĐÓNG** — `gate.py` **`RESULT: PASS`** trên lượt sạch.
+  6 module + route + template + **74 test riêng**, 0 tệp chạm
+  `platform_core/`/`server/`. `lint_app_contract`: 17 app, 0 ERROR, 0 WARN.
+  App khai `INTERNAL_ONLY` — lý do là **giấy phép**, không phải kế hoạch.
+- **phase_E:** ⏸️ **CHẶN** — `E1` (service C-CLOUD) đã viết xong
+  (`tools/wangp/dich_vu_ccloud.py`), `E2`–`E7` cần GPU thật.
+  🔴 `US-KS-2` **hết A100** (thử 6 lượt, đều `not enough free GPU`); lệnh `stop`
+  đã nhả card và không lấy lại được. Volume khoá ta vào datacenter đó.
 - **exact_next_action:** **chờ chủ dự án duyệt chi ~$2,80 (trần $5,00)** cho
   lượt POC GPU của P01 — xem *Kế hoạch chi P01*. Duyệt xong thì chạy tiếp P01
   mục 5–9; **không** nhảy sang P02.
