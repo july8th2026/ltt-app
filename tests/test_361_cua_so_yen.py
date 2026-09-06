@@ -529,16 +529,28 @@ def test_pytest_GO_TAY_luot_lon_thi_XIN_khoa(tmp_path, monkeypatch):
     import conftest as cf                        # noqa: PLC0415
     monkeypatch.setattr(cf, "_KHOA_PHIEN", None)
 
-    # 🔴 `conftest.py:96` thoát ngay khi `PYTEST_XDIST_WORKER` có mặt — và dưới
-    #    gate (`-n 6`) **mọi** test đều chạy trong một worker. Không xoá biến ấy
-    #    thì thân hàm không bao giờ chạy tới, nên phép kiểm này chưa từng xanh
-    #    được trong gate: nó chỉ xanh khi gõ tay một luồng.
+    # 🔴 Cửa ở `conftest.py:95-104` có BA điều kiện thoát sớm, và **cả ba** đều
+    #    được môi trường mà phép kiểm này đang đứng tự thoả:
     #
-    # ⭐ Đây là một hình dạng riêng đáng nhớ: phép kiểm canh một **cửa chặn**,
-    #    mà điều kiện ĐẦU TIÊN của cửa ấy lại chính là môi trường phép kiểm đang
-    #    đứng. Nó không "flaky" — nó **luôn** đỏ ở đúng nơi duy nhất người ta
-    #    đọc kết quả.
+    #      _KHOA_PHIEN is not None        phiên trước đã xin
+    #      PYTEST_XDIST_WORKER            dưới gate, MỌI test ở trong một worker
+    #      to_tien_da_giu_khoa()          dưới gate, tổ tiên CHÍNH LÀ `gate.py`
+    #
+    #    Không vô hiệu đủ cả ba thì thân hàm không bao giờ chạy tới, nên phép
+    #    kiểm này **chưa từng xanh được trong gate** — nó chỉ xanh khi gõ tay.
+    #
+    # ⭐ Hình dạng đáng nhớ: phép kiểm canh một **cửa chặn**, mà điều kiện của
+    #    cửa ấy lại chính là môi trường phép kiểm đang đứng. Nó không "khi xanh
+    #    khi đỏ" — nó **luôn** đỏ ở đúng nơi duy nhất người ta đọc kết quả.
+    #
+    # ⛔ Và tôi đã sửa nó HAI LẦN mới đủ: lần đầu chỉ gỡ `PYTEST_XDIST_WORKER`,
+    #    rồi `-n 6` cục bộ xanh 3/3 nên tôi tưởng xong — nhưng `-n 6` cục bộ
+    #    **không có `gate.py` làm tổ tiên**. Một phép đo thiếu đúng cái điều
+    #    kiện đang hỏi thì nó xác nhận, không kiểm chứng.
     monkeypatch.delenv("PYTEST_XDIST_WORKER", raising=False)
+    sys.path.insert(0, str(GOC / "tools"))
+    import test_nhanh as tn                      # noqa: PLC0415
+    monkeypatch.setattr(tn, "to_tien_da_giu_khoa", lambda *a, **k: False)
 
     lon = [types.SimpleNamespace(fspath=f"t{i}.py")
            for i in range(cf._NGUONG_TEP_NANG + 5)]
@@ -578,6 +590,21 @@ def test_pytest_GO_TAY_luot_lon_thi_XIN_khoa(tmp_path, monkeypatch):
     assert not cpu.exists() and not pg.exists(), (
         "worker con cung xin khoa - mot luot `-n 6` se co SAU nguoi tranh mot "
         "khoa O_EXCL, va nam cai sau se CHEN sau khi het gio cho")
+
+    # ── Chiều thứ NĂM: tổ tiên đã giữ khoá hộ thì KHÔNG xin nữa ────────────
+    #
+    # 🔴 Đây đúng là điều kiện đã làm phép kiểm này đỏ trong gate, và nó chưa
+    #    từng được đo theo chiều của nó. `gate.py` và `test_nhanh.py` đã xin
+    #    khoá trước khi gọi `pytest`; nếu `conftest` xin thêm một lần nữa thì
+    #    khoá là tệp `O_EXCL` **không tái nhập** ⇒ tiến trình tự chờ chính mình
+    #    tới hết `--cho` rồi CHÈN. Gate treo 15 phút ở bốn chỗ, đã xảy ra 06/09.
+    monkeypatch.delenv("PYTEST_XDIST_WORKER", raising=False)
+    monkeypatch.setattr(cf, "_KHOA_PHIEN", None)
+    monkeypatch.setattr(tn, "to_tien_da_giu_khoa", lambda *a, **k: True)
+    cf.pytest_collection_modifyitems(None, None, lon)
+    assert not cpu.exists() and not pg.exists(), (
+        "to tien da giu khoa ho ma van xin them - khoa O_EXCL khong tai nhap, "
+        "nen tien trinh se tu cho chinh minh toi het `--cho` roi CHEN")
 
 
 def test_may_ban_KHONG_dem_chinh_no_va_chuoi_cha():
