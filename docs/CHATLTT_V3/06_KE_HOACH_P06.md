@@ -209,3 +209,82 @@ luôn".
 ⛔ **DEFERRED, ghi rõ chứ không tính PASS:** code sandbox (chỉ khi có sandbox
 chứng minh được), tìm kiếm web (cần một nhà cung cấp và một quyết định chi phí),
 MCP (xem §4).
+
+---
+
+## §7 — 🔴 Ngã ba của bước 2: tệp treo vào ĐÂU, và ai trả tiền cho chỗ ấy
+
+Đo 06/09 — `platform_core/upload_sessions.py` **đã có** trọn vòng đời tệp, giàu
+hơn tôi tưởng:
+
+```
+create -> confirm -> { promote | attach_to_project }
+trang thai : draft · confirmed · promoted · attached
+han luu    : PROMOTED_RETENTION_DAYS = 30 · DRAFT_RETENTION_DAYS = 30
+tran       : 20 phien dang mo · 2 GiB · 12 lan tao/phut
+so huu     : user_id + app_slug + tien to "{app_slug}/{user_id}/"
+```
+
+⇒ **Không dựng bảng tệp song song.** `UploadSession` *là* bản ghi tệp bền.
+
+### Nhưng cả hai cửa đều đòi một thứ chatltt chưa có
+
+| Cửa | Đòi | Hạn lưu |
+|---|---|---|
+| `promote(job=…)` | job **đang giữ credit** (`credit.so_da_giu > 0`) | 30 ngày |
+| `attach_to_project(project_id=…)` | một `AppProject` của người dùng | 30 ngày |
+
+🔴 **chatltt KHÔNG có `AppProject`.** `git grep AppProject` khớp
+`apps/chatltt/services/hoi_thoai.py`, nhưng đọc ra thì đó là một **chú thích**
+trích con số 30 ngày của nền tảng — không phải một lần dùng. *(Cùng bẫy đã ghi:
+`grep` **thấy** cũng không chứng minh năng lực **có**.)*
+
+Và cửa thứ nhất mang theo một **quyết định sản phẩm**, viết sẵn trong docstring
+của chính nó:
+
+> *"Cửa 'phải giữ credit mới được lưu file' tồn tại để **không ai biến input của
+> job thành kho lưu trữ miễn phí**."*
+
+### Quyết định: đi cửa `promote`, và trích văn bản LÀ một job có phí
+
+**Bốn lý do, và lý do thứ ba là lý do quyết:**
+
+1. **Không sửa nền tảng.** Hai cửa đã có; thêm cửa thứ ba là sửa
+   `platform_core/upload_sessions.py` — ngoài ranh giới app, và `CLAUDE.md` đòi
+   dừng lại nói rõ vì sao trước khi làm thế.
+2. **Trích văn bản thật sự là một job**: dài hơn vài giây (trần Cloudflare
+   100 s), cần hàng đợi, cần lease. Nó **đã** đúng hình dạng một job.
+3. 🔑 **Cái cửa ấy chặn đúng lỗ hổng lớn nhất của chính tính năng này.** Một kho
+   tri thức là **đúng thứ** người ta dùng để biến nền tảng thành ổ đĩa miễn phí.
+   Gỡ cửa cho tiện là tự mở lỗ mà docstring kia viết ra để bịt.
+4. Hạn 30 ngày + trần 2 GiB + 12 lần/phút **đã có sẵn**, không phải nghĩ lại.
+
+⛔ **Hệ quả phải nói với người dùng, không được giấu:** tải một tài liệu lên để
+hỏi **tốn credit**, vì nó chạy một job trích. Giá phải nhỏ và phải hiện **trước**
+khi bấm — đi qua đúng đường duyệt của P04 (`bao_gia` → phiếu → bấm), không phải
+một khoản trừ âm thầm.
+
+⭐ Và điều này **hoãn được** phạm vi `project`: ba phạm vi của P06 là *lượt · hội
+thoại · project*, nhưng project là chuyện của **P07**. Bản đầu chỉ làm phạm vi
+**hội thoại**, và ghi rõ hai phạm vi kia là CHƯA LÀM chứ không phải đã cân nhắc
+rồi bỏ.
+
+### ✅ ĐÃ ĐO: `Job` mang được, nhưng KHÔNG nên là chỗ duy nhất
+
+`Job` có `params: dict` (cột JSON), nên `conversation_id` **nhét được** vào đó.
+Nhưng nếu đó là chỗ **duy nhất** thì hai thứ hỏng:
+
+1. Liệt kê *"tệp của hội thoại X"* thành một truy vấn JSON xuyên bảng `jobs` —
+   bảng nóng nhất của nền tảng, và là bảng của **mọi app**, không riêng chatltt.
+2. 🔴 **Vòng đời tệp bị buộc vào vòng đời job.** Governance khai `jobs` là dữ
+   liệu **vận hành** (tự già đi theo hạn riêng), còn `chatltt_*` là **CONTENT**
+   (*"không tự già đi"*). Treo tri thức của khách vào một bảng tự dọn là đúng ca
+   đã ghi ở P03 (`chatltt_run` **không thể** là `OPERATIONAL`), lặp lại y hệt.
+
+⇒ **Một bảng liên kết nhỏ trong `apps/chatltt/tables.py`**, và nó **không** chứa
+byte nào: `(user_id, conversation_id, upload_id, job_id, trạng thái trích)`.
+`UploadSession` vẫn là bản ghi tệp; bảng này chỉ mang **phạm vi** và **tiến độ
+trích**.
+
+⭐ Đúng ranh giới app: thêm một bảng có `table_prefix` là việc của app, không
+phải sửa nền tảng.
