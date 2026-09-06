@@ -61,10 +61,30 @@ def test_moi_route_deu_doi_dang_nhap():
 
 
 def test_route_KHONG_chua_quy_tac_gia_hay_ho_so():
-    """Nghiệp vụ phải ở `cost`/`ho_so`, không rơi vào route."""
-    ma = inspect.getsource(routes)
-    for cam in ("USD_MOI_GIO_GPU", "flow_shift", "guidance_scale", "t2v_2_2"):
-        assert cam not in ma, f"route mang nghiệp vụ: {cam}"
+    """Nghiệp vụ phải ở `cost`/`ho_so`, không rơi vào route.
+
+    🔴 Bản đầu quét **văn bản thô** của tệp, nên nó báo động trên chính đoạn
+       CHÚ THÍCH giải thích vì sao 15 giây làm được — một chú thích nhắc tên
+       model để người đọc tra được nguồn. Cách chữa duy nhất khi ấy là **xoá
+       lời giải thích**, tức phép kiểm phạt đúng thứ ta muốn khuyến khích.
+       Đây là lần thứ **ba** kho này mắc cùng một lỗi (xem
+       `docs/BAY_TRONG_CONG_CHAT_LUONG.md`).
+
+    ⇒ Đọc **AST**: chỉ soi hằng chuỗi và tên định danh — tức thứ CHẠY — chứ
+      không soi chú thích. Mệnh đề cần chốt là "route không mang nghiệp vụ",
+      và nghiệp vụ sống trong mã, không sống trong chú thích.
+    """
+    cay = ast.parse(inspect.getsource(routes))
+    cam = ("USD_MOI_GIO_GPU", "flow_shift", "guidance_scale", "t2v_2_2")
+    thay: list[str] = []
+    for n in ast.walk(cay):
+        if isinstance(n, ast.Constant) and isinstance(n.value, str):
+            thay += [c for c in cam if c in n.value]
+        elif isinstance(n, ast.Name):
+            thay += [c for c in cam if c == n.id]
+        elif isinstance(n, ast.Attribute):
+            thay += [c for c in cam if c == n.attr]
+    assert not thay, f"route mang nghiệp vụ: {sorted(set(thay))}"
 
 
 def test_routes_khong_vuot_tran_hop_dong():
@@ -106,8 +126,10 @@ def test_co_du_ba_cua_nguoi_dung_can():
 
 def test_template_ton_tai_va_khong_co_tab_mode():
     """Composer phẳng: không tab T2V/I2V/Control (kiến trúc đã khoá)."""
-    tep = (pathlib.Path(inspect.getsourcefile(routes)).parents[2]
-           / "server" / "templates" / "lttvideo.html")
+    # 📌 `apps/lttvideo/templates/` chu KHONG `server/templates/` — hop dong
+    #    app H5. 12 app khac deu vay; ban truoc cua tep nay thi khong.
+    tep = (pathlib.Path(inspect.getsourcefile(routes)).parent
+           / "templates" / "lttvideo.html")
     assert tep.is_file(), "thiếu template"
     # ⭐ Bỏ khối chú thích Jinja trước khi kiểm. Luật nói về thứ NGƯỜI DÙNG
     #    THẤY, mà `{# ... #}` không bao giờ render. Quét cả tệp thì phép kiểm
@@ -120,8 +142,10 @@ def test_template_ton_tai_va_khong_co_tab_mode():
 
 def test_template_dinh_asset_ver_de_cache_bust():
     """`CLAUDE.md` luật 6: đổi static phải cache-bust."""
-    tep = (pathlib.Path(inspect.getsourcefile(routes)).parents[2]
-           / "server" / "templates" / "lttvideo.html")
+    # 📌 `apps/lttvideo/templates/` chu KHONG `server/templates/` — hop dong
+    #    app H5. 12 app khac deu vay; ban truoc cua tep nay thi khong.
+    tep = (pathlib.Path(inspect.getsourcefile(routes)).parent
+           / "templates" / "lttvideo.html")
     html = tep.read_text(encoding="utf-8")
     if "ltt.css" in html:
         assert "asset_ver" in html, "link ltt.css phải đính ?v={{ asset_ver }}"

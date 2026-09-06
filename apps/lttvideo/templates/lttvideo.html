@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% from "_o_chon_tep.html" import o_chon_tep %}
+{% block title %}{{ _('Video AI') }}{% endblock %}
+
+{#
+  Unified Composer — KHÔNG tab mode.
+
+  ⛔ Người dùng không chọn cách engine chạy. Họ mô tả thứ họ muốn, đính media
+     nếu có, chọn hai tuỳ chọn đơn giản, rồi bấm tạo.
+
+  ⭐ Hình dạng này KHÔNG phải phát minh của LTT. `docs/GETTING_STARTED.md` của
+     WanGP cho biết panel chính của chính nó chỉ có ba thứ — Model · Prompt ·
+     Generate — còn mọi tham số kỹ thuật nằm sau một ô tick "Advanced". Màn này
+     là panel ấy TRỪ ĐI Model, vì `A1` cấm lộ tên model.
+
+  ⛔ Có phép kiểm canh (`test_724`): tệp này không được chứa t2v/i2v/v2v/vace/
+     animate. Lộ tên mode ra giao diện là bỏ đúng ranh giới trên.
+
+  📌 Tệp nằm ở `apps/lttvideo/templates/` chứ không phải `server/templates/` —
+     hợp đồng app H5. 12 app khác đều vậy; bản trước của tệp này thì không.
+#}
+
+{% block content %}
+<div class="ltt-wrap">
+
+  <div class="row" style="align-items:baseline;justify-content:space-between;gap:12px;">
+    <h1 style="margin-bottom:0">🎬 {{ _('Video AI') }}</h1>
+    {# Lich su la cua NEN TANG: /jobs da co loc theo app, trang thai, ngay,
+       phan trang, tien do tu dieu nhip, nut huy va o tai ket qua. Dung lai. #}
+    <a class="ltt-link" href="/jobs?app=lttvideo">{{ _('Lịch sử') }} →</a>
+  </div>
+  <p class="ltt-sub">{{ _('Mô tả video bạn muốn. Hệ thống lo phần còn lại.') }}</p>
+
+  {% if request.query_params.get('loi') %}
+    <div class="ltt-alert ltt-alert-warn">{{ request.query_params.get('loi') }}</div>
+  {% endif %}
+
+  {% if not duoc_dung %}
+    <div class="ltt-alert ltt-alert-warn">{{ ly_do_tu_choi }}</div>
+  {% else %}
+
+  <form method="post" action="tao" class="ltt-card ltt-composer"
+        enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+    <label class="ltt-label" for="prompt">{{ _('Mô tả video') }}</label>
+    <textarea id="prompt" name="prompt" rows="4" class="ltt-input"
+              placeholder="{{ _('Ví dụ: một dòng sông lúc bình minh, sương mù trên mặt nước, máy quay tiến chậm về phía trước') }}"
+              required></textarea>
+
+    {# ── Đính media. Đây LÀ cơ chế Seedance: người dùng ném vào một tấm ảnh
+         với vài chữ, hệ thống tự hiểu. Không có ô nào tên "chế độ". ── #}
+    {{ o_chon_tep('media', 'media',
+                  _('Thêm ảnh hoặc video (không bắt buộc)'),
+                  _('Đính ảnh để làm khung mở đầu · JPEG/PNG/WebP/MP4'),
+                  accept='image/jpeg,image/png,image/webp,video/mp4',
+                  mo_ta_boi='ltt-media-giai-thich') }}
+    <p class="ltt-hint" id="ltt-media-giai-thich">
+      {{ _('Không đính gì thì video được dựng hoàn toàn từ mô tả của bạn.') }}
+    </p>
+
+    <div class="ltt-row">
+      <div class="ltt-field">
+        <label class="ltt-label" for="ti_le">{{ _('Tỉ lệ khung hình') }}</label>
+        <select id="ti_le" name="ti_le" class="ltt-input">
+          {% for t in ti_le %}
+            <option value="{{ t }}">{{ t }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="ltt-field">
+        <label class="ltt-label" for="do_dai_s">{{ _('Độ dài') }}</label>
+        <select id="do_dai_s" name="do_dai_s" class="ltt-input" onchange="lttCapNhatGia()">
+          {% for g in do_dai %}
+            <option value="{{ g }}" data-gia="{{ uoc_gia[g] }}">{{ g }} {{ _('giây') }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    {# Cảnh báo trôi chất lượng — nội dung lấy ý từ `PROCESSING.md` của WanGP:
+       "The longer the video, the more likely quality is to degrade over time:
+        artifacts can accumulate and character identity may progressively drift."
+       Video dài hơn một cửa sổ được ghép từ nhiều cửa sổ, nên đây là đánh đổi
+       CÓ THẬT, không phải chi tiết kỹ thuật giấu đi được. #}
+    <div class="ltt-alert ltt-alert-warn" id="ltt-canh-bao-dai" hidden>
+      {{ _('Video càng dài, chất lượng càng dễ trôi về cuối: chi tiết có thể nhiễu dần và nhân vật có thể đổi nét.') }}
+    </div>
+
+    <p class="ltt-hint" id="ltt-uoc">
+      {{ _('Sẽ tạo:') }} <b id="ltt-uoc-mo-ta">{{ _('video từ mô tả') }}</b> ·
+      <span id="ltt-uoc-gia">{{ uoc_gia[do_dai[0]] }}</span> {{ _('credit (giữ chỗ)') }}
+    </p>
+
+    <button type="submit" class="ltt-btn ltt-btn-primary">
+      {{ _('Tạo video') }}
+    </button>
+  </form>
+
+  <p class="ltt-note">
+    {{ _('Một video mất khoảng vài chục phút. Bạn có thể đóng trang — kết quả sẽ nằm trong Lịch sử.') }}
+  </p>
+
+  {% endif %}
+</div>
+
+<script>
+// Gia lay tu `data-gia` do may chu tinh — khong tinh lai o trinh duyet, de mot
+// cong thuc chi song o MOT noi.
+function lttCapNhatGia() {
+  var sel = document.getElementById('do_dai_s');
+  if (!sel) return;
+  var o = sel.options[sel.selectedIndex];
+  var el = document.getElementById('ltt-uoc-gia');
+  if (o && el) { el.textContent = o.getAttribute('data-gia'); }
+
+  // Canh bao troi chat luong chi hien khi video dai hon MOT cua so sinh.
+  var canh = document.getElementById('ltt-canh-bao-dai');
+  if (canh && o) { canh.hidden = parseInt(o.value, 10) < 10; }
+}
+
+// Doi mo ta khi nguoi dung dinh media — noi bang ngon ngu san pham, KHONG noi
+// ten model. Day la cho duy nhat giao dien phan anh viec he thong "hieu" khac di.
+document.addEventListener('DOMContentLoaded', function () {
+  lttCapNhatGia();
+  var f = document.getElementById('media');
+  var mo_ta = document.getElementById('ltt-uoc-mo-ta');
+  if (!f || !mo_ta) return;
+  var goc = mo_ta.textContent;
+  f.addEventListener('change', function () {
+    mo_ta.textContent = (f.files && f.files.length)
+      ? {{ _('video từ ảnh bạn đính kèm')|tojson }}
+      : goc;
+  });
+});
+</script>
+{% endblock %}

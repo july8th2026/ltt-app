@@ -13339,3 +13339,27 @@ msgstr "Received. Your video is being made — track progress in History."
 
 msgid "Tạo video"
 msgstr "Create video"
+
+msgid "Thêm ảnh hoặc video (không bắt buộc)"
+msgstr "Add an image or video (optional)"
+
+msgid "Đính ảnh để làm khung mở đầu · JPEG/PNG/WebP/MP4"
+msgstr "Attach an image to use as the opening frame · JPEG/PNG/WebP/MP4"
+
+msgid "Không đính gì thì video được dựng hoàn toàn từ mô tả của bạn."
+msgstr "With nothing attached, the video is built entirely from your description."
+
+msgid "Video càng dài, chất lượng càng dễ trôi về cuối: chi tiết có thể nhiễu dần và nhân vật có thể đổi nét."
+msgstr "The longer the video, the more quality drifts toward the end: detail can accumulate artifacts and characters can change appearance."
+
+msgid "video từ ảnh bạn đính kèm"
+msgstr "video from the image you attached"
+
+msgid "Tệp đính kèm rỗng."
+msgstr "The attached file is empty."
+
+msgid "Video đính kèm vượt giới hạn 80 MB."
+msgstr "The attached video exceeds the 80 MB limit."
+
+msgid "Chỉ nhận ảnh PNG/JPEG/WebP hoặc video MP4."
+msgstr "Only PNG/JPEG/WebP images or MP4 video are accepted."

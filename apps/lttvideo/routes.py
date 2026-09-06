@@ -19,8 +19,9 @@ trình**, mà worker (tạo tệp) và web (phục vụ) là hai tiến trình k
 from __future__ import annotations
 
 import re
+import uuid
 
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 
 from platform_core.i18n import _ as _t
@@ -73,8 +74,70 @@ _DO_PHAN_GIAI = {
     "1:1": "720x720",
 }
 
-#: Độ dài cho chọn, theo giây. Trần 10 giây cho baseline.
-DO_DAI_S = (5, 10)
+#: Độ dài cho chọn, theo giây.
+#:
+#: ⭐ 15 giây làm được vì `t2v_2_2` có `sliding_window` (`wan_handler.py:368`).
+#:    WanGP ghép nhiều cửa sổ và mã hoá MỘT lần — `PROCESSING.md` gọi đó là
+#:    "best technical quality".
+#:
+#: ⛔ KHÔNG tự quy ra số khung ở đây. `apply_video_length_duration()` của WanGP
+#:    nhận thẳng chuỗi `"15s"` và chọn số khung hợp lệ cho model
+#:    (`frames_minimum=5`, `frames_steps=4`). Tự tính là dựng bản sao thứ hai
+#:    của một quy tắc thượng nguồn.
+DO_DAI_S = (5, 10, 15)
+
+
+#: Trần cỡ tệp video đính kèm. Ảnh đã có trần riêng 8 MB trong
+#: `platform_core.image_input`; video thì chưa ai đặt, và Cloudflare cắt ở
+#: **100 MB** mỗi request (`CLAUDE.md`) nên đặt dưới mức đó là bắt buộc —
+#: vượt trần Cloudflare thì người dùng nhận HTTP 413 **trước khi** chạm máy chủ,
+#: tức ta không có cơ hội báo lỗi tử tế.
+TRAN_VIDEO_BYTE = 80 * 1024 * 1024
+
+#: Đuôi tệp theo MIME. Dùng bảng thay vì cắt tên tệp người dùng gửi lên: tên ấy
+#: do trình duyệt cung cấp và không có gì bảo đảm nó khớp nội dung.
+_DUOI_THEO_MIME = {
+    "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp",
+    "video/mp4": "mp4",
+}
+
+
+class LoiMedia(ValueError):
+    """Media đính kèm không dùng được. Thông điệp đưa thẳng ra giao diện."""
+
+
+def _luu_media(media, nguoi_dung_id) -> str:
+    """Kiểm rồi cất media người dùng đính kèm; trả khoá kho, hoặc chuỗi rỗng.
+
+    ⛔ Ảnh đi qua `platform_core.image_input.validate_reference` — nó **giải mã
+       thật** chứ không tin MIME của trình duyệt. Chép lại phép kiểm ấy ở đây là
+       dựng bản sao thứ hai của một quy tắc bảo mật.
+    """
+    if media is None or not getattr(media, "filename", ""):
+        return ""
+    du_lieu = media.file.read()
+    mime = (getattr(media, "content_type", "") or "").lower()
+
+    if mime.startswith("image/"):
+        from platform_core.image_input import validate_reference  # noqa: PLC0415
+        try:
+            mime, _kich_thuoc = validate_reference(du_lieu, mime)
+        except ValueError as e:
+            raise LoiMedia(str(e)) from e
+    elif mime == "video/mp4":
+        if not du_lieu:
+            raise LoiMedia(_t("Tệp đính kèm rỗng."))
+        if len(du_lieu) > TRAN_VIDEO_BYTE:
+            raise LoiMedia(_t("Video đính kèm vượt giới hạn 80 MB."))
+    else:
+        raise LoiMedia(_t("Chỉ nhận ảnh PNG/JPEG/WebP hoặc video MP4."))
+
+    from platform_core.storage import get_storage  # noqa: PLC0415
+
+    duoi = _DUOI_THEO_MIME.get(mime, "bin")
+    khoa = f"lttvideo/{nguoi_dung_id}/vao/{uuid.uuid4().hex}.{duoi}"
+    get_storage().put(khoa, du_lieu, mime)
+    return khoa
 
 
 def _uoc_gia() -> dict[int, int]:
@@ -108,6 +171,7 @@ async def tao_video(
     ti_le: str = Form("16:9"),
     do_dai_s: int = Form(5),
     csrf_token: str = Form(""),
+    media: UploadFile | None = File(None),
     user=Depends(require_login),
     db=Depends(get_db),
 ):
@@ -127,24 +191,35 @@ async def tao_video(
     if do_dai_s not in DO_DAI_S:
         do_dai_s = DO_DAI_S[0]
 
+    try:
+        media_key = _luu_media(media, user.id)
+    except LoiMedia as e:
+        return RedirectResponse(f"?loi={e}", status_code=303)
+
     from platform_core.job_submit import submit_with_credit  # noqa: PLC0415
 
     from .manifest import MANIFEST
+
+    tham_so = {
+        "prompt": mo_ta,          # `C3`: nen tang luu `params` => lich su co prompt
+        "duration_s": do_dai_s,
+        "resolution": _DO_PHAN_GIAI[ti_le],
+        "nguoi_dung_id": user.id,
+    }
+    if media_key:
+        tham_so["media_key"] = media_key
 
     job = submit_with_credit(
         db,
         user_id=user.id,
         app_slug=MANIFEST.slug,
         job_type="lttvideo.tao",
-        params={
-            "prompt": mo_ta,
-            "duration_s": do_dai_s,
-            "resolution": _DO_PHAN_GIAI[ti_le],
-            "nguoi_dung_id": user.id,
-        },
+        params=tham_so,
     )
     db.commit()
-    return RedirectResponse(f"?job={getattr(job, 'id', '')}", status_code=303)
+    # ⭐ Di thang toi trang job CUA NEN TANG: o do da co tien do tu dieu nhip,
+    #    nut huy, dong thoi gian va o tai ket qua. Dung tu dung mot man cho.
+    return RedirectResponse(f"/jobs/{getattr(job, 'id', '')}", status_code=303)
 
 
 @router.get("/video/{key:path}")
