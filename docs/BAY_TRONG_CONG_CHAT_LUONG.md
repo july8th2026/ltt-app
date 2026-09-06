@@ -1420,6 +1420,56 @@ thì phép kiểm này thành rỗng mà không ai biết.
 ⇒ **Đối chứng dương phải nằm trong CÙNG phép kiểm.** Đã sửa: chủ sở hữu `True`,
 người lạ `False`, cùng một hàm.
 
+### 🔑 Ước BÁN KÍNH theo NGUYÊN NHÂN bỏ sót đúng những phép kiểm TỐT NHẤT
+
+*(H44 đo 05→06/09 khi đổi chính sách làm tròn tiền; phiên Mobile V1 khái quát)*
+
+Đổi một chính sách ở tầng quyết toán. Để biết phải sửa những phép kiểm nào, tôi
+quét theo **tên nguồn**: `thanh_toan|toi_thieu_moi_luot|quyet_toan_luot|lam_tron`.
+Sửa 9 tệp, tuyên bố xong. Gate ra **đỏ** vì một tệp thứ mười.
+
+```
+05/09  "ba tep da nang kich ban ... nen ngay bat C3 khong do lan nua"  -> do 9
+06/09  quet theo ten module, sua 9, tuyen bo xong                      -> con 1
+```
+
+Tệp lọt (`test_618`) khẳng định trên **`ex.credit_thu`** — một thuộc tính của
+**bảng** — nên nó không nhắc tên module tính tiền nào, và **mọi** phép quét theo
+tên module đi ngang qua nó.
+
+⇒ **Phép quét của tôi tìm theo NGUỒN, còn phép kiểm thì neo vào KẾT QUẢ.**
+
+🔴 Và đây là chỗ đau: **neo vào hệ quả là thứ làm một phép kiểm TỐT** — nó bất
+biến với cách cài đặt, nên nó sống sót qua những lần viết lại mà phép kiểm neo
+vào nguồn thì chết. ⇒ **Càng viết phép kiểm tốt, phép quét theo nguồn càng bỏ
+sót nhiều.** Hai thứ ta muốn lại kéo ngược nhau.
+
+**Cách quét thay thế — theo HỆ QUẢ, không theo nguồn:**
+
+```
+git grep -n "credit_thu|thu_credit|credit_charged" -- 'tests/*.py'
+  | grep -E ">=? *1|> *0|== *1"
+```
+
+tức tìm **tên trường kết quả** + **hình dạng khẳng định**, không tìm tên module.
+
+⭐ Và ghi **cả hai** lần ước sai (9 → 1), đừng chỉ ghi lần cuối: con số 9→1 là
+thứ nói cho người sau biết phải quét rộng cỡ nào. *"Còn 1"* không mang tin ấy.
+
+### Ranh giới của gate — và nó KHÔNG được đọc thành "gate vô dụng"
+
+Đêm 05→06/09, bốn phiên tìm ra **tám** cái sai và **không cái nào** bị một lượt
+gate bắt; cả tám đều do **một người khác đọc lại con số của mình**. Nhưng ca thứ
+chín (`test_618`) thì **gate bắt**, còn không phiên nào đọc ra.
+
+🔑 Ranh giới đúng: **gate bắt một phép kiểm thật chạy trên mã thật; nó không bắt
+được một suy luận sai VỀ mã.** Tám ca kia là suy luận (chẩn đoán sai nguồn CRLF ·
+"gate không có bước kiểm" · RSS đo nhầm loại tiến trình · nói quá về cấu hình
+03/09 · ước sai bán kính). `test_618` là mã.
+
+⛔ Không lớp nào thay được lớp kia, và bảng "tám cái sai" ở trên **không** được
+đọc thành *"gate vô dụng"* — kết luận ấy sai, và nguy hiểm hơn hẳn cái nó thay.
+
 ### Và một biến thể khi ĐẾM
 
 *(cùng phiên)* `grep -r` không phân biệt **thứ sẽ merge** với **thứ tự sinh ra**:
