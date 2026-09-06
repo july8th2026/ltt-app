@@ -120,7 +120,26 @@ DOC_CANH = ThaoTac("doc_canh", True, ("de_xuat", "do_tin"), pha="11")
 HO_SO_NOI_DUNG = ThaoTac("ho_so_noi_dung", True, ("the_loai", "nhip"), pha="11")
 CHUYEN_LOI_THOAI = ThaoTac("chuyen_loi_thoai", False, ("doan",), pha="14")
 RUT_NGAN_CHO_VUA = ThaoTac("rut_ngan_cho_vua", False, ("doan",), pha="15")
-QC_NGU_NGHIA = ThaoTac("qc_ngu_nghia", False, ("dat", "ly_do"), pha="19")
+#: 🔴 **`("doan",)`, khong phai `("dat", "ly_do")` — va do la B22-01 lan hai.**
+#:
+#:    `qc_ai.loi_nhac_ngu_nghia` doi dung mot hinh dang:
+#:
+#:        {"doan": {"<ma>": {"dat": true, "do_tin": 0.9, "ly_do": ""}}}
+#:
+#:    `dat` va `ly_do` nam o tang TRONG, moi ma mot ban. Nhung `doc_json`
+#:    kiem `truong_bat_buoc` o **tang ngoai cung** (`t not in ra`), nen mot
+#:    phan hoi tuan thu DUNG loi nhac cua chinh ta bi CHINH TA tu choi:
+#:
+#:        LuocDoSai: qc_ngu_nghia: phan hoi thieu truong bat buoc
+#:                   ['dat', 'ly_do']
+#:
+#: ⭐ Do dung la khiem khuyet pha 27 vua sua cho `DOC_CANH` (khai `("canh",)`
+#:    — mot hinh dang khong ai san xuat). Lan nay no nam san trong duong QC
+#:    ngu nghia, chua tung chay, nen no doi den luot goi TRA TIEN dau tien.
+#:
+#: ⚠️ Bat duoc TRUOC khi noi vao mach, bang cach cho mot phan hoi tuan thu
+#:    di qua `doc_json` — khong bang cach doc hai tep roi so trong dau.
+QC_NGU_NGHIA = ThaoTac("qc_ngu_nghia", False, ("doan",), pha="19")
 
 THAO_TAC: tuple[ThaoTac, ...] = (
     DICH_THUAT, DOC_CANH, HO_SO_NOI_DUNG, CHUYEN_LOI_THOAI,

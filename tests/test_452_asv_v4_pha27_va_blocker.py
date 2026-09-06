@@ -417,3 +417,54 @@ def test_moi_ID_CO_TIEN_TO_cua_ASV_deu_vua_cot_no_di_qua():
         assert dai and len(ma) <= dai, (
             f"{bang.__tablename__}.{cot} chua duoc {dai} ky tu, "
             f"ma lan chay dai {len(ma)}")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  B22-01 lan hai: luoc do KHAI khong khop luoc do LOI NHAC DOI
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_phan_hoi_TUAN_THU_LOI_NHAC_phai_duoc_chinh_ta_CHAP_NHAN():
+    """🔴 **Mot phan hoi tuan thu DUNG loi nhac cua ta tung bi CHINH TA tu choi.**
+
+        loi nhac doi : {"doan": {"<ma>": {"dat": ..., "ly_do": ...}}}
+        khai bao     : truong_bat_buoc = ("dat", "ly_do")
+        `doc_json`   : kiem o TANG NGOAI CUNG  ->  `t not in ra`
+
+    `dat`/`ly_do` nam o tang TRONG, moi ma mot ban. Nen mot model ngoan ngoan
+    nhat cung bi `LuocDoSai: thieu truong bat buoc ['dat', 'ly_do']`.
+
+    ⭐ Dung khiem khuyet pha 27 sua cho `DOC_CANH` (khai `("canh",)` — mot hinh
+       dang khong ai san xuat). Lan nay no nam trong duong QC ngu nghia, **chua
+       tung chay**, nen no doi den luot goi TRA TIEN dau tien moi lo ra.
+
+    🔑 Bai nay dung phan hoi **dung tu chinh loi nhac**, khong go lai hinh dang:
+       doi loi nhac ma quen doi khai bao thi bai nay do, va do la ca muc dich.
+    """
+    import json
+    import re
+
+    from apps.auto_scan_video import ai, qc_ai
+
+    tin = qc_ai.loi_nhac_ngu_nghia(
+        [{"ma": "seg_0001", "goc": "Good morning", "chu": "Chao buoi sang"}])
+    he_thong = next(t["content"] for t in tin if t["role"] == "system")
+
+    # Hinh dang loi nhac TU KHAI: lay khoa tang ngoai tu chinh cau "Tra ve DUY NHAT".
+    m = re.search(r'Tra ve DUY NHAT:\s*\{"([a-z_]+)"', he_thong)
+    assert m, ("loi nhac khong con cau `Tra ve DUY NHAT: {\"...\"` — bai nay doc "
+               "hinh dang tu do, nen phai sua bai truoc khi sua loi nhac")
+    khoa_ngoai = m.group(1)
+
+    assert khoa_ngoai in ai.QC_NGU_NGHIA.truong_bat_buoc, (
+        f"loi nhac doi tang ngoai la {khoa_ngoai!r}, nhung ThaoTac khai "
+        f"{ai.QC_NGU_NGHIA.truong_bat_buoc!r} — mot phan hoi tuan thu se bi tu choi")
+
+    # Va chot bang HANH VI, khong chi bang so sanh hai khai bao.
+    tuan_thu = json.dumps(
+        {khoa_ngoai: {"seg_0001": {"dat": True, "do_tin": 0.9, "ly_do": ""}}})
+    ra = ai.doc_json(tuan_thu, ai.QC_NGU_NGHIA)
+    assert khoa_ngoai in ra
+
+    # Va no phai doc duoc bang chinh ham doc cua `qc_ai`.
+    phan = qc_ai.doc_ngu_nghia(ra, {"seg_0001"})
+    assert phan and phan[0]["ma"] == "seg_0001" and phan[0]["dat"] is True
