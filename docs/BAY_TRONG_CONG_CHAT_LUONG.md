@@ -1749,3 +1749,24 @@ thẳng:
 1. Đọc **bảng bước**, không đọc đuôi pytest. Sửa cho **hết** rồi mới chạy.
 2. Gate là công cụ ra **phán quyết**. Một phán quyết về một cây **đang đổi** thì
    không phán quyết gì cả — đúng như chính nó tự in ra.
+
+### Phụ lục — bộ lọc khớp vào **chính nó**, và nó tự giết cha mình
+
+Ngay sau khi viết mục trên, tôi dừng lượt gate hỏng bằng một đoạn Python lọc
+tiến trình theo `'gate.py' in cmdline`. Đoạn ấy thoát với mã **15** (SIGTERM), và
+ba tiến trình `gate.py` vẫn "còn". Đo tiếp thì cả ba là **shell của chính tôi**:
+
+    pid=23712 ppid=27464  bash.exe -c source '/c/Users/.../snapshot-bash...'
+    pid=27464 ppid=27748  bash.exe -c ...
+    pid=27748 ppid=10944  bash.exe -c ...
+
+Chuỗi `gate.py` nằm trong **mã nguồn** tôi truyền cho shell, nên nó có mặt trong
+`cmdline` của shell. Bộ lọc khớp vào công cụ đo, và lệnh `kill` đi ngược lên cây
+cha của chính nó.
+
+⭐ Đây là Bẫy 22 tầng 1 (*khớp `cmdline` đếm thừa*) ở một hình dạng mới: không
+phải `timeout.exe` tự nhân bản, mà **câu hỏi xuất hiện bên trong câu hỏi**.
+
+⇒ Lọc tiến trình để **giết** thì `cmdline` không đủ. Điều kiện phải là thứ tiến
+trình đo *không thể tự thoả*: `cwd` bằng đúng cây, **và** `pid` khác `os.getpid()`
+cùng toàn bộ chuỗi cha của nó.
