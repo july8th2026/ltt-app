@@ -16,6 +16,114 @@
 
 
 
+## 2026-09-06 — `test_nhanh` xin khoá · khoá chưa bao giờ bảo vệ PostgreSQL test
+
+Bốn phiên chạy song song đêm 05–06/09 và **cả bốn đều báo nhau tử tế** — vẫn
+chồng ba lượt gate lúc 00:09 (CPU 93 %). Nguyên nhân không phải thiếu người
+trong danh sách; nếu thế thì bản vá là thêm tên, và thêm tên chẳng sửa được gì.
+
+### Ba lỗ, đo được từ mã
+
+| Lỗ | Đo | Hệ quả |
+|---|---|---|
+| `tools/test_nhanh.py` **không xin khoá dòng nào** | `grep cua_so_yen` → rỗng | `cua_so_yen trang-thai` báo **RẢNH** trong khi máy chạy ba lượt gate |
+| 25/28 `Step()` trong `gate.py` **không khai `tai_nguyen`** | quét AST | khoá không giữ `postgres_test`; `bo test --lf` không khai **gì cả** |
+| mọi cây **suy ra cùng tên CSDL test**, và các test gọi `drop_all()` | `check_multiproc.py:19` và `:78` | hai cây chạy cách nhau 2 phút ⇒ `relation "api_metric_samples" does not exist` |
+
+⛔ Cả ba đều là **một kênh trả lời thành thật cho câu hỏi hẹp của nó**, còn người
+đọc nghe thành câu rộng hơn. `cua_so_yen` trả lời *"có ai XIN khoá không"*,
+không trả lời *"có gì đang CHẠY không"*.
+
+### Bản vá — công của phiên LTT Video AI V3, ghép và sửa ở đây
+
+Năm commit (`ab632112`, `d9360ce4`, `ff4bd527`, `b629d072`, `f51964d4`) cherry-pick
+lên trunk, bỏ hai tệp không thuộc trunk: `ho_so_he_thong.txt` (gỡ ở `e85020eb`)
+và `docs/VIDEO_AI/PROJECT_STATE.md`.
+
+Ghép lộ ra **hai lỗi** không cái nào thấy khi đứng riêng:
+
+**1. `ff4bd527` phá `ab632112`.** Gate đổi sang `("cpu_nhieu","postgres_test")`
+mà `test_nhanh.TAI_NGUYEN` vẫn `("cpu_nhieu",)`. Không chỉ lệch chuỗi: chạy
+`test_nhanh` gõ tay **không giữ `postgres_test`**, đúng cái lỗ `ff4bd527` bịt.
+
+**2. `_to_tien_la_gate()` khớp chuỗi con trên cả dòng lệnh.** Hai lệnh giống hệt
+nhau trừ một `echo` vô hại:
+
+```
+lenh KHONG chua chu `gate.py`  ->  1 passed
+lenh CO   chua chu do          ->  1 failed
+```
+
+Tổ tiên của pytest là `bash.exe -c "<cả câu lệnh>"`, nên bất kỳ câu lệnh nào
+nhắc tên công cụ — một `grep`, một ghi chú — cũng làm `test_nhanh` **lặng lẽ bỏ
+khoá**. Hỏng theo hướng dễ chịu, đúng chỗ đau nhất: **những phiên hay nhắc
+`gate.py` nhất là những phiên đang phối hợp với nhau.**
+
+⇒ Hỏi **tên tệp được thi hành** (`basename` từng đối số + lọc tên tiến trình),
+đừng hỏi **văn bản câu lệnh**.
+
+### Một tai nạn đáng nhớ hơn cả bản vá
+
+Một phép tách hàm cắt nhầm chỗ khiến hai pha pytest rơi vào **mã chết sau một
+`return`**. `tools/test_nhanh.py` thoát sau **0,114 giây**, mã 0, **không chạy
+một test nào** — và gate in:
+
+```
+[PASS] bo test (song song)   0.1s
+```
+
+Bước nặng nhất kho, xanh, trong một phần mười giây. **Cả năm bánh cóc AST vẫn
+xanh**, vì chúng hỏi *hình dạng mã*, mà hình dạng vẫn đúng khi công cụ đã chết.
+Dấu hiệu duy nhất là **con số giây**, thứ không ai đọc.
+
+🔑 Bài học tổng quát hơn bản vá: **"đỏ được" và "đo đúng thứ cần đo" là HAI câu
+hỏi.** Tiêm lại bản cũ chứng minh phép kiểm *phân biệt được* hai bản; nó không
+chứng minh phép kiểm *quan sát thứ ta cần*. Một khẳng định chỉ mù trước "công cụ
+bất động" khi nó nằm **phía trước** của việc thi hành.
+
+⇒ Thêm phép kiểm **hành vi**: gọi thẳng `main()` với `_chay` thay bằng hàm ghi
+nhận, khẳng định nó **chạm tới pha 1**.
+
+### Giới hạn đã biết — đừng đọc mục này thành "đã xong"
+
+- `pytest` gõ tay trực tiếp **vẫn vô hình** với khoá. Đường đóng nốt nằm ở
+  `tests/conftest.py`, không ở `tools/`. Hạng mục riêng.
+- `cua_so_yen.chay_khong_khoa` (gate hết `--cho` rồi **chèn**) không giữ tài
+  nguyên **nào**, kể cả `postgres_test`. Hai lượt cùng chèn vẫn làm bẩn nhau.
+- **Chỉ có hiệu lực khi MỌI cây đều khai.** Cây nào chưa ff vẫn `drop_all()` vào
+  giữa lượt cây khác — đúng cơ chế đã hỏng bản vá `-n 6` ngày 03/09. Trước đó nó
+  còn **phạt người sửa đúng**: cây đã khai thì chờ, cây chưa khai chạy tự do.
+
+### Đếm tiến trình: cả ba bậc đều từng sai
+
+| cách hỏng | vì sao `cwd` không dính |
+|---|---|
+| worker `execnet` không mang từ khoá ⇒ **thiếu** | không cần từ khoá |
+| `bash -c "<cả câu lệnh>"` ⇒ **thừa** | chỉ đếm `python.exe` |
+| **mồ côi** mất gốc ⇒ rơi khỏi cây con | không cần gốc |
+
+Đo cùng một thời điểm: khớp văn bản **3** · thêm `execnet` **3** · gom theo
+`cwd` **9**. `psutil` đọc được `cwd` của **27/27** tiến trình.
+
+⇒ Hỏi `cwd` — nó trả lời đúng câu ta **thật sự** hỏi (*"cây nào đang bận"*), chứ
+không phải *"tiến trình nào đang thi hành tệp gì"*.
+
+### Bằng chứng
+
+| Phép đo | Kết quả |
+|---|---|
+| `test_145` + `test_361` + `test_394` | **85 passed** |
+| `test_309` + `test_332` + `test_362` + `test_365` + `test_431` | **81 passed** |
+| bộ đầy đủ trên cây LTTCHAT (đã hoà 4 commit này) | **6491 passed** |
+| năm phép tiêm bánh cóc | `returncode=1` cả năm, khôi phục **khớp sha256** |
+
+⚠️ Ba tệp đầu là tất cả những gì một phiên chạy được nhanh; nhưng kiểm tĩnh cho
+thấy **21** tệp đọc `gate.py` hoặc `test_nhanh.py`. Con số 21 mới là thứ nói cho
+biết "3 tệp xanh" **chưa đủ** — không có nó thì ba tệp nghe như đã phủ hết.
+
+
+
+
 ## 2026-09-04 — Nén đúng lúc cho cả Codex lẫn Claude · gỡ hồ sơ hệ thống
 
 **Đã deploy** lúc 10:50 (`EXITCODE=0`, health `status=ready`). Xác minh qua
