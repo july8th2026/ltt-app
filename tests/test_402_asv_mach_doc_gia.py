@@ -178,11 +178,17 @@ def _chay_het_hang_doi(db, *, nang_luc=None, toi_da=200) -> int:
 #  Mach doc
 # ══════════════════════════════════════════════════════════════════════════════
 
-def test_run_chay_het_CHIN_giai_doan_va_ve_done(db, kho_tam, tmp_path, asr_gia, dich_gia, giong_gia):
+def test_run_chay_het_CA_CHUOI_va_ve_done(db, kho_tam, tmp_path, asr_gia, dich_gia, giong_gia):
     """Bang chung chinh cua pha 05.
 
-    Mot lan chay di qua ca chin giai doan bang hang doi that, worker that, dinh
-    tuyen that — chi cong viec ben trong la gia.
+    Mot lan chay di qua ca chuoi bang hang doi that, worker that, dinh tuyen
+    that — chi cong viec ben trong la gia.
+
+    ⚠️ **Ten bai tung mang con so, va con so trong ten da noi doi.** No la
+       `..._CHIN_giai_doan_...` trong khi than bai chot **10** — tu pha 12.
+       Mot con so trong TEN khong co gi bat no phai dung, con mot con so
+       trong THAN thi co `assert`. Nen con so o lai trong than, va ten thi
+       khong bao gio cu nua.
     """
     from apps.auto_scan_video import features, pipeline
     from apps.auto_scan_video.tables import RUN_DONE, STAGE_SUCCEEDED
@@ -204,7 +210,18 @@ def test_run_chay_het_CHIN_giai_doan_va_ve_done(db, kho_tam, tmp_path, asr_gia, 
     #    doi chieu voi chinh no: mot phep kiem so chuoi voi chinh no khong bao
     #    gio do. Doi chuoi thi phai sua con so nay, va do la luc nguoi sua doc
     #    lai xem viec chen co dung cho khong.
-    assert len(ds) == len(pipeline.CHUOI) == 10
+    #
+    # ⚠️ **10 -> 11 o pha 19 (nua thu hai).** `qc_ai` duoc them SAU `qc`, khong
+    #    thay `qc`: QC ky thuat la mot cong PHAT HANH tat dinh — do duoc, chay
+    #    lai cho cung ket qua — con QC bang AI hoi mot ben CHU QUAN va TRA
+    #    TIEN. Gop hai thu vao mot giai doan la lam mot lan chay hong vi mot
+    #    phan quyet chu quan truoc khi ai kip xem phep do tat dinh noi gi.
+    #
+    # ⭐ Va no MAC DINH TAT (`LTT_ASV_QC_AI`): khi tat, giai doan van chay va
+    #    van `succeeded` — no chi khong goi model va khong ton gi. Bo qua han
+    #    mot giai doan se lam `len(da_xong)` khong bao gio bang `len(CHUOI)`
+    #    va lan chay khong ve `done`. Bai nay chinh la thu chot dieu do.
+    assert len(ds) == len(pipeline.CHUOI) == 11
     assert sorted(xong) == sorted(pipeline.TEN_GIAI_DOAN), (
         f"chua xong het: thieu {set(pipeline.TEN_GIAI_DOAN) - set(xong)}")
     assert run.status == RUN_DONE

@@ -107,8 +107,10 @@ kiểm định kỳ bằng lệnh trên.
 
 ## 4. Vòng sửa chữa hết lượt
 
-**Nhìn vào đâu**: `asv_work_item` của giai đoạn `voice_synthesis`, cột `so_vong`,
-và báo cáo QC trong artifact của giai đoạn `qc`.
+**Nhìn vào đâu**: `asv_work_item` (cột `status`, `revision`), `asv_stage.outputs`
+của `qc` và `qc_ai`, và dòng `WARNING ... vao vong sua N, dat lai ...` trong log
+worker — dòng đó nói **vòng thứ mấy**, **giai đoạn nào bị đặt lại**, và **bao
+nhiêu đơn vị** bị mở lại.
 
 **Kết luận được gì**
 
@@ -116,10 +118,33 @@ và báo cáo QC trong artifact của giai đoạn `qc`.
   không vừa khe thì đoạn đó được xếp `can_sua`, và lần chạy vẫn đi tiếp.
 - `sua_chua.VONG_SUA_TOI_DA` **chặt hơn** vì nó sửa một phán quyết chủ quan, còn
   vòng nắn sửa một đại lượng đo được và hội tụ.
+- Đơn vị mang `ITEM_INVALIDATED` là đơn vị **đã bị mở lại và đang chờ chạy lại**,
+  không phải đơn vị hỏng.
 
-**Làm gì**: không có nút "sửa tiếp". ⚠️ Pha 19 ghi rõ: kế hoạch sửa được **tính**
-nhưng chưa được **thi hành** — không giai đoạn nào đọc nó. Nên hôm nay câu trả lời
-là một lần chạy mới với cài đặt khác (giọng khác, chế độ thời gian khác).
+⭐ **Trần vòng sửa nằm trong CSDL, không nằm trong một biến đếm.** `UNIQUE(run_id,
+ma_dispatch)` trên sổ cái là thứ chặn, nên một tiến trình thứ hai chạy song song
+cũng không lách qua được — khác hẳn một biến `so_vong` mà mỗi tiến trình giữ một
+bản.
+
+**Làm gì**
+
+🔴 Câu trả lời cũ ở mục này đã **hết đúng**. Nó viết: *"kế hoạch sửa được tính
+nhưng chưa được thi hành — không giai đoạn nào đọc nó"*. Hai nửa đó đã được nối:
+
+| ngày | nối cái gì |
+|---|---|
+| 05/09 | `jobs._sua_chua_neu_can` đọc bậc thang nắn (`khong_vua` → `voice_synthesis`) |
+| 06/09 | giai đoạn `qc_ai` đọc thêm nguồn **ngữ nghĩa** (`dich_sai` → `content_process`) |
+
+Nên hôm nay **không phải làm gì cả** khi thấy một vòng sửa: nó tự chạy, tự dừng
+khi hết trần, và lần chạy vẫn giao hàng kèm phán quyết. Chỉ khi hết trần mà bản
+giao vẫn sai mới cần một lần chạy mới với cài đặt khác (giọng khác, chế độ thời
+gian khác).
+
+⚠️ **QC bằng AI mặc định TẮT.** Thấy `qc_ai` xanh mà `so_khong_dat` không có
+trong `outputs` thì đọc `qc_ai_bat`: `false` nghĩa là **chưa soát lần nào**, không
+phải "soát rồi, không có lỗi". Bật bằng `LTT_ASV_QC_AI=1` ở cấp người vận hành —
+đó là một khoản chi mỗi lần chạy, nên nó không nằm trong `settings` của khách.
 
 ---
 

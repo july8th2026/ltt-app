@@ -33,7 +33,7 @@ from platform_core.storage import get_storage
 from . import (assets, features, giai_doan_am_thanh, giai_doan_ban_dung,
                giai_doan_ban_bien_tap,
                giai_doan_chep_loi, giai_doan_giong, giai_doan_ket_xuat,
-               giai_doan_media, giai_doan_noi_dung, giai_doan_qc,
+               giai_doan_media, giai_doan_noi_dung, giai_doan_qc, giai_doan_qc_ai,
                giai_doan_thoi_gian, loi, pipeline)
 from .tables import STAGE_QUEUED, STAGE_RUNNING, STAGE_SUCCEEDED
 
@@ -81,6 +81,14 @@ def phien_ban_engine(stage_ten: str) -> str:
        nap, va keo ca cay module engine vao luc import se bat mot worker chi
        chay lan `api` phai co du moi thu cua lan `gpu`.
     """
+    if stage_ten == pipeline.QC_AI:
+        # 🔑 Hai con so, hai thu doi doc lap: ma cua giai doan va loi
+        #    nhac/luoc do o `qc_ai`. Doi loi nhac ma van tay khong doi thi
+        #    lan chay lai dung y phan quyet cu — tuc mot ban va cho cach hoi
+        #    model da duoc giao nhung se khong bao gio chay.
+        from . import giai_doan_qc_ai, qc_ai
+        return (f"qc_ai/{giai_doan_qc_ai.PHIEN_BAN_QC_AI_GD}"
+                f"+loi_nhac/{qc_ai.PHIEN_BAN_QC_AI}")
     if stage_ten == pipeline.MEDIA_PREPARE:
         from . import nhap_media
         return f"chuan_hoa/{nhap_media.PHIEN_BAN_CHUAN_HOA}"
@@ -294,6 +302,8 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
             ra = giai_doan_ket_xuat.chay(db, kho, run=run, ctx=ctx)
         elif ten == pipeline.QC:
             ra = giai_doan_qc.chay(db, kho, run=run, ctx=ctx)
+        elif ten == pipeline.QC_AI:
+            ra = giai_doan_qc_ai.chay(db, kho, run=run, ctx=ctx)
         else:
             ra = _engine_gia(kho, run_id=run_id, owner_id=owner_id, ten=ten,
                              van_tay=vt)

@@ -52,7 +52,7 @@ MA_TRAN: dict[str, list[tuple[str, str]]] = {
     ],
     # ── G2 Nguon chan ly thi hanh ──────────────────────────────────────────
     "G2": [
-        ("test_402_asv_mach_doc_gia.py", "test_run_chay_het_CHIN_giai_doan_va_ve_done"),
+        ("test_402_asv_mach_doc_gia.py", "test_run_chay_het_CA_CHUOI_va_ve_done"),
         ("test_402_asv_mach_doc_gia.py", "test_thu_tu_giai_doan_do_MAY_CHU_quyet_khong_phai_client"),
         ("test_402_asv_mach_doc_gia.py", "test_lan_ffmpeg_KHONG_nhat_duoc_job_GPU"),
         ("test_421_asv_tach_khoi_di_san.py", "test_KHONG_vong_lap_worker_rieng_trong_app"),
@@ -147,7 +147,7 @@ MA_TRAN: dict[str, list[tuple[str, str]]] = {
     # ── G13 Dung duoc (MVP) ────────────────────────────────────────────────
     "G13": [
         ("test_423_asv_giao_dien.py", "test_trang_khach_KHONG_lo_chi_tiet_ky_thuat"),
-        ("test_423_asv_giao_dien.py", "test_chin_buoc_hien_bang_NHAN_TIENG_VIET"),
+        ("test_423_asv_giao_dien.py", "test_MOI_buoc_hien_bang_NHAN_TIENG_VIET"),
         ("test_423_asv_giao_dien.py", "test_MOI_route_ghi_deu_doi_CSRF"),
         ("test_423_asv_giao_dien.py", "test_lich_su_chi_hien_lan_chay_CUA_MINH"),
         # ⚠️ Nguon THU HAI, doc lap voi tep giao dien: neu ca G13 chi duoc
@@ -157,7 +157,7 @@ MA_TRAN: dict[str, list[tuple[str, str]]] = {
     # ── G14 Bang chung ─────────────────────────────────────────────────────
     "G14": [
         ("test_400_asv_bat_bien_thi_hanh.py", "test_worker_chi_nhat_job_cua_app_ma_no_du_nang_luc"),
-        ("test_402_asv_mach_doc_gia.py", "test_run_chay_het_CHIN_giai_doan_va_ve_done"),
+        ("test_402_asv_mach_doc_gia.py", "test_run_chay_het_CA_CHUOI_va_ve_done"),
         ("test_415_asv_cong_thoat_render.py", "test_RENDER_that_su_sinh_ra_mot_mp4_PHAT_DUOC"),
         ("test_424_ma_tran_nghiem_thu.py", "test_moi_cong_deu_co_it_nhat_mot_bang_chung"),
     ],

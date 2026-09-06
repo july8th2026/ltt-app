@@ -86,7 +86,11 @@ MANIFEST = AppManifest(
     #:    can ffmpeg. Xep no vao lan ffmpeg la giu mot suat co ffmpeg de ngoi
     #:    cho mang — mot suat khan hiem dung cho viec khong can no.
     job_types=("auto_scan_video.advance", "auto_scan_video.edit_plan",
-               "auto_scan_video.content_process"),
+               "auto_scan_video.content_process",
+               #: QC bang AI — cung ly do voi CONTENT: mot lan goi model khong
+               #: can ffmpeg. MAC DINH TAT (`LTT_ASV_QC_AI`), xem
+               #: `giai_doan_qc_ai`.
+               "auto_scan_video.qc_ai"),
     requires=("api",),
 
     #: 🔑 Bo quet han luu tru. Xem `features.bao_tri` va `assets.quet_het_han`:
@@ -105,6 +109,10 @@ MANIFEST = AppManifest(
         #: Dich chia lo, moi lo mot luot goi model. Mot ban ghi dai co the la
         #: hang chuc luot, nen tran phai rong hon nhieu.
         "auto_scan_video.content_process": 3600,
+        #: QC ngu nghia cung chia lo va cung goi model moi lo. It luot hon
+        #: `content_process` (soat ngan hon dich) nhung cung bac do lon, nen
+        #: dung mot nua chu khong dung mot con so nho tuy tien.
+        "auto_scan_video.qc_ai": 1800,
     },
 
     #: ⚠️ KHONG khai `admission_resource` o day — `AppManifest` khong co truong

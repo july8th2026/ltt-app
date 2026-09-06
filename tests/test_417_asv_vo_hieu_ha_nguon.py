@@ -41,7 +41,16 @@ def test_ha_nguon_la_BAO_DONG_bac_cau_chu_khong_phai_phu_thuoc_truc_tiep():
 
 
 def test_giai_doan_cuoi_khong_co_ha_nguon():
-    assert pipeline.ha_nguon_cua(pipeline.QC) == []
+    """⚠️ Menh de la ve **giai doan cuoi**, khong ve `qc`.
+
+    Ban dau dong nay go thang `pipeline.QC`, va no do khi `qc_ai` duoc noi vao
+    sau `qc` (06/09). Do la mot bao dong DUNG — no bat duoc dung viec no sinh
+    ra de bat — nhung menh de thi sai: cai phai khong co ha nguon la giai doan
+    o CUOI chuoi, du do la giai doan nao.
+    """
+    cuoi = pipeline.TEN_GIAI_DOAN[-1]
+    assert pipeline.ha_nguon_cua(cuoi) == [], (
+        f"giai doan cuoi `{cuoi}` van co ha nguon — chuoi khong ket thuc o do")
 
 
 def test_ha_nguon_KHONG_bao_gom_chinh_no():
@@ -287,10 +296,51 @@ def test_run_KHONG_ve_done_khi_moi_chi_RENDER_xong(db, kho_tam, tmp_path,
     assert features.lay_run(db, run.id, "uA").status == RUN_DONE
 
 
-def test_QC_la_giai_doan_CUOI_CUNG_cua_chuoi():
-    """Chot vi tri, de mot luot sau them giai doan sau QC khong lam menh de
-    "run xong khi QC xong" thanh sai mot cach im lang."""
-    assert pipeline.TEN_GIAI_DOAN[-1] == pipeline.QC
+def test_MOI_giai_doan_deu_la_dieu_kien_ket_thuc_chu_khong_rieng_QC(db, kho_tam,
+                                                                   tmp_path,
+                                                                   asr_gia,
+                                                                   dich_gia,
+                                                                   giong_gia):
+    """🔴 **Ban truoc cua bai nay go cung `TEN_GIAI_DOAN[-1] == QC`.**
+
+    No noi ro muc dich cua no: *"chot vi tri, de mot luot sau them giai doan sau
+    QC khong lam menh de 'run xong khi QC xong' thanh sai mot cach im lang."*
+    Ngay 06/09 `qc_ai` duoc noi vao sau `qc` va bai do **da bao dong dung nhu
+    thiet ke**.
+
+    ⭐ Nhung khi doc lai ma, menh de no bao ve chua bao gio la menh de ma san
+       pham cai dat: `jobs._advance` ket thuc khi `len(da_xong) == len(CHUOI)`
+       — mot phep dem tren TAP HOP, khong phai mot cau ve giai doan cuoi. Bai
+       cu chot mot **dai dien** cua dieu kien ket thuc, va dai dien do het dung
+       ngay khi chuoi dai ra.
+
+    ⛔ Nen ban viet lai nay khong duoc de hon. No chot dieu MANH hon va bat
+       bien voi tap hop: **moi** giai doan deu phai chiu tai. Voi tung giai doan
+       mot, mot lan chay thieu dung giai doan do khong duoc ve `done`. Them mot
+       giai doan lam bai nay chat hon chu khong long ra, va mot ban cai dat
+       "xong khi giai doan cuoi xong" se do o day.
+    """
+    from apps.auto_scan_video import jobs
+    from apps.auto_scan_video.tables import AsvRun, RUN_RUNNING
+
+    assert len(pipeline.CHUOI) > 1
+
+    for bo_qua in pipeline.TEN_GIAI_DOAN:
+        run = AsvRun(owner_id="uA", source_key="asv/uA/nguon/x.mp4",
+                     settings={}, credit_held=0, status=RUN_RUNNING)
+        db.add(run)
+        db.flush()
+        for ten in pipeline.TEN_GIAI_DOAN:
+            if ten == bo_qua:
+                continue
+            db.add(AsvStage(run_id=run.id, owner_id="uA", stage=ten,
+                            status=STAGE_SUCCEEDED, fingerprint=""))
+        db.flush()
+
+        kq = jobs._advance(db, run_id=run.id, owner_id="uA")
+        assert kq["status"] != RUN_DONE, (
+            f"lan chay thieu `{bo_qua}` ma van ve done — giai doan do khong "
+            "phai mot dieu kien ket thuc, tuc no co the bi bo qua im lang")
 
 
 # ══════════════════════════════════════════════════════════════════════════════

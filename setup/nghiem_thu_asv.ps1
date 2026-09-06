@@ -28,6 +28,7 @@
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File .\setup\nghiem_thu_asv.ps1
     powershell -ExecutionPolicy Bypass -File .\setup\nghiem_thu_asv.ps1 -GiongSAPI
+    powershell -ExecutionPolicy Bypass -File .\setup\nghiem_thu_asv.ps1 -QcAi
 
 .NOTES
     Can Administrator (de doc app.env dang bi ACL chan).
@@ -41,6 +42,15 @@ param(
     [switch]$GiongSAPI,
     # Mac dinh goi model THAT tren may B qua pool. Bat co nay de dung ban gia.
     [switch]$ModelGia,
+    # Bat QC bang AI (mac dinh TAT vi no la mot khoan chi moi lan chay).
+    #
+    # Cong tat that la bien moi truong LTT_ASV_QC_AI o cap NGUOI VAN HANH,
+    # khong phai mot truong trong settings cua khach: mot truong settings la
+    # thu khach gui len, tuc khach tu bat duoc mot chi phi chua duoc dinh gia.
+    #
+    # Khong bat co nay thi luot nghiem thu do dung ban SE GIAO: giai doan
+    # qc_ai van chay va van thanh cong, chi la no khong goi model.
+    [switch]$QcAi,
     # Noi ghi bao cao nghiem thu. Rong = ghi de ban trong kho.
     [string]$BaoCao = ''
 )
@@ -139,6 +149,14 @@ if (-not $coCsdl) {
 
 $env:LTT_TEST_NANG   = '1'
 $env:LTT_ASV_E2E_RA  = $BaoCao
+
+if ($QcAi) {
+    $env:LTT_ASV_QC_AI = '1'
+    Write-Host "  [OK] QC bang AI: BAT (soat nghia ban dich, co tinh tien)" -ForegroundColor Green
+} else {
+    Remove-Item Env:LTT_ASV_QC_AI -ErrorAction SilentlyContinue
+    Write-Host "  [--] QC bang AI: TAT (mac dinh; dung -QcAi de bat)" -ForegroundColor Yellow
+}
 
 Remove-Item Env:LTT_ASV_POOL_URL -ErrorAction SilentlyContinue
 if ($ModelGia -or -not $coCsdl) {

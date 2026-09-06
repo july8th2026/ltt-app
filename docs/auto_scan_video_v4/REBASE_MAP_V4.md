@@ -72,6 +72,7 @@ two; translation moved after planning), not the parts that were wrong.
 | `giai_doan_ban_dung.py` | 132 | COMPOSE wiring | **KEEP** | re-verifies every reference before spending a render slot — keep exactly | |
 | `giai_doan_ket_xuat.py` | 214 | RENDER wiring | **REFACTOR** | dual path | 17 |
 | `giai_doan_qc.py` | 153 | QC gate | **EXTEND** | AI QC lanes + RepairPlan emission. The "gate must block" fix **kept** | 19 |
+| `giai_doan_qc_ai.py` | 178 | AI QC stage (semantic) | **NEW** | Phase 19 second half. **Off by default** (`LTT_ASV_QC_AI`) - turning it on is a pricing decision, so the switch is an operator env var, never a customer `settings` field. Semantic only; speech QC needs ASR and visual QC needs frame extraction, both deferred | 19 |
 | `hop_dong_v4.py` | 213 | V4 product contract | **KEEP** | written in Phase 01 | |
 
 ### Executor apps

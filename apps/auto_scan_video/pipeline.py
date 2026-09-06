@@ -49,6 +49,16 @@ TIMING_ALIGN = "timing_align"
 COMPOSE = "compose"
 RENDER = "render"
 QC = "qc"
+#: 🔑 **Sau `qc`, khong thay `qc`.** QC ky thuat la mot cong PHAT HANH tat
+#:    dinh — do duoc, chay lai cho cung ket qua. QC bang AI thi hoi mot ben
+#:    **chu quan** va **tra tien**. Gop hai thu do vao mot giai doan la lam
+#:    mot lan chay hong vi mot phan quyet chu quan truoc khi ai kip xem phep
+#:    do tat dinh noi gi.
+#:
+#: ⛔ Va no MAC DINH TAT (`LTT_ASV_QC_AI`). Khi tat, giai doan van chay va van
+#:    `succeeded` — bo qua han mot giai doan se lam `len(da_xong)` khong bao
+#:    gio bang `len(CHUOI)` va lan chay khong ve `done`.
+QC_AI = "qc_ai"
 
 
 @dataclass(frozen=True)
@@ -164,6 +174,12 @@ CHUOI: tuple[GiaiDoan, ...] = (
     GiaiDoan(COMPOSE, "asv_media", "asv_media.compose", sau=(TIMING_ALIGN,)),
     GiaiDoan(RENDER, "asv_media", "asv_media.render", sau=(COMPOSE,)),
     GiaiDoan(QC, "asv_media", "asv_media.qc", sau=(RENDER,)),
+    # 🔑 `auto_scan_video` chu khong `asv_media`: duong nay goi model, tuc
+    #    cung nang luc voi `edit_plan`/`content_process`. Nhet mot loi goi
+    #    model vao giai doan cua app khac la pha phep dinh tuyen `test_402`
+    #    chot — va phep dinh tuyen do la thu quyet dinh worker nao nhat viec.
+    GiaiDoan(QC_AI, "auto_scan_video", "auto_scan_video.qc_ai", sau=(QC,),
+             tai_nguyen="llm_remote", tai_nguyen_suat=1),
 )
 
 TEN_GIAI_DOAN: tuple[str, ...] = tuple(g.ten for g in CHUOI)

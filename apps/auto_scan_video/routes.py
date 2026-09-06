@@ -107,6 +107,11 @@ NHAN_GIAI_DOAN = {
     pipeline.COMPOSE: N_('Dựng bản ghép'),
     pipeline.RENDER: N_('Kết xuất video'),
     pipeline.QC: N_('Kiểm chất lượng'),
+    # ⭐ Nhãn nói **việc gì đang xảy ra**, không nói tên kỹ thuật `qc_ai`.
+    #    Bước này mặc định TẮT (`LTT_ASV_QC_AI`), và khi tắt nó chạy qua
+    #    tức thì — khách vẫn thấy đủ chuỗi bước thay vì thấy một chuỗi
+    #    ngắn đi rồi dài ra tuỳ cấu hình của người vận hành.
+    pipeline.QC_AI: N_('Soát lại nghĩa bản dịch'),
 }
 
 

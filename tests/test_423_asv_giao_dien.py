@@ -273,8 +273,15 @@ def test_trang_khach_KHONG_lo_chi_tiet_ky_thuat(moi_truong, tmp_path):
             assert dau not in van, f"{duong} lo `{dau}`"
 
 
-def test_chin_buoc_hien_bang_NHAN_TIENG_VIET(moi_truong, tmp_path):
-    """Khach thay chin buoc, khong thay `voice_synthesis`."""
+def test_MOI_buoc_hien_bang_NHAN_TIENG_VIET(moi_truong, tmp_path):
+    """Khach thay nhan tieng Viet cua MOI buoc, khong thay `voice_synthesis`.
+
+    ⚠️ Ten cu la `test_chin_buoc_...` trong khi than bai duyet
+       `pipeline.CHUOI` — tuc no chua bao gio chot con so chin. Chuoi da la
+       10 tu pha 12 va thanh 11 khi `qc_ai` duoc noi vao (06/09), va ten do
+       van doc troi chay trong ca hai lan. Mot con so trong TEN khong duoc
+       than bai kiem la mot con so khong ai sua khi no sai.
+    """
     from apps.auto_scan_video import pipeline
     from apps.auto_scan_video.routes import NHAN_GIAI_DOAN
     from tests.fixtures import asv_media as fx
@@ -286,8 +293,24 @@ def test_chin_buoc_hien_bang_NHAN_TIENG_VIET(moi_truong, tmp_path):
     van = a.get(f"/auto-scan-video/run/{run_id}").text
 
     for g in pipeline.CHUOI:
-        assert NHAN_GIAI_DOAN[g.ten] in van, f"thieu buoc {g.ten}"
-        assert g.ten not in van, f"lo ten ky thuat `{g.ten}` cho khach"
+        assert NHAN_GIAI_DOAN[g.ten] in van, (
+            f"thieu buoc {g.ten} tren trang tien do")
+        # 🔴 Doi khop THEO TU, khong theo chuoi con.
+        #
+        #    `"qc" in van` cung dung voi `qc_ai`, nen khi `qc_ai` duoc noi
+        #    vao chuoi (06/09) dong nay to cao `qc` — mot ten khong he lo
+        #    ra. Mot phep kiem chi sai TEN thu pham dat nguoi doc vao duong
+        #    tim kiem sai, va no ton kem hon la khong co gi.
+        #
+        # ⭐ Va khi do that, no phai NOI RA cho nao lo. Bai nay tung do
+        #    mot lan duy nhat trong mot luot `-n 4` toan dai 4xx (06/09)
+        #    roi khong tai hien lai; thong bao cu chi dua ra mot ban do
+        #    HTML bi cat, nen khong con gi de lan theo. Lan sau se co.
+        m = re.search(r"(?<![A-Za-z0-9_])" + re.escape(g.ten)
+                      + r"(?![A-Za-z0-9_])", van)
+        assert m is None, (
+            f"lo ten ky thuat `{g.ten}` cho khach, tai vi tri {m.start()}:\n"
+            f"  ...{van[max(0, m.start() - 120):m.end() + 120]}...")
 
 
 def test_moi_giai_doan_deu_co_NHAN():

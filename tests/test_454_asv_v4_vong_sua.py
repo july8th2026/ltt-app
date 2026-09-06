@@ -498,3 +498,389 @@ def test_don_vi_bi_TRANH_CHAP_khong_giet_ca_vong_sua(db, monkeypatch):
     assert kq.get("sua_chua"), "mot don vi tranh chap da giet ca vong sua"
     assert features.don_vi_theo_khoa(
         db, run.id, pipeline.VOICE_SYNTHESIS, "seg_b").status == ITEM_INVALIDATED
+
+
+# =============================================================================
+#  S5  QC bang AI la NGUON KHIEM KHUYET THU HAI — va no phai nhap chung MOT ke
+#      hoach voi bac thang nan, khong phai chay mot vong rieng
+# =============================================================================
+
+def _doan_dich(db, run, ma: str, *, chu: str = "cau tieng Viet"):
+    """Mot doan DA DICH — don vi viec o `content_process`.
+
+    Khong goi `su_dung.ghi`: `giai_doan_noi_dung` tinh tien theo LO nhung chot
+    theo DOAN, nen o truc doan chi co `danh_dau_xong`. Bai kiem di dung duong
+    do; dung tay se dung mot hinh dang san pham khong bao gio tao ra.
+    """
+    su_dung.danh_dau_xong(db, run, stage=pipeline.CONTENT_PROCESS,
+                          item_key=ma, fingerprint="vt",
+                          outputs={"chu": chu})
+    db.flush()
+
+
+def _phan_quyet_qc_ai(db, run, phan: list[dict]):
+    """Dat phan quyet QC ngu nghia vao dung cho san pham dat no: `stage.outputs`.
+
+    Day la giao dien THAT giua hai nua: `giai_doan_qc_ai.chay` tra ve
+    `tom_tat`, `thi_hanh` do `tom_tat` vao `stage.outputs`, roi
+    `jobs._qc_ngu_nghia` doc lai tu do. Bai kiem dat vao dung o do — khong goi
+    `lap_ke_hoach` truc tiep — nen no do CA duong day, ke ca cho noi.
+    """
+    st = db.execute(sa.select(AsvStage).where(
+        AsvStage.run_id == run.id,
+        AsvStage.stage == pipeline.QC_AI)).scalar_one()
+    khong_dat = [p for p in phan if not p.get("dat", True)]
+    st.outputs = {"qc_ai_bat": True, "so_muc": len(phan),
+                  "so_co_phan_quyet": len(phan),
+                  "so_khong_dat": len(khong_dat),
+                  "qc_ai_khong_dat": khong_dat}
+    db.flush()
+
+
+def test_QC_AI_TAT_thi_lan_chay_van_giao_hang(db):
+    """Chot mac dinh: `LTT_ASV_QC_AI` chua bat thi khong co gi doi.
+
+    Giai doan van chay va van `succeeded`, chi la `outputs` khong mang phan
+    quyet nao. Neu bai nay do, viec them mot giai doan MAC DINH TAT da lam moi
+    lan chay binh thuong di qua mot nhanh khong ai yeu cau.
+    """
+    run = _run_da_chay_het(db)
+    _doan_tieng(db, run, "seg_0001", trang_thai_nan=VUA)
+    st = db.execute(sa.select(AsvStage).where(
+        AsvStage.run_id == run.id,
+        AsvStage.stage == pipeline.QC_AI)).scalar_one()
+    st.outputs = {"qc_ai_bat": False, "ly_do": "LTT_ASV_QC_AI chua dat '1'"}
+    db.flush()
+
+    kq = _advance(db, run)
+    assert kq["status"] == RUN_DONE
+    assert "sua_chua" not in kq
+
+
+def test_moi_phan_quyet_DAT_thi_khong_sinh_viec_sua(db):
+    """QC da chay va noi "khong sao" phai khac han QC chua chay bao gio o CHI PHI,
+    nhung giong nhau o KET QUA: khong sua gi.
+
+    Bai nay chan mot ban doc sai hien nhien — coi "co phan quyet" la "co loi".
+    Mot ban nhu the se tra tien dich lai toan bo moi lan bat QC len.
+    """
+    run = _run_da_chay_het(db)
+    _doan_tieng(db, run, "seg_0001", trang_thai_nan=VUA)
+    _phan_quyet_qc_ai(db, run, [
+        {"ma": "seg_0001", "dat": True, "ly_do": "", "do_tin": 0.9},
+        {"ma": "seg_0002", "dat": True, "ly_do": "", "do_tin": 0.8},
+    ])
+
+    kq = _advance(db, run)
+    assert kq["status"] == RUN_DONE, (
+        "moi doan deu DAT ma van sinh viec sua — QC bang AI dang tu tao viec "
+        "cho chinh no")
+    assert "sua_chua" not in kq
+
+
+def test_doan_DICH_SAI_lam_CONTENT_PROCESS_va_ha_nguon_chay_lai(db):
+    """Duong chinh cua S5: mot ban dich lech y phai duoc DICH LAI.
+
+    Doc lai bao nhieu lan cung ra cung mot y sai, nen diem sua la
+    `content_process` — som hon `voice_synthesis` han mot buoc.
+    """
+    run = _run_da_chay_het(db)
+    _doan_tieng(db, run, "seg_0001", trang_thai_nan=VUA)
+    _doan_tieng(db, run, "seg_0007", trang_thai_nan=VUA)
+    _doan_dich(db, run, "seg_0001")
+    _doan_dich(db, run, "seg_0007")
+    _phan_quyet_qc_ai(db, run, [
+        {"ma": "seg_0001", "dat": True, "ly_do": "", "do_tin": 0.9},
+        {"ma": "seg_0007", "dat": False, "do_tin": 0.8,
+         "ly_do": "bo mat menh de dieu kien",
+         "nguon": "If it rains, the match is off.",
+         "dich": "Tran dau bi huy."},
+    ])
+
+    kq = _advance(db, run)
+
+    assert kq["status"] != RUN_DONE, (
+        "lan chay co mot doan bi bao dich sai ma van giao hang")
+    dat_lai = set(kq.get("sua_chua") or ())
+    assert pipeline.CONTENT_PROCESS in dat_lai, (
+        "`dich_sai` phai sua o `content_process`")
+    for ten in (pipeline.VOICE_SYNTHESIS, pipeline.TIMING_ALIGN,
+                pipeline.COMPOSE, pipeline.RENDER, pipeline.QC):
+        assert ten in dat_lai, f"{ten} phai bi vo hieu theo `content_process`"
+
+    # 🔑 Va CHI doan bi bao sai moi bi mo lai — day moi la "pham vi nho nhat
+    #    an toan". Dat lai mot GIAI DOAN ma mo lai MOI don vi cua no la dich
+    #    lai ca phim de sua mot cau.
+    assert features.don_vi_theo_khoa(
+        db, run.id, pipeline.CONTENT_PROCESS,
+        "seg_0007").status == ITEM_INVALIDATED
+    assert features.don_vi_theo_khoa(
+        db, run.id, pipeline.CONTENT_PROCESS,
+        "seg_0001").status == ITEM_SUCCEEDED, (
+        "doan DAT bi mo lai — vong sua dang tra tien dich lai mot cau dung")
+
+
+def test_DICH_SAI_va_KHONG_VUA_cung_mot_doan_thi_sua_o_cho_SOM_HON(db):
+    """Hai NGUON khiem khuyet, MOT doan, MOT ke hoach.
+
+    Day la ly do `lap_ke_hoach` nhan ca bon nguon vao cung mot ham thay vi moi
+    nguon chay mot vong. Neu `seg_0007` vua bi bao doc khong vua khe (sua o
+    `voice_synthesis`) vua bi bao dich sai (sua o `content_process`), sua o
+    `voice_synthesis` la vo ich: doc lai mot cau dich sai van ra cau dich sai.
+
+    Neu hai nguon chay hai vong rieng, lan chay se sua o `voice_synthesis`
+    truoc, tieu mot vong, roi moi phat hien phai lui ve `content_process`. Bai
+    nay chot rang khong co cai vong phi pham do.
+    """
+    run = _run_da_chay_het(db)
+    _doan_tieng(db, run, "seg_0007", trang_thai_nan=CAN_SUA)
+    _doan_dich(db, run, "seg_0007")
+    _phan_quyet_qc_ai(db, run, [
+        {"ma": "seg_0007", "dat": False, "do_tin": 0.8, "ly_do": "lech y",
+         "nguon": "src", "dich": "dich"},
+    ])
+
+    kq = _advance(db, run)
+    dat_lai = set(kq.get("sua_chua") or ())
+
+    assert pipeline.CONTENT_PROCESS in dat_lai, (
+        "phai lui ve cho som nhat sua duoc doan nay")
+    # `voice_synthesis` VAN bi dat lai — nhung vi no la HA NGUON cua
+    # `content_process`, khong phai vi no la diem sua. Phan biet hai dieu do
+    # bang don vi viec: don vi bi mo lai phai nam o `content_process`.
+    assert features.don_vi_theo_khoa(
+        db, run.id, pipeline.CONTENT_PROCESS,
+        "seg_0007").status == ITEM_INVALIDATED
+    assert features.don_vi_theo_khoa(
+        db, run.id, pipeline.VOICE_SYNTHESIS,
+        "seg_0007").status == ITEM_SUCCEEDED, (
+        "doan bi mo lai o CA HAI cho — tuc hai nguon da chay hai vong rieng "
+        "thay vi nhap thanh mot ke hoach, va lan doc lai se bi vut di ngay "
+        "sau khi `content_process` sinh cau moi")
+
+
+# =============================================================================
+#  S6  CHO NOI giua hai nua — va no la cho mot dot bien di qua duoc
+# =============================================================================
+#
+# Cac bai o S5 dat phan quyet vao `stage.outputs` BANG TAY. Chung do dung nua
+# thu hai (vong sua doc gi), nhung khong do duoc nua thu nhat: giai doan co
+# THAT SU ghi phan quyet vao do khong.
+#
+# Do duoc bang dot bien: go `qc_ai_khong_dat` khoi `tom_tat` cua giai doan thi
+# ca 15 bai tren VAN XANH — trong khi san pham da lang le thoi sua moi khiem
+# khuyet dich thuat. Bai duoi day dong dung cho do, va no khong duoc gia dinh
+# TEN cua khoa: no chay `chay()` that roi hoi `jobs._qc_ngu_nghia` that.
+
+class _KhoGia:
+    """Kho toi thieu — chi can `open` va `put` cho duong nay."""
+
+    def __init__(self, noi_dung: bytes):
+        self._noi_dung = noi_dung
+        self.da_ghi: dict[str, bytes] = {}
+
+    def open(self, khoa):
+        import io as _io
+        return _io.BytesIO(self._noi_dung)
+
+    def put(self, khoa, f, content_type=None):
+        self.da_ghi[khoa] = f.read()
+
+
+def test_GIAI_DOAN_ghi_phan_quyet_vao_dung_cho_VONG_SUA_doc(db, monkeypatch):
+    """🔑 Noi hai nua bang mot bai duy nhat, khong bang mot ten khoa go hai lan.
+
+    ⭐ Bai nay KHONG viet ra ten `qc_ai_khong_dat`. No lay `tom_tat` that ma
+       `giai_doan_qc_ai.chay` tra ve, do vao `stage.outputs` dung cach
+       `thi_hanh` do, roi hoi `jobs._qc_ngu_nghia` — ham THAT ma vong sua dung.
+       Doi ten khoa o ca hai ben van xanh (dung), go no o mot ben la do (dung).
+    """
+    from apps.auto_scan_video import ai, giai_doan_qc_ai
+
+    run = _run_da_chay_het(db)
+    ban_dich = {"muc": [
+        {"ma": "seg_0001", "goc": "The match is on.", "chu": "Tran dau dien ra."},
+        {"ma": "seg_0007", "goc": "If it rains, the match is off.",
+         "chu": "Tran dau bi huy."},
+    ]}
+    kho = _KhoGia(json.dumps(ban_dich).encode("utf-8"))
+
+    st_cp = db.execute(sa.select(AsvStage).where(
+        AsvStage.run_id == run.id,
+        AsvStage.stage == pipeline.CONTENT_PROCESS)).scalar_one()
+    st_cp.outputs = {"khoa_asset": ["asv/u1/staging/long_tieng.json"]}
+    db.flush()
+
+    monkeypatch.setenv(giai_doan_qc_ai.BIEN_BAT, "1")
+
+    def goi_gia(db_, run_, thao_tac, loi_nhac, **kw):
+        # Phan hoi dung khuon loi nhac doi: mot bang `doan` theo ma.
+        return {"noi_dung": json.dumps({"doan": {
+            "seg_0001": {"dat": True, "ly_do": "", "do_tin": 0.95},
+            "seg_0007": {"dat": False, "do_tin": 0.9,
+                         "ly_do": "bo mat menh de dieu kien"},
+        }})}
+
+    monkeypatch.setattr(ai, "goi_tinh_tien", goi_gia)
+
+    ra = giai_doan_qc_ai.chay(db, kho, run=run)
+
+    # Do vao `stage.outputs` DUNG CACH `thi_hanh` do (`thi_hanh.py`): chi
+    # `tom_tat` di qua, cac khoa mo dau bang `_` bi giu lai trong `thi_hanh`.
+    st = db.execute(sa.select(AsvStage).where(
+        AsvStage.run_id == run.id,
+        AsvStage.stage == pipeline.QC_AI)).scalar_one()
+    st.outputs = {"stage": pipeline.QC_AI, "khoa_asset": [],
+                  **(ra.get("tom_tat") or {})}
+    db.flush()
+
+    theo_ten = {g.stage: g for g in features.cac_giai_doan(db, run)}
+    thay = jobs._qc_ngu_nghia(theo_ten)
+
+    assert [d["ma"] for d in thay] == ["seg_0007"], (
+        "vong sua khong nhan duoc phan quyet ma giai doan vua sinh ra — "
+        f"nhan: {thay}")
+    assert thay[0]["nguon"] and thay[0]["dich"], (
+        "phan quyet khong mang cau nguon/cau dich, nen bao cao noi 'seg_0007 "
+        "sai' ma khong noi SAI CAI GI — khong ai kiem lai duoc ben chu quan")
+
+    # Va di het duong: phan quyet do phai thanh mot viec sua o `content_process`.
+    ke = sua_chua.lap_ke_hoach(qc_ngu_nghia=thay, vong=0)
+    assert sua_chua.gon_theo_don_vi(ke) == {"seg_0007": "content_process"}
+
+# =============================================================================
+#  S7  Giai doan QC AI: cong TAT, va mot lo hong khong duoc lam hong ca lan chay
+# =============================================================================
+
+def _don_qc_ai(db, run, *, so_muc: int) -> list[dict]:
+    """Dung san canh de `giai_doan_qc_ai.chay` co ban dich de doc."""
+    st_cp = db.execute(sa.select(AsvStage).where(
+        AsvStage.run_id == run.id,
+        AsvStage.stage == pipeline.CONTENT_PROCESS)).scalar_one()
+    st_cp.outputs = {"khoa_asset": ["asv/u1/staging/long_tieng.json"]}
+    db.flush()
+    return [{"ma": f"seg_{i:04d}", "goc": f"src {i}", "chu": f"dich {i}"}
+            for i in range(so_muc)]
+
+
+def test_QC_AI_TAT_thi_KHONG_goi_model_va_van_thanh_cong(db, monkeypatch):
+    """⛔ Cong tat phai chan o cho TRUOC khi tieu tien, khong phai loc ket qua sau.
+
+    Va giai doan van tra ve binh thuong: bo qua han mot giai doan se lam
+    `len(da_xong) != len(CHUOI)` va lan chay khong bao gio ve `done`.
+    """
+    from apps.auto_scan_video import ai, giai_doan_qc_ai
+
+    run = _run_da_chay_het(db)
+    monkeypatch.delenv(giai_doan_qc_ai.BIEN_BAT, raising=False)
+
+    def khong_duoc_goi(*a, **kw):
+        raise AssertionError("QC AI dang TAT ma van goi model — dang tieu tien "
+                             "cua nguoi van hanh cho mot thu chua ai bat")
+
+    monkeypatch.setattr(ai, "goi_tinh_tien", khong_duoc_goi)
+
+    kho = _KhoGia(b"")
+    ra = giai_doan_qc_ai.chay(db, kho, run=run)
+
+    assert ra["tom_tat"]["qc_ai_bat"] is False
+    assert ra["tom_tat"].get("ly_do"), (
+        "giai doan xanh ma khong noi VI SAO no trong — khong phan biet duoc "
+        "'da soat, khong co loi' voi 'chua soat lan nao'")
+
+    # 🔑 VAN ghi bao cao du khong soat gi. `test_403` doi moi giai doan
+    #    ket thuc bang mot asset ref that; va quan trong hon, ly do "chua soat"
+    #    phai nam trong chuoi BANG CHUNG duoc giao, khong chi trong mot cot CSDL.
+    #    Sau khi lan chay ket thuc, `stage.outputs` tra loi duoc cau "da soat
+    #    chua" — nhung artifact la thu di theo san pham toi tay nguoi doi soat.
+    assert len(ra["phan"]) == 1, (
+        "QC dang TAT ma giai doan khong de lai gi — sau lan chay khong ai "
+        "doi chieu duoc no da chay hay chua")
+    (khoa,) = list(kho.da_ghi)
+    bc = json.loads(kho.da_ghi[khoa].decode("utf-8"))
+    assert bc["qc_ai_bat"] is False and bc["ly_do"]
+    assert bc["ngu_nghia"] == []
+
+    # Va vong sua khong duoc doc ra khiem khuyet nao tu mot lan khong soat.
+    st = db.execute(sa.select(AsvStage).where(
+        AsvStage.run_id == run.id,
+        AsvStage.stage == pipeline.QC_AI)).scalar_one()
+    st.outputs = {"stage": pipeline.QC_AI, **ra["tom_tat"]}
+    db.flush()
+    theo_ten = {g.stage: g for g in features.cac_giai_doan(db, run)}
+    assert jobs._qc_ngu_nghia(theo_ten) == []
+
+
+def test_mot_LO_hong_khong_lam_hong_ca_lan_chay(db, monkeypatch):
+    """🔴 Mot lo thu hai hong khong duoc vut bo phan quyet cua lo thu nhat.
+
+    Ba muoi doan la ba lo. Neu mot loi mang o lo giua giet ca giai doan, moi
+    lan chay dai deu la mot vong quay xo so — va lan chay lai se tra tien cho
+    CA ba lo.
+
+    ⚠️ Va chieu nguoc lai cung duoc chot: lo hong KHONG duoc doc thanh "moi doan
+       trong lo deu DAT". Im lang la khong co phan quyet, khong phai phan quyet
+       tot. Do bang `so_co_phan_quyet` < `so_muc`.
+    """
+    from apps.auto_scan_video import ai, giai_doan_qc_ai
+
+    run = _run_da_chay_het(db)
+    muc = _don_qc_ai(db, run, so_muc=30)
+    kho = _KhoGia(json.dumps({"muc": muc}).encode("utf-8"))
+    monkeypatch.setenv(giai_doan_qc_ai.BIEN_BAT, "1")
+
+    da_goi = {"n": 0}
+
+    def goi_gia(db_, run_, thao_tac, loi_nhac, **kw):
+        da_goi["n"] += 1
+        if da_goi["n"] == 2:
+            raise RuntimeError("mang dut giua chung")
+        ma = kw.get("item_key")
+        i = int(str(ma).split("_")[-1])
+        dau = i * 10
+        return {"noi_dung": json.dumps({"doan": {
+            f"seg_{j:04d}": {"dat": j != 5, "do_tin": 0.9,
+                             "ly_do": "lech y" if j == 5 else ""}
+            for j in range(dau, dau + 10)}})}
+
+    monkeypatch.setattr(ai, "goi_tinh_tien", goi_gia)
+
+    ra = giai_doan_qc_ai.chay(db, kho, run=run)
+
+    tt = ra["tom_tat"]
+    assert da_goi["n"] == 3, "khong chay tiep sau lo hong"
+    assert tt["so_lo"] == 3 and tt["so_muc"] == 30
+    assert tt["so_co_phan_quyet"] == 20, (
+        f"co {tt['so_co_phan_quyet']} phan quyet — lo hong phai de lai mot LO "
+        "TRONG, khong duoc dem thanh 10 doan DAT")
+    assert [d["ma"] for d in tt["qc_ai_khong_dat"]] == ["seg_0005"], (
+        "khiem khuyet cua lo con song bi mat theo lo hong")
+    assert ra["phan"], "khong ghi artifact bao cao"
+
+
+def test_lo_MO_HO_khong_sinh_viec_sua(db, monkeypatch):
+    """`AiMoHo` = mat ket noi SAU khi gui: khong biet model da chay chua.
+
+    ⛔ Khong duoc thu lai mu va khong duoc doan. Lo do khong co phan quyet, va
+       khong co phan quyet nghia la khong sinh viec sua — im lang khong duoc
+       doc thanh "co loi".
+    """
+    from apps.auto_scan_video import ai, giai_doan_qc_ai
+
+    run = _run_da_chay_het(db)
+    muc = _don_qc_ai(db, run, so_muc=5)
+    kho = _KhoGia(json.dumps({"muc": muc}).encode("utf-8"))
+    monkeypatch.setenv(giai_doan_qc_ai.BIEN_BAT, "1")
+
+    def goi_gia(*a, **kw):
+        raise ai.AiMoHo("mat ket noi sau khi gui")
+
+    monkeypatch.setattr(ai, "goi_tinh_tien", goi_gia)
+
+    ra = giai_doan_qc_ai.chay(db, kho, run=run)
+    tt = ra["tom_tat"]
+    assert tt["so_co_phan_quyet"] == 0
+    assert tt["qc_ai_khong_dat"] == [], (
+        "mot lo mo ho bi doc thanh khiem khuyet — se tra tien dich lai mot cau "
+        "chua ai noi la sai")
+

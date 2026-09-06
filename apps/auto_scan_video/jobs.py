@@ -153,6 +153,24 @@ def _cac_nan(db, run) -> list[dict]:
     return ra
 
 
+def _qc_ngu_nghia(theo_ten) -> list[dict]:
+    """Phan quyet QC ngu nghia KHONG DAT, doc tu `outputs` cua giai doan.
+
+    ⭐ Doc tu CSDL chu khong mo kho: `_advance` chay o moi luot cua moi lan
+       chay, nen bat no mo mot tep de tra loi mot cau ma `stage.outputs` da
+       tra loi duoc la mot cai gia phai tra mai mai. Cung ly do voi `_cac_nan`.
+
+    ⚠️ Rong khi QC bang AI TAT — va do la dieu dung: khong soat thi khong co
+       phan quyet, va "khong co phan quyet" phai doc thanh "khong co khiem
+       khuyet nao DUOC BIET", khong phai "khong co khiem khuyet".
+    """
+    s = theo_ten.get(pipeline.QC_AI)
+    if s is None:
+        return []
+    return list((getattr(s, "outputs", None) or {}).get("qc_ai_khong_dat")
+                or [])
+
+
 def _sua_chua_neu_can(db, run, theo_ten) -> list[str]:
     """Thi hanh ke hoach sua. Tra ve danh sach giai doan da dat lai.
 
@@ -215,7 +233,9 @@ def _sua_chua_neu_can(db, run, theo_ten) -> list[str]:
     vong = len([d for d in su_dung.cac_dong(db, run, stage=pipeline.QC,
                                             item_key=DON_VI_SUA)
                 if d.nang_luc == NANG_LUC_VONG_SUA])
-    ke = sua_chua.lap_ke_hoach(cac_nan=_cac_nan(db, run), vong=vong)
+    ke = sua_chua.lap_ke_hoach(cac_nan=_cac_nan(db, run),
+                               qc_ngu_nghia=_qc_ngu_nghia(theo_ten),
+                               vong=vong)
     if not ke.can_sua:
         return []
 

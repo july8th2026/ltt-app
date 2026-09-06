@@ -36,7 +36,7 @@ GOC = pathlib.Path(__file__).resolve().parent.parent
 #:    nen o day co mot phep kiem ton tai rieng ngay truoc khi chay.
 KICH_BAN: list[tuple[str, str, str]] = [
     ("S1", "duong hanh phuc, mot video dai dien",
-     "tests/test_402_asv_mach_doc_gia.py::test_run_chay_het_CHIN_giai_doan_va_ve_done"),
+     "tests/test_402_asv_mach_doc_gia.py::test_run_chay_het_CA_CHUOI_va_ve_done"),
     ("S2", "hai nguoi dung: run/asset/output rieng",
      "tests/test_419_asv_tiem_loi.py::test_hai_nguoi_dung_chay_dong_thoi_khong_lan_du_lieu"),
     ("S3", "nop trung — dedupe job dieu phoi",

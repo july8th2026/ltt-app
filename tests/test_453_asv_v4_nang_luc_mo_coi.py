@@ -93,11 +93,22 @@ MO_COI_DA_BIET = frozenset({
     #       phai them tinh nang — mot phan biet quyet dinh viec no duoc lam hay
     #       bi hoan them mot pha nua, va no da bi hoan bon pha.
     #
-    #    ⚠️ Sau ten QC-bang-AI o duoi VAN mo coi: chung can mot giai doan moi va
-    #       mot khoan chi moi cho moi lan chay, tuc mot quyet dinh ve gia. Khac
-    #       han vong sua, thu chi dung lai co che da co.
-    "doc_hinh", "doc_ngu_nghia", "loi_nhac_hinh", "loi_nhac_ngu_nghia",
-    "moc_cho_noi", "so_khop_doc",
+    #    ✅ **`doc_ngu_nghia` va `loi_nhac_ngu_nghia` da RA khoi danh sach
+    #       (06/09).** Giai doan `qc_ai` (`giai_doan_qc_ai.py`) goi ca hai, va
+    #       phan quyet cua chung di tiep vao vong sua qua `stage.outputs`.
+    #
+    #    🔴 Quyet dinh ve GIA — thu lam hai ten nay bi hoan bon pha — duoc
+    #       tra loi bang mot cong tat o cap NGUOI VAN HANH (`LTT_ASV_QC_AI`),
+    #       khong phai bang mot truong trong `settings`: mot truong `settings`
+    #       la thu khach gui len, tuc khach tu bat duoc mot chi phi chua duoc
+    #       dinh gia. Mac dinh TAT, nen khong lan chay nao dang tra them gi.
+    #
+    #    ⚠️ Bon ten con lai VAN mo coi, va ly do khac han: chung phuc vu QC
+    #       **hinh** (`doc_hinh`, `loi_nhac_hinh`, `moc_cho_noi`) va QC **giong**
+    #       (`so_khop_doc`). Hai loai do can them may moc that — rut khung quanh
+    #       moi cho noi, va ASR tren chinh ban da ket xuat — chu khong chi can
+    #       mot cong tat. Dieu kien de go: mot giai doan doc duoc chung.
+    "doc_hinh", "loi_nhac_hinh", "moc_cho_noi", "so_khop_doc",
 
     # ── HO SO NOI DUNG — nang luc nay duoc KHAI CHO KHACH la chua san sang.
     #    `gia.py` bay `CHE_DO_GIONG_TU_KHOP` kem cau "tinh nang nay dang duoc

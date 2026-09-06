@@ -404,10 +404,34 @@
     ✅ Wired in `jobs._sua_chua_neu_can` (+ `su_dung.mo_lai_don_vi`), closing
     `sua_chua.gon_theo_don_vi`, `assets.vo_hieu_theo_day_chuyen` and
     `ITEM_INVALIDATED`. `tests/test_454`, 7 tests, two mutations red.
-    ⛔ **Still open: the AI-QC half** (`qc_ai.py` — the `doc_sai`/`dich_sai`/
-    `cat_sai` defect sources). That one genuinely *is* an expansion: it needs a
-    new pipeline stage and a new per-run charge, i.e. **a pricing decision**,
-    where the repair loop only reused machinery that already existed.
+    ✅ **AI-QC half closed 2026-09-06 — semantic only, and default OFF.**
+    New stage `qc_ai` (`giai_doan_qc_ai.py`), appended to `CHUOI` after `qc`,
+    routed to `auto_scan_video` because it calls a model. The chain is **11**
+    stages now; `test_402`'s deliberately hard-coded count forced the insertion
+    to be justified rather than absorbed.
+    🔴 **It is a pricing decision, so the switch is not a `settings` field.**
+    `LTT_ASV_QC_AI=1`, operator level. A `settings` field is something the
+    customer uploads — i.e. the customer could switch on a cost that has never
+    been priced. When OFF the stage still runs and still `succeeded`, writing
+    `qc_ai_bat: False` **and a reason**: skipping a stage outright would make
+    `len(da_xong) != len(CHUOI)` and no run would ever reach `done`, and a
+    silent green stage cannot distinguish *"checked, nothing wrong"* from
+    *"never checked"*.
+    🔑 **A latent defect had to be fixed before any of it could work.**
+    `ai.QC_NGU_NGHIA` declared `truong_bat_buoc = ("dat", "ly_do")` while its
+    own prompt demands `{"doan": {...}}`, and `ai.doc_json` checks the
+    **outermost** level — so a fully prompt-compliant response was rejected by
+    our own validator. This is the **second** instance of B22-01's shape (one
+    schema described in several places, no two agreeing). Fixed to `("doan",)`
+    and pinned by building the response *from the prompt itself*.
+    ⭐ Scope is **semantic only** (`dich_sai` → `content_process`). That is the
+    source the repair loop handles best: a mistranslation can only be fixed by
+    translating again, so the fix is exact. `doc_sai` needs ASR over the render
+    and `cat_sai` needs frames around each join — both are more machinery, and
+    neither is needed to prove the loop closes.
+    ⚠️ **Thresholds are un-calibrated.** The wiring is proven on fixtures; what
+    counts as "confident enough to pay for a retranslation" needs real footage,
+    and that is the same blocker as G17.
   * **A27-02 (P3)** — `tests/fixtures/asv_e2e.vung_co_tieng` estimated the noise
     floor with the **median**, on a premise stated in its own docstring: *"a dub
     speaks about a third of the duration, so the median falls on the bed."* That
