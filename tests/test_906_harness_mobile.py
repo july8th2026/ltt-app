@@ -139,3 +139,31 @@ def test_khung_mac_dinh_co_320px():
     assert "p320" in m.group(1)
     js = JS.read_text(encoding="utf-8")
     assert re.search(r"p320:\s*\{\s*w:\s*320", js), "`mobile_quet.js` không còn khổ 320"
+
+def test_bo_quet_PHAI_bao_khi_bi_day_ve_login():
+    """🔴 Một phép đo trên trang đăng nhập KHÔNG phải một kết quả.
+
+    Đo 06/09: ba route `prompt-ai-ommi` báo *"0 tràn, 0 lỗi console"* — và cả
+    ba đều là `/login`. Cookie của phép dò không có tác dụng, và bộ quét
+    **không hề biết**: nó đo bất cứ thứ gì nhận được.
+
+    ⛔ Nó hỏng theo hướng **dễ chịu**: một trang đăng nhập thì ngắn, không tràn
+       ngang, không có ô nhập nhỏ, không có video. **Mọi** con số đều đẹp —
+       nên không ai đi kiểm lại.
+
+    ⭐ Ghi **URL thực tế** chứ không ghi URL đã yêu cầu. Hai thứ ấy khác nhau
+       đúng ở chỗ quan trọng nhất, và chỉ một trong hai nói thật.
+
+    ⚠️ Hoá ra bộ quét **không** hỏng — phép dò tay của tôi truyền cả chuỗi
+       `session=eyJ...` làm *giá trị* cookie. Nhưng lỗ thì có thật: trước bản
+       vá này **không có gì** kiểm rằng phiên còn hiệu lực.
+    """
+    js = (GOC / "tools" / "mobile_quet.js").read_text(encoding="utf-8")
+    assert "url_thuc" in js, (
+        "bo quet khong ghi URL THUC TE - khong the biet no da do trang nao")
+    assert "CHUA_DANG_NHAP" in js, "bo quet khong danh dau luot bi day ve /login"
+
+    py = (GOC / "tools" / "mobile_qa.py").read_text(encoding="utf-8")
+    assert "CHUA_DANG_NHAP" in py, (
+        "ban tom tat khong doc co ay - no se in mot bang toan so dep")
+    assert "VO NGHIA" in py, "canh bao phai KEU TO, khong phai mot dong lang le"

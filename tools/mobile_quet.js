@@ -207,6 +207,23 @@ async (page) => {
       let m = {};
       try { m = await p.evaluate(DO); } catch (e) { m = { loi_do: String(e).slice(0, 100) }; }
       m.status = st;
+
+      // 🔴 CHUYEN HUONG VE /login LA MOT PHEP DO HONG, KHONG PHAI MOT KET QUA.
+      //
+      //    Do 06/09: ba route `prompt-ai-ommi` deu bao "0 tran, 0 loi console"
+      //    — va ca ba deu la TRANG DANG NHAP. Cookie khong co tac dung, va bo
+      //    quet khong he biet: no do bat cu thu gi nhan duoc.
+      //
+      // ⛔ Va no hong theo huong DE CHIU: mot trang dang nhap thi ngan, khong
+      //    tran ngang, khong co o nhap nho, khong co video. Moi con so deu
+      //    DEP — nen khong ai di kiem lai.
+      //
+      // ⭐ Ghi URL THUC TE chu khong ghi URL DA YEU CAU. Hai thu ay khac nhau
+      //    dung o cho quan trong nhat, va chi mot trong hai noi that.
+      m.url_thuc = p.url().replace(CAU_HINH.goc, '');
+      if (m.url_thuc !== route && /\/login/.test(m.url_thuc)) {
+        m.CHUA_DANG_NHAP = true;
+      }
       m.console_loi = loi.length;
       if (loi.length) m.console_mau = loi.slice(0, 2);
       ket[ten + ' ' + route] = m;

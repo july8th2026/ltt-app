@@ -159,7 +159,8 @@ phân biệt được gì.
 | **Bàn phím ảo thật** | phép đo thay thế (thu nhỏ khung nhìn) cho thấy composer vẫn hiện, nhưng iOS thu nhỏ `visualViewport` chứ không thu nhỏ layout viewport. |
 | **Phóng to 200%** (195px CSS) | 15/15 route tràn. Đã thử sửa **ba lần**, không đổi một pixel, nên đã hoàn tác cả ba. WCAG 1.4.10 đòi 320px và ở đó **đạt**. `07_BE_MAT_CHUAN.md` ghi cái đã loại trừ. |
 | **Tải lại / khoá máy giữa job** | môi trường đo không có provider nào `san_sang` nên không dựng được job thật. |
-| **`prompt_ai_ommi` React** | chưa seed dữ liệu; mọi phép đo tương tác của nó vẫn ở mức "chưa đo". |
+| **`prompt_ai_ommi` React** | seed **đã có** (`mobile_qa.py ommi-seed`); vỏ app đo **0 tràn** ở 195/320/390/430 với phiên đã đăng nhập. **View con** (Kho tài nguyên, Dự án…) là view do React quản lý trạng thái, không có `href` — chưa đo. |
+| **Bộ quét trước 06/09** | không kiểm phiên còn hiệu lực. Một route bị đẩy về `/login` vẫn được đo và cho **toàn số đẹp** (0 tràn, 0 lỗi). Nay ghi `url_thuc` + cờ `CHUA_DANG_NHAP` và kêu to. |
 
 ## 10. Rollback
 
