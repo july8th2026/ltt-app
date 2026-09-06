@@ -13253,6 +13253,12 @@ msgstr "Each time a user approves a credit-charging tool: the approved parameter
 msgid "Tài liệu người dùng đính vào một hội thoại để hỏi: tên tệp, kiểu, cỡ, và trạng thái trích văn bản. Nội dung tệp nằm ở kho lưu trữ, không nằm ở đây."
 msgstr "A document the user attaches to a conversation to ask about it: file name, type, size, and text-extraction status. The file contents live in object storage, not here."
 
+msgid "Văn bản đã trích từ tài liệu người dùng đính vào hội thoại, cắt thành từng đoạn kèm số trang để trích dẫn lại được. Đây là nội dung tài liệu của khách, không phải bản ghi kỹ thuật."
+msgstr "Text extracted from documents the user attached to a conversation, split into passages with page numbers so answers can cite them. This is the content of the customer's documents, not a technical record."
+
+msgid "theo tệp và hội thoại chứa nó"
+msgstr "with the file and the conversation holding it"
+
 msgid "Phần lẻ dưới một credit được giữ lại, không làm tròn lên"
 msgstr "Fractions below one credit are carried over, not rounded up"
 
