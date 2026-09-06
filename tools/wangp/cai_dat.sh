@@ -32,7 +32,11 @@ set -u
 SHA=1e1dd2757f24923f008593d9d4ec09062234be20
 GOC=/data
 KHO=$GOC/Wan2GP
-CONDA=$GOC/conda
+# ⛔ `forge` chu KHONG `conda`: `/data/conda` da chua mot Miniconda tu luot
+#    06/09. Dung lai duong day thi cong `[ ! -x "$CONDA/bin/conda" ]` se thay
+#    "da co conda" roi BO QUA — va ta van chay dung ban dinh cong ToS vua tranh.
+#    Mot cong kiem thu that van sai neu no kiem NHAM thu.
+CONDA=$GOC/forge
 MOI_TRUONG=$GOC/env311
 LOG=$GOC/ket_qua/install.log
 
@@ -95,16 +99,40 @@ fi
 
 echo "###### nua BEN thieu — cai tiep $(date -Is)" | tee -a "$LOG"
 
-# --- 2. Miniconda tren VOLUME => song qua moi lan xoa pod ---
+# --- 2. MINIFORGE tren VOLUME => song qua moi lan xoa pod ---
+#
+# 🔴 VI SAO MINIFORGE CHU KHONG MINICONDA. Luot 06/09 dung Miniconda va chet o
+#    buoc tao moi truong:
+#
+#        CondaToSNonInteractiveError: Terms of Service have not been accepted
+#        for the following channels...
+#
+#    Kenh mac dinh cua Anaconda (`repo.anaconda.com`) nay doi chap nhan Dieu
+#    khoan dich vu, va che do khong tuong tac thi tu choi thang.
+#
+# ⛔ KHONG tu chay `conda tos accept`. Do la nhan mot rang buoc PHAP LY thay chu
+#    du an, va dieu khoan cua Anaconda con co dieu kien ve su dung THUONG MAI.
+#    Miniforge mac dinh `conda-forge` — khong cong ToS, khong cau hoi giay phep,
+#    va la kenh chuan cho ngan xep khoa hoc.
+#
+# ⭐ Hai lop phong ve, co chu y: chon Miniforge O DAY, va van truyen
+#    `--override-channels -c conda-forge` o buoc sau. Lop thu hai giu dung ke ca
+#    khi `$CONDA` da chua mot ban conda khac do lan cai truoc de lai.
 if [ ! -x "$CONDA/bin/conda" ]; then
-  buoc tai_miniconda wget -q -O /tmp/mc.sh \
-       https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-  buoc cai_miniconda bash /tmp/mc.sh -b -p "$CONDA"
+  buoc tai_miniforge wget -q -O /tmp/mf.sh \
+       https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh
+  # `-f`: ghi de thu muc san co. Can no vi luot 06/09 da kip ghi mot ban
+  # Miniconda do dang vao dung duong nay truoc khi ban va toi noi. Khong co `-f`
+  # thi trinh cai tu choi va ta ket o mot thu muc nua voi nua kia.
+  buoc cai_miniforge bash /tmp/mf.sh -b -f -p "$CONDA"
 fi
 
 # --- 3. Moi truong Python 3.11.14, dung ban `INSTALLATION.md` ghi ---
 if [ ! -x "$MOI_TRUONG/bin/python" ]; then
-  buoc tao_env "$CONDA/bin/conda" create -y -p "$MOI_TRUONG" "python=$BAN_PY"
+  # `--override-channels -c conda-forge`: noi RO kenh thay vi de conda tu chon,
+  # de mot ban Miniforge cu (co con `defaults` trong cau hinh) khong keo ta tro
+  # lai dung cai cong ToS vua tranh.
+  buoc tao_env "$CONDA/bin/conda" create -y -p "$MOI_TRUONG"        --override-channels -c conda-forge "python=$BAN_PY"
 fi
 PY="$MOI_TRUONG/bin/python"
 buoc pip_upgrade "$PY" -m pip install -q --upgrade pip setuptools wheel
@@ -131,7 +159,15 @@ buoc requirements "$PY" -m pip install -q -r "$KHO/requirements.txt"
 # ⭐ Do tu card THAT moi la ban goc cua SageAttention: `setup.py` thuong nguon
 #    VON phat hien capability tu torch. `Dockerfile` cua WanGP thay no bang mot
 #    danh sach co dinh chi vi luc BUILD DOCKER khong co GPU. Tren pod thi co.
-ARCH=$("$MOI_TRUONG/bin/python" -c "import torch;a,b=torch.cuda.get_device_capability(0);print(f'{a}.{b}')" 2>/dev/null || echo "8.0")
+# ⛔ Do bang `nvidia-smi` chu KHONG bang torch: buoc nay chay TRUOC khi torch
+#    chac chan co, va luot 06/09 da cho thay hau qua — python chua ton tai nen
+#    phep do roi ve mac dinh `8.0`, trong khi card that la H100 (9.0). Mot gia
+#    tri du phong IM LANG bien mot phep do thanh mot lo^i doan.
+ARCH=$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader 2>/dev/null | head -1 | tr -d "[:space:]")
+if [ -z "${ARCH:-}" ]; then
+  echo "###### ⛔ KHONG DO DUOC compute_cap — dung, khong doan" | tee -a "$LOG"
+  exit 4
+fi
 echo "###### TORCH_CUDA_ARCH_LIST do duoc tu card: $ARCH" | tee -a "$LOG"
 export TORCH_CUDA_ARCH_LIST="$ARCH"
 export FORCE_CUDA=1
