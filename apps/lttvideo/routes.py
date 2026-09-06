@@ -11,12 +11,14 @@
 Router **không** tự viết prefix `/lttvideo` — nền tảng gắn từ
 `MANIFEST.route_prefix`. Tự viết là gắn hai lần.
 
-App tự phục vụ video qua `/video/{key}`: khoá có dạng `lttvideo/{owner}/...` nên
-kiểm sở hữu bằng chính khoá. Không dùng `download_token` của storage — token giữ
-trong RAM của **từng tiến trình**, mà worker (tạo tệp) và web (phục vụ) là hai
-tiến trình khác nhau.
+App tự phục vụ video qua `/video/{key}`, kiểm sở hữu bằng **danh sách trắng khuôn
+khoá** (`khoa_hop_le`) chứ không bằng tiền tố — xem chú thích ở `_KHUON_KHOA`.
+Không dùng `download_token` của storage: token giữ trong RAM của **từng tiến
+trình**, mà worker (tạo tệp) và web (phục vụ) là hai tiến trình khác nhau.
 """
 from __future__ import annotations
+
+import re
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
@@ -30,6 +32,24 @@ from server.templating import templates
 from . import cost, kha_nang
 
 router = APIRouter(tags=["lttvideo"])
+
+#: 🔴 Khuôn khoá video — DANH SÁCH TRẮNG, không phải bộ lọc `..`.
+#:
+#: `key.startswith(f"lttvideo/{user.id}/")` một mình **KHÔNG đủ**:
+#: `lttvideo/42/../../khac/bi_mat.mp4` qua được phép kiểm tiền tố nhưng đường
+#: dẫn giải ra thì thoát khỏi thư mục của chủ.
+#:
+#: ⭐ Khoá do `jobs._khoa_kho()` sinh luôn có dạng cố định, nên khớp **đúng
+#:    khuôn đó** vừa chặt hơn vừa ngắn hơn việc đi liệt kê thứ cần chặn — và
+#:    `test_724` đối chứng hai bên bằng chính hàm sinh khoá.
+_KHUON_KHOA = re.compile(r"^lttvideo/(\d+)/[0-9a-f]{32}\.(mp4|webm)$")
+
+
+def khoa_hop_le(key: str, user_id) -> bool:
+    """Khoá này có đúng khuôn LTT sinh ra, và có thuộc về `user_id` không?"""
+    m = _KHUON_KHOA.match(key or "")
+    return bool(m) and m.group(1) == str(user_id)
+
 
 #: Tỉ lệ khung hình cho người dùng chọn — nhãn sản phẩm, không phải độ phân giải.
 #: Ánh xạ sang `resolution` nằm ở `_DO_PHAN_GIAI` bên dưới, một chỗ duy nhất.
@@ -111,12 +131,12 @@ async def tao_video(
 
 @router.get("/video/{key:path}")
 async def phuc_vu_video(key: str, user=Depends(require_login)):
-    """Phục vụ video của **chính chủ**, kiểm sở hữu bằng tiền tố khoá."""
+    """Phục vụ video của **chính chủ**, kiểm bằng danh sách trắng khuôn khoá."""
     from fastapi import HTTPException
 
     from platform_core.storage import get_storage
 
-    if not key.startswith(f"lttvideo/{user.id}/"):
+    if not khoa_hop_le(key, user.id):
         raise HTTPException(status_code=404)
 
     kho = get_storage()

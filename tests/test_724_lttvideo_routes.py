@@ -125,3 +125,40 @@ def test_template_dinh_asset_ver_de_cache_bust():
     html = tep.read_text(encoding="utf-8")
     if "ltt.css" in html:
         assert "asset_ver" in html, "link ltt.css phải đính ?v={{ asset_ver }}"
+
+
+def test_khoa_video_chi_nhan_dung_khuon_do_LTT_sinh_ra():
+    """🔴 Chặn path traversal.
+
+    `key.startswith("lttvideo/{id}/")` một mình **KHÔNG đủ**:
+    `lttvideo/42/../../khac/bi_mat.mp4` qua được phép kiểm tiền tố nhưng đường
+    dẫn giải ra thì thoát khỏi thư mục của chủ.
+
+    Khoá do `jobs._khoa_kho()` sinh luôn có dạng `lttvideo/{owner}/{32 hex}.{ext}`,
+    nên danh sách trắng chặt vừa đúng vừa hẹp hơn việc đi lọc `..`.
+    """
+    from apps.lttvideo.routes import khoa_hop_le
+
+    assert khoa_hop_le("lttvideo/42/" + "a" * 32 + ".mp4", 42) is True
+
+    xau = [
+        "lttvideo/42/../../khac/bi_mat.mp4",
+        "lttvideo/42/..%2f..%2fbi_mat.mp4",
+        "lttvideo/42/sub/dir/x.mp4",
+        "lttvideo/43/" + "a" * 32 + ".mp4",     # cua nguoi khac
+        "lttvideo/42/" + "a" * 32 + ".exe",     # duoi la
+        "/lttvideo/42/" + "a" * 32 + ".mp4",    # tuyet doi
+        "lttvideo/42/",
+        "",
+    ]
+    for k in xau:
+        assert khoa_hop_le(k, 42) is False, f"phải từ chối: {k!r}"
+
+
+def test_khuon_khoa_KHOP_voi_thu_jobs_that_su_sinh_ra():
+    """Đối chứng: nếu hai bên lệch nhau thì video thật sẽ không xem được."""
+    from apps.lttvideo.jobs import _khoa_kho
+    from apps.lttvideo.routes import khoa_hop_le
+
+    for _ in range(5):
+        assert khoa_hop_le(_khoa_kho(42, "mp4"), 42) is True
