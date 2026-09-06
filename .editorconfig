@@ -1,0 +1,46 @@
+# https://editorconfig.org — quy uoc cho TRINH SOAN THAO cua nguoi.
+#
+# ⚠️ PHAM VI THAT CUA TEP NAY HEP HON NO TRONG. `.editorconfig` khong rang buoc
+#    git, khong rang buoc script Python, khong rang buoc gate. No chi noi cho
+#    trinh soan thao biet phai go ra cai gi.
+#
+#    Loi ket dong o kho nay den tu SCRIPT ghi tep, khong den tu nguoi go tay.
+#    Thu chan lop do la `tools/do_nhanh.ghi/thay` (giu kieu cu, doc lai bang
+#    byte) va buoc gate `kieu xuong dong` — khong phai tep nay.
+#
+# ⛔ VA VI SAO KHONG CO `.gitattributes`. Do 06/09 tren 3.349 tep duoc theo doi:
+#
+#        LF thuan    2.217
+#        CRLF thuan    391
+#        TRON           38
+#
+#    Mot `.gitattributes` voi `* text=auto` se VIET LAI 429 tep ngay lan checkout
+#    ke tiep — trong khi bon phien dang lam viec song song tren cung kho. Va vai
+#    tep CRLF la CO Y (`DEVELOPER_GUIDE.md` do cong cu sinh, `i18n_baseline.json`),
+#    dung nhu `tools/check_xuong_dong.py` da ghi.
+#
+#    => Luat cua kho nay la "GIU KIEU TEP DANG CO", khong phai "moi tep dung LF".
+#       `.gitattributes` khong dien dat duoc luat do ma khong viet lai lich su.
+
+root = true
+
+[*]
+charset = utf-8
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{py,js,jsx,ts,tsx,css,html,json,yml,yaml}]
+indent_style = space
+indent_size = 4
+
+[*.{js,jsx,ts,tsx,css,json,yml,yaml}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false   # hai dau cach cuoi dong la xuong dong trong Markdown
+
+[*.ps1]
+# `CLAUDE.md` quy tac 2: PowerShell 5.1 doc `.ps1` khong BOM theo bang ma ANSI,
+# nen mot dau tieng Viet lam hong ca cau lenh va bao loi o DONG KHAC.
+charset = latin1
+end_of_line = crlf

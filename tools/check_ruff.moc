@@ -1,0 +1,16 @@
+# Moc `ruff` — sinh boi `py tools\check_ruff.py --accept`.
+# Chot theo MA LUAT, khong chot tong: mot moc tong co cua hoan doi
+# mot-doi-mot (xoa mot F401, them mot F811 -> tong khong doi).
+
+B007 = 12
+B009 = 2
+B017 = 5
+B018 = 1
+B023 = 6
+B039 = 1
+B904 = 26
+B905 = 36
+F401 = 371
+F541 = 21
+F811 = 12
+F841 = 20

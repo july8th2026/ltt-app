@@ -1,0 +1,59 @@
+# Cau hinh `ruff` — chon LUAT BAO LOI THAT, khong chon luat kieu dang.
+#
+# 🔴 VI SAO KHONG BAT MAC DINH (E,F). Do 06/09, PHAM VI HEP (chi apps/
+#    platform_core/ server/ tools/ tests/ — KHONG phai toan kho, nen dung so
+#    nay de so voi moc):
+#
+#        E,F                  3.924
+#        E,F,B                4.414
+#        E,F,B,BLE,SIM        5.193
+#        F,B (bo B008)          482   <- bo duoc chon
+#
+#    Phan chenh lech gan nhu toan la KIEU DANG, khong phai loi:
+#
+#        E501  line-too-long                    1.789
+#        E702  multiple-statements-semicolon    1.132
+#        E701  multiple-statements-colon          538
+#        B008  function-call-in-default-arg       412  <- `Depends()` cua FastAPI
+#
+# ⛔ `B008` la DUONG TINH GIA o kho nay: `Depends(...)` trong tham so mac dinh
+#    la dung idiom cua FastAPI, khong phai loi. Bat no la day 412 canh bao sai
+#    vao mat nguoi doc, va cach duy nhat nguoi ta phan ung voi 412 canh bao sai
+#    la thoi doc ca bo.
+#
+# ⭐ Bon nhom duoi day deu la LOI THAT, khong phai so thich:
+#
+#        F811  redefined-while-unused   hai ham cung ten, cai sau che cai truoc
+#        B023  function-uses-loop-var   bay closure kinh dien
+#        B017  assert-raises-Exception  phep kiem khang dinh QUA RONG
+#        B904  raise-without-from       mat traceback goc
+#        B905  zip-without-strict       hai day lech do dai -> cat IM LANG
+#
+# ⚠️ SO LUONG tung ma KHONG ghi o day. No nam o `tools/check_ruff.moc`,
+#    tep duy nhat duoc SINH RA tu phep do. Bang tren truoc do co cot so va no
+#    lech ngay hom viet (B904 ghi 22, do that la 26) — vi bang do do tren nam
+#    thu muc con, con moc do TOAN KHO. Mot con so chep tay la mot con so se troi.
+#
+#    `B017` dang chu y rieng: no bat dung lop loi da can bon lan trong mot buoi
+#    ngay 06/09 — mot phep kiem trong nhu dang do, ma khang dinh cua no rong den
+#    muc no xanh voi ca ban hong. Xem `AGENTS.md` muc 4d lop C.
+
+line-length = 100          # chi de `ruff format` biet, KHONG bat E501
+target-version = "py313"
+
+exclude = [
+    "tmp", "dist", "build", "node_modules", ".playwright-cli", ".pytest_cache",
+    "alembic/versions",     # migration sinh ra, khong sua tay
+    "core",                 # 15.668 dong FB/TikTok cu, dong bang — xem CLAUDE.md
+    "cutclipshort",         # engine VENDOR tu D:/FULL AUTO VIDEO — khong bao tri o day
+]
+
+[lint]
+select = ["F", "B"]
+ignore = [
+    "B008",   # `Depends()` cua FastAPI — xem tren
+]
+
+[lint.per-file-ignores]
+# Tep test duoc phep `assert` tran va import de dung fixture.
+"tests/*" = ["B011"]

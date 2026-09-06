@@ -18,6 +18,16 @@
    | loc tien trinh khop chinh minh | 1 (thoat ma 15)           |
 
 ⛔ Mot luat "hay can than hon" khong sua duoc cai nao trong ba. Mot ham thi co.
+
+⚠️ VA BAY AY KHONG CHI LA BACKSLASH. Do 06/09, lan thu sau trong cung
+   mot buoi: mot chu thich co BACKTICK truyen qua cong cu Bash bi shell coi
+   la THAY THE LENH. Lan dau moi tu trong backtick BIEN MAT khoi tep —
+   `ruff`, `B008`, `Depends()`, `from` — ma khong co loi nao. Lan sau shell chet han
+   voi 'unexpected EOF while looking for matching'.
+
+   ⇒ Luat: dung go BAT KY ky tu dac biet cua shell vao mot lenh Bash
+     (\\  `  $  ") — ke ca ben trong nhay don, ke ca trong
+     heredoc. Soan bang cong cu Write ra mot tep, roi CHAY tep ay.
 """
 from __future__ import annotations
 
