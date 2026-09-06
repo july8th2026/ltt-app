@@ -1422,6 +1422,25 @@ def main() -> int:
     lenh = f"gate --ho-so {ho_so}"
     phien = (args.phien or os.environ.get("LTT_PHIEN")
              or f"{socket.gethostname()}:{os.getpid()}")
+
+    # ⚠️ In ra ai KHAC dang ban, roi VAN CHAY. Khong chan.
+    #
+    # 🔴 Dem theo `cwd`, khong theo ten lenh — xem `tools/may_ban.py`. Ba cach
+    #    dem theo van ban deu sai trong dem 05-06/09, va cai hong nguy nhat la
+    #    no hong IM LANG THEO HUONG DE CHIU: mot bo dem bo sot hang xom se luon
+    #    bao "toi chay mot minh" — tuc luon tra ve dung ket luan nguoi bam muon.
+    #
+    # ⛔ KHONG chan: mot cong chan nguoi ta la mot cong nguoi ta se tat, va luc
+    #    do mat ca phan canh bao. `cua_so_yen` moi la thu xep hang; day chi la
+    #    thu NOI RA dieu ma khoa khong thay (pytest go tay, worker execnet).
+    try:
+        from may_ban import dong_canh_bao
+        _canh = dong_canh_bao()
+        if _canh:
+            print(_canh)
+    except Exception as _e:  # noqa: BLE001
+        print(f"  [may ban] khong dem duoc: {type(_e).__name__}")
+
     can: set[str] = set()
     for s in steps:
         can |= set(s.tai_nguyen)

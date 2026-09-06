@@ -504,3 +504,48 @@ def test_luot_KHONG_chay_test_nao_thi_KHONG_duoc_xanh():
     assert tn.MA_KHONG_CHAY_GI not in (0, 1, 5), (
         "ma phai KHAC 0/1/5 de phan biet 'khong chay gi' voi 'co test do' "
         "va voi 'pytest thu thap 0 test'")
+
+def test_pytest_GO_TAY_luot_lon_thi_XIN_khoa(tmp_path, monkeypatch):
+    """🔴 Lỗ CUỐI CÙNG của khoá, và nó là lệnh bốn phiên đều gõ.
+
+    `gate.py` xin khoá; `tools/test_nhanh.py` xin khoá (từ 06/09). Nhưng
+    `python -m pytest tests/ -n 6` gõ tay thì **không** — nên `cua_so_yen
+    trang-thai` trả RẢNH trong khi máy đang chạy lệnh nặng nhất kho.
+
+    ⛔ Xin ở `pytest_collection_modifyitems` chứ không ở `pytest_configure`:
+       chỉ **sau khi thu thập** mới biết lượt này to hay nhỏ. Xin khoá cho một
+       lượt 2 tệp là làm chậm mọi vòng lặp sửa-rồi-thử, và người ta sẽ học cách
+       tắt nó — lúc đó ta mất cả phần bảo vệ.
+
+    ⭐ Ba chiều, vì thiếu chiều nào cũng để lại một lỗ:
+       lượt LỚN xin · lượt NHỎ không xin · `sessionfinish` **nhả**.
+       Thiếu chiều ba thì mọi lượt `pytest` gõ tay để lại một khoá mồ côi, và
+       phiên sau phải chờ hết `--cho` rồi CHÈN — tệ hơn trước bản vá.
+    """
+    import types                                 # noqa: PLC0415
+
+    monkeypatch.setattr(cy, "_tep", lambda tn: tmp_path / f"khoa_{tn}.json")
+    sys.path.insert(0, str(GOC / "tests"))
+    import conftest as cf                        # noqa: PLC0415
+    monkeypatch.setattr(cf, "_KHOA_PHIEN", None)
+
+    lon = [types.SimpleNamespace(fspath=f"t{i}.py")
+           for i in range(cf._NGUONG_TEP_NANG + 5)]
+    nho = [types.SimpleNamespace(fspath=f"t{i}.py") for i in range(3)]
+    cpu, pg = cy._tep("cpu_nhieu"), cy._tep("postgres_test")
+
+    cf.pytest_collection_modifyitems(None, None, lon)
+    assert cpu.exists() and pg.exists(), (
+        "luot `pytest` go tay LON van vo hinh voi khoa")
+    ban_ghi = json.loads(cpu.read_text(encoding="utf-8"))
+    assert ban_ghi["lenh"] == "pytest go tay", (
+        "phien khac phai DOC RA duoc day la mot luot go tay")
+
+    cf.pytest_sessionfinish(None, 0)
+    assert not cpu.exists() and not pg.exists(), (
+        "khong nha khoa - moi luot go tay se de lai mot khoa mo coi")
+
+    cf.pytest_collection_modifyitems(None, None, nho)
+    assert not cpu.exists(), (
+        "luot NHO ma van xin khoa - vong lap sua-roi-thu se bi cham va nguoi "
+        "ta se tat co nay di")

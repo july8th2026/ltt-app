@@ -231,7 +231,7 @@ def _to_tien_la_gate(to_tien: list[tuple] | None = None) -> bool:
     return any(_la_gate(ten, argv) for ten, argv in to_tien)
 
 
-def _la_gate(ten: str, argv) -> bool:
+def _la_gate(ten: str, argv, kich_ban: str = "gate.py") -> bool:
     """Tien trinh nay CO PHAI mot luot `gate.py` dang chay khong.
 
     🔴 **Dung khop CHUOI CON tren ca dong lenh.** Ban truoc hoi
@@ -257,8 +257,35 @@ def _la_gate(ten: str, argv) -> bool:
     """
     if not (ten or "").lower().startswith("python"):
         return False
-    return any(os.path.basename(str(d).replace(chr(92), "/")) == "gate.py"
+    return any(os.path.basename(str(d).replace(chr(92), "/")) == kich_ban
                for d in list(argv or [])[1:])
+
+
+def to_tien_da_giu_khoa(kich_ban: tuple[str, ...] = ("gate.py", "test_nhanh.py"),
+                        to_tien: list[tuple] | None = None) -> bool:
+    """Mot to tien CO PHAI mot cong cu da xin khoa ho ta khong.
+
+    ⭐ Tong quat hoa `_to_tien_la_gate` de `tests/conftest.py` dung lai duoc.
+       `pytest` go tay la lo CUOI CUNG con lai: `gate.py` xin khoa,
+       `test_nhanh.py` xin khoa, nhung `python -m pytest tests/ -n 6` thi
+       khong — va do la lenh nang nhat ma bon phien deu go trong dem 05-06/09.
+
+    ⛔ Dung MOT ham cho ca hai cho, dung chep. Hai ban sao cua cung mot phep
+       hoi la hai cho de chung lech nhau — va lech o day nghia la hoac khoa
+       chet (ca hai cung xin) hoac lo hong (ca hai cung bo qua).
+    """
+    if to_tien is None:
+        try:
+            import psutil
+        except ImportError:
+            return True
+        try:
+            to_tien = [(t.name(), t.cmdline() or [])
+                       for t in psutil.Process().parents()]
+        except (psutil.Error, OSError):
+            return True
+    return any(_la_gate(ten, argv, kb)
+               for ten, argv in to_tien for kb in kich_ban)
 
 
 def _so_loi_se_dung(n: str) -> int:
@@ -345,6 +372,17 @@ def main() -> int:
     p.add_argument("--khong-khoa", action="store_true",
                    help="chay ma khong xin khoa — chi dung khi biet ro vi sao")
     args, con_lai = p.parse_known_args()
+
+    # Cung ly do nhu trong `gate.py`: NOI RA ai khac dang ban, roi van chay.
+    # Khoa `cua_so_yen` xep hang; dong nay chi lam cho thay thu khoa khong thay.
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from may_ban import dong_canh_bao
+        _canh = dong_canh_bao()
+        if _canh:
+            print(_canh)
+    except Exception as _e:  # noqa: BLE001
+        print(f"  [may ban] khong dem duoc: {type(_e).__name__}")
 
     # ⛔ Duoi gate thi KHONG xin: gate da giu `cpu_nhieu` va khoa khong tai nhap.
     if args.khong_khoa or _to_tien_la_gate():
