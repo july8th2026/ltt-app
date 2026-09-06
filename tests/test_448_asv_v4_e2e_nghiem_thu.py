@@ -411,8 +411,14 @@ def _mot_luot(client_chu, csrf, client_khac, nguon: Path, tam: Path, *,
         return json.loads(du_lieu.decode("utf-8")) if du_lieu else {}
 
     bg, bd, qc = _json(ban_ghi), _json(ban_dich), _json(bao_qc)
+    # ⭐ Chi giu tang vat khi lan chay KHONG dat — mot luot xanh khong can bang
+    #    chung, va chep hai tep media cho moi luot xanh la mot cai gia tra mai.
+    tang_vat = ({} if run.status == "done"
+                else _giu_tang_vat(db, kho, run, nhan, giai_doan))
+
     return {
         "nhan": nhan, "preset": preset, "che_do_giong": che_do_giong,
+        "tang_vat": tang_vat,
         "giong_id": giong_id,
         "trang_thai_run": run.status, "giay_tong": round(time.time() - t0, 1),
         "giai_doan": giai_doan, "nhat_ky_job": nhat_ky,
@@ -593,6 +599,48 @@ def _chan_tai_nguyen_ban(bc: dict) -> None:
         "  Lam gi: hoi cac phien khac ai dang dung may B, doi ho xong, chay lai.",
         "  Mot luot hong vi ban chi ton ~2 phut, khong ton 21 phut.",
     ]))
+
+
+def _giu_tang_vat(db, kho, run, nhan: str, giai_doan: list[dict]) -> dict:
+    """Chep ban phoi + ban giao ra mot cho SONG LAU khi lan chay khong dat QC.
+
+    \U0001F534 **Vi sao can:** 06/09 QC T5 (dinh that) hong o `cat_thong_minh`, va
+       cau hoi tiep theo — *"phoi sai hay ma hoa vot lo?"* — chi tra loi duoc
+       bang cach do CHINH hai tep do. Chung nam duoi `tmp_path` cua pytest, ma
+       pytest **chi giu ba thu muc gan nhat**. Den luc toi hoi thi ba luot kiem
+       toi chay SAU do da day chung ra khoi hang doi.
+
+    \u26d4 Tuc bang chung bi xoa **boi chinh viec kiem tra chay sau no**. Bao cao
+       da ghi day du con SO (`master.dinh_that` va QC T5), nhung mot con so noi
+       "vot lo 2,78 dB" khong noi duoc **vi sao** — chi hai tep moi noi duoc.
+
+    \u2b50 Ghi ra ngoai cay lam viec, khong ghi canh bao cao: bao cao nam trong
+       `docs/`, va mot tep media o do se di thang vao mot commit `git add -A`.
+    """
+    import shutil
+    import tempfile
+
+    thu_muc = Path(tempfile.gettempdir()) / "asv_tang_vat" / nhan
+    if thu_muc.exists():
+        shutil.rmtree(thu_muc, ignore_errors=True)
+    thu_muc.mkdir(parents=True, exist_ok=True)
+
+    ra: dict[str, str] = {}
+    for g in giai_doan:
+        # `khoa_asset` nam trong `tom_tat` (thi_hanh do `ket_qua` vao
+        # `stage.outputs`, va bao cao chep nguyen `outputs` vao `tom_tat`).
+        for khoa in ((g.get("tom_tat") or {}).get("khoa_asset") or []):
+            duoi = Path(str(khoa)).suffix.lower()
+            if duoi not in (".wav", ".mp4"):
+                continue
+            dich = thu_muc / f"{g.get('ten')}{duoi}"
+            try:
+                with kho.open(str(khoa)) as f, open(dich, "wb") as o:
+                    shutil.copyfileobj(f, o)
+            except Exception:            # noqa: BLE001
+                continue
+            ra[str(g.get("ten"))] = str(dich)
+    return ra
 
 
 def _bao_cao() -> dict:
