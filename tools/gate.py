@@ -426,6 +426,7 @@ class Step:
         self.bo_qua = False
         self.seconds = 0.0
         self.tail = ""
+        self.tep_loi = ""
 
 
 def _npm() -> str | None:
@@ -985,6 +986,29 @@ def _run(step: Step) -> None:
     #    danh sach FAILED moi la thu can doc, va no dai hon 4 dong.
     step.tail = "\n".join(lines[-40:])
 
+    # 🔴 VA 40 DONG VAN KHONG DU KHI BO TEST DO. Do 06/09/2026: mot phep kiem
+    #    do trong 6.616 phep kiem; `short test summary` cho DUNG mot dong —
+    #    TEN phep kiem — con traceback da troi qua tu lau. Toi biet CAI GI do
+    #    ma khong biet VI SAO, va phai chay lai ca luot 11 phut de xem.
+    #
+    # ⛔ Do khong phai chuyen tang mot con so. Bat ky tran nao cung se bi vuot
+    #    boi mot luot du dai. Thu dung la: DO thi giu TRON dau ra ra tep.
+    #
+    # ⭐ Chi ghi khi DO, nen luot xanh khong de lai gi. Va in duong dan ra ngay
+    #    dong ket luan, vi mot tep khong ai biet la mot tep khong ai doc.
+    if not step.ok:
+        try:
+            thu_muc = ROOT / "test-results" / "gates"
+            thu_muc.mkdir(parents=True, exist_ok=True)
+            ten = "".join(c if c.isalnum() else "-" for c in step.name).strip("-")
+            tep = thu_muc / f"loi-{os.getpid()}-{ten}.log"
+            tep.write_text(output, encoding="utf-8", errors="replace")
+            step.tep_loi = str(tep.relative_to(ROOT)).replace("\\", "/")
+        except OSError:
+            # ⛔ HEP: mot loi ghi tep KHONG duoc bien mot buoc do thanh mot
+            #    ngoai le khac lam mat luon phan quyet.
+            step.tep_loi = ""
+
 
 def _da_doi_so_voi_HEAD() -> set[str] | None:
     """Đường dẫn đã đổi so với HEAD, kể cả chưa commit. `None` = không biết.
@@ -1536,6 +1560,9 @@ def main() -> int:
         print("\nChi tiet buoc that bai:")
         for step in failed:
             print(_console_text(f"\n--- {step.name} ---\n{step.tail}"))
+            if getattr(step, "tep_loi", ""):
+                print(_console_text(
+                    f"    [dau ra DAY DU] {step.tep_loi}"))
     print("=" * 62)
 
     # 🔴 Một lượt gate đầy đủ mất 2,9–4,4 giờ. Trên kho này — hai phiên làm

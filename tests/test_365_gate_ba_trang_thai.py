@@ -175,3 +175,62 @@ def _khoi_sua_ket() -> list[str]:
         if sua:
             ra.append(ast.unparse(n))
     return ra
+
+
+def test_buoc_DO_giu_TRON_dau_ra_ra_tep_chu_khong_chi_40_dong(tmp_path):
+    """🔴 Đo 06/09/2026: một phép kiểm đỏ trong **6.616** phép kiểm. Dòng
+       `short test summary` cho đúng **một** dòng — TÊN phép kiểm — còn
+       traceback đã trôi khỏi 40 dòng cuối từ lâu.
+
+       Tôi biết CÁI GÌ đỏ mà không biết VÌ SAO, và cách duy nhất để xem là
+       chạy lại cả lượt 11 phút. Gate là công cụ ra **phán quyết**, nhưng khi
+       nó đỏ thì nó cũng phải để lại đủ thứ cho người đọc **không phải chạy
+       lại**.
+
+    ⛔ Đây không phải chuyện tăng một con số. Bất kỳ trần nào cũng bị vượt bởi
+       một lượt đủ dài. Cách đúng là: ĐỎ thì giữ TRỌN đầu ra ra tệp.
+
+    ⭐ Và chiều ngược lại cũng được chốt: lượt XANH không được để lại gì, nếu
+       không `test-results/` sẽ đầy rác sau mỗi lượt.
+    """
+    import importlib.util
+    import pathlib
+    import sys
+
+    spec = importlib.util.spec_from_file_location(
+        "gate_giu_dau_ra", GOC / "tools" / "gate.py")
+    gate = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(gate)
+
+    thu_muc = pathlib.Path(gate.ROOT) / "test-results" / "gates"
+    truoc = set(thu_muc.glob("loi-*.log")) if thu_muc.is_dir() else set()
+
+    # ── Bước ĐỎ, đầu ra dài hơn 40 dòng ────────────────────────────────────
+    do = gate.Step("thu chot giu dau ra", [
+        sys.executable, "-c",
+        "import sys;[print(f'dong {i}') for i in range(200)];"
+        "print('MANH TRACEBACK');sys.exit(1)"], gate.ROOT)
+    gate._run(do)
+    assert do.ok is False
+    assert do.tep_loi, "buoc DO ma khong ghi tep dau ra day du"
+
+    tep = pathlib.Path(gate.ROOT) / do.tep_loi
+    try:
+        noi_dung = tep.read_text(encoding="utf-8")
+        assert "dong 0" in noi_dung, (
+            "tep chi giu phan duoi — dung lo da lam toi phai chay lai 11 phut")
+        assert "MANH TRACEBACK" in noi_dung
+        assert "dong 0" not in do.tail, (
+            "neu 40 dong cuoi da du thi phep kiem nay khong do duoc gi")
+
+        # ── Bước XANH: không được để lại gì ────────────────────────────────
+        xanh = gate.Step("thu chot buoc xanh",
+                         [sys.executable, "-c", "print('xong')"], gate.ROOT)
+        gate._run(xanh)
+        assert xanh.ok is True
+        assert xanh.tep_loi == "", "luot XANH ma van ghi tep loi"
+    finally:
+        tep.unlink(missing_ok=True)
+
+    con_lai = set(thu_muc.glob("loi-*.log")) - truoc
+    assert not con_lai, f"phep kiem de lai rac: {con_lai}"
