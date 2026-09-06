@@ -1848,7 +1848,54 @@ cùng lúc, hoặc không lan.
 ⛔ Và **không `--accept`**: mốc hiện tại chưa từng được chứng minh là khớp cây
 nào. Dời nó xuống là khoá vĩnh viễn ba lỗi chưa ai truy ra nguồn.
 
-### ✅ ĐÃ GIẢI — 07/09: **mốc chưa từng khớp cây của chính nó**
+### ❌ KẾT LUẬN ĐẦU CỦA TÔI — **SAI**. Giữ lại vì cách nó sai mới là bài học
+
+Tôi giải nén **đúng commit đã sinh ra mốc** (`4ece48f8`) ra một cây riêng, chạy
+mypy trên đó, thấy `120/61` trong khi `.moc` commit kèm ghi `119/59`, và kết
+luận: *"mốc sai từ lúc sinh ra"*.
+
+⛔ **Phép đo ấy không chứng minh được điều đó.** Nó giải nén cây **cũ** nhưng
+chạy trong môi trường **hôm nay** — nên nó không phân biệt nổi hai giả thuyết:
+
+| | Giả thuyết | Nó giải thích được gì |
+|---|---|---|
+| (a) | mốc chưa từng khớp | mỗi con số lệch |
+| (b) | **phụ thuộc đã đổi** kể từ lúc chốt | số lệch · **hai nhánh độc lập cùng đỏ** · **không nằm trong commit nào** |
+
+Tôi chọn (a) — cái giải thích **ít hơn**. Đây đúng *"giả thuyết khớp quá vừa kết
+thúc điều tra"*: (a) khớp con số một cách hoàn hảo, nên tôi ngừng hỏi.
+
+### ✅ ĐÃ GIẢI — 07/09: **một bản nâng phụ thuộc, không nằm trong commit nào**
+
+Phiên `LTTCHAT V3` đưa mảnh tôi thiếu: **`pillow 12` đổi stub kiểu**. Phép đo
+quyết định là **dấu thời gian**, không phải số đếm:
+
+```
+commit chot moc `4ece48f8`      06/09  17:02
+pillow-12.3.0.dist-info mtime   06/09  22:57      <- SAU gan 6 tieng
+```
+
+⇒ Lúc viết, mốc **đúng**. Gần sáu tiếng sau, một bản nâng trong `site-packages`
+**dùng chung** thêm 3 lỗi vào mọi cây cùng lúc. Không nhánh nào chứa nó, vì nó
+không nằm trong Git.
+
+### 🔴 Lỗ hổng thật, tổng quát hơn cả hai bánh cóc
+
+**Một bánh cóc chốt SỐ ĐẾM mà không chốt MÔI TRƯỜNG sinh ra số đếm ấy.**
+
+`check_mypy.moc` ghi *"arg-type = 119"* như thể đó là tính chất của **mã**. Nó
+không phải — nó là tính chất của **mã cộng với phiên bản mọi thư viện có stub**.
+Hai cây giống hệt nhau từng byte cho hai con số khác nhau nếu `pillow` khác bản.
+
+Và nó nguy hiểm theo **chiều ngược lại** nhiều hơn: một bản nâng phụ thuộc làm
+**giảm** số lỗi sẽ **hạ chuẩn thật** mà bánh cóc vẫn xanh — vì nhánh `giam` luôn
+`return 0`. Ta sẽ mất một tầng bảo vệ mà không có gì đỏ lên.
+
+⇒ `--accept` ngày 07/09 vẫn là hành động **đúng**, nhưng vì lý do khác lý do tôi
+ghi: đây là **chốt lại mốc sau một bản nâng phụ thuộc**, không phải sửa một mốc
+sai từ đầu. Và `.moc` nên ghi kèm phiên bản của những thư viện nó phụ thuộc,
+để lần sau câu hỏi *"vì sao số đổi"* có chỗ tra.
+
 
 Phép đo quyết định: giải nén **đúng commit đã sinh ra mốc** (`4ece48f8`, *"H9 —
 mypy làm bánh cóc thứ tư"*) ra một cây riêng ngoài kho, rồi chạy mypy trên đó.
@@ -1870,6 +1917,7 @@ mốc chưa bao giờ đúng, và diff chứng minh điều đó: **chỉ hai d�
 có mã lỗi nào khác trôi theo.
 
 ⛔ **Lỗ hổng cấu trúc thì vẫn còn**: nhánh `giam` in ghi chú rồi `return 0`, nên
-bánh cóc vẫn xanh khi phép đo teo lại. Bản sửa (ghi thêm **số tệp mypy thật sự
-kiểm** vào `.moc`, đỏ khi nó giảm) **chưa làm**, theo `AGENTS.md` §4c: mỗi
+bánh cóc vẫn xanh khi phép đo teo lại — và như trên, một bản nâng phụ thuộc là
+đúng cái làm nó teo. Bản sửa (ghi **số tệp mypy thật sự kiểm** + **phiên bản phụ
+thuộc** vào `.moc`, đỏ khi số tệp giảm) **chưa làm**, theo `AGENTS.md` §4c: mỗi
 worktree chạy bản `tools/` riêng nên một bản vá một phía phạt đúng cây đã sửa.
