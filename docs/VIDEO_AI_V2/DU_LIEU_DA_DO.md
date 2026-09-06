@@ -54,16 +54,35 @@ từng khoá — `tests/test_726_lttvideo_ho_so_bam_wangp.py` cưỡng chế.
 
 ## 3. Máy C-CLOUD
 
+### Pod đang dùng *(tạo 07/09)*
+
 | Mục | Giá trị |
 |---|---|
 | Network volume | `uizchbiet5` (`lttv-models-v1`), **300 GB**, `US-KS-2` |
-| Pod | `bly29qwp5bum3r`, **A100 SXM 80 GB** |
-| Giá | **$1,59/giờ** (`costPerHr` lúc tạo — **không** phải `lowestPrice` $1,39) |
-| Ảnh container | `nvidia/cuda:12.8.1-cudnn-devel-ubuntu22.04` |
-| Cổng mở | **`8888/http`** · `22/tcp` (ánh xạ 11191, **chưa nạp khoá SSH**) |
+| Pod | **`s6bbn2cip61wo3`** (`lttv-wangp-v1`) |
+| GPU | **NVIDIA H100 PCIe 80 GB** — SM **9.0** |
+| Giá | **$2,89/giờ** (`costPerHr`) |
+| Ảnh container | `nvidia/cuda:13.0.1-cudnn-devel-ubuntu22.04` |
+| Cổng mở | **`8888/http`** · `22/tcp` |
 | Driver | **580.159.04** — đỡ tới **CUDA 13.0** |
-| VRAM · RAM · vCPU | 85,09 GB · 251 GB · 32 |
-| Trạng thái 07/09 | **`EXITED`** (đã tắt theo `B1`) |
+| RAM · vCPU | 251 GB · 16 |
+
+🔴 **A100 đã hết hàng ở `US-KS-2`** (đo 07/09: cả `A100-SXM4-80GB` lẫn
+`A100 80GB PCIe` đều `KHONG CO`). Danh sách `gpuTypeIds` ưu tiên đã cứu — rơi
+xuống H100.
+
+🔴 **`lowestPrice` báo $1,99, `costPerHr` thật là $2,89** — lệch **45%**. Bẫy này
+đã ghi ở §5② của `TAI_NGUYEN_VA_CACH_DUNG_LAI.md` với biên độ nhỏ hơn ($1,39 vs
+$1,59); nay biên độ lớn hơn hẳn. **Chỉ tin `costPerHr`.**
+
+⚠️ H100 là **SM 9.0**, A100 là **8.0**. Mọi chỗ gán cứng arch đều sai khi rơi
+card — `cai_dat.sh` nay đo bằng `nvidia-smi --query-gpu=compute_cap` và **dừng
+hẳn** nếu không đo được, thay vì rơi về một mặc định im lặng.
+
+### Pod cũ *(A100, đã tắt)*
+
+`bly29qwp5bum3r` — A100 SXM 80 GB, $1,59/giờ, ảnh `cuda:12.8.1`, 85,09 GB VRAM,
+32 vCPU. **`EXITED`**. Mọi phép đo ở §4 lượt 1–2 chạy trên máy này.
 
 ### Bộ Python hiện tại — và vì sao nó lệch
 

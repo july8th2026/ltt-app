@@ -12,9 +12,12 @@
 """
 from __future__ import annotations
 
+import logging
 import time
 from enum import Enum
 from typing import Any, Callable
+
+_log = logging.getLogger(__name__)
 
 #: Đo 06/09: ~40 giây container + ~40 giây apt + ~450 giây nạp/ghim model ở
 #: profile 1 ⇒ ~530 giây. Cộng biên cho lượt cài lại nửa tạm và ổ mạng chậm.
@@ -53,7 +56,12 @@ class DieuPhoi:
     def _trang_thai_pod(self) -> str:
         try:
             d = self.api._rest("GET", f"/pods/{self.pod_id}")
-        except Exception:  # noqa: BLE001 — không đọc được thì coi như chưa chạy
+        except Exception as e:  # noqa: BLE001 — đọc không được thì coi như chưa chạy
+            # ⛔ Không nuốt: một lỗi mạng lặp lại ở đây là dấu hiệu khoá RunPod
+            #    hỏng hoặc pod đã bị xoá, và nếu nó im lặng thì triệu chứng duy
+            #    nhất là "máy mãi không lên" — đúng chỗ khó tìm nhất.
+            _log.warning("khong doc duoc trang thai pod %s: %s: %s",
+                         self.pod_id, type(e).__name__, e)
             return "?"
         return str((d or {}).get("desiredStatus") or "?")
 
@@ -76,15 +84,22 @@ class DieuPhoi:
                 raise
 
         het_han = time.monotonic() + self.cho_toi_da_s
+        loi_cuoi = ""
         while time.monotonic() < het_han:
             try:
                 if (self.client.health() or {}).get("ok"):
                     return TrangThaiMay.SAN_SANG
-            except Exception:  # noqa: BLE001 — chưa lên thì hỏi lại, đúng nghĩa
-                pass
+            except Exception as e:  # noqa: BLE001 — chưa lên thì hỏi lại
+                # ⛔ Giữ lỗi CUỐI thay vì nuốt. Một lượt hỏi hỏng là bình thường
+                #    (máy đang lên); nhưng khi hết giờ thì lỗi cuối là câu trả
+                #    lời duy nhất cho "vì sao không lên" — và nếu ta nuốt nó thì
+                #    người vận hành chỉ còn một dòng "hết giờ" không kèm gì.
+                loi_cuoi = f"{type(e).__name__}: {e}"
             self._ngu(self.nhip_s)
         # ⚠️ Hết giờ ≠ hết card. Máy có thể đang chạy mà dịch vụ hỏng — nên trả
         #    `TAT` (không phục vụ được) chứ không trả `KHONG_CO_CARD`.
+        _log.warning("pod %s khong san sang sau %.0f giay; loi cuoi: %s",
+                     self.pod_id, self.cho_toi_da_s, loi_cuoi or "(khong co)")
         return TrangThaiMay.TAT
 
     def tat_neu_ranh(self, *, so_viec_dang_chay: int) -> bool:

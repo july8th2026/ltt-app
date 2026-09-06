@@ -1847,3 +1847,29 @@ cùng lúc, hoặc không lan.
 
 ⛔ Và **không `--accept`**: mốc hiện tại chưa từng được chứng minh là khớp cây
 nào. Dời nó xuống là khoá vĩnh viễn ba lỗi chưa ai truy ra nguồn.
+
+### ✅ ĐÃ GIẢI — 07/09: **mốc chưa từng khớp cây của chính nó**
+
+Phép đo quyết định: giải nén **đúng commit đã sinh ra mốc** (`4ece48f8`, *"H9 —
+mypy làm bánh cóc thứ tư"*) ra một cây riêng ngoài kho, rồi chạy mypy trên đó.
+
+```
+tep `check_mypy.moc` COMMIT KEM:   arg-type = 119   assignment = 59
+mypy tren CHINH CAY DO:            arg-type = 120   assignment = 61
+```
+
+⇒ Không phải phần trôi của ai đó chưa commit. **Mốc sai từ lúc sinh ra** — nó
+được `--accept` trên một cây, rồi cây đổi trước khi commit.
+
+Điều đó cũng giải thích các lượt gate `PASS` xen kẽ mà không lời giải thích nào
+khớp: mốc lệch **cố định 3 lỗi**, nên bất cứ điều gì làm mypy đếm ra **ít hơn 3
+lỗi so với đầy đủ** đều biến nó thành xanh — và nhánh `giam` thì **luôn trả 0**.
+
+⇒ `--accept` ở đây **không** phải giặt phần trôi của người khác. Nó là sửa một
+mốc chưa bao giờ đúng, và diff chứng minh điều đó: **chỉ hai dòng đổi**, không
+có mã lỗi nào khác trôi theo.
+
+⛔ **Lỗ hổng cấu trúc thì vẫn còn**: nhánh `giam` in ghi chú rồi `return 0`, nên
+bánh cóc vẫn xanh khi phép đo teo lại. Bản sửa (ghi thêm **số tệp mypy thật sự
+kiểm** vào `.moc`, đỏ khi nó giảm) **chưa làm**, theo `AGENTS.md` §4c: mỗi
+worktree chạy bản `tools/` riêng nên một bản vá một phía phạt đúng cây đã sửa.
