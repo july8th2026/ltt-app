@@ -31,7 +31,10 @@ from fastapi import Body, FastAPI, Header, HTTPException
 
 KHO_WANGP = Path(os.environ.get("LTTV_WANGP_ROOT", "/data/Wan2GP"))
 KHOA = (os.environ.get("LTTV_WANGP_KEY") or "").strip()
-PROFILE = os.environ.get("LTTV_PROFILE", "3")
+#: Hồ sơ bộ nhớ. **1** = model đang dùng trọn trong VRAM + model khác trú ở
+#: RAM để luân chuyển nhanh (`HighRAM_HighVRAM` trong `mmgp`). Máy đo được
+#: 85 GB VRAM + 251 GB RAM ⇒ dư cả hai cột. Xem `P01-D-15`.
+PROFILE = os.environ.get("LTTV_PROFILE", "1")
 ATTENTION = os.environ.get("LTTV_ATTENTION", "sage2")
 
 app = FastAPI(title="LTT ↔ WanGP bridge")

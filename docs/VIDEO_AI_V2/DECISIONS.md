@@ -400,3 +400,45 @@ completes with `result.success == False` and a cancellation entry in
 
 ⇒ Nguyên thuỷ huỷ của hợp đồng engine **có thật và dùng được**. Còn thiếu: đo GPU
 có nhả VRAM sau khi huỷ không.
+
+### P01-D-15 — CHỐT `profile 1` (thay `P01-D-12`)
+
+Chủ dự án chốt 06/09: *"chốt mặc định luôn là profile 1, không cần test."*
+
+**Thay thế `P01-D-12`** (đã chốt `profile 3`). Lý do đổi: đọc kỹ hơn thì
+`profile 1` **bao trùm** `profile 3`, không đánh đổi gì trên máy này.
+
+Tên nội bộ trong `mmgp` xác nhận cách đặt tên là `<RAM>_<VRAM>` — sáu tên có
+thật trong mã nguồn tại SHA ghim:
+
+```
+HighRAM_HighVRAM      <- profile 1  ✅ chot
+HighRAM_LowVRAM       <- profile 2
+LowRAM_HighVRAM       <- profile 3
+LowRAM_LowVRAM        <- profile 4  (mac dinh cua WanGP, wgp.py:2633)
+VerylowRAM_LowVRAM    <- profile 5
+VeryLowRAM_HighVRAM
+```
+
+`docs/CLI.md` nguyên văn: *"**Profile 1**: Load entire current model in VRAM
+**and keep all unused models in reserved RAM for fast VRAM transfers**"*.
+
+| | `profile 3` | `profile 1` |
+|---|---|---|
+| Model **đang dùng** | trọn trong VRAM | trọn trong VRAM — **giống nhau** |
+| Model **không dùng** | không giữ | **trú ở RAM** |
+| Một model | như nhau | như nhau |
+| Đổi model (t2v↔i2v) | đọc lại **từ ổ đĩa** | chuyển **RAM→VRAM** |
+
+⭐ Vế thứ tư là toàn bộ giá trị: nó tránh đúng bài toán **~300 giây nạp từ ổ
+đĩa** mà `KE_HOACH_GO_COLD_START.md` đo được — và cũng đúng chỗ nghẽn chủ dự án
+chỉ ra ngay từ lần đầu hỏi về nhiều model trong một workflow.
+
+**Vì sao không cần đo để chốt:** máy đo được **85,09 GB VRAM** và **251 GB RAM**;
+model INT8 chỉ **14,90 GB** mỗi tầng. Dư cả hai cột ⇒ `profile 1` không có mặt
+trái nào trên phần cứng này. Nếu sau đổi sang card nhỏ hơn thì đây là chỗ xem
+lại đầu tiên.
+
+📌 Lượt đo đang chạy ở `profile 3` **không phí**: với **một** model, `1` và `3`
+cho cùng VRAM và tốc độ, và nó vẫn trả lời `C2` (huỷ xong GPU có nhả VRAM không)
+— câu hỏi độc lập với hồ sơ.
