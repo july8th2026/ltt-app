@@ -239,3 +239,63 @@ def test_do_nhanh_tien_trinh_KHONG_khop_chinh_no():
     assert os.getpid() not in [p.pid for p in ds], (
         "bo loc khop vao CHINH tien trinh dang hoi - mot che do giet se di "
         "nguoc len cay cha cua no")
+
+
+def test_moc_timeout_KHONG_duoc_la_chu_thich_chet():
+    """🔴 `@pytest.mark.timeout` chỉ có tác dụng khi `pytest-timeout` **có mặt**.
+
+    Đo 06/09: `tests/test_616:106` khai `@pytest.mark.timeout(240)` trong khi
+    plugin **không có trong máy**. Pytest chỉ cảnh báo `PytestUnknownMarkWarning`
+    rồi **chạy tiếp** — nên mốc ấy là một **chú thích chết**, và một test treo sẽ
+    treo mãi thay vì đỏ.
+
+    ⛔ Đây là lớp lỗi *"biết mà không làm"* ở tầng phụ thuộc: mã **nói** nó có
+       một giới hạn, môi trường thì **không** thi hành giới hạn ấy, và không có
+       gì đỏ. Bộ test dài 8 phút mà một test treo được thì lượt gate không bao
+       giờ kết thúc.
+
+    ⭐ Đo sau khi cài: một test `sleep(20)` với `timeout(2)` cho `returncode 1`
+       và in `Timeout`. Trước đó nó ngủ đủ 20 giây rồi **xanh**.
+
+    ⚠️ Phép kiểm này canh **môi trường**, không canh mã — cố ý. Một mốc timeout
+       trong mã không tự biết plugin của nó có mặt hay không.
+    """
+    import importlib.util                          # noqa: PLC0415
+
+    assert importlib.util.find_spec("pytest_timeout") is not None, (
+        "moc `@pytest.mark.timeout` trong bo test dang la CHU THICH CHET - "
+        "cai `pytest-timeout` (xem requirements-dev.txt)")
+
+
+def test_moi_goi_trong_requirements_dev_deu_CO_MAT():
+    """Một phụ thuộc không được khai sẽ biến mất **im lặng** ở máy khác.
+
+    🔴 Trước 06/09 bộ công cụ test không được khai ở **đâu cả** —
+    `requirements.txt` lẫn `requirements-server.txt` đều không có `pytest`, và
+    `setup/2-cai-dat.ps1` **cố ý** không cài (production không chạy pytest).
+    Bộ test chạy bằng **Python hệ thống** với những gói ai đó đã cài bằng tay.
+
+    ⇒ Phép kiểm này biến `requirements-dev.txt` từ một tờ khai thành một **ràng
+      buộc đo được**: khai mà không cài, hoặc cài mà quên khai, đều đỏ.
+    """
+    import importlib.metadata as md                # noqa: PLC0415
+
+    tep = GOC / "requirements-dev.txt"
+    assert tep.exists(), "khong con requirements-dev.txt"
+
+    thieu = []
+    for dong in tep.read_text(encoding="utf-8").splitlines():
+        d = dong.strip()
+        if not d or d.startswith("#"):
+            continue
+        ten = d.split("==")[0].split("#")[0].strip()
+        if not ten:
+            continue
+        try:
+            md.version(ten)
+        except md.PackageNotFoundError:
+            thieu.append(ten)
+
+    assert not thieu, (
+        f"khai trong requirements-dev.txt nhung KHONG co trong may: {thieu} - "
+        "moi dong o do la mot thu bo test DANG dua vao")
