@@ -186,12 +186,33 @@ if ($ModelGia -or -not $coCsdl) {
     #
     # !! Ten CSDL PHAI chua 'test' - `tests/pg_scratch.py` tu choi neu
     #    khong, vi cac bai nay goi `drop_all`.
+    Write-Host "  [**] Model: THAT, qua pool khoa -> may B" -ForegroundColor Cyan
+}
+
+# CSDL la mot truc RIENG, khong di theo lua chon model.
+#
+# !! Truoc 06/09 khoi chon PostgreSQL nam TRONG nhanh "model that", nen
+#    `-ModelGia` keo theo ca SQLite. Va SQLite khong song noi duong ong nay:
+#    `compose` chay ffmpeg vai giay trong khi web va worker cung ghi, nen
+#    luot chan doan chet o `compose` voi 'database is locked' - mot loi
+#    TRONG GIONG loi san pham nhung thuc ra la cau hinh cua bo chay.
+#
+# !! Do that 06/09 11:19: ca hai preset deu `compose failed_terminal`, khong
+#    preset nao toi duoc `render`. Chu thich cu da du bao dung hien tuong
+#    nhung quy cho "loi goi model that giu ket noi vai giay"; lan nay KHONG
+#    co loi goi model nao va no van khoa. Tuc thu phai co PostgreSQL la
+#    DUONG ONG, khong phai model.
+#
+# !! Ten CSDL PHAI chua 'test' - `tests/pg_scratch.py` tu choi neu khong,
+#    vi cac bai nay goi `drop_all`.
+if ($coCsdl) {
     if (-not $env:LTT_TEST_DATABASE_URL) {
         $env:LTT_TEST_DATABASE_URL = ($env:LTT_DATABASE_URL -replace
             '/[^/?]+(\?|$)', '/lttplatform_test$1')
     }
     Write-Host "  [**] CSDL nghiem thu: PostgreSQL nhap (ten chua 'test')" -ForegroundColor Cyan
-    Write-Host "  [**] Model: THAT, qua pool khoa -> may B" -ForegroundColor Cyan
+} else {
+    Write-Host "  [!!] CSDL: SQLite - duong ong nay hay dinh 'database is locked' o compose" -ForegroundColor Yellow
 }
 if ($GiongSAPI -or -not $coToken) {
     Remove-Item Env:LTT_ASV_GIONG_THAT -ErrorAction SilentlyContinue
