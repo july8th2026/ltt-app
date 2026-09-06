@@ -1620,6 +1620,48 @@ chín (`test_618`) thì **gate bắt**, còn không phiên nào đọc ra.
 ⛔ Không lớp nào thay được lớp kia, và bảng "tám cái sai" ở trên **không** được
 đọc thành *"gate vô dụng"* — kết luận ấy sai, và nguy hiểm hơn hẳn cái nó thay.
 
+### 🔴 Phép kiểm TỰ DỰNG đầu vào chỉ đo phía TIÊU THỤ — phía SẢN XUẤT trôi tự do
+
+*(phiên ASV, 06/09 — và nó là ca đắt nhất trong loạt này vì nó chạm tiền)*
+
+Một job hỏng vì máy B bận. Đáng lẽ nó phải được **hoãn**; thực tế nó thành
+`failed_terminal`:
+
+```
+auto_scan_video.content_process | hoan_s=None
+  AiError: khong provider nao phuc vu duoc: ltt_llm: ban
+```
+
+`AiError` — **không** phải `KhongCoProviderNao`. `ai.py` bọc **mọi** ngoại lệ
+thành `AiError`, làm **mất lớp gốc**, nên `phan_loai` ra `TAM_THOI` thay vì
+`BAN`, và nền tảng đọc `"retry"` thay vì `"resource_wait"`. Job **không bao giờ**
+được hoãn. `hoan_s=None` là dấu vết.
+
+🔴 **Và triệu chứng ấy đã được "sửa" một hôm trước, rồi báo là xong.** Bản vá
+không chạm tới chỗ này, vì chốt của nó **tự dựng `KhongCoProviderNao` bằng tay**
+— tức **bỏ qua đúng cái lớp đang làm mất tín hiệu**.
+
+⇒ Chốt xanh, sản phẩm hỏng, báo cáo sai. Ba thứ cùng lúc, và không thứ nào kêu.
+
+🔑 Cơ chế là **vòng phản hồi một phía**, cùng luật với *"chặt với cây mình, lỏng
+với cây người"*: một phép kiểm tự dựng đầu vào có vòng phản hồi với **phía tiêu
+thụ** (hàm phân loại) và **không có** vòng nào với **phía sản xuất** (chỗ ném
+ngoại lệ). Phía không ai đo thì trôi tự do — và nó trôi **im lặng**, vì phép kiểm
+vẫn xanh.
+
+⛔ Và giá của nó là **tiền**: một job `failed_terminal` **trừ credit cho việc
+chưa từng chạy** (đúng như docstring `giong_noi.MayBan` đã ghi). Đường giọng học
+bài ấy từ lâu; đường AI thì chưa.
+
+⇒ **Phép kiểm phải bắt đầu từ RANH GIỚI THẬT**, và không được phép biết tên lớp
+trung gian nào. Nếu nó cần gọi tên một lớp nội bộ để dựng đầu vào, nó đang đo
+**bản mô phỏng của mình**, không đo sản phẩm.
+
+⭐ Đối chứng ở đường khác cùng kho: `test_819::test_job_hong_thi_tien_HOAN_het`
+chốt rằng job hỏng thì `credit_thu == 0` và `credit_hoan == credit_giu`. Nó dựng
+job hỏng qua `tao_media.dong_bo` — tức **qua ranh giới thật**, không tự chế
+trạng thái.
+
 ### Và một biến thể khi ĐẾM
 
 *(cùng phiên)* `grep -r` không phân biệt **thứ sẽ merge** với **thứ tự sinh ra**:
