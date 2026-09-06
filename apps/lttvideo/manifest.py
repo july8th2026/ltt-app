@@ -20,9 +20,10 @@ Kiến trúc đã khoá: `docs/VIDEO_AI_V2/FINAL_MINIMAL_LTT_WANGP_ARCHITECTURE.
    customers or end users as a paid feature"* nếu không có giấy phép thương mại
    riêng. Xem `P01_UPSTREAM_PIN.md` mục 2.
 
-⛔ GIÁ KHÔNG Ở FILE NÀY — nó ở `cost.py`, phái sinh từ **một hằng số đo được**
-   (`USD_MOI_GIO_GPU`). `credit_cost` dưới đây chỉ là trần ước cao để giữ chỗ;
-   số thật do `jobs.handle` báo về theo **giây GPU đã chạy**.
+⛔ GIÁ KHÔNG Ở FILE NÀY — nó ở `cost.py`, một mức **phẳng** chỉnh được
+   (`CREDIT_MOI_GIAY_VIDEO`). `credit_cost` dưới đây là khoản **giữ chỗ**; số
+   thật do `jobs.handle` báo về theo **số giây video đã giao** — và bằng 0 khi
+   không giao được gì.
 """
 from __future__ import annotations
 

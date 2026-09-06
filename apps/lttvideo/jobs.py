@@ -118,13 +118,17 @@ def handle(params: dict, ctx=None, *, _client=None, _kho=None) -> dict:
 
     client.cleanup(job_id)
 
-    giay_gpu = time.time() - t0
+    # ⚠️ Đây là đồng hồ TƯỜNG của cả handler — gồm cả kéo tệp về và đẩy lên R2 —
+    #    chứ KHÔNG phải giây GPU. Tên cũ `giay_gpu` nói sai, và nó từng được
+    #    dùng để tính tiền. Nay chỉ là số liệu vận hành.
+    giay_chay = time.time() - t0
     return {
         "trang_thai": "xong",
         "tep": da_luu,
         "job_wangp": job_id,
-        "giay_gpu": round(giay_gpu, 1),
+        "giay_chay": round(giay_chay, 1),
+        # Giao du so giay da dat => tru dung khoan da giu cho.
         "credit_cost": cost.quyet_toan_credit(
-            giay_gpu=giay_gpu, tran=cost.uoc_credit(giay_video=giay)
+            giay_video_giao=giay, tran=cost.uoc_credit(giay_video=giay)
         ),
     }

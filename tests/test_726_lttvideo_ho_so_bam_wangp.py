@@ -123,12 +123,14 @@ def test_do_phan_giai_16_9_khop_dung_mac_dinh_cua_wangp():
     assert _DO_PHAN_GIAI["16:9"] == _factory()["resolution"]
 
 
-def test_hang_so_gia_bi_danh_dau_la_chua_do_lai():
-    """Hằng số giá đo ở profile 4 / 720p / 20 bước — cả ba nay đều đã đổi.
+def test_gia_KHONG_phu_thuoc_phep_do_nao_nua():
+    """Giá phẳng ⇒ đổi độ phân giải / số bước / profile không làm giá sai.
 
-    Cờ này đỏ cho tới khi `E1` đo lại. Một con số sai mà **im lặng** nguy hiểm
-    hơn một con số sai mà **ồn ào**.
+    ⭐ Đây là bản THAY THẾ cho `test_hang_so_gia_bi_danh_dau_la_chua_do_lai`.
+       Phép kiểm cũ canh một cờ nhắc "nhớ đo lại". Rủi ro thật không phải là
+       quên đo — mà là **một số đo cũ âm thầm định giá**. Bỏ chuỗi phái sinh thì
+       rủi ro ấy mất về cấu trúc, nên chốt luôn điều đó thay vì chốt lời nhắc.
     """
     from apps.lttvideo import cost
 
-    assert hasattr(cost, "DA_DO_LAI_SAU_KHI_DOI_THAM_SO")
+    assert cost.uoc_credit(giay_video=5) == 5 * cost.CREDIT_MOI_GIAY_VIDEO

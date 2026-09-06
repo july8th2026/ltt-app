@@ -1,85 +1,69 @@
-"""Giá của `lttvideo` — quy giây GPU thành credit.
+"""Giá của `lttvideo` — **một mức phẳng, chỉnh được, theo giây video**.
 
-⛔ WanGP **không có bất kỳ khái niệm tiền nào** (kiểm bằng cách tìm symbol
-   `credit|budget|price|cost` trong `shared/api.py`, `shared/mcp_server.py`,
-   `wangp-agent/SKILL.md` — không có định nghĩa nào). Đây là phần LTT phải tự có.
+⛔ WanGP **không có bất kỳ khái niệm tiền nào** (tìm `credit|budget|price|cost`
+   trong `shared/api.py`, `shared/mcp_server.py` — không có định nghĩa nào). Đây
+   là phần LTT phải tự có.
 
-🔴 **Mọi số tiền phái sinh từ MỘT hằng số đo được.** Bài học `V-017` của V3: giá
-   A100 được gõ tay vào một chỗ, rồi mọi thứ phái sinh từ nó, và khi nó sai thì
-   cả bảng ngân sách sai theo mà **không có gì đỏ lên**.
+⭐ **Vì sao phẳng chứ không phái sinh từ giá vốn.** Bản trước tính:
 
-⚠️ `USD_MOI_GIO_GPU` dưới đây là giá **đo được** của lượt P01 (A100 SXM ở
-   `US-KS-2`, `costPerHr` mà RunPod trả về khi tạo pod), **không** phải giá bảng.
-   Bảng giá GraphQL báo $1,39 trong khi hoá đơn thật là $1,59 — đừng dùng bảng.
+       giây video → giây GPU → USD → × hệ số bán → credit
 
-📌 Đổi lớp GPU (`O-006`) ⇒ đổi đúng hằng số này, không đổi chỗ nào khác.
+   Bốn phép nhân, và **mỗi phép cần một hằng số đo được**. Chuỗi ấy chỉ đúng khi
+   cả bốn còn đúng; đổi một tham số sinh (độ phân giải, số bước, profile) là
+   `GIAY_GPU_MOI_GIAY_VIDEO` sai ngay, mà **không có gì đỏ lên** — đúng vết xe
+   `V-017` của V3 mà chính tệp này từng cảnh báo, rồi vẫn đi vào.
+
+   Giai đoạn này dùng **nội bộ**, chưa bán. Một mức phẳng chỉnh được thì:
+     · không có tham số ẩn nào làm nó sai;
+     · đọc bảng giá là biết ngay sẽ trừ bao nhiêu;
+     · đổi giá = sửa **một** số.
+
+📌 Khi nào quay lại giá theo giá vốn: lúc mở bán ra ngoài. Lúc đó cần một phép
+   đo `giây GPU / giây video` ở **đúng cấu hình sản xuất** — xem
+   `docs/VIDEO_AI_V2/PLAN_TOAN_DIEN_THEO_TAI_LIEU_WANGP.md` §4.
 """
 from __future__ import annotations
 
 import math
 
-#: Giá thật của pod A100 SXM 80GB ở `US-KS-2`, đo 2026-09-06 (`costPerHr`).
-#: ⛔ Không phải `lowestPrice` của GraphQL — con số đó báo $1,39 và đã sai.
+#: 🔧 **Núm chỉnh giá — sửa đúng số này, không sửa chỗ nào khác.**
+#:
+#: Đặt 2026-09-06 theo chỉ đạo chủ dự án: giai đoạn nội bộ, giá là một lựa chọn
+#: vận hành chứ không phải một phép tính. Chưa neo vào giá vốn.
+CREDIT_MOI_GIAY_VIDEO: int = 30
+
+#: Giá thật của pod A100 SXM 80GB ở `US-KS-2`, đo 2026-09-06 (`costPerHr` mà
+#: RunPod trả về lúc tạo pod — **không** phải `lowestPrice` của GraphQL, con số
+#: đó báo $1,39 và đã sai).
+#:
+#: ⚠️ **Không tham gia vào giá bán.** Giữ ở đây vì nó là *chi phí* — thứ cần biết
+#:    để so với `CREDIT_MOI_GIAY_VIDEO` khi mở bán. Đừng phái sinh giá từ nó lúc
+#:    này; hai con số đang cố ý độc lập.
 USD_MOI_GIO_GPU: float = 1.59
-
-#: Q31: 1 credit = 100 đồng. Tỉ giá quy USD → credit của nền tảng.
-#: ⚠️ Con số này thuộc chính sách thương mại; nó ở đây vì `lttvideo` là app đầu
-#:    tiên tính tiền theo **giây GPU thuê ngoài** thay vì theo token của provider.
-CREDIT_MOI_USD: float = 260.0
-
-#: Hệ số giá bán trên giá vốn (`V-003` của V3: bán = 2 × giá vốn).
-HE_SO_BAN: float = 2.0
-
-#: Thời gian sinh mỗi giây video.
-#:
-#: 🔴 SỐ NÀY ĐÃ VÔ HIỆU — giữ lại để ước CAO, không phải để tin.
-#:
-#:    Đo ở P01: 20 bước × 79,8 giây cho 5,06 giây video ⇒ ~316 giây GPU mỗi
-#:    giây video. Nhưng phép đo ấy chạy ở **ba tham số nay đều đã đổi**:
-#:
-#:      · profile 4   -> đã chốt profile 1  (`P01-D-15`)
-#:      · 1280x720    -> đã trả về 832x480  (mặc định thật của WanGP)
-#:      · 20 bước     -> đã trả về 30 bước
-#:
-#:    Hai cái đầu làm số này ước CAO, cái thứ ba làm nó ước THẤP, nên không suy
-#:    ra được chiều sai lệch — phải đo lại ở đúng cấu hình (`E1`).
-#:
-#: ⭐ Vì sao vẫn để nó chạy: quyết toán đi theo **giây GPU thật**
-#:    (`quyet_toan_credit`), nên hằng số này chỉ định cỡ khoản GIỮ CHỖ. Một số
-#:    ước cao thì giữ chỗ thừa rồi hoàn lại; xoá nó đi thì không giữ chỗ được gì.
-GIAY_GPU_MOI_GIAY_VIDEO: float = 316.0
-#: Đặt False khi `E1` đo lại xong. Phép kiểm đọc cờ này để không ai quên.
-DA_DO_LAI_SAU_KHI_DOI_THAM_SO: bool = False
-
-
-def _usd_sang_credit(usd: float) -> int:
-    return max(1, math.ceil(usd * CREDIT_MOI_USD))
 
 
 def uoc_credit(*, giay_video: float) -> int:
-    """Ước **cao** để giữ chỗ trước khi chạy.
-
-    ⭐ Giữ chỗ phải ước **cao**: trừ thiếu rồi đòi thêm là chuyện không làm được
-       khi video đã sinh xong.
-    """
+    """Số credit giữ chỗ cho một video dài `giay_video` giây."""
     if giay_video <= 0:
         raise ValueError("giay_video must be > 0")
-    giay_gpu = giay_video * GIAY_GPU_MOI_GIAY_VIDEO
-    usd = giay_gpu / 3600.0 * USD_MOI_GIO_GPU * HE_SO_BAN
-    return _usd_sang_credit(usd)
+    return max(1, math.ceil(giay_video * CREDIT_MOI_GIAY_VIDEO))
 
 
-def quyet_toan_credit(*, giay_gpu: float, tran: int | None = None) -> int:
-    """Số credit thật sự trừ, tính theo **giây GPU đã chạy**.
+def quyet_toan_credit(*, giay_video_giao: float, tran: int | None = None) -> int:
+    """Số credit thật sự trừ, theo **số giây video đã giao**.
 
-    `tran` là số đã giữ chỗ. ⛔ Không bao giờ trừ nhiều hơn số đã báo cho người
-    dùng — nếu chạy lâu hơn dự kiến thì phần vượt là rủi ro của LTT, không phải
-    của khách.
+    ⭐ Giao gì trừ nấy. Không giao được gì (huỷ, hỏng) thì **0** — người dùng
+       không trả tiền cho một tệp không tồn tại.
+
+    `tran` là số đã giữ chỗ. ⛔ Không bao giờ trừ nhiều hơn số đã báo trước: nếu
+    kết quả dài hơn dự kiến thì phần vượt là rủi ro của LTT, không phải của
+    khách.
     """
-    if giay_gpu < 0:
-        raise ValueError("giay_gpu must not be negative")
-    usd = giay_gpu / 3600.0 * USD_MOI_GIO_GPU * HE_SO_BAN
-    credit = _usd_sang_credit(usd)
+    if giay_video_giao < 0:
+        raise ValueError("giay_video_giao must not be negative")
+    if giay_video_giao == 0:
+        return 0
+    credit = max(1, math.ceil(giay_video_giao * CREDIT_MOI_GIAY_VIDEO))
     if tran is not None:
         credit = min(credit, tran)
     return credit

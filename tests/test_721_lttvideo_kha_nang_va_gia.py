@@ -59,24 +59,37 @@ def test_uoc_gia_luon_duong_va_lam_tron_len():
     assert isinstance(cost.uoc_credit(giay_video=5), int)
 
 
-def test_quyet_toan_theo_giay_GPU_THAT_chu_khong_theo_uoc_tinh():
-    """Giữ chỗ là ước cao; quyết toán mới là số thật."""
-    giu = cost.uoc_credit(giay_video=5)
-    that = cost.quyet_toan_credit(giay_gpu=60.0)
-    assert that != giu or True  # hai con so doc lap nhau
-    assert cost.quyet_toan_credit(giay_gpu=120.0) > that
+def test_quyet_toan_theo_SO_GIAY_DA_GIAO():
+    """Giao gì trừ nấy — cùng một mức phẳng với lúc giữ chỗ."""
+    assert cost.quyet_toan_credit(giay_video_giao=10.0) > cost.quyet_toan_credit(
+        giay_video_giao=5.0
+    )
+    assert cost.quyet_toan_credit(giay_video_giao=5.0) == cost.uoc_credit(giay_video=5)
+
+
+def test_khong_giao_duoc_gi_thi_KHONG_TRU_DONG_NAO():
+    """⛔ Huỷ hoặc hỏng ⇒ 0. Không ai trả tiền cho một tệp không tồn tại."""
+    assert cost.quyet_toan_credit(giay_video_giao=0) == 0
 
 
 def test_quyet_toan_khong_bao_gio_vuot_uoc_giu_cho():
     """⛔ Trần cứng: không được trừ nhiều hơn số đã báo cho người dùng."""
     giu = cost.uoc_credit(giay_video=5)
-    assert cost.quyet_toan_credit(giay_gpu=99999.0, tran=giu) == giu
+    assert cost.quyet_toan_credit(giay_video_giao=99999.0, tran=giu) == giu
 
 
-def test_gia_phai_suy_tu_MOT_hang_so_do_duoc():
-    """`san-lam-tron-la-mot-tang-khac`: mọi số tiền phái sinh từ một hằng đo được."""
-    assert cost.USD_MOI_GIO_GPU > 0
-    assert cost.CREDIT_MOI_USD > 0
+def test_gia_la_MOT_num_chinh_duoc_chu_khong_phai_mot_chuoi_phai_sinh():
+    """🔴 Bản trước phái sinh giá qua BỐN phép nhân, mỗi phép một hằng số đo được.
+
+    Chuỗi ấy chỉ đúng khi cả bốn còn đúng: đổi độ phân giải / số bước / profile
+    là `GIAY_GPU_MOI_GIAY_VIDEO` sai ngay mà **không có gì đỏ lên**. Giai đoạn
+    nội bộ dùng một mức phẳng, và phép kiểm này chốt rằng nó vẫn phẳng.
+    """
+    assert cost.CREDIT_MOI_GIAY_VIDEO > 0
+    assert cost.uoc_credit(giay_video=7) == 7 * cost.CREDIT_MOI_GIAY_VIDEO
+    # gia von van duoc ghi lai, nhung KHONG duoc tham gia vao gia ban
+    assert not hasattr(cost, "HE_SO_BAN"), "hệ số bán quay lại ⇒ giá lại phái sinh"
+    assert not hasattr(cost, "GIAY_GPU_MOI_GIAY_VIDEO"), "hằng số đã vô hiệu quay lại"
 
 
 @pytest.mark.parametrize("giay", [0, -5])
