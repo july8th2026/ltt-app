@@ -604,6 +604,22 @@ def _steps(quick: bool, noi_tiep: bool = False) -> list[Step]:
         #    không theo **tổng** — một mốc tổng có cửa hoán đổi một-đổi-một đi
         #    lọt (xoá một `F401`, thêm một `F811` thì tổng không đổi).
         Step("ruff", [sys.executable, "tools/check_ruff.py"], ROOT),
+        # `mypy` cung nam san trong may nhieu thang ma KHONG co cau hinh.
+        # Do 06/09: 590 phat hien / 14 ma loi, ~45 giay.
+        #
+        #    attr-defined   cham thuoc tinh KHONG TON TAI  -> AttributeError
+        #    union-attr     cham thuoc tinh tren thu co the None
+        #    arg-type       truyen sai KIEU cho tham so
+        #
+        # Ba ma tren bat dung lop A trong AGENTS.md muc 4d: DOAN hinh dang
+        # API thay vi DOC no. So luong tung ma o `tools/check_mypy.moc`,
+        # khong chep vao day.
+        #
+        # Dong quan trong nhat cua `mypy.ini` la `plugins = pydantic.mypy`:
+        # thieu no thi mypy coi moi truong Pydantic co `Field(mac_dinh)` la
+        # BAT BUOC va de ra 58 `call-arg` SAI. Do 06/09 tren mot tep:
+        # khong plugin 60 loi, co plugin 1 loi — va cai 1 do la loi that.
+        Step("mypy", [sys.executable, "tools/check_mypy.py"], ROOT),
         # PowerShell khong phan biet hoa thuong o ten bien, va tham so cua script
         # chi la mot bien thuong. Nen mot vong lap gan `$ten` ghi de tham so
         # `-Ten` — khong loi, khong canh bao. Da xay ra 31/08/2026: giong tao ra

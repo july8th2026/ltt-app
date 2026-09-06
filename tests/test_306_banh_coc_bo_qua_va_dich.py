@@ -27,7 +27,8 @@ def _chay(cong_cu: str, *doi_so: str, cwd: pathlib.Path | None = None,
           po: pathlib.Path | None = None, moc: pathlib.Path | None = None,
           src: pathlib.Path | None = None, thu_muc: pathlib.Path | None = None,
           bo_qua_moc: pathlib.Path | None = None,
-          ruff_moc: pathlib.Path | None = None):
+          ruff_moc: pathlib.Path | None = None,
+          mypy_moc: pathlib.Path | None = None):
     """Chay CHINH cong do. `po` tro no sang mot BAN SAO cua `messages.po`.
 
     🔴 VI SAO CAN `po` — VA VI SAO BA LAN VA TRUOC DEU KHONG DU.
@@ -69,6 +70,8 @@ def _chay(cong_cu: str, *doi_so: str, cwd: pathlib.Path | None = None,
         env["LTT_BO_QUA_MOC"] = str(bo_qua_moc)
     if ruff_moc is not None:
         env["LTT_RUFF_MOC"] = str(ruff_moc)
+    if mypy_moc is not None:
+        env["LTT_MYPY_MOC"] = str(mypy_moc)
     return subprocess.run([sys.executable, f"tools/{cong_cu}", *doi_so],
                           cwd=cwd or GOC, capture_output=True, text=True,
                           encoding="utf-8", errors="replace", env=env)
@@ -487,6 +490,102 @@ def test_ruff_nam_trong_gate_VA_chay_ca_o_quick():
     for quick in (True, False):
         ten = [s.name for s in gate._steps(quick=quick)]
         assert "ruff" in ten, f"buoc `ruff` vang mat khi quick={quick}: {ten}"
+
+
+# ── 6. Banh coc thu TU: `mypy` (them 06/09/2026) ───────────────────────────
+#
+# ⭐ Cung khuon voi cum `ruff` o tren: ha MOC tren mot BAN SAO, khong tiem loi
+#    vao cay. Xem chu thich cua muc 5.
+
+
+def _mypy_moc_that(tmp_path: pathlib.Path) -> dict[str, int]:
+    ban = tmp_path / "mypy_goc.moc"
+    r = _chay("check_mypy.py", "--accept", mypy_moc=ban)
+    assert r.returncode == 0, f"khong chup duoc moc mypy:\n{r.stdout}\n{r.stderr}"
+    dem: dict[str, int] = {}
+    for d in ban.read_text(encoding="utf-8").splitlines():
+        d = d.strip()
+        if d and not d.startswith("#"):
+            ma, _, so = d.partition("=")
+            dem[ma.strip()] = int(so.strip())
+    assert dem, "moc mypy rong — `mypy.ini` hong hay mypy chet im lang?"
+    return dem
+
+
+def test_mypy_hien_tai_dat_moc():
+    r = _chay("check_mypy.py")
+    assert r.returncode == 0, (
+        "moc `check_mypy.moc` khong con khop cay:\n" + r.stdout + r.stderr)
+
+
+def test_mypy_TANG_o_mot_ma_thi_DO(tmp_path):
+    """Doi chung: banh coc PHAI do khi mot ma vuot moc."""
+    that = _mypy_moc_that(tmp_path)
+    ma = sorted(that)[0]
+    thap = dict(that, **{ma: that[ma] - 1})
+    r = _chay("check_mypy.py", mypy_moc=_ghi_moc(tmp_path / "thap.moc", thap))
+    assert r.returncode == 1, f"vuot moc o {ma} ma van xanh — banh coc khong can"
+    assert ma in r.stdout, f"do roi nhung khong noi ma nao ({ma}):\n{r.stdout}"
+
+
+def test_mypy_HOAN_DOI_van_do_du_TONG_KHONG_DOI(tmp_path):
+    """Xoa mot `var-annotated` (vo hai) + them mot `attr-defined`
+    (`AttributeError` luc chay) = tong khong doi. Moc dem TONG se im."""
+    that = _mypy_moc_that(tmp_path)
+    if len(that) < 2:
+        return
+    tang, giam = sorted(that)[0], sorted(that)[1]
+    lech = dict(that)
+    lech[tang] -= 1
+    lech[giam] += 1
+    assert sum(lech.values()) == sum(that.values()), "phep dung khong giu TONG"
+    r = _chay("check_mypy.py", mypy_moc=_ghi_moc(tmp_path / "lech.moc", lech))
+    assert r.returncode == 1, (
+        "hoan doi mot-doi-mot lot qua — moc mypy dang dem TONG chu khong phai "
+        "tung MA LOI")
+
+
+def test_mypy_ini_THUAN_ASCII():
+    """🔴 `mypy` doc `mypy.ini` bang `configparser`, va ham do mo tep theo bang
+       ma HE THONG (cp1252 tren may nay) chu khong phai UTF-8.
+
+       Do 06/09: mot ban `mypy.ini` co emoji lam mypy chet han
+       `UnicodeDecodeError ... byte 0x90`, rc=2, truoc khi kiem MOT DONG ma
+       nao. Va `check_mypy.py` khong the coi rc=2 la "0 loi" — nen luot gate
+       se do, khong im lang; nhung trieu chung se tro ve mot tep .ini chu
+       khong ve ma nguon, va do la cho rat kho doan.
+
+    ⭐ Cung mot lop voi luat `.ps1 phai thuan ASCII` trong `CLAUDE.md` quy
+       tac 2.
+    """
+    b = (GOC / "mypy.ini").read_bytes()
+    xau = [(i, by) for i, by in enumerate(b) if by > 127]
+    assert not xau, (
+        f"`mypy.ini` co {len(xau)} byte ngoai ASCII (dau tien o vi tri "
+        f"{xau[0][0]}, byte 0x{xau[0][1]:02x}) — configparser doc no bang "
+        f"cp1252 va se chet")
+
+
+def test_mypy_nam_trong_gate_VA_chay_ca_o_quick():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("gate_de_soi_mypy",
+                                                  GOC / "tools" / "gate.py")
+    gate = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(gate)
+    for quick in (True, False):
+        ten = [s.name for s in gate._steps(quick=quick)]
+        assert "mypy" in ten, f"buoc `mypy` vang mat khi quick={quick}: {ten}"
+
+
+def test_mypy_va_ruff_MIEN_cung_mot_danh_sach():
+    """Hai cong cu nhin cung pham vi thi mot tep duoc mien o cho nay khong
+    bat ngo bi bat o cho kia. `core/` va `cutclipshort/` la hai cai dat nhat:
+    mot la 15.668 dong dong bang, mot la engine VENDOR."""
+    ruff = (GOC / "ruff.toml").read_text(encoding="utf-8")
+    mypy = (GOC / "mypy.ini").read_text(encoding="utf-8")
+    for thu_muc in ("core", "cutclipshort"):
+        assert thu_muc in ruff, f"`{thu_muc}` khong con duoc mien trong ruff.toml"
+        assert thu_muc in mypy, f"`{thu_muc}` khong con duoc mien trong mypy.ini"
 
 
 def test_KHONG_test_nao_duoc_GHI_vao_messages_po_THAT():
