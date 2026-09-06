@@ -57,6 +57,23 @@ GOC = pathlib.Path(__file__).resolve().parent.parent
 THU_MUC = ("apps", "platform_core", "server", "tools", "llm_gateway",
            "render_gateway", "sdk", "nexus_agent", "codex_sidecar")
 
+#: Cay de QUET + thu muc trong no. Cho phep tro sang mot cay MAU da biet
+#: truoc so loi.
+#:
+#: 🔴 VI SAO CAN. Do 06/09 bang `cosmic-ray` tren `check_ruff.py` (cung mot
+#:    khuon): doi `dem[ma] = ... + 1` thanh `** 1` lam MOI so dem thanh 0,
+#:    nen `tang` luon rong va banh coc XANH VINH VIEN — ma khong phep kiem
+#:    nao thay, vi tat ca deu lay moc tu chinh `quet()`. Hong so voi hong
+#:    thi van bang nhau.
+#:
+#: ⛔ THU_MUC phai TRUYEN VAO chu khong duoc "tu bo qua thu muc khong ton
+#:    tai": mot thu muc bi doi ten se am tham roi khoi pham vi quet, va so
+#:    phat hien GIAM — trong y het mot cai thien.
+_GOC_THU = os.environ.get("LTT_MYPY_GOC")
+GOC_QUET = pathlib.Path(_GOC_THU) if _GOC_THU else GOC
+_TM_THU = os.environ.get("LTT_MYPY_THU_MUC")
+THU_MUC_QUET = tuple(t.strip() for t in _TM_THU.split(",") if t.strip()) if _TM_THU else THU_MUC
+
 #: Cho phep phep kiem tro moc di noi khac — xem `AGENTS.md` muc "chot khong
 #: duoc ghi vao cay": mot phep kiem sua tep that trong kho tu pha luot gate
 #: chua no.
@@ -73,8 +90,8 @@ _DONG_LOI = re.compile(r" error: .*\[([a-z][a-z-]*)\]\s*$")
 def quet() -> dict[str, int]:
     """{ma_loi: so_luong} theo cau hinh trong `mypy.ini`."""
     r = subprocess.run(
-        [sys.executable, "-m", "mypy", "--no-error-summary", *THU_MUC],
-        cwd=GOC, capture_output=True, text=True, encoding="utf-8", errors="replace")
+        [sys.executable, "-m", "mypy", "--no-error-summary", *THU_MUC_QUET],
+        cwd=GOC_QUET, capture_output=True, text=True, encoding="utf-8", errors="replace")
     # mypy tra 1 khi CO phat hien — binh thuong. 2 la CHET (cau hinh hong,
     # trung ten module, tep .ini khong doc duoc): do KHONG duoc im lang thanh
     # "0 loi", vi mot moc 0 se nuot moi thu ve sau.

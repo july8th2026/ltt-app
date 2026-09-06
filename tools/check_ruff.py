@@ -39,6 +39,7 @@ canh bao ve `Path(__file__).parents[n]`.
 from __future__ import annotations
 
 import json
+import os
 import pathlib
 import subprocess
 import sys
@@ -48,16 +49,27 @@ GOC = pathlib.Path(__file__).resolve().parent.parent
 #: Cho phep phep kiem tro moc di noi khac — xem `AGENTS.md` muc "chot khong
 #: duoc ghi vao cay": mot phep kiem sua tep that trong kho tu pha luot gate
 #: chua no.
-_MOC_THU = __import__("os").environ.get("LTT_RUFF_MOC")
+_MOC_THU = os.environ.get("LTT_RUFF_MOC")
 TEP_MOC = (pathlib.Path(_MOC_THU) if _MOC_THU
            else pathlib.Path(__file__).with_name("check_ruff.moc"))
+
+#: Cay de QUET. Cho phep tro sang mot cay mau da biet truoc so loi.
+#:
+#: 🔴 VI SAO CAN NO. Do 06/09 bang `cosmic-ray`: doi `dem[ma] = ... + 1`
+#:    thanh `** 1` lam MOI so dem thanh 0, nen `tang` luon rong va banh coc
+#:    XANH VINH VIEN. Bon phep kiem cua no deu khong thay, vi ca bon lay moc
+#:    tu chinh `--accept` -> `quet()`: hong so voi hong thi van bang nhau.
+#:
+#: ⇒ Phai co MOT phep kiem doi chieu `quet()` voi mot su that DOC LAP.
+_GOC_THU = os.environ.get("LTT_RUFF_GOC")
+GOC_QUET = pathlib.Path(_GOC_THU) if _GOC_THU else GOC
 
 
 def quet() -> dict[str, int]:
     """{ma_luat: so_luong} theo cau hinh trong `ruff.toml`."""
     r = subprocess.run(
         [sys.executable, "-m", "ruff", "check", "--output-format", "json", "."],
-        cwd=GOC, capture_output=True, text=True, encoding="utf-8", errors="replace")
+        cwd=GOC_QUET, capture_output=True, text=True, encoding="utf-8", errors="replace")
     # ruff tra 1 khi CO phat hien — do la binh thuong, khong phai loi chay.
     if r.returncode not in (0, 1):
         raise SystemExit(f"ruff khong chay duoc (ma {r.returncode}):\n{r.stderr[:400]}")
