@@ -31,7 +31,7 @@ from __future__ import annotations
 
 import unicodedata
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, select
 
 from apps.chatltt.tables import ChatlttDoan
 
