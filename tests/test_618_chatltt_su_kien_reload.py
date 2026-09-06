@@ -172,7 +172,14 @@ def test_su_kien_cua_facade_ap_nguyen_xi(db, monkeypatch):
                 sse({"choices": [{"delta": {"reasoning_content": "n"}}]}),
                 sse({"choices": [{"delta": {"content": "xin"}}]}),
                 sse({"choices": [{"delta": {"content": " chao"}, "finish_reason": "stop"}]}),
-                sse({"choices": [], "usage": {"prompt_tokens": 50, "completion_tokens": 3}}),
+                # 10.000 vao (500 mcredit) + 1.250 ra (500) = DUNG 1,000 credit.
+                # Do la co duy nhat cho `thu == 1` o CA C1 (lam tron len) lan C3
+                # (chia lay nguyen), nen khang dinh `credit_thu >= 1` duoi day
+                # bat bien voi chinh sach lam tron. Co cu (50, 3) chi qua duoc
+                # nho CAI SAN cua C1 — tuc mot phep kiem ve SU KIEN dang duoc
+                # do boi mot chinh sach TINH TIEN.
+                sse({"choices": [],
+                     "usage": {"prompt_tokens": 10_000, "completion_tokens": 1_250}}),
                 b"data: [DONE]" + NL + NL])
 
         def xong(self, tokens=0):
