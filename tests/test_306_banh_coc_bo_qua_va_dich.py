@@ -1034,3 +1034,43 @@ def test_a11y_moc_chi_chot_violations_khong_chot_incomplete():
     ds = [d.split("=")[0].strip() for d in moc.read_text(encoding="utf-8").splitlines()
           if d.strip() and not d.strip().startswith("#")]
     assert ds, "moc a11y rong"
+
+
+# ── 12. Nut sao chep cho O MOT DONG (S5, 07/09/2026) ──────────────────────
+
+
+def test_sao_chep_js_CO_xu_ly_o_mot_dong():
+    """🔴 Truoc 07/09 `vps_base.html` GHI rang co nut sao chep cho "moi khoi ma
+       VA moi `<code data-chep>`" — nhung `sao_chep.js` chi quet `main pre`.
+
+       Chu thich noi mot dang, ma lam mot neo, va **dia chi IP — dung thu khach
+       VPS vao trang de lay — khong co nut nao**. Do la kieu hong te nhat: mot
+       tai lieu KHANG DINH mot hanh vi khong ton tai, nen khong ai di kiem.
+    """
+    js = (GOC / "server" / "static" / "sao_chep.js").read_text(encoding="utf-8")
+    assert "code[data-chep]" in js, (
+        "`sao_chep.js` khong xu ly `<code data-chep>` — trong khi `_vps_mac.html` "
+        "sinh ra chung va `vps_base.html` hua co nut")
+    mac = (GOC / "server" / "templates" / "_vps_mac.html").read_text(encoding="utf-8")
+    assert "data-chep" in mac, "macro thoi khong danh dau o sao chep nua?"
+
+
+def test_co_da_xu_ly_KHONG_trung_ten_voi_dau_danh_dau():
+    """⛔ `data-chep` la DAU DANH DAU do template dat ("hay gan nut cho toi").
+       Neu JS cung dung `data-chep` lam co da-xu-ly ("toi gan roi") thi mot o
+       vua la yeu cau vua la da-xong — va no se bi bo qua ngay lan quet dau.
+
+       Truoc 07/09 dung la nhu vay: `pre.dataset.chep = "1"`.
+    """
+    js = (GOC / "server" / "static" / "sao_chep.js").read_text(encoding="utf-8")
+    assert "dataset.chepXong" in js, "co da-xu-ly phai la `data-chep-xong`"
+    assert 'dataset.chep =' not in js and 'dataset.chep=' not in js, (
+        "JS van dung `data-chep` lam co da-xu-ly — trung ten voi dau danh dau")
+
+
+def test_sao_chep_js_duoc_cache_bust():
+    """`CLAUDE.md` quy tac 6: doi tai san tinh ma URL khong doi thi khach nhan
+    ban CU cho toi khi het TTL cua Cloudflare."""
+    t = (GOC / "server" / "templating.py").read_text(encoding="utf-8")
+    assert "sao_chep.js" in t.split("TAI_SAN_CO_VERSION", 1)[1][:400], (
+        "`sao_chep.js` khong nam trong TAI_SAN_CO_VERSION")

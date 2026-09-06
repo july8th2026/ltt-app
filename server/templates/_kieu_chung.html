@@ -192,4 +192,20 @@
     .khoi-ma:hover > .nut-chep, .khoi-ma > .nut-chep:focus-visible { opacity:1; }
     .khoi-ma > .nut-chep.xong { color:var(--ok); border-color:var(--ok); opacity:1; }
     @media (hover: none) { .khoi-ma > .nut-chep { opacity:1; } }
+
+    /* Ô một dòng (`<code data-chep>`): địa chỉ IP, mã máy, khoá API.
+       ⛔ KHÔNG dùng `opacity:0` như khối `pre`. Khối mã có thể ẩn nút cho tới
+          khi rê chuột vì nội dung tự nó đã đọc được; còn một địa chỉ IP thì
+          khách tới đây CHÍNH LÀ để chép — giấu nút là giấu việc duy nhất họ
+          cần. Và trên cảm ứng không có "rê chuột" để làm nó hiện ra. */
+    .nut-chep-o {
+      margin-left:8px; padding:2px 8px; font-size:11px; vertical-align:middle;
+      border:1px solid var(--line); border-radius:6px;
+      background:var(--panel); color:var(--muted); cursor:pointer;
+      /* WCAG 2.5.8: vùng chạm tối thiểu. `min-height` một mình không đủ vì nút
+         nằm trong dòng — cần cả `min-width`. */
+      min-height:32px; min-width:44px;
+    }
+    .nut-chep-o:hover, .nut-chep-o:focus-visible { color:var(--fg); border-color:var(--fg); }
+    .nut-chep-o.xong { color:var(--ok); border-color:var(--ok); }
 </style>
