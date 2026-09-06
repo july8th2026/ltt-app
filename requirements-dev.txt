@@ -28,7 +28,7 @@ pytest-asyncio==1.3.0
     # ── Kiem tinh ──────────────────────────────────────────────────────────
 ruff==0.15.9                 # lint + format; banh coc tools/check_ruff.py
 mypy==1.20.0                 # kieu tinh;    banh coc tools/check_mypy.py
-import-linter==2.11          # ranh gioi kien truc
+import-linter==2.11          # ranh gioi kien truc; tools/check_ranh_gioi.py
 
     # ── Do chat luong BO TEST ────────────────────────────────────
 diff-cover==10.5.1           # phu cua DONG MOI; tools/do_phu_diff.py

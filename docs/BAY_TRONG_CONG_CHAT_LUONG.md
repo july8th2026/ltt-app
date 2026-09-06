@@ -1770,3 +1770,68 @@ phải `timeout.exe` tự nhân bản, mà **câu hỏi xuất hiện bên trong
 ⇒ Lọc tiến trình để **giết** thì `cmdline` không đủ. Điều kiện phải là thứ tiến
 trình đo *không thể tự thoả*: `cwd` bằng đúng cây, **và** `pid` khác `os.getpid()`
 cùng toàn bộ chuỗi cha của nó.
+
+## Bẫy 26 — Một bước gate đỏ vì **TẢI MÁY**, không vì mã
+
+Đo 06/09/2026. `python tools\gate.py` trả `RESULT: FAIL (1/28)`, bước hỏng là
+`bat bien da tien trinh` (`tests/test_214_multi_process_runtime.py`).
+
+Triệu chứng **đổi giữa hai lượt chạy cùng một cây, cùng một commit**:
+
+```
+lượt 1   sqlalchemy...UndefinedTable: relation "api_metric_samples" does not exist
+lượt 2   AssertionError: chỉ 0/6 job xong — có worker chết giữa chừng
+```
+
+Hai thông điệp ấy dẫn về hai giả thuyết hoàn toàn khác nhau — một cái nghe như
+**thiếu migration**, một cái nghe như **worker hỏng**. Cả hai đều sai.
+
+### Đối chứng mới là thứ kết luận, không phải thông điệp lỗi
+
+Bước này đã **XANH hai lượt gate trước đó cùng ngày** (138,2 s). Nên phép thử
+đúng không phải là đọc traceback, mà là:
+
+> chạy **đúng bước ấy** ở **commit đã biết là xanh**, trong **điều kiện máy
+> hiện tại**.
+
+```
+git worktree add --detach D:\LTT_doi_chung <commit-đã-xanh>
+# rồi chạy tools\check_multiproc.py trong cây đó, có giữ khoá
+```
+
+Kết quả: commit đã-biết-là-xanh **cũng đỏ**, cùng lỗi. ⇒ Nguyên nhân nằm ngoài
+mã. Lúc đo, hai cây khác đang chạy nặng (**412%** và **32%** CPU).
+
+🔴 Không có đối chứng này, đường đi tự nhiên là đi sửa `create_all()` hoặc thêm
+   một migration cho `api_metric_samples` — **sửa một thứ không hỏng**, và bản
+   "sửa" ấy sẽ được commit kèm một lời giải thích rất thuyết phục.
+
+### Vì sao khoá không cứu được
+
+`test_214` sinh **tiến trình worker thật** rồi chờ chúng xong trong một hạn.
+Dưới tải nặng chúng bị bỏ đói và chết. Mà `cua_so_yen` chỉ chặn được ai **XIN**
+khoá — xem **Bẫy 22**. Một phiên chạy `pytest` hẹp hay một tác vụ nặng bất kỳ
+không xin khoá vẫn ăn CPU bình thường.
+
+⚠️ Và đo được 06/09: **hai worktree chạy bước `check_multiproc` mà `gate.py`
+   của chúng KHÔNG khai `postgres_test`** (`auto-scan-video-v4-mvp`,
+   `mobile-v1`). Bước ấy gọi `drop_all()` lên CSDL test **dùng chung**. Đó là
+   một cửa va chạm thật, độc lập với chuyện tải.
+
+```
+findstr /C:"postgres_test" <cây>\tools\gate.py
+```
+
+### Luật
+
+⛔ Một lượt gate đỏ ở `bat bien da tien trinh` **chưa phải bằng chứng về mã**
+   cho tới khi đã đo tải. Trình tự đúng:
+
+1. `python tools\may_ban.py` — có cây nào đang bận không;
+2. nếu bận: **chờ**, rồi chạy lại. Đừng đọc traceback vội;
+3. nếu vẫn đỏ khi máy rảnh: lúc đó mới là tín hiệu về mã;
+4. còn nghi ngờ thì dựng cây đối chứng ở commit đã-biết-là-xanh.
+
+⭐ Đây là mặt còn lại của **Bẫy 24**: ở đó một kết quả ÂM không đối chứng trông
+   giống một phát hiện; ở đây một kết quả ĐỎ không đối chứng trông giống một
+   lỗi hồi quy.

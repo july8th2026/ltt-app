@@ -1,0 +1,106 @@
+# Cau hinh `import-linter` -- chot RANH GIOI IMPORT giua cac tang.
+#
+# =========================================================================
+# [!] TEP NAY PHAI THUAN ASCII, cung ly do voi `mypy.ini`.
+#     `import-linter` doc cau hinh INI bang `configparser`, va ham do mo tep
+#     theo ENCODING CUA HE THONG (cp1252 tren may nay), khong phai UTF-8. Do
+#     06/09: mot `mypy.ini` co emoji lam mypy chet han
+#     `UnicodeDecodeError ... byte 0x90` truoc khi kiem mot dong ma nao.
+#     Cung mot lop voi luat `.ps1 phai thuan ASCII` (CLAUDE.md quy tac 2).
+# =========================================================================
+#
+# VI SAO CONG CU NAY *KHONG* THAY `tools/lint_app_contract.py`
+#
+#     Plan ban dau ghi "import-linter thay lint_app_contract". Do la SAI, va
+#     do duoc bang cach doc chinh hai cong cu:
+#
+#         lint_app_contract  kiem CO HOC hop dong app -- manifest co MANIFEST,
+#                            slug khop ten thu muc, route co CSRF/require_login,
+#                            route khong phinh thanh noi chua nghiep vu
+#         import-linter      kiem RANH GIOI IMPORT -- tang nao duoc import tang
+#                            nao
+#
+#     Hai thu giai hai bai toan khac nhau. Bo cai nao cung mat mot lop bao ve.
+#     => Giu ca hai. Ghi day de lan sau khong ai "don gian hoa" bang cach xoa.
+#
+# TRANG THAI DO DUOC 06/09/2026 (ast, khong phai uoc luong)
+#
+#     platform_core -> apps      0 tep      <- da sach, chot lai
+#     platform_core -> server    0 tep      <- da sach, chot lai
+#     apps -> apps khac          1 cap      taovideo -> upscalevideo
+#     server -> apps             1 tep      server/api/streaming.py -> ltt_llm
+#
+# [*] Hai vi pham con lai KHONG bi giau bang mot con so mocc. Chung nam duoi
+#     dang `ignore_imports` co TEN va co LY DO, nen ai doc cung thay chinh xac
+#     cai gi dang duoc mien va vi sao. Do la khac biet giua mot ngoai le va mot
+#     mon no vo hinh.
+
+[importlinter]
+root_packages =
+    platform_core
+    server
+    apps
+include_external_packages = False
+
+
+[importlinter:contract:nen-tang-khong-phu-thuoc-app]
+name = platform_core khong duoc import apps hay server
+type = forbidden
+source_modules =
+    platform_core
+forbidden_modules =
+    apps
+    server
+# CLAUDE.md: "Them mot thu muc vao apps/. KHONG sua platform_core/ hay server/."
+# Neu nen tang import nguoc len app thi cau ay khong con dung duoc nua: go mot
+# app se lam vo nen tang. Do duoc 06/09: 0 vi pham, nen day la banh coc thuan
+# -- no chi ngan mon no MOI.
+
+
+[importlinter:contract:app-doc-lap-voi-nhau]
+name = app khong duoc import app khac
+type = independence
+modules =
+    apps.agent
+    apps.anhnoibo
+    apps.autosubvideo
+    apps.chataistudio
+    apps.chatltt
+    apps.ltt_llm
+    apps.ltt_voice
+    apps.nexus
+    apps.prompt_ai_ommi
+    apps.qualitylab
+    apps.taoanh
+    apps.taoclipngan
+    apps.taovideo
+    apps.thumbnail
+    apps.upscalevideo
+    apps.vps
+ignore_imports =
+    # NO KY THUAT, khong phai mien tru vinh vien.
+    #
+    # `taovideo` goi thang sang `upscalevideo` de lay gia va de day job nang
+    # cap. Theo hop dong app, viec dung chung phai di qua `platform_core` chu
+    # khong phai app nay goi app kia -- neu khong, go `upscalevideo` se lam vo
+    # `taovideo` mot cach im lang.
+    apps.taovideo.routes -> apps.upscalevideo.cost
+    apps.taovideo.routes -> apps.upscalevideo.service
+
+
+[importlinter:contract:server-khong-phu-thuoc-app-cu-the]
+name = server khong duoc import mot app cu the
+type = forbidden
+source_modules =
+    server
+forbidden_modules =
+    apps
+ignore_imports =
+    # NO KY THUAT. `server/api/streaming.py` doc ngan sach va bang alias cua
+    # `ltt_llm`. CLAUDE.md noi ro: "Neu thay buoc phai sua nen tang thi DUNG
+    # LAI va noi ro vi sao -- do la dau hieu hop dong app con thieu."
+    #
+    # Duong ra dung la day hai thu ay len `platform_core` (mot diem noi cho
+    # provider LLM), khong phai noi long hop dong.
+    server.api.streaming -> apps.ltt_llm.ngan_sach
+    server.api.streaming -> apps.ltt_llm.features
