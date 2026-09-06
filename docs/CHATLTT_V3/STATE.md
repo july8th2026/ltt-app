@@ -166,21 +166,44 @@ sau cả M1–M3. `test_833::test_CHUA_mo_cua_thu_tu` chốt sự vắng mặt �
 |---|---|---|
 | 1 | Gate đầy đủ PASS trên cây này | ✅ `20260905T181119Z-12404.json` — 26 bước · 0 FAIL · `cay_da_doi_giua_chung=False` · sha `4a55620f` |
 | 2 | **Mở trình duyệt thật, xem bốn nhãn trạng thái V3 hiện đúng** | ✅ **05/09** — xem §dưới |
-| 3 | Kiểm trên URL công khai, không chỉ loopback (`CLAUDE.md` 5b) | ❌ chưa |
+| 3 | Kiểm trên URL công khai, không chỉ loopback (`CLAUDE.md` 5b) | ✅ **07/09** — `https://app.lttstudios.com/en/chatltt/api/hoi-thoai/cv_x/tep` trả **303** (cổng cờ cho qua → `require_login`); đối chứng route không tồn tại vẫn **404**; `/health/ready` 200 |
 | 4 | R2b được chủ dự án chốt | ✅ **06/09 — chốt C3**, đã deploy (`334004d4`), đang thu thật |
 | 5 | **Giá trích tài liệu** được chủ dự án chốt | 🟡 **06/09 — đang chạy giá TẠM** `20` mcredit/1.000 ký tự (`apps/chatltt/gia_trich.py`). Cơ chế chạy đầu-cuối; `CHU_DU_AN_DA_CHOT = False` cho tới khi có người chốt. |
 
-⛔ **Và một sự thật không nằm trong bảng trên: hai cờ VẪN TẮT trên
-production.** Đo 06/09 sau deploy `334004d4`:
+### ✅ 07/09 — `_FILES` và `_TOOLS` ĐÃ BẬT trên production
 
 ```
-grep -c LTT_CHATLTT_V3  C:/LTTPlatform/secrets/app.env   ->  0
+loopback  /en/chatltt/api/hoi-thoai/cv_x/tep   404 -> 303
+cong khai https://app.lttstudios.com/...       303
+doi chung /en/chatltt/api/khong-ton-tai        404   (phep do phan biet duoc)
+/health/ready  ca hai duong                    200   (khong gian doan)
 ```
 
-⇒ Mã Làn A **đã lên production và đã qua gate**, nhưng `LTT_CHATLTT_V3_TOOLS`
-mặc định TẮT nên **vòng lặp agentic chưa chạm một người dùng nào**. "100 % mã"
-và "0 % tới khách" là hai con số **cùng đúng**, và trộn chúng lại là cách một
-báo cáo tiến độ nói dối mà không có câu nào sai.
+⚠️ Nói cho chính xác: **`_FILES` được chứng minh** bằng hành vi route. `_TOOLS`
+gác vòng lặp tool chứ không gác route nào, nên nó **không có phép đo HTTP
+riêng** — nó vào cùng lượt nạp, nhưng chưa được quan sát trực tiếp.
+
+### 🔴 Vì sao nó "đã bật" nhiều giờ mà vẫn TẮT: NSSM nướng ENV lúc CÀI
+
+Dịch vụ chạy qua NSSM, và NSSM **nướng biến môi trường vào đăng ký dịch vụ lúc
+CÀI** (`AppEnvironmentExtra`). `serverun.py` chỉ đọc `os.environ` — nó
+**không tự đọc `secretspp.env` lúc chạy**.
+
+⇒ Sửa `app.env` rồi `Restart-Service` = *"dịch vụ lên lại với ENV CŨ, không lỗi
+  nào báo"*. Cờ nằm đúng chỗ, không BOM, kết dòng đúng — và **vô tác dụng**.
+
+⭐ Cách đúng: `setup/nap_lai_env.ps1` (đã có sẵn trong kho). Header của nó ghi
+   rằng bẫy này **đã dính hai lần** trước đây — cổng VLM máy B, và
+   `LTT_PUBLIC_API_TOOLS` ngày 23/08. Triệu chứng giống hệt cả ba lần: *"cấu
+   hình đúng, dịch vụ chạy, tính năng không bật"*.
+
+⛔ **Và một sự cố bảo mật trong lúc chẩn đoán, ghi lại để không lặp:** một lệnh
+   `nssm get … AppEnvironmentExtra` đã in **toàn bộ bí mật production** ra bản
+   ghi phiên (session secret, khoá mã hoá token, mật khẩu CSDL, Turnstile,
+   Resend, Gemini, R2, ModelArk). `secrets/` là vùng cấm, nhưng **cấu hình dịch
+   vụ LÀ nơi chứa bí mật** — cùng một thứ, khác một cửa. `nap_lai_env.ps1` cố ý
+   không in giá trị nào (*"72 biến (không in giá trị)"*); một lệnh `get` thô thì
+   in sạch. ⇒ Đã khuyến nghị xoay khoá.
 
 ### Điều kiện 2 — ĐÃ GỠ, và nó bắt được một lỗi trước khi trình duyệt kịp mở
 
