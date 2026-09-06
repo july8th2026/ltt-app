@@ -305,3 +305,59 @@ def test_macro_o_sao_chep_van_dat_dau_data_chep():
         "macro `o_sao_chep` thoi danh dau o sao chep — doan `gan_o` trong "
         "`sao_chep.js` tro thanh ma chet")
     assert "o_sao_chep" in mac, "macro `o_sao_chep` bien mat?"
+
+
+def test_moi_trang_co_thanh_tien_do_deu_phai_co_nhip_hoi():
+    """🔴 Mot thanh tien do gan `aria-live` la mot LOI HUA: "cho nay se tu doi".
+
+       Do 07/09: `apps/upscalevideo` ve dung thanh ay ma khong co BAT KY co che
+       hoi lai nao — `hx-get` 0, `hx-trigger` 0, `nhipJob` 0, `EventSource` 0,
+       `fetch` chi dung cho `/batch-quote`. Khach xem job nang cap thay mot con
+       so DUNG IM cho toi khi ho tu tai lai trang.
+
+       Da do that: sua `progress` 42 -> 88 trong CSDL, tab hien lai, trang van
+       hien 42. Sau khi noi `LTT.nhipJob`: 88.
+
+    ⭐ `nhip_job.js` ton tai chinh vi lop loi nay (xem docstring cua no: NAM cho
+       tung tu viet vong hoi, KHONG cho nao xu ly `visibilitychange`). Phep kiem
+       nay giu cho danh sach ay khong dai ra lan nua.
+    ⛔ PHAM VI HEP CO Y. Ban dau phep kiem nay soi MOI trang co
+       `role="progressbar"`, va no to cao them BON trang. Mo tay hai mau:
+
+         apps/thumbnail       DUONG TINH GIA — htmx o do dung cho `hx-post` xem
+                              truoc, thanh tien do khong phai tien do job
+         apps/ltt_voice       hoi trong `voice.js`, khong trong template
+
+       Dung hai kieu bao sai da ghi o `AGENTS.md` 4d lop E: doc sai NGUON (co
+       che nam o tep `.js` roi) va mau qua hep ve KY THUAT. Mot bo do ~50%
+       duong tinh gia ma bien thanh cong thi day nguoi ta bo qua mau do — cung
+       chuan da dung de RUT H12 `deptry`.
+
+    ⚠️ Va `voice.js` la mot ca THAT chua sua: 18 cho `setInterval/fetch`, 0 cho
+       `visibilitychange`. Ghi lai o day thay vi im, nhung KHONG chot no bang
+       phep kiem nay: chua do tren trinh duyet nen chua duoc phep khang dinh.
+    """
+    t = (GOC / "apps" / "upscalevideo" / "templates"
+         / "upscalevideo.html").read_text(encoding="utf-8")
+    assert 'role="progressbar"' in t, "trang thoi ve thanh tien do?"
+    assert "nhipJob" in t, (
+        "`upscalevideo` co thanh tien do ma khong co nhip hoi — no se dung im, "
+        "dung nhu truoc 07/09")
+    assert "data-job-id" in t, "job khong mang id thi khong hoi lai duoc"
+
+
+def test_nhip_job_js_khong_duoc_dung_defer():
+    """⛔ `nhip_job.js` chi dinh nghia `LTT.nhipJob`, va script noi tuyen ngay
+       duoi goi no NGAY. Mot script `defer` chay SAU moi script noi tuyen, nen
+       `defer` o day cho ra `TypeError: LTT.nhipJob is not a function` ngay khi
+       mo trang — va no hong IM LANG: trang van ve, chi la khong bao gio doi.
+    """
+    import re
+    xau = []
+    for p in list((GOC / "apps").rglob("templates/*.html")) + \
+             list((GOC / "server" / "templates").rglob("*.html")):
+        t = p.read_text(encoding="utf-8", errors="replace")
+        for the in re.findall(r"<script[^>]*nhip_job\.js[^>]*>", t):
+            if "defer" in the or "async" in the:
+                xau.append(f"{p.relative_to(GOC).as_posix()}: {the}")
+    assert not xau, "nhip_job.js bi `defer`/`async`:\n  " + "\n  ".join(xau)
