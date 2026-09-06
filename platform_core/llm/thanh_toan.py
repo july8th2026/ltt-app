@@ -1,8 +1,9 @@
 """
 thanh_toan.py — thu tiền một lượt gọi model. Giữ chỗ → chạy → quyết toán. (H38)
 
-⭐ MẶC ĐỊNH vẫn là **C1** (làm tròn LÊN mỗi lượt gọi). **C3** — tích luỹ phần
-   lẻ, chỉ thu phần NGUYÊN — đã cài xong và bật bằng `LTT_TINH_TIEN_TICH_LUY=1`.
+🟢 MẶC ĐỊNH là **C3** từ **2026-09-06** (chủ dự án chốt): tích luỹ phần lẻ ở
+   `users.mcredit_du`, chỉ thu phần **NGUYÊN**. Đường lùi về C1 (làm tròn LÊN
+   mỗi lượt gọi, sàn 1 credit): `LTT_TINH_TIEN_SAN_MOI_LUOT=1`.
 
    Credit là số nguyên (`credit.tru()` nhận `int`), còn một lượt gọi điển hình
    tốn **0,3 credit**. Phần lẻ được giữ ở `users.mcredit_du` và cộng vào lượt
@@ -93,31 +94,58 @@ def giu_cho_luot(db, *, user_id: str, request_id: str,
     return so
 
 
-#: Cờ BẬT C3 (tích luỹ phần lẻ). **Mặc định TẮT ⇒ vẫn là C1.**
+#: 🟢 **C3 LÀ MẶC ĐỊNH TỪ 2026-09-06** — chủ dự án chốt.
 #:
-#: ⭐ Vì sao opt-in chứ không phải mặc định, dù C1 đã đo được là thu thừa:
-#:    đây là **quyết định giá**, không phải một bản sửa lỗi. Nó đổi
-#:    `toi_thieu_moi_luot_credit` — một **điều khoản công bố** qua
-#:    `public_api/dieu_khoan.py`. Đổi điều khoản là việc của chủ dự án, và
-#:    `04_ADR_R2B_TINH_TIEN_LUOT.md` ghi rõ nó đang ở trạng thái ĐỀ XUẤT.
+#: Trước đó C3 là opt-in, vì đây là **quyết định giá** chứ không phải một bản sửa
+#: lỗi: nó đổi `toi_thieu_moi_luot_credit`, một **điều khoản công bố** qua
+#: `public_api/dieu_khoan.py`. Quyết định ấy nay đã có, nên mặc định đảo lại.
 #:
-#: 🔑 Bật bằng một biến môi trường, không cần sửa mã:
+#: Đo làm căn cứ (`04_ADR_R2B_TINH_TIEN_LUOT.md`, model nhà `qwen3.8-27b`):
 #:
-#:        LTT_TINH_TIEN_TICH_LUY=1
+#:     hoi thoai 20 luot ngan   C1 thu 20 credit · gia niem yet cua ta 3,13
+#:     chat rat ngan (800+150)  C1 thu  1 credit · mua le OpenRouter 0,21
+#:     luot agentic 4 vong      C1 thu  4 credit · gia niem yet cua ta 0,92
+#:
+#: ⇒ Sàn "tối thiểu 1 credit mỗi lượt gọi" làm ta **đắt hơn giá bán lẻ ở mọi
+#:   lượt dưới ~1 credit** — tức ở đúng lượt thường gặp nhất của một sản phẩm
+#:   chat — và nó **luỹ thoái**: phạt người dùng nhẹ.
+#:
+#: ⛔ Bảng giá `gia_token` (50/10/400 credit/1M) **không đổi và không sai** — đo
+#:    lại neo thị trường 05/09 vẫn khớp trong 5 %. Thứ đổi là **tầng làm tròn**.
 CO_TICH_LUY = "LTT_TINH_TIEN_TICH_LUY"
 
-#: Tên cũ, giữ để không ai phải sửa hai chỗ khi đọc tài liệu cũ.
-CO_SAN_MOI_LUOT = CO_TICH_LUY
+#: 🔻 ĐƯỜNG LÙI: đặt `LTT_TINH_TIEN_SAN_MOI_LUOT=1` để quay lại C1 (làm tròn LÊN
+#: mỗi lượt gọi, sàn 1 credit) mà không phải sửa mã hay deploy lại bản cũ.
+#:
+#: ⭐ Giữ một đường lùi bằng biến môi trường vì đây là **tiền**: nếu C3 lộ ra một
+#:    hệ quả không lường (vd giữ chỗ thiếu làm `mcredit_du` phình), người trực
+#:    phải tắt được trong một phút, không phải chờ một lượt phát hành.
+CO_SAN_MOI_LUOT = "LTT_TINH_TIEN_SAN_MOI_LUOT"
+
+#: Cách viết được coi là BẬT. Fail-closed: mọi thứ khác là tắt — một cờ nhận
+#: nhiều cách viết là một cờ mà người ta tưởng đã bật trong khi chưa.
+BAT = ("1", "true", "on")
 
 
-def _tich_luy() -> bool:
+def _co(ten: str) -> bool:
     import os
-    return (os.environ.get(CO_TICH_LUY) or "").strip().lower() in ("1", "true", "on")
+    return (os.environ.get(ten) or "").strip().lower() in BAT
 
 
 def _san_moi_luot() -> bool:
-    """C1 là mặc định; C3 chỉ chạy khi được bật rõ ràng."""
-    return not _tich_luy()
+    """Có đang chạy C1 (làm tròn LÊN mỗi lượt gọi) không. **Mặc định KHÔNG.**
+
+    ⛔ Chỉ đường lùi mới bật được nó. `CO_TICH_LUY` giữ lại để một cấu hình cũ
+       ghi `LTT_TINH_TIEN_TICH_LUY=1` **không đổi nghĩa** — nó vẫn là C3, y như
+       mặc định mới. Nhưng nếu ai đó đặt **cả hai**, đường lùi thắng: khi hai cờ
+       mâu thuẫn, cái nói "quay về hành vi cũ" phải là cái được nghe.
+    """
+    return _co(CO_SAN_MOI_LUOT)
+
+
+def _tich_luy() -> bool:
+    """Có đang tích luỹ phần lẻ (C3) không. **Mặc định CÓ.**"""
+    return not _san_moi_luot()
 
 
 #: Ngưỡng cảnh báo phần lẻ. Bình thường `mcredit_du` < 1.000; lớn hơn nhiều lần

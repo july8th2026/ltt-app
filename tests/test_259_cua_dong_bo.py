@@ -256,10 +256,14 @@ def test_so_REQUEST_ghi_dung_so_tien_da_thu(api, monkeypatch):
        credit=+0 mọi dòng"* — trên đúng cái cửa mà cột ấy không bao giờ khác 0.
        Một bằng chứng không thể sai thì không chứng minh gì.
     """
-    _dat_model(monkeypatch, token_vao=1_000, token_ra=100)
+    # ⭐ Cỡ cố ý VƯỢT 1 credit: đối chứng `thu_that > 0` phải đúng vì lượt này
+    #    thật sự tốn tiền, không phải vì một chính sách làm tròn có sàn.
+    _dat_model(monkeypatch, token_vao=30_000, token_ra=1_000)   # 1,9 credit
     user_id, token = _account()
     truoc = _so_du(user_id)
-    r = api.post(DUONG, json=_than(max_tokens=400), headers=_h(token))
+    # ⚠️ `max_tokens` phải nằm dưới trần ngân sách 90 giây của cửa ĐỒNG BỘ
+    #    (~2.372) — vượt là HTTP 400, không phải một phép kiểm tiền.
+    r = api.post(DUONG, json=_than(max_tokens=2_000), headers=_h(token))
     assert r.status_code == 200, r.text
     thu_that = truoc - _so_du(user_id)
     assert thu_that > 0, "doi chung TRUOT: khong thu gi ca, phep kiem duoi vo nghia"
@@ -272,25 +276,28 @@ def test_so_REQUEST_ghi_dung_so_tien_da_thu(api, monkeypatch):
 
 
 def test_lot_binh_thuong_va_thu_theo_TOKEN_DA_DO(api, monkeypatch):
-    goi = _dat_model(monkeypatch, token_vao=10_000, token_ra=100)
+    # ⭐ Chi phí thật ĐÚNG 1,000 credit: 10.000 vào (500) + 1.250 ra (500).
+    #    Đó là số duy nhất cho `thu == 1` ở CẢ C1 (làm tròn lên) lẫn C3 (chia
+    #    lấy phần nguyên), nên `0 < thu < giu` bất biến với chính sách.
+    goi = _dat_model(monkeypatch, token_vao=10_000, token_ra=1_250)
     user_id, token = _account()
     truoc = _so_du(user_id)
 
     r = api.post(DUONG, json=_than(
         messages=[{"role": "user", "content": "x" * 25_000}],
-        max_tokens=1400), headers=_h(token))
+        max_tokens=1_800), headers=_h(token))
     assert r.status_code == 200, r.text
     b = r.json()
     assert b["object"] == "chat.completion"
     assert b["choices"][0]["message"]["content"] == "chao ban"
     assert b["usage"]["prompt_tokens"] == 10_000
-    assert b["usage"]["completion_tokens"] == 100
+    assert b["usage"]["completion_tokens"] == 1_250
     assert goi and goi[0]["model"] == "ltt_llm"
 
     thu = b["x_ltt"]["credit_charged"]
     assert thu == truoc - _so_du(user_id), "hoa don khong khop so du"
     assert 0 < thu < b["x_ltt"]["credit_held"], (
-        "sinh 100 token ma thu tron phan da giu cho 1400 token")
+        "sinh 1.250 token ma thu tron phan da giu cho 1.800 token")
     assert _dem_execution_lease() == 0
 
 

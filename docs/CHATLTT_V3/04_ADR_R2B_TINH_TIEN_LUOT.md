@@ -166,13 +166,32 @@ khi bật thu tiền thật: ghi `usage` của 20–50 lượt thật rồi ch�
 
 ---
 
-## §7 — Trạng thái cài đặt (05/09/2026)
+## §7 — Trạng thái cài đặt
 
-**Đã cài xong và đo xong. Mặc định vẫn là C1 — C3 là opt-in.**
+### 🟢 CHỐT 2026-09-06: **C3 là MẶC ĐỊNH.** Chủ dự án duyệt.
 
 ```
-LTT_TINH_TIEN_TICH_LUY=1        # bat C3
+(khong co gi)                      # C3 — mac dinh
+LTT_TINH_TIEN_SAN_MOI_LUOT=1       # duong lui ve C1
 ```
+
+⚠️ **Chốt này chưa chạm tới khách thật.** Nó đổi mặc định **trong mã**; bật cho
+người dùng thật cần một lượt **deploy** — một trong ba ranh giới phải có người.
+Cho tới lúc ấy máy chủ vẫn chạy bản cũ.
+
+⛔ Và cảnh báo ở §6 **vẫn nguyên giá trị**: mọi con số trong tài liệu này đến từ
+**mô hình**, không phải lượt chạy thật. Trước khi deploy: ghi `usage` của 20–50
+lượt thật rồi chạy lại §3–§4. Chốt này **không thay** phép đo đó.
+
+### Đường lùi, và vì sao nó tồn tại
+
+Đây là **tiền**. Nếu C3 lộ ra một hệ quả không lường — ví dụ giữ chỗ thiếu làm
+`mcredit_du` phình — người trực phải tắt được trong **một phút** bằng một biến
+môi trường, không phải chờ một lượt phát hành. `TRAN_CANH_BAO_DU_MCREDIT`
+(5.000) là thứ nói cho họ biết khi nào cần nhìn.
+
+⛔ Khi **cả hai** cờ cùng được đặt, **đường lùi thắng**: cái nói *"quay về hành
+vi cũ"* phải là cái được nghe.
 
 | Thành phần | Trạng thái |
 |---|---|
@@ -182,9 +201,9 @@ LTT_TINH_TIEN_TICH_LUY=1        # bat C3
 | `gia_token.bang_gia()` tự khai đúng chính sách đang chạy | ✅ |
 | `test_818` (20 phép kiểm) + `test_253` (điều khoản khớp cách thu) | ✅ |
 
-### ⛔ Vì sao opt-in chứ không phải mặc định
+### ⏳ Vì sao nó TỪNG là opt-in (05/09 → 06/09)
 
-Tôi cài nó làm **mặc định** trước, rồi tự đảo lại. Lý do đảo:
+Tôi cài nó làm **mặc định** trước, rồi **tự đảo lại** và chờ. Lý do đảo:
 
 1. Chính tài liệu này ghi *"ĐỀ XUẤT — chờ chủ dự án chốt"*. Đặt nó làm mặc định
    là **tự chốt hộ** một quyết định giá.
@@ -195,7 +214,21 @@ Tôi cài nó làm **mặc định** trước, rồi tự đảo lại. Lý do �
    mệnh đề khác, không phải để ghim chính sách làm tròn.
 
 ⭐ Cả 10 đã xanh lại, và ba trong số đó được **nâng kịch bản** cho đủ lớn để
-đúng ở **cả hai** chính sách — nên ngày bật C3 chúng không đỏ lần nữa.
+đúng ở **cả hai** chính sách.
+
+🔴 **Và ngày bật thật (06/09) vẫn còn 9 phép kiểm đỏ** — dự báo *"không đỏ
+lần nữa"* của tôi **sai**. Bảy trong số đó cùng một hình dạng: dùng
+`thu > 0` làm **đối chứng** cho mệnh đề *"thu phần đã sinh, hoàn phần dư"*,
+và kịch bản của chúng nhỏ hơn 1 credit. Đã **phóng to kịch bản** thay vì nới
+khẳng định — nới là làm phép kiểm yếu đi cho vừa một chính sách.
+
+⭐ Cỡ đắt nhất là **chi phí thật đúng 1,000 credit** — con số duy nhất cho
+`thu == 1` ở **cả** C1 (làm tròn lên) lẫn C3 (chia lấy nguyên), trong khi giữ
+chỗ là 2. Đo lại cả cụm dưới **hai** chính sách: **154/154 ở cả hai**.
+
+⚠️ Hai phép kiểm phải **tự dựng** trạng thái *"không cờ nào"* thay vì mượn
+biến môi trường của người chạy — chúng đỏ khi chạy cả cụm với đường lùi bật,
+và đó là lỗi của phép kiểm, không phải của mã.
 
 ### Hai chốt chặn của phần cài đặt, cả hai là chuyện tiền
 

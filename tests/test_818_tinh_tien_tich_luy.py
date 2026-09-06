@@ -10,6 +10,10 @@ Ba nhóm mệnh đề, và nhóm 2 là nhóm đắt:
   1. Cộng dồn đúng: phần lẻ ở lại, phần nguyên được thu.
   2. **Không thu hai lần, không mất phần lẻ** — phát lại và bị cap.
   3. Đường lùi `LTT_TINH_TIEN_SAN_MOI_LUOT=1` trả lại đúng hành vi C1.
+
+🟢 **C3 là MẶC ĐỊNH từ 06/09** (chủ dự án chốt). Trước đó nó là opt-in, và
+tệp này ghim chiều ngược lại — mục 3 đã đổi theo, xem
+`test_C3_la_MAC_DINH_khong_phai_opt_in`.
 """
 from __future__ import annotations
 
@@ -23,7 +27,9 @@ from platform_core.llm.cong_vlm import SuDung
 @pytest.fixture()
 def db(tmp_path, monkeypatch):
     monkeypatch.setenv("LTT_DATABASE_URL", "sqlite:///" + (tmp_path / "t.db").as_posix())
-    monkeypatch.setenv(thanh_toan.CO_TICH_LUY, "1")   # C3 la OPT-IN
+    # ⭐ KHONG bat co gi: C3 la MAC DINH tu 06/09. Mot fixture phai bat co
+    #    de co hanh vi mac dinh la mot fixture noi doi ve mac dinh.
+    monkeypatch.delenv(thanh_toan.CO_SAN_MOI_LUOT, raising=False)
     import platform_core.db as dbmod
     dbmod.reset_engine()
     import platform_core.models  # noqa: F401
@@ -174,28 +180,41 @@ def test_du_luon_nho_hon_1000_khi_khong_bi_cap(db):
 
 # ── 3. Đường lùi ───────────────────────────────────────────────────────────
 
-def test_TAT_co_tra_lai_dung_hanh_vi_C1(db, monkeypatch):
-    monkeypatch.delenv(thanh_toan.CO_TICH_LUY, raising=False)
+def test_DUONG_LUI_tra_lai_dung_hanh_vi_C1(db, monkeypatch):
+    """`LTT_TINH_TIEN_SAN_MOI_LUOT=1` phải quay về C1 trong một biến môi
+    trường — vì đây là **tiền**, và người trực phải tắt được trong một
+    phút chứ không phải chờ một lượt phát hành."""
+    monkeypatch.setenv(thanh_toan.CO_SAN_MOI_LUOT, "1")
     uid = _user(db)
     thu = [_thu(db, uid, f"r{i}").thu_credit for i in range(4)]
     assert thu == [1, 1, 1, 1], "C1: moi luot lam tron LEN"
     assert _du(db, uid) == 0, "duong lui KHONG dung toi phan le"
 
 
-def test_C3_la_OPT_IN_khong_phai_mac_dinh(db, monkeypatch):
-    """⛔ C3 đổi `toi_thieu_moi_luot_credit` — một điều khoản CÔNG BỐ. Bật nó là
-    quyết định của chủ dự án, nên mặc định phải là hành vi cũ."""
+def test_C3_la_MAC_DINH_khong_phai_opt_in(db, monkeypatch):
+    """🟢 Chủ dự án chốt 06/09: C3 là mặc định. Không cờ nào ⇒ vẫn là C3.
+
+    ⛔ Mệnh đề này ĐỔI CHIỀU so với bản 05/09 (*"mặc định phải là hành vi
+    cũ"*), và đổi vì một **quyết định**, không vì mã dễ hơn. Bản mới KHÓ
+    xanh hơn: nó đòi một lượt 0,3 credit thu **0**, trong khi bản cũ chỉ
+    đòi nó thu 1 — thứ mọi chính sách làm tròn đều thoả."""
     monkeypatch.delenv(thanh_toan.CO_TICH_LUY, raising=False)
+    monkeypatch.delenv(thanh_toan.CO_SAN_MOI_LUOT, raising=False)
     uid = _user(db)
-    assert _thu(db, uid, "r1").thu_credit == 1, "khong bat co => van la C1"
+    assert _thu(db, uid, "r1").thu_credit == 0, "khong co nao => C3"
+    assert _du(db, uid) == 300, "phan le phai o lai"
 
 
 @pytest.mark.parametrize("gt", ["0", "", "yes", "off", "2"])
 def test_co_fail_closed_moi_cach_viet_la_deu_la_TAT(db, monkeypatch, gt):
-    """Mọi cách viết ngoài `1/true/on` đều là TẮT — giữ nguyên chính sách cũ."""
-    monkeypatch.setenv(thanh_toan.CO_TICH_LUY, gt)
+    """Mọi cách viết ngoài `1/true/on` đều là TẮT ⇒ **không** lùi về C1.
+
+    ⭐ Fail-closed ở đây nghĩa là *giữ chính sách đang chạy*, và chính sách
+    đang chạy nay là C3. Một cờ nhận nhiều cách viết là một cờ mà người ta
+    tưởng đã bật trong khi chưa."""
+    monkeypatch.setenv(thanh_toan.CO_SAN_MOI_LUOT, gt)
     uid = _user(db)
-    assert _thu(db, uid, "r1").thu_credit == 1
+    assert _thu(db, uid, "r1").thu_credit == 0, "cach viet la => KHONG lui"
 
 
 # ── 4. Sổ cái vẫn là sự thật ───────────────────────────────────────────────

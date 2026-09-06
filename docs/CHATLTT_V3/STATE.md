@@ -129,7 +129,7 @@ mới của mọi app đều phải khai ở đó, `test_211` cưỡng chế.
 | **A** | P03 kernel điều phối | 5,0 | **5,0** ✅ | — |
 | **A** | P04 duyệt bền + tiền | 4,5 | **4,0** (trừ R2b) | 0,5 |
 | **A** | P05 ảnh/tiếng thành tool | 3,5 | **3,5** ✅ | — |
-| | **Làn A** | **17,0** | **16,4** | **0,5** (chỉ còn R2b — chờ chủ dự án) |
+| | **Làn A** | **17,0** | **17,0** ✅ | — (R2b đã chốt 06/09) |
 | **B** | P06 · P07 · P08 | 20,0 | 0 | 20,0 |
 | **C** | P09 · P10 · P11 · P12 | 14,0 | 0 | 14,0 |
 | | **TOÀN CHƯƠNG TRÌNH** | **51,0** | **16,4** | **34,6** |
@@ -344,9 +344,12 @@ con số tối ưu"*. Kết luận:
 | chat rất ngắn | 1 | 0,10 | 0,21 (**ta đắt 4,84×**) |
 | lượt agentic 4 vòng | 4 | 0,92 | — |
 
-**Đã cài `C3`** (tích luỹ phần lẻ theo người dùng) + migration chỉ-thêm + 20
-phép kiểm. **Để OPT-IN** vì nó đổi `toi_thieu_moi_luot_credit` — một **điều
-khoản công bố**. Bật bằng `LTT_TINH_TIEN_TICH_LUY=1`.
+🟢 **CHỐT 06/09: C3 là MẶC ĐỊNH** (chủ dự án duyệt). Đường lùi về C1:
+`LTT_TINH_TIEN_SAN_MOI_LUOT=1` — giữ lại vì đây là **tiền**, người trực phải
+tắt được trong một phút chứ không chờ một lượt phát hành.
+
+⚠️ **Chưa chạm khách thật:** chốt này đổi mặc định **trong mã**; bật cho người
+dùng thật cần một lượt **deploy**.
 
 ⚠️ Mọi con số trên đến từ **mô hình**, không phải lượt chạy thật (artefact P01
 ghi độ trễ, **không ghi token**). Trước khi bật thu tiền thật: ghi `usage` của
