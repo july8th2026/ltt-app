@@ -1909,12 +1909,11 @@ mypy tren CHINH CAY DO:            arg-type = 120   assignment = 61
 được `--accept` trên một cây, rồi cây đổi trước khi commit.
 
 Điều đó cũng giải thích các lượt gate `PASS` xen kẽ mà không lời giải thích nào
-khớp: mốc lệch **cố định 3 lỗi**, nên bất cứ điều gì làm mypy đếm ra **ít hơn 3
-lỗi so với đầy đủ** đều biến nó thành xanh — và nhánh `giam` thì **luôn trả 0**.
+khớp: **mọi cây đều lệch cùng 3 lỗi kể từ 22:57**, nên một lượt gate chạy trước
+mốc thời gian ấy thì xanh, sau thì đỏ — và không ai nhìn đồng hồ.
 
-⇒ `--accept` ở đây **không** phải giặt phần trôi của người khác. Nó là sửa một
-mốc chưa bao giờ đúng, và diff chứng minh điều đó: **chỉ hai dòng đổi**, không
-có mã lỗi nào khác trôi theo.
+⇒ `--accept` **không** phải giặt phần trôi của người khác: diff chứng minh —
+**chỉ hai dòng đổi**, không mã lỗi nào khác trôi theo.
 
 ⛔ **Lỗ hổng cấu trúc thì vẫn còn**: nhánh `giam` in ghi chú rồi `return 0`, nên
 bánh cóc vẫn xanh khi phép đo teo lại — và như trên, một bản nâng phụ thuộc là
