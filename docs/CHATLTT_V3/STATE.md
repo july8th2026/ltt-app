@@ -30,7 +30,19 @@
 | 1 | Gate đầy đủ PASS trên cây này | ✅ `20260905T181119Z-12404.json` — 26 bước · 0 FAIL · `cay_da_doi_giua_chung=False` · sha `4a55620f` |
 | 2 | **Mở trình duyệt thật, xem bốn nhãn trạng thái V3 hiện đúng** | ✅ **05/09** — xem §dưới |
 | 3 | Kiểm trên URL công khai, không chỉ loopback (`CLAUDE.md` 5b) | ❌ chưa |
-| 4 | R2b được chủ dự án chốt | ❌ đang chạy theo giả định (b) |
+| 4 | R2b được chủ dự án chốt | ✅ **06/09 — chốt C3**, đã deploy (`334004d4`), đang thu thật |
+
+⛔ **Và một sự thật không nằm trong bảng trên: hai cờ VẪN TẮT trên
+production.** Đo 06/09 sau deploy `334004d4`:
+
+```
+grep -c LTT_CHATLTT_V3  C:/LTTPlatform/secrets/app.env   ->  0
+```
+
+⇒ Mã Làn A **đã lên production và đã qua gate**, nhưng `LTT_CHATLTT_V3_TOOLS`
+mặc định TẮT nên **vòng lặp agentic chưa chạm một người dùng nào**. "100 % mã"
+và "0 % tới khách" là hai con số **cùng đúng**, và trộn chúng lại là cách một
+báo cáo tiến độ nói dối mà không có câu nào sai.
 
 ### Điều kiện 2 — ĐÃ GỠ, và nó bắt được một lỗi trước khi trình duyệt kịp mở
 
@@ -132,14 +144,14 @@ mới của mọi app đều phải khai ở đó, `test_211` cưỡng chế.
 | | **Làn A** | **17,0** | **17,0** ✅ | — (R2b đã chốt 06/09) |
 | **B** | P06 · P07 · P08 | 20,0 | 0 | 20,0 |
 | **C** | P09 · P10 · P11 · P12 | 14,0 | 0 | 14,0 |
-| | **TOÀN CHƯƠNG TRÌNH** | **51,0** | **16,4** | **34,6** |
+| | **TOÀN CHƯƠNG TRÌNH** | **51,0** | **17,0** | **34,0** |
 
 ### Con số
 
 | | |
 |---|---|
-| **Toàn chương trình (P00→P12)** | **≈ 32 %** |
-| **Làn A** (phần phát hành được một mình) | **≈ 97 %** — phần còn lại **không phải việc viết mã**: R2b cần chủ dự án chốt |
+| **Toàn chương trình (P00→P12)** | **≈ 33 %** (17,0 / 51,0 ngày công) |
+| **Làn A** (phần phát hành được một mình) | **100 % MÃ** — nhưng ⛔ **chưa tới người dùng nào**: hai cờ vẫn TẮT, xem bảng điều kiện |
 | Mã sản phẩm đã sửa | 16 tệp · 19 tệp test · 1 migration |
 | Phép kiểm mới | **383** (backend 800–819: **374** đếm bằng `--collect-only` · frontend A5: 9) |
 

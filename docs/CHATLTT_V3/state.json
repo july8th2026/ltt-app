@@ -16,7 +16,7 @@
     "LTT_CHATLTT_V3_TOOLS": "mac dinh TAT",
     "LTT_CHATLTT_V3_PAID_TOOLS": "mac dinh TAT, DOC LAP voi co tren"
   },
-  "da_deploy": false,
+  "da_deploy": true,
   "quyet_dinh_chu_du_an": [
     {
       "id": 1,
@@ -385,7 +385,8 @@
       "phan_tram": 33
     },
     "ma_san_pham_da_sua": "16 tep san pham, 19 tep test, 1 migration",
-    "ghi_chu": "dem theo NGAY CONG, khong theo so pha — P00 nua ngay, P03 nam ngay"
+    "ghi_chu": "dem theo NGAY CONG, khong theo so pha — P00 nua ngay, P03 nam ngay",
+    "canh_bao": "100% la MA da viet va da deploy. Hai co LTT_CHATLTT_V3_TOOLS / _PAID_TOOLS VAN TAT tren production (do 06/09: 0 dong trong app.env), nen vong lap agentic CHUA cham mot nguoi dung nao."
   },
   "lo_chinh": {
     "trang_thai": "PASS",
@@ -728,5 +729,10 @@
     "duong_lui": "LTT_TINH_TIEN_SAN_MOI_LUOT=1 -> quay ve C1",
     "chua_cham_khach_that": "Chot doi mac dinh TRONG MA. Bat cho nguoi dung that can mot luot DEPLOY — mot trong ba ranh gioi phai co nguoi.",
     "ban_kinh_khi_doi_that": "9 phep kiem do (khong phai 10 nhu du bao). Bay cai cung mot hinh dang: dung `thu > 0` lam DOI CHUNG cho menh de 'thu phan da sinh, hoan phan du', va kich ban nho hon 1 credit. Da PHONG TO kich ban thay vi noi khang dinh. Do lai ca cum duoi HAI chinh sach: 154/154 o ca hai."
+  },
+  "deploy": {
+    "commit": "334004d4",
+    "luc": "2026-09-06T09:44:55",
+    "co_tinh_nang_bat": false
   }
 }
