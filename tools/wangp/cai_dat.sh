@@ -220,12 +220,33 @@ try:
 except Exception as e:
     ra["torch_loi"] = str(e)
 for ten, mod in (("mmgp", "mmgp"), ("sageattention", "sageattention"),
-                 ("llamacpp_gguf_cuda", "llamacpp_gguf_cuda")):
+                 ("gguf", "gguf"), ("llamacpp_gguf_cuda", "llamacpp_gguf_cuda")):
     try:
         from importlib.metadata import version
         ra[ten] = version(mod)
     except Exception as e:
         ra[ten] = "THIEU: %s" % str(e)[:60]
+
+# 🔴 Goi CAI DAT DUOC khong dong nghia NHAN NAP DUOC. Luot 07/09:
+#    `llamacpp_gguf_cuda 1.0.14+torch210cu130py311` co trong bao cao, ma WanGP
+#    van in "[GGUF][llama.cpp CUDA] kernels unavailable, using fallback".
+#    Toi suyt tuyen bo thang loi dua tren mot dong phien ban.
+#
+# ⭐ WanGP GIU dung ngoai le do o `_GGUF_CUDA_LOAD_ERROR`. Hoi thang no thay vi
+#    doan — `_validate_gguf_cuda_module` co BON cho hong khac nhau (thieu goi
+#    `gguf`, khong co CUDA, khong ho tro Q4_0, va mot phep tu kiem SO HOC).
+try:
+    import sys as _s
+    _s.path.insert(0, "/data/Wan2GP")
+    from shared.qtypes import gguf as _g
+    _g._probe_gguf_cuda_runtime(force=True)
+    loi = getattr(_g, "_GGUF_CUDA_LOAD_ERROR", None)
+    ra["gguf_cuda_nap_duoc"] = bool(getattr(_g, "_GGUF_CUDA_KERNELS_ENABLED_CACHE", False))
+    ra["gguf_cuda_ly_do_hong"] = f"{type(loi).__name__}: {loi}" if loi else ""
+except Exception as e:
+    ra["gguf_cuda_nap_duoc"] = False
+    ra["gguf_cuda_ly_do_hong"] = f"khong hoi duoc: {type(e).__name__}: {e}"
+
 print(json.dumps(ra, ensure_ascii=False, indent=1))
 ENV
 
