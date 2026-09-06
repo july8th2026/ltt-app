@@ -72,7 +72,7 @@
   mục 5–9; **không** nhảy sang P02.
   ➕ Kèm theo lượt đó: chốt **giữ hay bỏ volume `uizchbiet5`** (~$21/tháng), vì
   chỉ lúc boot WanGP thật mới biết nó cần model nào. `P00-D-07`.
-- **spend_phase (P01):** ⚙️ hỏi `python toolsideo_cloud.py trang-thai` —
+- **spend_phase (P01):** ⚙️ hỏi `python tools/video_cloud.py trang-thai` —
   đừng chép số vào đây. Mốc: pod tạo `2026-09-06T08:30:28Z`, $1,59/giờ.
   ⚠️ Hoá đơn RunPod **trễ 20–60 phút**; số cuối cùng phải đọc lại sau.
 - **legacy_cloud_data:** 🔴 **ĐÃ XOÁ 06/09** — 10 đối tượng / **183,09 GB** model
