@@ -283,3 +283,25 @@ def test_hook_KHONG_duoc_lam_hong_commit_o_cay_CHUA_dong_bo(tmp_path):
         f"hook chan commit o mot cay khong co cau hinh (rc={r.returncode}):\n"
         f"{r.stdout}{r.stderr}")
     assert not r.stdout.strip(), f"hook on ao o cay khong lien quan: {r.stdout!r}"
+
+
+def test_macro_o_sao_chep_van_dat_dau_data_chep():
+    """Nua CON LAI cua hop dong nut sao chep. Nua kia
+    (`sao_chep.js` co xu ly `code[data-chep]`) nam o `test_306`.
+
+    ⛔ Hai nua phai o HAI tep, va do khong phai tuy tien: banh coc
+       `test_KHONG_test_nao_duoc_GHI_vao_messages_po_THAT` cam moi tham chieu
+       toi `server/templates/` tu trong `test_306`, vi tep ay tung ghi de len
+       tep that ba lan. Luat cua no la "tep that chi duoc xuat hien o dung mot
+       cho". Chuyen khang dinh sang day la ton trong luat do, khong phai lach.
+
+    🔴 Vi sao van phai chot: neu macro thoi dat `data-chep` thi doan JS xu ly
+       no thanh MA CHET — van chay, van qua moi phep kiem cua rieng no, va
+       khong con nut nao cho dia chi IP. Mot nua hop dong khong duoc canh la
+       mot nua se troi.
+    """
+    mac = (GOC / "server" / "templates" / "_vps_mac.html").read_text(encoding="utf-8")
+    assert "data-chep" in mac, (
+        "macro `o_sao_chep` thoi danh dau o sao chep — doan `gan_o` trong "
+        "`sao_chep.js` tro thanh ma chet")
+    assert "o_sao_chep" in mac, "macro `o_sao_chep` bien mat?"

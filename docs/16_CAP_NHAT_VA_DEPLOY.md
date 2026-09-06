@@ -86,6 +86,24 @@ python -m pip_audit --no-deps -r %TEMP%/prod.txt
 `--no-deps` là **bắt buộc**: freeze có `torch==...+cu128` không giải được trên
 PyPI, thiếu cờ này `pip-audit` chết trước khi kiểm gì.
 
+### 2c. a11y (`axe-core`) — cũng chạy **trước deploy**, không trong gate
+
+```bash
+playwright-cli -s=a11y open --browser=chrome     # một lần
+MSYS_NO_PATHCONV=1 python tools/check_a11y.py
+```
+
+⛔ **Không để trong `gate.py`**, cùng lý do với `check_cve.py`: nó cần **một máy
+chủ đang phục vụ** và **một phiên trình duyệt đang mở**. Gate không dựng hai thứ
+đó, nên một bước như vậy sẽ đỏ vì **thiếu phiên**, không phải vì mã — **Bẫy 26**.
+
+⚠️ `MSYS_NO_PATHCONV=1` là **bắt buộc** trong Git Bash: thiếu nó, một route
+`/` bị MSYS đổi thành `C:/Program Files/Git/` và buổi quét đi vào một URL vô
+nghĩa.
+
+⭐ Nó **không thay** `tools/mobile_quet.js`. `axe` không đo **tràn ngang**;
+   `mobile_quet` không đo **tương phản màu**. Bỏ cái nào cũng mất một lớp.
+
 ---
 
 ## 3. Đưa lên trunk

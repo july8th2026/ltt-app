@@ -8,7 +8,7 @@
  * Không ẩn đi, vì người dùng cần thấy sản phẩm sẽ đi tới đâu; cũng không cho
  * bấm, vì một nút không làm gì làm G4 "Honest UI" trượt.
  */
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import './ommi.css'
 import { setCsrfToken } from './ommiApi'
 import { CreditScreen, SettingsScreen } from './AccountScreens'
@@ -54,9 +54,75 @@ const GROUPS: Group[] = [
   },
 ]
 
+/* Moi khoa man DA XAY. Dung de loc hash — mot hash la duong vao tu ngoai,
+ * nen khong duoc tin. `#/khong-co-that` phai roi ve `overview`, khong duoc
+ * render mot vung trong. */
+const KHOA_HOP_LE = new Set(
+  GROUPS.flatMap((g) => g.items.filter((i) => i.built).map((i) => i.key)),
+)
+
+const MAN_MAC_DINH = 'overview'
+
+function docHash(): string {
+  const h = (window.location.hash || '').replace(/^#\/?/, '')
+  return KHOA_HOP_LE.has(h) ? h : MAN_MAC_DINH
+}
+
 export function OmmiShell({ csrfToken }: { csrfToken: string }) {
   setCsrfToken(csrfToken)
-  const [screen, setScreen] = useState('overview')
+
+  /* 🔴 VI SAO CO DINH TUYEN O DAY. Truoc 07/09 man hinh chi nam trong
+   *    `useState`, va do la BA loi nguoi dung that, khong phai mot chi tiet
+   *    ky thuat:
+   *
+   *      tai lai trang  -> ve `overview`, mat cho dang xem
+   *      nut Back       -> THOAT khoi app thay vi ve man truoc
+   *      chia se link   -> khong the tro toi mot man cu the
+   *
+   *    Cai thu hai nang nhat tren di dong: Back la cu chi dieu huong chinh, va
+   *    mot nguoi dang o `storyboard` bam Back se bi van ra ngoai.
+   *
+   * ⭐ Dung HASH chu khong `pushState` duong dan: hash khong can may chu biet
+   *    gi ca, nen tai lai `#/storyboard` khong the ra 404. Doi sang duong dan
+   *    that se can them mot route bat-tat-ca o server.
+   */
+  const [screen, setScreen] = useState(docHash)
+
+  useEffect(() => {
+    const dong_bo = () => setScreen(docHash())
+    window.addEventListener('hashchange', dong_bo)
+    return () => window.removeEventListener('hashchange', dong_bo)
+  }, [])
+
+  /* ⛔ BO QUA lan chay dau. Ghi hash ngay khi mount la sai hai kieu:
+   *
+   *    1. No day them mot muc lich su cho TRANG THAI BAN DAU, nen lan bam Back
+   *       dau tien khong lam gi ca — dung kieu "nut Back dam chan tai cho" ma
+   *       nguoi dung khong bao gio bao cao duoc thanh loi.
+   *
+   *    2. No ban `hashchange` -> render lai ngay giua lan mount. Do 07/09:
+   *       viec do lam DO hai phep kiem co san cua `ResourceLibrary.test.tsx`
+   *       (chung dang `waitFor` du lieu bat dong bo). Bo test cu bat duoc, va
+   *       no bat mot loi THAT chu khong phai mot va cham vo tinh.
+   */
+  const da_mount = useRef(false)
+  useEffect(() => {
+    if (!da_mount.current) {
+      da_mount.current = true
+      /* Hash BAY BA thi chuan hoa ngay, nhung bang `replaceState` — no khong
+       * them mot muc lich su, nen nut Back van ve dung cho nguoi dung vua roi
+       * khoi. Thieu buoc nay thi URL noi `#/khong-co-that` trong khi man dang
+       * hien la Tong quan: dung ve hanh vi, sai ve thu URL KHANG DINH. */
+      const h = window.location.hash
+      if (h && h !== '#/' + screen) {
+        window.history.replaceState(null, '', '#/' + screen)
+      }
+      return
+    }
+    const mong = '#/' + screen
+    // Chi ghi khi KHAC: ghi lai cung mot hash van day them mot muc lich su.
+    if (window.location.hash !== mong) window.location.hash = mong
+  }, [screen])
 
   return (
     <div className="ommi">

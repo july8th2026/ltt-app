@@ -173,3 +173,7 @@ docs/CHATLTT_V3/harness/nexus_audit.log
 docs/CHATLTT_V3/harness/nexus_cert_pin.txt
 docs/CHATLTT_V3/harness/nexus_duong.json
 docs/CHATLTT_V3/harness/p01_sieu_du_lieu.json
+
+# axe-core tai ve (566 KB), ghim phien ban o tools/vendor_a11y/axe.version.
+# Tai lai: py tools/check_a11y.py --tai-axe
+tools/vendor_a11y/axe.min.js

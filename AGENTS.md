@@ -968,3 +968,35 @@ phải cây của ai cả, mà là cây của một bên *trước khi* gộp.
 `test_177` bắt được, nhưng chỉ khi có người chạy gate **sau** merge. Ai vừa chạy
 gate xong ở nhánh mình thì có lý do để không chạy lại — và đó đúng là lúc nó lọt.
 
+
+### Lớp E — **phép đo của tôi báo sai, và tôi suýt sửa thứ không hỏng**
+
+Đo 07/09/2026 khi làm S6 (*"trạng thái loading/empty/error từng bề mặt"*). Tôi
+viết một bộ dò regex trên template, và nó tố cáo **5/12 bề mặt thiếu trạng
+thái**. Sau ba lần sửa chính bộ dò ấy, con số thật là **0/12**.
+
+Ba kiểu báo sai, và chúng khác nhau về bản chất:
+
+| # | Sai vì | Ví dụ |
+|---|---|---|
+| 1 | **đọc sai NGUỒN** | đo `apps/*/templates` cho app React — giao diện nằm ở `frontend/*/src` |
+| 2 | **mẫu quá hẹp về NGÔN NGỮ** | tìm `empty\|rong\|trong`, bỏ sót `{% else %}Chưa có evaluation.` với class `muted` |
+| 3 | **mẫu quá hẹp về KỸ THUẬT** | tìm `spinner\|loading\|skeleton`, bỏ sót `role="progressbar"` + `aria-live` — vốn là cách ĐÚNG hơn |
+
+⛔ Cả ba đều đẩy về **cùng một phía**: báo THIẾU thứ đang có. Và hậu quả của
+   việc tin nó không phải "bỏ sót một lỗi" mà là **đi thêm trạng thái rỗng thứ
+   hai vào một trang đã có** — tức làm hỏng một thứ đang đúng, kèm một commit
+   nghe rất thuyết phục.
+
+⭐ Dấu hiệu nhận ra: **phép đo mới toanh cho ra một con số cao đáng ngạc nhiên.**
+   Nếu một bộ dò vừa viết xong nói *"5/12 bề mặt thiếu"* trong một kho đã chạy
+   thật nhiều tháng, giả thuyết đầu tiên phải là **bộ dò sai**, không phải kho
+   sai.
+
+⇒ **Cơ chế:** trước khi hành động theo một phép đo mới, **mở tay hai mẫu mà nó
+  tố cáo**. Nếu cả hai đều vô tội thì bộ dò sai, và con số còn lại không dùng
+  được. Đây chính là chuẩn đã dùng để **rút H12 `deptry`** (74/78 dương tính
+  giả) — cùng một chuẩn phải áp cho phép đo do chính mình viết.
+
+⚠️ Và đừng biến một bộ dò như thế thành cổng. Một cổng báo động giả dạy người
+   ta bỏ qua nó, rồi cái đỏ thật cũng bị bỏ qua cùng.
