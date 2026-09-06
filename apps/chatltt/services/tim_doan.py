@@ -128,3 +128,60 @@ def trich_dan(doan) -> dict:
     """
     return {"tep_id": doan.tep_id, "doan_id": doan.id,
             "trang": int(doan.trang or 0), "thu_tu": int(doan.thu_tu)}
+
+
+def cho_tool(db, *, user_id: str, conversation_id: str, cau_hoi: str,
+             so_doan: int = SO_DOAN_MAC_DINH) -> dict:
+    """Kết quả cho tool: mỗi đoạn **dính liền** trích dẫn của nó. (P06 bước 5)
+
+    ## 🔴 Vì sao chữ và nguồn nằm trong CÙNG một đối tượng
+
+    Truy hồi không trích dẫn là *"một cái máy nói linh tinh có tự tin"* — chính
+    câu P06 §4 dùng để giải thích vì sao bước 5 tồn tại. Nhưng một quy ước
+    *"nhớ kèm nguồn"* thì sẽ bị quên, và nó bị quên **im lặng**: câu trả lời vẫn
+    trôi chảy, chỉ là không ai kiểm được nó lấy từ đâu.
+
+    ⇒ Nên cách chặn không phải là một dòng nhắc, mà là **hình dạng dữ liệu**:
+      hàm này không có đường nào trả về chữ trần. Muốn lấy `noi_dung` thì phải
+      cầm cả `trich_dan` — chúng ở cùng một `dict`.
+
+    ⭐ `test_827` chốt điều đó bằng cách quét **mọi** phần tử trả về, chứ không
+       kiểm phần tử đầu: một hàm quên gắn nguồn cho đoạn thứ ba vẫn qua được
+       phép kiểm chỉ nhìn đoạn đầu.
+
+    ## `ten_tep` lấy từ `chatltt_tep`, và nó là thứ NGƯỜI đọc
+
+    `tep_id` đủ cho máy đối chiếu, nhưng người dùng cần *"báo cáo quý 4.pdf,
+    trang 7"*. Thiếu tên thì trích dẫn đúng mà vô dụng.
+    """
+    from apps.chatltt.tables import ChatlttTep
+
+    khop = tim(db, user_id=user_id, conversation_id=conversation_id,
+               cau_hoi=cau_hoi, so_doan=so_doan)
+    if not khop:
+        # ⛔ Phan biet "khong co tai lieu nao" voi "cau hoi qua hep". `plainto_tsquery`
+        #    noi cac tu bang AND, nen mot tu vang mat lam ca cau truot — GIONG HET
+        #    trieu chung khong co tai lieu. Bay da dinh khi viet `test_821`.
+        co_tai_lieu = db.execute(
+            select(func.count()).select_from(ChatlttDoan)
+            .where(ChatlttDoan.user_id == user_id,
+                   ChatlttDoan.conversation_id == conversation_id)
+        ).scalar() or 0
+        return {"doan": [], "so_khop": 0, "co_tai_lieu": bool(co_tai_lieu),
+                "nen_tang": nen_tang(db)}
+
+    ten = {t.id: (t.ten_tep or "") for t in db.execute(
+        select(ChatlttTep).where(
+            ChatlttTep.id.in_({d.tep_id for d, _ in khop}),
+            ChatlttTep.user_id == user_id)
+    ).scalars()}
+
+    return {
+        "doan": [{"noi_dung": d.noi_dung,
+                  "trich_dan": {**trich_dan(d), "ten_tep": ten.get(d.tep_id, "")},
+                  "diem": float(diem)}
+                 for d, diem in khop],
+        "so_khop": len(khop),
+        "co_tai_lieu": True,
+        "nen_tang": nen_tang(db),
+    }
