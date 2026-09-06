@@ -64,11 +64,27 @@ class KetQua:
 HEADER_KHOA = "X-LTTV-Key"
 
 
+#: ⛔ **Bắt buộc.** Đường tới C-CLUD đi qua proxy của RunPod, mà proxy ấy nằm
+#:   sau Cloudflare. Cloudflare chặn User-Agent mặc định của `urllib`
+#:   (`Python-urllib/3.x`) và trả **HTTP 403 `error code: 1010`** — chặn theo
+#:   chữ ký trình duyệt, trước khi yêu cầu chạm tới pod.
+#:
+#: 🔴 Đây là kiểu hỏng khó lần nhất trong cả tuyến: dịch vụ **đang chạy đúng**,
+#:   log phía C-CLOUD **sạch không một dòng lỗi** (yêu cầu chưa từng tới nơi),
+#:   `curl` từ cùng máy lại **200**. Đo được 06/09: bốn biến thể header xác thực
+#:   đều 403, đổi mỗi User-Agent thì 200 ngay.
+UA_TRINH_DUYET = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+)
+
+
 def _goi_that(method: str, duong: str, than=None, timeout: float = 30.0,
               khoa: str = ""):
     du_lieu = json.dumps(than).encode("utf-8") if than is not None else None
     req = urllib.request.Request(duong, data=du_lieu, method=method)
     req.add_header("Content-Type", "application/json")
+    req.add_header("User-Agent", UA_TRINH_DUYET)
     if khoa:
         req.add_header(HEADER_KHOA, khoa)
     with urllib.request.urlopen(req, timeout=timeout) as r:

@@ -71,3 +71,43 @@ def test_job_id_du_dai_de_khong_do_duoc():
     assert len(ids) == 200, "id bị trùng"
     for i in ids:
         assert len(i) >= 20, f"id quá ngắn: {i!r}"
+
+
+# ── nạp model: phải xong TRƯỚC khi có người gửi việc ──────────────────────────
+
+
+def test_ham_nong_chay_luc_KHOI_DONG_chu_khong_luc_submit():
+    """Nạp model lười làm hỏng theo ba đường cùng lúc.
+
+    1. người dùng ĐẦU TIÊN trả toàn bộ độ trễ nạp model;
+    2. proxy RunPod (Cloudflare) có trần thời gian riêng ⇒ nâng timeout phía
+       client **không** cứu được, yêu cầu chết ở giữa đường;
+    3. `/health` đã biết sự thật (`san_sang`) mà không ai dùng.
+
+    Đo 06/09: `POST /submit` timeout ở 60 giây, và log phía dịch vụ **không có
+    dòng nào** cho `/submit` — uvicorn chỉ ghi khi phản hồi đã gửi, nên phía
+    máy chủ trông như chưa từng nhận gì.
+    """
+    ma = _TEP.read_text(encoding="utf-8")
+    assert 'on_event("startup")' in ma or "lifespan" in ma, (
+        "không có móc khởi động — model sẽ lại nạp lười ở /submit"
+    )
+    assert "_ham_nong_nen" in ma
+
+
+def test_submit_TU_CHOI_NGAY_khi_chua_am_chu_khong_treo():
+    """503 + `Retry-After` nói rõ 'chưa sẵn sàng'.
+
+    ⛔ Một yêu cầu treo tới khi proxy cắt là thất bại **không phân biệt được**
+       với máy chết: LTT không biết nên thử lại hay báo hỏng.
+    """
+    import ast
+
+    n = _handler()["submit"]
+    than = ast.unparse(n)
+    assert "503" in than, "/submit không trả 503 khi phiên chưa sẵn sàng"
+    assert "Retry-After" in than
+    # phai kiem TRUOC khi goi _lay_phien, khong phai sau
+    assert than.index("503") < than.index("_lay_phien"), (
+        "kiểm sẵn-sàng phải nằm TRƯỚC lời gọi nạp model"
+    )

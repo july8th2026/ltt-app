@@ -26,6 +26,7 @@ Chạy:
 """
 from __future__ import annotations
 
+import contextlib
 import os
 import secrets
 import threading
@@ -43,7 +44,19 @@ KHOA = (os.environ.get("LTTV_WANGP_KEY") or "").strip()
 PROFILE = os.environ.get("LTTV_PROFILE", "1")
 ATTENTION = os.environ.get("LTTV_ATTENTION", "sage2")
 
-app = FastAPI(title="LTT ↔ WanGP bridge")
+
+@contextlib.asynccontextmanager
+async def _vong_doi(_app: "FastAPI"):
+    """Hâm nóng model ngay khi dịch vụ lên — xem `_ham_nong_nen`.
+
+    Dùng `lifespan` chứ không `@app.on_event("startup")`: FastAPI đã phế bỏ
+    `on_event`, và một cảnh báo phế bỏ trong mã mới là nợ sinh ra lúc viết.
+    """
+    threading.Thread(target=_ham_nong_nen, daemon=True).start()
+    yield
+
+
+app = FastAPI(title="LTT ↔ WanGP bridge", lifespan=_vong_doi)
 
 _khoa_phien = threading.Lock()
 _phien: Any = None
@@ -74,6 +87,10 @@ def _kiem_khoa(khoa: str) -> None:
         raise HTTPException(status_code=401, detail="bad key")
 
 
+#: Lỗi lúc hâm nóng, giữ lại để `/health` nói ra thay vì im lặng.
+_loi_ham: str = ""
+
+
 def _lay_phien():
     """Một `WanGPSession` ấm cho cả tiến trình. `init()` chỉ gọi được một lần."""
     global _phien
@@ -85,9 +102,37 @@ def _lay_phien():
             os.chdir(KHO_WANGP)
             from shared.api import init
 
-            _phien = init(root=KHO_WANGP,
-                          cli_args=["--profile", PROFILE, "--attention", ATTENTION])
+            cli = ["--profile", PROFILE, "--attention", ATTENTION]
+            # `--compile`: co trong `run-docker-cuda-deb.sh` chinh chu cua WanGP
+            # va trong vi du "Best Performance" cua `docs/CLI.md:225`.
+            if os.environ.get("LTTV_COMPILE", "0") == "1":
+                cli.append("--compile")
+            _phien = init(root=KHO_WANGP, cli_args=cli)
         return _phien
+
+
+def _ham_nong_nen() -> None:
+    """Nạp model NGAY KHI dịch vụ lên, ở một luồng nền.
+
+    🔴 Bản đầu nạp model **lười** — lần `/submit` đầu tiên gọi `_lay_phien()`.
+       Nó hỏng theo ba đường cùng lúc:
+
+         1. người dùng ĐẦU TIÊN trả toàn bộ độ trễ nạp model;
+         2. proxy RunPod (Cloudflare) có trần thời gian riêng, nên nâng timeout
+            phía client **không** cứu được — yêu cầu chết ở giữa đường;
+         3. `/health` đã biết sự thật (`san_sang: false`) mà không ai dùng.
+
+       Đo 06/09: `POST /submit` timeout ở 60 giây, log phía dịch vụ **không có
+       dòng nào** cho `/submit` — vì uvicorn chỉ ghi khi phản hồi đã gửi.
+
+    ⭐ Đây cũng là cách WanGP tự làm: server của nó nạp model lúc khởi động,
+       không đợi lượt sinh đầu tiên.
+    """
+    global _loi_ham
+    try:
+        _lay_phien()
+    except Exception as e:  # noqa: BLE001 — ghi lai, khong nuot
+        _loi_ham = f"{type(e).__name__}: {e}"
 
 
 @app.get("/health")
@@ -105,7 +150,16 @@ def health() -> dict:
     except Exception as e:  # noqa: BLE001
         sha = f"khong-doc-duoc:{type(e).__name__}"
     return {"ok": True, "wangp_sha": sha, "profile": PROFILE,
-            "attention": ATTENTION, "san_sang": _phien is not None}
+            "attention": ATTENTION,
+            # ⛔ `runtime_san_sang` KHONG co nghia la "sinh duoc ngay". `init()`
+            #    chi dung runtime; TRONG SO chi nap o `submit_task` dau tien.
+            #    Do 06/09: `/health` bao san sang, roi `/submit` van mat vai
+            #    phut o "Loading Model ... / Pinning data of 'transformer' to
+            #    reserved RAM" — profile 1 ghim ~30 GB tu o mang vao RAM.
+            #    Ten cu la `san_sang`, va no HUA nhieu hon thu no biet.
+            "runtime_san_sang": _phien is not None,
+            "san_sang": _phien is not None,   # giu ten cu cho ban client dang chay
+            "loi_ham_nong": _loi_ham}
 
 
 @app.post("/submit")
@@ -114,6 +168,17 @@ def submit(than: dict = Body(...)) -> dict:
     settings = than.get("settings")
     if not isinstance(settings, dict) or not settings:
         raise HTTPException(status_code=400, detail="missing settings")
+
+    # ⛔ Chua am thi TU CHOI NGAY, dung cho. Mot yeu cau treo cho toi khi proxy
+    #    cat la mot that bai KHONG PHAN BIET DUOC voi may chet — LTT khong biet
+    #    nen thu lai hay bao hong. 503 noi ro: chua san sang, thu lai sau.
+    if _phien is None:
+        raise HTTPException(
+            status_code=503,
+            detail=("WanGP session is still loading" if not _loi_ham
+                    else f"WanGP session failed to load: {_loi_ham}"),
+            headers={"Retry-After": "60"},
+        )
 
     s = _lay_phien()
     job = s.submit_task(settings)          # ⛔ nguyen van — khong sua gi

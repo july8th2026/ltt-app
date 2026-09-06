@@ -20,15 +20,34 @@ phần lớn thứ bạn định tạo **đã có rồi**.
 ```
 /data/Wan2GP/      ma nguon WanGP @ 1e1dd275... (v12.71)
 /data/venv/        torch 2.10.0+cu128 · mmgp 3.7.14 · sageattention 2.2.0
-/data/hf/          model tai ve nam O DAY (HF_HOME), khong phai o ckpts/
-/data/ckpts/       ⚠️ do duoc 06/09: RONG (1 tep, 0 GB)
-/data/lttv/        script: cai_dat.sh · khoi_dong.sh · do_luong*.py
-/data/ket_qua/     ket qua do + log + vram*.csv
+/data/Wan2GP/ckpts/  ⭐ MODEL NAM O DAY — 44,8 GB, 113 tep (do 06/09)
+/data/ckpts/         ⚠️ RONG. Toi tao nham; WanGP khong dung no
+/data/hf/            ⚠️ RONG. HF_HOME co tro vao day nhung WanGP tai thang ve ckpts
+/data/lttv/          script: cai_dat.sh · khoi_dong.sh · dich_vu_ccloud.py
+/data/ket_qua/       ket qua do + log + vram*.csv
+/data/config/        lttv_key.txt (khoa cau noi)
 ```
 
-⚠️ Bản trước của tệp này ghi *"`/data/ckpts/` model WanGP tự tải về"*. **Sai** —
-đo bằng S3 ngày 06/09 thấy nó rỗng. `khoi_dong.sh` đặt `HF_HOME=/data/hf`, nên
-Hugging Face tải về `hf/`. Đừng suy vị trí model từ **tên thư mục**.
+### Model thật sự gồm gì — đo, không ước
+
+| Tệp | Cỡ |
+|---|---|
+| `wan2.2_text2video_14B_high_quanto_mbf16_int8` | **14,90 GB** |
+| `wan2.2_text2video_14B_low_quanto_mbf16_int8` | **14,90 GB** |
+| `umt5-xxl/…enc-quanto_int8` (text encoder) | 6,73 GB |
+| `xlm-roberta-large/…clip…bf16` | 2,39 GB |
+| `depth_anything_v2_vitl` · `sam_vit_h` | 1,34 + 1,28 GB |
+| **tổng `ckpts/`** | **44,8 GB** |
+
+⭐ Hai tệp 14,9 GB là **hai chuyên gia MoE** của Wan 2.2 (high-noise và
+low-noise), không phải hai bản sao. `t2v_2_2.json` khai `URLs` và `URLs2` chính
+là chúng, cộng `guidance_phases: 2` và `switch_threshold: 875` để đổi chuyên gia
+giữa chừng.
+
+🔴 Bản trước của tệp này ghi *"`/data/ckpts/` model WanGP tự tải về"* — **sai
+hai lần**: model không ở `/data/ckpts/`, cũng không ở `/data/hf/`, mà ở
+**`/data/Wan2GP/ckpts/`** (thư mục `ckpts` **bên trong kho**, đường tương đối từ
+`cwd` của WanGP). Đừng suy vị trí model từ tên thư mục — đọc log nạp model.
 
 🔑 **Cài đặt mất ~40 phút và phần lớn nằm trên volume — nhưng KHÔNG phải tất cả.**
 
@@ -96,6 +115,24 @@ kẹt cứng — thử 6 lượt đều `not enough free GPU`.
 ⛔ `PATCH /pods/{id}` **không nhận** `gpuTypeIds` — đã thử, trả 400 *"key
 provided in request body which is not in input schema"*. Chỉ đặt được **lúc
 tạo**. Muốn đổi danh sách ⇒ xoá pod, tạo lại (môi trường trên volume không mất).
+
+---
+
+## 3b. ⭐ `restart` KHÔNG nhả card — dùng nó, đừng `stop`/`start`
+
+Đo ngày 06/09:
+
+```python
+api._rest("POST", "/pods/bly29qwp5bum3r/restart")   # 200, giu nguyen may
+api._rest("POST", "/pods/bly29qwp5bum3r/reset")     # 200, tuong tu
+```
+
+Pod khởi động lại, nạp lại `dockerEntrypoint`, **giữ nguyên chỗ GPU đã thuê**.
+Đây là cách đúng để nạp script mới lên pod đang chạy.
+
+🔴 Trước khi biết đường này, tôi tưởng đổi script bắt buộc phải `stop` rồi
+`start` — tức nhả card rồi cầu may thuê lại (§4). Sáu lượt thất bại ngày 06/09
+là hệ quả của giả định đó, không phải của tồn kho.
 
 ---
 
@@ -177,6 +214,23 @@ https://<pod-id>-8888.proxy.runpod.net
 ```
 
 ⚠️ `22/tcp` có ánh xạ nhưng **chưa nạp khoá SSH** ⇒ chưa dùng được (xem §7).
+
+### 🔴 Proxy RunPod nằm sau Cloudflare — `urllib` bị chặn thẳng
+
+```
+HTTP 403   error code: 1010        <- Cloudflare chan theo chu ky trinh duyet
+```
+
+Đo ngày 06/09: **bốn** biến thể header xác thực (`Authorization: Bearer`,
+`x-runpod-api-key`, …) đều 403. Đổi **mỗi** `User-Agent` sang chuỗi của trình
+duyệt thì **200 ngay**. `curl` không dính vì UA mặc định của nó không bị chặn.
+
+⭐ Vì sao đây là kiểu hỏng khó lần nhất trong cả tuyến: dịch vụ **đang chạy
+đúng**, log phía C-CLOUD **sạch không một dòng** — vì yêu cầu chưa từng tới nơi
+— nên mọi bằng chứng ở phía máy chủ đều nói "không có gì sai". Chỉ có phía gọi
+mới thấy.
+
+⇒ `apps/lttvideo/wangp_client.py` gửi `UA_TRINH_DUYET` trên **mọi** lời gọi.
 
 ---
 

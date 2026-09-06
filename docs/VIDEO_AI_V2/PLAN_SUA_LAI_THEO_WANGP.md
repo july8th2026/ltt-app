@@ -125,6 +125,67 @@ khẳng định một tính chất của hệ hai-tuổi-thọ mà nó chỉ nh�
 
 ---
 
+## 4b. 🔴 WanGP CÓ tài liệu và CÓ bộ triển khai — tôi đã bỏ qua chúng
+
+Kho WanGP chứa **26 tài liệu** trong `docs/`, và ở gốc kho có **`Dockerfile`**,
+**`entrypoint.sh`**, **`run-docker-cuda-deb.sh`**, `wgp_config.json`.
+
+Tôi viết `cai_dat.sh` và `khoi_dong.sh` bằng tay **trước khi** đọc chúng, và
+đánh dấu vài thứ là "ẩn số phải đo" trong khi WanGP đã có hẳn một tệp trả lời:
+
+| Thứ tôi tự làm / gọi là ẩn số | Tài liệu đã trả lời sẵn |
+|---|---|
+| bộ nâng cấp — *"phải đo trên máy"* | `docs/SPATIAL_UPSAMPLERS.md` · `docs/TEMPORAL_UPSAMPLERS.md` |
+| sổ đăng ký hồ sơ 113 khoá | `docs/SETTINGS.md` (mô tả **từng** khoá) |
+| `cai_dat.sh` viết tay | `Dockerfile` |
+| `khoi_dong.sh` viết tay | `entrypoint.sh` |
+| cờ dòng lệnh | `docs/CLI.md` · `run-docker-cuda-deb.sh` |
+
+### Đối chiếu: chỗ nào tôi bám đúng, chỗ nào lệch
+
+✅ **`cai_dat.sh` bám `Dockerfile` sát** — cùng ảnh nền
+`nvidia/cuda:12.8.1-cudnn-devel-ubuntu22.04`, cùng danh sách gói apt, cùng
+`torch==2.10.0+cu128`, cùng bản vá SageAttention, cùng `TORCH_CUDA_ARCH_LIST=8.0`
+(A100).
+
+⚠️ Đừng nhầm hai tuyến: `INSTALLATION.md` mô tả tuyến **conda** và chỉ ghi hai
+cặp (`cu130`+torch 2.10.0+py3.11 · `cu128`+torch 2.7.1+py3.10). Cặp
+`torch 2.10.0 + cu128` ta đang dùng **không** nằm trong đó — nó là tuyến
+**Docker**, và tuyến Docker mới là tuyến ta đi.
+
+❌ **`khoi_dong.sh` bỏ sót chín biến môi trường của `entrypoint.sh`**, trong đó:
+
+```bash
+export TORCH_ALLOW_TF32_CUBLAS=1     # TF32 tren Ampere — thang vao toc do matmul
+export TORCH_ALLOW_TF32_CUDNN=1
+export OMP_NUM_THREADS=$(nproc)      # va MKL / OPENBLAS / NUMEXPR
+export PYTHONUNBUFFERED=1
+```
+
+⇒ Phép đo **79,8 giây/bước** ngày 06/09 chạy **thiếu TF32**. Con số ấy không
+phải "tốc độ của WanGP trên A100"; nó là tốc độ của bản cấu hình thiếu của tôi.
+
+❌ **Thiếu `--compile`.** `run-docker-cuda-deb.sh` chính chủ truyền nó, và
+`docs/CLI.md:225` xếp nó vào ví dụ *Best Performance*
+(`--compile --attention sage2 --profile 3`).
+
+⚠️ **`--perc-reserved-mem-max`: hai nguồn của WanGP mâu thuẫn nhau.**
+`docs/CLI.md:156` ghi `< 0.5`; `run-docker-cuda-deb.sh` truyền `1`. **Chưa đặt**,
+có chủ ý — đo rồi mới chốt, không sao chép mù bên nào.
+
+✅ **`--attention sage2` hợp lệ** (`CLI.md:283`: cần Triton + SageAttention 2.x,
+ta có 2.2.0). Script docker dùng `sage` là lựa chọn thủ, không phải giới hạn.
+
+✅ **Profile 1 được tài liệu xác nhận** — `CLI.md:147`: *"Load entire current
+model in VRAM and keep all unused models in reserved RAM for fast VRAM
+transfers"*. Đúng điều đã chốt ở `P01-D-15`.
+
+⭐ Bài học: **đọc bộ triển khai của thượng nguồn trước khi viết bộ triển khai của
+mình.** Một tệp `Dockerfile` là câu trả lời cho câu hỏi "cài thế nào", và nó
+không trôi như một ghi chú.
+
+---
+
 ## 5. Việc phải làm, theo thứ tự
 
 ### E0 — sửa hồ sơ về đúng factory *(không cần GPU)*
@@ -140,17 +201,28 @@ khẳng định một tính chất của hệ hai-tuổi-thọ mà nó chỉ nh�
 - [ ] `cost.py`: `GIAY_GPU_MOI_GIAY_VIDEO = 316.0` đo ở **profile 4 + 720p +
       20 bước** ⇒ **vô hiệu**. Đánh dấu là chưa đo lại, đừng để nó im lặng sai.
 
-### E1 — đo lại ở đúng cấu hình WanGP *(cần GPU, ~25 phút)*
+### E1 — đo lại ở đúng cấu hình WanGP *(cần GPU, ~25 phút)* — ĐANG CHẠY
 
-Một lượt duy nhất, `832x480 / 30 bước / 81 khung / profile 1`, ghi:
-VRAM đỉnh · giây mỗi bước · tổng giây · và **danh sách bộ nâng cấp máy thật có**.
+Một lượt, `832x480 / 30 bước / 81 khung / profile 1`, **chưa** có TF32 và
+**chưa** `--compile` — cố ý, để làm **mốc gốc** cho phép so A/B ở `E1b`.
+
+### E1b — bật đúng môi trường của `entrypoint.sh`, đo lại, so
+
+Đổi **một lần một thứ**: (1) chín biến môi trường của WanGP; (2) `--compile`.
+Một phép đo đổi hai thứ cùng lúc không trả lời được thứ nào.
 
 ### E2 — chốt đường 480p→720p bằng số, không bằng ý kiến
 
-So ba lượt: `480p thô` · `480p + spatial_upsampling` · `720p thô`.
-Chốt cái nào vào sản phẩm dựa trên **giá mỗi giây video** và ảnh so sánh.
+Đọc `docs/SPATIAL_UPSAMPLERS.md` **trước**, rồi so ba lượt:
+`480p thô` · `480p + spatial_upsampling` · `720p thô`. Chốt theo **giá mỗi giây
+video** và ảnh so sánh.
 
-### E3–E7 — như `FINAL_IMPLEMENTATION_PLAN.md`, sau khi E1 xanh
+### E3 — đọc `docs/SETTINGS.md` đối chiếu toàn bộ 113 khoá hồ sơ
+
+Sổ đăng ký hồ sơ dựng từ phép trích thời-chạy, chưa từng đối chiếu với tài liệu
+mô tả từng khoá. Việc này **không cần GPU**.
+
+### E4–E7 — như `FINAL_IMPLEMENTATION_PLAN.md`, sau khi E1 xanh
 
 ---
 
