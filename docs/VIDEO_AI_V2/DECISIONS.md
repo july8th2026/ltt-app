@@ -145,6 +145,83 @@ mại được · tới lúc muốn bán thì làm lại.
 song song, **cùng một engine**. Mặc định vẫn là đường dài (`D-V2-002`); đổi thì
 phải là quyết định của chủ dự án, ghi vào đây.
 
+### P01-D-06 — "Máy C sẵn có" KHÔNG dùng lại được để chạy WanGP (nhưng ổ đĩa thì có)
+
+Câu hỏi của chủ dự án 06/09: *"ta có sẵn máy C-CLOUD với cấu hình GPU và ổ đĩa
+sẵn, tại sao không dùng luôn?"* Đo cấu hình thật của endpoint `uwzftpd3utftfn`:
+
+| Trường | Giá trị đo được |
+|---|---|
+| loại | **Serverless endpoint**, không phải máy |
+| `workersMin` / `workersMax` | **0** / 1 ⇒ **hiện không có gì đang chạy** |
+| `gpuTypeIds` | ghim cứng **H100 PCIe · H100 80GB HBM3 · H100 NVL** |
+| `templateId` | `wgvdjosgyq` — **API trả 404, template đã biến mất** |
+| `version` | 17 (ảnh build từ kho riêng `lttvideo-worker`) |
+| `networkVolumeId` | **`uizchbiet5`** ✅ |
+| `idleTimeout` / `executionTimeoutMs` | 300 s / 1.800.000 ms |
+
+**Ba thứ chặn, và không thứ nào sửa được bằng cấu hình:**
+
+① **Ảnh sai phần mềm.** Ảnh dựng từ kho `lttvideo-worker` = ComfyUI + `handler.py`
+của V3. **WanGP không có trong đó.** Muốn chạy WanGP thì phải build ảnh mới —
+việc này tồn tại dù dùng lại endpoint hay không.
+
+② **Serverless không có cổng vào thường trực.** Nó là hàng đợi request→response.
+P01 và P02 đòi *"private operator WebUI"* và *"API/MCP entrypoint"* — tức phải mở
+được cổng và **gõ vào tận nơi**. Trên serverless không làm được.
+
+③ **GPU ghim cứng lớp H100**, mà tồn kho H100 NVL ở `US-KS-2` đang **Low**.
+
+**Nhưng vế đúng của câu hỏi vẫn đúng, và nó là vế đắt tiền:** volume
+`uizchbiet5` (300 GB, đã trả tiền, ~$21/tháng) **dùng lại được** — Pod gắn được
+đúng volume đó miễn là cùng `US-KS-2`.
+
+⇒ Phương án A **không phải** "thuê một GPU". Nó là **"thuê 2 giờ truy cập tương
+tác vào cái ổ đĩa ta đang trả tiền hằng tháng"**. Giá $1,39/giờ không do nhu cầu
+tính toán quyết định — nó do **ràng buộc datacenter của volume** quyết định, vì
+`US-KS-2` chỉ còn A100 và H100.
+
+⛔ Endpoint cũ **để nguyên**, không xoá: `workersMin=0` nên nó tốn $0. Xoá nó
+thuộc P06.
+
+### P01-D-07 — KHÔNG chạy hệ thống trên máy A
+
+Chủ dự án chốt 06/09: *"ta không dùng máy A để run hệ thống vì GPU không đủ để
+sử dụng Wan 2.2."*
+
+Đo được ở máy A: **2 × RTX 5060 Ti 16 GB**, GPU 0 rảnh hoàn toàn (0 MiB, 0%),
+ổ `E:` trống **2.794 GB**. *(Ghi chú: bộ nhớ cũ chép rằng GPU thứ hai lỗi Code 43
+— **sai rồi**, cả hai card hiện đều sống.)*
+
+⭐ Căn cứ của quyết định vững: `V3` đã trả giá cho đúng bài học này — *"Kiểm ở
+nơi nó sẽ chạy. Không dựng bậc kiểm trung gian ở máy A"* — vì máy A là
+Windows/Blackwell còn C-CLOUD là Linux/Hopper. Và 16 GB đứng rất xa đỉnh **59,8
+GB** mà `V-008` đo cho fp16 720P.
+
+⚠️ Một sắc thái ghi lại để sau khỏi cãi: WanGP *có thể* chạy Wan 2.2 trên card
+16 GB (đó là toàn bộ lý do nó tồn tại — lượng tử hoá + offload). Cái nó **không**
+làm được là chạy ở **chất lượng/tốc độ sản xuất**. Nên câu đúng là *"máy A không
+đủ cho bản sản xuất"*, không phải *"máy A không chạy nổi"*.
+
+**Đã làm gì ở máy A:** `git clone` mã nguồn WanGP tại SHA ghim vào
+`E:\WANGP\Wan2GP` (**181 MB**). **Không** tạo venv, **không** cài torch,
+**không** tải model, **không** chạm GPU — kiểm lại sau khi có quyết định: GPU 0
+vẫn 0 MiB.
+
+Bản nguồn này **giữ lại** làm bản tra cứu chỉ-đọc: đọc `defaults/`, `models/`,
+`profiles/` để rút tham số baseline **không cần GPU nào cả**. Đó là việc P02 phải
+làm, và làm ở đây thì miễn phí.
+
+### P01-D-08 — Hash lệch vì Windows đổi kết dòng, KHÔNG phải bản clone hỏng
+
+Clone xong, 7/8 tệp lệch hash. Nguyên nhân: **`core.autocrlf=true`** — mặc định
+của Git for Windows — đổi LF→CRLF lúc checkout. Quy về LF rồi băm lại thì
+`LICENSE.txt` và `wgp.py` khớp **chính xác** hash đã ghim.
+
+⇒ Khi đối chiếu hash của một bản checkout trên Windows với hash tải thẳng từ
+`raw.githubusercontent.com`, **phải quy về LF trước**. Nếu không, một bản clone
+hoàn toàn đúng sẽ trông y hệt một bản hỏng — và tôi suýt báo cáo như thế.
+
 ### P01-D-04 — SHA thượng nguồn được ghim
 
 `1e1dd2757f24923f008593d9d4ec09062234be20` (2026-09-05). Hash từng tệp ở
