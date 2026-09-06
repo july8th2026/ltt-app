@@ -1770,3 +1770,80 @@ phải `timeout.exe` tự nhân bản, mà **câu hỏi xuất hiện bên trong
 ⇒ Lọc tiến trình để **giết** thì `cmdline` không đủ. Điều kiện phải là thứ tiến
 trình đo *không thể tự thoả*: `cwd` bằng đúng cây, **và** `pid` khác `os.getpid()`
 cùng toàn bộ chuỗi cha của nó.
+
+---
+
+## Bẫy 26 — Bánh cóc chỉ đỏ khi **TĂNG**, nên nó xanh khi phép đo **teo lại**
+
+*(Ghi 06/09/2026 trên nhánh `phien/video-v2-wangp`. Số bẫy có thể trùng với một
+bẫy khác đang viết song song trên `claude/chatltt-v3-agentic` — đánh lại số khi
+hợp nhất.)*
+
+### Chuyện gì xảy ra
+
+Phiên `LTTCHAT V3` báo `tools/check_mypy.py` **đỏ từ trước mọi thay đổi của
+họ**: `arg-type 119 → 120`, `assignment 59 → 61`. Họ kiểm bốn phép đo độc lập,
+gồm cả **hai cha** của commit hợp nhất, và **cố ý không chạy `--accept`** — dời
+mốc xuống dưới commit của mình là giặt phần trôi của người khác thành phần của
+mình.
+
+**Kiểm độc lập trên một nhánh khác hẳn** (`phien/video-v2-wangp`): **đúng hai mã
+ấy, đúng hai con số ấy**. Hai nhánh độc lập cùng đỏ ⇒ chỗ trôi nằm ở **tổ tiên
+chung**, không phải của ai trong hai phiên. Kết luận của họ đứng vững.
+
+### 🔴 Nhưng thứ đáng sợ hơn nằm trong **biên bản gate**, không nằm ở ba lỗi
+
+Đọc `test-results/gates/*.json` trên **cùng một cây**:
+
+| Lượt | `mypy` | Giây |
+|---|---|---|
+| 13:53 | **FAIL** | 3,2 |
+| 14:19 | **PASS** | 2,2 |
+| 15:49 | **PASS** | 3,1 |
+| gõ tay, ngay sau | **FAIL** | 7,9 |
+
+Chạy tay ba lượt liền: **3/3 FAIL**, cùng một thông điệp ⇒ *bây giờ* nó tất
+định. Gate **không** đặt biến môi trường nào, **không** chụp cây, và bước `mypy`
+gọi **đúng** `tools/check_mypy.py`. Vậy hai lượt PASS kia đo một thứ khác.
+
+### Lỗ hổng: `giam` **in ghi chú rồi trả 0**
+
+```python
+tang = {... if so > moc.get(ma, 0)}
+giam = {... if hien.get(ma, 0) < moc[ma]}
+if tang:  ...  return 1
+...
+if giam:  print("da GIAM ...")
+return 0          # <- GIAM luon XANH
+```
+
+⇒ Bất cứ điều gì làm mypy **quét được ít hơn** — một gói không nạp được, một
+thư mục rơi khỏi phạm vi, một lượt dừng sớm ở một nhánh — đều làm số đếm **giảm**
+và bánh cóc **xanh**.
+
+⭐ Cay nhất: chính docstring của `check_mypy.py` đã cảnh báo đúng lớp lỗi này —
+*"một thư mục bị đổi tên sẽ âm thầm rơi khỏi phạm vi quét, và số phát hiện GIẢM
+— trông y hệt một cải thiện"* — và tôi đã canh **`THU_MUC`** (truyền tường minh,
+không tự bỏ qua thư mục thiếu) nhưng **không canh khối lượng thật sự được
+kiểm**. Canh danh sách đầu vào không thay được việc canh sản lượng đầu ra.
+
+### ⛔ Đừng đuổi theo cột GIÂY
+
+Phiên kia đề xuất *"thấy `mypy` xanh dưới ~6 giây thì đừng tin"*. **Đo được: đó
+là cache tăng dần của mypy** (`.mypy_cache/`), không phải dấu hiệu hỏng — lượt
+nguội ~15 giây, lượt ấm ~2–3 giây, và lượt **FAIL** ở 13:53 cũng chỉ mất **3,2
+giây**. Một lượt đỏ nhanh bác bỏ chính quy tắc ấy. Lấy nó làm dấu hiệu sẽ đẩy
+các phiên sau đi đuổi một cái bóng.
+
+### Bản sửa — và vì sao **chưa** vá
+
+Sửa đúng lớp: ghi thêm vào `.moc` **số tệp mypy thật sự kiểm**, và đỏ khi nó
+**giảm**. Đầu vào đã canh; đây là canh đầu ra.
+
+⛔ Chưa vá, theo `AGENTS.md` §4c: mỗi worktree chạy bản `tools/` của riêng nó,
+nên một bản vá một phía **phạt đúng cây đã sửa** (cây mới thì đỏ, cây cũ chạy
+tự do), và một trường mới trong `.moc` thì bản cũ đọc qua không thấy. Phải lan
+cùng lúc, hoặc không lan.
+
+⛔ Và **không `--accept`**: mốc hiện tại chưa từng được chứng minh là khớp cây
+nào. Dời nó xuống là khoá vĩnh viễn ba lỗi chưa ai truy ra nguồn.
