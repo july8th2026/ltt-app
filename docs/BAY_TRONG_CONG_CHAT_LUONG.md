@@ -1137,6 +1137,36 @@ viết đúng cho Windows, và khoá đánh theo **phiên** nên chỉ cần k�
 việc đó không bế tắc — vì thứ chuyển giao không phải một yêu cầu, mà là **một
 quyết định đã được chuẩn bị đủ để người có quyền chỉ cần nói có hoặc không**.
 
+### 🔴 Hai chuẩn: lọc cứng cho CÂY MÌNH, liếc bảng cho CÂY NGƯỜI
+
+*(phiên VIDEO AI tự chẩn, 06/09 — cùng một người, cùng một phút)*
+
+Họ báo **ba** tiến trình mồ côi ở cây H44. Đo đúng thì **hai**: cái thứ ba có cha
+`bash.exe` còn sống, và nó là một **bộ lấy mẫu đang chạy có chủ đích**.
+
+Chỗ đáng ghi không phải con số sai, mà là **cùng một người áp hai chuẩn trong
+cùng một phút**:
+
+| | Cây của mình | Cây của người |
+|---|---|---|
+| cách lọc | ba tầng **cứng trong mã**: `cwd` + cha `NoSuchProcess` + cmdline | *"CPU thấp + tuổi cao"*, liếc bảng rồi gõ |
+
+⛔ Và chỉ số phân biệt — **cha còn sống không** — chính là chỉ số họ **dặn người
+kia dùng trong cùng tin nhắn ấy**. Phương pháp đúng đã được viết ra; nó chỉ không
+được áp cho phần mình không phải chịu hậu quả.
+
+🔑 Vì sao nó lọt: cả ba tiến trình trông **y hệt nhau ở hai chỉ số dễ đo nhất**
+(CPU thấp, tuổi cao). Một phép lọc rẻ đủ dùng cho việc của mình — nơi mình biết
+mình vừa chạy gì — nhưng **không** đủ cho cây người, nơi mình không có ngữ cảnh
+ấy. Thiếu ngữ cảnh đòi **nhiều** chứng cứ hơn, không phải ít hơn.
+
+⇒ **Báo cáo về cây người khác phải chặt hơn báo cáo về cây mình**, chứ không lỏng
+hơn. Nếu không thì hậu quả rơi vào người không có dữ liệu để phản biện.
+
+⭐ Ở ca này cái sai dừng ở **một dòng báo cáo** thay vì thành một hành động — và
+dừng vì người nhận **đo lại trước khi dừng**, không vì người gửi cẩn thận. Đó là
+lý do dòng 4 của giao ước nằm ở phía **người hành động**, không ở phía người báo.
+
 ### 🔑 Luật khái quát: CÁI TÊN đi xa hơn dòng chữ
 
 *(phiên Mobile V1 đúc, 06/09 — và nó gom được cả bốn ca của đêm)*
