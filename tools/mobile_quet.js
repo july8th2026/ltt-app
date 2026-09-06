@@ -29,6 +29,9 @@ async (page) => {
   const CAU_HINH = {"goc":"http://127.0.0.1:8123","cookie":"","routes":["/"],"khung":["p390"]};
 
   const KHUNG = {
+    // 195px = mot may 390px o muc phong to 200% (WCAG 1.4.10 doi 320px;
+    // 195 la chat hon tieu chuan, ghi ro o docs/MOBILE/07_BE_MAT_CHUAN.md).
+    p195: { w: 195, h: 844, cham: true },
     p320: { w: 320, h: 720, cham: true },
     p390: { w: 390, h: 844, cham: true },
     p430: { w: 430, h: 932, cham: true },
@@ -43,11 +46,32 @@ async (page) => {
     const r = { tran_ngang: Math.round(de.scrollWidth - vw) };
 
     // (1) chi tinh la tran khi KHONG co to tien tu cuon hap thu
+    //
+    // 🔴 BAN DAU CUA HAM NAY SAI VOI PHAN TU DINH VI TUYET DOI, va do la ly do
+    //    thu pham o 195px "khong khoanh duoc" suot phien 05-06/09.
+    //
+    //    `overflow-x` cua mot to tien CHI cat duoc mot phan tu `position:absolute`
+    //    khi to tien ay la KHOI CHUA cua no — tuc la to tien DA DINH VI gan nhat.
+    //    Mot to tien `static` co `overflow-x:auto` nam giua thi KHONG cat gi ca.
+    //
+    //    Do duoc luc ay: `header.hdr` co scrollWidth 250 / clientWidth 195, ma
+    //    bon con TRUC TIEP cua no ket thuc o x=185 (vua). Phan doi ra den tu mot
+    //    hau due tuyet doi — va ham cu LOAI no ra khoi danh sach nghi can.
+    //
+    // ⛔ `position:fixed` thi khong to tien nao hap thu duoc (tru khi co
+    //    `transform`/`filter`/`contain` tao khoi chua moi — hiem, va neu co thi
+    //    ta bao THUA mot ung vien, re hon bo sot thu pham).
     const coToTienCuon = (el) => {
+      const viTri = getComputedStyle(el).position;
+      if (viTri === 'fixed') return false;
+      const tuyetDoi = viTri === 'absolute';
       let a = el.parentElement;
+      let daQuaKhoiChua = !tuyetDoi;   // phan tu thuong: moi to tien deu cat duoc
       while (a && a !== de) {
         const cs = getComputedStyle(a);
-        if (['auto', 'scroll', 'hidden'].includes(cs.overflowX)) return true;
+        const cuon = ['auto', 'scroll', 'hidden'].includes(cs.overflowX);
+        if (!daQuaKhoiChua && cs.position !== 'static') daQuaKhoiChua = true;
+        if (daQuaKhoiChua && cuon) return true;
         a = a.parentElement;
       }
       return false;
@@ -60,6 +84,7 @@ async (page) => {
         if (coToTienCuon(el)) continue;
         thu.push({ t: el.tagName.toLowerCase(),
           c: (typeof el.className === 'string' ? el.className : '').slice(0, 40),
+          p: getComputedStyle(el).position,
           r: Math.round(b.right) });
       }
       thu.sort((a, b) => b.r - a.r);
@@ -129,9 +154,17 @@ async (page) => {
     if (day.length) r.dinh_day = day.slice(0, 2);
 
     // (6) bang: co bi giau cot hay tran ma khong cuon duoc khong
+    // ⚠️ Bang co the tu cuon TRONG CHINH NO, khong can mot to tien cuon.
+    //
+    // 🔴 Do 06/09: sau khi `.table` duoc cho `display:block;overflow-x:auto` o
+    //    duoi 320px, bo do nay bao "6 bang tran ma khong cuon duoc" trong khi
+    //    ca sau deu cuon duoc — vi no chi hoi TO TIEN. Mot bao dong gia o dung
+    //    cho vua sua xong la cach nhanh nhat de nguoi ta thoi doc bo do.
+    const tuCuon = (el) => ['auto', 'scroll'].includes(getComputedStyle(el).overflowX);
     r.bang_tran = [...document.querySelectorAll('table')].filter((t) => {
       const b = t.getBoundingClientRect();
-      return t.scrollWidth > Math.round(b.width) + 1 && !coToTienCuon(t);
+      return t.scrollWidth > Math.round(b.width) + 1
+        && !tuCuon(t) && !coToTienCuon(t);
     }).length;
     r.cot_an = [...document.querySelectorAll('th,td')].filter(
       (e) => getComputedStyle(e).display === 'none').length;
