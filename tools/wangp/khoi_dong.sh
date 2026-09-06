@@ -41,7 +41,7 @@ echo "### KHOI DONG $(date -Is)  pod=${RUNPOD_POD_ID:-?}" | tee -a "$LOG"
 # --- 1. Tu lanh. Cong ben trong kiem THU THAT nen goi moi lan la an toan ---
 bash "$GOC/lttv/cai_dat.sh" 2>&1 | tee -a "$LOG"
 
-PY=$GOC/venv/bin/python
+PY=$GOC/env311/bin/python
 if [ ! -x "$PY" ]; then
   echo "### ⛔ KHONG CO PYTHON SAU KHI CAI — dung, khong phuc vu" | tee -a "$LOG"
   echo "khong-co-python $(date -Is)" > "$GOC/ket_qua/_LOI_KHOI_DONG"

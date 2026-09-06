@@ -1,39 +1,47 @@
 #!/usr/bin/env bash
-# Cai WanGP len network volume, theo DUNG cac buoc trong Dockerfile chinh chu
-# cua WanGP tai SHA ghim. Khac biet duy nhat: cai vao /data (volume) thay vi
-# vao anh, de no song qua moi lan xoa pod.
+# Cai WanGP len network volume theo BO CHINH CHU cua `docs/INSTALLATION.md`:
 #
-# Moi lenh deu ghi thoi gian + ma thoat => log nay CHINH LA ban nhap Dockerfile.
+#     conda create -n wan2gp python=3.11.14
+#     pip install torch==2.10.0 ... --index-url .../cu130
+#     pip install -r requirements.txt
 #
 # ############################################################################
-# HAI NUA, HAI TUOI THO — va do la ca goc cua su co 06/09.
+# VI SAO DOI TU BO CU (py3.10 + torch2.10 + cu128)
 #
-#   NUA TAM  (o container, /usr):  python3, ffmpeg, git, cmake...  <- apt
-#            MAT SACH moi lan pod khoi dong lai.
-#   NUA BEN  (o volume,   /data):  venv, torch, WanGP, ckpts
-#            song qua moi lan xoa pod.
+# Bo cu duoc dung theo `Dockerfile` cua WanGP, va no chay tot cho viec SINH
+# VIDEO. Nhung WanGP chi phat hanh nhan GGUF llama.cpp CUDA cho DUNG HAI bo:
 #
-# Nua ben PHU THUOC nua tam: `$VENV/bin/python3` la symlink TUYET DOI toi
-# `/usr/bin/python3`, va venv khong bao gio chua stdlib cua chinh no.
+#     torch210cu130py311   <- py3.11 · torch 2.10.0 · CUDA 13.0
+#     torch271cu128py310   <- py3.10 · torch 2.7.1  · CUDA 12.8
 #
-# Ban dau chi co MOT cong, kiem MOT moc `_CAI_DAT_XONG` nam o nua BEN. Pod
-# khoi dong lai => nua tam bay hoi, moc van con, cong bo qua cai dat, va
-# `/data/venv/bin/python` thanh symlink treo. Bash bao dung cau
-# "No such file or directory" cho mot symlink treo, nen loi trong nhu la
-# venv da bi xoa — trong khi venv con nguyen ven tren volume.
+# Bo cu la py3.10 + torch2.10 + cu128 => khong khop bo nao, nen log ghi
+# "[GGUF][llama.cpp CUDA] kernels unavailable, using fallback". Ma bo mo rong
+# prompt `Qwen3.8-27B` — thu cho phep DOC ANH de viet prompt, tuc chinh co che
+# Seedance — dung trong so GGUF.
 #
-# ⇒ Moi nua co cong RIENG, va ca hai cong deu kiem THU THAT (chay duoc khong)
-#   chu khong kiem MOT MOC (ai do tung noi la xong).
+# Driver may chu do duoc: 580.159.04 => CUDA 13.0. Nen bo `py311/cu130` chay
+# duoc tren dung card nay.
 # ############################################################################
+#
+# ⛔ HAI NUA, HAI TUOI THO — luat cu van nguyen gia tri:
+#      NUA TAM  (/usr, o container): apt — MAT moi lan pod khoi dong lai
+#      NUA BEN  (/data, volume):     conda env, torch, WanGP, ckpts
+#    Moi nua mot cong, va ca hai cong kiem THU THAT chu khong kiem MOT MOC.
 
 set -u
 SHA=1e1dd2757f24923f008593d9d4ec09062234be20
 GOC=/data
 KHO=$GOC/Wan2GP
-VENV=$GOC/venv
+CONDA=$GOC/conda
+MOI_TRUONG=$GOC/env311
 LOG=$GOC/ket_qua/install.log
 
-mkdir -p "$GOC/ket_qua" "$GOC/ckpts" "$GOC/hf" "$GOC/config"
+#: Ban Python cua bo chinh chu. `INSTALLATION.md` ghi 3.11.14.
+BAN_PY=3.11.14
+#: Banh xe nhan GGUF cho dung bo nay. Thieu no thi Qwen3.8 chay khong nhan.
+GGUF_WHL=https://github.com/deepbeepmeep/kernels/releases/download/GGUF_Kernels/llamacpp_gguf_cuda-1.0.14+torch210cu130py311-cp311-cp311-linux_x86_64.whl
+
+mkdir -p "$GOC/ket_qua" "$GOC/hf" "$GOC/config"
 
 buoc() {
   local ten="$1"; shift
@@ -45,89 +53,87 @@ buoc() {
   t1=$(date +%s)
   echo "=== [$ten] ma_thoat=$ma giay=$((t1-t0))" | tee -a "$LOG"
   echo "{\"buoc\":\"$ten\",\"ma_thoat\":$ma,\"giay\":$((t1-t0))}" >> "$GOC/ket_qua/cai_dat.jsonl"
-  return 0   # khong dung ca script vi mot buoc hong — con thu thap duoc gi thi thu
+  return 0
 }
 
-#: Nua TAM da du chua? Kiem bang `command -v` — tuc thu chay duoc that.
+#: Nua TAM du chua? Kiem bang `command -v` — tuc thu chay duoc that.
 co_goi_he_thong() {
-  command -v python3 >/dev/null 2>&1 || return 1
-  command -v ffmpeg  >/dev/null 2>&1 || return 1
-  command -v git     >/dev/null 2>&1 || return 1
+  command -v git    >/dev/null 2>&1 || return 1
+  command -v wget   >/dev/null 2>&1 || return 1
+  command -v ffmpeg >/dev/null 2>&1 || return 1
   return 0
 }
 
-#: Nua BEN da du chua? Ba muc, tang dan do chat:
-#:   1. `-x` tren venv/bin/python  -> bat luon symlink treo (`-x` theo dich)
-#:   2. kho ma nguon co .git
-#:   3. NAP THAT torch + mmgp      -> bat venv cai do dang
+#: Nua BEN du chua? Ba muc, tang dan do chat.
 co_moi_truong_ben() {
-  [ -x "$VENV/bin/python" ] || return 1
+  [ -x "$MOI_TRUONG/bin/python" ] || return 1
   [ -d "$KHO/.git" ] || return 1
-  "$VENV/bin/python" -c "import torch, mmgp" >/dev/null 2>&1 || return 1
+  "$MOI_TRUONG/bin/python" -c "import torch, mmgp" >/dev/null 2>&1 || return 1
   return 0
 }
 
-echo "###### CAI DAT WanGP $(date -Is)" | tee -a "$LOG"
+echo "###### CAI DAT WanGP (bo chinh chu py3.11/cu130) $(date -Is)" | tee -a "$LOG"
 nvidia-smi >>"$LOG" 2>&1 || echo "khong co nvidia-smi" >>"$LOG"
 
-# --- 1. Goi he thong: y het dong `apt install` trong Dockerfile cua WanGP ---
-#     Chay lai MOI lan khoi dong vi no nam o o container (tuoi tho mot phien).
+# --- 1. Goi he thong (nua TAM) — chay lai MOI lan khoi dong ---
+#     KHONG cai `python3` nua: Python nay den tu conda tren volume.
 if co_goi_he_thong; then
   echo "###### goi he thong da du — bo qua apt $(date -Is)" | tee -a "$LOG"
 else
   echo "###### nua TAM trong — cai lai goi he thong $(date -Is)" | tee -a "$LOG"
   buoc apt_update apt-get update -qq
   buoc apt_install env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
-       python3 python3-pip python3-venv git wget curl cmake ninja-build \
-       libgl1 libglib2.0-0 ffmpeg
-fi
-
-# --- 1b. Ban python cua container PHAI khop ban ma venv duoc dung ---
-#     site-packages bien dich theo cp3XX. Apt doi ban minor => venv im lang
-#     hong theo mot kieu KHAC, kho lan hon nhieu so voi symlink treo.
-BAN_HT=$(python3 -c 'import sys; print("%d.%d" % sys.version_info[:2])' 2>/dev/null || echo "?")
-BAN_VENV=$(ls -d "$VENV"/lib/python3.* 2>/dev/null | head -1 | sed 's#.*/python##')
-if [ -n "${BAN_VENV:-}" ] && [ "$BAN_HT" != "$BAN_VENV" ]; then
-  echo "###### ⛔ LECH BAN PYTHON: container=$BAN_HT venv=$BAN_VENV" | tee -a "$LOG"
-  echo "###### venv phai dung lai tu dau — dung cai dat de khong ghi de am tham" \
-    | tee -a "$LOG"
-  exit 3
+       git wget curl cmake ninja-build libgl1 libglib2.0-0 ffmpeg
 fi
 
 if co_moi_truong_ben; then
   echo "###### nua BEN da du (torch+mmgp nap duoc) — bo qua $(date -Is)" | tee -a "$LOG"
-  echo "###### python=$BAN_HT  HEAD=$(git -C "$KHO" rev-parse HEAD 2>/dev/null)" \
+  "$MOI_TRUONG/bin/python" -c "import sys, torch; print('python', sys.version.split()[0], '| torch', torch.__version__, '| cuda', torch.version.cuda)" \
     | tee -a "$LOG"
   exit 0
 fi
 
 echo "###### nua BEN thieu — cai tiep $(date -Is)" | tee -a "$LOG"
 
-# --- 2. Ma nguon tai SHA ghim ---
+# --- 2. Miniconda tren VOLUME => song qua moi lan xoa pod ---
+if [ ! -x "$CONDA/bin/conda" ]; then
+  buoc tai_miniconda wget -q -O /tmp/mc.sh \
+       https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+  buoc cai_miniconda bash /tmp/mc.sh -b -p "$CONDA"
+fi
+
+# --- 3. Moi truong Python 3.11.14, dung ban `INSTALLATION.md` ghi ---
+if [ ! -x "$MOI_TRUONG/bin/python" ]; then
+  buoc tao_env "$CONDA/bin/conda" create -y -p "$MOI_TRUONG" "python=$BAN_PY"
+fi
+PY="$MOI_TRUONG/bin/python"
+buoc pip_upgrade "$PY" -m pip install -q --upgrade pip setuptools wheel
+
+# --- 4. torch cu130 — bo ma banh xe GGUF nham toi ---
+buoc torch "$PY" -m pip install -q \
+     torch==2.10.0 torchvision==0.25.0 torchaudio==2.10.0 \
+     --index-url https://download.pytorch.org/whl/cu130
+
+# --- 5. Ma nguon tai SHA ghim ---
 if [ ! -d "$KHO/.git" ]; then
   buoc clone git clone --quiet https://github.com/deepbeepmeep/Wan2GP.git "$KHO"
 fi
 buoc checkout git -C "$KHO" checkout --quiet "$SHA"
 echo "HEAD=$(git -C "$KHO" rev-parse HEAD)" | tee -a "$LOG"
 
-# --- 3. Venv tren volume => thu vien song qua moi lan xoa pod ---
-if [ ! -x "$VENV/bin/python" ]; then
-  buoc venv python3 -m venv "$VENV"
-fi
-PY="$VENV/bin/python"
-buoc pip_upgrade "$PY" -m pip install -q --upgrade pip setuptools wheel
-
-# --- 4. torch: DUNG phien ban trong Dockerfile cua WanGP (cu128) ---
-buoc torch "$PY" -m pip install -q \
-     torch==2.10.0+cu128 torchvision==0.25.0+cu128 torchaudio==2.10.0+cu128 \
-     --index-url https://download.pytorch.org/whl/cu128
-
-# --- 5. requirements.txt cua WanGP ---
 buoc requirements "$PY" -m pip install -q -r "$KHO/requirements.txt"
 
-# --- 6. SageAttention: y het Dockerfile, ke ca ban va phat hien GPU ---
-#     8.0 = A100 theo chinh bang trong Dockerfile cua WanGP.
-export TORCH_CUDA_ARCH_LIST="8.0"
+# --- 6. SageAttention ---
+# 🔴 Ban truoc gan cung `8.0` (A100). Ngay 07/09 `US-KS-2` HET A100 va ta roi
+#    xuong H100 — SM **9.0**. Mot arch gan cung se bien dich cho sai card, va
+#    loi do khong no luc build ma no luc CHAY.
+#
+# ⭐ Do tu card THAT moi la ban goc cua SageAttention: `setup.py` thuong nguon
+#    VON phat hien capability tu torch. `Dockerfile` cua WanGP thay no bang mot
+#    danh sach co dinh chi vi luc BUILD DOCKER khong co GPU. Tren pod thi co.
+ARCH=$("$MOI_TRUONG/bin/python" -c "import torch;a,b=torch.cuda.get_device_capability(0);print(f'{a}.{b}')" 2>/dev/null || echo "8.0")
+echo "###### TORCH_CUDA_ARCH_LIST do duoc tu card: $ARCH" | tee -a "$LOG"
+export TORCH_CUDA_ARCH_LIST="$ARCH"
 export FORCE_CUDA=1
 export MAX_JOBS=8
 if [ ! -d /tmp/sageattention ]; then
@@ -160,9 +166,12 @@ PATCH
 buoc sage_patch bash -c "cd /tmp/sageattention && $PY /tmp/patch_setup.py"
 buoc sage_build bash -c "cd /tmp/sageattention && $PY -m pip install -q --no-build-isolation ."
 
-# --- 7. Bao cao moi truong ---
+# --- 7. Nhan GGUF llama.cpp CUDA — LY DO CHINH cua ca lan nang bo nay ---
+buoc gguf_kernels "$PY" -m pip install -q "$GGUF_WHL"
+
+# --- 8. Bao cao moi truong ---
 "$PY" - <<'ENV' > "$GOC/ket_qua/moi_truong.json" 2>>"$LOG"
-import json, platform, subprocess, sys
+import json, platform, sys
 ra = {"python": sys.version, "platform": platform.platform()}
 try:
     import torch
@@ -174,7 +183,8 @@ try:
                        for i in range(torch.cuda.device_count())])
 except Exception as e:
     ra["torch_loi"] = str(e)
-for ten, mod in (("mmgp", "mmgp"), ("sageattention", "sageattention")):
+for ten, mod in (("mmgp", "mmgp"), ("sageattention", "sageattention"),
+                 ("llamacpp_gguf_cuda", "llamacpp_gguf_cuda")):
     try:
         from importlib.metadata import version
         ra[ten] = version(mod)
@@ -184,7 +194,5 @@ print(json.dumps(ra, ensure_ascii=False, indent=1))
 ENV
 
 echo "###### CAI DAT XONG $(date -Is)" | tee -a "$LOG"
-du -sh "$VENV" "$KHO" >> "$LOG" 2>&1
-# ⛔ KHONG con `touch _CAI_DAT_XONG`. Moc do chinh la thu da gay ra su co:
-#    no khang dinh mot tinh chat cua he HAI TUOI THO ma no chi nhin thay MOT.
-#    Cong o tren kiem thu that, nen khong can moc nao ca.
+du -sh "$MOI_TRUONG" "$CONDA" "$KHO" >> "$LOG" 2>&1
+# ⛔ KHONG co moc `_CAI_DAT_XONG`. Cong o tren kiem thu that.
