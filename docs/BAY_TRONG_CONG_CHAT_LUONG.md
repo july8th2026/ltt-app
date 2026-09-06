@@ -1699,3 +1699,53 @@ là cache** (`.pytest_cache/v/cache/nodeids`, `.playwright-cli/*.yml`).
 
 ⇒ Dùng **`git grep`** — ranh giới *"git có theo dõi không"* chính là ranh giới ta
 cần.
+
+---
+
+## Bẫy 25 — `short test summary` của pytest **không phải** bảng kết quả của gate
+
+Đo 06/09. Một lượt `gate.py --vong-lap` kết thúc, tôi đọc phần đuôi và thấy:
+
+    FAILED tests/test_299_khu_api_da_dich.py::...
+    FAILED tests/test_616_chatltt_bang_va_migration.py::...
+    2 failed, 6517 passed, 48 skipped ... in 415.07s
+    RESULT: FAIL (3/21)
+
+Tôi sửa **hai** thứ rồi chạy gate đầy đủ để chốt. Nó đỏ.
+
+⭐ Câu trả lời nằm ngay trong dòng tôi vừa đọc: **`(3/21)`**, không phải `(2/21)`.
+Gate có **21 bước**; `pytest` chỉ là **một** trong số đó. `short test summary`
+liệt kê những phép kiểm đỏ **bên trong bước ấy** — nó không biết gì về hai mươi
+bước còn lại. Bước thứ ba đỏ là `bo qua im lang`, một bánh cóc chốt tập hợp lượt
+bỏ qua, và nó **không xuất hiện** trong bất kỳ dòng `FAILED` nào.
+
+### Vì sao cái nhầm này dễ tới thế
+
+Cả hai đều là "danh sách những thứ đỏ", cùng nằm ở đuôi cùng một luồng ra, và
+danh sách của pytest **dài hơn** nên nó trông đầy đủ hơn. Thứ ngắn hơn — một cặp
+số trong ngoặc — mới là thứ nói đúng.
+
+### Cách hỏi đúng
+
+Gate ghi bảng bước ra JSON. Đọc nó, đừng đọc đuôi stdout:
+
+    ls -t test-results/gates/*.json | head -1     # luot gan nhat
+    # moi hang: {'ten': ..., 'ket': 'PASS'|'FAIL', 'giay': ...}
+
+Bảng ấy trả lời **bước nào** đỏ. `short test summary` trả lời **phép kiểm nào**
+đỏ, và chỉ khi bước đỏ tình cờ là bước chạy pytest.
+
+### Cái giá, và nó không phải thời gian
+
+Lượt gate đầy đủ ấy tốn ~7 phút và **không dùng được làm bằng chứng** — vì tôi
+đã sửa `check_bo_qua.moc` **trong lúc nó đang chạy**. Gate tự phát hiện và nói
+thẳng:
+
+    CAY DA DOI TRONG LUC CHAY:  M tools/check_bo_qua.moc (891 -> 936 byte)
+    Ket qua duoi day noi ve cay luc BAT DAU, khong phai cay hien tai.
+
+⇒ Hai luật, và luật thứ hai là hệ quả của luật thứ nhất:
+
+1. Đọc **bảng bước**, không đọc đuôi pytest. Sửa cho **hết** rồi mới chạy.
+2. Gate là công cụ ra **phán quyết**. Một phán quyết về một cây **đang đổi** thì
+   không phán quyết gì cả — đúng như chính nó tự in ra.
