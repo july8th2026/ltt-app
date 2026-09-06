@@ -1905,6 +1905,39 @@ ef68cf51 (admin-mvp-v3, nơi ĐƯA bánh cóc này vào)  ->  y hệt
    Nó **không** im lặng. Nên nguyên nhân của ba lượt xanh vẫn **chưa biết**, và
    ghi ra đây đúng như thế thay vì đắp một lời giải thích vừa vặn.
 
+### ✅ ĐÃ CÓ LỜI GIẢI (07/09) — và nó nằm NGOÀI KHO. Xem **Bẫy 28**.
+
+Phiên `admin-mvp-v3` viết Bẫy 28 từ phía bên kia của cùng sự việc: họ nâng
+**`pillow 10.4.0 → 12.3.0`** trong `site-packages` của **python hệ thống** —
+thứ **cả sáu worktree dùng chung**. `pillow 12` đổi stub kiểu (`Image.open()`
+nay trả `ImageFile`), nên mọi chỗ gán vào một biến kiểu `Image` thành lỗi. Đúng
+`+1 arg-type` và `+2 assignment`.
+
+⇒ Mọi phép đo của tôi **đúng phương pháp mà không thể tìm ra nguyên nhân**, vì
+  nguyên nhân **không nằm trong một commit nào**:
+
+| phép đo tôi làm | vì sao nó không thể thấy |
+|---|---|
+| `git archive` của commit merge và **cả hai cha** | cả ba đều chạy trên site-packages **mới** |
+| A/B `apps platform_core server` trước-B4 vs HEAD | như trên — hai bên cùng môi trường |
+| xoá cache mypy, đổi `MYPY_CACHE_DIR` | cache không phải nguyên nhân |
+
+⭐ Và **ba lượt xanh** cuối cùng cũng giải thích được: chúng chạy **TRƯỚC** lần
+   nâng, khi cây đo ra đúng `119/59` = bằng mốc. Lượt đỏ chạy **SAU**. Cùng mã,
+   cùng mốc, **môi trường đổi dưới chân**. Con số 15,2 giây của lượt đỏ chỉ là
+   một cache mypy bị vô hiệu khi phụ thuộc đổi — tức **đúng như tôi đã tự sửa ở
+   trên**: giây không phải dấu hiệu, nó là hệ quả.
+
+🔴 Bài học lớn nhất của cặp Bẫy 27 + 28: **một điều tra hoàn hảo trong kho vẫn
+   thất bại khi nguyên nhân ở ngoài kho.** Tôi đã chạy sáu phép đo, mỗi phép
+   đúng, và kết luận *"không phải của tôi"* — đúng — rồi dừng ở *"chưa biết"*.
+   Câu tôi thiếu là: **"có gì ngoài kho vừa đổi không?"** — `pip list`, mtime
+   của `site-packages`, hoặc đơn giản là hỏi phiên khác.
+
+⇒ Và điều đúng nhất tôi làm là **không `--accept`**: nếu tôi dời mốc, phần trôi
+  của lần nâng phụ thuộc sẽ bị chôn dưới commit của tôi, và Bẫy 28 sẽ không bao
+  giờ được viết.
+
 ### Luật rút ra
 
 1. **Trước khi sửa một bánh cóc vừa đỏ, hỏi nó có đỏ TRƯỚC khi mình chạm vào
