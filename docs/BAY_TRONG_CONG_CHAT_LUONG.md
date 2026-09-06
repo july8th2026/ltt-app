@@ -1129,6 +1129,35 @@ khác: ở đây **không ai** bị phạt cả, kể cả người sau. Đó l�
 Và đọc CPU **tích luỹ** chứ không phải một mẫu `cpu_percent` — một lượt đang chờ
 I/O đo ra 0 %, còn một xác chết cũng đo ra 0 %.
 
+### Bậc 5 — KẾT NỐI TCP phân biệt "đang chờ" với "đã chết"
+
+*(phiên ASV, 06/09)*
+
+CPU tích luỹ (bậc 3) phân biệt được **đang cày** với **xác chết**. Nó **không**
+phân biệt được **đang chờ mạng** với **đã chết** — cả hai đều 0 %.
+
+```
+ESTABLISHED -> 192.168.2.66:8299     <- dang SINH CHU tren may B, khong treo
+khong ket noi nao                    <- da chet, hoac chua bat dau
+```
+
+⇒ Năm bậc, mỗi bậc trả một câu **khác**:
+
+| Bậc | Trả lời |
+|---|---|
+| 1 khớp cmdline | *"có tên công cụ nào không"* — đếm **thừa** (`timeout.exe`) |
+| 2 cây con | *"cây con của gốc nào"* — đếm **thiếu** (mồ côi rơi khỏi cây) |
+| 3 `cwd` + CPU tích luỹ | *"cây nào, và có cày không"* |
+| 4 nhật ký quyết định | *"nó **định** làm gì"* (`hoan_s=None` = chưa từng hoãn) |
+| **5 kết nối TCP** | *"nó đang **chờ ai**"* |
+
+⛔ Và không bậc nào thấy được **deploy** — PowerShell chép tệp, không tiến trình
+mang tên công cụ nào, không kết nối nào. Kênh duy nhất là tệp `.ket.txt` của
+chính nó, tức lại là bậc 4.
+
+⭐ Bài học chung: **mỗi bậc trả lời một câu hẹp, và không bậc nào là "phép đo
+đúng"** — thứ sai là hỏi một bậc câu của bậc khác.
+
 ### 🔑 `cmdline` nói dối theo CẢ HAI chiều — trong cùng một đêm
 
 Đây là lần thứ **hai** một phép lọc theo cmdline lừa được cả nhóm, và hai lần
