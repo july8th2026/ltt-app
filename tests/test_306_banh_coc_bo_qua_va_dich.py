@@ -798,3 +798,32 @@ def test_ruff_KHONG_CO_MOC_thi_DO_chu_khong_lang_le_XANH(tmp_path):
     assert r.returncode == 1, (
         f"khong co moc ma van XANH — xoa tep .moc la tat duoc banh coc:\n{r.stdout}")
     assert "CHUA CO MOC" in r.stdout
+
+
+def test_ruff_CAY_SACH_khong_lam_cong_cu_chet(tmp_path):
+    """Ba dot bien quanh `if r.returncode not in (0, 1)` song sot 06/09.
+
+    🔴 Ly do: MOI phep kiem khac deu chay tren mot cay CO loi, nen `ruff` luon
+       tra 1. Nhanh `ruff tra 0` (cay sach) chua bao gio duoc chay — va do
+       chinh la nhanh se chay dau tien tren mot kho da don xong.
+
+    ⚠️ Phep kiem nay cung ghi lai mot GOC KHUAT co that: tren mot cay SACH,
+       `quet()` tra `{}`, `--accept` ghi mot moc RONG, va luot sau `doc_moc()`
+       doc ra `{}` -> cong cu bao "CHUA CO MOC" va do. Tuc no khong phan biet
+       duoc "sach" voi "chua co moc".
+
+       KHONG sua o day: kho nay co 513 phat hien, trang thai ay khong voi toi
+       duoc, va them nhanh cho mot trang thai khong the xay ra la them cho de
+       hong. Ghi lai de nguoi sau khong phai kham pha lai.
+    """
+    d = tmp_path / "cay_sach"
+    d.mkdir()
+    (d / "ruff.toml").write_bytes((GOC / "ruff.toml").read_bytes())
+    (d / "sach.py").write_text("def f(x: int) -> int:\n    return x + 1\n",
+                               encoding="utf-8")
+    moc = tmp_path / "sach.moc"
+    r = _chay("check_ruff.py", "--accept", ruff_goc=d, ruff_moc=moc)
+    assert r.returncode == 0, (
+        f"`ruff` tra 0 (cay sach) ma cong cu chet — nhanh nay chua tung duoc "
+        f"chay:\n{r.stdout}\n{r.stderr}")
+    assert "0 phat hien" in r.stdout, r.stdout
