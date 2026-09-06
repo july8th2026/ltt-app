@@ -27,6 +27,16 @@ CHO_TOI_DA_S: float = 900.0
 #: Nhịp hỏi `/health`. Đủ thưa để không đập vào proxy, đủ dày để không phí phút.
 NHIP_S: float = 10.0
 
+#: Rảnh bao lâu thì tắt máy. `B1` chốt "bật theo nhu cầu, tắt khi rảnh", nhưng
+#: **tắt ngay khi sổ rỗng là sai**: khởi động lại tốn ~9 phút (`DU_LIEU_DA_DO`
+#: §4) và mang rủi ro không thuê lại được card (06/09: hơn một tiếng).
+#:
+#: ⭐ Chọn 15 phút vì nó **lớn hơn** khoảng nghỉ tự nhiên giữa hai lượt của cùng
+#:    một người (xem kết quả rồi gõ prompt tiếp), và **nhỏ hơn nhiều** so với
+#:    tiền một giờ máy. Đây là một đánh đổi, không phải một hằng số tự nhiên —
+#:    đo lại khi có nhịp dùng thật.
+NGHI_TAT_SAU_S: float = 15 * 60.0
+
 #: Dấu hiệu RunPod dùng khi hết GPU. ⚠️ Đây là **so chuỗi trên lỗi của bên thứ
 #: ba** — thứ có thể đổi mà không báo. Nên nó chỉ dùng để PHÂN LOẠI, và nhánh
 #: mặc định là "hỏng thật", tức phía an toàn: hoàn tiền cho khách.
@@ -43,12 +53,14 @@ class DieuPhoi:
     def __init__(self, *, api: Any, pod_id: str, client: Any,
                  cho_toi_da_s: float = CHO_TOI_DA_S,
                  nhip_s: float = NHIP_S,
+                 nghi_tat_sau_s: float = NGHI_TAT_SAU_S,
                  ngu: Callable[[float], None] = time.sleep) -> None:
         self.api = api
         self.pod_id = pod_id
         self.client = client
         self.cho_toi_da_s = cho_toi_da_s
         self.nhip_s = nhip_s
+        self.nghi_tat_sau_s = nghi_tat_sau_s
         self._ngu = ngu          # tiêm được ⇒ phép kiểm không tốn thời gian thật
 
     # ── đọc ──
@@ -101,6 +113,32 @@ class DieuPhoi:
         _log.warning("pod %s khong san sang sau %.0f giay; loi cuoi: %s",
                      self.pod_id, self.cho_toi_da_s, loi_cuoi or "(khong co)")
         return TrangThaiMay.TAT
+
+    def nen_tat(self, *, so_viec_dang_chay: int,
+                giay_ke_tu_viec_cuoi: float | None) -> bool:
+        """Có nên tắt máy lúc này không? **Chỉ quyết định, không hành động.**
+
+        ⭐ Tách quyết định khỏi hành động để phép kiểm hỏi được câu *"nó có
+           định tắt không"* mà không cần một `api` giả nào — và để chỗ gọi có
+           thể ghi log lý do trước khi tiêu một lệnh đắt.
+
+        Hai điều kiện, **và**:
+        - sổ rỗng;
+        - lần cuối có việc đã quá `NGHI_TAT_SAU_S`.
+
+        ⛔ Vế thứ hai không thừa. Giữa hai job liên tiếp của cùng một người
+           dùng, sổ **có lúc rỗng** trong vài giây. Tắt ngay lúc ấy là bắt họ
+           trả lại **9 phút** khởi động cho lượt kế — và gánh rủi ro không thuê
+           lại được card.
+        """
+        if so_viec_dang_chay < 0:
+            raise ValueError("so_viec_dang_chay must not be negative")
+        if so_viec_dang_chay > 0:
+            return False
+        if giay_ke_tu_viec_cuoi is None:
+            # Chua tung co viec nao => khong co gi de cho.
+            return True
+        return giay_ke_tu_viec_cuoi >= self.nghi_tat_sau_s
 
     def tat_neu_ranh(self, *, so_viec_dang_chay: int) -> bool:
         """Tắt pod **chỉ khi** sổ rỗng. Trả `True` nếu đã gửi lệnh tắt.

@@ -107,3 +107,40 @@ def test_may_dang_chay_thi_KHONG_goi_start_lai():
     api.trang_thai = "RUNNING"
     _dp(api, cl).bat_va_cho()
     assert not any(l.endswith("/start") for l in api.lenh), "gọi start trên máy đang chạy"
+
+
+# ── tự tắt khi rảnh (`B1`) ────────────────────────────────────────────────────
+
+
+def test_con_viec_thi_KHONG_nen_tat():
+    assert _dp(ApiGia(), ClientGia()).nen_tat(
+        so_viec_dang_chay=1, giay_ke_tu_viec_cuoi=99999) is False
+
+
+def test_so_rong_nhung_VUA_XONG_thi_CHUA_tat():
+    """⛔ Giữa hai job của cùng một người, sổ **có lúc rỗng** trong vài giây.
+
+    Tắt ngay lúc ấy là bắt họ trả lại ~9 phút khởi động cho lượt kế, và gánh
+    rủi ro không thuê lại được card.
+    """
+    dp = _dp(ApiGia(), ClientGia())
+    assert dp.nen_tat(so_viec_dang_chay=0, giay_ke_tu_viec_cuoi=30) is False
+
+
+def test_so_rong_va_da_ranh_LAU_thi_tat():
+    dp = _dp(ApiGia(), ClientGia())
+    assert dp.nen_tat(so_viec_dang_chay=0,
+                      giay_ke_tu_viec_cuoi=dp.nghi_tat_sau_s + 1) is True
+
+
+def test_chua_tung_co_viec_nao_thi_tat_ngay():
+    """Máy bật mà chưa ai dùng ⇒ không có gì để chờ."""
+    assert _dp(ApiGia(), ClientGia()).nen_tat(
+        so_viec_dang_chay=0, giay_ke_tu_viec_cuoi=None) is True
+
+
+def test_nen_tat_KHONG_goi_lenh_nao():
+    """Quyết định tách khỏi hành động: hỏi được mà không tiêu một lệnh đắt."""
+    api = ApiGia()
+    _dp(api, ClientGia()).nen_tat(so_viec_dang_chay=0, giay_ke_tu_viec_cuoi=None)
+    assert api.lenh == [], f"nen_tat da goi lenh: {api.lenh}"
