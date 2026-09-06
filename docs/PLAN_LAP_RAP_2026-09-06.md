@@ -56,7 +56,7 @@ test 8 phút thì không thể chạy toàn kho. ⇒ Chỉ chạy trên **tệp 
 | **H2** ⚠️ | Mốc kết dòng | `check_xuong_dong.py` | `.editorconfig` **mình nó** | 1 h | **đã lắp** `d8c9e65f`; `.gitattributes` **RÚT** — đo được nó viết lại **429 tệp** | chính rủi ro ở cột này đã xảy ra |
 | **H3** | Cổng trước commit | *không có* | `pre-commit 4.5.1` *(đã cài)* | 1 h | cưỡng chế lớp D | **`.git/hooks` dùng chung 4 worktree** |
 | **H4** ✅ | Timeout test | 1 mốc **chết** | `pytest-timeout` | 20 ph | **đã lắp** `6b71f01a` + `requirements-dev.txt` | thêm phụ thuộc |
-| **H5** | Khoá tệp | `cua_so_yen` tự viết | `filelock` *(đã cài)* làm lõi | 2 h | bỏ mã `O_EXCL` + doạt khoá treo | phải giữ phần khai tài nguyên |
+| **H5** ⛔ | Khoá tệp | `cua_so_yen` tự viết | ~~`filelock` làm lõi~~ | — | **RÚT 06/09** — đo được: đổi lõi làm cây cũ và cây mới **không loại trừ nhau** | chính rủi ro ở cột này là thứ giết nó |
 | **H6** | Ranh giới kiến trúc | `lint_app_contract.py` | `import-linter` *(đã cài)* | 2 h | hợp đồng thành **cấu hình** | |
 | **H7** ✅ | Kiểm thử đột biến | làm **tay** mỗi lần | **`cosmic-ray`** *(`mutmut` KHÔNG chạy trên Windows)* | 3 h | **tỷ lệ giết 56% → 73%**; tìm ra **4 lỗ thật** trong chính bánh cóc | phải chạy trong **cây riêng** — nó sửa tệp tại chỗ |
 | **H8** ✅ | Độ phủ theo diff | *không có* | `diff-cover 10.5.1` | 1 h | **đã lắp** `tools/do_phu_diff.py`, chạy thật đầu-cuối | 2 rào chắn chống đọc nhầm chính nó |
@@ -91,7 +91,7 @@ Giai doan 2 — DO DUOC (bien ky luat thanh con so)   ~7 h
    H9  mypy + moc              3 h     bat lop A
 
 Giai doan 3 — THAY LOI TU VIET                  ~7 h
-   H5  filelock lam loi        2 h
+   H5  filelock lam loi        --   RUT 06/09 (xem muc 4b)
    H6  import-linter           2 h
    H10 axe-core                3 h
 
@@ -103,6 +103,54 @@ Giai doan 4 — CAN QUYET DINH / CAN NGUOI
 
 ⇒ **Giai đoạn 1 phải đi trước** vì `ruff`/`.editorconfig` soi mọi thứ làm sau
 đó. Làm ngược lại là viết thêm mã rồi mới bật đèn.
+
+## 4b. H5 bị RÚT — và đây là phép đo giết nó
+
+Đo 06/09/2026 trên cả sáu worktree:
+
+| Cây | `O_EXCL` | tên tệp khoá |
+|---|:--:|:--:|
+| `auto-scan-video-v4-mvp` | 3 | 2 |
+| `chatltt-v3-agentic` | 3 | 2 |
+| `ltt-llm-api-http-guide` | 3 | 2 |
+| `mobile-v1` | 3 | 2 |
+| `video-v2-wangp` | 3 | 2 |
+| **CÂY CHÍNH** | 3 | 2 |
+
+⭐ **Sáu trên sáu dùng y hệt một giao thức.** Đây là mảnh điều phối **duy
+   nhất** hiện đang đồng nhất trên toàn kho — khác `-n 6` (bốn cây sai) và
+   `postgres_test` (hai cây thiếu).
+
+### Áp câu 1 của §4c: nếu chỉ MỘT SỐ cây nhận bản vá?
+
+`cua_so_yen` không có tệp khoá riêng: **bản ghi JSON chính là cái khoá**, chiếm
+bằng `O_EXCL`. `filelock` dùng một tệp **khác** làm thẻ loại trừ.
+
+⇒ Một cây `filelock` và một cây `O_EXCL` **không nhìn thấy nhau**. Cả hai cùng
+  chạy lệnh nặng — đúng cái mà khoá sinh ra để chặn. Và cây **nâng cấp** là cây
+  bị phạt: nó chờ, các cây kia không.
+
+⛔ Câu trả lời là *"tệ hơn trước khi vá"* ⇒ theo chính §4c, **thiết kế sai**,
+   không phải "chấp nhận được trong lúc lan".
+
+### Còn lợi ích thì sao? Có thật, nhưng không đủ mua
+
+Đo được: `filelock` **thật sự** tự nhả khi chủ chết (chặn khi còn sống, chiếm
+được ngay sau khi giết) — tức nó xoá hẳn khái niệm "khoá treo".
+
+Nhưng bản ghi JSON không chỉ là khoá, nó là **bản chẩn đoán**: ai giữ, lệnh
+gì, từ bao giờ. Hôm nay chính dòng ấy cho tôi biết gate đang xếp hàng sau một
+`pytest go tay` 3,6 phút. Giữ bản ghi **và** thêm `filelock` thì bản ghi vẫn
+bị bỏ lại khi bị giết ⇒ vẫn cần `_treo()` ⇒ **lợi ích bằng không, phức tạp
+tăng**.
+
+⭐ `O_EXCL` ở đây là **ba dòng và nó ĐÚNG**. Thay một thứ đúng, đang chạy đồng
+   nhất trên sáu cây, bằng một thứ **không tương thích ngược**, để bỏ ba dòng
+   — đó không phải lắp ghép, đó là thay cho có vẻ hiện đại.
+
+⇒ **H5 rút.** Nếu sau này kho chỉ còn **một** cây thì mở lại — lúc đó câu 1
+  của §4c không còn hiệu lực, và lập luận này phải được đo lại chứ không
+  được chép lại.
 
 ## 5. Cái **KHÔNG** thay, và vì sao
 
