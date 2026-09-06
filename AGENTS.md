@@ -220,6 +220,77 @@ chứng minh phép kiểm **phân biệt được** hai bản; nó không chứn
 vẫn tự vi phạm nó — nên nó phải là một **động tác** trong quy trình, không phải
 một điều để nhớ.
 
+## 4d. Sổ lỗi TỰ GÂY — bốn lớp, và cơ chế cho từng lớp
+
+Ngày 06/09 một phiên kê lại **13 lỗi tự gây trong một buổi**. Mục này không phải
+lời nhắc "hãy cẩn thận"; nó là bốn **cơ chế**, vì cả 13 lỗi đều xảy ra ở một
+phiên **đã biết** luật liên quan.
+
+🔑 Con số quan trọng nhất: **9 trên 13 nằm ở CÔNG CỤ DÙNG ĐỂ ĐO, không nằm ở
+thứ được giao.** Kỷ luật sống trong mã sản phẩm và được miễn trừ cho script tạm
+— trong khi chính script tạm quyết định ta **nhìn thấy gì**.
+
+### Lớp A — gọi một API mà không đọc chữ ký trước
+
+```
+resources.create(kind="style")   -> app tra loi: chi nhan character/background/
+                                    prop/vehicle/misc
+add_variant(prompt_text=...)     -> no doi `storage_key` (bien the la MOT ANH)
+cookie value = "session=eyJ..."  -> ca chuoi bi dung lam GIA TRI -> ba phep do
+                                    ra trang /login, va mot ket luan SAI ve
+                                    harness suyt duoc bao di
+```
+
+⇒ **Cơ chế:** `python tools\do_nhanh.py chu-ky <tep> <ten_ham>` in chữ ký thật
+từ AST. Một lệnh rẻ hơn một vòng sửa.
+
+### Lớp B — script TẠM lặp lại một cái bẫy đã có ghi chú
+
+| bẫy | số lần cắn trong MỘT buổi |
+|---|---|
+| `print` vỡ vì cp1252 | **4** |
+| heredoc Bash nuốt một lớp `\` | **5** |
+| lọc tiến trình khớp chính mình | 1 (thoát mã 15) |
+
+⛔ Lần thứ năm của bẫy heredoc xảy ra **trong chính lệnh đang viết ra luật cấm
+nó**. Đó là bằng chứng đủ: tri thức không chặn được lớp này.
+
+⇒ **Cơ chế:** `tools/do_nhanh.py` — `ra()` thay `print`, `thay()` thay
+`str.replace`, `tien_trinh()` thay mọi bộ lọc tiến trình. Và **không sinh mã
+qua heredoc Bash**: soạn bằng công cụ Write rồi chạy tệp.
+
+### Lớp C — phép kiểm chốt MÔI TRƯỜNG hoặc HÌNH DẠNG thay vì HÀNH VI
+
+```
+assert _to_tien_la_gate() is False   -> do khi GATE chay (to tien LA gate.py)
+assert cpu < NGUONG                  -> do khi may co tai
+assert cpu < tich_luy                -> so PHAN TRAM voi GIAY, dung nho tinh co
+assert "parents()" in ma             -> grep ma nguon, xanh ca khi go bo chan
+```
+
+⇒ **Cơ chế:** phép đo **hai chiều**, và cả hai đều bắt buộc —
+① chạy dưới điều kiện ngược (có tải / dưới gate) để chắc nó **không phụ thuộc
+môi trường**; ② tiêm lại bản cũ để chắc nó **đỏ được**.
+Xem §4c: *"đỏ được" và "đo đúng thứ cần đo" là HAI câu hỏi*.
+
+### Lớp D — commit vào trunk trước khi có gate xanh
+
+Bốn commit không gate làm **5 lượt đỏ ở cây của phiên khác**. Đây không phải
+quên: phiên ấy *biết* luật và vẫn hoãn, vì gate mất 10 phút và máy đang bận.
+
+⛔ Nên bản vá không thể là "nhớ chạy gate". Thiệt hại rơi vào người khác **vì
+trunk là thứ mọi phiên kéo về**.
+
+⇒ **Cơ chế:** việc rủi ro đi trên **nhánh riêng**; chỉ hoà vào trunk **sau** một
+lượt gate xanh. Commit trên nhánh riêng thì rẻ và không ai chịu hậu quả.
+
+### Dấu hiệu nhận ra mình đang ở trong một lớp
+
+- *"Chỗ này chỉ là script đo, không cần cẩn thận"* → **lớp B**
+- *"Tôi nhớ hàm này nhận tham số gì"* → **lớp A**
+- *"Chạy tay xanh rồi, chắc ổn"* → **lớp C**
+- *"Gate lâu quá, commit trước rồi chạy sau"* → **lớp D**
+
 ## 4b. Chạy test — ba lệnh, và **đừng gọi `pytest` trực tiếp**
 
 | Lệnh | Dùng khi | Thời gian |
