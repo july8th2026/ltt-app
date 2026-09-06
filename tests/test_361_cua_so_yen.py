@@ -452,3 +452,38 @@ def test_nhac_TEN_gate_trong_cau_lenh_KHONG_bi_coi_la_dang_o_duoi_gate():
     assert tn._to_tien_la_gate(
         [("python.exe", ["C:/py/python.exe", "tools/test_nhanh.py", "-n", "6"])]
     ) is False
+
+
+def test_luot_KHONG_chay_test_nao_thi_KHONG_duoc_xanh():
+    """🔴 Cổng cuối cho tai nạn 06/09, và nó hỏi HÀNH VI chứ không hỏi hình dạng.
+
+    Hôm ấy một phép tách hàm làm hai pha pytest rơi vào **mã chết sau một
+    `return`**: `tools/test_nhanh.py` thoát sau **0,114 giây**, mã **0**, và
+    **không chạy một test nào**. `gate.py` in `[PASS] bo test (song song) 0.1s`.
+
+    ⛔ **Cả năm bánh cóc AST lúc ấy đều xanh** — chúng hỏi *"còn khối `with`
+       không"*, *"còn nhập không"*, *"khai đúng tài nguyên không"*. Hình dạng mã
+       vẫn đúng khi công cụ đã chết. Dấu hiệu duy nhất là **con số giây**, thứ
+       không ai đọc, và nó chỉ lộ ra sau ~25 phút vì tôi tình cờ đọc nó.
+
+    ⭐ `_SO_LAN_CHAY` chỉ tăng **sau khi** một tiến trình pytest đã được phóng.
+       Một khẳng định nằm **phía sau** việc thi hành thì không thể đúng khi công
+       cụ bất động — đó là thứ phân biệt nó với mọi bánh cóc AST ở trên.
+    """
+    import test_nhanh as tn                       # noqa: PLC0415
+
+    cu = tn._SO_LAN_CHAY
+    try:
+        tn._SO_LAN_CHAY = 0
+        assert tn._chot(0) == tn.MA_KHONG_CHAY_GI, (
+            "luot RONG ma van tra 0 — cong cuoi khong hoat dong")
+        tn._SO_LAN_CHAY = 1
+        assert tn._chot(0) == 0, "luot CO chay bi cong cuoi chan nham"
+        tn._SO_LAN_CHAY = 0
+        assert tn._chot(1) == 1, "ma loi that phai di qua nguyen ven"
+    finally:
+        tn._SO_LAN_CHAY = cu
+
+    assert tn.MA_KHONG_CHAY_GI not in (0, 1, 5), (
+        "ma phai KHAC 0/1/5 de phan biet 'khong chay gi' voi 'co test do' "
+        "va voi 'pytest thu thap 0 test'")
