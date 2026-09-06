@@ -11,8 +11,18 @@
 
 ## Trạng thái
 
-- **phase:** **Phase D ĐÓNG** (app LTT tối thiểu) · **Phase E chặn bởi GPU**
-  *(P00, P01 nửa không tốn tiền, Phase B, Phase D đã xong)*
+> 📍 **Đọc ba tệp này trước, theo đúng thứ tự:**
+> 1. `DU_LIEU_DA_DO.md` — mọi con số, kèm ngày và cách đo. **Đừng chép số ra chỗ khác.**
+> 2. `QUYET_DINH_DA_KHOA_V1.md` — 11 quyết định sản phẩm chủ dự án đã chốt.
+> 3. `PLAN_V1_CHI_TIET.md` — việc phải làm, thứ tự, và phụ thuộc pod.
+>
+> ⚠️ `SOAT_TINH_NANG_WANGP_VA_GUI.md` §1 **sửa** phần A5 của tệp số 2 (bộ mở
+> rộng prompt đi bằng WanGP, không đi bằng LLM nội bộ LTT).
+
+- **phase:** **Phase E MỞ** — tuyến LTT ↔ C-CLOUD **đã thông và sinh được
+  video thật** (E2E `thanh_cong=true`, 06/09). Đang xây phần sản phẩm còn lại
+  theo `PLAN_V1_CHI_TIET.md`.
+  *(P00, P01, Phase B, Phase D đã xong)*
 - **phase_cu:** `P01` — Pin + Vanilla WanGP C-CLOUD POC
   *(P00 đã đóng PASS — mục `Cổng nghiệm thu P00` giữ nguyên bên dưới)*
 - **status:** **P01 ĐANG CHẠY lượt GPU.** Chủ dự án duyệt chi 06/09.
@@ -73,10 +83,14 @@
   6 module + route + template + **74 test riêng**, 0 tệp chạm
   `platform_core/`/`server/`. `lint_app_contract`: 17 app, 0 ERROR, 0 WARN.
   App khai `INTERNAL_ONLY` — lý do là **giấy phép**, không phải kế hoạch.
-- **phase_E:** ⏸️ **CHẶN** — `E1` (service C-CLOUD) đã viết xong
-  (`tools/wangp/dich_vu_ccloud.py`), `E2`–`E7` cần GPU thật.
-  🔴 `US-KS-2` **hết A100** (thử 6 lượt, đều `not enough free GPU`); lệnh `stop`
-  đã nhả card và không lấy lại được. Volume khoá ta vào datacenter đó.
+- **phase_E:** ▶️ **ĐANG CHẠY** — cầu nối C-CLOUD **đã phục vụ thật**:
+  7 thao tác, `POST /submit` trả job, tiến độ khớp chính xác hai phía, và một
+  video `832x480 / 30 bước / profile 1` đã sinh xong trong **1.269,8 giây**.
+  Bốn bẫy trên đường đã vá: cổng **8888** (không phải 8188) · Cloudflare chặn
+  User-Agent của `urllib` (403 `1010`) · nạp model lười làm `/submit` timeout ·
+  `/health.san_sang` nói quá.
+  🔑 `POST /pods/{id}/restart` **giữ card** — sáu lượt thất bại hôm 06/09 là hệ
+  quả của giả định "đổi script phải `stop`/`start`", không phải của tồn kho.
 - **exact_next_action:** **chờ chủ dự án duyệt chi ~$2,80 (trần $5,00)** cho
   lượt POC GPU của P01 — xem *Kế hoạch chi P01*. Duyệt xong thì chạy tiếp P01
   mục 5–9; **không** nhảy sang P02.

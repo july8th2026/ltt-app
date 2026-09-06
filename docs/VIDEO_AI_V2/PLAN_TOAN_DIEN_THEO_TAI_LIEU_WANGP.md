@@ -1,3 +1,7 @@
+> ⛔ **TỆP NÀY ĐÃ BỊ THAY** bởi `PLAN_V1_CHI_TIET.md` (07/09/2026).
+> Giữ lại để tra lịch sử. Đừng thi hành theo nó — một số kết luận trong
+> đây đã bị chính phiên sau bác bằng bằng chứng.
+
 # PLAN TOÀN DIỆN — DỰNG TỪ TÀI LIỆU WanGP
 
 Ngày 06/09/2026. Thay `PLAN_SUA_LAI_THEO_WANGP.md` và phần tham số của

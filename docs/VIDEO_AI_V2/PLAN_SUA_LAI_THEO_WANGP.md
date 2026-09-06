@@ -1,3 +1,7 @@
+> ⛔ **TỆP NÀY ĐÃ BỊ THAY** bởi `PLAN_V1_CHI_TIET.md` (07/09/2026).
+> Giữ lại để tra lịch sử. Đừng thi hành theo nó — một số kết luận trong
+> đây đã bị chính phiên sau bác bằng bằng chứng.
+
 # PLAN SỬA LẠI — BÁM ĐÚNG CÁCH WanGP TRIỂN KHAI
 
 Ngày 06/09/2026. Thay phần tham số của `FINAL_IMPLEMENTATION_PLAN.md`.

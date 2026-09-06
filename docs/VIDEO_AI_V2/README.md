@@ -7,10 +7,18 @@ chạy trên C-CLOUD, GUI và mọi trạng thái sản phẩm ở lại A-CONTR
 
 | # | Tệp | Trả lời câu gì |
 |---|---|---|
-| 1 | **`PROJECT_STATE.md`** | đang ở phase nào, nhánh/worktree nào, việc kế tiếp chính xác là gì |
-| 2 | `LEGACY_INVENTORY.md` | legacy nằm ở đâu, phân loại, bằng chứng path-level |
-| 3 | `DECISIONS.md` | quyết định đã chốt + quyết định phát sinh ở kho này |
-| 4 | `PACK_V2_1/` | bản gốc của pack (kiến trúc, 10 prompt, checklist) |
+| 1 | **`DU_LIEU_DA_DO.md`** | **mọi con số**, kèm ngày và cách đo. ⛔ Đừng chép số ra chỗ khác |
+| 2 | **`QUYET_DINH_DA_KHOA_V1.md`** | 11 quyết định sản phẩm chủ dự án đã chốt |
+| 3 | **`PLAN_V1_CHI_TIET.md`** | việc phải làm, thứ tự, phụ thuộc pod |
+| 4 | `SOAT_TINH_NANG_WANGP_VA_GUI.md` | 226 model → tám loại đầu ra → hình dạng GUI. **Sửa A5** của tệp 2 |
+| 5 | `PROJECT_STATE.md` | phase, nhánh, việc kế tiếp |
+| 6 | `TAI_NGUYEN_VA_CACH_DUNG_LAI.md` | tài nguyên cloud đang có và cách dùng lại |
+| 7 | `DECISIONS.md` | sổ quyết định |
+| 8 | `LEGACY_INVENTORY.md` · `PACK_V2_1/` | legacy, và bản gốc của pack |
+
+⛔ **Ba tệp mang banner "ĐÃ BỊ THAY"** (`FINAL_IMPLEMENTATION_PLAN.md`,
+`PLAN_SUA_LAI_THEO_WANGP.md`, `PLAN_TOAN_DIEN_THEO_TAI_LIEU_WANGP.md`) giữ để
+tra lịch sử. Đừng thi hành theo chúng.
 
 ## `PACK_V2_1/` là bản chép **nguyên văn**
 
