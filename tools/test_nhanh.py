@@ -150,7 +150,33 @@ def _chay(argv: list[str], nhan: str) -> tuple[int, float]:
     print(f"\n{'-' * 70}\n  {nhan}\n{'-' * 70}", flush=True)
     t0 = time.monotonic()
     ma = subprocess.run(argv, cwd=GOC).returncode
+    global _SO_LAN_CHAY
+    _SO_LAN_CHAY += 1
     return ma, time.monotonic() - t0
+
+
+#: So lan `_chay` **that su** phong mot tien trinh pytest trong luot nay.
+#:
+#: 🔴 Day la mot khang dinh **nam SAU viec thi hanh**, va do la ca diem cua no.
+#:    Ngay 06/09 mot phep tach ham lam hai pha roi vao ma chet sau mot `return`:
+#:    tep nay thoat sau **0,114 giay**, ma **0**, **khong chay mot test nao** —
+#:    va gate in `[PASS] bo test (song song) 0.1s`. **Ca nam banh coc AST van
+#:    xanh**, vi chung hoi *hinh dang ma*, ma hinh dang van dung khi cong cu da
+#:    chet. Dau hieu duy nhat la con so giay, thu khong ai doc.
+#:
+#: ⭐ Mot bien chi tang **khi tien trinh con da chay** thi khong the dung neu
+#:    cong cu bat dong. Moi thu doc duoc **truoc** khi chay — co `with` khong,
+#:    co nhap khong, khai dung tai nguyen khong — deu mu voi lop loi ay.
+_SO_LAN_CHAY = 0
+
+#: Luot nay CO Y khong chay gi (vd `--lf` ma khong co test nao do lan truoc).
+#:
+#: 🔴 Phai tach khoi `_SO_LAN_CHAY == 0`, vi hai trang thai ay NHIN GIONG NHAU
+#:    tu ben ngoai — ca hai deu la "khong tien trinh pytest nao chay" — nhung
+#:    mot cai la QUYET DINH con cai kia la TAI NAN. Gop chung lam mot thi hoac
+#:    ta bao dong gia moi lan `--vong-lap` chay sau mot luot xanh, hoac ta phai
+#:    noi long cong den muc no bo lot ca tai nan 06/09.
+_CO_Y_KHONG_CHAY = False
 
 
 #: Tài nguyên khai với `cua_so_yen`. Cùng tên gate dùng cho bước `bo test`
@@ -205,7 +231,7 @@ def _to_tien_la_gate(to_tien: list[tuple] | None = None) -> bool:
     return any(_la_gate(ten, argv) for ten, argv in to_tien)
 
 
-def _la_gate(ten: str, argv) -> bool:
+def _la_gate(ten: str, argv, kich_ban: str = "gate.py") -> bool:
     """Tien trinh nay CO PHAI mot luot `gate.py` dang chay khong.
 
     🔴 **Dung khop CHUOI CON tren ca dong lenh.** Ban truoc hoi
@@ -231,8 +257,35 @@ def _la_gate(ten: str, argv) -> bool:
     """
     if not (ten or "").lower().startswith("python"):
         return False
-    return any(os.path.basename(str(d).replace(chr(92), "/")) == "gate.py"
+    return any(os.path.basename(str(d).replace(chr(92), "/")) == kich_ban
                for d in list(argv or [])[1:])
+
+
+def to_tien_da_giu_khoa(kich_ban: tuple[str, ...] = ("gate.py", "test_nhanh.py"),
+                        to_tien: list[tuple] | None = None) -> bool:
+    """Mot to tien CO PHAI mot cong cu da xin khoa ho ta khong.
+
+    ⭐ Tong quat hoa `_to_tien_la_gate` de `tests/conftest.py` dung lai duoc.
+       `pytest` go tay la lo CUOI CUNG con lai: `gate.py` xin khoa,
+       `test_nhanh.py` xin khoa, nhung `python -m pytest tests/ -n 6` thi
+       khong — va do la lenh nang nhat ma bon phien deu go trong dem 05-06/09.
+
+    ⛔ Dung MOT ham cho ca hai cho, dung chep. Hai ban sao cua cung mot phep
+       hoi la hai cho de chung lech nhau — va lech o day nghia la hoac khoa
+       chet (ca hai cung xin) hoac lo hong (ca hai cung bo qua).
+    """
+    if to_tien is None:
+        try:
+            import psutil
+        except ImportError:
+            return True
+        try:
+            to_tien = [(t.name(), t.cmdline() or [])
+                       for t in psutil.Process().parents()]
+        except (psutil.Error, OSError):
+            return True
+    return any(_la_gate(ten, argv, kb)
+               for ten, argv in to_tien for kb in kich_ban)
 
 
 def _so_loi_se_dung(n: str) -> int:
@@ -250,6 +303,34 @@ def _so_loi_se_dung(n: str) -> int:
         return max(1, psutil.cpu_count(logical=False) or os.cpu_count() or 1)
     except ImportError:
         return max(1, os.cpu_count() or 1)
+
+
+#: Ma tra ve khi luot chay KHONG phong mot tien trinh pytest nao.
+#: Khac 1 (co test do) va khac 5 (pytest thu thap 0 test) de doc duoc ngay.
+MA_KHONG_CHAY_GI = 3
+NL_IN = chr(10)
+
+
+def _chot(ma: int) -> int:
+    """Cong cuoi: mot luot "xanh" ma khong chay gi thi KHONG xanh.
+
+    ⛔ Doi xung voi `_SO_LAN_CHAY`: bo dem chi tang khi mot tien trinh pytest da
+       that su duoc phong. Nen `ma == 0` **va** bo dem `== 0` la trang thai khong
+       the co that — no chi xay ra khi than ham bi cat mat, bi `return` som, hoac
+       bi refactor hong. Do dung la chuyen da xay ra 06/09.
+
+    ⭐ Cho no mot ma tra ve RIENG, khong dung 1: nguoi doc phai phan biet duoc
+       *"co test do"* voi *"khong test nao chay"*. Hai chuyen do doi hoi hai hanh
+       dong khac han nhau, va gop chung vao mot ma la bat nguoi sau di doan.
+    """
+    if ma == 0 and _SO_LAN_CHAY == 0 and not _CO_Y_KHONG_CHAY:
+        print(NL_IN + "=" * 70)
+        print("  KHONG MOT TIEN TRINH pytest NAO DUOC PHONG.")
+        print("  Day KHONG phai mot luot xanh — day la mot luot RONG.")
+        print("  `_SO_LAN_CHAY` chi tang SAU khi mot tien trinh da chay.")
+        print("=" * 70)
+        return MA_KHONG_CHAY_GI
+    return ma
 
 
 def main() -> int:
@@ -292,9 +373,20 @@ def main() -> int:
                    help="chay ma khong xin khoa — chi dung khi biet ro vi sao")
     args, con_lai = p.parse_known_args()
 
+    # Cung ly do nhu trong `gate.py`: NOI RA ai khac dang ban, roi van chay.
+    # Khoa `cua_so_yen` xep hang; dong nay chi lam cho thay thu khoa khong thay.
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from may_ban import dong_canh_bao
+        _canh = dong_canh_bao()
+        if _canh:
+            print(_canh)
+    except Exception as _e:  # noqa: BLE001
+        print(f"  [may ban] khong dem duoc: {type(_e).__name__}")
+
     # ⛔ Duoi gate thi KHONG xin: gate da giu `cpu_nhieu` va khoa khong tai nhap.
     if args.khong_khoa or _to_tien_la_gate():
-        return _than(args, con_lai)
+        return _chot(_than(args, con_lai))
 
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from cua_so_yen import CuaSoYen
@@ -313,7 +405,7 @@ def main() -> int:
                   "Ket qua lan nay co the bi nhieu (may dang chia CPU).")
         elif khoa.da_cho_s > 1:
             print(f"  [cua so yen] da cho {khoa.da_cho_s:.0f} giay de den luot.")
-        return _than(args, con_lai)
+        return _chot(_than(args, con_lai))
 
 
 def _than(args, con_lai: list[str]) -> int:
@@ -358,6 +450,12 @@ def _than(args, con_lai: list[str]) -> int:
             print("\n[--lf] KHONG test nao do o luot truoc => khong chay lai gi.")
             print("       Day KHONG phai mot luot test xanh. Do la mot luot")
             print("       test RONG. Muon chay that: bo `--lf`.")
+            # Khai voi `gate.py` bang dau BO QUA o DAU DONG: mot buoc co y
+            # khong lam gi phai hien ra o dong RESULT, khong duoc lan vao
+            # mot chu PASS tran.
+            print("BO QUA: --lf khong co test nao do o luot truoc")
+            global _CO_Y_KHONG_CHAY
+            _CO_Y_KHONG_CHAY = True
             return 0
 
     if args.noi_tiep:

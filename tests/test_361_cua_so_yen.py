@@ -452,3 +452,164 @@ def test_nhac_TEN_gate_trong_cau_lenh_KHONG_bi_coi_la_dang_o_duoi_gate():
     assert tn._to_tien_la_gate(
         [("python.exe", ["C:/py/python.exe", "tools/test_nhanh.py", "-n", "6"])]
     ) is False
+
+
+def test_luot_KHONG_chay_test_nao_thi_KHONG_duoc_xanh():
+    """🔴 Cổng cuối cho tai nạn 06/09, và nó hỏi HÀNH VI chứ không hỏi hình dạng.
+
+    Hôm ấy một phép tách hàm làm hai pha pytest rơi vào **mã chết sau một
+    `return`**: `tools/test_nhanh.py` thoát sau **0,114 giây**, mã **0**, và
+    **không chạy một test nào**. `gate.py` in `[PASS] bo test (song song) 0.1s`.
+
+    ⛔ **Cả năm bánh cóc AST lúc ấy đều xanh** — chúng hỏi *"còn khối `with`
+       không"*, *"còn nhập không"*, *"khai đúng tài nguyên không"*. Hình dạng mã
+       vẫn đúng khi công cụ đã chết. Dấu hiệu duy nhất là **con số giây**, thứ
+       không ai đọc, và nó chỉ lộ ra sau ~25 phút vì tôi tình cờ đọc nó.
+
+    ⭐ `_SO_LAN_CHAY` chỉ tăng **sau khi** một tiến trình pytest đã được phóng.
+       Một khẳng định nằm **phía sau** việc thi hành thì không thể đúng khi công
+       cụ bất động — đó là thứ phân biệt nó với mọi bánh cóc AST ở trên.
+    """
+    import test_nhanh as tn                       # noqa: PLC0415
+
+    cu, cu_coy = tn._SO_LAN_CHAY, tn._CO_Y_KHONG_CHAY
+    try:
+        tn._CO_Y_KHONG_CHAY = False
+        tn._SO_LAN_CHAY = 0
+        assert tn._chot(0) == tn.MA_KHONG_CHAY_GI, (
+            "luot RONG ma van tra 0 — cong cuoi khong hoat dong")
+        tn._SO_LAN_CHAY = 1
+        assert tn._chot(0) == 0, "luot CO chay bi cong cuoi chan nham"
+        tn._SO_LAN_CHAY = 0
+        assert tn._chot(1) == 1, "ma loi that phai di qua nguyen ven"
+
+        # ⛔ Miễn trừ CỐ Ý phải còn nguyên, nếu không `gate --vong-lap` đỏ oan.
+        #
+        #    Sau một lượt xanh hết, cache `lastfailed` rỗng ⇒ `--lf` **cố ý**
+        #    không chạy gì và trả 0. Trạng thái ấy nhìn từ ngoài **giống hệt**
+        #    tai nạn 06/09 — cả hai đều là "không tiến trình pytest nào chạy".
+        #    Nhưng một cái là QUYẾT ĐỊNH, cái kia là TAI NẠN.
+        #
+        # ⭐ Gộp hai trạng thái ấy làm một thì hoặc ta báo động giả mỗi lần
+        #    `--vong-lap` chạy sau một lượt xanh, hoặc phải nới cổng đến mức
+        #    nó bỏ lọt chính tai nạn nó sinh ra để bắt.
+        tn._SO_LAN_CHAY = 0
+        tn._CO_Y_KHONG_CHAY = True
+        assert tn._chot(0) == 0, (
+            "luot CO Y khong chay (vd `--lf` cache rong) bi chan nham - "
+            "`gate --vong-lap` se do oan sau moi luot xanh")
+    finally:
+        tn._SO_LAN_CHAY, tn._CO_Y_KHONG_CHAY = cu, cu_coy
+
+    assert tn.MA_KHONG_CHAY_GI not in (0, 1, 5), (
+        "ma phai KHAC 0/1/5 de phan biet 'khong chay gi' voi 'co test do' "
+        "va voi 'pytest thu thap 0 test'")
+
+def test_pytest_GO_TAY_luot_lon_thi_XIN_khoa(tmp_path, monkeypatch):
+    """🔴 Lỗ CUỐI CÙNG của khoá, và nó là lệnh bốn phiên đều gõ.
+
+    `gate.py` xin khoá; `tools/test_nhanh.py` xin khoá (từ 06/09). Nhưng
+    `python -m pytest tests/ -n 6` gõ tay thì **không** — nên `cua_so_yen
+    trang-thai` trả RẢNH trong khi máy đang chạy lệnh nặng nhất kho.
+
+    ⛔ Xin ở `pytest_collection_modifyitems` chứ không ở `pytest_configure`:
+       chỉ **sau khi thu thập** mới biết lượt này to hay nhỏ. Xin khoá cho một
+       lượt 2 tệp là làm chậm mọi vòng lặp sửa-rồi-thử, và người ta sẽ học cách
+       tắt nó — lúc đó ta mất cả phần bảo vệ.
+
+    ⭐ Ba chiều, vì thiếu chiều nào cũng để lại một lỗ:
+       lượt LỚN xin · lượt NHỎ không xin · `sessionfinish` **nhả**.
+       Thiếu chiều ba thì mọi lượt `pytest` gõ tay để lại một khoá mồ côi, và
+       phiên sau phải chờ hết `--cho` rồi CHÈN — tệ hơn trước bản vá.
+    """
+    import types                                 # noqa: PLC0415
+
+    monkeypatch.setattr(cy, "_tep", lambda tn: tmp_path / f"khoa_{tn}.json")
+    sys.path.insert(0, str(GOC / "tests"))
+    import conftest as cf                        # noqa: PLC0415
+    monkeypatch.setattr(cf, "_KHOA_PHIEN", None)
+
+    lon = [types.SimpleNamespace(fspath=f"t{i}.py")
+           for i in range(cf._NGUONG_TEP_NANG + 5)]
+    nho = [types.SimpleNamespace(fspath=f"t{i}.py") for i in range(3)]
+    cpu, pg = cy._tep("cpu_nhieu"), cy._tep("postgres_test")
+
+    cf.pytest_collection_modifyitems(None, None, lon)
+    assert cpu.exists() and pg.exists(), (
+        "luot `pytest` go tay LON van vo hinh voi khoa")
+    ban_ghi = json.loads(cpu.read_text(encoding="utf-8"))
+    assert ban_ghi["lenh"] == "pytest go tay", (
+        "phien khac phai DOC RA duoc day la mot luot go tay")
+
+    cf.pytest_sessionfinish(None, 0)
+    assert not cpu.exists() and not pg.exists(), (
+        "khong nha khoa - moi luot go tay se de lai mot khoa mo coi")
+
+    cf.pytest_collection_modifyitems(None, None, nho)
+    assert not cpu.exists(), (
+        "luot NHO ma van xin khoa - vong lap sua-roi-thu se bi cham va nguoi "
+        "ta se tat co nay di")
+
+def test_may_ban_KHONG_dem_chinh_no_va_chuoi_cha():
+    """⛔ Điều kiện phải là thứ tiến trình đo **không thể tự thoả**.
+
+    🔴 Phiên H44 đo được 06/09: một bộ lọc tiến trình khớp vào **chính công cụ
+       đo**, vì vỏ `bash -c` mang cả mã nguồn được truyền cho nó. Họ dùng bộ
+       lọc ấy để `kill`, và lệnh giết đi **ngược lên cây cha của chính nó** —
+       script thoát mã 15 (SIGTERM).
+
+    ⚠️ `cwd` bậc 3 **không** cứu được ca này: shell của người đang hỏi cũng có
+       `cwd` đúng bằng cây ấy. Đó là lý do điều kiện phải loại `os.getpid()`
+       **và toàn bộ `parents()`**, chứ không chỉ lọc theo cây.
+
+    ⭐ `may_ban.py` chỉ ĐẾM nên hậu quả hiện tại chỉ là đếm thừa một. Nhưng một
+       bộ đếm tự đếm mình là một bộ đếm **nói dối về chính câu hỏi nó trả lời**,
+       và ngày nào có người thêm chế độ giết thì lỗ hổng đã nằm sẵn ở đó.
+    """
+    import os                                    # noqa: PLC0415
+    import psutil                                # noqa: PLC0415
+
+    sys.path.insert(0, str(GOC / "tools"))
+    import may_ban                               # noqa: PLC0415
+
+    me = psutil.Process()
+    chuoi = {me.pid} | {t.pid for t in me.parents()}
+    assert os.getpid() in chuoi
+
+    # Tien trinh dang chay phep kiem nay CHINH la mot python.exe trong cay kho.
+    trong_cay = bool(may_ban._ten_cay(os.getcwd()))
+    if not trong_cay:
+        import pytest as _pt                     # noqa: PLC0415
+        _pt.skip("khong chay tu trong cay kho - phep do nay khong phan biet duoc")
+
+    thay = []
+    for p in psutil.process_iter(["pid", "name", "cwd"]):
+        try:
+            if p.info["pid"] in chuoi and (p.info["name"] or "").lower() == "python.exe":
+                if may_ban._ten_cay(p.info["cwd"] or ""):
+                    thay.append(p.info["pid"])
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
+    assert thay, "phep kiem nay chi co nghia khi chinh no nam trong cay kho"
+
+    # ⇒ Hoi HANH VI, dung grep ma nguon.
+    #
+    # ⛔ Ban dau cua phep kiem nay khang dinh `"parents()" in ma and "bo_qua" in ma`
+    #    — tuc lai la mot banh coc HINH DANG. Tiem "bo dong loai tru" thi no VAN
+    #    XANH, vi hai chu ay con nguyen trong tep. Do dung lop loi ma ca tep nay
+    #    ton tai de chan.
+    ten = may_ban._ten_cay(os.getcwd())
+    tho = 0
+    for p in psutil.process_iter(["pid", "name", "cwd"]):
+        try:
+            if (p.info["name"] or "").lower() != "python.exe":
+                continue
+            if may_ban._ten_cay(p.info["cwd"] or "") == ten:
+                tho += 1
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
+
+    tinh = may_ban.quet().get(ten, {"so": 0})["so"]
+    assert tinh < tho, (
+        f"quet() dem {tinh} tren tong {tho} python.exe cua cay `{ten}` - "
+        "no dang dem ca chinh tien trinh dang hoi")
