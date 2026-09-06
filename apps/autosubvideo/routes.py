@@ -6,6 +6,7 @@ KHÔNG tự viết prefix (nền tảng gắn theo manifest).
 from __future__ import annotations
 
 from platform_core.i18n import _ as _t
+from platform_core import phat_media
 import uuid
 import json
 import os
@@ -15,8 +16,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import (HTMLResponse, JSONResponse, RedirectResponse,
-                               Response, StreamingResponse)
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
 from apps.autosubvideo import cost
@@ -819,29 +819,6 @@ def _guard_key(request: Request, key: str) -> None:
         raise HTTPException(status_code=404, detail=_t('Không tìm thấy.'))
 
 
-def _iter_storage_range(stream, start: int, length: int):
-    """Yield a byte range from local files or non-seekable R2 StreamingBody."""
-    try:
-        try:
-            stream.seek(start)
-        except (AttributeError, OSError):
-            skipped = 0
-            while skipped < start:
-                chunk = stream.read(min(1024 * 1024, start - skipped))
-                if not chunk:
-                    return
-                skipped += len(chunk)
-        remaining = length
-        while remaining > 0:
-            chunk = stream.read(min(1024 * 1024, remaining))
-            if not chunk:
-                return
-            remaining -= len(chunk)
-            yield chunk
-    finally:
-        stream.close()
-
-
 @router.get("/v/{key:path}")
 def video_out(request: Request, key: str, user: str = Depends(require_login)):
     """Serve video output theo HTTP Range; R2 → redirect presigned (né 100MB)."""
@@ -855,26 +832,20 @@ def video_out(request: Request, key: str, user: str = Depends(require_login)):
         total = storage.size(key)
     except (StorageError, FileNotFoundError):
         raise HTTPException(status_code=404, detail=_t('Không tìm thấy video.'))
-    rng = request.headers.get("range")
-    if rng and rng.startswith("bytes="):
-        try:
-            s, _, e = rng[len("bytes="):].partition("-")
-            start = int(s) if s else 0
-            end = int(e) if e else total - 1
-        except ValueError:
-            start, end = 0, total - 1
-        start = max(0, start); end = min(end, total - 1)
-        if start > end:
-            start = 0
-        length = end - start + 1
-        return StreamingResponse(_iter_storage_range(storage.open(key), start, length),
-                        status_code=206, media_type="video/mp4",
-                        headers={"Content-Range": f"bytes {start}-{end}/{total}",
-                                 "Accept-Ranges": "bytes",
-                                 "Content-Length": str(length)})
-    return StreamingResponse(storage.open(key), media_type="video/mp4",
-                             headers={"Accept-Ranges": "bytes",
-                                      "Content-Length": str(total)})
+    # ⭐ HTTP Range đi qua `platform_core.phat_media`, không tự viết ở đây.
+    #
+    # ⚠️ Bản cũ ở đây là bản **ít tệ nhất** trong năm bản chép: nó là bản duy
+    #    nhất phát theo khối (`_iter_storage_range`) thay vì `f.read(length)`,
+    #    nên nó không nuốt cả tệp vào RAM. Nhưng nó vẫn mang ba khiếm khuyết kia
+    #    — không bao giờ trả `416`, hiểu ngược suffix `bytes=-500`, và nắn
+    #    `start > end` theo một kiểu riêng — và nó **không đóng luồng**: một
+    #    client ngắt giữa chừng để lại một mô tả tệp treo tới lúc GC dọn.
+    #
+    # ⭐ Chính `_iter_storage_range` là thứ được nâng lên thành
+    #    `phat_media.doc_khoi`, cộng thêm `finally: luong.close()`.
+    return phat_media.phat_tu_kho(
+        storage, key, kieu_noi_dung="video/mp4",
+        dai_range=request.headers.get("range"), tong=total)
 
 
 @router.get("/f/{key:path}")
@@ -895,5 +866,9 @@ def file_out(request: Request, key: str, user: str = Depends(require_login)):
     elif name.endswith(".zip"): ct = "application/zip"
     elif name.endswith(".json"): ct = "application/json"
     else: ct = "text/plain; charset=utf-8"
-    return StreamingResponse(storage.open(key), media_type=ct,
-                             headers={"Content-Disposition": f'attachment; filename="{name}"'})
+    # Tệp phụ đề nhỏ, nên đây không phải chuyện Range. Đi qua `phat_media` để
+    # có `Content-Length` và để luồng được **đóng** khi phát xong — hai thứ bản
+    # cũ đều thiếu.
+    return phat_media.phat_tu_kho(
+        storage, key, kieu_noi_dung=ct, dai_range=None,
+        tieu_de_them={"Content-Disposition": f'attachment; filename="{name}"'})

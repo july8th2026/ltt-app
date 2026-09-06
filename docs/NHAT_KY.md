@@ -16073,3 +16073,77 @@ xác nhận target, trang sẽ tự chọn lại 1.0.0.
 
 EXE chưa có chứng chỉ ký số nên SmartScreen có thể cảnh báo; web nói rõ cách
 đối chiếu SHA-256 và không bao giờ yêu cầu tắt antivirus.
+
+---
+
+## 2026-09-05 — Mobile Pack V1: 5 bản chép Range → 0, và bảy luật tồn tại mà không làm gì
+
+Nhánh `phien/mobile-v1` (fork `admin-mvp-v3` @ `911cd142`). Toàn văn:
+`docs/MOBILE/08_BAO_CAO.md`. Quy trình: `LTT_MOBILE_AUTONOMOUS_PROMPT_PACK_V1`.
+
+### Phán quyết
+
+**AUTOMATED MOBILE GATE PASS / REAL-DEVICE GATE PENDING.** Không gọi là full
+release PASS, và lý do là một phép đo chứ không phải thiếu thời gian: bản WebKit
+của Playwright trên máy này **không giải mã nổi audio** — kể cả một WAV `data:`
+URI tự sinh không qua mạng (`MediaError.code = 4`) — trong khi vẫn báo
+`canPlayType = "probably"`. Nên vế *"Safari phát được tiếng"* chưa ai đo được.
+
+### P0 có hai nửa, không phải một
+
+*"Tải về được nhưng bấm Play trên điện thoại không chạy"*:
+
+- **máy chủ**: `ltt_voice/routes/_p_audio.py` trả `StreamingResponse` không
+  `Accept-Ranges`. Safari quyết định một nguồn có tua được hay không từ chính
+  lượt 200 đầu tiên, nên nó bỏ phát — trong khi `<a download>` vẫn chạy.
+- **trình duyệt**: `voice.js:263` gọi `au.play()` trần; bị từ chối thì **không
+  có gì xảy ra** — nút không đổi, console sạch, log sạch. Cùng tệp ấy dòng ~395
+  đã bắt Promise đúng từ đầu.
+
+### Kiến trúc
+
+`platform_core/phat_media.py` — **một** bộ trả lời Range cho cả nền tảng, viết
+theo RFC 9110. Trước đó `apps/` có **năm** bản chép gần như giống nhau từng dòng
+và cả năm mang cùng bốn khiếm khuyết: không bao giờ trả `416`; `bytes=-500` trả
+501 byte **đầu** thay vì 500 byte cuối; `bytes=0-` nuốt cả tệp vào RAM;
+`start > end` xử lý mỗi nơi một kiểu. Sau lượt này: **0 bản chép**, 7 app dùng
+chung, và `test_904` đọc AST để chặn bản thứ sáu.
+
+`server/static/nhip_job.js` — một vòng hỏi job biết tab đang ẩn, rút từ bản đúng
+vốn đã nằm im trong `job_detail.html`.
+
+### Bảy lần một luật tồn tại mà không làm gì
+
+Tất cả đều biên dịch được, đúng cú pháp, không lỗi ở đâu: `:where()` độ đặc hiệu
+0 (**hai** lần) · `env(safe-area-inset)` khi thiếu `viewport-fit=cover` ·
+`Cache-Control` bị middleware ghi đè · `overflow-y:auto` trên hàng grid cao
+`auto` · `<script defer>` cho tệp mà script nội tuyến gọi ngay · `songDeu` tự
+gọi lại chính nó.
+
+⇒ **Luật CSS/HTTP nào thêm cũng phải đo lại sau khi thêm.** Và bốn lần chính bộ
+đo nói dối — chi tiết ở `08_BAO_CAO.md` mục 8.
+
+### Số đo
+
+23 route × 6 khung nhìn × 2 trình duyệt, sau lần build cuối: **0 tràn ngang,
+0 ô nhập < 16px trên cảm ứng, 0 console error, 0 `<video>` thiếu `playsinline`**.
+Desktop không đổi một pixel. Vẽ sóng Voice: tải thừa tới 165 MB → **0**.
+
+Dựng lại mọi con số: `python tools\mobile_qa.py quet --cookie "session=..."`.
+
+### Cổng
+
+`python tools\gate.py` **PASS 26/26** (gồm cả 4 bộ test frontend).
+`test_nhanh.py`: 6097 passed / 32 skipped / 0 failed + 67 frontend.
+
+### Còn tồn đọng
+
+Safari thật · bàn phím ảo thật · phóng to 200% (195px CSS, 15/15 route tràn —
+đã thử sửa ba lần, không đổi một pixel nên **đã hoàn tác cả ba**; WCAG 1.4.10
+đòi 320px và ở đó đạt) · tải lại giữa job (môi trường đo không có provider
+`san_sang`) · `prompt_ai_ommi` React chưa seed dữ liệu.
+
+### Cách lùi lại
+
+Bỏ nhánh `phien/mobile-v1` là bỏ hết. Không migration Alembic nào, không chạm
+`data/`/`secrets/`. `phat_media.py` là thêm mới; mỗi app migrate độc lập.

@@ -72,15 +72,48 @@ def test_studio_la_public_default_sau_as9_va_off_van_rollback(monkeypatch):
 
 
 def test_video_range_stream_supports_non_seekable_r2_body():
-    from apps.autosubvideo.routes import _iter_storage_range
+    """Body khong tua duoc cua R2 van ra dung byte, va van duoc dong.
+
+    ⚠️ MENH DE KHONG DOI, NHA CUA NO THI DOI. Ngay 05/09 `_iter_storage_range`
+       cua `apps/autosubvideo/routes.py` duoc nang len thanh
+       `platform_core.phat_media.doc_khoi` — no la ban TOT NHAT trong nam ban
+       chep bo Range (ban duy nhat phat theo khoi thay vi `f.read(length)`), nen
+       no duoc chon lam goc cho lop dung chung.
+
+    ⭐ Giu phep kiem nay o day chu khong xoa: no chot mot hanh vi ma `autosubvideo`
+       VAN phu thuoc vao. Chuyen no sang trỏ dung nha moi la cach duy nhat giu
+       duoc menh de ma khong giu mot cai ten da chet.
+
+    ⛔ Mot thu `phat_media.doc_khoi` co ma ban cu KHONG co: `finally: close()`.
+       Ban cu khong dong luong, nen mot client ngat giua chung de lai mot mo ta
+       tep treo toi luc GC don. Dong `assert body.closed` duoi day truoc kia
+       xanh nho `Body.close()` duoc goi o cuoi vong lap binh thuong; nay no
+       xanh ke ca khi bo sinh bi bo do.
+    """
+    from platform_core.phat_media import doc_khoi
     class Body:
         def __init__(self): self.data=io.BytesIO(b"0123456789");self.closed=False
         def read(self,size=-1): return self.data.read(size)
         def seek(self,_position): raise io.UnsupportedOperation("seek")
         def close(self): self.closed=True
     body=Body()
-    assert b"".join(_iter_storage_range(body,2,4))==b"2345"
+    assert b"".join(doc_khoi(body,2,4))==b"2345"
     assert body.closed is True
+
+
+def test_autosubvideo_khong_con_tu_viet_bo_range():
+    """Va app that su di qua lop dung chung, khong chi "co import".
+
+    Neu ai do chep lai bo phan tich Range vao day, `test_904` do truoc — nhung
+    phep kiem nay do o dung tep cua app, tuc dung cho nguoi sua no dang nhin.
+    """
+    import pathlib
+    p = (pathlib.Path(__file__).resolve().parent.parent
+         / "apps" / "autosubvideo" / "routes.py")
+    s = p.read_text(encoding="utf-8")
+    assert "phat_media.phat_tu_kho" in s
+    assert "_iter_storage_range" not in s.replace("`_iter_storage_range`", ""), (
+        "ham cu quay lai — no da chuyen sang `platform_core.phat_media.doc_khoi`")
 
 
 # ── Parse transcript đa định dạng ─────────────────────────────────────────────
@@ -149,8 +182,17 @@ def test_media_progress_parse(monkeypatch):
             return 0
 
     class _Empty:
-        def read(self):
-            return ""
+        """Gia `proc.stderr` RONG: van phai LAP DUOC, khong phai `read()`.
+
+        ⚠️ Ban cu chi co `read()` nen `_drain_err` nem `TypeError` trong luong
+           con. Phep kiem van xanh — no chi doc `seen`, khong dinh gi toi stderr
+           — nhung mot ngoai le im lang trong luong nen la thu khong duoc de lai
+           trong bo test: no lam nhieu moi lan doc log, va no day nguoi doc toi
+           cho quen rang canh bao luong la mot tin hieu that.
+        """
+
+        def __iter__(self):
+            return iter([])
 
     monkeypatch.setattr(media.subprocess, "Popen", lambda *a, **k: _FakeProc())
     seen = []
@@ -161,7 +203,37 @@ def test_media_progress_parse(monkeypatch):
 
 
 def test_media_progress_loi_thi_nem(monkeypatch):
+    """`ffmpeg` hong thi nem MediaError, VA thong bao phai mang duoi stderr.
+
+    🔴 BAN CU CUA PHEP KIEM NAY XANH VI MOT LY DO SAI — phien LTT Video AI chi ra
+       06/09 khi doc canh bao luong trong log gate cua ho:
+
+           PytestUnhandledThreadExceptionWarning: Exception in thread ...
+           File platform_core/media.py, line 223, in _drain_err
+               for ln in proc.stderr:
+           TypeError: '_Err' object is not iterable
+
+       `_drain_err` LAP tren `proc.stderr`, con `_Err` cu chi co `read()`. Luong
+       chet ngay dong dau, `tail` rong — va phep kiem van xanh, vi `MediaError`
+       duoc nem tu `returncode != 0`, khong lien quan gi toi stderr.
+
+    ⭐ Tuc nhanh duy nhat ma phep kiem nay ton tai de bao ve —
+       `raise MediaError(... + " | ".join(tail))` — CHUA BAO GIO duoc chay. Va no
+       khong the do duoc: ngoai le chet trong luong con, khong noi len luong
+       chinh; pytest chi ghi mot canh bao ma khong ai doc.
+
+    ⚠️ Nen ban nay sua HAI thu, thieu mot trong hai thi phep kiem lai rong:
+       (1) `_Err` LAP DUOC, dung nhu `proc.stderr` that;
+       (2) khang dinh thong bao MANG duoi stderr — chi sua (1) thi luong co chay
+           nhung khong ai kiem ket qua cua no.
+    """
     from platform_core import media
+
+    class _Err:
+        """Gia `proc.stderr`: mot doi tuong LAP theo dong, khong phai `read()`."""
+
+        def __iter__(self):
+            return iter(["boom\n", "fatal error\n"])
 
     class _FakeProc:
         returncode = 1
@@ -173,13 +245,14 @@ def test_media_progress_loi_thi_nem(monkeypatch):
         def wait(self, timeout=None):
             return 1
 
-    class _Err:
-        def read(self):
-            return "boom\nfatal error"
-
     monkeypatch.setattr(media.subprocess, "Popen", lambda *a, **k: _FakeProc())
-    with pytest.raises(media.MediaError):
+    with pytest.raises(media.MediaError) as loi:
         media.run_with_progress(["ffmpeg"], total_duration=0)
+    van = str(loi.value)
+    assert "code 1" in van
+    assert "boom" in van and "fatal error" in van, (
+        f"thong bao khong mang duoi stderr: {van!r} — `_drain_err` khong chay, "
+        "hoac `tail` khong toi duoc cho nem")
 
 
 def test_autosub_burn_kills_ffmpeg_when_progress_callback_cancels(monkeypatch):

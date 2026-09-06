@@ -28,7 +28,7 @@ log = logging.getLogger(__name__)
 TRAN_DOC = 500
 
 #: Nguồn đã biết. Khớp giá trị `params["nguon"]` mà các cửa nộp ghi vào.
-NGUON = ("studio", "giong", "du_an", "lo", "api")
+NGUON = ("studio", "giong", "du_an", "api")
 
 
 def _nguon_cua(job) -> str:

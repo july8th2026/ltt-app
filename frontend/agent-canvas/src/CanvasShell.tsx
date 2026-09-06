@@ -712,7 +712,7 @@ function Editor() {
         </section><h2>Công cụ</h2>
         <div className="workflow-settings"><p className="routing-note">AUTO ROUTING · {catalogMeta.models} model · {catalogMeta.routing||'managed'}</p><label>Mục tiêu workflow<textarea disabled={readOnly}
           value={state.document.goal} onChange={event => dispatch({ type: 'document', goal: event.target.value })} /></label>
-          <label>Ngân sách tối đa<input type="number" min="5" disabled={readOnly}
+          <label>Ngân sách tối đa<input type="number" inputMode="numeric" min="5" disabled={readOnly}
             value={state.document.budget_max_credit} onChange={event => dispatch({ type: 'document', budget_max_credit: Number(event.target.value) })} /></label>
           <button disabled={readOnly || state.document.goal.trim().length < 10} onClick={async () => {
             try { setPhase('loading'); const planned = await planWorkflow(state.document.goal,

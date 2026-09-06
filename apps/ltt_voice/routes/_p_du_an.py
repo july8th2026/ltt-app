@@ -12,7 +12,8 @@ from ._chung import (MANIFEST, SO_LAN_THU_JOB, TRAN_MOI_LUOT_SINH, Depends, Form
                      HTMLResponse, JSONResponse, Request, _db, _het_phien,
                      _t, _uid, du_an, features, giong_mau, require_login,
                      router, templates, tham_chieu, user_hien_tai,
-                     verify_csrf_token, vo, lan_ngon_ngu, nghe_thu)
+                     verify_csrf_token, vo, lan_ngon_ngu, nghe_thu,
+                     so_viet)
 
 
 def _mo_du_an(db, request, user, public_id: str):
@@ -290,7 +291,7 @@ def sua_khoi(request: Request, public_id: str, block_id: int,
         if text is not None and len(text) > TRAN_MOI_LUOT_SINH:
             return JSONResponse({"ok": False, "loi": _t(
                 "Khối dài {n} ký tự, vượt giới hạn {t} cho một lượt đọc."
-            ).format(n=len(text), t=TRAN_MOI_LUOT_SINH)}, status_code=400)
+            ).format(n=so_viet(len(text)), t=so_viet(TRAN_MOI_LUOT_SINH))}, status_code=400)
         du_an.sua_khoi(db, k, text=text, giong=giong)
         db.commit()
         return JSONResponse({"ok": True, "trang_thai": k.trang_thai})

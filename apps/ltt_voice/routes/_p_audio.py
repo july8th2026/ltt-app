@@ -1,6 +1,8 @@
 """Phục vụ tệp tiếng — cửa duy nhất đọc kho của khách."""
 from __future__ import annotations
 
+from platform_core import phat_media
+
 from ._chung import (MANIFEST, TRAN_KY_TU_CONG_KHAI, Depends, File, Form,
                      HTMLResponse, JSONResponse, Request, Response,
                      StreamingResponse, UploadFile, _db, _het_phien,
@@ -13,7 +15,7 @@ from ._chung import (MANIFEST, TRAN_KY_TU_CONG_KHAI, Depends, File, Form,
 # ── Phục vụ tệp tiếng ────────────────────────────────────────────────────────
 
 @router.get("/audio/{key:path}")
-def audio(key: str, mp3: int = 0,
+def audio(request: Request, key: str, mp3: int = 0,
           user=Depends(user_hien_tai), _=Depends(require_login)):
     """Phục vụ tệp tiếng. **Kiểm sở hữu bằng chính hình dạng khoá.**
 
@@ -85,16 +87,7 @@ def audio(key: str, mp3: int = 0,
     if not (la_ket_qua or la_clip_goc or la_nghe_thu_mau or la_nghe_thu_rieng):
         return Response(status_code=404)
     from platform_core.storage import get_storage
-    try:
-        with get_storage().open(key) as f:
-            data = f.read()
-    except Exception as e:  # noqa: BLE001 - kho co the nem nhieu loai loi
-        # Khong co tep la 404, khong phai 500 — nhung PHAI ghi lai. Mot khoa dung
-        # dinh dang ma doc khong duoc nghia la kho lech voi CSDL, va no bien mat
-        # o dung cho kho tim nhat neu ta chi tra 404 roi im.
-        import logging
-        logging.getLogger(__name__).warning("khong doc duoc audio %s: %s", key, e)
-        return Response(status_code=404)
+    kho = get_storage()
     # Kieu noi dung theo DUOI TEP, khong gan cung `audio/wav`. Tep ket qua luon
     # la WAV, nhung clip GOC cua khach thi khong: `luu_nguon` nhan ca mp3 va m4a
     # (xem bang duoi o `tham_chieu.luu_nguon`). Bao sai kieu thi trinh duyet tu
@@ -116,7 +109,19 @@ def audio(key: str, mp3: int = 0,
     #    lượt đọc chiếm gấp đôi kho, và bản MP3 ấy phải được `job_content.py`
     #    dọn theo — tức một thứ nữa để quên. Một lượt tải là hiếm; một lượt
     #    chuyển đổi mất dưới một giây.
+    #
+    # ⚠️ Và đây là đường DUY NHẤT còn đọc toàn tệp vào RAM — có lý do: `ffmpeg`
+    #    cần trọn vẹn byte, và đây là một lượt TẢI XUỐNG (`attachment`), không
+    #    phải một lượt phát. Trình phát không bao giờ đi qua nhánh này.
     if mp3 and la_ket_qua:
+        try:
+            with kho.open(key) as f:
+                data = f.read()
+        except Exception as e:  # noqa: BLE001 - kho co the nem nhieu loai loi
+            import logging
+            logging.getLogger(__name__).warning(
+                "khong doc duoc audio %s: %s", key, e)
+            return Response(status_code=404)
         chuyen = _sang_mp3(data)
         if chuyen is not None:
             return StreamingResponse(
@@ -126,7 +131,29 @@ def audio(key: str, mp3: int = 0,
         # Không chuyển được thì trả WAV — khách vẫn có tệp nghe được. Ném ở đây
         # là biến "thiếu một tiện nghi" thành "không tải được gì".
 
-    return StreamingResponse(io.BytesIO(data), media_type=kieu)
+    # ── Phát: đi qua `platform_core.phat_media` ──────────────────────────────
+    #
+    # 🔴 Trước 2026-09-05 chỗ này là `StreamingResponse(io.BytesIO(f.read()))`:
+    #    toàn tệp vào RAM, **không** `Accept-Ranges`, **không** `Content-Length`,
+    #    không 206, không 416.
+    #
+    # ⭐ Safari/WebKit quyết định một nguồn âm thanh có tua được hay không từ
+    #    chính lượt 200 đầu tiên. Không thấy `Accept-Ranges` thì nó kết luận máy
+    #    chủ không hỗ trợ Range và **bỏ phát** — trong khi `<a download>` vẫn tải
+    #    bình thường, vì tải xuống không cần tua. Đó chính xác là hình dạng lỗi
+    #    người dùng báo: *"tải về được nhưng bấm Play trên điện thoại không chạy"*.
+    #    (WebKit bug 211323, Starlette #950 — xem `docs/MOBILE/02_BASELINE.md`.)
+    try:
+        return phat_media.phat_tu_kho(
+            kho, key, kieu_noi_dung=kieu,
+            dai_range=request.headers.get("range"))
+    except Exception as e:  # noqa: BLE001 - kho co the nem nhieu loai loi
+        # Khong co tep la 404, khong phai 500 — nhung PHAI ghi lai. Mot khoa dung
+        # dinh dang ma doc khong duoc nghia la kho lech voi CSDL, va no bien mat
+        # o dung cho kho tim nhat neu ta chi tra 404 roi im.
+        import logging
+        logging.getLogger(__name__).warning("khong doc duoc audio %s: %s", key, e)
+        return Response(status_code=404)
 
 
 #: Chất lượng MP3. 192 kbps VBR cho giọng nói ở 48 kHz là dư — nhưng đây là tệp

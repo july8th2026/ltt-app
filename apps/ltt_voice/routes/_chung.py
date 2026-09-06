@@ -4,8 +4,8 @@ _chung.py — router + mọi thứ các mảnh route dùng chung.
 ⭐ VÌ SAO `routes.py` THÀNH MỘT PACKAGE.
 
    Trần của hợp đồng app là **900 dòng / 30 handler** cho một tệp route
-   (`tools/lint_app_contract.py`). Bốn màn đầu đã dùng 632 dòng; thêm Dự án,
-   Chạy lô và API nữa là vượt.
+   (`tools/lint_app_contract.py`). Bốn màn đầu đã dùng 632 dòng; thêm Dự án
+   và API nữa là vượt.
 
    ⛔ Và lối thoát SAI là đặt một tệp anh em `routes_du_an.py`: linter chỉ
       soi `routes.py` **hoặc** package `routes/`, nên một tệp anh em sẽ
@@ -25,6 +25,10 @@ from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import (HTMLResponse, JSONResponse, RedirectResponse,
                                Response, StreamingResponse)
 
+# ⭐ MỘT quy ước đọc số cho cả nền tảng. Thông điệp lỗi phải nói `100.000`
+#    giống hệt ô đếm trên màn hình — trước 05/09 chúng nói `100000` và
+#    `100.000`, cách nhau đúng một lượt POST. Xem `platform_core/dinh_dang.py`.
+from platform_core.dinh_dang import so_viet
 from platform_core.i18n import N_
 from platform_core.i18n import _ as _t
 from server.auth.csrf import verify_csrf_token
@@ -45,9 +49,15 @@ NHAN_NGUON = {
     "studio": N_('Tạo tiếng nói'),
     "giong": N_('Ghi danh giọng'),
     "du_an": N_('Dự án'),
-    "lo": N_('Chạy lô'),
     "api": N_('API'),
 }
+#: ⛔ KHÔNG có `"lo"` ở đây. Màn "Chạy lô" không bao giờ được xây (xem
+#:    `manifest.py`), nên không cửa nộp nào từng ghi `nguon="lo"` và không job
+#:    nào mang giá trị ấy. Một nhãn cho một nguồn không tồn tại là một chuỗi
+#:    phải dịch, phải bảo trì, và không bao giờ hiện ra.
+#: ⭐ Bộ lọc ở màn Lịch sử dựng từ `nguon_da_dung` — các nguồn THẬT SỰ có trong
+#:    dữ liệu — nên một giá trị lạ (nếu có) vẫn hiện thô qua `nhan_nguon.get(n, n)`
+#:    thay vì biến mất.
 
 router = APIRouter(tags=["ltt_voice"])
 

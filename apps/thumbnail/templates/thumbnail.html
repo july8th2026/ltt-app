@@ -43,7 +43,7 @@
       <div class="th-three">
         <label class="th-field">{{ _("Tỉ lệ") }}<select name="aspect_ratio">{% for a in aspects %}<option value="{{ a }}" {% if a == (form_values.aspect_ratio or '16:9') %}selected{% endif %}>{{ a }}</option>{% endfor %}</select></label>
         <label class="th-field">{{ _("Ngôn ngữ") }}<select name="ngon_ngu">{% for id, label in catalog['ngon_ngu'] %}<option value="{{ id }}" {% if id == (form_values.ngon_ngu or defaults['ngon_ngu']) %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
-        <label class="th-field">{{ _("Số ảnh") }}<input id="th-count" type="number" name="count" value="{{ form_values.count or 1 }}" min="1" max="4"></label>
+        <label class="th-field">{{ _("Số ảnh") }}<input id="th-count" type="number" inputmode="numeric" name="count" value="{{ form_values.count or 1 }}" min="1" max="4"></label>
       </div>
       <div class="th-actions"><button type="button" class="btn ghost" hx-post="{{ app.route_prefix }}/preview" hx-include="closest form" hx-target="#prompt-preview">{{ _("Xem cấu hình") }}</button>
         <button type="submit" class="btn">{{ _("Tạo ảnh ·") }} <span id="th-cost">{{ app.credit_cost({'count': 1}) }}</span> credit</button></div>

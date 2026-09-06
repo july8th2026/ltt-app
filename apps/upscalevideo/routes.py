@@ -5,6 +5,7 @@ P1), lùi về multipart nếu R2 chưa mở CORS. Router KHÔNG tự viết pre
 from __future__ import annotations
 
 from platform_core.i18n import _ as _t
+from platform_core import phat_media
 import uuid
 import json
 import os
@@ -777,28 +778,19 @@ def _serve_owned_video(request: Request, key: str):
         total = storage.size(key)
     except (StorageError, FileNotFoundError):
         raise HTTPException(status_code=404, detail=_t('Không tìm thấy video.'))
-    rng = request.headers.get("range")
-    if rng and rng.startswith("bytes="):
-        try:
-            s, _, e = rng[len("bytes="):].partition("-")
-            start = int(s) if s else 0
-            end = int(e) if e else total - 1
-        except ValueError:
-            start, end = 0, total - 1
-        start = max(0, start); end = min(end, total - 1)
-        if start > end:
-            start = 0
-        length = end - start + 1
-        f = storage.open(key)
-        try:
-            f.seek(start); chunk = f.read(length)
-        finally:
-            f.close()
-        return Response(content=chunk, status_code=206, media_type="video/mp4",
-                        headers={"Content-Range": f"bytes {start}-{end}/{total}",
-                                 "Accept-Ranges": "bytes", "Content-Length": str(len(chunk))})
-    return StreamingResponse(storage.open(key), media_type="video/mp4",
-                             headers={"Accept-Ranges": "bytes", "Content-Length": str(total)})
+    # ⭐ HTTP Range đi qua `platform_core.phat_media`, không tự viết ở đây.
+    #
+    #    Bản cũ ở chỗ này là một trong **năm** bản chép gần như giống nhau từng
+    #    dòng (`taovideo`, `taoclipngan`, `upscalevideo`, `agent`,
+    #    `autosubvideo`), và cả năm mang cùng bốn khiếm khuyết: không bao giờ trả
+    #    `416`; `bytes=-500` trả 501 byte ĐẦU thay vì 500 byte cuối; `bytes=0-`
+    #    nuốt cả tệp vào RAM; `start > end` xử lý mỗi nơi một kiểu.
+    #
+    # ⚠️ Phép kiểm sở hữu ở TRÊN vẫn ở lại app — đó là ranh giới: app giữ quyền,
+    #    lớp dùng chung giữ đường ống. Xem `docs/MOBILE/04_SHARED_CONTRACT.md`.
+    return phat_media.phat_tu_kho(
+        storage, key, kieu_noi_dung="video/mp4",
+        dai_range=request.headers.get("range"), tong=total)
 
 
 def _serve_download(key: str, filename: str):
@@ -810,18 +802,29 @@ def _serve_download(key: str, filename: str):
     from platform_core.storage import StorageError, get_storage
     storage = get_storage()
     try:
+        # ⚠️ Chỉ hỏi kích thước, KHÔNG mở luồng ở đây: `phat_media` tự mở đúng
+        #    lúc phát. Bản cũ mở sẵn một luồng rồi đưa cho `StreamingResponse`;
+        #    mở rồi đóng ngay là hai lượt chạm kho cho một việc.
         total = storage.size(key)
-        stream = storage.open(key)
     except (StorageError, FileNotFoundError):
         raise HTTPException(status_code=404, detail=_t('Không tìm thấy video.'))
     safe = re.sub(r"[^A-Za-z0-9._-]+", "-", filename).strip("-.")
     if not safe.lower().endswith(".mp4"):
         safe = (safe or "upscaled-video") + ".mp4"
-    return StreamingResponse(stream, media_type="video/mp4", headers={
-        "Content-Disposition": f'attachment; filename="{safe}"',
-        "Content-Length": str(total),
-        "X-Content-Type-Options": "nosniff",
-    })
+    # ⚠️ Đường TẢI XUỐNG cũng đi qua `phat_media`, và không phải vì Range:
+    #    `StreamingResponse(stream, ...)` đưa thẳng một tệp nhị phân cho Starlette
+    #    lặp, mà **lặp trên tệp nhị phân là lặp theo DÒNG** — nó cắt ở mỗi byte
+    #    `0x0A`, băm một video thành hàng nghìn mẩu dài ngắn ngẫu nhiên. Nó chạy
+    #    được nên không ai để ý. `phat_media` đọc khối đều 1 MiB và **đóng luồng**
+    #    khi xong, thứ mà bản cũ cũng không làm.
+    #
+    # ⭐ `Accept-Ranges` đi kèm là một món quà tặng thêm: một lượt tải 2 GB đứt
+    #    giữa chừng nay tiếp lại được thay vì phải tải lại từ đầu.
+    return phat_media.phat_tu_kho(
+        storage, key, kieu_noi_dung="video/mp4",
+        dai_range=None, tong=total,
+        tieu_de_them={"Content-Disposition": f'attachment; filename="{safe}"',
+                      "X-Content-Type-Options": "nosniff"})
 
 
 @router.get("/v/{key:path}")

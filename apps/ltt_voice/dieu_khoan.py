@@ -20,6 +20,8 @@ from platform_core.i18n import _ as _t
 from platform_core.job_content import RETENTION_DAYS
 
 from .audio_input import GIAY_TOI_DA, GIAY_TOI_THIEU, MAX_BYTES
+from platform_core.dinh_dang import so_viet
+
 from .tham_so_cong_khai import TRAN_KY_TU_CONG_KHAI
 
 #: Đổi bất cứ câu nào bên dưới thì phải đổi chuỗi này. Bản cam kết đã lưu trỏ tới
@@ -63,7 +65,7 @@ def cac_dieu() -> list:
                 "Bạn không cần tự chia: văn bản dài được cắt theo ranh giới câu "
                 "rồi đọc thành nhiều lượt và ghép lại thành một tệp liền mạch. "
                 "Dài hơn nữa thì dùng Dự án, mỗi khối một lượt đọc riêng."
-            ).format(n=f"{TRAN_KY_TU_CONG_KHAI:,}".replace(",", "."),
+            ).format(n=so_viet(TRAN_KY_TU_CONG_KHAI),
                      p=int(TRAN_KY_TU_CONG_KHAI / 19.86 / 60)),
         },
         {
