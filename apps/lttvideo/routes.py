@@ -26,6 +26,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from platform_core.i18n import _ as _t
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.auth.session import require_login
+from server.deps import get_db
 from server.templating import templates
 
 from . import cost, kha_nang
@@ -47,7 +48,9 @@ _KHUON_KHOA = re.compile(r"^lttvideo/(\d+)/[0-9a-f]{32}\.(mp4|webm)$")
 def khoa_hop_le(key: str, user_id) -> bool:
     """Khoá này có đúng khuôn LTT sinh ra, và có thuộc về `user_id` không?"""
     m = _KHUON_KHOA.match(key or "")
-    return bool(m) and m.group(1) == str(user_id)
+    if m is None:
+        return False
+    return m.group(1) == str(user_id)
 
 
 #: Tỉ lệ khung hình cho người dùng chọn — nhãn sản phẩm, không phải độ phân giải.
@@ -96,6 +99,7 @@ async def tao_video(
     do_dai_s: int = Form(5),
     csrf_token: str = Form(""),
     user=Depends(require_login),
+    db=Depends(get_db),
 ):
     verify_csrf_token(request, csrf_token)
 
@@ -113,11 +117,15 @@ async def tao_video(
     if do_dai_s not in DO_DAI_S:
         do_dai_s = DO_DAI_S[0]
 
-    from platform_core.jobs import tao_job  # noqa: PLC0415 — tranh vong import
+    from platform_core.job_submit import submit_with_credit  # noqa: PLC0415
 
-    job = tao_job(
-        job_type="lttvideo.tao",
+    from .manifest import MANIFEST
+
+    job = submit_with_credit(
+        db,
         user_id=user.id,
+        app_slug=MANIFEST.slug,
+        job_type="lttvideo.tao",
         params={
             "prompt": mo_ta,
             "duration_s": do_dai_s,
@@ -125,6 +133,7 @@ async def tao_video(
             "nguoi_dung_id": user.id,
         },
     )
+    db.commit()
     return RedirectResponse(f"?job={getattr(job, 'id', '')}", status_code=303)
 
 

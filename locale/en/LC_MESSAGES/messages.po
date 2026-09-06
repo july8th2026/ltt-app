@@ -13309,3 +13309,33 @@ msgstr "Saving the result failed."
 
 msgid "Chuẩn 720p"
 msgstr "Standard 720p"
+
+msgid "Hãy mô tả video bạn muốn."
+msgstr "Please describe the video you want."
+
+msgid "Mô tả video bạn muốn. Hệ thống lo phần còn lại."
+msgstr "Describe the video you want. We handle the rest."
+
+msgid "Một video mất khoảng vài chục phút. Bạn có thể đóng trang — kết quả sẽ nằm trong Lịch sử."
+msgstr "A video takes tens of minutes. You can close this page — the result will appear in History."
+
+msgid "Sẽ tạo:"
+msgstr "Will create:"
+
+msgid "Tỉ lệ khung hình"
+msgstr "Aspect ratio"
+
+msgid "Ví dụ: một dòng sông lúc bình minh, sương mù trên mặt nước, máy quay tiến chậm về phía trước"
+msgstr "For example: a river at dawn, mist over the water, the camera dollying slowly forward"
+
+msgid "credit (giữ chỗ)"
+msgstr "credits (on hold)"
+
+msgid "video từ mô tả"
+msgstr "video from a description"
+
+msgid "Đã nhận. Video đang được dựng — bạn xem tiến độ ở mục Lịch sử."
+msgstr "Received. Your video is being made — track progress in History."
+
+msgid "Tạo video"
+msgstr "Create video"
