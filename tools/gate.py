@@ -677,9 +677,17 @@ def _steps(quick: bool, noi_tiep: bool = False) -> list[Step]:
         # khong co PostgreSQL, nhung viec bo qua thi khong bao gio con lang le.
         # `test_214` dung HAI tien trinh worker — do la ca diem cua no. Khai 2,
         # khong khai 1: bo dem loi chi dung khi moi buoc noi that ve cai no lay.
+        # 🔴 `postgres_test` THEM 06/09/2026. `check_multiproc.py` goi
+        #    `drop_all()` (xem docstring dong 19 cua no) tren CSDL test DUNG
+        #    CHUNG, va buoc nay truoc do KHONG khai tai nguyen nao. Hai luot gate
+        #    o hai cay khac nhau => mot ben xoa schema giua luc ben kia dang ghi.
+        #    Trieu chung do that dem 05-06/09, hai phien, hai kieu:
+        #        relation "api_metric_samples" does not exist
+        #        assert 0 == 9   (9 job bien mat khoi bang)
         steps.append(Step("bat bien da tien trinh",
                           [sys.executable, "tools/check_multiproc.py"], ROOT,
-                          nhom="nang", so_loi=2))
+                          nhom="nang", tai_nguyen=("postgres_test",),
+                          so_loi=2))
     npm = _npm()
     for name in FRONTENDS:
         folder = ROOT / "frontend" / name
@@ -758,13 +766,15 @@ def _steps(quick: bool, noi_tiep: bool = False) -> list[Step]:
             steps.append(Step("bo test (noi tiep)",
                               [sys.executable, "tools/test_nhanh.py",
                                "--noi-tiep"], ROOT,
-                              nhom="nang", tai_nguyen=("cpu_nhieu",),
+                              nhom="nang",
+                              tai_nguyen=("cpu_nhieu", "postgres_test"),
                               so_loi=1))
         else:
             steps.append(Step("bo test (song song)",
                               [sys.executable, "tools/test_nhanh.py",
                                "-n", str(loi_bo_test)], ROOT,
-                              nhom="nang", tai_nguyen=("cpu_nhieu",),
+                              nhom="nang",
+                              tai_nguyen=("cpu_nhieu", "postgres_test"),
                               so_loi=loi_bo_test))
     return steps
 
@@ -780,7 +790,8 @@ def _steps_pham_vi(tep_test: list[str]) -> list[Step]:
         return []
     return [Step("bo test (pham vi)",
                  [sys.executable, "tools/test_nhanh.py", *sorted(tep_test)],
-                 ROOT, nhom="nang", tai_nguyen=("cpu_nhieu",))]
+                 ROOT, nhom="nang",
+                 tai_nguyen=("cpu_nhieu", "postgres_test"))]
 
 
 #: HO SO — moi ho so mot HOP DONG viet ra thanh chu.
@@ -970,9 +981,14 @@ def _rut_gon_vong_lap(steps: list[Step]) -> list[Step]:
     # ⚠️ `--lf-rong-thi-khong-chay` la bat buoc o day. `--lf` mot minh chay TAT
     #    CA khi lan truoc khong co gi do — do 27/08: che do nay dat ra de xong
     #    trong ~20 giay va mat 4 phut 26 vi dung ly do do.
+    # ⛔ Buoc nay truoc 06/09 khai **KHONG TAI NGUYEN NAO** — ke ca `cpu_nhieu`.
+    #    Va no khong he nhe: `--lf` chay TOAN BO bo test khi cache lastfailed
+    #    rong hoac toan id chet (do that 06/09: 393 giay). Tuc `--vong-lap` la
+    #    mot buoc nang **doi lot mot buoc nhanh**, va no vo hinh voi khoa.
     ra.append(Step("bo test --lf",
                    [sys.executable, "tools/test_nhanh.py", "--lf",
-                    "--lf-rong-thi-khong-chay"], ROOT, nhom="nang"))
+                    "--lf-rong-thi-khong-chay"], ROOT, nhom="nang",
+                   tai_nguyen=("cpu_nhieu", "postgres_test")))
     return ra
 
 
