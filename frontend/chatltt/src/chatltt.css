@@ -249,6 +249,48 @@
   font-size: 13px;
 }
 
+/* ── Khoi tool (H44 P09) ───────────────────────────────────────────────── */
+
+/* ⭐ Nhat, hep, khong mau manh. Mot khoi tool la CHU THICH cho cau tra loi,
+   khong phai noi dung — no phai doc duoc ma khong keo mat khoi cau chu. */
+.ltc-tools { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+
+.ltc-tool {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-canvas);
+  font-size: 13px;
+}
+.ltc-tool__nut {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 6px 10px;
+  background: none; border: none; color: var(--text-secondary);
+  font: inherit; text-align: left; cursor: pointer;
+}
+/* Khong co gi de mo thi nut khong duoc gia vo la mot nut. */
+.ltc-tool__nut:disabled { cursor: default; }
+.ltc-tool__ten { color: var(--text-primary); }
+.ltc-tool__tt { margin-left: auto; color: var(--text-muted); font-size: 12px; }
+
+/* Chi hai trang thai duoc to mau, va ca hai deu la "con viec / da hong" —
+   mot khoi "xong" khong can gianh su chu y voi cau tra loi ngay duoi no. */
+.ltc-tool[data-trang-thai="cho_duyet"] { border-color: var(--status-warn-border, var(--border-subtle)); }
+.ltc-tool[data-trang-thai="loi"] { border-color: var(--status-danger-border); }
+.ltc-tool[data-trang-thai="loi"] .ltc-tool__tt { color: var(--status-danger); }
+
+.ltc-tool__than {
+  padding: 0 10px 8px;
+  border-top: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+.ltc-tool__doiso { margin: 0; }
+.ltc-tool__dong { display: flex; gap: 8px; padding-top: 6px; }
+/* `<dd>` co margin-inline-start 40px mac dinh cua trinh duyet. */
+.ltc-tool__gt { margin: 0; }
+.ltc-tool__khoa { color: var(--text-muted); min-width: 92px; }
+.ltc-tool__gt { word-break: break-word; margin: 0; }
+.ltc-tool__loi { margin: 8px 0 0; color: var(--status-danger); }
+
 /* ── O soan ────────────────────────────────────────────────────────────── */
 
 .ltc-soan {

@@ -19,6 +19,8 @@ import remarkBreaks from 'remark-breaks'
 import remarkGfm from 'remark-gfm'
 import { anhEm, chuCuaThongDiep, suyLuanCuaThongDiep } from './cay'
 import type { Khoi, ThongDiep } from './kieu'
+import { KhoiTool } from './KhoiTool'
+import { laKhoiTool } from './kieu'
 import { TrangThaiLuot } from './TrangThaiLuot'
 
 /**
@@ -155,6 +157,9 @@ export function ThongDiepView({
   const dangChay = m.status === 'streaming' || m.status === 'queued'
   const chu = chuCuaThongDiep(m)
   const suyLuan = suyLuanCuaThongDiep(m)
+  // H44 P09: khoi tool dung TRUOC phan chu — nguoi doc thay "no da lam
+  // gi" roi moi thay "no noi gi". Cung thu tu backend da chen chung.
+  const tool = m.blocks.filter(laKhoiTool)
   const loi = m.blocks.find((k) => k.type === 'error')
   const trangThai = m.blocks.find((k) => k.type === 'status')
   const dangTaoMedia = dangChay && m.execution?.mode === 'job'
@@ -195,6 +200,12 @@ export function ThongDiepView({
            thanh `<br>`; no khong bat HTML tho, nen mo hinh chong XSS o dau tep
            nay khong doi mot chut nao. `test_ThongDiepView` chot ca hai ve.
       */}
+      {tool.length > 0 && (
+        <div className="ltc-tools">
+          {tool.map((k, i) => <KhoiTool key={i} khoi={k} />)}
+        </div>
+      )}
+
       <div className="ltc-tin__chu">
         {m.role === 'user' ? (
           <p className="ltc-tin__tho">{chu}</p>

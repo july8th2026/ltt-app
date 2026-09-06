@@ -70,6 +70,21 @@ TRANG_THAI = ("draft", "streaming", "queued", "done", "failed", "cancelled")
 LOAI_KHOI = ("text", "reasoning", "image", "audio", "file", "status", "error",
              "tool_call")
 
+#: Trạng thái của một khối `tool_call`. (H44 P09 bước 1)
+#:
+#: 🔴 **MỘT chiều, không phải ba cờ rời.** Bản trước mang `ok` + `cho_duyet` và
+#:    bỏ hẳn `cho_job` — nên một bước **đang chờ job** tuần tự hoá thành
+#:    `ok=True, cho_duyet=False, tom_tat=""`, tức **không phân biệt được với đã
+#:    xong**. Đo bằng thí nghiệm 06/09, không phải bằng đọc mã.
+#:
+#: ⭐ Ba cờ rời cho 8 tổ hợp mà chỉ 4 có nghĩa; một union một chiều thì **mọi**
+#:    giá trị đều có nghĩa. Cùng hình dạng `ToolCallMessagePartStatus` của
+#:    `assistant-ui` (đọc đặc tả 06/09, không chạm mã — xem `11_KE_HOACH_P09_UX.md`).
+#:
+#: ⚠️ `ok` vẫn được ghi kèm, **chỉ để đọc ngược**: 220 hội thoại thật có thể
+#:    đang mang khối cũ không có `trang_thai`.
+TRANG_THAI_KHOI_TOOL = ("cho_duyet", "dang_chay", "xong", "loi")
+
 
 class ChatlttConversation(Base):
     __tablename__ = "chatltt_conversation"

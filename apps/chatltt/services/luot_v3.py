@@ -344,6 +344,40 @@ def _dong(db, *, run_row, run: DP.Run, tra_loi) -> None:
     db.commit()
 
 
+def _trang_thai_buoc(b) -> str:
+    """Một bước → **một** trạng thái. (H44 P09 bước 1)
+
+    🔴 Bản trước tuần tự hoá ba cờ rời và **bỏ hẳn `cho_job`**, nên một bước
+       đang chờ job ra `ok=True, cho_duyet=False, tom_tat=""` — không phân biệt
+       được với **đã xong**. Đo bằng thí nghiệm 06/09:
+
+           DANG CHO JOB -> ok=True   cho_duyet=False  tom_tat=''
+           DA XONG      -> ok=True   cho_duyet=False  tom_tat='{"key": ...}'
+
+    ⇒ Hai ca chỉ khác nhau **một chuỗi rỗng**. Hôm nay không ai thấy vì không ai
+      vẽ khối này; ngày bắt đầu vẽ, đó là một lời nói dối trên màn hình — người
+      dùng đọc "đã xong ✓" trong khi job còn đang xếp hàng.
+
+    ⛔ Và bản vá sai là ở phía giao diện: *"tom_tat rỗng thì vẽ spinner"*. Nó
+       chạy đúng hôm nay, nhưng `tom_tat` rỗng là **thứ đại diện** cho "chưa có
+       kết quả" — một tool trả kết quả rỗng hợp lệ sẽ quay mãi. Sự thật phải
+       được sửa ở nơi nó được sinh ra.
+
+    ⭐ Thứ tự kiểm là thứ tự **loại trừ**, và `ket_qua` đi trước: `dieu_phoi`
+       xoá `cho_duyet` khi đặt `cho_job`, nhưng không có gì bảo đảm điều đó cho
+       mọi đường tương lai — còn "đã có kết quả" thì luôn thắng mọi cờ chờ.
+    """
+    if b.ket_qua is not None:
+        return "xong" if b.ket_qua.ok else "loi"
+    if b.cho_duyet:
+        return "cho_duyet"
+    if b.cho_job:
+        return "dang_chay"
+    # Chưa kết quả, không chờ ai: bước vừa được dựng. Vẫn là "đang chạy" chứ
+    # KHÔNG phải "xong" — mặc định phải nghiêng về phía chưa hoàn thành.
+    return "dang_chay"
+
+
 def _them_khoi(tra_loi, run: DP.Run, *, cho_duyet: bool = False) -> None:
     """Nối khối `tool_call` (+ `status`) vào `blocks`, giữ nguyên phần chữ.
 
@@ -363,6 +397,10 @@ def _them_khoi(tra_loi, run: DP.Run, *, cho_duyet: bool = False) -> None:
             continue
         da_co.add(khoa)
         chen.append({"type": "tool_call", "ten": b.ten, "doi_so": b.doi_so,
+                     "trang_thai": _trang_thai_buoc(b),
+                     # ⚠️ Hai trường dưới GIỮ LẠI cho tương thích ngược, không
+                     #    phải nguồn chân lý. Bộ vẽ đọc `trang_thai`; `ok` chỉ
+                     #    dùng khi gặp khối CŨ chưa có trường ấy.
                      "ok": bool(b.ket_qua is None or b.ket_qua.ok),
                      "cho_duyet": bool(b.cho_duyet and b.ket_qua is None),
                      "tom_tat": b.ket_qua.tom_tat() if b.ket_qua else ""})

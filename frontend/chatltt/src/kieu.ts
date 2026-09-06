@@ -19,6 +19,48 @@ export type Khoi = {
   [k: string]: unknown
 }
 
+/**
+ * Trang thai cua mot khoi `tool_call`. Khop `tables.TRANG_THAI_KHOI_TOOL`.
+ *
+ * 🔴 MOT chieu, khong phai ba co roi. Ban truoc mang `ok` + `cho_duyet` va bo
+ *    han `cho_job`, nen mot buoc DANG CHO JOB tuan tu hoa y het mot buoc DA
+ *    XONG — do bang thi nghiem 06/09, `test_834` chot lai.
+ */
+export type TrangThaiTool = 'cho_duyet' | 'dang_chay' | 'xong' | 'loi'
+
+export type KhoiToolCall = Khoi & {
+  type: 'tool_call'
+  ten?: string
+  doi_so?: Record<string, unknown>
+  trang_thai?: TrangThaiTool
+  /** ⚠️ Chi de doc khoi CU. Nguon chan ly la `trang_thai`. */
+  ok?: boolean
+  cho_duyet?: boolean
+  tom_tat?: string
+}
+
+/**
+ * Type guard — `filter(laKhoiTool)` hep kieu duoc, `filter(k => k.type === ...)`
+ * thi khong: `Khoi.type` khai la `LoaiKhoi` nen TypeScript khong tu hep.
+ */
+export function laKhoiTool(k: Khoi): k is KhoiToolCall {
+  return k.type === 'tool_call'
+}
+
+/**
+ * Trang thai cua mot khoi, ke ca khoi CU chua co truong `trang_thai`.
+ *
+ * ⚠️ 220 hoi thoai that co the dang mang khoi cu. Doc nguoc tu `ok`/`cho_duyet`
+ *    la duong duy nhat de chung khong hien sai — nhung no **khong the** phan
+ *    biet "dang chay" voi "xong", vi thong tin ay chua bao gio duoc ghi.
+ *    ⇒ Khoi cu ngo ra `xong`, va do la cau tra loi trung thuc nhat con lai.
+ */
+export function trangThaiTool(k: KhoiToolCall): TrangThaiTool {
+  if (k.trang_thai) return k.trang_thai
+  if (k.cho_duyet) return 'cho_duyet'
+  return k.ok === false ? 'loi' : 'xong'
+}
+
 export type TrangThai =
   | 'draft' | 'streaming' | 'queued' | 'done' | 'failed' | 'cancelled'
 
