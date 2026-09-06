@@ -20,7 +20,7 @@ sentry-sdk>=2.22,<3.0
 yt-dlp>=2026.3.17,<2027.0  # Agent Social Video: Python API only; no shell/netrc/exec options
 
 # CSDL (H1.1). psycopg 3 ban "binary" mang theo thu vien libpq da bien dich
-# san — tren Windows dieu do tranh phai cai PostgreSQL client rieng chi de
+# san -- tren Windows dieu do tranh phai cai PostgreSQL client rieng chi de
 # ung dung ket noi duoc.
 sqlalchemy>=2.0.49,<3.0
 alembic>=1.18.4,<2.0
@@ -31,18 +31,23 @@ psycopg[binary]>=3.3.4,<4.0
 sqladmin>=0.20.1,<0.21
 wtforms>=3.1.2,<4.0
 
-# R2 object storage (H10). R2 = S3-compatible → dùng boto3. Chỉ cần khi
-# LTT_STORAGE=r2; import lười trong storage.py nên không bắt buộc lúc dev.
+# R2 object storage (H10). R2 = S3-compatible -> dung boto3. Chi can khi
+# LTT_STORAGE=r2; import luoi trong storage.py nen khong bat buoc luc dev.
 boto3>=1.35,<2.0
 
 # seedance Pha 2: chuan hoa anh ref (Pillow), nhan dien mat Haar (opencv), ky
 # ModelArk asset API (volcengine SDK). insightface (SCRFD chinh xac hon) can MSVC
 # C++ build tools -> tam dung Haar fallback; cai insightface sau neu can.
-pillow>=10,<12
+# 06/09/2026: noi tran <12 -> <13. Ban 11.3.0 dang cai co 25 advisory
+# (PYSEC-2026-165, -2249..-2257, -2874, -3451..-3496), ban va tu 12.1.1.
+# pillow nam tren duong xu ly ANH NGUOI DUNG TAI LEN (platform_core/
+# image_input.py + 7 app), nen day la be mat tan cong that, khong phai
+# no ky thuat. Nang major -> da chay lai toan bo test truoc khi chot.
+pillow>=12.1.1,<13
 opencv-python-headless>=4.9,<5.0
 volcengine>=1.0.140,<2.0
 openai-codex>=0.144.4,<0.145   # CHAT AI STUDIO: dieu khien Codex app-server (keo theo codex_cli_bin ~140MB); pin sat vi khop version binary
-# TAO CLIP NGAN (engine cutclipshort) — ML nang. torch cu128 cai RIENG trong setup/2
+# TAO CLIP NGAN (engine cutclipshort) -- ML nang. torch cu128 cai RIENG trong setup/2
 # (khong de o day vi -r keo ban CPU tu PyPI; Blackwell can cu128).
 faster-whisper>=1.0,<2.0     # chep loi (CTranslate2), GPU float16 / CPU int8
 scenedetect>=0.6.4,<0.7      # phat hien canh

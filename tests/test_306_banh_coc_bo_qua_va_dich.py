@@ -910,3 +910,73 @@ def test_importlinter_cau_hinh_THUAN_ASCII():
     xau = [(i, by) for i, by in enumerate(b) if by > 127]
     assert not xau, (
         f"`.importlinter` co {len(xau)} byte ngoai ASCII (dau tien o {xau[0][0]})")
+
+
+# ── 10. Banh coc CVE (`pip-audit`, them 06/09/2026) ────────────────────────
+#
+# ⛔ Cum nay KHONG cham mang. `check_cve.py` mat 49 giay va hoi PyPI/OSV, nen
+#    goi no trong bo test la bien mot phep kiem thanh mot phep do phu thuoc
+#    duong truyen. Ba phep kiem duoi day chot dung nhung menh de THUOC VE cong
+#    cu: dinh dang moc, doi hoi LY DO, va viec no KHONG nam trong gate.
+
+
+def test_moc_cve_MOI_DONG_deu_co_LY_DO():
+    """⛔ Mot dong mien tru CVE khong ly do la mot dong se song mai ma khong ai
+       nho vi sao. Khac han `check_ruff.moc`: o do la no ky thuat, o day la mot
+       quyet dinh BAO MAT.
+    """
+    import re
+    tep = GOC / "tools" / "check_cve.moc"
+    mau = re.compile(r"^[A-Za-z0-9-]+\s*\|\s*[^|]+\|\s*\S.*$")
+    xau = []
+    for so, dong in enumerate(tep.read_text(encoding="utf-8").splitlines(), 1):
+        d = dong.strip()
+        if not d or d.startswith("#"):
+            continue
+        if not mau.match(d):
+            xau.append(f"{so}: {d!r}")
+    assert not xau, "dong sai dinh dang hoac THIEU LY DO:\n  " + "\n  ".join(xau)
+
+
+def test_check_cve_TU_CHOI_moc_thieu_ly_do(tmp_path):
+    """Doi chung: cong cu phai DUNG HAN, khong duoc am tham chap nhan."""
+    import pytest
+
+    moc = tmp_path / "khong_ly_do.moc"
+    moc.write_text("PYSEC-2026-2132 | click\n", encoding="ascii")
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "ccve", GOC / "tools" / "check_cve.py")
+    ccve = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(ccve)
+    ccve.TEP_MOC = moc
+    with pytest.raises(SystemExit) as loi:
+        ccve.doc_moc()
+    assert "ly do" in str(loi.value).lower()
+
+
+def test_check_cve_KHONG_nam_trong_gate():
+    """🔴 Co Y khong nam trong gate, va phep kiem nay chot dieu do.
+
+       Do 06/09: **49 giay** va no hoi PyPI/OSV qua mang. Mot buoc gate do vi
+       MAT MANG la mot buoc do vi ly do khong lien quan toi ma — dung thu day
+       nguoi ta bo qua mau do (`BAY_TRONG_CONG_CHAT_LUONG.md` Bay 26).
+
+    ⭐ CVE xuat hien theo THOI GIAN, khong theo commit. Hoi mot lan truoc khi
+       giao hang moi dung nhip — xem `docs/16_CAP_NHAT_VA_DEPLOY.md` muc 2b.
+    """
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "gate_cve", GOC / "tools" / "gate.py")
+    gate = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(gate)
+    for quick in (True, False):
+        for s in gate._steps(quick=quick):
+            assert not any("check_cve" in str(a) for a in s.argv), (
+                f"`check_cve.py` da lot vao gate o buoc `{s.name}` — no ton 49 "
+                f"giay va phu thuoc mang")
+    # Va no phai duoc nhac o tai lieu deploy, neu khong khong ai chay no.
+    dl = (GOC / "docs" / "16_CAP_NHAT_VA_DEPLOY.md").read_text(encoding="utf-8")
+    assert "check_cve.py" in dl, (
+        "cong cu khong nam trong gate VA khong duoc nhac o quy trinh deploy "
+        "= mot cong cu khong ai chay")

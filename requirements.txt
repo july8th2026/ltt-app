@@ -1,9 +1,9 @@
-# Core runtime — Google Sheets, the Graph / TikTok HTTP clients, and the
+# Core runtime -- Google Sheets, the Graph / TikTok HTTP clients, and the
 # encrypted token store. Shared by the web app and worker_main.py.
 #
 # Dropped when the Tkinter desktop app was removed (W6): customtkinter,
 # Pillow, qrcode[pil] (QR code for cross-machine OAuth), and
-# google-auth-oauthlib — that last one only ever provided InstalledAppFlow,
+# google-auth-oauthlib -- that last one only ever provided InstalledAppFlow,
 # which needs a browser and is now refused outright on a server
 # (utils/sheet_client.py::_load_credentials).
 #
@@ -14,39 +14,56 @@ google-auth>=2.28.0,<3.0
 requests>=2.31.0,<3.0
 pytz>=2024.1
 tzdata>=2024.1
-cryptography>=46.0.7,<47.0   # 46.0.6 dinh GHSA-p423-j2cm-9vmq. Bon advisory con lai doi 48-50, tuc phai NOI TRAN <47 - quyet dinh rieng
+# 06/09/2026: noi tran <47 -> <51, dung nhu dong chu thich cu da du bao.
+# 46.0.7 con 6 advisory (GHSA-537c-gmf6-5ccf, PYSEC-2026-3552..-3554),
+# ban va tu 48.0.1. Thu vien nay ma hoa TOKEN nguoi dung
+# (platform_core/secretbox.py, nexus/agent_auth.py) -> da chay lai toan
+# bo test truoc khi chot.
+cryptography>=48.0.1,<51.0
 
 # Trich chu tu PDF. Do 06/09: KHONG mot thu vien trich nao ton tai tren may chu
 # (pypdf / PyPDF2 / fitz / pdfminer / pdfplumber / docx / openpyxl / markitdown /
 # unstructured deu vang o `C:\LTTPlatform\venv`), du `apps/chataistudio/
 # features.py:48` DA GOI `from pypdf import PdfReader` tu lau. `except Exception`
-# o do nuot `ImportError` roi bao lai thanh "Khong doc duoc noi dung PDF." — tuc
+# o do nuot `ImportError` roi bao lai thanh "Khong doc duoc noi dung PDF." -- tuc
 # may chu thieu thu vien ma thong bao do loi cho TEP CUA KHACH.
 #
-# ⛔ Tieu chi LOAI la giay phep, khong phai toc do: `pymupdf` la AGPL-3.0 hoac
+# [!] Tieu chi LOAI la giay phep, khong phai toc do: `pymupdf` la AGPL-3.0 hoac
 #    thuong mai, va phuc vu qua mang thi AGPL kich hoat nghia vu cong bo ma
 #    nguon. `pdfminer.six` (MIT) gioi bo cuc hon nhung nang hon, va chua co
 #    phep do nao noi ta can do trung thuc bo cuc.
 #
-# ⇒ `pypdf`: BSD-3-Clause, THUAN Python (khong can trinh bien dich tren Windows),
-#   va la dung thu vien `chataistudio` da goi san — mot phu thuoc phuc vu ca ban
+# => `pypdf`: BSD-3-Clause, THUAN Python (khong can trinh bien dich tren Windows),
+#   va la dung thu vien `chataistudio` da goi san -- mot phu thuoc phuc vu ca ban
 #   va loi dang song lan P06 buoc 3.
 pypdf>=6.17.0,<7.0
 
 # Doc docx/pptx/outlook/html. MIT, 6 phu thuoc LOI nhe. Do 06/09:
 #   [docx] lxml + mammoth   [pptx] python-pptx   [outlook] olefile
 #
-# ⛔ KHONG lay extra `xlsx`/`xls`: chung keo theo `pandas`, va `pandas`
+# [!] KHONG lay extra `xlsx`/`xls`: chung keo theo `pandas`, va `pandas`
 #    KHONG co o ca hai venv. Mot khoi lon cho mot dinh dang chua co phep do
-#    nao noi khach can — them mot dong `[xlsx]` la du khi co nhu cau that.
+#    nao noi khach can -- them mot dong `[xlsx]` la du khi co nhu cau that.
 #
-# ⛔ KHONG lay extra `pdf`: `_pdf_converter.py` duyet theo trang ben trong
-#    nhung API tra ve MOT KHOI markdown, tuc mat so trang — ma
+# [!] KHONG lay extra `pdf`: `_pdf_converter.py` duyet theo trang ben trong
+#    nhung API tra ve MOT KHOI markdown, tuc mat so trang -- ma
 #    (tep_id, doan_id, trang) la toan bo ly do buoc 5 cua P06 ton tai.
 #    PDF giu duong `pypdf` theo trang.
 #
-# ⭐ `magika` (nhan dien kieu tep cua Google) di kem loi, va no dung
+# [*] `magika` (nhan dien kieu tep cua Google) di kem loi, va no dung
 #    `onnxruntime` DA CO SAN tren ca hai venv (ngan video).
+#
+# [!] NHUNG `magika` TAI MO HINH TU MANG LUC CAI. Do 06/09 trong log deploy:
+#      Fetching 15 files: 100%|##########| 15/15 [00:00<00:00, 1290.69it/s]
+#    Toi da doan sai truoc do rang "onnxruntime co san nen no khong tai gi".
+#    `onnxruntime` la bo CHAY mo hinh; ban than MO HINH thi van phai tai ve.
+#
+# => Hai he qua that:
+#    1. Mot may chu KHONG co duong ra Internet se CAI HONG o dong nay.
+#    2. Lan cai dau tien cham hon binh thuong, va no cham o cho khong ai ngo.
+#
+#    Neu ngay nao can cai offline: `huggingface_hub` cho phep tro
+#    `HF_HOME`/`HF_HUB_OFFLINE` toi mot ban sao da tai san.
 markitdown[docx,pptx,outlook]>=0.1.7,<0.2
 
 # --- Phu thuoc chi dung cho TEST ---
