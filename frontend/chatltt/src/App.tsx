@@ -12,6 +12,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Api, docSSE, LoiApi } from './api'
 import { duongToiLa, laKhiChuyenNhanh } from './cay'
+import { BangGhiNho } from './BangGhiNho'
 import { SoanThao } from './SoanThao'
 import { TaoMedia } from './TaoMedia'
 import { ThongDiepView } from './ThongDiepView'
@@ -149,9 +150,15 @@ export function App({ api }: AppProps) {
     () => Object.keys(nangLucText?.models ?? {}), [nangLucText],
   )
 
+  const [coGhiNho, datCoGhiNho] = useState(false)
+  const [moGhiNho, datMoGhiNho] = useState(false)
+
   const napDanhMuc = useCallback(() => api.danhMuc()
     .then((d) => {
       datNangLuc(d.nang_luc)
+      // ⛔ Vang => TAT. Mot may chu cu hon frontend khong khai `co_v3`, va doan
+      //    "khong khai tuc la co" se hien mot nut dan thang toi 404.
+      datCoGhiNho(!!d.co_v3?.ghi_nho)
       const text = d.nang_luc.find((n) => n.ten === 'text.chat')
       // ⛔ `model_mac_dinh` chu KHONG `Object.keys(models)[0]`. Ban cu lay
       //    phan tu dau cua mot dict, tuc mac dinh la THU TU KHAI trong
@@ -521,7 +528,26 @@ export function App({ api }: AppProps) {
             </li>
           ))}
         </ul>
+
+        {/*
+          ⛔ Nut nay chi hien khi co `LTT_CHATLTT_V3_MEMORY` BAT. Hien no khi co
+             tat la dan nguoi dung toi mot route tra 404 — mot loi hua hong, va
+             la dung ly do `cong_ghi_nho` tra 404 chu khong 403.
+        */}
+        {coGhiNho && (
+          <button
+            type="button"
+            className="ltc-nut ltc-nut--ghinho"
+            onClick={() => datMoGhiNho(true)}
+          >
+            Máy nhớ gì về bạn
+          </button>
+        )}
       </aside>
+
+      {moGhiNho && (
+        <BangGhiNho api={api} onDong={() => datMoGhiNho(false)} />
+      )}
 
       <main className="ltc-chinh">
         <header className="ltc-dinh">

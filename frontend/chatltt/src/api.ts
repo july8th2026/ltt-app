@@ -5,7 +5,7 @@
  *    `khong_tim_thay`, `csrf`…), khong phai mot chuoi. Giao dien re nhanh theo
  *    ma; chuoi chi de hien.
  */
-import type { AnhChup, HoiThoai, NangLuc, SuThat } from './kieu'
+import type { AnhChup, GhiNho, HoiThoai, NangLuc, SuThat } from './kieu'
 
 export class LoiApi extends Error {
   code: string
@@ -59,7 +59,17 @@ export class Api {
     return this.goi('/so-du')
   }
 
-  danhMuc(): Promise<{ nang_luc: NangLuc[] }> {
+  /**
+   * Catalog + trang thai co V3.
+   *
+   * ⚠️ `co_v3` co the VANG o mot may chu cu hon frontend — deploy backend truoc
+   *    hay sau frontend deu la thu tu binh thuong. Nen no `?`, va noi goi phai
+   *    coi "vang" la "tat".
+   */
+  danhMuc(): Promise<{
+    nang_luc: NangLuc[]
+    co_v3?: { tools: boolean; tool_co_phi: boolean; tep: boolean; ghi_nho: boolean }
+  }> {
     return this.goi('/danh-muc')
   }
 
@@ -82,6 +92,32 @@ export class Api {
     return this.goi(`/hoi-thoai/${encodeURIComponent(convId)}/xoa`, {
       method: 'POST', body: '{}',
     })
+  }
+
+  // ── Ghi nho (H44 B4) ─────────────────────────────────────────────────
+  //
+  // ⛔ Bon phep, khong hai. Mot kho CHI BIET THEM tich luy mau thuan va te dan
+  //    di **im lang** — xem `apps/chatltt/services/ghi_nho.py`.
+
+  ghiNhoLietKe(): Promise<{
+    ghi_nho: GhiNho[]; tran_moi_pham_vi: number; tran_mot_ban: number
+  }> {
+    return this.goi('/ghi-nho')
+  }
+
+  ghiNhoThem(than: { noi_dung: string; pham_vi?: string; muc_tieu_id?: string }):
+  Promise<{ ghi_nho: GhiNho; trang_thai: 'them' | 'bo_qua' }> {
+    return this.goi('/ghi-nho', { method: 'POST', body: JSON.stringify(than) })
+  }
+
+  ghiNhoSua(id: string, noiDung: string): Promise<{ ghi_nho: GhiNho }> {
+    return this.goi(`/ghi-nho/${encodeURIComponent(id)}`, {
+      method: 'PATCH', body: JSON.stringify({ noi_dung: noiDung }),
+    })
+  }
+
+  ghiNhoXoa(id: string): Promise<{ da_xoa: boolean }> {
+    return this.goi(`/ghi-nho/${encodeURIComponent(id)}`, { method: 'DELETE' })
   }
 
   chonLa(convId: string, messageId: string): Promise<HoiThoai> {

@@ -249,6 +249,83 @@
   font-size: 13px;
 }
 
+/* ── Bang ghi nho (H44 B4) ─────────────────────────────────────────────── */
+
+/* ⚠️ `.ltc-nut.ltc-nut--ghinho` chu KHONG `.ltc-nut--ghinho`. Hai lop don co
+   CUNG do dac hieu, va `.ltc-nut` khai o duoi (dong ~413) nen no thang — nut
+   hien ra DO CHOI y het nut "+ Hoi thoai moi". Thay bang mat, khong thay bang
+   doc CSS. */
+.ltc-nut.ltc-nut--ghinho {
+  margin-top: 8px;
+  width: 100%;
+  background: var(--surface-overlay);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+/* ⭐ Nut trong bang phai IM. Mot bang toan nut do doc thanh mot mang canh bao,
+   trong khi "Sua"/"Xoa" la thao tac binh thuong tren du lieu cua chinh minh.
+   Chi nut "Luu" (submit) duoc noi to hon mot chut. */
+.ltc-ghinho button {
+  padding: 4px 10px;
+  background: var(--surface-overlay);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  cursor: pointer;
+}
+.ltc-ghinho button:disabled { opacity: .45; cursor: default; }
+.ltc-ghinho__them button[type="submit"] { color: var(--text-primary); }
+
+.ltc-ghinho {
+  position: fixed; inset: 10% 50% auto 50%;
+  transform: translateX(-50%);
+  width: min(680px, 92vw);
+  max-height: 76vh; overflow-y: auto;
+  z-index: 20;
+  padding: 16px;
+  background: var(--surface-canvas);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 12px 40px rgb(0 0 0 / .5);
+}
+.ltc-ghinho__dau { display: flex; align-items: center; gap: 12px; }
+.ltc-ghinho__tieude { margin: 0; font-size: 16px; }
+.ltc-ghinho__dong { margin-left: auto; }
+.ltc-ghinho__them { display: flex; gap: 8px; margin: 12px 0 6px; }
+.ltc-ghinho__nhan {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%);
+}
+.ltc-ghinho__o {
+  flex: 1;
+  padding: 6px 8px;
+  background: var(--surface-overlay);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+}
+.ltc-ghinho__tran { margin: 0 0 10px; color: var(--text-muted); font-size: 12px; }
+.ltc-ghinho__loi { color: var(--status-danger); }
+.ltc-ghinho__rong, .ltc-ghinho__cho { color: var(--text-muted); }
+.ltc-ghinho__nhomten {
+  margin: 14px 0 6px; font-size: 13px; color: var(--text-muted); font-weight: 400;
+}
+.ltc-ghinho__ds { list-style: none; margin: 0; padding: 0; }
+.ltc-ghinho__mau {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 0;
+  border-top: 1px solid var(--border-subtle);
+}
+.ltc-ghinho__chu { flex: 1; }
+/* ⭐ `nguon` phai doc duoc, khong chi to mau: mau khong toi duoc trinh doc
+   man hinh, va cung khong toi duoc nguoi mu mau. */
+.ltc-ghinho__nguon { color: var(--text-muted); font-size: 12px; white-space: nowrap; }
+.ltc-ghinho__mau[data-nguon="model"] { border-left: 2px solid var(--border-subtle); padding-left: 8px; }
+
 /* ── Khoi tool (H44 P09) ───────────────────────────────────────────────── */
 
 /* ⭐ Nhat, hep, khong mau manh. Mot khoi tool la CHU THICH cho cau tra loi,

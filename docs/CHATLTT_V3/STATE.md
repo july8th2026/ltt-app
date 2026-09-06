@@ -60,9 +60,9 @@ chưa thấy một thay đổi nào.
 | 3 | tiêm vào `luot.dung_ngu_canh()` sau cờ | `test_831` (11) |
 | 4 | 4 route `/api/ghi-nho` + `cong_ghi_nho` | `test_832` (11) |
 | 5 | tool `noi_bo.ghi_nho` (`FREE`) — **cửa 4 CÒN ĐÓNG** | `test_833` (15) |
-| 6 | giao diện quản lý | ⏳ **đã mở khoá** — P09 xong 06/09 |
+| 6 | `BangGhiNho.tsx` — xem/sửa/xoá, kể cả mẩu **model ghi** | ✅ `BangGhiNho.test.tsx` (12) |
 
-**62 phép kiểm mới.** Kế hoạch + §0 đối chiếu cộng đồng:
+**74 phép kiểm mới** (62 Python + 12 frontend). Kế hoạch + §0 đối chiếu cộng đồng:
 `10_KE_HOACH_B4_GHI_NHO.md`.
 
 🔴 Ba ràng buộc đã trả giá trong B4:
@@ -125,7 +125,7 @@ phải "tiêm một khối rỗng".
 | # | Điều kiện | Vì sao |
 |---|---|---|
 | M1 | ~~P09 vẽ được khối `tool_call`~~ | ✅ **XONG 06/09** (`d2175f7c`) — bốn trạng thái, kiểm trên trình duyệt thật |
-| M2 | **Giao diện quản lý (bước 6)** | bật đường tiêm trước khi có chỗ xem/xoá là cho một kho ghi nhớ chạy mà chủ của nó không mở ra được |
+| M2 | ~~Giao diện quản lý (bước 6)~~ | ✅ **XONG 06/09** — CRUD kiểm đầu-cuối trên trình duyệt thật |
 | M3 | **Đo lại trần 2.000 ký tự/phạm vi** trên 20–50 người dùng thật | hằng số hiện tại là một **neo tự suy** (4 × trần một mẩu), không phải phép đo — và nó tự khai như vậy trong mã |
 
 ⛔ Thêm `noi_bo.ghi_nho` vào `chieu_tool.CHO_MODEL_GOI` là một bước **riêng**,

@@ -1835,3 +1835,79 @@ findstr /C:"postgres_test" <cây>\tools\gate.py
 ⭐ Đây là mặt còn lại của **Bẫy 24**: ở đó một kết quả ÂM không đối chứng trông
    giống một phát hiện; ở đây một kết quả ĐỎ không đối chứng trông giống một
    lỗi hồi quy.
+
+---
+
+## Bẫy 27 — Một bánh cóc **đỏ sẵn từ trước** nhìn y hệt một bánh cóc bạn vừa làm đỏ
+
+Đo ngày 06/09/2026, phiên H44 B4/P09.
+
+Gate báo `FAIL (2/29)`, một trong hai bước đỏ là **`mypy`**:
+
+```
+[mypy] TANG so voi moc - moi dong duoi day la mot loi MOI:
+   arg-type         119 -> 120
+   assignment       59 -> 61
+```
+
+Câu ấy đọc lên là *"bạn vừa thêm ba lỗi"*. Phản xạ đúng theo mọi luật đã ghi là
+đi sửa chúng — hoặc, nếu vội, `--accept` để dời mốc. **Cả hai đều sai ở đây.**
+
+### Bốn phép đo, và chỉ phép cuối trả lời đúng câu
+
+| phép đo | kết quả | nó nói gì |
+|---|---|---|
+| `mypy` trên các tệp tôi vừa viết | 1 lỗi, **có sẵn** từ trước | không phải của tôi? |
+| `mypy` toàn cây, cây làm việc | **592** lỗi | — |
+| `mypy` toàn cây, **`git archive HEAD`** | **592** lỗi | phần chưa commit thêm **0** |
+| A/B `apps platform_core server`: trước-B4 vs HEAD | **148 → 131**, `comm` ra **rỗng** | mã của tôi thêm **0** lỗi arg-type/assignment |
+
+⇒ Rồi phép đo dứt điểm: chạy chính `tools/check_mypy.py` trên `git archive` của
+**commit merge** `18f786c4` — trước một dòng nào của tôi — và của **cả hai cha**
+của nó:
+
+```
+6b0ef096 (nhánh tôi, trước merge)   ->  arg-type 119 -> 120 · assignment 59 -> 61
+ef68cf51 (admin-mvp-v3, nơi ĐƯA bánh cóc này vào)  ->  y hệt
+```
+
+**Bánh cóc đã đỏ từ trước, ở cả hai nhánh, với đúng cùng hai con số.**
+
+### Vì sao nó không đỏ ở ba lượt gate trước — và dấu hiệu là CỘT GIÂY
+
+| lượt gate | sha | bước `mypy` | giây |
+|---|---|---|---:|
+| `20260906T144839Z` | `18f786c4` | PASS | **5,2** |
+| `20260906T150511Z` | `18f786c4` | PASS | **2,8** |
+| `20260906T154739Z` | `5f7c1e37` | PASS | **5,3** |
+| `20260906T161123Z` | `6b6d4af5` | **FAIL** | **15,2** |
+
+⭐ 636 tệp nguồn không kiểm xong trong **2,8 giây**. Ba lượt kia không đo thứ
+   chúng khai là đã đo — và **dấu hiệu duy nhất lộ ra là một con số ở cột người
+   ta không đọc**. Đúng hình dạng Bẫy 26 và ca `test_nhanh` bất động:
+   *"một bảng tóm tắt có đủ dữ liệu để tố giác vẫn vô dụng nếu không ai nhìn vào
+   cột đó."*
+
+⛔ Giả thuyết đầu của tôi — *"mypy chết sớm thì bánh cóc đếm ra ít lỗi nên
+   XANH"* — **bị bác bằng thí nghiệm**: dựng một cây làm `mypy` chết sớm thật
+   (`errors prevented further checking`) rồi chạy bánh cóc ⇒ `RETURNCODE=1`.
+   Nó **không** im lặng. Nên nguyên nhân của ba lượt xanh vẫn **chưa biết**, và
+   ghi ra đây đúng như thế thay vì đắp một lời giải thích vừa vặn.
+
+### Luật rút ra
+
+1. **Trước khi sửa một bánh cóc vừa đỏ, hỏi nó có đỏ TRƯỚC khi mình chạm vào
+   không.** Một lệnh, không cần đoán:
+
+```bash
+git archive <commit-truoc-viec-cua-ban> | tar -x -C <thu-muc-tam>
+cd <thu-muc-tam> && python tools/<banh-coc>.py
+```
+
+2. ⛔ **Đừng `--accept` một mốc mình không làm lệch.** Dời mốc dưới commit của
+   mình là **giặt** phần trôi của người khác thành phần của mình — sau đó không
+   ai truy được nó đến từ đâu. Cùng luật đã ghi: *"hạ mốc dịch bằng DỊCH, không
+   bằng TRÍCH LẠI."*
+
+3. ⭐ **Một bước gate xanh NHANH BẤT THƯỜNG là một bước cần nghi**, ngang với một
+   bước đỏ. Ba lượt PASS ở 2,8–5,3 giây đã đứng đó suốt buổi và không ai hỏi.

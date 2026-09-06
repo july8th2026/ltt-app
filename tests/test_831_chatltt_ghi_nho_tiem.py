@@ -225,3 +225,28 @@ def test_trang_thai_khai_du_bon_co():
     """`/api/danh-muc` phải nói được cờ nào đang bật — kể cả cờ mới."""
     from apps.chatltt.services import co_v3
     assert set(co_v3.trang_thai()) == {"tools", "tool_co_phi", "tep", "ghi_nho"}
+
+
+def test_danh_muc_CO_khai_co_v3_ra_giao_dien():
+    """🔴 `co_v3.trang_thai()` từng là một hàm KHÔNG AI GỌI.
+
+    Docstring của nó khai *"cho `/api/danh-muc` và log"* từ P03, nhưng đo 06/09:
+    không nơi nào gọi. Tức `test_co_ghi_nho_...` ở trên đang chốt hình dạng của
+    một thứ **không có người tiêu thụ** — đúng hình dạng *"phép kiểm mạnh hơn
+    thứ nó đo"*, chỉ khác là ở đây nó mạnh hơn cả sự tồn tại.
+
+    ⭐ Và giao diện thật sự cần nó: nút *"Máy nhớ gì về bạn"* không được hiện
+       khi cờ TẮT — hiện một nút dẫn tới 404 là một lời hứa hỏng, và đó chính
+       là lý do `cong_ghi_nho` trả 404 chứ không 403.
+    """
+    import ast
+
+    cay = ast.parse((GOC / "apps" / "chatltt" / "routes" / "_p_trang.py")
+                    .read_bytes().decode("utf-8"))
+    ham = [n for n in ast.walk(cay)
+           if isinstance(n, ast.FunctionDef) and n.name == "api_danh_muc"]
+    assert len(ham) == 1
+    khoa = {k.value for n in ast.walk(ham[0]) if isinstance(n, ast.Dict)
+            for k in n.keys if isinstance(k, ast.Constant)}
+    assert "co_v3" in khoa
+    assert "nang_luc" in khoa, "doi chung: khoa cu phai con nguyen"

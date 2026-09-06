@@ -61,6 +61,20 @@ export function trangThaiTool(k: KhoiToolCall): TrangThaiTool {
   return k.ok === false ? 'loi' : 'xong'
 }
 
+/** Mot mau ghi nho. Anh xa 1-1 voi `_p_ghi_nho._bay()`. */
+export type GhiNho = {
+  id: string
+  /** ⛔ PHAM VI AP DUNG, khong phai phan loai noi dung. */
+  pham_vi: 'nguoi_dung' | 'du_an' | 'hoi_thoai'
+  muc_tieu_id: string
+  /** Ai viet — quyet dinh QUYEN SUA, doc lap voi `pham_vi`. */
+  nguon: 'nguoi' | 'model'
+  noi_dung: string
+  meta: Record<string, unknown>
+  created_at: string
+  updated_at: string
+}
+
 export type TrangThai =
   | 'draft' | 'streaming' | 'queued' | 'done' | 'failed' | 'cancelled'
 

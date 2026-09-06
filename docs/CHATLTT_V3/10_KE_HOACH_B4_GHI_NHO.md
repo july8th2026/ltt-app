@@ -253,7 +253,7 @@ mọi mẩu; model chỉ `replace` mẩu do chính model ghi trong cùng phạm 
 | 3 | tiêm vào `dung_ngu_canh()` sau cờ `LTT_CHATLTT_V3_MEMORY` | cờ **mới**, mặc định tắt | ✅ `test_831` (11) |
 | 4 | route CRUD `/api/ghi-nho` + `cong_ghi_nho` **trước** `require_login` | cổng cờ | ✅ `test_832` (11) |
 | 5 | tool `noi_bo.ghi_nho` (`FREE`) — **một** tool, xem D4 | cổng 4 **CÒN ĐÓNG** | ✅ `test_833` (15) |
-| 6 | giao diện quản lý | sau P09 | ⏳ |
+| 6 | `BangGhiNho.tsx` + 4 route client + cờ ra `/api/danh-muc` | vẽ thật | ✅ `BangGhiNho.test.tsx` (12) |
 
 Dải test: **830–835** (dải 800–899 của H44). Đã dùng 830–833, **62 phép kiểm**.
 
@@ -261,8 +261,8 @@ Dải test: **830–835** (dải 800–899 của H44). Đã dùng 830–833, **6
 
 1. **P09 vẽ được khối `tool_call`.** Không có nó thì `FREE` là một lời nói dối:
    *"sửa lại được"* đòi người dùng **nhìn thấy** nó đã xảy ra.
-2. **Giao diện quản lý (bước 6).** Bật đường tiêm trước khi có chỗ xem/xoá là
-   cho một kho ghi nhớ chạy mà chủ của nó không mở ra được.
+2. ~~**Giao diện quản lý (bước 6).**~~ ✅ **XONG 06/09** — `BangGhiNho.tsx`,
+   kiểm CRUD đầu-cuối trên trình duyệt thật (`GET 200 · POST 201 · DELETE 200`).
 3. **Đo lại trần 2.000 ký tự** trên 20–50 người dùng thật rồi chốt — hằng số
    hiện tại là một **neo tự suy**, và nó tự khai như vậy.
 
