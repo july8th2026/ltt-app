@@ -1074,3 +1074,20 @@ def test_sao_chep_js_duoc_cache_bust():
     t = (GOC / "server" / "templating.py").read_text(encoding="utf-8")
     assert "sao_chep.js" in t.split("TAI_SAN_CO_VERSION", 1)[1][:400], (
         "`sao_chep.js` khong nam trong TAI_SAN_CO_VERSION")
+
+
+def test_studio_dev_dang_ky_bang_cua_MOI_app_dang_bat():
+    """🔴 Truoc 07/09 `studio_dev.py` chi import bang cua `ltt_voice`, nen mo
+       `/vps` cho ra **HTTP 500**: `no such table: vps_instance`.
+
+       Do khong phai loi san pham — la bo khung soi giao dien khong dung noi
+       giao dien can soi. Va trieu chung (500) doc y het mot loi that, nen no
+       an mot cach dat tien: nguoi ta se di tim loi trong `apps/vps/`.
+
+    ⭐ `registry.load_app_tables()` chinh la thu `tools/mobile_qa.py` da dung,
+       va chu thich o do ghi: "da lam dung viec nay cho ca Alembic lan server".
+    """
+    ma = (GOC / "tools" / "studio_dev.py").read_text(encoding="utf-8")
+    assert "registry.load_app_tables()" in ma, (
+        "`studio_dev.py` khong dang ky bang cua cac app — no chi dung duoc "
+        "trang Voice, va moi trang khac se 500")

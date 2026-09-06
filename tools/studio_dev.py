@@ -102,6 +102,22 @@ def seed(lam_lai: bool = True) -> None:
     import platform_core.models          # noqa: F401
     import apps.ltt_voice.tables         # noqa: F401
     import apps.ltt_voice.tables_du_an   # noqa: F401
+
+    # 🔴 Đăng ký bảng của **mọi** app đang bật, không chỉ `ltt_voice`.
+    #
+    #    Trước 07/09 chỗ này chỉ import ba module trên, nên bộ khung chỉ dựng
+    #    được trang Voice. Mở `/vps` cho ra **HTTP 500**:
+    #
+    #        sqlite3.OperationalError: no such table: vps_instance
+    #
+    #    Đó không phải lỗi sản phẩm — là bộ khung soi giao diện không dựng nổi
+    #    giao diện cần soi, và triệu chứng (500) đọc y hệt một lỗi thật.
+    #
+    # ⭐ `registry.load_app_tables()` chính là thứ `tools/mobile_qa.py` đã dùng,
+    #    và chú thích ở đó ghi: *"đã làm đúng việc này cho cả Alembic lẫn
+    #    server"*. Không có lý do gì bộ khung này làm khác.
+    from platform_core import registry
+    registry.load_app_tables()
     dbmod.Base.metadata.create_all(dbmod.get_engine())
 
     from platform_core.storage import LocalStorage, set_storage
