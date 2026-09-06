@@ -186,8 +186,8 @@ riêng** — nó vào cùng lượt nạp, nhưng chưa được quan sát trự
 ### 🔴 Vì sao nó "đã bật" nhiều giờ mà vẫn TẮT: NSSM nướng ENV lúc CÀI
 
 Dịch vụ chạy qua NSSM, và NSSM **nướng biến môi trường vào đăng ký dịch vụ lúc
-CÀI** (`AppEnvironmentExtra`). `serverun.py` chỉ đọc `os.environ` — nó
-**không tự đọc `secretspp.env` lúc chạy**.
+CÀI** (`AppEnvironmentExtra`). `server\run.py` chỉ đọc `os.environ` — nó
+**không tự đọc `secrets\app.env` lúc chạy**.
 
 ⇒ Sửa `app.env` rồi `Restart-Service` = *"dịch vụ lên lại với ENV CŨ, không lỗi
   nào báo"*. Cờ nằm đúng chỗ, không BOM, kết dòng đúng — và **vô tác dụng**.
