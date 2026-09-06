@@ -63,6 +63,18 @@ garak 0.16.0             9.121     Apache-2.0    45                            T
 * `protectai/rebuff` — cập nhật gần nhất **08/2024**. Chết.
 * `vercel/ai` — giấy phép `NOASSERTION`, phải đọc kỹ trước khi chạm mã.
 
+🔴 **Sửa 06/09 (B4 §0.1): dòng `letta` trong bảng trên là một phép đo TRỘN.**
+Số phụ thuộc (69) đo từ gói PyPI `letta 0.16.8`; số sao (24.627) đo từ kho
+GitHub `letta-ai/letta`. Đo lại cây tệp thì kho ấy có đúng **15 mục, toàn tệp
+meta** — README nói nó *"nay chỉ là trang giới thiệu"*, mã V1 đã lui về nhánh
+`archive`, và mã sống chuyển sang `letta-ai/letta-code` (**3.217** sao,
+**TypeScript**).
+
+⇒ Kết luận "loại letta" không đổi, nhưng **căn cứ đổi hẳn**: không phải *"nặng
+69 phụ thuộc"* mà là *"gói Python ấy đã ngừng, bản kế nhiệm không phải Python"*.
+⭐ Luật rút ra, áp cho mọi §0 sau: **đếm mục trong cây gốc trước khi trích số
+sao** — một kho rỗng vẫn trả về số sao rất đẹp.
+
 ---
 
 ## §2 — Ba chặn cứng của nền tảng này
@@ -109,8 +121,14 @@ bật, và chủ dự án chốt giá trích.
 * **Không lắp** mem0/letta/zep — xem §2. Và chúng giải bài **ghi nhớ ngữ nghĩa
   qua embedding**; bài của bước này là *"người dùng thấy và sửa được"* — một bài
   về **quyền và giao diện**.
-* **Đặc tả mượn:** phân loại kiểu ghi nhớ của mem0 (fact / preference / episode)
-  và cách Open WebUI bày giao diện quản lý ghi nhớ. Đọc tài liệu, không cài.
+* **Đặc tả mượn:** ⚠️ **sửa 06/09** — kế hoạch chi tiết ở
+  `10_KE_HOACH_B4_GHI_NHO.md`. Câu cũ ở đây (*"phân loại kiểu ghi nhớ của mem0
+  (fact / preference / episode)"*) **sai**: đọc `mem0/configs/prompts.py` thì
+  bộ ba ấy không tồn tại — tôi đã nhớ một bộ ba quen tai rồi viết ra như một
+  phép đo. Thứ đáng mượn là `DEFAULT_UPDATE_MEMORY_PROMPT`: **bốn** phép
+  `Add / Update / Delete / No Change`, trong đó *"mâu thuẫn ⇒ XOÁ"* là cả giá
+  trị — một kho chỉ biết thêm sẽ tích luỹ mâu thuẫn và tệ dần đi **im lặng**.
+  Cộng với lược đồ + hành vi của Open WebUI. Đọc tài liệu, không cài.
 * ⛔ Open WebUI giấy phép `NOASSERTION` (có điều khoản thương hiệu) ⇒ **không
   chạm mã**, chỉ đọc hành vi.
 

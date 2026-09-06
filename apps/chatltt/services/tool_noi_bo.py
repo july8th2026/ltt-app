@@ -37,6 +37,7 @@ from apps.chatltt.services import thi_hanh
 TEN_THOI_GIAN = "noi_bo.thoi_gian"
 TEN_TINH = "noi_bo.tinh"
 TEN_TIM_TAI_LIEU = "noi_bo.tim_tai_lieu"
+TEN_GHI_NHO = "noi_bo.ghi_nho"
 
 #: Múi giờ được phép hỏi. Danh sách ĐÓNG, không nhận offset tuỳ ý — một enum
 #: hẹp là thứ `_kiem_schema` cưỡng chế được, còn "+07:00" thì phải tự phân tích.
@@ -166,6 +167,56 @@ def _h_tim_tai_lieu(db, user_id, doi_so, boi_canh=None):
                              cau_hoi=hoi, so_doan=so)
 
 
+@thi_hanh.dang_ky(TEN_GHI_NHO)
+def _h_ghi_nho(db, user_id, doi_so, boi_canh=None):
+    """Ghi một điều đáng nhớ về người dùng. (H44 B4 bước 5)
+
+    ## 🔴 Vì sao model chỉ có MỘT tool ghi nhớ, không có `quen` và `thay`
+
+    Kế hoạch B4 §D4 định cho model cả `noi_bo.quen` (lớp `DESTRUCTIVE`). Viết
+    tới đây thì lộ ra một điều kế hoạch không thấy: **model không có địa chỉ để
+    gọi**. Khối ghi nhớ tiêm vào ngữ cảnh chỉ có *chữ*, không có `id` — cố ý,
+    vì `id` tốn token mỗi lượt. Không có `id` thì không `quen` được, cũng không
+    `thay` được.
+
+    ⇒ Hai đường sửa, và cả hai đều là quyết định **chưa tới lúc**:
+      1. tiêm `id` vào ngữ cảnh — đổi một thứ đang tối giản, chỉ để phục vụ một
+         tool chưa mở;
+      2. `quen` theo **nội dung** thay vì theo `id` — địa chỉ hoá bằng chữ, cần
+         một phép so khớp mà chưa có phép đo nào nói ta cần.
+
+    ⭐ Nên `thay`/`quen` ở lại phía **người dùng** (route bước 4). Đó không phải
+       một thiếu sót: bài toán B4 tự nói là *"quyền và giao diện"*, còn bốn phép
+       của mem0 được mượn làm **đặc tả cho KHO** — ai được gọi phép nào là một
+       câu hỏi khác, và nó được trả lời riêng.
+
+    ## Địa chỉ từ bối cảnh, ĐỘ BỀN từ model, TRẦN từ bên gọi
+
+    `user_id`/`conversation_id` **không** nằm trong schema gửi cho model. Thứ
+    model nêu được là `lau_dai` — một lựa chọn sản phẩm — và bên gọi đặt trần
+    cho nó bằng `boi_canh["cho_phep_ghi_nho_lau_dai"]`.
+    """
+    from apps.chatltt.services import ghi_nho as GN
+
+    bc = boi_canh or {}
+    conv = str(bc.get("conversation_id") or "")
+    if not conv:
+        raise ThieuPhamVi(
+            "thieu pham vi hoi thoai — khong ghi de tranh ghi cheo hoi thoai")
+    van = str(doi_so.get("noi_dung") or "").strip()
+    if not van:
+        raise BieuThucSai("`noi_dung` khong duoc rong")
+
+    mau, trang_thai = GN.ghi_boi_model(
+        db, user_id=str(user_id), conv_id=conv, noi_dung=van,
+        lau_dai=bool(doi_so.get("lau_dai")),
+        cho_phep_lau_dai=bool(bc.get("cho_phep_ghi_nho_lau_dai")))
+    # ⭐ Tra ve `pham_vi` THAT, khong tra ve thu model xin. Bi ha tran ma van
+    #    bao "da nho lau dai" se khien model khang dinh voi khach mot dieu sai.
+    return {"da_ghi": True, "pham_vi": mau.pham_vi,
+            "trang_thai": trang_thai, "noi_dung": mau.noi_dung}
+
+
 # ── Khối `tools` gửi cho model ─────────────────────────────────────────────
 #
 # ⭐ Mô tả viết cho MODEL đọc, không cho người đọc. P01 nhóm N3 cho thấy nó chọn
@@ -205,11 +256,37 @@ KHOI: tuple = (
                            "cau_hoi": {"type": "string"},
                            "so_doan": {"type": "integer"}},
                        "required": ["cau_hoi"]}}},
+    {"type": "function", "function": {
+        "name": TEN_GHI_NHO,
+        # ⛔ Cau "CHI dung khi..." quan trong hon ca cau mo ta. P01 do duoc model
+        #    goi tool rat sat mo ta — mot mo ta rong se bien moi loi tam su
+        #    thanh mot mau ghi nho, va kho day sau ba cuoc tro chuyen.
+        "description": ("Ghi nho mot dieu ve nguoi dung de dung o cac lan sau. "
+                        "CHI dung khi ho noi mot dieu ON DINH ve ban than "
+                        "(ten, nghe, so thich lau dai, cach ho muon duoc tra "
+                        "loi). KHONG dung cho thong tin chi dung trong cau "
+                        "chuyen hom nay, va KHONG dung de ghi lai cau hoi cua "
+                        "ho. Dat `lau_dai` = true khi dieu do dung o MOI cuoc "
+                        "tro chuyen, false khi no chi dung o cuoc nay."),
+        "parameters": {"type": "object",
+                       "properties": {
+                           "noi_dung": {"type": "string"},
+                           "lau_dai": {"type": "boolean"}},
+                       "required": ["noi_dung"]}}},
 )
 
 #: Tên → lớp chính sách, để `chieu_tool.LOP_CUA` nạp vào.
+#:
+#: ⚠️ `TEN_GHI_NHO` là `FREE`, **không** `READ_ONLY`: nó ghi. Và không
+#:    `DESTRUCTIVE`: nó không xoá gì, không tốn credit, dữ liệu là của chính
+#:    người hỏi, và người dùng sửa/xoá lại được ở giao diện.
+#:
+#: 🔴 Nhưng *"sửa lại được"* chỉ đúng **nếu người dùng nhìn thấy nó đã xảy ra**.
+#:    Khối `tool_call` hiện **chưa được vẽ** (đo ở P09). ⇒ Đó là lý do
+#:    `TEN_GHI_NHO` **không** có mặt trong `chieu_tool.CHO_MODEL_GOI`: cửa thứ
+#:    tư mở sau P09, không phải bây giờ.
 LOP: dict = {TEN_THOI_GIAN: "READ_ONLY", TEN_TINH: "READ_ONLY",
-             TEN_TIM_TAI_LIEU: "READ_ONLY"}
+             TEN_TIM_TAI_LIEU: "READ_ONLY", TEN_GHI_NHO: "FREE"}
 
 
 def khoi_cho(user_id: str = "") -> list:      # noqa: ARG001 — chỗ móc về sau

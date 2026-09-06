@@ -66,6 +66,17 @@ LOP_CUA: dict = {
     #    chặt nhất, fail-closed đúng thiết kế. Tôi đã quên nó thật, và bánh cóc
     #    `test_808::test_lop_khai_o_chieu_tool_khop_voi_tool_noi_bo` bắt được.
     "noi_bo.tim_tai_lieu": READ_ONLY,
+    # ⚠️ Thêm 06/09 (B4 bước 5). **`FREE`, không `READ_ONLY`** — nó GHI. Lớp
+    #    này khai bằng tay ở đây chứ không import từ `tool_noi_bo`: nơi khai
+    #    chính sách phải là nơi đọc chính sách, để một tool mới không tự nâng
+    #    lớp cho mình bằng cách khai trong tệp của chính nó.
+    #
+    # 🔴 Và nó **không** có trong `CHO_MODEL_GOI` dưới đây. `FREE` nghĩa là
+    #    *"không cần phiếu duyệt"*, và điều đó chỉ chấp nhận được vì người dùng
+    #    **sửa lại được** — mà "sửa lại được" đòi họ **nhìn thấy** nó đã xảy ra.
+    #    Khối `tool_call` hiện chưa được vẽ (P09). Mở cửa bốn trước P09 là biến
+    #    một hành động ghi thành một hành động vô hình.
+    "noi_bo.ghi_nho": FREE,
 }
 
 #: Năng lực MODEL được phép tự gọi. Hẹp hơn `chinh_sach.CONG_CU_CHO_PHEP`.

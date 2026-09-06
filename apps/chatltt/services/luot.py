@@ -61,7 +61,26 @@ class _MacDinh:
 MAC_DINH = _MacDinh()
 
 
-def dung_ngu_canh(duong: list, *, doc_anh: bool = False) -> list:
+def khoi_ghi_nho_neu_bat(db, *, user_id: str, conv_id: str) -> str:
+    """Khối ghi nhớ cho một lượt — **chuỗi rỗng** khi cờ tắt. (H44 B4 bước 3)
+
+    ⛔ Cờ tắt phải làm ngữ cảnh **không đổi một byte**, chứ không phải "tiêm một
+       khối rỗng". Một khối rỗng vẫn tốn token mỗi lượt và vẫn dạy model rằng nó
+       có một kho để viện dẫn. `test_831` so **byte**, không so cấu trúc.
+
+    ⭐ Đọc cờ ở **một chỗ duy nhất**. Hai nơi gọi `dung_ngu_canh` (`luot.chay`
+       và `luot_v3.chay_tiep`) đều đi qua hàm này, nên không có đường nào tiêm
+       ghi nhớ mà bỏ qua cờ — và `test_831` đọc AST để chốt rằng vẫn đúng thế
+       sau này.
+    """
+    if not co_v3.ghi_nho_bat():
+        return ""
+    from apps.chatltt.services import ghi_nho
+    return ghi_nho.khoi_ngu_canh(db, user_id=str(user_id), conv_id=str(conv_id))
+
+
+def dung_ngu_canh(duong: list, *, doc_anh: bool = False,
+                  khoi_ghi_nho: str = "") -> list:
     """Đường gốc→cha của assistant → `messages` OpenAI. Chỉ khối `text` (và
     khối `image` khi `doc_anh`); khối reasoning/status/error/artifact không đi
     vào ngữ cảnh.
@@ -77,6 +96,11 @@ def dung_ngu_canh(duong: list, *, doc_anh: bool = False) -> list:
     from apps.chatltt.services import anh_vao
 
     ra: list = []
+    #: ⭐ Ghi nhớ đứng **trước** cả lượt đầu tiên. Nó là bối cảnh bền, không phải
+    #:   một tin nhắn trong cuộc — đặt nó giữa dòng thì model đọc nó như một
+    #:   điều ai đó vừa nói, và nó sẽ trả lời lại điều đó.
+    if khoi_ghi_nho.strip():
+        ra.append({"role": "system", "content": khoi_ghi_nho})
     khoi_anh: list = []          # (chỉ số trong `ra`, khoá) — cắt trần ở cuối
     for m in duong:
         if m.role not in ("user", "assistant", "system"):
@@ -280,7 +304,9 @@ def chay(execution_id: str, *, user_id: str) -> None:
                                leaf_id=tra_loi.parent_id)
         params = {"model": tra_loi.model_alias,
                   "messages": dung_ngu_canh(
-                      duong, doc_anh=doc_anh_duoc(db, tra_loi.model_alias))}
+                      duong, doc_anh=doc_anh_duoc(db, tra_loi.model_alias),
+                      khoi_ghi_nho=khoi_ghi_nho_neu_bat(
+                          db, user_id=user_id, conv_id=ex.conversation_id))}
         re_ = (ex.usage or {}).get("reasoning_effort")
         if re_:
             params["reasoning_effort"] = re_

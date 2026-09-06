@@ -424,3 +424,106 @@ class ChatlttDoan(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now,
                                                  nullable=False)
 
+
+#: Phạm vi **ÁP DỤNG** của một mẩu ghi nhớ. (H44 B4)
+#:
+#: ⛔ Đây KHÔNG phải phân loại nội dung. mem0 phân theo nội dung (sở thích ·
+#:    chi tiết cá nhân · kế hoạch · …, bảy nhóm — đo `mem0/configs/prompts.py`
+#:    ngày 06/09); bảy nhóm ấy là **nhãn để hiện**, và nhãn thì thuộc `meta`.
+#:    Cột trong bảng chỉ dành cho thứ có **ràng buộc**, và thứ có ràng buộc ở
+#:    đây là *"mẩu này được phép ảnh hưởng tới lượt nào"* — tức một câu hỏi về
+#:    **quyền**.
+#:
+#: ⚠️ `du_an` khai sẵn nhưng **chưa dùng**: B5 mới là chỗ `project_id` ra đời.
+#:    Khai trước vì cùng lý do `chieu_tool` giữ hai lớp rỗng — ngày đầu tiên có
+#:    một mẩu thuộc project, chỗ để nó rơi vào phải đã tồn tại và đã fail-closed.
+PHAM_VI = ("nguoi_dung", "du_an", "hoi_thoai")
+
+#: Ai đã viết mẩu này. Mượn `type: Literal['user','context']` của Open WebUI
+#: (đọc hành vi, **không** chạm mã — giấy phép `NOASSERTION`).
+#:
+#: ⭐ Trục này độc lập hoàn toàn với `PHAM_VI`, và gộp chúng là lỗi thiết kế đầu
+#:    tiên ai cũng mắc: *"ai viết"* quyết định **quyền sửa** (người sửa được mọi
+#:    mẩu; model chỉ được thay mẩu do chính model ghi), còn *"áp cho ai"* quyết
+#:    định **lượt nào bị ảnh hưởng**. Một cột không trả lời được hai câu.
+NGUON = ("nguoi", "model")
+
+#: Trần ký tự cho MỘT mẩu. Ép ở tầng CSDL (`String`) chứ không chỉ ở service:
+#: một mẩu ghi nhớ đi vào **mọi lượt sau đó**, nên một mẩu dài là một khoản
+#: thuế token vĩnh viễn chứ không phải một hàng to.
+TRAN_KY_TU_MOT_BAN = 500
+
+
+class ChatlttGhiNho(Base):
+    """Một mẩu GHI NHỚ — thứ được tiêm vào ngữ cảnh của mọi lượt trong phạm vi.
+
+    ## Vì sao KHÔNG có cột embedding, và vì sao đó không phải một thoả hiệp
+
+    `pgvector` không có trên PostgreSQL 17.10 này (đo ở P06). Nhưng lập luận
+    đúng không phải *"thiếu nên đành chịu"*: B4 §D5 chốt trần **4.000 ký tự cho
+    cả khối ghi nhớ mỗi lượt**, và cả khối ấy được tiêm **trọn vẹn**. Không có
+    gì để *truy hồi* — truy hồi chỉ có nghĩa khi kho lớn hơn ngữ cảnh.
+
+    ⭐ Tức cái trần làm kho vector **thành thừa**, chứ không phải kho vector
+       thiếu làm cái trần **thành thoả hiệp**. Hai câu ấy dẫn tới hai kiến trúc
+       khác nhau, và câu sau là câu khiến ai đó ba tháng nữa đi cài Qdrant lên
+       máy đang chạy production.
+
+    ## 🔴 Vì sao `muc_tieu_id` là `""` chứ KHÔNG phải `NULL`
+
+    Ràng buộc chống trùng là bộ bốn `(user_id, pham_vi, muc_tieu_id, bam)`. Với
+    `pham_vi = "nguoi_dung"` thì không có mục tiêu, và phản xạ đầu tiên là để
+    `NULL`. Nhưng trong SQL **`NULL` không bằng `NULL`**, nên một `UNIQUE` chứa
+    cột `NULL` **không chặn trùng** — hai mẩu y hệt nhau vẫn vào được, và triệu
+    chứng là kho ghi nhớ tự nhân đôi chứ không phải một lỗi ràng buộc.
+
+    ⛔ PostgreSQL 15+ có `NULLS NOT DISTINCT`, nhưng SQLite (đường chạy test)
+       **không có**. Một bất biến chỉ đúng ở một trong hai nền tảng thì phép
+       kiểm sẽ xanh ở nơi nó không quan trọng — cùng hình dạng với `_tim_chuoi_con`
+       của P06, và ở đó ta đã chọn *"đừng giả vờ là đường sản xuất"*.
+       ⇒ Chuỗi rỗng: một giá trị **thật**, so sánh được ở cả hai nơi.
+
+    ## Vì sao unique trên `bam` chứ không trên `noi_dung`
+
+    Cùng lý do `chatltt_doan.bam` tồn tại, cộng một lý do vật lý: chỉ số btree
+    của PostgreSQL có trần ~2.704 byte/hàng, mà 500 ký tự tiếng Việt ≈ 1.500
+    byte — cộng ba cột kia thì đã sát trần. Một ràng buộc chỉ vỡ với **hàng
+    dài** là một ràng buộc vỡ đúng lúc người dùng ghi mẩu quan trọng nhất.
+    """
+
+    __tablename__ = "chatltt_ghi_nho"
+    __table_args__ = (
+        Index("ux_chatltt_ghi_nho_khoa", "user_id", "pham_vi", "muc_tieu_id",
+              "bam", unique=True),
+        #: Truy vấn TIÊM: "mọi mẩu áp cho lượt này". Chạy **mỗi lượt**, nên nó
+        #: là truy vấn nóng nhất của cả tính năng.
+        Index("ix_chatltt_ghi_nho_tiem", "user_id", "pham_vi", "muc_tieu_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True,
+                                    default=lambda: sinh_id("gn_"))
+    #: ⛔ `String(36)` — cùng bài học `apps/ltt_voice/tables.py:66-75`.
+    #:
+    #: ⚠️ **Không** `index=True` ở đây, khác `chatltt_tep`/`chatltt_doan`. Chỉ số
+    #:    tổ hợp `ix_chatltt_ghi_nho_tiem` bắt đầu bằng chính `user_id`, nên một
+    #:    chỉ số đơn nữa là **bản sao chết**: nó tốn ghi ở mọi lần chèn và không
+    #:    phục vụ truy vấn nào mà chỉ số kia không phục vụ.
+    user_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    pham_vi: Mapped[str] = mapped_column(String(16), nullable=False)
+    #: `conv_id` khi `pham_vi="hoi_thoai"`, `project_id` khi `"du_an"`,
+    #: **chuỗi rỗng** khi `"nguoi_dung"` — xem docstring, đừng đổi thành `NULL`.
+    muc_tieu_id: Mapped[str] = mapped_column(String(40), default="",
+                                             nullable=False)
+    nguon: Mapped[str] = mapped_column(String(8), nullable=False)
+    noi_dung: Mapped[str] = mapped_column(String(TRAN_KY_TU_MOT_BAN),
+                                          nullable=False)
+    #: sha256 của nội dung đã chuẩn hoá. Khoá chống trùng, không phải kiểm toàn vẹn.
+    bam: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    #: Nhãn hiển thị, id lượt đã sinh ra mẩu này. ⭐ *"vì sao nó nhớ"* là một
+    #: phần của lời hứa B4, và câu trả lời phải lưu được ở đâu đó.
+    meta: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now,
+                                                 nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now,
+                                                 onupdate=_now, nullable=False)
+

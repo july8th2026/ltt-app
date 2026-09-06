@@ -142,7 +142,9 @@ def tiep_sau_duyet(db, *, run_id: str, user_id: str, so) -> DP.Run:
     duong = H.duong_toi_la(db, user_id=user_id, conv_id=run_row.conversation_id,
                            leaf_id=tra_loi.parent_id)
     goc = LUOT.dung_ngu_canh(
-        duong, doc_anh=LUOT.doc_anh_duoc(db, tra_loi.model_alias))
+        duong, doc_anh=LUOT.doc_anh_duoc(db, tra_loi.model_alias),
+        khoi_ghi_nho=LUOT.khoi_ghi_nho_neu_bat(
+            db, user_id=user_id, conv_id=run_row.conversation_id))
     khoi_tools = chieu_tool.chieu(db, user_id=user_id)
 
     run = LR.dung_lai(db, user_id=user_id, run_row=run_row,

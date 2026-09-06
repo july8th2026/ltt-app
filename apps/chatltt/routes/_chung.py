@@ -33,6 +33,20 @@ def cong_tep() -> None:
         raise HTTPException(status_code=404)
 
 
+def cong_ghi_nho() -> None:
+    """Cong co cho nhom B4 (ghi nho). Tat => 404, khong phai 403.
+
+    🔴 Cung luat dat-truoc-`require_login` nhu `cong_tep` — xem docstring o tren.
+       Ghi lai o day chu khong chi tro sang: mot luat chi song trong mot chu
+       thich o ham ben canh la mot luat se bi bo qua khi ai do chep khuon nay
+       cho cong thu ba.
+    """
+    from apps.chatltt.services import co_v3
+
+    if not co_v3.ghi_nho_bat():
+        raise HTTPException(status_code=404)
+
+
 def uid(request: Request) -> str:
     u = user_hien_tai(request)
     if u is None:

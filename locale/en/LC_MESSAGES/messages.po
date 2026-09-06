@@ -13262,6 +13262,12 @@ msgstr "Text extracted from documents the user attached to a conversation, split
 msgid "theo tệp và hội thoại chứa nó"
 msgstr "with the file and the conversation holding it"
 
+msgid "Những điều người dùng dặn hệ thống nhớ về mình (hoặc để trợ lý tự ghi lại), kèm phạm vi áp dụng: toàn tài khoản, một dự án, hay một hội thoại. Người dùng xem, sửa và xoá được từng mẩu."
+msgstr "Things the user has told the system to remember about them (or let the assistant record), each with a scope: the whole account, one project, or a single conversation. The user can view, edit and delete each entry."
+
+msgid "theo tài khoản; mẩu thuộc phạm vi hội thoại thì theo hội thoại chứa nó"
+msgstr "with the account; entries scoped to a conversation go with that conversation"
+
 msgid "Phần lẻ dưới một credit được giữ lại, không làm tròn lên"
 msgstr "Fractions below one credit are carried over, not rounded up"
 

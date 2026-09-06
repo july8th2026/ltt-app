@@ -373,6 +373,22 @@ STORES: tuple = (
              "thành từng đoạn kèm số trang để trích dẫn lại được. Đây là nội "
              "dung tài liệu của khách, không phải bản ghi kỹ thuật."),
           purged_by=N_("theo tệp và hội thoại chứa nó")),
+    # ⚠️ H44 B4. CONTENT, và ở đây lời phân loại còn rõ hơn hai bảng trên: đây
+    #    là những điều người dùng **cố ý dạy** cho hệ thống về chính họ. Một mẩu
+    #    bị dọn mất nghĩa là máy quên một điều họ đã dặn — và họ sẽ không biết
+    #    nó đã quên cho tới lúc câu trả lời sai.
+    #
+    # 🔴 Đây cũng là bảng `chatltt_*` **duy nhất không gắn với một hội thoại**:
+    #    mẩu phạm vi `nguoi_dung` sống lâu hơn mọi hội thoại đã sinh ra nó. Nên
+    #    `purged_by` của nó là **tài khoản**, không phải hội thoại — chép câu
+    #    của bảng bên cạnh vào đây sẽ để lại một kho ghi nhớ mồ côi sau khi
+    #    người dùng xoá hết hội thoại.
+    Store("chatltt_ghi_nho", CONTENT, None, N_("chủ tài khoản"),
+          N_("Những điều người dùng dặn hệ thống nhớ về mình (hoặc để trợ lý tự "
+             "ghi lại), kèm phạm vi áp dụng: toàn tài khoản, một dự án, hay một "
+             "hội thoại. Người dùng xem, sửa và xoá được từng mẩu."),
+          purged_by=N_("theo tài khoản; mẩu thuộc phạm vi hội thoại thì theo "
+                       "hội thoại chứa nó")),
     Store("ommi_resource", CONTENT, None, N_("chủ tài khoản"),
           N_("Tài nguyên (ảnh, tệp) người dùng tải lên PROMPT AI OMMI.")),
     Store("ommi_resource_variant", CONTENT, None, N_("chủ tài khoản"),
