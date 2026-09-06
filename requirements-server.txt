@@ -38,7 +38,12 @@ boto3>=1.35,<2.0
 # seedance Pha 2: chuan hoa anh ref (Pillow), nhan dien mat Haar (opencv), ky
 # ModelArk asset API (volcengine SDK). insightface (SCRFD chinh xac hon) can MSVC
 # C++ build tools -> tam dung Haar fallback; cai insightface sau neu can.
-pillow>=10,<12
+# 06/09/2026: noi tran <12 -> <13. Ban 11.3.0 dang cai co 25 advisory
+# (PYSEC-2026-165, -2249..-2257, -2874, -3451..-3496), ban va tu 12.1.1.
+# pillow nam tren duong xu ly ANH NGUOI DUNG TAI LEN (platform_core/
+# image_input.py + 7 app), nen day la be mat tan cong that, khong phai
+# no ky thuat. Nang major -> da chay lai toan bo test truoc khi chot.
+pillow>=12.1.1,<13
 opencv-python-headless>=4.9,<5.0
 volcengine>=1.0.140,<2.0
 openai-codex>=0.144.4,<0.145   # CHAT AI STUDIO: dieu khien Codex app-server (keo theo codex_cli_bin ~140MB); pin sat vi khop version binary
