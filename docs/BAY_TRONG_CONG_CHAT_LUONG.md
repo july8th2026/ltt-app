@@ -1072,7 +1072,41 @@ nhau. Nó không phải, và không thể trở thành.
 ⇒ Thứ duy nhất đóng được khe ấy là **một cái khoá lấy trước khi chạy**. Mà lượt
 nặng nhất trên máy này — `tools/test_nhanh.py` — **không xin khoá dòng nào**.
 
-### 💡 ĐỀ XUẤT (chưa làm): cho `test_nhanh.py` xin khoá
+### ✅ ĐÃ LÀM 06/09 — chủ dự án duyệt, phiên Mobile V1 thi hành ở cây chính
+
+Bản vá gồm **ba nửa**, và nửa thứ nhất là nửa không ai nghĩ tới:
+
+```
+tools/cua_so_yen.py   + phien_nay_dang_giu()  -> khoa TAI NHAP theo PHIEN
+tools/gate.py         + os.environ["LTT_PHIEN"] = phien   (truyen xuong con)
+tools/test_nhanh.py   + with CuaSoYen(...)    -> gio no CO xin khoa
+```
+
+🔴 **Bản vá ngây thơ — chỉ cho `test_nhanh` xin khoá — không vô ích, nó TÁI TẠO
+ĐÚNG TAI NẠN CŨ.** `gate.py` gọi `test_nhanh.py`, nên nếu khoá không tái nhập
+thì lượt con **đợi hết `--cho` (mặc định 15 phút) ở BỐN chỗ** rồi chạy chèn. Đo
+bằng cách tiêm lại hành vi cũ:
+
+```
+ban MOI (long nhau)         doi 0,0s   dang_chen=False
+ban CU  (khong biet long)   doi 3,0s   dang_chen=True
+```
+
+⛔ Và triệu chứng **không** phải *"khoá chết"* — nó là **"gate treo ở bước
+`bo test`"**. Đúng cái triệu chứng đã khiến một phiên đi **giết worker của một
+lượt đang chạy** ngày 05/09 (xem dòng 4 của giao ước). Một bản vá cho vấn đề
+điều phối, làm sai, sẽ đẻ ra lại chính tai nạn điều phối nó định chữa.
+
+⚠️ **Hệ quả vận hành sau khi ff:** `tools/test_nhanh.py` nay **xin khoá thật** —
+gõ tay nó lúc máy bận sẽ **xếp hàng** thay vì chạy ngay. Có `--khong-khoa` khi
+chắc máy rảnh, và `--cho <phút>` (mặc định 15).
+
+⭐ Kiểm bằng **ba** phép kiểm đã chứng minh đỏ được (tiêm bản cũ, khôi phục khớp
+byte) **cộng một đối chứng dương** — không có nó thì phép kiểm lồng-nhau vẫn
+xanh khi khoá hỏng theo kiểu *"không bao giờ đợi ai"*. Đúng luật Bẫy 24.
+`tests/test_361_cua_so_yen.py`: **19 passed**.
+
+### 💡 Đề xuất ban đầu, giữ lại vì nó ghi một ranh giới
 
 *(phiên VIDEO AI nêu; H44 ghi lại, KHÔNG tự thi hành)*
 
@@ -1092,6 +1126,16 @@ Bản vá một lớp lỗi mà bốn phiên đã trả tiền suốt một bu�
 
 ⇒ Việc này thuộc về chủ dự án hoặc phiên giữ `tools/`. Ghi ở đây để nó không
 biến mất cùng cửa sổ chat đã tìm ra nó.
+
+⭐ **Và đường đi ấy đã chạy đúng như thế.** Ba phiên lần lượt từ chối tự thi hành
+— mỗi phiên áp cùng một lý do cho **chính mình** — rồi đặt nó trước mặt chủ dự
+án **kèm vật liệu** (hai phát hiện làm bản vá nhỏ đi: `_treo()`/`_con_song()` đã
+viết đúng cho Windows, và khoá đánh theo **phiên** nên chỉ cần kế thừa biến
+`phien` của tiến trình cha). Chủ dự án duyệt; phiên đứng ở **trunk** thi hành.
+
+🔑 Ba phiên dựng gần trọn một bản vá mà **không phiên nào có quyền đóng nó**, và
+việc đó không bế tắc — vì thứ chuyển giao không phải một yêu cầu, mà là **một
+quyết định đã được chuẩn bị đủ để người có quyền chỉ cần nói có hoặc không**.
 
 ### 🔑 Luật khái quát: CÁI TÊN đi xa hơn dòng chữ
 
