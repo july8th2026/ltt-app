@@ -16,7 +16,7 @@
 | FINAL_SHA | *(chưa)* |
 | Dải test | **800–899** |
 | Pha hiện tại | Làn A ✅ · **P06 ✅** · B1–B3 ✅ · **B4 ✅ 6/6** · **B5 ✅ 6/6** · **P09 5/6** → còn **B6 · P10–P12** |
-| Deploy | ⛔ chương trình này **chưa deploy**. Làn A phát hành sau cờ `LTT_CHATLTT_V3_TOOLS` |
+| Deploy | ✅ **07/09 02:21** — commit `5434a4b8baee` trên production. 543 tệp `.py` đối chiếu băm: 0 lệch/0 thiếu · `alembic f2c48b71e903` · 5/5 dịch vụ Running · không gián đoạn |
 
 🔑 **Cờ `LTT_CHATLTT_V3_TOOLS` và `LTT_CHATLTT_V3_PAID_TOOLS` đều đang TẮT, và
 độc lập với nhau.** Không một dòng nào đã viết chạm tới một người dùng thật.
@@ -125,6 +125,52 @@ mượn phép sắp xếp mà **không** mượn bộ đếm.
    nhịp bấm**.
 
 ---
+
+---
+
+## Deploy 07/09 — H44 đã lên production
+
+```
+commit        5434a4b8baee   (= dung commit gate PASS, khong phai mot cay khac)
+asset_ver     bb5a645f -> ae960b57
+alembic       f2c48b71e903   (chatltt_ghi_nho + project_id da co)
+bam .py       543 tep / 6 goi -> 0 lech, 0 thieu
+/health/ready 200 tren URL cong khai
+```
+
+⭐ **Cloudflare phục vụ đúng bundle mới**, không dính bẫy `CLAUDE.md` 5b: tải
+`main-r0NDDjvS.js` qua `https://app.lttstudios.com` cho `cf: HIT`, và **sha256
+khớp tệp trên đĩa máy chủ**. Bundle chứa đủ `ltc-tool`, `ltc-duan`,
+*"Không chạy được"*.
+
+### 🔴 Đi tới đây mất BỐN vòng, và lý do đáng ghi
+
+Deploy đi qua `merge --ff-only` từ cây chính, nên nhánh phải **chứa** trunk. Một
+vòng là *merge → gate đầy đủ (~12 phút) → ff → deploy*, và phiên
+`admin-mvp-v3` vẫn commit bình thường trong lúc gate chạy:
+
+| vòng | gate PASS trên | quay ra trunk đã ở |
+|---|---|---|
+| 1 | `ca31a534` | `b0f47939` (+8) |
+| 2 | `67810150` | `a2a6a018` (+1) |
+| 3 | `8110ca76` | `0260ac07` (+1) |
+| 4 | `5434a4b8` | **đứng yên** ⇒ ff được |
+
+⛔ Không có đường tắt, và **không nên có**: rào `--ff-only` tồn tại để trunk chứa
+**đúng cây đã qua cổng**. Merge nhánh vào trunk sẽ tạo một cây chưa ai gate — mất
+đúng thứ đã bắt được `ruff`, `mypy`, ký tự điều khiển và một lượt `bo test` đỏ
+trong cùng buổi.
+
+⇒ Bài học vận hành: **khi hai phiên cùng đẩy lên một trunk, phía muốn deploy cần
+  trunk đứng yên một lần bằng đúng thời lượng gate.** Đó là phối hợp, không phải
+  kỹ thuật — và tôi đã nhắn phiên kia xin giữ tay.
+
+### Còn lại của P09 bước 6
+
+Đã chứng minh: mã trên máy, bundle đúng, Cloudflare không phục vụ bản cũ.
+**Chưa chứng minh:** khối `tool_call` vẽ ra trông thế nào trong một phiên **đã
+đăng nhập** trên URL công khai — việc đó cần một phiên đăng nhập thật, và tôi
+không nhập mật khẩu của chủ dự án.
 
 ## 🔒 Điều kiện để BẬT các cờ V3 — món nợ tự đòi
 
