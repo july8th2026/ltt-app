@@ -671,11 +671,11 @@ def test_may_ban_KHONG_dem_chinh_no_va_chuoi_cha():
         f"quet() dem {tinh} tren tong {tho} python.exe cua cay `{ten}` - "
         "no dang dem ca chinh tien trinh dang hoi")
 
-def test_may_ban_do_DELTA_chu_khong_do_CPU_tich_luy():
+def test_may_ban_do_DELTA_chu_khong_do_CPU_tich_luy(tmp_path, monkeypatch):
     """🔴 Đo 06/09: công cụ báo hai cây **ĐANG LÀM** trong khi CPU toàn máy 4,6 %.
 
-    Ngưỡng ban đầu đặt trên **CPU tích luỹ**, nên một tiến trình sống lâu tích
-    đủ 5 giây CPU **một lần** rồi nằm không sẽ **mãi mãi** trông như đang làm.
+    Ngưỡng ban đầu đặt trên **CPU tích luỹ**, nên một tiến trình sống lâu tích đủ
+    5 giây CPU **một lần** rồi nằm không sẽ **mãi mãi** trông như đang làm.
 
     ⛔ Hai cách đo đều sai, mỗi cách một chiều:
          `cpu_percent()` một nhát  -> mẫu TỨC THỜI; không phân biệt "đã chết"
@@ -683,12 +683,23 @@ def test_may_ban_do_DELTA_chu_khong_do_CPU_tich_luy():
          CPU TÍCH LUỸ              -> không phân biệt "đang làm" với "đã làm
                                       xong từ lâu"
 
-    ⭐ Câu thật sự hỏi là *"cây đó có đang ĂN CPU không"*, và nó chỉ trả lời
-       được bằng một **delta trên một khoảng** — không phải một con số tích
-       luỹ, cũng không phải một mẫu tức thời.
-
     ⚠️ Hậu quả nếu sai: công cụ báo bận vĩnh viễn ⇒ không ai chạy gate được ⇒
-       người ta thôi đọc nó. Một cảnh báo luôn bật là một cảnh báo đã tắt.
+       người ta thôi đọc nó. **Một cảnh báo luôn bật là một cảnh báo đã tắt.**
+
+    ## Vì sao phép kiểm này phải TỰ DỰNG tập tiến trình của nó
+
+    🔴 Hai bản trước đều chốt một **sự thật môi trường** và đỏ dưới gate:
+
+         `assert cpu < NGUONG`      -> dưới gate cây chính chạy 6 worker,
+                                       delta là hàng trăm phần trăm
+         `assert cpu < tich_luy`    -> `cpu` là **phần trăm**, `tich_luy` là
+                                       **giây**; phép so chỉ đúng nhờ tình cờ
+                                       khi máy rảnh, và đỏ ngay khi có tải
+
+    ⭐ Nên phép kiểm **thay `_ten_cay`** để chỉ đúng tiến trình con của nó rơi
+       vào bảng. Khi ấy khẳng định không còn phụ thuộc vào máy đang bận hay rảnh
+       — đó là khác biệt giữa *chốt một tính chất của mã* và *chốt một sự thật
+       môi trường*.
     """
     import subprocess                            # noqa: PLC0415
     import time as _t                            # noqa: PLC0415
@@ -696,38 +707,39 @@ def test_may_ban_do_DELTA_chu_khong_do_CPU_tich_luy():
     sys.path.insert(0, str(GOC / "tools"))
     import may_ban                               # noqa: PLC0415
 
-    # Mot tien trinh DOT CPU roi NAM KHONG — dung hinh dang da lam sai bo do.
+    thu_muc = tmp_path / "cay_gia"
+    thu_muc.mkdir()
     ma = ("import time" + chr(10) +
           "t=time.time()" + chr(10) +
-          "while time.time()-t < 1.2: pass" + chr(10) +
+          "while time.time()-t < 6.0: pass" + chr(10) +
           "time.sleep(30)")
-    con = subprocess.Popen([sys.executable, "-c", ma], cwd=str(GOC),
+    con = subprocess.Popen([sys.executable, "-c", ma], cwd=str(thu_muc),
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     try:
-        _t.sleep(2.0)                            # de no dot xong roi ngu
+        # CHI tien trinh con nay roi vao bang. Moi thu khac -> "" -> bi bo qua.
+        goc_gia = str(thu_muc).lower()
+        monkeypatch.setattr(
+            may_ban, "_ten_cay",
+            lambda cwd: "CAY THU" if (cwd or "").lower().startswith(goc_gia) else "")
+
+        _t.sleep(7.0)                            # de no dot xong roi ngu
         bang = may_ban.quet()
-        muc = bang.get("CAY CHINH")
-        assert muc is not None, "khong thay cay chinh - phep do khong phan biet duoc"
-        assert muc["tich_luy"] >= 1.0, (
-            "tien trinh moi khong tich duoc CPU nao - phep kiem nay khong con "
-            "phan biet duoc hai cach do")
-        # ⛔ So TRUC TIEP hai dai luong, dung so voi mot NGUONG.
-        #
-        # 🔴 Ban dau cua phep kiem nay khang dinh `cpu < PHAN_TRAM_COI_LA_LAM`.
-        #    Tiem lai ban CU (`cpu = CPU tich luy`) thi no VAN XANH, vi tien
-        #    trinh chi dot 1,2 giay — duoi nguong 8 o CA HAI cach do. Phep kiem
-        #    khong PHAN BIET DUOC hai ban cai dat, tuc no khong do thu no noi
-        #    la do.
-        #
-        # ⭐ Voi delta: `cpu` ~ 0 trong khi `tich_luy` ~ 1,2 -> hai so KHAC nhau.
-        #    Voi tich luy: `cpu` == `tich_luy` -> bang nhau. Do la mot khac biet
-        #    KHONG phu thuoc vao viec tien trinh dot bao nhieu giay.
-        assert muc["cpu"] < muc["tich_luy"], (
-            f"cpu={muc['cpu']:.2f} khong nho hon tich_luy={muc['tich_luy']:.2f} "
-            "- bo do dang doc CPU TICH LUY chu khong doc delta")
-        assert muc["cpu"] < may_ban.PHAN_TRAM_COI_LA_LAM, (
-            f"delta {muc['cpu']:.1f}% >= nguong {may_ban.PHAN_TRAM_COI_LA_LAM}% "
-            "cho mot tien trinh DANG NGU")
+        muc = bang.get("CAY THU")
+        assert muc is not None and muc["so"] == 1, (
+            f"phai thay DUNG mot tien trinh con, thay: {bang}")
+        # 🔴 Phai dot LAU HON nguong o duoi, neu khong phep kiem khong phan
+        #    biet duoc: ban dau dot 1,2 giay thi ca hai cach do deu < 5 va phep
+        #    tiem VAN XANH. Mot phep kiem khong phan biet duoc thi khong do gi.
+        assert muc["tich_luy"] >= 5.5, (
+            f"tien trinh con moi tich {muc['tich_luy']:.1f}s CPU - phai VUOT "
+            "nguong o duoi thi phep kiem moi phan biet duoc hai cach do")
+
+        # ⭐ Ve DUY NHAT phan biet duoc, va no dung o MOI muc tai cua may:
+        #      delta    -> ~0 %  cho mot tien trinh DANG NGU
+        #      tich luy -> >= 1,2 (giay da dot truoc do)
+        assert muc["cpu"] < 5.0, (
+            f"delta {muc['cpu']:.1f}% cho mot tien trinh DANG NGU - bo do dang "
+            f"doc CPU tich luy ({muc['tich_luy']:.1f}s) chu khong doc delta")
     finally:
         con.terminate()
         con.wait(timeout=10)
