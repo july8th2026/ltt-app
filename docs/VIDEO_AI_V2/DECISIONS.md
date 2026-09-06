@@ -346,3 +346,57 @@ Giảm nhẹ đã có: chủ dự án duyệt · bảng kê khôi phục (`repo`
 `sha256`) commit **trước** khi xoá (`4e209c08`) · tái tạo ≈ 63 phút + ~$0,20.
 
 ⇒ Ghi nhận là **rủi ro đã chấp nhận có ý thức**, không phải sơ suất.
+
+### P01-D-12 — CHỐT `profile 3`, xem lại khi đổi cấu hình GPU
+
+Chủ dự án chốt 06/09: *"nếu là cờ thì ta chốt profile 3, sau này sửa sau nếu
+thay cấu hình GPU."*
+
+Căn cứ: máy đo được **85,09 GB VRAM** và **251 GB RAM**; model INT8 chỉ
+**14,90 GB** mỗi tầng nhiễu. Thừa chỗ để nạp trọn vào VRAM ⇒ không phải chuyển
+model ra vào giữa các bước.
+
+| | Cột trái: model **đang dùng** | Cột phải: model **không dùng** |
+|---|---|---|
+| profile 4 *(mặc định WanGP)* | nạp từng phần | không giữ |
+| **profile 3** ✅ | **trọn trong VRAM** | không giữ |
+| profile 1 | trọn trong VRAM | giữ ở RAM |
+
+⚠️ `profile` là **cờ lúc khởi động**, không phải cơ chế tự chuyển. "3 fallback về
+2" là quy tắc **lúc dựng máy**: VRAM đủ thì 3, không đủ thì 2.
+
+📌 `profile 1` để dành cho P02 — nó chỉ hơn `3` khi **đổi model** (t2v↔i2v), và
+việc đó thuộc phạm vi P02.
+
+### P01-D-13 — 🔴 `init()` chỉ gọi được MỘT lần mỗi tiến trình
+
+Đo được 06/09, lượt 2:
+
+```
+"WanGP runtime already loaded with different root/config/cli args"
+```
+
+Script tạo ba phiên (profile 4 → 3 → 2) trong **cùng một tiến trình**; phiên thứ
+hai và ba **bị từ chối**. Đây là lỗi thiết kế của tôi, không phải của WanGP.
+
+**Hệ quả cho kiến trúc, không chỉ cho phép đo:**
+
+- muốn đổi `profile` / `attention` / `root` ⇒ **tiến trình mới**;
+- ⇒ một worker serverless phục vụ **đúng một cấu hình**. Muốn hai cấu hình thì
+  hai endpoint, không phải một endpoint đổi cờ theo job;
+- ⇒ mọi phép đo so cấu hình phải chạy **mỗi cấu hình một tiến trình**.
+
+### P01-D-14 — Phép kiểm HUỶ (E4) ĐẠT
+
+`job.cancel()` gọi ở giây 75 của một lượt sinh. Kết quả trả về:
+
+```json
+{"thanh_cong": false, "tep": [], "loi": ["Generation was cancelled"]}
+```
+
+Đúng như `docs/API.md` mô tả: *"Cancellation is cooperative... A cancelled run
+completes with `result.success == False` and a cancellation entry in
+`result.errors`."*
+
+⇒ Nguyên thuỷ huỷ của hợp đồng engine **có thật và dùng được**. Còn thiếu: đo GPU
+có nhả VRAM sau khi huỷ không.
