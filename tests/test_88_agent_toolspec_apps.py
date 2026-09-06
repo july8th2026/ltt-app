@@ -1,6 +1,8 @@
 """P2: ToolSpec public phải bám handler, giá và output đang chạy."""
 from __future__ import annotations
 
+import pathlib
+
 import pytest
 
 from platform_core.agent.tools import (ToolParamsError, discover_tools,
@@ -50,11 +52,47 @@ EXPECTED = {
     #    o phia Agent, KHONG phai bang nay. Bang nay chi chep lai `discover_tools()`
     #    tra ve gi; sua no de "chan" Agent la sua cai nhiet ke.
     "text.chat",
+    # ⚠️ CAP NHAT 06/09 (H44 B1). `chatltt.trich_tep` — trich van ban tu tai
+    #    lieu khach dinh vao hoi thoai. No vao bang nay vi `discover_tools()`
+    #    lay MOI ToolSpec, khong phai vi ai do mo no cho Agent.
+    #
+    # 🔴 VA DAY LA TOOL DAU TIEN TRONG KHO dat `customer_visible=False`.
+    #    Cong thu nhat ton tai tu lau nhung CHUA TUNG CHIU LUC — 13 tool con
+    #    lai deu `True`. Do 06/09 truoc khi dua vao:
+    #      frontend/agent-canvas/src/presentationAdapter.ts:65 va :75
+    #      palette.filter(tool => tool.customer_visible !== false)
+    #    ⇒ giao dien CO ton trong no, nen tool nay khong hien trong palette.
+    "chatltt.trich_tep",
 }
 
 
 def test_dung_toan_bo_tool_job_based_duoc_discover():
     assert set(discover_tools()) == EXPECTED
+
+
+def test_cong_THU_NHAT_that_su_chan_chu_khong_chi_ton_tai():
+    """🔴 Them 06/09 — banh coc tren chi chot TEN, khong chot HANH VI.
+
+    `chatltt.trich_tep` la tool DAU TIEN dat `customer_visible=False`. Truoc
+    no, cong thu nhat la mot truong khong ai dung — no co the da hong tu lau
+    ma khong ai biet, vi khong co gi de no chan.
+
+    ⛔ Va `discover_tools()` KHONG loc theo no (do: no tra ve ca 14 tool).
+       Cua that nam o giao dien. Nen phep kiem nay chot rang truong ay den
+       duoc CHO LOC — thieu no thi mot tool "an" se hien trong palette Agent,
+       mot san pham DANG CONG KHAI.
+    """
+    tools = discover_tools()
+    an = {n for n, s in tools.items() if not s.customer_visible}
+    assert an == {"chatltt.trich_tep"}, (
+        f"tap tool AN da doi: {an} — moi thay doi o day la mot quyet dinh "
+        "ve thu khach nhin thay trong palette Agent")
+
+    goc = pathlib.Path(__file__).resolve().parents[1]
+    ma = (goc / "frontend" / "agent-canvas" / "src"
+          / "presentationAdapter.ts").read_text(encoding="utf-8")
+    assert "customer_visible!==false" in ma.replace(" ", ""), (
+        "giao dien thoi loc `customer_visible` — tool AN se hien trong palette")
 
 
 def test_app_khong_phu_hop_khong_bi_ep_toolspec():

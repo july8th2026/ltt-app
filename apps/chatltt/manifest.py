@@ -32,7 +32,7 @@ giữ chỗ trả 200 cho người đã đăng nhập — bẫy link 404 trong h
 from __future__ import annotations
 
 from platform_core.i18n import N_
-from platform_core.registry import AppManifest
+from platform_core.registry import AppManifest, ToolSpec
 
 from apps.chatltt import gia_trich as _gia_trich
 from apps.chatltt.services import hoi_thoai as _hoi_thoai
@@ -53,6 +53,37 @@ MANIFEST = AppManifest(
     # ⛔ No CHUA duoc mo cho model goi. `chinh_sach.CONG_CU_CHO_PHEP` va
     #    `chieu_tool.CHO_MODEL_GOI` van dong — buoc 6 moi mo, theo dung §4.
     job_types=("chatltt.trich_tep",),
+
+    # ⚠️ CAP NHAT 06/09 (B1). `job_types` mot minh KHONG du: `bao_gia()` cua
+    #    `runtime_noi_bo` tra gia qua `ToolSpec`, nen thieu khai nay thi khong
+    #    HIEN duoc gia truoc khi khach bam — ma "gia phai hien TRUOC khi bam"
+    #    la dieu P06 §7 da chot. Toi bo sot mat xich nay o buoc 3c.
+    #
+    # ⛔ `customer_visible=False`: day la cua thu NHAT trong bon cua. Tep nay
+    #    chi noi "tool nay TON TAI va gia bao nhieu"; viec no co ra `/api/v1`
+    #    hay khong la cua thu HAI (`api_exposed`), va ca hai deu KHONG mo.
+    tools=(ToolSpec(
+        name="chatltt.trich_tep",
+        job_type="chatltt.trich_tep",
+        description=N_('Trích văn bản từ tài liệu đã đính vào hội thoại.'),
+        params_schema={
+            "tep_id": {"type": "string", "required": True, "max_length": 40},
+            # ⭐ `so_byte` chi de UOC gia giu cho. Gia THAT tinh o
+            #    `jobs.handle` theo ky tu trich duoc — cung luat
+            #    `anhnoibo`: tinh theo thu THAT SU nhan duoc.
+            "so_byte": {"type": "int", "min": 0, "max": 104_857_600,
+                        "default": 0},
+        },
+        # ⭐ `returns` la ban khai cong RA. `bo_chay_tool._tep_cua` doc chinh
+        #    no de biet job tra ve gi — doan gia ten cong da la mot loi that
+        #    o P05 (`ket_qua_job` doan ten roi tra rong).
+        # ⛔ `TOOL_PORT_TYPES` chi nhan kieu DUONG ONG (text/image/json/...),
+        #    khong nhan `int`. Vi `returns` mo ta CONG NOI DUOC VOI TOOL KHAC,
+        #    khong phai kieu du lieu cua ket qua. Toi khai `int` va registry
+        #    tu choi nap ca app — dung huong, fail-closed.
+        returns={"ket_qua": "json"},
+        customer_visible=False,
+    ),),
     requires=(),
     # ⛔ GIA CHUA CHOT — `gia_trich.credit_cost` NEM cho toi khi chu du an dat
     #    so. Fail-closed co chu dich: mot gia 0 tam thoi CHINH LA cai lo ma
