@@ -139,3 +139,103 @@ def test_khung_mac_dinh_co_320px():
     assert "p320" in m.group(1)
     js = JS.read_text(encoding="utf-8")
     assert re.search(r"p320:\s*\{\s*w:\s*320", js), "`mobile_quet.js` không còn khổ 320"
+
+def test_bo_quet_PHAI_bao_khi_bi_day_ve_login():
+    """🔴 Một phép đo trên trang đăng nhập KHÔNG phải một kết quả.
+
+    Đo 06/09: ba route `prompt-ai-ommi` báo *"0 tràn, 0 lỗi console"* — và cả
+    ba đều là `/login`. Cookie của phép dò không có tác dụng, và bộ quét
+    **không hề biết**: nó đo bất cứ thứ gì nhận được.
+
+    ⛔ Nó hỏng theo hướng **dễ chịu**: một trang đăng nhập thì ngắn, không tràn
+       ngang, không có ô nhập nhỏ, không có video. **Mọi** con số đều đẹp —
+       nên không ai đi kiểm lại.
+
+    ⭐ Ghi **URL thực tế** chứ không ghi URL đã yêu cầu. Hai thứ ấy khác nhau
+       đúng ở chỗ quan trọng nhất, và chỉ một trong hai nói thật.
+
+    ⚠️ Hoá ra bộ quét **không** hỏng — phép dò tay của tôi truyền cả chuỗi
+       `session=eyJ...` làm *giá trị* cookie. Nhưng lỗ thì có thật: trước bản
+       vá này **không có gì** kiểm rằng phiên còn hiệu lực.
+    """
+    js = (GOC / "tools" / "mobile_quet.js").read_text(encoding="utf-8")
+    assert "url_thuc" in js, (
+        "bo quet khong ghi URL THUC TE - khong the biet no da do trang nao")
+    assert "CHUA_DANG_NHAP" in js, "bo quet khong danh dau luot bi day ve /login"
+
+    py = (GOC / "tools" / "mobile_qa.py").read_text(encoding="utf-8")
+    assert "CHUA_DANG_NHAP" in py, (
+        "ban tom tat khong doc co ay - no se in mot bang toan so dep")
+    assert "VO NGHIA" in py, "canh bao phai KEU TO, khong phai mot dong lang le"
+
+
+def test_do_nhanh_thay_CHAN_dung_ba_loi_da_xay_ra_that(tmp_path):
+    """`tools/do_nhanh.thay` phải chặn cả ba, vì cả ba đã xảy ra trong một buổi.
+
+    🔴 Ngày 06/09 một phiên tự kê 13 lỗi mình gây ra; **9/13** nằm ở **công cụ
+       dùng để đo**, không nằm ở thứ được giao. Kỷ luật sống trong mã sản phẩm
+       và được miễn trừ cho script tạm — trong khi chính script tạm quyết định
+       ta **nhìn thấy gì**.
+
+    ⭐ Một luật *"hãy cẩn thận hơn"* không sửa được cái nào trong ba. Một hàm
+       thì có.
+    """
+    import sys                                   # noqa: PLC0415
+    sys.path.insert(0, str(GOC / "tools"))
+    import do_nhanh                              # noqa: PLC0415
+
+    CR_LF = chr(13) + chr(10)
+    LF = chr(10)
+
+    # (1) Neo khong khop -> `str.replace` im lang khong thay gi.
+    t1 = tmp_path / "a.txt"
+    t1.write_bytes(b"xin chao")
+    try:
+        do_nhanh.thay(str(t1), "khong-co-chuoi-nay", "x")
+        raise AssertionError("neo sai ma khong keu - loi se di qua im lang")
+    except AssertionError as e:
+        assert "neo khop 0 lan" in str(e)
+    assert t1.read_bytes() == b"xin chao", "tep bi doi du neo khong khop"
+
+    # (2) Kieu ket dong CRLF phai duoc giu.
+    t2 = tmp_path / "b.txt"
+    t2.write_bytes(("mot" + CR_LF + "hai" + CR_LF).encode("utf-8"))
+    do_nhanh.thay(str(t2), "hai", "ba")
+    d = t2.read_bytes()
+    assert d.count(CR_LF.encode()) == 2 and d.count(LF.encode()) == 2, (
+        f"kieu ket dong bi doi: {d!r} - ca tep thanh mot diff khong ai doc duoc")
+
+    # (3) `.py` sai cu phap -> phai no TRUOC khi cham tep.
+    t3 = tmp_path / "c.py"
+    goc = ("def f():" + LF + "    return 1" + LF).encode("utf-8")
+    t3.write_bytes(goc)
+    try:
+        do_nhanh.thay(str(t3), "    return 1", "return 1")   # lech thut le
+        raise AssertionError("ghi mot tep .py hong ma khong keu")
+    except (SyntaxError, IndentationError):
+        pass
+    assert t3.read_bytes() == goc, "tep bi ghi hong du `ast.parse` da that bai"
+
+
+def test_do_nhanh_tien_trinh_KHONG_khop_chinh_no():
+    """⛔ Điều kiện phải là thứ tiến trình đang hỏi **không thể tự thoả**.
+
+    Đo 06/09, hai phiên cùng dính: một bộ lọc theo `cmdline` khớp vào **chính
+    công cụ đo**, vì vỏ `bash -c` mang cả mã nguồn được truyền cho nó. Một phiên
+    dùng bộ lọc ấy để `kill`, và lệnh giết đi **ngược lên cây cha của chính nó**
+    — script thoát mã 15.
+
+    ⚠️ Lọc theo `cwd` **không** cứu được ca này: shell của người đang hỏi cũng có
+       `cwd` đúng bằng cây ấy.
+    """
+    import os                                    # noqa: PLC0415
+
+    import sys                                   # noqa: PLC0415
+    sys.path.insert(0, str(GOC / "tools"))
+    import do_nhanh                              # noqa: PLC0415
+
+    # Tien trinh dang chay phep kiem nay CO chuoi "pytest" trong cmdline.
+    ds = do_nhanh.tien_trinh("pytest")
+    assert os.getpid() not in [p.pid for p in ds], (
+        "bo loc khop vao CHINH tien trinh dang hoi - mot che do giet se di "
+        "nguoc len cay cha cua no")

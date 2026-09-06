@@ -4,6 +4,7 @@ r"""mobile_qa.py — bộ khung đo mobile, lái bằng registry.
     python tools\mobile_qa.py bang                        # du bang cho studio_dev
     python tools\mobile_qa.py chat-seed  <uid>            # mot hoi thoai co noi dung
     python tools\mobile_qa.py agent-seed <uid>            # mot canvas CO node
+    python tools\mobile_qa.py ommi-seed  <uid>            # tai nguyen + thu vien ommi
     python tools\mobile_qa.py wav-dai    <uid>            # WAV 10..600 giay
     python tools\mobile_qa.py quet --cookie "session=..." # quet mobile moi route
 
@@ -279,6 +280,71 @@ def agent_seed(uid: str) -> str:
         don()
 
 
+
+def ommi_seed(uid: str) -> dict:
+    """Dựng tài nguyên + thư viện cho `prompt_ai_ommi`. Trả số dòng đã tạo.
+
+    🔴 VÌ SAO LỆNH NÀY TỒN TẠI. `docs/MOBILE/08_BAO_CAO.md` mục 9 ghi
+       `prompt_ai_ommi` là *"chưa seed dữ liệu; mọi phép đo tương tác vẫn ở
+       mức chưa đo"*. Đó không phải một hạng mục bị quên — đo trên một thư
+       viện **rỗng** thì mọi thao tác cho cùng một số 0, và số 0 ấy không phân
+       biệt được *"giao diện hỏng"* với *"không có gì để thao tác"*.
+
+    ⭐ Dùng **chính service của app** (`resources.create`, `library.create`)
+       chứ không tự dựng hàng trong bảng: hình dạng hàng là hợp đồng của app,
+       và một bản chép tay sẽ lệch ngay khi app đổi. Cùng lý do `agent_seed`
+       gọi `workflows.plan_to_canvas` thay vì tự bịa `document`.
+    """
+    from apps.prompt_ai_ommi.services import library, resources
+
+    db, don = _phien_dev()
+    dem = {"resource": 0, "variant": 0, "library": 0, "collection": 0}
+    try:
+        # Ten DAI co y: mot the 12 ky tu khong bao gio tran, nen no khong do
+        # duoc gi ve bo cuc hep. Do la bay "trang rong" o mot dang khac.
+        mau = [
+            ("character", "Nu dao dien toc ngan, ao khoac da, anh sang nguoc",
+             "Mot nhan vat dung de do be mat mobile o khung hep nhat"),
+            ("background", "Pho co Ha Noi luc mua phun, den vang, mat duong uot",
+             "Boi canh ten dai de kiem cat chu tren khung hep"),
+            ("prop", "May quay phim co, than kim loai xuoc, day deo da nau",
+             "Dao cu de kiem the va nhan xuong dong"),
+        ]
+        tao = []
+        for kind, ten, mo_ta in mau:
+            row = resources.create(db, owner_id=uid, kind=kind, name=ten,
+                                   description=mo_ta,
+                                   prompt_text=f"{ten}. {mo_ta}.")
+            tao.append(row)
+            dem["resource"] += 1
+        db.flush()
+
+        # `add_variant` doi `storage_key` — bien the la MOT ANH, khong phai
+        # mot doan chu. Do la hop dong cua app; doc chu ky roi moi goi.
+        for i, row in enumerate(tao[:2]):
+            resources.add_variant(db, resource_id=row.id, owner_id=uid,
+                                  storage_key=f"ommi/{uid}/mau-{i}.png",
+                                  label="Ban mau de do bo cuc",
+                                  width=1024, height=1024, bytes_size=512_000)
+            dem["variant"] += 1
+
+        for kind, ten in (("meta", "Khuon dao dien mac dinh"),
+                          ("snippet", "Doan mo dau chuan"),
+                          ("style", "Bang mau lanh")):
+            library.create(db, kind, owner_id=uid, name=ten,
+                           body="Noi dung mau du dai de kiem xuong dong tren "
+                                "mot khung nhin 320px va o muc phong to 200%.")
+            dem["library"] += 1
+
+        resources.create_collection(db, owner_id=uid, name="Bo suu tap mau")
+        dem["collection"] += 1
+
+        db.commit()
+        return dem
+    finally:
+        don()
+
+
 #: Khung nhìn mặc định của một lượt quét.
 #:
 #: ⭐ **320 phải có mặt.** Ngày 05/09 nó bắt được hai lỗi mà 390px bỏ lọt, và
@@ -405,6 +471,20 @@ def tom_tat(kq: dict) -> list[str]:
     for ten, x in gom.items():
         dong.append(f"{ten:<10}{x[0]:>6}{x[1]:>6}{x[2]:>8}{x[3]:>8}{x[4]:>9}{x[5]:>6}")
     for k, v in sorted(kq.items()):
+        # 🔴 Bi day ve `/login` thi MOI so do cua dong nay vo nghia.
+        #
+        #    Do 06/09: ba route `prompt-ai-ommi` bao "0 tran, 0 loi console"
+        #    va ca ba deu la trang dang nhap. Cookie khong co tac dung, va bo
+        #    quet khong he biet — no do bat cu thu gi nhan duoc.
+        #
+        # ⛔ Hong theo huong DE CHIU: trang dang nhap ngan, khong tran ngang,
+        #    khong co o nhap nho, khong co video. MOI con so deu dep, nen
+        #    khong ai di kiem lai. Do la ly do dong nay phai KEU TO.
+        if v.get("CHUA_DANG_NHAP"):
+            dong.append(f"  [!] CHUA DANG NHAP  {k}: bi day ve "
+                        f"{v.get(chr(39) + chr(39)) if False else v.get('url_thuc')}"
+                        f" - MOI so do cua dong nay VO NGHIA")
+            continue
         if v.get("tran_ngang", 0) > 1:
             dong.append(f"  TRAN     {k}: {v['tran_ngang']}px")
         if v.get("console_loi"):
@@ -420,7 +500,28 @@ def tom_tat(kq: dict) -> list[str]:
     return dong
 
 
+def _ep_utf8() -> None:
+    """`--help` cua tep nay VO tren console cp1252 — do 06/09, ma thoat 1.
+
+    Docstring va nhan tham so deu co tieng Viet, nen `argparse` in ra la vo:
+
+        UnicodeEncodeError: 'charmap' codec can't encode character 'ộ'
+
+    ⇒ Khong ai kham pha duoc lenh nao cua cong cu nay tu chinh no.
+
+    ⛔ Dung `reconfigure` tren luong DANG CO, khong tao mot `TextIOWrapper` MOI
+       boc quanh `sys.stdout.buffer`: ban goc bi thu gom rac se dong buffer that
+       va lam vo pytest — kho nay da tra gia mot lan cho dung loi do.
+    """
+    for luong in (sys.stdout, sys.stderr):
+        try:
+            luong.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
+        except (AttributeError, ValueError):
+            pass
+
+
 def main(argv=None) -> int:
+    _ep_utf8()
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     con = ap.add_subparsers(dest="lenh", required=True)
 
@@ -437,6 +538,9 @@ def main(argv=None) -> int:
 
     g = con.add_parser("agent-seed", help="dung mot workflow Agent Canvas CO node")
     g.add_argument("uid", help="uid cua tai khoan seed")
+
+    o = con.add_parser("ommi-seed", help="dung tai nguyen + thu vien cho prompt_ai_ommi")
+    o.add_argument("uid", help="uid cua tai khoan seed")
 
     q = con.add_parser("quet", help="quet mobile moi route khach hang")
     q.add_argument("--goc", default="http://127.0.0.1:8123",
@@ -489,6 +593,11 @@ def main(argv=None) -> int:
 
     if a.lenh == "agent-seed":
         print("workflow_id:", agent_seed(a.uid))
+        return 0
+
+    if a.lenh == "ommi-seed":
+        for k, v in ommi_seed(a.uid).items():
+            print(f"  {k:<12} {v}")
         return 0
 
     if a.lenh == "chat-seed":

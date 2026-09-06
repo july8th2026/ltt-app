@@ -322,7 +322,7 @@ html{background:var(--surface-canvas)}
   background:radial-gradient(circle,var(--focus-shadow),transparent 70%);pointer-events:none}
 .hero h1{font-size:26px;letter-spacing:-.4px;max-width:22ch;position:relative}
 .hero p{color:var(--muted);margin:9px 0 0;max-width:54ch;font-size:14.5px;position:relative}
-.grid{display:grid;gap:15px;grid-template-columns:repeat(auto-fill,minmax(288px,1fr))}
+.grid{display:grid;gap:15px;grid-template-columns:repeat(auto-fill,minmax(min(288px,100%),1fr))}
 .appcard{border:1px solid var(--line);border-radius:14px;background:var(--panel);overflow:hidden;transition:.18s;position:relative;color:inherit;text-decoration:none}
 .appcard:focus-visible{outline:3px solid var(--focus-ring);outline-offset:3px}
 .appcard:hover{transform:translateY(-3px);border-color:var(--line2);box-shadow:0 10px 30px #0006}
@@ -363,9 +363,51 @@ html{background:var(--surface-canvas)}
 .menu>summary::marker{content:""}
 .menu>summary:hover,.menu[open]>summary{background:var(--panel2)}
 .menu .caret{color:var(--dim);font-size:10px}
-.dropdown{position:absolute;top:calc(100% + 6px);left:0;min-width:214px;background:var(--panel);
+.dropdown{position:absolute;top:calc(100% + 6px);left:0;min-width:min(214px,calc(100vw - 20px));background:var(--panel);
   border:1px solid var(--line2);border-radius:10px;padding:6px;box-shadow:0 14px 40px #0008;z-index:50}
-.dropdown.right{right:0;left:auto;min-width:252px}
+.dropdown.right{right:0;left:auto;min-width:min(252px,calc(100vw - 20px))}
+/* 🔴 PHONG TO SAU: panel dropdown neo theo CHA nen no khong the vua khung nhin.
+ *
+ * Do 06/09 o khung 195px: `details.menu` nam o x=54, panel rong 175px ->
+ * canh phai 229. `min-width` da duoc kep theo `100vw` roi, nhung vi tri thi
+ * khong — mot panel `left:0` trong mot cha nam giua trang van tran ra ngoai.
+ *
+ * `header.hdr` co scrollWidth 257 tren MOI trang trong khi `main` va `footer`
+ * deu sach (195/195), nen day la nguon tran chung cua ca nen tang o muc phong
+ * to nay — khong phai mot loi rieng cua trang nao.
+ *
+ * ⇒ Duoi 320px, ghim panel theo KHUNG NHIN thay vi theo cha. `position:fixed`
+ *   voi ca `left` lan `right` cho be rong = khung nhin - 20, va vi tri khong
+ *   con phu thuoc vao cha nam o dau.
+ *
+ * ⚠️ Nguong 320px giong luat bang o `_kieu_chung.html`, va cung mot ly do:
+ *   WCAG 1.4.10 doi reflow o 320px va nen tang DAT o do. Duoi nguong ay la
+ *   vung ngoai chuan, noi mot panel ghim theo khung nhin van hon mot trang
+ *   tran ngang.
+ */
+@media(max-width:320px){
+  /* 🔴 `.hdr-right` la nguon tran CHUNG cua ca nen tang o muc phong to nay.
+   *
+   * Do bang cach an tung con cua `header.hdr` o khung 195px:
+   *
+   *     an hdr-logo      -> scrollWidth 213
+   *     an hdr-nav       -> 257  (da `display:none`, khong doi)
+   *     an hdr-burger    -> 209
+   *     an hdr-right     -> 195   <- SACH
+   *
+   * Header co 175px noi dung; logo+burger an het 92, con 83 cho `.hdr-right`
+   * — it hon be rong noi tai cua cac nut ben trong no. `min-width:0` o dong
+   * 430 cho ban than no co gian, nhung khong ep duoc CHU trong nut hep lai.
+   *
+   * ⇒ Cho header XUONG DONG: `.hdr-right` tut xuong hang hai va duoc tron
+   *   175px. Khong an chuc nang nao, chi doi bo cuc.
+   */
+  .hdr{flex-wrap:wrap;row-gap:6px}
+  .hdr-right{min-width:0;flex-wrap:wrap}
+
+  .dropdown,.dropdown.right{position:fixed;left:10px;right:10px;
+    min-width:0;width:auto;max-width:none}
+}
 .dropdown a,.dropdown button{display:flex;align-items:center;gap:9px;width:100%;padding:9px 11px;border-radius:7px;
   color:var(--fg);text-decoration:none;font-size:13.5px;background:transparent;border:0;font:inherit;cursor:pointer;text-align:left}
 .dropdown a:hover,.dropdown button:hover{background:var(--panel2)}
@@ -411,7 +453,7 @@ html{background:var(--surface-canvas)}
 .appcard .cover{height:120px;display:grid;place-items:center;position:relative}
 .appcard .cover .cbadge{position:absolute;top:10px;right:10px}
 .catbar{display:flex;gap:12px;align-items:center;margin:2px 0 16px;flex-wrap:wrap}
-.catbar .search{flex:1;min-width:200px;max-width:340px}
+.catbar .search{flex:1;min-width:min(200px,100%);max-width:340px}
 .catfilters{display:flex;gap:4px;flex-wrap:wrap}
 .catfilters button{border:1px solid var(--line2);background:var(--panel2);color:var(--muted);font:inherit;
   font-size:12.5px;padding:6px 12px;border-radius:20px;cursor:pointer}
@@ -702,7 +744,7 @@ html{background:var(--surface-canvas)}
 .clip-source-summary[hidden]{display:none}
 
 /* H26.10B Chat AI customer workflow and per-turn trace. */
-.chat-more{position:relative}.chat-more>summary{display:grid;min-width:44px;min-height:44px;place-items:center;border:1px solid var(--border-subtle);border-radius:8px;background:var(--surface-overlay);color:var(--text-secondary);cursor:pointer;list-style:none}.chat-more>summary::-webkit-details-marker{display:none}.chat-more .chat-thread-actions{position:absolute;right:0;top:calc(100% + 6px);z-index:3;min-width:210px;padding:7px;border:1px solid var(--border-strong);border-radius:9px;background:var(--surface-raised);box-shadow:0 12px 30px #0005}.chat-more .chat-thread-actions>*{flex:1}.chat-msg>header{display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--text-muted);font-size:10px}.chat-msg.user>header{flex-direction:row-reverse}.chat-msg time{font-size:9px}.chat-turn-meta{max-width:100%;color:var(--text-muted);font-size:9px}.chat-turn-meta summary{min-height:24px;cursor:pointer}.chat-turn-meta span{display:block;padding:3px 0}.chat-suggestions{display:grid;max-width:620px;margin:auto;place-items:center;gap:9px;color:var(--text-secondary);text-align:center}.chat-suggestions p{margin:0}.chat-suggestions>div{display:flex;flex-wrap:wrap;justify-content:center;gap:7px}.chat-suggestions button{min-height:44px;padding:7px 11px;border:1px solid var(--border-subtle);border-radius:99px;background:var(--surface-overlay);color:var(--text-secondary);cursor:pointer}.chat-suggestions button:hover{border-color:var(--brand-primary);color:var(--text-primary)}.chat-file-list{display:block;max-width:100%;overflow:hidden;color:var(--text-muted);font-size:9px;text-overflow:ellipsis;white-space:nowrap}.chat-status.busy{color:var(--text-secondary)}.chat-status.success{color:var(--status-success)}.chat-status.warn{color:var(--status-warning)}.chat-status.error{color:var(--status-danger)}#stopbtn[hidden],#sendbtn[hidden]{display:none}@media(max-width:480px){.chat-more .chat-thread-actions{right:auto;left:0}.chat-suggestions>div{display:grid;width:100%}.chat-suggestions button{width:100%}}
+.chat-more{position:relative}.chat-more>summary{display:grid;min-width:44px;min-height:44px;place-items:center;border:1px solid var(--border-subtle);border-radius:8px;background:var(--surface-overlay);color:var(--text-secondary);cursor:pointer;list-style:none}.chat-more>summary::-webkit-details-marker{display:none}.chat-more .chat-thread-actions{position:absolute;right:0;top:calc(100% + 6px);z-index:3;min-width:min(210px,calc(100vw - 20px));padding:7px;border:1px solid var(--border-strong);border-radius:9px;background:var(--surface-raised);box-shadow:0 12px 30px #0005}.chat-more .chat-thread-actions>*{flex:1}.chat-msg>header{display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--text-muted);font-size:10px}.chat-msg.user>header{flex-direction:row-reverse}.chat-msg time{font-size:9px}.chat-turn-meta{max-width:100%;color:var(--text-muted);font-size:9px}.chat-turn-meta summary{min-height:24px;cursor:pointer}.chat-turn-meta span{display:block;padding:3px 0}.chat-suggestions{display:grid;max-width:620px;margin:auto;place-items:center;gap:9px;color:var(--text-secondary);text-align:center}.chat-suggestions p{margin:0}.chat-suggestions>div{display:flex;flex-wrap:wrap;justify-content:center;gap:7px}.chat-suggestions button{min-height:44px;padding:7px 11px;border:1px solid var(--border-subtle);border-radius:99px;background:var(--surface-overlay);color:var(--text-secondary);cursor:pointer}.chat-suggestions button:hover{border-color:var(--brand-primary);color:var(--text-primary)}.chat-file-list{display:block;max-width:100%;overflow:hidden;color:var(--text-muted);font-size:9px;text-overflow:ellipsis;white-space:nowrap}.chat-status.busy{color:var(--text-secondary)}.chat-status.success{color:var(--status-success)}.chat-status.warn{color:var(--status-warning)}.chat-status.error{color:var(--status-danger)}#stopbtn[hidden],#sendbtn[hidden]{display:none}@media(max-width:480px){.chat-more .chat-thread-actions{right:auto;left:0}.chat-suggestions>div{display:grid;width:100%}.chat-suggestions button{width:100%}}
 
 /* EXT-05 Developer API area: one portal, one navigation. The sub-nav scrolls
    horizontally on a phone rather than wrapping into a wall of links. */
@@ -1067,7 +1109,7 @@ code.to-dam{font-weight:600;color:var(--text-primary)}
   margin:0 0 14px;padding:12px 14px;border:1px solid var(--border-subtle);
   border-radius:var(--radius-lg);background:var(--surface-base)}
 .dev-loc .dev-field{margin:0;flex:0 1 auto;min-width:150px}
-.dev-loc .dev-field.rong{flex:1 1 260px;min-width:200px}
+.dev-loc .dev-field.rong{flex:1 1 260px;min-width:min(200px,100%)}
 .dev-loc .dev-nut{display:flex;gap:8px;margin-left:auto}
 
 /* ── Trường và hàng trường ────────────────────────────────────────────────
