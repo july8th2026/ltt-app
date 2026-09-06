@@ -120,6 +120,47 @@ def dinh_that_db() -> float:
 #:
 #: ⛔ Va no KHONG lam ban giao nho di ve cam giac: LUFS tich hop van la -14, chi
 #:    co bien dinh la ha xuong. Am luong nghe duoc khong doi.
+#:
+#: ══════════════════════════════════════════════════════════════════════════
+#: 🔴 **06/09: nguon thu HAI da do, va 2,0 KHONG DU. Vot lo phu thuoc NOI DUNG.**
+#:
+#:    Cau canh bao ngay tren ("van la mot con so do tu MOT ban nguon") da den
+#:    han. Bon phep do, cung tran phoi -3,5, cung duong ma:
+#:
+#:        noi dung              phoi     giao    vot lo   T5
+#:        ─────────────────────────────────────────────────────
+#:        model GIA, giu hinh   -3,45   -3,27     0,18    dat
+#:        model GIA, cat        -3,45   -3,32     0,13    dat
+#:        model THAT, giu hinh  -3,43   -2,10     1,33    dat
+#:        model THAT, cat       -3,46   -0,68     2,78    HONG
+#:
+#: ⭐ **Cung mot muc phoi, vot lo tu 0,13 den 2,78 dB.** Nen bien du can bao
+#:    nhieu **khong phai mot thuoc tinh cua duong ong** — no la mot thuoc tinh
+#:    cua TIN HIEU di qua duong ong. Model that sinh ban dich khac, ban dich
+#:    khac sinh tieng doc khac, va tieng doc khac vot lo khac.
+#:
+#: ⛔ **Va no BAC loi giai thich ngay ben tren.** Doan tren quy bien thien cho
+#:    "limiter dang phai ep manh toi dau", do o -2,5 so voi -3,5. Nhung bon dong
+#:    tren **cung o -3,45**, tuc limiter ep nhu nhau, ma vot lo van lech 20 lan.
+#:    Loi giai thich do dung cho THI NGHIEM cua no va khong dung cho truong hop
+#:    chung.
+#:
+#: ⚠️ **Bo ma hoa da duoc DOI CHUNG va no vo can.** Lay chinh ban phoi that roi
+#:    ma hoa bang dung tham so san pham (`aac 192k`, 44,1->48 kHz): vot lo
+#:    **0,10 va 0,17 dB**. Chay lai khong doi tan so: y het. Nen khong phai AAC,
+#:    khong phai phep lay mau lai, va khong phai `render` doc nham dau vao
+#:    (input 1 dung la ban phoi — loi pha 22 khong tai phat).
+#:
+#: 🔑 **CHUA doi gia tri, va day la ly do.** Ta biet 2,0 khong du cho MOT ban
+#:    nguon, nhung chua biet **can bao nhieu** — vi chua biet cai gi trong tin
+#:    hieu quyet dinh vot lo. Nang len mot con so doan duoc se lam phep kiem
+#:    xanh va de nguyen cau hoi; ha xuong thi te hon nua. Dieu kien de doi: do
+#:    vot lo tren vai ban nguon THAT khac nhau, tim ra bien nao dieu khien no,
+#:    roi dat bien du theo bien do — khong theo lan hong to nhat da thay.
+#:
+#: ⭐ Duong do cho lan sau da san: mot luot hong nay giu lai ca ban phoi lan ban
+#:    giao (`test_448._giu_tang_vat`), nen cap tep can do khong con bien mat
+#:    cung thu muc tam nua.
 BIEN_CHO_CODEC_DB = 2.0
 
 
