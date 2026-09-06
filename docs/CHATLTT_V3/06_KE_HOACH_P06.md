@@ -86,17 +86,41 @@ to_tsvector('simple', ...) -> 'credit':17 'cộng':19 'dùng':12 'dưới':15
 ⭐ **`simple` tách từ tiếng Việt ĐÚNG** — tách theo khoảng trắng, hạ chữ thường,
 **giữ nguyên dấu**. Không cần từ điển.
 
-Khớp câu hỏi:
+Khớp câu hỏi (đo lại **sau khi cài `unaccent`** trên `lttplatform_test`):
 
-| Câu hỏi | Kết quả |
-|---|---|
-| `"phần lẻ credit"` (có dấu) | ✅ **KHỚP** |
-| `"cộng dồn lượt sau"` (có dấu) | ✅ **KHỚP** |
-| `"tinh tien theo token"` (**không dấu**) | ❌ **KHÔNG khớp** |
+| Câu hỏi | không `unaccent` | có `unaccent` |
+|---|---|---|
+| `"phần lẻ credit"` (có dấu) | ✅ KHỚP | ✅ KHỚP |
+| `"phan le credit"` (không dấu) | ❌ | ✅ **KHỚP** |
+| `"cong don luot sau"` | ❌ | ✅ **KHỚP** |
+| `"so token that su dung"` | ❌ | ✅ **KHỚP** |
+| `"tinh theo token"` | ❌ | ✅ **KHỚP** |
 
-🔴 **Dòng thứ ba là cái lỗ thật**, và nó là ca **thường gặp nhất**: người Việt gõ
-nhanh thì gõ không dấu. Một tính năng tìm kiếm không tìm được `"tinh tien"` là
-một tính năng phần lớn người dùng thấy là hỏng.
+🔴 **Bốn dòng giữa là cái lỗ thật**, và chúng là ca **thường gặp nhất**: người
+Việt gõ nhanh thì gõ không dấu. Một tìm kiếm không tìm được `"phan le credit"`
+là một tính năng phần lớn người dùng thấy là hỏng.
+
+### ⛔ Và ví dụ ĐẦU TIÊN tôi dùng ở đây là một ví dụ BẨN
+
+Bản đầu của mục này ghi `"tinh tien theo token"` → ❌, và kết luận *"không khớp
+**vì không dấu**"*. **Sai.** Đo lại:
+
+```
+"tinh tien theo token"   (khong dau)  ->  KHONG khop
+"tính tiền theo token"   (CO dau)     ->  KHONG khop     <- van truot!
+```
+
+Từ `"tiền"` **không có** trong văn bản mẫu. `plainto_tsquery` nối các từ bằng
+**AND**, nên **một** từ vắng mặt làm cả câu trượt — **giống hệt** triệu chứng
+thiếu dấu. Hai nguyên nhân, một triệu chứng.
+
+⭐ Thứ bác nó không phải một lần đọc lại, mà là **chạy phép kiểm trên máy chủ
+thật**: `test_821` đỏ đúng ở ca ấy và xanh ở bốn ca sạch. Nếu tôi chỉ chạy nó ở
+chế độ `skipped` — như lần đầu, vì thiếu `LTT_TEST_DATABASE_URL` — thì ví dụ bẩn
+đã nằm lại trong kế hoạch và trong docstring của migration.
+
+🔑 Đã ghim sự phân biệt ấy bằng `test_MOT_TU_VANG_MAT_truot_GIONG_HET_thieu_dau`,
+để nó là một phép kiểm chứ không phải một dòng ghi chú.
 
 ⇒ **`unaccent` là bắt buộc, không phải tuỳ chọn.** Nó **có sẵn** trên máy chủ
 nhưng **chưa cài**:
