@@ -82,6 +82,53 @@ sự cố — và tách suất phải kèm một phép đo mới, không phải 
 
 ---
 
+## 2b. `ltt_llm: ban` — máy B chỉ phục vụ MỘT lượt tại một thời điểm
+
+**Nhìn vào đâu**: `asv_stage.error` chứa `khong provider nao phuc vu duoc:
+ltt_llm: ban`, ở một trong ba giai đoạn khai `tai_nguyen="llm_remote"`
+(`edit_plan`, `content_process`, `qc_ai`). Và trong `nhat_ky_job` của báo cáo
+nghiệm thu: `HET NGAN SACH HOAN sau 90s (tai nguyen ban)`.
+
+**Kết luận được gì**
+
+🔑 `apps/ltt_llm/ngan_sach.py` khai thẳng: **`DONG_THOI_MAY_B = 1`**. Máy B chạy
+`llama-server --parallel 1` — và đó **không phải dè dặt**, nó là con số đúng:
+speculative decoding chỉ tối ưu ở một luồng.
+
+⇒ Bất cứ thứ gì khác đang dùng model nhà — một job của khách thật, một phiên
+khác đo đạc, một lượt `bench_llm_*` — **giữ trọn suất duy nhất đó**. Phần dôi ra
+ăn 429, và chính chú thích ở `ngan_sach.py` gọi tên: *"không phải lỗi của bên
+nào, là hai trần không biết nhau"*.
+
+⚠️ **`/health` và `/live` của cổng KHÔNG nói được điều này.** Cả hai trả 200 khi
+máy đang bận — `apps/ltt_llm/features.py:334` ghi rõ *"Ban (429) khong nhin thay
+o `/live`"*. Nên "cổng khoẻ" và "gọi được" là hai câu hỏi khác nhau, và chỉ câu
+thứ hai mới trả lời được bằng một lượt gọi thật.
+
+⛔ Và **đừng** dùng `tools/kiem_ltt_llm.py` để chẩn đoán: nó mang khiếm khuyết
+F-05 của `docs/audit_ltt_llm` — *"không bao giờ có thể xanh, và nó đỏ về phía
+báo động"* (gửi bí danh `ltt_llm` thay vì tên model thật). Nó sẽ khẳng định một
+sự cố không tồn tại.
+
+**Làm gì**
+
+1. **Đợi, rồi chạy lại.** Đây không phải sự cố. Một lượt nghiệm thu hỏng vì bận
+   tốn ~3 phút, không tốn 21 phút — rẻ để thử lại.
+2. Hỏi các phiên khác ai đang dùng model nhà. Trên máy này CPU thấp **không**
+   chứng minh gì: `ltt_llm` chạy ở **máy B (192.168.2.66)**, máy khác hẳn.
+3. Nếu cần chạy nghiệm thu ngay mà không cần model thật: `-ModelGia`. Báo cáo sẽ
+   **tự khai** phần nào là bản thay thế (`test_bao_cao_GHI_RO_thu_khong_that`),
+   nên nó vẫn là bằng chứng — chỉ là bằng chứng yếu hơn, và nó nói ra điều đó.
+
+🔴 **Lịch sử: 06/09 việc này làm hỏng ba lượt nghiệm thu liên tiếp**
+(09:14 · 09:20 · 09:30). Hai lượt đầu **không chờ một giây nào** vì `ai.py` bọc
+`KhongCoProviderNao` thành `AiError`, làm mất tín hiệu "bận" trước khi nền tảng
+kịp đọc. Đã vá — xem `apps/auto_scan_video/ai.py:_la_ban`. Từ nay một lượt bị
+chặn vì bận sẽ **chờ đủ 90 giây rồi nói thẳng ra**, thay vì chết câm và để lại
+chín dòng đỏ trông y hệt khiếm khuyết sản phẩm.
+
+---
+
 ## 3. Dispatch mơ hồ với provider
 
 **Nhìn vào đâu**
