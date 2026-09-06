@@ -119,6 +119,28 @@ def _dang_ky_may() -> dict:
 #: ⭐ Co tran, va tran la thu phan biet "cho mot suat vua nha" voi "treo mai".
 #:    90 giay du cho vai luot hoan 20 giay cua nen tang, va du ngan de mot lan
 #:    may B ban that su khong bien bai nghiem thu thanh mot cuoc doi vo han.
+#:
+#: ⚠️ **Day la ngan sach cua CA LUOT, khong phai cua tung job** — va do la mot
+#:    gioi han da do duoc, khong phai mot suy doan. Nhat ky luot 06/09 09:30:
+#:
+#:      content_process | hoan_s=20,0 | HOAN BanError: ltt_llm: ban   (x4)
+#:      content_process | hoan_s=10,0 | HOAN ...                      <- can
+#:      edit_plan       | hoan_s=None | HET NGAN SACH HOAN sau 90s
+#:
+#:    Mot giai doan tieu het ngan sach, va giai doan sau **hong ngay lap tuc**
+#:    du no chua duoc hoan lan nao.
+#:
+#: 🔴 Dieu do quan trong vi mot lan chay co **ba** giai doan khai
+#:    `tai_nguyen="llm_remote"` (`edit_plan`, `content_process`, `qc_ai`), va may
+#:    B chi phuc vu **mot** luot cung luc (`ngan_sach.DONG_THOI_MAY_B = 1`). Tuc
+#:    tranh chap o nhieu giai doan la truong hop THUONG, khong phai ngoai le —
+#:    va mot ngan sach chung khong song sot noi truong hop thuong do.
+#:
+#: ⛔ CHUA doi thanh ngan sach theo job, va co y de vay: doi no bay gio la
+#:    chinh mot con so cho mot phep kiem do chuyen sang xanh, trong khi nguyen
+#:    nhan that (may B ban) van nguyen. Doi khi co mot luot XANH lam moc so
+#:    sanh; truoc do, `_chan_tai_nguyen_ban` da lam cho thong bao noi dung su
+#:    that roi.
 NGAN_SACH_HOAN_S = 90.0
 
 
