@@ -1,0 +1,8 @@
+# Moc a11y (`axe-core`) — sinh boi `py tools\check_a11y.py --accept`.
+# Chot theo MA LUAT + so NUT vi pham, khong chot tong: mot moc tong co
+# cua hoan doi mot-doi-mot.
+#
+# ⛔ Chi chot `violations`. `incomplete` la 'axe khong tu ket luan duoc,
+#    can nguoi xem' — dem no nhu loi la bao cao sai.
+
+color-contrast = 32

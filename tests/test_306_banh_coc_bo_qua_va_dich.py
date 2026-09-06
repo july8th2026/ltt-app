@@ -980,3 +980,57 @@ def test_check_cve_KHONG_nam_trong_gate():
     assert "check_cve.py" in dl, (
         "cong cu khong nam trong gate VA khong duoc nhac o quy trinh deploy "
         "= mot cong cu khong ai chay")
+
+
+# ── 11. Banh coc a11y (`axe-core`, them 06/09/2026) ────────────────────────
+#
+# ⛔ Cum nay KHONG mo trinh duyet. `check_a11y.py` can mot may chu dang phuc vu
+#    VA mot phien playwright dang mo — goi no trong bo test la bien mot phep
+#    kiem thanh mot phep do phu thuoc moi truong. Ba phep kiem duoi day chot
+#    nhung menh de THUOC VE cong cu.
+
+
+def test_a11y_KHONG_nam_trong_gate_nhung_CO_trong_quy_trinh_deploy():
+    """Cung ly do voi `check_cve`: no can may chu + phien trinh duyet. Mot buoc
+    gate do vi THIEU PHIEN la mot buoc do vi ly do khong lien quan toi ma."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "gate_a11y", GOC / "tools" / "gate.py")
+    gate = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(gate)
+    for quick in (True, False):
+        for s in gate._steps(quick=quick):
+            assert not any("check_a11y" in str(x) for x in s.argv), (
+                f"`check_a11y.py` lot vao gate o buoc `{s.name}`")
+    dl = (GOC / "docs" / "16_CAP_NHAT_VA_DEPLOY.md").read_text(encoding="utf-8")
+    assert "check_a11y.py" in dl, "khong o gate VA khong o quy trinh = khong ai chay"
+
+
+def test_a11y_va_mobile_quet_do_HAI_THU_KHAC_NHAU():
+    """⭐ `axe` KHONG do tran ngang; `mobile_quet` KHONG do tuong phan mau.
+
+       Do 06/09 tren 4 route cong khai: axe tim ra **32 nut `color-contrast`**
+       — mot lop loi ma bo quet mobile khong he cham toi. Bo cai nao cung mat
+       mot lop, dung nhu `import-linter` vs `lint_app_contract`.
+    """
+    a11y = (GOC / "tools" / "check_a11y.py").read_text(encoding="utf-8")
+    mob = (GOC / "tools" / "mobile_quet.js").read_text(encoding="utf-8")
+    assert "mobile_quet" in a11y and "KHONG thay" in a11y, (
+        "`check_a11y.py` phai ghi ro no khong thay `mobile_quet.js`")
+    # Bo quet mobile van phai giu phan TRAN NGANG — thu axe khong do.
+    assert "tran" in mob or "scrollWidth" in mob, (
+        "`mobile_quet.js` mat phan do tran ngang — axe khong bu duoc cho do")
+
+
+def test_a11y_moc_chi_chot_violations_khong_chot_incomplete():
+    """⛔ `axe` tra ca `violations` lan `incomplete`. `incomplete` la 'axe khong
+       tu ket luan duoc, can nguoi xem' — dem no nhu loi la bao cao sai, dung
+       kieu bay ma `mobile_quet.js` da ghi cho `target_be`.
+    """
+    ma = (GOC / "tools" / "check_a11y.py").read_text(encoding="utf-8")
+    assert "chua_ro" in ma and "KHONG tinh vao moc" in ma
+    moc = GOC / "tools" / "check_a11y.moc"
+    assert moc.is_file(), "chua lap moc a11y"
+    ds = [d.split("=")[0].strip() for d in moc.read_text(encoding="utf-8").splitlines()
+          if d.strip() and not d.strip().startswith("#")]
+    assert ds, "moc a11y rong"
