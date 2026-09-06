@@ -95,13 +95,57 @@ danh sách xoá chỉ vì nó khớp tiền tố chuỗi `tests/test_71`.
 
 ---
 
-## D. Xung đột chưa gỡ được ở tầng P00
+## D. Xung đột B-1 — ĐÃ GỠ
 
-**B-1 — hai chương trình cùng nhắm một sản phẩm.**
+### P00-D-07 — V3 dừng phát triển; V2.1 là đường duy nhất đi tiếp
 
-Nhánh V3 vẫn có commit **hôm nay 06/09 lúc 09:50** (`e21faf6a`), trong khi pack
-V2.1 xếp đúng nhánh đó vào diện `DELETE_AT_P06`. V3 đã đóng 8/8 pha và đã tiêu
-tiền thật.
+**Chủ dự án chốt 2026-09-06:** *"V3 đã dừng phát triển, ta đang tập trung vào
+V2.1. Loại bỏ V3 sau khi V2.1 chính thức khởi động."*
 
-⇒ Không ai ngoài **chủ dự án** quyết được cái nào sống. P00 không tự quyết, và
-cũng không dừng: nó dựng xong nền V2.1 rồi ghi xung đột ra đây.
+Ba vế, đừng trộn chúng vào nhau:
+
+| Vế | Hiệu lực | Ghi ở đâu |
+|---|---|---|
+| **V3 dừng phát triển** | **ngay lập tức** | banner đầu `docs/VIDEO_AI/PROJECT_STATE.md` trên nhánh V3 |
+| **V2.1 là đường duy nhất** | ngay lập tức | chính sổ này |
+| **Loại bỏ V3** | **sau khi V2.1 chạy thật** | mục dưới |
+
+### "Sau khi V2.1 chính thức khởi động" nghĩa là ĐIỂM NÀO
+
+Câu chốt của chủ dự án khớp đúng `D-V2-009` của pack, nên lấy luôn mốc của pack
+làm định nghĩa vận hành — **không diễn giải rộng ra**:
+
+```
+P05 REAL LTT<->WanGP + R2 + cancel PASS
+        |
+P06 cutover  ->  luc nay moi loai bo V3
+```
+
+⛔ **Không** loại bỏ ở P01/P02 chỉ vì WanGP đã tự chạy được. `D-V2-009` tồn tại
+đúng để chặn cách đọc đó: engine chạy được **chưa** chứng minh auth/R2/cancel/hợp
+đồng job của LTT chạy thật.
+
+⛔ Và "loại bỏ" ở kho này **không phải một lượt `git rm`** — xem `P00-D-03`:
+runtime V3 chưa bao giờ lên trunk. Loại bỏ = không merge + tag phục hồi
+`video-legacy-final-pre-wangp` (tạo ở P03) + quét lại chứng minh vẫn 0.
+
+### 🔴 Việc KHÔNG chờ tới P06 được: tiền cloud
+
+V3 dừng, nhưng **tài nguyên của nó vẫn tính tiền**:
+
+| Tài nguyên | Tiền | Dừng phát triển có làm nó ngừng tính tiền không |
+|---|---|---|
+| Volume `uizchbiet5`, 300 GB | **~$21/tháng** | ❌ **không** — tính tiền theo dung lượng, không theo việc dùng |
+| Endpoint `uwzftpd3utftfn` | ~$0 khi rảnh (`workersMin=0`) | ✅ có |
+
+Từ nay tới P06 là **nhiều tuần**. Giữ nguyên volume = trả tiền cho 170,51 GB
+model của một chương trình đã dừng.
+
+Nhưng **đừng vội xoá**, vì ba lý do đo được:
+① volume **thu nhỏ được thì không** — xoá là mất hẳn, tải lại mất 62,8 phút;
+② P01/P02 chưa biết WanGP cần model nào — có thể trùng một phần với 8 tệp đã có;
+③ số dư RunPod về $0 ⇒ RunPod **tự xoá volume**, không khôi phục được, nên
+"để đó cho rẻ" cũng có mặt trái.
+
+⇒ **Chốt việc này ở P01**, khi đã biết BOM model của WanGP — không sớm hơn, và
+không muộn hơn. Ghi thành `exact_next_action` phụ của P01.

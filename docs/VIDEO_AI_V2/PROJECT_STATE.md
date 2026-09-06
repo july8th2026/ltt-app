@@ -29,8 +29,9 @@
   `api_exposed=False`
 - **b_lan:** **UNTOUCHED** (D-V2-008) — P00 không đọc, không ghi, không ping máy B
 - **legacy_runtime_source:** **PRESENT — nhưng KHÔNG nằm trên trunk.**
-  Toàn bộ runtime V3 sống trên nhánh `claude/ltt-video-ai-v3-p00-3f5713`.
-  Chi tiết + bằng chứng: `LEGACY_INVENTORY.md`.
+  Toàn bộ runtime V3 sống trên nhánh `claude/ltt-video-ai-v3-p00-3f5713`, và
+  nhánh đó **đã dừng phát triển 06/09** (`P00-D-07`). Loại bỏ ở **P06**, sau khi
+  P05 PASS. Chi tiết + bằng chứng: `LEGACY_INVENTORY.md`.
 - **legacy_restore_ref:** *(chưa tạo — P03 tạo `video-legacy-final-pre-wangp`)*
 - **integration_transport:** **OPEN** (`O-001`: MCP trực tiếp vs cầu HTTP mỏng)
   — chốt sau bằng chứng P02
@@ -48,6 +49,9 @@
 - **decisions:** `DECISIONS.md`
 - **exact_next_action:** **P01** — `P01_PIN_VANILLA_WanGP_C_CLOUD_POC.md`,
   trong **chat mới**, từ worktree này.
+  ➕ **Việc phụ bắt buộc của P01:** chốt giữ hay bỏ volume RunPod `uizchbiet5`
+  (~$21/tháng, của V3 đã dừng) — quyết được ngay khi biết BOM model của WanGP.
+  Xem `DECISIONS.md` `P00-D-07`.
 
 ## Cloud — tài nguyên trả tiền đang sống (thừa kế từ V3)
 
@@ -124,13 +128,19 @@ cd D:\LTTSTUDIOSAPP && python -m pytest tests\test_306_banh_coc_bo_qua_va_dich.p
 
 | # | Nội dung | Ai gỡ |
 |---|---|---|
-| **B-1** | **Hai chương trình cùng nhắm một sản phẩm.** Nhánh V3 `claude/ltt-video-ai-v3-p00-3f5713` vẫn có commit **hôm nay 06/09 09:50** (`e21faf6a`). Pack V2.1 xếp đúng nhánh đó vào diện `DELETE_AT_P06`. Nếu V3 tiếp tục được xây thì công sức đó sẽ bị xoá ở P06. | **Chủ dự án** — dừng V3 hay dừng V2.1 |
+| ~~**B-1**~~ | ✅ **ĐÃ GỠ 06/09.** Chủ dự án chốt: **V3 dừng phát triển**, V2.1 là đường duy nhất, **loại bỏ V3 sau khi V2.1 chạy thật** (= P06, sau P05 PASS — xem `P00-D-07`). | — |
 | **B-2** | `O-001` chưa chốt: MCP trực tiếp vs cầu HTTP mỏng. Không chặn P01. | Bằng chứng P02 |
 | **B-3** | Chưa có tài khoản/hạ tầng **C-CLOUD** cho WanGP trong tay. P01 cần biết nhà cung cấp + GPU + vùng. | P01 preflight |
 | **B-4** | **Trunk đang đỏ 3/26 bước gate** vì việc đang dở của phiên khác (chỗ `skip` mới chưa `--accept`, +2 chỗ nuốt lỗi). Không chặn P00; **chặn P01 báo xong**, vì P01 có sửa mã nên cần `RESULT: PASS` thật. | phiên đang làm trên `admin-mvp-v3` |
 
-🔴 **B-1 là thứ đắt nhất.** V3 đã đóng 8/8 pha và tiêu tiền thật; V2.1 tuyên bố
-nó là legacy. Không ai ngoài chủ dự án quyết được cái nào sống.
+🔴 **Việc còn lại của B-1 không phải kỹ thuật mà là tiền.** V3 dừng rồi, nhưng
+volume `uizchbiet5` **vẫn tính ~$21/tháng** vì nó tính theo dung lượng chứ không
+theo việc dùng — dừng phát triển không làm nó ngừng. Từ nay tới P06 là nhiều
+tuần.
+
+⇒ **Chốt giữ hay bỏ volume ở P01**, khi đã biết BOM model của WanGP. Sớm hơn thì
+chưa đủ dữ liệu; muộn hơn là trả tiền cho một quyết định đã trì hoãn. Ba ràng
+buộc + lý do ở `DECISIONS.md` `P00-D-07`.
 
 ## Ghi chú vận hành cho phiên sau
 
