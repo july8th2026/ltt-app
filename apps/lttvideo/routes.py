@@ -26,7 +26,6 @@ from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from platform_core.i18n import _ as _t
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.auth.session import require_login
-from server.deps import user_hien_tai
 from server.templating import templates
 
 from . import cost, kha_nang
