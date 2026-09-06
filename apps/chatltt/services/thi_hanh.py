@@ -100,7 +100,13 @@ _SO_HANDLER: dict = {}
 
 
 def dang_ky(ten: str) -> Callable:
-    """Trang trí một handler nội bộ. Chữ ký: `(db, user_id, doi_so) -> Any`."""
+    """Trang trí một handler nội bộ. Chữ ký: `(db, user_id, doi_so, boi_canh)`.
+
+    ⚠️ Tham số thứ tư thêm 06/09 (H44 P06 bước 6). Nó mang thứ **người gọi**
+       biết mà model không được đặt — hôm nay là `conversation_id`. Handler nào
+       không cần thì đặt tên `_boi_canh` và bỏ qua; handler nào cần thì **ném**
+       khi thiếu, chứ đừng lặng lẽ bỏ mất phạm vi.
+    """
     def bao(f):
         _SO_HANDLER[str(ten)] = f
         return f
@@ -135,12 +141,27 @@ def da_cai(ten: str) -> bool:
 
 def thi_hanh(db, *, user_id: str, ten: str, doi_so: dict,
              schema: Optional[dict] = None,
-             cho_chay_co_phi: bool = False) -> KetQua:
+             cho_chay_co_phi: bool = False,
+             boi_canh: Optional[dict] = None) -> KetQua:
     """Chạy một lời gọi tool. **Luôn** trả `KetQua`, không bao giờ ném.
 
     `schema` là `parameters` của chính mục `tools` đã chiếu cho model — không
     phải `ToolSpec` thô. Model được cho cái gì thì bị kiểm theo cái đó; kiểm
     theo một hợp đồng khác với hợp đồng đã đưa là bắt lỗi model vì lỗi của ta.
+
+    ## `boi_canh` — thứ NGƯỜI GỌI biết mà model KHÔNG được đặt (H44 P06 bước 6)
+
+    Thêm 06/09 cho `noi_bo.tim_tai_lieu`: một tool tìm trong tài liệu của **hội
+    thoại hiện tại** cần biết hội thoại nào, và đó là một **ranh giới phạm vi**.
+
+    ⛔ Lối tưởng dễ — để model tự truyền `conversation_id` trong `doi_so` — sai
+       theo thiết kế: một tham số **do model kiểm soát** không thể là ranh giới
+       phạm vi. Model đọc được id hội thoại khác từ chính lịch sử trò chuyện, và
+       khi ấy tool trở thành đường đọc chéo hội thoại.
+
+    ⇒ `boi_canh` do **người gọi** (`bo_chay_tool`) đặt, không đi qua schema, nên
+      model không nhìn thấy lẫn không sửa được. Handler nào cần thì đọc, và
+      **ném** khi thiếu — fail-closed, không im lặng tìm toàn tài khoản.
     """
     ten = str(ten or "")
     lop = chieu_tool.lop_chinh_sach(ten)
@@ -171,7 +192,9 @@ def thi_hanh(db, *, user_id: str, ten: str, doi_so: dict,
         return KetQua(False, ma_loi=LOI_CHUA_CAI, lop=lop,
                       thong_diep=f"tool {ten!r} chua co handler noi bo.")
     try:
-        return KetQua(True, noi_dung=ham(db, user_id, dict(doi_so or {})), lop=lop)
+        return KetQua(True, lop=lop,
+                      noi_dung=ham(db, user_id, dict(doi_so or {}),
+                                   dict(boi_canh or {})))
     except Exception as e:                                      # noqa: BLE001
         # ⛔ Bắt rộng CÓ CHỦ Ý. Một handler ném là dữ liệu để model đọc, không
         #    phải sự cố để cả run chết. Nhưng KHÔNG nuốt: kiểu ngoại lệ đi vào

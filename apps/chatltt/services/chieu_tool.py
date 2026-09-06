@@ -57,6 +57,15 @@ LOP_CUA: dict = {
     # nâng lớp cho mình bằng cách khai trong tệp của chính nó.
     "noi_bo.thoi_gian": READ_ONLY,
     "noi_bo.tinh": READ_ONLY,
+    # ⚠️ Thêm 06/09 (P06 bước 6). READ_ONLY vì **trích đã thu tiền một lần**
+    #    (`chatltt.trich_tep`); tìm trong đoạn đã trích là một truy vấn CSDL
+    #    trên dữ liệu của chính người hỏi. Bắt duyệt lần nữa là tính tiền hai
+    #    lần cho một việc.
+    #
+    # 🔴 Quên dòng này thì `lop_chinh_sach()` trả **DESTRUCTIVE** — mặc định
+    #    chặt nhất, fail-closed đúng thiết kế. Tôi đã quên nó thật, và bánh cóc
+    #    `test_808::test_lop_khai_o_chieu_tool_khop_voi_tool_noi_bo` bắt được.
+    "noi_bo.tim_tai_lieu": READ_ONLY,
 }
 
 #: Năng lực MODEL được phép tự gọi. Hẹp hơn `chinh_sach.CONG_CU_CHO_PHEP`.
@@ -74,7 +83,16 @@ LOP_CUA: dict = {
 #:    nào khai nó (đo 05/09, `05_E2_ANH_TIENG_THANH_TOOL.md` §1). Mời một tool
 #:    nền tảng không làm được là bảo đảm model sẽ gọi nó — P01 đo 98,8 % chọn
 #:    đúng tool **trong số được mời**.
+#: ⚠️ `noi_bo.tim_tai_lieu` thêm 06/09 — **bước 6 và là bước CUỐI** của P06.
+#:    Năm bước trước không mở một cửa nào; đây là dòng duy nhất đổi hành vi
+#:    người dùng thấy, và nó đứng sau cùng đúng theo §4 của kế hoạch.
+#:
+#: ⭐ Nó READ_ONLY nên **không** cần vào `chinh_sach.CONG_CU_CHO_PHEP`: cổng ba
+#:    là thứ ChatLTT **mời người dùng bấm**, cổng bốn là thứ **model tự gọi**.
+#:    Tìm trong tài liệu của chính mình không phải một nút để bấm — cùng chỗ
+#:    đứng với `noi_bo.tinh`.
 CHO_MODEL_GOI: tuple = ("noi_bo.thoi_gian", "noi_bo.tinh",
+                        "noi_bo.tim_tai_lieu",
                         "image.ltt", "speech.ltt")
 
 

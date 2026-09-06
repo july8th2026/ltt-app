@@ -86,7 +86,7 @@ def _mo_cong(monkeypatch):
     monkeypatch.setitem(C.LOP_CUA, THU_CO_PHI, C.PAID)
     da_chay = []
     monkeypatch.setitem(T._SO_HANDLER, THU_CO_PHI,
-                        lambda db, uid, ds: (da_chay.append(ds),
+                        lambda db, uid, ds, bc=None: (da_chay.append(ds),
                                              {"url": f"anh/{ds.get('so_luong', 1)}.png"})[1])
     return da_chay
 

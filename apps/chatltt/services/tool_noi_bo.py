@@ -36,6 +36,7 @@ from apps.chatltt.services import thi_hanh
 
 TEN_THOI_GIAN = "noi_bo.thoi_gian"
 TEN_TINH = "noi_bo.tinh"
+TEN_TIM_TAI_LIEU = "noi_bo.tim_tai_lieu"
 
 #: Múi giờ được phép hỏi. Danh sách ĐÓNG, không nhận offset tuỳ ý — một enum
 #: hẹp là thứ `_kiem_schema` cưỡng chế được, còn "+07:00" thì phải tự phân tích.
@@ -107,7 +108,7 @@ def tinh_bieu_thuc(bt: str) -> float:
 # ── Handler ────────────────────────────────────────────────────────────────
 
 @thi_hanh.dang_ky(TEN_THOI_GIAN)
-def _h_thoi_gian(db, user_id, doi_so):        # noqa: ARG001 — chữ ký cố định
+def _h_thoi_gian(db, user_id, doi_so, _boi_canh=None):   # noqa: ARG001
     ten = str(doi_so.get("mui_gio") or "vn").lower()
     lech = MUI_GIO.get(ten)
     if lech is None:
@@ -120,9 +121,49 @@ def _h_thoi_gian(db, user_id, doi_so):        # noqa: ARG001 — chữ ký cố 
 
 
 @thi_hanh.dang_ky(TEN_TINH)
-def _h_tinh(db, user_id, doi_so):             # noqa: ARG001
+def _h_tinh(db, user_id, doi_so, _boi_canh=None):        # noqa: ARG001
     bt = str(doi_so.get("bieu_thuc") or "")
     return {"bieu_thuc": bt, "ket_qua": tinh_bieu_thuc(bt)}
+
+
+class ThieuPhamVi(RuntimeError):
+    """Thiếu `conversation_id` trong bối cảnh ⇒ KHÔNG tìm. Fail-closed."""
+
+
+@thi_hanh.dang_ky(TEN_TIM_TAI_LIEU)
+def _h_tim_tai_lieu(db, user_id, doi_so, boi_canh=None):
+    """Tìm trong tài liệu người dùng đã đính vào **hội thoại này**. (P06 bước 6)
+
+    ## 🔴 Phạm vi đến từ BỐI CẢNH, không từ đối số
+
+    `conversation_id` **không** nằm trong schema gửi cho model, nên model không
+    nhìn thấy lẫn không đặt được. Nếu nó là một đối số, model đọc được id hội
+    thoại khác từ chính lịch sử trò chuyện và tool thành đường đọc chéo.
+
+    ⛔ Thiếu bối cảnh thì **ném**, không tìm toàn tài khoản. Một tool mất phạm
+       vi mà vẫn trả kết quả là một rò rỉ trông như một tính năng.
+
+    ## Vì sao READ_ONLY dù tài liệu là thứ đã trả tiền
+
+    Trích đã thu tiền một lần (`chatltt.trich_tep`). Tìm trong đoạn đã trích chỉ
+    là một truy vấn CSDL trên dữ liệu của chính người hỏi — thu lần hai cho cùng
+    một tài liệu là tính tiền hai lần cho một việc.
+    """
+    from apps.chatltt.services import tim_doan
+
+    conv = str((boi_canh or {}).get("conversation_id") or "")
+    if not conv:
+        raise ThieuPhamVi(
+            "thieu pham vi hoi thoai — khong tim de tranh doc cheo hoi thoai")
+    hoi = str(doi_so.get("cau_hoi") or "").strip()
+    if not hoi:
+        raise BieuThucSai("`cau_hoi` khong duoc rong")
+    try:
+        so = int(doi_so.get("so_doan") or tim_doan.SO_DOAN_MAC_DINH)
+    except (TypeError, ValueError):
+        so = tim_doan.SO_DOAN_MAC_DINH
+    return tim_doan.cho_tool(db, user_id=str(user_id), conversation_id=conv,
+                             cau_hoi=hoi, so_doan=so)
 
 
 # ── Khối `tools` gửi cho model ─────────────────────────────────────────────
@@ -150,10 +191,25 @@ KHOI: tuple = (
         "parameters": {"type": "object",
                        "properties": {"bieu_thuc": {"type": "string"}},
                        "required": ["bieu_thuc"]}}},
+    {"type": "function", "function": {
+        "name": TEN_TIM_TAI_LIEU,
+        # ⭐ Cau quan trong nhat la cau noi KHI NAO dung, khong phai cau noi no
+        #    lam gi — P01 nhom N3 do duoc model chon tool rat sat mo ta.
+        "description": ("Tim trong cac tai lieu nguoi dung da dinh vao hoi "
+                        "thoai NAY. Dung MOI KHI cau hoi nhac den 'tai lieu', "
+                        "'file', 'ban bao cao', 'hop dong' da gui, hoac hoi mot "
+                        "chi tiet ma ban khong the biet neu khong doc tai lieu "
+                        "cua ho. Ket qua kem so trang de ban TRICH DAN lai."),
+        "parameters": {"type": "object",
+                       "properties": {
+                           "cau_hoi": {"type": "string"},
+                           "so_doan": {"type": "integer"}},
+                       "required": ["cau_hoi"]}}},
 )
 
 #: Tên → lớp chính sách, để `chieu_tool.LOP_CUA` nạp vào.
-LOP: dict = {TEN_THOI_GIAN: "READ_ONLY", TEN_TINH: "READ_ONLY"}
+LOP: dict = {TEN_THOI_GIAN: "READ_ONLY", TEN_TINH: "READ_ONLY",
+             TEN_TIM_TAI_LIEU: "READ_ONLY"}
 
 
 def khoi_cho(user_id: str = "") -> list:      # noqa: ARG001 — chỗ móc về sau

@@ -26,10 +26,10 @@ def cho_calc(monkeypatch):
     monkeypatch.setitem(C.LOP_CUA, "no_thu", C.READ_ONLY)
     monkeypatch.setitem(C.LOP_CUA, "co_phi_thu", C.PAID)
     monkeypatch.setitem(T._SO_HANDLER, "calc_thu",
-                        lambda db, u, ds: {"ket_qua": 36317933})
+                        lambda db, u, ds, bc=None: {"ket_qua": 36317933})
     monkeypatch.setitem(T._SO_HANDLER, "no_thu",
-                        lambda db, u, ds: (_ for _ in ()).throw(ZeroDivisionError("chia 0")))
-    monkeypatch.setitem(T._SO_HANDLER, "co_phi_thu", lambda db, u, ds: "khong duoc chay")
+                        lambda db, u, ds, bc=None: (_ for _ in ()).throw(ZeroDivisionError("chia 0")))
+    monkeypatch.setitem(T._SO_HANDLER, "co_phi_thu", lambda db, u, ds, bc=None: "khong duoc chay")
     yield
 
 
@@ -109,7 +109,7 @@ def test_khong_co_schema_thi_khong_kiem(cho_calc):
 def test_ket_qua_dai_bi_cat_VA_NOI_RA(monkeypatch, cho_calc):
     """⛔ `CLAUDE.md`: không cắt xén âm thầm. Cắt lặng lẽ thì model kết luận
     trên dữ liệu thiếu mà tưởng là đủ."""
-    monkeypatch.setitem(T._SO_HANDLER, "calc_thu", lambda db, u, ds: "x" * 50_000)
+    monkeypatch.setitem(T._SO_HANDLER, "calc_thu", lambda db, u, ds, bc=None: "x" * 50_000)
     kq = T.thi_hanh(None, user_id="u1", ten="calc_thu",
                     doi_so={"expression": "1"}, schema=SCHEMA)
     chu = kq.cho_model()
@@ -142,7 +142,7 @@ def test_tom_tat_ngan_va_mot_dong(monkeypatch, cho_calc):
     """
     dai = "d" * 500
     monkeypatch.setitem(T._SO_HANDLER, "calc_thu",
-                        lambda db, u, ds: dai + "\n" + dai)
+                        lambda db, u, ds, bc=None: dai + "\n" + dai)
     kq = T.thi_hanh(None, user_id="u1", ten="calc_thu",
                     doi_so={"expression": "1"}, schema=SCHEMA)
     t = kq.tom_tat()

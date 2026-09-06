@@ -102,7 +102,8 @@ def chay_run(db, *, ex, tra_loi, so, params: dict, user_id: str,
     chay_tool = bo_chay_tool.tao(
         db, user_id=user_id, run_id=run_row.id, khoi_tools=khoi_tools,
         bao_gia=_bao_gia(db, user_id=user_id, conv_id=ex.conversation_id),
-        cho_chay_co_phi=co_v3.tool_co_phi_bat)
+        cho_chay_co_phi=co_v3.tool_co_phi_bat,
+        conv_id=ex.conversation_id)
 
     run = DP.chay(messages=params.get("messages") or [], tools=khoi_tools,
                   goi_model=goi_model, chay_tool=chay_tool,
@@ -176,7 +177,8 @@ def tiep_sau_duyet(db, *, run_id: str, user_id: str, so) -> DP.Run:
     chay_tool = bo_chay_tool.tao(
         db, user_id=user_id, run_id=run_row.id, khoi_tools=khoi_tools,
         bao_gia=_bao_gia(db, user_id=user_id, conv_id=run_row.conversation_id),
-        cho_chay_co_phi=co_v3.tool_co_phi_bat)
+        cho_chay_co_phi=co_v3.tool_co_phi_bat,
+        conv_id=run_row.conversation_id)
 
     run = DP.tiep_tuc(run, ket_qua_duyet=kq, goi_model=goi_model,
                       chay_tool=chay_tool, phat=so.phat,
