@@ -1,0 +1,63 @@
+# Advisory DA DUOC XET. Dinh dang:  <MA> | <goi> | <ly do>
+#
+# [!] Mot dong o day KHONG co nghia la "da sua". No co nghia la "da doc, da can
+#     nhac, va chap nhan trong hien tai". `check_cve.py` TU CHOI chay neu mot
+#     dong thieu ly do -- mot danh sach mien tru khong ly do la mot danh sach
+#     se dai ra ma khong ai nho vi sao.
+#
+# TRANG THAI DO DUOC 06/09/2026
+#
+# Co HAI con so, va chung khac nhau. Dung lan:
+#
+#   1. Quet SPEC (`-r requirements*.txt`) -- thu mot lan cai MOI se nhan.
+#      Do la thu cong cu nay chot, vi no tai hien duoc tu kho tren may bat ky.
+#
+#   2. Quet VENV SAN PHAM -- rui ro DANG CHAY. Chi lam duoc tren may chu:
+#
+#        C:/LTTPlatform/venv/Scripts/python.exe -m pip freeze > <tep>
+#        python -m pip_audit --no-deps -r <tep>
+#
+#      (`--no-deps` la bat buoc: mot freeze co `torch==...+cu128` khong giai
+#      duoc tren PyPI, va thieu co nay pip-audit chet truoc khi kiem gi.)
+#
+#      Do 06/09 tren venv san pham:
+#
+#        pillow        11.3.0    25 advisory    ban va 12.1.1+
+#        cryptography  46.0.7     6 advisory    ban va 48.0.1+
+#        setuptools    78.1.0     4 advisory    ban va 78.1.1   <- KHONG bi tran chan
+#        click          8.2.1     1 advisory    ban va 8.3.3
+#        sqladmin      0.20.1     1 advisory    ban va 0.25.1
+#
+# [!] BA VIEC CON NO CHU DU AN -- khong phai viec cong cu nay tu lam, vi ca ba
+#     deu la NANG PHU THUOC SAN PHAM tren mot may dang chay that:
+#
+#       pillow       25 advisory, va no nam tren duong xu ly ANH NGUOI DUNG
+#                    TAI LEN. Uu tien cao nhat trong ba.
+#       cryptography  6 advisory, thu vien ma hoa token.
+#       setuptools    4 advisory, ban va la 78.1.0 -> 78.1.1: VA VAT, khong bi
+#                    tran nao chan. Re nhat de dong.
+
+GHSA-537c-gmf6-5ccf | cryptography | tran `<47` chan ban va (doi 48-50). Da ghi tu truoc o requirements.txt:17 -> QUYET DINH RIENG
+PYSEC-2026-165 | pillow | tran `<12` chan ban va (doi 12.1.1+). Nang major = doi hanh vi decode anh -> QUYET DINH RIENG
+PYSEC-2026-2132 | click | ban va 8.3.3; chi anh huong CLI noi bo, khong nam tren duong request cua khach
+PYSEC-2026-2249 | pillow | tran `<12` chan ban va (doi 12.1.1+) -> QUYET DINH RIENG
+PYSEC-2026-2250 | pillow | tran `<12` chan ban va (doi 12.1.1+) -> QUYET DINH RIENG
+PYSEC-2026-2251 | pillow | tran `<12` chan ban va (doi 12.1.1+) -> QUYET DINH RIENG
+PYSEC-2026-2252 | pillow | tran `<12` chan ban va (doi 12.1.1+) -> QUYET DINH RIENG
+PYSEC-2026-2253 | pillow | tran `<12` chan ban va (doi 12.1.1+) -> QUYET DINH RIENG
+PYSEC-2026-2254 | pillow | tran `<12` chan ban va (doi 12.1.1+) -> QUYET DINH RIENG
+PYSEC-2026-2255 | pillow | tran `<12` chan ban va (doi 12.1.1+) -> QUYET DINH RIENG
+PYSEC-2026-2256 | pillow | tran `<12` chan ban va (doi 12.1.1+) -> QUYET DINH RIENG
+PYSEC-2026-2257 | pillow | tran `<12` chan ban va (doi 12.1.1+) -> QUYET DINH RIENG
+PYSEC-2026-2874 | pillow | tran `<12` chan ban va (doi 12.1.1+) -> QUYET DINH RIENG
+PYSEC-2026-3073 | sqladmin | ban va 0.25.1 vuot tran `<0.21`; man admin chi Admin dang nhap moi vao -> QUYET DINH RIENG
+PYSEC-2026-3451 | pillow | tran `<12` chan ban va (doi 12.1.1+) -> QUYET DINH RIENG
+PYSEC-2026-3453 | pillow | tran `<12` chan ban va (doi 12.1.1+) -> QUYET DINH RIENG
+PYSEC-2026-3454 | pillow | tran `<12` chan ban va (doi 12.1.1+) -> QUYET DINH RIENG
+PYSEC-2026-3493 | pillow | tran `<12` chan ban va (doi 12.1.1+) -> QUYET DINH RIENG
+PYSEC-2026-3494 | pillow | tran `<12` chan ban va (doi 12.1.1+) -> QUYET DINH RIENG
+PYSEC-2026-3495 | pillow | tran `<12` chan ban va (doi 12.1.1+) -> QUYET DINH RIENG
+PYSEC-2026-3496 | pillow | tran `<12` chan ban va (doi 12.1.1+) -> QUYET DINH RIENG
+PYSEC-2026-3552 | cryptography | tran `<47` chan ban va (doi 48-50) -> QUYET DINH RIENG
+PYSEC-2026-3553 | cryptography | tran `<47` chan ban va (doi 48-50) -> QUYET DINH RIENG
+PYSEC-2026-3554 | cryptography | tran `<47` chan ban va (doi 48-50) -> QUYET DINH RIENG

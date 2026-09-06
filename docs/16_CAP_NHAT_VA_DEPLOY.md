@@ -62,6 +62,30 @@ python tools/gate.py               # TRƯỚC khi báo xong / deploy
 
 ⭐ Trước khi deploy: `git status --porcelain` phải **rỗng**, rồi mới chạy gate.
 
+### 2b. CVE trong phụ thuộc — chạy **trước deploy**, không chạy trong gate
+
+```bash
+python tools/check_cve.py
+```
+
+⛔ **Cố tình KHÔNG để trong `gate.py`.** Đo 06/09: **49 giây** và nó hỏi PyPI/OSV
+qua mạng. Một bước gate đỏ vì **mất mạng** là một bước đỏ vì lý do không liên
+quan tới mã — và đó chính là thứ dạy người ta bỏ qua màu đỏ (**Bẫy 26**).
+CVE xuất hiện theo **thời gian**, không theo commit, nên hỏi một lần trước khi
+giao hàng là đúng nhịp.
+
+⚠️ **Hai con số khác nhau, đừng lứa lẫn.** Công cụ quét **spec** (`requirements*.txt`)
+— tức *một lần cài mới sẽ nhận gì*. Muốn biết rủi ro **đang chạy** thì phải
+quét venv sản phẩm:
+
+```bash
+C:/LTTPlatform/venv/Scripts/python.exe -m pip freeze > %TEMP%/prod.txt
+python -m pip_audit --no-deps -r %TEMP%/prod.txt
+```
+
+`--no-deps` là **bắt buộc**: freeze có `torch==...+cu128` không giải được trên
+PyPI, thiếu cờ này `pip-audit` chết trước khi kiểm gì.
+
 ---
 
 ## 3. Đưa lên trunk
