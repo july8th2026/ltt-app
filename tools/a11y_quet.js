@@ -95,6 +95,34 @@ async (page) => {
         m.chua_ro = kq.chua_ro;
         m.so_vi_pham = kq.vi_pham.reduce((a, b) => a + b.so, 0);
         m.so_luat = kq.vi_pham.length;
+
+        // (3) `prefers-reduced-motion` — `axe` KHONG do cai nay.
+        //
+        // ⭐ Do 07/09 tren `/`: 26 transition > 50ms o che do `no-preference`,
+        //    va **0** o che do `reduce`. Tuc luat trong `ltt.css` co hieu luc
+        //    that. Nhung khong co gi chot dieu do, nen no troi duoc bat cu luc
+        //    nao — do la ly do phep do nay nam o day.
+        //
+        // ⛔ Doc CA HAI che do. Chi doc `reduce` roi thay 0 thi khong phan biet
+        //    duoc "luat co hieu luc" voi "trang nay von khong co chuyen dong
+        //    nao" — mot so 0 khong doi chung khong phai mot phat hien.
+        const dem_dong = async () => page.evaluate(() => {
+          let anim = 0, vo_han = 0, chuyen = 0;
+          for (const el of document.querySelectorAll('*')) {
+            const s = getComputedStyle(el);
+            if ((parseFloat(s.animationDuration) || 0) > 0.05) anim++;
+            if (s.animationIterationCount === 'infinite') vo_han++;
+            if ((parseFloat(s.transitionDuration) || 0) > 0.05) chuyen++;
+          }
+          return { anim, vo_han, chuyen };
+        });
+        await page.emulateMedia({ reducedMotion: 'no-preference' });
+        await page.waitForTimeout(120);
+        m.rm_thuong = await dem_dong();
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await page.waitForTimeout(120);
+        m.rm_giam = await dem_dong();
+        await page.emulateMedia({ reducedMotion: 'no-preference' });
       } catch (e) {
         m.LOI = String(e).slice(0, 200);
       }

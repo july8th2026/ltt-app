@@ -4,5 +4,10 @@
 #
 # ⛔ Chi chot `violations`. `incomplete` la 'axe khong tu ket luan duoc,
 #    can nguoi xem' — dem no nhu loi la bao cao sai.
+#
+# ⛔ PHAM VI duoi day la MOT PHAN cua moc. Quet it route/khung hon se cho
+#    ra so NHO hon, va no doc y het mot cai thien — cong cu TU CHOI so
+#    khi pham vi khac.
+# PHAM VI: routes=/,/bang-gia,/dang-ky,/login khung=d1280,p390
 
 color-contrast = 32

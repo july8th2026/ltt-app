@@ -118,6 +118,39 @@ def quet(goc: str, routes, khung, cookie: str = "", phien: str = "a11y") -> dict
     return json.loads(json.loads(out))
 
 
+def soi_reduced_motion(kq: dict) -> list[str]:
+    """Loi `prefers-reduced-motion`. Rong = dat.
+
+    ⛔ CONG TUYET DOI, khong phai banh coc — vi no dang o 0. Mot banh coc chi
+       hop ly khi da co no ton dong; chot mot con so 0 bang mot moc la moi
+       nguoi mot ngay se nang moc len 1.
+
+    ⭐ Va phai doc CA HAI che do. Do 07/09 tren `/`: 26 transition > 50ms o
+       `no-preference`, **0** o `reduce`. Neu chi doc `reduce` thay 0 thi khong
+       phan biet duoc "luat co hieu luc" voi "trang nay von khong co chuyen
+       dong nao" — mot so 0 khong doi chung khong phai mot phat hien
+       (`BAY_TRONG_CONG_CHAT_LUONG.md` Bay 24).
+    """
+    loi: list[str] = []
+    for khoa, m in sorted(kq.items()):
+        if m.get("CHUA_DANG_NHAP") or m.get("LOI"):
+            continue
+        thuong, giam = m.get("rm_thuong"), m.get("rm_giam")
+        if not thuong or not giam:
+            continue
+        if giam["chuyen"] or giam["anim"] or giam["vo_han"]:
+            loi.append(
+                f"{khoa}: che do `reduce` VAN con chuyen dong — "
+                f"transition={giam['chuyen']} animation={giam['anim']} "
+                f"vo_han={giam['vo_han']}")
+        elif not (thuong["chuyen"] or thuong["anim"]):
+            # Khong phai loi, nhung phai noi: phep do nay khong chung minh gi
+            # tren mot trang von tinh.
+            loi.append(f"[chi de biet] {khoa}: trang nay khong co chuyen dong o "
+                       f"CA HAI che do — phep do khong noi len dieu gi")
+    return loi
+
+
 def gom_theo_luat(kq: dict) -> tuple[dict[str, int], list[str]]:
     """({ma_luat: so_nut}, [canh bao]). Bo qua dong CHUA_DANG_NHAP."""
     dem: dict[str, int] = {}
@@ -148,7 +181,20 @@ def doc_moc() -> dict[str, int]:
     return ra
 
 
-def ghi_moc(dem: dict[str, int]) -> None:
+def _pham_vi(routes, khung) -> str:
+    return "routes=" + ",".join(sorted(routes)) + " khung=" + ",".join(sorted(khung))
+
+
+def doc_pham_vi() -> str:
+    if not TEP_MOC.exists():
+        return ""
+    for d in TEP_MOC.read_text(encoding="utf-8").splitlines():
+        if d.startswith("# PHAM VI:"):
+            return d.split(":", 1)[1].strip()
+    return ""
+
+
+def ghi_moc(dem: dict[str, int], pham_vi: str = "") -> None:
     dong = [
         "# Moc a11y (`axe-core`) — sinh boi `py tools\\check_a11y.py --accept`.",
         "# Chot theo MA LUAT + so NUT vi pham, khong chot tong: mot moc tong co",
@@ -156,6 +202,11 @@ def ghi_moc(dem: dict[str, int]) -> None:
         "#",
         "# ⛔ Chi chot `violations`. `incomplete` la 'axe khong tu ket luan duoc,",
         "#    can nguoi xem' — dem no nhu loi la bao cao sai.",
+        "#",
+        "# ⛔ PHAM VI duoi day la MOT PHAN cua moc. Quet it route/khung hon se cho",
+        "#    ra so NHO hon, va no doc y het mot cai thien — cong cu TU CHOI so",
+        "#    khi pham vi khac.",
+        f"# PHAM VI: {pham_vi}",
         "",
     ]
     dong += [f"{ma} = {so}" for ma, so in sorted(dem.items())]
@@ -184,10 +235,18 @@ def main() -> int:
         _ra(f"[a11y] da tai axe-core {ver} ({len(b) // 1024} KB)")
         return 0
 
-    kq = quet(a.goc, a.route or ROUTE_MAC_DINH, a.khung.split(","), a.cookie, a.phien)
+    routes = list(a.route or ROUTE_MAC_DINH)
+    khung = a.khung.split(",")
+    pham_vi = _pham_vi(routes, khung)
+    kq = quet(a.goc, routes, khung, a.cookie, a.phien)
     hien, canh = gom_theo_luat(kq)
     for c in canh:
         _ra(f"  [!] {c}")
+
+    rm = soi_reduced_motion(kq)
+    that_bai_rm = [x for x in rm if not x.startswith("[chi de biet]")]
+    for x in rm:
+        _ra(f"  {'[!]' if not x.startswith('[chi') else '   '} {x}")
 
     chua_ro = sum(len(m.get("chua_ro", [])) for m in kq.values())
     if chua_ro:
@@ -195,13 +254,30 @@ def main() -> int:
             f"KHONG tinh vao moc)")
 
     if a.accept:
-        ghi_moc(hien)
+        ghi_moc(hien, pham_vi)
         _ra(f"[a11y] da ghi moc: {sum(hien.values())} nut / {len(hien)} ma luat")
         return 0
 
     moc = doc_moc()
     if not moc:
         _ra("[a11y] CHUA CO MOC. Chay `--accept` mot lan.")
+        return 1
+
+    # ⛔ Pham vi phai KHOP. Quet it route/khung hon cho ra so nho hon, va no doc
+    #    y het mot cai thien — do 07/09: bo `d1280` lam 32 thanh 16 va cong cu
+    #    in "da GIAM", trong khi khong co gi duoc sua. Ai `--accept` luc do se
+    #    am tham ha ca pham vi bao ve.
+    # ⚠️ Ten rieng, KHONG dung `cu`: duoi kia `for ma, (cu, moi) in ...` dung
+    #    lai ten ay cho mot so nguyen. `mypy` bat duoc trung ten nay ngay khi
+    #    toi vua viet — hai bien cung ten khac kieu trong mot ham la cho de doc
+    #    nham nhat.
+    pham_vi_moc = doc_pham_vi()
+    if pham_vi_moc and pham_vi_moc != pham_vi:
+        _ra("[a11y] PHAM VI KHAC MOC — tu choi so sanh.")
+        _ra(f"    moc  : {pham_vi_moc}")
+        _ra(f"    hien : {pham_vi}")
+        _ra("  Quet it hon cho ra so nho hon va no TRONG NHU mot cai thien.")
+        _ra("  Chay dung pham vi cua moc, hoac `--accept` co y de doi pham vi.")
         return 1
 
     tang = {ma: (moc.get(ma, 0), so) for ma, so in hien.items() if so > moc.get(ma, 0)}
@@ -211,6 +287,10 @@ def main() -> int:
         _ra("[a11y] TANG so voi moc — moi dong duoi day la mot vi pham MOI:")
         for ma, (cu, moi) in sorted(tang.items()):
             _ra(f"   {ma:<38} {cu} -> {moi}")
+        return 1
+
+    if that_bai_rm:
+        _ra("[a11y] `prefers-reduced-motion` KHONG duoc ton trong — xem tren.")
         return 1
 
     _ra(f"[a11y] dat moc: {sum(hien.values())} nut / {len(hien)} ma luat")
