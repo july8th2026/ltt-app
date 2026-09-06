@@ -114,16 +114,46 @@ def _dang_ky_may() -> dict:
             "ffmpeg": ff, "torch": mo_ta_torch}
 
 
+#: Tong thoi gian bo chay nay chiu HOAN vi tai nguyen ban, tinh bang giay.
+#:
+#: ⭐ Co tran, va tran la thu phan biet "cho mot suat vua nha" voi "treo mai".
+#:    90 giay du cho vai luot hoan 20 giay cua nen tang, va du ngan de mot lan
+#:    may B ban that su khong bien bai nghiem thu thanh mot cuoc doi vo han.
+NGAN_SACH_HOAN_S = 90.0
+
+
 def _chay_hang_doi(db, *, toi_da: int = 200) -> list[dict]:
     """Dong vai worker THAT, va do gio tung job.
 
     Khong dung lai `test_402._chay_het_hang_doi`: cai do khong do gio, va gio
     tung giai doan la mot trong nhung thu pha 22 phai giao nop.
+
+    🔴 **Ban dau ham nay KHONG dong vai worker that o dung cho quan trong nhat.**
+
+       No bat moi ngoai le roi goi `jobs.fail(..., retry=False)` — tuc bien MOI
+       loi thanh that bai cuoi cung. Worker that thi phan loai truoc
+       (`job_runner._provider_failure_kind`), va voi mot provider **BAN** no tra
+       `("resource_wait", N)` roi `defer_resource`: job ve hang doi, **khong
+       tieu luot thu, khong cham tien**.
+
+    ⛔ Hau qua do duoc, ngay 05/09 luc 13:44: may B tra 429 cho moi lenh goi
+       (mot phien khac dang chay gate), va luot nghiem thu THAT bao
+       `content_process failed_terminal`. Doc y het mot khiem khuyet san pham.
+       San pham thi **dung** — chi bo chay nay sai.
+
+    ⭐ Mot cua gia chi tra loi duoc nhung cau khong phu thuoc thu no thay the;
+       bo chay nay thay **worker**, roi duoc dung de tra loi cau *"san pham xu
+       ly tai nguyen ban the nao"* — dung cai no thay.
+
+    🔑 Nen no goi **chinh** `_provider_failure_kind` cua worker that, khong chep
+       lai bang mot chuoi `isinstance`. Mot ban sao se lech o mot nhanh nao do,
+       va nhanh lech se la nhanh it duoc chay nhat.
     """
     from platform_core import jobs
-    from platform_core.job_runner import JobContext
+    from platform_core.job_runner import JobContext, _provider_failure_kind
 
     nhat_ky: list[dict] = []
+    da_hoan_s = 0.0
     for _ in range(toi_da):
         job = jobs.claim(db, worker_id="w-nghiem-thu", capabilities=NANG_LUC)
         if job is None:
@@ -134,15 +164,39 @@ def _chay_hang_doi(db, *, toi_da: int = 200) -> list[dict]:
         ctx.job_type = job.job_type
         t0 = time.time()
         loi = ""
+        hoan = 0.0
         try:
             ket_qua = handler(dict(job.params), ctx) or {}
             jobs.complete(db, job, ket_qua)
         except Exception as exc:            # noqa: BLE001 - worker that cung bat het
-            loi = f"{type(exc).__name__}: {exc}"
-            jobs.fail(db, job, str(exc), retry=False)
+            loai, cho = _provider_failure_kind(
+                exc, provider_state=str(getattr(job, "provider_state", "") or ""))
+            con_lai = NGAN_SACH_HOAN_S - da_hoan_s
+            if loai == "resource_wait" and con_lai > 0:
+                # ⚠️ Ngu THAT, khong chi doi `next_run_at`: `jobs.claim` loc theo
+                #    moc do, nen khong ngu thi vong lap quay khong va het `toi_da`
+                #    trong vai mili-giay — mot kieu "het gio" doc y het "khong con
+                #    viec".
+                hoan = min(float(cho or 20), con_lai)
+                jobs.defer_resource(
+                    db, job, retry_after=cho,
+                    resource=str(getattr(job, "admission_resource", "") or ""))
+                da_hoan_s += hoan
+                loi = f"HOAN {type(exc).__name__}: {exc}"
+            else:
+                loi = f"{type(exc).__name__}: {exc}"
+                if loai == "resource_wait":
+                    # ⛔ Het ngan sach hoan. Van la that bai, nhung phai NOI RA
+                    #    rang no den tu tai nguyen ban chu khong tu san pham.
+                    loi = (f"HET NGAN SACH HOAN sau {da_hoan_s:.0f}s "
+                           f"(tai nguyen ban): {loi}")
+                jobs.fail(db, job, str(exc), retry=False)
         db.commit()
+        if hoan:
+            time.sleep(hoan)
         nhat_ky.append({"job_type": job.job_type,
-                        "giay": round(time.time() - t0, 2), "loi": loi})
+                        "giay": round(time.time() - t0, 2), "loi": loi,
+                        **({"hoan_s": round(hoan, 1)} if hoan else {})})
     db.expire_all()
     return nhat_ky
 
@@ -962,3 +1016,116 @@ def test_G17_hai_preset_tren_PHIM_KHACH_THAT(moi_truong, tmp_path, monkeypatch):
         "so_clip": len(phim),
         "luot": luot,
     }), ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Bo chay hang doi: "ban" khong duoc bien thanh "hong"
+# ══════════════════════════════════════════════════════════════════════════════
+
+@pytest.fixture()
+def db_nhe(tmp_path, monkeypatch):
+    """SQLite tam, chi de do HANH VI cua `_chay_hang_doi` — khong dung `moi_truong`.
+
+    ⭐ Bai nay do mot thu cua BO CHAY, khong cua san pham, nen no khong can ca
+       mot ung dung dung len. Dung `moi_truong` o day la tra gia vai giay cho
+       moi lan chay de do mot vong `try/except`.
+    """
+    url = f"sqlite:///{(tmp_path / 'hd.db').as_posix()}"
+    monkeypatch.setenv("LTT_DATABASE_URL", url)
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+    s = next(dbmod.get_session())
+    try:
+        yield s
+    finally:
+        s.close()
+        dbmod.reset_engine()
+
+
+def test_tai_nguyen_BAN_thi_HOAN_chu_khong_giet_lan_chay(db_nhe, monkeypatch):
+    """🔴 **Bo chay nay tung bien MOI ngoai le thanh that bai cuoi cung.**
+
+        except Exception as exc:
+            jobs.fail(db, job, str(exc), retry=False)      # <- ban CU
+
+    Worker that thi phan loai truoc: mot `KhongCoProviderNao` ma **moi** provider
+    chi BAN (`busy_only`) tra ve `("resource_wait", N)`, va job **ve hang doi**,
+    khong tieu luot thu, khong cham tien.
+
+    ⛔ Hau qua do duoc, 05/09 13:44: may B tra 429 cho moi lenh goi vi mot phien
+       khac dang chay gate, va luot nghiem thu THAT bao `content_process
+       failed_terminal`. Doc y het mot khiem khuyet san pham. San pham **dung**;
+       chi bo chay sai.
+
+    ⭐ Bai nay chot HANH VI (trang thai job + so luot thu), khong chot hinh dang
+       ma. Mot ban viet lai dung `isinstance` tay van phai lam bai nay xanh.
+    """
+    from platform_core import jobs as pj
+    from platform_core.llm.dieu_phoi import KhongCoProviderNao
+    from platform_core.models import JOB_QUEUED, Job
+
+    job = Job(user_id="u1", app_slug="asv_media", job_type="asv_media.qc",
+              params={})
+    db_nhe.add(job)
+    db_nhe.commit()
+    ma_job = job.id
+
+    def cua_gia(_job_type):
+        def chay(_params, _ctx):
+            raise KhongCoProviderNao(["ltt_llm: ban"])
+        return chay
+
+    monkeypatch.setattr(pj, "resolve_handler", cua_gia)
+    # ⚠️ Chan giac ngu THAT: bo chay ngu dung `retry_after` cua nen tang (20s).
+    #    Do la hanh vi dung o san pham va la mot phut vo ich trong mot bai kiem.
+    monkeypatch.setattr(time, "sleep", lambda _s: None)
+
+    nhat_ky = _chay_hang_doi(db_nhe, toi_da=3)
+
+    db_nhe.expire_all()
+    lai = db_nhe.get(Job, ma_job)
+    assert lai.status == JOB_QUEUED, (
+        f"tai nguyen ban ma job thanh {lai.status} — do la bien mot tin hieu "
+        "'cho chut' thanh mot lan chay hong")
+    assert lai.attempts == 0, (
+        f"luot thu bi tieu ({lai.attempts}) — `defer_resource` khong duoc tieu "
+        "luot nao, neu khong thi vai lan ban lien tiep se dot het han muc")
+    assert nhat_ky and nhat_ky[0]["loi"].startswith("HOAN"), nhat_ky
+    assert nhat_ky[0].get("hoan_s", 0) > 0, (
+        "bo chay phai GHI RA rang no da hoan, neu khong thi mot luot cham vi "
+        "tai nguyen ban doc y het mot luot cham vi san pham")
+
+
+def test_loi_KHONG_phai_ban_thi_van_that_bai_nhu_cu(db_nhe, monkeypatch):
+    """⛔ Ban sua tren de lai mot rui ro ro rang: doc thanh "bo chay khong bao gio
+    lam hong job nua". Bai nay chot rang mot loi THAT van giet job.
+
+    ⚠️ Va no la nua khong the thieu: neu chi co bai tren, mot ban sua "hoan MOI
+       loi" se xanh — va luc do bo test khong con phan biet duoc san pham hong
+       voi tai nguyen ban, tuc mat dung nang luc vua duoc them.
+    """
+    from platform_core import jobs as pj
+    from platform_core.models import JOB_ERROR, Job
+
+    job = Job(user_id="u1", app_slug="asv_media", job_type="asv_media.qc",
+              params={})
+    db_nhe.add(job)
+    db_nhe.commit()
+    ma_job = job.id
+
+    def cua_gia(_job_type):
+        def chay(_params, _ctx):
+            raise ValueError("ban dung bi hong that")
+        return chay
+
+    monkeypatch.setattr(pj, "resolve_handler", cua_gia)
+    monkeypatch.setattr(time, "sleep", lambda _s: None)
+
+    nhat_ky = _chay_hang_doi(db_nhe, toi_da=3)
+
+    db_nhe.expire_all()
+    lai = db_nhe.get(Job, ma_job)
+    assert lai.status == JOB_ERROR, f"loi that ma job thanh {lai.status}"
+    assert nhat_ky and not nhat_ky[0]["loi"].startswith("HOAN"), nhat_ky
