@@ -529,6 +529,17 @@ def test_pytest_GO_TAY_luot_lon_thi_XIN_khoa(tmp_path, monkeypatch):
     import conftest as cf                        # noqa: PLC0415
     monkeypatch.setattr(cf, "_KHOA_PHIEN", None)
 
+    # 🔴 `conftest.py:96` thoát ngay khi `PYTEST_XDIST_WORKER` có mặt — và dưới
+    #    gate (`-n 6`) **mọi** test đều chạy trong một worker. Không xoá biến ấy
+    #    thì thân hàm không bao giờ chạy tới, nên phép kiểm này chưa từng xanh
+    #    được trong gate: nó chỉ xanh khi gõ tay một luồng.
+    #
+    # ⭐ Đây là một hình dạng riêng đáng nhớ: phép kiểm canh một **cửa chặn**,
+    #    mà điều kiện ĐẦU TIÊN của cửa ấy lại chính là môi trường phép kiểm đang
+    #    đứng. Nó không "flaky" — nó **luôn** đỏ ở đúng nơi duy nhất người ta
+    #    đọc kết quả.
+    monkeypatch.delenv("PYTEST_XDIST_WORKER", raising=False)
+
     lon = [types.SimpleNamespace(fspath=f"t{i}.py")
            for i in range(cf._NGUONG_TEP_NANG + 5)]
     nho = [types.SimpleNamespace(fspath=f"t{i}.py") for i in range(3)]
@@ -549,6 +560,25 @@ def test_pytest_GO_TAY_luot_lon_thi_XIN_khoa(tmp_path, monkeypatch):
     assert not cpu.exists(), (
         "luot NHO ma van xin khoa - vong lap sua-roi-thu se bi cham va nguoi "
         "ta se tat co nay di")
+
+    # ── Chiều thứ TƯ, và nó thiếu ở bản gốc ────────────────────────────────
+    #
+    # 🔴 Docstring trên kể ba chiều (lớn xin · nhỏ không xin · `sessionfinish`
+    #    nhả) và nói *"thiếu chiều nào cũng để lại một lỗ"*. Có một chiều thứ tư
+    #    mà nó không kể: **worker con KHÔNG được xin**. Đó là dòng ĐẦU của cửa
+    #    (`conftest.py:96`), và cũng đúng là dòng đã làm phép kiểm này không bao
+    #    giờ chạy tới thân hàm khi ở trong gate.
+    #
+    # ⭐ Nếu worker con cũng xin, thì một lượt `-n 6` sinh **sáu** người xin
+    #    cùng một khoá `O_EXCL`: năm cái sau chờ hết `--cho` rồi CHÈN — tệ hơn
+    #    hẳn trước bản vá, đúng câu hỏi 1 của AGENTS.md §4c.
+    monkeypatch.setattr(cf, "_KHOA_PHIEN", None)
+    monkeypatch.setenv("PYTEST_XDIST_WORKER", "gw3")
+    cf.pytest_collection_modifyitems(None, None, lon)
+    assert not cpu.exists() and not pg.exists(), (
+        "worker con cung xin khoa - mot luot `-n 6` se co SAU nguoi tranh mot "
+        "khoa O_EXCL, va nam cai sau se CHEN sau khi het gio cho")
+
 
 def test_may_ban_KHONG_dem_chinh_no_va_chuoi_cha():
     """⛔ Điều kiện phải là thứ tiến trình đo **không thể tự thoả**.

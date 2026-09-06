@@ -326,7 +326,7 @@ def _chot(ma: int) -> int:
     if ma == 0 and _SO_LAN_CHAY == 0 and not _CO_Y_KHONG_CHAY:
         print(NL_IN + "=" * 70)
         print("  KHONG MOT TIEN TRINH pytest NAO DUOC PHONG.")
-        print("  Day KHONG phai mot luot xanh — day la mot luot RONG.")
+        print("  Day KHONG phai mot luot xanh - day la mot luot RONG.")
         print("  `_SO_LAN_CHAY` chi tang SAU khi mot tien trinh da chay.")
         print("=" * 70)
         return MA_KHONG_CHAY_GI
