@@ -147,6 +147,39 @@ cách khách quan**: cùng một nguồn, một bản suy giảm có tham số b
 (nén nặng hơn, mờ hơn, nhiễu hơn). Nếu tôi không xếp đúng các cặp ấy thì mọi
 phán quyết ở lớp 3 **vô giá trị** — và phải nói ra thay vì báo cáo điểm.
 
+### ✅ Đã chạy 07/09 — `tools/cham_doi_chung.py`, và nó bắt được một thiên lệch thật
+
+```
+luot 1   29/32 = 91%   bicubic 8/8 · blur 8/8 · noise 7/8 · compression 6/8
+```
+
+⛔ **Sàn tổng đạt, nhưng `compression` 6/8 dưới sàn.** Và cả hai lần sai đều ở
+   mức **12 — mức mạnh nhất**, đáng ra dễ nhất. Ở một cặp tôi ghi *"B có quầng
+   nén"* trong khi B là **bản gốc**: tôi đọc **răng cưa của phông chữ** thành
+   **quầng nén**.
+
+🔴 Đó là một thiên lệch hệ thống, và nó nằm đúng trục quan trọng nhất — nén là
+   thứ mọi job upscale/video đều phải đối mặt.
+
+**Nên lượt 2 đo lại riêng trục ấy** (5 mức thay vì 2), với một chiến lược mới:
+*soi vùng phẳng tìm khối 8×8 và loang màu, đừng soi cạnh chữ.*
+
+```
+luot 2   18/20 = 90%    muc 8: 4/4   muc 12: 4/4   muc 16: 3/4
+                        muc 22: 4/4  muc 30: 3/4
+```
+
+⭐ **Con số 75% → 90% KHÔNG phải phần đáng đọc** — 8 và 20 mẫu không tách được
+   hai tỉ lệ ấy. Thứ tách được là **vị trí lỗi**: từ *mức mạnh* (đọc nhầm dấu
+   hiệu) sang *mức nhẹ* (chạm ngưỡng phân biệt). Và hai loại sai ấy **không
+   cùng giá**: một khác biệt ở mức 30 mà tôi không thấy thì **khách cũng không
+   thấy**.
+
+⇒ Ba thứ lượt chạy dạy ra, đã đưa vào công cụ: **sàn theo từng phép suy giảm**
+  (sàn tổng che mất trục yếu) · **chia theo mức** (tỉ lệ tổng che mất vị trí
+  lỗi) · **bộ lọc `--kieu`** (một đối chứng không chạy lại được thì không còn
+  là đối chứng).
+
 ⭐ Đây đúng luật đã ghi ở `BAY_TRONG_CONG_CHAT_LUONG.md` **Bẫy 24**: một dụng
    cụ không có đối chứng thì con số nó phát ra không phải phát hiện. Ở đây
    **dụng cụ là tôi**.
@@ -231,7 +264,14 @@ GIAI DOAN A — GO CHAN (khong viet tinh nang, chi mo duong)   ~6-8 h
         dat 1-4  |  con 5 (SHA-256) va 6 (smoke GPU)
   A1b Tac vu operator: tai 169 MB checkpoint, ghi SHA-256, ghim commit
   A1c Smoke benchmark tren GPU dich — VA kiem lech torch 2.8 -> 2.11
-  A2  Dung bo cham 4 lop, lop 1 (doi chung biet truoc) TRUOC TIEN
+  A2  Dung bo cham 4 lop                   [LOP 1 XONG 07/09]
+        `tools/cham_doi_chung.py` — 32 cap, dap an tu PHEP SUY GIAM
+        luot 1  29/32 = 91%  compression 6/8 DUOI san, sai o muc MANH
+        luot 2  18/20 = 90%  compression, 8/8 o hai muc manh nhat
+        => lop 1 DAT, va no bat duoc mot thien lech THAT o nguoi cham
+  A2b Lop 2 da co san: qualitylab/calibration.py blind_assignment
+  A2c Lop 3 (cham that) — chi sau khi co dataset o A3
+  A2d Lop 4 doi chieu may — can LPIPS/VMAF da provision (A1b/A1c)
   A3  Nguon media co license ro rang cho bo hieu chuan
   A4  [chu du an] khoa `trunk` trong cua_so_yen
 
