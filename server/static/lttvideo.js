@@ -167,6 +167,73 @@
   if (oDoDai) oDoDai.addEventListener('change', capNhatGia);
   capNhatGia();
 
+  /* ── Công cụ prompt: mở rộng ô + hoàn tác ────────────────────────────────
+   *
+   * ⭐ Muon tu bot van hanh (`BOT GEMINI`): no dat "Mo prompt ra bang lon" va
+   *    "Hoan tac N buoc" ngay canh o nhap, vi prompt la thu nguoi dung sua
+   *    nhieu nhat.
+   *
+   * 📌 Chong hoan tac ghi theo NGUONG, khong theo tung phim: ghi moi ky tu thi
+   *    "hoan tac" tra ve mot ky tu — dung ky thuat, vo dung voi nguoi dung.
+   */
+  (function () {
+    var o = q('#tv-prompt');
+    var nutMo = q('#tv-mo-rong');
+    var nutHoan = q('#tv-hoan-tac');
+    if (!o) return;
+
+    /* Mở rộng: chỉ đổi số dòng, không dựng một hộp thoại riêng — người dùng
+       vẫn thấy nguyên bối cảnh xung quanh. */
+    if (nutMo) {
+      var dongGoc = o.rows || 4;
+      nutMo.addEventListener('click', function () {
+        var dangTo = o.rows > dongGoc;
+        o.rows = dangTo ? dongGoc : 16;
+        nutMo.setAttribute('aria-expanded', String(!dangTo));
+        nutMo.textContent = dangTo ? '⤢' : '⤡';
+        o.focus();
+      });
+    }
+
+    if (!nutHoan) return;
+    var chong = [];
+    var cuoi = o.value;
+    var NGUONG = 12;           // ky tu; duoi nguong thi gop vao mot buoc
+
+    function ghiNeuDangKe() {
+      var nay = o.value;
+      if (Math.abs(nay.length - cuoi.length) < NGUONG && nay !== '') return;
+      if (cuoi !== nay) {
+        chong.push(cuoi);
+        if (chong.length > 20) chong.shift();
+        cuoi = nay;
+        capNhatNut();
+      }
+    }
+
+    function capNhatNut() {
+      nutHoan.disabled = chong.length === 0;
+      nutHoan.title = chong.length
+        ? 'Hoàn tác (' + chong.length + ' bước)'
+        : 'Chưa có gì để hoàn tác';
+    }
+
+    o.addEventListener('input', ghiNeuDangKe);
+    o.addEventListener('blur', function () {
+      // Roi o thi chot mot buoc, du chua du nguong — nguoi dung vua "xong y".
+      if (cuoi !== o.value) { chong.push(cuoi); cuoi = o.value; capNhatNut(); }
+    });
+
+    nutHoan.addEventListener('click', function () {
+      if (!chong.length) return;
+      o.value = chong.pop();
+      cuoi = o.value;
+      capNhatNut();
+      o.focus();
+    });
+    capNhatNut();
+  })();
+
   /* ── Mô tả đã dùng ──────────────────────────────────────────────────── */
   var lichSu = q('#tv-history');
   if (lichSu) lichSu.addEventListener('change', function () {
@@ -188,26 +255,62 @@
     });
   });
 
-  /* ── Lưới ⇄ danh sách, nhớ theo trình duyệt ─────────────────────────── */
+  /* ── Lưới ⇄ danh sách, nhớ theo trình duyệt ─────────────────────────────
+   *
+   * 🔴 Lop `list-view` nam tren CHINH `.tv-grid`, ma htmx thay ca node do moi
+   *    15 giay (`hx-swap="outerHTML"`). Ban dau lop bi xoa sau moi luot lam
+   *    moi — nhung nut van giu `aria-pressed="true"`.
+   *
+   *    ⇒ Bo cuc ve luoi trong khi giao dien VAN KHANG DINH dang o danh sach.
+   *      Mot man hinh noi doi ve chinh trang thai cua no, va no chi lo ra khi
+   *      hai tinh nang gap nhau: tu-lam-moi + nut doi kieu xem.
+   *
+   * ⭐ Nen `dat()` phai (1) tu tim lai `.tv-grid` moi lan — node cu da bien mat
+   *    — va (2) duoc goi lai sau MOI luot htmx thay noi dung.
+   */
   (function () {
-    var luoi = q('.tv-grid');
     var nut = qa('[data-view]');
-    if (!luoi) return;
-    function dat(kieu) {
+
+    function doc() {
+      try { return localStorage.getItem('ltt.lttvideo.view'); } catch (e) { return null; }
+    }
+
+    function dat(kieu, ghi) {
       kieu = kieu === 'list' ? 'list' : 'grid';
-      luoi.classList.toggle('list-view', kieu === 'list');
+      var luoi = q('.tv-grid');            // tim LAI: htmx da thay node cu
+      if (luoi) luoi.classList.toggle('list-view', kieu === 'list');
       nut.forEach(function (b) {
         b.setAttribute('aria-pressed', String(b.dataset.view === kieu));
       });
+      if (!ghi) return;
       // ⛔ localStorage co the NEM (cua so rieng tu, chan du lieu trang) — mot
       //    tien nghi nho khong duoc lam vo ca trang.
       try { localStorage.setItem('ltt.lttvideo.view', kieu); } catch (e) { /* bo qua co y */ }
     }
-    nut.forEach(function (b) { b.addEventListener('click', function () { dat(b.dataset.view); }); });
-    var cu = null;
-    try { cu = localStorage.getItem('ltt.lttvideo.view'); } catch (e) { cu = null; }
-    dat(cu || 'grid');
+
+    nut.forEach(function (b) {
+      b.addEventListener('click', function () { dat(b.dataset.view, true); });
+    });
+    dat(doc() || 'grid', false);
+
+    // Sau moi luot htmx thay luoi, dat lai kieu xem nguoi dung da chon.
+    document.body.addEventListener('htmx:afterSwap', function () {
+      dat(doc() || 'grid', false);
+    });
   })();
+
+  /* ── Huỷ việc: hỏi lại trước khi bấm ────────────────────────────────────
+   * Huy co hoan credit, nhung KHONG lay lai duoc thoi gian may da chay. Mot cu
+   * bam nham o the ben canh la mat ca hai muoi phut.
+   *
+   * 📌 Gan theo `document` chu khong theo tung nut: manh luoi bi htmx THAY MOI
+   *    15 giay, nen nut gan truc tiep se mat trinh xu ly ngay lan thay dau.
+   */
+  document.addEventListener('submit', function (e) {
+    var f = e.target;
+    if (!f || !f.dataset || !f.dataset.xacNhan) return;
+    if (!window.confirm(f.dataset.xacNhan)) e.preventDefault();
+  });
 
   /* ── Nâng nét: báo giá TRƯỚC khi xác nhận ───────────────────────────────
    *

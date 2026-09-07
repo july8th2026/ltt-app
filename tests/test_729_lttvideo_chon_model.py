@@ -137,3 +137,52 @@ def test_MA_NGUON_khong_duoc_nhac_ten_model_nao():
         thap = s.lower()
         for c in ("t2v", "i2v", "v2v", "vace", "animate", "wan2", "ltx"):
             assert c not in thap, f"mã nhắc tên model {c!r} trong hằng {s!r}"
+
+
+# ══════════════════════════════════════════════════════════════════════════
+#  Cua truoc phai KHOP cua sau
+#
+#  🔴 Loi that 07/09: o chon tep khai `accept="…,video/mp4"`, nhung
+#     `ho_so.HO_SO_THEO_DAU_VAO` khong co muc `"video"`. Nguoi dung tai MP4 len
+#     => nen tang GIU CREDIT => `jobs.handle` nem "Loai tep dinh kem nay chua
+#     duoc ho tro" => credit duoc hoan.
+#
+#     Tra tien lai, nhung lay mat thoi gian va niem tin. Va cai sai khong nam o
+#     job — job tu choi la DUNG. Cai sai la CUA TRUOC moi nguoi ta vao mot canh
+#     cua khoa.
+# ══════════════════════════════════════════════════════════════════════════
+
+def test_o_chon_tep_KHONG_moi_kieu_tep_ma_duong_job_tu_choi():
+    """Mọi MIME mà ô chọn tệp mời phải có một hồ sơ nhận được nó."""
+    import inspect
+    import pathlib
+    import re
+
+    from apps.lttvideo import ho_so, routes
+
+    goc = pathlib.Path(inspect.getsourcefile(routes)).parent / "templates"
+    html = chr(10).join(f.read_text(encoding="utf-8")
+                        for f in sorted(goc.glob("*.html")))
+    m = re.search(r'accept="([^"]+)"', html)
+    assert m, "khong tim thay o chon tep nao"
+    moi = [x.strip() for x in m.group(1).split(",") if x.strip()]
+
+    from apps.lttvideo import chon_model
+
+    for mime in moi:
+        la_video = mime.startswith("video/")
+        hinh_dang = chon_model.hinh_dang_dau_vao(co_anh=not la_video,
+                                                 co_video=la_video)
+        assert ho_so.HO_SO_THEO_DAU_VAO.get(hinh_dang), (
+            f"o chon tep moi {mime!r} (hinh dang {hinh_dang!r}) nhung khong co "
+            "ho so nao nhan duoc no — nguoi dung se mat credit va hai muoi phut")
+
+
+def test_tu_choi_video_noi_RO_LY_DO_chu_khong_noi_chung_chung():
+    """Một lời từ chối không nói vì sao là một lời từ chối người dùng sẽ thử lại."""
+    import inspect
+
+    from apps.lttvideo import routes
+
+    ma = inspect.getsource(routes._luu_media)
+    assert "chưa mở" in ma or "chua mo" in ma

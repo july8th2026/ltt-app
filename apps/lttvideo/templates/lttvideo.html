@@ -61,15 +61,23 @@
                     maxlength="10000" aria-describedby="tv-prompt-hint"
                     placeholder="{{ _('Ví dụ: một dòng sông lúc bình minh, sương mù trên mặt nước, máy quay tiến chậm về phía trước') }}"></textarea>
           <p id="tv-prompt-hint" class="dim">{{ _('Tả cảnh, chủ thể, chuyển động máy quay và ánh sáng.') }}</p>
-          {% if prompt_gan_day %}
+          {# ⭐ Hang cong cu muon tu bot van hanh: no co "Mo prompt ra bang lon"
+             va "Hoan tac N buoc" ngay canh o nhap. Prompt la thu nguoi dung sua
+             nhieu nhat, nen hai nut nay dat dung cho tay dang o. #}
           <div class="tv-tools">
+            <button type="button" id="tv-mo-rong" class="btn ghost"
+                    aria-controls="tv-prompt" aria-expanded="false"
+                    title="{{ _('Mở ô mô tả ra to hơn để đọc toàn bộ') }}">⤢</button>
+            <button type="button" id="tv-hoan-tac" class="btn ghost" disabled
+                    title="{{ _('Hoàn tác lần sửa mô tả gần nhất') }}">↶</button>
+            {% if prompt_gan_day %}
             <label class="sr-only" for="tv-history">{{ _('Mô tả đã dùng') }}</label>
             <select id="tv-history">
               <option value="">{{ _('Mô tả đã dùng') }}</option>
               {% for p in prompt_gan_day %}<option value="{{ p }}">{{ p[:60] }}</option>{% endfor %}
             </select>
+            {% endif %}
           </div>
-          {% endif %}
         </div>
 
         <div class="tv-section"><h2><strong>02</strong> {{ _('Đính kèm') }}</h2>
@@ -78,12 +86,22 @@
              GON — cung ngon ngu hinh anh voi cac studio khac cua LTT.
              Ta chi nhan MOT tep nen chi mot the, khong ba nhu Seedance. #}
           <div class="tv-ref-pickers">
+            {# 🔴 CHI NHAN ANH. Do tren `metadata` that cua WanGP: ca
+               `t2v_2_2` lan `i2v_2_2` deu khai khe video (`control`,
+               `continue`), NHUNG ta chua co ho so tham so cho duong do — va ho
+               so phai RUT tu may that, khong go tay duoc.
+
+               ⛔ Ban truoc nhan `video/mp4` o day trong khi
+                  `ho_so.HO_SO_THEO_DAU_VAO` khong co muc `"video"`. Nguoi dung
+                  tai MP4 len => bi GIU CREDIT => job hong => hoan credit. Mot
+                  vong tron tra tien lai nhung lay mat thoi gian va niem tin.
+                  Cua dong o day thi ho biet ngay, khong phai sau hai muoi phut. #}
             <label for="media">
               <span aria-hidden="true">▧</span>
-              <strong>{{ _('Ảnh hoặc video') }}</strong>
-              <small>JPEG · PNG · WebP · MP4</small>
+              <strong>{{ _('Ảnh mở đầu') }}</strong>
+              <small>JPEG · PNG · WebP</small>
               <input class="tv-file-input" id="media" type="file" name="media"
-                     accept="image/jpeg,image/png,image/webp,video/mp4"
+                     accept="image/jpeg,image/png,image/webp"
                      aria-describedby="tv-media-hint">
             </label>
           </div>
@@ -196,7 +214,13 @@
   <main class="tv-library">
     <header>
       <div>
-        <span class="eyebrow">LTT Video Studio</span>
+        {# ⭐ Muon `sdv-strip-info` cua bot van hanh: giai thich man lam gi ma
+           khong ton mot dong nao tren be mat. #}
+        <span class="eyebrow">LTT Video Studio
+          <span title="{{ _('Tả video bạn muốn bằng lời, hoặc đính một ảnh làm khung mở đầu. Video dựng trên máy thuê của LTT Studios, tính 30 credit mỗi giây, và giữ lại 3 ngày.') }}"
+                aria-label="{{ _('Giới thiệu màn này') }}" tabindex="0"
+                style="cursor:help">ⓘ</span>
+        </span>
         <h1>{{ _('Video của tôi') }}</h1>
         {# ⭐ Dai so lieu THAT, khong phai trang tri. Mo tu bot van hanh: dat
            SO do duoc canh nhau, va phan giai thich thi day vao tooltip. #}
@@ -238,51 +262,7 @@
          aria-label="{{ _('Làm mới danh sách') }}">↻ {{ _('Làm mới') }}</a>
     </form>
 
-    <div class="tv-grid">
-      {% for v in video %}
-      <article class="tv-card">
-        <div class="tv-preview">
-          {% if v.khoa %}
-            <video controls playsinline preload="metadata" src="{{ app.route_prefix }}/video/{{ v.khoa }}"></video>
-          {% else %}<span aria-hidden="true">▶</span>{% endif %}
-        </div>
-        <div class="tv-card-head">
-          <b class="{{ v.trang_thai }}">
-            {%- if v.trang_thai == 'done' %}✓ {{ _('Hoàn tất') }}
-            {%- elif v.trang_thai == 'error' %}△ {{ _('Lỗi') }}
-            {%- elif v.trang_thai == 'cancelled' %}○ {{ _('Đã huỷ') }}
-            {%- elif v.trang_thai == 'queued' %}● {{ _('Đang chờ') }}
-            {%- else %}● {{ _('Đang dựng') }} · {{ v.phan_tram }}%{% endif %}
-          </b>
-          <small>{{ v.ti_le }} · {{ v.do_dai }}{{ _('s') }}</small>
-        </div>
-        {% if v.trang_thai in ('queued', 'running') %}
-        <div class="tv-job-progress progress" role="progressbar"
-             aria-label="{{ _('Tiến độ tạo video') }}" aria-valuemin="0" aria-valuemax="100"
-             aria-valuenow="{{ v.phan_tram }}"><i style="width:{{ v.phan_tram }}%"></i></div>
-        {% if v.loi_nhan %}<small class="dim">{{ v.loi_nhan }}</small>{% endif %}
-        {% endif %}
-        <p>{{ v.prompt or _('(không có mô tả)') }}</p>
-        {% if v.loi %}<small class="tv-card-error">{{ v.loi }}</small>{% endif %}
-        <footer>
-          <button type="button" class="tv-remix" data-prompt="{{ v.prompt_day_du|e }}"
-                  data-tile="{{ v.ti_le|e }}" data-dodai="{{ v.do_dai|e }}">{{ _('Làm lại') }}</button>
-          {% if v.khoa %}
-            <a href="{{ app.route_prefix }}/video/{{ v.khoa }}" download>{{ _('Tải về') }}</a>
-            <button type="button" class="tv-upscale" data-job="{{ v.job_id }}" data-khoa="{{ v.khoa }}" data-dodai="{{ v.do_dai }}">{{ _('Nâng nét') }}</button>
-          {% endif %}
-          <a href="/jobs/{{ v.job_id }}">{{ _('Nhật ký') }}</a>
-          {% if v.het_han %}<small class="dim">{{ _('Nội dung đã hết hạn 3 ngày') }}</small>{% endif %}
-        </footer>
-      </article>
-      {% else %}
-      <div class="tv-empty" role="status">
-        <strong>{{ _('Chưa có video nào.') }}</strong>
-        <span>{{ _('Tả video bạn muốn rồi bấm Tạo video.') }}</span>
-        <button type="button" data-open-compose>{{ _('Mở bảng tạo video') }}</button>
-      </div>
-      {% endfor %}
-    </div>
+    {% include "_tv_luoi.html" %}
   </main>
 </div>
 

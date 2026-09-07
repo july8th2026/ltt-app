@@ -13519,3 +13519,24 @@ msgstr "Counts completed videos only. Credit is the settled amount, not the hold
 
 msgid "Một video mất khoảng vài chục phút. Bạn có thể đóng trang — kết quả nằm trong Lịch sử."
 msgstr "A video takes tens of minutes. You can close the page — the result will be in History."
+
+msgid "Mở ô mô tả ra to hơn để đọc toàn bộ"
+msgstr "Expand the description box to read it all"
+
+msgid "Hoàn tác lần sửa mô tả gần nhất"
+msgstr "Undo the last description edit"
+
+msgid "Huỷ video này? Credit sẽ được hoàn lại."
+msgstr "Cancel this video? Your credit will be refunded."
+
+msgid "Giới thiệu màn này"
+msgstr "About this screen"
+
+msgid "Tả video bạn muốn bằng lời, hoặc đính một ảnh làm khung mở đầu. Video dựng trên máy thuê của LTT Studios, tính 30 credit mỗi giây, và giữ lại 3 ngày."
+msgstr "Describe the video you want, or attach an image as the opening frame. Videos are rendered on machines LTT Studios rents, cost 30 credits per second, and are kept for 3 days."
+
+msgid "Ảnh mở đầu"
+msgstr "Opening image"
+
+msgid "Video làm đầu vào chưa mở. Hiện chỉ nhận ảnh làm khung mở đầu."
+msgstr "Video input is not open yet. For now only an image is accepted, as the opening frame."

@@ -71,12 +71,24 @@ def test_doc_dung_khoa_hop_dong_video_keys():
     assert '"tep"' not in ma, "quay lai ten khoa cu — `_artifacts()` se khong thay"
 
 
-def test_thu_vien_chi_lay_video_DA_XONG_moi_hien_nut_tai():
-    """Một nút Tải về trên job chưa xong dẫn tới 404."""
+def _moi_template() -> str:
+    """Gộp **mọi** template của app.
+
+    🔴 Sửa 07/09: bản trước neo vào đúng tên `lttvideo.html`, và nó vỡ ngay khi
+       khối lưới được tách ra `_tv_luoi.html` cho htmx — dù mệnh đề nó canh
+       không đổi một chữ. Một phép kiểm về *nội dung giao diện* không nên phụ
+       thuộc vào việc nội dung ấy nằm ở mấy tệp.
+    """
     import pathlib as _pl
 
-    html = (_pl.Path(inspect.getsourcefile(routes)).parent / "templates"
-            / "lttvideo.html").read_text(encoding="utf-8")
+    goc = _pl.Path(inspect.getsourcefile(routes)).parent / "templates"
+    return chr(10).join(f.read_text(encoding="utf-8")
+                        for f in sorted(goc.glob("*.html")))
+
+
+def test_thu_vien_chi_lay_video_DA_XONG_moi_hien_nut_tai():
+    """Một nút Tải về trên job chưa xong dẫn tới 404."""
+    html = _moi_template()
     # ⚠️ Template co HAI khoi `{% if v.khoa %}`: mot cho o xem truoc, mot cho
     #    cum nut. Bam vao khoi DAU TIEN la do nham cho — ban dau cua phep kiem
     #    nay lam dung the va do, trong khi template hoan toan dung.

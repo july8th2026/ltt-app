@@ -148,12 +148,13 @@ def _luu_media(media, nguoi_dung_id) -> str:
         except ValueError as e:
             raise LoiMedia(str(e)) from e
     elif mime == "video/mp4":
-        if not du_lieu:
-            raise LoiMedia(_t("Tệp đính kèm rỗng."))
-        if len(du_lieu) > TRAN_VIDEO_BYTE:
-            raise LoiMedia(_t("Video đính kèm vượt giới hạn 80 MB."))
+        # ⛔ Model CO khe video (`media_inputs.video.control/continue`), nhung ta
+        #    chua co HO SO tham so cho duong ay — va ho so phai rut tu may that.
+        #    Tu choi o day, ngay lap tuc, thay vi de nguoi dung mat credit va
+        #    hai muoi phut roi moi biet. Tran 80 MB giu lai cho ngay mo duong.
+        raise LoiMedia(_t("Video làm đầu vào chưa mở. Hiện chỉ nhận ảnh làm khung mở đầu."))
     else:
-        raise LoiMedia(_t("Chỉ nhận ảnh PNG/JPEG/WebP hoặc video MP4."))
+        raise LoiMedia(_t("Chỉ nhận ảnh PNG, JPEG hoặc WebP."))
 
     from platform_core.storage import get_storage  # noqa: PLC0415
 
@@ -218,6 +219,36 @@ async def trang_chinh(request: Request, _dinh_danh: str = Depends(require_login)
             **kho_du_lieu,
         },
     )
+
+
+@router.get("/luoi", response_class=HTMLResponse)
+async def luoi(request: Request, _dinh_danh: str = Depends(require_login),
+               db=Depends(get_db)):
+    """Chỉ **mảnh lưới kết quả**, để htmx tự làm mới khi có việc đang chạy.
+
+    ⭐ Trả đúng mảnh chứ không trả cả trang: thay cả trang thì mất tiêu điểm,
+       mất chữ người dùng đang gõ dở trong ô mô tả, và mất cả trạng thái mở của
+       khối "Tuỳ chọn nâng cao".
+
+    ⛔ Cùng phép lọc quyền với trang chính — một endpoint mảnh **không** được là
+       cửa sau vào dữ liệu của người khác.
+    """
+    nd = _nguoi_dung(request)
+    vai = getattr(nd, "role", "") or ""
+    duoc, _ly_do = kha_nang.kiem("tao_video", vai=vai)
+    if not duoc or nd is None:
+        return HTMLResponse("")
+
+    tt = str(request.query_params.get("trang_thai") or "all")
+    if tt not in features.TRANG_THAI_TAB:
+        tt = "all"
+    sx = "cu" if request.query_params.get("sap_xep") == "cu" else "moi"
+    kho = features.thu_vien(db, nd.id, trang_thai=tt, sap_xep=sx)
+
+    return templates.TemplateResponse(
+        request, "_tv_luoi.html",
+        {"app": MANIFEST, "csrf_token": issue_csrf_token(request),
+         "loc_trang_thai": tt, "loc_sap_xep": sx, **kho})
 
 
 @router.get("/trang-thai-may", response_class=HTMLResponse)
