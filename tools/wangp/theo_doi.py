@@ -10,7 +10,10 @@ nap_env(tim_app_env())
 import boto3  # noqa: E402
 from botocore.config import Config  # noqa: E402
 
-POD = "bly29qwp5bum3r"
+# Cung nguon voi `jobs._dieu_phoi_that()`; khong go tay mot pod nao.
+POD = (os.environ.get("LTTV_POD_ID") or "").strip()
+if not POD:
+    raise SystemExit("Thieu LTTV_POD_ID — khong doan pod nao.")
 BUCKET = "uizchbiet5"
 s3 = boto3.client("s3", endpoint_url=os.environ["RUNPOD_S3_ENDPOINT"],
                   region_name=os.environ["RUNPOD_S3_REGION"],

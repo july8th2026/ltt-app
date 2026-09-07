@@ -24,7 +24,25 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path.cwd()))
 
-POD_ID = "s6bbn2cip61wo3"
+#: 🔴 Pod nao? Doc `LTTV__pod_id()` — CUNG mot nguon voi
+#:    `apps/lttvideo/jobs.py:_dieu_phoi_that()`. Ban dau day la mot hang so go
+#:    tay, va den 07/09 no van tro `s6bbn2cip61wo3` trong khi pod dang dung la
+#:    `rwzfwnpkdcxa16`. Mot con cho canh nhin nham may la mot con cho canh de
+#:    hoa don chay tiep — va no bao "da tat" rat tu tin.
+#:
+#: ⛔ Khong dat gia tri du phong. Thieu bien thi DUNG, vi mot pod mac dinh sai
+#:    con te hon khong co pod nao.
+def _pod_id() -> str:
+    import os  # noqa: PLC0415
+
+    pod = (os.environ.get("LTTV__pod_id()") or "").strip()
+    if not pod:
+        raise SystemExit(
+            "Thieu LTTV__pod_id(). Dat bien moi truong (hoac them vao "
+            "secrets/app.env) roi chay lai — khong doan pod nao.")
+    return pod
+
+
 APP = "lttvideo"
 
 #: Trạng thái coi là "đang bận". Lấy từ `platform_core.models` chứ không gõ tay
@@ -75,11 +93,11 @@ def main() -> int:
         except StopIteration:
             pass
 
-    dp = DieuPhoi(api=api, pod_id=POD_ID, client=None)
+    dp = DieuPhoi(api=api, pod_id=_pod_id(), client=None)
     nen = dp.nen_tat(so_viec_dang_chay=so_ban, giay_ke_tu_viec_cuoi=giay)
 
-    trang_thai = api.rest("GET", f"/pods/{POD_ID}").get("desiredStatus")
-    print(f"pod={POD_ID} trang_thai={trang_thai} dang_ban={so_ban} "
+    trang_thai = api.rest("GET", f"/pods/{_pod_id()}").get("desiredStatus")
+    print(f"pod={_pod_id()} trang_thai={trang_thai} dang_ban={so_ban} "
           f"ranh_giay={'?' if giay is None else round(giay)} "
           f"nguong={dp.nghi_tat_sau_s:.0f} => nen_tat={nen}")
 
@@ -91,7 +109,7 @@ def main() -> int:
     if "--tat" not in sys.argv:
         print("=> DU DIEU KIEN TAT, nhung dang o che do xem. Them `--tat` de tat that.")
         return 0
-    api.rest("POST", f"/pods/{POD_ID}/stop")
+    api.rest("POST", f"/pods/{_pod_id()}/stop")
     print("=> DA GUI LENH TAT")
     return 0
 
