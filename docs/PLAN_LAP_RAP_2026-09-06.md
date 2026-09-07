@@ -54,14 +54,14 @@ test 8 phút thì không thể chạy toàn kho. ⇒ Chỉ chạy trên **tệp 
 |---|---|---|---|---|---|---|
 | **H1** ✅ | Lint tĩnh | ≥4 bước gate viết tay | `ruff` *(đã cài)* | 1,5 h | **đã lắp** `d8c9e65f` — bánh cóc theo **mã luật** | gate đỏ ngay ⇒ phải chốt mốc |
 | **H2** ⚠️ | Mốc kết dòng | `check_xuong_dong.py` | `.editorconfig` **mình nó** | 1 h | **đã lắp** `d8c9e65f`; `.gitattributes` **RÚT** — đo được nó viết lại **429 tệp** | chính rủi ro ở cột này đã xảy ra |
-| **H3** | Cổng trước commit | *không có* | `pre-commit 4.5.1` *(đã cài)* | 1 h | cưỡng chế lớp D | **`.git/hooks` dùng chung 4 worktree** |
+| **H3** ✅ | Cổng trước commit | *không có* | `pre-commit 4.5.1` | 1 h | **đã lắp** `c2d3e64d` — 4 hook, ~1,3 s mỗi commit | rủi ro `.git/hooks` dùng chung đã xử: cây thiếu cấu hình thì hook **đi qua im lặng**, không chặn ai |
 | **H4** ✅ | Timeout test | 1 mốc **chết** | `pytest-timeout` | 20 ph | **đã lắp** `6b71f01a` + `requirements-dev.txt` | thêm phụ thuộc |
 | **H5** ⛔ | Khoá tệp | `cua_so_yen` tự viết | ~~`filelock` làm lõi~~ | — | **RÚT 06/09** — đo được: đổi lõi làm cây cũ và cây mới **không loại trừ nhau** | chính rủi ro ở cột này là thứ giết nó |
-| **H6** | Ranh giới kiến trúc | `lint_app_contract.py` | `import-linter` *(đã cài)* | 2 h | hợp đồng thành **cấu hình** | |
+| **H6** ✅ | Ranh giới kiến trúc | `lint_app_contract.py` | `import-linter` | 2 h | **đã lắp** `ef68cf51` — 3 hợp đồng, thành bước gate | `python -m importlinter.cli` **trơ** (rc=0 dù có vi phạm) ⇒ phải gọi qua `tools/check_ranh_gioi.py` |
 | **H7** ✅ | Kiểm thử đột biến | làm **tay** mỗi lần | **`cosmic-ray`** *(`mutmut` KHÔNG chạy trên Windows)* | 3 h | **tỷ lệ giết 56% → 73%**; tìm ra **4 lỗ thật** trong chính bánh cóc | phải chạy trong **cây riêng** — nó sửa tệp tại chỗ |
 | **H8** ✅ | Độ phủ theo diff | *không có* | `diff-cover 10.5.1` | 1 h | **đã lắp** `tools/do_phu_diff.py`, chạy thật đầu-cuối | 2 rào chắn chống đọc nhầm chính nó |
 | **H9** ✅ | Kiểu tĩnh | *không có cấu hình* | `mypy` *(đã cài)* | 3 h | **đã lắp** `4ece48f8` — 589 / 14 mã, ~45 s; bắt ngay 1 lệch hợp đồng thật | `plugins = pydantic.mypy` là bắt buộc — thiếu nó là **58 `call-arg` sai** |
-| **H10** | a11y | bộ dò viết tay | `axe-playwright-python 0.1.8` | 3 h | chuẩn WCAG có bảo trì | giữ phần **tràn ngang** (axe không đo) |
+| **H10** ✅ | a11y | bộ dò viết tay | `axe-core` qua Playwright | 3 h | **đã lắp** `0f4961ba` — bánh cóc **32 nút / 1 mã luật**, kèm mốc tuyệt đối `reduced-motion` | chốt theo **mã luật**, và **chỉ** `violations` — đếm `incomplete` như lỗi là báo cáo sai. Giữ phần **tràn ngang** (axe không đo) |
 | **H11** ✅ | Bảo mật | *không có* | `pip-audit 2.10` | 1 h | **đã lắp** — 24 advisory → **2** sau khi nới hai trần | `bandit` chỉ khai MacOS/Linux |
 | **H12** ⛔ | Phụ thuộc thừa/thiếu | *không có* | ~~`deptry`~~ | — | **RÚT 06/09** — 78 `DEP001` thì 74 là dương tính giả | mô hình 1-dự-án-1-tệp không khớp kho này |
 
@@ -69,13 +69,38 @@ test 8 phút thì không thể chạy toàn kho. ⇒ Chỉ chạy trên **tệp 
 
 | # | Hạng mục | Trạng thái | Chặn bởi |
 |---|---|---|---|
-| **S1** | Safari thật · bàn phím ảo thật | `REAL_DEVICE=PENDING` | **thiết bị vật lý** — ~30 phút của chủ dự án |
+| **S1** ⚠️ | Safari thật · bàn phím ảo thật | **một nửa đã đóng bằng phép đo** — xem dưới bảng | 4 phép kiểm còn lại cần **thiết bị vật lý** |
 | **S2** | `prompt_ai_ommi` view con | seed **đã có**, vỏ app đo sạch; view con là nút React không `href` | cần kịch bản điều hướng riêng |
 | **S3** | Tải lại / nối lại job | không có provider `san_sang` trong môi trường đo | cần provider giả |
 | **S4** ✅ | `reduced-motion` ở 4 app React | **đã đo và chốt** `3124848b` — 26 transition → **0** khi `reduce` | |
 | **S5** ✅ | Copy IP/token `/vps`, `/developers` | **đã sửa** `f9d41dbc` — `<code data-chep>` chưa từng có nút, dù tài liệu nói có | |
 | **S6** ✅ | Trạng thái loading/empty/error từng bề mặt | **đã đo 07/09 — 12/12 bề mặt đều có**; hai cái bị phép đo tố cáo đều là **dương tính giả** | phép đo sai **ba kiểu** — xem §4d |
 | **S7** | Trôi giữa kho chính ↔ kho worker | rủi ro tiềm ẩn, thuộc phiên VIDEO AI | |
+
+### S1 — nửa đã đóng, và vì sao nửa kia không giả lập được
+
+`playwright-cli` có sẵn **WebKit** — *chính engine của Safari* — và cờ
+`--mobile`. Bộ quét mobile đã nhận tham số `--phien` từ trước, nên chạy được
+**toàn bộ** bộ quét dưới engine Safari mà **không viết thêm dòng mã nào**.
+
+Đo 07/09, cùng bộ quét, cùng viền nhìn 390 px, cùng cookie:
+
+```
+                route  tran  inp<16  tgt<44  console  psi!
+WebKit (Safari)    24     0       0     249        0     0
+Chromium           24     0       0     249        0     0
+```
+
+Đối chứng **hai lớp**: (1) hai phiên thật sự là hai engine — `vendor` khác
+nhau (`Apple Computer, Inc.` với `Google Inc.`); (2) dụng cụ không trơ — nó
+vẫn cho giá trị khác 0 ở trường khác (`target_be` 249, `input_hien` 52).
+
+⇒ **Rủi ro "Safari render khác Chromium" trên 24 bề mặt khách hàng: THẤP.**
+
+🔴 Nửa kia **không** giả lập được, và đừng cố: thu nhỏ viewport đo được *"bố
+   cục có vỡ khi màn ngắn lại không"* — một câu **khác** với *"iOS có cuộn ô
+   đang gõ vào tầm nhìn không"*. Cái giả lập sẽ **xanh** trong khi máy thật
+   đỏ. Chi tiết + 4 việc còn lại: `docs/BAN_GIAO_S1_S7_2026-09-07.md`.
 
 ## 4. Lộ trình — xếp theo *thứ chặn thứ khác*, không theo độ khó
 
@@ -103,6 +128,22 @@ Giai doan 4 — CAN QUYET DINH / CAN NGUOI
 
 ⇒ **Giai đoạn 1 phải đi trước** vì `ruff`/`.editorconfig` soi mọi thứ làm sau
 đó. Làm ngược lại là viết thêm mã rồi mới bật đèn.
+
+### Trạng thái 07/09/2026 — sơ đồ trên là *ý định*, đây là *đã xảy ra*
+
+```
+HA TANG   10/12 lap    H1 H2 H3 H4 H6 H7 H8 H9 H10 H11
+           2/12 RUT     H5 (4b)  H12 (4c) — ca hai kem phep do giet no
+SAN PHAM   5/7  dong    S4 S5 S6 + S1 (nua hinh hoc) + S3 do lai
+           S1 con 4 phep kiem can THIET BI VAT LY
+           S2 -> phien khac      S7 -> phien VIDEO AI
+```
+
+⭐ Hai hạng mục **bị rút** không phải hai thất bại. Chúng là hai lần plan này
+   làm đúng việc của nó: `H5` và `H12` đều **nghe hợp lý trên giấy** và đều bị
+   một phép đo giết — 78 `DEP001` thì 74 là dương tính giả, và đổi lõi khoá
+   làm cây cũ với cây mới **thôi loại trừ nhau**. Lắp một công cụ cộng đồng
+   *vì nó là công cụ cộng đồng* là cách nhập khẩu một vấn đề mới.
 
 ## 4b. H5 bị RÚT — và đây là phép đo giết nó
 
@@ -212,10 +253,24 @@ biết**:
 
 ## 6. Ba điều cần chủ dự án quyết
 
+✅ **Cả ba đã ngã ngũ — chủ dự án trả lời 06–07/09.** Giữ nguyên văn để
+truy vết; trạng thái ghi ngay dưới mỗi mục.
+
 1. **H3 chạm hạ tầng dùng chung.** `.git/hooks` dùng chung cho cả bốn worktree;
    bật `pre-commit` sẽ chặn ba phiên kia giữa chừng. Theo §4c câu 1, việc này
    không thuộc quyền một phiên.
+   → ✅ **Được cấp phép, và rủi ro đã xử bằng cơ chế chứ không bằng lời hứa.**
+     Hook có **đường suy biến**: cây nào chưa có `.pre-commit-config.yaml` thì
+     nó **thoát 0 im lặng**. Không phiên nào bị chặn vì chưa kịp đồng bộ.
+     Thân hook nằm ở `setup/pre-commit-hook.sh`, `.git/hooks/pre-commit` chỉ
+     là vỏ mỏng — nhờ vậy phép kiểm của chính nó không phải `skip`.
 2. **H1/H9 sẽ đỏ ngay lượt đầu.** Cách đúng là **chốt mốc** theo khuôn
    `check_bo_qua.moc` đã có, không sửa 1.149 lỗi một lần.
+   → ✅ **Đã chốt mốc, và chốt theo *bản đồ* chứ không theo *tổng*** —
+     `ruff` 513/12 mã, `mypy` 592/14 mã. Một mốc tổng có **lỗ hoán đổi
+     một-đổi-một**: xoá một `F401`, thêm một `F811`, tổng không đổi.
 3. **Thứ tự sản phẩm vs hạ tầng.** Plan này làm mọi việc **sau đó** nhanh hơn;
    nó không tự đóng S1–S7. Muốn ưu tiên sản phẩm thì đảo lại.
+   → ✅ **Giữ thứ tự gốc** (hạ tầng trước), và nó đã trả công: bốn bánh cóc mới
+     bắt lỗi thật ngay trong chính đợt này — trong đó có một lỗi làm **gate đỏ
+     ở một tệp không ai đụng tới** (Bẫy 29).
