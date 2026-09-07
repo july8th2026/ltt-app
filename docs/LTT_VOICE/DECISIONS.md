@@ -450,3 +450,138 @@ hình của màn Dự án; làm ở hai nơi là hai chỗ để chúng lệch n
 bằng chứng cho mình: tôi báo "243 xanh" từ 11 tệp gõ tay, chạy đủ 26 tệp thì hai
 tệp đỏ — và cả hai đúng chỗ vừa sửa. Liệt kê bằng `ls | grep` rồi chạy cả danh
 sách.
+
+---
+
+## DV-009 — Đường lùi giọng: có, nhưng KHÔNG BAO GIỜ đổi giới và KHÔNG BAO GIỜ im
+
+**Ngày:** 2026-09-07 · **Gate:** `20260907T175803Z-5652.json` (27/29 PASS, 0 bước
+đỏ quy về mục này) · **Migration:** `e7b2c94a1d38`
+
+### Vấn đề
+
+Một giọng nhân bản `active` mà không còn `voice_repr` nào `dang_dung` — ca **nâng
+engine**, vì biểu diễn gắn với phiên bản engine — làm cả lượt đọc **hỏng**, kèm
+một câu sai:
+
+> *"Giọng này chưa ghi danh xong. Hãy thử lại sau ít phút."*
+
+Chờ **không bao giờ** giúp được: không có job ghi danh nào đang chạy. Một lời
+khuyên không dẫn tới đâu tệ hơn một lời từ chối.
+
+### Quyết định
+
+`apps/ltt_voice/lui_giong.py` — bậc thang bốn mặt, nới theo thứ tự:
+
+```
+1. cung lan + cung gioi + cung phong cach + cung vung
+2. noi VUNG        (giu lan + gioi + phong cach)
+3. noi PHONG CACH  (giu lan + gioi)
+4. DUNG  -> tra None, KHONG ha tieu chuan
+```
+
+⛔ **Hai mặt không bao giờ được nới: GIỚI và LÀN.** Hết ứng viên thì trả `None`
+và báo lỗi thành thật. Một lỗi *"không đọc được"* tốt hơn một bản đọc bằng giọng
+người khác.
+
+⭐ Vùng nới **trước** phong cách: giọng miền Bắc đọc thay miền Nam thì người nghe
+nhận ra ngay nhưng vẫn hiểu; một giọng tin tức đọc thay giọng kể chuyện thì đổi
+hẳn **nhịp** của cả bài.
+
+### Vì sao luật ấy là luật, không phải sở thích
+
+Hệ `D:\Viral` chạy đúng đường lùi **không** giữ giới, và khách của họ báo ngày
+26/08/2026: *"giọng nam bị biến thành giọng nữ"*. Chú thích trong
+`giong_piper.py` của họ ghi lại cơ chế:
+
+> *"TRUOC DAY backend KHONG CO bang nay: gioi chi nam trong NHAN hien thi …
+> moi duong LUI GIONG o backend khong co cach nao biet khach dang chon nam hay
+> nu ⇒ lui ve PIPER_VOICE_MAC_DINH = giong NU, ke ca khi khach chon giong NAM."*
+
+Ta học bài ấy **miễn phí**, bằng cách đọc mã của người khác.
+
+### Cột `VoiceProfile.gioi` — và vì sao migration KHÔNG đoán
+
+`""` = **KHÔNG RÕ**, và đó là một giá trị thật, không phải chỗ trống chờ điền.
+
+⛔ Cám dỗ rõ ràng là suy giới từ tên hiển thị hoặc từ F0 của clip nguồn. Cả hai
+sai theo hướng nguy hiểm: chúng sinh ra một cột **trông như dữ liệu**, được
+`lui_giong` tin, và khi sai thì hậu quả đúng bằng thứ cột này sinh ra để ngăn.
+`toc_do.py` đã ghi một ca thật của phép đo F0 — bộ dò nhầm quãng tám trên một
+clip giọng nữ, báo 105,6 Hz.
+
+⇒ Không rõ thì `lui_giong` **từ chối lùi**, và bộ lọc ở bộ chọn giọng **vẫn
+hiện** giọng đó. Hai hành vi ấy đều là *"không biết thì đừng làm hộ người ta"*.
+
+### Giới hạn ĐÃ BIẾT của bản này
+
+Ứng viên lùi hiện **chỉ là 20 giọng mẫu**, và cả 20 đều làn `vi`. Nghĩa là:
+
+```
+lan vi + gioi ro   ->  lui duoc
+lan en             ->  KHONG (chua co giong mau lan en)
+gioi = "" khong ro ->  KHONG (khong duoc doan)
+```
+
+Đây là giới hạn của **kho giọng**, không phải của thuật toán — `chon()` nhận một
+danh sách ứng viên bất kỳ. Ngày kho chung có giọng làn `en` đã khai giới, mở rộng
+bằng cách đưa chúng vào `cac`, **không** bằng cách sửa bậc thang.
+
+---
+
+## DV-010 — Ba đường ống có đủ khớp nối mà chưa bao giờ có nước
+
+Nối `lui_giong` vào làm lộ ra rằng **kênh báo cho khách chưa từng chạy**. Cả ba
+đều là mã trông hoàn chỉnh:
+
+| Thứ | Trạng thái trước 07/09/2026 |
+|---|---|
+| `KetQua.canh_bao` | có trường, có khoá trong `as_result()`, **không ai điền** — `jobs.py` viết `ref_b64, preset, _ =` |
+| `lan_ngon_ngu.dien_canh_bao` | **0 nơi gọi**; `doi_chieu` trả khuôn còn `{lan_giong}` — khách sẽ đọc đúng chuỗi ấy |
+| `/ket-qua/{job_id}` | không trả `canh_bao`; Studio không có ô hiện nó |
+
+⇒ `lan_ngon_ngu.doi_chieu` chạy ở **mọi** lượt kể từ 01/09 và chưa bao giờ nói
+được gì. Nay `doi_chieu` trả **câu đã điền**, `jobs.py` giữ nó, route trả nó, và
+Studio có `#lv-kq-canh-bao`.
+
+🔴 **Bài học đo lường:** một chỗ trống có sẵn cho một giá trị trông **giống hệt**
+một chỗ đã được điền đúng. Cách duy nhất phân biệt là hỏi *"ai ghi vào đây"* —
+và câu hỏi ấy trả lời được bằng AST, nên nó thành phép kiểm
+(`test_503::test_jobs_KHONG_VUT_canh_bao_di`).
+
+⚠️ Và nó vừa thành thứ **không được phép** chết: một đường lùi im lặng chính là
+lỗi DV-009 đi sửa. Mất dòng cảnh báo là mất toàn bộ điểm của nó.
+
+---
+
+## DV-011 — Kiểm tệp model theo NỘI DUNG trước khi nạp
+
+`os.path.isfile()` trả lời *"có tệp không"*, không trả lời *"tệp đó có phải model
+không"*. `voice_sidecar/kiem_model.py` hỏi câu thứ hai, và `engine.nap()` gọi nó
+**trước** `from vieneu import Vieneu`.
+
+Ba phép kiểm theo định dạng, không một luật chung:
+
+| Định dạng | Phép kiểm |
+|---|---|
+| `*.safetensors` | đọc `u64` độ dài phần đầu, đòi `8 + n <= cỡ tệp` và `{` ở **offset 8** |
+| `*.onnx` | sàn 1 MB + byte đầu không phải `<` hay `{` |
+| `*.json` | `json.load` phải chạy được |
+
+⛔ **Vì sao safetensors KHÔNG dùng luật của ONNX.** Phần JSON của safetensors
+**thật sự bắt đầu bằng `{`** — chỉ là ở offset 8. Và byte 0 là byte thấp của độ
+dài; một phần đầu dài đúng 123 byte cho byte 0 = `0x7B` = `{`. Áp luật ONNX vào
+đây là một phép kiểm **đúng gần hết thời gian** — loại tệ nhất: nó sẽ báo oan một
+lần, giữa đêm, và không ai tái hiện được.
+`test_502::test_safetensors_co_dau_JSON_o_offset_8_van_duoc_coi_la_LANH` dựng
+đúng ca tình cờ ấy.
+
+**Fail-open khi không định vị được cache, fail-closed khi định vị được mà hỏng.**
+Trộn hai nhánh là hỏng theo cả hai hướng: fail-closed ở nhánh đầu chặn mọi máy
+phát triển ⇒ cổng bị gỡ trong một tuần; fail-open ở nhánh sau thì cổng vô nghĩa.
+
+**Nguồn:** `D:\Viral\resources\app-src\giong_piper.py::_onnx_hop_le`, chú thích
+07/08/2026 — proxy/captive portal trả **HTTP 200 kèm HTML**, `isfile` xanh
+**vĩnh viễn**, khách mất hẳn giọng offline và không lần nào tự sửa được. Ta
+không thừa kế mã của họ; ta thừa kế bài học, và làm chặt hơn vì ta biết chính
+xác ba định dạng của mình.

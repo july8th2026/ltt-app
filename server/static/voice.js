@@ -1333,6 +1333,26 @@
       nhan("b-ok", chu.xong);
       nutTao.disabled = false;
 
+      /* Canh bao cua mot luot DA XONG: lech lan, hoac DA LUI GIONG.
+       *
+       * ⛔ `textContent`, KHONG `innerHTML`. Cau nay di qua bao nhieu tang thi
+       *    van la chuoi cua may chu, nhung o day no duoc dat vao DOM — va mot
+       *    cho dat chuoi vao DOM bang innerHTML la mot cho se bi dung sai sau
+       *    ba lan sua. Moi canh bao mot dong rieng: hai cau noi lien nhau doc
+       *    thanh mot cau vo nghia. */
+      var oCanh = document.getElementById("lv-kq-canh-bao");
+      if (oCanh) {
+        var ds = (d.canh_bao || []).filter(function (c) { return !!c; });
+        oCanh.textContent = "";
+        ds.forEach(function (c) {
+          var p = document.createElement("p");
+          p.style.margin = "0";
+          p.textContent = c;
+          oCanh.appendChild(p);
+        });
+        oCanh.hidden = ds.length === 0;
+      }
+
       var au = document.getElementById("lv-player");
       au.src = d.audio_url;
       var tai = document.getElementById("lv-tai");
@@ -1464,6 +1484,10 @@
      *    la bat khach chon "giong cua toi" HOAC "tieng Anh" thay vi ca hai —
      *    va dung luc kho giong dong len thi do la luc ho can ca hai nhat. */
     var locLan = "";
+    /* Gioi tinh cua giong (nam | nu | "" = moi gioi). Bien RIENG, cung ly do
+     * voi `locLan` ngay tren: gop hai mat loc vao mot bien la bat khach chon
+     * MOT trong hai thay vi ca hai. */
+    var locGioi = "";
 
     function locChon() {
       var q = ((oTimChon && oTimChon.value) || "").trim().toLowerCase();
@@ -1476,9 +1500,18 @@
          *    tung la mot cot khong noi nao doc, nen du lieu cu hoan toan co the
          *    trong — an chung di la khach mat giong cua chinh minh ma khong
          *    hieu vi sao. Chua biet lan thi hien o moi lan. */
+        /* ⛔ Muc chua khai GIOI (`data-gioi` rong) cung KHONG bi loc bo —
+         *    cung quy uoc voi `data-lan` ngay tren, va cung mot ly do: cot
+         *    `gioi` chi co tu 07/09/2026 nen moi giong nhan ban tao TRUOC do
+         *    deu rong. An chung di la khach mat giong cua chinh minh ngay lan
+         *    dau ho bam mot bo loc.
+         *
+         * ⚠️ Man Giong lam KHAC (an, roi DEM so the bi an) — xem chu thich o
+         *    `_voice_chon.html`. Khac nhau la co chu y, khong phai lech. */
         var hop = d.loai === ""
           || ((!locLoai || d.loai === locLoai)
               && (!locLan || !d.lan || d.lan === locLan)
+              && (!locGioi || !d.gioi || d.gioi === locGioi)
               && (!q || (d.ten || "").toLowerCase().indexOf(q) >= 0));
         m.hidden = !hop;
         if (hop && d.loai !== "") con++;
@@ -1505,6 +1538,16 @@
           locChon();
         });
       })(nutChonLan[j]);
+    }
+    var nutChonGioi = document.querySelectorAll("[data-chon-gioi]");
+    for (var k = 0; k < nutChonGioi.length; k++) {
+      (function (nut) {
+        nut.addEventListener("click", function () {
+          locGioi = nut.dataset.chonGioi || "";
+          batNut(nut);
+          locChon();
+        });
+      })(nutChonGioi[k]);
     }
     if (oTimChon) oTimChon.addEventListener("input", locChon);
 

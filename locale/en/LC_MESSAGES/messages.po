@@ -14311,3 +14311,27 @@ msgstr "Reviewing the translation"
 
 msgid "Chưa có bản dịch để soát."
 msgstr "No translation available to review."
+
+msgid "Dùng để chọn giọng thay thế đúng giới nếu giọng này tạm thời không dùng được. Bỏ trống nếu bạn không chắc."
+msgstr "Used to pick a same-gender stand-in if this voice ever becomes unavailable. Leave blank if you are not sure."
+
+msgid "Giọng bạn chọn hiện không dùng được, nên bài này được đọc bằng {giong_thay} ({mo_ta}). Hãy ghi danh lại giọng của bạn để dùng tiếp."
+msgstr "The voice you picked is currently unavailable, so this was read by {giong_thay} ({mo_ta}). Enrol your voice again to keep using it."
+
+msgid "Giọng này cần được ghi danh lại (bản ghi cũ không còn dùng được với máy đọc hiện tại). Hãy tải lại clip mẫu ở màn Giọng."
+msgstr "This voice needs to be enrolled again (its old recording no longer works with the current engine). Upload your sample clip again on the Voices screen."
+
+msgid "Giọng này đang được ghi danh. Chờ khoảng một phút rồi thử lại."
+msgstr "This voice is still being enrolled. Wait about a minute and try again."
+
+msgid "Giới tính giọng"
+msgstr "Voice gender"
+
+msgid "Không rõ"
+msgstr "Not sure"
+
+msgid "Ngôn ngữ bạn nói trong clip mẫu, không phải ngôn ngữ bạn sẽ đọc sau này."
+msgstr "The language you speak in the sample clip, not the language you will read later."
+
+msgid "Ngôn ngữ của clip"
+msgstr "Clip language"

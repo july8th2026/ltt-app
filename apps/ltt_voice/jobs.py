@@ -92,7 +92,18 @@ def _tao_tieng(params: dict, ctx=None) -> dict:
             "Máy tạo tiếng nói chưa được thiết lập trên máy chủ này "
             "(thiếu LTT_VOICE_SIDECAR_TOKEN)."))
 
-    ref_b64, preset, _ = _voi_db(lambda db: features.giai_giong(db, yc))
+    # 🔴 THÀNH PHẦN THỨ BA KHÔNG ĐƯỢC VỨT ĐI NỮA.
+    #
+    #    Trước 07/09/2026 dòng này là `ref_b64, preset, _ = ...`, và dấu gạch
+    #    dưới ấy làm **cả chuỗi cảnh báo chết**: `lan_ngon_ngu.doi_chieu` được
+    #    gọi ở cả hai nhánh của `giai_giong`, `KetQua` có sẵn trường `canh_bao`,
+    #    `as_result()` có sẵn khoá `canh_bao` — và không có gì đi giữa hai đầu
+    #    đó. Một đường ống đủ mọi khớp nối, không bao giờ có nước.
+    #
+    # ⛔ Và nó vừa thành thứ KHÔNG ĐƯỢC PHÉP chết: `lui_giong` báo qua đúng
+    #    kênh này. Một đường lùi im lặng là chính cái lỗi mà `lui_giong.py`
+    #    được viết ra để sửa — mất dòng cảnh báo là mất toàn bộ điểm của nó.
+    ref_b64, preset, canh_bao = _voi_db(lambda db: features.giai_giong(db, yc))
 
     # ── chia đoạn: văn bản dài đi ĐƯỜNG KHÁC, không phải bị từ chối ──────────
     #
@@ -182,11 +193,13 @@ def _tao_tieng(params: dict, ctx=None) -> dict:
             khai = headers.get("X-Duration-S")
 
         return _cat_kho(yc, duong, thu_muc, job_id=job_id, khai=khai,
-                        chuan=chuan, so_doan=len(doan), ctx=ctx)
+                        chuan=chuan, so_doan=len(doan), ctx=ctx,
+                        canh_bao=canh_bao, giong_that=preset)
 
 
 def _cat_kho(yc, duong: str, thu_muc: str, *, job_id: str, khai,
-             chuan, so_doan: int, ctx=None) -> dict:
+             chuan, so_doan: int, ctx=None, canh_bao=(),
+             giong_that: str = "") -> dict:
     """Đo, đổi tốc độ, cất kho. Tách ra vì thân `_tao_tieng` đã đủ dài.
 
     ⚠️ Nhận `duong` chứ không nhận `bytes`: đây là chỗ duy nhất còn chạm tới cả
@@ -249,9 +262,13 @@ def _cat_kho(yc, duong: str, thu_muc: str, *, job_id: str, khai,
     with open(duong, "rb") as f:
         get_storage().put(khoa, f, content_type="audio/wav")
 
+    # ⭐ `giong_that` chi khac `yc.preset` khi `giai_giong` DA LUI GIONG. Ghi
+    #    lai o day de lich su tra loi duoc cau *"vi sao bai nay nghe khac"* —
+    #    mot dong canh bao tren man hinh song het mot phien, ban ghi thi khong.
     ket = features.KetQua(
         yeu_cau=yc, audio_key=khoa, giay=giay, giay_phat=giay_phat,
-        text_da_chuan_hoa=chuan.da_chuan_hoa, so_doan=so_doan)
+        text_da_chuan_hoa=chuan.da_chuan_hoa, so_doan=so_doan,
+        canh_bao=tuple(canh_bao or ()), giong_that=giong_that or "")
 
     if giay <= 0:
         log.warning("job %s: khong do duoc thoi luong -> thu 0 credit", job_id)

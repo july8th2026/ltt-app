@@ -24,8 +24,28 @@
          data-loai="{{ 'mau' if la_mau else 'toi' }}"
          data-ten="{{ g.ten_hien_thi }}"
          data-trangthai="{{ g.trang_thai }}"
+         {#
+           GIOI phat ra cho CA HAI loai the — tu 07/09/2026 `VoiceProfile` co
+           cot `gioi` nen giong nhan ban cung tra loi duoc cau hoi ay.
+
+           🔴 Truoc do ba mat nay chi co o giong mau, va do la ly do dong ghi
+              chu ngay duoi `lv-g-dem` ton tai: do 01/09 tren production, bam
+              "Nam" thi 45 giong con 9 va **toan bo 25 giong cua khach bien
+              mat**. Giao dien khi ay chi con cach NOI RA hau qua, vi du lieu
+              khong tra loi duoc.
+
+           ⭐ Nay no tra loi duoc — nhung chi khi chu giong DA KHAI. `gioi` rong
+              van la mot cau tra loi that (*"chua ai noi"*), va the do van bi
+              bo loc gioi an di. Do la dung: an mot the CHUA PHAN LOAI khac han
+              voi an mot the KHONG KHOP, va `voice.js` dem hai thu do rieng.
+
+           ⛔ `vung`/`phong_cach` VAN chi co o giong mau. `VoiceProfile` khong
+              co hai cot ay, va bia ra mot gia tri mac dinh ("bac"?) de bo loc
+              "chay duoc" la dat mot du lieu SAI vao cho mot du lieu THIEU.
+         #}
+         data-gioi="{{ g.gioi or '' }}"
          {%- if la_mau %}
-         data-gioi="{{ g.gioi }}" data-vung="{{ g.vung }}" data-phongcach="{{ g.phong_cach }}"
+         data-vung="{{ g.vung }}" data-phongcach="{{ g.phong_cach }}"
          {%- endif %}
          tabindex="0" role="button"
          aria-pressed="{{ 'true' if chon else 'false' }}"

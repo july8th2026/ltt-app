@@ -267,6 +267,43 @@
         <input type="file" name="tep" accept="audio/*" required>
         <small>{{ _("Từ 3 đến 30 giây, nói rõ, không nhạc nền.") }}</small></label>
 
+      {#
+        HAI O KHAI BAO — va ca hai deu KHONG BAT BUOC, co chu y.
+
+        🔴 GIOI TINH khong phai de trang tri the giong. No la thu duy nhat cho
+           phep `lui_giong.py` chon mot giong thay ma KHONG doi nguoi noi khi
+           ban ghi cua giong nay het dung duoc (vd sau mot lan nang engine).
+           He `D:\Viral` khong co no, va ngay 26/08/2026 khach cua ho bao:
+           *"giong nam bi bien thanh giong nu"*.
+
+        🔴 LAN cung khong phai trang tri: `VoiceProfile.ngon_ngu` mac dinh
+           `"vi"` va truoc 07/09/2026 **khong o nao dat no**, nen moi giong
+           khach nhan ban tu clip tieng Anh van bi ghi la lan `vi` — roi bo loc
+           lan o bo chon giong xep no nham cho, va `lan_ngon_ngu.doi_chieu`
+           canh bao nham chieu.
+
+        ⛔ "Khong ro" la mot lua chon THAT, khong phai mot o trong. Bat khach
+           phai chon gioi la buoc ho DOAN khi chinh ho khong chac (giong tre
+           em, giong da qua xu ly), va mot cot "gioi" sai con te hon mot cot
+           trong — vi no DUOC TIN. Xem `tables.VoiceProfile.gioi`.
+      #}
+      <label class="lv-field"><span class="lv-nhan">{{ _("Giới tính giọng") }}</span>
+        <select name="gioi">
+          <option value="">{{ _("Không rõ") }}</option>
+          {% for k, nhan in nhan_gioi.items() %}
+            <option value="{{ k }}">{{ _(nhan) }}</option>
+          {% endfor %}
+        </select>
+        <small>{{ _("Dùng để chọn giọng thay thế đúng giới nếu giọng này tạm thời không dùng được. Bỏ trống nếu bạn không chắc.") }}</small></label>
+
+      <label class="lv-field"><span class="lv-nhan">{{ _("Ngôn ngữ của clip") }}</span>
+        <select name="ngon_ngu">
+          {% for k, nhan in nhan_lan.items() %}
+            <option value="{{ k }}"{{ ' selected' if k == 'vi' }}>{{ _(nhan) }}</option>
+          {% endfor %}
+        </select>
+        <small>{{ _("Ngôn ngữ bạn nói trong clip mẫu, không phải ngôn ngữ bạn sẽ đọc sau này.") }}</small></label>
+
       <fieldset class="lv-dk">
         <legend>{{ _("Điều khoản") }}</legend>
         <ul>{% for d in dieu_khoan %}<li><b>{{ d.tieu_de }}</b> — {{ d.noi_dung }}</li>{% endfor %}</ul>
