@@ -403,7 +403,7 @@ sau cả M1–M3. `test_833::test_CHUA_mo_cua_thu_tu` chốt sự vắng mặt �
 | 2 | **Mở trình duyệt thật, xem bốn nhãn trạng thái V3 hiện đúng** | ✅ **05/09** — xem §dưới |
 | 3 | Kiểm trên URL công khai, không chỉ loopback (`CLAUDE.md` 5b) | ✅ **07/09** — `https://app.lttstudios.com/en/chatltt/api/hoi-thoai/cv_x/tep` trả **303** (cổng cờ cho qua → `require_login`); đối chứng route không tồn tại vẫn **404**; `/health/ready` 200 |
 | 4 | R2b được chủ dự án chốt | ✅ **06/09 — chốt C3**, đã deploy (`334004d4`), đang thu thật |
-| 5 | **Giá trích tài liệu** được chủ dự án chốt | 🟡 **06/09 — đang chạy giá TẠM** `20` mcredit/1.000 ký tự (`apps/chatltt/gia_trich.py`). Cơ chế chạy đầu-cuối; `CHU_DU_AN_DA_CHOT = False` cho tới khi có người chốt. |
+| 5 | **Giá trích tài liệu** được chủ dự án chốt | ✅ **CHỐT 07/09/2026 — chủ dự án giữ nguyên `20`** mcredit/1.000 ký tự. Căn cứ: giá vốn đo được **1–2đ**/lượt (PDF thật 1 MB/17 trang = 0,16 s CPU); **sàn làm tròn 1 credit** ăn hết mọi tài liệu dưới 50.000 ký tự, nên hạ xuống `10` không đổi gì cho tài liệu thường. `CHU_DU_AN_DA_CHOT = True`. |
 
 ### ✅ 07/09 — `_FILES` và `_TOOLS` ĐÃ BẬT trên production
 

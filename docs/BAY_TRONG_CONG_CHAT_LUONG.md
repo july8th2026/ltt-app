@@ -2420,3 +2420,75 @@ bàn giao sang đây; văn bản giữ gần nguyên.)*
 | 1 | nguồn **ngoài** — cây mã không khớp mẫu nữa |
 | 2 | không rỗng, mà **khớp nhầm** — mẫu bắt phải một dòng chú thích |
 | 3 | **chính mã đang kiểm** — nó rút tập về rỗng trên dữ liệu tự dựng |
+
+---
+
+## Bẫy 32 — phép kiểm YẾU hơn thứ nó cần đo
+
+*Đo 07/09/2026, H44 B6. Mặt còn lại của `phep-kiem-manh-hon-thu-no-do`.*
+
+`test_841` có **bốn** phép kiểm về `gia_nghien_cuu.uoc_tran`, tất cả đều có đối
+chứng đỏ tử tế. Hằng số nó canh sai **13 lần**, và cả bốn vẫn xanh:
+
+```python
+assert G.uoc_tran(1) > 0                    # sai 13 lan van > 0
+assert G.uoc_tran(3) > G.uoc_tran(1)        # sai 13 lan van tang don dieu
+assert G.uoc_tran(3) > G.credit_cost(...)   # credit_cost = 0, nen day cung la "> 0"
+```
+
+Sự thật: `uoc_tran(3)` trả **13 credit**; giá thật đo từ `gia_token` là **1**.
+Hậu quả trong mã: route từ chối khách có dưới 13 credit cho một việc tốn 1.
+
+### 🔴 Khác Bẫy 31 ở TRỤC nào
+
+| | câu hỏi | hỏng ở đâu |
+|---|---|---|
+| **Bẫy 31** | *tập rỗng đến từ đâu?* | phép kiểm **không nhìn thấy** thứ cần nhìn |
+| **Bẫy 32** | *mệnh đề có đủ chặt không?* | nó **nhìn đúng**, chạy **đúng** dữ liệu, và vẫn cho qua |
+
+Bẫy 31 là lỗi về **phạm vi**. Bẫy 32 là lỗi về **độ chặt**. Một phép kiểm có thể
+sạch ở trục này và hỏng ở trục kia — `test_841` nhìn đúng `uoc_tran`, gọi nó với
+đúng tham số, và vẫn không đo được gì.
+
+### Dấu hiệu nhận biết — một câu
+
+> **Một hằng số sai một BẬC ĐỘ LỚN mà vẫn thoả mọi `assert` ⇒ những `assert` ấy
+> đang chốt DẤU và THỨ TỰ, không chốt ĐỘ LỚN.**
+
+Thử bằng tay: nhân hằng số với 10 rồi chạy lại. Còn xanh ⇒ Bẫy 32.
+
+### Liều thuốc, và mặt trái của chính nó
+
+Neo vào một **nguồn độc lập**, không vào một bất đẳng thức tự tham chiếu. Ở đây
+là `platform_core/llm/gia_token` — bảng giá **đang thật sự thu tiền**.
+
+⛔ Nhưng *"nguồn độc lập"* không có nghĩa là *"một hằng số khác trong cùng kho"*.
+   Một hằng số ta tự viết neo vào một hằng số ta cũng tự viết thì không độc lập —
+   nó chỉ **xa hơn một bước**, và cả hai vẫn trôi cùng nhau. `gia_token` đủ tư
+   cách vì nó là giá **có thật với nhà cung cấp**, tức có một thực tại ngoài kho
+   giữ nó đứng yên.
+
+⇒ Câu để tự hỏi: *nếu tôi sửa nguồn neo cho khớp bug, có ai ngoài kho này phản
+  đối không?* Không ⇒ nó không phải một cái neo.
+
+### ⭐ Và nguyên nhân GỐC hoá ra rộng hơn phép kiểm
+
+Ba ca trong **cùng một ngày**, hai phiên khác nhau:
+
+```
+do `git diff`          (co che) -> suy ra production dang chay gi   (pham vi)
+grep `ly_do}`          (co che) -> suy ra "chi 2 cho ro"            (pham vi)
+do bang gia token      (co che) -> suy ra "khach bi chan"           (pham vi)
+```
+
+Cả ba đều **đo đúng cơ chế** rồi **suy** sang phạm vi. Cả ba đều sai ở vế suy:
+production đang chạy một commit khác; chỗ rò là **bốn** không phải hai; và cờ
+đang **tắt** nên không khách nào bị chặn.
+
+> **Đo cơ chế xong thì phạm vi là một phép đo THỨ HAI, không phải một hệ quả.**
+
+Áp cho phép kiểm: biết `uoc_tran` **sai** là cơ chế; biết nó sai **bao nhiêu** là
+phạm vi — và chỉ vế thứ hai mới nói được phép kiểm nào đủ chặt.
+
+*Chốt ở `tests/test_847_chatltt_uoc_tran_neo_vao_gia_that.py`. Đối chứng: tiêm
+lại hằng số cũ ⇒ `test_841` vẫn xanh **cả 25** phép kiểm, chỉ `test_847` đỏ.*
