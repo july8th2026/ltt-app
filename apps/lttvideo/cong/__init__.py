@@ -8,5 +8,6 @@ from __future__ import annotations
 
 from apps.lttvideo.cong.giao_uoc import LoiMay, May
 from apps.lttvideo.cong.may_gia_lap import MayGiaLap
+from apps.lttvideo.cong.may_that import MayThat
 
-__all__ = ["LoiMay", "May", "MayGiaLap"]
+__all__ = ["LoiMay", "May", "MayGiaLap", "MayThat"]

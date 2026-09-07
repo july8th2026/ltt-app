@@ -1,4 +1,4 @@
-"""Giao ước giữa LTT và WanGP — **tám** phương thức, không hơn.
+"""Giao ước giữa LTT và WanGP — **mười một** phương thức, không hơn.
 
 ## Vì sao bề mặt phải HẸP
 
@@ -7,14 +7,30 @@ thanh, LoRA. Một mối nối "cho tiện" sẽ mọc thêm đường mỗi l�
 khi ấy nó thành `wangp_client` thứ hai — thứ đã trộn *cách nói chuyện* với
 *biết gì về model*, và giữ độ phủ ở 2/46.
 
-Tám cửa dưới đây là **toàn bộ** thứ sản phẩm cần:
+Mười một cửa dưới đây là **toàn bộ** thứ sản phẩm cần:
 
-    tra cứu   liet_ke_model · so_do · mac_dinh · kha_dung
-    chạy việc gui_viec · tien_do · ket_qua · huy
+    tra cứu    liet_ke_model · so_do · mac_dinh · kha_dung
+    đưa vào    nap_media
+    chạy việc  gui_viec · tien_do · ket_qua · huy
+    lấy ra     tai_ve
+    dọn        don_dep
 
-Thứ gì WanGP làm mà không lọt qua tám cửa này thì tầng trên không dùng được —
-và đó là chủ ý. Thêm cửa thứ chín là một quyết định, không phải một tiện nghi,
-nên `test_738` chốt **con số** để người thêm phải dừng lại một nhịp.
+Thứ gì WanGP làm mà không lọt qua mười một cửa này thì tầng trên không dùng
+được — và đó là chủ ý. Thêm cửa thứ mười hai là một quyết định, không phải một
+tiện nghi, nên `test_738` chốt **con số** để người thêm phải dừng lại một nhịp.
+
+## 🔴 Con số này ban đầu là TÁM, và phép kiểm ấy bắt được chính người viết nó
+
+Bản đầu khai tám cửa — thiết kế **trước khi** đọc xem `wangp_client` cũ thật sự
+cần gì. Đọc rồi mới thấy ba cửa nữa đang được dùng thật: `nap_media`
+(`/nap_media`), `tai_ve` (`/tai/{job}/{i}`), `don_dep` (`/cleanup/{job}`).
+
+⭐ Không có ba cửa ấy thì đường ống **không chạy nổi một lượt nào**: ảnh của
+  người dùng nằm ở R2 phía LTT, mà WanGP chỉ nhận **đường dẫn tệp trên chính
+  máy nó**; và video sinh ra nằm trên pod, phải kéo về mới lưu vào R2 được.
+
+Đây đúng là việc `test_738` sinh ra để làm — chốt con số buộc người sửa dừng
+lại một nhịp, kể cả khi người sửa là người đã viết ra nó.
 
 ## Ranh giới với `dieu_phoi.py`
 
@@ -86,6 +102,21 @@ class May(Protocol):
         """
         ...
 
+    # ── Đưa media vào ──────────────────────────────────────────────────────
+
+    def nap_media(self, du_lieu: bytes, *, duoi: str = "png") -> str:
+        """Nạp byte một tệp lên máy chạy WanGP, trả **đường dẫn trên máy đó**.
+
+        ⭐ Mắt xích bắt buộc, không bỏ được: `docs_API.md` §*Accepted Input
+          Shapes* nói mọi đầu vào media của WanGP là **đường dẫn tệp trên chính
+          máy chạy nó** — không URL, không base64. Ảnh của người dùng nằm ở R2
+          phía LTT.
+
+        ⛔ Gửi **byte thô**, không bọc JSON: base64 phồng 33%, và một ảnh 8 MB
+           thành 11 MB đi qua một proxy vốn đã có trần thời gian.
+        """
+        ...
+
     # ── Chạy việc ──────────────────────────────────────────────────────────
 
     def gui_viec(self, settings: dict) -> str:
@@ -112,4 +143,24 @@ class May(Protocol):
 
     def huy(self, ma_viec: str) -> None:
         """Xin huỷ. Không chờ."""
+        ...
+
+    # ── Lấy ra và dọn ──────────────────────────────────────────────────────
+
+    def tai_ve(self, ma_viec: str, chi_so: int = 0) -> bytes:
+        """Kéo tệp thứ `chi_so` của việc về dạng byte.
+
+        `ket_qua()["tep"]` trả **đường dẫn trên máy WanGP**, không phải nội
+        dung. Không có cửa này thì video sinh xong nằm lại trên pod và không
+        bao giờ tới R2 — job XONG mà người dùng không tải được gì.
+        """
+        ...
+
+    def don_dep(self, ma_viec: str) -> None:
+        """Xoá tệp tạm của việc trên máy WanGP, sau khi đã kéo về.
+
+        ⚠️ Không dọn thì volume đầy dần một cách im lặng, và nó là volume
+           **300 GB dùng chung với trọng số model** — đầy ở đây nghĩa là không
+           tải thêm được model nào.
+        """
         ...

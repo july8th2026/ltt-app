@@ -519,3 +519,70 @@ nào lẽ ra phải mất mà vẫn sống.
    là bỏ một đảm bảo, không phải dọn dẹp.
 3. **Đo bằng AST, không bằng `grep`,** khi chốt "không ai còn import thứ đã gỡ"
    — `grep` khớp cả chú thích nhắc tới nó, và đã báo động sai bốn lần ở kho này.
+
+---
+
+## 6. Nhật ký thực thi — thứ kế hoạch đoán sai
+
+Mục này ghi chỗ **bản kế hoạch sai**, vì đó mới là dữ liệu. Chỗ nó đúng thì các
+ô đánh dấu đã nói rồi.
+
+### HM-1 · giao ước đáng lẽ là 8, thật ra là 11
+
+Mục 2 của chính tài liệu này khai **tám** phương thức — viết **trước khi** đọc
+xem `wangp_client` cũ thật sự dùng gì. Đọc rồi mới thấy ba cửa nữa đang chạy
+thật:
+
+| Cửa thiếu | Đường cầu nối | Thiếu nó thì |
+|---|---|---|
+| `nap_media` | `POST /nap_media` | WanGP chỉ nhận **đường dẫn tệp trên máy nó**; ảnh người dùng nằm ở R2 ⇒ không có đầu vào ảnh nào chạy được |
+| `tai_ve` | `GET /tai/{job}/{i}` | video sinh xong **nằm lại trên pod** ⇒ job XONG mà không tải được gì |
+| `don_dep` | `POST /cleanup/{job}` | volume 300 GB đầy dần, và nó **dùng chung với trọng số model** |
+
+⭐ Chính `test_738` (*"chốt con số"*) bắt được điều này — nó sinh ra để buộc
+  người sửa dừng một nhịp, và người đầu tiên nó chặn là người viết ra nó.
+
+### HM-1 · máy giả lập ghi vào cây kho
+
+`ket_qua()` bản đầu ghi `gia_lap_<ma>.mp4` vào `apps/lttvideo/ban_ghi/`. Một tệp
+lạ sinh ra trong cây **giữa lượt gate** làm chính lượt ấy mất giá trị
+(`cay_da_doi_giua_chung`) — mất 10 phút mới biết. Nay ghi ra thư mục tạm, có
+phép kiểm canh.
+
+### 🔴 HM-2 · một lỗi đã khiến MỌI lượt chạy thật đều chết
+
+`jobs.py` kéo tệp về bằng:
+
+```python
+with_tai = getattr(client, "tai_ve", None)
+if with_tai is None:
+    raise LoiJob(_t("Không tải được kết quả về."))
+```
+
+Nhưng `WanGPClient` **không bao giờ có** `tai_ve` — đếm được: 0 định nghĩa.
+
+⇒ Mọi lượt sinh video thật đều dừng ở *"Không tải được kết quả về"*, **sau khi**
+  GPU đã chạy xong và tính tiền thời gian thuê.
+
+⭐ Bài học không nằm ở phương thức thiếu, mà ở **cái vỏ**: `getattr(x, "ten",
+  None)` cộng một thông điệp lỗi tử tế biến một **lỗ hổng** thành một **trường
+  hợp biên đã xử lý**. Không có dấu vết nào để lần: không `AttributeError`,
+  không traceback, chỉ một câu tiếng Việt lịch sự nói rằng việc đã hỏng.
+
+⇒ Nay gọi thẳng `client.tai_ve(job_id, i)` theo giao ước. Thiếu là
+  `AttributeError` nổ ngay trong test.
+
+### HM-2 · phân biệt huỷ/hỏng từng đặt trên một chuỗi của thượng nguồn
+
+`KetQua.da_huy` cũ dò chuỗi `"cancelled"` trong thông điệp lỗi. Đó là một phép
+phân biệt **về tiền** (huỷ ⇒ hoàn phần chưa dùng; hỏng ⇒ không trừ) đặt trên
+cách diễn đạt của WanGP.
+
+Hai đường hỏng, cả hai đều im lặng:
+
+1. WanGP đổi chữ ⇒ mọi lần huỷ bị tính như hỏng
+2. một lỗi thật chứa chữ ấy (*"upstream connection cancelled by peer"*) ⇒ một
+   lần hỏng được tính như huỷ
+
+⇒ Cầu nối nay phơi thẳng `GenerationResult.cancelled` thành trường `huy`.
+  `test_722` có phép kiểm đối chứng cho **đúng** ca số 2.

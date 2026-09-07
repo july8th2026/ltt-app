@@ -98,6 +98,7 @@ class MayGiaLap:
         self._viec: dict[str, dict[str, Any]] = {}
         self._dem = 0
         self._noi_ra: Path | None = None
+        self._dem_media = 0
 
     # ── đọc bản ghi ────────────────────────────────────────────────────────
 
@@ -203,3 +204,33 @@ class MayGiaLap:
 
     def huy(self, ma_viec: str) -> None:
         self._lay(ma_viec)["huy"] = True
+
+    # ── dua vao / lay ra / don ─────────────────────────────────────────────
+
+    def nap_media(self, du_lieu: bytes, *, duoi: str = "png") -> str:
+        """Ghi byte ra thư mục tạm, trả đường dẫn — y như pod thật làm.
+
+        ⛔ Từ chối byte rỗng. Trên máy thật, một tệp 0 byte đi trót lọt qua đây
+           rồi làm WanGP hỏng ở tận khâu giải mã, và thông điệp lỗi lúc đó nói
+           về VAE chứ không nói về tệp đầu vào.
+        """
+        if not du_lieu:
+            raise LoiMay("nap_media: du lieu rong")
+        if self._noi_ra is None:
+            self._noi_ra = Path(tempfile.mkdtemp(prefix="lttv_gialap_"))
+        self._dem_media += 1
+        tep = self._noi_ra / f"vao_{self._dem_media}.{duoi.lstrip('.')}"
+        tep.write_bytes(du_lieu)
+        return str(tep)
+
+    def tai_ve(self, ma_viec: str, chi_so: int = 0) -> bytes:
+        kq = self.ket_qua(ma_viec)
+        try:
+            return Path(kq["tep"][chi_so]).read_bytes()
+        except IndexError as e:
+            raise LoiMay(
+                f"viec {ma_viec!r} khong co tep thu {chi_so}") from e
+
+    def don_dep(self, ma_viec: str) -> None:
+        v = self._lay(ma_viec)
+        v["da_don"] = True

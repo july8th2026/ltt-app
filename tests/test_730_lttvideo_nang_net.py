@@ -152,11 +152,29 @@ def test_KHONG_chep_lai_cong_thuc_gia_upscale():
         assert dau_hieu not in js
 
 
-def test_KHONG_them_thao_tac_nao_o_cau_noi_C_CLOUD():
-    """Nâng nét chạy ở máy A ⇒ `wangp_client` **không** được mọc thêm đường."""
-    from apps.lttvideo import wangp_client
+def test_KHONG_them_thao_tac_nao_o_MOI_NOI_C_CLOUD():
+    """Nâng nét chạy ở máy A ⇒ mối nối **không** được mọc thêm đường hậu kỳ.
 
-    cay = ast.parse(inspect.getsource(wangp_client))
-    ten = {n.name for n in ast.walk(cay) if isinstance(n, ast.FunctionDef)}
-    assert "hau_ky" not in ten, "cầu nối mọc thêm đường hậu kỳ — nâng nét ở máy A"
+    🔴 Viết lại 07/09 (HM-2): `wangp_client` đã gỡ, mệnh đề chuyển sang
+       `cong/giao_uoc.py`. **Mệnh đề không đổi một chữ** — chỉ nơi chứa nó đổi.
+
+    ⭐ Và nay nó được canh chặt hơn hẳn: `test_738` chốt giao ước có **đúng
+      mười một** phương thức, nên một đường hậu kỳ mọc thêm làm đỏ ở đó trước
+      khi làm đỏ ở đây. Hai lớp cố ý chồng nhau: phép kiểm này nói *vì sao*
+      không được thêm, con số kia bắt *mọi* lần thêm kể cả tên khác.
+
+    ⚠️ WanGP **có** hậu kỳ thật (`submit_media_postprocessing`: `rife*2`,
+       `flashvsr*2`, `h3facerefine`). Không mở nó ở đây là một **quyết định**
+       hiện tại, không phải một giới hạn — `apps/upscalevideo` đang chạy trên
+       GPU máy A và đã có bảng giá. Mở đường C-CLOUD là dựng bản sao thứ hai
+       của một quy tắc tiền.
+    """
+    from apps.lttvideo.cong import giao_uoc, may_that
+
+    for mo_dun in (giao_uoc, may_that):
+        cay = ast.parse(inspect.getsource(mo_dun))
+        ten = {n.name for n in ast.walk(cay) if isinstance(n, ast.FunctionDef)}
+        for cam in ("hau_ky", "nang_net", "upscale", "postprocessing"):
+            assert cam not in ten, (
+                f"{mo_dun.__name__} moc them duong {cam!r} — nang net o may A")
     assert isinstance(routes, types.ModuleType)

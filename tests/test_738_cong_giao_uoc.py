@@ -6,7 +6,7 @@ V2.1 đạt độ phủ **2/46 model** không phải vì WanGP khó, mà vì m�
 hồ sơ rút tay — và hồ sơ ấy tồn tại vì tầng gọi WanGP (`wangp_client`) trộn lẫn
 *cách nói chuyện* với *biết gì về model*. Mối nối tách hai thứ ấy ra:
 
-    tầng trên  ──►  May (8 phương thức)  ──►  MayThat   (HTTP tới pod)
+    tầng trên  ──►  May (11 phương thức) ──►  MayThat   (HTTP tới pod)
                                           └─►  MayGiaLap (phát lại bản ghi)
 
 ⇒ Sổ đăng ký · danh mục tác vụ · đường ống · GUI đều xây và nghiệm thu được
@@ -42,21 +42,30 @@ def _thanh_vien_giao_uoc(giao_uoc) -> set[str]:
     return set(getattr(giao_uoc, "__protocol_attrs__", ()))
 
 
-def test_giao_uoc_khai_dung_TAM_phuong_thuc():
+def test_giao_uoc_khai_dung_MUOI_MOT_phuong_thuc():
     """⛔ Chốt **kích cỡ** bề mặt, không chỉ chốt sự tồn tại của nó.
 
     Bề mặt WanGP rất rộng (33 model type, hậu kỳ, âm thanh, LoRA…). Mối nối chỉ
     có giá trị khi nó **hẹp**: mỗi phương thức thêm vào là một đường mà tầng
     trên có thể lệ thuộc, và là một đường `MayGiaLap` phải giả lập.
 
-    Thêm phương thức thứ chín là một quyết định, nên nó phải làm phép kiểm này
-    đỏ để người thêm dừng lại một nhịp — chứ không trôi vào âm thầm.
+    Thêm phương thức thứ mười hai là một quyết định, nên nó phải làm phép kiểm
+    này đỏ để người thêm dừng lại một nhịp — chứ không trôi vào âm thầm.
+
+    🔴 Con số này ban đầu là **8**, và chính phép kiểm này bắt được người viết
+       ra nó: giao ước được thiết kế **trước khi** đọc xem `wangp_client` cũ
+       thật sự cần gì. Đọc rồi mới thấy ba cửa nữa đang dùng thật — `nap_media`,
+       `tai_ve`, `don_dep` — mà thiếu chúng thì đường ống **không chạy nổi một
+       lượt**: ảnh người dùng ở R2 mà WanGP chỉ nhận đường dẫn tệp trên máy nó,
+       còn video sinh ra thì nằm lại trên pod.
     """
     from apps.lttvideo.cong.giao_uoc import May
 
     assert _thanh_vien_giao_uoc(May) == {
-        "liet_ke_model", "so_do", "mac_dinh", "kha_dung",
-        "gui_viec", "tien_do", "ket_qua", "huy",
+        "liet_ke_model", "so_do", "mac_dinh", "kha_dung",     # tra cuu
+        "nap_media",                                          # dua vao
+        "gui_viec", "tien_do", "ket_qua", "huy",              # chay viec
+        "tai_ve", "don_dep",                                  # lay ra / don
     }
 
 

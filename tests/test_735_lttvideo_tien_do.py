@@ -1,7 +1,7 @@
 """`F1` + `F2` — vòng hỏi tiến độ thay cho một lời gọi chặn-chờ.
 
 🔴 **Lỗi thật, và nó giết mọi job.** `/result/{job}` phía cầu nối **chặn-chờ**
-   tới khi sinh xong (~20 phút), còn `wangp_client.result()` gọi nó với
+   tới khi sinh xong (~20 phút), còn `MayThat.ket_qua()` gọi nó với
    `timeout=30.0` — tham số của `urllib.request.urlopen`, tức timeout **socket**
    áp cho từng lần đọc. Nên `handle()` ném `socket.timeout` sau 30 giây với
    **mọi** job thật.
@@ -20,11 +20,11 @@
 """
 from __future__ import annotations
 
-import io
 
 import pytest
 
-from apps.lttvideo import jobs, wangp_client as wc
+from apps.lttvideo import jobs
+from apps.lttvideo.cong.giao_uoc import LoiMay
 
 
 class ClientChamGia:
@@ -40,11 +40,12 @@ class ClientChamGia:
         self.da_submit: dict | None = None
         self.da_cleanup = False
 
-    def submit(self, settings):
+    # 🔴 Doi ten theo giao uoc `cong.May` (HM-2) — menh de khong doi mot chu.
+    def gui_viec(self, settings):
         self.da_submit = settings
         return "J-CHAM"
 
-    def progress(self, job_id):
+    def tien_do(self, job_id):
         self.lan_hoi += 1
         if self.lan_hoi == 1:
             return {"phase": "encoding_text", "current_step": None,
@@ -54,18 +55,20 @@ class ClientChamGia:
                     "total_steps": self.so_buoc, "giay_da_chay": 9.0}
         return {"phase": "done", "xong": True, "giay_da_chay": 30.0}
 
-    def result(self, job_id):
+    def ket_qua(self, job_id):
         if self.lan_hoi <= self.so_buoc:
             # Đúng thứ xảy ra thật: doc socket qua han truoc khi may chu tra loi.
-            raise wc.LoiWanGP("GET /result/J-CHAM: TimeoutError: timed out")
-        return wc.KetQua(thanh_cong=True, tep=self.tep, loi=[])
+            raise LoiMay("GET /result/J-CHAM: TimeoutError: timed out")
+        return {"tep": list(self.tep), "loi": [], "huy": False}
 
-    def cleanup(self, job_id):
+    def don_dep(self, job_id):
         self.da_cleanup = True
-        return {}
 
-    def tai_ve(self, duong):
-        return io.BytesIO(b"MP4DATA")
+    def huy(self, job_id):
+        return None
+
+    def tai_ve(self, job_id, chi_so=0):
+        return b"MP4DATA"
 
 
 class KhoGia:
@@ -178,15 +181,15 @@ def test_progress_hong_giua_chung_thi_van_cho_tiep():
     """Một nhịp hỏi tiến độ hỏng là chuyện mạng bình thường. Nếu nó làm job
     thất bại thì ta đổi một lỗi hiển thị thành một lỗi mất tiền."""
     c = ClientChamGia(so_buoc=4)
-    that = c.progress
+    that = c.tien_do
 
     def thi_thoang_hong(job_id):
         d = that(job_id)
         if c.lan_hoi == 2:
-            raise wc.LoiWanGP("GET /progress: ConnectionResetError")
+            raise LoiMay("GET /progress: ConnectionResetError")
         return d
 
-    c.progress = thi_thoang_hong
+    c.tien_do = thi_thoang_hong
     ra = _chay(c)
     assert ra["trang_thai"] == "xong"
 

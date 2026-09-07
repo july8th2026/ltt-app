@@ -5,39 +5,48 @@
 """
 from __future__ import annotations
 
-import io
-
 import pytest
 
-from apps.lttvideo import jobs, wangp_client as wc
+from apps.lttvideo import jobs
+from apps.lttvideo.cong.giao_uoc import LoiMay  # noqa: F401
 
 
 class ClientGia:
     def __init__(self, *, tep=("/data/Wan2GP/outputs/2026-09-06_seed1_"
                                "A large orange octopus, blending in.mp4"),
-                 thanh_cong=True, loi=()):
+                 thanh_cong=True, loi=(), huy=False):
         self.tep = list(tep)
         self._thanh_cong = thanh_cong
         self._loi = list(loi)
+        #: 🔴 Truoc 07/09 khong co truong nay: mot luot HUY duoc bao bang cach
+        #:   nhet chuoi "cancelled" vao `loi`, roi `KetQua.da_huy` do lai chuoi
+        #:   ay. Nay huy la mot TRUONG, va phep kiem manh len vi the.
+        self.huy_that = bool(huy)
         self.da_submit: dict | None = None
         self.da_cleanup = False
 
-    def submit(self, settings):
+    # 🔴 Doi ten theo giao uoc `cong.May` (HM-2). `wangp_client` da go; menh de
+    #    tung phep kiem duoi day KHONG doi mot chu.
+    def gui_viec(self, settings):
         self.da_submit = settings
         return "JOB1"
 
-    def progress(self, job_id):
+    def tien_do(self, job_id):
         return {"phase": "denoising", "current_step": 20, "total_steps": 20}
 
-    def result(self, job_id):
-        return wc.KetQua(thanh_cong=self._thanh_cong, tep=self.tep, loi=self._loi)
+    def ket_qua(self, job_id):
+        # `huy` la mot TRUONG rieng, khong con doan bang cach do chuoi trong loi.
+        return {"tep": list(self.tep), "loi": list(self._loi),
+                "huy": bool(self.huy_that)}
 
-    def cleanup(self, job_id):
+    def don_dep(self, job_id):
         self.da_cleanup = True
-        return {}
 
-    def tai_ve(self, duong):
-        return io.BytesIO(b"MP4DATA")
+    def huy(self, job_id):
+        self._thanh_cong = False
+
+    def tai_ve(self, job_id, chi_so=0):
+        return b"MP4DATA"
 
 
 class KhoGia:
@@ -104,9 +113,30 @@ def test_wangp_hong_thi_job_hong_va_KHONG_luu_gi():
 
 
 def test_bi_HUY_thi_KHAC_bi_hong():
-    c = ClientGia(thanh_cong=False, loi=["Generation was cancelled"], tep=())
+    """🔴 Viết lại 07/09 — và mệnh đề **mạnh lên**.
+
+    Bản cũ báo huỷ bằng cách nhét chuỗi `"Generation was cancelled"` vào danh
+    sách lỗi, vì `KetQua.da_huy` dò đúng chuỗi ấy. Tức phép kiểm và mã sản phẩm
+    cùng dựa vào **một cách diễn đạt của thượng nguồn**: WanGP đổi chữ thì cả
+    hai đổi theo, phép kiểm vẫn xanh, và cách tính tiền đã sai.
+
+    Nay huỷ là một **trường** (`GenerationResult.cancelled` → `huy`).
+    """
+    c = ClientGia(thanh_cong=False, huy=True, tep=())
     ra = _chay(client=c)
     assert ra["trang_thai"] == "da_huy"
+
+
+def test_loi_that_CO_CHU_cancelled_van_la_HONG_chu_khong_phai_huy():
+    """⛔ Đối chứng — đúng ca mà bản cũ **chắc chắn sai**.
+
+    *"upstream connection cancelled by peer"* là một lỗi mạng thật. Bản cũ dò
+    chuỗi nên coi nó là người dùng bấm huỷ, và hai ca ấy **khác nhau về tiền**.
+    """
+    c = ClientGia(thanh_cong=False, huy=False,
+                  loi=["upstream connection cancelled by peer"], tep=())
+    with pytest.raises(jobs.LoiJob):
+        _chay(client=c)
 
 
 def test_don_rac_tren_c_cloud_sau_khi_keo_ve():
@@ -174,7 +204,10 @@ def test_HET_CARD_thi_NEM_LOI_chu_khong_gui_job():
     from apps.lttvideo.dieu_phoi import TrangThaiMay
 
     class _ClientKhongDuocGoi:
-        def submit(self, _):  # pragma: no cover - phai khong bao gio chay
+        # ⛔ Ten phai theo giao uoc MOI. De ten cu `submit` o day la de mot
+        #    hang rao CHET: ma san pham goi `gui_viec`, khong ai nem gi ca, va
+        #    phep kiem van xanh trong khi dieu no canh da khong con duoc canh.
+        def gui_viec(self, _):  # pragma: no cover - phai khong bao gio chay
             raise AssertionError("da gui job du chua thue duoc may")
 
     dp = _DpGia(TrangThaiMay.KHONG_CO_CARD)
@@ -191,7 +224,7 @@ def test_MAY_KHONG_LEN_cung_nem_loi():
     from apps.lttvideo.dieu_phoi import TrangThaiMay
 
     class _C:
-        def submit(self, _):  # pragma: no cover
+        def gui_viec(self, _):  # pragma: no cover
             raise AssertionError("da gui job du may chua len")
 
     with pytest.raises(jobs.LoiJob):
@@ -245,20 +278,18 @@ class _ClientGhiNhan:
         self.media_da_nap.append((len(du_lieu), duoi))
         return f"/tmp/lttv_media/abc.{duoi}"
 
-    def submit(self, settings):
+    def gui_viec(self, settings):
         self.settings = settings
         return "j1"
 
-    def result(self, _jid):
-        from apps.lttvideo.wangp_client import KetQua
+    def ket_qua(self, _jid):
+        return {"tep": ["/data/Wan2GP/outputs/x.mp4"], "loi": [], "huy": False}
 
-        return KetQua(thanh_cong=True, tep=["/data/Wan2GP/outputs/x.mp4"])
-
-    def tai_ve(self, _duong):
+    def tai_ve(self, _jid, chi_so=0):
         return b"MP4"
 
-    def cleanup(self, _jid):
-        return {"da_don": 1}
+    def don_dep(self, _jid):
+        return None
 
 
 def test_KHONG_dinh_media_thi_dung_ho_so_chu():

@@ -71,6 +71,27 @@ _JOB: dict[str, dict] = {}
 HEADER_KHOA = "X-LTTV-Key"
 
 
+_SO_NGUYEN = frozenset({"limit", "offset"})
+
+
+def _loc_tu_query(request: "Request") -> dict:
+    """Doi query string thanh bo loc cho `list_model_metadata`.
+
+    ⭐ Dat RIENG chu khong nhet vao `tra_cuu_model`: bon duong tra cuu phai
+       thuan chuyen tiep de `test_739` doc AST xac nhan duoc dieu do. Phep bien
+       doi nao can thiet thi dung o day, noi no NHIN THAY duoc.
+
+    Tham so lap lai (`?inputs=image&inputs=video`) thanh danh sach — `docs_API.md`
+    noi nhieu gia tri la phep HOAC.
+    """
+    ra: dict = {}
+    for khoa in request.query_params.keys():
+        gia_tri = request.query_params.getlist(khoa)
+        v = gia_tri if len(gia_tri) > 1 else gia_tri[0]
+        ra[khoa] = int(v) if khoa in _SO_NGUYEN and isinstance(v, str) else v
+    return ra
+
+
 def sinh_job_id() -> str:
     """`job_id` sinh bằng CSPRNG.
 
@@ -190,6 +211,47 @@ def metadata(x_lttv_key: str = Header(default="")) -> dict:
             # hong ca anh chup; ghi ly do vao chinh o cua no.
             ra[str(ten)] = {"loi": f"{type(e).__name__}: {e}"}
     return {"so_model": len(ra), "model": ra}
+
+
+# ══════════════════════════════════════════════════════════════════════════
+#  BON DUONG TRA CUU — chuyen tiep THO, khong bien doi
+#
+#  ⛔ Khong `if`, khong `for`, khong `try/except` nuot loi trong bon ham duoi.
+#     Mot phep bien doi o day nam NGOAI tam voi cua gate: gate chay tren may A,
+#     cau noi chay tren may thue. Sai o day thi khong luot kiem nao thay, va no
+#     chi lo ra khi co nguoi dung that. `test_739` doc AST de canh dieu do.
+#
+#  ⭐ Bon duong nay KHONG nhan mot ma tran nao — chung doc ban khai JSON va quet
+#     he tep. Nen chung chay duoc CA KHI stack CUDA dang hong, va do la ly do
+#     HM-7 khong phai cho HM-9.
+# ══════════════════════════════════════════════════════════════════════════
+
+@app.get("/model")
+def tra_cuu_model(request: Request, x_lttv_key: str = Header(default="")) -> dict:
+    """`list_model_metadata(**loc)` — nguyen van."""
+    _kiem_khoa(x_lttv_key)
+    return {"model": _lay_phien().list_model_metadata(**_loc_tu_query(request))}
+
+
+@app.get("/model/{model_type}/so-do")
+def tra_cuu_so_do(model_type: str, x_lttv_key: str = Header(default="")) -> dict:
+    """`get_model_schema(model_type)` — nguyen van."""
+    _kiem_khoa(x_lttv_key)
+    return {"so_do": _lay_phien().get_model_schema(model_type)}
+
+
+@app.get("/model/{model_type}/mac-dinh")
+def tra_cuu_mac_dinh(model_type: str, x_lttv_key: str = Header(default="")) -> dict:
+    """`get_default_settings(model_type)` — nguyen van."""
+    _kiem_khoa(x_lttv_key)
+    return {"mac_dinh": _lay_phien().get_default_settings(model_type)}
+
+
+@app.get("/model/{model_type}/kha-dung")
+def tra_cuu_kha_dung(model_type: str, x_lttv_key: str = Header(default="")) -> dict:
+    """`get_model_availability(model_type)` — nguyen van."""
+    _kiem_khoa(x_lttv_key)
+    return {"kha_dung": _lay_phien().get_model_availability(model_type)}
 
 
 @app.post("/nap_media")
@@ -316,6 +378,13 @@ def result(job_id: str, x_lttv_key: str = Header(default="")) -> dict:
         "success": bool(getattr(kq, "success", False)),
         "generated_files": [str(x) for x in (getattr(kq, "generated_files", []) or [])],
         "errors": [str(getattr(e, "message", e)) for e in (getattr(kq, "errors", []) or [])],
+        # 🔴 `huy` den tu CHINH TRUONG cua WanGP (`GenerationResult.cancelled`),
+        #    khong de LTT do chuoi "cancelled" trong thong diep loi nua.
+        #    Phan biet huy/hong la mot phep phan biet VE TIEN — huy thi hoan
+        #    phan chua dung, hong thi khong tru. Dat no tren mot chuoi cua
+        #    thuong nguon nghia la mot lan doi cach dien dat o WanGP se lang le
+        #    doi cach tinh tien o day, va khong test nao thay.
+        "huy": bool(getattr(kq, "cancelled", False)),
         "giay_da_chay": round(time.time() - m["bat_dau"], 1),
     }
 

@@ -19,6 +19,8 @@
 """
 from __future__ import annotations
 
+import io
+
 from platform_core.i18n import N_
 from platform_core.i18n import _ as _t
 
@@ -142,9 +144,9 @@ def _client_that():
     khoa = (os.environ.get("LTTV_WANGP_KEY") or "").strip()
     if not goc:
         raise LoiJob(_t("Chưa cấu hình máy dựng video."))
-    from .wangp_client import WanGPClient
+    from .cong import MayThat
 
-    return WanGPClient(goc=goc, khoa=khoa)
+    return MayThat(goc, khoa=khoa)
 
 
 def handle(params: dict, ctx=None, *, _client=None, _kho=None,
@@ -238,13 +240,13 @@ def handle(params: dict, ctx=None, *, _client=None, _kho=None,
         tham_so["image_start" if hinh_dang == "anh" else "video_guide"] =             client.nap_media(kho.open(khoa_media).read(), duoi=duoi)
 
     t0 = time.time()
-    job_id = client.submit(tham_so)
+    job_id = client.gui_viec(tham_so)
     _bao(ctx, 2, str(_t("Đã gửi yêu cầu tới máy dựng")))
 
     # ── Vòng hỏi tiến độ. KHÔNG gọi thẳng `result()` ──────────────────────
     #
     # 🔴 `/result/{job}` phía cầu nối **chặn-chờ** tới khi sinh xong (~20 phút),
-    #    còn `wangp_client.result()` gọi nó với `timeout=30.0` — tham số của
+    #    còn `MayThat.ket_qua()` gọi nó với `timeout=30.0` — tham số của
     #    `urllib.request.urlopen`, tức timeout **socket** cho từng lần đọc. Bản
     #    trước gọi `result()` ngay sau `submit()`, nên **mọi job thật** ném
     #    `socket.timeout` sau 30 giây.
@@ -260,7 +262,7 @@ def handle(params: dict, ctx=None, *, _client=None, _kho=None,
         # ⭐ Hỏi TRƯỚC, ngủ SAU. Một việc đã xong sẵn thì trả về ngay, không bắt
         #    người dùng (và bộ test) chờ một nhịp vô ích.
         try:
-            p = client.progress(job_id)
+            p = client.tien_do(job_id)
         except Exception as e:  # noqa: BLE001
             # Một nhịp hỏi hỏng là nhiễu mạng bình thường. Để nó làm job thất
             # bại là đổi một lỗi hiển thị lấy một lỗi mất tiền.
@@ -286,10 +288,10 @@ def handle(params: dict, ctx=None, *, _client=None, _kho=None,
         #    một hợp đồng mình định làm, chứ không phải hợp đồng đang có, là
         #    cách chắc chắn để hỏng ở đúng chỗ không ai kiểm.
         if p.get("xong"):
-            kq = client.result(job_id)
+            kq = client.ket_qua(job_id)
             break
         try:
-            kq = client.result(job_id)      # chan-cho; het gio => chua xong
+            kq = client.ket_qua(job_id)     # chan-cho; het gio => chua xong
             break
         except Exception as e:  # noqa: BLE001
             log.debug("lttvideo: chua co ket qua (%s) — cho tiep",
@@ -300,29 +302,44 @@ def handle(params: dict, ctx=None, *, _client=None, _kho=None,
                             "Credit đã được hoàn, bạn thử lại sau."))
         time.sleep(NHIP_HOI_S)
 
-    if not kq.thanh_cong:
-        if kq.da_huy:
-            client.cleanup(job_id)
-            return {"trang_thai": "da_huy", "video_keys": [], "job_wangp": job_id}
-        raise LoiJob(_t("Sinh video thất bại.") + " " + "; ".join(kq.loi[:2]))
+    # ⭐ `huy` doc THANG tu `GenerationResult.cancelled` qua cau noi. Ban cu do
+    #    chuoi "cancelled" trong thong diep loi — mot phep phan biet VE TIEN
+    #    (huy thi hoan phan chua dung; hong thi khong tru) dat tren cach dien
+    #    dat cua thuong nguon, tuc mot lan doi chu o WanGP la mot lan doi cach
+    #    tinh tien o day ma khong test nao thay.
+    if kq["huy"]:
+        client.don_dep(job_id)
+        return {"trang_thai": "da_huy", "video_keys": [], "job_wangp": job_id}
 
-    if not kq.tep:
+    if kq["loi"]:
+        raise LoiJob(_t("Sinh video thất bại.") + " " + "; ".join(kq["loi"][:2]))
+
+    if not kq["tep"]:
         raise LoiJob(_t("Máy dựng báo xong nhưng không trả về tệp nào."))
 
     # ── Kéo về kho của LTT. Job chưa xong cho tới khi bước này xong. ──
+    # 🔴 Ban truoc goi `getattr(client, "tai_ve", None)` roi bao loi tu te khi
+    #    thieu — nhung `WanGPClient` KHONG BAO GIO co `tai_ve`, nen moi luot
+    #    that deu dung o "Khong tai duoc ket qua ve". Mot phuong thuc THIEU bi
+    #    `getattr` mac dinh hoa thanh mot "truong hop bien da xu ly", va thong
+    #    diep tu te lam no trong nhu mot quyet dinh chu khong phai mot lo hong.
+    #
+    #    ⇒ Nay goi thang `client.tai_ve(job_id, i)` theo giao uoc. Thieu no thi
+    #      `AttributeError` no ngay o test, khong am tham nua.
     da_luu: list[str] = []
-    for duong in kq.tep:
+    for i, duong in enumerate(kq["tep"]):
         duoi = duong.rsplit(".", 1)[-1].lower() if "." in duong else "mp4"
         khoa = _khoa_kho(nguoi_dung_id, duoi)
-        with_tai = getattr(client, "tai_ve", None)
-        if with_tai is None:
-            raise LoiJob(_t("Không tải được kết quả về."))
-        kho.put(khoa, with_tai(duong), "video/mp4")
+        # `storage.put(key, stream: BinaryIO, ...)` doi mot doi tuong CO `.read()`.
+        # `tai_ve` tra `bytes` — kieu don gian nhat va dung voi tang HTTP ben
+        # duoi. Boc o day, mot cho, thay vi bat moi hien thuc `May` phai tu
+        # nghi ra mot file-like.
+        kho.put(khoa, io.BytesIO(client.tai_ve(job_id, i)), "video/mp4")
         if not kho.exists(khoa):
             raise LoiJob(_t("Lưu kết quả thất bại.") + f" ({khoa})")
         da_luu.append(khoa)
 
-    client.cleanup(job_id)
+    client.don_dep(job_id)
 
     # ⚠️ Đây là đồng hồ TƯỜNG của cả handler — gồm cả kéo tệp về và đẩy lên R2 —
     #    chứ KHÔNG phải giây GPU. Tên cũ `giay_gpu` nói sai, và nó từng được
