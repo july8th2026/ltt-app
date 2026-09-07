@@ -161,6 +161,34 @@ def dinh_that_db() -> float:
 #: ⭐ Duong do cho lan sau da san: mot luot hong nay giu lai ca ban phoi lan ban
 #:    giao (`test_448._giu_tang_vat`), nen cap tep can do khong con bien mat
 #:    cung thu muc tam nua.
+#:
+#: ── BA gia thuyet DA BI LOAI, dung thu lai ────────────────────────────────
+#:
+#: 1. **Bo ma hoa AAC.** Lay CHINH ban phoi that, ma hoa bang dung tham so san
+#:    pham (`aac 192k`): vot lo **0,10 va 0,17 dB**. Khong phai no.
+#:
+#: 2. **Phep lay mau lai 44,1 -> 48 kHz.** Chay lai y het nhung GIU 44,1 kHz:
+#:    vot lo khong doi (0,18 so voi 0,26 tren cung nguon). Khong phai no.
+#:
+#: 3. **"Limiter ep cang manh thi vot lo cang nhieu"** — chinh loi giai thich ghi
+#:    o tren. Day ban phoi that len tung nac (0/3/6/9/12/18 dB) roi han cung:
+#:
+#:        day  0 dB -> vot lo 0,09      day  9 dB -> vot lo 0,40
+#:        day  3 dB -> vot lo 0,17      day 12 dB -> vot lo 0,29
+#:        day  6 dB -> vot lo 0,00      day 18 dB -> vot lo 0,30
+#:
+#:    Tran **0,40 dB**, khong toi mot phan sau cua 2,78. Gia thuyet nay giai
+#:    thich duoc mot phan nho va khong giai thich duoc ca hien tuong.
+#:
+#: ⚠️ Va phep do so 3 tu phoi bay mot cai bay dang ghi lai: dinh ban phoi TROI
+#:    tu -3,48 len -2,68 khi day manh, tuc `alimiter` khong giu duoc tran. Vi
+#:    `alimiter` han dinh MAU con `loudnorm` do dinh THAT (giua mau) — hai dai
+#:    luong khac nhau. San pham khong dinh (no dung `loudnorm=TP=`), nhung ai do
+#:    lai dung `alimiter` de "cho chac" thi se tao ra dung cai lech nay.
+#:
+#: 🔑 ⇒ Nghi can con lai la mot thuoc tinh nao do cua **noi dung tieng noi that**
+#:    ma ban model gia khong co. Khong con doan nua: luot hong lan sau giu lai
+#:    ban phoi, va luc do do THANG tren no.
 BIEN_CHO_CODEC_DB = 2.0
 
 
