@@ -93,6 +93,63 @@ def _wav_bytes(wav_f32: np.ndarray, sr: int) -> bytes:
     return buf.getvalue()
 
 
+#: Thư mục mà cổng này được phép GHI vào. Rỗng ⇒ chỉ thư mục tạm của hệ thống.
+#:
+#: 🔴 CỬA ĐỌC VÀ CỬA GHI KHÔNG CÙNG MỘT MỨC RỦI RO, và trước `/v1/lo-ra-tep`
+#:    thì cổng này chỉ có cửa ĐỌC (`/v1/enroll` nhận `duong_wav`).
+#:
+#:    Một cửa nhận đường dẫn tuỳ ý để GHI là một cửa ghi đè được `app.env`,
+#:    ghi đè được chính `server.py`, ghi đè được một tệp của Windows. Token
+#:    dùng chung và loopback vẫn là hàng rào đầu, nhưng "chỉ máy này gọi được"
+#:    không có nghĩa là "mọi thứ chạy trên máy này đều đáng tin".
+#:
+#: ⭐ Nên đường ghi bị KẸP vào một gốc, và mặc định là thư mục tạm — chỗ worker
+#:    vốn đã dựng tệp của nó. Fail-closed: không nằm dưới gốc thì 400.
+_GOC_GHI = (os.environ.get("LTT_VOICE_THU_MUC_TAM") or "").strip()
+
+
+def _goc_cho_phep() -> list:
+    import tempfile
+    goc = [tempfile.gettempdir()]
+    if _GOC_GHI:
+        goc.append(_GOC_GHI)
+    return [os.path.realpath(g) for g in goc if g]
+
+
+def _kiem_duong_ghi(duong: str) -> str:
+    """Đường ghi phải nằm DƯỚI một gốc cho phép. Trả đường đã chuẩn hoá."""
+    if not duong or not str(duong).strip():
+        raise HTTPException(status_code=400, detail="thieu duong ra")
+    that = os.path.realpath(str(duong))
+    for g in _goc_cho_phep():
+        # `commonpath` chứ không `startswith`: `C:	mp-khac` bắt đầu bằng
+        # `C:	mp` nhưng không nằm trong nó. Một phép so chuỗi ở đây là một lỗ.
+        try:
+            if os.path.commonpath([that, g]) == g:
+                return that
+        except ValueError:
+            continue            # khác ổ đĩa -> chắc chắn không nằm trong gốc
+    raise HTTPException(
+        status_code=400,
+        detail="duong ra nam ngoai thu muc cho phep (LTT_VOICE_THU_MUC_TAM)")
+
+
+def _ghi_float32(wav_f32: np.ndarray, sr: int, duong: str) -> None:
+    """Ghi một đoạn ra WAV **float32**, giữ nguyên khoảng dư.
+
+    ⛔ KHÔNG PCM16 ở đây. Xem `test_ghep_tep_canh_bao_mat_khoang_du_khi_luu_pcm16`:
+       mẫu vượt 1,0 mà lưu bằng PCM16 là kẹp ngay lúc ghi, trước khi bộ hạ trần
+       đỉnh của `noi_dai.ghep_tep` kịp chạy — và méo đã nằm trong tệp thì không
+       cứu được. Bản đọc cuối cùng vẫn ra PCM16, nhưng chỉ SAU khi đã hạ trần.
+    """
+    import soundfile as sf
+    thu_muc = os.path.dirname(duong)
+    if thu_muc:
+        os.makedirs(thu_muc, exist_ok=True)
+    sf.write(duong, np.asarray(wav_f32, dtype=np.float32), int(sr),
+             subtype="FLOAT")
+
+
 def _wav_header_mo(sr: int) -> bytes:
     """Header WAV với `nframes` rất lớn, cho đường phát dần.
 
@@ -120,6 +177,30 @@ class ThanLo(BaseModel):
     texts: list[str]
     ref_b64: str | None = None
     preset: str | None = None
+
+
+class ThanLoRaTep(BaseModel):
+    """Sinh một lô đoạn và GHI THẲNG RA TỆP, thay vì trả byte qua HTTP.
+
+    ⭐ Cùng lối `/v1/enroll` đã dùng: sidecar và worker ở **cùng một máy**, nên
+       đẩy âm thanh qua HTTP là chép một thứ đang nằm sẵn trên đĩa. Với đường
+       văn bản dài thì đó không còn là chuyện lãng phí mà là chuyện trần cứng —
+       một cuốn sách nghĩa là hàng trăm MB base64 đi qua một tiến trình web.
+    """
+    texts: list[str]
+    #: Đường dẫn tệp **cục bộ** cho từng đoạn. Phải cùng số phần tử với `texts`.
+    duong_ra: list[str]
+    ref_b64: str | None = None
+    preset: str | None = None
+
+
+class ThanGhepTep(BaseModel):
+    duong_vao: list[str]
+    duong_ra: str
+    #: Số câu của từng đoạn. Bộ ghép cần nó để biết đâu là ranh giới CÂU giữa
+    #: hằng trăm khe TỪ — xem `noi_dai.nhip_nghi`. Thiếu thì nhịp nghỉ đo được
+    #: sẽ là khe từ, và mối nối nghe gần như dính liền.
+    so_cau: list[int] | None = None
 
 
 class ThanGhiDanhKho(BaseModel):
@@ -202,6 +283,17 @@ def create_app(cong: eng.CongGiong | None = None) -> FastAPI:
         c = lay()
         wav, giay = c.noi(text, ref_b64=body.ref_b64, preset=body.preset)
         sr = c.sample_rate
+        # 🔴 TRẦN ĐỈNH THẬT CŨNG ÁP Ở ĐÂY, không chỉ ở đường ghép.
+        #
+        #    Cho tới 03/09/2026 cửa này trả thẳng sóng âm của engine, nên bảo
+        #    đảm −1,0 dBTP chỉ tồn tại khi bài có từ hai đoạn. Đo cùng ngày:
+        #    bài 1.400 ký tự đi đường này ra **−0,78 dBTP**, tức vượt trần —
+        #    trong khi bản ghép 7 đoạn ra −2,11 và tuân thủ.
+        #
+        # ⭐ Nghịch với trực giác, và đó là lý do không ai đi tìm ở đây: phép
+        #    cân mức giữa các đoạn (thứ đẩy đỉnh lên) chỉ có ở đường ghép, nên
+        #    ai cũng đoán đường ghép mới là đường cần hạ trần.
+        wav, ha_db, dinh_truoc = noi_dai.ha_tran_dinh(wav)
         thoi_luong = len(wav) / float(sr) if sr else 0.0
         return Response(
             content=_wav_bytes(wav, sr), media_type="audio/wav",
@@ -213,6 +305,8 @@ def create_app(cong: eng.CongGiong | None = None) -> FastAPI:
                 "X-RTF": f"{(giay / thoi_luong):.4f}" if thoi_luong else "0",
                 "X-Sample-Rate": str(sr),
                 "X-Tham-So": _dau(tham_so.PHIEN_BAN_THAM_SO),
+                "X-Dinh-Truoc-Dbtp": _dau(dinh_truoc),
+                "X-Ha-Tran-Db": _dau(round(ha_db, 2)),
             })
 
     @app.post("/v1/batch")
@@ -299,6 +393,84 @@ def create_app(cong: eng.CongGiong | None = None) -> FastAPI:
                                          (ho_so.get("moc_s") or ()))),
                 "X-Ha-Tran-Db": _dau(ho_so.get("ha_tran_db", 0.0)),
             })
+
+    @app.post("/v1/lo-ra-tep")
+    def lo_ra_tep(body: ThanLoRaTep, _: None = Depends(auth)):
+        """Sinh một lô đoạn -> GHI RA TỆP. Trả hồ sơ từng đoạn, không trả byte.
+
+        🔴 VÌ SAO KHÔNG DÙNG `/v1/batch` CHO ĐƯỜNG TÀI LIỆU DÀI.
+
+           `/v1/batch` trả base64 của từng WAV trong một phản hồi JSON. Với tám
+           đoạn thì đó là vài MB, không sao. Với một cuốn sách thì mỗi lô vẫn
+           vài MB nhưng **worker phải giữ chúng, giải base64, rồi ghi ra đĩa** —
+           và nó làm việc đó hàng chục lần. Sidecar đã có sóng âm trong tay và
+           đã có `soundfile`; để nó ghi thẳng là bỏ được cả một vòng chép.
+
+        ⭐ VÀ GHI BẰNG FLOAT32, KHÔNG PHẢI PCM16. Đây là một ràng buộc đã chốt
+           bằng phép kiểm (`test_ghep_tep_canh_bao_mat_khoang_du_khi_luu_pcm16`):
+           mẫu vượt 1,0 mà lưu bằng PCM16 là **kẹp ngay lúc ghi**, trước khi bộ
+           hạ trần đỉnh của `noi_dai` kịp chạy. Méo nằm trong tệp rồi thì không
+           bộ hạ trần nào cứu được nữa.
+        """
+        if len(body.duong_ra) != len(body.texts):
+            raise HTTPException(
+                status_code=400,
+                detail=(f"{len(body.texts)} van ban nhung {len(body.duong_ra)} "
+                        f"duong ra"))
+        for d in body.duong_ra:
+            _kiem_duong_ghi(d)
+
+        texts = ngan_sach.kiem_bai_dai(body.texts)
+        c = lay()
+        sr = c.sample_rate
+
+        # Chia nhóm theo kích thước một lượt gộp lô — cùng lý do `/v1/speech-dai`
+        # làm vậy: đó là chuyện xếp việc cho GPU, không phải hợp đồng của khách.
+        n = max(1, int(tham_so.TRAN_SO_VAN_BAN_BATCH))
+        muc, giay_sinh = [], 0.0
+        for i in range(0, len(texts), n):
+            phan, g = c.noi_lo(texts[i:i + n], ref_b64=body.ref_b64,
+                               preset=body.preset)
+            giay_sinh += g
+            for j, w in enumerate(phan):
+                duong = body.duong_ra[i + j]
+                _ghi_float32(w, sr, duong)
+                muc.append({
+                    "chi_so": i + j,
+                    "duong": duong,
+                    "giay": round(len(w) / float(sr), 3) if sr else 0.0,
+                    "so_cau": max(1, len(_KET_CAU.findall(texts[i + j])) or 1),
+                })
+
+        tong = sum(m["giay"] for m in muc)
+        return {"items": muc, "sample_rate": sr,
+                "gen_s": round(giay_sinh, 3),
+                "rtf": round(giay_sinh / tong, 4) if tong else 0.0,
+                "tham_so": tham_so.PHIEN_BAN_THAM_SO}
+
+    @app.post("/v1/ghep-tep")
+    def ghep_tep(body: ThanGhepTep, _: None = Depends(auth)):
+        """Ghép các đoạn ĐÃ CÓ TRÊN ĐĨA thành một bản đọc. Trả hồ sơ phép ghép.
+
+        ⭐ Tách khỏi `/v1/speech-dai` chứ không thay nó: cửa kia sinh **và**
+           ghép trong một lượt gọi, đúng cho bài vừa phải. Cửa này chỉ ghép, nên
+           nó cho phép sinh lại **một** đoạn hỏng rồi ghép lại cả bài mà không
+           phải đọc lại 79 đoạn kia.
+        """
+        if not body.duong_vao:
+            raise HTTPException(status_code=400, detail="khong co doan nao")
+        for d in body.duong_vao:
+            if not os.path.isfile(d):
+                raise HTTPException(status_code=400,
+                                    detail=f"khong thay tep: {d}")
+        _kiem_duong_ghi(body.duong_ra)
+        if body.so_cau is not None and len(body.so_cau) != len(body.duong_vao):
+            raise HTTPException(
+                status_code=400,
+                detail=(f"so_cau co {len(body.so_cau)} muc cho "
+                        f"{len(body.duong_vao)} doan"))
+        return noi_dai.ghep_tep(body.duong_vao, body.duong_ra,
+                                so_cau=body.so_cau)
 
     @app.post("/v1/stream")
     def stream(body: ThanNoi, _: None = Depends(auth)):

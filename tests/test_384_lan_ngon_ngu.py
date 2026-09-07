@@ -191,3 +191,50 @@ def test_moi_man_dung_bo_chon_deu_truyen_nhan_lan():
     assert src.count("nhan_lan") >= 3, (
         f"{len(dung)} man dung bo chon giong nhung chi {src.count('nhan_lan')} "
         f"cho truyen `nhan_lan`")
+
+
+# ── ngôn ngữ KHÁCH KHAI thay cho phép đoán (Studio §12) ──────────────────────
+
+def test_khai_bao_thay_cho_phep_doan():
+    """🔴 GIÁ TRỊ CỦA Ô `NGÔN NGỮ` NẰM ĐÚNG Ở CHỖ PHÉP ĐOÁN IM LẶNG.
+
+    `doan_ngon_ngu` cố ý trả `None` khi không đủ dấu hiệu, và im lặng khi ấy là
+    quyết định đúng — một cảnh báo hay sai là một cảnh báo bị bỏ qua.
+
+    ⛔ Nhưng cái giá của nó: **ca im lặng nhiều nhất lại là ca cần nhắc nhất**.
+       Một câu tiếng Anh NGẮN đọc bằng giọng Việt không đủ dấu hiệu để máy đoán,
+       nên khách không được nhắc gì cả — dù đó chính là ca chất lượng sẽ tụt.
+
+    ⇒ Khách khai được thì máy hết phải đoán. Đó là toàn bộ lý do ô ấy tồn tại,
+      và phép kiểm này chốt đúng mệnh đề đó.
+    """
+    ngan = "Go now."
+    assert L.doan_ngon_ngu(ngan) is None, (
+        "ca thu phai la ca may KHONG doan duoc, neu khong no khong chung minh gi")
+
+    # Không khai ⇒ im lặng (hành vi cũ, vẫn đúng).
+    assert L.doi_chieu("vi", ngan) == ()
+
+    # Khai `en` cho một giọng làn `vi` ⇒ cảnh báo.
+    assert L.doi_chieu("vi", ngan, "en") != ()
+
+    # Khai đúng làn ⇒ vẫn im.
+    assert L.doi_chieu("vi", ngan, "vi") == ()
+
+
+def test_khai_bao_la_khong_hop_le_thi_lui_ve_phep_doan():
+    """Giá trị lạ không được làm hỏng gì — nó chỉ đưa ta về hành vi cũ."""
+    vi = "Hôm nay trời đẹp và tôi đi dạo ngoài phố."
+    for xau in ("", "auto", "xx", None):
+        assert L.doi_chieu("vi", vi, xau) == ()
+
+
+def test_chuan_hoa_kep_ngon_ngu_la_ve_auto():
+    """Cửa vào ép giá trị lạ về `auto`, và phép ép ấy ở `features` chứ không ở
+    route — Public API đi THẲNG xuống job, không qua route nào."""
+    from apps.ltt_voice import features
+
+    for xau, mong in (("EN", "en"), ("vi", "vi"), ("bậy", "auto"),
+                      ("", "auto"), (None, "auto")):
+        yc = features.chuan_hoa({"text": "xin chào", "ngon_ngu": xau})
+        assert yc.ngon_ngu == mong, xau

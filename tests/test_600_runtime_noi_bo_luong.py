@@ -265,10 +265,15 @@ def test_response_started_phat_TRUOC_khi_mo_luong(app_luong, monkeypatch):
 # ── 3. Sinh ít trả ít ────────────────────────────────────────────────────────
 
 def test_thu_dung_theo_usage_va_hoan_phan_du(app_luong, monkeypatch):
-    _dat_luong(monkeypatch, _khoi_openai(vao=100, ra=50))
+    _dat_luong(monkeypatch, _khoi_openai(vao=50_000, ra=5_000))
     u = _user(1000)
-    # 30.000 token ra ⇒ giữ ~12 credit; sinh 50 ⇒ thu 1 (làm tròn lên). Hai số
-    # phải KHÁC nhau thì phép kiểm "hoàn phần dư" mới có nghĩa.
+    # 30.000 token ra ⇒ giữ ~12 credit; sinh 5.000 ⇒ chi phí thật 4,5 credit.
+    # Hai số phải KHÁC nhau thì phép kiểm "hoàn phần dư" mới có nghĩa.
+    #
+    # ⭐ Kịch bản cố ý VƯỢT 1 credit: bản cũ dùng (100, 50) = 0,025 credit, nên
+    #    `thu > 0` chỉ đúng nhờ SÀN của C1. Nó biến một phép kiểm về "hoàn
+    #    phần dư" thành một phép kiểm về chính sách làm tròn — hai chuyện khác
+    #    nhau. Cỡ này đúng ở CẢ C1 lẫn C3.
     sk = _chay(u, _params(max_tokens=30000), monkeypatch)
     tien = sk[-1]
     assert tien["type"] == "billing.updated"
@@ -277,7 +282,7 @@ def test_thu_dung_theo_usage_va_hoan_phan_du(app_luong, monkeypatch):
     assert tien["credit_giu"] - tien["credit_thu"] == tien["credit_hoan"]
     assert _so_du(u) == 1000 - tien["credit_thu"]
     usage = next(s for s in sk if s["type"] == "usage.updated")
-    assert (usage["token_vao"], usage["token_ra"]) == (100, 50)
+    assert (usage["token_vao"], usage["token_ra"]) == (50_000, 5_000)
     assert _dem_lease() == 0                    # suất đã nhả
 
 
@@ -326,8 +331,9 @@ def test_het_suat_thuc_thi_la_ngoai_le_truoc_byte_dau(app_luong, monkeypatch):
 # ── 5. Dừng giữa chừng vẫn quyết toán phần đã sinh ──────────────────────────
 
 def test_dong_generator_giua_chung_van_quyet_toan(app_luong, monkeypatch):
+    # Cỡ vượt 1 credit để `0 < thu < giu` đúng ở CẢ HAI chính sách làm tròn.
     khoi = [_sse({"choices": [{"delta": {"content": "a"}}],
-                  "usage": {"prompt_tokens": 100, "completion_tokens": 20}})]
+                  "usage": {"prompt_tokens": 50_000, "completion_tokens": 5_000}})]
     khoi += [_sse({"choices": [{"delta": {"content": "b"}}]})] * 5
     _dat_luong(monkeypatch, khoi)
     from platform_core.runtime_noi_bo import luong
@@ -392,7 +398,7 @@ def test_ten_tool_la_thi_KhongCoNangLuc(app_luong, monkeypatch):
 
 def test_mo_luong_tho_chuyen_byte_nguyen_xi_va_quyet_toan(app_luong, monkeypatch):
     from platform_core.runtime_noi_bo import luong
-    ks = _khoi_openai("nguyen xi", vao=10, ra=5)
+    ks = _khoi_openai("nguyen xi", vao=20_000, ra=2_000)   # 1,8 credit > san
     _dat_luong(monkeypatch, list(ks))
     u = _user(1000)
     gen, db = _session()

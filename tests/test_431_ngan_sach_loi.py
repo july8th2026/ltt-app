@@ -33,16 +33,29 @@ def _n_truyen_cho_pytest() -> int:
        Ban truoc cua tep nay chep lai phep `min(...)` ba ve — va mot ban chep la
        mot cho de hai ben lech nhau ma khong ai do.
 
-    🔴 **`do_tai=False`, va do la mot lan sua that.** Khi ve DO DUOC duoc them
-       vao (hop nhat voi `loi_dang_ban` cua phien lttchat), mac dinh thanh
-       `True` — nen moi phep kiem SO HOC o day bat dau doc CPU that va **doi ket
-       qua theo tai may**. Chung xanh khi chay mot minh va do duoi `-n 4`, do
-       duoc ngay trong luot hoi quy dau tien cua pha 08.
+    ⛔ `do_tai=False` KHONG PHAI DE CHO DE. Thieu no thi moi phep kiem goi ham
+       nay **do chinh cai may no dang chay tren do**: chay rieng ⇒ may ranh ⇒
+       ra dung tran; chay TRONG mot luot gate ⇒ chinh bo test lam may ban ⇒ nho
+       hon tran ⇒ do. Do duoc 03/09 tren cay nay, trong mot luot gate day du:
 
-    ⛔ Mot phep kiem cong chat luong chap chon con te hon khong co: no day nguoi
-       ta vao thoi quen chay lai cho toi khi xanh, va tu do khong ai doc mau do
-       nua. Nhung phep kiem CO chu dinh do ve DO DUOC thi tu `monkeypatch`
-       `loi_dang_ban` — chung khong dung ham nay.
+           [ngan sach] 4 loi dang bi chiem (khai bao 0, do duoc 4)
+
+       va `test_them_mot_frontend_da_CHE_khuyet_tat_chu_khong_sua_no` do trong
+       khi no XANH khi chay mot minh.
+
+    ⭐ Phan DO DUOC duoc chot rieng, va chot bang BAT DANG THUC chu khong bang
+       mot con so: `test_do_tai_khong_bao_gio_noi_ngan_sach`. Mot con so do duoc
+       thi khong bao gio la mot hang so.
+
+    ⭐ VA MOT GHI CHU VE VIEC HOP NHAT. Hai phien doc lap (`lttchat` va
+       `ltt-llm-context-200k`) tim ra khuyet tat nay trong cung mot buoi va sua
+       no **y het nhau** — cung `do_tai=False`, cung y tuong tach menh de tat
+       dinh khoi menh de do duoc. Xung dot merge o day chi la hai khoi chu thich
+       noi cung mot dieu.
+
+       Do la mot dau hieu tot ve chinh cai luat nay: no la thu hai nguoi doc lap
+       cung suy ra. Va no la truong hop cu the cua bay `gate-tu-nhieu-vao-phep-do`
+       da ghi trong bo nho du an.
     """
     return gate.loi_cho_bo_test(phien="", do_tai=False)
 
@@ -355,23 +368,46 @@ def test_chi_MOT_ham_quyet_dinh_so_worker_cua_bo_test():
 
 
 def test_moi_ve_deu_tinh_tren_LOI_VAT_LY(monkeypatch):
-    """Mot don vi duy nhat. Lech don vi la loi da song 5 thang o kho nay."""
+    """Mot don vi duy nhat. Lech don vi la loi da song 5 thang o kho nay.
+
+    ⛔ `do_tai=False` KHONG PHAI DE "cho de". Thieu no thi phep kiem nay **do
+       chinh cai may no dang chay tren do**: chay rieng ⇒ may ranh ⇒ `chiem = 0`
+       ⇒ ra dung `TRAN_WORKER_BO_TEST`; chay TRONG mot luot gate ⇒ chinh bo test
+       lam may ban ⇒ `chiem` lon ⇒ nho hon ⇒ do. Quan sat that 03/09 tren cay
+       nay: `4 loi dang bi chiem (khai bao 0, do duoc 4)`.
+
+    ⭐ Day la bay `gate-tu-nhieu-vao-phep-do` o dang tinh vi hon: khong phai hai
+       buoc gate giam nhau, ma **mot phep kiem do chinh moi truong no dang o
+       trong**. Mot menh de TAT DINH phai duoc chot bang dau vao TAT DINH; phan
+       do duoc thi chot bang BAT DANG THUC, o
+       `test_do_tai_khong_bao_gio_noi_ngan_sach`.
+    """
     monkeypatch.setattr(gate, "loi_cong_cu_tu_do", lambda: 10)
     # Khong phu thuoc `os.cpu_count()` (logic) nua.
     monkeypatch.setattr(gate.os, "cpu_count", lambda: 999)
-
-    # 🔴 `do_tai=False`, cung ly do voi `_n_truyen_cho_pytest` — va day la cho
-    #    thu HAI cua cung mot loi, tim ra o luot hoi quy cua pha 12.
-    #
-    #    Phep kiem nay do SO HOC cua don vi. De `do_tai` mac dinh (`True`) thi no
-    #    doc CPU that va doi ket qua theo tai may: xanh khi chay mot minh, do
-    #    duoi `-n 4`. Mot phep kiem cong chat luong chap chon day nguoi ta vao
-    #    thoi quen chay lai cho toi khi xanh, va tu do khong ai doc mau do nua.
+    # ⛔ `do_tai=False` — CUNG LY DO nhu `_n_truyen_cho_pytest`. Hai phien sua
+    #    hai phep kiem nay doc lap trong cung mot buoi (`9b6bef0` va ban tren
+    #    nhanh `admin-mvp-v3`), va hai ban sua trung nhau tung chu.
     assert gate.loi_cho_bo_test(phien="", do_tai=False) == gate.TRAN_WORKER_BO_TEST
 
     monkeypatch.setattr(gate, "loi_cong_cu_tu_do", lambda: 8)
     assert gate.loi_cho_bo_test(phien="", do_tai=False) == min(
         gate.TRAN_WORKER_BO_TEST, 8 - gate.LOI_DE_DANH_VAT_LY)
+
+
+def test_do_tai_khong_bao_gio_noi_ngan_sach(monkeypatch):
+    """Phan DO DUOC chot bang bat dang thuc, khong bang mot con so.
+
+    Mot con so do duoc thi khong bao gio la mot hang so — no dung o may ranh va
+    sai o may day. Bat dang thuc nay dung o ca hai, va no van chot dung tinh
+    chat can chot: **do tai chi lam ngan sach nho di, khong bao gio noi ra**.
+    """
+    monkeypatch.setattr(gate, "loi_cong_cu_tu_do", lambda: 10)
+    monkeypatch.setattr(gate.os, "cpu_count", lambda: 999)
+    tinh = gate.loi_cho_bo_test(phien="", do_tai=False)
+    do = gate.loi_cho_bo_test(phien="", do_tai=True)
+    assert 1 <= do <= tinh, (
+        f"do tai cho {do} worker nhung ngan sach tinh la {tinh}")
 
 
 def test_phien_khac_giu_thi_tu_tut_xuong(monkeypatch):
@@ -380,7 +416,7 @@ def test_phien_khac_giu_thi_tu_tut_xuong(monkeypatch):
         {"phien": "khac", "tai_nguyen": c.MAC_DINH, "so_loi": 4}])
     monkeypatch.setattr(gate, "loi_cong_cu_tu_do", lambda: 10)
     # 10 - 3 - 4 = 3, nho hon tran 6 -> 3 thang
-    assert gate.loi_cho_bo_test(phien="toi") == 3
+    assert gate.loi_cho_bo_test(phien="toi", do_tai=False) == 3
 
 
 def test_bo_dem_LICH_cung_dung_don_vi_VAT_LY(monkeypatch):
@@ -592,3 +628,15 @@ def test_conftest_van_LAY_MIN_chu_khong_dat_de(monkeypatch):
     doan = _ast.get_source_segment(src, ham) or ""
     assert "min(n, " in doan or "min(n," in doan, (
         "phai LAY MIN voi phep tinh cuc bo, khong duoc gan thang so cua gate")
+
+
+def test_do_tai_khong_bao_gio_noi_ngan_sach():
+    """Do tai chi duoc lam ngan sach NHO DI, khong bao gio lon hon.
+
+    ⭐ Day la cach chot mot ham phu thuoc vao phep do: khong chot GIA TRI cua
+       no (gia tri doi theo tai, va lượt gate nao cung tu lam may ban), ma chot
+       QUAN HE giua hai che do. Bat dang thuc thi dung o may ranh lan may day.
+    """
+    tinh = gate.loi_cho_bo_test(phien="", do_tai=False)
+    do = gate.loi_cho_bo_test(phien="", do_tai=True)
+    assert 1 <= do <= tinh, f"do_tai=True ({do}) khong duoc vuot ban tinh ({tinh})"

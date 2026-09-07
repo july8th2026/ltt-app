@@ -34,6 +34,11 @@ from platform_core import image_input, storage
 #: ⚠️ Thêm hình này thì PHẢI thêm nó vào `tao_media.kiem_so_huu_khoa` — cửa
 #:    `/tai-san` fail-closed, nên quên khai là ảnh vừa tải lên không hiện được,
 #:    và triệu chứng (ảnh vỡ trong hội thoại) không trỏ về đây.
+#: Hình khoá MỚI: `chatltt/<uid>/anh-vao/<id>.<duôi>`.
+GOC = "chatltt"
+NHOM = "anh-vao"
+
+#: Hình khoá CŨ, chỉ còn để **đọc**. Xem `khoa_moi` về việc vì sao nó phải đổi.
 TIEN_TO = "chatltt/anh-vao"
 
 DUOI = {"image/png": "png", "image/jpeg": "jpg", "image/webp": "webp"}
@@ -62,7 +67,24 @@ class LoiAnhVao(ValueError):
 
 
 def khoa_moi(user_id: str, mime: str) -> str:
-    return f"{TIEN_TO}/{user_id}/{uuid.uuid4().hex}.{DUOI.get(mime, 'png')}"
+    """Khoá mới: `chatltt/<uid>/anh-vao/<id>.<duôi>` — **uid ở đoạn thứ hai**.
+
+    🔴 THỨ TỰ HAI ĐOẠN NÀY LÀ MỘT HỢP ĐỒNG, KHÔNG PHẢI SỞ THÍCH. Quy ước kho của
+       nền tảng là `{app}/{user_id}/…`, và `apps/anhnoibo/features._kiem_chu_so_huu`
+       kiểm **đúng đoạn thứ hai** để biết ảnh tham chiếu có thuộc người gọi không.
+
+    ⛔ Bản cũ ghi `chatltt/anh-vao/<uid>/…`, tức đoạn thứ hai là `"anh-vao"`. Hệ
+       quả đo được 04/09: **mọi ảnh khách tải lên trong chat đều bị `image.ltt`
+       từ chối** với câu *"Ảnh tham chiếu không thuộc người dùng hiện tại"* — nên
+       tạo-ảnh-từ-ảnh không chạy được, dù cả hai đầu đều đã sẵn sàng từ lâu. Một
+       hàng rào an toàn **đúng**, chặn một thao tác **hợp lệ**, chỉ vì một dấu
+       `/` đặt sai chỗ. Loại lỗi này không báo gì cả; nó chỉ làm một tính năng
+       trông như chưa được xây.
+
+    ⭐ Khoá CŨ vẫn đọc được (xem `la_khoa_anh_vao`): ảnh trong các hội thoại đã
+       có không được biến mất chỉ vì ta sửa lại quy ước.
+    """
+    return f"{GOC}/{user_id}/{NHOM}/{uuid.uuid4().hex}.{DUOI.get(mime, 'png')}"
 
 
 def luu(data: bytes, content_type: str, *, user_id: str) -> dict:
@@ -98,8 +120,15 @@ def la_khoa_anh_vao(khoa: str, user_id: str) -> bool:
     doan = khoa.split("/")
     if any(d in ("", ".", "..") for d in doan):
         return False
-    return (len(doan) == 4 and doan[0] == "chatltt" and doan[1] == "anh-vao"
-            and doan[2] == str(user_id))
+    if len(doan) != 4 or doan[0] != GOC:
+        return False
+    # Hình MỚI: `chatltt/<uid>/anh-vao/<tên>` — uid ở đoạn 1, khớp quy ước kho.
+    if doan[1] == str(user_id) and doan[2] == NHOM:
+        return True
+    # ⭐ Hình CŨ: `chatltt/anh-vao/<uid>/<tên>`. Giữ đường đọc này vì các hội
+    #    thoại đã có đang trỏ tới nó. Bỏ đi là làm hỏng ảnh của khách để dọn một
+    #    quy ước — đúng loại "dọn dẹp" gây thiệt hại nhiều hơn thứ nó sửa.
+    return doan[1] == NHOM and doan[2] == str(user_id)
 
 
 def data_uri(khoa: str) -> str:

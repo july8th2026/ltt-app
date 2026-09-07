@@ -130,9 +130,46 @@ def dong_thoi() -> dict:
     return ra
 
 
+def _muc_lam_tron() -> dict:
+    """Mục `lam_tron` — **đọc chính sách đang chạy**, không chép lại nó.
+
+    🔴 Bản trước là một chuỗi cứng *"tối thiểu 1 credit"* kèm
+       `do_bang: "gia_token.bang_gia toi_thieu_moi_luot_credit"` — tức nó **tự
+       khai là dẫn xuất trong khi nó là bản chép**. Ngày 06/09 chính sách đổi
+       sang C3 (`toi_thieu = 0`) và trang giá công khai tiếp tục hứa điều cũ
+       suốt quãng giữa hai lần deploy.
+
+    ⛔ Công bố một lời hứa không còn đúng **tệ hơn thu thừa**: thu thừa thì
+       hoàn được, còn một lời hứa sai thì khách đã đọc và đã quyết định theo nó.
+
+    ⭐ Nên chỗ này không mô tả chính sách — nó **hỏi** chính sách.
+    """
+    from platform_core.llm import gia_token
+
+    toi_thieu = int(gia_token.bang_gia().get("toi_thieu_moi_luot_credit", 1) or 0)
+    if toi_thieu > 0:
+        return {
+            "khoa": "lam_tron",
+            "tieu_de": N_("Mỗi lượt gọi làm tròn lên credit nguyên"),
+            "noi_dung": N_(
+                "Một lượt gọi rất nhỏ vẫn tính tối thiểu 1 credit. Với lượt gọi nhỏ, "
+                "số tiền thực trả cao hơn giá niêm yết trên một triệu token."),
+            "do_bang": "gia_token.bang_gia toi_thieu_moi_luot_credit",
+        }
+    return {
+        "khoa": "lam_tron",
+        "tieu_de": N_("Phần lẻ dưới một credit được giữ lại, không làm tròn lên"),
+        "noi_dung": N_(
+            "Chi phí một lượt gọi thường là số lẻ. Phần lẻ dưới một credit không "
+            "bị làm tròn lên mà được cộng dồn sang lượt sau, nên số tiền thực trả "
+            "bám sát giá niêm yết kể cả với những lượt gọi rất nhỏ."),
+        "do_bang": "gia_token.bang_gia toi_thieu_moi_luot_credit",
+    }
+
+
 #: Những điều **đã đo trên production**, mỗi điều kèm phép đo sinh ra nó.
 #: Đây là phần an toàn của điều khoản: nó chỉ mô tả hệ thống đang làm gì.
-MUC_DA_DO = (
+_MUC_DA_DO = (
     {
         "khoa": "giu_va_quyet_toan",
         "tieu_de": N_("Giữ chỗ trước, tính tiền theo mức dùng thật"),
@@ -179,14 +216,7 @@ MUC_DA_DO = (
         # Do song qua Cloudflare: cung job id, tru 0 credit.
         "do_bang": "B14 B15",
     },
-    {
-        "khoa": "lam_tron",
-        "tieu_de": N_("Mỗi lượt gọi làm tròn lên credit nguyên"),
-        "noi_dung": N_(
-            "Một lượt gọi rất nhỏ vẫn tính tối thiểu 1 credit. Với lượt gọi nhỏ, "
-            "số tiền thực trả cao hơn giá niêm yết trên một triệu token."),
-        "do_bang": "gia_token.bang_gia toi_thieu_moi_luot_credit",
-    },
+    _muc_lam_tron,
     {
         "khoa": "dong_thoi",
         "tieu_de": N_("Mỗi tài khoản được phục vụ một lượt tại một thời điểm"),
@@ -308,3 +338,19 @@ def can_dieu_khoan_san_sang() -> None:
             f"{len(CAN_CHU_SAN_PHAM_QUYET)} cau hoi chua ai tra loi ({con}). "
             "Xem CAN_CHU_SAN_PHAM_QUYET trong platform_core/public_api/"
             "dieu_khoan.py — moi muc co san cau hoi va hien trang.")
+
+
+def __getattr__(name):
+    """`MUC_DA_DO` phải **sống**, không đóng băng lúc import.
+
+    ⛔ Một tuple dựng lúc import sẽ giữ nguyên câu chữ của chính sách **lúc tiến
+       trình khởi động**. Đổi cờ lúc chạy (đường lùi `LTT_TINH_TIEN_SAN_MOI_LUOT`
+       tồn tại đúng để làm việc ấy trong một phút) sẽ đổi cách THU mà **không**
+       đổi điều khoản CÔNG BỐ — tức mở lại đúng khe vừa vá.
+
+    PEP 562 cho phép module có `__getattr__`, nên `dk.MUC_DA_DO` vẫn viết như cũ
+    ở mọi nơi gọi, chỉ là nó được dựng lại mỗi lần đọc.
+    """
+    if name == "MUC_DA_DO":
+        return tuple(m() if callable(m) else m for m in _MUC_DA_DO)
+    raise AttributeError(name)

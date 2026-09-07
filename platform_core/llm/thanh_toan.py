@@ -1,20 +1,32 @@
 """
 thanh_toan.py — thu tiền một lượt gọi model. Giữ chỗ → chạy → quyết toán. (H38)
 
-⭐ PHƯƠNG ÁN **C1**, chốt 2026-08-22: **làm tròn LÊN credit nguyên mỗi lượt gọi.**
+🟢 MẶC ĐỊNH là **C3** từ **2026-09-06** (chủ dự án chốt): tích luỹ phần lẻ ở
+   `users.mcredit_du`, chỉ thu phần **NGUYÊN**. Đường lùi về C1 (làm tròn LÊN
+   mỗi lượt gọi, sàn 1 credit): `LTT_TINH_TIEN_SAN_MOI_LUOT=1`.
 
    Credit là số nguyên (`credit.tru()` nhận `int`), còn một lượt gọi điển hình
-   tốn **0,3 credit**. C1 giải bằng cách làm tròn lên — đơn giản, không đụng sổ
-   cái, dùng được ngay.
+   tốn **0,3 credit**. Phần lẻ được giữ ở `users.mcredit_du` và cộng vào lượt
+   sau, nên khách trả **đúng bảng giá** chứ không trả sàn.
 
-   ⚠️ **Cái giá của C1, phải nói ra chứ không giấu:** lượt gọi nhỏ trả **nhiều hơn
-   giá niêm yết**, tới ~3,3 lần với lượt 0,3 credit. Vì thế `gia_token.bang_gia()`
-   khai thẳng `toi_thieu_moi_luot_credit = 1` và giải thích trong `ghi_chu`.
-   Một khách gọi nhiều sẽ tự tính ra trong vòng một ngày — thà họ đọc được từ
-   trước còn hơn tự phát hiện.
+   ⚠️ **Trước đây là C1** — làm tròn LÊN mỗi lượt gọi, tối thiểu 1 credit. Chính
+   docstring cũ ở đây đã thừa nhận cái giá của nó: *"lượt gọi nhỏ trả nhiều hơn
+   giá niêm yết, tới ~3,3 lần"*. Đo lại 05/09 thì nó lớn hơn thế:
 
-   (Phương án C2 — sổ tích luỹ phần lẻ — vẫn để ngỏ. Nó chỉ đụng module này,
-   **không** đụng `gia_token.py`. Ranh giới đó là có chủ ý.)
+     - lượt agentic 4 vòng : **0,92 credit thật → thu 4** (4,0×)
+     - hội thoại 20 lượt ngắn: **3,13 credit thật → thu 20** (6,4×)
+     - chat rất ngắn: ta thu **1**, cùng model trên OpenRouter là **0,21**
+       ⇒ ta **đắt hơn giá bán lẻ 4,84 lần**
+
+   Lý lẽ và số liệu đầy đủ: `docs/CHATLTT_V3/04_ADR_R2B_TINH_TIEN_LUOT.md`.
+
+   ⛔ **Bảng giá KHÔNG đổi** (50 / 10 / 400 credit/1M). Neo thị trường đo lại
+   hôm nay vẫn đúng: `qwen/qwen3.8-27b` = 110,5 / 789, ta ở 45 %/51 %. Thứ hỏng
+   là **ranh giới làm tròn**, không phải đơn giá — và trộn hai chuyện đó là cách
+   chắc chắn để không ai còn biết giá thật là bao nhiêu.
+
+   🔑 C3 là **đề xuất chờ chốt**, không phải bản sửa đã duyệt: nó đổi
+   `toi_thieu_moi_luot_credit` — một điều khoản CÔNG BỐ. Nên nó opt-in.
 
 ⭐ BA NGUYÊN HÀM ĐỀU CÓ SẴN, KHÔNG DỰNG SỔ TIỀN THỨ HAI:
 
@@ -82,6 +94,65 @@ def giu_cho_luot(db, *, user_id: str, request_id: str,
     return so
 
 
+#: 🟢 **C3 LÀ MẶC ĐỊNH TỪ 2026-09-06** — chủ dự án chốt.
+#:
+#: Trước đó C3 là opt-in, vì đây là **quyết định giá** chứ không phải một bản sửa
+#: lỗi: nó đổi `toi_thieu_moi_luot_credit`, một **điều khoản công bố** qua
+#: `public_api/dieu_khoan.py`. Quyết định ấy nay đã có, nên mặc định đảo lại.
+#:
+#: Đo làm căn cứ (`04_ADR_R2B_TINH_TIEN_LUOT.md`, model nhà `qwen3.8-27b`):
+#:
+#:     hoi thoai 20 luot ngan   C1 thu 20 credit · gia niem yet cua ta 3,13
+#:     chat rat ngan (800+150)  C1 thu  1 credit · mua le OpenRouter 0,21
+#:     luot agentic 4 vong      C1 thu  4 credit · gia niem yet cua ta 0,92
+#:
+#: ⇒ Sàn "tối thiểu 1 credit mỗi lượt gọi" làm ta **đắt hơn giá bán lẻ ở mọi
+#:   lượt dưới ~1 credit** — tức ở đúng lượt thường gặp nhất của một sản phẩm
+#:   chat — và nó **luỹ thoái**: phạt người dùng nhẹ.
+#:
+#: ⛔ Bảng giá `gia_token` (50/10/400 credit/1M) **không đổi và không sai** — đo
+#:    lại neo thị trường 05/09 vẫn khớp trong 5 %. Thứ đổi là **tầng làm tròn**.
+CO_TICH_LUY = "LTT_TINH_TIEN_TICH_LUY"
+
+#: 🔻 ĐƯỜNG LÙI: đặt `LTT_TINH_TIEN_SAN_MOI_LUOT=1` để quay lại C1 (làm tròn LÊN
+#: mỗi lượt gọi, sàn 1 credit) mà không phải sửa mã hay deploy lại bản cũ.
+#:
+#: ⭐ Giữ một đường lùi bằng biến môi trường vì đây là **tiền**: nếu C3 lộ ra một
+#:    hệ quả không lường (vd giữ chỗ thiếu làm `mcredit_du` phình), người trực
+#:    phải tắt được trong một phút, không phải chờ một lượt phát hành.
+CO_SAN_MOI_LUOT = "LTT_TINH_TIEN_SAN_MOI_LUOT"
+
+#: Cách viết được coi là BẬT. Fail-closed: mọi thứ khác là tắt — một cờ nhận
+#: nhiều cách viết là một cờ mà người ta tưởng đã bật trong khi chưa.
+BAT = ("1", "true", "on")
+
+
+def _co(ten: str) -> bool:
+    import os
+    return (os.environ.get(ten) or "").strip().lower() in BAT
+
+
+def _san_moi_luot() -> bool:
+    """Có đang chạy C1 (làm tròn LÊN mỗi lượt gọi) không. **Mặc định KHÔNG.**
+
+    ⛔ Chỉ đường lùi mới bật được nó. `CO_TICH_LUY` giữ lại để một cấu hình cũ
+       ghi `LTT_TINH_TIEN_TICH_LUY=1` **không đổi nghĩa** — nó vẫn là C3, y như
+       mặc định mới. Nhưng nếu ai đó đặt **cả hai**, đường lùi thắng: khi hai cờ
+       mâu thuẫn, cái nói "quay về hành vi cũ" phải là cái được nghe.
+    """
+    return _co(CO_SAN_MOI_LUOT)
+
+
+def _tich_luy() -> bool:
+    """Có đang tích luỹ phần lẻ (C3) không. **Mặc định CÓ.**"""
+    return not _san_moi_luot()
+
+
+#: Ngưỡng cảnh báo phần lẻ. Bình thường `mcredit_du` < 1.000; lớn hơn nhiều lần
+#: nghĩa là quyết toán liên tục bị **cap ở mức đã giữ** — tức giữ chỗ đang thiếu.
+TRAN_CANH_BAO_DU_MCREDIT = 5_000
+
+
 def quyet_toan_luot(db, *, user_id: str, request_id: str,
                     su_dung: SuDung) -> KetQuaThu:
     """Chốt tiền sau khi lượt gọi xong.
@@ -89,9 +160,13 @@ def quyet_toan_luot(db, *, user_id: str, request_id: str,
     Ném `gia_token.KhongDoDuocError` khi thượng nguồn không trả `usage`. Bên gọi
     nên dùng `quyet_toan_hoac_hoan()` thay vì tự bắt.
     """
-    chi_phi = gia_token.tinh(su_dung)                    # C1: làm tròn LÊN
-    thu = chi_phi.tong_credit_lam_tron_len
-    kq = credit.quyet_toan(db, user_id, request_id, thu)
+    chi_phi = gia_token.tinh(su_dung)
+    if _san_moi_luot():                                  # C1 — đường lùi
+        thu = chi_phi.tong_credit_lam_tron_len
+        kq = credit.quyet_toan(db, user_id, request_id, thu)
+    else:                                                # C3 — mặc định
+        kq = _quyet_toan_tich_luy(db, user_id=user_id, request_id=request_id,
+                                  chi_phi_mcredit=chi_phi.tong_mcredit)
     return KetQuaThu(
         da_giu_credit=kq.held_credit,
         thu_credit=kq.charged_credit,
@@ -99,6 +174,56 @@ def quyet_toan_luot(db, *, user_id: str, request_id: str,
         chi_phi_mcredit=chi_phi.tong_mcredit,
         phien_ban_gia=chi_phi.phien_ban_gia,
     )
+
+
+def _quyet_toan_tich_luy(db, *, user_id: str, request_id: str,
+                         chi_phi_mcredit: int):
+    """**C3** — cộng phần lẻ vào `users.mcredit_du`, chỉ thu phần NGUYÊN.
+
+        du_moi = du_cu + chi_phi - (so credit THAT SU thu) * 1000
+
+    ⭐ Trừ theo **số thật sự thu**, không theo số đề nghị. `credit.quyet_toan`
+       cap ở mức đã giữ; nếu bị cap thì phần chưa thu **ở lại** trong `du` và
+       lượt sau thu tiếp — thay vì bốc hơi.
+
+    🔴 Hai chốt chặn, và cả hai đều là chuyện tiền:
+
+    1. **Phát lại không được cộng `du` lần hai.** `credit.quyet_toan` idempotent
+       theo `request_id`, nên nó trả kết quả cũ; nhưng `du` thì không tự biết.
+       Hỏi `credit.da_quyet_toan()` trước.
+    2. **Khoá hàng user trước khi đọc `du`.** Đọc-rồi-ghi có một khe, và hai lượt
+       song song của cùng một user lọt vừa vào đó sẽ cùng đọc `du` cũ rồi cùng
+       ghi đè — mất một phần lẻ, tức mất doanh thu im lặng.
+    """
+    from platform_core.models import User
+
+    if credit.da_quyet_toan(db, request_id):
+        # Phát lại: `quyet_toan` trả kết quả cũ. `actual=0` không đổi gì —
+        # nó early-return trước khi đọc tới con số này.
+        return credit.quyet_toan(db, user_id, request_id, 0)
+
+    credit.khoa_user(db, user_id)
+    u = db.get(User, str(user_id))
+    du = int(getattr(u, "mcredit_du", 0) or 0) if u is not None else 0
+
+    tong = du + max(0, int(chi_phi_mcredit))
+    de_nghi = tong // gia_token.MCREDIT_MOI_CREDIT
+    kq = credit.quyet_toan(db, user_id, request_id, de_nghi)
+
+    if u is not None:
+        con = tong - kq.charged_credit * gia_token.MCREDIT_MOI_CREDIT
+        u.mcredit_du = max(0, con)
+        # ⛔ `flush` chứ không đợi bên gọi `commit`. Không flush thì giá trị chỉ
+        #    nằm trong bộ nhớ phiên; một truy vấn khác trong **cùng** transaction
+        #    vẫn đọc ra số cũ — và phần lẻ vừa cộng biến mất mà không ai báo.
+        db.flush()
+        if u.mcredit_du >= TRAN_CANH_BAO_DU_MCREDIT:
+            # Không phải lỗi của phép cộng — là dấu hiệu GIỮ CHỖ đang thiếu, nên
+            # quyết toán bị cap liên tục. Nói ra để có người đi xem `uoc_tran`.
+            log.warning(
+                "phan le tich luy cao bat thuong: user=%s du=%s mcredit "
+                "(nghi giu cho thieu, quyet toan bi cap)", user_id[:8], u.mcredit_du)
+    return kq
 
 
 def hoan_luot(db, *, user_id: str, request_id: str) -> None:

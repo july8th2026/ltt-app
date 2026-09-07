@@ -101,7 +101,7 @@ def main() -> None:
         # Không phải lỗi — fail-closed của Q92 đang làm đúng việc. Nhưng phải nói
         # to, vì "GET /v1/models trả rỗng" rất dễ bị hiểu nhầm thành cổng hỏng.
         log.warning("LTT_LLM_MODELS rong -> KHONG mo model nao. "
-                    "Dat vi du: LTT_LLM_MODELS=qwen38-ops,qwen38-vision")
+                    "Dat vi du: LTT_LLM_MODELS=qwen38-api,qwen38-vision")
     if not cfg.token:
         log.warning("LTT_LLM_TOKEN rong -> KHONG kiem tra bearer. "
                     "Chi chap nhan duoc khi host van la 127.0.0.1")

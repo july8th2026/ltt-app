@@ -205,3 +205,134 @@ describe('App — hoi thoai co DIA CHI trong URL', () => {
     expect(screen.getByText('Bắt đầu bằng một câu hỏi.')).toBeTruthy()
   })
 })
+
+describe('App — noi lai luong sau khi tai lai trang', () => {
+  /**
+   * 🔴 ĐO ĐƯỢC TRÊN PRODUCTION 03/09. F5 giữa lúc model đang trả lời:
+   *
+   *        giao diện        máy chủ
+   *     t+ 0s   chữ = 0     streaming, partial =    0
+   *     t+25s   chữ = 0     streaming, partial = 3429   ← vẫn đang sinh
+   *
+   *    Máy chủ chạy hoàn hảo. Giao diện trắng cho tới khi người dùng tự F5
+   *    **lần nữa**.
+   *
+   * ⭐ Máy chủ đã dựng sẵn từ Phase 08a: `dang_chay` là sổ fan-out nhiều người
+   *    nghe, và route ghi thẳng "Nối lại = mở lại `stream?after=<seq>`".
+   *    Thiếu đúng một chỗ: client chưa bao giờ gọi.
+   */
+  it('thay mot luot dang streaming thi TU MO lai stream', async () => {
+    const dangChay = {
+      ...SU_THAT,
+      messages: [
+        SU_THAT.messages[0],
+        {
+          ...SU_THAT.messages[1],
+          status: 'streaming',
+          blocks: [],
+          execution: { ...SU_THAT.messages[1].execution, status: 'streaming', mode: 'stream' },
+        },
+      ],
+    }
+    const goi = vi.fn(async (url: string) => {
+      const u = String(url)
+      const j = (x: unknown) => new Response(JSON.stringify(x), { status: 200 })
+      if (u.endsWith('/so-du')) return j({ credit: 10 })
+      if (u.endsWith('/danh-muc')) return j(NANG_LUC)
+      if (u.includes('/hoi-thoai?') || u.endsWith('/hoi-thoai')) {
+        return j({ hoi_thoai: [SU_THAT.conversation] })
+      }
+      if (u.includes('/stream')) {
+        return new Response('event: end\ndata: {"seq":9}\n\n',
+          { status: 200, headers: { 'content-type': 'text/event-stream' } })
+      }
+      if (u.includes('/hoi-thoai/cv1')) return j(dangChay)
+      return j({})
+    })
+    vi.stubGlobal('fetch', goi)
+    window.location.hash = '#cv1'
+    veApp()
+
+    await waitFor(() => {
+      const duong = goi.mock.calls.map((c) => String(c[0]))
+      expect(duong.some((d) => d.includes('/luot/ex1/stream'))).toBe(true)
+    }, { timeout: 4000 })
+    window.location.hash = ''
+  })
+
+  it('luot DA XONG thi KHONG mo stream — khong goi thua', async () => {
+    // ⛔ Thieu dieu kien nay thi moi lan mo mot hoi thoai cu la mot ket noi SSE
+    //    vo ich toi may chu, nhan len theo so lan nguoi dung bam quanh sidebar.
+    datMayChuGia()
+    window.location.hash = '#cv1'
+    const goi = (globalThis.fetch as unknown as ReturnType<typeof vi.fn>)
+    veApp()
+    await waitFor(() => expect(screen.getByText('trả lời')).toBeTruthy())
+    const duong = goi.mock.calls.map((c) => String(c[0]))
+    expect(duong.some((d) => d.includes('/stream'))).toBe(false)
+    window.location.hash = ''
+  })
+})
+
+/**
+ * Năng lực CHƯA sẵn sàng thì phải tự hỏi lại — đừng bắt người dùng bấm F5.
+ *
+ * 🔴 Trước 04/09 danh mục chỉ được nạp **một lần** lúc gắn component. Model ảnh
+ *    và giọng nằm ở máy B và nạp sau vài phút, nên ai mở trang trước đó sẽ thấy
+ *    nút "Tạo giọng" vô hiệu **vĩnh viễn**: không có gì báo, không có gì đổi, và
+ *    lối thoát duy nhất là F5 mà không ai nói cho họ biết.
+ *
+ * ⭐ Lỗi này lộ ra từ chính một dòng BỎ QUA của bộ kiểm giao diện, không phải từ
+ *    một dòng đỏ: *"model tiếng chưa nạp — máy chủ nói `speech.ltt=san_sang`"*.
+ *    Một câu tự mâu thuẫn. Thứ bắt được nó là đọc kỹ một dòng BOQUA thay vì hài
+ *    lòng vì nó không đỏ.
+ */
+describe('nang luc chua san sang', () => {
+  const chuaSanSang = {
+    nang_luc: NANG_LUC.nang_luc.map((n) => (
+      n.ten === 'speech.ltt' ? { ...n, san_sang: 'dang_nap' } : n)),
+  }
+
+  afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals() })
+
+  it('hoi lai danh muc khi con nang luc chua san sang', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    const goi = datMayChuGia({ nangLuc: chuaSanSang })
+    veApp()
+    await waitFor(() => expect(
+      goi.mock.calls.filter((c) => String(c[0]).endsWith('/danh-muc')).length).toBe(1))
+
+    await vi.advanceTimersByTimeAsync(21_000)
+    await waitFor(() => expect(
+      goi.mock.calls.filter((c) => String(c[0]).endsWith('/danh-muc')).length)
+      .toBeGreaterThan(1))
+  })
+
+  it('DU sang sang roi thi KHONG hoi lai — vong lap phai tu dung', async () => {
+    // ⛔ Nua kia cua menh de. Mot vong lap chay mai la mot vong lap se bi ai do
+    //    tat di vi ton, va lan tat do mang theo ca truong hop dang can no.
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    const goi = datMayChuGia()
+    veApp()
+    await waitFor(() => expect(
+      goi.mock.calls.filter((c) => String(c[0]).endsWith('/danh-muc')).length).toBe(1))
+
+    await vi.advanceTimersByTimeAsync(65_000)
+    expect(goi.mock.calls.filter((c) => String(c[0]).endsWith('/danh-muc')).length).toBe(1)
+  })
+})
+
+/**
+ * ⚠️ ĐÃ THỬ VIẾT MỘT PHÉP KIỂM Ở ĐÂY CHO "lựa chọn model không bị ghi đè",
+ *    VÀ ĐÃ GỠ NÓ. Ghi lại vì cái gỡ đáng nhớ hơn cái viết.
+ *
+ *    Phép kiểm đó bấm lại chính hội thoại đang mở để giả lập "một lần làm mới".
+ *    Nhưng bấm lại **không đổi `convId`**, nên hiệu ứng `[convId]` không chạy,
+ *    nên `napSuThat` không hề được gọi. Gỡ bản vá ra thì nó **vẫn xanh** — một
+ *    dòng trang trí.
+ *
+ * ⭐ Đường thật đi qua `guiLuot` → `napSuThat(cid)` (`App.tsx`), tức cần một
+ *    lượt gửi thật với SSE. Thứ đang canh mệnh đề này là hạng mục `9.1` của bộ
+ *    kiểm giao diện — nó chạy trên sản phẩm thật và **chính nó đã bắt được lỗi
+ *    này**, với thông điệp nói rõ ô chọn quay về `ltt_llm`.
+ */

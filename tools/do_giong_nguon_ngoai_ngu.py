@@ -11,13 +11,24 @@ xây quyết định điều đó: **F5-TTS train bằng giọng tiếng Việt 
 bằng giọng tiếng Anh (17 giọng)**. Chấm lại bằng ASR: 24/24 khớp nhãn, độ tin
 0,987–1,000. Không có ngoại lệ nào.
 
-Hệ mới thì khác ở chỗ quyết định: **VieNeu không nói được tiếng Anh.**
-`vieneu_utils/phonemize_text.py` khoá cứng `SEAPipeline(lang="vi")` +
-`G2P(lang="vi")` ở tầng singleton, nên mọi văn bản đi qua G2P **tiếng Việt**.
+⛔ ĐOẠN NÀY TỪNG GHI: *"VieNeu không nói được tiếng Anh"*, dẫn chứng
+   `vieneu_utils/phonemize_text.py` khoá cứng `SEAPipeline(lang="vi")` +
+   `G2P(lang="vi")`. **Khẳng định ấy SAI**, và nó đã bị bác bỏ bằng phép đo
+   cùng ngày — xem `tools/do_engine_co_noi_tieng_anh.py`:
 
-⇒ 17 giọng XTTS không thể trở thành "giọng tiếng Anh của nền tảng". Chúng chỉ
-  có thể là **nguồn âm sắc** cho tiếng Việt. Và câu hỏi *"mượn âm sắc từ một
-  người nói tiếng Anh thì tiếng Việt sinh ra có dùng được không"* là một câu
+       VAO : The quick brown fox jumps over the lazy dog.
+       ASR : The quick brown fox jumps over the lazy dog.       [en 0,996]
+
+   `lang` của `sea-g2p` chọn **ngôn ngữ nền Đông Nam Á**, không phải danh sách
+   ngôn ngữ đầu ra; chuỗi Latin đi qua một engine tiếng Anh dùng chung bên
+   trong. Model được train from scratch trên ~10.000 giờ Anh–Việt.
+
+⭐ Giữ lại đoạn sai thay vì xoá, vì bản thân hình dạng của nó mới là bài học:
+   **một hằng số đọc rất thuyết phục, cộng một tiền đề ngầm chưa ai kiểm.**
+
+⇒ Nhưng CÂU HỎI của tệp này thì KHÔNG đổi, và đó là lý do nó vẫn đứng: *"mượn
+  âm sắc từ một người nói tiếng Anh thì **tiếng Việt** sinh ra có dùng được
+  không"*. Engine đọc được tiếng Anh không trả lời câu ấy. Nó là một câu
   **thực nghiệm**, không phải một câu suy luận:
 
   · Lập luận nói ĐƯỢC: embedding người nói của VieNeu là một vector 192 chiều

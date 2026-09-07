@@ -63,6 +63,68 @@ from fastapi import APIRouter, Depends, Form, Request
 _LOI_DE_DANH = 6
 
 
+#: Nguong tep de coi mot luot `pytest` go tay la LENH NANG.
+#:
+#: ⚠️ `CLAUDE.md` da ghi "tu 3 tep test tro len" la lenh nang. Dung dung con so
+#:    do: mot luot 3 tep chay vai giay, con cai ta can bat la luot chiem may
+#:    hang phut. Lay 20 — duoi do thi xin khoa dat hon phan no bao ve.
+_NGUONG_TEP_NANG = 20
+_KHOA_PHIEN = None
+
+
+def pytest_collection_modifyitems(session, config, items):
+    """🔴 Lo CUOI CUNG cua khoa: `pytest` go tay hoan toan VO HINH.
+
+    `gate.py` xin khoa, `tools/test_nhanh.py` xin khoa (tu 06/09) — nhung
+    `python -m pytest tests/ -n 6` thi khong. Va do dung la lenh bon phien deu
+    go trong dem 05-06/09, khi ba luot gate chong nhau luc 00:09 (CPU 93 %).
+
+    ⛔ Xin o day chu khong o `pytest_configure`: chi sau khi THU THAP xong ta
+       moi biet luot nay to hay nho. Xin khoa cho mot luot 2 tep la lam moi
+       vong lap sua-roi-thu cham di, va nguoi ta se hoc cach tat no.
+
+    ⭐ Bo qua khi to tien DA giu khoa ho (`gate.py` / `test_nhanh.py`): khoa la
+       mot tep `O_EXCL`, khong tai nhap. Dung MOT ham chung voi `test_nhanh`
+       thay vi chep phep hoi — hai ban sao la hai cho de chung lech nhau, va
+       lech o day nghia la hoac khoa chet hoac lo hong.
+
+    ⚠️ KHONG chan, KHONG bo cuoc: het gio cho thi `CuaSoYen` van chay va noi ro
+       la dang CHEN. Mot cong chat luong tu choi chay vi ban la mot cong khong
+       ai dung.
+    """
+    global _KHOA_PHIEN
+    if _KHOA_PHIEN is not None or os.environ.get("PYTEST_XDIST_WORKER"):
+        return                                  # worker con: cha da xin roi
+    if len({getattr(i, "fspath", None) for i in items}) < _NGUONG_TEP_NANG:
+        return
+    try:
+        sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "tools"))
+        from test_nhanh import to_tien_da_giu_khoa
+        if to_tien_da_giu_khoa():
+            return
+        from cua_so_yen import CuaSoYen
+        _KHOA_PHIEN = CuaSoYen(
+            os.environ.get("LTT_PHIEN") or f"pytest:{os.getpid()}",
+            "pytest go tay", cho_toi_da_s=900.0,
+            tai_nguyen=("cpu_nhieu", "postgres_test"))
+        _KHOA_PHIEN.__enter__()
+    except Exception as e:  # noqa: BLE001
+        # Thieu psutil / khong doc duoc khoa -> chay tiep, nhung NOI RA.
+        print(f"  [cua so yen] khong xin duoc khoa: {type(e).__name__}")
+        _KHOA_PHIEN = None
+
+
+def pytest_sessionfinish(session, exitstatus):
+    """Nha khoa. `_treo()` cua `cua_so_yen` van do neu tien trinh chet dot ngot."""
+    global _KHOA_PHIEN
+    if _KHOA_PHIEN is not None:
+        try:
+            _KHOA_PHIEN.__exit__(None, None, None)
+        except Exception as e:  # noqa: BLE001
+            print(f"  [cua so yen] khong nha duoc khoa: {type(e).__name__}")
+        _KHOA_PHIEN = None
+
+
 def pytest_xdist_auto_num_workers(config) -> int:
     """Tran cho `auto` — LAY MIN, khong dat de.
 

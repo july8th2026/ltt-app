@@ -41,10 +41,72 @@ html{background:var(--surface-canvas)}
   *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;
     animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
+/* ── Lề an toàn (notch / thanh Home) ──────────────────────────────────────────
+ *
+ * ⭐ MỘT biến, không bốn lần `calc(... + env(...))` rải rác. Đo 05/09: bốn thanh
+ *    hành động `position:sticky` chạm mép dưới — `lv-st-nut` (Voice),
+ *    `im-actions` (Tạo ảnh), `th-actions` (Thumbnail), `clip-actions` (Clip
+ *    ngắn) — và không cái nào chừa chỗ cho thanh Home của iPhone. Bốn bản chép
+ *    của cùng một phép cộng là bốn bản sẽ lệch; đúng cơ chế đã sinh ra năm bản
+ *    phân tích Range trong `apps/`.
+ *
+ * ⚠️ Biến này VÔ NGHĨA nếu `<meta name=viewport>` thiếu `viewport-fit=cover`:
+ *    `env()` trả 0 và mọi thứ vẫn biên dịch, vẫn chạy, chỉ là không làm gì cả.
+ *    Ba base template khách hàng đã được sửa cùng lượt này.
+ *
+ * Trên desktop `env()` trả `0px` ⇒ không một pixel nào đổi.
+ *
+ * Luật áp cho từng thanh nằm ở CUỐI tệp — xem chú thích ở đó, thứ tự là bắt buộc. */
+:root{--ltt-day-an-toan:env(safe-area-inset-bottom,0px)}
+
 @media(pointer:coarse){
   :where(button,.btn,summary,input:not([type=hidden]),select){min-height:44px}
   :where(button,.btn,summary){min-width:44px}
+
+  /* ⭐ Luật trên KHÔNG có `a`, và đó là lỗ hổng lớn nhất của nó. Đo 05/09 ở
+   *    390×844: trong số phần tử tương tác dưới 44px, **55 là `<a>` và chỉ 2 là
+   *    `<button>`** — và hai kẻ tái phạm xuất hiện trên MỌI trang vì chúng nằm
+   *    ở chrome nền tảng: `a.hdr-logo` 40×30 và liên kết ứng dụng trong menu
+   *    200×37.
+   *
+   * ⛔ Nhưng KHÔNG nâng mọi `<a>` lên 44px. Phần lớn liên kết dưới 44px là
+   *    liên kết văn bản trong dòng và ở chân trang — WCAG 2.2 SC 2.5.8 có ngoại
+   *    lệ đúng cho chúng, và ép hết sẽ phá giãn dòng của văn bản. Chỉ nâng liên
+   *    kết ĐÓNG VAI ĐIỀU KHIỂN. */
+  :where(.hdr-logo,.hdr-link,.pill,.dropdown a,.adm-nav a,a.btn){
+    min-height:44px;display:flex;align-items:center}
+
+  /* Safari iOS tự phóng to trang khi focus vào ô nhập có computed font-size
+   * < 16px, rồi để trang ở mức phóng đó. Đo 05/09: **mọi** ô nhập đang hiện
+   * trên nền tảng đều dưới 16px (13px là phổ biến nhất, 18 lần).
+   *
+   * ⛔ Cách chữa KHÔNG được là `user-scalable=no` — nó tắt luôn khả năng phóng
+   *    to của người khiếm thị để giấu một triệu chứng.
+   *
+   * ⚠️ Chỉ trong `pointer:coarse`. Nâng ô nhập lên 16px trên desktop sẽ phá hệ
+   *    thống chữ của giao diện dày đặc, nơi nhãn 10–11px là ngôn ngữ thị giác
+   *    hiện có — và rủi ro auto-zoom vốn chỉ tồn tại trên cảm ứng.
+   *
+   * 🔴 `!important` Ở ĐÂY LÀ CỐ Ý — ĐỪNG "DỌN" NÓ ĐI.
+   *
+   *    Bản đầu viết `:where(input,textarea,select){font-size:16px}`. `:where()`
+   *    có độ đặc hiệu **bằng 0**, nên nó thua mọi luật thành phần dạng
+   *    `.market-search input{font:inherit;font-size:14px}` hay `.im-field input`
+   *    — độ đặc hiệu (0,1,1). Đo lại sau khi thêm luật: **52 trong 55** ô nhập
+   *    VẪN dưới 16px. Luật có mặt trong tệp, đúng cú pháp, và không làm gì cả.
+   *
+   *    Nâng độ đặc hiệu bằng bộ chọn dài hơn cũng không cứu: mọi cách viết
+   *    chỉ-bằng-thẻ tối đa là (0,0,3), vẫn thua một lớp đơn.
+   *
+   * ⭐ Đây là một SÀN chứ không phải một lựa chọn thẩm mỹ: theo định nghĩa nó
+   *    phải thắng mọi luật thành phần. Và nó nằm trong `@media(pointer:coarse)`
+   *    nên không chạm được tới desktop. */
+  input:not([type=hidden]),textarea,select{font-size:16px!important}
 }
+
+/* Trình phát tiếng đã bỏ cuộc và trả điều khiển về cho trình duyệt
+ * (`voice.js::boCuoc`). Hiện `<audio controls>` gốc thay cho nút tự dựng. */
+.lv-phat.lv-phat-lui audio{display:block;width:100%}
 .mono{font-family:var(--mono)}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .tnum{font-variant-numeric:tabular-nums}
@@ -260,7 +322,7 @@ html{background:var(--surface-canvas)}
   background:radial-gradient(circle,var(--focus-shadow),transparent 70%);pointer-events:none}
 .hero h1{font-size:26px;letter-spacing:-.4px;max-width:22ch;position:relative}
 .hero p{color:var(--muted);margin:9px 0 0;max-width:54ch;font-size:14.5px;position:relative}
-.grid{display:grid;gap:15px;grid-template-columns:repeat(auto-fill,minmax(288px,1fr))}
+.grid{display:grid;gap:15px;grid-template-columns:repeat(auto-fill,minmax(min(288px,100%),1fr))}
 .appcard{border:1px solid var(--line);border-radius:14px;background:var(--panel);overflow:hidden;transition:.18s;position:relative;color:inherit;text-decoration:none}
 .appcard:focus-visible{outline:3px solid var(--focus-ring);outline-offset:3px}
 .appcard:hover{transform:translateY(-3px);border-color:var(--line2);box-shadow:0 10px 30px #0006}
@@ -301,9 +363,51 @@ html{background:var(--surface-canvas)}
 .menu>summary::marker{content:""}
 .menu>summary:hover,.menu[open]>summary{background:var(--panel2)}
 .menu .caret{color:var(--dim);font-size:10px}
-.dropdown{position:absolute;top:calc(100% + 6px);left:0;min-width:214px;background:var(--panel);
+.dropdown{position:absolute;top:calc(100% + 6px);left:0;min-width:min(214px,calc(100vw - 20px));background:var(--panel);
   border:1px solid var(--line2);border-radius:10px;padding:6px;box-shadow:0 14px 40px #0008;z-index:50}
-.dropdown.right{right:0;left:auto;min-width:252px}
+.dropdown.right{right:0;left:auto;min-width:min(252px,calc(100vw - 20px))}
+/* 🔴 PHONG TO SAU: panel dropdown neo theo CHA nen no khong the vua khung nhin.
+ *
+ * Do 06/09 o khung 195px: `details.menu` nam o x=54, panel rong 175px ->
+ * canh phai 229. `min-width` da duoc kep theo `100vw` roi, nhung vi tri thi
+ * khong — mot panel `left:0` trong mot cha nam giua trang van tran ra ngoai.
+ *
+ * `header.hdr` co scrollWidth 257 tren MOI trang trong khi `main` va `footer`
+ * deu sach (195/195), nen day la nguon tran chung cua ca nen tang o muc phong
+ * to nay — khong phai mot loi rieng cua trang nao.
+ *
+ * ⇒ Duoi 320px, ghim panel theo KHUNG NHIN thay vi theo cha. `position:fixed`
+ *   voi ca `left` lan `right` cho be rong = khung nhin - 20, va vi tri khong
+ *   con phu thuoc vao cha nam o dau.
+ *
+ * ⚠️ Nguong 320px giong luat bang o `_kieu_chung.html`, va cung mot ly do:
+ *   WCAG 1.4.10 doi reflow o 320px va nen tang DAT o do. Duoi nguong ay la
+ *   vung ngoai chuan, noi mot panel ghim theo khung nhin van hon mot trang
+ *   tran ngang.
+ */
+@media(max-width:320px){
+  /* 🔴 `.hdr-right` la nguon tran CHUNG cua ca nen tang o muc phong to nay.
+   *
+   * Do bang cach an tung con cua `header.hdr` o khung 195px:
+   *
+   *     an hdr-logo      -> scrollWidth 213
+   *     an hdr-nav       -> 257  (da `display:none`, khong doi)
+   *     an hdr-burger    -> 209
+   *     an hdr-right     -> 195   <- SACH
+   *
+   * Header co 175px noi dung; logo+burger an het 92, con 83 cho `.hdr-right`
+   * — it hon be rong noi tai cua cac nut ben trong no. `min-width:0` o dong
+   * 430 cho ban than no co gian, nhung khong ep duoc CHU trong nut hep lai.
+   *
+   * ⇒ Cho header XUONG DONG: `.hdr-right` tut xuong hang hai va duoc tron
+   *   175px. Khong an chuc nang nao, chi doi bo cuc.
+   */
+  .hdr{flex-wrap:wrap;row-gap:6px}
+  .hdr-right{min-width:0;flex-wrap:wrap}
+
+  .dropdown,.dropdown.right{position:fixed;left:10px;right:10px;
+    min-width:0;width:auto;max-width:none}
+}
 .dropdown a,.dropdown button{display:flex;align-items:center;gap:9px;width:100%;padding:9px 11px;border-radius:7px;
   color:var(--fg);text-decoration:none;font-size:13.5px;background:transparent;border:0;font:inherit;cursor:pointer;text-align:left}
 .dropdown a:hover,.dropdown button:hover{background:var(--panel2)}
@@ -349,7 +453,7 @@ html{background:var(--surface-canvas)}
 .appcard .cover{height:120px;display:grid;place-items:center;position:relative}
 .appcard .cover .cbadge{position:absolute;top:10px;right:10px}
 .catbar{display:flex;gap:12px;align-items:center;margin:2px 0 16px;flex-wrap:wrap}
-.catbar .search{flex:1;min-width:200px;max-width:340px}
+.catbar .search{flex:1;min-width:min(200px,100%);max-width:340px}
 .catfilters{display:flex;gap:4px;flex-wrap:wrap}
 .catfilters button{border:1px solid var(--line2);background:var(--panel2);color:var(--muted);font:inherit;
   font-size:12.5px;padding:6px 12px;border-radius:20px;cursor:pointer}
@@ -640,7 +744,7 @@ html{background:var(--surface-canvas)}
 .clip-source-summary[hidden]{display:none}
 
 /* H26.10B Chat AI customer workflow and per-turn trace. */
-.chat-more{position:relative}.chat-more>summary{display:grid;min-width:44px;min-height:44px;place-items:center;border:1px solid var(--border-subtle);border-radius:8px;background:var(--surface-overlay);color:var(--text-secondary);cursor:pointer;list-style:none}.chat-more>summary::-webkit-details-marker{display:none}.chat-more .chat-thread-actions{position:absolute;right:0;top:calc(100% + 6px);z-index:3;min-width:210px;padding:7px;border:1px solid var(--border-strong);border-radius:9px;background:var(--surface-raised);box-shadow:0 12px 30px #0005}.chat-more .chat-thread-actions>*{flex:1}.chat-msg>header{display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--text-muted);font-size:10px}.chat-msg.user>header{flex-direction:row-reverse}.chat-msg time{font-size:9px}.chat-turn-meta{max-width:100%;color:var(--text-muted);font-size:9px}.chat-turn-meta summary{min-height:24px;cursor:pointer}.chat-turn-meta span{display:block;padding:3px 0}.chat-suggestions{display:grid;max-width:620px;margin:auto;place-items:center;gap:9px;color:var(--text-secondary);text-align:center}.chat-suggestions p{margin:0}.chat-suggestions>div{display:flex;flex-wrap:wrap;justify-content:center;gap:7px}.chat-suggestions button{min-height:44px;padding:7px 11px;border:1px solid var(--border-subtle);border-radius:99px;background:var(--surface-overlay);color:var(--text-secondary);cursor:pointer}.chat-suggestions button:hover{border-color:var(--brand-primary);color:var(--text-primary)}.chat-file-list{display:block;max-width:100%;overflow:hidden;color:var(--text-muted);font-size:9px;text-overflow:ellipsis;white-space:nowrap}.chat-status.busy{color:var(--text-secondary)}.chat-status.success{color:var(--status-success)}.chat-status.warn{color:var(--status-warning)}.chat-status.error{color:var(--status-danger)}#stopbtn[hidden],#sendbtn[hidden]{display:none}@media(max-width:480px){.chat-more .chat-thread-actions{right:auto;left:0}.chat-suggestions>div{display:grid;width:100%}.chat-suggestions button{width:100%}}
+.chat-more{position:relative}.chat-more>summary{display:grid;min-width:44px;min-height:44px;place-items:center;border:1px solid var(--border-subtle);border-radius:8px;background:var(--surface-overlay);color:var(--text-secondary);cursor:pointer;list-style:none}.chat-more>summary::-webkit-details-marker{display:none}.chat-more .chat-thread-actions{position:absolute;right:0;top:calc(100% + 6px);z-index:3;min-width:min(210px,calc(100vw - 20px));padding:7px;border:1px solid var(--border-strong);border-radius:9px;background:var(--surface-raised);box-shadow:0 12px 30px #0005}.chat-more .chat-thread-actions>*{flex:1}.chat-msg>header{display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--text-muted);font-size:10px}.chat-msg.user>header{flex-direction:row-reverse}.chat-msg time{font-size:9px}.chat-turn-meta{max-width:100%;color:var(--text-muted);font-size:9px}.chat-turn-meta summary{min-height:24px;cursor:pointer}.chat-turn-meta span{display:block;padding:3px 0}.chat-suggestions{display:grid;max-width:620px;margin:auto;place-items:center;gap:9px;color:var(--text-secondary);text-align:center}.chat-suggestions p{margin:0}.chat-suggestions>div{display:flex;flex-wrap:wrap;justify-content:center;gap:7px}.chat-suggestions button{min-height:44px;padding:7px 11px;border:1px solid var(--border-subtle);border-radius:99px;background:var(--surface-overlay);color:var(--text-secondary);cursor:pointer}.chat-suggestions button:hover{border-color:var(--brand-primary);color:var(--text-primary)}.chat-file-list{display:block;max-width:100%;overflow:hidden;color:var(--text-muted);font-size:9px;text-overflow:ellipsis;white-space:nowrap}.chat-status.busy{color:var(--text-secondary)}.chat-status.success{color:var(--status-success)}.chat-status.warn{color:var(--status-warning)}.chat-status.error{color:var(--status-danger)}#stopbtn[hidden],#sendbtn[hidden]{display:none}@media(max-width:480px){.chat-more .chat-thread-actions{right:auto;left:0}.chat-suggestions>div{display:grid;width:100%}.chat-suggestions button{width:100%}}
 
 /* EXT-05 Developer API area: one portal, one navigation. The sub-nav scrolls
    horizontally on a phone rather than wrapping into a wall of links. */
@@ -1005,7 +1109,7 @@ code.to-dam{font-weight:600;color:var(--text-primary)}
   margin:0 0 14px;padding:12px 14px;border:1px solid var(--border-subtle);
   border-radius:var(--radius-lg);background:var(--surface-base)}
 .dev-loc .dev-field{margin:0;flex:0 1 auto;min-width:150px}
-.dev-loc .dev-field.rong{flex:1 1 260px;min-width:200px}
+.dev-loc .dev-field.rong{flex:1 1 260px;min-width:min(200px,100%)}
 .dev-loc .dev-nut{display:flex;gap:8px;margin-left:auto}
 
 /* ── Trường và hàng trường ────────────────────────────────────────────────
@@ -2341,7 +2445,65 @@ a.adm-o-link:hover{border-color:var(--brand-border);background:var(--panel2)}
 .lv-nhan{display:inline-flex;gap:4px;align-items:baseline}
 
 /* ── Man Giong: luoi the + loc + panel chi tiet (P3) ───────────────────────── */
-.lv-g-khung{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:20px;align-items:start}
+/* TAB GIONG — cung phep do, cung ket luan voi Studio.
+   Do that 04/09 o 1672x941: `.lv-man` bi kep 1120px, khung chia
+   `770px + 330px`, va ca trang cao 2402px — hon HAI MAN RUOI.
+
+   Anh tham chieu 02_VOICES cho luoi ~1085 va rail phai ~520, tuc ~66,8/32,0.
+   Cot phai o day KHONG phai mot cai chip: no chua trinh phat, bang thong tin,
+   danh sach clip goc. 330px la chieu rong cua mot thanh ben, khong phai cua
+   mot bang chi tiet — va do la ly do no trong chat trong anh chup truoc. */
+.lv-g-khung{display:grid;grid-template-columns:minmax(0,1085fr) minmax(0,520fr);
+  gap:14px;align-items:start}
+.lv-man.lv-giong{max-width:none}
+/* Dai dau man compact — cung ly do va cung cach lam voi Studio. */
+.lv-giong>.lv-vo{align-items:center;gap:12px;margin-bottom:8px}
+.lv-giong>.lv-vo .lv-vo-chu{display:flex;align-items:baseline;gap:10px;min-width:0}
+.lv-giong>.lv-vo .lv-vo-chu h1{font-size:15px;letter-spacing:0}
+.lv-giong>.lv-vo .lv-vo-chu p{display:none}
+.page--immersive:has(.lv-giong){padding-top:10px}
+/* BA the moi hang, dung nhu anh tham chieu. `auto-fill` cho BON o 1089px, va
+   the vi the hep di — trong khi the con phai chua them nut phat, thoi luong,
+   va bon nut o hang duoi. Ba the cho moi the ~354px, du cho ca hang nut. */
+/* ⚠️ CHI o man rong. Ep ba cot o moi be rong la mot hoi quy: do 04/09 o
+   375px cho TRAN NGANG — ba the 355px khong the nam trong 351px. Duoi
+   nguong nay tra ve `auto-fill` cua ban goc, thu von da tu xuong mot cot. */
+@media(min-width:1200px){.lv-giong .lv-luoi{
+  grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}}
+.lv-g-trang{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
+.lv-g-trang-nut{display:flex;align-items:center;gap:8px}
+.lv-g-trang-nut b{min-width:44px;text-align:center;font-size:11.5px;color:var(--muted)}
+.lv-g-trang-nut .btn[disabled]{opacity:.4;cursor:not-allowed}
+/* Form tao giong gap lai. Khong to dam summary thanh mot cai nut gia — no la
+   mot cai nut that cua trinh duyet, chi can trong ra nhu mot the. */
+details.lv-tao-giong{margin-top:14px;padding:12px 14px;border:1px solid var(--line);
+  border-radius:var(--radius);background:var(--panel)}
+details.lv-tao-giong>summary{cursor:pointer;display:flex;align-items:baseline;gap:10px;
+  list-style:none}
+details.lv-tao-giong>summary::-webkit-details-marker{display:none}
+details.lv-tao-giong>summary::before{content:'+';margin-right:2px;color:var(--accent);
+  font-weight:700}
+details.lv-tao-giong[open]>summary::before{content:'2'}
+details.lv-tao-giong>summary:focus-visible{outline:2px solid var(--focus-ring);
+  outline-offset:3px;border-radius:4px}
+/* Huong dan ba buoc o rail phai — doc, gon, danh so. */
+.lv-hd-tao{margin-top:12px}
+.lv-buoc-doc{display:grid;gap:9px;margin:9px 0 11px;padding:0;list-style:none;
+  counter-reset:hdb}
+/* ⚠️ BA phan tu trong luoi HAI cot: `::before`, `<b>`, `<span>`. Khong dat
+   vi tri tuong minh thi `<span>` roi xuong hang hai cot MOT (rong 20px) va
+   chu doc thanh mot cot doc — do 04/09: the huong dan cao 716px cho ba dong
+   ngan. Neo `::before` qua hai hang, va cho ca hai chu vao cot hai. */
+.lv-buoc-doc li{counter-increment:hdb;display:grid;
+  grid-template-columns:20px minmax(0,1fr);gap:2px 9px;align-items:start}
+.lv-buoc-doc li::before{grid-row:1/3}
+.lv-buoc-doc b,.lv-buoc-doc span{grid-column:2}
+.lv-buoc-doc li::before{content:counter(hdb);display:grid;place-items:center;
+  width:20px;height:20px;border:1px solid var(--brand-border);border-radius:50%;
+  background:var(--brand-soft,#2b1512);color:#fff;font-size:10px}
+.lv-buoc-doc b{display:block;font-size:12px}
+.lv-buoc-doc span{display:block;color:var(--muted);font-size:11px;line-height:1.45}
 .lv-g-trai{min-width:0}
 .lv-g-phai{position:sticky;top:72px}
 
@@ -2464,7 +2626,136 @@ button.lv-the-song.dang-phat .lv-nghe-dau::before{width:4px;height:14px;
 }
 
 /* ── Man Studio: bo cuc ba cot (P2) ────────────────────────────────────────── */
-.lv-st{display:grid;grid-template-columns:290px minmax(0,1fr) 330px;gap:16px;align-items:start}
+/* Studio la mot BAN LAM VIEC, khong phai mot bieu mau.
+   Ti le ba cot lay tu anh tham chieu 01_STUDIO.png (do 04/09/2026):
+     trai 397 : giua 692 : phai 519  ->  24,3% : 42,4% : 31,8%
+   Dung `fr` chu khong dung px co dinh: ban truoc la `290px 1fr 330px`, nen
+   cot giua nuot toan bo phan rong them va hai cot ben khong lon theo. O
+   1672px do duoc 25,9/41,8/29,5 — gan dung, va no gan dung chi vi be rong
+   tong dang bi kep o 1120. Bo kep ra thi ti le px lech han. */
+.lv-st{display:grid;grid-template-columns:minmax(0,397fr) minmax(0,692fr) minmax(0,519fr);
+  gap:12px;align-items:start}
+/* Chi Studio moi bo tran 1120px cua vo Voice. Cac man Voice khac (Giong, Du
+   an, Lich su, API) la trang DOC, va mot cot chu rong 1600px thi kho doc. */
+.lv-man.lv-studio{max-width:none}
+/* DAI DAU MAN COMPACT — chi o Studio.
+   `_voice_vo.html` dung chung cho ca sau man Voice, va o nam man kia no dung:
+   chung la trang DOC, tieu de + mo ta la thu dau tien can thay. Studio thi la
+   mot BAN LAM VIEC — anh tham chieu di thang tu thanh dieu huong vao workspace.
+
+   Do 04/09: dai nay cao 67px va day workspace xuong y=204, trong khi anh mau
+   bat dau o ~132. Cong voi cot trai 876px, no la ly do **nut Tao tieng noi nam
+   duoi man hinh**.
+
+   ⛔ KHONG xoa `<h1>`: `aria-labelledby="lv-title"` cua ca trang tro vao no, va
+      mot trang khong co tieu de la mot hoi quy tro nang. Chi thu nho no va gap
+      vao mot hang voi cac chip — dung hinh dang anh mau co.
+   ⛔ Va KHONG dong vao mac dinh cua `_voice_vo`: nam man kia giu nguyen. */
+.lv-studio>.lv-vo{align-items:center;gap:12px;margin-bottom:10px}
+.lv-studio>.lv-vo .lv-vo-chu{display:flex;align-items:baseline;gap:10px;min-width:0}
+.lv-studio>.lv-vo .lv-vo-chu h1{font-size:15px;letter-spacing:0}
+.lv-studio>.lv-vo .lv-vo-chu p{display:none}
+/* DANH SACH GIONG THAP HON — chi o Studio.
+   Man `Giong cua toi` la noi de DUYET giong, nen o do danh sach cao la dung.
+   O Studio no chi la mot buoc trong bay buoc, va anh tham chieu cho no ~230px
+   ca hop. Do 04/09: hop giong cao 475px = 54% ca cot trai, va chinh no day
+   nut Tao tieng noi xuong duoi man hinh.
+   Danh sach van cuon (22 giong, noi dung 1150px) — thu ngan cua so nhin, khong
+   bo bot giong nao. */
+.lv-studio .lv-chon-ds{max-height:150px}
+/* DANH SO 1..N CHO COT TRAI.
+   Anh tham chieu danh so tung muc, va do khong phai trang tri: no bien mot
+   chong the roi thanh mot QUY TRINH doc duoc bang mat — chon giong, roi ngon
+   ngu, roi cach doc, roi dau ra, roi bam.
+
+   Dung `counter` chu khong go so vao HTML: so muc con doi (LANGUAGE vua them,
+   MODE co the them sau), va mot day so go tay se lech ngay lan doi dau tien —
+   lech im lang, vi khong gi do khi "3" dung sau "5". */
+.lv-studio .lv-st-trai{counter-reset:lvb}
+.lv-studio .lv-st-trai>.lv-chon,.lv-studio .lv-st-trai>.lv-st-o{counter-increment:lvb}
+.lv-studio .lv-st-trai>.lv-chon>.lv-chon-dau>.eyebrow::before,
+.lv-studio .lv-st-trai>.lv-st-o>.eyebrow::before,
+.lv-studio .lv-st-trai>.lv-st-o>.lv-st-o-dau>.eyebrow::before{
+  content:counter(lvb);display:inline-grid;place-items:center;width:16px;height:16px;
+  margin-right:7px;border:1px solid var(--line);border-radius:4px;
+  background:var(--surface-raised,#1a1414);color:var(--muted);
+  font-size:9.5px;letter-spacing:0;vertical-align:-3px}
+/* Cau giai thich xuong DONG RIENG. Truoc do no chay tiep ngay sau nhom nut
+   toc do va quan quanh chung — do 04/09, o 395px chieu ngang. */
+.lv-studio .lv-st-trai>.lv-st-o>small.dim{display:block;margin-top:7px;font-size:10.5px;line-height:1.45}
+/* MAT DO COT TRAI.
+   Anh tham chieu xep BAY muc trong mot man 941px. Ban hien tai xep NAM muc
+   ma da tran: do 04/09 sau khi them o Ngon ngu, cot trai cao 883px va nut
+   Tao tieng noi tut xuong y=1033.
+
+   Cho chenh khong phai so muc ma la MAT DO: moi hop co padding 13/14 va mot
+   cau giai thich day du ben duoi. Cau ay co gia tri — no la thu tra loi
+   "nut nay lam gi" ma khong bat khach di doc tai lieu — nen thu nho va thu
+   chat, khong xoa.
+
+   ⛔ Chi trong `.lv-studio`. Man `Giong cua toi` va `Du an` la trang doc, o do
+      khoang tho la dung. */
+.lv-studio .lv-st-trai{gap:10px}
+.lv-studio .lv-st-trai>.lv-st-o,.lv-studio .lv-st-trai>.lv-chon{padding:10px 12px}
+.lv-studio .lv-st-trai>.lv-st-o>.eyebrow{display:block;margin-bottom:7px}
+/* NUT CHINH GHIM DAY COT TRAI.
+   §17 cua ban yeu cau: Generate la diem ket thi giac cua day 1..N. Nhung day
+   ay dai hon man hinh — do 04/09 cot trai cao 823px trong khoang 791px con
+   lai, va do khong phai mot loi bo cuc ma la mot su that: nam muc co giai
+   thich thi cao hon nam muc khong co.
+
+   Hai duong ra. Cat bot giai thich — nhung do la thu tra loi "nut nay lam gi"
+   ngay tai cho. Hoac ghim nut. Ghim giu duoc CA HAI: cuon de doc, ma hanh dong
+   chinh khong bao gio roi khoi tam mat.
+
+   ⚠️ `bottom:10px` chu khong `bottom:0`: dinh sat day man hinh trong nhu bi cat. */
+/* ⚠️ Chuyen mau phai DUC SOM. Ban dau `var(--bg) 42%` de nua tren trong
+   suot, va hop `DAU RA` ngay tren hien xuyen qua nut — trong nhu bo cuc
+   bi vo chu khong nhu mot nut ghim. 14% du de mep tren khong bi cat ngang. */
+.lv-studio .lv-st-nut{position:sticky;bottom:10px;z-index:2;
+  padding:12px 0 0;background:linear-gradient(180deg,transparent,var(--bg) 14%)}
+/* Dai dau man sat hon mot chut — anh mau bat dau workspace o ~132px. */
+.page--immersive:has(.lv-studio){padding-top:10px}
+.lv-studio>.lv-vo{margin-bottom:8px}
+/* PHIEN BAN — mot dong bon cot, dung khuon `lv-gd` cua o Gan day de hai danh
+   sach o hai cot trong nhu mot he, khong nhu hai bo phan roi. */
+.lv-pb-ds{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.lv-pb-ds li{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto;
+  align-items:center;gap:9px;padding:6px 0;border-top:1px solid var(--line)}
+.lv-pb-ds li:first-child{border-top:0}
+.lv-pb-nhan{display:inline-grid;place-items:center;min-width:26px;height:19px;
+  padding:0 5px;border:1px solid var(--brand-primary,#b7372b);border-radius:4px;
+  background:var(--brand-soft,#3a1512);color:#fff;font-size:10.5px}
+.lv-kq-ct .lv-ma code{font-size:10.5px;color:var(--muted);word-break:break-all}
+/* SONG AM TO HON o cot ket qua — anh mau danh cho no gan nua chieu cao panel,
+   vi do la thu khach nhin vao de biet ban doc co dung khong truoc khi nghe. */
+.lv-studio .lv-kq .lv-phat{padding:8px 11px}
+.lv-studio .lv-kq .lv-phat-song{height:58px}
+/* Nut phat trong dong Gan day: dung lai `lv-phat` nhung GIAU song am — mot
+   dong cao 40px thi song am khong doc duoc gi, no chi choan cho. */
+.lv-gd .lv-phat{width:auto;padding:0;border:0;background:none}
+.lv-gd .lv-phat-song,.lv-gd .lv-phat-gio{display:none}
+.lv-gd .lv-phat-nut{width:26px;height:26px}
+.lv-gd li{display:flex;align-items:center;gap:9px}
+/* Menu `⋮` cua dong Gan day. `<details>` thuan, khong JS. */
+.lv-gd-menu{position:relative}
+.lv-gd-menu>summary{list-style:none;cursor:pointer;padding:0 4px;color:var(--dim);
+  border-radius:4px;line-height:1}
+.lv-gd-menu>summary::-webkit-details-marker{display:none}
+.lv-gd-menu>summary:hover{color:var(--text)}
+.lv-gd-menu>summary:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
+.lv-gd-menu-hop{position:absolute;right:0;top:calc(100% + 6px);z-index:6;min-width:132px;
+  padding:5px;border:1px solid var(--line);border-radius:var(--radius-sm,6px);
+  background:var(--panel);box-shadow:0 12px 30px #0009;display:grid;gap:1px}
+.lv-gd-menu-hop a{display:block;padding:7px 9px;border-radius:4px;color:var(--text);
+  text-decoration:none;font-size:11.5px;white-space:nowrap}
+.lv-gd-menu-hop a:hover{background:var(--brand-soft,#2b1512)}
+/* Toc do phat + am luong — chi o bang dieu khien day du cua cot ket qua. */
+.lv-phat-td{flex:0 0 auto;min-width:34px;height:22px;padding:0 5px;
+  border:1px solid var(--line);border-radius:5px;background:transparent;
+  color:var(--muted);font:inherit;font-size:10.5px;cursor:pointer}
+.lv-phat-td:hover{color:var(--text);border-color:var(--brand-border)}
+.lv-phat-am{flex:0 0 62px;width:62px;height:3px;accent-color:var(--accent)}
 .lv-st-trai,.lv-st-giua,.lv-st-phai{display:flex;flex-direction:column;gap:14px;min-width:0}
 .lv-st-phai{position:sticky;top:72px}
 
@@ -2487,6 +2778,14 @@ button.lv-the-song.dang-phat .lv-nghe-dau::before{width:4px;height:14px;
 .lv-st-giua .lv-dem{margin:7px 0 0;justify-content:flex-end}
 /* Sap cham tran: doi mau TRUOC khi bi cat, chu khong bao sau. */
 .sap-tran{color:var(--warn)!important;font-weight:600}
+/* DA vuot tran. Khac `.sap-tran` mot bac mau, vi day la hai trang thai
+   khac nhau: mot cai la "sap", mot cai la "khong nop duoc". */
+.vuot-tran{color:var(--err)!important;font-weight:700}
+/* Dong giai thich vi sao nut Tao dang tat. Mot nut tat khong loi giai la
+   mot nguo cut; khoi nay la loi giai ay, va no chiem cho chu khong chen. */
+.lv-vuot{margin:7px 0 0;padding:8px 10px;border-radius:var(--radius-md);
+  border:1px solid var(--err-line);background:var(--err-bg);color:var(--err);
+  font-size:12.5px;line-height:1.6}
 
 /* Xem truoc cach doc */
 .lv-xt{border-color:var(--brand-border);background:var(--brand-soft)}
@@ -2520,7 +2819,45 @@ button.lv-the-song.dang-phat .lv-nghe-dau::before{width:4px;height:14px;
 .lv-tiendo>div{height:100%;width:0;background:var(--accent);transition:width var(--motion-normal)}
 
 /* Man API — cot doi, gap o mobile */
-.lv-api-khung{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
+/* TAB API — cung phep do. Anh tham chieu 04 cho ~1150 trai + ~470 phai.
+   Hai cot BANG NHAU o 1625px cho hai cot ~800px, va mot cot chu 800px thi qua
+   rong de doc; con bang voice_id thi lai can be ngang. */
+/* ⚠️ `minmax(0,...)` chu khong `...fr` tran. Mot track `fr` co `min-width:auto`,
+   nen mot the `<pre>` hay mot dong chu dai DAY duoc ca cot rong ra — do 04/09:
+   cot phai cham x=1712 trong viewport 1672, tuc trang tran ngang. */
+.lv-api-khung{display:grid;grid-template-columns:minmax(0,1150fr) minmax(0,470fr);
+  gap:14px;align-items:start}
+/* Khoi ma cuon TRONG vung cua no, khong day ca trang (§33). */
+.lv-api-ma pre{overflow-x:auto;max-width:100%}
+/* ⚠️ Kep track thoi thi CHUA DU: mot grid ITEM co `min-width:auto`, nen no
+   van no ra ngoai track khi noi dung rong hon. Do 04/09: track 470px nhung
+   `.lv-api-phai` rong 531px va cham x=1712 trong viewport 1672. */
+/* ⚠️ Kep track thoi thi chua du, va kep cot thoi cung chua du: mot `<pre>`
+   voi dong dai co `min-content` rat lon, va no day moi to tien cua no ra
+   ngoai. Do 04/09 ngay khi vi du ma duoc hien: cot phai 467px nhung khoi ben
+   trong 531px. Nen phai kep TUNG TANG, va cho chinh `<pre>` cuon. */
+.lv-api-trai,.lv-api-phai{min-width:0}
+.lv-api-trai>*,.lv-api-phai>*{min-width:0;max-width:100%}
+.lv-api-ma{min-width:0;max-width:100%;overflow:hidden}
+.lv-api-ma pre{overflow-x:auto;max-width:100%;min-width:0}
+.lv-api-gh dd,.lv-api-phai p{overflow-wrap:anywhere}
+.lv-man.lv-api{max-width:none}
+.lv-api>.lv-vo{align-items:center;gap:12px;margin-bottom:8px}
+.lv-api>.lv-vo .lv-vo-chu{display:flex;align-items:baseline;gap:10px;min-width:0}
+.lv-api>.lv-vo .lv-vo-chu h1{font-size:15px;letter-spacing:0}
+.lv-api>.lv-vo .lv-vo-chu p{display:none}
+.page--immersive:has(.lv-api){padding-top:10px}
+/* TAB DU AN va MAN MOT DU AN — chuan hoa theo cung ngon ngu voi bon tab kia.
+   Khong co anh tham chieu cho hai man nay (chu du an bao da mat), nen o day
+   KHONG doan mot bo cuc moi: chi ap dung dung ba thu da do duoc o bon tab
+   truoc — be rong immersive, dai dau man compact, va cot khong tran. */
+.lv-man.lv-da,.lv-man.lv-mda{max-width:none}
+.lv-da>.lv-vo,.lv-mda>.lv-vo{align-items:center;gap:12px;margin-bottom:8px}
+.lv-da>.lv-vo .lv-vo-chu,.lv-mda>.lv-vo .lv-vo-chu{display:flex;align-items:baseline;
+  gap:10px;min-width:0}
+.lv-da>.lv-vo .lv-vo-chu h1,.lv-mda>.lv-vo .lv-vo-chu h1{font-size:15px;letter-spacing:0}
+.lv-da>.lv-vo .lv-vo-chu p,.lv-mda>.lv-vo .lv-vo-chu p{display:none}
+.page--immersive:has(.lv-da),.page--immersive:has(.lv-mda){padding-top:10px}
 .lv-api-trai,.lv-api-phai{display:grid;gap:14px;min-width:0}
 .lv-api-ds{display:grid;gap:7px;margin:8px 0 0;padding:0;list-style:none}
 .lv-api-ds li{display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-width:0}
@@ -2647,7 +2984,48 @@ button.lv-the-song.dang-phat .lv-nghe-dau::before{width:4px;height:14px;
 }
 
 /* ── Man Lich su (P4) ──────────────────────────────────────────────────────── */
-.lv-ls-khung{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;align-items:start}
+/* TAB LICH SU — cung phep do voi Studio va Giong.
+   Do 04/09 o 1672x941: `.lv-man` kep 1120px, khung `1fr + 300px`, trang cao
+   1244px. Anh tham chieu 03 cho ~1150 trai + ~470 phai, tuc ~70,8/28,9 — rail
+   phai o day chua BON khoi (tom tat, thong ke nhanh, dang xu ly, chi tiet muc
+   duoc chon), khong phai mot the tom tat don doc. */
+.lv-ls-khung{display:grid;grid-template-columns:minmax(0,1150fr) minmax(0,470fr);
+  gap:14px;align-items:start}
+.lv-man.lv-ls{max-width:none}
+.lv-ls>.lv-vo{align-items:center;gap:12px;margin-bottom:8px}
+.lv-ls>.lv-vo .lv-vo-chu{display:flex;align-items:baseline;gap:10px;min-width:0}
+.lv-ls>.lv-vo .lv-vo-chu h1{font-size:15px;letter-spacing:0}
+.lv-ls>.lv-vo .lv-vo-chu p{display:none}
+.page--immersive:has(.lv-ls){padding-top:10px}
+/* DONG LICH SU MOT HANG NGANG.
+   Do 04/09: moi dong cao 162px vi song am chiem tron mot hang va bon nut
+   chiem hang thu ba. Anh tham chieu 03 xep tat ca tren MOT hang ~100px — va
+   khac biet ay khong phai tham my: o 42 muc, 162px cho ra mot trang dai 6.800px.
+
+   ⛔ KHONG doi template. Bon manh (chu · trinh phat · chip · nut) da la bon
+      con truc tiep cua `.lv-ls-dong`; chi can noi cho chung o dau. Sua template
+      la sua ca duong ma `voice.js` doc lai. */
+/* ⚠️ CHI o man rong. Bon cot tren MOT hang can ~900px; ep chung o 375px cho
+   TRAN NGANG (do 04/09). Duoi nguong nay tra ve bo cuc xep chong cua ban
+   goc, von da dung cho mobile. */
+@media(min-width:1000px){
+  .lv-ls .lv-ls-dong{grid-template-columns:minmax(0,1fr) 216px auto auto;
+    align-items:center;gap:6px 12px;padding:10px 12px}
+  .lv-ls .lv-ls-chinh{grid-column:1;min-width:0}
+  .lv-ls .lv-ls-dong>.lv-phat{grid-column:2;grid-row:1;margin:0}
+  .lv-ls .lv-ls-dong>.lv-phat .lv-phat-song{height:30px}
+  .lv-ls .lv-ls-phai{grid-column:3;grid-row:1;display:flex;align-items:center;gap:6px}
+  .lv-ls .lv-ls-tai{grid-column:4;grid-row:1;margin:0;flex-wrap:nowrap}
+}
+/* Chu gioi han HAI dong — anh mau cung hai. Mot luot doc 100.000 ky tu ma de
+   tran thi mot dong nuot ca trang. */
+.lv-ls .lv-ls-chu{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+  overflow:hidden;margin:0 0 3px;font-size:12.5px;line-height:1.45}
+.lv-ls .lv-ls-meta{margin:0;font-size:11px}
+.lv-ls .lv-ls-dong{cursor:pointer}
+.lv-ls .lv-ls-dong.chon{border-color:var(--brand-border);
+  box-shadow:inset 2px 0 var(--accent)}
+.lv-ls .lv-ls-dong:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
 .lv-ls-trai{min-width:0}
 .lv-ls-phai-cot{position:sticky;top:72px;display:flex;flex-direction:column;gap:12px}
 
@@ -2908,6 +3286,75 @@ button.lv-the-song.dang-phat .lv-nghe-dau::before{width:4px;height:14px;
   .lv-mlo-xoa{margin-left:0}
 }
 
+/* ── Lề an toàn: áp cho từng thanh dính đáy ───────────────────────────────────
+ *
+ * 🔴 KHỐI NÀY PHẢI Ở CUỐI TỆP, và đó là một ràng buộc thật chứ không phải sở
+ *    thích sắp xếp. `.im-actions`/`.th-actions`/`.clip-actions` được đặt lại
+ *    padding bằng thuộc tính RÚT GỌN `padding:10px 12px` trong khối
+ *    `@media(max-width:560px)` ở giữa tệp. Một `padding-bottom` đứng TRƯỚC khối
+ *    ấy sẽ bị nó ghi đè trên đúng khổ màn hình mà ta đang muốn sửa — tức bản vá
+ *    biến mất ở chỗ duy nhất nó cần có mặt, và biến mất trong im lặng.
+ *
+ * ⭐ Mỗi thanh giữ NGUYÊN padding của chính nó và chỉ CỘNG THÊM phần lề an toàn.
+ *    Trên desktop `env()` = 0 ⇒ `calc(12px + 0px)` = 12px = đúng giá trị cũ.
+ *    Không một pixel nào đổi ngoài iPhone có thanh Home. */
+.lv-st-nut{padding-bottom:var(--ltt-day-an-toan)}
+.im-actions,.th-actions,.clip-actions{
+  padding-bottom:calc(12px + var(--ltt-day-an-toan))}
+@media(max-width:560px){
+  .im-actions,.th-actions,.clip-actions{
+    padding-bottom:calc(10px + var(--ltt-day-an-toan))}
+}
+
+/* ── Mã trong dòng không được đẩy cả trang tràn ngang ─────────────────────────
+ *
+ * Đo 05/09 ở 390×844: `/huong-dan` là route DUY NHẤT tràn ngang trong 19 route
+ * — 12px trên Chromium, **28px trên WebKit**.
+ *
+ * ⚠️ Và thủ phạm KHÔNG phải khối `<pre>`: cả 11 khối `<pre>` ở trang đó đã có
+ *    `overflow-x:auto` đặt thẳng trong thuộc tính `style`. Thủ phạm là `<code>`
+ *    TRONG DÒNG — 68 thẻ, chứa những chuỗi không có chỗ ngắt (URL, tên khoá) —
+ *    và một hộp không ngắt được thì nó nong rộng cả tổ tiên của nó ra.
+ *
+ * ⭐ `overflow-wrap:anywhere` chứ không phải `break-word`: chỉ `anywhere` mới ảnh
+ *    hưởng tới BỀ RỘNG NỘI TẠI mà phần tử đòi hỏi. `break-word` bẻ được dòng
+ *    nhưng vẫn khai một bề rộng tối thiểu bằng cả từ dài nhất — tức trang vẫn
+ *    tràn, chỉ tràn êm hơn.
+ *
+ * ⛔ `:not(pre) > code` chứ không phải `code`: mã trong khối `<pre>` PHẢI giữ
+ *    nguyên dòng và cuộn ngang. Bẻ dòng một lệnh `curl` giữa chừng làm người ta
+ *    chép nhầm — một lỗi tệ hơn cái ta đang sửa. */
+:not(pre) > code{overflow-wrap:anywhere}
+
+/* ── Man RAT hep (320px — iPhone SE doi 1) ───────────────────────────────────
+ *
+ * Do 05/09 o 320x720, sau khi 390px da sach: **hai** route con tran ngang.
+ *
+ * ⭐ Va mot trong hai la do CHINH ban va cua toi. Nhom nut toc do doc
+ *    (`.lv-loc-nhom`) gom nam nut; luat vung cham 44px o tren lam moi nut rong
+ *    it nhat 44px, nen ca nhom thanh 305px trong mot khung 320px. Mot ban va
+ *    kha nang tiep can vua sinh ra mot loi bo cuc — va no chi lo ra o khung hep
+ *    nhat, tuc cho it ai do nhat.
+ *
+ * ⚠️ Bo cuon ngang cho nhom nay chu khong bo 44px: 44px la san WCAG cho ngon
+ *    tay, con cuon ngang chi la mot thao tac quen thuoc. Danh doi dung chieu. */
+.lv-loc-nhom{max-width:100%;overflow-x:auto;scrollbar-width:thin}
+
+/*
+ * Route con lai la `/huong-dan`: `<h3>` co `clientWidth 234` ma
+ * `scrollWidth 293` — mot dinh danh dai khong co cho ngat (ten endpoint API)
+ * trong mot the khoi. Chu khong ngat duoc thi trang phai no ra.
+ *
+ * ⭐ `break-word` chu khong `anywhere`: `break-word` chi ngat khi mot TU DON
+ *    khong vua mot dong, nen no khong dong toi cach xuong dong cua van ban
+ *    tieng Viet binh thuong. `anywhere` con doi ca be rong noi tai — manh hon
+ *    muc can thiet o day, va no cat chu giua chung o nhung cho khong dang.
+ *
+ * ⛔ Chi duoi 360px. Tren khung rong hon, mot tu dai tran ra la dau hieu bo cuc
+ *    co van de that su — giau no di la giau mot phep do. */
+@media(max-width:360px){
+  :where(h1,h2,h3,h4,dt,dd,p,li,td,th,figcaption){overflow-wrap:break-word}
+}
 /* ── Auto Scan Video (long tieng Viet) ──────────────────────────────────────
    Dung lai `.card` `.field` `.btn` `.alert` cua he thiet ke. Khoi nay chi them
    nhung gi he thong chua co: danh sach chin buoc, va mot lua chon radio co mo ta

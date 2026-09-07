@@ -113,6 +113,21 @@ class User(Base):
     # IP lúc đăng ký — dùng để giới hạn số tài khoản mới trên mỗi IP mỗi ngày
     # (chống lạm dụng credit dùng thử, Q9). Rỗng khi admin tạo tay.
     registration_ip: Mapped[str] = mapped_column(String(45), default="", nullable=False)
+    # ⭐ PHẦN LẺ CHƯA THU, đơn vị milli-credit, luôn trong [0, 1000).
+    #
+    #    Credit là số nguyên, còn một lượt gọi LLM điển hình tốn 0,3 credit. Làm
+    #    tròn LÊN mỗi lượt (C1) biến một hội thoại 20 lượt ngắn thành 20 credit
+    #    trong khi giá niêm yết của chính ta là ~3 — đo 05/09, xem
+    #    `docs/CHATLTT_V3/04_ADR_R2B_TINH_TIEN_LUOT.md`.
+    #
+    #    Cột này giữ phần lẻ để lượt sau cộng tiếp, nên khách trả **đúng bảng
+    #    giá** thay vì trả sàn.
+    #
+    # ⛔ ĐÂY KHÔNG PHẢI SỔ TIỀN. `credit_entries` vẫn là sự thật duy nhất — mọi
+    #    lần thu vẫn là một bút toán. Đây là **bộ đếm dẫn xuất**, cùng hạng với
+    #    `chatltt_run.mcredit_tich_luy`. Mất nó thì khách được lợi tối đa
+    #    0,999 credit, không ai mất tiền.
+    mcredit_du: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     def __repr__(self) -> str:      # pragma: no cover
         return f"<User {self.email} role={self.role} verified={self.is_verified}>"

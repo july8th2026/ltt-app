@@ -10,30 +10,91 @@ import pytest
 
 from apps.ltt_voice import audio_input, features, sidecar_client, text_pipeline
 from apps.ltt_voice.manifest import MANIFEST
-from apps.ltt_voice.tham_so_cong_khai import TRAN_KY_TU_CONG_KHAI
+from apps.ltt_voice.tham_so_cong_khai import (TRAN_KY_TU_CONG_KHAI,
+                                             TRAN_MOI_LUOT_SINH)
 
 
 # ── tham số dùng chung hai venv ──────────────────────────────────────────────
 
-def test_tran_ky_tu_khop_giua_app_va_sidecar():
+def test_tran_MOT_LUOT_khop_giua_app_va_sidecar():
     """🔴 Hai bản sao của một hằng số, và đây là phép kiểm giữ chúng khớp.
 
     `apps/ltt_voice/` chạy trong venv nền tảng; `voice_sidecar/` chạy trong venv
     cách ly có torch. App **không được** import sidecar, nên hằng số phải nằm hai
     chỗ. Hai bản sao không có phép kiểm là hai bản sao sẽ lệch.
+
+    ⚠️ Phép kiểm này trước 03/09 chốt `TRAN_KY_TU_CONG_KHAI`, và nó ĐÚNG lúc ấy
+       vì hai trần là một con số. Khi trần công khai được nới lên 100.000 thì nó
+       đỏ — không phải vì hợp đồng vỡ, mà vì **nó đang gọi tên sai hằng số**.
+       Thứ phải khớp với sidecar là trần MỘT LƯỢT SINH, và nó vẫn khớp.
     """
     from voice_sidecar import tham_so
-    assert TRAN_KY_TU_CONG_KHAI == tham_so.TRAN_KY_TU_MOT_LUOT
+    assert TRAN_MOI_LUOT_SINH == tham_so.TRAN_KY_TU_MOT_LUOT
 
 
-def test_tran_ky_tu_nam_duoi_nguong_troi_giong_cua_upstream():
-    """Q119 — trần là trần CHẤT LƯỢNG, lấy từ upstream #168 (~3.000 ký tự).
+def test_tran_mot_luot_nam_duoi_nguong_troi_giong_cua_upstream():
+    """Q119 — trần MỘT LƯỢT là trần CHẤT LƯỢNG, lấy từ upstream #168 (~3.000).
 
     Đo 30/08 cho thấy 3.000 ký tự vẫn sinh ra được (17,6 giây, không lỗi), nên
     con số này KHÔNG đến từ giới hạn kỹ thuật. Nó đến từ chỗ chất lượng bắt đầu
     tụt, và nới nó phải qua cổng V10.
     """
-    assert TRAN_KY_TU_CONG_KHAI <= 3000 // 2
+    assert TRAN_MOI_LUOT_SINH <= 3000 // 2
+
+
+def test_tran_cong_khai_KHONG_con_bi_buoc_vao_tran_model():
+    """⭐ Chốt chính điều làm nên đường tài liệu dài: hai trần được phép KHÁC nhau.
+
+    Trần model nói *"model đọc liền được bao nhiêu trước khi trôi"*; trần công
+    khai nói *"khách gửi được bao nhiêu trong một lần"*. Buộc chúng bằng nhau
+    chính là lỗi đã làm bài 3.000 ký tự **bị từ chối** trong khi thông điệp lỗi
+    của cổng đã nói *"phải đi đường long-form nhiều lượt sinh"*.
+
+    ⛔ Nếu ai đó sau này gán lại `TRAN_KY_TU_CONG_KHAI = TRAN_MOI_LUOT_SINH` cho
+       "gọn", phép kiểm này đỏ và nói thẳng vì sao đừng làm thế.
+    """
+    assert TRAN_KY_TU_CONG_KHAI > TRAN_MOI_LUOT_SINH
+
+
+def test_tran_cong_khai_nam_TRONG_ngan_sach_thoi_gian_job():
+    """🔴 Trần công khai và `max_runtime_s` là HAI ĐẦU CỦA CÙNG MỘT NGÂN SÁCH.
+
+    Trần mới không đến từ model — nó đến từ tài nguyên. Đo 03/09
+    (`tools/do_bai_dai.py`): 19,86 ký tự mỗi giây audio, RTF 0,152
+    ⇒ **0,00763 giây GPU mỗi ký tự**.
+
+    Nâng một đầu mà quên đầu kia thì hỏng theo kiểu tệ nhất: job chạy gần xong
+    rồi bị giết vì hết giờ — tức đã tiêu gần trọn phần GPU của nó rồi mới vứt
+    kết quả đi, và đúng ở những tài liệu dài nhất.
+
+    ⚠️ Đòi biên **2 lần**, không đòi vừa khít: GPU có thể chậm gấp đôi khi đang
+       chia việc với một job khác, và `max_runtime_s` là chốt chặn cho job TREO
+       chứ không phải hạn mức hiệu năng.
+    """
+    GIAY_GPU_MOI_KY_TU = 0.00763          # do 03/09, xem tham_so_cong_khai.py
+    tran_giay = MANIFEST.max_runtime_s["ltt_voice.synthesize"]
+    can = TRAN_KY_TU_CONG_KHAI * GIAY_GPU_MOI_KY_TU
+    assert tran_giay >= can * 2, (
+        f"tran {TRAN_KY_TU_CONG_KHAI} ky tu can ~{can:.0f}s GPU nhung "
+        f"max_runtime_s chi {tran_giay}s — bien duoi 2 lan")
+
+
+def test_tran_cong_khai_nam_duoi_tran_dinh_dang_WAV():
+    """⛔ RIFF/WAV tràn ở ~2 GiB, và nó hỏng IM LẶNG.
+
+    Trình phát vẫn mở được phần đầu, nên một bản đọc bị cắt trông y hệt một bản
+    đọc bình thường cho tới khi ai đó nghe tới cuối. Không có lỗi nào được ném,
+    không có gì đỏ.
+
+    ⇒ Trần ký tự phải nằm dưới ngưỡng ấy cho tới khi có RF64/WAVE64.
+    """
+    BYTE_MOI_GIAY = 48_000 * 2            # 48 kHz PCM16 mono
+    KY_TU_MOI_GIAY_AUDIO = 19.86          # do 03/09
+    giay_toi_da = (2 * 1024 ** 3) / BYTE_MOI_GIAY
+    ky_tu_toi_da = giay_toi_da * KY_TU_MOI_GIAY_AUDIO
+    assert TRAN_KY_TU_CONG_KHAI < ky_tu_toi_da, (
+        f"tran {TRAN_KY_TU_CONG_KHAI} vuot nguong tran WAV "
+        f"(~{ky_tu_toi_da:.0f} ky tu)")
 
 
 def test_tham_so_sinh_mau_khong_ra_hop_dong_cong_khai():
@@ -152,6 +213,66 @@ def test_chia_doan_giu_du_noi_dung():
     assert len(" ".join(doan).split()) == len(goc.replace(".", " ")
                                               .replace("!", " ")
                                               .replace("?", " ").split())
+
+
+# ── chia đoạn CÂN BẰNG (đường bản đọc) ──────────────────────────────────────
+
+def _bai(n_cau: int) -> str:
+    return " ".join(f"Day la cau so {i} trong mot bai doc thu nghiem kha dai."
+                    for i in range(n_cau))
+
+
+def test_can_bang_khong_them_doan_va_khong_vuot_tran():
+    """Hai bất biến của phép cân bằng. Vi phạm cái nào cũng là một hồi quy.
+
+    ⛔ `_can_bang` tìm trần nhỏ nhất còn cho ra ngần ấy đoạn bằng phép nhị phân,
+       và phép ấy dựa trên giả định "trần lớn hơn thì đoạn ít hơn" — đúng trong
+       mọi ca thật nhưng KHÔNG phải một định lý. Nên hai bất biến này phải được
+       kiểm, không được suy ra.
+    """
+    for n in (5, 20, 60, 200):
+        goc = _bai(n)
+        goi = text_pipeline.chia_doan(goc, tran_moi_doan=300)
+        deu = text_pipeline.chia_doan(goc, tran_moi_doan=300, can_bang=True)
+        assert len(deu) <= len(goi)
+        assert max(len(d) for d in deu) <= 300
+
+
+def test_can_bang_giu_du_noi_dung():
+    goc = _bai(40)
+    deu = text_pipeline.chia_doan(goc, tran_moi_doan=300, can_bang=True)
+    assert " ".join(deu).split() == goc.split()
+
+
+def test_can_bang_xoa_duoc_duoi_cut():
+    """🔴 CA BỆNH LÝ ĐÃ ĐO — đây là lý do phép cân bằng tồn tại.
+
+    Phép gói tới trần nhồi đầy đoạn trước rồi để phần thừa rơi vào đoạn cuối.
+    Đo 03/09 trên corpus của `tools/do_bai_dai.py` ở trần 1.500: một bài 1.591
+    ký tự ra **1.462 + 128** — đuôi cụt lệch 11,4 lần, mà vẫn tốn trọn một lượt
+    `infer`. Phép cân bằng cho 2 đoạn ~795.
+
+    ⚠️ Chốt bằng TỈ LỆ, không bằng con số tuyệt đối: corpus đổi thì số đổi, còn
+       mệnh đề "đuôi không được cụt hơn một nửa đoạn dài nhất" thì không đổi.
+    """
+    goc = _bai(46)
+    goi = text_pipeline.chia_doan(goc, tran_moi_doan=1500)
+    assert len(goi) > 1, "ca thu phai chia ra nhieu doan moi co nghia"
+    deu = text_pipeline.chia_doan(goc, tran_moi_doan=1500, can_bang=True)
+    assert len(deu) == len(goi)
+    assert min(len(d) for d in deu) / max(len(d) for d in deu) > 0.5
+
+
+def test_chuan_bi_dung_phep_can_bang():
+    """Đường BẢN ĐỌC cân bằng; `du_an.nhap_van_ban` thì KHÔNG.
+
+    ⭐ Hai người gọi, hai nhu cầu — `du_an.py` đã ghi rõ: khối biên tập muốn gói
+       tới trần (một kịch bản ngắn thật sự là MỘT khối), bản đọc muốn các đoạn
+       đều nhau. Phép kiểm này chốt rằng chúng không bị gộp lại làm một.
+    """
+    goc = _bai(46)
+    doan = text_pipeline.chuan_bi(goc, tran_moi_doan=1500).doan
+    assert min(len(d) for d in doan) / max(len(d) for d in doan) > 0.5
 
 
 def test_chuan_bi_giu_ca_ban_goc():
@@ -443,3 +564,22 @@ def test_check_i18n_van_dem_hai_tep_co_thong_diep_nguoi_dung():
     for phai_dem in ("apps/ltt_voice/features.py", "apps/ltt_voice/audio_input.py",
                      "apps/ltt_voice/routes.py", "apps/ltt_voice/gia.py"):
         assert not any(phai_dem.startswith(b) for b in bo_qua), phai_dem
+
+
+def test_dem_cau_khop_voi_bo_ghep_o_sidecar():
+    """🔴 Hai bản sao của MỘT luật đếm câu, và đây là phép kiểm giữ chúng khớp.
+
+    `text_pipeline._KET_CAU` (venv nền tảng) và `voice_sidecar.server._KET_CAU`
+    (venv cách ly) phải cùng một biểu thức. Lệch nhau thì `/v1/speech-dai` và
+    đường đoạn-rời tính ra hai nhịp nghỉ khác nhau cho cùng một bài — và triệu
+    chứng là mối nối nghe khác nhau tuỳ đường đi, thứ không phép đo hợp đồng
+    nào bắt được.
+    """
+    from voice_sidecar.server import _KET_CAU as O_SIDECAR
+
+    assert text_pipeline._KET_CAU.pattern == O_SIDECAR.pattern
+
+    for t, n in (("Mot cau.", 1), ("Mot. Hai! Ba?", 3), ("Khong co dau ket", 1),
+                 ("", 1), ("A... B.", 2)):
+        assert text_pipeline.dem_cau(t) == n, t
+        assert text_pipeline.dem_cau(t) == max(1, len(O_SIDECAR.findall(t)) or 1)

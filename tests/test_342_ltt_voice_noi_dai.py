@@ -64,13 +64,29 @@ def test_van_ban_dai_duoc_chia_chu_khong_bi_tu_choi():
 
 # ── ghép ─────────────────────────────────────────────────────────────────────
 
-def test_ghep_mot_doan_khong_dong_gi():
+def test_ghep_mot_doan_khong_lam_viec_CUA_PHEP_GHEP():
+    """Một đoạn thì không cắt im, không cân mức, không chèn nhịp nghỉ.
+
+    ⚠️ Bản trước của phép kiểm này chốt `np.array_equal(ra, w)` — "không đụng gì
+       cả". Nó đúng về phép GHÉP, nhưng nó vô tình chốt luôn cả việc **không hạ
+       trần đỉnh**, và đó chính là lỗ hổng: bảo đảm −1,0 dBTP khi ấy chỉ tồn tại
+       ở đường nhiều đoạn. Xem `test_ha_tran_dinh_ap_ca_cho_ban_MOT_DOAN`.
+
+    ⭐ Nên nay nó chốt đúng mệnh đề nó vốn muốn: **độ dài không đổi** (không cắt,
+       không chèn) và **tương quan giữa các mẫu không đổi** (không cân mức, chỉ
+       có thể bị nhân bởi một hằng số duy nhất cho cả bản).
+    """
     from voice_sidecar import noi_dai
 
     w = _doan(0.2, 1.0, 0.3)
     ra, ho_so = noi_dai.ghep([w], SR)
     assert ho_so["so_doan"] == 1
-    assert np.array_equal(ra, w), "mot doan thi khong co moi noi nao de sua"
+    assert len(ra) == len(w), "mot doan thi khong co gi de cat hay chen"
+
+    # Chỉ được phép khác nhau đúng một hệ số nhân — tức hình dạng sóng nguyên vẹn.
+    khac_khong = np.abs(w) > 1e-6
+    ty_le = ra[khac_khong] / w[khac_khong]
+    assert np.allclose(ty_le, ty_le[0], rtol=1e-5), "song am bi bien dang"
 
 
 def test_ghep_cat_im_hai_dau_nen_moi_noi_khong_bi_im_gap_doi():
@@ -288,3 +304,232 @@ def test_app_khong_khai_thi_giu_nguyen_mac_dinh_nen_tang():
     jt = khong_khai[0].job_types[0]
     assert _cho_tai_nguyen(jt) == GPU_RETRY_DELAY_S, (
         f"{jt} khong khai gi ma bi doi giãn cách — do la mot hoi quy")
+
+
+# ── ghép TỆP -> TỆP: cùng phép ghép, bộ nhớ có trần ──────────────────────────
+
+def _ghi_wav(duong, wav, sr=SR):
+    import wave
+    with wave.open(str(duong), "wb") as f:
+        f.setnchannels(1)
+        f.setsampwidth(2)
+        f.setframerate(sr)
+        f.writeframes((np.clip(wav, -1.0, 1.0) * 32767.0)
+                      .astype(np.int16).tobytes())
+
+
+def _doc_wav(duong):
+    import wave
+    with wave.open(str(duong), "rb") as f:
+        return (np.frombuffer(f.readframes(f.getnframes()), dtype="<i2")
+                .astype(np.float32) / 32768.0), f.getframerate()
+
+
+def _qua_pcm16(w):
+    """Cho sóng đi qua đúng phép lượng tử hoá mà một tệp WAV PCM16 áp lên nó.
+
+    🔴 KHÔNG PHẢI MỘT CHI TIẾT CỦA PHÉP KIỂM. Đây là chỗ phép kiểm đầu tiên đã
+       SAI, và cái sai ấy chỉ ra một khác biệt thật giữa hai đường:
+
+           `ghep`      nhan float32 THO tu engine, chua kep
+           `ghep_tep`  nhan PCM16 doc tu dia, DA kep o luc ghi
+
+       Bản đầu của phép kiểm đưa float32 thô cho đường A và tệp PCM16 cho đường
+       B rồi đòi hai bên ra cùng một số. Chênh 0,27 dB, và tôi đã đi tìm nguyên
+       nhân ở bộ lọc tăng mẫu — sai chỗ hoàn toàn. Số đo nói thẳng: đỉnh hai bên
+       giống hệt nhau (1,5431 cả hai), thứ khác nhau là **dữ liệu vào**.
+
+    ⚠️ Và điều đó có hệ quả cho kiến trúc chứ không chỉ cho phép kiểm: mẫu có
+       biên độ > 1,0 bị **kẹp ngay lúc ghi đoạn**, trước khi bộ hạ trần đỉnh kịp
+       chạy. Xem `test_ghep_tep_canh_bao_mat_khoang_du_khi_luu_pcm16`.
+    """
+    import numpy as _np
+    return (_np.clip(w, -1.0, 1.0) * 32767.0).astype(_np.int16).astype(
+        _np.float32) / 32768.0
+
+
+def _bo_doan():
+    """Bốn đoạn lệch mức nhau — đủ để phép cân mức và trần đỉnh cùng phải chạy.
+
+    Cho cả bốn đi qua PCM16 TRƯỚC, để hai đường ghép nhận **đúng cùng một dữ
+    liệu**. So một đường ăn float thô với một đường ăn PCM16 là so hai thứ khác
+    nhau rồi quy tội cho phép ghép.
+    """
+    return [_qua_pcm16(w) for w in (
+        _doan(0.20, 1.2, 0.30, muc=0.20),
+        _doan(0.15, 1.0, 0.25, muc=0.35),
+        _doan(0.25, 1.4, 0.20, muc=0.12),
+        _doan(0.10, 1.1, 0.35, muc=0.28),
+    )]
+
+
+def test_ghep_tep_cho_cung_am_thanh_voi_ghep(tmp_path):
+    """🔴 PHÉP KIỂM GIỮ HAI ĐƯỜNG KHÔNG LỆCH NHAU.
+
+    `ghep_tep` tồn tại vì `ghep` giữ cả bài trong RAM (bốn bản sao) — trần thật
+    của "tài liệu dài tuỳ ý" là RAM của sidecar chứ không phải trần ký tự. Nhưng
+    một đường ghép THỨ HAI là một cơ hội để hai đường lệch nhau, và lệch ở đây
+    là thứ chỉ NGHE thấy chứ không thấy trong bất kỳ số đo hợp đồng nào.
+
+    ⇒ Nên hai đường phải bị chốt vào nhau. Chúng dùng chung `bien_cat`,
+      `db_can`, `_nhip_tu_lang`; phép kiểm này chốt phần còn lại.
+
+    ⚠️ Không chốt bằng byte. `ghep` nhân `(w × g) × h`, `ghep_tep` nhân
+       `w × (g × h)` — bằng nhau về toán, lệch tới 1 LSB về float32. Và
+       `dinh_that` chạy trên cả bài ở một bên, trên từng đoạn ở bên kia, nên
+       hiệu ứng biên của bộ lọc tăng mẫu cho hai con số sát nhau chứ không
+       bằng nhau. Chốt bằng DUNG SAI, và nói ra dung sai ấy là bao nhiêu.
+    """
+    from voice_sidecar import noi_dai
+
+    ds = _bo_doan()
+    so_cau = [3, 2, 3, 2]
+
+    trong_bo_nho, ho_a = noi_dai.ghep([d.copy() for d in ds], SR, so_cau=so_cau)
+
+    duong = []
+    for i, d in enumerate(ds):
+        p = tmp_path / f"doan{i}.wav"
+        _ghi_wav(p, d)
+        duong.append(str(p))
+    ra = tmp_path / "ghep.wav"
+    ho_b = noi_dai.ghep_tep(duong, str(ra), so_cau=so_cau)
+
+    # ── hồ sơ phép ghép: những mục là QUYẾT ĐỊNH thì phải giống hệt ──────────
+    assert ho_b["so_doan"] == ho_a["so_doan"]
+    assert ho_b["nghi_s"] == ho_a["nghi_s"]
+    assert ho_b["nguon_nghi"] == ho_a["nguon_nghi"]
+    assert ho_b["chinh_do_to_db"] == ho_a["chinh_do_to_db"]
+
+    # ── trần đỉnh: cùng kết luận, sai số của phép tăng mẫu ───────────────────
+    assert abs(ho_b["ha_tran_db"] - ho_a["ha_tran_db"]) <= 0.1
+
+    # ── sóng âm ─────────────────────────────────────────────────────────────
+    tu_tep, sr = _doc_wav(ra)
+    assert sr == SR
+    assert abs(len(tu_tep) - len(trong_bo_nho)) <= 1
+
+    n = min(len(tu_tep), len(trong_bo_nho))
+    mong = np.clip(trong_bo_nho[:n], -1.0, 1.0)
+    lech = float(np.max(np.abs(tu_tep[:n] - mong)))
+    assert lech < 0.01, f"hai duong lech toi {lech:.5f} bien do"
+
+    # Mốc từng đoạn phải trỏ đúng chỗ — nó là thứ mọi phép đo lại dựa vào.
+    assert len(ho_b["moc_s"]) == len(ho_a["moc_s"])
+    for a, b in zip(ho_a["moc_s"], ho_b["moc_s"]):
+        assert abs(a - b) <= 0.02
+
+
+def test_ghep_tep_khong_giu_ca_bai_trong_bo_nho(tmp_path):
+    """Bộ nhớ phải bị chặn bởi MỘT đoạn, không phải bởi độ dài bài.
+
+    ⭐ Đo bằng cách đếm mảng LỚN NHẤT mà `_doc_doan` từng trả về, chứ không đo
+       RSS của tiến trình: RSS lên xuống vì cấp phát của numpy và vì bộ dọn rác,
+       nên nó cho một con số nhiễu tới mức không chốt được. Thứ ta thật sự muốn
+       bảo đảm là **không có chỗ nào cầm cả bài**, và đó là một mệnh đề về mã.
+    """
+    from voice_sidecar import noi_dai
+
+    ds = [_doan(0.1, 0.8, 0.2, muc=0.2) for _ in range(12)]
+    duong = []
+    for i, d in enumerate(ds):
+        p = tmp_path / f"d{i}.wav"
+        _ghi_wav(p, d)
+        duong.append(str(p))
+
+    goc = noi_dai._doc_doan
+    to_nhat = {"n": 0}
+
+    def theo_doi(p):
+        w, s = goc(p)
+        to_nhat["n"] = max(to_nhat["n"], len(w))
+        return w, s
+
+    noi_dai._doc_doan = theo_doi
+    try:
+        ho = noi_dai.ghep_tep(duong, str(tmp_path / "ra.wav"), so_cau=[2] * 12)
+    finally:
+        noi_dai._doc_doan = goc
+
+    mot_doan = len(ds[0])
+    assert to_nhat["n"] <= mot_doan, "co cho dang cam nhieu hon mot doan"
+    # và bản ghép thật sự dài hơn hẳn một đoạn — nếu không thì phép trên vô nghĩa
+    assert ho["giay"] > (mot_doan / SR) * 8
+
+
+def test_ghep_tep_canh_bao_mat_khoang_du_khi_luu_pcm16(tmp_path):
+    """🔴 LƯU ĐOẠN BẰNG PCM16 LÀ KẸP TRƯỚC KHI BỘ HẠ TRẦN KỊP CHẠY.
+
+    Đường hiện tại (`/v1/speech-dai`) giữ float32 của engine suốt từ lúc sinh
+    tới lúc ghép, nên khi một mẫu vượt 1,0 thì `ghep` **hạ cả bản xuống** rồi
+    mới đổi sang PCM16 — không mẫu nào bị kẹp.
+
+    Đường đoạn-rời thì khác: đoạn được GHI RA ĐĨA giữa hai bước. Ghi bằng PCM16
+    là kẹp ngay tại đó, và bộ hạ trần đỉnh chạy sau đó không còn gì để cứu —
+    méo đã nằm trong tệp rồi.
+
+    ⛔ Nên phép kiểm này KHÔNG phải để mô tả một hành vi ta chấp nhận. Nó chốt
+       một RÀNG BUỘC cho kiến trúc đoạn-rời: **artifact của đoạn phải giữ được
+       khoảng dư**, tức float32 (hoặc một hệ số hạ đã ghi lại), không phải
+       PCM16 trần. Ngày ai đó lưu đoạn bằng PCM16 cho gọn, phép kiểm này nói
+       trước cái giá.
+    """
+    from voice_sidecar import noi_dai
+
+    # Một đoạn có mẫu vượt 1,0 — đúng thứ bộ hạ trần đỉnh sinh ra để xử lý.
+    vuot = _doan(0.10, 1.0, 0.20, muc=0.55)
+    assert float(np.max(np.abs(vuot))) > 1.0, "ca thu phai co mau vuot 1,0"
+
+    mat = float(np.max(np.abs(vuot))) - float(np.max(np.abs(_qua_pcm16(vuot))))
+    assert mat > 0.01, (
+        "PCM16 phai lam MAT dinh that su — neu khong thi ca thu nay khong "
+        "chung minh duoc gi")
+
+    # Và bộ ghép trong bộ nhớ giữ được chỗ đó: nó hạ cả bản thay vì kẹp.
+    _, ho = noi_dai.ghep([vuot.copy(), vuot.copy()], SR, so_cau=[2, 2])
+    assert ho["ha_tran_db"] < 0.0, "phai ha ca ban vi dinh vuot tran"
+    assert ho["dinh_truoc_dbtp"] > noi_dai.TRAN_TRUE_PEAK_DBTP
+
+
+def test_ha_tran_dinh_ap_ca_cho_ban_MOT_DOAN():
+    """🔴 Bảo đảm −1,0 dBTP trước 03/09 chỉ thi hành ở đường GHÉP.
+
+    `ghep` nhánh `len == 1` trả thẳng về, và `/v1/speech` không gọi `ghep` bao
+    giờ. Nên bài NGẮN là bài không được bảo đảm — nghịch với trực giác của mọi
+    người, vì phép cân mức (thứ đẩy đỉnh lên) chỉ có ở đường ghép.
+
+    Đo 03/09: bài 1.400 ký tự một lượt ra **−0,78 dBTP**, vượt trần; bản ghép
+    7 đoạn ra −2,11 và tuân thủ.
+
+    ⭐ Một bảo đảm chỉ thi hành ở một nhánh không phải một bảo đảm — nó là một
+       sự trùng hợp của nhánh ấy.
+    """
+    from voice_sidecar import noi_dai
+
+    to = _doan(0.05, 1.0, 0.05, muc=0.9)
+    assert noi_dai.dinh_that(to) > noi_dai.TRAN_TRUE_PEAK_DBTP, "ca thu phai vuot tran"
+
+    ra, ha, truoc = noi_dai.ha_tran_dinh(to)
+    assert ha < 0.0
+    assert truoc is not None and truoc > noi_dai.TRAN_TRUE_PEAK_DBTP
+    assert noi_dai.dinh_that(ra) <= noi_dai.TRAN_TRUE_PEAK_DBTP + 1e-6
+
+    # và `ghep` mot doan cung phai ap
+    mot, ho = noi_dai.ghep([to.copy()], SR, so_cau=[2])
+    assert ho["ha_tran_db"] < 0.0
+    assert noi_dai.dinh_that(mot) <= noi_dai.TRAN_TRUE_PEAK_DBTP + 1e-6
+
+
+def test_ha_tran_dinh_KHONG_dung_toi_ban_da_trong_tran():
+    """Bản đã dưới trần phải đi qua NGUYÊN VẸN — không hạ "cho chắc".
+
+    Hạ một bản vốn đã đúng là làm nhỏ tiếng đi mà không ai yêu cầu, và nó tích
+    luỹ nếu hàm bị gọi hai lần trên cùng dữ liệu.
+    """
+    from voice_sidecar import noi_dai
+
+    nho = _doan(0.05, 1.0, 0.05, muc=0.05)
+    assert noi_dai.dinh_that(nho) < noi_dai.TRAN_TRUE_PEAK_DBTP
+    ra, ha, _ = noi_dai.ha_tran_dinh(nho)
+    assert ha == 0.0
+    assert np.array_equal(ra, nho)

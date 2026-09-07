@@ -1,0 +1,265 @@
+{
+  "cong": 0,
+  "so_luot": 20,
+  "dem": {
+    "tool_co_cau_truc": 10,
+    "chi_van_ban": 10
+  },
+  "ket_qua": [
+    {
+      "ma": "G0-1.1",
+      "nhom": "G0-1",
+      "ky_vong": "co_tool",
+      "giay": 1.9,
+      "phan_loai": {
+        "loai": "tool_co_cau_truc",
+        "so_loi_goi": 1,
+        "ten": [
+          "calculator"
+        ],
+        "finish_reason": "tool_calls"
+      }
+    },
+    {
+      "ma": "G0-1.2",
+      "nhom": "G0-1",
+      "ky_vong": "co_tool",
+      "giay": 1.5,
+      "phan_loai": {
+        "loai": "tool_co_cau_truc",
+        "so_loi_goi": 1,
+        "ten": [
+          "calculator"
+        ],
+        "finish_reason": "tool_calls"
+      }
+    },
+    {
+      "ma": "G0-1.3",
+      "nhom": "G0-1",
+      "ky_vong": "co_tool",
+      "giay": 1.7,
+      "phan_loai": {
+        "loai": "tool_co_cau_truc",
+        "so_loi_goi": 1,
+        "ten": [
+          "calculator"
+        ],
+        "finish_reason": "tool_calls"
+      }
+    },
+    {
+      "ma": "G0-1.4",
+      "nhom": "G0-1",
+      "ky_vong": "co_tool",
+      "giay": 1.7,
+      "phan_loai": {
+        "loai": "tool_co_cau_truc",
+        "so_loi_goi": 1,
+        "ten": [
+          "calculator"
+        ],
+        "finish_reason": "tool_calls"
+      }
+    },
+    {
+      "ma": "G0-1.5",
+      "nhom": "G0-1",
+      "ky_vong": "co_tool",
+      "giay": 1.9,
+      "phan_loai": {
+        "loai": "tool_co_cau_truc",
+        "so_loi_goi": 1,
+        "ten": [
+          "calculator"
+        ],
+        "finish_reason": "tool_calls"
+      }
+    },
+    {
+      "ma": "G0-2.1",
+      "nhom": "G0-2",
+      "ky_vong": "khong_tool",
+      "giay": 2.1,
+      "phan_loai": {
+        "loai": "chi_van_ban",
+        "trich": "Chào bạn! Mình là trợ lý của LTT Studios, mình đang hoạt động tốt ạ. 😊\n\nHôm nay bạn cần mình hỗ trợ gì? Tính toán, tra thời tiết, hay bất cứ việc gì khác cứ nói nhé!",
+        "finish_reason": "stop"
+      }
+    },
+    {
+      "ma": "G0-2.2",
+      "nhom": "G0-2",
+      "ky_vong": "khong_tool",
+      "giay": 1.7,
+      "phan_loai": {
+        "loai": "chi_van_ban",
+        "trich": "2 + 2 = **4**",
+        "finish_reason": "stop"
+      }
+    },
+    {
+      "ma": "G0-2.3",
+      "nhom": "G0-2",
+      "ky_vong": "khong_tool",
+      "giay": 2.2,
+      "phan_loai": {
+        "loai": "chi_van_ban",
+        "trich": "Mưa rơi trên mái ngói,\nNgọt ngào tiếng dế đêm,\nMùi rêu trong mưa ướt,\nNhẹ như hơi thở ai.",
+        "finish_reason": "stop"
+      }
+    },
+    {
+      "ma": "G0-2.4",
+      "nhom": "G0-2",
+      "ky_vong": "khong_tool",
+      "giay": 3.2,
+      "phan_loai": {
+        "loai": "chi_van_ban",
+        "trich": "**HTTP 404 – Not Found**\n\nMáy chủ nhận được yêu cầu nhưng **không tìm thấy tài nguyên** (trang, file, API endpoint...) tại địa chỉ URL đó.\n\nNguyên nhân thường gặp:\n- Sai đường dẫn (gõ nhầm URL)\n- Trang đã bị xóa hoặc chuyển đi nơi khác\n- Li",
+        "finish_reason": "stop"
+      }
+    },
+    {
+      "ma": "G0-2.5",
+      "nhom": "G0-2",
+      "ky_vong": "khong_tool",
+      "giay": 2.1,
+      "phan_loai": {
+        "loai": "chi_van_ban",
+        "trich": "Tôi là trợ lý của **LTT Studios**. Tôi có thể giúp bạn tra cứu thời tiết, tính toán các biểu thức toán học, và hỗ trợ nhiều tác vụ khác. Bạn cần gì không? 😊",
+        "finish_reason": "stop"
+      }
+    },
+    {
+      "ma": "G0-3.1",
+      "nhom": "G0-3",
+      "ky_vong": "co_tool",
+      "giay": 2.2,
+      "phan_loai": {
+        "loai": "tool_co_cau_truc",
+        "so_loi_goi": 2,
+        "ten": [
+          "calculator",
+          "weather_fake"
+        ],
+        "finish_reason": "tool_calls"
+      }
+    },
+    {
+      "ma": "G0-3.2",
+      "nhom": "G0-3",
+      "ky_vong": "co_tool",
+      "giay": 2.5,
+      "phan_loai": {
+        "loai": "tool_co_cau_truc",
+        "so_loi_goi": 2,
+        "ten": [
+          "calculator",
+          "weather_fake"
+        ],
+        "finish_reason": "tool_calls"
+      }
+    },
+    {
+      "ma": "G0-3.3",
+      "nhom": "G0-3",
+      "ky_vong": "co_tool",
+      "giay": 2.3,
+      "phan_loai": {
+        "loai": "tool_co_cau_truc",
+        "so_loi_goi": 2,
+        "ten": [
+          "calculator",
+          "weather_fake"
+        ],
+        "finish_reason": "tool_calls"
+      }
+    },
+    {
+      "ma": "G0-3.4",
+      "nhom": "G0-3",
+      "ky_vong": "co_tool",
+      "giay": 2.6,
+      "phan_loai": {
+        "loai": "tool_co_cau_truc",
+        "so_loi_goi": 2,
+        "ten": [
+          "calculator",
+          "weather_fake"
+        ],
+        "finish_reason": "tool_calls"
+      }
+    },
+    {
+      "ma": "G0-3.5",
+      "nhom": "G0-3",
+      "ky_vong": "co_tool",
+      "giay": 2.2,
+      "phan_loai": {
+        "loai": "tool_co_cau_truc",
+        "so_loi_goi": 2,
+        "ten": [
+          "calculator",
+          "weather_fake"
+        ],
+        "finish_reason": "tool_calls"
+      }
+    },
+    {
+      "ma": "G0-4.1",
+      "nhom": "G0-4",
+      "ky_vong": "tra_loi_cuoi",
+      "giay": 1.8,
+      "phan_loai": {
+        "loai": "chi_van_ban",
+        "trich": "8123 × 4471 = **36.325.133**",
+        "finish_reason": "stop"
+      }
+    },
+    {
+      "ma": "G0-4.2",
+      "nhom": "G0-4",
+      "ky_vong": "tra_loi_cuoi",
+      "giay": 1.4,
+      "phan_loai": {
+        "loai": "chi_van_ban",
+        "trich": "8123 × 4471 = **36,325,133**",
+        "finish_reason": "stop"
+      }
+    },
+    {
+      "ma": "G0-4.3",
+      "nhom": "G0-4",
+      "ky_vong": "tra_loi_cuoi",
+      "giay": 1.4,
+      "phan_loai": {
+        "loai": "chi_van_ban",
+        "trich": "**8123 × 4471 = 36,325,133**",
+        "finish_reason": "stop"
+      }
+    },
+    {
+      "ma": "G0-4.4",
+      "nhom": "G0-4",
+      "ky_vong": "tra_loi_cuoi",
+      "giay": 1.6,
+      "phan_loai": {
+        "loai": "chi_van_ban",
+        "trich": "Kết quả: **8123 × 4471 = 36,325,133**",
+        "finish_reason": "stop"
+      }
+    },
+    {
+      "ma": "G0-4.5",
+      "nhom": "G0-4",
+      "ky_vong": "tra_loi_cuoi",
+      "giay": 1.4,
+      "phan_loai": {
+        "loai": "chi_van_ban",
+        "trich": "**8123 × 4471 = 36.325.133**",
+        "finish_reason": "stop"
+      }
+    }
+  ]
+}

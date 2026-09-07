@@ -77,7 +77,11 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
     #    Goi `/running` moi yeu cau la them mot vong loopback vao duong nong.
     tt = trong_tai if trong_tai is not None else TrongTai(
         ram_trong_toi_thieu_gb=cfg.ram_trong_toi_thieu_gb, bat=cfg.trong_tai_bat,
-        model_cua_ta_dang_chay=lambda: _co_model_cua_ta_dang_chay())
+        model_cua_ta_dang_chay=lambda: _co_model_cua_ta_dang_chay(),
+        # ⭐ HOI THANG HANG DOI ComfyUI, dung suy tu muc tai. Muc tai la suy doan
+        #    ("card nong, chac ai do dang lam"); hang doi la su that ("co dung
+        #    n viec dang chay"). Xem nhanh `_model_cua_ta` trong `trong_tai.py`.
+        ho_kia_dang_ve=lambda: _comfy_dang_ve())
 
     gh = gioi_han if gioi_han is not None else GioiHan(
         max_dong_thoi=cfg.max_dong_thoi, rpm=cfg.rpm, now=now)
@@ -87,6 +91,26 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
     elif cfg.don_dep_bat:
         don_dep = DonDepGpu(comfy_url=cfg.comfy_url,
                             nguong_sach_mb=cfg.vram_sach_mb)
+
+    def _comfy_dang_ve() -> bool:
+        """ComfyUI có việc ĐANG CHẠY không (không tính việc đang xếp hàng).
+
+        ⛔ Chỉ tính `queue_running`, không tính `queue_pending`: một việc đang
+           xếp hàng chưa chiếm card, và coi nó là bận sẽ chặn lượt LLM trong lúc
+           ComfyUI còn chưa bắt đầu gì.
+
+        ⚠️ Gọi LƯỜI — chỉ chạy khi nhánh tải thực sự cần, cùng lý do với
+           `_co_model_cua_ta_dang_chay`: thêm một vòng loopback vào đường nóng
+           của mọi yêu cầu là trả giá cho một câu hỏi hiếm khi cần hỏi.
+        """
+        try:
+            import httpx
+
+            r = httpx.get(f"{cfg.comfy_url.rstrip('/')}/queue", timeout=4.0)
+            r.raise_for_status()
+            return bool(r.json().get("queue_running"))
+        except Exception:                                       # noqa: BLE001
+            return False
 
     def _co_model_cua_ta_dang_chay() -> bool:
         """`llama-swap` có đang giữ **bất kỳ** model nào của ta không.
@@ -115,6 +139,113 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
         except (ValueError, TypeError):
             return False
         return any(isinstance(m, dict) and m.get("model") for m in (d.get("running") or []))
+
+    #: Nhớ tên hồ sơ đang nạp trong ít giây, để một phiên agent gửi liên tiếp
+    #: không sinh một `/running` cho mỗi lượt.
+    #:
+    #: ⭐ 2 giây là đủ: thứ ta hỏi chỉ quyết định *đếm chính xác có rẻ không*.
+    #:    Sai trong 2 giây thì hậu quả xấu nhất là một lần lùi về phép ước
+    #:    (từ chối oan một yêu cầu lẽ ra vừa) hoặc một `/tokenize` bị llama-swap
+    #:    trả lời bằng hồ sơ khác — cả hai đều không chạm tiền và không sai
+    #:    chiều nguy hiểm.
+    _nho_nap: dict = {"luc": None, "ten": ""}
+    _TTL_NHO_NAP_S = 2.0
+
+    def _ho_so_dang_nap(ten: str) -> bool:
+        """Đúng **hồ sơ này** có đang nằm trong VRAM không.
+
+        ⛔ KHÁC `_co_model_cua_ta_dang_chay()` ở trên, và khác một cách có chủ ý.
+           Ở đó câu hỏi là *"llama-swap có đang giữ BẤT KỲ model nào của ta"* —
+           để trọng tài biết tải cao trên card là của ai. Ở đây câu hỏi là
+           *"đếm token bằng `/tokenize` có RẺ không"*, và nó chỉ rẻ khi **đúng
+           hồ sơ này** đã nạp: hỏi `/tokenize` cho một hồ sơ khác thì llama-swap
+           sẽ ĐỔI model để phục vụ nó — tức đánh thức GPU, mất 2,5 phút, và làm
+           đúng cái điều mà phép ước sinh ra để tránh.
+
+        ⚠️ `timeout=2.0`, KHÔNG phải 5. Lời gọi này nằm trên đường **từ chối**:
+           nếu llama-swap chết thì bản cũ trả `413` tức thì, còn bản này sẽ chờ
+           hết timeout trước khi từ chối. Năm giây cho một yêu cầu chắc chắn bị
+           từ chối là một hồi quy; hai giây là cái giá tối thiểu còn đọc được.
+        """
+        luc = _nho_nap["luc"]
+        if luc is not None and (now() - luc) < _TTL_NHO_NAP_S:
+            return _nho_nap["ten"] == ten
+        ma, than = upstream.json("GET", "/running", timeout=2.0)
+        if ma != 200:
+            return False
+        try:
+            import json as _json
+            d = _json.loads(than or b"{}")
+        except (ValueError, TypeError):
+            return False
+        dang = ""
+        for m in (d.get("running") or []):
+            if isinstance(m, dict) and str(m.get("state") or "") == "ready":
+                dang = str(m.get("model") or "")
+                break
+        _nho_nap["luc"] = now()
+        _nho_nap["ten"] = dang
+        return dang == ten
+
+    def _dem_token_that(ten: str, van: list) -> "int | None":
+        """Số token THẬT của các đoạn văn bản, qua `/tokenize` của llama-server.
+
+        Trả `None` khi không đếm được — hồ sơ chưa nạp, hoặc thượng nguồn không
+        trả lời. `None` **không phải** 0: bên gọi phải lùi về phép ước, không
+        được coi như một yêu cầu rỗng.
+
+        ⭐ `/tokenize` KHÔNG chạy inference. Nó cần từ vựng của model đang nạp,
+           không cần một lượt sinh. Đo 03/09: gọi hàng chục lần trên prompt
+           130K–180K, không sinh một token nào.
+
+        ⛔ MỘT LỜI GỌI CHO CẢ HỘI THOẠI, không phải một lời gọi mỗi đoạn. Nối
+           bằng `chr(10)` rồi đếm một lần: `n` lời gọi cho `n` tin nhắn là `n`
+           vòng loopback, và với một phiên agent thì `n` lên tới hàng trăm.
+           Sai số của việc nối (vài token ranh giới) nhỏ hơn hai bậc so với
+           chỗ `LE` đã chừa.
+
+        🔴 ĐƯỜNG PHẢI LÀ `/upstream/<model>/tokenize`, KHÔNG PHẢI `/tokenize`.
+           `llama-swap` định tuyến theo trường `model` **trong thân**; `/tokenize`
+           không có trường đó nên nó trả **404**. Đo 03/09 trên máy B:
+
+               POST /tokenize                        -> 404
+               POST /upstream/qwen38-api/tokenize     -> 200 {"tokens":[...]}
+               POST 127.0.0.1:8281/tokenize (thang)   -> 200
+
+        ⛔ VÀ BẢN ĐẦU CỦA HÀM NÀY DÙNG `/tokenize`. Nó nhận 404, `ma != 200`,
+           trả `None`, và cổng **lặng lẽ lùi về phép ước** — tức bản vá đã
+           deploy lên production và **không làm gì cả**, không một dòng nào nói
+           ra. Đúng lớp khuyết tật mà cả chương trình này đi sửa: một năng lực
+           có, được nối dây, và im lặng không hoạt động.
+
+        ⭐ Nên lần lùi bây giờ **kêu**. Phân biệt hai thứ khác hẳn nhau:
+           *"chưa nạp nên không hỏi"* là đường bình thường, không log;
+           *"đã hỏi mà thất bại"* là một khuyết tật, và nó phải ra log.
+        """
+        if not van:
+            return None
+        if not _ho_so_dang_nap(ten):
+            return None                      # binh thuong: khong log
+        ma, than = upstream.json(
+            "POST", "/upstream/" + ten + "/tokenize",
+            body={"content": chr(10).join(str(s) for s in van)},
+            timeout=30.0)
+        if ma != 200:
+            log.warning("dem token that THAT BAI ma=%s model=%s - lui ve phep uoc "
+                        "(neu thay dong nay lien tuc thi duong /tokenize da doi)",
+                        ma, ten)
+            return None
+        try:
+            import json as _json
+            d = _json.loads(than or b"{}")
+        except (ValueError, TypeError):
+            return None
+        toks = d.get("tokens")
+        if not isinstance(toks, list):
+            log.warning("dem token that: than khong co `tokens` (model=%s) - "
+                        "lui ve phep uoc", ten)
+            return None
+        return len(toks)
 
     def auth(authorization: str = Header(default="")) -> None:
         if not cfg.token:
@@ -225,6 +356,9 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
                 max_image_bytes=cfg.max_image_bytes,
                 max_context=spec.max_context,
                 co_vision=spec.co_vision,
+                # ⭐ Chỉ được gọi khi phép ƯỚC đã vượt trần — xem `NS.kiem_tra`.
+                #    Đường nhanh không thêm round-trip nào.
+                dem_that=lambda van: _dem_token_that(ten, van),
             )
         except NS.VuotNganSach as e:
             # 413 chứ không phải 400: đây là "to quá", không phải "sai cú pháp".

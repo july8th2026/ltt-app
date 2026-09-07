@@ -210,3 +210,42 @@ def ap_dung(wav_bytes: bytes, toc_do, *, giay_cho: int = 120) -> bytes:
                     os.unlink(p)
                 except OSError:
                     pass
+
+
+def ap_dung_tep(duong_vao: str, duong_ra: str, toc_do, *,
+                giay_cho: int = 600) -> str:
+    """Đổi tốc độ TỆP -> TỆP. Trả đường dẫn của bản dùng được.
+
+    ⭐ Cùng phép hậu kỳ với `ap_dung`, khác đúng một điều: không có lúc nào cả
+       bản đọc nằm trong bộ nhớ. Với một cuốn sách thì `ap_dung` phải giữ hai
+       bản `bytes` cùng lúc (vào và ra) chỉ để gọi một lệnh ffmpeg vốn đọc ghi
+       bằng tệp — tức ta chép dữ liệu vào RAM để đưa cho một chương trình sắp
+       ghi nó xuống đĩa.
+
+    ⛔ Hỏng thì trả **đường dẫn bản gốc**, không ném — cùng lý do `ap_dung` ghi:
+       tới đây tiếng đã sinh xong và khách đã bị tính tiền. Biến một lỗi hậu kỳ
+       thành một job hỏng là thu tiền cho một việc rồi vứt kết quả của nó đi.
+
+    ⚠️ `giay_cho` rộng hơn `ap_dung` (600 thay vì 120): tệp ở đây có thể dài
+       hàng giờ, và một trần đặt cho bài 30 giây sẽ giết đúng những bài mà hàm
+       này sinh ra để phục vụ.
+    """
+    if not can_doi(toc_do):
+        return duong_vao
+    t = hop_le(toc_do)
+    try:
+        try:
+            _chay(duong_vao, duong_ra, _chuoi_atempo(t), giay_cho)
+        except Exception as ex:                        # noqa: BLE001
+            log.warning("atempo hong (%s) -> lui ve rubberband", ex)
+            _chay(duong_vao, duong_ra, f"rubberband=tempo={t}:pitch=1.0",
+                  giay_cho)
+        if not os.path.isfile(duong_ra) or os.path.getsize(duong_ra) <= 0:
+            raise RuntimeError("ffmpeg tra tep rong")
+        log.info("doi toc do %.2fx (tep): %d -> %d byte", t,
+                 os.path.getsize(duong_vao), os.path.getsize(duong_ra))
+        return duong_ra
+    except Exception:                                  # noqa: BLE001
+        log.warning("doi toc do %.2fx that bai — giu nguyen ban goc", t,
+                    exc_info=True)
+        return duong_vao

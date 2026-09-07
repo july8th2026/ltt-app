@@ -78,6 +78,8 @@ const MAT_KHAU = co('--pass', process.env.LTT_SMOKE_PASS || '');
 const HIEN = argv.includes('--hien');          // mo cua so that de nguoi xem
 const THU_MUC_ANH = co('--anh', 'tmp/kiem_gui');
 const CHI = co('--chi', '');                   // chay mot hang muc theo ten
+/** `--dot 1,2,A` — chi chay nhung dot duoc goi ten. Rong = tat ca. */
+const DOT = co('--dot', '').split(',').map((x) => x.trim()).filter(Boolean);
 
 /**
  * `--phien <tep>` — dung mot PHIEN DA DANG NHAP (Playwright storageState).
@@ -111,9 +113,40 @@ const PHIEN = co('--phien', '');
  */
 const PROFILE = co('--profile', '');
 
-if (!PHIEN && !PROFILE && (!NGUOI || !MAT_KHAU)) {
-  console.error('Can `--profile <thu-muc>` (profile Chrome that), '
-    + '`--phien <tep>`, hoac LTT_SMOKE_USER/LTT_SMOKE_PASS.');
+/**
+ * `--cdp <dia-chi>` — NOI VAO mot Chrome DANG CHAY, thay vi tu mo trinh duyet.
+ *
+ * 🔴 VI SAO CAN, VA BANG CHUNG DAN TOI NO. Ngay 04/09 profile kiem het
+ *    phien; moi lan `launchPersistentContext` mo lai, Cloudflare tra CAPTCHA va
+ *    xoay vong khong vao duoc. Cung luc do chu du an mo **Coc Coc** va dang
+ *    nhap binh thuong, ngay lap tuc.
+ *
+ * ⭐ Do la phep doi chung dat gia: khac biet khong nam o profile, o mang,
+ *    hay o tai khoan — ma o chinh viec **Playwright TU KHOI CHAY** Chrome kem
+ *    co automation. Mot profile moi van bi y het, vi nguyen nhan khong phai
+ *    profile.
+ *
+ * ⛔ Loi giai KHONG phai che dau co automation — do la vuot bot detection,
+ *    thu bo kiem nay khong lam. Loi giai la **dung mot Chrome that**: chu du an
+ *    tu mo, tu qua xac minh, tu dang nhap; bo kiem chi NOI VAO qua cong go loi.
+ *    Khong gia mao gi, va viec xac thuc van hoan toan la cua con nguoi.
+ *
+ * Mo trinh duyet (chu du an chay, roi dang nhap trong cua so hien ra):
+ *
+ *     chrome.exe --user-data-dir=C:\LTTBrowserProfiles\ChatLTTKiem2 \
+ *                --remote-debugging-port=9222 https://app.lttstudios.com/chatltt
+ *
+ * Roi:  node tools/kiem_chatltt_gui.mjs --url https://app.lttstudios.com \
+ *            --cdp http://127.0.0.1:9222
+ *
+ * ⚠️ Bo kiem KHONG dong trinh duyet nay khi xong — no khong so huu cua so
+ *    do. Dong nham la cuop mat phien ma nguoi dung vua bo cong dang nhap.
+ */
+const CDP = co('--cdp', '');
+
+if (!PHIEN && !PROFILE && !CDP && (!NGUOI || !MAT_KHAU)) {
+  console.error('Can `--cdp <dia-chi>` (noi vao Chrome dang chay), '
+    + '`--profile <thu-muc>`, `--phien <tep>`, hoac LTT_SMOKE_USER/LTT_SMOKE_PASS.');
   process.exit(2);
 }
 
@@ -122,6 +155,33 @@ mkdirSync(THU_MUC_ANH, { recursive: true });
 // ── Gom loi suot ca luot ───────────────────────────────────────────────────
 const loiConsole = [];
 const requestHong = [];
+
+/**
+ * Hang muc dang chay, va nhung loi no DA KHAI TRUOC la co y.
+ *
+ * 🔴 VI SAO CAN. Ba hang muc cua dot 4 co y gui dau vao XAU de kiem rang may
+ *    chu tu choi — va may chu tu choi dung, bang HTTP 400. Nhung bo chay dem
+ *    moi 4xx la mot loi, nen mot luot 5/5 DAT van in `RESULT: FAIL`.
+ *
+ * ⛔ Va do khong phai mot su bat tien. Mot dong canh bao LUON do la mot dong
+ *    nguoi ta hoc cach bo qua — roi mot loi console THAT se di qua ma khong ai
+ *    thay. Cai gia khong phai bao cao sai, la cai canh bao mat gia tri.
+ *
+ * ⭐ Nen: hang muc phai KHAI TRUOC (`loi_mong_doi`). Khai truoc thi no la mot
+ *    loi DUOC CHO DOI; khong khai thi no van la mot loi. Va viec khai nam
+ *    trong chinh hang muc, canh cau hoi no dat ra.
+ */
+let hangMucHienTai = null;
+const loiDaKhai = [];
+
+function ghiLoi(bo, dong) {
+  const mong = hangMucHienTai?.loi_mong_doi ?? [];
+  if (mong.some((re) => re.test(dong))) {
+    loiDaKhai.push(`${hangMucHienTai.ten}: ${dong}`);
+    return;
+  }
+  bo.push(dong);
+}
 
 // ── Tro giup ───────────────────────────────────────────────────────────────
 const cho = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -149,37 +209,177 @@ const soDu = async (p) => {
   const m = t.replace(/[.\s]/g, '').match(/(\d+)/);
   return m ? Number(m[1]) : null;
 };
+/** So du khi no da NGUNG NHUC NHICH — hai lan doc lien tiep bang nhau.
+ *
+ * 🔴 VI SAO CAN. So du KHONG don dieu theo thoi gian: giu/thu/hoan quyet
+ *    toan **khong dong bo** voi luot dang chay, nen mot khoan cua luot TRUOC co
+ *    the ve ngay giua phep do cua luot NAY.
+ *
+ * ⛔ Do 04/09: hang muc `5.1` bao "BAO GIA da tru tien: 908 -> 907" trong
+ *    khi bao gia khong he cham so tien. Thu tru mot credit la luot chu `"Chao."`
+ *    ma chinh `moPanelAnh` vua gui de mo o media. Mot phep kiem to nham san pham
+ *    vi no do mot dai luong dang chuyen dong.
+ *
+ * ⭐ Cung goc voi loi `7.4` ("so du phai giam") da sua truoc do trong ngay.
+ *    Sua o mot cho roi khong ra soat nhung cho con lai la de danh lai dung cai
+ *    bay cho lan sau.
+ */
+const soDuOnDinh = async (p, hanS = 20) => {
+  let truoc = await soDu(p);
+  const het = Date.now() + hanS * 1000;
+  while (Date.now() < het) {
+    await cho(1500);
+    const nay = await soDu(p);
+    if (nay !== null && nay === truoc) return nay;
+    truoc = nay;
+  }
+  return truoc;
+};
+
 const dangChay = (p) => p.getByRole('button', { name: 'Dừng' }).count().then((n) => n > 0);
+
+/** Trang thai mot nang luc, HOI THANG MAY CHU.
+ *
+ * 🔴 VI SAO CAN HAM NAY. Dot 5 va 6 tung bao HONG voi "qua 60s ma chua: nut
+ *    media san sang" — va ket luan do SAI. Nut bi vo hieu vi `san_sang !==
+ *    'san_sang'` (`TaoMedia.tsx`), tuc **model chua nap**, khong phai giao dien
+ *    hong. Do 04/09: ngay sau lat chay do, catalog tra `speech.ltt=san_sang`.
+ *
+ * ⭐ Va ly do model chua nap lai la CHINH BO KIEM NAY: dot 1-4 gui hang chuc
+ *    luot chu, giu LLM tren GPU (TTL 1800s), nen sidecar anh/tieng khong con
+ *    cho. Mot bo kiem tu tao ra dieu kien roi bao do la loi san pham.
+ *
+ * ⛔ Nen dung suy tu cai nut. Doc **con so may chu noi**, va dat no vao thong
+ *    diep `bo_qua` — mot lan bo qua co bang chung khac han mot lan bo qua vi
+ *    het kien nhan.
+ */
+/** Phien con song khong. Nem khi da bi dang xuat / Cloudflare chan lai.
+ *
+ * 🔴 VI SAO PHAI CO. Lat chay 04/09: phien chet GIUA LUOT, va Cloudflare
+ *    bat dau tra `403` kem trang `<!DOCTYPE html>...Just a moment...`. Hai hang
+ *    muc **BAO DAT** dua tren chinh con so 403 do — vi ca hai chi kiem
+ *    `status === 403` va khong nhin thu gi khac.
+ *
+ * ⛔ Mot `403` cua Cloudflare KHONG PHAN BIET DUOC voi mot `403` cua ung
+ *    dung, neu chi doc ma trang thai. Do dung loai loi ta da sua ca ngay o cho
+ *    khac: chot mot con so ma khong hoi no **tu dau ra**.
+ *
+ * ⭐ Nen bo kiem phai DUNG HAN thay vi de lai mot bao cao trong nhu that.
+ *    Mot lat chay bi cat giua chung la mot su that; mot lat chay "xanh" tren
+ *    rac la mot lat chay se bi tin.
+ */
+async function conPhien(page) {
+  const r = await page.evaluate(async () => {
+    try {
+      const res = await fetch('/chatltt/api/so-du', { redirect: 'follow' });
+      const chu = await res.text();
+      return { ma: res.status, html: chu.trim().startsWith('<') , dai: chu.length };
+    } catch (e) { return { ma: -1, html: false, loi: String(e).slice(0, 80) }; }
+  });
+  if (r.ma === 200 && !r.html) return true;
+  throw new Error(
+    `PHIEN DA CHET giua luot (so-du tra ${r.ma}${r.html ? ', than la HTML' : ''}). `
+    + 'Dang nhap lai trong cua so Chrome roi chay lai — dung tin ket qua sau diem nay.');
+}
+
+const nangLuc = (p, ten) => p.evaluate(
+  (t) => fetch('/chatltt/api/danh-muc').then((r) => r.json())
+    .then((d) => (d.nang_luc || []).find((n) => n.ten === t)?.san_sang || 'khong_co_trong_catalog')
+    .catch((e) => 'khong_doc_duoc: ' + e.message), ten);
 
 async function guiChu(p, chu) {
   // ⛔ `exact: true`. Khong co no, `name: 'Gửi'` khop CA "Sửa và gửi lại" —
   //    va no chi khop khi hoi thoai DA CO tin nhan, tuc lo ra o hang muc thu
   //    nam chu khong phai thu nhat. Mot locator mo la mot loi biet cho luc.
   const truoc = await soBai(p);
+  // ⛔ DOI O SOAN MO KHOA. Sau ~40 luot lien tiep, model bao "chua san sang"
+  //    va giao dien khoa o soan — do la hanh vi DUNG (fail-closed), khong phai
+  //    loi. Nhung `fill()` vao mot `<textarea disabled>` thi treo 30 giay roi
+  //    bao "locator.fill: Timeout", va SAU hang muc do lien tiep nhau.
+  //
+  // ⭐ Mot bo kiem chay 45 luot that phai chiu duoc chinh co che chong qua tai
+  //    cua san pham no dang kiem. Doi la dung; bao san pham hong la sai.
+  await doiDen('o soan mo khoa (model san sang)', async () => {
+    const o = p.getByLabel('Nội dung tin nhắn');
+    return (await o.count()) > 0 && !(await o.isDisabled());
+  }, 180);
   await p.getByLabel('Nội dung tin nhắn').fill(chu);
   await p.getByRole('button', { name: 'Gửi', exact: true }).click();
   await doiDen('luot da bat dau',
     async () => (await soBai(p)) >= truoc + 2 || (await dangChay(p)), 40);
+  // ⭐ VA DOI HOI THOAI CO DIA CHI. Mot hoi thoai da co tin nhan thi PHAI co
+  //    `#<id>` trong URL — do la bat bien ta vua xay. Doi no o day vua la mot
+  //    phep kiem mien phi, vua go mot cuoc dua: `2.1` tung doc hash NGAY sau
+  //    `xong()` va nhan chuoi rong, roi bao "hai hoi thoai cung hash". Do tay
+  //    thi hash duoc dat sau ~800ms va luon khac nhau — san pham dung, phep do
+  //    voi.
+  await doiDen('hoi thoai da co dia chi trong URL',
+    async () => (await p.evaluate(() => location.hash)).length > 4, 25);
 }
 
-async function xong(p, hanS = 120) {
-  // 🔴 HAI DIEU KIEN, VA THIEU DIEU KIEN THU HAI LA MOT LO HONG THAT.
+async function xong(p, hanS = 150) {
+  // 🔴 DOC DAU HIEU CUA SAN PHAM, DUNG DOAN BANG DO DAI CHUOI.
   //
-  //    Ban dau `xong` chi doi "khong con nut Dung". Nhung ngay sau khi bam Gui,
-  //    nut Dung CHUA KIP hien — nen `xong` tra ve ngay lap tuc, va hang muc ke
-  //    tiep doc mot bai TRONG roi ket luan "model tra loi sai".
+  //    Ban truoc doi hai thu: "khong con nut Dung" va "chu dai hon 15 ky tu".
+  //    Ca hai deu SAI kieu:
   //
-  // ⛔ Do khong phai mot bao cao sai vo hai: no bao SAN PHAM hong trong khi
-  //    phep do moi la thu hong. Va o chieu nguoc lai no con te hon — mot cau
-  //    tra loi RONG that su cung se di qua, vi khong ai kiem noi dung.
+  //      · `dangChay` co mot khoang FALSE ngay sau khi bam Gui — tin nhan da
+  //        tao nhung luong chua mo. `xong` tra ve trong khoang do.
+  //      · "dai hon 15 ky tu" duoc thoa boi CHINH nhan vai: mot bai chi co
+  //        "ChatLTT" + "▸ Đang suy nghĩ…" da 24 ky tu, khong mot chu tra loi
+  //        nao.
   //
-  // ⭐ Nen: doi luot ket thuc, ROI doi noi dung that su co mat.
-  await doiDen('luot chay xong', async () => !(await dangChay(p)), hanS);
-  await doiDen('cau tra loi co noi dung', async () => {
-    const chu = (await chuBaiCuoi(p)).replace(/\s/g, '');
-    // "ChatLTT" la nhan vai, khong phai noi dung.
-    return chu.length > 'ChatLTT'.length + 8;
-  }, 30);
+  // ⛔ Hau qua do that tren production: hang muc hoi "thu do nuoc Phap" doc
+  //    phai cau tra loi cua luot TRUOC (mot loi chao), roi bao "model tra loi
+  //    sai". Chay tay cung cau hoi ay: "Paris". Bao cao vu khong san pham
+  //    trong khi phep do moi la thu hong — lan thu ba trong cung mot buoi.
+  //
+  // ⭐ Nut "Tạo lại" chi hien tren mot bai DA XONG. Do la dau hieu chinh san
+  //    pham dung de noi "luot nay ket thuc roi" — muon no thi khong phai doan.
+  await doiDen('luot ket thuc (bai cuoi co nut "Tạo lại")', async () => {
+    if (await dangChay(p)) return false;
+    const cuoi = p.locator('article').last();
+    return (await cuoi.getByRole('button', { name: 'Tạo lại' }).count()) > 0;
+  }, hanS);
+}
+
+/**
+ * Mo mot hoi thoai moi VA doi cho no rong han.
+ *
+ * ⛔ `cho(600)` khong du, va do la mot loi da xay ra: bam Gui som hon mot nhip
+ *    thi tin nhan di vao hoi thoai CU, roi hang muc doc phai cau tra loi cua
+ *    mot cau hoi khac va bao "model tra loi sai".
+ */
+async function hoiThoaiMoi(p) {
+  await p.getByRole('button', { name: '+ Hội thoại mới' }).click();
+  await doiDen('hoi thoai moi da rong', async () => (await soBai(p)) === 0, 25);
+  await donOSoan(p);
+}
+
+/**
+ * Bo MOI anh dang dinh va xoa o soan.
+ *
+ * 🔴 VI SAO CAN. Cac hang muc lam ban lan nhau: 4.1 de lai hai chip, nen 4.2
+ *    dem chip cua 4.1 roi ket luan "tep gia vo da duoc nhan", va 4.3 gui mot
+ *    luot mang theo anh cua hang muc truoc. Hai bao cao SAI ve san pham tu mot
+ *    thu duy nhat — trang thai khong duoc don giua cac hang muc.
+ *
+ * ⛔ Va vong bam dau tien cua toi cung sai: `getByRole(...).all()` lay mot
+ *    SNAPSHOT, bam cai dau lam React ve lai, va cac handle con lai thanh cu —
+ *    `.catch(() => {})` nuot loi nen chi mot chip duoc bo. Phai bam CAI DAU
+ *    TIEN, lap lai, doc lai moi vong.
+ */
+async function donOSoan(p) {
+  for (let i = 0; i < 12; i += 1) {
+    const nut = p.getByRole('button', { name: /^Bỏ ảnh / }).first();
+    if (!(await nut.count())) break;
+    await nut.click();
+    await doiDen('chip da bo', async () =>
+      (await p.getByRole('button', { name: /^Bỏ ảnh / }).count()) < (i + 12), 10)
+      .catch(() => {});
+  }
+  const o = p.getByLabel('Nội dung tin nhắn');
+  if (await o.count()) await o.fill('');
 }
 
 // ── Cac hang muc ───────────────────────────────────────────────────────────
@@ -187,7 +387,7 @@ async function xong(p, hanS = 120) {
 // Moi hang muc: mot cau hoi CO THE SAI, va mot phep do tra loi no.
 const HANG_MUC = [
   {
-    ten: 'trang-mo-duoc',
+    dot: 0, ten: 'trang-mo-duoc',
     hoi: 'Trang ChatLTT co dung duoc cac phan chinh khong (thanh ben, chon model, o soan)?',
     async chay(p) {
       await doiDen('sidebar', () => p.getByRole('button', { name: '+ Hội thoại mới' }).count());
@@ -198,7 +398,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'chua-co-model-thi-khong-gui-duoc',
+    dot: 0, ten: 'chua-co-model-thi-khong-gui-duoc',
     hoi: 'Trong giay dau khi catalog chua ve, nguoi dung co bam Gui duoc khong?',
     async chay(p) {
       // ⭐ Do duoc 03/09: o t+0ms danh sach model RONG. Neu o soan van bat thi
@@ -219,7 +419,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'model-mac-dinh-la-ltt_llm',
+    dot: 0, ten: 'model-mac-dinh-la-ltt_llm',
     hoi: 'Model chon san co phai `ltt_llm` khong — hay la vision (ngu canh 28K thay vi 89K)?',
     async chay(p) {
       // ⛔ Doi CATALOG ve truoc khi doc. Ban dau doc ngay va nhan "", roi bao
@@ -233,7 +433,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'stream-tra-loi',
+    dot: 0, ten: 'stream-tra-loi',
     hoi: 'Gui mot cau thi co cau tra loi chay ve khong, va no co noi dung that khong?',
     async chay(p) {
       const truoc = await soBai(p);
@@ -246,7 +446,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'tra-loi-DUNG-CAU-DUOC-HOI',
+    dot: 0, ten: 'tra-loi-DUNG-CAU-DUOC-HOI',
     hoi: 'Cau tra loi co lien quan den cau hoi khong — hay chi la "co chu chay ve"?',
     async chay(p) {
       // 🔴 HANG MUC NAY LAP MOT LO HONG THAT trong chinh bo kiem. `stream-tra-loi`
@@ -256,7 +456,10 @@ const HANG_MUC = [
       // ⭐ Chon mot cau co dap an mot tu, kiem duoc bang chuoi con: khong can
       //    hieu ngu nghia, khong phu thuoc model "gioi" den dau.
       await p.getByRole('button', { name: '+ Hội thoại mới' }).click();
-      await cho(600);
+      // ⛔ Doi cho luong bai RONG HAN, khong `cho(600)`. Neu bam Gui truoc khi
+      //    hoi thoai moi kip thay the hoi thoai cu, tin nhan di vao hoi thoai
+      //    CU — va hang muc doc phai cau tra loi cua mot cau hoi khac.
+      await doiDen('hoi thoai moi da rong', async () => (await soBai(p)) === 0, 20);
       await guiChu(p, 'Thu do cua nuoc Phap ten la gi? Tra loi dung mot tu.');
       await xong(p);
       const chu = (await chuBaiCuoi(p)).toLowerCase();
@@ -267,11 +470,14 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'lam-theo-rang-buoc-cua-lenh',
+    dot: 0, ten: 'lam-theo-rang-buoc-cua-lenh',
     hoi: 'Model co ton trong rang buoc dinh dang trong lenh khong?',
     async chay(p) {
       await p.getByRole('button', { name: '+ Hội thoại mới' }).click();
-      await cho(600);
+      // ⛔ Doi cho luong bai RONG HAN, khong `cho(600)`. Neu bam Gui truoc khi
+      //    hoi thoai moi kip thay the hoi thoai cu, tin nhan di vao hoi thoai
+      //    CU — va hang muc doc phai cau tra loi cua mot cau hoi khac.
+      await doiDen('hoi thoai moi da rong', async () => (await soBai(p)) === 0, 20);
       await guiChu(p, 'Liet ke dung 3 mau sac, moi mau mot dong, khong giai thich gi them.');
       await xong(p);
       const chu = await chuBaiCuoi(p);
@@ -288,14 +494,17 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'tieng-viet-co-dau-khong-vo',
+    dot: 0, ten: 'tieng-viet-co-dau-khong-vo',
     hoi: 'Chu tieng Viet co dau di tron ven qua SSE va qua Cloudflare khong?',
     async chay(p) {
       // ⛔ Day la cho ma mot loi encoding se lo ra, va no chi lo ra tren ĐUONG
       //    THAT: SSE cat chunk giua mot ky tu UTF-8 nhieu byte, hoac mot lop
       //    minify/proxy doi charset. jsdom khong the do duoc dieu do.
       await p.getByRole('button', { name: '+ Hội thoại mới' }).click();
-      await cho(600);
+      // ⛔ Doi cho luong bai RONG HAN, khong `cho(600)`. Neu bam Gui truoc khi
+      //    hoi thoai moi kip thay the hoi thoai cu, tin nhan di vao hoi thoai
+      //    CU — va hang muc doc phai cau tra loi cua mot cau hoi khac.
+      await doiDen('hoi thoai moi da rong', async () => (await soBai(p)) === 0, 20);
       await guiChu(p, 'Viet lai chinh xac cau nay, khong doi gi: "Nghiêng nước nghiêng thành."');
       await xong(p);
       const chu = await chuBaiCuoi(p);
@@ -307,7 +516,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'hoi-thoai-co-dia-chi',
+    dot: 0, ten: 'hoi-thoai-co-dia-chi',
     hoi: 'Hoi thoai co nam trong URL khong — F5 co quay lai dung cho khong?',
     async chay(p) {
       const hash = await p.evaluate(() => location.hash);
@@ -321,7 +530,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'tao-lai-sinh-nhanh-moi',
+    dot: 0, ten: 'tao-lai-sinh-nhanh-moi',
     hoi: 'Bam "Tao lai" co sinh mot nhanh anh em moi khong, va dieu huong nhanh co chay khong?',
     async chay(p) {
       await p.getByRole('button', { name: 'Tạo lại' }).last().click();
@@ -332,7 +541,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'dung-giua-chung',
+    dot: 0, ten: 'dung-giua-chung',
     hoi: 'Bam "Dung" co that su dung khong — hay chu van chay tiep sau khi nut bien mat?',
     async chay(p) {
       await guiChu(p, 'Viet mot doan that dai ve lich su Viet Nam, cang dai cang tot.');
@@ -378,7 +587,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'o-soan-khong-de-chan-trang',
+    dot: 0, ten: 'o-soan-khong-de-chan-trang',
     hoi: 'O soan co nam tron trong vung cua no khong, hay tran ra de len phan duoi?',
     async chay(p) {
       const r = await p.evaluate(() => {
@@ -396,7 +605,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'khong-cuon-ngang',
+    dot: 0, ten: 'khong-cuon-ngang',
     hoi: 'Trang co bi cuon ngang o be rong nao khong (390 / 768 / 1920)?',
     async chay(p) {
       const xau = [];
@@ -412,7 +621,133 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'vision-o-dinh-anh-theo-hop-dong',
+    /*
+     * CK1 (a) — ma tran NAM moc, khong phai ba.
+     *
+     * Muc `khong-cuon-ngang` o tren do 390/768/1920 va chi hoi MOT cau: trang
+     * co cuon ngang khong. Tieu chi P09 doi NAM moc va hoi them hai cau nua.
+     *
+     * ⛔ `scrollWidth > clientWidth` KHONG bat duoc moi ca: mot phan tu co the
+     *    thoi ra ngoai mep phai ma van khong tao thanh cuon, neu mot to tien
+     *    co `overflow: hidden`. Nguoi dung mat noi dung ma phep do bao sach.
+     *
+     * ⭐ Nen do THEM: dem phan tu co `rect.right` vuot qua be rong khung. Do la
+     *    cau hoi "co gi bi cat khong", khac han "co cuon duoc khong".
+     */
+    dot: 0, ten: 'ck1-ma-tran-5-moc',
+    hoi: 'Nam moc 390/768/1280/1440/1920: co tran ngang, co phan tu vuot mep phai?',
+    async chay(p) {
+      const bang = [];
+      for (const w of [390, 768, 1280, 1440, 1920]) {
+        await p.setViewportSize({ width: w, height: 900 });
+        await cho(450);
+        const m = await p.evaluate((be) => {
+          const de = document.documentElement;
+          let vuot = 0;
+          for (const el of document.querySelectorAll('body *')) {
+            const r = el.getBoundingClientRect();
+            if (r.width > 0 && r.right > be + 1) vuot++;
+          }
+          const chip = document.querySelector('.ltc-chip');
+          return {
+            tran: de.scrollWidth - de.clientWidth,
+            vuot,
+            chipCao: chip ? Math.round(chip.getBoundingClientRect().height) : null,
+          };
+        }, w);
+        bang.push({ w, ...m });
+      }
+      await p.setViewportSize({ width: 1280, height: 900 });
+      const xau = bang.filter((b) => b.tran > 1 || b.vuot > 0)
+        .map((b) => `${b.w}px: tran ${b.tran}, vuot phai ${b.vuot}`);
+      if (xau.length) throw new Error(xau.join('; '));
+      return { bang };
+    },
+  },
+  {
+    /*
+     * CK1 (b) — CLS, VA mot doi chung di kem.
+     *
+     * 🔴 Do 07/09: mot khung trinh duyet nhung tra `CLS = 0` voi 0 dich chuyen
+     *    ghi duoc, KE CA khi bi ep dich chuyen ba lan. `supportedEntryTypes` CO
+     *    `layout-shift`, nhung no khong phat muc nao.
+     *
+     * ⇒ Mot so 0 khong co doi chung la mot so 0 VO NGHIA — no khong phan biet
+     *   duoc "trang on dinh" voi "bo do khong chay". Nen hang muc nay ep mot
+     *   dich chuyen TRUOC, va neu bo do khong bat duoc no thi BAO HONG thay vi
+     *   bao dat.
+     */
+    dot: 0, ten: 'ck1-cls-duoi-nguong',
+    hoi: 'CLS co duoi 0.079 khong — va bo do co that su chay khong?',
+    async chay(p) {
+      const CAI = () => {
+        window.__cls = 0;
+        window.__clsN = 0;
+        try {
+          new PerformanceObserver((l) => {
+            for (const e of l.getEntries()) {
+              if (!e.hadRecentInput) { window.__cls += e.value; window.__clsN++; }
+            }
+          }).observe({ type: 'layout-shift', buffered: true });
+        } catch (_) { window.__clsHong = true; }
+      };
+
+      await p.setViewportSize({ width: 390, height: 844 });
+      await p.addInitScript(CAI);
+
+      // --- DOI CHUNG: ep mot dich chuyen, bo do PHAI bat duoc ---------------
+      await p.reload({ waitUntil: 'domcontentloaded' });
+      await cho(1200);
+      await p.evaluate(() => {
+        const d = document.createElement('div');
+        d.style.cssText = 'height:260px';
+        document.body.insertBefore(d, document.body.firstChild);
+      });
+      await cho(900);
+      const dc = await p.evaluate(() => ({ cls: window.__cls, n: window.__clsN }));
+      if (!dc.n) {
+        /*
+         * 🔴 BO QUA, khong phai HONG. Hai trang thai khac nhau:
+         *
+         *     "do duoc, va CLS te"     -> loi cua san pham
+         *     "khong do duoc o day"    -> loi cua MOI TRUONG
+         *
+         * Gop chung lam mot thi bo kiem bao do moi lan chay bang Chromium cua
+         * Playwright, va nguoi ta hoc cach bo qua chinh no. Do dung co che da
+         * ghi o `docs/BAY_TRONG_CONG_CHAT_LUONG.md` va da sua cho `may_ban`.
+         *
+         * ⭐ Do 07/09: `layout-shift` KHONG phat trong Chromium cua Playwright
+         *    (ep mot dich chuyen 260px -> 0 muc), nhung phat binh thuong trong
+         *    Chrome THAT (ep -> CLS 0.2043 qua 2 muc). Nen hang muc nay chi co
+         *    nghia khi chay voi `--cdp` noi vao Chrome that.
+         */
+        await p.setViewportSize({ width: 1280, height: 900 });
+        return {
+          bo_qua: 'bo do layout-shift khong chay o trinh duyet nay '
+            + '(ep dich chuyen -> 0 muc). Chay lai voi `--cdp` noi vao Chrome '
+            + 'THAT thi moi do duoc. KHONG doc ket qua nay thanh dat.',
+        };
+      }
+
+      // --- Do SACH -----------------------------------------------------------
+      await p.reload({ waitUntil: 'domcontentloaded' });
+      await cho(2500);
+      const s = await p.evaluate(() => ({ cls: window.__cls, n: window.__clsN }));
+      await p.setViewportSize({ width: 1280, height: 900 });
+
+      const NGUONG = 0.079;
+      if (s.cls > NGUONG) {
+        throw new Error(`CLS ${s.cls.toFixed(4)} > nguong ${NGUONG} `
+          + `(${s.n} dich chuyen)`);
+      }
+      return {
+        cls: Number(s.cls.toFixed(4)), so_dich_chuyen: s.n, nguong: NGUONG,
+        doi_chung: `ep dich chuyen -> ${dc.n} muc, cls ${dc.cls.toFixed(4)}`,
+      };
+    },
+  },
+  {
+    dot: 0, ten: 'vision-o-dinh-anh-theo-hop-dong',
     hoi: 'O dinh anh co hien DUNG khi model doc anh, va BIEN MAT khi model khong doc anh?',
     async chay(p) {
       const sel = p.locator('select[aria-label="Chọn model"]');
@@ -432,7 +767,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'nut-media-co-mat',
+    dot: 0, ten: 'nut-media-co-mat',
     hoi: 'Hai nut Tao anh / Tao giong co mat trong hoi thoai khong?',
     async chay(p) {
       const anh = await p.getByRole('button', { name: 'Tạo ảnh' }).count();
@@ -442,7 +777,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'bao-gia-truoc-khi-thu-tien',
+    dot: 0, ten: 'bao-gia-truoc-khi-thu-tien',
     hoi: 'Bam Tao anh co hoi gia TRUOC khi thu tien khong, va co Huy duoc khong?',
     async chay(p) {
       await p.getByRole('button', { name: 'Tạo ảnh' }).click();
@@ -462,18 +797,29 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'khong-lo-id-noi-bo',
+    dot: 0, ten: 'khong-lo-id-noi-bo',
     hoi: 'Giao dien co lo ten model that / URL may B / khoa API ra khong?',
     async chay(p) {
       const t = await p.evaluate(() => document.body.innerText);
-      const cam = [/qwen\s*3?8/i, /8299/, /8199/, /8120/, /ltt_sk_/, /192\.168\./];
+      // ⭐ CAM la ID NOI BO va HA TANG, khong phai ten model.
+      //
+      //    Chu du an chot 03/09: **de model tra loi dung no la Qwen**. Khi
+      //    duoc chao, no noi "toi khong phai ChatLTT, toi la Qwen" — va do la
+      //    hanh vi MONG MUON, khong phai ro ri. Giau di can mot system prompt
+      //    day model noi sai ve chinh no, tuc doi mot su that lay mot cau
+      //    quang cao.
+      //
+      // ⛔ Thu VAN cam: `qwen38` (id noi bo, khac ten thuong goi), cong LAN cua
+      //    may B, tien to khoa API. Do la nhung thu cho ai do di tiep mot buoc
+      //    — mot cai ten model thi khong.
+      const cam = [/qwen\s*3\s*8/i, /8299/, /8199/, /8120/, /ltt_sk_/, /192\.168\./];
       const dinh = cam.filter((r) => r.test(t)).map(String);
       if (dinh.length) throw new Error(`lo ra: ${dinh.join(', ')}`);
       return { da_quet_ky_tu: t.length };
     },
   },
   {
-    ten: 'phim-tat-va-focus',
+    dot: 0, ten: 'phim-tat-va-focus',
     hoi: 'Ctrl+Shift+O co mo hoi thoai moi va dua con tro ve o soan khong?',
     async chay(p) {
       await p.keyboard.press('Control+Shift+O');
@@ -486,7 +832,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'nhan-doc-duoc-cho-trinh-doc-man-hinh',
+    dot: 0, ten: 'nhan-doc-duoc-cho-trinh-doc-man-hinh',
     hoi: 'Cac dieu khien chinh co nhan doc duoc khong (nut khong nhan la nut cam)?',
     async chay(p) {
       const xau = await p.evaluate(() => {
@@ -504,16 +850,46 @@ const HANG_MUC = [
   },
 ];
 
+// ── Nap cac dot ────────────────────────────────────────────────────────────
+//
+// ⭐ Tach ra module rieng vi bo kiem se lon toi ~60 hang muc. Mot tep 2.000
+//    dong thi khong ai doc lai, va mot bo kiem khong ai doc lai la mot bo kiem
+//    khong ai sua khi no sai.
+const TRO_GIUP = { cho, doiDen, soBai, chuBaiCuoi, dangChay, guiChu, xong,
+                   hoiThoaiMoi, donOSoan, soDu, soDuOnDinh, nangLuc };
+{
+  const nap = async (ten, ham) => {
+    try {
+      const m = await import(pathToFileURL(
+        join(new URL('.', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'),
+             'kiem_chatltt', ten)).href);
+      HANG_MUC.push(...m[ham](TRO_GIUP));
+    } catch (e) {
+      console.log(`  [!] khong nap duoc ${ten}: ${e.message}`);
+      process.exitCode = 2;
+    }
+  };
+  await nap('dot1_luong.mjs', 'dot1');
+  await nap('dot2_hoi_thoai.mjs', 'dot2');
+  await nap('dot3_markdown.mjs', 'dot3');
+  await nap('dot4_dinh_kem.mjs', 'dot4');
+  await nap('dot5_tao_anh.mjs', 'dot5');
+  await nap('dot6_tao_giong.mjs', 'dot6');
+  await nap('dot7_tien_dong_thoi.mjs', 'dot7');
+  await nap('dot8_di_dong.mjs', 'dot8');
+  await nap('dot9_doi_model.mjs', 'dot9');
+}
+
 // ── Chay ───────────────────────────────────────────────────────────────────
 async function dangNhap(page) {
   await page.goto(`${URL_GOC}/chatltt`, { waitUntil: 'domcontentloaded' });
 
   // Da co phien: khong dung toi form dang nhap. Neu van thay form thi phien da
   // het han — noi thang thay vi de no do o mot hang muc chang lien quan.
-  if (PHIEN || PROFILE) {
+  if (PHIEN || PROFILE || CDP) {
     if (await page.getByRole('textbox', { name: /Username|Tên đăng nhập/i }).count()) {
       throw new Error('phien da het han — dang nhap lai trong '
-        + (PROFILE ? 'profile `' + PROFILE + '`' : 'tep `' + PHIEN + '`'));
+        + (CDP ? 'trinh duyet o `' + CDP + '`' : PROFILE ? 'profile `' + PROFILE + '`' : 'tep `' + PHIEN + '`'));
     }
     await doiDen('vao duoc ChatLTT',
       async () => (await page.getByLabel('Nội dung tin nhắn').count()) > 0, 40);
@@ -553,7 +929,15 @@ async function dangNhap(page) {
 
 let trinh = null;
 let boi_canh;
-if (PROFILE) {
+let cdp_noi_vao = false;
+if (CDP) {
+  // ⚠️ `connectOverCDP` tra ve mot `Browser` cua trinh duyet NGUOI KHAC so
+  //    huu. Dung `boi_canh.close()` o cuoi — xem co `cdp_noi_vao`.
+  trinh = await chromium.connectOverCDP(CDP);
+  boi_canh = trinh.contexts()[0];
+  if (!boi_canh) throw new Error(`khong thay boi canh nao o ${CDP}`);
+  cdp_noi_vao = true;
+} else if (PROFILE) {
   // ⚠️ `launchPersistentContext` tra ve CHINH boi canh, khong co doi tuong
   //    `Browser` rieng — nen `trinh` giu `null` va cho dong bang `boi_canh`.
   //    Quen dieu nay thi tien trinh Chrome o lai sau khi bo kiem xong, va lan
@@ -573,9 +957,9 @@ if (PROFILE) {
 const page = boi_canh.pages()[0] || await boi_canh.newPage();
 
 page.on('console', (m) => {
-  if (m.type() === 'error') loiConsole.push(m.text().slice(0, 300));
+  if (m.type() === 'error') ghiLoi(loiConsole, m.text().slice(0, 300));
 });
-page.on('pageerror', (e) => loiConsole.push('pageerror: ' + String(e).slice(0, 300)));
+page.on('pageerror', (e) => ghiLoi(loiConsole, 'pageerror: ' + String(e).slice(0, 300)));
 // ⛔ MOT SSE BI HUY KHONG PHAI MOT LOI. Khi trang reload hay component ro ra,
 //    trinh duyet huy ket noi `/stream` dang mo — do la hanh vi DUNG, va no xay
 //    ra o moi hang muc co reload.
@@ -590,10 +974,12 @@ page.on('requestfailed', (r) => {
     sseHuy.push(dong);
     return;
   }
-  requestHong.push(dong);
+  ghiLoi(requestHong, dong);
 });
 page.on('response', (r) => {
-  if (r.status() >= 400) requestHong.push(`${r.status()} ${r.request().method()} ${r.url().slice(0, 140)}`);
+  if (r.status() >= 400) {
+    ghiLoi(requestHong, `${r.status()} ${r.request().method()} ${r.url().slice(0, 140)}`);
+  }
 });
 
 const ketQua = [];
@@ -601,19 +987,82 @@ let maThoat = 0;
 try {
   await dangNhap(page);
   for (const hm of HANG_MUC) {
-    if (CHI && hm.ten !== CHI) continue;
+    // ⭐ Khop theo TIEN TO. Ten hang muc dai va co dau gach ngang
+    //    (`8.4-nut-media-cham-duoc-bang-ngon-tay`); bat go du ca ten la bat go
+    //    dung mot chuoi ma khong ai nho, va go sai thi loc ra RONG.
+    if (CHI && !hm.ten.startsWith(CHI) && hm.ten !== CHI) continue;
+    if (DOT.length && !DOT.includes(String(hm.dot ?? '0'))) continue;
     const t0 = Date.now();
+    hangMucHienTai = hm;
     try {
+      // ⛔ BAO DAM DANG O DUNG TRANG TRUOC MOI HANG MUC.
+      //
+      //    Do 03/09: hang muc `2.1` goi `goBack()`, va vi giao dien dung
+      //    `replaceState` nen lich su chi co MOT muc — trinh duyet **roi khoi
+      //    trang**. Sau muc do, sau hang muc con lai chay tren mot trang khong
+      //    phai ChatLTT va bao nhung loi vo nghia ("khong co o tim").
+      //
+      // ⭐ Mot hang muc duoc phep dieu huong; no khong duoc phep lam do ca dot.
+      //    Bay dong nay tach "mot phep kiem do" khoi "ca lo mat nghia".
+      if (!(await page.getByLabel('Nội dung tin nhắn').count())) {
+        await page.goto(`${URL_GOC}/chatltt`, { waitUntil: 'domcontentloaded' });
+        await doiDen('ve lai duoc ChatLTT',
+          async () => (await page.getByLabel('Nội dung tin nhắn').count()) > 0, 30);
+      }
+      await conPhien(page);
       const ct = await hm.chay(page);
       const bo = ct && typeof ct === 'object' && 'bo_qua' in ct;
-      ketQua.push({ ten: hm.ten, dat: !bo, bo_qua: !!bo,
+      ketQua.push({ dot: hm.dot ?? 0, ten: hm.ten, dat: !bo, bo_qua: !!bo,
                     giay: (Date.now() - t0) / 1000, chi_tiet: ct });
-      console.log(`  [${bo ? 'BOQUA' : 'DAT  '}] ${hm.ten}  ${JSON.stringify(ct)}`);
+      console.log(`  [${bo ? 'BOQUA' : 'DAT  '}] ${String(hm.dot ?? '0').padStart(2)} ${hm.ten}  ${JSON.stringify(ct)}`);
     } catch (e) {
+      // 🔴 TRUOC KHI GOI DAY LA MOT LOI: NHIN MAN HINH DA.
+      //
+      //    Do 04/09, dot 0 chay rieng: BA hang muc bao HONG, va ca ba deu dang
+      //    hien dung mot cau — cau cua CHINH SAN PHAM:
+      //
+      //      "Model dang ban. Thu lai sau it giay — luot nay khong bi tinh tien."
+      //
+      //    Do khong phai san pham hong. Do la san pham xu ly DUNG mot may ban,
+      //    noi ro bang tieng Viet, va tu tuyen bo khong thu tien. Menh de ma ba
+      //    hang muc kia dat ra (tra dung cau hoi, giu rang buoc dinh dang, chu
+      //    co dau khong vo) — khong cai nao **duoc kiem** o lat chay do.
+      //
+      // ⛔ Va day khong phai mot ngoai le cho de bao cao dep hon. Bao HONG o
+      //    day la vu khong, dung nghia luat ② cua ke hoach; ba dong do se lam
+      //    nguoi doc di tim mot loi khong ton tai, roi lan sau ho bo qua ca ba
+      //    — ke ca khi mot trong so do do that.
+      //
+      // ⭐ Chi bo qua khi chinh SAN PHAM noi cau do tren man hinh. Do la bang
+      //    chung quan sat duoc, khong phai mot phong doan cua bo kiem. Va cau
+      //    ay tu no da hua "khong bi tinh tien" — tuc so tien khong lien can.
+      // ⛔ CUA NAY CHI CUU NHUNG HANG MUC PHU THUOC CAU TRA LOI CUA MODEL.
+      //
+      //    Do 04/09: `8.4` do CHIEU CAO NUT (27px < 44px) — mot loi bo cuc that,
+      //    khong dinh gi toi model. Nhung man hinh luc ay tinh co dang hien "Model
+      //    dang ban", nen cua nay nuot no thanh BOQUA va **giau mat mot loi that**.
+      //
+      // ⭐ Mot cai luoi cuu qua rong thi bat ca thu khong can cuu. Hang muc do
+      //    thu KHONG lien quan model phai khai `doc_lap_voi_model: true`, va cua
+      //    nay tranh ra.
+      const manHinh = hm.doc_lap_voi_model
+        ? ''
+        : await page.locator('article').last().innerText().catch(() => '');
+      if (/Model đang bận/i.test(manHinh) && /không bị tính tiền/i.test(manHinh)) {
+        const ct = { bo_qua: 'model bao BAN ngay tren man hinh — menh de chua kiem duoc',
+                     man_hinh: manHinh.replace(/\s+/g, ' ').slice(0, 120),
+                     loi_goc: e.message.slice(0, 160) };
+        ketQua.push({ dot: hm.dot ?? 0, ten: hm.ten, dat: false, bo_qua: true,
+                      giay: (Date.now() - t0) / 1000, chi_tiet: ct });
+        console.log(`  [BOQUA] ${String(hm.dot ?? '0').padStart(2)} ${hm.ten}  ${JSON.stringify(ct)}`);
+        continue;
+      }
       maThoat = 1;
-      ketQua.push({ ten: hm.ten, dat: false, giay: (Date.now() - t0) / 1000, chi_tiet: e.message });
-      console.log(`  [HONG] ${hm.ten}  ${e.message}`);
+      ketQua.push({ dot: hm.dot ?? 0, ten: hm.ten, dat: false, giay: (Date.now() - t0) / 1000, chi_tiet: e.message });
+      console.log(`  [HONG ] ${String(hm.dot ?? '0').padStart(2)} ${hm.ten}  ${e.message}`);
       await page.screenshot({ path: join(THU_MUC_ANH, `hong-${hm.ten}.png`), fullPage: true }).catch(() => {});
+    } finally {
+      hangMucHienTai = null;
     }
   }
   await page.screenshot({ path: join(THU_MUC_ANH, 'cuoi.png'), fullPage: true }).catch(() => {});
@@ -621,8 +1070,14 @@ try {
   maThoat = 2;
   console.log(`  [CHET] khong chay duoc bo kiem: ${e.message}`);
 } finally {
-  await boi_canh.close().catch(() => {});
-  if (trinh) await trinh.close().catch(() => {});
+  // ⛔ KHI NOI VAO QUA CDP THI KHONG DONG GI CA. Cua so do la cua NGUOI
+  //    DUNG: ho vua bo cong qua xac minh Cloudflare va dang nhap bang tay. Dong
+  //    no di la vut mat dung thu vua ton cong nhat, va lan chay sau lai phai
+  //    lam lai tu dau. Bo kiem chi la khach tro trong cua so ay.
+  if (!cdp_noi_vao) {
+    await boi_canh.close().catch(() => {});
+    if (trinh) await trinh.close().catch(() => {});
+  }
 }
 
 // ⛔ Loi console va request hong la HANG MUC, khong phai ghi chu. Mot bo kiem in
@@ -640,6 +1095,7 @@ const bao_cao = {
   loi_console: loiConsole,
   request_hong: requestHong,
   sse_bi_huy_binh_thuong: sseHuy,
+  loi_da_khai_truoc: loiDaKhai,
 };
 const duong = join(THU_MUC_ANH, 'bao_cao.json');
 mkdirSync(dirname(duong), { recursive: true });
@@ -649,10 +1105,24 @@ console.log('\n' + '='.repeat(64));
 console.log(`  ${URL_GOC}`);
 console.log(`  DAT ${bao_cao.dat} / BO QUA ${bao_cao.bo_qua} / HONG ${bao_cao.hong}`);
 console.log(`  loi console: ${loiConsole.length}   request hong: ${requestHong.length}`
-  + `   (SSE bi huy binh thuong: ${sseHuy.length})`);
+  + `   (SSE bi huy: ${sseHuy.length}, loi DA KHAI TRUOC: ${loiDaKhai.length})`);
+for (const l of loiDaKhai.slice(0, 6)) console.log(`    (da khai) ${l}`);
 for (const l of loiConsole.slice(0, 8)) console.log(`    console: ${l}`);
 for (const r of requestHong.slice(0, 8)) console.log(`    request: ${r}`);
 console.log(`  bao cao: ${duong}`);
 console.log('='.repeat(64));
+// 🔴 CHAY 0 HANG MUC KHONG PHAI THANH CONG.
+//
+//    Do 04/09: `--chi 8.4` khong khop ten nao (ten that la
+//    `8.4-nut-media-cham-duoc-bang-ngon-tay`), bo loc ra RONG, va bo kiem in
+//    `DAT 0 / BO QUA 0 / HONG 0` roi **`RESULT: PASS`**.
+//
+// ⛔ Ba duong deu dan toi day: mot loi go trong bo loc, mot hang muc doi ten,
+//    hay mot dot nap hong. Ca ba cho ra chu PASS — dung loai xanh khong chung
+//    minh gi ma ca ngay hom nay di sua.
+if (ketQua.length === 0) {
+  maThoat = maThoat || 3;
+  console.log('  [!] KHONG HANG MUC NAO CHAY. Kiem lai `--dot` / `--chi`.');
+}
 console.log(maThoat === 0 ? 'RESULT: PASS' : 'RESULT: FAIL');
 process.exit(maThoat);

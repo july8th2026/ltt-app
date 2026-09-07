@@ -35,7 +35,8 @@ from platform_core.i18n import N_
 from platform_core.registry import AppManifest, NavEntry, ToolSpec
 
 from . import gia, nghe_thu, sidecar_client
-from .tham_so_cong_khai import SO_LAN_THU_JOB, TRAN_KY_TU_CONG_KHAI
+from .tham_so_cong_khai import (SO_LAN_THU_JOB, TRAN_KY_TU_CONG_KHAI,
+                                TRAN_MOI_LUOT_SINH)
 
 
 def _gia(params: dict) -> int:
@@ -81,9 +82,24 @@ MANIFEST = AppManifest(
     group=N_('Âm thanh'),
     badge=N_('MỚI'),
 
-    # ⭐ SÁU TAB, và từ P8 **cả sáu đều đã xây** — không tab nào còn
+    # ⭐ NĂM TAB, và từ P8 **cả năm đều đã xây** — không tab nào còn
     #    `built=False`. Cơ chế badge "đang xây" của nền tảng vẫn còn nguyên và
     #    vẫn dùng được; thứ đã biến mất là những màn cần tới nó.
+    #
+    # 🔴 TỪNG LÀ SÁU, VÀ TAB THỨ SÁU KHÔNG ĐƯỢC XÂY — có chủ ý.
+    #
+    #    "Chạy lô" được thiết kế khi một lượt sinh trần ở 1.500 ký tự: muốn
+    #    đọc nhiều hơn thì phải nộp nhiều dòng. Đường tài liệu dài (03/09) lấy
+    #    mất chính nhu cầu đó: một ô nhập duy nhất nay nhận `TRAN_KY_TU_CONG_KHAI`
+    #    và tự chia, nên "nộp hai mươi dòng rồi ghép tay" không còn là việc
+    #    khách phải làm. Phần còn lại — soạn nhiều khối, mỗi khối một giọng,
+    #    sửa lại từng khối — là đúng định nghĩa của **Dự án**.
+    #
+    # ⛔ ĐỪNG DỰNG LẠI "Chạy lô" để một chú thích nói "sáu tab" thành đúng.
+    #    Nó chỉ quay lại nếu có một năng lực lô THẬT khác cả Dự án lẫn tài liệu
+    #    dài — ví dụ `infer_batch` của sidecar (xem `tables_du_an.py`), thứ gộp
+    #    nhiều đoạn vào MỘT lượt GPU. Mô hình cũ — mỗi dòng một job — không
+    #    phải năng lực đó, nó chỉ là một vòng lặp có giao diện.
     #
     # ⛔ Nếu một ngày thêm tab thứ bảy chưa xây: đặt `built=False` chứ ĐỪNG giấu
     #    tab đi. Hai thứ đó nói hai điều khác nhau — giấu nói *"sản phẩm không
@@ -128,10 +144,26 @@ MANIFEST = AppManifest(
     #    chạy nhưng có thể bị xếp vào card chật.
     gpu_vram_mb={"ltt_voice.synthesize": 2000, "ltt_voice.enroll": 2000},
 
-    # Đo được: 3.000 ký tự mất 17,6 giây sinh. Trần 900 giây cho một job là rất
-    # rộng, và nó tồn tại để bắt job **treo** chứ không để bắt job chậm: một job
-    # treo mà vẫn đập nhịp sẽ giữ slot vô hạn và không ai được báo.
-    max_runtime_s={"ltt_voice.synthesize": 900, "ltt_voice.enroll": 300},
+    # Trần này tồn tại để bắt job **treo**, không để bắt job chậm: một job treo
+    # mà vẫn đập nhịp sẽ giữ slot vô hạn và không ai được báo.
+    #
+    # 🔴 3600 CHO `synthesize`, VÀ CON SỐ ẤY ĐI CÙNG `TRAN_KY_TU_CONG_KHAI`.
+    #
+    #    Trước 03/09 nó là 900 giây, hợp lý khi trần yêu cầu là 1.500 ký tự
+    #    (một lượt đọc ~75 giây). Nhưng nó là **ràng buộc thật** của trần mới:
+    #    đo 03/09 cho 0,00763 giây GPU mỗi ký tự, nên 100.000 ký tự cần ~763
+    #    giây ở tốc độ đo được — tức nó sẽ **vừa vặn chạm** 900 và hỏng ở đúng
+    #    những tài liệu dài nhất, sau khi đã tiêu gần hết phần GPU của chúng.
+    #
+    # ⭐ 3600 cho biên ~4,7 lần so với tốc độ đo được, tức vẫn còn nguyên biên
+    #    khi GPU chậm gấp đôi vì đang chia với một job khác. Đây là **chốt chặn
+    #    cho job treo**, không phải hạn mức hiệu năng — nên nó phải rộng hơn ca
+    #    xấu nhất hợp lệ, chứ không sát ca trung bình.
+    #
+    # ⛔ Đừng nâng nó mà không nâng `TRAN_KY_TU_CONG_KHAI` theo, và ngược lại.
+    #    Hai con số này là hai đầu của cùng một ngân sách; lệch nhau thì hoặc
+    #    job chết oan, hoặc một job treo giữ GPU lâu hơn cần thiết.
+    max_runtime_s={"ltt_voice.synthesize": 3600, "ltt_voice.enroll": 300},
 
     # Bận thì 3 giây sau hỏi lại, thay vì 20 giây mặc định của nền tảng.
     #
@@ -172,6 +204,25 @@ MANIFEST = AppManifest(
     # kieu so trong khi `User.id` la UUID chuoi.
     lifecycle="released",
     capabilities=("audio",),
+
+    # 🔴 HAI TRẦN, KHAI RA CHO CHẨN ĐOÁN VẬN HÀNH.
+    #
+    #    Ngày 05/09/2026 bản deploy đứng ở một commit cũ hơn kho 94 lượt, nên
+    #    trần công khai **đang chạy** là 1.500 trong khi mã nguồn ghi 100.000.
+    #    Không ai phát hiện, vì không có chỗ nào hỏi được máy chủ *"hợp đồng mày
+    #    đang thi hành là gì"*. `/health/version` nay trả lời được.
+    #
+    # ⛔ THAM CHIẾU HẰNG SỐ, KHÔNG GÕ LẠI SỐ. Một bản chép ở đây sẽ trôi — và nó
+    #    trôi ngay bên trong công cụ dựng ra để phát hiện trôi, tức nó sẽ xác
+    #    nhận trạng thái sai một cách rất thuyết phục.
+    #
+    # ⚠️ Chỉ những thứ ĐÃ công khai ở nơi khác: cả hai con số này đã in trên màn
+    #    Studio và màn API cho mọi khách đọc. `/health/version` không có xác
+    #    thực, nên đây không phải chỗ cho bất cứ thứ gì khác.
+    hop_dong_cong_khai={
+        "tran_ky_tu_cong_khai": TRAN_KY_TU_CONG_KHAI,
+        "tran_moi_luot_sinh": TRAN_MOI_LUOT_SINH,
+    },
     table_prefix="voice",
 
     blocker_titles=(N_('Dịch vụ giọng nói (LTTStudioVoice)'),),
@@ -223,7 +274,13 @@ MANIFEST = AppManifest(
             # Giọng nhân bản CỦA NGƯỜI DÙNG cho palette/sản phẩm khác, không
             # import app này (H43 Phase 02). Gợi ý cho giao diện; sở hữu vẫn do
             # `features.giai_giong` kiểm lúc thi hành.
-            tuy_chon_dong={"voice_id": "apps.ltt_voice.tham_chieu:tuy_chon_voice_id"},
+            tuy_chon_dong={
+                "voice_id": "apps.ltt_voice.tham_chieu:tuy_chon_voice_id",
+                # ⭐ Kho DUNG CHUNG. Khong co dong nay thi mot tai khoan chua
+                #    nhan ban giong nao khong thay MOT lua chon nao ca — do la
+                #    trang thai cua gan nhu moi khach moi.
+                "preset": "apps.ltt_voice.tham_chieu:tuy_chon_preset",
+            },
 
             api_exposed=True,
             api_contract={
@@ -237,13 +294,26 @@ MANIFEST = AppManifest(
                 #    temperature cao làm lệch tông giữa các đoạn.
                 "hidden": (),
                 "params": {
+                    # 🔴 MÔ TẢ CŨ BẮT NGƯỜI TÍCH HỢP LÀM HỘ TA MỘT VIỆC TA ĐÃ
+                    #    TỰ LÀM. Nó viết *"longer scripts should be split into
+                    #    several calls"* — tức mỗi khách hàng phải tự viết lại
+                    #    phép chia đoạn theo ranh giới câu, phép ghép, phép đo
+                    #    nhịp nghỉ và phép cân mức. Bốn thứ đó nằm sẵn trong
+                    #    `text_pipeline` và `noi_dai`, đã được đo, và không có
+                    #    lý do gì để mỗi tích hợp có một bản riêng kém hơn.
+                    #
+                    # ⭐ Trần nay là NGÂN SÁCH TÀI NGUYÊN, không phải chỗ giọng
+                    #    bắt đầu trôi — xem `tham_so_cong_khai.py`. Nên mô tả
+                    #    phải nói đúng điều đó, và nói cả đường đi khi vượt.
                     "text": {
                         "description": (
                             "What to say. Vietnamese, English, or both mixed. "
-                            f"Up to {TRAN_KY_TU_CONG_KHAI} characters per call - "
-                            "longer scripts should be split into several calls, "
-                            "because voice consistency degrades on very long "
-                            "single passes."),
+                            f"Up to {TRAN_KY_TU_CONG_KHAI:,} characters per "
+                            "call. You do NOT need to split long text yourself "
+                            "- it is segmented on sentence boundaries, spoken "
+                            "in several passes and joined back into one "
+                            "continuous audio file. For anything longer, use "
+                            "Projects, where each block is its own pass."),
                         "example": "Xin chào, đây là giọng đọc của LTT Studios.",
                     },
                     "voice_id": {

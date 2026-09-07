@@ -129,7 +129,15 @@ describe('ThongDiepView — suy luan va nhanh', () => {
     })
     rerender(<ThongDiepView m={loi} phang={[loi]} onChuyenNhanh={KHONG}
       onTaoLai={KHONG} onSuaGuiLai={KHONG} />)
-    expect(screen.getByRole('alert')).toHaveTextContent('may B dang ban')
+    // ⚠️ DOI 03/09: truoc day phep kiem nay chot rang chuoi NOI BO
+    //    (`may B dang ban`) phai hien ra. Do la mot phep kiem chot dung hanh vi
+    //    sau — no bao ve viec dat van ban chan doan truoc mat khach.
+    //
+    //    Do tren production: khi can suat admission, o tra loi hien dung chuoi
+    //    `het suat thuc thi`. Nay ma di truoc va cho ra mot cau doc duoc; chuoi
+    //    chan doan chi con la luoi do khi khong ma nao khop.
+    expect(screen.getByRole('alert')).toHaveTextContent('Model đang bận')
+    expect(screen.getByRole('alert')).not.toHaveTextContent('may B dang ban')
   })
 })
 
@@ -162,5 +170,91 @@ describe('Markdown — mot xuong dong don phai la mot xuong dong', () => {
     )
     expect(container.querySelector('img')).toBeNull()
     expect(container.textContent).toContain('onerror')   // hien thanh CHU, khong chay
+  })
+})
+
+describe('Loi hien ra phai la mot CAU, khong phai van ban noi bo', () => {
+  /**
+   * 🔴 ĐO TRÊN PRODUCTION 03/09. Chạy 45 lượt liên tiếp làm cạn suất admission,
+   *    và ô trả lời hiện đúng chuỗi `het suat thuc thi` — văn bản nội bộ, tiếng
+   *    Việt không dấu, viết cho người đọc log, đặt vào đúng chỗ câu trả lời.
+   *
+   * ⛔ Bản cũ ưu tiên `loi.text` TRƯỚC `loi.code`. Nghĩa là càng nhiều thông
+   *    tin chẩn đoán ở tầng dưới thì người dùng càng thấy nhiều thứ khó hiểu —
+   *    đúng chiều ngược lại.
+   */
+  const veLoi = (code: string, text: string) => {
+    const m = tin({ status: 'failed', blocks: [{ type: 'error', code, text }] })
+    return render(<ThongDiepView m={m} phang={[m]} onChuyenNhanh={KHONG}
+      onTaoLai={KHONG} onSuaGuiLai={KHONG} />)
+  }
+
+  it('ma co trong bang thi hien CAU, khong hien van ban noi bo', () => {
+    veLoi('suat', 'het suat thuc thi')
+    const t = screen.getByRole('alert').textContent || ''
+    expect(t).toContain('Model đang bận')
+    expect(t).not.toContain('het suat thuc thi')
+  })
+
+  it('noi ro luot bi tu choi KHONG mat tien', () => {
+    // Nguoi dung gap loi giua chung se hoi dung mot cau: "toi co mat tien khong".
+    veLoi('ban', 'busy')
+    expect(screen.getByRole('alert').textContent).toContain('không bị tính tiền')
+  })
+
+  it('ma la + van ban KHONG DAU ⇒ khong hien van ban do', () => {
+    veLoi('ma_la_khong_biet', 'internal pipeline stage 3 aborted')
+    const t = screen.getByRole('alert').textContent || ''
+    expect(t).not.toContain('pipeline')
+    expect(t).toContain('Thử lại')
+  })
+
+  it('ma la + van ban CO DAU ⇒ van hien, vi no viet cho nguoi dung', () => {
+    veLoi('ma_la_khong_biet', 'Ảnh tham chiếu quá lớn.')
+    expect(screen.getByRole('alert').textContent).toContain('Ảnh tham chiếu quá lớn.')
+  })
+})
+
+describe('Cho tai nguyen: noi ra ly do, khong noi "Dang tao"', () => {
+  /**
+   * 🔴 Đo 04/09 trên production: job ảnh nằm `queued` nhiều phút vì GPU máy B
+   *    bận. Log worker nói rõ từng vòng — một câu tiếng Việt **viết sẵn cho
+   *    người dùng**, kèm cả gợi ý — nhưng nó dừng lại ở log. Màn hình vẫn nói
+   *    "Đang tạo…".
+   *
+   * ⛔ `defer_resource` không chạm sổ tiền và không tiêu lượt thử, nên đó là
+   *    một lần chờ hoàn toàn lành. Che nó đi không bảo vệ ai — nó chỉ biến một
+   *    lần chờ CÓ LÝ DO thành một lần treo VÔ CỚ.
+   */
+  const ve = (usage: Record<string, unknown>) => {
+    const m = tin({
+      status: 'queued', blocks: [],
+      execution: { id: 'ex1', status: 'queued', mode: 'job', tool_name: 'image.ltt',
+        partial_text: '', reasoning_text: '', finish_reason: '', usage,
+        credit: { giu: 3, thu: 0, hoan: 0 }, error_code: '', error_text: '',
+        job_id: 'j1', seq: 2 },
+    })
+    return render(<ThongDiepView m={m} phang={[m]} onChuyenNhanh={KHONG}
+      onTaoLai={KHONG} onSuaGuiLai={KHONG} />)
+  }
+
+  it('dang cho may ban ⇒ noi ro, kem so giay', () => {
+    ve({ cho_tai_nguyen: 17 })
+    const t = screen.getByRole('status').textContent || ''
+    expect(t).toContain('Máy đang bận')
+    expect(t).toContain('17 giây')
+    expect(t).not.toContain('Đang tạo')
+  })
+
+  it('den han thu lai ⇒ van la CHO, khong nhap nhay ve "Dang tao"', () => {
+    ve({ cho_tai_nguyen: 0 })
+    expect(screen.getByRole('status').textContent).toContain('Máy đang bận')
+  })
+
+  it('khong cho gi ⇒ van la "Dang tao" kem tien do', () => {
+    ve({ progress: 45 })
+    const t = screen.getByRole('status').textContent || ''
+    expect(t).toContain('Đang tạo')
+    expect(t).toContain('45%')
   })
 })

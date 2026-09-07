@@ -1,0 +1,104 @@
+{
+ "bat_dau": "2026-09-03T19:01:45",
+ "model": "qwen38-ops",
+ "vram_truoc_nap_mb": 22011,
+ "luot": [
+  {
+   "model": "qwen38-ops",
+   "muc_tieu": 130000,
+   "token_ra_xin": 256,
+   "token_vao_that": 129755,
+   "finish_reason": "stop",
+   "vram_dinh_mb": 21975,
+   "tong_giay": 181.39,
+   "ttft_giay": 178.59,
+   "usage": {
+    "completion_tokens": 110,
+    "prompt_tokens": 129834,
+    "total_tokens": 129944,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "tra_loi": "DAU=YJCASJNM CUOI=QLEXGIOA",
+   "token_nghi_ky_tu": 251,
+   "sentinel_dau": true,
+   "sentinel_cuoi": true,
+   "prefill_tok_s": 726.5,
+   "decode_tok_s": 39.4
+  },
+  {
+   "model": "qwen38-ops",
+   "muc_tieu": 150000,
+   "token_ra_xin": 256,
+   "token_vao_that": 149930,
+   "finish_reason": "stop",
+   "vram_dinh_mb": 21979,
+   "tong_giay": 226.64,
+   "ttft_giay": 222.98,
+   "usage": {
+    "completion_tokens": 119,
+    "prompt_tokens": 150009,
+    "total_tokens": 150128,
+    "prompt_tokens_details": {
+     "cached_tokens": 30
+    }
+   },
+   "tra_loi": "DAU=QYICXCIT CUOI=ADLZPGBV",
+   "token_nghi_ky_tu": 251,
+   "sentinel_dau": true,
+   "sentinel_cuoi": true,
+   "prefill_tok_s": 672.4,
+   "decode_tok_s": 32.5
+  },
+  {
+   "model": "qwen38-ops",
+   "muc_tieu": 165000,
+   "token_ra_xin": 256,
+   "token_vao_that": 164791,
+   "finish_reason": "stop",
+   "vram_dinh_mb": 21979,
+   "tong_giay": 261.26,
+   "ttft_giay": 257.84,
+   "usage": {
+    "completion_tokens": 119,
+    "prompt_tokens": 164870,
+    "total_tokens": 164989,
+    "prompt_tokens_details": {
+     "cached_tokens": 30
+    }
+   },
+   "tra_loi": "DAU=ZZJXUDAS CUOI=FOIYTWKQ",
+   "token_nghi_ky_tu": 251,
+   "sentinel_dau": true,
+   "sentinel_cuoi": true,
+   "prefill_tok_s": 639.1,
+   "decode_tok_s": 34.8
+  },
+  {
+   "model": "qwen38-ops",
+   "muc_tieu": 180000,
+   "token_ra_xin": 256,
+   "token_vao_that": 180680,
+   "loi": "ConnectionResetError: [WinError 10054] An existing connection was forcibly closed by the remote host",
+   "vram_dinh_mb": 21979,
+   "tong_giay": 228.15,
+   "ttft_giay": null,
+   "usage": null,
+   "tra_loi": "",
+   "token_nghi_ky_tu": 0,
+   "sentinel_dau": false,
+   "sentinel_cuoi": false
+  },
+  {
+   "model": "qwen38-ops",
+   "muc_tieu": 160000,
+   "token_ra_xin": 8192,
+   "loi": "dung_prompt: URLError: <urlopen error [WinError 10061] No connection could be made because the target machine actively refused it>"
+  }
+ ],
+ "nap_giay": 147.3,
+ "dia_chi": "http://127.0.0.1:8282",
+ "vram_sau_nap_mb": 21959,
+ "ket_thuc": "2026-09-03T19:19:16"
+}

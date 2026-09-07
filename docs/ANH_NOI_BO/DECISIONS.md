@@ -3335,3 +3335,90 @@ gian nạp lại — rồi tra bảng trên. Nếu nó **không tự nhả đư�
 
 **Bằng chứng:** `tests/test_278_nhuong_card.py` (32 test, có 5 test chiều ngược),
 `logs/do_ck2.ps1` + `logs/do_ck4.ps1` trên máy B 14:43–14:45.
+
+## D-06x (2026-09-04) — Nhường card hai chiều: hai lỗ hổng, đo qua Nexus
+
+Chủ dự án hỏi vì sao model ảnh "có vẻ không được nạp". Điều khiển máy B qua
+Nexus để đo, và tìm ra **hai** lỗ hổng khác hẳn nhau.
+
+### ① Khoá chết theo thứ tự — chặn TOÀN BỘ đường ảnh
+
+Máy A hỏi `/health` **trước** khi gửi lệnh vẽ và hoãn job nếu `busy`
+(`apps/anhnoibo/jobs.py::_xep_lai_neu_may_ban`). Nhánh VRAM của `busy` bật lên
+mỗi khi **bất kỳ ai** giữ card — kể cả Qwen, kẻ ta **bảo nhả được**. Nên lệnh vẽ
+không bao giờ tới, và `xin_card` — thứ duy nhất biết đi bảo Qwen nhả — **không
+bao giờ chạy**.
+
+**Bằng chứng đo trên máy B, 04/09:**
+
+| Dấu hiệu | Số đo |
+|---|---|
+| `POST` tới cổng render trong toàn bộ log | **0** |
+| `/unload` được gọi, toàn bộ lịch sử | **6 lần** |
+| `/health` tự nói | *"tiến trình khác đang giữ 20431 MB VRAM, chỉ còn 4144 MB dùng được (cần 20500)"* |
+| ComfyUI | sống, hàng đợi **trống**, không job nào chạy |
+
+⭐ **Và đây đúng là con bug `api.py:255` ĐÃ SỬA MỘT LẦN, sống lại ở tầng trên.**
+Chú thích ở đó viết: *"chốt bận coi 'VRAM còn ít' là bận, nên khi Qwen giữ 19 GB
+thì cổng trả 429 ngay — không bao giờ đi bảo Qwen nhả"*. Nó được sửa **bên
+trong** cổng bằng cách đặt `xin_card` trước chốt bận. Máy A dựng lại đúng phép
+kiểm ấy ở **ngoài**, nên bản sửa bên trong mất tác dụng.
+
+🔑 **Bài học chung: một bản sửa ở tầng trong bị vô hiệu bởi một tiền-kiểm ở tầng
+ngoài lặp lại chính sai lầm cũ.** Sửa xong một lớp thì phải hỏi ai còn hỏi cùng
+câu hỏi đó ở lớp khác.
+
+### ② Đuổi mù — rủi ro cắt ngang lượt của khách
+
+`xin_card` gọi `/unload` mà **không hỏi Qwen có đang sinh chữ không**. Chính
+`llama-swap.yaml` đã ghi hậu quả, đo 03/09: *"llama-swap **giết một lượt đang
+chạy** để nạp hồ sơ khác. Lượt bị giết chỉ nhận `ConnectionReset`."*
+
+Nay phân biệt hai trạng thái của cùng một hộ:
+
+    đang GIỮ bộ nhớ, ngồi im  ->  bảo nhả, không ai thiệt
+    đang TÍNH                 ->  CHỜ (tối đa 45s), rồi 429 "đang bận"
+    tự xong giữa lúc chờ      ->  đi luôn, khỏi đuổi ai
+
+### Hai quyết định thiết kế
+
+⛔ **"Không biết" xử NGƯỢC NHAU ở hai chỗ, và ngược có chủ ý:**
+
+    đọc VRAM hỏng       ->  TỪ CHỐI  (ta sắp tiêu GPU và tiền khách)
+    đo "đang tính" hỏng ->  CHỜ      (ta sắp PHÁ VIỆC người khác)
+
+⭐ **Gộp hằng số thay vì chép.** `TAI_GPU_DANG_TINH` chuyển từ
+`llm_gateway/trong_tai.py` sang `render_gateway/busy.py`, đúng hướng phụ thuộc
+mà chính `trong_tai.py` khai. Từ 04/09 **cả hai** cổng cùng cần: cổng ảnh để
+**không đuổi** kẻ đang tính, cổng LLM để **không nạp đè** lên lượt vẽ. Có chốt
+so `is` để hai bên không thể lệch.
+
+### Nghiệm thu trên máy B sau triển khai
+
+    POST /v1/images/generations  ->  200 / 202     (trước: 0 POST)
+    ComfyUI history              ->  4 prompt success, mỗi prompt 1 ảnh
+    nhuong_card                  ->  "da nha VRAM cua ComfyUI sau 60s ranh"
+    /health                      ->  busy=False, ngoai=20350 (lấy lại được)
+
+### ⚠️ Cảnh báo cho phiên sau: ĐỪNG nạp model vòng qua `llm_gateway`
+
+Trong lúc điều tra tôi gọi thẳng llama-swap ở cổng 8280 để nạp Qwen. Việc đó
+**bỏ qua `llm_gateway/don_dep.py`** — chỗ bảo ComfyUI `/free` và chờ `nvidia-smi`
+xác nhận card sạch **trước khi** nạp. Hậu quả tức thì: hai model cùng trên card,
+24.174/24.576 MiB, và theo số đo đã ghi thì Qwen tràn trọng số sang RAM chủ và
+chạy còn **1/3,5 tốc độ mà không báo lỗi nào**.
+
+⭐ Nạp model thì đi cổng **8299** (`llm_gateway`), đừng đi **8280** (llama-swap).
+
+### ⚠️ Và hai lần tôi đọc sai VRAM trong chính lượt điều tra này
+
+Cả hai cùng một kiểu: **gán nhầm VRAM cho sai tiến trình**.
+
+1. Kết luận "ComfyUI ôm 16 GB" — sai, `vram_ngoai_mb` là phần **ngoài** ComfyUI
+   và tôi trừ ngược chiều.
+2. Kết luận "`/free` trả 200 mà không nhả" — sai, 20 GB lúc ấy là của **Qwen**,
+   `/free` không có gì để nhả.
+
+🔑 `vram_ngoai_mb` là **phần NGOÀI ComfyUI**. Đọc nhầm chiều một lần là kết luận
+sai về ai đang giữ card — và cả hai lần đều suýt dẫn tới một bản vá cho một thứ
+không hỏng.

@@ -7,10 +7,11 @@ KHÔNG dính trần 100MB của Cloudflare (không cần R2 cho clip ngắn).
 from __future__ import annotations
 
 from platform_core.i18n import _ as _t
+from platform_core import phat_media
 from pathlib import PurePath
 
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
 from apps.taovideo import cost, models, quotes
 from apps.taovideo.manifest import MANIFEST
@@ -618,28 +619,16 @@ def video(request: Request, key: str, user: str = Depends(require_login)):
     except (StorageError, FileNotFoundError):
         raise HTTPException(status_code=404, detail=_t('Không tìm thấy video.'))
 
-    rng = request.headers.get("range")
-    if rng and rng.startswith("bytes="):
-        try:
-            s, _, e = rng[len("bytes="):].partition("-")
-            start = int(s) if s else 0
-            end = int(e) if e else total - 1
-        except ValueError:
-            start, end = 0, total - 1
-        start = max(0, start); end = min(end, total - 1)
-        if start > end:
-            start = 0
-        length = end - start + 1
-        f = storage.open(key)
-        try:
-            f.seek(start)
-            chunk = f.read(length)
-        finally:
-            f.close()
-        return Response(content=chunk, status_code=206, media_type="video/mp4",
-                        headers={"Content-Range": f"bytes {start}-{end}/{total}",
-                                 "Accept-Ranges": "bytes",
-                                 "Content-Length": str(len(chunk))})
-    return StreamingResponse(storage.open(key), media_type="video/mp4",
-                             headers={"Accept-Ranges": "bytes",
-                                      "Content-Length": str(total)})
+    # ⭐ HTTP Range đi qua `platform_core.phat_media`, không tự viết ở đây.
+    #
+    #    Bản cũ ở chỗ này là một trong **năm** bản chép gần như giống nhau từng
+    #    dòng (`taovideo`, `taoclipngan`, `upscalevideo`, `agent`,
+    #    `autosubvideo`), và cả năm mang cùng bốn khiếm khuyết: không bao giờ trả
+    #    `416`; `bytes=-500` trả 501 byte ĐẦU thay vì 500 byte cuối; `bytes=0-`
+    #    nuốt cả tệp vào RAM; `start > end` xử lý mỗi nơi một kiểu.
+    #
+    # ⚠️ Phép kiểm sở hữu ở TRÊN vẫn ở lại app — đó là ranh giới: app giữ quyền,
+    #    lớp dùng chung giữ đường ống. Xem `docs/MOBILE/04_SHARED_CONTRACT.md`.
+    return phat_media.phat_tu_kho(
+        storage, key, kieu_noi_dung="video/mp4",
+        dai_range=request.headers.get("range"), tong=total)

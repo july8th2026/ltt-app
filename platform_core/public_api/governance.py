@@ -320,6 +320,75 @@ STORES: tuple = (
           N_("Một lượt thi hành: phần chữ đã sinh (kể cả khi bị ngắt), số token "
              "đo được và số credit đã giữ/thu — thứ đối chiếu được với sổ tiền."),
           purged_by=N_("theo hội thoại chứa nó")),
+    # ── ChatLTT V3 — điều phối tool (H44) ────────────────────────────────────
+    #
+    # 🔴 Cả ba đều CONTENT, kể cả `chatltt_run` vốn chỉ chứa số đếm.
+    #
+    #    Với `step` và `approval` thì hiển nhiên: `doi_so` là câu hỏi của khách
+    #    đã được model viết lại thành tham số ("tìm bệnh viện gần Cầu Giấy"), và
+    #    `ket_qua` giữ tới 8 KB thứ tool trả về. Đó là nội dung, không phải một
+    #    bản ghi kỹ thuật.
+    #
+    # ⭐ `chatltt_run` mới là cái đáng nói. Nó **không** chứa chữ của ai, nên
+    #    xếp OPERATIONAL nghe hợp lý — và sẽ sai. OPERATIONAL tự già đi theo
+    #    hạn riêng, nghĩa là một ngày các `run` bị dọn trong khi hội thoại chứa
+    #    chúng vẫn còn: người dùng mở lại một lượt cũ và thấy các bước đã biến
+    #    mất khỏi một tin nhắn vẫn nguyên vẹn. Một hội thoại phải có **một** lời
+    #    hứa giữ dữ liệu, không phải hai lời hứa lệch nhau bên trong nó.
+    Store("chatltt_run", CONTENT, None, N_("chủ tài khoản"),
+          N_("Một lượt có dùng công cụ: số vòng đã chạy, lý do dừng, và tổng "
+             "credit đã giữ/thu/hoàn của cả lượt."),
+          purged_by=N_("theo hội thoại chứa nó")),
+    Store("chatltt_step", CONTENT, None, N_("chủ tài khoản"),
+          N_("Từng bước trong một lượt: công cụ nào được gọi, với tham số gì, "
+             "và nó trả về gì. Tham số bắt nguồn từ câu hỏi của người dùng."),
+          purged_by=N_("theo hội thoại chứa nó")),
+    Store("chatltt_approval", CONTENT, None, N_("chủ tài khoản"),
+          N_("Lần người dùng bấm duyệt cho một công cụ tốn credit: tham số đã "
+             "duyệt, báo giá lúc đó, và quyết định. Bằng chứng của một lần "
+             "đồng ý tiêu tiền."),
+          purged_by=N_("theo hội thoại chứa nó")),
+    # ── ChatLTT V3 — tệp đính vào hội thoại (H44 P06) ───────────────────────
+    #
+    # ⭐ Bảng này **không chứa byte nào** — byte nằm ở `storage`, vé vào là
+    #    `upload_sessions`. Nó chỉ nói *tệp nào thuộc hội thoại nào*.
+    #
+    # 🔴 Và chính vì thế nó là cái bẫy. "Chỉ siêu dữ liệu" nghe như OPERATIONAL,
+    #    nhưng OPERATIONAL **tự già đi**: một ngày liên kết bị dọn trong khi hội
+    #    thoại và tệp đều còn, và người dùng thấy tài liệu mình đã đính biến mất
+    #    khỏi một cuộc trò chuyện vẫn nguyên vẹn. Đây là lần **thứ ba** cùng ca
+    #    ấy — P03 với `chatltt_run`, P06 §7 khi bác `Job.params` (vì `jobs` LÀ
+    #    OPERATIONAL), và bây giờ.
+    Store("chatltt_tep", CONTENT, None, N_("chủ tài khoản"),
+          N_("Tài liệu người dùng đính vào một hội thoại để hỏi: tên tệp, kiểu, "
+             "cỡ, và trạng thái trích văn bản. Nội dung tệp nằm ở kho lưu trữ, "
+             "không nằm ở đây."),
+          purged_by=N_("theo hội thoại chứa nó")),
+    # ⚠️ Bảng dưới thì NGƯỢC LẠI: nó **giữ chữ của khách**. Đó là chủ đích, không
+    #    phải rò rỉ — chỉ số tìm kiếm phải chạy trên chính chữ ấy. Nhưng nó làm
+    #    bảng này thành thứ nhạy cảm nhất trong nhóm: nội dung tài liệu riêng
+    #    của khách, đã tách nhỏ và đánh chỉ số để tìm được.
+    Store("chatltt_doan", CONTENT, None, N_("chủ tài khoản"),
+          N_("Văn bản đã trích từ tài liệu người dùng đính vào hội thoại, cắt "
+             "thành từng đoạn kèm số trang để trích dẫn lại được. Đây là nội "
+             "dung tài liệu của khách, không phải bản ghi kỹ thuật."),
+          purged_by=N_("theo tệp và hội thoại chứa nó")),
+    # ⚠️ H44 B4. CONTENT, và ở đây lời phân loại còn rõ hơn hai bảng trên: đây
+    #    là những điều người dùng **cố ý dạy** cho hệ thống về chính họ. Một mẩu
+    #    bị dọn mất nghĩa là máy quên một điều họ đã dặn — và họ sẽ không biết
+    #    nó đã quên cho tới lúc câu trả lời sai.
+    #
+    # 🔴 Đây cũng là bảng `chatltt_*` **duy nhất không gắn với một hội thoại**:
+    #    mẩu phạm vi `nguoi_dung` sống lâu hơn mọi hội thoại đã sinh ra nó. Nên
+    #    `purged_by` của nó là **tài khoản**, không phải hội thoại — chép câu
+    #    của bảng bên cạnh vào đây sẽ để lại một kho ghi nhớ mồ côi sau khi
+    #    người dùng xoá hết hội thoại.
+    Store("chatltt_ghi_nho", CONTENT, None, N_("chủ tài khoản"),
+          N_("Những điều người dùng dặn hệ thống nhớ về mình (hoặc để trợ lý tự "
+             "ghi lại), kèm phạm vi áp dụng: toàn tài khoản, một dự án, hay một "
+             "hội thoại. Người dùng xem, sửa và xoá được từng mẩu."),
+          purged_by=N_("theo tài khoản; mẩu thuộc phạm vi hội thoại thì theo "
+                       "hội thoại chứa nó")),
     Store("ommi_resource", CONTENT, None, N_("chủ tài khoản"),
           N_("Tài nguyên (ảnh, tệp) người dùng tải lên PROMPT AI OMMI.")),
     Store("ommi_resource_variant", CONTENT, None, N_("chủ tài khoản"),

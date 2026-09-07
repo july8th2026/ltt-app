@@ -1,0 +1,49 @@
+# Bo cong cu PHAT TRIEN + KIEM THU. KHONG cai tren may chu.
+#
+# [!] VI SAO TEP NAY RA DOI (06/09/2026). Truoc no, bo cong cu test khong duoc
+#    khai o DAU CA: `requirements.txt` va `requirements-server.txt` deu khong co
+#    `pytest`, va `setup/2-cai-dat.ps1` co y KHONG cai no ("production khong
+#    chay Node/Vite/Playwright/pytest"). Bo test chay bang PYTHON HE THONG voi
+#    nhung goi ai do da cai bang tay.
+#
+# [!] Hau qua do duoc: `tests/test_616:106` khai `@pytest.mark.timeout(240)`
+#    trong khi `pytest-timeout` KHONG CO trong may. Pytest chi canh bao
+#    `PytestUnknownMarkWarning` roi chay tiep -- nen moc ay la mot CHU THICH
+#    CHET, va mot test treo se treo mai thay vi do.
+#
+#    Do sau khi cai: mot test `sleep(20)` voi `timeout(2)` -> returncode 1,
+#    dau ra co "Timeout". Truoc do no ngu du 20 giay roi XANH.
+#
+# [!] Mot phu thuoc khong duoc khai la mot phu thuoc se bien mat o may khac --
+#    va no bien mat IM LANG, dung kieu `PytestUnknownMarkWarning` tren.
+
+    # -- Bo test ------------------------------------------------------------
+pytest==9.0.2
+pytest-xdist==3.8.0          # `-n` song song; xem tools/test_nhanh.py
+pytest-timeout==2.4.0        # lam `@pytest.mark.timeout` co hieu luc THAT
+pytest-cov==7.1.0
+pytest-mock==3.15.1
+pytest-asyncio==1.3.0
+
+    # -- Kiem tinh ----------------------------------------------------------
+ruff==0.15.9                 # lint + format; banh coc tools/check_ruff.py
+mypy==1.20.0                 # kieu tinh;    banh coc tools/check_mypy.py
+import-linter==2.11          # ranh gioi kien truc; tools/check_ranh_gioi.py
+
+    # -- Do chat luong BO TEST ------------------------------------
+diff-cover==10.5.1           # phu cua DONG MOI; tools/do_phu_diff.py
+cosmic-ray==8.7.0            # kiem thu dot bien
+pip-audit==2.10.0            # CVE phu thuoc; tools/check_cve.py
+deptry==0.25.1               # phu thuoc thua/thieu
+#
+# [!] KHONG dung `mutmut`. Ban 3.7.0 TU CHOI chay tren Windows:
+#    "To run mutmut on Windows, please use the WSL" (issue #397). Da cai
+#    va go lai 06/09. `cosmic-ray` chay duoc o day, nen no duoc chon vi
+#    MOI TRUONG, khong phai vi chat luong.
+
+    # -- Ha tang phien / cong cu --------------------------------------------
+psutil==7.2.2                # tools/may_ban.py, tools/cua_so_yen.py
+filelock==3.25.2
+portalocker==2.10.1
+pre-commit==4.5.1            # DA bat 06/09; hook co rao cho cay chua dong bo
+selenium==4.41.0

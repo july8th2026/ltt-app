@@ -151,13 +151,53 @@ def bang_gia() -> dict:
         "token_vao": GIA_VAO_MOI_CREDIT_1M,
         "token_vao_cache": GIA_VAO_CACHE_CREDIT_1M,
         "token_ra": GIA_RA_CREDIT_1M,
-        # ⛔ Nói thẳng cả ba điều, đừng để khách phát hiện sau khi nhận hoá đơn.
-        #    Cái thứ ba là quan trọng nhất: nó làm lượt gọi NHỎ đắt hơn giá niêm
-        #    yết, và một khách gọi nhiều sẽ tự tính ra trong vòng một ngày.
-        "lam_tron": "len credit nguyen, moi luot goi",
-        "toi_thieu_moi_luot_credit": 1,
+        # ⛔ Nói thẳng cách làm tròn, đừng để khách phát hiện sau khi nhận hoá đơn.
+        #
+        # ⭐ ĐỔI 05/09/2026 (R2b): trước đây là *"làm tròn LÊN mỗi lượt gọi, tối
+        #    thiểu 1 credit"* — và chính dòng này thừa nhận nó làm lượt nhỏ đắt
+        #    hơn giá niêm yết. Đo ra: một hội thoại 20 lượt ngắn bị thu **20
+        #    credit** trong khi giá niêm yết của chính ta là **~3**, và mọi lượt
+        #    dưới ~1 credit đắt hơn cả giá bán lẻ ngoài thị trường.
+        #
+        #    Nay phần lẻ được **tích luỹ** (`users.mcredit_du`) và chỉ thu phần
+        #    nguyên. Khách trả **đúng bảng giá**, không trả sàn.
+        #    Xem `docs/CHATLTT_V3/04_ADR_R2B_TINH_TIEN_LUOT.md`.
+        #
+        # 🔴 Ba dòng dưới là ĐIỀU KHOẢN CÔNG BỐ (`public_api/dieu_khoan.py` đọc
+        #    chính hàm này). Đổi cách tính mà quên đổi chúng là công bố một điều
+        #    khoản không còn đúng — tệ hơn cả việc thu thừa.
+        "lam_tron": _mo_ta_lam_tron(),
+        "toi_thieu_moi_luot_credit": _toi_thieu_moi_luot(),
         "ghi_chu": ("Token reasoning tinh nhu token ra. "
                     "Token vao lay lai tu cache tinh 20% gia token vao. "
-                    "Moi luot goi lam tron LEN credit nguyen, toi thieu 1 credit "
-                    "(100d) — nen luot goi rat nho tra nhieu hon gia niem yet."),
+                    + _ghi_chu_lam_tron()),
     }
+
+
+def _san_moi_luot() -> bool:
+    """Có đang chạy C1 (làm tròn lên mỗi lượt gọi) không. **C1 là mặc định.**
+
+    ⛔ Đọc cùng một biến môi trường mà `thanh_toan.py` đọc, **không** chép lại
+       tên cờ — điều khoản công bố phải nói đúng thứ đang thật sự chạy. Hai
+       bản đọc cờ là hai bản sẽ lệch, và chúng lệch ở chỗ tính tiền.
+    """
+    from platform_core.llm import thanh_toan
+    return thanh_toan._san_moi_luot()
+
+
+def _mo_ta_lam_tron() -> str:
+    return ("len credit nguyen, moi luot goi" if _san_moi_luot()
+            else "tich luy phan le, chi thu phan nguyen")
+
+
+def _toi_thieu_moi_luot() -> int:
+    return 1 if _san_moi_luot() else 0
+
+
+def _ghi_chu_lam_tron() -> str:
+    if _san_moi_luot():
+        return ("Moi luot goi lam tron LEN credit nguyen, toi thieu 1 credit "
+                "(100d) — nen luot goi rat nho tra nhieu hon gia niem yet.")
+    return ("Phan le duoi 1 credit duoc GIU LAI va cong vao luot sau, nen ban "
+            "tra dung bang gia chu khong tra san. Khong co muc toi thieu moi "
+            "luot goi.")

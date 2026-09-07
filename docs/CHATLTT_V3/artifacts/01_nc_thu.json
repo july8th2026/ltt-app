@@ -1,0 +1,158 @@
+{
+  "ket_qua": [
+    {
+      "ma": "K1-50000-dau-r0",
+      "sau": 50000,
+      "vi_tri": "dau",
+      "giay": 42.7,
+      "token_vao": 41906,
+      "ten_goi": [
+        "calculator"
+      ],
+      "goi_dung": true,
+      "kim_trong_doi_so": true,
+      "doi_so": "[\"{\\\"expression\\\":\\\"8123*4471\\\"}\"]",
+      "content": ""
+    },
+    {
+      "ma": "K2-50000-dau-r0",
+      "sau": 50000,
+      "vi_tri": "dau",
+      "giay": 44.4,
+      "token_vao": 42094,
+      "ten_goi": [
+        "weather_fake"
+      ],
+      "goi_dung": true,
+      "kim_trong_doi_so": true,
+      "doi_so": "[\"{\\\"city\\\":\\\"đà nẵng\\\",\\\"unit\\\":\\\"c\\\"}\"]",
+      "content": "Theo tài liệu, trung tâm dữ liệu chính được đặt tại **thành phố Đà Nẵng**. Để có thông tin thời tiết hiện tại, tôi sẽ tra cứu.\n\n"
+    },
+    {
+      "ma": "K3-50000-dau-r0",
+      "sau": 50000,
+      "vi_tri": "dau",
+      "giay": 43.6,
+      "token_vao": 41423,
+      "ten_goi": [
+        "image_edit_fake"
+      ],
+      "goi_dung": true,
+      "kim_trong_doi_so": true,
+      "doi_so": "[\"{\\\"image_id\\\":\\\"img_5591\\\",\\\"instruction\\\":\\\"tăng độ tương phản của ảnh\\\"}\"]",
+      "content": ""
+    },
+    {
+      "ma": "K4-50000-dau-r0",
+      "sau": 50000,
+      "vi_tri": "dau",
+      "giay": 42.3,
+      "token_vao": 40834,
+      "ten_goi": [
+        "speech_fake"
+      ],
+      "goi_dung": true,
+      "kim_trong_doi_so": true,
+      "doi_so": "[\"{\\\"text\\\":\\\"vận hành bền bỉ mỗi ngày.\\\",\\\"giong\\\":\\\"nam_mien_bac\\\"}\"]",
+      "content": ""
+    },
+    {
+      "ma": "K1-50000-giua-r0",
+      "sau": 50000,
+      "vi_tri": "giua",
+      "giay": 44.2,
+      "token_vao": 41903,
+      "ten_goi": [
+        "calculator"
+      ],
+      "goi_dung": true,
+      "kim_trong_doi_so": true,
+      "doi_so": "[\"{\\\"expression\\\":\\\"8123*4471\\\"}\"]",
+      "content": ""
+    },
+    {
+      "ma": "K2-50000-giua-r0",
+      "sau": 50000,
+      "vi_tri": "giua",
+      "giay": 43.5,
+      "token_vao": 41464,
+      "ten_goi": [
+        "weather_fake"
+      ],
+      "goi_dung": true,
+      "kim_trong_doi_so": true,
+      "doi_so": "[\"{\\\"city\\\":\\\"đà nẵng\\\",\\\"unit\\\":\\\"c\\\"}\"]",
+      "content": ""
+    },
+    {
+      "ma": "K3-50000-giua-r0",
+      "sau": 50000,
+      "vi_tri": "giua",
+      "giay": 44.2,
+      "token_vao": 41409,
+      "ten_goi": [
+        "image_edit_fake"
+      ],
+      "goi_dung": true,
+      "kim_trong_doi_so": true,
+      "doi_so": "[\"{\\\"image_id\\\":\\\"img_5591\\\",\\\"instruction\\\":\\\"tăng độ tương phản của bức ảnh\\\"}\"]",
+      "content": "Theo tài liệu, mã ảnh chuẩn là **img_5591**. Tôi sẽ sửa ảnh này để tăng độ tương phản.\n\n"
+    },
+    {
+      "ma": "K4-50000-giua-r0",
+      "sau": 50000,
+      "vi_tri": "giua",
+      "giay": 43.5,
+      "token_vao": 41717,
+      "ten_goi": [
+        "speech_fake"
+      ],
+      "goi_dung": true,
+      "kim_trong_doi_so": true,
+      "doi_so": "[\"{\\\"text\\\":\\\"vận hành bền bỉ mỗi ngày.\\\"}\"]",
+      "content": ""
+    },
+    {
+      "ma": "K1-50000-cuoi-r0",
+      "sau": 50000,
+      "vi_tri": "cuoi",
+      "giay": 93.6,
+      "token_vao": 41716,
+      "ten_goi": [
+        "calculator"
+      ],
+      "goi_dung": true,
+      "kim_trong_doi_so": true,
+      "doi_so": "[\"{\\\"expression\\\":\\\"8123*4471\\\"}\"]",
+      "content": ""
+    },
+    {
+      "ma": "K2-50000-cuoi-r0",
+      "sau": 50000,
+      "vi_tri": "cuoi",
+      "giay": 43.3,
+      "token_vao": 42078,
+      "ten_goi": [
+        "weather_fake"
+      ],
+      "goi_dung": true,
+      "kim_trong_doi_so": true,
+      "doi_so": "[\"{\\\"city\\\":\\\"đà nẵng\\\",\\\"unit\\\":\\\"c\\\"}\"]",
+      "content": ""
+    },
+    {
+      "ma": "K3-50000-cuoi-r0",
+      "sau": 50000,
+      "vi_tri": "cuoi",
+      "giay": 44.4,
+      "token_vao": 42012,
+      "ten_goi": [
+        "image_edit_fake"
+      ],
+      "goi_dung": true,
+      "kim_trong_doi_so": true,
+      "doi_so": "[\"{\\\"image_id\\\":\\\"img_5591\\\",\\\"instruction\\\":\\\"tăng độ tương phản của bức ảnh\\\"}\"]",
+      "content": "Theo tài liệu, mã ảnh chuẩn là **img_5591**. Tôi sẽ sửa ảnh này theo yêu cầu tăng độ tương phản.\n\n"
+    }
+  ]
+}

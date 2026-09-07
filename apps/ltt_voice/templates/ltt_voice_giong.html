@@ -1,6 +1,12 @@
 {% extends "base.html" %}
 {% block title %}{{ _("Giọng nói") }} — {{ _("Giọng nói LTT") }}{% endblock %}
 
+{# Cung che do trang rong voi Studio, va cung mot ly do: do 04/09 o 1672x941
+   khung nay chi rong 1120px va cot phai chi 330px — chieu rong cua mot thanh
+   ben, trong khi no phai chua trinh phat, bang thong tin va danh sach clip.
+   `page--immersive` da co san o nen tang va tam app khac dang dung. #}
+{% block page_mode %}immersive{% endblock %}
+
 {#
   Màn Giọng. Đối chiếu với ảnh tham chiếu `02_VOICES.png`:
 
@@ -104,6 +110,33 @@
         {% endfor %}
       </div>
 
+      {#
+        PHÂN TRANG — mục `Showing 1–6 of 6` + nút chuyển trong ảnh 02.
+
+        🔴 KHÔNG phải trang trí. Đo 04/09 ở 1672×941: 21 giọng render hết một
+           lượt cho ra trang cao **2.286px** — hai màn rưỡi — trong khi ảnh mẫu
+           gói trọn trong một màn. Cột phải (trình phát + bảng thông tin + danh
+           sách clip) khi ấy nằm cạnh một lưới dài gấp ba nó, nên nó trông như
+           một mẩu giấy dán bên lề.
+
+        ⭐ Chín thẻ mỗi trang = ba hàng, vừa đúng 683px còn lại dưới lưới. Con
+           số ấy đo được chứ không chọn cho tròn: thẻ cao 167px, khe 12px.
+
+        ⚠️ Phân trang chạy SAU bộ lọc, trên đúng tập đã lọc — nên "trang 2 của
+           kết quả tìm kiếm" là một khái niệm đúng, không phải trang 2 của toàn
+           bộ danh sách.
+      #}
+      <nav class="lv-g-trang" id="lv-g-trang" hidden aria-label="{{ _('Phân trang giọng') }}">
+        <span class="dim" id="lv-g-pham-vi"></span>
+        <span class="lv-g-trang-nut">
+          <button type="button" class="btn sm ghost" id="lv-g-truoc"
+                  aria-label="{{ _('Trang trước') }}">‹</button>
+          <b id="lv-g-trang-so">1</b>
+          <button type="button" class="btn sm ghost" id="lv-g-sau"
+                  aria-label="{{ _('Trang sau') }}">›</button>
+        </span>
+      </nav>
+
       {# Hiện khi bộ lọc không còn giọng nào. Một lưới trống không nói gì là một
          ngõ cụt — người dùng sẽ tưởng trang hỏng chứ không tưởng mình lọc chặt. #}
       <div id="lv-g-khonghop" hidden>
@@ -180,17 +213,50 @@
           <p class="dim">{{ _("Tắt thì giọng không dùng được nữa, nhưng lịch sử và các tệp đã tạo vẫn giữ nguyên.") }}</p>
         </div>
       </div>
+
+      {#
+        HƯỚNG DẪN TẠO GIỌNG — mục `Create Voice – Quick Guide` trong ảnh 02.
+
+        ⛔ Ảnh mẫu vẽ **năm** bước (Info · Record/Upload · Audio Check · Create
+           Voice · Test & Save). Luồng thật của ta có **ba**. Vẽ năm bước cho một
+           luồng ba bước là mô tả sai chính sản phẩm mình — khách sẽ đi tìm hai
+           màn không tồn tại.
+
+        ⭐ Nên giữ hình dạng (một dải bước đánh số ở cột phải) và giữ SỐ BƯỚC
+           THẬT. Ba bước này là ba trường bắt buộc của chính form bên dưới.
+      #}
+      <div class="ui-card lv-hd-tao">
+        <span class="eyebrow">{{ _("Tạo giọng của bạn") }}</span>
+        <ol class="lv-buoc-doc">
+          <li><b>{{ _("Đặt tên") }}</b><span>{{ _("Tên để bạn nhận ra giọng này về sau.") }}</span></li>
+          <li><b>{{ _("Tải clip mẫu") }}</b><span>{{ _("Ba tới ba mươi giây, nói rõ, không nhạc nền.") }}</span></li>
+          <li><b>{{ _("Xác nhận quyền") }}</b><span>{{ _("Đọc điều khoản và xác nhận đây là giọng bạn được phép dùng.") }}</span></li>
+        </ol>
+        <a class="btn sm primary" href="#lv-tao-giong">{{ _("+ Tạo giọng") }}</a>
+      </div>
     </aside>
   </div>
 
   {# ── Tạo giọng mới — BA bước, đúng luồng thật ─────────────────────────── #}
-  <section class="lv-tao-giong" id="lv-tao-giong" aria-labelledby="lv-tg-title">
-    <h2 id="lv-tg-title">{{ _("Tạo giọng của riêng bạn") }}</h2>
-    <ol class="lv-buoc">
-      <li><b>{{ _("Đặt tên") }}</b><span>{{ _("Tên để bạn nhận ra giọng này về sau.") }}</span></li>
-      <li><b>{{ _("Tải clip mẫu") }}</b><span>{{ _("Ba tới ba mươi giây, nói rõ, không nhạc nền.") }}</span></li>
-      <li><b>{{ _("Xác nhận quyền") }}</b><span>{{ _("Đọc điều khoản và xác nhận đây là giọng bạn được phép dùng.") }}</span></li>
-    </ol>
+  {#
+    FORM TẠO GIỌNG — GẤP LẠI, không còn nằm mở suốt dưới lưới.
+
+    🔴 Đo 04/09 ở 1672×941: trang cao **2.286px**, và sau khi phân trang lưới
+       vẫn còn **1.621px** — phần dư gần như trọn vẹn là khối này. Ảnh tham
+       chiếu 02 không có form nào trên màn cả: nó có một NÚT ở dải lọc và một
+       hướng dẫn gọn ở cột phải.
+
+    ⭐ `<details>` chứ không phải một modal tự viết: đóng mở bằng bàn phím sẵn,
+       không một dòng JS nào cho trạng thái, và **nội dung vẫn nằm trong DOM**
+       nên trình duyệt tìm-trong-trang vẫn thấy nó.
+
+    ⚠️ Nút `+ Tạo giọng` ở trên vẫn trỏ `#lv-tao-giong`. Trình duyệt hiện đại
+       tự mở `<details>` khi điều hướng tới một phần tử bên trong nó; bản không
+       tự mở thì vẫn cuộn đúng chỗ và khách bấm một lần nữa.
+  #}
+  <details class="lv-tao-giong" id="lv-tao-giong">
+    <summary><b>{{ _("Tạo giọng của riêng bạn") }}</b>
+      <span class="dim">{{ _("Ba bước, khoảng một phút.") }}</span></summary>
 
     <form class="lv-form" id="lv-form-giong" enctype="multipart/form-data">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -212,7 +278,7 @@
       </div>
     </form>
     <div id="lv-g-loi" class="alert alert-err" role="alert" hidden></div>
-  </section>
+  </details>
 </section>
 {% endblock %}
 

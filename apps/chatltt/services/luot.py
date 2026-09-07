@@ -27,10 +27,12 @@ from typing import Optional
 
 from sqlalchemy import select
 
-from apps.chatltt.services import chinh_sach, dang_chay
+from apps.chatltt.services import (chieu_tool, chinh_sach, co_v3, dang_chay,
+                                   luot_v3)
 from apps.chatltt.services import hoi_thoai as H
 from apps.chatltt.services import su_kien as S
 from apps.chatltt.tables import ChatlttExecution, ChatlttMessage
+from apps.chatltt.services import loi_ra_ngoai as LRN
 
 log = logging.getLogger("apps.chatltt.luot")
 
@@ -60,7 +62,35 @@ class _MacDinh:
 MAC_DINH = _MacDinh()
 
 
-def dung_ngu_canh(duong: list, *, doc_anh: bool = False) -> list:
+def khoi_ghi_nho_neu_bat(db, *, user_id: str, conv_id: str) -> str:
+    """Khối ghi nhớ cho một lượt — **chuỗi rỗng** khi cờ tắt. (H44 B4 bước 3)
+
+    ⛔ Cờ tắt phải làm ngữ cảnh **không đổi một byte**, chứ không phải "tiêm một
+       khối rỗng". Một khối rỗng vẫn tốn token mỗi lượt và vẫn dạy model rằng nó
+       có một kho để viện dẫn. `test_831` so **byte**, không so cấu trúc.
+
+    ⭐ Đọc cờ ở **một chỗ duy nhất**. Hai nơi gọi `dung_ngu_canh` (`luot.chay`
+       và `luot_v3.chay_tiep`) đều đi qua hàm này, nên không có đường nào tiêm
+       ghi nhớ mà bỏ qua cờ — và `test_831` đọc AST để chốt rằng vẫn đúng thế
+       sau này.
+    """
+    if not co_v3.ghi_nho_bat():
+        return ""
+    from apps.chatltt.services import du_an, ghi_nho
+    # ⭐ H44 B5 bước 4. Tầng `du_an` của `ghi_nho` đã có từ B4 bước 1 và đã có
+    #    phép kiểm; nó chỉ chưa có ai truyền `du_an_id` vào. Đây là sợi dây ấy.
+    #
+    # ⛔ Và đó là lý do dự án **không** có trường chỉ dẫn riêng: hai cơ chế cùng
+    #    tiêm chữ vào system prompt là hai cơ chế sẽ lệch nhau, rồi người dùng
+    #    sửa nhầm chỗ. Xem `services/du_an.py::SCHEMA`.
+    return ghi_nho.khoi_ngu_canh(
+        db, user_id=str(user_id), conv_id=str(conv_id),
+        du_an_id=du_an.du_an_cua_hoi_thoai(db, user_id=str(user_id),
+                                           conv_id=str(conv_id)))
+
+
+def dung_ngu_canh(duong: list, *, doc_anh: bool = False,
+                  khoi_ghi_nho: str = "") -> list:
     """Đường gốc→cha của assistant → `messages` OpenAI. Chỉ khối `text` (và
     khối `image` khi `doc_anh`); khối reasoning/status/error/artifact không đi
     vào ngữ cảnh.
@@ -76,6 +106,11 @@ def dung_ngu_canh(duong: list, *, doc_anh: bool = False) -> list:
     from apps.chatltt.services import anh_vao
 
     ra: list = []
+    #: ⭐ Ghi nhớ đứng **trước** cả lượt đầu tiên. Nó là bối cảnh bền, không phải
+    #:   một tin nhắn trong cuộc — đặt nó giữa dòng thì model đọc nó như một
+    #:   điều ai đó vừa nói, và nó sẽ trả lời lại điều đó.
+    if khoi_ghi_nho.strip():
+        ra.append({"role": "system", "content": khoi_ghi_nho})
     khoi_anh: list = []          # (chỉ số trong `ra`, khoá) — cắt trần ở cuối
     for m in duong:
         if m.role not in ("user", "assistant", "system"):
@@ -203,6 +238,69 @@ def _da_huy_trong_csdl(db, execution_id: str) -> bool:
     return tt == "cancelled"
 
 
+def dong_su_kien(db, *, ex, tra_loi, so, params: dict, user_id: str,
+                 phat: bool = True):
+    """Mở một lượt model và **sinh ra** từng sự kiện, đồng thời ghi CSDL theo nhịp.
+
+    Tách ra khỏi `chay()` để đường V3 (`luot_v3.py`) dùng **cùng một bản**,
+    không phải một bản chép.
+
+    ⛔ Một bản chép ở đây sẽ lệch, và nơi nó lệch là **nhịp ghi CSDL** và
+       **đường huỷ** — hai thứ chỉ sai khi có sự cố, tức chỉ sai lúc không ai
+       đang nhìn. Đây cũng là khúc đã được `test_627`/`test_629` tra tấn; về một
+       chỗ thì lưới đỡ đó che cả hai đường.
+
+    Sinh ra từng sự kiện canonical để bên gọi đọc thêm nếu cần
+    (`dieu_phoi` cần `tool_call.delta` và `response.completed`).
+    """
+    from platform_core.runtime_noi_bo import luong as L
+
+    ghi_nhan: dict = {}
+    it = L.mo_luong(db, user_id=user_id, tool_name=ex.tool_name, params=params,
+                    correlation_id=ex.id, holder_id=ex.id, ghi_nhan=ghi_nhan)
+    luc_ghi = time.monotonic()
+    ky_tu = 0
+    try:
+        for sk in it:
+            ket = S.ap_dung(ex, sk, message=tra_loi)
+            if sk.get("type") == "response.delta":
+                ky_tu += len(sk.get("text") or "")
+            if phat:
+                so.phat(sk)
+            yield sk
+            bay_gio = time.monotonic()
+            if S.nen_ghi(luc_ghi_cuoi=luc_ghi, bay_gio=bay_gio, ky_tu_moi=ky_tu,
+                         ket_thuc=ket):
+                if ket:
+                    S.dong_bo_khoi_text(tra_loi, ex)
+                db.commit()
+                luc_ghi, ky_tu = bay_gio, 0
+                if not ket and (so.dung.is_set() or _da_huy_trong_csdl(db, ex.id)):
+                    it.close()
+                    _huy(db, ex, tra_loi, so, ghi_nhan)
+                    return
+            elif so.dung.is_set():
+                it.close()
+                _huy(db, ex, tra_loi, so, ghi_nhan)
+                return
+    except L.LoiCuaLuong as e:
+        # Lỗi TRƯỚC byte đầu: chưa giữ tiền (trừ DangBan/ThieuCredit đã dọn).
+        # 🔴 `str(e)` o day tung mang NGUYEN than loi thuong nguon ra
+        #    trinh duyet — do 07/09: duong dan .gguf, id model noi bo,
+        #    base_url va IP noi bo, bon thu cung mot luc. Xem
+        #    `services/loi_ra_ngoai.py`.
+        ma = _ma_loi(e)
+        sk = {"type": "response.failed", "code": ma,
+              "ly_do": LRN.cau(ma)}
+        if isinstance(e, L.DangBan):
+            sk["retry_after_s"] = e.thu_lai_sau_s
+        S.ap_dung(ex, sk, message=tra_loi)
+        S.dong_bo_khoi_text(tra_loi, ex)
+        if phat:
+            so.phat(sk)
+        yield sk
+
+
 def chay(execution_id: str, *, user_id: str) -> None:
     """Thân luồng nền. Mọi kết cục đều để lại execution ở trạng thái kết thúc."""
     from platform_core.db import get_session
@@ -222,45 +320,44 @@ def chay(execution_id: str, *, user_id: str) -> None:
                                leaf_id=tra_loi.parent_id)
         params = {"model": tra_loi.model_alias,
                   "messages": dung_ngu_canh(
-                      duong, doc_anh=doc_anh_duoc(db, tra_loi.model_alias))}
+                      duong, doc_anh=doc_anh_duoc(db, tra_loi.model_alias),
+                      khoi_ghi_nho=khoi_ghi_nho_neu_bat(
+                          db, user_id=user_id, conv_id=ex.conversation_id))}
         re_ = (ex.usage or {}).get("reasoning_effort")
         if re_:
             params["reasoning_effort"] = re_
 
-        ghi_nhan: dict = {}
-        it = L.mo_luong(db, user_id=user_id, tool_name=ex.tool_name, params=params,
-                        correlation_id=ex.id, holder_id=ex.id, ghi_nhan=ghi_nhan)
-        luc_ghi = time.monotonic()
-        ky_tu = 0
-        try:
-            for sk in it:
-                ket = S.ap_dung(ex, sk, message=tra_loi)
-                if sk.get("type") == "response.delta":
-                    ky_tu += len(sk.get("text") or "")
-                so.phat(sk)
-                bay_gio = time.monotonic()
-                if S.nen_ghi(luc_ghi_cuoi=luc_ghi, bay_gio=bay_gio, ky_tu_moi=ky_tu,
-                             ket_thuc=ket):
-                    if ket:
-                        S.dong_bo_khoi_text(tra_loi, ex)
-                    db.commit()
-                    luc_ghi, ky_tu = bay_gio, 0
-                    if not ket and (so.dung.is_set() or _da_huy_trong_csdl(db, ex.id)):
-                        it.close()
-                        _huy(db, ex, tra_loi, so, ghi_nhan)
-                        break
-                elif so.dung.is_set():
-                    it.close()
-                    _huy(db, ex, tra_loi, so, ghi_nhan)
-                    break
-        except L.LoiCuaLuong as e:
-            # Lỗi TRƯỚC byte đầu: chưa giữ tiền (trừ DangBan/ThieuCredit đã dọn).
-            sk = {"type": "response.failed", "code": _ma_loi(e), "ly_do": str(e)}
-            if isinstance(e, L.DangBan):
-                sk["retry_after_s"] = e.thu_lai_sau_s
-            S.ap_dung(ex, sk, message=tra_loi)
-            S.dong_bo_khoi_text(tra_loi, ex)
-            so.phat(sk)
+        # ── H44 V3: đính khối `tools` khi cờ bật ────────────────────────────
+        #
+        # ⛔ Chỉ đính khi có tool THẬT. Gửi `tools: []` là nói với model "bạn có
+        #    0 tool", còn KHÔNG gửi khoá là nói "lượt này không có tool" — hai
+        #    câu khác nhau với văn phạm GBNF của llama.cpp: **có khoá `tools` là
+        #    BẬT cưỡng chế sinh** (`01_M1_NATIVE_HAY_GENERIC.md` §5b). Một lượt
+        #    trò chuyện thường không nên đi qua văn phạm.
+        #
+        # ⭐ [U] `docs/function-calling.md:24`: `parallel_tool_calls` TẮT mặc
+        #    định ở llama.cpp. Không gửi cờ thì gọi song song không bao giờ xảy
+        #    ra — P01 đo 18/18 ra đúng 2 lời gọi, nhưng chỉ KHI có cờ.
+        khoi_tools: list = []
+        if co_v3.tool_bat():
+            khoi_tools = chieu_tool.chieu(db, user_id=user_id)
+            if khoi_tools:
+                params["tools"] = khoi_tools
+                params["parallel_tool_calls"] = True
+
+        if khoi_tools:
+            # Đường V3: nhiều vòng model, có tool, có duyệt (`luot_v3.py`).
+            #
+            # ⛔ Nhánh này chỉ với được khi cờ bật **và** có tool thật. Cờ tắt
+            #    ⇒ không một dòng nào của V3 chạy, và hàm này giữ nguyên hình dạng
+            #    V1 — đó là điều kiện của đường lùi (`02_ADR` §7), và `test_806`
+            #    đọc chính mã nguồn này để chốt.
+            luot_v3.chay_run(db, ex=ex, tra_loi=tra_loi, so=so, params=params,
+                             user_id=user_id, khoi_tools=khoi_tools)
+        else:
+            for _sk in dong_su_kien(db, ex=ex, tra_loi=tra_loi, so=so, params=params,
+                                    user_id=user_id):
+                pass
         if ex.status in ("streaming", "queued"):
             # Luồng cạn mà không có sự kiện kết thúc — không được để "đang chảy" mãi.
             sk = {"type": "response.failed", "code": "luong_cat", "ly_do": "luong ket thuc som"}
@@ -276,7 +373,15 @@ def chay(execution_id: str, *, user_id: str) -> None:
                 ex = db.get(ChatlttExecution, execution_id)
                 tra_loi = db.get(ChatlttMessage, ex.message_id) if ex else None
             if ex is not None and ex.status in ("streaming", "queued"):
-                sk = {"type": "response.failed", "code": "loi_noi_bo", "ly_do": type(e).__name__}
+                # ⭐ Nhanh nay VON da dung: tra HINH DANG (ten lop), khong
+                #    tra noi dung. Ten lop la cua MA CUA TA, khong phai chu
+                #    thuong nguon viet ra.
+                #
+                # ⚠️ Toi da thu "dong bo" no thanh `LRN.cau(...)` va do la
+                #    mot buoc LUI: mat thong tin chan doan ma khong dong
+                #    them lo nao. `ruff` bat ngay (`e` thanh bien thua).
+                sk = {"type": "response.failed", "code": "loi_noi_bo",
+                      "ly_do": LRN.hinh_dang(e)}
                 S.ap_dung(ex, sk, message=tra_loi)
                 if tra_loi is not None:
                     S.dong_bo_khoi_text(tra_loi, ex)
@@ -327,13 +432,73 @@ def khoi_chay_nen(execution_id: str, *, user_id: str) -> threading.Thread:
     return t
 
 
+def _dung_run_dang_cho(db, ex, *, user_id: str) -> bool:
+    """Huỷ luôn `ChatlttRun` khi lượt V3 đang **đứng chờ**. Trả `True` nếu có huỷ.
+
+    ## 🔴 Vì sao hai việc của `dung()` đều trượt ở biên chờ
+
+    ```
+    ex.status in ("streaming", "queued")  ->  vong da xong, KHONG lat
+    dang_chay.yeu_cau_dung(ex.id)         ->  luong da thoat, KHONG tim thay
+    ```
+
+    Luồng nền gọi `dang_chay.ket_thuc()` ở `finally`, nên sổ `_SO` không còn
+    khoá ấy. Và lần chạy tiếp gọi `dang_chay.bat_dau()` — hàm này **ghi đè** một
+    `LuotDangChay` mới, tức một `Event` mới **đã xoá**. Cờ đặt trước đó biến mất
+    cùng đối tượng cũ.
+
+    ⇒ Bấm Dừng lúc chờ duyệt là một **no-op im lặng**, và lượt vẫn chạy tiếp khi
+      được duyệt — tiêu thêm tiền sau khi người dùng đã bảo dừng.
+
+    ## ⭐ Chỗ ghi nhận ĐÃ có sẵn, chỉ là không ai ghi vào
+
+    `dieu_phoi.CHUYEN_HOP_LE` khai `AWAITING_APPROVAL -> CANCELLED` và
+    `WAITING_BACKGROUND -> CANCELLED` là hợp lệ. Dùng đúng ô ấy thì
+    `nen_chay_tiep` tự đúng theo (`CANCELLED` không thuộc `CHO_DUOC`), và mọi
+    chỗ đọc trạng thái run — kể cả chỗ chưa viết — cũng vậy.
+
+    ⛔ Một cờ `da_huy` song song thì mỗi người đọc phải nhớ hỏi thêm một câu, và
+       sẽ có người quên. Đó là cách một bất biến trở thành một quy ước.
+
+    ## ⚠️ Chỉ chạm biên CHỜ — `TOOL_RUNNING` thì KHÔNG
+
+    `CHUYEN_HOP_LE` cũng cho `TOOL_RUNNING -> CANCELLED`, nhưng ở đó có một
+    luồng **đang sống** và nó có đường dừng riêng (cờ trong tiến trình + phép
+    kiểm ở `dong_su_kien`). Lật trạng thái từ ngoài vào là ghi đè lên thứ luồng
+    ấy sắp ghi; hai người ghi một ô thì ô ấy nói dối một trong hai.
+
+    ⇒ Điều kiện là `CHO_DUOC` (không có luồng nào), **không** phải bảng chuyển.
+    """
+    from apps.chatltt.services import dieu_phoi as DP
+    from apps.chatltt.tables import ChatlttRun
+
+    if not getattr(ex, "run_id", None):
+        return False
+    r = db.get(ChatlttRun, str(ex.run_id))
+    # ⛔ Kiểm chủ sở hữu LẠI, trên chính bảng sắp ghi. `ex` đã được kiểm ở
+    #    `dung()`, nhưng đây là một bảng KHÁC — một phép kiểm quyền không tự nối
+    #    sang bảng khác chỉ vì hai bảng có liên kết.
+    if r is None or str(r.user_id) != str(user_id):
+        return False
+    if r.trang_thai not in DP.CHO_DUOC:
+        return False
+    r.trang_thai = DP.CANCELLED
+    return True
+
+
 def dung(db, *, user_id: str, execution_id: str) -> dict:
     """Nút Dừng: ghi `cancelled` xuống CSDL (chắc) + cờ trong tiến trình (nhanh)."""
     ex = db.get(ChatlttExecution, str(execution_id))
     if ex is None or ex.user_id != str(user_id):
         raise H.KhongTimThay("khong co luot nay")
+    doi = False
     if ex.status in ("streaming", "queued"):
         ex.status = "cancelled"
+        doi = True
+    # ⭐ Biên CHỜ: không có luồng nào để nhận cờ, nên phải ghi vào trạng thái run.
+    #    Xem `_dung_run_dang_cho` — `test_849` chốt cả bốn biên.
+    doi = _dung_run_dang_cho(db, ex, user_id=user_id) or doi
+    if doi:
         db.commit()
     trong_tien_trinh = dang_chay.yeu_cau_dung(ex.id)
     return {"execution_id": ex.id, "status": ex.status, "trong_tien_trinh": trong_tien_trinh}

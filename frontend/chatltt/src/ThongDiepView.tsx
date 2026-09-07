@@ -19,10 +19,66 @@ import remarkBreaks from 'remark-breaks'
 import remarkGfm from 'remark-gfm'
 import { anhEm, chuCuaThongDiep, suyLuanCuaThongDiep } from './cay'
 import type { Khoi, ThongDiep } from './kieu'
+import { KhoiTool } from './KhoiTool'
+import { laKhoiTool } from './kieu'
+import { TrangThaiLuot } from './TrangThaiLuot'
+
+/**
+ * Mã lỗi của máy chủ → một câu người đọc được.
+ *
+ * 🔴 ĐO TRÊN PRODUCTION 03/09. Chạy 45 lượt liên tiếp làm cạn suất admission,
+ *    và ô trả lời hiện đúng chuỗi:
+ *
+ *        het suat thuc thi
+ *
+ *    Đó là văn bản NỘI BỘ — tiếng Việt không dấu, viết cho người đọc log —
+ *    đặt vào đúng chỗ câu trả lời của model. Người dùng không biết "suất" là
+ *    gì, không biết phải chờ hay phải làm lại, và không biết mình có mất tiền
+ *    không.
+ *
+ * ⛔ Bản cũ là `loi.text || loi.code || 'Có lỗi xảy ra.'` — nó ưu tiên chuỗi
+ *    nội bộ TRƯỚC. Nghĩa là càng nhiều thông tin chẩn đoán ở tầng dưới thì
+ *    người dùng càng thấy nhiều thứ khó hiểu. Đúng chiều ngược lại.
+ *
+ * ⭐ Nay MÃ đi trước: mã là hợp đồng, còn `text` là chẩn đoán. Chỉ khi không
+ *    có mã nào khớp mới rơi về `text`, và khi ấy nó vẫn tốt hơn một dòng
+ *    trống.
+ */
+const LOI_DOC_DUOC: Record<string, string> = {
+  ban: 'Model đang bận. Thử lại sau ít giây — lượt này không bị tính tiền.',
+  suat: 'Model đang bận. Thử lại sau ít giây — lượt này không bị tính tiền.',
+  het_credit: 'Không đủ credit cho lượt này.',
+  qua_dai: 'Hội thoại vượt trần ngữ cảnh. Bắt đầu hội thoại mới hoặc rút ngắn câu hỏi.',
+  khong_mo_duoc: 'Không gọi được model lúc này. Thử lại sau ít phút.',
+  tham_so: 'Nội dung không hợp lệ.',
+  huy: 'Đã dừng theo yêu cầu.',
+}
+
+function loiDocDuoc(ma: string, chu: string): string {
+  if (LOI_DOC_DUOC[ma]) return LOI_DOC_DUOC[ma]
+  // ⚠️ Chuỗi chẩn đoán chỉ được hiện khi nó KHÔNG phải văn bản nội bộ. Dấu
+  //    hiệu rẻ và đủ tốt: một câu cho người dùng Việt thì có dấu.
+  const coDau = /[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ]/i
+  if (chu && coDau.test(chu)) return chu
+  return 'Không hoàn thành được lượt này. Thử lại giúp tôi.'
+}
 
 const NHAN_TRANG_THAI: Record<string, string> = {
   cancelled: 'Đã dừng',
   length: 'Bị cắt ở trần độ dài',
+  // V3: bon ly do ket cua mot run co dung tool (`dieu_phoi.KET_*`).
+  //
+  // ⛔ Khong co nhan thi dong 228 do NGUYEN MA ra man hinh — nguoi dung doc
+  //    duoc chu `tran_vong`. Khong vo, va vi the khong ai bao loi; no chi lam
+  //    san pham trong nhu ban chua lam xong.
+  //
+  // ⭐ Bon cau nay noi ro cai gi da dung va vi sao, boi vi mot luot dung vi
+  //    tran trong y het mot luot model tu thay du — va voi nguoi dang cho thi
+  //    hai chuyen do khac nhau: mot cai nen hoi lai, mot cai thi khong.
+  tran_vong: 'Đã dừng sau số vòng tối đa — hãy hỏi tiếp nếu còn thiếu',
+  tran_tool: 'Đã dừng vì gọi công cụ quá nhiều lần trong một lượt',
+  tran_trung: 'Đã dừng vì công cụ được gọi lặp lại với cùng tham số',
+  huy: 'Đã dừng theo yêu cầu',
 }
 
 function KhoiSuyLuan({ chu, dangChay }: { chu: string; dangChay: boolean }) {
@@ -91,20 +147,35 @@ export type ThongDiepViewProps = {
   duongTaiSan?: (k: string) => string
   /** Doc to chinh cau tra loi nay. Vang mat = nang luc tieng khong san sang. */
   onDocTo?: (m: ThongDiep, chu: string) => void
+  /**
+   * The duyet de ve tai cho khoi `status.code === 'cho_duyet'`.
+   *
+   * ⭐ Truyen XUONG chu khong tu lay: mot component trong danh sach tu goi
+   *    mang la N lan goi cho N tin nhan. `App` lay mot lan tu `dang-cho` —
+   *    nguon BEN, song qua F5.
+   */
+  theDuyet?: React.ReactNode
 }
 
 export function ThongDiepView({
   m, phang, onChuyenNhanh, onTaoLai, onSuaGuiLai, duongTaiSan, onDocTo,
+  theDuyet,
 }: ThongDiepViewProps) {
   const ds = anhEm(phang, m)
   const idx = ds.findIndex((x) => x.id === m.id)
   const dangChay = m.status === 'streaming' || m.status === 'queued'
   const chu = chuCuaThongDiep(m)
   const suyLuan = suyLuanCuaThongDiep(m)
+  // H44 P09: khoi tool dung TRUOC phan chu — nguoi doc thay "no da lam
+  // gi" roi moi thay "no noi gi". Cung thu tu backend da chen chung.
+  const tool = m.blocks.filter(laKhoiTool)
   const loi = m.blocks.find((k) => k.type === 'error')
   const trangThai = m.blocks.find((k) => k.type === 'status')
   const dangTaoMedia = dangChay && m.execution?.mode === 'job'
-  const tienDo = (m.execution?.usage as { progress?: number } | undefined)?.progress ?? null
+  const dungLuong = m.execution?.usage as
+    { progress?: number; cho_tai_nguyen?: number } | undefined
+  const tienDo = dungLuong?.progress ?? null
+  const choTaiNguyen = dungLuong?.cho_tai_nguyen ?? null
 
   return (
     <article
@@ -138,20 +209,43 @@ export function ThongDiepView({
            thanh `<br>`; no khong bat HTML tho, nen mo hinh chong XSS o dau tep
            nay khong doi mot chut nao. `test_ThongDiepView` chot ca hai ve.
       */}
+      {tool.length > 0 && (
+        <div className="ltc-tools">
+          {tool.map((k, i) => <KhoiTool key={i} khoi={k} />)}
+        </div>
+      )}
+
       <div className="ltc-tin__chu">
         {m.role === 'user' ? (
           <p className="ltc-tin__tho">{chu}</p>
         ) : (
           <Markdown remarkPlugins={[remarkGfm, remarkBreaks]}>{chu}</Markdown>
         )}
-        {dangChay && !chu && !dangTaoMedia && (
-          <span className="ltc-nhipdap" aria-label="Đang trả lời" />
+        {/*
+          ⛔ Thay cho mot cham nhip cam. Mot cham tra loi duoc "con song khong";
+             no khong tra loi duoc "dang lam gi" — va do moi la cau nguoi dung
+             thuc su hoi sau ba giay im lang. Xem `TrangThaiLuot.tsx`.
+        */}
+        {!dangTaoMedia && (
+          <TrangThaiLuot ex={m.execution} daCoChu={!!chu} dangChay={dangChay} />
         )}
       </div>
 
       {dangTaoMedia && (
         <p className="ltc-tin__nhan" role="status">
-          Đang tạo… {tienDo != null ? `${tienDo}%` : ''}
+          {/*
+            🔴 "Đang tạo…" MOT MINH la mot loi noi doi nho. Do 04/09 tren
+               production: job anh nam `queued` NHIEU PHUT vi GPU may B dang
+               ban, va man hinh van noi "Đang tạo…" — trong khi thu that su
+               dang xay ra la **cho**, va he thong biet chinh xac con bao nhieu
+               giay (`job.next_run_at`).
+            ⭐ `defer_resource` khong cham so tien va khong tieu luot thu, nen
+               day la mot lan cho hoan toan lanh. Che no di khong bao ve ai —
+               no chi bien mot lan cho CO LY DO thanh mot lan treo VO CO.
+          */}
+          {choTaiNguyen != null
+            ? `Máy đang bận — tự thử lại${choTaiNguyen > 0 ? ` sau ${choTaiNguyen} giây` : ' ngay'}…`
+            : `Đang tạo… ${tienDo != null ? `${tienDo}%` : ''}`}
         </p>
       )}
       {duongTaiSan && <KhoiTaiSan khoi={m.blocks} duongTaiSan={duongTaiSan}
@@ -159,14 +253,24 @@ export function ThongDiepView({
 
       {loi && (
         <p className="ltc-tin__loi" role="alert">
-          {String(loi.text || loi.code || 'Có lỗi xảy ra.')}
+          {loiDocDuoc(String(loi.code || ''), String(loi.text || ''))}
         </p>
       )}
-      {trangThai && (
-        <p className="ltc-tin__nhan">
-          {NHAN_TRANG_THAI[String(trangThai.code)] ?? String(trangThai.code)}
-        </p>
-      )}
+      {/*
+        🔴 `cho_duyet` KHONG ve thanh mot nhan chu. Truoc P09 no roi vao
+           nhanh duoi va hien NGUYEN MA `cho_duyet` ra man hinh — dung cai chu
+           thich cua `NHAN_TRANG_THAI` da canh bao. Va mot nhan chu cung khong
+           tra loi duoc cau hoi that: *bam vao dau de duyet?*
+      */}
+      {trangThai && String(trangThai.code) === 'cho_duyet'
+        ? theDuyet ?? (
+          <p className="ltc-tin__nhan">Đang chờ bạn duyệt…</p>
+        )
+        : trangThai && (
+          <p className="ltc-tin__nhan">
+            {NHAN_TRANG_THAI[String(trangThai.code)] ?? String(trangThai.code)}
+          </p>
+        )}
 
       <div className="ltc-tin__thanhcong">
         {ds.length > 1 && (

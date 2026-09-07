@@ -256,11 +256,73 @@ def test_moi_buoc_gate_cu_van_con():
 
 
 def test_chi_buoc_that_su_doc_quyen_moi_khai_tai_nguyen():
-    """Khai thua tai nguyen lam moi thu xep hang tro lai — mat het cai vua duoc."""
+    """Chi buoc THAT SU dung doc quyen mot thu moi duoc khai no.
+
+    🔴 SUA 06/09/2026 — ban truoc chot `== {"bo test (song song)"}`, tuc chot
+       mot GIA TRI. No do khi bon buoc khac duoc khai `postgres_test`, va cai
+       do la mot ban va CAN THIET chu khong phai khai thua:
+
+           tools/check_multiproc.py:19   "cac test nay goi `drop_all()`"
+           => hai luot gate o hai worktree cung do trong mot dem:
+              relation "api_metric_samples" does not exist   (mot phien)
+              assert 0 == 9  (9 job bien mat)                (phien kia)
+
+    ⚠️ Lo ngai cua ban cu VAN DUNG va van duoc chot o day: khai thua lam moi
+       thu xep hang tro lai. Nhung pham vi cua no hep hon ban cu gia dinh, va
+       dieu do DO DUOC:
+
+           `Step.tai_nguyen` chi duoc doc o DUNG MOT cho trong gate.py — de
+           gop thanh tap `can` cho khoa CA LUOT. Bo lap lich (`_chay_theo_lich`)
+           dung `so_loi`, KHONG dung `tai_nguyen`.
+
+       => Khai them KHONG lam cac buoc xep hang **trong** mot luot. No chi doi
+          thu luot ay giu so voi **luot khac**. Phep kiem thu hai duoi day chot
+          chinh tinh chat do, nen neu ai lam `tai_nguyen` anh huong lap lich
+          thi no do.
+
+    ⭐ Chot TAP HOP, khong chot so luong — va moi ten trong tap phai co ly do
+       doc duoc ngay canh no.
+    """
     gate = _nap_gate()
     co_tn = {s.name for s in gate._steps(quick=False) if s.tai_nguyen}
-    assert co_tn == {"bo test (song song)"}, (
-        f"buoc khai tai nguyen ngoai du kien: {sorted(co_tn)}")
+    du_kien = {
+        # Chay pytest `-n` => an gan het loi, VA cham CSDL test dung chung.
+        "bo test (song song)",
+        "bo test (noi tiep)",
+        "bo test (pham vi)",
+        # `check_multiproc.py` goi `drop_all()` tren CSDL test dung chung.
+        "bat bien da tien trinh",
+    }
+    thua = co_tn - du_kien
+    assert not thua, f"buoc khai tai nguyen ngoai du kien: {sorted(thua)}"
+
+
+def test_tai_nguyen_KHONG_duoc_anh_huong_lich_chay_trong_mot_luot():
+    """Menh de lam cho phep kiem tren an toan: khai them chi ton kem GIUA cac luot.
+
+    ⛔ Neu mot ban sua nao do cho `tai_nguyen` tham gia `_chay_theo_lich` thi
+       moi lan khai them mot tai nguyen se **noi tiep hoa** cac buoc trong cung
+       mot luot — dung cai lo ngai ma ban cu cua phep kiem tren dinh chan, va
+       luc do tap `du_kien` o tren tro nen nguy hiem.
+
+    ⭐ Nen thay vi cam khai them, ta chot **ly do khai them la re**: `tai_nguyen`
+       chi duoc doc de gop thanh khoa ca luot.
+    """
+    import ast as _ast
+
+    ma = (GOC / "tools" / "gate.py").read_text(encoding="utf-8")
+    cay = _ast.parse(ma)
+    doc_o = []
+    for n in _ast.walk(cay):
+        if isinstance(n, _ast.Attribute) and n.attr == "tai_nguyen":
+            doc_o.append(n.lineno)
+
+    lich = next(f for f in _ast.walk(cay)
+                if isinstance(f, _ast.FunctionDef) and f.name == "_chay_theo_lich")
+    trong_lich = [l for l in doc_o if lich.lineno <= l <= lich.end_lineno]
+    assert not trong_lich, (
+        f"`_chay_theo_lich` doc `tai_nguyen` o dong {trong_lich} - khai them "
+        "gio se noi tiep hoa cac buoc trong CUNG mot luot")
 
 
 def test_chot_bien_dich_KHONG_di_vao_cay_cua_phien_khac():

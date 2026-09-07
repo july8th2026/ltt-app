@@ -155,6 +155,191 @@ credential, kể cả khi mọi bước riêng lẻ trông đều hợp lý.
   được.** Chỉ dựa trên kết quả chạy thật.
 - Thay đổi rủi ro: viết trước cách lùi lại, rồi mới làm.
 
+## 4c. Sửa hạ tầng dùng chung — **ba câu bắt buộc trước dòng mã đầu tiên**
+
+Áp cho mọi thay đổi trong `tools/`, `platform_core/`, `tests/conftest.py` — tức
+mọi thứ **nhiều cây cùng chạy**. Ba câu này không phải nghi thức: mỗi câu tương
+ứng một bản vá đã hỏng thật trong kho này.
+
+### 1. Nếu chỉ MỘT SỐ cây nhận bản vá, chuyện gì xảy ra?
+
+Mỗi worktree chạy bản `tools/` của **riêng nó**. Một bản vá điều phối chỉ có
+hiệu lực khi **mọi** cây đều nhận — và trong khoảng chuyển tiếp nó thường
+**phạt người sửa đúng**: cây đã khai thì chờ, cây chưa khai chạy tự do.
+
+```
+03/09  tran `-n 6` sua o MOT nhanh   -> bon cay con lai van chay -n 14
+06/09  gate khai `postgres_test`     -> cay chua ff van drop_all() vao giua
+```
+
+⛔ Nếu câu trả lời là *"tệ hơn trước khi vá"* thì **thiết kế sai**, không phải
+"chấp nhận được trong lúc lan". Một bản vá mà chế độ hỏng của nó tệ hơn bệnh nó
+chữa thì không phải một bản vá.
+
+### 2. Đường SUY BIẾN của cơ chế này là gì?
+
+Mọi cơ chế điều phối đều có một nhánh "không giữ được gì". Hỏi thẳng: **trên
+nhánh ấy, bản vá còn đúng không?**
+
+```
+`cua_so_yen.chay_khong_khoa`  -> gate CHEN, giu ZERO tai nguyen
+`--lf` cache rong             -> CO Y khong chay gi
+thieu `psutil`                -> khong dem duoc, khong phai "may ranh"
+```
+
+⭐ Và **cố ý** phải phân biệt được với **tai nạn**: hai trạng thái ấy nhìn từ
+ngoài thường giống hệt nhau, nhưng gộp chúng làm một thì hoặc báo động giả liên
+tục, hoặc phải nới cổng đến mức nó bỏ lọt chính thứ nó sinh ra để bắt.
+
+### 3. Tôi đang hỏi một NHÃN hay một QUAN HỆ?
+
+```
+NHAN    ten tep · chuoi trong cmdline · bien moi truong · ten nhanh
+QUAN HE cha-con · cwd · ai dang giu khoa · commit nao la to tien
+```
+
+Nhãn thì rẻ và **sai im lặng**. Ba cách đếm tiến trình theo nhãn đều hỏng trong
+một đêm — thiếu (`execnet` không mang từ khoá), thừa (`bash -c` mang cả câu
+lệnh), và mù với mồ côi (mất gốc thì rơi khỏi cây con).
+
+⛔ Và điều kiện phải là thứ tiến trình đang hỏi **không thể tự thoả**: shell của
+chính nó cũng có `cwd` đúng bằng cây ấy. Loại `os.getpid()` **và** `parents()`.
+
+### Sau khi vá: banh cóc phải hỏi HÀNH VI, không hỏi hình dạng
+
+🔴 Ngày 06/09 `tools/test_nhanh.py` thoát sau **0,114 giây**, mã **0**, không
+chạy một test nào — và **cả năm** bánh cóc AST vẫn xanh, vì chúng hỏi *"còn khối
+`with` không"*, *"còn nhập không"*. Hình dạng mã vẫn đúng khi công cụ đã chết.
+
+⇒ Câu để tự hỏi: **thứ tôi đang khẳng định có tồn tại được nếu chương trình
+không chạy không?** Có ⇒ nó không kiểm hành vi, dù nó **đỏ được** khi bị tiêm.
+
+⚠️ *"Đỏ được"* và *"đo đúng thứ cần đo"* là **hai** câu hỏi. Tiêm lại bản cũ
+chứng minh phép kiểm **phân biệt được** hai bản; nó không chứng minh phép kiểm
+**quan sát thứ ta cần**. Ba lần trong một buổi, cùng một người viết luật này
+vẫn tự vi phạm nó — nên nó phải là một **động tác** trong quy trình, không phải
+một điều để nhớ.
+
+## 4d. Sổ lỗi TỰ GÂY — bốn lớp, và cơ chế cho từng lớp
+
+Ngày 06/09 một phiên kê lại **13 lỗi tự gây trong một buổi**. Mục này không phải
+lời nhắc "hãy cẩn thận"; nó là bốn **cơ chế**, vì cả 13 lỗi đều xảy ra ở một
+phiên **đã biết** luật liên quan.
+
+🔑 Con số quan trọng nhất: **9 trên 13 nằm ở CÔNG CỤ DÙNG ĐỂ ĐO, không nằm ở
+thứ được giao.** Kỷ luật sống trong mã sản phẩm và được miễn trừ cho script tạm
+— trong khi chính script tạm quyết định ta **nhìn thấy gì**.
+
+### Lớp A — gọi một API mà không đọc chữ ký trước
+
+```
+resources.create(kind="style")   -> app tra loi: chi nhan character/background/
+                                    prop/vehicle/misc
+add_variant(prompt_text=...)     -> no doi `storage_key` (bien the la MOT ANH)
+cookie value = "session=eyJ..."  -> ca chuoi bi dung lam GIA TRI -> ba phep do
+                                    ra trang /login, va mot ket luan SAI ve
+                                    harness suyt duoc bao di
+```
+
+⇒ **Cơ chế:** `python tools\do_nhanh.py chu-ky <tep> <ten_ham>` in chữ ký thật
+từ AST. Một lệnh rẻ hơn một vòng sửa.
+
+### Lớp B — script TẠM lặp lại một cái bẫy đã có ghi chú
+
+| bẫy | số lần cắn trong MỘT buổi |
+|---|---|
+| `print` vỡ vì cp1252 | **4** |
+| heredoc Bash nuốt một lớp `\` | **5** |
+| lọc tiến trình khớp chính mình | 1 (thoát mã 15) |
+
+⛔ Lần thứ năm của bẫy heredoc xảy ra **trong chính lệnh đang viết ra luật cấm
+nó**. Đó là bằng chứng đủ: tri thức không chặn được lớp này.
+
+⇒ **Cơ chế:** `tools/do_nhanh.py` — `ra()` thay `print`, `thay()` thay
+`str.replace`, `tien_trinh()` thay mọi bộ lọc tiến trình. Và **không sinh mã
+qua heredoc Bash**: soạn bằng công cụ Write rồi chạy tệp.
+
+### Lớp C — phép kiểm chốt MÔI TRƯỜNG hoặc HÌNH DẠNG thay vì HÀNH VI
+
+```
+assert _to_tien_la_gate() is False   -> do khi GATE chay (to tien LA gate.py)
+assert cpu < NGUONG                  -> do khi may co tai
+assert cpu < tich_luy                -> so PHAN TRAM voi GIAY, dung nho tinh co
+assert "parents()" in ma             -> grep ma nguon, xanh ca khi go bo chan
+```
+
+⇒ **Cơ chế:** phép đo **hai chiều**, và cả hai đều bắt buộc —
+① chạy dưới điều kiện ngược (có tải / dưới gate) để chắc nó **không phụ thuộc
+môi trường**; ② tiêm lại bản cũ để chắc nó **đỏ được**.
+Xem §4c: *"đỏ được" và "đo đúng thứ cần đo" là HAI câu hỏi*.
+
+#### ⛔ Nhưng "tiêm hai chiều" CHƯA ĐỦ — đo được 06/09/2026
+
+`cosmic-ray` chạy **97 đột biến** trên `tools/check_ruff.py`, với bốn phép kiểm
+mà tôi *đã* tiêm hai chiều đàng hoàng:
+
+```
+SURVIVED     43
+INCOMPETENT  54
+KILLED        0        <- không giết được cái nào
+```
+
+Một đột biến sống sót nói hết:
+
+```
+dem[ma] = dem.get(ma, 0) + 1   ->   dem[ma] = dem.get(ma, 0) ** 1
+```
+
+`0 ** 1` luôn là 0 ⇒ mọi số đếm thành 0 ⇒ `tang` luôn rỗng ⇒ bánh cóc báo
+**PASS vĩnh viễn**. Nó mù hoàn toàn, và không phép kiểm nào thấy.
+
+🔴 **Hai bài học, cái thứ hai mới là cái chung:**
+
+1. **Tôi tiêm ĐÚNG CHỖ mình đang nghĩ tới.** Tôi tiêm vào *phép so sánh* nên
+   tôi chứng minh được phép so sánh. Cái hỏng nằm ở *phép đếm* nuôi nó — chỗ
+   tôi không nghĩ tới, nên không tiêm. Tiêm tay chỉ phủ được trí tưởng tượng
+   của người tiêm; đột biến máy phủ **mọi nhánh**.
+
+2. **Mọi kiểu hỏng của một bánh cóc đều đi về phía BÁO PASS DỄ HƠN.** Một phép
+   kiểm chỉ khẳng định *"bánh cóc báo PASS"* thì không kiểm gì cả — nó xanh với
+   cả bản mù. Đúng lớp `B017` (assert quá rộng) mà chính `ruff` đang đếm.
+
+⇒ **Cơ chế bổ sung:** một phép kiểm phải đối chiếu với **sự thật ĐỘC LẬP**,
+  không phải với số do chính công cụ ấy sinh ra. Bốn phép kiểm cũ lấy mốc bằng
+  `--accept`, mà `--accept` gọi `quet()`: **hỏng so với hỏng thì vẫn bằng
+  nhau**. Bản sửa đặt trước một cây mẫu đếm tay (`LTT_RUFF_GOC` /
+  `LTT_MYPY_GOC`) rồi hỏi lại.
+
+⭐ Và khi nghi một cụm phép kiểm là lớp C, **đừng suy đoán — chạy đột biến**:
+
+```
+py -m cosmic_ray.cli init <cấu-hình>.toml <phiên>.sqlite
+py -m cosmic_ray.cli exec <cấu-hình>.toml <phiên>.sqlite
+```
+
+⚠️ `cosmic-ray` **sửa tệp tại chỗ**, nên phải chạy trong một cây riêng
+(`git worktree add --detach`) — bốn phiên dùng chung cây này, và một lượt gate
+song song sẽ thấy "CÂY ĐÃ ĐỔI TRONG LÚC CHẠY". Đọc `docs/QUY_TRINH_WORKTREE.md`
+trước. `mutmut` **không chạy được trên Windows** (nó bảo dùng WSL).
+
+### Lớp D — commit vào trunk trước khi có gate xanh
+
+Bốn commit không gate làm **5 lượt đỏ ở cây của phiên khác**. Đây không phải
+quên: phiên ấy *biết* luật và vẫn hoãn, vì gate mất 10 phút và máy đang bận.
+
+⛔ Nên bản vá không thể là "nhớ chạy gate". Thiệt hại rơi vào người khác **vì
+trunk là thứ mọi phiên kéo về**.
+
+⇒ **Cơ chế:** việc rủi ro đi trên **nhánh riêng**; chỉ hoà vào trunk **sau** một
+lượt gate xanh. Commit trên nhánh riêng thì rẻ và không ai chịu hậu quả.
+
+### Dấu hiệu nhận ra mình đang ở trong một lớp
+
+- *"Chỗ này chỉ là script đo, không cần cẩn thận"* → **lớp B**
+- *"Tôi nhớ hàm này nhận tham số gì"* → **lớp A**
+- *"Chạy tay xanh rồi, chắc ổn"* → **lớp C**
+- *"Gate lâu quá, commit trước rồi chạy sau"* → **lớp D**
+
 ## 4b. Chạy test — ba lệnh, và **đừng gọi `pytest` trực tiếp**
 
 | Lệnh | Dùng khi | Thời gian |
@@ -163,6 +348,22 @@ credential, kể cả khi mọi bước riêng lẻ trông đều hợp lý.
 | `python tools\test_nhanh.py` | muốn chạy cả bộ test | ~4 phút |
 | `python tools\gate.py` | **trước khi báo xong** | ~5 phút |
 | `python tools\gate.py --noi-tiep` | khi nghi kết quả bị **nhiễu** bởi song song hoặc tải máy | ~25–30 phút |
+
+⚠️ **`npm run build` phải là việc CUỐI trước gate, sau cả việc sửa test.**
+
+`build_release._frontend_source_sha256` băm **cả** thư mục frontend — gồm cả
+`tests/`. Nên thêm một phép kiểm vitest cũng làm bundle bị coi là **cũ**, và
+gate đỏ ở ba chỗ chẳng liên quan gì tới thứ vừa sửa:
+
+```
+test_44_release_build · test_95_agent_canvas_build · test_103_autosub_projects
+       -> "frontend/<ten> bundle is stale or built with the wrong Node"
+```
+
+⭐ Ba lần trong một ngày 03/09. Không phải vì luật khó nhớ, mà vì thứ tự tự
+nhiên khi làm việc là *sửa mã → build → viết test* — và bước cuối lại làm hỏng
+bước giữa. Chỉ có một cách không quên: **build ngay trước khi gõ `gate.py`**,
+không phải "sau khi sửa mã".
 
 ⛔ **`--tuan-tu` KHÔNG phải `--noi-tiep`, và nhầm hai cái này rất dễ.**
 `--tuan-tu` xếp hàng các **bước**; bước `bo test` bên trong nó vẫn tự mở 10–14
@@ -685,10 +886,18 @@ tại. Hôm đó cả hai phiên đều mất một lượt, và cả hai dòng 
 một lượt sạch**.
 
 ⛔ **Đừng “song song hoá” cổng chất lượng để chữa cái này.** Pha `bo test` đã lấy
-`-n auto` = **mọi lõi** (20 lõi; nối tiếp 1.534 giây → song song 234 giây). Hai
+trọn phần lõi mà máy cho phép — số worker do **`tools/gate.py:loi_cho_bo_test()`**
+quyết, và đó là hàm DUY NHẤT trả lời câu hỏi đó. Hai
 lượt cùng lúc chỉ chia đôi cùng một chiếc bánh: tổng thời gian gần y hệt chạy
 lần lượt, nhưng trả thêm gấp đôi bộ nhớ, gấp đôi thư mục tạm, và gấp đôi khả
 năng đo sai. Song song hoá một thứ **đã bão hoà lõi** không phải tối ưu.
+
+⚠️ **Dòng trên trước 03/09 ghi `-n auto` = “mọi lõi (20 lõi)”. Sai, và sai về
+phía nguy hiểm.** `os.cpu_count()` trả **20** vì đó là lõi *logic*; máy này có
+**10 lõi vật lý**, và xdist đọc lõi vật lý. Từ 03/09 cổng không còn dùng
+`-n auto` nữa. Con số thật ở `tools/gate.py`; luật đầy đủ ở
+`docs/QUY_TRINH_WORKTREE.md` và `docs/QUY_TAC_CHAY_LENH_NANG.md`.
+⛔ Đừng gõ lại con số đó vào đây — đó chính là cơ chế vừa hỏng.
 
 **Ba thứ đã dựng:**
 
@@ -759,3 +968,35 @@ phải cây của ai cả, mà là cây của một bên *trước khi* gộp.
 `test_177` bắt được, nhưng chỉ khi có người chạy gate **sau** merge. Ai vừa chạy
 gate xong ở nhánh mình thì có lý do để không chạy lại — và đó đúng là lúc nó lọt.
 
+
+### Lớp E — **phép đo của tôi báo sai, và tôi suýt sửa thứ không hỏng**
+
+Đo 07/09/2026 khi làm S6 (*"trạng thái loading/empty/error từng bề mặt"*). Tôi
+viết một bộ dò regex trên template, và nó tố cáo **5/12 bề mặt thiếu trạng
+thái**. Sau ba lần sửa chính bộ dò ấy, con số thật là **0/12**.
+
+Ba kiểu báo sai, và chúng khác nhau về bản chất:
+
+| # | Sai vì | Ví dụ |
+|---|---|---|
+| 1 | **đọc sai NGUỒN** | đo `apps/*/templates` cho app React — giao diện nằm ở `frontend/*/src` |
+| 2 | **mẫu quá hẹp về NGÔN NGỮ** | tìm `empty\|rong\|trong`, bỏ sót `{% else %}Chưa có evaluation.` với class `muted` |
+| 3 | **mẫu quá hẹp về KỸ THUẬT** | tìm `spinner\|loading\|skeleton`, bỏ sót `role="progressbar"` + `aria-live` — vốn là cách ĐÚNG hơn |
+
+⛔ Cả ba đều đẩy về **cùng một phía**: báo THIẾU thứ đang có. Và hậu quả của
+   việc tin nó không phải "bỏ sót một lỗi" mà là **đi thêm trạng thái rỗng thứ
+   hai vào một trang đã có** — tức làm hỏng một thứ đang đúng, kèm một commit
+   nghe rất thuyết phục.
+
+⭐ Dấu hiệu nhận ra: **phép đo mới toanh cho ra một con số cao đáng ngạc nhiên.**
+   Nếu một bộ dò vừa viết xong nói *"5/12 bề mặt thiếu"* trong một kho đã chạy
+   thật nhiều tháng, giả thuyết đầu tiên phải là **bộ dò sai**, không phải kho
+   sai.
+
+⇒ **Cơ chế:** trước khi hành động theo một phép đo mới, **mở tay hai mẫu mà nó
+  tố cáo**. Nếu cả hai đều vô tội thì bộ dò sai, và con số còn lại không dùng
+  được. Đây chính là chuẩn đã dùng để **rút H12 `deptry`** (74/78 dương tính
+  giả) — cùng một chuẩn phải áp cho phép đo do chính mình viết.
+
+⚠️ Và đừng biến một bộ dò như thế thành cổng. Một cổng báo động giả dạy người
+   ta bỏ qua nó, rồi cái đỏ thật cũng bị bỏ qua cùng.

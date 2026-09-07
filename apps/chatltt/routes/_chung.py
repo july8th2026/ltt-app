@@ -15,6 +15,66 @@ router = APIRouter(tags=["chatltt"])
 NO_STORE = {"Cache-Control": "no-store"}
 
 
+def cong_tep() -> None:
+    """Cong co cho nhom P06 (dinh tai lieu). Tat => 404, khong phai 403.
+
+    🔴 PHAI dat TRUOC `require_login` trong danh sach tham so. `Depends`
+       chay theo thu tu khai bao, va `require_login` **chuyen huong 303 ve
+       /login** — nen dat sau thi mot route "da dong" van tra 303 cho khach
+       chua dang nhap, tuc no van noi rang duong nay ton tai. Ca nay da xay
+       ra that o kho nay.
+
+    ⛔ 404 chu khong 403: mot tinh nang chua mo thi khong nen tu khai rang
+       no ton tai va dang bi cam.
+    """
+    from apps.chatltt.services import co_v3
+
+    if not co_v3.tep_bat():
+        raise HTTPException(status_code=404)
+
+
+def cong_ghi_nho() -> None:
+    """Cong co cho nhom B4 (ghi nho). Tat => 404, khong phai 403.
+
+    🔴 Cung luat dat-truoc-`require_login` nhu `cong_tep` — xem docstring o tren.
+       Ghi lai o day chu khong chi tro sang: mot luat chi song trong mot chu
+       thich o ham ben canh la mot luat se bi bo qua khi ai do chep khuon nay
+       cho cong thu ba.
+    """
+    from apps.chatltt.services import co_v3
+
+    if not co_v3.ghi_nho_bat():
+        raise HTTPException(status_code=404)
+
+
+def cong_du_an() -> None:
+    """Cong co cho nhom B5 (du an). Tat => 404, khong phai 403.
+
+    🔴 Cung luat dat-truoc-`require_login` nhu `cong_tep`/`cong_ghi_nho`.
+       Ghi lai o day chu khong tro sang: mot luat chi song trong mot chu
+       thich o ham ben canh la mot luat se bi bo qua khi ai do chep khuon.
+    """
+    from apps.chatltt.services import co_v3
+
+    if not co_v3.du_an_bat():
+        raise HTTPException(status_code=404)
+
+
+def cong_nghien_cuu() -> None:
+    """Cong co cho nhom B6 (nghien cuu). Tat => 404, khong phai 403.
+
+    🔴 Cung luat dat-truoc-`require_login` nhu ba cong tren. Day la lan
+       thu TU chep khuon nay, va lan nao cung phai chep ca chu thich — vi
+       `Depends` chay theo thu tu khai bao, va `require_login` chuyen huong
+       303 ve /login, nen dat sau thi mot route "da dong" van noi rang duong
+       nay ton tai.
+    """
+    from apps.chatltt.services import co_v3
+
+    if not co_v3.nghien_cuu_bat():
+        raise HTTPException(status_code=404)
+
+
 def uid(request: Request) -> str:
     u = user_hien_tai(request)
     if u is None:

@@ -26,6 +26,46 @@
  *    `min-height` giu no dung duoc tren man rat thap; vung tin nhan tu cuon nen
  *    khong bao giờ co gi khong voi toi duoc.
  */
+/* Goc mount cua React: GIU CHO TRUOC KHI CO GI DE VE.
+ *
+ * 🔴 DO DUOC 03/09, va no lat nguoc mot chan doan sai cua chinh toi. CLS cua
+ *    trang do 0,1642, va toi cho rang thu phamla khoi "Suy luan" moc ra o giay
+ *    3,7. Do tung cu nhay mot thi khac han:
+ *
+ *      v=0,0749  t+0ms  FOOTER.platform-footer  truoc=109  sau=819
+ *
+ *    Cu nhay lon nhat xay ra o **giay thu khong**, va no la CHAN TRANG. Truoc
+ *    khi React mount, `#chatltt-root` rong ⇒ cao 0 ⇒ chan trang nam o 109px.
+ *    Mount xong, `.ltc` chiem `100vh - 190px` va day chan trang xuong 819px.
+ *
+ * ⭐ Thu duy nhat can lam la BAO TRUOC chieu cao ay cho trinh duyet, bang dung
+ *    cong thuc `.ltc` se dung. Trinh duyet danh cho san, va chan trang khong
+ *    bao gio phai di dau ca.
+ *
+ * ⚠️ Ba con so phai KHOP voi `.ltc` ben duoi. Lech mot cai la lai nhay, chi
+ *    it hon — tuc kho thay hon.
+ */
+#chatltt-root {
+  min-height: calc(100vh - 190px);
+}
+@media (max-height: 610px) { #chatltt-root { min-height: 420px; } }
+@media (min-height: 1190px) { #chatltt-root { min-height: 1000px; } }
+
+/* 🔴 VA CONG THUC MOBILE PHAI DUOC CHEP XUONG DAY, KHONG DUOC QUEN.
+ *
+ *    Chu thich o tren noi "Ba con so phai KHOP voi `.ltc` ben duoi" — va do
+ *    chinh la thu toi suyt pha ngay 05/09. Khi `.ltc` duoi 860px doi sang
+ *    `calc(100dvh - 77px)`, cho nay van con giu `calc(100vh - 190px)`.
+ *
+ *    O 390x844 do la 654px danh cho, trong khi `.ltc` chiem 767px ⇒ chan trang
+ *    NHAY 113px ngay khi React mount. Dung cai CLS 0,0749 ma chu thich tren mo
+ *    ta, chi la lan nay chi xay ra tren dien thoai — tuc kho thay hon nua.
+ *
+ * ⚠️ Nen luat that o day khong phai "nho ba con so", ma la: **doi chieu cao cua
+ *    `.ltc` o bat ky diem ngat nao thi PHAI them mot dong o day cho dung diem
+ *    ngat ay.** `test_703` chot dieu do. */
+@media (max-width: 860px) { #chatltt-root { min-height: calc(100dvh - 77px); } }
+
 .ltc {
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
@@ -94,13 +134,26 @@
   background: var(--surface-canvas);
 }
 
+/* 🔴 `flex-wrap: wrap` — do 07/09 tren ma tran 390 px (P09 "Dat khi").
+   Voi `nowrap`, bon phan tu (65+77+56+100 = 298 px + 3 gap) bi ep trong 366 px
+   kha dung: chip "Model chua san sang" co lai con 56 px RONG va 72 px CAO, tuc
+   chu gay bon dong trong mot hinh bau duc. O chon du an co lai con "— k".
+
+   ⛔ Khong sua bang `overflow-x: auto`: mot thanh cuon ngang o hang dinh la mot
+      hang dinh nguoi dung khong thay het, va tren dien thoai thi ho khong biet
+      la con thu de cuon toi. Xuong dong thi moi thu deu nhin thay duoc. */
 .ltc-dinh {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 12px;
   padding: 10px 16px;
   border-bottom: 1px solid var(--border-subtle);
 }
+
+/* ⭐ Chip trang thai KHONG duoc co lai: no la mot cau, khong phai mot nhan
+   trang tri, va mot cau gay bon dong trong hinh bau duc thi doc khong ra. */
+.ltc-dinh > .ltc-chip { flex: 0 0 auto; }
 
 .ltc-model { display: flex; align-items: center; gap: 8px; color: var(--text-secondary); }
 .ltc-model select {
@@ -209,6 +262,135 @@
   font-size: 13px;
 }
 
+/* ── Bang du an (H44 B5) ───────────────────────────────────────────────── */
+/* ⭐ Dung chung the voi `.ltc-ghinho`: hai bang cung mot hinh dang (hop noi,
+   danh sach, nut im). Chep mot ban CSS thu hai la de hai bang troi khoi nhau. */
+.ltc-duan__ghi { color: var(--text-muted); font-size: 12px; white-space: nowrap; }
+.ltc-duan__ten {
+  flex: 1; text-align: left;
+  background: none !important; border: none !important;
+  color: var(--text-primary) !important;
+}
+
+/* ── Bang ghi nho (H44 B4) ─────────────────────────────────────────────── */
+
+/* ⚠️ `.ltc-nut.ltc-nut--ghinho` chu KHONG `.ltc-nut--ghinho`. Hai lop don co
+   CUNG do dac hieu, va `.ltc-nut` khai o duoi (dong ~413) nen no thang — nut
+   hien ra DO CHOI y het nut "+ Hoi thoai moi". Thay bang mat, khong thay bang
+   doc CSS. */
+.ltc-nut.ltc-nut--ghinho {
+  margin-top: 8px;
+  width: 100%;
+  background: var(--surface-overlay);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+/* ⭐ Nut trong bang phai IM. Mot bang toan nut do doc thanh mot mang canh bao,
+   trong khi "Sua"/"Xoa" la thao tac binh thuong tren du lieu cua chinh minh.
+   Chi nut "Luu" (submit) duoc noi to hon mot chut. */
+.ltc-ghinho button, .ltc-duan button {
+  padding: 4px 10px;
+  background: var(--surface-overlay);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  cursor: pointer;
+}
+.ltc-ghinho button:disabled, .ltc-duan button:disabled { opacity: .45; cursor: default; }
+.ltc-ghinho__them button[type="submit"] { color: var(--text-primary); }
+
+.ltc-ghinho, .ltc-duan {
+  position: fixed; inset: 10% 50% auto 50%;
+  transform: translateX(-50%);
+  width: min(680px, 92vw);
+  max-height: 76vh; overflow-y: auto;
+  z-index: 20;
+  padding: 16px;
+  background: var(--surface-canvas);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 12px 40px rgb(0 0 0 / .5);
+}
+.ltc-ghinho__dau, .ltc-duan__dau { display: flex; align-items: center; gap: 12px; }
+.ltc-ghinho__tieude, .ltc-duan__tieude { margin: 0; font-size: 16px; }
+.ltc-ghinho__dong, .ltc-duan__dong { margin-left: auto; }
+.ltc-ghinho__them, .ltc-duan__them { display: flex; gap: 8px; margin: 12px 0 6px; }
+.ltc-ghinho__nhan, .ltc-duan__nhan {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%);
+}
+.ltc-ghinho__o, .ltc-duan__o {
+  flex: 1;
+  padding: 6px 8px;
+  background: var(--surface-overlay);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+}
+.ltc-ghinho__tran { margin: 0 0 10px; color: var(--text-muted); font-size: 12px; }
+.ltc-ghinho__loi, .ltc-duan__loi { color: var(--status-danger); }
+.ltc-ghinho__rong, .ltc-ghinho__cho, .ltc-duan__rong, .ltc-duan__cho { color: var(--text-muted); }
+.ltc-ghinho__nhomten {
+  margin: 14px 0 6px; font-size: 13px; color: var(--text-muted); font-weight: 400;
+}
+.ltc-ghinho__ds, .ltc-duan__ds { list-style: none; margin: 0; padding: 0; }
+.ltc-ghinho__mau, .ltc-duan__muc {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 0;
+  border-top: 1px solid var(--border-subtle);
+}
+.ltc-ghinho__chu { flex: 1; }
+/* ⭐ `nguon` phai doc duoc, khong chi to mau: mau khong toi duoc trinh doc
+   man hinh, va cung khong toi duoc nguoi mu mau. */
+.ltc-ghinho__nguon { color: var(--text-muted); font-size: 12px; white-space: nowrap; }
+.ltc-ghinho__mau[data-nguon="model"] { border-left: 2px solid var(--border-subtle); padding-left: 8px; }
+
+/* ── Khoi tool (H44 P09) ───────────────────────────────────────────────── */
+
+/* ⭐ Nhat, hep, khong mau manh. Mot khoi tool la CHU THICH cho cau tra loi,
+   khong phai noi dung — no phai doc duoc ma khong keo mat khoi cau chu. */
+.ltc-tools { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+
+.ltc-tool {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-canvas);
+  font-size: 13px;
+}
+.ltc-tool__nut {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 6px 10px;
+  background: none; border: none; color: var(--text-secondary);
+  font: inherit; text-align: left; cursor: pointer;
+}
+/* Khong co gi de mo thi nut khong duoc gia vo la mot nut. */
+.ltc-tool__nut:disabled { cursor: default; }
+.ltc-tool__ten { color: var(--text-primary); }
+.ltc-tool__tt { margin-left: auto; color: var(--text-muted); font-size: 12px; }
+
+/* Chi hai trang thai duoc to mau, va ca hai deu la "con viec / da hong" —
+   mot khoi "xong" khong can gianh su chu y voi cau tra loi ngay duoi no. */
+.ltc-tool[data-trang-thai="cho_duyet"] { border-color: var(--status-warn-border, var(--border-subtle)); }
+.ltc-tool[data-trang-thai="loi"] { border-color: var(--status-danger-border); }
+.ltc-tool[data-trang-thai="loi"] .ltc-tool__tt { color: var(--status-danger); }
+
+.ltc-tool__than {
+  padding: 0 10px 8px;
+  border-top: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+.ltc-tool__doiso { margin: 0; }
+.ltc-tool__dong { display: flex; gap: 8px; padding-top: 6px; }
+/* `<dd>` co margin-inline-start 40px mac dinh cua trinh duyet. */
+.ltc-tool__gt { margin: 0; }
+.ltc-tool__khoa { color: var(--text-muted); min-width: 92px; }
+.ltc-tool__gt { word-break: break-word; margin: 0; }
+.ltc-tool__loi { margin: 8px 0 0; color: var(--status-danger); }
+
 /* ── O soan ────────────────────────────────────────────────────────────── */
 
 .ltc-soan {
@@ -308,16 +490,82 @@
 
 /* ── Man hep ───────────────────────────────────────────────────────────── */
 
+/*
+ * 🔴 DO NGAY 05/09 — `height: auto` o day bien mot UNG DUNG thanh mot TRANG.
+ *
+ *    Ban cu dat `height: auto; max-height: none` cho `.ltc` duoi 860px. Hau qua
+ *    do duoc voi mot hoi thoai 27 tin nhan tren khung 390x844:
+ *
+ *        `.ltc` cao 2412px, `<body>` cao 2648px, TRANG tu cuon
+ *        `.ltc-luong` cao 1970px — `overflow-y:auto` cua no KHONG BAO GIO chay
+ *        o soan nam o y=929 trong mot khung cao 844  ->  DUOI MAN HINH
+ *
+ *    Tren desktop cung hoi thoai ay: `.ltc` cao 710, `.ltc-luong` cuon trong
+ *    (ch=511 sh=1430), o soan luon o tren man. Tuc chi ban mobile hong.
+ *
+ * ⭐ Va no hong theo mot kieu de bo qua: KHONG co gi bi cat, khong tran ngang,
+ *    khong loi console. Chi la sau moi cau tra loi, nguoi dung phai cuon mot
+ *    trang dai de tim lai o nhap. Mot phep kiem "khong tran / khong loi" xanh
+ *    het — day la ly do phep do phai hoi *"o soan co nam tren man khong"*.
+ *
+ * ⚠️ `overflow-y: auto` tren mot hang grid cao `auto` la mot cau lenh CHET: mot
+ *    vung khong bi gioi han chieu cao thi khong co gi de tran. Chinh tep nay da
+ *    ghi bai hoc `min-height: 0` cho cung lop loi ay o tren — o day la ve con
+ *    lai cua no.
+ *
+ * ⭐ 77px = 61px header dinh (`.hdr` la `position:sticky`) + 16px `padding-top`
+ *    cua `main.page`. **Do duoc, khong uoc luong** — va do la ly do no khong
+ *    trung 190px cua ban desktop: desktop tru ca chan trang de chan trang nam
+ *    trong man, con o day chan trang cao 61-127px tuy khung nhin (no XUONG DONG
+ *    o 390px) nen tru no la tru mot so khong on dinh. Ung dung chiem tron man;
+ *    chan trang o ngay duoi, cuon mot nhip la toi.
+ *
+ * ⛔ `dvh` chu khong phai `vh`: tren dien thoai thanh dia chi thu vao/nho ra,
+ *    va `100vh` giu nguyen gia tri LON NHAT — tuc o soan bi day xuong duoi mep
+ *    man dung luc thanh dia chi dang hien. Day la dung cho ma `dvh` sinh ra de
+ *    giai, va la mot trong so it cho trong ca kho that su co ngu nghia app-shell.
+ */
 @media (max-width: 860px) {
-  .ltc { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto;
-         height: auto; max-height: none; }
+  .ltc {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    height: calc(100dvh - 77px);
+    /* ⛔ KHONG giu `min-height: 420px` cua ban desktop o day. Do lai o
+     *    844x390 (dien thoai xoay ngang): chi con 313px kha dung, nen mot san
+     *    420px lam chinh cai no dinh chua — o soan bi day xuong duoi mep man
+     *    lai. Mot san chieu cao trong mot bo cuc lay chieu cao lam gioi han la
+     *    mot mau thuan, khong phai mot bien phap an toan. */
+    min-height: 0;
+    max-height: none;
+  }
   .ltc-ben {
     border-right: none;
     border-bottom: 1px solid var(--border-subtle);
-    max-height: 220px;
+    /* ⭐ 132px = nut "Moi" 44 + o tim 44 + mot dong danh sach 44, do duoc.
+     *    Ban cu de 220px; tren 767px kha dung do la 29% man hinh cho mot thanh
+     *    ben, trong khi `.ltc-ds` von da tu cuon nen no khong mat muc nao ca. */
+    max-height: 132px;
   }
   .ltc-luong { padding: 12px 10px; }
   .ltc-tin { padding: 10px 12px; }
+  /* Le an toan cho o soan khi no cham mep duoi man (iPhone co thanh Home). */
+  .ltc-soan { padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* ── Man RAT THAP: dien thoai xoay ngang ────────────────────────────────────
+ *
+ * Do o 844x390: sau khi tru 77px chrome chi con **313px**. Thanh ben 132 + thanh
+ * tren 65 + o soan 99 = 296px, tuc vung tin nhan con 17px.
+ *
+ * ⭐ Nen o day thanh ben rut ve dung hai hang dieu khien (nut "Moi" + o tim);
+ *    `.ltc-ds` von da tu cuon nen KHONG mat muc hoi thoai nao — no chi ngan hon.
+ *    Doi lai vung tin nhan tu 17px len ~61px, va o soan van nam tren man.
+ *
+ * ⚠️ Nguong 500px chon theo hinh hoc chu khong theo mau may: mot khung cao
+ *    500px tru 77px chrome con 423px, tuc vua du cho 132+65+99 = 296px khung
+ *    ung dung va ~127px tin nhan. Duoi muc do thi phai rut. */
+@media (max-width: 860px) and (max-height: 500px) {
+  .ltc-ben { max-height: 88px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -343,6 +591,24 @@
   color: var(--text-primary);
   font: inherit;
 }
+/* Anh tham chieu cho `mode=edit`.
+   ⛔ KHONG dung `.ltc-chip`: chip do la chip CANH BAO (nen vang, chu vang), nen
+      mot anh dinh kem binh thuong se trong nhu mot loi. Theo khuon chip dinh
+      kem cua o soan — cung y nghia thi cung hinh. */
+.ltc-media__ref { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.ltc-media__ref .ltc-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid var(--border-subtle); background: var(--surface-raised);
+  color: var(--text-secondary); border-radius: var(--radius-md);
+  padding: 4px 6px 4px 10px; font-size: .85rem; max-width: 22ch;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ltc-media__ref .ltc-chip button {
+  background: none; border: 0; padding: 2px 4px; font-size: 1rem; line-height: 1;
+  cursor: pointer; color: var(--text-secondary);
+}
+.ltc-media__ref .ltc-chip button:hover { color: var(--text-primary); }
+
 .ltc-media__giong { display: flex; align-items: center; gap: 6px; color: var(--text-secondary); }
 .ltc-media__giong select {
   padding: 6px 8px;
@@ -384,3 +650,185 @@
   color: var(--text-secondary);
   white-space: nowrap;
 }
+
+
+/* == Dong trang thai luot =================================================
+ *
+ * DAY LA CHO GIET CU NHAY BO CUC, va co che nam o CSS chu khong o React.
+ *
+ * Do 03/09 tren production: CLS mot luot stream = 0,1642, vuot ca nguong
+ * "kem" (0,1) cua Google. Gan nhu toan bo den tu MOT cu nhay khi khoi
+ * "Suy luan" moc ra o giay thu 3,7 va day moi thu ben duoi xuong.
+ *
+ * Cach LibreChat giai (`progress-text-wrapper` / `progress-text-content`):
+ * khung co CHIEU CAO CO DINH, noi dung ben trong `position: absolute`. Doi
+ * nhan bao nhieu lan cung khong the day gi — vi khung khong bao gio doi
+ * kich thuoc.
+ *
+ * Va an bang `visibility` chu KHONG `display: none`. `display: none` tra lai
+ * chieu cao cho dong chay, tuc dung lai dung cai ta vua tranh.
+ */
+.ltc-trangthai {
+  position: relative;
+  height: 1.5rem;
+  line-height: 1.5rem;
+  margin: 0 0 0.25rem;
+}
+.ltc-trangthai__chu {
+  position: absolute;
+  left: 0;
+  top: 0;
+  white-space: nowrap;
+  font-size: 0.9em;
+  color: var(--text-secondary);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ltc-trangthai:not([data-trangthai="khong"]) .ltc-trangthai__chu {
+    animation: ltc-tho 1.6s ease-in-out infinite;
+  }
+}
+@keyframes ltc-tho {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 1; }
+}
+
+/* ── Bang nghien cuu (H44 B6) ──────────────────────────────── */
+
+/* ⚠️ `.ltc-nut.ltc-nut--nghiencuu` chu KHONG `.ltc-nut--nghiencuu` — cung bay
+   do dac hieu da ghi o `--ghinho` ngay tren. */
+.ltc-nut.ltc-nut--nghiencuu {
+  margin-top: 8px;
+  width: 100%;
+  background: var(--surface-overlay);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+/* Cung hinh dang voi `.ltc-ghinho`/`.ltc-duan`: hop noi giua man hinh. */
+.ltc-nc {
+  position: fixed; inset: 10% 50% auto 50%;
+  transform: translateX(-50%);
+  width: min(680px, 92vw);
+  max-height: 76vh; overflow-y: auto;
+  z-index: 20;
+  padding: 16px;
+  background: var(--surface-canvas);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 12px 40px rgb(0 0 0 / .5);
+}
+.ltc-nc__dau { display: flex; align-items: center; gap: 12px; }
+.ltc-nc__tieude { margin: 0; font-size: 16px; }
+.ltc-nc__dong { margin-left: auto; }
+.ltc-nc button {
+  padding: 4px 10px;
+  background: var(--surface-overlay);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  cursor: pointer;
+}
+.ltc-nc button:disabled { opacity: .45; cursor: default; }
+.ltc-nc__chay { color: var(--text-primary) !important; }
+
+/* 🔴 PHAM VI. No khong duoc trong nhu chu chan trang: cau nay la thu duy
+   nhat noi cho khach biet san pham KHONG doc Internet. */
+.ltc-nc__phamvi {
+  margin: 10px 0 4px;
+  padding: 8px 10px;
+  background: var(--surface-overlay);
+  border-left: 3px solid var(--status-warn-border, var(--border-subtle));
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+}
+.ltc-nc__gia { margin: 4px 0 10px; color: var(--text-muted); font-size: 13px; }
+.ltc-nc__thieu { color: var(--status-danger); }
+.ltc-nc__nhap { display: block; margin-bottom: 8px; }
+.ltc-nc__nhap span { display: block; margin-bottom: 4px; color: var(--text-muted); }
+.ltc-nc__nhap textarea {
+  width: 100%;
+  padding: 6px 8px;
+  background: var(--surface-overlay);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  resize: vertical;
+}
+.ltc-nc__loi { margin: 8px 0 0; color: var(--status-danger); }
+.ltc-nc__cho { margin: 8px 0 0; color: var(--text-muted); }
+.ltc-nc__bc { margin-top: 14px; }
+.ltc-nc__lydo { margin: 0 0 8px; color: var(--text-muted); font-size: 13px; }
+.ltc-nc__loai { color: var(--status-danger); }
+.ltc-nc__rong { color: var(--text-muted); }
+.ltc-nc__ds { margin: 0; padding-left: 20px; }
+.ltc-nc__ds li { margin-bottom: 10px; }
+.ltc-nc__nguon { display: block; margin-top: 2px; }
+.ltc-nc__td {
+  display: inline-block;
+  margin-right: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-family: var(--font-mono, monospace);
+}
+
+/* ── The duyet (H44 P09) ─────────────────────────────────── */
+
+.ltc-duyet__ds { display: flex; flex-direction: column; gap: 10px; margin: 8px 0; }
+
+/* 🔴 Vien canh bao, khong phai vien loi: day la mot cau hoi, khong phai
+   mot su co. Nhung no phai NOI BAT hon moi khoi khac trong dong thoi gian —
+   day la cho duy nhat nguoi dung phai DUNG LAI va quyet dinh. */
+.ltc-duyet {
+  padding: 12px 14px;
+  background: var(--surface-overlay);
+  border: 1px solid var(--status-warn-border, var(--border-subtle));
+  border-left-width: 4px;
+  border-radius: var(--radius-sm);
+}
+.ltc-duyet__dau { display: flex; align-items: baseline; gap: 10px; }
+.ltc-duyet__tieude { margin: 0; font-size: 15px; color: var(--text-primary); }
+.ltc-duyet__han { margin-left: auto; font-size: 12px; color: var(--text-muted); }
+.ltc-duyet__hequa { margin: 6px 0 10px; color: var(--text-secondary); }
+
+.ltc-duyet__doiso { margin: 0 0 10px; }
+.ltc-duyet__dong { display: flex; gap: 8px; padding-top: 6px; align-items: baseline; }
+.ltc-duyet__dong dt { color: var(--text-muted); min-width: 92px; }
+.ltc-duyet__dong dd { margin: 0; flex: 1; word-break: break-word; }
+.ltc-duyet__dong input {
+  width: 100%;
+  padding: 4px 8px;
+  background: var(--surface-canvas);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  font: inherit;
+}
+
+.ltc-duyet__gia { margin: 0 0 10px; color: var(--text-primary); }
+.ltc-duyet__chuagia { color: var(--status-danger); margin-right: 8px; }
+.ltc-duyet__loi { margin: 0 0 10px; color: var(--status-danger); }
+
+.ltc-duyet__nut { display: flex; gap: 8px; align-items: center; }
+.ltc-duyet button {
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-canvas);
+  color: var(--text-secondary);
+  font: inherit;
+  cursor: pointer;
+}
+.ltc-duyet button:disabled { opacity: .45; cursor: default; }
+
+/* ⭐ "Tu choi" va "Duyet" CUNG co chu, cung padding. Chi khac mau vien. Mot
+   the ma nut dong y to hon nut tu choi la mot the day nguoi ta bam dong y —
+   va o day "dong y" nghia la tieu tien that. */
+.ltc-duyet__dongy { border-color: var(--status-warn-border, var(--border-subtle)); }
+.ltc-duyet__dongy:not(:disabled) { color: var(--text-primary); }
+.ltc-duyet__sua { margin-left: auto; }
+.ltc-duyet__baogia { padding: 2px 10px !important; }

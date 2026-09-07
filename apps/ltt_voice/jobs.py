@@ -83,12 +83,7 @@ def handle(params: dict, ctx=None) -> dict:
 
 def _tao_tieng(params: dict, ctx=None) -> dict:
     """`ltt_voice.synthesize` — tạo tiếng nói từ văn bản."""
-    import io
-
-    from platform_core.storage import get_storage
-
-    from . import (features, sidecar_client, tham_chieu, toc_do,
-                   tu_dien_rieng)
+    from . import features, sidecar_client, tham_chieu, tu_dien_rieng
 
     yc = features.chuan_hoa(params)
 
@@ -160,26 +155,49 @@ def _tao_tieng(params: dict, ctx=None) -> dict:
     # ⛔ BẬN KHÔNG PHẢI HỎNG — để `DangBanTam` bay lên nguyên vẹn cho job_runner
     #    xếp lại. Bọc nó thành LoiGiongNoi ở đây là biến "máy đang bận" thành
     #    "job hỏng", và một job hỏng sẽ TRỪ CREDIT cho việc chưa từng chạy.
-    if len(doan) > 1:
-        wav_bytes, headers = features.goi_cong_dai(
-            doan, ref_b64=ref_b64, preset=preset)
-    else:
-        wav_bytes, headers = features.goi_cong(
-            doan[0], ref_b64=ref_b64, preset=preset)
+    job_id = str(getattr(ctx, "job_id", "") or "adhoc")
+
+    # ── MỘT THƯ MỤC TẠM CHO CẢ LƯỢT, và mọi thứ dưới đây đi bằng ĐƯỜNG DẪN ──
+    #
+    # 🔴 Bản trước cầm `wav_bytes` từ lúc sinh tới lúc cất kho, và cầm hai bản
+    #    cùng lúc trong lúc đổi tốc độ. Với bài 1.500 ký tự thì không ai thấy;
+    #    với một cuốn sách thì đó là trần thật của sản phẩm, và nó chưa từng
+    #    được khai ra ở đâu. Xem `ban_doc_dai` và `noi_dai.ghep_tep`.
+    #
+    # ⭐ Đường ngắn KHÔNG chậm đi vì việc này: nó vốn đã ghi ra một tệp tạm để
+    #    đo thời lượng bằng ffprobe rồi xoá đi. Nay nó giữ đúng tệp ấy lại.
+    with tempfile.TemporaryDirectory(prefix="lttvoice-") as thu_muc:
+        if len(doan) > 1:
+            from . import ban_doc_dai
+            duong, ho_so = ban_doc_dai.dung(
+                doan, thu_muc=thu_muc, owner_id=yc.owner_id or "",
+                job_id=job_id, ref_b64=ref_b64, preset=preset, ctx=ctx)
+            khai = ho_so.get("giay")
+        else:
+            wav_bytes, headers = features.goi_cong(
+                doan[0], ref_b64=ref_b64, preset=preset)
+            duong = os.path.join(thu_muc, "tieng.wav")
+            with open(duong, "wb") as f:
+                f.write(wav_bytes)
+            khai = headers.get("X-Duration-S")
+
+        return _cat_kho(yc, duong, thu_muc, job_id=job_id, khai=khai,
+                        chuan=chuan, so_doan=len(doan), ctx=ctx)
+
+
+def _cat_kho(yc, duong: str, thu_muc: str, *, job_id: str, khai,
+             chuan, so_doan: int, ctx=None) -> dict:
+    """Đo, đổi tốc độ, cất kho. Tách ra vì thân `_tao_tieng` đã đủ dài.
+
+    ⚠️ Nhận `duong` chứ không nhận `bytes`: đây là chỗ duy nhất còn chạm tới cả
+       bản đọc, và nó phải chạm bằng tệp.
+    """
+    from platform_core.storage import get_storage
+
+    from . import features, toc_do
 
     # Đo trên tệp thật, không tin header của sidecar. Header chỉ để đối chiếu.
-    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
-    try:
-        tmp.write(wav_bytes)
-        tmp.close()
-        giay = _do_thoi_luong(tmp.name)
-    finally:
-        try:
-            os.unlink(tmp.name)
-        except OSError:
-            pass
-
-    khai = headers.get("X-Duration-S")
+    giay = _do_thoi_luong(duong)
     if khai and giay:
         try:
             lech = abs(float(khai) - giay)
@@ -206,10 +224,10 @@ def _tao_tieng(params: dict, ctx=None) -> dict:
     # ⇒ Thứ tự bất biến: sinh → đo → (tính tiền theo `giay`) → kéo giãn → lưu.
     giay_phat = 0.0
     if toc_do.can_doi(yc.toc_do):
-        wav_bytes = toc_do.ap_dung(wav_bytes, yc.toc_do)
+        duong = toc_do.ap_dung_tep(duong, os.path.join(thu_muc, "nhanh.wav"),
+                                   yc.toc_do)
         giay_phat = giay / toc_do.hop_le(yc.toc_do)
 
-    job_id = str(getattr(ctx, "job_id", "") or "adhoc")
     # 🔴 `{job_id}/` — CÓ dấu gạch chéo sau job id, không phải `{job_id}.wav`.
     #
     #    `platform_core/job_content.py` nhận diện tệp thuộc về một job bằng
@@ -225,11 +243,15 @@ def _tao_tieng(params: dict, ctx=None) -> dict:
     #    Bảy app còn lại đều theo đúng `{app}/{owner}/{job_id}/...`; chỉ
     #    app này lệch. `tests/test_343` chốt lại cả hai chiều.
     khoa = f"voice/out/{yc.owner_id or 'chung'}/{job_id}/tieng.wav"
-    get_storage().put(khoa, io.BytesIO(wav_bytes), content_type="audio/wav")
+    # Luồng tệp, không `BytesIO`: `LocalStorage.put` chép bằng
+    # `shutil.copyfileobj`, nên một handle là đủ và cả bản đọc không bao giờ
+    # phải nằm trong bộ nhớ.
+    with open(duong, "rb") as f:
+        get_storage().put(khoa, f, content_type="audio/wav")
 
     ket = features.KetQua(
         yeu_cau=yc, audio_key=khoa, giay=giay, giay_phat=giay_phat,
-        text_da_chuan_hoa=chuan.da_chuan_hoa, so_doan=len(doan))
+        text_da_chuan_hoa=chuan.da_chuan_hoa, so_doan=so_doan)
 
     if giay <= 0:
         log.warning("job %s: khong do duoc thoi luong -> thu 0 credit", job_id)

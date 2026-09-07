@@ -258,12 +258,12 @@ export function ProjectScreen({ mode }: { mode: 'projects' | 'brief' }) {
                   onChange={(event) => updateDraft({ audience: event.target.value })} />
               </label>
               <label>Thời lượng (giây)
-                <input type="number" min={3} max={600} value={draft.duration_seconds}
+                <input type="number" inputMode="numeric" min={3} max={600} value={draft.duration_seconds}
                   disabled={frozen}
                   onChange={(event) => updateDraft({ duration_seconds: Number(event.target.value) })} />
               </label>
               <label>Số cảnh
-                <input type="number" min={1} max={20} value={draft.scene_count}
+                <input type="number" inputMode="numeric" min={1} max={20} value={draft.scene_count}
                   disabled={frozen}
                   onChange={(event) => updateDraft({ scene_count: Number(event.target.value) })} />
               </label>

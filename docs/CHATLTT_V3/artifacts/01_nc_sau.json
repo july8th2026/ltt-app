@@ -1,0 +1,144 @@
+{
+  "ket_qua": [
+    {
+      "ma": "K1-156000-dau-r0",
+      "sau": 156000,
+      "vi_tri": "dau",
+      "giay": 180.5,
+      "token_vao": 128336,
+      "ten_goi": [
+        "calculator"
+      ],
+      "goi_dung": true,
+      "kim_trong_doi_so": true,
+      "doi_so": "[\"{\\\"expression\\\":\\\"8123*4471\\\"}\"]",
+      "content": ""
+    },
+    {
+      "ma": "K2-156000-dau-r0",
+      "sau": 156000,
+      "vi_tri": "dau",
+      "giay": 179.8,
+      "token_vao": 127744,
+      "ten_goi": [
+        "weather_fake"
+      ],
+      "goi_dung": true,
+      "kim_trong_doi_so": true,
+      "doi_so": "[\"{\\\"city\\\":\\\"đà nẵng\\\",\\\"unit\\\":\\\"c\\\"}\"]",
+      "content": ""
+    },
+    {
+      "ma": "K3-156000-dau-r0",
+      "sau": 156000,
+      "vi_tri": "dau",
+      "giay": 187.7,
+      "token_vao": 128115,
+      "ten_goi": [
+        "image_edit_fake"
+      ],
+      "goi_dung": true,
+      "kim_trong_doi_so": true,
+      "doi_so": "[\"{\\\"image_id\\\":\\\"img_5591\\\",\\\"instruction\\\":\\\"tăng độ tương phản\\\"}\"]",
+      "content": ""
+    },
+    {
+      "ma": "K4-156000-dau-r0",
+      "sau": 156000,
+      "vi_tri": "dau",
+      "giay": 188.2,
+      "token_vao": 129162,
+      "ten_goi": [
+        "speech_fake"
+      ],
+      "goi_dung": true,
+      "kim_trong_doi_so": true,
+      "doi_so": "[\"{\\\"text\\\":\\\"vận hành bền bỉ mỗi ngày.\\\",\\\"giong\\\":\\\"nu_mien_bac\\\"}\"]",
+      "content": ""
+    },
+    {
+      "ma": "K1-156000-giua-r0",
+      "sau": 156000,
+      "vi_tri": "giua",
+      "giay": 180.0,
+      "token_vao": 127667,
+      "ten_goi": [
+        "calculator"
+      ],
+      "goi_dung": true,
+      "kim_trong_doi_so": true,
+      "doi_so": "[\"{\\\"expression\\\":\\\"8123*4471\\\"}\"]",
+      "content": ""
+    },
+    {
+      "ma": "K2-156000-giua-r0",
+      "sau": 156000,
+      "vi_tri": "giua",
+      "giay": 188.2,
+      "token_vao": 129441,
+      "ten_goi": [
+        "weather_fake"
+      ],
+      "goi_dung": true,
+      "kim_trong_doi_so": true,
+      "doi_so": "[\"{\\\"city\\\":\\\"đà nẵng\\\",\\\"unit\\\":\\\"c\\\"}\"]",
+      "content": ""
+    },
+    {
+      "ma": "K3-156000-giua-r0",
+      "sau": 156000,
+      "vi_tri": "giua",
+      "giay": 188.2,
+      "token_vao": 128276,
+      "ten_goi": [
+        "image_edit_fake"
+      ],
+      "goi_dung": true,
+      "kim_trong_doi_so": true,
+      "doi_so": "[\"{\\\"image_id\\\":\\\"img_5591\\\",\\\"instruction\\\":\\\"tăng độ tương phản\\\"}\"]",
+      "content": "Theo tài liệu, mã ảnh chuẩn là **img_5591**. Tôi sẽ sửa ảnh này để tăng độ tương phản.\n\n"
+    },
+    {
+      "ma": "K4-156000-giua-r0",
+      "sau": 156000,
+      "vi_tri": "giua",
+      "giay": 187.7,
+      "token_vao": 127959,
+      "ten_goi": [
+        "speech_fake"
+      ],
+      "goi_dung": true,
+      "kim_trong_doi_so": true,
+      "doi_so": "[\"{\\\"text\\\":\\\"vận hành bền bỉ mỗi ngày.\\\"}\"]",
+      "content": ""
+    },
+    {
+      "ma": "K1-156000-cuoi-r0",
+      "sau": 156000,
+      "vi_tri": "cuoi",
+      "giay": 188.1,
+      "token_vao": 127923,
+      "ten_goi": [
+        "calculator"
+      ],
+      "goi_dung": true,
+      "kim_trong_doi_so": true,
+      "doi_so": "[\"{\\\"expression\\\":\\\"8123 * 4471\\\"}\"]",
+      "content": ""
+    },
+    {
+      "ma": "K2-156000-cuoi-r0",
+      "sau": 156000,
+      "vi_tri": "cuoi",
+      "giay": 188.1,
+      "token_vao": 128381,
+      "ten_goi": [
+        "weather_fake"
+      ],
+      "goi_dung": true,
+      "kim_trong_doi_so": true,
+      "doi_so": "[\"{\\\"city\\\":\\\"đà nẵng\\\",\\\"unit\\\":\\\"c\\\"}\"]",
+      "content": ""
+    }
+  ]
+}

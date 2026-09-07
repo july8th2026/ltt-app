@@ -99,6 +99,18 @@ class YeuCau:
     #: sao nó không thuộc năm tham số mà Q119 khoá.
     toc_do: float = 1.0
 
+    #: Ngôn ngữ khách TỰ KHAI: `"auto"` (mặc định), `"vi"`, `"en"`.
+    #:
+    #: ⛔ KHÔNG phải tham số của engine. VieNeu song ngữ và tự xử lý cả hai —
+    #:    đó là lý do ô này từng bị bỏ với ghi chú *"ba nút giả tệ hơn một câu
+    #:    thật"*. Nhận xét ấy đúng **vào lúc viết**, và nó hết đúng khi
+    #:    `lan_ngon_ngu.py` ra đời: nay có làn của giọng, có phép đoán ngôn ngữ
+    #:    của văn bản, và có phép đối chiếu hai thứ đó.
+    #:
+    #: ⭐ Nên ô này điều khiển một thứ THẬT: nó thay cho phép ĐOÁN khi đối chiếu
+    #:    làn. Xem `lan_ngon_ngu.doi_chieu`.
+    ngon_ngu: str = "auto"
+
     @property
     def so_ky_tu(self) -> int:
         return len(self.text)
@@ -145,9 +157,15 @@ def chuan_hoa(params: dict) -> YeuCau:
     #    từng ném rồi bị nuốt, cho ra `owner_id = 0` cho mọi người dùng.
     owner_id = str(p.get("owner_id") or p.get("user_id") or "").strip()
 
+    # Giá trị lạ -> `auto`. Một tham số hỏng không được làm hỏng job, và
+    # `auto` là hành vi cũ nên nó là lối lui đúng.
+    ngon_ngu = str(p.get("ngon_ngu") or "auto").strip().lower()
+    if ngon_ngu not in ("auto", "vi", "en"):
+        ngon_ngu = "auto"
+
     from . import toc_do as _toc_do
     return YeuCau(text=text, voice_id=voice_id, preset=preset,
-                  owner_id=owner_id,
+                  owner_id=owner_id, ngon_ngu=ngon_ngu,
                   doc_so_tran=bool(p.get("doc_so_tran")),
                   # `hop_le` ép về khoảng và biến giá trị vô nghĩa thành 1.0 —
                   # tức "không đổi". Một tham số hỏng không được làm hỏng job.
@@ -226,7 +244,8 @@ def giai_giong(db, yc: YeuCau) -> tuple:
     if not yc.voice_id:
         # Preset là giọng người nói TIẾNG VIỆT ba miền (`giong_mau.py`), nên
         # chúng thuộc làn `vi` — dù engine song ngữ đọc được cả tiếng Anh.
-        return None, (yc.preset or None), lan_ngon_ngu.doi_chieu("vi", yc.text)
+        return None, (yc.preset or None), lan_ngon_ngu.doi_chieu(
+            "vi", yc.text, yc.ngon_ngu)
 
     # `cho_dung_chung=True`: kho giọng chung của nền tảng đọc được cho mọi
     # khách. Đây là cửa DÙNG, nên nó mở; cửa SỬA (`_p_giong`) thì không.
@@ -244,7 +263,7 @@ def giai_giong(db, yc: YeuCau) -> tuple:
         raise LoiGiongNoi(_t(
             "Giọng này chưa ghi danh xong. Hãy thử lại sau ít phút."))
     return (tham_chieu.nap_ref_b64(bieu_dien), None,
-            lan_ngon_ngu.doi_chieu(ho_so.ngon_ngu, yc.text))
+            lan_ngon_ngu.doi_chieu(ho_so.ngon_ngu, yc.text, yc.ngon_ngu))
 
 
 def _goi_va_dich_loi(ham, *doi_so, **tham_so):
@@ -281,10 +300,21 @@ def goi_cong(text: str, *, ref_b64=None, preset=None) -> tuple:
                             ref_b64=ref_b64, preset=preset)
 
 
-def goi_cong_dai(doan: list, *, ref_b64=None, preset=None) -> tuple:
-    """Nhiều đoạn -> MỘT tệp liền mạch. Cùng hình dạng trả về với `goi_cong`."""
-    return _goi_va_dich_loi(sidecar_client.noi_dai, list(doan),
-                            ref_b64=ref_b64, preset=preset)
+#: 🔴 `goi_cong_dai` ĐÃ GỠ 03/09/2026, và chỗ này ghi lại vì sao — không phải để
+#:    tiếc nó, mà để lần sau ai đó định thêm lại thì đọc được lý do nó đi.
+#:
+#:    Nó gọi `/v1/speech-dai`: sinh **và** ghép cả bài trong MỘT lượt HTTP. Đúng
+#:    cho bài vừa phải, và nó không sai — nhưng nó không ghi lại gì giữa chừng,
+#:    nên một đoạn hỏng ở phút thứ 18 làm mất cả lượt, và cả bản đọc phải nằm
+#:    trong RAM sidecar cùng lúc.
+#:
+#: ⭐ Đường bản đọc dài nay đi qua `ban_doc_dai.dung` — từng đoạn có một chỗ
+#:    đứng riêng trên đĩa, nên "đọc tiếp" và "chỉ sinh lại đoạn hỏng" là hệ quả
+#:    tự nhiên chứ không phải tính năng phải xây thêm.
+#:
+#: ⚠️ Cửa `/v1/speech-dai` thì VẪN CÒN ở sidecar: `tools/do_troi_tong.py` gọi
+#:    thẳng nó, và nó là đường đối chứng của phép đo. Gỡ ở đây là gỡ **người gọi
+#:    trong sản phẩm**, không phải gỡ cửa.
 
 
 def hash_noi_dung(data: bytes) -> str:

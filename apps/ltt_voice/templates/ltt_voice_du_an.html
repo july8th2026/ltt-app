@@ -1,6 +1,9 @@
 {% extends "base.html" %}
 {% block title %}{{ _("Dự án") }} — {{ _("Giọng nói LTT") }}{% endblock %}
 
+{# Cung che do trang rong voi bon tab kia. #}
+{% block page_mode %}immersive{% endblock %}
+
 {#
   Danh sách dự án. Ảnh tham chiếu 03 gộp danh sách vào cột trái của màn biên
   tập; ở đây tách thành hai trang.

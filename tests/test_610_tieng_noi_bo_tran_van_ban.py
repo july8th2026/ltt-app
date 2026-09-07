@@ -42,21 +42,53 @@ def moi_truong(tmp_path, monkeypatch):
 
 # ── 1. Trần ở cửa báo giá ───────────────────────────────────────────────────
 
-def test_tran_la_1500_va_khong_noi():
+def test_tran_cong_khai_khop_schema_va_tran_chat_luong_van_1500():
+    """🔴 PHÉP KIỂM NÀY ĐÃ ĐỔI 03/09/2026, và chỗ đổi mới là chỗ đáng đọc.
+
+    Bản trước tên là `test_tran_la_1500_va_khong_noi` và chốt
+    `TRAN_KY_TU_CONG_KHAI <= 1500` kèm câu *"nới trần phải qua cổng V10, không
+    qua test"*. Câu ấy **đúng** — và nó đã làm đúng việc của nó: nó đỏ đúng lúc
+    trần được nới, buộc người nới phải quay lại đây và nói ra bằng chứng.
+
+    ⭐ Nhưng nó chốt NHẦM HẰNG SỐ. Thứ Q119 bảo vệ là chỗ **giọng bắt đầu trôi**
+       — tức trần của MỘT LƯỢT SINH. Trần của một YÊU CẦU là chuyện khác: nó là
+       ngân sách tài nguyên. Trước 03/09 hai con số bằng nhau nên không ai phải
+       phân biệt, và phép kiểm gọi tên con số dễ thấy hơn.
+
+    ⇒ Nay nó chốt đúng thứ nó vốn muốn canh: **trần chất lượng vẫn là 1.500**.
+      Trần yêu cầu được phép khác, và `tests/test_338` chốt nó nằm trong ngân
+      sách thời gian job lẫn trần định dạng WAV.
+
+    ⚠️ NÓI CHO ĐÚNG VỀ BẰNG CHỨNG: trần công khai được nới sau **một vòng đo**
+       (`tools/do_bai_dai.py`, 03/09) chứ không phải sau một lượt cổng V10 đầy
+       đủ. Bốn tài liệu độc lập và 17 đoạn cùng chỉ một hướng — bản ghép tốt hơn
+       bản một lượt trên mọi chỉ số ASR, và tương đồng người nói không tụt dưới
+       sàn nhiễu của chính nó ở bất kỳ độ dài nào. Chi tiết ở
+       `apps/ltt_voice/tham_so_cong_khai.py`.
+    """
     from apps.ltt_voice import tham_so_cong_khai as ts
     from apps.ltt_voice.manifest import MANIFEST
     tool = next(t for t in MANIFEST.tools if t.name == TOOL)
     assert tool.params_schema["text"]["max_length"] == ts.TRAN_KY_TU_CONG_KHAI
-    assert ts.TRAN_KY_TU_CONG_KHAI <= 1500, "noi tran phai qua cong V10, khong qua test"
-    assert ts.TRAN_MOI_LUOT_SINH == 1500
+    assert ts.TRAN_MOI_LUOT_SINH == 1500, (
+        "tran CHAT LUONG cua mot luot sinh la thu Q119 bao ve — noi no van "
+        "phai qua cong V10, khong qua test")
 
 
-def test_bao_gia_tu_choi_1501_nhan_1500():
+def test_bao_gia_tu_choi_vuot_tran_nhan_dung_tran():
+    """Cửa nội bộ vẫn chặn TRƯỚC tiền, trước hàng đợi, trước GPU.
+
+    ⭐ Chốt theo `TRAN_KY_TU_CONG_KHAI` chứ không theo một con số gõ tay: phép
+       bảo vệ ở đây là *"vượt trần thì bị từ chối ở cửa"*, và mệnh đề ấy không
+       đổi khi con số đổi. Gõ tay `1501` là buộc phép kiểm phải sửa mỗi lần trần
+       đổi, và mỗi lần sửa là một cơ hội sửa nhầm thành không kiểm gì cả.
+    """
+    from apps.ltt_voice.tham_so_cong_khai import TRAN_KY_TU_CONG_KHAI as TRAN
     from platform_core.runtime_noi_bo import job as rj
     with pytest.raises(rj.ThamSoSai, match="text"):
-        rj.bao_gia(TOOL, {"text": "a" * 1501})
-    bg = rj.bao_gia(TOOL, {"text": "a" * 1500})
-    assert bg.credit > 0 and len(bg.tham_so_sach["text"]) == 1500
+        rj.bao_gia(TOOL, {"text": "a" * (TRAN + 1)})
+    bg = rj.bao_gia(TOOL, {"text": "a" * TRAN})
+    assert bg.credit > 0 and len(bg.tham_so_sach["text"]) == TRAN
 
 
 # ── 2. features không cắt, không tự đặt số ──────────────────────────────────

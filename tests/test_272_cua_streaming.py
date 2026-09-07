@@ -222,14 +222,18 @@ def test_KHONG_doi_idempotency_key(api, monkeypatch):
 # ── 3. Tiền: giữ TRẦN, thu THẬT ─────────────────────────────────────────────
 
 def test_thu_theo_TOKEN_DA_SINH_khong_theo_tran(api, monkeypatch):
-    _dat_luong(monkeypatch, _khoi(vao=1_000, ra=20))
+    # ⚠️ Ba nghin token RA = 1.200 mcredit > 1 credit. Con so nay KHONG tuy y:
+    #    tu 05/09 phan le duoi 1 credit duoc TICH LUY (`users.mcredit_du`) chu
+    #    khong lam tron len, nen mot kich ban vai chuc mcredit thu dung 0 va moi
+    #    doi chung `thu > 0` ben duoi thanh vo nghia. Dung ha xuong.
+    _dat_luong(monkeypatch, _khoi(vao=1_000, ra=3_000))
     user_id, token = _account()
     truoc = _so_du(user_id)
     api.post(MSG, json=_than(max_tokens=8000), headers=_h(token)).read()
     thu = truoc - _so_du(user_id)
     assert thu > 0, "khong thu gi ca"
 
-    _dat_luong(monkeypatch, _khoi(vao=1_000, ra=3_000))
+    _dat_luong(monkeypatch, _khoi(vao=1_000, ra=6_000))
     truoc2 = _so_du(user_id)
     api.post(MSG, json=_than(max_tokens=8000), headers=_h(token)).read()
     thu2 = truoc2 - _so_du(user_id)
@@ -264,7 +268,11 @@ def test_so_REQUEST_ghi_dung_so_tien_da_thu_o_cua_stream(api, monkeypatch):
     ⭐ Và `platform_core/public_api/anomalies.py` cộng chính cột này để dò bất
        thường tiền, nên nó mù với hai cửa khách dùng nhiều nhất.
     """
-    _dat_luong(monkeypatch, _khoi(vao=1_000, ra=200))
+    # ⚠️ Ba nghin token RA = 1.200 mcredit > 1 credit. Con so nay KHONG tuy y:
+    #    tu 05/09 phan le duoi 1 credit duoc TICH LUY (`users.mcredit_du`) chu
+    #    khong lam tron len, nen mot kich ban vai chuc mcredit thu dung 0 va moi
+    #    doi chung `thu > 0` ben duoi thanh vo nghia. Dung ha xuong.
+    _dat_luong(monkeypatch, _khoi(vao=1_000, ra=3_000))
     user_id, token = _account()
     truoc = _so_du(user_id)
     api.post(MSG, json=_than(max_tokens=8000), headers=_h(token)).read()
@@ -350,13 +358,15 @@ def test_so_REQUEST_ghi_dung_so_tien_o_nhanh_KHONG_STREAM(api, monkeypatch):
     def _gia(db, params, *, timeout_s=300.0):
         return features.KetQua(
             noi_dung="chao ban", suy_nghi="", tool_calls=(), finish_reason="stop",
-            model=params["model"], token_vao=800, token_ra=120,
+            # ⚠️ Đủ lớn để vượt 1 credit — để phép kiểm đúng cả khi bật C3
+            #    (`LTT_TINH_TIEN_TICH_LUY=1`), lúc đó phần lẻ không bị làm tròn lên.
+            model=params["model"], token_vao=8_000, token_ra=2_000,
             token_vao_cache=0, do_duoc=True)
 
     monkeypatch.setattr(features, "chay", _gia)
     user_id, token = _account()
     truoc = _so_du(user_id)
-    than = _than(max_tokens=400)
+    than = _than(max_tokens=2_000)
     than.pop("stream", None)                      # <- KHAC BIET DUY NHAT
     r = api.post(MSG, json=than, headers=_h(token))
     assert r.status_code == 200, r.text
@@ -409,9 +419,13 @@ def test_nonstream_execution_slot_cung_bi_chan_truoc_model(api, monkeypatch):
 
 def test_CAT_GIUA_CHUNG_van_thu_dung_phan_da_sinh(api, monkeypatch):
     """🔴 Đây là ca mà cả thiết kế này sinh ra để xử. GPU đã đốt rồi."""
+    # ⚠️ Ba nghin token RA = 1.200 mcredit > 1 credit. Con so nay KHONG tuy y:
+    #    tu 05/09 phan le duoi 1 credit duoc TICH LUY (`users.mcredit_du`) chu
+    #    khong lam tron len, nen mot kich ban vai chuc mcredit thu dung 0 va moi
+    #    doi chung `thu > 0` ben duoi thanh vo nghia. Dung ha xuong.
     khoi = [_sse("message_start", {"message": {"usage": {"input_tokens": 500,
                                                          "output_tokens": 0}}}),
-            _sse("message_delta", {"usage": {"output_tokens": 42}})]
+            _sse("message_delta", {"usage": {"output_tokens": 3_000}})]
     khoi += [_sse("content_block_delta", {"delta": {"text": "x"}})] * 50
     _dat_luong(monkeypatch, khoi)
     user_id, token = _account()

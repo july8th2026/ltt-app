@@ -148,7 +148,11 @@ def _tool_thu(monkeypatch, khoi=None, ban=False):
             _sse({"choices": [{"delta": {"reasoning_content": "nghi"}}]}),
             _sse({"choices": [{"delta": {"content": "xin "}}]}),
             _sse({"choices": [{"delta": {"content": "chao"}, "finish_reason": "stop"}]}),
-            _sse({"choices": [], "usage": {"prompt_tokens": 40, "completion_tokens": 2}}),
+            # Cỡ vượt 1 credit: các phép kiểm tiền ở tệp này khẳng định
+            # `0 < thu < giu`, và mệnh đề ấy phải đúng ở CẢ HAI chính sách
+            # làm tròn chứ không nhờ sàn của C1.
+            _sse({"choices": [],
+                  "usage": {"prompt_tokens": 40_000, "completion_tokens": 2_000}}),
             b"data: [DONE]" + NL + NL])
 
     monkeypatch.setattr(luong_vlm, "mo", mo)
@@ -185,7 +189,7 @@ def test_gui_luot_roi_su_that_va_stream(web, monkeypatch):
     a = tin[kq["assistant_message_id"]]
     assert a["status"] == "done" and a["parent_id"] == kq["user_message_id"]
     assert a["blocks"] == [{"type": "reasoning", "text": "nghi"}, {"type": "text", "text": "xin chao"}]
-    assert a["execution"]["usage"]["token_ra"] == 2
+    assert a["execution"]["usage"]["token_ra"] == 2_000
     assert a["execution"]["credit"]["thu"] >= 1
     assert st["conversation"]["current_leaf_id"] == kq["assistant_message_id"]
     assert st["conversation"]["title"].startswith("hoi gi do")
@@ -218,7 +222,9 @@ def test_dung_giua_chung_giu_phan_da_sinh_va_thu_dung(web, monkeypatch):
     from apps.chatltt.services import luot as LUOT
 
     khoi = [_sse({"choices": [{"delta": {"content": "a"}}],
-                  "usage": {"prompt_tokens": 100, "completion_tokens": 30}})]
+                  # 10.000 vào (500) + 1.250 ra (500) = ĐÚNG 1,000 credit ⇒
+                  # `thu == 1` ở cả C1 lẫn C3, trong khi giữ chỗ là 2.
+                  "usage": {"prompt_tokens": 10_000, "completion_tokens": 1_250}})]
     khoi += [_sse({"choices": [{"delta": {"content": "b"}}]})] * 400
     _tool_thu(monkeypatch, khoi=khoi)
     uid, email = _user(1000)

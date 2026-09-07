@@ -23,22 +23,75 @@ ngan_sach.py — chặn yêu cầu VƯỢT VÙNG ĐÃ ĐO **trước khi** nó c
    Hệ quả phải chấp nhận: ước lượng **cao hơn thật**, nên đôi khi từ chối một yêu
    cầu lẽ ra vừa. Đó là chiều sai an toàn. Chiều ngược lại — cho lọt một yêu cầu
    vượt trần — mới là chiều nguy hiểm.
+
+================================================================================
+🔴 ĐO 03/09: "CAO HƠN THẬT" HOÁ RA LÀ TỚI **HAI LẦN**, VÀ ĐÓ LÀ MỘT LỖI THẬT
+
+Đoạn trên đúng về *chiều* và sai về *độ lớn*. Đo bằng `/tokenize` của chính
+model đang nạp, năm loại nội dung:
+
+    JSON kieu Codex gui     1,42x     3,55 ky tu/token that
+    ma Python (kho nay)     1,27x     3,17
+    tieng Anh van xuoi      2,00x     5,00
+    tieng Viet co dau       1,26x     3,14
+    tron - phien agent      1,55x     3,87
+
+⛔ VÀ ĐÂY LÀ CHỖ NÓ THÀNH LỖI, KHÔNG CHỈ THÀNH LÃNG PHÍ. Cổng này cưỡng chế
+   bằng token **ƯỚC**; client (Codex, Claude Code) đếm token **THẬT**. Nên con
+   số ta công bố cho client — và ngưỡng nén nó tính ra từ con số đó — **nằm ở
+   một đơn vị khác** với thứ ta từ chối. Với hỗn hợp 1,55×, ta từ chối ở khoảng
+   110.000 token thật trong khi nói với client rằng nó có 156.385 và hãy nén ở
+   123.617.
+
+   Không ngưỡng nén nào ở phía client ngăn được `413` khi hai bên đếm bằng hai
+   đơn vị khác nhau. Đó là cơ chế thật của sự cố `413` ở 101.938/96.256, và
+   **một ngưỡng nén đúng không sửa được nó**.
+
+⭐ VÀ `/tokenize` KHÔNG PHẢI `/v1/chat/completions/input_tokens`. Đoạn ba dòng ở
+   trên gộp hai endpoint làm một, và sự nhập nhằng đó là lý do phép đếm chính xác
+   bị loại từ đầu. `/tokenize` **không chạy inference** — nó chỉ cần từ vựng của
+   model đang nạp. Gọi hàng chục lần trong lô đo 03/09: không sinh một token nào.
+
+⇒ Nên `kiem_tra` nay có **ba nhánh**, và nhánh nhanh không đổi:
+
+       uoc <= tran                    -> NHAN ngay
+       uoc >  tran, model DA NAP      -> /tokenize, quyet theo so THAT
+       uoc >  tran, model CHUA NAP    -> tu choi theo uoc (khong danh thuc GPU)
+
+   Nhánh một an toàn **vì** ước là số cao: ước vừa thì thật chắc chắn vừa.
+   Nhánh ba giữ nguyên tính chất "413 trước khi chạm GPU" (đo 03/09: ≤0,02 s).
+   Chỉ nhánh hai là mới, và nó chỉ **nới**, không bao giờ nới quá `tran`.
 """
 from __future__ import annotations
 
 import base64
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 #: Số ký tự trên một token, dùng để ƯỚC LƯỢNG.
 #:
-#: Tokenizer của Qwen nuốt khoảng 3,5–4 ký tự tiếng Anh cho một token, và **ít hơn
-#: hẳn với tiếng Việt có dấu** (dấu tiếng Việt tốn thêm byte UTF-8, và tokenizer
-#: cắt nhỏ hơn). Lấy **2,5** để nghiêng về phía ước lượng CAO.
+#: 🔴 LÝ LẼ CHỌN 2,5 ĐÃ ĐƯỢC ĐO, VÀ NÓ SAI. Chú thích cũ ở đây viết: *"Tokenizer
+#:    của Qwen nuốt khoảng 3,5–4 ký tự tiếng Anh cho một token, và **ít hơn hẳn
+#:    với tiếng Việt có dấu**"*. Đo 03/09 bằng `/tokenize` của chính model:
 #:
-#: ⚠️ Đây không phải hằng của model. Nó là một mốc an toàn. Đừng nâng nó lên cho
-#:    "lọt được nhiều yêu cầu hơn" — đó là chọn một con số khác cũng chưa ai đo.
+#:        tieng Anh van xuoi   5,00 ky tu/token
+#:        JSON kieu Codex      3,55
+#:        ma Python            3,17
+#:        tieng Viet co dau    3,14      <- KHONG "it hon han"
+#:
+#:    Tiếng Việt là **3,14**, không phải dưới 2,5. Nên 2,5 không bảo thủ *vừa
+#:    đủ* cho tiếng Việt — nó bảo thủ **quá** cho mọi thứ, và quá nhất (2,0×) ở
+#:    đúng thứ Codex gửi.
+#:
+#: ⚠️ Đây không phải hằng của model. Nó là một mốc an toàn cho ĐƯỜNG NHANH:
+#:    "ước vừa trần" ⇒ nhận ngay, không cần đếm. Giữ nó THẤP là đúng cho việc
+#:    đó — ước thấp hơn thật thì mới nguy hiểm.
+#:
+#: ⛔ ĐỪNG NÂNG NÓ ĐỂ "LỌT ĐƯỢC NHIỀU YÊU CẦU HƠN". Đó là chọn một con số khác
+#:    cũng chưa ai đo, và nó đổi sai số sang **chiều nguy hiểm** cho mọi loại nội
+#:    dung cùng lúc. Việc cho lọt nhiều hơn thuộc nhánh hai của `kiem_tra` —
+#:    đếm THẬT, chính xác, chỉ khi cần.
 KY_TU_MOI_TOKEN = 2.5
 
 #: Token quy cho MỘT ảnh khi chưa biết độ phân giải thật.
@@ -76,9 +129,29 @@ class KetQuaDo:
     byte_anh_lon_nhat: int
     #: URL ảnh KHÔNG phải `data:` — mỗi cái là một đường SSRF tiềm năng.
     url_tu_xa: tuple = ()
+    #: Mọi đoạn văn bản đã gom, để `kiem_tra` đếm **thật** khi cần.
+    #:
+    #: ⛔ Giữ tham chiếu chứ không chép: chúng đã nằm trong `body` trong bộ nhớ,
+    #:    nên đây không phải một bản sao thứ hai của một hội thoại 400 KB.
+    van_ban: tuple = ()
+    #: Số token **thật** do `/tokenize` trả về, khi đã hỏi. `None` = chưa hỏi.
+    #:
+    #: ⭐ `None` KHÁC 0. Không phân biệt được hai thứ đó thì một lần "không hỏi
+    #:    được" trông y hệt một yêu cầu rỗng — và một yêu cầu rỗng thì vừa mọi
+    #:    trần, tức lỗi sẽ nghiêng về chiều nguy hiểm.
+    token_that: "int | None" = None
 
     @property
     def token_vao(self) -> int:
+        """Token vào **dùng để phán xử**: số thật nếu đã đếm, không thì số ước."""
+        if self.token_that is not None:
+            return self.token_that + self.token_anh
+        return self.token_van_ban + self.token_anh
+
+    @property
+    def token_vao_uoc(self) -> int:
+        """Số ƯỚC, luôn có. Dùng cho log và header — để đọc log biết được ta
+        phán xử bằng số nào."""
         return self.token_van_ban + self.token_anh
 
 
@@ -195,13 +268,24 @@ def do_yeu_cau(body: dict[str, Any]) -> KetQuaDo:
         token_anh=len(anh) * TOKEN_MOI_ANH,
         byte_anh_lon_nhat=byte_lon_nhat,
         url_tu_xa=tu_xa,
+        van_ban=tuple(van_ban),
     )
 
 
 def kiem_tra(body: dict[str, Any], *, max_input_tokens: int, max_output_tokens: int,
              max_images: int, max_image_bytes: int, max_context: int,
-             co_vision: bool) -> KetQuaDo:
-    """Ném `VuotNganSach` nếu yêu cầu vượt bất kỳ trần nào. Không chạm GPU."""
+             co_vision: bool, dem_that=None) -> KetQuaDo:
+    """Ném `VuotNganSach` nếu yêu cầu vượt bất kỳ trần nào. Không chạm GPU.
+
+    `dem_that` — tuỳ chọn — là một hàm `(list[str]) -> int | None` đếm token
+    **thật** của các đoạn văn bản, hoặc trả `None` khi không đếm được lúc này
+    (model chưa nạp, thượng nguồn không trả lời). Xem ba nhánh ở docstring đầu
+    tệp.
+
+    ⛔ `dem_that` chỉ được gọi khi phép **ước** đã vượt trần. Đường nhanh —
+       tuyệt đại đa số yêu cầu — không thêm một round-trip nào, và đó là điều
+       kiện để thay đổi này không phải một cái giá trả mỗi lượt.
+    """
     do = do_yeu_cau(body)
 
     if do.so_anh and not co_vision:
@@ -240,6 +324,26 @@ def kiem_tra(body: dict[str, Any], *, max_input_tokens: int, max_output_tokens: 
     if xin_ra > max_output_tokens:
         raise VuotNganSach("Xin sinh ra qua nhieu token.", truong="max_tokens",
                            tran=max_output_tokens, thay=xin_ra)
+
+    # ── NHÁNH HAI: ước đã vượt trần, hỏi số THẬT trước khi từ chối ──────────
+    #
+    # ⭐ Chỉ vào đây khi **ước** đã vượt. Ước là số CAO, nên ước vừa ⇒ thật chắc
+    #    chắn vừa, và ta không tốn một round-trip nào cho đường nhanh.
+    #
+    # ⛔ `dem_that` trả `None` = "không đếm được lúc này" (model chưa nạp, hoặc
+    #    thượng nguồn không trả lời). Khi đó ta **giữ nguyên** phán xử theo ước.
+    #    Đó là chiều sai an toàn, và nó giữ đúng tính chất đã đo 03/09: một
+    #    yêu cầu quá to bị chặn trong ≤0,02 s mà không đánh thức GPU.
+    if do.token_vao > max_input_tokens and dem_that is not None and do.van_ban:
+        that = None
+        try:
+            that = dem_that(list(do.van_ban))
+        except Exception:                                     # noqa: BLE001
+            # Một đường ĐẾM mà ném thì không được phép làm vỡ đường phục vụ.
+            # Không đếm được thì lùi về ước, y như `None`.
+            that = None
+        if isinstance(that, int) and that >= 0:
+            do = replace(do, token_that=that)
 
     if do.token_vao > max_input_tokens:
         raise VuotNganSach("Dau vao vuot tran token.", truong="input_tokens",

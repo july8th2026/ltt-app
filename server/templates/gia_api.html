@@ -33,7 +33,13 @@
       </tr>
     </tbody>
   </table>
+  {# Cau nay la DIEU KHOAN CONG BO — phai theo chinh sach dang chay, khong
+     duoc chep lai no. Xem `dieu_khoan._muc_lam_tron()`. #}
+  {% if bang.toi_thieu_moi_luot_credit %}
   <p class="muted">{{ _("Mỗi lượt gọi làm tròn LÊN credit nguyên, tối thiểu 1 credit. Nên một lượt rất nhỏ trả nhiều hơn giá niêm yết — xem ví dụ đầu bảng dưới.") }}</p>
+  {% else %}
+  <p class="muted">{{ _("Phần lẻ dưới một credit không bị làm tròn lên mà được cộng dồn sang lượt sau, nên số tiền thực trả bám sát giá niêm yết kể cả với những lượt gọi rất nhỏ.") }}</p>
+  {% endif %}
 </div>
 
 <div class="card">

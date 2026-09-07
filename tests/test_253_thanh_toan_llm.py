@@ -94,24 +94,79 @@ def test_giu_cho_luon_du_cho_moi_ket_cuc_that(db):
 
 # ── 2. C1: làm tròn LÊN ──────────────────────────────────────────────────────
 
-def test_C1_luot_nho_van_thu_tron_1_credit(db):
-    """2.000 vao + 500 ra = 0,3 credit -> thu 1 credit. Day la cai gia cua C1."""
+def test_MAC_DINH_la_C3_tich_luy_phan_le(db, monkeypatch):
+    """2.000 vào + 500 ra = **0,3 credit** → thu **0**, phần lẻ ở lại.
+
+    🟢 Chủ dự án chốt 2026-09-06: C3 là mặc định. Trước đó phép kiểm này ghim
+    chiều ngược lại (*"mặc định vẫn là C1, thu 1"*) vì C3 đổi
+    `toi_thieu_moi_luot_credit` — một điều khoản **công bố** — nên việc bật là
+    quyết định của chủ dự án, không phải của bản vá. Quyết định ấy nay đã có.
+
+    ⭐ Bản mới **khó xanh hơn** bản cũ: nó đòi một lượt 0,3 credit thu đúng
+    **0**, trong khi `thu == 1` là thứ mọi chính sách làm tròn LÊN đều thoả.
+    Đường lùi về C1: `LTT_TINH_TIEN_SAN_MOI_LUOT=1`.
+    """
     from platform_core.llm import thanh_toan as T
+    # ⭐ TU DUNG trang thai "khong co nao", dung muon trang thai cua nguoi
+    #    chay. Do 06/09: chay ca cum voi `LTT_TINH_TIEN_SAN_MOI_LUOT=1` thi
+    #    phep kiem nay DO — khong phai vi ma sai, ma vi no chua tu dung lay
+    #    cau hinh ma no khang dinh.
+    monkeypatch.delenv(T.CO_SAN_MOI_LUOT, raising=False)
+    monkeypatch.delenv(T.CO_TICH_LUY, raising=False)
     u = _nap(db)
     T.giu_cho_luot(db, user_id=u, request_id="r1",
                    token_vao_uoc=2_000, max_tokens=500)
     kq = T.quyet_toan_luot(db, user_id=u, request_id="r1",
                            su_dung=_su_dung(vao=2_000, ra=500))
-    assert kq.chi_phi_mcredit == 300
-    assert kq.thu_credit == 1
+    assert kq.chi_phi_mcredit == 300, "bang gia KHONG doi — 50/10/400 credit/1M"
+    assert kq.thu_credit == 0, "mac dinh la C3: 0,3 credit thi thu 0"
 
 
-def test_C1_duoc_cong_bo_trong_bang_gia(db):
-    """⛔ Khach gọi nhieu se tu tinh ra trong mot ngay — tha ho doc duoc tu truoc."""
+def test_BAT_C3_thi_thu_dung_phan_nguyen_cua_TONG(db, monkeypatch):
+    """🔑 Mệnh đề của C3, phát biểu sao cho **không đổi theo số lượt**: tổng thu
+    qua N lượt bằng đúng phần nguyên của tổng chi phí — không phải bằng N."""
+    from platform_core.llm import thanh_toan as T
+    # Duong lui THANG khi hai co mau thuan, nen phai tat no RO RANG.
+    monkeypatch.delenv(T.CO_SAN_MOI_LUOT, raising=False)
+    monkeypatch.setenv(T.CO_TICH_LUY, "1")
+    u = _nap(db)
+    tong = 0
+    for i in range(7):
+        T.giu_cho_luot(db, user_id=u, request_id=f"r{i}",
+                       token_vao_uoc=2_000, max_tokens=500)
+        tong += T.quyet_toan_luot(db, user_id=u, request_id=f"r{i}",
+                                  su_dung=_su_dung(vao=2_000, ra=500)).thu_credit
+    assert tong == 2, "7 x 300 mcredit = 2.100 => 2 credit, khong phai 7"
+
+
+def test_dieu_khoan_cong_bo_KHOP_voi_cach_thu_that(db, monkeypatch):
+    """🔴 Mệnh đề đắt nhất, và nó **không đổi theo chính sách nào đang bật**.
+
+    `public_api/dieu_khoan.py` công bố `gia_token.bang_gia()` ra ngoài. Đổi cách
+    làm tròn mà quên đổi điều khoản là **công bố một lời hứa không còn đúng** —
+    tệ hơn cả thu thừa.
+
+    ⛔ Nên phép kiểm này không ghim 0 hay 1; nó ghim **hai thứ đó khớp nhau** ở
+       CẢ HAI chính sách.
+    """
     from platform_core.llm import gia_token
-    b = gia_token.bang_gia()
-    assert b["toi_thieu_moi_luot_credit"] == 1
-    assert "toi thieu 1 credit" in b["ghi_chu"]
+    from platform_core.llm import thanh_toan as T
+
+    # (co duong lui, toi thieu cong bo) — MAC DINH la C3 (0), lui ve C1 (1).
+    for co, toi_thieu in ((None, 0), ("1", 1)):
+        if co is None:
+            monkeypatch.delenv(T.CO_SAN_MOI_LUOT, raising=False)
+        else:
+            monkeypatch.setenv(T.CO_SAN_MOI_LUOT, co)
+        assert gia_token.bang_gia()["toi_thieu_moi_luot_credit"] == toi_thieu
+
+        u = _nap(db, user_id=f"dk-{co}")
+        rid = f"dk{co}"
+        T.giu_cho_luot(db, user_id=u, request_id=rid,
+                       token_vao_uoc=2_000, max_tokens=500)
+        thu = T.quyet_toan_luot(db, user_id=u, request_id=rid,
+                                su_dung=_su_dung(vao=2_000, ra=500)).thu_credit
+        assert thu == toi_thieu, f"dieu khoan noi {toi_thieu} ma thu {thu} (co={co})"
 
 
 def test_luot_khong_dung_gi_thi_thu_0(db):

@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% block title %}{{ _("API") }} — {{ _("Giọng nói LTT") }}{% endblock %}
 
+{% block page_mode %}immersive{% endblock %}
+
 {#
   Màn API của Voice — màn thứ sáu và cuối cùng.
 
@@ -87,13 +89,38 @@
         <span class="eyebrow">{{ _("Giới hạn của công cụ này") }}</span>
         <dl class="lv-api-gh">
           <dt>{{ _("Mỗi lượt gọi") }}</dt>
-          <dd>{{ _("%(n)s ký tự") % {"n": tran_ky_tu} }}</dd>
+          <dd>{{ _("%(n)s ký tự") % {"n": tran_ky_tu|so} }}</dd>
         </dl>
         {# ⭐ Câu này là toàn bộ lý do dòng trên tồn tại ở đây thay vì chỉ nằm
-             trong bảng tham số của `/developers/tools`. #}
-        <p class="dim"><small>{{ _("Đây là trần CHẤT LƯỢNG, không phải trần kỹ thuật: văn bản dài hơn vẫn sinh được, nhưng giọng bắt đầu trôi tông giữa các đoạn. Kịch bản dài thì chia thành nhiều lượt gọi.") }}</small></p>
+             trong bảng tham số của `/developers/tools`.
+
+           ⛔ Bản trước (tới 03/09/2026) viết "Kịch bản dài thì chia thành nhiều
+              lượt gọi" — đúng khi đường tài liệu dài chưa có, sai ngay ngày nó
+              có. Một câu hướng dẫn không ai quay lại kiểm là một câu sẽ tiếp tục
+              được làm theo rất lâu sau khi nó hết đúng. #}
+        <p class="dim"><small>{{ _("Bạn không cần tự chia văn bản: bài dài được cắt theo ranh giới câu, đọc thành nhiều lượt rồi ghép thành một tệp liền mạch. Trần này là ngân sách tài nguyên cho một lần gửi, không phải chỗ giọng bắt đầu trôi. Dài hơn nữa thì dùng Dự án.") }}</small></p>
       </div>
 
+      {#
+        ⛔ VÍ DỤ CHỈ HIỆN KHI CỬA THẬT SỰ MỞ — và 04/09/2026 tôi đã thử đảo
+           quyết định này rồi TRẢ LẠI. Ghi lại vì lần sau sẽ có người thử lần
+           nữa với đúng lập luận ấy.
+
+           Lập luận đảo: "một đoạn mã là TÀI LIỆU, không phải điều khiển; §37
+           cấm điều khiển chết, còn tài liệu thì người tích hợp cần đọc trước".
+           Nghe hợp lý, và nó **trừu tượng**.
+
+        🔴 Lập luận giữ thì cụ thể, và nó mô tả một cơ chế hỏng đã đo: một lệnh
+           curl chép được sẽ được chép và dán, bất kể ta có nút chép hay không.
+           Rồi nó trả 404/403 **của Cloudflare hoặc của cổng** — không
+           `request_id`, không dòng nào trong `public_api_requests`, không tra
+           được bằng `/admin/api-trace`. Khách đọc nó thành "khoá của tôi sai",
+           đi tạo khoá mới, và vẫn hỏng. **Phía ta không thấy gì cả.**
+
+        ⭐ Một lập luận cụ thể về một cơ chế hỏng thắng một lập luận tổng quát
+           về phân loại. `test_364` chốt cả hai chiều: cửa đóng thì không có
+           chữ `curl` nào và không có nút chép nào.
+      #}
       {% if trang_thai.tool_mo %}
         <div class="lv-st-o">
           <span class="eyebrow">{{ _("Gọi thử") }}</span>

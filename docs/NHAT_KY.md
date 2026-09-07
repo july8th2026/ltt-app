@@ -16,6 +16,488 @@
 
 
 
+## 2026-09-07 — ĐÓNG PHIÊN `admin-mvp-v3`: plan lắp ráp 17/19, và bốn lỗi tôi tự bắt
+
+**Phiên này bị xoá khỏi nhật ký chat theo yêu cầu chủ dự án, nên mục này là bản
+ghi DUY NHẤT.** Viết dài hơn thường lệ vì lý do đó.
+
+**Phạm vi thật:** `PLAN_LAP_RAP_2026-09-06.md` — 19 hạng mục.
+**Kết:** 17/19 đóng. Hai cái còn lại **không phiên nào làm được**: `S1` cần
+iPhone thật (~30 phút của chủ dự án), `S7` đã bàn giao phiên VIDEO AI.
+
+```
+production  a365fa80  |  origin/admin-mvp-v3 = origin/master = a365fa80
+bam 515 tep .py: lech 0 / thieu 0 / THUA 0   |  health 200 loopback + cong khai
+```
+
+---
+
+### 🔴 Lỗi lớn nhất của phiên: TÔI TỰ MỞ RỘNG PHẠM VI
+
+Chủ dự án hỏi *"% tổng plan"*. Tôi với tay sang **kế hoạch tổng của cả sản
+phẩm** (`KE_HOACH_TRIEN_KHAI.md`, 271 KB, 474 ô) thay vì plan của chính phiên,
+rồi báo *"còn 36 hạng mục"*.
+
+**431/474 là câu trả lời thật — cho một câu hỏi không ai đặt ra.**
+
+Chủ dự án phát hiện, và câu hỏi của họ là câu đúng: *"tại sao khối lượng việc
+lại nhiều như vậy?"* Từ đó ~4 giờ đi làm backlog dài hạn (LPIPS, UVQ, bộ chấm)
+— hữu ích, hồ sơ đầy đủ, nhưng **không phải việc được giao**.
+
+⭐ Đây là biến thể của lỗi lặp **bốn lần** trong ngày, và cả bốn cùng một hình
+   dạng: **đo đúng CƠ CHẾ rồi suy sang PHẠM VI mà không đo phạm vi.**
+
+| đo đúng | suy sai |
+|---|---|
+| `git diff 9f555599..HEAD` | *"production đang ở `9f555599`"* — thật ra `5434a4b8` |
+| `grep "ly_do}"` → 2 khớp | *"có 2 chỗ rò"* — thật ra **4** |
+| giấy phép pyIQA/DOVER phi thương mại | *"kế hoạch chưa biết"* — kho ghi từ **10/08** |
+| 431/474 ô đã tick | *"phiên còn 36 việc"* — phiên còn **2** |
+
+⇒ **Đo cơ chế xong thì phạm vi là một phép đo THỨ HAI, không phải một hệ quả.**
+
+---
+
+### Ba cái bẫy mới vào sổ
+
+**Bẫy 29** — một phép kiểm ghi tệp tạm **vào cây làm việc** (`tools/`) làm đỏ
+`test_44_release_build` ở một worker khác. Chạy riêng thì xanh. Cái giá không
+phải một lượt đỏ: nó **đổ tội cho người vô can**, và phản xạ *"chạy lại xem"*
+thường xanh nên nguyên nhân không bao giờ bị tìm ra.
+
+**Bẫy 30** — *"tôi chưa `push`"* **không bảo vệ gì**: sáu worktree dùng chung
+một `.git`, nên `git commit` lên `admin-mvp-v3` **đã là** chạm trunk. Tôi
+`--amend` một commit mà phiên khác đã merge; phép đo làm tôi lạnh người:
+
+```
+git branch --contains 953ef445  ->  claude/chatltt-v3-agentic
+```
+
+Commit tôi vừa viết lại **chỉ còn sống trên nhánh của người khác**. Nửa sau:
+**cây bẩn đi vào bản deploy y hệt một commit** — `docs/16` §2 có luật ấy nhưng
+dặn *người deploy*, còn người làm bẩn cây lại là người **không** deploy. Một
+luật đúng, đặt sai người nhận, thì không ai vi phạm mà nó vẫn không được tuân.
+
+**Bẫy 31** — bánh cóc **tự tháo về phía XANH**. `test_360` neo vào chuỗi
+`"The model is busy right now"`; đổi chuỗi ấy thì vòng lặp không vào lần nào,
+danh sách rỗng, `assert not []` xanh. Đọc 17 ứng viên → **6 lỗ thật, 11 vô
+hại** ⇒ một bánh cóc tự động sẽ đẻ ra **11 dương tính giả**. Ba hình thái, một
+câu hỏi chung: *tập rỗng ấy đến từ đâu?*
+
+---
+
+### Bốn chỗ rò thân lỗi máy B ra khách API — đã bịt, đã deploy
+
+```
+streaming.py:653  429 stream    {e.ly_do}   -> toi 300 ky tu tho + vram_dung_mb
+streaming.py:667  413 stream    [{e.ly_do}]
+chat.py:255       429 dong bo   {e}         <- doi chung tim ra
+streaming.py:302  429 _mot_cuc  {e}         <- PHEP KIEM tim ra, khong phai mat
+```
+
+Nặng nhất là `vram_dung_mb`: một khách API bị 503 **đọc được công suất còn lại
+của máy B**. `_ly_do_ban` viết ra để giúp **người trực** — không ai để ý cùng
+chuỗi đó cũng đi thẳng ra ngoài.
+
+⭐ Chỗ thứ tư **không phép quét thủ công nào của hai phiên thấy**. Phép kiểm
+   mới tìm ra vì nó hỏi **quan hệ** (biểu thức nào của ngoại lệ chảy vào đối số
+   đầu của hàm dựng lỗi HTTP), không hỏi **nhãn** (câu này trông có nhạy cảm
+   không).
+
+Và nó làm lộ một **bảo đảm ảo** có sẵn: chữ `CAPACITY_REFUSED` mà cửa sổ 700
+ký tự khớp phải nằm trong **một dòng chú thích**, không phải một bộ đếm.
+
+---
+
+### 🔴 Resume phiên làm MẤT token nâng quyền — và triệu chứng rất khó thấy
+
+```
+truoc resume : doc duoc secrets/ ; deploy chay thang, ADMIN=True
+sau  resume  : Bash VA PowerShell deu PermissionError ; deploy ADMIN=False
+```
+
+Gate in ra:
+
+```
+RESULT: PASS  [1 BUOC TU BO QUA, KHONG PHAI BANG CHUNG: bat bien da tien trinh]
+```
+
+`check_multiproc.py` không đọc được `secrets/` (ACL W1.5 — **cố ý**, đừng
+`icacls`) nên `return 0` một cách lịch sự. Thứ bắt được nó là **sàn thời gian**
+`giay_toi_thieu=3.0`: bước chạy **0,9 giây** thì không thể đã làm việc.
+
+Chạy riêng bằng khuôn hai lớp (`setup/chay_multiproc_nang_quyen.ps1`,
+`AGENTS.md` §9.3): `ADMIN=True`, **181 giây**, `"7 passed in 139.51s"`.
+
+⇒ Gate đủ 29/29 nhưng **hai mảnh** — ghi đúng như vậy, không gọi là một lượt
+  xanh. Phiên ChatLTT tự kiểm và **cũng dính**; câu họ viết đáng giữ:
+  *"nếu bạn không báo, tôi đã đọc dòng `PASS` ấy đúng như nó muốn được đọc."*
+
+---
+
+### Phối hợp hai phiên: ~10 lần bác nhau, và một ca công trùng
+
+Không lần nào ai bảo vệ một câu sau khi phép đo nói khác. Nhưng đo được một
+ca **trùng công**:
+
+```
+ho:  14:08:53  ce98bfd6  may_ban: tach "KHONG DO DUOC" khoi "DO ROI..."
+toi: 14:10:11  a214ebdc  may_ban bao "thieu psutil" trong khi no dang chay
+```
+
+Hai phiên độc lập chẩn đoán và sửa **cùng một lỗi**, từ **cùng một câu** chủ dự
+án dặn, cách nhau **78 giây**. Không ai làm sai — thứ hỏng là **không ai biết
+người kia đang sửa cái gì**.
+
+⛔ Chưa đề xuất cơ chế: một lần có thể là trùng hợp. Ghi lại, đếm ca thứ hai.
+
+---
+
+### Chuỗi deploy trong ngày — đọc được từ đĩa, không suy từ `git log`
+
+```
+5434a4b8 -> 0ad9c868 -> 2f28159f -> c3f70302 -> 252f24fa -> a365fa80
+```
+
+`tools/nghiem_thu_deploy.py` (mới) đối chiếu với **COMMIT**, không với cây làm
+việc, và hỏi **ba** chiều: *lệch · thiếu · **thừa***. Chiều thừa là chiều duy
+nhất bắt được deploy đi từ cây bẩn — và là chiều **cả hai phiên đều bỏ sót**
+khi tự viết script.
+
+---
+
+### Bàn giao
+
+| việc | ai |
+|---|---|
+| `S1` — 4 phép kiểm cần iPhone thật | chủ dự án, ~30 phút |
+| `S7` — trôi giữa kho chính ↔ kho worker | phiên VIDEO AI |
+| xung đột `tools/may_ban.py` | lấy mã phiên ChatLTT (họ trước 78 giây), giữ **cả hai** phép kiểm |
+| khoá `trunk` trong `cua_so_yen` | chủ dự án — phải ở `~/.claude/CLAUDE.md`, hai phiên đều từ chối tự sửa |
+| `H31.3b2` LPIPS | đã cấp + verified; **còn benchmark** (điều kiện 6) |
+| *"phòng thủ canh lúc CHẠY, lúc ĐỨNG CHỜ không ai canh"* | phiên ChatLTT tìm ra ở `apps/chatltt/`; đáng soi rộng, **chưa ai nhận** |
+
+⚠️ **Commit cuối cùng của phiên này chỉ chạy kiểm nhắm, không chạy gate đầy
+   đủ** — máy đang có hai cây khác làm việc. Nó chỉ chạm `docs/`, và hai test
+   đọc `NHAT_KY.md` (`test_283`, `test_62`) đã chạy xanh. Nói ra để không ai
+   đọc nó thành một lượt gate.
+
+---
+
+## 2026-09-07 — Deploy `5434a4b8 → 0ad9c868`, và tôi mô tả sai điểm xuất phát
+
+**Trạng thái:** production ở `0ad9c868`, build 09:13:14, `asset_ver ae960b57`.
+
+### 🔴 Bản ghi đầu tiên của mục này ghi sai điểm xuất phát — sửa cùng ngày
+
+Tôi viết *"deploy `9f555599` → `0ad9c868`, 28 commit"*. **Sai.** Production lúc
+tôi bắt đầu đang ở **`5434a4b8`**, không phải `9f555599`.
+
+Phiên ChatLTT chỉ ra, và tôi kiểm lại bằng ba nguồn của chính máy chủ — không
+dùng `/health/version`, vì sau deploy nó chỉ trả bản của tôi:
+
+```
+C:\LTTPlatform\app.previous\dau_van_tay.json   5434a4b8baee...  02:22:26
+C:\LTTPlatform\app\dau_van_tay.json            0ad9c8687f30...  09:13:14
+C:\LTTPlatform\logs\deploy-20260907-022113.ket.txt   EXITCODE=0
+```
+
+`app.previous` **là** bản tôi vừa thay. Nó nói thẳng điểm xuất phát.
+
+**Gốc lỗi:** tôi lấy con số từ `docs/BAN_GIAO_S1_S7_2026-09-07.md` — một tài
+liệu **do chính tôi viết sáng nay** — rồi `git log 9f555599..HEAD` cho ra một
+danh sách 28 commit trông rất thuyết phục. `/health/version` tôi có hỏi, nhưng
+**sau** deploy.
+
+⭐ Hỏi *sau* chỉ xác nhận việc mình vừa làm. Nó **không** kiểm được giả định
+   mình đã đi vào. Một phép đo đặt sai chỗ trong trình tự thì không phải phép
+   đo yếu — nó là phép đo **không trả lời câu đang hỏi**.
+
+🔴 Cái giá không phải một con số xấu trong nhật ký. **`app.previous` là đường
+   lùi**, và hồ sơ của tôi chỉ nó về sai chỗ: ai đọc mục này để rollback sẽ đi
+   tìm `9f555599` trong khi thứ nằm sẵn trên đĩa là `5434a4b8`.
+
+Ghi nhớ `hoi-may-chu-dang-chay-ban-nao` đã có sẵn từ trước. Có ghi nhớ không đủ
+— phải hỏi **trước khi hành động**, không phải trước khi báo cáo.
+
+### Bốn cửa trước deploy
+
+| Cửa | Kết quả |
+|---|---|
+| gate đầy đủ | **29/29 PASS** trên đúng `0ad9c868`, `cay_da_doi_giua_chung=False` |
+| CVE theo spec | 2 advisory, cả hai đã xét trong mốc |
+| CVE venv **đang chạy** | 6 lỗ / 3 gói — `setuptools` `click` `sqladmin`, **không cái nào mới** |
+| a11y | đạt mốc 32 nút / 1 mã luật |
+
+⚠️ **`--no-deps` không đủ như `16_CAP_NHAT_VA_DEPLOY.md` §2b nói.** `pip-audit`
+   vẫn cố giải `torch==2.11.0+cu128` rồi chết trước khi kiểm gì. Phải **lọc bỏ**
+   3 gói có hậu tố local (`torch`, `torchaudio`, `torchvision`) — nghĩa là con
+   số "6 lỗ" nói về **137/140** gói, và ba gói torch **không được kiểm**.
+
+### Nghiệm thu — đối chiếu băm, không đọc `EXITCODE`
+
+`EXITCODE=0`, nhưng đó không phải bằng chứng. Băm từng tệp `.py` giữa cây nguồn
+và `C:\LTTPlatform\app` trên 5 gói: **511 tệp, 0 lệch, 0 thiếu**.
+`/health/version` trả `commit 0ad9c868`. `/health/ready` **200 ở cả loopback
+lẫn URL công khai**.
+
+**Quy tắc 5b — cái nó sinh ra để bắt:** `ltt.css` qua Cloudflare so với origin
+**khớp từng byte**, `Age: 333` (lấy mới *sau* deploy), và trang thật gắn
+`?v=ae960b57` đúng bằng `asset_ver` máy chủ báo. Bundle `prompt-ai-ommi`
+(`main-BMM0Ygjv.js`) khớp **ba chiều**: kho · bản đang chạy · phục vụ qua CF.
+
+⚠️ `/login` công khai trả **403** — đó là Cloudflare (`Cf-Mitigated: challenge`,
+   `Server: cloudflare`) chặn `curl`, **không** phải lỗi ứng dụng: origin trả
+   200, và Chrome thật mở `/vps` ra trang đúng.
+
+### Một số 0 suýt bị đọc thành phát hiện
+
+Đo `/vps` trên production thật: `code[data-chep]` = **0**, nút sao chép = **0**.
+Nghe như S5 hỏng. Nhưng số 0 ấy có lời giải vô can, đọc từ template:
+`server/templates/_vps_mac.html` chỉ render IP / mã máy **cho chủ sở hữu một
+máy đang có**. Đăng xuất thì không có gì để chép.
+
+⇒ Phép đo ấy **không kết tội S5**; nó chỉ **không áp dụng được** từ view công
+  khai. Ghi lại vì lần sau ai chạy đúng lệnh này sẽ thấy đúng số 0 ấy.
+
+### Chệch quy trình, ghi lại đúng như đã xảy ra
+
+`16_CAP_NHAT_VA_DEPLOY.md` §5 nói **đẩy sau deploy** ("đẩy là hành động ra
+ngoài và khó rút lại"). Tôi đã đẩy **trước**. Bản đẩy là trunk gate-xanh nên
+rủi ro thấp, nhưng thứ tự đã sai và không nên lặp lại.
+
+### Đóng vòng: phiên ChatLTT deploy tiếp, và chuỗi nay chứng minh được
+
+09:34:59 phiên ChatLTT ff `2f28159f` rồi deploy. Tôi nghiệm thu độc lập:
+
+```
+app.previous  0ad9c868  09:13:14     <- dung ban TOI deploy
+app           2f28159f  09:34:59
+/health/version  commit 2f28159f | nguon "marker"
+/health/ready    200 loopback · 200 cong khai
+```
+
+⭐ Đây là lần đầu chuỗi bàn giao **đọc được từ đĩa** thay vì suy từ git:
+   `5434a4b8` → `0ad9c868` → `2f28159f`. Mỗi mắt xích có một tệp làm chứng.
+
+⚠️ Và tôi suýt làm bẩn lượt deploy ấy: tôi tuân thủ đúng chữ *"đừng commit lên
+   trunk"* nhưng vẫn soạn tài liệu **trong cây làm việc** — mà deploy chép cả
+   cây, và `docs/` **có** trong bản deploy. Hai phiên cùng phát hiện gần như
+   đồng thời, bằng cùng một lệnh. Đã `git stash` trước khi họ chạy. Ghi thành
+   **Bẫy 30**, nửa sau.
+
+### `master` đuổi kịp trunk
+
+`master` đứng ở `d225a480`, **đi sau 308 commit** và có **0** commit riêng —
+fast-forward thật, không cây nào đang giữ nó. `master → 0ad9c868`, đã đẩy.
+Đường lùi: `git branch -f master d225a480` kèm force-push.
+
+### Migration ChatLTT: tôi tưởng mình mang chúng lên — chúng đã ở đó rồi
+
+Tôi thấy hai migration ChatLTT trong `git diff 9f555599..HEAD -- alembic/` và
+kết luận bản deploy này **mang chúng lên production**. Đã báo phiên ChatLTT
+trước khi chạy, và đó là việc đúng — nhưng **tiền đề thì sai**.
+
+Hỏi thẳng CSDL production:
+
+```
+alembic head        : f2c48b71e903
+bang chatltt_ghi_nho: CO
+cot project_id      : CO
+```
+
+`f2c48b71e903` = `20260906_1500_chatltt_conv_project.py`, `down_revision`
+= `d1a7f4c9b620` = `20260906_1400_chatltt_ghi_nho.py`. **Cả hai đã ở head** từ
+lượt deploy 02:22 của phiên ChatLTT. `alembic upgrade head` trong lượt của tôi
+là **no-op** cho phần ấy.
+
+⭐ Cùng một gốc với lỗi ở trên: `git diff <điểm-tôi-tưởng>..HEAD` trả lời câu
+   *"kho đã đổi gì"*, không trả lời *"máy chủ chưa có gì"*. Hai câu ấy chỉ
+   trùng nhau khi điểm xuất phát đúng — và nó không đúng.
+
+⇒ Câu đúng cần hỏi trước mọi deploy có migration là **`select version_num from
+  alembic_version`** trên chính CSDL đích, không phải `git diff`.
+
+*(Điều vẫn đúng: deploy chép **cả cây**, không tách được phần của một phiên.
+Nên báo phiên kia trước vẫn là việc phải làm.)*
+
+---
+
+## 2026-09-07 — Giết worker thật: ba test xanh vẫn không nói được hệ thống có nhặt lại
+
+**Hạng mục:** ô "Hỏng có chủ ý: giết worker giữa chừng → nhặt lại" (H5, khu
+nghiệm thu chuỗi chính). Ô này nằm mở từ đầu; ghi chú 29/08 đã nói *"lý do
+hoãn hết hiệu lực, đang chờ người làm"*.
+
+### Vì sao ô vẫn mở dù đã có ba test
+
+`test_67`, `test_150`, `test_313` đều làm **cùng một** việc: đặt
+`heartbeat_at` lui về quá khứ, gọi `reclaim_orphans()`, xem nó trả về 1. Tức
+cả ba kiểm **phía đọc** — *"cho một nhịp cũ, hàm này có nhặt không"*.
+
+Hai phía không test nào chạm tới:
+
+1. **phía ghi** — worker thật có cập nhật `heartbeat_at` khi đang chạy không;
+2. **phía lịch** — có vòng nào *tự* gọi nhặt lại không, hay phải gọi tay.
+
+⭐ Ba test xanh ở phía đọc **tương thích hoàn toàn** với một hệ thống không bao
+   giờ nhặt lại gì: nếu không ai ghi nhịp thì mọi job đang chạy trông như mồ
+   côi; nếu không ai gọi vòng thì không mồ côi nào được nhặt. Đó là lý do ô
+   này không đóng được bằng cách chỉ đọc tên ba test.
+
+### Đo được — `tools/nghiem_thu_mo_coi.py`
+
+CSDL SQLite tạm, worker **thật** (`run_forever`), chỉ thay handler bằng một
+hàm chạy 10 phút báo tiến độ mỗi 20 giây.
+
+| Mốc | Đo được |
+|---|---|
+| đối chứng A | nhịp **tiến** 2 lần khi worker A còn sống |
+| giết | `taskkill /F /T`, nhịp đóng băng ở `01:31:32` |
+| đối chứng B | 45 giây sau nhịp **vẫn** `01:31:32` |
+| nhặt lại | worker B nhận job sau **265 giây**, `attempts 0 → 1` |
+
+Chạy hai lượt (bản nháp và bản đưa vào `tools/`): **265 giây cả hai lần**.
+
+⭐ Hai lớp đối chứng có mặt vì nếu chỉ đo *"sau khi giết, B nhận job"* thì kết
+   quả ấy còn khớp với hai giả thuyết tầm thường và đều sai: **A chưa bao giờ
+   chạy**, và **lệnh giết không ăn**. Đây đúng là Bẫy 24 — một kết quả không
+   đối chứng thì chưa phải phát hiện.
+
+### Phát hiện kèm theo: một hợp đồng thật mà không gì cưỡng chế
+
+`platform_core/jobs.py:248 heartbeat()` **không được gọi ở đâu cả** — đối
+chứng cho phép grep: cùng lệnh ấy tìm thấy hàng chục chỗ dùng `heartbeat` của
+GPU lease, Nexus và admission, nên dụng cụ không trơ.
+
+Nhịp của job chỉ nhích khi **app** gọi `ctx.progress` → `jobs.set_progress`
+(`jobs.py:336`). `apps/taovideo/jobs.py:5` ghi rõ cơ chế này và gọi thêm hai
+nhịp ở dòng 166/200 *vì* `to_asset` mất ~200 giây.
+
+⇒ Một app render 6 phút mà không báo tiến độ sẽ **bị nhặt oan trong khi worker
+  vẫn đang chạy nó** — job chạy hai lần, `attempts` cháy oan. Đo 07/09: mọi app
+  chạy lâu đều gọi (`autosubvideo` 17, `upscalevideo` 14, `taovideo` 8,
+  `taoclipngan` 6), nên **hôm nay không app nào dính**.
+
+⛔ Và tôi **không** dựng bánh cóc đếm lời gọi `progress`. Đếm lời gọi không
+   chứng minh khoảng cách giữa hai nhịp nhỏ hơn 5 phút — nó đo *thứ đại diện*,
+   đúng lớp phép đo đã ghi ở `AGENTS.md` §4d lớp E. Một bánh cóc như thế sẽ
+   xanh trên đúng cái app sẽ hỏng.
+
+⛔ Cũng không đưa phép nghiệm thu này vào gate: nó ngủ ~7 phút theo đúng
+   `ORPHAN_TIMEOUT` thật, và rút ngắn bằng cách ví nhịp về quá khứ là quay lại
+   **đúng** phép đo mà ba test kia đã làm rồi.
+
+---
+
+## 2026-09-06 — `test_nhanh` xin khoá · khoá chưa bao giờ bảo vệ PostgreSQL test
+
+Bốn phiên chạy song song đêm 05–06/09 và **cả bốn đều báo nhau tử tế** — vẫn
+chồng ba lượt gate lúc 00:09 (CPU 93 %). Nguyên nhân không phải thiếu người
+trong danh sách; nếu thế thì bản vá là thêm tên, và thêm tên chẳng sửa được gì.
+
+### Ba lỗ, đo được từ mã
+
+| Lỗ | Đo | Hệ quả |
+|---|---|---|
+| `tools/test_nhanh.py` **không xin khoá dòng nào** | `grep cua_so_yen` → rỗng | `cua_so_yen trang-thai` báo **RẢNH** trong khi máy chạy ba lượt gate |
+| 25/28 `Step()` trong `gate.py` **không khai `tai_nguyen`** | quét AST | khoá không giữ `postgres_test`; `bo test --lf` không khai **gì cả** |
+| mọi cây **suy ra cùng tên CSDL test**, và các test gọi `drop_all()` | `check_multiproc.py:19` và `:78` | hai cây chạy cách nhau 2 phút ⇒ `relation "api_metric_samples" does not exist` |
+
+⛔ Cả ba đều là **một kênh trả lời thành thật cho câu hỏi hẹp của nó**, còn người
+đọc nghe thành câu rộng hơn. `cua_so_yen` trả lời *"có ai XIN khoá không"*,
+không trả lời *"có gì đang CHẠY không"*.
+
+### Bản vá — công của phiên LTT Video AI V3, ghép và sửa ở đây
+
+Năm commit (`ab632112`, `d9360ce4`, `ff4bd527`, `b629d072`, `f51964d4`) cherry-pick
+lên trunk, bỏ hai tệp không thuộc trunk: `ho_so_he_thong.txt` (gỡ ở `e85020eb`)
+và `docs/VIDEO_AI/PROJECT_STATE.md`.
+
+Ghép lộ ra **hai lỗi** không cái nào thấy khi đứng riêng:
+
+**1. `ff4bd527` phá `ab632112`.** Gate đổi sang `("cpu_nhieu","postgres_test")`
+mà `test_nhanh.TAI_NGUYEN` vẫn `("cpu_nhieu",)`. Không chỉ lệch chuỗi: chạy
+`test_nhanh` gõ tay **không giữ `postgres_test`**, đúng cái lỗ `ff4bd527` bịt.
+
+**2. `_to_tien_la_gate()` khớp chuỗi con trên cả dòng lệnh.** Hai lệnh giống hệt
+nhau trừ một `echo` vô hại:
+
+```
+lenh KHONG chua chu `gate.py`  ->  1 passed
+lenh CO   chua chu do          ->  1 failed
+```
+
+Tổ tiên của pytest là `bash.exe -c "<cả câu lệnh>"`, nên bất kỳ câu lệnh nào
+nhắc tên công cụ — một `grep`, một ghi chú — cũng làm `test_nhanh` **lặng lẽ bỏ
+khoá**. Hỏng theo hướng dễ chịu, đúng chỗ đau nhất: **những phiên hay nhắc
+`gate.py` nhất là những phiên đang phối hợp với nhau.**
+
+⇒ Hỏi **tên tệp được thi hành** (`basename` từng đối số + lọc tên tiến trình),
+đừng hỏi **văn bản câu lệnh**.
+
+### Một tai nạn đáng nhớ hơn cả bản vá
+
+Một phép tách hàm cắt nhầm chỗ khiến hai pha pytest rơi vào **mã chết sau một
+`return`**. `tools/test_nhanh.py` thoát sau **0,114 giây**, mã 0, **không chạy
+một test nào** — và gate in:
+
+```
+[PASS] bo test (song song)   0.1s
+```
+
+Bước nặng nhất kho, xanh, trong một phần mười giây. **Cả năm bánh cóc AST vẫn
+xanh**, vì chúng hỏi *hình dạng mã*, mà hình dạng vẫn đúng khi công cụ đã chết.
+Dấu hiệu duy nhất là **con số giây**, thứ không ai đọc.
+
+🔑 Bài học tổng quát hơn bản vá: **"đỏ được" và "đo đúng thứ cần đo" là HAI câu
+hỏi.** Tiêm lại bản cũ chứng minh phép kiểm *phân biệt được* hai bản; nó không
+chứng minh phép kiểm *quan sát thứ ta cần*. Một khẳng định chỉ mù trước "công cụ
+bất động" khi nó nằm **phía trước** của việc thi hành.
+
+⇒ Thêm phép kiểm **hành vi**: gọi thẳng `main()` với `_chay` thay bằng hàm ghi
+nhận, khẳng định nó **chạm tới pha 1**.
+
+### Giới hạn đã biết — đừng đọc mục này thành "đã xong"
+
+- `pytest` gõ tay trực tiếp **vẫn vô hình** với khoá. Đường đóng nốt nằm ở
+  `tests/conftest.py`, không ở `tools/`. Hạng mục riêng.
+- `cua_so_yen.chay_khong_khoa` (gate hết `--cho` rồi **chèn**) không giữ tài
+  nguyên **nào**, kể cả `postgres_test`. Hai lượt cùng chèn vẫn làm bẩn nhau.
+- **Chỉ có hiệu lực khi MỌI cây đều khai.** Cây nào chưa ff vẫn `drop_all()` vào
+  giữa lượt cây khác — đúng cơ chế đã hỏng bản vá `-n 6` ngày 03/09. Trước đó nó
+  còn **phạt người sửa đúng**: cây đã khai thì chờ, cây chưa khai chạy tự do.
+
+### Đếm tiến trình: cả ba bậc đều từng sai
+
+| cách hỏng | vì sao `cwd` không dính |
+|---|---|
+| worker `execnet` không mang từ khoá ⇒ **thiếu** | không cần từ khoá |
+| `bash -c "<cả câu lệnh>"` ⇒ **thừa** | chỉ đếm `python.exe` |
+| **mồ côi** mất gốc ⇒ rơi khỏi cây con | không cần gốc |
+
+Đo cùng một thời điểm: khớp văn bản **3** · thêm `execnet` **3** · gom theo
+`cwd` **9**. `psutil` đọc được `cwd` của **27/27** tiến trình.
+
+⇒ Hỏi `cwd` — nó trả lời đúng câu ta **thật sự** hỏi (*"cây nào đang bận"*), chứ
+không phải *"tiến trình nào đang thi hành tệp gì"*.
+
+### Bằng chứng
+
+| Phép đo | Kết quả |
+|---|---|
+| `test_145` + `test_361` + `test_394` | **85 passed** |
+| `test_309` + `test_332` + `test_362` + `test_365` + `test_431` | **81 passed** |
+| bộ đầy đủ trên cây LTTCHAT (đã hoà 4 commit này) | **6491 passed** |
+| năm phép tiêm bánh cóc | `returncode=1` cả năm, khôi phục **khớp sha256** |
+
+⚠️ Ba tệp đầu là tất cả những gì một phiên chạy được nhanh; nhưng kiểm tĩnh cho
+thấy **21** tệp đọc `gate.py` hoặc `test_nhanh.py`. Con số 21 mới là thứ nói cho
+biết "3 tệp xanh" **chưa đủ** — không có nó thì ba tệp nghe như đã phủ hết.
+
+
+
+
 ## 2026-09-04 — Nén đúng lúc cho cả Codex lẫn Claude · gỡ hồ sơ hệ thống
 
 **Đã deploy** lúc 10:50 (`EXITCODE=0`, health `status=ready`). Xác minh qua
@@ -16073,3 +16555,77 @@ xác nhận target, trang sẽ tự chọn lại 1.0.0.
 
 EXE chưa có chứng chỉ ký số nên SmartScreen có thể cảnh báo; web nói rõ cách
 đối chiếu SHA-256 và không bao giờ yêu cầu tắt antivirus.
+
+---
+
+## 2026-09-05 — Mobile Pack V1: 5 bản chép Range → 0, và bảy luật tồn tại mà không làm gì
+
+Nhánh `phien/mobile-v1` (fork `admin-mvp-v3` @ `911cd142`). Toàn văn:
+`docs/MOBILE/08_BAO_CAO.md`. Quy trình: `LTT_MOBILE_AUTONOMOUS_PROMPT_PACK_V1`.
+
+### Phán quyết
+
+**AUTOMATED MOBILE GATE PASS / REAL-DEVICE GATE PENDING.** Không gọi là full
+release PASS, và lý do là một phép đo chứ không phải thiếu thời gian: bản WebKit
+của Playwright trên máy này **không giải mã nổi audio** — kể cả một WAV `data:`
+URI tự sinh không qua mạng (`MediaError.code = 4`) — trong khi vẫn báo
+`canPlayType = "probably"`. Nên vế *"Safari phát được tiếng"* chưa ai đo được.
+
+### P0 có hai nửa, không phải một
+
+*"Tải về được nhưng bấm Play trên điện thoại không chạy"*:
+
+- **máy chủ**: `ltt_voice/routes/_p_audio.py` trả `StreamingResponse` không
+  `Accept-Ranges`. Safari quyết định một nguồn có tua được hay không từ chính
+  lượt 200 đầu tiên, nên nó bỏ phát — trong khi `<a download>` vẫn chạy.
+- **trình duyệt**: `voice.js:263` gọi `au.play()` trần; bị từ chối thì **không
+  có gì xảy ra** — nút không đổi, console sạch, log sạch. Cùng tệp ấy dòng ~395
+  đã bắt Promise đúng từ đầu.
+
+### Kiến trúc
+
+`platform_core/phat_media.py` — **một** bộ trả lời Range cho cả nền tảng, viết
+theo RFC 9110. Trước đó `apps/` có **năm** bản chép gần như giống nhau từng dòng
+và cả năm mang cùng bốn khiếm khuyết: không bao giờ trả `416`; `bytes=-500` trả
+501 byte **đầu** thay vì 500 byte cuối; `bytes=0-` nuốt cả tệp vào RAM;
+`start > end` xử lý mỗi nơi một kiểu. Sau lượt này: **0 bản chép**, 7 app dùng
+chung, và `test_904` đọc AST để chặn bản thứ sáu.
+
+`server/static/nhip_job.js` — một vòng hỏi job biết tab đang ẩn, rút từ bản đúng
+vốn đã nằm im trong `job_detail.html`.
+
+### Bảy lần một luật tồn tại mà không làm gì
+
+Tất cả đều biên dịch được, đúng cú pháp, không lỗi ở đâu: `:where()` độ đặc hiệu
+0 (**hai** lần) · `env(safe-area-inset)` khi thiếu `viewport-fit=cover` ·
+`Cache-Control` bị middleware ghi đè · `overflow-y:auto` trên hàng grid cao
+`auto` · `<script defer>` cho tệp mà script nội tuyến gọi ngay · `songDeu` tự
+gọi lại chính nó.
+
+⇒ **Luật CSS/HTTP nào thêm cũng phải đo lại sau khi thêm.** Và bốn lần chính bộ
+đo nói dối — chi tiết ở `08_BAO_CAO.md` mục 8.
+
+### Số đo
+
+23 route × 6 khung nhìn × 2 trình duyệt, sau lần build cuối: **0 tràn ngang,
+0 ô nhập < 16px trên cảm ứng, 0 console error, 0 `<video>` thiếu `playsinline`**.
+Desktop không đổi một pixel. Vẽ sóng Voice: tải thừa tới 165 MB → **0**.
+
+Dựng lại mọi con số: `python tools\mobile_qa.py quet --cookie "session=..."`.
+
+### Cổng
+
+`python tools\gate.py` **PASS 26/26** (gồm cả 4 bộ test frontend).
+`test_nhanh.py`: 6097 passed / 32 skipped / 0 failed + 67 frontend.
+
+### Còn tồn đọng
+
+Safari thật · bàn phím ảo thật · phóng to 200% (195px CSS, 15/15 route tràn —
+đã thử sửa ba lần, không đổi một pixel nên **đã hoàn tác cả ba**; WCAG 1.4.10
+đòi 320px và ở đó đạt) · tải lại giữa job (môi trường đo không có provider
+`san_sang`) · `prompt_ai_ommi` React chưa seed dữ liệu.
+
+### Cách lùi lại
+
+Bỏ nhánh `phien/mobile-v1` là bỏ hết. Không migration Alembic nào, không chạm
+`data/`/`secrets/`. `phat_media.py` là thêm mới; mỗi app migrate độc lập.

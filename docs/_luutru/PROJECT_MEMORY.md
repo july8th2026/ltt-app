@@ -1689,3 +1689,192 @@ Copy this template to the top of the change log for every material session:
 `docs/system_purification/reports/` — 13 bao cao (`00`…`10`, `01b`, `08b`,
 `phase_minus_1`). Bao cao `10_final_acceptance.md` chua ca hai **dinh chinh** va
 phan quyet chot.
+
+## 2026-09-04 — ChatLTT: bo kiem GUI dot 5-7, va sau lan bo kiem VU KHONG san pham
+
+Gate day du **PASS** (`20260903T193457Z-12864.json`). Truoc do lat noi tiep:
+5.934 passed / 32 skipped / 3 failed trong 41m32s — ca ba la `ho_so_he_thong`
+cu, da sinh lai.
+
+### Thu dang gia nhat cua buoi nay khong phai bug san pham
+
+Bo kiem GUI bao **sau** hang muc HONG. **Khong cai nao la loi san pham.** Moi cai
+sai mot kieu, va do la sau kieu khac nhau de mot bo kiem noi doi:
+
+| Bao | Su that | Loai sai |
+|---|---|---|
+| 6.1/6.2 "nut media khong san sang" | model chua nap tren may B | suy tu giao dien thay vi hoi may chu |
+| 6.3 "may chu nhan `voice_id` cua nguoi khac" | job `failed`, giu 1/thu 0/**hoan 1** | do chi tiet cai dat thay vi bat bien |
+| 6.4 "bam Doc to khong gui gi" | dung thiet ke: phai qua o xac nhan gia | doi san pham **bo mot chot an toan** |
+| 6.4 lan hai `manh_doi_chieu:""` | nua menh de tu tat | **xanh ma khong chung minh gi** |
+| 3 hang muc dot 0 | man hinh dang hien "Model dang ban… khong bi tinh tien" | may ban bi doc thanh san pham hong |
+| 7.4 "so du phai giam" | do 921 -> **933**: mot khoan hoan vua ve | chot huong tren mot dai luong khong don dieu |
+
+🔴 **Cai nguy nhat la dong thu tu, du no XANH.** Nam dong kia do nen duoc dieu
+tra; dong xanh do dong ho so lai.
+
+⛔ Va 6.3 suyt gay thiet hai that: "sua" san pham cho khop se them mot cho kiem
+so huu **thu hai** o route — dung thu `tham_chieu.tim_profile` canh bao — va cho
+do **khong thay kho giong chung** nen se chan nham giong hop le.
+
+### Hai gia thuyet sai bi phep do bac bo (khong thanh ban va)
+
+- **"`mo_luong` ro suat admission"**: chi `server/api/streaming.py` co
+  `BackgroundTask(release_by_id)`; duong ChatLTT khong thay cho nha, ma
+  `llm_remote` chi co **1 suat** — mot ro se khoa ca san pham 20 phut. Do that:
+  giu **1** giua luong, **0** sau luong. Cho nha o `_phat`: `with keep_alive(...)`.
+- **"tran ra khong theo model"**: `tran_theo_ngu_canh()` dung `CUA_SO_MODEL`
+  (204.800) vo dieu kien, con vision chi 65.536. Bac bo bang **so hoc**:
+  `tran_vao_cua` da tru san `TOKEN_RA_TRAN`, nen dau vao hop le lon nhat cua
+  vision la 30.720 va 30.720 + 32.768 = 63.488 <= 65.536.
+
+### Chot moi, va mot chot dau tien la TAUTOLOGY
+
+`tests/test_334`: chot `tran_vao_cua(m) + TOKEN_RA_TRAN + LE == CUA_SO_THEO_MODEL[m]`
+(DANG THUC). Ban `<=` viet truoc **khong the do**: tong luon bang `cua_so - LE`,
+nen nang `TOKEN_RA_TRAN` len 40.000 van xanh. Ban dang thuc **do dung mot thay
+doi**: bo phan tru tran-ra khoi `tran_vao_cua` (98.304 > 65.536).
+
+⭐ Hai luat rut ra, dung cho moi phep kiem sau:
+**mot chot phai kem duoc kich ban lam no DO** — khong viet ra duoc thi chot ay
+chua ton tai; va **mot phep do phai kem duoc doi chung lam no ra KHAC di**.
+
+### ⛔ CHAN: khong dang nhap lai duoc production tu may nay
+
+Hai thu chong len nhau, moi thu mot minh da du chan:
+1. `/login` tra **403 `cf-mitigated: challenge`** ke ca voi client HTTP tran mang
+   UA Chrome qua IPv4 (`/` tra 200, `/chatltt` tra 303 — khong thu thach);
+2. thu thach khong hoan tat duoc: `brunhild.challenges.cloudflare.com` co **0 ban
+   ghi A, chi AAAA** (do cheo 1.1.1.1 + 8.8.8.8; doi chung
+   `challenges.cloudflare.com` dual-stack), ma may **khong co IPv6 toan cuc nao**.
+
+⛔ Cach sua ghi trong `don-dep-sau-h6` (`Disable-NetAdapterBinding ms_tcpip6`)
+**khong ap duoc** — voi mot host chi-AAAA thi tat IPv6 la di lui.
+
+Con lai sau khi mo duoc dang nhap: **5.2, 5.3** (tao anh) va **6.2** (giong nhan
+ban — tai khoan kiem chua nhan ban giong nao).
+
+---
+
+## 2026-09-05 — LTT Voice: "giao dien hien 1500" hoa ra la BAN DEPLOY CU
+
+Trieu chung: kho ghi `TRAN_KY_TU_CONG_KHAI = 100_000`, web hien `0 / 1500 ky tu`.
+
+⛔ **Khong phai cache, va khong phai loi ma nguon.** `C:\LTTPlatform\app` giu mot
+ban chep tu thoi `master`, con `admin-mvp-v3` da di truoc **94 commit**. Bang
+chung phan biet duoc hai gia thuyet: md5 cua `/static/voice.js` may chu **phuc
+vu** khop **chinh xac** ban tren dia o thu muc deploy (79.040 B) chu khong khop
+ban trong kho (91.281 B). Cache thi dia phai moi ma phuc vu moi cu.
+
+⭐ Dieu dang giu khong phai "nho deploy". La: **khong co cho nao hoi duoc may chu
+dang chay ma nao.** `/health/version` khi ay tra `"v1.0"` — doc tu `version.py`
+cua *LTTStudios VideoBot*, hang so go tay tu 2025, khong doi qua bat ky lan
+deploy nao. Nen cau hoi chi tra loi duoc bang cach so md5 hai thu muc bang tay.
+
+⇒ `/health/version` nay tra **ba truong bat ba kieu troi DOC LAP**: `commit` (ma
+nguon), `asset_ver` (tai san tinh qua CF), `ltt_voice` (hop dong tran). Chung
+hong rieng re, nen gop lai mot truong thi khong phan biet duoc — ma phan biet
+chinh la toan bo gia tri. `setup/2-cai-dat.ps1` ghi `dau_van_tay.json` (bang
+`Write-NoBom`) vi ban deploy **khong** co `.git`.
+
+### Bon loi TIM THEM khi dieu tra, khong ai bao
+
+1. 🔴 **JS dem UTF-16, Python dem diem ma.** `maxlength` cung dem don vi ma, nen
+   50.001 emoji = 50.001 ky tu voi may chu nhung **100.002 don vi ma** voi o
+   nhap ⇒ trinh duyet **cat mat mot nua** mot van ban may chu hoan toan chap
+   nhan, khong loi nao bao. Da go `maxlength`; `voice.js::demKyTu()` dem bang
+   `Array.from` va chan o **cho NOP** (tat nut Tao + `role="alert"`), khong chan
+   o cho go — van ban o nguyen de khach tu cat.
+2. **Nhap TXT `s.slice(0, tran)`** — mat phan duoi ngay luc nhap, khong hoan tac
+   duoc. Nay giu nguyen ca tep (da bo BOM).
+3. **Song am `decodeAudioData` ca tep.** O tran moi: ~483 MB tai + ~967 MB PCM.
+   Chu thich cu ngay tren `veSong` **da du bao dung** ("neu tran ky tu duoc noi
+   thi cho nay phai doi") — tran noi 03/09, cho ay thi khong. Nay co
+   `TRAN_GIAY_SONG = 600` + `songDeu()` (track PHANG, khong phai song bia ra).
+4. **`100000` vs `100.000` tren cung mot luong**: o dem hien co dau cham, thong
+   diep loi cua **chinh cua ay** thi khong. Filter `|so` chi toi duoc noi co
+   Jinja ⇒ tach than ham ra `platform_core/dinh_dang.py::so_viet()`.
+
+### Residue "Chay lo" — man chua bao gio duoc xay
+
+`taoLo()` + `motLo()` trong `voice.js`: **236 dong**, export qua `window.LttVoice`,
+**khong khuon mau nao goi**, gui toi moi khach cua moi trang Voice. `manifest.py`
+ghi *"SAU TAB, va tu P8 ca sau deu da xay"* trong khi nav co **NAM**.
+
+⛔ Da go, va ghi ro **dieu kien de no duoc phep quay lai**: mot nang luc lo THAT
+nhu `infer_batch` (gop nhieu doan vao MOT luot GPU, do 01/09 cho 3,47x thong
+luong), chu khong phai "moi dong mot job" — mo hinh cu chi la mot vong lap co
+giao dien. **Dung dung lai no de mot chu thich noi "sau tab" thanh dung.**
+
+⚠️ Giu nguyen nhung cho nhac Chay lo o **thi qua khu co ghi ngay**
+(`tables_du_an.py`, `vo.py:106`, `ltt_voice_thongbao.html`) — viet lai lich su
+cho khop hien tai la xoa mat chinh thu khien tai lieu ay co gia.
+
+### Hai cai bay gap lai trong lot nay
+
+- **Bo do quet trung phat viec giai thich.** Ban dau cua
+  `test_nhap_txt_khong_cat_lang_le` tim `s.slice(0, tran)` trong ca tep va **do
+  ngay** — chinh chu thich giai thich cai bay da trich dan doan ma ay. Ai muon
+  no xanh se phai *xoa loi giai thich*. ⇒ `_bo_chu_thich()` + `test__..._tu_kiem`
+  (mot bo loc hong ma khong tu-kiem se lam moi phep kiem dung no xanh vinh vien).
+- **Heredoc Bash nuot `\n`** — lai mot lan nua. Dung `chr(10)` hoac Edit.
+
+Tai lieu day du: `docs/LTT_VOICE/AUTONOMOUS_AUDIT/` (00–07).
+
+### Ket qua 05/09: DA DEPLOY, va bon loi cua chinh ban va
+
+Ba noi khop nhau o `fca8833e`: kho = GitHub = production.
+
+    /health/version cong khai:  commit=fca8833ee57f  nguon=marker
+    voice.js khach nhan:        63c7c169…  (truoc deploy: 7ace0b84…)
+    tran dang chay:             100.000 / 1.500
+
+25 giong kho chung da doi ten (public_id NGUYEN, nen hop dong API khong doi mot
+chu). Bang doi khoa theo `ma_cu` chu khong theo ten hien thi — va quyet dinh do
+CUU ca luot: `-Xem` lo ra 5 giong mang ten khac bang, trong do hai cai giu dung
+ten toi dinh gan cho giong khac (`Ethan`, `Ivy`). Do `sua_luc` truoc khi ghi:
+ca bon cung MOT GIAY (01/09 12:43:12) va `tao_luc` som hon ca nhom => do la bon
+giong nhap dot dau ma luot nhap 01/09 chi va xuat xu, khong doi ten. Khong phai
+phien nao dang lam song song.
+
+## ⛔ BON LOI CUA CHINH BAN VA, VA MOT CAI DA VAO PRODUCTION
+
+  ① nhanh `!AudioContext` van `return` tran => `songGia` (song ngau nhien) nam
+    lai VINH VIEN — dung thu cai tran sinh ra de tranh. Tu bat khi soat diff.
+  ② `/health/version` khong xac thuc ma `doc()` fork `git` moi luot goi. Tu bat.
+  ③ bang doi ten khoa theo ten hien thi — thu troi duoc. Tu bat.
+  ④ `songDeu` TU GOI LAI CHINH NO (de quy vo han). **Lot qua gate day du 6000
+    test, vao production.** Phien Mobile V1 tim ra khi doc ma.
+
+⭐ ④ dang ghi nhat, vi hai le:
+
+  · Nguyen nhan la mot `str.replace` TOAN CUC cho dong `if (!canvas) return;` —
+    dong ay co o HAI noi, va toi doc lai "cho toi nghi da sua" chu khong doc lai
+    CA THAN HAM.
+  · No CHUA BAO GIO NO (moi cho goi deu truyen canvas that). Nhung duong DUY
+    NHAT kich hoat no lai chinh la nhanh phong thu — tuc dong viet ra de tu bao
+    ve se la dong giet ca handler bang `RangeError`.
+
+⇒ **Mot loi khong bao gio no van la mot loi**, va loai nguy hiem nhat la loai
+  chi no o dung nhanh hiem ma nguoi ta viet ra de phong than.
+
+⚠️ Va phep kiem dau tien toi viet de chot ④ CUNG SAI: cat tu chinh dong khai
+   ham nen `"songDeu(" in than` luon dung, do tren mot ma da sach. Ban sua cat
+   SAU chu ky, va da kiem nguoc bang cach tiem lai loi cu.
+
+Memory moi: `thay-chuoi-toan-cuc-cham-dong-phong-thu`,
+`hoi-may-chu-dang-chay-ban-nao`.
+
+## Con lai, KHONG duoc doc thanh "da xong"
+
+  1. Bug mobile (`/audio` thieu `Range` => Safari tu choi phat) da sua o
+     `phien/mobile-v1`, **CHUA merge**. Do tren cay vua deploy: `grep -c "Range"
+     _p_audio.py` -> 0. Can mot chuyen deploy rieng.
+  2. O dem hien `100.000` la SUY RA tu ba manh da xac minh trong ban deploy
+     (hang so, `|so`, khong con `maxlength`) — **chua mo trang bang mat**, vi
+     dang nhap production tu may nay bi Cloudflare chan.
+  3. `TRAN_GIAY_SONG = 600` co lap luan moi de ha (phien Mobile do: o 35 cot thi
+     mot cot ganh 17 giay tieng). Co y KHONG gop vao chuyen nay.
+
+Tai lieu: `docs/LTT_VOICE/NGUON_CHAN_LY.md` (chi muc), `AUTONOMOUS_AUDIT/00-08`,
+`KHO_GIONG/00-01`.

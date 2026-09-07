@@ -18,6 +18,24 @@ cũ nguy hiểm hơn không có bản đồ, vì nó trả lời tự tin. Đọ
 Quy tắc làm việc đầy đủ (kể cả quy tắc cập nhật memory và giao thức đổi quyết
 định) ở `AGENTS.md`.
 
+## ⛔ Đừng đọc cả kho — khám phá trước, đọc sau
+
+Một phiên đọc đệ quy cả cây sẽ nuốt hết ngữ cảnh trước khi chạm được việc thật,
+và phần lớn thứ nó nuốt là **rác sinh ra**: `tmp/`, `dist/`, `logs/`,
+`data/files/`, `__pycache__/`, `.playwright-*/`, ảnh bằng chứng trong `docs/`.
+
+Thứ tự đúng: **KHÁM PHÁ → ĐẾM → LỌC → PHÂN LOẠI → NHẮM → ĐỌC**.
+
+- Định vị bằng `grep`/`Glob`, không bằng `cat` cả thư mục.
+- Thư mục lớn: đo **siêu dữ liệu** (số tệp, dung lượng, mtime) trước; chỉ đọc
+  nội dung khi cần phân biệt *bản chuẩn* với *bản đã lỗi thời*.
+- Đầu ra lệnh có thể lớn thì ghi ra tệp tạm rồi tóm tắt, đừng đổ vào ngữ cảnh.
+- Không nạp: sản phẩm build, log, cache, kết xuất sinh ra, bản sao lưu, dữ liệu
+  vận hành, artefact của phiên cũ — trừ khi việc đang làm cần đúng cái đó.
+
+⭐ Cỡ thật để bạn liệu: `docs/` có **645 tệp `.md`** và **788 tệp ảnh (90 MB)**.
+Đọc theo nhu cầu, không đọc theo thứ tự.
+
 ⚠️ **`D:\BOT GEMINI` là kho tham chiếu CHỈ ĐỌC.** Nó đang phục vụ người dùng
 thật trên cổng 8000. Không sửa, không tạo, không xoá gì bên đó. Nền tảng này
 dùng cổng **8100**.
@@ -268,6 +286,16 @@ chế đã hỏng năm lần. Ví dụ thật: trần ký tự của `ltt_voice`
 **hai** hằng số ngày 31/08 — bảng cũ vẫn mô tả **một**, và không ai phát hiện
 cho tới khi có người đối chiếu từng giá trị với mã.
 
+## ⛔ `D:\LTTBackups` — ACL chặn ở đó là CỐ Ý, đừng "sửa"
+
+Thư mục ấy chứa `app.env` và dump CSDL **mang bí mật thật**. Hạng mục **W1.5**
+của `docs/AUDIT_MVP_2026-07-31.md` yêu cầu đúng điều đang thấy: *"thư mục backup
+chỉ SYSTEM/Admin đọc"*.
+
+Thấy `Access denied` ở đó mà chạy `icacls` để mở ra là **gỡ một bản vá bảo mật
+đã hoàn thành**. Remote git `backup` trỏ vào đó đã được **gỡ 04/09**; bản sao
+off-site nay là **GitHub riêng tư** (`origin`).
+
 ## Không bao giờ commit hay copy đi
 
 ```
@@ -281,11 +309,16 @@ cloudflare/config.yml cloudflare/*.json
 |---|---|
 | `docs/00_BAT_DAU_TU_DAY.md` | bố cục, nguyên tắc |
 | `docs/01_COPY_LEN_SERVER.md` | chuyển sang máy chủ + cập nhật |
+| `docs/16_CAP_NHAT_VA_DEPLOY.md` | **quy trình cho MỌI phiên**: đồng bộ → gate → ff → deploy → đẩy GitHub |
 | `docs/02_LENH_CHO_CLAUDE.md` | câu lệnh mẫu người dùng đưa cho bạn |
 | `docs/03_THEM_APP_MOI.md` | thêm app |
 | `docs/04_CLOUDFLARE_TUNNEL.md` | Tunnel chi tiết + xử lý sự cố |
+| `docs/05_LEN_MANG_CLOUDFLARE.md` | đưa nền tảng ra Internet |
+| `docs/06_DON_HA_TANG.md` | dọn hạ tầng — việc Claude làm được và việc bạn phải tự làm |
+| `docs/QUY_TRINH_WORKTREE.md` | **đọc TRƯỚC khi tạo hay gỡ worktree** — vì sao máy treo, và luật để nó không lặp |
+| `docs/QUY_TAC_CHAY_LENH_NANG.md` | **đọc TRƯỚC mọi lệnh nặng** — bốn bước bắt buộc, ba điều tuyệt đối không làm |
 | `docs/PUBLIC_API/APP_API_COVERAGE_FINAL.md` | app/tool/model nào mở, nào đóng, **vì sao** |
 | `docs/PUBLIC_API/API_PLATFORM_FULL_RELEASE_READINESS.md` | trạng thái Public API + điều kiện còn lại |
 | `docs/_luutru/PROJECT_MEMORY.md` | nhật ký — **cập nhật cuối mỗi phiên** |
-| `docs/BAY_TRONG_CONG_CHAT_LUONG.md` | sáu cái bẫy trong chính cổng chất lượng — đọc trước khi tin một dòng `RESULT: PASS` |
+| `docs/BAY_TRONG_CONG_CHAT_LUONG.md` | những cái bẫy trong chính cổng chất lượng — đọc trước khi tin một dòng `RESULT: PASS` |
 | `AGENTS.md` | quy ước kỹ thuật chi tiết |

@@ -110,15 +110,31 @@ def doan_ngon_ngu(text: str):
     return None
 
 
-def doi_chieu(lan_giong: str, text: str) -> tuple:
+def doi_chieu(lan_giong: str, text: str, khai_bao: str = "") -> tuple:
     """Cảnh báo (dạng tuple chuỗi) khi văn bản lệch làn của giọng. Không ném.
 
     Trả tuple rỗng khi khớp, khi không đoán được, hoặc khi giọng chưa có làn.
+
+    ⭐ `khai_bao` — ngôn ngữ khách TỰ NÓI, từ ô `Ngôn ngữ` ở Studio. Khi có, nó
+       **thay cho phép đoán**, và đó là toàn bộ giá trị của ô ấy.
+
+       `doan_ngon_ngu` cố ý trả `None` khi không đủ dấu hiệu, và im lặng khi
+       `None` là quyết định đúng: một cảnh báo hay sai là một cảnh báo bị bỏ
+       qua. Nhưng cái giá của nó là **ca im lặng nhiều nhất lại là ca cần cảnh
+       báo nhất** — một câu tiếng Anh ngắn đọc bằng giọng Việt không đủ dấu hiệu
+       để máy đoán, nên khách không được nhắc gì cả.
+
+    ⇒ Khách khai được thì máy hết phải đoán. Đó là một điều khiển THẬT: chọn
+      `Tiếng Anh` cho một giọng làn `vi` sẽ ra cảnh báo mà `Tự động` bỏ qua.
+
+    ⛔ Và nó KHÔNG chặn việc tạo — cùng chính sách với bản đoán: sản phẩm này
+       cảnh báo, không cấm.
     """
     lan = (lan_giong or "").strip().lower()
     if lan not in ("vi", "en"):
         return ()
-    do = doan_ngon_ngu(text)
+    khai = (khai_bao or "").strip().lower()
+    do = khai if khai in ("vi", "en") else doan_ngon_ngu(text)
     if do is None or do == lan:
         return ()
     return (N_(

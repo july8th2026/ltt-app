@@ -277,24 +277,57 @@ def test_gate_NOI_RA_khi_cay_doi_trong_luc_chay():
 
        Nen bay gio no chay that: sua mot tep trong cay giua hai anh chup, roi
        doi hoi gate nhin ra.
+
+    ⛔ Nhung "cay" o day KHONG duoc la cay lam viec that. Ban truoc goi
+       `tempfile.mkstemp(dir=ROOT / "tools")` — ghi mot tep `.py` vao `tools/`
+       roi xoa ngay. Do 07/09/2026: viec do lam **do mot luot gate** o mot test
+       khac hoan toan, `test_44_release_build`:
+
+           tools/build_release.py:261: zf.write(full, rel)
+           FileNotFoundError: [WinError 2] ... 'D:/LTTSTUDIOSAPP/tools/tmplibsfvn9.py'
+
+       `build_release` liet ke `tools/` roi nen tung tep; test nay xoa tep tam
+       vao dung khe giua hai buoc ay. Hai test chay song song (`gw5`), nen loi
+       chi hien khi thoi diem trung nhau — mot lan do khong tai hien duoc, va
+       khong lien quan gi den ma vua sua.
+
+       ⭐ Bat bien khong doi: van goi `_anh_chup_cay()` THAT, van tao tep THAT
+          tren dia. Chi doi GOC sang mot cay tam. Phep kiem khong yeu di —
+          no thoi lam hong luot chay chua chinh no.
+          Xem `docs/BAY_TRONG_CONG_CHAT_LUONG.md` **Bay 29**.
     """
     import os
     import tempfile
 
+    import tools.gate as gatemod
     from tools.gate import _anh_chup_cay
 
     ma = (ROOT / "tools" / "gate.py").read_text(encoding="utf-8")
     assert "CAY DA DOI TRONG LUC CHAY" in ma
 
-    truoc = _anh_chup_cay()
-    fd, ten = tempfile.mkstemp(suffix=".py", dir=ROOT / "tools")
-    os.close(fd)                    # Windows khong xoa duoc tep dang mo
-    tam = pathlib.Path(ten)
-    try:
-        assert _anh_chup_cay() != truoc, "them mot tep ma anh chup khong doi"
-    finally:
-        tam.unlink()
-    assert _anh_chup_cay() == truoc, "xoa di roi ma anh chup van khac"
+    with tempfile.TemporaryDirectory() as thu_muc:
+        goc_gia = pathlib.Path(thu_muc)
+        (goc_gia / "tools").mkdir()
+        (goc_gia / "tools" / "co_san.py").write_text("x = 1\n", encoding="utf-8")
+
+        cu = gatemod.ROOT
+        gatemod.ROOT = goc_gia
+        try:
+            truoc = _anh_chup_cay()
+            # Doi chung: cay gia phai co noi dung. Mot anh chup RONG se "bang
+            # nhau" o cuoi ham du ham co hong hay khong.
+            assert truoc, "cay gia rong — phep kiem se xanh ma khong do gi"
+
+            fd, ten = tempfile.mkstemp(suffix=".py", dir=goc_gia / "tools")
+            os.close(fd)            # Windows khong xoa duoc tep dang mo
+            tam = pathlib.Path(ten)
+            try:
+                assert _anh_chup_cay() != truoc, "them mot tep ma anh chup khong doi"
+            finally:
+                tam.unlink()
+            assert _anh_chup_cay() == truoc, "xoa di roi ma anh chup van khac"
+        finally:
+            gatemod.ROOT = cu
 
 
 def test_quick_PHAI_noi_no_khong_chay_gi():
@@ -409,6 +442,57 @@ def test_moi_dong_print_cua_gate_song_duoc_khi_dau_ra_bi_HUNG():
     assert not xau, f"dong print co ky tu ngoai ASCII: {xau}"
 
 
+def test_anh_chup_cay_phu_MA_DEPLOY_DI_XA_khoi_kho():
+    """🔴 CHỐT "CÂY ĐỨNG YÊN" TỪNG KHÔNG SOI BA THỨ QUAN TRỌNG NHẤT.
+
+    Trước 03/09, `_anh_chup_cay()` chỉ chụp bảy thư mục và **bỏ qua**
+    `llm_gateway/` (mã cổng máy B), `sdk/` (bộ cài chạy trên máy khách) và
+    `frontend/`.
+
+    ⛔ Nghĩa là sửa mã cổng máy B ngay giữa một lượt gate thì `CAY DA DOI
+       TRONG LUC CHAY` **không kêu**, và dòng `RESULT: PASS` nói về một cây đã
+       không còn tồn tại. Với hai phiên làm việc song song trên cùng một kho,
+       đó không phải rủi ro lý thuyết.
+
+    ⭐ Ba thư mục ấy đáng canh **hơn** phần còn lại, không kém: mã trong chúng
+       **rời khỏi kho này** — chạy trên máy B, hoặc tải về máy khách. Một lần
+       sai ở đó không lộ ra trong bất kỳ phép kiểm nào chạy tại chỗ.
+    """
+    from tools.gate import THU_MUC_CHUP
+
+    for phai_co in ("llm_gateway", "sdk", "frontend"):
+        assert phai_co in THU_MUC_CHUP, (
+            f"`{phai_co}` khong nam trong anh chup cay. Ma o do DEPLOY DI XA "
+            f"khoi kho nay, nen sua no giua mot luot gate se khong bi phat hien.")
+
+
+def test_anh_chup_cay_CAT_node_modules_nhung_GIU_bundle_da_commit():
+    """Cắt phải cắt đúng thứ vô nghĩa, và **chỉ** thứ vô nghĩa.
+
+    ⭐ Cắt `node_modules` là lý do ảnh chụp rộng gấp đôi mà lại **nhanh hơn**:
+       `os.walk` cắt `dirnames` tại chỗ nên nó không đi xuống 12.255 tệp, khác
+       hẳn `rglob` (đi xuống rồi mới lọc). Đo 03/09: 1.321 tệp/0,143 s → 1.491
+       tệp/0,047 s.
+
+    ⛔ NHƯNG `.vite`, `dist`, `coverage` thì KHÔNG được cắt. Bốn tệp
+       `server/static/*/.vite/manifest.json` là bundle production **đã commit**
+       — chúng chính là thứ máy chủ phục vụ. Cắt chúng khỏi ảnh chụp là mất
+       đúng thứ cần canh, và mất một cách im lặng.
+    """
+    from tools.gate import _BO_QUA_THU_MUC, _anh_chup_cay
+
+    assert "node_modules" in _BO_QUA_THU_MUC
+    for khong_duoc_cat in (".vite", "dist", "coverage"):
+        assert khong_duoc_cat not in _BO_QUA_THU_MUC, (
+            f"`{khong_duoc_cat}` bi cat khoi anh chup — bundle da commit nam "
+            f"trong do, va mat chung la mat dung thu can canh")
+
+    cay = _anh_chup_cay()
+    assert not [p for p in cay if "node_modules" in p], "node_modules lot vao anh chup"
+    manifest = [p for p in cay if p.endswith(".vite/manifest.json")]
+    assert manifest, "khong con manifest bundle nao trong anh chup"
+
+
 def test_canh_bao_cay_doi_phai_KE_TEN_chu_khong_chi_bao_co_doi():
     """Một cảnh báo không nói được cái gì đổi thì không dùng để làm gì.
 
@@ -457,3 +541,90 @@ def test_ba_tep_ghi_vao_cay_deu_tra_lai_CA_DAU_THOI_GIAN():
     assert not doi, (
         f"ba tep pha 2 lam ban cay: {sorted(doi)}. Xem `finally:` cua chung — "
         f"khoi phuc phai co ca `os.utime`, khong chi noi dung.")
+def test_moi_buoc_NANG_deu_phai_khai_tai_nguyen():
+    """`nhom="nang"` ma khong khai `tai_nguyen` la tu chon ra khoi khoa, IM LANG.
+
+    🔴 Do 06/09/2026: tren 29 `Step()` trong `gate.py`, chi 3 khai tai nguyen —
+       va HAI trong so cac buoc `nang` khong khai gi ca:
+
+           bat bien da tien trinh   -> dung PostgreSQL, goi `drop_all()`
+           bo test --lf             -> KHONG khai gi, ke ca `cpu_nhieu`
+
+       Hai luot gate o hai worktree cung do trong mot dem, hai trieu chung khac
+       nhau, mot nguyen nhan: mot ben xoa schema giua luc ben kia dang ghi.
+
+           relation "api_metric_samples" does not exist
+           assert 0 == 9   (9 job bien mat khoi bang)
+
+    ⛔ `bo test --lf` la ca te nhat vi no **doi lot mot buoc nhanh**:
+       `gate --vong-lap` duoc quang cao la vong lap 15 giay, nhung `--lf` chay
+       TOAN BO bo test khi cache `lastfailed` rong hoac toan id chet (do that:
+       393 giay). Mot luot nang vo hinh hoan toan voi khoa.
+
+    ⭐ Khoa **khong doan duoc** buoc lam gi; no chi giu thu duoc KHAI. Nen them
+       mot buoc nang ma quen `tai_nguyen=` la tu chon ra khoi khoa — khong co gi
+       do, khong co gi vang mat, chi co mot cai ten khong duoc nhac toi.
+
+    ⚠️ Phep kiem nay doc AST va menh de cua no noi ve **hinh dang ma**, nen AST
+       la cong cu DUNG o day — khac han truong hop
+       `test_main_cua_test_nhanh_THUC_SU_chay_pha_1`, noi menh de noi ve **hanh vi**
+       va AST mu voi no.
+    """
+    import ast
+
+    cay = ast.parse((ROOT / "tools" / "gate.py").read_text(encoding="utf-8"))
+    thieu = []
+    for n in ast.walk(cay):
+        if not (isinstance(n, ast.Call) and getattr(n.func, "id", "") == "Step"):
+            continue
+        kw = {k.arg: k.value for k in n.keywords}
+        nhom = getattr(kw.get("nhom"), "value", "tinh")
+        if nhom != "nang" or "tai_nguyen" in kw:
+            continue
+        ten = (n.args[0].value if n.args and isinstance(n.args[0], ast.Constant)
+               else "?")
+        thieu.append(f"dong {n.lineno}: {ten}")
+
+    assert not thieu, (
+        "buoc nhom=\"nang\" KHONG khai tai_nguyen => vo hinh voi cua_so_yen: "
+        + "; ".join(thieu))
+
+def test_moi_buoc_NANG_deu_phai_khai_SAN_THOI_GIAN():
+    """Mot buoc nang xong trong tich tac la mot buoc KHONG CHAY.
+
+    🔴 Đo 06/09: một phép tách hàm làm hai pha pytest rơi vào **mã chết sau một
+       `return`**. `tools/test_nhanh.py` thoát sau **0,114 giây**, mã **0**,
+       không chạy một test nào — và `gate.py` in:
+
+           [PASS] bo test (song song)   0.1s
+
+       Bước nặng nhất kho, **xanh**, trong một phần mười giây. Cả **năm** bánh
+       cóc AST lúc ấy đều xanh, vì chúng hỏi *hình dạng mã* — mà hình dạng vẫn
+       đúng khi công cụ đã chết.
+
+    ⭐ `giay_toi_thieu` biến **con số giây gate vẫn in ra mà không ai đọc** thành
+       một phán quyết. Nó là lớp bảo vệ **tổng quát**: không cần biết bước làm
+       gì, chỉ cần biết nó không thể xong trong tích tắc. Một bánh cóc riêng cho
+       từng công cụ thì phải viết lại mỗi lần thêm công cụ; cái này thì không.
+
+    ⚠️ Bước **tự khai** bỏ qua (`DAU_BO_QUA`) được miễn trong `_run` — "không làm
+       được việc và nói ra" là trạng thái hợp lệ, khác hẳn "trông như đã làm".
+    """
+    import ast                                   # noqa: PLC0415
+
+    ma = (ROOT / "tools" / "gate.py").read_text(encoding="utf-8")
+    thieu = []
+    for n in ast.walk(ast.parse(ma)):
+        if not (isinstance(n, ast.Call) and getattr(n.func, "id", "") == "Step"):
+            continue
+        nhom = next((k.value for k in n.keywords if k.arg == "nhom"), None)
+        if not (isinstance(nhom, ast.Constant) and nhom.value == "nang"):
+            continue
+        g = next((k.value for k in n.keywords if k.arg == "giay_toi_thieu"), None)
+        ten = n.args[0].value if n.args and isinstance(n.args[0], ast.Constant) else "?"
+        if g is None or not isinstance(g, ast.Constant) or not g.value:
+            thieu.append(f"{ten} (dong {n.lineno})")
+
+    assert not thieu, (
+        "buoc `nhom=nang` khong khai `giay_toi_thieu` - mot luot bat dong cua no "
+        f"se bao PASS: {thieu}")

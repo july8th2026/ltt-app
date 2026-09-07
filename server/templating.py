@@ -57,7 +57,7 @@ _STATIC_DIR = pathlib.Path(__file__).resolve().parent / "static"
 #    được đính version, rồi đòi danh sách này phủ hết. Thêm tệp mới mà quên khai
 #    là đỏ ngay — một luật cho cả lớp, không phải một danh sách được nhớ tay.
 TAI_SAN_CO_VERSION = ("ltt.css", "sao_chep.js", "cam_chon.js", "chon_tep.js",
-                      "voice.js", "dev_playground.js")
+                      "voice.js", "dev_playground.js", "nhip_job.js")
 
 
 def _tinh_asset_ver() -> str:
@@ -113,6 +113,7 @@ templates.env.globals["asset_ver"] = ASSET_VER
 # Mọi link nội bộ trong template PHẢI đi qua `u()`. Viết thẳng href="/nap" thì
 # người đang ở bản tiếng Anh bấm vào sẽ rơi về bản tiếng Việt — và lỗi đó không
 # làm trang vỡ, chỉ âm thầm đổi ngôn ngữ giữa chừng. Có scanner trong gate chặn.
+from platform_core import dinh_dang  # noqa: E402
 from platform_core import i18n as _i18n  # noqa: E402
 
 
@@ -203,15 +204,12 @@ def _so(gt) -> str:
        được bằng `isinstance`. Bắt ngoại lệ ở đây là dùng cơ chế báo lỗi để làm
        việc của một câu `if`.
     """
-    if isinstance(gt, str):
-        rut = gt.strip()
-        if not rut.lstrip("-").isdigit():
-            return str(gt)
-        gt = int(rut)
-    # `bool` là con của `int`: để lọt thì `True` hiện ra thành `1`.
-    if isinstance(gt, bool) or not isinstance(gt, (int, float)):
-        return str(gt)
-    return f"{int(gt):,}".replace(",", ".")
+    # ⭐ Thân hàm đã chuyển sang `platform_core/dinh_dang.py` ngày 05/09/2026,
+    #    vì filter chỉ tới được nơi có Jinja — mà **thông điệp lỗi thì không**.
+    #    Cùng ngày, màn Studio hiện `0 / 100.000 ký tự` trong khi thông điệp lỗi
+    #    của chính cửa ấy nói *"vượt giới hạn 100000"*: hai quy ước cách nhau
+    #    đúng một lượt POST, trên cùng một màn hình.
+    return dinh_dang.so_viet(gt)
 
 
 templates.env.filters["tien_vnd"] = _tien_vnd

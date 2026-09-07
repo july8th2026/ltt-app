@@ -8,16 +8,16 @@ _p_media.py — tao anh/tieng trong hoi thoai, va cua DUY NHAT phuc vu tai san.
 """
 from __future__ import annotations
 
-import io
 import logging
 
 from fastapi import Depends, Request
-from fastapi.responses import RedirectResponse, StreamingResponse
+from fastapi.responses import RedirectResponse
 
 from apps.chatltt.routes._chung import doc_json, json_ok, kiem_csrf, loi, router, uid
 from apps.chatltt.services import chinh_sach
 from apps.chatltt.services import hoi_thoai as H
 from apps.chatltt.services import tao_media as TM
+from platform_core import phat_media
 from server.auth.session import require_login
 from server.deps import get_db
 
@@ -37,9 +37,13 @@ async def bao_gia(request: Request, _=Depends(require_login), db=Depends(get_db)
     if not kiem_csrf(request, than):
         return loi(403, "csrf")
     try:
+        # `hoi_thoai` la TUY CHON va chi dung cho mot viec: biet luot tieng
+        # truoc do trong CUNG hoi thoai da chon giong nao, de khong hoi model
+        # lai (moi lan hoi ton 1 credit). Thieu no thi bao gia van chay.
         return json_ok(TM.bao_gia(str(than.get("nang_luc") or ""),
                                   dict(than.get("tham_so") or {}),
-                                  db=db, user_id=uid(request)))
+                                  db=db, user_id=uid(request),
+                                  conv_id=str(than.get("hoi_thoai") or "")))
     except chinh_sach.KhongDuocPhep as e:
         return loi(403, "khong_duoc_phep", str(e))
     except TM.ThamSoSai as e:
@@ -134,9 +138,19 @@ def tai_san(request: Request, key: str, _=Depends(require_login)):
     if thang:
         # R2: chuyen thang toi CDN, khong keo byte qua may nay.
         return RedirectResponse(thang, status_code=302)
+    duoi = key.rsplit(".", 1)[-1].lower()
     try:
-        with kho.open(key) as f:
-            data = f.read()
+        # ⭐ HTTP Range di qua `platform_core.phat_media`, khong tu viet o day.
+        #    Truoc 2026-09-05 cho nay doc TOAN TEP vao RAM roi tra mot
+        #    `StreamingResponse` khong khai `Accept-Ranges`. Safari/WebKit quyet
+        #    dinh co tua duoc hay khong tu chinh luot 200 dau tien, nen mot tieng
+        #    sinh ra o day TAI XUONG duoc ma bam Play thi im — trieu chung nguoi
+        #    dung bao, va no khong bao gio lo ra trong log vi khong co loi nao.
+        return phat_media.phat_tu_kho(
+            kho, key,
+            kieu_noi_dung=KIEU.get(duoi, "application/octet-stream"),
+            dai_range=request.headers.get("range"),
+            tieu_de_them={"Cache-Control": "private, max-age=3600"})
     except Exception as e:                                      # noqa: BLE001
         # Khach van nhan 404 — khong noi cho ho biet la "co tep nhung doc hong".
         # Nhung ta thi PHAI biet: mot kho doc khong duoc la su co ha tang, con
@@ -144,7 +158,3 @@ def tai_san(request: Request, key: str, _=Depends(require_login)):
         # tu phia khach, nen chi log moi phan biet duoc.
         log.info("khong doc duoc tai san %s: %s", key[:80], type(e).__name__)
         return loi(404, "khong_tim_thay")
-    duoi = key.rsplit(".", 1)[-1].lower()
-    return StreamingResponse(io.BytesIO(data),
-                             media_type=KIEU.get(duoi, "application/octet-stream"),
-                             headers={"Cache-Control": "private, max-age=3600"})

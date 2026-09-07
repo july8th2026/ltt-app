@@ -37,26 +37,89 @@ TRAN_MOI_LUOT_SINH = 1500
 #:      · `TRAN_KY_TU_CONG_KHAI` — khách gửi được bao nhiêu trong một lần
 #:    Yêu cầu dài hơn một lượt thì **chia rồi ghép**, không từ chối.
 #:
-#: ⚠️ Vẫn giữ 1.500 cho tới khi đo được chất lượng bản GHÉP ở 3.000 và 5.000 ký
-#:    tự. Đường đã có, cổng chưa mở — và thứ tự đó là có chủ ý: hạ tầng sẵn sàng
-#:    không phải là bằng chứng chất lượng. Nới nó vẫn phải qua V10.
+#: ✅ MỞ 03/09/2026, VÀ CON SỐ MỚI KHÔNG CÒN NÓI VỀ MODEL NỮA.
 #:
-#: ✅ MỘT trong các điều kiện ấy đã xong (01/09/2026): **trôi tông đã đo, và
-#:    không có**. Ba lượt độc lập trên bài 12 đoạn, `tools/do_troi_tong.py`:
-#:    chênh F0 giữa các đoạn 11–20 Hz so với sàn nhiễu (độ lệch F0 *bên trong*
-#:    một đoạn) 19–26 Hz, độ dốc −0,2 đến +1,1 Hz mỗi đoạn. Không vượt sàn, và
-#:    phần vượt thì không có hướng.
+#: 🔴 ĐÂY LÀ CHỖ QUAN TRỌNG NHẤT: 1.500 là con số **của model** (chỗ giọng bắt
+#:    đầu trôi). 100.000 là con số **của tài nguyên** (một job giữ GPU bao lâu
+#:    thì còn công bằng với người khác). Đổi một trần cứng lấy một trần cứng
+#:    khác thì vô nghĩa; đổi một trần CHẤT LƯỢNG lấy một trần NGÂN SÁCH mới là
+#:    gỡ đúng thứ.
 #:
-#: ⛔ ĐỪNG đọc điều đó thành "nới được rồi". Trôi tông là MỘT chiều của chất
-#:    lượng; V10 còn CER/WER, tương đồng người nói, clipping, tỉ lệ hỏng. Một
-#:    phép đo không thay được một cổng — đó đúng là cách một cảnh báo đúng bị
-#:    biến thành một lời cho phép.
+#:    Trần của model vẫn còn nguyên và vẫn đúng — nó là `TRAN_MOI_LUOT_SINH` ở
+#:    trên. Nó chỉ không còn **rò ra** thành trần của sản phẩm, vì
+#:    `apps/ltt_voice/ban_doc_dai.py` hấp thụ nó: bài dài chia thành nhiều lượt
+#:    ≤ trần ấy, mỗi lượt một artifact riêng trên đĩa, rồi ghép.
 #:
-#: ✅ Và trần tuyệt đối cũ đã BỎ. Trước 01/09 nó là `TRAN_MOI_LUOT_SINH ×
-#:    voice_sidecar.tham_so.TRAN_SO_VAN_BAN_BATCH` (= 8 đoạn), vì cửa văn bản
-#:    dài áp kích thước một lượt gộp lô lên chính người gọi — bài 12 đoạn nhận
-#:    `413`. Nay cửa tự chia nhóm, nên số đoạn không còn là hợp đồng của khách.
-TRAN_KY_TU_CONG_KHAI = 1500
+#: ⭐ BẰNG CHỨNG (03/09, `tools/do_bai_dai.py`, sidecar dựng từ worktree):
+#:
+#:      chi so        1400(1 doan)   1500(2)   3000(3)   5000(4)   10000(7)
+#:      CER               0,1121      0,0915    0,0897    0,0980    0,1077
+#:      WER               0,2037      0,1969    0,1905    0,1906    0,2050
+#:      ty le phu         0,9401      0,9630    0,9605    0,9528    0,9534
+#:      F0 trung vi         91,8        89,7      89,7      90,8      90,8
+#:      ty le hong             0           0         0         0         0
+#:      RTF                0,214       0,199     0,168     0,163     0,152
+#:
+#:    Bản GHÉP **tốt hơn** bản một lượt trên mọi chỉ số ASR, ở mọi độ dài. Và
+#:    RTF *cải thiện* theo độ dài — chi phí khởi động chia cho nhiều việc hơn.
+#:
+#:    Tương đồng người nói, so với **sàn nhiễu của chính nó** (cắt đôi từng đoạn
+#:    rồi so hai nửa — hai nửa chắc chắn là cùng người, nên đó là mức giống nhau
+#:    nhất mà thước đo này đạt được):
+#:
+#:      doan xau nhat <-> doan 1   0,9742   0,9797   0,9760   0,9710
+#:      san nhieu (xau nhat)       0,9716   0,9650   0,9687   0,9684
+#:
+#:    Ở **mọi** độ dài, đoạn giống đoạn đầu ít nhất vẫn giống hơn hai nửa của
+#:    cùng một đoạn. Độ dốc theo chỉ số đoạn đổi dấu giữa các bài ⇒ dao động,
+#:    không phải một chiều.
+#:
+#: ⭐ VÌ SAO SUY RỘNG TỪ 10.000 LÊN 100.000 LÀ HỢP LỆ — lập luận về CƠ CHẾ, không
+#:    phải về đường cong:
+#:
+#:      đường sinh **không mang trạng thái nào giữa các đoạn**. Mỗi đoạn là một
+#:      lượt `infer` độc lập, cùng tham chiếu, cùng tham số. Không có gì tích
+#:      luỹ, nên đoạn thứ 60 không thể khác đoạn thứ 7 vì lý do "bài dài hơn".
+#:
+#:    Số đo xác nhận đúng dự đoán ấy. Nếu số đo NGƯỢC lại thì mới là chuyện lớn,
+#:    vì khi đó có một trạng thái ẩn mà ta không biết. Nó không ngược.
+#:
+#: ⚠️ GIỚI HẠN CỦA BẰNG CHỨNG: **một vòng đo**, không phải nhiều vòng như
+#:    `tools/cong_chat_luong_voice.py` đòi để rút dung sai từ chính số đo. Bốn
+#:    tài liệu độc lập và 17 đoạn cùng chỉ một hướng nên kết luận đứng được,
+#:    nhưng ĐỪNG viết "đã qua cổng V10" — nó chưa qua.
+#:
+#: ⛔ VÀ MỘT ĐỐI CHỨNG ĐÃ KHÔNG CHẠY. `do_bai_dai.py` khai ba đối chứng; mục ③
+#:    ("cùng văn bản, khác vị trí") trả rỗng ở cả bốn bài, vì phép chia cân bằng
+#:    gộp đoạn văn khác đi nên không đoạn nào trùng độ dài. Chạy được **hai**.
+#:
+#: ── 100.000 ĐẾN TỪ ĐÂU ──────────────────────────────────────────────────────
+#:
+#:    Đo được: **19,86 ký tự mỗi giây audio**, RTF **0,152**
+#:          ⇒ **0,00763 giây GPU cho mỗi ký tự**
+#:
+#:    Ba ràng buộc, và trần là cái NGẶT NHẤT:
+#:
+#:      thoi gian job (max_runtime_s = 3600, xem manifest)  ~ 236.000 ky tu
+#:      RIFF/WAV 2 GiB (~6,2 gio audio)                     ~ 444.000 ky tu
+#:      cong bang GPU: CHUA co bo xep lich uu tien          <- rang buoc that
+#:
+#: 🔴 Ràng buộc thứ ba mới là thứ chọn con số. Ở 100.000 ký tự một job giữ GPU
+#:    khoảng 13 phút ở RTF đo được (≈23 phút nếu GPU chậm gấp đôi). Chưa có hàng
+#:    đợi ưu tiên, nên suốt ngần ấy nó **chặn mọi người khác**. Mở tới trần định
+#:    dạng (444.000 ≈ gần một giờ) là cố ý giao cho một người khả năng làm nghẽn
+#:    cả hệ thống.
+#:
+#: ⭐ ĐIỀU KIỆN NÂNG TIẾP — ghi ra để người sau kiểm được mà không phải tin lời:
+#:      · có bộ xếp lịch ưu tiên (yêu cầu tương tác chen trước job nền), HOẶC
+#:      · một GPU được cấp riêng cho làn tài liệu dài
+#:    Khi ấy trần kế tiếp là **định dạng tệp**, và trước khi chạm nó phải có
+#:    RF64/WAVE64: WAV thường tràn ở ~2 GiB và nó hỏng **im lặng** — trình phát
+#:    vẫn mở được phần đầu.
+#:
+#: ⚠️ TÀI LIỆU DÀI HƠN 100.000 KHÔNG BỊ TỪ CHỐI — nó đi đường **Dự án**: 200
+#:    khối, mỗi khối một job riêng. Đó đúng là hình dạng mà một cuốn sách nên có.
+TRAN_KY_TU_CONG_KHAI = 100_000
 
 
 #: Số lần thử cho một job giọng. **Không phải một con số tuỳ ý.**

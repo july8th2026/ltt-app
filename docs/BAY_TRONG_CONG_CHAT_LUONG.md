@@ -1,7 +1,7 @@
-# Hai mươi cái bẫy trong chính cổng chất lượng
+# Những cái bẫy trong chính cổng chất lượng
 
-**2026-08-25.** Không phải bẫy trong sản phẩm — bẫy trong **thứ dùng để chứng
-minh sản phẩm đúng**. Tất cả đều cùng một hình dạng:
+**2026-08-25, cập nhật 2026-09-06.** Không phải bẫy trong sản phẩm — bẫy trong
+**thứ dùng để chứng minh sản phẩm đúng**. Tất cả đều cùng một hình dạng:
 
 > Một phép kiểm **tồn tại**, nên không ai viết lại nó.
 > Nó **không đo thứ nó có vẻ đang đo**, nên nó không cảnh gì cả.
@@ -10,6 +10,15 @@ minh sản phẩm đúng**. Tất cả đều cùng một hình dạng:
 Sáu cái đầu lộ ra trong một ngày, vì trong ngày đó có **hai phiên làm việc song
 song trên cùng một cây nguồn** — điều kiện làm mọi giả định "chỉ có một người"
 gãy cùng lúc.
+
+⭐ **Bẫy 22–24 đến từ một đêm có BỐN phiên song song** (05→06/09), và chúng khác
+ba nhóm trước ở một điểm: không cái nào là bẫy của **một** phiên. Cả bốn phiên
+đều đo trước, đều báo nhau, đều tuân luật — và máy vẫn chồng ba lượt gate. Ba
+mục ấy được ghép từ phép đo của cả bốn, và mỗi phần ghi rõ nguồn.
+
+⛔ **Tiêu đề tệp này từng là một con số** ("Hai mươi mốt cái bẫy"), và nó đã cũ
+đi ngay lần thêm mục kế tiếp — tức nó vướng đúng **Bẫy 1** của chính nó: chốt
+**số lượng** thay vì chốt **tập hợp**. Đã bỏ con số khỏi tiêu đề.
 
 ---
 
@@ -593,6 +602,38 @@ biến một máy không có PostgreSQL thành một máy không chạy được
 một lời nói dối lấy một cản trở. Sửa đúng là cho gate có trạng thái thứ ba
 (`BOQUA`) tách khỏi `PASS`, và cho dòng `RESULT` nói ra số bước đã bỏ qua.
 
+### 🔴 Một bước bỏ qua ỔN ĐỊNH nguy hiểm hơn một bước bỏ qua THẤT THƯỜNG
+
+*(phiên Mobile V1 đối chiếu hai cây, 06/09)*
+
+Cùng ba bước ấy, ở **cây chính**, chúng **chạy được**:
+
+```
+frontend agent-canvas    PASS 14,8s
+frontend autosub-studio  PASS  4,1s
+frontend prompt-ai-ommi  PASS  4,5s
+```
+
+⇒ `BOQUA` ở một worktree là thuộc tính của **cây đó** (thiếu `node_modules`),
+**không** phải một giới hạn của kho. `npm ci` ba thư mục là gỡ hẳn.
+
+⚠️ Và đây là chỗ nó thành bẫy: **nguyên nhân bỏ qua không liên quan gì tới nội
+dung đang sửa.** Nên ba lượt gate liên tiếp cùng bỏ đúng ba bước ấy là một trạng
+thái **ổn định** — và **ổn định là thứ người ta ngừng đọc**. Ngày ai đó chạm vào
+`agent-canvas` trên cây ấy, bước phủ nó sẽ **vẫn** bỏ qua, im lặng, đúng lúc nó
+cần nói nhất.
+
+🔑 So hai ca cho rõ:
+
+| Ca | Bỏ bước | Vì sao nó sống lâu |
+|---|---|---|
+| Mobile V1 | **đúng** bước phủ phần vừa sửa (77 phép kiểm) | đập vào mặt ⇒ bị bắt ngay |
+| H44 | ba bước **không liên quan** | không đập vào mặt ⇒ **sống lâu hơn** |
+
+⇒ Ghi trong hồ sơ bàn giao của mỗi cây: *"ba bước này bỏ qua vì cây thiếu
+bundle, **không phải** vì chúng không áp dụng"* — để người sau không đọc `BOQUA`
+thành *"không liên quan"*.
+
 ---
 
 ## Bẫy 18 — Bánh cóc số tệp test không thấy tệp **chưa được git theo dõi**
@@ -709,9 +750,1850 @@ trước khi ai đó đo CPU và thấy không có lấy một `python.exe` nào
 
 ---
 
-⚠️ Bẫy 7, 8, 10, 18 và 20 **chưa có bánh cóc** (Bẫy 17 và 19 đã có, vá 31/08).
+⚠️ Bẫy 7, 8, 10, 18, 20 và 21 **chưa có bánh cóc** (Bẫy 17 và 19 đã có, vá 31/08).
 Chúng được ghi ở đây vì cả năm đều là
 loại chỉ nhận ra khi đã biết trước — và cái giá của việc không biết là một vòng
 chẩn đoán đi sai hướng ngay từ câu đầu tiên.
 
 ---
+
+## Bẫy 21 — Cache `--lf` có id nhưng **không id nào còn sống**: trạng thái thứ ba
+
+**2026-09-05.** `--vong-lap` tốn **531 giây** thay vì ~15 giây (một phiên khác đo
+`113 giây` ở lượt khác). Nhưng nguyên nhân **không** phải cái tôi viết lần đầu.
+
+### ⚠️ Đính chính chính bản ghi đầu tiên của mục này
+
+Tôi viết: *"nguyên nhân là `--lfnf=all`, mặc định của pytest"* và *"`--vong-lap`
+chậm ngay sau mỗi lượt xanh"*. **Cả hai đều sai với kho này** — vì tôi đọc dòng
+**mô tả** `--lf` trong `gate.py` thay vì đọc **lệnh nó thật sự chạy**:
+
+```
+tools/test_nhanh.py --lf --lf-rong-thi-khong-chay
+```
+
+Ca *"sau mỗi lượt xanh"* **đã được vá 27/08**: `test_nhanh._doc_lastfailed()`
+phân biệt ba trạng thái trên đĩa (vắng mặt / đọc được / đọc hỏng) và có hẳn khối
+chú thích kể lại đúng lần hỏng ấy (đo 27/08: 3 phút 35 thay vì 15 giây).
+
+⇒ Tôi mô tả lại một cái bẫy **đã có bánh cóc**, và bỏ sót cái đang cắn. Đúng
+hình dạng của cả tài liệu này: đọc một **bản tóm tắt** thay vì đọc thứ thật —
+lần này bản tóm tắt là một dòng tài liệu trong chính công cụ.
+
+### Trạng thái thứ ba, đo trên hai cây
+
+| cache `lastfailed` | `--lf` trần | `--lf --lfnf=none` | `--lf-rong-thi-khong-chay` |
+|---|---|---|---|
+| **vắng mặt / rỗng** | ❌ chạy tất | ✅ deselect tất | ✅ không chạy |
+| **có id, TẤT CẢ chết** | ❌ chạy tất | ❌ **chạy tất** | ❌ **chạy tất** |
+| có ≥1 id sống | ✅ 1/14 | ✅ 1/14 | ✅ thu hẹp |
+| 1 sống + 1 chết | ✅ 1/14 | — | — |
+
+🔑 **Cả hai lớp bảo vệ chỉ đếm "có bao nhiêu id", không hỏi "id nào còn phân giải
+được".** Cache có 4 id ⇒ trông như có việc ⇒ truyền xuống pytest ⇒ pytest không
+phân giải được cái nào ⇒ chạy toàn bộ, **im lặng**.
+
+⛔ **Đừng rút ra "đổi tên test làm hỏng `--lf`"** — hàng cuối bác điều đó: một id
+chết cạnh một id sống thì vẫn thu hẹp. Đổi tên chỉ hại khi nó giết **id sống
+cuối cùng**. Và id chết theo cách **lành mạnh**: gỡ một chốt đã hết lý do tồn
+tại là việc kho này khuyến khích.
+
+### Vì sao khó thấy
+
+`--lf` nhanh **đúng khi đang đỏ**, và ca hỏng này chỉ hiện khi **mọi** id đỏ cũ
+đã biến mất — tức đúng sau một pha dọn dẹp thành công. Nó thưởng cho việc làm
+đúng bằng một lượt 9 phút mang tên "15 giây".
+
+### Bản vá: gỡ im lặng, không đổi hành vi
+
+Phiên ASV V4 đã vá ở cây họ (`aa0dce89`):
+
+```
+[--lf] N id trong cache va KHONG id nao con phan giai duoc ... se chay TOAN BO
+```
+
+⭐ **Không** cho chạy rỗng — một id không phân giải được vẫn có thể là lỗi thu
+gom tạm thời, và chính `test_nhanh.py` cảnh báo ở chỗ khác rằng *"chạy rỗng và
+chạy hết rồi xanh in ra gần giống nhau"*.
+
+🔑 **Chưa vá ở cây này.** `CLAUDE.md:115` và `gate.py:6,14` vẫn ghi "~15 giây".
+
+
+---
+
+## Bẫy 22 — `cua_so_yen` chỉ thấy ai **XIN** khoá, và `test_nhanh.py` không xin
+
+**Đo 2026-09-05, 23:30–23:59.** Ba phiên, hai lần suýt reset máy, và cả ba lần
+cùng một câu trả lời sai:
+
+```
+python tools\cua_so_yen.py trang-thai
+RANH - khong tai nguyen nao dang bi giu.
+```
+
+...trong khi máy đang chạy một lượt nghiệm thu `demucs + Whisper + NVENC`, hoặc
+hai lượt gate đầy đủ.
+
+⛔ **Câu trả lời ấy KHÔNG sai về mặt kỹ thuật.** Nó trả lời đúng câu hỏi của nó —
+*"có tệp khoá nào trong `gettempdir()` không"* — và người đọc nghe thành *"máy có
+rảnh không"*. Hai câu khác nhau, và chúng khác nhau ở đúng chỗ nguy hiểm.
+
+### Ba đường đi vòng qua khoá, đọc được từ mã
+
+| # | Đường | Dòng |
+|---|---|---|
+| 1 | **`tools/test_nhanh.py` không lấy khoá — không một dòng nào** | `grep cua_so_yen tools/test_nhanh.py` → rỗng |
+| 2 | `python -m pytest` gõ tay: cũng không | — |
+| 3 | `gate.py` có đường **chạy KHÔNG khoá, cố ý** | `cua_so_yen.py:298-314` |
+
+Đường 3 đáng đọc kỹ: `CuaSoYen.chay_khong_khoa` — hết `--cho` mà khoá vẫn bị giữ
+thì lượt sau **chèn**, chạy tiếp mà **không giữ gì**, chỉ in
+`[cua so yen] dang CHEN`. Ngân sách lõi tự tụt bằng phép trừ per-máy nên về lõi
+nó không ẩu; nhưng hệ quả là **một lượt gate đang chạy có thể không có tệp khoá
+nào cả**.
+
+⇒ Chỉ `gate.py` (dòng 1384, `with CuaSoYen(...)`) xin khoá, và cả nó cũng có
+đường không xin. Mọi thứ khác — `test_nhanh.py`, `pytest` trần, `demucs` do
+người chạy tay — **vô hình**.
+
+### Một đường xoá khoá của người đang sống — đọc được, CHƯA tái hiện
+
+`thu_giu` (`cua_so_yen.py:165-180`) tạo tệp bằng `O_EXCL` **rỗng**, rồi mới ghi
+nội dung. Giữa hai mốc ấy tệp **tồn tại nhưng rỗng**; một lượt khác đọc vào đó
+thì `_doc` trả `None`, và nhánh `if cu is None:` **`tep.unlink()` rồi giành
+khoá** — tức xoá khoá của một lượt đang sống, không cần `--ep`.
+
+⛔ Cửa sổ tính bằng micro-giây và **chưa ai tái hiện được**. Ghi ở đây vì nó là
+đường duy nhất trong mã xoá được khoá không phải của mình mà không ai gọi `nha`.
+
+### Không phải lệch thư mục TEMP — đã đo và loại
+
+Nghi ngờ hợp lý: `dang_giu()` glob `tempfile.gettempdir()`, mà `TEMP` là biến
+**của từng tiến trình**, nên hai phiên có thể nhìn hai thư mục. Đo:
+`C:\Users\THANGT~1\...\Temp` và `C:\Users\Thang Tuong\...\Temp` là **cùng
+một thư mục** (tên 8.3), và cả ba nơi đều 0 tệp khoá. Giả thuyết chết.
+
+### `timeout.exe` tự fork một bản sao — một lượt gate hiện ra BA dòng
+
+⚠️ `timeout.exe` của Git for Windows tạo **hai** tiến trình, cái sau là con của
+cái trước, rồi mới exec lệnh con. Cả hai mang **nguyên** cmdline. Đo trên một
+lượt `timeout 2400 python tools/gate.py` thật:
+
+```
+25128  ppid=21576  timeout.exe 2400 python tools/gate.py
+26396  ppid=25128  timeout.exe 2400 python tools/gate.py   <- CON cua 25128
+21592  ppid=26396  python.exe   tools/gate.py              <- gate THAT, chi MOT
+```
+
+🔴 Ai khớp chuỗi con `gate.py` trong cmdline mà **không lọc `Name='python.exe'`
+trước** sẽ đếm ra **hai lượt gate mồ côi** cho một lượt duy nhất. Và "cái mồ
+côi" ấy là `timeout.exe` **cha** — giết nó là gỡ mất cái phanh của một lượt đang
+chạy, hoặc giết luôn cả lượt.
+
+05/09 một phiên đã đếm kiểu ấy và gần kết luận có một gate vô chủ đang ăn lõi.
+Thứ cứu họ là luật *"đừng giết theo một bản tóm tắt"*.
+
+⭐ Lọc `Name == "python.exe"` **rồi mới** khớp cmdline; hoặc dựng cây bằng `ppid`
+và chỉ đếm gốc. Và phân biệt cho được **cùng một lượt** với **hai lượt**: hai
+`gate.py` khác pid, mỗi cái có `test_nhanh` con riêng và `-n` khác nhau, thì đó
+là hai lượt thật — fork của `timeout.exe` chỉ nhân đôi lớp `timeout.exe`.
+
+### Ba phiên báo nhau tử tế, và vẫn chồng lên nhau
+
+Đo **06/09 00:09:31**, lọc `Name='python.exe'` trước nên không có `timeout.exe`
+nào lọt vào:
+
+```
+00:03:04  ltt-llm-api-http-guide  gate.py            -> test_nhanh.py -n 6 -> pytest
+00:04:56  auto-scan-video-v4-mvp  gate.py --phien... -> test_nhanh.py -n 6 -> pytest
+00:07:36  mobile-v1               gate.py --vong-lap -> test_nhanh --lf   -> pytest
+
+CPU toan may: 93,2 %      RAM trong: 10,3 GiB
+```
+
+Ba lượt × `-n 6` = tới **18 worker trên 10 lõi** — đúng cấu hình đã làm máy
+production **reset cứng hai lần** ngày 03/09.
+
+🔴 Và điều đáng học là **không ai làm sai luật**. Cả ba phiên đều đo trước, đều
+nhắn trước, đều nhắn lại khi xong. Thứ hỏng là **tin nhắn cũ đi nhanh hơn ta
+gõ**:
+
+| Tin | Đúng lúc gõ | Sai lúc đọc |
+|---|---|---|
+| *"tôi cần một lượt gate, xếp sau bạn"* | ✅ | đọc thành *"nó sắp chạy"* |
+| *"gate của BẠN đang chạy, tôi đang nhường"* | ❌ ngay lúc gõ | lượt ấy đã dừng 4 phút trước |
+| *"xong tôi nhắn ngay, máy là của bạn"* | ✅ | không ai biết phiên **thứ tư** tồn tại |
+
+⇒ **Một lời NHƯỜNG máy cũng có hạn sử dụng.** Nó chỉ đúng tại thời điểm gõ, và
+người **nhận** phải đo lại ngay trước khi bấm — đừng coi nó là một suất đã đặt
+chỗ. Đây là dòng 3 của giao ước, áp cho **cả hai đầu** của tin nhắn chứ không
+chỉ đầu người gửi.
+
+⛔ Và **không phải** vì thiếu người trong danh sách — tôi đã viết thế và **sai**.
+
+Bản đầu của mục này ghi *"`mobile-v1` không đọc tin của ai"*. Tôi **không đo điều
+đó**; tôi suy nó từ việc chính tôi chưa từng nhắn họ. Phiên VIDEO AI đính chính:
+họ trao đổi với `mobile-v1` cả tối, và chính `mobile-v1` kiểm chéo hộ đợt đổi tên
+`test_700→710` và tìm ra bốn tham chiếu sót trong `docs/NHAT_KY.md`.
+
+🔴 Giao ước có **bốn** người, và bốn người đều báo nhau, và máy **vẫn** chồng ba
+lượt. Nên cái hỏng không phải *"thiếu người trong danh sách"* — nếu là thế thì
+bản vá sẽ là thêm tên vào danh sách, và bản vá ấy **không sửa được gì**. Cái hỏng
+là **độ trễ**: mỗi người bấm dựa trên ảnh chụp của một phút trước.
+
+⭐ Cùng lỗi với thứ mục này đang mô tả, chỉ đổi chiều: tôi **suy từ sự vắng mặt**
+trong hộp thư của chính mình rồi phát biểu nó như một sự thật về máy.
+
+### Chồng gate làm nó CHẬM, không làm nó SAI — đo được, 06/09
+
+Câu hỏi thật khi thấy ba lượt chồng nhau không phải *"có nguy hiểm không"* mà
+*"nguy hiểm KIỂU GÌ"*. Hai kiểu khác hẳn nhau và cần hai phản ứng khác hẳn:
+
+| Kiểu | Phản ứng đúng |
+|---|---|
+| làm lượt **SAI** (đỏ giả, timeout, lease hết hạn) | phải dừng, kết quả vô giá trị |
+| làm lượt **CHẬM** | chạy nốt — dừng rồi chạy lại làm **tổng tải tăng** |
+
+Đo được, cùng một bước, cùng một cây:
+
+```
+490,0s   chay mot minh
+613,6s   chay cung HAI luot gate khac   -> cham 25%, va VAN XANH
+```
+
+⇒ **Chậm, không sai.** Ba bộ test Python thuần bão hoà CPU thì các lượt chia
+nhau lõi; chúng không đầu độc kết quả của nhau.
+
+⛔ Và đây là chỗ phải phân biệt cho đúng với 03/09 — ngày máy **reset cứng hai
+lần**. Cấu hình hôm ấy là **12 tiến trình `demucs`, mỗi cái 460–984 % CPU**, tức
+mỗi worker pytest tự nở thành một bầy luồng torch (`-n 6` đếm **worker**, không
+đếm thứ mỗi worker sinh ra). Gọi ba lượt test Python thuần là *"đúng cấu hình
+03/09"* là **nói quá** — và nói quá thì lần sau người ta bỏ qua lời cảnh báo
+thật.
+
+🔑 Nên khi thấy chồng lượt, hỏi: **có tiến trình nào NẠP MODEL không?** Đó mới là
+biến phân biệt hai kiểu nguy hiểm, chứ không phải số lượt.
+
+⭐ Ngưỡng tự dừng nên đặt **trước khi biết kết quả**. Phiên VIDEO AI đặt "tự dừng
+nếu RAM < 6 GiB" lúc RAM còn 9,6 GiB; nó không bao giờ bị chạm. Đặt sau khi nhìn
+số thì con số ấy trôi theo điều mình muốn — họ tự nói: *"nếu tôi đặt sau khi
+thấy 9,6 thì tôi đã đặt 5"*.
+
+### Kiểm RỒI MỚI chạy — `check && run` biến phép kiểm thành lời bình luận
+
+*(phiên Mobile V1, đo 06/09)*
+
+Họ gọi `cua_so_yen.py trang-thai` **và** phóng lệnh nặng trong **cùng một dòng
+shell**. Cảnh báo `[cpu_nhieu] pid 19272 ... 4 phút` in ra **sau khi** quyết định
+đã bấm.
+
+🔑 Đây **không** phải một biến thể của *"hãy đo trước"* — nó là lỗi **nhân quả**.
+`check && run` trông y hệt một quy trình đúng; thứ hỏng là **thời điểm câu trả
+lời tới nơi**, không phải tính trung thực của nó. Cùng gốc với mọi thứ trong bẫy
+này.
+
+⇒ Hai lệnh **tách rời**, đọc kết quả giữa chừng. Gộp một dòng thì phép kiểm biến
+thành lời bình luận.
+
+### RSS trả lời được câu "tiến trình này có NẠP MODEL không"
+
+*(phiên VIDEO AI, đo 06/09; H44 xác nhận một mẫu độc lập)*
+
+Biến phân biệt hai kiểu nguy hiểm là *"có nạp model không"*, nhưng câu ấy khó hỏi
+trực tiếp. `p.memory_info().rss` trả lời được:
+
+**Cách đo — và cách đo SAI đã lừa cả hai phiên:**
+
+⛔ Đừng lọc theo cmdline. `pytest-xdist` sinh worker qua `execnet`, và cmdline
+của chúng **không chứa chữ `pytest`**. Lấy **cây con của `gate.py`** bằng
+`children(recursive=True)`.
+
+Đo đỉnh một lượt gate thật (06/09 00:49:20, phiên VIDEO AI) — **10 tiến trình,
+tổng RSS 0,94 GiB**:
+
+```
+0,359 GiB   tien trinh lon nhat trong cay
+0,119 / 0,119 / 0,115 / 0,099 GiB
+0,051 / 0,050 GiB
+0,022 GiB   gate.py
+0,005 / 0,005 GiB
+─────────
+0,94 GiB    TONG mot luot gate
+   tinh bang GiB (mot tien trinh)   neu da nap torch + mot model that
+```
+
+🔴 **Ba con số từng trao đổi giữa hai phiên đều SAI, và đây là bản đo thay
+chúng:** một lượt gate là **0,94 GiB** chứ không phải ~0,6 (phép nhân
+`6 × 0,1` thiếu **1,6 lần**, vì đếm sai cả **số** tiến trình — 10 chứ không phải
+6 — lẫn **cỡ**); và tiến trình lớn nhất là **0,359 GiB**, không phải 0,10 —
+mẫu 0,08–0,10 mà cả hai phiên lấy là **tiến trình điều phối**, và nó **không**
+phải cái to nhất trong cây.
+
+⭐ **Nhưng kết luận sống sót, và nó sống sót vì đúng lý do làm biến này dùng
+được:** khoảng cách tới một tiến trình đã nạp torch + model thật vẫn là **một
+bậc độ lớn** (0,36 GiB so với hàng GiB). **Một phép đo sai 3,5 lần vẫn không lật
+được kết luận** — đó là dấu hiệu của một ngưỡng chọn đúng chỗ.
+
+⇒ Chênh **một bậc độ lớn**, nên ngưỡng không cần chính xác — và đó là điều làm nó
+dùng được.
+
+⭐ RSS hơn hai cách đoán kia ở chỗ nó đo **thứ đã thực sự được nạp**: nó miễn
+nhiễm với `-n` (đếm worker, không đếm bầy luồng mỗi worker sinh) **và** với tên
+tệp test (một tên vô hại vẫn có thể `import torch`).
+
+### 🔑 MỘT KHOẢNG LẶNG KHÔNG PHẢI GIẤY PHÉP
+
+*(phiên Mobile V1 đúc, 06/09, từ một lần H44 **không** bấm)*
+
+Đo 09:18:31, đếm mọi tiến trình (không chỉ `python`), CPU tích luỹ ≥ 5s:
+
+```
+CPU 7,2 %  |  RAM trong 18,5 GiB  |  cay ASV: 0 tien trinh
+RSS lon nhat toan may: 0,16 GiB   <- bac pytest thuan, khong phai torch
+```
+
+Số ấy **nói thật**. Nhưng một khoảng lặng có **ba** nguyên nhân trông y hệt nhau:
+
+| | Nguyên nhân | Hệ quả nếu ta bấm |
+|---|---|---|
+| 1 | lượt kia đang **chờ máy B** | tải bung lên **sau** khi ta đã cam kết |
+| 2 | lượt kia đã **chết** | máy thật sự rảnh — **chỉ ca này là giấy phép** |
+| 3 | lượt kia **chưa bắt đầu** | rảnh bây giờ, bận một phút nữa |
+
+🔴 Ca 1 tệ nhất: dừng **sau khi đã bấm** đắt hơn hẳn không bấm — lượt bị bỏ dở
+phải chạy lại, nên tổng tải **tăng**.
+
+⇒ Cùng hình dạng đếm cả đêm — *một số 0 không phân biệt được hai nguyên nhân* —
+nhưng ở một trục mới: **thứ hết hạn không phải một CON SỐ, mà là SỰ IM LẶNG.**
+
+⭐ Và phần khó không phải biết luật, mà là: **có số đo ủng hộ việc bấm và vẫn
+không bấm**, vì hỏi *"số này trả lời được câu nào"* thay vì *"số này có đẹp
+không"*. Một phiên khác cùng sáng ấy bấm gate khi còn 11 tiến trình ở hai cây
+khác, và tự biện minh bằng chính phép đo 490s→613s.
+
+### ⛔ "KHẨN" cũng bị lạm phát — và bản vá là một ĐỘNG TÁC
+
+06/09, H44 gọi việc *"trang `/gia-api` hứa sai"* là **thiệt hại đang xảy ra**,
+nghe ngang hạng một lỗi thu tiền. Phân biệt đúng:
+
+| | |
+|---|---|
+| tiền thu sai | **không** xảy ra — C3 thu đúng từ 08:53 |
+| trang tài liệu hứa sai | có, phải sửa, nhưng **không ai mất tiền** |
+
+Và chiều lệch còn nghiêng về phía khách: trang hứa *"tối thiểu 1 credit"* trong
+khi ta thu **ít hơn** thế.
+
+🔴 Chưa đầy **mười tiếng** trước đó, chính H44 viết vào tệp này rằng *"nói quá
+thì lần sau người ta bỏ qua lời cảnh báo thật"*, sau khi gọi ba lượt gate chồng
+nhau là *"đúng cấu hình 03/09"*. Cùng người, cùng lỗi, trục khác: lần đầu lạm
+phát **mức nguy hiểm**, lần sau lạm phát **mức khẩn**.
+
+⇒ Nên bản vá **không** phải *"nhớ kỹ hơn"* — tri thức đã có và vẫn thua. Nó phải
+là một **động tác**:
+
+> Trước khi gọi thứ gì là **khẩn**, viết ra: **AI mất GÌ, trong BAO LÂU, nếu
+> chờ thêm một giờ.** Không điền được cả ba ô ⇒ **nó không khẩn.**
+
+⭐ Cùng khuôn với bản vá CRLF (*đọc kiểu hiện có rồi ép theo nó trong cùng một
+thao tác ghi*): cả hai đổi **cái tay làm**, không thêm một dòng cho **cái đầu
+nhớ**.
+
+### 🔴 ĐẾM trả lời "AI"; chỉ CPU TÍCH LUỸ trả lời "CÓ ĐANG LÀM VIỆC KHÔNG"
+
+*(phiên ASV nêu 06/09, từ một phép đo của H44)*
+
+Bậc 3 (đếm mọi `python` theo `cwd`) sửa được chuyện *đếm thiếu / đếm thừa*. Nó
+**không** sửa được chuyện phân biệt **bận** với **đông cứng**:
+
+```
+chatltt-v3-agentic   7 tien trinh /   30 giay CPU trong 22-46 phut  -> RAC
+CAY-CHINH           10 tien trinh / 1842 giay CPU trong  6 phut     -> DANG CAY
+```
+
+⇒ Hai con số **7 và 10 gần như nhau**, hai kết luận **ngược nhau**. Không có cột
+CPU tích luỹ thì cả hai đọc thành *"cây kia đang bận"*.
+
+🔴 **Và hệ quả lệch về phía nguy hiểm theo một chiều rất khó thấy.** Phiên ASV
+**chờ 8 phút** một phần vì 6–7 tiến trình `chatltt` mà H44 vừa chứng minh là
+**xác chết** — cặn của ba lượt `check_multiproc`.
+
+⛔ Cái giá của lỗi này là **thời gian không xảy ra chuyện gì**, nên nó **không
+để lại dấu vết nào**: không ai đỏ, không ai treo, không ai than. Mọi phiên sẽ
+nhường nhầm, **đều đặn**, và không ai biết.
+
+⭐ Cùng cơ chế với *"lỗi không phạt người gây ra là lỗi sống rất dai"* — chỉ
+khác: ở đây **không ai** bị phạt cả, kể cả người sau. Đó là loại lỗi bền nhất.
+
+⇒ Bậc 3 đủ **ba** cột, không phải một: **cây · số tiến trình · CPU tích luỹ**.
+Và đọc CPU **tích luỹ** chứ không phải một mẫu `cpu_percent` — một lượt đang chờ
+I/O đo ra 0 %, còn một xác chết cũng đo ra 0 %.
+
+### Bậc 5 — KẾT NỐI TCP phân biệt "đang chờ" với "đã chết"
+
+*(phiên ASV, 06/09)*
+
+CPU tích luỹ (bậc 3) phân biệt được **đang cày** với **xác chết**. Nó **không**
+phân biệt được **đang chờ mạng** với **đã chết** — cả hai đều 0 %.
+
+```
+ESTABLISHED -> 192.168.2.66:8299     <- dang SINH CHU tren may B, khong treo
+khong ket noi nao                    <- da chet, hoac chua bat dau
+```
+
+⇒ Năm bậc, mỗi bậc trả một câu **khác**:
+
+| Bậc | Trả lời |
+|---|---|
+| 1 khớp cmdline | *"có tên công cụ nào không"* — đếm **thừa** (`timeout.exe`) |
+| 2 cây con | *"cây con của gốc nào"* — đếm **thiếu** (mồ côi rơi khỏi cây) |
+| 3 `cwd` + CPU tích luỹ | *"cây nào, và có cày không"* |
+| 4 nhật ký quyết định | *"nó **định** làm gì"* (`hoan_s=None` = chưa từng hoãn) |
+| **5 kết nối TCP** | *"nó đang **chờ ai**"* |
+
+⛔ Và không bậc nào thấy được **deploy** — PowerShell chép tệp, không tiến trình
+mang tên công cụ nào, không kết nối nào. Kênh duy nhất là tệp `.ket.txt` của
+chính nó, tức lại là bậc 4.
+
+⭐ Bài học chung: **mỗi bậc trả lời một câu hẹp, và không bậc nào là "phép đo
+đúng"** — thứ sai là hỏi một bậc câu của bậc khác.
+
+### 🔑 `cmdline` nói dối theo CẢ HAI chiều — trong cùng một đêm
+
+Đây là lần thứ **hai** một phép lọc theo cmdline lừa được cả nhóm, và hai lần
+lệch **ngược nhau**:
+
+| Cơ chế | Sai chiều nào | Hậu quả suýt xảy ra |
+|---|---|---|
+| `timeout.exe` tự fork một bản sao | đếm **THỪA** — 3 dòng cho 1 lượt gate | giết "gate mồ côi", tức giết cái phanh của lượt đang chạy |
+| `execnet` không mang chữ `pytest` | đếm **THIẾU** — bỏ sót mọi worker | báo "worker chỉ 0,1 GiB" trong khi cái to nhất là 0,36 |
+
+⇒ Cùng một nguyên nhân: **`cmdline` là thứ ĐẠI DIỆN; cây tiến trình là thứ
+THẬT.** Hỏi bằng `ppid` / `children(recursive=True)`, đừng hỏi bằng chuỗi.
+
+⛔ Và con số `3 × 6 × 0,1 = 1,8 GiB` từng được trao đổi giữa hai phiên là một
+**phép nhân**, không phải phép đo. Việc nó "khớp" với RAM tụt 0,9 GiB rồi hồi là
+một **sự phù hợp** — đúng thứ [[gia-thuyet-khop-qua-vua-ket-thuc-dieu-tra]] cảnh
+báo: một con số khớp làm người ta **thôi đo**.
+
+### 🔴 Khe giữa ĐO và BẤM không có đáy — nên nhắn tin không phải cơ chế loại trừ
+
+Đo 06/09: hai phiên bấm gate cách nhau **25 giây**, và **cả hai đều vừa đo thấy
+máy trống**. Không ai sai, không ai bỏ bước.
+
+⛔ Dù nhắn nhanh tới đâu, khoảng thời gian giữa *đo* và *bấm* của hai người vẫn
+có thể chồng. **25 giây chỉ là con số gặp phải tối nay; nó có thể là 2 giây.**
+Suốt buổi, bốn phiên dùng tin nhắn **như thể** nó là một cơ chế loại trừ lẫn
+nhau. Nó không phải, và không thể trở thành.
+
+⇒ Thứ duy nhất đóng được khe ấy là **một cái khoá lấy trước khi chạy**. Mà lượt
+nặng nhất trên máy này — `tools/test_nhanh.py` — **không xin khoá dòng nào**.
+
+### ✅ ĐÃ LÀM 06/09 — chủ dự án duyệt, phiên Mobile V1 thi hành ở cây chính
+
+Bản vá gồm **ba nửa**, và nửa thứ nhất là nửa không ai nghĩ tới:
+
+```
+tools/cua_so_yen.py   + phien_nay_dang_giu()  -> khoa TAI NHAP theo PHIEN
+tools/gate.py         + os.environ["LTT_PHIEN"] = phien   (truyen xuong con)
+tools/test_nhanh.py   + with CuaSoYen(...)    -> gio no CO xin khoa
+```
+
+🔴 **Bản vá ngây thơ — chỉ cho `test_nhanh` xin khoá — không vô ích, nó TÁI TẠO
+ĐÚNG TAI NẠN CŨ.** `gate.py` gọi `test_nhanh.py`, nên nếu khoá không tái nhập
+thì lượt con **đợi hết `--cho` (mặc định 15 phút) ở BỐN chỗ** rồi chạy chèn. Đo
+bằng cách tiêm lại hành vi cũ:
+
+```
+ban MOI (long nhau)         doi 0,0s   dang_chen=False
+ban CU  (khong biet long)   doi 3,0s   dang_chen=True
+```
+
+⛔ Và triệu chứng **không** phải *"khoá chết"* — nó là **"gate treo ở bước
+`bo test`"**. Đúng cái triệu chứng đã khiến một phiên đi **giết worker của một
+lượt đang chạy** ngày 05/09 (xem dòng 4 của giao ước). Một bản vá cho vấn đề
+điều phối, làm sai, sẽ đẻ ra lại chính tai nạn điều phối nó định chữa.
+
+⚠️ **Hệ quả vận hành sau khi ff:** `tools/test_nhanh.py` nay **xin khoá thật** —
+gõ tay nó lúc máy bận sẽ **xếp hàng** thay vì chạy ngay. Có `--khong-khoa` khi
+chắc máy rảnh, và `--cho <phút>` (mặc định 15).
+
+⭐ Kiểm bằng **ba** phép kiểm đã chứng minh đỏ được (tiêm bản cũ, khôi phục khớp
+byte) **cộng một đối chứng dương** — không có nó thì phép kiểm lồng-nhau vẫn
+xanh khi khoá hỏng theo kiểu *"không bao giờ đợi ai"*. Đúng luật Bẫy 24.
+`tests/test_361_cua_so_yen.py`: **19 passed**.
+
+### 💡 Đề xuất ban đầu, giữ lại vì nó ghi một ranh giới
+
+*(phiên VIDEO AI nêu; H44 ghi lại, KHÔNG tự thi hành)*
+
+Bản vá một lớp lỗi mà bốn phiên đã trả tiền suốt một buổi tối: bọc thân
+`test_nhanh.py` trong `CuaSoYen` y như `gate.py:1384` đang làm.
+
+⛔ **Cố ý chưa làm, và lý do nên nằm bằng chữ:**
+
+1. `tools/` là **hạ tầng dùng chung**, ngoài ranh giới của bất kỳ chương trình
+   ứng dụng nào. `CLAUDE.md` yêu cầu dừng lại và nói rõ vì sao trước khi sửa nền
+   tảng — đây là chỗ dừng.
+2. **Mỗi worktree chạy một bản `tools/` riêng.** Sửa ở một cây thì bốn cây kia
+   không đổi, nên nó **không** giải quyết vấn đề chung mà chỉ đẻ ra phân kỳ —
+   đúng cơ chế đã ghi ở `~/.claude/CLAUDE.md` (bốn cây cũ vẫn `-n 14` trong khi
+   `auto` = 10).
+3. Một phiên khác **đề nghị** không phải một phiên khác **cho phép**.
+
+⇒ Việc này thuộc về chủ dự án hoặc phiên giữ `tools/`. Ghi ở đây để nó không
+biến mất cùng cửa sổ chat đã tìm ra nó.
+
+⭐ **Và đường đi ấy đã chạy đúng như thế.** Ba phiên lần lượt từ chối tự thi hành
+— mỗi phiên áp cùng một lý do cho **chính mình** — rồi đặt nó trước mặt chủ dự
+án **kèm vật liệu** (hai phát hiện làm bản vá nhỏ đi: `_treo()`/`_con_song()` đã
+viết đúng cho Windows, và khoá đánh theo **phiên** nên chỉ cần kế thừa biến
+`phien` của tiến trình cha). Chủ dự án duyệt; phiên đứng ở **trunk** thi hành.
+
+🔑 Ba phiên dựng gần trọn một bản vá mà **không phiên nào có quyền đóng nó**, và
+việc đó không bế tắc — vì thứ chuyển giao không phải một yêu cầu, mà là **một
+quyết định đã được chuẩn bị đủ để người có quyền chỉ cần nói có hoặc không**.
+
+### 🔴 Hai chuẩn: lọc cứng cho CÂY MÌNH, liếc bảng cho CÂY NGƯỜI
+
+*(phiên VIDEO AI tự chẩn, 06/09 — cùng một người, cùng một phút)*
+
+Họ báo **ba** tiến trình mồ côi ở cây H44. Đo đúng thì **hai**: cái thứ ba có cha
+`bash.exe` còn sống, và nó là một **bộ lấy mẫu đang chạy có chủ đích**.
+
+Chỗ đáng ghi không phải con số sai, mà là **cùng một người áp hai chuẩn trong
+cùng một phút**:
+
+| | Cây của mình | Cây của người |
+|---|---|---|
+| cách lọc | ba tầng **cứng trong mã**: `cwd` + cha `NoSuchProcess` + cmdline | *"CPU thấp + tuổi cao"*, liếc bảng rồi gõ |
+
+⛔ Và chỉ số phân biệt — **cha còn sống không** — chính là chỉ số họ **dặn người
+kia dùng trong cùng tin nhắn ấy**. Phương pháp đúng đã được viết ra; nó chỉ không
+được áp cho phần mình không phải chịu hậu quả.
+
+🔑 Vì sao nó lọt: cả ba tiến trình trông **y hệt nhau ở hai chỉ số dễ đo nhất**
+(CPU thấp, tuổi cao). Một phép lọc rẻ đủ dùng cho việc của mình — nơi mình biết
+mình vừa chạy gì — nhưng **không** đủ cho cây người, nơi mình không có ngữ cảnh
+ấy. Thiếu ngữ cảnh đòi **nhiều** chứng cứ hơn, không phải ít hơn.
+
+⇒ **Báo cáo về cây người khác phải chặt hơn báo cáo về cây mình**, chứ không lỏng
+hơn. Nếu không thì hậu quả rơi vào người không có dữ liệu để phản biện.
+
+⭐ Ở ca này cái sai dừng ở **một dòng báo cáo** thay vì thành một hành động — và
+dừng vì người nhận **đo lại trước khi dừng**, không vì người gửi cẩn thận. Đó là
+lý do dòng 4 của giao ước nằm ở phía **người hành động**, không ở phía người báo.
+
+### 🔑 Luật khái quát: CÁI TÊN đi xa hơn dòng chữ
+
+*(phiên Mobile V1 đúc, 06/09 — và nó gom được cả bốn ca của đêm)*
+
+Mỗi công cụ ở đây đều **nói thật**, và mỗi công cụ đều có một **cái tên hứa rộng
+hơn thứ nó đo**. Dòng chữ đính kèm thì đúng, nhưng **cái tên là thứ người ta
+nhớ**:
+
+| Cái tên hứa | Thứ công cụ thật sự đo | Ai đọc nhầm |
+|---|---|---|
+| `cua_so_yen trang-thai` → *"máy có rảnh không"* | có **tệp khoá** nào không | 3 phiên, 3 lần |
+| `--vong-lap` → *"15 giây"* | `--lf`, và **chạy toàn bộ** khi cache toàn id chết | H44, 300+ giây |
+| `master` → *"nhánh chính"* | một nhãn đi **sau trunk 125 commit**; bản đang phục vụ khách **không nằm trên nó** | VIDEO AI |
+| `RESULT: PASS` | PASS **của những bước đã chạy** | Mobile V1, 77 phép kiểm frontend |
+
+⭐ Cả bốn đều **có** một dòng chữ nói đúng ngay cạnh: `--vong-lap` in thẳng rằng
+nó không phải bằng chứng; `RESULT` in thẳng tên bước bỏ qua. **Dòng chữ thua cái
+tên**, vì cái tên là thứ đi vào câu nói và vào trí nhớ.
+
+⇒ **Chỗ nào cái tên hứa rộng hơn thứ công cụ đo được, chỗ đó sẽ có người đọc
+nhầm — và người đọc nhầm sẽ là ta, vào lúc mệt.**
+
+#### Và thứ hứa quá nhiều không phải lúc nào cũng là một cái TÊN
+
+`returncode` cũng vậy, và nó lừa được **cả hai phiên trong cùng một giờ** — dù
+đó đúng là kênh ta vừa khuyên nhau dùng thay cho việc khớp mẫu stdout.
+
+Console của công cụ Bash trên máy này là **cp1252**. Một `print` chứa emoji hay
+tiếng Việt có dấu ném `UnicodeEncodeError` ⇒ **`returncode=1`**, trong khi
+**việc thật đã xong**:
+
+| Ca | Việc thật | `returncode` |
+|---|---|---|
+| H44, script tiêm `con_cho_job` | đo xong, đã kết luận, đã khôi phục **khớp từng byte** | **1** (chết ở dòng in `✅`) |
+| Mobile V1, lệnh ghi bộ nhớ | ghi **3 tệp thành công** | **1** (chết ở `print` cuối) |
+
+🔴 Ca thứ hai nguy hiểm hơn: đọc mã trả về rồi kết luận *"ghi hỏng"* dẫn tới
+**ghi đè lại một tệp đã đúng**.
+
+🔑 `returncode` **gộp** *"việc hỏng"* với *"báo cáo hỏng"* thành **cùng một số**.
+Nó vẫn hơn hẳn khớp mẫu stdout — nhưng nó không phải một kênh sạch, nó là một
+kênh **hẹp hơn**, và ta lại đang đọc nó rộng hơn thứ nó đo.
+
+⇒ Bản vá có **hai** vế, và **thứ tự này là cố ý**:
+
+**1. Đặt mọi `print` SAU khi việc đã xong.** Không cần thư viện, không đổi trạng
+thái toàn cục, **không có ngoại lệ** — nó chỉ là *thứ tự*. Tầng báo cáo chết thì
+nó không kéo theo mã trả về của tầng làm việc.
+
+**2.** *(chỉ trong script dùng một lần)* ép luồng ra về UTF-8:
+
+```python
+import io, sys
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
+```
+
+⚠️ Vế 2 **có bẫy riêng đã trả giá ở kho này**: một công cụ trong `tools/` đổi
+`sys.stdout` thành `TextIOWrapper` làm **vỡ pytest**, vì bản gốc bị thu gom rác
+và đóng luôn buffer thật. Đừng nhét nó vào công cụ dùng chung.
+
+🔑 **Và thứ tự hai vế là một bài học riêng.** Bản đầu của mục này kê vế 2 trước —
+tức đặt một lời khuyên **có ngoại lệ** trước một lời khuyên **không ngoại lệ**.
+Người đọc vội lấy cái đầu tiên, nên cách kê ấy phát cái nguy hiểm hơn cho đúng
+người ít thời gian nhất. *(phiên Mobile V1 chỉ ra)*
+
+### Phân loại một phép đọc sai: nó GỢI RA HÀNH ĐỘNG GÌ?
+
+Hai ca `returncode` ở trên có **cùng** một sai số, và khác nhau ở hệ quả:
+
+| Ca | Phép đọc sai dẫn tới |
+|---|---|
+| H44 — script tiêm | **kết luận sai** (*"script thất bại"* trong khi nó thành công). Mất công, dừng ở đó |
+| Mobile V1 — lệnh ghi bộ nhớ | **hành động phá hoại**: *"ghi hỏng"* là một lời mời **ghi lại**, và lần ghi lại đè lên một tệp **đã đúng** |
+
+🔑 Nên câu phân loại đáng nhớ không phải *"đọc sai nặng hay nhẹ"* mà **"phép đọc
+sai ấy gợi ra hành động gì?"** Cùng một sai số, nếu nó đẩy về phía **hành động**
+thì nó thuộc nhóm đắt nhất.
+
+⇒ Cùng họ với luật đã có của kho: **một phép đo lệch chiều thì phải BỎ, không
+phải SỬA** — vì sai số đẩy về phía hành động không có bản vá nào cứu được.
+
+### Luật
+
+🔑 **`cua_so_yen trang-thai` là điều kiện CẦN, không đủ. Vế quyết định là CÂY
+TIẾN TRÌNH.** Trước lệnh nặng phải hỏi cả hai, và vế thứ hai mới có quyền phủ
+quyết.
+
+⚠️ Và đọc cây tiến trình cũng có hai cách đọc sai — cả hai xảy ra thật tối 05/09:
+
+| Đọc | Vì sao lừa được |
+|---|---|
+| `cpu_percent()` một nhát | mẫu **tức thời**: không phân biệt "đã chết" với "đang chờ I/O". Một lượt nghiệm thu đang chạy đo ra **0,0 %** |
+| `create_time` in ra `23:41:22` | **không có ngày** — người đọc tự điền, và điền thành "đêm qua". Nó là 15 phút trước |
+
+⇒ In `create_time` **kèm ngày**, và dùng `cpu_times()` **tích luỹ** thay vì lấy
+một mẫu. Hai thứ này đã làm một phiên kết luận "máy rảnh" rồi bấm gate chồng lên
+lượt nghiệm thu của phiên khác — lượt mà phiên kia **đã báo trước 15 phút**.
+
+⭐ Cùng họ với Bẫy 17 và Bẫy 21: một công cụ trả lời **thành thật** cho câu hỏi
+hẹp của nó, và cái hỏng nằm ở khoảng cách giữa câu hỏi ấy với câu ta đang hỏi.
+
+
+---
+
+## Bẫy 23 — Kết dòng: bánh cóc bảo vệ CÂY LÀM VIỆC, không bảo vệ LỊCH SỬ
+
+**Và khi lịch sử sai thì nó quay ra cản bản sửa.**
+
+`tools/gate.py:530` **có** bước `kieu xuong dong` → `tools/check_xuong_dong.py`.
+
+⛔ Bản đầu của tài liệu này viết ngược lại — *"gate không có bước kiểm kết dòng
+nào"* — và đã bị commit hai lần. Nguyên nhân: `grep gate.py` bằng **tên hiện
+tượng** (`crlf`, `ket dong`) chứ không bằng **tên bước** (`xuong_dong`).
+
+🔑 Một `grep` không thấy chỉ chứng minh **chuỗi ấy** không có. Nó **không** chứng
+minh **năng lực ấy** không có. Câu này áp được cho cả `test_453` (bánh cóc mồ
+côi tìm người gọi bằng AST — một năng lực gọi qua chuỗi hay `getattr` sẽ vô hình
+y hệt).
+
+### Lưới ấy căng ở đâu
+
+`check_xuong_dong.py` soi tệp **đang sửa** (`git status --porcelain`), so **kiểu
+thuần** (LF/CRLF/trộn) với bản ở `HEAD`, bỏ qua tệp mới và tệp nhị phân. Luật của
+nó **không** phải *"cả kho dùng LF"* mà *"khớp đúng thứ git đang giữ cho từng
+tệp"* — vì vài tệp **vốn là CRLF** (`DEVELOPER_GUIDE.md` do công cụ sinh,
+`i18n_baseline.json`), ép chúng về LF là mở một vòng lặp không ai thắng.
+
+⇒ Nó bắt **cú lật kết dòng trong cây làm việc**. Nó **không** thấy nội dung đã
+được **commit** kèm CRLF — lúc ấy `git status` sạch, không có gì để so.
+
+🔴 **Hai phiên cùng lọt qua đúng khe đó trong một đêm** (H44: 17 tệp docs rồi 3
+tệp mã; ASV: 4 tệp) — cùng một cách: **commit trong cùng nhịp với lúc ghi**, nên
+không bao giờ đi qua lưới. Không phải lưới thủng; là ta bước qua trước khi lưới
+được căng.
+
+### Đo hậu quả bằng số, không bằng cảm giác
+
+Cách đo: `git diff --numstat` so với `git diff --ignore-cr-at-eol --numstat`.
+
+| tệp | ở BASE | diff thô | thật | **nhiễu** |
+|---|---|---|---|---|
+| `apps/chatltt/services/tao_media.py` | **LF** | 703 | 111 | **592** |
+| `luot_v3.py`, `test_819.py` | (mới) | — | — | 0 |
+
+Cùng ca với hai lần trước mà docstring đã ghi: 26/08 `messages.po` lệch **10.465
+dòng**; 30/08 **25 tệp**, trong đó `CLAUDE.md` hiện **919 dòng đổi cho 1 dòng
+thật**.
+
+### 🔴 Công cụ CHỐNG LẠI bản sửa
+
+Sau khi trả ba tệp về LF, `check_xuong_dong.py` ra **`RESULT: FAIL`**:
+
+```
+tao_media.py   HEAD=CRLF -> hien tai=LF   (thay doi THAT: 0 dong)
+```
+
+Vì nó neo vào `HEAD`, mà `HEAD` đang giữ bản sai. ⇒ **Một khi kết dòng hỏng đã
+commit, cái bánh cóc trở thành lực cản.**
+
+⭐ Nhưng chính nó cũng in ra bằng chứng bản sửa an toàn: **"thay đổi THẬT: 0
+dòng"**. Đổi kết dòng không chạm một ký tự nội dung nào. Commit xong thì nó `PASS`
+lại — nên đường đi đúng là **sửa và commit trong một nhịp**, đừng chạy gate ở
+giữa.
+
+### Hai nguồn sinh CRLF, và bản vá cho cái này không chữa cái kia
+
+⛔ **Bản đầu của mục này đổ tội cho công cụ `Write`, và ĐÓ LÀ MỘT CHẨN ĐOÁN
+CHƯA ĐO.** Tôi suy nó ra: `test_819.py` do `Write` tạo, tệp ấy CRLF ⇒ `Write`
+sinh CRLF. Phiên Mobile V1 chất vấn, và phép đo bác bỏ:
+
+```
+Write tao tep MOI          ->  b'dong mot\ndong hai\ndong ba\n'   CRLF 0
+Write GHI DE len tep CRLF  ->  b'moi mot\nmoi hai\n'              CRLF 0
+write_text len tep LF      ->  b'X\r\ny\r\n'                      <- thu pham THAT
+```
+
+`test_819.py` thành CRLF vì sau khi `Write` tạo nó, tôi sửa nó **hai lần bằng
+`pathlib.write_text`**. Thủ phạm chỉ có một, và nó là cái đã biết từ đầu.
+
+| Nguồn | Kết dòng sinh ra | Bản vá |
+|---|---|---|
+| `pathlib.write_text` (mặc định `newline=None`) | 🔴 **CRLF** | `write_bytes(s.encode())`, hoặc `newline="\n"` (Python ≥ 3.10) |
+| Công cụ `Write` của harness | ⚠️ **cưỡng chế LF** | xem cảnh báo dưới |
+| Công cụ `Edit` của harness | ✅ **giữ nguyên** | — |
+| `sed -i` trong Git Bash | ✅ LF | — |
+
+⚠️ **`Write` cưỡng chế LF, và nó không hỏi ai.** Với ~90 % tệp trong kho thì đó
+là thứ ta muốn. Nhưng vài tệp **vốn là CRLF trong git** — `DEVELOPER_GUIDE.md`
+(công cụ sinh ra), `i18n_baseline.json` — và `Write` lên chúng là **lật ngược
+chúng, im lặng**. Nên câu đúng không phải *"`Write` không bảo vệ gì"* mà:
+**`Write` an toàn cho tệp LF và nguy hiểm cho đúng những tệp phải giữ CRLF.**
+
+⭐ **Hai dòng cuối bảng là lối thoát rẻ nhất, và đều đo được:**
+`bo_chay_tool.py` từng là CRLF (ghi bằng `write_text`) rồi **tự lành** khi tôi
+chạy một `sed -i` sửa lỗi chính tả. Và một `Edit` vào `CLAUDE.md` (299 dòng LF)
+để lại **0 CRLF**.
+
+⇒ **Sửa tệp có sẵn thì dùng `Edit`, đừng đọc-sửa-ghi-đè cả tệp.** Nó tránh cùng
+lúc **ba** thứ: lật kết dòng · cắt trắng tệp khi phép mã hoá vỡ · và một diff
+toàn tệp. Chỉ dùng `Write`/`write_bytes` cho tệp **mới**, rồi đo lại bằng byte.
+
+### 🔑 Và cách cái sai này sống được là bài học riêng của nó
+
+Chẩn đoán sai (**`Write`**) nhưng lời khuyên kèm theo đúng (*"đo lại bằng
+byte"*), nên **không có gì đỏ để lộ nó ra**. Phiên Mobile V1 vừa bị đúng thế ở
+một mục khác: họ viết *"heredoc nuốt backslash"*, đo lại thì thủ phạm là đường
+truyền `command` của công cụ Bash — **chẩn đoán sai, lời khuyên vẫn đúng, nên nó
+sống ba tuần**.
+
+⇒ Một mục tài liệu nêu **nguyên nhân** thì phải kèm **phép đo tái hiện được**,
+đúng như mọi mục khác trong tệp này. Nếu chỉ có lời khuyên mà chưa có phép đo,
+ghi thẳng **"CHƯA ĐO ĐƯỢC"** — cùng luật với Bẫy 24.
+
+⚠️ Ghi chú cũ khuyên *"dùng `Write` thay heredoc"* để tránh bẫy nuốt backslash.
+**Đúng cho bẫy đó, và không bảo vệ gì trước kết dòng.** Hai bẫy khác nhau; một
+bản vá không chữa được cả hai.
+
+### Vì sao có tài liệu mà vẫn dính — trục CƠ CHẾ và trục THÓI QUEN
+
+*(phiên ASV)*
+
+Cả memory lẫn docstring đều nằm ở trục **"cơ chế"**: chúng trả lời *"chuyện gì đã
+xảy ra"*. Thứ thiếu nằm ở trục **"thói quen kiểm"** — nhìn *nội dung* tệp sau mỗi
+lần ghi, chưa bao giờ nhìn *byte*.
+
+🔑 **Bài học nằm đúng chỗ mà vẫn không chặn được, vì nó không nằm trong động
+tác.** Hai phiên, cùng một tài liệu, cùng một đêm, cùng dính — trong đó một phiên
+đã **trích dẫn chính docstring ấy** cho phiên kia rồi vẫn viết như thể vừa phát
+hiện.
+
+⇒ Bản vá dùng được không phải "ghi thêm một mục" (đã có ba mục) mà là **đổi động
+tác mặc định** thành bốn dòng:
+
+```python
+data = s.encode("utf-8")                    # ma hoa TRUOC khi cham tep
+assert b"\r\n" not in data                  # kiem TRUOC
+p.write_bytes(data)                         # ghi
+assert p.read_bytes() == data               # do lai bang BYTE
+```
+
+Ba trong bốn dòng ấy sửa **ba lỗi khác nhau** đã gặp: kết dòng · tệp bị cắt trắng
+khi phép mã hoá vỡ · `read_text` dịch ngược nên không kiểm được phép ghi.
+
+
+---
+
+## Bẫy 24 — Một kết quả ÂM không có đối chứng trông giống một PHÁT HIỆN
+
+*(phiên Mobile V1, 06/09)*
+
+Họ kéo bằng cảm ứng trên canvas React Flow. **Không pan.** Kết luận:
+*"`panOnDrag` dạng mảng chặn cảm ứng"* — kèm một lý thuyết đẹp đọc được trong mã
+`@xyflow/system`.
+
+Canvas đang **rỗng**. Chuột trái cũng không pan. Chuột giữa cũng không. **Ba đầu
+vào, ba số 0** — không phải vì đầu vào bị chặn, mà vì **không có gì để dịch
+chuyển**. Sau khi gieo 2 nút, cảm ứng pan được ngay.
+
+🔴 **Chỗ nguy hiểm hơn mọi bẫy khác trong tệp này:** một kết quả âm **không trông
+giống một giới hạn** — nó trông giống một **thành quả**. *"Tôi tìm ra một lỗi
+mobile"* có hình dạng của việc đã làm được, nên nó đi thẳng vào báo cáo và không
+ai chất vấn. Các bẫy khác gây khó chịu khi đọc lại; cái này đọc lại thấy **hài
+lòng**.
+
+### Luật
+
+⇒ Trước khi ghi một kết quả âm thành phát hiện, hỏi: **"điều kiện nào ĐÁNG LẼ
+phải cho kết quả DƯƠNG ở đây?"** rồi chạy đúng điều kiện đó.
+
+Không nghĩ ra được một điều kiện như thế ⇒ **phép đo không phân biệt được**, và
+số 0 chưa nói gì. Lúc ấy ghi **"CHƯA ĐO ĐƯỢC"**, đừng ghi "không có lỗi".
+
+### Cùng luật, áp cho PHÉP KIỂM
+
+`test_819::test_nguoi_KHAC_khong_thay_buoc_cho_job` chỉ khẳng định
+`con_cho_job(user_id="u-nguoi-la") is False`. Nó **vẫn xanh** nếu `con_cho_job`
+hỏng và luôn trả `False` — không phân biệt được *"chặn đúng người lạ"* với
+*"chặn tất cả"*. Đối chứng dương **có** tồn tại, nhưng ở một hàm khác; xoá hàm ấy
+thì phép kiểm này thành rỗng mà không ai biết.
+
+⇒ **Đối chứng dương phải nằm trong CÙNG phép kiểm.** Đã sửa: chủ sở hữu `True`,
+người lạ `False`, cùng một hàm.
+
+### Chụp ảnh SAU khi sự kiện bắt đầu ⇒ bộ canh không thể thấy nó
+
+*(H44, lượt deploy 06/09)*
+
+Vòng canh deploy chụp danh sách tệp `.ket.txt` **hiện có** rồi rình tệp **MỚI**:
+
+```
+08:51:59   deploy bat dau, tao deploy-20260906-085159.ket.txt
+08:52:26   vong canh chup anh -> tep ay nam trong tap "CU"
+08:53:55   deploy xong, ghi EXITCODE=0 vao dung tep do
+09:12:26   vong canh HET GIO (20 phut), thoat ma 2
+```
+
+⛔ Nó **không có khả năng** thấy lượt ấy — không phải vì chờ chưa đủ, mà vì thứ
+nó rình (**tệp mới**) không bao giờ xuất hiện. Chờ thêm một tiếng cũng vậy.
+
+🔑 Lỗi nằm ở **thứ tự**: ảnh chụp "trạng thái trước" được lấy **sau** khi sự kiện
+đã bắt đầu, nên sự kiện nằm sẵn trong nền. Cùng họ với `check && run` (Bẫy 22):
+ở đó phép kiểm chạy **sau** quyết định; ở đây mốc so chụp **sau** sự kiện.
+
+⭐ **Thứ cứu ở đây là một luật đã viết sẵn:** vòng canh có hạn và **thoát mã 2**,
+nên im lặng **không** trông giống thành công. Không có nó thì 20 phút im lặng đã
+thành *"deploy hỏng"*, và câu trả lời đúng đã bị một câu sai che mất.
+
+⇒ Sửa: đừng rình **tệp mới**, hãy rình **nội dung của tệp mới nhất**, hoặc ghi
+mốc thời gian **trước** khi kích hoạt rồi tìm tệp có `mtime` sau mốc ấy.
+
+⛔ Và bài học lớn hơn: **câu trả lời thật đến từ một kênh khác** — đối chiếu băm
+523 tệp `.py` và `curl /health/version`. Một kênh chuyên trách (`EXITCODE`) im
+lặng, còn hai phép đo độc lập trả lời dứt khoát. Đừng để một kênh chuyên trách
+làm nguồn duy nhất chỉ vì nó *có vẻ* được sinh ra cho câu hỏi ấy.
+
+### 🔑 Ước BÁN KÍNH theo NGUYÊN NHÂN bỏ sót đúng những phép kiểm TỐT NHẤT
+
+*(H44 đo 05→06/09 khi đổi chính sách làm tròn tiền; phiên Mobile V1 khái quát)*
+
+Đổi một chính sách ở tầng quyết toán. Để biết phải sửa những phép kiểm nào, tôi
+quét theo **tên nguồn**: `thanh_toan|toi_thieu_moi_luot|quyet_toan_luot|lam_tron`.
+Sửa 9 tệp, tuyên bố xong. Gate ra **đỏ** vì một tệp thứ mười.
+
+```
+05/09  "ba tep da nang kich ban ... nen ngay bat C3 khong do lan nua"  -> do 9
+06/09  quet theo ten module, sua 9, tuyen bo xong                      -> con 1
+```
+
+Tệp lọt (`test_618`) khẳng định trên **`ex.credit_thu`** — một thuộc tính của
+**bảng** — nên nó không nhắc tên module tính tiền nào, và **mọi** phép quét theo
+tên module đi ngang qua nó.
+
+⇒ **Phép quét của tôi tìm theo NGUỒN, còn phép kiểm thì neo vào KẾT QUẢ.**
+
+🔴 Và đây là chỗ đau: **neo vào hệ quả là thứ làm một phép kiểm TỐT** — nó bất
+biến với cách cài đặt, nên nó sống sót qua những lần viết lại mà phép kiểm neo
+vào nguồn thì chết. ⇒ **Càng viết phép kiểm tốt, phép quét theo nguồn càng bỏ
+sót nhiều.** Hai thứ ta muốn lại kéo ngược nhau.
+
+**Cách quét thay thế — theo HỆ QUẢ, không theo nguồn:**
+
+```
+git grep -n "credit_thu|thu_credit|credit_charged" -- 'tests/*.py'
+  | grep -E ">=? *1|> *0|== *1"
+```
+
+tức tìm **tên trường kết quả** + **hình dạng khẳng định**, không tìm tên module.
+
+⭐ Và ghi **cả hai** lần ước sai (9 → 1), đừng chỉ ghi lần cuối: con số 9→1 là
+thứ nói cho người sau biết phải quét rộng cỡ nào. *"Còn 1"* không mang tin ấy.
+
+### Ranh giới của gate — và nó KHÔNG được đọc thành "gate vô dụng"
+
+Đêm 05→06/09, bốn phiên tìm ra **tám** cái sai và **không cái nào** bị một lượt
+gate bắt; cả tám đều do **một người khác đọc lại con số của mình**. Nhưng ca thứ
+chín (`test_618`) thì **gate bắt**, còn không phiên nào đọc ra.
+
+🔑 Ranh giới đúng: **gate bắt một phép kiểm thật chạy trên mã thật; nó không bắt
+được một suy luận sai VỀ mã.** Tám ca kia là suy luận (chẩn đoán sai nguồn CRLF ·
+"gate không có bước kiểm" · RSS đo nhầm loại tiến trình · nói quá về cấu hình
+03/09 · ước sai bán kính). `test_618` là mã.
+
+⛔ Không lớp nào thay được lớp kia, và bảng "tám cái sai" ở trên **không** được
+đọc thành *"gate vô dụng"* — kết luận ấy sai, và nguy hiểm hơn hẳn cái nó thay.
+
+### 🔴 Phép kiểm TỰ DỰNG đầu vào chỉ đo phía TIÊU THỤ — phía SẢN XUẤT trôi tự do
+
+*(phiên ASV, 06/09 — và nó là ca đắt nhất trong loạt này vì nó chạm tiền)*
+
+Một job hỏng vì máy B bận. Đáng lẽ nó phải được **hoãn**; thực tế nó thành
+`failed_terminal`:
+
+```
+auto_scan_video.content_process | hoan_s=None
+  AiError: khong provider nao phuc vu duoc: ltt_llm: ban
+```
+
+`AiError` — **không** phải `KhongCoProviderNao`. `ai.py` bọc **mọi** ngoại lệ
+thành `AiError`, làm **mất lớp gốc**, nên `phan_loai` ra `TAM_THOI` thay vì
+`BAN`, và nền tảng đọc `"retry"` thay vì `"resource_wait"`. Job **không bao giờ**
+được hoãn. `hoan_s=None` là dấu vết.
+
+🔴 **Và triệu chứng ấy đã được "sửa" một hôm trước, rồi báo là xong.** Bản vá
+không chạm tới chỗ này, vì chốt của nó **tự dựng `KhongCoProviderNao` bằng tay**
+— tức **bỏ qua đúng cái lớp đang làm mất tín hiệu**.
+
+⇒ Chốt xanh, sản phẩm hỏng, báo cáo sai. Ba thứ cùng lúc, và không thứ nào kêu.
+
+🔑 Cơ chế là **vòng phản hồi một phía**, cùng luật với *"chặt với cây mình, lỏng
+với cây người"*: một phép kiểm tự dựng đầu vào có vòng phản hồi với **phía tiêu
+thụ** (hàm phân loại) và **không có** vòng nào với **phía sản xuất** (chỗ ném
+ngoại lệ). Phía không ai đo thì trôi tự do — và nó trôi **im lặng**, vì phép kiểm
+vẫn xanh.
+
+⛔ Và giá của nó là **tiền**: một job `failed_terminal` **trừ credit cho việc
+chưa từng chạy** (đúng như docstring `giong_noi.MayBan` đã ghi). Đường giọng học
+bài ấy từ lâu; đường AI thì chưa.
+
+⇒ **Phép kiểm phải bắt đầu từ RANH GIỚI THẬT**, và không được phép biết tên lớp
+trung gian nào. Nếu nó cần gọi tên một lớp nội bộ để dựng đầu vào, nó đang đo
+**bản mô phỏng của mình**, không đo sản phẩm.
+
+⭐ Đối chứng ở đường khác cùng kho: `test_819::test_job_hong_thi_tien_HOAN_het`
+chốt rằng job hỏng thì `credit_thu == 0` và `credit_hoan == credit_giu`. Nó dựng
+job hỏng qua `tao_media.dong_bo` — tức **qua ranh giới thật**, không tự chế
+trạng thái.
+
+### Và một biến thể khi ĐẾM
+
+*(cùng phiên)* `grep -r` không phân biệt **thứ sẽ merge** với **thứ tự sinh ra**:
+nó trả `Binary file ... matches` từ `.pyc`, và cho một phiên khác **129/133 dòng
+là cache** (`.pytest_cache/v/cache/nodeids`, `.playwright-cli/*.yml`).
+
+⇒ Dùng **`git grep`** — ranh giới *"git có theo dõi không"* chính là ranh giới ta
+cần.
+
+---
+
+## Bẫy 25 — `short test summary` của pytest **không phải** bảng kết quả của gate
+
+Đo 06/09. Một lượt `gate.py --vong-lap` kết thúc, tôi đọc phần đuôi và thấy:
+
+    FAILED tests/test_299_khu_api_da_dich.py::...
+    FAILED tests/test_616_chatltt_bang_va_migration.py::...
+    2 failed, 6517 passed, 48 skipped ... in 415.07s
+    RESULT: FAIL (3/21)
+
+Tôi sửa **hai** thứ rồi chạy gate đầy đủ để chốt. Nó đỏ.
+
+⭐ Câu trả lời nằm ngay trong dòng tôi vừa đọc: **`(3/21)`**, không phải `(2/21)`.
+Gate có **21 bước**; `pytest` chỉ là **một** trong số đó. `short test summary`
+liệt kê những phép kiểm đỏ **bên trong bước ấy** — nó không biết gì về hai mươi
+bước còn lại. Bước thứ ba đỏ là `bo qua im lang`, một bánh cóc chốt tập hợp lượt
+bỏ qua, và nó **không xuất hiện** trong bất kỳ dòng `FAILED` nào.
+
+### Vì sao cái nhầm này dễ tới thế
+
+Cả hai đều là "danh sách những thứ đỏ", cùng nằm ở đuôi cùng một luồng ra, và
+danh sách của pytest **dài hơn** nên nó trông đầy đủ hơn. Thứ ngắn hơn — một cặp
+số trong ngoặc — mới là thứ nói đúng.
+
+### Cách hỏi đúng
+
+Gate ghi bảng bước ra JSON. Đọc nó, đừng đọc đuôi stdout:
+
+    ls -t test-results/gates/*.json | head -1     # luot gan nhat
+    # moi hang: {'ten': ..., 'ket': 'PASS'|'FAIL', 'giay': ...}
+
+Bảng ấy trả lời **bước nào** đỏ. `short test summary` trả lời **phép kiểm nào**
+đỏ, và chỉ khi bước đỏ tình cờ là bước chạy pytest.
+
+### Cái giá, và nó không phải thời gian
+
+Lượt gate đầy đủ ấy tốn ~7 phút và **không dùng được làm bằng chứng** — vì tôi
+đã sửa `check_bo_qua.moc` **trong lúc nó đang chạy**. Gate tự phát hiện và nói
+thẳng:
+
+    CAY DA DOI TRONG LUC CHAY:  M tools/check_bo_qua.moc (891 -> 936 byte)
+    Ket qua duoi day noi ve cay luc BAT DAU, khong phai cay hien tai.
+
+⇒ Hai luật, và luật thứ hai là hệ quả của luật thứ nhất:
+
+1. Đọc **bảng bước**, không đọc đuôi pytest. Sửa cho **hết** rồi mới chạy.
+2. Gate là công cụ ra **phán quyết**. Một phán quyết về một cây **đang đổi** thì
+   không phán quyết gì cả — đúng như chính nó tự in ra.
+
+### Phụ lục — bộ lọc khớp vào **chính nó**, và nó tự giết cha mình
+
+Ngay sau khi viết mục trên, tôi dừng lượt gate hỏng bằng một đoạn Python lọc
+tiến trình theo `'gate.py' in cmdline`. Đoạn ấy thoát với mã **15** (SIGTERM), và
+ba tiến trình `gate.py` vẫn "còn". Đo tiếp thì cả ba là **shell của chính tôi**:
+
+    pid=23712 ppid=27464  bash.exe -c source '/c/Users/.../snapshot-bash...'
+    pid=27464 ppid=27748  bash.exe -c ...
+    pid=27748 ppid=10944  bash.exe -c ...
+
+Chuỗi `gate.py` nằm trong **mã nguồn** tôi truyền cho shell, nên nó có mặt trong
+`cmdline` của shell. Bộ lọc khớp vào công cụ đo, và lệnh `kill` đi ngược lên cây
+cha của chính nó.
+
+⭐ Đây là Bẫy 22 tầng 1 (*khớp `cmdline` đếm thừa*) ở một hình dạng mới: không
+phải `timeout.exe` tự nhân bản, mà **câu hỏi xuất hiện bên trong câu hỏi**.
+
+⇒ Lọc tiến trình để **giết** thì `cmdline` không đủ. Điều kiện phải là thứ tiến
+trình đo *không thể tự thoả*: `cwd` bằng đúng cây, **và** `pid` khác `os.getpid()`
+cùng toàn bộ chuỗi cha của nó.
+
+## Bẫy 26 — Một bước gate đỏ vì **TẢI MÁY**, không vì mã
+
+Đo 06/09/2026. `python tools\gate.py` trả `RESULT: FAIL (1/28)`, bước hỏng là
+`bat bien da tien trinh` (`tests/test_214_multi_process_runtime.py`).
+
+Triệu chứng **đổi giữa hai lượt chạy cùng một cây, cùng một commit**:
+
+```
+lượt 1   sqlalchemy...UndefinedTable: relation "api_metric_samples" does not exist
+lượt 2   AssertionError: chỉ 0/6 job xong — có worker chết giữa chừng
+```
+
+Hai thông điệp ấy dẫn về hai giả thuyết hoàn toàn khác nhau — một cái nghe như
+**thiếu migration**, một cái nghe như **worker hỏng**. Cả hai đều sai.
+
+### Đối chứng mới là thứ kết luận, không phải thông điệp lỗi
+
+Bước này đã **XANH hai lượt gate trước đó cùng ngày** (138,2 s). Nên phép thử
+đúng không phải là đọc traceback, mà là:
+
+> chạy **đúng bước ấy** ở **commit đã biết là xanh**, trong **điều kiện máy
+> hiện tại**.
+
+```
+git worktree add --detach D:\LTT_doi_chung <commit-đã-xanh>
+# rồi chạy tools\check_multiproc.py trong cây đó, có giữ khoá
+```
+
+Kết quả: commit đã-biết-là-xanh **cũng đỏ**, cùng lỗi. ⇒ Nguyên nhân nằm ngoài
+mã. Lúc đo, hai cây khác đang chạy nặng (**412%** và **32%** CPU).
+
+🔴 Không có đối chứng này, đường đi tự nhiên là đi sửa `create_all()` hoặc thêm
+   một migration cho `api_metric_samples` — **sửa một thứ không hỏng**, và bản
+   "sửa" ấy sẽ được commit kèm một lời giải thích rất thuyết phục.
+
+### Vì sao khoá không cứu được
+
+`test_214` sinh **tiến trình worker thật** rồi chờ chúng xong trong một hạn.
+Dưới tải nặng chúng bị bỏ đói và chết. Mà `cua_so_yen` chỉ chặn được ai **XIN**
+khoá — xem **Bẫy 22**. Một phiên chạy `pytest` hẹp hay một tác vụ nặng bất kỳ
+không xin khoá vẫn ăn CPU bình thường.
+
+⚠️ Và đo được 06/09: **hai worktree chạy bước `check_multiproc` mà `gate.py`
+   của chúng KHÔNG khai `postgres_test`** (`auto-scan-video-v4-mvp`,
+   `mobile-v1`). Bước ấy gọi `drop_all()` lên CSDL test **dùng chung**. Đó là
+   một cửa va chạm thật, độc lập với chuyện tải.
+
+```
+findstr /C:"postgres_test" <cây>\tools\gate.py
+```
+
+### Luật
+
+⛔ Một lượt gate đỏ ở `bat bien da tien trinh` **chưa phải bằng chứng về mã**
+   cho tới khi đã đo tải. Trình tự đúng:
+
+1. `python tools\may_ban.py` — có cây nào đang bận không;
+2. nếu bận: **chờ**, rồi chạy lại. Đừng đọc traceback vội;
+3. nếu vẫn đỏ khi máy rảnh: lúc đó mới là tín hiệu về mã;
+4. còn nghi ngờ thì dựng cây đối chứng ở commit đã-biết-là-xanh.
+
+⭐ Đây là mặt còn lại của **Bẫy 24**: ở đó một kết quả ÂM không đối chứng trông
+   giống một phát hiện; ở đây một kết quả ĐỎ không đối chứng trông giống một
+   lỗi hồi quy.
+
+---
+
+## Bẫy 27 — Một bánh cóc **đỏ sẵn từ trước** nhìn y hệt một bánh cóc bạn vừa làm đỏ
+
+Đo ngày 06/09/2026, phiên H44 B4/P09.
+
+Gate báo `FAIL (2/29)`, một trong hai bước đỏ là **`mypy`**:
+
+```
+[mypy] TANG so voi moc - moi dong duoi day la mot loi MOI:
+   arg-type         119 -> 120
+   assignment       59 -> 61
+```
+
+Câu ấy đọc lên là *"bạn vừa thêm ba lỗi"*. Phản xạ đúng theo mọi luật đã ghi là
+đi sửa chúng — hoặc, nếu vội, `--accept` để dời mốc. **Cả hai đều sai ở đây.**
+
+### Bốn phép đo, và chỉ phép cuối trả lời đúng câu
+
+| phép đo | kết quả | nó nói gì |
+|---|---|---|
+| `mypy` trên các tệp tôi vừa viết | 1 lỗi, **có sẵn** từ trước | không phải của tôi? |
+| `mypy` toàn cây, cây làm việc | **592** lỗi | — |
+| `mypy` toàn cây, **`git archive HEAD`** | **592** lỗi | phần chưa commit thêm **0** |
+| A/B `apps platform_core server`: trước-B4 vs HEAD | **148 → 131**, `comm` ra **rỗng** | mã của tôi thêm **0** lỗi arg-type/assignment |
+
+⇒ Rồi phép đo dứt điểm: chạy chính `tools/check_mypy.py` trên `git archive` của
+**commit merge** `18f786c4` — trước một dòng nào của tôi — và của **cả hai cha**
+của nó:
+
+```
+6b0ef096 (nhánh tôi, trước merge)   ->  arg-type 119 -> 120 · assignment 59 -> 61
+ef68cf51 (admin-mvp-v3, nơi ĐƯA bánh cóc này vào)  ->  y hệt
+```
+
+**Bánh cóc đã đỏ từ trước, ở cả hai nhánh, với đúng cùng hai con số.**
+
+### Vì sao nó không đỏ ở ba lượt gate trước — và dấu hiệu là CỘT GIÂY
+
+| lượt gate | sha | bước `mypy` | giây |
+|---|---|---|---:|
+| `20260906T144839Z` | `18f786c4` | PASS | **5,2** |
+| `20260906T150511Z` | `18f786c4` | PASS | **2,8** |
+| `20260906T154739Z` | `5f7c1e37` | PASS | **5,3** |
+| `20260906T161123Z` | `6b6d4af5` | **FAIL** | **15,2** |
+
+⭐ 636 tệp nguồn không kiểm xong trong **2,8 giây**. Ba lượt kia không đo thứ
+   chúng khai là đã đo — và **dấu hiệu duy nhất lộ ra là một con số ở cột người
+   ta không đọc**. Đúng hình dạng Bẫy 26 và ca `test_nhanh` bất động:
+   *"một bảng tóm tắt có đủ dữ liệu để tố giác vẫn vô dụng nếu không ai nhìn vào
+   cột đó."*
+
+⛔ **SỬA NGAY TRONG NGÀY: đừng đọc bảng trên thành luật *"dưới 6 giây là đáng
+   nghi"*.** Một lượt gate sau đó (`20260906T172328Z`) báo `mypy` **FAIL trong
+   4,3 giây** — tức nhanh mà **đúng**. `check_mypy.py` chạy tăng dần, nên một
+   lượt sau khi cache đã ấm hoàn toàn có thể vừa nhanh vừa thật.
+
+⇒ Con số giây **không** phân biệt được "đo thật" với "không đo". Nó chỉ là một
+  thứ **đáng nhìn khi đã có mâu thuẫn khác** — ở đây là *"PASS ba lần rồi FAIL
+  trên cùng mã"*. ⭐ Và bài học chung: **tôi vừa suýt đúc một quan sát ĐƠN LẺ
+  thành một ngưỡng.** Cùng hình dạng với mọi lần "một con số tóm tắt" khác trong
+  tệp này — chỉ khác là lần này con số do chính tôi đặt ra.
+
+⛔ Giả thuyết đầu của tôi — *"mypy chết sớm thì bánh cóc đếm ra ít lỗi nên
+   XANH"* — **bị bác bằng thí nghiệm**: dựng một cây làm `mypy` chết sớm thật
+   (`errors prevented further checking`) rồi chạy bánh cóc ⇒ `RETURNCODE=1`.
+   Nó **không** im lặng. Nên nguyên nhân của ba lượt xanh vẫn **chưa biết**, và
+   ghi ra đây đúng như thế thay vì đắp một lời giải thích vừa vặn.
+
+### ✅ ĐÃ CÓ LỜI GIẢI (07/09) — và nó nằm NGOÀI KHO. Xem **Bẫy 28**.
+
+Phiên `admin-mvp-v3` viết Bẫy 28 từ phía bên kia của cùng sự việc: họ nâng
+**`pillow 10.4.0 → 12.3.0`** trong `site-packages` của **python hệ thống** —
+thứ **cả sáu worktree dùng chung**. `pillow 12` đổi stub kiểu (`Image.open()`
+nay trả `ImageFile`), nên mọi chỗ gán vào một biến kiểu `Image` thành lỗi. Đúng
+`+1 arg-type` và `+2 assignment`.
+
+⇒ Mọi phép đo của tôi **đúng phương pháp mà không thể tìm ra nguyên nhân**, vì
+  nguyên nhân **không nằm trong một commit nào**:
+
+| phép đo tôi làm | vì sao nó không thể thấy |
+|---|---|
+| `git archive` của commit merge và **cả hai cha** | cả ba đều chạy trên site-packages **mới** |
+| A/B `apps platform_core server` trước-B4 vs HEAD | như trên — hai bên cùng môi trường |
+| xoá cache mypy, đổi `MYPY_CACHE_DIR` | cache không phải nguyên nhân |
+
+⭐ Và **ba lượt xanh** cuối cùng cũng giải thích được: chúng chạy **TRƯỚC** lần
+   nâng, khi cây đo ra đúng `119/59` = bằng mốc. Lượt đỏ chạy **SAU**. Cùng mã,
+   cùng mốc, **môi trường đổi dưới chân**. Con số 15,2 giây của lượt đỏ chỉ là
+   một cache mypy bị vô hiệu khi phụ thuộc đổi — tức **đúng như tôi đã tự sửa ở
+   trên**: giây không phải dấu hiệu, nó là hệ quả.
+
+🔴 Bài học lớn nhất của cặp Bẫy 27 + 28: **một điều tra hoàn hảo trong kho vẫn
+   thất bại khi nguyên nhân ở ngoài kho.** Tôi đã chạy sáu phép đo, mỗi phép
+   đúng, và kết luận *"không phải của tôi"* — đúng — rồi dừng ở *"chưa biết"*.
+   Câu tôi thiếu là: **"có gì ngoài kho vừa đổi không?"** — `pip list`, mtime
+   của `site-packages`, hoặc đơn giản là hỏi phiên khác.
+
+⇒ Và điều đúng nhất tôi làm là **không `--accept`**: nếu tôi dời mốc, phần trôi
+  của lần nâng phụ thuộc sẽ bị chôn dưới commit của tôi, và Bẫy 28 sẽ không bao
+  giờ được viết.
+
+### Luật rút ra
+
+1. **Trước khi sửa một bánh cóc vừa đỏ, hỏi nó có đỏ TRƯỚC khi mình chạm vào
+   không.** Một lệnh, không cần đoán:
+
+```bash
+git archive <commit-truoc-viec-cua-ban> | tar -x -C <thu-muc-tam>
+cd <thu-muc-tam> && python tools/<banh-coc>.py
+```
+
+2. ⛔ **Đừng `--accept` một mốc mình không làm lệch.** Dời mốc dưới commit của
+   mình là **giặt** phần trôi của người khác thành phần của mình — sau đó không
+   ai truy được nó đến từ đâu. Cùng luật đã ghi: *"hạ mốc dịch bằng DỊCH, không
+   bằng TRÍCH LẠI."*
+
+3. ⭐ **Thứ đáng nghi không phải "nhanh", mà là "PASS ba lần rồi FAIL trên cùng
+   một mã".** Con số giây chỉ hữu ích **sau** khi đã có mâu thuẫn ấy — nó giúp
+   chọn lượt nào để tin, không giúp phát hiện. (Xem đoạn ⛔ ở §trên: một lượt
+   `mypy` FAIL đúng chỉ mất 4,3 giây.)
+
+## Bẫy 28 — Một lần nâng phụ thuộc dời mốc của **mọi worktree cùng lúc**
+
+Đo 06/09/2026. Tôi nâng `pillow 10.4.0 → 12.3.0` trong `site-packages` của
+**python hệ thống** — thứ cả sáu worktree dùng chung. Trong vòng vài phút, gate
+ở một cây khác đỏ với:
+
+```
+arg-type     119 -> 120
+assignment    59 ->  61
+```
+
+Phiên bên ấy làm đúng mọi bước điều tra: chạy bánh cóc trên `git archive` của
+commit merge **và cả hai cha**, A/B `apps platform_core server` giữa commit
+trước việc của họ và HEAD. Kết luận của họ chính xác — *"mã tôi thêm 0 lỗi"* —
+và họ **không** `--accept` một cái mốc mình không làm lệch. Đúng phản xạ.
+
+🔴 Nhưng họ không thể tìm ra nguyên nhân trong lịch sử git, **vì nó không nằm
+   trong bất kỳ commit nào**. `pillow 12` đổi stub kiểu: `Image.open()` nay trả
+   `ImageFile`, nên mọi chỗ gán vào biến kiểu `Image` thành lỗi:
+
+```
+apps/taovideo/refs.py:45          Image -> ImageFile
+apps/chataistudio/features.py:37  Image -> ImageFile
+tools/danh_gia_vision.py:117      FreeTypeFont | ImageFont
+```
+
+### Vì sao lớp này khó thấy hơn mọi lớp khác trong tệp này
+
+Mọi bẫy trước đều **ở trong kho**: một tệp, một dòng, một cấu hình. Cái này ở
+**bên ngoài kho** và **dùng chung**, nên:
+
+- `git bisect` không tìm ra — không commit nào gây ra nó;
+- A/B giữa hai commit cho kết quả **giống nhau**, vì cả hai cùng chạy trên
+  site-packages MỚI;
+- cây nào có mốc cũ thì đỏ, cây nào đã `--accept` thì xanh — **cùng một mã**.
+
+### ⛔ Và một suy luận SAI mà chính tôi suýt tin
+
+Quan sát bên kia: `mypy` xanh trong 2,8–5,3 giây ở các lượt gate, còn lượt đo
+thật mất 15,2 giây và ra đỏ ⇒ giả thuyết *"xanh dưới ~6 giây là đáng nghi"*.
+
+Đo hai chiều thì **bác được**:
+
+| cache | thời gian | phát hiện |
+|---|---|---|
+| nguội | 47,5 s | **592 / 14 mã** |
+| nóng | 2,6 s | **592 / 14 mã** |
+
+⭐ Giống **hệt** nhau. Cache nóng không làm `mypy` báo thiếu.
+
+Tương quan là thật nhưng **ngược chiều nhân quả**: đổi một gói trong
+site-packages **làm mất hiệu lực cache của mypy**, nên lượt kế tiếp vừa **chậm**
+(phải tính lại) vừa **đỏ** (thấy stub mới). "Chậm" và "đỏ" cùng là *hệ quả* của
+việc nâng gói; cái này không gây ra cái kia.
+
+⛔ Nếu tin giả thuyết ấy, bản vá sẽ là một cái sàn thời gian cho bước `mypy` —
+   một `giay_toi_thieu` cho thứ không cần nó — và nó sẽ **đỏ giả mỗi lượt cache
+   nóng** trong khi nguyên nhân thật vẫn nguyên.
+
+### Luật
+
+⚠️ Nâng một gói trong `site-packages` dùng chung là **sửa hạ tầng dùng chung**,
+   đúng nghĩa §4c của `AGENTS.md`, dù không có dòng mã nào đổi.
+
+1. Trước khi nâng: chạy các bánh cóc để có mốc **trước**;
+2. Sau khi nâng: chạy lại, và nếu mốc đổi thì **nói cho các phiên khác biết** —
+   họ sẽ thấy đỏ mà không có gì trong lịch sử giải thích;
+3. Cây nào đỏ vì việc này thì **ff lên trunk** để lấy cái mốc đã cập nhật, chứ
+   đừng `--accept` riêng ở cây mình: hai cái mốc lệch nhau còn tệ hơn một cái
+   mốc cũ.
+
+---
+
+## Bẫy 29 — Một phép kiểm **ghi vào cây làm việc** tự phá lượt gate chứa nó
+
+`tests/test_145::test_gate_NOI_RA_khi_cay_doi_trong_luc_chay` chứng minh một
+điều thật: ảnh chụp cây của gate phải **nhìn ra** một tệp mới xuất hiện giữa
+lượt chạy. Và nó chứng minh đúng cách — không đếm chữ trong mã nguồn, mà tạo
+một tệp thật rồi đòi hàm nhận ra.
+
+Chỗ hỏng nằm ở **nơi** nó tạo tệp:
+
+```python
+fd, ten = tempfile.mkstemp(suffix=".py", dir=ROOT / "tools")   # cây LÀM VIỆC
+```
+
+Đo 2026-09-07, một lượt `--vong-lap`:
+
+```
+FAILED tests/test_44_release_build.py::test_build_produces_a_usable_archive
+tools/build_release.py:261: zf.write(full, rel)
+FileNotFoundError: [WinError 2] ... 'D:/LTTSTUDIOSAPP/tools/tmplibsfvn9.py'
+```
+
+`build_release` liệt kê `tools/` rồi nén từng tệp một. Test kia xoá tệp tạm
+vào đúng khe giữa hai bước ấy. Hai test chạy trên hai worker khác nhau
+(`gw5`), nên lỗi chỉ hiện khi thời điểm trùng nhau.
+
+### Vì sao cái bẫy này đắt hơn vẻ ngoài của nó
+
+Nó **đổ tội cho người vô can**. Lượt gate đỏ ở `test_44_release_build`, một
+tệp mà bạn không đụng tới, vì một nguyên nhân nằm ở `test_145`, một tệp bạn
+cũng không đụng tới. Và nó **không tái hiện được**: chạy riêng `test_44` thì
+xanh trong 16 giây.
+
+⇒ Phản xạ tự nhiên khi gặp nó — *"chạy lại xem"* — là phản xạ **đúng**, và
+  chính vì thế nó nguy hiểm: chạy lại thường xanh, nên nguyên nhân không bao
+  giờ bị tìm ra, và lượt sau nó lại đỏ ở một chỗ khác.
+
+### Luật
+
+**Một phép kiểm không được ghi, sửa hay xoá bất cứ thứ gì trong cây làm
+việc** — kể cả khi nó dọn sạch sau lưng mình. Cây làm việc là trạng thái
+**dùng chung** của mọi test đang chạy song song, và của cả `git status`.
+
+Bản sửa **không** làm phép kiểm yếu đi. Nó vẫn tạo tệp thật trên đĩa thật và
+vẫn gọi `_anh_chup_cay()` thật — chỉ đổi **gốc** sang một thư mục tạm:
+
+```python
+cu = gatemod.ROOT
+gatemod.ROOT = goc_gia          # cây tạm, có `tools/co_san.py`
+```
+
+⭐ Kèm một đối chứng, vì bản sửa mở ra một cách hỏng **mới**: nếu cây tạm rỗng
+   thì hai ảnh chụp bằng nhau ở dòng cuối **dù hàm có hỏng hay không**, và
+   phép kiểm thành một cái vỏ báo PASS. Nên có thêm
+   `assert truoc, "cây giả rỗng"`.
+
+Đã kiểm hai chiều: xanh với hàm thật; tiêm một `_anh_chup_cay` trả hằng số thì
+**đỏ** ở đúng dòng `"them mot tep ma anh chup khong doi"`.
+
+---
+
+## Bẫy 30 — "Tôi chưa `push`" **không** bảo vệ gì, vì sáu cây dùng chung một `.git`
+
+`D:\LTTSTUDIOSAPP` và sáu worktree dưới `.claude/worktrees/` chia sẻ **một**
+kho. `admin-mvp-v3` là **một ref duy nhất**, không phải bản sao mỗi cây. Và
+`docs/16_CAP_NHAT_VA_DEPLOY.md` bắt `merge --ff-only` nhắm vào nhánh **cục
+bộ**, không nhắm `origin`.
+
+⇒ `git commit` lên nhánh ấy **đã là chạm trunk**. `git push` không liên quan.
+
+### Chuyện đã xảy ra, 07/09/2026
+
+Tôi commit một nhật ký deploy — **3 tệp, toàn `docs/`** — rồi phát hiện một con
+số sai, rồi `git commit --amend`, tự nhủ *"chưa push nên an toàn"*.
+
+Phiên ChatLTT đã merge commit gốc vào nhánh họ và đang chạy gate 12 phút trên
+nó. Phép đo:
+
+```
+git merge-base --is-ancestor 953ef445 admin-mvp-v3  ->  KHONG
+git branch --contains 953ef445  ->  claude/chatltt-v3-agentic
+```
+
+🔴 **Commit tôi vừa viết lại chỉ còn sống trên nhánh của người khác.**
+
+Nếu họ `--ff-only` đúng bốn phút ấy, nó vỡ — và họ mất vòng gate thứ ba trong
+ngày. Chính commit `docs/`-only ấy, trước đó, đã làm họ mất một vòng rồi: hôm
+trước **bốn** vòng, hôm ấy **hai**, mỗi vòng 12 phút.
+
+### Cách cứu
+
+```
+git reset --soft <commit-cu>
+git stash push -m "..."
+```
+
+Nhánh về đúng điểm người kia đã merge; bản sửa nằm nguyên trong stash, không
+mất chữ nào. Rồi đưa bản sửa lên bằng **một commit MỚI**, không `--amend`.
+
+⭐ Nhật ký sai **kèm lý do vì sao nó sai** đáng giữ hơn một lịch sử sạch. Xoá
+   dấu vết một con số sai là xoá luôn bài học đã trả tiền để có.
+
+### Hai điều đắt hơn bản thân sự cố
+
+**1. Lời hứa không phải cơ chế.** Tôi hứa *"tôi giữ tay, không đẩy"* — hứa thật
+lòng, hiểu sai đúng **một chữ**, và trunk vẫn nhích. Chỉ có **không commit** mới
+bảo vệ; `cua_so_yen` giữ CPU bằng khoá chứ không bằng lời, và trunk cũng cần thế.
+
+**2. `--ff-only` bắt người đến sau trả toàn bộ chi phí** — kể cả khi hai thay
+đổi **không hề đụng nhau**: 3 tệp tài liệu so với mã nằm sau một cờ mặc định
+TẮT.
+
+⛔ Nhưng lời giải *"vậy cho commit `docs/`-only đi thẳng, khỏi gate"* là **SAI**,
+   và tôi suýt đề xuất nó. Tài liệu **có** vào gate dù không vào bản deploy:
+
+```
+test doc tep trong docs/            43 / 440
+tests/test_212...py:37              "APP_API_COVERAGE_FINAL.md"
+tools/check_ky_tu_dieu_khien.py:11  quet `docs/` cap tren cung
+```
+
+Hai ca thật, cùng ngày: sửa một dòng trong `APP_API_COVERAGE_FINAL.md` làm
+`test_212` đỏ; và một ký tự **BEL** lọt vào `docs/KE_HOACH_TRIEN_KHAI.md` qua
+bẫy backslash — `secrets<BEL>pp.env` trông y hệt một dòng bình thường, chỉ lộ
+ra ở bước quét byte.
+
+⭐ Ca BEL mạnh hơn ca `test_212`: quên khai thì người ta **thấy** mình thiếu gì;
+   một ký tự điều khiển thì **không nhìn thấy được**. Đó đúng là ca mà câu
+   *"docs không vào bản deploy"* nghe hợp lý nhất — và sai nặng nhất, vì người
+   phải đỏ là **người merge sau**.
+
+### Bài học tổng quát hơn cả sự cố: thay **giá trị** bằng **lệnh**
+
+Bản đính chính đầu tiên của tôi sửa một hàng tài liệu từ `9f555599` thành
+`0ad9c868`. **Trong vòng một giờ nó lại sai**, vì phiên kia deploy `2f28159f`
+lên sau.
+
+⭐ Hai lần sai trong một giờ **không phải hai lần bất cẩn**. Nó là cơ chế: một
+   số commit chép tay vào tài liệu **không có cách nào tự biết nó đã cũ**. Sửa
+   giá trị chỉ mua được đúng khoảng thời gian tới lần deploy kế tiếp.
+
+Đây đúng thứ `CLAUDE.md` phải học sau **năm** lần nói sai — và cả năm lần đều
+sai *về phía nguy hiểm*:
+
+> *"Một bảng chép tay không có cách nào tự biết nó đã cũ. Nên thứ đổi là **nơi
+> câu trả lời đến từ**."*
+
+⇒ Hàng ấy nay chứa **lệnh**, không chứa **giá trị**:
+
+```bash
+curl -s http://127.0.0.1:8100/health/version          # ban DANG chay
+cat  C:/LTTPlatform/app.previous/dau_van_tay.json     # DUONG LUI
+```
+
+🔴 Và với con số này thì "cũ" đắt hơn bình thường: `app.previous` **là đường
+   lùi**, nên một giá trị cũ ở đó không chỉ sai — nó **rollback về sai chỗ**.
+
+### Nửa sau, và nó suýt xảy ra thật trong cùng buổi
+
+Sau khi bị chỉ ra, tôi làm đúng chữ *"đừng commit lên trunk"* — và **vẫn suýt
+gây chuyện**, vì tôi cứ soạn tiếp tài liệu trong cây làm việc.
+
+`setup\2-cai-dat.ps1` **từ chối chạy từ worktree**, nên mọi lượt deploy đi từ
+`D:\LTTSTUDIOSAPP` — cây tôi đang ngồi. Và:
+
+```
+ls C:/LTTPlatform/app/docs   ->  CO — docs/ CO trong ban deploy
+git status --short           ->  M docs/16_CAP_NHAT_VA_DEPLOY.md
+                                 M docs/BAY_TRONG_CONG_CHAT_LUONG.md
+```
+
+Phiên kia sắp deploy từ cây ấy. Hai tệp chưa thuộc commit nào sẽ lên máy chủ,
+trong khi `dau_van_tay.json` ghi `2f28159f`.
+
+🔴 Không hỏng chức năng — `.md` không được phục vụ, không được import, và phép
+   đối chiếu băm chỉ soi `.py` + bundle. Cái hỏng là **mệnh đề**: *"bản đang
+   chạy = một commit xác định"*. Đó chính là thứ `dau_van_tay.json`, phép đối
+   chiếu băm và `/health/version` cùng dựng lên; một vết nhoè trong nó làm cả
+   ba yếu đi cùng lúc.
+
+⇒ **Giữ tay khỏi `git commit` là chưa đủ. Cây bẩn đi vào bản deploy y hệt một
+  commit.** Khi một phiên khác sắp deploy, cây phải sạch — `git stash` là đủ.
+
+⚠️ `docs/16` §2 **có** câu *"trước khi deploy: `git status --porcelain` phải
+   rỗng"*. Nhưng nó nói với **người deploy**. Hôm ấy người deploy là phiên kia,
+   còn người làm bẩn cây là tôi — và không dòng nào nói với **người đang ngồi
+   trong cây ấy**. Một luật đúng, đặt sai người nhận, thì không ai vi phạm nó
+   mà nó vẫn không được tuân thủ.
+
+*(Cả hai phiên cùng đo ra điều này gần như đồng thời, bằng cùng một lệnh, và
+nhắn chéo nhau. Phiên kia không tự commit hộ cũng không tự revert — đúng ranh
+giới: revert hộ là xoá mất 72 dòng đang viết dở mà người viết không biết vì
+sao.)*
+
+---
+
+## Bẫy 31 — Một bánh cóc **tự tháo về phía XANH**, và không ai thấy nó tháo
+
+Bẫy 27 nói về một bánh cóc **đỏ sẵn từ trước**. Cái này ngược lại, và tệ hơn:
+một bánh cóc thôi bảo vệ thứ nó sinh ra để bảo vệ, mà **vẫn in `PASS`**.
+
+Không lỗi, không stack trace, không dòng nào khác thường. Chỉ là từ hôm đó
+nó không còn kiểm gì.
+
+### Hình dạng
+
+```python
+xau = []
+for m in re.findall(r"<chuoi hang>", ma):      # <- vong lap LAI BANG mot hang
+    if <dieu kien>: xau.append(...)
+assert not xau                                  # <- rong thi XANH
+```
+
+Ai đó sửa **chuỗi hằng** kia — thường vì họ sửa đúng cái sản phẩm mà phép kiểm
+đang canh — thì vòng lặp không vào lần nào, `xau` rỗng, `assert not []` xanh.
+
+⭐ Đây là **cùng một bài học** với *"không đối chứng thì số 0 không phải phát
+   hiện"* (Bẫy 24), chỉ đứng ở **phía phép kiểm** thay vì phía phép đo. Ở đó
+   một số 0 trông như một phát hiện; ở đây một tập rỗng trông như một bảo đảm.
+
+### 🔴 Điều kiện để hình dạng ấy thành LỖ — và nó không phải lúc nào cũng thành
+
+**Tập rỗng phải tương ứng một trạng thái SAI mà không ai thấy.**
+
+Hai mẫu đọc thật, 07/09/2026, một của mỗi loại:
+
+| | |
+|---|---|
+| **Lỗ thật** — `test_365:349` | quét `<script … nhip_job.js …>` tìm `defer`. Đổi tên tệp JS ⇒ khớp 0 ⇒ xanh, và thứ nó canh (`defer` làm `LTT.nhipJob is not a function`, hỏng **im lặng**) hết người canh |
+| **Vô hại** — `test_306:923` | duyệt `check_cve.moc` đòi mỗi dòng có lý do. Tệp rỗng ⇒ xanh — nhưng "rỗng" ở đây là **không miễn trừ CVE nào**, trạng thái *an toàn hơn* |
+
+⛔ Nên **đừng** dựng một bánh cóc chỉ đếm *hình dạng*. Nó sẽ báo động trên
+   `test_306` — tức chính ta xây một dụng cụ **§4d lớp E**, dương tính giả từ
+   công cụ của mình, trong lúc đang bàn về việc dụng cụ tự sai.
+
+### Ba bộ dò, ba con số, và cả ba đều tự kiểm ĐẠT
+
+Hai phiên viết hai bộ dò độc lập cho *cùng* một hình dạng:
+
+```
+v1 (hang chuoi GAN trong ham)                  ->  1
+v2 (+ hang cap module + viet thang)            -> 17
+ban cua phien kia (+ .split/.startswith/...)   -> 25
+```
+
+Cả ba đều bắt được ca đã biết (`test_360`) — tức cả ba **tự kiểm đạt**.
+
+🔴 Vậy mà chúng đếm ba tập khác nhau. ⇒ **"Tự kiểm đạt" không đủ để một con số
+   so sánh được với con số khác.** Bộ tự kiểm chỉ nói *"tôi không rỗng"*; nó
+   không nói *"tôi đếm cùng một thứ với anh"*. Điều đó chỉ lộ ra vì có **hai
+   người đo độc lập rồi so** — không bộ dò nào tự nói ra được.
+
+⛔ Và đừng lấy **phần giao** hai danh sách làm việc tiếp: phần giao của hai bộ
+   lọc **sai tiêu chí** vẫn sai tiêu chí, chỉ ngắn hơn và **trông** đáng tin
+   hơn. Đó là *"giả thuyết khớp quá vừa"*.
+
+### Chiều thứ hai: xanh vì **KHỚP NHẦM**, không phải vì rỗng
+
+`test_360::test_MOI_nhanh_ban_deu_nuoi_CAPACITY_REFUSED` đòi mỗi nhánh trả
+"bận" phải đếm `CAPACITY_REFUSED` trong **700 ký tự trước** nó. Đo 07/09: ở
+nhánh `DangBan` của `streaming.py`, chữ mà cửa sổ ấy khớp phải nằm trong **một
+dòng chú thích** — không phải một bộ đếm.
+
+⇒ Bảo đảm ở site đó là **ảo** suốt thời gian qua, và không ai biết vì nó vẫn
+  `PASS`. Chỉ khi viết lại phép kiểm bằng **AST** nó mới lộ ra.
+
+*(Sự thật phía sau thì vô hại: chỗ ấy đếm ở **facade** `runtime_noi_bo/luong.py`
+đúng thiết kế H43 Phase 02. Nhưng phép kiểm không biết điều đó — nó chỉ tình cờ
+khớp một chuỗi.)*
+
+### Liều thuốc
+
+**1. Một đối chứng số lượng đứng cạnh mọi phép kiểm dạng này.**
+
+```python
+assert so_khop >= 3, "chi thay {so_khop} — hoac cau chu da doi, hoac mot nhanh
+                      da bien mat. Ca hai deu phai xem."
+```
+
+*"Không tìm thấy chỗ nào"* không bao giờ được đọc thành *"mọi chỗ đều đúng"*.
+
+**2. Đọc AST, đừng quét văn bản thô.** Một bộ dò văn bản **trừng phạt việc
+giải thích**: viết chú thích càng rõ càng dễ làm nó đỏ. Trong đúng bản vá này
+nó xảy ra **hai lần**:
+
+- tôi viết `# GIU NGUYEN tien to "The model is busy…"` vào `streaming.py` →
+  phép kiểm đếm dòng chú thích ấy như một nhánh bận → đỏ;
+- tôi viết thêm mươi dòng giải thích vào `chat.py` → `CAPACITY_REFUSED` bị đẩy
+  ra ngoài **cửa sổ 700 ký tự** → đỏ, dù mã không đổi một chút nào.
+
+**3. Hỏi QUAN HỆ, đừng đo KHOẢNG CÁCH.** Thay *"700 ký tự trước"* bằng *"trong
+cùng khối `except`"*. Ranh giới cú pháp là quan hệ thật; nó bất biến với việc
+chú thích dài hay ngắn.
+
+**4. Miễn trừ phải KÈM CHỨNG MINH.** Nhánh `DangBan` được miễn vì facade mới là
+chỗ đếm — nên phép kiểm chốt luôn rằng **facade thật sự đếm**. Ngày facade thôi
+đếm, nó đỏ; chứ không im lặng tha cho cả hai chỗ.
+
+⭐ Và kiểm hai chiều: tiêm bản cũ, đòi hỏi **ĐỎ**. Ba phép tiêm cho bản vá này
+   (trả `{e.ly_do}` vào thân · gỡ `CAPACITY_REFUSED` · đổi câu chữ sản phẩm)
+   đều đỏ đúng như mong đợi — và đọc `returncode`, đừng khớp mẫu `stdout`.
+
+### Kiểm toán 07/09/2026 — 17 ứng viên, **6** phải sửa
+
+Đã **đọc từng cái**, không vá máy móc. Thứ quyết định là **nguồn của vòng lặp
+trong cùng**, vì nó trả lời *"tập rỗng nghĩa là gì"*:
+
+| an toàn — **không sửa** | vì sao |
+|---|---|
+| `145` `148` `151` `343` `390` `901` | `ast.walk` / `rglob` trên `apps/` — không thể rỗng |
+| `306` | mốc CVE rỗng = **không miễn trừ nào** = an toàn hơn |
+| `353` | rỗng = **không ai bọc `stdout`** = đúng điều mong muốn |
+| `309` `906` | đọc dòng của một tệp đã commit |
+
+| nguy hiểm — **đã chốt** | tập rỗng che mất điều gì | sàn đo được |
+|---|---|---|
+| `310` input ẩn | mọi input ẩn mất chỗ bấm → **không chọn được tệp** | 2 |
+| `365` `nhip_job.js` | `defer` → `LTT.nhipJob is not a function`, hỏng im lặng | 3 |
+| `501` cửa nộp job | 4 cửa thiếu `max_attempts` → chết khi deploy | 4 |
+| `904` thẻ `<video>` | thiếu `playsinline` → iOS ép toàn màn hình | 10 |
+| `388` luật chẩn đoán | luật không thể nổ nhìn y hệt luật đang canh | 3 |
+| `155` ràng buộc `uq_` | `load_app_tables()` hỏng im lặng → drill kiểm tập rỗng | 28 |
+
+⭐ **`155` là kiểu khó thấy nhất**: xanh rỗng không đến từ mã của phép kiểm mà
+   từ một **bước nạp phía trước nó**.
+
+⭐ Và `904` cho thấy **hai đối chứng khác nhau, cần cả hai**. Nó đã có
+   `test_bo_do_the_video_that_su_bat_duoc_the_thieu` — chứng minh regex bắt
+   được một thẻ thiếu. Nhưng phép kiểm ấy chạy trên **một chuỗi viết sẵn**, nên
+   nó vẫn xanh kể cả khi lượt quét thật không tìm thấy thẻ nào. Một cái hỏi
+   *"dụng cụ có hoạt động không"*, cái kia hỏi *"nó có nhìn thấy gì không"*.
+
+**Đối chứng cho chính sáu bản vá:** ép tập rỗng (`re.findall → []`,
+`LUAT → []`, `metadata.tables → {}`) — **cả sáu đều ĐỎ**.
+
+⛔ Và ba cái tên trong danh sách ứng viên của phiên kia
+   (`test_khong_import_cheo_tu_bot_gemini`, `test_platform_never_imports_an_app`)
+   **không** có ở đây: chúng duyệt `glob()`/module chứ không lái bằng khớp
+   chuỗi. Đó là lý do **không** lấy phần giao hai danh sách làm việc — phần
+   giao của hai bộ lọc sai tiêu chí vẫn sai tiêu chí, chỉ ngắn hơn.
+
+⭐ Tỉ lệ cuối: **6/17 hình dạng là lỗ thật**. Một bánh cóc tự động sẽ báo động
+   trên cả 17 — tức **11 dương tính giả**, và đó chính là §4d lớp E. Phân loại
+   này cần **đọc**, và nó chỉ tốn một lượt.
+
+### Hình thái thứ ba — tập rỗng do **chính bản vá** tạo ra
+
+Hai hình thái trên đều có tập rỗng đến từ **bên ngoài** phép kiểm: một cây
+nguồn không khớp gì, hoặc một chuỗi neo đã đổi. Hình thái thứ ba xảy ra **bên
+trong** một phép kiểm thao tác trên dữ liệu **do chính người viết dựng ra** —
+tức đúng chỗ trực giác nói *"không thể rỗng"*.
+
+`test_844` (H44 P10, 07/09/2026) chốt rằng khi cắt kết quả tool, không đoạn
+nào mất trích dẫn:
+
+```python
+d = json.loads(_ket(12).cho_model())
+for m in d["doan"]:
+    assert m.get("trich_dan"), "doan mat nguon"
+```
+
+12 đoạn là dữ liệu **tự dựng**. Nhưng chính bản vá mà phép kiểm này canh —
+`_cat_dict`, bỏ **cả mục** cho tới khi vừa trần — làm nó rỗng được: **một đoạn
+duy nhất dài hơn trần ⇒ `doan == []`**. Vòng không chạy lần nào; phép kiểm
+PASS mà không kiểm gì.
+
+⛔ Người viết **biết** dạng lỗi này: ba tệp khác viết cùng buổi (`test_843`,
+   `test_845`, `test_846`) đều có đối chứng *"bộ trích không rỗng"*. Cái thiếu
+   đúng ở tệp thao tác trên dữ liệu tự dựng.
+
+⭐ Luật rút ra:
+
+> **"Dữ liệu do tôi tự dựng" là một bảo đảm về ĐẦU VÀO, không phải về KẾT QUẢ
+> sau khi mã sản phẩm xử lý nó.**
+
+⇒ Đối chứng phải đặt ở **đầu ra của mã đang kiểm**, không ở đầu vào của phép
+  kiểm: `assert d["doan"]` **trước** vòng lặp, cộng một phép kiểm **riêng** cho
+  chính trạng thái rỗng — để nó có người canh thay vì lặng lẽ hợp lệ.
+
+*(Đối chứng: ép `_cat_dict` luôn trả `doan` rỗng ⇒ 6 đỏ, trong đó 2 cái trước
+bản sửa là xanh. Ca này do phiên ChatLTT tự tìm trong test của chính họ và
+bàn giao sang đây; văn bản giữ gần nguyên.)*
+
+⭐ Ba hình thái, một câu hỏi chung: **tập rỗng ấy đến từ đâu?**
+
+| hình thái | tập rỗng đến từ |
+|---|---|
+| 1 | nguồn **ngoài** — cây mã không khớp mẫu nữa |
+| 2 | không rỗng, mà **khớp nhầm** — mẫu bắt phải một dòng chú thích |
+| 3 | **chính mã đang kiểm** — nó rút tập về rỗng trên dữ liệu tự dựng |
+
+---
+
+## Bẫy 32 — phép kiểm YẾU hơn thứ nó cần đo
+
+*Đo 07/09/2026, H44 B6. Mặt còn lại của `phep-kiem-manh-hon-thu-no-do`.*
+
+`test_841` có **bốn** phép kiểm về `gia_nghien_cuu.uoc_tran`, tất cả đều có đối
+chứng đỏ tử tế. Hằng số nó canh sai **13 lần**, và cả bốn vẫn xanh:
+
+```python
+assert G.uoc_tran(1) > 0                    # sai 13 lan van > 0
+assert G.uoc_tran(3) > G.uoc_tran(1)        # sai 13 lan van tang don dieu
+assert G.uoc_tran(3) > G.credit_cost(...)   # credit_cost = 0, nen day cung la "> 0"
+```
+
+Sự thật: `uoc_tran(3)` trả **13 credit**; giá thật đo từ `gia_token` là **1**.
+Hậu quả trong mã: route từ chối khách có dưới 13 credit cho một việc tốn 1.
+
+### 🔴 Khác Bẫy 31 ở TRỤC nào
+
+| | câu hỏi | hỏng ở đâu |
+|---|---|---|
+| **Bẫy 31** | *tập rỗng đến từ đâu?* | phép kiểm **không nhìn thấy** thứ cần nhìn |
+| **Bẫy 32** | *mệnh đề có đủ chặt không?* | nó **nhìn đúng**, chạy **đúng** dữ liệu, và vẫn cho qua |
+
+Bẫy 31 là lỗi về **phạm vi**. Bẫy 32 là lỗi về **độ chặt**. Một phép kiểm có thể
+sạch ở trục này và hỏng ở trục kia — `test_841` nhìn đúng `uoc_tran`, gọi nó với
+đúng tham số, và vẫn không đo được gì.
+
+### Dấu hiệu nhận biết — một câu
+
+> **Một hằng số sai một BẬC ĐỘ LỚN mà vẫn thoả mọi `assert` ⇒ những `assert` ấy
+> đang chốt DẤU và THỨ TỰ, không chốt ĐỘ LỚN.**
+
+Thử bằng tay: nhân hằng số với 10 rồi chạy lại. Còn xanh ⇒ Bẫy 32.
+
+### Liều thuốc, và mặt trái của chính nó
+
+Neo vào một **nguồn độc lập**, không vào một bất đẳng thức tự tham chiếu. Ở đây
+là `platform_core/llm/gia_token` — bảng giá **đang thật sự thu tiền**.
+
+⛔ Nhưng *"nguồn độc lập"* không có nghĩa là *"một hằng số khác trong cùng kho"*.
+   Một hằng số ta tự viết neo vào một hằng số ta cũng tự viết thì không độc lập —
+   nó chỉ **xa hơn một bước**, và cả hai vẫn trôi cùng nhau. `gia_token` đủ tư
+   cách vì nó là giá **có thật với nhà cung cấp**, tức có một thực tại ngoài kho
+   giữ nó đứng yên.
+
+⇒ Câu để tự hỏi: *nếu tôi sửa nguồn neo cho khớp bug, có ai ngoài kho này phản
+  đối không?* Không ⇒ nó không phải một cái neo.
+
+### ⭐ Và nguyên nhân GỐC hoá ra rộng hơn phép kiểm
+
+Ba ca trong **cùng một ngày**, hai phiên khác nhau:
+
+```
+do `git diff`          (co che) -> suy ra production dang chay gi   (pham vi)
+grep `ly_do}`          (co che) -> suy ra "chi 2 cho ro"            (pham vi)
+do bang gia token      (co che) -> suy ra "khach bi chan"           (pham vi)
+```
+
+Cả ba đều **đo đúng cơ chế** rồi **suy** sang phạm vi. Cả ba đều sai ở vế suy:
+production đang chạy một commit khác; chỗ rò là **bốn** không phải hai; và cờ
+đang **tắt** nên không khách nào bị chặn.
+
+> **Đo cơ chế xong thì phạm vi là một phép đo THỨ HAI, không phải một hệ quả.**
+
+Áp cho phép kiểm: biết `uoc_tran` **sai** là cơ chế; biết nó sai **bao nhiêu** là
+phạm vi — và chỉ vế thứ hai mới nói được phép kiểm nào đủ chặt.
+
+*Chốt ở `tests/test_847_chatltt_uoc_tran_neo_vao_gia_that.py`. Đối chứng: tiêm
+lại hằng số cũ ⇒ `test_841` vẫn xanh **cả 25** phép kiểm, chỉ `test_847` đỏ.*
+
+---
+
+## Bẫy 33 — BẬT một bước đang tắt cũng là một thay đổi, và nó làm đỏ bước khác
+
+**07/09/2026.** Bốn lượt gate liên tiếp báo `[BOQUA] bat bien da tien trinh`.
+Đọc mã thì thấy `check_multiproc._tim_url()` chỉ cần `LTT_TEST_DATABASE_URL`.
+Đặt biến ấy trước `gate.py` ⇒ bước chạy thật, **140,7 giây** (sàn là 3,0 s).
+
+Nghe như một thắng lợi nhỏ. Nhưng cùng lượt ấy gate **ĐỎ**.
+
+### Vì sao
+
+Biến môi trường đặt cho tiến trình gate thì **mọi worker pytest cũng thấy nó**,
+và `tests/pg_scratch.py` dùng đúng biến ấy làm công tắc (`ENV =
+"LTT_TEST_DATABASE_URL"`). Nó **kích hoạt** một loạt tệp sang PostgreSQL thật.
+Ở cây `chatltt-v3-agentic` là **năm**:
+
+```
+tests/test_73_dong_thoi_pg.py
+tests/test_179_developer_api_key.py
+tests/test_214_multi_process_runtime.py
+tests/test_821_unaccent_tim_kiem_tieng_viet.py   <- ChatLTT, can `unaccent`
+tests/test_826_chatltt_tim_doan.py               <- ChatLTT
+```
+
+Chúng không an toàn khi chạy **song song trên một CSDL dùng chung** — xoá hàng
+của nhau:
+
+```
+pytest tests/test_73_dong_thoi_pg.py tests/test_179_developer_api_key.py -n 2
+  2 failed, 41 passed, 2 errors
+  IntegrityError: Key (id)=... is still referenced from table "developer_api_keys"
+```
+
+⭐ A/B sạch, cùng cây, cách nhau một phép hoà: **gate không có biến ⇒ PASS; gate
+  có biến ⇒ FAIL.**
+
+### ⚠️ Bán kính nổ ĐẶC THÙ TỪNG CÂY — đừng chép danh sách
+
+Một phiên khác đếm ở cây họ ra danh sách **khác**: có `test_423_asv_giao_dien.py`
+(không tồn tại ở cây này) và thiếu hai tệp ChatLTT ở trên. Cùng một biến, hai bán
+kính, vì mỗi cây có bộ test khác nhau.
+
+⇒ Đếm ở cây mình: `grep -rln pg_scratch tests/`
+
+⛔ Và ở cây ấy `test_423` còn nặng hơn một công tắc: nó gọi `pg_scratch.scratch_url()`
+   **trong fixture** rồi lấy kết quả làm `LTT_DATABASE_URL` cho cả ứng dụng dựng
+   trong test — tức biến này **đổi CSDL nền dưới chân** mọi test dùng fixture đó,
+   chứ không chỉ bật thêm vài tệp.
+
+### 🔑 Khung đúng: không phải công tắc BẬT/TẮT mà là lựa chọn PHẠM VI
+
+Cùng một biến phục vụ **hai mục đích trái nhau**:
+
+| Ai dùng | Vai trò của biến |
+|---|---|
+| bộ nghiệm thu ASV (`nghiem_thu_asv.ps1`) | **điều kiện CẦN** — SQLite không sống nổi đường ống; web + worker cùng ghi ra `database is locked` |
+| `check_multiproc` chạy đứng riêng | **điều kiện CẦN** |
+| `gate.py` chạy cả bộ test song song | **thuốc độc** |
+
+⇒ Câu hỏi đúng không phải *"có đặt biến không"* mà *"đặt cho tiến trình nào"*.
+  Phạm vi đúng là **một tiến trình, một mục đích**.
+
+### Và tên CSDL riêng KHÔNG cứu được ca này
+
+Một đề nghị hợp lý: mỗi cây một tên CSDL riêng (`..._asv_multiproc_test`) để hai
+cây không đâm nhau. Đúng cho **liên cây**, nhưng vô hiệu ở đây — va chạm này nằm
+**trong một cây, trong một lượt gate**, giữa hai tệp của *cùng* bộ test.
+
+⇒ Đổi tên chỉ đổi chỗ va chạm, không bỏ nó.
+
+### 🔴 Mệnh đề đáng nhớ
+
+> Một bước gate đang `[BOQUA]` **không phải một khoảng trống trung tính**. Bật
+> nó lên là thay đổi môi trường của **cả** lượt chạy, kể cả hàng nghìn phép kiểm
+> không liên quan gì tới nó.
+
+⛔ Cái làm bẫy này khó thấy là nó **cải thiện thật**: bước ấy đúng là đã chạy,
+   đúng là có bằng chứng, đúng là tốt hơn một dòng `[BOQUA]`. Người làm không có
+   cảm giác đang "sửa" gì — chỉ là "bật một thứ vốn nên bật".
+
+⭐ Luật rút ra: **cấu hình cũng là mã.** Một thay đổi cấu hình cần đúng lượng
+  nghi ngờ như một thay đổi mã, và cách kiểm rẻ nhất là A/B — chạy một lượt có
+  và một lượt không, thay vì chỉ nhìn bước mình vừa bật.
+
+### Cách làm đúng
+
+Bước nào không chạy được **trong** gate thì chạy nó **cạnh** gate, ghi bằng
+chứng riêng:
+
+```
+gate.py                                    -> khong bien, buoc ay [BOQUA]
+LTT_TEST_DATABASE_URL=... check_multiproc  -> chay rieng, ghi lai thoi luong
+```
+
+Đúng khuôn `setup/chay_multiproc_nang_quyen.ps1` dùng cho ca cần nâng quyền:
+tách ra, fail-closed, ghi `EXITCODE` + thời lượng.
+
+⚠️ Muốn ép nó chạy *trong* gate thì phải đặt biến **chỉ cho bước đó**, tức sửa
+   `gate.py` — hạ tầng dùng chung, `AGENTS.md` §4c đòi ba câu trả lời trước.
+
+⭐ Và khi đọc kết quả, nhớ **Bẫy 30**: `[N BUOC TU BO QUA]` không phải gate xanh.
+  Hai điều này không mâu thuẫn — một dòng `[BOQUA]` vẫn là một khoảng trống phải
+  nói ra; nó chỉ không phải một khoảng trống được lấp bằng cách bật bừa.

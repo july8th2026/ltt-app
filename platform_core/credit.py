@@ -359,6 +359,30 @@ def _da_ket_so(db: DbSession, job_id: str) -> bool:
     return n > 0
 
 
+def da_quyet_toan(db: DbSession, job_id: str) -> bool:
+    """Tên công khai của `_da_ket_so`. **Một hàm, không phải bản chép.**
+
+    ⭐ `thanh_toan.py` cần đúng vị ngữ này để biết mình đang ở **lần quyết toán
+       thật** hay ở một **lần phát lại**. Nó phải biết, vì phần lẻ tích luỹ
+       (`users.mcredit_du`) chỉ được cộng ở lần thật — cộng hai lần là thu của
+       khách một khoản không có bút toán nào đối chứng.
+
+    ⛔ Đừng viết lại phép đếm này ở tầng trên: hai bản đếm "đã quyết toán chưa"
+       là hai bản sẽ lệch, và chúng lệch ở chỗ tính tiền.
+    """
+    return _da_ket_so(db, job_id)
+
+
+def khoa_user(db: DbSession, user_id: str) -> None:
+    """Tên công khai của `_khoa_so_du_user`, cho tầng quyết toán dùng lại.
+
+    Đọc-rồi-ghi `users.mcredit_du` có đúng cái khe mà `_khoa_so_du_user` sinh ra
+    để bịt: hai lượt của cùng một user quyết toán song song sẽ **cùng** đọc phần
+    lẻ cũ rồi **cùng** ghi đè — mất một phần lẻ, tức mất doanh thu im lặng.
+    """
+    _khoa_so_du_user(db, user_id)
+
+
 def _khoa_ket_so_job(db: DbSession, job_id: str) -> None:
     """Tuần tự hoá settle/refund của cùng một job trong PostgreSQL.
 

@@ -771,7 +771,18 @@ def test_catalog_dung_khuon_Codex_chap_nhan(cc):
         assert "effective_context_window_percent" not in m
         # khong duoc con truong null nao
         assert not [k for k, v in m.items() if v is None]
-        assert m["context_window"] == cc.CUA_SO_NGU_CANH
+
+    # ⛔ MOI MODEL KHAI CUA SO CUA NO. Ban truoc cua doan nay la
+    #       assert m["context_window"] == cc.CUA_SO_NGU_CANH
+    #    — MOT hang so cho HAI model, va no doi `ltt_llm_vision` (cua so that
+    #    28.262, vi `qwen38-vision` nap `-c 65536`) phai noi 88.555. Phep kiem
+    #    khong bat duoc khuyet tat; no CUONG CHE khuyet tat, nen sua ma cho dung
+    #    thi gate do. Xem `test_334::test_MOI_model_trong_catalog_khai_cua_so_CUA_NO`.
+    mong = {"ltt_llm": cc.CUA_SO_NGU_CANH,
+            "ltt_llm_vision": cc.CUA_SO_NGU_CANH_VISION}
+    for m in d["models"]:
+        assert m["context_window"] == mong[m["slug"]]
+        assert m["max_context_window"] == mong[m["slug"]]
 
 
 def test_go_ra_xoa_catalog_DA_TAO_nhung_giu_catalog_co_tu_truoc(cc):

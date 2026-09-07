@@ -37,10 +37,10 @@
         <div class="field"><label for="ql-source-job">{{ _("Job Upscale nguồn (tùy chọn)") }}</label><input id="ql-source-job" name="source_job_id" type="text" placeholder="UUID job đã hoàn tất"><span class="hint">{{ _("Dùng snapshot thật để tính processing time/throughput; peak VRAM chưa có sẽ là UNKNOWN.") }}</span></div>
       </details>
       <details><summary>{{ _("Kỳ vọng kỹ thuật") }}</summary>
-        <div class="row"><div class="field"><label>{{ _("Rộng (px)") }}</label><input name="expected_width" type="number" min="0" value="0"></div>
-        <div class="field"><label>{{ _("Cao (px)") }}</label><input name="expected_height" type="number" min="0" value="0"></div></div>
-        <div class="row"><div class="field"><label>{{ _("Thời lượng (s)") }}</label><input name="expected_duration" type="number" min="0" step="0.001" value="0"></div>
-        <div class="field"><label>{{ _("FPS") }}</label><input name="expected_fps" type="number" min="0" step="0.001" value="0"></div></div>
+        <div class="row"><div class="field"><label>{{ _("Rộng (px)") }}</label><input name="expected_width" type="number" inputmode="numeric" min="0" value="0"></div>
+        <div class="field"><label>{{ _("Cao (px)") }}</label><input name="expected_height" type="number" inputmode="numeric" min="0" value="0"></div></div>
+        <div class="row"><div class="field"><label>{{ _("Thời lượng (s)") }}</label><input name="expected_duration" type="number" inputmode="decimal" min="0" step="0.001" value="0"></div>
+        <div class="field"><label>{{ _("FPS") }}</label><input name="expected_fps" type="number" inputmode="decimal" min="0" step="0.001" value="0"></div></div>
         <div class="field"><label>{{ _("Audio") }}</label><select name="expected_audio"><option value="">{{ _("Không đặt") }}</option><option value="yes">{{ _("Phải có") }}</option><option value="no">{{ _("Không được có") }}</option></select></div>
       </details>
       <div class="field"><label for="ql-truth">{{ _("Transcript chuẩn (AutoSub, tùy chọn)") }}</label><textarea id="ql-truth" name="expected_text" placeholder="{{ _('Không nhập thì WER = UNKNOWN') }}"></textarea></div>

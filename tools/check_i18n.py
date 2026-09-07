@@ -98,7 +98,18 @@ def _khong_phai_cau(gia_tri: str, node: ast.AST, cha: dict) -> bool:
        `platform_core/` hay `apps/`. Bọc nó vào `N_()` thì sai theo hướng ngược
        lại: một chuỗi không hiện ra lại bị trích cho người dịch.
 
-    Đây là thu hẹp phạm vi ĐẾM, không phải nới bánh cóc: hai dạng trên không bao
+    3. **Lời nhắc gửi cho model.** Một chuỗi nằm ở khoá `"content"` của một dict
+       có cả khoá `"role"` là **một tin nhắn LLM**, không phải chữ trên màn hình.
+       Nhận theo *hình dạng* chứ không theo tên hàm hay tên tệp: hình dạng
+       `{"role": …, "content": …}` là hợp đồng của cửa chat, và nó không đổi
+       theo chỗ đặt.
+
+       ⛔ Bọc nó vào `_()` sai theo hướng **nguy hiểm hơn** cả hai dạng trên: nó
+          làm model nhận một lời nhắc **khác nhau tuỳ ngôn ngữ giao diện**. Một
+          khách để giao diện tiếng Anh sẽ được chọn giọng theo một bộ luật khác
+          — tức một thiết lập hiển thị lặng lẽ đổi **hành vi** của sản phẩm.
+
+    Đây là thu hẹp phạm vi ĐẾM, không phải nới bánh cóc: ba dạng trên không bao
     giờ là chuỗi giao diện, nên đếm chúng chỉ tạo áp lực bọc bừa.
     """
     if not gia_tri.strip():
@@ -108,6 +119,36 @@ def _khong_phai_cau(gia_tri: str, node: ast.AST, cha: dict) -> bool:
     p = cha.get(id(node))
     if isinstance(p, ast.keyword) and p.arg == "notes":
         return True
+    if _la_tin_nhan_model(node, cha):
+        return True
+    return False
+
+
+def _la_tin_nhan_model(node: ast.AST, cha: dict) -> bool:
+    """`node` có nằm trong giá trị của khoá `"content"` (dict có cả `"role"`)?
+
+    ⛔ PHẢI LEO NHIỀU TẦNG, KHÔNG CHỈ NHÌN CHA TRỰC TIẾP. Bản đầu chỉ so cha và
+       **không bắt được gì**: một lời nhắc thật luôn được ghép từ nhiều mảnh
+       (`f"..." "..."`), nên cha trực tiếp của mỗi mảnh là `JoinedStr`/`BinOp`,
+       không phải `Dict`. Nhìn đúng một tầng là nhìn nhầm chỗ.
+    """
+    con = node
+    for _ in range(8):
+        p = cha.get(id(con))
+        if p is None:
+            return False
+        if isinstance(p, ast.Dict):
+            khoa = [k.value if isinstance(k, ast.Constant) else None for k in p.keys]
+            if "role" not in khoa:
+                return False
+            for k, v in zip(p.keys, p.values):
+                if v is con and isinstance(k, ast.Constant) and k.value == "content":
+                    return True
+            return False
+        if not isinstance(p, (ast.JoinedStr, ast.BinOp, ast.FormattedValue,
+                              ast.Expr, ast.Tuple, ast.Starred)):
+            return False
+        con = p
     return False
 
 

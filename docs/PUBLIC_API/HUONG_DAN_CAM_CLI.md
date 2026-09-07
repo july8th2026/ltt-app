@@ -107,6 +107,33 @@ LTTStudios-CamCLI-Console.exe go
 
 ## 2. Cấu hình tay, nếu không muốn dùng công cụ
 
+### 2.0 Năm con số, và cái nào đi vào tệp nào
+
+Mọi thứ dưới đây quay quanh **năm** con số. Chúng khác nhau, và mỗi lần dự án
+này gộp hai trong số chúng thì kết quả là một lời hứa sai.
+
+| Con số | Giá trị | Ai cần biết |
+|---|---:|---|
+| Cửa sổ **engine** | 204.800 | không ai — nó chỉ giải thích các số dưới |
+| **Trần đầu vào** | 169.984 | máy chủ. Vượt là `413`, không bao giờ cắt lặng lẽ |
+| **Cửa sổ công bố** | 156.385 | `model_context_window`, `CLAUDE_CODE_MAX_CONTEXT_TOKENS` |
+| **Ngưỡng nén** | 123.617 | `auto_compact_token_limit` trong catalog Codex |
+| **Token ra tối đa** | 32.768 | `CLAUDE_CODE_MAX_OUTPUT_TOKENS` |
+
+🔴 **Ngưỡng nén không phải một tỉ lệ tròn, và chỗ này đã trả giá thật.**
+
+Cho tới 03/09 bộ cài đặt ngưỡng nén ở `0,8 × cửa sổ`. Nghe hợp lý, và sai: client
+chỉ kiểm ngưỡng **giữa hai lượt**, nên sau khi nó quyết định "chưa cần nén", lượt
+kế tiếp vẫn được phép lớn thêm **trọn một lượt trả lời nữa** trước lần kiểm sau.
+
+Với `0,8` thì khoảng trống từ ngưỡng nén lên cửa sổ công bố nhỏ hơn một lượt trả
+lời dài nhất — nên cấu hình ấy **không thể** giữ lời hứa. Đo được trên
+production: một lượt `POST /api/v1/responses` ăn `413` ở **101.938** token vào
+trên trần **96.256** khi đó.
+
+⇒ Quy tắc đúng: **ngưỡng nén = cửa sổ công bố − token ra tối đa**. Nếu bạn tự
+đặt con số, hãy giữ đúng khoảng cách ấy.
+
 ### 2.1 Codex CLI — dạng **profile** (mặc định của bạn không đổi)
 
 `~/.codex/config.toml`:
@@ -125,7 +152,7 @@ nằm trong `config.toml`:
 model = "ltt_llm"
 model_provider = "ltt"
 model_reasoning_effort = "low"
-model_context_window = 88555
+model_context_window = 156385
 model_catalog_json = 'C:\Users\<ban>\.codex\ltt_model_catalog.json'
 ```
 
@@ -147,6 +174,11 @@ kế fail-closed, nên bạn thấy hội thoại dài **im lặng** mà không 
 
 79.699 đúng bằng con số **chúng tôi** khai, tức Codex đã đọc tệp và thôi phải
 đoán. Số lượt 400 sau đó về **0**.
+
+⚠️ Bảng trên là **một phép đo ngày 30/08**, không phải cấu hình hiện tại. Cửa sổ
+công bố khi ấy là 88.555; từ 03/09 nó là **156.385** (cửa sổ engine lên
+204.800), nên con số Codex hiển thị bây giờ là **140.746 = 156.385 × 90 %**.
+Tỉ lệ 90 % là thứ không đổi, và đó mới là điều bảng này chứng minh.
 
 Tệp catalog do công cụ `cam` ghi ra; nếu cấu hình tay thì lấy mẫu ở
 **<https://app.lttstudios.com/huong-dan/cong-cu>**.
@@ -170,7 +202,7 @@ Error: legacy `profile = "ltt"` config is no longer supported;
 model = "ltt_llm"
 model_provider = "ltt"
 model_reasoning_effort = "low"
-model_context_window = 88555
+model_context_window = 156385
 model_catalog_json = 'C:\Users\<ban>\.codex\ltt_model_catalog.json'
 
 [model_providers.ltt]
@@ -191,7 +223,7 @@ setx ANTHROPIC_BASE_URL "https://app.lttstudios.com/api"    # /api, KHONG /api/v
 setx ANTHROPIC_AUTH_TOKEN "<khoa ltt_sk_... cua ban>"
 setx ANTHROPIC_MODEL "ltt_llm"
 setx ANTHROPIC_DEFAULT_HAIKU_MODEL "ltt_llm"
-setx CLAUDE_CODE_MAX_CONTEXT_TOKENS "88555"
+setx CLAUDE_CODE_MAX_CONTEXT_TOKENS "156385"
 setx CLAUDE_CODE_MAX_OUTPUT_TOKENS "32768"
 ```
 
@@ -209,7 +241,7 @@ auto-compact will keep this session within 200k tokens (the context
 window it assumes).
 ```
 
-Trần đầu vào thật là **96.256**. Với giả định 200k, auto-compact **không bao giờ
+Trần đầu vào thật là **169.984**. Với giả định 200k, auto-compact **không bao giờ
 nén kịp**: hội thoại vượt trần từ lâu mà client vẫn tưởng còn nửa đường, và bạn
 ăn **413** giữa chừng. A/B đo 30/08: đặt `CLAUDE_CODE_MAX_CONTEXT_TOKENS` thì
 cảnh báo trên biến mất.
@@ -232,7 +264,7 @@ Tiện ích **không đọc biến môi trường** như CLI (lỗi đã biết 
     {"name": "ANTHROPIC_BASE_URL", "value": "https://app.lttstudios.com/api"},
     {"name": "ANTHROPIC_MODEL", "value": "ltt_llm"},
     {"name": "ANTHROPIC_DEFAULT_HAIKU_MODEL", "value": "ltt_llm"},
-    {"name": "CLAUDE_CODE_MAX_CONTEXT_TOKENS", "value": "88555"},
+    {"name": "CLAUDE_CODE_MAX_CONTEXT_TOKENS", "value": "156385"},
     {"name": "CLAUDE_CODE_MAX_OUTPUT_TOKENS", "value": "32768"}
   ]
 }

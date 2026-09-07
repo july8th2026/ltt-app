@@ -147,3 +147,70 @@ describe('SoanThao — dinh anh cho model vision', () => {
     expect(tai).toHaveBeenCalledTimes(2)
   })
 })
+
+describe('SoanThao — bon khuyet tat dinh kem tim ra tren production', () => {
+  const tep = (n: string) => new File(['x'], n, { type: 'image/png' })
+
+  it('MOT tep hong khong duoc giet ca lo', async () => {
+    // 🔴 Do 03/09: chon 3 anh, mot cai hong ⇒ chi con 1/3. `try` bao ca vong
+    //    lap nen tep sau tep hong khong bao gio duoc thu. Dung loi LibreChat
+    //    da dinh: *Uploading multiple files fails ENTIRELY if any single file
+    //    exceeds fileSizeLimit*.
+    let i = 0
+    const tai = vi.fn(async (f: File) => {
+      i += 1
+      if (f.name === 'hong.png') throw new Error('tham_so')
+      return { key: `k${i}`, ten: f.name }
+    })
+    render(<SoanThao onGui={vi.fn()} dangChay={false} onDung={vi.fn()}
+                     docAnh onTaiAnh={tai} toiDaAnh={4} />)
+    fireEvent.change(screen.getByLabelText('Đính ảnh'), {
+      target: { files: [tep('a.png'), tep('hong.png'), tep('c.png')] },
+    })
+    await waitFor(() => expect(tai).toHaveBeenCalledTimes(3))
+    await waitFor(() => expect(screen.getByText('a.png')).toBeTruthy())
+    expect(screen.getByText('c.png')).toBeTruthy()      // tep SAU tep hong
+    expect(screen.getByRole('alert').textContent).toContain('hong.png')
+  })
+
+  it('loi hien thanh CAU, khong phai ma HTTP', async () => {
+    const loi = Object.assign(new Error('http_400'), { code: 'http_400' })
+    const tai = vi.fn(async () => { throw loi })
+    render(<SoanThao onGui={vi.fn()} dangChay={false} onDung={vi.fn()}
+                     docAnh onTaiAnh={tai} />)
+    fireEvent.change(screen.getByLabelText('Đính ảnh'), { target: { files: [tep('x.png')] } })
+    await waitFor(() => expect(screen.getByRole('alert')).toBeTruthy())
+    const t = screen.getByRole('alert').textContent || ''
+    expect(t).toContain('không phải ảnh hợp lệ')
+    expect(t).not.toMatch(/^Không tải được 1 ảnh — x\.png: http_400$/)
+  })
+
+  it('doi hoi thoai thi BO anh dang dinh', async () => {
+    // Anh cua hoi thoai truoc di theo sang hoi thoai sau = nguoi dung tra tien
+    // cho mot ngu canh ho khong he chon.
+    const tai = vi.fn(async (f: File) => ({ key: 'k1', ten: f.name }))
+    const { rerender } = render(
+      <SoanThao onGui={vi.fn()} dangChay={false} onDung={vi.fn()}
+                docAnh onTaiAnh={tai} hoiThoai="cv1" />)
+    fireEvent.change(screen.getByLabelText('Đính ảnh'), { target: { files: [tep('meo.png')] } })
+    await waitFor(() => expect(screen.getByText('meo.png')).toBeTruthy())
+
+    rerender(<SoanThao onGui={vi.fn()} dangChay={false} onDung={vi.fn()}
+                       docAnh onTaiAnh={tai} hoiThoai="cv2" />)
+    await waitFor(() => expect(screen.queryByText('meo.png')).toBeNull())
+  })
+
+  it('doi sang model khong doc anh thi bo anh VA noi ra', async () => {
+    const tai = vi.fn(async (f: File) => ({ key: 'k1', ten: f.name }))
+    const { rerender } = render(
+      <SoanThao onGui={vi.fn()} dangChay={false} onDung={vi.fn()}
+                docAnh onTaiAnh={tai} hoiThoai="cv1" />)
+    fireEvent.change(screen.getByLabelText('Đính ảnh'), { target: { files: [tep('meo.png')] } })
+    await waitFor(() => expect(screen.getByText('meo.png')).toBeTruthy())
+
+    rerender(<SoanThao onGui={vi.fn()} dangChay={false} onDung={vi.fn()}
+                       docAnh={false} onTaiAnh={tai} hoiThoai="cv1" />)
+    await waitFor(() => expect(screen.queryByText('meo.png')).toBeNull())
+    expect(screen.getByRole('alert').textContent).toContain('không đọc ảnh')
+  })
+})

@@ -21,6 +21,19 @@ data/retry_*.json
 # Session ownership locks (runtime, machine/pid-specific)
 data/session_locks/
 
+# ─── Weight cua evaluator Quality Lab — CAP BANG TAC VU OPERATOR ────────────
+#
+# `apps/qualitylab/evaluator_assets.py` doi weight duoc cap SAN NGOAI RUNTIME
+# kem SHA-256; worker khong duoc tai mang. Nen chung nam o `data/`, khong o
+# trong git: mot backbone AlexNet la ~233 MB, va mot kho co weight trong lich
+# su thi khong bao gio nho lai duoc.
+#
+# ⛔ Va co mot ly do thu hai, dat hon: `data/` KHONG bi ignore theo mac dinh,
+#    nen mot tep 233 MB tha vao day se hien trong `git status`. Deploy chep CA
+#    CAY, ke ca phan chua commit (Bay 30) — tuc no se len may chu ma khong
+#    thuoc commit nao.
+data/qualitylab/models/
+
 # Worker list (operator's own sheet/page configuration, machine-specific)
 data/workers.json
 
@@ -82,6 +95,12 @@ __pycache__/
 *.egg-info/
 .eggs/
 pip-wheel-metadata/
+
+# Cache cua bo kiem/linter. Chung TU ghi mot .gitignore chua "*" ben trong,
+# nhung luat do bien mat neu thu muc bi tao lai bang tay hay bi chep di.
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
 
 # ─── Virtual environments ─────────────────────────────────────────────────────
 venv/
@@ -147,6 +166,12 @@ data/translations/desktop.ini
 /tmp/
 /test-results/
 
+# Artefact cua `coverage` (tools/do_phu_diff.py). `.coverage` la CSDL
+# sqlite sinh ra moi luot do; ban XML di vao /test-results/ o tren.
+.coverage
+.coverage.*
+htmlcov/
+
 # App vendor binaries (Real-ESRGAN engine + models) — copy tu BOT GEMINI, khong commit
 apps/*/vendor/
 
@@ -155,3 +180,13 @@ apps/*/vendor/
 *.pt
 cutclipshort/**/*.onnx
 frontend/prompt-ai-ommi/node_modules/
+
+# H44 — dau vet chay cua harness Nexus (khong commit)
+docs/CHATLTT_V3/harness/nexus_audit.log
+docs/CHATLTT_V3/harness/nexus_cert_pin.txt
+docs/CHATLTT_V3/harness/nexus_duong.json
+docs/CHATLTT_V3/harness/p01_sieu_du_lieu.json
+
+# axe-core tai ve (566 KB), ghim phien ban o tools/vendor_a11y/axe.version.
+# Tai lai: py tools/check_a11y.py --tai-axe
+tools/vendor_a11y/axe.min.js

@@ -8,11 +8,12 @@
 """
 from __future__ import annotations
 
-from ._chung import (MANIFEST, SO_LAN_THU_JOB, TRAN_KY_TU_CONG_KHAI, Depends, Form,
+from ._chung import (MANIFEST, SO_LAN_THU_JOB, TRAN_MOI_LUOT_SINH, Depends, Form,
                      HTMLResponse, JSONResponse, Request, _db, _het_phien,
                      _t, _uid, du_an, features, giong_mau, require_login,
                      router, templates, tham_chieu, user_hien_tai,
-                     verify_csrf_token, vo, lan_ngon_ngu, nghe_thu)
+                     verify_csrf_token, vo, lan_ngon_ngu, nghe_thu,
+                     so_viet)
 
 
 def _mo_du_an(db, request, user, public_id: str):
@@ -271,10 +272,26 @@ def sua_khoi(request: Request, public_id: str, block_id: int,
         k = du_an.tim_khoi(db, d.id, block_id)
         if k is None:
             return JSONResponse({"ok": False}, status_code=404)
-        if text is not None and len(text) > TRAN_KY_TU_CONG_KHAI:
+        # 🔴 `TRAN_MOI_LUOT_SINH`, KHÔNG phải `TRAN_KY_TU_CONG_KHAI`.
+        #
+        #    Một KHỐI là một lượt đọc — đúng một lượt `infer`. Nên trần của nó
+        #    là trần CHẤT LƯỢNG của một lượt sinh, không phải trần của một yêu
+        #    cầu khách gửi lên. Hai con số ấy đang bằng nhau, nên đổi chỗ này
+        #    không đổi hành vi hôm nay.
+        #
+        # ⛔ Nhưng ngày trần yêu cầu được nới (tài liệu dài đi đường
+        #    `ban_doc_dai`), một khối vẫn phải nằm trong một lượt sinh. Neo nhầm
+        #    hằng số ở đây thì khối phình theo, và mỗi khối lại vượt đúng cái
+        #    ngưỡng trôi giọng mà `tham_so.py` dựng trần lên để tránh — hỏng im
+        #    lặng, chỉ nghe thấy chứ không đỏ ở đâu cả.
+        #
+        # ⭐ Cùng lớp lỗi `du_an.TRAN_KHOI_KHI_NHAP` đã ghi: 1.500 trả lời "một
+        #    lượt đọc gánh được bao nhiêu", không trả lời "một đơn vị biên tập
+        #    nên to bằng nào". Một hằng số đi lạc sang chỗ nó không thuộc về.
+        if text is not None and len(text) > TRAN_MOI_LUOT_SINH:
             return JSONResponse({"ok": False, "loi": _t(
                 "Khối dài {n} ký tự, vượt giới hạn {t} cho một lượt đọc."
-            ).format(n=len(text), t=TRAN_KY_TU_CONG_KHAI)}, status_code=400)
+            ).format(n=so_viet(len(text)), t=so_viet(TRAN_MOI_LUOT_SINH))}, status_code=400)
         du_an.sua_khoi(db, k, text=text, giong=giong)
         db.commit()
         return JSONResponse({"ok": True, "trang_thai": k.trang_thai})
@@ -323,8 +340,9 @@ def nhap_van_ban(request: Request, public_id: str, text: str = Form(""),
         d = _mo_du_an(db, request, user, public_id)
         if d is None:
             return JSONResponse({"ok": False}, status_code=404)
+        # Cùng lý do ở `sua_khoi` phía trên: cỡ một khối là cỡ một LƯỢT ĐỌC.
         so = du_an.nhap_van_ban(db, d, text,
-                                tran_moi_khoi=TRAN_KY_TU_CONG_KHAI)
+                                tran_moi_khoi=TRAN_MOI_LUOT_SINH)
         db.commit()
         return JSONResponse({"ok": True, "so_khoi": so})
     except du_an.LoiDuAn as e:

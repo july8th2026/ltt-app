@@ -238,8 +238,12 @@ def test_tao_tieng_sinh_khoi_audio(web):
     tin = {m["id"]: m for m in su["messages"]}[kq["message_id"]]
     assert tin["blocks"] == [{"type": "audio", "key": khoa}]
     # Tran 1.500 ky tu cua voice van chan o cua bao gia — khong noi.
+    # ⚠️ Lấy trần từ hằng số, KHÔNG gõ `1501`. Con số ấy đúng tới 03/09/2026 rồi
+    #    hết đúng khi trần công khai được nới (1.500 -> 100.000). Mệnh đề cần
+    #    canh là *"vượt trần thì cửa trả 400"*, và nó không đổi theo con số.
+    from apps.ltt_voice.tham_so_cong_khai import TRAN_KY_TU_CONG_KHAI as _TRAN
     assert web.post("/chatltt/api/bao-gia", headers=h, json={
-        "nang_luc": TOOL_TIENG, "tham_so": {"text": "a" * 1501}},
+        "nang_luc": TOOL_TIENG, "tham_so": {"text": "a" * (_TRAN + 1)}},
     ).status_code == 400
 
 

@@ -1,6 +1,11 @@
 {% extends "base.html" %}
 {% block title %}{{ _("Lịch sử") }} — {{ _("Giọng nói LTT") }}{% endblock %}
 
+{# Cung che do trang rong voi Studio va Giong. Do 04/09: khung chi rong
+   1120px va rail phai 300px, trong khi anh tham chieu 03 dat BON khoi o rail
+   ay. #}
+{% block page_mode %}immersive{% endblock %}
+
 {#
   Màn Lịch sử. Đối chiếu với ảnh tham chiếu `05_HISTORY.png`:
 

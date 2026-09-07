@@ -1,0 +1,79 @@
+{
+  "cong": 0,
+  "so_luot": 5,
+  "dem": {
+    "tool_co_cau_truc": 5
+  },
+  "ket_qua": [
+    {
+      "ma": "G0-1.1",
+      "nhom": "G0-1",
+      "ky_vong": "co_tool",
+      "giay": 21.0,
+      "phan_loai": {
+        "loai": "tool_co_cau_truc",
+        "so_loi_goi": 1,
+        "ten": [
+          "calculator"
+        ],
+        "finish_reason": "tool_calls"
+      }
+    },
+    {
+      "ma": "G0-1.2",
+      "nhom": "G0-1",
+      "ky_vong": "co_tool",
+      "giay": 1.8,
+      "phan_loai": {
+        "loai": "tool_co_cau_truc",
+        "so_loi_goi": 1,
+        "ten": [
+          "calculator"
+        ],
+        "finish_reason": "tool_calls"
+      }
+    },
+    {
+      "ma": "G0-1.3",
+      "nhom": "G0-1",
+      "ky_vong": "co_tool",
+      "giay": 1.7,
+      "phan_loai": {
+        "loai": "tool_co_cau_truc",
+        "so_loi_goi": 1,
+        "ten": [
+          "calculator"
+        ],
+        "finish_reason": "tool_calls"
+      }
+    },
+    {
+      "ma": "G0-1.4",
+      "nhom": "G0-1",
+      "ky_vong": "co_tool",
+      "giay": 1.8,
+      "phan_loai": {
+        "loai": "tool_co_cau_truc",
+        "so_loi_goi": 1,
+        "ten": [
+          "calculator"
+        ],
+        "finish_reason": "tool_calls"
+      }
+    },
+    {
+      "ma": "G0-1.5",
+      "nhom": "G0-1",
+      "ky_vong": "co_tool",
+      "giay": 1.7,
+      "phan_loai": {
+        "loai": "tool_co_cau_truc",
+        "so_loi_goi": 1,
+        "ten": [
+          "calculator"
+        ],
+        "finish_reason": "tool_calls"
+      }
+    }
+  ]
+}

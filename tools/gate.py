@@ -366,7 +366,7 @@ TEP_KHONG_DUOC_DOC_SONG_SONG = {
 class Step:
     def __init__(self, name: str, argv: list[str], cwd: Path,
                  nhom: str = "tinh", tai_nguyen: tuple[str, ...] = (),
-                 so_loi: int = 1):
+                 so_loi: int = 1, giay_toi_thieu: float = 0.0):
         assert nhom in NHOM, nhom
         self.name = name
         self.argv = argv
@@ -403,9 +403,30 @@ class Step:
         #: ⛔ Hai phien doc cung mot dong RESULT theo hai cach trai nguoc trong
         #:    cung mot ngay, va ca hai deu tuong minh dung. Do la cai gia that:
         #:    mot buoc khong chay ma trong nhu da chay thi khong ai di tim no.
+        #: San thoi gian: buoc nay KHONG THE xong nhanh hon ngan nay giay.
+        #:
+        #: 🔴 Vi sao can. Ngay 06/09 mot phep tach ham lam hai pha pytest roi
+        #:    vao ma chet sau mot `return`. `tools/test_nhanh.py` thoat sau
+        #:    **0,114 giay**, ma **0**, KHONG chay mot test nao — va dong nay
+        #:    in ra: `[PASS] bo test (song song) 0.1s`.
+        #:
+        #:    Ca NAM banh coc AST luc ay van xanh, vi chung hoi *hinh dang ma*
+        #:    con hinh dang thi van dung khi cong cu da chet. Dau hieu duy nhat
+        #:    la CON SO GIAY — thu gate VAN IN RA nhung khong ai doc.
+        #:
+        #: ⭐ Nen bien no thanh mot PHAN QUYET. Day la lop bao ve TONG QUAT:
+        #:    no khong can biet buoc lam gi, chi can biet buoc do khong the
+        #:    xong trong tich tac. Mot banh coc rieng cho tung cong cu thi
+        #:    phai viet lai moi lan them cong cu; cai nay thi khong.
+        #:
+        #: ⚠️ Buoc TU KHAI bo qua (`DAU_BO_QUA`) duoc mien: "khong lam duoc
+        #:    viec va noi ra" la mot trang thai HOP LE, khac han "trong nhu da
+        #:    lam ma khong lam".
+        self.giay_toi_thieu = max(0.0, float(giay_toi_thieu))
         self.bo_qua = False
         self.seconds = 0.0
         self.tail = ""
+        self.tep_loi = ""
 
 
 def _npm() -> str | None:
@@ -560,6 +581,56 @@ def _steps(quick: bool, noi_tiep: bool = False) -> list[Step]:
         # Banh coc: khong cho THEM cho nuot loi lang le. Xem
         # tools/check_silent_except.py vi sao khong doi ve 0 ngay.
         Step("nuot loi lang le", [sys.executable, "tools/check_silent_except.py"], ROOT),
+        # 🔴 `ruff` đã nằm sẵn trong máy nhiều tháng mà **không có cấu hình** và
+        #    không nằm trong gate. Đo 06/09 nó bắt một bộ phát hiện lớn với bộ luật
+        #    `F,B` (đã bỏ `B008` vì nó là `Depends()` của FastAPI) — trong đó có
+        #    những lớp lỗi THẬT mà các bước viết tay không soi:
+        #
+        #        F811  hai ham cung ten, cai sau che cai truoc
+        #        B023  bay closure trong vong lap
+        #        B017  phep kiem khang dinh QUA RONG
+        #        B904  raise khong `from` -> mat traceback goc
+        #
+        # ⚠️ SO LUONG tung ma nam o `tools/check_ruff.moc`, KHONG chep vao day.
+        #    Chep mot con so vao chu thich la tao ra mot con so se troi —
+        #    dung luc viet ba cho nay no DA lech (B904: 22 o ruff.toml, 26 o moc).
+        #
+        # ⭐ `B017` đáng chú ý riêng: nó bắt đúng lớp lỗi đã cắn bốn lần trong
+        #    một buổi ngày 06/09 — một phép kiểm trông như đang đo, mà khẳng
+        #    định của nó rộng đến mức nó xanh với cả bản hỏng. Xem `AGENTS.md`
+        #    mục 4d lớp C.
+        #
+        # ⛔ Là BÁNH CÓC, không phải cổng "phải sạch": 512 lỗi thì một cổng
+        #    tuyệt đối sẽ bị tắt ngay lượt đầu. Và chốt theo **mã luật** chứ
+        #    không theo **tổng** — một mốc tổng có cửa hoán đổi một-đổi-một đi
+        #    lọt (xoá một `F401`, thêm một `F811` thì tổng không đổi).
+        Step("ruff", [sys.executable, "tools/check_ruff.py"], ROOT),
+        # `mypy` cung nam san trong may nhieu thang ma KHONG co cau hinh.
+        # Do 06/09: 590 phat hien / 14 ma loi, ~45 giay.
+        #
+        #    attr-defined   cham thuoc tinh KHONG TON TAI  -> AttributeError
+        #    union-attr     cham thuoc tinh tren thu co the None
+        #    arg-type       truyen sai KIEU cho tham so
+        #
+        # Ba ma tren bat dung lop A trong AGENTS.md muc 4d: DOAN hinh dang
+        # API thay vi DOC no. So luong tung ma o `tools/check_mypy.moc`,
+        # khong chep vao day.
+        #
+        # Dong quan trong nhat cua `mypy.ini` la `plugins = pydantic.mypy`:
+        # thieu no thi mypy coi moi truong Pydantic co `Field(mac_dinh)` la
+        # BAT BUOC va de ra 58 `call-arg` SAI. Do 06/09 tren mot tep:
+        # khong plugin 60 loi, co plugin 1 loi — va cai 1 do la loi that.
+        Step("mypy", [sys.executable, "tools/check_mypy.py"], ROOT),
+        # Ranh gioi IMPORT giua cac tang -- xem `.importlinter`. 0,3 giay.
+        #
+        # ⛔ KHONG thay `lint_app_contract.py`. Hai cong cu giai hai bai
+        #    toan khac nhau: cai kia kiem CO HOC hop dong app (manifest,
+        #    CSRF, co route), cai nay kiem AI DUOC IMPORT AI. Plan ban dau
+        #    ghi "thay the" va do la sai -- da sua trong `.importlinter`.
+        #
+        # ⭐ Do 06/09: 3 hop dong, 0 gay. Hai mon no con lai nam duoi dang
+        #    `ignore_imports` CO TEN va CO LY DO, khong phai mot con so.
+        Step("ranh gioi import", [sys.executable, "tools/check_ranh_gioi.py"], ROOT),
         # PowerShell khong phan biet hoa thuong o ten bien, va tham so cua script
         # chi la mot bien thuong. Nen mot vong lap gan `$ten` ghi de tham so
         # `-Ten` — khong loi, khong canh bao. Da xay ra 31/08/2026: giong tao ra
@@ -677,9 +748,17 @@ def _steps(quick: bool, noi_tiep: bool = False) -> list[Step]:
         # khong co PostgreSQL, nhung viec bo qua thi khong bao gio con lang le.
         # `test_214` dung HAI tien trinh worker — do la ca diem cua no. Khai 2,
         # khong khai 1: bo dem loi chi dung khi moi buoc noi that ve cai no lay.
+        # 🔴 `postgres_test` THEM 06/09/2026. `check_multiproc.py` goi
+        #    `drop_all()` (xem docstring dong 19 cua no) tren CSDL test DUNG
+        #    CHUNG, va buoc nay truoc do KHONG khai tai nguyen nao. Hai luot gate
+        #    o hai cay khac nhau => mot ben xoa schema giua luc ben kia dang ghi.
+        #    Trieu chung do that dem 05-06/09, hai phien, hai kieu:
+        #        relation "api_metric_samples" does not exist
+        #        assert 0 == 9   (9 job bien mat khoi bang)
         steps.append(Step("bat bien da tien trinh",
                           [sys.executable, "tools/check_multiproc.py"], ROOT,
-                          nhom="nang", so_loi=2))
+                          nhom="nang", tai_nguyen=("postgres_test",),
+                          so_loi=2, giay_toi_thieu=3.0))
     npm = _npm()
     for name in FRONTENDS:
         folder = ROOT / "frontend" / name
@@ -758,14 +837,16 @@ def _steps(quick: bool, noi_tiep: bool = False) -> list[Step]:
             steps.append(Step("bo test (noi tiep)",
                               [sys.executable, "tools/test_nhanh.py",
                                "--noi-tiep"], ROOT,
-                              nhom="nang", tai_nguyen=("cpu_nhieu",),
-                              so_loi=1))
+                              nhom="nang",
+                              tai_nguyen=("cpu_nhieu", "postgres_test"),
+                              so_loi=1, giay_toi_thieu=3.0))
         else:
             steps.append(Step("bo test (song song)",
                               [sys.executable, "tools/test_nhanh.py",
                                "-n", str(loi_bo_test)], ROOT,
-                              nhom="nang", tai_nguyen=("cpu_nhieu",),
-                              so_loi=loi_bo_test))
+                              nhom="nang",
+                              tai_nguyen=("cpu_nhieu", "postgres_test"),
+                              so_loi=loi_bo_test, giay_toi_thieu=3.0))
     return steps
 
 
@@ -780,7 +861,8 @@ def _steps_pham_vi(tep_test: list[str]) -> list[Step]:
         return []
     return [Step("bo test (pham vi)",
                  [sys.executable, "tools/test_nhanh.py", *sorted(tep_test)],
-                 ROOT, nhom="nang", tai_nguyen=("cpu_nhieu",))]
+                 ROOT, nhom="nang",
+                 tai_nguyen=("cpu_nhieu", "postgres_test"), giay_toi_thieu=3.0)]
 
 
 #: HO SO — moi ho so mot HOP DONG viet ra thanh chu.
@@ -852,6 +934,7 @@ HO_SO: dict[str, dict] = {
 #: Buoc nao KHONG lam duoc viec cua no thi mo dau mot dong bang chuoi nay.
 #: Quy uoc, khong phai ma thoat — vi ma thoat 0 o cac buoc do la co chu y.
 DAU_BO_QUA = "BO QUA"
+NL_GATE = chr(10)
 
 
 def _tu_khai_bo_qua(output: str) -> bool:
@@ -892,6 +975,14 @@ def _run(step: Step) -> None:
         output = f"khong chay duoc: {exc}"
     step.seconds = time.monotonic() - started
     step.bo_qua = bool(step.ok) and _tu_khai_bo_qua(output)
+    if (step.ok and not step.bo_qua and step.giay_toi_thieu > 0
+            and step.seconds < step.giay_toi_thieu):
+        step.ok = False
+        output += (f"{NL_GATE}[san thoi gian] buoc `{step.name}` xong trong "
+                   f"{step.seconds:.2f}s, duoi san {step.giay_toi_thieu:.1f}s.{NL_GATE}"
+                   f"Mot buoc nang xong trong tich tac la mot buoc KHONG CHAY."
+                   f" Neu no co y khong lam gi thi phai TU KHAI bang dong"
+                   f" bat dau bang `{DAU_BO_QUA}`.")
     lines = [line for line in output.splitlines() if line.strip()]
     # 🔴 GIU 40 DONG, KHONG PHAI 4 — day la mot sua loi QUY TRINH, khong phai
     #    mot con so tuy chinh.
@@ -904,6 +995,29 @@ def _run(step: Step) -> None:
     # ⭐ Bon dong du cho mot buoc tinh (chung in mot dong ket luan). Voi bo test,
     #    danh sach FAILED moi la thu can doc, va no dai hon 4 dong.
     step.tail = "\n".join(lines[-40:])
+
+    # 🔴 VA 40 DONG VAN KHONG DU KHI BO TEST DO. Do 06/09/2026: mot phep kiem
+    #    do trong 6.616 phep kiem; `short test summary` cho DUNG mot dong —
+    #    TEN phep kiem — con traceback da troi qua tu lau. Toi biet CAI GI do
+    #    ma khong biet VI SAO, va phai chay lai ca luot 11 phut de xem.
+    #
+    # ⛔ Do khong phai chuyen tang mot con so. Bat ky tran nao cung se bi vuot
+    #    boi mot luot du dai. Thu dung la: DO thi giu TRON dau ra ra tep.
+    #
+    # ⭐ Chi ghi khi DO, nen luot xanh khong de lai gi. Va in duong dan ra ngay
+    #    dong ket luan, vi mot tep khong ai biet la mot tep khong ai doc.
+    if not step.ok:
+        try:
+            thu_muc = ROOT / "test-results" / "gates"
+            thu_muc.mkdir(parents=True, exist_ok=True)
+            ten = "".join(c if c.isalnum() else "-" for c in step.name).strip("-")
+            tep = thu_muc / f"loi-{os.getpid()}-{ten}.log"
+            tep.write_text(output, encoding="utf-8", errors="replace")
+            step.tep_loi = str(tep.relative_to(ROOT)).replace("\\", "/")
+        except OSError:
+            # ⛔ HEP: mot loi ghi tep KHONG duoc bien mot buoc do thanh mot
+            #    ngoai le khac lam mat luon phan quyet.
+            step.tep_loi = ""
 
 
 def _da_doi_so_voi_HEAD() -> set[str] | None:
@@ -970,9 +1084,14 @@ def _rut_gon_vong_lap(steps: list[Step]) -> list[Step]:
     # ⚠️ `--lf-rong-thi-khong-chay` la bat buoc o day. `--lf` mot minh chay TAT
     #    CA khi lan truoc khong co gi do — do 27/08: che do nay dat ra de xong
     #    trong ~20 giay va mat 4 phut 26 vi dung ly do do.
+    # ⛔ Buoc nay truoc 06/09 khai **KHONG TAI NGUYEN NAO** — ke ca `cpu_nhieu`.
+    #    Va no khong he nhe: `--lf` chay TOAN BO bo test khi cache lastfailed
+    #    rong hoac toan id chet (do that 06/09: 393 giay). Tuc `--vong-lap` la
+    #    mot buoc nang **doi lot mot buoc nhanh**, va no vo hinh voi khoa.
     ra.append(Step("bo test --lf",
                    [sys.executable, "tools/test_nhanh.py", "--lf",
-                    "--lf-rong-thi-khong-chay"], ROOT, nhom="nang"))
+                    "--lf-rong-thi-khong-chay"], ROOT, nhom="nang",
+                   tai_nguyen=("cpu_nhieu", "postgres_test"), giay_toi_thieu=3.0))
     return ra
 
 
@@ -1118,6 +1237,44 @@ def _console_text(value: str, encoding: str | None = None) -> str:
 BO_QUA_KHI_QUICK = ("bat bien da tien trinh", "bo test (song song)")
 
 
+#: Thư mục nằm trong ảnh chụp "cây đứng yên".
+#:
+#: 🔴 TRƯỚC 03/09 DANH SÁCH NÀY THIẾU BA THỨ QUAN TRỌNG NHẤT VỚI HAI PHIÊN
+#:    LÀM VIỆC SONG SONG: `llm_gateway/` (mã cổng máy B), `sdk/` (bộ cài chạy
+#:    trên máy khách) và `frontend/`.
+#:
+#:    Một chương trình sửa 10 thư mục — đo thật 03/09 — có **năm** thư mục nằm
+#:    ngoài ảnh chụp. Nghĩa là sửa mã cổng máy B ngay giữa một lượt gate thì
+#:    `CAY DA DOI TRONG LUC CHAY` **không kêu**, và dòng `RESULT: PASS` nói về
+#:    một cây đã không còn tồn tại.
+#:
+#: ⭐ Cùng họ với `banh-coc-chi-bao-ve-thu-no-nhin-thay`: chốt có, và nó chỉ
+#:    canh phần nó được kể tên.
+THU_MUC_CHUP = (
+    "apps", "platform_core", "server", "tools", "tests", "alembic", "locale",
+    # Mã chạy trên máy B và bộ cài chạy trên máy khách. Cả hai deploy đi xa
+    # khỏi kho này, nên một lần sửa giữa lượt gate là một lần sai không ai thấy.
+    "llm_gateway", "render_gateway", "sdk", "nexus_agent", "codex_sidecar",
+    # Nguồn frontend. `node_modules` bị cắt ở `_BO_QUA_THU_MUC`.
+    "frontend",
+)
+
+#: Thư mục **cắt ngay lúc duyệt**, không phải lọc sau.
+#:
+#: ⭐ VÀ ĐÓ LÀ TOÀN BỘ LÝ DO ẢNH CHỤP RỘNG HƠN MÀ LẠI NHANH HƠN. Bản `rglob`
+#:    trước vẫn **đi xuống** `node_modules` (12.255 tệp) rồi mới bỏ; `os.walk`
+#:    cắt `dirnames` tại chỗ nên nó không xuống. Đo 03/09 trên cây này:
+#:
+#:        rglob,   7 thu muc, loc sau   1.321 tep   0,143 s
+#:        os.walk, 13 thu muc, cat nhanh 1.491 tep   0,047 s
+#:
+#: ⛔ VÀ KHÔNG CẮT `.vite`. Bốn tệp `server/static/*/.vite/manifest.json` là
+#:    bundle production **đã commit** — chúng chính là thứ máy chủ phục vụ, nên
+#:    mất chúng khỏi ảnh chụp là mất đúng thứ cần canh. Cắt `dist`/`coverage`
+#:    cũng cùng rủi ro; chỉ cắt hai thứ chắc chắn vô nghĩa.
+_BO_QUA_THU_MUC = frozenset({"__pycache__", "node_modules"})
+
+
 def _anh_chup_cay() -> dict[str, tuple[int, int]]:
     """Ảnh chụp cây nguồn: đường dẫn → (kích thước, thời điểm sửa).
 
@@ -1129,19 +1286,21 @@ def _anh_chup_cay() -> dict[str, tuple[int, int]]:
        nhau không nói được gì ngoài "khác nhau". Xem `_ke_cho_da_doi`.
     """
     ra: dict[str, tuple[int, int]] = {}
-    for thu_muc in ("apps", "platform_core", "server", "tools", "tests",
-                    "alembic", "locale"):
+    for thu_muc in THU_MUC_CHUP:
         goc = ROOT / thu_muc
-        if not goc.exists():
+        if not goc.is_dir():
             continue
-        for f in sorted(goc.rglob("*")):
-            if not f.is_file() or "__pycache__" in f.parts:
-                continue
-            try:
-                st = f.stat()
-            except OSError:
-                continue
-            ra[f.relative_to(ROOT).as_posix()] = (st.st_size, int(st.st_mtime))
+        for thu, con, tep in os.walk(goc):
+            # Cắt tại chỗ: `os.walk` đọc lại `con` sau mỗi vòng, nên gán vào
+            # `con[:]` là bảo nó **không đi xuống** những nhánh đó.
+            con[:] = [d for d in con if d not in _BO_QUA_THU_MUC]
+            for ten in tep:
+                p = Path(thu) / ten
+                try:
+                    st = p.stat()
+                except OSError:
+                    continue
+                ra[p.relative_to(ROOT).as_posix()] = (st.st_size, int(st.st_mtime))
     return ra
 
 
@@ -1337,6 +1496,25 @@ def main() -> int:
     lenh = f"gate --ho-so {ho_so}"
     phien = (args.phien or os.environ.get("LTT_PHIEN")
              or f"{socket.gethostname()}:{os.getpid()}")
+
+    # ⚠️ In ra ai KHAC dang ban, roi VAN CHAY. Khong chan.
+    #
+    # 🔴 Dem theo `cwd`, khong theo ten lenh — xem `tools/may_ban.py`. Ba cach
+    #    dem theo van ban deu sai trong dem 05-06/09, va cai hong nguy nhat la
+    #    no hong IM LANG THEO HUONG DE CHIU: mot bo dem bo sot hang xom se luon
+    #    bao "toi chay mot minh" — tuc luon tra ve dung ket luan nguoi bam muon.
+    #
+    # ⛔ KHONG chan: mot cong chan nguoi ta la mot cong nguoi ta se tat, va luc
+    #    do mat ca phan canh bao. `cua_so_yen` moi la thu xep hang; day chi la
+    #    thu NOI RA dieu ma khoa khong thay (pytest go tay, worker execnet).
+    try:
+        from may_ban import dong_canh_bao
+        _canh = dong_canh_bao()
+        if _canh:
+            print(_canh)
+    except Exception as _e:  # noqa: BLE001
+        print(f"  [may ban] khong dem duoc: {type(_e).__name__}")
+
     can: set[str] = set()
     for s in steps:
         can |= set(s.tai_nguyen)
@@ -1392,6 +1570,9 @@ def main() -> int:
         print("\nChi tiet buoc that bai:")
         for step in failed:
             print(_console_text(f"\n--- {step.name} ---\n{step.tail}"))
+            if getattr(step, "tep_loi", ""):
+                print(_console_text(
+                    f"    [dau ra DAY DU] {step.tep_loi}"))
     print("=" * 62)
 
     # 🔴 Một lượt gate đầy đủ mất 2,9–4,4 giờ. Trên kho này — hai phiên làm

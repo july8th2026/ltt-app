@@ -175,3 +175,200 @@ def _khoi_sua_ket() -> list[str]:
         if sua:
             ra.append(ast.unparse(n))
     return ra
+
+
+def test_buoc_DO_giu_TRON_dau_ra_ra_tep_chu_khong_chi_40_dong(tmp_path):
+    """🔴 Đo 06/09/2026: một phép kiểm đỏ trong **6.616** phép kiểm. Dòng
+       `short test summary` cho đúng **một** dòng — TÊN phép kiểm — còn
+       traceback đã trôi khỏi 40 dòng cuối từ lâu.
+
+       Tôi biết CÁI GÌ đỏ mà không biết VÌ SAO, và cách duy nhất để xem là
+       chạy lại cả lượt 11 phút. Gate là công cụ ra **phán quyết**, nhưng khi
+       nó đỏ thì nó cũng phải để lại đủ thứ cho người đọc **không phải chạy
+       lại**.
+
+    ⛔ Đây không phải chuyện tăng một con số. Bất kỳ trần nào cũng bị vượt bởi
+       một lượt đủ dài. Cách đúng là: ĐỎ thì giữ TRỌN đầu ra ra tệp.
+
+    ⭐ Và chiều ngược lại cũng được chốt: lượt XANH không được để lại gì, nếu
+       không `test-results/` sẽ đầy rác sau mỗi lượt.
+    """
+    import importlib.util
+    import pathlib
+    import sys
+
+    spec = importlib.util.spec_from_file_location(
+        "gate_giu_dau_ra", GOC / "tools" / "gate.py")
+    gate = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(gate)
+
+    thu_muc = pathlib.Path(gate.ROOT) / "test-results" / "gates"
+    truoc = set(thu_muc.glob("loi-*.log")) if thu_muc.is_dir() else set()
+
+    # ── Bước ĐỎ, đầu ra dài hơn 40 dòng ────────────────────────────────────
+    do = gate.Step("thu chot giu dau ra", [
+        sys.executable, "-c",
+        "import sys;[print(f'dong {i}') for i in range(200)];"
+        "print('MANH TRACEBACK');sys.exit(1)"], gate.ROOT)
+    gate._run(do)
+    assert do.ok is False
+    assert do.tep_loi, "buoc DO ma khong ghi tep dau ra day du"
+
+    tep = pathlib.Path(gate.ROOT) / do.tep_loi
+    try:
+        noi_dung = tep.read_text(encoding="utf-8")
+        assert "dong 0" in noi_dung, (
+            "tep chi giu phan duoi — dung lo da lam toi phai chay lai 11 phut")
+        assert "MANH TRACEBACK" in noi_dung
+        assert "dong 0" not in do.tail, (
+            "neu 40 dong cuoi da du thi phep kiem nay khong do duoc gi")
+
+        # ── Bước XANH: không được để lại gì ────────────────────────────────
+        xanh = gate.Step("thu chot buoc xanh",
+                         [sys.executable, "-c", "print('xong')"], gate.ROOT)
+        gate._run(xanh)
+        assert xanh.ok is True
+        assert xanh.tep_loi == "", "luot XANH ma van ghi tep loi"
+    finally:
+        tep.unlink(missing_ok=True)
+
+    con_lai = set(thu_muc.glob("loi-*.log")) - truoc
+    assert not con_lai, f"phep kiem de lai rac: {con_lai}"
+
+
+# ── pre-commit: hook DUNG CHUNG, cong cu thi MOI CAY MOT BAN ──────────────
+
+def test_pre_commit_config_chi_goi_cong_cu_CO_THAT():
+    """Mot hook goi tep khong ton tai la mot hook chan MOI commit."""
+    import re
+    noi_dung = (GOC / ".pre-commit-config.yaml").read_text(encoding="utf-8")
+    goi = re.findall(r"entry:\s*python\s+(tools/[\w./]+)", noi_dung)
+    assert goi, "khong doc duoc `entry:` nao — mau cau hinh da doi?"
+    for t in goi:
+        assert (GOC / t).is_file(), f"`.pre-commit-config.yaml` goi {t} khong ton tai"
+
+
+def test_hook_KHONG_duoc_lam_hong_commit_o_cay_CHUA_dong_bo(tmp_path):
+    """🔴 `.git/hooks` DUNG CHUNG ca sau worktree, nhung `tools/` va
+       `.pre-commit-config.yaml` thi MOI CAY MOT BAN.
+
+       Do 06/09/2026: nam cay con lai deu THIEU it nhat mot cong cu, va khong
+       cay nao co `.pre-commit-config.yaml`. Chay `pre-commit` o mot cay nhu
+       vay tra **rc=1** (`InvalidConfigError: .pre-commit-config.yaml is not a
+       file`) — tuc cai thang framework vao `.git/hooks` se lam MOI COMMIT o
+       nam cay ay hong ngay, ke ca ba phien dang lam viec.
+
+    ⇒ §4c cau 2: duong SUY BIEN phai tuong minh. Cay chua co cau hinh thi hook
+      IM LANG di qua. Khong cay nao bi phat vi chua kip dong bo.
+    """
+    # ⛔ Doc ban DUOC THEO DOI, khong doc `.git/hooks/`. Tep trong `.git/` khong
+    #    nam trong git: khong ai review, khong cay nao khac co, va mot phep kiem
+    #    dua vao no phai `skip` khi chua cai -- ma mot test bi bo qua la mot test
+    #    KHONG canh gi ca. Buoc gate `bo qua im lang` bat dung dieu do 06/09,
+    #    va do la ly do than hook duoc chuyen ra `setup/`.
+    hook = GOC / "setup" / "pre-commit-hook.sh"
+    assert hook.is_file(), "than hook phai duoc THEO DOI, khong chi song o .git/"
+
+    ma = hook.read_text(encoding="utf-8", errors="replace")
+    assert ".pre-commit-config.yaml" in ma and "exit 0" in ma, (
+        "hook khong co rao 'chua co cau hinh thi thoat 0' — no se chan commit "
+        "o cac cay chua dong bo")
+
+    # Doi chung SONG: chay hook trong mot thu muc KHONG co cau hinh.
+    import subprocess
+    r = subprocess.run(["sh", str(hook)], cwd=tmp_path,
+                       capture_output=True, text=True,
+                       encoding="utf-8", errors="replace")
+    assert r.returncode == 0, (
+        f"hook chan commit o mot cay khong co cau hinh (rc={r.returncode}):\n"
+        f"{r.stdout}{r.stderr}")
+    assert not r.stdout.strip(), f"hook on ao o cay khong lien quan: {r.stdout!r}"
+
+
+def test_macro_o_sao_chep_van_dat_dau_data_chep():
+    """Nua CON LAI cua hop dong nut sao chep. Nua kia
+    (`sao_chep.js` co xu ly `code[data-chep]`) nam o `test_306`.
+
+    ⛔ Hai nua phai o HAI tep, va do khong phai tuy tien: banh coc
+       `test_KHONG_test_nao_duoc_GHI_vao_messages_po_THAT` cam moi tham chieu
+       toi `server/templates/` tu trong `test_306`, vi tep ay tung ghi de len
+       tep that ba lan. Luat cua no la "tep that chi duoc xuat hien o dung mot
+       cho". Chuyen khang dinh sang day la ton trong luat do, khong phai lach.
+
+    🔴 Vi sao van phai chot: neu macro thoi dat `data-chep` thi doan JS xu ly
+       no thanh MA CHET — van chay, van qua moi phep kiem cua rieng no, va
+       khong con nut nao cho dia chi IP. Mot nua hop dong khong duoc canh la
+       mot nua se troi.
+    """
+    mac = (GOC / "server" / "templates" / "_vps_mac.html").read_text(encoding="utf-8")
+    assert "data-chep" in mac, (
+        "macro `o_sao_chep` thoi danh dau o sao chep — doan `gan_o` trong "
+        "`sao_chep.js` tro thanh ma chet")
+    assert "o_sao_chep" in mac, "macro `o_sao_chep` bien mat?"
+
+
+def test_moi_trang_co_thanh_tien_do_deu_phai_co_nhip_hoi():
+    """🔴 Mot thanh tien do gan `aria-live` la mot LOI HUA: "cho nay se tu doi".
+
+       Do 07/09: `apps/upscalevideo` ve dung thanh ay ma khong co BAT KY co che
+       hoi lai nao — `hx-get` 0, `hx-trigger` 0, `nhipJob` 0, `EventSource` 0,
+       `fetch` chi dung cho `/batch-quote`. Khach xem job nang cap thay mot con
+       so DUNG IM cho toi khi ho tu tai lai trang.
+
+       Da do that: sua `progress` 42 -> 88 trong CSDL, tab hien lai, trang van
+       hien 42. Sau khi noi `LTT.nhipJob`: 88.
+
+    ⭐ `nhip_job.js` ton tai chinh vi lop loi nay (xem docstring cua no: NAM cho
+       tung tu viet vong hoi, KHONG cho nao xu ly `visibilitychange`). Phep kiem
+       nay giu cho danh sach ay khong dai ra lan nua.
+    ⛔ PHAM VI HEP CO Y. Ban dau phep kiem nay soi MOI trang co
+       `role="progressbar"`, va no to cao them BON trang. Mo tay hai mau:
+
+         apps/thumbnail       DUONG TINH GIA — htmx o do dung cho `hx-post` xem
+                              truoc, thanh tien do khong phai tien do job
+         apps/ltt_voice       hoi trong `voice.js`, khong trong template
+
+       Dung hai kieu bao sai da ghi o `AGENTS.md` 4d lop E: doc sai NGUON (co
+       che nam o tep `.js` roi) va mau qua hep ve KY THUAT. Mot bo do ~50%
+       duong tinh gia ma bien thanh cong thi day nguoi ta bo qua mau do — cung
+       chuan da dung de RUT H12 `deptry`.
+
+    ⚠️ Va `voice.js` la mot ca THAT chua sua: 18 cho `setInterval/fetch`, 0 cho
+       `visibilitychange`. Ghi lai o day thay vi im, nhung KHONG chot no bang
+       phep kiem nay: chua do tren trinh duyet nen chua duoc phep khang dinh.
+    """
+    t = (GOC / "apps" / "upscalevideo" / "templates"
+         / "upscalevideo.html").read_text(encoding="utf-8")
+    assert 'role="progressbar"' in t, "trang thoi ve thanh tien do?"
+    assert "nhipJob" in t, (
+        "`upscalevideo` co thanh tien do ma khong co nhip hoi — no se dung im, "
+        "dung nhu truoc 07/09")
+    assert "data-job-id" in t, "job khong mang id thi khong hoi lai duoc"
+
+
+def test_nhip_job_js_khong_duoc_dung_defer():
+    """⛔ `nhip_job.js` chi dinh nghia `LTT.nhipJob`, va script noi tuyen ngay
+       duoi goi no NGAY. Mot script `defer` chay SAU moi script noi tuyen, nen
+       `defer` o day cho ra `TypeError: LTT.nhipJob is not a function` ngay khi
+       mo trang — va no hong IM LANG: trang van ve, chi la khong bao gio doi.
+    """
+    import re
+    xau, so_the = [], 0
+    for p in list((GOC / "apps").rglob("templates/*.html")) + \
+             list((GOC / "server" / "templates").rglob("*.html")):
+        t = p.read_text(encoding="utf-8", errors="replace")
+        for the in re.findall(r"<script[^>]*nhip_job\.js[^>]*>", t):
+            so_the += 1
+            if "defer" in the or "async" in the:
+                xau.append(f"{p.relative_to(GOC).as_posix()}: {the}")
+    # ⛔ DOI CHUNG (Bay 31): doi ten `nhip_job.js` -> `findall` khop 0 ->
+    #    `xau` rong -> XANH, va thu phep kiem nay canh (mot `defer` bien
+    #    `LTT.nhipJob` thanh `is not a function`, hong IM LANG: trang van ve,
+    #    chi khong bao gio doi) het nguoi canh.
+    #
+    #    Do 07/09/2026: 3 the script nap `nhip_job.js`.
+    assert so_the >= 3, (
+        f"chi thay {so_the} the <script> nap nhip_job.js — mong doi >= 3. "
+        f"Hoac tep da doi ten (thi SUA mau o day), hoac mot trang thoi hoi "
+        f"lai. Ca hai deu phai xem; KHONG duoc de phep kiem nay xanh rong.")
+    assert not xau, "nhip_job.js bi `defer`/`async`:\n  " + "\n  ".join(xau)

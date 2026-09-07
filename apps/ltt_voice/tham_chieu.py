@@ -181,6 +181,51 @@ def luu_nguon(*, owner_id: str, public_id: str, data: bytes, mime: str) -> str:
     return khoa
 
 
+def tuy_chon_preset(db, user_id: str) -> list:
+    """Kho giọng **DÙNG CHUNG** của nền tảng, cho `ToolSpec.tuy_chon_dong`.
+
+    🔴 VÌ SAO CẦN, TÁCH HẲN KHỎI `tuy_chon_voice_id`. Hàm kia chỉ trả giọng
+       **nhân bản của chính người dùng** — một tài khoản chưa nhân bản giọng nào
+       thì nhận về danh sách rỗng. Đo 04/09 trên tài khoản kiểm: ô chọn giọng
+       của ChatLTT **không hiện ra**, nên con đường "chọn giọng" chưa từng tồn
+       tại với phần lớn khách; họ chỉ có đúng một giọng mặc định.
+
+    ⭐ Nhưng nền tảng đã có sẵn **20 giọng mẫu** gắn nhãn giới/vùng/phong cách
+       (`giong_mau.py`), và `speech.ltt` đã nhận `preset` từ lâu. Thứ thiếu chưa
+       bao giờ là năng lực — chỉ là không ai mời chúng ra màn hình.
+
+    ⛔ Nhãn KHÔNG dịch ở đây. `NHAN_*` là chuỗi đã đánh dấu `N_()`; dịch sớm
+       trong một hàm chạy ở tầng danh mục là ghim ngôn ngữ của tiến trình vào
+       một danh sách nhiều phiên cùng đọc. Bên hiển thị dịch, như `_p_giong.py`.
+
+    ⚠️ `db` và `user_id` không dùng tới — kho chung không thuộc về ai. Chữ ký
+       vẫn giữ nguyên vì đó là hợp đồng của `tuy_chon_dong`.
+    """
+    from . import giong_mau
+
+    # ⭐ XEP THEO PHONG CACH, khong theo thu tu khai bao. Ben tieu thu lay
+    #    phan tu DAU LAM MAC DINH, nen thu tu o day la mot QUYET DINH san pham
+    #    chu khong phai mot chi tiet: de `tin_tuc` dung dau nghia la moi khach
+    #    chua chon gi deu duoc doc bang giong ban tin trang trong.
+    #
+    # ⛔ Va xep bang DU LIEU chu khong de ben kia do chu tren nhan: nhan da
+    #    qua `_()`, nen mot ban dich sang tieng Anh se lam moi phep so chuoi
+    #    truot — hong lang le, va hong theo ngon ngu giao dien.
+    uu_tien = {"tu_nhien": 0, "doc_truyen": 1, "tin_tuc": 2}
+    ra = []
+    for g in sorted(giong_mau.DANH_SACH,
+                    key=lambda x: (uu_tien.get(x.phong_cach, 9), x.ma)):
+        nhan = " · ".join(x for x in (
+            giong_mau.NHAN_GIOI.get(g.gioi, ""),
+            giong_mau.NHAN_VUNG.get(g.vung, ""),
+            giong_mau.NHAN_PHONG_CACH.get(g.phong_cach, ""),
+        ) if x)
+        ra.append({"value": g.public_id,
+                   "label": f"{g.ten_hien_thi} ({nhan})" if nhan else g.ten_hien_thi,
+                   "gioi": g.gioi, "vung": g.vung, "phong_cach": g.phong_cach})
+    return ra
+
+
 def tuy_chon_voice_id(db, user_id: str) -> list:
     """Giọng nhân bản của **chính** người dùng, cho `ToolSpec.tuy_chon_dong`.
 

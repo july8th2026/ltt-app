@@ -563,8 +563,35 @@ def chuan_hoa(text: str, *, doc_so_tran: bool = False,
 # ── chia đoạn ────────────────────────────────────────────────────────────────
 _CAU = re.compile(r"(?<=[.!?…])\s+|\n+")
 
+#: Dấu kết câu. **Bản sao của `voice_sidecar.server._KET_CAU`**, và
+#: `tests/test_338` chốt hai bên khớp nhau.
+#:
+#: 🔴 Vì sao phải có bản sao thay vì import: cùng lý do `tham_so_cong_khai.py`
+#:    tồn tại — `apps/ltt_voice` chạy trong venv nền tảng, `voice_sidecar` chạy
+#:    trong venv cách ly có torch. Một `import voice_sidecar.server` từ worker
+#:    kéo cả cây phụ thuộc ấy vào đúng tiến trình mà venv cách ly sinh ra để
+#:    tránh. Hai bản sao không có phép kiểm là hai bản sao sẽ lệch; hai bản sao
+#:    **có** phép kiểm là một hợp đồng.
+_KET_CAU = re.compile(r"[.!?…]+(?:\s|$)")
 
-def chia_doan(text: str, *, tran_moi_doan: int) -> list:
+
+def dem_cau(text: str) -> int:
+    """Số câu của một đoạn, tối thiểu 1.
+
+    ⭐ Bộ ghép CẦN con số này: nó phân biệt ranh giới CÂU với hằng trăm khe TỪ
+       khi đo nhịp nghỉ. `noi_dai.nhip_nghi` đã ghi lại cái giá của việc thiếu
+       nó — trung vị mọi khoảng lặng cho 0,04 giây, tức khe giữa hai từ, và đặt
+       0,04 s ở mối nối là nối gần như dính liền.
+
+    ⚠️ Đường `/v1/speech-dai` đếm câu ở phía sidecar vì nó có sẵn văn bản. Đường
+       đoạn-rời thì KHÔNG: `/v1/ghep-tep` chỉ nhận đường dẫn tệp, và một đoạn
+       lấy lại từ kho sau khi máy chủ khởi động lại thì văn bản của nó chỉ còn ở
+       phía worker. Nên phép đếm phải làm được ở đây.
+    """
+    return max(1, len(_KET_CAU.findall(text or "")) or 1)
+
+
+def chia_doan(text: str, *, tran_moi_doan: int, can_bang: bool = False) -> list:
     """Chia theo RANH GIỚI NGỮ NGHĨA, không cắt giữa câu.
 
     ⛔ Đây không phải chia cho vừa bộ nhớ. Cắt giữa câu là cắt giữa một mệnh đề
@@ -573,7 +600,13 @@ def chia_doan(text: str, *, tran_moi_doan: int) -> list:
 
     Câu dài hơn cả trần thì mới cắt theo dấu phẩy, và cuối cùng mới cắt cứng —
     mỗi bậc là một sự nhượng bộ, và bậc sau chỉ chạy khi bậc trước không đủ.
+
+    `can_bang=True` thì thêm một bước nữa — xem `_can_bang` ngay dưới. Mặc định
+    TẮT, vì hai người gọi muốn hai thứ khác nhau và `du_an.py` đã ghi rõ điều đó:
+    khối biên tập muốn **gói tới trần**, bản đọc muốn **các đoạn đều nhau**.
     """
+    if can_bang:
+        return _can_bang(text, max(1, int(tran_moi_doan)))
     tran = max(1, int(tran_moi_doan))
     ra: list = []
     dem = ""
@@ -595,6 +628,72 @@ def chia_doan(text: str, *, tran_moi_doan: int) -> list:
         dem = f"{dem} {cau}".strip()
     day()
     return ra
+
+
+def _can_bang(text: str, tran: int) -> list:
+    """Cùng số đoạn, nhưng các đoạn ĐỀU NHAU.
+
+    🔴 VÌ SAO CẦN, VÀ ĐÂY LÀ MỘT SỐ ĐO CHỨ KHÔNG PHẢI MỘT LINH CẢM.
+
+       Phép gói tới trần nhồi đầy đoạn trước rồi để phần thừa rơi vào đoạn cuối.
+       Đo 03/09 trên corpus của `tools/do_bai_dai.py`, trần 1.500:
+
+           bai 1.500 ky tu  ->  2 doan:  1462 + 128     (lech 11,4 lan)
+           bai 3.000 ky tu  ->  3 doan:  1463 + ... + 133
+           bai 5.000 ky tu  ->  4 doan:  1463 + ... + 698
+
+       Đoạn đuôi 128 ký tự **vẫn là một lượt `infer` đầy đủ**: vẫn một lần vào
+       GPU, vẫn một lần khởi động. `docs/LTT_VOICE/AUTONOMOUS_RUN/` đã đo RTF
+       theo độ dài và nó tệ đi rõ rệt ở các câu ngắn (`cau_dai` 353 ký tự cho
+       RTF 1,009 — tốt nhất bảng). Nên một đuôi cụt vừa **chậm hơn** vừa là một
+       mối nối thừa, đổi lấy đúng con số không.
+
+    ⭐ CÁCH LÀM: KHÔNG viết một bộ chia thứ hai.
+
+       Một bộ chia thứ hai là hai cách hiểu "ranh giới câu là gì", và chúng sẽ
+       lệch nhau — đúng cái bẫy `du_an.nhap_van_ban` đã cảnh báo. Thay vào đó
+       gọi lại CHÍNH `chia_doan` với một trần NHỎ HƠN, và tìm trần nhỏ nhất còn
+       cho ra đúng ngần ấy đoạn. Mọi luật cắt vẫn là một bộ luật duy nhất.
+
+           gói ở trần 1.500  ->  2 đoạn        (k = 2)
+           tìm trần nhỏ nhất còn ra <= 2 đoạn  ->  ~800
+           gói ở trần ~800   ->  2 đoạn ~795   ✅
+
+    ⚠️ Số đoạn KHÔNG BAO GIỜ tăng, và không đoạn nào vượt `tran`. Cả hai được
+       kiểm lại ở cuối rồi mới trả — phép nhị phân dựa trên giả định "trần lớn
+       hơn thì đoạn ít hơn", đúng trong mọi ca thật nhưng không phải một định
+       lý. Sai giả định thì lui về bản gói tới trần, không trả một bản tệ hơn.
+
+    ⛔ NÓI CHO ĐÚNG NÓ LÀM ĐƯỢC GÌ: phép này **cực tiểu hoá đoạn DÀI NHẤT**, và
+       chỉ nhờ thế mà các đoạn đều ra. Khi bài gần lấp đầy `k × tran` thì không
+       còn chỗ để đều: phần dư phải rơi vào một đoạn nào đó. Đo cùng lượt 03/09:
+
+           bai  1.500 ky tu:  lech 1.334 -> 104   (con 7,8%)
+           bai  3.000 ky tu:  lech 1.330 ->  26
+           bai  5.000 ky tu:  lech   765 -> 130
+           bai 50.000 ky tu:  lech   740 -> 740   (khong doi — da gan lap day)
+
+       Tức nó xoá ca BỆNH LÝ (đuôi 128 ký tự cạnh một đoạn 1.462 — lệch 11,4
+       lần) chứ không hứa mọi đoạn bằng nhau. Phần dư còn lại bị chặn trên bởi
+       đúng MỘT đoạn, và một đoạn 724 ký tự thì không nằm trong vùng RTF xấu.
+    """
+    co_ban = chia_doan(text, tran_moi_doan=tran)
+    k = len(co_ban)
+    if k <= 1:
+        return co_ban
+
+    lo, hi = 1, tran
+    while lo < hi:
+        giua = (lo + hi) // 2
+        if len(chia_doan(text, tran_moi_doan=giua)) <= k:
+            hi = giua
+        else:
+            lo = giua + 1
+
+    thu = chia_doan(text, tran_moi_doan=lo)
+    if len(thu) <= k and thu and max(len(x) for x in thu) <= tran:
+        return thu
+    return co_ban
 
 
 def _cat_cau_dai(cau: str, tran: int) -> list:
@@ -620,5 +719,8 @@ def chuan_bi(text: str, *, tran_moi_doan: int, doc_so_tran: bool = False,
              tu_dien_rieng: dict | None = None) -> KetQuaChuanHoa:
     """Đường đi đầy đủ. Trả cả text gốc lẫn text đã chuẩn hoá để ghi lịch sử."""
     da = chuan_hoa(text, doc_so_tran=doc_so_tran, tu_dien_rieng=tu_dien_rieng)
+    # ⭐ `can_bang=True` CHỈ ở đường bản đọc. `du_an.nhap_van_ban` gọi thẳng
+    #    `chia_doan` và giữ phép gói tới trần — hai người gọi, hai nhu cầu.
     return KetQuaChuanHoa(goc=text or "", da_chuan_hoa=da,
-                          doan=chia_doan(da, tran_moi_doan=tran_moi_doan))
+                          doan=chia_doan(da, tran_moi_doan=tran_moi_doan,
+                                         can_bang=True))

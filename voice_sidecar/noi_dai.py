@@ -112,6 +112,39 @@ def dinh_that(wav) -> float:
     return 20.0 * float(np.log10(dinh))
 
 
+def ha_tran_dinh(wav) -> tuple:
+    """Hạ cả bản xuống dưới `TRAN_TRUE_PEAK_DBTP`. Trả `(wav, ha_db, dinh_truoc)`.
+
+    🔴 VÌ SAO NÓ TÁCH RA THÀNH MỘT HÀM, VÀ ĐÂY LÀ MỘT LỖI ĐÃ ĐO.
+
+       Trần đỉnh thật được chính tệp này gọi là **MỘT BẢO ĐẢM**. Nhưng cho tới
+       03/09/2026 nó chỉ được thi hành ở **một** đường: bên trong `ghep`, tức
+       chỉ khi có từ hai đoạn trở lên. Đường một lượt (`/v1/speech`) không gọi
+       `ghep` bao giờ, và nhánh `len == 1` của `ghep` thì trả về sớm.
+
+       Đo 03/09 (`tools/do_bai_dai.py`, bài 1.400 ký tự đi đường một lượt):
+
+           mot luot  ->  -0,78 dBTP     <- VUOT tran -1,0
+           ghep 2 doan -> -2,22 dBTP
+           ghep 7 doan -> -2,11 dBTP
+
+    ⛔ Và nó hỏng đúng chiều khó chịu nhất: **bài NGẮN là bài không được bảo
+       đảm**. Ai cũng sẽ đoán ngược lại — bài dài phức tạp hơn nên rủi ro hơn —
+       nên không ai đi tìm ở đây. Phép cân mức giữa các đoạn (thứ đẩy đỉnh lên)
+       chỉ có ở đường ghép, nên trực giác nói đường ghép mới cần hạ trần.
+
+    ⭐ Một bảo đảm thi hành ở một nhánh không phải một bảo đảm. Nó là một sự
+       trùng hợp của nhánh ấy.
+    """
+    if not len(wav):
+        return wav, 0.0, None
+    tp = dinh_that(wav)
+    if not np.isfinite(tp) or tp <= TRAN_TRUE_PEAK_DBTP:
+        return wav, 0.0, (float(tp) if np.isfinite(tp) else None)
+    ha = TRAN_TRUE_PEAK_DBTP - tp
+    return (wav * (10.0 ** (ha / 20.0))).astype(np.float32), float(ha), float(tp)
+
+
 def _khung_rms(wav, sr: int):
     n = max(1, int(sr * KHUNG_MS / 1000.0))
     du = len(wav) % n
@@ -153,11 +186,16 @@ def khoang_lang_giua(wav, sr: int) -> list:
     return ra
 
 
-def cat_im_hai_dau(wav, sr: int):
-    """Bỏ im ở đầu và cuối. Trả mảng đã cắt (có thể rỗng nếu toàn im)."""
+def bien_cat(wav, sr: int) -> tuple:
+    """Biên `(dau, cuoi)` tính bằng MẪU sau khi bỏ im hai đầu.
+
+    ⭐ Tách khỏi `cat_im_hai_dau` để đường ghép-từ-tệp dùng lại đúng LUẬT này
+       mà không phải giữ mảng đã cắt trong bộ nhớ — nó chỉ cần hai con số.
+       Một luật, hai người gọi; viết luật thứ hai là để chúng lệch nhau.
+    """
     im, n = _mat_na_im(wav, sr)
     if not len(im):
-        return wav
+        return 0, len(wav)
     dau = 0
     while dau < len(im) and im[dau]:
         dau += 1
@@ -165,8 +203,14 @@ def cat_im_hai_dau(wav, sr: int):
     while cuoi > dau and im[cuoi - 1]:
         cuoi -= 1
     if dau >= cuoi:
-        return wav[:0]
-    return wav[dau * n:cuoi * n]
+        return 0, 0
+    return dau * n, cuoi * n
+
+
+def cat_im_hai_dau(wav, sr: int):
+    """Bỏ im ở đầu và cuối. Trả mảng đã cắt (có thể rỗng nếu toàn im)."""
+    dau, cuoi = bien_cat(wav, sr)
+    return wav[dau:cuoi]
 
 
 def nhip_nghi(wavs, sr: int, so_cau=None) -> tuple:
@@ -192,10 +236,20 @@ def nhip_nghi(wavs, sr: int, so_cau=None) -> tuple:
     `so_cau` là số câu của từng đoạn. Không truyền thì lui về trung vị toàn bộ,
     kèm cảnh báo trong `nguon` — vì con số đó gần như chắc chắn quá ngắn.
     """
+    return _nhip_tu_lang([khoang_lang_giua(w, sr) for w in wavs], so_cau)
+
+
+def _nhip_tu_lang(lang_theo_doan, so_cau=None) -> tuple:
+    """Cùng phép quyết định, nhưng nhận sẵn khoảng lặng ĐÃ ĐO của từng đoạn.
+
+    ⭐ Đường ghép-từ-tệp đo khoảng lặng ở lượt đọc đầu rồi buông mảng ra; nó
+       không giữ nổi cả bài trong bộ nhớ để gọi `nhip_nghi`. Tách chỗ *quyết
+       định* khỏi chỗ *đo* cho phép hai đường dùng chung một luật.
+    """
     ranh_gioi = []
     tat_ca = []
-    for i, w in enumerate(wavs):
-        lang = sorted(khoang_lang_giua(w, sr), reverse=True)
+    for i, l in enumerate(lang_theo_doan):
+        lang = sorted(l, reverse=True)
         tat_ca.extend(lang)
         if so_cau is None or i >= len(so_cau):
             continue
@@ -233,24 +287,42 @@ def _rms_hieu_dung(wav, sr: int) -> float:
     return float(np.sqrt((co_tieng ** 2).mean())) if len(co_tieng) else 0.0
 
 
-def can_do_to(wavs, sr: int) -> tuple:
-    """Cân các đoạn về trung vị, kẹp ±`KEP_CHINH_DB`. Trả `(wavs, [dB đã chỉnh])`."""
-    muc = [_rms_hieu_dung(w, sr) for w in wavs]
+def db_can(muc) -> list:
+    """Từ mức RMS của từng đoạn -> số dB phải chỉnh từng đoạn. `None` = không chỉnh.
+
+    Tách khỏi `can_do_to` vì cùng lý do `_nhip_tu_lang` được tách: đường
+    ghép-từ-tệp có các con số `muc` nhưng KHÔNG giữ các mảng.
+
+    ⚠️ Trả số **CHƯA làm tròn**. Phép nhân phải dùng số chưa tròn — làm tròn
+       rồi mới nhân là đổi sóng âm đi một lượng nhỏ mà không ai yêu cầu, và nó
+       làm bản ghép-từ-tệp lệch bit so với bản ghép trong bộ nhớ. Chỗ *báo cáo*
+       mới làm tròn.
+
+    ⛔ `None` khác `0.0`: `None` là "đoạn này không có tiếng nên không đụng
+       tới", `0.0` là "đã tính và ra đúng không dB". Hai thứ ấy trông giống
+       nhau trong một tệp JSON, và chỉ cái đầu mới được phép bỏ qua `astype`.
+    """
+    muc = list(muc)
     hop_le = [m for m in muc if m > 0]
     if len(hop_le) < 2:
-        return list(wavs), [0.0] * len(wavs)
+        return [None] * len(muc)
     dich = float(np.median(hop_le))
-    ra, da_chinh = [], []
-    for w, m in zip(wavs, muc):
+    ra = []
+    for m in muc:
         if m <= 0:
-            ra.append(w)
-            da_chinh.append(0.0)
+            ra.append(None)
             continue
         db = 20.0 * np.log10(dich / m)
-        db = float(np.clip(db, -KEP_CHINH_DB, KEP_CHINH_DB))
-        ra.append((w * (10.0 ** (db / 20.0))).astype(np.float32))
-        da_chinh.append(round(db, 2))
-    return ra, da_chinh
+        ra.append(float(np.clip(db, -KEP_CHINH_DB, KEP_CHINH_DB)))
+    return ra
+
+
+def can_do_to(wavs, sr: int) -> tuple:
+    """Cân các đoạn về trung vị, kẹp ±`KEP_CHINH_DB`. Trả `(wavs, [dB đã chỉnh])`."""
+    db = db_can([_rms_hieu_dung(w, sr) for w in wavs])
+    ra = [w if d is None else (w * (10.0 ** (d / 20.0))).astype(np.float32)
+          for w, d in zip(wavs, db)]
+    return ra, [0.0 if d is None else round(d, 2) for d in db]
 
 
 def ghep(wavs, sr: int, so_cau=None) -> tuple:
@@ -264,7 +336,12 @@ def ghep(wavs, sr: int, so_cau=None) -> tuple:
     if not ds:
         return np.zeros(0, dtype=np.float32), {"so_doan": 0}
     if len(ds) == 1:
-        return ds[0], {"so_doan": 1, "nghi_s": 0.0, "nguon_nghi": "khong can ghep"}
+        # ⛔ VẪN PHẢI HẠ TRẦN ĐỈNH. Nhánh này trước 03/09 trả thẳng về, nên một
+        #    bản một đoạn không bao giờ được kiểm trần — xem `ha_tran_dinh`.
+        mot, ha, tp = ha_tran_dinh(ds[0])
+        return mot, {"so_doan": 1, "nghi_s": 0.0, "nguon_nghi": "khong can ghep",
+                     "dinh_truoc_dbtp": None if tp is None else round(tp, 2),
+                     "ha_tran_db": round(ha, 2)}
 
     nghi, nguon = nhip_nghi(ds, sr, so_cau=so_cau)
     can, da_chinh = can_do_to(ds, sr)
@@ -320,3 +397,183 @@ def ghep(wavs, sr: int, so_cau=None) -> tuple:
         "dinh_truoc_dbtp": round(float(tp), 2) if np.isfinite(tp) else None,
         "ha_tran_db": round(ha_db, 2),
     }
+
+
+# ═════════════════════════════════════ ghép TỆP -> TỆP, bộ nhớ có trần ════
+
+def _doc_doan(duong: str):
+    """Đọc một đoạn thành float32 mono. Trả `(wav, sr)`.
+
+    ⭐ `wave` CỦA THƯ VIỆN CHUẨN TRƯỚC, `soundfile` chỉ là lối lui.
+
+       Không phải để tiết kiệm một phụ thuộc. `soundfile` **chỉ có trong
+       `vieneu-venv`**, còn phép kiểm tương đương giữa `ghep` và `ghep_tep`
+       chạy trong venv nền tảng. Bắt nó qua `soundfile` là viết một bộ ghép
+       mà bộ kiểm hồi quy của chính nó không chạy được — và một đường không
+       được kiểm là đường sẽ lệch.
+
+       Đoạn ở đây luôn là WAV PCM16 mono do chính ta ghi (`server._wav_bytes`
+       cho `/v1/batch`), nên `wave` đọc được mọi ca thật.
+    """
+    import wave
+    try:
+        with wave.open(duong, "rb") as f:
+            if f.getsampwidth() == 2:
+                sr, kenh = f.getframerate(), f.getnchannels()
+                tho = np.frombuffer(f.readframes(f.getnframes()),
+                                    dtype="<i2").astype(np.float32) / 32768.0
+                if kenh > 1:
+                    tho = tho.reshape(-1, kenh).mean(axis=1)
+                return np.ascontiguousarray(tho, dtype=np.float32), int(sr)
+    except (wave.Error, EOFError, OSError):
+        pass                      # không phải WAV PCM16 -> để `soundfile` lo
+
+    import soundfile as sf
+    w, s = sf.read(duong, dtype="float32", always_2d=False)
+    if getattr(w, "ndim", 1) > 1:
+        w = w.mean(axis=1)
+    return np.asarray(w, dtype=np.float32), int(s)
+
+
+def ghep_tep(duong_vao, duong_ra: str, so_cau=None) -> dict:
+    r"""Cùng phép ghép, nhưng TỆP -> TỆP. Trả cùng hồ sơ như `ghep`.
+
+    🔴 VÌ SAO TỒN TẠI: `ghep()` giữ CẢ BÀI trong RAM, ba lần cùng lúc.
+
+       `ghep` nhận `wavs` (mọi đoạn), rồi `can_do_to` dựng một danh sách MỚI,
+       rồi `cat_im_hai_dau` dựng danh sách thứ ba, rồi `np.concatenate` dựng
+       mảng thứ tư. Với một bài 1.500 ký tự thì không ai thấy. Với một cuốn
+       sách thì đó là trần cứng của "tài liệu dài tuỳ ý":
+
+           2 gio audio @ 48 kHz float32  =  1,38 GB  cho MOT ban sao
+           `/v1/speech-dai` giu 4 ban    =  ~5,5 GB  + ban WAV bytes tra ve
+
+       Tức trần thật của sản phẩm không phải `TRAN_KY_TU_CONG_KHAI` — nó là
+       RAM của tiến trình sidecar, và nó **không được khai ở đâu cả**. Một
+       giới hạn không khai ra là một giới hạn sẽ được phát hiện bằng cách đâm
+       vào nó, giữa một job của khách.
+
+    ⭐ Ở đây bộ nhớ bị chặn bởi **MỘT đoạn** (≤ trần một lượt sinh, tức vài
+       chục MB), không phải bởi độ dài bài. Ba lượt đọc tuần tự, một lượt ghi.
+
+    ⛔ BA LƯỢT CHỨ KHÔNG PHẢI MỘT, và từng lượt là bắt buộc:
+
+         A. nhịp nghỉ và phép cân mức là số liệu TOÀN BÀI — không biết trung vị
+            mức của cả bài thì không cân được đoạn đầu tiên.
+         B. trần đỉnh thật cũng toàn bài, và nó phải đo SAU khi cân mức, vì
+            chính phép cân là thứ đẩy đỉnh lên (đo 31/08: bản 4 đoạn ra
+            −0,65 dBTP, vượt trần, trong khi bản một đoạn là −1,10).
+         C. tới đây mới biết đủ để ghi ra một mẫu nào.
+
+       Gộp B vào C thì phải ghi tạm rồi ghi lại lần hai — đọc lại đầu vào rẻ
+       hơn viết lại đầu ra.
+
+    ⚠️ KHÔNG dùng lại `cat_im_hai_dau`/`can_do_to` ở đây, nhưng cũng KHÔNG
+       chép luật của chúng: cả hai đã được tách thành `bien_cat` và `db_can`,
+       và đường này gọi đúng hai hàm ấy. Một luật, hai người gọi.
+    """
+    import wave
+
+    duong_vao = list(duong_vao)
+    if not duong_vao:
+        raise ValueError("khong co doan nao de ghep")
+
+    # ── A. đo từng đoạn, giữ lại SỐ chứ không giữ sóng ───────────────────────
+    sr = None
+    lang_theo_doan, muc = [], []
+    for d in duong_vao:
+        w, s = _doc_doan(d)
+        if sr is None:
+            sr = s
+        elif s != sr:
+            raise ValueError(f"tan so lay mau lech: {s} != {sr} ({d})")
+        lang_theo_doan.append(khoang_lang_giua(w, sr))
+        muc.append(_rms_hieu_dung(w, sr))
+        del w
+
+    nghi, nguon = _nhip_tu_lang(lang_theo_doan, so_cau=so_cau)
+    db = db_can(muc)
+
+    # ── B. cắt + đỉnh thật, sau khi đã biết phải chỉnh bao nhiêu dB ──────────
+    #
+    # 🔴 ĐO ĐỈNH KÈM KHOẢNG IM HAI BÊN, KHÔNG ĐO ĐOẠN TRẦN. Đây là một lỗi đã
+    #    bắt được bằng phép kiểm tương đương, không phải một phòng xa.
+    #
+    #    Bản đầu lấy `max(dinh_that(tung_doan))`. Nó cho **−2,27 dBTP** trong
+    #    khi `ghep` trên cùng dữ liệu cho **−2,54** — tức bản từng-đoạn báo đỉnh
+    #    THẤP HƠN THẬT 0,27 dB, và hạ ít hơn 0,27 dB. Với một trần được chính
+    #    tệp này gọi là "MỘT BẢO ĐẢM", đo thiếu là đúng chiều nguy hiểm: bản
+    #    giao cho khách vượt trần mà hồ sơ nói là không.
+    #
+    #    Chỗ thiếu là mối nối. Bộ lọc tăng mẫu 4× đi qua chỗ tiếng đổ xuống im
+    #    sinh ra dao động vọt lố (Gibbs), và vọt lố ấy là một đỉnh THẬT của bản
+    #    đã ghép. Đo đoạn trần thì không có mối nối nào để mà thấy.
+    #
+    # ⭐ Đệm im hai bên là ĐÚNG BẰNG chứ không phải xấp xỉ: khoảng im dài
+    #    `nghi × sr` mẫu (≥ 14.400 ở 48 kHz) dài hơn hẳn đáp ứng xung của bộ lọc
+    #    `resample_poly(4, 1)`, nên bộ lọc không thể nhìn xuyên qua nó sang đoạn
+    #    kế. Ngữ cảnh cục bộ của mỗi đoạn trong bản ghép được tái hiện trọn vẹn.
+    im = np.zeros(int(round(nghi * sr)), dtype=np.float32)
+    bien, dinh = [], -np.inf
+    for d, dbi in zip(duong_vao, db):
+        w, _ = _doc_doan(d)
+        if dbi is not None:
+            w = (w * (10.0 ** (dbi / 20.0))).astype(np.float32)
+        a, b = bien_cat(w, sr)
+        bien.append((a, b))
+        if b > a:
+            tp = dinh_that(np.concatenate([im, w[a:b], im]))
+            if np.isfinite(tp) and tp > dinh:
+                dinh = tp
+        del w
+
+    ha_db = 0.0
+    if np.isfinite(dinh) and dinh > TRAN_TRUE_PEAK_DBTP:
+        ha_db = TRAN_TRUE_PEAK_DBTP - dinh
+
+    # ── C. ghi ra, đoạn nào ghi xong buông đoạn ấy ───────────────────────────
+    moc, cho, so_ghi = [], 0, 0
+    with wave.open(duong_ra, "wb") as ra:
+        ra.setnchannels(1)
+        ra.setsampwidth(2)
+        ra.setframerate(sr)
+        for i, (d, dbi, (a, b)) in enumerate(zip(duong_vao, db, bien)):
+            if b <= a:
+                continue                       # đoạn toàn im: bỏ, như `ghep`
+            if so_ghi:
+                ra.writeframes(_pcm16_khoi(im))
+                cho += len(im)
+            w, _ = _doc_doan(d)
+            he_so = 10.0 ** (((dbi or 0.0) + ha_db) / 20.0)
+            khuc = (w[a:b] * he_so).astype(np.float32)
+            del w
+            moc.append(cho / float(sr) if sr else 0.0)
+            ra.writeframes(_pcm16_khoi(khuc))
+            cho += len(khuc)
+            so_ghi += 1
+            del khuc
+
+    return {
+        "so_doan": so_ghi,
+        "moc_s": [round(float(x), 4) for x in moc] +
+                 [round(cho / float(sr), 4) if sr else 0.0],
+        "nghi_s": round(float(nghi), 3),
+        "nguon_nghi": nguon,
+        "chinh_do_to_db": [0.0 if x is None else round(x, 2) for x in db],
+        "dinh_truoc_dbtp": round(float(dinh), 2) if np.isfinite(dinh) else None,
+        "ha_tran_db": round(ha_db, 2),
+        "sample_rate": sr,
+        "giay": round(cho / float(sr), 3) if sr else 0.0,
+    }
+
+
+def _pcm16_khoi(wav_f32) -> bytes:
+    """float32 [-1,1] -> PCM16. Kẹp TRƯỚC khi ép kiểu, không sau.
+
+    ⛔ Cùng luật với `server._pcm16`, và lý do cũng y hệt: ép trước rồi kẹp là
+       cách kinh điển để một mẫu vượt biên quấn vòng thành một tiếng *tách* rất
+       to — thứ chỉ nghe thấy chứ không thấy trong test. Nó nằm ở đây chứ
+       không import từ `server` vì `server` import `noi_dai`, không ngược lại.
+    """
+    return (np.clip(np.asarray(wav_f32, dtype=np.float32), -1.0, 1.0)
+            * 32767.0).astype(np.int16).tobytes()

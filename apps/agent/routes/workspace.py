@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from __future__ import annotations
 from platform_core.i18n import _ as _t
+from platform_core import phat_media
 import mimetypes
 import os
 import io
@@ -10,8 +11,7 @@ import tempfile
 import uuid
 from pathlib import Path
 from fastapi import Depends, File, HTTPException, Request, UploadFile
-from fastapi.responses import (JSONResponse, RedirectResponse, Response, 
-                               StreamingResponse)
+from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy.orm import Session
 from platform_core.agent.tools import (ToolParamsError, discover_tools, 
                                        validate_tool_params)
@@ -146,28 +146,20 @@ def workflow_asset_preview(request: Request, asset_name: str,
     except (OSError, StorageError):
         raise HTTPException(status_code=404, detail=_t('Không tìm thấy asset.')) from None
     media_type = mimetypes.guess_type(key)[0] or "application/octet-stream"
-    range_header = request.headers.get("range", "")
-    if range_header.startswith("bytes="):
-        try:
-            start_text, _, end_text = range_header[6:].partition("-")
-            start = int(start_text) if start_text else 0
-            end = int(end_text) if end_text else total - 1
-        except ValueError:
-            start, end = 0, total - 1
-        start = max(0, start); end = min(end, total - 1)
-        if start > end:
-            start, end = 0, total - 1
-        stream = storage.open(key)
-        try:
-            stream.seek(start); chunk = stream.read(end - start + 1)
-        finally:
-            stream.close()
-        return Response(chunk, status_code=206, media_type=media_type, headers={
-            "Content-Range": f"bytes {start}-{end}/{total}", "Accept-Ranges": "bytes",
-            "Content-Length": str(len(chunk)), "Cache-Control": "private, no-store"})
-    return StreamingResponse(storage.open(key), media_type=media_type, headers={
-        "Accept-Ranges": "bytes", "Content-Length": str(total),
-        "Cache-Control": "private, no-store"})
+    # ⭐ HTTP Range đi qua `platform_core.phat_media`, không tự viết ở đây.
+    #
+    #    Bản cũ ở chỗ này là một trong **năm** bản chép gần như giống nhau từng
+    #    dòng, và cả năm mang cùng bốn khiếm khuyết: không bao giờ trả `416`;
+    #    `bytes=-500` trả 501 byte ĐẦU thay vì 500 byte cuối; `bytes=0-` nuốt cả
+    #    tệp vào RAM; `start > end` xử lý mỗi nơi một kiểu.
+    #
+    # ⚠️ Bản ở đây nằm trong số hai bản lệch: bốn app kia đặt `start = 0` và **giữ**
+    #    `end`, còn bản này đặt `start, end = 0, total - 1`. Cùng một đầu vào,
+    #    hai đầu ra — và không ai biết mình đang chạy bản nào.
+    return phat_media.phat_tu_kho(
+        storage, key, kieu_noi_dung=media_type,
+        dai_range=request.headers.get("range"), tong=total,
+        tieu_de_them={"Cache-Control": "private, no-store"})
 
 
 @router.post("/api/tools/{tool_name}/quote")

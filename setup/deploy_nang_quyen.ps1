@@ -57,6 +57,39 @@ if (-not (Test-Path $script)) {
     exit 1
 }
 
+# !! DON PSModulePath TRUOC KHI SINH TIEN TRINH CON (06/09/2026).
+#
+#    Trieu chung: deploy chet voi
+#      Get-Acl : The 'Get-Acl' command was found in the module
+#      'Microsoft.PowerShell.Security', but the module could not be loaded.
+#
+#    Nguyen nhan goc: tien trinh con la Windows PowerShell 5.1, va no THUA
+#    HUONG `PSModulePath` cua tien trinh cha. Neu cha la PowerShell 7 (mot
+#    phien Claude Code chay `pwsh`), duong dan cua PS7 ro sang:
+#
+#      c:\program files\powershell\7\Modules\Microsoft.PowerShell.Security
+#      C:\Windows\system32\WindowsPowerShell\v1.0\Modules\...
+#
+#    5.1 tim thay module o CA HAI, nap ban cua PS7, va
+#    `Security.types.ps1xml` dang ky trung kieu da co:
+#      Error in TypeData 'System.Security.AccessControl.ObjectSecurity':
+#      The member AuditToString is already present.
+#    Module chet keo theo `Get-Acl`, va khoi siet quyen secrets\ (W1.5) no.
+#
+# !! Da xay ra THAT: deploy 20:12 ngay 06/09 chet o day SAU KHI da dung bon
+#    dich vu va TRUOC khi chay migration. Hau qua: production 502 khoang
+#    bon phut, va MA MOI chay tren SCHEMA CU.
+#
+# !! Vi sao va o DAY chu khong o `2-cai-dat.ps1`: loi khong phai cua trinh
+#    cai, ma cua MOI TRUONG nguoi goi de lai. Lop bao nay la cho duy nhat
+#    biet minh sap sinh mot tien trinh 5.1.
+$psmp = @(
+    "$env:ProgramFiles\WindowsPowerShell\Modules",
+    "$env:SystemRoot\system32\WindowsPowerShell\v1.0\Modules"
+) -join ';'
+$env:PSModulePath = $psmp
+"PSMODULEPATH=$psmp" | Add-Content $sum -Encoding utf8
+
 # Da co quyen roi, nen o day duoc phep chuyen huong. KHONG dat `-Verb`.
 $p = Start-Process powershell `
         -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$script`"" `

@@ -12,10 +12,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Api, docSSE, LoiApi } from './api'
 import { duongToiLa, laKhiChuyenNhanh } from './cay'
+import { BangDuAn } from './BangDuAn'
+import { BangGhiNho } from './BangGhiNho'
+import { BangNghienCuu } from './BangNghienCuu'
 import { SoanThao } from './SoanThao'
 import { TaoMedia } from './TaoMedia'
+import { TheDuyet } from './TheDuyet'
 import { ThongDiepView } from './ThongDiepView'
-import type { HoiThoai, NangLuc, SuThat, ThongDiep } from './kieu'
+import type { HoiThoai, NangLuc, PhieuDuyet, SuThat, ThongDiep } from './kieu'
 
 const MA_LOI: Record<string, string> = {
   ban: 'Model đang bận. Thử lại sau ít giây.',
@@ -74,6 +78,33 @@ function xoaHash(): void {
     window.location.pathname + window.location.search)
 }
 
+
+/* ⭐ `khiHien` — chay `viec` theo nhip, nhung KHONG chay khi tab dang an, va
+ *    chay lai NGAY khi tab hien lai.
+ *
+ *    Do 05/09: nam vong hoi trang thai job trong kho, khong vong nao biet tab
+ *    dang an. Tren dien thoai do la pin va dung luong 3G cua khach chay trong
+ *    khi ho dang lam viec khac — con job thi van chay o may chu du khong ai hoi.
+ *
+ * ⚠️ CO Y khong dung mot hook dung chung: hai app React o kho nay la hai goi
+ *    npm rieng, khong co thu muc nguon chung. Mot "hook dung chung" o day se la
+ *    HAI BAN CHEP — dung cai da sinh ra nam ban Range trong `apps/`. Muoi dong
+ *    lap lai, khong co truu tuong nao de troi.
+ *
+ * ⛔ Trang thai job o MAY CHU la chan ly. Tab an chi GIAM nhip hoi. */
+function khiHien(viec: () => void, nhip: number): () => void {
+  const chay = () => { if (!document.hidden) viec() }
+  const h = window.setInterval(chay, nhip)
+  const lai = () => { if (!document.hidden) viec() }
+  document.addEventListener('visibilitychange', lai)
+  window.addEventListener('online', lai)
+  return () => {
+    window.clearInterval(h)
+    document.removeEventListener('visibilitychange', lai)
+    window.removeEventListener('online', lai)
+  }
+}
+
 export function App({ api }: AppProps) {
   const [nangLuc, datNangLuc] = useState<NangLuc[]>([])
   const [dsHoiThoai, datDsHoiThoai] = useState<HoiThoai[]>([])
@@ -90,6 +121,30 @@ export function App({ api }: AppProps) {
   const huy = useRef<AbortController | null>(null)
   const cuoiLuong = useRef<HTMLDivElement | null>(null)
   const nguoiDungDaCuon = useRef(false)
+  /**
+   * Lần đổi hội thoại sắp tới có phải do NGƯỜI DÙNG chủ động không.
+   *
+   * 🔴 Đo trên production 03/09: bấm Back **rời khỏi trang** thay vì về hội
+   *    thoại trước. Vì mọi lần đổi đều `replaceState`, nên lịch sử chỉ có đúng
+   *    một mục — không có gì để lùi về.
+   *
+   * ⭐ Ranh giới đúng: **người dùng chủ động đổi chỗ ⇒ một bước lịch sử**; máy
+   *    chủ vừa cấp địa chỉ cho chỗ đang đứng ⇒ **không** phải một bước. Gửi tin
+   *    đầu tiên không đưa họ đi đâu cả — nó chỉ làm chỗ họ đang đứng có tên.
+   *
+   * ⛔ Và đây là lý do KHÔNG `pushState` cho mọi thứ: bản đầu của tệp này ghi
+   *    rõ vì sao dùng `replaceState` — mười lần bấm quanh thanh bên thì phải
+   *    bấm Back mười lần mới rời được trang. Cả hai lo ngại đều thật; chúng chỉ
+   *    thuộc hai loại thay đổi khác nhau.
+   */
+  const dayLichSu = useRef(false)
+
+  /** Đổi hội thoại theo ý người dùng — có một bước lịch sử. */
+  const chonHoiThoai = useCallback((id: string | null) => {
+    dayLichSu.current = true
+    datConvId(id)
+    if (id === null) datSuThat(null)
+  }, [])
 
   const nangLucText = useMemo(
     () => nangLuc.find((n) => n.ten === 'text.chat'), [nangLuc],
@@ -98,21 +153,66 @@ export function App({ api }: AppProps) {
     () => Object.keys(nangLucText?.models ?? {}), [nangLucText],
   )
 
+  const [coGhiNho, datCoGhiNho] = useState(false)
+  const [coDuAn, datCoDuAn] = useState(false)
+  const [moDuAn, datMoDuAn] = useState(false)
+  const [dsDuAn, datDsDuAn] = useState<{ id: string; ten: string }[]>([])
+  const [duAnCuaConv, datDuAnCuaConv] = useState('')
+  const [moGhiNho, datMoGhiNho] = useState(false)
+  const [phieuDuyet, datPhieuDuyet] = useState<PhieuDuyet[]>([])
+  const [coNghienCuu, datCoNghienCuu] = useState(false)
+  const [moNghienCuu, datMoNghienCuu] = useState(false)
+
+  const napDanhMuc = useCallback(() => api.danhMuc()
+    .then((d) => {
+      datNangLuc(d.nang_luc)
+      // ⛔ Vang => TAT. Mot may chu cu hon frontend khong khai `co_v3`, va doan
+      //    "khong khai tuc la co" se hien mot nut dan thang toi 404.
+      datCoGhiNho(!!d.co_v3?.ghi_nho)
+      datCoDuAn(!!d.co_v3?.du_an)
+      datCoNghienCuu(!!d.co_v3?.nghien_cuu)
+      const text = d.nang_luc.find((n) => n.ten === 'text.chat')
+      // ⛔ `model_mac_dinh` chu KHONG `Object.keys(models)[0]`. Ban cu lay
+      //    phan tu dau cua mot dict, tuc mac dinh la THU TU KHAI trong
+      //    `apps/ltt_llm/manifest.py`. No dung — mot cach tinh co. Dao hai
+      //    dong ben do la ca san pham lang le chuyen sang `ltt_llm_vision`,
+      //    model co ngu canh 28K thay vi 89K.
+      const dau = text?.model_mac_dinh || Object.keys(text?.models ?? {})[0] || ''
+      datAlias((a) => a || dau)
+      return d.nang_luc
+    }), [api])
+
+  useEffect(() => { napDanhMuc().catch((e) => datLoi(nhanLoi(e))) }, [napDanhMuc])
+
+  // ⭐ Chi hoi khi co BAT. Mot request toi mot route 404 moi lan mo trang
+  //    khong hong gi, nhung no lam log nhieu va day nguoi truc di sai huong.
   useEffect(() => {
-    api.danhMuc()
-      .then((d) => {
-        datNangLuc(d.nang_luc)
-        const text = d.nang_luc.find((n) => n.ten === 'text.chat')
-        // ⛔ `model_mac_dinh` chu KHONG `Object.keys(models)[0]`. Ban cu lay
-        //    phan tu dau cua mot dict, tuc mac dinh la THU TU KHAI trong
-        //    `apps/ltt_llm/manifest.py`. No dung — mot cach tinh co. Dao hai
-        //    dong ben do la ca san pham lang le chuyen sang `ltt_llm_vision`,
-        //    model co ngu canh 28K thay vi 89K.
-        const dau = text?.model_mac_dinh || Object.keys(text?.models ?? {})[0] || ''
-        datAlias((a) => a || dau)
-      })
-      .catch((e) => datLoi(nhanLoi(e)))
-  }, [api])
+    if (!coDuAn) return
+    api.duAnLietKe()
+      .then((r) => datDsDuAn(r.du_an.map((d) => ({ id: d.id, ten: d.ten }))))
+      .catch(() => datDsDuAn([]))
+  }, [api, coDuAn, moDuAn])
+
+  // ── Nang luc chua san sang thi HOI LAI, dung doi F5 ──────────────────────
+  //
+  // 🔴 VI SAO CAN. Danh muc truoc day chi duoc nap **mot lan** luc gan component.
+  //    Model anh/tieng nam o may B va nap sau vai phut; ai mo trang truoc do se
+  //    thay nut "Tao giong" vo hieu **vinh vien** — khong co gi bao, khong co gi
+  //    doi, va cach duy nhat thoat ra la bam F5 ma khong ai noi cho ho biet.
+  //
+  // ⭐ Do 04/09 tren production, va no lo ra tu chinh dong bo qua cua bo kiem:
+  //    *"model tieng chua nap — may chu noi speech.ltt=san_sang"*. Mot cau tu
+  //    mau thuan: nut vo hieu suot 210 giay trong khi may chu bao san sang. Bo
+  //    kiem khong bat duoc loi nay, no chi ghi lai du kien; thu bat duoc la
+  //    **doc ky mot dong BOQUA thay vi hai long vi no khong do**.
+  //
+  // ⛔ Chi hoi lai KHI CON THIEU, va dung ngay khi du. Mot vong lap chay mai la
+  //    mot vong lap se bi ai do tat di vi ton, roi mang theo ca cai nay.
+  useEffect(() => {
+    const thieu = nangLuc.some((n) => n.san_sang !== 'san_sang')
+    if (!nangLuc.length || !thieu) return undefined
+    return khiHien(() => { void napDanhMuc().catch(() => {}) }, 20_000)
+  }, [nangLuc, napDanhMuc])
 
   const napSoDu = useCallback(() => {
     api.soDu().then((d) => datSoDu(d.credit)).catch(() => {})
@@ -126,17 +226,66 @@ export function App({ api }: AppProps) {
 
   useEffect(() => { napDs() }, [napDs])
 
-  const napSuThat = useCallback(async (id: string) => {
+  /**
+   * Nạp sự thật của một hội thoại.
+   *
+   * 🔴 `dongBoAlias` MẶC ĐỊNH `false`, VÀ ĐÓ LÀ CẢ BẢN VÁ.
+   *
+   *    Bản cũ đặt lại `alias` ở **mọi** lời gọi. Mà hàm này được gọi từ **bảy**
+   *    chỗ: sau khi gửi lượt, sau khi luồng kết thúc, sau khi tạo media… Nên
+   *    người dùng chọn một model rồi bất kỳ lần làm mới nào cũng **âm thầm trả
+   *    về model cũ**.
+   *
+   * ⛔ Đo 04/09 trên production: chọn `ltt_llm_vision`, ô chọn quay lại
+   *    `ltt_llm` sau ~16 giây, không một thông báo nào. Khách nghĩ mình đang
+   *    dùng model đọc ảnh, trả tiền cho một model khác, và không có cách nào
+   *    biết. Lỗi tiền + lỗi tin cậy, im lặng cả hai.
+   *
+   * ⭐ Đồng bộ alias chỉ có nghĩa khi ta **vừa mở một hội thoại** — lúc đó model
+   *    của hội thoại là sự thật. Ở mọi lời gọi khác, thứ đúng là **lựa chọn
+   *    người dùng vừa làm**, không phải giá trị cũ trong CSDL.
+   */
+  /**
+   * Phieu duyet con cho. Nguon BEN — song qua F5, dong tab, restart.
+   *
+   * ⛔ Lay o DAY, mot lan, roi truyen xuong. Mot the tu goi mang la N lan
+   *    goi cho N tin nhan tren man hinh.
+   */
+  const napPhieuDuyet = useCallback(() => {
+    api.duyetDangCho()
+      // 🔴 `r.items` PHAI duoc kiem hinh dang. Do 07/09: mot than tra ve khong
+      //    co `items` (bo gia lap, mot trang loi cua proxy dung JSON, mot lech
+      //    phien ban) lam `phieuDuyet` thanh `undefined`, roi `.length` o duoi
+      //    NEM va **ca khung hoi thoai trang man hinh**.
+      //
+      // ⛔ `.catch()` khong do duoc ca nay: promise KHONG bi tu choi, no thanh
+      //    cong voi mot hinh dang khac. Hai chuyen khac nhau, va toi da viet
+      //    mot chu thich rat can than cho `.catch` roi bo qua duong thanh cong.
+      .then((r) => datPhieuDuyet(Array.isArray(r?.items) ? r.items : []))
+      // ⭐ Hong thi de DANH SACH CU nguyen — xoa no di la lam bien mat nut
+      //    duyet cua mot phieu van dang cho that.
+      .catch(() => undefined)
+  }, [api])
+
+  const napSuThat = useCallback(async (id: string,
+                                       { dongBoAlias = false } = {}) => {
     const st = await api.suThat(id)
     datSuThat(st)
-    if (st.conversation.model_alias) datAlias(st.conversation.model_alias)
+    if (dongBoAlias && st.conversation.model_alias) datAlias(st.conversation.model_alias)
+    // ⛔ `?? ''` chu khong `|| ''` roi de undefined: may chu CU khong khai
+    //    `project_id`, va mot `undefined` o day lam `<select>` thanh
+    //    khong-kiem-soat — React canh bao, roi o chon nhay gia tri.
+    datDuAnCuaConv(st.conversation.project_id ?? '')
     return st
   }, [api])
 
   useEffect(() => {
     api.convHienTai = convId ?? ''
     if (!convId) { datSuThat(null); return }
-    napSuThat(convId).catch((e) => {
+    // ⭐ CHO DUY NHAT truyen `dongBoAlias: true` — day la luc VUA MO mot hoi
+    //    thoai, nen model cua no la su that. Xem docstring `napSuThat`.
+    napPhieuDuyet()
+    napSuThat(convId, { dongBoAlias: true }).catch((e) => {
       datLoi(nhanLoi(e))
       // ⛔ VA TRA VE MAN HINH TRONG, khong dung o mot man hinh loi.
       //
@@ -162,8 +311,13 @@ export function App({ api }: AppProps) {
     if (typeof window === 'undefined') return
     const muon = convId ? `#${convId}` : ''
     if (window.location.hash === muon) return
-    window.history.replaceState(null, '',
-      window.location.pathname + window.location.search + muon)
+    const duong = window.location.pathname + window.location.search + muon
+    if (dayLichSu.current) {
+      dayLichSu.current = false
+      window.history.pushState(null, '', duong)
+    } else {
+      window.history.replaceState(null, '', duong)
+    }
   }, [convId])
 
   // Back/Forward của trình duyệt, và người dán một link vào thanh địa chỉ.
@@ -186,7 +340,7 @@ export function App({ api }: AppProps) {
     )
     if (!dangCho.length || !convId) return
     let dung = false
-    const h = window.setInterval(async () => {
+    const huy = khiHien(() => { void (async () => {
       if (dung) return
       try {
         await Promise.all(dangCho.map((m) => api.trangThai(m.execution!.id)))
@@ -195,8 +349,8 @@ export function App({ api }: AppProps) {
       } catch {
         // Mot nhip hong khong lam hong ca man hinh; nhip sau thu lai.
       }
-    }, 2000)
-    return () => { dung = true; window.clearInterval(h) }
+    })() }, 2000)
+    return () => { dung = true; huy() }
   }, [api, convId, suThat, napSuThat, napSoDu])
 
   // ── Phim tat ────────────────────────────────────────────────────────────
@@ -213,7 +367,7 @@ export function App({ api }: AppProps) {
       const mod = e.ctrlKey || e.metaKey
       if (mod && e.shiftKey && (e.key === 'o' || e.key === 'O')) {
         e.preventDefault()
-        datConvId(null); datSuThat(null)
+        chonHoiThoai(null)
         oSoan.current?.focus()
         return
       }
@@ -309,11 +463,59 @@ export function App({ api }: AppProps) {
       }
       const kq = await api.guiLuot(cid, { ...than, modelAlias: alias })
       await napSuThat(cid)
+      // 🔴 NAP LAI DANH SACH. Thieu dong nay thi hoi thoai moi KHONG hien trong
+      //    thanh ben cho toi khi mot thu khac tinh co lam moi no — nguoi dung
+      //    vua tao mot hoi thoai va no khong o dau ca.
+      //
+      // ⛔ Va do dung la issue DANG MO cua LibreChat: *New chat has no label
+      //    until page refresh*. `bat_dau` phia may chu DA dat `hoi.title` tu
+      //    tin nhan dau, nen tieu de co san — chi la khong ai di lay.
+      //
+      // ⭐ Do bang dot 2 tren production: doi 25 giay ma thanh ben khong bao gio
+      //    co muc moi. Toi da TUONG minh thay no hien o hanh trinh A hom nay;
+      //    phep do noi khac, va phep do dung.
+      napDs()
       void theoDoi(kq.execution_id, cid)
     } catch (e) {
       datLoi(nhanLoi(e))
     }
-  }, [api, alias, convId, napSuThat, theoDoi])
+  }, [api, alias, convId, napSuThat, napDs, theoDoi])
+
+  // ── Nối lại luồng text sau khi tải lại trang ────────────────────────────
+  //
+  // 🔴 ĐO ĐƯỢC TRÊN PRODUCTION 03/09. F5 giữa lúc model đang trả lời:
+  //
+  //        giao diện          máy chủ
+  //     t+ 0s   chữ = 0       streaming, partial =    0
+  //     t+ 8s   chữ = 0       streaming, partial =  796
+  //     t+25s   chữ = 0       streaming, partial = 3429   ← vẫn đang sinh
+  //
+  //    Máy chủ chạy hoàn hảo. Giao diện không hiện gì: không chữ, không nút
+  //    Dừng, không nút Tạo lại. Người dùng ngồi nhìn một hộp trắng cho tới khi
+  //    họ tự F5 **lần nữa**.
+  //
+  // ⭐ Và phía máy chủ ĐÃ dựng sẵn cho việc này từ Phase 08a: `dang_chay` là
+  //    một sổ fan-out nhiều người nghe, và docstring của route viết thẳng
+  //    "Nối lại = mở lại `stream?after=<seq>` — snapshot đầu tiên mang đủ phần
+  //    đã có". Thiếu đúng một chỗ: **client chưa bao giờ gọi**.
+  //
+  // ⛔ `theoDoi` trước đó chỉ chạy trên đường GỬI. Một luồng chỉ được theo dõi
+  //    bởi chính cú bấm sinh ra nó là một luồng mất hút sau mọi lần tải lại,
+  //    mọi lần đổi hội thoại, mọi lần mở từ một link.
+  //
+  // ⚠️ Điều kiện `dangChayEx !== ex.id` là bắt buộc, không phải tối ưu: thiếu
+  //    nó thì mỗi delta làm `suThat` đổi, hiệu ứng chạy lại, `theoDoi` huỷ
+  //    chính kết nối đang chạy rồi mở lại — một vòng lặp huỷ-mở vô tận.
+  useEffect(() => {
+    if (!convId || !suThat) return
+    const dangSong = suThat.messages.find(
+      (m) => m.role === 'assistant' && m.status === 'streaming'
+        && m.execution?.mode === 'stream' && m.execution.id,
+    )
+    if (!dangSong?.execution) return
+    if (dangChayEx === dangSong.execution.id) return
+    void theoDoi(dangSong.execution.id, convId)
+  }, [convId, suThat, dangChayEx, theoDoi])
 
   const dung = useCallback(async () => {
     if (!dangChayEx) return
@@ -348,7 +550,7 @@ export function App({ api }: AppProps) {
         <button
           type="button"
           className="ltc-nut ltc-nut--moi"
-          onClick={() => { datConvId(null); datSuThat(null) }}
+          onClick={() => chonHoiThoai(null)}
         >
           + Hội thoại mới
         </button>
@@ -367,14 +569,64 @@ export function App({ api }: AppProps) {
                 type="button"
                 className={`ltc-ds__muc${h.id === convId ? ' la-dang-xem' : ''}`}
                 aria-current={h.id === convId ? 'true' : undefined}
-                onClick={() => datConvId(h.id)}
+                onClick={() => chonHoiThoai(h.id)}
               >
                 {h.title || 'Hội thoại mới'}
               </button>
             </li>
           ))}
         </ul>
+
+        {/*
+          ⛔ Nut nay chi hien khi co `LTT_CHATLTT_V3_MEMORY` BAT. Hien no khi co
+             tat la dan nguoi dung toi mot route tra 404 — mot loi hua hong, va
+             la dung ly do `cong_ghi_nho` tra 404 chu khong 403.
+        */}
+        {coDuAn && (
+          <button
+            type="button"
+            className="ltc-nut ltc-nut--ghinho"
+            onClick={() => datMoDuAn(true)}
+          >
+            Dự án
+          </button>
+        )}
+        {coGhiNho && (
+          <button
+            type="button"
+            className="ltc-nut ltc-nut--ghinho"
+            onClick={() => datMoGhiNho(true)}
+          >
+            Máy nhớ gì về bạn
+          </button>
+        )}
+        {/*
+          ⛔ Doi CA co LAN mot hoi thoai dang mo. Pham vi cua mot luot nghien
+             cuu la MOT hoi thoai (`tim_doan.tim` loc theo ca `user_id` va
+             `conversation_id`), nen mot nut "Nghien cuu" khi chua chon hoi
+             thoai nao la mot nut dan thang toi 400.
+        */}
+        {coNghienCuu && convId && (
+          <button
+            type="button"
+            className="ltc-nut ltc-nut--nghiencuu"
+            onClick={() => datMoNghienCuu(true)}
+          >
+            Nghiên cứu
+          </button>
+        )}
       </aside>
+
+      {moDuAn && (
+        <BangDuAn api={api} onDong={() => datMoDuAn(false)} />
+      )}
+      {moGhiNho && (
+        <BangGhiNho api={api} onDong={() => datMoGhiNho(false)} />
+      )}
+      {moNghienCuu && convId && (
+        <BangNghienCuu api={api} convId={convId}
+                       onDong={() => datMoNghienCuu(false)} />
+      )}
 
       <main className="ltc-chinh">
         <header className="ltc-dinh">
@@ -390,6 +642,37 @@ export function App({ api }: AppProps) {
               ))}
             </select>
           </label>
+          {/*
+            🔴 Mot o chon cho CA gan lan go: chon "— khong thuoc du an nao —"
+               gui `du_an_id` rong, va may chu hieu do la GO. Hai nut rieng bat
+               giao dien tu chon dong tu, roi mot ngay no chon sai.
+          */}
+          {coDuAn && convId && (
+            <label className="ltc-model">
+              <span>Dự án</span>
+              <select
+                value={duAnCuaConv}
+                aria-label="Dự án của cuộc trò chuyện"
+                onChange={(e) => {
+                  const moi = e.target.value
+                  datDuAnCuaConv(moi)
+                  api.duAnGan(convId, moi)
+                    .then(() => napSuThat(convId))
+                    .catch((err) => {
+                      // Tra o chon ve gia tri CU: mot o hien mot thu chua duoc
+                      // luu la mot o noi doi.
+                      datDuAnCuaConv(duAnCuaConv)
+                      datLoi(nhanLoi(err))
+                    })
+                }}
+              >
+                <option value="">— không thuộc dự án nào —</option>
+                {dsDuAn.map((d) => (
+                  <option key={d.id} value={d.id}>{d.ten}</option>
+                ))}
+              </select>
+            </label>
+          )}
           {chuaSanSang && (
             <span className="ltc-chip ltc-chip--tat" role="status">
               Model chưa sẵn sàng
@@ -422,6 +705,17 @@ export function App({ api }: AppProps) {
               onChuyenNhanh={chuyenNhanh}
               duongTaiSan={(k) => api.duongTaiSan(k)}
               onDocTo={coTieng ? (_m, c) => datChuDocTo(c) : undefined}
+              theDuyet={phieuDuyet.length > 0 ? (
+                <div className="ltc-duyet__ds">
+                  {phieuDuyet.map((p) => (
+                    <TheDuyet key={p.approval_id} api={api} phieu={p}
+                              onXong={() => {
+                                napPhieuDuyet()
+                                if (convId) napSuThat(convId).catch(() => undefined)
+                              }} />
+                  ))}
+                </div>
+              ) : undefined}
               onTaoLai={(x) => guiLuot({ taoLaiCua: x.id })}
               onSuaGuiLai={(x) => {
                 const chu = window.prompt('Sửa câu hỏi',
@@ -457,6 +751,7 @@ export function App({ api }: AppProps) {
           goiY={chuaSanSang ? 'Model chưa sẵn sàng' : undefined}
           docAnh={docAnh}
           onTaiAnh={taiAnh}
+          hoiThoai={convId}
         />
       </main>
     </div>

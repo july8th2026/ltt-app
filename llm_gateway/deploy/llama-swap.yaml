@@ -13,25 +13,37 @@
 #   ta khai hai ho so va de llama-swap doi giua chung theo ten model client goi.
 #   Chi MOT cai nam trong VRAM tai mot thoi diem.
 #
-#     qwen38-api      131K ngu canh, KV q8_0, KHONG vision  ~20,7 GB
-#     qwen38-ops      200K ngu canh, KV q4_0, KHONG vision   ~23,3 GB
-#     qwen38-vision    64K ngu canh, KV q8_0, CO  vision     ~19,9 GB
+#     qwen38-api      200K ngu canh, KV q4_0, KHONG vision  ~21,5 GB  <- MAC DINH
+#     qwen38-vision   131K ngu canh, KV q4_0, CO  vision    ~21,1 GB
 #
 # ==========================================================================
-# BA CON SO LAY TU SWEEP CONG DONG TREN DUNG RTX 3090 + DUNG MODEL NAY:
+# CAC CON SO DUOI DAY DA DUOC DO, 03/09/2026, TREN DUNG CARD DANG PHUC VU.
 #
-#   -c 204800        "262K exceeded 24 GB at model load" - 204800 la moc ho
-#                    chay duoc that. KHONG dat 262144.
+# !! Ban truoc cua muc nay ghi "MOI CON SO TREN LA MOC KHOI DIEM, CHUA PHAI SO
+#    TA DO" va lay tu mot sweep cong dong. Cau do dung khi viet va da HET DUNG.
+#    Nay thay bang so do that (build 10689, prompt ngau nhien moi luot nen khong
+#    tai dung prompt cache, dem token bang /tokenize cua chinh model dang nap):
+#
+#   -c 204800        nap duoc, VRAM sau nap 21.959 MiB / 24.576.
+#                    Chay that toi 179.902 token vao, doc lai dung moc dau VA
+#                    moc cuoi prompt. KHONG dat 262144 (cong dong: "262K
+#                    exceeded 24 GB at model load").
 #   --cache-type-* q4_0
-#                    Khong co cac co nay thi tao ngu canh HONG qua khoang 90K
-#                    khi dung canh 17 GB trong so. Voi chung, cua so day vua
-#                    card 24 GB o 22,2 GB.
+#                    BAT BUOC o 200K: q8_0 o 204800 khong vua card 24 GB.
+#                    VRAM dinh 21.979 MiB - THAP HON ho so 131K/q8_0 cu
+#                    (22.017 MiB), vi KV q4_0 o 204.800 nho hon KV q8_0 o
+#                    131.072. Chat luong: 36/36 bo danh_gia_llm va 10/10
+#                    kim-trong-dong-co o 130K (nam do sau) - hoa voi q8_0,
+#                    nhung hoa O KICH TRAN nen chi loai tru suy giam DU LON
+#                    DE DO THAY.
 #   --spec-draft-n-max 2
 #                    Card 24 GB dat dinh o n-max 2. Sau hon thi code nhanh len
-#                    nhung prose cham di, tong the giam.
+#                    nhung prose cham di, tong the giam. (Van la so cong dong.)
 #
-# !! MOI CON SO TREN LA MOC KHOI DIEM, CHUA PHAI SO TA DO. Phase P5 phai do lai
-#    bang nvidia-smi tren may B roi ghi vao docs/ANH_NOI_BO/DECISIONS.md.
+#   Prefill do duoc:  50K 999,9 tok/s | 100K 805,3 | 130K 726,5
+#                    150K 672,4 | 165K 639,1 | 180K 616,7
+#
+#   Bang chung day du: docs/VLM_NOI_BO/NGU_CANH_DAI_2026-09-03.md
 #
 # ==========================================================================
 # GPU CHUA SACH LUC NAP - DO THAT NGAY 22/08/2026 (P6). DOC KY MUC NAY.
@@ -108,50 +120,31 @@ models:
   # ============================================================ KHACH NGOAI
   # Ho so MAC DINH, phuc vu khach goi API qua Cloudflare. Chot 2026-08-27.
   #
-  # Engine 131K da duoc warm benchmark tren RTX 3090. Public input cap 65K
-  # theo Q116 la bien an toan cho Cloudflare; khong phai gioi han VRAM cua engine.
-  #   CF mac dinh cat o 125 giay (tai lieu chinh thuc, cap nhat 23/07/2026).
-  #   Canary API that ngay 27/08 tren chinh card nay:
-  #     86.101 token that / 89.716 token uoc luong -> 102,0 s
-  #     tra dung sentinel dau-cuoi, VRAM dinh 22.639 MiB, khong OOM
-  #   Vi vay public cap 65K giu them bien cho overhead; 131K chi danh cho
-  #   engine, khong mo het cho public.
-  #   Cap phat mot cua so ma khach khong dung noi la ban mot loi hua khong giu duoc.
+  # Engine 200K (`-c 204800`). Tran vao public 169.984, cong bo cho client
+  # 156.385 - ba con so cho ba viec, va chung KHONG duoc gop lai.
+  #   Nguon chan ly: `apps/ltt_llm/ngan_sach.py`. `test_334` doi chieu `-c` o
+  #   day voi `CUA_SO_MODEL` va do khi hai ben lech.
   #
-  # VA: cot "ngu canh" trong moi bang cong dong la CON SO CAP PHAT. Hang 200K cua
-  # 3090 duoc do voi prompt 400 token ("clean probe, 3x400 tokens") - tuc cua so
-  # gan nhu RONG. Chua ai chung minh 200K DUOC DO DAY tren card 24 GB.
+  # !! MUC NAY TUNG NOI "Public input cap 65K theo Q116" VA "131K chi danh cho
+  #    engine". Ca hai da het dung tu 03/09. Tran vao khong con la mot con so
+  #    chon tay cho "bien an toan Cloudflare" - no la mot con so DAN XUAT
+  #    (cua so - token ra toi da - le uoc), va rang buoc Cloudflare duoc cuong
+  #    che o mot cho khac han: cua DONG BO tu tu choi theo NGAN SACH THOI GIAN
+  #    (`features.tran_token_ra_dong_bo`), nen no co lai dung ma khong can mot
+  #    tran token rieng.
+  #
+  # !! VA CAU "Chua ai chung minh 200K DUOC DO DAY tren card 24 GB" - nay DA CO.
+  #    Do 03/09 tren chinh card nay: chay that toi 179.902 token vao, doc lai
+  #    dung moc dau va moc cuoi prompt, VRAM dinh 21.979 MiB. Cot "ngu canh"
+  #    trong bang cong dong van la con so CAP PHAT (do voi prompt 400 token) -
+  #    canh bao do dung, va no khong con ap cho ta.
   #
   # MOT HO SO CHO MOI LOAI VIEC (coding, chat, agent, tom tat). Khong tach model
   # theo tac vu: chung deu la "text vao, text ra, co tool" - cung mot hinh dang.
   # Khach dieu khien do sau bang `reasoning_effort` trong tung request.
   qwen38-api:
     name: "Qwen3.8-27B (LTT Studios)"
-    description: "Coding, chat, agent, tom tat. Engine 131K; input public 65K."
-    capabilities:
-      in: ["text"]
-      out: ["text"]
-    cmd: |
-      ${BIN}/llama-server.exe
-      -m ${GGUF}
-      ${CHUNG}
-      -c 131072
-      --cache-type-k q8_0 --cache-type-v q8_0
-      --host 127.0.0.1 --port ${PORT}
-    proxy: "http://127.0.0.1:${PORT}"
-    # Dai hon `ops`: khach ngoai goi rai rac, nap lai giua cac lan la tra tien
-    # bang do tre cho nguoi dung cuoi.
-    ttl: 1800
-    unloadTimeout: 30
-
-  # ---------------------------------------------------- van hanh trong LAN
-  # KHONG phuc vu khach ngoai. Ngu canh 200K chi dung duoc khi KHONG qua Cloudflare.
-  qwen38-ops:
-    name: "Qwen3.8-27B ops (200K, khong vision)"
-    description: "Van hanh, ngu canh dai 200K, khong doc anh. Cho Codex va Claude Code."
-    # Khai modality that su cua ho so nay. Khong co mmproj => KHONG nhan anh.
-    # Khai o day de chinh llama-swap tra dung trong /v1/models, chu khong chi
-    # `llm_gateway` biet - hai noi cung mot su that, khong the lech nhau.
+    description: "Coding, chat, agent, tom tat. Engine 200K; input public 170K."
     capabilities:
       in: ["text"]
       out: ["text"]
@@ -163,16 +156,38 @@ models:
       --cache-type-k q4_0 --cache-type-v q4_0
       --host 127.0.0.1 --port ${PORT}
     proxy: "http://127.0.0.1:${PORT}"
-    # 900s = 15 phut. Du dai de mot phien agent co khoang nghi ma khong phai nap
-    # lai (nap lai o 200K ton them ca thoi gian prefill), du ngan de tra VRAM cho
-    # ComfyUI truoc khi lo anh ke tiep bat dau.
-    ttl: 900
+    # Dai hon `ops`: khach ngoai goi rai rac, nap lai giua cac lan la tra tien
+    # bang do tre cho nguoi dung cuoi.
+    ttl: 1800
     unloadTimeout: 30
+
+  # ==========================================================================
+  # `qwen38-ops` DA GO NGAY 03/09, va viec go la MOT PHAN CUA BAN VA.
+  #
+  # No tung ton tai vi ta tin rang 200K "chi dung duoc khi KHONG qua
+  # Cloudflare". Do la mot suy luan, khong phai mot phep do, va no SAI cho cua
+  # ma Codex/Claude Code that su dung:
+  #
+  #   * lap luan cu: prefill ~1.000 tok/s => prompt 200K ton ~200s => CF cat o
+  #     125s => 524. Dung cho cua DONG BO.
+  #   * nhung `nhip_tim.py` chen chu thich SSE moi 15 giay TRONG LUC prefill,
+  #     nen dong ho im-lang cua CF khong bao gio cham o cua STREAM. Chu thich
+  #     cu duoc viet TRUOC khi `nhip_tim.py` ton tai, va khong ai doc lai no.
+  #
+  # !! VA CO MOT LY DO MANH HON DE CHI GIU MOT HO SO TEXT. Do that 03/09:
+  #    llama-swap **giet mot luot dang chay** de nap ho so khac. Luot bi giet
+  #    chi nhan `ConnectionReset`, khong loi nao noi vi sao - no trong y het
+  #    mot lan OOM, va no da lam hong hai lo do lien tiep cua chinh phien nay.
+  #
+  #    Hai ho so text cung mo ra cho khach = mot nguon `ConnectionReset` ngau
+  #    nhien khong giai thich duoc. Mot ho so text cong khai, mot tep `-c`, mot
+  #    su that. Nen `qwen38-api` GIO CHINH LA ho so 200K.
+  # ==========================================================================
 
   # ------------------------------------------------------------------- vision
   qwen38-vision:
-    name: "Qwen3.8-27B vision (64K, doc anh)"
-    description: "Doc anh chup man hinh, bieu do, giao dien. Ngu canh 64K."
+    name: "Qwen3.8-27B vision (131K, doc anh)"
+    description: "Doc anh chup man hinh, bieu do, giao dien. Ngu canh 131K."
     capabilities:
       in: ["text", "image"]
       out: ["text"]
@@ -181,8 +196,8 @@ models:
       -m ${GGUF}
       --mmproj ${MODELS}/mmproj-F16.gguf
       ${CHUNG}
-      -c 65536
-      --cache-type-k q8_0 --cache-type-v q8_0
+      -c 131072
+      --cache-type-k q4_0 --cache-type-v q4_0
       --host 127.0.0.1 --port ${PORT}
     proxy: "http://127.0.0.1:${PORT}"
     ttl: 600

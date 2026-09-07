@@ -46,10 +46,95 @@ BIEN_KHOA = "LTT_API_KEY"
 #:    Vi vay `tests/test_275_cai_dat_cli.py` doi chieu HAI CHIEU: so o day phai
 #:    bang `ngan_sach.CONG_BO_CHO_CLIENT`. Doi mot ben ma quen ben kia => gate do.
 #:
-#:    Truoc 02/09 so nay la 65000 -- da CU tu lau (tran vao tung la 65k, roi 81k,
-#:    nay 96.256 => cong bo 88.555). Khach macOS/Linux tai ban nay ve bi bao
-#:    ngu canh THAP hon that 26%, tuc Codex nen som va vo co.
-CUA_SO_NGU_CANH = 88555
+#:    Truoc 02/09 so nay la 65000 -- da CU tu lau. Khach macOS/Linux tai ban do
+#:    ve bi bao ngu canh THAP hon that 26%, tuc Codex nen som va vo co.
+#:
+#:    Duong di cua con so: 65.000 -> 88.555 (02/09) -> 156.385 (03/09, khi cua
+#:    so engine len 204.800). Moi lan doi deu phai doi CA HAI bo cai.
+CUA_SO_NGU_CANH = 156385
+
+#: Tran token RA, khop `ngan_sach.TOKEN_RA_TRAN`.
+TOKEN_RA_TRAN = 32768
+
+#: Nguong client PHAI nen hoi thoai, khop `ngan_sach.NEN_CHO_CLIENT`.
+#:
+#: 🔴 KHONG PHAI `CUA_SO_NGU_CANH * 0.8`. Ti le do khong do cai can do: thu phai
+#:    vua la khoang trong tu nguong nen len cua so cong bo, va no phai chua tron
+#:    MOT luot sinh dai nhat (32.768) — client chi kiem nguong GIUA hai luot.
+#:    Voi 0,8 khoang do chi con 25.412, thieu, va production da an mot `413` o
+#:    101.938 token vao dung vi vay.
+NEN_HOI_THOAI = 123617
+
+#: Tran token cho MOT ket qua tool, do vao `truncation_policy` cua catalog.
+#:
+#: 🔴 TRUOC 04/09 CHO NAY LA `cua_so` — tuc **ca cua so ngu canh**. Mot ket qua
+#:    tool duy nhat duoc phep nuot tron ngu canh. Mac dinh cua chinh Codex la
+#:    `TruncationPolicyConfig::bytes(10_000)` voi `APPROX_BYTES_PER_TOKEN = 4`,
+#:    tuc **2.500 token** — ta rong hon **62 lan**.
+#:
+#: ⭐ VA DAY KHONG PHAI MOT TRUONG TRANG TRI. Codex chi kiem nguong nen **GIUA
+#:    hai luot**, khong kiem giua cac lan goi tool trong CUNG mot luot
+#:    (openai/codex#16033: 83 lenh shell dua ngu canh tu 0 len 400K trong mot
+#:    luot, nen khong kip chay; co TODO cua chinh ho thua nhan). Nen khi mot
+#:    luot phinh ra, `truncation_policy` la **co che phong thu duy nhat con
+#:    lai** — va ta da vo hieu hoa no bang chinh tay minh. Production da an mot
+#:    ket qua tool **95.901 token trong mot luot**.
+#:
+#: Suy ra, khong bia: khoang trong giua nguong nen va cua so cong bo dung bang
+#: `TOKEN_RA_TRAN` (156.385 - 123.617 = 32.768). Mot ket qua tool khong duoc
+#: chiem qua NUA khoang do, de sau no van con cho cho luot sinh ke tiep.
+#:
+#: ⚠️ Don vi o day la token **UOC CUA CODEX** (`len/4`), khong phai token that
+#:    cua Qwen. Do 03/09: tieng Viet ~3,14 ky tu/token that, nen 16.384 x 4 =
+#:    65.536 byte ~ **20.872 token that** — van duoi 32.768, con bien an toan.
+TRAN_KET_QUA_TOOL = TOKEN_RA_TRAN // 2
+
+#: Cua so nen cua Claude Code, do vao `CLAUDE_CODE_AUTO_COMPACT_WINDOW`.
+#:
+#: 🔴 TRUOC 04/09 BIEN NAY KHONG DUOC DAT, va do la MOT LOI TIEN — cung ho voi
+#:    `truncation_policy` cua Codex, chi khac ten. Tai lieu chinh thuc
+#:    (`code.claude.com/docs/en/model-config.md`, muc *Default auto-compact
+#:    thresholds*) noi thang:
+#:
+#:        "If you don't set an auto-compact window, Claude Code compacts when
+#:         the conversation reaches the model's context limit"
+#:        "Sessions on a model ID Claude Code doesn't recognize, such as an LLM
+#:         gateway alias, compact at the context window Claude Code assumes"
+#:
+#: ⇒ Ta khai `CLAUDE_CODE_MAX_CONTEXT_TOKENS = 156.385` va khong dat cua so nen,
+#:   nen Claude nen o DUNG 156.385 — tuc 100% cua so, khong phai mot phan an
+#:   toan duoi no. Tran cung may chu la 169.984, nen khoang con lai chi
+#:   **13.599**, trong khi mot luot sinh dai nhat la **32.768**. Va Claude cung
+#:   chi kiem nguong GIUA hai luot.
+#:
+#: ⭐ Dung mot con so voi Codex (`NEN_HOI_THOAI`), va vi cung mot ly do: khoang
+#:    trong tu nguong nen len tran phai chua TRON mot luot nua.
+#:
+#: ⚠️ Bien nay co san **toi thieu 100.000**. Nguong vision cua ta (55.787) nam
+#:    duoi muc do va bien moi truong thi khong tach duoc theo model — nhung
+#:    `ANTHROPIC_MODEL` la `ltt_llm`, nen con so text moi la con so dung cho
+#:    phien Claude Code.
+CUA_SO_NEN_CLAUDE = NEN_HOI_THOAI
+
+#: Cua so cong bo cua model VISION. `qwen38-vision` nap `-c 131072`.
+#:
+#: ⛔ NO VAN LA MOT CON SO RIENG, du hien gio no tinh co bang con so text CU.
+#:    Ban truoc 01/09 khai 88.555 cho CA HAI model va do la mot loi hua sai
+#:    (luc do vision chay `-c 65536`, cua so that cua no la 28.262). Su trung
+#:    hop hom nay khong xoa duoc ly do phai tach: hai model, hai `-c`, hai con
+#:    so — va chung se lech lai ngay lan nang cua so ke tiep.
+#:
+#: 📈 03/09: 28.262 -> 88.555, khi vision len `-c 131072` + KV q4_0. Do that:
+#:    89.868 token vao doc lai dung moc dau-cuoi, VRAM 21.099 MiB (+748 so voi
+#:    ho so 65K cu), va A/B doc anh tren cung mot anh: ca hai ho so tra dung moc.
+CUA_SO_NGU_CANH_VISION = 88555
+#: Nguong nen cua vision, khop `ngan_sach.nen_cua("qwen38-vision")`.
+#:
+#: ⭐ TRUOC 03/09 SO NAY LA **0**, va so 0 do la mot cau tra loi that: cua so
+#:    cong bo cua vision khi ay (28.262) HEP HON mot luot sinh dai nhat (32.768),
+#:    nen khong nguong nen nao giu duoc loi hua va bo cai phai bo han truong do.
+#:    Nang cua so len 131K la thu lam cho no dinh nghia duoc tro lai.
+NEN_HOI_THOAI_VISION = 55787
 
 #: Khoa BAT BUOC trong `[model_providers.ltt]`, kem ly do.
 #:
@@ -74,8 +159,8 @@ def _catalog() -> str:
          chuoi. KHONG so nao lam vua long ca hai => BO HAN. No la tuy chon.
        * tro `model_catalog_json` toi tep KHONG ton tai -- Codex tu choi khoi dong.
     """
-    def mot(slug: str, doc_anh: bool = False) -> dict:
-        return {
+    def mot(slug: str, cua_so: int, nen: int, doc_anh: bool = False) -> dict:
+        d = {
             "slug": slug, "display_name": slug,
             "description": f"{slug} (LTT Studios)",
             "default_reasoning_level": "medium",
@@ -93,20 +178,27 @@ def _catalog() -> str:
             "supports_reasoning_summary_parameter": False,
             "default_reasoning_summary": "none", "support_verbosity": False,
             "apply_patch_tool_type": "freeform",
-            "truncation_policy": {"mode": "tokens", "limit": CUA_SO_NGU_CANH},
+            "truncation_policy": {"mode": "tokens", "limit": TRAN_KET_QUA_TOOL},
             "supports_parallel_tool_calls": False,
             "supports_image_detail_original": False,
-            "context_window": CUA_SO_NGU_CANH,
-            "max_context_window": CUA_SO_NGU_CANH,
-            "auto_compact_token_limit": int(CUA_SO_NGU_CANH * 0.8),
+            "context_window": cua_so,
+            "max_context_window": cua_so,
             "experimental_supported_tools": [],
             "input_modalities": ["text", "image"] if doc_anh else ["text"],
             "supports_search_tool": False, "use_responses_lite": False,
             "node_repl_auto_review_required": False, "node_repl_disabled": False,
         }
+        # Khong co nguong nao giu duoc loi hua (nen=0) thi BO HAN truong, dung
+        # ghi mot con so bia: Codex se tin no, va cai gia la mot 413 giua phien.
+        if nen > 0:
+            d["auto_compact_token_limit"] = nen
+        return d
 
-    return json.dumps({"models": [mot("ltt_llm"), mot("ltt_llm_vision", True)]},
-                      indent=1)
+    return json.dumps(
+        {"models": [mot("ltt_llm", CUA_SO_NGU_CANH, NEN_HOI_THOAI),
+                    mot("ltt_llm_vision", CUA_SO_NGU_CANH_VISION,
+                        NEN_HOI_THOAI_VISION, doc_anh=True)]},
+        indent=1)
 
 
 def _goc(base: str) -> str:
@@ -206,6 +298,28 @@ def claude_code(base: str, goc_claude: pathlib.Path) -> list:
         "ANTHROPIC_BASE_URL": f"{_goc(base)}/api",     # KHONG /v1: client tu ghep
         "ANTHROPIC_MODEL": MODEL,
         "ANTHROPIC_DEFAULT_HAIKU_MODEL": MODEL,
+        # 🔴 HAI DONG DUOI KHONG PHAI TINH CHINH — THIEU CHUNG LA MOT LOI TIEN,
+        #    va chung da thieu o day trong khi ban Windows (`tools/cam_cli.py`)
+        #    thi co. Tuc khach macOS/Linux nhan mot ban cai **yeu hon**, va
+        #    khong co gi trong tep nay noi ra dieu do.
+        #
+        #    Claude Code khong biet `ltt_llm` nen no GIA DINH cua so 200.000 va
+        #    noi thang ra:
+        #        "ltt_llm" is not a model this version of Claude Code
+        #        recognizes, so auto-compact will keep this session within
+        #        200k tokens (the context window it assumes).
+        #    Tran vao that cua ta nho hon nhieu, nen auto-compact khong bao gio
+        #    kip nen va khach an 413 giua phien.
+        "CLAUDE_CODE_MAX_CONTEXT_TOKENS": str(CUA_SO_NGU_CANH),
+        "CLAUDE_CODE_MAX_OUTPUT_TOKENS": str(TOKEN_RA_TRAN),
+        # 🔴 HAI DONG NAY THEM 04/09, va thieu chung cung la mot loi tien.
+        #    `CLAUDE_CODE_MAX_CONTEXT_TOKENS` chi sua con so Claude GIA DINH;
+        #    no KHONG dat nguong nen. Tai lieu chinh thuc noi ro: khong dat
+        #    cua so nen thi Claude nen khi hoi thoai **cham dung** cua so ay,
+        #    tuc 100%. Voi ta la 156.385 tren tran cung 169.984 — chi con
+        #    13.599, nho hon mot luot sinh dai nhat (32.768).
+        "CLAUDE_CODE_AUTO_COMPACT_WINDOW": str(CUA_SO_NEN_CLAUDE),
+        "MAX_MCP_OUTPUT_TOKENS": str(TRAN_KET_QUA_TOOL),
     })
     # Khoa KHONG vao day. `settings.json` bi chia se va commit thuong xuyen.
     env.setdefault("ANTHROPIC_AUTH_TOKEN", f"${BIEN_KHOA}")
