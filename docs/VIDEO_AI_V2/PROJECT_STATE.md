@@ -19,6 +19,10 @@
 > ⚠️ `SOAT_TINH_NANG_WANGP_VA_GUI.md` §1 **sửa** phần A5 của tệp số 2 (bộ mở
 > rộng prompt đi bằng WanGP, không đi bằng LLM nội bộ LTT).
 
+- **cong chat luong:** ✅ **`RESULT: PASS`** tren cay dung yen, 07/09 01:07
+  (`test-results/gates/20260907T010725Z-20212.json`). 28 buoc, 4 buoc frontend
+  tu bo qua — gate tu ghi chu chung **khong phai bang chung**, va khong buoc nao
+  cham viec cua V2.1.
 - **phase:** **Phase E MỞ** — tuyến LTT ↔ C-CLOUD **đã thông và sinh được
   video thật** (E2E `thanh_cong=true`, 06/09). Đang xây phần sản phẩm còn lại
   theo `PLAN_V1_CHI_TIET.md`.
