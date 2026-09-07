@@ -350,7 +350,8 @@ hơn 0,079**"*.
 | Tương phản màu | ✅ thấp nhất **4,79** (thẻ duyệt) và **5,25** (khối tool), chuẩn AA là 4,5 |
 | Bàn phím / focus | ✅ `focus-visible` ra viền `2px solid` kèm offset, Tab tới đủ ba nút |
 | `prefers-reduced-motion` | ✅ 3 quy tắc |
-| **CLS** | ⛔ **KHÔNG ĐO ĐƯỢC ở môi trường này** — xem dưới |
+| **CLS** | ✅ **0,0003** trên Chrome thật (mốc 0,079 — dư biên **263 lần**), ba lượt giống hệt |
+| Ma trận trên **URL công khai** | ⛔ **chưa đo được, và lý do không phải cái tôi tưởng** — xem dưới |
 
 ### 🔴 Lỗi thật mà ma trận tìm ra, ở 390 px
 
@@ -372,10 +373,10 @@ chip  134 x 24     o chon du an hien du "— khong thuoc du an nao —"
    hàng đỉnh người dùng không thấy hết, và trên điện thoại họ không biết là còn
    thứ để cuộn tới.
 
-### ⛔ CLS: không đo được, và tôi KHÔNG báo "0"
+### CLS — và vì sao lượt đo ĐẦU TIÊN phải bị vứt
 
-Lượt đo đầu ra `CLS = 0` với **0 dịch chuyển ghi được**. Đó là đúng cái số 0
-không có đối chứng. Ba lần ép dịch chuyển có chủ đích:
+Lượt đầu (khung trình duyệt nhúng) ra `CLS = 0` với **0 dịch chuyển ghi được**.
+Đó là đúng cái số 0 không có đối chứng. Ba lần ép dịch chuyển có chủ đích:
 
 ```
 chen div 200px vao dau <body>          -> 0 muc
@@ -383,16 +384,83 @@ chen div 260px vao dau .page           -> 0 muc
 doi chieu cao mot .ltc-tool DANG HIEN  -> 0 muc
 ```
 
-`PerformanceObserver.supportedEntryTypes` **có** `layout-shift`, nhưng khung
-trình duyệt nhúng này không phát mục nào kể cả khi bị ép.
+`supportedEntryTypes` **có** `layout-shift`, nhưng khung nhúng không phát mục
+nào kể cả khi bị ép. ⇒ Số 0 ấy **vô nghĩa**, và tôi không báo nó là "đạt".
 
-⇒ **Kết luận trung thực: chưa đo được**, không phải "đạt". Cần một lượt Chrome
-  thật (hoặc Lighthouse) trên URL công khai. Ghi lại đây để nó không bị đọc
-  thành ✅ ở lượt tổng kết sau.
+⭐ Nếu tôi dừng ở đó, tôi đã báo *"CLS = 0, đạt"* — một câu sai, và sai về phía
+  **an toàn giả**.
 
-⭐ Bài học `khong-doi-chung-thi-so-khong-khong-phai-phat-hien` áp đúng vào đây:
-  nếu tôi dừng ở lượt đo đầu, tôi đã báo *"CLS = 0, đạt"* — một câu sai, và sai
-  về phía **an toàn giả**.
+### ✅ Đo lại trên Chrome THẬT (Playwright, chủ dự án cấp quyền 07/09)
+
+**Đối chứng TRƯỚC:** ép một dịch chuyển ⇒ `CLS 0,2043` qua **2 mục**. Bộ đo
+chạy thật; khung nhúng mới là thứ hỏng. Không có dòng này thì mọi số dưới đây
+lại là một số 0 không đối chứng nữa.
+
+**Rồi đo sạch, ba lượt tải lại:**
+
+```
+luot 1   CLS 0,0003   1 dich chuyen   nguon: .ltc-chip--tat
+luot 2   CLS 0,0003   1 dich chuyen   nguon: .ltc-chip--tat
+luot 3   CLS 0,0003   1 dich chuyen   nguon: .ltc-chip--tat
+```
+
+Mốc là **0,079** ⇒ dư biên **263 lần**. Dịch chuyển duy nhất là chip *"Model
+chưa sẵn sàng"* xuất hiện khi `/api/danh-muc` trả về — một nhịp, rất nhỏ.
+
+Ma trận 5 mốc cũng chạy lại trên Chrome thật: **0 tràn ngang, 0 phần tử vượt
+phải, chip 24 px ở cả năm** (390 / 768 / 1280 / 1440 / 1920).
+
+### ⛔ Vế "URL CÔNG KHAI" — chưa đo được, và lý do KHÔNG phải Cloudflare
+
+Tôi suýt ghi vào đây rằng *"Cloudflare chặn bot nên không đo được"*. Đó là một
+**triệu chứng tôi gặp**, không phải **nguyên nhân**. Đo tiếp thì ra nguyên nhân
+thật:
+
+```
+grep "ltc-duyet" C:/LTTPlatform/app/server/static/chatltt/assets/main-DkFV4b4_.js   -> 0
+grep "ltc-duyet" C:/LTTPlatform/app/server/static/chatltt/assets/main-DHF47eDa.css  -> 0
+git branch -a --contains HEAD   -> chi `claude/chatltt-v3-agentic`, chua hop nhat
+production /health/version      -> commit 252f24fa6e2f
+```
+
+⇒ **Giao diện V3 chưa có trên production.** Không có gì để đo ở URL công khai.
+  Vế này không "trượt" — nó **chưa tới lượt**, và nó tới ở **P12 (phát hành)**.
+
+⭐ Bài học: một lời giải thích **khớp vừa vặn** (`kiem-gui-noi-vao-chrome-that`
+  đúng là có nói Cloudflare chặn Chrome do Playwright mở) thì kết thúc điều tra
+  sớm. Nó khớp, nó có sẵn trong trí nhớ, và nó **sai**. Bẫy
+  `gia-thuyet-khop-qua-vua-ket-thuc-dieu-tra`.
+
+### Hai sự thật RỜI NHAU, đừng gộp
+
+**1. Cloudflare CÓ chặn.** `https://app.lttstudios.com/login` trả *"Just a
+moment…"*. Tôi **không giải CAPTCHA**. Đây là việc thật phải xử ở P12 — nối vào
+Chrome của chủ dự án cần bật `chrome://inspect/#remote-debugging` bằng tay.
+
+**2. Nhưng Cloudflare KHÔNG làm hỏng byte.** Đo 07/09 trên static đang phục vụ
+thật:
+
+```
+GET https://app.lttstudios.com/static/ltt.css
+  HTTP 200 · 290.440 byte · cf-cache-status: HIT
+  sha256 165ed3b1904fd5b4f1228200745625e7db154f9dcbf9e2954290f8b51e2208db
+
+C:/LTTPlatform/app/server/static/ltt.css
+  290.440 byte
+  sha256 165ed3b1904fd5b4f1228200745625e7db154f9dcbf9e2954290f8b51e2208db
+```
+
+**Khớp tuyệt đối** — CF không minify, không đổi một byte nào của tệp này.
+
+⚠️ Nhưng đây là **`ltt.css`, không phải bundle V3**. Nó chỉ chứng minh *cơ chế*
+   phục vụ nguyên byte; nó **không** chứng minh bố cục V3 đúng trên URL công
+   khai. Đó là một phép đo **thứ hai**, và nó phải chạy sau P12.
+
+⛔ Vì đúng cái bẫy `CLAUDE.md` mục **5b** ghi lại đã xảy ra thật: sau khi sửa
+   `ltt.css`, CF phục vụ bản **cũ** (TTL 4h) → chip hiện thành radio thô dù
+   origin đã đúng. `Cache-Control: max-age=14400` ở trên chính là 4 giờ ấy. Vấn
+   đề khi đó là **bản nào**, không phải **byte có nguyên không** — nên phép đo
+   byte ở trên **không** trả lời được nó.
 
 ### axe chạy ở vitest, không tiêm vào trang — và vì sao
 
@@ -458,15 +526,62 @@ sau cả M1–M3. `test_833::test_CHUA_mo_cua_thu_tu` chốt sự vắng mặt �
 |---|---|---|
 | R1 | `_FILES` đang bật — không có tài liệu thì mọi lượt ra `khong_co_nguon` | ✅ **07/09** |
 | R2 | Giao diện nói rõ **phạm vi** (không đọc Internet) | ✅ **07/09** — chốt ở bốn chỗ, xem mục B6 |
-| R3 | **Đo lại `CREDIT_UOC_MOI_VONG = 3`** trên 20–50 lượt thật | 🟡 là một **neo** từ giá 400 credit/1M token, không phải phép đo |
+| R3 | **Đo lại `CREDIT_UOC_MOI_VONG`** (nay `= 1`) trên 20–50 lượt thật | 🟡 vẫn là một **neo**, không phải phép đo — nhưng nay neo vào `gia_token` bằng mã, không chép tay; xem dưới |
 
 ⛔ Thêm `chatltt.nghien_cuu` vào `chieu_tool.CHO_MODEL_GOI` là một bước **riêng**
    và hôm nay **không** làm: vòng nghiên cứu là một nút **người dùng bấm**, không
    phải một năng lực model tự gọi. `test_841` chốt sự vắng mặt ấy.
 
+🔴 **R3 từng ghi `= 3`, và con số ấy sai 13 lần.** Nó được suy ra bằng cách lấy
+   `GIA_RA_CREDIT_1M = 400` áp lên **token VÀO** — mà token vào có giá riêng,
+   `GIA_VAO_MOI_CREDIT_1M = 50`. Sai một bậc độ lớn.
+
+⛔ Và **25 phép kiểm của `test_841` đều xanh với hằng số sai**, vì chúng chỉ đòi
+   `> 0` và đòi tăng đơn điệu — hai mệnh đề mà một hằng số sai 13 lần vẫn thoả.
+   Đó là **Bẫy 32** (`docs/BAY_TRONG_CONG_CHAT_LUONG.md`): phép kiểm **yếu hơn**
+   thứ nó phải đo.
+
+⭐ Bản vá không phải "sửa số cho đúng" — số chép tay nào rồi cũng trôi. `test_847`
+  neo `uoc_tran` vào **chính `gia_token`**, nên đổi bảng giá mà quên đổi ước tính
+  thì gate đỏ.
+
 ⭐ Không có điều kiện "chốt giá" như `_FILES`, và đó **không** phải bỏ sót: tầng
   job này thu **0**, mọi credit chảy qua `runtime_noi_bo` theo giá đã chốt của
   `text.chat`. Xem `apps/chatltt/gia_nghien_cuu.py`.
+
+### 📌 Món nợ CHÉO: vế "URL công khai" của P09 chỉ trả được SAU P12
+
+Tiêu chí P09 đòi ma trận *"trên trình duyệt thật **+ URL công khai**"*. Vế đầu
+đã đo xong trên Chrome thật. Vế sau **chưa đo được**, và không phải vì trượt:
+
+```
+grep "ltc-duyet" <bundle chatltt tren production>  -> 0
+git branch -a --contains HEAD                      -> chua hop nhat vao dau
+```
+
+Giao diện V3 **chưa có trên production**, nên URL công khai không có gì để đo.
+
+⛔ Đây là một **vòng phụ thuộc**, phải nói thẳng ra chứ đừng để nó tự giải:
+
+```
+P09 (nghiem thu)  can  URL cong khai
+URL cong khai     can  P12 (phat hanh)
+P12               can  P11 (red team)
+P11               can  P09
+```
+
+⇒ Cách cắt vòng: P09 đóng với vế công khai **treo có địa chỉ**, và nó thành một
+  hạng mục **bắt buộc trong nghiệm thu P12** — không phải một việc "nhớ thì làm".
+
+| # | Việc | Khi nào |
+|---|---|---|
+| CK1 | Chạy lại ma trận 5 mốc + CLS trên `https://app.lttstudios.com/chatltt` | ngay sau deploy P12 |
+| CK2 | Đối chiếu sha256 bundle CF phục vụ với tệp trên đĩa | cùng lượt |
+
+⚠️ CK2 **không** thừa dù đã đo `ltt.css` khớp tuyệt đối hôm nay. Sự cố `CLAUDE.md`
+   mục 5b ghi lại không phải "CF đổi byte" mà "CF phục vụ **bản cũ**" — TTL 4 giờ
+   (`Cache-Control: max-age=14400`, đo được ngay hôm nay). Phép đo *byte có nguyên
+   không* **không trả lời được** câu *bản nào*. Hai câu khác nhau, hai phép đo.
 
 
 ⛔ **Đọc mục này trước khi bật cờ, kể cả bật để thử.**
