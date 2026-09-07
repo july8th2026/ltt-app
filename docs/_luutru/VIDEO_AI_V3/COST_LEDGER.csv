@@ -1,0 +1,4 @@
+timestamp,resource_type,resource_id,provider,region,unit_price_usd,unit,quantity,estimated_cost_usd,actual_cost_usd,phase,phase_envelope_h,envelope_remaining_h,status,notes
+2026-09-04T16:20:00+07:00,network_volume,uizchbiet5,runpod,US-KS-2,0.07,GB-month,300,21.00,,P04-b,0,0,ACTIVE,"lttvideo-models-v1 · standard storage · dataCenterId KHONG SUA DUOC · dong ho tien bat dau chay tu day (~$0.70/ngay)"
+2026-09-05T02:39:10+07:00,cpu_pod,b33f664mr7dtpu,runpod,US-KS-2,,vCPU-hour,4,,,P05,0,0,DA_XOA,"lttvideo-nap-model - nap model vao volume uizchbiet5. Song 05/09 02:39 -> 03:50 (~71 phut). Tai 8 tep 170,515 GB, 0 loi, 62,8 phut chay. DA XOA luc 03:50 (HTTP 204)."
+2026-09-05T11:37:14+07:00,serverless_endpoint,uwzftpd3utftfn,runpod,US-KS-2,0.00133,giay,1,,,P06,0.3,0.3,ACTIVE,"lttvideo-worker - build tu GitHub repo rieng tu. workersMin=0 nen KHONG tinh tien khi ranh. GPU: 3 bien the H100 (80GB PRO 4.79/gio). idle 60s, exec 1800s, flashboot bat, volume uizchbiet5."
