@@ -1,4 +1,4 @@
-"""Service mỏng chạy TRÊN C-CLOUD — dịch 6 đường HTTP của LTT sang `WanGPSession`.
+"""Service mỏng chạy TRÊN C-CLOUD — dịch các đường HTTP của LTT sang `WanGPSession`.
 
 ⭐ Vì sao cần nó: `shared/api.py` của WanGP là API **trong tiến trình**. Gọi qua
    mạng không được. Đây là mảnh nối duy nhất, và nó **mỏng có chủ đích**:
@@ -16,10 +16,10 @@
    phục vụ **đúng một cấu hình**. Muốn hai cấu hình thì hai tiến trình.
 
 Chạy:
-    /data/venv/bin/python -m uvicorn dich_vu_ccloud:app --host 0.0.0.0 --port 8888
+    /data/env311/bin/python -m uvicorn dich_vu_ccloud:app --host 0.0.0.0 --port 8888
 
 ⛔ **8888, không phải 8188.** Cổng phải nằm trong danh sách pod ĐÃ MỞ lúc tạo;
-   pod `bly29qwp5bum3r` khai `ports: ['8888/http', '22/tcp']`. Nghe ở cổng
+   pod hien tai (`s6bbn2cip61wo3`) khai `ports: ['8888/http', '22/tcp']`. Nghe ở cổng
    không khai thì dịch vụ vẫn chạy, log vẫn sạch, và máy A vẫn **không gọi tới
    được** — một kiểu hỏng không để lại dấu vết ở phía máy chủ. Đường công khai
    RunPod dựng theo khuôn `https://<pod-id>-<cong>.proxy.runpod.net`.
@@ -160,6 +160,36 @@ def health() -> dict:
             "runtime_san_sang": _phien is not None,
             "san_sang": _phien is not None,   # giu ten cu cho ban client dang chay
             "loi_ham_nong": _loi_ham}
+
+
+@app.get("/metadata")
+def metadata(x_lttv_key: str = Header(default="")) -> dict:
+    """Ảnh chụp `metadata` của **mọi** model, để LTT chọn model khi máy đã TẮT.
+
+    ⭐ Vì sao chụp chứ không hỏi trực tiếp: `list_model_defs()` có sẵn bộ lọc
+       `main_output` + `inputs`, nhưng nó cần một **phiên đang chạy**. Mà `B1`
+       chốt "bật pod theo nhu cầu", nên ta phải chọn model **trước khi** bật máy
+       — lúc đó không có phiên nào để hỏi.
+
+    ⛔ Đây là dữ liệu của WanGP, chụp nguyên văn. LTT **không** diễn giải lại;
+       `apps/lttvideo/chon_model.py` chỉ **lọc** trên nó.
+
+    📌 Neo vào SHA: cùng một SHA cho cùng một ảnh chụp. Lệch SHA nghĩa là ảnh
+       chụp nói về một engine khác bản.
+    """
+    _kiem_khoa(x_lttv_key)
+    s = _lay_phien()
+    ra = {}
+    for m in s.list_model_defs():
+        ten = m.get("model_type") or m.get("id")
+        if not ten:
+            continue
+        try:
+            ra[str(ten)] = s.get_model_schema(str(ten))
+        except Exception as e:  # noqa: BLE001 — mot model hong khong duoc lam
+            # hong ca anh chup; ghi ly do vao chinh o cua no.
+            ra[str(ten)] = {"loi": f"{type(e).__name__}: {e}"}
+    return {"so_model": len(ra), "model": ra}
 
 
 @app.post("/submit")
