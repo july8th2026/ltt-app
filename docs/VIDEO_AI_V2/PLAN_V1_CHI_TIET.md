@@ -320,6 +320,60 @@ nối, không phải một thao tác mới — và điều đó xoá luôn lỗ 
 
 ---
 
+## 5c. Kế hoạch chốt: viết hết phần không cần GPU, rồi **MỘT** lượt pod cuối
+
+Chủ dự án đề xuất 07/09, và nó đúng nguyên tắc §0: mỗi lần bật pod tốn ~9 phút
+cộng rủi ro không thuê được card (đã trả giá hôm nay — `stop` rồi 5 lượt `start`
+đều hỏng, phải tạo pod mới).
+
+### Đợt A — viết hết, không bật pod
+
+| # | Việc | Vì sao chưa cần GPU |
+|---|---|---|
+| A-1 | **`C2` dọn theo hạn 3 ngày** | thao tác trên R2 + sổ job, không đụng engine |
+| A-2 | **`B2` chống bấm hai lần** (`dedupe_key`) | nền tảng đã có cột; chỉ cần truyền |
+| A-3 | **`A5` mở rộng prompt** — bật `prompt_enhancer` của WanGP | mã đường đi viết được; **model** thì tải ở đợt B |
+| A-4 | **Kiểm GUI bằng trình duyệt thật** (`CLAUDE.md` mục 5) | app chạy cục bộ, job không cần chạy xong |
+| A-5 | Gate đầy đủ trên cây đứng yên | |
+
+### Đợt B — **một** lượt bật pod, chạy hết rồi tắt
+
+Thứ tự trong cùng một lượt, xếp theo *"hỏng sớm thì rẻ"*:
+
+1. **Nghiệm thu bộ mới bằng một video chữ** — bộ `py3.11/cu130` trên SM 9.0
+   **chưa từng sinh video nào**. Nếu hỏng thì hỏng ở đây, trước khi tải 30 GB.
+2. **Tải `i2v_2_2`** (WanGP tự tải ở lượt dùng đầu) + **video từ ảnh**, đi qua
+   đúng đường `nap_media` → `image_start`.
+3. **Tải bộ mở rộng prompt** (`Qwen3.5-9B Int8` — **không** phải 3.8-27B, xem
+   §5d) và thử một lượt có mở rộng.
+4. **Nút Nâng nét** trên video vừa sinh → job `upscalevideo` chạy ở máy A.
+5. **Đo** giây/bước ở cấu hình cuối, ghi vào `DU_LIEU_DA_DO.md`.
+6. `canh_pod.py --tat` và `kiem-ke` phải thấy `pods` rỗng.
+
+⛔ Không xen việc viết mã vào giữa đợt B: mỗi phút pod chạy là $3,19, và sửa mã
+giữa chừng thì phép nghiệm thu không còn nói về một cây đứng yên.
+
+### 5d. 🔴 `Qwen3.8-27B` bị chặn — dùng `Qwen3.5-9B Int8`
+
+Đo 07/09 trên pod, hỏi thẳng `_GGUF_CUDA_LOAD_ERROR` của WanGP:
+
+```
+GGUF nap duoc: False
+RuntimeError: CUDA error: CUBLAS_STATUS_INVALID_VALUE
+              when calling cublasSgemm(...)
+```
+
+Gói `llamacpp_gguf_cuda 1.0.14+torch210cu130py311` **cài được**, gói `gguf`
+**có**, `Q4_0` **được hỗ trợ** — hỏng ở **phép tự kiểm số học** của WanGP. Đây
+là lỗi thật giữa bánh xe dựng sẵn và ngăn xếp này, không phải thiếu cấu hình.
+
+⇒ `Qwen3.8` dùng trọng số GGUF nên **bị chặn**. `Qwen3.5-9B` chạy backend
+**Int8/quanto**, không đụng đường GGUF — và `PROMPTS.md` gọi nó là *"strong
+quality/performance balance"*. Lên 27B là một bước riêng, sau khi thượng nguồn
+sửa.
+
+---
+
 ## 6. Không nằm trong V1
 
 Tab Ảnh / Giọng nói / Nhạc · LoRA · VACE mask · nối video >15s · bán ra ngoài

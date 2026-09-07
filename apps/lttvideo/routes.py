@@ -198,7 +198,8 @@ async def tao_video(
     except LoiMedia as e:
         return RedirectResponse(f"?loi={e}", status_code=303)
 
-    from platform_core.job_submit import submit_with_credit  # noqa: PLC0415
+    from platform_core.job_submit import (  # noqa: PLC0415
+        dedupe_key_for, submit_with_credit)
 
     from .manifest import MANIFEST
 
@@ -211,12 +212,22 @@ async def tao_video(
     if media_key:
         tham_so["media_key"] = media_key
 
+    # ⛔ `dedupe_key_for` chan F5 / bam hai lan: cung `job_type` + cung `params`
+    #    trong khi job CU CHUA XONG => tra ve job cu, KHONG tru tien lan hai.
+    #    Docstring cua no noi "moi route submit NEN truyen khoa nay"; day la mot
+    #    lop bao ve da co san ma app khong dung thi tu minh chiu.
+    #
+    # ⚠️ Voi luot CO DINH MEDIA thi lop nay yeu hon: moi lan tai len sinh mot
+    #    `media_key` khac (uuid), nen hai lan bam ra hai khoa khac nhau. Chan
+    #    duoc truong hop pho bien nhat (khong media), va noi ro gioi han thay vi
+    #    de nguoi sau tuong no chan tat ca.
     job = submit_with_credit(
         db,
         user_id=user.id,
         app_slug=MANIFEST.slug,
         job_type="lttvideo.tao",
         params=tham_so,
+        dedupe_key=dedupe_key_for("lttvideo.tao", tham_so),
     )
     db.commit()
     # ⭐ Di thang toi trang job CUA NEN TANG: o do da co tien do tu dieu nhip,
