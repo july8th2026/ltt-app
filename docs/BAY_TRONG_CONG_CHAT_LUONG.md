@@ -2161,6 +2161,32 @@ ra ở bước quét byte.
    *"docs không vào bản deploy"* nghe hợp lý nhất — và sai nặng nhất, vì người
    phải đỏ là **người merge sau**.
 
+### Bài học tổng quát hơn cả sự cố: thay **giá trị** bằng **lệnh**
+
+Bản đính chính đầu tiên của tôi sửa một hàng tài liệu từ `9f555599` thành
+`0ad9c868`. **Trong vòng một giờ nó lại sai**, vì phiên kia deploy `2f28159f`
+lên sau.
+
+⭐ Hai lần sai trong một giờ **không phải hai lần bất cẩn**. Nó là cơ chế: một
+   số commit chép tay vào tài liệu **không có cách nào tự biết nó đã cũ**. Sửa
+   giá trị chỉ mua được đúng khoảng thời gian tới lần deploy kế tiếp.
+
+Đây đúng thứ `CLAUDE.md` phải học sau **năm** lần nói sai — và cả năm lần đều
+sai *về phía nguy hiểm*:
+
+> *"Một bảng chép tay không có cách nào tự biết nó đã cũ. Nên thứ đổi là **nơi
+> câu trả lời đến từ**."*
+
+⇒ Hàng ấy nay chứa **lệnh**, không chứa **giá trị**:
+
+```bash
+curl -s http://127.0.0.1:8100/health/version          # ban DANG chay
+cat  C:/LTTPlatform/app.previous/dau_van_tay.json     # DUONG LUI
+```
+
+🔴 Và với con số này thì "cũ" đắt hơn bình thường: `app.previous` **là đường
+   lùi**, nên một giá trị cũ ở đó không chỉ sai — nó **rollback về sai chỗ**.
+
 ### Nửa sau, và nó suýt xảy ra thật trong cùng buổi
 
 Sau khi bị chỉ ra, tôi làm đúng chữ *"đừng commit lên trunk"* — và **vẫn suýt

@@ -228,3 +228,36 @@ Máy B (`render_gateway`, `llm_gateway`, ComfyUI, llama-swap) **không** nhận 
 
 ⭐ Và **nói với phiên kia** trước khi deploy nếu trunk vừa nhận việc của họ —
    deploy chép cả cây, nên bạn đang đưa mã của họ lên production cùng mã mình.
+
+### 🔴 Cây chính là **bề mặt deploy của MỌI phiên** — giữ nó sạch kể cả khi bạn không deploy
+
+`setup\2-cai-dat.ps1` **từ chối chạy từ worktree**, nên mọi lượt deploy — của
+bất kỳ phiên nào — đều chép từ `D:\LTTSTUDIOSAPP`. Và `docs/` **có** trong bản
+deploy (`C:\LTTPlatform\app\docs`).
+
+⇒ Một tệp bạn đang sửa dở ở cây chính sẽ lên máy chủ trong lượt deploy của
+  **người khác**, dù bạn chưa `git add` gì.
+
+⛔ §2 có câu *"trước khi deploy, `git status --porcelain` phải rỗng"* — nhưng nó
+   dặn **người deploy**, mà người deploy thường ngồi ở **worktree khác**. Người
+   có khả năng làm bẩn cây chính lại là người **không** đọc dòng ấy, vì họ đâu
+   có deploy. Một luật đặt sai người nhận thì coi như không tồn tại.
+
+**Luật cho người ngồi ở cây chính:** khi một phiên khác sắp deploy, đưa cây về
+sạch trước. Đã xảy ra 07/09 — hai tệp `.md` sửa dở suýt lên production trong
+lượt deploy của phiên ChatLTT.
+
+⚠️ Đừng mặc định `git stash` cho việc này: **`AGENTS.md` §10.3** xếp nó vào
+   *"ba cái bẫy của cây dùng chung"* — nó **cuốn cả phần dở của phiên kia** vào
+   stash của bạn. Chỉ an toàn khi bạn chắc mình là người duy nhất đang sửa cây
+   ấy. Muốn một cây sạch để đo thì dựng riêng:
+
+```bash
+git worktree add --detach <tmp> HEAD
+git worktree remove --force <tmp>
+```
+
+*(Hậu quả nếu bỏ qua **không** phải hỏng chức năng — `.md` không được phục vụ,
+không được import, và phép đối chiếu băm chỉ soi `.py` + bundle. Cái hỏng là
+mệnh đề **"bản đang chạy = một commit xác định"**, thứ mà `dau_van_tay.json`,
+phép đối chiếu băm và `/health/version` cùng dựng lên. Xem **Bẫy 30**.)*
