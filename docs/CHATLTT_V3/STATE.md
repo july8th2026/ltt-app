@@ -636,6 +636,54 @@ phía tôi sẽ báo một hồi quy không có thật.
 
 ---
 
+## Deploy 07/09 lượt 2 — `33a76d8b`, bốn bản vá P10 lên production
+
+```
+cay chinh HEAD   33a76d8b
+origin/trunk     33a76d8b
+production       33a76d8b
+duong lui        a365fa80   <- ghi TRUOC deploy, dung Bay 30
+nghiem thu       515 tep .py | lech 0 | thieu 0 | THUA 0
+health           200 loopback + 200 cong khai
+```
+
+⭐ Chiều **thừa** = 0 là chiều duy nhất chứng minh deploy đi từ một **commit
+  sạch**, không từ cây bẩn.
+
+### Cờ V3: vẫn TẮT cả sáu. Nhưng "không đổi gì" là một câu KHÔNG chính xác
+
+Đo trước khi nói, thay vì nói rồi tin:
+
+| Chuỗi trong bundle | Bản đang chạy trước | Bản mới |
+|---|---|---|
+| `ltc-duyet` (thẻ duyệt V3) | 0 | 2 — **nhưng cờ gác, inert** |
+| `Model chưa sẵn sàng`, `ltc-chip--tat` | đã có | như cũ |
+
+⇒ Không tính năng V3 nào sống dậy. **Nhưng có một thay đổi người dùng thấy
+  thật**, và nó không phải V3: CSS `.ltc-dinh` đổi `nowrap` → `wrap`. Đó là bản
+  sửa lỗi **tràn ngang ở 390 px** mà ma trận P09 tìm ra, và nó áp cho hàng đỉnh
+  **chung**.
+
+Kiểm nó đã tới người dùng thật, không chỉ tới đĩa:
+
+```
+.ltc-dinh{ ... flex-wrap:wrap ... }        <- tu CSS Cloudflare dang phuc vu
+.ltc-dinh>.ltc-chip{flex:none}
+```
+
+### ⚠️ Một thứ ngoài commit đã lên production — ghi ra, không giấu
+
+Thư mục **chưa theo dõi** `docs/architecture/workflow_v2_audit/` (việc đang dở
+của phiên `video-v2-wangp`, tạo lúc 16:44) đã được robocopy chép lên, vì danh
+sách `/XD` của `2-cai-dat.ps1` **không có `docs`**.
+
+- Tác động lúc chạy: **không** — markdown, production không phục vụ `docs/`.
+- ⛔ Nó **không** hiện trong con số "thừa 0" ở trên, vì `nghiem_thu_deploy.py`
+  chỉ đếm tệp `.py`. Đừng đọc "thừa 0" thành "không có gì ngoài commit".
+- Đã hỏi phiên ấy, chờ 5 phút, không có trả lời. Không xoá việc của phiên khác.
+
+---
+
 ## 🔒 Điều kiện để BẬT các cờ V3 — món nợ tự đòi
 
 ⚠️ **SÁU cờ** (cập nhật 07/09). Kế hoạch tổng ghi *"làn B — mỗi nhóm một cờ"*;
@@ -732,10 +780,29 @@ P11               can  P09
 ⇒ Cách cắt vòng: P09 đóng với vế công khai **treo có địa chỉ**, và nó thành một
   hạng mục **bắt buộc trong nghiệm thu P12** — không phải một việc "nhớ thì làm".
 
-| # | Việc | Khi nào |
+| # | Việc | Trạng thái |
 |---|---|---|
-| CK1 | Chạy lại ma trận 5 mốc + CLS trên `https://app.lttstudios.com/chatltt` | ngay sau deploy P12 |
-| CK2 | Đối chiếu sha256 bundle CF phục vụ với tệp trên đĩa | cùng lượt |
+| CK1 | Chạy lại ma trận 5 mốc + CLS trên `https://app.lttstudios.com/chatltt` | 🔴 **còn nợ** — cần cờ V3 bật, tức sau P12 |
+| CK2 | Đối chiếu sha256 bundle CF phục vụ với tệp trên đĩa | ✅ **ĐÃ TRẢ 07/09** — xem dưới |
+
+### ✅ CK2 trả được sớm, ở lượt deploy `33a76d8b`
+
+Bundle mới lên production khi deploy các bản vá P10 (cờ V3 vẫn tắt), nên đối
+chiếu được ngay mà không cần chờ P12:
+
+```
+main-DQ_2XKqu.js    cf e1f6a0dcfd4e...  =  dia e1f6a0dcfd4e1e73
+main-BOzoROl1.css   cf 1001289a1225...  =  dia 1001289a12257266
+main-DkFV4b4_.js (ban cu)  ->  http 404
+```
+
+⭐ Và bản cũ **404 ngay**, không phục vụ tiếp 4 giờ như sự cố `CLAUDE.md` mục 5b.
+  Lý do: bundle cache-bust bằng **tên tệp** (hash nội dung), không bằng query
+  string — nên URL cũ đơn giản là không còn tồn tại.
+
+⛔ CK1 thì **không** trả được cùng lượt: nó đo bố cục của giao diện V3, mà giao
+   diện ấy chỉ hiện khi cờ bật. Đây đúng là chỗ phân biệt *"byte có nguyên
+   không"* với *"bố cục có đúng không"* — hai câu hỏi khác nhau, hai phép đo.
 
 ⚠️ CK2 **không** thừa dù đã đo `ltt.css` khớp tuyệt đối hôm nay. Sự cố `CLAUDE.md`
    mục 5b ghi lại không phải "CF đổi byte" mà "CF phục vụ **bản cũ**" — TTL 4 giờ
