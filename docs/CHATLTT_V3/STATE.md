@@ -671,16 +671,54 @@ Kiểm nó đã tới người dùng thật, không chỉ tới đĩa:
 .ltc-dinh>.ltc-chip{flex:none}
 ```
 
-### ⚠️ Một thứ ngoài commit đã lên production — ghi ra, không giấu
+### ⚠️ Một thứ ngoài commit đã lên production — và nó là một ẢNH CHỤP DỞ
 
-Thư mục **chưa theo dõi** `docs/architecture/workflow_v2_audit/` (việc đang dở
-của phiên `video-v2-wangp`, tạo lúc 16:44) đã được robocopy chép lên, vì danh
-sách `/XD` của `2-cai-dat.ps1` **không có `docs`**.
+Thư mục **chưa theo dõi** `docs/architecture/workflow_v2_audit/` đã được
+robocopy chép lên, vì danh sách `/XD` của `2-cai-dat.ps1` **không có `docs`**.
+
+**Đo lại 07/09 sau khi một phiên khác bác lời kể đầu tiên:**
+
+| | Production | Cây nguồn |
+|---|---|---|
+| số tệp | **1** | **2** |
+| `01_CURRENT_LTT_ARCHITECTURE.md` | 60.620 byte, đóng băng **16:44** | 66.852 byte, **17:07** |
+| `02_LTT_WORKFLOW_V2_REQUIREMENTS.md` | **không có** | 44.863 byte, **17:13** |
+
+⇒ Production đang mang một **ảnh chụp dở** của một tài liệu người ta **vẫn đang
+  viết**: 60.620 byte của một tệp nay đã 66.852 byte, và thiếu hẳn tệp thứ hai.
 
 - Tác động lúc chạy: **không** — markdown, production không phục vụ `docs/`.
 - ⛔ Nó **không** hiện trong con số "thừa 0" ở trên, vì `nghiem_thu_deploy.py`
   chỉ đếm tệp `.py`. Đừng đọc "thừa 0" thành "không có gì ngoài commit".
-- Đã hỏi phiên ấy, chờ 5 phút, không có trả lời. Không xoá việc của phiên khác.
+- Chủ nó là phiên **`LTT Workflow V2 architecture investigation`** — một phiên
+  thứ tư, khởi động **sau** lượt `ListAgents` của tôi. Bản ghi đầu tôi đoán sai
+  chủ và đã hỏi nhầm người.
+
+### 🔴 Bài học: `git status` lúc kiểm KHÁC trạng thái cây lúc robocopy
+
+Mốc thời gian nói ra một thứ không ai trong hai phiên nhìn thấy lúc đầu:
+
+```
+16:44  thu muc + tep 01 (ban 60.620 byte)  xuat hien
+16:47  toi chay `git status`, thay `?? docs/architecture/`, hoi phien khac
+16:50  deploy chay  -> robocopy chep BAN 16:44
+16:53  deploy xong
+17:07  tac gia ghi tiep, tep 01 thanh 66.852 byte
+17:13  tac gia them tep 02
+```
+
+⇒ Phép kiểm cây sạch của tôi và lượt chép **không cùng một thời điểm**, và giữa
+  chúng cây vẫn đổi. Trong một kho nhiều phiên, **"cây sạch lúc 16:47" không
+  phải một phát biểu về lúc 16:50.**
+
+⭐ Đây là bản mở rộng của điều `docs/16` đã ghi cho phép nghiệm thu: *"cây làm
+  việc không phải một mốc — nó là một mốc đang chuyển động"*. Chỗ ấy nói về việc
+  **đối chiếu**; chỗ này nói rằng nó đúng cả với việc **quyết định có deploy hay
+  không**.
+
+⛔ Và không có bản sửa rẻ nào: khoảng giữa "kiểm" và "chép" luôn tồn tại. Thứ
+   làm được là **đo lại sau khi chép** — đúng cái `nghiem_thu_deploy` làm, nhưng
+   nó chỉ đếm `.py` nên khoảng mù này nằm ngoài tầm nó.
 
 ---
 
