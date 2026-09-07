@@ -211,6 +211,40 @@
   different sources before anyone believes it is enough."* Today is source two,
   and it says 2,0 is not enough — but not yet why.
 
+  ✅ **ANSWERED 2026-09-07: the overshoot depends on the CONTENT, and the
+  encoder is exonerated.** Four measurements at the same mix ceiling (−3,5):
+
+  | content | mix | delivered | overshoot | T5 |
+  |---|---|---|---|---|
+  | fake model, `giu_hinh` | −3,45 | −3,27 | 0,18 | pass |
+  | fake model, `cat_thong_minh` | −3,45 | −3,32 | 0,13 | pass |
+  | real model, `giu_hinh` | −3,43 | −2,10 | 1,33 | pass |
+  | real model, `cat_thong_minh` | −3,46 | −0,68 | **2,78** | **fail** |
+
+  ⭐ Same mix level, overshoot spanning **0,13 to 2,78 dB** — a factor of 20. So
+  how much headroom is needed is **not a property of the pipeline**; it is a
+  property of the SIGNAL going through it. A different model writes a different
+  translation, which is spoken differently, which peaks differently.
+
+  ⚠️ **And that disproves the explanation written above the constant**, which
+  attributed the variation to "how hard the limiter is pressing" (measured at
+  −2,5 versus −3,5). All four rows sit at −3,45, i.e. the limiter presses
+  equally, and the overshoot still differs twentyfold.
+
+  🔑 **The encoder was controlled for and is innocent.** Taking the *real* mix
+  and encoding it with the product's own parameters (`aac 192k`, 44,1→48 kHz)
+  gives **0,10 and 0,17 dB**. Re-run without the resample: identical. So it is
+  not AAC, not the resample, and not `render` reading the wrong input — input 1
+  really is the mix, so the Phase-22 defect has not recurred.
+
+  ⛔ Value still unchanged at 2,0. We know it is not enough for one source; we
+  do not know *how much* is, because we do not know which property of the signal
+  drives the overshoot. The exit condition is written at the constant itself.
+
+  ⭐ And the next real-model failure will not cost an extra run: a failing run
+  now retains both the mix and the delivered file
+  (`test_448._giu_tang_vat`).
+
   ⚠️ **No customer exposure**: ASV has no production rows. This is a shipping
   blocker, not a live defect.
 
