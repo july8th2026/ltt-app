@@ -227,7 +227,10 @@ Bốn dòng `Passed` sau mỗi commit trả lời một câu hẹp hơn nhiều 
 
 ```
 GIAI DOAN A — GO CHAN (khong viet tinh nang, chi mo duong)   ~6-8 h
-  A1  Thay pyIQA + DOVER bang torchmetrics + VMAF, do lai moc
+  A1  Tham dinh UVQ theo 6 dieu kien       [XONG PHAN DO DUOC 07/09]
+        dat 1-4  |  con 5 (SHA-256) va 6 (smoke GPU)
+  A1b Tac vu operator: tai 169 MB checkpoint, ghi SHA-256, ghim commit
+  A1c Smoke benchmark tren GPU dich — VA kiem lech torch 2.8 -> 2.11
   A2  Dung bo cham 4 lop, lop 1 (doi chung biet truoc) TRUOC TIEN
   A3  Nguon media co license ro rang cho bo hieu chuan
   A4  [chu du an] khoa `trunk` trong cua_so_yen
