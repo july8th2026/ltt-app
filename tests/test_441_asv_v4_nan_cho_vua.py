@@ -375,3 +375,71 @@ def test_van_tay_doan_GOM_van_ban_da_nan():
     # ... va van doi theo giong, vi loi thoai duoc doc BOI mot giong cu the.
     c = giai_doan_giong._van_tay("seg_0001", "cau da rut ngan", "GIONG KHAC", "bac")
     assert c != b
+
+# =============================================================================
+#  F. May BAN khong duoc giet giai doan giong  (MAY_BAN_KHONG_GIET)
+# =============================================================================
+
+def test_may_BAN_khong_giet_giai_doan_giong(monkeypatch):
+    """🔴 **Loi hoi quy that, do duoc o luot nghiem thu 07/09 16:58.**
+
+    Ban va 06/09 doi may-ban tu `ai.AiError` sang `giong_noi.MayBan` de nen tang
+    doc duoc "cho tai nguyen" thay vi "that bai". Dung o tang do — nhung
+    `MayBan` ke thua `RuntimeError`, KHONG ke thua `AiError`, nen no **lot qua**
+    tay bat cua `_viet_lai` va bay len giet ca giai doan:
+
+        voice_synthesis failed_terminal | ltt_llm: ban
+
+    ⛔ Dung dieu docstring cua `_viet_lai` cam: *"mot lan xin viet lai hong
+       khong duoc lam hong ca giai doan"*. Bac thang nan con mot nac nua.
+
+    ⭐ Bai nay chot HANH VI o ranh gioi: mot lan goi model bao BAN phai bien
+       thanh `_KhongNanDuoc` — tin hieu ma vong lap doc duoc — chu khong bay ra
+       ngoai duoi bat ky lop nao.
+    """
+    from apps.auto_scan_video import ai, giai_doan_giong as gd
+    from apps.auto_scan_video.giong_noi import MayBan
+
+    def ban(*a, **kw):
+        raise MayBan("khong provider nao phuc vu duoc: ltt_llm: ban")
+
+    monkeypatch.setattr(ai, "goi_tinh_tien", ban)
+
+    with pytest.raises(gd._KhongNanDuoc):
+        gd._viet_lai(None, None, {"ma": "seg_0001"}, chu="mot cau dai",
+                     giay=4.0, khe=2.0, so_vong=0, ctx=None)
+
+
+def test_loi_THAT_van_thanh_KhongNanDuoc_nhu_cu(monkeypatch):
+    """⚠️ Nua khong the thieu: ban va tren khong duoc bien tay bat thanh
+    `except Exception`. Mot loi THAT cua model van phai di dung duong cu.
+    """
+    from apps.auto_scan_video import ai, giai_doan_giong as gd
+
+    def hong(*a, **kw):
+        raise ai.AiError("model tra ve rong")
+
+    monkeypatch.setattr(ai, "goi_tinh_tien", hong)
+
+    with pytest.raises(gd._KhongNanDuoc):
+        gd._viet_lai(None, None, {"ma": "seg_0001"}, chu="mot cau dai",
+                     giay=4.0, khe=2.0, so_vong=0, ctx=None)
+
+
+def test_loi_LA_thi_KHONG_bi_nuot(monkeypatch):
+    """⛔ Va chieu thu ba: tay bat phai HEP. Mot loi khong lien quan (vd loi
+    lap trinh) phai bay len nguyen ven, khong bi doi ten thanh "khong nan duoc"
+    — neu khong thi mot khiem khuyet that se doc thanh mot cau khong rut ngan
+    duoc, va lan chay van giao hang.
+    """
+    from apps.auto_scan_video import ai, giai_doan_giong as gd
+
+    def la(*a, **kw):
+        raise KeyError("truong bi thieu")
+
+    monkeypatch.setattr(ai, "goi_tinh_tien", la)
+
+    with pytest.raises(KeyError):
+        gd._viet_lai(None, None, {"ma": "seg_0001"}, chu="mot cau dai",
+                     giay=4.0, khe=2.0, so_vong=0, ctx=None)
+

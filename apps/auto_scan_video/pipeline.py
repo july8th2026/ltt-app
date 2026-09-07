@@ -167,6 +167,22 @@ CHUOI: tuple[GiaiDoan, ...] = (
     # 🔑 Lan `voice`, khong phai ffmpeg: may sinh tieng la mot DICH VU rieng
     #    (`LTTStudioVoice`, loopback :8120), nen "co ffmpeg" khong keo theo "co
     #    may sinh tieng". Xem `apps/asv_voice/manifest.py`.
+    # 🔴 **Giai doan nay CO goi may B, va co y KHONG khai `llm_remote`.**
+    #
+    #    Tao tieng thi 100% o may A (`LTTStudioVoice`, loopback :8120). Nhung
+    #    bac thang nan (pha 15) goi model de VIET LAI CAU NGAN HON khi tieng doc
+    #    ra dai qua khe — `ai.RUT_NGAN_CHO_VUA`, mot thao tac van ban thuan
+    #    (`can_thi_giac=False` -> `qwen38-api`, khong phai ban thi giac).
+    #
+    # ⚠️ Khai `llm_remote` o day se giu suat DUY NHAT cua may B
+    #    (`ltt_llm.ngan_sach.DONG_THOI_MAY_B = 1`) suot ca giai doan DAI NHAT
+    #    cua chuoi — chan `edit_plan`/`content_process`/`qc_ai` cua moi lan chay
+    #    khac, de tra gia cho mot loi goi THINH THOANG moi xay ra.
+    #
+    # ⭐ Nen cach xu ly la o TAY BAT chu khong o BAN KHAI: may ban thi bo nac
+    #    rut ngan va xuong nac co gian, va `nan_cho_vua.ket_luan` ghi lai thanh
+    #    `CO_GIAN` hoac `CAN_SUA` — suy giam CO GHI SO, va `CAN_SUA` chay thang
+    #    vao vong sua. Xem `giai_doan_giong._viet_lai`.
     GiaiDoan(VOICE_SYNTHESIS, "asv_voice", "asv_voice.voice_synthesis",
              sau=(CONTENT_PROCESS,)),
     GiaiDoan(TIMING_ALIGN, "asv_media", "asv_media.timing_align",

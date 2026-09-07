@@ -305,7 +305,30 @@ def _viet_lai(db, run, m: dict, *, chu: str, giay: float, khe: float,
         #    `ai.doc_json` la buoc doc-va-kiem-luoc-do bi bo quen o ca hai cho.
         return nan_cho_vua.doc_nan(
             ai.doc_json(kq.get("noi_dung") or "", ai.RUT_NGAN_CHO_VUA))
-    except (ai.AiError, ai.AiMoHo, nan_cho_vua.NanError) as exc:
+    except (ai.AiError, ai.AiMoHo, giong_noi.MayBan,
+            nan_cho_vua.NanError) as exc:
+        # 🔴 **`MayBan` PHAI nam trong danh sach nay, va no tung khong.**
+        #
+        #    06/09 mot ban va o `ai.goi` doi may-ban tu `AiError` sang `MayBan`
+        #    de nen tang doc duoc "cho tai nguyen" thay vi "that bai". Dung o
+        #    tang do — nhung `MayBan` ke thua `RuntimeError`, KHONG ke thua
+        #    `AiError`, nen tu do no **lot qua** tay bat nay.
+        #
+        # \u26d4 Hau qua do duoc o luot nghiem thu 07/09 16:58:
+        #    `voice_synthesis failed_terminal | ltt_llm: ban` — dung dieu
+        #    docstring ngay tren cam: *"mot lan xin viet lai hong khong duoc lam
+        #    hong ca giai doan"*. Mot ban va o tang duoi doi hanh vi o tang tren
+        #    ma khong ai rà, vi phep kiem cua no chi do tang duoi.
+        #
+        # \u2b50 Va bo nac rut ngan KHONG im lang: `nan_cho_vua.ket_luan` xep doan
+        #    vao `VUA` / `CO_GIAN` / `CAN_SUA`, ca ba deu vao `tom_tat`, va
+        #    `CAN_SUA` chay thang vao vong sua. Nen "may ban -> xuong nac co
+        #    gian" la suy giam CO GHI SO, khong phai mat mat am tham.
+        #
+        # \u26a0\ufe0f Vi sao KHONG de no bay len de job duoc hoan: `voice_synthesis`
+        #    la giai doan DAI NHAT va no khong khai `llm_remote`, nen hoan ca
+        #    giai doan vi mot cau khong rut ngan duoc la vut di toan bo tieng da
+        #    doc trong luot do. Bac thang nan sinh ra dung de xu ly ca nay.
         log.info("khong nan duoc doan %s: %s", m.get("ma"), exc)
         raise _KhongNanDuoc(str(exc)) from exc
 
