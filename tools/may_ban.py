@@ -71,16 +71,34 @@ def _ten_cay(cwd: str) -> str:
     return cwd.replace(chr(92), "/").split("worktrees/")[-1].split("/")[0]
 
 
-def quet() -> dict:
-    """{ten cay: {"so": n, "cpu": giay, "la_cay_toi": bool}} — rong neu vang psutil.
+#: Tra ve cua `quet()` khi **khong do duoc** — khac han mot bang RONG.
+#:
+#: 🔴 Do 07/09: `quet()` tra `{}` cho CA HAI ca, va `main` in "thieu psutil"
+#:    cho ca hai. Tren mot may co `psutil 7.2.2` va khong cay nao khac chay,
+#:    cong cu noi *"KHONG BIET - thieu psutil"*.
+#:
+#: ⛔ Do la mot bao dong GIA, va bao dong gia tren mot cong cu an toan thi dat
+#:    hon im lang: nguoi ta hoc cach bo qua no. `AGENTS.md` §4c cau 2 goi dung
+#:    ten: *"co y phai phan biet duoc voi tai nan — gop chung lam mot thi hoac
+#:    bao dong gia lien tuc, hoac phai noi cong den muc no bo lot chinh thu no
+#:    sinh ra de bat"*.
+#:
+#: ⭐ Va cau hoi dung la mot QUAN HE, khong phai mot NHAN: khong hoi *"bang co
+#:    rong khong"* (hinh dang) ma hoi *"phep do co CHAY khong"* (trang thai).
+KHONG_DO_DUOC = None
 
-    ⚠️ Vang `psutil` thi tra RONG, tuc "khong biet", chu khong phai "khong ai
-       chay". Nguoi goi phai doc duoc khac biet do — xem `main`.
+
+def quet():
+    """`{ten cay: {...}}`, hoac `KHONG_DO_DUOC` khi khong do duoc.
+
+    ⛔ Mot bang RONG la mot cau tra loi THAT: *"da do, khong cay nao khac dang
+       chay"*. `KHONG_DO_DUOC` la *"khong do duoc"*. Hai thu khac han, va nguoi
+       goi phai doc duoc khac biet ay — xem `main`.
     """
     try:
         import psutil
     except ImportError:
-        return {}
+        return KHONG_DO_DUOC
 
     # ⛔ LOAI TRU chinh minh VA toan bo chuoi cha.
     #
@@ -212,10 +230,17 @@ def main() -> int:
     a = p.parse_args()
 
     bang = quet()
-    if not bang:
+    if bang is KHONG_DO_DUOC:
         if not a.im:
             print("  [may ban] KHONG BIET - thieu `psutil`, khong dem duoc.")
             print("            Day KHONG phai 'may ranh'. Hoi phien khac truoc khi bam.")
+        return 0
+    if not bang:
+        # ⭐ Da DO, va khong cay nao khac dang chay. Day la mot cau tra loi,
+        #    khong phai mot su co — noi thang de nguoi doc phan biet duoc no
+        #    voi dong tren.
+        if not a.im:
+            print("  [may ban] da do: KHONG cay nao khac dang chay.")
         return 0
 
     if not a.im:
