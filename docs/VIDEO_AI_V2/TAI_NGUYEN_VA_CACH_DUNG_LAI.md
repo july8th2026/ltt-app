@@ -27,7 +27,10 @@ phần lớn thứ bạn định tạo **đã có rồi**.
 
 ```
 /data/Wan2GP/      ma nguon WanGP @ 1e1dd275... (v12.71)
-/data/venv/        torch 2.10.0+cu128 · mmgp 3.7.14 · sageattention 2.2.0
+/data/forge/         Miniforge (conda-forge) — bo chinh chu
+/data/env311/        python 3.11.14 · torch 2.10.0+cu130 · mmgp 3.7.14
+                     sageattention 2.2.0 · llamacpp_gguf_cuda 1.0.14
+/data/venv/          ⚠️ BO CU (py3.10 + cu128) — giu de lui lai, dung xoa
 /data/Wan2GP/ckpts/  ⭐ MODEL NAM O DAY — 44,8 GB, 113 tep (do 06/09)
 /data/ckpts/         ⚠️ RONG. Toi tao nham; WanGP khong dung no
 /data/hf/            ⚠️ RONG. HF_HOME co tro vao day nhung WanGP tai thang ve ckpts
@@ -66,7 +69,7 @@ hai lần**: model không ở `/data/ckpts/`, cũng không ở `/data/hf/`, mà 
 | **TẠM** | `/usr` — ổ container | `python3`, `ffmpeg`, `git`, `cmake` (apt) | **mất mỗi lần pod khởi động lại** |
 | **BỀN** | `/data` — volume | venv, torch, WanGP, model | qua cả lần xoá pod |
 
-Ảnh container là `nvidia/cuda:12.8.1-cudnn-devel-ubuntu22.04` — **không có
+Ảnh container (nay `nvidia/cuda:13.0.1-cudnn-devel-ubuntu22.04`) — **không có
 Python**. Python chỉ tồn tại vì `apt-get install` đặt nó vào nửa tạm. Mà
 `venv/bin/python3` là symlink **tuyệt đối** tới `/usr/bin/python3` ⇒ nửa bền
 **phụ thuộc** nửa tạm.
@@ -160,8 +163,11 @@ mới được.
 | Ngừng tính tiền GPU | `POST /pods/{id}/stop` | **nhả card**, có thể không thuê lại |
 | Bỏ hẳn | `DELETE /pods/{id}` | mất pod, **môi trường trên volume vẫn còn** |
 
-⇒ **Đang làm dở thì đừng `stop`.** Chi phí giữ máy chạy ($1,59/giờ) có thể rẻ
-hơn việc mất nửa buổi chờ card.
+⇒ **Đang làm dở thì đừng `stop`.** Chi phí giữ máy chạy (nay **$2,89/giờ** với
+H100) vẫn có thể rẻ hơn việc mất nửa buổi chờ card.
+
+⭐ Nhưng khi **đã xong** thì tắt — `canh_pod.py` lo việc đó, và `nen_tat()` đòi
+rảnh quá 15 phút chứ không tắt ngay khi sổ rỗng.
 
 ---
 
