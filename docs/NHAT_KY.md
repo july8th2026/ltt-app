@@ -16,6 +16,73 @@
 
 
 
+## 2026-09-07 — Giết worker thật: ba test xanh vẫn không nói được hệ thống có nhặt lại
+
+**Hạng mục:** ô "Hỏng có chủ ý: giết worker giữa chừng → nhặt lại" (H5, khu
+nghiệm thu chuỗi chính). Ô này nằm mở từ đầu; ghi chú 29/08 đã nói *"lý do
+hoãn hết hiệu lực, đang chờ người làm"*.
+
+### Vì sao ô vẫn mở dù đã có ba test
+
+`test_67`, `test_150`, `test_313` đều làm **cùng một** việc: đặt
+`heartbeat_at` lui về quá khứ, gọi `reclaim_orphans()`, xem nó trả về 1. Tức
+cả ba kiểm **phía đọc** — *"cho một nhịp cũ, hàm này có nhặt không"*.
+
+Hai phía không test nào chạm tới:
+
+1. **phía ghi** — worker thật có cập nhật `heartbeat_at` khi đang chạy không;
+2. **phía lịch** — có vòng nào *tự* gọi nhặt lại không, hay phải gọi tay.
+
+⭐ Ba test xanh ở phía đọc **tương thích hoàn toàn** với một hệ thống không bao
+   giờ nhặt lại gì: nếu không ai ghi nhịp thì mọi job đang chạy trông như mồ
+   côi; nếu không ai gọi vòng thì không mồ côi nào được nhặt. Đó là lý do ô
+   này không đóng được bằng cách chỉ đọc tên ba test.
+
+### Đo được — `tools/nghiem_thu_mo_coi.py`
+
+CSDL SQLite tạm, worker **thật** (`run_forever`), chỉ thay handler bằng một
+hàm chạy 10 phút báo tiến độ mỗi 20 giây.
+
+| Mốc | Đo được |
+|---|---|
+| đối chứng A | nhịp **tiến** 2 lần khi worker A còn sống |
+| giết | `taskkill /F /T`, nhịp đóng băng ở `01:31:32` |
+| đối chứng B | 45 giây sau nhịp **vẫn** `01:31:32` |
+| nhặt lại | worker B nhận job sau **265 giây**, `attempts 0 → 1` |
+
+Chạy hai lượt (bản nháp và bản đưa vào `tools/`): **265 giây cả hai lần**.
+
+⭐ Hai lớp đối chứng có mặt vì nếu chỉ đo *"sau khi giết, B nhận job"* thì kết
+   quả ấy còn khớp với hai giả thuyết tầm thường và đều sai: **A chưa bao giờ
+   chạy**, và **lệnh giết không ăn**. Đây đúng là Bẫy 24 — một kết quả không
+   đối chứng thì chưa phải phát hiện.
+
+### Phát hiện kèm theo: một hợp đồng thật mà không gì cưỡng chế
+
+`platform_core/jobs.py:248 heartbeat()` **không được gọi ở đâu cả** — đối
+chứng cho phép grep: cùng lệnh ấy tìm thấy hàng chục chỗ dùng `heartbeat` của
+GPU lease, Nexus và admission, nên dụng cụ không trơ.
+
+Nhịp của job chỉ nhích khi **app** gọi `ctx.progress` → `jobs.set_progress`
+(`jobs.py:336`). `apps/taovideo/jobs.py:5` ghi rõ cơ chế này và gọi thêm hai
+nhịp ở dòng 166/200 *vì* `to_asset` mất ~200 giây.
+
+⇒ Một app render 6 phút mà không báo tiến độ sẽ **bị nhặt oan trong khi worker
+  vẫn đang chạy nó** — job chạy hai lần, `attempts` cháy oan. Đo 07/09: mọi app
+  chạy lâu đều gọi (`autosubvideo` 17, `upscalevideo` 14, `taovideo` 8,
+  `taoclipngan` 6), nên **hôm nay không app nào dính**.
+
+⛔ Và tôi **không** dựng bánh cóc đếm lời gọi `progress`. Đếm lời gọi không
+   chứng minh khoảng cách giữa hai nhịp nhỏ hơn 5 phút — nó đo *thứ đại diện*,
+   đúng lớp phép đo đã ghi ở `AGENTS.md` §4d lớp E. Một bánh cóc như thế sẽ
+   xanh trên đúng cái app sẽ hỏng.
+
+⛔ Cũng không đưa phép nghiệm thu này vào gate: nó ngủ ~7 phút theo đúng
+   `ORPHAN_TIMEOUT` thật, và rút ngắn bằng cách ví nhịp về quá khứ là quay lại
+   **đúng** phép đo mà ba test kia đã làm rồi.
+
+---
+
 ## 2026-09-06 — `test_nhanh` xin khoá · khoá chưa bao giờ bảo vệ PostgreSQL test
 
 Bốn phiên chạy song song đêm 05–06/09 và **cả bốn đều báo nhau tử tế** — vẫn

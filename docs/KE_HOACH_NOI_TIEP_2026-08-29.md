@@ -206,7 +206,41 @@ làm nó **không thể sai** — `_dam_bao_giu_cho` vẫn nâng giữ chỗ. Đ
 
 </details>
 
-### Đợt 2 — H41.5 + H35.10: mở hai bề mặt *(Đợt 1 đã xanh — hết chặn)*
+### Đợt 2 — H41.5 + H35.10 *(Đo lại 07/09: **H35.10 ĐÃ XONG**)*
+
+⛔ **H35.10 không còn là việc cần làm.** Đo trên production 07/09:
+
+```
+LTT_PUBLIC_API_TOOLS = text.chat,image.ltt,video.subtitle,video.upscale,speech.ltt
+```
+
+`video.upscale` và `video.subtitle` **đã mở từ 29/08** — cùng ngày tài liệu này
+được viết, nên nó ghi là còn treo. `APP_API_COVERAGE_FINAL.md` dòng 70 và 72 đã
+ghi **EXPOSE_V1 — MỞ 29/08** cho cả hai.
+
+⭐ Luật của kho: *khi kế hoạch và nhật ký mâu thuẫn, **nhật ký đúng***. Ai
+   đọc hàng này mà đi "mở" hai tool ấy là đang đụng vào một bề mặt **đang thu
+   tiền thật**.
+
+### H41.5 — hình dạng thật, đo 07/09
+
+Cạnh `apps/taovideo/routes.py:549,578` **vẫn còn**, và nó không phải cẩu thả:
+docstring của `submit_upscale_job` ghi rõ *"dùng bởi route /queue **VÀ** bởi
+taovideo — **KHÔNG nhân đôi code engine**"*.
+
+⚠️ Gỡ nó **không phải xóa hai dòng import.** Nền tảng có đường chung
+   (`public_api/invocation.py`: `validate_public_input` → `build_job_params` →
+   `apply_server_measurements` → `price` → `submit`), nhưng nó mang **hình
+   dạng API-key**: `submit()` nhận `principal` và ghi `key_id` + ngân sách
+   project. Cuộc gọi của `taovideo` là **phiên web**; bịa một principal để dùng
+   nó là ghi sai sổ.
+
+⇒ Phần còn lại của H41.5 là **một tính năng nền tảng** (một đường gọi tool
+  dùng chung cho cả phiên web lẫn khoá API), và nó chạm `submit_with_credit`
+  — tức **đường tiền. Theo chính tiêu chí của tài liệu này, việc đó thuộc
+  Đợt 3 — mỗi việc một phiên riêng**, không phải Đợt 2.
+
+<details><summary>Nội dung Đợt 2 như viết ban đầu (giữ để truy vết)</summary>
 
 ⏳ **Cần chủ sản phẩm gật trước**, vì đợt này chạm hai ranh giới: nó **mở bề mặt
 công khai** cho khách trả tiền, và bước bật cờ + deploy nằm ngoài quyền phiên.
@@ -228,6 +262,8 @@ công khai** cho khách trả tiền, và bước bật cờ + deploy nằm ngo�
 **Nghiệm thu:** canary một khoá, request thật, **vượt cap trả 413 chứ không 503**,
 sổ credit đóng đúng vòng `hold → settle`, và kiểm trên **URL công khai** (quy tắc
 5b), không chỉ loopback.
+
+</details>
 
 ### Đợt 3 — hai việc rủi ro cao, mỗi việc một phiên riêng
 

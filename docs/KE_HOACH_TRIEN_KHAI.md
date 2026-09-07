@@ -435,13 +435,46 @@ tiền API vào.
 - [x] Hỏng có chủ ý: job lỗi → credit hoàn đủ (test + nghiệm thu)
 - [x] Hai người dùng: A không đọc được job B (test tầng route)
 - [x] Kiểm tra thật bằng browser (Playwright), console 0 lỗi
-- [ ] Hỏng có chủ ý: giết worker giữa chừng → nhặt lại (đã có reclaim_orphans +
-      test — `test_67`, `test_150`, `test_313`).
-      ⚠️ **Sửa 2026-08-29: lý do hoãn đã hết hiệu lực.** Câu cũ ghi *"để khi có
-      tool chạy lâu thật, demo quá nhanh để giết giữa chừng"* — `apps/demo` đã
-      gỡ (Q109), và nay **có** tool chạy lâu thật: `video.upscale` (job GPU
-      hàng phút) và `text.chat` (đo thật 119 giây). Việc này nay **làm được**;
-      nó đang chờ người làm, không chờ điều kiện.
+- [x] Hỏng có chủ ý: giết worker giữa chừng → nhặt lại — **nghiệm thu sống
+      2026-09-07**, `tools/nghiem_thu_mo_coi.py`.
+
+      Ba test đã có (`test_67`, `test_150`, `test_313`) đều làm **một** việc:
+      đặt `heartbeat_at` lui về quá khứ rồi gọi `reclaim_orphans()`. Tức chúng
+      kiểm **phía đọc**. Hai phía không test nào chạm tới:
+
+      1. **phía ghi** — worker thật có cập nhật nhịp khi đang chạy không;
+      2. **phía lịch** — có vòng nào *tự* gọi nhặt lại không.
+
+      ⭐ Một bộ test xanh ở phía đọc vẫn tương thích hoàn toàn với một hệ thống
+         **không bao giờ nhặt lại gì** — vì không ai ghi nhịp, hoặc không ai gọi
+         vòng. Nên phép nghiệm thu này giết một **tiến trình thật** và không giả
+         lập gì cả.
+
+      | Mốc | Đo được |
+      |---|---|
+      | đối chứng A | nhịp **tiến** 2 lần khi worker A còn sống |
+      | giết | `taskkill /F`, nhịp đóng băng ở `01:20:46` |
+      | đối chứng B | 45 giây sau nhịp **vẫn** `01:20:46` — lệnh giết ăn thật |
+      | nhặt lại | worker B nhận job sau **265 giây**, `attempts 0 → 1` |
+
+      Hai lớp đối chứng có mặt vì nếu chỉ đo *"sau khi giết, B nhận job"* thì
+      kết quả ấy còn khớp với hai giả thuyết tầm thường: **A chưa bao giờ chạy**,
+      và **lệnh giết không ăn**.
+
+      🔴 **Phát hiện kèm theo:** `platform_core/jobs.py:248 heartbeat()`
+         **không được gọi ở đâu cả**. Nhịp của job chỉ nhích khi app gọi
+         `ctx.progress` → `jobs.set_progress` (`jobs.py:336`). Đó là hợp đồng
+         thật — `apps/taovideo/jobs.py:5` ghi rõ — nhưng **không có gì cưỡng
+         chế** nó. Một app render 6 phút mà không báo tiến độ sẽ bị nhặt oan
+         **trong khi worker vẫn đang chạy nó**. Đo 07/09: mọi app chạy lâu đều
+         gọi (`autosubvideo` 17, `upscalevideo` 14, `taovideo` 8,
+         `taoclipngan` 6), nên hôm nay không có app nào dính.
+
+      ⛔ Không biến việc này thành bước gate: nó ngủ ~7 phút theo đúng
+         `ORPHAN_TIMEOUT` thật, và rút ngắn bằng cách ví nhịp về quá khứ là
+         quay lại **đúng** phép đo mà ba test kia đã làm. Và **đừng** dựng bánh
+         cóc đếm lời gọi `progress` — đếm lời gọi không chứng minh khoảng cách
+         giữa hai nhịp nhỏ hơn 5 phút (`AGENTS.md` §4d lớp E).
 - [ ] Tắt CSDL → giao diện báo lỗi rõ (dời cùng H3-admin/observability)
 
 **Trạng thái:** chuỗi chính đã nghiệm thu thật. Hai mục còn lại cần tình huống
@@ -990,10 +1023,34 @@ test thật và browser thật theo UI-RD.
 - [x] Decision Gate đã khóa — 2026-08-02: Dev trả lời 9 lựa chọn; Seedance giữ
   app/route hiện hành, xây studio trên dữ liệu/job thật và tích hợp Upscale qua
   popup quote/confirm credit dùng chung `submit_upscale_job()`.
-- [ ] R4–R7 Contract, design và lát cắt dọc — **WIP, chưa commit/deploy**: studio,
-  filter/history từ job owner-scoped và cầu Seedance→Upscale đang có code dở;
-  phải đóng theo UP1/UP3 trước khi coi hoàn thành.
+- [x] R4–R7 Contract, design và lát cắt dọc — **đã đóng** *(đo lại 07/09/2026)*.
+  Dòng cũ ghi *"WIP, chưa commit/deploy … đang có code dở"*; cả ba mệnh đề của
+  nó nay **đều sai**, mỗi cái có một phép đo riêng:
+  - *studio* — `apps/taovideo/templates/taovideo.html` có `tv-studio` (dòng 6)
+    và hợp đồng `immersive` (dòng 2).
+  - *filter/history owner-scoped* — `apps/taovideo/routes.py:60`:
+    `select(Job).where(Job.user_id == u.id, Job.app_slug == MANIFEST.slug)`,
+    cùng `tv-library-filters` (template dòng 76).
+  - *cầu Seedance→Upscale* — vào kho ở `a8058e3f`, và **đang chạy trên
+    production**: `git show 9f555599:apps/taovideo/routes.py` có cả hai dòng
+    549/578.
+
+  Điều kiện đóng do chính dòng này đặt ra — *"phải đóng theo UP1/UP3"* — cũng
+  đã thoả: **UP1** và **UP3** đều `[x]` ngay bên dưới trong chính tệp này.
+
 - [ ] R8–R10 Nghiệm thu đa state/viewport, full gate, memory và release.
+  ⚠️ **Đo lại 07/09: ô này đúng một nửa — giữ mở, nhưng thu hẹp lại.**
+  - *release* — **xong**: mã này đang trên production (`9f555599`).
+  - *viewport* — **xong**, và vừa đo lại: `taovideo` nằm trong lượt quét 24
+    route ngày 07/09 (bộ quét lấy route từ **registry**, không chép tay), chạy
+    trên **cả WebKit lẫn Chromium**, 0 tràn ngang — `BAN_GIAO_S1_S7_2026-09-07.md`.
+  - *đa state* (`empty/queued/running/done/error/cancelled`) và *memory* —
+    **chưa có phép đo nào từ cây này**. Đó là phần còn lại thật của ô.
+
+  ⭐ Không tick cả ô dù hai trong bốn vế đã xong: `04_IMPLEMENTATION_PLAN.md`
+     mục 5 ghi `[x]` cho toàn bộ, nhưng đó là **một tệp chép tay** — chính cơ
+     chế đã nói sai năm lần ở `CLAUDE.md`. Tick theo nó là tin lời khai, không
+     phải tin phép đo.
 
 ### H13.upscalevideo — UI-RD Upscale Video Studio
 
@@ -1336,9 +1393,10 @@ Q60; bước tuần tự tiếp theo là H15.S15 DEEP re-audit + full release ga
     Ghi lại một báo động giả của Claude: grep rộng báo "wp-login còn lộ ở trang
     chủ", hoá ra chỉ là tên biến CSS `--wp-admin-theme-color`. Phép kiểm của
     `audit_public_web.py` mới là cái có thẩm quyền, không phải grep tuỳ hứng.
-- [ ] H15.S15 DEEP re-audit + full release gate.
-  - [ ] H15.S15.1 `LAYOUT-001` — checkpoint 2026-08-04, **đã code nhưng chưa
-    nghiệm thu/deploy**: thêm hợp đồng `standard/catalog/wide/immersive`; mở
+- [x] H15.S15 DEEP re-audit + full release gate — **đóng 07/09/2026**, xem
+  phép đo ở `LAYOUT-001` bên dưới (phát hiện **duy nhất** của lượt re-audit).
+  - [x] H15.S15.1 `LAYOUT-001` — checkpoint 2026-08-04, **đóng 07/09/2026**:
+    thêm hợp đồng `standard/catalog/wide/immersive`; mở
     rộng Seedance, Upscale, Auto Sub, Agent Canvas và năm workspace `wide`;
     bỏ margin âm ở Upscale/Auto Sub; rebuild bundle Auto Sub.
     - [x] Targeted gate: `tests/test_129_adaptive_page_layouts.py` 3 passed;
@@ -1346,10 +1404,33 @@ Q60; bước tuần tự tiếp theo là H15.S15 DEEP re-audit + full release ga
     - [x] Browser fixture 8118: 9 app × 7 viewport 1920→390, overflow toàn
       trang 0; desktop/mobile đã xem; console 0 error/0 warning; không request
       4xx/5xx. Tại 1720 px immersive root 1.657 px, wide root 1.552 px.
-    - [ ] Full `python -m pytest -q`: đã chủ động dừng theo quyết định gom
-      release gate sau khi còn nhiều hạng mục; **không được ghi PASS**.
-    - [ ] Secret scan, commit, build release, deploy và smoke production: chưa
-      chạy; thực hiện một lần sau khi kết thúc chuỗi debug/UI tiếp theo.
+    - [x] Bộ test đầy đủ — **đã xanh, trên chính commit đang chạy production**.
+      Tiêu chí cũ (`python -m pytest -q`) nay là **tiêu chí đã bị kho bãi bỏ**:
+      `CLAUDE.md` cấm chạy nó cho toàn kho vì nó **bỏ sót 77 test frontend**
+      — tức chính nó không bao giờ chứng minh được điều ô này đòi. Người
+      kế nhiệm là `tools/gate.py`, và nó **bao cả bốn bộ frontend**.
+    - [x] Secret scan, commit, build release, deploy và smoke production.
+
+    ⭐ **Bằng chứng cho cả hai ô trên là một bản ghi MÁY SINH RA, không phải
+       lời khai**: `test-results/gates/20260906T163550Z-23388.json` — gate
+       **29/29 PASS**, 668 giây, `sha = 9f555599`, đúng commit production đang
+       chạy. Trong đó:
+
+    | Bước | Kết quả | Đóng ô nào của nhật ký 04/08 |
+    |---|---|---|
+    | 2 `secret scan` | PASS 17,5s | *"`scan_source_secrets.py` — Chưa chạy"* |
+    | 29 `bo test (song song)` | PASS 523,1s | *"`python -m pytest -q` — ĐÃ DỪNG"* |
+    | 25–28 bốn bộ frontend | PASS | phần mà tiêu chí cũ bỏ sót |
+
+    Còn *commit / build release / deploy*: mã của `LAYOUT-001` **có mặt trong
+    chính `9f555599`** — `git show 9f555599:server/static/ltt.css` có 8 chỗ
+    `immersive`, `git show 9f555599:tests/test_129_adaptive_page_layouts.py`
+    tồn tại, và 13 template đang dùng hợp đồng layout. *Smoke*: 07/09 đo
+    `/health/version`, `/health/ready` 200 và `/login` tại origin 200.
+
+    ⚠️ Ô này nằm mở **34 ngày sau khi việc của nó xong**, vì người đóng
+       release ngày ấy không biết nó tồn tại. Đó là giá của một ô chỉ đóng
+       được bằng tay: nó không đợi ai — nó **im lặng**.
 
 - [x] H16 Agent Canvas parity với PlenX — triển khai tuần tự sau Decision Gate;
   không thay runtime/credit/queue hiện có và không sao chép lỗi PlenX.
@@ -2403,7 +2484,13 @@ Quyết định nền: **Q92**. Nhật ký thật: mục `2026-08-15 — H35` tr
     `/api/v1/*` (POST tới đó đi thẳng tới origin). Nếu sau này có luật WAF mở
     rộng sang `/api/v1`, đường máy-gọi-máy sẽ chết — cần kiểm lại mỗi khi đổi
     cấu hình WAF.
-  - [~] H35.9e **Đường ra đã có 2026-08-17; kênh chưa bật.**
+  - [~] H35.9e **Đường ra đã có và kênh ĐÃ BẬT (2026-08-17).**
+    ⚠️ *Đầu đề cũ ghi "kênh chưa bật" — sửa 07/09 vì nó mâu thuẫn với
+       chính thân ô ngay bên dưới ("Đã bật trên máy chủ 2026-08-17"). Đo lại
+       `secrets/app.env` trên máy chủ: cả ba khoá đều có mặt —
+       `LTT_OPS_ALERT_EMAIL`, `LTT_MAIL_FROM`, `RESEND_API_KEY`. Ô vẫn để `[~]`
+       vì việc còn nợ (**xoay khoá provider**) là hành động của chủ sản phẩm,
+       không phải việc agent tự làm — xem cuối ô.*
     `platform_core/public_api/ops_alerts.py` đọc `metrics.aggregate()` — **cộng
     qua mọi tiến trình**, không phải `snapshot()` trong một tiến trình — và gửi
     email cho `LTT_OPS_ALERT_EMAIL`, chạy trong vòng bảo trì đã có lease (H36).

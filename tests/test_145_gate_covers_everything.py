@@ -277,24 +277,57 @@ def test_gate_NOI_RA_khi_cay_doi_trong_luc_chay():
 
        Nen bay gio no chay that: sua mot tep trong cay giua hai anh chup, roi
        doi hoi gate nhin ra.
+
+    ⛔ Nhung "cay" o day KHONG duoc la cay lam viec that. Ban truoc goi
+       `tempfile.mkstemp(dir=ROOT / "tools")` — ghi mot tep `.py` vao `tools/`
+       roi xoa ngay. Do 07/09/2026: viec do lam **do mot luot gate** o mot test
+       khac hoan toan, `test_44_release_build`:
+
+           tools/build_release.py:261: zf.write(full, rel)
+           FileNotFoundError: [WinError 2] ... 'D:/LTTSTUDIOSAPP/tools/tmplibsfvn9.py'
+
+       `build_release` liet ke `tools/` roi nen tung tep; test nay xoa tep tam
+       vao dung khe giua hai buoc ay. Hai test chay song song (`gw5`), nen loi
+       chi hien khi thoi diem trung nhau — mot lan do khong tai hien duoc, va
+       khong lien quan gi den ma vua sua.
+
+       ⭐ Bat bien khong doi: van goi `_anh_chup_cay()` THAT, van tao tep THAT
+          tren dia. Chi doi GOC sang mot cay tam. Phep kiem khong yeu di —
+          no thoi lam hong luot chay chua chinh no.
+          Xem `docs/BAY_TRONG_CONG_CHAT_LUONG.md` **Bay 29**.
     """
     import os
     import tempfile
 
+    import tools.gate as gatemod
     from tools.gate import _anh_chup_cay
 
     ma = (ROOT / "tools" / "gate.py").read_text(encoding="utf-8")
     assert "CAY DA DOI TRONG LUC CHAY" in ma
 
-    truoc = _anh_chup_cay()
-    fd, ten = tempfile.mkstemp(suffix=".py", dir=ROOT / "tools")
-    os.close(fd)                    # Windows khong xoa duoc tep dang mo
-    tam = pathlib.Path(ten)
-    try:
-        assert _anh_chup_cay() != truoc, "them mot tep ma anh chup khong doi"
-    finally:
-        tam.unlink()
-    assert _anh_chup_cay() == truoc, "xoa di roi ma anh chup van khac"
+    with tempfile.TemporaryDirectory() as thu_muc:
+        goc_gia = pathlib.Path(thu_muc)
+        (goc_gia / "tools").mkdir()
+        (goc_gia / "tools" / "co_san.py").write_text("x = 1\n", encoding="utf-8")
+
+        cu = gatemod.ROOT
+        gatemod.ROOT = goc_gia
+        try:
+            truoc = _anh_chup_cay()
+            # Doi chung: cay gia phai co noi dung. Mot anh chup RONG se "bang
+            # nhau" o cuoi ham du ham co hong hay khong.
+            assert truoc, "cay gia rong — phep kiem se xanh ma khong do gi"
+
+            fd, ten = tempfile.mkstemp(suffix=".py", dir=goc_gia / "tools")
+            os.close(fd)            # Windows khong xoa duoc tep dang mo
+            tam = pathlib.Path(ten)
+            try:
+                assert _anh_chup_cay() != truoc, "them mot tep ma anh chup khong doi"
+            finally:
+                tam.unlink()
+            assert _anh_chup_cay() == truoc, "xoa di roi ma anh chup van khac"
+        finally:
+            gatemod.ROOT = cu
 
 
 def test_quick_PHAI_noi_no_khong_chay_gi():

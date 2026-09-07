@@ -2028,3 +2028,63 @@ việc nâng gói; cái này không gây ra cái kia.
 3. Cây nào đỏ vì việc này thì **ff lên trunk** để lấy cái mốc đã cập nhật, chứ
    đừng `--accept` riêng ở cây mình: hai cái mốc lệch nhau còn tệ hơn một cái
    mốc cũ.
+
+---
+
+## Bẫy 29 — Một phép kiểm **ghi vào cây làm việc** tự phá lượt gate chứa nó
+
+`tests/test_145::test_gate_NOI_RA_khi_cay_doi_trong_luc_chay` chứng minh một
+điều thật: ảnh chụp cây của gate phải **nhìn ra** một tệp mới xuất hiện giữa
+lượt chạy. Và nó chứng minh đúng cách — không đếm chữ trong mã nguồn, mà tạo
+một tệp thật rồi đòi hàm nhận ra.
+
+Chỗ hỏng nằm ở **nơi** nó tạo tệp:
+
+```python
+fd, ten = tempfile.mkstemp(suffix=".py", dir=ROOT / "tools")   # cây LÀM VIỆC
+```
+
+Đo 2026-09-07, một lượt `--vong-lap`:
+
+```
+FAILED tests/test_44_release_build.py::test_build_produces_a_usable_archive
+tools/build_release.py:261: zf.write(full, rel)
+FileNotFoundError: [WinError 2] ... 'D:/LTTSTUDIOSAPP/tools/tmplibsfvn9.py'
+```
+
+`build_release` liệt kê `tools/` rồi nén từng tệp một. Test kia xoá tệp tạm
+vào đúng khe giữa hai bước ấy. Hai test chạy trên hai worker khác nhau
+(`gw5`), nên lỗi chỉ hiện khi thời điểm trùng nhau.
+
+### Vì sao cái bẫy này đắt hơn vẻ ngoài của nó
+
+Nó **đổ tội cho người vô can**. Lượt gate đỏ ở `test_44_release_build`, một
+tệp mà bạn không đụng tới, vì một nguyên nhân nằm ở `test_145`, một tệp bạn
+cũng không đụng tới. Và nó **không tái hiện được**: chạy riêng `test_44` thì
+xanh trong 16 giây.
+
+⇒ Phản xạ tự nhiên khi gặp nó — *"chạy lại xem"* — là phản xạ **đúng**, và
+  chính vì thế nó nguy hiểm: chạy lại thường xanh, nên nguyên nhân không bao
+  giờ bị tìm ra, và lượt sau nó lại đỏ ở một chỗ khác.
+
+### Luật
+
+**Một phép kiểm không được ghi, sửa hay xoá bất cứ thứ gì trong cây làm
+việc** — kể cả khi nó dọn sạch sau lưng mình. Cây làm việc là trạng thái
+**dùng chung** của mọi test đang chạy song song, và của cả `git status`.
+
+Bản sửa **không** làm phép kiểm yếu đi. Nó vẫn tạo tệp thật trên đĩa thật và
+vẫn gọi `_anh_chup_cay()` thật — chỉ đổi **gốc** sang một thư mục tạm:
+
+```python
+cu = gatemod.ROOT
+gatemod.ROOT = goc_gia          # cây tạm, có `tools/co_san.py`
+```
+
+⭐ Kèm một đối chứng, vì bản sửa mở ra một cách hỏng **mới**: nếu cây tạm rỗng
+   thì hai ảnh chụp bằng nhau ở dòng cuối **dù hàm có hỏng hay không**, và
+   phép kiểm thành một cái vỏ báo PASS. Nên có thêm
+   `assert truoc, "cây giả rỗng"`.
+
+Đã kiểm hai chiều: xanh với hàm thật; tiêm một `_anh_chup_cay` trả hằng số thì
+**đỏ** ở đúng dòng `"them mot tep ma anh chup khong doi"`.
