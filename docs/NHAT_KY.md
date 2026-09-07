@@ -16,9 +16,41 @@
 
 
 
-## 2026-09-07 — Deploy `9f555599 → 0ad9c868`, và `master` đuổi kịp trunk sau 308 commit
+## 2026-09-07 — Deploy `5434a4b8 → 0ad9c868`, và tôi mô tả sai điểm xuất phát
 
 **Trạng thái:** production ở `0ad9c868`, build 09:13:14, `asset_ver ae960b57`.
+
+### 🔴 Bản ghi đầu tiên của mục này ghi sai điểm xuất phát — sửa cùng ngày
+
+Tôi viết *"deploy `9f555599` → `0ad9c868`, 28 commit"*. **Sai.** Production lúc
+tôi bắt đầu đang ở **`5434a4b8`**, không phải `9f555599`.
+
+Phiên ChatLTT chỉ ra, và tôi kiểm lại bằng ba nguồn của chính máy chủ — không
+dùng `/health/version`, vì sau deploy nó chỉ trả bản của tôi:
+
+```
+C:\LTTPlatform\app.previous\dau_van_tay.json   5434a4b8baee...  02:22:26
+C:\LTTPlatform\app\dau_van_tay.json            0ad9c8687f30...  09:13:14
+C:\LTTPlatform\logs\deploy-20260907-022113.ket.txt   EXITCODE=0
+```
+
+`app.previous` **là** bản tôi vừa thay. Nó nói thẳng điểm xuất phát.
+
+**Gốc lỗi:** tôi lấy con số từ `docs/BAN_GIAO_S1_S7_2026-09-07.md` — một tài
+liệu **do chính tôi viết sáng nay** — rồi `git log 9f555599..HEAD` cho ra một
+danh sách 28 commit trông rất thuyết phục. `/health/version` tôi có hỏi, nhưng
+**sau** deploy.
+
+⭐ Hỏi *sau* chỉ xác nhận việc mình vừa làm. Nó **không** kiểm được giả định
+   mình đã đi vào. Một phép đo đặt sai chỗ trong trình tự thì không phải phép
+   đo yếu — nó là phép đo **không trả lời câu đang hỏi**.
+
+🔴 Cái giá không phải một con số xấu trong nhật ký. **`app.previous` là đường
+   lùi**, và hồ sơ của tôi chỉ nó về sai chỗ: ai đọc mục này để rollback sẽ đi
+   tìm `9f555599` trong khi thứ nằm sẵn trên đĩa là `5434a4b8`.
+
+Ghi nhớ `hoi-may-chu-dang-chay-ban-nao` đã có sẵn từ trước. Có ghi nhớ không đủ
+— phải hỏi **trước khi hành động**, không phải trước khi báo cáo.
 
 ### Bốn cửa trước deploy
 
@@ -66,19 +98,60 @@ máy đang có**. Đăng xuất thì không có gì để chép.
 ngoài và khó rút lại"). Tôi đã đẩy **trước**. Bản đẩy là trunk gate-xanh nên
 rủi ro thấp, nhưng thứ tự đã sai và không nên lặp lại.
 
+### Đóng vòng: phiên ChatLTT deploy tiếp, và chuỗi nay chứng minh được
+
+09:34:59 phiên ChatLTT ff `2f28159f` rồi deploy. Tôi nghiệm thu độc lập:
+
+```
+app.previous  0ad9c868  09:13:14     <- dung ban TOI deploy
+app           2f28159f  09:34:59
+/health/version  commit 2f28159f | nguon "marker"
+/health/ready    200 loopback · 200 cong khai
+```
+
+⭐ Đây là lần đầu chuỗi bàn giao **đọc được từ đĩa** thay vì suy từ git:
+   `5434a4b8` → `0ad9c868` → `2f28159f`. Mỗi mắt xích có một tệp làm chứng.
+
+⚠️ Và tôi suýt làm bẩn lượt deploy ấy: tôi tuân thủ đúng chữ *"đừng commit lên
+   trunk"* nhưng vẫn soạn tài liệu **trong cây làm việc** — mà deploy chép cả
+   cây, và `docs/` **có** trong bản deploy. Hai phiên cùng phát hiện gần như
+   đồng thời, bằng cùng một lệnh. Đã `git stash` trước khi họ chạy. Ghi thành
+   **Bẫy 30**, nửa sau.
+
 ### `master` đuổi kịp trunk
 
 `master` đứng ở `d225a480`, **đi sau 308 commit** và có **0** commit riêng —
 fast-forward thật, không cây nào đang giữ nó. `master → 0ad9c868`, đã đẩy.
 Đường lùi: `git branch -f master d225a480` kèm force-push.
 
-### Bản deploy này mang theo migration của phiên khác
+### Migration ChatLTT: tôi tưởng mình mang chúng lên — chúng đã ở đó rồi
 
-Hai migration ChatLTT đã nằm trên trunk qua các commit "Dong bo trunk":
-`chatltt_ghi_nho` (bảng mới + 2 index) và `chatltt_conversation.project_id`
-(cột nullable + index). Cả hai **thuần cộng thêm**, có `downgrade`. Đã báo
-phiên ChatLTT trước khi chạy — deploy chép **cả cây**, không tách được phần
-của một phiên.
+Tôi thấy hai migration ChatLTT trong `git diff 9f555599..HEAD -- alembic/` và
+kết luận bản deploy này **mang chúng lên production**. Đã báo phiên ChatLTT
+trước khi chạy, và đó là việc đúng — nhưng **tiền đề thì sai**.
+
+Hỏi thẳng CSDL production:
+
+```
+alembic head        : f2c48b71e903
+bang chatltt_ghi_nho: CO
+cot project_id      : CO
+```
+
+`f2c48b71e903` = `20260906_1500_chatltt_conv_project.py`, `down_revision`
+= `d1a7f4c9b620` = `20260906_1400_chatltt_ghi_nho.py`. **Cả hai đã ở head** từ
+lượt deploy 02:22 của phiên ChatLTT. `alembic upgrade head` trong lượt của tôi
+là **no-op** cho phần ấy.
+
+⭐ Cùng một gốc với lỗi ở trên: `git diff <điểm-tôi-tưởng>..HEAD` trả lời câu
+   *"kho đã đổi gì"*, không trả lời *"máy chủ chưa có gì"*. Hai câu ấy chỉ
+   trùng nhau khi điểm xuất phát đúng — và nó không đúng.
+
+⇒ Câu đúng cần hỏi trước mọi deploy có migration là **`select version_num from
+  alembic_version`** trên chính CSDL đích, không phải `git diff`.
+
+*(Điều vẫn đúng: deploy chép **cả cây**, không tách được phần của một phiên.
+Nên báo phiên kia trước vẫn là việc phải làm.)*
 
 ---
 

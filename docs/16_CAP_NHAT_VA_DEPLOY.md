@@ -80,11 +80,44 @@ quét venv sản phẩm:
 
 ```bash
 C:/LTTPlatform/venv/Scripts/python.exe -m pip freeze > %TEMP%/prod.txt
-python -m pip_audit --no-deps -r %TEMP%/prod.txt
+
+# Bo 3 goi co hau to phien ban local (`+cu128`) — chung khong ton tai tren PyPI.
+python - <<'PY'
+import os, pathlib
+p = pathlib.Path(os.environ["TEMP"])
+dong = (p / "prod.txt").read_text(encoding="utf-8").splitlines()
+loai = [d for d in dong if "+" in d.split("==")[-1]]
+nl = chr(10)          # KHONG viet "\n" o day — xem chu thich duoi
+(p / "prod_loc.txt").write_text(
+    nl.join(d for d in dong if d not in loai) + nl, encoding="utf-8")
+print("quet", len(dong) - len(loai), "| LOAI RA", len(loai), loai)
+PY
+
+python -m pip_audit --no-deps -r %TEMP%/prod_loc.txt
 ```
 
-`--no-deps` là **bắt buộc**: freeze có `torch==...+cu128` không giải được trên
-PyPI, thiếu cờ này `pip-audit` chết trước khi kiểm gì.
+⛔ **`--no-deps` KHÔNG đủ, dù câu trước đây ở đây nói là đủ.** Đo 07/09/2026:
+   với cờ ấy `pip-audit` **vẫn** cố giải `torch==2.11.0+cu128` và chết trước khi
+   kiểm gì:
+
+```
+ERROR: Could not find a version that satisfies the requirement torch==2.11.0+cu128
+ERROR:pip_audit._cli:Failed to install packages
+```
+
+   Phải **lọc bỏ** mọi dòng có hậu tố phiên bản local. Trên máy này là ba dòng:
+   `torch`, `torchaudio`, `torchvision`.
+
+🔴 **Hệ quả phải nói ra khi báo cáo con số.** Sau khi lọc, kết quả nói về
+   **137/140** gói. Ba gói torch **không được kiểm** — không phải "sạch", mà là
+   "không biết". Viết *"venv production: 6 lỗ"* mà không kèm mẫu số là biến một
+   khoảng trống thành một lời bảo đảm.
+
+⚠️ Đoạn trên dùng `chr(10)` chứ **không** viết `"\n"`, và đó là cố ý: công cụ
+   Bash của agent **nuốt một lớp backslash** trên đường truyền, nên một đoạn
+   copy nguyên si sẽ nhận `"n"` và ghi ra một tệp một dòng. Kho này đã dính bẫy
+   ấy nhiều lần — gần nhất là một ký tự **BEL** lọt vào `KE_HOACH_TRIEN_KHAI.md`
+   vì `\a` của `\app.env`.
 
 ### 2c. a11y (`axe-core`) — cũng chạy **trước deploy**, không trong gate
 
