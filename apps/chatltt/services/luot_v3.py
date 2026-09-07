@@ -33,6 +33,8 @@ kỹ một luồng dài.
 """
 from __future__ import annotations
 
+from datetime import timedelta
+
 import logging
 
 from apps.chatltt.services import bo_chay_tool, chieu_tool, co_v3
@@ -118,22 +120,88 @@ class KhongChayTiepDuoc(RuntimeError):
     """Run không ở trạng thái chạy tiếp được, hoặc không thuộc người này."""
 
 
+#: Lease giữ chỗ một run đang chạy tiếp. TTL rộng vì một vòng model có thể lâu;
+#: và có đập nhịp mỗi bước nên TTL chỉ là trần cho trường hợp tiến trình CHẾT.
+TTL_CHAY_TIEP = timedelta(minutes=10)
+
+
+def ten_lease(run_id: str) -> str:
+    """Tên lease của một run. Một hàm chứ không phải một f-string rải rác —
+    hai chỗ gõ lại cùng một khuôn là hai chỗ sẽ lệch."""
+    return f"chatltt-run:{run_id}"
+
+
 def tiep_sau_duyet(db, *, run_id: str, user_id: str, so) -> DP.Run:
     """Chạy tiếp một run đang chờ duyệt, sau khi người dùng đã bấm.
 
     ⛔ Dựng lại `Run` **từ CSDL**, không giữ nó trong bộ nhớ giữa hai yêu cầu
        HTTP. Một `Run` sống trong RAM của tiến trình web là một `Run` biến mất
        khi dịch vụ khởi động lại — và "duyệt bền" mất hết ý nghĩa.
+
+    ## 🔴 Vì sao có một lease ở đây
+
+    Có **hai** nguồn gọi chạy tiếp, không phải một:
+
+    ```
+    routes/_p_duyet.py    nguoi bam Duyet
+    services/tao_media.py _danh_thuc_run() khi job xong (dong_bo goi)
+    ```
+
+    Cả hai theo cùng khuôn: hỏi `nen_chay_tiep()` **rồi mới** `chay_tiep_nen()`.
+    Đó là đọc-rồi-ghi, và khe giữa hai câu đủ rộng cho người thứ hai lọt vào —
+    đo được ở `test_817::test_chay_tiep_bi_chan_khi_da_co_nguoi_chay`: người thứ
+    hai vào được đúng lúc người thứ nhất bắt đầu làm việc.
+
+    ⛔ Hai lượt model cho một lần duyệt ⇒ **tiền đi hai lần**, và cây hội thoại
+       có hai nhánh trả lời cho cùng một câu hỏi.
+
+    ⭐ Chính `duyet._quyet` đã học bài này rồi và ghi vào mã của nó (*"Điều kiện
+      nằm TRONG `WHERE`"*). Cổng duyệt có người canh; đường chạy tiếp thì chưa.
+
+    ## ⚠️ Vì sao là LEASE chứ không phải lật một cột trạng thái
+
+    Lật `trang_thai` ra ngoài `CHO_DUOC` cũng chặn được người thứ hai — nhưng
+    một sự cố giữa chừng sẽ để run **kẹt vĩnh viễn**: nó không còn ở trạng thái
+    chạy tiếp được, và không ai đưa nó về. Trước bản vá, cùng sự cố ấy chỉ làm
+    lượt đứng lại và **thử lại được**.
+
+    ⇒ Chữa một cuộc đua mà tạo ra một cách kẹt mới là đổi một lỗi hiếm lấy một
+      lỗi hiếm khác — không phải một bản sửa. `leases` hết hạn theo nhịp đập,
+      nên tiến trình chết thì chỗ tự nhả.
+
+    ⭐ Và `LR.dung_lai` **đọc** `run_row.trang_thai` để dựng lại `Run`; ghi đè
+      cột ấy để giữ chỗ là làm hỏng chính thứ mình sắp dựng.
     """
-    from apps.chatltt.services import hoi_thoai as H
-    from apps.chatltt.services import luot as LUOT
-    from apps.chatltt.tables import ChatlttExecution, ChatlttMessage, ChatlttRun
+    from platform_core import leases
+    from apps.chatltt.tables import ChatlttRun
 
     run_row = db.get(ChatlttRun, str(run_id))
     if run_row is None or run_row.user_id != str(user_id):
         raise KhongChayTiepDuoc("khong tim thay run")
     if run_row.trang_thai not in DP.CHO_DUOC:
         raise KhongChayTiepDuoc(f"run dang o {run_row.trang_thai}")
+
+    # ⭐ Các phép kiểm RẺ chạy trước: không giành chỗ cho một việc chắc chắn
+    #    không làm được. Giành rồi mới phát hiện sai chủ sở hữu là giữ chỗ oan
+    #    của người có quyền cho tới khi hết TTL.
+    cho = leases.acquire(db, name=ten_lease(run_row.id), ttl=TTL_CHAY_TIEP)
+    if cho is None:
+        raise KhongChayTiepDuoc("run dang duoc chay tiep o cho khac")
+    try:
+        return _tiep_sau_duyet(db, run_row=run_row, user_id=user_id, so=so,
+                               cho=cho)
+    finally:
+        # ⛔ Nhả trong `finally`: một ngoại lệ giữa chừng mà không nhả thì run
+        #    đứng im tới hết TTL — đúng cái kẹt mà lease sinh ra để tránh.
+        leases.release(db, cho)
+
+
+def _tiep_sau_duyet(db, *, run_row, user_id: str, so, cho) -> DP.Run:
+    """Thân thật của `tiep_sau_duyet`, chạy khi đã giữ được chỗ."""
+    from apps.chatltt.services import hoi_thoai as H
+    from apps.chatltt.services import luot as LUOT
+    from apps.chatltt.tables import ChatlttExecution, ChatlttMessage
+    from platform_core import leases
 
     tra_loi = db.get(ChatlttMessage, run_row.message_id)
     if tra_loi is None or tra_loi.user_id != str(user_id):
@@ -182,9 +250,16 @@ def tiep_sau_duyet(db, *, run_id: str, user_id: str, so) -> DP.Run:
         cho_chay_co_phi=co_v3.tool_co_phi_bat,
         conv_id=run_row.conversation_id)
 
+    def ghi_va_dap_nhip(b):
+        # ⭐ `ghi` được gọi mỗi bước, nên đây là nhịp có sẵn — không phải thêm
+        #    một luồng đập nhịp riêng. TTL 10 phút vì thế chỉ còn là trần cho
+        #    trường hợp tiến trình CHẾT, không phải trần cho một lượt chậm.
+        LR.ghi_buoc(db, run_row, b)
+        leases.heartbeat(db, cho)
+
     run = DP.tiep_tuc(run, ket_qua_duyet=kq, goi_model=goi_model,
                       chay_tool=chay_tool, phat=so.phat,
-                      ghi=lambda b: LR.ghi_buoc(db, run_row, b),
+                      ghi=ghi_va_dap_nhip,
                       nen_dung=lambda: so.dung.is_set())
     _dong(db, run_row=run_row, run=run, tra_loi=tra_loi)
     return run

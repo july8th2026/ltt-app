@@ -432,13 +432,73 @@ def khoi_chay_nen(execution_id: str, *, user_id: str) -> threading.Thread:
     return t
 
 
+def _dung_run_dang_cho(db, ex, *, user_id: str) -> bool:
+    """Huỷ luôn `ChatlttRun` khi lượt V3 đang **đứng chờ**. Trả `True` nếu có huỷ.
+
+    ## 🔴 Vì sao hai việc của `dung()` đều trượt ở biên chờ
+
+    ```
+    ex.status in ("streaming", "queued")  ->  vong da xong, KHONG lat
+    dang_chay.yeu_cau_dung(ex.id)         ->  luong da thoat, KHONG tim thay
+    ```
+
+    Luồng nền gọi `dang_chay.ket_thuc()` ở `finally`, nên sổ `_SO` không còn
+    khoá ấy. Và lần chạy tiếp gọi `dang_chay.bat_dau()` — hàm này **ghi đè** một
+    `LuotDangChay` mới, tức một `Event` mới **đã xoá**. Cờ đặt trước đó biến mất
+    cùng đối tượng cũ.
+
+    ⇒ Bấm Dừng lúc chờ duyệt là một **no-op im lặng**, và lượt vẫn chạy tiếp khi
+      được duyệt — tiêu thêm tiền sau khi người dùng đã bảo dừng.
+
+    ## ⭐ Chỗ ghi nhận ĐÃ có sẵn, chỉ là không ai ghi vào
+
+    `dieu_phoi.CHUYEN_HOP_LE` khai `AWAITING_APPROVAL -> CANCELLED` và
+    `WAITING_BACKGROUND -> CANCELLED` là hợp lệ. Dùng đúng ô ấy thì
+    `nen_chay_tiep` tự đúng theo (`CANCELLED` không thuộc `CHO_DUOC`), và mọi
+    chỗ đọc trạng thái run — kể cả chỗ chưa viết — cũng vậy.
+
+    ⛔ Một cờ `da_huy` song song thì mỗi người đọc phải nhớ hỏi thêm một câu, và
+       sẽ có người quên. Đó là cách một bất biến trở thành một quy ước.
+
+    ## ⚠️ Chỉ chạm biên CHỜ — `TOOL_RUNNING` thì KHÔNG
+
+    `CHUYEN_HOP_LE` cũng cho `TOOL_RUNNING -> CANCELLED`, nhưng ở đó có một
+    luồng **đang sống** và nó có đường dừng riêng (cờ trong tiến trình + phép
+    kiểm ở `dong_su_kien`). Lật trạng thái từ ngoài vào là ghi đè lên thứ luồng
+    ấy sắp ghi; hai người ghi một ô thì ô ấy nói dối một trong hai.
+
+    ⇒ Điều kiện là `CHO_DUOC` (không có luồng nào), **không** phải bảng chuyển.
+    """
+    from apps.chatltt.services import dieu_phoi as DP
+    from apps.chatltt.tables import ChatlttRun
+
+    if not getattr(ex, "run_id", None):
+        return False
+    r = db.get(ChatlttRun, str(ex.run_id))
+    # ⛔ Kiểm chủ sở hữu LẠI, trên chính bảng sắp ghi. `ex` đã được kiểm ở
+    #    `dung()`, nhưng đây là một bảng KHÁC — một phép kiểm quyền không tự nối
+    #    sang bảng khác chỉ vì hai bảng có liên kết.
+    if r is None or str(r.user_id) != str(user_id):
+        return False
+    if r.trang_thai not in DP.CHO_DUOC:
+        return False
+    r.trang_thai = DP.CANCELLED
+    return True
+
+
 def dung(db, *, user_id: str, execution_id: str) -> dict:
     """Nút Dừng: ghi `cancelled` xuống CSDL (chắc) + cờ trong tiến trình (nhanh)."""
     ex = db.get(ChatlttExecution, str(execution_id))
     if ex is None or ex.user_id != str(user_id):
         raise H.KhongTimThay("khong co luot nay")
+    doi = False
     if ex.status in ("streaming", "queued"):
         ex.status = "cancelled"
+        doi = True
+    # ⭐ Biên CHỜ: không có luồng nào để nhận cờ, nên phải ghi vào trạng thái run.
+    #    Xem `_dung_run_dang_cho` — `test_849` chốt cả bốn biên.
+    doi = _dung_run_dang_cho(db, ex, user_id=user_id) or doi
+    if doi:
         db.commit()
     trong_tien_trinh = dang_chay.yeu_cau_dung(ex.id)
     return {"execution_id": ex.id, "status": ex.status, "trong_tien_trinh": trong_tien_trinh}

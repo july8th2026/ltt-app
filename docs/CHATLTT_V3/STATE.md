@@ -477,6 +477,102 @@ Nới CSP để đo một lần a11y là đổi một biện phòng thủ thật
 
 ---
 
+## P10 — tra tấn: hai lỗ thật, cả hai đều ở chỗ KHÔNG ai đang chạy
+
+Kế hoạch P10 liệt kê *"đua credit · POST/duyệt trùng · **huỷ ở từng biên trạng
+thái**"*. Đo 07/09 tìm ra **hai** lỗ, và chúng cùng một hình dạng: mọi đường
+phòng thủ đều canh lúc có **một luồng đang chạy**, còn lúc lượt **đứng chờ** thì
+không ai canh.
+
+| # | Lỗ | Hậu quả | Phép kiểm |
+|---|---|---|---|
+| **1** | Bấm Dừng lúc lượt đang **chờ** là no-op im lặng | duyệt xong lượt **vẫn chạy tiếp**, tiêu thêm tiền sau khi người dùng bảo dừng | `test_849` |
+| **2** | Hai nguồn cùng chạy tiếp **một** run | **hai lượt model cho một lần duyệt** ⇒ tiền đi hai lần, hội thoại hai nhánh | `test_817` |
+
+### Lỗ 1 — nút Dừng trượt cả hai việc của nó
+
+```
+ex.status in ("streaming", "queued")  ->  vong da xong, KHONG lat
+dang_chay.yeu_cau_dung(ex.id)         ->  luong da thoat, KHONG tim thay
+```
+
+Luồng nền gọi `dang_chay.ket_thuc()` ở `finally`, nên sổ `_SO` không còn khoá.
+Và lần chạy tiếp gọi `dang_chay.bat_dau()` — hàm này **ghi đè** một
+`LuotDangChay` mới, tức một `Event` **mới, đã xoá**. Cờ đặt trước đó biến mất
+cùng đối tượng cũ.
+
+⭐ Bản vá không thêm cột nào: `dieu_phoi.CHUYEN_HOP_LE` **đã khai**
+  `AWAITING_APPROVAL -> CANCELLED` và `WAITING_BACKGROUND -> CANCELLED`. Chỗ ghi
+  nhận có sẵn, chỉ là không ai ghi vào. Dùng đúng ô ấy thì `nen_chay_tiep` tự
+  đúng theo, vì `CANCELLED` không thuộc `CHO_DUOC`.
+
+⛔ Và bản vá **chỉ** chạm biên chờ. `TOOL_RUNNING -> CANCELLED` cũng hợp lệ,
+   nhưng ở đó có một luồng đang sống với đường dừng riêng; lật trạng thái từ
+   ngoài vào là ghi đè lên thứ luồng ấy sắp ghi. `test_849` chốt cả hai chiều.
+
+### Lỗ 2 — đọc-rồi-ghi, đúng cái bẫy cổng duyệt đã học
+
+Có **hai** nguồn gọi chạy tiếp, không phải một:
+
+```
+routes/_p_duyet.py     nguoi bam Duyet
+services/tao_media.py  _danh_thuc_run() khi job xong (dong_bo goi)
+```
+
+Cả hai theo cùng khuôn: hỏi `nen_chay_tiep()` **rồi mới** `chay_tiep_nen()`.
+
+⭐ Và `duyet._quyet` đã học đúng bài này rồi, ghi ngay trong mã của nó: *"Điều
+  kiện nằm TRONG `WHERE`. Đọc-rồi-ghi có một khe giữa hai câu lệnh, và hai yêu
+  cầu song song lọt vừa vào khe ấy."* Cổng duyệt có người canh; đường chạy tiếp
+  thì chưa — **cùng một kho, cùng một tuần**.
+
+⚠️ Bản vá **không** lật một cột trạng thái để giữ chỗ, dù cách ấy ngắn hơn: một
+   sự cố giữa chừng sẽ để run **kẹt vĩnh viễn** ngoài `CHO_DUOC`, trong khi
+   trước bản vá cùng sự cố ấy chỉ làm lượt đứng lại và **thử lại được**.
+
+⇒ Chữa một cuộc đua mà tạo ra một cách kẹt mới là đổi một lỗi hiếm lấy một lỗi
+  hiếm khác, không phải một bản sửa. Dùng `platform_core.leases`: UNIQUE quyết
+  người thắng, `heartbeat_at` khiến tiến trình chết thì chỗ **tự nhả**. Đập nhịp
+  đi nhờ callback `ghi=` có sẵn của `DP.tiep_tuc`, nên TTL 10 phút chỉ là trần
+  cho ca tiến trình chết, không phải trần cho một lượt chậm.
+
+### 🔴 Cả hai phép kiểm đều đã được TIÊM BẢN CŨ để xem có đỏ không
+
+Màu xanh không phải bằng chứng; đối chứng mới là.
+
+```
+Lo 1:  ban cu chay trong cung bo phep kiem  ->  4/10 DO
+Lo 2:  go lease ra, chay lai                ->  returncode 1 (DO)
+       roi tra lai nguyen trang, sha256 khop
+```
+
+⭐ Lỗ 2 còn có một đối chứng **ngược**:
+  `test_nha_cho_xong_thi_nguoi_sau_van_vao_duoc`. Một bản vá chặn người thứ hai
+  bằng cách chặn **luôn mọi người** cũng làm phép kiểm chính xanh — phép kiểm
+  ngược là thứ phân biệt *giữ chỗ* với *khoá chết*.
+
+⚠️ Và `test_849` suýt xanh rỗng: `nen_chay_tiep` trả `False` vì **bốn** lý do
+   khác nhau. Nên mỗi ca huỷ có một ca **không huỷ** chạy trên cùng dữ liệu và
+   phải ra `True` — không có nó thì màu xanh không nói lên gì (Bẫy 31 hình
+   thái 3).
+
+### Còn nợ của P10
+
+| Món | Trạng thái |
+|---|---|
+| Đua credit · POST/duyệt trùng | ✅ CAS ở `_quyet` + lease ở chạy tiếp; `test_627` phủ đường V2 |
+| Huỷ ở từng biên trạng thái | ✅ `test_849`, 10 phép kiểm, 4 biên |
+| **Hồi quy TTFT** | 🔴 **chưa đo** — cần model thật **và máy yên** |
+
+⛔ TTFT **không** đo được hôm nay, và không phải vì thiếu thời gian: máy đang ở
+   ~900–1.100% CPU trên 10 lõi vì hai cây khác. Một phép đo TTFT trong điều kiện
+   ấy ra số lệch về phía *"chậm"* ⇒ **báo động giả**.
+
+⭐ Đây đúng là `phep-do-lech-chieu-phai-bo-khong-phai-sua`: sai số có chiều thì
+  không có bản hiệu chỉnh nào cứu được, chỉ có bỏ lượt đo và đo lại lúc yên.
+
+---
+
 ## 🔒 Điều kiện để BẬT các cờ V3 — món nợ tự đòi
 
 ⚠️ **SÁU cờ** (cập nhật 07/09). Kế hoạch tổng ghi *"làn B — mỗi nhóm một cờ"*;
@@ -921,6 +1017,43 @@ giao diện chưa bao giờ chạy ở đâu cả.
 | `frontend agent-canvas` | thiếu `node_modules` ở cây riêng | `npm ci` |
 | `frontend autosub-studio` | 〃 | 〃 |
 | `frontend prompt-ai-ommi` | 〃 | 〃 |
+
+### 🔴 07/09: cùng bước ấy bỏ qua vì một lý do THỨ HAI, và bản sửa khác hẳn
+
+Bảng trên ghi lý do là *"thiếu `LTT_TEST_DATABASE_URL`"*. Hôm nay nó bỏ qua vì
+một chuyện khác:
+
+```
+python -c "pathlib.Path(r'C:\LTTPlatform\secrets').iterdir()"
+  -> PermissionError [WinError 5] Access is denied
+```
+
+Thư mục ấy siết ACL từ 27/08 (hạng mục **W1.5**, và siết là **cố ý**).
+`check_multiproc.py` cần đọc nó, nên nó cần **quyền nâng**.
+
+⛔ Và đây là phần đáng sợ: **một phiên được nối tiếp sẽ MẤT token nâng quyền**,
+   trong khi sớm hơn trong cùng phiên nó đọc được. Phiên khác báo sang đã đo
+   được đúng thế (`ADMIN=True` lúc 11:12, `PermissionError` sau khi resume);
+   phiên này kiểm lại và **cũng dính**.
+
+⇒ Hai nguyên nhân khác nhau cho cùng một dòng `[BOQUA]`, và **hai bản sửa khác
+  nhau**: một cái là đặt biến môi trường, cái kia là chạy có UAC. Đọc bảng trên
+  rồi đặt biến môi trường sẽ **không** làm bước này chạy.
+
+⭐ Bản sửa cho ca thứ hai: `setup/chay_multiproc_nang_quyen.ps1` (khuôn hai lớp,
+  `AGENTS.md` §9.3). Nó **fail-closed** — không có quyền thì ghi `EXITCODE=126`
+  kèm lý do chứ không chạy rồi báo xanh. Đo được ở phiên kia: `ADMIN=True`,
+  `EXITCODE=0`, **181 giây**, log `"7 passed in 139.51s"` — vượt xa sàn
+  `giay_toi_thieu=3.0`, nên là chạy thật chứ không phải một `return 0` lịch sự.
+
+⚠️ Script ấy **chưa có trong nhánh này** (`claude/chatltt-v3-agentic` rẽ trước
+   `a365fa80`). Nó sẽ tới khi nhánh này hợp nhất lên trunk, và lúc ấy vẫn cần
+   **chủ dự án bấm UAC** — không phiên Claude nào tự làm được.
+
+🔑 Nên với mọi lượt gate của nhánh này cho tới lúc đó: dòng `RESULT: PASS`
+   **thiếu một bước**, và phải nói ra kèm nó. Đây đúng lớp lỗi mà
+   `docs/BAY_TRONG_CONG_CHAT_LUONG.md` sinh ra để chứa: *một bước không chạy mà
+   trông như đã chạy*.
 
 ### Một cái bẫy đã trả giá trong phiên này
 
