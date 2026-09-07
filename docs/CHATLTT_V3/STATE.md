@@ -562,14 +562,48 @@ Lo 2:  go lease ra, chay lai                ->  returncode 1 (DO)
 |---|---|
 | Đua credit · POST/duyệt trùng | ✅ CAS ở `_quyet` + lease ở chạy tiếp; `test_627` phủ đường V2 |
 | Huỷ ở từng biên trạng thái | ✅ `test_849`, 10 phép kiểm, 4 biên |
-| **Hồi quy TTFT** | 🔴 **chưa đo** — cần model thật **và máy yên** |
+| **Hồi quy TTFT** | 🟡 **hai trong ba thành phần đã đo**, phần prefill treo sang P12 |
 
-⛔ TTFT **không** đo được hôm nay, và không phải vì thiếu thời gian: máy đang ở
-   ~900–1.100% CPU trên 10 lõi vì hai cây khác. Một phép đo TTFT trong điều kiện
-   ấy ra số lệch về phía *"chậm"* ⇒ **báo động giả**.
+### Hồi quy TTFT — đo cái GÂY RA nó, thay vì bấm giờ
 
-⭐ Đây đúng là `phep-do-lech-chieu-phai-bo-khong-phai-sua`: sai số có chiều thì
-  không có bản hiệu chỉnh nào cứu được, chỉ có bỏ lượt đo và đo lại lúc yên.
+Tiêu chí viết *"TTFT lượt không-tool không xấu hơn baseline quá 10 %"*. Nghe như
+một phép bấm giờ, nhưng bấm giờ ở đây trả lời sai câu hỏi:
+
+- **Không có baseline nào được ghi.** Nó phải được dựng trước, và chỉ có nghĩa
+  khi đo cùng máy, cùng model, **xen kẽ** để triệt trôi.
+- **Phương sai của model nuốt tín hiệu.** Lượt thật dao động hàng trăm ms; phụ
+  phí V3 là vài ms cộng phần prefill dài thêm.
+- **Máy dùng chung.** Một cây khác chạy nặng đẩy số về phía *"chậm"* ⇒ báo động
+  giả. Sai số **có chiều** thì không hiệu chỉnh được
+  (`phep-do-lech-chieu-phai-bo-khong-phai-sua`).
+
+⭐ Nên tách TTFT thành ba thành phần và đo **tất định** hai cái đầu —
+`tools/do_phu_phi_v3.py`, đo 07/09 lúc máy yên:
+
+| Thành phần | Cờ TẮT | Cờ BẬT | Kết luận |
+|---|---|---|---|
+| Ký tự thêm vào prompt | **0** | **1.213** (3 tool) | cờ tắt ⇒ **không đổi một byte** |
+| CPU trước lời gọi (trung vị) | 0,00 ms | **3,33 ms** | không đáng kể |
+| Prefill của 1.213 ký tự | — | **chưa đo** | cần model thật + máy yên ⇒ **P12** |
+
+### 🔴 Và phép đo đầu tiên của chính tôi đã nói dối, theo hướng nguy hiểm
+
+Bản đầu của công cụ báo **204 ms**. Xem phân bố mới thấy:
+
+```
+tung luot (ms): 986.97  2.73  2.46  3.98  2.72  2.51  2.51  2.58  2.56  2.81  2.77
+```
+
+Lượt một là **987 ms** (nạp module), sau đó ổn định **2,7 ms**. Trung bình 204 ms
+là một con số **không mô tả lượt nào cả** — và nó lệch về phía *"chậm"*, tức về
+phía tôi sẽ báo một hồi quy không có thật.
+
+⛔ Một dãy có mẫu khác biệt **bậc độ lớn** thì trung bình là thống kê **sai**,
+   không phải thống kê thô. Công cụ nay báo **trung vị**, và in riêng lượt đầu
+   kèm chú thích *"một lần mỗi tiến trình"*.
+
+⭐ Cái bắt được nó không phải trực giác mà là **nhìn phân bố thay vì nhìn tóm
+  tắt** — cùng họ với `doc-thu-dai-dien-thay-vi-doc-thu-that`.
 
 ---
 
