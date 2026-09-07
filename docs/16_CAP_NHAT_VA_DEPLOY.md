@@ -80,11 +80,44 @@ quét venv sản phẩm:
 
 ```bash
 C:/LTTPlatform/venv/Scripts/python.exe -m pip freeze > %TEMP%/prod.txt
-python -m pip_audit --no-deps -r %TEMP%/prod.txt
+
+# Bo 3 goi co hau to phien ban local (`+cu128`) — chung khong ton tai tren PyPI.
+python - <<'PY'
+import os, pathlib
+p = pathlib.Path(os.environ["TEMP"])
+dong = (p / "prod.txt").read_text(encoding="utf-8").splitlines()
+loai = [d for d in dong if "+" in d.split("==")[-1]]
+nl = chr(10)          # KHONG viet "\n" o day — xem chu thich duoi
+(p / "prod_loc.txt").write_text(
+    nl.join(d for d in dong if d not in loai) + nl, encoding="utf-8")
+print("quet", len(dong) - len(loai), "| LOAI RA", len(loai), loai)
+PY
+
+python -m pip_audit --no-deps -r %TEMP%/prod_loc.txt
 ```
 
-`--no-deps` là **bắt buộc**: freeze có `torch==...+cu128` không giải được trên
-PyPI, thiếu cờ này `pip-audit` chết trước khi kiểm gì.
+⛔ **`--no-deps` KHÔNG đủ, dù câu trước đây ở đây nói là đủ.** Đo 07/09/2026:
+   với cờ ấy `pip-audit` **vẫn** cố giải `torch==2.11.0+cu128` và chết trước khi
+   kiểm gì:
+
+```
+ERROR: Could not find a version that satisfies the requirement torch==2.11.0+cu128
+ERROR:pip_audit._cli:Failed to install packages
+```
+
+   Phải **lọc bỏ** mọi dòng có hậu tố phiên bản local. Trên máy này là ba dòng:
+   `torch`, `torchaudio`, `torchvision`.
+
+🔴 **Hệ quả phải nói ra khi báo cáo con số.** Sau khi lọc, kết quả nói về
+   **137/140** gói. Ba gói torch **không được kiểm** — không phải "sạch", mà là
+   "không biết". Viết *"venv production: 6 lỗ"* mà không kèm mẫu số là biến một
+   khoảng trống thành một lời bảo đảm.
+
+⚠️ Đoạn trên dùng `chr(10)` chứ **không** viết `"\n"`, và đó là cố ý: công cụ
+   Bash của agent **nuốt một lớp backslash** trên đường truyền, nên một đoạn
+   copy nguyên si sẽ nhận `"n"` và ghi ra một tệp một dòng. Kho này đã dính bẫy
+   ấy nhiều lần — gần nhất là một ký tự **BEL** lọt vào `KE_HOACH_TRIEN_KHAI.md`
+   vì `\a` của `\app.env`.
 
 ### 2c. a11y (`axe-core`) — cũng chạy **trước deploy**, không trong gate
 
@@ -195,3 +228,36 @@ Máy B (`render_gateway`, `llm_gateway`, ComfyUI, llama-swap) **không** nhận 
 
 ⭐ Và **nói với phiên kia** trước khi deploy nếu trunk vừa nhận việc của họ —
    deploy chép cả cây, nên bạn đang đưa mã của họ lên production cùng mã mình.
+
+### 🔴 Cây chính là **bề mặt deploy của MỌI phiên** — giữ nó sạch kể cả khi bạn không deploy
+
+`setup\2-cai-dat.ps1` **từ chối chạy từ worktree**, nên mọi lượt deploy — của
+bất kỳ phiên nào — đều chép từ `D:\LTTSTUDIOSAPP`. Và `docs/` **có** trong bản
+deploy (`C:\LTTPlatform\app\docs`).
+
+⇒ Một tệp bạn đang sửa dở ở cây chính sẽ lên máy chủ trong lượt deploy của
+  **người khác**, dù bạn chưa `git add` gì.
+
+⛔ §2 có câu *"trước khi deploy, `git status --porcelain` phải rỗng"* — nhưng nó
+   dặn **người deploy**, mà người deploy thường ngồi ở **worktree khác**. Người
+   có khả năng làm bẩn cây chính lại là người **không** đọc dòng ấy, vì họ đâu
+   có deploy. Một luật đặt sai người nhận thì coi như không tồn tại.
+
+**Luật cho người ngồi ở cây chính:** khi một phiên khác sắp deploy, đưa cây về
+sạch trước. Đã xảy ra 07/09 — hai tệp `.md` sửa dở suýt lên production trong
+lượt deploy của phiên ChatLTT.
+
+⚠️ Đừng mặc định `git stash` cho việc này: **`AGENTS.md` §10.3** xếp nó vào
+   *"ba cái bẫy của cây dùng chung"* — nó **cuốn cả phần dở của phiên kia** vào
+   stash của bạn. Chỉ an toàn khi bạn chắc mình là người duy nhất đang sửa cây
+   ấy. Muốn một cây sạch để đo thì dựng riêng:
+
+```bash
+git worktree add --detach <tmp> HEAD
+git worktree remove --force <tmp>
+```
+
+*(Hậu quả nếu bỏ qua **không** phải hỏng chức năng — `.md` không được phục vụ,
+không được import, và phép đối chiếu băm chỉ soi `.py` + bundle. Cái hỏng là
+mệnh đề **"bản đang chạy = một commit xác định"**, thứ mà `dau_van_tay.json`,
+phép đối chiếu băm và `/health/version` cùng dựng lên. Xem **Bẫy 30**.)*

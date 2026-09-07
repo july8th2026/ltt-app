@@ -1040,8 +1040,8 @@ test thật và browser thật theo UI-RD.
 
 - [ ] R8–R10 Nghiệm thu đa state/viewport, full gate, memory và release.
   ⚠️ **Đo lại 07/09: ô này đúng một nửa — giữ mở, nhưng thu hẹp lại.**
-  - *release* — **xong**: mã này lên production từ `9f555599` (và vẫn còn ở
-    `0ad9c868`, bản deploy chiều 07/09).
+  - *release* — **xong**: mã này có trong `9f555599`, và vẫn còn trong
+    `0ad9c868` — bản **đang chạy trên production** (deploy 07/09 09:13).
   - *viewport* — **xong**, và vừa đo lại: `taovideo` nằm trong lượt quét 24
     route ngày 07/09 (bộ quét lấy route từ **registry**, không chép tay), chạy
     trên **cả WebKit lẫn Chromium**, 0 tràn ngang — `BAN_GIAO_S1_S7_2026-09-07.md`.
@@ -1414,9 +1414,10 @@ Q60; bước tuần tự tiếp theo là H15.S15 DEEP re-audit + full release ga
 
     ⭐ **Bằng chứng cho cả hai ô trên là một bản ghi MÁY SINH RA, không phải
        lời khai**: `test-results/gates/20260906T163550Z-23388.json` — gate
-       **29/29 PASS**, 668 giây, `sha = 9f555599` — commit **đang chạy trên
-       production lúc đo (06–07/09)**; production đã tiến lên `0ad9c868` chiều
-       07/09, và bản ghi này vẫn là bằng chứng vì nó neo vào `sha`. Trong đó:
+       **29/29 PASS**, 668 giây, `sha = 9f555599` — bản ghi neo vào **`sha`**,
+       nên nó là bằng chứng bền: nó nói *"đúng cây mã này qua trọn 29 bước"*,
+       bất kể máy chủ sau đó chạy bản nào. Production nay ở `0ad9c868`
+       (`9f555599` là tổ tiên của nó). Trong đó:
 
     | Bước | Kết quả | Đóng ô nào của nhật ký 04/08 |
     |---|---|---|

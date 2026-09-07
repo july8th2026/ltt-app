@@ -2088,3 +2088,138 @@ gatemod.ROOT = goc_gia          # cây tạm, có `tools/co_san.py`
 
 Đã kiểm hai chiều: xanh với hàm thật; tiêm một `_anh_chup_cay` trả hằng số thì
 **đỏ** ở đúng dòng `"them mot tep ma anh chup khong doi"`.
+
+---
+
+## Bẫy 30 — "Tôi chưa `push`" **không** bảo vệ gì, vì sáu cây dùng chung một `.git`
+
+`D:\LTTSTUDIOSAPP` và sáu worktree dưới `.claude/worktrees/` chia sẻ **một**
+kho. `admin-mvp-v3` là **một ref duy nhất**, không phải bản sao mỗi cây. Và
+`docs/16_CAP_NHAT_VA_DEPLOY.md` bắt `merge --ff-only` nhắm vào nhánh **cục
+bộ**, không nhắm `origin`.
+
+⇒ `git commit` lên nhánh ấy **đã là chạm trunk**. `git push` không liên quan.
+
+### Chuyện đã xảy ra, 07/09/2026
+
+Tôi commit một nhật ký deploy — **3 tệp, toàn `docs/`** — rồi phát hiện một con
+số sai, rồi `git commit --amend`, tự nhủ *"chưa push nên an toàn"*.
+
+Phiên ChatLTT đã merge commit gốc vào nhánh họ và đang chạy gate 12 phút trên
+nó. Phép đo:
+
+```
+git merge-base --is-ancestor 953ef445 admin-mvp-v3  ->  KHONG
+git branch --contains 953ef445  ->  claude/chatltt-v3-agentic
+```
+
+🔴 **Commit tôi vừa viết lại chỉ còn sống trên nhánh của người khác.**
+
+Nếu họ `--ff-only` đúng bốn phút ấy, nó vỡ — và họ mất vòng gate thứ ba trong
+ngày. Chính commit `docs/`-only ấy, trước đó, đã làm họ mất một vòng rồi: hôm
+trước **bốn** vòng, hôm ấy **hai**, mỗi vòng 12 phút.
+
+### Cách cứu
+
+```
+git reset --soft <commit-cu>
+git stash push -m "..."
+```
+
+Nhánh về đúng điểm người kia đã merge; bản sửa nằm nguyên trong stash, không
+mất chữ nào. Rồi đưa bản sửa lên bằng **một commit MỚI**, không `--amend`.
+
+⭐ Nhật ký sai **kèm lý do vì sao nó sai** đáng giữ hơn một lịch sử sạch. Xoá
+   dấu vết một con số sai là xoá luôn bài học đã trả tiền để có.
+
+### Hai điều đắt hơn bản thân sự cố
+
+**1. Lời hứa không phải cơ chế.** Tôi hứa *"tôi giữ tay, không đẩy"* — hứa thật
+lòng, hiểu sai đúng **một chữ**, và trunk vẫn nhích. Chỉ có **không commit** mới
+bảo vệ; `cua_so_yen` giữ CPU bằng khoá chứ không bằng lời, và trunk cũng cần thế.
+
+**2. `--ff-only` bắt người đến sau trả toàn bộ chi phí** — kể cả khi hai thay
+đổi **không hề đụng nhau**: 3 tệp tài liệu so với mã nằm sau một cờ mặc định
+TẮT.
+
+⛔ Nhưng lời giải *"vậy cho commit `docs/`-only đi thẳng, khỏi gate"* là **SAI**,
+   và tôi suýt đề xuất nó. Tài liệu **có** vào gate dù không vào bản deploy:
+
+```
+test doc tep trong docs/            43 / 440
+tests/test_212...py:37              "APP_API_COVERAGE_FINAL.md"
+tools/check_ky_tu_dieu_khien.py:11  quet `docs/` cap tren cung
+```
+
+Hai ca thật, cùng ngày: sửa một dòng trong `APP_API_COVERAGE_FINAL.md` làm
+`test_212` đỏ; và một ký tự **BEL** lọt vào `docs/KE_HOACH_TRIEN_KHAI.md` qua
+bẫy backslash — `secrets<BEL>pp.env` trông y hệt một dòng bình thường, chỉ lộ
+ra ở bước quét byte.
+
+⭐ Ca BEL mạnh hơn ca `test_212`: quên khai thì người ta **thấy** mình thiếu gì;
+   một ký tự điều khiển thì **không nhìn thấy được**. Đó đúng là ca mà câu
+   *"docs không vào bản deploy"* nghe hợp lý nhất — và sai nặng nhất, vì người
+   phải đỏ là **người merge sau**.
+
+### Bài học tổng quát hơn cả sự cố: thay **giá trị** bằng **lệnh**
+
+Bản đính chính đầu tiên của tôi sửa một hàng tài liệu từ `9f555599` thành
+`0ad9c868`. **Trong vòng một giờ nó lại sai**, vì phiên kia deploy `2f28159f`
+lên sau.
+
+⭐ Hai lần sai trong một giờ **không phải hai lần bất cẩn**. Nó là cơ chế: một
+   số commit chép tay vào tài liệu **không có cách nào tự biết nó đã cũ**. Sửa
+   giá trị chỉ mua được đúng khoảng thời gian tới lần deploy kế tiếp.
+
+Đây đúng thứ `CLAUDE.md` phải học sau **năm** lần nói sai — và cả năm lần đều
+sai *về phía nguy hiểm*:
+
+> *"Một bảng chép tay không có cách nào tự biết nó đã cũ. Nên thứ đổi là **nơi
+> câu trả lời đến từ**."*
+
+⇒ Hàng ấy nay chứa **lệnh**, không chứa **giá trị**:
+
+```bash
+curl -s http://127.0.0.1:8100/health/version          # ban DANG chay
+cat  C:/LTTPlatform/app.previous/dau_van_tay.json     # DUONG LUI
+```
+
+🔴 Và với con số này thì "cũ" đắt hơn bình thường: `app.previous` **là đường
+   lùi**, nên một giá trị cũ ở đó không chỉ sai — nó **rollback về sai chỗ**.
+
+### Nửa sau, và nó suýt xảy ra thật trong cùng buổi
+
+Sau khi bị chỉ ra, tôi làm đúng chữ *"đừng commit lên trunk"* — và **vẫn suýt
+gây chuyện**, vì tôi cứ soạn tiếp tài liệu trong cây làm việc.
+
+`setup\2-cai-dat.ps1` **từ chối chạy từ worktree**, nên mọi lượt deploy đi từ
+`D:\LTTSTUDIOSAPP` — cây tôi đang ngồi. Và:
+
+```
+ls C:/LTTPlatform/app/docs   ->  CO — docs/ CO trong ban deploy
+git status --short           ->  M docs/16_CAP_NHAT_VA_DEPLOY.md
+                                 M docs/BAY_TRONG_CONG_CHAT_LUONG.md
+```
+
+Phiên kia sắp deploy từ cây ấy. Hai tệp chưa thuộc commit nào sẽ lên máy chủ,
+trong khi `dau_van_tay.json` ghi `2f28159f`.
+
+🔴 Không hỏng chức năng — `.md` không được phục vụ, không được import, và phép
+   đối chiếu băm chỉ soi `.py` + bundle. Cái hỏng là **mệnh đề**: *"bản đang
+   chạy = một commit xác định"*. Đó chính là thứ `dau_van_tay.json`, phép đối
+   chiếu băm và `/health/version` cùng dựng lên; một vết nhoè trong nó làm cả
+   ba yếu đi cùng lúc.
+
+⇒ **Giữ tay khỏi `git commit` là chưa đủ. Cây bẩn đi vào bản deploy y hệt một
+  commit.** Khi một phiên khác sắp deploy, cây phải sạch — `git stash` là đủ.
+
+⚠️ `docs/16` §2 **có** câu *"trước khi deploy: `git status --porcelain` phải
+   rỗng"*. Nhưng nó nói với **người deploy**. Hôm ấy người deploy là phiên kia,
+   còn người làm bẩn cây là tôi — và không dòng nào nói với **người đang ngồi
+   trong cây ấy**. Một luật đúng, đặt sai người nhận, thì không ai vi phạm nó
+   mà nó vẫn không được tuân thủ.
+
+*(Cả hai phiên cùng đo ra điều này gần như đồng thời, bằng cùng một lệnh, và
+nhắn chéo nhau. Phiên kia không tự commit hộ cũng không tự revert — đúng ranh
+giới: revert hộ là xoá mất 72 dòng đang viết dở mà người viết không biết vì
+sao.)*
