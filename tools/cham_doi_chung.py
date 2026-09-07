@@ -63,7 +63,10 @@ BI_MAT = "doi-chung-lop-1-khong-phai-bi-mat-van-hanh"
 #: Muc suy giam. So cang lon = cang te. Chon de chenh lech NHIN THAY DUOC —
 #: lop 1 do "co phan biet duoc khong", khong do "nguong nhay bao nhieu".
 MUC: dict[str, list[float]] = {
-    "compression": [12, 22],      # chat luong JPEG (thap = te)
+    # ⚠️ Nam muc, khong hai. Luot 07/09 ra `compression 6/8` — duoi san,
+    #    va CA HAI lan sai deu o muc 12 (muc MANH NHAT, dang ra de nhat).
+    #    Tam muc thua tren mot truc yeu re hon nhieu mot ket luan sai.
+    "compression": [8, 12, 16, 22, 30],   # chat luong JPEG (thap = te)
     "blur": [2.2, 3.5],           # ban kinh Gauss
     "noise": [26, 44],            # bien do nhieu
     "bicubic": [4, 6],            # he so thu nho roi phong lai
@@ -163,7 +166,15 @@ def _bam(p: pathlib.Path) -> str:
     return hashlib.sha256(p.read_bytes()).hexdigest()
 
 
-def sinh(thu_muc: pathlib.Path) -> int:
+def sinh(thu_muc: pathlib.Path, chi_kieu: str = "") -> int:
+    """Dung bo cap. `chi_kieu` gioi han ve MOT phep suy giam.
+
+    ⭐ Vi sao co bo loc: luot dau ra `compression 6/8` — duoi san tung kieu.
+       Muon do lai dung truc ay ma khong co bo loc thi phai cham lai ca 32
+       cap, tuc 24 cap khong lien quan. Mot bo do khong RE thi nguoi ta se
+       khong chay lai no, va mot doi chung khong duoc chay lai thi khong
+       con la doi chung.
+    """
     from apps.qualitylab.calibration import (blind_assignment,
                                              resolve_artifact_token)
 
@@ -175,6 +186,8 @@ def sinh(thu_muc: pathlib.Path) -> int:
     cases, dap_an, stt = [], [], 0
     for lat in LAT:
         for kieu, cac_muc in MUC.items():
+            if chi_kieu and kieu != chi_kieu:
+                continue
             for muc in cac_muc:
                 stt += 1
                 ma = f"dc-{stt:03d}"
@@ -274,6 +287,37 @@ def cham(thu_muc: pathlib.Path) -> int:
     print()
     for kieu, (d, t) in sorted(theo_kieu.items()):
         print(f"    {kieu:12s} {d}/{t}")
+
+    # ⛔ CHIA THEO MUC SUY GIAM — them 07/09 sau luot thu hai.
+    #
+    #    Ti le tong khong noi duoc dieu quan trong nhat: sai O DAU tren truc
+    #    manh-yeu. Do that:
+    #      luot 1  compression 6/8   ca hai lan sai o muc 12 (MANH nhat)
+    #      luot 2  compression 18/20 hai lan sai o muc 16 va 30 (NHE nhat)
+    #
+    # ⭐ Hai con so 75% va 90% tren 8 va 20 mau thi KHONG tach duoc nhau. Thu
+    #    tach duoc la VI TRI: sai o muc manh nghia la nguoi cham doc nham dau
+    #    hieu (luot 1: doc rang cua phong chu thanh quang nen); sai o muc nhe
+    #    chi nghia la da cham nguong phan biet.
+    #
+    # 🔴 Va hai loai sai ay KHONG cung gia. Mot khac biet o muc 30 ma nguoi
+    #    cham khong thay thi KHACH cung khong thay — do la mot "loi" khong ai
+    #    phai tra tien. Cung ho voi bai da ghi trong kho: mot nguong do tren
+    #    khac biet khong ai quan tam thi khong noi gi ve san pham.
+    theo_muc: dict[float, list[int]] = {}
+    for m in da["dap_an"]:
+        c = tra_loi.get(m["id"])
+        if not c:
+            continue
+        theo_muc.setdefault(m["muc"], [0, 0])
+        theo_muc[m["muc"]][1] += 1
+        theo_muc[m["muc"]][0] += c == m["ben_TOT"]
+    if len(theo_muc) > 1:
+        print()
+        print("    (chia theo muc suy giam - so nho = suy giam MANH hon)")
+        for muc, (d, t) in sorted(theo_muc.items()):
+            co = "" if d == t else "   <- sai o day"
+            print(f"    muc {muc:<8} {d}/{t}{co}")
     if sai:
         print()
         print("  cham sai:")
@@ -320,9 +364,11 @@ def main() -> int:
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("lenh", choices=["sinh", "cham"])
     p.add_argument("--thu-muc", default="")
+    p.add_argument("--kieu", default="", choices=["", *MUC],
+                   help="chi sinh MOT phep suy giam (de do lai mot truc yeu)")
     a = p.parse_args()
     tm = pathlib.Path(a.thu_muc) if a.thu_muc else GOC / "test-results" / "doi-chung-cham"
-    return sinh(tm) if a.lenh == "sinh" else cham(tm)
+    return sinh(tm, a.kieu) if a.lenh == "sinh" else cham(tm)
 
 
 if __name__ == "__main__":
