@@ -21,6 +21,31 @@ Viết 07/09/2026, sau khi `PLAN_LAP_RAP_2026-09-06.md` đóng 17/19 hạng mụ
 >   hai mâu thuẫn với `NHAT_KY.md`, **nhật ký đúng** — luật đã có sẵn ở đầu
 >   kế hoạch tổng.
 
+> ## 🔴 VÀ NÓ KHÔNG PHẢI PHẠM VI CỦA PHIÊN NÀY — đo 07/09
+>
+> Chủ dự án hỏi: *"tại sao khối lượng việc lại nhiều như vậy?"* Đo lại mục
+> đích gốc, và câu trả lời là **tôi tự mở rộng phạm vi**.
+>
+> ```
+> Plan GOC cua phien nay = PLAN_LAP_RAP_2026-09-06.md
+>     19 hang muc:  HA TANG 10 lap + 2 rut = 12/12 quyet xong
+>                   SAN PHAM  5 dong + S1 (nua) + S7 (ban giao)
+>     => 17/19 DA DONG, va 2 cai con lai can THIET BI THAT / phien khac
+> ```
+>
+> Khi được hỏi *"% tổng plan"*, tôi với tay sang **kế hoạch tổng của cả sản
+> phẩm** (271 KB, từ 31/07, 474 ô) thay vì plan của chính phiên. Từ đó ra con
+> số "36 ô còn lại" — và nó **đúng về kế hoạch tổng**, nhưng **sai về việc của
+> phiên này**.
+>
+> ⇒ **36 ô ấy là backlog dài hạn của sản phẩm, không phải việc đang dở.** Phần
+>   lớn chờ người chấm, dữ liệu có bản quyền, cửa sổ GPU hoặc một môi trường
+>   staging — thứ không phiên nào tự cấp được.
+>
+> ⭐ Đây lại đúng cái lỗi đã ghi bốn lần trong ngày, lần này ở chiều ngược:
+>   **đo đúng một con số rồi gắn nó vào sai câu hỏi.** 431/474 là câu trả lời
+>   thật — cho một câu hỏi không ai đặt ra.
+
 ⭐ **Kế hoạch này không phải danh sách việc. Nó là danh sách CHẶN.** Phép đo mở
 đầu nói rõ vì sao: 37 ô còn lại **không** bị chặn bởi mã.
 
@@ -297,6 +322,47 @@ mở thật.
 ⇒ Luật rút ra, áp cho chính tệp này: **đổi thứ tự thi công thì sửa lộ trình
   TRƯỚC khi làm, không phải sau khi bị hỏi.** Nếu lý do đổi chỉ lộ ra lúc bắt
   tay vào việc, thì dừng lại ghi một dòng rồi mới đi tiếp.
+
+---
+
+## 4b. 🔴 Công trùng — đo được, và nó không phải giả thuyết
+
+Chủ dự án nghi *"có những hạng mục worktree khác đã có lời giải rồi"*. Đo cả
+hai vế:
+
+**Vế SAI:** không hạng mục nào trong 36 ô đang được giải ở nơi khác.
+
+```
+commit tren nhanh khac cham apps/qualitylab/            0
+commit tren nhanh khac nhac H31.3c / H35.10c / H33.R4   0
+```
+
+190 commit ngoài trunk (`asv-v4` 127 · `video-v2-wangp` 63 · `chatltt` 8) là
+**chương trình khác**, không chồng lấn.
+
+**Vế ĐÚNG, và nó nặng hơn:**
+
+```
+ho:  14:08:53   ce98bfd6   may_ban: tach "KHONG DO DUOC" khoi "DO ROI..."
+toi: 14:10:11   a214ebdc   may_ban bao "thieu psutil" trong khi psutil dang chay
+```
+
+Hai phiên **độc lập chẩn đoán và sửa cùng một lỗi**, từ **cùng một câu** chủ
+dự án dặn (*"check CPU trước khi chạy gate"*), cách nhau **78 giây**.
+
+⇒ Không ai làm sai. Cả hai đều đo, đều tìm ra, đều sửa đúng. Thứ hỏng là
+  **không ai biết người kia đang sửa cái gì** — và giờ nó thành một xung đột
+  merge trên cùng một tệp.
+
+⭐ Đây là **cùng một lỗ** với hạng mục `A4` (khoá `trunk` trong `cua_so_yen`),
+   chỉ khác mặt: khoá `trunk` chặn hai phiên **đẩy** cùng lúc; nó **không**
+   chặn hai phiên **làm** cùng một việc. Cái thứ hai đắt hơn — sáu vòng gate
+   mất trắng là ~1,5 giờ máy, còn hai bản sửa trùng là hai lượt **người** làm
+   cùng một việc rồi phải gỡ xung đột.
+
+⛔ Nhưng đừng vội kết luận cần thêm cơ chế. Trước khi đề xuất bất cứ thứ gì,
+   phải đo **tần suất**: một lần trong một ngày có thể là trùng hợp. Việc đúng
+   là ghi lại ca này, và đếm ca thứ hai nếu nó xảy ra.
 
 ---
 
