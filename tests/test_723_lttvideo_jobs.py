@@ -210,3 +210,94 @@ def test_KHONG_co_duong_hoan_credit_rieng_trong_app():
     goi = {n.func.attr for n in ast.walk(cay)
            if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)}
     assert "hoan" not in goi, "app tự hoàn credit — nền tảng đã hoàn, sẽ hoàn hai lần"
+
+
+# ── đính media ⇒ đổi hồ sơ, và hàng rào kiểm lại lựa chọn ────────────────────
+
+
+class _KhoGia:
+    """Kho giả có `open` (đọc media vào) và `put`/`exists` (ghi kết quả ra)."""
+
+    def __init__(self, noi_dung=b"PNGDATA"):
+        self.noi_dung = noi_dung
+        self.da_ghi = {}
+
+    def open(self, _khoa):
+        import io
+
+        return io.BytesIO(self.noi_dung)
+
+    def put(self, khoa, du_lieu, _mime=None):
+        self.da_ghi[khoa] = getattr(du_lieu, "read", lambda: du_lieu)()
+
+    def exists(self, khoa):
+        return khoa in self.da_ghi
+
+
+class _ClientGhiNhan:
+    """Ghi lại settings đã gửi để phép kiểm soi được model và media."""
+
+    def __init__(self):
+        self.settings = None
+        self.media_da_nap = []
+
+    def nap_media(self, du_lieu, *, duoi="png"):
+        self.media_da_nap.append((len(du_lieu), duoi))
+        return f"/tmp/lttv_media/abc.{duoi}"
+
+    def submit(self, settings):
+        self.settings = settings
+        return "j1"
+
+    def result(self, _jid):
+        from apps.lttvideo.wangp_client import KetQua
+
+        return KetQua(thanh_cong=True, tep=["/data/Wan2GP/outputs/x.mp4"])
+
+    def tai_ve(self, _duong):
+        return b"MP4"
+
+    def cleanup(self, _jid):
+        return {"da_don": 1}
+
+
+def test_KHONG_dinh_media_thi_dung_ho_so_chu():
+    from apps.lttvideo import jobs
+
+    c = _ClientGhiNhan()
+    jobs.handle({"prompt": "p", "duration_s": 5, "nguoi_dung_id": "42"},
+                _client=c, _kho=_KhoGia())
+    assert c.settings["model_type"] == "t2v_2_2"
+    assert c.media_da_nap == []
+    assert "image_start" not in c.settings or not c.settings["image_start"]
+
+
+def test_DINH_ANH_thi_doi_sang_ho_so_anh_VA_nap_media_len_C_CLOUD():
+    """⛔ WanGP nhận media bằng **đường dẫn tệp trên máy nó** (`API.md`
+    §Accepted Input Shapes) — không URL, không base64. Nên ảnh phải được nạp
+    lên trước, và `image_start` phải mang đường dẫn ấy."""
+    from apps.lttvideo import jobs
+
+    c = _ClientGhiNhan()
+    jobs.handle({"prompt": "p", "duration_s": 5, "nguoi_dung_id": "42",
+                 "media_key": "lttvideo/42/vao/abc.png"},
+                _client=c, _kho=_KhoGia())
+    assert c.settings["model_type"] == "i2v_2_2"
+    assert c.media_da_nap == [(len(b"PNGDATA"), "png")]
+    assert c.settings["image_start"].endswith(".png")
+
+
+def test_hang_rao_CHAN_khi_ho_so_khong_hop_dau_vao(monkeypatch):
+    """Một dòng gõ sai trong bảng chọn không được lặng lẽ gửi ảnh tới model
+    không nhận ảnh — WanGP sẽ **bỏ qua** nó, không lỗi, không cảnh báo."""
+    import pytest
+
+    from apps.lttvideo import ho_so, jobs
+
+    # tro `anh` sang ho so CHU (t2v) — dung kieu sai ma hang rao phai bat
+    monkeypatch.setitem(ho_so.HO_SO_THEO_DAU_VAO, "anh", "ltt.video.chuan.v1")
+    with pytest.raises(Exception) as e:
+        jobs.handle({"prompt": "p", "duration_s": 5, "nguoi_dung_id": "42",
+                     "media_key": "lttvideo/42/vao/abc.png"},
+                    _client=_ClientGhiNhan(), _kho=_KhoGia())
+    assert "khung mo dau" in str(e.value)

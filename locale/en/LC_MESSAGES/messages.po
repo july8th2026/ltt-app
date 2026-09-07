@@ -13387,3 +13387,9 @@ msgstr "No video machine is available right now. Your credits were refunded — 
 
 msgid "Máy dựng video chưa sẵn sàng. Credit đã được hoàn, bạn thử lại sau ít phút."
 msgstr "The video machine is not ready. Your credits were refunded — please try again in a few minutes."
+
+msgid "Chuẩn WanGP — có ảnh"
+msgstr "WanGP standard — with image"
+
+msgid "Loại tệp đính kèm này chưa được hỗ trợ."
+msgstr "That attachment type is not supported yet."

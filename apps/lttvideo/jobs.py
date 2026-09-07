@@ -23,11 +23,23 @@ from platform_core.i18n import _ as _t
 
 import time
 import uuid
+from pathlib import Path
 
-from . import cost, ho_so
+from . import chon_model, cost, ho_so
 
-#: Hồ sơ dùng cho baseline. Đổi hồ sơ là một quyết định, ghi ở `DECISIONS.md`.
+#: Hồ sơ dùng khi không đính media. Đổi hồ sơ là một quyết định (`DECISIONS.md`).
 HO_SO_BASELINE = "ltt.video.chuan.v1"
+
+#: Ảnh chụp `metadata` của WanGP tại SHA ghim — dùng để **kiểm lại** bảng chọn.
+_ANH_CHUP = (Path(__file__).parent.parent.parent / "tests" / "fixtures"
+             / "wangp_metadata" / "1e1dd275.json")
+
+
+def _kho_metadata() -> dict:
+    """Đọc ảnh chụp. Nhẹ và hiếm khi gọi nên không cần cache."""
+    import json  # noqa: PLC0415
+
+    return json.loads(_ANH_CHUP.read_text(encoding="utf-8"))["model"]
 
 #: Khoảng hỏi tiến độ. Một lượt sinh mất hàng chục phút nên không cần hỏi dày.
 NHIP_HOI_S = 5.0
@@ -95,7 +107,22 @@ def handle(params: dict, ctx=None, *, _client=None, _kho=None,
     except (TypeError, ValueError):
         giay = 5.0
 
-    h = ho_so.lay(HO_SO_BASELINE)
+    # ── Hinh dang dau vao quyet dinh HO SO, va ho so quyet dinh MODEL ──
+    #
+    # ⛔ Bang chon la mot QUYET DINH cua nguoi (`ho_so.HO_SO_THEO_DAU_VAO`), con
+    #    `metadata` cua WanGP chi de KIEM LAI. Ly do o `chon_model.py`: do tren
+    #    anh chup that, 150/225 model deu khai `text_to_video` nen du lieu khong
+    #    xac dinh duy nhat cau tra loi.
+    khoa_media = str(params.get("media_key") or "")
+    hinh_dang = chon_model.hinh_dang_dau_vao(
+        co_anh=bool(khoa_media) and not khoa_media.endswith(".mp4"),
+        co_video=khoa_media.endswith(".mp4"),
+    )
+    ho_so_id = ho_so.HO_SO_THEO_DAU_VAO.get(hinh_dang)
+    if ho_so_id is None:
+        raise LoiJob(_t("Loại tệp đính kèm này chưa được hỗ trợ."))
+
+    h = ho_so.lay(ho_so_id)
     # Kieu tuong minh: gia tri vua la chuoi vua la so nguyen (seed).
     doi: dict[str, object] = {"prompt": prompt,
                               "video_length": f"{int(max(giay, 1))}s"}
@@ -104,6 +131,12 @@ def handle(params: dict, ctx=None, *, _client=None, _kho=None,
     if params.get("resolution"):
         doi["resolution"] = str(params["resolution"])
     tham_so = h.ap_dung(doi)
+
+    # Hang rao: model cua ho so co THAT SU nhan duoc hinh dang dau vao nay khong.
+    # ⛔ WanGP BO QUA media ma model khong nhan — khong loi, khong canh bao. Ta
+    #    chi biet khi xem video ra va khong thay anh cua minh trong do.
+    chon_model.kiem_model(model_type=str(tham_so.get("model_type") or ""),
+                          hinh_dang=hinh_dang, kho_metadata=_kho_metadata())
 
     client = _client or _client_that()
 
@@ -130,6 +163,13 @@ def handle(params: dict, ctx=None, *, _client=None, _kho=None,
         if tt is not TrangThaiMay.SAN_SANG:
             raise LoiJob(_t("Máy dựng video chưa sẵn sàng. "
                             "Credit đã được hoàn, bạn thử lại sau ít phút."))
+
+    # Media phai NAM TREN MAY WanGP: `docs/API.md` §Accepted Input Shapes cho
+    # biet moi dau vao media la mot DUONG DAN TEP tren chinh may do — khong URL,
+    # khong base64. Nen keo tu R2 roi nap len C-CLOUD.
+    if khoa_media:
+        duoi = khoa_media.rsplit(".", 1)[-1].lower()
+        tham_so["image_start" if hinh_dang == "anh" else "video_guide"] =             client.nap_media(kho.open(khoa_media).read(), duoi=duoi)
 
     t0 = time.time()
     job_id = client.submit(tham_so)

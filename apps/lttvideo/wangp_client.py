@@ -1,6 +1,6 @@
 """Client gọi WanGP trên C-CLOUD — **mỏng nhất có thể**.
 
-⛔ ĐÂY KHÔNG PHẢI một engine abstraction. Nó chuyển tiếp sáu thao tác và **không
+⛔ ĐÂY KHÔNG PHẢI một engine abstraction. Nó chuyển tiếp các thao tác và **không
    chuẩn hoá lại thứ WanGP đã chuẩn hoá**:
 
      · `apply_media_flag_defaults()`  tu dien co vai media (S/E/V/I/A/B)
@@ -80,10 +80,13 @@ UA_TRINH_DUYET = (
 
 
 def _goi_that(method: str, duong: str, than=None, timeout: float = 30.0,
-              khoa: str = ""):
-    du_lieu = json.dumps(than).encode("utf-8") if than is not None else None
+              khoa: str = "", du_lieu_tho: bytes | None = None):
+    du_lieu = (du_lieu_tho if du_lieu_tho is not None else
+               (json.dumps(than).encode("utf-8") if than is not None else None))
     req = urllib.request.Request(duong, data=du_lieu, method=method)
-    req.add_header("Content-Type", "application/json")
+    req.add_header("Content-Type",
+                   "application/octet-stream" if du_lieu_tho is not None
+                   else "application/json")
     req.add_header("User-Agent", UA_TRINH_DUYET)
     if khoa:
         req.add_header(HEADER_KHOA, khoa)
@@ -93,7 +96,7 @@ def _goi_that(method: str, duong: str, than=None, timeout: float = 30.0,
 
 
 class WanGPClient:
-    """Sáu thao tác, không hơn."""
+    """Chuyển tiếp, không diễn giải."""
 
     def __init__(self, *, goc: str, khoa: str,
                  goi: Callable[..., Any] | None = None) -> None:
@@ -110,10 +113,35 @@ class WanGPClient:
         except Exception as e:  # noqa: BLE001 — boc lai, khong nuot
             raise LoiWanGP(f"{method} {duong}: {type(e).__name__}: {e}") from e
 
-    # ── sáu thao tác ──
+    # ── các thao tác ──
 
     def health(self) -> dict:
         return self._hoi("GET", "/health", timeout=10.0)
+
+    def nap_media(self, du_lieu: bytes, *, duoi: str = "png") -> str:
+        """Nạp một tệp media lên C-CLOUD, trả **đường dẫn trên máy đó**.
+
+        ⭐ `docs/API.md` §*Accepted Input Shapes*: mọi đầu vào media của WanGP là
+           **đường dẫn tệp trên chính máy chạy nó** — không URL, không base64.
+           Ảnh của người dùng nằm ở R2 phía LTT, nên đây là mắt xích bắt buộc.
+
+        ⛔ Gửi **byte thô**, không bọc JSON: base64 phồng 33% và một ảnh 8 MB
+           thành 11 MB đi qua một proxy vốn đã có trần thời gian.
+        """
+        import urllib.parse  # noqa: PLC0415
+
+        duong = f"{self.goc}/nap_media?duoi={urllib.parse.quote(duoi)}"
+        try:
+            dap = self._goi("POST", duong, None, timeout=180.0, khoa=self.khoa,
+                            du_lieu_tho=du_lieu)
+        except LoiWanGP:
+            raise
+        except Exception as e:  # noqa: BLE001
+            raise LoiWanGP(f"POST /nap_media: {type(e).__name__}: {e}") from e
+        d = (dap or {}).get("duong")
+        if not d:
+            raise LoiWanGP("/nap_media khong tra ve duong dan")
+        return str(d)
 
     def submit(self, settings: dict) -> str:
         """Gửi **nguyên văn** bộ tham số. Không thêm, không bớt, không sửa."""

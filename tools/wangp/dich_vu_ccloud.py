@@ -34,7 +34,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from fastapi import Body, FastAPI, Header, HTTPException
+from fastapi import Body, FastAPI, Header, HTTPException, Request
 
 KHO_WANGP = Path(os.environ.get("LTTV_WANGP_ROOT", "/data/Wan2GP"))
 KHOA = (os.environ.get("LTTV_WANGP_KEY") or "").strip()
@@ -190,6 +190,34 @@ def metadata(x_lttv_key: str = Header(default="")) -> dict:
             # hong ca anh chup; ghi ly do vao chinh o cua no.
             ra[str(ten)] = {"loi": f"{type(e).__name__}: {e}"}
     return {"so_model": len(ra), "model": ra}
+
+
+@app.post("/nap_media")
+async def nap_media(request: Request, x_lttv_key: str = Header(default=""),
+                    duoi: str = "png") -> dict:
+    """Nhận **byte** của một tệp media, ghi ra đĩa pod, trả **đường dẫn tuyệt đối**.
+
+    ⭐ Vì sao thao tác này bắt buộc phải có, khác với `/hau_ky` đã bỏ:
+       `docs/API.md` §*Accepted Input Shapes* cho biết mọi đầu vào media của
+       WanGP là **đường dẫn tệp trên chính máy chạy nó**. Không có dạng URL,
+       không có dạng base64. Ảnh của người dùng nằm ở R2 phía LTT, nên **không
+       có đường nào khác** để nó tới được model.
+
+    ⛔ Tệp ở đây là **TẠM**, cùng vòng đời với tệp kết quả: `/cleanup` xoá nó.
+       Ổ container biến mất khi xoá pod, nên đừng coi đây là kho.
+    """
+    _kiem_khoa(x_lttv_key)
+    du_lieu = await request.body()
+    if not du_lieu:
+        raise HTTPException(status_code=400, detail="empty body")
+    if len(du_lieu) > 200 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="media too large")
+    an_toan = "".join(c for c in (duoi or "bin") if c.isalnum())[:8] or "bin"
+    thu_muc = Path("/tmp/lttv_media")
+    thu_muc.mkdir(parents=True, exist_ok=True)
+    tep = thu_muc / f"{secrets.token_hex(16)}.{an_toan}"
+    tep.write_bytes(du_lieu)
+    return {"duong": str(tep), "byte": len(du_lieu)}
 
 
 @app.post("/submit")

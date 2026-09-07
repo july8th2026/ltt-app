@@ -112,6 +112,21 @@ _SO: tuple[HoSo, ...] = (
             "these settings."
         ),
     ),
+    HoSo(
+        profile_id="ltt.video.anh.v1",
+        ten=N_("Chuẩn WanGP — có ảnh"),
+        tep="ltt.video.anh.v1.json",
+        wangp_sha=WANGP_SHA,
+        ghi_chu=(
+            "Extracted from get_default_settings('i2v_2_2') on C-CLOUD "
+            "2026-09-06, kept at WanGP's factory values (832x480, 30 steps, "
+            "flow_shift 5, guidance 3.5). "
+            "image_prompt_type is 'S' -- WanGP's own default for this family "
+            "(wan_handler.update_default_settings sets it when the model "
+            "allows a start image). We do not compose that flag by hand; "
+            "SETTINGS.md says to take it from the model's exposed choices."
+        ),
+    ),
 )
 
 _THEO_ID = {h.profile_id: h for h in _SO}
@@ -131,6 +146,15 @@ _THEO_ID = {h.profile_id: h for h in _SO}
 MODEL_THEO_DAU_VAO: dict[str, str] = {
     "chu": "t2v_2_2",     # docs/MODELS.md de cu cho general text-to-video
     "anh": "i2v_2_2",     # cung ho, nhan anh lam khung mo dau
+}
+
+#: Hồ sơ tham số đi kèm mỗi hình dạng đầu vào. **Một model — một hồ sơ**: tham
+#: số của `i2v_2_2` khác `t2v_2_2` ở `flow_shift`, `guidance_scale`, và
+#: `image_prompt_type`, nên dùng chung một hồ sơ là gửi tham số của model này
+#: cho model kia.
+HO_SO_THEO_DAU_VAO: dict[str, str] = {
+    "chu": "ltt.video.chuan.v1",
+    "anh": "ltt.video.anh.v1",
 }
 
 
