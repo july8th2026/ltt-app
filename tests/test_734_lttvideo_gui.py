@@ -210,11 +210,19 @@ def _dung(duoc_mo_rong: bool) -> str:
 
     from apps.lttvideo.manifest import MANIFEST
 
+    from apps.lttvideo import features
+
     return templates.env.get_template("lttvideo.html").render(
         request=_yeu_cau_gia(), app=MANIFEST, nav=MANIFEST.slug, user=None,
         csrf_token="x", ti_le=routes.TI_LE, do_dai=routes.DO_DAI_S,
         uoc_gia=routes._uoc_gia(), duoc_dung=True, ly_do_tu_choi="",
-        duoc_mo_rong=duoc_mo_rong, video_gan_day=[])
+        duoc_mo_rong=duoc_mo_rong,
+        # Ngu canh cua khoang THU VIEN — hop dong template doi 07/09 khi man
+        # nay thanh studio ba khoang.
+        so_dem={k: 0 for k in features.TRANG_THAI_TAB}, video=[],
+        prompt_gan_day=[], tai_san=[],
+        trang_thai_tab=[(k, k) for k in features.TRANG_THAI_TAB],
+        loc_trang_thai="all", loc_sap_xep="moi")
 
 
 def test_template_dung_duoc_khi_BAT_o_tick():

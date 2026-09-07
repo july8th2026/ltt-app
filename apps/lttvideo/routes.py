@@ -24,13 +24,14 @@ import uuid
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 
+from platform_core.i18n import N_
 from platform_core.i18n import _ as _t
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.auth.session import require_login
 from server.deps import get_db, user_hien_tai
 from server.templating import templates
 
-from . import cost, kha_nang
+from . import cost, features, kha_nang
 from .manifest import MANIFEST
 
 router = APIRouter(tags=["lttvideo"])
@@ -167,6 +168,14 @@ def _uoc_gia() -> dict[int, int]:
     return {g: cost.uoc_credit(giay_video=g) for g in DO_DAI_S}
 
 
+#: Nhan tab, ghep voi `features.TRANG_THAI_TAB`. Nhan o day (viec cua HTTP),
+#: khoa o kia (viec cua nghiep vu) — khong tron hai thu.
+_NHAN_TAB = {
+    "all": N_("Tất cả"), "running": N_("Đang xử lý"), "done": N_("Hoàn tất"),
+    "error": N_("Lỗi"), "cancelled": N_("Đã huỷ"),
+}
+
+
 @router.get("", response_class=HTMLResponse)
 @router.get("/", response_class=HTMLResponse)
 async def trang_chinh(request: Request, _dinh_danh: str = Depends(require_login),
@@ -174,6 +183,17 @@ async def trang_chinh(request: Request, _dinh_danh: str = Depends(require_login)
     nd = _nguoi_dung(request)
     vai = getattr(nd, "role", "") or ""
     duoc, ly_do = kha_nang.kiem("tao_video", vai=vai)
+
+    tt = str(request.query_params.get("trang_thai") or "all")
+    if tt not in features.TRANG_THAI_TAB:
+        tt = "all"
+    sx = "cu" if request.query_params.get("sap_xep") == "cu" else "moi"
+
+    kho_du_lieu = (features.thu_vien(db, nd.id, trang_thai=tt, sap_xep=sx)
+                   if duoc and nd is not None
+                   else {"so_dem": {}, "video": [], "prompt_gan_day": [],
+                         "tai_san": []})
+
     return templates.TemplateResponse(
         request,
         "lttvideo.html",
@@ -191,10 +211,36 @@ async def trang_chinh(request: Request, _dinh_danh: str = Depends(require_login)
             "ly_do_tu_choi": ly_do,
             # `A5`: chua mo thi KHONG ve o tick. Xem `kha_nang.NANG_LUC_MO`.
             "duoc_mo_rong": kha_nang.duoc_phep("mo_rong_prompt", vai=vai),
-            "video_gan_day": (_video_gan_day(db, nd.id)
-                              if duoc and nd is not None else []),
+            "trang_thai_tab": [(k, _t(_NHAN_TAB[k]))
+                               for k in features.TRANG_THAI_TAB],
+            "loc_trang_thai": tt,
+            "loc_sap_xep": sx,
+            **kho_du_lieu,
         },
     )
+
+
+@router.get("/trang-thai-may", response_class=HTMLResponse)
+async def trang_thai_may(request: Request,
+                         _dinh_danh: str = Depends(require_login)):
+    """Một dòng nói máy dựng đang bật hay tắt.
+
+    🔴 Vì sao cần: `B1` bật máy **theo nhu cầu**, và lượt đầu sau khi máy nghỉ
+       phải chờ khởi động (trần `dieu_phoi.CHO_TOI_DA_S` = 900 giây). Seedance
+       không có vấn đề này vì nó gọi một API luôn sẵn sàng. Im lặng ở đây thì
+       người dùng đọc mười lăm phút chờ thành "hỏng rồi".
+
+    ⛔ KHÔNG hỏi RunPod ở đây. Trang chủ mà đi gọi một API ngoài là buộc thời
+       gian dựng trang vào độ trễ của người khác. Chỉ đọc cấu hình.
+    """
+    import os  # noqa: PLC0415
+
+    if not (os.environ.get("LTTV_POD_ID") or "").strip():
+        # Khong cau hinh pod = moi truong co may chay san. Khong doa nguoi dung
+        # bang mot canh bao khong dung voi ho.
+        return HTMLResponse("")
+    return HTMLResponse(
+        f"<span>{_t('Máy dựng bật theo nhu cầu — lượt đầu có thể mất thêm vài phút để khởi động.')}</span>")
 
 
 @router.post("/tao")
@@ -204,6 +250,7 @@ async def tao_video(
     ti_le: str = Form("16:9"),
     do_dai_s: int = Form(5),
     mo_rong_prompt: str = Form(""),
+    tai_san_khoa: str = Form(""),
     csrf_token: str = Form(""),
     media: UploadFile | None = File(None),
     _dinh_danh: str = Depends(require_login),
@@ -250,6 +297,25 @@ async def tao_video(
     }
     if media_key:
         tham_so["media_key"] = media_key
+    elif tai_san_khoa:
+        # 🔴 KHONG tin khoa do trinh duyet gui. `features.khoa_tai_san_hop_le`
+        #    doi chieu voi chinh lich su job CUA CHU va kiem tep con ton tai —
+        #    cung ho bao ve voi `_KHUON_KHOA`: mot danh sach trang dung tu du
+        #    lieu cua chu, khong phai mot bo loc chuoi.
+        from sqlalchemy import select  # noqa: PLC0415
+
+        from platform_core.models import Job  # noqa: PLC0415
+
+        cua_toi = db.execute(
+            select(Job).where(Job.user_id == user.id,
+                              Job.app_slug == MANIFEST.slug)
+            .order_by(Job.created_at.desc())
+            .limit(features.GIOI_HAN_THU_VIEN)).scalars().all()
+        if not features.khoa_tai_san_hop_le(cua_toi, tai_san_khoa):
+            return RedirectResponse(
+                f"?loi={_t('Tài sản đã chọn không còn dùng được.')}",
+                status_code=303)
+        tham_so["media_key"] = tai_san_khoa
 
     # ⛔ KHÔNG tin ô tick trong biểu mẫu. Trình duyệt gửi được bất cứ trường nào;
     #    năng lực chưa mở mà vẫn nhận là mở cửa sau cho đúng thứ `kha_nang` đang
@@ -278,57 +344,6 @@ async def tao_video(
     # ⭐ Di thang toi trang job CUA NEN TANG: o do da co tien do tu dieu nhip,
     #    nut huy, dong thoi gian va o tai ket qua. Dung tu dung mot man cho.
     return RedirectResponse(f"/jobs/{getattr(job, 'id', '')}", status_code=303)
-
-
-def _job_video_cua_toi(db, user_id, job_id: str):
-    """Job `lttvideo` ĐÃ XONG và thuộc về `user_id`, hoặc `None`.
-
-    ⛔ Kiểm **cả ba**: đúng chủ, đúng app, đã xong. Thiếu vế "đúng app" thì một
-       `job_id` của app khác cũng qua được, và ta sẽ đem khoá của nó đi nâng cấp.
-    """
-    from platform_core.models import Job  # noqa: PLC0415
-
-    j = db.get(Job, (job_id or "")[:36])
-    if j is None or str(j.user_id) != str(user_id):
-        return None
-    if j.app_slug != "lttvideo" or j.status != "done":
-        return None
-    return j
-
-
-def _khoa_video(job) -> str:
-    """Khoá video đầu tiên trong kết quả, hoặc rỗng.
-
-    ⭐ Dùng để dựng nút **Nâng nét** — một `<form>` post thẳng sang bề mặt HTTP
-       công khai của `upscalevideo`. Xem chú thích ở template.
-    """
-    ds = (job.result or {}).get("video_keys") or []
-    return str(ds[0]) if ds else ""
-
-
-def _video_gan_day(db, user_id, gioi_han: int = 12) -> list[dict]:
-    """Vài video mới nhất của chính chủ, để trang app có chỗ bấm Nâng nét.
-
-    📌 Đây **không** phải một trang lịch sử thứ hai — lịch sử là
-       `/jobs?app=lttvideo` của nền tảng. Đây là chỗ đặt **hành động riêng của
-       app**, thứ trang job dùng chung không có móc để cắm vào.
-    """
-    from platform_core.models import Job  # noqa: PLC0415
-    from sqlalchemy import select  # noqa: PLC0415
-
-    rows = db.execute(
-        select(Job).where(Job.user_id == user_id, Job.app_slug == "lttvideo",
-                          Job.status == "done")
-        .order_by(Job.created_at.desc()).limit(gioi_han)
-    ).scalars().all()
-    ra = []
-    for j in rows:
-        khoa = _khoa_video(j)
-        if khoa:
-            ra.append({"job_id": j.id, "khoa": khoa,
-                       "prompt": (j.params or {}).get("prompt", ""),
-                       "luc": j.created_at})
-    return ra
 
 
 @router.get("/video/{key:path}")

@@ -58,8 +58,17 @@ def test_chi_quet_job_CUA_APP_NAY():
 
 
 def test_chi_quet_job_DA_KET_THUC():
-    """Job đang chờ/đang chạy còn cần chính `params` của nó để chạy được."""
-    ma = inspect.getsource(features)
+    """Job đang chờ/đang chạy còn cần chính `params` của nó để chạy được.
+
+    🔴 Viết lại 07/09. Bản cũ quét **cả module** `features`, và nó xanh chỉ vì
+       lúc ấy module chỉ có mỗi phép dọn. Khi khoang thư viện dọn vào cùng tệp —
+       và nó **phải** nhắc `JOB_QUEUED`/`JOB_RUNNING` để đếm tab — phép kiểm đỏ
+       lên dù `don_het_han` không đổi một dòng nào.
+
+    ⇒ Mệnh đề phải **bất biến với tập hợp**: nó nói về *phép dọn*, nên nó phải
+      đo *phép dọn*, không đo cái tệp tình cờ chứa phép dọn.
+    """
+    ma = inspect.getsource(features.don_het_han)
     assert "JOB_DONE" in ma and "JOB_ERROR" in ma and "JOB_CANCELLED" in ma
     assert "JOB_RUNNING" not in ma and "JOB_QUEUED" not in ma
 

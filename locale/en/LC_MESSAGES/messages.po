@@ -13420,3 +13420,69 @@ msgstr "Request sent to the render machine"
 
 msgid "Máy dựng video không phản hồi kịp. Credit đã được hoàn, bạn thử lại sau."
 msgstr "The render machine did not respond in time. Your credit was refunded; please try again later."
+
+msgid "Điều hướng Video AI"
+msgstr "Video AI navigation"
+
+msgid "Tạo"
+msgstr "Create"
+
+msgid "Đính kèm"
+msgstr "Attachment"
+
+msgid "Tả cảnh, chủ thể, chuyển động máy quay và ánh sáng."
+msgstr "Describe the scene, subject, camera movement and lighting."
+
+msgid "Mô tả đã dùng"
+msgstr "Previous descriptions"
+
+msgid "Tài sản đã dùng"
+msgstr "Files you used before"
+
+msgid "Chọn lại một tệp từ lượt trước thay vì tải lên lần nữa."
+msgstr "Pick a file from an earlier run instead of uploading it again."
+
+msgid "đã hết hạn"
+msgstr "expired"
+
+msgid "Giữ chỗ"
+msgstr "On hold"
+
+msgid "Kết quả được giữ 3 ngày, sau đó tự xoá. Hãy tải về nếu bạn muốn giữ lâu hơn."
+msgstr "Results are kept for 3 days, then deleted. Download anything you want to keep."
+
+msgid "Đang hỏi trạng thái máy dựng…"
+msgstr "Checking the render machine…"
+
+msgid "Máy dựng bật theo nhu cầu — lượt đầu có thể mất thêm vài phút để khởi động."
+msgstr "The render machine starts on demand — the first run may take a few extra minutes to boot."
+
+msgid "kết quả"
+msgstr "results"
+
+msgid "Đang dựng"
+msgstr "Rendering"
+
+msgid "s"
+msgstr "s"
+
+msgid "Làm lại"
+msgstr "Redo"
+
+msgid "Nội dung đã hết hạn 3 ngày"
+msgstr "Content expired after 3 days"
+
+msgid "Chưa có video nào."
+msgstr "No videos yet."
+
+msgid "Tả video bạn muốn rồi bấm Tạo video."
+msgstr "Describe the video you want, then press Create video."
+
+msgid "Nâng nét video"
+msgstr "Upscale video"
+
+msgid "Xác nhận"
+msgstr "Confirm"
+
+msgid "Tài sản đã chọn không còn dùng được."
+msgstr "The selected file is no longer available."
