@@ -435,13 +435,46 @@ tiền API vào.
 - [x] Hỏng có chủ ý: job lỗi → credit hoàn đủ (test + nghiệm thu)
 - [x] Hai người dùng: A không đọc được job B (test tầng route)
 - [x] Kiểm tra thật bằng browser (Playwright), console 0 lỗi
-- [ ] Hỏng có chủ ý: giết worker giữa chừng → nhặt lại (đã có reclaim_orphans +
-      test — `test_67`, `test_150`, `test_313`).
-      ⚠️ **Sửa 2026-08-29: lý do hoãn đã hết hiệu lực.** Câu cũ ghi *"để khi có
-      tool chạy lâu thật, demo quá nhanh để giết giữa chừng"* — `apps/demo` đã
-      gỡ (Q109), và nay **có** tool chạy lâu thật: `video.upscale` (job GPU
-      hàng phút) và `text.chat` (đo thật 119 giây). Việc này nay **làm được**;
-      nó đang chờ người làm, không chờ điều kiện.
+- [x] Hỏng có chủ ý: giết worker giữa chừng → nhặt lại — **nghiệm thu sống
+      2026-09-07**, `tools/nghiem_thu_mo_coi.py`.
+
+      Ba test đã có (`test_67`, `test_150`, `test_313`) đều làm **một** việc:
+      đặt `heartbeat_at` lui về quá khứ rồi gọi `reclaim_orphans()`. Tức chúng
+      kiểm **phía đọc**. Hai phía không test nào chạm tới:
+
+      1. **phía ghi** — worker thật có cập nhật nhịp khi đang chạy không;
+      2. **phía lịch** — có vòng nào *tự* gọi nhặt lại không.
+
+      ⭐ Một bộ test xanh ở phía đọc vẫn tương thích hoàn toàn với một hệ thống
+         **không bao giờ nhặt lại gì** — vì không ai ghi nhịp, hoặc không ai gọi
+         vòng. Nên phép nghiệm thu này giết một **tiến trình thật** và không giả
+         lập gì cả.
+
+      | Mốc | Đo được |
+      |---|---|
+      | đối chứng A | nhịp **tiến** 2 lần khi worker A còn sống |
+      | giết | `taskkill /F`, nhịp đóng băng ở `01:20:46` |
+      | đối chứng B | 45 giây sau nhịp **vẫn** `01:20:46` — lệnh giết ăn thật |
+      | nhặt lại | worker B nhận job sau **265 giây**, `attempts 0 → 1` |
+
+      Hai lớp đối chứng có mặt vì nếu chỉ đo *"sau khi giết, B nhận job"* thì
+      kết quả ấy còn khớp với hai giả thuyết tầm thường: **A chưa bao giờ chạy**,
+      và **lệnh giết không ăn**.
+
+      🔴 **Phát hiện kèm theo:** `platform_core/jobs.py:248 heartbeat()`
+         **không được gọi ở đâu cả**. Nhịp của job chỉ nhích khi app gọi
+         `ctx.progress` → `jobs.set_progress` (`jobs.py:336`). Đó là hợp đồng
+         thật — `apps/taovideo/jobs.py:5` ghi rõ — nhưng **không có gì cưỡng
+         chế** nó. Một app render 6 phút mà không báo tiến độ sẽ bị nhặt oan
+         **trong khi worker vẫn đang chạy nó**. Đo 07/09: mọi app chạy lâu đều
+         gọi (`autosubvideo` 17, `upscalevideo` 14, `taovideo` 8,
+         `taoclipngan` 6), nên hôm nay không có app nào dính.
+
+      ⛔ Không biến việc này thành bước gate: nó ngủ ~7 phút theo đúng
+         `ORPHAN_TIMEOUT` thật, và rút ngắn bằng cách ví nhịp về quá khứ là
+         quay lại **đúng** phép đo mà ba test kia đã làm. Và **đừng** dựng bánh
+         cóc đếm lời gọi `progress` — đếm lời gọi không chứng minh khoảng cách
+         giữa hai nhịp nhỏ hơn 5 phút (`AGENTS.md` §4d lớp E).
 - [ ] Tắt CSDL → giao diện báo lỗi rõ (dời cùng H3-admin/observability)
 
 **Trạng thái:** chuỗi chính đã nghiệm thu thật. Hai mục còn lại cần tình huống
@@ -2451,7 +2484,13 @@ Quyết định nền: **Q92**. Nhật ký thật: mục `2026-08-15 — H35` tr
     `/api/v1/*` (POST tới đó đi thẳng tới origin). Nếu sau này có luật WAF mở
     rộng sang `/api/v1`, đường máy-gọi-máy sẽ chết — cần kiểm lại mỗi khi đổi
     cấu hình WAF.
-  - [~] H35.9e **Đường ra đã có 2026-08-17; kênh chưa bật.**
+  - [~] H35.9e **Đường ra đã có và kênh ĐÃ BẬT (2026-08-17).**
+    ⚠️ *Đầu đề cũ ghi "kênh chưa bật" — sửa 07/09 vì nó mâu thuẫn với
+       chính thân ô ngay bên dưới ("Đã bật trên máy chủ 2026-08-17"). Đo lại
+       `secrets/app.env` trên máy chủ: cả ba khoá đều có mặt —
+       `LTT_OPS_ALERT_EMAIL`, `LTT_MAIL_FROM`, `RESEND_API_KEY`. Ô vẫn để `[~]`
+       vì việc còn nợ (**xoay khoá provider**) là hành động của chủ sản phẩm,
+       không phải việc agent tự làm — xem cuối ô.*
     `platform_core/public_api/ops_alerts.py` đọc `metrics.aggregate()` — **cộng
     qua mọi tiến trình**, không phải `snapshot()` trong một tiến trình — và gửi
     email cho `LTT_OPS_ALERT_EMAIL`, chạy trong vòng bảo trì đã có lease (H36).
