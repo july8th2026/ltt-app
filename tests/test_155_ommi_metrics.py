@@ -185,11 +185,30 @@ def test_moi_rang_buoc_unique_song_con_deu_nam_trong_drill():
     import platform_core.models  # noqa: F401
     load_app_tables()
 
-    thieu = []
+    thieu, so_uq = [], 0
     for bang in Base.metadata.tables.values():
         for rb in bang.constraints:
             ten = getattr(rb, "name", None)
-            if ten and str(ten).startswith("uq_") and str(ten) not in src:
-                thieu.append(str(ten))
+            if ten and str(ten).startswith("uq_"):
+                so_uq += 1
+                if str(ten) not in src:
+                    thieu.append(str(ten))
+
+    # ⛔ ĐỐI CHỨNG (Bẫy 31) — thêm 07/09/2026.
+    #
+    #    Vòng lặp lái bằng `Base.metadata.tables`, mà bảng của app chỉ có mặt
+    #    sau `load_app_tables()`. Nếu lời gọi ấy hỏng **im lặng** — một app
+    #    không import được, một `tables.py` đổi tên — thì tập bảng rỗng hoặc
+    #    thiếu, `thieu` rỗng, và phép kiểm XANH trong khi drill không kiểm gì.
+    #
+    # 🔴 Đây là kiểu xanh rỗng khó thấy nhất: nó không đến từ mã của phép kiểm
+    #    mà từ một **bước nạp** phía trước nó.
+    #
+    #    Đo 07/09/2026: 75 bảng, 28 ràng buộc `uq_`.
+    assert so_uq >= 28, (
+        f"chi thay {so_uq} rang buoc `uq_` tren {len(Base.metadata.tables)} "
+        f"bang — mong doi >= 28. Nghi `load_app_tables()` khong nap du: mot "
+        f"drill kiem tren tap bang thieu la mot drill khong bao dam gi.")
+
     assert not thieu, (
         f"ràng buộc UNIQUE không được drill kiểm: {sorted(set(thieu))}")

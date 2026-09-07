@@ -396,13 +396,29 @@ def test_MOI_cua_nop_job_deu_khai_SO_LAN_THU_JOB():
     import re as _re
 
     goc = _p.Path(__file__).resolve().parents[1] / "apps/ltt_voice/routes"
-    thieu = []
+    thieu, so_cua = [], 0
     for tep in goc.glob("_p_*.py"):
         noi_dung = tep.read_text(encoding="utf-8")
         for khoi in _re.findall(r"submit_with_credit\((?:[^()]|\([^()]*\))*\)",
                                 noi_dung):
+            so_cua += 1
             if "max_attempts" not in khoi:
                 thieu.append(tep.name)
+
+    # ⛔ ĐỐI CHỨNG (Bẫy 31) — thêm 07/09/2026.
+    #
+    #    Docstring nói *"BỐN cửa nộp job, và cửa bị quên là cửa sẽ chết lặng lẽ
+    #    khi deploy"*. Nhưng phép kiểm lái bằng một mẫu chuỗi: đổi tên
+    #    `submit_with_credit`, bọc nó qua một hàm trung gian, hay đưa lời gọi
+    #    xuống một tệp không khớp `_p_*.py` — `findall` khớp **0** lần, `thieu`
+    #    rỗng, XANH. Bốn cửa mất người canh mà không dòng nào báo.
+    #
+    #    Đo 07/09/2026: 4 lời gọi trong 6 tệp `_p_*.py`.
+    assert so_cua >= 4, (
+        f"chi thay {so_cua} loi goi `submit_with_credit` — mong doi >= 4 (con "
+        f"so trong docstring). Hoac ham da doi ten / bi boc lai, hoac mot cua "
+        f"nop job da chuyen cho. Ca hai deu phai xem bang MAT.")
+
     assert not thieu, (
         f"cua nop job KHONG khai max_attempts: {sorted(set(thieu))} — "
         f"job o day se chet khi deploy")

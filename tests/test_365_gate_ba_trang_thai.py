@@ -353,11 +353,22 @@ def test_nhip_job_js_khong_duoc_dung_defer():
        mo trang — va no hong IM LANG: trang van ve, chi la khong bao gio doi.
     """
     import re
-    xau = []
+    xau, so_the = [], 0
     for p in list((GOC / "apps").rglob("templates/*.html")) + \
              list((GOC / "server" / "templates").rglob("*.html")):
         t = p.read_text(encoding="utf-8", errors="replace")
         for the in re.findall(r"<script[^>]*nhip_job\.js[^>]*>", t):
+            so_the += 1
             if "defer" in the or "async" in the:
                 xau.append(f"{p.relative_to(GOC).as_posix()}: {the}")
+    # ⛔ DOI CHUNG (Bay 31): doi ten `nhip_job.js` -> `findall` khop 0 ->
+    #    `xau` rong -> XANH, va thu phep kiem nay canh (mot `defer` bien
+    #    `LTT.nhipJob` thanh `is not a function`, hong IM LANG: trang van ve,
+    #    chi khong bao gio doi) het nguoi canh.
+    #
+    #    Do 07/09/2026: 3 the script nap `nhip_job.js`.
+    assert so_the >= 3, (
+        f"chi thay {so_the} the <script> nap nhip_job.js — mong doi >= 3. "
+        f"Hoac tep da doi ten (thi SUA mau o day), hoac mot trang thoi hoi "
+        f"lai. Ca hai deu phai xem; KHONG duoc de phep kiem nay xanh rong.")
     assert not xau, "nhip_job.js bi `defer`/`async`:\n  " + "\n  ".join(xau)

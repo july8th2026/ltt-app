@@ -2331,3 +2331,46 @@ chỗ đếm — nên phép kiểm chốt luôn rằng **facade thật sự đ�
 ⭐ Và kiểm hai chiều: tiêm bản cũ, đòi hỏi **ĐỎ**. Ba phép tiêm cho bản vá này
    (trả `{e.ly_do}` vào thân · gỡ `CAPACITY_REFUSED` · đổi câu chữ sản phẩm)
    đều đỏ đúng như mong đợi — và đọc `returncode`, đừng khớp mẫu `stdout`.
+
+### Kiểm toán 07/09/2026 — 17 ứng viên, **6** phải sửa
+
+Đã **đọc từng cái**, không vá máy móc. Thứ quyết định là **nguồn của vòng lặp
+trong cùng**, vì nó trả lời *"tập rỗng nghĩa là gì"*:
+
+| an toàn — **không sửa** | vì sao |
+|---|---|
+| `145` `148` `151` `343` `390` `901` | `ast.walk` / `rglob` trên `apps/` — không thể rỗng |
+| `306` | mốc CVE rỗng = **không miễn trừ nào** = an toàn hơn |
+| `353` | rỗng = **không ai bọc `stdout`** = đúng điều mong muốn |
+| `309` `906` | đọc dòng của một tệp đã commit |
+
+| nguy hiểm — **đã chốt** | tập rỗng che mất điều gì | sàn đo được |
+|---|---|---|
+| `310` input ẩn | mọi input ẩn mất chỗ bấm → **không chọn được tệp** | 2 |
+| `365` `nhip_job.js` | `defer` → `LTT.nhipJob is not a function`, hỏng im lặng | 3 |
+| `501` cửa nộp job | 4 cửa thiếu `max_attempts` → chết khi deploy | 4 |
+| `904` thẻ `<video>` | thiếu `playsinline` → iOS ép toàn màn hình | 10 |
+| `388` luật chẩn đoán | luật không thể nổ nhìn y hệt luật đang canh | 3 |
+| `155` ràng buộc `uq_` | `load_app_tables()` hỏng im lặng → drill kiểm tập rỗng | 28 |
+
+⭐ **`155` là kiểu khó thấy nhất**: xanh rỗng không đến từ mã của phép kiểm mà
+   từ một **bước nạp phía trước nó**.
+
+⭐ Và `904` cho thấy **hai đối chứng khác nhau, cần cả hai**. Nó đã có
+   `test_bo_do_the_video_that_su_bat_duoc_the_thieu` — chứng minh regex bắt
+   được một thẻ thiếu. Nhưng phép kiểm ấy chạy trên **một chuỗi viết sẵn**, nên
+   nó vẫn xanh kể cả khi lượt quét thật không tìm thấy thẻ nào. Một cái hỏi
+   *"dụng cụ có hoạt động không"*, cái kia hỏi *"nó có nhìn thấy gì không"*.
+
+**Đối chứng cho chính sáu bản vá:** ép tập rỗng (`re.findall → []`,
+`LUAT → []`, `metadata.tables → {}`) — **cả sáu đều ĐỎ**.
+
+⛔ Và ba cái tên trong danh sách ứng viên của phiên kia
+   (`test_khong_import_cheo_tu_bot_gemini`, `test_platform_never_imports_an_app`)
+   **không** có ở đây: chúng duyệt `glob()`/module chứ không lái bằng khớp
+   chuỗi. Đó là lý do **không** lấy phần giao hai danh sách làm việc — phần
+   giao của hai bộ lọc sai tiêu chí vẫn sai tiêu chí, chỉ ngắn hơn.
+
+⭐ Tỉ lệ cuối: **6/17 hình dạng là lỗ thật**. Một bánh cóc tự động sẽ báo động
+   trên cả 17 — tức **11 dương tính giả**, và đó chính là §4d lớp E. Phân loại
+   này cần **đọc**, và nó chỉ tốn một lượt.
