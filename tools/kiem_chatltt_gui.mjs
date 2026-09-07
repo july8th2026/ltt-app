@@ -621,6 +621,132 @@ const HANG_MUC = [
     },
   },
   {
+    /*
+     * CK1 (a) — ma tran NAM moc, khong phai ba.
+     *
+     * Muc `khong-cuon-ngang` o tren do 390/768/1920 va chi hoi MOT cau: trang
+     * co cuon ngang khong. Tieu chi P09 doi NAM moc va hoi them hai cau nua.
+     *
+     * ⛔ `scrollWidth > clientWidth` KHONG bat duoc moi ca: mot phan tu co the
+     *    thoi ra ngoai mep phai ma van khong tao thanh cuon, neu mot to tien
+     *    co `overflow: hidden`. Nguoi dung mat noi dung ma phep do bao sach.
+     *
+     * ⭐ Nen do THEM: dem phan tu co `rect.right` vuot qua be rong khung. Do la
+     *    cau hoi "co gi bi cat khong", khac han "co cuon duoc khong".
+     */
+    dot: 0, ten: 'ck1-ma-tran-5-moc',
+    hoi: 'Nam moc 390/768/1280/1440/1920: co tran ngang, co phan tu vuot mep phai?',
+    async chay(p) {
+      const bang = [];
+      for (const w of [390, 768, 1280, 1440, 1920]) {
+        await p.setViewportSize({ width: w, height: 900 });
+        await cho(450);
+        const m = await p.evaluate((be) => {
+          const de = document.documentElement;
+          let vuot = 0;
+          for (const el of document.querySelectorAll('body *')) {
+            const r = el.getBoundingClientRect();
+            if (r.width > 0 && r.right > be + 1) vuot++;
+          }
+          const chip = document.querySelector('.ltc-chip');
+          return {
+            tran: de.scrollWidth - de.clientWidth,
+            vuot,
+            chipCao: chip ? Math.round(chip.getBoundingClientRect().height) : null,
+          };
+        }, w);
+        bang.push({ w, ...m });
+      }
+      await p.setViewportSize({ width: 1280, height: 900 });
+      const xau = bang.filter((b) => b.tran > 1 || b.vuot > 0)
+        .map((b) => `${b.w}px: tran ${b.tran}, vuot phai ${b.vuot}`);
+      if (xau.length) throw new Error(xau.join('; '));
+      return { bang };
+    },
+  },
+  {
+    /*
+     * CK1 (b) — CLS, VA mot doi chung di kem.
+     *
+     * 🔴 Do 07/09: mot khung trinh duyet nhung tra `CLS = 0` voi 0 dich chuyen
+     *    ghi duoc, KE CA khi bi ep dich chuyen ba lan. `supportedEntryTypes` CO
+     *    `layout-shift`, nhung no khong phat muc nao.
+     *
+     * ⇒ Mot so 0 khong co doi chung la mot so 0 VO NGHIA — no khong phan biet
+     *   duoc "trang on dinh" voi "bo do khong chay". Nen hang muc nay ep mot
+     *   dich chuyen TRUOC, va neu bo do khong bat duoc no thi BAO HONG thay vi
+     *   bao dat.
+     */
+    dot: 0, ten: 'ck1-cls-duoi-nguong',
+    hoi: 'CLS co duoi 0.079 khong — va bo do co that su chay khong?',
+    async chay(p) {
+      const CAI = () => {
+        window.__cls = 0;
+        window.__clsN = 0;
+        try {
+          new PerformanceObserver((l) => {
+            for (const e of l.getEntries()) {
+              if (!e.hadRecentInput) { window.__cls += e.value; window.__clsN++; }
+            }
+          }).observe({ type: 'layout-shift', buffered: true });
+        } catch (_) { window.__clsHong = true; }
+      };
+
+      await p.setViewportSize({ width: 390, height: 844 });
+      await p.addInitScript(CAI);
+
+      // --- DOI CHUNG: ep mot dich chuyen, bo do PHAI bat duoc ---------------
+      await p.reload({ waitUntil: 'domcontentloaded' });
+      await cho(1200);
+      await p.evaluate(() => {
+        const d = document.createElement('div');
+        d.style.cssText = 'height:260px';
+        document.body.insertBefore(d, document.body.firstChild);
+      });
+      await cho(900);
+      const dc = await p.evaluate(() => ({ cls: window.__cls, n: window.__clsN }));
+      if (!dc.n) {
+        /*
+         * 🔴 BO QUA, khong phai HONG. Hai trang thai khac nhau:
+         *
+         *     "do duoc, va CLS te"     -> loi cua san pham
+         *     "khong do duoc o day"    -> loi cua MOI TRUONG
+         *
+         * Gop chung lam mot thi bo kiem bao do moi lan chay bang Chromium cua
+         * Playwright, va nguoi ta hoc cach bo qua chinh no. Do dung co che da
+         * ghi o `docs/BAY_TRONG_CONG_CHAT_LUONG.md` va da sua cho `may_ban`.
+         *
+         * ⭐ Do 07/09: `layout-shift` KHONG phat trong Chromium cua Playwright
+         *    (ep mot dich chuyen 260px -> 0 muc), nhung phat binh thuong trong
+         *    Chrome THAT (ep -> CLS 0.2043 qua 2 muc). Nen hang muc nay chi co
+         *    nghia khi chay voi `--cdp` noi vao Chrome that.
+         */
+        await p.setViewportSize({ width: 1280, height: 900 });
+        return {
+          bo_qua: 'bo do layout-shift khong chay o trinh duyet nay '
+            + '(ep dich chuyen -> 0 muc). Chay lai voi `--cdp` noi vao Chrome '
+            + 'THAT thi moi do duoc. KHONG doc ket qua nay thanh dat.',
+        };
+      }
+
+      // --- Do SACH -----------------------------------------------------------
+      await p.reload({ waitUntil: 'domcontentloaded' });
+      await cho(2500);
+      const s = await p.evaluate(() => ({ cls: window.__cls, n: window.__clsN }));
+      await p.setViewportSize({ width: 1280, height: 900 });
+
+      const NGUONG = 0.079;
+      if (s.cls > NGUONG) {
+        throw new Error(`CLS ${s.cls.toFixed(4)} > nguong ${NGUONG} `
+          + `(${s.n} dich chuyen)`);
+      }
+      return {
+        cls: Number(s.cls.toFixed(4)), so_dich_chuyen: s.n, nguong: NGUONG,
+        doi_chung: `ep dich chuyen -> ${dc.n} muc, cls ${dc.cls.toFixed(4)}`,
+      };
+    },
+  },
+  {
     dot: 0, ten: 'vision-o-dinh-anh-theo-hop-dong',
     hoi: 'O dinh anh co hien DUNG khi model doc anh, va BIEN MAT khi model khong doc anh?',
     async chay(p) {
