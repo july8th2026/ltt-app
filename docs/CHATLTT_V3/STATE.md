@@ -1099,24 +1099,54 @@ Thư mục ấy siết ACL từ 27/08 (hạng mục **W1.5**, và siết là **c
    được đúng thế (`ADMIN=True` lúc 11:12, `PermissionError` sau khi resume);
    phiên này kiểm lại và **cũng dính**.
 
-⇒ Hai nguyên nhân khác nhau cho cùng một dòng `[BOQUA]`, và **hai bản sửa khác
-  nhau**: một cái là đặt biến môi trường, cái kia là chạy có UAC. Đọc bảng trên
-  rồi đặt biến môi trường sẽ **không** làm bước này chạy.
+### 🔴 ĐÍNH CHÍNH cùng ngày: đoạn trên từng kết luận SAI, và một phiên khác bác được
 
-⭐ Bản sửa cho ca thứ hai: `setup/chay_multiproc_nang_quyen.ps1` (khuôn hai lớp,
-  `AGENTS.md` §9.3). Nó **fail-closed** — không có quyền thì ghi `EXITCODE=126`
-  kèm lý do chứ không chạy rồi báo xanh. Đo được ở phiên kia: `ADMIN=True`,
-  `EXITCODE=0`, **181 giây**, log `"7 passed in 139.51s"` — vượt xa sàn
-  `giay_toi_thieu=3.0`, nên là chạy thật chứ không phải một `return 0` lịch sự.
+Bản đầu của mục này viết: *"hai nguyên nhân, **hai bản sửa khác nhau** — một cái
+đặt biến môi trường, cái kia phải chạy có UAC"*. **Câu ấy sai.** Đọc mã:
 
-⚠️ Script ấy **chưa có trong nhánh này** (`claude/chatltt-v3-agentic` rẽ trước
-   `a365fa80`). Nó sẽ tới khi nhánh này hợp nhất lên trunk, và lúc ấy vẫn cần
-   **chủ dự án bấm UAC** — không phiên Claude nào tự làm được.
+```
+tools/check_multiproc.py:74   _tim_url() doc LTT_TEST_DATABASE_URL TRUOC TIEN
+                     :56-57   roi moi den C:\LTTPlatform\secrets\app.env
+                              roi moi den <cay>/secrets/app.env
+```
 
-🔑 Nên với mọi lượt gate của nhánh này cho tới lúc đó: dòng `RESULT: PASS`
-   **thiếu một bước**, và phải nói ra kèm nó. Đây đúng lớp lỗi mà
+⇒ Đặt `LTT_TEST_DATABASE_URL` là **đủ**. Không cần UAC.
+
+Phép đo của tôi (`PermissionError` trên `secrets\`) là **thật**, nhưng nó chỉ
+đóng **một trong ba** đường; tôi đọc sự vắng mặt của một đường thành *"phải có
+quyền"*. Cùng hình dạng với ba lần sai khác trong ngày: **một lời giải thích
+khớp vừa đủ làm điều tra dừng sớm**.
+
+⭐ Và vế phiên kia thêm còn sắc hơn: một **worktree không có `secrets/` chút
+  nào**, vì thư mục ấy bị gitignore nên `git worktree add` không chép nó. Ở cây
+  riêng thì **cả hai** đường dự phòng đều tắt — một lý do đủ mà không cần viện
+  tới quyền hạn gì.
+
+### ⛔ Và vì sao biến môi trường là bản sửa DUY NHẤT sống sót
+
+`setup/2-cai-dat.ps1:555-563` chạy `icacls /inheritance:r` + `/remove:g` +
+`/grant:r SYSTEM,Administrators` **mỗi lượt cài**. Nghĩa là bất kỳ ai để bước
+này phụ thuộc vào việc đọc được `C:\LTTPlatform\secrets\app.env` sẽ **mất nó
+lại sau mỗi deploy**.
+
+⇒ Đường `_doc_env` là **dự phòng cơ hội**, không phải đường chính — dù nó trông
+  như một đường tin cậy được, và **hai phiên đã mất thời gian vì tưởng thế**.
+
+### ✅ Nên lượt deploy 07/09 CHẠY THẬT bước ấy
+
+Đo được: `secrets/postgres-superuser.txt` ở **cây chính** đọc được, khoá còn
+dùng được, CSDL nháp `lttplatform_multiproc_test` đã tồn tại. Lượt gate trước
+deploy đặt `LTT_TEST_DATABASE_URL` tường minh ⇒ bước **chạy**, không `[BOQUA]`.
+
+🔑 Luật đọc vẫn giữ nguyên: thấy `[N BUOC TU BO QUA]` ở dòng `RESULT` thì **đó
+   không phải gate xanh**, dù chữ `PASS` vẫn hiện. Đây đúng lớp lỗi mà
    `docs/BAY_TRONG_CONG_CHAT_LUONG.md` sinh ra để chứa: *một bước không chạy mà
    trông như đã chạy*.
+
+⚠️ Và cái làm cả hai phiên đọc nhầm **không phải** thông điệp của công cụ —
+   `check_multiproc.py` **có** in ra đúng lời khuyên đặt biến môi trường. Cái
+   che nó là **bảng tóm tắt của gate**: nó hiện `[BOQUA] 0.1s` mà không hiện lời
+   giải thích của bước. Đọc phán quyết mà không đọc đầu ra của chính bước ấy.
 
 ### Một cái bẫy đã trả giá trong phiên này
 

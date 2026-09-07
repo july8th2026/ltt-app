@@ -2180,8 +2180,43 @@ Mục tiêu: bổ sung bằng chứng chất lượng thực tế cho audit/debu
     - [x] H31.3b1 Fail-closed provision gate — 2026-08-10: manifest source/
       license/version, artifact bytes/SHA, chống traversal, không tải mạng và
       chỉ public status; LPIPS chưa có assets hiển thị `manifest_missing`.
-    - [ ] H31.3b2 Cấp thật LPIPS 0.1.4 + AlexNet offline, ghi checksum rồi
+    - [~] H31.3b2 Cấp thật LPIPS 0.1.4 + AlexNet offline, ghi checksum rồi
       benchmark; thiếu file vẫn giữ evaluator disabled/`UNKNOWN`.
+      **Cấp xong 07/09/2026; còn benchmark.**
+
+      ```
+      alex_linear_v0.1.pth        6.009 bytes   df73285e35b22355...
+      alexnet-owt-7be5be79.pth  244.408.911     7be5be79115947 2b...
+      verify_manifest("lpips") -> ready: True, reason: "verified"
+      ```
+
+      ⭐ **Đối chứng độc lập cho tệp 233 MB:** torchvision nhúng **8 ký tự đầu
+         của SHA-256 vào chính tên tệp** (`...-7be5be79.pth`), và băm tính ra
+         bắt đầu đúng bằng `7be5be79`. Tức có một phép kiểm toàn vẹn **không
+         đến từ manifest do ta tự viết** — nếu chỉ so với con số mình vừa tự
+         ghi thì đó là một vòng tự tham chiếu.
+
+      ⭐ Linear weight **trích từ chính wheel `lpips-0.1.4`**, không tải rời:
+         nguồn và version khớp nhau theo cấu tạo.
+
+      **Cổng provision đã kiểm có răng** — ba phép tiêm trên một bản sao
+      (`verify_manifest` nhận tham số `root`, nên không đụng bản thật):
+
+      | tiêm | kết quả |
+      |---|---|
+      | lật **một bit** trong backbone | `ready: False` |
+      | xoá linear weight | `ready: False` |
+      | khai `license` sai (`MIT`) | `ready: False` |
+
+      ⛔ **Còn lại: benchmark CPU/GPU + peak VRAM + latency** (điều kiện 6 của
+         `04_EVALUATOR_LICENSE_MODEL_MATRIX.md`). Chưa có nó thì evaluator
+         **vẫn `disabled`** — cấp được asset **không** phải bật được metric,
+         và bật được metric **không** phải bật được release gate.
+
+      ⚠️ Weight nằm ở `data/qualitylab/models/`, đã thêm vào `.gitignore`:
+         `data/` không bị ignore mặc định, nên 233 MB thả vào đó sẽ hiện trong
+         `git status` — và deploy chép **cả cây** kể cả phần chưa commit
+         (**Bẫy 30**).
   - [ ] H31.3c Video temporal + performance: frame sampling, flicker/motion,
     decode/encode contract, latency/VRAM/throughput trên GPU đích.
     - [x] H31.3c1 Paired video diagnostic — 2026-08-10: contract A/V, sample
