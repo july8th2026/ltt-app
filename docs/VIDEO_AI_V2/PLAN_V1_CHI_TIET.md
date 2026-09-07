@@ -282,6 +282,44 @@ nhận tệp ở cầu nối. ⚠️ Đây là câu hỏi cần chủ dự án x
 
 ---
 
+## 5b. Trạng thái 07/09 — sau lượt làm
+
+| Việc | GPU | Trạng thái |
+|---|---|---|
+| **T0** nâng pod lên bộ chính chủ (CUDA 13 · py3.11 · cu130) | ⚠️ | ✅ cài xong · ⛔ **nhân GGUF vẫn chưa nạp được** |
+| **T5** điều phối viên pod (`dieu_phoi.py`) | ❌ | ✅ |
+| **V3** nối `DieuPhoi` vào job — `B1` bật theo nhu cầu, `B3` hoàn credit | ❌ | ✅ |
+| tự tắt khi rảnh (`nen_tat` + `tools/wangp/canh_pod.py`) | ❌ | ✅ |
+| **G1** template về `apps/lttvideo/templates/` | ❌ | ✅ |
+| **G2** ô đính media (macro `_o_chon_tep`) | ❌ | ✅ |
+| **G3** `chon_model()` đọc `metadata` | ❌ | ✅ mã xong · ⏳ chờ ảnh chụp thật |
+| **G4** nút Nâng nét → `upscalevideo` (GPU máy A) | ❌ | ✅ |
+| **G5** cảnh báo trôi chất lượng ≥10 giây | ❌ | ✅ |
+| **A2** độ dài 15 giây (truyền `"15s"`) | ❌ | ✅ |
+| đường `/metadata` ở cầu nối | ❌ | ✅ |
+| **T1** chụp `metadata` thật, thay fixture tạm | ⚠️ | ⏳ |
+| **T2** tải `i2v_2_2` (+`vace_14B`) | ⚠️ | ⏳ |
+| **T3** bộ mở rộng `Qwen3.8-27B` | ⚠️ | ⏳ **chặn bởi nhân GGUF** |
+| **T4** đo lại ở cấu hình cuối | ⚠️ | ⏳ |
+| **T11** nghiệm thu E2E | ✅ | ⏳ |
+
+⇒ **Mọi việc không cần GPU đã xong.** Bốn việc còn lại gom vào **một lượt bật
+pod**, đúng nguyên tắc §0.
+
+### Hai thứ đổi so với plan gốc
+
+🔴 **T8 (`/hau_ky` ở cầu nối) đã BỎ.** Chủ dự án chỉ ra LTT **đã có**
+`apps/upscalevideo` chạy `realesrgan` trên GPU máy A. Việc còn lại là một dây
+nối, không phải một thao tác mới — và điều đó xoá luôn lỗ hổng "tệp đã bị
+`cleanup` xoá" ghi ở §5.
+
+🔴 **T6 (lịch sử · tiến độ · huỷ) gần như BỎ.** Nền tảng đã có
+`GET /jobs?app=lttvideo`, `/jobs/{id}/progress` (tự điều nhịp), `POST
+/jobs/{id}/cancel`, `/artifacts/{i}`, và `Job.params` giữ prompt (`C3`). Xem
+`THIET_KE_GUI.md` §1 — kèm **một lỗi mà trang lịch sử tự viết sẽ che mất**.
+
+---
+
 ## 6. Không nằm trong V1
 
 Tab Ảnh / Giọng nói / Nhạc · LoRA · VACE mask · nối video >15s · bán ra ngoài
