@@ -218,20 +218,24 @@ def test_co_ghi_nho_co_ten_rieng_khong_dung_chung():
     from apps.chatltt.services import co_v3
     assert co_v3.CO_GHI_NHO == "LTT_CHATLTT_V3_MEMORY"
     assert len({co_v3.CO_GHI_NHO, co_v3.CO_TEP, co_v3.CO_TOOLS,
-                co_v3.CO_TOOL_CO_PHI, co_v3.CO_DU_AN}) == 5
+                co_v3.CO_TOOL_CO_PHI, co_v3.CO_DU_AN,
+                co_v3.CO_NGHIEN_CUU}) == 6
 
 
 def test_trang_thai_khai_du_MOI_co():
     """`/api/danh-muc` phải nói được cờ nào đang bật — kể cả cờ mới.
 
-    ⚠️ Bánh cóc này làm đúng việc ở B5: nó đỏ khi cờ thứ **năm** (`du_an`) ra
-       đời, và bắt tôi quay lại đây khai. Bản viết lại vẫn chốt **TẬP HỢP**, chỉ
-       là năm tên thay vì bốn — không nới thành `>=`, vì nới là gỡ chính thứ vừa
-       bắt được thay đổi.
+    ⚠️ Bánh cóc này đã đỏ **hai lần** đúng lúc cần: cờ thứ **năm** (`du_an`,
+       B5) và cờ thứ **sáu** (`nghien_cuu`, B6 07/09). Cả hai lần nó bắt người
+       viết quay lại đây khai.
+
+    ⛔ Vẫn chốt **TẬP HỢP**, không nới thành `>=` hay `issuperset`. Nới là gỡ
+       đúng thứ vừa bắt được thay đổi — cùng bài học `banh-coc-cong-chat-luong`:
+       chốt tập hợp, không chốt số lượng.
     """
     from apps.chatltt.services import co_v3
     assert set(co_v3.trang_thai()) == {"tools", "tool_co_phi", "tep",
-                                       "ghi_nho", "du_an"}
+                                       "ghi_nho", "du_an", "nghien_cuu"}
 
 
 def test_danh_muc_CO_khai_co_v3_ra_giao_dien():

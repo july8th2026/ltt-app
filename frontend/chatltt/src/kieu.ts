@@ -169,3 +169,43 @@ export type AnhChup = {
   error_code: string
   job_id: string | null
 }
+
+// ── Nghien cuu (H44 B6) ─────────────────────────────────────────────────
+
+/** Mot trich dan phan giai duoc ve MOT doan tai lieu co that cua chinh chu. */
+export type TrichDan = {
+  tep_id: string
+  doan_id: string
+  /** ⛔ `0` nghia la KHONG BIET (tep khong co khai niem trang), khong phai
+   *  "trang dau". Giao dien phai hien duoc khac biet do — mot trich dan `.txt`
+   *  tro vao "trang 0" trong nhu mot loi. */
+  trang: number
+}
+
+/** Mot cau trong bao cao, DA phan giai nguon. Khong co nguon thi khong ton tai:
+ *  `nghien_cuu.kiem_trich_dan` loai no truoc khi toi day. */
+export type KhangDinh = { chu: string; nguon: TrichDan[] }
+
+export type LyDoDung = 'xong' | 'tran_vong' | 'tran_nguon' | 'khong_co_nguon'
+
+export type BaoCaoNghienCuu = {
+  cau_hoi: string
+  ly_do_dung: LyDoDung
+  so_vong: number
+  /** So cau model viet ra ma **khong** phan giai duoc ve nguon nao. Hien ra,
+   *  khong giau: no la thuoc do do tin cua chinh luot nay. */
+  so_bi_loai: number
+  khang_dinh: KhangDinh[]
+  nguon: { loai: string; trich_dan: TrichDan }[]
+  phien_ban_gia: string
+}
+
+export type BaoGiaNghienCuu = {
+  uoc_credit: number
+  tran_vong: number
+  tran_vong_toi_da: number
+  so_du: number
+  du_credit: boolean
+  pham_vi: string
+  phien_ban_gia: string
+}

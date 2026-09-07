@@ -9,6 +9,8 @@ routes/ — bề mặt HTTP của ChatLTT, tách theo màn (AGENTS.md §8.1). CH
     _p_tep.py        /api/hoi-thoai/{id}/tep · .../{up}/trich · DELETE /api/tep/{id}  (B1)
     _p_ghi_nho.py    /api/ghi-nho · PATCH|DELETE /api/ghi-nho/{id}   (B4)
     _p_du_an.py      /api/du-an · .../{id}/hoi-thoai · POST /api/hoi-thoai/{id}/du-an  (B5)
+    _p_nghien_cuu.py /api/nghien-cuu/bao-gia · POST /api/hoi-thoai/{id}/nghien-cuu
+                     · GET /api/nghien-cuu/{job}   (B6)
     _p_media.py      /api/bao-gia · /api/hoi-thoai/{id}/tao · /api/luot/{id}/trang-thai
                      · /tai-san/{key} (cua DUY NHAT phuc vu anh/tieng)
 
@@ -18,6 +20,6 @@ khi** nền tảng gắn router vào FastAPI.
 from apps.chatltt.routes._chung import router
 from apps.chatltt.routes import (  # noqa: F401,E402  (import de dang ky route)
     _p_trang, _p_hoi_thoai, _p_luot, _p_media, _p_duyet, _p_tep, _p_ghi_nho,
-    _p_du_an)
+    _p_du_an, _p_nghien_cuu)
 
 __all__ = ["router"]

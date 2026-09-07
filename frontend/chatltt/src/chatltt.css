@@ -678,3 +678,87 @@
   0%, 100% { opacity: 0.55; }
   50%      { opacity: 1; }
 }
+
+/* ── Bang nghien cuu (H44 B6) ──────────────────────────────── */
+
+/* ⚠️ `.ltc-nut.ltc-nut--nghiencuu` chu KHONG `.ltc-nut--nghiencuu` — cung bay
+   do dac hieu da ghi o `--ghinho` ngay tren. */
+.ltc-nut.ltc-nut--nghiencuu {
+  margin-top: 8px;
+  width: 100%;
+  background: var(--surface-overlay);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+/* Cung hinh dang voi `.ltc-ghinho`/`.ltc-duan`: hop noi giua man hinh. */
+.ltc-nc {
+  position: fixed; inset: 10% 50% auto 50%;
+  transform: translateX(-50%);
+  width: min(680px, 92vw);
+  max-height: 76vh; overflow-y: auto;
+  z-index: 20;
+  padding: 16px;
+  background: var(--surface-canvas);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 12px 40px rgb(0 0 0 / .5);
+}
+.ltc-nc__dau { display: flex; align-items: center; gap: 12px; }
+.ltc-nc__tieude { margin: 0; font-size: 16px; }
+.ltc-nc__dong { margin-left: auto; }
+.ltc-nc button {
+  padding: 4px 10px;
+  background: var(--surface-overlay);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  cursor: pointer;
+}
+.ltc-nc button:disabled { opacity: .45; cursor: default; }
+.ltc-nc__chay { color: var(--text-primary) !important; }
+
+/* 🔴 PHAM VI. No khong duoc trong nhu chu chan trang: cau nay la thu duy
+   nhat noi cho khach biet san pham KHONG doc Internet. */
+.ltc-nc__phamvi {
+  margin: 10px 0 4px;
+  padding: 8px 10px;
+  background: var(--surface-overlay);
+  border-left: 3px solid var(--status-warn-border, var(--border-subtle));
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+}
+.ltc-nc__gia { margin: 4px 0 10px; color: var(--text-muted); font-size: 13px; }
+.ltc-nc__thieu { color: var(--status-danger); }
+.ltc-nc__nhap { display: block; margin-bottom: 8px; }
+.ltc-nc__nhap span { display: block; margin-bottom: 4px; color: var(--text-muted); }
+.ltc-nc__nhap textarea {
+  width: 100%;
+  padding: 6px 8px;
+  background: var(--surface-overlay);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  resize: vertical;
+}
+.ltc-nc__loi { margin: 8px 0 0; color: var(--status-danger); }
+.ltc-nc__cho { margin: 8px 0 0; color: var(--text-muted); }
+.ltc-nc__bc { margin-top: 14px; }
+.ltc-nc__lydo { margin: 0 0 8px; color: var(--text-muted); font-size: 13px; }
+.ltc-nc__loai { color: var(--status-danger); }
+.ltc-nc__rong { color: var(--text-muted); }
+.ltc-nc__ds { margin: 0; padding-left: 20px; }
+.ltc-nc__ds li { margin-bottom: 10px; }
+.ltc-nc__nguon { display: block; margin-top: 2px; }
+.ltc-nc__td {
+  display: inline-block;
+  margin-right: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-family: var(--font-mono, monospace);
+}

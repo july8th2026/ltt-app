@@ -5,7 +5,10 @@
  *    `khong_tim_thay`, `csrf`…), khong phai mot chuoi. Giao dien re nhanh theo
  *    ma; chuoi chi de hien.
  */
-import type { AnhChup, DuAn, GhiNho, HoiThoai, NangLuc, SuThat } from './kieu'
+import type {
+  AnhChup, BaoCaoNghienCuu, BaoGiaNghienCuu, DuAn, GhiNho, HoiThoai,
+  NangLuc, SuThat,
+} from './kieu'
 
 export class LoiApi extends Error {
   code: string
@@ -70,10 +73,34 @@ export class Api {
     nang_luc: NangLuc[]
     co_v3?: {
       tools: boolean; tool_co_phi: boolean; tep: boolean
-      ghi_nho: boolean; du_an: boolean
+      ghi_nho: boolean; du_an: boolean; nghien_cuu: boolean
     }
   }> {
     return this.goi('/danh-muc')
+  }
+
+  // ── Nghien cuu (H44 B6) ──────────────────────────────────
+
+  /** Uoc credit **va** PHAM VI, de hien TRUOC khi bam. */
+  nghienCuuBaoGia(tranVong?: number): Promise<BaoGiaNghienCuu> {
+    const q = tranVong ? `?tran_vong=${tranVong}` : ''
+    return this.goi(`/nghien-cuu/bao-gia${q}`)
+  }
+
+  /** Nop mot luot. Tra `job_id` — no CHUA xong, phai hoi lai. */
+  nghienCuuChay(convId: string, cauHoi: string, tranVong?: number):
+  Promise<{ job_id: string; tran_vong: number; pham_vi: string }> {
+    return this.goi(`/hoi-thoai/${encodeURIComponent(convId)}/nghien-cuu`, {
+      method: 'POST',
+      body: JSON.stringify({ cau_hoi: cauHoi, tran_vong: tranVong ?? 0 }),
+    })
+  }
+
+  nghienCuuXem(jobId: string): Promise<{
+    job_id: string; trang_thai: string; pham_vi: string
+    bao_cao?: BaoCaoNghienCuu; ly_do?: string
+  }> {
+    return this.goi(`/nghien-cuu/${encodeURIComponent(jobId)}`)
   }
 
   lietKe(tim = ''): Promise<{ hoi_thoai: HoiThoai[] }> {

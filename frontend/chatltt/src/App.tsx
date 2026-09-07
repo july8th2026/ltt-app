@@ -14,6 +14,7 @@ import { Api, docSSE, LoiApi } from './api'
 import { duongToiLa, laKhiChuyenNhanh } from './cay'
 import { BangDuAn } from './BangDuAn'
 import { BangGhiNho } from './BangGhiNho'
+import { BangNghienCuu } from './BangNghienCuu'
 import { SoanThao } from './SoanThao'
 import { TaoMedia } from './TaoMedia'
 import { ThongDiepView } from './ThongDiepView'
@@ -157,6 +158,8 @@ export function App({ api }: AppProps) {
   const [dsDuAn, datDsDuAn] = useState<{ id: string; ten: string }[]>([])
   const [duAnCuaConv, datDuAnCuaConv] = useState('')
   const [moGhiNho, datMoGhiNho] = useState(false)
+  const [coNghienCuu, datCoNghienCuu] = useState(false)
+  const [moNghienCuu, datMoNghienCuu] = useState(false)
 
   const napDanhMuc = useCallback(() => api.danhMuc()
     .then((d) => {
@@ -165,6 +168,7 @@ export function App({ api }: AppProps) {
       //    "khong khai tuc la co" se hien mot nut dan thang toi 404.
       datCoGhiNho(!!d.co_v3?.ghi_nho)
       datCoDuAn(!!d.co_v3?.du_an)
+      datCoNghienCuu(!!d.co_v3?.nghien_cuu)
       const text = d.nang_luc.find((n) => n.ten === 'text.chat')
       // ⛔ `model_mac_dinh` chu KHONG `Object.keys(models)[0]`. Ban cu lay
       //    phan tu dau cua mot dict, tuc mac dinh la THU TU KHAI trong
@@ -571,6 +575,21 @@ export function App({ api }: AppProps) {
             Máy nhớ gì về bạn
           </button>
         )}
+        {/*
+          ⛔ Doi CA co LAN mot hoi thoai dang mo. Pham vi cua mot luot nghien
+             cuu la MOT hoi thoai (`tim_doan.tim` loc theo ca `user_id` va
+             `conversation_id`), nen mot nut "Nghien cuu" khi chua chon hoi
+             thoai nao la mot nut dan thang toi 400.
+        */}
+        {coNghienCuu && convId && (
+          <button
+            type="button"
+            className="ltc-nut ltc-nut--nghiencuu"
+            onClick={() => datMoNghienCuu(true)}
+          >
+            Nghiên cứu
+          </button>
+        )}
       </aside>
 
       {moDuAn && (
@@ -578,6 +597,10 @@ export function App({ api }: AppProps) {
       )}
       {moGhiNho && (
         <BangGhiNho api={api} onDong={() => datMoGhiNho(false)} />
+      )}
+      {moNghienCuu && convId && (
+        <BangNghienCuu api={api} convId={convId}
+                       onDong={() => datMoNghienCuu(false)} />
       )}
 
       <main className="ltc-chinh">

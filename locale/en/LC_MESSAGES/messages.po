@@ -13280,3 +13280,7 @@ msgstr "Fractions below one credit are not rounded up; they carry over to the ne
 #: apps/chatltt/manifest.py
 msgid "Nghiên cứu một câu hỏi trên tài liệu bạn đã đính vào hội thoại này."
 msgstr "Research a question across the documents you attached to this conversation."
+
+#: apps/chatltt/routes/_p_nghien_cuu.py
+msgid "Đọc tài liệu bạn đã đính vào hội thoại này. Không tìm trên Internet."
+msgstr "Reads the documents you attached to this conversation. Does not search the Internet."

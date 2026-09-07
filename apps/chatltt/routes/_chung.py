@@ -60,6 +60,21 @@ def cong_du_an() -> None:
         raise HTTPException(status_code=404)
 
 
+def cong_nghien_cuu() -> None:
+    """Cong co cho nhom B6 (nghien cuu). Tat => 404, khong phai 403.
+
+    🔴 Cung luat dat-truoc-`require_login` nhu ba cong tren. Day la lan
+       thu TU chep khuon nay, va lan nao cung phai chep ca chu thich — vi
+       `Depends` chay theo thu tu khai bao, va `require_login` chuyen huong
+       303 ve /login, nen dat sau thi mot route "da dong" van noi rang duong
+       nay ton tai.
+    """
+    from apps.chatltt.services import co_v3
+
+    if not co_v3.nghien_cuu_bat():
+        raise HTTPException(status_code=404)
+
+
 def uid(request: Request) -> str:
     u = user_hien_tai(request)
     if u is None:
