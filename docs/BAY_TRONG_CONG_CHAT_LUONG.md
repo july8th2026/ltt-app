@@ -2374,3 +2374,49 @@ trong cùng**, vì nó trả lời *"tập rỗng nghĩa là gì"*:
 ⭐ Tỉ lệ cuối: **6/17 hình dạng là lỗ thật**. Một bánh cóc tự động sẽ báo động
    trên cả 17 — tức **11 dương tính giả**, và đó chính là §4d lớp E. Phân loại
    này cần **đọc**, và nó chỉ tốn một lượt.
+
+### Hình thái thứ ba — tập rỗng do **chính bản vá** tạo ra
+
+Hai hình thái trên đều có tập rỗng đến từ **bên ngoài** phép kiểm: một cây
+nguồn không khớp gì, hoặc một chuỗi neo đã đổi. Hình thái thứ ba xảy ra **bên
+trong** một phép kiểm thao tác trên dữ liệu **do chính người viết dựng ra** —
+tức đúng chỗ trực giác nói *"không thể rỗng"*.
+
+`test_844` (H44 P10, 07/09/2026) chốt rằng khi cắt kết quả tool, không đoạn
+nào mất trích dẫn:
+
+```python
+d = json.loads(_ket(12).cho_model())
+for m in d["doan"]:
+    assert m.get("trich_dan"), "doan mat nguon"
+```
+
+12 đoạn là dữ liệu **tự dựng**. Nhưng chính bản vá mà phép kiểm này canh —
+`_cat_dict`, bỏ **cả mục** cho tới khi vừa trần — làm nó rỗng được: **một đoạn
+duy nhất dài hơn trần ⇒ `doan == []`**. Vòng không chạy lần nào; phép kiểm
+PASS mà không kiểm gì.
+
+⛔ Người viết **biết** dạng lỗi này: ba tệp khác viết cùng buổi (`test_843`,
+   `test_845`, `test_846`) đều có đối chứng *"bộ trích không rỗng"*. Cái thiếu
+   đúng ở tệp thao tác trên dữ liệu tự dựng.
+
+⭐ Luật rút ra:
+
+> **"Dữ liệu do tôi tự dựng" là một bảo đảm về ĐẦU VÀO, không phải về KẾT QUẢ
+> sau khi mã sản phẩm xử lý nó.**
+
+⇒ Đối chứng phải đặt ở **đầu ra của mã đang kiểm**, không ở đầu vào của phép
+  kiểm: `assert d["doan"]` **trước** vòng lặp, cộng một phép kiểm **riêng** cho
+  chính trạng thái rỗng — để nó có người canh thay vì lặng lẽ hợp lệ.
+
+*(Đối chứng: ép `_cat_dict` luôn trả `doan` rỗng ⇒ 6 đỏ, trong đó 2 cái trước
+bản sửa là xanh. Ca này do phiên ChatLTT tự tìm trong test của chính họ và
+bàn giao sang đây; văn bản giữ gần nguyên.)*
+
+⭐ Ba hình thái, một câu hỏi chung: **tập rỗng ấy đến từ đâu?**
+
+| hình thái | tập rỗng đến từ |
+|---|---|
+| 1 | nguồn **ngoài** — cây mã không khớp mẫu nữa |
+| 2 | không rỗng, mà **khớp nhầm** — mẫu bắt phải một dòng chú thích |
+| 3 | **chính mã đang kiểm** — nó rút tập về rỗng trên dữ liệu tự dựng |

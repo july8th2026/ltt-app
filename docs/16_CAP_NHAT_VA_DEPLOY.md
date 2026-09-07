@@ -62,27 +62,47 @@ python tools/gate.py               # TRƯỚC khi báo xong / deploy
 
 ⭐ Trước khi deploy: `git status --porcelain` phải **rỗng**, rồi mới chạy gate.
 
-⛔ **`pre-commit` xanh KHÔNG có nghĩa gate sẽ xanh.** Bốn hook trước commit là
-   `banh-coc-ruff` · `kieu-xuong-dong` · `ranh-gioi-import` · `cau-hinh-thuan-ascii`.
-   **Không có `mypy`** — nó quá chậm cho một hook.
+### ⛔ `pre-commit` xanh là phát biểu về **3/29 bước**, không phải về gate
 
-   ⇒ Một **tệp mới** có thể qua cả bốn hook rồi làm gate đỏ ở bánh cóc `mypy`.
-     Đo 07/09/2026: `tools/nghiem_thu_deploy.py` viết
-     `lech, thieu, thua, vi_du = 0, 0, 0, []` — `mypy` không suy được kiểu của
-     `[]` trong một phép gán nhiều đích, `var-annotated` **44 → 45**, và một
-     dòng ấy làm đỏ **hai** bước: `mypy` và `test_306::test_mypy_hien_tai_dat_moc`.
-     Một nguyên nhân, hai triệu chứng — đừng đi sửa hai chỗ.
+Đếm 07/09/2026:
 
-   ⭐ Nên khi thêm một tệp `.py` **mới**, chạy trước khi commit:
+```
+tong buoc gate      29
+co hook tuong ung    3     ruff · kieu xuong dong · ranh gioi import
+KHONG co hook       26
+```
+
+⇒ Bốn dòng `Passed` sau mỗi `git commit` trả lời một câu **hẹp hơn nhiều** câu
+  người ta đọc nó thành. Chúng phủ **~10%** cổng chất lượng.
+
+**Ca thật, cùng ngày:** `tools/nghiem_thu_deploy.py` viết
+`lech, thieu, thua, vi_du = 0, 0, 0, []`. `mypy` không suy được kiểu của `[]`
+trong một phép gán nhiều đích ⇒ `var-annotated` **44 → 45** ⇒ vượt mốc bánh
+cóc. Bốn hook **xanh hết**, và một dòng ấy làm đỏ **hai** bước gate:
+
+```
+[LOI] mypy
+[LOI] bo test  ->  test_306::test_mypy_hien_tai_dat_moc
+```
+
+⭐ **Một nguyên nhân, hai triệu chứng.** Ai đọc bằng *kết quả* mà không đọc
+   *nguyên nhân* sẽ đi sửa hai chỗ — và chỗ thứ hai không có gì để sửa.
+
+**Thêm một tệp mới thì chạy trước khi commit** (vài giây, đổi lấy một vòng
+gate 12 phút):
 
 ```bash
 python -m mypy --config-file mypy.ini <tep moi>
+python tools/check_i18n.py                 # neu tep co chuoi hien ra cho nguoi dung
+python tools/check_dich_thieu.py
 ```
 
-   Hai giây, và nó tiết kiệm một vòng gate 12 phút.
+⛔ Và **đừng `--accept`** để nới mốc cho một chú thích kiểu còn thiếu: đó là
+   trả một lỗi vĩnh viễn để mua lại một phút.
 
-   ⛔ Và **đừng `--accept`** để nới mốc cho một chú thích kiểu còn thiếu: đó là
-      trả một lỗi vĩnh viễn để mua lại một phút.
+*(Danh sách trên không đầy đủ — không thể đầy đủ, vì 26 bước không có hook.
+Mệnh đề đáng nhớ là chính con số: `pre-commit` không phải một bản gate thu
+nhỏ, nó là **ba** phép kiểm chạy sớm.)*
 
 ### 2b. CVE trong phụ thuộc — chạy **trước deploy**, không chạy trong gate
 
