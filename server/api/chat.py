@@ -251,8 +251,21 @@ def _finish_chat(*, db, sach: dict, principal, record, request_id: str,
         metrics.increment(metrics.CAPACITY_REFUSED)
         log.warning("BAN dong bo: user=%s duong=/chat/completions ly_do=%s",
                     principal.user_id[:8], e)
+        # 🔴 KHÔNG nội suy `{e}`. `BanError` mang `detail.chi_tiet` / `ly_do`
+        #    của máy B (`platform_core/llm/cong_vlm.py:225`) — mô tả TRẠNG THÁI
+        #    BÊN TRONG ta ("3/3 suat dang dung"), thứ khách không hành động
+        #    được và không nên đọc. Dòng `log.warning` ngay trên đã giữ nó cho
+        #    người trực.
+        #
+        # ⭐ Cửa ĐỒNG BỘ này bị bỏ sót ở lượt rà đầu: phép quét tìm `ly_do}`
+        #    không thấy nó, vì ở đây là `{e}` chứ không `{e.ly_do}`. Chỉ một
+        #    phép quét rộng hơn (mọi biểu thức cạnh hàm dựng lỗi HTTP) mới lôi
+        #    ra. Ba chỗ rò, không phải hai.
+        #
+        # ⛔ GIỮ NGUYÊN tiền tố "The model is busy right now" — `test_360` neo
+        #    vào đúng chuỗi ấy trên CẢ `chat` lẫn `streaming`. Xem **Bẫy 31**.
         raise service_unavailable(
-            f"The model is busy right now: {e}", retry_after=30) from None
+            "The model is busy right now.", retry_after=30) from None
     except VuotNganSachError as e:
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
