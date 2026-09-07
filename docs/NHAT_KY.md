@@ -16,6 +16,72 @@
 
 
 
+## 2026-09-07 — Deploy `9f555599 → 0ad9c868`, và `master` đuổi kịp trunk sau 308 commit
+
+**Trạng thái:** production ở `0ad9c868`, build 09:13:14, `asset_ver ae960b57`.
+
+### Bốn cửa trước deploy
+
+| Cửa | Kết quả |
+|---|---|
+| gate đầy đủ | **29/29 PASS** trên đúng `0ad9c868`, `cay_da_doi_giua_chung=False` |
+| CVE theo spec | 2 advisory, cả hai đã xét trong mốc |
+| CVE venv **đang chạy** | 6 lỗ / 3 gói — `setuptools` `click` `sqladmin`, **không cái nào mới** |
+| a11y | đạt mốc 32 nút / 1 mã luật |
+
+⚠️ **`--no-deps` không đủ như `16_CAP_NHAT_VA_DEPLOY.md` §2b nói.** `pip-audit`
+   vẫn cố giải `torch==2.11.0+cu128` rồi chết trước khi kiểm gì. Phải **lọc bỏ**
+   3 gói có hậu tố local (`torch`, `torchaudio`, `torchvision`) — nghĩa là con
+   số "6 lỗ" nói về **137/140** gói, và ba gói torch **không được kiểm**.
+
+### Nghiệm thu — đối chiếu băm, không đọc `EXITCODE`
+
+`EXITCODE=0`, nhưng đó không phải bằng chứng. Băm từng tệp `.py` giữa cây nguồn
+và `C:\LTTPlatform\app` trên 5 gói: **511 tệp, 0 lệch, 0 thiếu**.
+`/health/version` trả `commit 0ad9c868`. `/health/ready` **200 ở cả loopback
+lẫn URL công khai**.
+
+**Quy tắc 5b — cái nó sinh ra để bắt:** `ltt.css` qua Cloudflare so với origin
+**khớp từng byte**, `Age: 333` (lấy mới *sau* deploy), và trang thật gắn
+`?v=ae960b57` đúng bằng `asset_ver` máy chủ báo. Bundle `prompt-ai-ommi`
+(`main-BMM0Ygjv.js`) khớp **ba chiều**: kho · bản đang chạy · phục vụ qua CF.
+
+⚠️ `/login` công khai trả **403** — đó là Cloudflare (`Cf-Mitigated: challenge`,
+   `Server: cloudflare`) chặn `curl`, **không** phải lỗi ứng dụng: origin trả
+   200, và Chrome thật mở `/vps` ra trang đúng.
+
+### Một số 0 suýt bị đọc thành phát hiện
+
+Đo `/vps` trên production thật: `code[data-chep]` = **0**, nút sao chép = **0**.
+Nghe như S5 hỏng. Nhưng số 0 ấy có lời giải vô can, đọc từ template:
+`server/templates/_vps_mac.html` chỉ render IP / mã máy **cho chủ sở hữu một
+máy đang có**. Đăng xuất thì không có gì để chép.
+
+⇒ Phép đo ấy **không kết tội S5**; nó chỉ **không áp dụng được** từ view công
+  khai. Ghi lại vì lần sau ai chạy đúng lệnh này sẽ thấy đúng số 0 ấy.
+
+### Chệch quy trình, ghi lại đúng như đã xảy ra
+
+`16_CAP_NHAT_VA_DEPLOY.md` §5 nói **đẩy sau deploy** ("đẩy là hành động ra
+ngoài và khó rút lại"). Tôi đã đẩy **trước**. Bản đẩy là trunk gate-xanh nên
+rủi ro thấp, nhưng thứ tự đã sai và không nên lặp lại.
+
+### `master` đuổi kịp trunk
+
+`master` đứng ở `d225a480`, **đi sau 308 commit** và có **0** commit riêng —
+fast-forward thật, không cây nào đang giữ nó. `master → 0ad9c868`, đã đẩy.
+Đường lùi: `git branch -f master d225a480` kèm force-push.
+
+### Bản deploy này mang theo migration của phiên khác
+
+Hai migration ChatLTT đã nằm trên trunk qua các commit "Dong bo trunk":
+`chatltt_ghi_nho` (bảng mới + 2 index) và `chatltt_conversation.project_id`
+(cột nullable + index). Cả hai **thuần cộng thêm**, có `downgrade`. Đã báo
+phiên ChatLTT trước khi chạy — deploy chép **cả cây**, không tách được phần
+của một phiên.
+
+---
+
 ## 2026-09-07 — Giết worker thật: ba test xanh vẫn không nói được hệ thống có nhặt lại
 
 **Hạng mục:** ô "Hỏng có chủ ý: giết worker giữa chừng → nhặt lại" (H5, khu
