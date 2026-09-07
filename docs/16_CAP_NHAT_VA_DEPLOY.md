@@ -62,7 +62,7 @@ python tools/gate.py               # TRƯỚC khi báo xong / deploy
 
 ⭐ Trước khi deploy: `git status --porcelain` phải **rỗng**, rồi mới chạy gate.
 
-### ⛔ Nhưng "rỗng lúc kiểm" KHÔNG phải "rỗng lúc chép"
+### ⛔ Một dòng `??` lạ là một PHIÊN KHÁC đang làm việc, không phải rác
 
 Đo 07/09/2026, một lượt deploy thật:
 
@@ -78,13 +78,33 @@ python tools/gate.py               # TRƯỚC khi báo xong / deploy
 ⇒ Production nhận một **ảnh chụp dở** của một tài liệu người ta vẫn đang viết.
 
 🔴 Ba giờ đồng hồ sau mới lộ ra, và nó lộ vì một phiên khác **bác lại** lời kể
-   đầu tiên bằng mốc thời gian. Không ai nhìn thấy nó lúc deploy.
+   đầu tiên bằng mốc thời gian.
+
+### ⛔ Và nguyên nhân KHÔNG phải "mốc thời gian" — đừng đọc nó thành thế
+
+Bản đầu của mục này viết: *"rỗng lúc kiểm không phải rỗng lúc chép"*. Đúng về sự
+kiện, nhưng nó **đổ lỗi cho thời điểm** và vì thế xoa dịu sai chỗ. Chính phiên
+sở hữu thư mục ấy chỉ ra:
+
+> *"`?? docs/architecture/` thì bạn **ĐÃ thấy** lúc 16:47. Phép kiểm không bỏ
+> sót gì cả; cái bỏ sót là **đọc `??` thành 'không sao'**."*
+
+🔑 **Phép kiểm chạy đúng. Người đọc nó sai.** Tôi thấy dòng `??`, hỏi hai phiên,
+   chờ năm phút, rồi xếp nó vào loại "rác tạm, không sao" — trong khi nó là
+   **một phiên khác đang viết dở**.
+
+⇒ Luật thật: **trong kho nhiều phiên, một dòng `??` lạ là một phiên khác đang
+  làm việc cho tới khi chứng minh được điều ngược lại.** Không phải rác.
+
+⚠️ Và `ListAgents` **chỉ thấy các phiên đang tồn tại lúc bạn hỏi**. Ngày 07/09
+   chủ của thư mục ấy là một phiên **thứ tư**, khởi động **sau** lượt hỏi — nên
+   cả hai phiên được hỏi đều trả lời *"không phải của tôi"* một cách trung thực,
+   và câu trả lời ấy đẩy tôi về phía kết luận sai.
 
 **Ba hệ quả phải nhớ:**
 
-1. Trong kho nhiều phiên, cây làm việc là **một mốc đang chuyển động** — điều
-   `docs/16` đã ghi cho phép *đối chiếu* thì cũng đúng cho phép *quyết định có
-   deploy hay không*. Khoảng giữa "kiểm" và "chép" luôn tồn tại.
+1. Khoảng giữa "kiểm" và "chép" có tồn tại, nhưng đó **không** phải bài học
+   chính — nó là cái nền. Bài học chính là **cách đọc một dòng `??`**.
 2. `robocopy` **không loại trừ `docs/`**. Danh sách `/XD` là
    `data secrets logs .venv venv __pycache__ .pytest_cache .git dist build
    temp_videos node_modules .playwright-cli .playwright-mcp .claude test-results
@@ -93,10 +113,35 @@ python tools/gate.py               # TRƯỚC khi báo xong / deploy
    của nó **không** có nghĩa *"không có gì ngoài commit"*. Đọc nó như thế là
    đọc sai một câu hẹp thành một câu rộng.
 
-⭐ Không có bản sửa rẻ cho khoảng trống ấy. Thứ làm được:
-   **đo lại `git status` NGAY SAU khi robocopy xong**, và nếu có gì lạ thì
-   **ghi ra** thay vì giải thích cho êm. Một dòng ghi lại rẻ hơn ba giờ điều tra
-   của người sau.
+⭐ Thứ làm được ngay: **đo lại `git status` NGAY SAU khi robocopy xong**, và
+   nếu có gì lạ thì **ghi ra** thay vì giải thích cho êm. Một dòng ghi lại rẻ
+   hơn ba giờ điều tra của người sau.
+
+### 📌 Hai món nợ trong CHÍNH đường ray này — chưa ai sửa
+
+Cả hai được **hai phiên độc lập xác nhận** ngày 07/09. Không phiên nào sửa được
+trong phạm vi lúc ấy, nên chúng nằm đây với tên gọi rõ ràng thay vì tan vào một
+câu chuyện.
+
+| # | Lỗ | Vì sao nó là lỗ thật |
+|---|---|---|
+| **D1** | `setup/2-cai-dat.ps1` — `/XD` của robocopy lọc theo **tên thư mục** | Thứ cần lọc là **trạng thái git**. Một tệp chưa theo dõi ở bất kỳ thư mục nào không nằm trong `/XD` sẽ lên production nguyên vẹn. |
+| **D2** | `tools/nghiem_thu_deploy.py` — chỉ đếm tệp `.py` | Dòng `thua 0` của nó là một phát biểu **hẹp hơn** cái người đọc hiểu. |
+
+🔴 **D2 nguy hiểm hơn D1**, và lý do đáng nhớ: sai số của nó **đẩy về phía yên
+   tâm**. Một công cụ nghiệm thu báo `thua 0` khi thực tế có tệp ngoài commit
+   thì nó không im lặng — nó **nói sai theo hướng làm người ta ngừng tìm**. Đó
+   đúng lớp lỗi `phep-do-lech-chieu-phai-bo-khong-phai-sua`.
+
+⛔ Trong lúc chưa sửa: **đừng đọc `thua 0` thành `khong co gi ngoai commit`.**
+   Nó chỉ có nghĩa *"không có tệp `.py` nào ngoài commit"*. Muốn biết phần còn
+   lại thì chạy tay:
+
+```bash
+git -C D:\LTTSTUDIOSAPP status --porcelain
+```
+
+⚠️ Và chạy nó **sau** robocopy, không chỉ trước.
 
 ⚠️ Và nếu thứ chưa theo dõi ấy là **của phiên khác**: hỏi, chờ, rồi **ghi lại** —
    đừng xoá. Nhưng nhớ rằng `ListAgents` chỉ thấy các phiên **đang tồn tại lúc
