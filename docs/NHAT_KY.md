@@ -16,6 +16,174 @@
 
 
 
+## 2026-09-07 — ĐÓNG PHIÊN `admin-mvp-v3`: plan lắp ráp 17/19, và bốn lỗi tôi tự bắt
+
+**Phiên này bị xoá khỏi nhật ký chat theo yêu cầu chủ dự án, nên mục này là bản
+ghi DUY NHẤT.** Viết dài hơn thường lệ vì lý do đó.
+
+**Phạm vi thật:** `PLAN_LAP_RAP_2026-09-06.md` — 19 hạng mục.
+**Kết:** 17/19 đóng. Hai cái còn lại **không phiên nào làm được**: `S1` cần
+iPhone thật (~30 phút của chủ dự án), `S7` đã bàn giao phiên VIDEO AI.
+
+```
+production  a365fa80  |  origin/admin-mvp-v3 = origin/master = a365fa80
+bam 515 tep .py: lech 0 / thieu 0 / THUA 0   |  health 200 loopback + cong khai
+```
+
+---
+
+### 🔴 Lỗi lớn nhất của phiên: TÔI TỰ MỞ RỘNG PHẠM VI
+
+Chủ dự án hỏi *"% tổng plan"*. Tôi với tay sang **kế hoạch tổng của cả sản
+phẩm** (`KE_HOACH_TRIEN_KHAI.md`, 271 KB, 474 ô) thay vì plan của chính phiên,
+rồi báo *"còn 36 hạng mục"*.
+
+**431/474 là câu trả lời thật — cho một câu hỏi không ai đặt ra.**
+
+Chủ dự án phát hiện, và câu hỏi của họ là câu đúng: *"tại sao khối lượng việc
+lại nhiều như vậy?"* Từ đó ~4 giờ đi làm backlog dài hạn (LPIPS, UVQ, bộ chấm)
+— hữu ích, hồ sơ đầy đủ, nhưng **không phải việc được giao**.
+
+⭐ Đây là biến thể của lỗi lặp **bốn lần** trong ngày, và cả bốn cùng một hình
+   dạng: **đo đúng CƠ CHẾ rồi suy sang PHẠM VI mà không đo phạm vi.**
+
+| đo đúng | suy sai |
+|---|---|
+| `git diff 9f555599..HEAD` | *"production đang ở `9f555599`"* — thật ra `5434a4b8` |
+| `grep "ly_do}"` → 2 khớp | *"có 2 chỗ rò"* — thật ra **4** |
+| giấy phép pyIQA/DOVER phi thương mại | *"kế hoạch chưa biết"* — kho ghi từ **10/08** |
+| 431/474 ô đã tick | *"phiên còn 36 việc"* — phiên còn **2** |
+
+⇒ **Đo cơ chế xong thì phạm vi là một phép đo THỨ HAI, không phải một hệ quả.**
+
+---
+
+### Ba cái bẫy mới vào sổ
+
+**Bẫy 29** — một phép kiểm ghi tệp tạm **vào cây làm việc** (`tools/`) làm đỏ
+`test_44_release_build` ở một worker khác. Chạy riêng thì xanh. Cái giá không
+phải một lượt đỏ: nó **đổ tội cho người vô can**, và phản xạ *"chạy lại xem"*
+thường xanh nên nguyên nhân không bao giờ bị tìm ra.
+
+**Bẫy 30** — *"tôi chưa `push`"* **không bảo vệ gì**: sáu worktree dùng chung
+một `.git`, nên `git commit` lên `admin-mvp-v3` **đã là** chạm trunk. Tôi
+`--amend` một commit mà phiên khác đã merge; phép đo làm tôi lạnh người:
+
+```
+git branch --contains 953ef445  ->  claude/chatltt-v3-agentic
+```
+
+Commit tôi vừa viết lại **chỉ còn sống trên nhánh của người khác**. Nửa sau:
+**cây bẩn đi vào bản deploy y hệt một commit** — `docs/16` §2 có luật ấy nhưng
+dặn *người deploy*, còn người làm bẩn cây lại là người **không** deploy. Một
+luật đúng, đặt sai người nhận, thì không ai vi phạm mà nó vẫn không được tuân.
+
+**Bẫy 31** — bánh cóc **tự tháo về phía XANH**. `test_360` neo vào chuỗi
+`"The model is busy right now"`; đổi chuỗi ấy thì vòng lặp không vào lần nào,
+danh sách rỗng, `assert not []` xanh. Đọc 17 ứng viên → **6 lỗ thật, 11 vô
+hại** ⇒ một bánh cóc tự động sẽ đẻ ra **11 dương tính giả**. Ba hình thái, một
+câu hỏi chung: *tập rỗng ấy đến từ đâu?*
+
+---
+
+### Bốn chỗ rò thân lỗi máy B ra khách API — đã bịt, đã deploy
+
+```
+streaming.py:653  429 stream    {e.ly_do}   -> toi 300 ky tu tho + vram_dung_mb
+streaming.py:667  413 stream    [{e.ly_do}]
+chat.py:255       429 dong bo   {e}         <- doi chung tim ra
+streaming.py:302  429 _mot_cuc  {e}         <- PHEP KIEM tim ra, khong phai mat
+```
+
+Nặng nhất là `vram_dung_mb`: một khách API bị 503 **đọc được công suất còn lại
+của máy B**. `_ly_do_ban` viết ra để giúp **người trực** — không ai để ý cùng
+chuỗi đó cũng đi thẳng ra ngoài.
+
+⭐ Chỗ thứ tư **không phép quét thủ công nào của hai phiên thấy**. Phép kiểm
+   mới tìm ra vì nó hỏi **quan hệ** (biểu thức nào của ngoại lệ chảy vào đối số
+   đầu của hàm dựng lỗi HTTP), không hỏi **nhãn** (câu này trông có nhạy cảm
+   không).
+
+Và nó làm lộ một **bảo đảm ảo** có sẵn: chữ `CAPACITY_REFUSED` mà cửa sổ 700
+ký tự khớp phải nằm trong **một dòng chú thích**, không phải một bộ đếm.
+
+---
+
+### 🔴 Resume phiên làm MẤT token nâng quyền — và triệu chứng rất khó thấy
+
+```
+truoc resume : doc duoc secrets/ ; deploy chay thang, ADMIN=True
+sau  resume  : Bash VA PowerShell deu PermissionError ; deploy ADMIN=False
+```
+
+Gate in ra:
+
+```
+RESULT: PASS  [1 BUOC TU BO QUA, KHONG PHAI BANG CHUNG: bat bien da tien trinh]
+```
+
+`check_multiproc.py` không đọc được `secrets/` (ACL W1.5 — **cố ý**, đừng
+`icacls`) nên `return 0` một cách lịch sự. Thứ bắt được nó là **sàn thời gian**
+`giay_toi_thieu=3.0`: bước chạy **0,9 giây** thì không thể đã làm việc.
+
+Chạy riêng bằng khuôn hai lớp (`setup/chay_multiproc_nang_quyen.ps1`,
+`AGENTS.md` §9.3): `ADMIN=True`, **181 giây**, `"7 passed in 139.51s"`.
+
+⇒ Gate đủ 29/29 nhưng **hai mảnh** — ghi đúng như vậy, không gọi là một lượt
+  xanh. Phiên ChatLTT tự kiểm và **cũng dính**; câu họ viết đáng giữ:
+  *"nếu bạn không báo, tôi đã đọc dòng `PASS` ấy đúng như nó muốn được đọc."*
+
+---
+
+### Phối hợp hai phiên: ~10 lần bác nhau, và một ca công trùng
+
+Không lần nào ai bảo vệ một câu sau khi phép đo nói khác. Nhưng đo được một
+ca **trùng công**:
+
+```
+ho:  14:08:53  ce98bfd6  may_ban: tach "KHONG DO DUOC" khoi "DO ROI..."
+toi: 14:10:11  a214ebdc  may_ban bao "thieu psutil" trong khi no dang chay
+```
+
+Hai phiên độc lập chẩn đoán và sửa **cùng một lỗi**, từ **cùng một câu** chủ dự
+án dặn, cách nhau **78 giây**. Không ai làm sai — thứ hỏng là **không ai biết
+người kia đang sửa cái gì**.
+
+⛔ Chưa đề xuất cơ chế: một lần có thể là trùng hợp. Ghi lại, đếm ca thứ hai.
+
+---
+
+### Chuỗi deploy trong ngày — đọc được từ đĩa, không suy từ `git log`
+
+```
+5434a4b8 -> 0ad9c868 -> 2f28159f -> c3f70302 -> 252f24fa -> a365fa80
+```
+
+`tools/nghiem_thu_deploy.py` (mới) đối chiếu với **COMMIT**, không với cây làm
+việc, và hỏi **ba** chiều: *lệch · thiếu · **thừa***. Chiều thừa là chiều duy
+nhất bắt được deploy đi từ cây bẩn — và là chiều **cả hai phiên đều bỏ sót**
+khi tự viết script.
+
+---
+
+### Bàn giao
+
+| việc | ai |
+|---|---|
+| `S1` — 4 phép kiểm cần iPhone thật | chủ dự án, ~30 phút |
+| `S7` — trôi giữa kho chính ↔ kho worker | phiên VIDEO AI |
+| xung đột `tools/may_ban.py` | lấy mã phiên ChatLTT (họ trước 78 giây), giữ **cả hai** phép kiểm |
+| khoá `trunk` trong `cua_so_yen` | chủ dự án — phải ở `~/.claude/CLAUDE.md`, hai phiên đều từ chối tự sửa |
+| `H31.3b2` LPIPS | đã cấp + verified; **còn benchmark** (điều kiện 6) |
+| *"phòng thủ canh lúc CHẠY, lúc ĐỨNG CHỜ không ai canh"* | phiên ChatLTT tìm ra ở `apps/chatltt/`; đáng soi rộng, **chưa ai nhận** |
+
+⚠️ **Commit cuối cùng của phiên này chỉ chạy kiểm nhắm, không chạy gate đầy
+   đủ** — máy đang có hai cây khác làm việc. Nó chỉ chạm `docs/`, và hai test
+   đọc `NHAT_KY.md` (`test_283`, `test_62`) đã chạy xanh. Nói ra để không ai
+   đọc nó thành một lượt gate.
+
+---
+
 ## 2026-09-07 — Deploy `5434a4b8 → 0ad9c868`, và tôi mô tả sai điểm xuất phát
 
 **Trạng thái:** production ở `0ad9c868`, build 09:13:14, `asset_ver ae960b57`.
