@@ -22,7 +22,7 @@ _log = logging.getLogger(__name__)
 #: Đo 06/09: ~40 giây container + ~40 giây apt + ~450 giây nạp/ghim model ở
 #: profile 1 ⇒ ~530 giây. Cộng biên cho lượt cài lại nửa tạm và ổ mạng chậm.
 #: Số đo ở `docs/VIDEO_AI_V2/DU_LIEU_DA_DO.md` §4 — đừng chép nó đi nơi khác.
-CHO_TOI_DA_S: float = 900.0
+CHO_MAY_SAN_SANG_S: float = 900.0
 
 #: Nhịp hỏi `/health`. Đủ thưa để không đập vào proxy, đủ dày để không phí phút.
 NHIP_S: float = 10.0
@@ -51,7 +51,7 @@ class TrangThaiMay(str, Enum):
 
 class DieuPhoi:
     def __init__(self, *, api: Any, pod_id: str, client: Any,
-                 cho_toi_da_s: float = CHO_TOI_DA_S,
+                 cho_toi_da_s: float = CHO_MAY_SAN_SANG_S,
                  nhip_s: float = NHIP_S,
                  nghi_tat_sau_s: float = NGHI_TAT_SAU_S,
                  ngu: Callable[[float], None] = time.sleep) -> None:

@@ -55,7 +55,29 @@
       <div class="tv-compose-scroll">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
-        <div class="tv-section"><h2><strong>01</strong> {{ _('Mô tả') }}</h2>
+        {# 🔑 Tac vu dung DAU TIEN vi no quyet dinh ca man: no chon model, no
+           quyet dinh co duoc dinh kem khong va toi da may tep. Dat no trong muc
+           "dinh kem" (ban truoc) lam no trong nhu mot tuy chon con cua dinh kem
+           — nguoc voi thu tu that cua quyet dinh. #}
+        <div class="tv-section"><h2><strong>01</strong> {{ _('Loại tác vụ') }}</h2>
+          {# ⭐ Dung lai `.tv-models` — khuon DA CO cua chinh app nay (luoi 2
+             cot, vien, `:has(input:checked)` lam noi o dang chon). De tu che
+             mot lop moi la de mot khoi trong cung mot man hinh trong khac
+             nhau, va la de mot tep static moi phai cache-bust. #}
+          <div class="tv-models" role="radiogroup"
+               aria-label="{{ _('Loại tác vụ') }}">
+            {% for t in tac_vu %}
+            <label>
+              <input type="radio" name="tac_vu" value="{{ t.ma }}"
+                     {% if loop.first %}checked{% endif %}
+                     data-so-tep="{{ t.so_tep_toi_da }}">
+              <b>{{ _(t.nhan) }}</b>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="tv-section"><h2><strong>02</strong> {{ _('Mô tả') }}</h2>
           <label class="sr-only" for="tv-prompt">{{ _('Mô tả video') }}</label>
           <textarea id="tv-prompt" name="prompt" rows="4" class="ltt-input" required
                     maxlength="10000" aria-describedby="tv-prompt-hint"
@@ -80,7 +102,7 @@
           </div>
         </div>
 
-        <div class="tv-section"><h2><strong>02</strong> {{ _('Đính kèm') }}</h2>
+        <div class="tv-section"><h2><strong>03</strong> {{ _('Đính kèm') }}</h2>
           {# ⭐ Khuon `tv-ref-pickers` cua `taovideo`, khong dung macro
              `o_chon_tep`: macro dung mot hop gach dut CAO, con day la mot the
              GON — cung ngon ngu hinh anh voi cac studio khac cua LTT.
@@ -96,6 +118,10 @@
                   tai MP4 len => bi GIU CREDIT => job hong => hoan credit. Mot
                   vong tron tra tien lai nhung lay mat thoi gian va niem tin.
                   Cua dong o day thi ho biet ngay, khong phai sau hai muoi phut. #}
+            {# 🔑 O chon TAC VU — sinh tu `tac_vu.dang_mo()`, khong go tay.
+               Mot tac vu chi hien khi no THAT SU chay duoc: `test_741` chot moi
+               tac vu `mo=True` phai co ban ghi `mac_dinh__<model>.json`. Cua
+               truoc khop cua sau, do la bat bien da tra gia mot lan. #}
             <label for="media">
               <span aria-hidden="true">▧</span>
               <strong>{{ _('Ảnh mở đầu') }}</strong>
@@ -132,7 +158,7 @@
         </details>
         {% endif %}
 
-        <fieldset class="tv-fieldset"><legend><strong>03</strong> {{ _('Thiết lập') }}</legend>
+        <fieldset class="tv-fieldset"><legend><strong>04</strong> {{ _('Thiết lập') }}</legend>
           <div class="tv-selects">
             <label>{{ _('Tỉ lệ khung hình') }}
               <select name="ti_le" id="tv-tile">

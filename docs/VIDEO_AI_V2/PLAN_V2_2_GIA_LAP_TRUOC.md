@@ -586,3 +586,46 @@ Hai đường hỏng, cả hai đều im lặng:
 
 ⇒ Cầu nối nay phơi thẳng `GenerationResult.cancelled` thành trường `huy`.
   `test_722` có phép kiểm đối chứng cho **đúng** ca số 2.
+
+### HM-5 · hai trần chờ trùng tên đã tách
+
+`CHO_TOI_DA_S` tồn tại ở **hai** tệp, **hai** giá trị, **hai** nghĩa —
+`dieu_phoi` 900,0 (chờ **máy** khởi động) và `jobs` 3600,0 (chờ **việc** xong) —
+và `routes.py` nói với người dùng con số của cái kia. Nay là
+`CHO_MAY_SAN_SANG_S` / `CHO_VIEC_XONG_S`, có phép kiểm chốt cả hai tên lẫn quan
+hệ thứ tự giữa chúng.
+
+⛔ Và `_client_that()` **không** lui về máy giả lập khi thiếu cấu hình. Một job
+   thật chạy trên máy giả lập sẽ "thành công" và trả về một tệp **không phải
+   video**: job XONG, credit đã trừ, người dùng tải về một tệp hỏng — thất bại
+   im lặng **về phía có lợi**, kiểu tệ nhất.
+
+### HM-6 · gallery kéo-thả **hoãn có chủ đích**
+
+Kế hoạch dự tính một gallery nhiều ảnh có thứ tự. Nhưng mọi tác vụ cần nhiều
+ảnh (`nhieu_anh_tham_chieu`, `boi_canh_va_nhan_vat`) đang `mo=False` — chúng
+thiếu `mac_dinh__vace_14B.json`, mà bản ghi ấy phải rút từ máy thật (HM-7).
+
+⛔ Dựng ô chọn nhiều ảnh trong khi mọi tác vụ nhiều ảnh đều đóng là **mở một
+   cánh cửa vào căn phòng khoá** — đúng bất biến app này đã trả giá để học.
+
+⭐ `test_743` canh điều đó theo cách **tự tắt**: nó `skip` ngay khi có một tác vụ
+  nhiều ảnh mở ra. Nó canh sự **khớp** giữa hai cửa, không canh sự vắng mặt của
+  một tính năng.
+
+### 🔴 HM-6 · test xanh, DOM đúng, nhìn thì vỡ
+
+Ô chọn tác vụ ban đầu render thành **chữ thô xếp dọc**, không phải chip — y hệt
+sự cố `ltt.css` mà `CLAUDE.md` mục 5b ghi lại. Cả `test_743` lẫn `test_734` đều
+xanh, vì chúng đo **cấu trúc**, và cấu trúc thì đúng.
+
+⇒ Sửa bằng cách **dùng lại `.tv-models`**, khuôn đã có của chính app này (lưới 2
+  cột, viền, `:has(input:checked)`). Không lớp CSS mới, không tệp static mới,
+  nên không phải cache-bust gì.
+
+Đo bằng CSS **tính toán** chứ không bằng DOM: bấm ô thứ hai thì viền đổi
+`rgb(59,48,49)` → `rgb(239,61,53)` và nền `rgb(19,20,22)` → `rgb(50,19,21)`.
+
+Và bố cục ban đầu đặt ô chọn tác vụ **trong mục "Đính kèm"** — ngược với thứ tự
+thật của quyết định, vì tác vụ chọn model, chọn có được đính kèm không, chọn tối
+đa mấy tệp. Nay nó là mục **01**, các mục sau đánh số lại.

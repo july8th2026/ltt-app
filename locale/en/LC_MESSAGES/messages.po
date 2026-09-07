@@ -13611,3 +13611,9 @@ msgstr "Video that follows a reference video's motion"
 
 msgid "Nối dài một video có sẵn"
 msgstr "Continue an existing video"
+
+msgid "Loại tác vụ"
+msgstr "Task type"
+
+msgid "Loại tác vụ này chưa mở."
+msgstr "This task type is not open yet."

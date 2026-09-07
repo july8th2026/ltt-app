@@ -31,7 +31,7 @@ from server.auth.session import require_login
 from server.deps import get_db, user_hien_tai
 from server.templating import templates
 
-from . import cost, features, kha_nang
+from . import cost, features, kha_nang, tac_vu
 from .manifest import MANIFEST
 
 router = APIRouter(tags=["lttvideo"])
@@ -205,6 +205,11 @@ async def trang_chinh(request: Request, _dinh_danh: str = Depends(require_login)
             "app": MANIFEST,
             "nav": MANIFEST.slug,
             "csrf_token": issue_csrf_token(request),
+            # 🔑 Danh muc tac vu den tu `tac_vu.dang_mo()`, KHONG go trong
+            #    template. Mot tac vu `mo=False` thieu ban ghi mac dinh cua model
+            #    nen no se hien tren giao dien roi hong luc chay — dung cai vong
+            #    "giu credit -> job hong -> hoan credit" da tra gia mot lan.
+            "tac_vu": tac_vu.dang_mo(),
             "ti_le": TI_LE,
             "do_dai": DO_DAI_S,
             "uoc_gia": _uoc_gia(),
@@ -257,7 +262,7 @@ async def trang_thai_may(request: Request,
     """Một dòng nói máy dựng đang bật hay tắt.
 
     🔴 Vì sao cần: `B1` bật máy **theo nhu cầu**, và lượt đầu sau khi máy nghỉ
-       phải chờ khởi động (trần `dieu_phoi.CHO_TOI_DA_S` = 900 giây). Seedance
+       phải chờ khởi động (trần `dieu_phoi.CHO_MAY_SAN_SANG_S` = 900 giây). Seedance
        không có vấn đề này vì nó gọi một API luôn sẵn sàng. Im lặng ở đây thì
        người dùng đọc mười lăm phút chờ thành "hỏng rồi".
 
@@ -278,6 +283,7 @@ async def trang_thai_may(request: Request,
 async def tao_video(
     request: Request,
     prompt: str = Form(""),
+    tac_vu_ma: str = Form("", alias="tac_vu"),
     ti_le: str = Form("16:9"),
     do_dai_s: int = Form(5),
     mo_rong_prompt: str = Form(""),
@@ -328,6 +334,15 @@ async def tao_video(
         "resolution": _DO_PHAN_GIAI[ti_le],
         "nguoi_dung_id": user.id,
     }
+
+    # ⛔ KHONG tin ma tac vu do trinh duyet gui: doi chieu voi `dang_mo()`. Mot
+    #    ma la (hoac mot tac vu `mo=False` go tay vao request) phai bi tu choi o
+    #    CUA TRUOC, chu khong di toi job roi hong sau khi da giu credit.
+    if tac_vu_ma:
+        if tac_vu_ma not in {t.ma for t in tac_vu.dang_mo()}:
+            return RedirectResponse(
+                f"?loi={_t('Loại tác vụ này chưa mở.')}", status_code=303)
+        tham_so["tac_vu"] = tac_vu_ma
 
     # ── Hai tuy chon nang cao ────────────────────────────────────────────
     #

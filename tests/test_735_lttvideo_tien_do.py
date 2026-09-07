@@ -212,10 +212,10 @@ def test_khong_cho_vo_han():
     import inspect
 
     ma = inspect.getsource(jobs)
-    assert "CHO_TOI_DA_S" in ma
+    assert "CHO_VIEC_XONG_S" in ma
     cay = ast.parse(ma)
     hang = {n.targets[0].id: n.value.value for n in ast.walk(cay)
             if isinstance(n, ast.Assign) and len(n.targets) == 1
             and isinstance(n.targets[0], ast.Name)
             and isinstance(n.value, ast.Constant)}
-    assert hang.get("CHO_TOI_DA_S", 0) >= 1800, "tran cho qua ngan cho video 15s"
+    assert hang.get("CHO_VIEC_XONG_S", 0) >= 1800, "tran cho qua ngan cho video 15s"

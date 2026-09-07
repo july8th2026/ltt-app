@@ -40,7 +40,11 @@ NHIP_HOI_S = 5.0
 #:
 #: ⭐ 3.600 giây chọn từ số đo: 5 giây video ở 480p/30 bước mất ~1.270 giây trên
 #:    A100, nên 15 giây video qua ba cửa sổ trượt còn xa mới chạm trần này.
-CHO_TOI_DA_S = 3600.0
+#: 🔴 Ten cu la `CHO_TOI_DA_S`, TRUNG ten voi mot hang so o `dieu_phoi.py` mang
+#:   gia tri KHAC (900,0) va nghia KHAC (cho MAY khoi dong, khong phai cho VIEC
+#:   xong). Mot ten, hai gia tri, hai nghia — va `routes.py` con noi voi nguoi
+#:   dung con so cua cai kia. Doi ten 07/09 (HM-5).
+CHO_VIEC_XONG_S = 3600.0
 
 #: Pha của WanGP → (phần trăm, lời nhắn). Khoảng `5..92` chừa hai đầu cho việc
 #: của **LTT**: gửi yêu cầu ở đầu, kéo tệp về kho ở cuối.
@@ -128,6 +132,10 @@ def _client_that():
     goc = (os.environ.get("LTTV_WANGP_URL") or "").strip()
     khoa = (os.environ.get("LTTV_WANGP_KEY") or "").strip()
     if not goc:
+        # ⛔ KHONG lang le lui ve may gia lap o day. Mot job cua nguoi dung that
+        #    chay tren may gia lap se "thanh cong" va tra ve mot tep KHONG PHAI
+        #    video — job XONG, credit da tru, va nguoi dung tai ve mot tep hong.
+        #    May gia lap chi duoc tiem TUONG MINH qua `_client`, tu phep kiem.
         raise LoiJob(_t("Chưa cấu hình máy dựng video."))
     from .cong import MayThat
 
@@ -286,7 +294,7 @@ def handle(params: dict, ctx=None, *, _client=None, _kho=None,
             log.debug("lttvideo: chua co ket qua (%s) — cho tiep",
                       type(e).__name__)
 
-        if time.time() - t0 > CHO_TOI_DA_S:
+        if time.time() - t0 > CHO_VIEC_XONG_S:
             raise LoiJob(_t("Máy dựng video không phản hồi kịp. "
                             "Credit đã được hoàn, bạn thử lại sau."))
         time.sleep(NHIP_HOI_S)
