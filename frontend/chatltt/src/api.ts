@@ -5,7 +5,10 @@
  *    `khong_tim_thay`, `csrf`…), khong phai mot chuoi. Giao dien re nhanh theo
  *    ma; chuoi chi de hien.
  */
-import type { AnhChup, HoiThoai, NangLuc, SuThat } from './kieu'
+import type {
+  AnhChup, BaoCaoNghienCuu, BaoGiaNghienCuu, DuAn, GhiNho, HoiThoai,
+  NangLuc, PhieuDuyet, SuThat,
+} from './kieu'
 
 export class LoiApi extends Error {
   code: string
@@ -59,8 +62,76 @@ export class Api {
     return this.goi('/so-du')
   }
 
-  danhMuc(): Promise<{ nang_luc: NangLuc[] }> {
+  /**
+   * Catalog + trang thai co V3.
+   *
+   * ⚠️ `co_v3` co the VANG o mot may chu cu hon frontend — deploy backend truoc
+   *    hay sau frontend deu la thu tu binh thuong. Nen no `?`, va noi goi phai
+   *    coi "vang" la "tat".
+   */
+  danhMuc(): Promise<{
+    nang_luc: NangLuc[]
+    co_v3?: {
+      tools: boolean; tool_co_phi: boolean; tep: boolean
+      ghi_nho: boolean; du_an: boolean; nghien_cuu: boolean
+    }
+  }> {
     return this.goi('/danh-muc')
+  }
+
+  // ── Duyet (H44 P04 + P09) ────────────────────────────────────────────
+
+  /**
+   * Phieu con cho cua CHINH nguoi goi.
+   *
+   * ⭐ Day la nguon chan ly BEN — no song qua F5, dong tab, restart tien
+   *    trinh. Su kien SSE `approval.required` chi la duong NHANH; mot giao
+   *    dien chi nghe SSE se mat nut sau khi tai lai trang.
+   */
+  duyetDangCho(runId = ''): Promise<{ items: PhieuDuyet[] }> {
+    const q = runId ? `?run_id=${encodeURIComponent(runId)}` : ''
+    return this.goi(`/duyet/dang-cho${q}`)
+  }
+
+  /**
+   * Dong y hoac tu choi mot phieu.
+   *
+   * ⛔ `quyetDinh` la enum DONG — may chu khop CHINH XAC, khong `.lower()`.
+   *    Sai chinh ta o day la mot quyet dinh thay nguoi dung.
+   */
+  duyetQuyet(approvalId: string, quyetDinh: 'duyet' | 'tu_choi',
+             doiSoDaSua?: Record<string, unknown>):
+  Promise<{ type: string; approval_id: string; chay_tiep: boolean }> {
+    const than: Record<string, unknown> = { quyet_dinh: quyetDinh }
+    if (doiSoDaSua) than.doi_so_da_sua = doiSoDaSua
+    return this.goi(`/duyet/${encodeURIComponent(approvalId)}`, {
+      method: 'POST', body: JSON.stringify(than),
+    })
+  }
+
+
+  // ── Nghien cuu (H44 B6) ──────────────────────────────────
+
+  /** Uoc credit **va** PHAM VI, de hien TRUOC khi bam. */
+  nghienCuuBaoGia(tranVong?: number): Promise<BaoGiaNghienCuu> {
+    const q = tranVong ? `?tran_vong=${tranVong}` : ''
+    return this.goi(`/nghien-cuu/bao-gia${q}`)
+  }
+
+  /** Nop mot luot. Tra `job_id` — no CHUA xong, phai hoi lai. */
+  nghienCuuChay(convId: string, cauHoi: string, tranVong?: number):
+  Promise<{ job_id: string; tran_vong: number; pham_vi: string }> {
+    return this.goi(`/hoi-thoai/${encodeURIComponent(convId)}/nghien-cuu`, {
+      method: 'POST',
+      body: JSON.stringify({ cau_hoi: cauHoi, tran_vong: tranVong ?? 0 }),
+    })
+  }
+
+  nghienCuuXem(jobId: string): Promise<{
+    job_id: string; trang_thai: string; pham_vi: string
+    bao_cao?: BaoCaoNghienCuu; ly_do?: string
+  }> {
+    return this.goi(`/nghien-cuu/${encodeURIComponent(jobId)}`)
   }
 
   lietKe(tim = ''): Promise<{ hoi_thoai: HoiThoai[] }> {
@@ -82,6 +153,65 @@ export class Api {
     return this.goi(`/hoi-thoai/${encodeURIComponent(convId)}/xoa`, {
       method: 'POST', body: '{}',
     })
+  }
+
+  // ── Du an (H44 B5) ───────────────────────────────────────────────────
+
+  duAnLietKe(): Promise<{ du_an: DuAn[] }> {
+    return this.goi('/du-an')
+  }
+
+  duAnTao(ten: string): Promise<{ du_an: DuAn }> {
+    return this.goi('/du-an', { method: 'POST', body: JSON.stringify({ ten }) })
+  }
+
+  /** ⛔ `revision` BAT BUOC — khoa lac quan cua loi. Thieu no thi may chu tra
+   *  400, va do la hanh vi dung: mot mac dinh o day la tat khoa di. */
+  duAnDoiTen(id: string, ten: string, revision: number): Promise<{ du_an: DuAn }> {
+    return this.goi(`/du-an/${encodeURIComponent(id)}`, {
+      method: 'PATCH', body: JSON.stringify({ ten, revision }),
+    })
+  }
+
+  duAnHoiThoai(id: string): Promise<{ hoi_thoai: { id: string; title: string }[] }> {
+    return this.goi(`/du-an/${encodeURIComponent(id)}/hoi-thoai`)
+  }
+
+  duAnXoa(id: string): Promise<{ da_xoa: boolean }> {
+    return this.goi(`/du-an/${encodeURIComponent(id)}`, { method: 'DELETE' })
+  }
+
+  /** `duAnId` rong = GO khoi du an. Mot duong cho ca hai — xem `_p_du_an`. */
+  duAnGan(convId: string, duAnId: string): Promise<{ du_an_id: string }> {
+    return this.goi(`/hoi-thoai/${encodeURIComponent(convId)}/du-an`, {
+      method: 'POST', body: JSON.stringify({ du_an_id: duAnId }),
+    })
+  }
+
+  // ── Ghi nho (H44 B4) ─────────────────────────────────────────────────
+  //
+  // ⛔ Bon phep, khong hai. Mot kho CHI BIET THEM tich luy mau thuan va te dan
+  //    di **im lang** — xem `apps/chatltt/services/ghi_nho.py`.
+
+  ghiNhoLietKe(): Promise<{
+    ghi_nho: GhiNho[]; tran_moi_pham_vi: number; tran_mot_ban: number
+  }> {
+    return this.goi('/ghi-nho')
+  }
+
+  ghiNhoThem(than: { noi_dung: string; pham_vi?: string; muc_tieu_id?: string }):
+  Promise<{ ghi_nho: GhiNho; trang_thai: 'them' | 'bo_qua' }> {
+    return this.goi('/ghi-nho', { method: 'POST', body: JSON.stringify(than) })
+  }
+
+  ghiNhoSua(id: string, noiDung: string): Promise<{ ghi_nho: GhiNho }> {
+    return this.goi(`/ghi-nho/${encodeURIComponent(id)}`, {
+      method: 'PATCH', body: JSON.stringify({ noi_dung: noiDung }),
+    })
+  }
+
+  ghiNhoXoa(id: string): Promise<{ da_xoa: boolean }> {
+    return this.goi(`/ghi-nho/${encodeURIComponent(id)}`, { method: 'DELETE' })
   }
 
   chonLa(convId: string, messageId: string): Promise<HoiThoai> {

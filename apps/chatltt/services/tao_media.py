@@ -32,6 +32,7 @@ from apps.chatltt.services import chinh_sach
 from apps.chatltt.services import hoi_thoai as H
 from apps.chatltt.services import su_kien as S
 from apps.chatltt.tables import ChatlttExecution, ChatlttMessage
+from apps.chatltt.services import loi_ra_ngoai as LRN
 
 log = logging.getLogger("apps.chatltt.tao_media")
 
@@ -280,7 +281,10 @@ def dong_bo(db, *, user_id: str, execution_id: str) -> dict:
     elif tt in ("error", "cancelled"):
         ma = "huy" if tt == "cancelled" else "that_bai"
         S.ap_dung(ex, {"type": "execution.failed", "code": ma,
-                       "ly_do": str(getattr(job, "error", "") or "")[:500]},
+                       # 🔴 `job.error` la chuoi TU DO do handler viet, va
+                       #    handler co the da boc `str()` cua mot loi
+                       #    thuong nguon vao do. Khong dua no ra khach.
+                       "ly_do": LRN.cau("loi_noi_bo")},
                   message=tin)
         S.ap_dung(ex, {"type": "billing.updated", "credit_giu": ex.credit_giu,
                        "credit_thu": 0, "credit_hoan": ex.credit_giu},

@@ -1,0 +1,78 @@
+# pre-commit -- cong RE chay TRUOC moi commit, o CA SAU worktree.
+#
+# =========================================================================
+# [!] TEP NAY CHAM HA TANG DUNG CHUNG. Doc truoc khi doi.
+#
+#     `git rev-parse --git-common-dir` = `.git`, nen SAU worktree dung chung
+#     `D:\LTTSTUDIOSAPP\.git\hooks`. Cai hook o day co hieu luc NGAY voi moi
+#     phien dang lam viec, khong co giai doan lan dan.
+#
+#     => Moi hook o day phai: (1) NHANH, (2) khong tai gi ve mang,
+#        (3) hong thi hong AN TOAN.
+# =========================================================================
+#
+# VI SAO CHI CO BON HOOK, VA VI SAO KHONG CO `mypy`
+#
+#     Do 06/09/2026:
+#
+#         check_ruff.py        0,18 s
+#         check_xuong_dong.py  0,07 s
+#         check_ranh_gioi.py   0,31 s
+#         ------------------------------
+#         tong                 ~0,6 s
+#
+#         check_mypy.py        2,2 s khi cache NONG
+#                             45   s khi cache NGUOI   <- bi loai vi cai nay
+#
+#     Mot cay vua checkout co cache mypy rong. 45 giay cho MOI commit o mot
+#     phien khac la du de nguoi ta go `--no-verify` mot lan, roi go mai. Gate
+#     da chay `mypy`; hook khong can lam lai.
+#
+# ⛔ VI SAO DUNG BANH COC CHU KHONG DUNG `ruff` THO
+#
+#     Do duoc: `python -m ruff check <hai tep bat ky>` tra **rc=1**, vi kho
+#     dang co 513 phat hien ton dong. Mot hook chay `ruff` tho se DO o gan nhu
+#     moi commit ngay tu luot dau — va mot cong luon do la mot cong se bi tat.
+#     `check_ruff.py` chi do khi so phat hien TANG.
+#
+# ⭐ `language: system` -- KHONG tao moi truong ao, KHONG tai goi. pre-commit
+#    mac dinh dung `pip install` vao mot venv rieng cho moi hook; o may nay
+#    dieu do nghia la sau worktree x N hook x mot lan tai ve. Cac cong cu nay
+#    da nam trong `requirements-dev.txt` roi.
+#
+# Bo qua mot lan (chi khi that su can, va noi ro trong commit):
+#     git commit --no-verify
+
+repos:
+  - repo: local
+    hooks:
+      - id: banh-coc-ruff
+        name: banh coc ruff (chi do khi TANG)
+        entry: python tools/check_ruff.py
+        language: system
+        pass_filenames: false
+        # `always_run`: banh coc do TOAN KHO, khong do tep staged. Mot commit
+        # chi sua tai lieu van co the lam so phat hien doi neu ai do vua sua
+        # `ruff.toml` -- nen no phai chay bat ke staged co `.py` hay khong.
+        always_run: true
+
+      - id: kieu-xuong-dong
+        name: kieu xuong dong (CRLF/LF khong duoc lat)
+        entry: python tools/check_xuong_dong.py
+        language: system
+        pass_filenames: false
+        always_run: true
+
+      - id: ranh-gioi-import
+        name: ranh gioi import giua cac tang
+        entry: python tools/check_ranh_gioi.py
+        language: system
+        pass_filenames: false
+        always_run: true
+
+      - id: cau-hinh-thuan-ascii
+        name: mypy.ini / .importlinter / *.ps1 phai thuan ASCII
+        entry: python tools/check_ascii_cau_hinh.py
+        language: system
+        pass_filenames: false
+        always_run: true

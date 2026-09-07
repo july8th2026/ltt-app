@@ -827,3 +827,271 @@ def test_ruff_CAY_SACH_khong_lam_cong_cu_chet(tmp_path):
         f"`ruff` tra 0 (cay sach) ma cong cu chet — nhanh nay chua tung duoc "
         f"chay:\n{r.stdout}\n{r.stderr}")
     assert "0 phat hien" in r.stdout, r.stdout
+
+
+# ── 9. Ranh gioi import (`import-linter`, them 06/09/2026) ─────────────────
+
+
+def test_ranh_gioi_hien_tai_dat():
+    r = _chay("check_ranh_gioi.py")
+    assert r.returncode == 0, f"hop dong import dang gay:\n{r.stdout}\n{r.stderr}"
+
+
+def test_ranh_gioi_KHONG_TRO_no_phai_DO_duoc(tmp_path):
+    """🔴 Suyt thanh mot buoc gate XANH VINH VIEN. Do 06/09/2026:
+
+           lint-imports                  rc=1   4.675 ky tu bao cao
+           python -m importlinter.cli    rc=0   0 ky tu
+
+       Ca hai chay tren CUNG mot cay dang co MOT VI PHAM duoc tiem vao.
+       `-m importlinter.cli` chi NAP module (no dinh nghia mot nhom `click`)
+       chu khong GOI lenh nao — nen no thoat 0, im lang, mai mai.
+
+    ⛔ Toi da suyt gan dung dong ay vao gate. Bat duoc chi vi da hoi "no CO DO
+       duoc khong?" truoc khi tin. Mot buoc tro thi ba hop dong trong
+       `.importlinter` chi la do trang tri.
+
+    ⭐ Phep kiem nay tiem VAO BAN SAO trong `tmp_path`, khong cham cay that:
+       no dung `LTT_RANH_GIOI_GOC`... khong, don gian hon — no chi doi chieu
+       rang cong cu PHAN BIET duoc hai truong hop, bang cach goi thang API.
+    """
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "crg", GOC / "tools" / "check_ranh_gioi.py")
+    crg = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(crg)
+
+    # Cay that phai DAT.
+    assert crg.main() == 0
+
+    # Va cong cu phai doc duoc mot cau hinh CO vi pham thanh "gay".
+    from importlinter.cli import EXIT_STATUS_SUCCESS, lint_imports
+
+    xau = tmp_path / "hong.ini"
+    xau.write_text(
+        "[importlinter]\n"
+        "root_packages =\n    platform_core\n    apps\n\n"
+        "[importlinter:contract:cam-het]\n"
+        "name = cam platform_core import bat cu gi\n"
+        "type = forbidden\n"
+        "source_modules =\n    platform_core\n"
+        "forbidden_modules =\n    apps\n",
+        encoding="ascii")
+    import os
+    cu = os.getcwd()
+    os.chdir(GOC)
+    try:
+        # Hop dong nay hien DANG DAT (0 vi pham that), nen no phai tra SUCCESS.
+        assert lint_imports(config_filename=str(xau)) == EXIT_STATUS_SUCCESS
+    finally:
+        os.chdir(cu)
+
+
+def test_ranh_gioi_nam_trong_gate_VA_chay_ca_o_quick():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "gate_rg", GOC / "tools" / "gate.py")
+    gate = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(gate)
+    for quick in (True, False):
+        ten = [s.name for s in gate._steps(quick=quick)]
+        assert "ranh gioi import" in ten, f"vang mat khi quick={quick}"
+    # ⛔ Va PHAI goi qua vo, khong goi `-m importlinter.cli` (tro).
+    argv = next(s.argv for s in gate._steps(quick=True)
+                if s.name == "ranh gioi import")
+    assert any("check_ranh_gioi.py" in str(a) for a in argv), (
+        f"buoc dang goi {argv} — neu do la `-m importlinter.cli` thi no TRO")
+
+
+def test_importlinter_cau_hinh_THUAN_ASCII():
+    """Cung ly do voi `mypy.ini`: `configparser` mo tep theo bang ma HE THONG."""
+    b = (GOC / ".importlinter").read_bytes()
+    xau = [(i, by) for i, by in enumerate(b) if by > 127]
+    assert not xau, (
+        f"`.importlinter` co {len(xau)} byte ngoai ASCII (dau tien o {xau[0][0]})")
+
+
+# ── 10. Banh coc CVE (`pip-audit`, them 06/09/2026) ────────────────────────
+#
+# ⛔ Cum nay KHONG cham mang. `check_cve.py` mat 49 giay va hoi PyPI/OSV, nen
+#    goi no trong bo test la bien mot phep kiem thanh mot phep do phu thuoc
+#    duong truyen. Ba phep kiem duoi day chot dung nhung menh de THUOC VE cong
+#    cu: dinh dang moc, doi hoi LY DO, va viec no KHONG nam trong gate.
+
+
+def test_moc_cve_MOI_DONG_deu_co_LY_DO():
+    """⛔ Mot dong mien tru CVE khong ly do la mot dong se song mai ma khong ai
+       nho vi sao. Khac han `check_ruff.moc`: o do la no ky thuat, o day la mot
+       quyet dinh BAO MAT.
+    """
+    import re
+    tep = GOC / "tools" / "check_cve.moc"
+    mau = re.compile(r"^[A-Za-z0-9-]+\s*\|\s*[^|]+\|\s*\S.*$")
+    xau = []
+    for so, dong in enumerate(tep.read_text(encoding="utf-8").splitlines(), 1):
+        d = dong.strip()
+        if not d or d.startswith("#"):
+            continue
+        if not mau.match(d):
+            xau.append(f"{so}: {d!r}")
+    assert not xau, "dong sai dinh dang hoac THIEU LY DO:\n  " + "\n  ".join(xau)
+
+
+def test_check_cve_TU_CHOI_moc_thieu_ly_do(tmp_path):
+    """Doi chung: cong cu phai DUNG HAN, khong duoc am tham chap nhan."""
+    import pytest
+
+    moc = tmp_path / "khong_ly_do.moc"
+    moc.write_text("PYSEC-2026-2132 | click\n", encoding="ascii")
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "ccve", GOC / "tools" / "check_cve.py")
+    ccve = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(ccve)
+    ccve.TEP_MOC = moc
+    with pytest.raises(SystemExit) as loi:
+        ccve.doc_moc()
+    assert "ly do" in str(loi.value).lower()
+
+
+def test_check_cve_KHONG_nam_trong_gate():
+    """🔴 Co Y khong nam trong gate, va phep kiem nay chot dieu do.
+
+       Do 06/09: **49 giay** va no hoi PyPI/OSV qua mang. Mot buoc gate do vi
+       MAT MANG la mot buoc do vi ly do khong lien quan toi ma — dung thu day
+       nguoi ta bo qua mau do (`BAY_TRONG_CONG_CHAT_LUONG.md` Bay 26).
+
+    ⭐ CVE xuat hien theo THOI GIAN, khong theo commit. Hoi mot lan truoc khi
+       giao hang moi dung nhip — xem `docs/16_CAP_NHAT_VA_DEPLOY.md` muc 2b.
+    """
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "gate_cve", GOC / "tools" / "gate.py")
+    gate = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(gate)
+    for quick in (True, False):
+        for s in gate._steps(quick=quick):
+            assert not any("check_cve" in str(a) for a in s.argv), (
+                f"`check_cve.py` da lot vao gate o buoc `{s.name}` — no ton 49 "
+                f"giay va phu thuoc mang")
+    # Va no phai duoc nhac o tai lieu deploy, neu khong khong ai chay no.
+    dl = (GOC / "docs" / "16_CAP_NHAT_VA_DEPLOY.md").read_text(encoding="utf-8")
+    assert "check_cve.py" in dl, (
+        "cong cu khong nam trong gate VA khong duoc nhac o quy trinh deploy "
+        "= mot cong cu khong ai chay")
+
+
+# ── 11. Banh coc a11y (`axe-core`, them 06/09/2026) ────────────────────────
+#
+# ⛔ Cum nay KHONG mo trinh duyet. `check_a11y.py` can mot may chu dang phuc vu
+#    VA mot phien playwright dang mo — goi no trong bo test la bien mot phep
+#    kiem thanh mot phep do phu thuoc moi truong. Ba phep kiem duoi day chot
+#    nhung menh de THUOC VE cong cu.
+
+
+def test_a11y_KHONG_nam_trong_gate_nhung_CO_trong_quy_trinh_deploy():
+    """Cung ly do voi `check_cve`: no can may chu + phien trinh duyet. Mot buoc
+    gate do vi THIEU PHIEN la mot buoc do vi ly do khong lien quan toi ma."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "gate_a11y", GOC / "tools" / "gate.py")
+    gate = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(gate)
+    for quick in (True, False):
+        for s in gate._steps(quick=quick):
+            assert not any("check_a11y" in str(x) for x in s.argv), (
+                f"`check_a11y.py` lot vao gate o buoc `{s.name}`")
+    dl = (GOC / "docs" / "16_CAP_NHAT_VA_DEPLOY.md").read_text(encoding="utf-8")
+    assert "check_a11y.py" in dl, "khong o gate VA khong o quy trinh = khong ai chay"
+
+
+def test_a11y_va_mobile_quet_do_HAI_THU_KHAC_NHAU():
+    """⭐ `axe` KHONG do tran ngang; `mobile_quet` KHONG do tuong phan mau.
+
+       Do 06/09 tren 4 route cong khai: axe tim ra **32 nut `color-contrast`**
+       — mot lop loi ma bo quet mobile khong he cham toi. Bo cai nao cung mat
+       mot lop, dung nhu `import-linter` vs `lint_app_contract`.
+    """
+    a11y = (GOC / "tools" / "check_a11y.py").read_text(encoding="utf-8")
+    mob = (GOC / "tools" / "mobile_quet.js").read_text(encoding="utf-8")
+    assert "mobile_quet" in a11y and "KHONG thay" in a11y, (
+        "`check_a11y.py` phai ghi ro no khong thay `mobile_quet.js`")
+    # Bo quet mobile van phai giu phan TRAN NGANG — thu axe khong do.
+    assert "tran" in mob or "scrollWidth" in mob, (
+        "`mobile_quet.js` mat phan do tran ngang — axe khong bu duoc cho do")
+
+
+def test_a11y_moc_chi_chot_violations_khong_chot_incomplete():
+    """⛔ `axe` tra ca `violations` lan `incomplete`. `incomplete` la 'axe khong
+       tu ket luan duoc, can nguoi xem' — dem no nhu loi la bao cao sai, dung
+       kieu bay ma `mobile_quet.js` da ghi cho `target_be`.
+    """
+    ma = (GOC / "tools" / "check_a11y.py").read_text(encoding="utf-8")
+    assert "chua_ro" in ma and "KHONG tinh vao moc" in ma
+    moc = GOC / "tools" / "check_a11y.moc"
+    assert moc.is_file(), "chua lap moc a11y"
+    ds = [d.split("=")[0].strip() for d in moc.read_text(encoding="utf-8").splitlines()
+          if d.strip() and not d.strip().startswith("#")]
+    assert ds, "moc a11y rong"
+
+
+# ── 12. Nut sao chep cho O MOT DONG (S5, 07/09/2026) ──────────────────────
+
+
+def test_sao_chep_js_CO_xu_ly_o_mot_dong():
+    """🔴 Truoc 07/09 `vps_base.html` GHI rang co nut sao chep cho "moi khoi ma
+       VA moi `<code data-chep>`" — nhung `sao_chep.js` chi quet `main pre`.
+
+       Chu thich noi mot dang, ma lam mot neo, va **dia chi IP — dung thu khach
+       VPS vao trang de lay — khong co nut nao**. Do la kieu hong te nhat: mot
+       tai lieu KHANG DINH mot hanh vi khong ton tai, nen khong ai di kiem.
+    """
+    js = (GOC / "server" / "static" / "sao_chep.js").read_text(encoding="utf-8")
+    assert "code[data-chep]" in js, (
+        "`sao_chep.js` khong xu ly `<code data-chep>` — trong khi `_vps_mac.html` "
+        "sinh ra chung va `vps_base.html` hua co nut")
+    # ⚠️ Nua con lai cua hop dong — "macro CON dat `data-chep`" — nam o
+    #    `test_365::test_macro_o_sao_chep_van_dat_dau_data_chep`, KHONG o day.
+    #    Banh coc `test_KHONG_test_nao_duoc_GHI...` trong chinh tep nay cam moi
+    #    tham chieu toi `server/templates/`, va no cam CO Y: luat cua no la "tep
+    #    that chi duoc xuat hien o dung mot cho — ham tao ban sao". Toi khong
+    #    noi mot cai cong chi vi no bat toi.
+
+
+def test_co_da_xu_ly_KHONG_trung_ten_voi_dau_danh_dau():
+    """⛔ `data-chep` la DAU DANH DAU do template dat ("hay gan nut cho toi").
+       Neu JS cung dung `data-chep` lam co da-xu-ly ("toi gan roi") thi mot o
+       vua la yeu cau vua la da-xong — va no se bi bo qua ngay lan quet dau.
+
+       Truoc 07/09 dung la nhu vay: `pre.dataset.chep = "1"`.
+    """
+    js = (GOC / "server" / "static" / "sao_chep.js").read_text(encoding="utf-8")
+    assert "dataset.chepXong" in js, "co da-xu-ly phai la `data-chep-xong`"
+    assert 'dataset.chep =' not in js and 'dataset.chep=' not in js, (
+        "JS van dung `data-chep` lam co da-xu-ly — trung ten voi dau danh dau")
+
+
+def test_sao_chep_js_duoc_cache_bust():
+    """`CLAUDE.md` quy tac 6: doi tai san tinh ma URL khong doi thi khach nhan
+    ban CU cho toi khi het TTL cua Cloudflare."""
+    t = (GOC / "server" / "templating.py").read_text(encoding="utf-8")
+    assert "sao_chep.js" in t.split("TAI_SAN_CO_VERSION", 1)[1][:400], (
+        "`sao_chep.js` khong nam trong TAI_SAN_CO_VERSION")
+
+
+def test_studio_dev_dang_ky_bang_cua_MOI_app_dang_bat():
+    """🔴 Truoc 07/09 `studio_dev.py` chi import bang cua `ltt_voice`, nen mo
+       `/vps` cho ra **HTTP 500**: `no such table: vps_instance`.
+
+       Do khong phai loi san pham — la bo khung soi giao dien khong dung noi
+       giao dien can soi. Va trieu chung (500) doc y het mot loi that, nen no
+       an mot cach dat tien: nguoi ta se di tim loi trong `apps/vps/`.
+
+    ⭐ `registry.load_app_tables()` chinh la thu `tools/mobile_qa.py` da dung,
+       va chu thich o do ghi: "da lam dung viec nay cho ca Alembic lan server".
+    """
+    ma = (GOC / "tools" / "studio_dev.py").read_text(encoding="utf-8")
+    assert "registry.load_app_tables()" in ma, (
+        "`studio_dev.py` khong dang ky bang cua cac app — no chi dung duoc "
+        "trang Voice, va moi trang khac se 500")

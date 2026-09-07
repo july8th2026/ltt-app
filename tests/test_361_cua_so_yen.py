@@ -19,6 +19,7 @@ import ast
 import json
 import os
 import subprocess
+import builtins
 import sys
 import time
 from pathlib import Path
@@ -785,3 +786,51 @@ def test_may_ban_BAO_ca_KHOA_chu_khong_chi_bao_CPU(tmp_path, monkeypatch):
             "`dong_canh_bao` (thu gate/test_nhanh in ra) khong nhac gi den khoa")
 
     assert may_ban.khoa_dang_giu() == [], "nha roi ma van bao con khoa"
+
+# ── "Khong do duoc" phai khac "khong ai ban" (07/09/2026) ──────────────────
+
+def test_may_ban_PHAN_BIET_khong_do_duoc_voi_khong_ai_ban(monkeypatch):
+    """🔴 Do 07/09: `may_ban` bao "KHONG BIET - thieu psutil" trong khi
+       `psutil 7.2.2` cai san va import duoc tu dung trinh thong dich ay.
+
+    Nguyen nhan: `quet()` tra `{}` cho CA HAI trang thai, va `main` doc bang
+    rong thanh "thieu psutil". Nen mot may THAT SU RANH bi bao la khong do
+    duoc — tuc mot canh bao khi khong co gi.
+
+    ⭐ Sai ve phia an toan VAN LA SAI. Mot thong diep bao dong khi khong co gi
+       la thu day nguoi ta bo qua chinh thong diep ay — va `may_ban` la cong cu
+       gac quy tac "kiem CPU truoc lenh nang", nen no bi bo qua la quy tac bi
+       bo qua.
+
+    `AGENTS.md` §4c cau 2 doi hoi dung dieu nay: **co y** phai phan biet duoc
+    voi **tai nan**.
+    """
+    import sys as _s
+
+    sys.path.insert(0, str(GOC / "tools"))
+    import may_ban                               # noqa: PLC0415
+
+    # 1. Do duoc, nhung khong cay nao ban -> `{}`, KHONG phai None.
+    monkeypatch.setattr(may_ban, "_quet_thuc", lambda: {})
+    assert may_ban._quet_thuc() == {}, "do duoc ma khong ai ban phai la {}"
+
+    # 2. Vang psutil -> None. Ep bang cach chan chinh lan import.
+    that = builtins.__import__
+
+    def _chan(ten, *a, **k):
+        if ten == "psutil":
+            raise ImportError("gia lap vang psutil")
+        return that(ten, *a, **k)
+
+    monkeypatch.undo()
+    monkeypatch.setattr(builtins, "__import__", _chan)
+    _s.modules.pop("psutil", None)
+    assert may_ban._quet_thuc() is None, (
+        "vang psutil phai tra None — tra {} la gop no voi 'khong ai ban', "
+        "dung cai loi ngay 07/09")
+
+    # 3. ⛔ Va hop dong CU phai giu nguyen: `quet()` van luon tra `dict`.
+    #    `test_khoa_hien_ra_o_may_ban` va cac cho khac goi `.get(...)` tren no;
+    #    doi kieu tra ve o day bien mot ban sua NGHIA thanh mot ban pha hop
+    #    dong o cho khong lien quan.
+    assert may_ban.quet() == {}, "`quet()` phai luon tra dict, ke ca khi vang"

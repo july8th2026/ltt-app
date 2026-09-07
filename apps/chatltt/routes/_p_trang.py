@@ -5,7 +5,7 @@ from fastapi import Depends, Request
 from fastapi.responses import HTMLResponse
 
 from apps.chatltt.routes._chung import issue_csrf_token, json_ok, router, uid
-from apps.chatltt.services import chinh_sach
+from apps.chatltt.services import chinh_sach, co_v3
 from platform_core.frontend_bundle import bundle_assets
 from server.auth.session import require_login
 from server.deps import get_db
@@ -41,7 +41,15 @@ def api_so_du(request: Request, _=Depends(require_login), db=Depends(get_db)):
 def api_danh_muc(request: Request, _=Depends(require_login), db=Depends(get_db)):
     """Catalog ChatLTT cho người dùng hiện tại — chỉ thứ chính sách sản phẩm mời."""
     ds = chinh_sach.danh_muc(db, user_id=uid(request))
-    return json_ok({"nang_luc": [
+    # ⚠️ Them 06/09 (B4 buoc 6). `co_v3.trang_thai()` da ton tai tu P03 va
+    #    docstring cua no khai *"cho /api/danh-muc va log"* — nhung KHONG NOI
+    #    NAO goi no. Mot loi khai trong tai lieu ma khong ai thuc hien la mot
+    #    loi khai se troi, va `test_831` dang chot hinh dang cua no cho mot
+    #    nguoi tieu thu khong ton tai.
+    #
+    # ⭐ Giao dien can dung thu nay: nut "May nho gi ve ban" khong duoc hien khi
+    #    co TAT — hien mot nut dan toi 404 la mot loi hua hong.
+    return json_ok({"co_v3": co_v3.trang_thai(), "nang_luc": [
         {"ten": n.ten, "phuong_thuc": n.phuong_thuc, "che_do": n.che_do, "nhan": n.nhan,
          "models": n.models, "model_mac_dinh": n.model_mac_dinh,
          "tuy_chon": n.tuy_chon, "gia": n.gia,

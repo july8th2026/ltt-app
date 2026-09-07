@@ -299,7 +299,12 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         metrics.increment(metrics.CAPACITY_REFUSED)
         log.warning("BAN mot-cuc: user=%s duong=%s ly_do=%s",
                     principal.user_id[:8], duong, e)
-        raise service_unavailable(f"The model is busy right now: {e}",
+        # 🔴 Chỗ rò THỨ TƯ, và không phép quét thủ công nào của tôi thấy nó —
+        #    `test_than_tra_ve_KHONG_mang_chu_thuong_nguon` mới lôi ra, vì nó
+        #    hỏi **quan hệ** (biểu thức nào của ngoại lệ chảy vào đối số đầu
+        #    của hàm dựng lỗi) chứ không hỏi **nhãn** (câu này trông có nhạy
+        #    cảm không). `ly_do=%s` ở dòng trên đã giữ đủ cho người trực.
+        raise service_unavailable("The model is busy right now.",
                                   retry_after=getattr(e, "thu_lai_sau_s", 30)) from None
     except (VuotNganSachError, CongVlmError) as e:
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
@@ -650,7 +655,23 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
             raise limits.execution_busy(e.tai_nguyen) from None
         # ⛔ BẬN ≠ HỎNG. 503 + Retry-After, và khách KHÔNG bị thu tiền (facade
         #    đã hoàn và đã đếm vào `CAPACITY_REFUSED`).
-        raise service_unavailable(f"The model is busy right now: {e.ly_do}",
+        #
+        # 🔴 KHÔNG nhét `e.ly_do` vào thân trả về. Nó mang văn bản THÔ của máy B
+        #    (`_ly_do_ban` trả tới 300 ký tự thân 429) và, khi cổng bên đó khai
+        #    `vram_dung_mb`, nó ghép thẳng `"VRAM dang dung NNN MB"` vào câu.
+        #    Tức một khách API bị 503 đọc được **công suất còn lại của máy B**.
+        #
+        # ⭐ Và bỏ nó đi KHÔNG mất gì cho người trực: `runtime_noi_bo/luong.py`
+        #    đã `log.warning("BAN luong: ... ly_do=%s")` **trước** khi `raise`.
+        #    Câu phải hỏi ở mọi bản vá bịt rò là *"bịt rồi, người trực còn thấy
+        #    gì?"* — ở đây câu trả lời là "thấy đủ, ở nhật ký, đúng chỗ".
+        #
+        # ⛔ GIỮ NGUYÊN tiền tố "The model is busy right now":
+        #    `test_360::test_MOI_nhanh_ban_deu_nuoi_CAPACITY_REFUSED` neo vào
+        #    ĐÚNG chuỗi ấy để tìm mọi nhánh bận. Đổi nó thì vòng lặp của phép
+        #    kiểm không vào lần nào, danh sách rỗng, và nó XANH RỖNG — một bản
+        #    vá bảo mật tự tháo một bánh cóc. Xem **Bẫy 31**.
+        raise service_unavailable("The model is busy right now.",
                                   retry_after=e.thu_lai_sau_s) from None
     except cua_luong.KhongMoDuoc as e:
         if e.qua_dai:
@@ -661,10 +682,17 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
             # tự tóm tắt hội thoại.
             log.warning("ngu canh qua dai user=%s: %s",
                         principal.user_id[:8], e.ly_do)
+            # 🔴 `e.ly_do` ở nhánh này là `f"may B tra 413: {than_loi[:200]}"`
+            #    — 200 ký tự thân thô của máy B. Đã ghi ở `log.warning` ngay
+            #    trên, nên gỡ khỏi thân trả về không mất chẩn đoán nào.
+            #
+            # ⭐ Thứ khách HÀNH ĐỘNG ĐƯỢC thì giữ nguyên: `limit_name` và
+            #    `limit_value` nói trần là bao nhiêu, câu chữ nói phải làm gì.
+            #    Một bản vá cắt luôn hai trường ấy sẽ "sạch" mà làm khách hết
+            #    đường xử lý — đó là bịt rò bằng cách bịt cả sự hữu ích.
             raise payload_too_large(
                 "The input exceeds the model's context limit. Drop or summarise "
-                "older turns and retry with a shorter conversation. "
-                f"[{e.ly_do}]",
+                "older turns and retry with a shorter conversation.",
                 limit_name="input_tokens",
                 # ⛔ TRAN THEO MODEL, khong phai tran chung (P08 F-02).
                 #    `qwen38-vision` chay `-c 65536` nen tran vao that cua no

@@ -70,12 +70,51 @@ MCREDIT_MOI_1000_KY_TU: int | None = 20
 #: Phiên bản giá — đi vào `chatltt_approval.phien_ban_gia` để đối soát sau này.
 #: ⛔ Chữ `tam` nằm trong tên **có chủ đích**: nó đi vào từng bản ghi duyệt, nên
 #:    ngày chốt giá thật, mọi bút toán tính theo giá tạm đều lọc ra được.
+#: ⚠️ Giữ nguyên chuỗi `trich-v0-tam` **dù giá đã chốt**: nó đã đi vào
+#:    `chatltt_approval.phien_ban_gia` của mọi bút toán trước 07/09. Đổi nó
+#:    bây giờ làm hai giai đoạn có **cùng** giá mang **hai** nhãn, và lúc
+#:    đối soát thì không ai biết nhãn nào ứng với giá nào. Nhãn mới chỉ
+#:    dành cho lần giá **thật sự đổi**.
 PHIEN_BAN_GIA = "trich-v0-tam"
 
-#: 🔴 Giá đã được chủ dự án chốt chưa. `False` ⇒ `MCREDIT_MOI_1000_KY_TU` ở trên
-#:    là một **giả định của tôi**, và điều kiện bật cờ trong `STATE.md` chốt
-#:    rằng nó phải thành `True` trước khi `LTT_CHATLTT_V3_TOOLS` được bật.
-CHU_DU_AN_DA_CHOT = False
+#: ✅ **ĐÃ CHỐT 07/09/2026 — chủ dự án giữ nguyên `20`.**
+#:
+#: ## Ba số đo đưa tới quyết định
+#:
+#:     gia von mot luot trich : 1-2 d   (PDF that 1 MB / 17 trang = 0,16 s CPU)
+#:     luu tru R2             : ~0,004 d / tai lieu / thang
+#:     neo de so              : hoi MOT cau ve tai lieu ay = 1 credit
+#:
+#: ⇒ Giá **không phải để thu hồi chi phí** — chi phí gần bằng không. Nó để
+#:   (a) chặn biến kho input thành kho lưu trữ miễn phí, và (b) không cản việc
+#:   dùng thật.
+#:
+#: ## 🔴 Và SÀN LÀM TRÒN mới là thứ quyết định, không phải con số 20
+#:
+#: `jobs.py` đổi milli-credit sang credit bằng `(mc + 999) // 1000`, nên **mọi**
+#: tài liệu dưới 50.000 ký tự đều thu đúng **1 credit**:
+#:
+#:     1 trang giay to    1.500 ky tu -> 1 credit (100 d)  = 66,7 d/1k ky tu
+#:     PDF 17 trang       4.527       -> 1 credit (100 d)  = 22,1
+#:     hop dong 10 trang 20.000       -> 1 credit (100 d)  =  5,0
+#:     bao cao 30 trang  60.000       -> 2 credit (200 d)  =  3,3
+#:     sach 300 trang   600.000       -> 12 credit(1.200d) =  2,0
+#:
+#: ⭐ Giá thực mỗi 1.000 ký tự chênh nhau **33 lần**. Hạ `20` xuống `10` sẽ
+#:   **không đổi gì** cho tài liệu thường — sàn vẫn ăn — chỉ làm tài liệu lớn rẻ
+#:   đi một nửa. Đó là lý do giữ `20`: nó cho ra đúng những con số nên có ở cả
+#:   hai đầu dải.
+#:
+#: ⚠️ Bài học `san-lam-tron-la-mot-tang-khac-voi-bang-gia` áp thẳng vào đây:
+#:    câu phải hỏi không phải *"giá mỗi 1.000 ký tự là bao nhiêu"* mà **"một tài
+#:    liệu điển hình bị trừ bao nhiêu, cộng hết mọi tầng"**.
+#:
+#: ## ⛔ Giá KHÔNG phải cái chặn lạm dụng
+#:
+#: Ai muốn dùng làm kho lưu trữ sẽ trả 100đ/tệp không chớp mắt. Cái chặn thật là
+#: **hạn mức** (MB hoặc số tài liệu mỗi tài khoản) — thứ đó **chưa có**, và nó là
+#: một hạng mục riêng, không phải một con số trong tệp này.
+CHU_DU_AN_DA_CHOT = True
 
 
 class ChuaChotGia(RuntimeError):

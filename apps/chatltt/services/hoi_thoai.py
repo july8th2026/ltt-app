@@ -353,6 +353,10 @@ def su_that(db, *, user_id: str, conv_id: str) -> dict:
     return {
         "conversation": {"id": hoi.id, "title": hoi.title, "model_alias": hoi.model_alias,
                          "current_leaf_id": hoi.current_leaf_id,
+                         # ⚠️ H44 B5. Chuoi rong, KHONG `None`: giao dien
+                         #    dung no lam gia tri cua mot `<select>`, va
+                         #    `null` o do bien thanh chuoi "null".
+                         "project_id": str(hoi.project_id or ""),
                          "archived": hoi.archived_at is not None,
                          "created_at": hoi.created_at.isoformat(),
                          "updated_at": hoi.updated_at.isoformat()},

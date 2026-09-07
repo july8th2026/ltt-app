@@ -1878,3 +1878,85 @@ Memory moi: `thay-chuoi-toan-cuc-cham-dong-phong-thu`,
 
 Tai lieu: `docs/LTT_VOICE/NGUON_CHAN_LY.md` (chi muc), `AUTONOMOUS_AUDIT/00-08`,
 `KHO_GIONG/00-01`.
+
+---
+
+## 2026-09-07 — ChatLTT V3: P10 (ba lỗ tiền), deploy, và PHÁT HÀNH sáu cờ
+
+**Kết quả:** `33a76d8b` lên production 16:53; sáu cờ V3 bật 17:06; trunk đóng ở
+`a0ef52cf`. Nghiệm thu ba chiều: 515 tệp `.py`, lệch 0 / thiếu 0 / **thừa 0**.
+
+⚠️ **Chủ dự án quyết định phát hành TRƯỚC P11 (red team)** và xử lý P11 sau. Ghi
+   ra đây là một quyết định **thương mại**, không phải kết luận kỹ thuật.
+
+### P10 — ba lỗ tiền thật, cùng MỘT hình dạng
+
+> Mọi đường phòng thủ đều canh lúc **có luồng đang chạy**.
+> Lúc lượt **đứng chờ** thì không ai canh.
+
+| # | Lỗ | Hậu quả |
+|---|---|---|
+| 1 | Dừng lúc lượt đang chờ là **no-op im lặng** | duyệt xong lượt vẫn chạy tiếp, tiêu tiền sau khi người dùng bảo dừng |
+| 2 | Hai nguồn cùng chạy tiếp **một** run | **hai lượt model cho một lần duyệt** ⇒ tiền đi hai lần |
+| 3 | Huỷ rồi mà **thẻ duyệt vẫn hiện** | bấm Duyệt, không có gì xảy ra, không lời giải thích |
+
+Cả ba đều **tiêm bản cũ để xem có đỏ không** trước khi tin màu xanh. Lỗ 2 vá
+bằng `platform_core.leases` chứ không lật cột trạng thái — lật cột chặn được đua
+nhưng tạo ra một cách **kẹt vĩnh viễn** mới.
+
+⭐ Lỗ 2 là đúng cái bẫy mà `duyet._quyet` **đã học và ghi vào mã của chính nó**
+  (*"Điều kiện nằm TRONG WHERE"*). Cùng kho, cùng tuần — một chỗ học được, một
+  chỗ chưa. Bài học không tự lan sang tệp bên cạnh.
+
+### Bẫy 33 — bật một bước gate đang tắt cũng là một THAY ĐỔI
+
+Đặt `LTT_TEST_DATABASE_URL` để cứu một bước `[BOQUA]` ⇒ bước chạy thật 140,7 s,
+**và gate ĐỎ**: biến ấy tới **mọi worker pytest**, `pg_scratch.py` dùng nó làm
+công tắc bật năm tệp sang PostgreSQL thật, chúng đâm nhau qua xdist.
+
+Cách đúng: chạy **cạnh** gate, không **trong** gate ⇒ được cả hai vế.
+
+### 🔴 Giải thích được một chặn mà mục 05/09 đã ghi
+
+Mục **2026-09-05** viết: *"đăng nhập production từ máy này bị Cloudflare chặn"*.
+Hôm nay tìm ra nguyên nhân, và nó **không phải bot-detection**:
+
+```
+brunhild.challenges.cloudflare.com  ->  CHI CO IPv6
+ket noi IPv6 tu may nay             ->  KHONG DUOC (may khong co IPv6 toan cuc)
+```
+
+Challenge cần một host chỉ có IPv6 ⇒ không tải nổi ⇒ treo vĩnh viễn ở *"Just a
+moment…"*. Lỗi **hạ tầng mạng**, không phải phán quyết bot.
+
+🚨 **Và hệ quả chưa xác định bán kính:** nếu Cloudflare cũng phát challenge cho
+   khách thường thì **mọi khách ở mạng chỉ có IPv4 đều kẹt**. Đo từ một IP thì
+   không phân biệt được "chính sách chung" với "IP máy này bị chấm điểm". Phép
+   kiểm rẻ nhất: mở site trên điện thoại 4G.
+
+### Còn nợ — không cờ nào che được
+
+| Nợ | Trạng thái |
+|---|---|
+| **P11** red team | chưa chạy; bản giao ở `docs/CHATLTT_V3/15_BAN_GIAO_P11_RED_TEAM.md` |
+| **CK1** | ma trận 5 mốc + CLS đã đo trên Chrome thật; vế **URL công khai** chưa |
+| **Hạn mức lưu trữ** | tải lên **miễn phí**, không giới hạn số lượng; `C:` còn 458,6 GB ≈ 23.500 lượt là đầy ⇒ **sập cả nền tảng** |
+| **M3 · R3** | hai hằng số vẫn là **neo tự suy**; R3 **đã từng sai 13 lần** |
+| **D1 · D2** | hai lỗ trong chính đường ray deploy — xem `docs/16` |
+
+### Ba lần tôi sai trong ngày, đều cùng hình dạng
+
+Một lời giải thích **khớp vừa đủ** làm điều tra dừng sớm:
+
+| Tôi tưởng | Thật ra |
+|---|---|
+| Huỷ hỏng vì **đa tiến trình** | `_danh_thuc_run` chạy ở tiến trình web |
+| URL công khai chặn vì **Cloudflare coi là bot** | **thiếu IPv6** |
+| Phụ phí V3 là **204 ms** | 987 ms lượt đầu (nạp module) rồi **2,7 ms** |
+
+⭐ Và một lần nữa do phiên khác bắt: tôi ghi bài học deploy đổ lỗi cho **thời
+  điểm**, trong khi lỗi thật là tôi **đã thấy** dòng `??` và **đọc nó thành
+  "không sao"**. Phép kiểm chạy đúng; người đọc nó sai.
+
+Tài liệu: `docs/CHATLTT_V3/STATE.md` · `docs/BAY_TRONG_CONG_CHAT_LUONG.md`
+(Bẫy 33) · `docs/16_CAP_NHAT_VA_DEPLOY.md` (D1/D2).

@@ -2035,9 +2035,39 @@
       for (var i = 0; i < cac.length; i++) ganKhoi(cac[i]);
     }
 
+    /* Tab AN thi ngung hoi; hien lai thi hoi NGAY.
+     *
+     * 🔴 Do 07/09: vong hoi duoi day da lui nhip tu te (1,5s -> toi da 8s, loi
+     *    thi 15s) va DUNG HAN khi het viec — nhung no khong biet tab da an.
+     *    Mot may trong tui van hoi may chu moi 8 giay, va do la pin cong dung
+     *    luong 3G cua khach chay trong khi ho dang lam viec khac. Job thi van
+     *    chay o may chu du khong ai hoi.
+     *
+     * ⭐ Khi mo lai, thu ho can khong phai mot nhip hoi lien tuc ma la MOT CAU
+     *    TRA LOI NGAY. Do la ca hai nua cua ban va nay.
+     *
+     * ⛔ KHONG doi sang `LTT.nhipJob` o day. Vong nay co ngu nghia lui nhip
+     *    rieng (x1,3 khi chay, x2 khi loi, tran khac nhau) da duoc chinh theo
+     *    tai that cua `/trang-thai`; thay tron goi la doi mot thu dang dung lay
+     *    mot thu tong quat hon nhung chua duoc do o day. Chi bo sung dung phan
+     *    con thieu.
+     */
+    var anTab = false;
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "hidden") {
+        anTab = true;
+        if (dongHo && dongHo !== 1) { clearTimeout(dongHo); }
+        dongHo = null;
+        return;
+      }
+      // Hien lai: hoi ngay, khong doi het nhip cu.
+      if (anTab) { anTab = false; batDauTheoDoi(); }
+    });
+
     /* Theo doi ca du an bang MOT loi goi, khong mot loi goi moi khoi. */
     function batDauTheoDoi() {
       if (dongHo) return;
+      if (document.visibilityState === "hidden") { anTab = true; return; }
       var cho = 1500;
       (function vong() {
         fetch(goc + "/trang-thai")
@@ -2069,7 +2099,13 @@
             baoTin(dienSo(!conChay && xg === tg && tg ? chu.baoXong : chu.baoTienDo,
                           {x: xg, y: tg}));
 
-            if (conChay) {
+            // ⛔ Kiem `anTab` NGAY TRUOC khi len lich lai, khong chi o
+            //    `visibilitychange`. Tab co the an TRONG LUC `fetch` dang bay,
+            //    va luc do bo xu ly su kien da chay xong roi — nhanh `.then`
+            //    nay se dat mot nhip moi ma khong ai huy.
+            if (anTab) {
+              dongHo = null;
+            } else if (conChay) {
               cho = Math.min(cho * 1.3, 8000);
               dongHo = setTimeout(vong, cho);
             } else {
@@ -2077,6 +2113,7 @@
             }
           })
           .catch(function () {
+            if (anTab) { dongHo = null; return; }
             cho = Math.min(cho * 2, 15000);
             dongHo = setTimeout(vong, cho);
           });

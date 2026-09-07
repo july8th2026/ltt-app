@@ -13253,11 +13253,20 @@ msgstr "Each time a user approves a credit-charging tool: the approved parameter
 msgid "Tài liệu người dùng đính vào một hội thoại để hỏi: tên tệp, kiểu, cỡ, và trạng thái trích văn bản. Nội dung tệp nằm ở kho lưu trữ, không nằm ở đây."
 msgstr "A document the user attaches to a conversation to ask about it: file name, type, size, and text-extraction status. The file contents live in object storage, not here."
 
+msgid "Trích văn bản từ tài liệu đã đính vào hội thoại."
+msgstr "Extract text from a document attached to the conversation."
+
 msgid "Văn bản đã trích từ tài liệu người dùng đính vào hội thoại, cắt thành từng đoạn kèm số trang để trích dẫn lại được. Đây là nội dung tài liệu của khách, không phải bản ghi kỹ thuật."
 msgstr "Text extracted from documents the user attached to a conversation, split into passages with page numbers so answers can cite them. This is the content of the customer's documents, not a technical record."
 
 msgid "theo tệp và hội thoại chứa nó"
 msgstr "with the file and the conversation holding it"
+
+msgid "Những điều người dùng dặn hệ thống nhớ về mình (hoặc để trợ lý tự ghi lại), kèm phạm vi áp dụng: toàn tài khoản, một dự án, hay một hội thoại. Người dùng xem, sửa và xoá được từng mẩu."
+msgstr "Things the user has told the system to remember about them (or let the assistant record), each with a scope: the whole account, one project, or a single conversation. The user can view, edit and delete each entry."
+
+msgid "theo tài khoản; mẩu thuộc phạm vi hội thoại thì theo hội thoại chứa nó"
+msgstr "with the account; entries scoped to a conversation go with that conversation"
 
 msgid "Phần lẻ dưới một credit được giữ lại, không làm tròn lên"
 msgstr "Fractions below one credit are carried over, not rounded up"
@@ -13540,3 +13549,47 @@ msgstr "Opening image"
 
 msgid "Video làm đầu vào chưa mở. Hiện chỉ nhận ảnh làm khung mở đầu."
 msgstr "Video input is not open yet. For now only an image is accepted, as the opening frame."
+
+#: apps/chatltt/manifest.py
+msgid "Nghiên cứu một câu hỏi trên tài liệu bạn đã đính vào hội thoại này."
+msgstr "Research a question across the documents you attached to this conversation."
+
+#: apps/chatltt/routes/_p_nghien_cuu.py
+msgid "Đọc tài liệu bạn đã đính vào hội thoại này. Không tìm trên Internet."
+msgstr "Reads the documents you attached to this conversation. Does not search the Internet."
+
+#: apps/chatltt/services/loi_ra_ngoai.py
+msgid "Model đang bận. Thử lại sau ít giây."
+msgstr "The model is busy. Try again in a few seconds."
+
+#: apps/chatltt/services/loi_ra_ngoai.py
+msgid "Không đủ credit cho lượt này."
+msgstr "Not enough credit for this turn."
+
+#: apps/chatltt/services/loi_ra_ngoai.py
+msgid "Nội dung vượt trần ngữ cảnh. Rút ngắn rồi thử lại."
+msgstr "The content exceeds the context limit. Shorten it and try again."
+
+#: apps/chatltt/services/loi_ra_ngoai.py
+msgid "Không gọi được model lúc này."
+msgstr "Could not reach the model right now."
+
+#: apps/chatltt/services/loi_ra_ngoai.py
+msgid "Năng lực này chưa mở."
+msgstr "This capability is not open yet."
+
+#: apps/chatltt/services/loi_ra_ngoai.py
+msgid "Yêu cầu không hợp lệ."
+msgstr "The request is not valid."
+
+#: apps/chatltt/services/loi_ra_ngoai.py
+msgid "Kết nối tới model đứt giữa chừng."
+msgstr "The connection to the model was cut short."
+
+#: apps/chatltt/services/loi_ra_ngoai.py
+msgid "Có lỗi phía máy chủ. Việc này đã được ghi lại."
+msgstr "Something went wrong on the server. It has been logged."
+
+#: apps/chatltt/services/loi_ra_ngoai.py
+msgid "Không chạy được. Thử lại, hoặc báo cho chúng tôi nếu còn lặp."
+msgstr "Could not run. Try again, or tell us if it keeps happening."

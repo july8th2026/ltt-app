@@ -299,3 +299,53 @@ def test_moi_goi_trong_requirements_dev_deu_CO_MAT():
     assert not thieu, (
         f"khai trong requirements-dev.txt nhung KHONG co trong may: {thieu} - "
         "moi dong o do la mot thu bo test DANG dua vao")
+
+
+def test_do_nhanh_tien_trinh_KHONG_khop_ke_chi_NHAC_ten():
+    """🔴 Lo thu TU cua ho bay "bo loc khop chinh minh", do 06/09/2026.
+
+       Phien LTTCHAT V3 do duoc, va toi tai hien lai tren may nay:
+
+           loc ca dong lenh   4 tien trinh  (3 la `bash.exe` ANH EM)
+           loc kich ban       1 tien trinh
+
+       Ba cai thua la shell cua nhung lenh nen TRUOC DO trong cung phien.
+       Chung KHONG phai to tien, nen `parents()` khong cham toi — ba ban va
+       truoc deu di theo quan he cha-con nen deu khong bit duoc cho nay.
+
+    ⛔ Va rao `ten_tien_trinh="python.exe"` chi THU HEP chu khong dong: mot
+       script PYTHON chi NHAC chuoi ay trong ma nguon van bi dem. Da dung mot
+       tien trinh moi de xac nhan truoc khi sua — no bi dem that.
+
+    ⇒ Phep khop phai hoi KICH BAN DANG CHAY, khong hoi ca dong lenh.
+    """
+    import subprocess
+    import sys
+    import time
+
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "do_nhanh_kt", GOC / "tools" / "do_nhanh.py")
+    do_nhanh = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(do_nhanh)
+
+    # Ba dang phai phan biet duoc, khong can mo tien trinh nao.
+    assert do_nhanh._kich_ban(["python", "tools/gate.py", "--quick"]) == "gate.py"
+    assert do_nhanh._kich_ban(["python", "-m", "pytest", "-q"]) == "pytest"
+    assert do_nhanh._kich_ban(["python", "-c", "x='gate.py'"]) == "", (
+        "mot tien trinh chi NHAC ten van duoc coi la dang CHAY no")
+    assert do_nhanh._kich_ban(["bash", "-c", "python tools/gate.py"]) == ""
+
+    # Doi chung SONG: mot tien trinh that, chi nhac ten, khong duoc dem.
+    moi = subprocess.Popen(
+        [sys.executable, "-c",
+         "import time; _ = 'tools/gate.py chi la mot chuoi'; time.sleep(20)"])
+    try:
+        time.sleep(1.5)
+        pids = [p.pid for p in do_nhanh.tien_trinh("gate.py")]
+        assert moi.pid not in pids, (
+            f"tien trinh {moi.pid} chi NHAC 'gate.py' ma bi dem la dang chay no "
+            f"— bo loc dang hoi CA DONG LENH chu khong hoi kich ban")
+    finally:
+        moi.terminate()
+        moi.wait(timeout=10)

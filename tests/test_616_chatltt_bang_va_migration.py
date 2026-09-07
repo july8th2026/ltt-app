@@ -33,7 +33,18 @@ BANG_V3 = {"chatltt_run", "chatltt_step", "chatltt_approval"}
 #:    ở trong.
 BANG_P06 = {"chatltt_tep", "chatltt_doan"}
 
-TAT_CA = BANG_V1 | BANG_V3 | BANG_P06
+#: ⚠️ CẬP NHẬT 06/09 (H44 B4). Bánh cóc làm đúng việc lần **thứ ba**: tôi thêm
+#:    `chatltt_ghi_nho` và nó bắt tôi quay lại đây khai tên.
+#:
+#: 🔴 Và lần này nó bắt được nhiều hơn một cái tên. Đây là bảng `chatltt_*` đầu
+#:    tiên **không gắn với một hội thoại**: mẩu phạm vi `nguoi_dung` sống lâu
+#:    hơn mọi hội thoại đã sinh ra nó. Chép nguyên `purged_by` của bảng bên
+#:    cạnh (*"theo hội thoại chứa nó"*) sẽ để lại một kho ghi nhớ **mồ côi**
+#:    sau khi người dùng xoá hết hội thoại — và không phép kiểm nào ở đây bắt
+#:    được, vì tên bảng thì vẫn đúng.
+BANG_B4 = {"chatltt_ghi_nho"}
+
+TAT_CA = BANG_V1 | BANG_V3 | BANG_P06 | BANG_B4
 
 
 def test_ba_bang_mang_dung_tien_to_va_registry_nap_duoc():

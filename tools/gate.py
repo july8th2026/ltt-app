@@ -426,6 +426,7 @@ class Step:
         self.bo_qua = False
         self.seconds = 0.0
         self.tail = ""
+        self.tep_loi = ""
 
 
 def _npm() -> str | None:
@@ -620,6 +621,16 @@ def _steps(quick: bool, noi_tiep: bool = False) -> list[Step]:
         # BAT BUOC va de ra 58 `call-arg` SAI. Do 06/09 tren mot tep:
         # khong plugin 60 loi, co plugin 1 loi — va cai 1 do la loi that.
         Step("mypy", [sys.executable, "tools/check_mypy.py"], ROOT),
+        # Ranh gioi IMPORT giua cac tang -- xem `.importlinter`. 0,3 giay.
+        #
+        # ⛔ KHONG thay `lint_app_contract.py`. Hai cong cu giai hai bai
+        #    toan khac nhau: cai kia kiem CO HOC hop dong app (manifest,
+        #    CSRF, co route), cai nay kiem AI DUOC IMPORT AI. Plan ban dau
+        #    ghi "thay the" va do la sai -- da sua trong `.importlinter`.
+        #
+        # ⭐ Do 06/09: 3 hop dong, 0 gay. Hai mon no con lai nam duoi dang
+        #    `ignore_imports` CO TEN va CO LY DO, khong phai mot con so.
+        Step("ranh gioi import", [sys.executable, "tools/check_ranh_gioi.py"], ROOT),
         # PowerShell khong phan biet hoa thuong o ten bien, va tham so cua script
         # chi la mot bien thuong. Nen mot vong lap gan `$ten` ghi de tham so
         # `-Ten` — khong loi, khong canh bao. Da xay ra 31/08/2026: giong tao ra
@@ -984,6 +995,29 @@ def _run(step: Step) -> None:
     # ⭐ Bon dong du cho mot buoc tinh (chung in mot dong ket luan). Voi bo test,
     #    danh sach FAILED moi la thu can doc, va no dai hon 4 dong.
     step.tail = "\n".join(lines[-40:])
+
+    # 🔴 VA 40 DONG VAN KHONG DU KHI BO TEST DO. Do 06/09/2026: mot phep kiem
+    #    do trong 6.616 phep kiem; `short test summary` cho DUNG mot dong —
+    #    TEN phep kiem — con traceback da troi qua tu lau. Toi biet CAI GI do
+    #    ma khong biet VI SAO, va phai chay lai ca luot 11 phut de xem.
+    #
+    # ⛔ Do khong phai chuyen tang mot con so. Bat ky tran nao cung se bi vuot
+    #    boi mot luot du dai. Thu dung la: DO thi giu TRON dau ra ra tep.
+    #
+    # ⭐ Chi ghi khi DO, nen luot xanh khong de lai gi. Va in duong dan ra ngay
+    #    dong ket luan, vi mot tep khong ai biet la mot tep khong ai doc.
+    if not step.ok:
+        try:
+            thu_muc = ROOT / "test-results" / "gates"
+            thu_muc.mkdir(parents=True, exist_ok=True)
+            ten = "".join(c if c.isalnum() else "-" for c in step.name).strip("-")
+            tep = thu_muc / f"loi-{os.getpid()}-{ten}.log"
+            tep.write_text(output, encoding="utf-8", errors="replace")
+            step.tep_loi = str(tep.relative_to(ROOT)).replace("\\", "/")
+        except OSError:
+            # ⛔ HEP: mot loi ghi tep KHONG duoc bien mot buoc do thanh mot
+            #    ngoai le khac lam mat luon phan quyet.
+            step.tep_loi = ""
 
 
 def _da_doi_so_voi_HEAD() -> set[str] | None:
@@ -1536,6 +1570,9 @@ def main() -> int:
         print("\nChi tiet buoc that bai:")
         for step in failed:
             print(_console_text(f"\n--- {step.name} ---\n{step.tail}"))
+            if getattr(step, "tep_loi", ""):
+                print(_console_text(
+                    f"    [dau ra DAY DU] {step.tep_loi}"))
     print("=" * 62)
 
     # 🔴 Một lượt gate đầy đủ mất 2,9–4,4 giờ. Trên kho này — hai phiên làm

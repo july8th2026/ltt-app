@@ -70,11 +70,19 @@ class KetQua:
             # ⭐ Nói RÕ đây là lỗi của lời gọi, kèm mã — model dùng mã để quyết
             #    định sửa hay bỏ, thay vì đoán từ câu chữ tiếng Việt.
             return f"LOI[{self.ma_loi}]: {self.thong_diep}"
+        # ⭐ `dict` thì cắt theo MỤC rồi mới tuần tự hoá — xem `_cat_dict`.
+        if isinstance(self.noi_dung, dict):
+            return _cat_dict(self.noi_dung)
         chu = _thanh_chuoi(self.noi_dung)
         if len(chu) > TRAN_KY_TU_KET_QUA:
             chu = chu[:TRAN_KY_TU_KET_QUA]
             # ⛔ Nói ra việc cắt, TRONG chuỗi model đọc. Cắt lặng lẽ thì model
             #    kết luận trên dữ liệu thiếu mà tưởng là đủ.
+            #
+            # ⚠️ Đường này chỉ còn cho kết quả KHÔNG phải `dict` (chuỗi trần).
+            #    Ở đó không có cấu trúc nào để giữ, nên cắt theo ký tự là
+            #    lựa chọn duy nhất — và một tài liệu vẫn giả mạo được câu
+            #    báo cắt này. Với `dict` thì `_cat_dict` đóng cả hai lỗ.
             chu += (f"\n\n[DA CAT: ket qua dai hon {TRAN_KY_TU_KET_QUA} ky tu. "
                     f"Phan tren la phan dau. Neu can phan sau, hay thu hep yeu cau.]")
         return chu
@@ -92,6 +100,67 @@ def _thanh_chuoi(gt: Any) -> str:
         return json.dumps(gt, ensure_ascii=False, indent=None)
     except (TypeError, ValueError):
         return str(gt)
+
+#: Khoá báo cắt, nằm **trong** JSON. Một tài liệu không giả mạo được nó —
+#: đo 07/09: `json.dumps` thoát mọi ngoặc kép, nên chữ trong `noi_dung`
+#: không thành một trường được.
+KHOA_DA_CAT = "_da_cat"
+
+
+def _cat_dict(goc: dict) -> str:
+    """Cắt một kết quả `dict` theo **mục**, không theo ký tự. (H44 P10)
+
+    ## 🔴 Vì sao cắt theo ký tự là một lỗi, không phải một lựa chọn thô
+
+    Đo 07/09 với một kết quả `noi_bo.tim_tai_lieu` cỡ thường (12 đoạn):
+
+        json phan tich duoc : KHONG (JSONDecodeError o char 8000)
+        doan co "noi_dung"  : 10
+        doan co "trich_dan" : 9      <- MOT DOAN MAT NGUON
+
+    ⛔ Đó đúng là thứ **P06 bước 5 dùng cả một bước để chặn**: *"chữ và
+       nguồn nằm trong CÙNG một đối tượng… hình dạng dữ liệu, không phải
+       một quy ước nhớ kèm nguồn"*. Một phép cắt theo ký tự ở tầng dưới
+       tháo đúng mọi mối mà bước ấy khâu lại — và tháo **im lặng**.
+
+    ⇒ Bỏ **cả mục**, giữ mọi mục còn lại **nguyên vẹn**. Một đoạn hoặc có
+      mặt đầy đủ, hoặc không có mặt. Không có trạng thái thứ ba.
+
+    ⭐ Và câu báo cắt vào **trong** JSON (`_da_cat`), nên kết quả vẫn phân
+      tích được, và một tài liệu độc không giả mạo được nó.
+    """
+    chu = _thanh_chuoi(goc)
+    if len(chu) <= TRAN_KY_TU_KET_QUA:
+        return chu
+
+    # Danh sách dài nhất là chỗ tốn chỗ nhất — bỏ từ CUỐI, vì bộ truy hồi
+    # đã xếp giảm dần theo điểm, nên mục cuối là mục ít liên quan nhất.
+    khoa = max((k for k, v in goc.items() if isinstance(v, list)),
+               key=lambda k: len(goc[k]), default="")
+    if not khoa:
+        # Không có danh sách nào để bỏ ⇒ không cắt khéo được. Nói ra, và
+        # KHÔNG cắt giữa chuỗi: trả nguyên rồi để tầng trên chịu, còn hơn
+        # giao cho model một JSON hỏng.
+        return _thanh_chuoi(dict(goc, **{KHOA_DA_CAT: "khong_cat_duoc"}))
+
+    muc = list(goc[khoa])
+    bo = 0
+    while muc:
+        muc.pop()
+        bo += 1
+        thu = dict(goc)
+        thu[khoa] = muc
+        thu[KHOA_DA_CAT] = {"da_bo": bo, "truong": khoa,
+                            "ly_do": "qua dai, hay thu hep yeu cau"}
+        chu = _thanh_chuoi(thu)
+        if len(chu) <= TRAN_KY_TU_KET_QUA:
+            return chu
+
+    # Bỏ hết vẫn quá dài ⇒ phần **ngoài** danh sách đã quá trần. Trả về một
+    # kết quả rỗng nói rõ lý do, chứ không trả một mảnh.
+    return _thanh_chuoi({khoa: [],
+                         KHOA_DA_CAT: {"da_bo": bo, "truong": khoa,
+                                       "ly_do": "qua dai, hay thu hep yeu cau"}})
 
 
 # ── Sổ handler nội bộ. P03: chỉ tool MIỄN PHÍ, tất định. ───────────────────

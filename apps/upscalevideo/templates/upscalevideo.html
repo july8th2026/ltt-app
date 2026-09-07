@@ -85,7 +85,7 @@
       <header><div><h2>{{ _("Hàng đợi xử lý") }} <b>{{jobs|length}}</b></h2><small id="up-queue-count" aria-live="polite"></small></div><div class="up-queue-controls"><a class="up-history-link" href="/jobs?app=upscalevideo">{{ _("Lịch sử") }}</a><div class="up-job-filters" role="group" aria-label="{{ _('Lọc hàng đợi') }}"><button type="button" class="on" data-job-filter="all" aria-pressed="true">{{ _("Tất cả") }}</button><button type="button" data-job-filter="done" aria-pressed="false">{{ _("Hoàn tất") }}</button><button type="button" data-job-filter="processing" aria-pressed="false">{{ _("Đang xử lý") }}</button><button type="button" data-job-filter="cancelled" aria-pressed="false">{{ _("Đã hủy") }}</button><button type="button" data-job-filter="error" aria-pressed="false">{{ _("Lỗi") }}</button></div><label class="up-job-sort"><span class="sr-only">{{ _("Sắp xếp hàng đợi") }}</span><select id="up-job-sort"><option value="newest">{{ _("Mới nhất") }}</option><option value="oldest">{{ _("Cũ nhất") }}</option></select></label><div class="up-view-toggle" role="group" aria-label="{{ _('Kiểu hiển thị') }}"><button type="button" data-job-view="list" aria-pressed="true" title="{{ _('Danh sách') }}">☷</button><button type="button" data-job-view="grid" aria-pressed="false" title="{{ _('Lưới') }}">▦</button></div></div></header>
       <div class="up-job-list" id="up-job-list">
         {% for j in jobs %}
-        <article class="up-job" data-state="{{j.status}}" data-state-group="{% if j.status in ('queued','running') %}processing{% else %}{{j.status}}{% endif %}" data-created="{{j.created_at}}" aria-labelledby="up-job-title-{{j.id}}">
+        <article class="up-job" data-job-id="{{j.id}}" data-state="{{j.status}}" data-state-group="{% if j.status in ('queued','running') %}processing{% else %}{{j.status}}{% endif %}" data-created="{{j.created_at}}" aria-labelledby="up-job-title-{{j.id}}">
           <video class="up-job-thumb" muted playsinline preload="metadata" src="{{app.route_prefix}}/jobs/{{j.id}}/source#t=0.1" aria-label="{{ _('Xem trước') }} {{j.source_name}}"></video>
           <div class="up-job-info">
             <strong id="up-job-title-{{j.id}}">{{j.source_name}}</strong>
@@ -217,4 +217,55 @@
   window.addEventListener('beforeunload',()=>previewUrls.forEach(url=>URL.revokeObjectURL(url)));
 })();
 </script>
+{# 🔴 Truoc 07/09 trang nay ve mot thanh tien do gan `aria-live="polite"` — tuc
+   HUA cap nhat truc tiep — ma KHONG co bat ky co che hoi lai nao. Do duoc:
+   `hx-get` 0 · `hx-trigger` 0 · `nhipJob` 0 · `EventSource` 0 · `fetch` chi
+   dung cho `/batch-quote`. Doi chieu: `apps/taoanh` co `nhipJob` x4.
+
+   Hau qua: khach xem job nang cap thay mot con so DUNG IM. Da do that — sua
+   `progress` 42 -> 88 trong CSDL, tab hien lai, trang van 42.
+
+   ⛔ `nhip_job.js` KHONG dung `defer`: no chi dinh nghia `LTT.nhipJob` chu
+      khong cham DOM, va script noi tuyen ngay duoi goi no NGAY. Mot script
+      `defer` chay SAU moi script noi tuyen -> `LTT.nhipJob is not a function`.
+      Cung ly do da ghi o `apps/taoanh/templates/image.html`. #}
+<script src="/static/nhip_job.js?v={{ asset_ver }}"></script>
+<script>(()=>{
+  const DANG_CHAY = '.up-job[data-state="queued"],.up-job[data-state="running"]';
+  const nhan = {done: {{ _("Hoàn tất")|tojson }}, error: {{ _("Lỗi")|tojson }},
+                cancelled: {{ _("Đã hủy")|tojson }}, running: {{ _("Đang xử lý")|tojson }},
+                queued: {{ _("Đang chờ")|tojson }}};
+  const veLai = async () => {
+    /* Mot job vua KET THUC thi cai doi khong chi la con so: nut tai xuong, o
+       so sanh, anh xem truoc deu xuat hien. Ve lai ca khoi hang doi tu chinh
+       trang nay, giong `refreshHistory` cua `taoanh`. */
+    const r = await fetch(location.pathname + location.search, {headers: {Accept: 'text/html'}});
+    if (!r.ok) return;
+    const trang = new DOMParser().parseFromString(await r.text(), 'text/html');
+    const moi = trang.querySelector('.up-queue'), cu = document.querySelector('.up-queue');
+    if (moi && cu) cu.replaceWith(moi);
+  };
+  const hoi = async () => {
+    const the = [...document.querySelectorAll(DANG_CHAY)];
+    if (!the.length) return false;
+    let xong = false;
+    await Promise.all(the.map(async (t) => {
+      const r = await fetch(`/api/jobs/${t.dataset.jobId}`, {headers: {Accept: 'application/json'}});
+      if (!r.ok) return;
+      const j = await r.json();
+      const p = Math.max(0, Math.min(100, Number(j.progress) || 0));
+      t.dataset.state = j.status;
+      const st = t.querySelector('.up-state');
+      if (st) st.textContent = j.status === 'running' ? `${nhan.running} · ${p}%`
+                                                     : (nhan[j.status] || j.status);
+      const bar = t.querySelector('[role="progressbar"]');
+      if (bar) { bar.setAttribute('aria-valuenow', String(p));
+                 const i = bar.querySelector('i'); if (i) i.style.width = `${p}%`; }
+      if (['done', 'error', 'cancelled'].includes(j.status)) xong = true;
+    }));
+    if (xong) await veLai();
+    return !!document.querySelector(DANG_CHAY);
+  };
+  LTT.nhipJob({hoi, nhip: 1500});
+})();</script>
 {% endblock %}

@@ -144,6 +144,47 @@ def _signature_ok(content_type: str, head: bytes) -> bool:
         return head.startswith(b"ID3") or (len(head) >= 2 and head[0] == 0xFF)
     if ct in {"audio/mp4", "audio/x-m4a"}:
         return len(head) >= 12 and head[4:8] == b"ftyp"
+
+    # ── TAI LIEU (H44 B1, 06/09) ─────────────────────────────────────────────
+    #
+    # 🔴 Truoc hom nay ham nay tra `False` cho MOI kieu tai lieu, nen duong
+    #    upload cua nen tang KHONG NHAN DUOC mot tai lieu nao. Do la mot khoang
+    #    thieu cua hop dong, khong phai mot chinh sach — `chatltt` la app dau
+    #    tien can no (P06 doc PDF/txt/md/csv/json).
+    if ct == "application/pdf":
+        # PDF co magic THAT. Kiem no la mot cai loi bao mat that: mot tep `.exe`
+        # doi ten thanh `.pdf` bi chan o DAY, truoc khi cham bo trich.
+        return head.startswith(b"%PDF-")
+    if ct in {
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    }:
+        # ⭐ `.docx`/`.pptx` la ZIP (OOXML) — magic `PK\x03\x04`. Kiem duoc, va
+        #    no chan mot `.exe` doi ten y het truong hop PDF.
+        #
+        # ⚠️ Nhung no KHONG phan biet duoc docx voi mot zip bat ky. Do la gioi
+        #    han THAT cua tang nay, va no chap nhan duoc: bo trich phia sau se
+        #    tu choi mot zip khong phai OOXML, va no tu choi bang `KhongDocDuoc`
+        #    — dung loai loi, dung ai co loi.
+        return head.startswith(b"PK\x03\x04")
+    if ct in {"text/plain", "text/markdown", "text/csv", "application/json",
+              "text/html"}:
+        # ⛔ Chu thuan KHONG co magic — nen dieu kien phai la mot TINH CHAT,
+        #    khong phai mot tien to: khong byte NUL, va giai duoc UTF-8. Mot tep
+        #    nhi phan gan nhu luon co NUL trong 512 byte dau; mot tep chu thi
+        #    khong bao gio.
+        if b"\x00" in head:
+            return False
+        try:
+            head.decode("utf-8")
+        except UnicodeDecodeError:
+            # ⭐ Cat giua mot ky tu nhieu byte cung nem — nen chi tu choi khi loi
+            #    KHONG nam o duoi cung cua doan da doc.
+            try:
+                head[:-4].decode("utf-8")
+            except UnicodeDecodeError:
+                return False
+        return bool(head)
     return False
 
 

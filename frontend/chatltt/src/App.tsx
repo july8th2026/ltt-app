@@ -12,10 +12,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Api, docSSE, LoiApi } from './api'
 import { duongToiLa, laKhiChuyenNhanh } from './cay'
+import { BangDuAn } from './BangDuAn'
+import { BangGhiNho } from './BangGhiNho'
+import { BangNghienCuu } from './BangNghienCuu'
 import { SoanThao } from './SoanThao'
 import { TaoMedia } from './TaoMedia'
+import { TheDuyet } from './TheDuyet'
 import { ThongDiepView } from './ThongDiepView'
-import type { HoiThoai, NangLuc, SuThat, ThongDiep } from './kieu'
+import type { HoiThoai, NangLuc, PhieuDuyet, SuThat, ThongDiep } from './kieu'
 
 const MA_LOI: Record<string, string> = {
   ban: 'Model đang bận. Thử lại sau ít giây.',
@@ -149,9 +153,24 @@ export function App({ api }: AppProps) {
     () => Object.keys(nangLucText?.models ?? {}), [nangLucText],
   )
 
+  const [coGhiNho, datCoGhiNho] = useState(false)
+  const [coDuAn, datCoDuAn] = useState(false)
+  const [moDuAn, datMoDuAn] = useState(false)
+  const [dsDuAn, datDsDuAn] = useState<{ id: string; ten: string }[]>([])
+  const [duAnCuaConv, datDuAnCuaConv] = useState('')
+  const [moGhiNho, datMoGhiNho] = useState(false)
+  const [phieuDuyet, datPhieuDuyet] = useState<PhieuDuyet[]>([])
+  const [coNghienCuu, datCoNghienCuu] = useState(false)
+  const [moNghienCuu, datMoNghienCuu] = useState(false)
+
   const napDanhMuc = useCallback(() => api.danhMuc()
     .then((d) => {
       datNangLuc(d.nang_luc)
+      // ⛔ Vang => TAT. Mot may chu cu hon frontend khong khai `co_v3`, va doan
+      //    "khong khai tuc la co" se hien mot nut dan thang toi 404.
+      datCoGhiNho(!!d.co_v3?.ghi_nho)
+      datCoDuAn(!!d.co_v3?.du_an)
+      datCoNghienCuu(!!d.co_v3?.nghien_cuu)
       const text = d.nang_luc.find((n) => n.ten === 'text.chat')
       // ⛔ `model_mac_dinh` chu KHONG `Object.keys(models)[0]`. Ban cu lay
       //    phan tu dau cua mot dict, tuc mac dinh la THU TU KHAI trong
@@ -164,6 +183,15 @@ export function App({ api }: AppProps) {
     }), [api])
 
   useEffect(() => { napDanhMuc().catch((e) => datLoi(nhanLoi(e))) }, [napDanhMuc])
+
+  // ⭐ Chi hoi khi co BAT. Mot request toi mot route 404 moi lan mo trang
+  //    khong hong gi, nhung no lam log nhieu va day nguoi truc di sai huong.
+  useEffect(() => {
+    if (!coDuAn) return
+    api.duAnLietKe()
+      .then((r) => datDsDuAn(r.du_an.map((d) => ({ id: d.id, ten: d.ten }))))
+      .catch(() => datDsDuAn([]))
+  }, [api, coDuAn, moDuAn])
 
   // ── Nang luc chua san sang thi HOI LAI, dung doi F5 ──────────────────────
   //
@@ -217,11 +245,37 @@ export function App({ api }: AppProps) {
    *    của hội thoại là sự thật. Ở mọi lời gọi khác, thứ đúng là **lựa chọn
    *    người dùng vừa làm**, không phải giá trị cũ trong CSDL.
    */
+  /**
+   * Phieu duyet con cho. Nguon BEN — song qua F5, dong tab, restart.
+   *
+   * ⛔ Lay o DAY, mot lan, roi truyen xuong. Mot the tu goi mang la N lan
+   *    goi cho N tin nhan tren man hinh.
+   */
+  const napPhieuDuyet = useCallback(() => {
+    api.duyetDangCho()
+      // 🔴 `r.items` PHAI duoc kiem hinh dang. Do 07/09: mot than tra ve khong
+      //    co `items` (bo gia lap, mot trang loi cua proxy dung JSON, mot lech
+      //    phien ban) lam `phieuDuyet` thanh `undefined`, roi `.length` o duoi
+      //    NEM va **ca khung hoi thoai trang man hinh**.
+      //
+      // ⛔ `.catch()` khong do duoc ca nay: promise KHONG bi tu choi, no thanh
+      //    cong voi mot hinh dang khac. Hai chuyen khac nhau, va toi da viet
+      //    mot chu thich rat can than cho `.catch` roi bo qua duong thanh cong.
+      .then((r) => datPhieuDuyet(Array.isArray(r?.items) ? r.items : []))
+      // ⭐ Hong thi de DANH SACH CU nguyen — xoa no di la lam bien mat nut
+      //    duyet cua mot phieu van dang cho that.
+      .catch(() => undefined)
+  }, [api])
+
   const napSuThat = useCallback(async (id: string,
                                        { dongBoAlias = false } = {}) => {
     const st = await api.suThat(id)
     datSuThat(st)
     if (dongBoAlias && st.conversation.model_alias) datAlias(st.conversation.model_alias)
+    // ⛔ `?? ''` chu khong `|| ''` roi de undefined: may chu CU khong khai
+    //    `project_id`, va mot `undefined` o day lam `<select>` thanh
+    //    khong-kiem-soat — React canh bao, roi o chon nhay gia tri.
+    datDuAnCuaConv(st.conversation.project_id ?? '')
     return st
   }, [api])
 
@@ -230,6 +284,7 @@ export function App({ api }: AppProps) {
     if (!convId) { datSuThat(null); return }
     // ⭐ CHO DUY NHAT truyen `dongBoAlias: true` — day la luc VUA MO mot hoi
     //    thoai, nen model cua no la su that. Xem docstring `napSuThat`.
+    napPhieuDuyet()
     napSuThat(convId, { dongBoAlias: true }).catch((e) => {
       datLoi(nhanLoi(e))
       // ⛔ VA TRA VE MAN HINH TRONG, khong dung o mot man hinh loi.
@@ -521,7 +576,57 @@ export function App({ api }: AppProps) {
             </li>
           ))}
         </ul>
+
+        {/*
+          ⛔ Nut nay chi hien khi co `LTT_CHATLTT_V3_MEMORY` BAT. Hien no khi co
+             tat la dan nguoi dung toi mot route tra 404 — mot loi hua hong, va
+             la dung ly do `cong_ghi_nho` tra 404 chu khong 403.
+        */}
+        {coDuAn && (
+          <button
+            type="button"
+            className="ltc-nut ltc-nut--ghinho"
+            onClick={() => datMoDuAn(true)}
+          >
+            Dự án
+          </button>
+        )}
+        {coGhiNho && (
+          <button
+            type="button"
+            className="ltc-nut ltc-nut--ghinho"
+            onClick={() => datMoGhiNho(true)}
+          >
+            Máy nhớ gì về bạn
+          </button>
+        )}
+        {/*
+          ⛔ Doi CA co LAN mot hoi thoai dang mo. Pham vi cua mot luot nghien
+             cuu la MOT hoi thoai (`tim_doan.tim` loc theo ca `user_id` va
+             `conversation_id`), nen mot nut "Nghien cuu" khi chua chon hoi
+             thoai nao la mot nut dan thang toi 400.
+        */}
+        {coNghienCuu && convId && (
+          <button
+            type="button"
+            className="ltc-nut ltc-nut--nghiencuu"
+            onClick={() => datMoNghienCuu(true)}
+          >
+            Nghiên cứu
+          </button>
+        )}
       </aside>
+
+      {moDuAn && (
+        <BangDuAn api={api} onDong={() => datMoDuAn(false)} />
+      )}
+      {moGhiNho && (
+        <BangGhiNho api={api} onDong={() => datMoGhiNho(false)} />
+      )}
+      {moNghienCuu && convId && (
+        <BangNghienCuu api={api} convId={convId}
+                       onDong={() => datMoNghienCuu(false)} />
+      )}
 
       <main className="ltc-chinh">
         <header className="ltc-dinh">
@@ -537,6 +642,37 @@ export function App({ api }: AppProps) {
               ))}
             </select>
           </label>
+          {/*
+            🔴 Mot o chon cho CA gan lan go: chon "— khong thuoc du an nao —"
+               gui `du_an_id` rong, va may chu hieu do la GO. Hai nut rieng bat
+               giao dien tu chon dong tu, roi mot ngay no chon sai.
+          */}
+          {coDuAn && convId && (
+            <label className="ltc-model">
+              <span>Dự án</span>
+              <select
+                value={duAnCuaConv}
+                aria-label="Dự án của cuộc trò chuyện"
+                onChange={(e) => {
+                  const moi = e.target.value
+                  datDuAnCuaConv(moi)
+                  api.duAnGan(convId, moi)
+                    .then(() => napSuThat(convId))
+                    .catch((err) => {
+                      // Tra o chon ve gia tri CU: mot o hien mot thu chua duoc
+                      // luu la mot o noi doi.
+                      datDuAnCuaConv(duAnCuaConv)
+                      datLoi(nhanLoi(err))
+                    })
+                }}
+              >
+                <option value="">— không thuộc dự án nào —</option>
+                {dsDuAn.map((d) => (
+                  <option key={d.id} value={d.id}>{d.ten}</option>
+                ))}
+              </select>
+            </label>
+          )}
           {chuaSanSang && (
             <span className="ltc-chip ltc-chip--tat" role="status">
               Model chưa sẵn sàng
@@ -569,6 +705,17 @@ export function App({ api }: AppProps) {
               onChuyenNhanh={chuyenNhanh}
               duongTaiSan={(k) => api.duongTaiSan(k)}
               onDocTo={coTieng ? (_m, c) => datChuDocTo(c) : undefined}
+              theDuyet={phieuDuyet.length > 0 ? (
+                <div className="ltc-duyet__ds">
+                  {phieuDuyet.map((p) => (
+                    <TheDuyet key={p.approval_id} api={api} phieu={p}
+                              onXong={() => {
+                                napPhieuDuyet()
+                                if (convId) napSuThat(convId).catch(() => undefined)
+                              }} />
+                  ))}
+                </div>
+              ) : undefined}
               onTaoLai={(x) => guiLuot({ taoLaiCua: x.id })}
               onSuaGuiLai={(x) => {
                 const chu = window.prompt('Sửa câu hỏi',
