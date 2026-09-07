@@ -684,6 +684,118 @@ sách `/XD` của `2-cai-dat.ps1` **không có `docs`**.
 
 ---
 
+## 🟢 P12 — sáu cờ V3 ĐÃ BẬT trên production, 07/09 17:06
+
+⚠️ **Chủ dự án quyết định phát hành TRƯỚC P11** và sẽ xử lý P11 sau. Ghi ra đây
+   là một quyết định **thương mại của chủ dự án**, không phải một kết luận kỹ
+   thuật — để lượt đọc sau không hiểu nhầm rằng P11 đã đạt.
+
+```
+SO CO DA DAT   6/6
+CO BOM         False
+NAP LAI        EXITCODE=0
+SAO LUU        C:\LTTPlatform\secrets\app.env.truoc-co-v3-20260907-170622
+dich vu        200 loopback + 200 cong khai sau restart
+nhat ky        0 dong ERROR/Traceback trong 400 dong cuoi
+```
+
+### Xác minh ĐỘC LẬP, không tin log của chính script
+
+Năm cờ **có route** đều đổi `404 → 303`. Cổng cờ chạy **trước** `require_login`,
+nên `404` = tắt, `303` = bật:
+
+| Cờ | Route | Trước | Sau |
+|---|---|---|---|
+| `_TOOLS` | `/api/duyet/dang-cho` | 404 | **303** |
+| `_PROJECTS` | `/api/du-an` | 404 | **303** |
+| `_MEMORY` | `/api/ghi-nho` | 404 | **303** |
+| `_RESEARCH` | `/api/nghien-cuu/bao-gia` | 404 | **303** |
+| `_FILES` | `/api/hoi-thoai/{id}/tep` | 404 | **303** |
+
+🔴 **Đối chứng:** một route **bịa** vẫn trả `404`. Không có dòng này thì năm số
+   `303` kia vô nghĩa — chúng có thể chỉ nói *"app chuyển hướng mọi thứ"*.
+
+⛔ Cờ thứ sáu `_PAID_TOOLS` **không gác route nào** — nó là cờ hành vi lúc chạy.
+   **Chưa đo trực tiếp.** Nói ra thay vì đếm nó vào "6/6 đã xác minh": tệp có
+   `=1` và cơ chế nạp lại đã được chứng minh bằng năm cờ kia, nhưng đó là một
+   **suy luận**, không phải một phép đo.
+
+### 🔙 Đường lùi đã viết TRƯỚC lúc cần
+
+```powershell
+Start-Process powershell -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass',
+  '-File','"D:\LTTSTUDIOSAPP\setup\bat_co_v3_nang_quyen.ps1"','-Tat' -Verb RunAs
+```
+
+⭐ `co_v3.py` đọc `os.environ` **mỗi lần**, nên tắt cờ ăn ngay ở lượt kế tiếp —
+  không phải chờ khởi động lại logic. Nhưng vẫn cần `nap_lai_env.ps1` vì `nssm`
+  nướng ENV lúc cài; script đã gọi nó.
+
+### ⛔ Còn nợ — và không cờ nào che được
+
+| # | Nợ | Vì sao nó là nợ thật |
+|---|---|---|
+| M3 | đo lại trần 2.000 ký tự (`_MEMORY`) trên 20–50 người thật | hằng số hiện là **neo tự suy** (4 × trần một mẩu) |
+| R3 | đo lại `CREDIT_UOC_MOI_VONG` (`_RESEARCH`) trên 20–50 lượt thật | 〃, và nó **đã từng sai 13 lần** |
+| — | **hạn mức lưu trữ** | thứ thật sự chặn lạm dụng đính tệp; **chưa có** |
+| P11 | red team độc lập | bản giao đã viết: `15_BAN_GIAO_P11_RED_TEAM.md` |
+
+---
+
+## 🔬 CK1 — còn thiếu ĐÚNG một thứ, và nó hẹp hơn tưởng
+
+CK1 = *"ma trận 5 mốc + CLS trên URL công khai"*. Phần lớn đã có, phần thiếu thì
+cụ thể:
+
+| Vế | Trạng thái |
+|---|---|
+| Ma trận 5 mốc trên **Chrome thật**, cờ V3 bật | ✅ đo 07/09 — 5/5 sạch |
+| CLS trên **Chrome thật**, cờ V3 bật | ✅ **0,0003** / mốc 0,079, có đối chứng 0,2043 |
+| Bundle **qua Cloudflare** byte-identical | ✅ CK2 — sha256 khớp `.js` + `.css`, bản cũ 404 |
+| **Trang HTML** qua Cloudflare, người dùng đã đăng nhập | 🔴 **CHƯA** |
+
+⇒ Phần thiếu **không** phải bố cục (đã đo) và **không** phải byte của bundle (đã
+  đo). Nó là: *trang HTML đi qua biên Cloudflare, với một phiên đã đăng nhập,
+  có trông đúng như ở loopback không.*
+
+### Vì sao tôi không tự làm được
+
+```
+node tools/kiem_chatltt_gui.mjs --url https://app.lttstudios.com --profile ChatLTTKiem
+  -> 403 GET https://app.lttstudios.com/login?next=/chatltt
+  -> challenges.cloudflare.com ... ERR_NAME_NOT_RESOLVED
+  -> KHONG HANG MUC NAO CHAY
+```
+
+Cloudflare bot challenge, và chính miền challenge cũng không phân giải được nên
+nó không hoàn tất. ⛔ **Tôi không giải CAPTCHA.**
+
+⚠️ Và một phép đo tôi **đã thử rồi bỏ**: so header CSP biên với origin. Nó vô
+   nghĩa, vì thứ biên trả về là **trang challenge của Cloudflare**, không phải
+   trang của app — CSP `default-src 'none'` ấy là của Cloudflare. So hai thứ
+   khác loại thì ra một khác biệt không nói lên gì.
+
+### Cách trả nợ CK1 — cần chủ dự án khởi động
+
+**Lối 1 — profile Chrome đã đăng nhập** (không mật khẩu nào đi qua đâu cả).
+Đóng cửa sổ Chrome đang dùng profile đó trước, vì Chrome khoá profile khi chạy:
+
+```bash
+node tools/kiem_chatltt_gui.mjs --url https://app.lttstudios.com --profile "C:\LTTBrowserProfiles\ChatLTTKiem"
+```
+
+**Lối 2 — biến môi trường**, chủ dự án đặt và khởi động:
+
+```bash
+LTT_SMOKE_USER=... LTT_SMOKE_PASS=... node tools/kiem_chatltt_gui.mjs --url https://app.lttstudios.com
+```
+
+Cả hai ghi `tmp/kiem_gui/bao_cao.json`. ⭐ Ranh giới giữ nguyên: **Claude không
+gõ mật khẩu vào form đăng nhập** — chủ dự án khởi động, Claude đọc báo cáo và
+phân tích.
+
+---
+
 ## 🔒 Điều kiện để BẬT các cờ V3 — món nợ tự đòi
 
 ⚠️ **SÁU cờ** (cập nhật 07/09). Kế hoạch tổng ghi *"làn B — mỗi nhóm một cờ"*;
