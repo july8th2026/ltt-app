@@ -171,7 +171,26 @@ Một thay đổi, hai lỗi, và nó biến `NHIP_HOI_S` từ hằng số chế
 Mỗi pha kết thúc bằng: `--vong-lap` (15 giây) → soi trình duyệt thật → ghim test.
 **Một** lượt gate đầy đủ ở cuối cùng, không phải mỗi pha.
 
-### Pha 1 — Sửa đường job *(F1 + F2)* · không đụng giao diện
+### ✅ Pha 1 — Sửa đường job *(F1 + F2)* · không đụng giao diện — **XONG 07/09**
+
+Kết quả: 10 phép kiểm mới ở `test_735`, **đỏ trước / xanh sau**. Cộng hai phép
+kiểm ở `test_725` cho cờ `xong` phía cầu nối.
+
+🔴 **Một sai lầm của chính tôi, đáng ghi lại.** Bản sửa đầu chỉ thoát vòng lặp
+   khi thấy cờ `xong` — một cờ mà cầu nối **chưa gửi**. Nó treo vô hạn ngay
+   trên bộ test. Viết mã cho hợp đồng mình *định* làm thay vì hợp đồng *đang
+   có* là cách chắc chắn để hỏng ở chỗ không ai kiểm.
+
+   ⇒ Bản đúng có **hai lối ra**: cờ `xong` *(rẻ, khi cầu nối đã nâng cấp)* và
+     `result()` trả về được *(đúng với cầu nối hôm nay)*.
+
+⭐ Căn cứ cho cờ `xong` lấy từ thượng nguồn chứ không phỏng đoán:
+   `shared/api.py:379` cho thấy `iter()` chỉ `break` khi `_closed.is_set()`,
+   còn hết giờ thì `continue`. Nên **thoát vòng `for` nghĩa là job đã xong**.
+   Cờ đặt trong `finally`, và `/progress` còn hỏi thẳng `events.closed` làm
+   nguồn thứ hai.
+
+
 - `jobs.py`: vòng hỏi tiến độ, dùng `NHIP_HOI_S`, gọi `ctx.progress()`
 - ánh xạ pha WanGP → phần trăm: `encoding_text` → 5% · `denoising` →
   `5 + 85*current_step/total_steps` · `encoding_video` → 92% · kéo tệp về → 96%

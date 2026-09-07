@@ -19,13 +19,17 @@
 """
 from __future__ import annotations
 
+from platform_core.i18n import N_
 from platform_core.i18n import _ as _t
 
+import logging
 import time
 import uuid
 from pathlib import Path
 
 from . import chon_model, cost, ho_so
+
+log = logging.getLogger(__name__)
 
 #: Hồ sơ dùng khi không đính media. Đổi hồ sơ là một quyết định (`DECISIONS.md`).
 HO_SO_BASELINE = "ltt.video.chuan.v1"
@@ -43,6 +47,60 @@ def _kho_metadata() -> dict:
 
 #: Khoảng hỏi tiến độ. Một lượt sinh mất hàng chục phút nên không cần hỏi dày.
 NHIP_HOI_S = 5.0
+
+#: Trần chờ một job trên C-CLOUD. Một job treo bên kia không được giữ một worker
+#: của LTT mãi mãi — worker là tài nguyên hữu hạn và job khác đang xếp hàng.
+#:
+#: ⭐ 3.600 giây chọn từ số đo: 5 giây video ở 480p/30 bước mất ~1.270 giây trên
+#:    A100, nên 15 giây video qua ba cửa sổ trượt còn xa mới chạm trần này.
+CHO_TOI_DA_S = 3600.0
+
+#: Pha của WanGP → (phần trăm, lời nhắn). Khoảng `5..92` chừa hai đầu cho việc
+#: của **LTT**: gửi yêu cầu ở đầu, kéo tệp về kho ở cuối.
+_PHA = {
+    "encoding_text": (5, N_("Đang đọc mô tả")),
+    "denoising": (5, N_("Đang dựng hình")),
+    "encoding_video": (92, N_("Đang ghép video")),
+    "done": (100, N_("Xong")),
+}
+
+
+def _tien_do(p: dict) -> tuple[int, str]:
+    """Đọc một gói tiến độ của WanGP thành thứ người dùng hiểu.
+
+    ⛔ **Không** diễn giải lại quá mức: `phase` nào chưa biết thì giữ nguyên phần
+       trăm cũ và nói tên pha ra, còn hơn là im lặng hoặc bịa một con số.
+    """
+    if p.get("xong"):
+        return 100, str(_t("Xong"))
+    pha = str(p.get("phase") or "")
+    goc, nhan = _PHA.get(pha, (0, ""))
+    if pha == "denoising":
+        buoc = p.get("current_step")
+        tong = p.get("total_steps")
+        if buoc and tong:
+            # 5..90: phần thân của việc, và là phần duy nhất ta biết tỉ lệ thật.
+            return (goc + int(85 * min(int(buoc), int(tong)) / int(tong)),
+                    str(_t("Đang dựng hình")) + f" {int(buoc)}/{int(tong)}")
+    if not nhan:
+        return 0, (pha or str(_t("Đang xử lý")))
+    return goc, str(_t(nhan))
+
+
+def _bao(ctx, phan_tram: int, loi_nhan: str) -> None:
+    """Báo tiến độ, và **không bao giờ** để việc báo giết mất việc chính.
+
+    🔴 Sinh video là **việc**; báo tiến độ là **trang trí**. Một lần ghi hỏng
+       (CSDL bận, worker mất phiên) mà làm mất cả một video đã tính tiền thì ta
+       đã đổi một lỗi hiển thị lấy một lỗi mất tiền.
+    """
+    if ctx is None:
+        return
+    try:
+        ctx.progress(max(0, min(100, int(phan_tram))), loi_nhan)
+    except Exception as e:  # noqa: BLE001
+        log.warning("lttvideo: khong ghi duoc tien do: %s: %s",
+                    type(e).__name__, e)
 
 
 class LoiJob(RuntimeError):
@@ -177,8 +235,66 @@ def handle(params: dict, ctx=None, *, _client=None, _kho=None,
 
     t0 = time.time()
     job_id = client.submit(tham_so)
+    _bao(ctx, 2, str(_t("Đã gửi yêu cầu tới máy dựng")))
 
-    kq = client.result(job_id)
+    # ── Vòng hỏi tiến độ. KHÔNG gọi thẳng `result()` ──────────────────────
+    #
+    # 🔴 `/result/{job}` phía cầu nối **chặn-chờ** tới khi sinh xong (~20 phút),
+    #    còn `wangp_client.result()` gọi nó với `timeout=30.0` — tham số của
+    #    `urllib.request.urlopen`, tức timeout **socket** cho từng lần đọc. Bản
+    #    trước gọi `result()` ngay sau `submit()`, nên **mọi job thật** ném
+    #    `socket.timeout` sau 30 giây.
+    #
+    # ⭐ Bộ test cũ không thấy vì client giả trả kết quả tức thì: cái giả không
+    #    mang tính chất mà cái thật hỏng vì nó. `test_735` dựng một client
+    #    **chậm** — nó từ chối trả kết quả trước khi tiến độ báo xong.
+    #
+    # 📌 Vòng này cũng là thứ duy nhất cho người dùng thấy phần trăm: trước đó
+    #    `ctx` được nhận vào rồi bỏ không dùng, nên màn hình đứng 0% suốt lượt.
+    phan_tram_cu = 2
+    while True:
+        # ⭐ Hỏi TRƯỚC, ngủ SAU. Một việc đã xong sẵn thì trả về ngay, không bắt
+        #    người dùng (và bộ test) chờ một nhịp vô ích.
+        try:
+            p = client.progress(job_id)
+        except Exception as e:  # noqa: BLE001
+            # Một nhịp hỏi hỏng là nhiễu mạng bình thường. Để nó làm job thất
+            # bại là đổi một lỗi hiển thị lấy một lỗi mất tiền.
+            log.warning("lttvideo: hoi tien do hong (%s: %s) — cho tiep",
+                        type(e).__name__, e)
+            p = {}
+
+        if p:
+            phan_tram, loi_nhan = _tien_do(p)
+            # Không lùi: WanGP có thể báo pha lệch thứ tự, mà thanh tiến độ đi
+            # giật lùi thì người dùng đọc thành "hỏng rồi".
+            phan_tram_cu = max(phan_tram_cu, phan_tram)
+            _bao(ctx, phan_tram_cu, loi_nhan)
+
+        # ⭐ HAI lối ra, và cần cả hai — chúng trả lời hai câu khác nhau.
+        #
+        #   `xong` trong gói tiến độ  -> lối ra RẺ, một lời gọi nhẹ.
+        #   `result()` trả về được    -> lối ra ĐÚNG với **cầu nối hôm nay**,
+        #                                vốn CHƯA gửi cờ `xong`.
+        #
+        # 🔴 Bản đầu chỉ có lối ra thứ nhất, và nó treo vô hạn trên chính bộ
+        #    test — vì tôi đã buộc mã vào một cờ **chưa tồn tại**. Viết mã cho
+        #    một hợp đồng mình định làm, chứ không phải hợp đồng đang có, là
+        #    cách chắc chắn để hỏng ở đúng chỗ không ai kiểm.
+        if p.get("xong"):
+            kq = client.result(job_id)
+            break
+        try:
+            kq = client.result(job_id)      # chan-cho; het gio => chua xong
+            break
+        except Exception as e:  # noqa: BLE001
+            log.debug("lttvideo: chua co ket qua (%s) — cho tiep",
+                      type(e).__name__)
+
+        if time.time() - t0 > CHO_TOI_DA_S:
+            raise LoiJob(_t("Máy dựng video không phản hồi kịp. "
+                            "Credit đã được hoàn, bạn thử lại sau."))
+        time.sleep(NHIP_HOI_S)
 
     if not kq.thanh_cong:
         if kq.da_huy:

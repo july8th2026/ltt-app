@@ -63,8 +63,11 @@ def _driver() -> str:
                             "--format=csv,noheader"],
                            capture_output=True, text=True, timeout=20)
         return r.stdout.strip().splitlines()[0].strip() if r.returncode == 0 else ""
-    except Exception:  # noqa: BLE001
-        return ""
+    except Exception as e:  # noqa: BLE001
+        # ⛔ Khong tra chuoi rong: mot o TRONG doc thanh "khong co driver", con
+        #    day la "khong hoi duoc". Hai thu khac nhau, va bao cao moi truong
+        #    ton tai chinh de phan biet chung.
+        return f"(khong hoi duoc: {type(e).__name__})"
 
 
 def _cublas() -> dict:

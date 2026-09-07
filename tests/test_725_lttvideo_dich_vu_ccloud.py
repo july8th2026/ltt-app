@@ -111,3 +111,45 @@ def test_submit_TU_CHOI_NGAY_khi_chua_am_chu_khong_treo():
     assert than.index("503") < than.index("_lay_phien"), (
         "kiểm sẵn-sàng phải nằm TRƯỚC lời gọi nạp model"
     )
+
+
+# ── `xong`: co bao ket thuc, them 07/09 cung `F1` ─────────────────────────
+
+def test_cau_noi_dat_co_xong_khi_luong_su_kien_dong():
+    """🔑 Căn cứ ở thượng nguồn, không phải phỏng đoán: `shared/api.py:379`
+    cho thấy `iter()` chỉ `break` khi `self._closed.is_set()`; hết giờ thì nó
+    `continue`. Nên **thoát khỏi vòng `for` nghĩa là job đã xong**.
+
+    ⭐ Vì sao cần: trước đó `/progress` không có cách nào nói "xong", nên phía
+       LTT phải gọi `/result` — vốn **chặn-chờ ~20 phút** — chỉ để biết. Và nó
+       chết vì timeout socket 30 giây (`F1`). Một cờ boolean ở đây đổi một cuộc
+       gọi hai mươi phút thành một cuộc gọi vài mili-giây.
+    """
+    import ast
+    import pathlib
+
+    goc = pathlib.Path(__file__).resolve().parents[1]
+    ma = (goc / "tools" / "wangp" / "dich_vu_ccloud.py").read_text(encoding="utf-8")
+    cay = ast.parse(ma)
+
+    # Co dat trong `finally` cua ham theo doi — tuc CHAC CHAN chay khi vong ket
+    # thuc, ke ca khi co ngoai le.
+    co_finally = False
+    for n in ast.walk(cay):
+        if isinstance(n, ast.Try) and n.finalbody:
+            doan = ast.unparse(ast.Module(body=n.finalbody, type_ignores=[]))
+            if "'xong'" in doan or '"xong"' in doan:
+                co_finally = True
+    assert co_finally, "co `xong` khong nam trong `finally` — mot ngoai le se nuot no"
+
+
+def test_progress_co_NGUON_THU_HAI_cho_xong():
+    """Một sự thật quan trọng nên có hai nguồn độc lập: luồng theo dõi đặt cờ,
+    và `/progress` hỏi thẳng `events.closed`. Thiếu nguồn thứ hai thì một luồng
+    theo dõi chết sớm sẽ làm job treo vô hạn ở phía LTT."""
+    import pathlib
+
+    goc = pathlib.Path(__file__).resolve().parents[1]
+    ma = (goc / "tools" / "wangp" / "dich_vu_ccloud.py").read_text(encoding="utf-8")
+    than = ma.split('@app.get("/progress/{job_id}")', 1)[1].split("@app.", 1)[0]
+    assert "closed" in than, "/progress khong hoi thang trang thai luong su kien"

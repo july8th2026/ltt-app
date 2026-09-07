@@ -13405,3 +13405,18 @@ msgstr "automatic description expansion"
 
 msgid "Hãy đăng nhập bằng tài khoản người dùng để tạo video."
 msgstr "Please sign in with a user account to create videos."
+
+msgid "Đang đọc mô tả"
+msgstr "Reading your description"
+
+msgid "Đang dựng hình"
+msgstr "Rendering frames"
+
+msgid "Đang ghép video"
+msgstr "Assembling the video"
+
+msgid "Đã gửi yêu cầu tới máy dựng"
+msgstr "Request sent to the render machine"
+
+msgid "Máy dựng video không phản hồi kịp. Credit đã được hoàn, bạn thử lại sau."
+msgstr "The render machine did not respond in time. Your credit was refunded; please try again later."

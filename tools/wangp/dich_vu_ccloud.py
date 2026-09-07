@@ -257,6 +257,17 @@ def submit(than: dict = Body(...)) -> dict:
                 }
         except Exception as e:  # noqa: BLE001
             _JOB[jid]["tien_do"] = {"loi_theo_doi": f"{type(e).__name__}: {e}"}
+        finally:
+            # 🔑 Vong `for` tren chi thoat khi luong su kien DONG — xem
+            #    `shared/api.py:379`: `iter()` gap `None` thi kiem `_closed`,
+            #    het gio thi `continue`. Nen toi day la job DA XONG.
+            #
+            # ⭐ Vi sao can co nay: `/progress` truoc do khong co cach nao noi
+            #    "xong", nen phia LTT phai goi `/result` (chan-cho ~20 phut) de
+            #    biet — va no chet vi timeout socket 30 giay. Mot co boolean o
+            #    day doi mot cuoc goi 20 phut thanh mot cuoc goi vai mili-giay.
+            _JOB[jid].setdefault("tien_do", {})
+            _JOB[jid]["tien_do"]["xong"] = True
 
     threading.Thread(target=_theo_doi, daemon=True).start()
     return {"job_id": jid}
@@ -270,6 +281,15 @@ def progress(job_id: str, x_lttv_key: str = Header(default="")) -> dict:
         raise HTTPException(status_code=404, detail="unknown job")
     ra = dict(m["tien_do"])
     ra["giay_da_chay"] = round(time.time() - m["bat_dau"], 1)
+    # Nguon thu HAI cho cung mot su that: hoi thang luong su kien. Neu luong da
+    # dong ma luong theo doi chua kip dat co thi ta van tra loi dung.
+    try:
+        if getattr(m["job"].events, "closed", False):
+            ra["xong"] = True
+    except Exception as e:  # noqa: BLE001
+        # Hoi mot thuoc tinh khong duoc lam vo mot duong doc trang thai — nhung
+        # cung KHONG duoc im. Nguon thu nhat (co trong `finally`) van dung.
+        ra["loi_hoi_closed"] = f"{type(e).__name__}: {e}"
     return ra
 
 
