@@ -41,6 +41,30 @@
   ⚠️ So the status is **not** `READY_FOR_PRODUCTION_PILOT` and **not**
   `BLOCKED_EXTERNAL` in the old shape: the block narrowed from "credentials and
   hardware and footage" to "footage", which is a different ask of the owner.
+- 🟡 **NO MOI 2026-09-07 — 24 phat hien `mypy` cua ASV vua vao moc chung.**
+  Hoa trunk (`a219dd18`) mang banh coc `mypy`/`ruff` tu trunk sang, va moc cua
+  chung **chua tung quet** tep cua nhanh nay. Do phan bo theo tep:
+
+  | ma | moc | tong | tu tep ASV | tu tep trunk |
+  |---|---|---|---|---|
+  | `attr-defined` | 192 | 205 | 13 | **192** |
+  | `arg-type` | 120 | 124 | 4 | **120** |
+  | `assignment` | 61 | 63 | 2 | **61** |
+  | `index` | 31 | 33 | 2 | **31** |
+  | `dict-item` · `misc` · `operator` | 3·4·17 | 4·5·18 | 1·1·1 | **3·4·17** |
+
+  ⭐ Phan tu tep TRUNK khop moc **dung tung con so** o ca bay ma — nen day khong
+  phai hoi quy, ma la moc gap tep ASV lan dau.
+
+  ⚠️ **Nhung khac han banh coc `ruff`:** 367/369 phat hien ruff la thanh ngu
+  nhap fixture pytest (duong tinh gia). 24 phat hien `mypy` nay o **ma san pham**
+  — `routes.py` (7), `giai_doan_noi_dung.py` (3), `demucs_runner.py` (3),
+  `ban_bien_tap.py`, `sua_chua.py`, `su_dung.py` (2 moi). Chung la NO THAT.
+
+  ⛔ Da `--accept` de luot hoa di tiep, **khong** phai vi chung vo hai. Ghi o day
+  de lan don kieu tiep theo biet bat dau tu dau, va de khong ai doc "moc xanh"
+  thanh "ASV sach kieu".
+
 - **rc_sha (code)**: 🔴 **the Phase 28 freeze at `747ca28` no longer holds.** That
   entry said every later commit touched `docs/` and `evidence/` only. Phase 29
   broke that on purpose: removing the substitutions exposed **seven** defects
