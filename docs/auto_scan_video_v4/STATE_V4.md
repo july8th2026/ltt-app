@@ -144,6 +144,42 @@
   is not allowed to name any intermediate class. Two mutations red.
       00:02  green, repair loop LIVE, reused 2
 
+- 🟡 **gate 2026-09-07 at `02253be2`: `FAIL (1/26)` — and the one red step
+  is TRUE, not broken.** Two gate runs today, and the difference between them is
+  the whole story:
+
+  | sha | verdict | red steps |
+  |---|---|---|
+  | `e9b1d9d0` | FAIL (2/26) | `dich thieu ban EN` · `bo test (song song)` |
+  | `02253be2` | FAIL (1/26) | `bo test (song song)` |
+
+  ✅ **`dich thieu ban EN` closed by TRANSLATING**, not by re-extracting. The
+  `qc_ai` stage added three customer-facing strings, pushing the baseline 343 →
+  346. Running `i18n.py trich` would have let `msgmerge` *guess* translations
+  across the whole catalogue and scatter fuzzy flags — i.e. lower the bar by
+  making the translation **worse**. Three entries were added by hand
+  (`write_bytes`, because the `.po` is pure LF and `write_text` would rewrite
+  every line ending on Windows). Back to 343 exactly.
+
+  🔑 **`bo test` is `2 failed / 6944 passed`, and both are
+  `test_448`'s report readers** — reproduced exactly:
+  `test_moi_luot_di_HET_chuoi_giai_doan` and
+  `test_QC_moi_muc_deu_co_phan_quyet_va_khong_muc_nao_hong`. They read the
+  committed acceptance report, which is run 4, in which `cat_thong_minh` failed
+  QC T5. So the gate is red **because acceptance is red**, and it should be.
+
+  ⛔ This is the intended shape, not a blocker to route around: the programme's
+  exit criteria include a passing acceptance run, so the gate must stay red
+  until one exists. The path to green is a real-model acceptance run that passes
+  T5 — which depends on the content-dependent true-peak margin recorded above,
+  not on any code change pending here.
+
+  ⚠️ **And one thing to do differently next time:** the first gate was run with
+  `| tail -20`, which kept the *verdict* and threw away the *evidence* — the two
+  failing test names were in the discarded middle. The names had to be recovered
+  by re-deriving them. Keep the whole output; the tail is the least informative
+  part of a failing run.
+
 - **gate at RC**: `RESULT: PASS` at `d2d66ad0` (2026-09-06), **4** steps BOQUA -
   all frontend. ⭐ One fewer than the previous PASS: `bat bien da tien trinh`
   actually **ran** this time, so this verdict covers one more invariant than the
