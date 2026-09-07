@@ -758,17 +758,61 @@ cụ thể:
   đo). Nó là: *trang HTML đi qua biên Cloudflare, với một phiên đã đăng nhập,
   có trông đúng như ở loopback không.*
 
-### Vì sao tôi không tự làm được
+### 🔴 Vì sao không làm được — và câu trả lời KHÔNG phải "Cloudflare coi tôi là bot"
+
+Lần đầu tôi kết luận *"bot challenge chặn"* và định dừng ở đó. Chủ dự án cấp
+quyền điều khiển máy, nên đào tiếp — và nguyên nhân thật khác hẳn.
+
+**Đã thử, theo đúng lối bộ nhớ dự án ghi** (nối vào Chrome thật, không để
+Playwright tự mở):
 
 ```
-node tools/kiem_chatltt_gui.mjs --url https://app.lttstudios.com --profile ChatLTTKiem
-  -> 403 GET https://app.lttstudios.com/login?next=/chatltt
-  -> challenges.cloudflare.com ... ERR_NAME_NOT_RESOLVED
-  -> KHONG HANG MUC NAO CHAY
+Chrome THAT (152.0.7977.77) + profile ChatLTTKiem + --remote-debugging-port=9222
+playwright-cli attach --cdp=http://localhost:9222
+goto https://app.lttstudios.com/chatltt   ->  403 "Just a moment..."
+cho 12 giay                               ->  van "Just a moment..."
 ```
 
-Cloudflare bot challenge, và chính miền challenge cũng không phân giải được nên
-nó không hoàn tất. ⛔ **Tôi không giải CAPTCHA.**
+Soi trang challenge: **không checkbox, không iframe** — nó là challenge **tự
+động bằng JS**, không phải CAPTCHA cần bấm. Vậy vì sao nó không tự qua?
+
+```
+brunhild.challenges.cloudflare.com  ->  2606:4700::6812:1192   CHI CO IPv6
+ket noi IPv6 toi host do            ->  KHONG DUOC
+dia chi IPv6 toan cuc cua may       ->  (rong)
+ket noi IPv4 toi challenges.cf      ->  DUOC
+```
+
+⇒ **Challenge cần một host chỉ có IPv6, và máy này không có IPv6.** Nó không tải
+  nổi phần mình cần để tự hoàn tất, nên treo vĩnh viễn ở *"Performing security
+  verification"*.
+
+⭐ Đây **không** phải một phán quyết bot. Nó là một lỗi **hạ tầng mạng**. Và ghi
+  nhớ dự án đã có sẵn dòng *"IPv6 chặn đăng nhập trên máy chủ"* — cùng gốc.
+
+⛔ Tôi vẫn **không** giải hay đi vòng challenge. Phân biệt: **chờ** một
+   interstitial tự chạy là tải một trang; **vượt** nó là việc khác, và tôi không
+   làm kể cả khi được cấp quyền.
+
+### 🚨 Và hệ quả này LỚN HƠN CK1 — có thể chạm khách thật
+
+Nếu Cloudflare đang phát challenge cho **khách thường** (không chỉ cho IP hay
+gửi nhiều yêu cầu tự động như máy này), thì **bất kỳ khách nào ở mạng chỉ có
+IPv4 cũng sẽ kẹt vĩnh viễn** ở màn hình *"Just a moment…"* — không đăng nhập
+được, không dùng được sản phẩm.
+
+⚠️ Tôi **chưa xác định được bán kính**: từ máy này cả `curl` lẫn Chrome đều bị
+   challenge, nhưng IP máy này hôm nay đã phát rất nhiều yêu cầu tự động (của
+   tôi và của hai phiên khác), nên điểm bot của nó có thể đã cao. **Không phân
+   biệt được "chính sách chung" với "IP này bị chấm điểm"** khi chỉ đo từ một IP.
+
+🔑 **Phép kiểm rẻ nhất, mười giây, chủ dự án làm được:** mở
+   `https://app.lttstudios.com` trên **điện thoại dùng 4G** (khác mạng, khác IP).
+
+```
+vao thang, khong "Just a moment"  ->  chi IP may nay bi cham diem. Khong gap.
+cung ket o "Just a moment"        ->  KHACH THAT DANG BI CHAN. Gap.
+```
 
 ⚠️ Và một phép đo tôi **đã thử rồi bỏ**: so header CSP biên với origin. Nó vô
    nghĩa, vì thứ biên trả về là **trang challenge của Cloudflare**, không phải
