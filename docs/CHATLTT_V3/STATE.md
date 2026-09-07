@@ -239,12 +239,23 @@ khối `tool_call` không mang trường ấy, nên màn hình không nói giá.
 một hồi quy mà là một hạng mục của việc dựng giao diện duyệt. Ghi ra để nó không
 rơi.
 
-### Còn lại của P09 bước 6
+### ~~Còn lại của P09 bước 6~~ — ✅ ĐÃ XONG 07/09
 
-Đã chứng minh: mã trên máy, bundle đúng, Cloudflare không phục vụ bản cũ.
+> *Giữ nguyên chữ gốc bên dưới làm bản ghi. Nó đã hết đúng — xem mục
+> **P09 bước 6** ở trên.*
+
+~~Đã chứng minh: mã trên máy, bundle đúng, Cloudflare không phục vụ bản cũ.
 **Chưa chứng minh:** khối `tool_call` vẽ ra trông thế nào trong một phiên **đã
-đăng nhập** trên URL công khai — việc đó cần một phiên đăng nhập thật, và tôi
-không nhập mật khẩu của chủ dự án.
+đăng nhập** trên URL công khai.~~
+
+✅ **Đã đăng nhập được**, và chặn không phải cái tôi tưởng: cookie phiên mang cờ
+`Secure` (production đặt `https_only`), nên `http.cookiejar` **từ chối gửi** nó
+qua `http://` loopback ⇒ session rỗng ⇒ CSRF trượt ⇒ 400 *"phiên đã hết hạn"*.
+Không liên quan gì tới mật khẩu của chủ dự án. Xem
+[[cookie-secure-chan-loopback-http]].
+
+⭐ Và lần nhìn bằng mắt ấy tìm ra một lỗi thật: khối `cho_duyet` của tool **trả
+  tiền** vẽ ra **rỗng hoàn toàn**. Xem mục P09 bước 6.
 
 ## B6 — vòng nghiên cứu: 6/6 XONG 07/09
 
@@ -466,11 +477,23 @@ và `kieu.ts LoaiKhoi`) và ghim bằng `test_807` mục 8.
 nghĩa**; đây là loại ta **chủ động sinh ra**. Một loại mình tự ghi mà không khai
 là một loại sẽ bị chính mình từ chối.
 
-### Còn lại của điều kiện 2
+### ~~Còn lại của điều kiện 2~~ — ✅ ĐÃ XONG (P09, 06–07/09)
 
-Khối `tool_call` hiện **chưa được vẽ gì cả** — người dùng thấy phần chữ và nhãn
-trạng thái, không thấy dấu vết lời gọi công cụ. Đó **đúng A5** (bỏ qua khối chưa
-có bộ vẽ, không vỡ), nhưng nghĩa là **P09 vẫn phải dựng bộ hiển thị tool_call**.
+> *Bản ghi của lượt gate **05/09**. Giữ nguyên chữ; câu cuối đã hết đúng.*
+
+~~Khối `tool_call` hiện **chưa được vẽ gì cả** — người dùng thấy phần chữ và
+nhãn trạng thái, không thấy dấu vết lời gọi công cụ. Đó **đúng A5** (bỏ qua khối
+chưa có bộ vẽ, không vỡ), nhưng nghĩa là **P09 vẫn phải dựng bộ hiển thị
+`tool_call`**.~~
+
+✅ `frontend/chatltt/src/KhoiTool.tsx` đã dựng, và đã **nhìn bằng mắt** trên
+trình duyệt thật với đủ **năm** dạng khối (bốn trạng thái + khối CŨ không có
+`trang_thai`). Xem mục **P09 bước 6**.
+
+⛔ Để nguyên câu *"P09 vẫn phải dựng"* thì người đọc sau sẽ đi dựng lại một thứ
+   đã có. Đó đúng cơ chế `CLAUDE.md` mô tả: *"một bảng chép tay không có cách
+   nào tự biết nó đã cũ"* — và ở đây thứ chép tay là **một câu về tương lai**
+   nằm trong một bản ghi về quá khứ.
 
 ### ⚠️ Ba bước `BOQUA` của cây này là thuộc tính CÂY, không phải của kho
 
