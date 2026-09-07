@@ -210,13 +210,14 @@ def test_moi_input_bi_AN_deu_con_MOT_CHO_BAM():
     import re
 
     goc = pathlib.Path(__file__).resolve().parent.parent
-    thieu = []
+    thieu, so_input_an = [], 0
     for tep in sorted(goc.glob("apps/**/templates/*.html")) + \
                sorted(goc.glob("server/templates/*.html")):
         src = tep.read_text(encoding="utf-8", errors="replace")
         if "ltt-input-tep-an" not in src:
             continue
         for the in re.findall(r"<input[^>]*ltt-input-tep-an[^>]*>", src):
+            so_input_an += 1
             m = re.search(r'id="([^"]+)"', the)
             if not m:
                 thieu.append(f"{tep.name}: input an ma KHONG co id")
@@ -227,6 +228,22 @@ def test_moi_input_bi_AN_deu_con_MOT_CHO_BAM():
                 or re.search(r"\.click\(\)", src) and f"'{ma}'" in src
             if not (co_label or co_js):
                 thieu.append(f"{tep.name}: `{ma}` bi an ma khong con cho bam")
+
+    # ⛔ ĐỐI CHỨNG (Bẫy 31) — thêm 07/09/2026.
+    #
+    #    Cả phép kiểm này lái bằng lớp CSS `ltt-input-tep-an`. Đổi tên lớp ấy
+    #    thì `continue` bỏ qua **mọi** tệp, `thieu` rỗng, và `assert not thieu`
+    #    XANH — trong khi mọi input ẩn có thể đã mất chỗ bấm.
+    #
+    # 🔴 Chính docstring ở trên gọi đây là *"phép kiểm quan trọng nhất của đợt
+    #    này"*, và nó tự tháo bằng một lần đổi tên lớp. Không lỗi, không stack
+    #    trace, chỉ một dòng PASS như mọi khi.
+    #
+    #    Đo 07/09/2026: 2 input đang bị ẩn.
+    assert so_input_an >= 2, (
+        f"chi thay {so_input_an} input mang `ltt-input-tep-an` — mong doi >= 2. "
+        f"Hoac lop CSS da doi ten (thi SUA mau o day va noi ro vi sao), hoac "
+        f"mot trang thoi an input. Ca hai deu phai xem bang MAT.")
 
     assert not thieu, (
         "input file bi an mat cho bam — nguoi dung se KHONG chon duoc tep:\n  "

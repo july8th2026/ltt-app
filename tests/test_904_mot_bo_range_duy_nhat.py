@@ -147,7 +147,7 @@ def test_moi_the_video_deu_co_playsinline():
     ⚠️ Quét cả `.tsx`: ở JSX thuộc tính là `playsInline` (chữ I hoa), và một
        phép kiểm chỉ tìm chữ thường sẽ bỏ lọt cả bốn app React.
     """
-    vi_pham = []
+    vi_pham, so_the = [], 0
     for tm, duoi in (("apps", (".html",)), ("server/templates", (".html",)),
                      ("frontend", (".tsx", ".jsx"))):
         goc_tm = GOC / tm
@@ -158,9 +158,29 @@ def test_moi_the_video_deu_co_playsinline():
                 continue
             noi_dung = p.read_text(encoding="utf-8", errors="ignore")
             for m in _THE_VIDEO.finditer(noi_dung):
+                so_the += 1
                 if "playsinline" not in m.group(0).lower():
                     dong = noi_dung.count("\n", 0, m.start()) + 1
                     vi_pham.append(f"{p.relative_to(GOC).as_posix()}:{dong}")
+
+    # ⛔ ĐỐI CHỨNG (Bẫy 31) — thêm 07/09/2026.
+    #
+    #    `test_bo_do_the_video_that_su_bat_duoc_the_thieu` ngay dưới chứng minh
+    #    **mẫu regex** bắt được một thẻ thiếu. Nó KHÔNG chứng minh lượt quét
+    #    này tìm thấy thẻ nào thật: nếu `<video>` đổi dạng (đổi sang một
+    #    component React bọc lại, chẳng hạn), `finditer` khớp 0, `vi_pham`
+    #    rỗng, phép kiểm chính XANH — mà phép kiểm đối chứng kia **vẫn xanh**,
+    #    vì nó chạy trên một chuỗi viết sẵn.
+    #
+    # ⭐ Hai đối chứng khác nhau, và cần cả hai: một cái hỏi *"dụng cụ có hoạt
+    #    động không"*, cái này hỏi *"nó có nhìn thấy gì không"*.
+    #
+    #    Đo 07/09/2026: 10 thẻ `<video`.
+    assert so_the >= 10, (
+        f"chi thay {so_the} the <video> — mong doi >= 10. Hoac cach dung video "
+        f"da doi (thi SUA mau `_THE_VIDEO` va con so nay), hoac mot man hinh "
+        f"da bo video. Ca hai deu phai xem bang MAT.")
+
     assert not vi_pham, (
         "thẻ <video> thiếu `playsinline` — iOS sẽ ép phát toàn màn hình: "
         + ", ".join(vi_pham))

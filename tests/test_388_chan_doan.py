@@ -261,15 +261,33 @@ def test_KHONG_luat_nao_co_dung_sai_VUOT_DAI_gia_tri():
         f"thieu {bl.relative_to(GOC)} — tep nay DA COMMIT, nen no vang mat la "
         f"mot loi. Ghim lai: `setup/do_lech_tham_chieu.ps1 -Ghim`")
     san = (json.loads(bl.read_text(encoding="utf-8")) or {}).get("do") or {}
-    xau = []
+    xau, so_luat_xet = [], 0
     for ma, chi, chieu, _, _ in m.LUAT:
         if not chi.endswith("_ti_le") or chi not in san:
             continue
+        so_luat_xet += 1
         s = san[chi]
         dung = max(m.HE_SO_LECH * float(s["lech"]), m.SAN.get(chi, 0.0))
         if chieu <= 0 and float(s["tb"]) - dung < -1.0:
             xau.append(f"{ma}/{chi}: no khi < {float(s['tb']) - dung:.4f}, "
                        f"nhung can duoi la -1,0")
+    # ⛔ ĐỐI CHỨNG (Bẫy 31) — thêm 07/09/2026.
+    #
+    #    Vòng lặp lọc hai lần: chỉ số phải kết thúc `_ti_le` VÀ phải có mặt
+    #    trong sàn. Nếu `m.LUAT` đổi tên chỉ số, hoặc `baseline_lech.json` được
+    #    ghim lại thiếu mấy chỉ số ấy, thân vòng **không chạy lần nào**, `xau`
+    #    rỗng, và phép kiểm XANH.
+    #
+    # 🔴 Trớ trêu vì chính phép kiểm này sinh ra để bắt *"một luật không thể
+    #    nổ nhìn y hệt một luật đang canh tốt"*. Xanh rỗng làm **chính nó**
+    #    thành thứ nó đang săn.
+    #
+    #    Đo 07/09/2026: 3/6 luật qua bộ lọc.
+    assert so_luat_xet >= 3, (
+        f"chi xet duoc {so_luat_xet} luat thang ti le — mong doi >= 3. Hoac "
+        f"ten chi so da doi, hoac baseline_lech.json ghim thieu. Ca hai deu "
+        f"lam phep kiem nay canh RONG.")
+
     assert not xau, "; ".join(xau)
 
 
