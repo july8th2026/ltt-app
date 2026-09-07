@@ -276,3 +276,95 @@ def test_KHONG_doan_kien_truc_khi_khong_do_duoc():
     ma = (GOC / "tools" / "wangp" / "cai_dat.sh").read_text(encoding="utf-8")
     assert "exit 4" in ma
     assert "do_arch" in ma
+
+def _backslash_n_NGOAI_nhay(raw: bytes) -> list[int]:
+    """Vị trí các byte `backslash`+`n` nằm **ngoài** dấu nháy.
+
+    🔴 Bản đầu của phép kiểm này quét cả trong nháy, và nó báo động sai ngay lập
+       tức trên `printf '%s\n' "$KHOA_RIENG"` — nơi dãy ấy là **mã định dạng
+       của printf**, hoàn toàn đúng.
+
+    ⭐ Ranh giới đúng là dấu nháy, và nó không phải một tinh chỉnh cho vừa: ngoài
+      nháy, escape một chữ cái thường như `n` là **vô nghĩa** trong shell, nên
+      mọi lần xuất hiện ở đó đều là một dấu xuống dòng đã bị nuốt. Trong nháy
+      đơn thì ngược lại — nó là hai ký tự chữ thật, và `printf` đọc chúng.
+    """
+    ra, i, n = [], 0, len(raw)
+    nhay = None            # None | b"'" | b'"'
+    while i < n - 1:
+        c = raw[i:i + 1]
+        if nhay is None:
+            if c == b"#":                      # chu thich: bo toi het dong
+                j = raw.find(b"\n", i)
+                i = n if j < 0 else j + 1
+                continue
+            if c in (b"'", b'"'):
+                nhay = c
+            elif c == b"\\" and raw[i + 1:i + 2] == b"n":
+                ra.append(i)
+            elif c == b"\\":
+                i += 2                          # escape hop le: bo qua ca hai
+                continue
+        elif c == nhay:
+            nhay = None
+        elif nhay == b'"' and c == b"\\":
+            i += 2
+            continue
+        i += 1
+    return ra
+
+
+def test_KHONG_script_shell_nao_co_dau_xuong_dong_BI_NUOT():
+    """🔴 Lỗi thật, đã **commit và sống sót**: `cai_dat.sh:76` chứa hai byte
+    `backslash`+`n` chữ thật thay cho một dấu xuống dòng nối dòng.
+
+    Lệnh thành `nvidia-smi ... n` — một tham số rác. `nvidia-smi` lỗi, `ARCH`
+    rỗng, script thoát mã 4. Tức **bộ cài không chạy được**, và ta chỉ biết sau
+    khi đã tạo pod và bắt đầu tính tiền.
+
+    ⛔ `bash -n` **KHÔNG** bắt được: ngoài dấu nháy, dãy ấy là một escape hợp lệ
+       (thành chữ `n`). Cú pháp đúng, ngữ nghĩa sai — đúng lớp lỗi mà một bộ
+       kiểm cú pháp không thể thấy.
+
+    ⭐ Nguồn gốc: công cụ Bash nuốt một lớp backslash khi ghi tệp. Sổ đã ghi luật
+      ấy cho heredoc; đây là bằng chứng nó áp cho **mọi** lần ghi, và rằng phép
+      kiểm phải đọc **byte**, không đọc dòng.
+    """
+    import pathlib as _pl
+
+    goc = _pl.Path(__file__).resolve().parents[1]
+    pham = []
+    for tep in sorted(list((goc / "tools").rglob("*.sh"))
+                      + list((goc / "setup").rglob("*.sh"))):
+        raw = tep.read_bytes()
+        for i in _backslash_n_NGOAI_nhay(raw):
+            pham.append(f"{tep.relative_to(goc)}:{raw[:i].count(b'\n') + 1}")
+    assert not pham, (
+        "dau xuong dong bi nuot thanh chu `n` (bash -n KHONG thay): " + str(pham))
+
+
+def test_doi_chung_bo_do_KHONG_bao_dong_tren_printf_hop_le():
+    """⛔ Đối chứng hai chiều cho bộ dò trên — nếu thiếu, nó có thể là một bộ dò
+    luôn trả rỗng và mọi phép kiểm dùng nó xanh vĩnh viễn."""
+    assert _backslash_n_NGOAI_nhay(b"""printf '%s\\n' \"$X\"
+""") == []
+    assert _backslash_n_NGOAI_nhay(b'echo "a\\nb"') == []
+    assert _backslash_n_NGOAI_nhay(b"cmd --a 2>/dev/null \\n  | head -1")
+
+
+def test_cai_dat_kiem_ca_ban_CUDA_cua_torch_chu_khong_chi_kien_truc_GPU():
+    """⛔ Bốn điều kiện cũ của `co_moi_truong_ben` — python / kho / kiến trúc
+    GPU / `import torch` — đều **xanh** khi đổi ảnh container từ cu130 sang
+    cu128, vì không điều kiện nào hỏi torch được build cho CUDA nào.
+
+    ⇒ Pod khởi động với torch lệch ảnh và **bỏ qua cài lại**, im lặng. Và đó
+      đúng là hướng HM-9 đang chọn, nên lỗ hổng này sẽ nổ ở đúng lượt tới.
+    """
+    import pathlib as _pl
+
+    ma = (_pl.Path(__file__).resolve().parents[1] / "tools" / "wangp"
+          / "cai_dat.sh").read_text(encoding="utf-8")
+    than = ma.split("co_moi_truong_ben()", 1)[1].split("\n}", 1)[0]
+    assert "TEP_CUDA" in than, "khong kiem ban CUDA cua torch"
+    assert "do_cuda_torch" in than
+    assert "torch.version.cuda" in ma, "khong do bang chinh torch"

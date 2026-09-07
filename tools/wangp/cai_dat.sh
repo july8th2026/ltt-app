@@ -42,6 +42,14 @@ LOG=$GOC/ket_qua/install.log
 #: Kien truc GPU ma nua BEN da duoc BIEN DICH cho. Xem `co_moi_truong_ben`.
 TEP_ARCH=$GOC/ket_qua/_ARCH_SAGE
 
+#: Ban CUDA ma torch tren volume duoc BUILD cho. Xem `co_moi_truong_ben`.
+#:
+#: 🔴 Them 08/09. Bon dieu kien cu (python / kho / kien truc GPU / import
+#:    torch) deu XANH khi doi anh container tu cu130 sang cu128 — vi khong
+#:    dieu kien nao hoi torch duoc build cho CUDA nao. Nen pod se khoi dong
+#:    voi torch LECH anh va BO QUA cai lai, im lang.
+TEP_CUDA=$GOC/ket_qua/_CUDA_TORCH
+
 #: Ban Python cua bo chinh chu. `INSTALLATION.md` ghi 3.11.14.
 BAN_PY=3.11.14
 #: Banh xe nhan GGUF cho dung bo nay. Thieu no thi Qwen3.8 chay khong nhan.
@@ -73,7 +81,14 @@ co_goi_he_thong() {
 #: Kien truc tinh toan cua card DANG cam. Do bang `nvidia-smi`, khong bang
 #: torch: buoc nay chay TRUOC khi torch chac chan co.
 do_arch() {
-  nvidia-smi --query-gpu=compute_cap --format=csv,noheader 2>/dev/null \n    | head -1 | tr -d "[:space:]"
+  nvidia-smi --query-gpu=compute_cap --format=csv,noheader 2>/dev/null \
+    | head -1 | tr -d "[:space:]"
+}
+
+#: Ban CUDA cua torch DANG cai. Do bang chinh torch, khong bang ten anh
+#: container: mot anh `cuda:12.8` van co the chua mot banh xe cu130.
+do_cuda_torch() {
+  "$MOI_TRUONG/bin/python" -c "import torch;print(torch.version.cuda or 0)" 2>/dev/null | tr -d "[:space:]"
 }
 
 ARCH=$(do_arch)
@@ -97,6 +112,9 @@ co_moi_truong_ben() {
   [ -f "$TEP_ARCH" ] || return 1
   [ "$(tr -d "[:space:]" < "$TEP_ARCH")" = "$ARCH" ] || return 1
   "$MOI_TRUONG/bin/python" -c "import torch, mmgp" >/dev/null 2>&1 || return 1
+  # Dieu kien thu NAM: torch phai duoc build cho dung ban CUDA dang chay.
+  [ -f "$TEP_CUDA" ] || return 1
+  [ "$(tr -d "[:space:]" < "$TEP_CUDA")" = "$(do_cuda_torch)" ] || return 1
   return 0
 }
 
@@ -270,6 +288,8 @@ print(json.dumps(ra, ensure_ascii=False, indent=1))
 ENV
 
 echo "$ARCH" > "$TEP_ARCH"
+do_cuda_torch > "$TEP_CUDA"
+echo "###### da ghi ban CUDA cua torch: $(cat "$TEP_CUDA") -> $TEP_CUDA" | tee -a "$LOG"
 echo "###### da ghi kien truc da bien dich: $ARCH -> $TEP_ARCH" | tee -a "$LOG"
 echo "###### CAI DAT XONG $(date -Is)" | tee -a "$LOG"
 du -sh "$MOI_TRUONG" "$CONDA" "$KHO" >> "$LOG" 2>&1
