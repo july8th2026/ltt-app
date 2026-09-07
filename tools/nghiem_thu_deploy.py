@@ -113,7 +113,13 @@ def main() -> int:
         print("  Co the may chu dang chay mot commit CHUA duoc day/fetch ve day.")
         return 1
 
-    lech, thieu, thua, vi_du = 0, 0, 0, []
+    # ⛔ Khai kiểu rời chứ đừng gộp vào gán bộ: `mypy` không suy được kiểu của
+    #    `[]` trong một phép gán nhiều đích, nên `var-annotated` tăng một và
+    #    bánh cóc `check_mypy.moc` (mốc 44) đỏ. Đo 07/09/2026 — một tệp mới
+    #    làm đỏ **hai** bước gate: `mypy` và `test_306::test_mypy_hien_tai_dat_moc`.
+    #    Một nguyên nhân, hai triệu chứng.
+    vi_du: list[str] = []
+    lech = thieu = thua = 0
     for duong, blob in trong_commit.items():
         q = CHAY / duong
         if not q.exists():

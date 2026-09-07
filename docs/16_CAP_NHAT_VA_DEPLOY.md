@@ -62,6 +62,28 @@ python tools/gate.py               # TRƯỚC khi báo xong / deploy
 
 ⭐ Trước khi deploy: `git status --porcelain` phải **rỗng**, rồi mới chạy gate.
 
+⛔ **`pre-commit` xanh KHÔNG có nghĩa gate sẽ xanh.** Bốn hook trước commit là
+   `banh-coc-ruff` · `kieu-xuong-dong` · `ranh-gioi-import` · `cau-hinh-thuan-ascii`.
+   **Không có `mypy`** — nó quá chậm cho một hook.
+
+   ⇒ Một **tệp mới** có thể qua cả bốn hook rồi làm gate đỏ ở bánh cóc `mypy`.
+     Đo 07/09/2026: `tools/nghiem_thu_deploy.py` viết
+     `lech, thieu, thua, vi_du = 0, 0, 0, []` — `mypy` không suy được kiểu của
+     `[]` trong một phép gán nhiều đích, `var-annotated` **44 → 45**, và một
+     dòng ấy làm đỏ **hai** bước: `mypy` và `test_306::test_mypy_hien_tai_dat_moc`.
+     Một nguyên nhân, hai triệu chứng — đừng đi sửa hai chỗ.
+
+   ⭐ Nên khi thêm một tệp `.py` **mới**, chạy trước khi commit:
+
+```bash
+python -m mypy --config-file mypy.ini <tep moi>
+```
+
+   Hai giây, và nó tiết kiệm một vòng gate 12 phút.
+
+   ⛔ Và **đừng `--accept`** để nới mốc cho một chú thích kiểu còn thiếu: đó là
+      trả một lỗi vĩnh viễn để mua lại một phút.
+
 ### 2b. CVE trong phụ thuộc — chạy **trước deploy**, không chạy trong gate
 
 ```bash
