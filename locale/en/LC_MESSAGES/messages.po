@@ -14115,3 +14115,12 @@ msgstr "This work item was updated by another process."
 
 msgid "Bản dựng thiếu bản phối âm để kết xuất."
 msgstr "The build has no audio master to render from."
+
+msgid "Soát lại nghĩa bản dịch"
+msgstr "Reviewing the translation"
+
+msgid "Đang soát nghĩa bản dịch"
+msgstr "Reviewing the translation"
+
+msgid "Chưa có bản dịch để soát."
+msgstr "No translation available to review."
