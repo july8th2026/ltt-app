@@ -154,14 +154,32 @@ class MayGiaLap:
         ra = ra[bo_qua:]
         return ra[:int(gioi_han)] if gioi_han is not None else ra
 
+    def _tu_ban_do(self, ten: str, model_type: str) -> dict:
+        """Đọc một ô trong bản ghi **dạng bản đồ** (`{model_type: …}`).
+
+        ⭐ Một tệp cho cả 225 model, không phải 225 tệp: cùng dữ liệu, nhưng 225
+          tệp nhỏ trong git biến mỗi lần ghi lại thành một diff không đọc nổi.
+
+        ⛔ Thiếu khoá thì NÉM. `May.so_do` được phép trả `None` khi **WanGP**
+           không biết model — nhưng "bản ghi của ta chưa có" là chuyện khác hẳn,
+           và trả `None` cho nó là biến một khoảng trống đã biết thành một câu
+           trả lời sai.
+        """
+        ban_do = self._doc(ten)
+        if model_type not in ban_do:
+            raise LoiMay(
+                f"ban ghi {ten!r} khong co model {model_type!r} "
+                f"({len(ban_do)} model da ghi) — chay `ghi_ban_ghi.py --pod`")
+        return ban_do[model_type]
+
     def so_do(self, model_type: str) -> dict | None:
-        return self._doc(f"so_do__{model_type}")
+        return self._tu_ban_do("so_do", model_type)
 
     def mac_dinh(self, model_type: str) -> dict:
         return self._doc(f"mac_dinh__{model_type}")
 
     def kha_dung(self, model_type: str) -> dict:
-        return self._doc(f"kha_dung__{model_type}")
+        return self._tu_ban_do("kha_dung", model_type)
 
     # ── chạy việc ──────────────────────────────────────────────────────────
 

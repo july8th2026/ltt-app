@@ -1,7 +1,9 @@
 {
- "wangp_sha": "1e1dd2757f24923f008593d9d4ec09062234be20",
- "so_model": 225,
- "model": {
+ "nguon": "ghi_tu_may",
+ "sha_wangp": "1e1dd2757f24923f008593d9d4ec09062234be20",
+ "luc": "2026-09-07T22:00:33.715304+07:00",
+ "goi": "get_model_schema(<moi model>)",
+ "du_lieu": {
   "ace_step_v1": {
    "model_type": "ace_step_v1",
    "family": "music",

@@ -19,7 +19,10 @@ import pathlib
 
 GOC = pathlib.Path(__file__).parent.parent
 KHO = GOC / "tests" / "fixtures" / "wangp_factory"
-HO_SO = GOC / "apps" / "lttvideo" / "ho_so_data" / "ltt.video.chuan.v1.json"
+#: 🔴 Doi cho 07/09 (HM-3): `ho_so_data/` da go, du lieu chuyen sang `ban_ghi/`
+#:   kem phong bi xuat xu. **Menh de khong doi mot chu** — no van hoi dung mot
+#:   cau: "ta co dang chay dung nhu WanGP khong".
+HO_SO = GOC / "apps" / "lttvideo" / "ban_ghi" / "mac_dinh__t2v_2_2.json"
 
 MODEL = "t2v_2_2"
 I2V = False  # `t2v_2_2` khong phai i2v — quyet dinh hai dong hard-code duoi day
@@ -79,7 +82,9 @@ _PROMPT_MAC_DINH = (
 
 
 def _ho_so() -> dict:
-    return json.loads(HO_SO.read_text(encoding="utf-8"))
+    # Ban ghi nam trong mot phong bi (`nguon`/`sha_wangp`/`du_lieu`) de khong
+    # bao gio nham du lieu tam voi du lieu that.
+    return json.loads(HO_SO.read_text(encoding="utf-8"))["du_lieu"]
 
 
 def test_khong_lech_gia_tri_nao_ngoai_danh_sach_duoc_duyet():

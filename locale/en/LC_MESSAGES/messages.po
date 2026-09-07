@@ -13593,3 +13593,21 @@ msgstr "Something went wrong on the server. It has been logged."
 #: apps/chatltt/services/loi_ra_ngoai.py
 msgid "Không chạy được. Thử lại, hoặc báo cho chúng tôi nếu còn lặp."
 msgstr "Could not run. Try again, or tell us if it keeps happening."
+
+msgid "Tạo video từ mô tả"
+msgstr "Generate video from a description"
+
+msgid "Tạo video từ một ảnh"
+msgstr "Generate video from one image"
+
+msgid "Video theo nhiều ảnh tham chiếu"
+msgstr "Video from several reference images"
+
+msgid "Bối cảnh riêng, nhân vật riêng"
+msgstr "Your own setting, your own characters"
+
+msgid "Video theo chuyển động của video mẫu"
+msgstr "Video that follows a reference video's motion"
+
+msgid "Nối dài một video có sẵn"
+msgstr "Continue an existing video"

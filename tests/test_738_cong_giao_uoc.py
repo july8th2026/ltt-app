@@ -103,12 +103,12 @@ def test_ban_ghi_deu_khai_NGUON_va_SHA(tmp_path):
     """
     from apps.lttvideo.cong.may_gia_lap import MayGiaLap
 
-    (tmp_path / "so_do__x.json").write_bytes(json.dumps(
-        {"nguon": "khuon", "sha_wangp": "1e1dd275", "du_lieu": {"a": 1}},
+    (tmp_path / "so_do.json").write_bytes(json.dumps(
+        {"nguon": "khuon", "sha_wangp": "1e1dd275", "du_lieu": {"x": {"a": 1}}},
         ensure_ascii=False).encode("utf-8"))
     m = MayGiaLap(goc=tmp_path)
     assert m.so_do("x") == {"a": 1}
-    assert m.nguon_cua("so_do__x") == "khuon"
+    assert m.nguon_cua("so_do") == "khuon"
 
 
 def test_ban_ghi_thieu_NGUON_bi_tu_choi(tmp_path):
@@ -118,8 +118,8 @@ def test_ban_ghi_thieu_NGUON_bi_tu_choi(tmp_path):
     from apps.lttvideo.cong.giao_uoc import LoiMay
     from apps.lttvideo.cong.may_gia_lap import MayGiaLap
 
-    (tmp_path / "so_do__x.json").write_bytes(
-        json.dumps({"du_lieu": {"a": 1}}).encode("utf-8"))
+    (tmp_path / "so_do.json").write_bytes(
+        json.dumps({"du_lieu": {"x": {"a": 1}}}).encode("utf-8"))
     with pytest.raises(LoiMay, match="nguon"):
         MayGiaLap(goc=tmp_path).so_do("x")
 

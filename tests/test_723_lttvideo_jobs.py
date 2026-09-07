@@ -8,13 +8,27 @@ from __future__ import annotations
 import pytest
 
 from apps.lttvideo import jobs
+from apps.lttvideo.cong.may_gia_lap import MayGiaLap
 from apps.lttvideo.cong.giao_uoc import LoiMay  # noqa: F401
 
 
-class ClientGia:
+class ClientGia(MayGiaLap):
+    """⭐ KE THUA `MayGiaLap` chu khong dung tu dau.
+
+    Giao uoc `May` co MUOI MOT cua. Mot ban gia viet tu dau chi thuc hien nhung
+    cua ma phep kiem nghi toi, nen moi lan giao uoc moc them mot cua la mot lan
+    phai sua tay MOI ban gia — va cai bi quen thi no `AttributeError` o tan luc
+    chay job that.
+
+    Ke thua thi `mac_dinh` / `kha_dung` / `nap_media` den tu ban ghi THAT, va
+    phep kiem chi de len dung thu no dang do.
+
+    """
+
     def __init__(self, *, tep=("/data/Wan2GP/outputs/2026-09-06_seed1_"
                                "A large orange octopus, blending in.mp4"),
                  thanh_cong=True, loi=(), huy=False):
+        super().__init__()
         self.tep = list(tep)
         self._thanh_cong = thanh_cong
         self._loi = list(loi)
@@ -267,10 +281,11 @@ class _KhoGia:
         return khoa in self.da_ghi
 
 
-class _ClientGhiNhan:
+class _ClientGhiNhan(MayGiaLap):
     """Ghi lại settings đã gửi để phép kiểm soi được model và media."""
 
     def __init__(self):
+        super().__init__()
         self.settings = None
         self.media_da_nap = []
 
@@ -318,17 +333,23 @@ def test_DINH_ANH_thi_doi_sang_ho_so_anh_VA_nap_media_len_C_CLOUD():
     assert c.settings["image_start"].endswith(".png")
 
 
-def test_hang_rao_CHAN_khi_ho_so_khong_hop_dau_vao(monkeypatch):
-    """Một dòng gõ sai trong bảng chọn không được lặng lẽ gửi ảnh tới model
-    không nhận ảnh — WanGP sẽ **bỏ qua** nó, không lỗi, không cảnh báo."""
+def test_hang_rao_CHAN_khi_tac_vu_khong_hop_dau_vao():
+    """🔴 Viết lại 07/09 (HM-3): `ho_so.HO_SO_THEO_DAU_VAO` đã gỡ. **Mệnh đề
+    không đổi một chữ** — một dòng gõ sai không được lặng lẽ gửi ảnh tới model
+    không nhận ảnh, vì WanGP sẽ **bỏ qua** nó: không lỗi, không cảnh báo, và ta
+    chỉ biết khi xem video ra rồi không thấy ảnh của mình trong đó.
+
+    ⭐ Hàng rào nay đứng **sớm hơn hẳn**: `test_741` đối chiếu mọi tác vụ với
+      bản khai của model ngay lúc chạy test, không đợi một lượt job thật. Phép
+      kiểm này chốt vế còn lại — đường job từ chối một tác vụ **chưa mở**, thay
+      vì giữ credit rồi hỏng.
+    """
     import pytest
 
-    from apps.lttvideo import ho_so, jobs
+    from apps.lttvideo import jobs
 
-    # tro `anh` sang ho so CHU (t2v) — dung kieu sai ma hang rao phai bat
-    monkeypatch.setitem(ho_so.HO_SO_THEO_DAU_VAO, "anh", "ltt.video.chuan.v1")
-    with pytest.raises(Exception) as e:
+    with pytest.raises(jobs.LoiJob):
         jobs.handle({"prompt": "p", "duration_s": 5, "nguoi_dung_id": "42",
+                     "tac_vu": "nhieu_anh_tham_chieu",
                      "media_key": "lttvideo/42/vao/abc.png"},
                     _client=_ClientGhiNhan(), _kho=_KhoGia())
-    assert "khung mo dau" in str(e.value)

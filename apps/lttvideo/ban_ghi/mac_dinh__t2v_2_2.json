@@ -1,4 +1,9 @@
 {
+ "nguon": "ghi_tu_may",
+ "sha_wangp": "1e1dd2757f24923f008593d9d4ec09062234be20",
+ "luc": "2026-09-07T22:00:33.723230+07:00",
+ "goi": "get_default_settings('t2v_2_2')",
+ "du_lieu": {
   "prompt": "A large orange octopus is seen resting on the bottom of the ocean floor, blending in with the sandy and rocky terrain. Its tentacles are spread out around its body, and its eyes are closed. The octopus is unaware of a king crab that is crawling towards it from behind a rock, its claws raised and ready to attack. The crab is brown and spiny, with long legs and antennae. The scene is captured from a wide angle, showing the vastness and depth of the ocean. The water is clear and blue, with rays of sunlight filtering through. The shot is sharp and crisp, with a high dynamic range. The octopus and the crab are in focus, while the background is slightly blurred, creating a depth of field effect.",
   "alt_prompt": "",
   "image_mode": 0,
@@ -69,7 +74,7 @@
   "postprocess_audio_neg_prompt": "",
   "perturbation_switch": 0,
   "perturbation_layers": [
-    9
+   9
   ],
   "perturbation_start_perc": 10,
   "perturbation_end_perc": 90,
@@ -114,4 +119,5 @@
   "replace_voice_sample2": null,
   "settings_version": 2.78,
   "model_type": "t2v_2_2"
+ }
 }

@@ -24,16 +24,27 @@ from __future__ import annotations
 import pytest
 
 from apps.lttvideo import jobs
+from apps.lttvideo.cong.may_gia_lap import MayGiaLap
 from apps.lttvideo.cong.giao_uoc import LoiMay
 
 
-class ClientChamGia:
-    """Máy chủ **chậm**: `result()` nổ nếu hỏi trước khi tiến độ báo xong.
+class ClientChamGia(MayGiaLap):
+    """⭐ KE THUA `MayGiaLap` chu khong dung tu dau.
 
-    Đó chính là hành vi của `/result` thật cộng timeout socket 30 giây.
+    Giao uoc `May` co MUOI MOT cua. Mot ban gia viet tu dau chi thuc hien nhung
+    cua ma phep kiem nghi toi, nen moi lan giao uoc moc them mot cua la mot lan
+    phai sua tay MOI ban gia — va cai bi quen thi no `AttributeError` o tan luc
+    chay job that.
+
+    Ke thua thi `mac_dinh` / `kha_dung` / `nap_media` den tu ban ghi THAT, va
+    phep kiem chi de len dung thu no dang do.
+
+    Máy chủ **chậm**: `ket_qua()` nổ nếu hỏi trước khi tiến độ báo xong. Đó
+    chính là hành vi của `/result` thật cộng timeout socket 30 giây.
     """
 
     def __init__(self, *, so_buoc: int = 4, tep=("/data/out/a.mp4",)):
+        super().__init__()
         self.so_buoc = so_buoc
         self.tep = list(tep)
         self.lan_hoi = 0
