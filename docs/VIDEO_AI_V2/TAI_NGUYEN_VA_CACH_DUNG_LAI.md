@@ -12,8 +12,16 @@ phần lớn thứ bạn định tạo **đã có rồi**.
 | Tài nguyên | ID | Là gì | Tiền |
 |---|---|---|---|
 | Network volume | **`uizchbiet5`** (`lttv-models-v1`) | 300 GB, `US-KS-2`. **Chứa cả môi trường WanGP đã cài** | ~$21/tháng, chảy liên tục |
-| Pod | **`bly29qwp5bum3r`** (`lttv-wangp-p01`) | A100 80 GB, mount `/data` | $1,59/giờ **khi RUNNING** |
+| Pod **đang dùng** | **`s6bbn2cip61wo3`** (`lttv-wangp-v1`) | **H100 PCIe 80 GB** (SM 9.0), ảnh `cuda:13.0.1`, mount `/data` | **$2,89/giờ** khi RUNNING |
+| Pod cũ | `bly29qwp5bum3r` (`lttv-wangp-p01`) | A100 80 GB, ảnh `cuda:12.8.1` — **EXITED**, giữ để lui lại | $1,59/giờ khi RUNNING |
 | Endpoint Serverless | **`uwzftpd3utftfn`** (`lttv-worker`) | ảnh ComfyUI **của V3** — không dùng cho V2.1 | ~$0 (`workersMin=0`) |
+
+🔴 **A100 đã hết hàng ở `US-KS-2`** (đo 07/09). Danh sách `gpuTypeIds` ưu tiên
+(§3) đã cứu — rơi xuống H100. Đó là lý do §3 tồn tại.
+
+⭐ **Tự tắt khi rảnh**: `tools/wangp/canh_pod.py` chạy theo lịch trên **máy A**
+(không đặt ở pod — pod tự tắt được thì phải giữ khoá RunPod, phá ranh giới
+`Phần 7`). Mặc định là **xem thôi**; `--tat` mới gửi lệnh.
 
 ### Trên volume có sẵn những gì
 
@@ -86,8 +94,12 @@ python tools\video_cloud.py trang-thai   # so du va cau dao
 Rồi bật pod:
 
 ```python
-api._rest("POST", "/pods/bly29qwp5bum3r/start")
+api._rest("POST", "/pods/s6bbn2cip61wo3/start")     # pod dang dung (H100)
 ```
+
+⭐ Hoac de `apps/lttvideo/jobs.handle` tu bat: `B1` chot "bat theo nhu cau", va
+`DieuPhoi.bat_va_cho()` lo viec do — ke ca truong hop het card (`B3`: bao loi,
+credit tu hoan vi job vao `JOB_ERROR`).
 
 ⚠️ Khoá RunPod nằm ở `secrets/app.env` của **worktree V3**
 (`ltt-llm-api-http-guide-a3e123`), không phải cây V2. Công cụ
@@ -169,6 +181,57 @@ trả về **$1,59**. Dùng `costPerHr`, đừng dùng bảng.
 | `containerDiskInGb` | **50** | tính tiền; đặt **20** là đủ vì mọi thứ ở trên volume |
 | `minRAMPerGPU` | **8** | quá ít cho `profile 1/2` của WanGP (giữ model ở RAM). Đặt **64** |
 | `dataCenterIds` | **cả 28 DC** | không ghim ⇒ đặt nhầm nơi ⇒ **không gắn được volume** |
+
+---
+
+## 5b. Ba bài học của lượt dựng lại môi trường 07/09
+
+### ① `lowestPrice` lệch `costPerHr` tới **45%**
+
+| | |
+|---|---|
+| GraphQL `lowestPrice` báo | **$1,99**/giờ |
+| `costPerHr` thật lúc tạo pod | **$2,89**/giờ |
+
+Bẫy này đã ghi ở §5② với biên độ $1,39 vs $1,59. Nay biên độ lớn gấp ba.
+⇒ **Chỉ tin `costPerHr`.** Và đừng lập ngân sách trên bảng giá.
+
+### ② Miniconda có cổng **Điều khoản dịch vụ** — dùng Miniforge
+
+```
+CondaToSNonInteractiveError: Terms of Service have not been accepted
+for the following channels...
+```
+
+Kênh mặc định của Anaconda (`repo.anaconda.com`) nay đòi chấp nhận ToS, và chế
+độ không tương tác thì từ chối thẳng.
+
+⛔ **Đừng chạy `conda tos accept`.** Đó là nhận một ràng buộc **pháp lý** thay
+chủ dự án, và điều khoản của Anaconda còn có điều kiện về **sử dụng thương
+mại**. Miniforge mặc định `conda-forge` — không cổng ToS, không câu hỏi giấy
+phép, và là kênh chuẩn cho ngăn xếp khoa học.
+
+⚠️ Và **đổi đường dẫn** khi đổi bản: `/data/conda` đã chứa Miniconda dở dang, nên
+cổng `[ ! -x "$CONDA/bin/conda" ]` sẽ thấy "đã có conda" rồi **bỏ qua** — dẫn ta
+trở lại đúng cái cổng vừa tránh. Bản mới nằm ở `/data/forge`.
+⭐ **Một cổng kiểm thứ thật vẫn sai nếu nó kiểm nhầm thứ.**
+
+### ③ 🔴 Gói **cài được** ≠ nhân **nạp được**
+
+Báo cáo môi trường ghi `llamacpp_gguf_cuda 1.0.14+torch210cu130py311`, và tôi
+suýt tuyên bố lần nâng bộ thành công. Nhưng WanGP vẫn in:
+
+```
+[GGUF][llama.cpp CUDA] kernels unavailable, using fallback
+```
+
+`shared/qtypes/gguf.py` cho biết `_validate_gguf_cuda_module` có **bốn** chỗ
+hỏng: thiếu gói `gguf`, không có CUDA, `Q4_0` không được hỗ trợ, và một **phép
+tự kiểm số học** (`torch.allclose`, atol 2e-2). Hai cái đầu đã loại trừ được.
+
+⇒ `cai_dat.sh` nay **hỏi thẳng** `_GGUF_CUDA_LOAD_ERROR` và ghi vào
+`moi_truong.json` (`gguf_cuda_nap_duoc` · `gguf_cuda_ly_do_hong`). Một dòng
+phiên bản không phải một phép nghiệm thu.
 
 ---
 
