@@ -116,6 +116,23 @@ _SO: tuple[HoSo, ...] = (
 
 _THEO_ID = {h.profile_id: h for h in _SO}
 
+#: 🔑 **BẢNG CHỌN MODEL — một QUYẾT ĐỊNH của người, không phải một suy luận.**
+#:
+#: Đo trên ảnh chụp `metadata` thật (225 model, SHA ghim): đầu vào chỉ-chữ có
+#: **150** model hợp, có ảnh **83**, có video **122**. Ngay trong hai model ta
+#: dùng, cả hai đều khai `text_to_video: true`. ⇒ Dữ liệu **không** xác định
+#: duy nhất câu trả lời, nên mọi cách gỡ hoà đều là bảng xếp hạng tự chế.
+#:
+#: ⇒ Người chọn ở đây; `chon_model.kiem_model()` **kiểm lại** lựa chọn ấy trên
+#:   `metadata` để một dòng gõ sai không lặng lẽ gửi ảnh tới model không nhận
+#:   ảnh.
+#:
+#: ⚠️ `"video"` chưa mở: cần tải thêm model điều khiển, và `A1` mới mở tới ảnh.
+MODEL_THEO_DAU_VAO: dict[str, str] = {
+    "chu": "t2v_2_2",     # docs/MODELS.md de cu cho general text-to-video
+    "anh": "i2v_2_2",     # cung ho, nhan anh lam khung mo dau
+}
+
 
 def liet_ke() -> tuple[HoSo, ...]:
     return _SO

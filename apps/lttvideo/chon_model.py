@@ -1,65 +1,85 @@
-"""Chọn model theo **thứ người dùng đính kèm** — đọc `metadata` của WanGP.
+"""Chọn model theo thứ người dùng đính kèm — **người chọn, dữ liệu kiểm**.
 
-⭐ Vì sao tệp này được phép tồn tại, trong khi `IntentResolver` /
-   `CapabilityResolver` / `ModelRegistry` đã bị xoá ở lượt audit: chúng bị xoá
-   vì **tự nghĩ ra một taxonomy** rồi ép WanGP vào. Tệp này thì ngược lại — nó
-   **lọc trên dữ liệu WanGP tự công bố**.
+🔴 **Bản đầu sai, và dữ liệu thật bác nó.** Bản đầu *suy ra* model từ
+   `metadata`: lọc những model hợp với bộ media đang có, và coi "nhiều hơn một"
+   là lỗi. Đo trên ảnh chụp thật (225 model tại SHA ghim):
 
-   `docs/SETTINGS.md` §*API Metadata About Models*: mỗi model mang sẵn
+       chi chu  -> 150 model hop
+       co anh   ->  83
+       co video -> 122
 
-       metadata.capabilities  = {"text_to_video": true, "image_to_video": true, ...}
-       metadata.media_inputs  = {"image": {"start": true, ...}, "video": {...}}
+   Và ngay trong tập hai model ta định dùng, `i2v_2_2` **cũng** khai
+   `text_to_video: true`. Nên đầu vào chỉ-chữ đã mơ hồ ngay từ hai phần tử.
 
-⛔ **Không tên model nào được viết trong tệp này.** Có phép kiểm đọc AST canh
-   điều đó (`test_729`). Một cái tên gán cứng ở đây là một bảng ánh xạ tay, và
-   bảng ấy sẽ trôi khi thượng nguồn thêm model.
+⭐ **Dữ liệu không xác định duy nhất câu trả lời** — nên mọi cách gỡ hoà đều là
+   một bảng xếp hạng tự chế đội lốt suy luận. Đảo vai trò cho đúng:
 
-⛔ **Mơ hồ là LỖI, không phải chỗ để đoán.** Nếu hai model cùng khớp thì mọi
-   cách xếp hạng ta nghĩ ra đều là một bảng tự chế trá hình. Ném lỗi, và người
-   duyệt hồ sơ thu hẹp tập hợp lại — quyết định ấy thuộc về con người.
+       NGUOI chon model cho tung hinh dang dau vao   (mot QUYET DINH, ghi lai)
+       DU LIEU kiem lai lua chon do                  (mot RANG BUOC, may lo)
+
+   Ta vẫn không bịa ra khả năng của model: `kiem_model()` từ chối nếu model
+   được chọn **không thật sự** nhận được media đang đính. Thứ mất đi chỉ là ảo
+   tưởng rằng `metadata` tự nói cho ta biết nên dùng model nào.
+
+⛔ Không tên model nào viết trong tệp này. Bảng chọn nằm ở `ho_so`, cạnh những
+   quyết định khác về tham số — có phép kiểm canh (`test_729`).
 """
 from __future__ import annotations
 
 
 class LoiChonModel(RuntimeError):
-    """Không có model nào hợp, hoặc có nhiều model cùng hợp."""
+    """Model được chọn không nhận được bộ media đang có, hoặc không có trong bảng."""
 
 
-def _hop(meta: dict, *, co_anh: bool, co_video: bool) -> bool:
-    """Model này nhận đúng bộ media đang có không?"""
+def hinh_dang_dau_vao(*, co_anh: bool, co_video: bool) -> str:
+    """Tên hình dạng đầu vào, dùng làm khoá tra bảng.
+
+    ⭐ Video **thắng** ảnh khi đính cả hai: nó là ràng buộc chặt hơn, và một
+       model nhận video thì hầu như luôn nhận được ảnh tham chiếu.
+    """
+    if co_video:
+        return "video"
+    if co_anh:
+        return "anh"
+    return "chu"
+
+
+def _nhan_duoc(meta: dict, hinh_dang: str) -> tuple[bool, str]:
+    """Model này có **thật sự** nhận được hình dạng đầu vào ấy không?"""
     kn = (meta or {}).get("capabilities") or {}
     mi = (meta or {}).get("media_inputs") or {}
     anh = mi.get("image") or {}
     video = mi.get("video") or {}
 
-    if co_video:
-        # Video đính kèm chỉ có nghĩa khi model nhận được nó làm nguồn hoặc
-        # làm điều khiển. `SETTINGS.md` mô tả đúng hai vai này.
-        return bool(video.get("control") or video.get("continue"))
-    if co_anh:
-        # ⚠️ `image_to_video` là cờ TỔNG; `media_inputs.image.start` mới nói
-        #    model nhận ảnh làm KHUNG MỞ ĐẦU — thứ composer đang hứa với người
-        #    dùng. Đòi cả hai để cờ tổng không kéo vào một model chỉ nhận ảnh
-        #    tham chiếu.
-        return bool(kn.get("image_to_video") and anh.get("start"))
-    return bool(kn.get("text_to_video"))
+    if hinh_dang == "video":
+        if video.get("control") or video.get("continue"):
+            return True, ""
+        return False, "model khong nhan video lam nguon hay dieu khien"
+    if hinh_dang == "anh":
+        # ⚠️ `image_to_video` la co TONG; `media_inputs.image.start` moi noi
+        #    model nhan anh lam KHUNG MO DAU — dung thu composer dang hua.
+        if kn.get("image_to_video") and anh.get("start"):
+            return True, ""
+        return False, "model khong nhan anh lam khung mo dau"
+    if kn.get("text_to_video"):
+        return True, ""
+    return False, "model khong sinh video tu chu"
 
 
-def chon_model(*, co_anh: bool, co_video: bool, kho_metadata: dict) -> str:
-    """Trả `model_type` duy nhất hợp với bộ media đang có.
+def kiem_model(*, model_type: str, hinh_dang: str, kho_metadata: dict) -> None:
+    """Ném `LoiChonModel` nếu `model_type` không nhận được `hinh_dang`.
 
-    `kho_metadata` là `{model_type: metadata}` — và nó phải là **tập đã duyệt**
-    của LTT, không phải cả 226 model của WanGP. Thu hẹp tập hợp là việc của hồ
-    sơ; chọn trong tập đã hẹp là việc của hàm này.
+    ⛔ Đây là **hàng rào**, không phải bộ chọn. Nó tồn tại để một dòng sai trong
+       bảng chọn không lặng lẽ gửi ảnh của người dùng tới một model không nhận
+       ảnh — thứ WanGP sẽ bỏ qua, và ta chỉ biết khi xem video ra không có ảnh
+       ấy trong đó.
     """
-    hop = [ten for ten, meta in (kho_metadata or {}).items()
-           if _hop(meta, co_anh=co_anh, co_video=co_video)]
-    if not hop:
+    meta = (kho_metadata or {}).get(model_type)
+    if meta is None:
         raise LoiChonModel(
-            "khong co model da duyet nao nhan duoc bo media nay "
-            f"(anh={co_anh}, video={co_video})")
-    if len(hop) > 1:
-        raise LoiChonModel(
-            "nhieu model cung hop nen lua chon la mo ho: " + ", ".join(sorted(hop))
-            + " — thu hep tap da duyet thay vi de he thong doan")
-    return hop[0]
+            f"khong co `{model_type}` trong anh chup metadata — "
+            "anh chup lech SHA, hoac bang chon go sai ten")
+    duoc, ly_do = _nhan_duoc(meta, hinh_dang)
+    if not duoc:
+        raise LoiChonModel(f"`{model_type}` khong hop voi dau vao "
+                           f"`{hinh_dang}`: {ly_do}")

@@ -49,6 +49,18 @@ if [ ! -x "$PY" ]; then
   exit 1
 fi
 
+# --- 1b. Bao cao moi truong — chay o MOI lan khoi dong ---
+#
+# 🔴 Truoc day buoc nay nam o CUOI duong cai dat, nen mot lan khoi dong BO QUA
+#    cai dat (truong hop pho bien nhat: moi truong da co san tren volume) khong
+#    de lai bao cao nao. Dung luc can tra loi "nhan GGUF nap duoc chua" thi
+#    khong co gi de doc.
+#
+# ⭐ Mot lan khoi dong phai TU MO TA duoc, khong phu thuoc vao viec no co cai gi.
+if [ -f "$GOC/lttv/bao_cao_moi_truong.py" ]; then
+  "$PY" "$GOC/lttv/bao_cao_moi_truong.py" >>"$LOG" 2>&1     && echo "### bao cao moi truong: da ghi" | tee -a "$LOG"     || echo "### bao cao moi truong: HONG (xem install.log)" | tee -a "$LOG"
+fi
+
 # --- 2. Thu vien cho lop HTTP. WanGP keo fastapi theo, uvicorn thi khong chac ---
 if ! "$PY" -c "import uvicorn, fastapi" >/dev/null 2>&1; then
   echo "### cai uvicorn+fastapi $(date -Is)" | tee -a "$LOG"

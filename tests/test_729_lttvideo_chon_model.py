@@ -1,103 +1,139 @@
-"""Chọn model phải suy từ **dữ liệu WanGP công bố**, không từ tên gán cứng.
+"""Người chọn model, **dữ liệu WanGP kiểm lại** — không phải ngược lại.
 
-⚠️ Fixture dưới đây là bản **tay, tạm**, dựng theo đúng khuôn `metadata` mô tả ở
-   `Wan2GP/docs/SETTINGS.md`. Nó sẽ được thay bằng **ảnh chụp thật** lấy từ
-   `get_model_schema()` trên pod (việc `T1` của `PLAN_V1_CHI_TIET.md`). Giữ tên
-   khoá y hệt tài liệu để lúc thay không phải sửa phép kiểm.
+🔴 Bản đầu của phép kiểm này (và của `chon_model.py`) *suy ra* model từ
+   `metadata`, và coi "nhiều hơn một model hợp" là lỗi. **Ảnh chụp thật bác nó**
+   — xem `test_CA_KHO_thi_MO_HO_nen_du_lieu_KHONG_the_tu_chon`.
 """
 from __future__ import annotations
 
 import ast
+import json
 import pathlib
 
 import pytest
 
-from apps.lttvideo.chon_model import LoiChonModel, chon_model
+from apps.lttvideo.chon_model import LoiChonModel, hinh_dang_dau_vao, kiem_model
+from apps.lttvideo.ho_so import MODEL_THEO_DAU_VAO, WANGP_SHA
 
-#: Khuôn theo `SETTINGS.md`. Tên model đặt trung tính **có chủ ý**: phép kiểm
-#: không được phụ thuộc vào tên thật, vì mã cũng không được phụ thuộc.
-KHO_TAM = {
-    "chu_thanh_video": {
-        "capabilities": {"text_to_video": True, "image_to_video": False},
-        "media_inputs": {"image": {"start": False}, "video": {}},
-    },
-    "anh_thanh_video": {
-        "capabilities": {"text_to_video": False, "image_to_video": True},
-        "media_inputs": {"image": {"start": True, "reference": True}, "video": {}},
-    },
-    "video_dieu_khien": {
-        "capabilities": {"text_to_video": False, "image_to_video": False},
-        "media_inputs": {"image": {}, "video": {"control": True, "continue": True}},
-    },
-}
+ANH_CHUP = (pathlib.Path(__file__).parent / "fixtures" / "wangp_metadata"
+            / "1e1dd275.json")
 
 
-def test_khong_media_thi_chon_model_sinh_tu_CHU():
-    assert chon_model(co_anh=False, co_video=False,
-                      kho_metadata=KHO_TAM) == "chu_thanh_video"
+def _kho() -> dict:
+    return json.loads(ANH_CHUP.read_text(encoding="utf-8"))["model"]
 
 
-def test_co_anh_thi_chon_model_nhan_ANH_LAM_KHUNG_MO_DAU():
-    assert chon_model(co_anh=True, co_video=False,
-                      kho_metadata=KHO_TAM) == "anh_thanh_video"
+# ── ảnh chụp là BẰNG CHỨNG, không phải bản chép tay ──────────────────────────
 
 
-def test_co_video_thi_chon_model_nhan_VIDEO():
-    assert chon_model(co_anh=False, co_video=True,
-                      kho_metadata=KHO_TAM) == "video_dieu_khien"
+def test_anh_chup_neo_dung_SHA_ma_ho_so_dung():
+    """Ảnh chụp nói về **engine bản nào**. Lệch SHA là lệch cả ngữ nghĩa."""
+    d = json.loads(ANH_CHUP.read_text(encoding="utf-8"))
+    assert d["wangp_sha"] == WANGP_SHA
+    assert d["so_model"] == 225
+
+
+def test_du_lieu_that_dung_khuon_tai_lieu_mo_ta():
+    kho = _kho()
+    t2v = kho["t2v_2_2"]["capabilities"]
+    i2v = kho["i2v_2_2"]
+    assert t2v["text_to_video"] is True
+    assert t2v["image_to_video"] is False
+    assert i2v["capabilities"]["image_to_video"] is True
+    assert i2v["media_inputs"]["image"]["start"] is True
+
+
+# ── vì sao KHÔNG suy ra model từ dữ liệu ─────────────────────────────────────
+
+
+def test_CA_KHO_thi_MO_HO_nen_du_lieu_KHONG_the_tu_chon():
+    """🔴 Số đo trên ảnh chụp thật, 225 model tại SHA ghim:
+
+        chỉ chữ  → **150** model hợp
+        có ảnh   →  **83**
+        có video → **122**
+
+    Và ngay trong hai model ta dùng, **cả hai** đều khai `text_to_video: true`.
+    ⇒ Dữ liệu không xác định duy nhất câu trả lời. Mọi cách gỡ hoà là một bảng
+      xếp hạng tự chế đội lốt suy luận.
+    """
+    kho = _kho()
+
+    def hop(meta, hinh_dang):
+        kn = meta.get("capabilities") or {}
+        mi = meta.get("media_inputs") or {}
+        a, v = mi.get("image") or {}, mi.get("video") or {}
+        if hinh_dang == "video":
+            return bool(v.get("control") or v.get("continue"))
+        if hinh_dang == "anh":
+            return bool(kn.get("image_to_video") and a.get("start"))
+        return bool(kn.get("text_to_video"))
+
+    dem = {h: sum(1 for m in kho.values() if hop(m, h))
+           for h in ("chu", "anh", "video")}
+    assert dem["chu"] > 100, dem
+    assert dem["anh"] > 50, dem
+    assert dem["video"] > 100, dem
+    # va hai model ta dung cung nhau o nhanh `chu`
+    assert hop(kho["t2v_2_2"], "chu") and hop(kho["i2v_2_2"], "chu")
+
+
+# ── hình dạng đầu vào ────────────────────────────────────────────────────────
+
+
+def test_hinh_dang_dau_vao():
+    assert hinh_dang_dau_vao(co_anh=False, co_video=False) == "chu"
+    assert hinh_dang_dau_vao(co_anh=True, co_video=False) == "anh"
+    assert hinh_dang_dau_vao(co_anh=False, co_video=True) == "video"
 
 
 def test_video_thang_anh_khi_dinh_ca_hai():
-    """Đính cả hai thì video là ràng buộc chặt hơn — ít model nhận được nó."""
-    assert chon_model(co_anh=True, co_video=True,
-                      kho_metadata=KHO_TAM) == "video_dieu_khien"
+    """Video là ràng buộc chặt hơn."""
+    assert hinh_dang_dau_vao(co_anh=True, co_video=True) == "video"
 
 
-def test_co_anh_ma_model_chi_co_CO_TONG_thi_KHONG_chon():
-    """`image_to_video` là cờ tổng; `media_inputs.image.start` mới là lời hứa.
+# ── hàng rào: bảng chọn phải khớp dữ liệu ────────────────────────────────────
 
-    Một model bật cờ tổng nhưng chỉ nhận ảnh **tham chiếu** thì không làm được
-    thứ composer đang hứa ("dùng ảnh của bạn làm khung mở đầu").
+
+def test_MOI_dong_trong_bang_chon_deu_dung_theo_du_lieu_that():
+    """Chốt cả bảng, không chốt từng dòng — thêm một dòng sai là ĐỎ ngay."""
+    kho = _kho()
+    for hinh_dang, model in MODEL_THEO_DAU_VAO.items():
+        kiem_model(model_type=model, hinh_dang=hinh_dang, kho_metadata=kho)
+
+
+def test_gui_ANH_toi_model_khong_nhan_anh_thi_BI_CHAN():
+    """⛔ Đây là lý do hàng rào tồn tại.
+
+    WanGP **bỏ qua** media mà model không nhận — không lỗi, không cảnh báo. Ta
+    chỉ biết khi xem video ra và không thấy ảnh của mình trong đó, sau khi đã
+    trừ tiền khách.
     """
-    kho = {"chi_tham_chieu": {
-        "capabilities": {"image_to_video": True},
-        "media_inputs": {"image": {"start": False, "reference": True}},
-    }}
-    with pytest.raises(LoiChonModel):
-        chon_model(co_anh=True, co_video=False, kho_metadata=kho)
-
-
-def test_khong_co_model_nao_hop_thi_BAO_LOI_chu_khong_tra_bua():
-    with pytest.raises(LoiChonModel):
-        chon_model(co_anh=True, co_video=False, kho_metadata={})
-
-
-def test_MO_HO_la_LOI_chu_khong_phai_cho_de_doan():
-    """Hai model cùng hợp ⇒ mọi cách xếp hạng ta nghĩ ra đều là bảng tự chế."""
-    kho = {
-        "a": {"capabilities": {"text_to_video": True}, "media_inputs": {}},
-        "b": {"capabilities": {"text_to_video": True}, "media_inputs": {}},
-    }
     with pytest.raises(LoiChonModel) as e:
-        chon_model(co_anh=False, co_video=False, kho_metadata=kho)
-    assert "mo ho" in str(e.value)
+        kiem_model(model_type="t2v_2_2", hinh_dang="anh", kho_metadata=_kho())
+    assert "khung mo dau" in str(e.value)
+
+
+def test_ten_model_go_sai_thi_BAO_LOI_chu_khong_im_lang():
+    with pytest.raises(LoiChonModel) as e:
+        kiem_model(model_type="khong_ton_tai", hinh_dang="chu",
+                   kho_metadata=_kho())
+    assert "anh chup" in str(e.value)
 
 
 def test_MA_NGUON_khong_duoc_nhac_ten_model_nao():
-    """⛔ Một tên gán cứng ở đây là một bảng ánh xạ tay, và bảng ấy sẽ trôi.
+    """⛔ Bảng chọn ở `ho_so` (cạnh các quyết định khác), không ở đây.
 
     Đọc **AST** chứ không quét văn bản: bộ quét văn bản sẽ báo động trên chính
-    đoạn chú thích giải thích nó — lỗi đã mắc hai lần trong kho này.
+    đoạn chú thích giải thích nó — lỗi đã mắc ba lần trong kho này.
     """
     tep = (pathlib.Path(__file__).parent.parent / "apps" / "lttvideo"
            / "chon_model.py")
     cay = ast.parse(tep.read_text(encoding="utf-8"))
-    chuoi = [n.value for n in ast.walk(cay)
-             if isinstance(n, ast.Constant) and isinstance(n.value, str)]
-    # bo qua docstring: chung la chu thich, khong phai hanh vi
-    than = [s for s in chuoi if len(s) < 200]
-    cam = ("t2v", "i2v", "v2v", "vace", "animate", "wan2", "ltx", "hunyuan")
+    than = [n.value for n in ast.walk(cay)
+            if isinstance(n, ast.Constant) and isinstance(n.value, str)
+            and len(n.value) < 200]
     for s in than:
         thap = s.lower()
-        for c in cam:
+        for c in ("t2v", "i2v", "v2v", "vace", "animate", "wan2", "ltx"):
             assert c not in thap, f"mã nhắc tên model {c!r} trong hằng {s!r}"
