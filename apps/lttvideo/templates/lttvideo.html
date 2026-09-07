@@ -119,9 +119,25 @@
           {{ v.prompt or _('(không có mô tả)') }}
         </span>
         <a class="ltt-link" href="/jobs/{{ v.job_id }}">{{ _('Xem') }}</a>
-        <form method="post" action="nang-net" style="margin:0">
+        {#
+          ⭐ Post THANG sang be mat HTTP cong khai cua `upscalevideo` — chinh
+             duong ma GUI cua no dung. Khong import cheo, khong ngoai le linter,
+             khong nhan doi hop dong tham so: route cua no CHINH LA hop dong.
+
+          🔴 Ban dau toi import `apps.upscalevideo.service.submit_upscale_job`.
+             `tests/test_147_layering.py` bat, va chu thich cua chinh no goi
+             cach ay la NO: "go hay doi ten `upscalevideo` se lam gay
+             `taovideo`". `taovideo` duoc mien vi no la luong TRA TIEN dang
+             chay; them mot app moi vao khoan no ay thi khong co ly do nao.
+
+          📌 CSRF gan theo PHIEN (`server/auth/csrf.py`), khong theo duong dan,
+             nen token phat o trang nay dung duoc o route ben kia.
+        #}
+        <form method="post" action="/upscalevideo/queue" style="margin:0">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <input type="hidden" name="job_id" value="{{ v.job_id }}">
+          <input type="hidden" name="video_key" value="{{ v.khoa }}">
+          <input type="hidden" name="target_height" value="1080">
+          <input type="hidden" name="preset" value="fast">
           <button type="submit" class="ltt-btn">{{ _('Nâng nét') }}</button>
         </form>
       </li>

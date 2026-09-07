@@ -241,7 +241,11 @@ def _job_video_cua_toi(db, user_id, job_id: str):
 
 
 def _khoa_video(job) -> str:
-    """Khoá video đầu tiên trong kết quả, hoặc rỗng."""
+    """Khoá video đầu tiên trong kết quả, hoặc rỗng.
+
+    ⭐ Dùng để dựng nút **Nâng nét** — một `<form>` post thẳng sang bề mặt HTTP
+       công khai của `upscalevideo`. Xem chú thích ở template.
+    """
     ds = (job.result or {}).get("video_keys") or []
     return str(ds[0]) if ds else ""
 
@@ -269,38 +273,6 @@ def _video_gan_day(db, user_id, gioi_han: int = 12) -> list[dict]:
                        "prompt": (j.params or {}).get("prompt", ""),
                        "luc": j.created_at})
     return ra
-
-
-@router.post("/nang-net")
-async def nang_net(request: Request, job_id: str = Form(""),
-                   csrf_token: str = Form(""),
-                   user=Depends(require_login), db=Depends(get_db)):
-    """Nâng nét một video đã có — chạy trên **GPU máy A**, không đụng C-CLOUD.
-
-    ⭐ Dùng `apps.upscalevideo.service.submit_upscale_job` — bề mặt **đã được
-       hợp đồng app khai** (`tools/lint_app_contract.py`) cho đúng việc này, và
-       `taovideo` đã đi đường đó cho nút "Nâng cấp 4K". Ta bám tiền lệ thay vì
-       tự dựng tham số.
-    """
-    verify_csrf_token(request, csrf_token)
-
-    from apps.upscalevideo.service import submit_upscale_job  # noqa: PLC0415
-    from platform_core import credit  # noqa: PLC0415
-
-    j = _job_video_cua_toi(db, user.id, job_id)
-    khoa = _khoa_video(j) if j is not None else ""
-    if not khoa:
-        return RedirectResponse(f"?loi={_t('Không tìm thấy video để nâng nét.')}",
-                                status_code=303)
-    try:
-        moi = submit_upscale_job(db, user_id=user.id, video_key=khoa,
-                                 preset="fast", target_height=1080,
-                                 duration_s=float((j.params or {}).get("duration_s") or 0))
-        db.commit()
-    except credit.ThieuCreditError as e:
-        db.rollback()
-        return RedirectResponse(f"?loi={e}", status_code=303)
-    return RedirectResponse(f"/jobs/{getattr(moi, 'id', '')}", status_code=303)
 
 
 @router.get("/video/{key:path}")

@@ -63,33 +63,38 @@ def test_khoa_video_doc_dung_khoa_hop_dong():
         "đọc tên khoá CŨ — nền tảng sẽ không nhặt được khoá đó")
 
 
-def test_dung_BE_MAT_DA_KHAI_chu_khong_tu_dung_tham_so():
-    """⛔ Hợp đồng app khai `apps.upscalevideo.service.submit_upscale_job` là
-    bề mặt hợp lệ cho đúng việc này (`tools/lint_app_contract.py`).
+def test_nut_nang_net_KHONG_import_cheo_app():
+    """🔴 Bản đầu import `apps.upscalevideo.service.submit_upscale_job`.
 
-    Tự dựng `params` rồi gọi `submit_with_credit` thẳng là **bản sao thứ hai**
-    của một hợp đồng đang sống ở app khác — nó sẽ trôi khi bên kia đổi.
+    `tests/test_147_layering.py` bắt, và chú thích của chính nó gọi cách ấy là
+    **nợ**: *"gỡ hay đổi tên `upscalevideo` sẽ làm gãy `taovideo`"*. `taovideo`
+    được miễn vì nó là luồng **trả tiền đang chạy**; thêm một app mới vào khoản
+    nợ ấy thì không có lý do nào.
+
+    ⇒ Nút là một `<form>` post thẳng sang bề mặt HTTP công khai của
+      `upscalevideo` — chính đường mà GUI của nó dùng. Không import, không
+      ngoại lệ linter, không nhân đôi hợp đồng tham số.
     """
-    cay = ast.parse(inspect.getsource(routes))
-    ten_ham = {n.name for n in ast.walk(cay)
-               if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))}
-    assert "nang_net" in ten_ham
-    than = next(ast.unparse(n) for n in ast.walk(cay)
-                if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))
-                and n.name == "nang_net")
-    assert "submit_upscale_job" in than
-    assert "build_params" not in than, "tự dựng params thay vì dùng bề mặt đã khai"
-
-
-def test_ham_nang_net_la_route_POST_va_doi_CSRF():
-    cay = ast.parse(inspect.getsource(routes))
+    ma = inspect.getsource(routes)
+    cay = ast.parse(ma)
     for n in ast.walk(cay):
-        if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n.name == "nang_net":
-            trang_tri = " ".join(ast.unparse(d) for d in n.decorator_list)
-            assert "post" in trang_tri
-            assert "verify_csrf_token" in ast.unparse(n)
-            return
-    raise AssertionError("khong tim thay `nang_net`")
+        if isinstance(n, ast.ImportFrom) and (n.module or "").startswith("apps."):
+            assert "lttvideo" in (n.module or ""), f"import chéo: {n.module}"
+        if isinstance(n, ast.Import):
+            for a in n.names:
+                assert not a.name.startswith("apps.upscalevideo"), "import chéo"
+
+
+def test_template_post_sang_be_mat_CONG_KHAI_cua_upscalevideo():
+    import pathlib
+
+    html = (pathlib.Path(inspect.getsourcefile(routes)).parent / "templates"
+            / "lttvideo.html").read_text(encoding="utf-8")
+    assert 'action="/upscalevideo/queue"' in html
+    assert 'name="video_key"' in html
+    # CSRF gan theo PHIEN chu khong theo duong dan, nen token o trang nay dung
+    # duoc o route ben kia — nhung phai CO no.
+    assert 'name="csrf_token"' in html
 
 
 def test_KHONG_them_thao_tac_nao_o_cau_noi_C_CLOUD():

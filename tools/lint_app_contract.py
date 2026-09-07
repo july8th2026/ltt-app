@@ -87,17 +87,6 @@ APP_DUOC_DUNG_APP: dict = {
         ("apps.upscalevideo", "cost"),                        # bao gia nang cap
         ("apps.upscalevideo.service", "submit_upscale_job"),  # nop job nang cap
     },
-    # `lttvideo` — nut "Nang net" tren mot video da sinh. Cung be mat, cung ly do
-    # voi `taovideo`: engine upscale chay tren GPU may A va viec ay chi co MOT
-    # ban trong ca he. Chep `build_params` sang app khac la dung ban sao thu hai
-    # cua mot hop dong dang song o noi khac.
-    #
-    # ⭐ Xin IT hon `taovideo`: khong xin `cost`. `lttvideo` khong bao gia nang
-    #    cap tren giao dien cua no — nguoi dung bam nut roi xem gia o trang job
-    #    cua nen tang. Xin dung thu minh dung.
-    ("lttvideo", "upscalevideo"): {
-        ("apps.upscalevideo.service", "submit_upscale_job"),  # nop job nang cap
-    },
 }
 
 
