@@ -39,7 +39,7 @@
     <div class="ltt-alert ltt-alert-warn">{{ ly_do_tu_choi }}</div>
   {% else %}
 
-  <form method="post" action="tao" class="ltt-card ltt-composer"
+  <form method="post" action="{{ app.route_prefix }}/tao" class="ltt-card ltt-composer"
         enctype="multipart/form-data">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
@@ -78,6 +78,21 @@
         </select>
       </div>
     </div>
+
+    {# `A5` — mở rộng mô tả. Ô này CHỈ hiện khi năng lực đã mở (`kha_nang`): bộ
+       mở rộng nằm ở C-CLOUD, và một ô tick không có model phía sau thì WanGP bỏ
+       qua trong im lặng — người dùng tick mà không có gì đổi. #}
+    {% if duoc_mo_rong %}
+    <div class="ltt-field">
+      <label class="ltt-label" for="mo_rong_prompt">
+        <input type="checkbox" id="mo_rong_prompt" name="mo_rong_prompt" value="1">
+        {{ _('Tự viết lại mô tả cho chi tiết hơn') }}
+      </label>
+      <p class="ltt-hint">
+        {{ _('Máy sẽ viết lại mô tả của bạn thành một đoạn dài và chi tiết hơn trước khi dựng. Kết quả sẽ khác với mô tả gốc.') }}
+      </p>
+    </div>
+    {% endif %}
 
     {# Cảnh báo trôi chất lượng — nội dung lấy ý từ `PROCESSING.md` của WanGP:
        "The longer the video, the more likely quality is to degrade over time:

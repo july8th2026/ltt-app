@@ -330,15 +330,96 @@ cộng rủi ro không thuê được card (đã trả giá hôm nay — `stop` 
 
 | # | Việc | Vì sao chưa cần GPU |
 |---|---|---|
-| A-1 | **`C2` dọn theo hạn 3 ngày** | thao tác trên R2 + sổ job, không đụng engine |
-| A-2 | **`B2` chống bấm hai lần** (`dedupe_key`) | nền tảng đã có cột; chỉ cần truyền |
-| A-3 | **`A5` mở rộng prompt** — bật `prompt_enhancer` của WanGP | mã đường đi viết được; **model** thì tải ở đợt B |
+| A-1 | ✅ **`C2` dọn theo hạn 3 ngày** | thao tác trên R2 + sổ job, không đụng engine |
+| A-2 | ✅ **`B2` chống bấm hai lần** (`dedupe_key`) | nền tảng đã có cột; chỉ cần truyền |
+| A-3 | ✅ **`A5` mở rộng prompt** — bật `prompt_enhancer` của WanGP | mã đường đi viết được; **model** thì tải ở đợt B |
+| A-6 | ✅ **Gỡ phụ thuộc legacy `tools/video_cloud`** *(phát sinh trong A-3)* | thuần mã, không cần máy |
 | A-4 | **Kiểm GUI bằng trình duyệt thật** (`CLAUDE.md` mục 5) | app chạy cục bộ, job không cần chạy xong |
 | A-5 | Gate đầy đủ trên cây đứng yên | |
 
+#### A-3 đã làm gì — và cái gì **cố ý** để lại cho đợt B
+
+Đường mã đã đủ: `ho_so.khoa_mo_rong()` → `jobs` → route → giao diện, cộng
+`tools/wangp/cau_hinh_enhancer.py` để chỉnh cấu hình phía C-CLOUD.
+
+Đánh số họ model **đọc thẳng từ nguồn**, không suy —
+`shared/prompt_enhancer/qwen35_vl.py`:
+
+```python
+def get_qwen35_prompt_enhancer_variant(model_no) -> str:
+    return {3: QWEN35_VARIANT_4B, 4: QWEN35_VARIANT_9B,
+            5: QWEN38_VARIANT_27B}[int(model_no)]
+```
+
+⇒ `1` Florence2+Llama3.2 · `2` Florence2+LlamaJoy · `3` Qwen3.5-4B ·
+**`4` Qwen3.5-9B Abliterated** · `5` Qwen3.8-27B *(đang chặn — §5d)*.
+
+🔴 **Đo được trên `wgp_config.json` thật của volume, và nó trỏ đúng vào thứ
+   hỏng.** Ba trong bốn khoá đang sai với máy này:
+
+| khoá | đang là | phải là | vì sao |
+|---|---|---|---|
+| `enhancer_enabled` | `5` | `4` | `5` là 27B, model đang chặn bởi lỗi cuBLAS |
+| `prompt_enhancer_quantization` | `"gguf"` | `"quanto_int8"` | nhân GGUF CUDA không nạp được trên py3.11/cu130 |
+| `enhancer_mode` | *vắng* ⇒ `1` | `0` | `1` = on-demand, chỉ chạy khi **bấm nút Gradio**. Ta đi API ⇒ khoá `prompt_enhancer` bị bỏ qua **im lặng** (`wgp.py:6853`) |
+| `prompt_enhancer_speculative_decoding` | `2` (auto) | `0` | auto + 99 GB VRAM ⇒ tự bật một đường giải mã chưa từng chạy ở đây |
+
+⭐ Chúng **không phải cấu hình tồi** — chúng là mặc định xuất xưởng của WanGP
+   cho một máy đủ mạnh. Chúng sai với *máy này*, và đó đúng là loại khác biệt
+   không đọc tài liệu ra được.
+
+⛔ **Ô tick chưa hiện với người dùng, và đó là cố ý.** `"mo_rong_prompt"` chưa
+   có trong `kha_nang.NANG_LUC_MO`, có phép kiểm chốt trạng thái đóng
+   (`test_732`). Bật một ô tick khi C-CLOUD còn `enhancer_enabled = 5` + `gguf`
+   là **nói dối bằng giao diện**: WanGP bỏ qua khoá ấy không một tiếng động, nên
+   người dùng tick, chờ hai mươi phút, rồi nhận đúng video như khi không tick.
+
+#### A-6 — một lỗi thật, nằm trên đường sản phẩm
+
+Năm chỗ trong mã V2 `import tools.video_cloud`; tệp ấy `import
+platform_core.video_gen`. Đo bằng `git ls-tree` ngày 07/09:
+
+| nhánh | `platform_core/video_gen` | `tools/video_cloud.py` |
+|---|---|---|
+| `master` | 0 tệp | không |
+| `admin-mvp-v3` | 0 tệp | không |
+| **`phien/video-v2-wangp`** | **0 tệp** | **không** |
+| `claude/ltt-video-ai-v3-p00-3f5713` (V3) | 5 tệp | có |
+
+⇒ `apps/lttvideo/jobs.py:_dieu_phoi_that()` — đường `B1` bật máy theo nhu cầu,
+chạy trong worker thật — ném `ModuleNotFoundError` ở lượt job đầu tiên có
+`LTTV_POD_ID`. Nó cũng vi phạm luật đã khoá *"New V2 code: import legacy =
+FORBIDDEN"*.
+
+Thay bằng `tools/wangp/may_cloud.py` (V2, không chạm `platform_core.video_gen`),
+và đổi `_rest`/`_graphql` thành `rest`/`graphql` — một tên riêng tư dùng xuyên
+ranh giới module là một hợp đồng không ai hứa. Phép kiểm `test_733` **import
+thật** mọi module `tools.*` được nhắc tới, chứ không đọc tên nó; đã đối chứng
+bằng cách tiêm lại bản cũ và xác nhận nó đỏ.
+
 ### Đợt B — **một** lượt bật pod, chạy hết rồi tắt
 
-Thứ tự trong cùng một lượt, xếp theo *"hỏng sớm thì rẻ"*:
+#### B-0 · B-1 — đã xong 07/09 **khi pod còn TẮT**
+
+⭐ Nguyên tắc rút ra: *mọi thứ đọc/ghi được qua S3 thì làm lúc pod tắt.* Volume
+   vẫn truy cập được khi pod EXITED, nên phần chuẩn bị **không tốn một xu GPU**.
+
+| Việc | Kết quả đo |
+|---|---|
+| **B-0** đồng bộ mã chạy trên pod | `dich_vu_ccloud.py` trên volume lệch 1.460 byte và **thiếu hẳn `/nap_media`** — đúng đường mà B-3 (ảnh → video) dựa vào. Đã đẩy, đọc lại khớp SHA. |
+| **B-1** cấu hình bộ mở rộng | 4 khoá đã ghi, đọc lại khớp, 75 → 76 khoá. Không đụng khoá nào khác. |
+
+🔴 **B-0 chặn được một lỗi chỉ lộ ra sau khi đã đốt tiền.** Nếu bật pod trước,
+   `/nap_media` trả 404 giữa đợt B và ta mất ~15 phút GPU để dò ra một thứ mà
+   một lượt `list_objects` trả lời miễn phí.
+
+Điều kiện khởi động đã kiểm đủ từ S3: `config/lttv_key.txt` · `khoi_dong.sh` ·
+`cai_dat.sh` · `wgp.py` · `env311/bin/python` · `_ARCH_SAGE`. Ba điều kiện của
+cổng bỏ-qua-cài đều thoả (`env311/bin/python`, `Wan2GP/.git`, `torch`+`mmgp`)
+⇒ pod sẽ **khởi động nhanh, không cài lại**. `ckpts` đang có 41,7 GB / 113 tệp;
+`i2v_2_2` và `Qwen3.5-9B` **chưa tải** — đúng như plan, chúng là việc của B-3/B-4.
+
+#### Thứ tự còn lại, xếp theo *"hỏng sớm thì rẻ"*
 
 1. **Nghiệm thu bộ mới bằng một video chữ** — bộ `py3.11/cu130` trên SM 9.0
    **chưa từng sinh video nào**. Nếu hỏng thì hỏng ở đây, trước khi tải 30 GB.
@@ -352,6 +433,43 @@ Thứ tự trong cùng một lượt, xếp theo *"hỏng sớm thì rẻ"*:
 
 ⛔ Không xen việc viết mã vào giữa đợt B: mỗi phút pod chạy là $3,19, và sửa mã
 giữa chừng thì phép nghiệm thu không còn nói về một cây đứng yên.
+
+#### A-7 — chuẩn hoá tài nguyên V3 *(chủ dự án giao 07/09)*
+
+🔴 **Khoá RunPod chỉ tồn tại trong MỘT worktree.** Đo được: cả 7 khoá
+   (`RUNPOD_API_KEY`, 4 khoá S3, 2 khoá endpoint) nằm duy nhất ở
+   `.claude/worktrees/ltt-llm-api-http-guide-a3e123/secrets/app.env` — không có
+   ở kho chính, không có trong git (`secrets/` bị gitignore). Mà `git worktree
+   remove` **xoá âm thầm** thứ bị gitignore, và cây ấy đang **detached HEAD**
+   trên nhánh V3 đã dừng.
+
+   ⇒ Gỡ cây đó là mất khoá điều khiển pod **và** khoá S3 của volume 300 GB đang
+     giữ 41,7 GB model. Đã gộp 7 khoá về `D:\LTTSTUDIOSAPP\secrets\app.env`:
+     sao lưu trước, **chỉ thêm khoá thiếu**, không ghi đè khoá nào, đọc lại đối
+     chiếu (17 → 24 khoá, không khoá cũ nào đổi).
+
+   ⚠️ Còn một vế chưa làm: worker production đọc ENV **nướng lúc cài** của nssm,
+      nên muốn `B1` bật pod tự động chạy thật thì sau deploy phải chạy
+      `setup/nap_lai_env.ps1` — `Restart-Service` là **không đủ**.
+
+📚 **Tài liệu V3 khôi phục vào `docs/_luutru/VIDEO_AI_V3/`** — 31 tệp, 499 KB,
+   nguyên byte từ nhánh `claude/ltt-video-ai-v3-p00-3f5713`. Giữ vì chúng chứa
+   thứ dựng lại không được: sổ chi phí thật, kết quả đo thật, và chuỗi quyết
+   định giải thích vì sao V3 dừng.
+
+   ⛔ **Không merge một dòng mã V3 nào** — `P06` đã rút thành *"không merge"*, và
+     luật đã khoá cấm `import legacy`. Chỉ tài liệu và số liệu sang.
+
+   📌 Đặt ở `docs/_luutru/` vì đó là chỗ kho **đã** dùng cho tài liệu chương
+     trình ngừng (`TONG_QUAN_TIEN_DO.md`, `KE_HOACH_RA_SOAT_APP.md` nằm sẵn ở
+     đấy) — theo quy ước có sẵn, không đặt ra chỗ mới.
+
+#### Hai chỗ vá phát sinh từ chính việc chuẩn bị đợt B
+
+| Vá | Vì sao |
+|---|---|
+| `may_cloud.tim_app_env()` + cờ `--env` | `secrets/` bị gitignore ⇒ **mọi** cây riêng thiếu `app.env` ⇒ cả bốn công cụ cloud chết ngay dòng đầu. Nay lùi về gốc kho dùng chung lấy từ `git rev-parse --git-common-dir`, không neo đường dẫn tuyệt đối. |
+| `cai_dat.sh`: cổng bỏ-qua-cài **so kiến trúc GPU** | `_ARCH_SAGE` trước đây được *ghi ra mà không ai đọc lại*, nên nó không canh gì. Đổi card (A100 8.0 → H100 9.0) thì ba mức cũ vẫn đủ, cổng bỏ qua, và ta chạy tiếp trên bản SageAttention biên dịch cho card cũ — **im lặng**. |
 
 ### 5d. 🔴 `Qwen3.8-27B` bị chặn — dùng `Qwen3.5-9B Int8`
 

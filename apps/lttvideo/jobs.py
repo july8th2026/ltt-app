@@ -70,7 +70,7 @@ def _dieu_phoi_that(client):
     from pathlib import Path as _P
 
     sys.path.insert(0, str(_P.cwd()))
-    from tools.video_cloud import tao_client  # noqa: PLC0415
+    from tools.wangp.may_cloud import tao_client  # noqa: PLC0415
 
     from .dieu_phoi import DieuPhoi  # noqa: PLC0415
 
@@ -130,6 +130,10 @@ def handle(params: dict, ctx=None, *, _client=None, _kho=None,
         doi["seed"] = int(params["seed"])
     if params.get("resolution"):
         doi["resolution"] = str(params["resolution"])
+    # `A5`: mở rộng mô tả bằng chính bộ enhancer của WanGP. Ngữ nghĩa `"T"`/`"TI"`
+    # đọc từ `wgp.py`, ghi ở `ho_so.MO_RONG_THEO_DAU_VAO`.
+    doi["prompt_enhancer"] = ho_so.khoa_mo_rong(
+        hinh_dang, bat=bool(params.get("mo_rong_prompt")))
     tham_so = h.ap_dung(doi)
 
     # Hang rao: model cua ho so co THAT SU nhan duoc hinh dang dau vao nay khong.

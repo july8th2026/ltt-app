@@ -1920,3 +1920,63 @@ bánh cóc vẫn xanh khi phép đo teo lại — và như trên, một bản n�
 đúng cái làm nó teo. Bản sửa (ghi **số tệp mypy thật sự kiểm** + **phiên bản phụ
 thuộc** vào `.moc`, đỏ khi số tệp giảm) **chưa làm**, theo `AGENTS.md` §4c: mỗi
 worktree chạy bản `tools/` riêng nên một bản vá một phía phạt đúng cây đã sửa.
+
+---
+
+## Bẫy 27 — Một worktree khác **đứng ở nhánh khác**, nên nó có tệp mà nhánh bạn không có
+
+Đo 07/09/2026 trên `phien/video-v2-wangp`.
+
+### Chuyện gì xảy ra
+
+Năm chỗ trong mã V2 viết `from tools.video_cloud import ...`, trong đó có
+`apps/lttvideo/jobs.py:_dieu_phoi_that()` — đường bật máy theo nhu cầu, chạy
+**trong worker thật**. Tệp ấy không tồn tại trên nhánh này. Suốt cả phiên tôi
+chạy hàng chục lệnh `python -c "from tools.video_cloud import nap_env..."` và
+lần nào cũng chạy được.
+
+Vì tôi chạy chúng từ **một worktree khác**, và cây ấy đứng ở nhánh V3.
+
+```
+git ls-tree -r --name-only <nhanh> -- platform_core/video_gen | wc -l
+```
+
+| nhánh | `platform_core/video_gen` | `tools/video_cloud.py` |
+|---|---|---|
+| `master` · `admin-mvp-v3` · **`phien/video-v2-wangp`** | **0 tệp** | **không** |
+| `claude/ltt-video-ai-v3-p00-3f5713` | 5 tệp | có |
+
+### Vì sao bộ test không thấy
+
+`_dieu_phoi_that()` trả `None` sớm khi thiếu `LTTV_POD_ID`, và **mọi** phép kiểm
+đều tiêm `_dieu_phoi` vào để khỏi chạm mạng. Nghĩa là câu lệnh `import` ấy
+**chưa từng được thực thi một lần nào** — không phải nó xanh, mà là nó chưa bao
+giờ chạy. Một `import` không bao giờ chạy trông y hệt một `import` đúng.
+
+### Vì sao nó là một bẫy riêng, không phải Bẫy 24 hay "đọc thứ đại diện"
+
+Ba thứ **cùng lúc** phải sai thì mới ra được lỗi này, và mỗi thứ một mình đều vô
+hại:
+
+1. `sys.path.insert(0, str(Path.cwd()))` — module phân giải theo **thư mục đang
+   đứng**, không theo thư mục chứa tệp gọi. Ai chạy ở đâu thì ra kết quả đó.
+2. Nhiều worktree trên cùng một kho, mỗi cây một nhánh. Cùng đường dẫn tương
+   đối, khác nội dung.
+3. Đường mã ấy chỉ chạy khi có biến môi trường mà máy phát triển không đặt.
+
+⇒ Phép đo *"tôi vừa import nó xong mà"* **đúng** — chỉ là nó trả lời câu
+  *"cây tôi đang đứng có tệp đó không"*, còn câu cần hỏi là *"nhánh sắp deploy
+  có tệp đó không"*.
+
+### Luật rút ra
+
+- **Đo bằng `git ls-tree <nhánh>`, đừng đo bằng `import` hay `ls`.** Nhánh là
+  thứ sẽ deploy; thư mục chỉ là thứ tình cờ đang mở. Cùng họ với
+  `do-nhanh-bang-rev-parse-khong-bang-ten-worktree`.
+- **Phép kiểm phải `import` thật, đừng khớp tên.** `test_733` duyệt AST lấy mọi
+  tên module `tools.*` rồi gọi `importlib.import_module` từng cái. Đối chứng
+  bắt buộc: tiêm lại bản cũ, xác nhận **đỏ**, đọc `returncode` — đã làm, ra đúng
+  `ModuleNotFoundError: No module named 'tools.video_cloud'`.
+- **Nhánh nào chạy `import` lười thì nhánh ấy nợ một phép kiểm nhập.** `import`
+  đặt trong thân hàm để tránh vòng lặp phụ thuộc là hợp lý; nhưng nó dời lỗi từ
+  lúc khởi động sang lúc phục vụ khách, nên phải có ai đó nhập nó sớm.

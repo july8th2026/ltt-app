@@ -50,7 +50,10 @@ MANIFEST = AppManifest(
     icon="🎬",
     accent="#7C3AED",
 
-    # Nội bộ: hiện cho nhân viên đã đăng nhập, không lên trang chủ công khai.
+    # Nội bộ: `surface="admin"` nghĩa là `server/access_middleware.py:71` trả
+    # **404** cho mọi tài khoản có `role != "admin"` — không phải "ẩn khỏi
+    # trang chủ", mà là không tồn tại với người khác. 404 chứ không 403: 403
+    # xác nhận app có thật.
     surface="admin",
     public=False,
     lifecycle="development",

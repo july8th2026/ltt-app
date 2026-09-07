@@ -13393,3 +13393,15 @@ msgstr "WanGP standard — with image"
 
 msgid "Loại tệp đính kèm này chưa được hỗ trợ."
 msgstr "That attachment type is not supported yet."
+
+msgid "Tự viết lại mô tả cho chi tiết hơn"
+msgstr "Rewrite my description in more detail"
+
+msgid "Máy sẽ viết lại mô tả của bạn thành một đoạn dài và chi tiết hơn trước khi dựng. Kết quả sẽ khác với mô tả gốc."
+msgstr "The machine will expand your description into a longer, more detailed one before rendering. The result will differ from what you wrote."
+
+msgid "mở rộng mô tả tự động"
+msgstr "automatic description expansion"
+
+msgid "Hãy đăng nhập bằng tài khoản người dùng để tạo video."
+msgstr "Please sign in with a user account to create videos."

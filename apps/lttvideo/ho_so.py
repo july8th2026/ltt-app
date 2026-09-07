@@ -42,6 +42,7 @@ KHOA_NGUOI_DUNG_DOI_DUOC = frozenset({
     "seed",
     "resolution",
     "video_length",
+    "prompt_enhancer",
 })
 
 
@@ -156,6 +157,35 @@ HO_SO_THEO_DAU_VAO: dict[str, str] = {
     "chu": "ltt.video.chuan.v1",
     "anh": "ltt.video.anh.v1",
 }
+
+#: `A5` — giá trị khoá `prompt_enhancer` gửi mỗi lượt khi người dùng bật mở rộng.
+#:
+#: 🔑 **Đọc thẳng từ mã WanGP, không suy.** Khoá này có sẵn trong
+#:    `models/_settings.json` (mặc định `""`), và `wgp.py:6561` đọc nó đúng một
+#:    cách: `if image_start is None or not "I" in prompt_enhancer` — tức `"I"`
+#:    nghĩa là **đưa cả ảnh mở đầu vào bộ mở rộng**, `"T"` là đưa chữ.
+#:
+#: ⭐ Vì sao `"anh"` là `"TI"` chứ không phải `"I"`: `wgp.py:3118-3121` tự nâng
+#:    `"I"` thành `"TI"` khi nạp settings. Gửi `"TI"` sẵn là gửi đúng thứ WanGP
+#:    sẽ dùng, nên bản ghi `params` của job khớp với thứ thật sự chạy.
+MO_RONG_THEO_DAU_VAO: dict[str, str] = {
+    "chu": "T",
+    "anh": "TI",
+}
+
+#: Giá trị khoá khi **tắt** mở rộng — chính là giá trị xuất xưởng của WanGP.
+MO_RONG_TAT = ""
+
+
+def khoa_mo_rong(hinh_dang: str, *, bat: bool) -> str:
+    """Giá trị `prompt_enhancer` cho một lượt.
+
+    ⛔ Tắt ⇒ trả `""`, y hệt hồ sơ xuất xưởng. Nghĩa là đường mở rộng **không**
+       đổi hành vi của lượt không bật, kể cả khi C-CLOUD đã bật bộ mở rộng.
+    """
+    if not bat:
+        return MO_RONG_TAT
+    return MO_RONG_THEO_DAU_VAO.get(hinh_dang, MO_RONG_TAT)
 
 
 def liet_ke() -> tuple[HoSo, ...]:

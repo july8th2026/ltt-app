@@ -27,12 +27,34 @@ from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from platform_core.i18n import _ as _t
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.auth.session import require_login
-from server.deps import get_db
+from server.deps import get_db, user_hien_tai
 from server.templating import templates
 
 from . import cost, kha_nang
+from .manifest import MANIFEST
 
 router = APIRouter(tags=["lttvideo"])
+
+
+def _nguoi_dung(request: Request):
+    """User **CSDL** của phiên hiện tại.
+
+    🔴 `require_login` trả về một **chuỗi** (email, hoặc username của đường
+       admin-env) — xem docstring của nó. Nó là *cổng* 303, không phải nguồn
+       user. Bản đầu của tệp này đối xử với giá trị ấy như một đối tượng, và hai
+       kiểu hỏng đi kèm nhau:
+
+       1. `user.id` ném `AttributeError` ⇒ trang **500**. Ồn ào, thấy ngay khi
+          mở trang bằng trình duyệt.
+       2. `getattr(user, "vai", "nhan_vien")` **không** ném gì cả — nó trả về giá
+          trị mặc định. Nghĩa là phép kiểm quyền của app chưa từng đọc vai thật
+          của ai; nó luôn chấm trên một hằng số. Im lặng, và là cái tệ hơn.
+
+    ⭐ Trả `None` khi đăng nhập bằng admin-env (không có hàng trong `users`).
+       Đường ấy là lối vận hành, không chạy job — nên nơi gọi phải xử lý `None`
+       chứ không được giả định có user.
+    """
+    return user_hien_tai(request)
 
 #: 🔴 Khuôn khoá video — DANH SÁCH TRẮNG, không phải bộ lọc `..`.
 #:
@@ -147,21 +169,30 @@ def _uoc_gia() -> dict[int, int]:
 
 @router.get("", response_class=HTMLResponse)
 @router.get("/", response_class=HTMLResponse)
-async def trang_chinh(request: Request, user=Depends(require_login),
+async def trang_chinh(request: Request, _dinh_danh: str = Depends(require_login),
                       db=Depends(get_db)):
-    duoc, ly_do = kha_nang.kiem("tao_video", vai=getattr(user, "vai", "nhan_vien"))
+    nd = _nguoi_dung(request)
+    vai = getattr(nd, "role", "") or ""
+    duoc, ly_do = kha_nang.kiem("tao_video", vai=vai)
     return templates.TemplateResponse(
         request,
         "lttvideo.html",
         {
-            "user": user,
+            "user": nd,
+            # `app` cho `{{ app.route_prefix }}` trong template, `nav` de thanh
+            # ben to sang muc dang mo — cung khuon `thumbnail`/`taovideo`.
+            "app": MANIFEST,
+            "nav": MANIFEST.slug,
             "csrf_token": issue_csrf_token(request),
             "ti_le": TI_LE,
             "do_dai": DO_DAI_S,
             "uoc_gia": _uoc_gia(),
             "duoc_dung": duoc,
             "ly_do_tu_choi": ly_do,
-            "video_gan_day": _video_gan_day(db, user.id) if duoc else [],
+            # `A5`: chua mo thi KHONG ve o tick. Xem `kha_nang.NANG_LUC_MO`.
+            "duoc_mo_rong": kha_nang.duoc_phep("mo_rong_prompt", vai=vai),
+            "video_gan_day": (_video_gan_day(db, nd.id)
+                              if duoc and nd is not None else []),
         },
     )
 
@@ -172,14 +203,24 @@ async def tao_video(
     prompt: str = Form(""),
     ti_le: str = Form("16:9"),
     do_dai_s: int = Form(5),
+    mo_rong_prompt: str = Form(""),
     csrf_token: str = Form(""),
     media: UploadFile | None = File(None),
-    user=Depends(require_login),
+    _dinh_danh: str = Depends(require_login),
     db=Depends(get_db),
 ):
     verify_csrf_token(request, csrf_token)
 
-    duoc, ly_do = kha_nang.kiem("tao_video", vai=getattr(user, "vai", "nhan_vien"))
+    user = _nguoi_dung(request)
+    if user is None:
+        # Dang nhap bang admin-env: khong co hang trong `users`, nen khong co so
+        # credit de tru va khong co chu de gan job. Tu choi ro rang.
+        return RedirectResponse(
+            f"?loi={_t('Hãy đăng nhập bằng tài khoản người dùng để tạo video.')}",
+            status_code=303)
+
+    vai = getattr(user, "role", "") or ""
+    duoc, ly_do = kha_nang.kiem("tao_video", vai=vai)
     if not duoc:
         return RedirectResponse(f"?loi={ly_do}", status_code=303)
 
@@ -201,8 +242,6 @@ async def tao_video(
     from platform_core.job_submit import (  # noqa: PLC0415
         dedupe_key_for, submit_with_credit)
 
-    from .manifest import MANIFEST
-
     tham_so = {
         "prompt": mo_ta,          # `C3`: nen tang luu `params` => lich su co prompt
         "duration_s": do_dai_s,
@@ -211,6 +250,12 @@ async def tao_video(
     }
     if media_key:
         tham_so["media_key"] = media_key
+
+    # ⛔ KHÔNG tin ô tick trong biểu mẫu. Trình duyệt gửi được bất cứ trường nào;
+    #    năng lực chưa mở mà vẫn nhận là mở cửa sau cho đúng thứ `kha_nang` đang
+    #    đóng. Nhánh này hỏi lại chính sách, không đọc lại thứ vừa nhận.
+    if mo_rong_prompt and kha_nang.duoc_phep("mo_rong_prompt", vai=vai):
+        tham_so["mo_rong_prompt"] = True
 
     # ⛔ `dedupe_key_for` chan F5 / bam hai lan: cung `job_type` + cung `params`
     #    trong khi job CU CHUA XONG => tra ve job cu, KHONG tru tien lan hai.
@@ -287,13 +332,15 @@ def _video_gan_day(db, user_id, gioi_han: int = 12) -> list[dict]:
 
 
 @router.get("/video/{key:path}")
-async def phuc_vu_video(key: str, user=Depends(require_login)):
+async def phuc_vu_video(key: str, request: Request,
+                        _dinh_danh: str = Depends(require_login)):
     """Phục vụ video của **chính chủ**, kiểm bằng danh sách trắng khuôn khoá."""
     from fastapi import HTTPException
 
     from platform_core.storage import get_storage
 
-    if not khoa_hop_le(key, user.id):
+    nd = _nguoi_dung(request)
+    if nd is None or not khoa_hop_le(key, nd.id):
         raise HTTPException(status_code=404)
 
     kho = get_storage()

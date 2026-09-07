@@ -18,12 +18,20 @@ def test_baseline_chi_mo_dung_mot_nang_luc():
     assert kha_nang.NANG_LUC_MO == ("tao_video",)
 
 
-def test_nhan_vien_duoc_dung_nang_luc_da_mo():
-    assert kha_nang.duoc_phep("tao_video", vai="nhan_vien") is True
+def test_admin_duoc_dung_nang_luc_da_mo():
+    assert kha_nang.duoc_phep("tao_video", vai="admin") is True
+
+
+def test_vai_KHONG_CO_THAT_thi_bi_tu_choi():
+    """🔴 `"nhan_vien"` từng nằm trong `VAI_DUOC_DUNG` nhưng **không tồn tại**:
+    `User` chỉ có cột `role` với hai giá trị `admin`/`user`. Phép kiểm này chốt
+    rằng từ vựng của app là từ vựng của nền tảng, không phải một bảng tự chế."""
+    for vai in ("nhan_vien", "staff", "user"):
+        assert kha_nang.duoc_phep("tao_video", vai=vai) is False
 
 
 def test_nang_luc_chua_mo_thi_TU_CHOI_kem_ly_do_doc_duoc():
-    ok, ly_do = kha_nang.kiem("dien_hoat_nhan_vat", vai="nhan_vien")
+    ok, ly_do = kha_nang.kiem("dien_hoat_nhan_vat", vai="admin")
     assert ok is False
     assert ly_do, "phải có lý do bằng ngôn ngữ sản phẩm"
     assert "dien_hoat_nhan_vat" not in ly_do, "lý do không được rò tên nội bộ"

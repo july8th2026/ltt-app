@@ -189,9 +189,56 @@ dư**.
 
 ---
 
+## 6b. Bộ mở rộng prompt — đọc từ nguồn, và đo trên volume *(07/09)*
+
+### Đánh số họ model — `shared/prompt_enhancer/qwen35_vl.py`
+
+```python
+def get_qwen35_prompt_enhancer_variant(model_no) -> str:
+    return {3: QWEN35_VARIANT_4B, 4: QWEN35_VARIANT_9B,
+            5: QWEN38_VARIANT_27B}[int(model_no)]
+```
+
+cộng `loader.py:44,54` cho hai số đầu:
+
+| `enhancer_enabled` | họ | ghi chú |
+|---|---|---|
+| `0` | tắt | |
+| `1` | Florence2 + Llama 3.2 | |
+| `2` | Florence2 + Llama Joy | |
+| `3` | Qwen3.5-4B Abliterated | **không** hỗ trợ speculative decoding (`config.py`) |
+| **`4`** | **Qwen3.5-9B Abliterated** | ← ta chọn; speculative cần ≥ 12 GB VRAM |
+| `5` | Qwen3.8-27B Uncensored | speculative cần ≥ 24 GB; **đang chặn bởi lỗi cuBLAS** |
+
+Ngữ nghĩa khoá `prompt_enhancer` mỗi lượt: `wgp.py:6561` đọc `"I"` để biết có đưa
+`image_start` vào bộ mở rộng; `wgp.py:3118-3121` tự nâng `"I"` → `"TI"`.
+
+### `wgp_config.json` thật trên volume — 4 khoá, 3 đang sai với máy này
+
+| khoá | đo được | cần | vì sao |
+|---|---|---|---|
+| `enhancer_enabled` | `5` | `4` | 27B đang chặn |
+| `prompt_enhancer_quantization` | `"gguf"` | `"quanto_int8"` | nhân GGUF CUDA không nạp được trên py3.11/cu130 |
+| `enhancer_mode` | *vắng* ⇒ `1` | `0` | `1` = chỉ chạy khi bấm nút Gradio; đường API bị bỏ qua **im lặng** |
+| `prompt_enhancer_speculative_decoding` | `2` (auto) | `0` | auto + 99 GB ⇒ tự bật đường chưa từng chạy |
+
+Sửa bằng `tools/wangp/cau_hinh_enhancer.py` *(mặc định xem, `--ghi` mới ghi;
+từ chối ghi khi pod đang chạy)*.
+
+⚠️ Cũng đo được: tệp live có `"checkpoints_paths": ["ckpts", "."]`, trong khi
+   `tools/wangp/wgp_config.json` của kho ghi `["/data/ckpts", "ckpts", "."]`.
+   WanGP **tự ghi đè** tệp này lúc khởi động (`wgp.py:2661`), nên bản trong kho
+   là bản *gieo hạt*, không phải bản đang chạy. Không hỏng — cwd là
+   `/data/Wan2GP` nên `"ckpts"` vẫn trỏ đúng chỗ 44,8 GB — nhưng đừng đọc tệp
+   trong kho rồi tưởng đó là cấu hình thật.
+
+---
+
 ## 7. Chưa đo — đừng trích như thể đã đo
 
 - cỡ tải `i2v_2_2` · `vace_14B` · `Qwen3.8-27B` (GGUF Q4)
+- cỡ tải **`Qwen3.5-9B Abliterated` Int8** — thứ ta sẽ thật sự tải ở đợt B
+- bộ mở rộng có chạy được trên py3.11/cu130 không *(chưa từng nạp một lần nào)*
 - giây/bước khi bật TF32 + `--compile` + `--teacache`
 - giây/bước ở 241 khung (3–4 cửa sổ trượt)
 - VRAM đỉnh ở profile 1
