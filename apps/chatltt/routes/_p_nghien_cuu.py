@@ -44,6 +44,7 @@ from platform_core.i18n import N_
 from platform_core.i18n import _ as _t
 from server.auth.session import require_login
 from server.deps import get_db
+from apps.chatltt.services import loi_ra_ngoai as LRN
 
 log = logging.getLogger(__name__)
 
@@ -146,6 +147,8 @@ async def xem(job_id: str, request: Request,
     if tt == "done":
         ra["bao_cao"] = dict(getattr(job, "result", None) or {})
     elif tt == "failed":
-        # ⭐ Ly do di ra ngoai. Mot luot hong im lang la mot luot khach cho mai.
-        ra["ly_do"] = str(getattr(job, "error", "") or "")[:300]
+        # ⭐ Ly do di ra ngoai — mot luot hong im lang la mot luot khach
+        #    cho mai. Nhung no dung tu MA, khong tu `job.error`:
+        #    handler co the da boc than loi thuong nguon vao chuoi ay.
+        ra["ly_do"] = LRN.cau("loi_noi_bo")
     return json_ok(ra)

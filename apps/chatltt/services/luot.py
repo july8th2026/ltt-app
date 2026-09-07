@@ -32,6 +32,7 @@ from apps.chatltt.services import (chieu_tool, chinh_sach, co_v3, dang_chay,
 from apps.chatltt.services import hoi_thoai as H
 from apps.chatltt.services import su_kien as S
 from apps.chatltt.tables import ChatlttExecution, ChatlttMessage
+from apps.chatltt.services import loi_ra_ngoai as LRN
 
 log = logging.getLogger("apps.chatltt.luot")
 
@@ -284,7 +285,13 @@ def dong_su_kien(db, *, ex, tra_loi, so, params: dict, user_id: str,
                 return
     except L.LoiCuaLuong as e:
         # Lỗi TRƯỚC byte đầu: chưa giữ tiền (trừ DangBan/ThieuCredit đã dọn).
-        sk = {"type": "response.failed", "code": _ma_loi(e), "ly_do": str(e)}
+        # 🔴 `str(e)` o day tung mang NGUYEN than loi thuong nguon ra
+        #    trinh duyet — do 07/09: duong dan .gguf, id model noi bo,
+        #    base_url va IP noi bo, bon thu cung mot luc. Xem
+        #    `services/loi_ra_ngoai.py`.
+        ma = _ma_loi(e)
+        sk = {"type": "response.failed", "code": ma,
+              "ly_do": LRN.cau(ma)}
         if isinstance(e, L.DangBan):
             sk["retry_after_s"] = e.thu_lai_sau_s
         S.ap_dung(ex, sk, message=tra_loi)
@@ -366,7 +373,15 @@ def chay(execution_id: str, *, user_id: str) -> None:
                 ex = db.get(ChatlttExecution, execution_id)
                 tra_loi = db.get(ChatlttMessage, ex.message_id) if ex else None
             if ex is not None and ex.status in ("streaming", "queued"):
-                sk = {"type": "response.failed", "code": "loi_noi_bo", "ly_do": type(e).__name__}
+                # ⭐ Nhanh nay VON da dung: tra HINH DANG (ten lop), khong
+                #    tra noi dung. Ten lop la cua MA CUA TA, khong phai chu
+                #    thuong nguon viet ra.
+                #
+                # ⚠️ Toi da thu "dong bo" no thanh `LRN.cau(...)` va do la
+                #    mot buoc LUI: mat thong tin chan doan ma khong dong
+                #    them lo nao. `ruff` bat ngay (`e` thanh bien thua).
+                sk = {"type": "response.failed", "code": "loi_noi_bo",
+                      "ly_do": LRN.hinh_dang(e)}
                 S.ap_dung(ex, sk, message=tra_loi)
                 if tra_loi is not None:
                     S.dong_bo_khoi_text(tra_loi, ex)

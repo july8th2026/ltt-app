@@ -13284,3 +13284,39 @@ msgstr "Research a question across the documents you attached to this conversati
 #: apps/chatltt/routes/_p_nghien_cuu.py
 msgid "Đọc tài liệu bạn đã đính vào hội thoại này. Không tìm trên Internet."
 msgstr "Reads the documents you attached to this conversation. Does not search the Internet."
+
+#: apps/chatltt/services/loi_ra_ngoai.py
+msgid "Model đang bận. Thử lại sau ít giây."
+msgstr "The model is busy. Try again in a few seconds."
+
+#: apps/chatltt/services/loi_ra_ngoai.py
+msgid "Không đủ credit cho lượt này."
+msgstr "Not enough credit for this turn."
+
+#: apps/chatltt/services/loi_ra_ngoai.py
+msgid "Nội dung vượt trần ngữ cảnh. Rút ngắn rồi thử lại."
+msgstr "The content exceeds the context limit. Shorten it and try again."
+
+#: apps/chatltt/services/loi_ra_ngoai.py
+msgid "Không gọi được model lúc này."
+msgstr "Could not reach the model right now."
+
+#: apps/chatltt/services/loi_ra_ngoai.py
+msgid "Năng lực này chưa mở."
+msgstr "This capability is not open yet."
+
+#: apps/chatltt/services/loi_ra_ngoai.py
+msgid "Yêu cầu không hợp lệ."
+msgstr "The request is not valid."
+
+#: apps/chatltt/services/loi_ra_ngoai.py
+msgid "Kết nối tới model đứt giữa chừng."
+msgstr "The connection to the model was cut short."
+
+#: apps/chatltt/services/loi_ra_ngoai.py
+msgid "Có lỗi phía máy chủ. Việc này đã được ghi lại."
+msgstr "Something went wrong on the server. It has been logged."
+
+#: apps/chatltt/services/loi_ra_ngoai.py
+msgid "Không chạy được. Thử lại, hoặc báo cho chúng tôi nếu còn lặp."
+msgstr "Could not run. Try again, or tell us if it keeps happening."
