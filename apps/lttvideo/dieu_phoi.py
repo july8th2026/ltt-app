@@ -67,7 +67,7 @@ class DieuPhoi:
 
     def _trang_thai_pod(self) -> str:
         try:
-            d = self.api._rest("GET", f"/pods/{self.pod_id}")
+            d = self.api.rest("GET", f"/pods/{self.pod_id}")
         except Exception as e:  # noqa: BLE001 — đọc không được thì coi như chưa chạy
             # ⛔ Không nuốt: một lỗi mạng lặp lại ở đây là dấu hiệu khoá RunPod
             #    hỏng hoặc pod đã bị xoá, và nếu nó im lặng thì triệu chứng duy
@@ -88,7 +88,7 @@ class DieuPhoi:
         """
         if self._trang_thai_pod() != "RUNNING":
             try:
-                self.api._rest("POST", f"/pods/{self.pod_id}/start")
+                self.api.rest("POST", f"/pods/{self.pod_id}/start")
             except Exception as e:  # noqa: BLE001
                 thong_diep = str(e).lower()
                 if any(d in thong_diep for d in _DAU_HIEU_HET_CARD):
@@ -151,5 +151,5 @@ class DieuPhoi:
             raise ValueError("so_viec_dang_chay must not be negative")
         if so_viec_dang_chay > 0:
             return False
-        self.api._rest("POST", f"/pods/{self.pod_id}/stop")
+        self.api.rest("POST", f"/pods/{self.pod_id}/stop")
         return True

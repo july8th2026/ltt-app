@@ -22,7 +22,7 @@ class ApiGia:
         self.lenh: list[str] = []
         self.trang_thai = "EXITED"
 
-    def _rest(self, method: str, duong: str, than=None):
+    def rest(self, method: str, duong: str, than=None):
         self.lenh.append(f"{method} {duong}")
         if duong.endswith("/start"):
             if self.het_card:

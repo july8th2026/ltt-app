@@ -60,9 +60,9 @@ def main() -> int:
     from platform_core.db import get_session
 
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-    from tools.video_cloud import nap_env, tao_client
+    from tools.wangp.may_cloud import nap_env, tao_client, tim_app_env
 
-    nap_env(Path("secrets/app.env"))
+    nap_env(tim_app_env())
     api = tao_client()
 
     gen = get_session()
@@ -78,7 +78,7 @@ def main() -> int:
     dp = DieuPhoi(api=api, pod_id=POD_ID, client=None)
     nen = dp.nen_tat(so_viec_dang_chay=so_ban, giay_ke_tu_viec_cuoi=giay)
 
-    trang_thai = api._rest("GET", f"/pods/{POD_ID}").get("desiredStatus")
+    trang_thai = api.rest("GET", f"/pods/{POD_ID}").get("desiredStatus")
     print(f"pod={POD_ID} trang_thai={trang_thai} dang_ban={so_ban} "
           f"ranh_giay={'?' if giay is None else round(giay)} "
           f"nguong={dp.nghi_tat_sau_s:.0f} => nen_tat={nen}")
@@ -91,7 +91,7 @@ def main() -> int:
     if "--tat" not in sys.argv:
         print("=> DU DIEU KIEN TAT, nhung dang o che do xem. Them `--tat` de tat that.")
         return 0
-    api._rest("POST", f"/pods/{POD_ID}/stop")
+    api.rest("POST", f"/pods/{POD_ID}/stop")
     print("=> DA GUI LENH TAT")
     return 0
 

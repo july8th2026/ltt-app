@@ -39,6 +39,8 @@ KHO=$GOC/Wan2GP
 CONDA=$GOC/forge
 MOI_TRUONG=$GOC/env311
 LOG=$GOC/ket_qua/install.log
+#: Kien truc GPU ma nua BEN da duoc BIEN DICH cho. Xem `co_moi_truong_ben`.
+TEP_ARCH=$GOC/ket_qua/_ARCH_SAGE
 
 #: Ban Python cua bo chinh chu. `INSTALLATION.md` ghi 3.11.14.
 BAN_PY=3.11.14
@@ -68,10 +70,32 @@ co_goi_he_thong() {
   return 0
 }
 
-#: Nua BEN du chua? Ba muc, tang dan do chat.
+#: Kien truc tinh toan cua card DANG cam. Do bang `nvidia-smi`, khong bang
+#: torch: buoc nay chay TRUOC khi torch chac chan co.
+do_arch() {
+  nvidia-smi --query-gpu=compute_cap --format=csv,noheader 2>/dev/null \n    | head -1 | tr -d "[:space:]"
+}
+
+ARCH=$(do_arch)
+if [ -z "${ARCH:-}" ]; then
+  echo "###### KHONG DO DUOC compute_cap — dung, khong doan" | tee -a "$LOG"
+  exit 4
+fi
+
+#: Nua BEN du chua? BON muc, tang dan do chat.
+#:
+#: Muc thu tu them 07/09. Truoc do `_ARCH_SAGE` duoc GHI RA ma khong ai doc
+#: lai, nen no khong canh gi ca. Hau qua that: doi card (A100 8.0 -> H100
+#: 9.0) thi ba muc dau van du, cong bo qua, va ta dung lai ban SageAttention
+#: bien dich cho card CU — im lang, khong loi, chi la cham hoac sai.
+#:
+#: Khong co tep arch (ban cai cu) => coi nhu LECH va cai lai. Tha cai thua
+#: mot lan con hon chay ca chuong trinh tren mot nhan sai card.
 co_moi_truong_ben() {
   [ -x "$MOI_TRUONG/bin/python" ] || return 1
   [ -d "$KHO/.git" ] || return 1
+  [ -f "$TEP_ARCH" ] || return 1
+  [ "$(tr -d "[:space:]" < "$TEP_ARCH")" = "$ARCH" ] || return 1
   "$MOI_TRUONG/bin/python" -c "import torch, mmgp" >/dev/null 2>&1 || return 1
   return 0
 }
@@ -163,11 +187,6 @@ buoc requirements "$PY" -m pip install -q -r "$KHO/requirements.txt"
 #    chac chan co, va luot 06/09 da cho thay hau qua — python chua ton tai nen
 #    phep do roi ve mac dinh `8.0`, trong khi card that la H100 (9.0). Mot gia
 #    tri du phong IM LANG bien mot phep do thanh mot lo^i doan.
-ARCH=$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader 2>/dev/null | head -1 | tr -d "[:space:]")
-if [ -z "${ARCH:-}" ]; then
-  echo "###### ⛔ KHONG DO DUOC compute_cap — dung, khong doan" | tee -a "$LOG"
-  exit 4
-fi
 echo "###### TORCH_CUDA_ARCH_LIST do duoc tu card: $ARCH" | tee -a "$LOG"
 export TORCH_CUDA_ARCH_LIST="$ARCH"
 export FORCE_CUDA=1
@@ -250,6 +269,8 @@ except Exception as e:
 print(json.dumps(ra, ensure_ascii=False, indent=1))
 ENV
 
+echo "$ARCH" > "$TEP_ARCH"
+echo "###### da ghi kien truc da bien dich: $ARCH -> $TEP_ARCH" | tee -a "$LOG"
 echo "###### CAI DAT XONG $(date -Is)" | tee -a "$LOG"
 du -sh "$MOI_TRUONG" "$CONDA" "$KHO" >> "$LOG" 2>&1
 # ⛔ KHONG co moc `_CAI_DAT_XONG`. Cong o tren kiem thu that.

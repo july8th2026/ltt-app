@@ -4,9 +4,9 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path.cwd()))
-from tools.video_cloud import nap_env, tao_client  # noqa: E402
+from tools.wangp.may_cloud import nap_env, tao_client, tim_app_env  # noqa: E402
 
-nap_env(Path("secrets/app.env"))
+nap_env(tim_app_env())
 import boto3  # noqa: E402
 from botocore.config import Config  # noqa: E402
 
@@ -30,7 +30,7 @@ def doc(key, duoi=2500):
 
 api = tao_client()
 try:
-    p = api._rest("GET", f"/pods/{POD}")
+    p = api.rest("GET", f"/pods/{POD}")
     print(f"POD {POD}: {p.get('desiredStatus')} | ${p.get('costPerHr')}/gio")
 except Exception as e:
     print("khong doc duoc pod:", str(e)[:90])

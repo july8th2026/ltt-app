@@ -21,9 +21,9 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path.cwd()))
-from tools.video_cloud import nap_env, tao_client  # noqa: E402
+from tools.wangp.may_cloud import nap_env, tao_client, tim_app_env  # noqa: E402
 
-nap_env(Path("secrets/app.env"))
+nap_env(tim_app_env())
 api = tao_client()
 
 SO = Path(r"C:/Users/THANGT~1/AppData/Local/Temp/claude/D--LTTSTUDIOSAPP"
@@ -44,7 +44,7 @@ GPU_UU_TIEN = [
 DC = "US-KS-2"          # ghim: volume nam o day, khong ghim thi khong gan duoc
 
 # ── Tien kiem: loai nao con hang ngay luc nay ──
-d = api._graphql(
+d = api.graphql(
     'query { gpuTypes { id displayName memoryInGb '
     'lowestPrice(input: {gpuCount: 1, dataCenterId: "%s"}) '
     '{ uninterruptablePrice stockStatus } } }' % DC)
@@ -82,7 +82,7 @@ than = {
 }
 print(f"[tao pod] anh={ANH}")
 print("[tao pod] dang goi POST /pods ...")
-pod = api._rest("POST", "/pods", than)
+pod = api.rest("POST", "/pods", than)
 pid = pod.get("id")
 
 # ⛔ DONG NGAY SAU — khong duoc co gi chen vao giua
