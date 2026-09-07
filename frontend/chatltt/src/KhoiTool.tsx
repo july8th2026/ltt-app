@@ -44,7 +44,21 @@ const NHAN_TOOL: Record<string, string> = {
   'speech.ltt': 'Đọc thành tiếng',
 }
 
-/** Khoa doi so → nhan. Khoa VANG o day thi **khong hien**, xem docstring. */
+/**
+ * Khoa doi so → nhan. Khoa VANG o day thi **khong hien**, xem docstring.
+ *
+ * 🔴 Sau nhom `noi_bo.*` la doi so cua HAI tool TRA TIEN ma model duoc phep de
+ *    nghi (`chieu_tool.CHO_MODEL_GOI`). Do 07/09 tren trinh duyet that, truoc
+ *    khi co may dong nay: mot khoi `cho_duyet` cua `image.ltt` ve ra
+ *    **rong hoan toan** — chi "Ve anh — Dang cho ban duyet", khong mot dong
+ *    nao noi se ve cai gi.
+ *
+ * ⛔ `test_835` co y KHONG doi nhan cho tool ngoai, ly le la *"hop dong nam o
+ *    app khac"*. Ly le do dung ve QUYEN SO HUU nhung sai ve KET QUA: dung hai
+ *    tool duy nhat tieu tien cua khach lai la hai tool ve ra man hinh trang.
+ *    Va `tables.py` da tu hua dieu nguoc lai — `ChatlttApproval.doi_so` chu
+ *    thich la *"doi so nguoi dung NHIN THAY khi bam"*.
+ */
 const NHAN_DOI_SO: Record<string, string> = {
   mui_gio: 'Múi giờ',
   bieu_thuc: 'Phép tính',
@@ -52,6 +66,14 @@ const NHAN_DOI_SO: Record<string, string> = {
   so_doan: 'Số đoạn',
   noi_dung: 'Nội dung',
   lau_dai: 'Nhớ lâu dài',
+  // `image.ltt` — `prompt` la doi so BAT BUOC, xem `apps/anhnoibo/manifest.py`.
+  prompt: 'Mô tả',
+  negative_prompt: 'Tránh vẽ',
+  count: 'Số ảnh',
+  // `speech.ltt` — `text` la doi so BAT BUOC, xem `apps/ltt_voice/manifest.py`.
+  text: 'Văn bản',
+  voice_id: 'Giọng',
+  preset: 'Kiểu giọng',
 }
 
 const NHAN_TRANG_THAI: Record<TrangThaiTool, string> = {
@@ -117,7 +139,19 @@ export function KhoiTool({ khoi }: { khoi: KhoiToolCall }) {
     .map(([k, v]) => [NHAN_DOI_SO[k], giaTri(v)] as const)
     .filter(([, v]) => v !== '')
 
-  const coThan = doiSo.length > 0 || tt === 'loi'
+  /**
+   * ⭐ Mot khoi `cho_duyet` KHONG duoc phep rong. Ca ung dung nay fail-closed
+   *    (`lop_chinh_sach` tra `DESTRUCTIVE` khi khong khai), va mot phieu duyet
+   *    trang la fail-OPEN o giao dien: no trong vo hai, nen nguoi ta bam.
+   *
+   * ⛔ Duong nay le ra khong bao gio chay — banh coc `test_840` chot rang moi
+   *    tool trong `CHO_MODEL_GOI` deu co nhan cho doi so BAT BUOC cua no. No o
+   *    day vi banh coc chay luc gate con bo giao dien la mot BAN DA BUILD: mot
+   *    lan doi ten tham so ben app khac co the len may chu truoc khi ai kip
+   *    build lai.
+   */
+  const thieuChiTiet = tt === 'cho_duyet' && doiSo.length === 0
+  const coThan = doiSo.length > 0 || tt === 'loi' || thieuChiTiet
 
   const ten = nhanTool(String(khoi.ten ?? ''))
 
@@ -156,6 +190,11 @@ export function KhoiTool({ khoi }: { khoi: KhoiToolCall }) {
                 </div>
               ))}
             </dl>
+          )}
+          {thieuChiTiet && (
+            <p className="ltc-tool__loi">
+              Không hiển thị được chi tiết của yêu cầu này — đừng duyệt.
+            </p>
           )}
           {tt === 'loi' && (
             <p className="ltc-tool__loi">{cauLoi(String(khoi.tom_tat ?? ''))}</p>

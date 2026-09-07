@@ -165,6 +165,80 @@ trong cùng buổi.
   trunk đứng yên một lần bằng đúng thời lượng gate.** Đó là phối hợp, không phải
   kỹ thuật — và tôi đã nhắn phiên kia xin giữ tay.
 
+### P09 bước 6 — ĐÃ XONG 07/09, và nó tìm ra một lỗi
+
+Đăng nhập thật bằng trình duyệt, mở một hội thoại gieo sẵn đủ **năm** dạng khối
+`tool_call`. Đo trên DOM, không đọc ảnh chụp:
+
+| khối | nhãn khả truy cập | thân |
+|---|---|---|
+| `cho_duyet` | `Tính toán — Đang chờ bạn duyệt` | mở, `Phép tính 8123*4471` |
+| `dang_chay` | `Vẽ ảnh — Đang chạy` | — |
+| `xong` | `Tìm trong tài liệu của bạn — Xong` | gấp lại |
+| `loi` | `Tính toán — Không chạy được` | mở, câu lỗi màu đỏ |
+| khối CŨ (không `trang_thai`) | `Xem ngày giờ — Xong` | gấp lại |
+
+⭐ `aria-label` rời rạc đúng như P09 bước 4 đã sửa: `Tính toán — Đang chờ bạn
+duyệt`, không phải chuỗi dính `Tính toánĐang chờ bạn duyệt`.
+
+### 🔴 Lỗi tìm ra bằng MẮT: một phiếu duyệt VẼ RA RỖNG
+
+Khối `dang_chay` của `image.ltt` ở bảng trên có thân **trống**, và DOM nói vì
+sao:
+
+```html
+<div class="ltc-tool" data-trang-thai="dang_chay">
+  <button aria-label="Vẽ ảnh — Đang chạy" disabled>…</button>
+</div>
+```
+
+`prompt` không có trong `NHAN_DOI_SO`, mà khoá không nhãn thì **ẩn**. Bình
+thường đó là lựa chọn đúng — nhưng `image.ltt` và `speech.ltt` là **hai tool
+duy nhất tiêu tiền của khách**, thuộc lớp `PAID`, nên đường đi bình thường của
+chúng là mở một **phiếu duyệt**. Nghĩa là người dùng được hỏi *"duyệt không?"*
+trên một cái khung không nói mình sắp duyệt cái gì.
+
+⛔ `test_835` cố ý không đòi nhãn cho tool ngoài, lý lẽ: *"hợp đồng nằm ở app
+   khác và có thể đổi mà không ai ở đây biết"*. Lý lẽ ấy đúng về **quyền sở
+   hữu** và sai về **kết quả**.
+
+⭐ Và `tables.py` đã tự hứa điều ngược lại từ trước: chú thích của
+  `ChatlttApproval.doi_so` là *"đối số người dùng **nhìn thấy** khi bấm"*.
+
+**Sửa, hai tầng:**
+
+1. `NHAN_DOI_SO` thêm nhãn cho đối số của hai tool trả tiền: `prompt`
+   (*Mô tả*), `count`, `negative_prompt`, `text` (*Văn bản*), `voice_id`,
+   `preset`. Núm kỹ thuật (`mode`, `model`, `image_key`) vẫn ẩn.
+2. `KhoiTool` **fail-closed**: `cho_duyet` mà không hiện được đối số nào thì in
+   *"Không hiển thị được chi tiết của yêu cầu này — đừng duyệt."* Cả ứng dụng
+   này fail-closed (`lop_chinh_sach` trả `DESTRUCTIVE` khi không khai); một
+   phiếu duyệt trắng là fail-**open** ở giao diện — nó trông vô hại, nên người
+   ta bấm.
+
+**Bánh cóc `test_840`** chốt: mọi tool trong `CHO_MODEL_GOI` phải có nhãn cho ít
+nhất một đối số **bắt buộc**. Mệnh đề hẹp đúng chỗ — nó bất biến với việc app kia
+thêm núm mới, nhưng đỏ ngay nếu họ đổi tên `prompt`. Đối chứng đã đo: tiêm bản
+cũ ⇒ **2 đỏ** (Python) và **3 đỏ** (frontend).
+
+Đo lại sau khi sửa, trên trình duyệt thật:
+
+```
+Vẽ ảnh — Đang chờ bạn duyệt      | Mô tả: mot con meo…  · Số ảnh: 2
+Đọc thành tiếng — Đang chờ…      | Văn bản: Xin chao…   · Giọng: vn_nu_1
+Vẽ ảnh — Đang chờ bạn duyệt      | "…— đừng duyệt."   (ca khoá không nhãn)
+```
+
+0 lỗi console · mọi request 200 · bundle `main-Cz21CDvu.js`.
+
+### ⚠️ Còn thiếu, và KHÔNG sửa ở đây: GIÁ
+
+`ChatlttApproval` mang `bao_gia_credit` — *"số credit **đã hiện ra**"* — nhưng
+khối `tool_call` không mang trường ấy, nên màn hình không nói giá. Không vá vội
+ở P09: giao diện **duyệt** (nút bấm) chưa tồn tại ở frontend, nên đây không phải
+một hồi quy mà là một hạng mục của việc dựng giao diện duyệt. Ghi ra để nó không
+rơi.
+
 ### Còn lại của P09 bước 6
 
 Đã chứng minh: mã trên máy, bundle đúng, Cloudflare không phục vụ bản cũ.

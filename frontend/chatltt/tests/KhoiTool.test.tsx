@@ -199,3 +199,44 @@ describe('ten kha truy cap', () => {
     expect(container.querySelector('dl dd')?.textContent).toBe('2+2')
   })
 })
+
+// ── 8. Phieu duyet khong duoc RONG ─────────────────────────────────────────
+
+describe('phieu duyet khong duoc rong', () => {
+  it('doi so cua tool TRA TIEN hien ra, khong bi an nhu khoa la', () => {
+    // 🔴 Do 07/09 tren trinh duyet that: khoi `image.ltt` ve ra chi mot dong
+    //    tieu de, vi `prompt` khong co trong `NHAN_DOI_SO`. Hai tool tra tien
+    //    la hai tool DUY NHAT tieu tien cua khach.
+    const chu = chuCua({
+      ten: 'image.ltt', trang_thai: 'cho_duyet',
+      doi_so: { prompt: 'mot con meo di bo tren mai nha' },
+    })
+    expect(chu).toContain('mot con meo di bo tren mai nha')
+  })
+
+  it('speech.ltt hien VAN BAN se doc', () => {
+    const chu = chuCua({
+      ten: 'speech.ltt', trang_thai: 'cho_duyet',
+      doi_so: { text: 'xin chao cac ban' },
+    })
+    expect(chu).toContain('xin chao cac ban')
+  })
+
+  it('khong nhan duoc doi so nao thi NOI RA, khong ve mot phieu trang', () => {
+    // ⭐ Fail-closed. Bo giao dien la mot BAN DA BUILD, nen banh coc `test_840`
+    //    (chay luc gate, tren ma nguon) khong che duoc ca truong hop app kia
+    //    doi ten tham so va len may chu truoc mot lan build.
+    const chu = chuCua({
+      ten: 'image.ltt', trang_thai: 'cho_duyet',
+      doi_so: { mot_khoa_chua_ai_lam_nhan: 'gia tri' },
+    })
+    expect(chu).toContain('đừng duyệt')
+  })
+
+  it('nhung KHONG canh bao khi trang thai khac cho_duyet', () => {
+    // Mot khoi `xong` khong co doi so nao hien duoc thi im lang la dung: khong
+    // ai dang duoc hoi de bam gi ca.
+    const chu = chuCua({ ten: 'image.ltt', trang_thai: 'xong', doi_so: { mode: 't2i' } })
+    expect(chu).not.toContain('đừng duyệt')
+  })
+})
