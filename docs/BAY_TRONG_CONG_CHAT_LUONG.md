@@ -2223,3 +2223,111 @@ trong khi `dau_van_tay.json` ghi `2f28159f`.
 nhắn chéo nhau. Phiên kia không tự commit hộ cũng không tự revert — đúng ranh
 giới: revert hộ là xoá mất 72 dòng đang viết dở mà người viết không biết vì
 sao.)*
+
+---
+
+## Bẫy 31 — Một bánh cóc **tự tháo về phía XANH**, và không ai thấy nó tháo
+
+Bẫy 27 nói về một bánh cóc **đỏ sẵn từ trước**. Cái này ngược lại, và tệ hơn:
+một bánh cóc thôi bảo vệ thứ nó sinh ra để bảo vệ, mà **vẫn in `PASS`**.
+
+Không lỗi, không stack trace, không dòng nào khác thường. Chỉ là từ hôm đó
+nó không còn kiểm gì.
+
+### Hình dạng
+
+```python
+xau = []
+for m in re.findall(r"<chuoi hang>", ma):      # <- vong lap LAI BANG mot hang
+    if <dieu kien>: xau.append(...)
+assert not xau                                  # <- rong thi XANH
+```
+
+Ai đó sửa **chuỗi hằng** kia — thường vì họ sửa đúng cái sản phẩm mà phép kiểm
+đang canh — thì vòng lặp không vào lần nào, `xau` rỗng, `assert not []` xanh.
+
+⭐ Đây là **cùng một bài học** với *"không đối chứng thì số 0 không phải phát
+   hiện"* (Bẫy 24), chỉ đứng ở **phía phép kiểm** thay vì phía phép đo. Ở đó
+   một số 0 trông như một phát hiện; ở đây một tập rỗng trông như một bảo đảm.
+
+### 🔴 Điều kiện để hình dạng ấy thành LỖ — và nó không phải lúc nào cũng thành
+
+**Tập rỗng phải tương ứng một trạng thái SAI mà không ai thấy.**
+
+Hai mẫu đọc thật, 07/09/2026, một của mỗi loại:
+
+| | |
+|---|---|
+| **Lỗ thật** — `test_365:349` | quét `<script … nhip_job.js …>` tìm `defer`. Đổi tên tệp JS ⇒ khớp 0 ⇒ xanh, và thứ nó canh (`defer` làm `LTT.nhipJob is not a function`, hỏng **im lặng**) hết người canh |
+| **Vô hại** — `test_306:923` | duyệt `check_cve.moc` đòi mỗi dòng có lý do. Tệp rỗng ⇒ xanh — nhưng "rỗng" ở đây là **không miễn trừ CVE nào**, trạng thái *an toàn hơn* |
+
+⛔ Nên **đừng** dựng một bánh cóc chỉ đếm *hình dạng*. Nó sẽ báo động trên
+   `test_306` — tức chính ta xây một dụng cụ **§4d lớp E**, dương tính giả từ
+   công cụ của mình, trong lúc đang bàn về việc dụng cụ tự sai.
+
+### Ba bộ dò, ba con số, và cả ba đều tự kiểm ĐẠT
+
+Hai phiên viết hai bộ dò độc lập cho *cùng* một hình dạng:
+
+```
+v1 (hang chuoi GAN trong ham)                  ->  1
+v2 (+ hang cap module + viet thang)            -> 17
+ban cua phien kia (+ .split/.startswith/...)   -> 25
+```
+
+Cả ba đều bắt được ca đã biết (`test_360`) — tức cả ba **tự kiểm đạt**.
+
+🔴 Vậy mà chúng đếm ba tập khác nhau. ⇒ **"Tự kiểm đạt" không đủ để một con số
+   so sánh được với con số khác.** Bộ tự kiểm chỉ nói *"tôi không rỗng"*; nó
+   không nói *"tôi đếm cùng một thứ với anh"*. Điều đó chỉ lộ ra vì có **hai
+   người đo độc lập rồi so** — không bộ dò nào tự nói ra được.
+
+⛔ Và đừng lấy **phần giao** hai danh sách làm việc tiếp: phần giao của hai bộ
+   lọc **sai tiêu chí** vẫn sai tiêu chí, chỉ ngắn hơn và **trông** đáng tin
+   hơn. Đó là *"giả thuyết khớp quá vừa"*.
+
+### Chiều thứ hai: xanh vì **KHỚP NHẦM**, không phải vì rỗng
+
+`test_360::test_MOI_nhanh_ban_deu_nuoi_CAPACITY_REFUSED` đòi mỗi nhánh trả
+"bận" phải đếm `CAPACITY_REFUSED` trong **700 ký tự trước** nó. Đo 07/09: ở
+nhánh `DangBan` của `streaming.py`, chữ mà cửa sổ ấy khớp phải nằm trong **một
+dòng chú thích** — không phải một bộ đếm.
+
+⇒ Bảo đảm ở site đó là **ảo** suốt thời gian qua, và không ai biết vì nó vẫn
+  `PASS`. Chỉ khi viết lại phép kiểm bằng **AST** nó mới lộ ra.
+
+*(Sự thật phía sau thì vô hại: chỗ ấy đếm ở **facade** `runtime_noi_bo/luong.py`
+đúng thiết kế H43 Phase 02. Nhưng phép kiểm không biết điều đó — nó chỉ tình cờ
+khớp một chuỗi.)*
+
+### Liều thuốc
+
+**1. Một đối chứng số lượng đứng cạnh mọi phép kiểm dạng này.**
+
+```python
+assert so_khop >= 3, "chi thay {so_khop} — hoac cau chu da doi, hoac mot nhanh
+                      da bien mat. Ca hai deu phai xem."
+```
+
+*"Không tìm thấy chỗ nào"* không bao giờ được đọc thành *"mọi chỗ đều đúng"*.
+
+**2. Đọc AST, đừng quét văn bản thô.** Một bộ dò văn bản **trừng phạt việc
+giải thích**: viết chú thích càng rõ càng dễ làm nó đỏ. Trong đúng bản vá này
+nó xảy ra **hai lần**:
+
+- tôi viết `# GIU NGUYEN tien to "The model is busy…"` vào `streaming.py` →
+  phép kiểm đếm dòng chú thích ấy như một nhánh bận → đỏ;
+- tôi viết thêm mươi dòng giải thích vào `chat.py` → `CAPACITY_REFUSED` bị đẩy
+  ra ngoài **cửa sổ 700 ký tự** → đỏ, dù mã không đổi một chút nào.
+
+**3. Hỏi QUAN HỆ, đừng đo KHOẢNG CÁCH.** Thay *"700 ký tự trước"* bằng *"trong
+cùng khối `except`"*. Ranh giới cú pháp là quan hệ thật; nó bất biến với việc
+chú thích dài hay ngắn.
+
+**4. Miễn trừ phải KÈM CHỨNG MINH.** Nhánh `DangBan` được miễn vì facade mới là
+chỗ đếm — nên phép kiểm chốt luôn rằng **facade thật sự đếm**. Ngày facade thôi
+đếm, nó đỏ; chứ không im lặng tha cho cả hai chỗ.
+
+⭐ Và kiểm hai chiều: tiêm bản cũ, đòi hỏi **ĐỎ**. Ba phép tiêm cho bản vá này
+   (trả `{e.ly_do}` vào thân · gỡ `CAPACITY_REFUSED` · đổi câu chữ sản phẩm)
+   đều đỏ đúng như mong đợi — và đọc `returncode`, đừng khớp mẫu `stdout`.
