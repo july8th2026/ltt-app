@@ -2,6 +2,25 @@
 
 Viết 07/09/2026, sau khi `PLAN_LAP_RAP_2026-09-06.md` đóng 17/19 hạng mục.
 
+> ## ⛔ ĐÂY KHÔNG PHẢI "PLAN CUỐI" THAY CÁC PLAN KIA
+>
+> Bốn tài liệu kế hoạch **xếp lớp**, không thay nhau. Thiếu dòng này ở bản đầu
+> là một thiếu sót thật — và nó đã gây nhầm lẫn ngay trong ngày (xem §4a).
+>
+> | tài liệu | vai trò |
+> |---|---|
+> | **`KE_HOACH_TRIEN_KHAI.md`** | **KẾ HOẠCH TỔNG.** Nguồn duy nhất của mọi mã `H…`. Mọi ô đóng/mở đếm ở đây. |
+> | `KE_HOACH_NOI_TIEP_2026-08-29.md` | một lát cắt (Đợt 0–4). Tự khai *"không thay kế hoạch tổng"* |
+> | `PLAN_LAP_RAP_2026-09-06.md` | **trục khác**: thay tự-viết bằng công cụ cộng đồng (`H1–H12`, `S1–S7`) |
+> | **tệp này** | một **thấu kính** trên 37 ô còn mở của kế hoạch tổng |
+>
+> ⇒ Tệp này **không tạo hạng mục mới**. Mã `A1`, `A2`… ở §4 chỉ là **thứ tự
+>   thi công**; hạng mục thật vẫn là `H31.3b2`, `H33.R4`… trong kế hoạch tổng.
+>
+> ⭐ Khi tệp này và kế hoạch tổng mâu thuẫn, **kế hoạch tổng đúng**. Và khi cả
+>   hai mâu thuẫn với `NHAT_KY.md`, **nhật ký đúng** — luật đã có sẵn ở đầu
+>   kế hoạch tổng.
+
 ⭐ **Kế hoạch này không phải danh sách việc. Nó là danh sách CHẶN.** Phép đo mở
 đầu nói rõ vì sao: 37 ô còn lại **không** bị chặn bởi mã.
 
@@ -256,13 +275,43 @@ Bốn dòng `Passed` sau mỗi commit trả lời một câu hẹp hơn nhiều 
 
 ---
 
+## 4a. ⚠️ Một lần lệch giữa kế hoạch và việc — ghi lại thay vì lặng lẽ sửa
+
+Chủ dự án hỏi 07/09: *"có vẻ bạn đang trộn plan lại để xử lý?"* — **đúng**.
+
+Lộ trình bản đầu ghi giai đoạn A gồm `A1 · A1b · A1c`, **cả ba đều là UVQ**.
+Nhưng việc tôi thực sự làm là **`H31.3b2` — cấp LPIPS**, một ô của kế hoạch
+tổng **không có mặt trong giai đoạn A**.
+
+**Lý do kỹ thuật thì đúng:** đi làm `A1b` mới lộ ra `verify_manifest` ghim cứng
+`if key != "lpips"`, nên provision UVQ đòi **sửa mã nền tảng** trước; còn LPIPS
+là *"đường mở duy nhất"* theo chính ma trận giấy phép, và `H31.3b2` là ô đang
+mở thật.
+
+⛔ **Nhưng tôi không cập nhật lộ trình.** Nên trong vài giờ, tài liệu nói một
+   đằng và tôi làm một nẻo — và chỉ người ngoài đọc mới thấy.
+
+⭐ Đó là cùng một lớp lỗi đã ghi nhiều lần trong ngày: **một bản đồ chép tay
+   không tự biết nó đã cũ**. Chỉ khác là lần này bản đồ do chính tôi vừa vẽ.
+
+⇒ Luật rút ra, áp cho chính tệp này: **đổi thứ tự thi công thì sửa lộ trình
+  TRƯỚC khi làm, không phải sau khi bị hỏi.** Nếu lý do đổi chỉ lộ ra lúc bắt
+  tay vào việc, thì dừng lại ghi một dòng rồi mới đi tiếp.
+
+---
+
 ## 4. Lộ trình — xếp theo *thứ chặn thứ khác*
 
 ```
-GIAI DOAN A — GO CHAN (khong viet tinh nang, chi mo duong)   ~6-8 h
-  A1  Tham dinh UVQ theo 6 dieu kien       [XONG PHAN DO DUOC 07/09]
+GIAI DOAN A — GO CHAN (khong viet tinh nang, chi mo duong)
+  A0  H31.3b2  CAP LPIPS 0.1.4 + AlexNet     [CAP XONG 07/09, con benchmark]
+        verify_manifest("lpips") -> ready: True, reason "verified"
+        con dieu kien 6: benchmark CPU/GPU + peak VRAM + latency
+  A1  Tham dinh UVQ theo 6 dieu kien         [XONG PHAN DO DUOC 07/09]
         dat 1-4  |  con 5 (SHA-256) va 6 (smoke GPU)
-  A1b Tac vu operator: tai 169 MB checkpoint, ghi SHA-256, ghim commit
+  A1b Tac vu operator: tai 169 MB checkpoint UVQ, ghi SHA-256, ghim commit
+        ⛔ CHAN: `verify_manifest` ghim cung `if key != "lpips"` -> phai
+           mo rong cong provision TRUOC, tuc sua ma nen tang
   A1c Smoke benchmark tren GPU dich — VA kiem lech torch 2.8 -> 2.11
   A2  Dung bo cham 4 lop                   [LOP 1 XONG 07/09]
         `tools/cham_doi_chung.py` — 32 cap, dap an tu PHEP SUY GIAM
