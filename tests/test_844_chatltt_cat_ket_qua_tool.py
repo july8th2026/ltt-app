@@ -2,13 +2,37 @@
 test_844 — kết quả tool KHỔNG LỒ: cắt theo MỤC, không theo ký tự. (H44 P10)
 
 P10 liệt kê *"kết quả tool/tệp khổng lồ"* là một hạng mục tra tấn. Đo 07/09 trên
-một kết quả `noi_bo.tim_tai_lieu` cỡ **thường** — 12 đoạn, không phải ca biên:
+một kết quả `noi_bo.tim_tai_lieu`:
 
 ```
 json phan tich duoc : KHONG  (JSONDecodeError o char 8000)
 doan co "noi_dung"  : 10
 doan co "trich_dan" : 9          <- MOT DOAN TOI MODEL MA KHONG CO NGUON
 ```
+
+## ⚠️ Ngưỡng THẬT — đo lại sau khi một phiên khác bác con số của tôi
+
+Bản đầu tôi mô tả 12 đoạn là *"cỡ thường"*. **Sai.** `SO_DOAN_MAC_DINH = 5`, và
+`chia_doan.TRAN = 1200` chặn cỡ mỗi đoạn. Đo lại từng bước:
+
+```
+so_doan=5  ->  6.561 ky tu     (mac dinh — KHONG vo)
+so_doan=6  ->  7.859 ky tu     (con cach tran 141 ky tu)
+so_doan=7  ->  9.157 ky tu     <- VO TRAN
+```
+
+⇒ Mệnh đề đúng: *"ở một cỡ kết quả **đạt tới được**, đường này tháo mất bất biến
+  trích dẫn"* — **không** phải *"mọi lượt tìm tài liệu đều hỏng"*.
+
+🔴 Và nó vẫn phải vá sớm, vì hai lý do:
+   1. `so_doan` là tham số **model tự đặt** (`tool_noi_bo` khai nó trong schema,
+      `tim()` chặn ở 50) — không ai phải làm gì lạ để chạm ngưỡng;
+   2. `so_doan=6` chỉ còn **141 ký tự** dư. Một tài liệu có đoạn dài hơn trung
+      bình, hay một trường mới thêm vào `cho_tool`, là đủ.
+
+⭐ Ghi lại cả con số **sai** của tôi: một mệnh đề quá mạnh bị bác thì cả mệnh đề
+  bị mất giá, kể cả phần đúng của nó. Bên bác tôi nói đúng câu đó — *"vế đầu đủ
+  để phải vá sớm, và nó đứng vững khi bị soi"*.
 
 ## 🔴 Vì sao đây là lỗi, không phải một phép cắt thô chấp nhận được
 
