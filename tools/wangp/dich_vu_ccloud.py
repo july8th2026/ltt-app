@@ -183,35 +183,14 @@ def health() -> dict:
             "loi_ham_nong": _loi_ham}
 
 
-@app.get("/metadata")
-def metadata(x_lttv_key: str = Header(default="")) -> dict:
-    """Ảnh chụp `metadata` của **mọi** model, để LTT chọn model khi máy đã TẮT.
-
-    ⭐ Vì sao chụp chứ không hỏi trực tiếp: `list_model_defs()` có sẵn bộ lọc
-       `main_output` + `inputs`, nhưng nó cần một **phiên đang chạy**. Mà `B1`
-       chốt "bật pod theo nhu cầu", nên ta phải chọn model **trước khi** bật máy
-       — lúc đó không có phiên nào để hỏi.
-
-    ⛔ Đây là dữ liệu của WanGP, chụp nguyên văn. LTT **không** diễn giải lại;
-       `apps/lttvideo/chon_model.py` chỉ **lọc** trên nó.
-
-    📌 Neo vào SHA: cùng một SHA cho cùng một ảnh chụp. Lệch SHA nghĩa là ảnh
-       chụp nói về một engine khác bản.
-    """
-    _kiem_khoa(x_lttv_key)
-    s = _lay_phien()
-    ra = {}
-    for m in s.list_model_defs():
-        ten = m.get("model_type") or m.get("id")
-        if not ten:
-            continue
-        try:
-            ra[str(ten)] = s.get_model_schema(str(ten))
-        except Exception as e:  # noqa: BLE001 — mot model hong khong duoc lam
-            # hong ca anh chup; ghi ly do vao chinh o cua no.
-            ra[str(ten)] = {"loi": f"{type(e).__name__}: {e}"}
-    return {"so_model": len(ra), "model": ra}
-
+# 🔴 `/metadata` da GO 08/09 (HM-7). No gom `list_model_defs()` + `get_model_
+#    schema()` cua MOI model roi NHET LOI cua tung model vao chinh o cua no
+#    (`{"loi": ...}`). Nghe nhu phong thu, thuc ra la GIAU HONG HOC VAO TRONG DU
+#    LIEU: tang tren doc o ay nhu mot nang luc, va mot model hong trong giong
+#    het mot model khong co nang luc.
+#
+#    Bon duong tra cuu tho o tren thay no. `test_739` doc AST de cam dung kieu
+#    gom ay quay lai.
 
 # ══════════════════════════════════════════════════════════════════════════
 #  BON DUONG TRA CUU — chuyen tiep THO, khong bien doi
