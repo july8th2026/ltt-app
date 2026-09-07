@@ -134,13 +134,26 @@
   background: var(--surface-canvas);
 }
 
+/* 🔴 `flex-wrap: wrap` — do 07/09 tren ma tran 390 px (P09 "Dat khi").
+   Voi `nowrap`, bon phan tu (65+77+56+100 = 298 px + 3 gap) bi ep trong 366 px
+   kha dung: chip "Model chua san sang" co lai con 56 px RONG va 72 px CAO, tuc
+   chu gay bon dong trong mot hinh bau duc. O chon du an co lai con "— k".
+
+   ⛔ Khong sua bang `overflow-x: auto`: mot thanh cuon ngang o hang dinh la mot
+      hang dinh nguoi dung khong thay het, va tren dien thoai thi ho khong biet
+      la con thu de cuon toi. Xuong dong thi moi thu deu nhin thay duoc. */
 .ltc-dinh {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 12px;
   padding: 10px 16px;
   border-bottom: 1px solid var(--border-subtle);
 }
+
+/* ⭐ Chip trang thai KHONG duoc co lai: no la mot cau, khong phai mot nhan
+   trang tri, va mot cau gay bon dong trong hinh bau duc thi doc khong ra. */
+.ltc-dinh > .ltc-chip { flex: 0 0 auto; }
 
 .ltc-model { display: flex; align-items: center; gap: 8px; color: var(--text-secondary); }
 .ltc-model select {

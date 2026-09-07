@@ -335,6 +335,80 @@ console               0 loi
 
 ---
 
+## P09 — nghiệm thu pha, đo 07/09
+
+Tiêu chí `00_KE_HOACH_V3.md`: *"ma trận **390 / 768 / 1280 / 1440 / 1920** px
+trên trình duyệt thật + URL công khai · 0 lỗi console · axe không có vi phạm
+nghiêm trọng · bàn phím/focus/`prefers-reduced-motion` đúng · **CLS không tệ
+hơn 0,079**"*.
+
+| Tiêu chí | Kết quả |
+|---|---|
+| Ma trận 5 mốc | ✅ 0 tràn ngang ở cả năm — **và tìm ra một lỗi thật ở 390 px** |
+| 0 lỗi console | ✅ |
+| axe (nghiêm trọng) | ✅ 0 vi phạm · **9 rule** chạy trên `KhoiTool`, **13** trên `TheDuyet` |
+| Tương phản màu | ✅ thấp nhất **4,79** (thẻ duyệt) và **5,25** (khối tool), chuẩn AA là 4,5 |
+| Bàn phím / focus | ✅ `focus-visible` ra viền `2px solid` kèm offset, Tab tới đủ ba nút |
+| `prefers-reduced-motion` | ✅ 3 quy tắc |
+| **CLS** | ⛔ **KHÔNG ĐO ĐƯỢC ở môi trường này** — xem dưới |
+
+### 🔴 Lỗi thật mà ma trận tìm ra, ở 390 px
+
+`.ltc-dinh` là `flex-wrap: nowrap`. Bốn phần tử (65+77+56+100 = 298 px + 3 gap)
+bị ép trong 366 px khả dụng:
+
+```
+chip "Model chua san sang"   56 px RONG  x  72 px CAO   <- chu gay BON dong
+o chon du an                 co lai con "— k"
+```
+
+Sau khi đổi sang `flex-wrap: wrap` + `flex: 0 0 auto` cho chip:
+
+```
+chip  134 x 24     o chon du an hien du "— khong thuoc du an nao —"
+```
+
+⛔ Không sửa bằng `overflow-x: auto`: một thanh cuộn ngang ở hàng đỉnh là một
+   hàng đỉnh người dùng không thấy hết, và trên điện thoại họ không biết là còn
+   thứ để cuộn tới.
+
+### ⛔ CLS: không đo được, và tôi KHÔNG báo "0"
+
+Lượt đo đầu ra `CLS = 0` với **0 dịch chuyển ghi được**. Đó là đúng cái số 0
+không có đối chứng. Ba lần ép dịch chuyển có chủ đích:
+
+```
+chen div 200px vao dau <body>          -> 0 muc
+chen div 260px vao dau .page           -> 0 muc
+doi chieu cao mot .ltc-tool DANG HIEN  -> 0 muc
+```
+
+`PerformanceObserver.supportedEntryTypes` **có** `layout-shift`, nhưng khung
+trình duyệt nhúng này không phát mục nào kể cả khi bị ép.
+
+⇒ **Kết luận trung thực: chưa đo được**, không phải "đạt". Cần một lượt Chrome
+  thật (hoặc Lighthouse) trên URL công khai. Ghi lại đây để nó không bị đọc
+  thành ✅ ở lượt tổng kết sau.
+
+⭐ Bài học `khong-doi-chung-thi-so-khong-khong-phai-phat-hien` áp đúng vào đây:
+  nếu tôi dừng ở lượt đo đầu, tôi đã báo *"CLS = 0, đạt"* — một câu sai, và sai
+  về phía **an toàn giả**.
+
+### axe chạy ở vitest, không tiêm vào trang — và vì sao
+
+CSP của nền tảng là `script-src 'self' 'unsafe-inline' <hai host Cloudflare>`.
+`cdnjs` không nằm trong đó nên tiêm `axe.min.js` bị chặn — **và đó là đúng**.
+Nới CSP để đo một lần a11y là đổi một biện phòng thủ thật lấy một phép đo.
+
+`axe-core` 4.13.0 — **0 dependency**, MPL-2.0, chỉ chạy lúc test. Đúng ngưỡng
+§0 mức thấp mà chính kế hoạch đặt cho test-time tooling.
+
+⚠️ `jsdom` không vẽ nên `color-contrast` **không chạy được** ở đó — axe tự xếp
+   nó vào `incomplete`, không phải `pass`. Tương phản vì thế được đo **riêng**
+   trên trình duyệt thật, và số ở bảng trên là từ lượt đo ấy.
+
+---
+
 ## 🔒 Điều kiện để BẬT các cờ V3 — món nợ tự đòi
 
 ⚠️ **SÁU cờ** (cập nhật 07/09). Kế hoạch tổng ghi *"làn B — mỗi nhóm một cờ"*;
