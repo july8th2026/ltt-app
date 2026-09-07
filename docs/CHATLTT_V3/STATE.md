@@ -477,10 +477,10 @@ Nới CSP để đo một lần a11y là đổi một biện phòng thủ thật
 
 ---
 
-## P10 — tra tấn: hai lỗ thật, cả hai đều ở chỗ KHÔNG ai đang chạy
+## P10 — tra tấn: ba lỗ thật, cả ba ở chỗ KHÔNG ai đang chạy
 
 Kế hoạch P10 liệt kê *"đua credit · POST/duyệt trùng · **huỷ ở từng biên trạng
-thái**"*. Đo 07/09 tìm ra **hai** lỗ, và chúng cùng một hình dạng: mọi đường
+thái**"*. Đo 07/09 tìm ra **ba** lỗ, và chúng cùng một hình dạng: mọi đường
 phòng thủ đều canh lúc có **một luồng đang chạy**, còn lúc lượt **đứng chờ** thì
 không ai canh.
 
@@ -488,6 +488,7 @@ không ai canh.
 |---|---|---|---|
 | **1** | Bấm Dừng lúc lượt đang **chờ** là no-op im lặng | duyệt xong lượt **vẫn chạy tiếp**, tiêu thêm tiền sau khi người dùng bảo dừng | `test_849` |
 | **2** | Hai nguồn cùng chạy tiếp **một** run | **hai lượt model cho một lần duyệt** ⇒ tiền đi hai lần, hội thoại hai nhánh | `test_817` |
+| **3** | Huỷ rồi mà **thẻ duyệt vẫn hiện** | người dùng bấm "Duyệt", **không có gì xảy ra**, không lời giải thích | `test_849` |
 
 ### Lỗ 1 — nút Dừng trượt cả hai việc của nó
 
@@ -536,7 +537,29 @@ Cả hai theo cùng khuôn: hỏi `nen_chay_tiep()` **rồi mới** `chay_tiep_n
   đi nhờ callback `ghi=` có sẵn của `DP.tiep_tuc`, nên TTL 10 phút chỉ là trần
   cho ca tiến trình chết, không phải trần cho một lượt chậm.
 
-### 🔴 Cả hai phép kiểm đều đã được TIÊM BẢN CŨ để xem có đỏ không
+### Lỗ 3 — trạng thái đúng mà giao diện sai vẫn là sản phẩm hỏng
+
+Bản vá lỗ 1 làm `ChatlttRun.trang_thai` thành `CANCELLED` — đúng. Nhưng
+`ChatlttApproval.quyet_dinh` vẫn là `CHO`, và `dang_cho()` chỉ lọc theo
+`quyet_dinh` + hạn, **không** biết run đã huỷ.
+
+⇒ Thẻ duyệt vẫn hiện. Người dùng bấm "Duyệt", `_quyet` chạy trót lọt, rồi
+  `nen_chay_tiep` trả `False` và **không có gì xảy ra** — không kết quả, không
+  lời giải thích. Một cái nút không làm gì mà cũng không nói gì.
+
+⭐ Vá ở phía **ĐỌC**, không phía ghi — theo đúng lý lẽ đã viết trong bản vá lỗ 1:
+  nếu đi cập nhật từng hàng phiếu mỗi lần huỷ, thì **mọi** đường huỷ tương lai
+  phải nhớ làm thêm bước ấy, và sẽ có đường quên.
+
+⚠️ `outerjoin` chứ không `join`: một phiếu mà `run_id` không trỏ tới hàng nào vẫn
+   phải hiện. `join` trong sẽ **im lặng nuốt** nó, biến một dữ liệu hỏng thành
+   một phiếu vô hình thay vì một phiếu đáng ngờ.
+
+⛔ Và **chỉ** lọc `CANCELLED`. `FAILED` cũng có vẻ đáng lọc, nhưng đường ấy chưa
+   được đo — nới một bộ lọc theo suy đoán là cách một bộ lọc bắt đầu giấu thứ nó
+   không nên giấu. Ghi lại cho P11 ở `15_BAN_GIAO_P11_RED_TEAM.md` §2.4.
+
+### 🔴 Cả ba phép kiểm đều đã được TIÊM BẢN CŨ để xem có đỏ không
 
 Màu xanh không phải bằng chứng; đối chứng mới là.
 
@@ -604,6 +627,12 @@ phía tôi sẽ báo một hồi quy không có thật.
 
 ⭐ Cái bắt được nó không phải trực giác mà là **nhìn phân bố thay vì nhìn tóm
   tắt** — cùng họ với `doc-thu-dai-dien-thay-vi-doc-thu-that`.
+
+⚠️ **Giới hạn phải nói ra:** phép đo chạy trên một SQLite **rỗng** với một
+   `user_id` bịa, nên `chieu_tool.chieu()` chỉ dựng **3 tool**. Một tài khoản
+   thật bật nhiều tool hơn sẽ ra nhiều ký tự hơn.
+
+⇒ **1.213 là một cái SÀN, không phải trần.** Đo lại trên tài khoản thật ở P12.
 
 ---
 

@@ -221,3 +221,72 @@ def test_dieu_phoi_dung_giua_hai_vong(db):
                   nen_dung=lambda: True)
     assert run.trang_thai == DP.CANCELLED
     assert goi["lan"] == 0, "da bao dung ma van goi model"
+# ── 4. Huỷ rồi thì THẺ DUYỆT phải biến mất, không đứng đó chờ vô nghĩa ──────
+
+def _xin_mot_phieu(db, run_row, step_id="st-1"):
+    # ⛔ `step_id` phai KHAC nhau giua hai run: `xin_duyet` khu trung theo no va
+    #    tra ve dung phieu cu neu trung — dung phep kiem "hai run" se do vi mot
+    #    ly do khong lien quan gi toi ban va.
+    from apps.chatltt.services import duyet as D
+
+    return D.xin_duyet(db, user_id=U, run_id=run_row.id, step_id=step_id,
+                       tool_name="image.ltt", doi_so={"prompt": "mot con meo"},
+                       policy_class="PAID", bao_gia_credit=8,
+                       phien_ban_gia="thu-v0", bam_trung="b-1")
+
+
+def test_DOI_CHUNG_chua_huy_thi_phieu_VAN_hien(db):
+    """🔴 Không có dòng này thì phép kiểm dưới xanh trên hư không.
+
+    `dang_cho` trả rỗng vì **ba** lý do khác nhau (không có phiếu · đã quyết ·
+    hết hạn). Một phép kiểm chỉ đòi rỗng sẽ xanh kể cả khi bản vá chẳng làm gì.
+    """
+    run_row, _ex = _dung_lai_canh(db, DP.AWAITING_APPROVAL)
+    _xin_mot_phieu(db, run_row)
+    db.commit()
+    from apps.chatltt.services import duyet as D
+    assert len(D.dang_cho(db, user_id=U, run_id=run_row.id)) == 1
+
+
+def test_huy_run_thi_phieu_duyet_KHONG_con_hien(db):
+    """⛔ Trạng thái đúng mà giao diện sai thì người dùng vẫn gặp một sản phẩm hỏng.
+
+    ## Cái hụt mà bản vá "huỷ ở biên chờ" để lại
+
+    Sau khi huỷ, `ChatlttRun.trang_thai == CANCELLED` — đúng. Nhưng
+    `ChatlttApproval.quyet_dinh` vẫn là `CHO`, nên thẻ duyệt **vẫn hiện**. Người
+    dùng bấm "Duyệt", `_quyet` chạy trót lọt, rồi `nen_chay_tiep` trả `False` và
+    **không có gì xảy ra** — không kết quả, không lời giải thích.
+
+    ⭐ Vá ở phía ĐỌC chứ không phía GHI, theo đúng lý lẽ đã viết trong bản vá
+      kia: một cờ song song thì **mỗi** người đọc phải nhớ hỏi thêm một câu, và
+      sẽ có người quên. Lọc một lần trong `dang_cho` thì mọi người đọc — kể cả
+      người chưa được viết — tự đúng theo.
+    """
+    run_row, ex = _dung_lai_canh(db, DP.AWAITING_APPROVAL)
+    _xin_mot_phieu(db, run_row)
+    db.commit()
+
+    LUOT.dung(db, user_id=U, execution_id=ex.id)
+    from apps.chatltt.services import duyet as D
+    assert D.dang_cho(db, user_id=U, run_id=run_row.id) == []
+
+
+def test_huy_MOT_run_khong_lam_bien_mat_phieu_cua_run_KHAC(db):
+    """⚠️ Đối chứng ngược: một bộ lọc quá tay cũng làm phép kiểm trên xanh.
+
+    Lọc sạch mọi phiếu thì `dang_cho` luôn rỗng, và mệnh đề trên vẫn đạt. Phép
+    kiểm này là thứ phân biệt *lọc đúng cái đã huỷ* với *lọc hết*.
+    """
+    a_run, a_ex = _dung_lai_canh(db, DP.AWAITING_APPROVAL)
+    b_run, _b_ex = _dung_lai_canh(db, DP.AWAITING_APPROVAL)
+    _xin_mot_phieu(db, a_run, step_id="st-a")
+    _xin_mot_phieu(db, b_run, step_id="st-b")
+    db.commit()
+
+    LUOT.dung(db, user_id=U, execution_id=a_ex.id)
+    from apps.chatltt.services import duyet as D
+    assert D.dang_cho(db, user_id=U, run_id=a_run.id) == []
+    assert len(D.dang_cho(db, user_id=U, run_id=b_run.id)) == 1
+    # ⭐ Và danh sach KHONG loc theo run cung phai con dung mot phieu.
+    assert len(D.dang_cho(db, user_id=U)) == 1
