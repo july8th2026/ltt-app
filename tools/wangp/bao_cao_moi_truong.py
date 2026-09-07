@@ -54,12 +54,62 @@ def _gguf() -> dict:
                 "ly_do_hong": f"khong hoi duoc: {type(e).__name__}: {e}"}
 
 
+def _driver() -> str:
+    """Phien ban driver, doc bang `nvidia-smi` — torch khong luon khai no."""
+    import subprocess  # noqa: PLC0415
+
+    try:
+        r = subprocess.run(["nvidia-smi", "--query-gpu=driver_version",
+                            "--format=csv,noheader"],
+                           capture_output=True, text=True, timeout=20)
+        return r.stdout.strip().splitlines()[0].strip() if r.returncode == 0 else ""
+    except Exception:  # noqa: BLE001
+        return ""
+
+
+def _cublas() -> dict:
+    """🔴 Do THANG cuBLAS, ngoai WanGP.
+
+    Ngay 07/09 bo ma hoa van ban T5 vo voi
+    `CUBLAS_STATUS_INVALID_VALUE` khi goi `cublasGemmStridedBatchedEx(...
+    CUDA_R_16BF ...)`. Cung ho loi voi cai truoc do da bi quy cho GGUF — nen
+    chan doan cu ("nhan GGUF khong nap duoc") co the da khoanh SAI pham vi.
+
+    Phep do nay tra loi mot cau va chi mot cau: **cuBLAS co nhan mot phep nhan
+    ma tran theo lo o bf16 khong**, khi khong co WanGP, khong co quanto, khong
+    co mmgp. Vo o day => hong o tang ngan xep. Xanh o day => hong o duong WanGP.
+
+    ⭐ Do ca `fp16` va `fp32` de biet loi rieng cua bf16 hay chung moi kieu.
+    """
+    ra: dict = {}
+    try:
+        import torch  # noqa: PLC0415
+    except Exception as e:  # noqa: BLE001
+        return {"loi_nhap_torch": f"{type(e).__name__}: {e}"}
+    if not torch.cuda.is_available():
+        return {"khong_co_cuda": True}
+
+    for ten, kieu in (("bf16", torch.bfloat16), ("fp16", torch.float16),
+                      ("fp32", torch.float32)):
+        try:
+            a = torch.randn(2, 8, 64, 32, device="cuda", dtype=kieu)
+            b = torch.randn(2, 8, 64, 32, device="cuda", dtype=kieu)
+            # Cung phep einsum ma `models/wan/modules/t5.py:115` dung.
+            c = torch.einsum("binc,bjnc->bnij", a, b)
+            torch.cuda.synchronize()
+            ra[ten] = {"ok": True, "tong": float(c.float().sum().item())}
+        except Exception as e:  # noqa: BLE001
+            ra[ten] = {"ok": False, "loi": f"{type(e).__name__}: {e}"[:400]}
+    return ra
+
+
 def main() -> int:
     ra: dict = {"python": sys.version, "platform": platform.platform()}
     try:
         import torch
 
-        ra.update(torch=torch.__version__, cuda=torch.version.cuda,
+        ra.update(driver=getattr(torch.version, "cuda_driver", "") or _driver(),
+                  torch=torch.__version__, cuda=torch.version.cuda,
                   cuda_available=torch.cuda.is_available(),
                   gpu=[torch.cuda.get_device_name(i)
                        for i in range(torch.cuda.device_count())],
@@ -74,6 +124,7 @@ def main() -> int:
         ra[ten] = _phien_ban(ten)
 
     ra["gguf_cuda"] = _gguf()
+    ra["cublas"] = _cublas()
 
     with open(RA, "w", encoding="utf-8") as f:
         json.dump(ra, f, ensure_ascii=False, indent=1)

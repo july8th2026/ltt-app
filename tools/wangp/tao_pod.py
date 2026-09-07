@@ -34,12 +34,30 @@ SO.parent.mkdir(parents=True, exist_ok=True)
 #: `torch210cu130py311`. Driver may chu do duoc 13.0 (do 06/09: 580.159.04).
 ANH = sys.argv[1] if len(sys.argv) > 1 else "nvidia/cuda:13.0.1-cudnn-devel-ubuntu22.04"
 
-#: Xep RE TRUOC. Duoi 5 worker, RunPod luon lay loai uu tien cao nhat CON HANG.
+#: Xep theo KIEN TRUC DA BIEN DICH truoc, khong theo gia moi gio.
+#:
+#: 🔴 Sua 07/09. Ban dau xep RE TRUOC (A100 dau danh sach), va do la toi uu sai
+#:    ve. Moi truong tren volume duoc bien dich cho MOT kien truc — hien la
+#:    `9.0` (H100), ghi o `ket_qua/_ARCH_SAGE`. Lay mot card `8.0` thi cong
+#:    bo-qua-cai cua `cai_dat.sh` thay lech va **cai lai tu dau**: Miniforge +
+#:    torch + bien dich SageAttention.
+#:
+#: ⭐ Phep tinh that, do 07/09 tai US-KS-2:
+#:      H100 NVL $2,59/gio — bo qua cai, dung duoc ngay
+#:      A100     $1,39/gio — cong them mot luot cai ~30-45 phut, VA de volume
+#:                           o `8.0` nen lan sau gap H100 lai cai lai lan nua
+#:    Re hon moi gio khong co nghia re hon TONG. Va cai thrash qua lai giua hai
+#:    kien truc thi khong lan nao re ca.
+#:
+#: ⇒ Neu mot ngay nao do volume duoc dung lai cho `8.0` that su, hay doi thu tu
+#:   nay cho khop — day la mot lua chon co dieu kien, khong phai mot xep hang
+#:   vinh vien.
 GPU_UU_TIEN = [
+    "NVIDIA H100 NVL",
+    "NVIDIA H100 PCIe",
+    "NVIDIA H100 80GB HBM3",
     "NVIDIA A100-SXM4-80GB",
     "NVIDIA A100 80GB PCIe",
-    "NVIDIA H100 PCIe",
-    "NVIDIA H100 NVL",
 ]
 DC = "US-KS-2"          # ghim: volume nam o day, khong ghim thi khong gan duoc
 

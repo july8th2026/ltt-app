@@ -492,6 +492,61 @@ sửa.
 
 ---
 
+### 5e. 🔴🔴 ĐÍNH CHÍNH 07/09 — §5d **khoanh sai phạm vi**. cuBLAS hỏng TOÀN BỘ.
+
+Lượt `B-2` (một video chữ) **thất bại**, và nó bắt được thứ lớn hơn nhiều.
+
+**Triệu chứng.** Sau 1.648 giây job vẫn ở pha `encoding_text`, chưa vào một bước
+khử nhiễu nào. Bộ mã hoá văn bản T5 vỡ ở `models/wan/modules/t5.py:115`:
+
+```
+RuntimeError: CUDA error: CUBLAS_STATUS_INVALID_VALUE
+  when calling cublasGemmStridedBatchedEx(... CUDA_R_16BF ...)
+```
+
+**Phép đo dứt điểm.** Thêm `_cublas()` vào `bao_cao_moi_truong.py` — một phép
+`torch.einsum` trần trụi trên GPU, **không** WanGP, **không** quanto, **không**
+mmgp, **không** GGUF. Khởi động lại pod và đọc kết quả:
+
+| kiểu số | kết quả |
+|---|---|
+| `bf16` | ⛔ `CUBLAS_STATUS_INVALID_VALUE` · `cublasGemmStridedBatchedEx` |
+| `fp16` | ⛔ `CUBLAS_STATUS_INVALID_VALUE` · `cublasGemmStridedBatchedEx` |
+| `fp32` | ⛔ `CUBLAS_STATUS_INVALID_VALUE` · `cublasSgemmStridedBatched` |
+
+**Cả ba kiểu số đều vỡ trên một phép nhân ma trận theo lô.** Bộ này không nhân
+nổi hai ma trận.
+
+⭐ **Vì sao §5d sai.** Nó thấy `CUBLAS_STATUS_INVALID_VALUE` trong ngữ cảnh GGUF
+   rồi kết luận *"lỗi giữa bánh xe GGUF dựng sẵn và ngăn xếp này"*. Một giải
+   thích **khớp hoàn hảo** với bằng chứng lúc đó — và vì khớp quá vừa, nó **kết
+   thúc cuộc điều tra**. Sự thật là GGUF chỉ tình cờ là thứ chạm vào cuBLAS
+   trước nhất. Đúng bẫy `gia-thuyet-khop-qua-vua-ket-thuc-dieu-tra`.
+
+**Không phải các nguyên nhân sau** — đã loại bằng đo, không bằng suy:
+
+- ❌ *sai kiến trúc GPU*: `install.log` cho thấy lượt cài cuối kết thúc
+  06/09 19:04:51 với `TORCH_CUDA_ARCH_LIST do duoc tu card: 9.0`, và card hiện
+  tại là H100 NVL (SM 9.0). Khớp.
+  *(Lượt 17:47 **đo nhầm ra `8.0`** trên H100 PCIe — đúng lỗi đã ghi trong
+  `cai_dat.sh` — nhưng lượt sau đã cài đè bằng `9.0`.)*
+- ❌ *driver quá cũ*: `580.159.04`, khai `CUDA Version: 13.0`. Đủ.
+- ❌ *lỗi của WanGP / model / app*: phép đo chạy ngoài tất cả những thứ đó.
+
+**Còn lại**: `torch 2.10.0+cu130`. Và mốc so sánh quan trọng — lượt sinh video
+**thành công** duy nhất từ trước tới nay chạy trên bộ **cũ `py3.10/cu128`**.
+WanGP cũng chỉ phát hành nhân GGUF cho đúng hai bộ: `torch271cu128py310` và
+`torch210cu130py311`.
+
+⇒ **`T0` (nâng lên bộ chính chủ py3.11/cu130) phải xem lại.** Hướng: dựng môi
+  trường về `cu128/py310` — bộ đã chứng minh sinh được video trên phần cứng này.
+  Việc ấy đi riêng, **không chặn** phần GUI.
+
+📌 Đây chính là giá trị của thứ tự *"hỏng sớm thì rẻ"*: chặn đứng trước khi tải
+   thêm 30 GB model cho một ngăn xếp không chạy. Cả phiên pod tốn **$2,50**.
+
+---
+
 ## 6. Không nằm trong V1
 
 Tab Ảnh / Giọng nói / Nhạc · LoRA · VACE mask · nối video >15s · bán ra ngoài
