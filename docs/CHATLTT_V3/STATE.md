@@ -1118,9 +1118,29 @@ quyền"*. Cùng hình dạng với ba lần sai khác trong ngày: **một lờ
 khớp vừa đủ làm điều tra dừng sớm**.
 
 ⭐ Và vế phiên kia thêm còn sắc hơn: một **worktree không có `secrets/` chút
-  nào**, vì thư mục ấy bị gitignore nên `git worktree add` không chép nó. Ở cây
-  riêng thì **cả hai** đường dự phòng đều tắt — một lý do đủ mà không cần viện
-  tới quyền hạn gì.
+  nào**, vì thư mục ấy bị gitignore nên `git worktree add` không chép nó.
+
+### ⚠️ Nhưng hai đường dự phòng tắt vì HAI lý do khác nhau — đừng gộp
+
+Một phiên thứ ba bác tiếp bản đính chính ở trên, và đúng:
+
+| Đường | Vì sao tắt | Có cố định không |
+|---|---|---|
+| `C:\LTTPlatform\secrets\app.env` | **phiên không nâng quyền** | ⛔ **không** — đổi theo phiên |
+| `<cây>/secrets/app.env` | worktree không chép `secrets/` | ✅ cố định với mọi worktree |
+
+⛔ Nếu chỉ ghi lý do worktree thì người đọc sau kết luận *"vậy chạy từ cây chính
+   là được"* — và điều đó **cũng sai** khi phiên không nâng quyền.
+
+🔴 Đường thứ nhất **không tái hiện được theo ý muốn**: cùng một cây, cùng một
+   lệnh, hôm qua đọc được hôm nay thì không, vì phiên hôm nay là phiên nối lại
+   sang ngày mới. Đo được ở phiên thứ ba: `PowerShell elevated: False` hôm nay
+   so với `True` hôm qua — nên đây **không** phải khác biệt giữa Bash và
+   PowerShell, mà là khác biệt giữa hai phiên.
+
+⇒ Hai lý do, và **không** phải "một lý do đủ nên bỏ qua lý do kia". Bản sửa
+  chung cho cả hai vẫn là **đặt `LTT_TEST_DATABASE_URL` tường minh** — đó là
+  điều làm nó trở thành bản sửa đáng ghi, chứ không phải vì nó tiện.
 
 ### ⛔ Và vì sao biến môi trường là bản sửa DUY NHẤT sống sót
 
@@ -1132,11 +1152,35 @@ lại sau mỗi deploy**.
 ⇒ Đường `_doc_env` là **dự phòng cơ hội**, không phải đường chính — dù nó trông
   như một đường tin cậy được, và **hai phiên đã mất thời gian vì tưởng thế**.
 
-### ✅ Nên lượt deploy 07/09 CHẠY THẬT bước ấy
+### 🔴 Và lần thử ĐẦU đã làm gate ĐỎ — bật một bước đang tắt là một thay đổi
 
-Đo được: `secrets/postgres-superuser.txt` ở **cây chính** đọc được, khoá còn
-dùng được, CSDL nháp `lttplatform_multiproc_test` đã tồn tại. Lượt gate trước
-deploy đặt `LTT_TEST_DATABASE_URL` tường minh ⇒ bước **chạy**, không `[BOQUA]`.
+Đặt `LTT_TEST_DATABASE_URL` cho **cả tiến trình gate** làm bước ấy chạy thật
+(140,7 s). Nhưng cùng lượt ấy gate **FAIL**: biến đó cũng tới **mọi worker
+pytest**, và `tests/pg_scratch.py` dùng đúng nó làm công tắc bật một loạt tệp
+sang PostgreSQL thật — năm tệp ở cây này, gồm cả `test_821` và `test_826` của
+chính ChatLTT. Chúng không an toàn khi chạy song song trên một CSDL dùng chung.
+
+```
+gate KHONG bien  ->  PASS
+gate CO bien     ->  FAIL (1/29)
+```
+
+Toàn văn ở **Bẫy 33** của `docs/BAY_TRONG_CONG_CHAT_LUONG.md`.
+
+### ✅ Cách đúng: chạy nó CẠNH gate, không TRONG gate
+
+```
+gate.py (khong bien)          RESULT: PASS  [4 buoc tu bo qua]
+check_multiproc.py (co bien)  7 passed in 137.21s   EXITCODE=0
+```
+
+⭐ Được **cả hai vế** thay vì đánh đổi: bộ test 6.900 phép kiểm không bị nhiễu,
+  mà bất biến đa tiến trình vẫn có bằng chứng thật — 137 giây so với sàn 3,0 s
+  thì không thể là một `return 0` lịch sự.
+
+⛔ Muốn ép nó chạy *trong* gate thì phải đặt biến **chỉ cho bước đó**, tức sửa
+   `gate.py` — hạ tầng dùng chung, `AGENTS.md` §4c đòi ba câu trả lời trước, và
+   giữa một lượt deploy không phải lúc.
 
 🔑 Luật đọc vẫn giữ nguyên: thấy `[N BUOC TU BO QUA]` ở dòng `RESULT` thì **đó
    không phải gate xanh**, dù chữ `PASS` vẫn hiện. Đây đúng lớp lỗi mà

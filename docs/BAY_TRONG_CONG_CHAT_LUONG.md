@@ -2492,3 +2492,108 @@ phạm vi — và chỉ vế thứ hai mới nói được phép kiểm nào đ�
 
 *Chốt ở `tests/test_847_chatltt_uoc_tran_neo_vao_gia_that.py`. Đối chứng: tiêm
 lại hằng số cũ ⇒ `test_841` vẫn xanh **cả 25** phép kiểm, chỉ `test_847` đỏ.*
+
+---
+
+## Bẫy 33 — BẬT một bước đang tắt cũng là một thay đổi, và nó làm đỏ bước khác
+
+**07/09/2026.** Bốn lượt gate liên tiếp báo `[BOQUA] bat bien da tien trinh`.
+Đọc mã thì thấy `check_multiproc._tim_url()` chỉ cần `LTT_TEST_DATABASE_URL`.
+Đặt biến ấy trước `gate.py` ⇒ bước chạy thật, **140,7 giây** (sàn là 3,0 s).
+
+Nghe như một thắng lợi nhỏ. Nhưng cùng lượt ấy gate **ĐỎ**.
+
+### Vì sao
+
+Biến môi trường đặt cho tiến trình gate thì **mọi worker pytest cũng thấy nó**,
+và `tests/pg_scratch.py` dùng đúng biến ấy làm công tắc (`ENV =
+"LTT_TEST_DATABASE_URL"`). Nó **kích hoạt** một loạt tệp sang PostgreSQL thật.
+Ở cây `chatltt-v3-agentic` là **năm**:
+
+```
+tests/test_73_dong_thoi_pg.py
+tests/test_179_developer_api_key.py
+tests/test_214_multi_process_runtime.py
+tests/test_821_unaccent_tim_kiem_tieng_viet.py   <- ChatLTT, can `unaccent`
+tests/test_826_chatltt_tim_doan.py               <- ChatLTT
+```
+
+Chúng không an toàn khi chạy **song song trên một CSDL dùng chung** — xoá hàng
+của nhau:
+
+```
+pytest tests/test_73_dong_thoi_pg.py tests/test_179_developer_api_key.py -n 2
+  2 failed, 41 passed, 2 errors
+  IntegrityError: Key (id)=... is still referenced from table "developer_api_keys"
+```
+
+⭐ A/B sạch, cùng cây, cách nhau một phép hoà: **gate không có biến ⇒ PASS; gate
+  có biến ⇒ FAIL.**
+
+### ⚠️ Bán kính nổ ĐẶC THÙ TỪNG CÂY — đừng chép danh sách
+
+Một phiên khác đếm ở cây họ ra danh sách **khác**: có `test_423_asv_giao_dien.py`
+(không tồn tại ở cây này) và thiếu hai tệp ChatLTT ở trên. Cùng một biến, hai bán
+kính, vì mỗi cây có bộ test khác nhau.
+
+⇒ Đếm ở cây mình: `grep -rln pg_scratch tests/`
+
+⛔ Và ở cây ấy `test_423` còn nặng hơn một công tắc: nó gọi `pg_scratch.scratch_url()`
+   **trong fixture** rồi lấy kết quả làm `LTT_DATABASE_URL` cho cả ứng dụng dựng
+   trong test — tức biến này **đổi CSDL nền dưới chân** mọi test dùng fixture đó,
+   chứ không chỉ bật thêm vài tệp.
+
+### 🔑 Khung đúng: không phải công tắc BẬT/TẮT mà là lựa chọn PHẠM VI
+
+Cùng một biến phục vụ **hai mục đích trái nhau**:
+
+| Ai dùng | Vai trò của biến |
+|---|---|
+| bộ nghiệm thu ASV (`nghiem_thu_asv.ps1`) | **điều kiện CẦN** — SQLite không sống nổi đường ống; web + worker cùng ghi ra `database is locked` |
+| `check_multiproc` chạy đứng riêng | **điều kiện CẦN** |
+| `gate.py` chạy cả bộ test song song | **thuốc độc** |
+
+⇒ Câu hỏi đúng không phải *"có đặt biến không"* mà *"đặt cho tiến trình nào"*.
+  Phạm vi đúng là **một tiến trình, một mục đích**.
+
+### Và tên CSDL riêng KHÔNG cứu được ca này
+
+Một đề nghị hợp lý: mỗi cây một tên CSDL riêng (`..._asv_multiproc_test`) để hai
+cây không đâm nhau. Đúng cho **liên cây**, nhưng vô hiệu ở đây — va chạm này nằm
+**trong một cây, trong một lượt gate**, giữa hai tệp của *cùng* bộ test.
+
+⇒ Đổi tên chỉ đổi chỗ va chạm, không bỏ nó.
+
+### 🔴 Mệnh đề đáng nhớ
+
+> Một bước gate đang `[BOQUA]` **không phải một khoảng trống trung tính**. Bật
+> nó lên là thay đổi môi trường của **cả** lượt chạy, kể cả hàng nghìn phép kiểm
+> không liên quan gì tới nó.
+
+⛔ Cái làm bẫy này khó thấy là nó **cải thiện thật**: bước ấy đúng là đã chạy,
+   đúng là có bằng chứng, đúng là tốt hơn một dòng `[BOQUA]`. Người làm không có
+   cảm giác đang "sửa" gì — chỉ là "bật một thứ vốn nên bật".
+
+⭐ Luật rút ra: **cấu hình cũng là mã.** Một thay đổi cấu hình cần đúng lượng
+  nghi ngờ như một thay đổi mã, và cách kiểm rẻ nhất là A/B — chạy một lượt có
+  và một lượt không, thay vì chỉ nhìn bước mình vừa bật.
+
+### Cách làm đúng
+
+Bước nào không chạy được **trong** gate thì chạy nó **cạnh** gate, ghi bằng
+chứng riêng:
+
+```
+gate.py                                    -> khong bien, buoc ay [BOQUA]
+LTT_TEST_DATABASE_URL=... check_multiproc  -> chay rieng, ghi lai thoi luong
+```
+
+Đúng khuôn `setup/chay_multiproc_nang_quyen.ps1` dùng cho ca cần nâng quyền:
+tách ra, fail-closed, ghi `EXITCODE` + thời lượng.
+
+⚠️ Muốn ép nó chạy *trong* gate thì phải đặt biến **chỉ cho bước đó**, tức sửa
+   `gate.py` — hạ tầng dùng chung, `AGENTS.md` §4c đòi ba câu trả lời trước.
+
+⭐ Và khi đọc kết quả, nhớ **Bẫy 30**: `[N BUOC TU BO QUA]` không phải gate xanh.
+  Hai điều này không mâu thuẫn — một dòng `[BOQUA]` vẫn là một khoảng trống phải
+  nói ra; nó chỉ không phải một khoảng trống được lấp bằng cách bật bừa.
