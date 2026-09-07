@@ -33,44 +33,79 @@ phần **xây**. Phân theo *thứ chúng cần*:
 
 ---
 
-## 1. 🔴 Đối chiếu cộng đồng — và nó chặn đứng một hạng mục ngay
+## 1. Đối chiếu cộng đồng — và **bản đầu của mục này đã SAI**
 
-Tra 07/09/2026 qua GitHub API. `H31.3b` khai *"Evaluator provisioning: LPIPS
-offline + checksum; **pyIQA** và **DOVER**"*. Cả hai **cấm dùng thương mại**:
+⛔ **Đính chính 07/09, viết lại toàn bộ mục.** Bản đầu tuyên bố đã "phát hiện"
+   rằng `pyIQA` và `DOVER` cấm dùng thương mại, gọi đó là một lỗ hổng của kế
+   hoạch, rồi đề xuất thay bằng VMAF + torchmetrics.
 
-| công cụ | giấy phép thật | dùng thương mại | cập nhật |
+**Bốn mệnh đề, cả bốn sai:**
+
+| tôi viết | sự thật trong kho |
+|---|---|
+| "phát hiện" hai giấy phép phi thương mại | `QUALITY_LAB/04_EVALUATOR_LICENSE_MODEL_MATRIX.md:20-21` đã đánh dấu **BLOCKED** từ **2026-08-10** |
+| "kế hoạch đòi license cho dataset mà không đòi cho công cụ" | `H31.3b` viết nguyên văn: *"pyIQA và DOVER **đang BLOCKED do license phi thương mại, không được cài/bật lặng lẽ**"* |
+| "thay DOVER bằng VMAF" | tài liệu ấy **cấm thẳng**: *"không thay DOVER bằng proxy rồi gọi đó là chất lượng"* — và VMAF là **full-reference**, DOVER là **no-reference**; hai thứ đo hai câu khác nhau |
+| "VMAF là bản thay mới" | `registry.py` đã có `ffmpeg_libvmaf`, trạng thái **ENABLED diagnostic** |
+
+🔴 **Gốc lỗi:** tôi đọc `H31.3b` ở một bản liệt kê **cắt 95 ký tự**. Nó dừng
+   đúng sau *"pyIQA và DOVER"*, và tôi suy ra phần còn lại thay vì mở tệp.
+
+⭐ Đây là lần thứ **tư** trong ngày cùng một hình dạng: **đo đúng cơ chế rồi
+   suy sang phạm vi mà không đo phạm vi**. Ba lần trước: `git diff` → "production
+   đang ở X"; `grep "ly_do}"` → "có 2 chỗ rò" (thật ra 4); và ở phiên bạn:
+   `uoc_tran` sai 13 lần → "route đang từ chối khách" (cờ đang tắt).
+
+⇒ Luật: **đo cơ chế xong thì phạm vi là một phép đo THỨ HAI, không phải một
+  hệ quả.**
+
+### Luật thật của kho, khắt khe hơn "kiểm giấy phép"
+
+`04_EVALUATOR_LICENSE_MODEL_MATRIX.md` đòi **sáu** điều kiện đồng thời:
+
+> nguồn chính thức · license hợp SaaS thương mại · version cố định · **toàn bộ
+> weight cấp sẵn ngoài runtime** · SHA-256 từng file · smoke benchmark trên máy
+> đích. Thiếu một mục ⇒ `UNKNOWN`, **không fallback sang model khác**.
+
+⇒ Nên `torchmetrics` **không** phải bản thay tiện tay cho `pyIQA`: metric ảnh
+  của nó nạp backbone qua `torchvision` lúc chạy — vướng đúng điều kiện thứ tư,
+  y hệt LPIPS.
+
+### Trạng thái thật hôm nay
+
+| evaluator | trạng thái trong kho | còn thiếu gì |
+|---|---|---|
+| PSNR/SSIM/bicubic nội bộ | **ENABLED diagnostic** | chưa human-calibrated, không phải release gate |
+| `ffmpeg/libvmaf` | **ENABLED diagnostic** | `UNKNOWN` trước calibration; **full-reference** |
+| LPIPS 0.1.4 | **CANDIDATE, DISABLED** | provision offline + checksum (`H31.3b2`) |
+| pyIQA · DOVER | **BLOCKED** | giấy phép phi thương mại — đóng, không mở lại |
+
+### 🔎 Câu hỏi kho ĐỂ NGỎ, và đây mới là đóng góp thật của lượt tra này
+
+Tài liệu ghi: *"No-reference video phải nghiên cứu evaluator khác có license
+thương mại phù hợp hoặc mua license."* Đó là ô trống thật. Tra 07/09:
+
+| ứng viên NR-VQA | giấy phép | cập nhật | dùng được |
 |---|---|---|---|
-| `pyIQA` (`chaofengc/IQA-PyTorch`) | **PolyForm Noncommercial 1.0.0** | ⛔ **KHÔNG** | 2026-08-31 |
-| `DOVER` (`VQAssessment/DOVER`) | **S-Lab 1.0** — *"non-commercial purpose"* | ⛔ **KHÔNG** | **2024-08-12** *(chết 2 năm)* |
+| **`google/uvq`** | **Apache-2.0** | 2026-01-29 | ✅ **ứng viên thật** |
+| `FAST-VQA` (cùng nhóm S-Lab với DOVER) | NOASSERTION | 2024-08-12 | ⛔ nghi cùng license DOVER |
+| `RAPIQUE` | MIT | 2022-09-18 | ⚠️ chết 4 năm |
+| `VIDEVAL` | MIT | 2021-04-22 | ⚠️ chết 5 năm, 6 sao |
 
-🔴 Nền tảng này **bán tool AI theo credit**. Dùng hai công cụ ấy để hiệu chuẩn
-   chất lượng sản phẩm thương mại là **vi phạm giấy phép** — và `DOVER` còn
-   kèm rủi ro thứ hai: không ai bảo trì suốt hai năm.
+⭐ **`google/uvq` khớp điều kiện thứ tư** — thứ làm LPIPS và torchmetrics
+   vướng: README ghi *"This repository **contains checkpointed models**"*, tức
+   weight nằm **trong kho**, dưới cùng `LICENSE` Apache-2.0, ghim được theo
+   commit SHA. Không tải mạng lúc chạy.
 
-⭐ Kế hoạch gốc yêu cầu *"dataset có **license**/consent"* nhưng **không** đặt
-   cùng câu hỏi cho chính công cụ chấm. Một lỗ hổng đối xứng.
+⛔ Nhưng **chưa phải kết luận**. Trước khi khai `enabled`, còn phải: đọc
+   `models/*/LICENSE` con nếu có, ghi SHA-256 từng checkpoint, ghim version,
+   và smoke benchmark trên GPU đích. Và quan trọng nhất — **nó vẫn phải qua
+   calibration**; một evaluator có giấy phép sạch mà chưa hiệu chuẩn thì vẫn
+   là `UNKNOWN`, đúng luật của chính tài liệu ấy.
 
-### Bản thay — đã tra giấy phép thật, không đọc badge
-
-| thay cho | công cụ | giấy phép | trạng thái |
-|---|---|---|---|
-| LPIPS *(giữ)* | `richzhang/PerceptualSimilarity` | **BSD-2-Clause** | ổn định |
-| **DOVER** | **`Netflix/vmaf`** | **BSD-2-Clause-Patent** | 2026-08-14, chuẩn công nghiệp |
-| **pyIQA** | `Lightning-AI/torchmetrics` | **Apache-2.0** | 2026-08-31 |
-| bổ sung | `andrewekhalel/sewar` · `slhck/ffmpeg-quality-metrics` | **MIT** | active |
-| WER | `jitsi/jiwer` | **Apache-2.0** | 2026-09-03 |
-| DER | `pyannote/pyannote-audio` | **MIT** | 2026-09-06 |
-
-⭐ `VMAF` là thứ Netflix dùng trong sản xuất, và giấy phép của nó có **cấp phép
-   sáng chế minh thị** — đúng thứ một sản phẩm thương mại cần, và là thứ
-   `DOVER` không có.
-
-⛔ **Đừng mượn ngưỡng của họ.** Điểm VMAF 93 "tốt" trong ngữ cảnh streaming của
-   Netflix không nói gì về ngưỡng chấp nhận của một job upscale bán theo
-   credit. Mượn công cụ thì được; mượn **ngưỡng** thì phải đo lại trên chính
-   dữ liệu của mình.
-
----
+⇒ **A1 viết lại:** không phải "thay pyIQA/DOVER". Là **thẩm định `google/uvq`
+  theo đúng sáu điều kiện**, và nếu đạt thì nó lấp ô no-reference mà kho đã
+  ghi là còn trống từ 10/08.
 
 ## 2. Đổi hướng lớn: **tôi chấm thay người**
 
