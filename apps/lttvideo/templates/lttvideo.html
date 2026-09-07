@@ -73,14 +73,23 @@
         </div>
 
         <div class="tv-section"><h2><strong>02</strong> {{ _('Đính kèm') }}</h2>
-          {{ o_chon_tep('media', 'media',
-                        _('Thêm ảnh hoặc video (không bắt buộc)'),
-                        _('Đính ảnh để làm khung mở đầu · JPEG/PNG/WebP/MP4'),
-                        accept='image/jpeg,image/png,image/webp,video/mp4',
-                        mo_ta_boi='tv-media-hint') }}
+          {# ⭐ Khuon `tv-ref-pickers` cua `taovideo`, khong dung macro
+             `o_chon_tep`: macro dung mot hop gach dut CAO, con day la mot the
+             GON — cung ngon ngu hinh anh voi cac studio khac cua LTT.
+             Ta chi nhan MOT tep nen chi mot the, khong ba nhu Seedance. #}
+          <div class="tv-ref-pickers">
+            <label for="media">
+              <span aria-hidden="true">▧</span>
+              <strong>{{ _('Ảnh hoặc video') }}</strong>
+              <small>JPEG · PNG · WebP · MP4</small>
+              <input class="tv-file-input" id="media" type="file" name="media"
+                     accept="image/jpeg,image/png,image/webp,video/mp4"
+                     aria-describedby="tv-media-hint">
+            </label>
+          </div>
           <div id="tv-refs" class="tv-refs" aria-live="polite"></div>
           <p id="tv-media-hint" class="dim">
-            {{ _('Không đính gì thì video được dựng hoàn toàn từ mô tả của bạn.') }}
+            {{ _('Ảnh sẽ thành khung mở đầu. Không đính gì thì video được dựng hoàn toàn từ mô tả.') }}
           </p>
         </div>
 
@@ -127,12 +136,41 @@
           {% endif %}
         </fieldset>
 
+        {# ⭐ Khoi gap, dung khuon `tv-assist` cua `taovideo`. Hai khoa nay DA
+           nam trong `ho_so.KHOA_NGUOI_DUNG_DOI_DUOC` tu dau ma chua bao gio lo
+           ra giao dien — tuc nguoi dung khong dieu khien duoc thu ma kien truc
+           da cho phep ho dieu khien. #}
+        <details class="tv-fieldset tv-assist" id="tv-tuychon">
+          <summary>{{ _('Tuỳ chọn nâng cao') }} <small>{{ _('Không bắt buộc') }}</small></summary>
+          <p class="dim">{{ _('Để trống thì hệ thống tự chọn. Chỉ dùng khi bạn muốn kiểm soát sâu hơn.') }}</p>
+          <div class="tv-selects">
+            <label>{{ _('Seed') }}
+              <input type="number" name="seed" min="0" max="2147483647"
+                     inputmode="numeric" class="ltt-input"
+                     placeholder="{{ _('Để trống = ngẫu nhiên') }}"
+                     aria-describedby="tv-seed-hint">
+            </label>
+          </div>
+          <p id="tv-seed-hint" class="dim">
+            {{ _('Cùng một seed và cùng mô tả sẽ cho kết quả gần giống nhau — dùng để làm lại một video bạn thích.') }}
+          </p>
+          <label class="ltt-label" for="tv-negative">{{ _('Điều không muốn thấy') }}</label>
+          <textarea id="tv-negative" name="negative_prompt" rows="2" class="ltt-input"
+                    maxlength="2000"
+                    placeholder="{{ _('Ví dụ: chữ trên màn hình, tay bị méo, ánh sáng nhấp nháy') }}"></textarea>
+        </details>
+
         {# Cảnh báo trôi chất lượng — ý lấy từ `PROCESSING.md` của WanGP: video
            dài hơn một cửa sổ được ghép từ nhiều cửa sổ, nên đây là đánh đổi CÓ
            THẬT, không phải chi tiết kỹ thuật giấu đi được. #}
         <div class="ltt-alert ltt-alert-warn" id="tv-canh-bao-dai" hidden>
           {{ _('Video càng dài, chất lượng càng dễ trôi về cuối: chi tiết có thể nhiễu dần và nhân vật có thể đổi nét.') }}
         </div>
+
+        <p class="ltt-hint">
+          {{ _('Một video mất khoảng vài chục phút. Bạn có thể đóng trang — kết quả nằm trong Lịch sử.') }}
+          {{ _('Kết quả được giữ 3 ngày, sau đó tự xoá. Hãy tải về nếu bạn muốn giữ lâu hơn.') }}
+        </p>
 
         {# `B1`: máy bật theo nhu cầu. Lượt đầu sau khi máy nghỉ phải chờ khởi
            động — nói trước thì người dùng chờ, im lặng thì họ tưởng hỏng. #}
@@ -141,14 +179,14 @@
            hx-swap="innerHTML">{{ _('Đang hỏi trạng thái máy dựng…') }}</p>
       </div>
 
+      {# ⭐ Day chi giu GIA + NUT, giong het `taovideo`. Ban truoc nhet ca doan
+         van han giu vao day: day nang len, than khoang lai, va hai loi rong o
+         giua. Chu thich nen nam trong THAN, canh thu no noi ve. #}
       <div class="tv-submit-dock">
         <div class="tv-cost" aria-live="polite">
           <span>{{ _('Giữ chỗ') }}</span> <b id="tv-gia">{{ uoc_gia[do_dai[0]] }} credit</b>
         </div>
         <button class="tv-create" type="submit">✦ {{ _('Tạo video') }}</button>
-        <p class="ltt-hint">
-          {{ _('Kết quả được giữ 3 ngày, sau đó tự xoá. Hãy tải về nếu bạn muốn giữ lâu hơn.') }}
-        </p>
       </div>
     </form>
     {% endif %}
@@ -160,7 +198,16 @@
       <div>
         <span class="eyebrow">LTT Video Studio</span>
         <h1>{{ _('Video của tôi') }}</h1>
-        <small>{{ so_dem.all|default(0) }} {{ _('kết quả') }}</small>
+        {# ⭐ Dai so lieu THAT, khong phai trang tri. Mo tu bot van hanh: dat
+           SO do duoc canh nhau, va phan giai thich thi day vao tooltip. #}
+        <small class="dim" title="{{ _('Chỉ đếm video đã hoàn tất. Credit là khoản đã quyết toán, không phải khoản giữ chỗ.') }}">
+          {{ so_dem.all|default(0) }} {{ _('kết quả') }}
+          {%- if tom_tat and tom_tat.so_video %}
+            · {{ tom_tat.so_video }} {{ _('đã xong') }}
+            · {{ tom_tat.giay }}{{ _('s') }}
+            · {{ '{:,}'.format(tom_tat.credit).replace(',', '.') }} credit
+          {%- endif %}
+        </small>
       </div>
       <div class="tv-view-toggle" role="group" aria-label="{{ _('Kiểu hiển thị') }}">
         <button type="button" data-view="grid" aria-pressed="true" aria-label="{{ _('Dạng lưới') }}">▦</button>
@@ -185,6 +232,10 @@
         </select>
       </label>
       <button type="submit">{{ _('Áp dụng') }}</button>
+      {# Lam moi: job chay hang chuc phut, nen nguoi dung se muon xem lai ma
+         khong phai tim nut tai trang cua trinh duyet. #}
+      <a class="ltt-btn" href="?trang_thai={{ loc_trang_thai }}&sap_xep={{ loc_sap_xep }}"
+         aria-label="{{ _('Làm mới danh sách') }}">↻ {{ _('Làm mới') }}</a>
     </form>
 
     <div class="tv-grid">

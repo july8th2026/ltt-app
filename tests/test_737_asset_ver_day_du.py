@@ -101,3 +101,102 @@ def test_lttvideo_js_nam_trong_so():
     from server.templating import TAI_SAN_CO_VERSION
 
     assert "lttvideo.js" in TAI_SAN_CO_VERSION
+
+
+# ══════════════════════════════════════════════════════════════════════════
+#  Xem truoc tep dinh kem phai KHOP CSP
+#
+#  🔴 Loi that 07/09. Ban dau dung `URL.createObjectURL` (=> `blob:`) cho CA
+#     anh lan video. CSP o `server/app.py` cho phep:
+#
+#         img-src   'self' data:  https://*.r2...      (KHONG co blob:)
+#         media-src 'self' blob:  https://*.r2...      (CO blob:)
+#
+#     ⇒ Trinh duyet CHAN anh. DOM van co the <img> voi `src` dung, nen mot phep
+#       kiem cau truc van XANH — that bai chi hien o console, va chi khi mo
+#       trinh duyet that.
+#
+#  ⭐ Nen phep kiem duoi day do CO CHE (dung ham nao cho loai nao), chu khong do
+#     su ton tai cua the.
+# ══════════════════════════════════════════════════════════════════════════
+
+def _js_khong_chu_thich() -> str:
+    """JS đã **bỏ chú thích**.
+
+    🔴 Đây là lần thứ ba trong một ngày một bộ dò quét văn bản ở kho này báo
+       động trên chính đoạn giải thích nó. Hai lần trước: một chú thích nhắc
+       `t2v_2_2` làm đỏ phép kiểm "route không chứa quy tắc giá", và một chú
+       thích nhắc `nhan_vien` suýt làm đỏ phép kiểm từ vựng.
+
+    ⇒ Quét **mã**, đừng quét **lời**. Ở Python thì đọc AST; ở JS không có AST
+      sẵn nên bỏ chú thích trước đã — rẻ và đủ cho việc này.
+    """
+    import re as _re
+
+    js = (STATIC / "lttvideo.js").read_text(encoding="utf-8")
+    js = _re.sub(r"/\*.*?\*/", "", js, flags=_re.S)      # /* ... */
+    js = _re.sub(r"(?m)//.*$", "", js)                    # // ...
+    return js
+
+
+def _khoi_xem_truoc() -> str:
+    js = _js_khong_chu_thich()
+    return js.split("input[type=file][name=media]", 1)[1].split(
+        "oDoDai", 1)[0]
+
+
+def test_anh_dung_FileReader_chu_KHONG_dung_blob():
+    """`img-src` không cho `blob:`. Dùng `createObjectURL` cho ảnh là dựng một
+    ô xem trước không bao giờ hiện — và DOM vẫn trông đúng."""
+    khoi = _khoi_xem_truoc()
+    nhanh_anh = khoi.split("} else {", 1)[1].split("var ten", 1)[0]
+    assert "FileReader" in nhanh_anh
+    assert "createObjectURL" not in nhanh_anh, (
+        "nhanh anh dung blob: — CSP `img-src` se chan no")
+
+
+def test_video_dung_createObjectURL_vi_media_src_CHO_PHEP_blob():
+    khoi = _khoi_xem_truoc()
+    nhanh_video = khoi.split("if (la_video) {", 1)[1].split("} else {", 1)[0]
+    assert "createObjectURL" in nhanh_video
+
+
+def _chi_thi_csp(ten: str) -> str:
+    """Chỉ thị CSP thật, lấy từ **hằng chuỗi**, không lấy từ chú thích.
+
+    ⚠️ `server/app.py` có một chú thích nhắc "media-src/connect-src" NGAY TRƯỚC
+       khối chính sách. Tách thô trên tên chỉ thị sẽ bắt vào chú thích đó.
+    """
+    import re as _re
+
+    ma = (GOC / "server" / "app.py").read_text(encoding="utf-8")
+    m = _re.search(r'"' + _re.escape(ten) + r'\s+([^"]*)"', ma)
+    assert m, f"khong tim thay chi thi {ten} trong hang chuoi"
+    return m.group(1)
+
+
+def test_CSP_van_dung_nhu_gia_dinh_o_tren():
+    """⭐ Sự thật độc lập. Nếu ai đó thêm `blob:` vào `img-src` — hoặc bỏ nó
+    khỏi `media-src` — thì giả định của tệp này sai, và phép kiểm phải đỏ để
+    người sửa biết đường xem lại, thay vì để mã trôi khỏi chính sách."""
+    img = _chi_thi_csp("img-src")
+    media = _chi_thi_csp("media-src")
+    assert "data:" in img, "img-src khong con cho data: — xem truoc anh se vo"
+    assert "blob:" not in img, (
+        "img-src nay CHO blob: — co the don gian hoa xem truoc anh")
+    assert "blob:" in media, "media-src khong con cho blob: — xem truoc video vo"
+
+
+def test_tu_kiem_bo_tach_chi_thi_CSP():
+    """⛔ Đối chứng cho chính bộ tách trên: nó phải lấy được chỉ thị thật, và
+    chỉ thị ấy phải bắt đầu bằng `'self'` như mọi chỉ thị trong tệp."""
+    assert _chi_thi_csp("img-src").startswith("'self'")
+    assert _chi_thi_csp("media-src").startswith("'self'")
+
+
+def test_giai_phong_blob_khi_roi_trang():
+    """Một `createObjectURL` không `revoke` giữ nguyên tệp trong RAM tới khi
+    đóng tab."""
+    khoi = _khoi_xem_truoc()
+    assert "revokeObjectURL" in khoi
+    assert "beforeunload" in khoi

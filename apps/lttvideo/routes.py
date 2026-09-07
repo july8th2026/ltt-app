@@ -251,6 +251,8 @@ async def tao_video(
     do_dai_s: int = Form(5),
     mo_rong_prompt: str = Form(""),
     tai_san_khoa: str = Form(""),
+    seed: str = Form(""),
+    negative_prompt: str = Form(""),
     csrf_token: str = Form(""),
     media: UploadFile | None = File(None),
     _dinh_danh: str = Depends(require_login),
@@ -295,6 +297,24 @@ async def tao_video(
         "resolution": _DO_PHAN_GIAI[ti_le],
         "nguoi_dung_id": user.id,
     }
+
+    # ── Hai tuy chon nang cao ────────────────────────────────────────────
+    #
+    # ⭐ Ca hai DA nam trong `ho_so.KHOA_NGUOI_DUNG_DOI_DUOC` tu dau; thu thieu
+    #    la mot o nhap tren giao dien. Nguoi dung khong dieu khien duoc thu ma
+    #    kien truc da cho phep ho dieu khien.
+    #
+    # ⛔ Bo QUA gia tri sai thay vi bao loi: mot seed go nham khong dang lam
+    #    hong ca luot tao. WanGP tu chon seed khi khong co.
+    if seed.strip():
+        try:
+            gia_tri = int(seed.strip())
+        except ValueError:
+            gia_tri = -1
+        if 0 <= gia_tri <= 2147483647:
+            tham_so["seed"] = gia_tri
+    if negative_prompt.strip():
+        tham_so["negative_prompt"] = negative_prompt.strip()[:2000]
     if media_key:
         tham_so["media_key"] = media_key
     elif tai_san_khoa:

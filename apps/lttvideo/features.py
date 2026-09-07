@@ -151,7 +151,39 @@ def thu_vien(db, user_id, *, trang_thai: str = "all", sap_xep: str = "moi",
 
     return {"so_dem": so_dem, "video": video,
             "prompt_gan_day": _prompt_gan_day(rows),
-            "tai_san": tai_san_cua_toi(rows, storage=storage)}
+            "tai_san": tai_san_cua_toi(rows, storage=storage),
+            "tom_tat": tom_tat(rows)}
+
+
+def tom_tat(rows) -> dict:
+    """Vài con số **thật** về việc dùng app của chính chủ.
+
+    ⭐ Ý mượn từ dải đầu trang của bot vận hành (`BOT GEMINI`): nó không đặt một
+       hero cao 180px, nó đặt một dải mỏng **đầy số thật** — token còn lại, chi
+       phí, trạng thái — và đẩy phần mô tả vào tooltip. Chú thích trong mã của
+       nó nói thẳng: đổi hero lấy dải tiết kiệm ~125px chiều dọc.
+
+    ⛔ Chỉ đếm thứ **đo được** từ sổ job. Không ước, không suy. Một con số ước
+       đặt cạnh một con số thật thì cả hai đều mất giá trị — nên `credit` ở đây
+       là khoản **đã quyết toán** (`result.credit_cost`), không phải khoản giữ
+       chỗ lúc gửi.
+    """
+    from platform_core.models import JOB_DONE
+
+    xong = [j for j in rows if j.status == JOB_DONE]
+    credit = 0
+    giay = 0.0
+    for j in xong:
+        kq = j.result or {}
+        try:
+            credit += int(kq.get("credit_cost") or 0)
+        except (TypeError, ValueError):
+            pass
+        try:
+            giay += float((j.params or {}).get("duration_s") or 0)
+        except (TypeError, ValueError):
+            pass
+    return {"so_video": len(xong), "credit": credit, "giay": int(giay)}
 
 
 def _khoa_dau(ds) -> str:

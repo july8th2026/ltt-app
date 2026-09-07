@@ -188,6 +188,10 @@ def handle(params: dict, ctx=None, *, _client=None, _kho=None,
         doi["seed"] = int(params["seed"])
     if params.get("resolution"):
         doi["resolution"] = str(params["resolution"])
+    # ⛔ Nhan o route ma khong gui toi engine la mot o nhap KHONG LAM GI — kieu
+    #    that bai te nhat, vi nguoi dung tin la minh da dieu khien duoc.
+    if params.get("negative_prompt"):
+        doi["negative_prompt"] = str(params["negative_prompt"])
     # `A5`: mở rộng mô tả bằng chính bộ enhancer của WanGP. Ngữ nghĩa `"T"`/`"TI"`
     # đọc từ `wgp.py`, ghi ở `ho_so.MO_RONG_THEO_DAU_VAO`.
     doi["prompt_enhancer"] = ho_so.khoa_mo_rong(

@@ -13486,3 +13486,36 @@ msgstr "Confirm"
 
 msgid "Tài sản đã chọn không còn dùng được."
 msgstr "The selected file is no longer available."
+
+msgid "Ảnh hoặc video"
+msgstr "Image or video"
+
+msgid "Ảnh sẽ thành khung mở đầu. Không đính gì thì video được dựng hoàn toàn từ mô tả."
+msgstr "The image becomes the opening frame. Attach nothing and the video is built entirely from your description."
+
+msgid "Để trống thì hệ thống tự chọn. Chỉ dùng khi bạn muốn kiểm soát sâu hơn."
+msgstr "Leave blank and the system chooses. Use these only when you want deeper control."
+
+msgid "Seed"
+msgstr "Seed"
+
+msgid "Cùng một seed và cùng mô tả sẽ cho kết quả gần giống nhau — dùng để làm lại một video bạn thích."
+msgstr "The same seed with the same description gives a near-identical result — use it to redo a video you liked."
+
+msgid "Điều không muốn thấy"
+msgstr "What you do not want"
+
+msgid "Ví dụ: chữ trên màn hình, tay bị méo, ánh sáng nhấp nháy"
+msgstr "For example: on-screen text, distorted hands, flickering light"
+
+msgid "Làm mới"
+msgstr "Refresh"
+
+msgid "Làm mới danh sách"
+msgstr "Refresh the list"
+
+msgid "Chỉ đếm video đã hoàn tất. Credit là khoản đã quyết toán, không phải khoản giữ chỗ."
+msgstr "Counts completed videos only. Credit is the settled amount, not the hold."
+
+msgid "Một video mất khoảng vài chục phút. Bạn có thể đóng trang — kết quả nằm trong Lịch sử."
+msgstr "A video takes tens of minutes. You can close the page — the result will be in History."

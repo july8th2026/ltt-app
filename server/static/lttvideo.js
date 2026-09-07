@@ -80,6 +80,80 @@
     });
   });
 
+  /* ── Xem trước tệp đính kèm ─────────────────────────────────────────────
+   *
+   * ⭐ Muon tu Seedance: thay tep minh vua chon TRUOC khi gui la khac biet giua
+   *    "toi nghi minh da dinh dung anh" va "toi THAY anh cua minh".
+   *
+   * 🔴 ANH dung `FileReader` -> `data:`, VIDEO dung `createObjectURL` -> `blob:`.
+   *    Khong phai tuy hung — do la dung ranh gioi CSP o `server/app.py:213-220`:
+   *
+   *        img-src   'self' data:  https://*.r2...        (KHONG co blob:)
+   *        media-src 'self' blob:  https://*.r2...        (CO blob:)
+   *
+   *    Ban dau toi dung `blob:` cho ca hai. DOM van co the <img>, phep kiem cau
+   *    truc van xanh — nhung trinh duyet CHAN anh va no chi hien ra o console.
+   *    Mot that bai hinh anh im lang, chi trinh duyet that moi bat duoc.
+   *
+   * ⛔ KHONG co o chon vai tro (khung dau / khung cuoi) nhu Seedance. Doc
+   *    `wgp.py:1437-1466`: `"E"` doi model khai `image_prompt_types_allowed`,
+   *    va `"E"` khong kem `S`/`V`/`L` bi AM THAM go bo (dong 1458). Ta chi nhan
+   *    MOT tep, nen "chi khung cuoi" hoac loi hoac khong lam gi — mot nut noi
+   *    doi. Mo lai khi nhan duoc hai tep VA kiem duoc `image_prompt_types_allowed`
+   *    tren may that.
+   */
+  (function () {
+    var o = document.querySelector('input[type=file][name=media]');
+    var khung = q('#tv-refs');
+    if (!o || !khung) return;
+    var urlDangGiu = [];
+
+    function co(n) {
+      return n < 1048576 ? (n / 1024).toFixed(0) + ' KB'
+                         : (n / 1048576).toFixed(1) + ' MB';
+    }
+
+    function don() {
+      urlDangGiu.forEach(function (u) { URL.revokeObjectURL(u); });
+      urlDangGiu = [];
+      khung.replaceChildren();
+    }
+
+    o.addEventListener('change', function () {
+      don();
+      var f = o.files && o.files[0];
+      if (!f) return;
+      var la_video = f.type.indexOf('video/') === 0;
+      var el = document.createElement(la_video ? 'video' : 'img');
+      el.className = 'tv-ref-preview';
+
+      if (la_video) {
+        var url = URL.createObjectURL(f);   // media-src cho phep blob:
+        urlDangGiu.push(url);
+        el.src = url;
+        el.controls = true;
+        el.muted = true;
+      } else {
+        var doc = new FileReader();          // img-src chi cho phep data:
+        doc.addEventListener('load', function () {
+          el.src = String(doc.result || '');
+        });
+        doc.readAsDataURL(f);
+      }
+
+      var ten = document.createElement('span');
+      ten.textContent = f.name + ' · ' + co(f.size);
+      var hang = document.createElement('div');
+      hang.className = 'tv-ref-row';
+      hang.append(el, ten);
+      khung.append(hang);
+    });
+
+    // ⛔ Tra lai bo nho cho trinh duyet. Mot `createObjectURL` khong `revoke` la
+    //    mot tep giu nguyen trong RAM cho toi khi dong tab.
+    window.addEventListener('beforeunload', don);
+  })();
+
   /* ── Giá giữ chỗ + cảnh báo video dài ───────────────────────────────── */
   var oDoDai = q('#tv-dodai');
   function capNhatGia() {

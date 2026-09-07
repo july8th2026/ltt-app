@@ -1980,3 +1980,68 @@ hại:
 - **Nhánh nào chạy `import` lười thì nhánh ấy nợ một phép kiểm nhập.** `import`
   đặt trong thân hàm để tránh vòng lặp phụ thuộc là hợp lý; nhưng nó dời lỗi từ
   lúc khởi động sang lúc phục vụ khách, nên phải có ai đó nhập nó sớm.
+
+---
+
+## Bẫy 28 — DOM đúng, **ảnh vẫn không hiện**: CSP chặn ở tầng dưới phép kiểm
+
+Đo 07/09/2026 khi dựng ô xem trước tệp đính kèm của `lttvideo`.
+
+### Chuyện gì xảy ra
+
+Chép cách làm của `apps/taovideo`, dùng `URL.createObjectURL(f)` cho tệp người
+dùng vừa chọn. Kiểm bằng Playwright, đọc DOM:
+
+```
+{"co_anh": true, "src_blob": true, "so_con": 1}
+```
+
+Ba khẳng định đều **đúng**, và ảnh **không bao giờ hiện**. Console mới nói ra:
+
+```
+Loading the image 'blob:http://…' violates the following Content Security
+Policy directive: "img-src 'self' data: https://*.r2.cloudflarestorage.com"
+```
+
+CSP ở `server/app.py` cho `data:` **chứ không** cho `blob:` ở `img-src`, trong
+khi `media-src` thì **có** `blob:`. Nên `createObjectURL` đúng cho **video** và
+sai cho **ảnh**.
+
+⭐ `taovideo` làm đúng từ đầu — nó dùng `FileReader` cho ảnh và `createObjectURL`
+   cho video/audio. Tôi chép một nửa và tưởng đó là cả bài.
+
+### Vì sao phép kiểm cấu trúc không bắt được
+
+`co_anh`/`src_blob` đo **thứ ta dựng ra**. Việc trình duyệt có *chấp nhận* thứ
+ấy hay không nằm ở một tầng thấp hơn, và tầng đó chỉ nói qua console.
+
+⇒ Khẳng định phải là **`img.complete && img.naturalWidth > 0`** — thứ chỉ đúng
+  khi trình duyệt đã **giải mã ảnh thật**. Đó là khác biệt giữa *"tôi đã đặt
+  src"* và *"ảnh đã hiện"*.
+
+### Và bộ dò để canh nó lại tự sập vào Bẫy 22
+
+Phép kiểm đầu tiên tôi viết để chốt bài học này **đỏ trên mã đúng**, hai chỗ:
+
+| Quét | Khớp nhầm vào |
+|---|---|
+| `app.py.split("media-src")` | một **chú thích** nhắc `"media-src/connect-src"` nằm ngay trước khối chính sách |
+| `"createObjectURL" not in nhanh_anh` | dòng **chú thích** cảnh báo *"một `createObjectURL` không `revoke`…"* |
+
+Đây là lần **thứ ba trong một ngày** một bộ dò văn bản ở kho này báo động trên
+chính đoạn giải thích nó *(hai lần trước: chú thích nhắc `t2v_2_2`, và chú thích
+nhắc `nhan_vien`)*.
+
+⇒ Luật: **quét mã, đừng quét lời.** Python thì đọc AST. JS không có AST sẵn thì
+  bỏ chú thích trước đã. Và với CSP, lấy chỉ thị từ **hằng chuỗi** bằng
+  `"img-src\s+([^"]*)"`, không tách thô trên tên chỉ thị.
+
+### Luật rút ra
+
+- **Một khẳng định về hình ảnh phải đo việc GIẢI MÃ, không đo thuộc tính.**
+- **Chép một khuôn thì chép cả hai nhánh của nó.** `taovideo` phân nhánh
+  ảnh/video *có lý do*; nhánh ấy chính là bài học đã trả giá, và nó nằm ở chỗ
+  dễ bỏ qua nhất — một câu `if` không có chú thích.
+- **Chính sách bảo mật là một hợp đồng câm.** Nó không báo lỗi ở máy chủ, không
+  làm test đỏ, chỉ chặn ở trình duyệt người dùng. Phải có phép kiểm đọc **chính
+  chuỗi CSP** để khi ai đó sửa chính sách thì mã dựa vào nó biết mà đỏ theo.
