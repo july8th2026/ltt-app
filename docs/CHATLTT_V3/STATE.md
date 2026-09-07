@@ -246,9 +246,87 @@ rơi.
 đăng nhập** trên URL công khai — việc đó cần một phiên đăng nhập thật, và tôi
 không nhập mật khẩu của chủ dự án.
 
+## B6 — vòng nghiên cứu: 6/6 XONG 07/09
+
+| # | Việc | Trạng thái |
+|---|---|---|
+| 1 | `services/nguon.py` | ✅ |
+| 2 | `services/nghien_cuu.py` | ✅ |
+| 3 | `gia_nghien_cuu.py` + job `chatltt.nghien_cuu` | ✅ |
+| 4 | route + cờ `LTT_CHATLTT_V3_RESEARCH` | ✅ |
+| 5 | giao diện: báo giá → chạy → báo cáo có trích dẫn | ✅ |
+| 6 | nói rõ PHẠM VI ở giao diện | ✅ |
+
+Dải test dùng: **838, 839, 841, 842** *(kế hoạch ghi 838–840; **840** đã bị P09
+bước 6 lấy trong cùng buổi — xem mục P09 ở trên. Bảng cấp phát 800–899 của
+CHATLTT còn rộng, nên dịch một số rẻ hơn đổi tên một tệp đã commit.)*
+
+### 🔴 D3 của kế hoạch phải SỬA, không phải thi hành
+
+*"Quyết toán theo số lượt thật sự chạy"* — làm đúng chữ ấy ở tầng job là **thu
+hai lần**. Đo được: `runtime_noi_bo/luong.py` giữ credit theo trần token cho
+**mỗi** lời gọi model rồi hoàn về token thật (`billing.updated`). Vòng nghiên
+cứu không tốn gì ngoài những lượt ấy — nó đọc `chatltt_doan` của chính người
+hỏi rồi ghép chữ.
+
+⇒ `credit_cost = 0`, và số 0 ấy là một **khẳng định** có bánh cóc giữ hai đầu
+  (`test_841`): giá lúc nộp là 0, **và** kết quả job không mang khoá
+  `credit_cost`. Một số dương ở bất kỳ đầu nào là tầng thu thứ hai.
+
+⭐ Nửa đầu của D3 giữ nguyên và **quan trọng hơn trước**: vì job không giữ chỗ,
+  cửa số dư chuyển thành **điều kiện trước khi nộp** ở route. Một điều kiện,
+  không phải một giá.
+
+Bản sửa đã ghi vào chính `13_KE_HOACH_B6_NGHIEN_CUU.md`, theo giao thức đổi
+quyết định.
+
+### Phạm vi — bốn chốt, không phải một dòng chữ
+
+§1: nền tảng này **không có khả năng tìm web**. Câu phạm vi vì thế là hợp đồng
+với khách, và nó bị chốt ở bốn chỗ:
+
+1. **Đến từ máy chủ**, không phải hằng số trong bundle — một bản sao sẽ trôi về
+   phía **nguy hiểm**: bundle cũ nói *"không tìm Internet"* trong khi máy chủ đã
+   mở `web.tim`.
+2. **Ra ở cả ba đường** (báo giá · nộp · xem). Chỉ hiện ở màn báo giá là một câu
+   khách đọc một lần rồi không thấy lại — trong khi báo cáo cuối mới là chỗ họ
+   dễ tin nhầm nhất.
+3. **Đứng trước ô nhập** trên màn hình. Một cảnh báo đọc *sau* khi đã tin là một
+   cảnh báo không còn tác dụng.
+4. **Dịch theo request** (`N_` + `_t()`), không `_()` lúc import. `_()` đóng
+   băng ngôn ngữ của tiến trình vào câu này, và đây đúng là câu không được phép
+   không đọc được.
+
+### Kiểm bằng MẮT trên trình duyệt thật (cổng 8198, CSDL vứt đi)
+
+Job chạy qua **đúng** `jobs.handle` → `nghien_cuu.chay` → `kiem_trich_dan`; chỉ
+`goi_model` bị tiêm, vì cây thử nghiệm không có worker và không có model.
+
+```
+pham vi (khung vien)  Doc tai lieu ban da dinh vao hoi thoai nay. Khong tim tren Internet.
+gia                   Uoc khoang 13 credit cho toi da 3 vong. So du: 100 credit.
+bao cao               "Dung o gioi han so vong … · 3 vong · da bo 1 cau khong chi duoc nguon"
+                      1. Thoi han thanh toan la 30 ngay …   tep_78b2 · trang 2
+                      2. Cham thanh toan bi phat 0,05% …    tep_78b2 · trang 3
+console               0 loi
+/en/…/bao-gia         "Reads the documents you attached … Does not search the Internet."
+```
+
+⭐ Trạng thái *"0 credit"* cũng đã nhìn thấy trước khi nạp: nút **vô hiệu** và
+  màn hình nói *"Chưa đủ để chạy."* — chứ không phải một nút bấm được rồi mới
+  báo 402.
+
+### ⚠️ Bốn cổng vẫn ĐÓNG
+
+`customer_visible=False`, `api_exposed=False`, không trong
+`chinh_sach.CONG_CU_CHO_PHEP`, không trong `chieu_tool.CHO_MODEL_GOI`. Model
+**không** tự gọi được vòng nghiên cứu; nó là một nút người dùng bấm.
+
+---
+
 ## 🔒 Điều kiện để BẬT các cờ V3 — món nợ tự đòi
 
-⚠️ **NĂM cờ** (cập nhật 06/09). Kế hoạch tổng ghi *"làn B — mỗi nhóm một cờ"*;
+⚠️ **SÁU cờ** (cập nhật 07/09). Kế hoạch tổng ghi *"làn B — mỗi nhóm một cờ"*;
 cờ nhóm P06 bị bỏ sót suốt P06 lẫn B1/B2, cờ B4 thì khai ngay từ bước 3:
 
 | Cờ | Gác cái gì | Mặc định |
@@ -258,9 +336,19 @@ cờ nhóm P06 bị bỏ sót suốt P06 lẫn B1/B2, cờ B4 thì khai ngay t�
 | `LTT_CHATLTT_V3_FILES` | đính tài liệu (P06/B1) — **tốn credit** | TẮT |
 | `LTT_CHATLTT_V3_MEMORY` | kho ghi nhớ (B4) — đổi **ngữ cảnh mọi lượt** | TẮT |
 | `LTT_CHATLTT_V3_PROJECTS` | dự án gom hội thoại (B5) | TẮT |
+| `LTT_CHATLTT_V3_RESEARCH` | vòng nghiên cứu (B6) — **N lượt model chạy nền** | TẮT |
 
-⛔ **NĂM** cờ, tất cả **độc lập**. Bật cờ tool không kéo theo cờ tệp: đính một tài liệu
+⛔ **SÁU** cờ, tất cả **độc lập**. Bật cờ tool không kéo theo cờ tệp: đính một tài liệu
 tốn tiền ngay cả khi vòng lặp tool tắt.
+
+⭐ Và `_RESEARCH` **không** ăn theo `_FILES` dù đọc cùng kho `chatltt_doan`. Đính
+  một tài liệu là một việc khách làm **một lần** và thấy kết quả ngay; một vòng
+  nghiên cứu là **N lượt model chạy nền**, và nó tốn tiền theo N chứ không theo
+  một. Hai mức rủi ro khác nhau ⇒ hai cái van khác nhau.
+
+🔴 `test_831::test_trang_thai_khai_du_MOI_co` chốt **tập hợp** sáu tên, không
+   phải số lượng và không nới thành `>=`. Nó đã đỏ đúng lúc **hai lần** — cờ thứ
+   năm (B5) và cờ thứ sáu (B6) — và cả hai lần đều bắt người viết quay lại khai.
 
 🔴 Và cờ thứ tư khác ba cờ kia về **bề rộng**: ba cờ đầu gác một **cửa** (tắt thì
 một route 404, phần còn lại y nguyên). `_MEMORY` gác **ngữ cảnh của mọi lượt**,
@@ -278,6 +366,22 @@ phải "tiêm một khối rỗng".
 
 ⛔ Thêm `noi_bo.ghi_nho` vào `chieu_tool.CHO_MODEL_GOI` là một bước **riêng**,
 sau cả M1–M3. `test_833::test_CHUA_mo_cua_thu_tu` chốt sự vắng mặt ấy.
+
+### Điều kiện riêng để bật `LTT_CHATLTT_V3_RESEARCH`
+
+| # | Điều kiện | Trạng thái |
+|---|---|---|
+| R1 | `_FILES` đang bật — không có tài liệu thì mọi lượt ra `khong_co_nguon` | ✅ **07/09** |
+| R2 | Giao diện nói rõ **phạm vi** (không đọc Internet) | ✅ **07/09** — chốt ở bốn chỗ, xem mục B6 |
+| R3 | **Đo lại `CREDIT_UOC_MOI_VONG = 3`** trên 20–50 lượt thật | 🟡 là một **neo** từ giá 400 credit/1M token, không phải phép đo |
+
+⛔ Thêm `chatltt.nghien_cuu` vào `chieu_tool.CHO_MODEL_GOI` là một bước **riêng**
+   và hôm nay **không** làm: vòng nghiên cứu là một nút **người dùng bấm**, không
+   phải một năng lực model tự gọi. `test_841` chốt sự vắng mặt ấy.
+
+⭐ Không có điều kiện "chốt giá" như `_FILES`, và đó **không** phải bỏ sót: tầng
+  job này thu **0**, mọi credit chảy qua `runtime_noi_bo` theo giá đã chốt của
+  `text.chat`. Xem `apps/chatltt/gia_nghien_cuu.py`.
 
 
 ⛔ **Đọc mục này trước khi bật cờ, kể cả bật để thử.**
