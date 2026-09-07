@@ -42,6 +42,29 @@ def _khoa_kho(nguoi_dung_id, duoi: str = "mp4") -> str:
     return f"lttvideo/{nguoi_dung_id}/{uuid.uuid4().hex}.{duoi}"
 
 
+def _dieu_phoi_that(client):
+    """`DieuPhoi` thật, hoặc `None` nếu chưa cấu hình pod.
+
+    ⛔ `None` nghĩa là **không tự bật máy** — dùng cho môi trường đã có máy chạy
+       sẵn (phát triển, hoặc `B1` phương án bật-24/7 nếu sau này đổi). Nó KHÔNG
+       phải một lỗi im lặng: thiếu `LTTV_POD_ID` là một lựa chọn cấu hình.
+    """
+    import os
+
+    pod = (os.environ.get("LTTV_POD_ID") or "").strip()
+    if not pod:
+        return None
+    import sys
+    from pathlib import Path as _P
+
+    sys.path.insert(0, str(_P.cwd()))
+    from tools.video_cloud import tao_client  # noqa: PLC0415
+
+    from .dieu_phoi import DieuPhoi  # noqa: PLC0415
+
+    return DieuPhoi(api=tao_client(), pod_id=pod, client=client)
+
+
 def _client_that():
     import os
 
@@ -54,10 +77,12 @@ def _client_that():
     return WanGPClient(goc=goc, khoa=khoa)
 
 
-def handle(params: dict, ctx=None, *, _client=None, _kho=None) -> dict:
+def handle(params: dict, ctx=None, *, _client=None, _kho=None,
+           _dieu_phoi=None) -> dict:
     """Sinh một video.
 
-    `_client` / `_kho` chỉ để phép kiểm tiêm vào — mã sản phẩm không truyền.
+    `_client` / `_kho` / `_dieu_phoi` chỉ để phép kiểm tiêm vào — mã sản
+    phẩm không truyền.
     """
     prompt = str(params.get("prompt") or "").strip()
     if not prompt:
@@ -88,6 +113,23 @@ def handle(params: dict, ctx=None, *, _client=None, _kho=None) -> dict:
         kho = get_storage()
     else:
         kho = _kho
+
+    # ── `B1`: bật máy theo nhu cầu. `B3`: hết card ⇒ báo lỗi ngay ──
+    #
+    # ⭐ KHÔNG viết một dòng hoàn credit nào ở đây: `job_runner._hoan_credit`
+    #    đã hoàn khi job vào `JOB_ERROR` (`platform_core/job_runner.py:616`).
+    #    Ném lỗi LÀ cách hoàn tiền — thêm một đường hoàn thứ hai là hoàn hai lần.
+    dp = _dieu_phoi if _dieu_phoi is not None else _dieu_phoi_that(client)
+    if dp is not None:
+        from .dieu_phoi import TrangThaiMay  # noqa: PLC0415
+
+        tt = dp.bat_va_cho()
+        if tt is TrangThaiMay.KHONG_CO_CARD:
+            raise LoiJob(_t("Hiện không thuê được máy dựng video. "
+                            "Credit đã được hoàn, bạn thử lại sau ít phút."))
+        if tt is not TrangThaiMay.SAN_SANG:
+            raise LoiJob(_t("Máy dựng video chưa sẵn sàng. "
+                            "Credit đã được hoàn, bạn thử lại sau ít phút."))
 
     t0 = time.time()
     job_id = client.submit(tham_so)

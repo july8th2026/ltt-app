@@ -141,3 +141,72 @@ def test_khoa_ket_qua_PHAI_hop_khuon_ma_nen_tang_nhat_duoc():
                     khoa.add(k.value)
     assert "video_keys" in khoa, "kết quả không mang khoá tên `*_keys`"
     assert "tep" not in khoa, "tên `tep` quay lại — nền tảng sẽ không nhặt được"
+
+
+# ── `B1` bật máy theo nhu cầu · `B3` hết card thì hoàn credit ─────────────────
+
+
+class _DpGia:
+    """`DieuPhoi` giả: trả đúng một trạng thái đã đặt."""
+
+    def __init__(self, tt):
+        self.tt = tt
+        self.da_goi = 0
+
+    def bat_va_cho(self):
+        self.da_goi += 1
+        return self.tt
+
+
+def _tham_so():
+    return {"prompt": "mot dong song", "duration_s": 5, "nguoi_dung_id": "42"}
+
+
+def test_HET_CARD_thi_NEM_LOI_chu_khong_gui_job():
+    """`B3`: báo lỗi ngay. Ném lỗi **là** cách hoàn credit.
+
+    ⛔ Không viết đường hoàn tiền riêng ở app: `job_runner._hoan_credit` đã hoàn
+       khi job vào `JOB_ERROR`. Thêm một đường thứ hai là hoàn **hai lần**.
+    """
+    import pytest
+
+    from apps.lttvideo import jobs
+    from apps.lttvideo.dieu_phoi import TrangThaiMay
+
+    class _ClientKhongDuocGoi:
+        def submit(self, _):  # pragma: no cover - phai khong bao gio chay
+            raise AssertionError("da gui job du chua thue duoc may")
+
+    dp = _DpGia(TrangThaiMay.KHONG_CO_CARD)
+    with pytest.raises(jobs.LoiJob):
+        jobs.handle(_tham_so(), _client=_ClientKhongDuocGoi(), _kho=object(),
+                    _dieu_phoi=dp)
+    assert dp.da_goi == 1
+
+
+def test_MAY_KHONG_LEN_cung_nem_loi():
+    import pytest
+
+    from apps.lttvideo import jobs
+    from apps.lttvideo.dieu_phoi import TrangThaiMay
+
+    class _C:
+        def submit(self, _):  # pragma: no cover
+            raise AssertionError("da gui job du may chua len")
+
+    with pytest.raises(jobs.LoiJob):
+        jobs.handle(_tham_so(), _client=_C(), _kho=object(),
+                    _dieu_phoi=_DpGia(TrangThaiMay.TAT))
+
+
+def test_KHONG_co_duong_hoan_credit_rieng_trong_app():
+    """Chốt điều NGƯỢC LẠI: app không được tự hoàn tiền."""
+    import ast
+    import pathlib
+
+    ma = (pathlib.Path(__file__).parent.parent / "apps" / "lttvideo"
+          / "jobs.py").read_text(encoding="utf-8")
+    cay = ast.parse(ma)
+    goi = {n.func.attr for n in ast.walk(cay)
+           if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)}
+    assert "hoan" not in goi, "app tự hoàn credit — nền tảng đã hoàn, sẽ hoàn hai lần"

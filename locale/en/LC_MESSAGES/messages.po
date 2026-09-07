@@ -13381,3 +13381,9 @@ msgstr "(no description)"
 
 msgid "Không tìm thấy video để nâng nét."
 msgstr "No video found to enhance."
+
+msgid "Hiện không thuê được máy dựng video. Credit đã được hoàn, bạn thử lại sau ít phút."
+msgstr "No video machine is available right now. Your credits were refunded — please try again in a few minutes."
+
+msgid "Máy dựng video chưa sẵn sàng. Credit đã được hoàn, bạn thử lại sau ít phút."
+msgstr "The video machine is not ready. Your credits were refunded — please try again in a few minutes."
