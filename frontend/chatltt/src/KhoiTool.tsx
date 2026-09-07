@@ -96,6 +96,32 @@ const NHAN_TRANG_THAI: Record<TrangThaiTool, string> = {
  */
 const TU_MO: readonly TrangThaiTool[] = ['cho_duyet', 'dang_chay', 'loi']
 
+/**
+ * Doi so -> `[nhan, gia tri]`, BO khoa chua ai lam nhan.
+ *
+ * ⭐ Xuat ra de `TheDuyet` dung CHUNG mot bang nhan. Hai bang nhan la hai
+ *    bang se troi khoi nhau — va o day chung se troi ve phia nguy hiem: the
+ *    duyet la cho nguoi dung quyet dinh TIEU TIEN, nen mot doi so bi an o do
+ *    dat hon mot doi so bi an trong khoi tool.
+ */
+export function doiSoCoNhan(doiSo: Record<string, unknown> | undefined | null):
+  Array<readonly [string, string]> {
+  return Object.entries(doiSo ?? {})
+    .filter(([k]) => NHAN_DOI_SO[k])
+    .map(([k, v]) => [NHAN_DOI_SO[k], giaTri(v)] as const)
+    .filter(([, v]) => v !== '')
+}
+
+/** Khoa nao CO nhan — `TheDuyet` can biet de quyet dinh cho sua o dau. */
+export function khoaCoNhan(doiSo: Record<string, unknown> | undefined | null): string[] {
+  return Object.keys(doiSo ?? {}).filter((k) => NHAN_DOI_SO[k])
+}
+
+/** Nhan cua mot khoa, hoac chinh khoa neu chua ai dat nhan. */
+export function nhanCuaKhoa(khoa: string): string {
+  return NHAN_DOI_SO[khoa] ?? khoa
+}
+
 export function nhanTool(ten: string): string {
   if (NHAN_TOOL[ten]) return NHAN_TOOL[ten]
   // ⛔ Ngo ra phan sau dau cham chu KHONG ngo ra ca `noi_bo.xyz`: mot tien to
@@ -134,10 +160,7 @@ export function KhoiTool({ khoi }: { khoi: KhoiToolCall }) {
     if (tuMo) datMo(true)
   }
 
-  const doiSo = Object.entries(khoi.doi_so ?? {})
-    .filter(([k]) => NHAN_DOI_SO[k])
-    .map(([k, v]) => [NHAN_DOI_SO[k], giaTri(v)] as const)
-    .filter(([, v]) => v !== '')
+  const doiSo = doiSoCoNhan(khoi.doi_so)
 
   /**
    * ⭐ Mot khoi `cho_duyet` KHONG duoc phep rong. Ca ung dung nay fail-closed
