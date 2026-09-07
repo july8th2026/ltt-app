@@ -775,8 +775,55 @@ Start-Process powershell -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass',
 |---|---|---|
 | M3 | đo lại trần 2.000 ký tự (`_MEMORY`) trên 20–50 người thật | hằng số hiện là **neo tự suy** (4 × trần một mẩu) |
 | R3 | đo lại `CREDIT_UOC_MOI_VONG` (`_RESEARCH`) trên 20–50 lượt thật | 〃, và nó **đã từng sai 13 lần** |
-| — | **hạn mức lưu trữ** | thứ thật sự chặn lạm dụng đính tệp; **chưa có** |
+| — | **hạn mức lưu trữ** | 🔴 **đo 07/09** — xem mục riêng ngay dưới |
 | P11 | red team độc lập | bản giao đã viết: `15_BAN_GIAO_P11_RED_TEAM.md` |
+
+### 🔴 "Chưa có hạn mức" — đo ra thì nó là một lỗ CÓ SỐ
+
+Trước 07/09 mục này chỉ ghi *"chưa có hạn mức lưu trữ"*. Một câu như thế không
+ai hành động được. Đo lại:
+
+| Có | Không có |
+|---|---|
+| trần **mỗi tệp**: `dinh_tep.TRAN_BYTE = 20 MB` | trần **số lượng** tệp |
+| hạn chế kiểu tệp (`KIEU_NHAN`) | hạn mức **tổng dung lượng** mỗi người |
+
+⛔ Và điều làm nó thành một lỗ thật: route `POST /api/hoi-thoai/{id}/tep` tự
+   khai *"Tải một tài liệu lên và **hiện giá**. **Chưa thu**, chưa nộp job."*
+
+⇒ **Tải lên là MIỄN PHÍ.** Tiền chỉ thu lúc trích xuất. Nên tiền **không** chặn
+  được việc tải lên — thứ vẫn hay được coi là cái van tự nhiên ở đây thì ở đây
+  nó không tồn tại.
+
+**Cỡ thật, đo 07/09:**
+
+```
+C: con trong    458,6 GB      <- noi C:\LTTPlatform o
+dang dung        1 tep, 1,7 MB
+458,6 GB / 20 MB = ~23.500 luot tai len -> day o C
+```
+
+🔴 Đầy ổ C **sập cả nền tảng**, không riêng ChatLTT: Windows, PostgreSQL, cả bốn
+   dịch vụ. Một script làm việc đó trong vài giờ.
+
+⚠️ **Cần đăng nhập** mới tải lên được, và **hiện chưa có khách**, nên rủi ro
+   hôm nay thấp. Nhưng cờ `_FILES` **đã bật trên production**, nên nó không còn
+   là một rủi ro tương lai — nó là một rủi ro đang mở, chỉ chưa có ai ở đó.
+
+### Bản vá rẻ nhất, và vì sao tôi KHÔNG tự chọn con số
+
+Cơ chế thì hiển nhiên: một phép cộng `sum(so_byte)` theo `user_id` trong
+`dinh_tep.nhan()`, chặn khi vượt. Khoảng mười dòng.
+
+⛔ Nhưng **con số** thì không phải quyết định kỹ thuật: 500 MB một người là
+   rộng rãi với người dùng thường và vẫn chặn được kịch bản trên; 100 MB an
+   toàn hơn nhưng có thể chặn một khách hợp lệ đang làm việc thật. Đó là một
+   lựa chọn **sản phẩm**, và người quyết là chủ dự án.
+
+⚠️ Và một cân nhắc ngược chiều: thêm mã vào một đường **vừa mới bật và đang
+   thu tiền** cũng có rủi ro riêng — một lỗi trong phép kiểm hạn mức sẽ chặn
+   nhầm người dùng hợp lệ. Với "chưa có khách" thì cả hai rủi ro đều chưa gấp,
+   nên việc đúng là **hỏi rồi làm**, không phải làm vội.
 
 ---
 
