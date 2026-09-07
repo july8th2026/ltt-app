@@ -18,6 +18,8 @@ gồm:
 """
 from __future__ import annotations
 
+import json as _json
+
 import pytest
 
 from apps.lttvideo import so_dang_ky as sd
@@ -36,6 +38,13 @@ def may():
 
 
 CO_MODEL = [t for t in tv_mod.TAC_VU.values() if t.model]
+
+
+def _html_da_dung() -> str:
+    """HTML **đã dựng** — thứ người dùng thật sự thấy, không phải mã nguồn."""
+    from tests.test_734_lttvideo_gui import _dung  # noqa: PLC0415
+
+    return _dung(False)
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -194,27 +203,36 @@ def test_so_tac_vu_dang_mo_KHOP_voi_so_ban_ghi_mac_dinh_da_co():
 # ══════════════════════════════════════════════════════════════════════════
 
 def test_o_chon_tep_KHONG_moi_kieu_tep_ma_duong_job_TU_CHOI():
-    """Mọi MIME ô chọn tệp mời phải có một **tác vụ đang mở** nhận được nó."""
-    import inspect
-    import pathlib
-    import re
+    """Mọi MIME ô chọn tệp **thật sự hiện ra** phải có một tác vụ đang mở nhận
+    được nó.
 
-    from apps.lttvideo import routes
+    🔴 Viết lại 08/09. Bản trước đọc **văn bản** template, nên nó không thấy
+       hàng rào `{% if %}` bao quanh mục đính kèm — và nó đỏ đúng lúc mã đã
+       đúng. Một phép kiểm về *thứ người dùng thấy* phải đo **HTML đã dựng**,
+       không đo mã nguồn sinh ra nó.
 
-    goc = pathlib.Path(inspect.getsourcefile(routes)).parent / "templates"
-    html = chr(10).join(f.read_text(encoding="utf-8")
-                        for f in sorted(goc.glob("*.html")))
-    m = re.search(r'accept="([^"]+)"', html)
-    assert m, "khong tim thay o chon tep nao"
-    moi = [x.strip() for x in m.group(1).split(",") if x.strip()]
+    ⭐ Và đây là mệnh đề **tương đương**, không phải "không được có ô chọn tệp":
+       ô chọn tệp hiện ra ⟺ có tác vụ đang mở nhận tệp. Đúng ở cả hai thế giới,
+       nên nó tự đúng lại vào ngày `i2v_2_2` được tải về.
+    """
+    import re as _re
 
-    vai_tro_dang_mo = {v for t in tv_mod.dang_mo() for v in t.dau_vao}
-    for mime in moi:
-        loai = mime.split("/", 1)[0]          # "image" | "video" | "audio"
-        assert any(v.startswith(f"{loai}.") for v in vai_tro_dang_mo), (
+    html = _html_da_dung()
+    m = _re.search(r'accept="([^"]+)"', html)
+    nhan_tep = {v.split(".", 1)[0] for t in tv_mod.dang_mo() for v in t.dau_vao}
+
+    if not nhan_tep:
+        assert m is None, (
+            f"o chon tep HIEN RA ({m.group(1) if m else None}) nhung khong tac "
+            "vu dang mo nao nhan tep — nguoi dung se mat credit va hai muoi phut")
+        return
+
+    assert m, "co tac vu nhan tep nhung khong o chon tep nao hien ra"
+    for mime in m.group(1).split(","):
+        loai = mime.strip().split("/", 1)[0]
+        assert loai in nhan_tep, (
             f"o chon tep moi {mime!r} nhung khong tac vu DANG MO nao nhan "
-            f"loai {loai!r} — nguoi dung se mat credit va hai muoi phut")
-
+            f"loai {loai!r}")
 
 def test_tu_choi_video_noi_RO_LY_DO_chu_khong_noi_chung_chung():
     """Một lời từ chối không nói vì sao là một lời từ chối người dùng sẽ thử
@@ -254,3 +272,64 @@ def test_gui_ANH_toi_model_khong_nhan_anh_thi_BI_CHAN(so):
         "t2v_2_2 nay CO khai khe anh — hang rao chon model can xem lai")
     khai_i2v = sd._vai_tro(so.sieu("i2v_2_2"))
     assert "image.start" in khai_i2v
+
+
+# ══════════════════════════════════════════════════════════════════════════
+#  7. CUA THU BA — ban khai co, trong so KHONG
+# ══════════════════════════════════════════════════════════════════════════
+
+def test_tac_vu_dang_mo_deu_CO_TRONG_SO_tren_dia():
+    """🔴 Cửa thứ ba, tìm ra 08/09 khi máy ghi lấy được `kha_dung` thật.
+
+    Đo trên máy: **1/225 model** có trọng số (`t2v_2_2`), 4 phần, **220 thiếu**
+    — trong đó có `i2v_2_2`, model của một tác vụ khi ấy đang `mo=True`.
+
+    ⭐ Hai cửa ta canh trước đó **đều xanh** cho tác vụ ấy:
+         1. ô chọn tệp mời gì   ↔  tác vụ nhận gì
+         2. tác vụ cần vai trò  ↔  model khai vai trò
+       Nhưng có **bản khai** không có nghĩa là có **trọng số**. Người dùng bấm,
+       nền tảng giữ credit, rồi máy dựng đi tải ~30 GB giữa lượt — hoặc hỏng.
+
+    ⛔ Bài học rộng hơn một lỗi: một bất biến "cửa trước khớp cửa sau" chỉ đúng
+       khi ta **đếm đủ số cửa**. Hai cửa đầu là hai cửa ta *nghĩ ra*; cửa thứ ba
+       chỉ lộ ra khi hỏi máy thật.
+    """
+    for tv in tv_mod.dang_mo():
+        assert tv_mod.co_trong_so(tv.model), (
+            f"tac vu {tv.ma!r} dang mo nhung model {tv.model!r} CHUA co trong so")
+
+
+def test_thieu_ban_ghi_kha_dung_thi_COI_NHU_KHONG_CO_chu_khong_doan_la_co(
+        tmp_path, monkeypatch):
+    """⛔ Đoán "có" khi thiếu dữ liệu là mở một cánh cửa khoá. Đoán "không" thì
+    tệ nhất là ẩn mất một tác vụ chạy được — và cái đó **nhìn thấy được**.
+
+    🔴 Bản đầu của phép kiểm này **xoá rồi khôi phục `kha_dung.json` trong cây
+       kho**. Đúng cái bẫy đã ghi ở HM-1 và vừa dẫm lại: một phép kiểm ghi vào
+       cây tự phá lượt gate chứa nó (`cay_da_doi_giua_chung`) — và nếu nó hỏng
+       giữa chừng thì bản ghi thật **mất hẳn**.
+
+    ⇒ Trỏ thư mục bản ghi sang `tmp_path`, không đụng cây.
+    """
+    from apps.lttvideo.cong import may_gia_lap
+
+    monkeypatch.setattr(may_gia_lap, "GOC_BAN_GHI", tmp_path)
+    assert tv_mod.co_trong_so("t2v_2_2") is False, "thieu ban ghi ma van doan CO"
+
+    (tmp_path / "kha_dung.json").write_bytes(_json.dumps(
+        {"nguon": "ghi_tu_may", "sha_wangp": "x",
+         "du_lieu": {"t2v_2_2": {"available": True}}}).encode("utf-8"))
+    assert tv_mod.co_trong_so("t2v_2_2") is True
+
+def test_khong_con_ban_ghi_nao_la_KHUON():
+    """HM-7/B4: sau khi ghi từ máy thật, không bản ghi nào được còn `khuon`.
+
+    Một khuôn sót lại trông **y hệt** dữ liệu thật, chỉ khác là nó sai."""
+    import pathlib
+
+    goc = pathlib.Path(tv_mod.__file__).parent / "ban_ghi"
+    con = {t.name: _json.loads(t.read_text(encoding="utf-8"))["nguon"]
+           for t in goc.glob("*.json")}
+    khuon = [k for k, v in con.items() if v != "ghi_tu_may"]
+    assert not khuon, f"con ban ghi la khuon: {khuon}"
+    assert len(con) >= 4, f"qua it ban ghi: {con}"

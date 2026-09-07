@@ -222,7 +222,9 @@ def _dung(duoc_mo_rong: bool) -> str:
         so_dem={k: 0 for k in features.TRANG_THAI_TAB}, video=[],
         prompt_gan_day=[], tai_san=[],
         trang_thai_tab=[(k, k) for k in features.TRANG_THAI_TAB],
-        loc_trang_thai="all", loc_sap_xep="moi")
+        loc_trang_thai="all", loc_sap_xep="moi",
+        # Hop dong template doi 08/09: o chon tac vu sinh tu danh muc.
+        tac_vu=__import__("apps.lttvideo.tac_vu", fromlist=["x"]).dang_mo())
 
 
 def test_template_dung_duoc_khi_BAT_o_tick():

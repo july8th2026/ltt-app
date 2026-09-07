@@ -126,7 +126,12 @@ class MayCloud:
     def rest(self, method: str, duong_dan: str,
              than: Optional[dict] = None) -> Any:
         ma, body = self._goi(method, REST_GOC + duong_dan, than)
-        if ma not in (200, 201):
+        # 🔴 `204 No Content` la THANH CONG. RunPod tra no cho `DELETE /pods/{id}`,
+        #    va ban truoc coi no la loi — nen bon lan xoa pod THANH CONG deu in ra
+        #    "loi xoa". Bao thanh cong thanh that bai nguy hiem theo huong rieng
+        #    cua no: no day nguoi ta di thu lai mot viec DA XONG, va voi mot thao
+        #    tac destructive thi lan thu lai ay nham vao thu khac.
+        if ma not in (200, 201, 202, 204):
             raise LoiMayCloud(f"{method} {duong_dan} tra {ma}: {_gon(body)}")
         return body
 

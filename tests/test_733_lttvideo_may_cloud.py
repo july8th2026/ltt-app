@@ -368,3 +368,20 @@ def test_cai_dat_kiem_ca_ban_CUDA_cua_torch_chu_khong_chi_kien_truc_GPU():
     assert "TEP_CUDA" in than, "khong kiem ban CUDA cua torch"
     assert "do_cuda_torch" in than
     assert "torch.version.cuda" in ma, "khong do bang chinh torch"
+
+
+def test_204_NO_CONTENT_la_thanh_cong_chu_khong_phai_loi():
+    """🔴 Lỗi thật, thấy 08/09 khi xoá bốn pod chết: cả bốn lượt **thành công**
+    (HTTP 204) nhưng in ra `"loi xoa"`.
+
+    ⛔ Báo thành công thành thất bại nguy hiểm theo hướng riêng của nó: nó đẩy
+       người ta đi **thử lại một việc đã xong**, và với một thao tác destructive
+       thì lần thử lại ấy nhắm vào thứ khác.
+    """
+    import inspect
+
+    from tools.wangp import may_cloud
+
+    ma = inspect.getsource(may_cloud.MayCloud.rest)
+    assert "204" in ma, "`204 No Content` van bi coi la loi"
+    assert "200, 201, 202, 204" in ma

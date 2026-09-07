@@ -280,3 +280,52 @@ def test_KHONG_bat_wangp_TU_CHON_model():
     may = MayGiaLap()
     ra = so_dang_ky.settings(may, "t2v_2_2", prompt="x")
     assert ra["model_type"] == "t2v_2_2"
+
+
+def test_doc_duoc_CA_HAI_khuon_metadata():
+    """🔴 Lỗi thật, tìm ra khi bản ghi từ máy sống thay khuôn (HM-7).
+
+    WanGP có **hai** hàm liệt kê, và chúng trả **hai khuôn khác nhau**:
+
+        list_model_defs()      -> {model_type, name, metadata: {media_inputs…}}
+        list_model_metadata()  -> {model_type, name, media_inputs, …}   PHẲNG
+
+    Ví dụ ở `docs_API.md:262` là của hàm **thứ nhất**; tôi áp khuôn ấy cho hàm
+    thứ hai. Hậu quả: mọi `metadata` đều rỗng, chỉ mục ngược rỗng theo, và **225
+    model mà không model nào khai một vai trò nào**.
+
+    ⭐ Vì sao nó lọt qua tất cả phép kiểm trước đó: bản ghi cũ do **tôi** dựng
+      từ ảnh chụp, nên nó mang đúng khuôn tôi tưởng. Phép kiểm và dữ liệu cùng
+      sai một kiểu thì chúng khớp nhau hoàn hảo. Chỉ dữ liệu **từ máy thật** mới
+      phá được sự khớp giả ấy — đó chính là việc HM-7 sinh ra để làm.
+    """
+    class _MayHaiKhuon:
+        def __init__(self, ds): self._ds = ds
+        def liet_ke_model(self, **_): return self._ds
+
+    KHE = {"image": {"start": True}}
+    phang = _MayHaiKhuon([{"model_type": "a", "media_inputs": KHE,
+                           "main_output": ["video"]}])
+    long = _MayHaiKhuon([{"model_type": "a", "metadata": {
+        "media_inputs": KHE, "main_output": ["video"]}}])
+
+    for ten, may in (("phang", phang), ("long", long)):
+        so = so_dang_ky.nap(may)
+        assert so.model_cho(("image.start",)) == ["a"], f"khuon {ten} doc sai"
+
+
+def test_ban_ghi_THAT_va_anh_chup_CU_cho_cung_mot_ket_qua():
+    """⭐ Đối chứng chéo hai nguồn độc lập.
+
+    Ảnh chụp cũ (chuyển đổi 07/09) và bản ghi từ máy sống (08/09) là hai lần
+    đo cách nhau một ngày, qua hai đường khác nhau. Chúng phải cho **cùng** số
+    model khai mỗi vai trò — nếu lệch thì một trong hai đã trôi, và ta biết
+    ngay thay vì biết lúc một người dùng bấm nút.
+    """
+    so = so_dang_ky.nap(MayGiaLap())
+    assert len(so) == 225
+    assert len(so.model_cho(("image.start",))) == 83
+    assert len(so.model_cho(("image.reference",))) == 70
+    assert len(so.model_cho(("image.background",))) == 51
+    assert len(so.model_cho(("video.control",))) == 82
+    assert len(so.model_cho(("video.continue",))) == 113

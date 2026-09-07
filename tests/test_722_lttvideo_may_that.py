@@ -205,3 +205,31 @@ def test_may_KHONG_biet_gi_ve_credit_hay_nguoi_dung():
     ma = inspect.getsource(MayThat)
     for cam in ("credit", "user_id", "nguoi_dung", "gia_", "billing"):
         assert cam not in ma, f"client biet ve {cam!r} — sai ranh gioi so huu"
+
+
+def test_luot_tra_cuu_DAU_TIEN_duoc_cho_lau_hon_cac_luot_sau():
+    """🔴 Đo trên máy thật 08/09: lượt tra cứu đầu tiên **hết giờ ở 30 giây**,
+    rồi sau khi phiên WanGP ấm thì cùng lệnh ấy về trong **1 giây**.
+
+    Nguyên nhân: bốn đường tra cứu đúng là *không nhân ma trận* — nhưng chúng
+    gọi `_lay_phien()`, và lần đầu `init()` nạp cả runtime WanGP. Hợp đồng nói
+    **chưa đủ**, không phải nói sai.
+
+    ⛔ Cách sửa sai là nâng `CHO_MAC_DINH_S` lên cho vừa: thế thì **mọi** lượt
+       tra cứu về sau đều chờ được mười lăm phút trước khi chịu báo hỏng, và một
+       cầu nối chết sẽ giữ một worker mười lăm phút thay vì hỏng ngay.
+    """
+    from apps.lttvideo.cong import may_that as mt
+
+    ghi: list[float] = []
+
+    def goi(method, duong, *, than=None, tho=None, timeout=30.0, nhi_phan=False):
+        ghi.append(timeout)
+        return {"model": [], "so_do": {}}
+
+    m = mt.MayThat("https://x.test", khoa="K", goi=goi)
+    m.liet_ke_model()
+    m.so_do("bat_ky")
+    assert ghi[0] == mt.CHO_HAM_NONG_S, "luot dau khong duoc cho lau hon"
+    assert ghi[1] == mt.CHO_MAC_DINH_S, "luot sau van cho lau — cau noi chet se giu worker"
+    assert mt.CHO_HAM_NONG_S > mt.CHO_MAC_DINH_S

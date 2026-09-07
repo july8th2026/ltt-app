@@ -28,6 +28,7 @@ một bản ghi `mac_dinh__<model>.json`.
 """
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 
 from platform_core.i18n import N_
@@ -114,9 +115,43 @@ TAC_VU: dict[str, TacVu] = {
 }
 
 
+def co_trong_so(model_type: str) -> bool:
+    """Trọng số của model đã nằm trên đĩa của máy dựng chưa.
+
+    🔴 Đo 08/09 trên máy thật: **1/225 model** có trọng số (`t2v_2_2`), 4 phần,
+       **220 thiếu** — trong đó có `i2v_2_2`, model của một tác vụ đang mở.
+
+    ⭐ Đây là **cửa thứ ba**, và nó khác hai cửa kia. Trước đó ta canh:
+         1. ô chọn tệp mời gì   ↔  tác vụ nhận gì
+         2. tác vụ cần vai trò  ↔  model khai vai trò
+       Cả hai đều xanh cho `anh_thanh_video`. Nhưng có **bản khai** không có
+       nghĩa là có **trọng số**: WanGP sẽ đi tải ~30 GB giữa lượt chạy, hoặc
+       hỏng — sau khi nền tảng đã giữ credit.
+    """
+    from apps.lttvideo.cong.may_gia_lap import GOC_BAN_GHI  # noqa: PLC0415
+
+    tep = GOC_BAN_GHI / "kha_dung.json"
+    if not tep.is_file():
+        # Chua ghi thi KHONG doan la co. Doan "co" la mo mot cua khoa.
+        return False
+    d = json.loads(tep.read_text(encoding="utf-8")).get("du_lieu") or {}
+    return bool((d.get(model_type) or {}).get("available"))
+
+
 def dang_mo() -> list[TacVu]:
-    """Tác vụ **chạy được ngay**. Giao diện chỉ mời những cái này."""
-    return [t for t in TAC_VU.values() if t.mo]
+    """Tác vụ **chạy được ngay**. Giao diện chỉ mời những cái này.
+
+    Ba điều kiện, và cả ba đều phải đúng:
+
+      1. `mo=True`                  — ta đã quyết định mở nó
+      2. có `mac_dinh__<model>`     — có bản khai tham số
+      3. `co_trong_so(model)`       — trọng số đã trên đĩa
+
+    ⛔ Thiếu vế 3 thì tác vụ hiện trên giao diện, người dùng bấm, nền tảng giữ
+       credit — rồi máy dựng đi tải hàng chục GB hoặc hỏng.
+    """
+    return [t for t in TAC_VU.values()
+            if t.mo and t.model and co_trong_so(t.model)]
 
 
 def lay(ma: str) -> TacVu:

@@ -111,7 +111,15 @@ def nap(may: May, *, dau_ra: str = "video") -> SoDangKy:
         mt = m.get("model_type")
         if not mt:
             continue
-        sieu = m.get("metadata") or {}
+        # 🔴 HAI khuon, va toi da doc nham tai lieu mot lan vi chuyen nay:
+        #      `list_model_defs()`      -> {model_type, name, metadata: {...}}
+        #      `list_model_metadata()`  -> {model_type, name, media_inputs, ...}
+        #    Vi du o `docs_API.md:262` la cua ham THU NHAT; toi ap khuon ay cho
+        #    ham thu hai, nen moi `metadata` deu rong va chi muc nguoc rong theo
+        #    — 225 model ma KHONG model nao khai mot vai tro nao.
+        #
+        # ⭐ Doc ca hai: co `metadata` thi lay no, khong thi chinh ban ghi.
+        sieu = m.get("metadata") or m
         theo_model[mt] = sieu
         for vt in _vai_tro(sieu):
             theo_vai_tro.setdefault(vt, set()).add(mt)

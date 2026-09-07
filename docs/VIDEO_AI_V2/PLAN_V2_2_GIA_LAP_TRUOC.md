@@ -629,3 +629,85 @@ xanh, vì chúng đo **cấu trúc**, và cấu trúc thì đúng.
 Và bố cục ban đầu đặt ô chọn tác vụ **trong mục "Đính kèm"** — ngược với thứ tự
 thật của quyết định, vì tác vụ chọn model, chọn có được đính kèm không, chọn tối
 đa mấy tệp. Nay nó là mục **01**, các mục sau đánh số lại.
+
+### HM-7 · bốn điều đo được khi pod thật lên
+
+**1. Không pod nào bật lại được.** Cả bốn đều trả *"not enough free GPUs on the
+host machine"*. RunPod `stop` **nhả card**, và card ấy có thể không bao giờ về.
+⇒ HM-7 và HM-9 **gộp làm một**: tạo pod mới, và chọn ảnh cho nó chính là quyết
+định HM-9.
+
+**2. Bảng tồn kho không phải giá thật.** Tiền kiểm báo `H100 NVL $2,59/h`;
+pod tạo ra tính **$3,19/h**. `lowestPrice` là *chỉ dấu*, không phải hoá đơn.
+
+**3. ⛔ Pod này KHÔNG có SSH — và đó là hệ quả của chính cấu hình ta đặt.**
+`dockerEntrypoint: ["bash","-lc","bash /data/lttv/khoi_dong.sh"]` **ghi đè**
+entrypoint mặc định của RunPod, mà chính entrypoint ấy mới khởi động `sshd`.
+Cổng 22 vẫn được ánh xạ (38427) nên nhìn bảng thì tưởng có SSH — nhưng không ai
+nghe ở đó. ⇒ Mọi đường vào pod phải đi qua **cầu nối**. Muốn chạy một lệnh chẩn
+đoán thì phải có một đường trên cầu nối, không có đường tắt.
+
+**4. Lượt tra cứu ĐẦU TIÊN trả giá khởi tạo phiên.** Hợp đồng `May` nói đúng
+rằng bốn đường tra cứu *"không nhân ma trận"* — nhưng chúng gọi `_lay_phien()`,
+và lượt đầu tiên `init()` cả runtime WanGP. `MayThat.CHO_MAC_DINH_S = 30,0` nên
+lượt ấy **hết giờ**. Sau khi phiên ấm (`runtime_san_sang: true`) thì tra cứu trả
+về trong **1 giây**.
+
+⇒ Đây là một chỗ hợp đồng nói **chưa đủ**, không phải nói sai. Cần một trần chờ
+  riêng cho lượt đầu, hoặc một đường hâm nóng tường minh.
+
+### 🟢 HM-7/HM-9 · cuBLAS CHẠY ĐƯỢC trên cu128
+
+Đo 08/09 trên pod `rappv9risxm802` (image `cuda:12.8.1`, H100 NVL, $3,19/h):
+
+```
+30/30 bước inference -> decoding -> xong
+3.291.112 byte · header \x00\x00\x00 ftypisom   (MP4 thật)
+710 giây cho 5 giây video @ 480p / 30 bước
+```
+
+⇒ Lỗi `CUBLAS_STATUS_INVALID_VALUE` là **đặc thù của stack cu130**, không phải
+của WanGP, không phải của model, không phải của mã ta. Đây là lần đầu chuỗi
+`settings() → gui_viec → tien_do → ket_qua → tai_ve → don_dep` chạy trọn vẹn
+với **máy thật**.
+
+⚠️ Số giá vốn đo được, ghi để dùng khi thương mại hoá (đang hoãn theo quyết định
+   của chủ dự án): **~$0,63 cho một video 5 giây** ở 480p/30 bước.
+
+### 🔴 HM-7 · hai lỗi mà mọi phép kiểm trước đó đều bỏ lọt
+
+**1. Đọc nhầm tài liệu, và dữ liệu tự dựng che mất.** WanGP có **hai** hàm liệt
+kê trả **hai khuôn**: `list_model_defs()` lồng dưới `metadata`, còn
+`list_model_metadata()` trả **phẳng**. Ví dụ ở `docs_API.md:262` là của hàm thứ
+nhất; ta áp khuôn ấy cho hàm thứ hai ⇒ 225 model mà **không model nào khai một
+vai trò nào**.
+
+⭐ Vì sao nó lọt qua tất cả: bản ghi cũ do **chính ta** dựng từ ảnh chụp, nên nó
+  mang đúng khuôn ta tưởng. **Phép kiểm và dữ liệu cùng sai một kiểu thì khớp
+  nhau hoàn hảo.** Chỉ dữ liệu từ máy thật mới phá được sự khớp giả ấy — đó
+  chính xác là việc HM-7 sinh ra để làm.
+
+Sau khi sửa, hai nguồn độc lập cách nhau một ngày cho **cùng** con số
+(83/70/51/82/113). Đã chốt cả hai khuôn lẫn phép đối chứng chéo.
+
+**2. Cửa THỨ BA.** `kha_dung` thật: **1/225 available**, 4 partial, 220 missing
+— trong đó `i2v_2_2`. Hai cửa ta canh trước đó đều **xanh** cho tác vụ ảnh:
+
+    o chon tep moi gi    ↔  tac vu nhan gi          ✓
+    tac vu can vai tro   ↔  model khai vai tro      ✓
+    ban khai co          ↔  TRONG SO co             ✗  ← chua ai dem
+
+⇒ `dang_mo()` nay đòi **ba** điều kiện. Tác vụ ảnh tự đóng, ô chọn tệp biến
+  theo, và phép kiểm đo **HTML đã dựng** chứ không đo mã nguồn — một phép kiểm
+  về *thứ người dùng thấy* mà đọc mã nguồn thì nó đỏ đúng lúc mã đã đúng.
+
+**Bài học rộng hơn một lỗi:** bất biến *"cửa trước khớp cửa sau"* chỉ đúng khi
+**đếm đủ số cửa**. Hai cửa đầu là hai cửa ta *nghĩ ra*; cửa thứ ba chỉ lộ ra khi
+hỏi máy thật.
+
+### Bốn pod chết đã xoá — và `204` không phải lỗi
+
+Cả bốn xoá **thành công** (HTTP 204) nhưng `may_cloud.rest()` in ra `"loi xoa"`:
+nó chỉ nhận `200`/`201`. Báo thành công thành thất bại nguy hiểm theo hướng
+riêng: nó đẩy người ta đi **thử lại một việc đã xong**, và với một thao tác
+destructive thì lần thử lại ấy nhắm vào thứ khác. Đã vá, có phép kiểm.

@@ -47,6 +47,16 @@ UA_TRINH_DUYET = (
     "(KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
 )
 
+#: 🔴 Lượt tra cứu ĐẦU TIÊN trả giá khởi tạo phiên WanGP, không phải giá tra
+#:   cứu. Bốn đường tra cứu đúng là **không nhân ma trận** — nhưng chúng gọi
+#:   `_lay_phien()`, và lần đầu `init()` nạp cả runtime. Đo 08/09: lượt đầu vượt
+#:   30 giây và **hết giờ**; sau khi phiên ấm thì tra cứu về trong **1 giây**.
+#:
+#: ⛔ Đừng nâng `CHO_MAC_DINH_S` lên cho vừa: thế là mọi lượt tra cứu về sau đều
+#:   chờ được mười lăm phút trước khi chịu báo hỏng, và một cầu nối chết sẽ giữ
+#:   một worker mười lăm phút thay vì hỏng ngay.
+CHO_HAM_NONG_S = 900.0
+
 #: Nạp media có thể là ảnh vài MB qua proxy — rộng hơn hẳn các đường khác.
 CHO_NAP_MEDIA_S = 180.0
 CHO_TAI_VE_S = 300.0
@@ -64,6 +74,8 @@ class MayThat:
         self.goc = goc.rstrip("/")
         self.khoa = khoa
         self._tiem = goi
+        #: Chưa có lượt tra cứu nào thành công ⇒ phiên WanGP có thể chưa `init()`.
+        self._da_am = False
 
     # ── một chỗ duy nhất chạm mạng ─────────────────────────────────────────
 
@@ -124,6 +136,10 @@ class MayThat:
 
     # ── tra cứu ────────────────────────────────────────────────────────────
 
+    def _cho_tra_cuu(self) -> float:
+        """Lượt tra cứu đầu tiên được chờ lâu; các lượt sau thì không."""
+        return CHO_MAC_DINH_S if self._da_am else CHO_HAM_NONG_S
+
     def liet_ke_model(self, **loc: Any) -> list[dict]:
         cap: list[tuple[str, str]] = []
         for k, v in loc.items():
@@ -132,19 +148,27 @@ class MayThat:
             for x in (v if isinstance(v, (list, tuple, set)) else [v]):
                 cap.append((k, str(x)))
         q = f"?{urllib.parse.urlencode(cap)}" if cap else ""
-        return list(self._goi("GET", f"/model{q}").get("model") or [])
+        ra = self._goi("GET", f"/model{q}", timeout=self._cho_tra_cuu())
+        self._da_am = True
+        return list(ra.get("model") or [])
 
     def so_do(self, model_type: str) -> dict | None:
         duong = f"/model/{urllib.parse.quote(model_type)}/so-do"
-        return self._goi("GET", duong).get("so_do")
+        ra = self._goi("GET", duong, timeout=self._cho_tra_cuu())
+        self._da_am = True
+        return ra.get("so_do")
 
     def mac_dinh(self, model_type: str) -> dict:
         duong = f"/model/{urllib.parse.quote(model_type)}/mac-dinh"
-        return dict(self._goi("GET", duong).get("mac_dinh") or {})
+        ra = self._goi("GET", duong, timeout=self._cho_tra_cuu())
+        self._da_am = True
+        return dict(ra.get("mac_dinh") or {})
 
     def kha_dung(self, model_type: str) -> dict:
         duong = f"/model/{urllib.parse.quote(model_type)}/kha-dung"
-        return dict(self._goi("GET", duong).get("kha_dung") or {})
+        ra = self._goi("GET", duong, timeout=self._cho_tra_cuu())
+        self._da_am = True
+        return dict(ra.get("kha_dung") or {})
 
     # ── đưa media vào ──────────────────────────────────────────────────────
 

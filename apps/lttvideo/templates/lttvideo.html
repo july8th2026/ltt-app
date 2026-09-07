@@ -102,6 +102,11 @@
           </div>
         </div>
 
+        {# 🔑 Chi hien muc dinh kem khi CO tac vu dang mo nhan tep. `dang_mo()`
+           doi ca ba dieu kien, trong do co "trong so da tren dia" — nen khi
+           `i2v_2_2` chua tai ve thi tac vu anh dong lai, va o chon tep phai
+           bien theo. Moi tep no van moi la moi nguoi vao mot canh cua khoa. #}
+        {% if tac_vu | selectattr('so_tep_toi_da') | list %}
         <div class="tv-section"><h2><strong>03</strong> {{ _('Đính kèm') }}</h2>
           {# ⭐ Khuon `tv-ref-pickers` cua `taovideo`, khong dung macro
              `o_chon_tep`: macro dung mot hop gach dut CAO, con day la mot the
@@ -156,6 +161,7 @@
             {% endfor %}
           </div>
         </details>
+        {% endif %}
         {% endif %}
 
         <fieldset class="tv-fieldset"><legend><strong>04</strong> {{ _('Thiết lập') }}</legend>
