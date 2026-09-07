@@ -177,11 +177,42 @@ Chủ dự án bấm UAC. Kết quả ghi ở `C:\LTTPlatform\logs\deploy-*.ket.
 
 ### Nghiệm thu deploy — đối chiếu băm, đừng tin `EXITCODE`
 
-```python
-# 0 tệp .py lệch trên cả 5 gói, và bundle khớp `source_sha256`
+```bash
+python tools/nghiem_thu_deploy.py
 ```
 
-Rồi `curl https://app.lttstudios.com/health/ready` phải trả **200**.
+Nó đọc `dau_van_tay.json` của bản đang chạy để biết máy chủ **khai** mình là
+commit nào, rồi so từng tệp `.py` với `git show <sha>:<đường dẫn>`. Rồi
+`curl https://app.lttstudios.com/health/ready` phải trả **200**.
+
+⛔ **Đừng so với cây làm việc.** Đo 07/09/2026: cả hai phiên đều viết phép đo
+   dạng `for p in (D:/LTTSTUDIOSAPP/server).rglob("*.py")` và nó báo **2 tệp
+   lệch** ngay sau một lượt deploy **thành công** — deploy không hỏng, cây đã
+   đổi *sau* lúc chép vì một phiên khác vừa commit.
+
+   ⇒ Trong kho nhiều phiên, **cây làm việc không phải một mốc — nó là một mốc
+     đang chuyển động.** Thứ duy nhất đứng yên là một commit.
+
+🔴 Và chiều nguy hiểm không phải báo động giả. Là chiều ngược lại: deploy đi từ
+   một cây **bẩn** thì phép đo "so với cây" báo **0 lệch**, trong khi máy chủ
+   mang thứ không có trong commit nào. Vì vậy công cụ hỏi **cả ba chiều** —
+   *lệch*, *thiếu*, và **thừa** (tệp trên máy chủ không có trong commit). Chỉ
+   chiều thứ ba bắt được cây bẩn.
+
+⭐ Có răng, kiểm hai chiều: đối chiếu với commit đang chạy → `0/0/0`; đối chiếu
+   với commit **liền trước** → đúng **2** tệp lệch và gọi tên chúng.
+
+### Ba mốc đọc được từ đĩa, không suy từ `git log`
+
+| câu hỏi | đọc ở đâu |
+|---|---|
+| đang chạy bản nào | `curl /health/version`, hoặc `C:\LTTPlatform\app\dau_van_tay.json` |
+| **đường lùi là bản nào** | `C:\LTTPlatform\app.previous\dau_van_tay.json` |
+| lượt deploy nào, lúc nào | `C:\LTTPlatform\logs\deploy-*.ket.txt` |
+
+⛔ `/health/version` **không** trả lời được câu thứ hai **sau khi đã deploy** —
+   lúc đó nó chỉ nói về bản mới. Hỏi nó *sau* chỉ xác nhận việc mình vừa làm;
+   nó không kiểm được giả định mình đã đi vào. Xem **Bẫy 30**.
 
 ---
 
