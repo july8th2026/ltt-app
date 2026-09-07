@@ -62,6 +62,17 @@ CO_GHI_NHO = "LTT_CHATLTT_V3_MEMORY"
 #:    `_MEMORY` — va do la ly do no la mot co RIENG chu khong an theo.
 CO_DU_AN = "LTT_CHATLTT_V3_PROJECTS"
 
+#: Co cua nhom B6 (nghien cuu). Them 07/09.
+#:
+#: ⛔ KHONG an theo `CO_TEP` du no doc cung mot kho (`chatltt_doan`). Dinh mot
+#:    tai lieu la mot viec khach LAM MOT LAN va nhin thay ket qua ngay; mot
+#:    vong nghien cuu la N luot model chay NEN, va no ton tien theo N chu
+#:    khong theo mot. Hai muc rui ro khac nhau ⇒ hai cai van khac nhau.
+#:
+#: ⭐ Va no phai tat duoc rieng: ngay do vong lap ra bao cao te, thu can tat la
+#:    vong lap — khong phai kha nang dinh tep, thu ma moi luot chat deu dung.
+CO_NGHIEN_CUU = "LTT_CHATLTT_V3_RESEARCH"
+
 #: Giá trị được coi là BẬT. Fail-closed: mọi thứ khác là tắt, kể cả `"true"`
 #: viết hoa lạ hay `"yes"` — một cờ nhận nhiều cách viết là một cờ mà người ta
 #: tưởng đã bật trong khi chưa.
@@ -109,16 +120,22 @@ def du_an_bat() -> bool:
     return _bat(CO_DU_AN)
 
 
+def nghien_cuu_bat() -> bool:
+    """Vong nghien cuu co mo khong. **Mac dinh TAT.**"""
+    return _bat(CO_NGHIEN_CUU)
+
+
 def trang_thai() -> dict:
     """Cho `/api/danh-muc` và log — để người trực biết cờ nào đang bật."""
     return {"tools": tool_bat(), "tool_co_phi": tool_co_phi_bat(),
             "tep": tep_bat(), "ghi_nho": ghi_nho_bat(),
-            "du_an": du_an_bat()}
+            "du_an": du_an_bat(), "nghien_cuu": nghien_cuu_bat()}
 
 
 #: ⚠️ Sua 06/09: ban truoc thieu `tep_bat`/`CO_TEP` — `__all__` da troi khoi
 #:    module tu B3. Mot `__all__` thieu khong bao loi, no chi lam
 #:    `from ... import *` im lang bo qua thu moi.
 __all__ = ["tool_bat", "tool_co_phi_bat", "tep_bat", "ghi_nho_bat",
-           "du_an_bat", "trang_thai", "CO_TOOLS", "CO_TOOL_CO_PHI",
-           "CO_TEP", "CO_GHI_NHO", "CO_DU_AN"]
+           "du_an_bat", "nghien_cuu_bat", "trang_thai", "CO_TOOLS",
+           "CO_TOOL_CO_PHI", "CO_TEP", "CO_GHI_NHO", "CO_DU_AN",
+           "CO_NGHIEN_CUU"]

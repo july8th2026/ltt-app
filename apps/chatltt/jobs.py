@@ -39,12 +39,27 @@ import logging
 
 log = logging.getLogger(__name__)
 
+from apps.chatltt import gia as GIA
+from apps.chatltt.services.nghien_cuu import TRAN_VONG as NC_TRAN_VONG
+
 #: Tên loại job. Khai trong `manifest.job_types` — nền tảng CHỈ đọc bản khai đó.
 LOAI = "chatltt.trich_tep"
+
+#: ⚠️ B6 bước 3. Loại job thứ hai của app này.
+LOAI_NGHIEN_CUU = "chatltt.nghien_cuu"
 
 
 class LoiTrich(RuntimeError):
     """Job trích hỏng. Nền tảng bắt cái này ⇒ hoàn toàn bộ credit đã giữ."""
+
+
+class LoiNghienCuu(RuntimeError):
+    """Job nghiên cứu hỏng ⇒ hoàn credit đã giữ (ở đây là 0) và **nói lý do**.
+
+    ⛔ Không có *"xong với báo cáo rỗng"*: một lượt không gọi được model phải
+       trông khác một lượt tìm không ra tài liệu nào. Cái sau là một câu trả lời
+       thật (`ly_do_dung="khong_co_nguon"`); cái trước là một sự cố.
+    """
 
 
 def _voi_db(ham):
@@ -160,10 +175,120 @@ def _chay(db, *, tep_id: str, user_id: str) -> dict:
     }
 
 
+def _chu_so_huu(params: dict) -> str:
+    """Chủ của job. `nop_job` đặt `owner_id`; `dinh_tep` còn vá thêm `user_id`.
+
+    ⛔ Không có thì **ném**. Một job chạy không chủ là một job đọc tài liệu
+       của ai không rõ — và `tim_doan.tim` lọc theo `user_id`, nên một chuỗi
+       rỗng ở đây thành *"tìm trong tài liệu của người dùng rỗng"*, tức trả về
+       rỗng một cách trông rất bình thường.
+    """
+    p = params or {}
+    return str(p.get("user_id") or p.get("owner_id") or "")
+
+
+def _goi_model_mot_luot(db, *, user_id: str, model_alias: str, correlation_id: str):
+    """`goi_model(nhac) -> str` cho vòng nghiên cứu.
+
+    ⭐ Dùng thẳng `runtime_noi_bo.luong.mo_luong` chứ không đi qua `luot.py`:
+       đường chat dựng `chatltt_execution`, phát SSE và ghi khối vào một
+       `chatltt_message` — không cái nào có nghĩa trong một job nền. Nhưng
+       **tiền vẫn đi đúng đường ấy**: mỗi lượt được `mo_luong` giữ rồi hoàn
+       theo token thật, và đó là lý do `gia_nghien_cuu.credit_cost` là 0.
+    """
+    from platform_core.runtime_noi_bo import luong as L
+
+    def goi_model(nhac: str) -> str:
+        than = {"model": model_alias,
+                "messages": [{"role": "user", "content": str(nhac or "")}]}
+        manh: list = []
+        try:
+            for sk in L.mo_luong(db, user_id=user_id, tool_name="text.chat",
+                                 params=than, correlation_id=correlation_id):
+                if sk.get("type") == "response.delta":
+                    manh.append(str(sk.get("text") or ""))
+                elif sk.get("type") == "response.failed":
+                    raise LoiNghienCuu(
+                        f"model khong tra loi duoc: {sk.get('code') or ''}")
+        except L.LoiCuaLuong as e:
+            # 🔴 Hỏng thì job HỎ0NG, không phải *"xong với báo cáo rỗng"*. Cùng
+            #    lý lẽ đã ghi ở đầu tệp cho `trich_tep`.
+            raise LoiNghienCuu(str(e)) from e
+        return "".join(manh)
+
+    return goi_model
+
+
+def _chay_nghien_cuu(db, *, user_id: str, conversation_id: str, cau_hoi: str,
+                     tran_vong: int, job_id: str) -> dict:
+    from apps.chatltt import gia_nghien_cuu
+    from apps.chatltt.services import nghien_cuu as NC, nguon as NG
+    from apps.chatltt.tables import ChatlttConversation
+
+    hoi = db.get(ChatlttConversation, str(conversation_id))
+    if hoi is None or hoi.user_id != str(user_id):
+        # ⛔ Không phân biệt "không có" với "không phải của bạn" — cùng luật
+        #    `kho_tep.mot`.
+        raise LoiNghienCuu("khong tim duoc hoi thoai can nghien cuu")
+
+    boi_canh = {"conversation_id": str(conversation_id)}
+
+    def thu(q: str, so_toi_da: int):
+        # ⛔ `boi_canh` do BÊN GỌI đặt, không do model — phạm vi là quyền.
+        return NG.thu_nguon(db, user_id=str(user_id), boi_canh=boi_canh,
+                            cau_hoi=q, so_toi_da=int(so_toi_da))
+
+    bc = NC.chay(cau_hoi=cau_hoi, thu=thu,
+                 goi_model=_goi_model_mot_luot(
+                     db, user_id=str(user_id),
+                     model_alias=str(hoi.model_alias or ""),
+                     correlation_id=str(job_id or conversation_id)),
+                 tran_vong=int(tran_vong))
+
+    return {
+        "cau_hoi": bc.cau_hoi,
+        "ly_do_dung": bc.ly_do_dung,
+        "so_vong": bc.so_vong,
+        "so_bi_loai": bc.so_bi_loai,
+        "khang_dinh": [{"chu": k.chu,
+                        "nguon": [n.trich_dan for n in k.nguon]}
+                       for k in bc.khang_dinh],
+        "nguon": [{"loai": n.loai, "trich_dan": n.trich_dan} for n in bc.nguon],
+        # 🔴 KHÔNG có `credit_cost` ở đây, và đó là cố ý. `job_runner` thu
+        #    theo khoá ấy; mọi credit của lượt này đã chạy qua `runtime_noi_bo`
+        #    theo từng lượt model. Xem `apps/chatltt/gia_nghien_cuu.py`.
+        "phien_ban_gia": gia_nghien_cuu.PHIEN_BAN_GIA,
+    }
+
+
 def handle(params: dict, ctx=None) -> dict:
-    """Điểm vào của worker. `params`: `{"tep_id": ..., "user_id": ...}`."""
-    tep_id = str((params or {}).get("tep_id") or "")
-    user_id = str((params or {}).get("user_id") or "")
-    if not tep_id or not user_id:
-        raise LoiTrich("thieu `tep_id` hoac `user_id`")
-    return _voi_db(lambda db: _chay(db, tep_id=tep_id, user_id=user_id))
+    """Điểm vào của worker, phân nhánh theo `params["viec"]`.
+
+    ⛔ Phân nhánh theo khoá được **khai** trong `params_schema`, không theo
+       hình dạng tham số — cùng lý lẽ `apps/chatltt/gia.py`, và cùng một khoá,
+       nên giá và việc không bao giờ lệch nhau.
+    """
+    p = params or {}
+    viec = str(p.get(GIA.KHOA_VIEC) or "").strip()
+    user_id = _chu_so_huu(p)
+    if not user_id:
+        raise LoiTrich("thieu chu so huu cua job")
+
+    if viec == GIA.VIEC_NGHIEN_CUU:
+        conv = str(p.get("conversation_id") or "")
+        cau_hoi = str(p.get("cau_hoi") or "")
+        if not conv or not cau_hoi.strip():
+            raise LoiNghienCuu("thieu `conversation_id` hoac `cau_hoi`")
+        job_id = str(getattr(ctx, "job_id", "") or "")
+        return _voi_db(lambda db: _chay_nghien_cuu(
+            db, user_id=user_id, conversation_id=conv, cau_hoi=cau_hoi,
+            tran_vong=int(p.get("tran_vong") or 0) or NC_TRAN_VONG,
+            job_id=job_id))
+
+    if viec == GIA.VIEC_TRICH:
+        tep_id = str(p.get("tep_id") or "")
+        if not tep_id:
+            raise LoiTrich("thieu `tep_id`")
+        return _voi_db(lambda db: _chay(db, tep_id=tep_id, user_id=user_id))
+
+    raise LoiTrich(f"khong biet chay viec {viec!r}")

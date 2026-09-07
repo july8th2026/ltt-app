@@ -127,6 +127,38 @@ khi bấm, quyết toán theo số lượt **thật sự chạy**, hoàn phần 
    làm khách bị giam credit vài phút; sai về phía kia làm cả lượt hỏng **sau
    khi** họ đã đồng ý.
 
+#### ⚠️ SỬA D3 — 07/09, sau khi đo (bước 3)
+
+Nửa sau của D3 (*"quyết toán theo số lượt thật sự chạy, hoàn phần giữ dư"*)
+**không thi hành**, và không phải vì khó. Đo được:
+
+```
+platform_core/runtime_noi_bo/luong.py
+  moi loi goi model GIU credit theo tran token roi HOAN ve token that
+  -> su kien `billing.updated {credit_giu, credit_thu, credit_hoan}`
+```
+
+Vòng nghiên cứu không tốn gì **ngoài** những lượt model ấy — nó đọc
+`chatltt_doan` của chính người hỏi (một truy vấn CSDL) rồi ghép chữ. Nên một
+tầng giữ-và-thu ở job là **thu hai lần cùng một lượt**, đúng cái
+`apps/chatltt/manifest.py` cảnh báo từ H43: *"Khai `job_types` ở đây là mời một
+sổ tiền thứ hai."*
+
+⇒ Thay bằng:
+
+| D3 viết | thi hành |
+|---|---|
+| ước trần trước khi bấm | ✅ `gia_nghien_cuu.uoc_tran()` — số **hiện ra**, và là ngưỡng số dư route đòi |
+| job giữ credit | ❌ `credit_cost = 0`, có chủ đích và có bánh cóc |
+| job quyết toán theo lượt | ❌ `runtime_noi_bo` đã làm, chính xác hơn (theo token, không theo lượt) |
+
+⭐ Nửa đầu của D3 **giữ nguyên và quan trọng hơn trước**: vì job không giữ chỗ,
+  một tài khoản 0 credit vẫn nộp được job rồi chết ở lượt model đầu. Cửa ấy
+  chuyển thành **điều kiện trước khi nộp** ở route (bước 4) — một điều kiện,
+  không phải một giá, nên nó không tính hai lần thứ gì.
+
+---
+
 ### D4. Không có trích dẫn thì KHÔNG có câu
 
 Mỗi khẳng định trong báo cáo phải trỏ về `(tep_id, doan_id, trang)`. `P06 bước

@@ -13276,3 +13276,7 @@ msgstr "A single call usually costs a fractional amount. Fractions below one cre
 
 msgid "Phần lẻ dưới một credit không bị làm tròn lên mà được cộng dồn sang lượt sau, nên số tiền thực trả bám sát giá niêm yết kể cả với những lượt gọi rất nhỏ."
 msgstr "Fractions below one credit are not rounded up; they carry over to the next call, so what you actually pay tracks the listed price even for very small calls."
+
+#: apps/chatltt/manifest.py
+msgid "Nghiên cứu một câu hỏi trên tài liệu bạn đã đính vào hội thoại này."
+msgstr "Research a question across the documents you attached to this conversation."

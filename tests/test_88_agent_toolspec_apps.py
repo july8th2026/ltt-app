@@ -63,6 +63,10 @@ EXPECTED = {
     #      palette.filter(tool => tool.customer_visible !== false)
     #    ⇒ giao dien CO ton trong no, nen tool nay khong hien trong palette.
     "chatltt.trich_tep",
+    # ⚠️ CAP NHAT 07/09 (H44 B6 buoc 3). `chatltt.nghien_cuu` — vong nghien
+    #    cuu tren tai lieu khach da dinh. Cung ly do nhu dong tren: no vao bang
+    #    nay vi `discover_tools()` lay MOI ToolSpec.
+    "chatltt.nghien_cuu",
 }
 
 
@@ -77,6 +81,10 @@ def test_cong_THU_NHAT_that_su_chan_chu_khong_chi_ton_tai():
     no, cong thu nhat la mot truong khong ai dung — no co the da hong tu lau
     ma khong ai biet, vi khong co gi de no chan.
 
+    ⚠️ 07/09: tap nay len HAI voi `chatltt.nghien_cuu` (B6 buoc 3). Sua mot
+       con so o day la mot QUYET DINH ve palette Agent, nen no phai di kem mot
+       dong noi ro tool nao vua an di va vi sao — dung nhu dong tren da lam.
+
     ⛔ Va `discover_tools()` KHONG loc theo no (do: no tra ve ca 14 tool).
        Cua that nam o giao dien. Nen phep kiem nay chot rang truong ay den
        duoc CHO LOC — thieu no thi mot tool "an" se hien trong palette Agent,
@@ -84,7 +92,7 @@ def test_cong_THU_NHAT_that_su_chan_chu_khong_chi_ton_tai():
     """
     tools = discover_tools()
     an = {n for n, s in tools.items() if not s.customer_visible}
-    assert an == {"chatltt.trich_tep"}, (
+    assert an == {"chatltt.trich_tep", "chatltt.nghien_cuu"}, (
         f"tap tool AN da doi: {an} — moi thay doi o day la mot quyet dinh "
         "ve thu khach nhin thay trong palette Agent")
 
