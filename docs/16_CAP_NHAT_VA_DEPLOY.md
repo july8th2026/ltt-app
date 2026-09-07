@@ -62,6 +62,48 @@ python tools/gate.py               # TRƯỚC khi báo xong / deploy
 
 ⭐ Trước khi deploy: `git status --porcelain` phải **rỗng**, rồi mới chạy gate.
 
+### ⛔ Nhưng "rỗng lúc kiểm" KHÔNG phải "rỗng lúc chép"
+
+Đo 07/09/2026, một lượt deploy thật:
+
+```
+16:44  mot phien KHAC tao docs/architecture/... (chua theo doi)
+16:47  toi chay `git status`, thay no, hoi hai phien khac
+16:50  deploy chay -> robocopy chep BAN 16:44
+16:53  deploy xong
+17:07  tac gia ghi tiep -> tep do tu 60.620 thanh 66.852 byte
+17:13  tac gia them mot tep nua
+```
+
+⇒ Production nhận một **ảnh chụp dở** của một tài liệu người ta vẫn đang viết.
+
+🔴 Ba giờ đồng hồ sau mới lộ ra, và nó lộ vì một phiên khác **bác lại** lời kể
+   đầu tiên bằng mốc thời gian. Không ai nhìn thấy nó lúc deploy.
+
+**Ba hệ quả phải nhớ:**
+
+1. Trong kho nhiều phiên, cây làm việc là **một mốc đang chuyển động** — điều
+   `docs/16` đã ghi cho phép *đối chiếu* thì cũng đúng cho phép *quyết định có
+   deploy hay không*. Khoảng giữa "kiểm" và "chép" luôn tồn tại.
+2. `robocopy` **không loại trừ `docs/`**. Danh sách `/XD` là
+   `data secrets logs .venv venv __pycache__ .pytest_cache .git dist build
+   temp_videos node_modules .playwright-cli .playwright-mcp .claude test-results
+   tmp` — mọi thứ khác đi lên, kể cả tệp chưa theo dõi.
+3. ⛔ `tools/nghiem_thu_deploy.py` **chỉ đếm tệp `.py`**. Nên dòng *"thừa 0"*
+   của nó **không** có nghĩa *"không có gì ngoài commit"*. Đọc nó như thế là
+   đọc sai một câu hẹp thành một câu rộng.
+
+⭐ Không có bản sửa rẻ cho khoảng trống ấy. Thứ làm được:
+   **đo lại `git status` NGAY SAU khi robocopy xong**, và nếu có gì lạ thì
+   **ghi ra** thay vì giải thích cho êm. Một dòng ghi lại rẻ hơn ba giờ điều tra
+   của người sau.
+
+⚠️ Và nếu thứ chưa theo dõi ấy là **của phiên khác**: hỏi, chờ, rồi **ghi lại** —
+   đừng xoá. Nhưng nhớ rằng `ListAgents` chỉ thấy các phiên **đang tồn tại lúc
+   bạn hỏi**; ngày 07/09 chủ của thư mục ấy là một phiên **thứ tư** khởi động
+   **sau** lượt hỏi, nên cả hai phiên được hỏi đều trả lời "không phải của tôi"
+   một cách trung thực.
+
 ### ⛔ `pre-commit` xanh là phát biểu về **3/29 bước**, không phải về gate
 
 Đếm 07/09/2026:
