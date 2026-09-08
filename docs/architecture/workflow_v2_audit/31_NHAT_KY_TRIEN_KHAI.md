@@ -1277,6 +1277,76 @@ nó khai.
    đổi được Z".** Vế đầu đo *có tác dụng*; vế sau đo *đúng phạm vi*. Vế đầu một
    mình luôn xanh với bản cực đoan nhất.
 
+
+---
+
+## 🔴 `R4` — LỖ HỔNG RỘNG HƠN TÔI TƯỞNG: **không phép kiểm nào chạy alembic trên PostgreSQL**
+
+Phiên OPERATING cảnh báo rằng bước gate `bat bien da tien trinh` — bước họ nghĩ
+là **duy nhất** thi hành migration trên PostgreSQL — luôn `[BOQUA]` vì không
+dựng được CSDL nháp (thiếu `CREATEDB`). Tôi kiểm lại, và kết luận **mạnh hơn**:
+
+```
+tools/check_multiproc.py   ->  KHONG goi `command.upgrade` o dau ca
+                               (no dung `drop_all()` / metadata)
+
+Moi tep goi `command.upgrade` trong kho:
+  test_103_autosub_projects.py    alembic=1  postgres=0  sqlite=3
+  test_451_asv_v4_lam_cung.py     alembic=4  postgres=0  sqlite=5
+  test_45_deploy_scripts.py       alembic=3  postgres=0  sqlite=0
+  test_505_nguon_ban_giao.py      alembic=1  postgres=0  sqlite=0
+  test_616_chatltt...py           url = "sqlite:///" + tmp_path
+```
+
+⇒ **`postgres = 0` ở TẤT CẢ.** Không phải *"một bước bị bỏ qua"* mà là **năng
+lực ấy chưa từng tồn tại trong kho**.
+
+⭐ Và bước ấy, **kể cả khi có CSDL**, cũng không lấp được lỗ: nó dựng lược đồ
+bằng `drop_all()`/metadata — tức đi đường **SQLAlchemy model**, không đi đường
+**migration**. Hai đường khác nhau, và **chỉ đường thứ hai là đường production
+đi**.
+
+### Nghĩa là gì cho mọi lượt gate — kể cả lượt xanh
+
+⛔ **`RESULT: PASS` không được đọc thành "migration chạy được".** Trên SQLite
+theo đường alembic thì có `test_616`; trên PostgreSQL thì **con số là 0**.
+
+Đây chính là lý do `BOOLEAN DEFAULT 1` sống sót qua **ba** commit của tôi, mỗi
+commit đều kèm câu *"thi hành thật từ `base` tới `head`"* — câu ấy đúng, và nó
+đúng **trên SQLite**.
+
+### Bản vá cần HAI việc, không phải một
+
+| | mở được gì |
+|---|---|
+| cấp `CREATEDB` cho tài khoản test | bước đa tiến trình chạy được — **đường model** |
+| **thêm một phép kiểm alembic-trên-PG** | **đường migration** — đường production đi |
+
+Chỉ làm vế đầu thì sẽ có một bước xanh và một **cảm giác đã lấp**, trong khi lớp
+lỗi vừa tìm ra vẫn đi qua được.
+
+Hình dạng phép kiểm còn thiếu: chạy `alembic upgrade base:head` trên một
+PostgreSQL vứt đi, rồi so lược đồ sinh ra với `Base.metadata` — bắt được **cả**
+lỗi dialect **lẫn** lệch model↔migration.
+
+### Thứ đã lấp được mà KHÔNG cần CSDL sống
+
+`test_961` + phép sinh SQL offline (`command.upgrade(..., sql=True)` cho đúng dải
+`e7b2c94a1d38:e8f35c1a7d64`):
+
+```
+16 CREATE TABLE · 2 ALTER TABLE ADD COLUMN
+BOOLEAN DEFAULT 0|1 -> 0     BOOLEAN DEFAULT false x4, true x2
+7 chi muc BO PHAN giu dung menh de WHERE
+JSONB: 0    AUTOINCREMENT/pragma/sqlite: 0
+16 bang V2 tao DUNG MOT LAN tren 98 bang + 235 chi muc cua ca kho
+```
+
+⚠️ Nó chứng minh **SQL phát ra là PostgreSQL hợp lệ**. Nó **không** chứng minh
+SQL ấy **thi hành** trót lọt trên CSDL thật — quyền, extension, xung đột tên với
+object đang có. Cột phải của bảng ranh-giới-bằng-chứng vẫn trống, và nay ta biết
+**vì sao**.
+
 ## ĐỢT 2–5
 
 Chưa bắt đầu. Xem `27_29 §28`.
