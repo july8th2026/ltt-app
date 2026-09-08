@@ -50,6 +50,11 @@ Cột **Nhà mới** chỉ bắt buộc với `MIGRATE_*`: một năng lực b�
 | `lttvideo` | INTERNAL_ONLY | — | không khai `ToolSpec` nào | Video AI chạy bằng **WanGP** trên C-CLOUD (V2.1). Lý do đóng ở đây **không phải kế hoạch mà là GIẤY PHÉP**: `WanGP Community License 2.0` §5.2(g) cấm *"exposing the Software to customers or end users as a paid feature, add-on, or monetized backend component"* nếu không có giấy phép thương mại riêng — liên hệ cấp phép ghi ở §5.4 của chính giấy phép. ⇒ Mở tool ở đây là một quyết định **pháp lý**, chưa được đưa ra. Bằng chứng đầy đủ: `docs/VIDEO_AI_V2/P01_UPSTREAM_PIN.md` mục 2. |
 | `vps` | DEFER | — | không có hợp đồng job | Bán **máy chủ ảo** (H39). Không khai `ToolSpec` nào, và đó không phải thiếu sót: một máy ảo là một **hợp đồng thuê** có thời hạn, không phải một lượt chạy tính tiền một lần. Quote → giữ chỗ → quyết toán không mô tả được nó. ⚠️ Dòng này ghi lại **trạng thái thật** (không có ToolSpec), không phải một quyết định sản phẩm — chủ H39 muốn bán qua `/api/v1` thì phải nói được hợp đồng là gì trước. App vẫn **TẮT** (`LTT_VPS` chưa đặt). |
 
+| `auto_scan_video` | DEFER | — | chuỗi 11 giai đoạn, không phải một lượt gọi | **Lồng tiếng Việt cho video** (pha 00–14). Một lần chạy là **mười một giai đoạn**, mỗi giai đoạn một job riêng, bốn trong số đó chạy lại độc lập được. Ép vào `ToolSpec` một-vào-một-ra thì hoặc mất khả năng chạy lại một giai đoạn, hoặc bịa ra một hợp đồng mà chuỗi thật không có. ⛔ App còn `enabled=False` và `surface="runtime"` (chưa có `routes.py`) — chưa mở cho khách trên web, nên bàn mở qua API là bàn trước một bước. |
+| `asv_media` | DEFER | — | không phải app bán được | Vỏ thi hành làn `ffmpeg` của `auto_scan_video`. Khai `catalog_parent`, không `ToolSpec`, không thẻ catalog. Tồn tại vì quyền nhặt job lọc theo **APP** chứ không theo `job_type` (`platform_core/jobs.py:158-164`). |
+| `asv_gpu` | DEFER | — | không phải app bán được | Như trên, làn `gpu`. |
+| `asv_voice` | DEFER | — | không phải app bán được | Như trên, làn `voice`. |
+
 ## 2. 24/24 ToolSpec
 
 `customer_visible=True` **không** làm một tool public — đó là cờ palette của

@@ -1,0 +1,29 @@
+{
+  "ct2": "4.7.1",
+  "so_card": 2,
+  "model": "large-v3",
+  "buoc": {
+    "cpu": {
+      "giay_nap": 7.64,
+      "giay_chay": 35.43,
+      "so_doan": 4,
+      "ngon_ngu": "en"
+    },
+    "cuda": {
+      "giay_nap": 8.93,
+      "giay_chay": 0.23,
+      "loi_chay": "RuntimeError: Library cublas64_12.dll is not found or cannot be loaded"
+    }
+  },
+  "san_sang_sidecar": false,
+  "ghi_luc": "2026-09-04T14:33:53",
+  "may": {
+    "os": "Windows-10-10.0.19045-SP0",
+    "python": "3.13.12",
+    "loi_vat_ly": 10,
+    "loi_logic": 20,
+    "ram_gib": 31.9,
+    "ffmpeg": "ffmpeg.EXE",
+    "torch": "2.11.0+cpu cuda=False"
+  }
+}

@@ -38,7 +38,23 @@ def gemini_available(db) -> bool:
 
 
 def diarize_file(media_path: str, *, min_speakers: int = 0, max_speakers: int = 0,
-                  on_progress=None, is_cancelled=None) -> list[dict]:
+                  on_progress=None, is_cancelled=None,
+                  gpu_uuid: str = "") -> list[dict]:
+    """Phan vai nguoi noi. `gpu_uuid` GHIM tien trinh con vao mot card.
+
+    🔴 **Truoc tham so nay, `pyannote_runner.py:20` tu chon card**:
+       `if torch.cuda.is_available(): pipeline.to(torch.device("cuda"))` — tuc
+       no lay card dau tien torch thay, bat ke `platform_core.gpu_lease` da cap
+       card nao cho ai. Hai job song song thi hoac dam nhau tren mot card, hoac
+       mot card nam khong trong khi card kia OOM.
+
+    ⭐ Sua bang cach **dung lai** dung khuon cua `transcription._env_ghim_gpu`
+       (-> `platform_core.gpu.env_for`), khong dung mot co che dieu phoi thu
+       hai: ta chi TON TRONG cai lease da co, khong tu quyet dinh gi.
+
+    ⚠️ Mac dinh `""` = giu nguyen hanh vi cu, nen moi nguoi goi hien tai cua
+       `autosubvideo` chay khong doi mot dong.
+    """
     if not diarization_available():
         raise AuxiliaryAIError("Pyannote chưa được cấu hình (thiếu LTT_HF_TOKEN/sidecar).")
     from apps.autosubvideo.transcription import _sidecar_python
@@ -49,8 +65,10 @@ def diarize_file(media_path: str, *, min_speakers: int = 0, max_speakers: int = 
     if max_speakers: args += ["--max-speakers", str(max_speakers)]
     try:
         if on_progress: on_progress(10, "Pyannote đang phân vai")
+        from apps.autosubvideo.transcription import _env_ghim_gpu
         proc = subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
             text=True, encoding="utf-8", errors="replace",
+            env=_env_ghim_gpu(gpu_uuid),
             creationflags=(subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0))
         while proc.poll() is None:
             if is_cancelled and is_cancelled():

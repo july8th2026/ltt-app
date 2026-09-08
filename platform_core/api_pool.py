@@ -70,13 +70,59 @@ def _dinh_muc_con(key: ApiKey) -> bool:
     return True
 
 
+#: ── PHẠM VI CẤP KHOÁ (H43/Q120, O15) ────────────────────────────────────────
+#:
+#: 🔴 VÌ SAO PHẢI CÓ, VÀ VÌ SAO NÓ TỪNG LÀ MỘT LỖ.
+#:
+#:    `ApiKey.owner_user_id` tồn tại từ migration đầu tiên của bảng này
+#:    (`20260731_1600_them_bang_api_keys.py:24`, có index) và được `tao_key()`
+#:    ghi. Nhưng **không nơi nào ĐỌC nó** — `_ung_vien` lọc theo enabled/status/
+#:    categories/supported_models/rpm/tpm và không hề lọc theo chủ sở hữu. Nghĩa
+#:    là một khoá RIÊNG của khách sẽ được cấp cho lượt gọi của bất kỳ ai.
+#:
+#: ⭐ Hôm nay điều đó **chưa** rò rỉ, và nói cho đúng thì phải nói rõ vì sao:
+#:    không đường ghi nào trong kho đặt `owner_user_id`. Trang admin
+#:    (`server/admin.py:734`) không truyền tham số đó, hai công cụ nạp khoá cũng
+#:    không. Nên mọi dòng đang tồn tại đều mang chuỗi rỗng.
+#:
+#: ⇒ Định nghĩa rỗng = POOL NỀN TẢNG là **thiết lập** ngữ nghĩa cho một cột chưa
+#:   có ngữ nghĩa, không phải diễn giải lại một cột đang có. Không dòng nào đổi
+#:   hành vi, nên hợp đồng O15 ("tương thích ngược") được giữ nguyên vẹn.
+PHAM_VI_POOL = "platform_pool"     # khoá của nền tảng, dùng chung
+PHAM_VI_RIENG = "user_owned"       # khoá do chính người dùng cung cấp
+PHAM_VI_HOP_LE = frozenset({PHAM_VI_POOL, PHAM_VI_RIENG})
+
+
+class PhamViError(ValueError):
+    """Yêu cầu cấp khoá có phạm vi không hợp lệ. Fail-closed."""
+
+
 def _ung_vien(db: DbSession, now: datetime, *, providers: Optional[Sequence[str]],
-              category: Optional[str], model: Optional[str]) -> list:
+              category: Optional[str], model: Optional[str],
+              pham_vi: str = PHAM_VI_POOL,
+              owner_user_id: str = "") -> list:
     """Gom key khả dụng (tự hồi cooldown + cuộn cửa sổ). Lọc provider/category/model
-    và bỏ key đã chạm rpm/tpm. KHÔNG sắp xếp — caller quyết thứ tự."""
+    và bỏ key đã chạm rpm/tpm. KHÔNG sắp xếp — caller quyết thứ tự.
+
+    🔑 Phép lọc chủ sở hữu chạy **trong câu truy vấn**, trước mọi phép xếp hạng.
+       Đặt nó ở đây chứ không ở chỗ gọi vì một lý do: chủ sở hữu hiệu lực phải
+       được biết **TRƯỚC KHI CHỌN** (Prompt 07 mục 3). Lọc sau khi chọn nghĩa là
+       đã có một lượt chọn sai xảy ra rồi mới sửa, và một ngày nào đó ai đó sẽ
+       quên bước sửa.
+    """
     stmt = select(ApiKey).where(ApiKey.enabled.is_(True))
     if providers:
         stmt = stmt.where(ApiKey.provider.in_(list(providers)))
+
+    if pham_vi == PHAM_VI_RIENG:
+        # ⛔ KHÔNG BAO GIỜ rơi về pool nền tảng. Khách chọn khoá riêng là để
+        #    hạn mức và hoá đơn thuộc về họ; lặng lẽ dùng khoá nhà là tiêu tiền
+        #    của nền tảng cho một yêu cầu đã nói rõ không muốn thế.
+        stmt = stmt.where(ApiKey.owner_user_id == owner_user_id)
+    else:
+        # Pool nền tảng KHÔNG bao giờ chạm khoá riêng của ai (I7).
+        stmt = stmt.where(ApiKey.owner_user_id == "")
+
     rows = db.execute(stmt).scalars().all()
 
     out = []
@@ -101,7 +147,9 @@ def _ung_vien(db: DbSession, now: datetime, *, providers: Optional[Sequence[str]
 def chon_key(db: DbSession, *, category: Optional[str] = None,
              model: Optional[str] = None,
              thu_tu_provider: Optional[Sequence[str]] = None,
-             loai_tru: Optional[Sequence[str]] = None) -> ApiKey:
+             loai_tru: Optional[Sequence[str]] = None,
+             pham_vi: str = PHAM_VI_POOL,
+             owner_user_id: str = "") -> ApiKey:
     """Chọn một API key khả dụng cho `category` (tuỳ `model`), CASCADE nhiều provider.
 
     `thu_tu_provider`: thứ tự ưu tiên provider (vd ["gemini","apiai"]); None = xét
@@ -111,17 +159,27 @@ def chon_key(db: DbSession, *, category: Optional[str] = None,
     `loai_tru`: id các key **đã thử và hỏng trong chính lượt gọi này**. Xem
     `thu_lan_luot()` để biết vì sao cần.
     """
+    if pham_vi not in PHAM_VI_HOP_LE:
+        raise PhamViError(f"pham vi cap khoa khong hop le: {pham_vi!r}")
+    owner_user_id = (owner_user_id or "").strip()
+    if pham_vi == PHAM_VI_RIENG and not owner_user_id:
+        # Fail-closed. Xin khoá riêng mà không nói của ai thì câu trả lời đúng là
+        # từ chối — nếu đoán, đường đoán an toàn nhất vẫn là cấp một khoá của
+        # người khác hoặc của nền tảng, tức đúng hai thứ bất biến I7 cấm.
+        raise PhamViError("pham vi user_owned bat buoc phai co owner_user_id")
+
     order = [(p or "").strip().lower() for p in (thu_tu_provider or []) if p]
     bo_qua = {str(x) for x in (loai_tru or [])}
     now = _bay_gio()
     ung_vien = _ung_vien(db, now, providers=(order or None),
-                         category=category, model=model)
+                         category=category, model=model,
+                         pham_vi=pham_vi, owner_user_id=owner_user_id)
     if bo_qua:
         ung_vien = [k for k in ung_vien if k.id not in bo_qua]
     if not ung_vien:
         raise ThieuKeyError(
-            f"khong co API key kha dung: providers={order or 'moi'} "
-            f"category={category} model={model}")
+            f"khong co API key kha dung: pham_vi={pham_vi} "
+            f"providers={order or 'moi'} category={category} model={model}")
 
     def _rank_prov(p: str) -> int:
         if not order:
@@ -144,17 +202,22 @@ def chon_key(db: DbSession, *, category: Optional[str] = None,
 
 def lay_key(db: DbSession, provider: str, *, category: Optional[str] = None,
             model: Optional[str] = None,
-            loai_tru: Optional[Sequence[str]] = None) -> ApiKey:
+            loai_tru: Optional[Sequence[str]] = None,
+            pham_vi: str = PHAM_VI_POOL,
+            owner_user_id: str = "") -> ApiKey:
     """Chọn key cho MỘT provider cụ thể (tương thích Pha 1). Nội bộ gọi `chon_key`
     với thứ tự provider = [provider], nên rpm/tpm/telemetry áp dụng như nhau."""
     provider = (provider or "").strip().lower()
     return chon_key(db, category=category, model=model,
-                    thu_tu_provider=[provider], loai_tru=loai_tru)
+                    thu_tu_provider=[provider], loai_tru=loai_tru,
+                    pham_vi=pham_vi, owner_user_id=owner_user_id)
 
 
 def thu_lan_luot(db: DbSession, *, provider: Optional[str] = None,
                  category: Optional[str] = None, model: Optional[str] = None,
-                 so_lan: int = 3):
+                 so_lan: int = 3,
+                 pham_vi: str = PHAM_VI_POOL,
+                 owner_user_id: str = ""):
     """Sinh lần lượt các key khả dụng, **không bao giờ trả lại key đã thử**.
 
         for key in api_pool.thu_lan_luot(db, provider="gemini", category="image"):
@@ -188,9 +251,11 @@ def thu_lan_luot(db: DbSession, *, provider: Optional[str] = None,
     for _ in range(max(1, int(so_lan))):
         try:
             key = (lay_key(db, provider, category=category, model=model,
-                           loai_tru=da_thu)
+                           loai_tru=da_thu, pham_vi=pham_vi,
+                           owner_user_id=owner_user_id)
                    if provider else
-                   chon_key(db, category=category, model=model, loai_tru=da_thu))
+                   chon_key(db, category=category, model=model, loai_tru=da_thu,
+                            pham_vi=pham_vi, owner_user_id=owner_user_id))
         except ThieuKeyError:
             return          # het key kha dung -> dung, khong nem
         da_thu.append(key.id)
@@ -259,3 +324,37 @@ def tpm(key: ApiKey, *, now: Optional[datetime] = None) -> int:
     if ws is None or (now - ws).total_seconds() >= WINDOW_S:
         return 0
     return key.window_tokens
+
+
+def pham_vi_cua(key: ApiKey) -> str:
+    """Phạm vi thực tế của một khoá, suy từ DỮ LIỆU chứ không từ lời gọi."""
+    return PHAM_VI_RIENG if (key.owner_user_id or "").strip() else PHAM_VI_POOL
+
+
+def mo_ta_an_toan(key: ApiKey) -> dict:
+    """Mô tả một khoá cho log/telemetry/màn admin — KHÔNG BAO GIỜ có bí mật.
+
+    ⛔ Không có `credential`, không có `credential_enc`. `key_preview` do
+       `secretbox.preview()` sinh ra và vốn được thiết kế để in ra được; mọi thứ
+       còn lại ở đây là siêu dữ liệu.
+
+    ⭐ Có hàm này để nơi gọi khỏi phải tự dựng một dict — và mỗi lần tự dựng là
+       một cơ hội cho `credential` lọt vào một dòng log. Bất biến I16 nói "không
+       bí mật thô nào bị ghi lại"; cách giữ nó là làm cho đường đúng thành đường
+       sẵn có.
+
+    `chu_so_huu` rút gọn còn 8 ký tự: đủ để đối chiếu hai dòng log với nhau,
+    không đủ để dùng làm định danh ở chỗ khác.
+    """
+    chu = (key.owner_user_id or "").strip()
+    return {
+        "key_id": key.id,
+        "provider": key.provider,
+        "pham_vi": pham_vi_cua(key),
+        "chu_so_huu": (chu[:8] + "…") if chu else "",
+        "preview": key.key_preview or "",
+        "status": key.status,
+        "health": key.health_score,
+        "rpm": rpm(key),
+        "tpm": tpm(key),
+    }

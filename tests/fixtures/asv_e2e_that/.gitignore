@@ -1,0 +1,11 @@
+# Phim khách thật — KHÔNG BAO GIỜ commit.
+#
+# ⛔ Hai lý do, và lý do thứ hai mới là lý do thật:
+#    1. Kích thước — hai clip 2–5 phút làm phình kho vĩnh viễn.
+#    2. Đây là **tư liệu của khách**. Một tệp đã vào lịch sử git thì còn ở đó
+#       sau khi bị xoá, và kho này có bản off-site trên GitHub riêng tư.
+#
+# Chặn tất cả, rồi mở lại đúng hai tệp mô tả.
+*
+!.gitignore
+!README.md

@@ -1,0 +1,88 @@
+{
+  "schema": "asv.v4.suat_gpu.1",
+  "ghi_luc": "2026-09-04T14:27:24",
+  "may": {
+    "os": "Windows-10-10.0.19045-SP0",
+    "python": "3.13.12",
+    "loi_vat_ly": 10,
+    "loi_logic": 20,
+    "ram_gib": 31.9,
+    "ffmpeg": "ffmpeg.EXE",
+    "torch": "2.11.0+cpu cuda=False"
+  },
+  "nguon_giay": 32.189,
+  "nguong_tach_suat": {
+    "dinh_cpu": 70.0,
+    "ram_trong_gib": 8.0
+  },
+  "do": {
+    "demucs_mot_minh": {
+      "giay": 20.74,
+      "so_mau": 38,
+      "nhip_s": 0.5,
+      "cpu_dinh": 49.0,
+      "cpu_tb": 34.6,
+      "ram_trong_thap_nhat_mb": 11168.7,
+      "vram_dinh_mb": [
+        12298,
+        815
+      ],
+      "nen": {
+        "cpu_nen": 12.9,
+        "ram_trong_mb_nen": 12625.8,
+        "vram_mb_nen": [
+          12298,
+          802
+        ]
+      }
+    },
+    "asr_mot_minh": {
+      "giay": 42.79,
+      "so_mau": 80,
+      "nhip_s": 0.5,
+      "cpu_dinh": 46.5,
+      "cpu_tb": 33.2,
+      "ram_trong_thap_nhat_mb": 9550.8,
+      "vram_dinh_mb": [
+        12298,
+        866
+      ],
+      "nen": {
+        "cpu_nen": 12.5,
+        "ram_trong_mb_nen": 12634.4,
+        "vram_mb_nen": [
+          12298,
+          806
+        ]
+      }
+    },
+    "cung_luc": {
+      "giay_tuong": 42.43,
+      "giay_tung_cai": {
+        "demucs": 31.84,
+        "asr": 42.43
+      },
+      "so_mau": 77,
+      "nhip_s": 0.5,
+      "cpu_dinh": 78.6,
+      "cpu_tb": 54.8,
+      "ram_trong_thap_nhat_mb": 9089.5,
+      "vram_dinh_mb": [
+        12298,
+        867
+      ],
+      "nen": {
+        "cpu_nen": 13.9,
+        "ram_trong_mb_nen": 10884.6,
+        "vram_mb_nen": [
+          12298,
+          799
+        ]
+      }
+    }
+  },
+  "lan_luot_giay": 63.53,
+  "thong_luong_tang": 1.5,
+  "dat_nguong_tach_suat": false,
+  "chua_do_duoc": "VRAM khi hai model cung tren mot card — cay nay la torch+cpu (V4-R05), nen ca hai deu chay tren CPU"
+}

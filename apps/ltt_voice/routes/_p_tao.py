@@ -261,6 +261,13 @@ def ket_qua(job_id: str, user=Depends(user_hien_tai), _=Depends(require_login)):
             "giay": kq.get("duration_s"),
             "credit": kq.get("credit_cost"),
             "so_doan": kq.get("so_doan"),
+            # ⛔ CẢNH BÁO PHẢI RA TỚI ĐÂY. Trước 07/09/2026 `KetQua.canh_bao`
+            #    được dựng, được đưa vào `as_result()`, rồi dừng lại ở cửa này
+            #    — Studio không bao giờ hỏi tới nó. Nghĩa là hai thứ im lặng:
+            #    cảnh báo lệch làn, và (từ nay) **đường lùi giọng**. Một đường
+            #    lùi không nói ra là đúng cái lỗi `lui_giong.py` đi sửa.
+            "canh_bao": list(kq.get("canh_bao") or ()),
+            "giong_that": kq.get("giong_that") or "",
         }
         if job.status == "error":
             from platform_core import job_events

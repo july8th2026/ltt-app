@@ -28,7 +28,29 @@ DRAFT_RETENTION_DAYS = 30
 MAX_ACTIVE_SESSIONS = 20
 MAX_ACTIVE_BYTES = 2 * 1024 * 1024 * 1024
 MAX_CREATED_PER_MINUTE = 12
-_SLUG = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
+#: Slug app hop le cho mot khoa staging.
+#:
+#: 🔴 **DAU GACH DUOI DUOC THEM 2026-09-03, va truoc do no la mot loi that.**
+#:
+#:    Ban cu la `^[a-z0-9][a-z0-9-]{0,63}$` — khong co `_`. Ket qua: **7 trong 19
+#:    app** cua kho bi `create()` tu choi thang, trong do co `ltt_voice`
+#:    (`lifecycle="released"`, dang ban) va `ltt_llm`:
+#:
+#:        bi tu choi: asv_gpu, asv_media, asv_voice, auto_scan_video,
+#:                    ltt_llm, ltt_voice, prompt_ai_ommi
+#:
+#:    Va no khong lo ra suot mot thoi gian dai vi hai ly do cong lai: app duy
+#:    nhat dang goi `upload_sessions` la `autosubvideo` — mot trong so it slug
+#:    khong co gach duoi — con `tests/conftest.py:71` dat `APP_THU_SLUG="appthu"`,
+#:    nen ca bo test chua bao gio di qua nhanh nay voi mot slug that.
+#:
+#: ⭐ Day khong phai mot han che co chu y: `AppManifest` khong cam gach duoi o
+#:    dau ca, va bay app dang dung no. Trong mot duong dan luu tru, `_` an toan
+#:    ngang `-`, va `storage._safe_key` van la lop chan cuoi.
+#:
+#: ⛔ Doi nay CHI NOI RONG: moi slug hop le truoc day van hop le. Khong nguoi goi
+#:    nao doi hanh vi. Xem `tests/test_429_asv_v4_dau_vao_lon.py` muc 3.
+_SLUG = re.compile(r"^[a-z0-9][a-z0-9_-]{0,63}$")
 log = logging.getLogger(__name__)
 
 

@@ -1,0 +1,103 @@
+Gate [day-du]: 26 buoc, toi da 8 buoc cung luc, ngan sach 14/20 loi, tai nguyen: cpu_nhieu
+
+  [ok  ] bien dich duoc                  6.4s (1/26)
+  [ok  ] bat bien da tien trinh          0.1s (2/26)
+  [ok  ] bien .ps1 trung tham so         0.6s (3/26)
+  [ok  ] trung so test                   0.1s (4/26)
+  [ok  ] nuot loi lang le                1.3s (5/26)
+  [ok  ] bo qua im lang                  2.7s (6/26)
+  [ok  ] ky tu dieu khien                5.5s (7/26)
+  [ok  ] chuoi chua dich                 3.6s (8/26)
+  [ok  ] anh chup hop dong               2.3s (9/26)
+  [ok  ] tai lieu sinh ra                2.4s (10/26)
+  [ok  ] tai san GUI                     0.1s (11/26)
+  [ok  ] frontend agent-canvas           0.0s (12/26)
+  [ok  ] frontend autosub-studio         0.0s (13/26)
+  [ok  ] frontend prompt-ai-ommi         0.0s (14/26)
+  [ok  ] secret scan                    13.5s (15/26)
+  [ok  ] app contract lint               0.2s (16/26)
+  [ok  ] kich thuoc route server         0.1s (17/26)
+  [ok  ] chuong chua treo                1.9s (18/26)
+  [ok  ] system profile                  9.3s (19/26)
+  [ok  ] ten chua dinh nghia             4.4s (20/26)
+  [LOI ] bo test (song song)           674.6s (21/26)
+  [ok  ] kieu xuong dong                 0.1s (22/26)
+  [ok  ] SDK khop hop dong               1.2s (23/26)
+  [ok  ] hop dong API                    2.0s (24/26)
+  [ok  ] dich thieu ban EN               2.3s (25/26)
+  [ok  ] postman                         2.8s (26/26)
+
+==============================================================
+  [PASS] bien dich duoc                  6.4s
+  [PASS] secret scan                    13.5s
+  [PASS] app contract lint               0.2s
+  [PASS] kieu xuong dong                 0.1s
+  [PASS] kich thuoc route server         0.1s
+  [PASS] chuong chua treo                1.9s
+  [PASS] ten chua dinh nghia             4.4s
+  [PASS] nuot loi lang le                1.3s
+  [PASS] bien .ps1 trung tham so         0.6s
+  [PASS] trung so test                   0.1s
+  [PASS] bo qua im lang                  2.7s
+  [PASS] ky tu dieu khien                5.5s
+  [PASS] chuoi chua dich                 3.6s
+  [PASS] dich thieu ban EN               2.3s
+  [PASS] system profile                  9.3s
+  [PASS] hop dong API                    2.0s
+  [PASS] anh chup hop dong               2.3s
+  [PASS] tai lieu sinh ra                2.4s
+  [PASS] SDK khop hop dong               1.2s
+  [PASS] tai san GUI                     0.1s
+  [PASS] postman                         2.8s
+  [BOQUA] bat bien da tien trinh          0.1s
+  [BOQUA] frontend agent-canvas           0.0s
+  [BOQUA] frontend autosub-studio         0.0s
+  [BOQUA] frontend prompt-ai-ommi         0.0s
+  [FAIL] bo test (song song)           674.6s
+
+Chi tiet buoc that bai:
+
+--- bo test (song song) ---
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+    warnings.warn(pytest.PytestUnhandledThreadExceptionWarning(msg))
+tests/test_81_autosubvideo.py::test_media_progress_loi_thi_nem
+  C:\Users\Thang Tuong\AppData\Local\Programs\Python\Python313\Lib\site-packages\_pytest\threadexception.py:58: PytestUnhandledThreadExceptionWarning: Exception in thread Thread-221 (_drain_err)
+  Traceback (most recent call last):
+    File "C:\Users\Thang Tuong\AppData\Local\Programs\Python\Python313\Lib\threading.py", line 1044, in _bootstrap_inner
+      self.run()
+      ~~~~~~~~^^
+    File "C:\Users\Thang Tuong\AppData\Local\Programs\Python\Python313\Lib\threading.py", line 995, in run
+      self._target(*self._args, **self._kwargs)
+      ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "D:\LTTSTUDIOSAPP\.claude\worktrees\auto-scan-video-v4-mvp-7173d9\platform_core\media.py", line 223, in _drain_err
+      for ln in proc.stderr:                     # type: ignore[union-attr]
+                ^^^^^^^^^^^
+  TypeError: '_Err' object is not iterable
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+    warnings.warn(pytest.PytestUnhandledThreadExceptionWarning(msg))
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_82_upscalevideo.py::test_vendor_engine_co_mat - AssertionEr...
+FAILED tests/test_361_cua_so_yen.py::test_xep_hang_roi_vao_duoc_khi_nguoi_truoc_nha
+2 failed, 5769 passed, 32 skipped, 175 warnings in 588.55s (0:09:48)
+----------------------------------------------------------------------
+  PHA 2 - noi tiep (3 tep ghi vao cay kho)
+----------------------------------------------------------------------
+...................................................................      [100%]
+============================== warnings summary ===============================
+C:\Users\Thang Tuong\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\testclient.py:1
+  C:\Users\Thang Tuong\AppData\Local\Programs\Python\Python313\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+67 passed, 1 warning in 72.19s (0:01:12)
+======================================================================
+  pha 1 song song :    600 giay
+  pha 2 noi tiep  :     74 giay
+  TONG            :    675 giay (11.2 phut)
+======================================================================
+RESULT: FAIL
+==============================================================
+RESULT: FAIL (1/26)  [4 BUOC TU BO QUA, KHONG PHAI BANG CHUNG: bat bien da tien trinh, frontend agent-canvas, frontend autosub-studio, frontend prompt-ai-ommi]
+        [ket qua] test-results/gates/20260902T174701Z-11816.json

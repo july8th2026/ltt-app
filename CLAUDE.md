@@ -112,7 +112,7 @@ khi truyền cho `.exe`. Ghi ra file `.py` rồi chạy.
 **4. Chạy test — ĐỪNG gọi `pytest` trực tiếp, và đừng dùng gate để dò lỗi.**
 
 ```powershell
-python tools\gate.py --vong-lap     # sau MOI lan sua              (~15 giay)
+python tools\gate.py --vong-lap     # sau MOI lan sua        (~15 giay, CO DIEU KIEN)
 python tools\test_nhanh.py          # muon chay ca bo test         (~4 phut)
 python tools\gate.py                # TRUOC KHI BAO XONG           (~5 phut)
 ```
@@ -127,6 +127,31 @@ kiểm tĩnh (chính là thứ bắt bốn lỗi đó) trong ~15 giây.
 
 ⛔ Nhưng `--vong-lap` và `--quick` **không phải bằng chứng** — dòng `RESULT` của
 chúng nói thẳng điều đó. Trước khi báo xong vẫn là `python tools\gate.py`.
+
+🔴 **Và "~15 giây" là con số CÓ ĐIỀU KIỆN. Đo 05/09: 113 giây ở cây này, 531
+giây ở cây khác.**
+
+`--vong-lap` chạy `test_nhanh --lf`, và `--lf` chỉ thu hẹp **khi và chỉ khi còn
+ít nhất một id trong cache `lastfailed` phân giải được**. Ba trạng thái, và hai
+trong ba đã có rào:
+
+| cache `lastfailed` | kết quả |
+|---|---|
+| rỗng (vừa xanh hết) | ✅ `--lfnf=none` → chạy rỗng, 0,1 giây, và **nói ra** |
+| vắng mặt | ✅ `_da_do()` kết luận tại chỗ |
+| **đầy id nhưng KHÔNG id nào phân giải được** | ❌ chạy **toàn bộ** |
+
+Ở trạng thái thứ ba, pytest thấy "có failure đã biết" nên `--lfnf=none` không áp;
+rồi không id nào khớp nên nó không deselect gì.
+
+⭐ Và id chết theo cách **lành mạnh**: kho này khuyến khích gỡ những chốt đã hết
+   lý do tồn tại. Trên `phien/asv-v4` ngày 05/09, **15 trong 20** id chết là chốt
+   pha 27 gỡ sau khi khiếm khuyết của chúng chết. Tức `--lf` tự xuống cấp **như
+   hệ quả của việc làm đúng**.
+
+⇒ Đã vá `tools/test_nhanh.py`: nay nó **in ra** `[--lf] N id ... Luot nay se chay
+  TOAN BO`. **Không đổi hành vi** — kết quả vẫn đúng, chỉ là thời gian không như
+  tên gọi. Thấy dòng đó thì đừng chờ 15 giây.
 
 ⛔ **Đừng chạy `python -m pytest` cho toàn bộ kho.** Hai lý do, và lý do thứ hai
 mới là lý do thật:

@@ -53,6 +53,30 @@
          VI/EN" và "không có giọng nào chỉ EN". Đúng khi chỉ có 20 giọng mẫu;
          hết đúng từ khi 17 giọng nguồn tiếng Anh vào kho chung.
     #}
+    {#
+      GIỚI TÍNH — mặt lọc thứ ba, thêm 07/09/2026.
+
+      🔴 Vì sao nó không có từ đầu, và vì sao nay có được: `giong_mau` mang
+         `gioi` từ lâu, nhưng `VoiceProfile` thì **không có cột ấy** cho tới
+         hôm nay. Một bộ lọc giới trên một danh sách mà một nửa số mục không
+         trả lời được câu hỏi là một bộ lọc làm biến mất đúng phần khách quan
+         tâm nhất — giọng của chính họ.
+
+      ⭐ Đây là câu hỏi ĐẦU TIÊN người chọn giọng hỏi, nên nó xứng đáng một cú
+         bấm chứ không phải một lượt đọc hai mươi hai dòng chữ nhỏ.
+
+      ⚠️ KHÁC màn Giọng một cách CÓ CHỦ Ý. Ở đó, thẻ chưa khai giới bị ẩn và số
+         thẻ ẩn được **đếm ra** (`lv-g-anmat`). Ở đây không có chỗ cho một dòng
+         giải thích như thế, nên mục chưa khai giới **vẫn hiện** — cùng quy ước
+         với bộ lọc làn ngay dưới. Hai màn, hai khả năng nói, hai quy ước; cái
+         sai duy nhất là để một trong hai không nói gì cả.
+    #}
+    <div class="lv-loc-nhom" role="group" aria-label="{{ _('Giới tính') }}">
+      <button type="button" class="lv-loc-nut on" aria-pressed="true" data-chon-gioi="">{{ _("Mọi giới") }}</button>
+      {% for k, nhan in nhan_gioi.items() %}
+        <button type="button" class="lv-loc-nut" aria-pressed="false" data-chon-gioi="{{ k }}">{{ _(nhan) }}</button>
+      {% endfor %}
+    </div>
     <div class="lv-loc-nhom" role="group" aria-label="{{ _('Làn ngôn ngữ') }}">
       <button type="button" class="lv-loc-nut on" aria-pressed="true" data-chon-lan="">{{ _("Mọi làn") }}</button>
       <button type="button" class="lv-loc-nut" aria-pressed="false" data-chon-lan="vi">{{ _("Tiếng Việt") }}</button>
@@ -74,7 +98,7 @@
 
     {% for g in cua_toi %}
       <label class="lv-chon-muc" data-loai="toi" data-ten="{{ g.ten_hien_thi }}"
-             data-lan="{{ g.ngon_ngu or '' }}">
+             data-lan="{{ g.ngon_ngu or '' }}" data-gioi="{{ g.gioi or '' }}">
         <input type="radio" name="giong" value="v:{{ g.public_id }}"
                {{ 'checked' if giong_chon == g.public_id }}>
         {% include "_voice_chon_nghe.html" %}
@@ -116,7 +140,7 @@
 
     {% for g in giong_mau %}
       <label class="lv-chon-muc" data-loai="mau" data-ten="{{ g.ma }}"
-             data-lan="vi">
+             data-lan="vi" data-gioi="{{ g.gioi }}">
         <input type="radio" name="giong" value="m:{{ g.ma }}"
                {{ 'checked' if giong_chon == g.ma }}>
         {% with ma = g.ma %}{% include "_voice_chon_nghe.html" %}{% endwith %}

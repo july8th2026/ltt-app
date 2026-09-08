@@ -22,7 +22,7 @@ from dataclasses import dataclass, field
 from platform_core.i18n import _ as _t
 from platform_core.jobs import DangBan, LoiNguoiGoi
 
-from . import lan_ngon_ngu
+from . import lan_ngon_ngu, lui_giong
 from . import gia, sidecar_client, tham_chieu, text_pipeline
 
 log = logging.getLogger(__name__)
@@ -182,6 +182,18 @@ class KetQua:
     text_da_chuan_hoa: str
     so_doan: int = 1
     canh_bao: tuple = field(default_factory=tuple)
+    #: 🔴 GIỌNG THẬT SỰ ĐÃ ĐỌC — chỉ điền khi nó KHÁC thứ khách yêu cầu.
+    #:
+    #:    `lui_giong` cho phép một bài vẫn đọc được khi giọng được chọn hỏng.
+    #:    Cảnh báo trên màn hình nói điều đó **một lần**; bản ghi này nói điều
+    #:    đó **mãi mãi**. Không có nó thì ba tháng sau, khách hỏi *"sao bản này
+    #:    nghe khác bản kia"* và không ai trả lời được — hai bản ghi trông y hệt
+    #:    nhau, cùng `voice_id`, cùng giá.
+    #:
+    #: ⚠️ Rỗng = **không lùi**, không phải "không biết". Đó là lý do nó chỉ vào
+    #:    `as_result()` khi có giá trị: thêm một trường luôn-luôn-rỗng vào mọi
+    #:    bản ghi để phục vụ một ca hiếm là làm nặng tất cả.
+    giong_that: str = ""
     #: 🔴 HAI THỜI LƯỢNG, và trộn chúng là một lỗi TIỀN.
     #:
     #:    `giay`      — thời lượng SINH RA. Cơ sở tính credit, vì đó là lượng
@@ -223,6 +235,10 @@ class KetQua:
             **({"toc_do": self.yeu_cau.toc_do,
                 "duration_played_s": round(self.giay_phat, 3)}
                if self.giay_phat else {}),
+            # Chỉ khi ĐÃ LÙI — xem chú thích ở `giong_that`.
+            **({"giong_that": self.giong_that}
+               if self.giong_that and self.giong_that != self.yeu_cau.preset
+               else {}),
         }
 
 
@@ -255,13 +271,46 @@ def giai_giong(db, yc: YeuCau) -> tuple:
         # ⛔ Cùng một thông điệp cho "không tồn tại" và "không phải của bạn".
         #    Phân biệt hai câu đó là cho phép dò xem `voice_id` nào có thật.
         raise LoiGiongNoi(_t("Không tìm thấy giọng này trong tài khoản của bạn."))
+    # ⛔ HAI TRẠNG THÁI, HAI CÂU — trước 07/09/2026 chúng dùng CHUNG một câu.
+    #
+    #    `dang_ghi_danh` và `disabled` đều rơi vào `!= "active"`, và câu duy
+    #    nhất ở đó nói *"Giọng này đang bị tắt. Hãy bật lại"*. Với một giọng
+    #    vừa nộp xong và đang chờ worker, câu ấy sai theo kiểu tệ nhất: nó bảo
+    #    khách đi làm một việc **không tồn tại** (không có nút bật nào cho một
+    #    giọng chưa ghi danh xong), nên họ sẽ đi tìm cho tới khi bỏ cuộc.
+    if ho_so.trang_thai == "dang_ghi_danh":
+        raise LoiGiongNoi(_t(
+            "Giọng này đang được ghi danh. Chờ khoảng một phút rồi thử lại."))
     if ho_so.trang_thai != "active":
         raise LoiGiongNoi(_t("Giọng này đang bị tắt. Hãy bật lại hoặc tạo giọng mới."))
 
     bieu_dien = tham_chieu.tim_repr_active(db, ho_so.id)
     if bieu_dien is None:
+        # 🔴 ĐẾN ĐƯỢC ĐÂY NGHĨA LÀ GHI DANH ĐÃ XONG MÀ BIỂU DIỄN KHÔNG CÒN.
+        #
+        #    Nhánh `dang_ghi_danh` đã bị chặn ngay trên, nên trạng thái ở đây
+        #    là `active` — tức từng có biểu diễn và nay không có cái nào
+        #    `dang_dung`. Đó là ca **nâng engine**: `voice_repr` gắn với một
+        #    phiên bản engine, và bản cũ bị cho nghỉ.
+        #
+        # ⛔ Câu cũ ở đây là *"chưa ghi danh xong, hãy thử lại sau ít phút"* —
+        #    và chờ thì **không bao giờ** giúp được, vì không có job nào đang
+        #    chạy. Một lời khuyên không dẫn tới đâu tệ hơn một lời từ chối.
+        #
+        # ⭐ Nên đây là chỗ ĐƯỜNG LÙI đứng: bài vẫn đọc được, chỉ là bằng một
+        #    giọng khác — và khách **được nói cho biết** (`lui_giong.CANH_BAO`).
+        thay = lui_giong.chon(gioi=(ho_so.gioi or ""),
+                              ngon_ngu=(ho_so.ngon_ngu or ""),
+                              cac=lui_giong.tu_giong_mau())
+        if thay is not None:
+            log.info("lui giong: %s -> preset %s (gioi=%s lan=%s)",
+                     ho_so.public_id, thay.ma, ho_so.gioi, ho_so.ngon_ngu)
+            return (None, thay.ma,
+                    (lui_giong.dien_canh_bao(lui_giong.CANH_BAO, thay),))
+        # Không lùi được thì nói THẬT vì sao, và nói việc phải làm.
         raise LoiGiongNoi(_t(
-            "Giọng này chưa ghi danh xong. Hãy thử lại sau ít phút."))
+            "Giọng này cần được ghi danh lại (bản ghi cũ không còn dùng được "
+            "với máy đọc hiện tại). Hãy tải lại clip mẫu ở màn Giọng."))
     return (tham_chieu.nap_ref_b64(bieu_dien), None,
             lan_ngon_ngu.doi_chieu(ho_so.ngon_ngu, yc.text, yc.ngon_ngu))
 

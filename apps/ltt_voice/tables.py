@@ -97,6 +97,34 @@ class VoiceProfile(Base):
     owner_id: Mapped[str] = mapped_column(String(36), index=True)
     ten_hien_thi: Mapped[str] = mapped_column(String(120))
     ngon_ngu: Mapped[str] = mapped_column(String(16), default="vi")
+
+    #: 🔴 GIỚI TÍNH CỦA GIỌNG — `"nam"` · `"nu"` · `""` (KHÔNG RÕ).
+    #:
+    #:    Cột này tồn tại vì **hai** thứ khác nhau cùng cần nó, và trước
+    #:    07/09/2026 không thứ nào làm được:
+    #:
+    #:      ① `lui_giong.py` — khi một giọng hỏng, đường lùi phải giữ NGUYÊN
+    #:         giới. Không biết giới thì không lùi được, và cách duy nhất còn
+    #:         lại là lùi bừa. Hệ `D:\Viral` đã đi đúng con đường đó và khách
+    #:         báo lỗi ngày 26/08/2026: *"giọng nam bị biến thành giọng nữ"* —
+    #:         backend của họ không có bảng giới nên mọi đường lùi rơi về giọng
+    #:         mặc định, vốn là nữ.
+    #:      ② bộ lọc ở `_voice_chon.html` — giới là câu hỏi đầu tiên người chọn
+    #:         giọng hỏi, và 20 giọng mẫu đã trả lời được từ lâu
+    #:         (`giong_mau_engine.json`). Giọng nhân bản thì không, nên một bộ
+    #:         lọc giới sẽ **làm biến mất** đúng những giọng của chính khách.
+    #:
+    #: ⛔ MẶC ĐỊNH `""` = KHÔNG RÕ, và đó là một giá trị THẬT chứ không phải một
+    #:    chỗ trống chờ điền. Mọi dòng có trước migration này đều không rõ giới,
+    #:    và **đoán hộ là sai**: đoán bằng F0 nghe thì hợp lý, nhưng chính
+    #:    `toc_do.py` đã ghi lại một ca bộ dò cao độ nhầm quãng tám trên một
+    #:    clip giọng nữ (báo 105,6 Hz). Một cột "giới" sai còn tệ hơn một cột
+    #:    trống, vì nó **được tin**.
+    #:
+    #: ⇒ Không rõ thì `lui_giong` TỪ CHỐI lùi, và bộ lọc LUÔN HIỆN giọng đó.
+    #:   Hai hành vi ấy đều là "không biết thì đừng làm gì hộ người ta".
+    gioi: Mapped[str] = mapped_column(String(8), default="", nullable=False)
+
     ghi_chu: Mapped[str] = mapped_column(Text, default="")
 
     #: `dang_ghi_danh` -> `active` -> `disabled` | `revoked`.

@@ -117,6 +117,31 @@ DISPOSITION = {
     "lttvideo": (INTERNAL_ONLY, ()),
 
     "qualitylab": (INTERNAL_ONLY, ()),
+
+    # ── Auto Scan Video (pha 00-14) ──────────────────────────────────────────
+    #
+    # DEFER, và lý do là **hình dạng của sản phẩm**, không phải "chưa làm xong".
+    # Một lần lồng tiếng không phải một lần gọi tool: nó là chín giai đoạn, mỗi
+    # giai đoạn một job riêng, và bốn trong số đó có thể chạy lại độc lập. Ép nó
+    # vào `ToolSpec` một-vào-một-ra sẽ hoặc là mất khả năng chạy lại một giai
+    # đoạn, hoặc là bịa ra một hợp đồng mà chuỗi thật không có.
+    #
+    # ⛔ Và app còn `enabled=False` — nó chưa mở cho cả khách trên web, nên bàn
+    #    chuyện mở qua API là bàn trước một bước.
+    "auto_scan_video": (DEFER, ()),
+
+    # Ba vỏ thi hành của CÙNG sản phẩm trên, không phải app bán được. Chúng khai
+    # `surface="runtime"` + `catalog_parent="auto_scan_video"`: không thẻ
+    # catalog, không mục nav, không ToolSpec. Chúng tồn tại vì quyền nhặt job
+    # lọc theo APP chứ không theo `job_type` (`platform_core/jobs.py:158-164`),
+    # nên mỗi làn worker phải là một thư mục riêng.
+    #
+    # ⚠️ Nếu một lượt sau thấy ba dòng này và định "dọn cho gọn": đừng gộp chúng
+    #    vào một dòng. Sổ này chốt theo TỪNG slug trong registry, và gộp lại sẽ
+    #    làm phép kiểm đỏ theo một cách chẳng nói lên điều gì.
+    "asv_media": (DEFER, ()),
+    "asv_gpu": (DEFER, ()),
+    "asv_voice": (DEFER, ()),
 }
 
 

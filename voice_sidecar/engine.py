@@ -147,6 +147,30 @@ class CongGiong:
             if self._tts is not None:
                 return
             t0 = time.perf_counter()
+
+            # 🔴 KIỂM TỆP MODEL TRƯỚC KHI ĐƯA CHO THƯ VIỆN BÊN THỨ BA.
+            #
+            #    Cùng họ với chốt watermark ngay dưới: cả hai từ chối khởi động
+            #    thay vì ghi một dòng log rồi đi tiếp. Khác biệt là ở đây thứ
+            #    hỏng nằm **trước** cả `import` — một blob bị cắt cụt hay một
+            #    trang HTML mang tên `model.safetensors`.
+            #
+            # ⭐ Vì sao không để `Vieneu(...)` tự ném: nó **có** ném, nhưng ném
+            #    một lỗi về tensor ở trong một thư viện khác. Người vận hành đọc
+            #    lên sẽ đi tìm nhầm chỗ. Cổng này đổi một lỗi vô hướng thành một
+            #    câu có hướng: *tệp nào, hỏng thế nào, chạy lệnh gì để sửa*.
+            #
+            # ⛔ Không định vị được cache thì **bỏ qua** (fail-open) — xem
+            #    `kiem_model` đầu tệp. Máy phát triển không có cache vẫn phải
+            #    chạy được, nếu không thì cổng này bị gỡ trong một tuần.
+            from . import kiem_model
+            _che = kiem_model.che_do()
+            if _che != "tat":
+                try:
+                    kiem_model.kiem(bat_buoc=(_che == "bat_buoc"))
+                except kiem_model.ModelHong as e:
+                    raise LoiEngine(str(e)) from e
+
             from vieneu import Vieneu
 
             tts = Vieneu(mode="v3turbo", backend=self.backend_xin,

@@ -23,6 +23,11 @@ năm đều về phía nguy hiểm. Đừng gõ một con số nào vào đây.
 | Giá / credit | `apps/ltt_voice/gia.py` | |
 | Đường tài liệu dài | `apps/ltt_voice/ban_doc_dai.py` | |
 | Cửa tải audio có nhận `Range` không | `platform_core/phat_media.py` | ✅ **có, từ 05/09** — xem ca ⑤ |
+| Giọng hỏng thì lùi về đâu | `apps/ltt_voice/lui_giong.py` | bậc thang + chốt DV-009 |
+| Giới tính của một giọng nhân bản | `voice_profile.gioi` (`apps/ltt_voice/tables.py`) | `""` = **chưa ai khai**, không phải chưa biết |
+| Tệp model có lành không | `voice_sidecar/kiem_model.py` | đo **nội dung**, không đo sự tồn tại |
+| Cửa sidecar nào ĐANG phục vụ | `tests/test_504_ltt_voice_be_mat_sidecar.py::KIEM_KE` | bản kiểm kê **có phép kiểm hai chiều** |
+| So sánh với hệ Viral (engine · kho giọng · license) | `docs/LTT_VOICE/VIRAL_VOICE_AUDIT_2026-09-07.md` | lượt soát 07/09 |
 
 ---
 
@@ -33,6 +38,8 @@ hơn thắng — trừ khi tệp cũ mang một **phép đo** mà tệp mới ch
 
 | Tệp | Ngày | Vai trò |
 |---|---|---|
+| `VIRAL_VOICE_AUDIT_2026-09-07.md` | 07/09 | soát LTT × Viral: engine, kho giọng, **license/provenance** |
+| `DECISIONS.md` DV-009…DV-011 | 07/09 | ✅ **hợp đồng** đường lùi giọng · kênh cảnh báo · cổng model |
 | `NGUON_CHAN_LY.md` | 05/09 | **chỉ mục này** — con trỏ, không giá trị |
 | `KHO_GIONG/00_KIEM_KE.md` | 05/09 | kiểm kê 20 preset + 25 giọng dùng chung |
 | `AUTONOMOUS_AUDIT/00..07` | 05/09 | lượt soát trần ký tự · dấu vân tay · giao diện |
