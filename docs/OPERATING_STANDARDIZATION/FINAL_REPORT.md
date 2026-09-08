@@ -210,7 +210,7 @@ RESULT: FAIL (1/30) [1 BUOC TU BO QUA] [CAY DA DOI GIUA CHUNG - KHONG DUNG LAM B
 | | |
 |---|---|
 | **28 bước PASS** | gồm bước mới `luat van hanh` (**1,9 s**) và cả 23 bước tĩnh |
-| `bat bien da tien trinh` | `[BOQUA]` sau 0,7 s — cần PostgreSQL, **tự khai** là không chạy |
+| `bat bien da tien trinh` | `[BOQUA]` sau 0,7 s — **tự khai** là không chạy. ⚠️ Nguyên nhân **không** phải "thiếu PostgreSQL" — xem dưới |
 | `bo test` FAIL | **1 phép kiểm**: `test_306::test_bo_qua_hien_tai_dat_moc` |
 
 Phép kiểm đỏ duy nhất: hai `skip` mới trong
@@ -219,6 +219,40 @@ tức **giữa** lượt gate bắt đầu lúc 15:32, bởi phiên LTT VOICE. K
 chiến dịch này. *(Đúng cơ chế `Bẫy 37`, dạng thứ hai — xem `PERFORMANCE_REPORT` §9.)*
 
 ⭐ **744 s xác nhận 682,8 s** và bác dứt điểm "~5 phút".
+
+### ⚠️ Và tôi chẩn đoán SAI bước `[BOQUA]` ấy — phiên LTT VOICE bắt được
+
+Tôi viết *"cần PostgreSQL"*, người đọc hiểu thành *"máy này thiếu PostgreSQL"*.
+Đo lại trên chính máy này:
+
+```
+cong 5432                MO            <- PostgreSQL DANG CHAY
+LTT_TEST_DATABASE_URL    (chua dat)
+check_multiproc._tim_url()
+  -> ('', 'khong tao duoc CSDL test: ProgrammingError
+           (khong noi duoc truoc do: OperationalError)')
+```
+
+⇒ PostgreSQL **có**. Thứ hỏng là bước **dựng CSDL nháp `…_test`** cạnh nó — gần
+như chắc là tài khoản ứng dụng thiếu quyền `CREATEDB`.
+
+Khác biệt không phải chữ nghĩa: *"thiếu PostgreSQL"* dẫn người ta đi **cài** một
+thứ đã có; *"không tạo được CSDL test"* dẫn tới một lệnh `GRANT`, hoặc `createdb`
+một lần rồi đặt `LTT_TEST_DATABASE_URL`.
+
+⭐ Cùng hình dạng với `Bẫy 8`: **thông điệp đúng về sự việc, sai về nguyên nhân.**
+Nó nói *"không tìm thấy CSDL test"* và tôi đọc thành *"không có PostgreSQL"* —
+loại trừ một khả năng không phải xác định khả năng còn lại.
+
+🔴 **Hệ quả thật, và nó không nhỏ:** bước ấy là bước **duy nhất** chạy migration
+trên PostgreSQL. Nó `[BOQUA]` ⇒ **chưa migration nào trong kho từng được thi hành
+trên một PostgreSQL sống, ở bất kỳ lượt gate nào.** Phiên Workflow V2 vừa tìm ra
+một lỗi mà **chỉ** Postgres bắt được (`BOOLEAN DEFAULT 1` — SQLite nhận, Postgres
+từ chối), tức lớp lỗi ấy có thật và đang không có ai canh.
+
+⇒ **FOLLOW_UP P0 mới**: cấp `CREATEDB` cho tài khoản test, hoặc `createdb` một
+lần rồi đặt `LTT_TEST_DATABASE_URL`. Không tự làm — đổi trạng thái một máy đang
+chạy thật là quyết định của chủ sản phẩm.
 
 ### 🔴 Bài học đắt nhất — một PHÂN BIỆT, không phải một lời nhắc
 
@@ -301,3 +335,57 @@ phép kiểm chưa từng đỏ không chứng minh gì.
 Trừ điểm ở đúng ba chỗ, và cả ba đều **đo được chứ không phải cảm tính**: chưa có
 số giây thật cho `--doi`; `docs/**` chưa có chủ; một cadence còn sống ở tệp của
 phiên khác. Không nâng điểm cho việc chưa có bằng chứng.
+
+---
+
+# 🔑 DEPLOY — và một câu hỏi lẽ ra phải hỏi từ đầu
+
+Chủ sản phẩm ra lệnh deploy lúc 16:00. Trước khi bấm, tôi hỏi một câu chưa ai hỏi:
+
+> **Bốn commit của chiến dịch này có chạy trên máy chủ không?**
+
+```
+$ grep -rnE "^\s*(from|import)\s+tools|from tools\." server/ platform_core/ apps/
+server/routes/status.py:80        from tools import doctor
+apps/lttvideo/jobs.py:122         from tools.wangp.may_cloud import tao_client
+
+$ grep -rnE "import (gate|thanh_phan)" server/ platform_core/ apps/
+(khong co gi)
+```
+
+⇒ **Không.** Chiến dịch này đụng `CLAUDE.md`, `AGENTS.md`, `docs/**`,
+`tools/gate.py`, `tools/thanh_phan.py`, `tools/check_luat_van_hanh.py` — **không
+tệp nào được dịch vụ đang chạy nạp**. Chúng là tài liệu và cổng chất lượng phía
+lập trình viên.
+
+**Deploy bốn commit này lên production đổi ĐÚNG KHÔNG GÌ CẢ trong hành vi máy chủ.**
+
+## Và phần đi kèm thì có rủi ro
+
+Bản đang chạy `03a83a1c` → HEAD là **10 commit**, trong đó **5 migration Workflow
+V2**. Phiên chủ trả lời hai câu hỏi của tôi, cả hai đều **CHƯA**:
+
+| Câu hỏi | Trả lời |
+|---|---|
+| Migration đã chạy trên PostgreSQL thật chưa? | **CHƯA** — họ *biên dịch* DDL cho dialect Postgres, không *thi hành* trên CSDL sống. Họ tự đính chính rằng tiêu đề commit `0dcd4597` nói mạnh hơn thứ đo được |
+| Lượt gate tổng hợp? | **CHƯA** — vừa bấm, đang chạy trong cây riêng `D:\LTTSTUDIOSAPP-wf2` |
+
+⭐ **Vế quyết định, và nó do chính phiên chủ nêu:** Workflow V2 nằm sau cờ
+`LTT_WORKFLOW_V2` **mặc định TẮT**, chưa route nào gọi, chưa job handler nào dùng.
+
+⇒ Đưa 5 migration lên production **lúc này không mang lại lợi ích vận hành nào**;
+nó chỉ **dời rủi ro lên sớm**.
+
+## Kết luận
+
+| Vế | Đo được |
+|---|---|
+| Lợi ích của việc deploy **bây giờ** | **0** — việc của chiến dịch không chạy trên máy chủ; Workflow V2 thì cờ đang tắt |
+| Rủi ro | nhỏ nhưng **khác không**: 5 migration chưa từng thi hành trên PostgreSQL sống, và bước gate **duy nhất** kiểm điều đó đang `[BOQUA]` |
+
+⇒ **Khuyến nghị: không deploy vì chiến dịch này.** Chờ lượt gate của Workflow V2,
+rồi deploy khi có một lý do vận hành thật.
+
+⚠️ Đây **không** phải "chưa xong". Chiến dịch đã xong và đã đẩy GitHub. Đây là
+phát biểu rằng **deploy không phải bước cuối của nó** — và tôi đã suýt bấm mà
+không kiểm điều đó.
