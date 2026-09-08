@@ -11,6 +11,32 @@
 
 ---
 
+## ⚠️ ĐỌC TRƯỚC — TÀI LIỆU NÀY LÀ **BẢN CHỐT TRƯỚC KHI ĐỌC OSS**, KHÔNG PHẢI BẢN CUỐI
+
+Sau khi đọc bảy kho mã nguồn mở, **21 yêu cầu trong chính tài liệu này đã được
+sửa** — cộng **hai yêu cầu mới** (`WF-209` hệ con `finally`; `mock` trong lược
+đồ `ToolSpec`) và **một câu hỏi mới** (`Q8`).
+
+| | ở đâu |
+|---|---|
+| 21 sửa, từng dòng | `12_19_TONG_HOP_SO_SANH.md §22` |
+| thiết kế đích đã hợp nhất chúng | `23_24` · `25_26` |
+| trạng thái thi hành | `31_NHAT_KY_TRIEN_KHAI.md` |
+
+⛔ **Tài liệu này KHÔNG được sửa tại chỗ, và đó là chủ ý** — không phải một việc
+còn bỏ dở. Sửa nó sẽ xoá mất dấu vết *"yêu cầu ban đầu của ta là gì **trước
+khi** nhìn ai khác"*, thứ mà đề bài §3 yêu cầu giữ. Một tài liệu đã bị viết lại
+theo thứ nó học được không còn chứng minh được rằng nó **từng** độc lập.
+
+⇒ Nên rủi ro `R6` (`27_29 §29`) không được đóng bằng cách hợp nhất, mà bằng
+**chính khối này**: ai đọc `02` cũng thấy ngay nó là ảnh chụp của một thời điểm,
+và biết chỗ tìm bản đã sửa.
+
+🔑 Đọc `02` **một mình** ⇒ bỏ sót 21 sửa. Đọc `12_19 §22` **một mình** ⇒ có bản
+   vá mà không có bài toán. Hai tệp là **một cặp**.
+
+---
+
 ## 0. BỐN SỰ THẬT ĐO ĐƯỢC ĐỊNH HÌNH MỌI YÊU CẦU BÊN DƯỚI
 
 Không phải nguyên tắc. Là số đo. Mỗi yêu cầu trong tài liệu này truy về ít nhất

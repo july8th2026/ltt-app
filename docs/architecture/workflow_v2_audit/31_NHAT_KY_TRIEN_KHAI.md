@@ -1177,6 +1177,106 @@ mang tên nó là một lời khai sai.
 tới đây. Đợt 1–5 (phần đã làm) chưa nối vào đường chạy nào; ba mục ấy **là** việc
 nối. Chúng cần một quyết định riêng, không phải một lượt viết tiếp.
 
+
+---
+
+## A · B · C sau năm đợt ✅
+
+### A — `R4`: migration hợp PostgreSQL, không chỉ hợp SQLite
+
+🔴 **Rủi ro `R4` cảnh báo đúng thứ tôi mắc**, và tôi mắc nó **suốt năm đợt**:
+
+```
+BOOLEAN DEFAULT 1     <- PostgreSQL TU CHOI
+   "column is of type boolean but default expression is of type integer"
+SAU cot, BA migration
+```
+
+SQLite nhận `DEFAULT 1` nên **mọi** lượt kiểm của tôi xanh — kể cả bước *"thi
+hành thật từ `base` tới `head` rồi soi lược đồ bằng `inspect()`"* mà tôi viện
+dẫn làm bằng chứng ở **ba** commit.
+
+⭐ Bộ kiểm cũ hỏi *"migration chạy được không"* — **trên SQLite**. Câu cần hỏi
+là *"chạy được trên CSDL mà **production** dùng không"*. Một trục thiếu.
+
+`test_961` chốt lại cho **mọi** migration của kho, không cần PostgreSQL sống:
+compile DDL cho dialect PG rồi soi chuỗi. Kèm **đối chứng cho chính bộ dò** —
+một phép kiểm quét-rồi-không-thấy-gì **luôn** xanh, và nó xanh giống hệt nhau
+dù bộ quét hỏng hay kho sạch.
+
+⚠️ **Còn nợ:** đo `M1`/`M2` trên PostgreSQL thật + `EXPLAIN` xác nhận chỉ mục bộ
+phận được **dùng** chứ không chỉ được **tạo**. Cần một CSDL vứt đi; khoá ở
+`secrets/`, ACL chặn cố ý (`W1.5`).
+
+### B — bốn hệ con còn lại, **sau cờ**
+
+| hệ con | điểm đáng ghi |
+|---|---|
+| `enqueue` | luỹ đẳng — một run vào hàng đợi hai lần là một run **chạy** hai lần |
+| `dequeue` | ⭐ **lọc TRƯỚC khi chọn** — cùng phép sửa của `jobs.claim()`, ở tầng run |
+| `attempt` | đếm **theo node**, không theo run: `cost_credit` ghi theo attempt ⇒ đếm chung là **sổ tiền sai**, không chỉ nhãn sai |
+| `ttl` | `TIMED_OUT` là trạng thái **kết thúc** ⇒ kéo theo `finally` trong cùng transaction |
+
+⛔ **Cờ mặc định TẮT**, và **fail-closed**: `"0"`, `"false"`, rác — tất cả là
+tắt. Một giá trị không hiểu được nghĩa là người đặt nó **không chắc** họ đang
+bật cái gì.
+
+🔴 **`G23` kiểm TĨNH, không kiểm lúc chạy.** `dieu_phoi.py` không được import gì
+gọi ra ngoài (`requests` · `httpx` · `subprocess` · `socket` · …), và `test_962`
+cấm ở tầng **AST**. Lý do chọn tĩnh: cấm lúc import bắt được **mọi** đường, kể
+cả đường **chưa ai viết**; một phép kiểm lúc chạy chỉ bắt được đường mà bài kiểm
+đi qua.
+
+Bốn phép tiêm đối chứng, bốn lần đỏ: cờ mặc định bật (**3 đỏ**) · `dequeue`
+không lọc waitpoint (2) · `attempt` đếm theo run (1) · `ttl` đóng run mà không
+kết sổ (1).
+
+### C — `R6`: và vì sao **không** hợp nhất
+
+`R6` là *"phiên sau đọc `02` tưởng đó là yêu cầu cuối cùng"*. Bản sửa hiển
+nhiên — viết 21 sửa vào `02` — **là bản sai**:
+
+> Sửa `02` sẽ xoá mất dấu vết *"yêu cầu ban đầu của ta là gì **trước khi** nhìn
+> ai khác"*, thứ đề bài §3 yêu cầu giữ. Một tài liệu đã bị viết lại theo thứ nó
+> học được **không còn chứng minh được rằng nó từng độc lập**.
+
+⇒ Đóng `R6` bằng một **khối con trỏ** ở đầu `02`: ai đọc cũng thấy ngay nó là
+ảnh chụp của một thời điểm, và biết chỗ tìm bản đã sửa.
+
+🔑 `02` một mình ⇒ bỏ sót 21 sửa. `12_19 §22` một mình ⇒ có bản vá mà không có
+   bài toán. **Hai tệp là một cặp.**
+
+---
+
+## 🔴 HÌNH DẠNG LẶP LẠI CẢ NGÀY — bản phát biểu cuối
+
+Bốn phiên, và tới cuối ngày nó gọn lại thành một câu:
+
+> **Một phép đo ĐÚNG, nối vào một kết luận rộng hơn thứ nó đo.**
+
+Phiên VOICE cho nó một phép thử dùng được: **"kết luận của tôi có bao nhiêu
+trục, và phép đo có bấy nhiêu không?"**
+
+| ca | phép đo (đúng) | kết luận (rộng hơn) |
+|---|---|---|
+| `test_448` | *"bản của tôi và `HEAD` cho cùng kết quả"* | *"vậy nguyên nhân là máy B"* |
+| `dau_van_tay` | nội dung (1 trục) | nội dung **+ cách giao** (2 trục) |
+| `bam_do_thi` | `nodes` không mang thứ tự | **`edges` cũng vậy** |
+| migration | chạy được **trên SQLite** | chạy được (nói chung) |
+| `M9` | *"hai bên trùng khớp"* | *"luật đúng"* — thiếu trục **không tầm thường** |
+
+⭐ Và hai cái rào chết (`hien in RUN_KET_THUC`, `ttl_class <> 'PERMANENT'`) là
+cùng họ ở chiều ngược: một **phép kiểm** có tên đúng nhưng đo một trục khác trục
+nó khai.
+
+⇒ Hai luật rút ra, và cả hai đều là **thao tác**, không phải lời khuyên:
+
+1. **Một cái rào chỉ sống nếu dựng được một trạng thái mà CHỈ nó chặn.** Không
+   dựng được ⇒ rào là trang trí, và phép kiểm mang tên nó là một lời khai sai.
+2. **Một phép kiểm nói "X đổi được Y" phải đi kèm một phép kiểm nói "X KHÔNG
+   đổi được Z".** Vế đầu đo *có tác dụng*; vế sau đo *đúng phạm vi*. Vế đầu một
+   mình luôn xanh với bản cực đoan nhất.
+
 ## ĐỢT 2–5
 
 Chưa bắt đầu. Xem `27_29 §28`.
