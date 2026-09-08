@@ -98,7 +98,7 @@ def upgrade() -> None:
         sa.Column("dau_vao", sa.JSON(), nullable=False),
         sa.Column("ket_qua", sa.JSON(), nullable=False),
         sa.Column("xong", sa.Boolean(), nullable=False,
-                  server_default=sa.text("0")),
+                  server_default=sa.text("false")),
     )
     op.create_index("ix_foreach_muc_chua_xong", "foreach_muc", ["vong_id"],
                     postgresql_where=sa.text(_MUC_CHUA_XONG_PG),
@@ -139,7 +139,7 @@ def upgrade() -> None:
         sa.Column("kind", sa.String(24), nullable=False),
         sa.Column("config", sa.JSON(), nullable=False),
         sa.Column("enabled", sa.Boolean(), nullable=False,
-                  server_default=sa.text("1")),
+                  server_default=sa.text("true")),
         sa.Column("next_fire_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
     )

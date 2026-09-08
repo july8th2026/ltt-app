@@ -119,7 +119,7 @@ def upgrade() -> None:
                   server_default="1"),
         # TRUE = lan chuyen duoc chap nhan. FALSE = bi tu choi NHUNG van ghi.
         sa.Column("is_valid", sa.Boolean(), nullable=False,
-                  server_default=sa.text("1")),
+                  server_default=sa.text("true")),
         sa.Column("error", sa.Text(), nullable=False, server_default=""),
         sa.Column("description", sa.Text(), nullable=False, server_default=""),
         sa.Column("job_id", sa.String(36), nullable=False, server_default=""),
