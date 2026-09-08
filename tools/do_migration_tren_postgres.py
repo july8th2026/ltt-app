@@ -51,7 +51,11 @@ def _doc_env(ten: str) -> str:
                  GOC / "secrets" / "app.env"):
         try:
             noi_dung = path.read_text(encoding="utf-8", errors="ignore")
-        except Exception:                                   # noqa: BLE001
+        except Exception as loi:                            # noqa: BLE001
+            # ⛔ KHONG duoc nuot: "ACL chan" va "tep khong ton tai" phai la HAI
+            #    cau tra loi khac nhau. Gop chung thanh mot su im lang chinh la
+            #    thu da lam ba phien chan doan sai ba vong lien tiep 08/09.
+            print(f"  (bo qua {path}: {type(loi).__name__})")
             continue
         for line in noi_dung.splitlines():
             if line.strip().startswith(f"{ten}="):
@@ -64,7 +68,11 @@ def _superuser_pw() -> str:
                  GOC / "secrets" / "postgres-superuser.txt"):
         try:
             return path.read_text(encoding="utf-8").strip()
-        except Exception:                                   # noqa: BLE001
+        except Exception as loi:                            # noqa: BLE001
+            # Cung ly do nhu tren. `PermissionError` o `C:\LTTPlatform\secrets`
+            # KHONG phai loi — no la dau hieu ACL dang lam dung viec (W1.5) —
+            # nhung no phai NOI RA, vi no doi cau tra loi cua ca cong cu.
+            print(f"  (bo qua {path}: {type(loi).__name__})")
             continue
     return ""
 
@@ -122,8 +130,11 @@ def _tao_neu_thieu(url: str, ten: str, live: str) -> None:
         e.dispose()
         print(f"  CSDL {ten} da co.")
         return
-    except Exception:                                       # noqa: BLE001
-        pass
+    except Exception as loi:                                # noqa: BLE001
+        # ⚠️ Do 08/09: "xac thuc truot" va "CSDL chua tao" den day TRONG Y HET
+        #    nhau, va vong lap se thu tao lai MAI. Neu ra thi lan sau doc duoc
+        #    ngay thay vi doan.
+        print(f"  (chua noi duoc toi {ten}: {type(loi).__name__})")
 
     quan_tri = _url_nhap(live, "postgres")
     e = sa.create_engine(quan_tri, isolation_level="AUTOCOMMIT",
