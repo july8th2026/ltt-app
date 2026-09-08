@@ -124,9 +124,18 @@ def test_health_and_capabilities_expose_nothing_internal(enabled_client):
     # rong, va do la hai cau hoi khac nhau.
     # `messages` va `responses` la hai khu vuc them ke tu Q107 (2026-08-23): cua
     # streaming cho CLI. Chung o day de khach DO DUOC nang luc thay vi doan.
+    # `workflows` va `runs` la hai khu vuc them 08/09/2026 (WF-802): chay mot
+    # workflow da publish qua API. Chung la HAI khu vuc chu khong mot, vi hai
+    # tien to duong dan khac nhau tra loi hai cau hoi khac nhau — "workflow nao"
+    # va "luot chay nao" — va mot luot chay song lau hon lenh tao ra no.
+    #
+    # ⭐ Bai kiem nay chot TAP HOP chinh xac, nen no vua bat dung them route cua
+    #    chinh nguoi viet no. Do la banh coc lam dung viec: mot be mat cong khai
+    #    khong duoc lon len ma khong ai phai go tay mot dong khai bao.
     assert body["capabilities"] == ["tools", "models", "quotes", "jobs",
                                     "chat", "messages", "responses", "uploads",
-                                    "artifacts", "webhooks", "credits", "usage"]
+                                    "artifacts", "webhooks", "credits", "usage",
+                                    "workflows", "runs"]
     assert not {"health", "me", "capabilities"} & set(body["capabilities"])
     body = capabilities.text.lower()
     for leak in ("gemini", "seedance", "postgres", "r2", "c:\\", "/data/", "secret"):

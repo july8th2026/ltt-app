@@ -113,6 +113,31 @@ API_V1_ROUTES: tuple = (
              "Current credit balance", authenticated=True),
     ApiRoute("GET", f"{API_V1_PREFIX}/usage",
              "Credit usage for this account", authenticated=True),
+    # ── WF-802: chạy workflow qua API công khai ─────────────────────────────
+    #
+    # `02 §WF-802` đòi đúng bộ này, và đòi nó đi qua **hạ tầng đã có** —
+    # inventory, scope, idempotency, rate limit, `SYNC`/`ASYNC_JOB`, webhook
+    # HMAC: *"Không dựng bộ máy API thứ hai."*
+    #
+    # ⭐ Vì sao có `/quotes` riêng thay vì dùng `POST /quotes` sẵn có: báo giá
+    #    của một tool gắn với `(tool, input)`; báo giá của một workflow gắn với
+    #    **graph đã publish**, và nó trả **HAI** số (`M8`) chứ không một. Cùng
+    #    bộ máy ký (`quotes.issue`), khác thứ được ký.
+    ApiRoute("POST", f"{API_V1_PREFIX}/workflows/{{workflow_id}}/quotes",
+             "Price a workflow run before starting it", authenticated=True),
+    # Chargeable ASYNC_JOB thứ hai của bề mặt. `check_mode_rules` bắt nó phải
+    # đòi CẢ quote LẪN Idempotency-Key, và điều đó chỉ trung thực từ khi
+    # `platform_core/workflow/tien.py` thật sự giữ chỗ (08/09/2026) — trước đó
+    # khai `chargeable=True` là một lời hứa không có gì đứng sau.
+    ApiRoute("POST", f"{API_V1_PREFIX}/workflows/{{workflow_id}}/runs",
+             "Start a quoted workflow run", authenticated=True,
+             execution_mode=ASYNC_JOB),
+    ApiRoute("GET", f"{API_V1_PREFIX}/runs/{{run_id}}",
+             "Read one workflow run", authenticated=True),
+    ApiRoute("POST", f"{API_V1_PREFIX}/runs/{{run_id}}/cancel",
+             "Cancel a workflow run", authenticated=True),
+    ApiRoute("GET", f"{API_V1_PREFIX}/runs/{{run_id}}/artifacts",
+             "List artifacts produced by a run", authenticated=True),
     ApiRoute("GET", f"{API_V1_PREFIX}/openapi.json",
              "OpenAPI document for the public surface only",
              authenticated=False, in_schema=False),

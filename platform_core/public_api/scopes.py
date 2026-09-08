@@ -24,6 +24,13 @@ SCOPE_ARTIFACTS_READ = "artifacts:read"
 SCOPE_CREDITS_READ = "credits:read"
 SCOPE_USAGE_READ = "usage:read"
 SCOPE_WEBHOOKS_MANAGE = "webhooks:manage"
+# WF-802. `workflows:run` la scope TIEU TIEN thu hai cua be mat nay: mot
+# luot chay giu tran chi phi cua ca do thi, khong phai gia cua mot tool.
+# Doc va huy tach rieng theo dung luat o dau tep — doc khong bao gio suy
+# ra tu ghi.
+SCOPE_WORKFLOWS_RUN = "workflows:run"
+SCOPE_WORKFLOWS_READ = "workflows:read"
+SCOPE_WORKFLOWS_CANCEL = "workflows:cancel"
 
 KNOWN_SCOPES = frozenset({
     SCOPE_TOOLS_READ,
@@ -35,6 +42,9 @@ KNOWN_SCOPES = frozenset({
     SCOPE_CREDITS_READ,
     SCOPE_USAGE_READ,
     SCOPE_WEBHOOKS_MANAGE,
+    SCOPE_WORKFLOWS_RUN,
+    SCOPE_WORKFLOWS_READ,
+    SCOPE_WORKFLOWS_CANCEL,
 })
 
 # What a key gets when the caller does not ask for anything specific: enough to
@@ -43,7 +53,11 @@ DEFAULT_SCOPES = (SCOPE_TOOLS_READ, SCOPE_JOBS_READ)
 
 # Scopes that can move money or consume capacity. Listed explicitly so a review
 # of "what can this key cost me" is a lookup, not a reading of every route.
-SPENDING_SCOPES = frozenset({SCOPE_JOBS_CREATE})
+# ⛔ `SCOPE_WORKFLOWS_RUN` PHAI o day. Mot luot chay giu tran chi phi cua ca
+#    do thi — tuc no tieu duoc NHIEU HON mot `jobs:create` don le, khong
+#    phai it hon. Quen no o day lam cau tra loi cho "khoa nay ton toi bao
+#    nhieu" thieu dung phan dat nhat.
+SPENDING_SCOPES = frozenset({SCOPE_JOBS_CREATE, SCOPE_WORKFLOWS_RUN})
 
 
 class ScopeError(ValueError):
