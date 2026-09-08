@@ -78,8 +78,15 @@ def _toolspec_that() -> set[str]:
 
 @pytest.fixture(scope="module")
 def hardcode() -> dict[str, set[str]]:
-    if not NGUON.is_dir():
-        pytest.skip("cay nay khong co frontend/agent-canvas/src")
+    # ⛔ KHONG `pytest.skip` khi thu muc vang. Do 08/09: ca BON worktree deu co
+    #    `frontend/agent-canvas/src` — no duoc git theo doi, chi `node_modules`
+    #    la khong. Nen mot `skip` o day la mot rao KHONG BAO GIO NO, va
+    #    `check_bo_qua` goi dung ten no: "mot test bi bo qua la mot test KHONG
+    #    canh gi ca".
+    #
+    # Va neu thu muc that su vang thi do la mot van de, khong phai mot ly do im
+    # lang: `assert` duoi day noi thang ra thay vi bo qua.
+    assert NGUON.is_dir(), f"khong thay {NGUON} — nguon frontend duoc git theo doi"
     return _ten_hardcode()
 
 

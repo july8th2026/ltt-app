@@ -298,6 +298,14 @@ def test_chi_buoc_that_su_doc_quyen_moi_khai_tai_nguyen():
         # — cung ho voi `drop_all()` o dong tren, chi khac cap: mot ben xoa
         # BANG, ben nay xoa ca CSDL.
         "migration tren postgres",
+        # `dien_tap_m1_tren_postgres.py` dung CUNG mot CSDL nhap (`..._test`)
+        # va cung goi `create_all`/`drop_all` tren do. Hai luot gate cung luc
+        # se giam nhau y het buoc tren — cung tai nguyen, cung lop va cham.
+        #
+        # ⛔ No PHAI khai `tai_nguyen`, khong duoc bo di cho qua phep kiem nay:
+        #    bo di se mo lai dung lop loi `drop_all()` vao nhau ma
+        #    `postgres_test` sinh ra de chan.
+        "M-1 tren postgres",
     }
     thua = co_tn - du_kien
     assert not thua, f"buoc khai tai nguyen ngoai du kien: {sorted(thua)}"

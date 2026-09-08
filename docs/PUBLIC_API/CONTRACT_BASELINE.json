@@ -188,6 +188,20 @@
       "in_schema": false,
       "sunset_on": ""
     },
+    "GET /api/v1/runs/{run_id}": {
+      "authenticated": true,
+      "deprecated_on": "",
+      "execution_mode": "SYNC",
+      "in_schema": true,
+      "sunset_on": ""
+    },
+    "GET /api/v1/runs/{run_id}/artifacts": {
+      "authenticated": true,
+      "deprecated_on": "",
+      "execution_mode": "SYNC",
+      "in_schema": true,
+      "sunset_on": ""
+    },
     "GET /api/v1/tools": {
       "authenticated": true,
       "deprecated_on": "",
@@ -265,6 +279,13 @@
       "in_schema": true,
       "sunset_on": ""
     },
+    "POST /api/v1/runs/{run_id}/cancel": {
+      "authenticated": true,
+      "deprecated_on": "",
+      "execution_mode": "SYNC",
+      "in_schema": true,
+      "sunset_on": ""
+    },
     "POST /api/v1/uploads": {
       "authenticated": true,
       "deprecated_on": "",
@@ -290,6 +311,20 @@
       "authenticated": true,
       "deprecated_on": "",
       "execution_mode": "SYNC",
+      "in_schema": true,
+      "sunset_on": ""
+    },
+    "POST /api/v1/workflows/{workflow_id}/quotes": {
+      "authenticated": true,
+      "deprecated_on": "",
+      "execution_mode": "SYNC",
+      "in_schema": true,
+      "sunset_on": ""
+    },
+    "POST /api/v1/workflows/{workflow_id}/runs": {
+      "authenticated": true,
+      "deprecated_on": "",
+      "execution_mode": "ASYNC_JOB",
       "in_schema": true,
       "sunset_on": ""
     }
