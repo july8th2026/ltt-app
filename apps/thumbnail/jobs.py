@@ -125,6 +125,9 @@ def _goi_gemini(prompt: str, aspect_ratio: str, api_key: str,
     """Gọi Gemini Image API một lần, trả về bytes ảnh PNG. Ném lỗi nếu thất bại."""
     import httpx
 
+    from platform_core import providers as _prov
+    _prov.chan_neu_da_ngung("gemini")       # ⛔ fail-closed (AI CLEAN REBUILD V2)
+
     # Khoá ĐI QUA HEADER `x-goog-api-key`, KHÔNG nhét vào query `?key=` (W2.6):
     # URL hay bị ghi lại (log proxy, access log, lịch sử) → khoá trong query là
     # bề mặt rò khoá. Header không bị log mặc định.

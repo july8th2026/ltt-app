@@ -119,8 +119,9 @@ def _chunks(cues:list[dict]):
 
 def _gemini_chunk(db, items:list[dict], target_language:str) -> list[dict]:
     import httpx
-    from platform_core import api_keys, api_pool
+    from platform_core import api_keys, api_pool, providers as _prov
     from platform_core.models import APIKEY_CAT_CHAT
+    _prov.chan_neu_da_ngung("gemini")       # ⛔ fail-closed (AI CLEAN REBUILD V2)
     key=None; credential=""
     try:
         key=api_pool.chon_key(db,category=APIKEY_CAT_CHAT,model=_TRANSLATE_MODEL,

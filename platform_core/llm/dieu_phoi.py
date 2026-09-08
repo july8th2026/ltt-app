@@ -89,6 +89,9 @@ def _goi_gemini(model: str, credential: str, messages: list,
     """Dịch sang dạng dây của Gemini. Chỉ ở ĐÂY, không rải khắp nơi."""
     import httpx
 
+    from platform_core import providers
+    providers.chan_neu_da_ngung("gemini")   # ⛔ fail-closed (AI CLEAN REBUILD V2)
+
     phan = []
     for tin in messages:
         noi = tin.get("content")
@@ -181,6 +184,22 @@ def goi(db, *, messages: list, thu_tu_provider: Sequence[str],
     ly_do: list[str] = []
 
     for pid in thu_tu_provider:
+        # ⛔ AI CLEAN REBUILD V2 — CỔNG FAIL-CLOSED, ĐẶT TRƯỚC MỌI THỨ KHÁC.
+        #
+        #    Provider đã ngừng thì **không bao giờ** tới được `chon_key`, nên
+        #    không có đường nào lọt xuống HTTP. Ghi vào `ly_do` để thông điệp
+        #    lỗi cuối nói thật ra chuyện gì, thay vì đổ cho "bận".
+        #
+        # ⚠️ ĐÂY KHÔNG PHẢI `BanError`. "Bận" nghĩa *đi tiếp rồi quay lại sau*;
+        #    "đã ngừng" nghĩa *không còn là một đường chạy*. Nếu ai đó về sau
+        #    đổi nhánh này thành `BanError` thì đường lui legacy sống lại y
+        #    nguyên — chỉ khác cái tên.
+        prov_kt = providers.get(pid)
+        if prov_kt is not None and not prov_kt.is_active:
+            ly_do.append(f"{pid}: da ngung phuc vu (khong phai ban)")
+            log.info("provider %s da ngung, bo qua", pid)
+            continue
+
         ten_model = ban_do.get(pid, model) or ""
         try:
             key = api_pool.chon_key(db, category=cat, model=ten_model or None,

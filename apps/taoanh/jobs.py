@@ -127,6 +127,8 @@ def _goi_gemini(prompt: str, aspect_ratio: str, api_key: str,
                 model: str = _MODEL, references: list[dict] | None = None) -> bytes:
     """Gọi Gemini Image API một lần → bytes PNG. Ném lỗi nếu thất bại."""
     import httpx
+    from platform_core import providers as _prov
+    _prov.chan_neu_da_ngung("gemini")       # ⛔ fail-closed (AI CLEAN REBUILD V2)
     from platform_core.providers import resolve_model_id
     provider_model = resolve_model_id(model or _MODEL)
     url = f"{_BASE}/v1beta/models/{provider_model}:generateContent"

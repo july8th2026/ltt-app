@@ -79,8 +79,15 @@ def goi_gemini(text: str, he_thong: str, *, db, model: str = MODEL_DICH,
     `http(method, url, *, headers, json, timeout) -> (status, body_dict)` tiêm được
     để test không cần mạng.
     """
-    from platform_core import api_keys, api_pool
+    from platform_core import api_keys, api_pool, providers
     from platform_core.models import APIKEY_CAT_CHAT
+
+    # ⛔ AI CLEAN REBUILD V2 — fail-closed, đặt TRƯỚC cả `lay_key`.
+    #    Cổng phải đứng trước mọi thứ có thể ra mạng, kể cả `http=` được tiêm:
+    #    một phép kiểm tiêm `http` giả mà vẫn qua được cổng thì nó chứng minh
+    #    sai — nó nói "không có byte nào ra" trong khi cái nó đo là "không có
+    #    mạng thật", hai chuyện khác nhau.
+    providers.chan_neu_da_ngung("gemini")
 
     goi = http or _http_that
     loi_cuoi = ""

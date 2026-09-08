@@ -68,6 +68,8 @@ def report(key_id: str | None, *, ok: bool, status_code: int | None = None,
 
 def generate_json(system: str, prompt: str, *, model: str = DEFAULT_MODEL) -> tuple[dict, int]:
     import httpx
+    from platform_core import providers as _prov
+    _prov.chan_neu_da_ngung("gemini")       # ⛔ fail-closed (AI CLEAN REBUILD V2)
     from platform_core.providers import resolve_model_id
 
     credential, key_id = lease(model)

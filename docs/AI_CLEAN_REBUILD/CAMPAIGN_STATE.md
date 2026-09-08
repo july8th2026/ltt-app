@@ -17,7 +17,7 @@
 | **01** | Hard delete contract | ✅ XONG 17:10 | PASS | `FINAL_AI_CONTRACT.md` |
 | **02** | Forensic inventory | ✅ XONG 17:25 | **PASS — `INVESTIGATE = 0`** | `LEGACY_SURFACE_MATRIX.csv` · `OUTBOUND_EGRESS_MATRIX.csv` · `PRODUCT_DEPENDENCY_MAP.md` · `DELETE_DEPENDENCY_GRAPH.md` |
 | **03** | Target mapping only | ✅ XONG 18:20 | PASS | `MIGRATION_MAP.md` |
-| 04 | Block legacy execution (fail-closed) | ⬜ | — | — |
+| **04** | Block legacy execution (fail-closed) | 🟡 mã xong, **chờ L1** | 13/13 test riêng xanh · đối chứng ĐẠT | `tests/test_1000_chan_provider_da_ngung.py` |
 | 05 | Migrate TEXT/VLM → LTT_LLM | ⬜ | — | — |
 | 06 | Migrate IMAGE → LTT_IMAGE | ⬜ | — | — |
 | 07 | Delete all legacy runtime | ⬜ | — | — |
@@ -86,6 +86,51 @@ lượt merge ở pha 13 sẽ không xung đột.
 |---|---|---|
 | `cutclipshort/adapters/whisper.py` | 12 dòng **mã** khớp `openai` | `openai-whisper` là gói pip **chạy cục bộ**, không có mạng |
 | `apps/upscalevideo/**` | khớp `gemini` | *"BOT GEMINI"* là thư mục kho chỉ-đọc `D:\BOT GEMINI` |
+
+## Pha 04 — cổng fail-closed (mã xong, chờ L1)
+
+**Không phát minh cơ chế mới.** Kho đã sẵn đúng ngữ nghĩa pha 04 cần, chỉ thiếu
+ở mức provider:
+
+```
+model_options() / model_catalog()   -> LOC theo is_active   = be mat CHON
+get() / resolve_model_id() /
+model_capabilities()                -> KHONG loc            = doc LICH SU
+```
+
+⇒ Thêm `Provider.is_active` (mức provider của `ModelInfo.is_active` đã có),
+đặt `False` cho `gemini` · `apiai` · `cheapkeyai`, lọc hai bề mặt **chọn**, giữ
+nguyên ba đường **đọc**. Cộng `providers.chan_neu_da_ngung()` — cổng fail-closed
+đặt **trước** mọi lối ra, ở 7 chỗ:
+
+`dieu_phoi.goi()` (vòng chọn provider) · `dieu_phoi._goi_gemini` ·
+`image_gen/dich_gemini.goi_gemini` · `taoanh/jobs._goi_gemini` ·
+`thumbnail/jobs._goi_gemini` · `taovideo/translate.dich` ·
+`prompt_ai_ommi/provider.generate_json` · `autosubvideo/ai_workflows._gemini_chunk`.
+
+`anhnoibo` đi qua `dich_gemini.goi_gemini` nên được che sẵn.
+`tools/doi_chung_gemini.py` là **công cụ gõ tay**, không thuộc
+server/worker/UI ⇒ để pha 07 xoá hẳn.
+
+⚠️ **`ProviderDaNgung` KHÔNG kế thừa `BanError`** — và có phép kiểm chốt điều đó.
+`BanError` nghĩa *"bận, đi tiếp provider sau"*, tức một đường lui. Lẫn hai lớp là
+dựng lại đúng đường lui vừa gỡ, chỉ khác cái tên.
+
+### Phép kiểm đo LỐI RA, không đo tên gói
+
+`tests/test_1000_chan_provider_da_ngung.py` bịt `httpx.post/get/request/stream/
+Client/AsyncClient` bằng một cái bẫy, rồi gọi cả 7 đường và đòi
+`ProviderDaNgung` — **kiểu lỗi cụ thể**, nên nếu cổng bị gỡ mà một lỗi khác
+(thiếu khoá) nổ trước thì phép kiểm vẫn đỏ.
+
+✅ **Đối chứng ĐẠT** (`scratchpad/doi_chung_pha04.py`): tiêm bản cũ bằng một
+plugin pytest lật `is_active=True` **lúc chạy** (không ghi vào cây — chốt không
+được ghi vào cây) ⇒ **8/13 đỏ, `returncode=1`**. Bộ phép kiểm phân biệt được
+"có cổng" và "không cổng".
+
+⏭️ **Ghi nợ cho pha 05:** `apps/prompt_ai_ommi/routes/_shared.py:119` ghi cứng
+`("gemini",)` làm bộ lọc provider ⇒ nay bộ chọn của app đó **rỗng**. Đó là hành
+vi fail-closed đúng cho pha 04, nhưng pha 05 phải trỏ nó sang LTT.
 
 ## Ràng buộc mang theo suốt chiến dịch
 

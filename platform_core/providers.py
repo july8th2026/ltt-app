@@ -59,6 +59,42 @@ class Provider:
     list_models_path: Optional[str] = None   # endpoint liệt kê model (nếu có), vd /v1/models
     async_poll: bool = False                 # True = submit->poll (video)
     notes: str = ""
+    #: ⛔ `False` = **ĐÃ NGỪNG**. Không tạo được lượt gọi mới và không hiện ở bộ
+    #: chọn nào — nhưng `get()` · `resolve_model_id()` · `model_capabilities()`
+    #: **vẫn trả về**, để một job cũ trong DB còn đọc được tên model của nó.
+    #:
+    #: ⭐ Đây là mức PROVIDER của `ModelInfo.is_active` đã có sẵn, **không phải**
+    #:    một cơ chế mới. Ranh giới *"chặn tạo mới / giữ đọc lịch sử"* vốn đã nằm
+    #:    trong chính tệp này: `model_options()` và `model_catalog()` **lọc**
+    #:    theo `is_active`, còn `get()` và `resolve_model_id()` thì **không**.
+    is_active: bool = True
+
+
+class ProviderDaNgung(RuntimeError):
+    """Có người cố tạo một lượt gọi MỚI tới provider đã ngừng.
+
+    ⛔ **Đây là fail-closed, và nó KHÔNG có đường lui.** Bắt được lỗi này rồi
+    thử một provider khác chính là cái `HARD_DELETE_POLICY` cấm — rollback đi
+    bằng Git SHA, không bằng một nhánh `except`.
+
+    ⚠️ Nó **không** phải `BanError`. `BanError` nghĩa *"bận, đi tiếp provider
+    sau"*; lỗi này nghĩa *"provider này không còn tồn tại với tư cách đường
+    chạy"*. Lẫn hai cái là dựng lại đúng đường lui vừa gỡ.
+    """
+
+
+def chan_neu_da_ngung(provider_id: str) -> None:
+    """Cổng fail-closed — gọi NGAY TRƯỚC mỗi lượt ra mạng.
+
+    Đặt ở đây chứ không ở tầng HTTP vì tám nơi tự dựng HTTP riêng: một cổng
+    trong `httpx` không tồn tại, còn một cổng theo **danh tính provider** thì
+    mọi nơi đều gọi được.
+    """
+    p = REGISTRY.get((provider_id or "").strip().lower())
+    if p is not None and not p.is_active:
+        raise ProviderDaNgung(
+            f"provider '{p.id}' da ngung phuc vu — khong tao luot goi moi. "
+            f"Doc lich su van hoat dong.")
 
 
 # ── Seed 5 provider hiện có trong BOT GEMINI (chỉ key CHÍNH THỨC) ──────────────
@@ -100,21 +136,24 @@ REGISTRY: dict[str, Provider] = {
                       }),
         ),
         list_models_path="/models",   # kèm ?key= khi gọi
-        notes="Key dạng AIza...; ảnh generateContent đồng bộ; ảnh: responseModalities+imageConfig.",
+        notes="⛔ NGUNG 2026-09-08 (AI CLEAN REBUILD V2). Giu khai bao de doc lich su.",
+        is_active=False,
     ),
     "apiai": Provider(
         id="apiai", display_name="apiai.vn (OpenAI-compat gateway)",
         auth_style=AUTH_BEARER, base_url="https://api.apiai.vn/api/v1",
         categories=(APIKEY_CAT_CHAT, APIKEY_CAT_IMAGE),
         models=(), list_models_path="/models",
-        notes="Gateway OpenAI-compat; /chat/completions, /images/generations.",
+        notes="⛔ NGUNG 2026-09-08 (AI CLEAN REBUILD V2). Gateway OpenAI-compat cu.",
+        is_active=False,
     ),
     "cheapkeyai": Provider(
         id="cheapkeyai", display_name="cheapkeyai.shop (OpenAI-compat gateway)",
         auth_style=AUTH_BEARER, base_url="https://cheapkeyai.shop/v1",
         categories=(APIKEY_CAT_CHAT, APIKEY_CAT_IMAGE),
         models=(), list_models_path="/models",
-        notes="Gateway OpenAI-compat.",
+        notes="⛔ NGUNG 2026-09-08 (AI CLEAN REBUILD V2). Gateway OpenAI-compat cu.",
+        is_active=False,
     ),
     "byteplus": Provider(
         id="byteplus", display_name="BytePlus ModelArk (Seedance video)",
@@ -336,6 +375,8 @@ def model_options(category: str, provider_ids_filter: Optional[tuple] = None) ->
     for provider in REGISTRY.values():
         if allowed and provider.id not in allowed:
             continue
+        if not provider.is_active:
+            continue          # ⛔ provider đã ngừng: không hiện ở bộ chọn nào
         for model in provider.models:
             if (model.is_active and category in model.categories
                     and model.id not in seen):
@@ -348,6 +389,8 @@ def model_catalog() -> list[dict]:
     """Public capability catalog for schema-driven UIs; never exposes keys/endpoints."""
     indexed: dict[str, dict] = {}
     for provider in REGISTRY.values():
+        if not provider.is_active:
+            continue          # ⛔ provider đã ngừng: không lên catalog công khai
         for model in provider.models:
             if not model.is_active:
                 continue

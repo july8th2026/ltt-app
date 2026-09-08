@@ -32,6 +32,8 @@ def _key() -> str:
 
 def dich(prompt: str, target: str = "en") -> str:
     import httpx
+    from platform_core import providers as _prov
+    _prov.chan_neu_da_ngung("gemini")       # ⛔ fail-closed (AI CLEAN REBUILD V2)
     api_key = _key()
     if not api_key:
         raise RuntimeError(_t('Chưa có API key Gemini.'))
