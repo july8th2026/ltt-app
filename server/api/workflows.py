@@ -28,6 +28,7 @@ nhiều node (mỗi node có thể là **20 phút A100**) mà không giữ một
 """
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
 
 from fastapi import Body, Depends, Header, Path, Request
@@ -53,6 +54,8 @@ from server.api.auth import require_scope
 #    Mot ban sao cua ham nay la mot ban sao co the troi khoi ban goc.
 from server.api.jobs import _quote_secret
 from server.deps import get_db
+
+log = logging.getLogger("server.api.workflows")
 
 _NO_STORE = {"Cache-Control": "no-store"}
 OPERATION_START_RUN = "workflows.run"
@@ -225,7 +228,10 @@ def register_workflow_routes(api, config, tag: str) -> None:
                     WorkflowRun.idempotency_key == key)).scalars().first()
             if lai is None:
                 raise
-            print(f"tao_run dua idempotency: {type(loi).__name__}")
+            # Moi tep khac trong `server/api/` dung `logging`; `print`
+            # trong mot bo xu ly request di thang ra stdout, khong mang
+            # muc do va khong loc duoc o production.
+            log.info("tao_run dua idempotency: %s", type(loi).__name__)
             return JSONResponse(_cong_khai_run(lai), status_code=200,
                                 headers=_NO_STORE)
 
