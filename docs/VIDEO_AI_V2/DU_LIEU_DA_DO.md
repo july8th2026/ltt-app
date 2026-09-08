@@ -244,3 +244,60 @@ từ chối ghi khi pod đang chạy)*.
 - VRAM đỉnh ở profile 1
 - thời gian và VRAM của một lượt Upscale `lanczos*2`
 - bộ nâng cấp nào máy thật có (`upsampler_api` trả về gì)
+
+---
+
+## 9. 🔴 `CUBLAS_STATUS_INVALID_VALUE` là đặc thù **cu130** — đừng đi nâng driver
+
+**Đo 08/09/2026.** Đây là mục viết cho **phiên sau**, vì triệu chứng của lỗi này
+đẩy người ta đi đúng hướng sai.
+
+### Triệu chứng
+
+`torch.einsum("binc,bjnc->bnij")` — một phép nhân ma trận **trần**, ngoài WanGP
+hoàn toàn — ném `CUBLAS_STATUS_INVALID_VALUE` ở **cả ba** kiểu `bf16`, `fp16`,
+`fp32`.
+
+### ⛔ Vì sao nó đẩy ta đi sai hướng
+
+Mọi dấu hiệu đều chỉ về phía driver, và **tất cả đều bình thường**:
+
+| Thứ | Giá trị | Kết luận sai mà nó gợi ý |
+|---|---|---|
+| driver | `580.159.04`, khai CUDA 13.0 | *"driver hỗ trợ rồi, chắc do WanGP"* |
+| card | H100 NVL, arch `9.0` | *"đúng kiến trúc đã biên dịch"* |
+| torch | `2.10.0+cu130` | *"khớp ảnh container"* |
+
+⇒ Người đọc bảng này sẽ đi **nâng driver** hoặc đi soi WanGP. Cả hai đều phí.
+
+### Phép đo dứt điểm
+
+Dựng pod mới, đổi **một** biến — ảnh container `cuda:13.0.1` → `cuda:12.8.1` —
+giữ nguyên volume, model, mã, kiến trúc GPU:
+
+```
+pod rappv9risxm802 · image cuda:12.8.1 · H100 NVL · $3,19/h
+30/30 buoc inference -> decoding -> xong
+3.291.112 byte · header \x00\x00\x00 ftypisom   (MP4 that)
+710 giay cho 5 giay video @ 480p / 30 buoc
+```
+
+⇒ **Không phải WanGP, không phải model, không phải mã ta, không phải driver.**
+  Đặc thù stack **cu130**.
+
+### 🔑 Ba điều rút ra
+
+1. **Gặp lỗi này thì HẠ CUDA, đừng nâng driver.** Driver 580 hỗ trợ CUDA 13 —
+   đó là sự thật, và nó không liên quan.
+2. **Bốn chỉ dấu cùng "bình thường" không phải bằng chứng là không có gì sai.**
+   Chúng chỉ nói bốn thứ ấy không sai.
+3. **`co_moi_truong_ben()` từng KHÔNG kiểm bản CUDA của torch** — bốn điều kiện
+   cũ (python · kho · kiến trúc GPU · `import torch`) đều xanh khi đổi ảnh
+   container. Nay có điều kiện thứ năm `_CUDA_TORCH`, đo bằng chính
+   `torch.version.cuda` chứ không bằng **tên ảnh**: một ảnh `cuda:12.8` vẫn có
+   thể chứa một bánh xe cu130.
+
+### Số phụ, cho lúc thương mại hoá
+
+**~$0,63 / video 5 giây** @ 480p / 30 bước trên H100 NVL $3,19/h. *(Giá vốn
+đang hoãn theo quyết định chủ dự án — ghi để dùng sau, không dùng chặn gì.)*

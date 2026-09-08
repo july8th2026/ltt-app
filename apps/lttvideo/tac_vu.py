@@ -84,7 +84,10 @@ TAC_VU: dict[str, TacVu] = {
         model="vace_14B",
         can_cu=("VACE khai `image.reference` + `image.background` + "
                 "`image.injected_frames`, tuc mo mot lan tam hang muc cua bang "
-                "cham diem. Chua co ban ghi `mac_dinh__vace_14B`."),
+                "cham diem. ⚠️ LY DO DONG DA DOI 08/09: truoc la 'chua co ban "
+                "ghi mac_dinh', NAY la 'chua co gallery keo-tha nhieu anh'. "
+                "Ban ghi va trong so deu DA CO. Mot ly do cu de nguyen la mot "
+                "ly do se bi doc nham."),
         so_tep_toi_da=5,
     ),
     "boi_canh_va_nhan_vat": TacVu(
@@ -93,7 +96,8 @@ TAC_VU: dict[str, TacVu] = {
         dau_vao=("image.background", "image.reference"),
         model="vace_14B",
         can_cu=("Anh #1 giu nen, anh #2..N bi CAT nen tu dong. Day la nang luc "
-                "Seedance 2.0 KHONG co."),
+                "Seedance 2.0 KHONG co. ⚠️ Chan hien tai la GIAO DIEN (gallery "
+                "keo-tha co thu tu), khong con la du lieu."),
         so_tep_toi_da=5,
     ),
     "theo_video_dieu_khien": TacVu(
@@ -101,7 +105,9 @@ TAC_VU: dict[str, TacVu] = {
         nhan=N_("Video theo chuyển động của video mẫu"),
         dau_vao=("video.control",),
         model="vace_14B",
-        can_cu="VACE khai 16 che do dieu khien (pose/depth/canny/flow/...).",
+        can_cu=("VACE khai 16 che do dieu khien (pose/depth/canny/flow/...). "
+                "⚠️ Chan hien tai la GIAO DIEN + ho so `video_prompt_type`, "
+                "khong con la trong so."),
         so_tep_toi_da=1,
     ),
     "noi_dai_video": TacVu(
@@ -127,6 +133,19 @@ def co_trong_so(model_type: str) -> bool:
        Cả hai đều xanh cho `anh_thanh_video`. Nhưng có **bản khai** không có
        nghĩa là có **trọng số**: WanGP sẽ đi tải ~30 GB giữa lượt chạy, hoặc
        hỏng — sau khi nền tảng đã giữ credit.
+
+    ⚠️ **Bản ghi này là ẢNH CHỤP, còn `available` là trạng thái SỐNG trên pod.**
+
+    Đo 08/09: ta ghi `kha_dung` **rồi mới** tải `i2v_2_2` + `vace_14B`, nên bản
+    ghi nói *thiếu* trong khi đĩa đã *có*. Sai thứ tự — nhưng sai số đi **đúng
+    chiều an toàn**: nó giữ tác vụ **đóng**, không mở một cánh cửa khoá. Ẩn mất
+    một tác vụ chạy được thì nhìn thấy ngay; mời người ta vào một tác vụ hỏng
+    thì họ mất credit trước khi ai biết.
+
+    ⛔ Đừng bật pod chỉ để làm mới bản ghi này. Ứng dụng **không phục vụ được
+       job nào khi pod tắt**, nên một tác vụ "đang mở" lúc pod tắt cũng vô
+       nghĩa. Chỗ đúng để làm mới là **lúc pod khởi động**:
+       `python tools/wangp/ghi_ban_ghi.py --pod --url … --khoa …`
     """
     from apps.lttvideo.cong.may_gia_lap import GOC_BAN_GHI  # noqa: PLC0415
 

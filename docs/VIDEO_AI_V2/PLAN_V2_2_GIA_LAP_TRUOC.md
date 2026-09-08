@@ -711,3 +711,45 @@ Cả bốn xoá **thành công** (HTTP 204) nhưng `may_cloud.rest()` in ra `"lo
 nó chỉ nhận `200`/`201`. Báo thành công thành thất bại nguy hiểm theo hướng
 riêng: nó đẩy người ta đi **thử lại một việc đã xong**, và với một thao tác
 destructive thì lần thử lại ấy nhắm vào thứ khác. Đã vá, có phép kiểm.
+
+### 🟢 HM-8 · ba model có trọng số — và tải RẺ hơn dự tính nhiều
+
+```
+t2v_2_2    available (co san)
+i2v_2_2    missing -> available   681s tong (~186s tai, roi 30 buoc)   2.564.549 byte
+vace_14B   missing -> available   711s tong (~126s tai, roi 30 buoc)   3.924.224 byte
+```
+
+⭐ **Tải chỉ mất 2–3 phút mỗi model**, không phải hàng chục phút như kế hoạch lo.
+Phần đắt là **sinh video** (~11 phút cho 5 giây), không phải tải. Kế hoạch đã đặt
+HM-8 như một hạng mục nặng; đo ra thì nó là hạng mục nhẹ nhất trong ba hạng mục
+cần pod.
+
+**Tổng chi phí HM-7 + HM-8 + HM-9: 56 phút × $3,19/h ≈ $3,01.**
+
+### 🔴 HM-8 · một sai thứ tự của chính phiên này
+
+Ta ghi `kha_dung` **rồi mới** tải trọng số. Nên bản ghi nói `i2v_2_2` và
+`vace_14B` *thiếu*, trong khi đĩa đã *có*.
+
+⭐ Sai số đi **đúng chiều an toàn**: nó giữ tác vụ **đóng**. Ẩn mất một tác vụ
+  chạy được thì nhìn thấy ngay; mời người ta vào một tác vụ hỏng thì họ mất
+  credit trước khi ai biết. Đây là lần đầu trong phiên một sai sót của ta rơi về
+  phía an toàn thay vì phía yên tâm.
+
+⛔ **Cách sửa KHÔNG phải bật lại pod để làm mới một bản ghi.** Ứng dụng không
+   phục vụ được job nào khi pod tắt, nên một tác vụ "đang mở" lúc pod tắt cũng
+   vô nghĩa. `available` là **trạng thái sống**, không phải dữ liệu ghim — chỗ
+   đúng để làm mới là **lúc pod khởi động**.
+
+### Ba tác vụ VACE: lý do đóng ĐÃ ĐỔI
+
+| | Trước 08/09 | Nay |
+|---|---|---|
+| `nhieu_anh_tham_chieu` | thiếu `mac_dinh__vace_14B` | thiếu **gallery kéo-thả** |
+| `boi_canh_va_nhan_vat` | thiếu bản ghi | thiếu **giao diện** |
+| `theo_video_dieu_khien` | thiếu trọng số | thiếu **giao diện** + hồ sơ `video_prompt_type` |
+
+⛔ Đã ghi lại `can_cu` cho cả ba. **Một lý do cũ để nguyên là một lý do sẽ bị đọc
+   nhầm** — người sau đọc "chưa có bản ghi" sẽ đi rút bản ghi, và thấy nó đã có
+   thì kết luận sai rằng tác vụ sẵn sàng.

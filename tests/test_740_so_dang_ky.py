@@ -173,11 +173,27 @@ def test_vai_tro_khong_co_khe_thi_NEM_chu_khong_bo_qua():
 
 
 def test_thieu_ban_ghi_mac_dinh_thi_NEM():
-    """225 model có sơ đồ, nhưng chỉ 2 model có `get_default_settings` đã ghi.
-    Model thứ ba phải **kêu** chứ không chạy với settings rỗng."""
+    """225 model có sơ đồ, nhưng chỉ vài model có `get_default_settings` đã ghi.
+    Model chưa ghi phải **kêu** chứ không chạy với settings rỗng.
+
+    🔴 Viết lại 08/09: bản trước lấy `vace_14B` làm ví dụ "chưa ghi" — rồi HM-8
+       ghi nó, và phép kiểm đỏ. **Mệnh đề không đổi**, chỉ ví dụ chết.
+
+    ⭐ Nên nay ví dụ được **chọn từ dữ liệu** thay vì gõ tay: lấy một model có
+      trong sơ đồ nhưng không có tệp `mac_dinh__*`. Ghi thêm một bản ghi nữa
+      cũng không làm phép kiểm này chết lần thứ hai.
+    """
+    import pathlib as _pl
+
     may = MayGiaLap()
+    so = so_dang_ky.nap(may)
+    goc = _pl.Path(so_dang_ky.__file__).parent / "ban_ghi"
+    da_ghi = {t.stem[len("mac_dinh__"):] for t in goc.glob("mac_dinh__*.json")}
+    chua_ghi = sorted(set(so.theo_model) - da_ghi)
+    assert chua_ghi, "moi model deu da co mac_dinh — cap nhat phep kiem nay"
+
     with pytest.raises(LoiMay, match="chua co ban ghi"):
-        so_dang_ky.settings(may, "vace_14B", prompt="x")
+        so_dang_ky.settings(may, chua_ghi[0], prompt="x")
 
 
 # ══════════════════════════════════════════════════════════════════════════
