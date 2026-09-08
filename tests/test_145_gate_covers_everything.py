@@ -80,6 +80,21 @@ BUOC_CHAM = {
     #    ton it nhat 2 giay. Nhanh hon the nghia la no da BO QUA chu khong phai
     #    da chay — xem `tools/do_migration_tren_postgres.py`.
     "migration tren postgres",
+    # Cung ho voi buoc tren nhung KHAC TRUC, va do la ly do no ton tai rieng:
+    # buoc tren hoi *migration* (DDL) co chay tren PostgreSQL khong; buoc nay
+    # hoi *ma chay luc runtime* (DML) co chay khong — voi du lieu THAT cua
+    # production, doc chi-doc.
+    #
+    # ⇒ He qua do duoc 08/09/2026: `M-1` danh dau ban da di tru bang
+    #   `"m1:" + id` = 39 ky tu vao cot `String(36)`. SQLite khong cuong che do
+    #   dai VARCHAR nen ca bo test lan mot lan dien tap tren BAN SAO SQLITE CUA
+    #   CHINH DU LIEU PRODUCTION deu XANH. PostgreSQL:
+    #   `StringDataRightTruncation`. Buoc tren khong the thay — no khong chay
+    #   mot dong ma san pham nao.
+    #
+    # ⚠️ Cung dung mot CSDL nhap that va `giay_toi_thieu=2.0`, nen `--quick` bo
+    #    no la dung, y het buoc tren.
+    "M-1 tren postgres",
 }
 
 

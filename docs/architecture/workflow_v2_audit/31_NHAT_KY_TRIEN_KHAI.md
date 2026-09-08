@@ -1537,4 +1537,92 @@ mà **không có khoản giữ chỗ nào**.
 
 ---
 
+# 08/09/2026 22:24 — LƯỢT `L3` ĐẦU TIÊN, và nó bác một dự đoán "không hồi quy"
+
+```
+RESULT: FAIL (6/32) · 744 giay · cay_da_doi_giua_chung: FALSE
+21 dong FAILED  =  7 (ASV, test_448)  +  14 CUA TOI
+```
+
+Phiên `AICLEAN` chạy gate ở cây chính **không có thay đổi nào của họ** và dự
+đoán trước: *"`19 test_448 + 2`, và nếu khớp thì không hồi quy nào từ 10 commit
+của bạn"*. Dự đoán ấy **sai ở cả hai vế** — `test_448` là **7**, và **14 lỗi là
+của tôi**.
+
+⭐ Nhưng cách dự đoán ấy vẫn đúng, và nên giữ: một chữ `FAIL` là phán quyết nhị
+   phân che mất thông tin; một **tập hợp khai trước** thì kiểm được, và phần
+   lệch chính là chỗ phải nhìn — nhỏ hơn nhiều so với đọc lại cả lượt.
+
+## 🔴 MỘT NGUYÊN NHÂN, BA LỖI, Ở BA TỆP KHÔNG LIÊN QUAN
+
+```
+test_95 · test_44 x2  ->  "frontend/agent-canvas bundle is stale"
+```
+
+Tôi sửa `workflowApi.ts` mà không `npm run build`.
+
+⚠️ Chi tiết đáng giữ hơn cả cái lỗi: bundle dựng lại ra **byte-identical** — các
+hàm v3 chưa được app dùng nên bị tree-shake, còn kiểu thì biến mất lúc biên
+dịch. Chỉ `source_sha256` trong `build-meta.json` đổi.
+
+⇒ **"Đầu ra không đổi" không có nghĩa là "không cần dựng lại".** Và `test_44`
+  đỏ ở một tệp nói về *release archive*, cách xa chỗ tôi gõ — nếu không đọc
+  nguyên văn thông điệp thì rất dễ xếp nó là "đỏ sẵn".
+
+## `test_194` — không phải khai thiếu, là một quyết định
+
+```python
+assert async_routes == [f"POST {API_V1_PREFIX}/jobs"]   # "exactly ONE chargeable"
+```
+
+Tôi mở **cửa tiêu tiền thứ hai** mà không thấy. Đã cập nhật đăng ký, và **giữ
+nguyên tên bài** dù con số nay là hai: đổi tên sẽ phải đổi lại ở cửa thứ ba, và
+mỗi lần đổi tên là một lần mất liên kết với lịch sử. Thứ bài ấy canh không phải
+con số — là **mọi cửa ở đó đều giữ cùng một lời hứa** (`ASYNC_JOB` + đòi báo giá
++ đòi `Idempotency-Key`).
+
+## ⛔ MỘT LẦN TỪ CHỐI ĐƯỜNG DỄ, VÀ TIỀN ĐỀ CỦA TÔI ĐÃ SAI
+
+`check_i18n` gợi ý thẳng: *"nếu thật sự không phải chuỗi hiện ra, sửa
+`tools/check_i18n.py`"*. 13 chuỗi mới của tôi là thông điệp `RegistryError` —
+nghe **rất giống** "lỗi cho lập trình viên", và bộ dò đã có sẵn ba luật thu hẹp
+cùng dạng.
+
+Đo trước khi làm:
+
+```
+server/routes/jobs.py:309     HTTPException(detail=str(exc))
+apps/thumbnail/routes.py:396  _render(..., error=str(exc))   <- render RA TRANG
+```
+
+⇒ `RegistryError` **có** tới người dùng. Thu hẹp phép đếm sẽ **giấu chuỗi thật
+  sự hiện ra**, và giấu **vĩnh viễn** — vì bánh cóc chỉ bắt phần *tăng*, nên một
+  chuỗi đã bị loại khỏi phạm vi đếm thì không bao giờ quay lại.
+
+🔑 Đây là ca rõ nhất trong ngày của *"một lời mời hợp lý dẫn tới một việc sai"*:
+   công cụ mời, có tiền lệ, và tiền đề vẫn sai. Thứ chặn lại là **hai lệnh
+   `grep` mất mười giây**.
+
+## Hai bánh cóc, hai cách xử khác nhau — cả hai đều KHÔNG nới
+
+| | Nguyên nhân thật | Cách xử |
+|---|---|---|
+| `bo qua im lang` | hai `pytest.skip` tôi viết là **rào không bao giờ nổ** — cả 4 worktree đều có `frontend/agent-canvas/src` vì nó được git theo dõi | gỡ `skip`, thay bằng `assert` |
+| `mypy` `operator` | `scalar()` trả `Any | None` rồi bị trừ, trong công cụ **đối chiếu số bút toán** | ép `int(... or 0)` tại nguồn |
+
+⭐ Cái thứ hai không phải chuyện kiểu: một `None` lọt qua sẽ làm phép trừ nổ
+   **giữa lúc đang đối chiếu production, sau khi đã ghi**.
+
+## Bước tự bỏ qua — đã có bằng chứng, lấy CẠNH gate
+
+`bat bien da tien trinh` tự bỏ qua vì không đọc được `C:\LTTPlatform\secrets\`
+(ACL cố ý), và dòng `RESULT` khai thẳng *"KHÔNG PHẢI BẰNG CHỨNG"*. Dựng
+`LTT_TEST_DATABASE_URL` từ `secrets/` cây nguồn rồi chạy riêng: **`7 passed in
+142s`**.
+
+⚠️ Bật nó **bên trong** gate là một thay đổi riêng (biến môi trường tới mọi
+   worker pytest), không phải tác dụng phụ của một lượt sửa lỗi.
+
+---
+
 *Cập nhật sau mỗi đợt. Đợt chỉ được ✅ khi cổng đầy đủ xanh trên cây đứng yên.*

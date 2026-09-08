@@ -75,10 +75,14 @@ def main() -> int:
     # ── 2. Hien trang TRUOC ───────────────────────────────────────────────
     e0 = sa.create_engine(url, connect_args={"connect_timeout": 5})
     with e0.connect() as c:
-        nguon = c.execute(sa.text(d2._chi_doc(
-            "SELECT COUNT(*) FROM agent_workflows"))).scalar()
-        truoc = {b: c.execute(sa.text(d2._chi_doc(
-            f"SELECT COUNT(*) FROM {b}"))).scalar() for b in BANG_DICH}
+        nguon = int(c.execute(sa.text(d2._chi_doc(
+            "SELECT COUNT(*) FROM agent_workflows"))).scalar() or 0)
+        # `scalar()` khai kieu `Any | None`, va o mot cong cu DOI CHIEU SO
+        # BUT TOAN thi do khong phai chuyen kieu: mot `None` lot qua se lam
+        # phep tru duoi kia no giua luc dang doi chieu production, sau khi
+        # da ghi. Ep ngay tai nguon.
+        truoc = {b: int(c.execute(sa.text(d2._chi_doc(
+            f"SELECT COUNT(*) FROM {b}"))).scalar() or 0) for b in BANG_DICH}
     e0.dispose()
     print(f"  nguon  agent_workflows : {nguon}")
     for b, n in truoc.items():
@@ -116,8 +120,8 @@ def main() -> int:
     # ── 3. Doc lai va DOI CHIEU ───────────────────────────────────────────
     e1 = sa.create_engine(url, connect_args={"connect_timeout": 5})
     with e1.connect() as c:
-        sau = {b: c.execute(sa.text(d2._chi_doc(
-            f"SELECT COUNT(*) FROM {b}"))).scalar() for b in BANG_DICH}
+        sau = {b: int(c.execute(sa.text(d2._chi_doc(
+            f"SELECT COUNT(*) FROM {b}"))).scalar() or 0) for b in BANG_DICH}
     e1.dispose()
     dbmod.reset_engine()
 

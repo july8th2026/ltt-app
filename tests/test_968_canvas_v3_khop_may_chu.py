@@ -85,8 +85,10 @@ def _truong_may_chu_DOC() -> set[str]:
 
 @pytest.fixture(scope="module")
 def ts() -> set[str]:
-    if not TS.exists():
-        pytest.skip("cay nay khong co frontend/agent-canvas")
+    # Cung ly do nhu `test_967`: `workflowApi.ts` duoc git theo doi nen no co o
+    # moi cay. Mot `skip` o day chi lam hop dong hai ngon ngu ngung duoc kiem
+    # ma khong ai biet — dung thu phep kiem nay sinh ra de chong.
+    assert TS.exists(), f"khong thay {TS} — nguon frontend duoc git theo doi"
     return _truong_tu_typescript()
 
 

@@ -14724,3 +14724,11 @@ msgid ""
 msgstr ""
 "This provider has been retired. Existing content remains viewable, but no "
 "new requests can be created."
+
+#: apps/agent/routes/drafts_v3.py
+msgid "Thiếu số hiệu bản sửa."
+msgstr "Missing revision number."
+
+#: apps/agent/routes/drafts_v3.py
+msgid "Bản nháp chưa có nội dung để xuất bản."
+msgstr "This draft has nothing to publish yet."

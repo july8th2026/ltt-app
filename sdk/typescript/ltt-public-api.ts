@@ -45,6 +45,40 @@ export interface Quote {
   balance: number;
 }
 
+export interface WorkflowQuote {
+  quote: string;
+  workflow_id: string;
+  version_id: string;
+  /** Tran duoc KY va duoc GIU. So toi da co the bi tru. */
+  credit_max: number;
+  /** So nhieu kha nang tra that. Khong duoc ky, khong duoc giu. */
+  credit_estimate: number;
+  expires_in: number;
+  balance: number;
+}
+
+export interface WorkflowRun {
+  id: string;
+  workflow_id: string;
+  version_id: string;
+  status: string;
+  trigger: string;
+  /** Hai so, luon di cung nhau: thu khach dong y, va thu that su thu. */
+  credit_max: number;
+  credit_charged: number;
+  settled: boolean;
+  created_at: string | null;
+}
+
+export interface RunArtifact {
+  id: string;
+  kind: string;
+  mime: string;
+  size_bytes: number;
+  checksum_sha256: string;
+  created_at: string | null;
+}
+
 export interface ChatMessage {
   role: "system" | "user" | "assistant" | "tool";
   content: string | Array<Record<string, unknown>>;
@@ -351,6 +385,62 @@ export class LttClient {
   //   Neither takes an Idempotency-Key (Q107): no CLI sends one, so the money is
   //   protected by settling from the tokens actually produced instead. A stream
   //   you abandon halfway bills for what it generated, not for the ceiling.
+
+  // ── Workflow (WF-802) ──────────────────────────────────────────────────
+  //
+  // Khac `/jobs` o cho dat nhat: bao gia gan voi GRAPH DA PUBLISH, va no giu
+  // TRAN CHI PHI CUA CA DO THI chu khong phai gia cua mot loi goi tool.
+
+  /**
+   * Price a workflow run. Returns TWO numbers, and both matter.
+   *
+   * `credit_max` is the ceiling that gets signed and held; `credit_estimate`
+   * is what the run will most likely cost. A single number would force the
+   * caller to guess the other one.
+   */
+  // @covers POST /workflows/{workflow_id}/quotes
+  quoteWorkflow(workflowId: string) {
+    return this.request<WorkflowQuote>(
+      "POST", `/workflows/${encodeURIComponent(workflowId)}/quotes`,
+      { retry: true });
+  }
+
+  /**
+   * Start a quoted workflow run.
+   *
+   * Same key discipline as `createJob`, and it matters more here: a second key
+   * does not buy a second job, it buys a second *run of a whole graph*, at the
+   * ceiling of that graph.
+   */
+  // @covers POST /workflows/{workflow_id}/runs
+  startRun(workflowId: string, quote: WorkflowQuote, idempotencyKey?: string) {
+    const key = idempotencyKey ?? crypto.randomUUID().replace(/-/g, "");
+    return this.request<WorkflowRun>(
+      "POST", `/workflows/${encodeURIComponent(workflowId)}/runs`, {
+        body: { quote: quote.quote },
+        headers: { "Idempotency-Key": key },
+        retry: true,
+      });
+  }
+
+  // @covers GET /runs/{run_id}
+  getRun(runId: string) {
+    return this.request<WorkflowRun>(
+      "GET", `/runs/${encodeURIComponent(runId)}`, { retry: true });
+  }
+
+  /** Cancel a run. Cancelling an already-cancelled run is not an error. */
+  // @covers POST /runs/{run_id}/cancel
+  cancelRun(runId: string) {
+    return this.request<WorkflowRun>(
+      "POST", `/runs/${encodeURIComponent(runId)}/cancel`, { retry: true });
+  }
+
+  // @covers GET /runs/{run_id}/artifacts
+  runArtifacts(runId: string) {
+    return this.request<{ run_id: string; artifacts: RunArtifact[] }>(
+      "GET", `/runs/${encodeURIComponent(runId)}/artifacts`, { retry: true });
+  }
 
   // @covers POST /jobs/{job_id}/cancel
   cancelJob(jobId: string) {

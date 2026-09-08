@@ -60,7 +60,22 @@ def test_the_release_inventory_is_frozen_and_self_consistent():
     # ⛔ Con so nay la mot BANH COC, khong phai mot bien dem. Nang no phai keo theo
     #    ba thu: mot muc trong `docs/PUBLIC_API/CHANGELOG.md`, mot dong trong
     #    `server/api/inventory.py`, va mot cau tra loi cho "khach goi no the nao".
-    assert len(declared_paths()) == 27        # +2 /models*, +3 cua LLM (H38)
+    # 27 -> 32 ngay 08/09: `WF-802` mo **nam cua workflow**, va chung la ROUTE
+    # chu khong phai ToolSpec nen cung chi dong bang o day:
+    #
+    #   POST /api/v1/workflows/{id}/quotes   SYNC      - bao gia mot luot chay,
+    #                                        tra HAI so (`M8`): tran va uoc tinh
+    #   POST /api/v1/workflows/{id}/runs     ASYNC_JOB - cua tieu tien THU HAI
+    #   GET  /api/v1/runs/{id}               SYNC
+    #   POST /api/v1/runs/{id}/cancel        SYNC      - huy keo theo ket so
+    #   GET  /api/v1/runs/{id}/artifacts     SYNC
+    #
+    # Ba thu di kem theo dung yeu cau cua chinh banh coc nay:
+    #   1. `docs/PUBLIC_API/CHANGELOG.md` — muc 08/09
+    #   2. `server/api/inventory.py` — nam dong khai
+    #   3. "khach goi no the nao" — `sdk/python` + `sdk/typescript` + Postman,
+    #      va `tests/test_966` chay het duong tien tu bao gia toi hoan lai
+    assert len(declared_paths()) == 32        # +2 /models*, +3 LLM (H38), +5 WF-802
     assert all(route.path.startswith(API_V1_PREFIX) for route in API_V1_ROUTES)
 
     # Tools: the published catalog equals the golden contract.

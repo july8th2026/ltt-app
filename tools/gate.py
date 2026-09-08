@@ -799,10 +799,21 @@ def _steps(quick: bool, noi_tiep: bool = False) -> list[Step]:
         #   BAN SAO SQLITE CUA CHINH DU LIEU PRODUCTION cung xanh. PostgreSQL:
         #   `StringDataRightTruncation`. Buoc tren khong the thay — no khong
         #   chay mot dong ma san pham nao.
+        # ⚠️ SAN 0.8s, KHONG phai 2.0s. Ban dau toi chep `2.0` tu buoc tren ma
+        #    khong do — va gate do vi chinh cai san do: buoc chay THAT, in
+        #    `RESULT: PASS`, roi bi danh truot vi xong trong 1.63s.
+        #
+        # Do ba luot tren may ranh: 1466 / 1400 / 1376 ms. Buoc nay nhanh hon
+        # buoc migration vi no chi nap 10 hang, khong chay ca chuoi alembic.
+        #
+        # ⭐ San chi can phan biet CHAY THAT voi TRA 0 AM THAM — duong `BO QUA`
+        #    da duoc `_tu_khai_bo_qua` mien roi (`step.ok and not step.bo_qua`).
+        #    Duong tra 0 am tham la doc secrets roi thoat: ~0.2s. Nen 0.8s nam
+        #    giua hai cum voi bien ca hai phia.
         steps.append(Step("M-1 tren postgres",
                           [sys.executable, "tools/dien_tap_m1_tren_postgres.py"],
                           ROOT, nhom="nang", tai_nguyen=("postgres_test",),
-                          giay_toi_thieu=2.0))
+                          giay_toi_thieu=0.8))
     npm = _npm()
     for name in FRONTENDS:
         folder = ROOT / "frontend" / name

@@ -453,6 +453,80 @@
       }
     },
     {
+      "name": "GET /runs/{run_id}",
+      "request": {
+        "description": "Owner-scoped. Unknown or foreign ids answer 404.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "GET",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "runs",
+            "{run_id}"
+          ],
+          "raw": "{{base_url}}/runs/{{run_id}}"
+        }
+      }
+    },
+    {
+      "name": "GET /runs/{run_id}/artifacts",
+      "request": {
+        "description": "Owner-scoped, in the order they were produced.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "GET",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "runs",
+            "{run_id}",
+            "artifacts"
+          ],
+          "raw": "{{base_url}}/runs/{{run_id}}/artifacts"
+        }
+      }
+    },
+    {
+      "name": "POST /runs/{run_id}/cancel",
+      "request": {
+        "description": "Terminal runs answer 409; cancelling twice is safe.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "POST",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "runs",
+            "{run_id}",
+            "cancel"
+          ],
+          "raw": "{{base_url}}/runs/{{run_id}}/cancel"
+        }
+      }
+    },
+    {
       "name": "GET /tools",
       "request": {
         "description": "Returns the public tool catalog, narrowed to what the calling key is allowed to use.",
@@ -712,6 +786,69 @@
             "{webhook_id}"
           ],
           "raw": "{{base_url}}/webhooks/{{webhook_id}}"
+        }
+      }
+    },
+    {
+      "name": "POST /workflows/{workflow_id}/quotes",
+      "request": {
+        "description": "Returns a signed quote bound to this account and the published graph. Submit it to POST /workflows/{workflow_id}/runs.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          }
+        ],
+        "method": "POST",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "workflows",
+            "{workflow_id}",
+            "quotes"
+          ],
+          "raw": "{{base_url}}/workflows/{{workflow_id}}/quotes"
+        }
+      }
+    },
+    {
+      "name": "POST /workflows/{workflow_id}/runs",
+      "request": {
+        "body": {
+          "mode": "raw",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "raw": "{\n  \"tool\": \"{{tool}}\",\n  \"input\": {}\n}"
+        },
+        "description": "Holds the quoted ceiling and queues the run. Requires an Idempotency-Key header.",
+        "header": [
+          {
+            "key": "Authorization",
+            "type": "text",
+            "value": "Bearer {{api_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "method": "POST",
+        "url": {
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "workflows",
+            "{workflow_id}",
+            "runs"
+          ],
+          "raw": "{{base_url}}/workflows/{{workflow_id}}/runs"
         }
       }
     }

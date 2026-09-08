@@ -238,6 +238,52 @@ class LttClient:
             # Safe precisely because the key is fixed for the whole loop.
             retry=True)
 
+    # ── Workflow (WF-802) ───────────────────────────────────────────────
+    #
+    # Mot workflow khac mot tool o dung cho dat nhat: bao gia gan voi GRAPH DA
+    # PUBLISH, va no giu tran chi phi cua CA DO THI chu khong phai gia cua mot
+    # loi goi. Nen SDK phai lam dung viec `create_job` lam — sinh khoa mot lan
+    # va dung lai cho moi lan thu lai.
+
+    # @covers POST /workflows/{workflow_id}/quotes
+    def quote_workflow(self, workflow_id: str) -> dict:
+        """Price a workflow run. Returns TWO numbers, and both matter.
+
+        ``credit_max`` is the ceiling that gets held and signed; ``credit_estimate``
+        is what the run will most likely cost. A single number would force the
+        caller to guess the other one.
+        """
+        return self._json("POST", f"/workflows/{workflow_id}/quotes", retry=True)
+
+    # @covers POST /workflows/{workflow_id}/runs
+    def start_run(self, workflow_id: str, quote: dict, *,
+                  idempotency_key: str = "") -> dict:
+        """Start a quoted workflow run.
+
+        Same key discipline as :meth:`create_job`, and it matters more here: a
+        second key does not buy a second job, it buys a second *run* of a whole
+        graph, at the ceiling of that graph.
+        """
+        key = idempotency_key or uuid.uuid4().hex
+        return self._json(
+            "POST", f"/workflows/{workflow_id}/runs",
+            body={"quote": quote["quote"]},
+            headers={"Idempotency-Key": key},
+            retry=True)
+
+    # @covers GET /runs/{run_id}
+    def get_run(self, run_id: str) -> dict:
+        return self._json("GET", f"/runs/{run_id}", retry=True)
+
+    # @covers POST /runs/{run_id}/cancel
+    def cancel_run(self, run_id: str) -> dict:
+        """Cancel a run. Cancelling an already-cancelled run is not an error."""
+        return self._json("POST", f"/runs/{run_id}/cancel", retry=True)
+
+    # @covers GET /runs/{run_id}/artifacts
+    def run_artifacts(self, run_id: str) -> dict:
+        return self._json("GET", f"/runs/{run_id}/artifacts", retry=True)
+
     # @covers POST /chat/completions
     def chat(self, messages: list, *, model: str = "ltt_llm",
              max_tokens: int = 1024, temperature: float | None = None,
