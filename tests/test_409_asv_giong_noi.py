@@ -241,7 +241,11 @@ class TestPhucHoiTungDoan:
         monkeypatch.setattr(giong_noi, "giai_giong",
                             lambda db, **kw: (None, "bac"))
 
-        def doc(chu, *, ref_b64=None, preset=None):
+        # `**_`: ban gia nay do SO LAN GOI, khong do tham so. Liet ke tung
+        # tham so se bat no phai doi moi lan chu ky that moc them mot tuy
+        # chon khong lien quan — va lan nao cung la mot lan do do vi mot
+        # ly do khac voi ly do no ton tai.
+        def doc(chu, *, ref_b64=None, preset=None, **_):
             dem.append(chu)
             return _wav(tmp_path / f"g{len(dem)}.wav", giay=0.4), {}
 

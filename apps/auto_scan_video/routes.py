@@ -44,6 +44,7 @@ from server.deps import get_db, user_hien_tai
 from server.templating import templates
 
 from . import hop_dong_v4, features, gia, pipeline, quan_sat, vung_che
+from . import tu_dien as tu_dien_mod
 from .manifest import MANIFEST
 
 log = logging.getLogger(__name__)
@@ -280,6 +281,7 @@ async def tao(request: Request,
               preset: str = Form(""),
               che_do_giong: str = Form(""),
               giong_id: str = Form(""),
+              tu_dien: str = Form(""),
               #: Vung che, JSON do trinh sua vung dung. Rong = khong co vung nao,
               #: va do la truong hop BINH THUONG cua phan lon lan chay.
               vung: str = Form(""),
@@ -337,9 +339,18 @@ async def tao(request: Request,
     except (ValueError, TypeError):
         return _lai_voi_loi(request, db, u, _t('Vùng che không đọc được.'))
 
+    # ⚠️ Cung luat voi vung che: sai thi TU CHOI, khong doan. Mot dong
+    #    `Ten - cach doc` khong duoc tu hieu thanh dau `=` — doan dung mot
+    #    lan thi lan sau khach tin rang ta luon doan dung.
+    try:
+        bang_tu_dien = tu_dien_mod.phan_tich(tu_dien)
+    except tu_dien_mod.TuDienLoi as exc:
+        return _lai_voi_loi(request, db, u, str(exc))
+
     cai_dat = {"timing_mode": che_do, "preset": preset,
                "che_do_giong": che_do_giong, "giong_id": giong_id,
                "vung": ds_vung,
+               "tu_dien": bang_tu_dien,
                # ⚠️ Giu `voice_id` cho tuong thich nguoc: `giai_doan_giong` doc
                #    no lam duong lui cho nhung run tao truoc pha 15.
                "voice_id": giong_id}

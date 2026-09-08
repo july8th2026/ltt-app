@@ -174,6 +174,16 @@ def phan_loai(exc: BaseException) -> str:
     if isinstance(exc, VungLoi):
         return NGUOI_DUNG
 
+    # ── Tu dien ten rieng (V5) ────────────────────────────
+    #
+    # Cung ly do voi `VungLoi` ngay tren: hom nay no chi duoc nem trong
+    # `routes.tao` va bat ngay tai do, nen chua bao gio toi duoc ham nay.
+    # Van phan loai — chay lai cung mot tu dien sai se hong y het, nen no
+    # khong duoc roi xuong nhanh `retry`.
+    from .tu_dien import TuDienLoi
+    if isinstance(exc, TuDienLoi):
+        return NGUOI_DUNG
+
     # ── QC bang AI va ke hoach sua (pha 19) ─────────────────────────────────
     #
     # ⛔ `NGUOI_DUNG` — that bai cuoi cung. Ca hai deu la mau thuan trong du lieu

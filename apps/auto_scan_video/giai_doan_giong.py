@@ -73,6 +73,8 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
 
     tai_lieu = _doc_ban_dich(db, kho, run)
     cai_dat = run.settings or {}
+    # Tu dien ten rieng cua khach; `{}` khi khong co. Xem `tu_dien.py`.
+    tu_dien = dict(cai_dat.get("tu_dien") or {})
 
     # 🔴 **Giong lay tu BAN LONG TIENG, khong tu `settings`.**
     #
@@ -122,7 +124,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             khe = nan_cho_vua.khe_cua(m)
             chu = str(m["chu"])
             so_vong = 0
-            vt = _van_tay(m["ma"], chu, ma_giong, preset)
+            vt = _van_tay(m["ma"], chu, ma_giong, preset, tu_dien=tu_dien)
 
             # ── Phuc hoi o muc DOAN ───────────────────────────────────────
             khoa_ben = assets.dat_khoa(owner_id=run.owner_id, run_id=run.id,
@@ -168,8 +170,9 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             # ⛔ Vong nay co TRAN CUNG. Mot vong lap "sua cho toi khi vua" tren
             #    mot dich vu tra tien la mot hoa don khong co day.
             while True:
-                wav, _headers = giong_noi.doc_mot_doan(chu, ref_b64=ref_b64,
-                                                       preset=preset)
+                wav, _headers = giong_noi.doc_mot_doan(
+                    chu, ref_b64=ref_b64, preset=preset,
+                    tu_dien_rieng=tu_dien or None)
                 # ⛔ Kiem TRUOC khi coi doan la xong (muc 8). Do tren TEP THAT,
                 #    khong tin header cua may sinh tieng — cung ly do
                 #    `apps/ltt_voice` doi chieu hai phia va ghi log khi lech.
@@ -196,7 +199,8 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                     break
                 chu = moi_chu
                 so_vong += 1
-                vt = _van_tay(m["ma"], chu, ma_giong, preset)
+                vt = _van_tay(m["ma"], chu, ma_giong, preset,
+                              tu_dien=tu_dien)
 
             kq = nan_cho_vua.ket_luan(m["ma"], chu=chu, giay=giay, khe=khe,
                                       so_vong=so_vong)
@@ -263,7 +267,8 @@ class _KhongNanDuoc(RuntimeError):
     """Khong xin duoc cau viet lai — dung bac thang o day, khong lam hong ca run."""
 
 
-def _van_tay(ma: str, chu: str, ma_giong: str, preset: str) -> str:
+def _van_tay(ma: str, chu: str, ma_giong: str, preset: str, *,
+             tu_dien: dict) -> str:
     """Van tay cua MOT doan tieng.
 
     🔑 Gom **van ban da nan** chu khong phai van ban goc: sau mot vong nan, doan
@@ -271,7 +276,8 @@ def _van_tay(ma: str, chu: str, ma_giong: str, preset: str) -> str:
        vua quyet dinh la khong vua.
     """
     return giong_noi.van_tay_doan(ma_doan=ma, chu=chu, voice_id=ma_giong,
-                                  preset=str(preset or ""))
+                                  preset=str(preset or ""),
+                                  tu_dien=tu_dien or None)
 
 
 def _ke_nan(kq) -> dict:

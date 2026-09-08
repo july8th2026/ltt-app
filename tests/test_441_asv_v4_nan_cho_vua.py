@@ -366,14 +366,19 @@ def test_van_tay_doan_GOM_van_ban_da_nan():
     """
     from apps.auto_scan_video import giai_doan_giong
 
-    a = giai_doan_giong._van_tay("seg_0001", "cau dai luom thuom", "G", "bac")
-    b = giai_doan_giong._van_tay("seg_0001", "cau da rut ngan", "G", "bac")
+    # `tu_dien` la tham so BAT BUOC co chu y (V5): quen no o mot loi goi
+    # phai la `TypeError`, khong phai mot bam sai im lang.
+    a = giai_doan_giong._van_tay("seg_0001", "cau dai luom thuom", "G",
+                                 "bac", tu_dien={})
+    b = giai_doan_giong._van_tay("seg_0001", "cau da rut ngan", "G",
+                                 "bac", tu_dien={})
     assert a != b, (
         "van tay khong doi khi van ban doi — mot doan da viet lai se dung lai "
         "tep tieng cu")
 
     # ... va van doi theo giong, vi loi thoai duoc doc BOI mot giong cu the.
-    c = giai_doan_giong._van_tay("seg_0001", "cau da rut ngan", "GIONG KHAC", "bac")
+    c = giai_doan_giong._van_tay("seg_0001", "cau da rut ngan",
+                                 "GIONG KHAC", "bac", tu_dien={})
     assert c != b
 
 # =============================================================================

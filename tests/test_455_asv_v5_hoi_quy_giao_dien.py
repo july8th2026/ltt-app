@@ -457,3 +457,63 @@ def test_o_giong_chi_BAT_BUOC_o_dung_che_do_may_chu_doi():
     assert f'"{hop_dong_v4.CHE_DO_GIONG_TU_CHON}"' not in _bo_chu_thich_js(js), (
         f"asv.js dang chep hang so hop dong ({hop_dong_v4.CHE_DO_GIONG_TU_CHON}) "
         "vao ma client — mot ban sao se troi khi hop dong doi, va troi im lang")
+
+
+# ════════════════════════════════════════════════════════════════════════════
+#  Moi mat loc ma nen tang bay ra deu phai toi duoc tay khach
+# ════════════════════════════════════════════════════════════════════════════
+
+def test_MOI_MAT_LOC_giong_deu_co_o_chon_tren_man_hinh(moi_truong):
+    """🔴 Khiem khuyet tim ra 08/09, SAU khi buoc 24 da bao “xong”.
+
+    `gia.NHAN_LOC` mang **ba** mat loc va `routes.danh_muc_giong` da loc theo
+    ca ba tu truoc. Template thi chi ve **hai** o. Nen mat loc thu ba
+    (`phong_cach`) song trong ma, duoc kiem thu, va **vo hinh voi khach**.
+
+    ⚠️ Vi sao buoc 24 khong bat duoc: no doi chieu voi 22 hang cua bang
+       audit **cu**, chu khong doi chieu voi cot *“V5 lam ngay”* cua chinh
+       `V5_UI_INFORMATION_ARCHITECTURE.md` §4. Mot bai tai audit chi thay
+       duoc nhung gi thuoc do cua no ke ten — doi thuoc do la doi ket qua,
+       va thuoc do cu khong he sai, no chi hep hon loi hua.
+
+    ⭐ Nen phep kiem nay chot theo **quy tac**: lay danh sach mat loc tu
+       `gia.NHAN_LOC` luc chay, khong go tay ba cai ten. Ngay `ltt_voice`
+       them mat thu tu, no do ngay — khong cho ai nho ra.
+    """
+    from apps.auto_scan_video import gia
+
+    a = moi_truong[1]
+    van = a.get("/auto-scan-video/").text
+
+    thieu = []
+    for mat, nhan in gia.NHAN_LOC.items():
+        if not nhan:
+            # Mat khong co nhan nao thi mot o chon rong la vo nghia.
+            continue
+        ma_o = "asv-loc-" + mat.replace("_", "-")
+        if f'id="{ma_o}"' not in van:
+            thieu.append(f"{mat} (cho o `{ma_o}`)")
+    assert not thieu, (
+        "nen tang bay ra mat loc ma giao dien khong ve o chon: "
+        + ", ".join(thieu))
+
+
+def test_moi_giong_MANG_du_thuoc_tinh_cho_tung_mat_loc(moi_truong):
+    """Mot o chon khong loc duoc gi neu `<option>` khong mang nhan tuong ung.
+
+    ⚠️ Tach khoi phep kiem tren la co y: hai cach hong khac nhau. O chon
+       thieu thi khach **khong thay** mat loc; thuoc tinh thieu thi khach
+       thay o chon, bam vao, va danh sach **rong** — kieu thu hai te hon vi
+       no trong nhu san pham hong chu khong nhu tinh nang chua co.
+    """
+    from apps.auto_scan_video import gia
+
+    a = moi_truong[1]
+    van = a.get("/auto-scan-video/").text
+    i = van.index('id="asv-giong"')
+    khoi = van[i:van.index("</select>", i)]
+
+    thieu = [mat for mat, nhan in gia.NHAN_LOC.items()
+             if nhan and f'data-{mat.replace("_", "-")}=' not in khoi]
+    assert not thieu, (
+        "`<option>` giong khong mang nhan cho mat loc: " + ", ".join(thieu))

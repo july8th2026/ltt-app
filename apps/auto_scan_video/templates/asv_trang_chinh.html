@@ -133,6 +133,21 @@
                 <option value="{{ ma }}">{{ _(ten) }}</option>
               {% endfor %}
             </select>
+            {# 🔴 Mat loc thu BA. `gia.NHAN_LOC` da mang no tu 31/08 va
+               `routes.danh_muc_giong` da loc theo no — nhung template chi ve
+               HAI o, nen nang luc ay vo hinh voi khach suot ca V5.
+
+               ⚠️ Buoc 24 khong bat duoc cho nay, vi no doi chieu voi 22 hang
+                  cua bang audit CU chu khong doi chieu voi cot "V5 lam ngay"
+                  cua chinh `V5_UI_INFORMATION_ARCHITECTURE.md` §4. Mot bai
+                  tai audit chi thay duoc nhung gi thuoc do cua no ke ten. #}
+            <select id="asv-loc-phong-cach" class="asv-loc-o"
+                    aria-label="{{ _('Phong cách') }}">
+              <option value="">{{ _("Mọi phong cách") }}</option>
+              {% for ma, ten in nhan_loc.phong_cach.items() %}
+                <option value="{{ ma }}">{{ _(ten) }}</option>
+              {% endfor %}
+            </select>
           </div>
 
           {# ⛔ KHONG co o "Giọng mặc định". Engine tu choi phuc vu no (pha 09),
@@ -142,6 +157,7 @@
               <option value="{{ g.ma }}"
                       {% if g.ma == giong_chon %}selected{% endif %}
                       data-gioi="{{ g.gioi }}" data-vung="{{ g.vung }}"
+                      data-phong-cach="{{ g.phong_cach }}"
                       {% if g.duong_nghe %}data-nghe="{{ g.duong_nghe }}"{% endif %}
                       >{{ g.ten }}</option>
             {% endfor %}
@@ -164,6 +180,21 @@
     {# ── Nang cao — DONG mac dinh ──────────────────────────────────────── #}
     <details class="asv-nang-cao">
       <summary>{{ _("Tuỳ chọn nâng cao") }}</summary>
+
+      <div class="asv-nhom">
+        <h3>{{ _("Cách đọc tên riêng") }}</h3>
+        {# 🔴 `apps/ltt_voice/text_pipeline.chuan_hoa` nhan `tu_dien_rieng` tu
+           truoc, va `giong_noi` truyen no suot bon cho. O nay khong them nang
+           luc nao — no mo mot van da co ma chua ai co duong cap nuoc vao.
+
+           ⚠️ Tu dien di vao MOI doan cua mot lan chay, nen no nam trong
+              vong lap tinh tien. Tran o `tu_dien.SO_MUC_TOI_DA`. #}
+        <label class="asv-o" for="asv-tu-dien">
+          <span class="asv-nhan">{{ _("Mỗi dòng một tên, dạng: Tên = cách đọc") }}</span>
+          <textarea id="asv-tu-dien" name="tu_dien" rows="3"
+                    placeholder="{{ _('Nguyễn Huệ = Nguyễn Huê') }}"></textarea>
+        </label>
+      </div>
 
       <div class="asv-nhom">
         <h3>{{ _("Thời lượng") }}</h3>

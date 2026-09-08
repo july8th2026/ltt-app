@@ -15,6 +15,7 @@ import pytest
 
 from apps.auto_scan_video import loi
 from apps.auto_scan_video.ban_dung import BanDungError
+from apps.auto_scan_video.tu_dien import TuDienLoi
 from apps.auto_scan_video.vung_che import VungLoi
 from apps.auto_scan_video.ban_ghi import BanGhiError
 from apps.auto_scan_video.dich_thuat import DichError, DichMoHo
@@ -71,6 +72,7 @@ BANG = {
     #    toi duoc `phan_loai`. Chot o day de mot pha sau goi
     #    `vung_che.chuan_hoa` TU TRONG mot job khong roi xuong `retry`.
     VungLoi: loi.NGUOI_DUNG,
+    TuDienLoi: loi.NGUOI_DUNG,
     # ⭐ THU LAI la viec dung: nen tang co the cap mot card KHAC lan sau. Truoc
     #    pha 13 truong hop nay khong nem gi ca — no **im lang chay CPU**, cham
     #    hon 9,5 lan, va giu suat `tach_nguon_cuc_bo` suot ~37 phut o tran 2 gio.

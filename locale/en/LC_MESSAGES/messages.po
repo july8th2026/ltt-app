@@ -14508,3 +14508,27 @@ msgstr "Run did not finish"
 
 msgid "Lần chạy đã huỷ"
 msgstr "Run cancelled"
+
+msgid "Cách đọc tên riêng"
+msgstr "How names are pronounced"
+
+msgid "Mỗi dòng một tên, dạng: Tên = cách đọc"
+msgstr "One name per line, as: Name = pronunciation"
+
+msgid "Dòng %(so)d thiếu dấu bằng. Mỗi dòng viết dạng: Tên = cách đọc"
+msgstr "Line %(so)d has no equals sign. Write each line as: Name = pronunciation"
+
+msgid "Dòng %(so)d thiếu tên hoặc cách đọc."
+msgstr "Line %(so)d is missing the name or the pronunciation."
+
+msgid "Dòng %(so)d dài quá %(dai)d ký tự."
+msgstr "Line %(so)d is longer than %(dai)d characters."
+
+msgid "Tên %(ten)s được khai hai lần với hai cách đọc khác nhau."
+msgstr "The name %(ten)s is given twice with two different pronunciations."
+
+msgid "Tối đa %(n)d mục trong một lần chạy."
+msgstr "At most %(n)d entries per run."
+
+msgid "Nguyễn Huệ = Nguyễn Huê"
+msgstr "Nguyễn Huệ = Nguyễn Huê"

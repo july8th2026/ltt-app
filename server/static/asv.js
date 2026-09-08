@@ -164,6 +164,7 @@
   var oGiong = document.getElementById("asv-giong");
   var locGioi = document.getElementById("asv-loc-gioi");
   var locVung = document.getElementById("asv-loc-vung");
+  var locPhongCach = document.getElementById("asv-loc-phong-cach");
   var nutNghe = document.getElementById("asv-nghe-nut");
   var ttNghe = document.getElementById("asv-nghe-tt");
   var amNghe = document.getElementById("asv-nghe-am");
@@ -172,6 +173,7 @@
     if (!oGiong) return;
     var g = locGioi ? locGioi.value : "";
     var v = locVung ? locVung.value : "";
+    var pc = locPhongCach ? locPhongCach.value : "";
     var conLai = 0, dangChon = oGiong.value, hopLe = false;
 
     Array.prototype.forEach.call(oGiong.options, function (o) {
@@ -181,7 +183,8 @@
       var laRieng = !o.getAttribute("data-gioi");
       var khop = laRieng
         || ((!g || o.getAttribute("data-gioi") === g)
-            && (!v || o.getAttribute("data-vung") === v));
+            && (!v || o.getAttribute("data-vung") === v)
+            && (!pc || o.getAttribute("data-phong-cach") === pc));
       o.hidden = !khop;
       if (khop) { conLai++; if (o.value === dangChon) hopLe = true; }
     });
@@ -208,6 +211,7 @@
 
   if (locGioi) locGioi.addEventListener("change", locGiong);
   if (locVung) locVung.addEventListener("change", locGiong);
+  if (locPhongCach) locPhongCach.addEventListener("change", locGiong);
   if (oGiong) oGiong.addEventListener("change", capNhatNghe);
   if (nutNghe) {
     nutNghe.addEventListener("click", function () {
