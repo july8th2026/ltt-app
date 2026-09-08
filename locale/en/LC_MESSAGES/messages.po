@@ -14707,3 +14707,9 @@ msgstr ""
 "as the voice is: on the day the engine is upgraded, a voice rejected for "
 "hiss deserves another try, one rejected for missing consent does not — same "
 "status, two different fates."
+
+# U-17 — tên cho `role="progressbar"` ở màn Dự án. axe `aria-progressbar-name`
+# (serious): một thanh tiến độ không tên đọc lên là "bốn mươi phần trăm" mà
+# không nói của cái gì, trong khi màn ấy có nhiều dự án.
+msgid "Tiến độ dự án {ten}: {xong}/{tong} khối"
+msgstr "Project {ten} progress: {xong}/{tong} blocks"

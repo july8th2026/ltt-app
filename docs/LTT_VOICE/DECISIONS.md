@@ -974,3 +974,165 @@ bước bạn tình cờ chạy.
 **Một tập con không tự khai rằng nó là tập con.** Bảy dòng `rc=0` trông y hệt
 hai mươi dòng `rc=0` — khác biệt duy nhất nằm ở thứ *không có mặt*, và không có
 gì trên màn hình chỉ vào nó.
+
+---
+
+## DV-017 — U-15: đường nối chỉ được phép BỎ QUA, không được phép ĐẢO
+
+**Ngày:** 08/09/2026 · **Hạng mục:** U-15 / T-07
+
+`chuan_hoa()` làm **hai** việc rất khác nhau trong một khối cứng:
+
+```
+PHIEN AM   tu dien phat am · ha chu hoa viet tat
+DOC SO     so thu tu · ngay · gio · ky hieu · so lon · phan cach nghin
+```
+
+Với engine hiện tại cả hai đều cần — nhưng vì **hai lý do khác nhau**:
+
+- `phien_am` bật vì upstream #168 báo engine đọc `ch` thành `tr`, và tên riêng
+  thì không bảng nào đoán trước được;
+- `doc_so` bật vì engine đọc `1.250.000` theo từng chữ số.
+
+⭐ Nên gộp chúng vào một cờ `chuan_hoa=True/False` sẽ buộc engine thứ hai chọn
+**cả hai hoặc không cái nào** — tức nó sẽ chọn "cả hai" và mang theo lỗi. Một
+engine đã có bộ chuẩn hoá số riêng mà vẫn bật `doc_so` sẽ **đọc hai lần**:
+`"15%"` → `"15 phần trăm"` → `"mười lăm phần trăm phần trăm"`.
+
+### 🔴 KHUÔN CHỈ ĐƯỢC TẮT MỘT NHÓM, KHÔNG ĐƯỢC ĐỔI THỨ TỰ
+
+Thứ tự trong `chuan_hoa()` là **chịu lực**, và ba chú thích trong đó ghi lại ba
+lần đã trả giá bằng một lần hỏng thật:
+
+| thứ tự | mất nó thì |
+|---|---|
+| từ điển **trước** số | phép thay số cắt mất ranh giới từ của tên riêng |
+| `_ha_chuoi_viet_hoa` **sau** từ điển | hạ nhầm chữ hoa của viết tắt đã biết |
+| `_KY_HIEU` → `_doc_so_lon` → `_NGAN` | `1.250.000đ` ra *"…nghìnđ"* — một chữ `đ` mắc kẹt |
+
+Một khuôn cho phép **đổi thứ tự** mở lại cả ba lỗ cùng lúc, ở một chỗ mà không
+chú thích nào nhìn thấy. ⇒ `KhuonChuanHoa` chỉ có ba trường `bool`, và
+`test_512` chốt đúng điều đó: *mọi trường phải là `bool`* — không được mang một
+danh sách hay một thứ tự.
+
+### ⛔ ĐỔI KHUÔN LÀ ĐỔI TIỀN — nên mặc định phải GIỐNG HỆT TỪNG BYTE
+
+`manifest._gia()` đếm ký tự **sau** chuẩn hoá. Tắt `doc_so` làm hoá đơn nhỏ đi;
+bật `doc_so_tran` làm nó to lên.
+
+⇒ Trước khi tách, tôi **chụp đầu ra thật** của tám chuỗi ở hai chế độ và nhúng
+vào `test_512::MOC_VANG`. Đó không phải kỳ vọng ai gõ ra — là giá trị của bản
+trước. Sau khi tách: **16/16 khớp từng byte**.
+
+⚠️ Và mốc vàng đi kèm một đối chứng (`test_moc_vang_KHONG_rong_va_KHONG_tam_thuong`):
+một mốc gồm toàn chuỗi không có gì để chuẩn hoá sẽ xanh với **mọi** bản vá, kể
+cả bản xoá sạch `chuan_hoa`.
+
+### ⭐ Lời khai nằm cạnh sự thật về engine, không nằm trong bộ chuẩn hoá
+
+`KHUON_CHUAN_HOA` ở `tham_so_cong_khai.py` — cùng chỗ với `TRAN_MOI_LUOT_SINH`
+và `SO_LAN_THU_JOB`. Ngày có engine thứ hai, khuôn của nó nằm cạnh tham số của
+nó. `text_pipeline.KHUON_MAC_DINH` **dựng từ** lời khai ấy chứ không gõ lại —
+hai bản khai cho cùng một engine là hai bản sẽ lệch.
+
+### Hai lỗi tôi mắc khi làm chính hạng mục này
+
+1. Guard `"from dataclasses import" not in s` — kiểm **module đã import chưa**
+   trong khi thứ cần là **tên `replace`**. Import có sẵn nhưng chỉ mang
+   `dataclass, field`.
+2. `ma.index("phien_am") < ma.index("doc_so")` — chuỗi `"doc_so"` khớp vào
+   `doc_so_tran` trong **chữ ký**, nên phép so đang đo thứ tự hai **tham số**
+   chứ không phải thứ tự hai **nhánh**.
+
+⭐ Cả hai cùng một hình dạng, và là hình dạng lặp nhiều nhất trong ngày: **đo
+một thứ ĐẠI DIỆN cho thứ mình định đo.** Bản vá cho cả hai là đọc **cấu trúc**
+(`ast`, `lineno`) thay vì đọc **chuỗi**.
+
+---
+
+## DV-018 — U-17: lần đầu ba màn cần đăng nhập được đo, và bộ đo hỏng ở đúng chỗ đó
+
+**Ngày:** 08/09/2026
+
+### 🔴 Đường `--cookie` của `check_a11y.py` CHƯA BAO GIỜ CHẠY
+
+`tools/a11y_quet.js:39` gọi `new URL(CAU_HINH.goc)`, và `URL` **không tồn tại**
+trong ngữ cảnh `playwright-cli run-code`. Nó nằm **trong** nhánh
+`if (CAU_HINH.cookie)`, nên:
+
+- lượt chạy **không** cookie không bao giờ chạm tới nó;
+- `ROUTE_MAC_DINH` chỉ có bốn route **công khai** (`/`, `/login`, `/dang-ky`,
+  `/bang-gia`) — không route nào cần đăng nhập, nên gate không bao giờ truyền
+  `--cookie`.
+
+⇒ Một đường được **khai trong docstring** (*"route cần đăng nhập thì phải truyền
+`--cookie`"*) mà chưa bao giờ có nước chảy qua. Lại đúng `DV-010`, lần này ở
+tầng công cụ đo.
+
+⭐ **Và bản vá đã tồn tại sẵn** ở `tools/mobile_quet.js:189`, kèm nguyên chú
+thích giải thích: *"`URL` không tồn tại trong ngữ cảnh `run-code`. Tách tên máy
+bằng chuỗi."* Ai đó đã gặp lỗi này, sửa nó ở **một** tệp, ghi lại lý do — và tệp
+anh em có **cùng đoạn mã** thì không ai sửa.
+
+> **Chép lại bộ đo mà không chép bài học là cách một lớp lỗi sống sót qua chính
+> bản vá của nó.**
+
+### Kết quả đo — 55 nút / 5 mã luật, lần đầu tiên
+
+| mã luật | nút | mức | ở đâu |
+|---|---|---|---|
+| `nested-interactive` | 18 | **serious** | `article[data-ten=…]` — thẻ giọng |
+| `aria-allowed-role` | 18 | minor | cùng phần tử |
+| `color-contrast` | 14 | serious | `.lv-chon-noi > small` · `.lv-loc-tao` · `#lv-da-nut-moi` … |
+| `landmark-unique` | 3 | moderate | |
+| `aria-progressbar-name` | 2 | serious | `.lv-da-thanh` |
+
+**Đã sửa `aria-progressbar-name`** (thêm `aria-label` nói cả hai số: *"3/8 khối"*
+trả lời được câu "còn bao nhiêu", "37%" thì không). Đo lại: **55 → 53 nút,
+5 → 4 mã**.
+
+### ⛔ CÒN LẠI MỘT QUYẾT ĐỊNH, KHÔNG PHẢI MỘT BẢN VÁ
+
+36 nút (`nested-interactive` + `aria-allowed-role`) đều đến từ **một** dòng:
+
+```html
+<article ... tabindex="0" role="button" aria-pressed="…">
+    <button class="lv-the-song lv-nghe">…</button>   <- Nghe thu
+    <button class="btn sm ghost lv-the-xem">Chi tiết</button>
+</article>
+```
+
+Một phần tử `role="button"` **chứa** hai `<button>` thật. Trình đọc màn hình
+trình bày thẻ như **một** nút, và hai điều khiển bên trong thành không với tới
+được một cách tin cậy.
+
+🔴 **Và cấu trúc này đã gây HAI lỗi thật, cả hai đã được vá bằng JS:**
+
+| ngày | lỗi | bản vá |
+|---|---|---|
+| 04/09 | bấm chuột vào thẻ **không bao giờ** mở được panel — `closest(BEN_TRONG)` khớp vào **chính cái thẻ** | `if (trong && trong !== t) return;` |
+| — | Enter trên nút "Nghe thử" bị **nuốt** bởi handler của thẻ | `if (e.target !== t) return;` |
+
+⇒ Hai bản vá ấy chữa **triệu chứng**. `axe` chỉ vào **nguyên nhân**: cái thẻ
+không nên là một nút.
+
+**Bản vá đúng** — gỡ `role="button"`/`tabindex`/`aria-pressed` khỏi `<article>`;
+chuột vẫn bấm-cả-thẻ (mẫu quen thuộc), bàn phím đi qua nút **"Chi tiết"** vốn
+đã có sẵn.
+
+⚠️ **Chưa làm, và cố ý.** Nó đổi điều hướng bàn phím của **mọi** khách trên màn
+Giọng, và hai phép kiểm trong `test_500` đang chốt đúng hai bản vá JS ở trên.
+Đó là một quyết định sản phẩm, không phải một lượt dọn lint — nên nó được nêu ra
+kèm bằng chứng (2 lỗi cũ + 36 nút) chứ không được làm lặng lẽ ở cuối một phiên
+dài.
+
+### ⚠️ Bẫy môi trường: Git Bash biến `/ltt-voice` thành `C:/Program Files/Git/ltt-voice`
+
+MSYS tự chuyển đối số trông giống đường dẫn tuyệt đối. Bộ đo báo *"Cannot
+navigate to invalid URL"* và URL trong log là `http://127.0.0.1:8123C:/Program
+Files/...`. Chạy với `MSYS_NO_PATHCONV=1`.
+
+⭐ Và `check_a11y` **từ chối so mốc khi phạm vi khác** — nó làm đúng: quét ít
+route hơn cho ra số nhỏ hơn, và số nhỏ hơn *đọc lên y hệt một cải thiện*. Nên
+lượt soát này chạy qua một script chỉ-đọc, **không** `--accept`, để không âm thầm
+hạ phạm vi bảo vệ của mốc công khai.
