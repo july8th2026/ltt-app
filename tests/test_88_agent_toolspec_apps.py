@@ -11,6 +11,35 @@ from platform_core.agent.tools import (ToolParamsError, discover_tools,
 from platform_core.registry import credit_for, discover
 
 
+@pytest.fixture(autouse=True)
+def _moi_provider_deu_song(monkeypatch):
+    """Tệp này chốt **HỢP ĐỒNG TOOLSPEC** (tham số min/max, giá, output), không
+    chốt provider nào đang sống. Mệnh đề ấy phải **bất biến với tập hợp
+    provider** — nếu không, mỗi lần nền tảng retire một provider thì một phép
+    kiểm về toolspec lại đỏ, và người ta sẽ hạ kỳ vọng, tức mất luôn thứ nó canh.
+
+    ⚠️ Từ pha 04 (AI CLEAN REBUILD V2) `gemini` đã ngừng, mà
+    `taoanh/manifest.py:64,149` và `thumbnail/manifest.py:85` khai
+    `"providers": ["gemini"]` ⇒ enum `model_ref` của 5 tool thành **rỗng**, và
+    `validate_tool_params` nay fail-closed nên nó **từ chối mọi model**. Đó là
+    trạng thái ĐÚNG của pha 04; chốt trạng thái ấy nằm ở
+    `tests/test_1000_chan_provider_da_ngung.py`.
+
+    ⏭️ Pha 06 sẽ trỏ hai manifest ấy sang `ltt_image`. Lúc đó fixture này thành
+    **thừa và phải gỡ** — nó đang che một sự thật tạm thời, không phải một sự
+    thật lâu dài.
+    """
+    import dataclasses
+
+    from platform_core import providers
+
+    monkeypatch.setattr(
+        providers, "REGISTRY",
+        {pid: dataclasses.replace(p, is_active=True)
+         for pid, p in providers.REGISTRY.items()},
+        raising=False)
+
+
 # 🗑️ Bo 11 tool ngay 2026-08-25 cung ba app `kichban`, `mediatools`, `demo`:
 #    text.script · text.generate · asset.image · asset.images · asset.video ·
 #    asset.audio · video.extract_frames · media.merge_image · media.merge_video ·

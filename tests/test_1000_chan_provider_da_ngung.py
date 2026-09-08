@@ -168,6 +168,37 @@ def test_autosubvideo_khong_ra_mang(bit_mang):
     assert bit_mang == [], f"co luot ra mang: {bit_mang}"
 
 
+# ── 5. Enum RỖNG phải là "không gì hợp lệ", không phải "không có ràng buộc" ──
+
+def test_model_ref_enum_rong_thi_TU_CHOI_chu_khong_tha_cua():
+    """🔴 Lỗ fail-open mà pha 04 **kích hoạt**, và vì thế pha 04 phải vá.
+
+    `taoanh/manifest.py:64,149` và `thumbnail/manifest.py:85` khai
+    `"providers": ["gemini"]`. Gemini ngừng ⇒ `model_options` trả rỗng ⇒
+    `rule["values"]` rỗng. Bản cũ viết:
+
+        if kind == "model_ref" and rule.get("values") and value not in ...
+
+    Danh sách rỗng là **falsy**, nên phép kiểm **tự tắt** và `image.generate`
+    nhận bất kỳ chuỗi nào — kể cả `"model-khong-co"`.
+
+    Lỗ có sẵn từ trước, nhưng chưa ai chạm vì enum chưa bao giờ rỗng. Việc
+    retire provider biến nó từ **tiềm ẩn** thành **đang mở**, nên nó thuộc
+    changeset này chứ không phải một việc ngoài phạm vi.
+    """
+    from platform_core.agent.tools import ToolParamsError, validate_tool_params
+
+    with pytest.raises(ToolParamsError):
+        validate_tool_params("image.generate",
+                             {"prompt": "x", "model": "model-khong-co", "count": 1})
+    # …và cả một tên model TRÔNG hợp lệ cũng phải bị từ chối, vì hiện KHÔNG
+    # provider ảnh nào được phép phục vụ tool này.
+    with pytest.raises(ToolParamsError):
+        validate_tool_params("image.generate",
+                             {"prompt": "x", "model": "gemini-2.5-flash-image",
+                              "count": 1})
+
+
 # ── Đối chứng: cái bẫy có thật sự nổ được không? ─────────────────────────────
 
 def test_bay_ra_mang_that_su_no(bit_mang):
