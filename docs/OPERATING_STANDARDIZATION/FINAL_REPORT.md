@@ -11,11 +11,11 @@
 | Tệp `.md` **được git theo dõi** đã quét | **822** (`git ls-files`, trừ `docs/_luutru/`) |
 | Nguồn có mệnh lệnh cadence toàn cục / kế hoạch | **30** |
 | Rule ghi vào inventory | **44** |
-| **Rule xoá khỏi HEAD** | **9** |
+| **Rule xoá khỏi HEAD** | **11** |
 | Rule hợp nhất vào canonical | **11** |
 | Rule giữ + trỏ về canonical | **11** |
 | Tách ra thành "sự thật kỹ thuật, không phải chính sách" | **6** |
-| **Chính sách vận hành cạnh tranh còn lại** | **1** — có chủ, đã ghi nợ |
+| **Chính sách vận hành cạnh tranh còn lại** | **0** *(đóng nốt 15:55 — xem dưới)* |
 
 ### Cadence mâu thuẫn tìm thấy — **5 bản khác nhau** cùng sống trong HEAD
 
@@ -32,13 +32,34 @@ nguồn duy nhất đặt `--doi` làm mặc định — bị hai tệp mà mọ
 (`CLAUDE.md`, `AGENTS.md`) nói ngược lại. Hợp đồng canonical giữ lựa chọn của
 `DEVELOPMENT_WORKFLOW.md`.
 
-### Còn lại 1 — và vì sao **cố ý** không sửa
+### Ba mục hoãn ban đầu — nay **đóng cả ba**
 
-`docs/CHATLTT_V3/00_KE_HOACH_V3.md:253` thuộc worktree `claude/chatltt-v3-agentic`
-**đang sống**. Sửa một tệp phiên khác đang mở là tạo xung đột merge cho họ, và họ
-sẽ giải bằng cách giữ bản của họ — tức việc sửa bị hoàn tác, chỉ chậm hơn. Bàn
-giao qua `SESSION_MIGRATION_NOTE.md`, và ghi vào bảng `NO_CU` của bánh cóc **kèm
-tên chủ và lý do**.
+Lúc 12:00 tôi hoãn ba tệp vì worktree của chúng **đang sống**, và sửa một tệp
+phiên khác đang mở là tạo xung đột merge cho họ.
+
+| Tệp | Cách đóng |
+|---|---|
+| `docs/LTT_VOICE/VOICE_UI_EXECUTION_PLAN.md` | **phiên chủ tự sửa** sau migration note |
+| `docs/CHATLTT_V3/00_KE_HOACH_V3.md:253` | tôi sửa lúc 15:55 — xem dưới |
+| `docs/auto_scan_video_v4/STATE_V4.md:400` | tôi sửa lúc 15:55 — xem dưới |
+
+⭐ **Lý do hoãn hết hiệu lực, và tôi ĐO điều đó chứ không đoán:**
+
+```
+$ git rev-parse admin-mvp-v3:<tep>  vs  <nhanh-kia>:<tep>
+  GIONG NHAU  docs/CHATLTT_V3/00_KE_HOACH_V3.md      (chatltt-v3-agentic)
+  GIONG NHAU  docs/auto_scan_video_v4/STATE_V4.md    (phien/asv-v4)
+```
+
+Cùng một băm trên mọi nhánh ⇒ **không ai đang sửa chúng**, và cả hai phiên đều
+không chạy (`list_sessions`). Rủi ro tôi hoãn vì nó không còn tồn tại.
+
+⚠️ Một worktree **tồn tại** không có nghĩa là một phiên **đang sửa**. Tôi đã lẫn
+hai thứ đó lúc 12:00 — thận trọng đúng lúc ấy, nhưng đáng lẽ phải đo lại thay vì
+để nó thành nợ vĩnh viễn.
+
+⇒ Bảng `NO_CU` của bánh cóc nay **rỗng**, và bộ dò đỏ nếu ai để lại một mục đã
+được dọn — nên trạng thái này không trôi ngược được.
 
 ---
 
@@ -167,7 +188,7 @@ chỉ liệt kê **đúng tệp của nó** khi commit.
 |---|---|
 | `docs/**` vẫn hạ cấp xuống đầy đủ | **70 tệp test đọc `docs/`** — đã `grep`, không đoán. Luật "docs thì trơ" sẽ bỏ qua 70 phép kiểm **im lặng**. Cần bản khai chủ sở hữu cho `docs/`, không phải luật miễn trừ. |
 | `@pytest.mark.slow` dùng 1 lần mà **không khai** trong `pytest.ini` | chưa gãy vì `--strict-markers` chưa bật |
-| 3 phiên còn cadence riêng | `SESSION_MIGRATION_NOTE.md` §"Việc còn lại" |
+| ~~3 phiên còn cadence riêng~~ | ✅ **đóng cả ba** lúc 15:55 |
 | 11 tệp trích `OPERATING_CONTRACT §5/§10/§13` **không tồn tại trong HEAD** | Nay đã có hợp đồng thật; các trích dẫn cũ trỏ vào một prompt của phiên đã đóng, không kiểm chứng được |
 
 ### Hoãn có chủ ý
@@ -267,15 +288,15 @@ phép kiểm chưa từng đỏ không chứng minh gì.
 
 | Hạng mục | Điểm | Căn cứ |
 |---|---:|---|
-| Single Source of Truth | **9**/10 | 1 nguồn canonical; còn **1** nguồn cạnh tranh, có chủ + ghi nợ |
-| Rule Cleanliness | **9**/10 | 9 rule xoá khỏi HEAD; 5 cadence → 1; nợ còn lại là *cố ý*, không phải sót |
+| Single Source of Truth | **10**/10 | 1 nguồn canonical; **0** nguồn cạnh tranh; bánh cóc rỗng và tự canh cả hai chiều |
+| Rule Cleanliness | **10**/10 | **11** rule xoá khỏi HEAD; 5 cadence → 1; không còn nợ |
 | Gate Efficiency | **8**/10 | gỡ 2 nguồn chạy trùng; `--doi` từ **cửa giả** thành dùng được. **−2: chưa đo giây thật** |
 | Test Targeting | **8**/10 | 100 % → 22 %/9 %/0,2 % **số tệp test**; fail-open còn nguyên. **−2: `docs/**` chưa xong** |
 | Safety | **10**/10 | 0 worktree bị chạm · 16 tệp phiên khác nguyên vẹn · diff surgical · kết dòng khớp git từng tệp · đối chứng byte-exact |
 | Session Re-anchor | **9**/10 | note 4 dòng + bảng việc theo từng phiên. **−1: cần người dùng chuyển tay** |
 | Maintainability | **9**/10 | bánh cóc **trong gate**, có self-test, chốt **TẬP HỢP** không chốt số lượng, nợ cũ kèm chủ + lý do |
 
-### **FINAL SCORE: 88/100**
+### **FINAL SCORE: 90/100**
 
 Trừ điểm ở đúng ba chỗ, và cả ba đều **đo được chứ không phải cảm tính**: chưa có
 số giây thật cho `--doi`; `docs/**` chưa có chủ; một cadence còn sống ở tệp của

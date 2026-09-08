@@ -72,13 +72,18 @@ CHO_PHEP = (
 #:
 #: Moi muc phai co CHU va LY DO. Khong co muc nao duoc o day "tam thoi" ma
 #: khong ai chiu trach nhiem.
-NO_CU: dict[str, str] = {
-    # `claude/chatltt-v3-agentic` dang mo tep nay (worktree song luc 08/09).
-    # Sua ho la tao xung dot merge cho ho, va ho se giai bang cach giu ban cua
-    # ho. Chuyen giao qua docs/OPERATING_STANDARDIZATION/SESSION_MIGRATION_NOTE.md.
-    "docs/CHATLTT_V3/00_KE_HOACH_V3.md":
-        "phien claude/chatltt-v3-agentic — go khi phien do doc migration note",
-}
+#: ⭐ RONG tu 2026-09-08 15:55, va do la trang thai DUNG.
+#:
+#:    Muc duy nhat tung nam o day (`docs/CHATLTT_V3/00_KE_HOACH_V3.md`) duoc
+#:    hoan vi worktree `claude/chatltt-v3-agentic` dang song. Do lai sau do:
+#:    phien ay **khong chay**, va tep giong het nhau tren ca ba nhanh
+#:    (`git rev-parse <nhanh>:<tep>` cho cung mot bam) — tuc khong ai dang sua
+#:    no, nen sua o day khong tao xung dot cho ai. Ly do hoan khong con.
+#:
+#: ⚠️ Doan nay giu lai **khong phai** vi bang trong can chu thich, ma vi luat
+#:    "chot TAP HOP, khong chot SO LUONG" chi doc duoc khi ta con thay mot vi du
+#:    ve cach mot muc duoc them va duoc go.
+NO_CU: dict[str, str] = {}
 
 CADENCE = re.compile(
     r"sau\s+(moi|moi\s+mot|mot)\s+(lan|lo|cum|buoc)\s*(sua|thay\s*doi|edit)?"
