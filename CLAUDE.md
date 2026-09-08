@@ -77,6 +77,17 @@ mã nguồn**: `grep`/`Glob` trên `apps/`, `platform_core/`, `server/`.
 16. **Ghi file cấu hình phải KHÔNG BOM**; **`.ps1` thuần ASCII**; **đừng viết
     Python inline qua PowerShell**. Cả ba đã thực sự làm sập production ở dự án
     này. Toàn văn + luật thứ tư: `AGENTS.md` §5.
+
+    ```powershell
+    [IO.File]::WriteAllText($path, $text, (New-Object Text.UTF8Encoding($false)))
+    ```
+
+    ⛔ Đoạn mã này nằm ở đây chứ không chỉ ở `AGENTS.md` vì lời văn *"phải không
+    BOM"* **không ngăn được** lỗi: `Out-File -Encoding utf8` trông đúng và vẫn
+    chèn BOM, `json.load()` vỡ, `/health/ready` trả 503 trong khi dịch vụ vẫn
+    chạy. Người đọc cần biết viết **thế nào**, không chỉ biết **đừng** làm gì.
+    `tests/test_61_setup_scripts.py::test_claude_md_exists_at_root` ghim đúng
+    chuỗi này.
 17. **Kiểm bằng trình duyệt sau mỗi thay đổi giao diện**, và chốt trên **URL công
     khai** (`https://app.lttstudios.com`), không chỉ loopback `127.0.0.1:8100` —
     loopback bỏ qua Cloudflare (cache, CSP biên, minify).
