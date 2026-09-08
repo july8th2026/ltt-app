@@ -39,7 +39,26 @@ _BAT = frozenset({"1", "true", "yes", "on", "bat"})
 
 #: Trần thời gian một run được phép chạy. `TIMED_OUT` là trạng thái **kết thúc**,
 #: nên nó kéo theo `finally` — đó là điểm của `M10`.
-TRAN_RUN = timedelta(hours=24)
+#
+# 🔴 **PHẢI NGẮN HƠN `credit.TU_HOAN_SAU`, không được BẰNG.** Trước 08/09 cả hai
+#    đều là 24 giờ, và đó là một cuộc đua về **tiền**:
+#
+#        TRAN_RUN 24h    -> run tu het han, `ket_so` quyet toan `actual_cost`
+#        TU_HOAN_SAU 24h -> so tu hoan TOAN BO khoan giu
+#
+#    Cùng một mốc ⇒ khách trả `actual_cost` hay trả **0** phụ thuộc vào việc
+#    vòng quét nào chạy trước. Sổ vẫn cân (cả hai đường đều luỹ đẳng theo khoá),
+#    nhưng **số tiền thu được là không tất định** — và một hệ tính tiền không
+#    tất định thì không đối soát được.
+#
+# ⭐ Đường tự hoàn là **lưới đỡ** cho khoản giữ không ai kết sổ; đường TTL của
+#    run là **đường chính**. Lưới đỡ phải bung SAU đường chính, nếu không nó
+#    không phải lưới đỡ mà là một đường thứ hai cạnh tranh.
+#
+#    Chính `credit.py` đã viết đúng lập luận này cho cặp *báo* / *tự hoàn*
+#    (6h → 24h) — chỗ thiếu là không ai áp nó cho cặp *TTL run* / *tự hoàn*.
+#    `tests/test_965` ghim quan hệ ấy để nó không lặng lẽ bằng nhau trở lại.
+TRAN_RUN = timedelta(hours=20)
 
 
 def _bay_gio() -> datetime:
