@@ -14628,3 +14628,6 @@ msgstr "The language you speak in the sample clip, not the language you will rea
 
 msgid "Ngôn ngữ của clip"
 msgstr "Clip language"
+
+msgid "Workflow mới"
+msgstr "New workflow"

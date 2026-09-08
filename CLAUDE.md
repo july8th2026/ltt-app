@@ -92,6 +92,57 @@ C:\LTTPlatform\
 trắng, mất âm thầm, không báo lỗi. Sửa trong thư mục nguồn rồi chạy lại
 `setup\2-cai-dat.ps1`.
 
+## ⭐ CHƯA CÓ KHÁCH — đừng tiêu công vào việc rà soát ảnh hưởng khách hàng
+
+Chủ sản phẩm chốt lại **07/09/2026**: *"Hệ thống không có khách nên không cần
+tra rà soát hay lo ngại vấn đề liên quan."*
+
+**Nghĩa là ĐỪNG làm những việc sau** — chúng chỉ có giá trị khi có người đang
+dùng, và ở đây chúng chỉ làm chậm:
+
+- rà soát tương thích ngược, giữ đường cũ "cho khách đang dùng"
+- chia pha triển khai, bật cờ từ từ, canary theo phần trăm
+- viết lớp tương thích cho dữ liệu cũ khi **chưa có dữ liệu cũ nào của khách**
+- dừng lại hỏi *"việc này có ảnh hưởng người dùng không?"*
+- nêu rủi ro "khách sẽ gặp lỗi" như một lý do để không làm
+
+⇒ Thấy một thiết kế sai thì **sửa thẳng**, không bọc nó trong một đường di trú.
+
+### ⛔ Nhưng bốn thứ này KHÔNG phải chuyện khách hàng, nên vẫn giữ
+
+| | Vì sao nó tồn tại — và lý do đó **không** liên quan tới khách |
+|---|---|
+| **Gate phải xanh** | Bảo vệ **ta** khỏi mất thời gian. Một `NameError` lên production vẫn là sai dù không ai thấy |
+| **Xoá dữ liệu không đảo được** | "Chưa có khách" không làm một lệnh `DROP` đảo lại được |
+| **UAC** | Ràng buộc **cơ học** — người dùng phải bấm chuột. Không phải chuyện quyền |
+| **Hỏi phiên khác trước khi deploy** | Deploy chép **cả cây nguồn**; không tách được phần của một phiên |
+
+### ⚠️ Phạm vi thật của câu "chưa có khách" — đo được, đừng suy rộng
+
+Đo từ `C:\LTTPlatform\logs\ltt-job-worker*.jsonl`, **28 ngày** (11/08 → 07/09):
+
+```
+868   job hoàn tất          10.663  lượt nhặt ltt_llm.chat
+1.075 lượt anhnoibo.generate   147  ltt_voice.synthesize    22  vps.provision
+145   dòng "GIU CHO TREO: <n> khoan, <n> credit cua khach dang bi giu"
+0     job agent.advance     ← Agent/Canvas CHƯA TỪNG CHẠY
+```
+
+⇒ **Có lưu lượng thật và có bút toán credit thật** trên nền tảng. Cái **thật sự
+không có khách** là **lớp Agent/Canvas/Workflow** — 0 lượt chạy trong 28 ngày.
+
+**Cách áp dụng cho đúng:**
+
+- `platform_core/agent/`, Canvas, Workflow V2 → **tự do thiết kế lại**, không có
+  ai đứng trên đó.
+- `credit.py`, `jobs.py`, `job_runner.py`, `gpu_lease.py` → **đang chạy thật**.
+  Vẫn sửa được thoải mái, nhưng lý do cẩn thận ở đây là **tính đúng của sổ
+  sách**, không phải "sợ khách phàn nàn". Đừng dùng câu "chưa có khách" để bỏ
+  qua một bút toán lệch.
+
+⚠️ **Quyền này gắn với một điều kiện, và điều kiện sẽ hết hạn.** Ngày có khách
+trả tiền thật, mục này hết hiệu lực — đừng mang nó sang một bối cảnh đã đổi.
+
 ## Quy tắc bắt buộc
 
 **1. Ghi file cấu hình phải KHÔNG BOM.**
