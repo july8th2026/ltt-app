@@ -170,6 +170,162 @@ foreach ($d in @($Root, $dataDir, $secrets, $logs, $backups, $tools)) {
 }
 Ok "Da tao $Root"
 
+# Tim python SOM: khoi xuat ngay duoi can no de kiem chuoi alembic, va cong
+# bien dich ben duoi dung lai cung bien. Truoc day phep tim nay nam trong cong
+# bien dich; tach ra vi nay co HAI cho dung no.
+$pyKiemSom = $null
+foreach ($ung in @($venvPy, 'python', 'py')) {
+    if ($ung -and (Get-Command $ung -ErrorAction SilentlyContinue)) { $pyKiemSom = $ung; break }
+}
+
+Head 'Nguon ban giao: xuat COMMIT ra thu muc tam'
+# ---------------------------------------------------------------------------
+# !! VI SAO KHONG CHEP TU CAY SONG NUA -- mot su co that, 08/09/2026 luc 10:11.
+#
+#    Mot phien Claude khac chay `git stash pop` GIUA cua so robocopy
+#    (10:11:07-10:13:37). Production nhan `platform_core/jobs.py` o trang thai
+#    TRUNG GIAN: 526 dong, trong khi commit co 478. Deploy bao EXITCODE=0,
+#    /health/ready 200, va `dau_van_tay.json` khai dung commit do -- nen KHONG
+#    dau hieu nao noi rang dia mang thu khac. Chi `nghiem_thu_deploy` so voi
+#    commit moi lo ra, 15 phut sau.
+#
+# !! VA BA LOP BAO VE DEU KHONG DU. Truoc luot ay toi da: (1) danh sach trang
+#    `git status`, (2) kiem `mtime` 60 giay + `compileall`, (3) hoi lai tien
+#    trinh sat truoc khi bam. Ca ba deu tra loi ve MOT THOI DIEM; khong lop nao
+#    giu duoc cay dung yen suot 2,5 phut robocopy chay sau do.
+#
+# ** Ket luan cua mot phien khac, va no dung: *cua so ghi cua `git` khong dong
+#    duoc tu phia nguoi ghi -- chi dong duoc tu phia nguoi doc.* Nen nguon phai
+#    BAT BIEN, khong phai duoc canh chung.
+#
+# !! `git archive` chu KHONG `git worktree add`: archive khong cham `.git` cua
+#    cay song, con worktree thi ghi vao `.git/worktrees`. Voi bon phien chay
+#    song song tren cung mot `.git`, khac biet do khong nho.
+#
+# !! GHI RA TEP TAR ROI GIAI NEN, KHONG NOI ONG. Ong cua PowerShell 5.1 di qua
+#    tang van ban va lam HONG du lieu nhi phan. `git archive | tar -x` la mot
+#    cai bay im lang.
+#
+# ---------------------------------------------------------------------------
+# !! DANH SACH VAN CHUYEN -- va day la phan suyt lam hong production.
+#
+#    Do that 08/09: ban xuat commit co 3.650 tep, ban dang chay co 4.556.
+#    Trong 912 tep chenh, phan lon la rac (cache cong cu 148, bench/*.png 664)
+#    -- nhung MUOI tep la thu production DANG DUNG:
+#
+#      apps/upscalevideo/vendor/engine/realesrgan-ncnn-vulkan.exe
+#      apps/upscalevideo/vendor/engine/vcomp140.dll  +  vcomp140d.dll
+#      apps/upscalevideo/vendor/engine/models/*.bin  +  *.param   (6 tep)
+#      yolov8n.pt
+#      tools/vendor_a11y/axe.min.js
+#
+#    Chung gitignored CO CHU Y (`.gitignore:176 apps/*/vendor/`, `:180 *.pt`)
+#    va duoc doc LUC CHAY:
+#      apps/upscalevideo/engine.py:30  _EXE = _ENGINE_DIR / "realesrgan-ncnn-vulkan.exe"
+#
+# ** Mot ban `git archive` THUAN se lam app `upscalevideo` chet tren production,
+#    va chet IM LANG: EXITCODE=0, /health/ready 200, va `nghiem_thu_deploy`
+#    bao "thieu 0" vi no CHI DEM TEP .py.
+#
+# ** Nen danh sach duoi day khong phai mot tien ich -- no la HOP DONG. No noi
+#    ra mot su that truoc nay chi dung NHO TINH CO: "nhung duong nay gitignored
+#    nhung production can". Them mot vendor moi ma quen khai vao day thi
+#    `tests/test_505_nguon_ban_giao.py` do, chu production khong thieu tep.
+#
+# !! `tools\vendor_a11y\axe.min.js` KHONG o day, du no cung gitignored va cung
+#    la nhi phan. Do that (grep toan kho): nguoi doc DUY NHAT cua no la
+#    `tools/check_a11y.py`, va cong cu do chay TU CAY NGUON TRUOC khi deploy --
+#    production khong bao gio doc no.
+#
+# ** Khai them mot duong khong ai can la lam danh sach dai ra ma khong chac
+#    hon, va moi dong thua se duoc doc nhu mot rang buoc THAT. Danh sach nay
+#    chi dung khi no chi chua thu production DOC LUC CHAY.
+$VAN_CHUYEN = @(
+    'apps\*\vendor',
+    'yolov8n.pt'
+)
+
+$srcChep  = $src          # duong lui: cay song, y nhu truoc 08/09
+$xuatTam  = $null
+$shaXuat  = ''
+if (Test-Path $gitPath -PathType Container) {
+    try { $shaXuat = (& git -C $src rev-parse HEAD 2>$null) } catch { $shaXuat = '' }
+    if ($LASTEXITCODE -ne 0) { $shaXuat = '' }
+    $global:LASTEXITCODE = 0
+}
+if ($shaXuat) {
+    $shaXuat = $shaXuat.Trim()
+    $xuatTam = Join-Path ([IO.Path]::GetTempPath()) ("ltt-xuat-" + $shaXuat.Substring(0, 12))
+    if (Test-Path $xuatTam) { Remove-Item $xuatTam -Recurse -Force }
+    New-Item -ItemType Directory -Path $xuatTam -Force | Out-Null
+    $tarTam = Join-Path ([IO.Path]::GetTempPath()) ("ltt-xuat-" + $shaXuat.Substring(0, 12) + ".tar")
+    Invoke-Ngoai { & git -C $src archive --format=tar -o $tarTam $shaXuat }
+    if (-not (Test-Path $tarTam)) { throw "git archive khong tao duoc $tarTam" }
+    Invoke-Ngoai { & tar -xf $tarTam -C $xuatTam }
+    Remove-Item $tarTam -Force -ErrorAction SilentlyContinue
+    $soXuat = (Get-ChildItem $xuatTam -Recurse -File).Count
+    if ($soXuat -lt 100) { throw "Ban xuat chi co $soXuat tep - khong hop ly, DUNG deploy." }
+    Ok "Xuat commit $($shaXuat.Substring(0,12)): $soXuat tep (nguon BAT BIEN)"
+
+    # Chep cac duong DA KHAI tu cay song vao ban xuat. Chung la nhi phan vendor
+    # khong ai soan, nen cua so dua o day gan bang khong -- khac han ca cay.
+    foreach ($mau in $VAN_CHUYEN) {
+        foreach ($m in (Get-ChildItem (Join-Path $src $mau) -ErrorAction SilentlyContinue)) {
+            $tuongDoi = $m.FullName.Substring($src.Length).TrimStart('\')
+            $dich = Join-Path $xuatTam $tuongDoi
+            $chaDich = Split-Path -Parent $dich
+            if (-not (Test-Path $chaDich)) { New-Item -ItemType Directory -Path $chaDich -Force | Out-Null }
+            if ($m.PSIsContainer) {
+                $rcV = robocopy $m.FullName $dich /E /NFL /NDL /NJH /NJS /NP /R:2 /W:2
+                if ($LASTEXITCODE -ge 8) { throw "robocopy van chuyen '$tuongDoi' loi (ma $LASTEXITCODE)" }
+                $global:LASTEXITCODE = 0
+            } else {
+                Copy-Item $m.FullName $dich -Force
+            }
+            Ok "Van chuyen: $tuongDoi"
+        }
+    }
+
+    # !! CHUOI ALEMBIC PHAI GIAI DUOC TRONG BAN XUAT -- chan TRUOC Stop-Service.
+    #
+    #    Do that 08/09: mot migration da commit (`e7b2c94a1d38`) co cha la mot
+    #    tep CHUA THEO DOI. Bo tep cha ra khoi cay thi `ScriptDirectory` nem
+    #    `KeyError` NGAY khi dung -- tuc alembic khong giai duoc head NAO CA.
+    #    Voi nguon la `git archive`, moi tep chua commit deu vang mat, nen mot
+    #    chuoi phu thuoc vao tep untracked se chet o `alembic upgrade head` --
+    #    va buoc do chay SAU `Stop-Service`.
+    if ($pyKiemSom) {
+        $maAl = 0
+        $maNguon = @'
+import sys
+from alembic.config import Config
+from alembic.script import ScriptDirectory
+cfg = Config(); cfg.set_main_option("script_location", sys.argv[1])
+try:
+    print("heads:", ScriptDirectory.from_config(cfg).get_heads())
+except Exception as e:
+    print("LOI:", type(e).__name__, e); sys.exit(1)
+'@
+        $tepAl = Join-Path ([IO.Path]::GetTempPath()) 'ltt-kiem-alembic.py'
+        Write-NoBom $tepAl $maNguon
+        $kqAl = & $pyKiemSom $tepAl (Join-Path $xuatTam 'alembic') 2>&1 | Out-String
+        $maAl = $LASTEXITCODE
+        $global:LASTEXITCODE = 0
+        Remove-Item $tepAl -Force -ErrorAction SilentlyContinue
+        if ($maAl -ne 0) {
+            Write-Host $kqAl -ForegroundColor Red
+            throw ("Chuoi alembic KHONG giai duoc trong ban xuat. Gan nhu chac chan " +
+                   "co mot migration CHUA COMMIT dang lam cha cho mot migration da " +
+                   "commit. Commit no roi chay lai. DUNG deploy, dich vu chua bi dung.")
+        }
+        Ok "Chuoi alembic giai duoc trong ban xuat"
+    }
+
+    $srcChep = $xuatTam
+} else {
+    Canh "Khong doc duoc commit - chep TU CAY SONG (duong lui). Ban giao co the chua tep chua commit."
+}
+
 Head 'Kiem ma nguon truoc khi dong vao ban dang chay'
 # ---------------------------------------------------------------------------
 # VI SAO CHOT NAY O DAY, VA O TRUOC Stop-Service
@@ -186,10 +342,7 @@ Head 'Kiem ma nguon truoc khi dong vao ban dang chay'
 # Chot chay TRUOC `Stop-Service`: hong o day thi dich vu VAN DANG CHAY va
 # khong ai mat gi. Dat sau do thi ta da tu tay tao ra downtime roi moi phat
 # hien khong deploy duoc.
-$pyKiem = $null
-foreach ($ung in @($venvPy, 'python', 'py')) {
-    if ($ung -and (Get-Command $ung -ErrorAction SilentlyContinue)) { $pyKiem = $ung; break }
-}
+$pyKiem = $pyKiemSom
 if ($pyKiem) {
     # compileall: doc va bien dich MOI tep .py trong cay nguon. -q chi in loi.
     # /XD cua robocopy o duoi khong ap dung o day nen loai tay may thu muc lon.
@@ -232,9 +385,23 @@ if ($pyKiem) {
     #    giu khoa deploy. Mot buoc khong co han cho ma treo thi giu khoa VO HAN
     #    -- tuc no bien mot loi "cham" thanh mot loi "chan ca nhom". Do la loi
     #    cua chinh khoa nay neu khong sua.
+    # !! CHAY TREN `$srcChep` (ban xuat), KHONG tren `$src` (cay song). Hai he
+    #    qua, va ca hai deu la ban va cho mot su co that:
+    #
+    #      1. Pham vi thu hep con DUNG thu sap giao. Truoc 08/09 no quet ca
+    #         `.claude/worktrees/` -- sau checkout cua bon phien -- nen mot tep
+    #         dang duoc ghi o cay NGUOI KHAC chan duoc deploy. Da xay ra luc
+    #         09:43: `tac_vu.py` cua mot phien khac bi doc giua luc ghi.
+    #      2. Thong diep "Co tep .py KHONG bien dich duoc" LAN DAU TIEN noi dung
+    #         nghia. Truoc day no co the nghia la "co nguoi dang go phim", va
+    #         nguoi doc di tim mot tep hong khong ton tai.
+    #
+    # ** `-j 0` giu nguyen: no la so LOI (10 tren may nay), va nay chi tren MOT
+    #    cay chu khong phai sau cay. Bo `-j 0` la sua nham cho -- xem chu thich
+    #    dai o duoi ve nguyen nhan that cua vu treo 01/09 (cha chet, con mo coi).
     $bo = @('-m', 'compileall', '-q', '-j', '0',
             '-x', '(node_modules|\.git|\.venv|venv|__pycache__|dist|build)',
-            $src)
+            $srcChep)
     # !! DUNG .NET Process TRUC TIEP, KHONG DUNG `Start-Process -PassThru`.
     #
     #    Do that 01/09: voi `Start-Process -PassThru`, `$tt.ExitCode` tra ve
@@ -429,7 +596,7 @@ New-Item -ItemType Directory -Path $appDir -Force | Out-Null
 # /R:2 /W:2 la BAT BUOC. Mac dinh robocopy la /R:1000000 /W:30 - mot file bi
 # khoa hay ACL hong se treo VO HAN, trong khi dich vu DA bi dung o tren. Loi
 # do da that su lam production ngung 20 phut ngay 2026-08-05.
-$rc = robocopy $src $appDir /E /NFL /NDL /NJH /NJS /NP /R:2 /W:2 `
+$rc = robocopy $srcChep $appDir /E /NFL /NDL /NJH /NJS /NP /R:2 /W:2 `
       /XD data secrets logs .venv venv __pycache__ .pytest_cache .git dist build temp_videos `
          node_modules .playwright-cli .playwright-mcp .claude test-results tmp `
       /XF *.pyc *.log
@@ -455,10 +622,36 @@ try { $sha = (& git -C $src rev-parse HEAD 2>$null) } catch { $sha = "" }
 if ($LASTEXITCODE -ne 0) { $sha = "" }
 $global:LASTEXITCODE = 0
 if ($sha) {
-    $obj = [ordered]@{ commit = $sha.Trim()
-                       luc    = (Get-Date).ToString("s") }
+    # !! GHI CA NOI DUNG DA GIAO, KHONG CHI COMMIT DINH GIAO.
+    #
+    #    Su co 08/09 10:11: marker khai `c795ebc7` trong khi dia mang mot ban
+    #    `jobs.py` 526 dong (commit co 478). Marker KHONG SAI theo luat cu cua
+    #    no -- no ghi commit ma deploy DINH giao. Nhung nguoi doc hieu no la
+    #    "dia dang mang commit nay", va rollback sau do se khoi phuc mot ban
+    #    ban ma /health/version bao la hop le. Sai so day ve phia YEN TAM.
+    #
+    # ** `noi_dung` = sha256 cua danh sach (duong dan + kich thuoc) da chep. No
+    #    khong doi hoi doc noi dung tep nen re, va no DU de phat hien mot ban
+    #    giao khac voi ban giao khac. Voi nguon `git archive` + danh sach van
+    #    chuyen, hai lan deploy cung commit se cho cung `noi_dung`.
+    #
+    # ** `nguon` noi ban giao nay den TU DAU. `xuat` = bat bien; `cay-song` =
+    #    duong lui, va khi do `commit` chi la mot LOI KHAI, khong phai bang chung.
+    $dsTep = Get-ChildItem $appDir -Recurse -File | Sort-Object FullName
+    $chuoi = ($dsTep | ForEach-Object {
+        $_.FullName.Substring($appDir.Length).TrimStart('') + '|' + $_.Length
+    }) -join "`n"
+    $sha256 = [Security.Cryptography.SHA256]::Create()
+    $bam = ($sha256.ComputeHash([Text.Encoding]::UTF8.GetBytes($chuoi)) |
+            ForEach-Object { $_.ToString('x2') }) -join ''
+    $sha256.Dispose()
+    $obj = [ordered]@{ commit   = $sha.Trim()
+                       nguon    = $(if ($xuatTam) { 'xuat' } else { 'cay-song' })
+                       so_tep   = $dsTep.Count
+                       noi_dung = $bam
+                       luc      = (Get-Date).ToString("s") }
     Write-NoBom $vanTay ($obj | ConvertTo-Json -Compress)
-    Ok "Dau van tay: $($sha.Substring(0,12))"
+    Ok "Dau van tay: $($sha.Substring(0,12)) nguon=$($obj.nguon) noi_dung=$($bam.Substring(0,12))"
 } else {
     # Khong doc duoc git thi XOA marker cu. Mot marker cu la mot cau tra loi
     # SAI ma trong nhu that - te hon han khong co cau tra loi nao.
@@ -480,6 +673,12 @@ if (-not (Test-Path $autosubManifest) -or -not (Test-Path $autosubMeta)) {
     throw 'Release thieu Auto Sub Studio production bundle'
 }
 Ok 'Auto Sub Studio production bundle da co (khong can Node tren server)'
+
+# Don ban xuat: no da lam xong viec. Giu lai chi ton dia, va mot thu muc tam
+# mang ten commit rat de bi doc nham la "ban dang chay".
+if ($xuatTam -and (Test-Path $xuatTam)) {
+    Remove-Item $xuatTam -Recurse -Force -ErrorAction SilentlyContinue
+}
 
 Head 'Tai nguyen nguon di kem code'
 # data\translations va data\assets la TAI NGUYEN NGUON (ban dich giao dien,
