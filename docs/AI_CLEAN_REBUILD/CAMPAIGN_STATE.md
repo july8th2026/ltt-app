@@ -16,7 +16,7 @@
 | **00** | Campaign baseline | ✅ XONG 17:05 | PASS | tệp này, §Baseline |
 | **01** | Hard delete contract | ✅ XONG 17:10 | PASS | `FINAL_AI_CONTRACT.md` |
 | **02** | Forensic inventory | ✅ XONG 17:25 | **PASS — `INVESTIGATE = 0`** | `LEGACY_SURFACE_MATRIX.csv` · `OUTBOUND_EGRESS_MATRIX.csv` · `PRODUCT_DEPENDENCY_MAP.md` · `DELETE_DEPENDENCY_GRAPH.md` |
-| **03** | Target mapping only | ⬜ tiếp theo | — | `MIGRATION_MAP.md` |
+| **03** | Target mapping only | ✅ XONG 18:20 | PASS | `MIGRATION_MAP.md` |
 | 04 | Block legacy execution (fail-closed) | ⬜ | — | — |
 | 05 | Migrate TEXT/VLM → LTT_LLM | ⬜ | — | — |
 | 06 | Migrate IMAGE → LTT_IMAGE | ⬜ | — | — |
@@ -139,11 +139,28 @@ lượt merge ở pha 13 sẽ không xung đột.
 - **Không** wipe GitHub, **không** xoá/force-push `master`. Remote hygiene = pha 14.
 - **Ngoài phạm vi:** scheduler · priority · GPU fairness · runtime V2 · Public API V2.
 
-## Câu phải trả lời ở pha 03 trước khi gỡ fallback của planner
+## Câu treo từ pha 02 — ĐÃ ĐO Ở PHA 03
 
-Máy B chỉ có **một suất đồng thời** (`DONG_THOI_MAY_B=1`). Nếu *"máy B bận"* là
-trạng thái **thường xuyên**, gỡ fallback biến thất bại thành **mặc định** chứ
-không phải ngoại lệ. ⇒ **Đo tần suất trước, chốt hành vi thay thế sau.**
+**Hỏi:** gỡ fallback Gemini của `planner` có biến thất bại thành **mặc định** không?
+
+**Đáp: KHÔNG** — thất bại đã là mặc định sẵn. Đo 41.622 dòng log worker
+production, cửa sổ 28 ngày (11/08 → 08/09): 38 job hỏng vì máy B bận
+(38/3.435 lượt `ltt_llm.chat` ≈ **1,1%**), và thông điệp lỗi ghi nguyên văn
+`khong provider nao phuc vu duoc: ltt_llm: ban` — **danh sách chỉ có `ltt_llm`**,
+Gemini không hề nằm trong cascade của những lượt hỏng ấy.
+
+⛔ **Nhưng số 0 của Gemini KHÔNG phải bằng chứng nó vô dụng.** Đối chứng:
+`taoanh` chạy **2** lượt trong 28 ngày; `thumbnail`/`autosubvideo`/`taovideo`/
+`prompt_ai_ommi` chạy **0**. Con số ấy đo **sự vắng mặt của người dùng**, không
+đo sự vắng mặt của đường gọi. ⇒ **Rủi ro di trú 4 app kia là CHƯA ĐO**, pha 05/06
+phải tự dựng phép đo, không được viện dẫn bảng này.
+
+⚠️ Và một bẫy đếm đã tránh: 82 **dòng** log là **38 job** (một job chiếm 12
+dòng vì thử lại). Đọc theo dòng thổi phồng tần suất hỏng **2,2 lần**.
+
+🔑 **Thứ tự bắt buộc cho pha 05:** sửa **lỗi bí danh** `model_theo_provider={"ltt_llm":
+"ltt_llm"}` **trước**, rồi mới gỡ Gemini — nếu không, mọi lượt đang lặng lẽ đi
+Gemini sẽ thành lỗi ồn ào và bị quy sai thành *"LTT_LLM không đủ năng lực"*.
 
 ## Trạng thái commit
 
