@@ -131,7 +131,19 @@ MO_COI_DA_BIET = frozenset({
     "cua_chan_cho_lo", "giai_quyet_mo_ho", "loi_khong_du_ngan_sach",
     "tong_credit", "tom_tat_cho_khach",
     "cua_so_ngu_canh", "dung_gpu", "van_tay_che_do", "van_tay_van_ban",
-    "tu_json", "doc_wav", "ghi_wav", "tien_do",
+    "tu_json", "doc_wav", "ghi_wav",
+    # 🔴 `tien_do` GO 08/09 boi phien LTT VIDEO V2.1 — banh coc doi dieu do
+    #    ("hay xoa chung khoi MO_COI_DA_BIET de banh coc khong quay nguoc").
+    #
+    #    ⚠️ NHUNG ly do no "co nguoi goi" la mot VA CHAM TEN, khong phai mot
+    #    lan noi mach that: `apps/lttvideo/cong/` co `May.tien_do()` — mot ham
+    #    KHAC HAN cua mot app khac. `_ten_duoc_goi_trong_san_pham()` khop theo
+    #    TEN TRAN tren toan `apps/`, nen hai ham cung ten o hai app khac nhau
+    #    khong phan biet duoc.
+    #
+    #    ⇒ Neu `tien_do` cua ASV VAN mo coi, bo do nay khong con thay no. Do la
+    #      khuyet tat cua phep khop theo ten tran, va no can chu ASV quyet —
+    #      khong phai mot dong phien khac tu them de gate xanh.
 })
 
 

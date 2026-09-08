@@ -14208,10 +14208,6 @@ msgid "Bạn chưa có lần chạy nào."
 msgstr "You have no runs yet."
 
 #: apps/auto_scan_video
-msgid "Xem"
-msgstr "View"
-
-#: apps/auto_scan_video
 msgid "Lần chạy"
 msgstr "Run"
 
