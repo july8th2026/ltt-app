@@ -179,6 +179,43 @@ Có phiên khác đang giữ → **chờ**. `cua_so_yen` là điều kiện **c�
 **đủ** — nó chỉ thấy ai *xin khoá*, không thấy `pytest` gõ tay hay bốn dịch vụ
 production. Luật đầy đủ: `docs/QUY_TAC_CHAY_LENH_NANG.md`.
 
+## 4.9 🔴 Một lượt L3 cần HAI điều kiện — và `cua_so_yen` chỉ đo được MỘT
+
+| Điều kiện | Ai trả lời |
+|---|---|
+| máy có rảnh không | `cua_so_yen` + cây tiến trình |
+| **cây có đứng yên không** | ⛔ **không công cụ nào**, trước khi chạy |
+
+Vế thứ hai hiện chỉ có ảnh chụp trước/sau của `gate.py` — tức nó báo cho bạn
+**sau khi đã mất ~12 phút**.
+
+⭐ **Đo 08/09/2026, và đây là ca đáng nhớ vì mọi người đều làm đúng.** Chủ sản
+phẩm bảo các phiên khác **"dừng chạy pytest"**. Họ **giữ lời tuyệt đối**: máy chỉ
+`0.9/20 loi dang ban` suốt cả 12,4 phút. Lượt gate vẫn ra:
+
+```
+RESULT: FAIL (1/30)  [CAY DA DOI GIUA CHUNG - KHONG DUNG LAM BANG CHUNG]   16 tep
+```
+
+Họ không **chạy** gì cả — họ **gõ**. Và phép kiểm đỏ duy nhất trong 30 bước là
+hai `skip` trong một tệp test tạo ra **năm phút sau khi lượt gate bắt đầu**.
+
+🔑 **Cái bẫy không nằm ở sự sơ ý, mà ở chỗ hai câu nghe giống nhau.** *"Đừng dùng
+CPU"* thoả mãn được bằng cách **viết mã suốt 12 phút**. Một phiên tuân thủ hoàn
+hảo vẫn phá lượt đo của bạn.
+
+### ⇒ Giao ước bắt buộc quanh một lượt L3
+
+1. **Nhắn trước, chờ xác nhận, rồi mới bấm.** Nói rõ **giờ bắt đầu và thời
+   lượng**: *"tôi bấm gate lúc 15:32, ~13 phút"*.
+2. Câu xin đúng là **"đừng GHI TỆP"**, không phải "đừng chạy nặng".
+3. Trong khoảng đó **chính bạn cũng không ghi** — kể cả `docs/`.
+4. Luật đi **cả hai chiều**: phiên khác sắp bấm thì bạn đứng yên.
+
+⚠️ Điều 3 không thừa. Ngày 08/09 tôi sửa `docs/BAY_TRONG_CONG_CHAT_LUONG.md`
+giữa lượt gate của **chính mình**, và chỉ thoát vì `docs/` tình cờ không nằm
+trong `gate.THU_MUC_CHUP` — không phải vì tôi cẩn thận.
+
 ---
 
 # 5. Worktree — ai sở hữu cái gì

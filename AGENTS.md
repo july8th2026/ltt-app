@@ -430,7 +430,7 @@ Tốc độ đến từ hai chỗ, và chỗ thứ nhất lớn hơn:
   chúng chạy nối tiếp ở pha 2. Danh sách ở `tools/test_nhanh.py::TEP_NOI_TIEP`,
   và `test_309` chốt nó.
 
-### Thêm test mới thì nhớ hai điều
+### Thêm test mới thì nhớ ba điều
 
 1. Test **ghi vào tệp thật trong kho** phải khai vào `TEP_NOI_TIEP`, và phải
    khôi phục **đúng từng byte VÀ đúng dấu thời gian** (`write_bytes` + `os.utime`).
@@ -441,6 +441,27 @@ Tốc độ đến từ hai chỗ, và chỗ thứ nhất lớn hơn:
    `test_193` (hạn mức nhịp phụ thuộc tốc độ máy) và `test_250` (đọc tải GPU
    thật). **Một phép kiểm đọc trạng thái máy không đo thứ nó nói là đang đo —
    nó đo cái máy.**
+3. **`skip` cho điều kiện của MÔI TRƯỜNG; `assert` cho dữ liệu nằm TRONG KHO.**
+
+   Đúng: `test_74::pytestmark` (thiếu `LTT_SMOKE_URL`), `test_821::pg`,
+   `test_826::pg_engine` — thiếu Postgres, thiếu cổng, thiếu GPU là những thứ
+   máy này **có thể thật sự thiếu**.
+
+   Sai — đo 08/09/2026, `tests/test_507_muc_dung_thu_tu_giong.py`:
+
+   ```
+   skip "khong co tang nao co hai giong"     20 giong / 3 tang: 4 · 8 · 8
+   skip "chi co mot tang phong cach"         -> ca hai dieu kien KHONG BAO GIO dung
+   ```
+
+   Ảnh chụp giọng là **một tệp trong chính kho này**, nên hai `skip` ấy không
+   nổ được. ⛔ Và một `skip` không nổ được **tệ hơn vô dụng**: nó cộng vào bánh
+   cóc `bo qua`, *và* làm bản kiểm kê nói rằng phép kiểm ấy **có thể vắng mặt
+   một cách hợp lệ**.
+
+   ⇒ Nếu ngày nào ảnh chụp thật sự mất một tầng, thứ ta muốn là một lượt **ĐỎ**
+   bắt người ta nhìn — không phải một dòng `skipped` trôi qua. Đổi sang `assert`
+   kèm số đo trong thông điệp, đừng chạy `check_bo_qua.py --accept`.
 
 ---
 
