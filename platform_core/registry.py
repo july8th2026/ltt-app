@@ -204,6 +204,80 @@ class ToolSpec:
     #: `giá trị tham số -> job_type`. Phải phủ HẾT giá trị enum của tham số đó.
     job_type_lanes: dict = field(default_factory=dict)
 
+    # ═══ HỢP ĐỒNG NODE V2 (`25_26 §2`) ═══════════════════════════════════════
+    #
+    # Sáu trường, tất cả CÓ MẶC ĐỊNH ⇒ **không app nào phải sửa để lên V2**.
+    # Đó là ràng buộc thiết kế, không phải may mắn: `02 §3` chốt rằng V2 mở
+    # rộng `ToolSpec` chứ không dựng một registry thứ hai, vì dự án này đã trả
+    # giá nhiều lần cho mô hình hai nguồn chân lý.
+
+    #: Tăng khi `params_schema`/`returns` đổi KHÔNG tương thích.
+    #
+    # 🔴 Lỗ hổng IM LẶNG (`G05`): node ghim `tool.name` nhưng **không** ghim
+    #    version. Đổi `params_schema` của một tool ⇒ mọi `workflow_version` đã
+    #    xuất bản trỏ tới nó **đổi ý nghĩa** mà không lỗi nào báo.
+    #    Activepieces ghim `pieceName` **+** `pieceVersion` ngay trong node, và
+    #    họ có 10.077 connector — quy mô mà quên ghim version là thảm hoạ.
+    type_version: int = 1
+
+    #: `"none"` | `"external"` | `"irreversible"` — chỗ neo của mô hình bảo đảm.
+    #
+    # ⭐ Ba giá trị là BA HÀNH VI KHÔI PHỤC khác nhau khi một attempt thành
+    #    `ABANDONED` (provider **có thể** đã nhận việc):
+    #
+    #      none          thuần tính toán      -> thử lại tự do
+    #      external      gọi provider          -> thử lại SAU KHI kiểm bằng
+    #                                             `idempotency.key_fields`
+    #      irreversible  gửi mail, tạo VPS     -> ⛔ KHÔNG BAO GIỜ tự thử lại
+    #
+    # 🔴 Đo được là cần: `AmbiguousProviderError` xảy ra **10 lần / 28 ngày**
+    #    (`01 §A.4`), và `mark_ambiguous()` hôm nay xử lý **mọi job như nhau**.
+    #    `vps.provision` (đã tạo máy thật, tính tiền thật) và `image.generate`
+    #    (tốn một lượt gọi) không cùng loại rủi ro, nhưng đang cùng đường xử lý.
+    side_effect: str = "external"
+
+    #: `{"key_fields": ("prompt", "model", "seed")}` — khoá khử trùng TẤT ĐỊNH.
+    #
+    # Nền tảng dựng `dedupe_key` từ trường app chỉ định, thay vì băm TOÀN BỘ
+    # params: một `request_id`/`callback_ts` lọt vào khoá làm khử trùng **không
+    # bao giờ khớp**. Và nó sửa luôn `G31` — `_cached_result()` hôm nay so
+    # params bằng nhau tuyệt đối rồi quét 50 job, nên một tool có `seed` ngẫu
+    # nhiên nằm ngoài params sẽ **trả lại kết quả cũ cho khách**.
+    idempotency: dict = field(default_factory=dict)
+
+    #: Chạy thử workflow mà không chạm bước đắt tiền. `(params) -> returns`.
+    #
+    # 🔴 ĐIỀU KIỆN CẦN, không phải tiện nghi. `F4`: một node có thể là **20
+    #    phút A100**. Không có `mock`, khách muốn thử workflow 8 bước phải đốt
+    #    tám lượt GPU — và **ta** cũng không kiểm được `M6`/`M7` (chaos,
+    #    ForEach 100 phần tử) mà không đốt tiền thật.
+    mock_result: Optional[Callable[[dict], dict]] = None
+
+    #: `{"class", "vram_min_mb", "slots", "est_duration_s"}` — gom bốn thứ đang
+    #: rải rác ở `AppManifest` (`gpu_vram_mb`/`max_runtime_s`/`cho_tai_nguyen_s`
+    #: /`so_lan_thu`), tất cả khoá theo `job_type` và tách rời khỏi `ToolSpec`
+    #: khai ra job đó.
+    #
+    # ⭐ `est_duration_s` là trường MỚI, phục vụ `WF-202`: scheduler không xếp
+    #    một việc 20 phút vào chỗ vừa nhả ra bởi một việc 5 giây. LTT đã có số
+    #    đo cho đúng vấn đề này (job 5 giây mất **75 % thông lượng** vì hằng số
+    #    20 giây) nhưng chỉ dùng nó cho **giãn cách thử lại**, không dùng để
+    #    **xếp chỗ** (`G28`).
+    resource: dict = field(default_factory=dict)
+
+    #: Trần thời gian theo THAM SỐ, vd `"duration_s * 30 + 120"`. Rỗng ⇒ dùng
+    #: `resource`/mặc định của manifest.
+    #
+    # Video 5 giây và video 60 giây đang chung một `max_runtime_s` tĩnh ⇒ hoặc
+    # trần quá rộng (job treo giữ slot), hoặc quá chặt (job dài bị giết oan).
+    #
+    # ⚠️ `Q5`: tập toán tử CỐ ĐỊNH trên chính `params` của node — không đọc kết
+    #    quả bước khác, không gọi hàm ngoài. Nó phải tính được **lúc validate**
+    #    vì `WF-501` cần trần chi phí TRƯỚC khi chạy. Cưỡng chế ở
+    #    `platform_core/workflow/bieu_thuc.py`, và bộ tính ở đó **không dùng
+    #    `eval`** — nó duyệt AST rồi tự tính từng nút.
+    timeout_expr: str = ""
+
     def lane_for(self, params: dict) -> str:
         """`job_type` thật cho một lượt gọi, theo tham số app đã khai.
 
@@ -631,6 +705,89 @@ def _validate_tool(manifest: AppManifest, tool: ToolSpec,
                 f"{output!r}={port_type!r}")
 
     _validate_api_contract(manifest, tool)
+    _validate_hop_dong_v2(manifest, tool)
+
+
+#: `side_effect` — ba giá trị, ba hành vi khôi phục. Không có giá trị thứ tư:
+#: một tên lạ ở đây nghĩa là app tưởng nó khai được một hành vi mà nền tảng
+#: không có, và nó sẽ IM LẶNG rơi về `external` — tức "thử lại" cho một thứ
+#: app định khai là không đảo được.
+SIDE_EFFECT_VALUES = frozenset({"none", "external", "irreversible"})
+
+#: Khoá được phép trong `resource`. Danh sách ĐÓNG: một khoá viết sai chính tả
+#: trong một `dict` tự do không bao giờ báo lỗi — nó chỉ lặng lẽ không có tác
+#: dụng, và scheduler xếp chỗ bằng một giá trị mặc định mà không ai biết.
+RESOURCE_KEYS = frozenset({"class", "vram_min_mb", "slots", "est_duration_s"})
+
+
+def _validate_hop_dong_v2(manifest: AppManifest, tool: ToolSpec) -> None:
+    """Sáu trường V2 (`25_26 §2`) — kiểm lúc NẠP, không đợi lúc chạy.
+
+    ⭐ Vì sao kiểm ở đây chứ không ở chỗ dùng: ba trong sáu trường quyết định
+       **tiền** hoặc **khôi phục sau sự cố** (`side_effect`, `idempotency`,
+       `timeout_expr`). Một khai báo sai chỉ lộ ra lúc chạy thì chỗ nó lộ ra là
+       chỗ đang tiêu tiền của khách, hoặc chỗ vừa có một sự cố.
+    """
+    ten = f"[{manifest.slug}] tool {tool.name!r}"
+
+    if not isinstance(tool.type_version, int) or isinstance(tool.type_version, bool) \
+            or tool.type_version < 1:
+        raise RegistryError(f"{ten} type_version phải là int >= 1, "
+                            f"nhận {tool.type_version!r}")
+
+    if tool.side_effect not in SIDE_EFFECT_VALUES:
+        raise RegistryError(
+            f"{ten} side_effect lạ: {tool.side_effect!r} "
+            f"(chỉ {sorted(SIDE_EFFECT_VALUES)})")
+
+    if not isinstance(tool.idempotency, dict):
+        raise RegistryError(f"{ten} idempotency phải là dict")
+    if tool.idempotency:
+        thua = set(tool.idempotency) - {"key_fields"}
+        if thua:
+            raise RegistryError(f"{ten} idempotency có khoá lạ: {sorted(thua)}")
+        khoa = tool.idempotency.get("key_fields")
+        if not isinstance(khoa, (tuple, list)) or not khoa:
+            raise RegistryError(f"{ten} idempotency.key_fields phải là tuple không rỗng")
+        thieu = [k for k in khoa if k not in (tool.params_schema or {})]
+        if thieu:
+            # ⛔ Đây là phép kiểm đáng giá nhất trong hàm. Một `key_fields` trỏ
+            #    tới tham số không tồn tại làm `dedupe_key` được dựng từ một
+            #    tập RỖNG hoặc thiếu — nghĩa là **mọi lượt gọi khử trùng vào
+            #    nhau**, hoặc **không lượt nào khử trùng**. Cả hai đều là lỗi
+            #    về tiền, và cả hai đều im lặng.
+            raise RegistryError(
+                f"{ten} idempotency.key_fields trỏ tới tham số không có: "
+                f"{thieu} (params: {sorted(tool.params_schema or {})})")
+
+    if tool.mock_result is not None and not callable(tool.mock_result):
+        raise RegistryError(f"{ten} mock_result phải callable hoặc None")
+
+    if not isinstance(tool.resource, dict):
+        raise RegistryError(f"{ten} resource phải là dict")
+    thua = set(tool.resource) - RESOURCE_KEYS
+    if thua:
+        raise RegistryError(
+            f"{ten} resource có khoá lạ: {sorted(thua)} "
+            f"(chỉ {sorted(RESOURCE_KEYS)})")
+    for k in ("vram_min_mb", "slots", "est_duration_s"):
+        v = tool.resource.get(k)
+        if v is None:
+            continue
+        if isinstance(v, bool) or not isinstance(v, int) or v < 0:
+            raise RegistryError(f"{ten} resource[{k!r}] phải là int >= 0, nhận {v!r}")
+
+    if tool.timeout_expr:
+        # Nạp trễ: `bieu_thuc` không phụ thuộc gì trong `platform_core`, nhưng
+        # nạp nó ở đầu tệp buộc mọi đường import `registry` phải kéo theo, và
+        # `registry` là thứ được nạp sớm nhất trong tiến trình.
+        from platform_core.workflow import bieu_thuc
+
+        try:
+            bieu_thuc.kiem_bieu_thuc(tool.timeout_expr, tool.params_schema or {})
+        except bieu_thuc.LoiBieuThuc as loi:
+            raise RegistryError(
+                f"{ten} timeout_expr không hợp lệ: {loi}") from loi
 
 
 def _validate_lanes(manifest: AppManifest, tool: ToolSpec) -> None:
