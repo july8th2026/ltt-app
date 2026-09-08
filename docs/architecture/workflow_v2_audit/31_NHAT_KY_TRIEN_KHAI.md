@@ -1073,6 +1073,110 @@ Cộng Đợt 1 + 2 ⇒ **139 bài xanh**, và **98 xanh cả khi ngẫu nhiên 
 ⛔ Vẫn **chưa nối vào đường chạy nào**. Ba hệ con còn lại của scheduler
 (`enqueue` · `dequeue` · `attempt` · `foreach` · `ttl`) là Đợt 4–5.
 
+
+---
+
+## ĐỢT 4 + ĐỢT 5 ✅ — nguyên hàm đồ thị, artifact, trigger
+
+```
+Dot 4: 4.1 4.2 4.3 4.4 4.5 4.6   -> 29 chot
+Dot 5: 5.1 5.4                    -> 15 chot
+ca cum Workflow V2 + Dot 1: 183 passed   (142 xanh ca khi NGAU NHIEN HOA)
+16 bang · migration `e8f35c1a7d64`
+```
+
+### 4.2 — `M9` và vì sao "viết cẩn thận hai lần" không đạt được
+
+Ngưỡng: *luật nối dây client và server trùng khớp **100 %***. Hai bản cài đặt
+song song thì lệch — câu hỏi duy nhất là **bao lâu** và **ở đâu**.
+
+⇒ `xuat_luat_noi_day()` xuất **một bảng cặp tường minh**, client tra bảng.
+
+⚠️ Liệt kê cặp thay vì mô tả luật là có chủ ý: một mô tả (*"T sang T ngoặc
+vuông"*) vẫn cần client **diễn giải**, và diễn giải là chỗ hai bên lệch nhau.
+Một bảng cặp thì **không diễn giải sai được**.
+
+⭐ Và bài `M9` kèm một **đối chứng cho chính nó**: hai bên cũng "trùng khớp
+100 %" nếu cả hai cùng nói *không* với mọi cặp. Nên có thêm một bài đòi
+`0 < len(cặp) < tổng` — không có nó, `M9` **xanh được vì lý do rỗng**.
+
+### 4.6 — mục KHÔNG có đối chứng ngành
+
+*"Không kho nào trong bảy kho có trần chi phí — bước của họ gần như miễn phí."*
+Bảy kho gọi HTTP và biến đổi dữ liệu; bước của ta là một lượt GPU.
+
+⇒ Mọi quyết định ở `bao_gia.py` là **`INFERRED`**. `_TY_LE_UOC_TINH = 0.6` phải
+được hiệu chỉnh lại bằng `actual_cost` thật ngay khi có lượt chạy đầu tiên.
+
+`M8` — vì sao **hai** số: một số duy nhất buộc phải chọn giữa hai cách nói sai.
+Số tối đa ⇒ khách thấy đắt và bỏ đi. Số ước tính ⇒ khách bị bất ngờ khi bị trừ
+nhiều hơn. Hai số nói đúng thứ ta biết: *"thường khoảng X, không bao giờ quá Y"*.
+
+### 4.3 — `M7` và vì sao một CON TRỎ không đủ
+
+Trạng thái nằm **theo chỉ số, trong CSDL** — không phải một con trỏ "đã tới
+đâu". Con trỏ chỉ đúng khi các phần tử chạy **tuần tự**; với `parallelism > 1`
+thì phần tử 7 có thể xong trước phần tử 3, và con trỏ **không biểu đạt nổi**
+trạng thái ấy.
+
+⇒ Sau một lần chết, *"còn phải chạy gì"* là một câu `WHERE xong = false` —
+chính xác, không suy đoán. Phép kiểm dựng 100 phần tử, commit 57, **ghi 3 nữa
+rồi rollback**, và đòi `chi_so_chua_xong == range(57, 100)`.
+
+### 5.1 — bản vá cho một lỗ **SẼ** nổ
+
+Ngày R2 chạy song song Local, `storage.get_storage()` là singleton toàn cục ⇒
+mọi khoá cũ thành **mơ hồ**. Tham chiếu đi vào `output_ref` của bước sau, và
+**JSONB không tra bảng được** — nên backend phải nằm **ngay trong id**.
+
+⚠️ `delete` là **tuỳ chọn** của hợp đồng lưu trữ: R2 có lifecycle rule riêng.
+Chồng TTL của ta lên trên là hai bộ đếm cùng nhắm một tệp, và bộ nào chạy trước
+thì bộ kia thao tác trên **hư không**.
+
+### Đối chứng: tám phép tiêm — và **lần thứ hai** bắt được một rào chết
+
+| tiêm | đỏ |
+|---|---|
+| ép kiểu cho cả hướng "an toàn" `integer→number` | 1 |
+| ForEach ghi đè kết quả đã có | 1 |
+| báo giá lấy **tổng** nhánh thay vì nhánh đắt nhất | 1 |
+| artifact id **không** mang backend | 3 |
+| node điều khiển **vẫn** sinh job | 2 |
+| `MANUAL` tự đặt lịch | 1 |
+| quét hết hạn chạm cả `PERMANENT` | **0** ❌ → **1** ✅ |
+
+🔴 **Rào `ttl_class <> 'PERMANENT'` là MÃ CHẾT** — `PERMANENT` luôn có
+`expires_at IS NULL`, nên vế `is_not(None)` đã đủ. Bài
+`test_quet_HET_HAN_khong_dung_toi_PERMANENT` xanh vì **một lý do khác lý do nó
+khai**.
+
+⇒ Vá bằng cách dựng **dữ liệu lệch**: đặt `expires_at` cho một `PERMANENT` —
+trạng thái sai nhưng **dựng được bằng đúng một lệnh `UPDATE` tay**. Rào phải
+chặn nó.
+
+⭐ Đây là **lần thứ hai trong ngày** cùng một hình dạng (lần đầu: rào
+`hien in RUN_KET_THUC` ở Đợt 3). Cả hai đều là **một điều kiện bị một điều kiện
+khác che hoàn toàn**, và cả hai đều có một phép kiểm mang đúng tên của cái rào.
+
+⇒ Luật rút ra: **một cái rào chỉ sống nếu có một trạng thái mà CHỈ nó chặn
+được.** Nếu không dựng được trạng thái ấy thì rào là trang trí — và phép kiểm
+mang tên nó là một lời khai sai.
+
+---
+
+## CÒN LẠI CỦA ĐỢT 5 — và vì sao chưa làm
+
+| # | việc | vì sao hoãn |
+|---|---|---|
+| 5.2 | Canvas v3 (frontend) | cần bundle React `frontend/`; và bánh cóc "không hardcode tên tool" phải dựng ở phía frontend, không phải `platform_core` |
+| 5.3 | script di trú M-1 | phụ thuộc `D2` (đếm `AgentWorkflow` production) — `secrets/` ACL chặn **cố ý** |
+| 5.5 | `POST /api/v1/workflows/{id}/runs` | chạm `server/api/inventory.py` — **24 route đóng băng**; mở một route mới là quyết định về **bề mặt công khai**, không phải một lần thêm hàm |
+| 5.6 | `ToolSpec` 6 trường mới | chạm `platform_core/registry.py` — **hợp đồng app**, và `test_60`/`test_147` canh nó. Đổi hợp đồng là đổi thứ mọi app đang dựa vào |
+
+⛔ Ba mục cuối đều **chạm bề mặt đang phục vụ**, khác hẳn mọi thứ đã làm từ Đợt 1
+tới đây. Đợt 1–5 (phần đã làm) chưa nối vào đường chạy nào; ba mục ấy **là** việc
+nối. Chúng cần một quyết định riêng, không phải một lượt viết tiếp.
+
 ## ĐỢT 2–5
 
 Chưa bắt đầu. Xem `27_29 §28`.

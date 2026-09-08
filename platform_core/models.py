@@ -1333,3 +1333,122 @@ class Wakeup(Base):
               postgresql_where=text("claimed_at IS NULL"),
               sqlite_where=text("claimed_at IS NULL")),
     )
+
+
+# ── LTT WORKFLOW V2 · Đợt 4.3 — ForEach ──────────────────────────────────────
+
+
+class ForeachVong(Base):
+    """Một vòng ForEach. `max_items` là **chặn trên**, không phải gợi ý."""
+
+    __tablename__ = "foreach_vong"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    run_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    node_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    max_items: Mapped[int] = mapped_column(Integer, nullable=False)
+    # `M4`: hôm nay 4 **cứng**. V2 khai được, mặc định 8.
+    parallelism: Mapped[int] = mapped_column(Integer, default=8, nullable=False)
+    so_muc: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+
+
+class ForeachMuc(Base):
+    """MỘT hàng cho MỖI phần tử, ghi sẵn ngay lúc mở vòng.
+
+    ⭐ Đây là thứ làm `M7` đạt được. Một **con trỏ** "đã tới đâu" chỉ đúng khi
+       các phần tử chạy tuần tự; với `parallelism > 1` thì phần tử 7 có thể xong
+       trước phần tử 3, và con trỏ **không biểu đạt nổi** trạng thái ấy.
+
+    ⇒ Sau một lần chết, "còn phải chạy gì" là một câu `WHERE xong = false` —
+      chính xác, không suy đoán.
+    """
+
+    __tablename__ = "foreach_muc"
+
+    vong_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    chi_so: Mapped[int] = mapped_column(Integer, primary_key=True)
+    dau_vao: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    ket_qua: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    xong: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    __table_args__ = (
+        Index("ix_foreach_muc_chua_xong", "vong_id",
+              postgresql_where=text("xong = false"),
+              sqlite_where=text("xong = 0")),
+    )
+
+
+# ── LTT WORKFLOW V2 · Đợt 5.1 — artifact ─────────────────────────────────────
+
+
+class Artifact(Base):
+    """Tệp sinh ra bởi một lượt chạy. `id = "<backend>:<key>"` — **TỰ MÔ TẢ**.
+
+    🔴 Bản vá cho một lỗ **sẽ nổ**: ngày R2 chạy song song Local,
+       `storage.get_storage()` là singleton toàn cục ⇒ mọi khoá cũ thành mơ hồ.
+       Tham chiếu đi vào `output_ref` của bước sau, và **JSONB không tra bảng
+       được** — nên backend phải nằm ngay trong id (bài học n8n, `05 §4.1`).
+    """
+
+    __tablename__ = "artifact"
+
+    id: Mapped[str] = mapped_column(String(255), primary_key=True)
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    # ⭐ LINEAGE: "tệp này từ đâu ra" trả lời được bằng MỘT cột.
+    created_by_snapshot_id: Mapped[str] = mapped_column(
+        String(36), default="", nullable=False)
+    kind: Mapped[str] = mapped_column(String(16), default="file", nullable=False)
+    mime: Mapped[str] = mapped_column(String(120), default="", nullable=False)
+    size_bytes: Mapped[int] = mapped_column(BigInteger, default=0, nullable=False)
+    checksum_sha256: Mapped[str] = mapped_column(String(64), default="",
+                                                 nullable=False)
+    # EPHEMERAL | RUN | PROJECT | PERMANENT
+    ttl_class: Mapped[str] = mapped_column(String(16), default="RUN",
+                                           nullable=False)
+    expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    meta: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+
+    __table_args__ = (
+        Index("ix_artifact_expiry", "expires_at",
+              postgresql_where=text(
+                  "ttl_class <> 'PERMANENT' AND expires_at IS NOT NULL"),
+              sqlite_where=text(
+                  "ttl_class <> 'PERMANENT' AND expires_at IS NOT NULL")),
+    )
+
+
+# ── LTT WORKFLOW V2 · Đợt 5.4 — trigger ──────────────────────────────────────
+
+
+class WorkflowTrigger(Base):
+    """Cái gì làm một workflow chạy. Mỗi `kind` là một MÔ-ĐUN, không phải một `if`.
+
+    Nền tảng **không biết tên** loại nào: nó chỉ biết một loại phải trả lời được
+    `toi_han()` và `lan_ke_tiep()`. Thêm loại thứ năm là một lần `dang_ky()`,
+    không phải một lần sửa `platform_core` (`G42`, bài học Windmill).
+    """
+
+    __tablename__ = "workflow_trigger"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    workflow_id: Mapped[str] = mapped_column(String(36), nullable=False,
+                                             index=True)
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    kind: Mapped[str] = mapped_column(String(24), nullable=False)
+    config: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    next_fire_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+
+    __table_args__ = (
+        Index("ix_trigger_due", "next_fire_at",
+              postgresql_where=text("enabled AND next_fire_at IS NOT NULL"),
+              sqlite_where=text("enabled = 1 AND next_fire_at IS NOT NULL")),
+    )
