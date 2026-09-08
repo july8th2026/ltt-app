@@ -1960,3 +1960,83 @@ Một lời giải thích **khớp vừa đủ** làm điều tra dừng sớm:
 
 Tài liệu: `docs/CHATLTT_V3/STATE.md` · `docs/BAY_TRONG_CONG_CHAT_LUONG.md`
 (Bẫy 33) · `docs/16_CAP_NHAT_VA_DEPLOY.md` (D1/D2).
+
+---
+
+## 2026-09-08 — OPERATING STANDARDIZATION: một hợp đồng vận hành, và một cửa giả
+
+Bốn commit: `229927d6` · `144c4847` · `9484e5f1` · `974cb984`. Đã đẩy GitHub.
+
+### Vấn đề
+
+Cadence chép lại trong **10 tệp kế hoạch**, và **5 bản chép KHÁC NHAU**:
+`--vong-lap` sau mỗi lần sửa · `--doi` trong vòng lặp · `test_nhanh --lf` sau mỗi
+lần sửa · một tập bất biến riêng · và `test_nhanh.py` **rồi** `gate.py`.
+
+Không ai cố ý viết sai. Cái sai là **không có chỗ nào để trả lời**, nên ai cần
+một cadence thì tự viết một cái.
+
+⇒ `docs/00_LTT_OPERATING_CONTRACT.md` (mới) · `CLAUDE.md` 375 → 186 dòng ·
+`tools/check_luat_van_hanh.py` (bánh cóc trong gate, 1,9 s, chốt TẬP HỢP).
+
+### 🔴 `--doi` tồn tại, được tài liệu hoá, và CHƯA TỪNG thu hẹp gì
+
+Đếm 59 bản ghi `test-results/gates/*.json`: `doi` **0 lượt**, `pham-vi` **0 lượt**.
+`thanh_phan.toml` không khai `tests/`, nên **mọi thay đổi chạm một tệp test đều
+hạ cấp xuống gate đầy đủ** — mà gần như mọi thay đổi thật đều kèm một tệp test.
+
+| Thay đổi | Trước | Sau |
+|---|---|---|
+| chỉ một tệp test | 532/532 | **1/532** |
+| app + test của nó | 532/532 | **118/532** |
+
+⛔ Bản sửa **đầu tiên sai**: suy chủ tệp test từ `import` của chính nó → **86 %**,
+một phạm vi *trông hẹp mà không hề hẹp*. Phép đo giết giả thuyết, không phải trực giác.
+
+### Tài liệu sai gấp đôi ở 6 chỗ
+
+Gate đầy đủ: tài liệu ghi "~5 phút"; trung vị 43 lượt là **11,4 phút**, và lượt
+đo trực tiếp hôm nay là **12,4 phút**. Cả sáu chỗ đều chép tay từ nhau.
+
+### Ba lần tôi sai, và cả ba đều được phiên khác hoặc phép đo bắt
+
+| Tôi tưởng | Thật ra |
+|---|---|
+| gate có **26 bước** (đếm `Step(` bằng AST) | **30** — ba lời gọi frontend nằm trong vòng lặp có điều kiện |
+| deploy chép **cây sống** ⇒ việc dở của phiên Voice sẽ lên production | `git archive` từ **commit** (`setup/2-cai-dat.ps1:201`); tệp chưa commit **không** lên |
+| hai phiên sửa bánh cóc **sau khi tôi nhắn** | Workflow V2 sửa **trước**; tôi gán nhân quả cho một phép đo không trả lời câu đó |
+
+Và một lỗi tôi tự mắc **ngay sau khi viết luật cấm nó**: đọc `check_ruff.py 2>&1
+| tail -4; echo "EXIT=$?"` — `$?` đó là của `tail`. Thứ cứu tôi không phải sự cẩn
+thận mà là `pre-commit` tự chạy lại ruff.
+
+### 🔴 Bài học đắt nhất — một PHÂN BIỆT
+
+Chủ sản phẩm bảo các phiên khác **"dừng chạy pytest"**. Họ **giữ lời tuyệt đối**:
+máy chỉ `0.9/20` lõi bận suốt 12,4 phút. Lượt gate vẫn ra `CAY DA DOI GIUA CHUNG`
+— 16 tệp. Họ không **chạy** gì cả; họ **gõ**.
+
+> **"Không dùng CPU" ≠ "cây đứng yên".** Một lượt gate cần **cả hai**, và
+> `cua_so_yen` chỉ đo được vế đầu.
+
+Cái bẫy không nằm ở sự sơ ý mà ở chỗ **hai câu nghe giống nhau**: "đừng dùng CPU"
+thoả mãn được bằng cách viết mã suốt 12 phút. Một phiên **tuân thủ hoàn hảo** vẫn
+phá lượt đo của người khác. ⇒ `docs/00_LTT_OPERATING_CONTRACT.md` **§4.9**.
+
+⚠️ Và tôi mắc đúng lỗi đó trong cùng lượt: sửa `docs/BAY_TRONG_CONG_CHAT_LUONG.md`
+giữa lượt gate của **chính mình**, chỉ thoát vì `docs/` không nằm trong `THU_MUC_CHUP`.
+
+### Bẫy 37 — `pre-commit` stash UNSTAGED nhưng không stash UNTRACKED
+
+Một tệp untracked của phiên A cộng vào bánh cóc của phiên B, và **không** hiện
+trong `git diff --cached` của người bị chặn. Hôm nay đánh trúng **hai** bánh cóc:
+`ruff` F401 và `bo qua`.
+
+### Nợ
+
+| Nợ | Trạng thái |
+|---|---|
+| **Deploy** | ⛔ **CHƯA** — bị chặn bởi chế độ quyền của phiên, không phải bởi mã. 10 commit từ bản đang chạy (`03a83a1c`) tới `974cb984`, gồm **5 migration Workflow V2** |
+| Số giây thật cho `--doi` | chưa đo được — cả ngày chưa có cửa sổ nào cây đứng yên |
+| `docs/**` vẫn hạ cấp xuống đầy đủ | **70 tệp test đọc `docs/`** ⇒ cần bản khai chủ sở hữu, không phải luật miễn trừ |
+| `@pytest.mark.slow` | dùng 1 lần mà chưa khai trong `pytest.ini` |
