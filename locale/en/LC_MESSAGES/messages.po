@@ -14631,3 +14631,45 @@ msgstr "Clip language"
 
 msgid "Workflow mới"
 msgstr "New workflow"
+
+msgid "Một lượt chạy đã tính tiền. `actual_cost` và `hold_id` ở đây là câu trả lời cho một tranh chấp hoàn tiền sáu tháng sau."
+msgstr "A run that has already been billed. `actual_cost` and `hold_id` here are the answer to a refund dispute six months later."
+
+msgid "Chuỗi ảnh chụp BẤT BIẾN của từng bước, kèm chi phí theo từng lượt thử. Xoá nó là mất khả năng nói VÌ SAO một lượt chạy tốn ngần ấy — kể cả lần chuyển bị từ chối cũng nằm ở đây."
+msgstr "The IMMUTABLE snapshot chain of each step, with the cost of each attempt. Deleting it loses the ability to say WHY a run cost that much — even rejected transitions live here."
+
+msgid "Workflow là thứ khách DỰNG RA. Việc của họ, không phải dấu vết vận hành của ta."
+msgstr "A workflow is something the customer BUILDS. It is their work, not our operational trace."
+
+msgid "Bản đang soạn — mất nó là mất phần khách đang gõ dở."
+msgstr "The working draft — losing it loses what the customer was typing."
+
+msgid "Bản đã xuất bản, BẤT BIẾN. Một lượt chạy ghim vào đây, nên xoá nó là làm một lượt chạy đã tính tiền không còn tái dựng được."
+msgstr "A published version, IMMUTABLE. A run pins to it, so deleting it makes an already-billed run impossible to reconstruct."
+
+msgid "Cấu hình khách đặt để workflow tự chạy."
+msgstr "The configuration the customer set so the workflow runs by itself."
+
+msgid "Siêu dữ liệu tệp khách tạo ra. KHÔNG chứa byte nào; vòng đời thật do `ttl_class` quyết, và backend có lifecycle riêng thì ta không tự xoá."
+msgstr "Metadata for files the customer produced. Holds NO bytes; the real lifetime is decided by `ttl_class`, and a backend with its own lifecycle is not ours to delete from."
+
+msgid "CON TRỎ tới ảnh chụp mới nhất — dựng lại được từ chuỗi ảnh chụp."
+msgstr "A POINTER to the latest snapshot — rebuildable from the snapshot chain."
+
+msgid "Chỉ mục dẫn xuất từ đồ thị của bản đã xuất bản."
+msgstr "An index derived from the published version's graph."
+
+msgid "Trạng thái chờ trong một lượt chạy; chỉ có nghĩa khi lượt chạy còn sống."
+msgstr "A wait state inside a run; it only means anything while the run is alive."
+
+msgid "Tín hiệu từng nhánh gửi tới một điểm chờ."
+msgstr "The signal each branch sends to a waitpoint."
+
+msgid "Bảng nối nhiều-nhiều: waitpoint nào đang chặn node nào."
+msgstr "The many-to-many link table: which waitpoint is blocking which node."
+
+msgid "Một vòng ForEach đang chạy."
+msgstr "A ForEach loop in progress."
+
+msgid "Kết quả từng phần tử của một vòng ForEach — thứ nói CHÍNH XÁC còn phải chạy gì sau một lần chết."
+msgstr "The result of each ForEach element — what says EXACTLY which ones still have to run after a crash."
