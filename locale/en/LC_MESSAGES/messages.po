@@ -14713,3 +14713,11 @@ msgstr ""
 # không nói của cái gì, trong khi màn ấy có nhiều dự án.
 msgid "Tiến độ dự án {ten}: {xong}/{tong} khối"
 msgstr "Project {ten} progress: {xong}/{tong} blocks"
+
+#: apps/agent/routes/drafts_v3.py
+msgid "Thiếu số hiệu bản sửa."
+msgstr "Missing revision number."
+
+#: apps/agent/routes/drafts_v3.py
+msgid "Bản nháp chưa có nội dung để xuất bản."
+msgstr "This draft has nothing to publish yet."
