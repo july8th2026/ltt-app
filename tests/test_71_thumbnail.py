@@ -12,29 +12,8 @@ import io
 
 import pytest
 
-
-@pytest.fixture(autouse=True)
-def _moi_provider_deu_song(monkeypatch):
-    """Tệp này chốt **CƠ CHẾ** của handler `thumbnail` (khuôn request, lưu
-    storage, giá credit theo số ảnh, một ảnh hỏng không làm hỏng cả job) — nó
-    không chốt provider nào đang được phép phục vụ.
-
-    Từ pha 04 (AI CLEAN REBUILD V2) `gemini` đã ngừng, và cổng fail-closed nổ
-    **trước** cả bản mock. Test tự khai thế giới của nó để còn kiểm được cơ chế;
-    chốt production-thật nằm ở `tests/test_1000_chan_provider_da_ngung.py`.
-
-    ⏭️ Pha 06 chuyển `thumbnail` sang LTT_IMAGE ⇒ tệp này viết lại quanh động cơ
-    mới, và fixture này **phải biến mất cùng nó**.
-    """
-    import dataclasses
-
-    from platform_core import providers
-
-    monkeypatch.setattr(
-        providers, "REGISTRY",
-        {pid: dataclasses.replace(p, is_active=True)
-         for pid, p in providers.REGISTRY.items()},
-        raising=False)
+from tests.rao_provider_retire import (  # noqa: F401
+    moi_provider_deu_song)   # ⏭️ PHAI GO O PHA 06
 
 
 class _FakeResp:

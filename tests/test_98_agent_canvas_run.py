@@ -3,6 +3,9 @@ from __future__ import annotations
 
 import pytest
 
+from tests.rao_provider_retire import (  # noqa: F401
+    moi_provider_deu_song)   # ⏭️ PHAI GO O PHA 06
+
 
 @pytest.fixture()
 def db_user(tmp_path, monkeypatch):

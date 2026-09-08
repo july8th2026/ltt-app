@@ -7,6 +7,9 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
+from tests.rao_provider_retire import (  # noqa: F401
+    moi_provider_deu_song)   # ⏭️ PHAI GO O PHA 06
+
 
 def test_manifest_and_schema_are_public_versioned_and_defensive():
     from apps.prompt_ai_ommi.manifest import MANIFEST

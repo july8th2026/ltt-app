@@ -6,29 +6,11 @@ import io
 import re
 
 import pytest
+
 from PIL import Image
 
-
-@pytest.fixture(autouse=True)
-def _moi_provider_deu_song(monkeypatch):
-    """Chốt **CƠ CHẾ** của `taoanh` (quyền riêng tư ảnh tham chiếu, phân giải id
-    model cũ, bút toán) — không chốt provider nào đang được phép phục vụ.
-
-    Từ pha 04 `gemini` đã ngừng và cổng fail-closed nổ trước cả bản mock. Chốt
-    production-thật nằm ở `tests/test_1000_chan_provider_da_ngung.py`.
-
-    ⏭️ Pha 06 chuyển `taoanh` sang LTT_IMAGE ⇒ fixture này **phải biến mất** khi
-    tệp được viết lại quanh động cơ mới.
-    """
-    import dataclasses
-
-    from platform_core import providers
-
-    monkeypatch.setattr(
-        providers, "REGISTRY",
-        {pid: dataclasses.replace(p, is_active=True)
-         for pid, p in providers.REGISTRY.items()},
-        raising=False)
+from tests.rao_provider_retire import (  # noqa: F401
+    moi_provider_deu_song)   # ⏭️ PHAI GO O PHA 06
 
 
 def _png(size=(96, 64), color=(220, 20, 30)) -> bytes:
