@@ -33,7 +33,27 @@ class DbGia:
 @pytest.fixture
 def moi_truong(monkeypatch):
     """Thay `api_pool`/`api_keys` bằng bản ghi lại lời gọi."""
-    from platform_core import api_keys, api_pool
+    import dataclasses
+
+    from platform_core import api_keys, api_pool, providers
+
+    # ⭐ Tệp này chốt **KHUÔN DÂY + ÁNH XẠ LỖI** của động cơ Gemini (429 → ban,
+    #    401 → lỗi xác thực, 400 → lỗi của ta, mạng đứt → không có HTTP status).
+    #    Đó là cơ chế, và cơ chế phải kiểm được **độc lập** với việc provider
+    #    ấy hiện có được phép phục vụ hay không.
+    #
+    #    Từ pha 04 `gemini` đã ngừng, nên cổng fail-closed nổ **trước** cả tham
+    #    số `http=` tiêm được — đúng thiết kế. Test tự khai thế giới của nó để
+    #    còn kiểm được cơ chế; chốt production-thật nằm ở
+    #    `tests/test_1000_chan_provider_da_ngung.py`.
+    #
+    # ⛔ Cả hai — module này và tệp test này — sẽ **bị xoá ở pha 07**. Đây là
+    #    một lớp giữ tạm để pha 04 không phải xoá sớm thứ pha 07 mới xoá.
+    monkeypatch.setattr(
+        providers, "REGISTRY",
+        {pid: dataclasses.replace(p, is_active=True)
+         for pid, p in providers.REGISTRY.items()},
+        raising=False)
 
     ghi = {"loi": [], "thanh_cong": [], "so_lay_key": 0}
     key = KeyGia()

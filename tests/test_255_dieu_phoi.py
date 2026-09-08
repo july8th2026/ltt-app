@@ -14,6 +14,7 @@ Bốn tính chất neo ở đây:
 """
 from __future__ import annotations
 
+import dataclasses
 import sys
 import types
 
@@ -71,6 +72,26 @@ class GiaLap:
         monkeypatch.setattr(_ak, "lay_credential", api_keys.lay_credential,
                             raising=False)
         monkeypatch.setattr(_pv, "get", providers.get, raising=False)
+
+        # ⭐ TEST TỰ KHAI THẾ GIỚI CỦA NÓ — và đây là điểm sống còn của tệp này.
+        #
+        #    Tệp này chốt **CƠ CHẾ CASCADE** (bận thì đi tiếp · lỗi thật thì
+        #    đánh dấu · thứ tự bên gọi khai được tôn trọng), chứ không chốt
+        #    provider nào đang sống. Mệnh đề ấy phải **BẤT BIẾN với tập hợp
+        #    provider** — nếu không, mỗi lần nền tảng retire một provider thì
+        #    một phép kiểm về cơ chế lại đỏ, và người ta sẽ sửa nó bằng cách
+        #    hạ kỳ vọng, tức làm mất luôn thứ nó canh.
+        #
+        # ⛔ Vì vậy KHÔNG đổi `"gemini"` ở đây thành kỳ vọng "bị chặn". Cái
+        #    chốt production-thật (gemini/apiai/cheapkeyai đã ngừng) nằm ở
+        #    `tests/test_1000_chan_provider_da_ngung.py`. Mỗi tệp chốt MỘT thứ.
+        _pv_that = __import__("platform_core.providers", fromlist=["x"])
+        monkeypatch.setattr(
+            _pv_that, "REGISTRY",
+            {pid: dataclasses.replace(p, is_active=True)
+             for pid, p in _pv_that.REGISTRY.items()},
+            raising=False)
+
         monkeypatch.setattr("platform_core.models.APIKEY_CAT_CHAT", "chat",
                             raising=False)
         gl.mo_dun = types.SimpleNamespace(api_pool=_ap, api_keys=_ak, providers=_pv)

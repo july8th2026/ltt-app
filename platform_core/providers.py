@@ -83,6 +83,22 @@ class ProviderDaNgung(RuntimeError):
     """
 
 
+def da_ngung(provider_id: str) -> bool:
+    """Provider này đã ngừng chưa? Đọc THẲNG `REGISTRY`, đúng một nguồn.
+
+    🔴 **Cố ý không đi qua `get()`.** `get()` bị monkeypatch trong nhiều phép
+    kiểm (chúng trả `SimpleNamespace` giả không có trường `is_active`), nên một
+    cổng đọc qua nó vừa **nổ nhầm** ở test, vừa **im lặng hỏng** nếu ai đó thay
+    `get()` bằng thứ luôn báo "còn sống". Sự thật về việc retire nằm ở
+    `REGISTRY`, nên cổng phải hỏi đúng chỗ đó.
+
+    Provider **không có trong registry** ⇒ `False`: id lạ không phải việc của
+    hàm này, và biến nó thành lỗi ở đây sẽ chặn nhầm các đường hợp lệ khác.
+    """
+    p = REGISTRY.get((provider_id or "").strip().lower())
+    return p is not None and not p.is_active
+
+
 def chan_neu_da_ngung(provider_id: str) -> None:
     """Cổng fail-closed — gọi NGAY TRƯỚC mỗi lượt ra mạng.
 
@@ -90,11 +106,10 @@ def chan_neu_da_ngung(provider_id: str) -> None:
     trong `httpx` không tồn tại, còn một cổng theo **danh tính provider** thì
     mọi nơi đều gọi được.
     """
-    p = REGISTRY.get((provider_id or "").strip().lower())
-    if p is not None and not p.is_active:
+    if da_ngung(provider_id):
         raise ProviderDaNgung(
-            f"provider '{p.id}' da ngung phuc vu — khong tao luot goi moi. "
-            f"Doc lich su van hoat dong.")
+            f"provider '{(provider_id or '').strip().lower()}' da ngung phuc vu "
+            f"— khong tao luot goi moi. Doc lich su van hoat dong.")
 
 
 # ── Seed 5 provider hiện có trong BOT GEMINI (chỉ key CHÍNH THỨC) ──────────────

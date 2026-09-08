@@ -194,8 +194,11 @@ def goi(db, *, messages: list, thu_tu_provider: Sequence[str],
         #    "đã ngừng" nghĩa *không còn là một đường chạy*. Nếu ai đó về sau
         #    đổi nhánh này thành `BanError` thì đường lui legacy sống lại y
         #    nguyên — chỉ khác cái tên.
-        prov_kt = providers.get(pid)
-        if prov_kt is not None and not prov_kt.is_active:
+        #    ⚠️ Hỏi `providers.da_ngung()` chứ KHÔNG đọc `.is_active` trên vật
+        #       thể `get()` trả về: `get()` bị monkeypatch ở nhiều phép kiểm và
+        #       trả `SimpleNamespace` không có trường đó. Sự thật về retire nằm
+        #       ở `REGISTRY`, nên hỏi đúng chỗ ấy.
+        if providers.da_ngung(pid):
             ly_do.append(f"{pid}: da ngung phuc vu (khong phai ban)")
             log.info("provider %s da ngung, bo qua", pid)
             continue
