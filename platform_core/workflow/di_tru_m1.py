@@ -132,15 +132,28 @@ def chuyen(db, *, chay_that: bool = False) -> dict:
     }
 
     for cu in cu_ds:
-        # Luỹ đẳng theo `source_workflow_id`: một lần chạy lại tìm thấy bản cũ
-        # thay vì tạo bản thứ hai.
-        da = db.execute(
-            select(Workflow).where(Workflow.name == cu.name,
-                                   Workflow.owner_id == cu.user_id)).scalars()
-        trung = [w for w in da if w.published_version_id == f"m1:{cu.id}"]
-        if trung:
+        # ⭐ Danh tính: bản mới GIỮ NGUYÊN `id` của bản cũ. Luỹ đẳng thành một
+        #    phép tra khoá chính, và ánh xạ cũ→mới là phép đồng nhất.
+        #
+        # 🔴 Bản đầu đánh dấu bằng `published_version_id = f"m1:{cu.id}"`. Nó
+        #    chạy trên SQLite và **chết trên PostgreSQL**: `m1:` + id 36 ký tự
+        #    = **39**, còn cột là `String(36)`. SQLite không cưỡng chế độ dài
+        #    `VARCHAR`, PostgreSQL có — nên phép diễn tập trên bản sao SQLite
+        #    của chính dữ liệu production vẫn **xanh**.
+        #
+        #    Cùng họ với `BOOLEAN DEFAULT 1` ở các migration: SQLite nhận thứ
+        #    PostgreSQL từ chối. Khác ở chỗ `tools/do_migration_tren_postgres.py`
+        #    **không** đỡ được ca này — nó kiểm *migration*, còn đây là *đường
+        #    chạy lúc runtime*. Một trục nữa còn thiếu.
+        #
+        # ⛔ Và cách sửa KHÔNG phải cắt ngắn chuỗi cho vừa 36. Ép một dấu vào
+        #    một cột mang nghĩa khác ("version đang xuất bản") là chỗ sinh ra
+        #    lỗi ấy. `published_version_id` nay giữ đúng nghĩa của nó: rỗng =
+        #    chưa xuất bản lần nào — đúng với mọi bản vừa di trú.
+        da = db.get(Workflow, cu.id)
+        if da is not None:
             ra["da_co"] += 1
-            ra["anh_xa"][cu.id] = trung[0].id
+            ra["anh_xa"][cu.id] = da.id
             continue
 
         doc = cu.document if isinstance(cu.document, dict) else {}
@@ -159,10 +172,7 @@ def chuyen(db, *, chay_that: bool = False) -> dict:
         # ⚠️ GIỮ NGUYÊN tên: 10/10 bản ghi production mang tên mặc định
         #    "Workflow mới". Đặt tên mới cho chúng là **bịa** một thông tin mà
         #    không người dùng nào cung cấp.
-        wf = Workflow(owner_id=cu.user_id, name=cu.name)
-        # Dấu nguồn, để lần chạy thứ hai nhận ra. Không thêm cột mới cho một
-        # script chạy một lần.
-        wf.published_version_id = f"m1:{cu.id}"
+        wf = Workflow(id=cu.id, owner_id=cu.user_id, name=cu.name)
         db.add(wf)
         db.flush()
         db.add(WorkflowDraft(workflow_id=wf.id, document=moi, revision=1))

@@ -258,6 +258,58 @@ def test_ten_mac_dinh_duoc_giu_nguyen_khong_bia_ten_moi(db):
 
 # ── Báo cáo phải nói ĐỦ, không chỉ nói ĐẸP ──────────────────────────────────
 
+# ── Thứ SQLite không cưỡng chế mà PostgreSQL CÓ ─────────────────────────────
+
+def test_moi_chuoi_M1_ghi_ra_deu_VUA_do_dai_cot(db):
+    """🔴 Bộ test chạy SQLite. Production chạy PostgreSQL. `VARCHAR(n)` là một
+    trong những chỗ hai bên **không** đồng ý:
+
+        SQLite      : do dai VARCHAR la trang tri, nhan moi chuoi
+        PostgreSQL  : "value too long for type character varying(36)"
+
+    Bản đầu của `M-1` đánh dấu bằng `published_version_id = "m1:" + id`, tức
+    **39** ký tự vào một cột `String(36)`. Nó xanh trên SQLite, xanh cả khi
+    diễn tập trên **bản sao chính dữ liệu production** — và sẽ chết ở lượt chạy
+    thật.
+
+    ⭐ Nên phép kiểm này **không** hỏi *"cái dấu ấy có ngắn không"*. Nó hỏi
+       *"có chuỗi nào M-1 ghi ra mà dài hơn cột của nó không"* — mệnh đề bất
+       biến với mọi trường thêm về sau. Một phép kiểm chỉ ghim đúng ca đã biết
+       thì lần sau lại phải phát hiện lại từ đầu.
+
+    Cùng họ với `BOOLEAN DEFAULT 1` ở các migration, nhưng khác trục:
+    `tools/do_migration_tren_postgres.py` kiểm **migration**, còn đây là
+    **đường chạy lúc runtime** — nó không đỡ được ca này.
+    """
+    from sqlalchemy import String
+
+    from platform_core.models import Workflow, WorkflowDraft
+    from platform_core.workflow import di_tru_m1
+
+    _cu(db, document=_doc_v2())
+    _cu(db, document={}, nodes=[{"id": "n0", "type": "t", "data": {}}])
+    db.commit()
+
+    di_tru_m1.chuyen(db, chay_that=True)
+    db.commit()
+
+    qua_dai = []
+    for lop in (Workflow, WorkflowDraft):
+        for hang in db.query(lop).all():
+            for cot in lop.__table__.columns:
+                gioi_han = getattr(cot.type, "length", None)
+                if not isinstance(cot.type, String) or not gioi_han:
+                    continue
+                gia_tri = getattr(hang, cot.name, None)
+                if isinstance(gia_tri, str) and len(gia_tri) > gioi_han:
+                    qua_dai.append(
+                        f"{lop.__tablename__}.{cot.name}: "
+                        f"{len(gia_tri)} ky tu > {gioi_han}")
+
+    assert not qua_dai, (
+        "PostgreSQL se TU CHOI nhung gia tri nay: " + "; ".join(qua_dai))
+
+
 def test_bao_cao_cong_lai_dung_bang_TONG_SO_ban_ghi(db):
     """⭐ Bất biến kiểm được: `đã_chuyển + rỗng + đã_có = tổng`.
 
