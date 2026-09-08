@@ -886,6 +886,193 @@ Kiểm tĩnh: `ruff` sạch · `i18n` không tăng · `test_147_layering` 8 xanh
 ⛔ **Chưa nối vào đường chạy nào.** Đợt 2 chỉ là lược đồ + service + test, đúng
 `27_29 §28`. Scheduler là Đợt 3.
 
+
+---
+
+## ĐỢT 3A + 3B — máy trạng thái và hệ con `finally` ✅
+
+```
+RED    21 do    (bang chuyen + ket so chua ton tai)
+GREEN  21 xanh  -> ca cum Workflow V2 + Dot 1: 121 passed
+```
+
+### 3A — ba trạng thái, ba khiếm khuyết của chính BẢN NHÁP CỦA TA
+
+Khác Đợt 2 (vá khiếm khuyết của kho khác), ba thứ này vá bản nháp `WF-207`:
+
+| trạng thái | thiếu nó thì |
+|---|---|
+| `RUNNING_WITH_WAITPOINTS` | ForEach có vài vòng xong + vài vòng đang chờ là một run **có thật mà không có tên**. `RUNNING ⇄ WAITING` tách rời không biểu đạt nổi |
+| `SYSTEM_FAILURE` tách `FAILED` | hai chuyện khác nhau về **tiền** và **cảnh báo** bị gộp vào `AGENT_ERROR` (`G21`) |
+| `ABANDONED` | provider **có thể đã nhận** — `AmbiguousProviderError` 10 lần/28 ngày là có thật, và thử lại có thể tính tiền hai lần |
+
+⭐ **Lần chuyển bị TỪ CHỐI vẫn ghi một ảnh chụp** (`is_valid=False`), kèm lý do
+dạng `PENDING -> SUCCEEDED khong nam trong bang`. Không ghi thì thứ duy nhất
+còn lại là trạng thái cuối — thứ **không nói ai đã thử gì**.
+
+### 3B — `M10`: 145 → 0, và nguyên nhân là HÌNH DẠNG
+
+```
+145 dong "GIU CHO TREO: <n> khoan, <n> credit cua khach dang bi giu"  / 28 ngay
+```
+
+Khoản giữ chỗ treo là **tiền của khách bị giam**: số dư hiển thị thấp hơn thực
+tế, không lệnh nào của khách gỡ được, và nó **không gây lỗi, không gây cảnh
+báo** — chỉ im lặng cho tới khi ai đó đọc log.
+
+⭐ Nguyên nhân không phải sự cẩu thả: `_terminal_status` ghi trạng thái ở một
+chỗ, `budget.settle` kết sổ ở chỗ khác, và **giữa hai chỗ là một cửa sổ**.
+Worker restart 13,6 lần/ngày ⇒ cửa sổ ấy được **thử 13,6 lần mỗi ngày**.
+
+⇒ Bản vá không phải *"nhớ gọi settle"* mà là **gộp hai thao tác vào một
+  transaction**: `chuyen_run()` gọi thẳng `ket_so()`.
+
+🔑 Và `test_955` kiểm điều đó bằng **rollback**, không bằng đọc mã: nếu hai
+thao tác ở hai transaction thì một trong hai **sống sót** qua rollback. Cả hai
+cùng biến mất mới là bằng chứng chúng cùng một transaction.
+
+### Vì sao cần một CỘT `ket_so_luc`, không phải một suy luận
+
+Suy từ `hold_id == ""` sai ở đúng cách nguy hiểm:
+
+```
+hold_id rong  ->  co the la "da ket so"
+              ->  cung co the la "run nay CHUA BAO GIO co giu cho"
+```
+
+Hai chuyện khác hẳn, một giá trị. `ket_so_luc IS NULL` nói về **hành động**,
+không nói về **hậu quả** của hành động.
+
+### Đối chứng: năm phép tiêm, năm lần đỏ
+
+| tiêm | đỏ |
+|---|---|
+| không ghi ảnh chụp khi bị từ chối | 2 |
+| kết sổ **ngoài** transaction chuyển | **6** |
+| `SYSTEM_FAILURE` vẫn thu tiền | 1 |
+| tính cả hàng `is_valid=False` | 1 |
+| kết sổ không luỹ đẳng | 1 |
+
+Phép tiêm thứ hai đỏ **6 bài** — đúng như mong đợi: gỡ hệ con `finally` ra khỏi
+transaction là gỡ toàn bộ `M10`.
+
+### Và một phép kiểm XANH-RỖNG tôi tự bắt được
+
+`test_goi_ket_so_LAN_HAI` ban đầu chỉ đếm `CreditEntry`. Mã hiện tại **chưa ghi
+`CreditEntry` nào**, nên "không tăng" đúng **cả khi** kết sổ chạy lại từ đầu —
+bài ấy xanh mà không đo gì. Đã siết: `lan_hai is False` **và** `ket_so_luc`
+không bị ghi đè.
+
+⭐ Đây là dạng lỗi mà đối chứng-bằng-tiêm **không bắt được**: tiêm một lỗi vào
+`ket_so` vẫn để bài ấy xanh. Thứ bắt được nó là câu hỏi *"bài này sẽ đỏ khi
+nào?"* — và câu trả lời hoá ra là **không bao giờ**.
+
+### Migration `d7e24b9f1c53`
+
+```
+c6d13a8e4b72 -> d7e24b9f1c53
+workflow_run + ket_so_luc (nullable) + ly_do_ket_so
+```
+
+Hai cột mới trên một bảng chưa ai dùng. Thi hành thật từ `base` tới `head`.
+
+### Còn lại của Đợt 3
+
+`3.3` middleware trên cạnh (3 hook, `G45` — quyền tool kiểm **lúc thi hành**) ·
+`3.4` bộ chaos giết tiến trình ở 10 điểm (`M6`: 10/10 cùng kết quả).
+
+
+---
+
+## ĐỢT 3C + 3D — middleware cạnh và bộ chaos ✅ · ĐỢT 3 ĐÓNG
+
+```
+3C middleware  11 xanh      3D chaos M6  5 xanh
+ca cum Workflow V2 + Dot 1: 139 passed  (98 xanh ca khi NGAU NHIEN HOA thu tu)
+```
+
+### 3C — vì sao middleware chứ không phải một `if` trong scheduler
+
+`WF-903` là một lỗ **có thật**, và nó sinh ra từ một tính chất ta **muốn**:
+
+> `validate_plan` lọc theo `app_access` (đúng), nhưng một `WorkflowVersion`
+> **đã publish** có thể chạy **sau khi quyền bị thu hồi**.
+
+Version **bất biến** — nó giữ nguyên nội dung đã duyệt kể cả khi quyền của chủ
+nó đã đổi. Bất biến là thứ khiến tái dựng được, và **chính nó** tạo ra lỗ này.
+Nên bản vá không thể nằm ở `validate`; nó phải nằm ở **thời điểm truyền**.
+
+⛔ **Fail-CLOSED khi hook ném lỗi.** Đây là chỗ cắm của kiểm quyền, nên một hook
+   lỗi mà cho đi tiếp là **mở cổng khi bộ gác ngã**.
+
+⛔ **Tên điểm cắm sai bị từ chối NGAY.** Một hook gắn vào điểm không tồn tại là
+   một hook **không bao giờ chạy** — nếu nó là hook quyền thì đó là một cổng mở
+   mà không ai thấy.
+
+### 3D — `M6` và ba lần phép kiểm xanh vì lý do SAI
+
+Bộ chaos đầu tiên **4/4 xanh ngay lượt đầu**. Đối chứng cho thấy nó yếu hơn tên
+gọi của nó: trong ba phép tiêm, **chỉ một** làm nó đỏ.
+
+| tiêm | lượt đầu | sau khi sửa bộ kiểm |
+|---|---|---|
+| node: chuyển từ trạng thái kết thúc được chấp nhận | **2 đỏ** ✅ | 2 đỏ |
+| run: gỡ rào `hien in RUN_KET_THUC` | **0 đỏ** ❌ | **1 đỏ** ✅ |
+| `ket_so` mất tính luỹ đẳng | **0 đỏ** ❌ | **1 đỏ** ✅ |
+
+**Nguyên nhân, và cả hai đều đáng ghi:**
+
+⭐ **Rào `hien in RUN_KET_THUC` là MÃ CHẾT.** Không trạng thái kết thúc nào là
+*khoá* của `RUN_CHUYEN`, nên mệnh đề `sang not in RUN_CHUYEN.get(hien, ...)` đã
+đủ — rào kia **không bao giờ chạy**. Bài `test_run_da_ket_thuc_thi_khong_chuyen_nua`
+xanh vì một lý do **khác lý do nó khai**.
+
+⇒ Vá bằng cách làm cái rào **sống**: `monkeypatch` mở một đường ra khỏi `FAILED`
+  trong bảng rồi đòi rào vẫn chặn. Đó là cách duy nhất nó có nghĩa — nó phòng
+  đúng một chuyện: **một lần sửa bảng trong tương lai**. Cộng một bất biến cấu
+  trúc `set(RUN_CHUYEN) & RUN_KET_THUC == set()`.
+
+⭐ **Đường phát lại không bao giờ gọi `ket_so` lần hai** — `chuyen_run` tới
+trạng thái kết thúc đã bị từ chối trước đó. Nhưng **bộ dọn nền thì có gọi**, và
+đó chính là kiến trúc cũ mà `M10` sinh ra để thay. Thêm bài đo đúng đường ấy.
+
+⚠️ Và bài mới ấy **vẫn** xanh ở lượt đầu, vì `_anh_chup_ket_qua` chỉ giữ
+`da_ket_so` là một **bool** — một lần kết sổ chạy lại từ đầu cho ra ảnh chụp y
+hệt. Phải so cả `ket_so_luc` mới thấy. **Ba tầng, ba lần xanh sai.**
+
+🔑 Bài học tổng quát của cả ngày, ở dạng chặt nhất: **đối chứng-bằng-tiêm chỉ
+mạnh bằng độ mịn của thứ phép kiểm SO SÁNH.** Tiêm đúng chỗ mà so bằng một
+bool thì vẫn xanh.
+
+### `M6` — thứ ngưỡng này thật sự hỏi
+
+Không phải *"có khôi phục được không"* mà **"khôi phục có ra CÙNG một kết quả
+không"**. Câu thứ hai khó hơn hẳn: một hệ có thể khôi phục được mà vẫn **thu
+tiền hai lần**. 10 điểm giết + 1 lượt không giết ⇒ 11 lượt, cùng một ảnh chụp
+(trạng thái · chi phí · giữ chỗ · trạng thái từng node).
+
+⭐ Và mô hình C trả công ở đây: sau một lần giết, ta đọc được **cả đường đi thật
+lẫn những bước bị từ chối lúc phát lại**. Một khối JSON sửa tại chỗ thì lần phát
+lại **ghi đè** mất dấu vết của lần chết.
+
+---
+
+## ĐỢT 3 ĐÓNG — trạng thái
+
+| | test | nội dung |
+|---|---|---|
+| 3A máy trạng thái | 13 | `RUNNING_WITH_WAITPOINTS` · `SYSTEM_FAILURE` · `ABANDONED` · ghi lần chuyển bị từ chối |
+| 3B `finally` | 8 | `M10` 145 → 0, kết sổ trong **cùng transaction**, kiểm bằng rollback |
+| 3C middleware cạnh | 11 | 3 hook, fail-closed, `WF-903` kiểm quyền lúc thi hành |
+| 3D chaos | 5 | `M6` 10/10 điểm giết → cùng kết quả |
+| **tổng** | **37** | migration `d7e24b9f1c53` |
+
+Cộng Đợt 1 + 2 ⇒ **139 bài xanh**, và **98 xanh cả khi ngẫu nhiên hoá thứ tự**
+(sổ hook là trạng thái toàn cục — fixture `sach` dọn trước/sau mỗi bài).
+
+⛔ Vẫn **chưa nối vào đường chạy nào**. Ba hệ con còn lại của scheduler
+(`enqueue` · `dequeue` · `attempt` · `foreach` · `ttl`) là Đợt 4–5.
+
 ## ĐỢT 2–5
 
 Chưa bắt đầu. Xem `27_29 §28`.

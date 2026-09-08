@@ -1117,6 +1117,14 @@ class WorkflowRun(Base):
     estimated_max: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     actual_cost: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     hold_id: Mapped[str] = mapped_column(String(36), default="", nullable=False)
+    # ⭐ Dấu KẾT SỔ. Nó là thứ làm hệ con `finally` **luỹ đẳng**, và luỹ đẳng là
+    #   điều kiện để gọi được nó ở nhiều chỗ mà vẫn an toàn — một hệ con chỉ an
+    #   toàn ở một chỗ thì sớm muộn cũng bị bỏ sót ở chỗ thứ hai.
+    #   `NULL` = chưa kết sổ. Xem `platform_core/workflow/ket_so.py`.
+    ket_so_luc: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    ly_do_ket_so: Mapped[str] = mapped_column(String(200), default="",
+                                              nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_bay_gio, nullable=False)
     started_at: Mapped[datetime | None] = mapped_column(
