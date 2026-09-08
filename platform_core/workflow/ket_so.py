@@ -70,6 +70,17 @@ def ket_so(db, run_id: str, *, ly_do: str = "") -> bool:
 
     run.actual_cost = (0 if run.status in RUN_LOI_CUA_TA
                        else tong_chi_phi_hop_le(db, run_id))
+
+    # ⛔ QUYẾT TOÁN TRƯỚC, XOÁ DẤU SAU. Thứ tự này là toàn bộ vấn đề: xoá
+    #    `hold_id` rồi mới chạm sổ thì một lần crash ở giữa để lại một khoản giữ
+    #    **không còn ai biết nó thuộc về đâu** — đúng hình dạng của 145 khoản
+    #    treo mà hệ con này sinh ra để chống, chỉ khác là do chính ta tạo.
+    #
+    # Cả hai đường bên trong đều luỹ đẳng theo khoá sổ, nên `ket_so` gọi lại
+    # vẫn an toàn — và `ket_so_luc` ở dưới mới là thứ chặn lần gọi thứ hai.
+    from platform_core.workflow import tien
+    tien.ket_so_tien(db, run)
+
     run.hold_id = ""
     run.ket_so_luc = _bay_gio()
     run.ly_do_ket_so = (ly_do or f"run -> {run.status}")[:200]

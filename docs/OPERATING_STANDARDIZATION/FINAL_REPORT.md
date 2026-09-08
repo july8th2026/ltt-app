@@ -210,7 +210,7 @@ RESULT: FAIL (1/30) [1 BUOC TU BO QUA] [CAY DA DOI GIUA CHUNG - KHONG DUNG LAM B
 | | |
 |---|---|
 | **28 bước PASS** | gồm bước mới `luat van hanh` (**1,9 s**) và cả 23 bước tĩnh |
-| `bat bien da tien trinh` | `[BOQUA]` sau 0,7 s — **tự khai** là không chạy. ⚠️ Nguyên nhân **không** phải "thiếu PostgreSQL" — xem dưới |
+| `bat bien da tien trinh` | `[BOQUA]` sau 0,7 s — **tự khai** là không chạy. ⚠️ Nguyên nhân **không** phải "thiếu PostgreSQL", cũng **không** phải thiếu `CREATEDB` — xem đính chính 08/09 bên dưới |
 | `bo test` FAIL | **1 phép kiểm**: `test_306::test_bo_qua_hien_tai_dat_moc` |
 
 Phép kiểm đỏ duy nhất: hai `skip` mới trong
@@ -233,16 +233,57 @@ check_multiproc._tim_url()
            (khong noi duoc truoc do: OperationalError)')
 ```
 
-⇒ PostgreSQL **có**. Thứ hỏng là bước **dựng CSDL nháp `…_test`** cạnh nó — gần
-như chắc là tài khoản ứng dụng thiếu quyền `CREATEDB`.
+⇒ PostgreSQL **có**.
 
-Khác biệt không phải chữ nghĩa: *"thiếu PostgreSQL"* dẫn người ta đi **cài** một
-thứ đã có; *"không tạo được CSDL test"* dẫn tới một lệnh `GRANT`, hoặc `createdb`
-một lần rồi đặt `LTT_TEST_DATABASE_URL`.
+### ⛔ ĐÍNH CHÍNH 08/09/2026 (phiên LTT VOICE) — CHẨN ĐOÁN TRÊN CŨNG SAI
 
-⭐ Cùng hình dạng với `Bẫy 8`: **thông điệp đúng về sự việc, sai về nguyên nhân.**
-Nó nói *"không tìm thấy CSDL test"* và tôi đọc thành *"không có PostgreSQL"* —
-loại trừ một khả năng không phải xác định khả năng còn lại.
+Đoạn gốc ở đây viết *"gần như chắc là tài khoản ứng dụng thiếu quyền
+`CREATEDB`"*. Đo tiếp thì **không phải**:
+
+```
+_doc_env doc theo thu tu:
+  1) C:\LTTPlatform\secrets\app.env   -> Access to the path is denied   (ACL)
+  2) D:\LTTSTUDIOSAPP\secrets\app.env -> DOC DUOC                       (dung cai nay)
+
+ket noi bang URL lay tu (2):
+  FATAL: password authentication failed for user "ltt_app"
+
+production /health/ready -> 200
+```
+
+Xác thực **trượt trước** khi tới bước dựng CSDL nháp, nên `CREATEDB` chưa bao
+giờ được hỏi tới. Nguyên nhân thật: gate chạy dưới tài khoản **không đọc được
+bí mật production**, nên `_doc_env` rơi xuống `app.env` **trong cây nguồn**, và
+mật khẩu ở đó không khớp Postgres đang chạy. Production khoẻ (200) — bí mật
+thật hoàn toàn đúng, chỉ là gate không đọc được nó.
+
+### 🔴 Và bản vá "hiển nhiên" là bản vá SAI
+
+`icacls` mở `C:\LTTPlatform\secrets\` cho gate đọc được là **gỡ hạng mục
+W1.5** của `AUDIT_MVP_2026-07-31` — *"thư mục bí mật chỉ SYSTEM/Admin đọc"*.
+`CLAUDE.md` ghi thẳng rằng ACL ở đó là **cố ý**.
+
+⭐ Nên bước này bỏ qua **vì một bản vá bảo mật đang làm đúng việc của nó**. Đó
+không phải một khiếm khuyết cần vá — nó là một **đánh đổi** cần một đường thứ
+ba: một CSDL test **riêng**, tài khoản **riêng**, đặt qua
+`LTT_TEST_DATABASE_URL`. Không bao giờ cho cổng chất lượng chạm bí mật
+production.
+
+### ⭐ Ba vòng, và mỗi vòng đều "đúng" ở tầng của nó
+
+```
+vong 1  "thieu PostgreSQL"       -> sai. Postgres dang chay.
+vong 2  "thieu quyen CREATEDB"   -> sai. Xac thuc da truot truoc do.
+vong 3  doc nham TEP app.env, vi tep dung bi ACL chan
+```
+
+Cùng hình dạng với `Bẫy 8`: **thông điệp đúng về sự việc, sai về nguyên nhân** —
+và ở đây nó lặp **ba** vòng, vì mỗi thông điệp lỗi đều đúng về sự việc của tầng
+nó. *Loại trừ một nguyên nhân không phải là xác định nguyên nhân còn lại.*
+
+⚠️ Thứ cắt được vòng lặp không phải sự cẩn thận — là in `user=` và `host=` ra
+thay vì chỉ in `type(ex).__name__`. Hai vòng đầu chỉ đọc **tên lớp ngoại lệ**,
+và một tên lớp thì tương thích với mọi giả thuyết.
 
 🔴 **Hệ quả thật, và nó không nhỏ:** bước ấy là bước **duy nhất** chạy migration
 trên PostgreSQL. Nó `[BOQUA]` ⇒ **chưa migration nào trong kho từng được thi hành
@@ -250,9 +291,19 @@ trên một PostgreSQL sống, ở bất kỳ lượt gate nào.** Phiên Workfl
 một lỗi mà **chỉ** Postgres bắt được (`BOOLEAN DEFAULT 1` — SQLite nhận, Postgres
 từ chối), tức lớp lỗi ấy có thật và đang không có ai canh.
 
-⇒ **FOLLOW_UP P0 mới**: cấp `CREATEDB` cho tài khoản test, hoặc `createdb` một
-lần rồi đặt `LTT_TEST_DATABASE_URL`. Không tự làm — đổi trạng thái một máy đang
-chạy thật là quyết định của chủ sản phẩm.
+⇒ **FOLLOW_UP P0 mới**: dựng một CSDL test **riêng** với tài khoản **riêng**,
+rồi đặt `LTT_TEST_DATABASE_URL`. Không tự làm — đổi trạng thái một máy đang chạy
+thật là quyết định của chủ sản phẩm.
+
+⛔ **Đừng ghi sẵn một lệnh sửa vào P0 này.** Bản đầu ghi `GRANT CREATEDB`, và
+lệnh ấy **không sửa gì** — sẽ có người chạy nó, thấy bước vẫn `[BOQUA]`, rồi kết
+luận sai lần thứ tư. Thứ đáng ghi là **lệnh ĐO**:
+
+```
+python -c "import sys; sys.path.insert(0,'.'); from tools import check_multiproc as M; print(M._tim_url())"
+```
+
+rồi phân biệt ba nguyên nhân ở trên bằng chính thông điệp trả về.
 
 ### 🔴 Bài học đắt nhất — một PHÂN BIỆT, không phải một lời nhắc
 
@@ -349,9 +400,21 @@ $ grep -rnE "^\s*(from|import)\s+tools|from tools\." server/ platform_core/ apps
 server/routes/status.py:80        from tools import doctor
 apps/lttvideo/jobs.py:122         from tools.wangp.may_cloud import tao_client
 
-$ grep -rnE "import (gate|thanh_phan)" server/ platform_core/ apps/
+$ grep -rnE "import (gate|thanh_phan)\b" server/ platform_core/ apps/
 (khong co gi)
 ```
+
+⚠️ **Dòng lệnh trên từng bị hỏng trong bản commit đầu**, và cách nó hỏng đáng
+ghi lại: `\b` (ranh giới từ của regex) bị heredoc Bash nuốt thành **một byte
+backspace `0x08`** — một ký tự **không hiển thị**. `sed`, `cat`, và trình xem
+markdown đều in ra trông đúng, nên đọc lại tệp thấy đúng.
+
+⭐ Đây là lần thứ **ba** cùng một lỗi trong ngày 08/09/2026, ở **hai** phiên
+khác nhau. Nó không phải sự bất cẩn của ai — nó là một tính chất của công cụ,
+và mắt người không phải một bộ dò cho nó.
+
+⇒ Quét `[\x00-\x08\x0b\x0c\x0e-\x1f]` trên **mọi** tệp vừa ghi, cạnh phép
+kiểm CRLF vốn đã có. Rẻ, và nó bắt được thứ mắt không thấy.
 
 ⇒ **Không.** Chiến dịch này đụng `CLAUDE.md`, `AGENTS.md`, `docs/**`,
 `tools/gate.py`, `tools/thanh_phan.py`, `tools/check_luat_van_hanh.py` — **không

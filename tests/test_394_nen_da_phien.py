@@ -292,6 +292,12 @@ def test_chi_buoc_that_su_doc_quyen_moi_khai_tai_nguyen():
         "bo test (pham vi)",
         # `check_multiproc.py` goi `drop_all()` tren CSDL test dung chung.
         "bat bien da tien trinh",
+        # `do_migration_tren_postgres.py` DUNG roi XOA mot CSDL nhap canh CSDL
+        # chinh (`..._test`), va chay ca chuoi alembic tren do. Hai luot gate
+        # cung luc se giam nhau dung o buoc `CREATE DATABASE` / `DROP DATABASE`
+        # — cung ho voi `drop_all()` o dong tren, chi khac cap: mot ben xoa
+        # BANG, ben nay xoa ca CSDL.
+        "migration tren postgres",
     }
     thua = co_tn - du_kien
     assert not thua, f"buoc khai tai nguyen ngoai du kien: {sorted(thua)}"

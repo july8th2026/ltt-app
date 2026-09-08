@@ -207,6 +207,14 @@ def main() -> int:
                     #     khac nhau giua hai lan chay, khong loi nao bao, va
                     #     khach khong co cach nao tai hien de bao loi.
                     "uq_voice_tudien_owner_tu",
+                    #   uq_voice_quality_profile -> mot giong co HAI phan quyet
+                    #     curate. Hai dong cho cung mot giong la hai cau tra loi
+                    #     cho cung mot cau hoi, va khong ai biet cau nao dang co
+                    #     hieu luc. Hau qua cu the: `tools/soat_giong.py` doc
+                    #     bang `scalar_one_or_none()` — hai dong lam no NEM,
+                    #     nen mat rang buoc nay khong hong lang le, no hong o
+                    #     dung cho nguoi ta dang co soat mot giong.
+                    "uq_voice_quality_profile",
                     # Ten gateway trung -> cau hinh mang tro nham node.
                     "uq_vps_gateway_ten",
                     # Mat rang buoc nay = hai phien ban gia cung nhan cho mot

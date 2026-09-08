@@ -164,6 +164,16 @@ STORES: tuple = (
           N_("Cam kết sở hữu giọng: ai, lúc nào, bản điều khoản nào, hash tệp "
           "nào. Đây là bảng duy nhất trả lời được câu hỏi pháp lý, và nó là lý "
           "do consent phải là DỮ LIỆU chứ không phải một ô tick.")),
+    # ⚠️ `nguoi_soat` giữ id của NGƯỜI VẬN HÀNH đã ra phán quyết, không phải của
+    #    khách. Nhưng bảng vẫn xếp loại như bốn bảng trên, và có chủ ý: nó gắn
+    #    một-một với `voice_profile`, và `ly_do_loai` nói vì sao một giọng biến
+    #    mất — tức nó là nửa còn lại của câu trả lời cho khách hỏi *"giọng của
+    #    tôi đâu"*. Xếp nó là "không phải dữ liệu khách" sẽ đúng về cột và sai
+    #    về câu hỏi.
+    Store("voice_quality_profile", EVIDENCE, None, N_("chủ tài khoản + vận hành"),
+          N_("Phán quyết curate một giọng và LÝ DO LOẠI khi loại. Giữ chừng nào "
+          "giọng còn: ngày nâng engine, một giọng loại vì rè đáng thử lại, một "
+          "giọng loại vì thiếu consent thì không — cùng trạng thái, hai số phận.")),
 
     # ── Dự án và Chạy lô: bản thảo của khách, không phải kết quả một job ─────
     #

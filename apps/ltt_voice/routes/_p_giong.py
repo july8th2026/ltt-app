@@ -7,7 +7,7 @@ from ._chung import (MANIFEST, SO_LAN_THU_JOB, TRAN_KY_TU_CONG_KHAI, Depends, Fi
                      _t, _uid, doc_man_giong, doc_man_lich_su, features,
                      gia, giong_mau, io, require_login, router, templates,
                      tham_chieu, user_hien_tai, verify_csrf_token, vo,
-                     NHAN_NGUON, lan_ngon_ngu, nghe_thu)
+                     NHAN_NGUON, lan_ngon_ngu, muc_dung, nghe_thu)
 
 
 # ── Giọng của tôi ────────────────────────────────────────────────────────────
@@ -40,7 +40,8 @@ def trang_giong(request: Request, user=Depends(user_hien_tai),
     return templates.TemplateResponse(
         request, "ltt_voice_giong.html",
         vo.ngu_canh(request, user, nav_key=vo.NAV_GIONG, hang_doi=hang_doi,
-                    giong=giong, giong_mau=giong_mau.DANH_SACH,
+                    giong=giong,
+                    giong_mau=muc_dung.xep(giong_mau.DANH_SACH),  # U-12
                     nhan_gioi=giong_mau.NHAN_GIOI,
                     nhan_vung=giong_mau.NHAN_VUNG,
                     nhan_phong_cach=giong_mau.NHAN_PHONG_CACH,

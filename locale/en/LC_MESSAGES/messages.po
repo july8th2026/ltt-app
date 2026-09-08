@@ -14673,3 +14673,43 @@ msgstr "A ForEach loop in progress."
 
 msgid "Kết quả từng phần tử của một vòng ForEach — thứ nói CHÍNH XÁC còn phải chạy gì sau một lần chết."
 msgstr "The result of each ForEach element — what says EXACTLY which ones still have to run after a crash."
+
+# LTT VOICE — U-13, cửa nghe thử văn bản của khách (`routes/_p_nghe_thu.py`).
+# Thêm TAY theo đúng chỉ dẫn của `dich thieu ban EN`: mục `VANG` không được
+# chạy `i18n.py trich`, vì msgmerge sẽ ĐOÁN bản dịch cho chúng và xáo lại tệp.
+msgid "Chưa có văn bản."
+msgstr "No text yet."
+
+msgid "Nghe thử tối đa {n} ký tự — một câu."
+msgstr "Preview is limited to {n} characters — one sentence."
+
+msgid "Giọng không hợp lệ."
+msgstr "That voice is not valid."
+
+msgid "Bạn đã dùng hết {n} lượt nghe thử trong giờ này."
+msgstr "You have used all {n} previews for this hour."
+
+msgid "Máy đang bận tạo tiếng cho lượt khác. Thử lại sau ít giây."
+msgstr "The engine is busy generating another request. Try again in a few seconds."
+
+msgid "Không tạo được tiếng lúc này."
+msgstr "Could not generate audio right now."
+
+# U-04 — mô tả kho dữ liệu `voice_quality_profile` trong bản kiểm kê quản trị
+# dữ liệu (`platform_core/public_api/governance.py`). Khách đọc nó ở trang
+# "chúng tôi giữ gì về bạn", nên nó phải có bản EN như bốn bảng giọng kia.
+msgid ""
+"Phán quyết curate một giọng và LÝ DO LOẠI khi loại. Giữ chừng nào giọng còn: "
+"ngày nâng engine, một giọng loại vì rè đáng thử lại, một giọng loại vì thiếu "
+"consent thì không — cùng trạng thái, hai số phận."
+msgstr ""
+"The curation verdict on a voice, and the REASON it was rejected. Kept as long "
+"as the voice is: on the day the engine is upgraded, a voice rejected for "
+"hiss deserves another try, one rejected for missing consent does not — same "
+"status, two different fates."
+
+# U-17 — tên cho `role="progressbar"` ở màn Dự án. axe `aria-progressbar-name`
+# (serious): một thanh tiến độ không tên đọc lên là "bốn mươi phần trăm" mà
+# không nói của cái gì, trong khi màn ấy có nhiều dự án.
+msgid "Tiến độ dự án {ten}: {xong}/{tong} khối"
+msgstr "Project {ten} progress: {xong}/{tong} blocks"

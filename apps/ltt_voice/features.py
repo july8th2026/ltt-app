@@ -194,6 +194,23 @@ class KetQua:
     #:    `as_result()` khi có giá trị: thêm một trường luôn-luôn-rỗng vào mọi
     #:    bản ghi để phục vụ một ca hiếm là làm nặng tất cả.
     giong_that: str = ""
+    #: 🔴 GPU-GIÂY của lượt này — thứ `X-Gen-S` của sidecar nói ra và trước
+    #:    08/09/2026 **không ai lưu**.
+    #:
+    #:    Hệ quả không phải "thiếu một chỉ số đẹp": mọi câu hỏi vận hành dạng
+    #:    *"giọng nào tốn GPU nhất"*, *"bản engine mới nhanh hơn bao nhiêu"*,
+    #:    *"RTF có trôi không"* đều **không trả lời được bằng dữ liệu ta có** —
+    #:    chỉ trả lời được bằng một lượt đo mới, tức bằng cách tiêu thêm GPU.
+    #:
+    #: ⛔ `0.0` = KHÔNG BIẾT, và nó chỉ vào `as_result()` khi khác 0. Một
+    #:    trường luôn-luôn-có với giá trị 0 sẽ được đọc thành "lượt này tốn 0
+    #:    giây GPU", và trung vị tính trên nó là một con số sai một cách tự tin.
+    #:
+    #: ⚠️ KHÔNG dùng để tính tiền. Tiền theo **giây tiếng đo được** (chốt 3.4);
+    #:    trường này là số liệu VẬN HÀNH. Trộn hai thứ là mở một lỗ: khách
+    #:    không điều khiển được GPU-giây, nên tính tiền theo nó là tính tiền
+    #:    theo tình trạng máy của ta.
+    gen_s: float = 0.0
     #: 🔴 HAI THỜI LƯỢNG, và trộn chúng là một lỗi TIỀN.
     #:
     #:    `giay`      — thời lượng SINH RA. Cơ sở tính credit, vì đó là lượng
@@ -239,6 +256,8 @@ class KetQua:
             **({"giong_that": self.giong_that}
                if self.giong_that and self.giong_that != self.yeu_cau.preset
                else {}),
+            # Chỉ khi ĐO ĐƯỢC — xem chú thích ở `gen_s`.
+            **({"gen_s": round(self.gen_s, 3)} if self.gen_s else {}),
         }
 
 
@@ -343,10 +362,22 @@ def _goi_va_dich_loi(ham, *doi_so, **tham_so):
             "Máy tạo tiếng nói chưa sẵn sàng. Vui lòng thử lại sau.")) from e
 
 
-def goi_cong(text: str, *, ref_b64=None, preset=None) -> tuple:
-    """Một lượt sinh. Trả `(wav_bytes, headers)`."""
-    return _goi_va_dich_loi(sidecar_client.noi, text,
-                            ref_b64=ref_b64, preset=preset)
+def goi_cong(text: str, *, ref_b64=None, preset=None,
+             timeout: float | None = None) -> tuple:
+    """Một lượt sinh. Trả `(wav_bytes, headers)`.
+
+    ⭐ `timeout=None` giữ nguyên trần của `sidecar_client.noi` (900 giây) — trần
+       của một lượt **job**, nơi khách đã xếp hàng và đang chờ có ý thức.
+
+    ⚠️ Đường **web đồng bộ** phải truyền một trần ngắn hơn nhiều. Trần 900 giây
+       ở đó không bảo vệ ai: Cloudflare cắt ở 100 giây, nên phần còn lại chỉ là
+       một worker web bị giữ cho một phản hồi **không ai còn nhận được**.
+       Xem `nghe_thu_cua_toi.TRAN_THOI_GIAN_S`.
+    """
+    tham = {"ref_b64": ref_b64, "preset": preset}
+    if timeout is not None:
+        tham["timeout"] = float(timeout)
+    return _goi_va_dich_loi(sidecar_client.noi, text, **tham)
 
 
 #: 🔴 `goi_cong_dai` ĐÃ GỠ 03/09/2026, và chỗ này ghi lại vì sao — không phải để

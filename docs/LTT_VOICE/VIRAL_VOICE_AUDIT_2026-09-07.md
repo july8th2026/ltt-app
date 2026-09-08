@@ -706,7 +706,7 @@ Xếp theo **gap** giảm dần (cột cuối §14):
                                              ▼
                      ┌──────────── voice_sidecar (venv cách ly) ─────────────┐
                      │ /v1/speech  /v1/lo-ra-tep  /v1/ghep-tep  /v1/enroll   │
-                     │ /v1/batch   ◄── U-06 NỐI VÀO ban_doc_dai              │
+                     │ /v1/lo-ra-tep ── DA noi (U-06 XONG, xem dinh chinh)   │
                      │ /v1/stream  ◄── U-07 NỐI VÀO Studio (SSE/chunked)     │
                      │ engine.CongGiong ấm · chốt GPU theo SỐ ĐO             │
                      │ + U-08 kiểm model theo NỘI DUNG lúc khởi động (T-03)  │
@@ -814,7 +814,7 @@ một mất mát, không phải một bổ sung.
 | 3 | **U-03** | **Facet lọc giọng**: giới · vùng · phong cách (dữ liệu **đã có**, chỉ chưa thành nút) | ⭐⭐⭐⭐⭐ | T-08, T-09 |
 | 4 | **U-04** | `VoiceQualityProfile` + **quy trình curate có LÝ DO LOẠI**, công bố điểm | ⭐⭐⭐⭐⭐ | T-12 |
 | 5 | **U-05** | **Cổng license/provenance** — trường `license_status`, chỉ `ok` mới hiện; và **hỏi Q-01** | ⭐⭐⭐⭐⭐ | §13.3 |
-| 6 | **U-06** | Nối `/v1/batch` (`infer_batch`) vào `ban_doc_dai` — gộp nhiều đoạn vào **một lượt GPU** | ⭐⭐⭐⭐ | T-13, §15 |
+| 6 | ~~**U-06**~~ | ✅ **ĐÃ XONG TỪ TRƯỚC — mục này là một PHÁT HIỆN SAI.** Đường bài dài đã gộp lô trên GPU qua `/v1/lo-ra-tep`. Xem §19.0 | — | §19.0 |
 | 7 | **U-07** | Nối `/v1/stream` vào Studio (nghe được câu đầu trong ~2 s thay vì chờ cả bài) | ⭐⭐⭐⭐ | §5.3 |
 | 8 | **U-08** | **Kiểm model theo NỘI DUNG** lúc sidecar khởi động (size + magic byte), từ chối nạp bản hỏng | ⭐⭐⭐⭐ | T-03 |
 | 9 | **U-09** | **Preview đóng gói theo bản phát hành** — dựng lúc build, không dựng dần 7 giờ | ⭐⭐⭐⭐ | T-05 |
@@ -829,6 +829,50 @@ một mất mát, không phải một bổ sung.
 | 18 | **U-18** | **Dọn bề mặt chết**: `/v1/voices` · `/v1/capabilities` · `/v1/speech-dai` — gỡ hoặc nối, **không để lửng** | ⭐⭐ | §5.3 |
 | 19 | **U-19** | **BENCHMARK OmniVoice** làm engine dự phòng (chỉ sau khi license trọng số rõ) | ⭐⭐ | R-11 |
 | 20 | **U-20** | **Bộ xếp lịch ưu tiên** — điều kiện đã ghi để nâng `TRAN_KY_TU_CONG_KHAI` quá 100.000 | ⭐⭐ | §2.3 |
+
+---
+
+## 19.0 ĐÍNH CHÍNH 08/09/2026 — U-06 ĐÃ XONG TỪ TRƯỚC KHI BẢN NÀY ĐƯỢC VIẾT
+
+**Bản kiểm toán này nói sai về U-06.** Nó xếp *"nối `infer_batch` vào
+`ban_doc_dai`"* vào P3 như một việc chưa làm. Đo lại 08/09/2026:
+
+```
+ban_doc_dai._sinh_mot_lo(8 doan)          SO_DOAN_MOI_LO = 8
+  -> sidecar_client.lo_ra_tep(...)
+  -> POST /v1/lo-ra-tep                    voice_sidecar/server.py:397
+  -> c.noi_lo(texts[i:i+n], ...)           TRAN_SO_VAN_BAN_BATCH = 8
+  -> self._tts.infer_batch(...)            voice_sidecar/engine.py:349
+```
+
+Tức đường bài dài **đã** gộp nhiều đoạn vào một lượt forward trên GPU, và đã
+làm vậy từ trước.
+
+### 🔴 Vì sao phép rà soát bỏ sót — và đây mới là phần đáng giữ
+
+Tôi tìm **một cái tên** (`/v1/batch`) thay vì tìm **một tính chất** (*"đường bài
+dài có chạm `infer_batch` không"*). `/v1/batch` thật sự không có ai gọi ngoài
+công cụ đo — kết luận ấy **đúng**. Nhưng nó không phải câu hỏi cần trả lời.
+
+⭐ Cùng hình dạng lỗi với ba ca khác ghi trong `DECISIONS.md::DV-013`: **phạm vi
+   phép đo hẹp hơn phạm vi kết luận.** Ở đây phép đo có một trục (*tên endpoint*)
+   còn kết luận có một trục khác (*đường tới GPU*), và hai trục ấy tình cờ nghe
+   giống nhau.
+
+### ⭐ Và cửa đang dùng TỐT HƠN cửa bản kiểm toán đề nghị
+
+`/v1/batch` trả base64 của từng WAV trong JSON. Với một cuốn sách thì worker
+phải giữ chúng, giải base64, rồi ghi ra đĩa — hàng chục lần.
+`/v1/lo-ra-tep` để sidecar ghi thẳng: **không byte âm thanh nào đi qua HTTP**,
+và nó ghi float32 thay vì PCM16 (một ràng buộc đã chốt bằng phép kiểm — mẫu
+vượt 1,0 lưu PCM16 là kẹp **ngay lúc ghi**, trước khi bộ hạ trần đỉnh kịp chạy).
+
+⇒ Nếu ai đó đã "thi hành U-06" theo đúng chữ của bản gốc, họ sẽ **thay một cửa
+  tốt bằng một cửa tệ hơn** — và đo bằng thông lượng GPU thì không thấy gì,
+  vì cả hai cùng gọi `infer_batch`.
+
+⛔ `tests/test_510` chốt tính chất chứ không chốt tên cửa: *đường bài dài phải
+   gửi **nhiều hơn một** đoạn trong một lượt gọi sidecar.*
 
 ---
 
@@ -918,7 +962,7 @@ một mất mát, không phải một bổ sung.
 
 ### P3 — engine / runtime
 
-- **`P3-1` (U-06)** Nối `infer_batch`. **M.** ⛔ Chỉ giữ nếu đo được **GPU-giây/ký tự giảm**; không thì gỡ.
+- ~~**`P3-1` (U-06)**~~ ✅ **RÚT — việc đã có sẵn.** Xem §19.0.
 - **`P3-2` (U-07)** Streaming. **L.** Phải giành **cùng** `vieneu_gpu` slot; tính tiền theo giây đã phát.
 - **`P3-3` (U-15)** Khuôn chuẩn hoá theo cỡ engine. **S.**
 - **`P3-4` (U-19)** Benchmark OmniVoice. **M.** ⛔ Chặn cứng bởi license trọng số.
@@ -984,7 +1028,7 @@ PRODUCTION PASS      /health/version: commit + asset_ver + hop_dong KHỚP kho
 | **Q-02** | License **trọng số** OmniVoice | Card HF **không khai**; repo code Apache-2.0 | Hỏi k2-fsa / mở issue |
 | **Q-03** | VI/EN/mixed quality **so với ElevenLabs, CapCut, Piper** trên cùng corpus | Ba ô N/A của §14 là ba ô khách quan tâm nhất | P1-2 |
 | **Q-04** | Provenance **25 giọng dùng chung** (kho F5/XTTS cũ) | Cùng lớp câu hỏi Q-01, và đây là giọng **của ta** | Tra `voice_ref.sha256` ngược về clip nguồn + `voice_consent` |
-| **Q-05** | `infer_batch` có thật sự tiết kiệm GPU-giây không? | Nếu không, U-06 là công vô ích | Đo `tools/do_lo_giong.py` mở rộng: 1 lượt N đoạn vs N lượt 1 đoạn |
+| **Q-05** | `infer_batch` có thật sự tiết kiệm GPU-giây không? | ⚠️ Câu hỏi **vẫn còn giá trị** nhưng đã đổi ý nghĩa: nó không còn quyết định *có làm U-06 không* mà quyết định *có nên GIỮ phép gộp lô đang chạy không* | Đo `tools/do_lo_giong.py` mở rộng: 1 lượt N đoạn vs N lượt 1 đoạn |
 | **Q-06** | Streaming có giữ chất lượng bằng non-stream không? | Nếu drift tăng thì U-07 đổi chất lượng lấy độ trễ | Đo CER/WER trên bản stream vs bản thường |
 | **Q-07** | Có phải **mọi** giọng đều dùng chung `giay_khoi_dong = 1,5`? | Nếu không, P1-1 phải đo hai tham số/giọng chứ không một | Khớp tuyến tính riêng từng giọng |
 | **Q-08** | Cửa sổ 7 giờ ấm preview có ảnh hưởng khách thật không? | Quyết định U-09 đáng làm hay không | Đếm lượt bấm "nghe thử" gặp `co_san == False` trong log |

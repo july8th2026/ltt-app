@@ -1277,6 +1277,76 @@ nó khai.
    đổi được Z".** Vế đầu đo *có tác dụng*; vế sau đo *đúng phạm vi*. Vế đầu một
    mình luôn xanh với bản cực đoan nhất.
 
+
+---
+
+## 🔴 `R4` — LỖ HỔNG RỘNG HƠN TÔI TƯỞNG: **không phép kiểm nào chạy alembic trên PostgreSQL**
+
+Phiên OPERATING cảnh báo rằng bước gate `bat bien da tien trinh` — bước họ nghĩ
+là **duy nhất** thi hành migration trên PostgreSQL — luôn `[BOQUA]` vì không
+dựng được CSDL nháp (thiếu `CREATEDB`). Tôi kiểm lại, và kết luận **mạnh hơn**:
+
+```
+tools/check_multiproc.py   ->  KHONG goi `command.upgrade` o dau ca
+                               (no dung `drop_all()` / metadata)
+
+Moi tep goi `command.upgrade` trong kho:
+  test_103_autosub_projects.py    alembic=1  postgres=0  sqlite=3
+  test_451_asv_v4_lam_cung.py     alembic=4  postgres=0  sqlite=5
+  test_45_deploy_scripts.py       alembic=3  postgres=0  sqlite=0
+  test_505_nguon_ban_giao.py      alembic=1  postgres=0  sqlite=0
+  test_616_chatltt...py           url = "sqlite:///" + tmp_path
+```
+
+⇒ **`postgres = 0` ở TẤT CẢ.** Không phải *"một bước bị bỏ qua"* mà là **năng
+lực ấy chưa từng tồn tại trong kho**.
+
+⭐ Và bước ấy, **kể cả khi có CSDL**, cũng không lấp được lỗ: nó dựng lược đồ
+bằng `drop_all()`/metadata — tức đi đường **SQLAlchemy model**, không đi đường
+**migration**. Hai đường khác nhau, và **chỉ đường thứ hai là đường production
+đi**.
+
+### Nghĩa là gì cho mọi lượt gate — kể cả lượt xanh
+
+⛔ **`RESULT: PASS` không được đọc thành "migration chạy được".** Trên SQLite
+theo đường alembic thì có `test_616`; trên PostgreSQL thì **con số là 0**.
+
+Đây chính là lý do `BOOLEAN DEFAULT 1` sống sót qua **ba** commit của tôi, mỗi
+commit đều kèm câu *"thi hành thật từ `base` tới `head`"* — câu ấy đúng, và nó
+đúng **trên SQLite**.
+
+### Bản vá cần HAI việc, không phải một
+
+| | mở được gì |
+|---|---|
+| cấp `CREATEDB` cho tài khoản test | bước đa tiến trình chạy được — **đường model** |
+| **thêm một phép kiểm alembic-trên-PG** | **đường migration** — đường production đi |
+
+Chỉ làm vế đầu thì sẽ có một bước xanh và một **cảm giác đã lấp**, trong khi lớp
+lỗi vừa tìm ra vẫn đi qua được.
+
+Hình dạng phép kiểm còn thiếu: chạy `alembic upgrade base:head` trên một
+PostgreSQL vứt đi, rồi so lược đồ sinh ra với `Base.metadata` — bắt được **cả**
+lỗi dialect **lẫn** lệch model↔migration.
+
+### Thứ đã lấp được mà KHÔNG cần CSDL sống
+
+`test_961` + phép sinh SQL offline (`command.upgrade(..., sql=True)` cho đúng dải
+`e7b2c94a1d38:e8f35c1a7d64`):
+
+```
+16 CREATE TABLE · 2 ALTER TABLE ADD COLUMN
+BOOLEAN DEFAULT 0|1 -> 0     BOOLEAN DEFAULT false x4, true x2
+7 chi muc BO PHAN giu dung menh de WHERE
+JSONB: 0    AUTOINCREMENT/pragma/sqlite: 0
+16 bang V2 tao DUNG MOT LAN tren 98 bang + 235 chi muc cua ca kho
+```
+
+⚠️ Nó chứng minh **SQL phát ra là PostgreSQL hợp lệ**. Nó **không** chứng minh
+SQL ấy **thi hành** trót lọt trên CSDL thật — quyền, extension, xung đột tên với
+object đang có. Cột phải của bảng ranh-giới-bằng-chứng vẫn trống, và nay ta biết
+**vì sao**.
+
 ## ĐỢT 2–5
 
 Chưa bắt đầu. Xem `27_29 §28`.
@@ -1285,6 +1355,185 @@ Chưa bắt đầu. Xem `27_29 §28`.
 ⇒ **0 va chạm tên, 0 tên gần giống**. Bảng nền tảng không mang tiền tố (đúng quy
 ước: `jobs`, `users`, `credit_entries`), và `AppManifest.table_prefix` đã bảo vệ
 chiều ngược lại — app muốn có `artifact` riêng vẫn phải viết `<prefix>_artifact`.
+
+---
+
+# 🟢 08/09/2026 20:50 — CHUỖI MIGRATION ĐÃ CHẠY TRÊN PRODUCTION CÓ DỮ LIỆU THẬT
+
+Cột phải của bảng ranh-giới-bằng-chứng ở trên **không còn trống**. Phiên `LTT
+VOICE` deploy máy A theo lệnh chủ sản phẩm; lượt ấy mang 5 migration Workflow V2
+lên `lttplatform`.
+
+```
+Running upgrade e7b2c94a1d38 -> a4f81c2d6b95, Dot 2.1
+Running upgrade a4f81c2d6b95 -> b5c92e3f7a41, Dot 2.2 (mo hinh C)
+Running upgrade b5c92e3f7a41 -> c6d13a8e4b72, Dot 2.3 + 2.4
+Running upgrade c6d13a8e4b72 -> d7e24b9f1c53, Dot 3B
+Running upgrade d7e24b9f1c53 -> e8f35c1a7d64, Dot 4 + Dot 5
+Running upgrade e8f35c1a7d64 -> a4c71e93f8b2, voice (cua phien VOICE)
+Context impl PostgresqlImpl. Will assume transactional DDL.
+```
+
+## ⭐ HAI câu, không phải một — và VOICE chỉ có câu thứ nhất
+
+Phiên VOICE nói rõ giới hạn của bằng chứng họ đưa, và điểm ấy đáng giữ hơn cả
+con số: **"chuỗi migration chạy hết"** và **"16 bảng có thật trên CSDL"** là hai
+mệnh đề khác nhau. Họ không đếm được (tài khoản trong `app.env` cây nguồn xác
+thực trượt, bí mật production bị ACL `W1.5` chặn) nên họ **không** khai câu thứ
+hai. Đó là cách khai bằng chứng đúng.
+
+Phiên này đọc được production (đường đã dùng ở `D2`), nên lấy nốt câu thứ hai —
+**chỉ đọc**, rào `_chi_doc` **import** từ `tools/dem_d2_agent_production.py` chứ
+không chép lại (một bản sao của rào là một bản sao có thể trôi khỏi bản gốc mà
+không ai thấy):
+
+```
+alembic_version : a4c71e93f8b2   KHOP voi head mong doi
+bang Workflow V2 co mat : 16/16
+bang moi khong rong     : KHONG CO      <- migration khong cham du lieu cu
+[doi chung] users 27 · jobs 1812 · credit_entries 5583
+```
+
+⭐ Hai dòng dưới cùng là thứ làm 16/16 có nghĩa. **Đối chứng** tăng so với lượt
+`D2` sáng nay (`jobs` 1770 → 1812, `credit_entries` 5500 → 5583) ⇒ đây đúng là
+CSDL đang phục vụ, không phải một bản sao đứng yên. Và **16 bảng mới đều rỗng**
+⇒ chuỗi lên là thuần bổ sung, không câu nào chạm dữ liệu đang có.
+
+## ⚠️ Bằng chứng CŨ của phiên này yếu hơn nó tự nhận
+
+`RESULT: PASS` của `tools/do_migration_tren_postgres.py` chạy `base → head` trên
+CSDL **RỖNG**. Production chạy `<revision hiện tại> → head` trên CSDL **CÓ DỮ
+LIỆU**. Hai đường khác nhau ở đúng hai chỗ, và CSDL rỗng **không thể** phân biệt
+được chỗ nào:
+
+```
+add_column(nullable=False) khong server_default  -> RONG xanh · CO DU LIEU no
+unique index tren bang da co ban ghi trung       -> RONG xanh · CO DU LIEU no
+```
+
+Đây **cùng họ** với lý do công cụ ấy ra đời (bước gate cũ đi đường
+`drop_all()`/model, không đi đường migration): bịt một lỗ rồi tự mở lỗ kế tiếp.
+Câu hỏi *"có lý do nào để hoãn không?"* của VOICE là thứ làm nó lộ ra — nếu trả
+lời *"tôi verify rồi"* thì họ đã deploy trên một bằng chứng yếu hơn cả hai bên
+tưởng.
+
+Chứng minh hai lỗ không áp dụng — bằng **đọc AST `upgrade()`**, không bằng lập
+luận:
+
+| | |
+|---|---|
+| bảng tạo mới | 16 |
+| bảng bị `op.*` chạm mà **không** do chính chuỗi này tạo | **không có** |
+| `op.execute` / `DELETE` / `UPDATE` / `TRUNCATE` | không có |
+| 2 `add_column` | trên `workflow_run` (bảng do migration liền trước tạo); cột `nullable=False` vẫn kèm `server_default=""` |
+
+⛔ `grep` bắt được một dòng `INSERT ... UPDATE` ở `20260908_1200:21`. Đó là
+**docstring mô tả thiết kế lúc chạy** (mô hình C), không phải câu lệnh. Ghi ra
+đây vì đọc-grep-thành-lệnh đã là một lỗi thật của tuần này.
+
+## Một chênh lệch đã truy tới cùng, không để nó trôi
+
+Nháp báo **98** bảng, production đếm **93**. Chênh 5 — nên đo tiếp thay vì đoán:
+
+```
+MODEL KHAI ma PRODUCTION KHONG CO : 0
+PRODUCTION CO ma MODEL KHONG KHAI : 36   (ommi_* · voice_* · vps_*)
+platform_core.models khai         : 56       production: 93
+```
+
+⇒ **Không có drift.** 36 bảng "thừa" là bảng của **app**, khai trong
+`apps/*/models.py` chứ không trong `platform_core.models`. Còn con số 98 của
+CSDL nháp cao hơn vì `do_migration_tren_postgres.py` dọn bằng
+`Base.metadata.drop_all()` — thứ chỉ biết **56 bảng của platform_core**, nên
+bảng app từ lượt nháp trước **sống sót** và bị đếm thêm. Đó là hạn chế của công
+cụ nháp, không phải trạng thái của production.
+
+## Nghiệm thu (số của phiên VOICE)
+
+```
+dang chay 1f1636a6e75f 20:50:24 · duong lui 03a83a1c174c
+lech 0 · thieu 0 · thua 0   DAT      EXITCODE=0
+cong khai qua Cloudflare: /health/ready 200 · / 200 · /gia-api 200
+asset_ver 9b7ae80d (doi tu 8db862ca)
+```
+
+⚠️ Gate **đỏ** lúc deploy: 19 lỗi `test_448` đọc một tệp bằng chứng tĩnh cần
+**UAC** để sinh lại. VOICE nêu, chủ sản phẩm tái khẳng định, và VOICE ghi việc
+ấy vào nhật ký deploy thay vì để trôi. Phiên này **không** có cơ sở độc lập để
+xác nhận lượt trao đổi đó — chép lại nguyên văn, không bảo trợ.
+
+---
+
+# 08/09/2026 — ĐỢT 5.6 XONG, và `5.5` LỘ RA MỘT PHỤ THUỘC CHƯA AI GHI
+
+## ✅ 5.6 — sáu trường hợp đồng node vào `ToolSpec` (`10a88c22`)
+
+```
+type_version · side_effect · idempotency · mock_result · resource · timeout_expr
+```
+
+Tất cả có mặc định ⇒ **không app nào phải sửa**. Đo lại trên kho thật: 21 app
+nạp được, 15 `ToolSpec`, tất cả `type_version=1 side_effect=external`.
+`test_60`+`test_147`+`test_178`: 71 passed. 28 phép kiểm mới.
+
+⭐ `timeout_expr` là trường **duy nhất mang mã** chứ không mang dữ liệu, nên nó
+là trường duy nhất cần một bộ duyệt. Bản đầu tôi viết `eval` trên một cây "đã
+duyệt từng nút" — một cách nói khác của *"an toàn vì tôi không bỏ sót dạng nút
+nào"*. Thay bằng bộ tính đệ quy: thứ nó không biết tính thì nó không tính, nên
+**không có gì để bỏ sót**. `test_bo_tinh_KHONG_dung_eval` đọc **AST** của chính
+mô-đun chứ không `grep` — `grep "eval"` sẽ báo động trên chính đoạn chú thích
+giải thích vì sao không dùng `eval`.
+
+## 🔴 `5.5` BỊ CHẶN — và chặn ở chỗ không có trong bảng hoãn
+
+Bảng *"CÒN LẠI CỦA ĐỢT 5"* ghi lý do hoãn `5.5` là *"chạm `inventory.py` — 24
+route đóng băng"*. Lý do ấy **đúng nhưng không phải lý do chính**. Lý do chính
+đo được hôm nay:
+
+```
+đọc AST mọi tệp trong platform_core/workflow/:
+    tệp import `credit` hoặc `billing` :  0
+đối chứng — server/api/jobs.py         :  platform_core.credit  ✓
+
+ai GHI `WorkflowRun.hold_id` :  KHÔNG AI
+ai XOÁ nó                    :  ket_so.py:73  ->  hold_id = ""
+```
+
+⇒ **Đường tiền của một lượt chạy chưa được nối.** `hold_id` chỉ từng bị *xoá*,
+  chưa từng được *đặt*; `ket_so` chốt `actual_cost` từ ảnh chụp nhưng **không**
+  gọi `credit.quyet_toan`/`credit.hoan`.
+
+### Vì sao điều đó chặn `5.5` chứ không chỉ làm nó xấu
+
+`protocol.check_mode_rules` bắt: một `ASYNC_JOB` **chargeable** phải đòi **cả**
+quote **và** `Idempotency-Key`. Tôi *khai* được `chargeable=True` — và hệ sẽ
+**không giữ, không quyết toán gì cả**. Tức một route công khai mở cho người lạ
+khởi động một lượt chạy nhiều node (mỗi node có thể là **20 phút A100**, `F4`)
+mà **không có khoản giữ chỗ nào**.
+
+⛔ Khai `chargeable=False` cũng không thoát: khi ấy nó là compute không giới hạn
+   và miễn phí qua API. Cả hai nhánh đều sai, nên đây là **phụ thuộc**, không
+   phải một lựa chọn thiết kế.
+
+### Thứ tự đúng
+
+```
+1. noi duong tien cua run   giu_cho luc tao run · quyet_toan/hoan trong ket_so
+2. bao gia cho workflow     `bao_gia.uoc_tinh` -> `quotes.issue` (khuon co san)
+3. nam route cua WF-802     POST /workflows/{id}/runs · GET /runs/{id}
+                            POST /runs/{id}/cancel · GET /runs/{id}/artifacts
+                            webhook run.succeeded / run.failed / run.waiting
+```
+
+⚠️ Bước 1 là một **bút toán tiền** — một trong ba ranh giới `CLAUDE.md` giữ lại
+   khi bỏ cổng duyệt (cùng với deploy và UAC). Nên nó dừng ở đây chờ chủ dự án,
+   **không** phải vì khó.
+
+⭐ Và ghi rõ để lần sau không mất công tìm lại: `bao_gia.py` (`5.4`) đã trả **hai
+   số** (`M8`) và `quotes.issue` đã đủ tổng quát — `tool_name` chỉ là một trường
+   chuỗi nên `workflow:<id>` dùng lại được **nguyên bộ máy ký hiện có**, đúng
+   yêu cầu *"không dựng bộ máy API thứ hai"* của `WF-802`. Phần thiếu **chỉ** là
+   bước 1.
 
 ---
 

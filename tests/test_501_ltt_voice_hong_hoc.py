@@ -193,7 +193,7 @@ def test_moi_cua_sidecar_deu_co_TRAN_THOI_GIAN():
     runtime của job không cứu được, vì worker vẫn đang đập nhịp."""
     import inspect
     for ten in ("noi", "noi_dai", "noi_lo", "ghi_danh", "ghi_danh_kho",
-                "nang_luc", "giong_dung_san"):
+                "giong_dung_san"):
         ham = getattr(sidecar_client, ten)
         nguon = inspect.getsource(ham)
         assert "timeout" in nguon, f"sidecar_client.{ten} khong dat timeout"

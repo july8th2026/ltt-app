@@ -787,6 +787,22 @@ def _steps(quick: bool, noi_tiep: bool = False) -> list[Step]:
                           [sys.executable, "tools/do_migration_tren_postgres.py"],
                           ROOT, nhom="nang", tai_nguyen=("postgres_test",),
                           giay_toi_thieu=2.0))
+        # ⭐ TRUC THU HAI, va no khac buoc tren chu khong trung.
+        #
+        # Buoc tren hoi: *migration* co chay tren PostgreSQL khong (DDL).
+        # Buoc nay hoi:  *ma chay luc runtime* co chay tren PostgreSQL khong
+        #                (DML) — voi du lieu THAT cua production.
+        #
+        # ⇒ He qua that, do 08/09/2026: `M-1` danh dau ban da di tru bang
+        #   `"m1:" + id` = 39 ky tu vao cot `String(36)`. SQLite khong cuong
+        #   che do dai VARCHAR nen bo test xanh, va ca mot lan dien tap tren
+        #   BAN SAO SQLITE CUA CHINH DU LIEU PRODUCTION cung xanh. PostgreSQL:
+        #   `StringDataRightTruncation`. Buoc tren khong the thay — no khong
+        #   chay mot dong ma san pham nao.
+        steps.append(Step("M-1 tren postgres",
+                          [sys.executable, "tools/dien_tap_m1_tren_postgres.py"],
+                          ROOT, nhom="nang", tai_nguyen=("postgres_test",),
+                          giay_toi_thieu=2.0))
     npm = _npm()
     for name in FRONTENDS:
         folder = ROOT / "frontend" / name

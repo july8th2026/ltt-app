@@ -70,7 +70,16 @@
 
           {# Thanh tiến độ chỉ hiện khi có khối — một thanh 0/0 không nói gì. #}
           {% if t.so_khoi %}
+            {# 🔴 `aria-label` BẮT BUỘC — axe `aria-progressbar-name` (serious).
+               Một `role="progressbar"` không tên đọc lên là *"thanh tiến độ,
+               bốn mươi phần trăm"* mà không nói **của cái gì**; trên màn Dự án
+               có nhiều dự án, nên người dùng trình đọc màn hình nghe một chuỗi
+               phần trăm không gắn với dự án nào.
+
+               ⚠️ Nói cả HAI số, không chỉ phần trăm: *"3/8 khối"* trả lời được
+                  câu "còn bao nhiêu", còn "37%" thì không. #}
             <div class="lv-da-thanh" role="progressbar"
+                 aria-label="{{ _('Tiến độ dự án {ten}: {xong}/{tong} khối').format(ten=t.ten, xong=t.xong, tong=t.so_khoi) }}"
                  aria-valuemin="0" aria-valuemax="100"
                  aria-valuenow="{{ (t.xong * 100 // t.so_khoi) }}">
               <div style="width:{{ (t.xong * 100 // t.so_khoi) }}%"></div>

@@ -35,6 +35,39 @@ def van_tay(data: bytes) -> str:
 
 # ── tra cứu ──────────────────────────────────────────────────────────────────
 
+#: 🔴 CỔNG XUẤT XỨ (U-05) — giá trị DUY NHẤT cho phép một giọng ra kho chung.
+#:
+#:    Bản kiểm toán 07/09/2026 ghi ranh giới bằng một câu: *"tải được ≠ dùng
+#:    thương mại được"*. Cột `VoiceProfile.license_status` là chỗ câu ấy thành
+#:    dữ liệu, và hằng số này là chỗ nó thành một phép lọc.
+#:
+#: ⛔ MỘT giá trị, không phải một danh sách "những giá trị không bị cấm". Khác
+#:    biệt ấy quyết định điều gì xảy ra khi ai đó thêm một trạng thái mới:
+#:    danh-sách-cấm thì trạng thái mới **lọt qua** (mở, im lặng); danh-sách-cho
+#:    thì nó **bị chặn** cho tới khi có người cố ý thêm vào đây.
+LICENSE_CHO_PHEP = ("ok",)
+
+
+def _dieu_kien_kho_chung():
+    """Điều kiện SQL cho "giọng này được ở kho chung".
+
+    ⛔ MỘT hàm, dùng ở CẢ HAI chỗ đọc kho chung. Chép điều kiện ra hai nơi là
+       cách một bản vá sau này sửa `tim_profile` mà quên `danh_sach` — và hai
+       cửa khi ấy nói hai câu khác nhau về cùng một giọng: bộ chọn không hiện
+       nó, nhưng gửi thẳng `public_id` thì vẫn đọc được.
+
+    ⚠️ Đây là điều kiện của **kho chung**, không phải của mọi giọng. Giọng
+       riêng của một khách không đi qua cổng này: xuất xứ của nó đã có
+       `VoiceConsent` trả lời, và bắt một cột thứ hai cùng trả lời câu ấy sẽ
+       làm biến mất giọng của chính khách vào ngày migration chạy.
+    """
+    from sqlalchemy import and_
+
+    from .tables import VoiceProfile
+    return and_(VoiceProfile.dung_chung.is_(True),
+                VoiceProfile.license_status.in_(LICENSE_CHO_PHEP))
+
+
 def tim_profile(db, public_id: str, *, owner_id: str, cho_dung_chung: bool = False):
     """Tìm theo `public_id` **và** chủ sở hữu, trong MỘT truy vấn.
 
@@ -63,11 +96,13 @@ def tim_profile(db, public_id: str, *, owner_id: str, cho_dung_chung: bool = Fal
         return None
     dk = [VoiceProfile.public_id == str(public_id)]
     if cho_dung_chung:
+        # ⛔ `_dieu_kien_kho_chung()`, KHÔNG phải `dung_chung.is_(True)`. Cổng
+        #    U-05 nằm ở đây vì đây là chỗ DUY NHẤT kiểm quyền đọc một giọng.
         if owner_id:
             dk.append(or_(VoiceProfile.owner_id == str(owner_id),
-                          VoiceProfile.dung_chung.is_(True)))
+                          _dieu_kien_kho_chung()))
         else:
-            dk.append(VoiceProfile.dung_chung.is_(True))
+            dk.append(_dieu_kien_kho_chung())
     elif owner_id:
         dk.append(VoiceProfile.owner_id == str(owner_id))
     else:
@@ -99,7 +134,8 @@ def danh_sach(db, *, owner_id: str, gom_tat: bool = False,
     from .tables import VoiceProfile
     dk = VoiceProfile.owner_id == str(owner_id)
     if gom_dung_chung:
-        dk = or_(dk, VoiceProfile.dung_chung.is_(True))
+        # Cùng một điều kiện với `tim_profile` — xem `_dieu_kien_kho_chung`.
+        dk = or_(dk, _dieu_kien_kho_chung())
     q = select(VoiceProfile).where(dk)
     # LÀN. Chốt 01/09/2026: kho giọng tách làn theo ngôn ngữ của clip NGUỒN.
     #
@@ -211,10 +247,17 @@ def tuy_chon_preset(db, user_id: str) -> list:
     # ⛔ Va xep bang DU LIEU chu khong de ben kia do chu tren nhan: nhan da
     #    qua `_()`, nen mot ban dich sang tieng Anh se lam moi phep so chuoi
     #    truot — hong lang le, va hong theo ngon ngu giao dien.
-    uu_tien = {"tu_nhien": 0, "doc_truyen": 1, "tin_tuc": 2}
+    # ⛔ HANG SO O `giong_mau`, KHONG go lai o day. Ban truoc go tai cho, va
+    #    mot bang thu tu thu hai cho cung mot kho giong la hai man hinh moi
+    #    cung mot khach hai giong mac dinh khac nhau.
+    #
+    # ⭐ Va xep bang `muc_dung.xep` chu khong bang `sorted` tai cho: ben trong
+    #    mot tang phong cach, thu tu nay den tu muc dung THAT cua ta (U-12),
+    #    khong den tu bang chu cai. Anh chup rong thi ket qua bang het thu tu
+    #    (phong cach, ma) — dung thu tu truoc 08/09/2026.
+    from . import muc_dung
     ra = []
-    for g in sorted(giong_mau.DANH_SACH,
-                    key=lambda x: (uu_tien.get(x.phong_cach, 9), x.ma)):
+    for g in muc_dung.xep(giong_mau.DANH_SACH):
         nhan = " · ".join(x for x in (
             giong_mau.NHAN_GIOI.get(g.gioi, ""),
             giong_mau.NHAN_VUNG.get(g.vung, ""),

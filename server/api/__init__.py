@@ -40,6 +40,7 @@ from server.api.jobs import register_job_routes
 from server.api.tools import register_tool_routes
 from server.api.uploads import register_upload_routes
 from server.api.usage_routes import register_usage_routes
+from server.api.workflows import register_workflow_routes
 from server.api.webhook_routes import register_webhook_routes
 
 PUBLIC_API_TAG = "public-api"
@@ -163,6 +164,7 @@ def build_public_api_app(config: PublicApiConfig) -> FastAPI:
     register_upload_routes(api, config, PUBLIC_API_TAG)
     register_webhook_routes(api, config, PUBLIC_API_TAG)
     register_usage_routes(api, config, PUBLIC_API_TAG)
+    register_workflow_routes(api, config, PUBLIC_API_TAG)
     _publish_tool_schemas(api, config)
     return api
 

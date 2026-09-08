@@ -12,7 +12,8 @@
 from __future__ import annotations
 
 from ._chung import (TRAN_KY_TU_CONG_KHAI, Depends, HTMLResponse,
-                     Request, giong_mau, require_login, router, templates,
+                     Request, giong_mau, muc_dung, require_login, router,
+                     templates,
                      user_hien_tai, vo, _db, _uid)
 
 
@@ -39,7 +40,7 @@ def trang_api(request: Request, user=Depends(user_hien_tai),
                     trang_thai=doc_man_api.trang_thai_tool(),
                     ten_tool=doc_man_api.TEN_TOOL,
                     ma_giong=ma_giong,
-                    giong_mau=giong_mau.DANH_SACH,
+                    giong_mau=muc_dung.xep(giong_mau.DANH_SACH),  # U-12
                     mac_dinh=giong_mau.MAC_DINH,
                     nhan_gioi=giong_mau.NHAN_GIOI,
                     nhan_vung=giong_mau.NHAN_VUNG,
