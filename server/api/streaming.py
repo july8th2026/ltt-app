@@ -512,7 +512,16 @@ def _goi_y_ten_la(ten: str) -> str:
 
 def _tran_vao_cua_model(alias: str) -> int:
     """Trần đầu vào thật của một alias. Lùi về trần chung khi tên lạ."""
-    from apps.ltt_llm.features import ALIAS_SANG_ID
+    # ⭐ Pha 05.1 (AI CLEAN REBUILD V2): bảng bí danh nay ở `platform_core`, nên
+    #    `server` không còn phải import một app cụ thể để lấy nó. Dòng
+    #    `ignore_imports` tương ứng trong `.importlinter` đã được **xoá**, không
+    #    phải nới — bánh cóc siết lại một nấc.
+    #
+    # ⚠️ Món nợ còn lại là `ngan_sach` (dòng 48): ngân sách token là **việc của
+    #    app**, không phải của nền tảng, nên đẩy nó lên `platform_core` sẽ là
+    #    một quyết định kiến trúc khác chứ không phải phần thừa của bản vá này.
+    #    Nó vẫn nằm trong `.importlinter` dưới dạng một ngoại lệ CÓ TÊN.
+    from platform_core.llm.canonical import ALIAS_SANG_ID
     try:
         return ngan_sach.tran_vao_cua(ALIAS_SANG_ID[alias])
     except KeyError:
