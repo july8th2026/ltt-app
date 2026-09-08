@@ -454,6 +454,55 @@ STORES: tuple = (
     # ── Derived: rebuildable ─────────────────────────────────────────────────
     Store("sdk/postman/*", DERIVED, None, N_("công khai"),
           N_("Sinh từ OpenAPI.")),
+
+    # ── LTT WORKFLOW V2 ──────────────────────────────────────────────────────
+    #
+    # ⭐ Ranh giới giữa ba lớp ở đây là một quyết định về TIỀN và về VIỆC CỦA
+    #    KHÁCH, không phải về dung lượng:
+    #
+    #      EVIDENCE   trả lời được "vì sao khách bị trừ ngần ấy" sau sáu tháng
+    #      CONTENT    thứ khách TẠO RA — xoá là mất việc của họ
+    #      DERIVED    dựng lại được từ hai loại trên
+    Store("workflow_run", EVIDENCE, None, N_("chủ tài khoản + vận hành"),
+          N_("Một lượt chạy đã tính tiền. `actual_cost` và `hold_id` ở đây là "
+             "câu trả lời cho một tranh chấp hoàn tiền sáu tháng sau.")),
+    Store("node_run_snapshot", EVIDENCE, None, N_("chủ tài khoản + vận hành"),
+          N_("Chuỗi ảnh chụp BẤT BIẾN của từng bước, kèm chi phí theo từng lượt "
+             "thử. Xoá nó là mất khả năng nói VÌ SAO một lượt chạy tốn ngần ấy "
+             "— kể cả lần chuyển bị từ chối cũng nằm ở đây.")),
+    Store("workflow", CONTENT, None, N_("chủ tài khoản"),
+          N_("Workflow là thứ khách DỰNG RA. Việc của họ, không phải dấu vết "
+             "vận hành của ta.")),
+    Store("workflow_draft", CONTENT, None, N_("chủ tài khoản"),
+          N_("Bản đang soạn — mất nó là mất phần khách đang gõ dở.")),
+    Store("workflow_version", CONTENT, None, N_("chủ tài khoản"),
+          N_("Bản đã xuất bản, BẤT BIẾN. Một lượt chạy ghim vào đây, nên xoá nó "
+             "là làm một lượt chạy đã tính tiền không còn tái dựng được.")),
+    Store("workflow_trigger", CONTENT, None, N_("chủ tài khoản"),
+          N_("Cấu hình khách đặt để workflow tự chạy.")),
+    Store("artifact", CONTENT, None, N_("chủ tài khoản"),
+          N_("Siêu dữ liệu tệp khách tạo ra. KHÔNG chứa byte nào; vòng đời thật "
+             "do `ttl_class` quyết, và backend có lifecycle riêng thì ta không "
+             "tự xoá."),
+          "platform_core.workflow.artifact.het_han"),
+    Store("node_run", DERIVED, None, N_("chủ tài khoản + vận hành"),
+          N_("CON TRỎ tới ảnh chụp mới nhất — dựng lại được từ chuỗi ảnh chụp.")),
+    Store("workflow_version_node", DERIVED, None, N_("chủ tài khoản"),
+          N_("Chỉ mục dẫn xuất từ đồ thị của bản đã xuất bản.")),
+    Store("workflow_version_edge", DERIVED, None, N_("chủ tài khoản"),
+          N_("Chỉ mục dẫn xuất từ đồ thị của bản đã xuất bản.")),
+    Store("waitpoint", DERIVED, None, N_("chủ tài khoản + vận hành"),
+          N_("Trạng thái chờ trong một lượt chạy; chỉ có nghĩa khi lượt chạy "
+             "còn sống.")),
+    Store("waitpoint_signal", DERIVED, None, N_("chủ tài khoản + vận hành"),
+          N_("Tín hiệu từng nhánh gửi tới một điểm chờ.")),
+    Store("node_run_waitpoint", DERIVED, None, N_("chủ tài khoản + vận hành"),
+          N_("Bảng nối nhiều-nhiều: waitpoint nào đang chặn node nào.")),
+    Store("foreach_vong", DERIVED, None, N_("chủ tài khoản + vận hành"),
+          N_("Một vòng ForEach đang chạy.")),
+    Store("foreach_muc", DERIVED, None, N_("chủ tài khoản + vận hành"),
+          N_("Kết quả từng phần tử của một vòng ForEach — thứ nói CHÍNH XÁC còn "
+             "phải chạy gì sau một lần chết.")),
 )
 
 
@@ -494,6 +543,10 @@ NOT_CUSTOMER_DATA = frozenset({
     # cổng. Không có `user_id` và không có gì của khách — máy của khách nằm ở
     # `vps_instance`, và bảng đó đã được xếp loại ở trên.
     "vps_gateway",
+    # Một lời hẹn giờ của scheduler: `run_id` + `kind` + `due_at`. Không có gì
+    # của khách ở đây — nội dung lượt chạy nằm ở `workflow_run`, và bảng đó ĐÃ
+    # được xếp loại.
+    "wakeup",
 })
 
 

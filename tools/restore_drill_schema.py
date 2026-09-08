@@ -118,7 +118,23 @@ def main() -> int:
         # 3. Rang buoc SONG CON phai con nguyen ten. Danh sach nay duoc
         # `test_155` doi chieu voi luoc do that, nen them mot UNIQUE moi ma
         # quen dua vao day se bao do ngay - khong doi toi luc khoi phuc that.
-        for ten in ("uq_gpu_lease_host_uuid",
+        for ten in (
+                    # ── LTT WORKFLOW V2 ──────────────────────────────────────
+                    # Mat rang buoc nay = xuat ban HAI LAN cung mot noi dung ra
+                    # HAI version. Lich su day version gia, va cai gia that la
+                    # `estimated_max` bi dong bang lai o moi ban — tuc mot tran
+                    # chi phi cho cung mot do thi ra hai con so.
+                    "uq_workflow_version_hash",
+                    # Mat rang buoc nay = hai version cung mot so thu tu. So ay
+                    # la thu HIEN CHO NGUOI, nen trung no la hai thu khac nhau
+                    # mang cung mot ten trong moi bao cao.
+                    "uq_workflow_version_seq",
+                    # Mat rang buoc nay = mot lan danh thuc duoc hen HAI LAN
+                    # (bang va NOTIFY cung hen la trang thai BINH THUONG, chot
+                    # `Q4` doi ca hai duong luy dang). Hai lan danh thuc = mot
+                    # node tien hai lan.
+                    "uq_wakeup_khu_trung",
+                    "uq_gpu_lease_host_uuid",
                     "uq_execution_lease_resource_slot",
                     "uq_job_events_job_sequence",
                     "uq_job_events_job_event_key",
