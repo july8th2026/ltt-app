@@ -75,6 +75,79 @@ export function normalizeCanvas(canvas: CanvasDocument | LegacyCanvasDocument): 
       frames: [], notes: [], comments: [], view: { grid: true, connections: true, minimap: true } }] }
 }
 
+// ── Canvas v3 (LTT WORKFLOW V2, Dot 5.2) ────────────────────────────────────
+//
+// Canh v3 mang KIEU va CONG. Canh v2 co `sourceHandle`/`targetHandle` nhung
+// `canvas_to_plan()` cua duong cu VUT chung di — do la chinh xac thu `M-1`
+// duoc viet de cuu (`27_29 §27.2`).
+//
+// 🔴 SAU TEN TRUONG DUOI DAY PHAI KHOP TUNG CHU voi thu may chu sinh ra o
+//    `platform_core/workflow/di_tru_m1.py::_canh_v3` va doc o
+//    `dinh_nghia.py::_sinh_chi_muc`. Mot chu khac nhau khong gay loi bien dich
+//    o ben nao ca — no chi lam cong bien mat trong im lang, dung nhu duong cu.
+//    `tests/test_967` khong kiem duoc dieu do (no chi doc frontend), nen
+//    `tests/test_968` doc CA HAI bo va so.
+export type CanvasEdgeKind = 'DATA' | 'CONTROL'
+export type CanvasEdgeV3 = {
+  id: string
+  source_node: string
+  target_node: string
+  source_port: string
+  target_port: string
+  kind: CanvasEdgeKind
+}
+export type CanvasPageV3 = Omit<CanvasPage, 'edges'> & { edges: CanvasEdgeV3[] }
+export type CanvasDocumentV3 = Omit<CanvasDocument, 'version' | 'pages'> & {
+  version: 3
+  pages: CanvasPageV3[]
+}
+
+// Cong mac dinh khi canh cu khong khai. Trung voi `_canh_v3` phia may chu.
+export const DEFAULT_SOURCE_PORT = 'out'
+export const DEFAULT_TARGET_PORT = 'in'
+
+export function edgeToV3(edge: CanvasEdge): CanvasEdgeV3 {
+  return {
+    id: edge.id,
+    source_node: edge.source,
+    target_node: edge.target,
+    source_port: edge.sourceHandle || DEFAULT_SOURCE_PORT,
+    target_port: edge.targetHandle || DEFAULT_TARGET_PORT,
+    kind: 'DATA',
+  }
+}
+
+export function edgeFromV3(edge: CanvasEdgeV3): CanvasEdge {
+  return {
+    id: edge.id,
+    source: edge.source_node,
+    target: edge.target_node,
+    sourceHandle: edge.source_port,
+    targetHandle: edge.target_port,
+  }
+}
+
+/** v1/v2 -> v3. Mot tai lieu da la v3 thi tra ve nguyen. */
+export function toV3(canvas: CanvasDocument | LegacyCanvasDocument | CanvasDocumentV3): CanvasDocumentV3 {
+  if ((canvas as CanvasDocumentV3).version === 3) return canvas as CanvasDocumentV3
+  const v2 = normalizeCanvas(canvas as CanvasDocument | LegacyCanvasDocument)
+  return { ...v2, version: 3,
+    pages: v2.pages.map(page => ({ ...page, edges: page.edges.map(edgeToV3) })) }
+}
+
+/**
+ * v3 -> v2, de con GUI duoc cho `/agent/api/workflows` khi no chua nhan v3.
+ *
+ * ⚠️ Day KHONG phai mot lop tuong thich vinh vien. No ton tai dung mot ly do:
+ *    `WorkflowDraft` (v3) va `AgentWorkflow.document` (v2) hien la HAI bang
+ *    khac nhau, va cua noi bo cho bang moi chua duoc dung. Go no cung luc go
+ *    Plan v1.
+ */
+export function fromV3(canvas: CanvasDocumentV3): CanvasDocument {
+  return { ...canvas, version: 2,
+    pages: canvas.pages.map(page => ({ ...page, edges: page.edges.map(edgeFromV3) })) }
+}
+
 function normalizeWorkflow(workflow: Workflow): Workflow {
   return { ...workflow, canvas: normalizeCanvas(workflow.canvas as CanvasDocument | LegacyCanvasDocument) }
 }

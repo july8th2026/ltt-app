@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { approveRun, cloneWorkflow, createAutosave, createRun, exportWorkflow, importWorkflow,
-  loadRun, loadRunHistory, restoreRunAsWorkflow, saveWorkflow, WorkflowConflictError,
+  fromV3, loadRun, loadRunHistory, restoreRunAsWorkflow, saveWorkflow, toV3,
+  WorkflowConflictError,
   type AgentRun, type Workflow } from '../src/workflowApi'
 
 const workflow = { id: 'w1', name: 'A', revision: 3, status: 'draft', estimated: 0,
@@ -72,5 +73,54 @@ describe('workflow API', () => {
     await vi.advanceTimersByTimeAsync(500)
     expect(save).toHaveBeenCalledTimes(1)
     expect(save).toHaveBeenCalledWith(2)
+  })
+})
+
+// ── Canvas v3 (Dot 5.2) ────────────────────────────────────────────────────
+describe('canvas v3', () => {
+  // ⚠️ CO Y dung cong KHAC mac dinh. Bo du lieu dung 'out'/'in' se KHONG phan
+  //    biet duoc "giu cong that" voi "hard-code gia tri du phong" — hai duong
+  //    cho ra cung ket qua. Bai hoc nay da tra gia o Dot 4 va o `M-1`.
+  const v2 = { version: 2 as const, goal: 'g', budget_max_credit: 10,
+    active_page_id: 'p1', pages: [{ id: 'p1', name: 'P', nodes: [],
+      edges: [{ id: 'e1', source: 'a', target: 'b',
+        sourceHandle: 'anh_ra', targetHandle: 'van_ban_vao' }],
+      viewport: { x: 0, y: 0, zoom: 1 }, frames: [], notes: [], comments: [] }] }
+
+  it('giu cong khi len v3, va dung DUNG ten truong cua may chu', () => {
+    const e = toV3(v2).pages[0].edges[0]
+    expect(e).toEqual({ id: 'e1', source_node: 'a', target_node: 'b',
+      source_port: 'anh_ra', target_port: 'van_ban_vao', kind: 'DATA' })
+    // Khong con ten cu sot lai — mot truong thua se di thang vao CSDL.
+    expect(Object.keys(e).sort()).toEqual(
+      ['id', 'kind', 'source_node', 'source_port', 'target_node', 'target_port'])
+  })
+
+  it('canh KHONG khai cong thi roi ve mac dinh cua may chu', () => {
+    const tran = { ...v2, pages: [{ ...v2.pages[0],
+      edges: [{ id: 'e2', source: 'a', target: 'b' }] }] }
+    const e = toV3(tran).pages[0].edges[0]
+    expect([e.source_port, e.target_port]).toEqual(['out', 'in'])
+  })
+
+  it('vong tron v2 -> v3 -> v2 khong danh roi cong', () => {
+    const lai = fromV3(toV3(v2))
+    expect(lai.version).toBe(2)
+    expect(lai.pages[0].edges[0].sourceHandle).toBe('anh_ra')
+    expect(lai.pages[0].edges[0].targetHandle).toBe('van_ban_vao')
+  })
+
+  it('toV3 tren mot tai lieu DA la v3 tra ve nguyen (luy dang)', () => {
+    const ba = toV3(v2)
+    expect(toV3(ba)).toBe(ba)
+  })
+
+  it('nang v1 thang len v3', () => {
+    const v1 = { version: 1 as const, goal: 'g', budget_max_credit: 5,
+      nodes: [], edges: [{ id: 'e', source: 'a', target: 'b' }],
+      viewport: { x: 0, y: 0, zoom: 1 } }
+    const ra = toV3(v1)
+    expect(ra.version).toBe(3)
+    expect(ra.pages[0].edges[0].source_node).toBe('a')
   })
 })
