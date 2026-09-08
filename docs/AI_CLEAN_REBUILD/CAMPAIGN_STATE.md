@@ -17,7 +17,7 @@
 | **01** | Hard delete contract | ✅ XONG 17:10 | PASS | `FINAL_AI_CONTRACT.md` |
 | **02** | Forensic inventory | ✅ XONG 17:25 | **PASS — `INVESTIGATE = 0`** | `LEGACY_SURFACE_MATRIX.csv` · `OUTBOUND_EGRESS_MATRIX.csv` · `PRODUCT_DEPENDENCY_MAP.md` · `DELETE_DEPENDENCY_GRAPH.md` |
 | **03** | Target mapping only | ✅ XONG 18:20 | PASS | `MIGRATION_MAP.md` |
-| **04** | Block legacy execution (fail-closed) | 🟡 mã xong, **chờ L1** | 13/13 test riêng xanh · đối chứng ĐẠT | `tests/test_1000_chan_provider_da_ngung.py` |
+| **04** | Block legacy execution (fail-closed) | 🟡 **~95%** — chờ L1 xác nhận | L1 lượt 1: 16 đỏ → **7 của tôi, đã xanh hết**; 14/14 test riêng | `tests/test_1000_chan_provider_da_ngung.py` |
 | 05 | Migrate TEXT/VLM → LTT_LLM | ⬜ | — | — |
 | 06 | Migrate IMAGE → LTT_IMAGE | ⬜ | — | — |
 | 07 | Delete all legacy runtime | ⬜ | — | — |
@@ -131,6 +131,57 @@ plugin pytest lật `is_active=True` **lúc chạy** (không ghi vào cây — c
 ⏭️ **Ghi nợ cho pha 05:** `apps/prompt_ai_ommi/routes/_shared.py:119` ghi cứng
 `("gemini",)` làm bộ lọc provider ⇒ nay bộ chọn của app đó **rỗng**. Đó là hành
 vi fail-closed đúng cho pha 04, nhưng pha 05 phải trỏ nó sang LTT.
+
+### Lượt L1 thứ nhất (22:11 → 22:23, 11,9 phút) — `FAIL (2/31)`, 16 đỏ
+
+`--doi` **tự hạ cấp xuống chạy đầy đủ** 8.581 test, vì changeset chạm `tests/`
+(cửa giả đã biết của `--doi`). Tách ba nhóm:
+
+| Nhóm | Số | Chủ |
+|---|---|---|
+| `test_448` | 7 | **ASV** — báo cáo tĩnh, hàng rào đang làm đúng việc |
+| `test_145` · `test_394` | 2 | **đỏ sẵn trên trunk** — kiểm ở cây chính, không có thay đổi của tôi: vẫn đỏ. `test_394` phàn nàn `'M-1 tren postgres'` = migration mới của WF2 |
+| thumbnail ×5 · taoanh ×1 · agent_toolspec ×1 | 7 | **của tôi** — đã xanh hết |
+
+⇒ 9/16 không phải của tôi. `00_LTT_OPERATING_CONTRACT.md` §4.6 nói đúng: một
+lượt đỏ **không tự động** là lỗi của mình, và tách nhóm trước khi sửa là bước rẻ
+nhất trong cả lượt.
+
+### 🔴 L1 phơi ra một lỗ FAIL-OPEN mà chính pha 04 kích hoạt
+
+```python
+platform_core/agent/tools.py:153   (ban cu)
+if kind == "model_ref" and rule.get("values") and value not in rule["values"]:
+                           ^^^^^^^^^^^^^^^^^^^  danh sach RONG la falsy
+```
+
+Danh sách rỗng ⇒ **phép kiểm tự tắt**. `taoanh/manifest.py:64,149` và
+`thumbnail/manifest.py:85` khai `"providers": ["gemini"]`; Gemini ngừng ⇒ enum
+rỗng ⇒ `image.generate` nhận **bất kỳ chuỗi nào**, kể cả `"model-khong-co"`.
+
+Lỗ **có sẵn từ trước** và chưa ai chạm, vì enum chưa bao giờ rỗng. Việc retire
+provider biến nó từ **tiềm ẩn** thành **đang mở** ⇒ nó thuộc changeset này, không
+phải một mục ngoài phạm vi.
+
+🔑 **Danh sách rỗng nghĩa là "không gì hợp lệ", không phải "không có ràng buộc".**
+Hai câu ngược nhau, và bản cũ chọn đúng câu nguy hiểm.
+
+### Hệ quả thật của pha 04 — ghi rõ, không giấu
+
+**5 tool agent hiện KHÔNG còn model nào chọn được:** `image.generate` ·
+`image.batch_generate` · `image.thumbnail` · `story.storyboard` ·
+`text.prompt_package`. Đây là trạng thái fail-closed **đúng ý**; pha 06 trỏ hai
+manifest sang `ltt_image`.
+
+### Năm tệp test nhận fixture "tự khai thế giới" — và cả năm có HẠN DÙNG
+
+`test_251` · `test_255` · `test_71` · `test_117` · `test_88` đều chốt **cơ chế**
+(khuôn dây, cascade, hợp đồng toolspec, giá credit), và mệnh đề ấy phải **bất
+biến với tập hợp provider**. Hạ kỳ vọng xuống "bị chặn" là làm mất thứ chúng canh.
+
+⚠️ **Mỗi fixture mang một dòng `⏭️` nói rõ nó PHẢI BIẾN MẤT ở pha 06.** Một lớp
+che "tạm thời" không có ngày hết hạn viết ra sẽ sống mãi — và nó che đúng thứ
+chiến dịch này sinh ra để phơi bày.
 
 ## Ràng buộc mang theo suốt chiến dịch
 
