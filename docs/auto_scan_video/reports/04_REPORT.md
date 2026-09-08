@@ -162,4 +162,5 @@ Phase 05 (App Shell + Dummy Vertical Slice) creates the first Auto Scan code. On
 2. `DUONG_AUTO_SCAN` in T390 must match the real directories or M18 fails;
 3. M26 (concurrent stage rows), M27 (resume), M30 (ceiling guard) become writable and are
    Phase 05's test backlog;
-4. run the invariant subset after every edit, the full gate before declaring done.
+4. run the test level the change calls for — see `docs/00_LTT_OPERATING_CONTRACT.md`
+   §4; the full gate before declaring done.

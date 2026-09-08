@@ -581,6 +581,15 @@ def _steps(quick: bool, noi_tiep: bool = False) -> list[Step]:
         # Banh coc: khong cho THEM cho nuot loi lang le. Xem
         # tools/check_silent_except.py vi sao khong doi ve 0 ngay.
         Step("nuot loi lang le", [sys.executable, "tools/check_silent_except.py"], ROOT),
+        # 🔴 Banh coc cho chinh LUAT VAN HANH. Truoc 08/09 cadence duoc chep lai
+        #    trong 10 tep ke hoach, va 5 ban chep KHONG giong nhau — trong do hai
+        #    ban bao chay `test_nhanh.py` ROI `gate.py`, tuc tra ~4 phut hai lan
+        #    cho cung mot tap pass/fail (buoc `bo test` ngay trong tep nay CHINH
+        #    LA `test_nhanh.py`).
+        #
+        # ⛔ Khong ai co y viet sai. Cai sai la khong co CHO NAO de tra loi, nen
+        #    ai can mot cadence thi tu viet mot cai. Buoc nay giu cho do duy nhat.
+        Step("luat van hanh", [sys.executable, "tools/check_luat_van_hanh.py"], ROOT),
         # 🔴 `ruff` đã nằm sẵn trong máy nhiều tháng mà **không có cấu hình** và
         #    không nằm trong gate. Đo 06/09 nó bắt một bộ phát hiện lớn với bộ luật
         #    `F,B` (đã bỏ `B008` vì nó là `Depends()` của FastAPI) — trong đó có
@@ -1383,6 +1392,14 @@ def _thu_hep(steps: list[Step], args, ho_so: str
         nguon = f"{len(duong)} duong dan doi"
 
     tep_test = tp_mod.test_can_chay(phan, ROOT)
+    # ⭐ Tep test DA DOI di thang vao danh sach, khong qua do thi thanh phan.
+    #    `bi_anh_huong` co y khong nhan chu cho chung (khong ai import mot
+    #    module test, nen khong co canh tieu thu de mo rong). Thieu dong nay
+    #    thi mot thay doi CHI cham tep test se chay 0 test — te hon han so voi
+    #    ha cap xuong day du.
+    if ho_so == "doi":
+        tep_test |= {t for t in tp_mod.tep_test_da_doi(duong)
+                     if (ROOT / t).is_file()}
     if not tep_test:
         return None, (f"  [pham vi] {len(phan)} thanh phan nhung KHONG test nao"
                       " cham toi chung -> chay DAY DU")

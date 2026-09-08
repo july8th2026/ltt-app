@@ -569,8 +569,11 @@ không bắt được bằng cách đọc HTML.
 | `test_moi_asset_tinh_moi_deu_nam_trong_TAI_SAN_CO_VERSION` | chốt bẫy cache-bust §4.1 |
 | `test_khong_con_class_vua_la_KIEU_vua_la_MOC_JS` | mở rộng `test_304` ra 5 trang |
 
-Chạy: `python tools\test_nhanh.py --lf` sau mỗi lần sửa; `python tools\gate.py`
-trước khi báo xong. ⛔ Không gọi `python -m pytest` cho cả kho.
+Chạy test theo **`docs/00_LTT_OPERATING_CONTRACT.md` §4** (vòng lặp là
+`gate.py --doi`; đầy đủ trước khi báo xong).
+
+*(Trước 2026-09-08 dòng này bảo gọi thẳng `test_nhanh.py --lf` sau mỗi lần sửa —
+một cadence thứ ba, khác cả `CLAUDE.md` lẫn `DEVELOPMENT_WORKFLOW.md`.)*
 
 ---
 

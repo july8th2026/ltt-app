@@ -29,22 +29,15 @@ nhánh từ một *commit*. Lệnh `tao` in ra số tệp đang dở chính vì 
 
 ```
 sửa  →  gate --doi  →  sửa  →  gate --doi  →  ...  →  gate (đầy đủ)  →  commit
-        (giây/phút)                                   (~7 phút)
 ```
 
-| Lệnh | Chạy gì | Chứng minh gì | **Không** chứng minh gì |
-|---|---|---|---|
-| `gate.py --vong-lap` | tĩnh + `--lf` | không có lỗi tĩnh mới | ⛔ **không phải bằng chứng** — `--lf` chỉ chạy lại test *đã đỏ* |
-| `gate.py --doi` | tĩnh + test của phần đã đổi | mọi test **chạm tới** phần đã đổi đều xanh | không nói gì về phần còn lại; **tự hạ cấp** xuống đầy đủ khi không chắc |
-| `gate.py --pham-vi <tp>` | như trên, phạm vi chọn tay | như trên | ⚠️ **tin người gọi** — `--doi` tự kiểm, cái này thì không |
-| `gate.py --quick` | bỏ hai bước nặng | lỗi tĩnh | ⛔ không phải bằng chứng |
-| `gate.py` | tất cả | toàn bộ cổng chất lượng trên cây này | không nói gì về production |
+🔑 **Bảng "cấp nào chứng minh gì" nay ở `docs/00_LTT_OPERATING_CONTRACT.md` §4** —
+một chỗ duy nhất, cạnh giá **đo được** của từng cấp.
 
-🔑 **Gate là công cụ ra PHÁN QUYẾT, không phải công cụ CHẨN ĐOÁN.** Dùng nó để
-dò lỗi là trả 7 phút cho một câu trả lời mà một bước con đã có trong nửa giây.
-
-⛔ **Trước khi báo xong luôn là `python tools/gate.py` đầy đủ.** Mọi chế độ khác
-đều tự khai điều đó ở dòng `RESULT` của chúng.
+*(Tệp này từng giữ bảng đó, và bảng ấy **đúng** — nó là nguồn duy nhất đặt `--doi`
+làm vòng lặp mặc định, trong khi `CLAUDE.md` và `AGENTS.md` bảo `--vong-lap`. Hợp
+đồng canonical giữ lại lựa chọn của tệp này. Cái bỏ đi chỉ là **bản thứ hai** của
+cùng một luật — và con số "~7 phút", vốn đã trôi: đo trên 43 lượt thật là 11,4.)*
 
 ---
 

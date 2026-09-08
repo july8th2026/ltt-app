@@ -5,19 +5,20 @@ code. Phase 01 executes these and freezes the BEFORE behaviour.
 
 ## Repo-native quality gate (use these, not bare `pytest`)
 
+Test levels and when to use each: **`docs/00_LTT_OPERATING_CONTRACT.md` §4.**
+
 ```bash
-python tools/gate.py --vong-lap    # ~15s  diagnostic only, NOT evidence
-```
-```bash
-python tools/test_nhanh.py         # ~4min full suite, parallel
-```
-```bash
-python tools/gate.py               # ~5min VERDICT — the only thing that counts
+python tools/gate.py --doi         # the working loop — only tests touching what changed
+python tools/gate.py               # VERDICT — the only thing that counts
 ```
 
-`CLAUDE.md` rule 4: never run `python -m pytest` across the repo — it misses the 77
-frontend tests under `frontend/*` and takes 25 minutes single-threaded for the same
-pass/fail set `test_nhanh.py` gets in 4.
+⛔ Do **not** run `test_nhanh.py` and then `gate.py`. The `bo test` step *inside*
+the gate **is** `test_nhanh.py` (`tools/gate.py:844`) — running both pays ~4
+minutes twice for the same pass/fail set. *(This file listed them as two separate
+baseline commands until 2026-09-08; that is where the habit came from.)*
+
+Never run `python -m pytest` across the repo — it misses the frontend tests under
+`frontend/*` and is single-threaded.
 
 ## Targeted suites relevant to Auto Scan Video
 
