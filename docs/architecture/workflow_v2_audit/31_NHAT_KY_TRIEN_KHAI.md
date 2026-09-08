@@ -1464,4 +1464,77 @@ xác nhận lượt trao đổi đó — chép lại nguyên văn, không bảo 
 
 ---
 
+# 08/09/2026 — ĐỢT 5.6 XONG, và `5.5` LỘ RA MỘT PHỤ THUỘC CHƯA AI GHI
+
+## ✅ 5.6 — sáu trường hợp đồng node vào `ToolSpec` (`10a88c22`)
+
+```
+type_version · side_effect · idempotency · mock_result · resource · timeout_expr
+```
+
+Tất cả có mặc định ⇒ **không app nào phải sửa**. Đo lại trên kho thật: 21 app
+nạp được, 15 `ToolSpec`, tất cả `type_version=1 side_effect=external`.
+`test_60`+`test_147`+`test_178`: 71 passed. 28 phép kiểm mới.
+
+⭐ `timeout_expr` là trường **duy nhất mang mã** chứ không mang dữ liệu, nên nó
+là trường duy nhất cần một bộ duyệt. Bản đầu tôi viết `eval` trên một cây "đã
+duyệt từng nút" — một cách nói khác của *"an toàn vì tôi không bỏ sót dạng nút
+nào"*. Thay bằng bộ tính đệ quy: thứ nó không biết tính thì nó không tính, nên
+**không có gì để bỏ sót**. `test_bo_tinh_KHONG_dung_eval` đọc **AST** của chính
+mô-đun chứ không `grep` — `grep "eval"` sẽ báo động trên chính đoạn chú thích
+giải thích vì sao không dùng `eval`.
+
+## 🔴 `5.5` BỊ CHẶN — và chặn ở chỗ không có trong bảng hoãn
+
+Bảng *"CÒN LẠI CỦA ĐỢT 5"* ghi lý do hoãn `5.5` là *"chạm `inventory.py` — 24
+route đóng băng"*. Lý do ấy **đúng nhưng không phải lý do chính**. Lý do chính
+đo được hôm nay:
+
+```
+đọc AST mọi tệp trong platform_core/workflow/:
+    tệp import `credit` hoặc `billing` :  0
+đối chứng — server/api/jobs.py         :  platform_core.credit  ✓
+
+ai GHI `WorkflowRun.hold_id` :  KHÔNG AI
+ai XOÁ nó                    :  ket_so.py:73  ->  hold_id = ""
+```
+
+⇒ **Đường tiền của một lượt chạy chưa được nối.** `hold_id` chỉ từng bị *xoá*,
+  chưa từng được *đặt*; `ket_so` chốt `actual_cost` từ ảnh chụp nhưng **không**
+  gọi `credit.quyet_toan`/`credit.hoan`.
+
+### Vì sao điều đó chặn `5.5` chứ không chỉ làm nó xấu
+
+`protocol.check_mode_rules` bắt: một `ASYNC_JOB` **chargeable** phải đòi **cả**
+quote **và** `Idempotency-Key`. Tôi *khai* được `chargeable=True` — và hệ sẽ
+**không giữ, không quyết toán gì cả**. Tức một route công khai mở cho người lạ
+khởi động một lượt chạy nhiều node (mỗi node có thể là **20 phút A100**, `F4`)
+mà **không có khoản giữ chỗ nào**.
+
+⛔ Khai `chargeable=False` cũng không thoát: khi ấy nó là compute không giới hạn
+   và miễn phí qua API. Cả hai nhánh đều sai, nên đây là **phụ thuộc**, không
+   phải một lựa chọn thiết kế.
+
+### Thứ tự đúng
+
+```
+1. noi duong tien cua run   giu_cho luc tao run · quyet_toan/hoan trong ket_so
+2. bao gia cho workflow     `bao_gia.uoc_tinh` -> `quotes.issue` (khuon co san)
+3. nam route cua WF-802     POST /workflows/{id}/runs · GET /runs/{id}
+                            POST /runs/{id}/cancel · GET /runs/{id}/artifacts
+                            webhook run.succeeded / run.failed / run.waiting
+```
+
+⚠️ Bước 1 là một **bút toán tiền** — một trong ba ranh giới `CLAUDE.md` giữ lại
+   khi bỏ cổng duyệt (cùng với deploy và UAC). Nên nó dừng ở đây chờ chủ dự án,
+   **không** phải vì khó.
+
+⭐ Và ghi rõ để lần sau không mất công tìm lại: `bao_gia.py` (`5.4`) đã trả **hai
+   số** (`M8`) và `quotes.issue` đã đủ tổng quát — `tool_name` chỉ là một trường
+   chuỗi nên `workflow:<id>` dùng lại được **nguyên bộ máy ký hiện có**, đúng
+   yêu cầu *"không dựng bộ máy API thứ hai"* của `WF-802`. Phần thiếu **chỉ** là
+   bước 1.
+
+---
+
 *Cập nhật sau mỗi đợt. Đợt chỉ được ✅ khi cổng đầy đủ xanh trên cây đứng yên.*
