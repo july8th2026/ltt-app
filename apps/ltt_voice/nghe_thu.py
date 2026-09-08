@@ -256,3 +256,25 @@ def bao_tri() -> None:
              len(thieu), MOI_LUOT_TOI_DA)
     for g in thieu[:MOI_LUOT_TOI_DA]:
         dung(khoa_mau(g.ma), preset=g.ma)
+
+
+def duong_cho_app_khac(*, owner_id: str, ma_mau=(), rieng=()) -> dict:
+    """`duong_cho_trang` cho mot app KHAC, khong bat ho biet duong `/audio` cua ta.
+
+    🔑 Vi sao ton tai thay vi de ben goi tu ghep `f"{MANIFEST.route_prefix}/audio"`:
+
+       Lam the buoc app kia phai doc `MANIFEST` cua ta — tuc phai khai
+       `apps.ltt_voice.manifest.MANIFEST` la be mat cong khai. Va mot manifest la
+       thu **ca nen tang** doc: xuat no ra cho mot app khac la xuat ca `job_types`,
+       `credit_cost`, `bao_tri`, `tables` — moi thu, de lay mot chuoi.
+
+    ⭐ Va no giu nguyen luat cua `duong_cho_trang`: **MOT tham quyen dung duong
+       nghe thu**. Ham nay khong tu ghep gi, no goi ham kia.
+
+    ⚠️ Giong khong co tep van **vang mat** khoi dict, khong tra chuoi rong — hop
+       dong do khong doi.
+    """
+    from .manifest import MANIFEST
+
+    return duong_cho_trang(duong_audio=f"{MANIFEST.route_prefix}/audio",
+                           owner_id=owner_id, ma_mau=ma_mau, rieng=rieng)

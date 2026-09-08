@@ -212,7 +212,12 @@ def dung_lenh(ban: dict, *, ffmpeg_bin: str, duong_video: str,
         if bo not in cdr.THAM_SO:
             raise KetXuatError(
                 _t('Bộ mã hoá không được khai: {b}').format(b=bo))
-        cmd += ["-filter_complex", cdr.loc_cat_noi(khoang), "-map", "[ra]"]
+        # ⭐ `vung` di CUNG mot duong voi `khoang_giu`, va no chi ton tai o day.
+        #    `ban_dung.kiem` da chan mot ban dung vua `sao_chep` vua co vung, nen
+        #    toi cho nay khong con truong hop nao phai xu ly rieng.
+        cmd += ["-filter_complex",
+                cdr.loc_cat_noi(khoang, vung=(hinh.get("vung") or ())),
+                "-map", "[ra]"]
         cmd += list(cdr.tham_so(bo))
 
     # ── Tieng: BAN PHOI cua pha 16, khong tron lai ───────────────────────

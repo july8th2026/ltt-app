@@ -62,7 +62,9 @@ import json
 from platform_core.i18n import _ as _t
 
 #: Doi khi doi bat cu chinh sach nao o duoi. Vao van tay ban dung.
-PHIEN_BAN_CHE_DO = 1
+#: ⬆️ 1 -> 2 khi `van_tay_che_do` them `vung` (V5). Khong bump thi mot ban
+#:    render cu va mot ban co vung che se dung chung van tay.
+PHIEN_BAN_CHE_DO = 2
 
 #: Sao chep luong hinh — preset giu hinh.
 SAO_CHEP = "sao_chep"
@@ -140,13 +142,88 @@ def dung_gpu(bo: str) -> bool:
     return bo != LUI_VE
 
 
-def loc_cat_noi(khoang: list[tuple[float, float]]) -> str:
+#: Ban kinh lam mo = canh ngan cua O DUOC CHE chia cho so nay.
+#:
+#: ⭐ Ti le, khong phai pixel. Mot ban kinh co dinh (vd 10 px) lam mo dam tren
+#:    video 480p va gan nhu vo hinh tren 4K — trong khi mot logo phai bi che o
+#:    MOI do phan giai.
+#:
+#: ⚠️ Va tinh tren o duoc che chu khong tren ca khung: mot dai phu de mong o day
+#:    khung can ban kinh nho hon nhieu so voi mot o logo vuong o goc, du hai o
+#:    nam tren cung mot khung hinh.
+_MAU_BAN_KINH = 8
+
+
+def _loc_lam_mo(vung, nhan_vao: str, nhan_ra: str) -> list[str]:
+    """Cac ve `filter_complex` lam mo tung vung tren mot luong hinh.
+
+    Cach lam: **cat ra -> lam mo -> dan de len**. Khong dung `boxblur` thang
+    tren ca khung roi ghep, vi lam the la giai ma va lam mo TOAN BO khung chi de
+    lay lai mot o nho.
+
+    ⚠️ Kich thuoc phai CHAN. `libx264` va `h264_nvenc` deu tu choi chieu le o
+       mot so dinh dang pixel (`yuv420p` lay mau 2x2), va thong bao cua ffmpeg
+       khi do khong nhac gi toi `crop` — no bao mot loi khoi tao encoder. Nen
+       `trunc(.../2)*2` o day khong phai lam dep, no la dieu kien de lenh chay.
+
+    ⚠️ Va `x`/`y` cung phai chan, cung ly do lay mau.
+    """
+    ve: list[str] = []
+    hien = nhan_vao
+    for i, v in enumerate(vung):
+        x0, y0 = float(v["x0"]), float(v["y0"])
+        rong, cao = float(v["x1"]) - x0, float(v["y1"]) - y0
+        # 🔴 **`crop` dung `iw`/`ih`; `overlay` KHONG CO hai bien do** — no dung
+        #    `W`/`H` cho khung CHINH va `w`/`h` cho lop dan len.
+        #
+        #    Do that tren may nay: mot `overlay=trunc(iw*0.1/2)*2` lam ffmpeg nem
+        #    *"Error when evaluating the expression ... for x"*, trong khi dung
+        #    y het bieu thuc do trong `crop` thi chay. Hai bo loc, hai bo bien —
+        #    va tai lieu khong dat chung canh nhau de ai do nhin ra.
+        w = f"trunc(iw*{rong:.6f}/2)*2"
+        h = f"trunc(ih*{cao:.6f}/2)*2"
+        x_crop = f"trunc(iw*{x0:.6f}/2)*2"
+        y_crop = f"trunc(ih*{y0:.6f}/2)*2"
+        x = f"trunc(W*{x0:.6f}/2)*2"
+        y = f"trunc(H*{y0:.6f}/2)*2"
+        # 🔴 Ban kinh tinh tren kich thuoc cua CHINH luong da cat (`w`/`h`), khong
+        #    tren khung goc.
+        #
+        #    Ban dau toi viet `min(iw,ih)*0.025` va **ffmpeg tu choi ca chuoi**:
+        #    trong cu phap filter, `,` ngan hai BO LOC va `:` ngan hai THAM SO,
+        #    nen dau phay trong `min(iw,ih)` bi doc la het bo loc. Thong bao khi
+        #    do — *"No option name near '2'"* — khong nhac gi toi dau phay.
+        #
+        # ⇒ Thoat dau phay bang `\,`. Va dung `w`/`h` thi ban kinh ti le voi
+        #   chinh o duoc che, tuc mot o nho khong bi lam mo qua tay.
+        r = f"min(w{chr(92)},h)/{_MAU_BAN_KINH}"
+        ve.append(f"[{hien}]split[c{i}][g{i}]")
+        ve.append(f"[c{i}]crop={w}:{h}:{x_crop}:{y_crop},"
+                  f"boxblur=luma_radius={r}:luma_power=2[m{i}]")
+        ke = f"o{i}" if i + 1 < len(vung) else nhan_ra
+        ve.append(f"[g{i}][m{i}]overlay={x}:{y}[{ke}]")
+        hien = ke
+    return ve
+
+
+def loc_cat_noi(khoang: list[tuple[float, float]], vung=()) -> str:
     """`filter_complex` cat cac khoang duoc giu roi noi lai — **khong co tieng**.
 
     ⛔ Tieng khong di qua day. Ban phoi am (pha 16) da duoc dung theo dung nhung
        khoang nay va da chuan am luong mot lan; cho no di qua `concat` lan nua la
        tron hai quyet dinh am thanh o hai cho, va cai thu hai se thang mot cach
        im lang.
+
+    ## `vung` chi co nghia o duong NAY, va do la mot rang buoc VAT LY
+
+    🔴 Lam mo mot vung doi hoi mot BO LOC, va mot bo loc doi hoi **giai ma roi ma
+       hoa lai**. Duong `SAO_CHEP` di bang `-c:v copy` — o do khong co cho nao
+       dat mot bo loc vao, va D-ASV-03 cam ma hoa lai.
+
+    ⇒ Vung che chi phuc vu duoc o preset **cat**. Do khong phai mot lua chon
+      thiet ke ma la mot he qua: khong the vua "sao chep nguyen ven tung diem
+      anh" vua "sua mot vung diem anh". `ban_dung.kiem` cuong che dieu nay, va
+      giao dien noi ro cho khach truoc khi ho ve.
     """
     if not khoang:
         raise CheDoError(_t('Không có khoảng nào để cắt nối.'))
@@ -157,12 +234,18 @@ def loc_cat_noi(khoang: list[tuple[float, float]]) -> str:
         phan.append(f"[0:v]trim=start={float(b):.6f}:end={float(k):.6f},"
                     f"setpts=PTS-STARTPTS[v{i}]")
     nhan = "".join(f"[v{i}]" for i in range(len(khoang)))
-    phan.append(f"{nhan}concat=n={len(khoang)}:v=1:a=0[ra]")
+    # ⭐ Lam mo SAU khi noi, khong phai tren tung manh: mot vung ap cho ca video
+    #    thi mo tren ban da noi la MOT chuoi bo loc, con mo tung manh la N chuoi.
+    if vung:
+        phan.append(f"{nhan}concat=n={len(khoang)}:v=1:a=0[noi]")
+        phan.extend(_loc_lam_mo(vung, "noi", "ra"))
+    else:
+        phan.append(f"{nhan}concat=n={len(khoang)}:v=1:a=0[ra]")
     return ";".join(phan)
 
 
 def van_tay_che_do(*, che_do: str, bo_ma_hoa: str,
-                   khoang: list[tuple[float, float]]) -> str:
+                   khoang: list[tuple[float, float]], vung=()) -> str:
     """Van tay cua quyet dinh render.
 
     ⛔ Gom CA bo ma hoa: doi tu `libx264` sang `h264_nvenc` cho ra mot tep khac —
@@ -176,6 +259,12 @@ def van_tay_che_do(*, che_do: str, bo_ma_hoa: str,
         "bo": bo_ma_hoa,
         "tham_so": list(THAM_SO.get(bo_ma_hoa, ())),
         "khoang": [[round(float(b), 4), round(float(k), 4)] for b, k in khoang],
+        # 🔴 L4 cua `vung_che`: doi vung ma van tay khong doi la **phuc vu lai
+        #    ket qua cu**. Day dung la cai bay ma `cache_artifact.py` cua he
+        #    tham chieu goi ten: *"sot tham so = serve nham"*.
+        "vung": [[v.get("loai"), round(float(v["y0"]), 4), round(float(v["y1"]), 4),
+                  round(float(v["x0"]), 4), round(float(v["x1"]), 4)]
+                 for v in (vung or ())],
         "phien_ban": PHIEN_BAN_CHE_DO,
     }, sort_keys=True)
     return hashlib.sha256(goi.encode("utf-8")).hexdigest()[:32]

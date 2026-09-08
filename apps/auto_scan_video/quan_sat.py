@@ -27,6 +27,8 @@ tren dia, ten may, ten model, hay mot manh payload cua provider.
 """
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from sqlalchemy import select
 
 from platform_core import job_events
@@ -43,6 +45,75 @@ def _giay(bat, ket) -> float | None:
     if not bat or not ket:
         return None
     return round((ket - bat).total_seconds(), 3)
+
+
+def _theo_utc(t):
+    """Mot `datetime` doc tu CSDL -> luon co mui gio.
+
+    🔴 **Cot khai `DateTime(timezone=True)` nhung SQLite KHONG luu mui gio.**
+
+       `tables._now()` ghi `datetime.now(timezone.utc)`, con SQLite doc ra
+       `2026-09-08 04:08:46.572361` — **naive**. Tren PostgreSQL thi co tz.
+
+    ⇒ Cung mot cot, hai kieu gia tri, tuy backend. Va do la kieu lech te nhat:
+      no dung o production va sai o moi cho ta NHIN THAY.
+
+    ⭐ Naive o day **chinh la UTC**, vi chi `_now()` ghi cot nay. Nen gan UTC vao
+       khong phai mot phong doan — no la doc lai dieu ta da biet.
+    """
+    if t is None or t.tzinfo is not None:
+        return t
+    return t.replace(tzinfo=timezone.utc)
+
+
+def _giay_da_chay(run) -> float | None:
+    """Giay tu luc tao toi luc xong (hoac toi bay gio).
+
+    🔴 **Ban dau cho nay bat `TypeError` roi tra `None`** — mot cai bay dung
+       hinh dang "nuot loi an toan": khong ai thay gi sai, va **dong ho khong
+       bao gio hien o dev lan trong bo test**. Chi production (PostgreSQL) moi
+       co tz, nen loi an o dung nhung noi ta soi.
+
+    ⇒ Sua nguyen nhan (chuan hoa mui gio) thay vi giu nhanh nuot.
+    """
+    tao = _theo_utc(getattr(run, "created_at", None))
+    if tao is None:
+        return None
+    moc = _theo_utc(getattr(run, "finished_at", None)) or datetime.now(timezone.utc)
+    return max(0.0, (moc - tao).total_seconds())
+
+
+def _tien_do_khach(giai_doan: list[dict], run) -> dict:
+    """Ba so ma man tien do cua khach can: `%`, buoc dang chay, giay da chay.
+
+    ⛔ **KHONG co ETA o day, va do la mot quyet dinh.**
+
+       `V5_UI_INFORMATION_ARCHITECTURE.md` §7 cam gia ETA. Mot uoc "con 2 phut"
+       dung tren mot lan chay chua do duoc gi la mot con so bia — va khach nho
+       con so do, roi doi gap ba lan no. Khong hien gi thi ho khong bi hua.
+
+    ⭐ Phan tram dem theo SO GIAI DOAN da xong tren tong so giai doan, khong theo
+       thoi gian. No khong deu — `RENDER` lau hon `MEDIA_PREPARE` nhieu — nhung
+       no **khong bao gio giat lui**, va mot thanh tien do giat lui la thu lam
+       nguoi ta mat long tin vao ca man hinh.
+    """
+    tong = len(giai_doan) or 1
+    xong = sum(1 for m in giai_doan if m["trang_thai"] == "succeeded")
+    dang = next((m["giai_doan"] for m in giai_doan
+                 if m["trang_thai"] == "running"), "")
+    # Chua co buoc nao "running" nhung da co buoc xong -> buoc ke tiep la thu
+    # khach dang cho. Noi ten no van dung hon la de trong.
+    if not dang and run.status in ("queued", "running"):
+        dang = next((m["giai_doan"] for m in giai_doan
+                     if m["trang_thai"] in ("queued", "chua_tao")), "")
+
+    da_chay = _giay_da_chay(run)
+
+    return {
+        "phan_tram": 100 if run.status == "done" else int(xong * 100 / tong),
+        "dang_chay": dang,
+        "da_chay_giay": da_chay,
+    }
 
 
 def dong_thoi_gian(db, run, *, cho_van_hanh: bool = False,
@@ -129,6 +200,12 @@ def dong_thoi_gian(db, run, *, cho_van_hanh: bool = False,
         # 🔑 Cau tra loi cho "giai doan nao hong" — o ngay tang tren, khong bat
         #    nguoi doc phai duyet mang.
         "giai_doan_hong": [m["giai_doan"] for m in hong],
+        # ── Ba so cho giao dien khach (V5) ─────────────────────────────────
+        #
+        # 🔑 Tinh o DAY chu khong o template. Mot phep tinh trong Jinja la mot
+        #    phep tinh khong phep kiem nao voi toi duoc, va ba so nay tra loi
+        #    cau hoi khach hoi nhieu nhat ("con bao lau nua").
+        **_tien_do_khach(giai_doan, run),
     }
     if cho_van_hanh:
         ra["chu_so_huu"] = run.owner_id

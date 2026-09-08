@@ -40,7 +40,9 @@ import json
 
 from platform_core.i18n import _ as _t
 
-SCHEMA_BAN_DUNG = 1
+#: ⬆️ 1 -> 2 (V5): them `hinh.vung`. Ban dung SCHEMA 1 khong co khoa do,
+#:    va do la khac biet co nghia — khong phai mot mang rong.
+SCHEMA_BAN_DUNG = 2
 
 #: Chinh sach dau ra. Ke thua tu `assemble.py:199-207` va `replace_audio`.
 CODEC_TIENG = "aac"
@@ -61,7 +63,8 @@ class BanDungError(ValueError):
 def dung(*, khoa_video: str, khoa_nen: str, ke_hoach: dict,
          ban_ke_tieng: dict, phien_ban_ffmpeg: str,
          tong_giay: float, khoa_master: str = "", che_do: str = "",
-         bo_ma_hoa: str = "", khoang_giu=None, preset: str = "") -> dict:
+         bo_ma_hoa: str = "", khoang_giu=None, preset: str = "",
+         vung=None) -> dict:
     """Dung ban dung tu cac tai lieu chinh tac. Khong cham mot tep media nao.
 
     `ke_hoach`      ket qua cua `thoi_gian.lap_ke_hoach`
@@ -143,6 +146,17 @@ def dung(*, khoa_video: str, khoa_nen: str, ke_hoach: dict,
             "cach_render": che_do,
             "bo_ma_hoa": str(bo_ma_hoa or ""),
             "khoang_giu": [[round(b, 4), round(k, 4)] for b, k in khoang_giu],
+            # ── Vung che (V5) ────────────────────────────────────────────
+            #
+            # 🔴 Chi co nghia o duong CAT. Lam mo mot vung doi hoi mot BO LOC,
+            #    va mot bo loc doi hoi giai ma roi ma hoa lai — trong khi duong
+            #    `sao_chep` di bang `-c:v copy`, noi khong co cho nao dat bo loc
+            #    vao. `kiem()` cuong che dieu do, xem o duoi.
+            #
+            # ⭐ Luu CA KHI RONG, va do la co y: mot ban dung khong co khoa
+            #    `vung` va mot ban dung co `vung: []` la hai thu khac nhau voi
+            #    nguoi doc lai — cai dau la ban dung dung SCHEMA CU.
+            "vung": [dict(v) for v in (vung or ())],
         },
         # ── Tieng: BAN PHOI da dung o pha 16 ────────────────────────────
         #
@@ -199,6 +213,28 @@ def kiem(ban: dict, *, khoa_hop_le: set[str] | None = None) -> None:
         #    ho khong yeu cau.
         raise BanDungError(
             _t('Bản dựng khai chế độ hình khác "copy" — MVP không mã hoá lại hình.'))
+
+    # ── Vung che chi song duoc o duong CAT (V5) ─────────────────────────────
+    #
+    # 🔴 Day khong phai mot chinh sach ta chon, no la mot rang buoc VAT LY.
+    #
+    #    Duong `sao_chep` phat `-c:v copy`: byte hinh di thang tu nguon sang tep
+    #    ra, khong giai ma lan nao. Khong co khung hinh nao ton tai trong bo nho
+    #    de ma sua mot vung diem anh cua no. Muon lam mo thi phai giai ma — tuc
+    #    thoi `copy` — tuc pha vo ca D-ASV-03 lan loi hua cua preset giu hinh
+    #    (*"hinh anh duoc sao chep nguyen ven, khong giam chat luong"*).
+    #
+    # ⛔ Nen mot ban dung vua `sao_chep` vua co vung la mot ban dung **khong the
+    #    thi hanh dung**. Neu no lot qua day, `ket_xuat` se lang le bo qua vung
+    #    va giao mot video khong che gi — khach tra tien cho mot thu khong xay
+    #    ra, dung kieu that bai ma pha 27 vua go bo o cho khac.
+    #
+    # ⇒ Chan o day, va giao dien noi truoc cho khach de ho khong bao gio ve mot
+    #   vung roi moi biet no vo nghia.
+    from . import che_do_render as _cdr
+    if hinh.get("vung") and hinh.get("cach_render") != _cdr.CAT_MA_HOA_LAI:
+        raise BanDungError(_t(
+            'Vùng che chỉ dùng được với kiểu xử lý có biên tập lại hình.'))
 
     tieng = ban.get("tieng") or {}
     if not (tieng.get("nen") or {}).get("khoa"):

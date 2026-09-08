@@ -1,3 +1,22 @@
+{# Man STUDIO — tao mot lan chay.
+
+   Kien truc thong tin: `docs/auto_scan_video_v5/V5_UI_INFORMATION_ARCHITECTURE.md`.
+
+   ## Hai cau hoi o tang co ban, khong bon
+
+   🔴 Ban truoc cua tep nay bay BON fieldset radio ngang hang: kieu xu ly, cach
+      khop thoi gian, cach chon giong, va mot `<select>` giong. Cai thu hai —
+      "cach khop thoi gian" — la **he qua** cua preset, khong phai mot lua chon
+      doc lap, va bay no ngang hang la bat khach quyet mot viec ho khong co co so
+      de quyet. No da xuong `Tuy chon nang cao`, va preset dat mac dinh cho no.
+
+   ## Xem truoc la NEN, khong phai trang tri
+
+   Khong co khung hinh thi khong co trim marker, khong co vung che, khong co safe
+   area. Va no khong ton gi: the video phat thang tu kho (`/nguon` chuyen
+   huong sang presigned URL tren R2), lop phu ve bang SVG. Khong job, khong GPU,
+   khong credit.
+#}
 {% extends "base.html" %}
 {% block title %}{{ _("Lồng tiếng Việt") }} — LTT AI Studio{% endblock %}
 {% block topbar_title %}<strong>{{ _("Lồng tiếng Việt") }}</strong>{% endblock %}
@@ -8,96 +27,285 @@
   <header class="asv-dau">
     <div>
       <h1 id="asv-title">{{ _("Lồng tiếng Việt cho video") }}</h1>
-      <p>{{ _("Giữ nguyên hình ảnh và độ dài. Thay lời thoại gốc bằng giọng đọc tiếng Việt khớp thời điểm, giữ lại nhạc nền và tiếng động.") }}</p>
+      <p class="asv-ghi-chu">{{ _("Giữ nguyên hình ảnh và độ dài. Thay lời thoại gốc bằng giọng đọc tiếng Việt khớp thời điểm, giữ lại nhạc nền và tiếng động.") }}</p>
     </div>
   </header>
 
   {% if loi %}<div class="alert alert-err" role="alert">{{ loi }}</div>{% endif %}
 
-  <form class="asv-form card" method="post" enctype="multipart/form-data"
-        action="{{ app.route_prefix }}/tao">
+  {% if nap_lai_tu %}
+    {# ⭐ Noi RA rang cac o da duoc dien san. Khong co dong nay, khach thay mot
+       form khac mac dinh ma khong biet vi sao — va se tuong he thong tu doi. #}
+    <div class="alert" role="status">
+      {{ _("Đã điền sẵn cài đặt của lần chạy trước. Hãy chọn lại video.") }}
+    </div>
+  {% endif %}
+
+  <form class="asv-studio card" method="post" enctype="multipart/form-data"
+        action="{{ app.route_prefix }}/tao" id="asv-form"
+        data-uoc="{{ app.route_prefix }}/uoc-tinh"
+        data-tran-mb="{{ tran_mb }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    {# Vung che — do trinh sua vung ghi vao, dang JSON. Rong la binh thuong. #}
+    <input type="hidden" name="vung" id="asv-vung" value="">
 
-    <div class="asv-o">
-      <label for="asv-video"><strong>{{ _("Chọn video") }}</strong></label>
-      <input id="asv-video" type="file" name="video" required
-             accept="video/mp4,video/quicktime,video/x-matroska,video/webm">
-      <p class="asv-ghi-chu">{{ _("MP4, MOV, MKV hoặc WEBM. Tối đa 90 MB. Video phải có tiếng nói.") }}</p>
+    {# ── Duong tai len BEN VUNG ────────────────────────────────────────────
+       🔑 Tep di THANG tu trinh duyet len kho, khong qua tien trinh nay va
+          khong qua Cloudflare. Do la ca ly do tran 90 MB bien mat: no ton tai
+          vi Cloudflare cat o 100 MB **tren duong vao may chu** — mot duong ma
+          tep khong con di.
+
+       ⛔ O nay chi co gia tri khi cu PUT da XONG. Dat no som la noi doi voi
+          `routes.tao`: no uu tien `upload_id` va se tao mot lan chay tro vao
+          mot tep chua ton tai. #}
+    <input type="hidden" name="upload_id" id="asv-upload-id" value="">
+    <input type="hidden" id="asv-ve" data-url="{{ app.route_prefix }}/ve"
+           data-tran-ben-vung="{{ tran_ben_vung_mb }}"
+           data-kieu-ben-vung="{{ kieu_ben_vung|join(',') }}">
+
+    <div class="asv-luoi">
+
+      {# ── Trai: nguon + xem truoc ──────────────────────────────────────── #}
+      <div class="asv-cot">
+        <h2 class="asv-nhan-nhom">{{ _("Video của bạn") }}</h2>
+
+        <div class="asv-khung" id="asv-khung">
+          {# ⭐ Khung rong CO mot trang thai rieng, khong phai mot o input tran.
+             Truoc day day la mot `<input type=file>` khong hon, va khach khong
+             thay gi ca cho toi khi lan chay xong. #}
+          <div class="asv-rong" id="asv-rong">
+            <p class="asv-rong-lon">{{ _("Chọn video để bắt đầu") }}</p>
+            <p class="asv-ghi-chu">{{ _("MP4, MOV, MKV hoặc WEBM. Video phải có tiếng nói.") }}</p>
+          </div>
+          <video id="asv-xem" playsinline preload="metadata" hidden></video>
+          {# Lop phu vung che. `viewBox` 0..1 nen toa do trong SVG CHINH LA toa do
+             chuan hoa — khong co phep doi don vi nao de lam sai. #}
+          <svg id="asv-lop" class="asv-lop" viewBox="0 0 1 1"
+               preserveAspectRatio="none" hidden aria-hidden="true"></svg>
+        </div>
+
+        <label class="btn ghost asv-chon-tep" for="asv-video">
+          {{ _("Chọn video…") }}
+        </label>
+        <input id="asv-video" type="file" name="video" required class="asv-an-input"
+               accept="video/mp4,video/quicktime,video/x-matroska,video/webm">
+        <p class="asv-ghi-chu" id="asv-tep-ten" aria-live="polite"></p>
+
+        {# Tien do tai len — chi hien khi dang tai that. #}
+        <div class="asv-tai" id="asv-tai" hidden>
+          <div class="asv-thanh-tien" role="progressbar" aria-valuemin="0"
+               aria-valuemax="100" aria-valuenow="0" id="asv-tai-thanh">
+            <i style="width:0%"></i>
+          </div>
+          <p class="asv-ghi-chu" id="asv-tai-tt" aria-live="polite"></p>
+        </div>
+      </div>
+
+      {# ── Phai: hai cau hoi ────────────────────────────────────────────── #}
+      <div class="asv-cot">
+        <h2 class="asv-nhan-nhom">{{ _("Bạn muốn gì") }}</h2>
+
+        <fieldset class="asv-o">
+          <legend class="asv-an-doc">{{ _("Kiểu xử lý") }}</legend>
+          {% for ma, ten, mo_ta in preset %}
+            <label class="asv-chon">
+              <input type="radio" name="preset" value="{{ ma }}"
+                     {% if ma == preset_chon %}checked{% endif %}>
+              <span><strong>{{ _(ten) }}</strong><small>{{ _(mo_ta) }}</small></span>
+            </label>
+          {% endfor %}
+        </fieldset>
+
+        <div class="asv-o">
+          <label for="asv-giong"><strong>{{ _("Giọng đọc") }}</strong></label>
+
+          {# Ba mat loc. Nhan lay TU `ltt_voice`, khong go tay o template. #}
+          <div class="asv-loc" role="group" aria-label="{{ _('Lọc giọng') }}">
+            <select id="asv-loc-gioi" class="asv-loc-o" aria-label="{{ _('Giới') }}">
+              <option value="">{{ _("Mọi giới") }}</option>
+              {% for ma, ten in nhan_loc.gioi.items() %}
+                <option value="{{ ma }}">{{ _(ten) }}</option>
+              {% endfor %}
+            </select>
+            <select id="asv-loc-vung" class="asv-loc-o" aria-label="{{ _('Vùng') }}">
+              <option value="">{{ _("Mọi vùng") }}</option>
+              {% for ma, ten in nhan_loc.vung.items() %}
+                <option value="{{ ma }}">{{ _(ten) }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          {# ⛔ KHONG co o "Giọng mặc định". Engine tu choi phuc vu no (pha 09),
+             nen moi khach chon no la moi ho di bon giai doan roi hong. #}
+          <select id="asv-giong" name="giong_id" required>
+            {% for g in giong %}
+              <option value="{{ g.ma }}"
+                      {% if g.ma == giong_chon %}selected{% endif %}
+                      data-gioi="{{ g.gioi }}" data-vung="{{ g.vung }}"
+                      {% if g.duong_nghe %}data-nghe="{{ g.duong_nghe }}"{% endif %}
+                      >{{ g.ten }}</option>
+            {% endfor %}
+          </select>
+
+          <div class="asv-nghe">
+            <button type="button" class="btn ghost" id="asv-nghe-nut">
+              {{ _("Nghe thử") }}
+            </button>
+            {# ⭐ Giong chua co tep nghe thu thi noi ra, khong de mot nut bam duoc
+               ma khong keu. `nghe_thu.duong_cho_trang` CO Y bo khoa khoi dict. #}
+            <span class="asv-ghi-chu" id="asv-nghe-tt" aria-live="polite"></span>
+            <audio id="asv-nghe-am" preload="none"></audio>
+          </div>
+          <p class="asv-ghi-chu">{{ _("Bạn có thể nhân bản giọng riêng ở LTT VOICE.") }}</p>
+        </div>
+      </div>
     </div>
 
-    <fieldset class="asv-o">
-      <legend><strong>{{ _("Kiểu xử lý") }}</strong></legend>
-      {% for ma, ten, mo_ta in preset %}
-        <label class="asv-chon">
-          <input type="radio" name="preset" value="{{ ma }}"
-                 {% if ma == preset_mac_dinh %}checked{% endif %}>
-          <span><strong>{{ _(ten) }}</strong><small>{{ _(mo_ta) }}</small></span>
-        </label>
-      {% endfor %}
-    </fieldset>
+    {# ── Nang cao — DONG mac dinh ──────────────────────────────────────── #}
+    <details class="asv-nang-cao">
+      <summary>{{ _("Tuỳ chọn nâng cao") }}</summary>
 
-    <fieldset class="asv-o">
-      <legend><strong>{{ _("Cách khớp thời gian") }}</strong></legend>
-      {% for ma, ten, mo_ta in che_do %}
-        <label class="asv-chon">
-          <input type="radio" name="che_do" value="{{ ma }}"
-                 {% if ma == che_do_mac_dinh %}checked{% endif %}>
-          <span><strong>{{ _(ten) }}</strong><small>{{ _(mo_ta) }}</small></span>
-        </label>
-      {% endfor %}
-    </fieldset>
+      <div class="asv-nhom">
+        <h3>{{ _("Thời lượng") }}</h3>
+        <fieldset class="asv-o">
+          <legend class="asv-an-doc">{{ _("Cách khớp thời gian") }}</legend>
+          {% for ma, ten, mo_ta in che_do %}
+            <label class="asv-chon">
+              <input type="radio" name="che_do" value="{{ ma }}"
+                     {% if ma == che_do_chon %}checked{% endif %}>
+              <span><strong>{{ _(ten) }}</strong><small>{{ _(mo_ta) }}</small></span>
+            </label>
+          {% endfor %}
+        </fieldset>
+      </div>
 
-    <fieldset class="asv-o">
-      <legend><strong>{{ _("Cách chọn giọng") }}</strong></legend>
-      {% for ma, ten, mo_ta in che_do_giong %}
-        <label class="asv-chon">
-          <input type="radio" name="che_do_giong" value="{{ ma }}"
-                 {% if ma == che_do_giong_mac_dinh %}checked{% endif %}>
-          <span><strong>{{ _(ten) }}</strong><small>{{ _(mo_ta) }}</small></span>
-        </label>
-      {% endfor %}
-    </fieldset>
+      {# 🔴 Vung che chi song duoc o preset CAT, va do la mot rang buoc vat ly
+         chu khong phai mot lua chon: preset giu hinh phat `-c:v copy`, tuc byte
+         hinh di thang tu nguon sang tep ra ma khong giai ma lan nao — khong co
+         khung hinh nao ton tai de sua mot vung diem anh cua no.
 
-    <div class="asv-o">
-      <label for="asv-giong"><strong>{{ _("Giọng đọc") }}</strong></label>
-      {# ⛔ KHONG co o "Giọng mặc định". Engine từ chối phục vụ nó (pha 09), nên
-         mời khách chọn nó là mời họ đi bốn giai đoạn rồi hỏng. Danh sách luôn có
-         giọng mẫu, nên luôn có thứ CÓ THẬT để chọn. #}
-      <select id="asv-giong" name="giong_id" required>
-        {% for g in giong %}<option value="{{ g.ma }}">{{ g.ten }}</option>{% endfor %}
-      </select>
-      <p class="asv-ghi-chu">{{ _("Bạn có thể nhân bản giọng riêng ở LTT VOICE.") }}</p>
-    </div>
+         ⛔ Bay cong cu nay cho ca hai preset la mot **false feature**: khach ve
+            xong, thay no trong "Cai dat da dung", roi nhan mot video khong che
+            gi. `ban_dung.kiem` chan o may chu; cho nay chan o mat khach. #}
+      <div class="asv-nhom" id="asv-nhom-vung"
+           data-preset-can="{{ preset_can_cho_vung }}">
+        <h3>{{ _("Vùng che") }}</h3>
+        <p class="asv-ghi-chu">
+          {{ _("Vẽ một khung lên video để che logo hoặc phụ đề gốc. Kéo trên khung hình ở trên.") }}
+        </p>
+        <p class="asv-ghi-chu asv-vung-chan" id="asv-vung-chan" hidden>
+          {{ _("Vùng che cần kiểu xử lý “Rút gọn có biên tập”, vì phải dựng lại hình mới che được. Kiểu “Giữ nguyên hình ảnh” sao chép nguyên khung hình nên không sửa được điểm ảnh nào.") }}
+        </p>
+        <div class="asv-vung-thanh" role="group" aria-label="{{ _('Công cụ vùng che') }}">
+          <button type="button" class="btn ghost asv-vung-che-nut" data-loai="lam_mo">
+            {{ _("Thêm vùng làm mờ") }}
+          </button>
+          <button type="button" class="btn ghost asv-vung-che-nut" data-loai="danh_dau_phu_de">
+            {{ _("Đánh dấu phụ đề gốc") }}
+          </button>
+          <button type="button" class="btn ghost" id="asv-vung-xoa">
+            {{ _("Xoá vùng cuối") }}
+          </button>
+        </div>
+        <p class="asv-ghi-chu" id="asv-vung-tt" aria-live="polite">
+          {{ _("Chưa có vùng nào.") }}
+        </p>
+        <p class="asv-ghi-chu asv-chi-may">
+          {{ _("Chỉnh vùng che trên máy tính để chính xác hơn.") }}
+        </p>
+      </div>
 
-    <div class="asv-o asv-tien">
-      <p class="asv-ghi-chu">
-        {{ _("Chi phí được ước theo độ dài video và giữ chỗ khi bắt đầu. Phần không dùng đến sẽ được hoàn lại khi chạy xong.") }}
-      </p>
-      <button class="btn primary" type="submit">{{ _("Bắt đầu lồng tiếng") }}</button>
+      <div class="asv-nhom">
+        <h3>{{ _("Giọng") }}</h3>
+        <fieldset class="asv-o">
+          <legend class="asv-an-doc">{{ _("Cách chọn giọng") }}</legend>
+          {% for ma, ten, mo_ta in che_do_giong %}
+            <label class="asv-chon">
+              <input type="radio" name="che_do_giong" value="{{ ma }}"
+                     {% if ma == che_do_giong_can_giong %}data-can-giong="1"{% endif %}
+                     {% if ma == che_do_giong_chon %}checked{% endif %}>
+              <span><strong>{{ _(ten) }}</strong><small>{{ _(mo_ta) }}</small></span>
+            </label>
+          {% endfor %}
+        </fieldset>
+      </div>
+    </details>
+
+    {# ── Thanh hanh dong — DINH day tren mobile ────────────────────────── #}
+    <div class="asv-thanh">
+      <div class="asv-uoc" aria-live="polite">
+        {# ⛔ Truoc khi co video thi KHONG hien mot con so nao. Mot con so hien
+           truoc khi biet do dai la mot con so bia. #}
+        <span id="asv-uoc-tien" class="asv-uoc-tien"></span>
+        <span id="asv-uoc-gio" class="asv-ghi-chu"></span>
+        <p class="asv-ghi-chu">
+          {{ _("Chi phí được giữ chỗ khi bắt đầu. Phần không dùng đến sẽ được hoàn lại.") }}
+        </p>
+      </div>
+      <button class="btn primary" type="submit" id="asv-batdau">
+        {{ _("Bắt đầu lồng tiếng") }}
+      </button>
     </div>
   </form>
 
+  {# ── Lich su ──────────────────────────────────────────────────────────── #}
   <section class="asv-lich-su" aria-labelledby="asv-ls">
     <h2 id="asv-ls">{{ _("Lần chạy của tôi") }}</h2>
     {% if not lich_su %}
       <p class="asv-ghi-chu">{{ _("Bạn chưa có lần chạy nào.") }}</p>
     {% else %}
-      <table class="asv-bang">
-        <thead><tr>
-          <th>{{ _("Bắt đầu") }}</th><th>{{ _("Trạng thái") }}</th><th></th>
-        </tr></thead>
-        <tbody>
+      {# ⭐ The, khong phai bang. Bang ba cot tran ngang o 375px, va cot
+         `Trạng thái` cua ban cu in `r.status` THO — khach thay `queued`. #}
+      <ul class="asv-the-ds">
         {% for r in lich_su %}
-          <tr>
-            <td>{{ r.created_at.strftime("%d/%m/%Y %H:%M") if r.created_at else "—" }}</td>
-            <td><span class="asv-trang-thai asv-tt-{{ r.status }}">{{ r.status }}</span></td>
-            <td><a class="btn ghost" href="{{ app.route_prefix }}/run/{{ r.id }}">{{ _("Xem") }}</a></td>
-          </tr>
+          <li class="asv-the">
+            <a href="{{ app.route_prefix }}/run/{{ r.id }}">
+              <span class="asv-trang-thai asv-tt-{{ r.status }}">
+                {{ _(nhan_trang_thai.get(r.status, r.status)) }}
+              </span>
+              <span class="asv-the-gio">
+                {{ r.created_at.strftime("%d/%m/%Y %H:%M") if r.created_at else "—" }}
+              </span>
+            </a>
+          </li>
         {% endfor %}
-        </tbody>
-      </table>
+      </ul>
     {% endif %}
   </section>
 
 </section>
+{% endblock %}
+
+{% block scripts %}
+{# ⛔ Chuoi hien cho khach KHONG duoc nam trong `.js`.
+
+   `_()` chay trong ngu canh request va chi voi toi duoc tep Jinja; mot chuoi go
+   thang vao `asv.js` la mot chuoi **khong bao gio dich duoc**, va no se dung
+   giua mot trang da dich het — dung nhu `voice.js` va `cam_chon.js` da tranh
+   (ca hai khong chua mot cau tieng Viet nao cho khach doc).
+
+   ⭐ Mot khoi JSON thay vi muoi thuoc tinh `data-*`: cac chuoi nay thuoc ve
+      **kich ban**, khong thuoc ve mot phan tu nao ca. Treo chung len mot the
+      bat ky la buoc mot chuoi vao mot cho no khong lien quan. #}
+<script type="application/json" id="asv-chu">
+{
+  "vuot_tran": {{ _("vượt quá %(mb)s MB")|tojson }},
+  "dang_gui": {{ _("Đang gửi video…")|tojson }},
+  "credit": {{ _("credit")|tojson }},
+  "khoang": {{ _("khoảng")|tojson }},
+  "phut": {{ _("phút")|tojson }},
+  "giay": {{ _("giây")|tojson }},
+  "nghe_chua_co": {{ _("Giọng này đang được chuẩn bị bản nghe thử.")|tojson }},
+  "nghe_hong": {{ _("Không phát được bản nghe thử.")|tojson }},
+  "vung_chua_co": {{ _("Chưa có vùng nào.")|tojson }},
+  "vung_dem": {{ _("%(so)s vùng đã đánh dấu.")|tojson }},
+  "vung_keo": {{ _("Kéo trên khung hình để vẽ vùng.")|tojson }},
+  "vung_qua_nho": {{ _("Vùng quá nhỏ — hãy kéo một khung lớn hơn.")|tojson }},
+  "tai_dang": {{ _("Đang tải video lên… %(pct)s%%")|tojson }},
+  "tai_xong": {{ _("Đã tải lên xong.")|tojson }},
+  "tai_hong": {{ _("Không tải lên được. Hãy thử lại.")|tojson }},
+  "tai_qua_lon": {{ _("Video vượt quá %(mb)s MB.")|tojson }}
+}
+</script>
+<script src="/static/asv.js?v={{ asset_ver }}" defer></script>
 {% endblock %}

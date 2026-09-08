@@ -217,6 +217,20 @@ APP_DUOC_DUNG_APP: dict = {
         ("apps.ltt_voice.giong_mau", "NHAN_GIOI"),
         ("apps.ltt_voice.giong_mau", "NHAN_VUNG"),
         ("apps.ltt_voice.giong_mau", "NHAN_PHONG_CACH"),
+        # ── V5: nghe thu giong TRUOC khi chon ───────────────────────────────
+        #
+        # 🔑 Ba nhan khong tra loi duoc "giong nay nghe nhu the nao". Truoc muc
+        #    nay, cach duy nhat de biet la chay that mot lan — tra tien de xem
+        #    minh co muon mua khong.
+        #
+        # ⭐ `duong_cho_trang` chu KHONG `khoa_mau`/`khoa_rieng`: MOT tham quyen
+        #    dung duong nghe thu. Bai hoc da tra gia o `du_an.duong_tieng()`,
+        #    noi nam cho tu ghep URL va sua cho dung nghia la phai nho du nam.
+        #
+        # ⛔ Khong mo them cua doc nao: tep van do route `/audio` cua LTT VOICE
+        #    phuc vu, noi phep kiem so huu da o san. Auto Scan nhan URL, khong
+        #    nhan tep va khong nhan khoa.
+        ("apps.ltt_voice.nghe_thu", "duong_cho_app_khac"),
     },
 }
 

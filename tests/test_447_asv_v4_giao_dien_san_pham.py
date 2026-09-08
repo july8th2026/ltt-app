@@ -228,10 +228,34 @@ def test_FORM_hien_du_hai_preset(moi_truong, tmp_path):
 
 def test_FORM_khong_con_o_GIONG_MAC_DINH(moi_truong, tmp_path):
     """⛔ Engine tu choi phuc vu no (pha 09). Moi khach chon no la moi ho di qua
-    bon giai doan, bi giu credit, roi hong o giua chuoi."""
+    bon giai doan, bi giu credit, roi hong o giua chuoi.
+
+    ## Vi sao phep kiem nay duoc viet lai o V5
+
+    🔴 Ban cu quet **ca trang** tim chuoi `'<option value="">'`. Menh de that su
+       can chot la hep hon nhieu: *o chon GIONG khong duoc co lua chon rong*.
+
+       Hai thu do trung nhau chi khi trang co dung MOT `<select>`. V5 them hai o
+       loc (gioi · vung), va mot o loc **phai** co muc rong — do la "khong loc
+       mat nay", mot lua chon that va hop le. Ban cu bao dong tren chinh no.
+
+    ⭐ Ban viet lai **kho xanh hon**, khong de hon: no khong hoi "chuoi do co
+       vang mat khong" ma duyet TUNG `<option>` cua o giong va doi moi muc co
+       mot `value` khac rong. Mot o giong co ba muc rong o giua danh sach se bi
+       bat o day, trong khi ban cu chi bat duoc neu chuoi khop tung ky tu.
+    """
+    import re
+
     _app, a, _csrf, _b, _cb = moi_truong
     van = a.get("/auto-scan-video").text
-    assert '<option value="">' not in van, "form van moi chon mot giong rong"
+
+    khoi = re.search(r'<select[^>]*\bid="asv-giong"[^>]*>(.*?)</select>',
+                     van, re.S)
+    assert khoi, "khong tim thay o chon giong `#asv-giong` tren trang"
+    muc = re.findall(r'<option\s+value="([^"]*)"', khoi.group(1))
+    assert muc, "o chon giong khong co muc nao"
+    assert all(m.strip() for m in muc), (
+        "o chon giong co mot muc RONG — do la 'Giong mac dinh' quay lai")
     assert GIONG_THU in van, "form khong co giong mau nao de chon"
 
 

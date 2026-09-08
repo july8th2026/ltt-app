@@ -14311,3 +14311,200 @@ msgstr "Reviewing the translation"
 
 msgid "Chưa có bản dịch để soát."
 msgstr "No translation available to review."
+
+# ── Auto Scan Video — GUI V5 ─────────────────────────────────
+
+msgid "Video của bạn"
+msgstr "Your video"
+
+msgid "Bạn muốn gì"
+msgstr "What you want"
+
+msgid "Chọn video để bắt đầu"
+msgstr "Choose a video to start"
+
+msgid "Chọn video…"
+msgstr "Choose video…"
+
+msgid "MP4, MOV, MKV hoặc WEBM. Video phải có tiếng nói."
+msgstr "MP4, MOV, MKV or WEBM. The video must contain speech."
+
+msgid "Lọc giọng"
+msgstr "Filter voices"
+
+msgid "Giới"
+msgstr "Gender"
+
+msgid "Vùng"
+msgstr "Region"
+
+msgid "Nghe thử"
+msgstr "Preview"
+
+msgid "Chi phí được giữ chỗ khi bắt đầu. Phần không dùng đến sẽ được hoàn lại."
+msgstr "The cost is held when you start. Anything unused is refunded."
+
+msgid "Vùng che"
+msgstr "Masked areas"
+
+msgid "Công cụ vùng che"
+msgstr "Masking tools"
+
+msgid "Vẽ một khung lên video để che logo hoặc phụ đề gốc. Kéo trên khung hình ở trên."
+msgstr "Draw a box on the video to cover a logo or the original subtitles. Drag on the frame above."
+
+msgid "Thêm vùng làm mờ"
+msgstr "Add a blur area"
+
+msgid "Đánh dấu phụ đề gốc"
+msgstr "Mark the original subtitles"
+
+msgid "Xoá vùng cuối"
+msgstr "Remove last area"
+
+msgid "Chưa có vùng nào."
+msgstr "No areas yet."
+
+msgid "Chỉnh vùng che trên máy tính để chính xác hơn."
+msgstr "Edit masked areas on a computer for finer control."
+
+msgid "Đang lồng tiếng"
+msgstr "Dubbing in progress"
+
+msgid "Video đã lồng tiếng"
+msgstr "Dubbed video"
+
+msgid "Đang chuẩn bị…"
+msgstr "Getting ready…"
+
+msgid "đã chạy"
+msgstr "elapsed"
+
+msgid "Video gốc"
+msgstr "Original video"
+
+msgid "Bản lồng tiếng Việt"
+msgstr "Vietnamese dub"
+
+msgid "Lồng tiếng video khác"
+msgstr "Dub another video"
+
+msgid "Cài đặt đã dùng"
+msgstr "Settings used"
+
+msgid "không có"
+msgstr "none"
+
+msgid "Bộ mã hoá"
+msgstr "Encoder"
+
+msgid "Không hoàn tất bước:"
+msgstr "Step did not finish:"
+
+msgid "Lần chạy dừng lại giữa chừng."
+msgstr "The run stopped partway through."
+
+msgid "Một bước không hoàn tất nên chúng tôi dừng lại thay vì giao một bản chưa đạt."
+msgstr "A step did not finish, so we stopped rather than deliver a result that is not up to standard."
+
+msgid "Bạn có thể thử lại bước đó. Những bước đã xong sẽ không phải chạy lại."
+msgstr "You can retry that step. Steps already finished will not run again."
+
+msgid "Thử lại không tính thêm credit."
+msgstr "Retrying costs no extra credit."
+
+msgid "Vùng che có toạ độ không đọc được."
+msgstr "A masked area has coordinates we cannot read."
+
+msgid "Vùng che nằm ngoài khung hình."
+msgstr "A masked area falls outside the frame."
+
+msgid "Vùng che không đọc được."
+msgstr "A masked area could not be read."
+
+msgid "Loại vùng che không hợp lệ."
+msgstr "That kind of masked area is not supported."
+
+msgid "Vùng che quá nhỏ hoặc bị vẽ ngược."
+msgstr "A masked area is too small or was drawn backwards."
+
+msgid "Danh sách vùng che không đọc được."
+msgstr "The list of masked areas could not be read."
+
+msgid "Quá nhiều vùng che trong một lần chạy."
+msgstr "Too many masked areas in a single run."
+
+msgid "Khoảng thời gian của vùng che không đọc được."
+msgstr "The time range of a masked area could not be read."
+
+msgid "Khoảng thời gian của vùng che không hợp lệ."
+msgstr "The time range of a masked area is not valid."
+
+msgid "Lần chạy này không còn video nguồn."
+msgstr "This run no longer has its source video."
+
+# ── Auto Scan Video — GUI V5 ─────────────────────────────────
+
+msgid "%(so)s vùng đã đánh dấu."
+msgstr "%(so)s areas marked."
+
+msgid "Giọng này đang được chuẩn bị bản nghe thử."
+msgstr "A preview clip for this voice is still being prepared."
+
+msgid "Không phát được bản nghe thử."
+msgstr "The preview clip would not play."
+
+msgid "Kéo trên khung hình để vẽ vùng."
+msgstr "Drag on the frame to draw an area."
+
+msgid "Vùng quá nhỏ — hãy kéo một khung lớn hơn."
+msgstr "That area is too small — drag a larger box."
+
+msgid "khoảng"
+msgstr "about"
+
+msgid "vượt quá %(mb)s MB"
+msgstr "over the %(mb)s MB limit"
+
+msgid "Đang gửi video…"
+msgstr "Sending video…"
+
+# ── Auto Scan Video — GUI V5 ─────────────────────────────────
+
+msgid "Vùng che cần kiểu xử lý “Rút gọn có biên tập”, vì phải dựng lại hình mới che được. Kiểu “Giữ nguyên hình ảnh” sao chép nguyên khung hình nên không sửa được điểm ảnh nào."
+msgstr "Masking needs the “Shorten with editing” mode, because the picture has to be rebuilt before anything can be covered. “Keep the picture” copies the frames untouched, so no pixel can be changed."
+
+# ── Auto Scan Video — GUI V5 ─────────────────────────────────
+
+msgid "Vùng che chỉ dùng được với kiểu xử lý có biên tập lại hình."
+msgstr "Masking only works with a mode that rebuilds the picture."
+
+# ── Auto Scan Video — GUI V5 ─────────────────────────────────
+
+msgid "Đang tải video lên… %(pct)s%%"
+msgstr "Uploading video… %(pct)s%%"
+
+msgid "Đã tải lên xong."
+msgstr "Upload complete."
+
+msgid "Không tải lên được. Hãy thử lại."
+msgstr "The upload did not go through. Please try again."
+
+msgid "Video vượt quá %(mb)s MB."
+msgstr "The video is over %(mb)s MB."
+
+# ── Auto Scan Video — GUI V5 ─────────────────────────────────
+
+msgid "Chạy lại với cài đặt này"
+msgstr "Run again with these settings"
+
+msgid "Đã điền sẵn cài đặt của lần chạy trước. Hãy chọn lại video."
+msgstr "Settings from your previous run are filled in. Choose a video again."
+
+# ── Auto Scan Video — GUI V5 ─────────────────────────────────
+
+msgid "Lần chạy chưa hoàn tất"
+msgstr "Run did not finish"
+
+msgid "Lần chạy đã huỷ"
+msgstr "Run cancelled"

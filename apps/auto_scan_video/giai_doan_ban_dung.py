@@ -148,7 +148,17 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         phien_ban_ffmpeg=nhap_media.phien_ban_ffmpeg(),
         tong_giay=float(ke_hoach.get("tong_ms") or 0) / 1000.0,
         che_do=cach, bo_ma_hoa=bo_ma_hoa, khoang_giu=khoang,
-        preset=preset)
+        preset=preset,
+        # ⭐ Vung che di tu `run.settings` — noi `routes.tao` da ghi CHUNG SAU
+        #    KHI `vung_che.chuan_hoa` duyet. Khong chuan hoa lai o day: hai lan
+        #    chuan hoa la hai bo luat se lech, va ban da luu moi la ban that.
+        #
+        # ⚠️ Chi truyen o duong CAT. O duong sao chep, `ban_dung.kiem` se tu
+        #    choi — va tu choi o day thi khach mat mot lan chay da tra tien.
+        #    Giao dien khong cho ve vung khi preset la giu hinh, nhung mot yeu
+        #    cau dung tay van co the toi, nen cho nay khong duoc tin giao dien.
+        vung=((run.settings or {}).get("vung") or ()
+              if cach == cdr.CAT_MA_HOA_LAI else ()))
 
     # 🔑 Muc 5: doi chieu MOI tham chieu TRUOC khi ton mot suat render.
     if ctx is not None and getattr(ctx, "progress", None):

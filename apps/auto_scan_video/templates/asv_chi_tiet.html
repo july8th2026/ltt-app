@@ -1,3 +1,8 @@
+{# Man mot lan chay. CUNG mot URL cho "dang chay" va "da xong".
+
+   ⭐ Khong tach hai trang: khach gui link cho nguoi khac thi link van dung o moi
+      thoi diem. Noi dung doi theo `run.status`, dia chi thi khong.
+#}
 {% extends "base.html" %}
 {% block title %}{{ _("Lần chạy") }} — LTT AI Studio{% endblock %}
 {% block topbar_title %}<strong>{{ _("Lồng tiếng Việt") }}</strong>{% endblock %}
@@ -8,7 +13,17 @@
 
   <header class="asv-dau">
     <div>
-      <h1 id="asv-ct">{{ _("Tiến độ lồng tiếng") }}</h1>
+      {# 🔴 Bon trang thai, bon tieu de. Ban dau cho nay chi phan biet `done` voi
+         "moi thu con lai", nen mot lan chay **da hong** van doi tieu de "Dang
+         long tieng" — khach doc mot dong noi viec dang chay ben tren mot khung
+         do noi viec da dung. `R4` bat duoc dieu nay, va no chi lo ra khi co du
+         lieu THAT o tung trang thai. #}
+      <h1 id="asv-ct">
+        {% if run.status == "done" %}{{ _("Video đã lồng tiếng") }}
+        {% elif run.status == "error" %}{{ _("Lần chạy chưa hoàn tất") }}
+        {% elif run.status == "cancelled" %}{{ _("Lần chạy đã huỷ") }}
+        {% else %}{{ _("Đang lồng tiếng") }}{% endif %}
+      </h1>
       <p class="asv-ghi-chu">
         {{ _("Bắt đầu") }}: {{ run.created_at.strftime("%d/%m/%Y %H:%M") if run.created_at else "—" }}
       </p>
@@ -17,6 +32,32 @@
   </header>
 
   {% include "asv_tien_do.html" %}
+
+  {# ── Cai dat da dung ───────────────────────────────────────────────────
+     🔑 Khach xem lai mot lan chay cu **khong biet minh da chon gi**. Ban truoc
+        cua man nay khong hien mot lua chon nao, nen "chay lai giong the nay"
+        la mot viec khach phai nho bang dau.
+
+     ⛔ Chi hien nhung gi khach DA CHON, khong dump `run.settings`. Trong do co
+        `voice_id` trung lap va nhung khoa noi bo cua cac pha truoc. #}
+  <details class="asv-nang-cao">
+    <summary>{{ _("Cài đặt đã dùng") }}</summary>
+    <ul class="asv-cai-dat">
+      <li>{{ _("Kiểu xử lý") }}:
+        {% set p = run.settings.get("preset") %}
+        {% for ma, ten, _mo_ta in preset %}{% if ma == p %}{{ _(ten) }}{% endif %}{% endfor %}
+      </li>
+      <li>{{ _("Cách khớp thời gian") }}:
+        {% set c = run.settings.get("timing_mode") %}
+        {% for ma, ten, _mo_ta in che_do %}{% if ma == c %}{{ _(ten) }}{% endif %}{% endfor %}
+      </li>
+      <li>{{ _("Giọng đọc") }}: {{ run.settings.get("giong_id") or "—" }}</li>
+      <li>{{ _("Vùng che") }}:
+        {% set v = run.settings.get("vung") or [] %}
+        {% if v %}{{ v | length }}{% else %}{{ _("không có") }}{% endif %}
+      </li>
+    </ul>
+  </details>
 
   {# ── Chi tiet van hanh: MAC DINH AN, va chi hien cho operator ──────────
      Prompt 20 muc 6. Khach khong can biet job id hay ten worker; nguoi ho tro
@@ -48,6 +89,17 @@
         {{ _("giữ") }} {{ van_hanh.credit_da_giu }} ·
         {{ _("tính") }} {{ van_hanh.credit_da_tinh }}
       </p>
+      {# ── Ho so ket xuat — thu ma `SUA-GPU-CHAM.bat` cua he tham chieu ton tai vi
+         thieu: bo ma hoa nao da chay, va nhanh cham the nao.
+         ⛔ Chi cho operator. Khach khong bao gio thay ten encoder. #}
+      {% if van_hanh.ket_xuat %}
+        <p class="asv-ghi-chu">
+          {{ _("Bộ mã hoá") }}: <code>{{ van_hanh.ket_xuat.bo_ma_hoa }}</code>
+          {% if van_hanh.ket_xuat.lan_realtime %}
+            · {{ "%.1f"|format(van_hanh.ket_xuat.lan_realtime) }}× realtime
+          {% endif %}
+        </p>
+      {% endif %}
     </details>
   {% endif %}
 

@@ -160,6 +160,20 @@ def phan_loai(exc: BaseException) -> str:
     if isinstance(exc, RangGiongError):
         return NGUOI_DUNG
 
+    # ── Vung che (V5) ───────────────────────────────────────────────────────
+    #
+    # 🔑 `VungLoi` la toa do khong hop le: sai dinh dang, ngoai khoang 0..1, ve
+    #    nguoc, hay qua nho. Chay lai cung mot bo toa do se hong y het.
+    #
+    # ⚠️ Hom nay no chi duoc nem trong `routes.tao` va bat ngay tai do, nen no
+    #    **chua bao gio** toi duoc ham nay. Van phan loai, va do la co y: neu mot
+    #    pha sau goi `vung_che.chuan_hoa` tu ben trong mot job, no phai roi vao
+    #    nhanh dung chu khong roi xuong `retry` — dung dieu `test_418` goi la
+    #    "im lang thua ke hanh vi nguy hiem nhat trong bang".
+    from .vung_che import VungLoi
+    if isinstance(exc, VungLoi):
+        return NGUOI_DUNG
+
     # ── QC bang AI va ke hoach sua (pha 19) ─────────────────────────────────
     #
     # ⛔ `NGUOI_DUNG` — that bai cuoi cung. Ca hai deu la mau thuan trong du lieu

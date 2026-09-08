@@ -525,30 +525,6 @@ def huy_run(db: Session, run_id: str, owner_id: str) -> AsvRun:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-#  Tien do
-# ══════════════════════════════════════════════════════════════════════════════
-
-def tien_do(db: Session, run: AsvRun) -> dict:
-    """Tom tat cho giao dien va cho test. Khong co bi mat, khong co duong dan noi bo."""
-    ds = cac_giai_doan(db, run)
-    xong = sum(1 for s in ds if s.status == STAGE_SUCCEEDED)
-    return {
-        "run_id": run.id,
-        "status": run.status,
-        "phan_tram": int(xong * 100 / max(1, len(pipeline.CHUOI))),
-        "da_xong": xong,
-        "tong": len(pipeline.CHUOI),
-        "credit_held": int(run.credit_held),
-        "credit_actual": int(run.credit_actual),
-        "giai_doan": [
-            {"ten": s.stage, "trang_thai": s.status, "lan_thu": int(s.attempt),
-             "loi": s.error or ""}
-            for s in sorted(ds, key=lambda x: pipeline.TEN_GIAI_DOAN.index(x.stage))
-        ],
-    }
-
-
-# ══════════════════════════════════════════════════════════════════════════════
 #  Phuc vu giao dien (pha 20)
 # ══════════════════════════════════════════════════════════════════════════════
 

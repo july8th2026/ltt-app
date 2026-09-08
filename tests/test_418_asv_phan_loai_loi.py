@@ -15,6 +15,7 @@ import pytest
 
 from apps.auto_scan_video import loi
 from apps.auto_scan_video.ban_dung import BanDungError
+from apps.auto_scan_video.vung_che import VungLoi
 from apps.auto_scan_video.ban_ghi import BanGhiError
 from apps.auto_scan_video.dich_thuat import DichError, DichMoHo
 from apps.auto_scan_video.giai_doan_ban_dung import ThieuDauVao
@@ -64,6 +65,12 @@ from tests.rao_chan_nang import demucs_gia_lap  # noqa: F401
 #:    chu khong doi toi luc no roi xuong nhanh mac dinh trong production.
 BANG = {
     MayBan: loi.BAN,
+    # ⛔ Toa do vung che sai — sai dinh dang, ngoai khoang 0..1, ve
+    #    nguoc, hay qua nho. Chay lai cung mot bo toa do hong y het.
+    # ⚠️ Hom nay no bi bat ngay trong `routes.tao`, nen chua bao gio
+    #    toi duoc `phan_loai`. Chot o day de mot pha sau goi
+    #    `vung_che.chuan_hoa` TU TRONG mot job khong roi xuong `retry`.
+    VungLoi: loi.NGUOI_DUNG,
     # ⭐ THU LAI la viec dung: nen tang co the cap mot card KHAC lan sau. Truoc
     #    pha 13 truong hop nay khong nem gi ca — no **im lang chay CPU**, cham
     #    hon 9,5 lan, va giu suat `tach_nguon_cuc_bo` suot ~37 phut o tran 2 gio.
