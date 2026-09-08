@@ -2872,3 +2872,69 @@ nhắc `nhan_vien`)*.
 - **Chính sách bảo mật là một hợp đồng câm.** Nó không báo lỗi ở máy chủ, không
   làm test đỏ, chỉ chặn ở trình duyệt người dùng. Phải có phép kiểm đọc **chính
   chuỗi CSP** để khi ai đó sửa chính sách thì mã dựa vào nó biết mà đỏ theo.
+
+---
+
+## Bẫy 37 — `pre-commit` stash phần UNSTAGED nhưng **không** stash tệp UNTRACKED
+
+Ngày **08/09/2026**, ba phiên cùng làm trên cây chính. Phiên
+`OPERATING_STANDARDIZATION` staged đúng 20 tệp của mình, tất cả sạch, rồi
+`git commit` — và bị chặn:
+
+```
+banh coc ruff (chi do khi TANG)..........................................Failed
+   F401     416 -> 417
+```
+
+Dòng `F401` thứ 417 nằm ở **`tests/test_958_wf_he_kieu_cong.py:16`** — một tệp
+mà phiên **LTT WORKFLOW V2** vừa tạo lúc 15:17 và chưa `git add`.
+
+### Vì sao nó lọt
+
+`pre-commit` in ra `[INFO] Stashing unstaged files` và đúng là nó có stash. Nhưng
+nó stash **thay đổi chưa staged của tệp ĐÃ ĐƯỢC THEO DÕI**. Một tệp **untracked**
+thì không có gì để stash — nó chỉ nằm đó, và `ruff .` quét cả thư mục.
+
+⇒ **Một tệp mới của phiên A được tính vào bánh cóc của phiên B.** Đây là một
+đường ghép giữa các phiên mà **không ai khai**, và nó không xuất hiện trong
+`git diff --cached` của người bị chặn.
+
+### Vì sao nó nguy hơn "một commit bị chặn"
+
+Lần này nó chỉ chặn. Lần sau nó có thể làm **một phiên đi sửa mã của mình vì một
+con số không phải của mình** — bánh cóc chỉ nói *"F401 tăng 1"*, nó không nói
+*"của ai"*.
+
+### Cách phân xử — rẻ, ba mươi giây
+
+```bash
+python -m ruff check --select F401 $(git ls-files --others --exclude-standard | grep '\.py$')
+```
+
+Nếu con số dôi ra nằm ở một tệp **untracked mà bạn không tạo**, thì đó không phải
+việc của bạn. Đừng `--no-verify`, và đừng thêm `# noqa` vào tệp người khác — ở ca
+08/09 dòng `import pytest` thừa là **thật**: chủ tệp đã bỏ hết `pytest.raises`
+trong một lượt siết phép kiểm và quên dòng import. Một `# noqa` do người ngoài
+thêm vào sẽ giấu mất nó.
+
+⇒ Việc đúng là **nhắn cho chủ tệp**, rồi chờ. Xem `AGENTS.md` §10.4.
+
+### ⚠️ Và một bẫy phụ ngay trong lúc phân xử
+
+Đúng lượt kiểm ấy, hai phiên khác nhau cùng viết:
+
+```bash
+python tools/check_ruff.py 2>&1 | tail -4; echo "EXIT=$?"     # SAI — $? la cua `tail`
+```
+
+Câu lệnh **trông như** đang đọc `returncode` — nó có hẳn chữ `EXIT=$?`. Nhưng một
+cái ống làm mất mã thoát y hệt cách khớp mẫu stdout làm mất nó. Ghi ra tệp rồi
+mới đọc:
+
+```bash
+python tools/check_ruff.py > r.log 2>&1; echo "EXIT=$?"       # DUNG
+```
+
+⭐ Cả hai phiên mắc lỗi này **sau khi** một trong hai vừa viết ra luật *"đọc
+`returncode`, đừng khớp mẫu stdout"*. Thứ cứu họ không phải sự cẩn thận — mà là
+`pre-commit` tự chạy lại `ruff` một cách độc lập.

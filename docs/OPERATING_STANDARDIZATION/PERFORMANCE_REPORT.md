@@ -106,7 +106,7 @@ Quét 822 tệp `.md` được git theo dõi. 1,6 s trên tổng 682,8 s = **0,2
 |---|---|
 | **`docs/**` vẫn hạ cấp xuống đầy đủ** | **70 tệp test đọc `docs/`** — đã `grep`, không đoán. Một luật "docs thì trơ" sẽ bỏ qua 70 phép kiểm **im lặng**. Cần bản khai chủ sở hữu cho `docs/`, không phải một luật miễn trừ. **P1** |
 | Chuẩn hoá marker pytest (`unit`/`integration`/`slow`/…) | `pytest.ini` mới khai `nang`; `@pytest.mark.slow` dùng **1 lần** mà chưa khai. ROI thấp, và `--strict-markers` chưa bật nên chưa gãy. **P1** |
-| Đo thời gian đầu-cuối thật cho `--doi` | Cây đang bẩn bởi phiên khác + hai tệp `DUNG_CHUNG` vừa sửa ⇒ lượt tới tự hạ cấp. Đo ở lượt sạch kế tiếp. **P0** |
+| Đo thời gian đầu-cuối thật cho `--doi` | Vẫn treo. Xem §9 — cây chưa đứng yên được một lượt nào. **P0** |
 | Bật `pytest-xdist` rộng hơn | **Đã tối ưu xong từ 26/08**: 2 giờ → 4 phút bằng `--dist loadfile` + bỏ `fsync` SQLite tạm. Không còn phần dễ ăn. |
 
 ## 8. Cách đo lại
@@ -119,3 +119,72 @@ python tools\check_luat_van_hanh.py       # banh coc luat van hanh
 Số gate lấy từ `test-results/gates/*.json` — **bằng chứng máy sinh**, có `sha` và
 `cay`, nên đối chiếu được với commit. ⚠️ Trường `cho_khoa_giay` tách riêng thời
 gian **chờ khoá** khỏi thời gian **chạy**; đừng cộng nhầm hai cái.
+
+
+---
+
+## 9. Lượt L3 thật, 15:32–15:45 — **12,4 phút**, và nó tự nói KHÔNG phải bằng chứng
+
+Chủ sản phẩm cho phép chạy, và máy **đúng là yên**: `[tai may] 0.9/20 loi dang ban -> RANH`.
+
+```
+28 buoc PASS · 1 BOQUA · 1 FAIL = 30 buoc
+pha 1 song song   606 giay
+pha 2 noi tiep    138 giay
+TONG              744 giay (12,4 phut)
+RESULT: FAIL (1/30) [1 BUOC TU BO QUA...] [CAY DA DOI GIUA CHUNG - KHONG DUNG LAM BANG CHUNG]
+```
+
+⭐ **744 s xác nhận con số 682,8 s** (trung vị 43 lượt) và bác dứt điểm "~5 phút".
+Bước mới `luat van hanh` chạy **1,9 s** — khớp phép đo trước.
+
+### ⛔ Nhưng lượt này KHÔNG dùng làm bằng chứng được, và gate tự nói ra
+
+```
+CAY DA DOI TRONG LUC CHAY:
+    M alembic/versions/20260908_1200_workflow_v2_thi_hanh.py   (6218 -> 6221 byte)
+    + alembic/versions/20260908_1600_voice_license_va_curate.py
+    M apps/ltt_voice/nghe_thu.py                               (16285 -> 18351 byte)
+    M apps/ltt_voice/tables.py                                 (18234 -> 23515 byte)
+    + apps/ltt_voice/muc_dung.py
+    ... va 4 tep nua                            (tong 16+ tep, hai phien khac)
+```
+
+🔴 **Đây là bài học đắt nhất của cả chiến dịch, và nó là một PHÂN BIỆT:**
+
+> Chủ sản phẩm đã bảo các phiên khác **không dùng CPU**, và họ giữ lời — máy chỉ
+> 0,9/20 lõi bận. Nhưng họ **vẫn ghi tệp**. "Không dùng CPU" và "cây đứng yên" là
+> **hai điều kiện khác nhau**, và một lượt gate cần **cả hai**.
+
+`cua_so_yen` trả lời *"máy có bận không"*. Không công cụ nào ở đây trả lời *"cây
+có đứng yên không"* **trước** khi chạy — chỉ có ảnh chụp trước/sau, tức nó nói
+cho bạn biết **sau khi đã mất 12,4 phút**.
+
+### Một lỗi duy nhất, và nó cũng không phải của chiến dịch
+
+`test_306::test_bo_qua_hien_tai_dat_moc` — hai phép kiểm mới bị bỏ qua:
+
+```
+CHO BO QUA MOI (2):
+  test_507_muc_dung_thu_tu_giong.py::_cung_tang  <- khong co tang nao co hai giong
+  test_507_muc_dung_thu_tu_giong.py::test_muc_dung_KHONG_keo_duoc_mot_giong_qua_TANG
+```
+
+`tests/test_507_muc_dung_thu_tu_giong.py` là tệp **untracked**, tạo lúc **15:37**
+— tức **giữa** lượt gate bắt đầu lúc 15:32, bởi phiên LTT VOICE.
+
+⇒ Đúng cơ chế `Bẫy 37` (`docs/BAY_TRONG_CONG_CHAT_LUONG.md`), ở **dạng thứ hai**:
+lần trước một tệp untracked của phiên A cộng vào bánh cóc `ruff` của phiên B;
+lần này nó cộng vào bánh cóc **bỏ qua**. Cùng một lỗ, hai bánh cóc khác nhau.
+
+### Bước tự bỏ qua
+
+`bat bien da tien trinh` ra `[BOQUA]` sau **0,7 s** (bình thường 138 s) — nó cần
+PostgreSQL và tự khai là không chạy được. Gate in điều đó **ở dòng `RESULT`**,
+đúng như thiết kế: một bước không chạy mà trông như đã chạy thì không ai đi tìm nó.
+
+### Kết luận cho hạng mục P0
+
+Con số **12,4 phút cho L3 là dùng được** (thời lượng không phụ thuộc cây có đổi
+hay không). Nhưng **phán quyết PASS/FAIL thì không**, và số giây cho `--doi` vẫn
+chưa đo được — cả ngày 08/09 **chưa có một cửa sổ nào cây đứng yên đủ 12 phút**.

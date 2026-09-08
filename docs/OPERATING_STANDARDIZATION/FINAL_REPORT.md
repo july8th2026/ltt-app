@@ -159,7 +159,7 @@ chỉ liệt kê **đúng tệp của nó** khi commit.
 | | |
 |---|---|
 | Đo thời gian **đầu-cuối** thật cho `--doi` | Cây đang bẩn bởi phiên khác, và `gate.py`+`thanh_phan.py` vừa sửa đều `DUNG_CHUNG` ⇒ lượt `--doi` kế tiếp **tự hạ cấp**. Phải đo ở lượt sạch sau. Số hiện có là **số tệp test**, không phải giây — đừng suy tuyến tính. |
-| L3 cho chính chiến dịch này | Chưa chạy — xem "Trung thực" dưới |
+| ⭐ **Không có công cụ nào trả lời "cây có đứng yên không" TRƯỚC khi chạy** | `cua_so_yen` đo **máy bận**, không đo **cây đổi**. Lượt 15:32 hỏng vì đúng khe này. Cần một phép chụp-và-so trước khi bấm, hoặc một khoá ghi theo cây |
 
 ### P1
 
@@ -179,8 +179,40 @@ phần dễ ăn.
 
 ## Trung thực về việc chưa làm
 
-⛔ **Chưa chạy `gate.py` đầy đủ (L3) cho chiến dịch này.** Ba lý do, và lý do thứ
-ba mới là lý do thật:
+## ✅ CẬP NHẬT 15:45 — đã chạy L3, chủ sản phẩm cho phép
+
+```
+28 buoc PASS · 1 BOQUA · 1 FAIL = 30 buoc      TONG 744 giay (12,4 phut)
+RESULT: FAIL (1/30) [1 BUOC TU BO QUA] [CAY DA DOI GIUA CHUNG - KHONG DUNG LAM BANG CHUNG]
+```
+
+| | |
+|---|---|
+| **28 bước PASS** | gồm bước mới `luat van hanh` (**1,9 s**) và cả 23 bước tĩnh |
+| `bat bien da tien trinh` | `[BOQUA]` sau 0,7 s — cần PostgreSQL, **tự khai** là không chạy |
+| `bo test` FAIL | **1 phép kiểm**: `test_306::test_bo_qua_hien_tai_dat_moc` |
+
+Phép kiểm đỏ duy nhất: hai `skip` mới trong
+`tests/test_507_muc_dung_thu_tu_giong.py` — tệp **untracked**, tạo lúc **15:37**,
+tức **giữa** lượt gate bắt đầu lúc 15:32, bởi phiên LTT VOICE. Không phải của
+chiến dịch này. *(Đúng cơ chế `Bẫy 37`, dạng thứ hai — xem `PERFORMANCE_REPORT` §9.)*
+
+⭐ **744 s xác nhận 682,8 s** và bác dứt điểm "~5 phút".
+
+### 🔴 Bài học đắt nhất — một PHÂN BIỆT, không phải một lời nhắc
+
+> Chủ sản phẩm đã bảo các phiên khác **không dùng CPU**, và họ **giữ lời**: máy chỉ
+> 0,9/20 lõi bận suốt lượt chạy. Nhưng họ **vẫn ghi tệp** — 16 tệp.
+>
+> **"Không dùng CPU" ≠ "cây đứng yên".** Một lượt gate cần **cả hai**, và
+> `cua_so_yen` chỉ trả lời được vế thứ nhất.
+
+Vế thứ hai hiện **không có công cụ nào trả lời trước khi chạy** — chỉ có ảnh chụp
+trước/sau, tức nó báo cho bạn sau khi đã mất 12,4 phút. **FOLLOW_UP P0 mới.**
+
+---
+
+⛔ **Vì sao trước 15:45 chưa chạy L3.** Ba lý do, và lý do thứ ba mới là lý do thật:
 
 1. Cây mang **16 tệp dở của phiên VOICE**, và **một tệp trong đó đang làm đỏ hai
    bánh cóc** (`test_306`, `test_145` — bảng ở mục Sessions). Tức một lượt L3
