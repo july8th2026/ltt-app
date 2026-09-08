@@ -14713,3 +14713,14 @@ msgstr ""
 # không nói của cái gì, trong khi màn ấy có nhiều dự án.
 msgid "Tiến độ dự án {ten}: {xong}/{tong} khối"
 msgstr "Project {ten} progress: {xong}/{tong} blocks"
+
+# AI CLEAN REBUILD V2 pha 04 — cổng fail-closed khi một nhà cung cấp đã ngừng.
+# Chuỗi này HIỆN RA VỚI KHÁCH, đo được chứ không phỏng đoán: job hỏng lưu
+# thông điệp vào `Job.error` (`platform_core/models.py:297`), và trang danh
+# sách job render thẳng nó (`apps/autosubvideo/templates/…:97` `{{ j.error }}`).
+msgid ""
+"Nhà cung cấp này đã ngừng phục vụ. Nội dung cũ vẫn xem được, nhưng không tạo "
+"lượt mới được nữa."
+msgstr ""
+"This provider has been retired. Existing content remains viewable, but no "
+"new requests can be created."

@@ -107,9 +107,19 @@ def chan_neu_da_ngung(provider_id: str) -> None:
     mọi nơi đều gọi được.
     """
     if da_ngung(provider_id):
+        # 🔴 CHUỖI NÀY HIỆN RA VỚI KHÁCH — đo được, không phải phỏng đoán:
+        #      platform_core/models.py:297                Job.error  (cot Text)
+        #      apps/autosubvideo/templates/…:97           {{ j.error }}
+        #    Một job hỏng vì cổng này lưu thông điệp vào `Job.error`, và trang
+        #    danh sách job render thẳng nó. Nên nó phải được **dịch**, không
+        #    phải một chuỗi kỹ thuật.
+        #
+        # ⚠️ Cám dỗ ở đây là xếp nó vào *"lỗi nội bộ, không cần dịch"*. Hai
+        #    đường gọi trên bác điều đó bằng mã, không bằng ý kiến.
+        from platform_core.i18n import _ as _t
         raise ProviderDaNgung(
-            f"provider '{(provider_id or '').strip().lower()}' da ngung phuc vu "
-            f"— khong tao luot goi moi. Doc lich su van hoat dong.")
+            _t('Nhà cung cấp này đã ngừng phục vụ. Nội dung cũ vẫn xem được, '
+               'nhưng không tạo lượt mới được nữa.'))
 
 
 # ── Seed 5 provider hiện có trong BOT GEMINI (chỉ key CHÍNH THỨC) ──────────────
