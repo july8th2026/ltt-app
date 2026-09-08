@@ -10,14 +10,44 @@
 
 ## PHẦN 27 — DI TRÚ
 
-### 27.1 🔴 Bài toán di trú gần như KHÔNG TỒN TẠI
+### 27.1 🔴 Bài toán di trú NHỎ — nhưng KHÔNG rỗng
+
+⚠️ **ĐÃ SỬA 2026-09-08 sau khi đo `D2`.** Bản đầu của mục này viết *"gần như
+KHÔNG TỒN TẠI"* và kết luận *"không có khách đứng trên đường cũ ⇒ thay thẳng,
+gỡ bản cũ"*. Kết luận ấy **sai**, và nó sai từ một phép đo **đúng**.
 
 ```
-0 job agent.advance / 28 ngày log production          (01 §A.1)
+0 job agent.advance / 28 ngày log production          (01 §A.1)      <- DUNG
+agent_workflows 10 · agent_runs 4 · agent_workflow_snapshots 83      <- do D2, 08/09
+đối chứng: users 27 · jobs 1770 · credit_entries 5500
 ```
 
-Không có `AgentRun` nào từng chạy ⇒ **không có trạng thái thi hành để chuyển**,
-**không có khách đứng trên đường cũ**, **không cần lớp tương thích**.
+🔑 `0 run` nói **KHÔNG AI CHẠY**. Nó **không** nói **KHÔNG AI ĐÃ DỰNG**. Hai
+mệnh đề khác nhau, và bản đầu đã đọc mệnh đề thứ nhất thành mệnh đề thứ hai.
+
+⇒ Vẫn **không có trạng thái thi hành để chuyển** (`0 run` — phần ấy đúng), và
+  vẫn **không cần lớp tương thích runtime**. Nhưng **có 10 workflow người thật
+  đã dựng**, nên "gỡ bản cũ" là xoá việc của họ.
+
+## ⭐ Hình dạng thật của 10 bản ghi mới là thứ quyết cách làm
+
+Đo tiếp (chỉ đọc, 08/09):
+
+```
+10/10 mang tên mặc định "Workflow mới"   không ai đổi tên
+tối đa 3 node, tối đa 2 cạnh             không đồ thị nào thật sự
+4/10 `document` RỖNG                     chỉ còn `nodes`/`edges` cũ
+6/10 `document` 5 khoá                   active_page_id · budget_max_credit
+                                         · goal · pages · version
+3 `validated` · 7 `draft` · tất cả `plan_version = 1`
+```
+
+⇒ `M-1` **có thật nhưng nhỏ**, và nó phải xử **ba lớp** chứ không một. Xem
+  `platform_core/workflow/di_tru_m1.py` và `tests/test_963`.
+
+⛔ Cả hai kết luận trước — *"bài toán rỗng"* (từ `0 run`) và *"97 bản ghi cần di
+   trú"* (từ tổng `D2`) — đều **đọc một con số tổng rồi suy ra cách làm**. Chỉ
+   hình dạng nói được, và hình dạng chỉ có khi mở dữ liệu ra xem.
 
 Đối chiếu với `§22` của đề bài (*"Never perform a big-bang rewrite unless
 evidence overwhelmingly supports it"*): bằng chứng **có** ủng hộ — nhưng chỉ cho
@@ -25,7 +55,7 @@ evidence overwhelmingly supports it"*): bằng chứng **có** ủng hộ — nh
 
 | Lớp | Có khách? | Cách làm |
 |---|---|---|
-| `platform_core/agent/` (1.843 dòng) | **không** — 0 run | **thay thẳng**, gỡ bản cũ |
+| `platform_core/agent/` (1.843 dòng) | **0 run**, nhưng **10 workflow đã dựng** | thay thẳng phần THI HÀNH; bản nháp đi qua `M-1` |
 | `frontend/agent-canvas` (2.061 dòng) | không | đổi tại chỗ, 52 test là lưới |
 | `jobs.py` · `credit.py` · `job_runner.py` · `gpu_lease.py` | **CÓ** — 868 job/28 ngày | **sửa tại chỗ, từng thay đổi nhỏ, gate xanh** |
 
