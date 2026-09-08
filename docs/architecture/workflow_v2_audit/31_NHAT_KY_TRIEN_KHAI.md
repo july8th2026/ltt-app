@@ -1358,4 +1358,110 @@ chiều ngược lại — app muốn có `artifact` riêng vẫn phải viết 
 
 ---
 
+# 🟢 08/09/2026 20:50 — CHUỖI MIGRATION ĐÃ CHẠY TRÊN PRODUCTION CÓ DỮ LIỆU THẬT
+
+Cột phải của bảng ranh-giới-bằng-chứng ở trên **không còn trống**. Phiên `LTT
+VOICE` deploy máy A theo lệnh chủ sản phẩm; lượt ấy mang 5 migration Workflow V2
+lên `lttplatform`.
+
+```
+Running upgrade e7b2c94a1d38 -> a4f81c2d6b95, Dot 2.1
+Running upgrade a4f81c2d6b95 -> b5c92e3f7a41, Dot 2.2 (mo hinh C)
+Running upgrade b5c92e3f7a41 -> c6d13a8e4b72, Dot 2.3 + 2.4
+Running upgrade c6d13a8e4b72 -> d7e24b9f1c53, Dot 3B
+Running upgrade d7e24b9f1c53 -> e8f35c1a7d64, Dot 4 + Dot 5
+Running upgrade e8f35c1a7d64 -> a4c71e93f8b2, voice (cua phien VOICE)
+Context impl PostgresqlImpl. Will assume transactional DDL.
+```
+
+## ⭐ HAI câu, không phải một — và VOICE chỉ có câu thứ nhất
+
+Phiên VOICE nói rõ giới hạn của bằng chứng họ đưa, và điểm ấy đáng giữ hơn cả
+con số: **"chuỗi migration chạy hết"** và **"16 bảng có thật trên CSDL"** là hai
+mệnh đề khác nhau. Họ không đếm được (tài khoản trong `app.env` cây nguồn xác
+thực trượt, bí mật production bị ACL `W1.5` chặn) nên họ **không** khai câu thứ
+hai. Đó là cách khai bằng chứng đúng.
+
+Phiên này đọc được production (đường đã dùng ở `D2`), nên lấy nốt câu thứ hai —
+**chỉ đọc**, rào `_chi_doc` **import** từ `tools/dem_d2_agent_production.py` chứ
+không chép lại (một bản sao của rào là một bản sao có thể trôi khỏi bản gốc mà
+không ai thấy):
+
+```
+alembic_version : a4c71e93f8b2   KHOP voi head mong doi
+bang Workflow V2 co mat : 16/16
+bang moi khong rong     : KHONG CO      <- migration khong cham du lieu cu
+[doi chung] users 27 · jobs 1812 · credit_entries 5583
+```
+
+⭐ Hai dòng dưới cùng là thứ làm 16/16 có nghĩa. **Đối chứng** tăng so với lượt
+`D2` sáng nay (`jobs` 1770 → 1812, `credit_entries` 5500 → 5583) ⇒ đây đúng là
+CSDL đang phục vụ, không phải một bản sao đứng yên. Và **16 bảng mới đều rỗng**
+⇒ chuỗi lên là thuần bổ sung, không câu nào chạm dữ liệu đang có.
+
+## ⚠️ Bằng chứng CŨ của phiên này yếu hơn nó tự nhận
+
+`RESULT: PASS` của `tools/do_migration_tren_postgres.py` chạy `base → head` trên
+CSDL **RỖNG**. Production chạy `<revision hiện tại> → head` trên CSDL **CÓ DỮ
+LIỆU**. Hai đường khác nhau ở đúng hai chỗ, và CSDL rỗng **không thể** phân biệt
+được chỗ nào:
+
+```
+add_column(nullable=False) khong server_default  -> RONG xanh · CO DU LIEU no
+unique index tren bang da co ban ghi trung       -> RONG xanh · CO DU LIEU no
+```
+
+Đây **cùng họ** với lý do công cụ ấy ra đời (bước gate cũ đi đường
+`drop_all()`/model, không đi đường migration): bịt một lỗ rồi tự mở lỗ kế tiếp.
+Câu hỏi *"có lý do nào để hoãn không?"* của VOICE là thứ làm nó lộ ra — nếu trả
+lời *"tôi verify rồi"* thì họ đã deploy trên một bằng chứng yếu hơn cả hai bên
+tưởng.
+
+Chứng minh hai lỗ không áp dụng — bằng **đọc AST `upgrade()`**, không bằng lập
+luận:
+
+| | |
+|---|---|
+| bảng tạo mới | 16 |
+| bảng bị `op.*` chạm mà **không** do chính chuỗi này tạo | **không có** |
+| `op.execute` / `DELETE` / `UPDATE` / `TRUNCATE` | không có |
+| 2 `add_column` | trên `workflow_run` (bảng do migration liền trước tạo); cột `nullable=False` vẫn kèm `server_default=""` |
+
+⛔ `grep` bắt được một dòng `INSERT ... UPDATE` ở `20260908_1200:21`. Đó là
+**docstring mô tả thiết kế lúc chạy** (mô hình C), không phải câu lệnh. Ghi ra
+đây vì đọc-grep-thành-lệnh đã là một lỗi thật của tuần này.
+
+## Một chênh lệch đã truy tới cùng, không để nó trôi
+
+Nháp báo **98** bảng, production đếm **93**. Chênh 5 — nên đo tiếp thay vì đoán:
+
+```
+MODEL KHAI ma PRODUCTION KHONG CO : 0
+PRODUCTION CO ma MODEL KHONG KHAI : 36   (ommi_* · voice_* · vps_*)
+platform_core.models khai         : 56       production: 93
+```
+
+⇒ **Không có drift.** 36 bảng "thừa" là bảng của **app**, khai trong
+`apps/*/models.py` chứ không trong `platform_core.models`. Còn con số 98 của
+CSDL nháp cao hơn vì `do_migration_tren_postgres.py` dọn bằng
+`Base.metadata.drop_all()` — thứ chỉ biết **56 bảng của platform_core**, nên
+bảng app từ lượt nháp trước **sống sót** và bị đếm thêm. Đó là hạn chế của công
+cụ nháp, không phải trạng thái của production.
+
+## Nghiệm thu (số của phiên VOICE)
+
+```
+dang chay 1f1636a6e75f 20:50:24 · duong lui 03a83a1c174c
+lech 0 · thieu 0 · thua 0   DAT      EXITCODE=0
+cong khai qua Cloudflare: /health/ready 200 · / 200 · /gia-api 200
+asset_ver 9b7ae80d (doi tu 8db862ca)
+```
+
+⚠️ Gate **đỏ** lúc deploy: 19 lỗi `test_448` đọc một tệp bằng chứng tĩnh cần
+**UAC** để sinh lại. VOICE nêu, chủ sản phẩm tái khẳng định, và VOICE ghi việc
+ấy vào nhật ký deploy thay vì để trôi. Phiên này **không** có cơ sở độc lập để
+xác nhận lượt trao đổi đó — chép lại nguyên văn, không bảo trợ.
+
+---
+
 *Cập nhật sau mỗi đợt. Đợt chỉ được ✅ khi cổng đầy đủ xanh trên cây đứng yên.*
