@@ -768,6 +768,25 @@ def _steps(quick: bool, noi_tiep: bool = False) -> list[Step]:
                           [sys.executable, "tools/check_multiproc.py"], ROOT,
                           nhom="nang", tai_nguyen=("postgres_test",),
                           so_loi=2, giay_toi_thieu=3.0))
+        # 🔴 THEM 08/09/2026. Do duoc hom do: KHONG phep kiem nao trong kho thi
+        #    hanh `alembic upgrade` tren PostgreSQL.
+        #
+        #        moi tep goi `command.upgrade`: test_103 · test_451 · test_45
+        #                                       · test_505 · test_616
+        #        -> postgres = 0 o TAT CA (chung deu tro `sqlite:///`)
+        #
+        #    Va buoc `bat bien da tien trinh` ngay tren KHONG lap duoc lo do: no
+        #    dung luoc do bang `drop_all()`/metadata — tuc di duong SQLAlchemy
+        #    MODEL, khong di duong MIGRATION. Hai duong khac nhau, va chi duong
+        #    thu hai la duong production di.
+        #
+        # ⇒ He qua that: `BOOLEAN DEFAULT 1` (PostgreSQL tu choi, SQLite nhan)
+        #   song sot qua BA commit, moi commit deu kem cau "thi hanh that tu
+        #   base toi head" — cau ay dung, va no dung TREN SQLITE.
+        steps.append(Step("migration tren postgres",
+                          [sys.executable, "tools/do_migration_tren_postgres.py"],
+                          ROOT, nhom="nang", tai_nguyen=("postgres_test",),
+                          giay_toi_thieu=2.0))
     npm = _npm()
     for name in FRONTENDS:
         folder = ROOT / "frontend" / name
