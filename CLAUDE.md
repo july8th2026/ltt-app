@@ -123,6 +123,30 @@ lớp **Agent/Canvas/Workflow** — tự do thiết kế lại. Còn `credit.py`
 thận ở đó là **tính đúng của sổ sách**. Đừng dùng câu "chưa có khách" để bỏ qua
 một bút toán lệch.
 
+#### 🔑 `0 job` nói KHÔNG AI CHẠY — nó không nói KHÔNG AI ĐÃ DỰNG
+
+Đếm thẳng trên CSDL production (08/09/2026, chỉ đọc):
+
+```
+agent_workflows 10 · agent_runs 4 · agent_workflow_snapshots 83
+doi chung: users 27 · jobs 1770 · credit_entries 5500
+```
+
+Con số `0 job agent.advance` ở trên **đúng**. Nhưng nó trả lời câu *"có ai chạy
+không"*, còn câu người đọc rút ra là *"có ai dựng không"* — hai câu khác nhau,
+và **mười người thật đã dựng**.
+
+⇒ Quyền ở trên **không đổi**: vẫn tự do thiết kế lại lớp Agent/Canvas/Workflow,
+  vẫn không phải viết lớp tương thích runtime (`0 run` ⇒ không có trạng thái thi
+  hành nào để chuyển). Thứ **đổi** là một chữ: *"thiết kế lại"* ≠ *"xoá"*. Bản
+  nháp của họ đi qua `platform_core/workflow/di_tru_m1.py`, không đi ra thùng rác.
+
+⚠️ Và đừng suy *cách làm* từ con số **tổng** ấy — đó là lỗi thứ hai của cùng một
+   ngày. Tổng nói được **có làm hay không**; chỉ **hình dạng** nói được **làm thế
+   nào**: 10/10 mang tên mặc định, ≤3 node, và **4/10 `document` rỗng** — tức
+   việc di trú phải xử ba lớp chứ không một. Toàn văn:
+   `docs/architecture/workflow_v2_audit/27_29 §27.1`.
+
 ### ⛔ Bốn thứ KHÔNG phải chuyện khách hàng, nên vẫn giữ
 
 | | Vì sao |
