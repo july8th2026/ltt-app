@@ -45,8 +45,7 @@ KIEM_KE = {
     "noi_lo":          "cong_cu",    # tools/do_lo_giong.py
     "noi_dai":         "cong_cu",    # tools/do_troi_tong.py — `ban_doc_dai` thay thế
     "ghi_danh_kho":    "cong_cu",    # tools/do_nhan_ban_tu_kho_cu.py
-    "nang_luc":        "chua_noi",
-    "giong_dung_san":  "chua_noi",   # cố ý — `giong_mau.py` đọc ảnh chụp tĩnh
+    "giong_dung_san":  "san_pham",   # nghe_thu.py::_doi_chieu_giong_mau
 }
 
 #: Thư mục coi là "đường sản phẩm". `tools/` và `tests/` KHÔNG nằm ở đây, và đó

@@ -90,6 +90,25 @@ def ngu_canh(request, user, *, nav_key: str, hang_doi: int = 0, **them) -> dict:
         #    bằng hai tỉ lệ khác nhau là hai chỗ nói với khách hai con số khác
         #    nhau về cùng một văn bản — và họ sẽ tin con số nào tiện hơn.
         "ky_tu_moi_giay": gia.KY_TU_MOI_GIAY_UOC,
+        # 🔴 HAI HẰNG SỐ NỮA, VÌ ĐỦ MỘT TỈ LỆ THÌ CHƯA ĐỦ MỘT CÔNG THỨC.
+        #
+        #    Chú thích ngay trên nói đúng nguyên tắc — "cùng hằng số mà phần
+        #    giữ credit dùng" — nhưng chỉ cấp **một** trong ba số của công
+        #    thức. Nên `voice.js` gõ nốt hai số còn lại, và ô "ước credit"
+        #    của nó đọc nguyên văn:
+        #
+        #        Math.ceil((1.5 + n / 18) * 0.2)
+        #
+        #    Ba con số, và cả ba là bản chép của `GIAY_KHOI_DONG_UOC`,
+        #    `KY_TU_MOI_GIAY_UOC`, `MCREDIT_MOI_GIAY / MCREDIT_MOI_CREDIT`.
+        #    Tức bảng giá thứ hai vẫn tồn tại, chỉ là nó nằm sau một hằng số
+        #    đã được cấp đúng — chỗ khó nhìn nhất.
+        #
+        # ⛔ Và 08/09/2026 nó thành sai: giá nay cộng phí khởi động cho
+        #    **từng đoạn** (xem `manifest._gia`), nên một bài 67 đoạn được
+        #    JS ước thấp hơn phần thật sự bị giữ.
+        "giay_khoi_dong": gia.GIAY_KHOI_DONG_UOC,
+        "credit_moi_giay": gia.MCREDIT_MOI_GIAY / gia.MCREDIT_MOI_CREDIT,
         "bang_gia": gia.bang_gia(),
         "cong_san_sang": sidecar_client.san_sang(),
         "hang_doi": hang_doi,

@@ -67,6 +67,19 @@ BUOC_CHAM = {
     # nhiều tiến trình chạy cùng lúc — nên nó BẮT BUỘC có trong gate đầy đủ,
     # nhưng quá chậm cho `--quick`.
     "bat bien da tien trinh",
+    # Thi hanh THAT `alembic upgrade base -> head` tren mot CSDL PostgreSQL
+    # nhap (`lttplatform_<...>_test`), roi soi luoc do. La bang chung duy nhat
+    # cho lop loi ma SQLite KHONG bat duoc — do 08/09/2026:
+    # `BOOLEAN DEFAULT 1` SQLite nhan, PostgreSQL tu choi.
+    #
+    # ⛔ Nen no BAT BUOC co trong gate day du. Nhung no dung mot CSDL that va
+    #    chay ca chuoi migration, tuc no khong thuoc mot vong lap tinh bang
+    #    giay — `--quick` bo no la dung.
+    #
+    # ⚠️ `giay_toi_thieu=2.0` trong `gate.py`: buoc nay TU KHAI rang no phai
+    #    ton it nhat 2 giay. Nhanh hon the nghia la no da BO QUA chu khong phai
+    #    da chay — xem `tools/do_migration_tren_postgres.py`.
+    "migration tren postgres",
 }
 
 

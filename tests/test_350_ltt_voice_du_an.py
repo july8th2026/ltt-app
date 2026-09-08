@@ -466,7 +466,10 @@ def _tao_giong_kho_chung(ten="Giong kho chung thu"):
         g = VoiceProfile(public_id="vc_khochungthu000000000000000000",
                          owner_id="mot-chu-hoan-toan-khac",
                          ten_hien_thi=ten, ngon_ngu="vi",
-                         trang_thai="active", dung_chung=True)
+                         trang_thai="active", dung_chung=True,
+                         # U-05: ra kho chung doi HAI dieu kien — xem
+                         # `tham_chieu._dieu_kien_kho_chung`.
+                         license_status="ok")
         db.add(g)
         db.commit()
         return g.public_id

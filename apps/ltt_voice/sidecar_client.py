@@ -114,9 +114,21 @@ def _chi_tiet(raw: bytes) -> str:
 
 # ── các cửa ──────────────────────────────────────────────────────────────────
 
-def nang_luc() -> dict:
-    d, _ = _goi("/v1/capabilities", timeout=180.0)
-    return d
+# 🔴 `nang_luc()` ĐÃ GỠ 08/09/2026 — nó là đường ĐẮT HƠN cho cùng một câu trả lời.
+#
+#    Nó bọc `GET /v1/capabilities`, và cửa đó gọi `c.nap()` trước khi trả lời:
+#    **nạp model, 19,4 giây khi nguội** (`docs/LTT_VOICE/do_v1.json`).
+#
+#    Nhưng `GET /health` trả `{"ok": True, **lay().nang_luc()}` — **cùng nội
+#    dung, KHÔNG nạp model** (`voice_sidecar/server.py:250`). Và `song()` ngay
+#    dưới đã gọi `/health` ở **mọi lượt dựng trang**.
+#
+# ⇒ Dữ liệu ấy đã chảy sẵn qua một đường rẻ hơn. `nang_luc()` không phải "chưa
+#   nối" — nó **thừa**, và một wrapper thừa là một wrapper sẽ có người gọi nhầm.
+#
+# ⚠️ Endpoint `/v1/capabilities` GIỮ NGUYÊN ở sidecar: nó là cửa duy nhất **ép
+#    nạp model** để chẩn đoán, và đó là một năng lực thật, chỉ không thuộc
+#    đường sản phẩm.
 
 
 def noi(text: str, *, ref_b64: str | None = None, preset: str | None = None,

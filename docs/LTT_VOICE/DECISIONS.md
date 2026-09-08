@@ -585,3 +585,392 @@ phát triển ⇒ cổng bị gỡ trong một tuần; fail-open ở nhánh sau 
 **vĩnh viễn**, khách mất hẳn giọng offline và không lần nào tự sửa được. Ta
 không thừa kế mã của họ; ta thừa kế bài học, và làm chặt hơn vì ta biết chính
 xác ba định dạng của mình.
+
+
+---
+
+## DV-012 — Hồ sơ tốc độ theo TỪNG giọng, và ba lỗ tiền lộ ra khi nối nó vào
+
+**Ngày:** 08/09/2026 · **Hạng mục:** U-01 của `VIRAL_VOICE_AUDIT_2026-09-07.md`
+
+`gia.py` ước thời lượng bằng **một** cặp hằng số cho **cả kho giọng**, và chú
+thích của chính nó đã nói ra giới hạn: *"Số đo là của MỘT bộ giọng trên MỘT
+card."* Kho đối chiếu giữ bảng tương đương cho 61 giọng, và chênh lệch giữa hai
+giọng **cùng ngôn ngữ** ở đó lên tới **43 %**.
+
+`apps/ltt_voice/ho_so_giong.py` thay cặp hằng số ấy bằng một **ảnh chụp JSON**
+tra theo tên preset — không CSDL, không mạng, vì `manifest._gia()` chạy ở mọi
+lượt báo giá và chú thích của nó cấm đúng hai thứ đó.
+
+### 🔴 Nhận hay bác một hồ sơ NGUYÊN KHỐI, không theo từng trường
+
+Bản đầu tra hai trường riêng rẽ, và `tests/test_506` bắt được một lỗi **tiền**:
+khi `do_lech_chuan` phồng tới mức không tin được, tốc độ lùi về hằng số chung
+(18) nhưng **phí khởi động vẫn lấy số đã đo** (1,0 thay vì 1,5):
+
+```
+1,0 + 1000/18 = 56,56   <   1,5 + 1000/18 = 57,06
+```
+
+Trộn phần **bị bác** của một hồ sơ với phần lùi cho ra ước **thấp hơn cả đường
+lùi thuần** — tức giữ thiếu credit.
+
+⭐ Lý do đúng đắn hơn cả con số: nếu một phép đo không đủ tin để lấy tốc độ, thì
+phí khởi động **rút từ chính phép đo ấy** cũng không đủ tin. Hai trường không
+độc lập — chúng là hai ẩn của cùng một hệ phương trình.
+
+### ⛔ Lỗ thứ hai: ô báo giá của khách KHÔNG đi cùng đường với phần bị giữ
+
+`POST /xem-truoc` có một chú thích tự nhận: *"con số hiện ra ở đây là con số sẽ
+bị tạm giữ, không phải một ước lượng thứ hai."*
+
+Câu ấy đúng **cho tới** lúc `uoc_tran` nhận thêm `giong` — rồi nó thành sai mà
+**không ai đụng vào route**. Một mệnh đề chép tay trong chú thích không tự biết
+nó vừa hết đúng.
+
+⇒ Route nay nhận `preset` và truyền xuống; `voice.js` gửi nó ở nhánh `"m:"`.
+Chỉ `preset`, **không** `voice_id`: giọng nhân bản sinh ra **sau** lượt đo nên
+sẽ không bao giờ có hồ sơ, và cả hai đầu phải lùi về **cùng** một hằng số.
+
+### 🔴 Lỗ thứ ba, và là lỗ lớn nhất: bài dài là N lượt phát, không phải một
+
+`gia.giay_uoc` là mô hình hai tham số `khoi_dong + n/toc_do`, trong đó
+`khoi_dong` là khoảng lặng model thêm vào **mỗi lượt phát**. `uoc_tran_lo` nói
+thẳng điều đó: *"Phần khởi động cộng cho TỪNG đoạn, và đó là đúng: mỗi đoạn là
+một lượt phát riêng."*
+
+Nhưng `_gia` gọi `uoc_tran(so_ky_tu=len(cả_bài))` — tính như thể cả bài là
+**một** lượt. Hai hàm trong cùng một tệp giá mâu thuẫn nhau, và `uoc_tran_lo`
+tồn tại **không người gọi** suốt thời gian ấy.
+
+Đo 08/09/2026, trong trần công khai hiện tại:
+
+| ký tự | số đoạn | giữ (bản cũ) | giá theo từng đoạn | thiếu |
+|---|---|---|---|---|
+| 5.000 | 4 | 56 | 57 | 1 |
+| 100.000 | 67 | 1.112 | 1.132 | **20** |
+
+⛔ Lệch nhỏ, nhưng lệch về **đúng phía chốt 3.3 cấm**. Và hậu quả không phải
+"thu thiếu 20 credit" — quyết toán vượt phần giữ thì lượt chạy bị đánh hỏng
+**sau khi** đã tiêu hết GPU, tức khách chờ xong rồi nhận một lỗi.
+
+### ⭐ Cái làm ba lỗ này lộ ra là ĐỐI CHỨNG, không phải phép kiểm
+
+Cả ba đều **xanh** dưới một phép kiểm viết theo lối thường:
+
+- lỗ 1: `uoc_tran >= tinh(giây_thật)` xanh, vì cả hai cùng lệch một kiểu
+- lỗ 2: "route bằng manifest" xanh, vì **chưa giọng nào có hồ sơ** nên hai đầu
+  cùng rơi về hằng số chung — nó sẽ xanh **đúng tới ngày cơ chế bắt đầu có tác
+  dụng**
+- lỗ 3: "giữ ≥ giá theo từng đoạn" xanh ở văn bản ngắn, vì một đoạn thì hai
+  công thức trùng nhau
+
+⇒ Mỗi phép kiểm tiền ở `test_506` đi kèm một **đối chứng độ nhạy**: một vế
+chứng minh con số **thật sự đổi** khi thứ đang đo đổi. Và mỗi lượt vá được
+nghiệm bằng phép **tiêm bản cũ**, đọc `returncode` chứ không khớp mẫu stdout.
+
+### Ranh giới còn lại
+
+`ho_so_giong.json` hôm nay **rỗng**, và đó là một trạng thái khởi đầu hợp lệ —
+mọi giọng lùi về hai hằng số chung, y như trước 08/09. Lấp nó cần
+`tools/do_ho_so_giong.py` chạy trên **GPU rảnh**; công cụ ấy tự từ chối khi thấy
+`gate`/`pytest` đang chạy (`Win32_Process`, vì `ps` của Git Bash không thấy tiến
+trình Windows).
+
+**Chưa đo ⇒ chưa có số.** Không điền tay một giá trị nào vào ảnh chụp.
+
+
+---
+
+## DV-013 — Ba hạng mục cùng chạm một chỗ: *thứ tự nào, và ai được ở trong danh sách*
+
+**Ngày:** 08/09/2026 · **Hạng mục:** U-11, U-12, U-05, U-04
+
+### U-11 — ETA thật, và ba hằng số giá gõ tay trong JavaScript
+
+`vo.py` cấp `ky_tu_moi_giay` cho template kèm một chú thích đúng nguyên tắc:
+*"CÙNG hằng số mà phần giữ credit dùng … Hai chỗ ước thời lượng bằng hai tỉ lệ
+khác nhau là hai chỗ nói với khách hai con số khác nhau."*
+
+Nhưng nó cấp **một** trong **ba** số của công thức. `voice.js` gõ nốt hai số
+còn lại:
+
+```js
+Math.ceil((1.5 + n / 18) * 0.2)
+```
+
+Ba con số ấy là bản chép của `GIAY_KHOI_DONG_UOC`, `KY_TU_MOI_GIAY_UOC`, và
+`MCREDIT_MOI_GIAY / MCREDIT_MOI_CREDIT`.
+
+⭐ Nên bảng giá thứ hai **vẫn tồn tại** — nó chỉ nấp sau một hằng số đã được cấp
+đúng, tức chỗ khó nhìn nhất. Một chú thích nói "dùng chung hằng số" làm người
+đọc tin **cả khối** đã dùng chung.
+
+⇒ Cả ba nay đến từ máy chủ; `/xem-truoc` trả thêm `giay_uoc` tính trên phép chia
+**thật** (`chia_doan`, `can_bang=True`).
+
+### U-12 — bảng chữ cái không phải một quyết định sản phẩm
+
+`tham_chieu.py` đã xếp giọng theo phong cách, kèm một câu đáng giữ: *"Bên tiêu
+thụ lấy phần tử ĐẦU làm mặc định, nên thứ tự ở đây là một QUYẾT ĐỊNH sản phẩm."*
+
+Đúng — nhưng trong một tầng phong cách vẫn còn 6–7 giọng, và giữa chúng thứ tự
+là `x.ma`. **Bảng chữ cái không phải một quyết định; nó là sự vắng mặt của một
+quyết định** — trong khi phần tử đầu vẫn được dùng làm mặc định.
+
+`apps/ltt_voice/muc_dung.py` đếm từ bảng `jobs` của **chính ta**, ảnh chụp trong
+bộ nhớ, làm mới 6 giờ một lần trong `nghe_thu.bao_tri`.
+
+⛔ **Không mượn số của kho đối chiếu**, dù `D:\Viral` có sẵn bảng độ phổ biến cho
+61 giọng và nó lấp đúng ô trống này. Hai lý do, và lý do thứ hai nặng hơn: nó đo
+khách của *họ*; và ta **không kiểm chứng được** nó, nên ngày nó sai ta không có
+cách nào biết.
+
+⚠️ **Vòng phản hồi là có thật** — hiện trước ⇒ dùng nhiều ⇒ càng hiện trước. Ta
+nhốt nó **trong** một tầng phong cách và chặn nó **giữa** các tầng: `uu_tien`
+phong cách vẫn là khoá thứ nhất. Mức dùng không bao giờ kéo một giọng kể chuyện
+lên trên một giọng tự nhiên.
+
+⭐ Ảnh chụp rỗng ⇒ kết quả **đúng bằng** thứ tự cũ. Không có nhánh nào "chờ dữ
+liệu", và một kho vừa khởi động lại vẫn đúng.
+
+### U-05 — cổng xuất xứ, và phạm vi của nó hẹp hơn cái tên
+
+Cột `VoiceProfile.license_status` với **bốn** giá trị, ba trong bốn là "không":
+`cho_soat` (mặc định) · `thieu_bang_chung` · `tu_choi` · `ok`.
+
+🔴 **Nó gác đúng một thứ: giọng có ra tới KHO CHUNG hay không.** Nó *không* gác
+giọng riêng của một khách — xuất xứ của giọng riêng đã có `VoiceConsent` trả
+lời, và bắt một cột thứ hai cùng trả lời câu ấy sẽ **làm biến mất giọng của
+chính khách** vào ngày migration chạy. Một thiệt hại thật để đổi lấy một phép
+kiểm trùng.
+
+⇒ `tests/test_508` chốt ranh giới ấy từ **cả hai phía**. Vế thứ hai (*"cổng
+KHÔNG chạm tới giọng riêng"*) là vế bảo vệ khách hiện tại: thiếu nó, một bản vá
+"cho chắc, lọc hết" sẽ xanh.
+
+**Danh sách CHO, không phải danh sách CẤM.** `LICENSE_CHO_PHEP = ("ok",)`. Một
+bản viết `!= "tu_choi"` trông tương đương và không tương đương: ngày ai đó thêm
+một trạng thái mới, danh-sách-cấm để nó **lọt qua** (mở, im lặng),
+danh-sách-cho **chặn** nó cho tới khi có người cố ý thêm vào.
+
+**Migration đặt `cho_soat` cho MỌI dòng cũ, kể cả dòng đang `dung_chung=True`.**
+Chưa ai soát thật thì ghi `ok` là **bịa một phán quyết** — và cột này sinh ra để
+được trích dẫn trong một tranh chấp.
+
+⚠️ Bản đầu của docstring migration viết *"Đo được 08/09: không dòng nào đang
+`dung_chung=True`"*. **Tôi chưa đo con số đó.** Đã thay bằng một lời khai thật
+kèm câu lệnh đếm để người triển khai tự đo. Một con số bịa trong phần biện minh
+làm luận điểm mạnh lên một cách không thật — và nó nằm ngay cạnh một lập luận về
+việc đừng bịa phán quyết.
+
+### U-04 — `voice_quality_profile`, và vì sao `diem` được phép RỖNG
+
+`ly_do_loai` là một **cột**, không phải một dòng nhật ký. Nghe như thủ tục, cho
+tới lúc có người hỏi *"sao giọng này biến mất?"*.
+
+⭐ Và nó trả lời **mãi mãi**: ngày nâng engine, một giọng bị loại vì *"rè ở âm
+/s/"* đáng được thử lại; một giọng bị loại vì *"không có consent"* thì **không**
+— cùng trạng thái `rejected`, hai số phận hoàn toàn khác nhau.
+
+⛔ `diem` `nullable`. `None` = **chưa đo**, khác `0.0` = "đo được, và rất tệ".
+Một cột `NOT NULL DEFAULT 0` nói rằng mọi giọng đều đã được chấm và đều 0 điểm —
+một câu sai về **toàn bộ** kho. Cùng kỷ luật với ba ô "NOT YET BENCHMARKED" của
+bản kiểm toán.
+
+---
+
+## DV-014 — U-09: gỡ khả năng quên, thay vì viết một chú thích to hơn
+
+**Ngày:** 08/09/2026
+
+Ở đúng chỗ `nghe_thu.PHIEN_BAN` được gõ tay, chú thích cũ viết ra **cả hai** khớp
+nối và **cả** hậu quả:
+
+> *"ĐỔI CÂU TRÊN THÌ PHẢI ĐỔI CHUỖI NÀY … Không đổi phiên bản = khách nghe câu
+> **cũ** trong khi mã nói câu mới, và không ai phát hiện ra vì cả hai đều là
+> tiếng nói bình thường."*
+> *"⚠️ Nó cũng phải đổi khi `PHIEN_BAN_THAM_SO` đổi."*
+
+⭐ **Một chú thích nói "phải nhớ làm X" là một chú thích thừa nhận X sẽ bị
+quên.** Và ở đây cái giá của việc quên đã được viết ra bằng chữ: hỏng lặng lẽ,
+không triệu chứng nào để lần. Câu trả lời đúng không phải một chú thích to hơn.
+
+⇒ `PHIEN_BAN = "v2-" + sha256(CAU_NGHE_THU + "|" + PHIEN_BAN_THAM_SO)[:12]`.
+
+Đọc được `PHIEN_BAN_THAM_SO` không hiển nhiên — sidecar chạy trong **venv cách
+ly**. Nhưng `voice_sidecar/tham_so.py` có đúng **một** dòng import
+(`from __future__`); nó là một tệp hằng số thuần, cố ý. Thiếu nó thì trả `"?"` —
+một giá trị **ổn định**, nên khoá không nở ra vô hạn trên máy phát triển.
+
+### ⛔ Băm msgid GỐC, và điều đó phơi ra một khớp nối thứ hai
+
+`dung()` gửi `str(_t(CAU_NGHE_THU))` xuống engine, tức **nội dung âm thanh phụ
+thuộc ngôn ngữ**, trong khi khoá thì không. Hôm nay vòng bảo trì chạy ngoài mọi
+request nên nó luôn rơi về ngôn ngữ mặc định và hai giá trị trùng nhau — **một
+sự trùng hợp, không phải một bảo đảm**.
+
+Không vá: thêm ngôn ngữ vào khoá làm **mọi** tệp nghe thử hiện có thành mồ côi,
+và đó là thay đổi cần một lượt đo trước. Ghi ra để nó không lặng lẽ.
+
+### Tách *dựng bao nhiêu* khỏi *dựng lúc nào*
+
+`MOI_LUOT_TOI_DA = 3` đúng cho vòng bảo trì, vì vòng ấy chạy **cùng tiến trình**
+với worker job — dựng cả 20 tệp là giữ GPU một phút liền trong khi job của khách
+chờ mà không ai biết vì sao.
+
+Nhưng hệ quả: sau mỗi lần `PHIEN_BAN` đổi, **bảy tiếng** trôi qua trước khi giọng
+cuối có tệp. Trong bảy tiếng đó, cách duy nhất để biết một giọng nghe ra sao là
+**trả tiền tạo một lượt**.
+
+⇒ `tools/dung_nghe_thu.py` chạy **ngoài** vòng bảo trì, một lần, sau khi triển
+khai. Trần 3/giờ **giữ nguyên** — hai thứ giải hai bài toán khác nhau, và
+`test_509` chốt đúng điều đó để không ai gỡ trần "vì nay đã có công cụ".
+
+Công cụ tự từ chối khi `Win32_Process` thấy gate/pytest, không dừng cả lượt khi
+một giọng hỏng, và **thoát khác 0** khi có giọng hỏng — in ra rồi thoát 0 là
+cách một lỗi đi qua một đường ray tự động mà không ai thấy.
+
+---
+
+## DV-015 — U-13 · U-14 · và vì sao U-07 DỪNG ở phép đo
+
+**Ngày:** 08/09/2026
+
+### U-13 — nghe thử văn bản của khách: bốn trần, và cái thứ ba là cái quan trọng
+
+| trần | chặn |
+|---|---|
+| `TRAN_KY_TU = 160` | biến cửa này thành một TTS miễn phí |
+| `MOI_GIO = 6` | một tài khoản đốt GPU cả ngày |
+| **suất `vieneu_gpu`** | một lượt miễn phí làm khách **trả tiền** phải chờ |
+| `TRAN_THOI_GIAN_S = 45` | một lượt treo giữ luôn worker web |
+
+⛔ Ba cái đầu là chuyện **lạm dụng**. Cái thứ ba **không phải**: ngay cả một
+khách hoàn toàn tử tế, dùng đúng 6 lượt/giờ, vẫn giành card khỏi một job đã trả
+tiền nếu ta không xếp sau. `admission.hold_persisted` trả `None` khi hết suất
+và **không chờ** — cửa này là công dân hạng hai của cái card, có chủ ý.
+
+**Phơi nhiễm, bằng số:** 6 lượt × 160 ký tự ≈ 8,9 giây tiếng/lượt (18 ký tự/giây)
+= ~53 giây tiếng/giờ/tài khoản ≈ **10,7 credit/giờ** nếu tính tiền. Đó là trần
+trên, chỉ đạt khi card rảnh suốt.
+
+⛔ Ngày con số ấy thành vấn đề, thứ phải đổi là `MOI_GIO` — **không phải** bỏ
+phép xếp sau admission. Bỏ phép ấy đổi một chi phí **đo được** lấy một hàng đợi
+khách trả tiền, và **không ai sẽ thấy** sự đánh đổi đó xảy ra.
+
+⚠️ Bộ đếm nằm trong bộ nhớ một tiến trình (ADR-005), nên trần thật là
+`MOI_GIO × số tiến trình web`. Nói ra chứ không giấu: một trần "6" mà thật ra là
+"18" là một trần **nói dối**. Trần cứng thật nằm ở suất `vieneu_gpu` — nó là
+**một** trên toàn cụm và không nhân lên theo tiến trình.
+
+⭐ `xin_luot()` kiểm **và** trừ trong cùng một lần giữ khoá. Tách thành
+`con_lai()` rồi `ghi_nhan()` là để hai request đồng thời cùng đọc "còn 1" rồi
+cùng đi tiếp — và nó chỉ xảy ra **khi có tải**, tức đúng lúc trần quan trọng nhất.
+
+### U-14 — chỉ số theo giọng, và thứ nó KHÔNG biết
+
+Bản kiểm toán đòi ba chỉ số: RTF · tỉ lệ hỏng · CER trung vị. **Ta có hai.**
+
+🔴 Và ta không có RTF *cho tới hôm nay*: sidecar trả `X-Gen-S`/`X-RTF` ở mọi
+lượt, và **không ai lưu chúng**. Hệ quả không phải "thiếu một chỉ số đẹp": mọi
+câu hỏi vận hành dạng *"giọng nào tốn GPU nhất"*, *"bản engine mới nhanh hơn
+bao nhiêu"* đều không trả lời được bằng dữ liệu ta có — chỉ trả lời được bằng
+cách **tiêu thêm GPU để đo lại**.
+
+⇒ `KetQua.gen_s` nay ghi lại, và `ban_doc_dai` **cộng dồn** qua từng lô. Ghi đè
+thay vì cộng sẽ cho ra GPU-giây của lô cuối và gọi nó là của cả bài — nhỏ hơn
+sự thật nhiều lần, và **trông hoàn toàn hợp lý**.
+
+⛔ `gen_s = 0` nghĩa là **KHÔNG BIẾT**, nên nó không vào `as_result()`. Mọi job
+trước 08/09 có `gen_s = 0`, và `0 / giây` là một RTF bằng **0** — tức "nhanh vô
+hạn". Trộn chúng vào trung vị làm bảng nói **ngược hẳn** sự thật.
+
+⛔ `cer_trung_vi = None` ở mọi giọng, và `None` là một **câu trả lời**. Không suy
+nó từ bất cứ thứ gì đang có: một số bịa trong bảng chỉ số sẽ được so sánh, xếp
+hạng, rồi dùng để **loại một giọng**.
+
+⚠️ `gen_s` **không được dùng để tính tiền** (`test_510` chốt điều này bằng cách
+soi `gia.py`). Tính tiền theo GPU-giây là tính tiền theo tình trạng máy của
+**ta** — khách không điều khiển được nó, nên họ trả nhiều hơn vào ngày ta chạy
+nhiều việc khác.
+
+### 🔴 U-07 — DỪNG Ở PHÉP ĐO, và bốn lý do đều đo được
+
+| đo 08/09/2026 | hệ quả |
+|---|---|
+| `LTT_VOICE_STREAM` **chưa đặt** — `/v1/stream` trả 404 | không xác minh được gì, kể cả bằng tay |
+| `co_streaming()` gọi `c.nap()` rồi dò `infer_stream` | muốn biết engine làm được không thì **phải nạp model** ⇒ cần GPU rảnh |
+| cửa phát **PCM16**; `lo_ra_tep` cố ý ghi **float32** | streaming **kém trung thực hơn theo thiết kế** — mẫu vượt 1,0 bị kẹp *trước* khi bộ hạ trần đỉnh kịp chạy |
+| chốt 3.4: tiền theo thời lượng **ffprobe** trên tệp cuối | một luồng **không có tệp cuối** ⇒ *"tính tiền theo giây đã phát"* là một **mô hình tính tiền MỚI** |
+
+Cái thứ tư là cái chặn thật. Một đường tính tiền mới, không chạy được một phép
+kiểm nào, trên một cửa đang tắt — ba điều kiện ấy cộng lại thì lựa chọn đúng là
+**không viết**.
+
+⛔ Và **không viết nửa vời**. Thêm `sidecar_client.phat_dan()` mà không ai gọi
+là dựng đúng cái "đường ống có đủ khớp nối mà chưa bao giờ có nước" đã ghi ở
+DV-010 — và mắc lại đúng lỗi mà cột `license_status` vừa mắc trong chính phiên
+này (xem `tools/soat_giong.py`).
+
+**Điều kiện để mở lại U-07**, theo thứ tự:
+
+1. GPU rảnh ⇒ bật `LTT_VOICE_STREAM=1`, gọi `co_streaming()` và **đo** xem
+   engine hiện tại có `infer_stream` không. Nếu không thì U-07 chết ở đây.
+2. Quyết định thương mại: tính tiền theo **giây đã phát** hay theo **giây đã
+   sinh**? Hai câu trả lời khác nhau khi khách ngắt giữa chừng.
+3. Đo hành vi Cloudflare với `StreamingResponse` — trần 100 giây áp cho
+   **byte đầu** hay cho **cả luồng**? Chưa ai đo, và cả thiết kế phụ thuộc nó.
+4. Quyết định chất lượng: chấp nhận PCM16 cho đường nghe-ngay, hay đổi cửa
+   sidecar sang float32?
+
+---
+
+## DV-016 — Bảy bánh cóc không phải hai mươi bước, và tôi đã báo cáo như thể chúng là
+
+**Ngày:** 08/09/2026
+
+Suốt phiên này tôi quét **bảy** công cụ tĩnh sau mỗi hạng mục — `check_ruff`,
+`check_mypy`, `check_silent_except`, `check_bo_qua`, `check_i18n`,
+`check_luat_van_hanh`, `lint_app_contract` — rồi báo cáo *"bánh cóc xanh"*.
+
+Lượt L3 đỏ ở **`check_dich_thieu.py`**, một bước tôi chưa từng chạy. Đếm lại
+bằng AST trên `tools/gate.py::_steps`: gate có **20 bước tĩnh** dựa trên một
+script trong `tools/`. Tôi chạy **7**.
+
+### 🔴 Cái sai không phải bỏ sót — là dùng một TẬP CON làm ĐẠI DIỆN
+
+Bảy bước ấy không được chọn theo một tiêu chí nào. Chúng là những bước tôi
+**tình cờ gặp** trong phiên: ba bước do một phiên khác báo tôi làm đỏ, bốn bước
+tôi đọc thấy trong `CLAUDE.md`. Rồi tôi gọi tập ấy là *"bánh cóc"* và báo mức
+tin cậy của **toàn bộ cổng** dựa trên nó.
+
+⭐ Cùng hình dạng với sáu ca khác trong ngày (`DV-013`, `§19.0` của bản kiểm
+toán, ba vòng chẩn đoán Postgres): **phạm vi phép đo hẹp hơn phạm vi lời tuyên
+bố.** Lần này đối tượng bị suy rộng là **chính bằng chứng tôi đưa cho người
+khác**.
+
+⚠️ Và nó tốn đúng một lượt L3 — **15 phút**, cộng một cửa sổ mà ba phiên khác
+phải đứng yên — để học một thứ mà `check_dich_thieu.py` trả lời trong **2,6
+giây**.
+
+### ⇒ Danh sách đến từ MÃ, không từ trí nhớ
+
+```
+python -c "import ast,pathlib; s=pathlib.Path('tools/gate.py').read_text(encoding='utf-8');   print([n.args[0].value for n in ast.walk(ast.parse(s))          if isinstance(n,ast.Call) and getattr(n.func,'id','')=='Step'])"
+```
+
+Chạy hết 20 bước tĩnh mất **dưới một phút** và **không đụng pytest** — tức nó
+nằm ngoài mọi ràng buộc ngân sách lõi. So với 15 phút của một lượt L3 đỏ, tỉ lệ
+là 1:15.
+
+⛔ Đây **không** phải một cấp test mới. Hợp đồng vận hành `§4` đã có bốn cấp và
+tệp này không thêm cấp thứ năm. Nó chỉ nói: khi bạn định **báo cáo** rằng phần
+tĩnh đã sạch, hãy lấy danh sách từ `_steps` chứ đừng lấy từ trí nhớ về những
+bước bạn tình cờ chạy.
+
+### Chốt lại bằng một câu dùng được
+
+**Một tập con không tự khai rằng nó là tập con.** Bảy dòng `rc=0` trông y hệt
+hai mươi dòng `rc=0` — khác biệt duy nhất nằm ở thứ *không có mặt*, và không có
+gì trên màn hình chỉ vào nó.

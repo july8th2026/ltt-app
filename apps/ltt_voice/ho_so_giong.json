@@ -1,0 +1,8 @@
+{
+  "_ghi_chu": "Ho so toc do doc DO DUOC cua tung giong. SINH RA bang tools/do_ho_so_giong.py, dung sua tay.",
+  "_cach_doc": "ky_tu_moi_giay = trung binh; do_lech_chuan rut tu chinh cac luot do; giay_khoi_dong = chan tuyen tinh. `ho_so_giong.ky_tu_moi_giay_an_toan` tra CAN DUOI (tb - 2*sd) vi con so nay dung de GIU CHO credit.",
+  "_chua_do": "Map `giong` rong nghia la CHUA CHAY phep do lan nao. Moi giong se lui ve hai hang so chung trong gia.py (1,5 giay khoi dong + 18 ky tu/giay). Do la hanh vi dung, khong phai mot khoang trong cho lap.",
+  "phien_ban": "",
+  "engine_tham_so": "",
+  "giong": {}
+}
