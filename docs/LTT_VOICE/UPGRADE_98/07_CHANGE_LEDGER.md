@@ -706,3 +706,56 @@ cho vế thứ hai phải là `tempfile.tempdir`, **không** phải biến môi 
 
 Vá thiếu vế ấy thì test vẫn **xanh** (nó chỉ assert khoá của chính nó) mà lỗi
 còn nguyên — một bản vá *trông* đúng.
+
+### Đính chính của chính đính chính trên — lý do hết hạn, kết luận thì không
+
+Phiên `ltt-4bot-workflow` vá xong (`56dfc811`, hai đòn bẩy + một bài kiểm ghim
+**cơ chế** chứ không ghim tính chất), rồi nói ngược lại đúng cách tôi vừa ghi
+mục trên. Họ đúng, và tôi kiểm lại bằng mã trước khi nhận.
+
+Tôi ghi: *"`RANH` không tin được **vì** fixture xoá khoá"*. Câu ấy buộc một
+**kết luận không hết hạn** vào một **lý do hết hạn** — sau `56dfc811` sẽ có
+người đọc lại rồi tin `trang-thai`. Bản vá đóng **một** đường; còn hai, cả hai
+có từ trước và không liên quan gì tới fixture:
+
+| # | Đường | Kiểm |
+|---|---|---|
+| 2 | `chay_khong_khoa` — hết `--cho` thì gate **chèn và chạy mà không giữ gì**, có chủ đích | ✅ `gate.py:1596` + `cua_so_yen.py:298`, tôi đọc thật |
+| 3 | Mọi thứ **không xin khoá**: `pytest` gõ tay, deploy, bốn dịch vụ production | hiển nhiên |
+
+Trong đúng ca 2, `trang-thai` báo `RANH` một cách **hoàn toàn trung thực**
+trong khi máy đang chạy một lượt nặng — không con bọ nào cả.
+
+🔑 Câu sống lâu hơn, thay cho câu tôi ghi:
+
+> **`cua_so_yen` trả lời được *"ai XIN khoá"*. Nó không trả lời được *"máy có
+> bận không"*.** Cây tiến trình trả lời câu thứ hai, và đó là lý do cây tiến
+> trình gánh quyết định — **cả trước lẫn sau** bản vá.
+
+⇒ Kết luận của mục trên (vế thứ ba gánh quyết định) **giữ nguyên**. Thứ sai là
+lý do tôi gắn vào nó. Đây đúng hạng lỗi mà
+`gia-thuyet-khop-qua-vua-ket-thuc-dieu-tra` nói: một phép đo **đúng** bảo trợ
+cho một kết luận nó không trả lời.
+
+### Và một điều cả hai phiên đều chưa nói: bản vá KHÔNG tới cây này
+
+`56dfc811` nằm trên nhánh của họ. **Bảy cây dùng chung một `.git` nhưng mỗi cây
+một bản checkout `tests/`.** Đo ngay sau khi commit ấy vào kho:
+
+    git show 56dfc811 --stat        -> co trong .git chung
+    grep -n "tempfile.tempdir" tests/test_394_nen_da_phien.py   -> KHONG THAY
+    dong 138 van la  nha(ep=True, tai_nguyen=...)
+
+⇒ Ở **cây này** đường 1 vẫn sống, và ở bốn cây kia gần như chắc chắn cũng vậy.
+Cùng hình dạng với `ngan-sach-loi-khong-cuong-che-duoc-tu-mot-nhanh` (bốn cây
+vẫn `-n 14` trong khi bản sửa đã có ở một nhánh).
+
+⚠️ Nên câu *"đã vá"* đúng với **kho** và sai với **cây**. Ai đọc dòng này phải
+tự chạy `grep` ở cây mình đang đứng, không tin bảng.
+
+Tôi **không** cherry-pick `56dfc811` sang nhánh này: nó là hạ tầng dùng chung,
+và nhánh này đang chờ hoà vào `admin-mvp-v3` — kéo về sẽ thành hai bản của cùng
+một bản vá đi hai đường vào trunk.
+
+Đã ghi lại thành memory `cua-so-yen-tra-loi-ai-xin-khoa-khong-tra-loi-may-co-ban`
+(thay memory cũ, vì memory cũ mang đúng cái lý do hết hạn ấy).
