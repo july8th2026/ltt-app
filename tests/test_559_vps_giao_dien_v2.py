@@ -261,3 +261,63 @@ def test_trang_chi_tiet_RENDER_duoc_khi_may_dang_ban(moi_truong):
         assert "/khoi-phuc" not in r.text and "/cai-lai" not in r.text
     finally:
         client.close()
+
+
+# ── 7. Trang bán hàng KHÔNG được rò hình dạng hạ tầng ───────────────────────
+
+def test_trang_ban_hang_KHONG_ro_ten_bien_moi_truong_hay_ten_Proxmox(moi_truong):
+    """🔴 Đo được trên PRODUCTION 09/09/2026, ngay sau lượt deploy VPS V2.
+
+    Trang `/vps` **công khai** — khách chưa đăng nhập cũng thấy — in nguyên văn:
+
+        Hiện chưa nhận máy mới. (chua cau hinh Proxmox: production ma khong co
+        LTT_VPS_PROXMOX_CA: tu choi noi toi Proxmox khi khong xac minh duoc
+        chung chi. Ghim CA that, hoac chay o moi truong khac.)
+
+    Ba thứ sai cùng lúc: tiếng Việt-không-dấu trộn thuật ngữ trên một trang bán
+    hàng; **tên biến môi trường** nội bộ; và chữ `Proxmox` — thứ mà chính
+    `services/proxmox.py` viết rằng khách *"không bao giờ nhìn thấy"*.
+
+    ⚠️ Rò rỉ này **có sẵn từ trước** bản sửa TLS (`_suc_chua` luôn trả
+       `f"chua cau hinh Proxmox: {exc}"`). Bản sửa chỉ làm `exc` dài ra, và nhờ
+       dài ra mà nó lộ. Một lỗi ẩn sau một chuỗi ngắn vẫn là một lỗi.
+
+    Ca này chốt **hành vi qua đường render thật**, không đọc mã: môi trường test
+    vốn không có cấu hình Proxmox, nên đường `ChuaCauHinh` là đường mặc định ở
+    đây — đúng đường mà production vừa đi.
+    """
+    from fastapi.testclient import TestClient
+
+    from server.app import create_app
+
+    client = TestClient(create_app())
+    try:
+        r = client.get("/vps")
+        assert r.status_code == 200, r.status_code
+        # Tiền đề: phải THẬT SỰ đang ở nhánh không đọc được sức chứa, nếu không
+        # ca này xanh rỗng vì trang chưa bao giờ hiện dải cảnh báo nào.
+        assert "alert-err" in r.text, "trang khong o nhanh 'chua nhan may moi'"
+        for cam in ("Proxmox", "LTT_VPS_PROXMOX", "chua cau hinh",
+                    "ChuaCauHinh", "127.0.0.1", "8006"):
+            assert cam not in r.text, f"trang ban hang ro {cam!r}"
+    finally:
+        client.close()
+
+
+def test_ly_do_ky_thuat_van_di_vao_LOG(caplog):
+    """Không rò ra trang **không** có nghĩa là vứt đi.
+
+    Người vận hành cần đúng chuỗi ấy để biết phải đặt biến nào. Bỏ hẳn nó là
+    đổi một lỗi lộ liễu lấy một lỗi im lặng — và im lặng thì tốn nhiều giờ hơn.
+    """
+    import logging
+
+    from apps.vps import routes
+
+    with caplog.at_level(logging.WARNING, logger="apps.vps.routes"):
+        suc_chua, ly_do = routes._suc_chua(None)
+
+    assert suc_chua is None
+    assert "Proxmox" not in ly_do, "cau cho khach khong duoc nhac Proxmox"
+    ghi = " ".join(x.getMessage() for x in caplog.records)
+    assert "suc chua" in ghi, "khong ghi log ly do ky thuat"

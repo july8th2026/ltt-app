@@ -14830,3 +14830,7 @@ msgstr "Reload this page in a few minutes to see the result."
 #: platform_core/public_api/governance.py
 msgid "Một thao tác dài đang chạy trên một máy: ai yêu cầu, muốn gì, tới đâu rồi, hỏng vì sao. Khác nhật ký vòng đời ở chỗ nó KẾT THÚC."
 msgstr "A long-running operation on one machine: who asked for it, what they wanted, how far it got, and why it failed. Unlike the lifecycle log, this one ENDS."
+
+#: apps/vps/routes.py
+msgid "Hệ thống đang bảo trì, tạm chưa nhận máy mới."
+msgstr "The service is under maintenance and is not taking new machines right now."
