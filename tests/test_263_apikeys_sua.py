@@ -63,11 +63,19 @@ def test_provider_khong_phuc_vu_category_thi_TU_CHOI():
 
 def test_thong_bao_NOI_RO_provider_phuc_vu_gi():
     """Báo "sai category" thì người vận hành vẫn phải đi tra. Báo kèm danh sách
-    đúng thì họ sửa được ngay."""
+    đúng thì họ sửa được ngay.
+
+    ⭐ Bản cũ dùng `gemini` làm ví dụ, vì lúc ấy nó khai `model_control/chat/
+       image`. Sau 10/09/2026 nó khai **rỗng**, nên nó không còn từ chối gì —
+       và một phép kiểm về *chất lượng thông điệp* không nên phụ thuộc vào việc
+       nhà cung cấp nào còn sống. Đổi sang `ltt_image` (khai `image`) thì mệnh
+       đề cũ được giữ **nguyên vẹn**, chỉ đứng trên một ví dụ còn tồn tại.
+    """
     with pytest.raises(A.ApiKeyError) as e:
-        A._chuan_hoa_categories(["video"], "gemini")
-    for c in ("model_control", "chat", "image"):
-        assert c in str(e.value)
+        A._chuan_hoa_categories(["video"], "ltt_image")
+    loi = str(e.value)
+    assert "video" in loi, "khong noi ro category nao sai"
+    assert "image" in loi, "khong liet ke thu provider THUC SU phuc vu"
 
 
 def test_category_dung_thi_cho_qua():
@@ -99,13 +107,36 @@ def test_goi_y_category_theo_provider():
     assert A.categories_goi_y("khong-co") == []
 
 
-def test_MOI_provider_deu_khai_category():
+def test_MOI_provider_CON_SONG_deu_khai_category():
     """Nếu một provider quên khai thì phép chặn ở trên **im lặng không chặn gì**
-    cho riêng nó — và đó đúng là kiểu lỗ hổng khó thấy nhất."""
+    cho riêng nó — và đó đúng là kiểu lỗ hổng khó thấy nhất.
+
+    ⭐ 10/09/2026 mệnh đề này phải hẹp lại **một cách có chủ đích**: AI CLEAN
+       REBUILD V2 làm rỗng `categories` của bốn nhà cung cấp đã nghỉ, vì một
+       nhà cung cấp đã ngừng thì **không phục vụ category nào cả**. Nói "mọi
+       provider đều phải khai category" sau đó là đòi một lời khai vô nghĩa.
+
+    ⛔ Nhưng thu hẹp một mệnh đề là chỗ dễ làm yếu một phép kiểm nhất, nên vế
+       thứ hai dưới đây **rộng ra** đúng bằng phần vừa hẹp lại: nhà cung cấp đã
+       nghỉ phải khai **không** category nào. Trước đây không ai canh điều đó.
+
+    ⚠️ Và ghi lại một hệ quả đã cân, không giấu: vì `_chuan_hoa_categories` có
+       luật *"provider không khai gì thì không chặn"*, bốn nhà cung cấp nghỉ nay
+       **không còn bị chặn theo category**. Chốt thật cho chúng nằm ở chỗ khác
+       và mạnh hơn — `providers.chan_neu_da_ngung()` từ chối MỌI lượt gọi, và
+       `test_1008` chốt rằng `/capacity` cũng không đếm khoá của chúng.
+    """
     from platform_core import providers as P
 
-    thieu = [p.id for p in P.list_all() if not (p.categories or ())]
-    assert thieu == [], f"provider chua khai categories: {thieu}"
+    song = [p for p in P.list_all() if p.is_active]
+    nghi = [p for p in P.list_all() if not p.is_active]
+    assert song and nghi, "tien de sai: registry phai co ca hai loai"
+
+    thieu = [p.id for p in song if not (p.categories or ())]
+    assert thieu == [], f"provider CON SONG chua khai categories: {thieu}"
+
+    thua = [p.id for p in nghi if (p.categories or ())]
+    assert thua == [], f"provider DA NGHI ma van khai categories: {thua}"
 
 
 # ═══════════ sửa mà GIỮ NGUYÊN lịch sử ══════════════════════════════════════

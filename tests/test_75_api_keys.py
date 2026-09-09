@@ -95,45 +95,124 @@ def test_provider_registry_co_5_provider():
 
 
 def test_provider_auth_style_dung():
+    """Mỗi nhà cung cấp **còn sống** phải khai một cách xác thực hợp lệ.
+
+    ⭐ Bản cũ ghim tay ba dòng (`gemini`, `apiai`, `plenx`) — đúng **ba** cái mà
+       AI CLEAN REBUILD V2 đã cho nghỉ ngày 10/09/2026, và cách xác thực chính
+       là thứ chiến dịch phải xoá. Ban viết lại này **không** đổi ba dòng đó
+       thành ba dòng khác — nó chuyển sang một mệnh đề **bất biến với tập
+       hợp**, nên nó còn đúng khi ai đó thêm hay bớt một nhà cung cấp.
+    """
     from platform_core import providers
-    assert providers.get("gemini").auth_style == providers.AUTH_QUERY_KEY
-    assert providers.get("apiai").auth_style == providers.AUTH_BEARER
-    assert providers.get("plenx").auth_style == providers.AUTH_X_API_KEY
+
+    hop_le = {providers.AUTH_QUERY_KEY, providers.AUTH_BEARER,
+              providers.AUTH_X_API_KEY}
+    song = [p for p in providers.REGISTRY.values() if p.is_active]
+    assert song, "registry khong con nha cung cap nao song - kiem lai tien de"
+    for p in song:
+        assert p.auth_style in hop_le, (
+            f"{p.id} khai auth_style la {p.auth_style!r}")
+
+    # ⚠️ KHÔNG chốt "còn sống ⇒ có `base_url`". Bản nháp của phép kiểm này có
+    #    dòng ấy, và nó **đỏ ngay** ở `ltt_image`/`ltt_llm`: hai model nhà cố ý
+    #    để `base_url` rỗng vì địa chỉ máy B đến từ biến môi trường
+    #    (`LTT_RENDER_BASE_URL`, `LTT_LLM_BASE_URL`), không hardcode trong kho.
+    #    Một mệnh đề nghe hợp lý mà sai với chính dữ liệu nó canh.
+
+    # ⛔ VẾ thứ hai, và nó mới là vế chiến dịch cần: một nhà cung cấp đã nghỉ
+    #    phải **không còn mang cách gọi nào**. Thiếu vế này thì một bản "đã xoá"
+    #    vẫn có thể giữ nguyên `base_url` và `auth_style` mà không ai biết.
+    nghi = [p for p in providers.REGISTRY.values() if not p.is_active]
+    assert nghi, "khong con nha cung cap nao da nghi - kiem lai tien de"
+    for p in nghi:
+        assert not p.base_url, f"{p.id} da nghi ma con base_url"
+        assert not p.auth_style, f"{p.id} da nghi ma con auth_style"
+        assert not p.models, f"{p.id} da nghi ma con {len(p.models)} model"
+
     assert providers.get("byteplus").async_poll is True
 
 
 def test_models_for_loc_category():
+    """`models_for` lọc đúng theo category.
+
+    ⭐ Bản cũ đo bằng model ảnh của Gemini. Sau 10/09/2026 không còn model nào
+       ở đó nữa — nhưng thứ phep kiểm này **muốn** chứng minh là *hàm lọc có
+       chạy đúng không*, chứ không phải *Gemini có model nào không*. Đổi sang
+       một nhà cung cấp còn sống thì mệnh đề cũ được giữ nguyên.
+    """
     from platform_core import providers
-    from platform_core.models import APIKEY_CAT_IMAGE
-    imgs = providers.models_for("gemini", category=APIKEY_CAT_IMAGE)
-    assert any(m.id == "gemini-2.5-flash-image" for m in imgs)
+    from platform_core.models import APIKEY_CAT_IMAGE, APIKEY_CAT_VIDEO
+
+    vids = providers.models_for("byteplus", category=APIKEY_CAT_VIDEO)
+    assert vids, "byteplus phai co model video"
+    assert all(APIKEY_CAT_VIDEO in m.categories for m in vids)
+
+    # Lọc theo một category **không** thuộc về nó thì phải rỗng — đây là nửa
+    # còn lại của "lọc đúng", và bản cũ không có nửa này.
+    assert providers.models_for("byteplus", category=APIKEY_CAT_IMAGE) == []
+
+    # Nhà cung cấp đã nghỉ thì không còn model nào ở bất kỳ category nào.
+    assert providers.models_for("gemini", category=APIKEY_CAT_IMAGE) == []
 
 
-def test_gemini_image_registry_uses_stable_ids_and_resolves_legacy_aliases():
+def test_go_mot_provider_KHONG_lam_job_cu_mat_id_model():
+    """⭐ Phép kiểm này thay cho `test_gemini_image_registry_uses_stable_ids…`,
+    và nó **đổi câu hỏi** chứ không đổi con số.
+
+    Bản cũ chốt rằng registry Gemini có đúng những model nào và alias nào phân
+    giải ra đâu. AI CLEAN REBUILD V2 (10/09/2026) đã xoá toàn bộ tám `ModelInfo`
+    ấy, nên bản cũ không còn *sai* — nó **không còn chủ đề**.
+
+    Nhưng bên trong nó có một tính chất đáng giữ, và giữ nó mới là việc: **xoá
+    một nhà cung cấp không được làm một job cũ mất id model của nó.** Job nằm
+    trong CSDL mang chuỗi `gemini-3-pro-image`; trang lịch sử phải render được.
+
+    ⚠️ Và một mất mát có thật, ghi ra thay vì giấu: alias
+       `gemini-3.1-flash-image-preview` → `gemini-3.1-flash-image` **không còn
+       phân giải** nữa, vì bảng alias sống trong chính các `ModelInfo` đã xoá.
+       Job cũ dùng tên preview nay đọc ra chính tên preview. Đó là nhãn, không
+       phải dữ liệu — nhưng nó là một thay đổi, nên nó phải nằm trong một phép
+       kiểm chứ không nằm trong trí nhớ ai đó.
+    """
     from platform_core import providers
     from platform_core.models import APIKEY_CAT_IMAGE
-    active = {m.id for m in providers.models_for("gemini", APIKEY_CAT_IMAGE)
-              if m.is_active}
-    assert {"gemini-3.1-flash-lite-image", "gemini-3.1-flash-image"} <= active
-    # ⛔ `gemini-3-pro-image` ĐÓNG từ 2026-08-23 vì LÝ DO KINH TẾ: giá vốn
-    #    $0,134/ảnh = 35,2 credit, mà nền tảng bán 16 credit ở `taoanh` và 5 ở
-    #    `thumbnail`. Xem khối chú thích trong `platform_core/providers.py`.
-    #    Đây KHÔNG phải model bị bỏ — nó vẫn phải phân giải được cho job/draft cũ
-    #    (dòng dưới), chỉ là UI không tạo dữ liệu mới với nó nữa.
-    #    Mở lại thì sửa `is_active=True` ở providers.py VÀ dòng này cùng lúc.
-    assert "gemini-3-pro-image" not in active
-    assert providers.resolve_model_id("gemini-3-pro-image") == "gemini-3-pro-image"
-    assert "gemini-3.1-flash-image-preview" not in active
-    assert providers.resolve_model_id("gemini-3.1-flash-image-preview") == \
-        "gemini-3.1-flash-image"
-    assert providers.resolve_model_id("unknown-model") == "unknown-model"
+
+    assert providers.models_for("gemini", APIKEY_CAT_IMAGE) == []
+    assert providers.da_ngung("gemini") is True
+
+    # Tính chất SỐNG SÓT: id không tra được thì trả về chính nó.
+    for cu in ("gemini-3-pro-image", "gemini-2.5-flash-image",
+               "gemini-3.1-flash-image-preview", "unknown-model"):
+        assert providers.resolve_model_id(cu) == cu, (
+            f"job cu mang {cu!r} se khong render duoc")
 
 
 def test_public_model_catalog_aggregates_routing_without_secrets():
+    """⭐ Bản cũ ghim tay `{"byteplus", "plenx"}`. Sau khi PLENX nghỉ, con số ấy
+    sai — nhưng thay `{"byteplus"}` vào chỗ đó chỉ dời cùng một điểm gãy sang
+    lần sau.
+
+    Mệnh đề thật là: **catalog gom đúng những nhà cung cấp CÒN SỐNG đang phục
+    vụ model ấy** — suy ra từ registry, nên nó không trôi. Và nó **khó xanh
+    hơn** bản cũ: bản cũ chỉ đúng cho một model, bản này đúng cho **mọi** model
+    trong catalog.
+    """
     from platform_core import providers
+
     catalog = providers.model_catalog()
-    seedance = next(item for item in catalog if item["id"] == "seedance-2.0")
-    assert {item["id"] for item in seedance["providers"]} == {"byteplus", "plenx"}
+    assert catalog, "catalog rong - kiem lai tien de"
+
+    for muc in catalog:
+        mong = {p.id for p in providers.REGISTRY.values()
+                if p.is_active and any(m.id == muc["id"] for m in p.models)}
+        assert {x["id"] for x in muc["providers"]} == mong, (
+            f"catalog cua {muc['id']} lech voi registry")
+        # Nhà cung cấp đã nghỉ không được lọt vào bất kỳ mục nào.
+        for x in muc["providers"]:
+            assert not providers.da_ngung(x["id"]), (
+                f"{muc['id']} van chao {x['id']} - nha cung cap da nghi")
+
+    seedance = next(m for m in catalog if m["id"] == "seedance-2.0")
     assert seedance["capabilities"]["durations"]
     assert "base_url" not in seedance and "credential" not in str(catalog).lower()
 
