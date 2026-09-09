@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block page_mode %}wide{% endblock %}
+{% block title %}{{ _("Dựng video từ clip") }} — LTT AI Studio{% endblock %}
+{% block topbar_title %}<strong>{{ _("Dựng video từ clip") }}</strong>{% endblock %}
+
+{% block content %}
+<section class="va-wrap" aria-labelledby="va-title">
+  <header class="va-head">
+    <h1 id="va-title">{{ _("Dựng video từ clip") }}</h1>
+    <p>{{ _("Tải lên các clip thô và một bản nhạc. Hệ thống phiên âm, chọn clip khớp lời, ghép, tách nhạc nền, trộn tiếng và cháy phụ đề thành một video hoàn chỉnh.") }}</p>
+    <a class="btn ghost" href="/jobs">{{ _("Việc của tôi") }}</a>
+  </header>
+
+  {% if loi %}<p class="alert error" role="alert">{{ loi }}</p>{% endif %}
+
+  <form class="va-form" method="post" action="/video-assembly/tao" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+    <label class="field">
+      <span>{{ _("Clip thô") }}</span>
+      <input type="file" name="clips" accept="video/*" multiple required>
+      <small>{{ _("MP4, MOV, MKV, WebM, AVI. Tổng tất cả tệp trong một lượt tối đa 95 MB.") }}</small>
+    </label>
+
+    <label class="field">
+      <span>{{ _("Nhạc nền") }}</span>
+      <input type="file" name="music" accept="audio/*">
+      <small>{{ _("Không bắt buộc.") }}</small>
+    </label>
+
+    <div class="va-row">
+      <label class="field">
+        <span>{{ _("Cách khớp clip với lời") }}</span>
+        <select name="che_do_khop">
+          <option value="sequential" selected>{{ _("Theo tên tệp (đang dùng)") }}</option>
+          <option value="semantic">{{ _("Theo nội dung (CLIP)") }}</option>
+        </select>
+        <small>{{ _("Theo tên tệp: clip đặt tên dạng 001-scene… sẽ vào đúng cảnh đó.") }}</small>
+      </label>
+    </div>
+
+    <fieldset class="va-cogs">
+      <legend>{{ _("Giai đoạn tuỳ chọn") }}</legend>
+      <label class="check"><input type="checkbox" name="bat_demucs" value="1" checked>
+        <span>{{ _("Tách nhạc nền khỏi tiếng nói (Demucs)") }}</span></label>
+      <label class="check"><input type="checkbox" name="bat_phu_de" value="1" checked>
+        <span>{{ _("Cháy phụ đề vào video") }}</span></label>
+      <label class="check"><input type="checkbox" name="bat_cham_diem" value="1">
+        <span>{{ _("Tự chấm điểm kết quả") }}</span></label>
+    </fieldset>
+
+    <details class="va-adv">
+      <summary>{{ _("Cấu hình nâng cao (JSON)") }}</summary>
+      <textarea name="cau_hinh" rows="6"
+        placeholder='{"clip": {"reuse_max_times": 3}, "subtitle": {"max_chars_per_line": 42}}'></textarea>
+      <p class="muted">{{ _("Để trống để dùng cấu hình đang chạy. Ba ô tick ở trên luôn thắng giá trị trong JSON.") }}</p>
+    </details>
+
+    <button class="btn primary" type="submit">{{ _("Dựng video") }}</button>
+  </form>
+
+  <h2>{{ _("Lượt gần đây") }}</h2>
+  {% if jobs %}
+  <table class="va-jobs">
+    <thead><tr>
+      <th>{{ _("Lúc") }}</th><th>{{ _("Trạng thái") }}</th><th>{{ _("Tiến độ") }}</th>
+      <th>{{ _("Số đoạn") }}</th><th>{{ _("Cách khớp") }}</th><th></th>
+    </tr></thead>
+    <tbody>
+      {% for j in jobs %}
+      <tr>
+        <td>{{ j.created_at }}</td>
+        <td>{{ j.status }}</td>
+        <td>{{ j.progress or 0 }}%</td>
+        <td>{{ (j.result or {}).get("segments", "—") }}</td>
+        <td>{{ (j.result or {}).get("timeline_mode", "—") }}</td>
+        <td><a href="/video-assembly/ket-qua/{{ j.id }}">{{ _("Xem") }}</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">{{ _("Chưa có lượt nào.") }}</p>
+  {% endif %}
+</section>
+{% endblock %}

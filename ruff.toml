@@ -53,6 +53,7 @@ exclude = [
     # khac biet dau ra la do ta.
     "apps/transcript/services/engine",
     "apps/audio_pause/services/engine",
+    "apps/video_assembly/services/engine",
 ]
 
 [lint]
