@@ -37,9 +37,12 @@ class DieuPhoiGia:
     phép kiểm quyết toán phải sống sót qua.
     """
 
-    def __init__(self, *, so_anh_tra_ve=None, no=None):
+    def __init__(self, *, so_anh_tra_ve=None, no=None, khi_goi=None):
         self.so_anh_tra_ve = so_anh_tra_ve
         self.no = no
+        #: Gọi một lượt mỗi khi `chay` được gọi. Vài phép kiểm đếm **lượt gọi
+        #: nhà cung cấp** để chứng minh sandbox/idempotency không gọi thật.
+        self.khi_goi = khi_goi
         self.da_goi: list[dict] = []
 
     def chay(self, *, job_id, prompt, model="hidream-o1", mode="t2i", ref_keys=(),
@@ -52,6 +55,8 @@ class DieuPhoiGia:
                             "mode": mode, "ref_keys": list(ref_keys),
                             "so_anh": so_anh, "ti_le": ti_le,
                             "tien_to_khoa": tien_to_khoa})
+        if self.khi_goi is not None:
+            self.khi_goi()
         if self.no is not None:
             raise self.no
 

@@ -33,6 +33,9 @@ from server.api.inventory import API_V1_PREFIX
 
 PEPPER = "release-test-pepper-" + "k" * 40
 TOOL = "image.thumbnail"
+
+#: Giá đọc từ HÀM của app — con số gõ cứng chỉ đo được rằng chưa ai sửa nó.
+from apps.thumbnail.manifest import _cost as _gia_thumbnail
 ALL_SCOPES = (SCOPE_TOOLS_READ, SCOPE_JOBS_CREATE, SCOPE_JOBS_READ,
               SCOPE_JOBS_CANCEL, SCOPE_UPLOADS_WRITE, SCOPE_ARTIFACTS_READ,
               SCOPE_CREDITS_READ, SCOPE_USAGE_READ, SCOPE_WEBHOOKS_MANAGE)
@@ -169,8 +172,8 @@ def api(tmp_path, monkeypatch):
     metrics.reset()
 
     import apps.thumbnail.jobs as thumbnail_jobs
-    monkeypatch.setattr(thumbnail_jobs, "_goi_gemini",
-                        lambda *args, **kwargs: PNG)
+    from tests.gia_dieu_phoi_anh import tiem as _tiem_dieu_phoi
+    _tiem_dieu_phoi(monkeypatch, thumbnail_jobs)
 
     from server.app import create_app
 
@@ -282,13 +285,14 @@ def test_the_full_chain_runs_and_settles_exactly_once(api):
     created = _run(api, token, "release-canary-00001", count=2)
     assert created.status_code == 201
     job_id = created.json()["id"]
-    assert created.json()["credit"]["held"] == 10
+    assert created.json()["credit"]["held"] == _gia_thumbnail({"count": 2})
 
     assert _chay_mot_job("release-canary-worker") is True
 
     detail = api.get(f"{API_V1_PREFIX}/jobs/{job_id}", headers=_auth(token)).json()
     assert detail["status"] == "succeeded"
-    assert detail["credit"] == {"held": 10, "charged": 10}
+    gia2 = _gia_thumbnail({"count": 2})
+    assert detail["credit"] == {"held": gia2, "charged": gia2}
     assert len(detail["outputs"]) == 2
 
     artifact = api.get(f"{API_V1_PREFIX}/artifacts/{detail['outputs'][0]['id']}",
@@ -296,9 +300,9 @@ def test_the_full_chain_runs_and_settles_exactly_once(api):
     assert artifact.status_code == 200
 
     report = api.get(f"{API_V1_PREFIX}/usage", headers=_auth(token)).json()
-    assert report["totals"]["net_charged_credit"] == 10
+    assert report["totals"]["net_charged_credit"] == gia2
     assert api.get(f"{API_V1_PREFIX}/credits/balance",
-                   headers=_auth(token)).json()["balance"] == 490
+                   headers=_auth(token)).json()["balance"] == 500 - gia2
 
     deliveries = api.get(f"{API_V1_PREFIX}/webhooks/deliveries",
                          headers=_auth(token)).json()["items"]
@@ -306,7 +310,7 @@ def test_the_full_chain_runs_and_settles_exactly_once(api):
 
     # Exactly one of each money row, and they sum to what the customer paid.
     ledger = _ledger(user_id)
-    assert ledger[CREDIT_HOLD]["rows"] == 1 and ledger[CREDIT_HOLD]["delta"] == -10
+    assert ledger[CREDIT_HOLD]["rows"] == 1 and ledger[CREDIT_HOLD]["delta"] == -gia2
     assert ledger[CREDIT_SETTLE]["rows"] == 1 and ledger[CREDIT_SETTLE]["delta"] == 0
     assert CREDIT_REFUND not in ledger
 
@@ -389,10 +393,9 @@ def test_a_provider_timeout_refunds_and_reconciles(api, monkeypatch):
     user_id, token = _account()
     job_id = _run(api, token, "release-timeout-0001").json()["id"]
 
-    def _timeout(*args, **kwargs):
-        raise TimeoutError("provider did not answer")
-
-    monkeypatch.setattr(thumbnail_jobs, "_goi_gemini", _timeout)
+    from tests.gia_dieu_phoi_anh import tiem as _tiem_dieu_phoi
+    _tiem_dieu_phoi(monkeypatch, thumbnail_jobs,
+                    no=TimeoutError("provider did not answer"))
     for _ in range(5):
         _chay_mot_job("release-timeout-worker")
         gen, db = _session()
@@ -478,7 +481,7 @@ def test_a_webhook_receiver_being_down_changes_no_money(api):
 
     detail = api.get(f"{API_V1_PREFIX}/jobs/{job_id}", headers=_auth(token)).json()
     assert detail["status"] == "succeeded"
-    assert detail["credit"]["charged"] == 5
+    assert detail["credit"]["charged"] == _gia_thumbnail({"count": 1})
     assert _ledger(user_id)[CREDIT_SETTLE]["rows"] == 1
 
 

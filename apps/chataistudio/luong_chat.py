@@ -37,7 +37,7 @@ from __future__ import annotations
 import logging
 from typing import Iterator
 
-from platform_core.llm import loi_ra_ngoai as LRN
+from platform_core import loi_ra_ngoai as LRN
 from platform_core.llm.canonical import MODEL_MAC_DINH
 
 log = logging.getLogger(__name__)
@@ -80,7 +80,7 @@ def dung_messages(lich_su, tin_moi: str) -> list[dict]:
 
 
 def chay(db, *, user_id: str, conv_id: str, messages: list[dict],
-         holder_id: str) -> Iterator[dict]:
+         holder_id: str, so_tay: dict | None = None) -> Iterator[dict]:
     """Chạy một lượt và sinh **sự kiện SSE** đúng hợp đồng cũ của giao diện.
 
     Hợp đồng ấy (`chataistudio.html`) là: `delta` · `warning` · `error` · `done`.
@@ -89,13 +89,27 @@ def chay(db, *, user_id: str, conv_id: str, messages: list[dict],
 
     ⛔ `image` **không còn**: LTT_LLM là model văn bản. Đó là một tính năng bị
        gỡ, đã ghi trong `MIGRATION_MAP.md`, không phải một thiếu sót.
+
+    🔴 `so_tay` — sổ ghi cho bên gọi, và nó CÓ LÝ DO TIỀN BẠC.
+
+       Một lượt hỏng giữa chừng vẫn **bị thu tiền phần đã sinh ra**:
+       `mo_luong` quyết toán trong `finally` của chính nó, theo token thật.
+       Nếu phần chữ đã nhận không đi ra được khỏi hàm này thì khách trả
+       tiền cho một thứ họ không thấy đâu.
+
+       Bản 05.7 chỉ trả phần chữ ở sự kiện `done`, mà `done` **không xảy
+       ra** khi luồng hỏng. `so_tay` luôn mang `tra_loi` hiện có, nên bên
+       gọi lưu được nó ở `finally` bất kể lượt kết thúc kiểu gì.
     """
     from platform_core.runtime_noi_bo import luong as L
 
     ghi_nhan: dict = {}
+    so = so_tay if so_tay is not None else {}
     tra_loi = ""
     token_vao = token_ra = 0
     credit_thu = 0
+    so["tra_loi"] = ""
+    so["tokens_total"] = 0
 
     it = L.mo_luong(db, user_id=user_id, tool_name=TOOL_CHAT,
                     params={"model": MODEL_MAC_DINH, "messages": messages},
@@ -108,10 +122,12 @@ def chay(db, *, user_id: str, conv_id: str, messages: list[dict],
                 chu = sk.get("text") or ""
                 if chu:
                     tra_loi += chu
+                    so["tra_loi"] = tra_loi
                     yield {"type": "delta", "text": chu}
             elif loai == "usage.updated":
                 token_vao = int(sk.get("token_vao") or token_vao)
                 token_ra = int(sk.get("token_ra") or token_ra)
+                so["tokens_total"] = token_vao + token_ra
             elif loai == "billing.updated":
                 credit_thu = int(sk.get("credit_thu") or credit_thu)
             elif loai == "response.failed":
@@ -130,6 +146,7 @@ def chay(db, *, user_id: str, conv_id: str, messages: list[dict],
         # đóng generator, sự kiện `billing.updated` cuối được ghi vào `ghi_nhan`.
         if not credit_thu and ghi_nhan.get("billing"):
             credit_thu = int(ghi_nhan["billing"].get("credit_thu") or 0)
+        so["credit_thu"] = credit_thu
 
     yield {"type": "done", "text": tra_loi, "credit_cost": credit_thu,
            "tokens_total": token_vao + token_ra}

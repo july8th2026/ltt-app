@@ -84,13 +84,18 @@ Alias tồn tại để **đổi nhà cung cấp không thành breaking change**
 mọi surface khách đọc được: id thật của vendor lọt ra một chỗ là tích hợp bắt
 đầu ghim vào nó, và alias hết còn là lớp đệm.
 
+
+⛔ **`image.generate` thôi công bố bí danh model từ 09/09/2026.** Ba bí danh
+`standard` · `standard-lite` · `enhanced` trỏ tới ba model Gemini và tồn tại
+được nhờ đúng một điều kiện: **giá đi theo lựa chọn** (5 · 5 · 8 credit/ảnh).
+Tool nay chạy một model nội bộ duy nhất, giá theo số ảnh — nên lựa chọn không
+mua được gì, và công bố nó là bán ba tên cho một món. Xem `CHANGELOG.md`
+mục **BREAKING 2026-09-09**.
+
 | Alias | Tool | Đằng sau | Trạng thái | Lý do |
 |---|---|---|---|---|
-| `standard` | `image.generate` | `gemini-2.5-flash-image` | công khai | Điểm khởi đầu cân bằng giữa chất lượng và giá. |
 | `ltt_llm` | `text.chat` | `qwen38-api` | công khai | Model ngôn ngữ **chạy tại nhà** (máy B). Alias cố ý khác id nội bộ: ngày đổi GGUF bên dưới, mã của khách không phải sửa. |
 | `ltt_llm_vision` | `text.chat` | `qwen38-vision` | công khai | Cùng model, nạp thêm bộ chiếu ảnh (+1,1 GB VRAM đo thật). |
-| `standard-lite` | `image.generate` | `gemini-3.1-flash-lite-image` | công khai | Cùng giá với `standard`, đổi chi tiết lấy tốc độ. |
-| `enhanced` | `image.generate` | `gemini-3.1-flash-image` | công khai | Bám prompt và chi tiết tốt hơn `standard`, giá cao hơn. |
 | `seedance-2.0-mini` | `video.generate` | `dreamina-seedance-2-0-mini-260615` | công khai | Rẻ nhất. **480p/720p** — không có 1080p/4k. Alias đầu tiên của nền tảng công bố `constraints` riêng. |
 | `seedance-2.0` | `video.generate` | `dreamina-seedance-2-0-260128` | công khai | Bản đầy đủ: thêm **1080p và 4k**. Đây chính là lý do không publish được một tập hợp nhất — hợp nhất sẽ nói với khách rằng `mini` + `4k` hợp lệ. |
 | `seedance-2.0-fast` | `video.generate` | `dreamina-seedance-2-0-fast-260128` | công khai | Đổi chi tiết lấy tốc độ; cùng tập độ phân giải với `mini`. |

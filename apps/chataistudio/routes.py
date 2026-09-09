@@ -22,7 +22,7 @@ from fastapi.responses import (HTMLResponse, JSONResponse, RedirectResponse,
 from sqlalchemy import select
 
 from apps.chataistudio import luong_chat, sidecar_client as sc
-from platform_core.llm import loi_ra_ngoai as LRN
+from platform_core import loi_ra_ngoai as LRN
 from apps.chataistudio.manifest import MANIFEST
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.auth.session import require_login
@@ -227,8 +227,11 @@ async def send(request: Request, csrf_token: str = Form(...), conv_id: str = For
             db.add(conv); db.flush()
         visible = context_message(msg or "Hãy phân tích tệp đính kèm.",
                                   [x for x in parsed if x["kind"] == "text"])
-        db.add(ChatMessage(id=umsg_id, conversation_id=conv.id, user_id=u.id,
-                           role="user", content=visible[:20000]))
+        # 🔴 TIN CỦA NGƯỜI DÙNG ĐƯỢC THÊM **MỘT LẦN**, và ở phía dưới — sau khi
+        #    `lich_su` đã đọc xong. Pha 05.7 chèn dòng ấy xuống dưới mà QUÊN xoá
+        #    dòng ở đây, nên mọi lượt gửi `db.add` hai bản ghi cùng `id` và
+        #    `commit()` vỡ: `UNIQUE constraint failed: chat_messages.id`.
+        #    Không lượt chat nào đi qua được — 500 ở mọi lần gửi.
         storage = get_storage()
         for item in parsed:
             if item["kind"] != "image":
@@ -266,6 +269,9 @@ async def send(request: Request, csrf_token: str = Form(...), conv_id: str = For
             yield _sse({"type": "warning", "message": _t(
                 'Ảnh đã được lưu nhưng model văn bản chưa đọc được ảnh.')})
 
+        # 🔴 Sổ tay của lượt. Phần chữ đã nhận phải sống sót qua MỌI kiểu
+        #    kết thúc — xem `luong_chat.chay`.
+        so_tay: dict = {}
         g2 = _sess(); d2 = next(g2)
         try:
             # ⛔ `mo_luong` là generator ĐỒNG BỘ. Lặp thẳng nó trong `async def`
@@ -274,13 +280,10 @@ async def send(request: Request, csrf_token: str = Form(...), conv_id: str = For
             #    `taovideo/translate` đã dùng `run_in_threadpool`.
             it = iterate_in_threadpool(luong_chat.chay(
                 d2, user_id=owner, conv_id=conv_id2,
-                messages=tin_gui, holder_id=umsg_id))
+                messages=tin_gui, holder_id=umsg_id, so_tay=so_tay))
             async for ev in it:
                 if ev.get("type") == "done":
-                    tra_loi = str(ev.pop("text", "") or "")
-                    if tra_loi.strip():
-                        _save_msg(owner, conv_id2, "assistant", tra_loi, "", "",
-                                  int(ev.get("tokens_total") or 0))
+                    ev.pop("text", None)      # lưu ở `finally`, một chỗ duy nhất
                     ev["title"] = public_title
                     ev["balance"] = _so_du(owner)
                     ev["warning"] = ""
@@ -293,6 +296,17 @@ async def send(request: Request, csrf_token: str = Form(...), conv_id: str = For
                            conv_id2[:8], type(e).__name__)
             yield _sse({"type": "error", "message": LRN.cau("loi_noi_bo")})
         finally:
+            # 🔴 LƯU Ở ĐÂY, KHÔNG Ở NHÁNH `done`.
+            #
+            #    `mo_luong` quyết toán trong `finally` của nó, theo token
+            #    THẬT — nên một lượt đứt giữa chừng vẫn bị thu tiền phần đã
+            #    sinh ra. Bản 05.7 chỉ lưu ở nhánh `done`, mà `done` không
+            #    xảy ra khi luồng hỏng: khách trả tiền cho một đoạn chữ
+            #    **bị vứt đi**. Một chỗ lưu duy nhất, chạy mọi đường ra.
+            tra_loi = str(so_tay.get("tra_loi") or "")
+            if tra_loi.strip():
+                _save_msg(owner, conv_id2, "assistant", tra_loi, "", "",
+                          int(so_tay.get("tokens_total") or 0))
             try: next(g2)
             except StopIteration: pass
 

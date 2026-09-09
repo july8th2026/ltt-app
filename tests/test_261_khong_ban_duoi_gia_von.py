@@ -46,69 +46,15 @@ from platform_core.registry import discover
 #:    Chúng ở đây để khoản lỗ **được ghi nhận** thay vì vô hình — không phải để
 #:    test xanh. Hạn 15/09: quá ngày đó mà chưa chốt giá thì test đỏ trở lại.
 LO_CO_CHU_DICH: dict[str, dict] = {
-    "taoanh/image.batch_generate/gemini-2.5-flash-image": {
-        "ly_do": "Gia hien tai dat truoc khi co bang gia von; do 23/08 moi biet "
-                 "no duoi gia von. Cho chu du an chot boi so (hoa von / bien 40% / "
-                 "dong bac pro) — xem PHAN_TICH_MVP_2026-08-23.md muc 2.3.",
-        "chu": "chu du an",
-        "han_ra_lai": "2026-09-15",
-    },
-    "taoanh/image.batch_generate/gemini-3.1-flash-image": {
-        "ly_do": "Gia hien tai dat truoc khi co bang gia von; do 23/08 moi biet "
-                 "no duoi gia von. Cho chu du an chot boi so (hoa von / bien 40% / "
-                 "dong bac pro) — xem PHAN_TICH_MVP_2026-08-23.md muc 2.3.",
-        "chu": "chu du an",
-        "han_ra_lai": "2026-09-15",
-    },
-    "taoanh/image.batch_generate/gemini-3.1-flash-lite-image": {
-        "ly_do": "Gia hien tai dat truoc khi co bang gia von; do 23/08 moi biet "
-                 "no duoi gia von. Cho chu du an chot boi so (hoa von / bien 40% / "
-                 "dong bac pro) — xem PHAN_TICH_MVP_2026-08-23.md muc 2.3.",
-        "chu": "chu du an",
-        "han_ra_lai": "2026-09-15",
-    },
-    "taoanh/image.generate/gemini-2.5-flash-image": {
-        "ly_do": "Gia hien tai dat truoc khi co bang gia von; do 23/08 moi biet "
-                 "no duoi gia von. Cho chu du an chot boi so (hoa von / bien 40% / "
-                 "dong bac pro) — xem PHAN_TICH_MVP_2026-08-23.md muc 2.3.",
-        "chu": "chu du an",
-        "han_ra_lai": "2026-09-15",
-    },
-    "taoanh/image.generate/gemini-3.1-flash-image": {
-        "ly_do": "Gia hien tai dat truoc khi co bang gia von; do 23/08 moi biet "
-                 "no duoi gia von. Cho chu du an chot boi so (hoa von / bien 40% / "
-                 "dong bac pro) — xem PHAN_TICH_MVP_2026-08-23.md muc 2.3.",
-        "chu": "chu du an",
-        "han_ra_lai": "2026-09-15",
-    },
-    "taoanh/image.generate/gemini-3.1-flash-lite-image": {
-        "ly_do": "Gia hien tai dat truoc khi co bang gia von; do 23/08 moi biet "
-                 "no duoi gia von. Cho chu du an chot boi so (hoa von / bien 40% / "
-                 "dong bac pro) — xem PHAN_TICH_MVP_2026-08-23.md muc 2.3.",
-        "chu": "chu du an",
-        "han_ra_lai": "2026-09-15",
-    },
-    "thumbnail/image.thumbnail/gemini-2.5-flash-image": {
-        "ly_do": "Gia hien tai dat truoc khi co bang gia von; do 23/08 moi biet "
-                 "no duoi gia von. Cho chu du an chot boi so (hoa von / bien 40% / "
-                 "dong bac pro) — xem PHAN_TICH_MVP_2026-08-23.md muc 2.3.",
-        "chu": "chu du an",
-        "han_ra_lai": "2026-09-15",
-    },
-    "thumbnail/image.thumbnail/gemini-3.1-flash-image": {
-        "ly_do": "Gia hien tai dat truoc khi co bang gia von; do 23/08 moi biet "
-                 "no duoi gia von. Cho chu du an chot boi so (hoa von / bien 40% / "
-                 "dong bac pro) — xem PHAN_TICH_MVP_2026-08-23.md muc 2.3.",
-        "chu": "chu du an",
-        "han_ra_lai": "2026-09-15",
-    },
-    "thumbnail/image.thumbnail/gemini-3.1-flash-lite-image": {
-        "ly_do": "Gia hien tai dat truoc khi co bang gia von; do 23/08 moi biet "
-                 "no duoi gia von. Cho chu du an chot boi so (hoa von / bien 40% / "
-                 "dong bac pro) — xem PHAN_TICH_MVP_2026-08-23.md muc 2.3.",
-        "chu": "chu du an",
-        "han_ra_lai": "2026-09-15",
-    },
+    # 🟢 TRỐNG TỪ 09/09/2026 — và đây là một tin tốt có thể đếm được.
+    #
+    #    Chín mục vừa bị xoá đều là *"bán dưới giá vốn"* của ba model Gemini
+    #    qua `taoanh` và `thumbnail`. Cả chín biến mất không phải vì ai chỉnh
+    #    giá, mà vì **động cơ biến mất**: AI CLEAN REBUILD V2 pha 06 đưa hai
+    #    app ấy sang model nhà, nơi biên là 89,8 % (xem phép kiểm bên dưới).
+    #
+    # ⛔ Danh sách này **không phải chỗ để làm cho test xanh**. Mỗi dòng thêm
+    #    vào đây là một khoản lỗ trên mỗi đơn hàng, lớn dần theo doanh số.
 }
 
 

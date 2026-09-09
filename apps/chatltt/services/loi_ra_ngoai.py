@@ -1,4 +1,4 @@
-"""loi_ra_ngoai.py — BÍ DANH. Thân mã nay ở `platform_core/llm/loi_ra_ngoai.py`.
+"""loi_ra_ngoai.py — BÍ DANH. Thân mã nay ở `platform_core/loi_ra_ngoai.py`.
 
 🔴 NÂNG LÊN NỀN TẢNG 08/09/2026 — AI CLEAN REBUILD V2 pha 05.7.
 
@@ -17,12 +17,12 @@
    đổi.
 
 ⛔ Đừng thêm mã vào tệp này. Mọi thay đổi về *chữ cho người dùng khi lỗi* phải
-   xảy ra ở `platform_core/llm/loi_ra_ngoai.py` — nếu không ta lại có hai bản,
+   xảy ra ở `platform_core/loi_ra_ngoai.py` — nếu không ta lại có hai bản,
    đúng thứ việc nâng này vừa gỡ.
 """
 from __future__ import annotations
 
-from platform_core.llm.loi_ra_ngoai import (CAU, MAC_DINH,  # noqa: F401
+from platform_core.loi_ra_ngoai import (CAU, MAC_DINH,  # noqa: F401
                                             cau, hinh_dang)
 
 __all__ = ["CAU", "MAC_DINH", "cau", "hinh_dang"]

@@ -1,5 +1,15 @@
 """loi_ra_ngoai.py — MỘT cửa duy nhất biến một lỗi thành chữ cho NGƯỜI DÙNG.
 
+🔴 CHUYỂN CHỖ 09/09/2026 (pha 06.3): trước ở `platform_core/llm/`.
+
+   `tests/test_626` cấm `apps/chatltt` import `platform_core.llm` — hàng rào
+   thật: *"thêm model mới không được đòi ChatLTT biết ai cung cấp nó"*. Bảng
+   câu lỗi thì **không phải** chuyện của LLM: nó trả lời *"nói gì với khách
+   khi một lượt hỏng"*, và câu ấy giống nhau ở mọi luồng.
+
+⭐ Nên chỗ sai là VỊ TRÍ của tệp, không phải hàng rào. Hàng rào giữ nguyên
+   một mili-mét; tệp dời ra gốc `platform_core/`.
+
 🔴 NÂNG LÊN `platform_core` ngày 08/09/2026 — AI CLEAN REBUILD V2 pha 05.7.
    Thân mã nguyên gốc ở `apps/chatltt/services/loi_ra_ngoai.py`; tệp ấy nay
    **trỏ về đây**, nên `test_846` và mọi nơi gọi đường cũ không đổi một dòng.

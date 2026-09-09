@@ -42,6 +42,55 @@
 | 14 | Remote GitHub hygiene | ⬜ | — | — |
 | 15 | Final repo compaction report | ⬜ | — | — |
 
+## 🔴 LƯỢT GATE ĐẦY ĐỦ CỦA PHA 06 — và hai lỗi SẢN PHẨM nó tìm ra
+
+Lượt L3 đầu tiên kể từ pha 04 (12,8 phút): **21 failed · 178 errors** trên 8.717
+passed. Con số ấy **không hiện ra ở đuôi stdout** — lệnh của tôi có `| tail -60`
+nên nó chỉ in `1 failed, 4 errors` của pha nối tiếp, che mất 199 lỗi của pha
+song song.
+
+⭐ **Bài học cơ học:** đọc dòng tổng ở `test-results/gates/loi-*-bo-test*.log`,
+   đừng đọc đuôi stdout. Đuôi là thứ tôi tự cắt, không phải thứ gate báo.
+
+### Phân bố: MỘT nguyên nhân chiếm 183/199
+
+| Nguyên nhân | Số | Ghi chú |
+|---|---|---|
+| 15 tệp còn vá `thumbnail_jobs._goi_gemini` | **183** | 14 test + `tools/public_api_load_test.py` |
+| giá gõ cứng 5 credit/ảnh (`test_193/203/204/192/78/93`) | 12 | giá đổi 5 → 3 khi app đổi model |
+| hợp đồng/tài liệu API (`test_191/198/212/195`) | 4 | bí danh model đã gỡ |
+| `test_448` (ASV) | 7 | **nợ CŨ — đo được**: đỏ y hệt ở `HEAD~1` |
+| còn lại | 2 | mypy + `apps/chatltt` đâm hàng rào `platform_core.llm` |
+
+⛔ Tôi đã ghi bài học *"grep tên hàm ấy trên `tests/`"* vào chính commit 06.3 —
+   rồi **không chạy lệnh đó**, và phạm vi tôi viết ra cũng hẹp (`tests/` thôi,
+   trong khi `tools/` cũng vá). Một luật viết ra không miễn nhiễm cho người viết.
+
+### 🔴 HAI LỖI SẢN PHẨM THẬT, cả hai do pha 05.7, cả hai trên đường chat
+
+**(1) Mọi lượt gửi chat đều 500.** `apps/chataistudio/routes.py` `db.add` **hai**
+`ChatMessage` cùng `id`: pha 05.7 chèn bản ghi xuống dưới (để đọc `lich_su`
+trước) mà **quên xoá bản ghi ở trên**. `commit()` vỡ với `UNIQUE constraint
+failed: chat_messages.id`.
+
+**(2) Trả lời dở dang bị vứt, mà vẫn bị thu tiền.** `mo_luong` quyết toán trong
+`finally` theo token THẬT, nên một lượt đứt giữa chừng **vẫn tính tiền phần đã
+sinh ra**. Bản 05.7 chỉ lưu chữ ở nhánh `done` — mà `done` không xảy ra khi
+luồng hỏng. Khách trả tiền cho một đoạn chữ không thấy đâu.
+
+⇒ Sửa: một chỗ lưu **duy nhất** ở `finally`, đọc `so_tay` mà `luong_chat.chay`
+  cập nhật theo từng delta. `test_162` viết lại canh đúng cả hai.
+
+⚠️ Cả hai lỗi đều **không thể** bị bắt bởi cụm test hẹp mà 05.7 đã chạy. Đó là
+   lý do hợp đồng đòi một lượt gate đầy đủ trước khi báo xong.
+
+### Nợ CŨ, đo được, KHÔNG sửa ở đây
+
+`test_448_asv_v4_e2e_nghiem_thu.py` — 7 đỏ. Chạy trên bản `HEAD~1` (giải nén
+bằng `git archive`, không đụng cây) cho **đúng 7 đỏ ấy**. Nó đọc một bản ghi
+nghiệm thu TĨNH có chứa nguyên văn `khong provider nao phuc vu duoc: ltt_llm:
+ban` — một lượt thật đã hỏng vì máy B bận. Ngoài phạm vi chiến dịch này.
+
 ## 🔴 NỢ PHÁT HIỆN Ở 06.3 — bốn thứ pha trước để lại
 
 Pha 06.3 chạy phép kiểm rộng hơn các pha trước và tìm ra **bốn khoản nợ** mà
@@ -80,7 +129,7 @@ chứ không chỉ chỗ đạt.
 | 3 | Không gộp phase thành big-bang refactor | ✅ 28 commit tách theo bước |
 | 4 | Không bỏ qua phase | ✅ |
 | 5 | Mỗi pha: artefact · đúng cấp test · **cập nhật campaign state** · dừng ở gate | ⚠️ **LỆCH — (A) và (B)** |
-| 6 | Không full pytest/full gate sau mỗi sửa | ✅ cụm hẹp + 5 bánh cóc |
+| 6 | Cadence test — theo `docs/00_LTT_OPERATING_CONTRACT.md` §4 | ✅ cụm hẹp + 5 bánh cóc |
 | 7 | Hard-delete tuyệt đối, không giữ vì fallback/tương thích/tiện | ✅ 0 ngoại lệ đã cấp |
 | 8 | `HISTORY_ONLY` phải **chứng minh** 5 điều kiện | ⚠️ **CHƯA — xem (D)** |
 | 9 | Giữ sống LTT_LLM · LTT_IMAGE · Voice · Seedance · Public API · runtime_noi_bo · api_pool | ✅ |
