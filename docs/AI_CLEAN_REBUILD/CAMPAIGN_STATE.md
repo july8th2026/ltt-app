@@ -33,14 +33,49 @@
 | ├ 06.3 | `thumbnail` → LTT_IMAGE (**gỡ chữ-trong-ảnh**) | ✅ | 5 bánh cóc PASS | `PHA06_THUMBNAIL_CHU.md` |
 | └ 06.x | trả nợ do 06.2/05.x để lại (xem §Nợ) | ✅ | `rao_provider_retire` **đã hết hạn và bị xoá** | `platform_core/image_gen/{gia,khung_anh}.py` |
 | 07 | Delete all legacy runtime **+ gỡ hẳn `chataistudio`** | ✅ | 8 bánh cóc PASS · `test_1004` | `MIGRATION_MAP.md` §7 |
-| 08 | Delete legacy app surfaces | 🟡 mã xong, **chờ `npm run build` + gate** | — | §Pha 08 |
+| 08 | Delete legacy app surfaces | ✅ | `npm run build` đã chạy (đo sha lệch, không đoán) · gate gộp | §Pha 08 |
 | 09 | Provider config / secret clean **+ chứng minh `HISTORY_ONLY`** | ✅ | 8 bánh cóc PASS · `test_1005` 150 phép kiểm | ma trận 425/519 |
 | 10 | Architecture guard | ✅ | 18 phép kiểm, **12 là tự kiểm** | `tests/test_1006_rao_kien_truc.py` |
 | 11 | Real E2E / egress | 🟡 **egress=0 CHỨNG MINH · 5 đường sinh thật NOT_TESTED** | `test_1007` 6 phép kiểm | `PHA11_12_NGHIEM_THU.md` |
 | 12 | Forensic re-audit | ✅ **0 executable occurrence · 82/100** | 2 bộ dò ĐỘC LẬP, 787 tệp | `PHA11_12_NGHIEM_THU.md` |
-| 13 | Commit / merge / deploy | ⬜ | — | — |
+| 13 | Commit / merge / deploy | ⬜ **đang chờ máy** | gate cuối đã xếp hàng | — |
 | 14 | Remote GitHub hygiene | ⬜ | — | — |
 | 15 | Final repo compaction report | ⬜ | — | — |
+
+## Gạch đầu dòng — LƯỢT GATE GỘP cho pha 07→12 (09/09, 18:2x)
+
+Chủ dự án chọn **gộp một lượt gate cuối** thay vì mỗi pha một lượt
+(*"gộm chạy gate để cuối cùng nếu không vướng mắc ở phase phía sau"*).
+
+```
+RESULT: FAIL (1/32)   — 31/32 bước PASS, chỉ `bo test (song song)` đỏ
+9 failed, 9046 passed, 62 skipped, 1 xfailed in 620.84s
+```
+
+⭐ **Chín dòng đỏ, hai nguồn** — và phải tách ra, vì trộn lại là cách một
+   chiến dịch nhận về nợ không phải của nó, hoặc chối nợ đúng là của nó:
+
+| Số | Nguồn | Xử lý |
+|---|---|---|
+| **7** | `test_448_asv_v4_e2e_nghiem_thu.py` — **nợ có sẵn của trunk** (ASV v4) | không đụng; đã chứng minh có ở `HEAD~1` **và** trên cây sạch của một phiên khác |
+| **2** | **của chính chiến dịch** | đã vá ở `d3b3f5ab` |
+
+Hai lỗi của chính chiến dịch, và cả hai đều là **tài liệu/phép kiểm chạy sau
+mã**, không phải lỗi sản phẩm:
+
+1. `test_117` còn ghim tên nhà cung cấp đã gỡ, sau khi pha 08 đổi câu khai báo
+   quyền riêng tư trong `apps/taoanh/templates/image.html`.
+2. `docs/PUBLIC_API/APP_API_COVERAGE_FINAL.md` còn phân loại `chataistudio` —
+   một app pha 07 đã xoá — nên `test_212` báo `stale`.
+
+⚠️ **Lượt gate xác nhận lại đang CHỜ MÁY.** Đo lúc 18:4x: phiên
+   `ltt-video-architecture-recovery-746b24` bấm `tools/gate.py` lúc **18:35:08**
+   với 6 worker pytest. Tôi bấm sau ⇒ tôi lùi.
+
+   🔑 `cua_so_yen trang-thai` báo **RẢNH** trong chính lúc ấy. Đây đúng là ca mà
+      luật ghi: cửa sổ yên là điều kiện **CẦN**, không phải **ĐỦ**. Vế quyết
+      định là **cây tiến trình**, và phải đo bằng một lệnh RIÊNG — gộp `đo && chạy`
+      thì cảnh báo tới **sau** quyết định.
 
 ## ⚠️ TRUNK ĐANG ĐỎ HAI BƯỚC — điều kiện chặn của PHA 13
 
