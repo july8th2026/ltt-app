@@ -124,60 +124,50 @@ def chan_neu_da_ngung(provider_id: str) -> None:
 
 # ── Seed 5 provider hiện có trong BOT GEMINI (chỉ key CHÍNH THỨC) ──────────────
 REGISTRY: dict[str, Provider] = {
+    # ─────────────────────────────────────────────────────────────────────
+    # ⛔ BA NHÀ CUNG CẤP ĐÃ XOÁ — AI CLEAN REBUILD V2, 10/09/2026
+    #
+    # Chủ dự án chốt: *"Codex, gemini, apikey, shopapi các api ngoài hệ thống
+    # trừ api byteplus thì ta cần dọn và xoá hết."*
+    #
+    # 🔴 THỨ ĐÃ XOÁ là toàn bộ phần **GỌI THẾ NÀO**: `base_url` (ba host thật),
+    #    `auth_style`, `list_models_path`, và mọi `ModelInfo`. Sau đây không còn
+    #    một mẩu công thức nào để dựng lại một lượt gọi ra ba nhà cung cấp này —
+    #    kể cả khi ai đó có sẵn khoá API.
+    #
+    # ⭐ THỨ CỐ Ý GIỮ là đúng ba dòng khai `is_active=False`, và lý do là CƠ HỌC
+    #    chứ không phải tình cảm: `da_ngung()` trả `False` cho một id **không có
+    #    trong registry**. Xoá hẳn ba dòng này ⇒ `chan_neu_da_ngung("gemini")`
+    #    thôi ném, tức cổng fail-closed của pha 04 **im lặng mở ra**.
+    #
+    #    Nói cách khác: ở đây, xoá nốt dòng cuối không làm hệ thống sạch hơn —
+    #    nó gỡ mất lời từ chối. Cái còn lại không phải một đường chạy; nó là một
+    #    tấm biển "đường này đã đóng" mà cổng đọc được.
+    #
+    # ⚠️ Hệ quả đã cân: `resolve_model_id`/`model_capabilities` không còn tra
+    #    được tên hiển thị của model Gemini cũ. Job cũ vẫn đọc được **id thô**
+    #    đã lưu trong hàng của nó; thứ mất là nhãn đẹp, không phải dữ liệu.
+    # ─────────────────────────────────────────────────────────────────────
     "gemini": Provider(
-        id="gemini", display_name="Google Gemini (API key)",
-        auth_style=AUTH_QUERY_KEY,
-        base_url="https://generativelanguage.googleapis.com/v1beta",
-        categories=(APIKEY_CAT_MODEL, APIKEY_CAT_CHAT, APIKEY_CAT_IMAGE),
-        models=(
-            ModelInfo("gemini-2.5-flash-image", (APIKEY_CAT_IMAGE,),
-                      display_name="Gemini 2.5 Flash"),
-            ModelInfo("gemini-3.1-flash-lite-image", (APIKEY_CAT_IMAGE,),
-                      display_name="Gemini 3.1 Flash Lite"),
-            ModelInfo("gemini-3.1-flash-image", (APIKEY_CAT_IMAGE,),
-                      display_name="Gemini 3.1 Flash"),
-            # ⛔ ĐÓNG 2026-08-23 — LÝ DO KINH TẾ, KHÔNG PHẢI KỸ THUẬT.
-            #    Giá vốn $0,134/ảnh = 35,2 credit (`platform_core/gia_von.json`).
-            #    Nền tảng bán 16 credit ở `taoanh` và **5 credit** ở `thumbnail`
-            #    (app đó tính giá phẳng bất kể model) ⇒ lỗ 1.924đ và 3.024đ mỗi ảnh.
-            #    Chủ dự án chốt: giữ giá các bậc rẻ như chi phí thu hút khách, nhưng
-            #    **đóng đúng bậc lỗ nặng nhất**.
-            #    Mở lại khi giá bán ≥ giá vốn — `tests/test_261` sẽ kiểm hộ.
-            ModelInfo("gemini-3-pro-image", (APIKEY_CAT_IMAGE,),
-                      display_name="Gemini 3 Pro", is_active=False),
-            # Alias bất hoạt: job/draft cũ vẫn gọi đúng model ổn định, nhưng UI
-            # không tiếp tục tạo dữ liệu mới với tên preview đã lỗi thời.
-            ModelInfo("gemini-3.1-flash-image-preview", (APIKEY_CAT_IMAGE,),
-                      provider_model_id="gemini-3.1-flash-image", is_active=False),
-            ModelInfo("gemini-3-pro-image-preview", (APIKEY_CAT_IMAGE,),
-                      provider_model_id="gemini-3-pro-image", is_active=False),
-            ModelInfo("gemini-2.5-flash", (APIKEY_CAT_CHAT,),
-                      display_name="Gemini 2.5 Flash (chat)"),
-            ModelInfo("gemini-2.5-flash-preview-tts", ("audio",),
-                      display_name="Gemini 2.5 Flash TTS (Preview)", capabilities={
-                          "voices": ["Kore", "Puck", "Charon", "Zephyr", "Fenrir",
-                                     "Leda", "Orus", "Aoede"],
-                          "sample_rate": 24000, "preview": True,
-                      }),
-        ),
-        list_models_path="/models",   # kèm ?key= khi gọi
-        notes="⛔ NGUNG 2026-09-08 (AI CLEAN REBUILD V2). Giu khai bao de doc lich su.",
+        id="gemini", display_name="Google Gemini (da xoa)",
+        auth_style="", base_url="", categories=(), models=(),
+        list_models_path=None,
+        notes="XOA 2026-09-10 (AI CLEAN REBUILD V2). Giu bia mo de cong "
+              "`chan_neu_da_ngung` con no. Khong con base_url/auth/model.",
         is_active=False,
     ),
     "apiai": Provider(
-        id="apiai", display_name="apiai.vn (OpenAI-compat gateway)",
-        auth_style=AUTH_BEARER, base_url="https://api.apiai.vn/api/v1",
-        categories=(APIKEY_CAT_CHAT, APIKEY_CAT_IMAGE),
-        models=(), list_models_path="/models",
-        notes="⛔ NGUNG 2026-09-08 (AI CLEAN REBUILD V2). Gateway OpenAI-compat cu.",
+        id="apiai", display_name="apiai gateway (da xoa)",
+        auth_style="", base_url="", categories=(), models=(),
+        list_models_path=None,
+        notes="XOA 2026-09-10 (AI CLEAN REBUILD V2). Nhu tren.",
         is_active=False,
     ),
     "cheapkeyai": Provider(
-        id="cheapkeyai", display_name="cheapkeyai.shop (OpenAI-compat gateway)",
-        auth_style=AUTH_BEARER, base_url="https://cheapkeyai.shop/v1",
-        categories=(APIKEY_CAT_CHAT, APIKEY_CAT_IMAGE),
-        models=(), list_models_path="/models",
-        notes="⛔ NGUNG 2026-09-08 (AI CLEAN REBUILD V2). Gateway OpenAI-compat cu.",
+        id="cheapkeyai", display_name="cheapkeyai gateway (da xoa)",
+        auth_style="", base_url="", categories=(), models=(),
+        list_models_path=None,
+        notes="XOA 2026-09-10 (AI CLEAN REBUILD V2). Nhu tren.",
         is_active=False,
     ),
     "byteplus": Provider(

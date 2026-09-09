@@ -48,17 +48,16 @@ TEN_CAM = ("_goi_gemini", "goi_gemini", "PROVIDER_GEMINI")
 CAM_TRONG_HANG = ("generativelanguage.googleapis.com", "api.apiai.vn",
                   "cheapkeyai.shop")
 
-#: ⏳ MIỄN TRỪ CÓ HẠN — và hạn của nó là **pha 09**.
+#: ✅ **MIỄN TRỪ ĐÃ HẾT HẠN VÀ ĐƯỢC GỠ** — 10/09/2026.
 #:
-#: `platform_core/providers.py` còn `base_url` của ba nhà cung cấp đã ngừng, vì
-#: `REGISTRY` là **bảng tra lịch sử**: một job cũ vẫn phải tra ra được tên và
-#: nhãn model nó đã chạy. Chúng đã `is_active=False` từ pha 04, nên không một
-#: bộ chọn nào chào chúng ra — `test_1000` chốt điều đó.
+#: `platform_core/providers.py` từng được miễn vì nó còn `base_url` của ba nhà
+#: cung cấp đã ngừng. Chủ dự án chốt xoá hết, nên ba mục ấy nay chỉ còn
+#: **bia mộ**: `models=()`, `base_url=""`, `auth_style=""` — giữ đúng `is_active=False`
+#: để cổng `chan_neu_da_ngung` còn nổ (`da_ngung` trả `False` cho id **vắng mặt**).
 #:
-#: 🔴 Pha 09 (*provider config / secret clean*) là nơi quyết định giữ những dòng
-#:    ấy dưới dạng gì. Ngày đó tới, **xoá miễn trừ này trước**, rồi mới sửa
-#:    `providers.py` — nếu không nó sẽ sống mãi như mọi miễn trừ không có hạn.
-MIEN_TRU = ("platform_core/providers.py",)
+#: ⭐ Không còn danh sách miễn trừ nào, và `test_KHONG_con_mien_tru_nao` chốt
+#:    điều đó. Một miễn trừ không bị gỡ sẽ sống lâu hơn lý do sinh ra nó, rồi
+#:    che đúng thứ nó từng được cấp phép che — nhưng cho một lý do khác.
 
 
 def _tep_py():
@@ -130,8 +129,6 @@ def test_khong_HANG_SO_nao_con_mang_dia_chi_nha_cung_cap_legacy():
     """Docstring được miễn — xem khối đầu tệp."""
     xau = []
     for p in _tep_py():
-        if p.relative_to(GOC).as_posix() in MIEN_TRU:
-            continue
         try:
             than = p.read_bytes().decode("utf-8")
             cay = ast.parse(than)
@@ -152,11 +149,20 @@ def test_khong_HANG_SO_nao_con_mang_dia_chi_nha_cung_cap_legacy():
     assert xau == [], f"con dia chi nha cung cap legacy trong hang so: {xau}"
 
 
-def test_MIEN_TRU_chi_tro_toi_tep_CO_THAT():
-    """Một miễn trừ trỏ tới tệp không còn là một miễn trừ **không ai gỡ được**:
-    nó xanh mãi mãi và không ai biết nó đang che gì."""
-    thua = [t for t in MIEN_TRU if not (GOC / t).is_file()]
-    assert thua == [], f"mien tru tro toi tep khong ton tai: {thua}"
+def test_KHONG_con_mien_tru_nao():
+    """Phép kiểm trước chot rằng một miễn trừ **trỏ tới tệp có thật**. Nay
+    không còn miễn trừ nào, nên mệnh đề đúng hơn là **không có cái nào cả**.
+
+    ⭐ Bản viết lại này **khó xanh hơn** bản cũ, không dễ hơn: trước kia thêm
+       một tệp vào danh sách vẫn xanh; bây giờ thêm bất kỳ cái gì là đỏ. Một
+       phép kiểm viết lại mà dễ xanh hơn là một phép kiểm vừa bị hạ cấp.
+    """
+    than = pathlib.Path(__file__).read_bytes().decode("utf-8")
+    cay = ast.parse(than)
+    ten = {t.id for n in ast.walk(cay) if isinstance(n, ast.Assign)
+           for t in n.targets if isinstance(t, ast.Name)}
+    assert "MIEN_TRU" not in ten, (
+        "ai do them lai mot danh sach mien tru - phai co han va co ly do")
 
 
 def test_registry_app_KHONG_con_chataistudio():
