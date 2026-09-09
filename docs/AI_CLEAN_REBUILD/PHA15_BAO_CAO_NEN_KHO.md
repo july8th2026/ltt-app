@@ -125,10 +125,10 @@ văn thân hàm cũ** trên cùng dữ liệu), và xoá 4 hàng khỏi CSDL (c�
 
 ---
 
-## 5. Ba việc NGOÀI PHẠM VI — báo cáo, không tự sửa
+## 5. BỐN việc NGOÀI PHẠM VI — báo cáo, không tự sửa
 
 Gói chiến dịch dặn: *vấn đề ngoài phạm vi thì viết báo cáo, đừng mở rộng chiến
-dịch*. Ba thứ dưới đây đều thật, đều không phải việc của chiến dịch này:
+dịch*. Bốn thứ dưới đây đều thật, đều không phải việc của chiến dịch này:
 
 1. **`tools/i18n.py thieu` so `mtime`.** Sau bất kỳ lượt `ff`/`merge` nào nó có
    thể báo *"`.mo` cũ hơn `.po`"* thuần tuý vì **thứ tự git ghi hai tệp** —
@@ -148,6 +148,44 @@ dịch*. Ba thứ dưới đây đều thật, đều không phải việc của
    viết *"Mặc định KHÔNG"*. Hành vi thì nhất quán (cái trước uỷ quyền cho cái
    sau) — chỉ chú thích mâu thuẫn, và nó nằm trong tệp tự nhận là *"chỗ duy nhất
    được phép đại diện cho giá"*.
+
+4. **`tools/check_ps_bien_trung_tham_so.py` — docstring và mã nói ngược nhau.**
+   *(phát hiện của phiên `ltt-llm-api-http-guide-a3e123`, họ chủ động không tự sửa)*
+
+   Docstring nói luật chỉ cấm gán tham số **trong thân vòng lặp** (nguyên văn:
+   *"gan tham so ngoai vong lap = duoc"*), nhưng `kiem()` báo lỗi cho **mọi**
+   phép gán trùng tên tham số ngoài mẫu miễn trừ `if (-not $X) { $X = ... }`.
+   Nó chỉ đổi **nhãn vị trí** (`"than vong lap"` / `"cap ngoai"`), không đổi
+   phán quyết.
+
+   ⭐ Hai dữ kiện làm mục này **tự chứng minh**:
+   - **ca dính thật**: `tools/quet_mtp.ps1:82-84` — ba phép gán ở **cấp ngoài
+     cùng**, không vòng lặp nào. Docstring nói được, mã nói không.
+   - và docstring **có lý do tốt** cho luật hẹp: nó kể lần chạy đầu báo nhầm
+     `setup/cai_dich_vu_giong.ps1:42` (`if (-not $VenvRoot) { $VenvRoot = ... }`)
+     rồi kết luận *"mot phep kiem bao dong o do se bi tat di trong mot tuan"*.
+
+   ⇒ Tức **bản hẹp là bản đã được cân nhắc**, và phần thi hành mới là bản đi
+     lệch. Đây là một **quyết định**, không phải một lỗi chính tả: nới mã cho
+     khớp docstring là **hạ** một bánh cóc đang bảo vệ thật; sửa docstring cho
+     khớp mã thì giữ nguyên mức bảo vệ. Hai hướng đi hai nơi khác hẳn nhau.
+
+## 5c. ⚠️ MỘT TÁC DỤNG PHỤ CỦA CHÍNH CHIẾN DỊCH — tự khai
+
+Chiến dịch **đã hạ mốc `check_ruff`** (09/09): `B904` 24→21, `F401` 416→415,
+`F841` 25→23. Mức giảm ấy có thật — nó đến từ 21 tệp chiến dịch xoá.
+
+⛔ Nhưng hạ mốc là một **hành động MỘT PHÍA**: một cây **chưa hoà trunk** vẫn mang
+   đủ 21 tệp ấy, nên số đếm của nó vượt mốc mới và gate của nó **đỏ ở một bước
+   nó không gây ra**. Đường ra là hoà trunk, không phải sửa gì.
+
+⭐ Tôi ghi ra vì chính lý do này mà tôi **không** hạ mốc `nuot loi lang le`
+   (đo được **50** / mốc 62 trên trunk) và **không** hạ mốc `mypy`, dù cả hai đều
+   giảm thật: cây của phiên `ltt-llm-api-http-guide` đo **62**, đúng bằng mốc.
+   Hạ xuống 50 lúc này là làm đỏ một cây chưa làm gì sai.
+
+⇒ Luật rút ra: **hạ mốc sau khi mọi cây đã hoà, không phải lúc vừa giảm.**
+  Mốc là tài sản **dùng chung**; người hạ nó không phải người trả giá.
 
 ### Và một phép đo đóng lại nghi vấn "thu 0"
 
