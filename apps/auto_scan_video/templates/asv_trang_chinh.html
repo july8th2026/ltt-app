@@ -208,6 +208,48 @@
             </label>
           {% endfor %}
         </fieldset>
+
+        {# 🔴 Cat dau/cuoi chi song o preset CAT — cung khuon `data-preset-can`
+           voi vung che, nhung KHONG cung ly do, va cho khac nhau moi la cho
+           dang noi:
+
+             vung che  — khong THE co o `-c:v copy`: khong khung hinh nao duoc
+                         giai ma, nen khong co diem anh nao de sua. Vat ly.
+             cat       — lam duoc ve ky thuat (`-ss`/`-to` cat tren stream copy),
+                         nhung preset giu hinh **hua** do dai ra bang do dai vao.
+                         Quyet dinh san pham.
+
+           ⇒ Nen cau giai thich duoi day noi "loi hua", khong noi "khong the".
+              Noi sai ly do o day thi mot phien sau doc no roi di sua nham cho. #}
+        <div class="asv-nhom-con" id="asv-nhom-cat"
+             data-preset-can="{{ preset_can_cho_vung }}">
+          <h4 class="asv-nhan-nhom">{{ _("Cắt đầu/cuối") }}</h4>
+          <p class="asv-ghi-chu asv-vung-chan" id="asv-cat-chan" hidden>
+            {{ _("Kiểu “Giữ nguyên hình ảnh” hứa video ra dài đúng bằng video vào, nên không cắt bớt được. Chọn “Rút gọn có biên tập” nếu bạn muốn cắt.") }}
+          </p>
+          <div class="asv-cat-o">
+            <label class="asv-cat-nhan">
+              <span>{{ _("Bắt đầu từ (giây)") }}</span>
+              <input type="number" id="asv-cat-tu" class="asv-cat-so"
+                     min="0" step="0.1" inputmode="decimal" disabled>
+            </label>
+            <label class="asv-cat-nhan">
+              <span>{{ _("Kết thúc ở (giây)") }}</span>
+              <input type="number" id="asv-cat-den" class="asv-cat-so"
+                     min="0" step="0.1" inputmode="decimal" disabled>
+            </label>
+            <button type="button" class="btn ghost" id="asv-cat-xoa">
+              {{ _("Bỏ cắt") }}
+            </button>
+          </div>
+          {# ⭐ Hai o tren nhan GIAY vi khach nghi bang giay. Thu gui len may chu
+             la PHAN SO 0..1 (`cat_dau_cuoi` L1) — mot con so tinh bang giay tro
+             thanh sai ngay khi ban xem truoc co do dai khac ban goc. #}
+          <input type="hidden" name="cat" id="asv-cat" value="">
+          <p class="asv-ghi-chu" id="asv-cat-tt" aria-live="polite">
+            {{ _("Để trống thì giữ cả video.") }}
+          </p>
+        </div>
       </div>
 
       {# 🔴 Vung che chi song duoc o preset CAT, va do la mot rang buoc vat ly
@@ -335,7 +377,12 @@
   "tai_dang": {{ _("Đang tải video lên… %(pct)s%%")|tojson }},
   "tai_xong": {{ _("Đã tải lên xong.")|tojson }},
   "tai_hong": {{ _("Không tải lên được. Hãy thử lại.")|tojson }},
-  "tai_qua_lon": {{ _("Video vượt quá %(mb)s MB.")|tojson }}
+  "tai_qua_lon": {{ _("Video vượt quá %(mb)s MB.")|tojson }},
+  "cat_ca_video": {{ _("Để trống thì giữ cả video.")|tojson }},
+  "cat_khong_doc_duoc": {{ _("Đoạn cắt không đọc được.")|tojson }},
+  "cat_ngoai_khoang": {{ _("Đoạn cắt phải nằm trong video và điểm đầu phải trước điểm cuối.")|tojson }},
+  "cat_qua_ngan": {{ _("Đoạn cắt quá ngắn.")|tojson }},
+  "cat_con_lai": {{ _("Đoạn giữ lại dài %(giay)s.")|tojson }}
 }
 </script>
 <script src="/static/asv.js?v={{ asset_ver }}" defer></script>

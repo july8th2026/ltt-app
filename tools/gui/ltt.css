@@ -3503,6 +3503,19 @@ button.lv-the-song.dang-phat .lv-nghe-dau::before{width:4px;height:14px;
 .asv-nhom:first-of-type{border-top:0;padding-top:0}
 .asv-nhom h3{margin:0 0 8px;font-size:14px}
 .asv-vung-thanh{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 6px}
+
+/* -- Cat dau/cuoi -----------------------------------------------------
+   ⭐ Mot nhom CON, khong phai `.asv-nhom`: no nam BEN TRONG nhom "Thoi
+      luong" cung voi cach khop thoi gian, vi ca hai deu tra loi cung mot
+      cau hoi — *video ra dai bao nhieu*. Tach ra thanh mot nhom rieng se
+      tach hai nua cua mot quyet dinh ra hai cho. */
+.asv-nhom-con{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
+.asv-nhom-con h4{margin:0 0 8px}
+.asv-cat-o{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin:8px 0 4px}
+.asv-cat-nhan{display:flex;flex-direction:column;gap:4px;font-size:13px;
+  color:var(--muted);flex:1 1 130px;min-width:0}
+/* `min-width:0` + `width:100%` de o so khong day nhom tran ngang o 375px. */
+.asv-cat-so{width:100%;min-width:0;font-variant-numeric:tabular-nums}
 /* Chi hien tren man hinh nho — xem `@media` cuoi khoi. */
 .asv-chi-may{display:none}
 

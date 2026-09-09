@@ -43,7 +43,7 @@ from server.auth.session import require_login
 from server.deps import get_db, user_hien_tai
 from server.templating import templates
 
-from . import hop_dong_v4, features, gia, pipeline, quan_sat, vung_che
+from . import cat_dau_cuoi, hop_dong_v4, features, gia, pipeline, quan_sat, vung_che
 from . import tu_dien as tu_dien_mod
 from .manifest import MANIFEST
 
@@ -285,6 +285,9 @@ async def tao(request: Request,
               #: Vung che, JSON do trinh sua vung dung. Rong = khong co vung nao,
               #: va do la truong hop BINH THUONG cua phan lon lan chay.
               vung: str = Form(""),
+              #: Cua so cat dau/cuoi, JSON `[bat_dau, ket_thuc]` phan so 0..1.
+              #: Rong = giu ca video, va do la truong hop BINH THUONG.
+              cat: str = Form(""),
               csrf_token: str = Form(""),
               _g: None = Depends(_cong_co),
                 user: str = Depends(require_login),
@@ -339,6 +342,30 @@ async def tao(request: Request,
     except (ValueError, TypeError):
         return _lai_voi_loi(request, db, u, _t('Vùng che không đọc được.'))
 
+    # ── Cua so cat dau/cuoi ─────────────────────────────────────────────────
+    #
+    # ⭐ Tang thu nhat trong ba tang. Hai tang kia: giao dien an hai tay cam khi
+    #    preset la giu hinh, va `giai_doan_ban_dung` chi giao voi cua so o duong
+    #    cat — no khong tin giao dien.
+    #
+    # 🔑 Va tang nay tu choi **truoc khi giu credit**. Doan ngay tren da noi ra
+    #    nguyen tac do bang chinh chu cua no: *"mot cau tra loi o day tot hon mot
+    #    lan chay hong o phut thu muoi"*. Voi trim thi con dat hon — mot lan chay
+    #    bi `ban_dung.kiem` chan la mot lan chay da di qua chin giai doan.
+    try:
+        cua_so_cat = cat_dau_cuoi.chuan_hoa(json.loads(cat) if cat.strip() else None)
+    except cat_dau_cuoi.CatLoi as exc:
+        return _lai_voi_loi(request, db, u, str(exc))
+    except (ValueError, TypeError):
+        return _lai_voi_loi(request, db, u, _t('Đoạn cắt không đọc được.'))
+    # ⭐ CUNG mot cau voi cau giao dien hien khi khoa hai o (`asv-cat-chan`).
+    #    Mot y, mot chuoi: hai cach dien dat cho cung mot luat la hai ban dich
+    #    phai giu dong bo, va la hai co hoi de chung lech nhau.
+    if cua_so_cat and preset != hop_dong_v4.PRESET_CAT_THONG_MINH:
+        return _lai_voi_loi(request, db, u, _t(
+            'Kiểu “Giữ nguyên hình ảnh” hứa video ra dài đúng bằng video vào, '
+            'nên không cắt bớt được. Chọn “Rút gọn có biên tập” nếu bạn muốn cắt.'))
+
     # ⚠️ Cung luat voi vung che: sai thi TU CHOI, khong doan. Mot dong
     #    `Ten - cach doc` khong duoc tu hieu thanh dau `=` — doan dung mot
     #    lan thi lan sau khach tin rang ta luon doan dung.
@@ -354,6 +381,14 @@ async def tao(request: Request,
                # ⚠️ Giu `voice_id` cho tuong thich nguoc: `giai_doan_giong` doc
                #    no lam duong lui cho nhung run tao truoc pha 15.
                "voice_id": giong_id}
+    # ⛔ L4 cua `cat_dau_cuoi`: khong thu hep gi thi KHONG ghi khoa nao.
+    #
+    #    `chuan_hoa` da tra `None` cho ca "vang mat" lan "(0.0, 1.0)", nen hai
+    #    truong hop do khong the phan biet duoc o duoi — va do la chu y: chung
+    #    la CUNG mot y dinh. Ghi mot khoa cho chung se lam moi lan chay khong
+    #    cat cung mang mot truong ma khong lan nao dung toi.
+    if cua_so_cat:
+        cai_dat["cat"] = [cua_so_cat[0], cua_so_cat[1]]
     # ── Duong BEN VUNG: tep da nam trong kho, ta chi nhan mot ma ve ───────────
     #
     # ⭐ Dat truoc duong multipart co chu y. Khi ca hai cung co mat, duong ben

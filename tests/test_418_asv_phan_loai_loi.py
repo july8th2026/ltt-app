@@ -15,6 +15,7 @@ import pytest
 
 from apps.auto_scan_video import loi
 from apps.auto_scan_video.ban_dung import BanDungError
+from apps.auto_scan_video.cat_dau_cuoi import CatLoi
 from apps.auto_scan_video.tu_dien import TuDienLoi
 from apps.auto_scan_video.vung_che import VungLoi
 from apps.auto_scan_video.ban_ghi import BanGhiError
@@ -73,6 +74,13 @@ BANG = {
     #    `vung_che.chuan_hoa` TU TRONG mot job khong roi xuong `retry`.
     VungLoi: loi.NGUOI_DUNG,
     TuDienLoi: loi.NGUOI_DUNG,
+    # 🔑 `CatLoi` KHAC hai dong tren o mot cho co that: no **di toi `phan_loai`
+    #    hom nay**. `giai_doan_ban_dung` goi `cat_dau_cuoi.giao` ben trong mot
+    #    JOB, va `giao` nem khi cua so cat khong cham khoang giu nao.
+    # ⛔ Thieu dong nay thi mot cua so cat rong roi xuong nhanh `retry`, va ca ba
+    #    luot chay lai deu cho cung mot ket qua — cung mot cua so tren cung mot
+    #    ban do. Khach cho ba lan de nhan cung mot cau tra loi.
+    CatLoi: loi.NGUOI_DUNG,
     # ⭐ THU LAI la viec dung: nen tang co the cap mot card KHAC lan sau. Truoc
     #    pha 13 truong hop nay khong nem gi ca — no **im lang chay CPU**, cham
     #    hon 9,5 lan, va giu suat `tach_nguon_cuc_bo` suot ~37 phut o tran 2 gio.

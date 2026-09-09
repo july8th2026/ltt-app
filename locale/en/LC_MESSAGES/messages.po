@@ -14942,3 +14942,38 @@ msgstr "Missing revision number."
 #: apps/agent/routes/drafts_v3.py
 msgid "Bản nháp chưa có nội dung để xuất bản."
 msgstr "This draft has nothing to publish yet."
+
+# -- Auto Scan Video V6 -- cat dau/cuoi -----------------------------
+
+msgid "Cắt đầu/cuối"
+msgstr "Trim start/end"
+
+msgid "Kiểu “Giữ nguyên hình ảnh” hứa video ra dài đúng bằng video vào, nên không cắt bớt được. Chọn “Rút gọn có biên tập” nếu bạn muốn cắt."
+msgstr "“Keep the picture” promises the output runs exactly as long as the input, so it cannot trim. Choose “Shorten with editing” if you want to cut."
+
+msgid "Bắt đầu từ (giây)"
+msgstr "Start at (seconds)"
+
+msgid "Kết thúc ở (giây)"
+msgstr "End at (seconds)"
+
+msgid "Bỏ cắt"
+msgstr "Clear trim"
+
+msgid "Để trống thì giữ cả video."
+msgstr "Leave blank to keep the whole video."
+
+msgid "Đoạn cắt không đọc được."
+msgstr "The trim range could not be read."
+
+msgid "Đoạn cắt phải nằm trong video và điểm đầu phải trước điểm cuối."
+msgstr "The trim range must lie inside the video, and the start must come before the end."
+
+msgid "Đoạn cắt quá ngắn."
+msgstr "The trim range is too short."
+
+msgid "Đoạn giữ lại dài %(giay)s."
+msgstr "The kept range runs %(giay)s."
+
+msgid "Đoạn cắt bạn chọn không còn lại phần nào để dựng. Hãy chọn một đoạn khác."
+msgstr "Nothing is left to build from the range you picked. Please choose a different one."

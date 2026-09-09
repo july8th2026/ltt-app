@@ -184,6 +184,24 @@ def phan_loai(exc: BaseException) -> str:
     if isinstance(exc, TuDienLoi):
         return NGUOI_DUNG
 
+    # ── Cat dau/cuoi (V6 pha 10) ────────────────────────────────────────────
+    #
+    # ⚠️ **Khac hai muc tren o mot cho, va cho do la ly do muc nay quan trong
+    #    hon ca hai.** `VungLoi` va `TuDienLoi` chi duoc nem o `routes.tao` roi
+    #    bat ngay tai do — chung phan loai o day cho tuong lai.
+    #
+    #    `CatLoi` thi **that su di toi day hom nay**: `giai_doan_ban_dung` goi
+    #    `cat_dau_cuoi.giao`, va `giao` nem khi cua so khong cham khoang giu nao.
+    #    Do la mot job, khong phai mot request.
+    #
+    # ⛔ Nen thieu dong nay khong phai mot thieu sot ly thuyet: mot cua so cat
+    #    khong con lai gi se roi xuong nhanh `retry`, va lan chay lai se hong y
+    #    het — vi cung mot cua so, cung mot ban do. Khach cho ba lan de nhan
+    #    cung mot ket qua, va tra tien cho ca ba.
+    from .cat_dau_cuoi import CatLoi
+    if isinstance(exc, CatLoi):
+        return NGUOI_DUNG
+
     # ── QC bang AI va ke hoach sua (pha 19) ─────────────────────────────────
     #
     # ⛔ `NGUOI_DUNG` — that bai cuoi cung. Ca hai deu la mau thuan trong du lieu
