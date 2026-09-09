@@ -10,10 +10,21 @@
 |---|---|---|---|
 | `transcript` | **trống** | `/transcript` | **trống** |
 | `audio_pause` | **trống** | `/audio-pause` | **trống** |
-| `gem` | **trống** | `/gem` | **trống** |
+| ~~`gem`~~ → **`prompt_canh`** | **trống** | `/prompt-canh` | **trống** |
 | `video_assembly` | **trống** | `/video-assembly` | **trống** |
 
 21 `route_prefix` đang dùng, không cái nào trùng.
+
+🔴 **`gem` đã phải đổi thành `prompt_canh`, và lý do đáng ghi.** Slug ba chữ ấy
+là **chuỗi con** của `gemini` trong `platform_core/providers.py`, nên
+`test_60::test_no_app_slug_is_hardcoded_in_the_platform` báo bốn lần *"tên app
+bị viết cứng"*. Đó là một dương tính giả — nhưng nó cũng là một sự thật: một
+slug ngắn sẽ còn va vào chuỗi khác, và mỗi lần va lại tốn một lượt chẩn đoán.
+
+⇒ Luật rút ra: **slug phải đủ dài để không là chuỗi con của một từ thông
+  thường trong mã nền tảng.** Đổi tên rẻ hơn xin miễn trừ — và danh sách miễn
+  trừ của chốt ấy tự ghi rằng thêm một tên vào đó *"không miễn phí: nó làm bộ dò
+  mù với chuỗi ấy"*.
 
 ## `group="Workflow"` — có sẵn, không cần sửa nền tảng
 
@@ -33,10 +44,10 @@ trong bốn bản khai.** Không Hub, không trang mới, không hardcode slug.
 
 ## Bốn App — bảng ranh giới
 
-| | `transcript` | `audio_pause` | `gem` | `video_assembly` |
+| | `transcript` | `audio_pause` | `prompt_canh` | `video_assembly` |
 |---|---|---|---|---|
 | `group` | `Workflow` | `Workflow` | `Workflow` | `Workflow` |
-| `job_types` | `("transcript.run",)` | `("audio_pause.run",)` | `("gem.run",)` | `("video_assembly.run",)` |
+| `job_types` | `("transcript.run",)` | `("audio_pause.run",)` | `("prompt_canh.run",)` | `("video_assembly.run",)` |
 | `requires` | `("gpu",)` | `("gpu",)` | **`("api",)`** | `("gpu","ffmpeg")` |
 | `lifecycle` | `development` | `development` | `development` | `development` |
 | `surface` | `customer` | `customer` | `customer` | `customer` |

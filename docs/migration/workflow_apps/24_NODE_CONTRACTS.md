@@ -78,13 +78,16 @@ hai đều P0: transcript đã dịch mốc là thứ bước sau tiêu thụ.
 
 ---
 
-## `gem.run`
+## `prompt_canh.run`  *(đổi tên từ `gem.run`)*
 
 ⚠️ **Khối này đã SỬA 2026-09-09** sau quyết định bỏ lái trình duyệt. Bản đầy đủ
 kèm lý do: `09_QUYET_DINH_GEM_BO_TRINH_DUYET.md`.
 
+⚠️ **Slug đổi `gem` → `prompt_canh`** khi build thật: `gem` là chuỗi con của
+`gemini` trong `providers.py` và làm `test_60` đỏ. Xem `23` §*Không va chạm*.
+
 ```
-job_type      gem.run                 type_version  1
+job_type      prompt_canh.run         type_version  1
 requires      ("api",)                       <- was ("browser",)
 side_effect   none                           <- was "external"
 idempotency   key_fields=("kich_ban", "so_canh")   <- was {} (co y de rong)
@@ -97,6 +100,11 @@ resource      khong tu khai — admission cua `text.chat` lo
 | `so_canh` | `int` | | |
 | `batch_step2` / `batch_step3` | `int` | | mặc định **10 / 5** — giữ từ legacy |
 | `model` | `model_ref` | | category `text`, `hidden`, **phải có `default`** |
+
+⛔ **`credit_cost` của App này là 0**, và số 0 ấy là một khẳng định: mọi lượt
+model chảy qua `runtime_noi_bo`, nơi đã giữ rồi quyết toán theo token thật. Khai
+thêm một giá ở tầng job là thu **hai lần**. Đổi lại, `routes.py` phải có một
+**cửa số dư** trước khi nộp — một *điều kiện*, không phải một *giá*.
 
 `returns` = `{"ket_qua": "json"}`.
 

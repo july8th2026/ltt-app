@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}{{ _("Kịch bản → prompt cảnh") }} — LTT AI Studio{% endblock %}
+{% block topbar_title %}<strong>{{ _("Kịch bản → prompt cảnh") }}</strong>{% endblock %}
+
+{% block content %}
+<section class="pc-wrap" aria-labelledby="pc-title">
+  <header class="pc-head">
+    <h1 id="pc-title">{{ _("Kịch bản → prompt cảnh") }}</h1>
+    <p>{{ _("Ba bước: khoá đặc điểm nhân vật, chia kịch bản thành danh sách cảnh, rồi sinh prompt JSON cho từng cảnh. Mỗi lô giữ lại 5 cảnh gần nhất làm ngữ cảnh để nhân vật không trôi qua hàng trăm cảnh.") }}</p>
+    <a class="btn ghost" href="/jobs">{{ _("Việc của tôi") }}</a>
+  </header>
+
+  {% if loi %}<p class="alert error" role="alert">{{ loi }}</p>{% endif %}
+
+  <form class="pc-form" method="post" action="/prompt-canh/tao">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+    <label class="field">
+      <span>{{ _("Kịch bản") }}</span>
+      <textarea name="kich_ban" rows="12" required
+        placeholder="{{ _('Dán toàn bộ kịch bản vào đây.') }}"></textarea>
+    </label>
+
+    <div class="pc-row">
+      <label class="field">
+        <span>{{ _("Số cảnh") }}</span>
+        <input type="number" name="so_canh" value="20" min="1" max="500" required>
+      </label>
+      <label class="field">
+        <span>{{ _("Phong cách hình ảnh") }}</span>
+        <input type="text" name="visual_style" maxlength="200"
+               placeholder="{{ _('ví dụ: điện ảnh, tông lạnh') }}">
+      </label>
+      <label class="field">
+        <span>{{ _("Thời lượng mỗi cảnh") }}</span>
+        <input type="text" name="duration" maxlength="40"
+               placeholder="{{ _('ví dụ: 8 giây') }}">
+      </label>
+    </div>
+
+    <details class="pc-adv">
+      <summary>{{ _("Tuỳ chọn nâng cao") }}</summary>
+      <div class="pc-row">
+        <label class="field">
+          <span>{{ _("Lô bước 2") }}</span>
+          <input type="number" name="batch_step2" value="10" min="1" max="50">
+        </label>
+        <label class="field">
+          <span>{{ _("Lô bước 3") }}</span>
+          <input type="number" name="batch_step3" value="5" min="1" max="50">
+        </label>
+      </div>
+      <p class="muted">{{ _("Kích thước lô đổi chất lượng đầu ra, không chỉ tốc độ. Mặc định 10 / 5 là giá trị đã chạy thật.") }}</p>
+    </details>
+
+    <button class="btn primary" type="submit">{{ _("Sinh prompt cảnh") }}</button>
+  </form>
+
+  <h2>{{ _("Lượt gần đây") }}</h2>
+  {% if jobs %}
+  <table class="pc-jobs">
+    <thead><tr>
+      <th>{{ _("Lúc") }}</th><th>{{ _("Trạng thái") }}</th><th>{{ _("Tiến độ") }}</th>
+      <th>{{ _("Lượt model") }}</th><th></th>
+    </tr></thead>
+    <tbody>
+      {% for j in jobs %}
+      <tr>
+        <td>{{ j.created_at }}</td>
+        <td>{{ j.status }}</td>
+        <td>{{ j.progress or 0 }}%</td>
+        <td>{{ (j.result or {}).get("model_calls", "—") }}</td>
+        <td><a href="/prompt-canh/ket-qua/{{ j.id }}">{{ _("Xem") }}</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">{{ _("Chưa có lượt nào.") }}</p>
+  {% endif %}
+</section>
+{% endblock %}
