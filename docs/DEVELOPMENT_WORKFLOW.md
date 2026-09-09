@@ -14,8 +14,13 @@ phiên phải làm gì để không giẫm lên nhau.
 python tools/cay_rieng.py liet-ke      # ai đang có cây riêng nào
 python tools/cay_rieng.py tao <ten>    # cây + nhánh phien/<ten> cho riêng bạn
 cd D:\LTTSTUDIOSAPP-<ten>
+python tools/ho_so_cay.py trang-thai   # cây này ở hồ sơ nào, governance có cũ không
 python tools/gate.py --doi             # mốc xuất phát, chỉ chạy phần liên quan
 ```
+
+🔑 Một chiến dịch **dài** trong cây riêng có thể opt-in hồ sơ `FAST_BUILD` —
+luật ở `docs/00_LTT_OPERATING_CONTRACT.md` §4.10, thao tác ở
+`docs/OPERATING_STANDARDIZATION/FAST_BUILD_OPERATOR_GUIDE.md`.
 
 ⛔ **Không sửa code trên cây chính** khi có phiên khác đang chạy. Hai phiên cùng
 `Write` một tệp thì bản sau đè bản trước, **im lặng**.

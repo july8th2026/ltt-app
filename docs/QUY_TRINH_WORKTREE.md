@@ -86,6 +86,22 @@ locale/` lúc bắt đầu và đối chiếu lúc kết thúc. Một tệp đ�
 báo "CÂY ĐÃ ĐỔI" và **tự vứt bỏ phép đo của chính nó** — mất 5 phút không thu
 được gì.
 
+### 4b. Hỏi cây xem nó đang ở hồ sơ nào — trước khi tin một luật nào
+
+```powershell
+python tools\ho_so_cay.py trang-thai
+```
+
+Một lệnh, không chạy test. Nó trả lời: nhánh · HEAD · thiếu bao nhiêu commit của
+trunk · hồ sơ `NORMAL`/`FAST_BUILD` và trạng thái · **tệp governance nào của cây
+này đã lệch trunk**.
+
+⭐ Vế cuối là thứ mục 2 ở trên đang làm bằng tay với `findstr`. `findstr` trả lời
+đúng một câu hỏi về đúng một hàm; phép so **blob SHA** trả lời cho cả tập tệp
+quyết định luật, và nó không cũ đi khi có ai thêm một hàm mới.
+
+Luật của hai hồ sơ ở `docs/00_LTT_OPERATING_CONTRACT.md` §4.10 — **không** ở đây.
+
 ### 5. Xong việc thì gộp trunk lại ngay
 
 Nhánh sống lâu mà không gộp là cách sinh ra chính tình huống này. Sau mỗi hạng
