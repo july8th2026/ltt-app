@@ -53,7 +53,9 @@ def _ps(lenh: str) -> str:
 # ── 1. Dịch vụ ────────────────────────────────────────────────────────────────
 def kiem_dich_vu() -> None:
     print("\n1. DỊCH VỤ")
-    for ten in ("LTTStudioWeb", "LTTStudioWorker", "LTTStudioCodex"):
+    # `LTTStudioCodex` gỡ 09/09/2026 (pha 07) — giữ nó ở đây thì mọi lượt
+    # audit sau khi deploy đều báo THIẾU một dịch vụ đã cố ý bỏ.
+    for ten in ("LTTStudioWeb", "LTTStudioWorker"):
         ra = _ps(f"(Get-Service {ten} -ErrorAction SilentlyContinue).Status")
         if ra.startswith("__LOI__"):
             ghi("CANH", ten, f"không đọc được: {ra[7:]}")

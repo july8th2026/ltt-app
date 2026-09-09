@@ -34,7 +34,7 @@
 | └ 06.x | trả nợ do 06.2/05.x để lại (xem §Nợ) | ✅ | `rao_provider_retire` **đã hết hạn và bị xoá** | `platform_core/image_gen/{gia,khung_anh}.py` |
 | 07 | Delete all legacy runtime **+ gỡ hẳn `chataistudio`** | ✅ | 8 bánh cóc PASS · `test_1004` | `MIGRATION_MAP.md` §7 |
 | 08 | Delete legacy app surfaces | 🟡 mã xong, **chờ `npm run build` + gate** | — | §Pha 08 |
-| 09 | Provider config / secret clean | ⬜ | — | — |
+| 09 | Provider config / secret clean **+ chứng minh `HISTORY_ONLY`** | ✅ | 8 bánh cóc PASS · `test_1005` 150 phép kiểm | ma trận 425/519 |
 | 10 | Architecture guard | ⬜ | — | — |
 | 11 | Real E2E | ⬜ | — | — |
 | 12 | Forensic re-audit | ⬜ | — | — |
@@ -63,6 +63,55 @@ sau khi hoà sẽ đỏ, và **không tách được** phần đỏ nào là c�
 ⛔ Và **đừng cầm con số này đi dùng ở pha 13**: nó đo lúc 09/09, còn `docs/`
    ghi rõ trunk đi 134 commit trong 15 phút. Việc đúng là **đo lại ngay trước
    khi hoà** — xem `dong-bo-trunk-la-viec-lam-ngay-truoc-khi-ff`.
+
+## PHA 09 — trả nợ lớn nhất: **51 nhãn `HISTORY_ONLY` với 0 phép kiểm**
+
+Bản tự kiểm 09/09 ghi deviation (D): *"51 tệp `HISTORY_ONLY` được dán nhãn với
+**0 phép kiểm chứng minh**"* — tức nhãn là một **lời khai**, không phải sự thật.
+Gói chiến dịch đòi chứng minh **năm** điều mới được giữ một bề mặt legacy.
+
+### `tests/test_1005_history_only_chung_minh.py` — 150 phép kiểm
+
+| # | Điều kiện | Cách chốt |
+|---|---|---|
+| 1 | không callable | không địa chỉ nhà cung cấp trong **giá trị hằng** (AST) |
+| 2 | không selectable | `model_options` + `params_schema` của mọi ToolSpec |
+| 3 | không tra secret | không `GEMINI_API_KEY`/… trong hằng |
+| 4 | không network egress | như (1) |
+| 5 | không fallback | không **phần tử** list/tuple hằng nào mang tên đã ngừng |
+
+⭐ **Tập hợp đọc THẲNG TỪ MA TRẬN**, không chép tay. Hệ quả có chủ đích: thêm một
+   dòng `HISTORY_ONLY` vào sổ là **tự động** phải qua năm phép kiểm — không ai
+   khai được một nhãn rồi bỏ đó.
+
+⭐ Và nó có **đối chứng chống xanh-rỗng**: `parametrize` trên danh sách rỗng
+   không chạy phép kiểm nào mà pytest vẫn báo thành công, nên có một phép kiểm
+   riêng chốt `len(TEP) >= 20`.
+
+### 5 chỗ control-plane / tooling còn tên đã ngừng
+
+| Chỗ | Sai gì |
+|---|---|
+| `prompt_ai_ommi/routes/assets_catalog.py` | trả `"provider": "gemini"` ra cho **khách đọc** |
+| `prompt_ai_ommi/routes/handoff.py` · `projects.py` | mặc định gõ cứng tên model Gemini |
+| `tools/audit_van_hanh.py` · `do_sau_khoi_dong.py` | còn hỏi dịch vụ `LTTStudioCodex` (gỡ ở pha 07) ⇒ mọi lượt audit sau deploy sẽ báo **thiếu một dịch vụ đã cố ý bỏ** |
+
+⛔ Xoá `tools/import_api_keys_from_botgemini.py` — công cụ **nhập khoá provider**
+   từ kho ngoài, đã dùng xong một lần ở H8.5. Giữ nó là giữ một đường mang khoá
+   của nhà cung cấp đã ngừng **vào** nền tảng.
+
+✅ Giữ `import_r2_modelark_from_botgemini.py`: nó nhập **R2 + ModelArk** — cả hai
+   đang dùng; `botgemini` ở đây chỉ là tên **nguồn**, không phải thứ được nhập.
+
+### Sổ: 425/519 đóng, còn 94 — và 94 ấy có một người canh khác
+
+`DOC_ARCHIVE` 242 → `HISTORY_ONLY` (sửa tài liệu lịch sử là **viết lại lịch sử**)
+· `NOT_A_LEGACY_SURFACE` 54 → `KEEP` · `CONTROL_PLANE_DELETE` 3 → `KEEP` có điều
+kiện (yêu cầu 9 cho phép giữ `api_pool`/`providers` đúng vai trò).
+
+⏳ Còn **94 `TEST_UPDATE`**. Chúng **không đóng bằng một lượt đọc** — bằng chứng
+   của chúng là **lượt gate đầy đủ**: một tệp test còn trỏ tới thứ đã xoá thì đỏ.
+   Nên chúng đóng ở pha 11/12, sau gate, chứ không đóng bằng lời.
 
 ## PHA 08 — hoá ra là **12 dương tính giả và 4 lời nói dối**
 
