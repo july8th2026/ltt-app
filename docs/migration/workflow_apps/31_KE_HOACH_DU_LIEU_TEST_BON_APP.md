@@ -105,6 +105,28 @@ Ba mệnh đề khác cũng ghim được, đều đo trên job thật:
 Mệnh đề cuối là ràng buộc thật: bản vá path traversal **không** được thay tên
 bằng UUID, vì `sequential` khớp cảnh bằng tiền tố. Giờ có phép kiểm giữ nó.
 
+### ⛔ Nợ mở: giai đoạn "tự chấm điểm" chưa có đường lấy khoá
+
+Bot legacy lấy khoá Gemini từ **một trường văn bản thuần** trong
+`configs/pipeline.yaml` (`evaluation.gemini_api_key`). Nền tảng này không có
+trường ấy và **không được** có — bí mật đi qua `platform_core/api_pool`, nơi đã
+sẵn provider `gemini`.
+
+Vấn đề là engine chuyển nguyên vẹn **không ném lỗi** khi thiếu khoá
+(`engine/runner.py:677`): nó ghi `api_key="missing (env GEMINI_API_KEY)"` rồi vẫn
+gọi `evaluate_video(gemini_api_key="")`, dựa vào biến môi trường — thứ không
+được đặt ở đây.
+
+⇒ Không chặn thì khách bật công tắc, **trả credit cho cả lượt**, và nhận lại một
+giai đoạn không thể chạy. Đã thêm **cổng chặn ở `chuan_hoa()`**: bật
+`bat_cham_diem` mà không có khoá thì từ chối ngay, kèm câu nói rõ lý do.
+
+⚠️ Đó **không** phải bản sửa cuối. Bản sửa thật là nối `evaluation` vào
+`api_pool`, và nó cần ba quyết định chưa có: phiên DB bên trong `chay()`,
+`category` nào cho một lời gọi Gemini **thị giác** (pool hiện đăng ký
+`gemini-2.5-flash-image` ở `APIKEY_CAT_IMAGE`), và ứng xử khi pool cạn giữa job.
+Cho tới lúc đó, ràng buộc **nhìn thấy được** thay cho một công tắc giả.
+
 ## 3. `audio_pause` — không còn hiện vật, phải đổi phương pháp
 
 ### Vì sao không có
