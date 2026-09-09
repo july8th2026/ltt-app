@@ -3513,7 +3513,14 @@ button.lv-the-song.dang-phat .lv-nghe-dau::before{width:4px;height:14px;
 .asv-nhom-con h4{margin:0 0 8px}
 .asv-cat-o{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin:8px 0 4px}
 .asv-cat-nhan{display:flex;flex-direction:column;gap:4px;font-size:13px;
-  color:var(--muted);flex:1 1 130px;min-width:0}
+  color:var(--muted);flex:1 1 100px;min-width:0}
+/* 🔴 `100px` chu khong `130px`, va con so nay DO TREN TRINH DUYET chu khong
+   uoc: o 375px cot con lai rong 245px, nen hai o co so 130 + khe 10 + nut
+   "Bo cat" khong vua mot dong. Flex xuong dong o giua HAI O — o dau nong ra
+   245px, o sau con 149px, va hai o anh em cua mot cap hien ra hai co khac
+   nhau. Voi 100px thi hai o o lai cung mot dong (100+100+10 <= 245) va nut
+   xuong dong duoi mot minh. */
+#asv-cat-xoa{flex:0 0 auto}
 /* `min-width:0` + `width:100%` de o so khong day nhom tran ngang o 375px. */
 .asv-cat-so{width:100%;min-width:0;font-variant-numeric:tabular-nums}
 /* Chi hien tren man hinh nho — xem `@media` cuoi khoi. */
