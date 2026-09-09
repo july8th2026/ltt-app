@@ -93,7 +93,7 @@ def _voi_db(ham):
 def _dieu_phoi():
     """Dựng bộ điều phối. Tách ra để test tiêm được mà không chạm mạng."""
     from platform_core import providers
-    from platform_core.image_gen import cong_render, dich_gemini, dieu_phoi
+    from platform_core.image_gen import cong_render, dich_llm, dieu_phoi
     from platform_core.storage import get_storage
 
     prov = providers.get("ltt_image")
@@ -107,7 +107,7 @@ def _dieu_phoi():
     from .http_cong import goi_http
 
     def goi_llm(text, he_thong):
-        return _voi_db(lambda db: dich_gemini.goi_gemini(text, he_thong, db=db))
+        return _voi_db(lambda db: dich_llm.goi_llm(text, he_thong, db=db))
 
     return dieu_phoi.DieuPhoi(cong=cong_render.CongRender(goi=goi_http(base)),
                               storage=get_storage(), goi_llm=goi_llm)

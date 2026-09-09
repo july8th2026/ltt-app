@@ -293,7 +293,6 @@ VANG	Chữ cần vẽ vào ảnh có dấu tiếng Việt ({danh_sach}). Model d
 VANG	Credit của khách đang bị giữ mà không ai kết sổ được
 VANG	Cần nạp thêm credit để điều khiển máy này.
 VANG	Email hoặc mật khẩu không đúng.
-VANG	Gemini trả lời rỗng — có thể prompt bị bộ lọc an toàn chặn.
 VANG	Khoản giữ chỗ {credit} credit của tài khoản {user} (khoá {khoa}, tạo lúc {luc}) không có quyết toán và không có hoàn. Lý do: {ly_do}. Sổ credit CHỈ GHI THÊM nên khoản này không tự lành — muốn trả lại cho khách thì phải ghi một bút toán bù.
 VANG	Không cấp được vé tải ảnh lên. Model nội bộ cần lưu trữ R2 — máy tạo ảnh không giữ khoá lưu trữ nào.
 VANG	Không cấp được đường tải ảnh tham chiếu ({khoa}). Chế độ dùng ảnh tham chiếu cần lưu trữ R2.

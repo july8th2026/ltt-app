@@ -458,9 +458,11 @@ def test_the_repository_publishes_a_model_for_every_alias_it_advertises():
     models = {model.name for model in build_models(catalog)}
     for tool in catalog:
         assert set(tool.model_names()) <= models, tool.name
-    # `image.generate` publishes these three. `pro` was closed on 2026-08-23 for a
-    # commercial reason, not a technical one: its provider cost is 35.2 credits an
-    # image while the platform charged 16 (taoanh) and 5 (thumbnail, flat price
-    # regardless of model). See CHANGELOG.md and tests/test_261.
-    assert {"standard", "standard-lite", "enhanced"} <= models
+    # 🔴 `image.generate` USED to publish three aliases (`standard`,
+    #    `standard-lite`, `enhanced`) over three Gemini models. They were removed
+    #    on 2026-09-09 together with the engine — see CHANGELOG.md. The rule that
+    #    justified them is unchanged and is what the assertion below now states:
+    #    a model choice is published only where the price follows it.
+    assert not ({"standard", "standard-lite", "enhanced"} & models), (
+        "ba bac Gemini da go cung dong co — xem CHANGELOG 2026-09-09")
     assert "pro" not in models, "bac pro da dong — xem CHANGELOG 2026-08-23"

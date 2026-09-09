@@ -773,14 +773,14 @@ class AddApiKeyView(_AnTrongMenuSqlAdmin, BaseView):
 <div class="ui-card"><form method="post">
   <input type="hidden" name="csrf_token" value="{escape(token)}">
   <div class="field"><label>Provider</label><select class="inp" name="provider" id="prov" required>{opts}</select></div>
-  <div class="field"><label>Tên gợi nhớ</label><input class="inp" name="name" placeholder="gemini-chinh"></div>
+  <div class="field"><label>Tên gợi nhớ</label><input class="inp" name="name" placeholder="ltt-image-chinh"></div>
   <div class="field"><label>Credential (khoá THÔ — sẽ mã hoá)</label>
     <input class="inp" name="credential" type="password" required autocomplete="off" placeholder="AIza••••••"></div>
   <div class="field"><label>Loại (năng lực)</label>
     <div class="catpick">{cat_boxes}</div></div>
   <div class="field"><label>base_url (để trống = mặc định provider)</label><input class="inp" name="base_url"></div>
   <div class="field"><label>supported_models (phẩy phân cách, trống = mọi model)</label>
-    <input class="inp mono" name="supported_models" placeholder="gemini-2.5-flash-image, ..."></div>
+    <input class="inp mono" name="supported_models" placeholder="hidream-o1, ..."></div>
   <div class="field"><label>default_model</label><input class="inp mono" name="default_model"></div>
   <div class="field"><label>priority (cao = ưu tiên)</label><input class="inp tnum" name="priority" type="number" value="100"></div>
   <button class="btn" type="submit">Lưu API key</button>

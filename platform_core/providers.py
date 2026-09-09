@@ -59,6 +59,67 @@ class Provider:
     list_models_path: Optional[str] = None   # endpoint liệt kê model (nếu có), vd /v1/models
     async_poll: bool = False                 # True = submit->poll (video)
     notes: str = ""
+    #: ⛔ `False` = **ĐÃ NGỪNG**. Không tạo được lượt gọi mới và không hiện ở bộ
+    #: chọn nào — nhưng `get()` · `resolve_model_id()` · `model_capabilities()`
+    #: **vẫn trả về**, để một job cũ trong DB còn đọc được tên model của nó.
+    #:
+    #: ⭐ Đây là mức PROVIDER của `ModelInfo.is_active` đã có sẵn, **không phải**
+    #:    một cơ chế mới. Ranh giới *"chặn tạo mới / giữ đọc lịch sử"* vốn đã nằm
+    #:    trong chính tệp này: `model_options()` và `model_catalog()` **lọc**
+    #:    theo `is_active`, còn `get()` và `resolve_model_id()` thì **không**.
+    is_active: bool = True
+
+
+class ProviderDaNgung(RuntimeError):
+    """Có người cố tạo một lượt gọi MỚI tới provider đã ngừng.
+
+    ⛔ **Đây là fail-closed, và nó KHÔNG có đường lui.** Bắt được lỗi này rồi
+    thử một provider khác chính là cái `HARD_DELETE_POLICY` cấm — rollback đi
+    bằng Git SHA, không bằng một nhánh `except`.
+
+    ⚠️ Nó **không** phải `BanError`. `BanError` nghĩa *"bận, đi tiếp provider
+    sau"*; lỗi này nghĩa *"provider này không còn tồn tại với tư cách đường
+    chạy"*. Lẫn hai cái là dựng lại đúng đường lui vừa gỡ.
+    """
+
+
+def da_ngung(provider_id: str) -> bool:
+    """Provider này đã ngừng chưa? Đọc THẲNG `REGISTRY`, đúng một nguồn.
+
+    🔴 **Cố ý không đi qua `get()`.** `get()` bị monkeypatch trong nhiều phép
+    kiểm (chúng trả `SimpleNamespace` giả không có trường `is_active`), nên một
+    cổng đọc qua nó vừa **nổ nhầm** ở test, vừa **im lặng hỏng** nếu ai đó thay
+    `get()` bằng thứ luôn báo "còn sống". Sự thật về việc retire nằm ở
+    `REGISTRY`, nên cổng phải hỏi đúng chỗ đó.
+
+    Provider **không có trong registry** ⇒ `False`: id lạ không phải việc của
+    hàm này, và biến nó thành lỗi ở đây sẽ chặn nhầm các đường hợp lệ khác.
+    """
+    p = REGISTRY.get((provider_id or "").strip().lower())
+    return p is not None and not p.is_active
+
+
+def chan_neu_da_ngung(provider_id: str) -> None:
+    """Cổng fail-closed — gọi NGAY TRƯỚC mỗi lượt ra mạng.
+
+    Đặt ở đây chứ không ở tầng HTTP vì tám nơi tự dựng HTTP riêng: một cổng
+    trong `httpx` không tồn tại, còn một cổng theo **danh tính provider** thì
+    mọi nơi đều gọi được.
+    """
+    if da_ngung(provider_id):
+        # 🔴 CHUỖI NÀY HIỆN RA VỚI KHÁCH — đo được, không phải phỏng đoán:
+        #      platform_core/models.py:297                Job.error  (cot Text)
+        #      apps/autosubvideo/templates/…:97           {{ j.error }}
+        #    Một job hỏng vì cổng này lưu thông điệp vào `Job.error`, và trang
+        #    danh sách job render thẳng nó. Nên nó phải được **dịch**, không
+        #    phải một chuỗi kỹ thuật.
+        #
+        # ⚠️ Cám dỗ ở đây là xếp nó vào *"lỗi nội bộ, không cần dịch"*. Hai
+        #    đường gọi trên bác điều đó bằng mã, không bằng ý kiến.
+        from platform_core.i18n import _ as _t
+        raise ProviderDaNgung(
+            _t('Nhà cung cấp này đã ngừng phục vụ. Nội dung cũ vẫn xem được, '
+               'nhưng không tạo lượt mới được nữa.'))
 
 
 # ── Seed 5 provider hiện có trong BOT GEMINI (chỉ key CHÍNH THỨC) ──────────────
@@ -100,21 +161,24 @@ REGISTRY: dict[str, Provider] = {
                       }),
         ),
         list_models_path="/models",   # kèm ?key= khi gọi
-        notes="Key dạng AIza...; ảnh generateContent đồng bộ; ảnh: responseModalities+imageConfig.",
+        notes="⛔ NGUNG 2026-09-08 (AI CLEAN REBUILD V2). Giu khai bao de doc lich su.",
+        is_active=False,
     ),
     "apiai": Provider(
         id="apiai", display_name="apiai.vn (OpenAI-compat gateway)",
         auth_style=AUTH_BEARER, base_url="https://api.apiai.vn/api/v1",
         categories=(APIKEY_CAT_CHAT, APIKEY_CAT_IMAGE),
         models=(), list_models_path="/models",
-        notes="Gateway OpenAI-compat; /chat/completions, /images/generations.",
+        notes="⛔ NGUNG 2026-09-08 (AI CLEAN REBUILD V2). Gateway OpenAI-compat cu.",
+        is_active=False,
     ),
     "cheapkeyai": Provider(
         id="cheapkeyai", display_name="cheapkeyai.shop (OpenAI-compat gateway)",
         auth_style=AUTH_BEARER, base_url="https://cheapkeyai.shop/v1",
         categories=(APIKEY_CAT_CHAT, APIKEY_CAT_IMAGE),
         models=(), list_models_path="/models",
-        notes="Gateway OpenAI-compat.",
+        notes="⛔ NGUNG 2026-09-08 (AI CLEAN REBUILD V2). Gateway OpenAI-compat cu.",
+        is_active=False,
     ),
     "byteplus": Provider(
         id="byteplus", display_name="BytePlus ModelArk (Seedance video)",
@@ -336,6 +400,8 @@ def model_options(category: str, provider_ids_filter: Optional[tuple] = None) ->
     for provider in REGISTRY.values():
         if allowed and provider.id not in allowed:
             continue
+        if not provider.is_active:
+            continue          # ⛔ provider đã ngừng: không hiện ở bộ chọn nào
         for model in provider.models:
             if (model.is_active and category in model.categories
                     and model.id not in seen):
@@ -348,6 +414,8 @@ def model_catalog() -> list[dict]:
     """Public capability catalog for schema-driven UIs; never exposes keys/endpoints."""
     indexed: dict[str, dict] = {}
     for provider in REGISTRY.values():
+        if not provider.is_active:
+            continue          # ⛔ provider đã ngừng: không lên catalog công khai
         for model in provider.models:
             if not model.is_active:
                 continue

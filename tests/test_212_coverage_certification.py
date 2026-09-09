@@ -640,9 +640,33 @@ def test_every_published_model_alias_belongs_to_a_published_tool(certified):
              client.get(f"{API_V1_PREFIX}/tools",
                         headers=_auth(token)).json()["items"]}
     models = client.get(f"{API_V1_PREFIX}/models", headers=_auth(token)).json()
-    assert models["items"], "no models published, so this proves nothing"
     for row in models["items"]:
         owners = set(row.get("tools") or ())
         assert owners <= tools, (
             f"model {row['name']} is offered for unpublished tools: "
             f"{sorted(owners - tools)}")
+
+    # ⭐ ĐỐI CHỨNG — và nó phải đứng NGOÀI danh mục được chứng nhận.
+    #
+    # 🔴 Bản trước mở đầu bằng `assert models["items"], "no models published, so
+    #    this proves nothing"`. Câu ấy đúng, và từ 09/09/2026 nó thành ĐỎ: cả
+    #    năm operation trong `PUBLISHED` nay đều KHÔNG công bố model nào —
+    #    `image.generate` là cái cuối cùng, mất khối bí danh cùng động cơ Gemini
+    #    (CHANGELOG mục BREAKING 2026-09-09).
+    #
+    # ⛔ Cách sửa dễ (bỏ dòng ấy đi) sẽ để phép kiểm XANH-RỖNG mãi mãi: một vòng
+    #    lặp trên danh sách rỗng không chốt gì cả. Cách sửa dễ thứ hai (thêm một
+    #    tool có alias vào `PUBLISHED`) thì nới **phạm vi chứng nhận** — một
+    #    thứ khác hẳn, và không phải việc của phép kiểm này.
+    #
+    # ⇒ Giữ nguyên phạm vi, và chứng minh **cơ chế công bố alias vẫn sống** trên
+    #   danh mục ĐẦY ĐỦ. Ngày cơ chế ấy hỏng, dòng dưới đỏ.
+    from platform_core.public_api.catalog import build_catalog, build_models
+    from platform_core.public_api.config import load_public_api_config
+
+    ten = sorted({t.name for it in registry.discover() if not it.error
+                  for t in it.manifest.tools})
+    day_du = build_catalog(load_public_api_config(
+        {"LTT_PUBLIC_API": "1", "LTT_PUBLIC_API_TOOLS": ",".join(ten)}))
+    assert build_models(day_du), (
+        "khong tool nao con cong bo alias — co che cong bo da hong")

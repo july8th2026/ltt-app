@@ -127,29 +127,45 @@ def test_planner_GIANH_SUAT_truoc_khi_goi_model(monkeypatch):
     assert da_nha == ["lease-gia"], "khong nha suat -> giu mai mot suat duy nhat"
 
 
-def test_BAN_thi_BO_nhanh_model_nha_chu_KHONG_xep_hang(monkeypatch):
-    """Không giành được suất ⇒ đi thẳng Gemini.
+def test_BAN_thi_HONG_CO_TEN_chu_KHONG_xep_hang_va_KHONG_di_duong_ngoai(monkeypatch):
+    """Không giành được suất ⇒ **hỏng có tên**, không xếp hàng, không đường ngoài.
 
-    ⭐ Xếp hàng chờ ở đây là để một việc **nội bộ** chen chỗ một request khách
-       đang trả tiền — đổi thứ tự ưu tiên sai hướng.
+    ⭐ Bất biến tệp này canh **KHÔNG ĐỔI**: xếp hàng chờ ở đây là để một việc
+       **nội bộ** chen chỗ một request khách đang trả tiền — sai thứ tự ưu tiên.
+
+    🔴 CẬP NHẬT 08/09/2026 — pha 05.3 (AI CLEAN REBUILD V2). Bản cũ chốt
+       *"⇒ đi thẳng Gemini"* và đòi `"gemini" in thu_tu_provider`. Đường lui ấy
+       **đã bị gỡ**: đo 28 ngày log worker production cho thấy nó không hề đỡ
+       1,1% lượt hỏng vì máy B bận — thông điệp lỗi thật ghi
+       `khong provider nao phuc vu duoc: ltt_llm: ban`, danh sách **chỉ một
+       phần tử**. Nó là nhánh chỉ chạy khi không ai nhìn.
+
+    ⇒ **Kỳ vọng đổi, bất biến thì không.** Và bản mới chốt **mạnh hơn** bản cũ:
+       trước chỉ đòi `"ltt_llm"` vắng mặt trong thứ tự; nay đòi `dieu_phoi.goi`
+       **không được gọi một lần nào** — không đường nào chạm máy B, kể cả một
+       đường vòng chưa ai nghĩ ra.
+
+    ⛔ Và lỗi phải **CÓ TÊN**: `AGENTS.md` §4c câu 2 đòi *cố ý* phân biệt được
+       với *tai nạn*. Một `PlannerError` trống rỗng thì hai thứ nhìn giống hệt.
     """
-    goi = {}
-
-    class KetQua:
-        noi_dung = '{"version":1,"steps":[]}'
-
     from platform_core.llm import admission, dieu_phoi
     monkeypatch.setattr(admission, "acquire", lambda *a, **k: None)
     monkeypatch.setattr(admission, "release_by_id",
                         lambda i: pytest.fail("nha mot ve chua bao gio giu duoc"))
     monkeypatch.setattr(dieu_phoi, "goi",
-                        lambda db, **kw: (goi.update(kw), KetQua())[1])
+                        lambda db, **kw: pytest.fail(
+                            "khong co suat ma van goi model -> xep hang an, "
+                            "lach admission, hoac di mot duong ngoai"))
 
-    planner._goi_model(None, "prompt thu")
+    with pytest.raises(planner.PlannerError) as loi:
+        planner._goi_model(None, "prompt thu")
 
-    assert "ltt_llm" not in goi["thu_tu_provider"], (
-        "khong co suat ma van thu model nha -> hoac xep hang an, hoac lach")
-    assert "gemini" in goi["thu_tu_provider"], "bo luon ca duong lui"
+    van = str(loi.value)
+    assert "suat" in van or "san sang" in van, (
+        f"loi phai NOI RA vi sao, khong duoc trong nhu mot tai nan: {van!r}")
+    assert "KHONG co duong lui" in van, (
+        "thong diep phai khai ro khong con provider ngoai — nguoi doc log sau "
+        "nay se hoi dung cau do")
 
 
 def test_NHA_SUAT_ca_khi_dieu_phoi_NEM(monkeypatch):

@@ -14714,6 +14714,17 @@ msgstr ""
 msgid "Tiến độ dự án {ten}: {xong}/{tong} khối"
 msgstr "Project {ten} progress: {xong}/{tong} blocks"
 
+# AI CLEAN REBUILD V2 pha 04 — cổng fail-closed khi một nhà cung cấp đã ngừng.
+# Chuỗi này HIỆN RA VỚI KHÁCH, đo được chứ không phỏng đoán: job hỏng lưu
+# thông điệp vào `Job.error` (`platform_core/models.py:297`), và trang danh
+# sách job render thẳng nó (`apps/autosubvideo/templates/…:97` `{{ j.error }}`).
+msgid ""
+"Nhà cung cấp này đã ngừng phục vụ. Nội dung cũ vẫn xem được, nhưng không tạo "
+"lượt mới được nữa."
+msgstr ""
+"This provider has been retired. Existing content remains viewable, but no "
+"new requests can be created."
+
 #: apps/agent/routes/drafts_v3.py
 msgid "Thiếu số hiệu bản sửa."
 msgstr "Missing revision number."
@@ -14721,6 +14732,163 @@ msgstr "Missing revision number."
 #: apps/agent/routes/drafts_v3.py
 msgid "Bản nháp chưa có nội dung để xuất bản."
 msgstr "This draft has nothing to publish yet."
+
+#: apps/autosubvideo/routes.py
+# AI CLEAN REBUILD V2 pha 05.6 — thay chuỗi cũ "Gemini translation chưa cấu
+# hình API key." Tên nhà cung cấp không nên nằm trong thông điệp cho khách:
+# khách không mua Gemini, họ mua "dịch phụ đề", và ngày ta đổi động cơ thì
+# một chuỗi khai tên nhà cung cấp sẽ nói dối mà không ai sửa.
+msgid "Dịch vụ dịch chưa sẵn sàng."
+msgstr "The translation service is not available yet."
+
+# ── AI CLEAN REBUILD V2 pha 05.4–05.6 — thông điệp của các app vừa di trú ────
+# Cả bảy đều HIỆN RA VỚI KHÁCH: chúng đi qua `Job.error` hoặc `HTTPException`
+# rồi được render. Không xếp chúng vào "lỗi nội bộ" — hai đường gọi đã đo được
+# ở `platform_core/models.py:297` và `apps/autosubvideo/templates/…:97`.
+#
+# ⚠️ KHÔNG nhắc tên nhà cung cấp trong các chuỗi này. Khách mua "dịch phụ đề"
+#    và "sinh prompt", không mua một model cụ thể; ngày ta đổi động cơ, một
+#    chuỗi khai tên nhà cung cấp sẽ nói dối mà không ai nghĩ tới việc sửa nó.
+
+#: apps/taovideo/translate.py
+msgid "Chưa có nội dung để dịch."
+msgstr "Nothing to translate yet."
+
+#: apps/taovideo/translate.py
+msgid "Model không trả bản dịch."
+msgstr "The model returned no translation."
+
+#: apps/taovideo/translate.py apps/prompt_ai_ommi/provider.py
+msgid "Model đang bận, thử lại sau ít phút."
+msgstr "The model is busy; please try again in a few minutes."
+
+#: apps/prompt_ai_ommi/provider.py
+msgid "Dịch vụ AI đang bận, thử lại sau."
+msgstr "The AI service is busy; please try again shortly."
+
+#: apps/prompt_ai_ommi/provider.py
+msgid "Dịch vụ AI không trả dữ liệu."
+msgstr "The AI service returned no data."
+
+#: apps/prompt_ai_ommi/provider.py
+msgid "Dịch vụ AI trả cấu trúc không hợp lệ; hãy thử lại."
+msgstr "The AI service returned an invalid structure; please try again."
+
+#: apps/prompt_ai_ommi/provider.py
+msgid "Dịch vụ AI trả sai loại dữ liệu."
+msgstr "The AI service returned the wrong data type."
+
+#: apps/autosubvideo/ai_workflows.py
+msgid "Dịch vụ dịch đang bận, thử lại sau."
+msgstr "The translation service is busy; please try again shortly."
+
+#: apps/autosubvideo/ai_workflows.py
+msgid "Bản dịch trả về không phải JSON hợp lệ."
+msgstr "The translation returned is not valid JSON."
+
+#: apps/autosubvideo/ai_workflows.py
+# Chuỗi này thay cho bảo đảm `responseSchema` đã mất khi rời Gemini: hình dạng
+# `[{id, text}]` nay được kiểm ở tầng ứng dụng, nên lỗi phải nói rõ hình dạng
+# đang thiếu — người đọc log cần biết *cái gì* sai, không chỉ *có* sai.
+msgid "Bản dịch trả về sai cấu trúc (cần mảng object)."
+msgstr "The translation has the wrong structure (an array of objects is required)."
+
+#: apps/autosubvideo/ai_workflows.py
+msgid "Bản dịch thiếu/thừa hoặc sai thứ tự cue."
+msgstr "The translation has missing, extra, or misordered cues."
+
+#: apps/autosubvideo/ai_workflows.py
+msgid "Bản dịch có cue rỗng."
+msgstr "The translation contains an empty cue."
+
+#: apps/chataistudio/routes.py
+# AI CLEAN REBUILD V2 pha 05.7 — `chataistudio` chuyển từ sidecar Codex sang
+# LTT_LLM (model VĂN BẢN). Ảnh khách tải lên vẫn được lưu vì đó là dữ liệu của
+# họ, nhưng model không đọc được chúng.
+#
+# ⛔ Phải NÓI RA. Khách gửi ảnh rồi nhận một câu trả lời không nhắc gì tới nó sẽ
+#    tưởng model đã xem và đang trả lời về ảnh — im lặng ở đây là để họ tin một
+#    điều không có.
+msgid "Ảnh đã được lưu nhưng model văn bản chưa đọc được ảnh."
+msgstr "Your image was saved, but this text model cannot read images."
+
+# ── AI CLEAN REBUILD V2 pha 06.2 — `taoanh` sang LTT_IMAGE ──────────────────
+# Cả bốn chuỗi đều HIỆN RA VỚI KHÁCH qua `Job.error` hoặc `ValueError` của
+# handler, và cả bốn đều tránh nhắc tên nhà cung cấp.
+
+#: apps/taoanh/jobs.py
+# ⛔ Ba chế độ (`semantic_inpaint`·`outpaint`·`style_transfer`) bị GỠ vì
+#    `hidream-o1` khai đúng ba chế độ và không có chúng. Câu này phải nói rõ
+#    còn lại gì, chứ không chỉ nói "không hỗ trợ" — khách cần biết làm gì tiếp.
+msgid ""
+"Chế độ \"{ten}\" không còn được hỗ trợ. Model nội bộ nhận: tạo mới và chỉnh "
+"sửa."
+msgstr ""
+"Mode \"{ten}\" is no longer supported. The in-house model accepts: create and "
+"edit."
+
+#: apps/taoanh/jobs.py
+msgid "Model nội bộ nhận tối đa {n} ảnh tham chiếu."
+msgstr "The in-house model accepts at most {n} reference images."
+
+#: apps/taoanh/jobs.py
+msgid "Không tạo được ảnh nào."
+msgstr "No image could be generated."
+
+#: apps/taoanh/jobs.py
+msgid "Máy tạo ảnh đang bận{them}. Bạn có thể thử lại sau."
+msgstr "The image machine is busy{them}. Please try again later."
+
+#: platform_core/image_gen/dich_llm.py
+# Trả rỗng KHÔNG được im lặng: `dich_prompt_anh` sẽ gửi một prompt rỗng đi vẽ,
+# và khách nhận về một tấm ảnh không liên quan gì tới thứ họ gõ — một lỗi đắt
+# mà không để lại dấu vết nào.
+msgid "Model trả lời rỗng — thử lại hoặc đổi mô tả."
+msgstr "The model returned an empty reply; try again or reword the description."
+
+#: platform_core/image_gen/dieu_phoi.py
+msgid "Không hỏi được máy tạo ảnh về khung ảnh: {loi}"
+msgstr "Could not ask the image machine which frame sizes it serves: {loi}"
+
+#: platform_core/image_gen/khung_anh.py
+msgid "Model nội bộ không dựng được tỉ lệ {ti_le}."
+msgstr "The in-house model cannot produce a {ti_le} frame."
+
+#: apps/taoanh/jobs.py
+msgid "Ảnh đầu vào không còn tồn tại: {khoa}"
+msgstr "That input image no longer exists: {khoa}"
+
+#: apps/taoanh/manifest.py
+msgid "Sinh từ một đến bốn ảnh từ mô tả tự do, bằng model nội bộ."
+msgstr "Generate one to four images from a free-form description, in house."
+
+#: apps/taoanh/manifest.py
+msgid "Sinh một lô 2–4 ảnh đồng nhất từ cùng mô tả."
+msgstr "Generate a batch of 2–4 consistent images from one description."
+
+#: apps/thumbnail/jobs.py
+msgid "Model nội bộ không vẽ được chữ trong ảnh. Hãy để trống tiêu đề và phụ đề, rồi thêm chữ bằng công cụ chỉnh sửa của bạn."
+msgstr "The in-house model cannot draw text into an image. Leave the title and subtitle empty, then add your own text in an editor."
+
+#: apps/thumbnail/jobs.py
+msgid "Chỉ dùng được tối đa {n} ảnh tham chiếu."
+msgstr "At most {n} reference images can be used."
+
+#: apps/thumbnail/manifest.py
+msgid "Sinh ảnh nền thumbnail YouTube theo phong cách và bố cục."
+msgstr "Generate YouTube thumbnail backgrounds by style and composition."
+
+#: apps/thumbnail/templates/thumbnail.html
+msgid "PNG/JPEG/WebP · tối đa 8 MB · dùng làm ảnh nguồn để remix, không công khai"
+msgstr "PNG/JPEG/WebP · 8 MB max · used as the source image for a remix, never public"
+
+#: apps/thumbnail/templates/thumbnail_fragment.html
+msgid "Ảnh sinh ra KHÔNG có chữ — model nội bộ không vẽ được chữ đọc được. Thêm tiêu đề bằng công cụ chỉnh sửa của bạn."
+msgstr "The generated images carry NO text — the in-house model cannot draw legible lettering. Add your title in an editor."
+
+#: apps/taoanh/templates/image.html
+msgid "Ảnh tham chiếu chỉ rời nền tảng để tới máy tạo ảnh nội bộ, và lưu trong vùng dữ liệu riêng của tài khoản. “Thay vùng” dùng mô tả ngôn ngữ tự nhiên; chưa phải công cụ mask chính xác từng pixel."
+msgstr "Reference images leave the platform only to reach the in-house image machine, and are stored in the account private data area. \"Replace region\" takes a natural-language description; it is not yet a pixel-accurate masking tool."
 
 #: apps/vps/routes.py
 #, python-format

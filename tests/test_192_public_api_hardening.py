@@ -31,6 +31,13 @@ from platform_core.public_api.scopes import (SCOPE_ARTIFACTS_READ,
 from server.api.inventory import API_V1_PREFIX, declared_paths
 
 PEPPER = "harden-test-pepper-" + "m" * 40
+
+def _gia_mot_anh() -> int:
+    """Giá một ảnh, đọc từ app. Gõ cứng số ở đây chỉ đo được rằng
+    chưa ai sửa nó — bản trước ghi 5 và đỏ khi app đổi model."""
+    from apps.thumbnail.manifest import _cost
+    return _cost({"count": 1})
+
 TOOL = "image.thumbnail"
 ALL_SCOPES = (SCOPE_TOOLS_READ, SCOPE_JOBS_CREATE, SCOPE_JOBS_READ,
               SCOPE_JOBS_CANCEL, SCOPE_UPLOADS_WRITE, SCOPE_ARTIFACTS_READ,
@@ -392,7 +399,7 @@ def test_the_access_log_carries_the_fields_support_needs(api, caplog):
     for field in ("request_id=", "route=", "status=201", "latency_ms=",
                   f"key_id={devkeys.parse_token(token)[0]}", f"owner={user_id}",
                   f"tool={TOOL}", f"job_id={created.json()['id']}",
-                  "credit_delta=-5"):
+                  f"credit_delta=-{_gia_mot_anh()}"):
         assert field in line, field
 
 
@@ -418,7 +425,7 @@ def test_metrics_count_what_an_operator_would_alert_on(api):
     assert counters[metrics.AUTH_SUCCESS] >= 1
     assert counters[metrics.AUTH_FAILURE] >= 1
     assert counters[metrics.JOBS_CREATED] == 1
-    assert counters[metrics.CREDIT_HELD] == 5
+    assert counters[metrics.CREDIT_HELD] == _gia_mot_anh()
     assert counters[metrics.RESPONSES_4XX] >= 1
     assert snapshot["latency"][metrics.LATENCY_REQUEST]["count"] >= 2
 

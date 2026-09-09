@@ -255,10 +255,9 @@ duong = ["voice_sidecar/", "voice_sidecar_main.py"]
 he_trong = "ngoai_may"
 tai_nguyen = ["gpu0"]
 
-[thanh_phan."sidecar:codex"]
-mo_ta = "Sidecar Codex (dich vu LTTStudioCodex)."
-duong = ["codex_sidecar/", "codex_sidecar_main.py"]
-he_trong = "ngoai_may"
+# [thanh_phan."sidecar:codex"] GO 09/09/2026 — AI CLEAN REBUILD V2 pha 07.
+# ⚠️ Ma da xoa, nhung DICH VU WINDOWS `LTTStudioCodex` van con tren may chu.
+#    Xoa ma KHONG go mot dich vu: viec do lam o buoc deploy (pha 13).
 
 [thanh_phan."agent:nexus"]
 mo_ta = "Agent Nexus chay tren may khach. Co doi da commit chua deploy."

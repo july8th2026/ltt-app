@@ -42,8 +42,8 @@ def portal(tmp_path, monkeypatch):
     Base.metadata.create_all(get_engine())
 
     import apps.thumbnail.jobs as thumbnail_jobs
-    monkeypatch.setattr(thumbnail_jobs, "_goi_gemini",
-                        lambda *a, **k: b"\x89PNG\r\n\x1a\n" + b"0" * 100)
+    from tests.gia_dieu_phoi_anh import tiem as _tiem_dieu_phoi
+    _tiem_dieu_phoi(monkeypatch, thumbnail_jobs)
 
     from server.app import create_app
 
@@ -110,6 +110,30 @@ def _account(client, credits: int = 500):
     return user_id, token
 
 
+#: Giá MỘT lượt `_run` — đọc từ hàm giá của app, không gõ lại.
+#:
+#: 🔴 Trước 09/09/2026 tệp này gõ cứng số 5 ở tám chỗ. Khi app đổi
+#:    model (5 → 3 credit/ảnh) thì sáu phép kiểm đỏ — không phải vì
+#:    ngân sách hỏng mà vì phép kiểm đo một CON SỐ thay vì đo MỆNH ĐỀ.
+#:    Ngân sách dưới đây vì thế đặt theo BỘI SỐ của một lượt.
+from apps.thumbnail.manifest import _cost as _gia_thumbnail
+
+_GIA = _gia_thumbnail({"count": 1})
+
+#: Số lượt gọi vừa đúng một trần ngân sách hợp lệ.
+#:
+#: ⛔ Hai ràng buộc phải thoả CÙNG LÚC, và bản trước chỉ thoả một:
+#:      · trần phải là **bội số** của một lượt — không thì lượt cuối vượt
+#:        trần giữa chừng và phép kiểm ngưỡng 50 % không rơi đúng chỗ;
+#:      · trần phải **≥ `budgets.MIN_AMOUNT`** — `budgets.create` từ chối
+#:        số nhỏ hơn, và lời từ chối ấy trông y hệt một phép kiểm hỏng.
+#:
+#: Và số lượt phải **chẵn**, vì một phép kiểm dưới đây chốt đúng mốc 50 %.
+_SO_LUOT = max(2, -(-budgets.MIN_AMOUNT // _GIA))
+_SO_LUOT += _SO_LUOT % 2
+_TRAN = _SO_LUOT * _GIA
+
+
 def _run(client, token, *, count: int = 1, key: str = ""):
     payload = {"topic": "budget", "count": count}
     quote = client.post(f"{API_V1_PREFIX}/quotes",
@@ -163,7 +187,7 @@ def test_web_spending_does_not_consume_the_api_allowance(portal):
     finally:
         _close(gen)
 
-    assert api_only == 5, "only the API job counts"
+    assert api_only == _GIA, "only the API job counts"
     assert everything > api_only, "the UI job did spend, it just is not counted"
     assert credit.so_du(*_balance_args(user_id)) >= 0
 
@@ -184,21 +208,21 @@ def test_a_hard_cap_refuses_the_call_that_would_cross_it(portal):
     user_id, token = _account(portal)
     gen, db = _session()
     try:
-        budgets.create(db, user_id=user_id, amount=10, period="day",
+        budgets.create(db, user_id=user_id, amount=_TRAN, period="day",
                        hard_cap=True)
         db.commit()
     finally:
         _close(gen)
 
-    assert _run(portal, token).status_code == 201        # 5 of 10
-    assert _run(portal, token).status_code == 201        # 10 of 10
-    refused = _run(portal, token)                        # would be 15
+    for i in range(_SO_LUOT):                            # dùng vừa hết trần
+        assert _run(portal, token).status_code == 201, f"luot {i + 1}"
+    refused = _run(portal, token)                        # vượt trần
     assert refused.status_code == 429
     body = refused.json()
     assert body["code"] == "quota_exceeded"
     # The refusal names which rule applied — otherwise every support
     # conversation about a 429 starts with an investigation.
-    assert body["source"] == "budget" and body["limit"] == 10
+    assert body["source"] == "budget" and body["limit"] == _TRAN
 
 
 def test_a_soft_budget_never_refuses_anything(portal):
@@ -206,7 +230,7 @@ def test_a_soft_budget_never_refuses_anything(portal):
     user_id, token = _account(portal)
     gen, db = _session()
     try:
-        budgets.create(db, user_id=user_id, amount=10, period="day",
+        budgets.create(db, user_id=user_id, amount=_TRAN, period="day",
                        hard_cap=False)
         db.commit()
     finally:
@@ -241,7 +265,7 @@ def test_a_budget_never_writes_to_the_ledger(portal):
 
     gen, db = _session()
     try:
-        budget = budgets.create(db, user_id=user_id, amount=10, period="day",
+        budget = budgets.create(db, user_id=user_id, amount=_TRAN, period="day",
                                 hard_cap=True)
         db.commit()
         budgets.status(db, budget)
@@ -277,7 +301,7 @@ def test_a_replayed_call_is_not_counted_twice(portal):
             db, user_id=user_id, since=budgets.window_start("day"))
     finally:
         _close(gen)
-    assert spent == 5
+    assert spent == _GIA
 
 
 def test_a_project_budget_only_counts_that_project(portal):
@@ -293,7 +317,7 @@ def test_a_project_budget_only_counts_that_project(portal):
         since = budgets.window_start("day")
         assert budgets.api_spend_since(db, user_id=user_id, since=since,
                                        project_id=other.id) == 0
-        assert budgets.api_spend_since(db, user_id=user_id, since=since) == 5
+        assert budgets.api_spend_since(db, user_id=user_id, since=since) == _GIA
     finally:
         _close(gen)
 
@@ -312,11 +336,12 @@ def test_crossing_a_threshold_raises_one_alert_not_many(portal):
     user_id, token = _account(portal)
     gen, db = _session()
     try:
-        budgets.create(db, user_id=user_id, amount=10, period="day")
+        budgets.create(db, user_id=user_id, amount=_TRAN, period="day")
         db.commit()
     finally:
         _close(gen)
-    assert _run(portal, token).status_code == 201        # 5 of 10 = 50%
+    for _ in range(_SO_LUOT // 2):                       # đúng 50 % trần
+        assert _run(portal, token).status_code == 201
 
     gen, db = _session()
     try:
@@ -336,12 +361,13 @@ def test_each_threshold_is_its_own_news(portal):
     user_id, token = _account(portal)
     gen, db = _session()
     try:
-        budgets.create(db, user_id=user_id, amount=10, period="day")
+        budgets.create(db, user_id=user_id, amount=_TRAN, period="day")
         db.commit()
     finally:
         _close(gen)
 
-    _run(portal, token)                                   # 50%
+    for _ in range(_SO_LUOT // 2):                        # 50 %
+        _run(portal, token)
     gen, db = _session()
     try:
         alerting.scan_account(db, user_id=user_id)
@@ -349,7 +375,8 @@ def test_each_threshold_is_its_own_news(portal):
     finally:
         _close(gen)
 
-    _run(portal, token)                                   # 100%
+    for _ in range(_SO_LUOT - _SO_LUOT // 2):             # 100 %
+        _run(portal, token)
     gen, db = _session()
     try:
         raised = alerting.scan_account(db, user_id=user_id)
