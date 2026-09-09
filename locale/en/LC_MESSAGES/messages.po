@@ -14801,6 +14801,17 @@ msgstr "The translation has missing, extra, or misordered cues."
 msgid "Bản dịch có cue rỗng."
 msgstr "The translation contains an empty cue."
 
+#: apps/chataistudio/routes.py
+# AI CLEAN REBUILD V2 pha 05.7 — `chataistudio` chuyển từ sidecar Codex sang
+# LTT_LLM (model VĂN BẢN). Ảnh khách tải lên vẫn được lưu vì đó là dữ liệu của
+# họ, nhưng model không đọc được chúng.
+#
+# ⛔ Phải NÓI RA. Khách gửi ảnh rồi nhận một câu trả lời không nhắc gì tới nó sẽ
+#    tưởng model đã xem và đang trả lời về ảnh — im lặng ở đây là để họ tin một
+#    điều không có.
+msgid "Ảnh đã được lưu nhưng model văn bản chưa đọc được ảnh."
+msgstr "Your image was saved, but this text model cannot read images."
+
 #: platform_core/image_gen/dich_llm.py
 # Trả rỗng KHÔNG được im lặng: `dich_prompt_anh` sẽ gửi một prompt rỗng đi vẽ,
 # và khách nhận về một tấm ảnh không liên quan gì tới thứ họ gõ — một lỗi đắt

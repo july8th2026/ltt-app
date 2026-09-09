@@ -21,8 +21,8 @@ from fastapi.responses import (HTMLResponse, JSONResponse, RedirectResponse,
                                Response, StreamingResponse)
 from sqlalchemy import select
 
-from apps.chataistudio import cost
-from apps.chataistudio import sidecar_client as sc
+from apps.chataistudio import luong_chat, sidecar_client as sc
+from platform_core.llm import loi_ra_ngoai as LRN
 from apps.chataistudio.manifest import MANIFEST
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.auth.session import require_login
@@ -180,7 +180,6 @@ def delete_conv(request: Request, conv_id: str, csrf_token: str = Form(...),
 async def send(request: Request, csrf_token: str = Form(...), conv_id: str = Form(""),
                message: str = Form(""), attachments: list[UploadFile] = File(default=[]),
                user: str = Depends(require_login)):
-    from platform_core import credit
     from platform_core.models import ChatConversation, ChatMessage
     from platform_core.storage import get_storage
 
@@ -215,20 +214,17 @@ async def send(request: Request, csrf_token: str = Form(...), conv_id: str = For
     image_inputs = [item["data_url"] for item in parsed if item["kind"] == "image"]
 
     # Pre-flight ĐỒNG BỘ: load/tạo hội thoại, giữ chỗ credit, lưu tin user, bảo đảm thread.
-    reserve = cost.reserve_credit()
+    # ⛔ KHÔNG giữ credit ở đây nữa (pha 05.7). `runtime_noi_bo.luong.mo_luong`
+    #    tự giành suất → ước token → giữ chỗ → commit → quyết toán trong
+    #    `finally` của chính nó. Giữ thêm một vòng đời ở tầng app là **thu tiền
+    #    hai lần** hoặc **hoàn nhầm** — hai lỗi sổ sách không đảo được.
     umsg_id = uuid.uuid4().hex
     gen = _sess(); db = next(gen)
-    conv_settings = {}
     try:
         conv = _conv_of_user(db, u.id, conv_id) if conv_id else None
         if conv is None:
             conv = ChatConversation(user_id=u.id, model="gpt-5.6-sol", title="")
             db.add(conv); db.flush()
-        try:
-            credit.giu_cho(db, u.id, reserve, umsg_id)
-        except credit.ThieuCreditError as e:
-            db.rollback()
-            return _err_stream(str(e))
         visible = context_message(msg or "Hãy phân tích tệp đính kèm.",
                                   [x for x in parsed if x["kind"] == "text"])
         db.add(ChatMessage(id=umsg_id, conversation_id=conv.id, user_id=u.id,
@@ -245,150 +241,60 @@ async def send(request: Request, csrf_token: str = Form(...), conv_id: str = For
             conv.title = (msg or (parsed[0]["name"] if parsed else _t('Hội thoại mới')))[:48]
         public_title = conv.title
         conv_id2 = conv.id
-        cthread = conv.codex_thread_id
-        conv_settings = {"model": conv.model,
-                         "developer_instructions": conv.custom_instructions}
+        # ⭐ Lấy lịch sử TRƯỚC khi thêm tin mới: `dung_messages` tự nối tin mới
+        #    vào cuối, nên lấy sau sẽ gửi câu vừa gõ HAI lần.
+        lich_su = list(_messages(db, conv.id))
+        db.add(ChatMessage(id=umsg_id, conversation_id=conv.id, user_id=u.id,
+                           role="user", content=visible[:20000]))
         db.commit()
     finally:
         try: next(gen)
         except StopIteration: pass
 
     owner = u.id
+    tin_gui = luong_chat.dung_messages(lich_su, model_message)
 
     async def gen_stream():
-        storage = get_storage()
+        from starlette.concurrency import iterate_in_threadpool
+
         yield _sse({"type": "conv", "id": conv_id2})
-        # Bảo đảm có Codex thread (ngữ cảnh) — tạo nếu chưa.
-        tid = cthread
+        if image_inputs:
+            # ⛔ LTT_LLM là model VĂN BẢN. Ảnh tải lên vẫn được lưu (chúng là
+            #    dữ liệu của khách), nhưng model không đọc được chúng. Nói ra,
+            #    không im lặng bỏ qua: khách gửi ảnh rồi nhận một câu trả lời
+            #    không nhắc gì tới nó sẽ tưởng model đã xem.
+            yield _sse({"type": "warning", "message": _t(
+                'Ảnh đã được lưu nhưng model văn bản chưa đọc được ảnh.')})
+
+        g2 = _sess(); d2 = next(g2)
         try:
-            if not tid:
-                tid = sc.thread_start(owner, conv_id2, conv_settings)
-                g2 = _sess(); d2 = next(g2)
-                try:
-                    cc = d2.get(ChatConversation, conv_id2)
-                    if cc is not None:
-                        cc.codex_thread_id = tid; d2.commit()
-                finally:
-                    try: next(g2)
-                    except StopIteration: pass
+            # ⛔ `mo_luong` là generator ĐỒNG BỘ. Lặp thẳng nó trong `async def`
+            #    sẽ CHẶN EVENT LOOP suốt cả lượt stream — mọi request khác của
+            #    tiến trình web đứng chờ. Đẩy qua threadpool, đúng cách route
+            #    `taovideo/translate` đã dùng `run_in_threadpool`.
+            it = iterate_in_threadpool(luong_chat.chay(
+                d2, user_id=owner, conv_id=conv_id2,
+                messages=tin_gui, holder_id=umsg_id))
+            async for ev in it:
+                if ev.get("type") == "done":
+                    tra_loi = str(ev.pop("text", "") or "")
+                    if tra_loi.strip():
+                        _save_msg(owner, conv_id2, "assistant", tra_loi, "", "",
+                                  int(ev.get("tokens_total") or 0))
+                    ev["title"] = public_title
+                    ev["balance"] = _so_du(owner)
+                    ev["warning"] = ""
+                yield _sse(ev)
         except Exception as e:  # noqa: BLE001
-            _refund(owner, umsg_id)
-            yield _sse({"type": "error", "message": f"Không tạo được phiên chat: {e}"})
-            return
-
-        reply = ""
-        reply_saved = False
-        n_images = 0
-        image_denied = False
-        tokens_total = 0
-        fin = {"done": False}   # đã settle/refund chưa (đảm bảo đúng MỘT lần)
-
-        def _finalize_settle():
-            # Quyết toán theo phần ĐÃ giao (text + số ảnh đã lưu). Idempotent theo hold.
-            if fin["done"]:
-                return cost.settle_credit(n_images), None
-            fin["done"] = True
-            actual = cost.settle_credit(n_images)
-            balance = _settle(owner, umsg_id, actual, conv_id2)
-            logger.info(
-                "chat_turn_settled user=%s conv=%s turn=%s credit=%s balance=%s tokens=%s images=%s",
-                owner[:8], conv_id2[:8], umsg_id[:8], actual, balance,
-                tokens_total, n_images,
-            )
-            return actual, balance
-
-        def _finalize_refund():
-            if fin["done"]:
-                return 0, None
-            fin["done"] = True
-            balance = _refund(owner, umsg_id)
-            logger.info("chat_turn_refunded user=%s conv=%s turn=%s balance=%s",
-                        owner[:8], conv_id2[:8], umsg_id[:8], balance)
-            return 0, balance
-
-        try:
-            async for ev in sc.turn_stream(tid, owner, conv_id2, model_message,
-                                           conv_settings, image_inputs):
-                m = ev.get("method", "")
-                if m == "item/agentMessage/delta":
-                    d = (ev.get("payload") or {}).get("delta") \
-                        or (ev.get("payload") or {}).get("text") or ""
-                    if d:
-                        reply += d
-                        yield _sse({"type": "delta", "text": d})
-                elif m == "tokens":
-                    tokens_total = (ev.get("payload") or {}).get("total") or tokens_total
-                elif m == "image":
-                    pl = ev.get("payload") or {}
-                    abspath = pl.get("abs_path")
-                    # Mỗi ảnh phải giữ thêm credit TRƯỚC khi giao. Chỉ giữ 3 credit
-                    # ban đầu rồi quyết toán 23+ sẽ làm số dư âm khi tài khoản ít tiền.
-                    if abspath and n_images < cost.MAX_IMAGES_PER_TURN:
-                        if not _hold_more(owner, umsg_id, cost.CREDIT_PER_IMAGE):
-                            image_denied = True
-                            yield _sse({"type": "warning", "message": _t(
-                                'Không đủ credit để nhận thêm ảnh; phần chữ vẫn được giữ.')})
-                            continue
-                        try:
-                            with open(abspath, "rb") as f:
-                                data = f.read()
-                            ikey = f"chataistudio/{owner}/{conv_id2}/{uuid.uuid4().hex}.png"
-                            storage.put(ikey, io.BytesIO(data), content_type="image/png")
-                            n_images += 1
-                            _save_msg(owner, conv_id2, "assistant", "", ikey,
-                                      pl.get("prompt", ""))
-                            yield _sse({"type": "image",
-                                        "url": f"/chataistudio/img/{ikey}",
-                                        "prompt": pl.get("prompt", "")})
-                        except Exception:  # noqa: BLE001
-                            pass
-                elif m == "error":
-                    if reply.strip():
-                        _save_msg(owner, conv_id2, "assistant", reply, "", "", tokens_total)
-                        reply_saved = True
-                    if reply.strip() or n_images:
-                        _finalize_settle()
-                    else:
-                        _finalize_refund()
-                    yield _sse({"type": "error",
-                                "message": (ev.get("payload") or {}).get("message") or _t('Có lỗi xảy ra.')})
-                    return
-            # Xong: lưu tin assistant (text) + quyết toán credit + cập nhật hội thoại.
-            if reply.strip():
-                _save_msg(owner, conv_id2, "assistant", reply, "", "", tokens_total)
-                reply_saved = True
-            if reply.strip() or n_images:
-                actual, balance = _finalize_settle()
-            else:
-                actual, balance = _finalize_refund()
-            yield _sse({"type": "done", "credit_cost": actual, "balance": balance,
-                        "tokens_total": tokens_total, "title": public_title,
-                        "warning": _t('Không đủ credit để nhận thêm ảnh; phần chữ vẫn được giữ.')
-                                   if image_denied else ""})
-        except Exception as e:  # noqa: BLE001
-            if reply.strip() and not reply_saved:
-                _save_msg(owner, conv_id2, "assistant", reply, "", "", tokens_total)
-                reply_saved = True
-            if reply.strip() or n_images:
-                _finalize_settle()
-            else:
-                _finalize_refund()
-            logger.warning("chat_turn_failed user=%s conv=%s turn=%s error_type=%s",
-                           owner[:8], conv_id2[:8], umsg_id[:8], type(e).__name__)
-            yield _sse({"type": "error", "message": _t(
-                'AI tạm thời không phản hồi. Nội dung đã nhận vẫn được lưu.')})
+            # ⛔ KHÔNG `str(e)`: thân lỗi thượng nguồn từng mang đường dẫn
+            #    `.gguf`, id model nội bộ, `base_url` và IP nội bộ ra trình
+            #    duyệt (đo 07/09). Chữ cho khách dựng từ MÃ.
+            logger.warning("chataistudio_stream_hong conv=%s loai=%s",
+                           conv_id2[:8], type(e).__name__)
+            yield _sse({"type": "error", "message": LRN.cau("loi_noi_bo")})
         finally:
-            # Ngắt kết nối (GeneratorExit — BaseException, KHÔNG lọt except Exception)
-            # vẫn phải kết sổ: đã giao ảnh/chữ → settle (chống ảnh miễn phí bằng cách
-            # ngắt giữa chừng); chưa giao gì → refund.
-            if not fin["done"]:
-                if reply.strip() or n_images:
-                    if reply.strip() and not reply_saved:
-                        _save_msg(owner, conv_id2, "assistant", reply, "", "", tokens_total)
-                        reply_saved = True
-                    _finalize_settle()
-                else:
-                    _finalize_refund()
+            try: next(g2)
+            except StopIteration: pass
 
     return StreamingResponse(gen_stream(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
@@ -455,45 +361,16 @@ def _save_msg(user_id, conv_id, role, content, image_key="", image_prompt="", to
         except StopIteration: pass
 
 
-def _hold_more(user_id: str, hold_id: str, amount: int) -> bool:
-    """Giữ thêm credit trước khi giao output phát sinh; không bao giờ cho âm."""
+def _so_du(user_id: str) -> int:
+    """Số dư hiện tại, đọc SAU khi `mo_luong` đã quyết toán.
+
+    ⭐ Phải mở phiên MỚI: generator chạy sau khi phản hồi đã bắt đầu, lúc đó
+       phiên CSDL của request đã đóng — cùng bài học `runtime_noi_bo/luong.py`
+       ghi ở đầu tệp.
+    """
     from platform_core import credit
     gen = _sess(); db = next(gen)
     try:
-        try:
-            credit.giu_cho(db, user_id, int(amount), hold_id)
-            db.commit()
-            return True
-        except credit.ThieuCreditError:
-            db.rollback()
-            return False
-    finally:
-        try: next(gen)
-        except StopIteration: pass
-
-
-def _settle(user_id, hold_id, actual, conv_id):
-    from platform_core import credit
-    from platform_core.models import ChatConversation
-    from platform_core.models import _bay_gio
-    gen = _sess(); db = next(gen)
-    try:
-        credit.quyet_toan(db, user_id, hold_id, int(actual))
-        cc = db.get(ChatConversation, conv_id)
-        if cc is not None:
-            cc.updated_at = _bay_gio()
-        db.commit()
-        return credit.so_du(db, user_id)
-    finally:
-        try: next(gen)
-        except StopIteration: pass
-
-
-def _refund(user_id, hold_id):
-    from platform_core import credit
-    gen = _sess(); db = next(gen)
-    try:
-        credit.hoan(db, user_id, hold_id); db.commit()
         return credit.so_du(db, user_id)
     finally:
         try: next(gen)
