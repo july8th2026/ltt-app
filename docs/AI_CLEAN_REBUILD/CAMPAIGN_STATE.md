@@ -36,8 +36,8 @@
 | 08 | Delete legacy app surfaces | 🟡 mã xong, **chờ `npm run build` + gate** | — | §Pha 08 |
 | 09 | Provider config / secret clean **+ chứng minh `HISTORY_ONLY`** | ✅ | 8 bánh cóc PASS · `test_1005` 150 phép kiểm | ma trận 425/519 |
 | 10 | Architecture guard | ✅ | 18 phép kiểm, **12 là tự kiểm** | `tests/test_1006_rao_kien_truc.py` |
-| 11 | Real E2E | ⬜ | — | — |
-| 12 | Forensic re-audit | ⬜ | — | — |
+| 11 | Real E2E / egress | 🟡 **egress=0 CHỨNG MINH · 5 đường sinh thật NOT_TESTED** | `test_1007` 6 phép kiểm | `PHA11_12_NGHIEM_THU.md` |
+| 12 | Forensic re-audit | ✅ **0 executable occurrence · 82/100** | 2 bộ dò ĐỘC LẬP, 787 tệp | `PHA11_12_NGHIEM_THU.md` |
 | 13 | Commit / merge / deploy | ⬜ | — | — |
 | 14 | Remote GitHub hygiene | ⬜ | — | — |
 | 15 | Final repo compaction report | ⬜ | — | — |
