@@ -48,13 +48,36 @@ Phiên `workflow 4 bot` báo 09/09 (đo trên **bản export sạch** của chí
 nên không phải cây bẩn của ai):
 
 ```
-trunk admin-mvp-v3@05464239 — hai buoc gate DO, ca hai tu commit 3eae396d (ASV v4)
-  mypy                vuot moc 6 loi
-                      tools/do_ngan_sach_chuyen_loi_thoai.py
-                      tools/do_on_dinh_chuyen_loi_thoai.py
-                      tools/do_token_may_b.py
-  "nuot loi lang le"  63 > moc 62   tools/do_token_may_b.py:121
+trunk admin-mvp-v3@05464239 — do 17:47 tren LUOT SACH, CHAY MOT MINH,
+                              cay_da_doi_giua_chung=False, 751,7 giay
+RESULT: FAIL (3/32)
+  nuot loi lang le      63 > moc 62    tools/do_token_may_b.py:121
+  mypy                  vuot moc 6 loi (3 tep `do_*` cua ASV v4)
+  bo test (song song)   8894 passed, 8 failed
+        7x test_448  +  2 GUONG cua chinh hai banh coc tren
+                        (test_306::test_mypy_hien_tai_dat_moc,
+                         test_145::test_banh_coc_nuot_loi_khong_cho_tang_them)
 ```
+
+⭐ **Chín dòng đỏ, nhưng chỉ BA nguyên nhân.** Hai phép kiểm `test_306`/`test_145`
+   là **gương** của hai bánh cóc — chúng đỏ *vì* bánh cóc đỏ, không phải thêm
+   một lỗi độc lập. Đếm chín rồi báo "chín vấn đề" là thổi phồng gấp ba.
+
+🔴 **ĐÍNH CHÍNH 09/09 về bốn lỗi mypy** (phiên `workflow 4 bot` tự rút, VOICE đọc
+   thẳng `git show`): chúng **KHÔNG** phải "một biến gán sai kiểu làm `median()`
+   nhận `int`". `v` là **biến vòng lặp bị dùng lại tên** (`for v in range(...)`
+   → `v = sorted(...)`); lúc chạy `v` là list, `median(v)` **chạy đúng**.
+
+   ⇒ Không có lỗi runtime, và **số p50 ≈ 5.835 mà f1 công bố vẫn dùng được**.
+     Phép quét AST của phiên này không tìm thấy `int → list[float]` — và nó
+     **đúng**; thứ sai là chẩn đoán ban đầu.
+
+   ⚠️ Bài học: *một chẩn đoán khớp quá vừa kết thúc cuộc điều tra sớm.* Suýt nữa
+      ba phiên cùng tin một hình dạng không có thật.
+
+⛔ **Chủ dự án đã quyết: KHÔNG ai sửa ba tệp mồ côi lúc này** — *"không động vào
+   công việc của các phiên khác"*. Nên đây là **đỏ có sẵn của trunk**, ghi ra để
+   pha 13 không nhận nhầm nó là hồi quy của chiến dịch này.
 
 🔴 **Đây là chuyện của chiến dịch này, không phải chuyện riêng phiên VOICE.**
 Pha 13 hoà `phien/aiclean` vào trunk; hoà vào một trunk đang đỏ thì lượt gate
