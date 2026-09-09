@@ -161,11 +161,9 @@ def test_thumbnail_khong_ra_mang(bit_mang):
 #   một lượt gọi cụ thể bị chặn.
 
 
-def test_prompt_ai_ommi_khong_ra_mang(bit_mang):
-    from apps.prompt_ai_ommi import provider as pr
-    with pytest.raises(providers.ProviderDaNgung):
-        pr.generate_json("he thong", "prompt")
-    assert bit_mang == [], f"co luot ra mang: {bit_mang}"
+# ⏭️ `prompt_ai_ommi` ĐÃ DI TRÚ ở pha 05.5 — cùng lý do với `taovideo` ở trên:
+#    tiền đề biến mất, nên phép kiểm chuyển sang `test_1002` (chốt sự VẮNG MẶT
+#    của cả lớp đường gọi, thay vì chốt một lượt gọi cụ thể bị chặn).
 
 
 def test_autosubvideo_khong_ra_mang(bit_mang):

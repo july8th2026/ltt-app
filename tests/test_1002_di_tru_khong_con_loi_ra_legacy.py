@@ -30,6 +30,7 @@ GOC = pathlib.Path(__file__).resolve().parents[1]
 #: App đã di trú sang LTT_LLM/LTT_IMAGE. Thêm dòng khi một app xong pha 05/06.
 DA_DI_TRU = (
     "apps/taovideo/translate.py",
+    "apps/prompt_ai_ommi/provider.py",
 )
 
 #: Tên module không được `import` ở tầng app sau khi di trú.
