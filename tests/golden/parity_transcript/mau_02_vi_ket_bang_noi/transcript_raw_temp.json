@@ -1,0 +1,1828 @@
+{
+  "language": "vi",
+  "language_probability": 1.0,
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 1.9,
+      "text": "Bài học giác ngộ về chữ buông",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Bài",
+          "start": 0.0,
+          "end": 0.18,
+          "prob": 0.712646484375
+        },
+        {
+          "word": "học",
+          "start": 0.18,
+          "end": 0.34,
+          "prob": 0.99658203125
+        },
+        {
+          "word": "giác",
+          "start": 0.34,
+          "end": 0.6,
+          "prob": 0.990478515625
+        },
+        {
+          "word": "ngộ",
+          "start": 0.6,
+          "end": 0.86,
+          "prob": 0.999755859375
+        },
+        {
+          "word": "về",
+          "start": 0.86,
+          "end": 1.16,
+          "prob": 0.998046875
+        },
+        {
+          "word": "chữ",
+          "start": 1.16,
+          "end": 1.6,
+          "prob": 0.941650390625
+        },
+        {
+          "word": "buông",
+          "start": 1.6,
+          "end": 1.9,
+          "prob": 0.754150390625
+        }
+      ],
+      "index": 1,
+      "scene_id": "S0001",
+      "duration": 1.9
+    },
+    {
+      "start": 1.9,
+      "end": 5.74,
+      "text": "Bế bổng một cô gái tuyệt đẹp qua vũng buồn lầy",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Bế",
+          "start": 1.9,
+          "end": 2.68,
+          "prob": 0.7646484375
+        },
+        {
+          "word": "bổng",
+          "start": 2.68,
+          "end": 2.94,
+          "prob": 0.7975260416666666
+        },
+        {
+          "word": "một",
+          "start": 2.94,
+          "end": 3.14,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "cô",
+          "start": 3.14,
+          "end": 3.38,
+          "prob": 1.0
+        },
+        {
+          "word": "gái",
+          "start": 3.38,
+          "end": 3.74,
+          "prob": 1.0
+        },
+        {
+          "word": "tuyệt",
+          "start": 3.74,
+          "end": 4.04,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "đẹp",
+          "start": 4.04,
+          "end": 4.44,
+          "prob": 1.0
+        },
+        {
+          "word": "qua",
+          "start": 4.44,
+          "end": 4.68,
+          "prob": 0.83203125
+        },
+        {
+          "word": "vũng",
+          "start": 4.68,
+          "end": 5.08,
+          "prob": 0.9939778645833334
+        },
+        {
+          "word": "buồn",
+          "start": 5.08,
+          "end": 5.4,
+          "prob": 0.8966471354166666
+        },
+        {
+          "word": "lầy",
+          "start": 5.4,
+          "end": 5.74,
+          "prob": 0.9962565104166666
+        }
+      ],
+      "index": 2,
+      "scene_id": "S0002",
+      "duration": 3.84
+    },
+    {
+      "start": 5.74,
+      "end": 9.84,
+      "text": "Vị thiền sư bị đệ tử trách móc, gây gắt vì phạm giới",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Vị",
+          "start": 5.74,
+          "end": 6.3,
+          "prob": 0.861083984375
+        },
+        {
+          "word": "thiền",
+          "start": 6.3,
+          "end": 6.56,
+          "prob": 0.989501953125
+        },
+        {
+          "word": "sư",
+          "start": 6.56,
+          "end": 6.84,
+          "prob": 0.999755859375
+        },
+        {
+          "word": "bị",
+          "start": 6.84,
+          "end": 7.12,
+          "prob": 1.0
+        },
+        {
+          "word": "đệ",
+          "start": 7.12,
+          "end": 7.36,
+          "prob": 0.995849609375
+        },
+        {
+          "word": "tử",
+          "start": 7.36,
+          "end": 7.6,
+          "prob": 0.999267578125
+        },
+        {
+          "word": "trách",
+          "start": 7.6,
+          "end": 7.78,
+          "prob": 0.999755859375
+        },
+        {
+          "word": "móc,",
+          "start": 7.78,
+          "end": 8.16,
+          "prob": 0.964111328125
+        },
+        {
+          "word": "gây",
+          "start": 8.18,
+          "end": 8.62,
+          "prob": 0.992919921875
+        },
+        {
+          "word": "gắt",
+          "start": 8.62,
+          "end": 8.88,
+          "prob": 0.98974609375
+        },
+        {
+          "word": "vì",
+          "start": 8.88,
+          "end": 9.14,
+          "prob": 0.71044921875
+        },
+        {
+          "word": "phạm",
+          "start": 9.14,
+          "end": 9.5,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "giới",
+          "start": 9.5,
+          "end": 9.84,
+          "prob": 0.999267578125
+        }
+      ],
+      "index": 3,
+      "scene_id": "S0003",
+      "duration": 4.1
+    },
+    {
+      "start": 9.84,
+      "end": 12.04,
+      "text": "Nhưng câu đáp trả điềm nhiên",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Nhưng",
+          "start": 9.84,
+          "end": 10.7,
+          "prob": 0.99609375
+        },
+        {
+          "word": "câu",
+          "start": 10.7,
+          "end": 10.86,
+          "prob": 0.998046875
+        },
+        {
+          "word": "đáp",
+          "start": 10.86,
+          "end": 11.12,
+          "prob": 1.0
+        },
+        {
+          "word": "trả",
+          "start": 11.12,
+          "end": 11.44,
+          "prob": 1.0
+        },
+        {
+          "word": "điềm",
+          "start": 11.44,
+          "end": 11.66,
+          "prob": 0.9806315104166666
+        },
+        {
+          "word": "nhiên",
+          "start": 11.66,
+          "end": 12.04,
+          "prob": 0.999755859375
+        }
+      ],
+      "index": 4,
+      "scene_id": "S0004",
+      "duration": 2.2
+    },
+    {
+      "start": 12.04,
+      "end": 15.7,
+      "text": "Ta đã đặt nàng xuống từ lâu, sao đệ vẫn còn bé",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Ta",
+          "start": 12.04,
+          "end": 12.4,
+          "prob": 0.7265625
+        },
+        {
+          "word": "đã",
+          "start": 12.4,
+          "end": 12.62,
+          "prob": 1.0
+        },
+        {
+          "word": "đặt",
+          "start": 12.62,
+          "end": 12.86,
+          "prob": 0.998291015625
+        },
+        {
+          "word": "nàng",
+          "start": 12.86,
+          "end": 13.1,
+          "prob": 0.9765625
+        },
+        {
+          "word": "xuống",
+          "start": 13.1,
+          "end": 13.48,
+          "prob": 1.0
+        },
+        {
+          "word": "từ",
+          "start": 13.48,
+          "end": 13.66,
+          "prob": 1.0
+        },
+        {
+          "word": "lâu,",
+          "start": 13.66,
+          "end": 14.06,
+          "prob": 1.0
+        },
+        {
+          "word": "sao",
+          "start": 14.1,
+          "end": 14.5,
+          "prob": 0.99267578125
+        },
+        {
+          "word": "đệ",
+          "start": 14.5,
+          "end": 14.86,
+          "prob": 0.98779296875
+        },
+        {
+          "word": "vẫn",
+          "start": 14.86,
+          "end": 15.06,
+          "prob": 1.0
+        },
+        {
+          "word": "còn",
+          "start": 15.06,
+          "end": 15.42,
+          "prob": 1.0
+        },
+        {
+          "word": "bé",
+          "start": 15.42,
+          "end": 15.7,
+          "prob": 0.59619140625
+        }
+      ],
+      "index": 5,
+      "scene_id": "S0005",
+      "duration": 3.66
+    },
+    {
+      "start": 15.7,
+      "end": 19.42,
+      "text": "Đã vạch trần một bí mật chấn động về tâm trí",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Đã",
+          "start": 15.7,
+          "end": 16.64,
+          "prob": 0.96923828125
+        },
+        {
+          "word": "vạch",
+          "start": 16.64,
+          "end": 16.86,
+          "prob": 0.9991861979166666
+        },
+        {
+          "word": "trần",
+          "start": 16.86,
+          "end": 17.16,
+          "prob": 0.998291015625
+        },
+        {
+          "word": "một",
+          "start": 17.16,
+          "end": 17.36,
+          "prob": 1.0
+        },
+        {
+          "word": "bí",
+          "start": 17.36,
+          "end": 17.64,
+          "prob": 1.0
+        },
+        {
+          "word": "mật",
+          "start": 17.64,
+          "end": 17.9,
+          "prob": 1.0
+        },
+        {
+          "word": "chấn",
+          "start": 17.9,
+          "end": 18.16,
+          "prob": 0.999267578125
+        },
+        {
+          "word": "động",
+          "start": 18.16,
+          "end": 18.42,
+          "prob": 1.0
+        },
+        {
+          "word": "về",
+          "start": 18.42,
+          "end": 18.76,
+          "prob": 1.0
+        },
+        {
+          "word": "tâm",
+          "start": 18.76,
+          "end": 19.12,
+          "prob": 1.0
+        },
+        {
+          "word": "trí",
+          "start": 19.12,
+          "end": 19.42,
+          "prob": 1.0
+        }
+      ],
+      "index": 6,
+      "scene_id": "S0006",
+      "duration": 3.72
+    },
+    {
+      "start": 19.42,
+      "end": 23.88,
+      "text": "Có hai nhà sư cùng thong giong bước xuống một con đường lầy",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Có",
+          "start": 19.42,
+          "end": 20.12,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "hai",
+          "start": 20.12,
+          "end": 20.44,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "nhà",
+          "start": 20.44,
+          "end": 20.8,
+          "prob": 1.0
+        },
+        {
+          "word": "sư",
+          "start": 20.8,
+          "end": 21.18,
+          "prob": 1.0
+        },
+        {
+          "word": "cùng",
+          "start": 21.18,
+          "end": 21.46,
+          "prob": 1.0
+        },
+        {
+          "word": "thong",
+          "start": 21.46,
+          "end": 21.94,
+          "prob": 0.781494140625
+        },
+        {
+          "word": "giong",
+          "start": 21.94,
+          "end": 22.18,
+          "prob": 0.4202880859375
+        },
+        {
+          "word": "bước",
+          "start": 22.18,
+          "end": 22.44,
+          "prob": 1.0
+        },
+        {
+          "word": "xuống",
+          "start": 22.44,
+          "end": 22.82,
+          "prob": 1.0
+        },
+        {
+          "word": "một",
+          "start": 22.82,
+          "end": 22.98,
+          "prob": 1.0
+        },
+        {
+          "word": "con",
+          "start": 22.98,
+          "end": 23.16,
+          "prob": 1.0
+        },
+        {
+          "word": "đường",
+          "start": 23.16,
+          "end": 23.48,
+          "prob": 1.0
+        },
+        {
+          "word": "lầy",
+          "start": 23.48,
+          "end": 23.88,
+          "prob": 0.9988606770833334
+        }
+      ],
+      "index": 7,
+      "scene_id": "S0007",
+      "duration": 4.46
+    },
+    {
+      "start": 23.88,
+      "end": 28.18,
+      "text": "Cơn mưa nặng hạt vẫn còn rơi, đến khúc đường quẹo",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Cơn",
+          "start": 23.88,
+          "end": 24.62,
+          "prob": 0.999267578125
+        },
+        {
+          "word": "mưa",
+          "start": 24.62,
+          "end": 24.96,
+          "prob": 1.0
+        },
+        {
+          "word": "nặng",
+          "start": 24.96,
+          "end": 25.14,
+          "prob": 0.9988606770833334
+        },
+        {
+          "word": "hạt",
+          "start": 25.14,
+          "end": 25.42,
+          "prob": 0.973876953125
+        },
+        {
+          "word": "vẫn",
+          "start": 25.42,
+          "end": 25.64,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "còn",
+          "start": 25.64,
+          "end": 25.94,
+          "prob": 1.0
+        },
+        {
+          "word": "rơi,",
+          "start": 25.94,
+          "end": 26.38,
+          "prob": 1.0
+        },
+        {
+          "word": "đến",
+          "start": 26.44,
+          "end": 27.02,
+          "prob": 1.0
+        },
+        {
+          "word": "khúc",
+          "start": 27.02,
+          "end": 27.4,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "đường",
+          "start": 27.4,
+          "end": 27.76,
+          "prob": 1.0
+        },
+        {
+          "word": "quẹo",
+          "start": 27.76,
+          "end": 28.18,
+          "prob": 0.9972330729166666
+        }
+      ],
+      "index": 8,
+      "scene_id": "S0008",
+      "duration": 4.3
+    },
+    {
+      "start": 28.18,
+      "end": 46.34,
+      "text": "Hai người gặp một cô gái xinh xánh trong chiếc áo kimu và chiếc khanh quàng cổ bằng lũa đang đứng bên lề đường vì không thể băng qua đường lề được. Lập tức một nhà sư bảo đi nào, cô bé tức khắc đưa tay nhấc bỗng cô gái lên và đưa qua quảng đường lề.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Hai",
+          "start": 28.18,
+          "end": 28.68,
+          "prob": 0.91796875
+        },
+        {
+          "word": "người",
+          "start": 28.68,
+          "end": 28.96,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "gặp",
+          "start": 28.96,
+          "end": 29.3,
+          "prob": 1.0
+        },
+        {
+          "word": "một",
+          "start": 29.3,
+          "end": 29.42,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "cô",
+          "start": 29.42,
+          "end": 29.58,
+          "prob": 1.0
+        },
+        {
+          "word": "gái",
+          "start": 29.58,
+          "end": 29.86,
+          "prob": 1.0
+        },
+        {
+          "word": "xinh",
+          "start": 29.86,
+          "end": 30.08,
+          "prob": 0.991943359375
+        },
+        {
+          "word": "xánh",
+          "start": 30.08,
+          "end": 30.44,
+          "prob": 0.871826171875
+        },
+        {
+          "word": "trong",
+          "start": 30.44,
+          "end": 30.74,
+          "prob": 0.97314453125
+        },
+        {
+          "word": "chiếc",
+          "start": 30.74,
+          "end": 31.12,
+          "prob": 1.0
+        },
+        {
+          "word": "áo",
+          "start": 31.12,
+          "end": 31.3,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "kimu",
+          "start": 31.3,
+          "end": 31.78,
+          "prob": 0.946044921875
+        },
+        {
+          "word": "và",
+          "start": 31.78,
+          "end": 32.26,
+          "prob": 0.97900390625
+        },
+        {
+          "word": "chiếc",
+          "start": 32.26,
+          "end": 32.68,
+          "prob": 1.0
+        },
+        {
+          "word": "khanh",
+          "start": 32.68,
+          "end": 32.98,
+          "prob": 0.8986002604166666
+        },
+        {
+          "word": "quàng",
+          "start": 32.98,
+          "end": 33.3,
+          "prob": 0.99169921875
+        },
+        {
+          "word": "cổ",
+          "start": 33.3,
+          "end": 33.68,
+          "prob": 0.99658203125
+        },
+        {
+          "word": "bằng",
+          "start": 33.68,
+          "end": 33.96,
+          "prob": 0.998779296875
+        },
+        {
+          "word": "lũa",
+          "start": 33.96,
+          "end": 34.38,
+          "prob": 0.871826171875
+        },
+        {
+          "word": "đang",
+          "start": 34.38,
+          "end": 34.78,
+          "prob": 0.61474609375
+        },
+        {
+          "word": "đứng",
+          "start": 34.78,
+          "end": 35.28,
+          "prob": 1.0
+        },
+        {
+          "word": "bên",
+          "start": 35.28,
+          "end": 35.46,
+          "prob": 1.0
+        },
+        {
+          "word": "lề",
+          "start": 35.46,
+          "end": 35.8,
+          "prob": 0.8671875
+        },
+        {
+          "word": "đường",
+          "start": 35.8,
+          "end": 36.18,
+          "prob": 0.999755859375
+        },
+        {
+          "word": "vì",
+          "start": 36.18,
+          "end": 36.56,
+          "prob": 0.9921875
+        },
+        {
+          "word": "không",
+          "start": 36.56,
+          "end": 36.76,
+          "prob": 1.0
+        },
+        {
+          "word": "thể",
+          "start": 36.76,
+          "end": 37.02,
+          "prob": 1.0
+        },
+        {
+          "word": "băng",
+          "start": 37.02,
+          "end": 37.28,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "qua",
+          "start": 37.28,
+          "end": 37.52,
+          "prob": 1.0
+        },
+        {
+          "word": "đường",
+          "start": 37.52,
+          "end": 37.94,
+          "prob": 1.0
+        },
+        {
+          "word": "lề",
+          "start": 37.94,
+          "end": 38.26,
+          "prob": 0.809326171875
+        },
+        {
+          "word": "được.",
+          "start": 38.26,
+          "end": 38.48,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "Lập",
+          "start": 38.72,
+          "end": 39.3,
+          "prob": 0.999267578125
+        },
+        {
+          "word": "tức",
+          "start": 39.3,
+          "end": 39.48,
+          "prob": 1.0
+        },
+        {
+          "word": "một",
+          "start": 39.48,
+          "end": 39.64,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "nhà",
+          "start": 39.64,
+          "end": 39.92,
+          "prob": 1.0
+        },
+        {
+          "word": "sư",
+          "start": 39.92,
+          "end": 40.2,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "bảo",
+          "start": 40.2,
+          "end": 40.5,
+          "prob": 0.999267578125
+        },
+        {
+          "word": "đi",
+          "start": 40.5,
+          "end": 40.76,
+          "prob": 0.9912109375
+        },
+        {
+          "word": "nào,",
+          "start": 40.76,
+          "end": 41.04,
+          "prob": 1.0
+        },
+        {
+          "word": "cô",
+          "start": 41.24,
+          "end": 41.58,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "bé",
+          "start": 41.58,
+          "end": 41.9,
+          "prob": 1.0
+        },
+        {
+          "word": "tức",
+          "start": 41.9,
+          "end": 42.22,
+          "prob": 0.998291015625
+        },
+        {
+          "word": "khắc",
+          "start": 42.22,
+          "end": 42.4,
+          "prob": 0.99609375
+        },
+        {
+          "word": "đưa",
+          "start": 42.4,
+          "end": 42.62,
+          "prob": 1.0
+        },
+        {
+          "word": "tay",
+          "start": 42.62,
+          "end": 42.8,
+          "prob": 1.0
+        },
+        {
+          "word": "nhấc",
+          "start": 42.8,
+          "end": 43.1,
+          "prob": 0.7521158854166666
+        },
+        {
+          "word": "bỗng",
+          "start": 43.1,
+          "end": 43.4,
+          "prob": 0.83642578125
+        },
+        {
+          "word": "cô",
+          "start": 43.4,
+          "end": 43.58,
+          "prob": 1.0
+        },
+        {
+          "word": "gái",
+          "start": 43.58,
+          "end": 43.9,
+          "prob": 1.0
+        },
+        {
+          "word": "lên",
+          "start": 43.9,
+          "end": 44.08,
+          "prob": 1.0
+        },
+        {
+          "word": "và",
+          "start": 44.08,
+          "end": 44.64,
+          "prob": 1.0
+        },
+        {
+          "word": "đưa",
+          "start": 44.64,
+          "end": 45.12,
+          "prob": 1.0
+        },
+        {
+          "word": "qua",
+          "start": 45.12,
+          "end": 45.34,
+          "prob": 1.0
+        },
+        {
+          "word": "quảng",
+          "start": 45.34,
+          "end": 45.72,
+          "prob": 0.97607421875
+        },
+        {
+          "word": "đường",
+          "start": 45.72,
+          "end": 46.08,
+          "prob": 1.0
+        },
+        {
+          "word": "lề.",
+          "start": 46.08,
+          "end": 46.34,
+          "prob": 0.89501953125
+        }
+      ],
+      "index": 9,
+      "scene_id": "S0009",
+      "duration": 18.16
+    },
+    {
+      "start": 46.34,
+      "end": 54.14,
+      "text": "Nhà sư bạn của anh ta từ đó không buồn nói một tiếng nào Cho đến khi cả hai dừng lại trong một ngôi đền",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Nhà",
+          "start": 46.34,
+          "end": 47.14,
+          "prob": 0.487579345703125
+        },
+        {
+          "word": "sư",
+          "start": 47.14,
+          "end": 47.44,
+          "prob": 0.992431640625
+        },
+        {
+          "word": "bạn",
+          "start": 47.44,
+          "end": 47.6,
+          "prob": 0.45263671875
+        },
+        {
+          "word": "của",
+          "start": 47.6,
+          "end": 47.86,
+          "prob": 0.99462890625
+        },
+        {
+          "word": "anh",
+          "start": 47.86,
+          "end": 48.02,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "ta",
+          "start": 48.02,
+          "end": 48.3,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "từ",
+          "start": 48.3,
+          "end": 48.84,
+          "prob": 0.859375
+        },
+        {
+          "word": "đó",
+          "start": 48.84,
+          "end": 49.1,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "không",
+          "start": 49.1,
+          "end": 49.36,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "buồn",
+          "start": 49.36,
+          "end": 49.8,
+          "prob": 1.0
+        },
+        {
+          "word": "nói",
+          "start": 49.8,
+          "end": 50.04,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "một",
+          "start": 50.04,
+          "end": 50.32,
+          "prob": 0.98779296875
+        },
+        {
+          "word": "tiếng",
+          "start": 50.32,
+          "end": 50.7,
+          "prob": 1.0
+        },
+        {
+          "word": "nào",
+          "start": 50.7,
+          "end": 50.86,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "Cho",
+          "start": 50.86,
+          "end": 51.24,
+          "prob": 0.10882568359375
+        },
+        {
+          "word": "đến",
+          "start": 51.24,
+          "end": 51.56,
+          "prob": 1.0
+        },
+        {
+          "word": "khi",
+          "start": 51.56,
+          "end": 51.9,
+          "prob": 1.0
+        },
+        {
+          "word": "cả",
+          "start": 51.9,
+          "end": 52.24,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "hai",
+          "start": 52.24,
+          "end": 52.52,
+          "prob": 0.99169921875
+        },
+        {
+          "word": "dừng",
+          "start": 52.52,
+          "end": 52.84,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "lại",
+          "start": 52.84,
+          "end": 53.08,
+          "prob": 1.0
+        },
+        {
+          "word": "trong",
+          "start": 53.08,
+          "end": 53.46,
+          "prob": 0.994140625
+        },
+        {
+          "word": "một",
+          "start": 53.46,
+          "end": 53.62,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "ngôi",
+          "start": 53.62,
+          "end": 53.88,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "đền",
+          "start": 53.88,
+          "end": 54.14,
+          "prob": 0.999267578125
+        }
+      ],
+      "index": 10,
+      "scene_id": "S0010",
+      "duration": 7.8
+    },
+    {
+      "start": 54.14,
+      "end": 55.9,
+      "text": "Rồi không chịu được nữa",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Rồi",
+          "start": 54.14,
+          "end": 55.0,
+          "prob": 0.998046875
+        },
+        {
+          "word": "không",
+          "start": 55.0,
+          "end": 55.14,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "chịu",
+          "start": 55.14,
+          "end": 55.48,
+          "prob": 1.0
+        },
+        {
+          "word": "được",
+          "start": 55.48,
+          "end": 55.62,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "nữa",
+          "start": 55.62,
+          "end": 55.9,
+          "prob": 0.99951171875
+        }
+      ],
+      "index": 11,
+      "scene_id": "S0011",
+      "duration": 1.76
+    },
+    {
+      "start": 55.9,
+      "end": 58.5,
+      "text": "Nhà sư bạn lên tiếng nói với anh ta",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Nhà",
+          "start": 55.9,
+          "end": 56.54,
+          "prob": 0.775634765625
+        },
+        {
+          "word": "sư",
+          "start": 56.54,
+          "end": 56.78,
+          "prob": 1.0
+        },
+        {
+          "word": "bạn",
+          "start": 56.78,
+          "end": 57.0,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "lên",
+          "start": 57.0,
+          "end": 57.18,
+          "prob": 1.0
+        },
+        {
+          "word": "tiếng",
+          "start": 57.18,
+          "end": 57.46,
+          "prob": 1.0
+        },
+        {
+          "word": "nói",
+          "start": 57.46,
+          "end": 57.72,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "với",
+          "start": 57.72,
+          "end": 58.02,
+          "prob": 1.0
+        },
+        {
+          "word": "anh",
+          "start": 58.02,
+          "end": 58.18,
+          "prob": 1.0
+        },
+        {
+          "word": "ta",
+          "start": 58.18,
+          "end": 58.5,
+          "prob": 1.0
+        }
+      ],
+      "index": 12,
+      "scene_id": "S0012",
+      "duration": 2.6
+    },
+    {
+      "start": 58.5,
+      "end": 65.66,
+      "text": "Ở chúng ta là những nhà sư không được phép gần đàn bà Nhất là những người đàn bà trẻ đẹp",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Ở",
+          "start": 58.5,
+          "end": 59.2,
+          "prob": 0.964599609375
+        },
+        {
+          "word": "chúng",
+          "start": 59.2,
+          "end": 59.36,
+          "prob": 1.0
+        },
+        {
+          "word": "ta",
+          "start": 59.36,
+          "end": 59.56,
+          "prob": 1.0
+        },
+        {
+          "word": "là",
+          "start": 59.56,
+          "end": 59.86,
+          "prob": 1.0
+        },
+        {
+          "word": "những",
+          "start": 59.86,
+          "end": 60.16,
+          "prob": 1.0
+        },
+        {
+          "word": "nhà",
+          "start": 60.16,
+          "end": 60.46,
+          "prob": 1.0
+        },
+        {
+          "word": "sư",
+          "start": 60.46,
+          "end": 60.82,
+          "prob": 1.0
+        },
+        {
+          "word": "không",
+          "start": 60.82,
+          "end": 61.36,
+          "prob": 0.97509765625
+        },
+        {
+          "word": "được",
+          "start": 61.36,
+          "end": 61.64,
+          "prob": 1.0
+        },
+        {
+          "word": "phép",
+          "start": 61.64,
+          "end": 62.04,
+          "prob": 1.0
+        },
+        {
+          "word": "gần",
+          "start": 62.04,
+          "end": 62.42,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "đàn",
+          "start": 62.42,
+          "end": 62.62,
+          "prob": 0.992431640625
+        },
+        {
+          "word": "bà",
+          "start": 62.62,
+          "end": 62.98,
+          "prob": 1.0
+        },
+        {
+          "word": "Nhất",
+          "start": 62.98,
+          "end": 63.64,
+          "prob": 0.99560546875
+        },
+        {
+          "word": "là",
+          "start": 63.64,
+          "end": 63.82,
+          "prob": 1.0
+        },
+        {
+          "word": "những",
+          "start": 63.82,
+          "end": 64.08,
+          "prob": 1.0
+        },
+        {
+          "word": "người",
+          "start": 64.08,
+          "end": 64.4,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "đàn",
+          "start": 64.4,
+          "end": 64.76,
+          "prob": 1.0
+        },
+        {
+          "word": "bà",
+          "start": 64.76,
+          "end": 65.12,
+          "prob": 1.0
+        },
+        {
+          "word": "trẻ",
+          "start": 65.12,
+          "end": 65.36,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "đẹp",
+          "start": 65.36,
+          "end": 65.66,
+          "prob": 1.0
+        }
+      ],
+      "index": 13,
+      "scene_id": "S0013",
+      "duration": 7.16
+    },
+    {
+      "start": 65.66,
+      "end": 66.84,
+      "text": "Nguy hiểm lắm",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Nguy",
+          "start": 65.66,
+          "end": 66.26,
+          "prob": 0.979736328125
+        },
+        {
+          "word": "hiểm",
+          "start": 66.26,
+          "end": 66.54,
+          "prob": 0.999755859375
+        },
+        {
+          "word": "lắm",
+          "start": 66.54,
+          "end": 66.84,
+          "prob": 1.0
+        }
+      ],
+      "index": 14,
+      "scene_id": "S0014",
+      "duration": 1.18
+    },
+    {
+      "start": 66.84,
+      "end": 68.48,
+      "text": "Sao anh lại làm vậy?",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Sao",
+          "start": 66.84,
+          "end": 67.64,
+          "prob": 0.980224609375
+        },
+        {
+          "word": "anh",
+          "start": 67.64,
+          "end": 67.78,
+          "prob": 1.0
+        },
+        {
+          "word": "lại",
+          "start": 67.78,
+          "end": 67.96,
+          "prob": 1.0
+        },
+        {
+          "word": "làm",
+          "start": 67.96,
+          "end": 68.22,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "vậy?",
+          "start": 68.22,
+          "end": 68.48,
+          "prob": 1.0
+        }
+      ],
+      "index": 15,
+      "scene_id": "S0015",
+      "duration": 1.64
+    },
+    {
+      "start": 68.76,
+      "end": 70.2,
+      "text": "Nhà sư mỉm cười",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Nhà",
+          "start": 68.76,
+          "end": 69.32,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "sư",
+          "start": 69.32,
+          "end": 69.56,
+          "prob": 1.0
+        },
+        {
+          "word": "mỉm",
+          "start": 69.56,
+          "end": 69.84,
+          "prob": 0.9036458333333334
+        },
+        {
+          "word": "cười",
+          "start": 69.84,
+          "end": 70.2,
+          "prob": 0.999755859375
+        }
+      ],
+      "index": 16,
+      "scene_id": "S0016",
+      "duration": 1.44
+    },
+    {
+      "start": 70.2,
+      "end": 72.64,
+      "text": "Tôi đã bỏ nàng từ chỗ đó rồi",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Tôi",
+          "start": 70.2,
+          "end": 70.76,
+          "prob": 0.99462890625
+        },
+        {
+          "word": "đã",
+          "start": 70.76,
+          "end": 71.04,
+          "prob": 1.0
+        },
+        {
+          "word": "bỏ",
+          "start": 71.04,
+          "end": 71.28,
+          "prob": 1.0
+        },
+        {
+          "word": "nàng",
+          "start": 71.28,
+          "end": 71.56,
+          "prob": 0.974365234375
+        },
+        {
+          "word": "từ",
+          "start": 71.56,
+          "end": 71.82,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "chỗ",
+          "start": 71.82,
+          "end": 72.18,
+          "prob": 0.999267578125
+        },
+        {
+          "word": "đó",
+          "start": 72.18,
+          "end": 72.32,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "rồi",
+          "start": 72.32,
+          "end": 72.64,
+          "prob": 0.99951171875
+        }
+      ],
+      "index": 17,
+      "scene_id": "S0017",
+      "duration": 2.44
+    },
+    {
+      "start": 72.64,
+      "end": 74.76,
+      "text": "Anh còn mang nàng theo đấy sao?",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Anh",
+          "start": 72.64,
+          "end": 73.36,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "còn",
+          "start": 73.36,
+          "end": 73.56,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "mang",
+          "start": 73.56,
+          "end": 73.86,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "nàng",
+          "start": 73.86,
+          "end": 74.2,
+          "prob": 1.0
+        },
+        {
+          "word": "theo",
+          "start": 74.2,
+          "end": 74.36,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "đấy",
+          "start": 74.36,
+          "end": 74.52,
+          "prob": 0.93798828125
+        },
+        {
+          "word": "sao?",
+          "start": 74.52,
+          "end": 74.76,
+          "prob": 0.998046875
+        }
+      ],
+      "index": 18,
+      "scene_id": "S0018",
+      "duration": 2.12
+    },
+    {
+      "start": 75.54,
+      "end": 79.56,
+      "text": "Quá khứ đã đặt xuống, cỡ sao tâm trí còn mãi giam cầm",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Quá",
+          "start": 75.54,
+          "end": 76.14,
+          "prob": 0.668212890625
+        },
+        {
+          "word": "khứ",
+          "start": 76.14,
+          "end": 76.44,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "đã",
+          "start": 76.44,
+          "end": 76.62,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "đặt",
+          "start": 76.62,
+          "end": 76.86,
+          "prob": 0.984130859375
+        },
+        {
+          "word": "xuống,",
+          "start": 76.86,
+          "end": 77.28,
+          "prob": 1.0
+        },
+        {
+          "word": "cỡ",
+          "start": 77.32,
+          "end": 77.8,
+          "prob": 0.8173828125
+        },
+        {
+          "word": "sao",
+          "start": 77.8,
+          "end": 77.9,
+          "prob": 0.9658203125
+        },
+        {
+          "word": "tâm",
+          "start": 77.9,
+          "end": 78.16,
+          "prob": 0.999267578125
+        },
+        {
+          "word": "trí",
+          "start": 78.16,
+          "end": 78.44,
+          "prob": 1.0
+        },
+        {
+          "word": "còn",
+          "start": 78.44,
+          "end": 78.64,
+          "prob": 0.998046875
+        },
+        {
+          "word": "mãi",
+          "start": 78.64,
+          "end": 79.0,
+          "prob": 0.999755859375
+        },
+        {
+          "word": "giam",
+          "start": 79.0,
+          "end": 79.2,
+          "prob": 0.998291015625
+        },
+        {
+          "word": "cầm",
+          "start": 79.2,
+          "end": 79.56,
+          "prob": 1.0
+        }
+      ],
+      "index": 19,
+      "scene_id": "S0019",
+      "duration": 4.02
+    },
+    {
+      "start": 79.56,
+      "end": 85.94,
+      "text": "Hình hài không vướng bận, nhưng tâm niệm dính mắt mới là chiếc lồng giam kiên cố nhất",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Hình",
+          "start": 79.56,
+          "end": 80.36,
+          "prob": 0.5689697265625
+        },
+        {
+          "word": "hài",
+          "start": 80.36,
+          "end": 80.66,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "không",
+          "start": 80.66,
+          "end": 80.9,
+          "prob": 1.0
+        },
+        {
+          "word": "vướng",
+          "start": 80.9,
+          "end": 81.26,
+          "prob": 0.9986979166666666
+        },
+        {
+          "word": "bận,",
+          "start": 81.26,
+          "end": 81.56,
+          "prob": 0.974853515625
+        },
+        {
+          "word": "nhưng",
+          "start": 81.62,
+          "end": 82.08,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "tâm",
+          "start": 82.08,
+          "end": 82.42,
+          "prob": 1.0
+        },
+        {
+          "word": "niệm",
+          "start": 82.42,
+          "end": 82.76,
+          "prob": 0.9996744791666666
+        },
+        {
+          "word": "dính",
+          "start": 82.76,
+          "end": 83.0,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "mắt",
+          "start": 83.0,
+          "end": 83.24,
+          "prob": 0.99658203125
+        },
+        {
+          "word": "mới",
+          "start": 83.24,
+          "end": 83.5,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "là",
+          "start": 83.5,
+          "end": 84.02,
+          "prob": 0.87060546875
+        },
+        {
+          "word": "chiếc",
+          "start": 84.02,
+          "end": 84.5,
+          "prob": 0.9962565104166666
+        },
+        {
+          "word": "lồng",
+          "start": 84.5,
+          "end": 84.76,
+          "prob": 0.865234375
+        },
+        {
+          "word": "giam",
+          "start": 84.76,
+          "end": 85.04,
+          "prob": 0.998779296875
+        },
+        {
+          "word": "kiên",
+          "start": 85.04,
+          "end": 85.36,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "cố",
+          "start": 85.36,
+          "end": 85.68,
+          "prob": 0.996826171875
+        },
+        {
+          "word": "nhất",
+          "start": 85.68,
+          "end": 85.94,
+          "prob": 1.0
+        }
+      ],
+      "index": 20,
+      "scene_id": "S0020",
+      "duration": 6.38
+    },
+    {
+      "start": 85.94,
+      "end": 88.06,
+      "text": "Buông được, ít thanh thang",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Buông",
+          "start": 85.94,
+          "end": 86.7,
+          "prob": 0.75732421875
+        },
+        {
+          "word": "được,",
+          "start": 86.7,
+          "end": 86.94,
+          "prob": 0.99658203125
+        },
+        {
+          "word": "ít",
+          "start": 87.02,
+          "end": 87.5,
+          "prob": 0.95654296875
+        },
+        {
+          "word": "thanh",
+          "start": 87.5,
+          "end": 87.8,
+          "prob": 0.8916015625
+        },
+        {
+          "word": "thang",
+          "start": 87.8,
+          "end": 88.06,
+          "prob": 0.805419921875
+        }
+      ],
+      "index": 21,
+      "scene_id": "S0021",
+      "duration": 2.12
+    }
+  ],
+  "metadata": {
+    "model": "large-v3",
+    "device": "cuda",
+    "compute_type": "float16",
+    "word_timestamps": true,
+    "forced_language": null
+  }
+}

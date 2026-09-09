@@ -1,0 +1,727 @@
+{
+  "language": "en",
+  "language_probability": 1.0,
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 3.2,
+      "text": "The human brain can survive hunger for days.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "The",
+          "start": 0.0,
+          "end": 0.08,
+          "prob": 0.94873046875
+        },
+        {
+          "word": "human",
+          "start": 0.08,
+          "end": 0.28,
+          "prob": 0.99169921875
+        },
+        {
+          "word": "brain",
+          "start": 0.28,
+          "end": 0.68,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "can",
+          "start": 0.68,
+          "end": 1.06,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "survive",
+          "start": 1.06,
+          "end": 1.5,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "hunger",
+          "start": 1.5,
+          "end": 2.2,
+          "prob": 0.99560546875
+        },
+        {
+          "word": "for",
+          "start": 2.2,
+          "end": 2.66,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "days.",
+          "start": 2.66,
+          "end": 3.2,
+          "prob": 0.99755859375
+        }
+      ],
+      "index": 1,
+      "scene_id": "S0001",
+      "duration": 3.2
+    },
+    {
+      "start": 4.300000000000003,
+      "end": 7.22,
+      "text": "It can survive sleep loss.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "It",
+          "start": 4.300000000000003,
+          "end": 5.14,
+          "prob": 0.99658203125
+        },
+        {
+          "word": "can",
+          "start": 5.14,
+          "end": 5.34,
+          "prob": 1.0
+        },
+        {
+          "word": "survive",
+          "start": 5.34,
+          "end": 5.86,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "sleep",
+          "start": 5.86,
+          "end": 6.66,
+          "prob": 0.9482421875
+        },
+        {
+          "word": "loss.",
+          "start": 6.66,
+          "end": 7.22,
+          "prob": 0.9892578125
+        }
+      ],
+      "index": 2,
+      "scene_id": "S0002",
+      "duration": 2.92
+    },
+    {
+      "start": 8.360000000000003,
+      "end": 10.44,
+      "text": "It can survive pain.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "It",
+          "start": 8.360000000000003,
+          "end": 9.2,
+          "prob": 0.99658203125
+        },
+        {
+          "word": "can",
+          "start": 9.2,
+          "end": 9.34,
+          "prob": 1.0
+        },
+        {
+          "word": "survive",
+          "start": 9.34,
+          "end": 10.0,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "pain.",
+          "start": 10.0,
+          "end": 10.44,
+          "prob": 0.99560546875
+        }
+      ],
+      "index": 3,
+      "scene_id": "S0003",
+      "duration": 2.08
+    },
+    {
+      "start": 11.800000000000004,
+      "end": 20.64,
+      "text": "But let one person look at you the wrong way, and suddenly your whole inner world can collapse.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "But",
+          "start": 11.800000000000004,
+          "end": 12.64,
+          "prob": 0.9775390625
+        },
+        {
+          "word": "let",
+          "start": 12.64,
+          "end": 12.86,
+          "prob": 0.99462890625
+        },
+        {
+          "word": "one",
+          "start": 12.86,
+          "end": 13.18,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "person",
+          "start": 13.18,
+          "end": 13.74,
+          "prob": 1.0
+        },
+        {
+          "word": "look",
+          "start": 13.74,
+          "end": 14.0,
+          "prob": 1.0
+        },
+        {
+          "word": "at",
+          "start": 14.0,
+          "end": 14.2,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "you",
+          "start": 14.2,
+          "end": 14.4,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "the",
+          "start": 14.4,
+          "end": 14.6,
+          "prob": 0.998046875
+        },
+        {
+          "word": "wrong",
+          "start": 14.6,
+          "end": 14.88,
+          "prob": 1.0
+        },
+        {
+          "word": "way,",
+          "start": 14.88,
+          "end": 15.32,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "and",
+          "start": 15.860000000000001,
+          "end": 16.5,
+          "prob": 0.9892578125
+        },
+        {
+          "word": "suddenly",
+          "start": 16.5,
+          "end": 17.88,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "your",
+          "start": 17.88,
+          "end": 18.6,
+          "prob": 0.82373046875
+        },
+        {
+          "word": "whole",
+          "start": 18.6,
+          "end": 18.96,
+          "prob": 1.0
+        },
+        {
+          "word": "inner",
+          "start": 18.96,
+          "end": 19.46,
+          "prob": 1.0
+        },
+        {
+          "word": "world",
+          "start": 19.46,
+          "end": 19.88,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "can",
+          "start": 19.88,
+          "end": 20.16,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "collapse.",
+          "start": 20.16,
+          "end": 20.64,
+          "prob": 1.0
+        }
+      ],
+      "index": 4,
+      "scene_id": "S0004",
+      "duration": 8.84
+    },
+    {
+      "start": 21.98,
+      "end": 23.32,
+      "text": "A pause feels longer.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "A",
+          "start": 21.580000000000002,
+          "end": 22.0,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "pause",
+          "start": 22.0,
+          "end": 22.34,
+          "prob": 1.0
+        },
+        {
+          "word": "feels",
+          "start": 22.34,
+          "end": 22.74,
+          "prob": 1.0
+        },
+        {
+          "word": "longer.",
+          "start": 22.74,
+          "end": 23.32,
+          "prob": 1.0
+        }
+      ],
+      "index": 5,
+      "scene_id": "S0005",
+      "duration": 1.34
+    },
+    {
+      "start": 24.440000000000005,
+      "end": 26.92,
+      "text": "A sentence feels colder.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "A",
+          "start": 24.440000000000005,
+          "end": 25.28,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "sentence",
+          "start": 25.28,
+          "end": 25.7,
+          "prob": 1.0
+        },
+        {
+          "word": "feels",
+          "start": 25.7,
+          "end": 26.22,
+          "prob": 1.0
+        },
+        {
+          "word": "colder.",
+          "start": 26.22,
+          "end": 26.92,
+          "prob": 0.99951171875
+        }
+      ],
+      "index": 6,
+      "scene_id": "S0006",
+      "duration": 2.48
+    },
+    {
+      "start": 27.82,
+      "end": 35.98,
+      "text": "A small mistake feels enormous, and a single no can follow you for the rest of the day.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "A",
+          "start": 27.82,
+          "end": 28.54,
+          "prob": 0.75732421875
+        },
+        {
+          "word": "small",
+          "start": 28.54,
+          "end": 29.16,
+          "prob": 0.9931640625
+        },
+        {
+          "word": "mistake",
+          "start": 29.16,
+          "end": 29.62,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "feels",
+          "start": 29.62,
+          "end": 30.12,
+          "prob": 0.99462890625
+        },
+        {
+          "word": "enormous,",
+          "start": 30.12,
+          "end": 30.8,
+          "prob": 0.99560546875
+        },
+        {
+          "word": "and",
+          "start": 30.94,
+          "end": 32.1,
+          "prob": 0.9755859375
+        },
+        {
+          "word": "a",
+          "start": 32.1,
+          "end": 32.94,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "single",
+          "start": 32.94,
+          "end": 33.3,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "no",
+          "start": 33.3,
+          "end": 33.66,
+          "prob": 0.67919921875
+        },
+        {
+          "word": "can",
+          "start": 33.66,
+          "end": 34.06,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "follow",
+          "start": 34.06,
+          "end": 34.54,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "you",
+          "start": 34.54,
+          "end": 34.82,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "for",
+          "start": 34.82,
+          "end": 35.04,
+          "prob": 0.998046875
+        },
+        {
+          "word": "the",
+          "start": 35.04,
+          "end": 35.14,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "rest",
+          "start": 35.14,
+          "end": 35.44,
+          "prob": 1.0
+        },
+        {
+          "word": "of",
+          "start": 35.44,
+          "end": 35.56,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "the",
+          "start": 35.56,
+          "end": 35.66,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "day.",
+          "start": 35.66,
+          "end": 35.98,
+          "prob": 1.0
+        }
+      ],
+      "index": 7,
+      "scene_id": "S0007",
+      "duration": 8.16
+    },
+    {
+      "start": 37.38,
+      "end": 41.04,
+      "text": "That is what makes the fear of rejection so strange.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "That",
+          "start": 37.38,
+          "end": 38.1,
+          "prob": 0.99365234375
+        },
+        {
+          "word": "is",
+          "start": 38.1,
+          "end": 38.3,
+          "prob": 0.99658203125
+        },
+        {
+          "word": "what",
+          "start": 38.3,
+          "end": 38.5,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "makes",
+          "start": 38.5,
+          "end": 38.78,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "the",
+          "start": 38.78,
+          "end": 38.96,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "fear",
+          "start": 38.96,
+          "end": 39.3,
+          "prob": 0.998046875
+        },
+        {
+          "word": "of",
+          "start": 39.3,
+          "end": 39.62,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "rejection",
+          "start": 39.62,
+          "end": 40.02,
+          "prob": 0.998046875
+        },
+        {
+          "word": "so",
+          "start": 40.02,
+          "end": 40.52,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "strange.",
+          "start": 40.52,
+          "end": 41.04,
+          "prob": 0.99951171875
+        }
+      ],
+      "index": 8,
+      "scene_id": "S0008",
+      "duration": 3.66
+    },
+    {
+      "start": 42.54,
+      "end": 44.18,
+      "text": "It is not loud.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "It",
+          "start": 42.54,
+          "end": 43.26,
+          "prob": 0.984375
+        },
+        {
+          "word": "is",
+          "start": 43.26,
+          "end": 43.4,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "not",
+          "start": 43.4,
+          "end": 43.72,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "loud.",
+          "start": 43.72,
+          "end": 44.18,
+          "prob": 0.9990234375
+        }
+      ],
+      "index": 9,
+      "scene_id": "S0009",
+      "duration": 1.64
+    },
+    {
+      "start": 45.56,
+      "end": 47.4,
+      "text": "It is not dramatic.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "It",
+          "start": 45.56,
+          "end": 46.28,
+          "prob": 0.99609375
+        },
+        {
+          "word": "is",
+          "start": 46.28,
+          "end": 46.46,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "not",
+          "start": 46.46,
+          "end": 46.76,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "dramatic.",
+          "start": 46.76,
+          "end": 47.4,
+          "prob": 0.9990234375
+        }
+      ],
+      "index": 10,
+      "scene_id": "S0010",
+      "duration": 1.84
+    },
+    {
+      "start": 48.82,
+      "end": 50.96,
+      "text": "It is not always visible.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "It",
+          "start": 48.82,
+          "end": 49.54,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "is",
+          "start": 49.54,
+          "end": 49.68,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "not",
+          "start": 49.68,
+          "end": 49.84,
+          "prob": 1.0
+        },
+        {
+          "word": "always",
+          "start": 49.84,
+          "end": 50.32,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "visible.",
+          "start": 50.32,
+          "end": 50.96,
+          "prob": 0.99609375
+        }
+      ],
+      "index": 11,
+      "scene_id": "S0011",
+      "duration": 2.14
+    },
+    {
+      "start": 52.3,
+      "end": 56.76,
+      "text": "But for the brain it can feel like something very serious has happened.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "But",
+          "start": 52.3,
+          "end": 52.98,
+          "prob": 0.6591796875
+        },
+        {
+          "word": "for",
+          "start": 52.98,
+          "end": 53.14,
+          "prob": 0.97998046875
+        },
+        {
+          "word": "the",
+          "start": 53.14,
+          "end": 53.28,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "brain",
+          "start": 53.28,
+          "end": 53.58,
+          "prob": 0.99658203125
+        },
+        {
+          "word": "it",
+          "start": 53.58,
+          "end": 53.96,
+          "prob": 0.478515625
+        },
+        {
+          "word": "can",
+          "start": 53.96,
+          "end": 54.12,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "feel",
+          "start": 54.12,
+          "end": 54.5,
+          "prob": 0.998046875
+        },
+        {
+          "word": "like",
+          "start": 54.5,
+          "end": 54.8,
+          "prob": 0.99609375
+        },
+        {
+          "word": "something",
+          "start": 54.8,
+          "end": 55.12,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "very",
+          "start": 55.12,
+          "end": 55.52,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "serious",
+          "start": 55.52,
+          "end": 56.0,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "has",
+          "start": 56.0,
+          "end": 56.36,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "happened.",
+          "start": 56.36,
+          "end": 56.76,
+          "prob": 0.998046875
+        }
+      ],
+      "index": 12,
+      "scene_id": "S0012",
+      "duration": 4.46
+    }
+  ],
+  "metadata": {
+    "model": "large-v3",
+    "device": "cuda",
+    "compute_type": "float16",
+    "word_timestamps": true,
+    "forced_language": null
+  }
+}

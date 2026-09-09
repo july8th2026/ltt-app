@@ -1,0 +1,2080 @@
+{
+  "language": "en",
+  "language_probability": 0.9814453125,
+  "segments": [
+    {
+      "start": 2.1200000000000037,
+      "end": 3.9,
+      "text": "Let's say thank you!",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Let's",
+          "start": 2.1200000000000037,
+          "end": 2.96,
+          "prob": 0.900146484375
+        },
+        {
+          "word": "say",
+          "start": 2.96,
+          "end": 3.14,
+          "prob": 0.98779296875
+        },
+        {
+          "word": "thank",
+          "start": 3.14,
+          "end": 3.52,
+          "prob": 0.64990234375
+        },
+        {
+          "word": "you!",
+          "start": 3.52,
+          "end": 3.9,
+          "prob": 0.994140625
+        }
+      ],
+      "index": 1,
+      "scene_id": "S0001",
+      "duration": 1.78
+    },
+    {
+      "start": 7.680000000000003,
+      "end": 10.38,
+      "text": "Wake up in the morning light",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Wake",
+          "start": 7.680000000000003,
+          "end": 8.52,
+          "prob": 0.4580078125
+        },
+        {
+          "word": "up",
+          "start": 8.52,
+          "end": 8.88,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "in",
+          "start": 8.88,
+          "end": 9.06,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "the",
+          "start": 9.06,
+          "end": 9.28,
+          "prob": 0.998046875
+        },
+        {
+          "word": "morning",
+          "start": 9.28,
+          "end": 9.72,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "light",
+          "start": 9.72,
+          "end": 10.38,
+          "prob": 0.96044921875
+        }
+      ],
+      "index": 2,
+      "scene_id": "S0002",
+      "duration": 2.7
+    },
+    {
+      "start": 10.38,
+      "end": 11.34,
+      "text": "Yawn",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Yawn",
+          "start": 10.38,
+          "end": 11.34,
+          "prob": 0.6270751953125
+        }
+      ],
+      "index": 3,
+      "scene_id": "S0003",
+      "duration": 0.96
+    },
+    {
+      "start": 11.34,
+      "end": 14.4,
+      "text": "Sun is shining, oh so bright",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Sun",
+          "start": 11.34,
+          "end": 11.98,
+          "prob": 0.35693359375
+        },
+        {
+          "word": "is",
+          "start": 11.98,
+          "end": 12.32,
+          "prob": 0.97509765625
+        },
+        {
+          "word": "shining,",
+          "start": 12.32,
+          "end": 13.02,
+          "prob": 0.98974609375
+        },
+        {
+          "word": "oh",
+          "start": 13.18,
+          "end": 13.5,
+          "prob": 0.98193359375
+        },
+        {
+          "word": "so",
+          "start": 13.5,
+          "end": 13.8,
+          "prob": 0.88623046875
+        },
+        {
+          "word": "bright",
+          "start": 13.8,
+          "end": 14.4,
+          "prob": 0.9990234375
+        }
+      ],
+      "index": 4,
+      "scene_id": "S0004",
+      "duration": 3.06
+    },
+    {
+      "start": 14.4,
+      "end": 18.24,
+      "text": "I see my mom and say hello",
+      "type": "speech",
+      "words": [
+        {
+          "word": "I",
+          "start": 14.4,
+          "end": 15.58,
+          "prob": 0.95849609375
+        },
+        {
+          "word": "see",
+          "start": 15.58,
+          "end": 16.02,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "my",
+          "start": 16.02,
+          "end": 16.3,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "mom",
+          "start": 16.3,
+          "end": 16.66,
+          "prob": 0.9423828125
+        },
+        {
+          "word": "and",
+          "start": 16.66,
+          "end": 17.08,
+          "prob": 0.98828125
+        },
+        {
+          "word": "say",
+          "start": 17.08,
+          "end": 17.5,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "hello",
+          "start": 17.5,
+          "end": 18.24,
+          "prob": 0.88720703125
+        }
+      ],
+      "index": 5,
+      "scene_id": "S0005",
+      "duration": 3.84
+    },
+    {
+      "start": 18.24,
+      "end": 22.46,
+      "text": "I love you more than you can know",
+      "type": "speech",
+      "words": [
+        {
+          "word": "I",
+          "start": 18.24,
+          "end": 19.74,
+          "prob": 0.978515625
+        },
+        {
+          "word": "love",
+          "start": 19.74,
+          "end": 20.08,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "you",
+          "start": 20.08,
+          "end": 20.26,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "more",
+          "start": 20.26,
+          "end": 20.62,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "than",
+          "start": 20.62,
+          "end": 21.02,
+          "prob": 0.99462890625
+        },
+        {
+          "word": "you",
+          "start": 21.02,
+          "end": 21.44,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "can",
+          "start": 21.44,
+          "end": 21.86,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "know",
+          "start": 21.86,
+          "end": 22.46,
+          "prob": 0.99951171875
+        }
+      ],
+      "index": 6,
+      "scene_id": "S0006",
+      "duration": 4.22
+    },
+    {
+      "start": 23.780000000000005,
+      "end": 27.36,
+      "text": "Thank you, thank you, every day",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Thank",
+          "start": 23.780000000000005,
+          "end": 24.62,
+          "prob": 0.98291015625
+        },
+        {
+          "word": "you,",
+          "start": 24.62,
+          "end": 25.06,
+          "prob": 0.99609375
+        },
+        {
+          "word": "thank",
+          "start": 25.08,
+          "end": 25.38,
+          "prob": 0.98876953125
+        },
+        {
+          "word": "you,",
+          "start": 25.38,
+          "end": 25.92,
+          "prob": 1.0
+        },
+        {
+          "word": "every",
+          "start": 26.04,
+          "end": 26.68,
+          "prob": 0.85400390625
+        },
+        {
+          "word": "day",
+          "start": 26.68,
+          "end": 27.36,
+          "prob": 1.0
+        }
+      ],
+      "index": 7,
+      "scene_id": "S0007",
+      "duration": 3.58
+    },
+    {
+      "start": 27.36,
+      "end": 31.4,
+      "text": "For the fun and for the play",
+      "type": "speech",
+      "words": [
+        {
+          "word": "For",
+          "start": 27.36,
+          "end": 29.04,
+          "prob": 0.48046875
+        },
+        {
+          "word": "the",
+          "start": 29.04,
+          "end": 29.28,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "fun",
+          "start": 29.28,
+          "end": 29.6,
+          "prob": 0.99560546875
+        },
+        {
+          "word": "and",
+          "start": 29.6,
+          "end": 30.02,
+          "prob": 0.951171875
+        },
+        {
+          "word": "for",
+          "start": 30.02,
+          "end": 30.52,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "the",
+          "start": 30.52,
+          "end": 31.02,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "play",
+          "start": 31.02,
+          "end": 31.4,
+          "prob": 0.9990234375
+        }
+      ],
+      "index": 8,
+      "scene_id": "S0008",
+      "duration": 4.04
+    },
+    {
+      "start": 31.4,
+      "end": 35.3,
+      "text": "Thank you, thank you with a smile",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Thank",
+          "start": 31.4,
+          "end": 32.62,
+          "prob": 0.60595703125
+        },
+        {
+          "word": "you,",
+          "start": 32.62,
+          "end": 33.08,
+          "prob": 0.99609375
+        },
+        {
+          "word": "thank",
+          "start": 33.08,
+          "end": 33.42,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "you",
+          "start": 33.42,
+          "end": 33.86,
+          "prob": 1.0
+        },
+        {
+          "word": "with",
+          "start": 33.86,
+          "end": 34.5,
+          "prob": 0.52685546875
+        },
+        {
+          "word": "a",
+          "start": 34.5,
+          "end": 34.8,
+          "prob": 0.99365234375
+        },
+        {
+          "word": "smile",
+          "start": 34.8,
+          "end": 35.3,
+          "prob": 0.99951171875
+        }
+      ],
+      "index": 9,
+      "scene_id": "S0009",
+      "duration": 3.9
+    },
+    {
+      "start": 36.279999999999994,
+      "end": 40.62,
+      "text": "Let's be happy for a while",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Let's",
+          "start": 36.279999999999994,
+          "end": 37.12,
+          "prob": 0.993408203125
+        },
+        {
+          "word": "be",
+          "start": 37.12,
+          "end": 37.22,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "happy",
+          "start": 37.22,
+          "end": 37.64,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "for",
+          "start": 37.64,
+          "end": 38.46,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "a",
+          "start": 38.46,
+          "end": 39.4,
+          "prob": 0.9853515625
+        },
+        {
+          "word": "while",
+          "start": 39.4,
+          "end": 40.62,
+          "prob": 1.0
+        }
+      ],
+      "index": 10,
+      "scene_id": "S0010",
+      "duration": 4.34
+    },
+    {
+      "start": 40.62,
+      "end": 41.34,
+      "text": "Yay!",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Yay!",
+          "start": 40.62,
+          "end": 41.34,
+          "prob": 0.92578125
+        }
+      ],
+      "index": 11,
+      "scene_id": "S0011",
+      "duration": 0.72
+    },
+    {
+      "start": 43.82,
+      "end": 47.3,
+      "text": "Time for breakfast, yummy food",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Time",
+          "start": 43.82,
+          "end": 44.66,
+          "prob": 0.99462890625
+        },
+        {
+          "word": "for",
+          "start": 44.66,
+          "end": 44.98,
+          "prob": 1.0
+        },
+        {
+          "word": "breakfast,",
+          "start": 44.98,
+          "end": 45.68,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "yummy",
+          "start": 46.06,
+          "end": 46.66,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "food",
+          "start": 46.66,
+          "end": 47.3,
+          "prob": 1.0
+        }
+      ],
+      "index": 12,
+      "scene_id": "S0012",
+      "duration": 3.48
+    },
+    {
+      "start": 47.3,
+      "end": 48.6,
+      "text": "Munch, munch",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Munch,",
+          "start": 47.3,
+          "end": 48.12,
+          "prob": 0.9765625
+        },
+        {
+          "word": "munch",
+          "start": 48.24,
+          "end": 48.6,
+          "prob": 0.998291015625
+        }
+      ],
+      "index": 13,
+      "scene_id": "S0013",
+      "duration": 1.3
+    },
+    {
+      "start": 48.6,
+      "end": 51.38,
+      "text": "Pancakes put me in a mood",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Pancakes",
+          "start": 48.6,
+          "end": 49.6,
+          "prob": 0.876220703125
+        },
+        {
+          "word": "put",
+          "start": 49.6,
+          "end": 49.96,
+          "prob": 0.994140625
+        },
+        {
+          "word": "me",
+          "start": 49.96,
+          "end": 50.28,
+          "prob": 1.0
+        },
+        {
+          "word": "in",
+          "start": 50.28,
+          "end": 50.52,
+          "prob": 1.0
+        },
+        {
+          "word": "a",
+          "start": 50.52,
+          "end": 50.82,
+          "prob": 0.998046875
+        },
+        {
+          "word": "mood",
+          "start": 50.82,
+          "end": 51.38,
+          "prob": 1.0
+        }
+      ],
+      "index": 14,
+      "scene_id": "S0014",
+      "duration": 2.78
+    },
+    {
+      "start": 51.38,
+      "end": 54.42,
+      "text": "I tell my dad, this is so sweet",
+      "type": "speech",
+      "words": [
+        {
+          "word": "I",
+          "start": 51.38,
+          "end": 51.8,
+          "prob": 0.9931640625
+        },
+        {
+          "word": "tell",
+          "start": 51.8,
+          "end": 52.04,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "my",
+          "start": 52.04,
+          "end": 52.3,
+          "prob": 1.0
+        },
+        {
+          "word": "dad,",
+          "start": 52.3,
+          "end": 52.66,
+          "prob": 0.99560546875
+        },
+        {
+          "word": "this",
+          "start": 52.86,
+          "end": 53.28,
+          "prob": 0.99462890625
+        },
+        {
+          "word": "is",
+          "start": 53.28,
+          "end": 53.6,
+          "prob": 1.0
+        },
+        {
+          "word": "so",
+          "start": 53.6,
+          "end": 53.84,
+          "prob": 1.0
+        },
+        {
+          "word": "sweet",
+          "start": 53.84,
+          "end": 54.42,
+          "prob": 1.0
+        }
+      ],
+      "index": 15,
+      "scene_id": "S0015",
+      "duration": 3.04
+    },
+    {
+      "start": 54.42,
+      "end": 59.32,
+      "text": "Thank you for the tasty treat",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Thank",
+          "start": 54.42,
+          "end": 56.58,
+          "prob": 0.6240234375
+        },
+        {
+          "word": "you",
+          "start": 56.58,
+          "end": 57.04,
+          "prob": 0.98828125
+        },
+        {
+          "word": "for",
+          "start": 57.04,
+          "end": 57.46,
+          "prob": 0.873046875
+        },
+        {
+          "word": "the",
+          "start": 57.46,
+          "end": 58.24,
+          "prob": 0.958984375
+        },
+        {
+          "word": "tasty",
+          "start": 58.24,
+          "end": 58.68,
+          "prob": 0.98095703125
+        },
+        {
+          "word": "treat",
+          "start": 58.68,
+          "end": 59.32,
+          "prob": 0.98583984375
+        }
+      ],
+      "index": 16,
+      "scene_id": "S0016",
+      "duration": 4.9
+    },
+    {
+      "start": 59.32,
+      "end": 63.4,
+      "text": "Thank you, thank you every day",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Thank",
+          "start": 59.32,
+          "end": 60.6,
+          "prob": 0.4375
+        },
+        {
+          "word": "you,",
+          "start": 60.6,
+          "end": 61.08,
+          "prob": 0.98974609375
+        },
+        {
+          "word": "thank",
+          "start": 61.08,
+          "end": 61.38,
+          "prob": 0.990234375
+        },
+        {
+          "word": "you",
+          "start": 61.38,
+          "end": 61.86,
+          "prob": 1.0
+        },
+        {
+          "word": "every",
+          "start": 61.86,
+          "end": 62.58,
+          "prob": 0.5029296875
+        },
+        {
+          "word": "day",
+          "start": 62.58,
+          "end": 63.4,
+          "prob": 0.99951171875
+        }
+      ],
+      "index": 17,
+      "scene_id": "S0017",
+      "duration": 4.08
+    },
+    {
+      "start": 63.4,
+      "end": 67.38,
+      "text": "For the fun and for the play",
+      "type": "speech",
+      "words": [
+        {
+          "word": "For",
+          "start": 63.4,
+          "end": 64.44,
+          "prob": 0.87841796875
+        },
+        {
+          "word": "the",
+          "start": 64.44,
+          "end": 65.28,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "fun",
+          "start": 65.28,
+          "end": 65.76,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "and",
+          "start": 65.76,
+          "end": 66.04,
+          "prob": 0.98828125
+        },
+        {
+          "word": "for",
+          "start": 66.04,
+          "end": 66.46,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "the",
+          "start": 66.46,
+          "end": 67.02,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "play",
+          "start": 67.02,
+          "end": 67.38,
+          "prob": 0.99853515625
+        }
+      ],
+      "index": 18,
+      "scene_id": "S0018",
+      "duration": 3.98
+    },
+    {
+      "start": 67.38,
+      "end": 71.32,
+      "text": "Thank you, thank you with a smile",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Thank",
+          "start": 67.38,
+          "end": 68.66,
+          "prob": 0.994140625
+        },
+        {
+          "word": "you,",
+          "start": 68.66,
+          "end": 69.08,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "thank",
+          "start": 69.08,
+          "end": 69.36,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "you",
+          "start": 69.36,
+          "end": 69.86,
+          "prob": 1.0
+        },
+        {
+          "word": "with",
+          "start": 69.86,
+          "end": 70.5,
+          "prob": 0.9912109375
+        },
+        {
+          "word": "a",
+          "start": 70.5,
+          "end": 70.8,
+          "prob": 0.99072265625
+        },
+        {
+          "word": "smile",
+          "start": 70.8,
+          "end": 71.32,
+          "prob": 0.99951171875
+        }
+      ],
+      "index": 19,
+      "scene_id": "S0019",
+      "duration": 3.94
+    },
+    {
+      "start": 71.32,
+      "end": 76.52,
+      "text": "Let's be happy for a while",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Let's",
+          "start": 71.32,
+          "end": 73.14,
+          "prob": 0.99658203125
+        },
+        {
+          "word": "be",
+          "start": 73.14,
+          "end": 73.24,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "happy",
+          "start": 73.24,
+          "end": 73.74,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "for",
+          "start": 73.74,
+          "end": 74.52,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "a",
+          "start": 74.52,
+          "end": 75.44,
+          "prob": 0.982421875
+        },
+        {
+          "word": "while",
+          "start": 75.44,
+          "end": 76.52,
+          "prob": 0.99951171875
+        }
+      ],
+      "index": 20,
+      "scene_id": "S0020",
+      "duration": 5.2
+    },
+    {
+      "start": 76.52,
+      "end": 77.36,
+      "text": "Yay!",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Yay!",
+          "start": 76.52,
+          "end": 77.36,
+          "prob": 0.71044921875
+        }
+      ],
+      "index": 21,
+      "scene_id": "S0021",
+      "duration": 0.84
+    },
+    {
+      "start": 79.8,
+      "end": 83.42,
+      "text": "Playing blocks with all my friends",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Playing",
+          "start": 79.8,
+          "end": 80.88,
+          "prob": 0.9765625
+        },
+        {
+          "word": "blocks",
+          "start": 80.88,
+          "end": 81.58,
+          "prob": 0.9453125
+        },
+        {
+          "word": "with",
+          "start": 81.58,
+          "end": 82.02,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "all",
+          "start": 82.02,
+          "end": 82.36,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "my",
+          "start": 82.36,
+          "end": 82.78,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "friends",
+          "start": 82.78,
+          "end": 83.42,
+          "prob": 0.99853515625
+        }
+      ],
+      "index": 22,
+      "scene_id": "S0022",
+      "duration": 3.62
+    },
+    {
+      "start": 83.42,
+      "end": 84.66,
+      "text": "Locks falling!",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Locks",
+          "start": 83.42,
+          "end": 84.28,
+          "prob": 0.435302734375
+        },
+        {
+          "word": "falling!",
+          "start": 84.28,
+          "end": 84.66,
+          "prob": 0.93115234375
+        }
+      ],
+      "index": 23,
+      "scene_id": "S0023",
+      "duration": 1.24
+    },
+    {
+      "start": 84.8,
+      "end": 87.44,
+      "text": "The happy building never ends",
+      "type": "speech",
+      "words": [
+        {
+          "word": "The",
+          "start": 84.8,
+          "end": 84.98,
+          "prob": 0.2900390625
+        },
+        {
+          "word": "happy",
+          "start": 84.98,
+          "end": 85.12,
+          "prob": 0.95458984375
+        },
+        {
+          "word": "building",
+          "start": 85.12,
+          "end": 85.76,
+          "prob": 0.990234375
+        },
+        {
+          "word": "never",
+          "start": 85.76,
+          "end": 86.6,
+          "prob": 0.97705078125
+        },
+        {
+          "word": "ends",
+          "start": 86.6,
+          "end": 87.44,
+          "prob": 0.98828125
+        }
+      ],
+      "index": 24,
+      "scene_id": "S0024",
+      "duration": 2.64
+    },
+    {
+      "start": 87.44,
+      "end": 90.34,
+      "text": "You share your toys so nicely too",
+      "type": "speech",
+      "words": [
+        {
+          "word": "You",
+          "start": 87.44,
+          "end": 87.74,
+          "prob": 0.429931640625
+        },
+        {
+          "word": "share",
+          "start": 87.74,
+          "end": 88.06,
+          "prob": 0.99267578125
+        },
+        {
+          "word": "your",
+          "start": 88.06,
+          "end": 88.32,
+          "prob": 0.99169921875
+        },
+        {
+          "word": "toys",
+          "start": 88.32,
+          "end": 88.72,
+          "prob": 0.9814453125
+        },
+        {
+          "word": "so",
+          "start": 88.72,
+          "end": 89.02,
+          "prob": 0.99267578125
+        },
+        {
+          "word": "nicely",
+          "start": 89.02,
+          "end": 89.72,
+          "prob": 0.998046875
+        },
+        {
+          "word": "too",
+          "start": 89.72,
+          "end": 90.34,
+          "prob": 0.65576171875
+        }
+      ],
+      "index": 25,
+      "scene_id": "S0025",
+      "duration": 2.9
+    },
+    {
+      "start": 90.86,
+      "end": 95.44,
+      "text": "So I will sing my thanks to you",
+      "type": "speech",
+      "words": [
+        {
+          "word": "So",
+          "start": 90.86,
+          "end": 91.78,
+          "prob": 0.8955078125
+        },
+        {
+          "word": "I",
+          "start": 91.78,
+          "end": 92.04,
+          "prob": 0.9638671875
+        },
+        {
+          "word": "will",
+          "start": 92.04,
+          "end": 92.28,
+          "prob": 0.9736328125
+        },
+        {
+          "word": "sing",
+          "start": 92.28,
+          "end": 92.6,
+          "prob": 0.998046875
+        },
+        {
+          "word": "my",
+          "start": 92.6,
+          "end": 93.48,
+          "prob": 0.79736328125
+        },
+        {
+          "word": "thanks",
+          "start": 93.48,
+          "end": 94.64,
+          "prob": 0.94189453125
+        },
+        {
+          "word": "to",
+          "start": 94.64,
+          "end": 94.96,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "you",
+          "start": 94.96,
+          "end": 95.44,
+          "prob": 0.99755859375
+        }
+      ],
+      "index": 26,
+      "scene_id": "S0026",
+      "duration": 4.58
+    },
+    {
+      "start": 96.18,
+      "end": 99.36,
+      "text": "Thank you, thank you, every day",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Thank",
+          "start": 96.18,
+          "end": 96.62,
+          "prob": 0.86767578125
+        },
+        {
+          "word": "you,",
+          "start": 96.62,
+          "end": 97.04,
+          "prob": 0.990234375
+        },
+        {
+          "word": "thank",
+          "start": 97.06,
+          "end": 97.44,
+          "prob": 0.9892578125
+        },
+        {
+          "word": "you,",
+          "start": 97.44,
+          "end": 97.92,
+          "prob": 1.0
+        },
+        {
+          "word": "every",
+          "start": 98.0,
+          "end": 98.68,
+          "prob": 0.8515625
+        },
+        {
+          "word": "day",
+          "start": 98.68,
+          "end": 99.36,
+          "prob": 0.99951171875
+        }
+      ],
+      "index": 27,
+      "scene_id": "S0027",
+      "duration": 3.18
+    },
+    {
+      "start": 99.36,
+      "end": 103.38,
+      "text": "For the fun and for the play",
+      "type": "speech",
+      "words": [
+        {
+          "word": "For",
+          "start": 99.36,
+          "end": 100.94,
+          "prob": 0.95849609375
+        },
+        {
+          "word": "the",
+          "start": 100.94,
+          "end": 101.28,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "fun",
+          "start": 101.28,
+          "end": 101.78,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "and",
+          "start": 101.78,
+          "end": 102.04,
+          "prob": 0.9541015625
+        },
+        {
+          "word": "for",
+          "start": 102.04,
+          "end": 102.48,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "the",
+          "start": 102.48,
+          "end": 103.04,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "play",
+          "start": 103.04,
+          "end": 103.38,
+          "prob": 0.99951171875
+        }
+      ],
+      "index": 28,
+      "scene_id": "S0028",
+      "duration": 4.02
+    },
+    {
+      "start": 103.38,
+      "end": 107.34,
+      "text": "Thank you, thank you, with a smile",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Thank",
+          "start": 103.38,
+          "end": 104.64,
+          "prob": 0.9892578125
+        },
+        {
+          "word": "you,",
+          "start": 104.64,
+          "end": 105.08,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "thank",
+          "start": 105.08,
+          "end": 105.38,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "you,",
+          "start": 105.38,
+          "end": 105.88,
+          "prob": 1.0
+        },
+        {
+          "word": "with",
+          "start": 106.06,
+          "end": 106.46,
+          "prob": 0.998046875
+        },
+        {
+          "word": "a",
+          "start": 106.46,
+          "end": 106.8,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "smile",
+          "start": 106.8,
+          "end": 107.34,
+          "prob": 0.99951171875
+        }
+      ],
+      "index": 29,
+      "scene_id": "S0029",
+      "duration": 3.96
+    },
+    {
+      "start": 108.26,
+      "end": 112.52,
+      "text": "Let's be happy for a while",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Let's",
+          "start": 108.26,
+          "end": 109.14,
+          "prob": 0.990966796875
+        },
+        {
+          "word": "be",
+          "start": 109.14,
+          "end": 109.24,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "happy",
+          "start": 109.24,
+          "end": 109.72,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "for",
+          "start": 109.72,
+          "end": 110.5,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "a",
+          "start": 110.5,
+          "end": 111.4,
+          "prob": 0.9501953125
+        },
+        {
+          "word": "while",
+          "start": 111.4,
+          "end": 112.52,
+          "prob": 0.99951171875
+        }
+      ],
+      "index": 30,
+      "scene_id": "S0030",
+      "duration": 4.26
+    },
+    {
+      "start": 112.52,
+      "end": 113.36,
+      "text": "Yay!",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Yay!",
+          "start": 112.52,
+          "end": 113.36,
+          "prob": 0.62548828125
+        }
+      ],
+      "index": 31,
+      "scene_id": "S0031",
+      "duration": 0.84
+    },
+    {
+      "start": 115.06,
+      "end": 122.44,
+      "text": "Now the stars are in the sky Time to sleep and close my eye",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Now",
+          "start": 115.06,
+          "end": 116.02,
+          "prob": 0.76220703125
+        },
+        {
+          "word": "the",
+          "start": 116.02,
+          "end": 116.28,
+          "prob": 0.994140625
+        },
+        {
+          "word": "stars",
+          "start": 116.28,
+          "end": 116.8,
+          "prob": 0.99462890625
+        },
+        {
+          "word": "are",
+          "start": 116.8,
+          "end": 117.06,
+          "prob": 0.99267578125
+        },
+        {
+          "word": "in",
+          "start": 117.06,
+          "end": 117.52,
+          "prob": 0.99609375
+        },
+        {
+          "word": "the",
+          "start": 117.52,
+          "end": 117.78,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "sky",
+          "start": 117.78,
+          "end": 118.34,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "Time",
+          "start": 118.34,
+          "end": 120.04,
+          "prob": 0.66162109375
+        },
+        {
+          "word": "to",
+          "start": 120.04,
+          "end": 120.3,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "sleep",
+          "start": 120.3,
+          "end": 120.6,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "and",
+          "start": 120.6,
+          "end": 121.02,
+          "prob": 0.98779296875
+        },
+        {
+          "word": "close",
+          "start": 121.02,
+          "end": 121.42,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "my",
+          "start": 121.42,
+          "end": 121.86,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "eye",
+          "start": 121.86,
+          "end": 122.44,
+          "prob": 0.7607421875
+        }
+      ],
+      "index": 32,
+      "scene_id": "S0032",
+      "duration": 7.38
+    },
+    {
+      "start": 123.96,
+      "end": 130.36,
+      "text": "Thank you for my comfy bed And the story that was read",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Thank",
+          "start": 123.62,
+          "end": 124.1,
+          "prob": 0.98681640625
+        },
+        {
+          "word": "you",
+          "start": 124.1,
+          "end": 124.32,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "for",
+          "start": 124.32,
+          "end": 124.58,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "my",
+          "start": 124.58,
+          "end": 125.04,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "comfy",
+          "start": 125.04,
+          "end": 125.64,
+          "prob": 0.998046875
+        },
+        {
+          "word": "bed",
+          "start": 125.64,
+          "end": 126.34,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "And",
+          "start": 126.34,
+          "end": 127.92,
+          "prob": 0.96630859375
+        },
+        {
+          "word": "the",
+          "start": 127.92,
+          "end": 128.26,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "story",
+          "start": 128.26,
+          "end": 128.8,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "that",
+          "start": 128.8,
+          "end": 129.48,
+          "prob": 0.998046875
+        },
+        {
+          "word": "was",
+          "start": 129.48,
+          "end": 129.86,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "read",
+          "start": 129.86,
+          "end": 130.36,
+          "prob": 0.9990234375
+        }
+      ],
+      "index": 33,
+      "scene_id": "S0033",
+      "duration": 6.4
+    },
+    {
+      "start": 131.72,
+      "end": 138.38,
+      "text": "When someone helps me tie my shoe I know exactly what to do",
+      "type": "speech",
+      "words": [
+        {
+          "word": "When",
+          "start": 131.3,
+          "end": 131.78,
+          "prob": 0.99560546875
+        },
+        {
+          "word": "someone",
+          "start": 131.78,
+          "end": 132.14,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "helps",
+          "start": 132.14,
+          "end": 132.68,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "me",
+          "start": 132.68,
+          "end": 133.06,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "tie",
+          "start": 133.06,
+          "end": 133.5,
+          "prob": 0.99365234375
+        },
+        {
+          "word": "my",
+          "start": 133.5,
+          "end": 133.78,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "shoe",
+          "start": 133.78,
+          "end": 134.26,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "I",
+          "start": 134.26,
+          "end": 135.82,
+          "prob": 0.99658203125
+        },
+        {
+          "word": "know",
+          "start": 135.82,
+          "end": 136.06,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "exactly",
+          "start": 136.06,
+          "end": 136.74,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "what",
+          "start": 136.74,
+          "end": 137.48,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "to",
+          "start": 137.48,
+          "end": 137.96,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "do",
+          "start": 137.96,
+          "end": 138.38,
+          "prob": 1.0
+        }
+      ],
+      "index": 34,
+      "scene_id": "S0034",
+      "duration": 6.66
+    },
+    {
+      "start": 138.38,
+      "end": 142.3,
+      "text": "I give a hug and say it loud",
+      "type": "speech",
+      "words": [
+        {
+          "word": "I",
+          "start": 138.38,
+          "end": 139.76,
+          "prob": 0.4990234375
+        },
+        {
+          "word": "give",
+          "start": 139.76,
+          "end": 140.0,
+          "prob": 0.9443359375
+        },
+        {
+          "word": "a",
+          "start": 140.0,
+          "end": 140.32,
+          "prob": 0.9951171875
+        },
+        {
+          "word": "hug",
+          "start": 140.32,
+          "end": 140.66,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "and",
+          "start": 140.66,
+          "end": 141.04,
+          "prob": 0.98193359375
+        },
+        {
+          "word": "say",
+          "start": 141.04,
+          "end": 141.48,
+          "prob": 0.99609375
+        },
+        {
+          "word": "it",
+          "start": 141.48,
+          "end": 141.92,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "loud",
+          "start": 141.92,
+          "end": 142.3,
+          "prob": 0.9921875
+        }
+      ],
+      "index": 35,
+      "scene_id": "S0035",
+      "duration": 3.92
+    },
+    {
+      "start": 142.88,
+      "end": 146.5,
+      "text": "Saying thank you makes me proud",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Saying",
+          "start": 142.88,
+          "end": 143.84,
+          "prob": 0.5830078125
+        },
+        {
+          "word": "thank",
+          "start": 143.84,
+          "end": 144.6,
+          "prob": 0.86767578125
+        },
+        {
+          "word": "you",
+          "start": 144.6,
+          "end": 145.04,
+          "prob": 0.99658203125
+        },
+        {
+          "word": "makes",
+          "start": 145.04,
+          "end": 145.5,
+          "prob": 0.97607421875
+        },
+        {
+          "word": "me",
+          "start": 145.5,
+          "end": 145.88,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "proud",
+          "start": 145.88,
+          "end": 146.5,
+          "prob": 0.9931640625
+        }
+      ],
+      "index": 36,
+      "scene_id": "S0036",
+      "duration": 3.62
+    },
+    {
+      "start": 146.5,
+      "end": 147.32,
+      "text": "Woo-hoo!",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Woo",
+          "start": 146.5,
+          "end": 147.08,
+          "prob": 0.468017578125
+        },
+        {
+          "word": "-hoo!",
+          "start": 147.08,
+          "end": 147.32,
+          "prob": 0.6622314453125
+        }
+      ],
+      "index": 37,
+      "scene_id": "S0037",
+      "duration": 0.82
+    },
+    {
+      "start": 148.48,
+      "end": 151.38,
+      "text": "Thank you, thank you every day",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Thank",
+          "start": 148.23999999999998,
+          "end": 148.7,
+          "prob": 0.99560546875
+        },
+        {
+          "word": "you,",
+          "start": 148.7,
+          "end": 149.1,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "thank",
+          "start": 149.1,
+          "end": 149.44,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "you",
+          "start": 149.44,
+          "end": 149.86,
+          "prob": 1.0
+        },
+        {
+          "word": "every",
+          "start": 149.86,
+          "end": 150.74,
+          "prob": 0.53173828125
+        },
+        {
+          "word": "day",
+          "start": 150.74,
+          "end": 151.38,
+          "prob": 1.0
+        }
+      ],
+      "index": 38,
+      "scene_id": "S0038",
+      "duration": 2.9
+    },
+    {
+      "start": 151.38,
+      "end": 155.4,
+      "text": "For the fun and for the play",
+      "type": "speech",
+      "words": [
+        {
+          "word": "For",
+          "start": 151.38,
+          "end": 153.06,
+          "prob": 0.98974609375
+        },
+        {
+          "word": "the",
+          "start": 153.06,
+          "end": 153.3,
+          "prob": 1.0
+        },
+        {
+          "word": "fun",
+          "start": 153.3,
+          "end": 153.76,
+          "prob": 1.0
+        },
+        {
+          "word": "and",
+          "start": 153.76,
+          "end": 154.02,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "for",
+          "start": 154.02,
+          "end": 154.48,
+          "prob": 1.0
+        },
+        {
+          "word": "the",
+          "start": 154.48,
+          "end": 155.04,
+          "prob": 1.0
+        },
+        {
+          "word": "play",
+          "start": 155.04,
+          "end": 155.4,
+          "prob": 0.99951171875
+        }
+      ],
+      "index": 39,
+      "scene_id": "S0039",
+      "duration": 4.02
+    },
+    {
+      "start": 155.96,
+      "end": 159.34,
+      "text": "Thank you, thank you with a smile",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Thank",
+          "start": 155.96,
+          "end": 156.66,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "you,",
+          "start": 156.66,
+          "end": 157.1,
+          "prob": 1.0
+        },
+        {
+          "word": "thank",
+          "start": 157.1,
+          "end": 157.44,
+          "prob": 1.0
+        },
+        {
+          "word": "you",
+          "start": 157.44,
+          "end": 157.86,
+          "prob": 1.0
+        },
+        {
+          "word": "with",
+          "start": 157.86,
+          "end": 158.48,
+          "prob": 0.998046875
+        },
+        {
+          "word": "a",
+          "start": 158.48,
+          "end": 158.8,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "smile",
+          "start": 158.8,
+          "end": 159.34,
+          "prob": 1.0
+        }
+      ],
+      "index": 40,
+      "scene_id": "S0040",
+      "duration": 3.38
+    },
+    {
+      "start": 159.34,
+      "end": 164.6,
+      "text": "Let's be happy for a while",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Let's",
+          "start": 159.34,
+          "end": 161.16,
+          "prob": 0.999267578125
+        },
+        {
+          "word": "be",
+          "start": 161.16,
+          "end": 161.26,
+          "prob": 1.0
+        },
+        {
+          "word": "happy",
+          "start": 161.26,
+          "end": 161.78,
+          "prob": 1.0
+        },
+        {
+          "word": "for",
+          "start": 161.78,
+          "end": 162.52,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "a",
+          "start": 162.52,
+          "end": 163.58,
+          "prob": 0.994140625
+        },
+        {
+          "word": "while",
+          "start": 163.58,
+          "end": 164.6,
+          "prob": 1.0
+        }
+      ],
+      "index": 41,
+      "scene_id": "S0041",
+      "duration": 5.26
+    },
+    {
+      "start": 164.6,
+      "end": 165.42,
+      "text": "Yay!",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Yay!",
+          "start": 164.6,
+          "end": 165.42,
+          "prob": 0.95703125
+        }
+      ],
+      "index": 42,
+      "scene_id": "S0042",
+      "duration": 0.82
+    },
+    {
+      "start": 166.73999999999998,
+      "end": 168.96,
+      "text": "Thank you, thank you",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Thank",
+          "start": 166.73999999999998,
+          "end": 167.54,
+          "prob": 0.71240234375
+        },
+        {
+          "word": "you,",
+          "start": 167.54,
+          "end": 168.14,
+          "prob": 0.99609375
+        },
+        {
+          "word": "thank",
+          "start": 168.16,
+          "end": 168.56,
+          "prob": 0.99462890625
+        },
+        {
+          "word": "you",
+          "start": 168.56,
+          "end": 168.96,
+          "prob": 1.0
+        }
+      ],
+      "index": 43,
+      "scene_id": "S0043",
+      "duration": 2.22
+    },
+    {
+      "start": 168.96,
+      "end": 171.14,
+      "text": "Good night, sleep tight",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Good",
+          "start": 168.96,
+          "end": 169.72,
+          "prob": 0.1263427734375
+        },
+        {
+          "word": "night,",
+          "start": 169.72,
+          "end": 170.0,
+          "prob": 0.99462890625
+        },
+        {
+          "word": "sleep",
+          "start": 170.14,
+          "end": 170.64,
+          "prob": 0.99169921875
+        },
+        {
+          "word": "tight",
+          "start": 170.64,
+          "end": 171.14,
+          "prob": 1.0
+        }
+      ],
+      "index": 44,
+      "scene_id": "S0044",
+      "duration": 2.18
+    },
+    {
+      "start": 177.16,
+      "end": 178.76,
+      "text": "Let's say thank you",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Let's",
+          "start": 177.16,
+          "end": 177.96,
+          "prob": 0.958984375
+        },
+        {
+          "word": "say",
+          "start": 177.96,
+          "end": 178.02,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "thank",
+          "start": 178.02,
+          "end": 178.38,
+          "prob": 0.9912109375
+        },
+        {
+          "word": "you",
+          "start": 178.38,
+          "end": 178.76,
+          "prob": 1.0
+        }
+      ],
+      "index": 45,
+      "scene_id": "S0045",
+      "duration": 1.6
+    }
+  ],
+  "metadata": {
+    "model": "large-v3",
+    "device": "cuda",
+    "compute_type": "float16",
+    "word_timestamps": true,
+    "forced_language": null
+  }
+}

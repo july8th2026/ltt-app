@@ -191,12 +191,31 @@ def test_schema_hop_le_thi_KHONG_nem() -> None:
         [{"type": "speech", "start": 0.0, "end": 3.5, "text": "xin chao"}])
 
 
-def test_chieu_schema_bo_khoa_la_va_giu_khoa_can() -> None:
+def test_chieu_schema_ra_DUNG_SAU_khoa_va_KHONG_co_words() -> None:
+    """🔴 Đo trên **1.932 lượt job thật** ở `D:/FULL AUTO VIDEO/.../output/`:
+    6.934/6.934 đoạn có đúng tập khoá `{start,end,text,type,scene_id,index}`,
+    và **0 đoạn** có `words`.
+
+    Bản đầu của `_chieu_schema` giữ `words` khi có và không sinh `index` — hai
+    lệch parity mà **không phép kiểm tự dựng nào bắt được**, vì cả hai vẫn cho
+    một dòng thời gian hợp lệ. Chỉ dữ liệu thật mới nói ra.
+
+    ⚠️ Sáu khoá luôn CÓ MẶT, kể cả khi rỗng: `scene_id=""`, `index=0`. Một khoá
+       vắng mặt và một khoá rỗng là hai thứ khác nhau với bên tiêu thụ.
+    """
     ra = phien_am._chieu_schema([{
         "type": "speech", "start": 0, "end": 1, "text": "a",
-        "scene_id": "S0001", "words": [{"start": 0, "end": 1, "text": "a"}],
+        "scene_id": "S0001", "index": 1,
+        "words": [{"start": 0, "end": 1, "text": "a"}],
         "rac_noi_bo": 123, "debug": "khong duoc ra ngoai"}])
-    assert set(ra[0]) == {"type", "start", "end", "text", "scene_id", "words"}
+    assert set(ra[0]) == set(phien_am.KHOA_DAY_DU)
+    assert "words" not in ra[0]
+
+    # Thiếu `scene_id`/`index` thì thành rỗng, KHÔNG biến mất.
+    thieu = phien_am._chieu_schema([
+        {"type": "silence", "start": 1, "end": 3, "text": "[B-ROLL / PAUSE]"}])
+    assert thieu[0]["scene_id"] == "" and thieu[0]["index"] == 0
+    assert set(thieu[0]) == set(phien_am.KHOA_DAY_DU)
 
 
 # ── 5. Handler ──────────────────────────────────────────────────────────────

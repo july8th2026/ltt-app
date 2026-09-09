@@ -51,9 +51,13 @@ log = logging.getLogger("apps.transcript")
 #: `moc_tu_vad_ngoai` = có mốc từ, VAD chạy ở tầng trên chứ không trong whisper.
 HO_SO_STT = "moc_tu_vad_ngoai"
 
-#: Khoá bắt buộc của MỘT đoạn ở đầu ra. Đúng tập mà
+#: Khoá bắt buộc của MỘT đoạn ở đầu ra — đúng tập mà
 #: `_validate_output_segments_strict` của bot legacy cưỡng chế.
 KHOA_DOAN = ("type", "start", "end", "text")
+
+#: Tập khoá ĐẦY ĐỦ của một đoạn, đo trên 1.932 lượt job thật: 6.934/6.934
+#: đoạn có đúng sáu khoá này, không hơn không kém.
+KHOA_DAY_DU = ("start", "end", "text", "type", "scene_id", "index")
 
 LOAI_DOAN = ("speech", "silence")
 
@@ -149,15 +153,32 @@ def _kiem_co_mocs_tu(doan_tho: list[dict]) -> None:
 
 
 def _chieu_schema(doan: list[dict]) -> list[dict]:
-    """Chỉ giữ khoá thuộc hợp đồng đầu ra, theo đúng thứ tự."""
-    ra = []
-    for d in doan:
-        moi = {k: d[k] for k in KHOA_DOAN if k in d}
-        if d.get("scene_id"):
-            moi["scene_id"] = d["scene_id"]
-        if d.get("words"):
-            moi["words"] = d["words"]
-        ra.append(moi)
+    """Chiếu về ĐÚNG sáu khoá của hợp đồng đầu ra — bản sao của
+    `bot/worker.py::_project_strict_schema`.
+
+    🔴 Bản đầu của hàm này **giữ `words`** khi có, và **không sinh `index`**.
+       Cả hai đều sai, và cả hai chỉ lộ ra khi đối chiếu với 1.932 lượt job
+       thật ở `D:/FULL AUTO VIDEO/.../output/`: 6.934/6.934 đoạn ở đó có đúng
+       tập khoá `{start, end, text, type, scene_id, index}`, và **0 đoạn** có
+       `words`. Chú thích trong chính bot cũ nói thẳng: *"words kept internally
+       in pipeline but NOT in final output"*.
+
+    ⚠️ Sáu khoá này **luôn có mặt**, kể cả khi rỗng — `scene_id` thành `""` và
+       `index` thành `0` chứ không biến mất. Một khoá vắng mặt và một khoá rỗng
+       là hai thứ khác nhau với bên tiêu thụ.
+    """
+    ra: list[dict] = []
+    for d in doan or []:
+        if not isinstance(d, dict) or not d:
+            continue
+        ra.append({
+            "start": float(d.get("start", 0.0)),
+            "end": float(d.get("end", 0.0)),
+            "text": str(d.get("text", "")),
+            "type": str(d.get("type", "")),
+            "scene_id": str(d.get("scene_id", "")),
+            "index": int(d.get("index", 0)),
+        })
     return ra
 
 

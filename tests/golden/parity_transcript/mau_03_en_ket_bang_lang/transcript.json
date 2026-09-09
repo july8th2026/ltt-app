@@ -1,0 +1,354 @@
+[
+  {
+    "start": 0.0,
+    "end": 3.9,
+    "text": "[B-ROLL: INTRO]",
+    "type": "silence",
+    "scene_id": "S0001",
+    "index": 1
+  },
+  {
+    "start": 3.9,
+    "end": 7.68,
+    "text": "[B-ROLL: REACTION]",
+    "type": "silence",
+    "scene_id": "S0002",
+    "index": 2
+  },
+  {
+    "start": 7.68,
+    "end": 11.98,
+    "text": "Wake up in the morning light Yawn Sun",
+    "type": "speech",
+    "scene_id": "S0003",
+    "index": 3
+  },
+  {
+    "start": 11.98,
+    "end": 16.66,
+    "text": "is shining, oh so bright I see my mom",
+    "type": "speech",
+    "scene_id": "S0004",
+    "index": 4
+  },
+  {
+    "start": 16.66,
+    "end": 21.44,
+    "text": "and say hello I love you more than you",
+    "type": "speech",
+    "scene_id": "S0005",
+    "index": 5
+  },
+  {
+    "start": 21.44,
+    "end": 26.04,
+    "text": "can know Thank you, thank you,",
+    "type": "speech",
+    "scene_id": "S0006",
+    "index": 6
+  },
+  {
+    "start": 26.04,
+    "end": 29.6,
+    "text": "every day For the fun",
+    "type": "speech",
+    "scene_id": "S0007",
+    "index": 7
+  },
+  {
+    "start": 29.6,
+    "end": 33.08,
+    "text": "and for the play Thank you,",
+    "type": "speech",
+    "scene_id": "S0008",
+    "index": 8
+  },
+  {
+    "start": 33.08,
+    "end": 36.28,
+    "text": "thank you with a smile",
+    "type": "speech",
+    "scene_id": "S0009",
+    "index": 9
+  },
+  {
+    "start": 36.28,
+    "end": 41.34,
+    "text": "Let's be happy for a while Yay!",
+    "type": "speech",
+    "scene_id": "S0010",
+    "index": 10
+  },
+  {
+    "start": 41.34,
+    "end": 43.82,
+    "text": "[B-ROLL: REACTION]",
+    "type": "silence",
+    "scene_id": "S0011",
+    "index": 11
+  },
+  {
+    "start": 43.82,
+    "end": 48.24,
+    "text": "Time for breakfast, yummy food Munch,",
+    "type": "speech",
+    "scene_id": "S0012",
+    "index": 12
+  },
+  {
+    "start": 48.24,
+    "end": 52.86,
+    "text": "munch Pancakes put me in a mood I tell my dad,",
+    "type": "speech",
+    "scene_id": "S0013",
+    "index": 13
+  },
+  {
+    "start": 52.86,
+    "end": 57.04,
+    "text": "this is so sweet Thank you",
+    "type": "speech",
+    "scene_id": "S0014",
+    "index": 14
+  },
+  {
+    "start": 57.04,
+    "end": 61.08,
+    "text": "for the tasty treat Thank you,",
+    "type": "speech",
+    "scene_id": "S0015",
+    "index": 15
+  },
+  {
+    "start": 61.08,
+    "end": 65.76,
+    "text": "thank you every day For the fun",
+    "type": "speech",
+    "scene_id": "S0016",
+    "index": 16
+  },
+  {
+    "start": 65.76,
+    "end": 71.32,
+    "text": "and for the play Thank you, thank you with a smile",
+    "type": "speech",
+    "scene_id": "S0017",
+    "index": 17
+  },
+  {
+    "start": 71.32,
+    "end": 73.74,
+    "text": "Let's be happy",
+    "type": "speech",
+    "scene_id": "S0018",
+    "index": 18
+  },
+  {
+    "start": 73.74,
+    "end": 77.36,
+    "text": "for a while Yay!",
+    "type": "speech",
+    "scene_id": "S0019",
+    "index": 19
+  },
+  {
+    "start": 77.36,
+    "end": 79.8,
+    "text": "[B-ROLL: REACTION]",
+    "type": "silence",
+    "scene_id": "S0020",
+    "index": 20
+  },
+  {
+    "start": 79.8,
+    "end": 84.8,
+    "text": "Playing blocks with all my friends Locks falling!",
+    "type": "speech",
+    "scene_id": "S0021",
+    "index": 21
+  },
+  {
+    "start": 84.8,
+    "end": 89.72,
+    "text": "The happy building never ends You share your toys so nicely",
+    "type": "speech",
+    "scene_id": "S0022",
+    "index": 22
+  },
+  {
+    "start": 89.72,
+    "end": 94.64,
+    "text": "too So I will sing my thanks",
+    "type": "speech",
+    "scene_id": "S0023",
+    "index": 23
+  },
+  {
+    "start": 94.64,
+    "end": 98.0,
+    "text": "to you Thank you, thank you,",
+    "type": "speech",
+    "scene_id": "S0024",
+    "index": 24
+  },
+  {
+    "start": 98.0,
+    "end": 101.78,
+    "text": "every day For the fun",
+    "type": "speech",
+    "scene_id": "S0025",
+    "index": 25
+  },
+  {
+    "start": 101.78,
+    "end": 106.06,
+    "text": "and for the play Thank you, thank you,",
+    "type": "speech",
+    "scene_id": "S0026",
+    "index": 26
+  },
+  {
+    "start": 106.06,
+    "end": 109.72,
+    "text": "with a smile Let's be happy",
+    "type": "speech",
+    "scene_id": "S0027",
+    "index": 27
+  },
+  {
+    "start": 109.72,
+    "end": 115.06,
+    "text": "for a while Yay!",
+    "type": "speech",
+    "scene_id": "S0028",
+    "index": 28
+  },
+  {
+    "start": 115.06,
+    "end": 118.34,
+    "text": "Now the stars are in the sky",
+    "type": "speech",
+    "scene_id": "S0029",
+    "index": 29
+  },
+  {
+    "start": 118.34,
+    "end": 121.42,
+    "text": "Time to sleep and close",
+    "type": "speech",
+    "scene_id": "S0030",
+    "index": 30
+  },
+  {
+    "start": 121.42,
+    "end": 126.34,
+    "text": "my eye Thank you for my comfy bed",
+    "type": "speech",
+    "scene_id": "S0031",
+    "index": 31
+  },
+  {
+    "start": 126.34,
+    "end": 128.8,
+    "text": "And the story",
+    "type": "speech",
+    "scene_id": "S0032",
+    "index": 32
+  },
+  {
+    "start": 128.8,
+    "end": 134.26,
+    "text": "that was read When someone helps me tie my shoe",
+    "type": "speech",
+    "scene_id": "S0033",
+    "index": 33
+  },
+  {
+    "start": 134.26,
+    "end": 136.74,
+    "text": "I know exactly",
+    "type": "speech",
+    "scene_id": "S0034",
+    "index": 34
+  },
+  {
+    "start": 136.74,
+    "end": 141.48,
+    "text": "what to do I give a hug and say",
+    "type": "speech",
+    "scene_id": "S0035",
+    "index": 35
+  },
+  {
+    "start": 141.48,
+    "end": 147.32,
+    "text": "it loud Saying thank you makes me proud Woo -hoo!",
+    "type": "speech",
+    "scene_id": "S0036",
+    "index": 36
+  },
+  {
+    "start": 147.32,
+    "end": 151.38,
+    "text": "Thank you, thank you every day",
+    "type": "speech",
+    "scene_id": "S0037",
+    "index": 37
+  },
+  {
+    "start": 151.38,
+    "end": 153.76,
+    "text": "For the fun",
+    "type": "speech",
+    "scene_id": "S0038",
+    "index": 38
+  },
+  {
+    "start": 153.76,
+    "end": 159.34,
+    "text": "and for the play Thank you, thank you with a smile",
+    "type": "speech",
+    "scene_id": "S0039",
+    "index": 39
+  },
+  {
+    "start": 159.34,
+    "end": 161.78,
+    "text": "Let's be happy",
+    "type": "speech",
+    "scene_id": "S0040",
+    "index": 40
+  },
+  {
+    "start": 161.78,
+    "end": 166.74,
+    "text": "for a while Yay!",
+    "type": "speech",
+    "scene_id": "S0041",
+    "index": 41
+  },
+  {
+    "start": 166.74,
+    "end": 171.14,
+    "text": "Thank you, thank you Good night, sleep tight",
+    "type": "speech",
+    "scene_id": "S0042",
+    "index": 42
+  },
+  {
+    "start": 171.14,
+    "end": 174.15,
+    "text": "[B-ROLL: ENVIRONMENT]",
+    "type": "silence",
+    "scene_id": "S0043",
+    "index": 43
+  },
+  {
+    "start": 174.15,
+    "end": 179.96,
+    "text": "[B-ROLL: ENVIRONMENT]",
+    "type": "silence",
+    "scene_id": "S0044",
+    "index": 44
+  }
+]
