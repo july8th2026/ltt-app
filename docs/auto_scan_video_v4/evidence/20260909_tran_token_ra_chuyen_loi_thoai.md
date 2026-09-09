@@ -164,27 +164,33 @@ dòng cuối bản ghi.
 `long_tieng.DOAN_MOI_LO = 12`. Bộ nghiệm thu chỉ dựng video **6 câu**, tức
 **nửa lô**, nên nó chưa bao giờ chạm tới bức tường thật.
 
-Đo với **cả hai rào đã nới** (trần token 24.576, timeout 900 s), 2 vòng:
+Đo với **cả hai rào đã nới** (trần token 24.576, timeout 900 s), 3 vòng, tất cả
+`finish_reason = stop`, 0 hỏng:
 
-| cỡ lô | `token_ra` | giây | `finish_reason` |
-|---|---|---|---|
-| 6 | 5.039 · 5.278 | 75,7 · 78,8 | `stop` |
-| **12** | **10.248 · 9.642** | **151,0 · 142,6** | `stop` |
+| cỡ lô | `token_ra` | giây |
+|---|---|---|
+| 6 | 5.039 · 5.278 · **7.915** | 75,7 · 78,8 · 117,3 |
+| **12** | **10.248** · 9.642 · 6.948 | **151,0** · 142,6 · 102,3 |
 
-| rào | đang chạy thật | nhu cầu lô 12 | |
+| rào | đang chạy thật | lớn nhất quan sát | |
 |---|---|---|---|
 | `max_tokens` | 4.096 | **10.248** | vượt **2,5 ×** |
 | `timeout_s` | 120 s | **151,0 s** | vượt **1,26 ×** |
 
-Khớp **hai** tham số (không qua gốc) trên hai điểm `n = 6` và `n = 12`:
+### ⛔ Đường thẳng theo cỡ lô **không vững** — đừng dùng nó
 
-```
-token ra :  ra(n) ≈   310 +  828 · n
-thời gian:   t(n) ≈   6,6 + 12,0 · n   (giây)
-```
+Bản nháp tệp này (và commit `3eae396d`) ghi `ra(n) ≈ 310 + 828·n`, khớp từ **2**
+vòng đầu. Vòng 3 lật nó: lô 6 nhảy lên 7.915 còn lô 12 tụt xuống 6.948.
 
-⇒ Phần cố định nhỏ, gần như tỉ lệ thuận với số đoạn. Ngoại suy: `n = 20` cần
-~16.900 token và ~247 giây.
+⇒ Hai phân bố **chồng lên nhau**: `max(n=6) = 7.915` **>** `min(n=12) = 6.948`.
+Với n=3 mỗi điểm, độ dốc theo cỡ lô không tách được khỏi nhiễu, và khớp hai điểm
+trên hai giá trị **max** cho ra một đường đổi hẳn hình dạng khi thêm một mẫu —
+dấu hiệu kinh điển của việc khớp vào nhiễu.
+
+Kết luận đúng và chắc hơn một độ dốc: **nhu cầu bị chi phối bởi khối suy nghĩ,
+lớn và biến động mạnh, chứ không bởi cỡ lô.** Nên trần phải vượt **giá trị lớn
+nhất quan sát được** kèm biên, không đặt theo một công thức tuyến tính chưa đủ
+mẫu. Muốn dùng công thức thì phải đo lại với n đủ lớn ở mỗi điểm (≥ 10 mẫu).
 
 ### 🔑 Đây là thứ giải thích vì sao lỗi **trông như** xác suất
 
