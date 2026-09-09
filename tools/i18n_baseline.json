@@ -9,7 +9,7 @@
     "apps/agent/routes/workspace.py": 2,
     "apps/agent/templates/_agent_progress.html": 2,
     "apps/agent/templates/agent_run.html": 4,
-    "apps/autosubvideo/ai_workflows.py": 16,
+    "apps/autosubvideo/ai_workflows.py": 12,
     "apps/autosubvideo/burn.py": 6,
     "apps/autosubvideo/font_checker.py": 4,
     "apps/autosubvideo/jobs.py": 15,
@@ -31,7 +31,6 @@
     "apps/prompt_ai_ommi/jobs.py": 7,
     "apps/prompt_ai_ommi/manifest.py": 4,
     "apps/prompt_ai_ommi/project_schema.py": 4,
-    "apps/prompt_ai_ommi/provider.py": 7,
     "apps/prompt_ai_ommi/routes/assets_catalog.py": 1,
     "apps/prompt_ai_ommi/routes/projects.py": 2,
     "apps/prompt_ai_ommi/routes/storyboard.py": 1,
@@ -114,5 +113,5 @@
     "server/templating.py": 6,
     "server/usage_rate_limit.py": 1
   },
-  "tong": 752
+  "tong": 741
 }
