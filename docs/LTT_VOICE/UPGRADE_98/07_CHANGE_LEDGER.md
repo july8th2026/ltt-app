@@ -598,3 +598,58 @@ hỏng **~50 % số lượt** ngay cả khi mọi thứ đúng (đo 8 lượt, p
 cực**). Nên *"chạy lại thấy xanh rồi ghi đè"* **không** phải bằng chứng — một
 lượt xanh là đồng xu ngửa. Ai nhận nó phải đếm **tỉ lệ**, không chạy tới khi
 xanh.
+
+---
+
+## Commit `a61c7a0d` — Wave A đóng sổ (10/09/2026)
+
+36 tệp · +3.726 / −34. Stage **tường minh từng tệp** (luật 13). Nhánh
+`claude/ltt-voice-98-upgrade-9b586f` — **không** commit vào `admin-mvp-v3`, vì
+bảy cây dùng chung một `.git` nên commit vào nhánh dùng chung là **đã xuất
+bản**. Không push.
+
+Bốn hook pre-commit xanh (~0,6 s): bánh cóc ruff · kiểu xuống dòng · ranh giới
+import · cấu hình thuần ASCII. Kiểm trước khi bấm: `do_voice_co_bi_mat.ps1`
+thuần ASCII không BOM, `check_xuong_dong` PASS.
+
+⚠️ Lúc commit có phiên khác đang chạy `gate --ho-so day-du` (pid 19656, được
+1,6 phút). Vẫn bấm, và đây là lý do — không phải vì vội:
+
+- (a) hook chỉ tốn ~0,6 s kiểm tĩnh, **không** gọi pytest ⇒ không phải lệnh
+  nặng. Tôi đọc thân hook (`setup/pre-commit-hook.sh` +
+  `.pre-commit-config.yaml`) rồi mới kết luận, chứ không đoán theo tên.
+- (b) điều kiện thứ **BA** của giao ước — pre-commit checkout+apply đổi mtime
+  **mọi tệp unstaged cùng cây** — không áp, vì lúc ấy `git status` **không còn
+  dòng unstaged nào**.
+
+Cả hai vế đo **trước** khi bấm. Đây đúng chỗ mà một lượt trước đã trượt: gộp
+kiểm và chạy vào một lệnh thì cảnh báo tới **sau** quyết định.
+
+## `FINAL_SCORECARD.md` — deliverable §33
+
+Số đếm **rút bằng máy** từ chính bảng A (regex trên 77 dòng), không gõ tay:
+
+    cham duoc bang so : 73   trung binh 86,11
+    >= 98             :  0        <- muc tieu chuong trinh la >= 98 cho CA 87
+    90-97             : 43
+    80-89             : 23
+    <  80             :  7
+    chua co dong      : 10   15, 33-36, 66, 78-81
+
+Phát hiện đáng giá nhất của phép đếm ấy **không** phải điểm trung bình, mà là
+phân bố **trần**: 30/77 hạng mục có trần < 98, và 9 hạng mục đã **chạm đúng**
+trần của mình (12, 19, 27, 28, 29, 45, 58, 64, 75). Với chín cái ấy, viết thêm
+mã chỉ làm điểm **nhỏ đi**.
+
+⇒ Câu trả lời cho *"viết tiếp mã thì có lên 98 không"* là **không**, và nó là
+kết quả cơ học của §7 chứ không phải ý kiến của tôi. Thứ còn thiếu là **loại
+bằng chứng** (benchmark audio đủ mẫu · E2E trên URL công khai · load test ·
+diễn tập khôi phục · người thật nghe mù), và không dòng mã nào sinh ra được
+loại bằng chứng ấy.
+
+⛔ Cám dỗ nằm đúng ở chỗ này: hạ trần thì bảng đẹp lên ngay. Trần ở lại.
+
+Đã sửa hai chỗ **lỗi thời** ở `01_SCORECARD_BASELINE.md`: tiêu đề mục B còn ghi
+*"66 hạng mục còn lại"* (số của 13:37 ngày 09/09) và mục D còn ghi *"cố ý không
+ghi điểm tổng"*. Cả hai **đúng lúc viết và sai lúc đọc** — đúng kiểu bảng chép
+tay mà CLAUDE.md luật 5 cảnh báo, và lần này bảng chép tay ấy là của chính tôi.

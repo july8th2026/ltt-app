@@ -96,7 +96,12 @@ CÓ, theo §7. Trần không phải điểm — nó là mái.
 | 86 | Documentation accuracy | **80** | 100 | — | Docstring mang theo hồi quy đã sinh ra chúng (hiếm và có giá trị). Trừ điểm: `VIRAL_VOICE_AUDIT_2026-09-07.md` tự đính chính U-06 là "PHÁT HIỆN SAI" ⇒ bảng U- không đáng tin theo mặt chữ |
 | 87 | Dead-code/dead-surface debt | **90** | 100 | — | Đo thật: **0** hàm bọc `sidecar_client` không người gọi; **1** cửa sidecar không người gọi (`/v1/stream`) và nó có test ghim ⇒ "để sẵn có chủ ý", không phải rác. Không trừ cho `priority` nữa — đây là lỗi đọc của tôi, không phải nợ của mã (xem 14) |
 
-## B. CHƯA ĐO — 66 hạng mục còn lại
+## B. CHƯA ĐO — 10 hạng mục còn lại (15, 33–36, 66, 78–81)
+
+⚠️ Tiêu đề cũ ghi **66**; đó là con số lúc 09/09 13:37. Bảng A ở trên nay có
+**77** dòng, nên còn **10**. Bảng dưới giữ nguyên vì nó ghi *phép đo cần chạy*
+theo nhóm — vẫn dùng được cho 10 mục còn lại; mục nào đã chấm thì đã có dòng ở
+bảng A. Phán quyết tổng: .
 
 Không chấm. Mỗi dòng ghi **phép đo cần chạy**, để lượt sau không phải nghĩ lại.
 
@@ -130,9 +135,14 @@ Không chấm. Mỗi dòng ghi **phép đo cần chạy**, để lượt sau kh�
 | 90 — chưa E2E thật | 16, 37, 62 | Trình duyệt thật trên `https://app.lttstudios.com` |
 | 94 — chưa người nghe | mọi hạng mục acoustic | §19: cần người thật chấm mù |
 
-## D. Điểm tổng baseline — CỐ Ý KHÔNG GHI
+## D. Điểm tổng
 
-Trung bình của 21 hạng mục đã đo **không phải** điểm của hệ thống, và ghi nó
-ra sẽ tạo một con số để so sánh về sau — một con số mà 66 hạng mục chưa đo
-đang không có mặt trong đó. Điểm tổng ghi ở `FINAL_SCORECARD.md`, sau khi
-phần lớn 87 hạng mục có bằng chứng.
+Bản baseline cố ý không ghi điểm tổng: trung bình của 21 hạng mục lúc ấy không
+phải điểm của hệ thống, và ghi nó ra sẽ tạo một con số để so sánh về sau — một
+con số mà 66 hạng mục chưa đo đang không có mặt trong đó.
+
+⇒ 10/09/2026, bảng A đã có **77/87** dòng nên điểm tổng ghi được, và nó ở
+`FINAL_SCORECARD.md`. Tóm tắt: **0/87 hạng mục đạt mục tiêu ≥ 98**; trung bình
+**86,11** trên 73 mục có số; **10** mục vẫn BLOCKED_WITH_EVIDENCE. Cùng cảnh báo
+cũ vẫn áp: con số trung bình ấy KHÔNG có mặt của 14 hạng mục, và mọi hạng mục
+vắng mặt đều vắng vì **chưa đo** — phía chưa biết, không phải phía tốt.
