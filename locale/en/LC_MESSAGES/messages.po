@@ -14721,3 +14721,112 @@ msgstr "Missing revision number."
 #: apps/agent/routes/drafts_v3.py
 msgid "Bản nháp chưa có nội dung để xuất bản."
 msgstr "This draft has nothing to publish yet."
+
+#: apps/vps/routes.py
+#, python-format
+msgid "Máy đang bận với một thao tác khác (%(viec)s). Đợi nó xong rồi thử lại."
+msgstr "The machine is busy with another operation (%(viec)s). Wait for it to finish, then try again."
+
+#: apps/vps/nhan.py
+msgid "Đang khởi động lại"
+msgstr "Restarting"
+
+#: apps/vps/nhan.py
+msgid "Đang chụp ảnh"
+msgstr "Taking snapshot"
+
+#: apps/vps/nhan.py
+msgid "Đang khôi phục"
+msgstr "Restoring"
+
+#: apps/vps/nhan.py
+msgid "Đang cài lại"
+msgstr "Reinstalling"
+
+#: apps/vps/nhan.py
+msgid "Đang xoá"
+msgstr "Deleting"
+
+#: apps/vps/nhan.py
+msgid "Đang gửi lệnh tắt"
+msgstr "Sending shutdown command"
+
+#: apps/vps/nhan.py
+msgid "Đang chờ máy tắt"
+msgstr "Waiting for the machine to stop"
+
+#: apps/vps/nhan.py
+msgid "Đang gửi lệnh bật"
+msgstr "Sending start command"
+
+#: apps/vps/nhan.py
+msgid "Đang chờ máy bật"
+msgstr "Waiting for the machine to start"
+
+#: apps/vps/nhan.py
+msgid "Yêu cầu bật máy"
+msgstr "Start requested"
+
+#: apps/vps/nhan.py
+msgid "Yêu cầu tắt máy"
+msgstr "Shutdown requested"
+
+#: apps/vps/nhan.py
+msgid "Yêu cầu tắt cứng"
+msgstr "Force stop requested"
+
+#: apps/vps/nhan.py
+msgid "Yêu cầu khởi động lại"
+msgstr "Restart requested"
+
+#: apps/vps/nhan.py
+msgid "Đang tắt máy trước khi khôi phục"
+msgstr "Stopping the machine before restore"
+
+#: apps/vps/nhan.py
+msgid "Đang khôi phục ảnh chụp"
+msgstr "Restoring snapshot"
+
+#: apps/vps/nhan.py
+msgid "Đang bật lại máy"
+msgstr "Starting the machine again"
+
+#: apps/vps/nhan.py
+msgid "Yêu cầu khôi phục ảnh chụp"
+msgstr "Snapshot restore requested"
+
+#: apps/vps/nhan.py
+msgid "Máy bị cách ly mạng"
+msgstr "Machine network-quarantined"
+
+#: apps/vps/nhan.py
+msgid "Đã gỡ cách ly mạng"
+msgstr "Network quarantine lifted"
+
+#: server/templates/vps_chi_tiet.html
+msgid "Máy đang bị cách ly mạng"
+msgstr "Machine network-quarantined"
+
+#: server/templates/vps_chi_tiet.html
+msgid "Đường ra Internet của máy đã bị cắt vì nghi lạm dụng. Dữ liệu và đĩa còn nguyên, và bạn vẫn vào được bằng Console. Liên hệ hỗ trợ để gỡ."
+msgstr "This machine's Internet access has been cut off over suspected abuse. Your data and disk are intact, and you can still reach it through the Console. Contact support to lift it."
+
+#: server/templates/vps_chi_tiet.html
+msgid "Chưa hỏi được máy chủ"
+msgstr "Could not reach the server"
+
+#: server/templates/vps_chi_tiet.html
+msgid "Trạng thái bên dưới là lần đo gần nhất, không phải hiện tại. Chúng tôi đang thử lại."
+msgstr "The status below is the last reading, not the current one. We are retrying."
+
+#: server/templates/vps_chi_tiet.html
+msgid "Trạng thái bên dưới là lần đo gần nhất và có thể đã cũ."
+msgstr "The status below is the last reading and may be out of date."
+
+#: server/templates/vps_chi_tiet.html
+msgid "Tải lại trang sau ít phút để xem kết quả."
+msgstr "Reload this page in a few minutes to see the result."
+
+#: platform_core/public_api/governance.py
+msgid "Một thao tác dài đang chạy trên một máy: ai yêu cầu, muốn gì, tới đâu rồi, hỏng vì sao. Khác nhật ký vòng đời ở chỗ nó KẾT THÚC."
+msgstr "A long-running operation on one machine: who asked for it, what they wanted, how far it got, and why it failed. Unlike the lifecycle log, this one ENDS."

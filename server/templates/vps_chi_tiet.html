@@ -40,11 +40,58 @@
   </div>
   {% endif %}
 
+  {# ── Máy đang bị cách ly mạng ─────────────────────────────────────────
+     Khác "tạm dừng": đĩa còn nguyên, máy vẫn chạy, chỉ đường ra Internet bị
+     cắt. Khách vào bằng Console để dọn. Nói đúng cả ba điều đó, vì mỗi điều
+     đều là một câu hỏi họ sắp gửi tới hỗ trợ. #}
+  {% if bi_cach_ly %}
+  <div class="alert alert-err" style="margin:0 0 14px;">
+    <strong>{{ _("Máy đang bị cách ly mạng") }}</strong><br>
+    {{ _("Đường ra Internet của máy đã bị cắt vì nghi lạm dụng. Dữ liệu và đĩa còn nguyên, và bạn vẫn vào được bằng Console. Liên hệ hỗ trợ để gỡ.") }}
+    {% if may.cach_ly_ly_do %}<br><span class="ct">{{ may.cach_ly_ly_do }}</span>{% endif %}
+  </div>
+  {% endif %}
+
+  {# ── Phép đo gần nhất bao lâu rồi ─────────────────────────────────────
+     ⚠️ Hai câu KHÁC NHAU, và gộp chúng là mất đúng thông tin cần nhất:
+        `mat_lien_lac` = đã hỏi máy chủ và **không có trả lời**;
+        `quan_sat_cu`  = **chưa hỏi lại** đủ gần đây.
+     Cái đầu là sự cố hạ tầng; cái sau có thể chỉ là vòng đối chiếu chưa tới
+     lượt. Một trạng thái không có tuổi là một trạng thái khách không đánh giá
+     được — đó là lý do khối này tồn tại. #}
+  {% if mat_lien_lac %}
+  <div class="alert alert-warn" style="margin:0 0 14px;">
+    <strong>{{ _("Chưa hỏi được máy chủ") }}</strong><br>
+    {{ _("Trạng thái bên dưới là lần đo gần nhất, không phải hiện tại. Chúng tôi đang thử lại.") }}
+  </div>
+  {% elif quan_sat_cu %}
+  <div class="alert" style="margin:0 0 14px;">
+    {{ _("Trạng thái bên dưới là lần đo gần nhất và có thể đã cũ.") }}
+  </div>
+  {% endif %}
+
   {# ── Dải hành động, THEO TRẠNG THÁI ───────────────────────────────────
      Không bày mọi nút ngang hàng. `dieu_khien.kiem_dieu_khien_duoc` là nguồn
      chân lý về việc nào hợp lệ; trang chỉ hỏi lại nó qua trạng thái, không
      phát minh một danh sách thứ hai. #}
-  {% if may.trang_thai == "bi_treo" %}
+  {% if viec %}
+    {# Có việc đang chạy: KHÔNG hiện nút điều khiển nào.
+       Từ VPS V2 (ADR-03), bấm "Khởi động lại" mở một thao tác rồi nộp job —
+       trạng thái **không** đổi ngay. Không nói ra thì khách kết luận nút hỏng
+       và bấm lại; khoá idempotency chặn được, nhưng không nên bắt nó phải chặn
+       một thứ mà giao diện trả lời được.
+       Console vẫn để: nó không đụng vào máy, và nó là đường khách nhìn thấy
+       việc đang xảy ra. #}
+    <div class="alert alert-warn" style="margin:0 0 16px;">
+      <strong>{{ _(viec.loai) }}…</strong>
+      {% if viec.buoc %}<br>{{ _(viec.buoc) }}{% endif %}
+      <br><span class="ct">{{ _("Tải lại trang sau ít phút để xem kết quả.") }}</span>
+    </div>
+    <div class="vps-hd">
+      <a class="btn btn-ghost"
+         href="{{ app.route_prefix }}/{{ may.id }}/console">{{ _("Console") }}</a>
+    </div>
+  {% elif may.trang_thai == "bi_treo" %}
     <div class="alert alert-warn" style="margin:0 0 16px;">
       <strong>{{ _("Máy đang bị tạm dừng") }}</strong><br>
       {{ _(buoc_tiep) }}
@@ -264,7 +311,10 @@
      giống hệt: chúng phải khó bấm nhầm hơn một cú click.
 
      ⚠️ Ảnh tham chiếu bỏ mất ô gõ tên và chỉ để lại ba cái nút. Ảnh sai. #}
-  {% if may.trang_thai != "da_xoa" %}
+  {# ⚠️ `and not viec`: ba nút này cũng bị `thao_tac.mo` từ chối khi máy đang
+     bận, nhưng một nút bị từ chối tệ hơn không có nút — nhất là khi nút ấy đòi
+     khách gõ đúng tên máy trước rồi mới nói "đang bận". #}
+  {% if may.trang_thai != "da_xoa" and not viec %}
   <div class="vps-nguy">
     <h2>{{ _("Nguy hiểm") }}</h2>
     <p>{{ _("Ba việc dưới đây không hoàn tác được. Gõ đúng tên máy để xác nhận — cùng khuôn với GitHub, và cùng lý do: chúng phải khó bấm nhầm hơn một cú click.") }}</p>

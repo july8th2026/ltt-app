@@ -1,0 +1,263 @@
+"""VPS V2 Pha 09 — giao diện nói đúng thứ đang xảy ra.
+
+Từ ADR-03, bấm một nút điều khiển **không** đổi `trang_thai` ngay: nó mở một thao
+tác và nộp một job. Đó là bản sửa đúng cho ba lỗi P0 — nhưng nó dịch một vấn đề
+sang giao diện: nếu trang im lặng, khách thấy y nguyên trạng thái cũ, kết luận
+nút hỏng, và bấm lại.
+
+Nên bộ này chốt ba câu mà trang **phải** trả lời được:
+
+1. *"tôi vừa bấm — nó có ăn không?"* → nhánh "đang có việc chạy";
+2. *"trạng thái này mới hay cũ?"* → độ tươi của phép đo;
+3. *"vì sao máy tôi không ra Internet được?"* → cách ly, và nó khác "tạm dừng".
+
+Và một câu **không** trả lời: RAM/đĩa bên trong máy khách. Không đo được thì
+không có ô cho nó.
+"""
+from __future__ import annotations
+
+import pathlib
+import re
+
+import pytest
+
+GOC = pathlib.Path(__file__).resolve().parent.parent
+CHI_TIET = GOC / "server" / "templates" / "vps_chi_tiet.html"
+DANH_SACH = GOC / "server" / "templates" / "vps.html"
+ROUTES = GOC / "apps" / "vps" / "routes.py"
+
+
+def _chi_tiet() -> str:
+    return CHI_TIET.read_text(encoding="utf-8")
+
+
+# ── 1. "Tôi vừa bấm — nó có ăn không?" ──────────────────────────────────────
+
+def test_trang_may_co_nhanh_DANG_CO_VIEC_CHAY():
+    t = _chi_tiet()
+    assert "{% if viec %}" in t
+
+
+def test_dang_ban_thi_KHONG_bay_nut_dieu_khien_nao():
+    """Một nút sẽ bị máy chủ từ chối tệ hơn không có nút.
+
+    `thao_tac.mo` từ chối khi máy đang bận — nhưng khách chỉ biết điều đó **sau**
+    khi bấm, và với ba nút trong khối Nguy hiểm thì họ còn phải gõ đúng tên máy
+    trước rồi mới nghe "đang bận".
+    """
+    t = _chi_tiet()
+    khoi = t[t.index("{% if viec %}"):t.index('{% elif may.trang_thai == "bi_treo" %}')]
+    for nut in ("/bat", "/tat", "/khoi-dong-lai"):
+        assert f'action="{{{{ app.route_prefix }}}}/{{{{ may.id }}}}{nut}"' \
+            not in khoi, f"con bay nut {nut} khi may dang ban"
+    # Console thì VẪN để: nó không đụng vào máy, và nó là đường khách nhìn thấy
+    # việc đang xảy ra.
+    assert "/console" in khoi
+
+
+def test_khoi_NGUY_HIEM_cung_bi_an_khi_may_dang_ban():
+    t = _chi_tiet()
+    assert 'may.trang_thai != "da_xoa" and not viec' in t, (
+        "ba nut khong hoan tac duoc van bay ra khi may dang ban")
+
+
+def test_trang_DANH_SACH_cung_hien_viec_dang_chay():
+    """Khách thường bấm ở trang danh sách rồi quay lại đúng trang đó.
+
+    Chỉ sửa trang chi tiết là để nguyên câu hỏi ở đúng nơi nó hay được hỏi nhất.
+    """
+    t = DANH_SACH.read_text(encoding="utf-8")
+    assert "{% if m.viec %}" in t
+
+
+def test_route_cap_VIEC_cho_ca_hai_trang():
+    src = ROUTES.read_text(encoding="utf-8")
+    assert '"viec": _viec_dang_chay(db, m)' in src, "trang danh sach thieu"
+    assert '"viec": _viec_dang_chay(db, may)' in src, "trang chi tiet thieu"
+
+
+def test_nhan_tac_vu_dich_o_ROUTE_khong_o_TEMPLATE():
+    """Một bảng tra chép tay trong Jinja là bản sao thứ hai của `nhan.TAC_VU`.
+
+    Bản sao sẽ lệch, và trang sẽ nói một câu khác về cùng một việc.
+    """
+    t = _chi_tiet() + DANH_SACH.read_text(encoding="utf-8")
+    for ma in ("dang_kd_lai", "dang_khoi_phuc", "dang_cap_phat"):
+        assert f'"{ma}"' not in t, f"template tu tra ma tac vu {ma!r}"
+    assert "nhan.tac_vu(" in ROUTES.read_text(encoding="utf-8")
+
+
+# ── 2. "Trạng thái này mới hay cũ?" ─────────────────────────────────────────
+
+def test_trang_may_phan_biet_CHUA_HOI_DUOC_voi_CHUA_HOI_LAI():
+    """Hai câu khác nhau, hai nguyên nhân, hai chỗ đi sửa.
+
+    `mat_lien_lac` = đã hỏi máy chủ và **không có trả lời** — sự cố hạ tầng.
+    `quan_sat_cu` = **chưa hỏi lại** đủ gần đây — có thể vòng đối chiếu chưa tới
+    lượt, hoặc nó đã chết.
+
+    Gộp làm một câu là lấy mất của khách đúng thông tin họ cần để biết nên chờ
+    hay nên gọi hỗ trợ.
+    """
+    t = _chi_tiet()
+    assert "{% if mat_lien_lac %}" in t
+    assert "{% elif quan_sat_cu %}" in t
+    i, j = t.index("mat_lien_lac"), t.index("quan_sat_cu")
+    assert i < j, "nhanh 'khong hoi duoc' phai dung truoc nhanh 'co the da cu'"
+
+
+def test_route_cap_do_tuoi_tu_MO_HINH_chu_khong_tu_tinh_lai():
+    src = ROUTES.read_text(encoding="utf-8")
+    assert "trang_thai_may.qua_cu(may)" in src
+    assert "trang_thai_may.MAT_LIEN_LAC" in src
+
+
+# ── 3. Cách ly ≠ tạm dừng ───────────────────────────────────────────────────
+
+def test_trang_may_noi_ro_CACH_LY_khac_TAM_DUNG():
+    """Ba điều khách sắp hỏi hỗ trợ, và cả ba phải nằm trên trang.
+
+    Đĩa còn không, máy còn chạy không, vào bằng đường nào.
+    """
+    t = _chi_tiet()
+    assert "{% if bi_cach_ly %}" in t
+    khoi = t[t.index("{% if bi_cach_ly %}"):t.index("{% if mat_lien_lac %}")]
+    assert "Console" in khoi, "khong noi duong vao con lai"
+    assert "còn nguyên" in khoi, "khong noi du lieu con nguyen"
+
+
+def test_ly_do_cach_ly_hien_ra_cho_khach():
+    """Một trạng thái phạt không có lý do là một trạng thái khách không cãi được."""
+    assert "may.cach_ly_ly_do" in _chi_tiet()
+
+
+# ── 4. Không hứa thứ không đo được ─────────────────────────────────────────
+
+def test_trang_may_KHONG_co_o_RAM_hay_CPU_dang_dung():
+    """Máy khách không có guest agent (virtio treo trên cụm này).
+
+    Một ô "RAM đang dùng: —" là một lời hứa rằng ta sẽ điền nó, và nó không bao
+    giờ được điền. `plan.ram_mb` thì khác — đó là **cấu hình đã bán**, một con
+    số ta biết chắc.
+    """
+    # Bỏ chú thích trước khi soi: đầu tệp có một khối liệt kê **những thứ ảnh
+    # tham chiếu có mà backend KHÔNG có** ("Uptime SLA 99.95%…"), tức chính chỗ
+    # ghi lại quyết định không hứa. Soi cả chú thích là bắt đúng lời giải thích
+    # của mình — cùng lớp lỗi với bộ dò văn bản trừng phạt việc giải thích.
+    t = re.sub(r"(?s)\{#.*?#\}", " ", _chi_tiet())
+    for cam in ("RAM đang dùng", "CPU đang dùng", "Đĩa còn trống", "Uptime"):
+        assert cam not in t, f"hua thu khong do duoc: {cam}"
+
+
+def test_trang_may_KHONG_hua_sao_luu_doc_lap():
+    """Trang nói "Ảnh chụp", không nói "Sao lưu" — và khác biệt ấy là thật.
+
+    Ảnh nằm cùng pool với đĩa gốc; hỏng đĩa là mất cả hai. Hứa "sao lưu" rồi
+    giao một ảnh chụp là loại lời hứa người ta chỉ phát hiện sai đúng vào lúc
+    mất dữ liệu.
+    """
+    t = _chi_tiet()
+    xau = [d for d in t.splitlines()
+           if re.search(r'_\("[^"]*[Ss]ao l[ưu]u', d) and "Ảnh chụp" not in d]
+    assert xau == [], f"trang may dung tu 'sao luu': {xau}"
+
+
+# ── 5. API công khai: một quyết định, không phải một khoảng trống ───────────
+
+def test_VPS_van_dong_o_api_v1_va_ly_do_duoc_ghi_lai():
+    """Không mở `/api/v1` cho VPS là một **quyết định**, và nó phải đọc được.
+
+    Hợp đồng của `/api/v1` là *quote → giữ chỗ → quyết toán* cho **một lượt
+    chạy**. Một máy ảo là một **hợp đồng thuê có thời hạn**: không có "một lượt"
+    nào để báo giá, và tiền đã đi qua `paid_until` mỗi 30 ngày.
+
+    Ép nó vào khuôn đó là dựng một hợp đồng nói sai về thứ nó bán — đắt hơn hẳn
+    việc chưa có API. Xem `docs/vps_v2/ADR_INDEX.md` ADR-06.
+    """
+    adr = (GOC / "docs" / "vps_v2" / "ADR_INDEX.md").read_text(encoding="utf-8")
+    assert "ADR-06" in adr
+    assert "api/v1" in adr or "API công khai" in adr
+
+
+def test_manifest_van_KHONG_khai_ToolSpec_nao():
+    """Trạng thái thật, và nó khớp `docs/PUBLIC_API/APP_API_COVERAGE_FINAL.md`."""
+    from apps.vps.manifest import MANIFEST
+    assert not getattr(MANIFEST, "tools", ())
+
+
+# ── 6. Render thật: trang phải mở được với mô hình mới ─────────────────────
+
+@pytest.fixture()
+def moi_truong(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'vps-ui2.db').as_posix()}")
+    monkeypatch.setenv("LTT_ENV", "development")
+    monkeypatch.setenv("LTT_SESSION_SECRET", "test-vps-ui2")
+    monkeypatch.setenv("LTT_VPS", "1")
+    monkeypatch.delenv("TURNSTILE_SECRET_KEY", raising=False)
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models   # noqa: F401
+    import apps.vps.tables        # noqa: F401
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+    yield dbmod
+    dbmod.reset_engine()
+
+
+def test_trang_chi_tiet_RENDER_duoc_khi_may_dang_ban(moi_truong):
+    """Kiểm bằng render thật, không chỉ đọc template.
+
+    Một biến thiếu trong ngữ cảnh làm Jinja ném ở **runtime**, không ở lượt đọc
+    tệp — và trang trắng chỉ lộ ra khi có người mở nó.
+    """
+    from fastapi.testclient import TestClient
+
+    from apps.vps import trang_thai_may as tt
+    from apps.vps.services import thao_tac
+    from apps.vps.tables import VpsGateway, VpsInstance
+    from platform_core import credit
+    from platform_core.users import tao_nguoi_dung
+    from server.app import create_app
+
+    gen = moi_truong.get_session()
+    db = next(gen)
+    try:
+        u = tao_nguoi_dung(db, email="vps-ui2@test.com",
+                           password="matkhau-tot-12", is_verified=True)
+        db.flush()
+        credit.nap(db, u.id, 100_000)
+        g = VpsGateway(ten="cong-ui2", vung="sgp", ip_cong_khai="203.0.113.10")
+        db.add(g)
+        db.flush()
+        m = VpsInstance(user_id=u.id, plan_id="vps-vua",
+                        os_id="winsrv2022-gui", gateway_id=g.id,
+                        trang_thai="dang_chay", vmid=555)
+        db.add(m)
+        db.flush()
+        thao_tac.mo(db, m, tt.DANG_KD_LAI, boi=u.id)
+        db.commit()
+        may_id, email = m.id, u.email
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    client = TestClient(create_app())
+    try:
+        # Biểu mẫu đăng nhập đòi CSRF và dùng trường `username`. Bỏ qua hai
+        # điều đó thì nhận 422 — một lỗi của đồ gá đội lốt một lỗi của sản phẩm.
+        login = client.get("/login")
+        token = re.search(r'name="csrf_token" value="([^"]+)"',
+                          login.text).group(1)
+        client.post("/login", data={"username": email,
+                                    "password": "matkhau-tot-12",
+                                    "csrf_token": token})
+        r = client.get(f"/vps/{may_id}")
+        assert r.status_code == 200, r.status_code
+        # Nhãn tác vụ phải hiện ra — đây là toàn bộ điểm của pha này.
+        assert "Đang khởi động lại" in r.text
+        # Và KHÔNG được có nút phá huỷ nào trên một máy đang bận.
+        assert "/khoi-phuc" not in r.text and "/cai-lai" not in r.text
+    finally:
+        client.close()

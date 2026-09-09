@@ -25,11 +25,10 @@ from datetime import timedelta
 
 import logging
 import os
-import time
 
-from apps.vps import os_images
+from apps.vps import os_images, trang_thai_may
 from apps.vps.cost import dia_tong_gb, lay_plan
-from apps.vps.services import dinh_danh, mang, provisioning
+from apps.vps.services import dinh_danh, mang, provisioning, tac_vu
 from apps.vps.services import router as bo_dinh_tuyen
 from apps.vps.services.proxmox import ProxmoxError, client_tu_moi_truong
 from apps.vps.tables import VpsGateway, VpsInstance
@@ -43,9 +42,12 @@ log = logging.getLogger(__name__)
 #: Proxmox từ chối tạo máy ngay, không hỏng lặng lẽ.
 KHO_DIA = os.environ.get("LTT_VPS_KHO_DIA", "vmdata")
 
-#: Chờ tối đa cho một tác vụ nền của Proxmox (clone, xoá). Ngắn hơn trần của
-#: manifest để job tự báo lỗi thay vì bị nền tảng cắt như một job treo.
-CHO_TAC_VU_S = 20 * 60
+#: Nhịp hỏi lại trạng thái tác vụ (giây).
+#:
+#: ⚠️ Trần thời gian KHÔNG còn là hằng số ở đây. Nó lấy theo `max_runtime_s` của
+#: chính job đang chạy — xem `tac_vu.han_theo_job`. Hằng số cũ (`CHO_TAC_VU_S =
+#: 20*60`) dùng chung cho cả `vps.destroy`, mà job đó chỉ có trần **600 giây**:
+#: bộ chờ không bao giờ tới lượt bỏ cuộc.
 NHIP_HOI_S = 5
 
 
@@ -118,7 +120,9 @@ def handle(params: dict, ctx=None) -> dict:
     job_type = getattr(ctx, "job_type", "") or str(params.get("job_type", ""))
     nhanh = {"vps.provision": _tao_may,
              "vps.rebuild": _dung_lai,
-             "vps.destroy": _xoa_may}.get(job_type)
+             "vps.destroy": _xoa_may,
+             "vps.control": _dieu_khien_may,
+             "vps.snapshot": _khoi_phuc_anh}.get(job_type)
     if nhanh is None:
         raise VpsJobError(f"job_type khong biet: {job_type!r}")
 
@@ -150,19 +154,222 @@ def _lay_may(db, instance_id: str) -> VpsInstance:
     return may
 
 
-def _cho_tac_vu(client, upid: str, ctx=None, *, moc: int = 30) -> None:
-    """Chờ một tác vụ nền của Proxmox xong. Ném lỗi nếu nó thất bại hoặc quá hạn."""
-    het_han = time.monotonic() + CHO_TAC_VU_S
-    while time.monotonic() < het_han:
-        tt = client.trang_thai_tac_vu(upid)
-        if str(tt.get("status", "")) == "stopped":
-            ket_qua = str(tt.get("exitstatus", ""))
-            if ket_qua and ket_qua != "OK":
-                raise VpsJobError(f"Proxmox bao tac vu that bai: {ket_qua}")
-            return
-        _bao(ctx, moc, "dang chuan bi may")
-        time.sleep(NHIP_HOI_S)
-    raise VpsJobError("Proxmox khong hoan thanh tac vu trong thoi gian cho phep")
+def _cho_tac_vu(client, upid: str, ctx=None, *, moc: int = 30,
+                thong_diep: str = "dang chuan bi may") -> None:
+    """Chờ một tác vụ nền của Proxmox xong. Ném `VpsJobError` nếu hỏng/quá hạn.
+
+    ## Chỉ còn là một lớp mỏng — bản thật ở `services/tac_vu.py`
+
+    Trước VPS V2 đây là **chỗ duy nhất** trong cả app biết chờ một UPID, nên ba
+    đường còn lại (bật, tắt, khôi phục) không chờ gì cả. Giữ hai bản là để sửa
+    một bên và quên bên kia; nên phần logic đã dời sang `services/tac_vu.py`, và
+    ở đây chỉ còn phần thuộc về **job**: báo tiến độ và dịch lỗi.
+
+    Trần thời gian nay lấy theo **chính job đang chạy** chứ không phải một hằng
+    số chung: `vps.destroy` có `max_runtime_s=600`, nên một bộ chờ 1200 giây
+    trong đó không bao giờ tới lượt bỏ cuộc — nền tảng cắt job trước, và cái
+    chết đó trông giống hệt một job treo. Xem `tac_vu.han_theo_job`.
+    """
+    han = tac_vu.han_theo_job(getattr(ctx, "job_type", "") or "")
+    try:
+        tac_vu.cho_xong(client, upid, han_s=han, nhip_s=NHIP_HOI_S,
+                        bao=lambda _tt: _bao(ctx, moc, thong_diep))
+    except tac_vu.TacVuLoi as exc:
+        raise VpsJobError(str(exc)) from exc
+
+
+# ── vps.control ─────────────────────────────────────────────────────────────
+
+#: Tiến độ báo cho khách theo bước con. Bốn con số, không phải một thanh chạy
+#: mượt: khách cần biết **đang ở đâu**, và một thanh 37% không nói được điều đó.
+_TIEN_DO_BUOC = {
+    "gui_lenh_tat": 10,
+    "cho_may_tat": 30,
+    "gui_lenh_bat": 60,
+    "cho_may_bat": 80,
+}
+
+
+def _dieu_khien_may(params: dict, ctx=None) -> dict:
+    """Bật / tắt / khởi động lại — chạy tới nơi tới chốn rồi mới kết luận.
+
+    ## Vì sao thao tác được tra lại từ CSDL chứ không dựng mới
+
+    Job có thể chạy lại. Dựng một thao tác mới ở mỗi lần chạy là đẻ ra ba dòng
+    "đang khởi động lại" cho một cú bấm, và mất đúng thứ cần nhất khi chạy lại:
+    `upid` và `buoc` của lần trước — thứ cho biết pha tắt đã xong hay chưa.
+    """
+    from apps.vps.services import dieu_khien, tac_vu as bo_cho, thao_tac
+    from apps.vps.tables import VpsThaoTac
+
+    lenh = str(params.get("lenh") or "")
+    db, gen = _mo_db()
+    op = None
+    try:
+        may = _lay_may(db, params.get("instance_id"))
+        op = db.get(VpsThaoTac, str(params.get("thao_tac_id") or ""))
+        if op is None:
+            raise VpsJobError("khong tim thay thao tac cua lenh nay")
+        if op.tinh_trang not in thao_tac.DANG_MO:
+            # Job chạy lại sau khi thao tác đã kết thúc. Không làm gì, không lỗi
+            # — bắn lại một lệnh điện cho một việc đã xong là đúng thứ cần tránh.
+            return {"instance_id": may.id, "lenh": lenh, "da_xong_truoc_do": True}
+
+        thao_tac.bat_dau(db, op)
+        db.commit()
+
+        def _luu() -> None:
+            _bao(ctx, _TIEN_DO_BUOC.get(str(op.buoc or ""), 50), str(op.buoc or ""))
+            db.commit()
+
+        client = client_tu_moi_truong()
+        dien = dieu_khien.thi_hanh(db, may, client, op, lenh=lenh, luu=_luu)
+
+        thao_tac.xong(db, op, may, dien_sau=dien)
+        provisioning.ghi_su_kien(db, may.id, lenh,
+                                 boi=str(params.get("boi") or "he_thong"),
+                                 thao_tac_id=op.id, dien=dien)
+        db.commit()
+        _bao(ctx, 100, "xong")
+        return {"instance_id": may.id, "lenh": lenh, "dien": dien}
+    except bo_cho.TacVuLoi as exc:
+        # Hỏng **có phân loại**: `qua_han` khác `that_bai` khác `dien_khong_dat`,
+        # và ba cái đó cần ba câu trả lời khác nhau cho khách (Pha 08/09).
+        _ghi_thao_tac_hong(db, op, params, lenh, exc.ma, str(exc))
+        raise VpsJobError(str(exc)) from exc
+    except ProxmoxError as exc:
+        _ghi_thao_tac_hong(db, op, params, lenh, "proxmox_tu_choi", str(exc))
+        raise VpsJobError(f"Proxmox tu choi lenh: {exc}") from exc
+    finally:
+        gen.close()
+
+
+def _ghi_thao_tac_hong(db, op, params: dict, lenh: str, ma: str,
+                       chi_tiet: str) -> None:
+    """Đóng thao tác là **hỏng** và ghi nhật ký. Không được che lỗi gốc."""
+    from apps.vps.services import thao_tac
+
+    try:
+        db.rollback()
+        may = db.get(VpsInstance, str(params.get("instance_id") or ""))
+        if op is not None:
+            op = db.get(type(op), op.id)
+        if op is not None:
+            thao_tac.hong(db, op, may, ma_loi=ma, chi_tiet=chi_tiet,
+                          qua_han=(ma == "tac_vu_qua_han"))
+        if may is not None:
+            # Máy KHÔNG bị đẩy sang `loi`: một lần tắt mềm quá hạn không làm máy
+            # hỏng, nó chỉ làm ta không biết máy đang ở đâu. Đẩy sang `loi` là
+            # nói quá, và nó khoá mất những nút mà khách cần để tự gỡ.
+            trang_thai_may.dat(may, dien_quan_sat=trang_thai_may.KHONG_RO,
+                               suc_khoe=trang_thai_may.KHONG_RO)
+            provisioning.ghi_su_kien(
+                db, may.id, f"{lenh}_that_bai",
+                boi=str(params.get("boi") or "he_thong"),
+                ma_loi=ma, loi=chi_tiet[:200])
+        db.commit()
+    except Exception:            # noqa: BLE001 - ghi lỗi không được che lỗi gốc
+        log.exception("vps: khong ghi duoc that bai cua lenh %r", lenh)
+
+
+def _tat_de_xoa(client, may, ctx=None, *, moc: int = 30) -> str:
+    """Tắt cứng một máy **sắp bị xoá**, rồi xác minh. Trả điện đo được cuối cùng.
+
+    ## Vì sao một hàm chung cho `_dung_lai` và `_xoa_may`
+
+    Trước Pha 10 đây là **hai bản sao** của cùng một khối mười dòng, trong hai
+    hàm cách nhau bốn mươi dòng. Hai bản sao của một khối khó là hai chỗ sẽ lệch
+    nhau, và ở đây chúng đã lệch: một bản ghi *"tắt không xong thì vẫn thử xoá"*,
+    bản kia ghi thêm *"`purge` cưỡng chế"* — một khẳng định về hành vi Proxmox mà
+    **không lượt chạy nào ở đây kiểm được**.
+
+    ## Vì sao vẫn đi tiếp khi tắt không xong
+
+    Vì máy đang trên đường bị xoá: dữ liệu sẽ mất theo thiết kế, nên một lần tắt
+    cứng thất bại không đổi kết cục. Cái ĐỔI là ta **biết** điều đó thay vì đoán:
+    hàm này hỏi lại thế giới thật và ghi ra trạng thái đo được, nên khi `client.xoa`
+    trả lỗi thì log có sẵn câu trả lời cho *"vì sao"* — thay vì một dòng "500".
+
+    ⚠️ Chỉ dùng cho đường **xoá/dựng lại**. Đừng gọi nó ở đường điều khiển: ở đó
+       một lần tắt không xong là một lý do để DỪNG, không phải để đi tiếp.
+    """
+    from apps.vps.services import tac_vu
+
+    try:
+        _cho_tac_vu(client, client.tat_cung(may.vmid), ctx, moc=moc)
+    except (ProxmoxError, VpsJobError) as exc:
+        # Bắt HẸP hai loại: `ProxmoxError` (máy đã tắt sẵn, hoặc node từ chối)
+        # và `VpsJobError` (tác vụ hỏng/quá hạn). Lỗi lập trình vẫn nổ lên trên.
+        log.info("VPS: tat cung may %s truoc khi xoa khong xong: %s", may.id, exc)
+
+    dien = tac_vu.doc_dien(client, may.vmid)
+    if dien != trang_thai_may.TAT:
+        log.warning("VPS: may %s van o trang thai %r khi bat dau xoa — "
+                    "Proxmox co the tu choi lenh xoa", may.id, dien)
+    return dien
+
+
+# ── vps.snapshot ────────────────────────────────────────────────────────────
+
+_TIEN_DO_KHOI_PHUC = {
+    "tat_truoc_khoi_phuc": 15,
+    "dang_khoi_phuc_anh": 45,
+    "bat_lai_sau_khoi_phuc": 80,
+}
+
+
+def _khoi_phuc_anh(params: dict, ctx=None) -> dict:
+    """Khôi phục máy về một ảnh chụp — **phá huỷ dữ liệu**, nên chạy có sổ sách.
+
+    Cùng khuôn với `_dieu_khien_may`: tra lại thao tác từ CSDL (không dựng mới),
+    chạy tới nơi tới chốn, rồi mới kết luận. Khác ở chỗ hỏng ở đây đắt hơn nhiều
+    — xem `sao_luu.thi_hanh_khoi_phuc` về việc chạy lại.
+    """
+    from apps.vps.services import sao_luu, tac_vu as bo_cho, thao_tac
+    from apps.vps.tables import VpsThaoTac
+
+    ten_anh = str(params.get("anh") or "")
+    db, gen = _mo_db()
+    op = None
+    try:
+        may = _lay_may(db, params.get("instance_id"))
+        op = db.get(VpsThaoTac, str(params.get("thao_tac_id") or ""))
+        if op is None:
+            raise VpsJobError("khong tim thay thao tac khoi phuc")
+        if op.tinh_trang not in thao_tac.DANG_MO:
+            return {"instance_id": may.id, "da_xong_truoc_do": True}
+
+        thao_tac.bat_dau(db, op)
+        db.commit()
+
+        def _luu() -> None:
+            _bao(ctx, _TIEN_DO_KHOI_PHUC.get(str(op.buoc or ""), 50),
+                 str(op.buoc or ""))
+            db.commit()
+
+        client = client_tu_moi_truong()
+        dien = sao_luu.thi_hanh_khoi_phuc(db, may, client, op, ten=ten_anh,
+                                          luu=_luu)
+        thao_tac.xong(db, op, may, dien_sau=dien)
+        provisioning.ghi_su_kien(db, may.id, "khoi_phuc",
+                                 boi=str(params.get("boi") or "he_thong"),
+                                 anh=ten_anh, thao_tac_id=op.id)
+        db.commit()
+        _bao(ctx, 100, "xong")
+        return {"instance_id": may.id, "anh": ten_anh, "dien": dien}
+    except bo_cho.TacVuLoi as exc:
+        _ghi_thao_tac_hong(db, op, params, "khoi_phuc", exc.ma, str(exc))
+        raise VpsJobError(str(exc)) from exc
+    except sao_luu.SaoLuuError as exc:
+        _ghi_thao_tac_hong(db, op, params, "khoi_phuc", "anh_khong_dung",
+                           str(exc))
+        raise VpsJobError(str(exc)) from exc
+    except ProxmoxError as exc:
+        _ghi_thao_tac_hong(db, op, params, "khoi_phuc", "proxmox_tu_choi",
+                           str(exc))
+        raise VpsJobError(f"Proxmox tu choi lenh: {exc}") from exc
+    finally:
+        gen.close()
 
 
 # ── vps.provision ───────────────────────────────────────────────────────────
@@ -281,16 +488,32 @@ def _tao_may(params: dict, ctx=None) -> dict:
         # đếm nào, và nó dùng bao nhiêu cũng không ai biết — im lặng.
         rt.theo_doi_bang_thong(ip_noi_bo)
 
-        # 5) Bật máy.
+        # 5) Bật máy — và **chờ nó bật thật**.
+        #
+        # Bản cũ bắn `bat()` rồi ghi ngay `dang_chay`. Nghĩa là một máy không
+        # khởi động được (kho đầy, cấu hình sai, node hết RAM) vẫn được giao cho
+        # khách kèm chữ "Đang chạy", và họ mở console ra thấy một màn hình đen.
+        # Đó là V-02 ở đúng chỗ đắt nhất: ngay sau khi đã thu tiền.
         _bao(ctx, 85, "dang khoi dong")
-        client.bat(may.vmid)
+        # `int(may.vmid)` chu khong `may.vmid`: toi day thi VMID chac chan da
+        # duoc cap (buoc 1), nhung kieu tinh cua no van la `int | None`. Ep kieu
+        # o day thay vi de mypy phai tin mot bat bien no khong doc duoc.
+        vmid = int(may.vmid)
+        dien = tac_vu.cho_va_xac_minh(
+            client, client.bat(vmid), vmid, trang_thai_may.CHAY,
+            han_tac_vu_s=tac_vu.han_theo_job(getattr(ctx, "job_type", "")))
 
         # 6) IP công khai riêng. Mỗi máy một IP — xem `docs/VPS/GIAO_DIEN.md`.
         _bao(ctx, 92, "dang cap dia chi cong khai")
         ip_cong_khai = _cap_ip_cong_khai(db, may, gateway, ip_noi_bo)
 
-        may.trang_thai = "dang_chay"
-        may.ly_do = ""
+        # `dien` là số ĐO ĐƯỢC ở bước 5, không phải một giả định: tới dòng này
+        # thì máy đã thật sự chạy, đã được hỏi lại, và câu "Đang chạy" trên
+        # trang khách là một khẳng định có bằng chứng.
+        trang_thai_may.dat(may, vong_doi=trang_thai_may.HOAT_DONG,
+                           dien_mong_muon=trang_thai_may.CHAY,
+                           tac_vu=trang_thai_may.KHONG_CO, ly_do="")
+        trang_thai_may.ghi_quan_sat(may, dien)
         provisioning.ghi_su_kien(db, may.id, "tao_xong", boi="he_thong",
                                  vmid=may.vmid, ip_noi_bo=ip_noi_bo,
                                  ip_cong_khai=ip_cong_khai)
@@ -409,6 +632,17 @@ def _cap_ip_cong_khai(db, may: VpsInstance, gateway, ip_noi_bo: str) -> str:
                           "khong tra lai duoc: %s", ip["dia_chi"], ip["id"], loi_tra)
             raise
         khach.gan_ip(ip["id"], _id_cong_vao(gateway, khach))
+
+    # ⛔ Máy đang bị cách ly thì **không** mở lại đường, kể cả khi đang cài lại.
+    #
+    #    Không có phép kiểm này thì "Cài lại" trở thành một nút gỡ cách ly mà
+    #    khách tự bấm được — im lặng, không ghi sổ, và người vận hành vẫn thấy
+    #    `cach_ly_luc` khác NULL nên tưởng máy vẫn bị cắt.
+    from apps.vps.services import cach_ly as bo_cach_ly
+
+    if bo_cach_ly.dang_bi_cach_ly(may):
+        log.warning("VPS: may %s dang bi cach ly — KHONG mo duong NAT", may.id)
+        return str(cu.dia_chi)
 
     cong_vao.client_tu_moi_truong().mo_duong(cu.dia_chi, ip_noi_bo)
     return str(cu.dia_chi)
@@ -544,8 +778,13 @@ def _danh_dau_loi(db, instance_id, exc: Exception) -> None:
         may = db.get(VpsInstance, str(instance_id or ""))
         if may is None:
             return
-        may.trang_thai = "loi"
-        may.ly_do = f"{type(exc).__name__}: {exc}"[:2000]
+        # Tác vụ về rỗng: việc đã kết thúc — thất bại vẫn là kết thúc. Để nguyên
+        # `tac_vu` là để lại một cái khoá mềm khiến khách không bấm được gì nữa
+        # trên một máy đang lỗi, tức lấy mất đúng nút "Cài lại" mà họ cần.
+        trang_thai_may.dat(may, vong_doi=trang_thai_may.LOI,
+                           dien_quan_sat=trang_thai_may.KHONG_RO,
+                           tac_vu=trang_thai_may.KHONG_CO,
+                           ly_do=f"{type(exc).__name__}: {exc}"[:2000])
         provisioning.ghi_su_kien(db, may.id, "loi", boi="he_thong",
                                  thong_diep=may.ly_do)
         db.commit()
@@ -571,18 +810,14 @@ def _dung_lai(params: dict, ctx=None) -> dict:
         client = client_tu_moi_truong()
         _bao(ctx, 10, "dang tat may cu")
         if _vm_da_ton_tai(client, may.vmid):
-            try:
-                # Cùng cái bẫy đã dính ở đường xoá: `tat_cung` là tác vụ NỀN,
-                # gọi `xoa` ngay sau đó thì Proxmox trả 500 và không nói vì sao.
-                _cho_tac_vu(client, client.tat_cung(may.vmid), ctx, moc=20)
-            except ProxmoxError:
-                pass                      # máy đã tắt sẵn — không phải lỗi
-            except VpsJobError:
-                pass                      # tắt không xong thì vẫn thử xoá
+            _tat_de_xoa(client, may, ctx, moc=20)
             upid = client.xoa(may.vmid)
             _cho_tac_vu(client, upid, ctx, moc=30)
 
-        may.trang_thai = "dang_tao"
+        trang_thai_may.dat(may, vong_doi=trang_thai_may.DANG_TAO,
+                           dien_mong_muon=trang_thai_may.CHAY,
+                           dien_quan_sat=trang_thai_may.KHONG_RO,
+                           tac_vu=trang_thai_may.DANG_CAP_PHAT)
         # Xoá VM là xoá luôn mọi ảnh chụp của nó. Không xoá mốc này thì trang máy
         # vẫn khoe "Ảnh chụp gần nhất: <ngày>" cho một bản **không còn tồn tại**,
         # và nút Khôi phục hiện ra rồi báo "chưa có ảnh chụp nào" khi bấm.
@@ -612,16 +847,7 @@ def _xoa_may(params: dict, ctx=None) -> dict:
         client = client_tu_moi_truong()
         if may.vmid and _vm_da_ton_tai(client, may.vmid):
             _bao(ctx, 20, "dang tat may")
-            try:
-                # PHẢI chờ tác vụ tắt xong. `tat_cung` là tác vụ NỀN: gọi `xoa`
-                # ngay sau đó thì Proxmox trả **500** vì máy còn đang chạy hoặc
-                # còn khoá. Đã dính thật 24/08 — và triệu chứng chỉ là "500",
-                # không nói gì về nguyên nhân.
-                _cho_tac_vu(client, client.tat_cung(may.vmid), ctx, moc=40)
-            except ProxmoxError:
-                pass          # máy đã tắt sẵn — không phải lỗi, vẫn xoá tiếp
-            except VpsJobError:
-                pass          # tắt không xong thì vẫn thử xoá; `purge` cưỡng chế
+            _tat_de_xoa(client, may, ctx, moc=40)
             _bao(ctx, 50, "dang xoa dia")
             upid = client.xoa(may.vmid)
             _cho_tac_vu(client, upid, ctx, moc=70)
@@ -634,7 +860,12 @@ def _xoa_may(params: dict, ctx=None) -> dict:
         _bao(ctx, 80, "dang tra dia chi cong khai")
         _tra_ip_cong_khai(db, may)
         _nha_tai_nguyen(db, may)
-        may.trang_thai = "da_xoa"
+        # Máy đã đi rồi: quan sát là `tat` thật, không phải `khong_ro` — VM không
+        # còn tồn tại thì không có gì để không rõ.
+        trang_thai_may.dat(may, vong_doi=trang_thai_may.DA_XOA,
+                           dien_mong_muon=trang_thai_may.TAT,
+                           dien_quan_sat=trang_thai_may.TAT,
+                           tac_vu=trang_thai_may.KHONG_CO)
         provisioning.ghi_su_kien(db, may.id, "da_xoa",
                                  boi=str(params.get("boi") or "he_thong"))
         db.commit()

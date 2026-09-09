@@ -32,7 +32,12 @@ MANIFEST = AppManifest(
 
     nav=(NavEntry("LTT VPS", "/vps", "🖥️", "vps"),),
 
-    job_types=("vps.provision", "vps.rebuild", "vps.destroy"),
+    # `vps.control` (VPS V2/ADR-03): bật, tắt, khởi động lại. Trước đây ba lệnh
+    # này chạy THẲNG từ route — đúng chừng nào chúng chỉ *gửi* lệnh rồi nói dối
+    # là đã xong. Một lần khởi động lại **thật** (tắt → chờ STOPPED → bật → chờ
+    # RUNNING) vượt trần 100 giây của Cloudflare, nên nó phải vào hàng đợi.
+    job_types=("vps.provision", "vps.rebuild", "vps.destroy",
+               "vps.control", "vps.snapshot"),
     # Chỉ gọi HTTP tới Proxmox trong LAN — không cần GPU, không cần ffmpeg.
     requires=("api",),
     credit_cost=credit_cost,
@@ -44,6 +49,17 @@ MANIFEST = AppManifest(
         "vps.provision": 1800,
         "vps.rebuild": 1800,
         "vps.destroy": 600,
+        # 900 giây cho `vps.control`, và con số theo việc thật: lệnh nặng nhất
+        # là khởi động lại = tắt mềm (trần chờ điện 300s) + bật (300s) + hai lần
+        # chờ tác vụ nền. `tac_vu.han_theo_job` tiêu 80% số này (720s), vẫn dư
+        # cho 600s hai pha — nên bộ chờ hết hạn TRƯỚC nền tảng, và job còn kịp
+        # ghi lý do thật thay vì chết như một job treo.
+        "vps.control": 900,
+        # `vps.snapshot` = khoi phuc anh chup: tat cung (300s) + rollback (600s)
+        # + bat lai (300s). Job type RIENG chu khong gop vao `vps.control`: day
+        # la thao tac PHA HUY du lieu, tran thoi gian khac han, va gop lai la
+        # mat luon kha nang doc log theo loai viec.
+        "vps.snapshot": 1200,
     },
 
     # Việc nền định kỳ: thu tiền, treo máy hết tiền, xoá máy quá hạn ân hạn.

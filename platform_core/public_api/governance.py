@@ -129,6 +129,25 @@ STORES: tuple = (
           N_("Nhật ký vòng đời một máy — thứ trả lời \"vì sao máy tôi bị tắt\". "
           "Chính bảng này ghi rằng nó tồn tại vì log xoay vòng rồi mất, còn câu "
           "hỏi của khách thì đến sau ba tháng.")),
+    # `vps_thao_tac` là **OPERATIONAL, có hạn xoá** — khác hẳn `vps_event` ngay
+    # trên nó, và khác biệt ấy là cả lý do hai bảng tồn tại riêng.
+    #
+    #   `vps_event` = **đã xảy ra rồi**. Nó là bằng chứng, không bao giờ xoá.
+    #   `vps_thao_tac` = **đang xảy ra**. Nó có hạn chót, có UPID để nối lại,
+    #     và nó KẾT THÚC. Một hàng đợi không dọn được là một hàng đợi phình mãi.
+    #
+    # 180 ngày, không phải 30: một thao tác hỏng là thứ khách hỏi lại sau vài
+    # tháng ("hồi tháng trước bấm khởi động lại mà máy không lên"), và câu trả
+    # lời nằm ở `ma_loi` của chính hàng này. Ngắn hơn thì ta xoá mất câu trả lời
+    # trước khi câu hỏi tới.
+    #
+    # ⚠️ KHÔNG chứa bí mật: `upid` là mã tác vụ của Proxmox, `chi_tiet_loi` là
+    #    thông điệp lỗi. Cả hai chỉ tới người vận hành — `suc_khoe.dong_thoi_gian`
+    #    lọc chúng ra trước khi bất cứ thứ gì tới trang của khách.
+    Store("vps_thao_tac", OPERATIONAL, 180, N_("chủ tài khoản + vận hành"),
+          N_("Một thao tác dài đang chạy trên một máy: ai yêu cầu, muốn gì, tới "
+          "đâu rồi, hỏng vì sao. Khác nhật ký vòng đời ở chỗ nó KẾT THÚC."),
+          "thao_tac.don_cu (bao tri VPS)"),
 
     # ── LTT VOICE ────────────────────────────────────────────────────────────
     #

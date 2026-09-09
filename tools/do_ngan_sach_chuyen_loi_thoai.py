@@ -248,10 +248,14 @@ def main() -> int:
 
     diem_giay: dict[int, float] = {n: max(v) for n, v in giay_do.items() if v}
     for n in co_lo:
-        v = sorted(giay_do[n])
-        if v:
-            print(f"  lo {n:>2} doan: giay min={v[0]:>6.1f}  "
-                  f"p50={statistics.median(v):>6.1f}  max={v[-1]:>6.1f}")
+        # `vg` chu khong `v`: ten `v` da bi rang buoc voi mot `int` o tren trong
+        # cung ham, nen dung lai no cho mot `list[float]` lam mypy bao ba loi
+        # (mot `assignment` + hai `index`). Doi ten la ban sua re nhat va no
+        # khong doi hanh vi mot chut nao.
+        vg = sorted(giay_do[n])
+        if vg:
+            print(f"  lo {n:>2} doan: giay min={vg[0]:>6.1f}  "
+                  f"p50={statistics.median(vg):>6.1f}  max={vg[-1]:>6.1f}")
 
     if len(diem) == 2 and len(diem_giay) == 2:
         a, b = co_lo
