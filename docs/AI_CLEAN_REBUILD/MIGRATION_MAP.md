@@ -22,7 +22,7 @@ khong map duoc ->  GO TINH NANG.  ⛔ Khong fallback external.
 | **autosubvideo** | Gemini Text | `LTT_LLM` | ✅ giữ | `ai_workflows.py:140` |
 | **taovideo** | Gemini Text | `LTT_LLM` | ✅ giữ | `translate.py:11` |
 | **prompt_ai_ommi** | Gemini Text | `LTT_LLM` | ✅ giữ | `provider.py:10` |
-| **chataistudio** | Codex sidecar (ChatGPT OAuth) | `LTT_LLM` | ✅ giữ UX + **lịch sử** | `sidecar_client.py` → `codex_sidecar/` |
+| **chataistudio** | Codex sidecar (ChatGPT OAuth) | 🔴 **GỠ HẲN** (xem §7) | — | cả app + `codex_sidecar/` |
 | **agent planner** | `("ltt_llm","gemini")` | **`("ltt_llm",)`** | — | `planner.py:20` |
 | `tools/doi_chung_gemini.py` | Gemini | **GỠ HẲN** | — | `:163` |
 
@@ -141,3 +141,76 @@ provider; thử lại nơi khác chỉ tốn tiền rồi vẫn hỏng.
 
 Pha 03 **chỉ ánh xạ**, chưa sửa mã. Chưa chạy lệnh nặng nào. Bảng này là đầu vào
 cho pha 04 (fail-closed) và 05/06 (di trú).
+
+
+---
+
+## 7. 🔴 ĐẢO QUYẾT ĐỊNH 09/09/2026 — `chataistudio` **GỠ HẲN**, không di trú
+
+Pha 05.7 chạy theo phương án **(a) di trú sang LTT_LLM**. Chủ sản phẩm xem lại
+ngày 09/09 và chỉ ra điều tôi đã bỏ sót khi trình bày hai phương án ấy:
+
+> *"chataistudio vốn dĩ là 1 chat dùng để gọi codex pool phản hồi. Bản chất cơ
+> chế vận hành là CLI và code từ codex. Theo tôi là xóa thẳng app này đi luôn
+> mới đúng thay vì sửa chữa."*
+
+⛔ **Thiếu sót của tôi:** khi hỏi *"di trú hay retire"*, tôi không nói ra rằng
+   nền tảng **đã có** `chatltt` làm đúng việc ấy và làm đầy đủ hơn. Câu hỏi vì
+   thế trông như *"giữ hay bỏ một tính năng"*, trong khi nó thật ra là *"có nên
+   nuôi bản sao thứ hai của một app đang chạy không"*.
+
+### Bằng chứng — đo 09/09/2026
+
+| Đo | `chataistudio` | `chatltt` |
+|---|---|---|
+| Số tệp `.py` | **7** | **47** |
+| `group` trong catalog | `Chat` | `Chat` |
+| Năng lực | văn bản (sau khi mất Codex) | văn bản + **ảnh** + **giọng nói** |
+| `job_types` / bảng giá riêng | không / không | có / có |
+| Dòng trong `ltt-server.jsonl` (1.107 dòng) | **0** | **213** |
+| `chat_conversations` (CSDL production) | **3** | — |
+| `chat_messages` | **8** (3 người dùng) | — |
+| Tin nhắn mới nhất | **25/08/2026** — 15 ngày im lặng | — |
+
+⭐ Con số **0** ở dòng log có đối chứng: cùng tệp ấy ghi **213** dòng của
+   `chatltt`, nên nó đo *"không ai dùng"* chứ không đo *"tệp này không ghi app"*.
+
+⭐ Và **8 tin nhắn / 3 người / im từ 25/08** là dấu vết **thử nghiệm**, không
+   phải sử dụng.
+
+### Lập luận quyết định — không phải "mất động cơ", mà là **trùng lặp**
+
+Sau khi Gemini và Codex bị xoá, `chataistudio` còn lại đúng một thứ: *một khung
+chat văn bản trên LTT_LLM*. Đó chính là `chatltt`, đã `public=True` từ 03/09 sau
+khi H43 Phase 13 PASS. Nuôi hai app cùng nhóm, cùng model, cùng cửa runtime là
+nuôi hai bản sẽ trôi khỏi nhau.
+
+⚠️ `summary` của nó còn hứa hai thứ **đều đã chết**: *"Trò chuyện với AI (GPT-5)
+   và **tạo ảnh** trực tiếp"*. GPT-5 chết vì xoá Codex; ảnh chết vì LTT_LLM là
+   model văn bản.
+
+🔑 Và một bằng chứng nữa, tình cờ: lượt gate 09/09 cho thấy đường chat của app
+   này **chưa từng chạy được** sau 05.7 — mọi lượt gửi `500` vì `UNIQUE
+   constraint failed: chat_messages.id`. Nếu có ai dùng thật, lỗi ấy đã được
+   báo trong 15 ngày.
+
+### Việc phải làm, và thứ tự
+
+| Pha | Việc |
+|---|---|
+| **07** | Xoá `apps/chataistudio/` (toàn bộ) · `codex_sidecar/` · `codex_sidecar_main.py` |
+| **09** | Chứng minh bảng `chat_conversations`/`chat_messages` là `HISTORY_ONLY` |
+| **13** | ⚠️ **Gỡ dịch vụ Windows `LTTStudioCodex`** — nó **đang chạy** trên máy chủ, và xoá mã KHÔNG gỡ một dịch vụ |
+
+### ⛔ Dữ liệu: GIỮ, không xoá
+
+8 bản ghi của 3 người dùng. Ít, nhưng *"xoá dữ liệu không đảo được"* là một
+trong bốn ranh giới `CLAUDE.md` giữ lại kể cả khi chưa có khách. Hai bảng ở lại
+dưới nhãn **`HISTORY_ONLY`**: không route, không ghi mới, không tra khoá, không
+lối ra mạng. Rẻ hơn một migration `DROP`, và đảo lại được.
+
+### Cái gì của 05.7 còn sống
+
+`platform_core/loi_ra_ngoai.py` (nay `chatltt` dùng) · `tests/gia_dieu_phoi_anh.py`
+· và hai lỗi sản phẩm mà lượt gate tìm ra. `luong_chat.py` đi theo app — công bỏ
+ra mất phần lớn, và **đó không phải lý do để giữ một app trùng lặp**.

@@ -10,9 +10,9 @@ dòng nào** — chỉ nơi *chọn* hàm dịch đổi.
    — dịch prompt sang tiếng Anh trước khi vẽ. Nên di trú nó là đổi một hàm, chứ
    không phải đổi một động cơ.
 
-⛔ Module cũ `dich_gemini.py` bị xoá ở **pha 07**, không phải ở đây: pha 06 là
-   *di trú*, pha 07 là *xoá*. Tách hai việc để một lượt hoàn tác chỉ phải lùi
-   một trong hai.
+✅ Module cũ `dich_gemini.py` **đã bị xoá ở pha 07** (09/09/2026), đúng như
+   dòng này hứa ở pha 06. Tách hai việc ra để một lượt hoàn tác chỉ phải lùi
+   một trong hai — và cả hai đều đã đi trọn.
 """
 from __future__ import annotations
 
@@ -22,9 +22,18 @@ from typing import Callable
 from platform_core.i18n import _ as _t
 from platform_core.llm import canonical as _C
 
-#: Giữ nguyên tên lỗi của module cũ: `prompt_dich` bắt đúng lớp này, nên đổi
-#: tên ở đây sẽ làm một nhánh `except` im lặng không còn bắt được gì.
-from platform_core.image_gen.dich_gemini import GoiLLMThatBai  # noqa: F401
+
+
+class GoiLLMThatBai(Exception):
+    """Không gọi được LLM. `prompt_dich` sẽ bọc lại thành `DichThatBai`.
+
+    🔴 Lớp này **về nhà** ở pha 07: pha 06 còn nhập lại nó từ `dich_gemini` để
+       không đổi hai thứ cùng lúc, nay module ấy đã xoá.
+
+    ⛔ Đừng đổi tên: `prompt_dich` bắt **đúng lớp này**, và một nhánh `except`
+       không còn bắt được gì là một nhánh hỏng **im lặng**.
+    """
+
 
 TIMEOUT_S = 30.0
 MAX_TOKENS = 1024

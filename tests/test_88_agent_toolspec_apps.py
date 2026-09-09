@@ -105,7 +105,6 @@ def test_cong_THU_NHAT_that_su_chan_chu_khong_chi_ton_tai():
 
 def test_app_khong_phu_hop_khong_bi_ep_toolspec():
     manifests = {item.slug: item.manifest for item in discover()}
-    assert manifests["chataistudio"].tools == ()
     assert manifests["nexus"].tools == ()
 
 

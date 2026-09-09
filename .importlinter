@@ -64,7 +64,6 @@ modules =
     apps.agent
     apps.anhnoibo
     apps.autosubvideo
-    apps.chataistudio
     apps.chatltt
     apps.ltt_llm
     apps.ltt_voice

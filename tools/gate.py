@@ -1309,7 +1309,8 @@ THU_MUC_CHUP = (
     "apps", "platform_core", "server", "tools", "tests", "alembic", "locale",
     # Mã chạy trên máy B và bộ cài chạy trên máy khách. Cả hai deploy đi xa
     # khỏi kho này, nên một lần sửa giữa lượt gate là một lần sai không ai thấy.
-    "llm_gateway", "render_gateway", "sdk", "nexus_agent", "codex_sidecar",
+    "llm_gateway", "render_gateway", "sdk", "nexus_agent",
+    # (`codex_sidecar` gỡ 09/09/2026 — AI CLEAN REBUILD V2 pha 07.)
     # Nguồn frontend. `node_modules` bị cắt ở `_BO_QUA_THU_MUC`.
     "frontend",
 )

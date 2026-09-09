@@ -71,7 +71,7 @@ class KetQuaAnh:
 class DieuPhoi:
     cong: CR.CongRender
     storage: Any
-    #: `goi_llm(text, he_thong) -> str`. Thường là `dich_gemini.tao_ham_dich(db)`.
+    #: `goi_llm(text, he_thong) -> str`. Thường là `dich_llm.tao_ham_dich(db)`.
     goi_llm: Optional[Callable] = None
     tran_cho_s: float = TRAN_CHO_S
     nhip_hoi_s: float = NHIP_HOI_S

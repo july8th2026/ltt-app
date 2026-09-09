@@ -118,19 +118,15 @@ def test_khong_phai_BanError():
 
 # ── 4. 🔑 Không một byte nào ra mạng ─────────────────────────────────────────
 
-def test_dich_gemini_khong_ra_mang(bit_mang):
-    from platform_core.image_gen import dich_gemini
-    with pytest.raises(providers.ProviderDaNgung):
-        dich_gemini.goi_gemini("xin chao", "he thong", db=None)
-    assert bit_mang == [], f"co luot ra mang: {bit_mang}"
-
-
-def test_dieu_phoi_goi_gemini_khong_ra_mang(bit_mang):
-    from platform_core.llm import dieu_phoi
-    with pytest.raises(providers.ProviderDaNgung):
-        dieu_phoi._goi_gemini("gemini-2.5-flash", "khoa-gia",
-                              [{"content": "xin chao"}], None, 5.0)
-    assert bit_mang == [], f"co luot ra mang: {bit_mang}"
+# ⏭️ `dich_gemini.goi_gemini` và `llm.dieu_phoi._goi_gemini` ĐÃ XOÁ ở pha 07.
+#
+#    Hai phép kiểm cũ chốt *"gọi thì bị cổng chặn"* — mệnh đề chỉ có nghĩa khi
+#    đường gọi CÒN TỒN TẠI. Nay không còn hàm nào để mà chặn, nên giữ lại chúng
+#    là giữ hai `AttributeError` đội lốt phép kiểm.
+#
+# ⭐ Mệnh đề thay thế mạnh hơn và nằm ở `test_1004`: **không một tệp nào trong
+#    kho còn dựng được một lượt gọi tới ba họ nhà cung cấp ấy.** Vắng mặt khó
+#    lách hơn bị-chặn.
 
 
 # ⏭️ `taoanh` ĐÃ DI TRÚ ở pha 06.2 — tiền đề biến mất, chuyển sang `test_1002`.

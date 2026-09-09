@@ -90,9 +90,6 @@ DISPOSITION = {
     "autosubvideo": (EXPOSE_V1, ("video.subtitle",)),
     "taoclipngan": (MIGRATE, ()),
 
-    # No Job at all: credit is held against a message id, streamed through a
-    # sidecar. Nothing about the job contract applies to it yet.
-    "chataistudio": (DEFER, ()),
     # An orchestrator, not a tool: publishing it publishes a runtime.
     "agent": (DEFER, ()),
     # Device management, not a priced tool: no ToolSpec and no Job. Publishing
@@ -220,31 +217,15 @@ def test_the_removed_apps_stay_removed():
         assert da_go not in DISPOSITION, da_go
 
 
-def test_the_chat_app_still_has_no_job_contract():
-    """The reason chat is deferred, checked against the code rather than memory.
-
-    🔴 Rewritten 2026-09-09 (AI CLEAN REBUILD V2). The old line asserted
-       `"credit.giu_cho" in routes.py`: chat held credit **by hand**, against a
-       message id rather than a job, and that hand-rolled hold was the gap that
-       kept the tool off the public API.
-
-       Phase 05.7 moved chat onto `runtime_noi_bo.luong.mo_luong`, which owns
-       the whole credit lifecycle (admit, estimate, hold, commit, settle in
-       `finally`). So the old string is gone — and its absence is progress, not
-       a regression.
-
-    ⭐ The reason chat is still deferred is unchanged and is what this checks:
-       there is no job contract, so `/api/v1/jobs` has nothing to create.
-    """
-    manifest = _apps()["chataistudio"].manifest
-    assert manifest.job_types == ()
-    assert manifest.credit_cost is None
-    assert manifest.tools == ()
-    # Credit now lives in the streaming door, not in a hand-rolled hold here.
-    routes = Path("apps/chataistudio/routes.py").read_text(encoding="utf-8")
-    assert "credit.giu_cho" not in routes
-    luong = Path("apps/chataistudio/luong_chat.py").read_text(encoding="utf-8")
-    assert "mo_luong" in luong
+# ⏭️ `test_the_chat_app_still_has_no_job_contract` ĐÃ GỠ ở pha 07 cùng app.
+#
+#    `chataistudio` bị gỡ hẳn 09/09/2026: sau khi Codex biến mất nó chỉ còn
+#    là bản sao thứ hai của `chatltt` (đo: 3 hội thoại · 8 tin · im từ
+#    25/08). Xem `docs/AI_CLEAN_REBUILD/MIGRATION_MAP.md` §7.
+#
+# ⭐ Bảng `DISPOSITION` ngay trên là chỗ phép kiểm này thật sự sống: một app
+#    biến mất mà quên xoá dòng của nó ở đó thì `test_every_app_is_classified`
+#    đỏ. Nên bất biến *"mọi app đều có một phán quyết"* không mất người canh.
 
 
 def test_the_agent_app_is_an_orchestrator_not_a_tool():

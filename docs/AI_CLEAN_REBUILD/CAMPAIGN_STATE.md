@@ -32,7 +32,7 @@
 | ├ 06.2 | `taoanh` → LTT_IMAGE (**gỡ 3 chế độ**) | ✅ | 84 passed · 5 bánh cóc PASS | `platform_core/image_gen/http_cong.py` |
 | ├ 06.3 | `thumbnail` → LTT_IMAGE (**gỡ chữ-trong-ảnh**) | ✅ | 5 bánh cóc PASS | `PHA06_THUMBNAIL_CHU.md` |
 | └ 06.x | trả nợ do 06.2/05.x để lại (xem §Nợ) | ✅ | `rao_provider_retire` **đã hết hạn và bị xoá** | `platform_core/image_gen/{gia,khung_anh}.py` |
-| 07 | Delete all legacy runtime | ⬜ | — | — |
+| 07 | Delete all legacy runtime **+ gỡ hẳn `chataistudio`** | ✅ | 8 bánh cóc PASS · `test_1004` | `MIGRATION_MAP.md` §7 |
 | 08 | Delete legacy app surfaces | ⬜ | — | — |
 | 09 | Provider config / secret clean | ⬜ | — | — |
 | 10 | Architecture guard | ⬜ | — | — |
@@ -41,6 +41,46 @@
 | 13 | Commit / merge / deploy | ⬜ | — | — |
 | 14 | Remote GitHub hygiene | ⬜ | — | — |
 | 15 | Final repo compaction report | ⬜ | — | — |
+
+## PHA 07 — cái gì đã BIẾN MẤT
+
+| Xoá khỏi đĩa | Vì sao |
+|---|---|
+| `apps/chataistudio/` (9 tệp) | bản sao thứ hai của `chatltt` sau khi mất Codex — `MIGRATION_MAP.md` §7 |
+| `codex_sidecar/` · `codex_sidecar_main.py` | execution ngoài: đăng nhập ChatGPT, chạy CLI Codex |
+| `platform_core/image_gen/dich_gemini.py` | thay bằng `dich_llm.py` ở pha 06.1 |
+| `tools/doi_chung_gemini.py` | cuộc so mù đã đóng (D-046) |
+| `llm/dieu_phoi._goi_gemini` + `PROVIDER_GEMINI` | họ giao thức thứ hai, không còn ai nói |
+| 4 tệp test mất tiền đề | `test_83` · `test_118` · `test_119` · `test_162` · `test_251` · `test_255_doi_chung` |
+
+### Ba chỗ suýt bị bỏ sót, và cả ba đều **không** phải mã sản phẩm
+
+1. **`setup/2-cai-dat.ps1` CÀI dịch vụ `LTTStudioCodex`.** Xoá mã không gỡ một
+   dịch vụ Windows. Khối cài nay là khối **gỡ** — bỏ nó đi mà không gỡ thì lần
+   cập nhật sau có một dịch vụ trỏ tới tệp không tồn tại: fail liên tục, đầy
+   log, không ai biết vì sao.
+2. **`apps/ltt_llm` neo `catalog_parent="chataistudio"`.** Một `catalog_parent`
+   trỏ tới app không tồn tại làm mục ấy **rơi khỏi catalog — mất chứ không báo
+   lỗi**. `test_1004` nay canh cho mọi app.
+3. **`.importlinter` liệt kê `apps.chataistudio`.** Contract `independence` đỏ
+   ngay với *"Module does not exist"*.
+
+⚠️ Còn **một** việc không làm được từ kho: dịch vụ `LTTStudioCodex` **đang chạy
+   trên máy chủ**. Script đã biết gỡ nó, nhưng script chỉ chạy lúc deploy —
+   pha 13.
+
+### `test_1004` thay hai phép kiểm cũ, và nó KHÓ LÁCH HƠN
+
+Pha 04 chốt *"gọi thì bị chặn"* — mệnh đề cần một cái cổng còn đứng. Pha 07
+chốt **sự vắng mặt**: không thư mục nào còn trên đĩa, không module nào định
+nghĩa lại tên hàm cũ (đọc **AST**, nên chú thích giải thích vẫn sống), không tệp
+nào import được thứ đã xoá, không hằng số nào còn địa chỉ nhà cung cấp.
+
+⏳ Và nó mang **một miễn trừ có hạn**: `platform_core/providers.py` còn `base_url`
+   của ba nhà cung cấp đã ngừng, vì `REGISTRY` là bảng tra lịch sử. Hạn là
+   **pha 09**, ghi thẳng trong tệp, kèm một phép kiểm chốt rằng miễn trừ ấy phải
+   trỏ tới một tệp **có thật** — một miễn trừ trỏ vào hư không thì không ai gỡ
+   được, vì nó xanh mãi.
 
 ## 🔴 LƯỢT GATE ĐẦY ĐỦ CỦA PHA 06 — và hai lỗi SẢN PHẨM nó tìm ra
 
