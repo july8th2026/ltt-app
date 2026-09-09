@@ -82,8 +82,16 @@ lõi; CSDL test dùng chung; cổng 8100; GPU.
 
 ```powershell
 python tools/cua_so_yen.py trang-thai   # ai đang giữ gì, từ bao giờ
-python tools/cua_so_yen.py nha --ep     # gỡ khoá treo (hiếm khi cần)
+python tools/cua_so_yen.py nha --ep --tai-nguyen cpu_nhieu   # gỡ MỘT khoá treo
 ```
+
+⛔ **`nha --ep` không kèm `--tai-nguyen` gỡ TẤT CẢ khoá trên máy**, kể cả khoá
+của một lượt gate đang chạy — `--ep` là đường vòng có chủ đích bỏ qua phép đối
+chiếu chủ khoá. Gỡ **từng cái**, và chỉ khi `trang-thai` in `CANH BAO: TREO`.
+
+⚠️ `pid` chủ khoá đã biến mất **không** có nghĩa khoá treo — nó có thể đang
+**đổi chủ**. `cua_so_yen` tự đoạt khoá treo; không thấy `CANH BAO: TREO` thì
+khoá còn hiệu lực. Toàn văn: `docs/QUY_TAC_CHAY_LENH_NANG.md`.
 
 - Hai lượt cần **tài nguyên khác nhau** thì **không** đợi nhau.
 - Chỉ lượt **đầy đủ / phạm vi** xếp hàng. `--vong-lap` và `--quick` thì không —
