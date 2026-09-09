@@ -59,6 +59,20 @@ def _run(db, *, owner="u1", held=1000) -> AsvRun:
     return r
 
 
+def _kq(noi_dung: str) -> dict:
+    """Boc mot chuoi thanh KET QUA cua `ai.goi`.
+
+    ⭐ `doc_hieu_canh` nhan ca ket qua chu khong nhan rieng `noi_dung`, va do
+       la ban sua 09/09: boc `noi_dung` ra bang tay lam mat `finish_reason`,
+       tuc lam mat thu duy nhat phan biet "model tra sai" voi "model het tran
+       token giua khoi suy nghi".
+
+    ⚠️ `finish_reason="stop"` o day la co y: cac ca duoi day deu la model DA
+       tra loi xong roi tra sai, khong phai bi cat.
+    """
+    return {"noi_dung": noi_dung, "finish_reason": "stop", "suy_nghi": ""}
+
+
 def _canh_ok(**k) -> str:
     """Mot phan hoi VLM dung hinh dang ma `loi_nhac_canh` YEU CAU.
 
@@ -96,7 +110,7 @@ def _tiem_goi(monkeypatch, *, noi_dung="", loi=None, do=None):
 # ══════════════════════════════════════════════════════════════════════════════
 
 def test_doc_duoc_phan_hoi_dung_luoc_do():
-    h = hc.doc_hieu_canh(_canh_ok(), "canh_0001")
+    h = hc.doc_hieu_canh(_kq(_canh_ok()), "canh_0001")
     assert h.ma_canh == "canh_0001" and h.de_xuat == hc.GIU
     assert h.quan_trong == 0.8 and h.do_tin == 0.9
     assert h.chu_the == ("nguoi dan",)
@@ -120,13 +134,13 @@ def test_phan_hoi_sai_luoc_do_thi_NEM(xau, vi_sao):
     "khong canh nao duoc giu" — mot thong bao khong lien quan gi den nguyen
     nhan, va nguoi doc se di tim o nham cho."""
     with pytest.raises((hc.HieuCanhError, ai.LuocDoSai)):
-        hc.doc_hieu_canh(xau, "canh_0001")
+        hc.doc_hieu_canh(_kq(xau), "canh_0001")
 
 
 def test_truong_qua_dai_bi_CAT_chu_khong_bi_tu_choi():
     """⭐ Mot cau `ly_do` 5.000 ky tu khong lam hong ket qua — no chi la mot
     model noi nhieu. Cat va di tiep; tu choi o day la vut ca canh."""
-    h = hc.doc_hieu_canh(_canh_ok(ly_do="x" * 5000), "c1")
+    h = hc.doc_hieu_canh(_kq(_canh_ok(ly_do="x" * 5000)), "c1")
     assert len(h.ly_do) <= 500
 
 

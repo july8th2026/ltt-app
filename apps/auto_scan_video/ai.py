@@ -227,7 +227,56 @@ def cua_so_ngu_canh(thao_tac: ThaoTac) -> int:
 #  Doc ket qua co cau truc
 # ══════════════════════════════════════════════════════════════════════════════
 
-def doc_json(noi_dung: str, thao_tac: ThaoTac) -> dict:
+def _vi_sao_rong(finish_reason: str, suy_nghi: str) -> str:
+    """Phan duoi cua thong diep "model tra ve rong" — thu NOI RA vi sao.
+
+    🔴 Do that 09/09: lan chay `giu_hinh` chet ba lan voi dung mot dong
+       *"chuyen_loi_thoai: model tra ve rong"*, va **bon phien** lien tiep doc
+       dong ay thanh "may B hong". Buoc do sau do goi 30 luot that vao may B:
+       0/30 hong.
+
+    ⛔ Ca hai manh cua cau tra loi DA nam san trong `cong_vlm.KetQuaChat` —
+       `finish_reason` va `suy_nghi` (khoi think, vi cong chay
+       `--reasoning-format deepseek`). Chung chi khong di qua duoc cua nay.
+       `finish_reason == "length"` kem mot khoi suy nghi dai la mot cau chuyen
+       khac han "may B chet": model tieu het `max_tokens` vao viec nghi roi
+       khong con cho de tra loi.
+
+    ⚠️ Va do la ly do khong duoc go tat phan nay khi `finish_reason` rong: mot
+       chuoi rong o day nghia la *cong khong noi*, khong phai *cong noi la binh
+       thuong*. Hai thu do dan toi hai cho sua khac nhau.
+    """
+    manh = []
+    if finish_reason:
+        manh.append(f"finish_reason={finish_reason}")
+    else:
+        manh.append("finish_reason=(cong khong noi)")
+    n = len(suy_nghi or "")
+    if n:
+        manh.append(f"khoi suy nghi {n} ky tu")
+        if str(finish_reason).lower() == "length":
+            manh.append("=> HET NGAN SACH TOKEN trong luc dang nghi, "
+                        "khong phai may B hong")
+    return " [" + "; ".join(manh) + "]"
+
+
+def doc_ket_qua(kq: dict, thao_tac: ThaoTac) -> dict:
+    """Duong DUY NHAT di tu mot ket qua `goi()` sang mot dict da kiem luoc do.
+
+    ⛔ `ai.doc_json(kq.get("noi_dung") or "", ...)` vut mat `finish_reason` va
+       `suy_nghi` **ngay tai cho goi**, nen loi bao len tren la mot cau khong
+       phan biet duoc "model nghi qua tay" voi "may B chet".
+       `test_434::test_KHONG_giai_doan_nao_con_boc_noi_dung_ra_khoi_kq_bang_tay`
+       chot rang khong tep nao cua ASV con lam vay.
+    """
+    kq = kq or {}
+    return doc_json(str(kq.get("noi_dung") or ""), thao_tac,
+                    finish_reason=str(kq.get("finish_reason") or ""),
+                    suy_nghi=str(kq.get("suy_nghi") or ""))
+
+
+def doc_json(noi_dung: str, thao_tac: ThaoTac, *,
+             finish_reason: str = "", suy_nghi: str = "") -> dict:
     """Doc JSON tu phan hoi model va kiem luoc do. Nem `LuocDoSai` neu khong dat.
 
     ⭐ Model hay boc JSON trong ```json ... ```, hoac them mot cau dan truoc no.
@@ -240,7 +289,7 @@ def doc_json(noi_dung: str, thao_tac: ThaoTac) -> dict:
     """
     s = (noi_dung or "").strip()
     if not s:
-        raise LuocDoSai(f"{thao_tac.ma}: model tra ve rong")
+        raise LuocDoSai(f"{thao_tac.ma}: model tra ve rong{_vi_sao_rong(finish_reason, suy_nghi)}")
 
     dau, cuoi = s.find("{"), s.rfind("}")
     if dau < 0 or cuoi <= dau:
@@ -265,8 +314,35 @@ def doc_json(noi_dung: str, thao_tac: ThaoTac) -> dict:
 
 def goi(db, thao_tac: ThaoTac, messages: list, *, ctx=None,
         max_tokens: int = 0, temperature: float | None = None,
+        timeout_s: float | None = None,
         on_dispatch=None, on_rejected=None) -> dict:
     """MOT cua goi model. Tra ve `{"noi_dung", "provider", "model", "su_dung"}`.
+
+    🔴 **`timeout_s` la RAO THU HAI, va no nguy hiem hon rao token.**
+
+       Do that 09/09, sau luot THANH CONG cua `chuyen_loi_thoai` voi mot lo
+       **6** doan (`long_tieng.DOAN_MOI_LO` = 12, tuc lo that co the gap doi):
+
+           65,8 · 75,3 · 84,6 · 94,4 · 94,9 · **107,7** giay
+           4.517 · 5.201 · 5.868 · 6.406 · 6.422 · **7.526** token ra
+
+       Tuyen tinh sach, ~70 token/giay. Va `dieu_phoi.goi` co
+       `timeout_s: float = 120.0`. Luot cham nhat cach tran thoi gian **10 %**.
+
+    ⛔ Nen nang `max_tokens` MA KHONG nang `timeout_s` la doi mot that bai xau
+       lay mot that bai TE HON:
+
+           het token     -> `LuocDoSai`              -> `TAM_THOI`, thu lai duoc
+           het thoi gian -> `AmbiguousProviderError` -> `AiMoHo`, DUNG lan chay
+                                                        va cho nguoi quyet dinh
+
+       Tien da tieu o ca hai, nhung ca thu hai con khong ai biet model da chay
+       chua. Hai rao dat canh nhau, ca hai duoi nhu cau binh thuong; go mot cai
+       roi de nguyen cai kia la lam moi thu te di.
+
+    ⚠️ `None` = **khong khai**, va `dieu_phoi` giu mac dinh cua no. Khong go lai
+       mot con so o day: CLAUDE.md ghi mot loi da xay ra that vi go lai mot
+       hang so thu hai cho cung mot thu.
 
     ⛔ Khong tep nao khac cua Auto Scan duoc goi `dieu_phoi.goi` truc tiep.
        `tests/test_434` chot dieu do — hai duong toi cung mot provider la hai
@@ -292,6 +368,12 @@ def goi(db, thao_tac: ThaoTac, messages: list, *, ctx=None,
     if on_rejected is None and ctx is not None:
         on_rejected = getattr(ctx, "provider_rejected", None)
 
+    # ⚠️ Chi them khoa khi ben goi KHAI. Truyen `timeout_s=None` xuong se de len
+    #    mac dinh cua `dieu_phoi` mot gia tri khong hop le.
+    them: dict = {}
+    if timeout_s is not None:
+        them["timeout_s"] = float(timeout_s)
+
     try:
         kq = dieu_phoi.goi(
             db, messages=messages,
@@ -299,7 +381,7 @@ def goi(db, thao_tac: ThaoTac, messages: list, *, ctx=None,
             model_theo_provider=ban_do_model(thao_tac),
             max_tokens=int(max_tokens) or tran_token_ra(),
             temperature=temperature,
-            on_dispatch=on_dispatch, on_rejected=on_rejected)
+            on_dispatch=on_dispatch, on_rejected=on_rejected, **them)
     except Exception as exc:  # noqa: BLE001
         # 🔑 **BAN hoi TRUOC MO HO, va thu tu nay co ly do.**
         #
@@ -346,6 +428,14 @@ def goi(db, thao_tac: ThaoTac, messages: list, *, ctx=None,
         "provider": getattr(kq, "provider", "") or THU_TU_PROVIDER[0],
         "model": getattr(kq, "model", ""),
         "su_dung": getattr(kq, "su_dung", None) or getattr(kq, "usage", None),
+        # 🔑 Hai truong CHAN DOAN, va chung khong phai trang tri: mot phan hoi
+        #    rong voi `finish_reason="length"` kem mot khoi suy nghi dai la
+        #    "model tieu het ngan sach token vao viec nghi", con mot phan hoi
+        #    rong voi `finish_reason=""` la mot chuyen khac han. Bo chung o day
+        #    lam ca hai truong hop toi tang tren duoi CUNG MOT cau — va do la
+        #    cau da lam bon phien lien tiep di do nham may B (09/09).
+        "finish_reason": getattr(kq, "finish_reason", "") or "",
+        "suy_nghi": getattr(kq, "suy_nghi", "") or "",
     }
 
 

@@ -505,3 +505,163 @@ def test_MAT_KET_NOI_that_van_la_MO_HO(monkeypatch):
     with pytest.raises(ai.AiMoHo):
         ai.goi(None, ai.QC_NGU_NGHIA, [{"role": "user", "content": "x"}])
 
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §6  "Model tra ve rong" phai NOI RA vi sao no rong
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# 🔴 Do that 09/09: lan chay nghiem thu `giu_hinh` chet BA lan lien tiep voi
+#    dung mot dong — `chuyen_loi_thoai: model tra ve rong` — va **bon phien**
+#    lien tiep doc dong do thanh "may B hong". Buoc do (1) sau do goi 30 luot
+#    that vao may B: 0/30 hong. May B khong hong.
+#
+# ⛔ Cho hong that la o RANH GIOI NAY. `cong_vlm.KetQuaChat` DA boc san ca
+#    `finish_reason` lan `suy_nghi` (khoi think, vi cong chay
+#    `--reasoning-format deepseek`), va `ai.goi` **vut ca hai di** khi dong goi
+#    lai thanh dict. Nen mot phan hoi bi cat vi HET NGAN SACH TOKEN — model
+#    tieu het `max_tokens` vao khoi suy nghi roi khong con cho de tra loi —
+#    den tay nguoi doc duoi dang mot cau khong phan biet duoc voi "may B chet".
+#
+# ⭐ Dau vet ton tai o tang duoi; no chi khong di qua duoc cua nay. Mot thong
+#    diep loi khong noi duoc `finish_reason` la mot thong diep bat nguoi doc
+#    di do lai thu ma he thong DA do roi.
+
+
+class _KqDay:
+    """Ket qua GIONG `cong_vlm.KetQuaChat` — co ca finish_reason lan suy_nghi."""
+
+    def __init__(self, noi_dung="", finish_reason="", suy_nghi=""):
+        self.noi_dung = noi_dung
+        self.finish_reason = finish_reason
+        self.suy_nghi = suy_nghi
+        self.provider = "ltt_llm"
+        self.model = "qwen38-api"
+        self.su_dung = None
+
+
+def test_goi_MANG_THEO_finish_reason_va_suy_nghi(monkeypatch):
+    """Hai truong nay di duoc toi day thi moi tang tren moi noi ra duoc vi sao."""
+    import platform_core.llm.dieu_phoi as dp
+    monkeypatch.setattr(dp, "goi", lambda db, **k: _KqDay(
+        noi_dung="", finish_reason="length", suy_nghi="nghi rat nhieu"))
+
+    kq = ai.goi(None, ai.CHUYEN_LOI_THOAI, [{"role": "user", "content": "x"}])
+    assert kq["finish_reason"] == "length"
+    assert kq["suy_nghi"] == "nghi rat nhieu"
+
+
+def test_RONG_vi_HET_NGAN_SACH_thi_thong_diep_phai_noi_ra():
+    """⛔ Doi chung nam ngay trong phep kiem: cung mot chuoi rong, hai nguyen
+    nhan khac nhau, va hai thong diep phai KHAC NHAU. Neu chung giong nhau thi
+    phep kiem nay khong do gi ca."""
+    kq = {"noi_dung": "", "finish_reason": "length", "suy_nghi": "a" * 900}
+    with pytest.raises(ai.LuocDoSai) as e:
+        ai.doc_ket_qua(kq, ai.CHUYEN_LOI_THOAI)
+    thong_diep = str(e.value)
+    assert "length" in thong_diep
+    assert "900" in thong_diep, "phai noi ra khoi suy nghi dai bao nhieu"
+
+    with pytest.raises(ai.LuocDoSai) as e2:
+        ai.doc_ket_qua({"noi_dung": "", "finish_reason": "stop"},
+                       ai.CHUYEN_LOI_THOAI)
+    assert str(e2.value) != thong_diep
+
+
+def test_doc_ket_qua_van_doc_duoc_JSON_binh_thuong():
+    ra = ai.doc_ket_qua({"noi_dung": '{"doan": {}}', "finish_reason": "stop"},
+                        ai.CHUYEN_LOI_THOAI)
+    assert ra == {"doan": {}}
+
+
+def test_KHONG_giai_doan_nao_con_boc_noi_dung_ra_khoi_kq_bang_tay():
+    """⛔ Banh coc: boc `noi_dung` ra khoi ket qua lam mat `finish_reason` va
+    `suy_nghi` **ngay tai cho goi**. Duong duy nhat di tu MOT KET QUA sang MOT
+    DICT la `ai.doc_ket_qua`, va no la ham duy nhat nhin thay ca ba truong.
+
+    ⚠️ Chot theo TAP HOP tep, khong theo so luong: them mot giai doan moi ma
+       lai boc bang tay thi phep kiem nay phai do.
+
+    🔴 **Ban dau phep kiem nay chi soi doi so cua `doc_json`, va no HEP hon
+       chinh menh de no tuyen bo.**
+
+       `giai_doan_ban_bien_tap.py:211` viet
+       `hc.doc_hieu_canh(kq.get("noi_dung") or "", c.ma)` — cung mot cach boc,
+       cung mot mat mat, nhung ten ham la `doc_hieu_canh` nen no di qua. Mot
+       banh coc chi bao ve thu no nhin thay, va cai no nhin thay o day la MOT
+       TEN HAM chu khong phai MOT HANH VI.
+
+    ⇒ Menh de dung la: **khong tep nao cua ASV duoc go `kq.get("noi_dung")`**,
+      bat ke sau do dua cho ai. Ban viet lai nay KHO xanh hon ban cu — no bat
+      duoc ban cu cong them mot cho nua.
+    """
+    xau = []
+    for tep in sorted(APP.glob("*.py")):
+        # ⭐ `ai.py` la NGOAI LE DUY NHAT, va cung ly do voi §1 ("chi ai.py duoc
+        #    goi dieu_phoi"): no la cua, nen no la noi duy nhat duoc mo goi.
+        #    `ai.doc_ket_qua` boc `noi_dung` **cung voi** `finish_reason` va
+        #    `suy_nghi` — do la ca dinh nghia cua no. Moi tep khac boc mot minh
+        #    `noi_dung` la boc thieu.
+        if tep.name == "ai.py":
+            continue
+        for nut in ast.walk(_cay(tep)):
+            if (isinstance(nut, ast.Call)
+                    and isinstance(nut.func, ast.Attribute)
+                    and nut.func.attr == "get"
+                    and nut.args
+                    and isinstance(nut.args[0], ast.Constant)
+                    and nut.args[0].value == "noi_dung"):
+                xau.append(f"{tep.name}:{nut.lineno}")
+    assert xau == [], (
+        "boc noi_dung ra khoi ket qua bang tay lam mat finish_reason/suy_nghi: "
+        f"{xau}. Dung ai.doc_ket_qua(kq, ...) — hoac truyen ca `kq` di tiep.")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §7  HAI trần, không phải một — và cái thứ hai nguy hiểm hơn
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# 🔴 Do that 09/09, sau tran token: sau luot THANH CONG o tran token rong mat
+#
+#        65,8 · 75,3 · 84,6 · 94,4 · 94,9 · **107,7** giay
+#
+#    va `dieu_phoi.goi` co `timeout_s: float = 120.0`. Tuc luot cham nhat cach
+#    tran thoi gian **10 %** — voi mot lo 6 doan, trong khi
+#    `long_tieng.DOAN_MOI_LO` = 12.
+#
+# ⛔ Hai rao dat canh nhau, ca hai deu duoi nhu cau binh thuong. Va go MOT cai
+#    lam moi thu TE HON:
+#
+#      tran token cu  -> `LuocDoSai`              -> `TAM_THOI`, thu lai duoc
+#      tran thoi gian -> `AmbiguousProviderError` -> `AiMoHo`, DUNG lan chay
+#                                                    va cho nguoi quyet dinh
+#
+#    Nang `max_tokens` ma khong nang `timeout_s` la doi mot that bai thu lai
+#    duoc lay mot that bai treo lai — voi tien da tieu va khong ai biet model
+#    da chay chua.
+#
+# ⭐ Nen `ai.goi` phai co duong truyen `timeout_s`. Khong co no thi ngay ca mot
+#    PHEP DO ve nhu cau that cung khong thuc hien duoc: lo 12 doan se het gio
+#    truoc khi het token, va ta lai do cai phanh thay vi do nhu cau — dung loi
+#    da lam `token_ra = 4096` tro thanh mot con so vo nghia.
+
+
+def test_goi_TRUYEN_DUOC_timeout_s_xuong_dieu_phoi(monkeypatch):
+    """Khong co duong nay thi khong the do duoc nhu cau that cua mot lo day."""
+    gia = _Gia()
+    _tiem(monkeypatch, gia)
+    ai.goi(None, ai.CHUYEN_LOI_THOAI, [{"role": "user", "content": "x"}],
+           timeout_s=300.0)
+    assert gia.da_goi["timeout_s"] == 300.0
+
+
+def test_KHONG_truyen_thi_dieu_phoi_giu_mac_dinh_cua_no(monkeypatch):
+    """⛔ Doi chung: neu `ai.goi` **luon** gui mot con so thi no da go lai mot
+    mac dinh cua nen tang, va hai ben se lech nhau ngay lan dau ai do sua
+    `dieu_phoi`. Khong khai thi khong gui — de mot nguon chan ly duy nhat."""
+    gia = _Gia()
+    _tiem(monkeypatch, gia)
+    ai.goi(None, ai.CHUYEN_LOI_THOAI, [{"role": "user", "content": "x"}])
+    assert "timeout_s" not in gia.da_goi, (
+        "ASV go lai mac dinh timeout cua `dieu_phoi` — mot con so thu hai cho "
+        "cung mot thu, va CLAUDE.md ghi mot loi da xay ra that vi dung do")
