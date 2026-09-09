@@ -73,6 +73,29 @@ def _khoa_master(db, kho, run) -> str:
     return khoa[0]
 
 
+def _cao_khung(db, kho: Storage, run) -> int:
+    """Chieu cao khung NGUON, doc tu ho so soi cua `MEDIA_PREPARE`.
+
+    🔴 Chi mot cho can no: do day vien cua lop phu chu. `borderw` cua `drawtext`
+       **khong nhan bieu thuc** (do duoc: `borderw=H*0.004` -> *"Invalid
+       argument"*), nen do day phai duoc tinh ra PIXEL truoc khi dung chuoi loc.
+
+    ⛔ Doc lai ho so da luu chu khong `ffprobe` lai: pha soi da tra loi cau nay
+       roi, va hoi lai la mo duong cho hai cau tra loi khac nhau — dung dieu
+       `giai_doan_ban_dung` da ghi ve `cach`/`khoang`.
+
+    Tra `0` khi khong doc duoc. Nguoi goi quyet dinh do co la loi hay khong:
+    khong co lop phu thi `0` vo hai, co lop phu thi `ban_dung.kiem` tu choi.
+    """
+    khoa = _khoa_json(db, run, pipeline.MEDIA_PREPARE)
+    if not khoa:
+        return 0
+    try:
+        return int((_doc(kho, khoa) or {}).get("cao") or 0)
+    except (OSError, ValueError, TypeError):
+        return 0
+
+
 def _khoa_con_dung(db, kho: Storage, run) -> set[str]:
     """Moi khoa artifact CUA CHINH chu so huu, da kiem toan ven.
 
@@ -179,7 +202,13 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         #    Giao dien khong cho ve vung khi preset la giu hinh, nhung mot yeu
         #    cau dung tay van co the toi, nen cho nay khong duoc tin giao dien.
         vung=((run.settings or {}).get("vung") or ()
-              if cach == cdr.CAT_MA_HOA_LAI else ()))
+              if cach == cdr.CAT_MA_HOA_LAI else ()),
+        # ⭐ Lop phu chu (V6 pha 11) di cung khuon ba tang voi `vung`, va vi
+        #    CUNG mot ly do vat ly: `drawtext` la mot bo loc, bo loc doi hoi
+        #    giai ma, `-c:v copy` khong giai ma khung nao.
+        lop_phu=((run.settings or {}).get("lop_phu") or ()
+                 if cach == cdr.CAT_MA_HOA_LAI else ()),
+        cao_khung=_cao_khung(db, kho, run))
 
     # 🔑 Muc 5: doi chieu MOI tham chieu TRUOC khi ton mot suat render.
     if ctx is not None and getattr(ctx, "progress", None):

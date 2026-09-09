@@ -68,7 +68,8 @@ from platform_core.i18n import _ as _t
 #:    van tay. Bat buoc bump: moi ban render dung o phien ban 2 duoc tinh khi
 #:    khoang thoi gian con la mot truong CHET, nen no khong the tra loi cho mot
 #:    cau hoi nay da khac.
-PHIEN_BAN_CHE_DO = 3
+#: ⬆️ 3 -> 4 (V6 pha 11) khi `lop_phu` chu vao chuoi loc va vao van tay.
+PHIEN_BAN_CHE_DO = 4
 
 #: Sao chep luong hinh — preset giu hinh.
 SAO_CHEP = "sao_chep"
@@ -237,7 +238,61 @@ def _loc_lam_mo(vung, nhan_vao: str, nhan_ra: str, cua_so=None) -> list[str]:
     return ve
 
 
-def loc_cat_noi(khoang: list[tuple[float, float]], vung=()) -> str:
+def _loc_chu(lop_phu, duong_chu, nhan_vao: str, nhan_ra: str, *,
+             cao_khung: int, cua_so=None) -> list[str]:
+    """Cac ve `filter_complex` ve tung dong chu len mot luong hinh.
+
+    `duong_chu[i]` la tep UTF-8 chua chu cua lop `i` — xem `lop_phu.viet_tep_chu`
+    va doan "`textfile=` chu khong `text=`" o dau tep do. `cua_so[i]` la cac
+    khoang **CUA BAN RA** ma lop `i` duoc hien; `None` = suot ca video.
+
+    ⚠️ `drawtext` dat len TREN cung, tuc SAU vung che trong chuoi loc. Nguoc lai
+       thi mot dong chu roi trung o che se bi chinh o do lam mo — khach ve chu
+       de nguoi ta doc duoc no.
+    """
+    from . import lop_phu as lp
+
+    ds_cua_so = list(cua_so) if cua_so is not None else [None] * len(lop_phu)
+    if len(ds_cua_so) != len(lop_phu) or len(duong_chu) != len(lop_phu):
+        raise CheDoError(_t('Không dựng được lớp phủ chữ cho lần chạy này.'))
+
+    font = lp.thoat_duong(lp.duong_font())
+    ve: list[str] = []
+    hien = nhan_vao
+    for i, l in enumerate(lop_phu):
+        mau = lp.MAU_FFMPEG[str(l["mau"])]
+        do_mo = float(l["do_mo"])
+        cai = [
+            # ⛔ `expansion=none`: khong co no thi `%` va `{...}` trong chu cua
+            #    khach duoc `drawtext` doc nhu ma dinh dang. Mot cau
+            #    *"Giam 50%"* van chay, nhung *"%{pts}"* thi in ra dong ho.
+            "expansion=none",
+            f"fontfile='{font}'",
+            f"textfile='{lp.thoat_duong(duong_chu[i])}'",
+            f"fontsize=H*{float(l['co_chu']):.6f}",
+            f"fontcolor={mau}@{do_mo:.6f}",
+            # 🔴 L3: neo o dung cho khach dat, KHONG kep ve bien. Be rong mot
+            #    dong chu chi biet duoc khi ffmpeg do font, nen "co tran ra
+            #    ngoai khung khong" khong tra loi duoc o cong vao — va kep ve
+            #    bien la dung sai lam `localize.py:675` da ghi.
+            f"x=W*{float(l['x']):.6f}",
+            f"y=H*{float(l['y']):.6f}",
+        ]
+        if l.get("vien"):
+            # Chu den thi vien trang; con lai vien den. Vien cung mau chu la
+            # khong co vien.
+            mau_vien = "white" if mau == "black" else "black"
+            cai.append(f"borderw={lp.vien_px(l, cao_khung)}")
+            cai.append(f"bordercolor={mau_vien}@{do_mo:.6f}")
+        ke = f"t{i}" if i + 1 < len(lop_phu) else nhan_ra
+        ve.append(f"[{hien}]drawtext={':'.join(cai)}"
+                  f"{_bat_khi(ds_cua_so[i])}[{ke}]")
+        hien = ke
+    return ve
+
+
+def loc_cat_noi(khoang: list[tuple[float, float]], vung=(), *,
+                lop_phu=(), duong_chu=(), cao_khung: int = 0) -> str:
     """`filter_complex` cat cac khoang duoc giu roi noi lai — **khong co tieng**.
 
     ⛔ Tieng khong di qua day. Ban phoi am (pha 16) da duoc dung theo dung nhung
@@ -282,49 +337,90 @@ def loc_cat_noi(khoang: list[tuple[float, float]], vung=()) -> str:
     nhan = "".join(f"[v{i}]" for i in range(len(khoang)))
     # ⭐ Lam mo SAU khi noi, khong phai tren tung manh: mot vung ap cho ca video
     #    thi mo tren ban da noi la MOT chuoi bo loc, con mo tung manh la N chuoi.
+    #
+    # ⚠️ Thu tu ba chang la mot phan cua hop dong: noi -> che -> ve chu. Doi cho
+    #    hai chang cuoi lam mot dong chu roi trung o che bi lam mo cung o do.
+    cuoi = "ra" if not lop_phu else "sau_che"
     if vung:
         phan.append(f"{nhan}concat=n={len(khoang)}:v=1:a=0[noi]")
-        phan.extend(_loc_lam_mo(vung, "noi", "ra", cua_so_ra(khoang, vung)))
+        phan.extend(_loc_lam_mo(vung, "noi", cuoi, cua_so_ra(khoang, vung)))
     else:
-        phan.append(f"{nhan}concat=n={len(khoang)}:v=1:a=0[ra]")
+        phan.append(f"{nhan}concat=n={len(khoang)}:v=1:a=0[{cuoi}]")
+    if lop_phu:
+        phan.extend(_loc_chu(lop_phu, duong_chu, cuoi, "ra",
+                             cao_khung=cao_khung,
+                             cua_so=cua_so_ra_lop_phu(khoang, lop_phu)))
     return ";".join(phan)
 
 
-def cua_so_ra(khoang: list[tuple[float, float]], vung
-              ) -> list[list[tuple[float, float]] | None]:
-    """Moc NGUON cua tung vung -> khoang tren BAN RA. `None` = ap ca video.
+def _anh_xa_cua_so(khoang: list[tuple[float, float]], muc
+                   ) -> list[list[tuple[float, float]] | None]:
+    """Moc NGUON cua tung muc -> khoang tren BAN RA.
 
-    ⛔ Nem khi mot vung CO khai gio ma khong con khoang nao de ap: doan nguon
-       ay da bi cat het. Bo qua im lang la giao mot video khong che gi o cho
-       khach da ve — va ho chi biet khi xem tep da nhan.
+    Ba gia tri tra ve cho moi muc, va ca ba deu khac nhau:
+
+        `None`      muc khong khai gio  -> ap ca video
+        `[...]`     khai gio, con cho   -> cac khoang tren ban ra
+        `[]`        khai gio, HET cho   -> nguoi goi phai NEM, kem cau cua no
+
+    ⛔ Ham nay khong nem, va do la co y: `vung_che` va `lop_phu` can HAI cau
+       tieng Viet khac nhau cho cung mot tinh huong. Mot cau chung chung
+       (*"một vùng…"*) hien ra khi khach dat gio cho mot dong CHU la mot cau noi
+       ve thu ho khong lam. Cung bai hoc `cat_dau_cuoi.giao` da ghi.
 
     ⚠️ Dung `BanDoThoiGian(...)` truc tiep chu khong `tu_khoang(...)`: ham lop
-       kia **sap xep va gop** dau vao, con `concat` o tren noi theo dung thu tu
-       da nhan. Hai cach doc mot danh sach la hai ban do khac nhau, va cho lech
-       se khong ai thay cho toi khi mot vung bi che sai cho.
+       kia **sap xep va gop** dau vao, con `concat` noi theo dung thu tu da
+       nhan. Hai cach doc mot danh sach la hai ban do khac nhau, va cho lech se
+       khong ai thay cho toi khi mot vung bi che sai cho.
     """
     from .ban_do_thoi_gian import BanDoThoiGian
 
     ban_do = BanDoThoiGian(tuple((float(b), float(k)) for b, k in khoang),
                            float(khoang[-1][1]))
     ra: list[list[tuple[float, float]] | None] = []
-    for v in vung:
+    for v in muc:
         tu, den = v.get("tu_giay"), v.get("den_giay")
         if tu is None and den is None:
             ra.append(None)
             continue
-        cs = ban_do.ra_khoang(float(tu or 0.0),
-                              float(den) if den is not None else float(khoang[-1][1]))
-        if not cs:
+        ra.append(ban_do.ra_khoang(
+            float(tu or 0.0),
+            float(den) if den is not None else float(khoang[-1][1])))
+    return ra
+
+
+def cua_so_ra(khoang: list[tuple[float, float]], vung
+              ) -> list[list[tuple[float, float]] | None]:
+    """`_anh_xa_cua_so` cho VUNG CHE. `None` = ap ca video.
+
+    ⛔ Nem khi mot vung CO khai gio ma khong con khoang nao de ap: doan nguon
+       ay da bi cat het. Bo qua im lang la giao mot video khong che gi o cho
+       khach da ve — va ho chi biet khi xem tep da nhan.
+    """
+    ra = _anh_xa_cua_so(khoang, vung)
+    for cs in ra:
+        if cs is not None and not cs:
             raise CheDoError(_t('Một vùng che nằm trọn trong đoạn đã bị cắt bỏ, '
                                 'nên không còn chỗ nào để che. Hãy sửa hoặc xoá '
                                 'vùng đó.'))
-        ra.append(cs)
+    return ra
+
+
+def cua_so_ra_lop_phu(khoang: list[tuple[float, float]], lop_phu
+                      ) -> list[list[tuple[float, float]] | None]:
+    """`_anh_xa_cua_so` cho LOP PHU CHU. `None` = hien suot ca video."""
+    ra = _anh_xa_cua_so(khoang, lop_phu)
+    for cs in ra:
+        if cs is not None and not cs:
+            raise CheDoError(_t('Một lớp phủ chữ được đặt giờ nằm trọn trong '
+                                'đoạn đã bị cắt bỏ, nên nó sẽ không bao giờ '
+                                'hiện ra. Hãy sửa giờ hoặc xoá lớp đó.'))
     return ra
 
 
 def van_tay_che_do(*, che_do: str, bo_ma_hoa: str,
-                   khoang: list[tuple[float, float]], vung=()) -> str:
+                   khoang: list[tuple[float, float]], vung=(),
+                   lop_phu=()) -> str:
     """Van tay cua quyet dinh render.
 
     ⛔ Gom CA bo ma hoa: doi tu `libx264` sang `h264_nvenc` cho ra mot tep khac —
@@ -359,6 +455,25 @@ def van_tay_che_do(*, che_do: str, bo_ma_hoa: str,
                   None if v.get("tu_giay") is None else round(float(v["tu_giay"]), 3),
                   None if v.get("den_giay") is None else round(float(v["den_giay"]), 3)]
                  for v in (vung or ())],
+        # 🔴 Cung mot L4, va lan nay khai TU DAU thay vi vá sau.
+        #
+        #    ⛔ Bam CA `chu`. Doi mot dong chu ma van tay khong doi la giao lai
+        #       ban render cu — tuc khach sua chinh ta xong van thay loi chinh
+        #       ta cu, va khong co gi noi vi sao.
+        #
+        #    ⚠️ `duong_chu` (tep tam) **khong** vao day: no la ham cua `chu`, va
+        #       duong dan doi theo tung lan chay. Bam no lam moi lan chay ra mot
+        #       van tay khac — tuc pha huy cache ma khong ai co y do.
+        #
+        #    ⚠️ `cao_khung` cung khong: no la thuoc tinh cua NGUON, va nguon da
+        #       nam trong van tay ban dung o mot tang khac.
+        "lop_phu": [[l.get("chu"), l.get("mau"),
+                     round(float(l["x"]), 4), round(float(l["y"]), 4),
+                     round(float(l["co_chu"]), 4), round(float(l["do_mo"]), 3),
+                     bool(l.get("vien")),
+                     None if l.get("tu_giay") is None else round(float(l["tu_giay"]), 3),
+                     None if l.get("den_giay") is None else round(float(l["den_giay"]), 3)]
+                    for l in (lop_phu or ())],
         "phien_ban": PHIEN_BAN_CHE_DO,
     }, sort_keys=True)
     return hashlib.sha256(goi.encode("utf-8")).hexdigest()[:32]

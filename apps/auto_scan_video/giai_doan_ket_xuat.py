@@ -147,6 +147,17 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         duong_lop = [_tai_ve(kho, l["khoa"], thu_muc / f"s{i}.wav")
                      for i, l in enumerate(lop)]
 
+        # ⭐ Chu cua lop phu di ra TEP, khong di ra dong lenh. Do duoc: mot chuoi
+        #    tieng Viet co dau, mot dau `:` hay mot dau `\` trong `text=` deu lam
+        #    ffmpeg tu choi ca chuoi loc — xem bang do o dau `lop_phu.py`.
+        #
+        # ⚠️ Ghi vao `thu_muc` cua chinh lan chay nay: no bi xoa **du that bai
+        #    hay khong** (`TemporaryDirectory`), nen mot cau chu cua khach khong
+        #    o lai tren dia sau khi job xong.
+        from . import lop_phu as _lp
+        duong_chu = _lp.viet_tep_chu(
+            list((ban.get("hinh") or {}).get("lop_phu") or ()), thu_muc)
+
         duong_ra = str(thu_muc / "ra.mp4")
         bo_thuc = ket_xuat.bo_ma_hoa_thuc_te(ban, co_gpu=co_gpu)
         khai = str((ban.get("hinh") or {}).get("bo_ma_hoa") or "")
@@ -155,7 +166,8 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         cmd = ket_xuat.dung_lenh(
             ban, ffmpeg_bin=nhap_media.media.ffmpeg_bin(),
             duong_video=duong_video, duong_master=duong_master,
-            duong_lop=duong_lop, duong_ra=duong_ra, bo_ma_hoa=bo_thuc)
+            duong_lop=duong_lop, duong_ra=duong_ra, bo_ma_hoa=bo_thuc,
+            duong_chu=duong_chu)
 
         if bao:
             bao(15, _t('Đang kết xuất video'))
@@ -214,13 +226,32 @@ def _van_tay(kho: Storage, khoa_ban: str, ban: dict) -> str:
     ⭐ `PHIEN_BAN_KET_XUAT` nam trong van tay chinh la thu lam cong thoat cua pha
        nay dung duoc: doi cach dung lenh ffmpeg ma van tay khong doi thi mot lan
        chay lai se **dung lai tep cu** va khong ai thay cach dung lenh moi.
+
+    🔴 **`PHIEN_BAN_CHE_DO` them o V6 pha 11, va no vá mot lo co that.**
+
+       Cau tren hua *"doi cach dung lenh deu doi no"*. Nhung `dung_lenh` chi
+       DAN chuoi loc lai; nguoi dung no la `che_do_render.loc_cat_noi`. Nen mot
+       thay doi trong chinh cho ay — doi cach lam mo, doi thu tu chang, them
+       `drawtext` — cho ra **cung mot ban dung** va **cung mot van tay**, trong
+       khi tep ra da khac.
+
+       ⛔ Va no khong bao gio no. No hien ra nhu mot lan chay lai "nhanh bat
+          thuong" tra ve dung tep cu — thu ma `assets.py` goi ten la *"sot tham
+          so = serve nham"*.
+
+    ⚠️ `PHIEN_BAN_CHE_DO` khong the thay cho `ban_dung`: `vung` va `lop_phu` nam
+       TRONG ban dung nen chung da vao `cs`. Hai so nay chot hai thu khac nhau —
+       *du lieu* va *ma sinh ra lenh* — va ca hai deu doi duoc doc lap.
     """
     import hashlib
+
+    from . import che_do_render as cdr
 
     with kho.open(khoa_ban) as f:
         cs = assets.bam(f.read())
     goi = json.dumps({"ban_dung": cs,
                       "ket_xuat": ket_xuat.PHIEN_BAN_KET_XUAT,
+                      "che_do": cdr.PHIEN_BAN_CHE_DO,
                       "ffmpeg": (ban.get("cong_cu") or {}).get("ffmpeg", "")},
                      sort_keys=True)
     return hashlib.sha256(goi.encode("utf-8")).hexdigest()

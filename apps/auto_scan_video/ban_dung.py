@@ -64,7 +64,7 @@ def dung(*, khoa_video: str, khoa_nen: str, ke_hoach: dict,
          ban_ke_tieng: dict, phien_ban_ffmpeg: str,
          tong_giay: float, khoa_master: str = "", che_do: str = "",
          bo_ma_hoa: str = "", khoang_giu=None, preset: str = "",
-         vung=None) -> dict:
+         vung=None, lop_phu=None, cao_khung: int = 0) -> dict:
     """Dung ban dung tu cac tai lieu chinh tac. Khong cham mot tep media nao.
 
     `ke_hoach`      ket qua cua `thoi_gian.lap_ke_hoach`
@@ -157,6 +157,22 @@ def dung(*, khoa_video: str, khoa_nen: str, ke_hoach: dict,
             #    `vung` va mot ban dung co `vung: []` la hai thu khac nhau voi
             #    nguoi doc lai — cai dau la ban dung dung SCHEMA CU.
             "vung": [dict(v) for v in (vung or ())],
+            # ── Lop phu chu (V6 pha 11) ──────────────────────────────────
+            #
+            # 🔴 Cung rang buoc VAT LY voi `vung`: `drawtext` la mot bo loc, va
+            #    mot bo loc doi hoi giai ma. Duong `sao_chep` khong giai ma
+            #    khung nao, nen khong co khung nao de ve len. `kiem()` cuong
+            #    che, giao dien noi truoc.
+            "lop_phu": [dict(l) for l in (lop_phu or ())],
+            # 🔑 Chieu cao khung NGUON. No o day vi mot ly do do duoc: `borderw`
+            #    cua `drawtext` **khong nhan bieu thuc** (`borderw=H*0.004` lam
+            #    ffmpeg tra "Invalid argument"), nen do day vien phai duoc tinh
+            #    ra pixel TRUOC khi dung chuoi loc. Xem `lop_phu.vien_px`.
+            #
+            # ⚠️ Luu ca khi khong co lop phu: mot ban dung khong co khoa nay va
+            #    mot ban dung co `cao_khung: 0` la hai thu khac nhau voi nguoi
+            #    doc lai.
+            "cao_khung": int(cao_khung or 0),
         },
         # ── Tieng: BAN PHOI da dung o pha 16 ────────────────────────────
         #
@@ -235,6 +251,24 @@ def kiem(ban: dict, *, khoa_hop_le: set[str] | None = None) -> None:
     if hinh.get("vung") and hinh.get("cach_render") != _cdr.CAT_MA_HOA_LAI:
         raise BanDungError(_t(
             'Vùng che chỉ dùng được với kiểu xử lý có biên tập lại hình.'))
+
+    # ── Lop phu chu: cung mot rang buoc, va no phai duoc VIET RA rieng ──────
+    #
+    # ⛔ Khong gop hai chot lam mot dieu kien `or`. Hai tinh nang khac nhau thi
+    #    hai cau tra loi khac nhau: khach ve mot O CHE va khach go mot DONG CHU
+    #    la hai viec, va mot cau chung chung buoc ho phai doan minh vua lam gi
+    #    sai. `test_453` goi ten cho lo nguoc lai — nang luc co ma khong ai di
+    #    tren duong; o day thi la duong co ma bien bao noi sai loi.
+    if hinh.get("lop_phu") and hinh.get("cach_render") != _cdr.CAT_MA_HOA_LAI:
+        raise BanDungError(_t(
+            'Lớp phủ chữ chỉ dùng được với kiểu xử lý có biên tập lại hình.'))
+
+    # 🔴 Do day vien tinh bang PIXEL, nen no can chieu cao khung. Mot ban dung
+    #    co lop phu ma khong khai `cao_khung` se hong o TRINH RENDER — tuc sau
+    #    khi da chiem mot suat ffmpeg va tai vai tram MB. Chan o day.
+    if hinh.get("lop_phu") and int(hinh.get("cao_khung") or 0) <= 0:
+        raise BanDungError(_t(
+            'Bản dựng có lớp phủ chữ nhưng không khai chiều cao khung hình.'))
 
     tieng = ban.get("tieng") or {}
     if not (tieng.get("nen") or {}).get("khoa"):

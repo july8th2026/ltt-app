@@ -160,14 +160,48 @@ def test_cua_so_ra_DUNG_ban_do_thay_vi_tu_tinh():
 
 
 def test_ma_nguon_khong_tu_tinh_anh_xa():
-    """Doc AST: `cua_so_ra` phai GOI `ra_khoang`, khong tu cong don."""
+    """Doc AST: phep anh xa `moc nguon -> moc ra` co DUNG MOT chu so huu.
+
+    🔑 **Ban nay viet lai o pha 11, va no KHO xanh hon ban truoc chu khong de
+       hon.**
+
+       Ban cu doc AST cua rieng `cua_so_ra` va doi thay `ra_khoang`. Pha 11 them
+       `cua_so_ra_lop_phu` va rut ruot chung ra `_anh_xa_cua_so`; ban cu do ngay
+       — nhung no do vi **nhin nham cho**, chu khong vi menh de sai.
+
+    ⛔ Neu chi doi ten ham trong ban cu thi phep kiem se khong bao gio thay mot
+       ham anh xa THU HAI ra doi. Menh de dung la mot menh de ve CA MODULE:
+
+         · `ra_khoang` duoc goi o dung MOT ham
+         · moi ham cong khai anh xa cua so deu di qua ham do
+
+    ⭐ Ly do menh de nay dang gia: mot ban sao cua phep anh xa se **lech dung
+       vao ngay ai do doi cach cat**, va no lech im lang.
+    """
     import ast
     import inspect
 
-    cay = ast.parse(inspect.getsource(cdr.cua_so_ra))
-    goi = {n.func.attr for n in ast.walk(cay)
-           if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)}
-    assert "ra_khoang" in goi
+    cay = ast.parse(inspect.getsource(cdr))
+    ham = {n.name: n for n in ast.walk(cay) if isinstance(n, ast.FunctionDef)}
+
+    def _goi(ten: str) -> set[str]:
+        ra: set[str] = set()
+        for n in ast.walk(ham[ten]):
+            if isinstance(n, ast.Call):
+                f = n.func
+                if isinstance(f, ast.Attribute):
+                    ra.add(f.attr)
+                elif isinstance(f, ast.Name):
+                    ra.add(f.id)
+        return ra
+
+    chu = sorted(t for t in ham if "ra_khoang" in _goi(t))
+    assert chu == ["_anh_xa_cua_so"], (
+        f"phep anh xa phai co dung mot chu so huu, dang thay: {chu}")
+
+    for cong_khai in ("cua_so_ra", "cua_so_ra_lop_phu"):
+        assert "_anh_xa_cua_so" in _goi(cong_khai), (
+            f"{cong_khai} khong di qua chu so huu cua phep anh xa")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
