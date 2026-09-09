@@ -37,7 +37,7 @@ trong bốn bản khai.** Không Hub, không trang mới, không hardcode slug.
 |---|---|---|---|---|
 | `group` | `Workflow` | `Workflow` | `Workflow` | `Workflow` |
 | `job_types` | `("transcript.run",)` | `("audio_pause.run",)` | `("gem.run",)` | `("video_assembly.run",)` |
-| `requires` | `("gpu",)` | `("gpu",)` | `("browser",)` | `("gpu","ffmpeg")` |
+| `requires` | `("gpu",)` | `("gpu",)` | **`("api",)`** | `("gpu","ffmpeg")` |
 | `lifecycle` | `development` | `development` | `development` | `development` |
 | `surface` | `customer` | `customer` | `customer` | `customer` |
 | `public` | `False` | `False` | `False` | `False` |
@@ -121,7 +121,9 @@ API  (đóng ở V1)          ─┘        (CÙNG hàm)              job_type="
 ```
 
 `transcript` · `audio_pause` · `video_assembly`: xin suất GPU qua
-`admission_resource`. `gem`: xin suất `browser`, **không** GPU.
+`admission_resource`. `gem`: **không xin suất nào** — nó gọi `text.chat` qua
+`runtime_noi_bo`, và admission của chính tool đó lo phần giành chỗ
+(`09_QUYET_DINH_GEM_BO_TRINH_DUYET.md`).
 
 ⭐ Bất biến kiểm được: **GUI, Node và API gọi CÙNG một hàm service và tạo CÙNG
 một `job_type`.** Đó là thứ phép kiểm hợp đồng chốt được, chứ không phải một lời

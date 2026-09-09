@@ -73,36 +73,42 @@ hai đều P0: transcript đã dịch mốc là thứ bước sau tiêu thụ.
 
 ## `gem.run`
 
+⚠️ **Khối này đã SỬA 2026-09-09** sau quyết định bỏ lái trình duyệt. Bản đầy đủ
+kèm lý do: `09_QUYET_DINH_GEM_BO_TRINH_DUYET.md`.
+
 ```
 job_type      gem.run                 type_version  1
-side_effect   external                idempotency   {}   ⚠️ CỐ Ý RỖNG
-resource      class=browser  slots=1  est_duration_s=<lô × nhịp>
-requires      ("browser",)
+requires      ("api",)                       <- was ("browser",)
+side_effect   none                           <- was "external"
+idempotency   key_fields=("kich_ban", "so_canh")   <- was {} (co y de rong)
+resource      khong tu khai — admission cua `text.chat` lo
 ```
-
-🔴 **`side_effect="external"` và `idempotency` rỗng — đây là khai báo trung thực,
-không phải thiếu sót.** Tool này lái một phiên đăng nhập thật trên web. Chạy lại
-cùng tham số **không** cho cùng kết quả và **không** miễn phí: nó tiêu một suất
-trong hạn mức phiên của tài khoản. Khai một `key_fields` ở đây là hứa một tính
-luỹ đẳng mà runtime không giữ được.
 
 | Tham số | Kiểu | Bắt buộc | Ghi chú |
 |---|---|---|---|
 | `kich_ban` | `text` | ✅ | đầu vào bước 1 |
 | `so_canh` | `int` | | |
-| `batch_step2` / `batch_step3` | `int` | | mặc định **10 / 5** — legacy |
-| `provider` | `enum` | | `["gemini", "chatgpt"]` |
+| `batch_step2` / `batch_step3` | `int` | | mặc định **10 / 5** — giữ từ legacy |
+| `model` | `model_ref` | | category `text`, `hidden`, **phải có `default`** |
 
 `returns` = `{"ket_qua": "json"}`.
 
-⛔ Nhịp (`8s` · `+3s/lô` · cap `60s` · nghỉ `45s` mỗi `12` lô · hội thoại mới mỗi
-`25` lô · giữ `5` cảnh lịch sử) **không** phải tham số của tool. Chúng là hằng số
-của service, đóng băng theo audit `05`. Mở chúng ra thành tham số là mời người
-dùng đặt lại những con số đã trả giá bằng tài khoản bị throttle.
+🔑 **`side_effect` đổi `external` → `none` là thay đổi có thật.** Bản cũ khai
+`external` vì mỗi lượt tiêu một suất trong hạn mức phiên của một tài khoản người
+thật, và chạy lại không miễn phí — khai `key_fields` khi ấy là hứa một tính luỹ
+đẳng mà runtime không giữ được. Qua `runtime_noi_bo`, mỗi lượt là một lời gọi có
+kế toán riêng, nên `key_fields` khai được **thật**.
 
-🛑 App này **chưa build được** — ba điều kiện DỪNG S1–S3 (`07_CROSS_BOT_SYNTHESIS.md`).
+⛔ Sáu hằng số nhịp của legacy (`8s` · `+3s/lô` · cap `60s` · nghỉ `45s`/`12` lô
+· hội thoại mới mỗi `25` lô) **bị bỏ**: chúng là nhịp chống throttle của một
+**phiên web**, và chiến trường ấy không còn. Nhưng `HISTORY_SCENES_COUNT = 5`
+thì **giữ** — nó nói về ngữ cảnh của mô hình (*"chỉ giữ 2 scene cuối → qua 100+
+scenes drift character/style"*), không về trình duyệt. Phân biệt hai loại hằng
+số ấy là phần khó của quyết định này.
 
----
+⛔ Ba template `data/prompts/step*.txt` là **tài sản, không phải mã** — giữ
+nguyên từng ký tự.
+
 
 ## `video_assembly.run`
 

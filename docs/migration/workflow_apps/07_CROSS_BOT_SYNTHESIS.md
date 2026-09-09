@@ -142,15 +142,20 @@ phụ thuộc hơn ở **mọi** trục — dòng mã, số model, số kho ngo�
 
 | # | Hạng mục | Chặn ai | Trạng thái |
 |---|---|---|---|
-| S1 | `bot_gem`: nhánh `master` hay `tich-hop-ltt-llm`? | Phase 10 | **hỏi chủ dự án** |
-| S2 | `bot_gem`: giữ lái trình duyệt hay đổi API? | Phase 10 | **hỏi chủ dự án** |
-| S3 | `bot_gem`: tài khoản chạy E2E | Phase 10 | **hỏi chủ dự án** |
-| S4 | ~~`matcher.py` chưa đọc~~ | — | **ĐÃ ĐÓNG** 09/09 — `06` §S4 |
-| S5 | ~~`find_silence_point` chưa đo~~ | — | **ĐÃ ĐÓNG** 09/09 — `04` §S5 |
-| S6 | ~~`word_scene_builder.py` chưa đọc~~ | — | **ĐÃ ĐÓNG** 09/09 — `03` §S6 |
-| S7 | `gemini_automation.py` vs `gemini_client.py` — hai bản cùng việc? | Phase 10 | so trước |
-| S8 | `configs/` thật trên máy production ≠ bản trong kho | mọi phase | lấy từ máy chủ |
-| S9 | Đổi thứ tự build (pause trước) | Phase 08 | **chờ duyệt** |
+| S1 | ~~`bot_gem` nhánh nào~~ | — | **ĐÓNG 09/09**: chủ dự án chọn `master` |
+| S2 | ~~giữ trình duyệt hay đổi API~~ | — | **ĐÓNG 09/09**: bỏ hẳn trình duyệt, đi `runtime_noi_bo` — xem `09` |
+| S3 | ~~tài khoản chạy E2E cho gem~~ | — | **KHÔNG CÒN** — hệ quả của S2 |
+| S4 | ~~`matcher.py` chưa đọc~~ | — | **ĐÓNG 09/09** — `06` §S4 |
+| S5 | ~~`find_silence_point` chưa đo~~ | — | **ĐÓNG 09/09** — `04` §S5 |
+| S6 | ~~`word_scene_builder.py` chưa đọc~~ | — | **ĐÓNG 09/09** — `03` §S6 |
+| S7 | ~~`gemini_automation` vs `gemini_client`~~ | — | **KHÔNG CÒN** — cả hai bị bỏ theo S2 |
+| S8 | ~~`configs/` thật~~ | — | **ĐÓNG 09/09** — đọc từ `D:\FULL AUTO VIDEO`, xem `08` |
+| S9 | ~~đổi thứ tự build~~ | — | **ĐÓNG 09/09**: giữ thứ tự pack, `transcript` trước |
+| **S10** | `engine/music/mood.py` **chỉ có ở bản chạy**, không có trong kho git | Phase 11 | đọc trước khi viết service |
+| **S11** | sửa parity matrix `03`/`04`/`06` theo bảng đính chính `08` §1 | 08·09·11 | **mở** |
+| **S12** | `smart_silence.default` vs `timeline.silence_text` — hai chuỗi khác nhau | Phase 08 | đo đường nào dùng chuỗi nào |
+| **S13** | hồ sơ STT của `pause` là **hàm của `language`** (vi=5/3, en=1/1) | Phase 09 | sửa §2 tệp này |
+| **S14** | production chạy `timeline.mode=sequential`, **không** phải `semantic` | Phase 11 | đảo thứ tự ưu tiên trong `06` |
 
 ✅ **S4–S6 đóng ngày 09/09, TRƯỚC khi viết một dòng service nào** — đúng thứ tự
 mà MASTER-GUARDRAILS đòi. Cả ba trả về một thứ mà một bản port hợp lý sẽ làm sai
