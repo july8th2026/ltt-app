@@ -33,6 +33,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
+import re
 import subprocess
 from pathlib import Path
 
@@ -41,8 +43,13 @@ from platform_core.i18n import _ as _t
 
 from .nhap_media import MediaError, _chay
 
+log = logging.getLogger(__name__)
+
 #: Doi khi doi cach dung ban phoi. Vao van tay.
-PHIEN_BAN_MASTER = 1
+#: ⬆️ 1 -> 2 (V6): `loudnorm` doi tu MOT luot sang HAI luot. Ban ra doi byte —
+#:    khong bump thi mot ban phoi tinh o thoi mot luot duoc dung lai cho mot
+#:    cau hoi nay da khac.
+PHIEN_BAN_MASTER = 2
 
 #: So doan tieng moi lo. Xem ghi chu dau tep ve vi sao khong lam mot lan.
 #:
@@ -284,8 +291,13 @@ def tron_lo(duong_vao: list[str], moc_ms: list[int], he_so: list[float],
     return dich
 
 
-def bieu_thuc_chuan_am(vao: str, ra: str, *, tong_giay: float = 0.0) -> str:
+def bieu_thuc_chuan_am(vao: str, ra: str, *, tong_giay: float = 0.0,
+                       do_duoc: dict | None = None,
+                       in_json: bool = False) -> str:
     """Bo loc chuan am luong cuoi cung. Tach rieng de KIEM duoc ma khong chay.
+
+    `do_duoc` — ket qua luot DO (`print_format=json` cua `loudnorm`). Rong =
+    phat ban MOT LUOT, tuc chinh luot do. Xem khoi giai thich o duoi.
 
     ⭐ Truoc pha 22 chuoi nay nam thang trong `tron_cuoi`, va cach duy nhat de
        kiem no la chay ca mot lan tron that. Mot tham so quan trong nhu tran dinh
@@ -316,8 +328,45 @@ def bieu_thuc_chuan_am(vao: str, ra: str, *, tong_giay: float = 0.0) -> str:
     #    van de khong phai thieu mau ma la moc bi day. `asetpts=N/SR/TB` dat lai
     #    moc ve 0, roi `apad` lo phan thieu neu ban tron that su ngan hon.
     dem = ",asetpts=N/SR/TB,apad" if tong_giay > 0 else ""
-    return (f"{vao}loudnorm=I={lufs_dich()}:TP={dinh_that_phoi_db()}"
-            f":LRA=11:dual_mono=true{dem}{ra}")
+
+    # 🔴 **MOT luot `loudnorm` KHONG trung dich, va do la mot phep do chu khong
+    #    phai mot y kien.**
+    #
+    #    Luot nghiem thu 10/09 tren PostgreSQL, cung mot ban master, hai preset:
+    #
+    #        giu_hinh        LUFS = -14,98   DAT   (con 0,02 dB toi bien)
+    #        cat_thong_minh  LUFS = -15,02   HONG  (vuot 0,02 dB)
+    #
+    #    Dich la -14,0 ± 1,0. **Ca hai deu roi vao ~-15,0**, tuc lech ~1 dB va
+    #    nam DUNG tren bien. Preset nay dat, preset kia hong, cach nhau 0,04 dB —
+    #    do la tung dong xu, khong phai mot phep kiem.
+    #
+    # ⛔ Nen ban sua KHONG phai noi `LUFS_DUNG_SAI`. Noi mot dung sai de mot phep
+    #    kiem xanh la bo chinh cau hoi no dang hoi, va `giu_hinh` "dat" truoc do
+    #    la MAY chu khong phai dung.
+    #
+    # ⭐ `loudnorm` mot luot la mot bo chuan **dong**: no doan muc khi dang chay
+    #    va bam theo, nen sai so ~1 dB la hanh vi da biet cua no. Hai luot —
+    #    do truoc, roi ap bang `measured_*` kem `linear=true` — moi la duong
+    #    trung dich.
+    #
+    # ⚠️ Ham nay van phat duoc ban MOT LUOT khi `do_duoc` rong: luot do chinh la
+    #    luot DO. Hai luot dung chung mot chuoi loc, nen thu duoc do va thu duoc
+    #    ap khong the la hai tin hieu khac nhau.
+    lo = f"{vao}loudnorm=I={lufs_dich()}:TP={dinh_that_phoi_db()}:LRA=11:dual_mono=true"
+    if do_duoc:
+        lo += (f":measured_I={do_duoc['input_i']}"
+               f":measured_TP={do_duoc['input_tp']}"
+               f":measured_LRA={do_duoc['input_lra']}"
+               f":measured_thresh={do_duoc['input_thresh']}"
+               f":offset={do_duoc['target_offset']}:linear=true")
+    # ⛔ `print_format` la THAM SO cua `loudnorm`, phai nam TRONG cum tham so
+    #    cua no. Noi no sau nhan ra (`[ra]:print_format=...`) la cu phap
+    #    khong hop le, va ffmpeg tu choi CA chuoi — luot do khi do lang le
+    #    tra `None` va he tu lui ve mot luot. Da dinh dung the mot lan.
+    if in_json:
+        lo += ":print_format=json"
+    return f"{lo}{dem}{ra}"
 
 
 def tron_cuoi(nen: str, cac_lo: list[str], dich: str, *, tong_giay: float,
@@ -351,7 +400,16 @@ def tron_cuoi(nen: str, cac_lo: list[str], dich: str, *, tong_giay: float,
     #
     # ⭐ Va no la loai khiem khuyet khong bao gio duoc bao cao: khach khong nghe
     #    ra "sai 3 dB", ho chi thay ban long tieng "hoi to".
-    phan.append(bieu_thuc_chuan_am("[tron]", "[ra]", tong_giay=tong_giay))
+    # ── Luot 1: DO ────────────────────────────────────────────────────────
+    #
+    # ⭐ Cung mot chuoi loc, chi khac duoi `loudnorm` va dich ra `NUL`. Dung
+    #    chung chuoi la dieu kien de phep do noi ve dung tin hieu se duoc ap.
+    do_duoc = _do_am_luong(cmd, "".join(phan), tong_giay=tong_giay,
+                           hoi_huy=hoi_huy, timeout=timeout)
+
+    # ── Luot 2: AP ────────────────────────────────────────────────────────
+    phan.append(bieu_thuc_chuan_am("[tron]", "[ra]", tong_giay=tong_giay,
+                                   do_duoc=do_duoc))
 
     cmd += ["-filter_complex", "".join(phan), "-map", "[ra]",
             "-t", f"{max(0.001, float(tong_giay)):.3f}",
@@ -364,6 +422,79 @@ def tron_cuoi(nen: str, cac_lo: list[str], dich: str, *, tong_giay: float,
         raise MasterError(_t('Trộn bản phối thất bại: {loi}').format(
             loi=(r.stderr or b"").decode("utf-8", "replace")[-300:]))
     return dich
+
+
+#: Nam khoa `loudnorm` in ra o `print_format=json`. Thieu mot khoa la phep do
+#: khong dung duoc — va **thieu im lang** thi luot hai lai roi ve mot luot ma
+#: khong ai biet.
+KHOA_DO = ("input_i", "input_tp", "input_lra", "input_thresh", "target_offset")
+
+
+def _do_am_luong(cmd_goc: list[str], loc_tron: str, *, tong_giay: float,
+                 hoi_huy=None, timeout: int = 1800) -> dict | None:
+    """Luot DO cua `loudnorm` hai luot. `None` khi khong doc duoc.
+
+    ⛔ Tra `None` thay vi nem: khong do duoc thi ta ve ban MOT LUOT — ban van
+       chay tu truoc toi nay. Mot ban phoi lech 1 dB xau hon mot ban phoi dung,
+       nhung tot hon **khong co ban phoi nao**.
+
+    ⚠️ Va no phai ghi log khi lui: mot duong lui im lang la mot duong lui se
+       thanh mac dinh ma khong ai phat hien.
+    """
+    cmd = list(cmd_goc)
+    # ⛔ KHONG noi them bo loc nao sau `bieu_thuc_chuan_am`: chuoi do ket
+    #    thuc bang mot NHAN ra (`[ra]`), va noi tiep sau mot nhan la cu phap
+    #    khong hop le. Ban dau toi them `,aformat=...` vao day va ffmpeg tu
+    #    choi ca chuoi — luot do lang le tra `None`, tuc tu lui ve mot luot.
+    cmd += ["-filter_complex",
+            loc_tron + bieu_thuc_chuan_am("[tron]", "[ra]",
+                                          tong_giay=tong_giay, in_json=True),
+            "-map", "[ra]",
+            # ⛔ `-t` BAT BUOC o luot do, khong phai tuy chon. `apad` chen im
+            #    lang **vo han**, nen mot lenh khong co `-t` se chay mai —
+            #    va no treo IM LANG: ffmpeg khong bao gi, tien trinh cha doi
+            #    toi khi het gio. Da dinh dung the mot lan.
+            "-t", f"{max(0.001, float(tong_giay)):.3f}",
+            "-f", "null", "-"]
+    # `loudnorm` in JSON o loglevel `info`, con ca chuoi nay chay `-loglevel
+    # error`. Nang rieng cho luot do.
+    try:
+        i = cmd.index("error")
+        cmd[i] = "info"
+    except ValueError:
+        pass
+    cmd = [c for c in cmd if c != "-hide_banner"]
+    try:
+        r = _chay(cmd, timeout=timeout, hoi_huy=hoi_huy)
+    except subprocess.TimeoutExpired:
+        log.warning("do am luong qua han — lui ve loudnorm mot luot")
+        return None
+    if r.returncode != 0:
+        log.warning("do am luong that bai — lui ve loudnorm mot luot")
+        return None
+
+    van = (r.stderr or b"").decode("utf-8", "replace")
+    m = re.findall(r"\{[^{}]*\"input_i\"[^{}]*\}", van, re.S)
+    if not m:
+        log.warning("khong thay JSON cua loudnorm — lui ve mot luot")
+        return None
+    try:
+        goi = json.loads(m[-1])
+    except ValueError:
+        log.warning("JSON cua loudnorm khong doc duoc — lui ve mot luot")
+        return None
+
+    thieu = [k for k in KHOA_DO if k not in goi]
+    if thieu:
+        log.warning("do am luong thieu khoa %s — lui ve mot luot", thieu)
+        return None
+    # ⛔ `-inf` xuat hien khi doan vao im lang hoan toan. `linear=true` voi mot
+    #    gia tri vo cuc cho ra mot bo loc khong hop le, va ffmpeg tu choi CA
+    #    chuoi — tuc mot ban phoi im lang se lam hong ca lan chay.
+    if any(str(goi[k]).lstrip("-").lower().startswith("inf") for k in KHOA_DO):
+        log.warning("do am luong tra vo cuc (ban tron im lang?) — lui ve mot luot")
+        return None
+    return {k: goi[k] for k in KHOA_DO}
 
 
 def chia_lo(n: int, *, moi_lo: int | None = None) -> list[tuple[int, int]]:
