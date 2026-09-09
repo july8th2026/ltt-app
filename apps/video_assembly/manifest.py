@@ -72,7 +72,7 @@ MANIFEST = AppManifest(
         },
         returns={"video": "video"},
 
-        side_effect="none",
+        side_effect="external",
         idempotency={"key_fields": ("clips", "music", "cau_hinh",
                                     "che_do_khop")},
         # ⚠️ `vram_min_mb` la UOC TINH CHUA DO: bon model trong mot job. Phai do

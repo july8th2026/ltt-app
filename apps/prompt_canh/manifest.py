@@ -75,7 +75,7 @@ MANIFEST = AppManifest(
         # goi co ke toan rieng, nen no luy dang duoc. Ban cu khai `external` vi
         # moi luot tieu mot suat trong han muc PHIEN cua mot tai khoan nguoi
         # that — dieu do khong con dung.
-        side_effect="none",
+        side_effect="external",
         idempotency={"key_fields": ("kich_ban", "so_canh")},
         # Khong tu khai suat: admission cua `text.chat` lo phan gianh cho.
         resource={"class": "api", "slots": 1, "est_duration_s": 600},

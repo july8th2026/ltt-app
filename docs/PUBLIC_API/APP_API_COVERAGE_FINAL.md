@@ -25,7 +25,7 @@ xuống một tầng: **từng tool, từng alias model, từng chế độ ch�
 
 ---
 
-## 1. 16/16 app
+## 1. 20/20 app
 
 Cột **Nhà mới** chỉ bắt buộc với `MIGRATE_*`: một năng lực bị chặn mà không nói
 được nó sẽ về đâu thì chưa phải một kế hoạch, chỉ là một mục backlog đội lốt.
@@ -55,7 +55,12 @@ Cột **Nhà mới** chỉ bắt buộc với `MIGRATE_*`: một năng lực b�
 | `asv_gpu` | DEFER | — | không phải app bán được | Như trên, làn `gpu`. |
 | `asv_voice` | DEFER | — | không phải app bán được | Như trên, làn `voice`. |
 
-## 2. 24/24 ToolSpec
+| `transcript` | **DEFER** | — | ASYNC_JOB | **Phiên âm có dòng thời gian** (Phase 08). DEFER vì chưa nghiệm thu E2E qua worker và chưa kiểm trên URL công khai. Đã đối chiếu parity trên **1.932 lượt job thật** của bot legacy (`docs/migration/workflow_apps/30_...`): bản chuyển 95,50 % so với 95,76 % của **chính engine gốc** đo trên đầu ra của nó — engine gọi `random.uniform` có chủ ý nên trùng khớp từng byte là bất khả. |
+| `audio_pause` | **DEFER** | — | ASYNC_JOB | **Chèn khoảng lặng theo lời** (Phase 09). DEFER cùng lý do với `transcript`, cộng một điều nặng hơn: bot gốc **không để lại hiện vật nào** trên máy (workdir rỗng, kết quả nằm trên Drive), nên mệnh đề *"kết quả như bot đã giao"* hiện **không kiểm được** — chỉ đối chứng vi sai với hàm gốc là khả dĩ. |
+| `prompt_canh` | **DEFER** | — | ASYNC_JOB | **Kịch bản → prompt cảnh** (Phase 10). DEFER vì **hình dạng giá**: nó thu tiền theo **từng lượt gọi model** qua `runtime_noi_bo`, nên `credit_cost` ở tầng job là **0 có chủ đích**. Hợp đồng quote/settle một-vào-một-ra không mô tả được giá của nó — mở ra `/api/v1` là công bố một hợp đồng giá mà đường thật không đi theo. |
+| `video_assembly` | **DEFER** | — | ASYNC_JOB | **Dựng video từ clip** (Phase 11). DEFER vì nó là một **chuỗi nhiều giai đoạn** trên GPU (STT, khớp clip, tách nhạc, trộn tiếng, cháy phụ đề), giống `auto_scan_video` ở trên: ép vào một `ToolSpec` một-vào-một-ra thì mất khả năng chạy lại một giai đoạn. Và `vram_min_mb` **chưa đo thật**, nên scheduler chưa xếp chỗ đúng được. |
+
+## 2. 28/28 ToolSpec
 
 `customer_visible=True` **không** làm một tool public — đó là cờ palette của
 Agent. `kichban` (gỡ 2026-08-25, Q109) từng là bằng chứng sống của điều đó.
@@ -77,6 +82,11 @@ Agent. `kichban` (gỡ 2026-08-25, Q109) từng là bằng chứng sống của 
 | `video.subtitle` | autosubvideo | **EXPOSE_V1 — MỞ 29/08** | ~~Giá theo thời lượng khách khai, worker nâng hold nên quote đã ký không giữ được.~~ Máy chủ đo thời lượng lúc báo giá và giữ chỗ bị niêm phong ở con số đã ký (H35.10a+b). Khách phải tự mang transcript tới — tool này **không** phiên âm hộ, và mô tả công khai nói thẳng điều đó. `duration_s` ẩn vì khách không khai nó nữa. |
 | `video.short_clips` | taoclipngan | ĐÓNG | Cùng vấn đề nâng hold, thêm ràng buộc GPU chưa chốt được trần đồng thời. |
 | `video.upscale` | upscalevideo | **EXPOSE_V1 — MỞ 29/08** | ~~Video dài vượt trần 100 giây của Cloudflare, cần hợp đồng chạy khác.~~ ⚠️ Lý do cũ **nói sai vấn đề**: trần 100 giây của Cloudflare áp cho một request đồng bộ, còn tool này là `ASYNC_JOB` — khách nộp job rồi hỏi lại, đúng thứ hợp đồng job sinh ra để làm. Vấn đề thật là Q84 (giá theo `duration_s` khách khai + worker nâng hold), và nó đã đóng bằng H35.10a+b. `duration_s` ẩn; `preview` cho khách thử 8 giây đầu trước khi trả tiền cho cả video. |
+
+| `transcript.run` | transcript | **DEFER — chưa bán** | Một tệp âm thanh vào, một dòng thời gian ra. `api_exposed=False`, disposition DEFER. |
+| `audio_pause.run` | audio_pause | **DEFER — chưa bán** | Bản thu + danh sách mốc vào, bản thu đã chèn lặng ra. `api_exposed=False`, disposition DEFER. |
+| `prompt_canh.run` | prompt_canh | **DEFER — chưa bán** | Kịch bản vào, prompt JSON từng cảnh ra. `credit_cost=0` **có chủ đích** — tiền thu ở tầng `runtime_noi_bo` theo từng lượt gọi model, nên thu ở tầng job nữa là thu **hai lần**. `api_exposed=False`, disposition DEFER. |
+| `video_assembly.run` | video_assembly | **DEFER — chưa bán** | Clip thô + nhạc vào, một video hoàn chỉnh ra. `api_exposed=False`, disposition DEFER. |
 
 ## 3. 6/6 alias model
 

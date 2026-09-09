@@ -64,7 +64,7 @@ MANIFEST = AppManifest(
         # tieu thu. Tra ve mot minh tep am thanh la lam dut mach.
         returns={"audio": "audio", "transcript": "json"},
 
-        side_effect="none",
+        side_effect="external",
         # `language` NAM TRONG khoa o day — khac `transcript.run`. Ly do that:
         # no chon HO SO STT, nen doi no la doi ket qua phien am, tuc doi vi tri
         # cat. Hai lan chay cung audio + cung ke hoach nhung khac ngon ngu la

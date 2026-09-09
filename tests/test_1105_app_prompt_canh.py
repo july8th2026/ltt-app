@@ -61,15 +61,29 @@ def test_requires_la_api_KHONG_phai_browser() -> None:
     assert MANIFEST.requires == ("api",)
 
 
-def test_side_effect_la_none_va_idempotency_KHAI_DUOC() -> None:
-    """Bản cũ khai `external` + `idempotency` rỗng, và **đúng lúc ấy**: mỗi lượt
-    tiêu một suất trong hạn mức phiên của một tài khoản người thật, nên hứa tính
-    luỹ đẳng là hứa thứ runtime không giữ được.
+def test_side_effect_la_EXTERNAL_du_idempotency_khai_duoc() -> None:
+    """🔴 Hai trường này **độc lập**, và tôi đã gộp chúng làm một.
 
-    Qua `runtime_noi_bo`, mỗi lượt là một lời gọi có kế toán riêng — nên
-    `key_fields` khai được **thật**.
+    Bản đầu của tôi khai `side_effect="none"`, lý lẽ là: qua `runtime_noi_bo`
+    mỗi lượt là một lời gọi có kế toán riêng nên `key_fields` khai được **thật**.
+    Vế sau đúng — và nó **không** kéo theo vế trước.
+
+    `side_effect` là **hành vi khôi phục** (`platform_core/registry.py:711`), nói
+    cho nền tảng biết chạy lại có an toàn không. `none` nghĩa là *"cứ thử lại
+    thoải mái"*. Nhưng App này thu tiền theo **từng lượt gọi model** ở tầng
+    `runtime_noi_bo` — chạy lại là **thu lại**. Khai `none` là một lời khai sai
+    **về tiền**, đúng hạng lỗi mà `registry.py` cảnh báo: nó chỉ lộ ra ở chỗ
+    đang tiêu tiền của khách.
+
+    ⚠️ `idempotency.key_fields` bảo vệ khỏi **nộp trùng cùng một job**; nó không
+       làm cho một lượt đã chạy trở nên hoàn lại được. Hai lớp khác nhau, và
+       `external` là mặc định của nền tảng vì lý do đó.
+
+    Bắt được nhờ `tests/test_964_wf_toolspec_v2.py` trong lượt gate đầy đủ —
+    không phép kiểm nào của tôi thấy, vì tôi đã chốt **cùng một hiểu sai** ở cả
+    manifest lẫn phép kiểm.
     """
-    assert _tool().side_effect == "none"
+    assert _tool().side_effect == "external"
     khoa = _tool().idempotency["key_fields"]
     assert set(khoa) == {"kich_ban", "so_canh"}
     for ten in khoa:

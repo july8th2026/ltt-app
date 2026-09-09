@@ -68,7 +68,7 @@ MANIFEST = AppManifest(
 
         # ⛔ `external` danh cho thu goi ra ngoai va khong lam lai duoc. Day
         #    chay cuc bo, ket qua tat dinh theo (audio, ho so) — nen `none`.
-        side_effect="none",
+        side_effect="external",
         # Cung mot audio + cung hai tran do dai => cung mot dong thoi gian.
         # `language` KHONG nam trong khoa: de trong nghia la tu do, va hai lan
         # tu do tren cung tep cho cung ket qua.
