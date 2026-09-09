@@ -20,9 +20,12 @@ from __future__ import annotations
 
 import argparse
 import importlib.util
+import logging
 import pathlib
 import statistics
 import sys
+
+log = logging.getLogger("tools.do_token_may_b")
 
 GOC = pathlib.Path(__file__).resolve().parent.parent
 if str(GOC) not in sys.path:
@@ -111,14 +114,18 @@ def main() -> int:
     vao: dict[str, list] = collections.defaultdict(list)
     ra: dict[str, list] = collections.defaultdict(list)
     giay: dict[str, list] = collections.defaultdict(list)
-    trang = collections.Counter()
+    trang: collections.Counter[str] = collections.Counter()
     for h in hang:
         trang[h["trang_thai"]] += 1
         g = h["ghi_chu"]
         if isinstance(g, str):
             try:
                 g = json.loads(g)
-            except Exception:                                # noqa: BLE001
+            except ValueError as e:
+                # `ghi_chu` khong phai JSON la chuyen binh thuong voi ban ghi
+                # cu — nhung nuot im thi mot ban ghi HONG trong y het mot ban
+                # ghi khong co ghi chu, va phep do se lech ma khong ai biet.
+                log.debug("ghi_chu khong phai JSON, bo qua: %s", e)
                 g = {}
         g = g or {}
         nl = str(h["nang_luc"] or "?")

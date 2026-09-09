@@ -14721,3 +14721,220 @@ msgstr "Missing revision number."
 #: apps/agent/routes/drafts_v3.py
 msgid "Bản nháp chưa có nội dung để xuất bản."
 msgstr "This draft has nothing to publish yet."
+
+# --- Bon App migrate tu 4 bot (Phase 08-11, 2026-09-10) ---
+# Them TAY, khong qua `i18n.py trich`: msgmerge se doan ban dich
+# cho muc moi va xao lai thu tu ca tep.
+
+msgid "Ba bước: khoá đặc điểm nhân vật, chia kịch bản thành danh sách cảnh, rồi sinh prompt JSON cho từng cảnh. Mỗi lô giữ lại 5 cảnh gần nhất làm ngữ cảnh để nhân vật không trôi qua hàng trăm cảnh."
+msgstr "Three steps: lock the character details, split the script into a scene list, then generate a JSON prompt for each scene. Each batch keeps the last 5 scenes as context so characters do not drift over hundreds of scenes."
+
+msgid "Bản thu"
+msgstr "Recording"
+
+msgid "Chuyển một tệp âm thanh thành bản ghi lời có mốc thời gian, chia đoạn theo độ dài đặt trước, kèm các khoảng lặng."
+msgstr "Turn an audio file into a timestamped transcript, split into segments of a chosen length, with the silences kept."
+
+msgid "Cháy phụ đề vào video"
+msgstr "Burn subtitles into the video"
+
+msgid "Chèn khoảng lặng"
+msgstr "Insert pauses"
+
+msgid "Chèn khoảng lặng theo lời"
+msgstr "Insert pauses by line"
+
+msgid "Chèn khoảng lặng vào bản thu tại đúng những câu bạn chỉ định, cắt ở chỗ im thật chứ không cắt giữa từ, và dịch lại mốc thời gian của bản ghi lời."
+msgstr "Insert pauses into a recording at exactly the lines you name, cutting at real silence rather than mid-word, and shift the transcript timestamps to match."
+
+msgid "Chèn khoảng lặng vào một bản thu tại các mốc văn bản."
+msgstr "Insert pauses into a recording at text anchors."
+
+msgid "Chưa chọn clip nào."
+msgstr "No clips selected."
+
+msgid "Chỉ nhận tệp âm thanh: %(d)s."
+msgstr "Audio files only: %(d)s."
+
+msgid "Clip thô"
+msgstr "Raw clips"
+
+msgid "Cách khớp"
+msgstr "Match mode"
+
+msgid "Cách khớp clip với lời"
+msgstr "How clips are matched to the narration"
+
+msgid "Cấu hình nâng cao (JSON)"
+msgstr "Advanced configuration (JSON)"
+
+msgid "Danh sách mốc (JSON)"
+msgstr "Anchor list (JSON)"
+
+msgid "Dán toàn bộ kịch bản vào đây."
+msgstr "Paste the whole script here."
+
+msgid "Dựng một video hoàn chỉnh từ clip thô và nhạc."
+msgstr "Build a finished video from raw clips and music."
+
+msgid "Dựng video"
+msgstr "Build video"
+
+msgid "Dựng video từ clip"
+msgstr "Build a video from clips"
+
+msgid "Giai đoạn tuỳ chọn"
+msgstr "Optional stages"
+
+msgid "Giãn cách tối thiểu (giây)"
+msgstr "Minimum gap (seconds)"
+
+msgid "Giữ các khoảng lặng thành đoạn riêng"
+msgstr "Keep silences as their own segments"
+
+msgid "Không bắt buộc."
+msgstr "Optional."
+
+msgid "Kích thước lô đổi chất lượng đầu ra, không chỉ tốc độ. Mặc định 10 / 5 là giá trị đã chạy thật."
+msgstr "Batch size changes output quality, not just speed. The 10 / 5 default is the value that has run in production."
+
+msgid "Kịch bản → prompt"
+msgstr "Script to prompts"
+
+msgid "Kịch bản → prompt cảnh"
+msgstr "Script to scene prompts"
+
+msgid "Lô bước 2"
+msgstr "Step 2 batch"
+
+msgid "Lô bước 3"
+msgstr "Step 3 batch"
+
+msgid "Lượt gần đây"
+msgstr "Recent runs"
+
+msgid "Lượt model"
+msgstr "Model calls"
+
+msgid "Lặng dài nhất (ms)"
+msgstr "Longest pause (ms)"
+
+msgid "Lặng ngắn nhất (ms)"
+msgstr "Shortest pause (ms)"
+
+msgid "MP4, MOV, MKV, WebM, AVI. Tổng tất cả tệp trong một lượt tối đa 95 MB."
+msgstr "MP4, MOV, MKV, WebM, AVI. All files in one run must total 95 MB or less."
+
+msgid "Mốc khớp"
+msgstr "Anchors matched"
+
+msgid "Mốc trượt"
+msgstr "Anchors missed"
+
+msgid "Mỗi mốc cần `id`, `anchor_text` và `pause_ms`."
+msgstr "Each anchor needs `id`, `anchor_text` and `pause_ms`."
+
+msgid "Ngưỡng khớp"
+msgstr "Match threshold"
+
+msgid "Nhạc nền"
+msgstr "Background music"
+
+msgid "Nhạc phải là %(d)s."
+msgstr "Music must be %(d)s."
+
+msgid "Phiên âm"
+msgstr "Transcribe"
+
+msgid "Phiên âm có dòng thời gian"
+msgstr "Timestamped transcription"
+
+msgid "Phiên âm một tệp âm thanh thành dòng thời gian có mốc."
+msgstr "Transcribe an audio file into a timestamped timeline."
+
+msgid "Sinh prompt cảnh"
+msgstr "Generate scene prompts"
+
+msgid "Sinh prompt cảnh từ một kịch bản."
+msgstr "Generate scene prompts from a script."
+
+msgid "Số dư quá thấp để bắt đầu. Mỗi lượt model được tính riêng khi chạy."
+msgstr "Balance is too low to start. Each model call is charged separately as it runs."
+
+msgid "Theo nội dung (CLIP)"
+msgstr "By content (CLIP)"
+
+msgid "Theo tên tệp (đang dùng)"
+msgstr "By file name (in use)"
+
+msgid "Theo tên tệp: clip đặt tên dạng 001-scene… sẽ vào đúng cảnh đó."
+msgstr "By file name: a clip named 001-scene... goes to that exact scene."
+
+msgid "Thời lượng mỗi cảnh"
+msgstr "Length of each scene"
+
+msgid "Tách nhạc nền khỏi tiếng nói (Demucs)"
+msgstr "Separate background music from speech (Demucs)"
+
+msgid "Tải lên bản thu và danh sách mốc. Mỗi mốc là một câu trong bài; hệ thống tìm câu đó trong bản ghi lời, rồi chèn khoảng lặng tại chỗ im gần nhất — không cắt giữa từ."
+msgstr "Upload a recording and a list of anchors. Each anchor is a line from the script; the system finds that line in the transcript, then inserts the pause at the nearest real silence rather than mid-word."
+
+msgid "Tải lên các clip thô và một bản nhạc. Hệ thống phiên âm, chọn clip khớp lời, ghép, tách nhạc nền, trộn tiếng và cháy phụ đề thành một video hoàn chỉnh."
+msgstr "Upload the raw clips and a music track. The system transcribes, picks clips that match the narration, joins them, separates the background music, mixes the audio and burns in subtitles to produce a finished video."
+
+msgid "Tải lên một tệp âm thanh. Kết quả là bản ghi lời có mốc thời gian, đã chia đoạn theo độ dài bạn đặt, kèm các khoảng lặng."
+msgstr "Upload an audio file. The result is a timestamped transcript, already split into segments of the length you set, with the silences kept."
+
+msgid "Tệp vượt 95 MB — hãy cắt ngắn hoặc nén lại."
+msgstr "The file is over 95 MB - trim it or compress it."
+
+msgid "Tệp âm thanh"
+msgstr "Audio file"
+
+msgid "Tổng dung lượng vượt 95 MB — tải ít clip hơn mỗi lượt."
+msgstr "Total size is over 95 MB - upload fewer clips per run."
+
+msgid "Tổng dung lượng vượt 95 MB."
+msgstr "Total size is over 95 MB."
+
+msgid "Từ một kịch bản, khoá đặc điểm nhân vật, chia thành danh sách cảnh, rồi sinh prompt JSON cho từng cảnh."
+msgstr "From a script: lock the character details, split it into a scene list, then generate a JSON prompt for each scene."
+
+msgid "Từ một thư mục clip thô và một thư mục nhạc, chọn clip khớp lời, ghép, tách nhạc nền, trộn tiếng và cháy phụ đề thành một video hoàn chỉnh."
+msgstr "From a folder of raw clips and a folder of music: pick clips that match the narration, join them, separate the background music, mix the audio and burn in subtitles to produce a finished video."
+
+msgid "Tự chấm điểm kết quả"
+msgstr "Score the result automatically"
+
+msgid "WAV, MP3, M4A, AAC, FLAC, OGG, Opus, WebM — tối đa 95 MB."
+msgstr "WAV, MP3, M4A, AAC, FLAC, OGG, Opus, WebM - up to 95 MB."
+
+msgid "[{\"id\": 1, \"anchor_text\": \"Hà Nội. Những ngày\", \"pause_ms\": 1800}]"
+msgstr "[{\"id\": 1, \"anchor_text\": \"That morning. The city\", \"pause_ms\": 1800}]"
+
+msgid "`%(t)s` không phải video (%(d)s)."
+msgstr "`%(t)s` is not a video (%(d)s)."
+
+msgid "`cau_hinh` không phải JSON hợp lệ: %(e)s"
+msgstr "`cau_hinh` is not valid JSON: %(e)s"
+
+msgid "`pause_plan` không phải JSON hợp lệ: %(e)s"
+msgstr "`pause_plan` is not valid JSON: %(e)s"
+
+msgid "ví dụ: 8 giây"
+msgstr "for example: 8 seconds"
+
+msgid "ví dụ: điện ảnh, tông lạnh"
+msgstr "for example: cinematic, cool tones"
+
+msgid "Đoạn dài nhất (giây)"
+msgstr "Longest segment (seconds)"
+
+msgid "Đoạn ngắn nhất (giây)"
+msgstr "Shortest segment (seconds)"
+
+msgid "Để trống để dùng cấu hình đang chạy. Ba ô tick ở trên luôn thắng giá trị trong JSON."
+msgstr "Leave empty to use the running configuration. The three checkboxes above always win over the JSON."
+
+msgid "để trống = tự nhận"
+msgstr "leave empty to auto-detect"

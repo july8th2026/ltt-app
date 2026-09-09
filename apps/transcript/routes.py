@@ -16,6 +16,7 @@ import uuid
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
 
+from platform_core.i18n import _ as _t
 from platform_core.storage import get_storage
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.auth.session import require_login
@@ -87,19 +88,19 @@ async def queue(
     from platform_core.job_submit import dedupe_key_for, submit_with_credit
 
     if not verify_csrf_token(request, csrf_token):
-        return _trang(request, user, loi="Phiên đã hết hạn — tải lại trang.",
+        return _trang(request, user, loi=_t("Phiên đã hết hạn — tải lại trang."),
                       status_code=400)
 
     ten = (audio.filename or "").lower()
     if not ten.endswith(DUOI_NHAN):
         return _trang(request, user, status_code=400,
-                      loi=f"Chỉ nhận tệp âm thanh: {', '.join(DUOI_NHAN)}.")
+                      loi=_t("Chỉ nhận tệp âm thanh: %(d)s.") % {"d": ", ".join(DUOI_NHAN)})
     du_lieu = await audio.read()
     if not du_lieu:
-        return _trang(request, user, loi="Tệp âm thanh rỗng.", status_code=400)
+        return _trang(request, user, loi=_t("Tệp âm thanh rỗng."), status_code=400)
     if len(du_lieu) > TRAN_BYTE:
         return _trang(request, user, status_code=400,
-                      loi="Tệp vượt 95 MB — hãy cắt ngắn hoặc nén lại.")
+                      loi=_t("Tệp vượt 95 MB — hãy cắt ngắn hoặc nén lại."))
 
     # Chuẩn hoá tham số bằng CHÍNH hàm mà worker dùng: một chỗ kiểm, một câu
     # trả lời. Nếu route tự kiểm thì hai bộ luật sẽ lệch nhau, và bên lệch sẽ

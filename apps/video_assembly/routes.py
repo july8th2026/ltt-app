@@ -15,6 +15,7 @@ from pathlib import PurePosixPath
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
 
+from platform_core.i18n import _ as _t
 from platform_core.storage import get_storage
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.auth.session import require_login
@@ -85,10 +86,10 @@ async def queue(
     from platform_core.job_submit import dedupe_key_for, submit_with_credit
 
     if not verify_csrf_token(request, csrf_token):
-        return _trang(request, user, loi="Phiên đã hết hạn — tải lại trang.",
+        return _trang(request, user, loi=_t("Phiên đã hết hạn — tải lại trang."),
                       status_code=400)
     if not clips:
-        return _trang(request, user, loi="Chưa chọn clip nào.", status_code=400)
+        return _trang(request, user, loi=_t("Chưa chọn clip nào."), status_code=400)
 
     tong = 0
     du_lieu: list[tuple[str, bytes]] = []
@@ -96,14 +97,14 @@ async def queue(
         ten = (tep.filename or "").lower()
         if not ten.endswith(DUOI_VIDEO):
             return _trang(request, user, status_code=400,
-                          loi=f"`{tep.filename}` không phải video "
-                              f"({', '.join(DUOI_VIDEO)}).")
+                          loi=_t("`%(t)s` không phải video (%(d)s).")
+                              % {"t": tep.filename, "d": ", ".join(DUOI_VIDEO)})
         b = await tep.read()
         tong += len(b)
         if tong > TRAN_TONG_BYTE:
             return _trang(request, user, status_code=400,
-                          loi="Tổng dung lượng vượt 95 MB — tải ít clip hơn "
-                              "mỗi lượt.")
+                          loi=_t("Tổng dung lượng vượt 95 MB — tải ít clip "
+                                 "hơn mỗi lượt."))
         # 🔴 TEN TEP LA DAU VAO CUA KHACH, va no di THANG vao khoa luu tru.
         #    `../../x.mp4` se leo ra khoi tien to cua nguoi dung. `_safe_key`
         #    cua `storage` co chan, nhung no chan bang cach NEM — tuc mot loi
@@ -122,13 +123,13 @@ async def queue(
     if music is not None and music.filename:
         if not music.filename.lower().endswith(DUOI_NHAC):
             return _trang(request, user, status_code=400,
-                          loi=f"Nhạc phải là {', '.join(DUOI_NHAC)}.")
+                          loi=_t("Nhạc phải là %(d)s.") % {"d": ", ".join(DUOI_NHAC)})
         ten_nhac = safe_name(PurePosixPath(
             music.filename.replace(chr(92), "/")).name) or "nhac"
         nhac_byte = await music.read()
         if tong + len(nhac_byte) > TRAN_TONG_BYTE:
             return _trang(request, user, status_code=400,
-                          loi="Tổng dung lượng vượt 95 MB.")
+                          loi=_t("Tổng dung lượng vượt 95 MB."))
 
     cfg = {}
     if cau_hinh.strip():
@@ -136,7 +137,7 @@ async def queue(
             cfg = json.loads(cau_hinh)
         except ValueError as e:
             return _trang(request, user, status_code=400,
-                          loi=f"`cau_hinh` không phải JSON hợp lệ: {e}")
+                          loi=_t("`cau_hinh` không phải JSON hợp lệ: %(e)s") % {"e": e})
 
     lo = uuid.uuid4().hex
     khoa_clip = [f"video_assembly/{user}/{lo}/clip/{ten}" for ten, _ in du_lieu]

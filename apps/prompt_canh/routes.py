@@ -17,6 +17,7 @@ import logging
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 
+from platform_core.i18n import _ as _t
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.auth.session import require_login
 from server.templating import templates
@@ -79,7 +80,7 @@ def queue(
     from platform_core.job_submit import dedupe_key_for, submit_with_credit
 
     if not verify_csrf_token(request, csrf_token):
-        return _trang(request, user, loi="Phiên đã hết hạn — tải lại trang.",
+        return _trang(request, user, loi=_t("Phiên đã hết hạn — tải lại trang."),
                       status_code=400)
 
     tham_so = {"kich_ban": kich_ban_van, "so_canh": so_canh,
@@ -96,8 +97,8 @@ def queue(
     try:
         if credit.so_du(db, user) < SO_DU_TOI_THIEU:
             return _trang(request, user, status_code=402,
-                          loi=("Số dư quá thấp để bắt đầu. Mỗi lượt model được "
-                               "tính riêng khi chạy."))
+                          loi=_t("Số dư quá thấp để bắt đầu. Mỗi lượt model "
+                                 "được tính riêng khi chạy."))
         job = submit_with_credit(
             db, user_id=user, app_slug="prompt_canh", job_type="prompt_canh.run",
             params=tham_so, dedupe_key=dedupe_key_for("prompt_canh.run", tham_so))

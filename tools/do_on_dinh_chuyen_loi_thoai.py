@@ -266,7 +266,8 @@ def main() -> int:
         print(f"  {_t:22s} vao ~{_n / 4.5:>6,.0f} tok   tran ra {_tr:>7,}")
     print()
 
-    ket = {t: collections.Counter() for t, _, _, _ in cap}
+    ket: dict[str, collections.Counter[str]] = {
+        t: collections.Counter() for t, _, _, _ in cap}
     giay: dict[str, list] = {t: [] for t, _, _, _ in cap}
 
     print(f"do {args.vong} vong, moi vong goi CA HAI (xen ke)\n")

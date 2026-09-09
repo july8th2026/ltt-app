@@ -248,10 +248,14 @@ def main() -> int:
 
     diem_giay: dict[int, float] = {n: max(v) for n, v in giay_do.items() if v}
     for n in co_lo:
-        v = sorted(giay_do[n])
-        if v:
-            print(f"  lo {n:>2} doan: giay min={v[0]:>6.1f}  "
-                  f"p50={statistics.median(v):>6.1f}  max={v[-1]:>6.1f}")
+        # ⚠️ Ten bien rieng, KHONG dung lai `v` cua vong `for v in range(...)`
+        #    o tren: cung mot ten mang hai kieu trong mot ham lam mypy bao bon
+        #    loi (mot phep gan + ba he qua). Luc chay thi dung — Python gan lai
+        #    thoai mai — nen no khong bao gio no, va vi the no o lai rat lau.
+        gd = sorted(giay_do[n])
+        if gd:
+            print(f"  lo {n:>2} doan: giay min={gd[0]:>6.1f}  "
+                  f"p50={statistics.median(gd):>6.1f}  max={gd[-1]:>6.1f}")
 
     if len(diem) == 2 and len(diem_giay) == 2:
         a, b = co_lo
