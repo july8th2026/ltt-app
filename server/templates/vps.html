@@ -311,10 +311,13 @@
   </div>
   {% endif %}
 
+  {# `loi_ha_tang` LÀ câu viết cho khách, không phải một mã lỗi cần bọc ngoặc.
+     Trước 09/09/2026 chỗ này in `({{ loi_ha_tang }})` cạnh một câu chung — và
+     `_suc_chua` khi đó trả nguyên văn ngoại lệ, nên trang bán hàng CÔNG KHAI
+     hiện ra tên biến môi trường nội bộ và cả chữ "Proxmox", thứ mà chính
+     `services/proxmox.py` nói khách không bao giờ được thấy. Xem `_suc_chua`. #}
   {% if loi_ha_tang %}
-    <div class="alert alert-err" style="margin:0 0 16px;">
-      {{ _("Hiện chưa nhận máy mới.") }} <span class="muted">({{ loi_ha_tang }})</span>
-    </div>
+    <div class="alert alert-err" style="margin:0 0 16px;">{{ loi_ha_tang }}</div>
   {% endif %}
 
 

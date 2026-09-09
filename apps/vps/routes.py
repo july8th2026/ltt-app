@@ -62,11 +62,31 @@ def _chu(request: Request) -> str:
 
 
 def _suc_chua(db) -> tuple[capacity.SucChua | None, str]:
-    """Sức chứa hiện tại, và lý do nếu không đọc được.
+    """Sức chứa hiện tại, và **câu cho khách đọc** nếu không đọc được.
 
     Không đọc được Proxmox **không** phải lỗi trang: trang vẫn phải mở để khách
     xem máy của mình. Nhưng nút "Tạo máy" thì phải khoá — bán khi không biết còn
     bao nhiêu chỗ là đúng thứ `capacity.py` sinh ra để phòng.
+
+    ## Lý do KỸ THUẬT đi vào log, không đi ra trang
+
+    🔴 Đo được trên production 09/09/2026, ngay sau khi deploy VPS V2: trang bán
+    hàng **công khai** (khách chưa đăng nhập cũng thấy) in nguyên văn
+
+        Hiện chưa nhận máy mới. (chua cau hinh Proxmox: production ma khong co
+        LTT_VPS_PROXMOX_CA: tu choi noi toi Proxmox khi khong xac minh duoc
+        chung chi. Ghim CA that, hoac chay o moi truong khac.)
+
+    Ba thứ sai cùng lúc: một câu tiếng Việt-không-dấu trộn thuật ngữ trên trang
+    bán hàng; **tên biến môi trường** của hệ thống nội bộ; và cái tên `Proxmox`
+    — thứ mà chính `proxmox.py` nói là khách **không bao giờ** được thấy.
+
+    ⚠️ Rò rỉ này **có sẵn từ trước**, không phải do bản sửa TLS: dòng cũ là
+    `f"chua cau hinh Proxmox: {exc}"`. Bản sửa TLS chỉ làm `exc` dài hơn, và
+    nhờ dài hơn mà nó lộ ra. Một lỗi nhỏ ẩn sau một chuỗi ngắn vẫn là lỗi.
+
+    ⇒ Hàm này nay trả **đúng một câu viết cho khách**. Chi tiết kỹ thuật đi vào
+    `log.warning` — nơi người vận hành đọc, và nơi nó thật sự có ích.
     """
     try:
         client = client_tu_moi_truong()
@@ -74,10 +94,14 @@ def _suc_chua(db) -> tuple[capacity.SucChua | None, str]:
             db, client.trang_thai_node(), client.kho_luu_tru(),
             client.danh_sach_vm()), ""
     except ChuaCauHinh as exc:
-        return None, f"chua cau hinh Proxmox: {exc}"
+        # `ChuaCauHinh` gồm cả ca "thiếu biến môi trường" lẫn ca "production
+        # không có CA" (Pha 07). Cả hai đều là **việc của nhà**, và với khách
+        # thì chúng giống hệt nhau: chưa mua được.
+        log.warning("vps: chua cau hinh de doc suc chua: %s", exc)
+        return None, _t("Hệ thống đang bảo trì, tạm chưa nhận máy mới.")
     except ProxmoxError as exc:
         log.warning("vps: khong doc duoc suc chua: %s", exc)
-        return None, "khong ket noi duoc may chu ao"
+        return None, _t("Hệ thống đang bảo trì, tạm chưa nhận máy mới.")
 
 
 def _viec_dang_chay(db, may) -> dict:
