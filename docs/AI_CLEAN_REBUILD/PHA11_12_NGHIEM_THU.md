@@ -42,14 +42,60 @@ trông giống hệt nhau.
 | LTT_LLM VLM | **NOT_TESTED** | như trên |
 | LTT_IMAGE vẽ thật | **NOT_TESTED** | cổng 8199 không trả lời từ đây |
 | Voice regression thật | **NOT_TESTED** | cần sidecar VOICE + GPU |
-| Seedance/BytePlus regression | **NOT_TESTED** | cần khoá ModelArk thật + tiền thật |
+| Seedance/BytePlus regression | **NGOÀI PHẠM VI — 09/09** | chủ sản phẩm xác nhận *“đã chạy được thật”*; xem §11.3 |
 
 ⛔ **Không suy PASS từ "test xanh".** Bộ test dùng bộ điều phối giả; nó chứng
 minh *đường đi đúng*, không chứng minh *máy B trả lời đúng*. Trộn hai câu ấy
 lại là cách một nghiệm thu biến thành một lời hứa.
 
-⇒ Năm dòng trên phải chạy **trên máy chủ sau khi deploy** (pha 13), với
-`tools/api_prod_canary.py` và một lượt thật cho mỗi đường.
+⇒ **Bốn** dòng còn lại phải chạy **trên máy chủ sau khi deploy** (pha 13).
+
+## 11.3 🔴 Hai đính chính về chính kế hoạch này
+
+### (a) Công cụ tôi ghi ở trên là **SAI công cụ**
+
+Bản đầu mục này viết năm đường sẽ chạy bằng `tools/api_prod_canary.py`. Mở
+chính công cụ ấy ra thì nó nói ngược lại:
+
+> *Khoá cấp bằng `DEFAULT_SCOPES` (`tools:read` + `jobs:read`). `jobs:create`
+> nằm trong `SPENDING_SCOPES` và **không** được cấp, nên khoá này **không nộp
+> được việc** dù có credit.*
+
+Nó là canary **chỉ-đọc** cho control-plane — cố ý, để một phép đo không đòi
+tiêu tiền thì không tiêu tiền thật.
+
+Công cụ đúng — và chúng **cố ý tiêu được tiền**, kèm ba hàng rào (tài khoản
+riêng không phải admin · nạp đúng số credit vừa đủ vài lượt · không quyền admin):
+
+| Đường | Công cụ |
+|---|---|
+| LTT_LLM Text | `tools/nghiem_thu_chat_l1.py` — đi **cả ba cửa** `/chat/completions` · `/messages` · `/responses` |
+| LTT_IMAGE | `tools/nghiem_thu_anh_e2e.py` — từ ngoài vào qua Cloudflare |
+| VLM | `tools/danh_gia_vision.py` — **phải đọc trước khi tin**, đúng bài học ở trên |
+| Voice | `tools/chay_thu_ltt_voice.py` — cần sidecar VOICE + GPU |
+
+⛔ **Bài học:** tôi viết tên một công cụ vào kế hoạch **mà không mở nó ra đọc**.
+   Nó có tên đúng chủ đề nên nó **trông như** câu trả lời. Đọc `docstring` mất
+   20 giây và nó nói thẳng ngược lại.
+
+⭐ Và chính docstring của hai công cụ đúng phát biểu hộ lý do `NOT_TESTED` không
+   thay được bằng test xanh: *739 test xanh vẫn để lọt lỗi `VARCHAR(36)` tới
+   đúng lượt gọi thật đầu tiên, vì SQLite không ép độ dài mà PostgreSQL thì ép.*
+
+### (b) Seedance/BytePlus — **bỏ khỏi phạm vi**, 09/09/2026
+
+Chủ sản phẩm quyết: *“API seedance bỏ qua vì nó đã chạy được thật. Ta bỏ qua
+hạng mục này.”*
+
+⚠️ **Ghi cho đúng loại bằng chứng.** Đây là **lời xác nhận của chủ sản phẩm**
+   rằng đường ấy đang chạy thật trên production — **không phải** một lượt đo do
+   chiến dịch này thực hiện. Hai loại bằng chứng ấy **không thay nhau được**, và
+   trộn chúng là cách một nghiệm thu tự nâng điểm cho mình.
+
+⇒ Nên trục **E2E không được cộng điểm** cho dòng này; nó chỉ **rời khỏi danh
+  sách việc phải làm**. Lý do bỏ cũng hợp lý độc lập với điểm số: chạy lại nó là
+  tiêu **tiền thật với nhà cung cấp ngoài** cho một đường **không nằm trong phạm
+  vi xóa của chiến dịch** — Seedance/BytePlus thuộc nhóm được phép giữ chạy.
 
 ---
 
@@ -95,7 +141,7 @@ Hai bộ dò độc lập, hai cách đọc khác nhau, **cùng kết luận 0**
 | Registry / config | **10/10** | `is_active=False` + `chan_neu_da_ngung`; `test_1005` chốt 5 điều kiện |
 | Secrets | **8/10** | công cụ nhập khoá đã xoá; −2: `LTT_CODEX_SIDECAR_TOKEN` **còn trong `app.env` của máy chủ** — dọn ở pha 13 |
 | Guard | **10/10** | `test_1006`: 18 phép kiểm, **12 là tự kiểm** (mẫu dương + âm) |
-| E2E | **6/10** | egress = 0 chứng minh được; 5 đường sinh thật là **NOT_TESTED** |
+| E2E | **6/10** | egress = 0 chứng minh được; **4** đường sinh thật là **NOT_TESTED** (Seedance bỏ khỏi phạm vi 09/09 — §11.3b) |
 | Seedance / Voice preservation | **10/10** | không đụng; `MIEN_TRU_HTTP` khai rõ đích đến, `test_45` PASS |
 | Worktree hygiene | **9/10** | cây riêng, không đụng phiên khác; −1: đã chồng gate 2 lần trong ngày |
 
@@ -103,7 +149,7 @@ Hai bộ dò độc lập, hai cách đọc khác nhau, **cùng kết luận 0**
 
 ### ⛔ Ba trục KHÔNG đạt 10, và không trục nào được làm tròn lên
 
-- **E2E 6/10** — trục thấp nhất, và đúng như thế. Không có máy B thì không có
+- **E2E 6/10** — trục thấp nhất, và đúng như thế. ⚠️ **Việc Seedance rời khỏi phạm vi KHÔNG nâng điểm trục này**: bỏ bớt một dòng chưa đo không biến những dòng còn lại thành đã đo. Một nghiệm thu tự nâng điểm bằng cách thu hẹp mẫu số là một nghiệm thu đã hỏng. Không có máy B thì không có
   bằng chứng sinh thật. Nâng nó lên đòi một lượt chạy trên máy chủ, không đòi
   thêm một test nào ở đây.
 - **Secrets 8/10** — token của một dịch vụ đã chết vẫn nằm trong `app.env`
@@ -116,7 +162,7 @@ Hai bộ dò độc lập, hai cách đọc khác nhau, **cùng kết luận 0**
 
 | Pha | Việc | Chặn bởi |
 |---|---|---|
-| 13 | merge → deploy → **chạy 5 đường E2E thật** → dọn `LTT_CODEX_SIDECAR_TOKEN` → **gỡ dịch vụ `LTTStudioCodex`** | trunk đang có **2 bước gate đỏ** từ `3eae396d` (không phải của chiến dịch này) |
+| 13 | merge → deploy → **chạy 4 đường E2E thật** → dọn `LTT_CODEX_SIDECAR_TOKEN` → **gỡ dịch vụ `LTTStudioCodex`** | trunk đang có **2 bước gate đỏ** từ `3eae396d` (không phải của chiến dịch này) |
 | 14 | dọn 22 nhánh remote | sau 13 |
 | 15 | báo cáo nén kho | sau 14 |
 
