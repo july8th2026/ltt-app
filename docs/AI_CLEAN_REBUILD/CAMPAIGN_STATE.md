@@ -38,9 +38,9 @@
 | 10 | Architecture guard | ✅ | 18 phép kiểm, **12 là tự kiểm** | `tests/test_1006_rao_kien_truc.py` |
 | 11 | Real E2E / egress | 🟡 **egress=0 CHỨNG MINH · 5 đường sinh thật NOT_TESTED** | `test_1007` 6 phép kiểm | `PHA11_12_NGHIEM_THU.md` |
 | 12 | Forensic re-audit | ✅ **0 executable occurrence · 82/100** | 2 bộ dò ĐỘC LẬP, 787 tệp | `PHA11_12_NGHIEM_THU.md` |
-| 13 | Commit / merge / deploy | ⬜ **đang chờ máy** | gate cuối đã xếp hàng | — |
-| 14 | Remote GitHub hygiene | ⬜ | — | — |
-| 15 | Final repo compaction report | ⬜ | — | — |
+| 13 | Commit / merge / deploy | ✅ | ff `cf287794→39cb8723` · deploy `84661047` · 4 khoá CSDL + 4 khoá env + 1 dịch vụ đã gỡ | `PHA13_SO_TAY.md` |
+| 14 | Remote GitHub hygiene | ✅ | **25 → 10** nhánh, kèm sổ khôi phục từng nhánh | `PHA14_DON_NHANH_REMOTE.md` |
+| 15 | Final repo compaction report | ✅ | 21 tệp / 2.978 dòng — **đo có phạm vi** | `PHA15_BAO_CAO_NEN_KHO.md` |
 
 ## Gạch đầu dòng — LƯỢT GATE GỘP cho pha 07→12 (09/09, 18:2x)
 
@@ -112,6 +112,30 @@ frontend mà gate không soi"*. **Sai hai tầng:**
 0 tham chiếu mới tới thứ đã gỡ, 0 trùng với tệp đã xoá — cả ba đều có đối
 chứng), và bốn bẫy đã biết: `nssm` nướng ENV, dịch vụ `LTTStudioCodex` còn
 sống, máy B một suất đồng thời, nghiệm thu hỏi ba chiều.
+
+## 🔴 MỘT LỖ TÌM RA SAU KHI MỌI PHÉP KIỂM ĐÃ XANH (10/09)
+
+Việc dọn **dữ liệu** lôi ra thứ việc dọn **mã** không thấy. Bảng `api_keys` trên
+production còn **bốn khoá đang bật** của chính các provider chiến dịch đã gỡ:
+
+```
+apiai      ...KYJs   455 luot   dung cuoi 09/09 15:05:59
+cheapkeyai ...3qUP   456 luot   dung cuoi 09/09 23:35:41   <-- dung giay mot job anh
+cheapkeyai ...9Dbf   455 luot   dung cuoi 09/09 15:08:57
+gemini     ...B3sk   455 luot   dung cuoi 09/09 15:10:54
+```
+
+`public_api/capacity.py::_providers_healthy` xin khoá **không lọc nhà cung cấp**,
+nên `/api/v1/capacity` đã trả lời *"còn phục vụ"* dựa trên một khoá `cheapkeyai`
+— tức chào bán một năng lực mà `chan_neu_da_ngung` sẽ từ chối ngay khi có ai
+gọi thật.
+
+⭐ **Bài học lớn nhất của chiến dịch:** mọi phép kiểm đều soi **mã**. Không
+   phép kiểm nào soi **hàng trong bảng**. Một chiến dịch xoá provider mà chỉ
+   đọc mã sẽ tuyên bố thành công trong khi bốn khoá của chính những provider
+   ấy vẫn được cấp phát mỗi ngày.
+
+Đã vá ở mã (`tests/test_1008`) và xoá 4 hàng khỏi CSDL (có sao lưu).
 
 ## ⚠️ TRUNK ĐANG ĐỎ HAI BƯỚC — điều kiện chặn của PHA 13
 
