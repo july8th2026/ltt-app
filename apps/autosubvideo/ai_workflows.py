@@ -1,7 +1,24 @@
 """Bounded auxiliary AI workflows for Auto Sub Studio.
 
 No function logs source transcript or credentials. Diarization runs in the
-isolated WhisperX sidecar; translation uses the shared Gemini API-key pool.
+isolated WhisperX sidecar; translation runs on **LTT_LLM** (model nhà).
+
+🔴 DI TRÚ 08/09/2026 — AI CLEAN REBUILD V2 pha 05.6.
+
+## ⚠️ BẢO ĐẢM BỊ HẠ CẤP, và ở đây nó MẠNH hơn hai app trước
+
+Bản cũ gửi `responseSchema` — Gemini cưỡng chế **đúng hình dạng**
+`[{id: str, text: str}]` ở tầng giao thức, không chỉ "là JSON".
+
+⭐ Nhưng phần lớn bảo đảm ấy **đã có bản sao ở hạ nguồn**: `translate_cues`
+   vốn kiểm `isinstance(result, list)`, đối chiếu **đúng thứ tự id**, chặn
+   `text` rỗng và cắt 4000 ký tự. Nên mất `responseSchema` không mở ra một lỗ
+   lớn — nó chỉ để hở **một** kẽ: nếu model trả `["a", "b"]` thì `item.get(...)`
+   ném `AttributeError`, tức một lỗi **không có tên** thay vì `AuxiliaryAIError`.
+
+⇒ Kẽ đó được bịt ngay tại chỗ phân tích (xem `_dich_mot_lo`), chứ không để hạ
+  nguồn đoán. **Gỡ một bảo đảm ở tầng giao thức thì phải thêm đúng phép kiểm mà
+  nó đang làm** — nếu không, ta đổi một lỗi rõ ràng lấy một lỗi mơ hồ.
 """
 from __future__ import annotations
 
@@ -9,9 +26,12 @@ import json
 import os
 import subprocess
 import tempfile
+import uuid as _uuid
 from pathlib import Path
 
-_TRANSLATE_MODEL = "gemini-2.5-flash"
+from platform_core.i18n import _ as _t
+from platform_core.llm import canonical as _C
+
 _MAX_CUES = 10_000
 _CHUNK_CUES = 60
 _CHUNK_CHARS = 12_000
@@ -26,13 +46,23 @@ def diarization_available() -> bool:
     return whisperx_available() and bool(os.environ.get("LTT_HF_TOKEN", "").strip())
 
 
-def gemini_available(db) -> bool:
-    if os.environ.get("GEMINI_API_KEY", "").strip():
-        return True
+def dich_kha_dung(db) -> bool:
+    """Có dịch được không — cờ năng lực cho giao diện.
+
+    🔴 Đổi tên từ `gemini_available` ở pha 05.6. Tên cũ **khai một nhà cung cấp
+       cụ thể**, nên nó buộc mọi người đọc phải biết app này chạy trên gì. Câu
+       hỏi thật của giao diện là *"dịch được không"*, không phải *"có khoá
+       Gemini không"*.
+
+    ⛔ Không còn đọc `GEMINI_API_KEY`. Một biến môi trường ở tầng app là đường
+       vòng qua kho khoá — đúng thứ pha 05 gỡ.
+    """
     try:
         from platform_core.models import APIKEY_CAT_CHAT, ApiKey
-        rows = db.query(ApiKey).filter_by(provider="gemini", enabled=True).all()
-        return any(not row.categories or APIKEY_CAT_CHAT in row.categories for row in rows)
+        rows = db.query(ApiKey).filter_by(
+            provider=_C.THU_TU_PROVIDER[0], enabled=True).all()
+        return any(not row.categories or APIKEY_CAT_CHAT in row.categories
+                   for row in rows)
     except Exception:
         return False
 
@@ -117,45 +147,71 @@ def _chunks(cues:list[dict]):
     if chunk: yield chunk
 
 
-def _gemini_chunk(db, items:list[dict], target_language:str) -> list[dict]:
-    import httpx
-    from platform_core import api_keys, api_pool, providers as _prov
+def _dich_mot_lo(db, items: list[dict], target_language: str) -> list[dict]:
+    """Dịch một lô cue qua LTT_LLM. Ném `AuxiliaryAIError` khi không dùng được.
+
+    🔴 Giành **suất admission** trước khi chạm máy B — máy B chỉ có một suất
+       đồng thời, và một đường quên bước này làm chính cơ chế đếm suất sai.
+    """
+    from platform_core.llm import admission, dieu_phoi
     from platform_core.models import APIKEY_CAT_CHAT
-    _prov.chan_neu_da_ngung("gemini")       # ⛔ fail-closed (AI CLEAN REBUILD V2)
-    key=None; credential=""
+
+    loi_nhac = ("Translate each subtitle to " + target_language +
+                ". Preserve ids, meaning, tone, line breaks and placeholders. "
+                "Return exactly one item per input, in the same order.\n"
+                "Return ONLY a JSON array of objects with keys \"id\" and "
+                "\"text\". No markdown fence, no commentary.\nInput JSON:\n" +
+                json.dumps(items, ensure_ascii=False, separators=(",", ":")))
+
+    tai_nguyen, suat = _C.tai_nguyen_nha()
+    ve = None
     try:
-        key=api_pool.chon_key(db,category=APIKEY_CAT_CHAT,model=_TRANSLATE_MODEL,
-                              thu_tu_provider=["gemini"])
-        credential=api_keys.lay_credential(db,key)
-    except Exception:
-        credential=os.environ.get("GEMINI_API_KEY","").strip()
-    if not credential: raise AuxiliaryAIError("Chưa có API key Gemini cho bản dịch.")
-    schema={"type":"ARRAY","items":{"type":"OBJECT","properties":{
-        "id":{"type":"STRING"},"text":{"type":"STRING"}},"required":["id","text"]}}
-    prompt=("Translate each subtitle to " + target_language +
-            ". Preserve ids, meaning, tone, line breaks and placeholders. "
-            "Return exactly one item per input, in the same order. Input JSON:\n"+
-            json.dumps(items,ensure_ascii=False,separators=(",",":")))
+        ve = admission.acquire(
+            db, resource=tai_nguyen, slots=suat, user_id="he-thong:autosubvideo",
+            mode="sync", holder_id="asv-dich:" + _uuid.uuid4().hex[:12])
+        if ve is None:
+            raise AuxiliaryAIError(_t("Model đang bận, thử lại sau ít phút."))
+        try:
+            kq = dieu_phoi.goi(
+                db,
+                messages=[{"role": "user", "content": loi_nhac}],
+                category=APIKEY_CAT_CHAT,
+                thu_tu_provider=_C.THU_TU_PROVIDER,
+                model_theo_provider=_C.ban_do_model(),
+                temperature=0.1,
+                timeout_s=90.0,
+            )
+        except dieu_phoi.KhongCoProviderNao:
+            # `dieu_phoi` đã đánh dấu lỗi lên khoá cho đúng trường hợp rồi —
+            # KHÔNG đánh dấu lại ở đây (đó là bản sao thứ hai của telemetry).
+            raise AuxiliaryAIError(_t("Dịch vụ dịch đang bận, thử lại sau.")) from None
+    finally:
+        if ve is not None:
+            admission.release_by_id(ve.id)
+
+    van = (kq.noi_dung or "").strip()
+    if van.startswith("```"):
+        van = van.split("\n", 1)[-1].rsplit("```", 1)[0]
+    van = van.strip().removeprefix("json").strip()
     try:
-        response=httpx.post(
-            f"https://generativelanguage.googleapis.com/v1beta/models/{_TRANSLATE_MODEL}:generateContent",
-            headers={"x-goog-api-key":credential},json={"contents":[{"parts":[{"text":prompt}]}],
-            "generationConfig":{"responseMimeType":"application/json","responseSchema":schema,
-                                "temperature":0.1}},timeout=90)
-        if response.status_code!=200:
-            if key is not None: api_pool.danh_dau_loi(db,key,http_status=response.status_code)
-            raise AuxiliaryAIError(f"Gemini translation HTTP {response.status_code}.")
-        parts=(response.json().get("candidates") or [{}])[0].get("content",{}).get("parts",[])
-        text=next((part.get("text") for part in parts if part.get("text")),"")
-        result=json.loads(text)
-        if key is not None:
-            usage=response.json().get("usageMetadata") or {}
-            api_pool.danh_dau_thanh_cong(db,key,tokens=int(usage.get("totalTokenCount",0) or 0))
-        return result
-    except (httpx.HTTPError,json.JSONDecodeError) as exc:
-        if key is not None: api_pool.danh_dau_loi(db,key,message=type(exc).__name__)
-        raise AuxiliaryAIError(f"Gemini translation lỗi {type(exc).__name__}.") from None
-    finally: credential=""
+        ket_qua = json.loads(van)
+    except json.JSONDecodeError:
+        raise AuxiliaryAIError(_t("Bản dịch trả về không phải JSON hợp lệ.")) from None
+
+    # 🔴 PHÉP KIỂM THAY CHO `responseSchema` ĐÃ MẤT.
+    #
+    #    Hạ nguồn (`translate_cues`) đã đối chiếu id, thứ tự, và chặn text rỗng —
+    #    nhưng nó gọi `item.get(...)`, tức nó **giả định phần tử là dict**. Trước
+    #    đây `responseSchema` bảo đảm điều đó ở tầng giao thức; nay không còn ai
+    #    bảo đảm, nên nếu model trả `["a","b"]` thì hạ nguồn ném `AttributeError`
+    #    — một lỗi KHÔNG CÓ TÊN, và nó sẽ đi lên như một sự cố hạ tầng.
+    #
+    # ⇒ Gỡ một bảo đảm ở tầng giao thức thì phải **thêm đúng phép kiểm mà nó
+    #   đang làm**. Đây chính là phép kiểm ấy.
+    if not isinstance(ket_qua, list) or not all(
+            isinstance(m, dict) for m in ket_qua):
+        raise AuxiliaryAIError(_t("Bản dịch trả về sai cấu trúc (cần mảng object)."))
+    return ket_qua
 
 
 def translate_cues(db, cues:list[dict], target_language:str, *, call=None,
@@ -163,16 +219,16 @@ def translate_cues(db, cues:list[dict], target_language:str, *, call=None,
     if not cues or len(cues)>_MAX_CUES: raise AuxiliaryAIError("Số cue dịch không hợp lệ.")
     target=(target_language or "").strip()[:64]
     if not target: raise AuxiliaryAIError("Thiếu ngôn ngữ đích.")
-    translated={}; chunks=list(_chunks(cues)); invoke=call or (lambda batch:_gemini_chunk(db,batch,target))
+    translated={}; chunks=list(_chunks(cues)); invoke=call or (lambda batch:_dich_mot_lo(db,batch,target))
     for index,batch in enumerate(chunks):
         if is_cancelled and is_cancelled(): raise AuxiliaryAIError("Tác vụ đã bị hủy.")
         result=invoke(batch)
         expected=[item["id"] for item in batch]
         if not isinstance(result,list) or [str(item.get("id","")) for item in result]!=expected:
-            raise AuxiliaryAIError("Gemini trả thiếu/thừa hoặc sai thứ tự cue.")
+            raise AuxiliaryAIError(_t("Bản dịch thiếu/thừa hoặc sai thứ tự cue."))
         for item in result:
             text=str(item.get("text","")).strip()
-            if not text: raise AuxiliaryAIError("Gemini trả cue rỗng.")
+            if not text: raise AuxiliaryAIError(_t("Bản dịch có cue rỗng."))
             translated[str(item["id"])]=text[:4000]
         if on_progress:on_progress(10+int(80*(index+1)/len(chunks)),"đang dịch transcript")
     return [{**cue,"text":translated[str(cue["id"])],"words":[]} for cue in cues]

@@ -31,6 +31,7 @@ GOC = pathlib.Path(__file__).resolve().parents[1]
 DA_DI_TRU = (
     "apps/taovideo/translate.py",
     "apps/prompt_ai_ommi/provider.py",
+    "apps/autosubvideo/ai_workflows.py",
 )
 
 #: Tên module không được `import` ở tầng app sau khi di trú.

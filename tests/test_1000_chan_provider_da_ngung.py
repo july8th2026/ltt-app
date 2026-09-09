@@ -166,11 +166,7 @@ def test_thumbnail_khong_ra_mang(bit_mang):
 #    của cả lớp đường gọi, thay vì chốt một lượt gọi cụ thể bị chặn).
 
 
-def test_autosubvideo_khong_ra_mang(bit_mang):
-    from apps.autosubvideo import ai_workflows
-    with pytest.raises(providers.ProviderDaNgung):
-        ai_workflows._gemini_chunk(None, [{"text": "hi"}], "en")
-    assert bit_mang == [], f"co luot ra mang: {bit_mang}"
+# ⏭️ `autosubvideo` ĐÃ DI TRÚ ở pha 05.6 — tiền đề biến mất, chuyển sang `test_1002`.
 
 
 # ── 5. Enum RỖNG phải là "không gì hợp lệ", không phải "không có ràng buộc" ──

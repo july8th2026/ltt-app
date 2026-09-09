@@ -14732,3 +14732,71 @@ msgstr "Missing revision number."
 #: apps/agent/routes/drafts_v3.py
 msgid "Bản nháp chưa có nội dung để xuất bản."
 msgstr "This draft has nothing to publish yet."
+
+#: apps/autosubvideo/routes.py
+# AI CLEAN REBUILD V2 pha 05.6 — thay chuỗi cũ "Gemini translation chưa cấu
+# hình API key." Tên nhà cung cấp không nên nằm trong thông điệp cho khách:
+# khách không mua Gemini, họ mua "dịch phụ đề", và ngày ta đổi động cơ thì
+# một chuỗi khai tên nhà cung cấp sẽ nói dối mà không ai sửa.
+msgid "Dịch vụ dịch chưa sẵn sàng."
+msgstr "The translation service is not available yet."
+
+# ── AI CLEAN REBUILD V2 pha 05.4–05.6 — thông điệp của các app vừa di trú ────
+# Cả bảy đều HIỆN RA VỚI KHÁCH: chúng đi qua `Job.error` hoặc `HTTPException`
+# rồi được render. Không xếp chúng vào "lỗi nội bộ" — hai đường gọi đã đo được
+# ở `platform_core/models.py:297` và `apps/autosubvideo/templates/…:97`.
+#
+# ⚠️ KHÔNG nhắc tên nhà cung cấp trong các chuỗi này. Khách mua "dịch phụ đề"
+#    và "sinh prompt", không mua một model cụ thể; ngày ta đổi động cơ, một
+#    chuỗi khai tên nhà cung cấp sẽ nói dối mà không ai nghĩ tới việc sửa nó.
+
+#: apps/taovideo/translate.py
+msgid "Chưa có nội dung để dịch."
+msgstr "Nothing to translate yet."
+
+#: apps/taovideo/translate.py
+msgid "Model không trả bản dịch."
+msgstr "The model returned no translation."
+
+#: apps/taovideo/translate.py apps/prompt_ai_ommi/provider.py
+msgid "Model đang bận, thử lại sau ít phút."
+msgstr "The model is busy; please try again in a few minutes."
+
+#: apps/prompt_ai_ommi/provider.py
+msgid "Dịch vụ AI đang bận, thử lại sau."
+msgstr "The AI service is busy; please try again shortly."
+
+#: apps/prompt_ai_ommi/provider.py
+msgid "Dịch vụ AI không trả dữ liệu."
+msgstr "The AI service returned no data."
+
+#: apps/prompt_ai_ommi/provider.py
+msgid "Dịch vụ AI trả cấu trúc không hợp lệ; hãy thử lại."
+msgstr "The AI service returned an invalid structure; please try again."
+
+#: apps/prompt_ai_ommi/provider.py
+msgid "Dịch vụ AI trả sai loại dữ liệu."
+msgstr "The AI service returned the wrong data type."
+
+#: apps/autosubvideo/ai_workflows.py
+msgid "Dịch vụ dịch đang bận, thử lại sau."
+msgstr "The translation service is busy; please try again shortly."
+
+#: apps/autosubvideo/ai_workflows.py
+msgid "Bản dịch trả về không phải JSON hợp lệ."
+msgstr "The translation returned is not valid JSON."
+
+#: apps/autosubvideo/ai_workflows.py
+# Chuỗi này thay cho bảo đảm `responseSchema` đã mất khi rời Gemini: hình dạng
+# `[{id, text}]` nay được kiểm ở tầng ứng dụng, nên lỗi phải nói rõ hình dạng
+# đang thiếu — người đọc log cần biết *cái gì* sai, không chỉ *có* sai.
+msgid "Bản dịch trả về sai cấu trúc (cần mảng object)."
+msgstr "The translation has the wrong structure (an array of objects is required)."
+
+#: apps/autosubvideo/ai_workflows.py
+msgid "Bản dịch thiếu/thừa hoặc sai thứ tự cue."
+msgstr "The translation has missing, extra, or misordered cues."
+
+#: apps/autosubvideo/ai_workflows.py
+msgid "Bản dịch có cue rỗng."
+msgstr "The translation contains an empty cue."
