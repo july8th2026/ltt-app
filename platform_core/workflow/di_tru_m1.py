@@ -105,7 +105,11 @@ _TRANG_MAC_DINH: dict = {
 
 
 def _trang_v3(trang: dict) -> dict:
-    ra = {
+    # ⚠️ Khai kieu TUONG MINH. Khong khai thi mypy suy `dict[str, Sequence]` tu
+    #    ba gia tri dau (str/list/list), roi gan `viewport` — mot `dict` — vao
+    #    do la `assignment` error. Mot trang v3 KHONG dong nhat ve kieu gia tri,
+    #    va lam no dong nhat de chieu long bo suy kieu se lam no sai voi thuc te.
+    ra: dict[str, Any] = {
         "id": str(trang.get("id", "p1")),
         "name": str(trang.get("name", "")),
         "nodes": list(trang.get("nodes") or []),
