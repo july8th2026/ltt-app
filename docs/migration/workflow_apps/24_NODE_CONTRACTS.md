@@ -28,14 +28,14 @@ và khai như thế là lỗi hợp đồng, không phải một phép đo trả
 
 ```
 job_type      transcript.run          type_version  1
-side_effect   none                    idempotency   key_fields=("audio", "ho_so_stt")
+side_effect   none                    idempotency   key_fields=("audio", "min_s", "max_s")
 resource      class=gpu  vram_min_mb=5000  slots=1  est_duration_s=<đo>
 ```
 
 | Tham số | Kiểu | Bắt buộc | Ghi chú |
 |---|---|---|---|
 | `audio` | `audio` | ✅ | |
-| `ho_so_stt` | `enum` | | `["transcript"]` — **khoá một giá trị**, xem `23` |
+| ~~`ho_so_stt`~~ | — | | **BỎ**: hồ sơ là hằng số của App (`HO_SO_STT` trong service), không phải tham số của khách |
 | `language` | `string` | | rỗng = tự dò |
 | `min_s` / `max_s` | `number` | | legacy 3.0 / 6.0 |
 | `include_silence` | `bool` | | |
@@ -43,6 +43,13 @@ resource      class=gpu  vram_min_mb=5000  slots=1  est_duration_s=<đo>
 
 `returns` = `{"transcript": "json"}` — mảng đoạn theo schema đã bị
 `_validate_output_segments_strict` cưỡng chế trong legacy.
+
+⭐ **`ho_so_stt` bị bỏ khỏi `params_schema` khi build thật, và đó là bản sửa
+đúng.** Hồ sơ quyết định *đầu ra*, không phải *sở thích*: mở nó ra cho khách là
+mời họ đổi một thứ mà parity đang neo vào. Nó thành hằng số `HO_SO_STT` trong
+`services/phien_am.py`. Khoá luỹ đẳng đổi theo: `("audio", "min_s", "max_s")` —
+`language` **không** nằm trong khoá, vì để trống nghĩa là tự dò và hai lần tự dò
+trên cùng tệp cho cùng kết quả.
 
 ⛔ **Không** khai tham số cho `gemini_corrector`: `DEFER` theo audit `03`. Thêm
 một tham số rồi bỏ trống dễ hơn nhiều so với gỡ một tham số đã công bố.
@@ -61,7 +68,7 @@ resource      class=gpu  vram_min_mb=5000  slots=1
 |---|---|---|---|
 | `audio` | `audio` | ✅ | |
 | `pause_plan` | `json` | ✅ | `[{id, anchor_text, pause_ms, pause_type, reason}]` |
-| `ho_so_stt` | `enum` | | `["pause"]` |
+| ~~`ho_so_stt`~~ | — | | **BỎ** — như `transcript.run` |
 | `min_pause_ms` / `max_pause_ms` | `int` | | clamp |
 | `min_gap_s` | `number` | | legacy 0.8 |
 | `nguong_khop` | `number` | | ngưỡng khớp mờ |
@@ -124,7 +131,7 @@ requires      ("gpu", "ffmpeg")
 | `clips` | `video[]` | ✅ | |
 | `music` | `audio` | | |
 | `cau_hinh` | `json` | | ngưỡng lọc · style phụ đề · chuyển cảnh |
-| `ho_so_stt` | `enum` | | `["video"]` |
+| ~~`ho_so_stt`~~ | — | | **BỎ** — như `transcript.run` |
 | `bat_demucs` / `bat_phu_de` / `bat_cham_diem` | `bool` | | giai đoạn 8 / 11 / 12 |
 
 `returns` = `{"video": "video", "transcript": "json"}`.

@@ -2,19 +2,34 @@
 
 ## Vì sao tệp này tồn tại
 
-Sáu chỗ trong hệ sinh thái LTT gọi `faster_whisper` với **sáu bộ tham số khác
-nhau**, và khác biệt ấy **quyết định đầu ra**, không phải quyết định tốc độ.
+**Sáu** chỗ trong hệ sinh thái LTT gọi `faster_whisper` với **sáu bộ tham số
+khác nhau**, và khác biệt ấy **quyết định đầu ra**, không phải quyết định tốc độ.
 
-Đo ngày 2026-09-09, trên mã đang chạy thật:
+Bốn trong sáu đến từ bốn bot đang migrate, và chúng nằm ở `HO_SO` dưới đây:
 
 ```
-bot_transcript  engine/stt.py:303        word_ts=True   vad_filter=KHONG  beam=1
-bot_pause       engine/stt.py:337        word_ts=<ts>   vad_filter=True   beam=5(vi)/1(en)
-bot_dungvideo   engine/stt.py:48         word_ts=False  vad_filter=True   beam=5
-bot_dungvideo   evaluation/.../whisper   word_ts=False  vad_filter=False  —
-apps/autosubvideo transcription.py:135   word_ts=True   vad_filter=True   beam=5
-cutclipshort    adapters/whisper.py:330  word_ts=False  vad_filter=False  —
+bot_transcript  engine/stt.py:303       word_ts=True   vad_filter=KHONG  beam=1
+bot_pause       engine/stt.py:337       word_ts=True   vad_filter=True   beam=5(vi)/1(en)
+bot_dungvideo   engine/stt.py:48        word_ts=False  vad_filter=True   beam=5
+bot_dungvideo   evaluation/.../whisper  word_ts=False  vad_filter=False  —
 ```
+
+⛔ **Hai chỗ còn lại đang chạy trong nền tảng, và tệp này KHÔNG kê tên chúng** —
+xem chú thích sau `HO_SO`. Bảng đối chiếu đầy đủ ở
+`docs/migration/workflow_apps/07_CROSS_BOT_SYNTHESIS.md` §2.
+
+## Tên hồ sơ là tên NĂNG LỰC, không phải tên app
+
+Bản đầu đặt tên theo bot dùng nó (`transcript`, `pause`, `video`). Chốt
+`test_60::test_no_app_slug_is_hardcoded_in_the_platform` bắt ngay: một tên app
+trong mã nền tảng là dấu hiệu registry bị đi vòng, và `transcript` vừa là tên
+hồ sơ vừa là slug của một App.
+
+⭐ Chốt ấy ép ra một cái tên **tốt hơn**. Hồ sơ mô tả *thứ nó tạo ra* — có mốc
+từ hay không, VAD nằm trong whisper hay ở tầng trên — nên hai App khác nhau
+cần cùng một hành vi thì dùng chung được, thay vì mỗi App một hồ sơ trùng nội
+dung. Docstring của chính chốt ấy nói đúng câu này: *nền tảng đặt tên cho
+NĂNG LỰC, không bao giờ cho APP*.
 
 🔴 **Ba lý do khiến chúng KHÔNG hoà được thành một mặc định**, mỗi lý do đủ để
 một mình chặn:
@@ -64,7 +79,7 @@ class KhongCoHoSo(KeyError):
 #:    faster-whisper không tương đương với việc không truyền gì.
 HO_SO: dict[str, dict[str, Any]] = {
     # bot_transcript — VAD chạy RIÊNG ở tầng trên, nên không có `vad_filter`.
-    "transcript": {
+    "moc_tu_vad_ngoai": {
         "word_timestamps": True,          # "HARD RULE" trong mã legacy
         "beam_size": 1,
         "best_of": 1,
@@ -72,7 +87,7 @@ HO_SO: dict[str, dict[str, Any]] = {
         "condition_on_previous_text": False,
     },
     # bot_pause, tiếng Việt.
-    "pause_vi": {
+    "moc_tu_vad_trong_vi": {
         "word_timestamps": True,
         "vad_filter": True,
         "vad_parameters": {"min_silence_duration_ms": 500, "speech_pad_ms": 200},
@@ -82,7 +97,7 @@ HO_SO: dict[str, dict[str, Any]] = {
         "condition_on_previous_text": False,
     },
     # bot_pause, tiếng Anh — CÙNG một bot, KHÁC hai tham số.
-    "pause_en": {
+    "moc_tu_vad_trong_en": {
         "word_timestamps": True,
         "vad_filter": True,
         "vad_parameters": {"min_silence_duration_ms": 500, "speech_pad_ms": 200},
@@ -92,7 +107,7 @@ HO_SO: dict[str, dict[str, Any]] = {
         "condition_on_previous_text": False,
     },
     # bot_dungvideo, đường chính.
-    "video": {
+    "khong_moc_tu_vad_trong": {
         "word_timestamps": False,
         "vad_filter": True,
         "vad_parameters": {"min_silence_duration_ms": 500, "threshold": 0.5},
@@ -100,28 +115,30 @@ HO_SO: dict[str, dict[str, Any]] = {
         "condition_on_previous_text": False,
     },
     # bot_dungvideo, bước tự chấm điểm — chỉ cần dò ngôn ngữ.
-    "video_eval": {
+    "chi_do_ngon_ngu": {
         "word_timestamps": False,
         "vad_filter": False,
     },
 }
 
-#: Hồ sơ của hai chỗ gọi **đang chạy trong nền tảng**, ghi lại để không ai
-#: tưởng chúng dùng chung hồ sơ với bốn cái trên.
-#:
-#: ⛔ CHÚNG KHÔNG ĐƯỢC MIGRATE Ở V1. Đổi đường gọi của một app đang phục vụ
-#:    khách để "gom cho gọn" là đổi đầu ra của nó — ngoài phạm vi chương trình
-#:    này, và không ai yêu cầu.
-HO_SO_DA_CO: dict[str, dict[str, Any]] = {
-    # apps/autosubvideo/transcription.py:135
-    "autosubvideo": {"word_timestamps": True, "vad_filter": True, "beam_size": 5},
-    # cutclipshort/adapters/whisper.py:330
-    "cutclipshort_do_ngon_ngu": {"word_timestamps": False, "vad_filter": False},
-}
+# ⛔ HAI CHO GOI KHAC trong nen tang co ho so RIENG, va chung KHONG duoc ke
+#    ten o day.
+#
+#    Ban dau tep nay co mot `HO_SO_DA_CO` liet ke chung kem slug cua app. Chot
+#    `test_60::test_no_app_slug_is_hardcoded_in_the_platform` bat ngay: mot ten
+#    app xuat hien trong ma nen tang la dau hieu registry bi di vong. Chot do
+#    dung, va danh sach mien tru cua no tu ghi rang "them mot ten vao day khong
+#    mien phi — no lam bo do mu voi chuoi ay".
+#
+# ⇒ Ban sua la GO TEN KHOI CORE, khong phai xin mien tru. Bang doi chieu day du
+#   (cho goi nao, ho so nao, vi sao khong migrate o V1) nam o
+#   `docs/migration/workflow_apps/07_CROSS_BOT_SYNTHESIS.md` §2 — dung cho cua
+#   no, vi do la mot su that ve TAI LIEU MIGRATE chu khong ve NEN TANG.
 
 #: Hồ sơ nào chọn theo ngôn ngữ. Khoá = tên gốc, giá trị = {ngôn ngữ: tên thật}.
 THEO_NGON_NGU: dict[str, dict[str, str]] = {
-    "pause": {"vi": "pause_vi", "en": "pause_en"},
+    "moc_tu_vad_trong": {"vi": "moc_tu_vad_trong_vi",
+                         "en": "moc_tu_vad_trong_en"},
 }
 
 

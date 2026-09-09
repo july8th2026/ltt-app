@@ -91,16 +91,32 @@ Theo `07_CROSS_BOT_SYNTHESIS.md` §2. Ba App cần STT với **ba hồ sơ tham 
 nhau**, và khác biệt ấy quyết định đầu ra.
 
 ```
-platform_core/  (hoặc thư viện dùng chung)
-└── stt/
-    ├── service.py       nạp model · cache theo hash audio · một điểm gọi
-    └── ho_so.py         HO_SO = {"transcript": {...}, "pause": {...},
-                                  "video": {...}, "video_eval": {...}}
+platform_core/stt/
+├── service.py   nạp model · cache theo hash audio + TÊN HỒ SƠ · một điểm gọi
+└── ho_so.py     HO_SO = {"moc_tu_vad_ngoai", "moc_tu_vad_trong_vi",
+                          "moc_tu_vad_trong_en", "khong_moc_tu_vad_trong",
+                          "chi_do_ngon_ngu"}
 ```
+
+🔑 **Tên hồ sơ là tên NĂNG LỰC, không phải tên App** — và đó là một bài học phải
+trả giá mới có. Bản đầu đặt tên theo bot dùng nó (`transcript`, `pause`,
+`video`); `test_60::test_no_app_slug_is_hardcoded_in_the_platform` đỏ ngay, vì
+`transcript` vừa là tên hồ sơ vừa là slug của một App, và một tên App trong mã
+nền tảng là dấu hiệu registry bị đi vòng.
+
+⭐ Chốt ấy ép ra một cái tên **tốt hơn**, không chỉ một cái tên khác: hồ sơ mô tả
+*thứ nó tạo ra* (có mốc từ không · VAD nằm trong whisper hay ở tầng trên), nên
+hai App cần cùng hành vi thì dùng chung được, thay vì mỗi App một hồ sơ trùng
+nội dung.
 
 ⛔ **Không có "tham số mặc định hợp lý".** App khai tên hồ sơ; service từ chối
 nếu tên không có. Một mặc định ngầm ở đây là một quyết định về **đầu ra** mà
 không ai ký.
+
+⚠️ Khoá cache **phải** gồm tên hồ sơ. Legacy khoá theo `(hash, model, lang)` —
+đúng với chúng, vì mỗi bot chỉ có một hồ sơ. Năm hồ sơ dùng chung một thư mục
+cache thì thiếu tên hồ sơ là **trả kết quả của hồ sơ khác**, và kết quả ấy trông
+hoàn toàn hợp lệ.
 
 ⚠️ Đây là **thay đổi Core duy nhất** mà bốn App được phép đòi ở V1, và nó qua
 được cửa vì ≥2 App cần **và** ngữ nghĩa đã đo. Mọi thứ khác ở lại trong App.

@@ -46,6 +46,12 @@ exclude = [
     "alembic/versions",     # migration sinh ra, khong sua tay
     "core",                 # 15.668 dong FB/TikTok cu, dong bang — xem CLAUDE.md
     "cutclipshort",         # engine VENDOR tu D:/FULL AUTO VIDEO — khong bao tri o day
+    # Engine cua `bot_transcript`, chuyen vao NGUYEN VEN de giu parity. Cung ly
+    # do voi `cutclipshort` o tren, va o day ly do do manh hon: diem cua viec
+    # chuyen la tep giong het ban da chay mot nam. "Sua lint" cho no nghia la
+    # no khong con giong nua — va luc ay khong ai noi duoc phan nao cua mot
+    # khac biet dau ra la do ta.
+    "apps/transcript/services/engine",
 ]
 
 [lint]

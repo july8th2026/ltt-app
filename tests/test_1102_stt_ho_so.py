@@ -43,13 +43,13 @@ def test_ten_ho_so_la_khong_the_doan() -> None:
 def test_lay_tra_BAN_SAO_khong_phai_ban_goc() -> None:
     """Bên gọi thêm `language=` vào là chuyện thường; một lần sửa tại chỗ sẽ
     làm hỏng mọi lượt sau trong cùng tiến trình."""
-    a = ho_so.lay("transcript")
+    a = ho_so.lay("moc_tu_vad_ngoai")
     a["beam_size"] = 999
     a.setdefault("vad_parameters", {})["min_silence_duration_ms"] = 1
-    assert ho_so.lay("transcript")["beam_size"] != 999
-    b = ho_so.lay("pause_vi")
+    assert ho_so.lay("moc_tu_vad_ngoai")["beam_size"] != 999
+    b = ho_so.lay("moc_tu_vad_trong_vi")
     b["vad_parameters"]["min_silence_duration_ms"] = 1
-    assert ho_so.lay("pause_vi")["vad_parameters"]["min_silence_duration_ms"] != 1
+    assert ho_so.lay("moc_tu_vad_trong_vi")["vad_parameters"]["min_silence_duration_ms"] != 1
 
 
 def test_transcript_KHONG_co_vad_filter() -> None:
@@ -59,8 +59,8 @@ def test_transcript_KHONG_co_vad_filter() -> None:
     faster-whisper KHÔNG tương đương với việc không truyền gì — nên phép kiểm
     hỏi về **sự vắng mặt của khoá**, không hỏi giá trị.
     """
-    assert "vad_filter" not in ho_so.lay("transcript")
-    assert ho_so.lay("transcript")["word_timestamps"] is True
+    assert "vad_filter" not in ho_so.lay("moc_tu_vad_ngoai")
+    assert ho_so.lay("moc_tu_vad_ngoai")["word_timestamps"] is True
 
 
 def test_moi_ho_so_deu_khac_nhau_that_su() -> None:
@@ -76,24 +76,24 @@ def test_moi_ho_so_deu_khac_nhau_that_su() -> None:
 # ── 2. `pause` là hàm của ngôn ngữ ──────────────────────────────────────────
 
 def test_pause_doi_ngon_ngu_va_KHONG_doan() -> None:
-    assert ho_so.ten_thuc("pause", "vi") == "pause_vi"
-    assert ho_so.ten_thuc("pause", "en") == "pause_en"
+    assert ho_so.ten_thuc("moc_tu_vad_trong", "vi") == "moc_tu_vad_trong_vi"
+    assert ho_so.ten_thuc("moc_tu_vad_trong", "en") == "moc_tu_vad_trong_en"
     for thieu in (None, "", "fr"):
         with pytest.raises(ho_so.KhongCoHoSo):
-            ho_so.ten_thuc("pause", thieu)
+            ho_so.ten_thuc("moc_tu_vad_trong", thieu)
 
 
 def test_hai_bien_the_pause_khac_nhau_o_dung_hai_tham_so() -> None:
-    vi, en = ho_so.lay("pause", "vi"), ho_so.lay("pause", "en")
+    vi, en = ho_so.lay("moc_tu_vad_trong", "vi"), ho_so.lay("moc_tu_vad_trong", "en")
     khac = {k for k in set(vi) | set(en) if vi.get(k) != en.get(k)}
     assert khac == {"beam_size", "best_of"}, (
-        "hai bien the `pause` chi duoc khac beam_size/best_of — moi tham so "
+        "hai bien the chi duoc khac beam_size/best_of — moi tham so "
         f"khac them la mot thay doi hanh vi chua ai ky: {sorted(khac)}")
 
 
 def test_ho_so_khong_theo_ngon_ngu_thi_bo_qua_ngon_ngu() -> None:
-    assert ho_so.ten_thuc("video", "vi") == "video"
-    assert ho_so.lay("video", "en") == ho_so.lay("video")
+    assert ho_so.ten_thuc("khong_moc_tu_vad_trong", "vi") == "khong_moc_tu_vad_trong"
+    assert ho_so.lay("khong_moc_tu_vad_trong", "en") == ho_so.lay("khong_moc_tu_vad_trong")
 
 
 # ── 3. Cache không được lẫn hồ sơ ───────────────────────────────────────────
@@ -108,8 +108,9 @@ def test_khoa_cache_GOM_ten_ho_so(tmp_path: Path,
        thức**, nên không có gì đỏ.
     """
     monkeypatch.setenv("LTT_STT_CACHE", str(tmp_path))
-    a = service._tep_cache("BAM", "large-v3", "vi", "video")
-    b = service._tep_cache("BAM", "large-v3", "vi", "video_eval")
+    a = service._tep_cache("BAM", "large-v3", "vi", "khong_moc_tu_vad_trong")
+    b = service._tep_cache(
+        "BAM", "large-v3", "vi", "chi_do_ngon_ngu")
     assert a != b
 
 
@@ -146,7 +147,7 @@ def test_thieu_tep_audio_bao_loi_cua_TA(tmp_path: Path,
     lỗi tham số với lỗi runtime bằng lớp lỗi, không bằng chuỗi."""
     monkeypatch.setenv("LTT_STT_CACHE", str(tmp_path))
     with pytest.raises(service.LoiSTT):
-        service.phien_am(tmp_path / "khong-co.wav", ten_ho_so="transcript")
+        service.phien_am(tmp_path / "khong-co.wav", ten_ho_so="moc_tu_vad_ngoai")
 
 
 # ── 4. Ranh giới ────────────────────────────────────────────────────────────
@@ -160,14 +161,25 @@ def test_stt_khong_import_apps_hay_server() -> None:
             assert cam not in van, f"{tep.name} import `{cam}`"
 
 
-def test_hai_cho_goi_DA_CO_duoc_ghi_lai_nhung_khong_lan_vao_HO_SO() -> None:
-    """`apps/autosubvideo` và `cutclipshort` đang chạy với hồ sơ riêng.
+def test_TEN_HO_SO_khong_duoc_trung_slug_cua_mot_App() -> None:
+    """Nền tảng đặt tên cho NĂNG LỰC, không bao giờ cho APP.
 
-    Ghi lại để không ai tưởng chúng dùng chung; tách khỏi `HO_SO` để không ai
-    vô tình migrate chúng — đổi đường gọi của một app đang phục vụ khách là đổi
-    đầu ra của nó.
+    🔴 Đây là bản vá của một lỗi thật, bắt lúc 00:34 ngày 10/09. Bản đầu đặt tên
+       hồ sơ theo bot dùng nó (`transcript`, `pause`, `video`), và
+       `test_60::test_no_app_slug_is_hardcoded_in_the_platform` đỏ ngay: một tên
+       app trong mã nền tảng là dấu hiệu registry bị đi vòng.
+
+    ⭐ Chốt ấy ép ra một cái tên **tốt hơn**, không chỉ một cái tên khác: hồ sơ
+       mô tả *thứ nó tạo ra*, nên hai App cần cùng hành vi dùng chung được thay
+       vì mỗi App một hồ sơ trùng nội dung.
+
+    ⚠️ Phép kiểm này lặp lại `test_60` **có chủ ý**, ở một chỗ gần hơn: `test_60`
+       báo "có slug trong nền tảng", còn dòng đỏ ở đây nói thẳng hồ sơ nào.
     """
-    assert set(ho_so.HO_SO_DA_CO) & set(ho_so.HO_SO) == set()
-    for ten in ho_so.HO_SO_DA_CO:
-        with pytest.raises(ho_so.KhongCoHoSo):
-            ho_so.lay(ten)
+    from platform_core.registry import discover
+
+    slug = {a.slug for a in discover()}
+    trung = slug & (set(ho_so.HO_SO) | set(ho_so.THEO_NGON_NGU))
+    assert not trung, (
+        f"ten ho so trung slug cua App: {sorted(trung)} — dat ten theo NANG LUC "
+        "(co moc tu khong, VAD trong hay ngoai), dung dat theo App dung no")
