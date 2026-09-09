@@ -45,6 +45,7 @@ Khác 0 nghĩa là `master` lại tụt lại. Đừng tạo worktree từ nó.
 
 ```powershell
 robocopy D:\LTTSTUDIOSAPP\apps\upscalevideo\vendor <cây-mới>\apps\upscalevideo\vendor /E
+Copy-Item D:\LTTSTUDIOSAPP\yolov8n.pt <cây-mới>\yolov8n.pt
 ```
 
 ⛔ Không có bước này thì **gate không bao giờ xanh được** trong worktree mới, và
@@ -54,6 +55,24 @@ cái đỏ đó không nói lên điều gì về code. `.gitignore` loại `app
 
 ⚠️ Một lượt gate đỏ vì thiếu tài sản còn tệ hơn không chạy gate: nó dạy người
 đọc bỏ qua màu đỏ.
+
+🔴 **`yolov8n.pt` thêm 09/09, sau khi mục này đã tồn tại và vẫn bỏ sót nó.**
+Nó nằm ở **gốc kho**, untracked, không nằm dưới `apps/*/vendor/` — nên đọc câu
+`.gitignore` ở trên rồi suy ra "chỉ có `vendor/`" là suy sai. Thiếu nó thì
+`test_505::test_moi_duong_khai_deu_CO_THAT_tren_dia` đỏ, và câu nó nói —
+*"khai nhưng không có trên đĩa: ['yolov8n.pt']"* — **không nhắc một chữ nào tới
+worktree**, nên người đọc đi tìm lỗi trong mã.
+
+⇒ Cách đúng để lấy danh sách này là **hỏi cây chính**, không phải chép lại một
+bảng trong tài liệu (bảng chép tay không có cách nào tự biết nó đã cũ):
+
+```powershell
+git -C D:\LTTSTUDIOSAPP status --ignored --porcelain |
+  Where-Object { $_ -like '!!*' -and $_ -notlike '*__pycache__*' }
+```
+
+Đo 09/09 nó trả về đúng hai mục thật: `apps/upscalevideo/vendor/` và
+`yolov8n.pt` (cộng `desktop.ini` của Windows, bỏ qua được).
 
 ### 2. Mỗi phiên tự kiểm cây mình đang đứng
 
