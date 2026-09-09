@@ -759,3 +759,54 @@ một bản vá đi hai đường vào trunk.
 
 Đã ghi lại thành memory `cua-so-yen-tra-loi-ai-xin-khoa-khong-tra-loi-may-co-ban`
 (thay memory cũ, vì memory cũ mang đúng cái lý do hết hạn ấy).
+
+### Đồng bộ hai tệp test từ trunk — và vì sao đây KHÔNG phải đảo lời
+
+Trunk `admin-mvp-v3` nay đã có cả hai bản vá (`fedb0eaf` + `44e0e17e`, hoà qua
+`5694f90c`). Đã lấy về cây này bằng `git checkout admin-mvp-v3 -- <hai tệp>`.
+
+⚠️ Mục trên tôi viết *"**KHÔNG** cherry-pick `56dfc811` sang nhánh này"*. Lấy về
+bây giờ **không** đảo lại lời ấy — hai hành động khác nhau:
+
+| | lúc từ chối | bây giờ |
+|---|---|---|
+| bản vá ở đâu | chỉ trên **nhánh của phiên kia** | đã ở **trunk** |
+| lấy về nghĩa là | tạo **đường thứ hai** cùng một bản vá vào trunk | **đồng bộ** với trunk |
+| khi hoà | hai commit khác nhau cho cùng một thay đổi | git thấy hai bên **giống nhau** |
+
+Lý do từ chối là *tránh hai đường vào trunk*, không phải *tránh bản vá*. Khi
+trunk đã có, lý do ấy hết áp — và giữ nguyên trạng lúc này mới là sai.
+
+Đo trước khi lấy, để biết mình nhập cái gì:
+
+    git log --oneline 99017910..admin-mvp-v3 -- <hai tep>
+      44e0e17e  Ro ri thu HAI: test_361 ...
+      fedb0eaf  Mot fixture test dang thao khoa ...
+    => DUNG hai commit va, khong thay doi nao khac di ke.
+
+Sau khi lấy, `sha256` hai tệp **khớp từng byte** với bản trunk.
+
+### Đối chứng hai chiều — tự chạy, không nhận theo lời
+
+    TIEN DE  dang_giu() liet ke khoa THAT?              True
+    NUA 1    nha(ep=True) tren khoa KHONG phai cua minh -> xoa duoc?  True
+             => phep do BAT duoc su pha hoai
+    NUA 2    pytest 2 tep -> 60 passed, rc=0
+             khoa that TRUOC: True   SAU: True    => DA CACH LY
+
+⛔ **Nửa 1 phải KHOANH vào khoá của chính phép đo.** Tái hiện dạng rộng
+(`dang_giu()` rồi `nha(ep=True)` từng cái) chính là hành vi đang được vá — chạy
+nó để "chứng minh lỗi có thật" sẽ phá khoá thật của phiên khác. Nên nửa 1 ở đây
+chứng minh **cơ chế** trên đúng một khoá do phép đo tự dựng: `ep=True` xoá được
+một khoá **không phải của người gọi**. Cộng với tiền đề (`dang_giu()` **có** với
+tới khoá thật) là đủ suy ra vòng cũ sẽ xoá nó.
+
+⭐ Con số đáng nhớ của cả vụ này là của phiên `Dọn Dẹp hệ thống API` đo trên
+trunk: bản **CHƯA** vá cho **`31 passed`** trong khi đang xoá hàng rào đồng thời
+của cả máy. Hình dạng đầy đủ của lỗi không phải *"một bài đỏ khó hiểu"* mà là
+**không bài nào đỏ cả** — cùng họ với
+`du-lieu-tu-dung-khong-bao-dam-ket-qua`.
+
+⇒ Cây này nay chạy gate lại được. Điều kiện tôi tự đặt ở mục trên (*"không chạy
+gate cho tới khi ff"*) đã gỡ, và gỡ bằng **phép đo**, không bằng thông báo của
+người khác.
