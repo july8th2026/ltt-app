@@ -68,14 +68,50 @@ mã**, không phải lỗi sản phẩm:
 2. `docs/PUBLIC_API/APP_API_COVERAGE_FINAL.md` còn phân loại `chataistudio` —
    một app pha 07 đã xoá — nên `test_212` báo `stale`.
 
-⚠️ **Lượt gate xác nhận lại đang CHỜ MÁY.** Đo lúc 18:4x: phiên
-   `ltt-video-architecture-recovery-746b24` bấm `tools/gate.py` lúc **18:35:08**
-   với 6 worker pytest. Tôi bấm sau ⇒ tôi lùi.
+✅ **LƯỢT GATE XÁC NHẬN ĐÃ CHẠY** — bấm 18:48:56 sau khi phiên giữ máy
+   (`ltt-video-architecture-recovery-746b24`, cũng chính là phiên tự gọi
+   *"Chuẩn Hóa WanGP"* — tên thư mục worktree là nhánh **lúc tạo**, không phải
+   việc đang làm) kết thúc lúc 18:48:32.
 
-   🔑 `cua_so_yen trang-thai` báo **RẢNH** trong chính lúc ấy. Đây đúng là ca mà
-      luật ghi: cửa sổ yên là điều kiện **CẦN**, không phải **ĐỦ**. Vế quyết
-      định là **cây tiến trình**, và phải đo bằng một lệnh RIÊNG — gộp `đo && chạy`
-      thì cảnh báo tới **sau** quyết định.
+```
+RESULT: FAIL (1/32)   788 giay (13,1 phut)   cay_da_doi_giua_chung = False
+  31/32 buoc PASS hoac BOQUA · 6 BOQUA GIONG HET luot truoc
+  bo test: 7 failed, 9048 passed, 62 skipped, 1 xfailed
+           7/7 deu la test_448          <- ban ghi 20260909T120231Z-17000.json
+```
+
+⭐ **9 → 7.** Hai lỗi của chính chiến dịch đã hết (9046 → **9048 passed**). Bảy
+   lỗi còn lại là nợ ASV v4 của trunk, **không phải của chiến dịch này**.
+
+⭐ **6 bước BOQUA giống hệt lượt trước** ⇒ không phải triệu chứng mất token khi
+   resume phiên; đó là môi trường cố hữu (không postgres, ba frontend không dựng
+   được ở cây này). Phải **so hai bản ghi** mới nói được câu ấy — một lượt đơn
+   lẻ không phân biệt được "vốn vẫn bỏ" với "lần này mới bỏ".
+
+### 🔴 Một lỗ tôi tưởng đã tìm ra, đo lại thì không có
+
+Thấy `frontend agent-canvas` **BOQUA** trong khi `git diff 0d1ffe5a..HEAD` có
+`frontend/agent-canvas/src/workflowApi.ts`, tôi đã kết luận *"pha 08 sửa một
+frontend mà gate không soi"*. **Sai hai tầng:**
+
+1. Thay đổi ấy là của `4374c5ce`/`d2bf0e5c` — **Đợt 5.2 của WORKFLOW V2**, không
+   phải của chiến dịch này. Nền `0d1ffe5a` **quá rộng**: nhánh `phien/aiclean`
+   mang **51 commit** kể từ đó, chỉ ~15 là của chiến dịch.
+2. Và dù của ai thì bundle cũng **không cũ**: đo bằng chính
+   `tools/build_release.py::_frontend_source_sha256`, **cả bốn** frontend
+   (`agent-canvas`, `autosub-studio`, `prompt-ai-ommi`, `chatltt`) đều **KHỚP**
+   sha nguồn.
+
+⛔ Bài học: *một nền so sánh sai biến công việc của phiên khác thành "lỗ hổng
+   của tôi"* — và nó sẽ đẩy tôi đi sửa một thứ chủ dự án đã cấm động vào.
+   Hỏi *"commit nào đẻ ra dòng này"* trước khi hỏi *"sửa thế nào"*.
+
+## Sổ tay pha 13
+
+`PHA13_SO_TAY.md` — 5 bước, kèm bề mặt hoà đã đo trước (0 xung đột văn bản,
+0 tham chiếu mới tới thứ đã gỡ, 0 trùng với tệp đã xoá — cả ba đều có đối
+chứng), và bốn bẫy đã biết: `nssm` nướng ENV, dịch vụ `LTTStudioCodex` còn
+sống, máy B một suất đồng thời, nghiệm thu hỏi ba chiều.
 
 ## ⚠️ TRUNK ĐANG ĐỎ HAI BƯỚC — điều kiện chặn của PHA 13
 
