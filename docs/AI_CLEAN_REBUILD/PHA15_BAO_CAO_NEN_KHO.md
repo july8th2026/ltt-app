@@ -161,6 +161,31 @@ lần đọc mã.
 
 ---
 
+## 5b. Bước gate TỰ BỎ QUA — biến một dấu hỏi thành một phép đo
+
+Lượt gate cuối còn **1 bước tự bỏ qua**: `bat bien da tien trinh`.
+
+Lý do là **cấu trúc, không phải thiếu sót**: `check_multiproc.py` đọc
+`LTT_DATABASE_URL` từ `C:\LTTPlatform\secretspp.env`, mà thư mục đó đã siết về
+SYSTEM+Administrators từ 27/08. Gate chạy không quyền nâng ⇒ không đọc được ⇒ bỏ
+qua. Chính công cụ in ra: *"Đó **KHÔNG** phải lỗi."*
+
+⭐ Nhưng *"bỏ qua có lý do"* vẫn là một **dấu hỏi**, không phải một phép đo. Và
+   `gate.py` biết điều đó — chúnh nó giữ một **trạng thái thứ ba** riêng cho việc
+   bỏ qua, sau khi đo được 31/08 rằng *"một bước bỏ qua và một bước đạt trông **Y
+   HỆT nhau** trên dòng RESULT"*.
+
+Đã chạy tay 10/09 03:5x, với một CSDL **vứt đi** tự tạo (tên chứa chữ `test` —
+`tests/pg_scratch.py` từ chối mọi URL không chứng minh được nó vứt đi được, vì các
+test này gọi `drop_all()`):
+
+```
+tools/check_multiproc.py  ->  7 passed in 139.55s   exit = 0
+```
+
+⇒ Bất biến mà bước ấy canh — *"nhiều worker chạy cùng lúc thì cảnh báo không
+  nhân đôi và số credit khớp"* — **đứng vững trên PostgreSQL thật**.
+
 ## 6. Nén kho
 
 | | Trước | Sau |
