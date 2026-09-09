@@ -32,7 +32,7 @@ chứng minh đường ống chạy được với hàng giả, không chứng m
 
 | # | Chặn ở | Nguyên nhân | Trạng thái |
 |---|---|---|---|
-| **A** | `content_process` | trần token 4.096 < nhu cầu 10.248 | ✅ **đã vá** — xem §2 |
+| **A** | `content_process` | trần token 4.096 < nhu cầu 10.248 | ⚠️ **đường đã thông, TRẦN CHƯA XÁC NHẬN** — §2 và §6 |
 | **B** | `giu_hinh / compose` | `sqlite3.OperationalError: database is locked` | ⛔ cần PostgreSQL — §3 |
 | **C** | `cat_thong_minh / qc` | T4 loudness `-15,07` ngoài `-14,0 ± 1,0` | 🔴 lệch **0,07 dB** — §4 |
 
@@ -135,3 +135,56 @@ T4   lufs = -15,07     đích = -14,0     dung sai = ±1,0     -> lệch 0,07 dB
    thật là **`LTT_ASV_MODEL_THAT=1`**, kèm **`LTT_ASV_POOL_URL`** trỏ vào pool
    PostgreSQL thật (`tests/fixtures/asv_e2e.py:349-400`). Nó đọc `BIEN_POOL_URL`
    chứ **không** đọc `LTT_DATABASE_URL`, và docstring ở đó nói rõ vì sao.
+
+---
+
+## 6. ⛔ ĐÍNH CHÍNH 10/09 — lượt xanh KHÔNG chứng minh trần token đã đủ
+
+Bản đầu của tệp này xếp **A** là *"đã vá"*. **Phát biểu ấy rộng hơn phép đo.**
+
+Lượt nghiệm thu xanh (26 passed) khai `thay_the: 4`, trong đó có
+`platform_core.llm.dieu_phoi.goi`. Nghĩa là `chuyen_loi_thoai` **chưa hề chạm
+máy B**: nó gọi một bản thay thế, và một bản thay thế thì không có trần token
+nào để chạm.
+
+⇒ Lượt ấy chứng minh **B** (PostgreSQL) và **C** (loudness). Nó **không** nói
+  được gì về việc 16.384 token có đủ cho đường thật hay không.
+
+Đúng phải phát biểu tách làm hai:
+
+| | trạng thái |
+|---|---|
+| đường truyền ngân sách (`goi_tinh_tien` → `goi` → `dieu_phoi.goi`) | ✅ đã thông, có `test_464` chốt |
+| **giá trị** 16.384 / 300s có đủ không | ⚠️ **chưa đo trên đường thật** |
+
+### ⚠️ Và một cảnh báo từ phiên khác, đủ nghiêm trọng để đo TRƯỚC
+
+Phiên `workflow 4 bot` chuyển tiếp phép đo của `LLM LTT`: `predicted_n` chạm
+**đúng** trần ở **cả** 3.000 lẫn 12.000, `content = 0` ở cả hai — nhân ngân sách
+bốn lần mà vẫn ra **0 ký tự**. Nếu điều đó đúng cho prompt thật của
+`chuyen_loi_thoai` thì **nâng trần sẽ không gỡ được `test_448`**.
+
+🔑 **Một mảnh có thể còn thiếu trong phép đo ấy, và nó là câu hỏi chứ không phải
+   kết luận:** trước thay đổi 10/09, `ai.goi_tinh_tien` — cửa **duy nhất** của
+   mọi lần gọi có tính tiền, cửa mà cả bốn giai đoạn ASV đi qua — **không truyền
+   `max_tokens`/`timeout_s` xuống**. `ai.goi` nhận hai tham số ấy từ 09/09,
+   nhưng `goi_tinh_tien` gọi nó không kèm gì.
+
+⇒ Nếu phép đo kia gọi thẳng `dieu_phoi.goi`/`ai.goi` với `--tran 3.000` rồi
+  `12.000`, nó chạy trên một đường **ASV không dùng** — production luôn nhận
+  mặc định 4.096 bất kể trần truyền vào. Chưa biết họ đo qua cửa nào.
+
+### Việc phải làm TRƯỚC khi tiêu một lượt nghiệm thu 11 giai đoạn
+
+Đo `nghi_tok / predicted_n` ở **hai** trần khác nhau, qua **`goi_tinh_tien`**
+(không qua `dieu_phoi.goi` trực tiếp), trên prompt thật của `chuyen_loi_thoai`:
+
+* nếu `content` > 0 ở trần cao và = 0 ở trần thấp ⇒ trần **là** nguyên nhân,
+  16.384 đủ hay không thì con số nói;
+* nếu `content` = 0 ở **cả hai** ⇒ trần **không** phải nguyên nhân, và
+  `test_448` cần một chẩn đoán khác — nhiều khả năng là khối `<think>` hoặc
+  `reasoning_effort`, thứ `20260909_tran_token_ra_chuyen_loi_thoai.md` §"Thứ
+  KHÔNG làm" đã khoanh vùng sẵn.
+
+⛔ Không chạy nghiệm thu toàn phần trước khi có hai con số đó: một lượt tiêu một
+   suất máy B (`DONG_THOI_MAY_B = 1`) và chặn mọi phiên khác.
