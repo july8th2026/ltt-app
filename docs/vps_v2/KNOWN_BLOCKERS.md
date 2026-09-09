@@ -155,6 +155,74 @@ mức cho thao tác phá huỷ).
 
 ---
 
+## ✅ B-08 · ĐÃ SỬA — trang của khách in nguyên lỗi thô ra màn hình
+
+Không phải vật cản nữa, nhưng ghi lại vì **hình dạng** của nó là thứ đáng nhớ,
+không phải bản vá.
+
+### Một rò rỉ, hai lối ra — và lối thứ hai suýt sống sót
+
+Ngày 09/09 vá lần một (`cf287794`): trang bán hàng **công khai** `/vps` in
+`LTT_VPS_PROXMOX_CA` và chữ `Proxmox` cho khách chưa đăng nhập.
+
+Vá xong, quét AST cả `apps/vps/` tìm **cùng hạng lỗi** — f-string mang tên biến
+ngoại lệ mà không nằm trong lời gọi `log.*` — ra 14 chỗ. Trong đó một chỗ đang
+sống:
+
+```
+jobs._danh_dau_loi:  ly_do = f"{type(exc).__name__}: {exc}"[:2000]
+                     ghi_su_kien(..., thong_diep=may.ly_do)
+```
+
+Và **cả hai** đầu ra đều là trang của khách:
+
+| Nơi in | Tệp |
+|---|---|
+| khối "Lý do" trên trang máy | `vps_chi_tiet.html:39` |
+| dòng phụ ở danh sách máy | `vps.html:398` |
+| cột chi tiết của nhật ký | `vps_chi_tiet.html:299` |
+
+Đối chứng (tiêm lại thân hàm cũ, chạy hai ca mới) in ra đúng chuỗi khách sẽ thấy:
+
+```
+{'thong_diep': 'ProxmoxError: 500 loi tai https://10.10.0.2:8006/api2/json/nodes/pve1'}
+```
+
+⇒ tên class Python + IP nội bộ + cổng `8006` + đường `/nodes/<node>/qemu/<vmid>`.
+
+⭐ **Bài học không phải "còn một chỗ nữa".** Là: chỗ thứ hai chỉ lộ ra vì lần vá
+   thứ nhất được nối tiếp bằng một lượt **quét theo hạng lỗi**, chứ không dừng ở
+   dòng đã sửa. Sửa cái mình nhìn thấy rồi đóng việc là cách bỏ sót cái còn lại.
+
+### Vá ở chỗ GHI, không ở chỗ HIỂN THỊ
+
+`nhan.MA_LOI`: mã lỗi → câu cho khách. Cùng bộ từ vựng mà `_ghi_thao_tac_hong`
+đang ghi vào `vps_thao_tac.ma_loi` — **một** bộ mã, không phải hai, để còn nối
+được hai hàng lại khi khách hỏi.
+
+⛔ `nhan.ma_loi()` **không** theo quy ước *"mã lạ trả về chính nó"* của
+`trang_thai()`/`su_kien()`. Ở đây thứ truyền vào từng là **chuỗi lỗi thô**, nên
+echo lại đúng bằng việc in lại cái vừa đi vá. `test_559` ghim điểm lệch này.
+
+⭐ Chi tiết kỹ thuật **không mất** — đó là điều kiện để bản vá đúng: nó ở
+`log.warning` và ở `vps_thao_tac.chi_tiet_loi` (giữ 180 ngày). Đổi một lỗi lộ
+liễu lấy một lỗi **im lặng** thì tốn nhiều giờ hơn, không ít hơn.
+
+### 🟡 Còn một thứ CỐ Ý không sửa
+
+`billing.py:240` đưa `str(ThieuCreditError)` vào cùng cột `ly_do`:
+
+```
+can 120 credit cho chu ky toi, so du con 30
+```
+
+Không rò gì nội bộ — không tên biến, không `Proxmox`, không class Python — và nó
+là câu khách **cần** đọc. Nó chỉ xấu: tiếng Việt không dấu. Đó là một việc về
+chữ nghĩa, không phải một lỗ rò, nên nó không đi kèm bản vá này. Ghi ra đây để
+lần sau ai đọc cột `ly_do` không tưởng là bỏ sót.
+
+---
+
 ## 🟢 B-07 · Nhãn `lifecycle` vẫn là `development`
 
 Giữ nguyên, và đó là kết luận chứ không phải quên.

@@ -321,3 +321,161 @@ def test_ly_do_ky_thuat_van_di_vao_LOG(caplog):
     assert "Proxmox" not in ly_do, "cau cho khach khong duoc nhac Proxmox"
     ghi = " ".join(x.getMessage() for x in caplog.records)
     assert "suc chua" in ghi, "khong ghi log ly do ky thuat"
+
+
+# ── 8. Trang MÁY cũng không được rò — cùng hạng lỗi, khác trang ────────────
+
+#: Thứ không bao giờ được có mặt trong một câu viết cho khách.
+#:
+#: Chốt **tập hợp**, không chốt số lượng: thêm một mã lỗi mới vào `nhan.MA_LOI`
+#: thì ca dưới tự soi nó, không cần ai nhớ sửa test.
+CAM = ("Proxmox", "LTT_VPS_", "8006", "Error", "Traceback", "upid", "UPID",
+       "qemu", "vmid")
+
+
+def test_moi_cau_trong_MA_LOI_deu_sach(moi_truong):
+    """Quét cả bảng, không quét một dòng ví dụ."""
+    from apps.vps import nhan
+
+    assert nhan.MA_LOI, "bang rong thi ca nay xanh rong"
+    for ma, cau in list(nhan.MA_LOI.items()) + [("<la>", nhan.MA_LOI_KHONG_RO)]:
+        for cam in CAM:
+            assert cam not in cau, f"cau cua ma {ma!r} co {cam!r}"
+
+
+def test_ma_loi_LA_khong_duoc_tra_ve_chinh_no(moi_truong):
+    """Điểm lệch có chủ ý so với `trang_thai()` và `su_kien()`.
+
+    Chỗ gọi `nhan.ma_loi` từng chứa **chuỗi lỗi thô**. Nếu hàm này giữ quy ước
+    "mã lạ trả về chính nó" thì một chuỗi thô đi vào sẽ đi thẳng ra trang — tức
+    bản vá tự vô hiệu hoá mình mà vẫn xanh.
+    """
+    from apps.vps import nhan
+
+    tho = "VpsJobError: Proxmox tu choi lenh: 500 tai /nodes/pve1/qemu/555"
+    ra = nhan.ma_loi(tho)
+    assert ra != tho
+    assert "Proxmox" not in ra
+
+
+def test_trang_may_KHONG_ro_loi_tho_khi_mot_thao_tac_hong(moi_truong):
+    """🔴 Đo được trên PRODUCTION 09/09/2026, cùng ngày với lần rò ở `/vps`.
+
+    `jobs._danh_dau_loi` ghi `f"{type(exc).__name__}: {exc}"` vào `may.ly_do`,
+    rồi đẩy **chính chuỗi đó** vào nhật ký. Cả hai đều là trang của khách, nên
+    một lệnh Proxmox hỏng hiện ra nguyên văn:
+
+        VpsJobError: Proxmox tu choi lenh: <lỗi thô, kèm đường /nodes/…/qemu/…>
+
+    Ca này đi qua **render thật** và phủ cả hai bề mặt trong một lượt, vì sửa
+    một chỗ mà quên chỗ kia là kết cục mặc định của một rò rỉ có hai lối ra.
+    """
+    from fastapi.testclient import TestClient
+
+    from apps.vps import jobs
+    from apps.vps.services.proxmox import ProxmoxError
+    from apps.vps.tables import VpsGateway, VpsInstance
+    from platform_core import credit
+    from platform_core.users import tao_nguoi_dung
+    from server.app import create_app
+
+    # Chuỗi mồi mang đúng hình dạng thứ Proxmox trả về thật.
+    THO = "500 loi tai https://10.10.0.2:8006/api2/json/nodes/pve1/qemu/555/status"
+
+    gen = moi_truong.get_session()
+    db = next(gen)
+    try:
+        u = tao_nguoi_dung(db, email="vps-ro@test.com",
+                           password="matkhau-tot-12", is_verified=True)
+        db.flush()
+        credit.nap(db, u.id, 100_000)
+        g = VpsGateway(ten="cong-ro", vung="sgp", ip_cong_khai="203.0.113.11")
+        db.add(g)
+        db.flush()
+        m = VpsInstance(user_id=u.id, plan_id="vps-vua", os_id="winsrv2022-gui",
+                        gateway_id=g.id, trang_thai="dang_chay", vmid=555)
+        db.add(m)
+        db.flush()
+        db.commit()
+        may_id, email = m.id, u.email
+
+        # Đúng đường mà production đi: một lệnh Proxmox hỏng giữa chừng.
+        jobs._danh_dau_loi(db, may_id, ProxmoxError(THO))
+
+        may = db.get(VpsInstance, may_id)
+        assert may.ly_do, "khong ghi ly do thi ca nay xanh rong"
+        assert THO not in may.ly_do
+        assert "Proxmox" not in may.ly_do
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    client = TestClient(create_app())
+    try:
+        login = client.get("/login")
+        token = re.search(r'name="csrf_token" value="([^"]+)"',
+                          login.text).group(1)
+        client.post("/login", data={"username": email,
+                                    "password": "matkhau-tot-12",
+                                    "csrf_token": token})
+        r = client.get(f"/vps/{may_id}")
+        assert r.status_code == 200, r.status_code
+        # Tiền đề: trang phải THẬT SỰ đang hiện khối lý do, nếu không mọi
+        # khẳng định "không có chuỗi cấm" ở dưới đều đúng một cách rỗng.
+        assert "Lý do" in r.text, "trang khong hien khoi ly do"
+        for cam in (THO, "10.10.0.2", "8006", "ProxmoxError", "qemu"):
+            assert cam not in r.text, f"trang may ro {cam!r}"
+    finally:
+        client.close()
+
+
+def test_chi_tiet_ky_thuat_van_di_vao_LOG_va_giu_duoc_MA(moi_truong, caplog):
+    """Cạnh chiếu ngược: sửa rò rỉ bằng cách **xoá** thông tin.
+
+    Người vận hành cần chuỗi thô để chẩn đoán, và cần **mã** để nối dòng này
+    với `vps_thao_tac.ma_loi`. Mất một trong hai là đổi một lỗi lộ liễu lấy một
+    lỗi im lặng.
+    """
+    import logging
+
+    from apps.vps import jobs
+    from apps.vps.services.proxmox import ProxmoxError
+    from apps.vps.tables import VpsEvent, VpsGateway, VpsInstance
+    from platform_core.users import tao_nguoi_dung
+
+    THO = "500 loi tai https://10.10.0.2:8006/api2/json/nodes/pve1"
+    gen = moi_truong.get_session()
+    db = next(gen)
+    try:
+        u = tao_nguoi_dung(db, email="vps-log@test.com",
+                           password="matkhau-tot-12", is_verified=True)
+        db.flush()
+        g = VpsGateway(ten="cong-log", vung="sgp", ip_cong_khai="203.0.113.12")
+        db.add(g)
+        db.flush()
+        m = VpsInstance(user_id=u.id, plan_id="vps-vua", os_id="winsrv2022-gui",
+                        gateway_id=g.id, trang_thai="dang_chay", vmid=556)
+        db.add(m)
+        db.flush()
+        db.commit()
+
+        with caplog.at_level(logging.WARNING, logger="apps.vps.jobs"):
+            jobs._danh_dau_loi(db, m.id, ProxmoxError(THO))
+
+        ghi = " ".join(x.getMessage() for x in caplog.records)
+        assert THO in ghi, "chi tiet ky thuat bi vut mat"
+        assert "proxmox_tu_choi" in ghi, "log khong mang MA de noi voi thao tac"
+
+        from sqlalchemy import select
+        e = db.execute(select(VpsEvent).where(VpsEvent.instance_id == m.id)
+                       .where(VpsEvent.loai == "loi")).scalars().first()
+        assert e is not None, "khong ghi su kien"
+        assert e.chi_tiet.get("ma_loi") == "proxmox_tu_choi"
+        assert THO not in str(e.chi_tiet), "su kien van mang chuoi tho"
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass

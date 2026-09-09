@@ -338,6 +338,42 @@ Và ba sửa **ngoài phạm vi** (`governance.py`, `restore_drill_schema.py`, b
 đo) không mục nào trong kế hoạch lường trước: kế hoạch khoá phạm vi vào `apps/vps`
 mà không hỏi *"thêm một bảng mới thì nền tảng đòi gì"*.
 
+### Thứ NĂM kế hoạch không nhìn thấy — và nó chỉ lộ ra SAU khi deploy
+
+Cả chín mục trên, cả bảng điểm, cả bộ 189 ca test đều đo **mã** và đo **render
+local**. Không dòng nào trong kế hoạch đặt câu hỏi:
+
+> *"Sau khi bản này chạy thật sau Cloudflare, một người lạ mở trang bán hàng
+> thì họ đọc được những chữ gì?"*
+
+Một lượt `curl` lên `https://app.lttstudios.com/vps` ngay sau deploy trả lời:
+họ đọc được `LTT_VPS_PROXMOX_CA` và chữ `Proxmox`. Rồi một lượt quét cùng **hạng
+lỗi** trên `apps/vps/` tìm ra chỗ thứ hai, trên trang máy của khách. Cả hai
+**có sẵn từ trước** chương trình này. Xem `KNOWN_BLOCKERS.md` B-08.
+
+⛔ Điều đáng nói không phải "kế hoạch bỏ lọt hai lỗi". Là: `RELEASE_SCORECARD.md`
+   đã **viết ra** hạn chế ấy — dòng *"⚠️ local, chưa phải `app.lttstudios.com`"*
+   nằm ngay trong bảng, và tôi đã đọc qua nó khi chấm điểm 95.
+
+⭐ **Một hạn chế đã biết và đã ghi không tự biến thành một phép đo.** Nó chỉ đổi
+   trạng thái khi có ai đó chạy một lệnh và đọc kết quả. Đây là ca thứ hai trong
+   cùng một ngày của cùng một hình dạng: `cua_so_yen` báo `RANH` cũng là một câu
+   trả lời **đúng cho một câu hỏi khác** câu tôi đang hỏi.
+
+⇒ Bản vá dài hạn không phải hai commit sửa chuỗi, mà là `tools/vps_quet_ro_ri.py`:
+
+```bash
+python tools\vps_quet_ro_ri.py
+```
+
+Chạy **sau mỗi lượt deploy**, cạnh `nghiem_thu_deploy.py`. Không nằm trong gate —
+gate phải chạy được khi không có mạng, và nó đo *commit ở cây*, còn công cụ này
+đo *bản đang phục vụ khách*. Hai câu hỏi khác nhau.
+
+Công cụ đòi **tiền đề** trước khi kết luận (HTTP 200 và ≥ 2 KB nội dung): một bộ
+quét trả "0 phát hiện" trên trang tải hỏng trông y hệt một bộ quét trả "0 phát
+hiện" trên trang sạch.
+
 ### Chi phí thật so với hình dung
 
 Kế hoạch cảnh báo *"đây KHÔNG phải việc một phiên"*. Thực tế: **một phiên**, không

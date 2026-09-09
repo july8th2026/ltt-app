@@ -14834,3 +14834,35 @@ msgstr "A long-running operation on one machine: who asked for it, what they wan
 #: apps/vps/routes.py
 msgid "Hệ thống đang bảo trì, tạm chưa nhận máy mới."
 msgstr "The service is under maintenance and is not taking new machines right now."
+
+#: apps/vps/nhan.py
+msgid "Hạ tầng từ chối lệnh này. Đội vận hành đã nhận được nhật ký; thử lại sau ít phút."
+msgstr "The infrastructure refused this command. Our operations team has the logs; try again in a few minutes."
+
+#: apps/vps/nhan.py
+msgid "Máy chủ xử lý quá lâu nên chúng tôi dừng chờ. Trạng thái máy có thể đã đổi — tải lại trang để xem."
+msgstr "The server took too long, so we stopped waiting. The machine's state may have changed — reload the page to check."
+
+#: apps/vps/nhan.py
+msgid "Lệnh chạy nhưng không hoàn tất. Đội vận hành đã nhận được nhật ký."
+msgstr "The command ran but did not finish. Our operations team has the logs."
+
+#: apps/vps/nhan.py
+msgid "Lệnh đã chạy xong nhưng máy không về đúng trạng thái mong muốn. Thử lại, hoặc liên hệ hỗ trợ."
+msgstr "The command finished but the machine did not reach the expected state. Try again, or contact support."
+
+#: apps/vps/nhan.py
+msgid "Tạm thời không đọc được trạng thái máy. Tải lại trang sau ít phút."
+msgstr "We cannot read the machine's state right now. Reload the page in a few minutes."
+
+#: apps/vps/nhan.py
+msgid "Thao tác không hoàn tất. Đội vận hành đã nhận được nhật ký."
+msgstr "The operation did not finish. Our operations team has the logs."
+
+#: apps/vps/nhan.py
+msgid "Ảnh chụp này không dùng được để khôi phục. Hãy chọn một ảnh khác."
+msgstr "This snapshot cannot be used to restore. Please pick another one."
+
+#: apps/vps/routes.py
+msgid "lý do"
+msgstr "reason"

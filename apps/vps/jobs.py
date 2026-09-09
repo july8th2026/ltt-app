@@ -26,7 +26,7 @@ from datetime import timedelta
 import logging
 import os
 
-from apps.vps import os_images, trang_thai_may
+from apps.vps import nhan, os_images, trang_thai_may
 from apps.vps.cost import dia_tong_gb, lay_plan
 from apps.vps.services import dinh_danh, mang, provisioning, tac_vu
 from apps.vps.services import router as bo_dinh_tuyen
@@ -771,22 +771,62 @@ def _ip_cong_khai(db, instance_id: str) -> str:
     return str(ip.dia_chi) if ip is not None else ""
 
 
+def _ma_loi_cua(exc: Exception) -> str:
+    """Ngoại lệ → **mã** lỗi, cùng bộ từ vựng mà `_ghi_thao_tac_hong` đang ghi.
+
+    Một bộ mã, không phải hai. Nếu hàm này đẻ ra bộ mã riêng thì cùng một sự cố
+    sẽ mang hai tên khác nhau ở `vps_thao_tac.ma_loi` và ở `may.ly_do`, và không
+    ai nối được hai hàng đó lại khi khách hỏi.
+    """
+    # `sao_luu` nạp muộn vì nó nạp ngược lại `jobs`; `ProxmoxError` thì đã có
+    # sẵn ở mức module nên dùng lại, đừng nạp bản thứ hai.
+    from apps.vps.services.sao_luu import SaoLuuError
+
+    ma = getattr(exc, "ma", "")          # họ `bo_cho.TacVuLoi` tự khai mã
+    if isinstance(ma, str) and ma:
+        return ma
+    if isinstance(exc, SaoLuuError):
+        return "anh_khong_dung"
+    if isinstance(exc, ProxmoxError):
+        return "proxmox_tu_choi"
+    return "khong_ro"
+
+
 def _danh_dau_loi(db, instance_id, exc: Exception) -> None:
-    """Ghi lý do vào máy để khách và admin đọc được, thay vì chỉ ném lên log."""
+    """Ghi lý do vào máy, **bằng câu viết cho khách**.
+
+    ⛔ Trước 09/09/2026 dòng này ghi `f"{type(exc).__name__}: {exc}"`, và cả hai
+       chỗ đọc nó — `may.ly_do` trên trang máy, và `thong_diep` trong nhật ký —
+       đều là **trang của khách**. Đo trên production: khách thấy nguyên văn
+       `VpsJobError: Proxmox tu choi lenh: …`, tức tên class Python cộng tên lớp
+       hạ tầng mà `services/proxmox.py` nói khách "không bao giờ nhìn thấy".
+
+    ⭐ Chi tiết kỹ thuật **không bị vứt** — đó là điều kiện để bản vá này đúng.
+       Nó đi vào `log.warning` (người vận hành đọc) và, với mọi đường đã mở một
+       thao tác, vào `vps_thao_tac.chi_tiet_loi` giữ 180 ngày. Đổi một lỗi lộ
+       liễu lấy một lỗi **im lặng** thì tốn nhiều giờ hơn, không ít hơn.
+    """
     try:
         db.rollback()
         may = db.get(VpsInstance, str(instance_id or ""))
         if may is None:
             return
+        ma = _ma_loi_cua(exc)
+        # Ghi thô ra log TRƯỚC khi ghi CSDL: nếu `commit` hỏng, thứ ta cần để
+        # chẩn đoán vẫn phải còn ở đâu đó.
+        log.warning("vps: may %r hong (%s): %s: %s",
+                    getattr(may, "id", instance_id), ma,
+                    type(exc).__name__, exc)
         # Tác vụ về rỗng: việc đã kết thúc — thất bại vẫn là kết thúc. Để nguyên
         # `tac_vu` là để lại một cái khoá mềm khiến khách không bấm được gì nữa
         # trên một máy đang lỗi, tức lấy mất đúng nút "Cài lại" mà họ cần.
         trang_thai_may.dat(may, vong_doi=trang_thai_may.LOI,
                            dien_quan_sat=trang_thai_may.KHONG_RO,
                            tac_vu=trang_thai_may.KHONG_CO,
-                           ly_do=f"{type(exc).__name__}: {exc}"[:2000])
-        provisioning.ghi_su_kien(db, may.id, "loi", boi="he_thong",
-                                 thong_diep=may.ly_do)
+                           ly_do=nhan.ma_loi(ma)[:2000])
+        # `ma_loi` vào sự kiện là mã, không phải câu: nhật ký được tra bằng mã,
+        # còn câu thì `_chi_tiet_doc_duoc` dựng lại lúc render.
+        provisioning.ghi_su_kien(db, may.id, "loi", boi="he_thong", ma_loi=ma)
         db.commit()
     except Exception:            # noqa: BLE001 - ghi lỗi không được che lỗi gốc
         log.exception("vps: khong ghi duoc trang thai loi cho %r", instance_id)

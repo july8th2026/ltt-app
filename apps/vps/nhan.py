@@ -154,6 +154,40 @@ SU_KIEN_XAU = frozenset({
     "bi_cach_ly",
 })
 
+#: Mã lỗi (`vps_thao_tac.ma_loi`, `TacVuLoi.ma`) → câu cho **khách** đọc.
+#:
+#: Đo trên production 09/09/2026: trang máy in ra cho khách nguyên văn
+#: `VpsJobError: Proxmox tu choi lenh: <lỗi thô của Proxmox>` — ở **hai** chỗ
+#: cùng lúc (`may.ly_do` và cột chi tiết của nhật ký). Cùng một hạng lỗi với
+#: lần rò trên trang bán hàng công khai, chỉ khác trang.
+#:
+#: ⛔ Không mã nào ở đây được nhắc tên `Proxmox`, tên biến môi trường, cổng
+#:    `8006`, hay tên class Python. `services/proxmox.py` viết rằng khách
+#:    "không bao giờ nhìn thấy" lớp đó — một câu lỗi cũng là một lần nhìn thấy.
+#:
+#: ⭐ Câu ở đây phải nói được **giờ khách làm gì**, không chỉ nói việc hỏng.
+#:    Một câu "Đã xảy ra lỗi" đúng nhưng vô dụng thì khách vẫn phải mở phiếu hỗ
+#:    trợ — tức ta không tiết kiệm được gì, chỉ giấu đi.
+MA_LOI = {
+    "proxmox_tu_choi": N_("Hạ tầng từ chối lệnh này. Đội vận hành đã nhận được "
+                          "nhật ký; thử lại sau ít phút."),
+    "tac_vu_qua_han": N_("Máy chủ xử lý quá lâu nên chúng tôi dừng chờ. Trạng "
+                         "thái máy có thể đã đổi — tải lại trang để xem."),
+    "tac_vu_that_bai": N_("Lệnh chạy nhưng không hoàn tất. Đội vận hành đã nhận "
+                          "được nhật ký."),
+    "dien_khong_dat": N_("Lệnh đã chạy xong nhưng máy không về đúng trạng thái "
+                         "mong muốn. Thử lại, hoặc liên hệ hỗ trợ."),
+    "khong_doc_duoc": N_("Tạm thời không đọc được trạng thái máy. Tải lại trang "
+                         "sau ít phút."),
+    "tac_vu_loi": N_("Thao tác không hoàn tất. Đội vận hành đã nhận được nhật ký."),
+    "anh_khong_dung": N_("Ảnh chụp này không dùng được để khôi phục. Hãy chọn "
+                         "một ảnh khác."),
+}
+
+#: Câu dùng khi mã lỗi lạ — xem `ma_loi()` để biết vì sao nó **không** trả về
+#: chính mã như mọi bảng khác trong tệp này.
+MA_LOI_KHONG_RO = N_("Thao tác không hoàn tất. Đội vận hành đã nhận được nhật ký.")
+
 #: Hậu tố mà `dieu_khien._lam` gắn vào khi một thao tác thất bại.
 _HAU_TO_LOI = "_that_bai"
 
@@ -224,3 +258,21 @@ def su_kien_xau(loai: str) -> bool:
     """Sự kiện này có phải tin xấu không — quyết định màu chấm trên nhật ký."""
     loai = str(loai or "").strip()
     return loai in SU_KIEN_XAU or su_kien_that_bai(loai)
+
+
+def ma_loi(ma: str) -> str:
+    """Câu cho khách, từ một **mã** lỗi.
+
+    ⚠️ Hàm này **không** theo quy ước "mã lạ trả về chính nó" của `trang_thai()`
+       và `su_kien()`, và sự lệch đó là chủ ý.
+
+       Ở những bảng kia, thứ truyền vào luôn là một mã do ta sinh ra, nên echo
+       nó lại cùng lắm là xấu. Ở đây thì không: chỗ gọi hàm này từng chứa
+       **chuỗi lỗi thô** (`f"{type(exc).__name__}: {exc}"`), nên "trả về chính
+       nó" đúng bằng việc in lại cái ta vừa đi vá. Fail-closed về phía im lặng.
+
+    Chi tiết kỹ thuật **không mất**: nó ở `log.warning` và ở
+    `vps_thao_tac.chi_tiet_loi` (giữ 180 ngày) — hai nơi người vận hành đọc.
+    """
+    ma = str(ma or "").strip()
+    return MA_LOI.get(ma, MA_LOI_KHONG_RO)

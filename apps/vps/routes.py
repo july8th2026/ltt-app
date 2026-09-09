@@ -223,6 +223,10 @@ _NHAN_KHOA = {
     "loi": N_("lỗi"),
     "cu": N_("tên cũ"),
     "moi": N_("tên mới"),
+    # `ma_loi` là **mã**, và `_gia_tri_doc_duoc` đổi nó thành câu. Ghi mã chứ
+    # không ghi câu vào `vps_event` là có chủ ý: nhật ký tra được bằng mã, và
+    # một câu đã dịch nằm trong dữ liệu thì đóng băng ngôn ngữ theo lúc GHI.
+    "ma_loi": N_("lý do"),
 }
 
 
@@ -236,6 +240,11 @@ def _gia_tri_doc_duoc(khoa: str, gt) -> str:
     """
     if khoa == "den" and isinstance(gt, str) and len(gt) >= 10:
         return f"{gt[8:10]}/{gt[5:7]}/{gt[0:4]}"
+    if khoa == "ma_loi":
+        # Mã → câu, và **dịch ngay tại đây**: `nhan.ma_loi` trả về msgid thô
+        # (`N_()` chỉ đánh dấu). Trả msgid ra template thì bản EN hiện tiếng
+        # Việt, vì template chỉ dịch những gì nó tự bọc `_()`.
+        return _t(nhan.ma_loi(str(gt)))
     return str(gt)
 
 
