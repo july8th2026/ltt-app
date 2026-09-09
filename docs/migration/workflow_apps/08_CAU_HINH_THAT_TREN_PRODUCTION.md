@@ -92,10 +92,33 @@ vad       frame_ms=30 · min_speech_s=0.3 · min_silence_s=0.8
 runtime   poll=180s · max_jobs=3 · round_robin qua nhiều tab
 ```
 
-⚠️ **`smart_silence.default` là `[B-ROLL: PAUSE]` còn `timeline.silence_text` là
-`[B-ROLL / PAUSE]`** — hai chuỗi khác nhau trong cùng một tệp cấu hình. Không
-được "chuẩn hoá" chúng: đường nào dùng chuỗi nào là một câu hỏi phải đo, không
-phải đoán.
+### ✅ S12 ĐÃ ĐÓNG — chỉ MỘT chuỗi tới được engine
+
+`timeline.silence_text` là `[B-ROLL / PAUSE]`, còn `timeline.smart_silence.default`
+là `[B-ROLL: PAUSE]`. Hai chuỗi khác nhau trong cùng một tệp. Đo bằng cách đọc
+đường gọi thật (`bot/worker.py:587`):
+
+```python
+silence_text = str(cfg_get(cfg, "timeline.silence_text",
+                   cfg_get(cfg, "timeline.smart_silence.default",
+                           "[B-ROLL / PAUSE]")))
+```
+
+⇒ `smart_silence.default` chỉ là **giá trị dự phòng của một giá trị đã có**.
+`timeline.silence_text` được khai, nên nó thắng, và `[B-ROLL: PAUSE]` **không
+bao giờ tới engine**. Đó là cấu hình chết.
+
+⚠️ Nhưng cạm bẫy còn nguyên ở **mã**, không ở cấu hình: hai điểm vào của bộ dựng
+dòng thời gian có **hai mặc định khác nhau**
+
+```
+segment/core.py:35   make_timeline_v2(..., silence_text="[B-ROLL: PAUSE]")
+segment/core.py:165  make_timeline(...,   silence_text="[B-ROLL / PAUSE]")
+```
+
+⇒ Một bản port quên truyền `silence_text` sẽ nhận **dấu hai chấm** thay vì **dấu
+gạch chéo**, và chỉ ở một trong hai đường. App `transcript` truyền tường minh
+(`chu_khoang_lang` mặc định `[B-ROLL / PAUSE]` — khớp production).
 
 ⭐ **36 hồ sơ tab**, mỗi tab khai `language` riêng (`vi`/`en`/rỗng). Đây là một
 năng lực thật của production mà audit chưa ghi: **ngôn ngữ theo từng nguồn**.
