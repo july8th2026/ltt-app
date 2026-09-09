@@ -206,6 +206,67 @@ def tran_token_ra() -> int:
         raise AiError("khong doc duoc ngan sach token cua model nha") from exc
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+#  Ngan sach RIENG cua tung thao tac — V6
+# ══════════════════════════════════════════════════════════════════════════════
+
+#: `(tran token ra, tran thoi gian giay)` cho nhung thao tac **da do** va thay
+#: mac dinh cua nen tang khong du. Thao tac khong co o day di theo
+#: `tran_token_ra()` va mac dinh cua `dieu_phoi`.
+#:
+#: 🔴 **Vi sao khai o day chu khong nang `ltt_llm.ngan_sach`.**
+#:
+#:    Cua `job` cua `ltt_llm` la mac dinh cho **moi** app dung model nha. Nang no
+#:    len vi mot lo 12 doan cua Auto Scan la bat moi app khac mang mot tran ma
+#:    khong ai do cho ho. Nhu cau la cua ta, nen ta khai no.
+#:
+#: ⭐ Va khai theo THAO TAC chu khong truyen o tung cho goi: bon cho goi
+#:    `goi_tinh_tien` hom nay, va cho thu nam viet ngay mai se **tu** nhan dung
+#:    ngan sach thay vi phai nho.
+#:
+#: 🔑 CON SO DAT THE NAO — va cho nay quan trong hon con so.
+#:
+#:    `docs/auto_scan_video_v4/evidence/20260909_tran_token_ra_chuyen_loi_thoai.md`
+#:    do voi ca hai rao da noi, 3 vong moi co lo:
+#:
+#:        lo 6 : 5.039 · 5.278 · 7.915 token   |  75,7 · 78,8 · 117,3 giay
+#:        lo 12: 10.248 · 9.642 · 6.948 token  | 151,0 · 142,6 · 102,3 giay
+#:
+#:    ⛔ Ban dau bao cao ay rut ra `ra(n) ~ 310 + 828n` tu HAI vong, roi vong
+#:       thu ba lat no: `max(lo 6) = 7.915` **lon hon** `min(lo 12) = 6.948`.
+#:       Hai phan bo chong len nhau, tuc do doc theo co lo khong tach duoc khoi
+#:       nhieu. Chinh bao cao do ket luan: **dat tran theo GIA TRI LON NHAT QUAN
+#:       SAT DUOC kem bien, dung dat theo cong thuc tuyen tinh chua du mau.**
+#:
+#:    ⇒ lon nhat quan sat: 10.248 token / 151,0 giay.
+#:      Dat 16.384 (~1,6x) va 300 giay (~2,0x).
+#:
+#: ⛔ **BAT BIEN — bao cao ay ghim lai, va bang nay ep no thanh CO HOC:**
+#:    *"Khong bao gio giao tran token ma khong giao tran timeout cung luot."*
+#:
+#:    Vi hau qua khong phai "sua duoc it hon" ma **sua xong he TE DI**: hong it
+#:    lan hon, nhung moi lan hong dat hon nhieu — `LuocDoSai` chi thu lai, con
+#:    cham tran thoi gian cho ra `AiMoHo`, thu DUNG lan chay va doi nguoi.
+#:
+#:    Mot `tuple` hai o lam mot nua khong the giao mot minh. Khong phai giao uoc.
+#:
+#: ⚠️ `qc_ngu_nghia` (lo 10) **chua tung chay voi model that**, nen no o day
+#:    khong phai vi da do — ma vi no la **cung mot hinh dang**: cung mot khoi
+#:    suy nghi chiem ~93% token ra, cung mot co lo hai chu so. Doi no hong mot
+#:    lan roi moi cho ngan sach la doi mot lan chay cua khach de phat hien mot
+#:    thu da biet truoc.
+NGAN_SACH_RA: dict[str, tuple[int, float]] = {
+    CHUYEN_LOI_THOAI.ma: (16_384, 300.0),
+    QC_NGU_NGHIA.ma: (16_384, 300.0),
+}
+
+
+def ngan_sach_cho(thao_tac: ThaoTac) -> tuple[int, float | None]:
+    """`(max_tokens, timeout_s)` cho mot thao tac. `0`/`None` = theo mac dinh."""
+    tra = NGAN_SACH_RA.get(thao_tac.ma)
+    return (0, None) if tra is None else (int(tra[0]), float(tra[1]))
+
+
 def cua_so_ngu_canh(thao_tac: ThaoTac) -> int:
     """Cua so ngu canh THAT cua model se dung.
 
@@ -490,7 +551,17 @@ def goi_tinh_tien(db, run, thao_tac: ThaoTac, messages: list, *,
 
     # ── 2. Goi ────────────────────────────────────────────────────────────
     try:
-        kq = goi(db, thao_tac, messages, ctx=ctx, temperature=temperature)
+        # 🔴 Duong TRA TIEN phai mang theo ngan sach cua thao tac.
+        #
+        #    `goi` da nhan `max_tokens`/`timeout_s` tu 09/09, nhung `goi_tinh_tien`
+        #    — **cua duy nhat cua moi lan goi co tinh tien**, va la cua ma bon
+        #    giai doan that su di qua — khong truyen chung xuong. Duong co, khong
+        #    ai di tren duong: mot lo 12 doan cham tran 4.096 cua nen tang va
+        #    `chuyen_loi_thoai` hong 6/6, trong khi mot tham so da san sang o
+        #    ham ngay duoi.
+        tran, cho = ngan_sach_cho(thao_tac)
+        kq = goi(db, thao_tac, messages, ctx=ctx, temperature=temperature,
+                 max_tokens=tran, timeout_s=cho)
     except AiMoHo as exc:
         _ghi(sd.MO_HO, ly_do=str(exc)[:200])
         raise
