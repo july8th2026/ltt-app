@@ -5,9 +5,6 @@ import pathlib
 
 import pytest
 
-from tests.rao_provider_retire import (  # noqa: F401
-    moi_provider_deu_song)   # ⏭️ PHAI GO O PHA 06
-
 from platform_core.agent.tools import (ToolParamsError, discover_tools,
                                        resolve_params_schema,
                                        validate_tool_params)
@@ -114,29 +111,29 @@ def test_app_khong_phu_hop_khong_bi_ep_toolspec():
 
 VALID_CASES = {
     "image.generate": {
-        "prompt": "Một thành phố tương lai", "model": "gemini-2.5-flash-image",
+        "prompt": "Một thành phố tương lai", "model": "hidream-o1",
         "aspect_ratio": "16:9", "count": 4,
     },
     "image.batch_generate": {
-        "prompt": "Bốn góc máy của một sản phẩm", "model": "gemini-2.5-flash-image",
+        "prompt": "Bốn góc máy của một sản phẩm", "model": "hidream-o1",
         "aspect_ratio": "1:1", "count": 4,
     },
     "image.upscale": {"image_key": "$s1.image_key", "preset": "fast"},
     "image.thumbnail": {
-        "topic": "Du lịch Việt Nam", "model": "gemini-2.5-flash-image",
+        "topic": "Du lịch Việt Nam", "model": "hidream-o1",
         "aspect_ratio": "16:9", "count": 1,
     },
     "text.prompt_package": {
         "operation": "director", "title": "Chiến dịch", "story": "Một câu chuyện đủ dài",
         "scene_count": 6, "duration_seconds": 30, "aspect_ratio": "16:9",
         "style": "cinematic", "audience": "general", "language": "vi",
-        "resources": [], "model": "gemini-2.5-flash",
+        "resources": [], "model": "qwen38-api",
     },
     "story.storyboard": {
         "operation": "storyboard", "title": "Chiến dịch",
         "story": "Một câu chuyện đủ dài", "scene_count": 6,
         "aspect_ratio": "16:9", "style": "cinematic", "resources": [],
-        "model": "gemini-2.5-flash",
+        "model": "qwen38-api",
     },
     "video.generate": {
         "prompt": "Máy quay tiến qua khu rừng", "model": "seedance-2.0-mini",
@@ -170,7 +167,7 @@ def test_params_that_toi_thieu_toi_da_hop_le(tool_name):
 
 @pytest.mark.parametrize(("tool_name", "params"), [
     ("image.generate", {"prompt": "x", "model": "model-khong-co", "count": 1}),
-    ("image.thumbnail", {"topic": "x", "model": "gemini-2.5-flash-image", "count": 5}),
+    ("image.thumbnail", {"topic": "x", "model": "hidream-o1", "count": 5}),
     ("video.generate", {"prompt": "x", "model": "seedance-2.0-mini", "resolution": "4k"}),
     ("video.subtitle", {"video_key": "v", "transcript": [], "quality": "ultra"}),
     ("video.upscale", {"video_key": "v", "target_height": 9999}),

@@ -8,9 +8,6 @@ import pytest
 
 from PIL import Image
 
-from tests.rao_provider_retire import (  # noqa: F401
-    moi_provider_deu_song)   # ⏭️ PHAI GO O PHA 06
-
 
 def _png(size=(96, 64), color=(220, 20, 30)) -> bytes:
     out = io.BytesIO(); Image.new("RGB", size, color).save(out, "PNG")

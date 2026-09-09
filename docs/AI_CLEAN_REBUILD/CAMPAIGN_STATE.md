@@ -27,10 +27,11 @@
 | ├ 05.6 | `autosubvideo` + phép kiểm thay `responseSchema` | ✅ `00d59086` | | |
 | ├ 05.7a | nâng `loi_ra_ngoai` lên nền tảng | ✅ `be1a6dad` | `test_846` 9 passed | |
 | └ 05.7 | `chataistudio` → `runtime_noi_bo.luong` | ✅ `a425d056` | 38 passed | `apps/chataistudio/luong_chat.py` |
-| **06** | Migrate IMAGE → LTT_IMAGE | 🟡 **2/3** | | |
+| **06** | Migrate IMAGE → LTT_IMAGE | ✅ **XONG** | 5 bánh cóc PASS | |
 | ├ 06.1 | `anhnoibo` → `dich_llm` | ✅ `fa5afeef` | 16+77 passed | `platform_core/image_gen/dich_llm.py` |
 | ├ 06.2 | `taoanh` → LTT_IMAGE (**gỡ 3 chế độ**) | ✅ | 84 passed · 5 bánh cóc PASS | `platform_core/image_gen/http_cong.py` |
-| └ 06.3 | `thumbnail` | ⬜ **kế tiếp** | | |
+| ├ 06.3 | `thumbnail` → LTT_IMAGE (**gỡ chữ-trong-ảnh**) | ✅ | 5 bánh cóc PASS | `PHA06_THUMBNAIL_CHU.md` |
+| └ 06.x | trả nợ do 06.2/05.x để lại (xem §Nợ) | ✅ | `rao_provider_retire` **đã hết hạn và bị xoá** | `platform_core/image_gen/{gia,khung_anh}.py` |
 | 07 | Delete all legacy runtime | ⬜ | — | — |
 | 08 | Delete legacy app surfaces | ⬜ | — | — |
 | 09 | Provider config / secret clean | ⬜ | — | — |
@@ -40,6 +41,31 @@
 | 13 | Commit / merge / deploy | ⬜ | — | — |
 | 14 | Remote GitHub hygiene | ⬜ | — | — |
 | 15 | Final repo compaction report | ⬜ | — | — |
+
+## 🔴 NỢ PHÁT HIỆN Ở 06.3 — bốn thứ pha trước để lại
+
+Pha 06.3 chạy phép kiểm rộng hơn các pha trước và tìm ra **bốn khoản nợ** mà
+06.2 và 05.x đã để lại. Ghi ra vì cả bốn cùng một hình dạng: **tôi nghiệm thu
+bằng một cụm test hẹp rồi commit.**
+
+| # | Nợ | Do pha | Đã trả ở 06.3 |
+|---|---|---|---|
+| N1 | `taoanh` bỏ rơi `aspect_ratio` — khách chọn 9:16 vẫn nhận 16:9 | 06.2 | `DieuPhoi(ti_le=)` + `platform_core/image_gen/khung_anh.py`, khung **hỏi cổng** chứ không tra bảng |
+| N2 | `taoanh` thu **5** credit/ảnh cho model mà `anhnoibo` bán **3** | 06.2 | nâng `gia.py` lên `platform_core/image_gen/` (lift thứ **năm**); ba app đọc chung |
+| N3 | `test_187`, `test_134`, `test_207` đỏ vì `_goi_gemini` đã xoá | 06.2 | `tests/gia_dieu_phoi_anh.py` — một khuôn dùng chung thay ba bản vá |
+| N4 | `test_190` đỏ vì `credit.giu_cho` đã xoá khỏi `chataistudio` | 05.7 | viết lại quanh cửa `mo_luong` |
+| N5 | `prompt_ai_ommi/manifest.py` vẫn khai `providers: ["gemini"]` | 05.5 | → `["ltt_llm"]`; 5 agent tool lấy lại bộ chọn model |
+
+⭐ **Bài học cơ học, không phải "lần sau cẩn thận hơn":** một pha đổi chữ ký của
+   một hàm mà tệp test khác vá vào ⇒ phải `grep` tên hàm ấy trên `tests/` trước
+   khi commit. Đó là một lệnh, không phải một thói quen.
+
+### Nợ CÒN LẠI (không trả ở đây, có chủ)
+
+- **51 tệp `HISTORY_ONLY` chưa có phép kiểm chứng minh** → pha 09, là điều kiện
+  vào pha 12.
+- **Ma trận `LEGACY_SURFACE_MATRIX.csv`** vừa được đóng sổ lần đầu: 19/520 dòng
+  `DONE_*`. 501 dòng còn `OPEN` là **thật**, không phải chưa cập nhật.
 
 ## 🔴 TỰ KIỂM 09/09 — đối chiếu 13 yêu cầu gốc, và BA chỗ đã lệch
 

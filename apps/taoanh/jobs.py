@@ -11,6 +11,17 @@
 `semantic_inpaint`, `outpaint`, `style_transfer` không map được nên bị gỡ —
 xem `_CHE_DO_MAP`. Chúng **không** được nguỵ trang thành `edit`.
 
+## ⚠️ HAI THỨ SỬA THÊM 09/09 (pha 06.3), cả hai đều do 06.2 làm hỏng
+
+    tỉ lệ ảnh   `aspect_ratio` bị BỎ RƠI — khách chọn 9:16 vẫn nhận 16:9, vì
+                bản 06.2 không đọc tham số ấy nữa. Nay đi qua `DieuPhoi(ti_le=)`,
+                và khung do **cổng khai**, không do một bảng chép tay.
+    giá         06.2 để lại `unit_credit("hidream-o1")` → rơi về giá mặc định
+                **5**, trong khi `anhnoibo` bán **đúng model đó** với giá **3**
+                (và ảnh tham chiếu 9). Cùng model hai giá là lỗ hổng doanh thu
+                mà chính chú thích bảng giá cảnh báo. Nay cả ba app đọc
+                `platform_core.image_gen.gia`.
+
 ## Hợp đồng handler giữ nguyên
 
 Idempotent theo `job_id` · báo tiến độ qua `ctx` · NÉM khi thất bại để nền
@@ -46,22 +57,41 @@ _CHE_DO_MAP = {"generate": "t2i", "edit": "edit"}
 _MAX_REFS = 2
 
 
-def _canvas_reference_keys(params: dict, owner_id: str) -> list[str]:
-    """Normalise typed Canvas image inputs and enforce workflow ownership."""
+def _canvas_reference_keys(params: dict, owner_id: str, storage=None) -> list[str]:
+    """Normalise typed Canvas image inputs and enforce workflow ownership.
+
+    🔴 Pha 06.3 trả lại **hai chốt** mà bản 06.2 đánh rơi:
+
+      tồn tại  bản trước bỏ `storage.exists`. Một khoá đã bị xoá sẽ đi hết
+               đường: dịch prompt (tốn một lượt LLM), cấp vé, gửi máy B — rồi
+               hỏng ở đó với một thông điệp của máy khác. Hỏng sớm, hỏng rõ.
+      trần     bản trước còn ném ở con số **8**, là năng lực của động cơ CŨ.
+               `hidream-o1` khai `max_refs: 2`; hai con số trong một tệp thì
+               một trong hai đang nói dối.
+    """
     raw: list[object] = []
     if params.get("image_key"):
         raw.append(params["image_key"])
     raw.extend(list(params.get("image_keys") or []))
     keys: list[str] = []
     for value in raw:
-        key = str(value or "").replace("\\", "/").strip("/")
+        key = str(value or "").replace(chr(92), "/").strip("/")
         parts = key.split("/")
         if not owner_id or len(parts) < 3 or parts[1] != owner_id:
             raise ValueError(_t('Ảnh đầu vào không thuộc tài khoản đang chạy workflow.'))
         if key not in keys:
             keys.append(key)
-    if len(keys) > 8:
-        raise ValueError(_t('Một node Image chỉ nhận tối đa 8 ảnh tham chiếu.'))
+    if len(keys) > _MAX_REFS:
+        raise ValueError(_t(
+            'Model nội bộ nhận tối đa {n} ảnh tham chiếu.').format(n=_MAX_REFS))
+    if keys:
+        if storage is None:
+            from platform_core.storage import get_storage
+            storage = get_storage()
+        for key in keys:
+            if not storage.exists(key):
+                raise ValueError(_t(
+                    'Ảnh đầu vào không còn tồn tại: {khoa}').format(khoa=key))
     return keys
 
 
@@ -100,14 +130,15 @@ def _dieu_phoi():
 def handle(params: dict, ctx=None) -> dict:
     """Sinh 1–4 ảnh từ prompt tự do qua LTT_IMAGE; trả danh sách khoá ảnh."""
     from apps.taoanh.features import clean_mode
-    from apps.taoanh.manifest import unit_credit
     from platform_core.image_gen import cong_render, dieu_phoi
+    from platform_core.image_gen import gia as GIA
 
     prompt = str(params.get("prompt", "")).strip()
     if not prompt:
         raise ValueError(_t('Chưa nhập mô tả ảnh (prompt).'))
     owner_id = str(params.get("owner_id", "")) or "unknown"
     job_id = getattr(ctx, "job_id", "") or "adhoc"
+    ti_le = str(params.get("aspect_ratio") or "16:9") or "16:9"
     try:
         count = max(1, min(int(params.get("count", 1)), 4))
     except (TypeError, ValueError):
@@ -144,7 +175,7 @@ def handle(params: dict, ctx=None) -> dict:
         ctx.progress(10, "đang chuẩn bị")
     try:
         kq = dp.chay(job_id=str(job_id), prompt=prompt, model=_MODEL,
-                     mode=che_do, ref_keys=ref_keys, so_anh=count,
+                     mode=che_do, ref_keys=ref_keys, so_anh=count, ti_le=ti_le,
                      tien_to_khoa=f"taoanh/{owner_id}")
     except cong_render.BanError as e:
         # ⛔ Máy bận KHÔNG phải "thất bại". Ném `DangBan` của nền tảng để job về
@@ -167,9 +198,11 @@ def handle(params: dict, ctx=None) -> dict:
     if ctx is not None:
         ctx.progress(100, "xong")
 
-    # 🔴 TÍNH TIỀN THEO ẢNH THẬT SỰ NHẬN ĐƯỢC, không theo số đã xin.
+    # 🔴 TÍNH TIỀN THEO ẢNH THẬT SỰ NHẬN ĐƯỢC, và theo BẢNG GIÁ CỦA MODEL NHÀ —
+    #    cùng một hàm `anhnoibo` dùng, nên cùng model không thể ra hai giá.
     return {"image_keys": keys, "count": len(keys), "prompt": prompt,
             "prompt_da_gui": kq.prompt_da_gui, "da_dich": kq.da_dich,
-            "edit_mode": che_do_cu,
-            "credit_cost": len(keys) * unit_credit(_MODEL), "errors": [],
+            "edit_mode": che_do_cu, "aspect_ratio": ti_le,
+            "phien_ban_gia": GIA.PHIEN_BAN_GIA,
+            "credit_cost": GIA.tinh(so_anh=len(keys), che_do=che_do), "errors": [],
             costing.KHOA_GOI_PROVIDER: [{"model": _MODEL, "count": len(keys)}]}

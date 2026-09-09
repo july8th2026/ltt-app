@@ -34,6 +34,7 @@ DA_DI_TRU = (
     "apps/autosubvideo/ai_workflows.py",
     "apps/anhnoibo/jobs.py",
     "apps/taoanh/jobs.py",
+    "apps/thumbnail/jobs.py",
 )
 
 #: 🔴 Tệp **TỰ GỌI** model nhà ⇒ phải tự giành suất admission.

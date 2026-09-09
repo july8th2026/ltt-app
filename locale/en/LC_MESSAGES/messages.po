@@ -14845,3 +14845,43 @@ msgstr "The image machine is busy{them}. Please try again later."
 # mà không để lại dấu vết nào.
 msgid "Model trả lời rỗng — thử lại hoặc đổi mô tả."
 msgstr "The model returned an empty reply; try again or reword the description."
+
+#: platform_core/image_gen/dieu_phoi.py
+msgid "Không hỏi được máy tạo ảnh về khung ảnh: {loi}"
+msgstr "Could not ask the image machine which frame sizes it serves: {loi}"
+
+#: platform_core/image_gen/khung_anh.py
+msgid "Model nội bộ không dựng được tỉ lệ {ti_le}."
+msgstr "The in-house model cannot produce a {ti_le} frame."
+
+#: apps/taoanh/jobs.py
+msgid "Ảnh đầu vào không còn tồn tại: {khoa}"
+msgstr "That input image no longer exists: {khoa}"
+
+#: apps/taoanh/manifest.py
+msgid "Sinh từ một đến bốn ảnh từ mô tả tự do, bằng model nội bộ."
+msgstr "Generate one to four images from a free-form description, in house."
+
+#: apps/taoanh/manifest.py
+msgid "Sinh một lô 2–4 ảnh đồng nhất từ cùng mô tả."
+msgstr "Generate a batch of 2–4 consistent images from one description."
+
+#: apps/thumbnail/jobs.py
+msgid "Model nội bộ không vẽ được chữ trong ảnh. Hãy để trống tiêu đề và phụ đề, rồi thêm chữ bằng công cụ chỉnh sửa của bạn."
+msgstr "The in-house model cannot draw text into an image. Leave the title and subtitle empty, then add your own text in an editor."
+
+#: apps/thumbnail/jobs.py
+msgid "Chỉ dùng được tối đa {n} ảnh tham chiếu."
+msgstr "At most {n} reference images can be used."
+
+#: apps/thumbnail/manifest.py
+msgid "Sinh ảnh nền thumbnail YouTube theo phong cách và bố cục."
+msgstr "Generate YouTube thumbnail backgrounds by style and composition."
+
+#: apps/thumbnail/templates/thumbnail.html
+msgid "PNG/JPEG/WebP · tối đa 8 MB · dùng làm ảnh nguồn để remix, không công khai"
+msgstr "PNG/JPEG/WebP · 8 MB max · used as the source image for a remix, never public"
+
+#: apps/thumbnail/templates/thumbnail_fragment.html
+msgid "Ảnh sinh ra KHÔNG có chữ — model nội bộ không vẽ được chữ đọc được. Thêm tiêu đề bằng công cụ chỉnh sửa của bạn."
+msgstr "The generated images carry NO text — the in-house model cannot draw legible lettering. Add your title in an editor."

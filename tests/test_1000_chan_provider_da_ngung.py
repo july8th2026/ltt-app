@@ -136,11 +136,7 @@ def test_dieu_phoi_goi_gemini_khong_ra_mang(bit_mang):
 # ⏭️ `taoanh` ĐÃ DI TRÚ ở pha 06.2 — tiền đề biến mất, chuyển sang `test_1002`.
 
 
-def test_thumbnail_khong_ra_mang(bit_mang):
-    from apps.thumbnail import jobs
-    with pytest.raises(providers.ProviderDaNgung):
-        jobs._goi_gemini("anh bia", "16:9", "khoa-gia")
-    assert bit_mang == [], f"co luot ra mang: {bit_mang}"
+# ⏭️ `thumbnail` ĐÃ DI TRÚ ở pha 06.3 — tiền đề biến mất, chuyển sang `test_1002`.
 
 
 # ⏭️ `taovideo` ĐÃ DI TRÚ ở pha 05.4 — phép kiểm chặn-Gemini của nó **bị gỡ
@@ -170,7 +166,7 @@ def test_thumbnail_khong_ra_mang(bit_mang):
 def test_model_ref_enum_rong_thi_TU_CHOI_chu_khong_tha_cua():
     """🔴 Lỗ fail-open mà pha 04 **kích hoạt**, và vì thế pha 04 phải vá.
 
-    `taoanh/manifest.py:64,149` và `thumbnail/manifest.py:85` khai
+    `taoanh/manifest.py:64,149` và `thumbnail/manifest.py:85` từng khai
     `"providers": ["gemini"]`. Gemini ngừng ⇒ `model_options` trả rỗng ⇒
     `rule["values"]` rỗng. Bản cũ viết:
 
@@ -179,17 +175,20 @@ def test_model_ref_enum_rong_thi_TU_CHOI_chu_khong_tha_cua():
     Danh sách rỗng là **falsy**, nên phép kiểm **tự tắt** và `image.generate`
     nhận bất kỳ chuỗi nào — kể cả `"model-khong-co"`.
 
-    Lỗ có sẵn từ trước, nhưng chưa ai chạm vì enum chưa bao giờ rỗng. Việc
-    retire provider biến nó từ **tiềm ẩn** thành **đang mở**, nên nó thuộc
-    changeset này chứ không phải một việc ngoài phạm vi.
+    ⚠️ Pha 06 đã trỏ hai manifest ấy sang `ltt_image`, nên enum **không còn
+       rỗng** trên đường thật. Phép kiểm vì thế **không được** dựa vào chuyện
+       enum rỗng nữa — nó sẽ chỉ đo một tình cờ. Bản này chốt mệnh đề gốc bằng
+       hai đầu vào **không phụ thuộc** tập enum hiện tại:
+
+         · một tên bịa       → phải từ chối dù enum rỗng hay đầy;
+         · một tên của nhà cung cấp ĐÃ NGỪNG → phải từ chối kể cả khi nó vẫn
+           nằm trong `REGISTRY` để tra lịch sử.
     """
     from platform_core.agent.tools import ToolParamsError, validate_tool_params
 
     with pytest.raises(ToolParamsError):
         validate_tool_params("image.generate",
                              {"prompt": "x", "model": "model-khong-co", "count": 1})
-    # …và cả một tên model TRÔNG hợp lệ cũng phải bị từ chối, vì hiện KHÔNG
-    # provider ảnh nào được phép phục vụ tool này.
     with pytest.raises(ToolParamsError):
         validate_tool_params("image.generate",
                              {"prompt": "x", "model": "gemini-2.5-flash-image",

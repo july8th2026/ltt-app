@@ -3,9 +3,6 @@ from __future__ import annotations
 
 import pytest
 
-from tests.rao_provider_retire import (  # noqa: F401
-    moi_provider_deu_song)   # ⏭️ PHAI GO O PHA 06
-
 
 @pytest.fixture()
 def db_user(tmp_path, monkeypatch):
@@ -36,10 +33,10 @@ def _plan():
                     "story": "Một hướng dẫn ngắn về dựng phim.",
                     "scene_count": 3, "aspect_ratio": "16:9"}},
         {"id": "image", "tool": "image.generate", "after": [], **base, "fanout": 2,
-         "params": {"prompt": "Một thành phố tương lai", "model": "gemini-2.5-flash-image",
+         "params": {"prompt": "Một thành phố tương lai", "model": "hidream-o1",
                     "aspect_ratio": "16:9", "count": 1}},
         {"id": "thumb", "tool": "image.thumbnail", "after": [], **base,
-         "params": {"topic": "Du lịch Việt Nam", "model": "gemini-2.5-flash-image",
+         "params": {"topic": "Du lịch Việt Nam", "model": "hidream-o1",
                     "aspect_ratio": "16:9", "count": 1}},
         {"id": "video", "tool": "video.generate", "after": [], **base,
          "params": {"prompt": "Máy quay tiến qua khu rừng", "model": "seedance-2.0-mini",

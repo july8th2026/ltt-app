@@ -41,7 +41,6 @@ def portal(tmp_path, monkeypatch):
                        f"sqlite:///{(tmp_path / 'pricing.db').as_posix()}")
     monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
     monkeypatch.setenv(devkeys.PEPPER_ENV, PEPPER)
-    monkeypatch.setenv("GEMINI_API_KEY", "stub-key-not-used")
     for name in costing.RATE_ENV.values():
         monkeypatch.delenv(name, raising=False)
     limits.reset()
@@ -55,9 +54,12 @@ def portal(tmp_path, monkeypatch):
 
     Base.metadata.create_all(get_engine())
 
+    # 🔴 Chỉ thay MÁY VẼ, không thay gì khác: dựng prompt, lưu trữ, báo
+    #    credit và hình dạng kết quả đều chạy thật. Trước pha 06.3 chỗ này vá
+    #    `thumbnail_jobs._goi_gemini`; hàm ấy đã bị xoá cùng động cơ Gemini.
     import apps.thumbnail.jobs as thumbnail_jobs
-    monkeypatch.setattr(thumbnail_jobs, "_goi_gemini",
-                        lambda *a, **k: b"\x89PNG\r\n\x1a\n" + b"0" * 100)
+    from tests.gia_dieu_phoi_anh import tiem as _tiem_dieu_phoi
+    _tiem_dieu_phoi(monkeypatch, thumbnail_jobs)
 
     from server.app import create_app
 
@@ -276,9 +278,13 @@ def test_the_ui_path_still_prices_itself(portal):
             job_type="thumbnail.generate",
             params={"topic": "ui", "count": 2, "owner_id": user_id})
         db.commit()
+        from apps.thumbnail.manifest import _cost
         from platform_core import credit
 
-        assert credit.so_da_giu(db, job.id) == 10, "5 credit per image"
+        # 🔴 Đọc HÀM GIÁ, không gõ lại con số. Con số đổi 5 → 3 ngày 09/09 khi app
+        #    đổi model; mệnh đề *"đường UI tự tính giá của nó"* thì không đổi, và
+        #    một hằng số gõ tay ở đây chỉ đo được rằng ai đó chưa sửa nó.
+        assert credit.so_da_giu(db, job.id) == _cost({"count": 2})
     finally:
         _close(gen)
 

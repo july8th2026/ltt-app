@@ -24,7 +24,7 @@
     "apps/autosubvideo/transcription.py": 9,
     "apps/chataistudio/features.py": 4,
     "apps/chataistudio/manifest.py": 1,
-    "apps/chataistudio/routes.py": 5,
+    "apps/chataistudio/routes.py": 4,
     "apps/chataistudio/sidecar_client.py": 2,
     "apps/chataistudio/templates/chataistudio_admin.html": 9,
     "apps/ltt_voice/manifest.py": 1,
@@ -41,7 +41,7 @@
     "apps/prompt_ai_ommi/services/storyboard.py": 10,
     "apps/prompt_ai_ommi/templates/prompt_ai_ommi.html": 7,
     "apps/prompt_ai_ommi/templates/prompt_ai_ommi_workspace.html": 2,
-    "apps/taoanh/jobs.py": 5,
+    "apps/taoanh/jobs.py": 1,
     "apps/taoanh/manifest.py": 2,
     "apps/taoanh/routes.py": 6,
     "apps/taoanh/templates/image.html": 2,
@@ -54,7 +54,7 @@
     "apps/taovideo/manifest.py": 2,
     "apps/taovideo/routes.py": 17,
     "apps/taovideo/templates/taovideo.html": 5,
-    "apps/thumbnail/jobs.py": 5,
+    "apps/thumbnail/jobs.py": 1,
     "apps/thumbnail/manifest.py": 4,
     "apps/thumbnail/routes.py": 9,
     "apps/thumbnail/templates/thumbnail.html": 5,
@@ -113,5 +113,5 @@
     "server/templating.py": 6,
     "server/usage_rate_limit.py": 1
   },
-  "tong": 741
+  "tong": 732
 }
