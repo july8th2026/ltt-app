@@ -170,22 +170,69 @@ dịch*. Bốn thứ dưới đây đều thật, đều không phải việc c�
      khớp docstring là **hạ** một bánh cóc đang bảo vệ thật; sửa docstring cho
      khớp mã thì giữ nguyên mức bảo vệ. Hai hướng đi hai nơi khác hẳn nhau.
 
-## 5c. ⚠️ MỘT TÁC DỤNG PHỤ CỦA CHÍNH CHIẾN DỊCH — tự khai
+## 5c. 🔴 MỘT CẢNH BÁO TÔI ĐÃ ĐƯA RA, VÀ NÓ SAI
 
-Chiến dịch **đã hạ mốc `check_ruff`** (09/09): `B904` 24→21, `F401` 416→415,
-`F841` 25→23. Mức giảm ấy có thật — nó đến từ 21 tệp chiến dịch xoá.
+Chiến dịch đã hạ mốc `check_ruff` (09/09): `B904` 24→21, `F401` 416→415,
+`F841` 25→23 — mức giảm đến từ 21 tệp chiến dịch xoá.
 
-⛔ Nhưng hạ mốc là một **hành động MỘT PHÍA**: một cây **chưa hoà trunk** vẫn mang
-   đủ 21 tệp ấy, nên số đếm của nó vượt mốc mới và gate của nó **đỏ ở một bước
-   nó không gây ra**. Đường ra là hoà trunk, không phải sửa gì.
+Tôi tự khai điều này như một **tác dụng phụ**, với lập luận: *"một cây chưa hoà
+trunk vẫn mang đủ 21 tệp, nên số đếm vượt mốc mới và gate của nó đỏ ở một bước
+nó không gây ra"*.
 
-⭐ Tôi ghi ra vì chính lý do này mà tôi **không** hạ mốc `nuot loi lang le`
-   (đo được **50** / mốc 62 trên trunk) và **không** hạ mốc `mypy`, dù cả hai đều
-   giảm thật: cây của phiên `ltt-llm-api-http-guide` đo **62**, đúng bằng mốc.
-   Hạ xuống 50 lúc này là làm đỏ một cây chưa làm gì sai.
+⛔ **Lập luận ấy sai**, và phiên `ltt-llm-api-http-guide` bắt được. Đo lại:
 
-⇒ Luật rút ra: **hạ mốc sau khi mọi cây đã hoà, không phải lúc vừa giảm.**
-  Mốc là tài sản **dùng chung**; người hạ nó không phải người trả giá.
+```
+tools/check_ruff.moc la mot TEP DUOC GIT THEO DOI, moi nhanh giu ban rieng:
+  admin-mvp-v3                          B904=21  F401=415  F841=23
+  claude/ltt-llm-master-upgrade-ddcfc9  B904=26  F401=416  F841=25
+```
+
+⇒ Cây chưa hoà chạy **mốc của chính nó** với **mã của chính nó** — xanh. Khi hoà,
+  nó nhận **cả hai cùng lúc**: mốc thấp hơn *và* 21 tệp đã xoá. Số đếm tụt cùng
+  nhịp với mốc. **Không có cửa sổ nào để ai đỏ oan.**
+
+⭐ **Vì sao tôi sai** mới đáng giữ: tôi **khớp mẫu** vào một bài học có thật —
+   *"bản vá MỘT PHÍA phạt người sửa đúng"* — mà **không kiểm cơ chế này có cùng
+   hình dạng không**. Bài học ấy đúng cho trạng thái **toàn cục** (một khoá, một
+   bảng, một biến môi trường). Mốc ở đây không toàn cục — nó đi theo nhánh, tức
+   đi **cùng** mã biện minh cho nó.
+
+⇒ Luật đúng, hẹp hơn bản tôi viết lần đầu: **hạ mốc chỉ nguy hiểm khi mốc sống
+  NGOÀI cây.** Thấy một bánh cóc đỏ ở cây chưa hoà thì **so mốc của hai nhánh
+  trước, đừng chẩn đoán mã.**
+
+## 5d. MỘT PHÉP KIỂM KHÔNG BAO GIỜ ĐỎ ĐƯỢC
+
+*(ví dụ của phiên `ltt-llm-api-http-guide`, họ đề nghị ghi kèm tên)*
+
+Họ dựng một "phép phân định" cho việc model trả về rỗng:
+
+```
+reasoning / predicted_n = 34.210 / 12.000 = 2,851
+                           8.458 /  3.000 = 2,819     -> "ti le giu nguyen"
+```
+
+⛔ Tử số là **KÝ TỰ**, mẫu số là **TOKEN**. Đó là *ký tự trên một token* — một
+   **hằng số của bộ tách token**, quanh 2,8 dù model làm gì. Một phép kiểm **không
+   bao giờ đỏ được**, và màu xanh của nó được đọc thành bằng chứng.
+
+⭐ Bằng chứng **đúng** nằm ngay trong cùng hai dòng và không cần chia gì:
+   `predicted_n` chạm **đúng trần** ở cả hai mức (model bị cắt, không tự dừng), và
+   `ky_tu_content = 0` ở **cả hai** — nhân ngân sách bốn lần, khách vẫn nhận 0 ký tự.
+
+Họ tự rút ở `4b89bf94` sau khi phiên `ltt-voice-98-upgrade` bắt được.
+
+### ⭐ Bốn biến thể, một gốc
+
+| Ai | Sai ở đâu |
+|---|---|
+| họ | `git log -- <tệp>` **quá hẹp** → *"không có commit sửa"* đọc thành *"chưa sửa"* |
+| tôi | `git diff 0d1ffe5a..HEAD` **quá rộng** → suýt báo một lỗ hổng của pha 08 |
+| họ | ký tự / token — **đúng đơn vị, sai đại lượng** |
+| tôi | §5c — **khớp mẫu vào một bài học đúng, cho một cơ chế khác hình dạng** |
+
+Gốc chung: **hỏi một câu gần đúng rồi nhận câu trả lời như thể nó là câu mình
+muốn hỏi.**
 
 ### Và một phép đo đóng lại nghi vấn "thu 0"
 
