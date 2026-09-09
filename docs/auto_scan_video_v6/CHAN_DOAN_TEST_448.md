@@ -188,3 +188,61 @@ bốn lần mà vẫn ra **0 ký tự**. Nếu điều đó đúng cho prompt th
 
 ⛔ Không chạy nghiệm thu toàn phần trước khi có hai con số đó: một lượt tiêu một
    suất máy B (`DONG_THOI_MAY_B = 1`) và chặn mọi phiên khác.
+
+---
+
+## 7. Prompt THẬT của `chuyen_loi_thoai` nhỏ hơn fixture 7,6 lần — đo 10/09
+
+Phiên `LLM LTT` đo trên máy B, prompt thường, đầu vào **13.527 token**, 8 lượt,
+hai trần (3.000 và 12.000): **4/8 lượt trả `content` rỗng**, hình dạng **lưỡng
+cực** — lượt thành công dùng 561–1.197 token rồi tự dừng, lượt hỏng đốt trọn
+ngân sách rồi trả rỗng, không lượt nào ở giữa.
+
+Họ ghi rõ một giới hạn, và nó rơi đúng vào địa hạt này: *"chưa đo ở ngữ cảnh
+ngắn nên chưa biết nó có phải đặc thù ngữ cảnh dài — prompt `chuyen_loi_thoai`
+của ASV có thể ngắn hơn nhiều."*
+
+**Đo được, dựng bằng chính `long_tieng.loi_nhac` trên dữ liệu nguồn thật của bộ
+nghiệm thu:**
+
+| cỡ lô | ký tự prompt | ước token |
+|---|---|---|
+| 4 | 2.389 | ~683 |
+| 6 | 3.343 | ~955 |
+| **12** (`DOAN_MOI_LO`) | **6.261** | **~1.789** |
+| 24 | 12.069 | ~3.448 |
+
+⇒ Lô đầy của ASV vào khoảng **1.800 token đầu vào**, tức **7,6 lần nhỏ hơn**
+  fixture 13.527 token. Kết quả 4/8 **chưa được thiết lập** cho ngữ cảnh của
+  ASV; muốn biết thì phải đo lại ở ~1.800 token.
+
+⚠️ Và đây là đo **đầu vào**, còn hỏng nằm ở **đầu ra**. Kích thước đầu vào có
+   dẫn tới hình dạng lưỡng cực hay không thì chưa ai đo. Đừng đọc bảng này
+   thành *"ASV không dính"*.
+
+### 🔴 Một mâu thuẫn giữa hai phép đo, và nó chặn một bản vá đang được đề nghị
+
+| nguồn | prompt | lượt THÀNH CÔNG dùng bao nhiêu token RA |
+|---|---|---|
+| `3eae396d` (§lô 12) | prompt THẬT của `chuyen_loi_thoai`, lô 12 | **10.248 / 9.642 / 6.948**, `finish_reason=stop` |
+| `LLM LTT` (10/09) | prompt thường, đầu vào 13,5K | **561 / 579 / 647 / 1.197**, `stop` |
+
+Hai con số cách nhau một bậc. Chúng **không mô tả cùng một lời gọi**, nên không
+được trộn.
+
+⛔ **Hệ quả trực tiếp:** đề nghị *"hạ trần xuống 3.000, phát hiện rỗng, thử lại
+   3 lần"* rút từ hàng dưới. Áp nó cho ASV thì trần **3.000 nằm DƯỚI** nhu cầu
+   **10.248** mà hàng trên đo được — tức đặt trần dưới sàn nhu cầu, đúng cái
+   hình dạng `phanh-luon-an-te-hon-khong-co-phanh` đã có tên trong kho: một
+   trần dưới sàn biến thất bại thành **mặc định**, và ba lần thử lại đều cắt ở
+   cùng chỗ.
+
+⇒ Phép đo phải làm: chạy `chuyen_loi_thoai` **qua `goi_tinh_tien`**, prompt
+  THẬT, lô 12, **nhiều lượt**, ghi `finish_reason` + `token_ra` + `len(content)`
+  cho từng lượt. Hai câu hỏi cần tách:
+
+  1. ở ngữ cảnh ~1.800 token, tỉ lệ `content` rỗng là bao nhiêu;
+  2. lượt **thành công** thật sự dùng bao nhiêu token ra — 1.200 hay 10.248.
+
+  Câu 2 quyết định trần; câu 1 quyết định có cần thử lại hay không. Đặt trần
+  trước khi trả lời câu 2 là đoán.
