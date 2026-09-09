@@ -161,21 +161,45 @@ def _lag() -> str:
     return ra if ra is not None else "?"
 
 
-def governance_lech() -> list[str]:
-    """Tep governance nao cua cay nay KHAC trunk.
+def governance_lech() -> tuple[list[str], list[str]]:
+    """`(cu, di_truoc)` - tep governance da CU, va tep cay nay DI TRUOC trunk.
 
-    So blob SHA, khong so noi dung: git da bam san, va phep so nay dung ke ca
-    khi mot ben thieu han tep do.
+    🔴 **Phep so hai chieu la SAI, va no sai ve phia HANH DONG THUA.**
+
+       Ban dau ham nay chi so `HEAD:<tep>` voi `TRUNK:<tep>` roi bao "lech".
+       Do 09/09, ngay tren chinh cay viet ra no: cay di TRUOC trunk 3 commit,
+       va cong cu bao *"LECH trunk o 3 tep -> `git merge admin-mvp-v3` truoc
+       khi tin mot luot gate"*. Loi khuyen ay khong sai vo hai — no bao nguoi
+       ta lam mot viec KHONG lam gi ca, va lam the giua mot chien dich dang do.
+
+    ⭐ Thu phan biet duoc hai chieu la **diem hoa** (`merge-base`), khong phai
+       hai dau mut. Voi moi tep, so ba blob:
+
+           HEAD == goc  va  TRUNK != goc   ->  trunk doi, ta CU     (phai gop)
+           HEAD != goc  va  TRUNK == goc   ->  ta doi, ta DI TRUOC  (binh thuong)
+           ca hai != goc                   ->  PHAN KY             (phai gop, se co xung dot)
+
+    So blob SHA chu khong so noi dung: git da bam san, va phep so nay dung ke
+    ca khi mot ben thieu han tep do.
     """
-    lech: list[str] = []
+    goc = _git_thu("merge-base", "HEAD", TRUNK)
+    cu: list[str] = []
+    di_truoc: list[str] = []
     for t in TEP_GOVERNANCE:
         cua_ta = _git_thu("rev-parse", f"HEAD:{t}")
         cua_trunk = _git_thu("rev-parse", f"{TRUNK}:{t}")
         if cua_trunk is None:
             continue          # trunk chua co tep nay - khong ket luan gi
-        if cua_ta != cua_trunk:
-            lech.append(t)
-    return lech
+        if cua_ta == cua_trunk:
+            continue
+        cua_goc = _git_thu("rev-parse", f"{goc}:{t}") if goc else None
+        if cua_goc is not None and cua_ta == cua_goc:
+            cu.append(t)                      # chi trunk doi
+        elif cua_goc is not None and cua_trunk == cua_goc:
+            di_truoc.append(t)                # chi ta doi
+        else:
+            cu.append(t)                      # phan ky - van phai gop
+    return cu, di_truoc
 
 
 def _bay_gio() -> str:
@@ -189,7 +213,7 @@ def _bay_gio() -> str:
 def _trang_thai() -> int:
     tt = doc()
     ho_so = str(tt.get("ho_so", "NORMAL"))
-    lech = governance_lech()
+    cu, di_truoc = governance_lech()
     print(f"Cay        : {GOC}")
     print(f"Nhanh      : {_nhanh()}   HEAD {_git('rev-parse', '--short', 'HEAD')}")
     print(f"Trunk      : {TRUNK}   (cay nay thieu {_lag()} commit cua trunk)")
@@ -200,11 +224,16 @@ def _trang_thai() -> int:
         print(f"  baseline   : {tt.get('baseline_sha', '?')}")
         print(f"  pham vi    : {tt.get('pham_vi', '?')}")
         print(f"  bat luc    : {tt.get('bat_dau', '?')}")
-    if lech:
-        print(f"GOVERNANCE : LECH trunk o {len(lech)} tep:")
-        for t in lech:
+    if cu:
+        print(f"GOVERNANCE : CU o {len(cu)} tep (trunk da di tiep):")
+        for t in cu:
             print(f"  - {t}")
         print(f"  -> `git merge {TRUNK}` truoc khi tin mot luot gate o cay nay.")
+    elif di_truoc:
+        print(f"GOVERNANCE : cay nay DI TRUOC trunk o {len(di_truoc)} tep "
+              "- khong phai loi:")
+        for t in di_truoc:
+            print(f"  - {t}")
     else:
         print("GOVERNANCE : khop trunk")
     print("\nLuat: docs/00_LTT_OPERATING_CONTRACT.md muc 4.10")

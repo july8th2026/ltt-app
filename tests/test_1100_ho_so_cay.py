@@ -228,3 +228,72 @@ def test_hop_dong_co_muc_4_10() -> None:
     assert "## 4.10" in van
     for trang_thai in hsc.TRANG_THAI:
         assert trang_thai in van, f"hop dong khong noi ve `{trang_thai}`"
+# -- 6. Governance: PHAN BIET "cu" voi "di truoc" --------------------------
+
+def _kho_governance(tmp_path: Path, tep: str, ai_sua: str) -> Path:
+    """Kho git hai nhanh. `ai_sua` = "toi" hoac "trunk"."""
+    kho = tmp_path / ("gov_" + ai_sua)
+    kho.mkdir()
+
+    def g(*a: str) -> None:
+        subprocess.run(["git", *a], cwd=str(kho), check=True,
+                       capture_output=True)
+
+    g("init", "-q", "-b", "trunk-gia")
+    g("config", "user.email", "kiem@ltt.local")
+    g("config", "user.name", "kiem")
+    (kho / tep).parent.mkdir(parents=True, exist_ok=True)
+    (kho / tep).write_text("ban goc", encoding="utf-8")
+    g("add", tep)
+    g("commit", "-q", "--no-verify", "-m", "goc")
+    g("checkout", "-q", "-b", "nhanh-cua-toi")
+    if ai_sua == "toi":
+        (kho / tep).write_text("ban goc + phan cua toi", encoding="utf-8")
+        g("add", tep)
+        g("commit", "-q", "--no-verify", "-m", "toi sua governance")
+    else:
+        g("checkout", "-q", "trunk-gia")
+        (kho / tep).write_text("trunk da di tiep", encoding="utf-8")
+        g("add", tep)
+        g("commit", "-q", "--no-verify", "-m", "trunk sua governance")
+        g("checkout", "-q", "nhanh-cua-toi")
+    return kho
+
+
+def test_governance_phan_biet_CU_voi_DI_TRUOC(tmp_path: Path,
+                                              monkeypatch: pytest.MonkeyPatch
+                                              ) -> None:
+    """Mot cay DI TRUOC trunk khong duoc bao la CU.
+
+    Loi that, do 09/09 tren chinh cay viet ra cong cu nay: no di truoc trunk
+    3 commit, va `trang-thai` bao "LECH trunk -> git merge admin-mvp-v3".
+    Loi khuyen ay khong sai vo hai - no bao nguoi ta lam mot viec KHONG lam gi
+    ca, giua mot chien dich dang do. Sai so day ve phia HANH DONG THUA.
+
+    Thu phan biet duoc hai chieu la DIEM HOA, khong phai hai dau mut.
+    """
+    tep = "docs/00_LTT_OPERATING_CONTRACT.md"
+    monkeypatch.setattr(hsc, "GOC", _kho_governance(tmp_path, tep, "toi"))
+    monkeypatch.setattr(hsc, "TRUNK", "trunk-gia")
+    monkeypatch.setattr(hsc, "TEP_GOVERNANCE", (tep,))
+    cu, di_truoc = hsc.governance_lech()
+    assert di_truoc == [tep]
+    assert cu == [], ("cay DI TRUOC bi bao la CU -> nguoi doc se `git merge` "
+                      "mot thu khong co gi de gop")
+
+
+def test_governance_van_bat_duoc_cay_CU(tmp_path: Path,
+                                        monkeypatch: pytest.MonkeyPatch
+                                        ) -> None:
+    """Doi chung: chieu nguoc lai phai VAN bao `cu`.
+
+    Thieu phep kiem nay thi mot ban sua "luon tra di_truoc" cung xanh - va bo
+    do khi ay bat duoc 0 cay cu, dung thu no sinh ra de bat.
+    """
+    tep = "tools/gate.py"
+    monkeypatch.setattr(hsc, "GOC", _kho_governance(tmp_path, tep, "trunk"))
+    monkeypatch.setattr(hsc, "TRUNK", "trunk-gia")
+    monkeypatch.setattr(hsc, "TEP_GOVERNANCE", (tep,))
+    cu, di_truoc = hsc.governance_lech()
+    assert cu == [tep]
+    assert di_truoc == []
