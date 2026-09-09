@@ -55,7 +55,13 @@ rồi mới cắt. Một bản port "chèn tại `t`" chạy được, ra file n
 ⭐ Năm module engine đều **thuần hàm**: nhận dữ liệu, trả dữ liệu, không đụng
 Sheet/Drive/GPU. Đó là lý do bot này là **ứng viên số một cho App đầu tiên**.
 
-## Hồ sơ STT — KHÁC `bot_transcript`, và khác một cách có hậu quả
+## Hồ sơ STT — KHÁC `bot_transcript`, và còn khác THEO NGÔN NGỮ
+
+⚠️ Production khai `beam_size_vi=5 / beam_size_en=1` và `best_of_vi=3 /
+best_of_en=1`. Nên hồ sơ của bot này không phải một bộ số mà là một **hàm của
+`language`** — đã dựng thành `moc_tu_vad_trong_vi` / `_en` trong
+`platform_core/stt/ho_so.py`, và thiếu ngôn ngữ là một **lỗi**, không phải một
+lần đoán.
 
 ```python
 whisper_model.transcribe(audio_path,
@@ -78,16 +84,21 @@ hồ sơ của mình. Không có "tham số mặc định hợp lý".
 
 ## PARITY MATRIX
 
+⚠️ **Giá trị lấy từ `configs/bot_config_pause.json` ĐANG CHẠY.** Chỗ lệch nặng
+nhất: `max_pause_ms` là **15000**, còn mặc định trong mã là **2500** — gấp 6
+lần. Một phép kiểm parity dùng mặc định trong mã sẽ kẹp mọi khoảng lặng xuống
+2,5 giây, và bản port vẫn "chạy đúng".
+
 | Năng lực | Mức | Hành vi legacy | Đo bằng gì | Ca vàng |
 |---|---|---|---|---|
-| Khớp mốc mờ | **P0** | `fuzzy_span_search(threshold)` | mốc nào khớp, ở chỉ số từ nào | plan 4 mốc + audio thật |
-| Clamp `pause_ms` | **P0** | `[min_pause_ms, max_pause_ms]` | so từng mốc | có sẵn |
+| Khớp mốc mờ | **P0** | `fuzzy_threshold=` **0.65** | mốc nào khớp, ở chỉ số từ nào | plan 4 mốc + audio thật |
+| Clamp `pause_ms` | **P0** | **`[50, 15000]`** — mã mặc định `[120, 2500]`, lệch **6 lần** ở trần | so từng mốc | có sẵn |
 | Bỏ mốc chồng nhau | **P0** | giữ `priority` nhỏ hơn | tập mốc còn lại | dựng 2 mốc chồng |
 | Giãn cách tối thiểu | **P0** | `min_gap_s=0.8` | khoảng cách các lần lặng | |
 | Cắt ở điểm IM, không ở mốc | **P0** | `find_silence_point` (RMS) | lệch giữa mốc và điểm cắt | ⚠️ **dễ mất nhất** |
 | Dịch mốc transcript | **P0** | `calculate_cumulative_silence` | mọi mốc sau lần chèn thứ n | |
 | Tổng thời lượng ra | **P0** | vào + tổng lặng | so số giây | |
-| Cache STT | P1 | theo hash audio | | |
+| Cache STT | P1 | theo hash audio + model + ngôn ngữ + **tên hồ sơ** | lần hai không gọi model | |
 | `pause_type` / `reason` | P2 | chỉ để ghi log | | |
 
 ## S5 ĐÃ ĐÓNG — `find_silence_point`, và nó đúng là mục dễ mất nhất

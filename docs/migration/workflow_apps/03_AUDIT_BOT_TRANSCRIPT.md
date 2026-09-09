@@ -69,18 +69,22 @@ tức quyết định đầu ra. Xem bảng bốn hồ sơ ở `07_CROSS_BOT_SYN
 
 ## PARITY MATRIX
 
+⚠️ **Giá trị dưới đây lấy từ `configs/` ĐANG CHẠY**, không từ mặc định trong mã —
+xem `08_CAU_HINH_THAT_TREN_PRODUCTION.md` §1. Chúng lệch nhau ở năm chỗ, và mỗi
+chỗ lệch là một phép đo parity sẽ sai nếu dùng nhầm nguồn.
+
 | Năng lực | Mức | Hành vi legacy | Đo bằng gì | Ca vàng |
 |---|---|---|---|---|
-| VAD phân vùng tiếng | **P0** | `vad_speech_segments(audio)` | số vùng, tổng thời lượng tiếng | 1 audio ≥10 phút |
+| VAD phân vùng tiếng | **P0** | `frame_ms=30 · min_speech_s=0.3 · min_silence_s=0.8 · pad_s=0.15 · thr_db_above_noise=12.0` | số vùng, tổng thời lượng tiếng | 1 audio ≥10 phút |
 | STT có mốc từ | **P0** | `word_timestamps=True` bắt buộc | mỗi đoạn phải có `words` | `_validate_words_presence_or_error` |
-| Ràng buộc độ dài đoạn | **P0** | `segment.min_s=3.0`, `max_s=6.0` | phân bố độ dài | ca vàng |
+| Ràng buộc độ dài đoạn | **P0** | `segment.min_s=` **1.5** `, max_s=6.0` — và whisper còn tầng riêng `min_segment_s=2.5 / max_segment_s=5.5` | phân bố độ dài | ca vàng |
 | Không hai đoạn tiếng trùng nhau liên tiếp | **P0** | `_validate_no_consecutive_duplicate_speech` | ném lỗi | có sẵn |
 | Schema đầu ra nghiêm ngặt | **P0** | `_validate_output_segments_strict` | so schema | có sẵn |
 | Cache STT theo hash audio | P1 | `_stt_cache_lookup/save` | lần hai không gọi model | |
-| Đoạn `silence` khai được | P1 | `include_silence` | có/không | |
+| Đoạn `silence` khai được | P1 | `include_silence=True`, `silence_text=` **`[B-ROLL / PAUSE]`**, `silence_chunk_s=` **5.0**, `min_silence_keep=2.0` | có/không + so từng ký tự nhãn | |
 | Sửa văn bản sau STT | P1 | `comprehensive_fixer_v5` | so từng ký tự trên ca vàng | |
 | Lịch chạy theo giờ | P2 | `schedule_col` | — | `DROP` — LTT có hàng đợi |
-| Sửa bằng LLM | P2 | `gemini_corrector` | ngữ nghĩa | `DEFER` |
+| Sửa bằng LLM | P2 | `enable_gemini_correction=` **False** trên production | — | `DEFER` — và nó **đã tắt sẵn**, nên `DEFER` không mất gì |
 
 ⭐ Bốn phép kiểm P0 **đã tồn tại trong chính legacy** dưới dạng hàm validate. Đó
 là món quà của bot này: chúng chuyển thẳng thành phép kiểm parity, không phải

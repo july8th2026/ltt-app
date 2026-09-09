@@ -182,7 +182,7 @@ phụ thuộc hơn ở **mọi** trục — dòng mã, số model, số kho ngo�
 | S8 | ~~`configs/` thật~~ | — | **ĐÓNG 09/09** — đọc từ `D:\FULL AUTO VIDEO`, xem `08` |
 | S9 | ~~đổi thứ tự build~~ | — | **ĐÓNG 09/09**: giữ thứ tự pack, `transcript` trước |
 | S10 | ~~`mood.py` chỉ có ở bản chạy~~ | — | **ĐÓNG 10/09** — đã vào `apps/video_assembly` |
-| **S11** | sửa parity matrix `03`/`04`/`06` theo bảng đính chính `08` §1 | 08·09·11 | **mở** |
+| S11 | ~~sửa parity matrix theo `08` §1~~ | — | **ĐÓNG 10/09** — `03`/`04`/`06` đã lấy giá trị đang chạy |
 | S12 | ~~hai chuỗi `silence_text`~~ | — | **ĐÓNG 10/09** — `08` §2: chỉ một chuỗi tới engine |
 | S13 | ~~hồ sơ STT của pause là hàm của `language`~~ | — | **ĐÓNG 10/09** — `07` §2 |
 | S14 | ~~`sequential` là đường P0~~ | — | **ĐÓNG 10/09** — `06` §S14, đã áp vào App |

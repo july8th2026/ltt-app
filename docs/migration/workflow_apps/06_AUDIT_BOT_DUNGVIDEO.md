@@ -84,17 +84,27 @@ phải một nút bấm.
 
 ## PARITY MATRIX
 
+⚠️ **Giá trị lấy từ `configs/pipeline.yaml` ĐANG CHẠY** (`08` §1 và §4). Hai
+chỗ audit ban đầu nói sai: chế độ khớp là `sequential` chứ không phải
+`semantic`, và tự chấm điểm **đang bật** chứ không phải `DEFER`.
+
+⛔ Còn một khối P0 mà audit ban đầu **không biết là nó tồn tại**, vì nó sống
+hoàn toàn trong cấu hình: `transitions.speech_to_speech` — một thuật toán chấm
+điểm có trọng số (`semantic .35 · text_marker .35 · temporal_gap .3 ·
+duration_bonus .1`, ngưỡng 0.3/0.7) với **~90 dấu hiệu diễn ngôn** hai thứ
+tiếng.
+
 | Năng lực | Mức | Đo bằng gì |
 |---|---|---|
 | 13 giai đoạn đúng thứ tự, tuỳ chọn đúng chỗ | **P0** | nhật ký giai đoạn |
-| Chọn clip khớp lời | **P0** | tập clip chọn ra, theo thứ tự — trên bộ đầu vào cố định |
-| Lọc trùng / chuyển động / chất lượng | **P0** | tập clip bị loại |
+| Chọn clip khớp lời | **P0** | **`mode=sequential`** (production) — dãy `(đoạn → clip)` **đúng thứ tự**, không phải tập hợp |
+| Lọc trùng / chuyển động / chất lượng | **P0** | `phash=5` · `motion_threshold=null` · `yolo=on` — tập clip bị loại |
 | Dòng thời gian tuần tự | **P0** | mốc mỗi clip |
 | Ghép video | **P0** | thời lượng · codec · số khung |
-| Trộn tiếng (mức nhạc/lời) | **P0** | đo LUFS |
-| Cháy phụ đề | **P0** | có/không · style · font tồn tại |
-| Demucs tách nhạc | P1 | tuỳ chọn |
-| Tự chấm điểm | P2 | `DEFER` |
+| Trộn tiếng (mức nhạc/lời) | **P0** | `music_target_lufs=-26` · `true_peak=-2` · `lra=7` · ducking `ratio=16, thr=-32dB, attack=15ms, release=600ms` |
+| Cháy phụ đề | **P0** | `sentence` · `max_chars_per_line=42` · `max_lines=2` · font tồn tại |
+| Demucs tách nhạc | P1 | `htdemucs_ft` · `two_stems` · cuda |
+| Tự chấm điểm | **P1** | `enable: true` trên production (không phải P2 như audit ban đầu) — `skip_whisper=true`, `skip_yolo=false` |
 | NVENC khi máy có | P1 | codec đầu ra — ⚠️ máy không có bộ mã hoá phần cứng thì **không kết luận được** |
 
 ⛔ **Không so từng byte tệp video.** Bằng nhau từng byte không đạt được qua hai

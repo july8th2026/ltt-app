@@ -4,7 +4,7 @@
 > nguồn và `docs/00_LTT_OPERATING_CONTRACT.md`. Một bảng chép tay không có cách
 > nào tự biết nó đã cũ — cơ chế đó đã nói sai năm lần trong kho này.
 
-Cập nhật lần cuối: **2026-09-10 01:20**.
+Cập nhật lần cuối: **2026-09-10 01:25**.
 Nguồn: `docs/migration/workflow_apps/01_SOURCE_MANIFEST.md`.
 
 | Phase | Trạng thái | Bằng chứng | Chặn | Kế |
@@ -56,21 +56,22 @@ hồ sơ STT đổi từ tên App (`transcript`) sang tên **năng lực**
 (`moc_tu_vad_ngoai`), và slug `gem` — chuỗi con của `gemini` trong
 `providers.py` — đổi thành `prompt_canh`.
 
-## Nợ mở — bảng đầy đủ ở `07_CROSS_BOT_SYNTHESIS.md` §5
+## Sổ nợ — `S1`–`S14` ĐÃ ĐÓNG HẾT
 
-`S1`–`S10` đã đóng. `S10` đóng cùng Phase 11: `engine/music/mood.py` (7.698
-byte, chỉ có ở bản chạy) đã vào kho.
+Mười bốn mục, đóng trong hai ngày. Bốn mục cuối (`S11`–`S14`) sinh ra từ chính
+việc đọc cấu hình đang chạy, và cả bốn đều là **đo lại**, không phải xây thêm.
 
-Còn lại **bốn**, và cả bốn đều là *đo lại*, không phải *xây thêm*:
-`S11` (sửa parity matrix theo `08` §1) · `S12` (hai chuỗi `silence_text`) ·
-`S13` (hồ sơ STT của pause là hàm của `language` — **đã làm** trong
-`platform_core/stt/ho_so.py`, còn phải sửa `07` §2) · `S14` (`sequential` là
-đường P0 — **đã áp** vào `video_assembly`, còn phải sửa `06`).
+⛔ **Nhưng "hết nợ" không có nghĩa là "xong".** Thứ chưa có, và phải nói thẳng:
 
-⛔ Chưa làm, và phải nói rõ: **chưa có fixture parity nào chạy trên dữ liệu
-thật**. Bốn App có hợp đồng, ranh giới và phép kiểm đơn vị; chúng **chưa** được
-so với legacy trên một tệp âm thanh hay một thư mục clip thật. Đó là phần còn
-lại của Phase 12–15.
+| Còn thiếu | Vì sao nó chưa làm được |
+|---|---|
+| **fixture parity trên dữ liệu thật** | cần audio/clip mẫu — chưa có bộ nào an toàn để dùng |
+| **E2E chạy thật qua worker** | cần một lượt job đi hết hàng đợi → worker → artifact |
+| **kiểm trình duyệt trên URL công khai** | bốn App đổi giao diện; hợp đồng §9 đòi chốt trên `app.lttstudios.com` |
+| **đo `vram_min_mb` thật** cho `video_assembly` | con số 8000 hiện là **ước tính**, bốn model một job |
+
+⇒ Bốn App có **hợp đồng, ranh giới và phép kiểm đơn vị**. Chúng **chưa** được so
+với legacy trên một tệp thật. Đó là Phase 12–15, và nó cần dữ liệu mẫu.
 
 ## Hồ sơ vận hành của cây này
 
