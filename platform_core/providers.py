@@ -325,17 +325,30 @@ REGISTRY: dict[str, Provider] = {
                "429 = BẬN, không phải lỗi — đánh dấu lỗi cho key ở đây sẽ tự tắt "
                "model nhà sau 5 lần (D-005). Gọi qua platform_core/llm/dieu_phoi.py."),
     ),
+    # ⛔ PLENX ĐÃ XOÁ — AI CLEAN REBUILD V2, 10/09/2026. Cùng không gian với ba
+    #    mục trên: *"các api ngoài hệ thống trừ api byteplus thì ta cần dọn và
+    #    xoá hết."* PLENX là một cổng ngoài, không phải BytePlus.
+    #
+    # 📊 Số liệu đứng sau quyết định, không phải suy đoán — đếm trên CSDL
+    #    production 10/09: **1 khoá, 4 lượt gọi từ trước tới nay, im từ 08/09**.
+    #    Đường video đang sống là WanGP (LTT VIDEO V2.1), không phải cổng này.
+    #
+    # ⚠️ **CÁI MẤT, nói thẳng để đảo lại được bằng MỘT commit:** `kling-3.0` và
+    #    `seedance-2.0-pro` rời khỏi catalog video. BytePlus vẫn phục vụ
+    #    `seedance-2.0`, `-fast`, `-mini`, nên nhóm video **không chết**; thứ
+    #    mất là hai bậc model, và đó là một quyết định **sản phẩm** đã được
+    #    chủ dự án ra, không phải một hệ quả kỹ thuật tôi tự chọn.
+    #
+    # ⭐ Giữ `is_active=False` vì cùng lý do cơ học ở khối trên: `da_ngung()` trả
+    #    `False` cho một id **vắng mặt**, nên xoá hẳn dòng này sẽ **tắt** cổng
+    #    fail-closed thay vì siết nó.
     "plenx": Provider(
-        id="plenx", display_name="PLENX (Seedance/Kling video)",
-        auth_style=AUTH_X_API_KEY,
-        base_url="https://api.plenxai.com/api/v1/developer",
-        categories=(APIKEY_CAT_VIDEO,), async_poll=True,
-        models=(
-            ModelInfo("seedance-2.0", (APIKEY_CAT_VIDEO,)),
-            ModelInfo("seedance-2.0-pro", (APIKEY_CAT_VIDEO,)),
-            ModelInfo("kling-3.0", (APIKEY_CAT_VIDEO,)),
-        ),
-        notes="Key dạng pk_...; video async: POST /generate/video -> GET /status/{id}.",
+        id="plenx", display_name="PLENX video (da xoa)",
+        auth_style="", base_url="", categories=(), models=(),
+        async_poll=False,
+        notes="XOA 2026-09-10 (AI CLEAN REBUILD V2). Cong video ngoai, khong "
+              "phai BytePlus. Do 10/09: 1 khoa, 4 luot, im tu 08/09.",
+        is_active=False,
     ),
 }
 
