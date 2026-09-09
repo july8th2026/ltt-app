@@ -208,7 +208,7 @@ def _doc_cac_canh(db, kho, run, ci, ban_ghi: dict, ctx) -> tuple:
             kq = ai.goi_tinh_tien(db, run, ai.DOC_CANH, messages,
                                   stage=pipeline.EDIT_PLAN, item_key=c.ma,
                                   ctx=ctx)
-            h = hc.doc_hieu_canh(kq.get("noi_dung") or "", c.ma)
+            h = hc.doc_hieu_canh(kq, c.ma)
         except ai.AiMoHo:
             # ⛔ Mo ho KHONG duoc nuot: khong biet model da chay chua, nen khong
             #    duoc thu lai va khong duoc danh dau xong. So cai da ghi

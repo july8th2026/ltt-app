@@ -66,6 +66,40 @@ BUOC_TIEP = {
     "da_xoa": N_("Máy đã bị xoá. Không khôi phục được."),
 }
 
+#: Mã tác vụ (`trang_thai_may.TAC_VU`) → câu người đọc.
+#:
+#: Đây là thứ trả lời câu *"vì sao trang không đổi gì sau khi tôi bấm"*. Trước
+#: VPS V2 không có chỗ nào để hỏi, nên câu trả lời duy nhất là một lời nói dối
+#: phát ra ngay lúc bấm ("Đã tắt" cho một máy chưa tắt).
+#:
+#: ⚠️ Mọi nhãn ở đây đều là thì **đang diễn ra**. Một nhãn quá khứ ("Đã tắt")
+#:    trong bảng này sẽ nói dối đúng vào lúc việc chưa xong.
+TAC_VU = {
+    "dang_bat": N_("Đang bật"),
+    "dang_tat": N_("Đang tắt"),
+    "dang_kd_lai": N_("Đang khởi động lại"),
+    "dang_chup": N_("Đang chụp ảnh"),
+    "dang_khoi_phuc": N_("Đang khôi phục"),
+    "dang_dung_lai": N_("Đang cài lại"),
+    "dang_xoa": N_("Đang xoá"),
+    "dang_cap_phat": N_("Đang tạo"),
+}
+
+#: Mã bước con của một thao tác → câu người đọc.
+#:
+#: Mã trong CSDL, câu ở đây — cùng khuôn với `trang_thai`. Ghi thẳng tiếng Việt
+#: vào cột `buoc` thì chuỗi đó **không dịch được** sang tiếng Anh và không đếm
+#: được, vì nó nằm trong dữ liệu chứ không nằm trong catalog.
+BUOC = {
+    "gui_lenh_tat": N_("Đang gửi lệnh tắt"),
+    "cho_may_tat": N_("Đang chờ máy tắt"),
+    "gui_lenh_bat": N_("Đang gửi lệnh bật"),
+    "cho_may_bat": N_("Đang chờ máy bật"),
+    "tat_truoc_khoi_phuc": N_("Đang tắt máy trước khi khôi phục"),
+    "dang_khoi_phuc_anh": N_("Đang khôi phục ảnh chụp"),
+    "bat_lai_sau_khoi_phuc": N_("Đang bật lại máy"),
+}
+
 #: Loại sự kiện → câu người đọc, cho nhật ký ở trang máy.
 #:
 #: Trước 26/08 nhật ký hiện **nguyên mã** (`xin_cai_lai`, `treo_khong_tat_duoc`)
@@ -78,6 +112,15 @@ BUOC_TIEP = {
 #:    `treo_khong_tat_duoc` là hệ thống thử tắt và thất bại.
 SU_KIEN = {
     "tao_moi": N_("Yêu cầu tạo máy"),
+    # Bốn dòng `xin_*` (VPS V2/ADR-03) là **yêu cầu**, khác hẳn bốn dòng kết quả
+    # bên dưới. Từ khi ba lệnh điện đi qua hàng đợi, một cú bấm sinh HAI dòng:
+    # "yêu cầu bật" lúc bấm, rồi "máy được bật" khi đã đo được là nó bật thật.
+    # Gộp làm một là quay lại đúng lời nói dối cũ — nói "đã bật" lúc mới bấm.
+    "xin_bat": N_("Yêu cầu bật máy"),
+    "xin_tat": N_("Yêu cầu tắt máy"),
+    "xin_tat_cung": N_("Yêu cầu tắt cứng"),
+    "xin_khoi_dong_lai": N_("Yêu cầu khởi động lại"),
+    "xin_khoi_phuc": N_("Yêu cầu khôi phục ảnh chụp"),
     "tao_xong": N_("Máy đã sẵn sàng"),
     "thu_phi": N_("Đã thu phí một chu kỳ"),
     "hoan_tien": N_("Đã hoàn credit"),
@@ -93,6 +136,8 @@ SU_KIEN = {
     "khoi_phuc": N_("Khôi phục về ảnh chụp"),
     "sao_luu": N_("Đã chụp ảnh máy"),
     "bi_treo": N_("Máy bị tạm dừng"),
+    "bi_cach_ly": N_("Máy bị cách ly mạng"),
+    "go_cach_ly": N_("Đã gỡ cách ly mạng"),
     "treo_khong_tat_duoc": N_("Tạm dừng nhưng chưa tắt được máy"),
     "dung_lai": N_("Máy dừng lại"),
     "xin_xoa": N_("Yêu cầu xoá máy"),
@@ -106,6 +151,7 @@ SU_KIEN = {
 #: Sự kiện nào là **tin xấu** — dùng để chọn màu chấm trên dòng thời gian.
 SU_KIEN_XAU = frozenset({
     "loi", "bi_treo", "treo_khong_tat_duoc", "da_xoa", "dung_lai",
+    "bi_cach_ly",
 })
 
 #: Hậu tố mà `dieu_khien._lam` gắn vào khi một thao tác thất bại.
@@ -135,6 +181,18 @@ def badge(ma: str) -> str:
 def buoc_tiep(ma: str) -> str:
     """Câu "giờ làm gì" cho một mã trạng thái, hoặc chuỗi rỗng."""
     return BUOC_TIEP.get(str(ma or "").strip(), "")
+
+
+def tac_vu(ma: str) -> str:
+    """Nhãn cho một mã tác vụ đang chạy. Mã lạ trả về chính nó."""
+    ma = str(ma or "").strip()
+    return TAC_VU.get(ma, ma)
+
+
+def buoc(ma: str) -> str:
+    """Nhãn cho một bước con. Mã lạ trả về chính nó, rỗng trả rỗng."""
+    ma = str(ma or "").strip()
+    return BUOC.get(ma, ma)
 
 
 def su_kien(loai: str) -> str:

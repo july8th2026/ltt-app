@@ -167,7 +167,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                                   qc_ai.loi_nhac_ngu_nghia(lo),
                                   stage=pipeline.QC_AI, item_key=ma_lo, ctx=ctx)
             for pq in qc_ai.doc_ngu_nghia(
-                    ai.doc_json(kq.get("noi_dung") or "", ai.QC_NGU_NGHIA),
+                    ai.doc_ket_qua(kq, ai.QC_NGU_NGHIA),
                     ma_trong_lo):
                 # ⚠️ `sua_chua.tu_qc_ngu_nghia` doc `nguon`/`dich` lam bang
                 #    chung. Khong dinh vao thi khiem khuyet van dinh tuyen

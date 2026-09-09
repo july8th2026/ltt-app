@@ -383,7 +383,15 @@
               {{ m.plan.disk_gb }} GB{% endif %}<br>
               {{ _(m.os.ten) if m.os else m.may.os_id }}
             </div>
-            {% if m.may.ly_do %}
+            {# Việc đang chạy đứng TRƯỚC lý do và trước "bước tiếp": khách vừa
+               bấm một nút và đang tìm xem nó có ăn không. Từ VPS V2 trạng thái
+               **không** đổi ngay khi bấm (ADR-03), nên nếu chỗ này im thì thẻ
+               máy trông y hệt lúc chưa bấm. #}
+            {% if m.viec %}
+            <p class="muted" style="margin:6px 0 0;font-size:12px;">
+              <b>{{ _(m.viec.loai) }}…</b>{% if m.viec.buoc %} {{ _(m.viec.buoc) }}{% endif %}
+            </p>
+            {% elif m.may.ly_do %}
             <p class="muted" style="margin:6px 0 0;font-size:12px;">{{ m.may.ly_do }}</p>
             {% elif m.buoc_tiep %}
             {# Nhãn trạng thái nói máy đang ở đâu; câu này nói khách phải làm gì

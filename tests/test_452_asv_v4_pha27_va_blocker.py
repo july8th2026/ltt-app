@@ -122,12 +122,13 @@ def test_MOT_hinh_dang_luoc_do_o_ca_BA_cho():
                         "cam_xuc": "", "quan_trong": 0.2, "de_xuat": "bo",
                         "do_tin": 0.9, "ly_do": "khong co thoai",
                         "canh_bao": []})
-    h = hc.doc_hieu_canh(phang, "canh_0001")
+    h = hc.doc_hieu_canh({"noi_dung": phang}, "canh_0001")
     assert h.de_xuat == hc.BO and h.do_tin == pytest.approx(0.9)
 
     # Va lop boc kia nay bi TU CHOI thay vi duoc chieu — mot hinh dang, mot lan.
     with pytest.raises(ai.LuocDoSai):
-        hc.doc_hieu_canh(json.dumps({"canh": {"de_xuat": "bo", "do_tin": 0.9}}),
+        hc.doc_hieu_canh({"noi_dung": json.dumps(
+            {"canh": {"de_xuat": "bo", "do_tin": 0.9}})},
                          "canh_0001")
 
 

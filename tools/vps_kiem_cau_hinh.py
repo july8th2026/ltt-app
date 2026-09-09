@@ -66,7 +66,15 @@ ISO = {
 
 TUY_CHON = {
     "LTT_VPS_VUNG": "mã vùng hiển thị (mặc định có sẵn)",
-    "LTT_VPS_PROXMOX_CA": "chứng chỉ CA nếu không dùng TLS tự ký",
+    "LTT_VPS_PROXMOX_TLS_BO_QUA": "khai tường minh CHẤP NHẬN bỏ xác minh TLS "
+                                  "(chỉ ngoài production)",
+}
+
+# 🔴 `LTT_VPS_PROXMOX_CA` chuyển từ TUỲ CHỌN sang BẮT BUỘC ở production (VPS V2,
+# Pha 07). Không để nó trong `BAT_BUOC` vì ngoài production thì nó vẫn tuỳ chọn —
+# nên nó có phần kiểm riêng ở dưới, đọc chính hàm mà app dùng.
+TLS = {
+    "LTT_VPS_PROXMOX_CA": "chứng chỉ CA của Proxmox",
 }
 
 
@@ -134,6 +142,31 @@ def kiem_dieu_khoan() -> str:
         return "trang ban khong dan toi dieu khoan"
     return ""
 
+def _kiem_tls(co: dict) -> str:
+    """Cau hinh TLS trong `app.env` co phat hanh duoc khong. Tra ly do, hoac rong.
+
+    ## Vi sao goi THANG ham cua app chu khong chep lai luat
+
+    Luat la: production + khong co CA ⇒ tu choi. Chep lai no o day la dung mot
+    ban sao thu hai, va hai ban sao thi som muon lech nhau — dung o cho nguy
+    hiem nhat: cong cu bao "on" trong khi app tu choi khoi dong.
+
+    ⚠️ Doc `LTT_ENV` tu **chinh `app.env` cua ban dang chay**, khong tu moi
+       truong cua tien trinh nay: cong cu nay thuong duoc chay tay tren may chu,
+       va moi truong cua mot shell khong phai moi truong cua dich vu.
+    """
+    import sys
+    goc = pathlib.Path(__file__).resolve().parent.parent
+    if str(goc) not in sys.path:
+        sys.path.insert(0, str(goc))
+    try:
+        from apps.vps.services import proxmox
+    except Exception as exc:                     # noqa: BLE001
+        return f"khong nap duoc apps.vps.services.proxmox: {exc}"
+    _ok, ly_do = proxmox.san_sang_tls(co)
+    return ly_do
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--sinh-mau", action="store_true",
@@ -167,6 +200,16 @@ def main() -> int:
         print(f"  [{'x' if co.get(k) else ' '}] {k:<32} {mo_ta}")
     print()
 
+    print("TLS QUAN TRI (Proxmox cong 8006)")
+    for k, mo_ta in TLS.items():
+        print(f"  [{'x' if co.get(k) else ' '}] {k:<32} {mo_ta}")
+    loi_tls = _kiem_tls(co)
+    if loi_tls:
+        print(f"  [ ] KHONG PHAT HANH DUOC: {loi_tls}")
+    else:
+        print("  [x] cau hinh TLS phat hanh duoc")
+    print()
+
     if tham_so.sinh_mau:
         nguon = _doc(NGUON)
         print("=" * 68)
@@ -195,7 +238,7 @@ def main() -> int:
     # Truoc 26/08 cho nay chi chan khi chac chan 404, vi mot loi mang
     # khong phan biet duoc voi mot trang thieu. Nay phep kiem doc TEP
     # trong chinh kho — khong con trang thai "khong ket luan duoc".
-    chac_chan_thieu = bool(loi_dk)
+    chac_chan_thieu = bool(loi_dk) or bool(loi_tls)
     if thieu_bb or chac_chan_thieu:
         if chac_chan_thieu and not thieu_bb:
             print("CHUA MO BAN DUOC: du bien moi truong, nhung trang Dieu khoan")

@@ -329,3 +329,91 @@ def test_bao_cao_cong_lai_dung_bang_TONG_SO_ban_ghi(db):
     db.commit()
     tong = db.query(AgentWorkflow).count()
     assert ra["da_chuyen"] + ra["rong"] + ra["da_co"] == tong == 3
+
+
+# ── Vá trang cho bản ĐÃ di trú (09/09/2026) ─────────────────────────────────
+
+def _draft_thieu_khoa(db, wf_id: str):
+    """Đúng hình dạng `_trang_v3` bản đầu sinh ra: 4 khoá thay vì 8."""
+    from platform_core.models import WorkflowDraft
+
+    d = WorkflowDraft(workflow_id=wf_id, revision=1, document={
+        "version": 3, "goal": "g", "budget_max_credit": 10,
+        "active_page_id": "p1",
+        "pages": [{"id": "p1", "name": "", "nodes": [], "edges": []}]})
+    db.add(d)
+    db.flush()
+    return d
+
+
+def test_va_trang_dien_du_khoa_cho_ban_DA_di_tru(db):
+    """🔴 `chuyen()` luỹ đẳng nên nó **không tự lành** bản đã chuyển.
+
+    Ngày 09/09 đúng tình huống ấy: 9 workflow production đã ở dạng thiếu bốn
+    khoá, và Canvas trắng màn khi mở chúng.
+    """
+    from platform_core.workflow import di_tru_m1
+
+    d = _draft_thieu_khoa(db, "w1")
+    db.commit()
+
+    ra = di_tru_m1.va_trang(db, chay_that=True)
+    db.commit()
+
+    assert ra["da_va"] == 1 and ra["da_du"] == 0
+    trang = d.document["pages"][0]
+    for khoa in ("viewport", "frames", "notes", "comments", "view"):
+        assert khoa in trang, khoa
+
+
+def test_va_trang_KHONG_dung_toi_ban_da_du(db):
+    """⭐ Đối chứng. Không có bài này, một bản vá *"ghi đè mọi trang"* cũng làm
+    bài trên xanh — và nó sẽ **xoá** `viewport` người dùng đã kéo."""
+    from platform_core.workflow import di_tru_m1
+
+    d = _draft_thieu_khoa(db, "w1")
+    db.commit()
+    di_tru_m1.va_trang(db, chay_that=True)
+    db.commit()
+    rev_sau_lan_dau = d.revision
+
+    lai = di_tru_m1.va_trang(db, chay_that=True)
+    db.commit()
+    assert lai["da_va"] == 0 and lai["da_du"] == 1
+    assert d.revision == rev_sau_lan_dau, "ban da du khong duoc tang revision"
+
+
+def test_va_trang_GIU_viewport_va_node_dang_co(db):
+    """⛔ Chỉ THÊM. Một `viewport` người dùng đã kéo là thông tin thật."""
+    from platform_core.models import WorkflowDraft
+    from platform_core.workflow import di_tru_m1
+
+    vp = {"x": 88, "y": -12, "zoom": 2.0}
+    d = WorkflowDraft(workflow_id="w1", revision=1, document={
+        "version": 3, "goal": "g", "budget_max_credit": 10,
+        "active_page_id": "p1",
+        "pages": [{"id": "p1", "name": "T", "viewport": vp,
+                   "nodes": [{"id": "n0", "type": "tool", "data": {"tool": "x"}}],
+                   "edges": [{"id": "e", "source_node": "n0",
+                              "target_node": "n0", "source_port": "anh_ra",
+                              "target_port": "van_ban_vao", "kind": "DATA"}]}]})
+    db.add(d)
+    db.commit()
+
+    di_tru_m1.va_trang(db, chay_that=True)
+    db.commit()
+    t = d.document["pages"][0]
+    assert t["viewport"] == vp
+    assert t["nodes"][0]["data"]["tool"] == "x"
+    assert t["edges"][0]["source_port"] == "anh_ra"
+
+
+def test_va_trang_MAC_DINH_la_chay_thu(db):
+    from platform_core.workflow import di_tru_m1
+
+    d = _draft_thieu_khoa(db, "w1")
+    db.commit()
+    ra = di_tru_m1.va_trang(db)
+    db.commit()
+    assert ra["chay_that"] is False and ra["se_va"] == 1
+    assert "viewport" not in d.document["pages"][0]
