@@ -246,3 +246,60 @@ Hai con số cách nhau một bậc. Chúng **không mô tả cùng một lời 
 
   Câu 2 quyết định trần; câu 1 quyết định có cần thử lại hay không. Đặt trần
   trước khi trả lời câu 2 là đoán.
+
+---
+
+## 8. 10.248 đến từ đường nào — và câu trả lời làm rõ cả tệp bằng chứng
+
+Phiên `LLM LTT` chất vấn đúng chỗ: *"trước `6fcc39ed`, mọi lượt ASV nhận trần
+4.096 bất kể truyền gì. Mà lượt thành công trong `3eae396d` dùng tới 10.248. Tức
+những lượt ấy **không thể** đã đi qua `goi_tinh_tien`."*
+
+**Kiểm được tại chỗ, không cần máy B:**
+
+```
+tools/do_ngan_sach_chuyen_loi_thoai.py:196   ai.goi(db, ai.CHUYEN_LOI_THOAI, msg,
+                                                    max_tokens=args.tran, timeout_s=...)
+tools/do_on_dinh_chuyen_loi_thoai.py:167     ai.goi(db, thao_tac, messages,
+                                                    max_tokens=int(tran or 0))
+```
+
+⇒ Đúng: hai bảng ấy **không** đi qua `goi_tinh_tien`.
+
+⭐ **Nhưng chúng đi qua `ai.goi` với prompt THẬT và trần tường minh — đúng đường
+   mà `6fcc39ed` vừa làm cho production đi.** Chuỗi đầy đủ là
+   `goi_tinh_tien` → `goi` → `dieu_phoi.goi`; mắt duy nhất bị đứt là mắt **đầu
+   tiên**, và hai tool đo bắt đầu từ mắt **thứ hai**.
+
+Nên 10.248 **không** phải "số của một đường không còn tồn tại". Nó là số của
+đường production **vừa mới bắt đầu đi**. Điều kiện dùng nó, ghi rõ:
+
+> Nó đo *"model muốn bao nhiêu khi được cho chỗ"*, **không** đo *"một lượt
+> production thành công đã tiêu bao nhiêu"*. Trước `6fcc39ed` chưa từng có lượt
+> production nào được cho chỗ, nên đại lượng thứ hai **không tồn tại** để đo.
+
+### Hệ quả cho tệp bằng chứng đang đỏ
+
+Trước `6fcc39ed`, mọi lượt `chuyen_loi_thoai` của production bị chặn ở **4.096**,
+trong khi cùng prompt ấy qua `ai.goi` sinh **6.948–10.248** token khi được cho
+chỗ. Lượt hỏng trong `nghiem_thu_hien_hanh.json` **nhất quán với cắt trần**.
+
+⚠️ **Nhất quán, không phải chứng minh.** Bảng lưỡng cực của `LLM LTT` cho một cơ
+   chế thứ hai giải thích **cùng một triệu chứng** (`content` rỗng), và không có
+   cách phân biệt hai cái cho tới khi đo. Trần `16.384` giữ nhãn **chưa xác
+   nhận**.
+
+### Hai cải tiến phép đo, nhận từ `LLM LTT`
+
+**1. Ghi cả `len(reasoning_content)`, không chỉ `len(content)`.** Trong bốn ca
+hỏng của họ, `reasoning` đầy cả bốn (9.804–32.334 ký tự) — nhờ đó loại được
+"token bị bộ giải mã bỏ" và "bị lọc mất". Nếu ở ~1.800 token vào mà `content`
+rỗng **và** `reasoning` cũng rỗng thì đó là một chế độ **KHÁC**, và là một phát
+hiện riêng. Gộp hai chế độ ấy thì phép đo nói dối.
+
+**2. `finish_reason` KHÔNG dùng làm dấu hiệu hỏng.** Một ca hỏng của họ có
+`finish = stop`, `pred_n = 8.938` trên trần 12.000 — thừa ngân sách, tự dừng
+bình thường, vẫn rỗng.
+
+⇒ Mỗi lượt ghi: `len(content)` · `len(reasoning_content)` · `token_ra` ·
+  `finish_reason` · giây. **Bốn cột sau là MÔ TẢ; chỉ cột đầu là PHÁN QUYẾT.**
