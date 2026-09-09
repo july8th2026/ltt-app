@@ -21,6 +21,7 @@ import os
 import subprocess
 import builtins
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -39,7 +40,25 @@ def khoa_rieng(tmp_path, monkeypatch):
     ⛔ Không được đụng vào khoá THẬT: một lượt gate của phiên khác có thể đang
        giữ nó ngay lúc bộ test này chạy, và cướp mất là làm hỏng đúng thứ tệp
        này sinh ra để bảo vệ.
+
+    🔴 HAI đòn bẩy, và bản đầu chỉ kéo một. `TEP_KHOA` là hằng số tính lúc
+       **import**, và nó chỉ phủ tài nguyên `MAC_DINH`. Mọi tài nguyên **có
+       tên** đi qua `_tep()` → `tempfile.gettempdir()` đọc **lúc gọi** — nên
+       `test_cua_pytest_go_tay_...` (dòng ~559) lấy `_tep("postgres_test")` là
+       lấy thẳng `ltt_khoa_postgres_test.json` **thật của máy**, rồi khẳng định
+       nó xuất hiện và sau đó biến mất. Tức bộ kiểm này tạo và **xoá** một khoá
+       thật, trong khi một lượt gate của phiên khác có thể đang giữ nó.
+
+       Và nó **không đỏ** khi hỏng: phép kiểm chỉ nhìn khoá của chính nó.
+
+    ⚠️ Đòn bẩy thư mục phải là `tempfile.tempdir`, KHÔNG phải biến môi trường:
+       `gettempdir()` cache vào `tempfile.tempdir` sau lần gọi đầu, mà trong một
+       lượt pytest thì nó đã được gọi từ lâu. Đo: đặt `os.environ["TEMP"]` →
+       `gettempdir()` **không đổi**; đặt `tempfile.tempdir` → đổi.
+
+    ⭐ `test_khoa_KHONG_nam_trong_cay_kho` vẫn đúng: `tmp_path` nằm ngoài kho.
     """
+    monkeypatch.setattr(tempfile, "tempdir", str(tmp_path))
     monkeypatch.setattr(cy, "TEP_KHOA", tmp_path / "khoa.json")
     yield
 
