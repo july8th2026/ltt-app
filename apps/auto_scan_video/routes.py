@@ -474,6 +474,11 @@ def chi_tiet(request: Request, run_id: str,
              _g: None = Depends(_cong_co),
                 user: str = Depends(require_login),
              db: Session = Depends(get_db)):
+    # ⚠️ Nhap TRONG ham, cung khuon voi cac handler khac cua tep nay: kho luu
+    #    tru duoc dung o dung mot vai cho, va keo no vao dau tep la bat moi
+    #    tien trinh nap `routes` phai tra gia cho mot thu no khong goi.
+    from platform_core.storage import get_storage
+
     u = user_hien_tai(request)
     run = _run_cua_toi(db, run_id, u)
     return _dung_trang(request, "asv_chi_tiet.html", {
@@ -483,6 +488,14 @@ def chi_tiet(request: Request, run_id: str,
                      if _la_operator(request) else None),
         "loi_khach": quan_sat.tom_tat_loi_cho_khach(db, run),
         "co_ket_qua": bool(features.khoa_ket_qua(db, run)),
+        # ⭐ Bang ke canh (V6 pha 09). `None` khi `edit_plan` chua xong — khoi
+        #    giao dien khi do khong hien, chu khong hien mot khoi rong.
+        #
+        # 🔴 Truoc pha 09, chuoi nay tach canh bang ffmpeg, goi model doc tung
+        #    canh — mot buoc CO TINH TIEN — roi quyet dinh bo canh nao, va khach
+        #    khong thay duoc mot dong nao trong so do. Ho tra tien cho mot quyet
+        #    dinh ho khong duoc xem.
+        "canh": quan_sat.dong_canh(db, get_storage(), run),
         # ⭐ Hai bang nhan de man "Cai dat da dung" doc duoc `run.settings` bang
         #    TIENG VIET. Khong go lai nhan o template: chung song o `gia.py`, va
         #    hai ban cua mot nhan la hai ban se lech.

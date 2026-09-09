@@ -328,3 +328,108 @@ def tom_tat_loi_cho_khach(db, run) -> str:
         return ""
     ten = hong[0].stage
     return f"{ten}: {LOI_CHUNG}"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Duyet canh — V6 pha 09
+# ══════════════════════════════════════════════════════════════════════════════
+
+#: Ti le be nhat mot canh duoc ve tren thanh, tinh theo phan tram.
+#:
+#: ⭐ Mot canh 0,4 giay trong mot video 30 phut ra 0,02% — tuc **khong mot diem
+#:    anh nao**. Khach dem duoc muoi canh trong danh sach nhung chi thay chin
+#:    vach, va khong co cach nao doan la vi sao. San nay lam no hien ra.
+#:
+#: ⚠️ No lam tong be rong vuot 100% khi co that nhieu canh vun. Do la danh doi
+#:    co chu y: mot thanh dai hon khung mot chut van doc duoc, con mot canh bien
+#:    mat thi khong.
+SAN_BE_RONG_PT = 0.4
+
+
+def dong_canh(db, kho, run) -> dict | None:
+    """Cac canh cua lan chay + quyet dinh GIU/CAT, de khach XEM.
+
+    Tra `None` khi giai doan `edit_plan` chua xong hoac khong doc duoc — man
+    hinh khi do khong hien khoi nay, thay vi hien mot khoi rong.
+
+    ## ⛔ Vi sao KHONG tra `ly_do` cho khach
+
+    `ban_bien_tap._quyet_dinh_mot_canh` ghi `ly_do` cho **nguoi van hanh**:
+    *"VLM de xuat bo (tin 0.91 >= nguong 0.85, canh co loi thoai)"*. Cau do
+    mang ten mot he con, mot con so nguong va mot tu viet tat — dung ba thu ma
+    `routes.py` muc 2 va `test_447` nhom D cam dua ra man khach.
+
+    ⇒ Nhan cho khach suy tu **truong co cau truc** (`thao_tac`), khong tu chuoi.
+      Doc mot chuoi tu do de doan y no la doc thu dai dien thay vi doc thu that,
+      va no se vo im lang vao ngay ai do sua mot tu trong cau.
+
+    ## ⚠️ Mot dieu ham nay KHONG noi duoc, va noi ro ra thay vi doan
+
+    `_ap_chinh_sach_an_toan` co the **hoan mot lenh cat** de dat san giu lai —
+    no lat `thao_tac` ve GIU nhung giu nguyen `do_tin` va `bang_chung`. Nen mot
+    canh duoc hoan cat **khong phan biet duoc** voi mot canh duoc giu ngay tu
+    dau, neu chi nhin cac truong co cau truc.
+
+    ⛔ Va cach "sua" hien nhien — do chuoi `ly_do` xem co chua "hoan cat" khong
+       — chinh la thu doan tren vua cam. Ban sua dung la them mot truong co cau
+       truc vao `QuyetDinh`, va do la mot lan doi luoc do (`PHIEN_BAN_BAN`), nen
+       no thuoc mot pha co chu dinh chu khong phai lam ke o day.
+
+    ⇒ Hom nay ta noi su that o **cap ban**: `ghi_chu["da_hoan_cat"]` cho biet co
+      bao nhieu canh duoc giu lai vi chinh sach, va khoi giao dien noi cau do
+      mot lan cho ca danh sach.
+    """
+    import json
+
+    gd = features.giai_doan_theo_ten(db, run.id, pipeline.EDIT_PLAN)
+    if gd is None or gd.status != "succeeded":
+        return None
+    khoa = [k for k in (((gd.outputs or {}) if gd else {}).get("khoa_asset") or [])
+            if str(k).endswith(".json")]
+    if not khoa:
+        return None
+    try:
+        with kho.open(khoa[0]) as f:
+            goi = json.loads(f.read().decode("utf-8"))
+    except (OSError, ValueError):
+        # ⛔ Nuot CO CHU DICH, va chi o day: mot artifact khong doc duoc khong
+        #    duoc lam vo trang ket qua cua mot lan chay DA XONG. Khach van tai
+        #    duoc video; ho chi khong thay bang ke canh.
+        return None
+
+    ban = (goi.get("ban") or {})
+    chi_muc = (goi.get("chi_muc") or {})
+    theo_ma = {str(q.get("ma_canh")): q for q in (ban.get("quyet_dinh") or [])}
+    tong = float(chi_muc.get("thoi_luong") or ban.get("thoi_luong_nguon") or 0.0)
+
+    canh: list[dict] = []
+    giu_giay = 0.0
+    for c in (chi_muc.get("canh") or []):
+        bat, ket = float(c.get("bat") or 0.0), float(c.get("ket") or 0.0)
+        q = theo_ma.get(str(c.get("ma")), {})
+        # ⭐ Vang mat khoi ban = GIU. Cung mac dinh voi `_quyet_dinh_mot_canh`:
+        #    cat la hanh dong phai co can cu, giu thi khong.
+        la_giu = str(q.get("thao_tac") or "keep") != "cut"
+        dai = max(0.0, ket - bat)
+        if la_giu:
+            giu_giay += dai
+        canh.append({
+            "ma": str(c.get("ma") or ""),
+            "bat": round(bat, 3), "ket": round(ket, 3), "dai": round(dai, 3),
+            "giu": la_giu,
+            "bat_pt": round(100.0 * bat / tong, 4) if tong > 0 else 0.0,
+            "rong_pt": (max(SAN_BE_RONG_PT, round(100.0 * dai / tong, 4))
+                        if tong > 0 else 0.0),
+        })
+
+    ghi_chu = dict(ban.get("ghi_chu") or {})
+    return {
+        "thoi_luong": round(tong, 3),
+        "canh": canh,
+        "so_canh": len(canh),
+        "so_giu": sum(1 for c in canh if c["giu"]),
+        "so_cat": sum(1 for c in canh if not c["giu"]),
+        "giu_giay": round(giu_giay, 3),
+        # Xem docstring: day la cho DUY NHAT hom nay noi duoc ve viec hoan cat.
+        "da_hoan_cat": int(ghi_chu.get("da_hoan_cat") or 0),
+    }

@@ -15005,3 +15005,23 @@ msgstr "The masked areas could not be built for this run."
 
 msgid "Một vùng che nằm trọn trong đoạn đã bị cắt bỏ, nên không còn chỗ nào để che. Hãy sửa hoặc xoá vùng đó."
 msgstr "One masked area sits entirely inside a stretch that was cut out, so there is nothing left to cover. Please adjust or remove it."
+
+# -- Auto Scan Video V6 -- bang ke canh ----------------------------
+
+msgid "Các cảnh trong video"
+msgstr "Scenes in the video"
+
+msgid "%(tong)s cảnh · giữ %(giu)s · bỏ %(bo)s"
+msgstr "%(tong)s scenes · %(giu)s kept · %(bo)s dropped"
+
+msgid "Dải cảnh: phần sáng là giữ lại, phần mờ là bỏ đi."
+msgstr "Scene strip: solid segments are kept, hatched ones are dropped."
+
+msgid "Giữ lại"
+msgstr "Kept"
+
+msgid "Bỏ đi"
+msgstr "Dropped"
+
+msgid "Có %(n)s cảnh được giữ lại để video không bị cắt quá nhiều."
+msgstr "%(n)s scenes were kept so the video is not cut down too far."

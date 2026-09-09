@@ -3536,6 +3536,27 @@ button.lv-the-song.dang-phat .lv-nghe-dau::before{width:4px;height:14px;
 .asv-vung-gio-o{display:flex;gap:8px;flex:1 1 200px;min-width:0}
 .asv-vung-gio{display:flex;flex-direction:column;gap:4px;font-size:13px;
   color:var(--muted);flex:1 1 90px;min-width:0}
+
+/* -- Bang ke canh ---------------------------------------------------------
+   ⛔ CHI XEM. Khong o chon, khong keo tha: chuoi thi hanh nam trong ma nguon
+      chu khong trong CSDL, va mot o chon o day la buoc dau tien cua cai do
+      thi ma hop dong san pham cam. */
+.asv-canh{display:flex;flex-direction:column;gap:8px;margin-top:18px}
+/* `position:relative` de cac vach dinh vi theo THANH, khong theo trang. */
+.asv-canh-thanh{position:relative;height:14px;border-radius:999px;
+  background:var(--panel2);border:1px solid var(--line);overflow:hidden}
+.asv-canh-vach{position:absolute;top:0;bottom:0}
+/* Giu = dac, bo = mo va co van. Hai dau hieu chu khong mot: mot nguoi khong
+   phan biet duoc mau van doc duoc dai nay. */
+.asv-canh-thanh .asv-canh-giu{background:var(--accent)}
+.asv-canh-thanh .asv-canh-bo{background:repeating-linear-gradient(45deg,
+  var(--line) 0 3px,transparent 3px 6px);opacity:.85}
+.asv-canh-ds{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.asv-canh-ds li{display:flex;gap:8px;align-items:baseline;font-size:12px;
+  padding:4px 9px;border:1px solid var(--line);border-radius:999px}
+.asv-canh-ds li.asv-canh-bo{opacity:.62}
+.asv-canh-moc{font-variant-numeric:tabular-nums;color:var(--muted)}
+.asv-canh-nhan{font-weight:600}
 /* `min-width:0` + `width:100%` de o so khong day nhom tran ngang o 375px. */
 .asv-cat-so{width:100%;min-width:0;font-variant-numeric:tabular-nums}
 /* Chi hien tren man hinh nho — xem `@media` cuoi khoi. */

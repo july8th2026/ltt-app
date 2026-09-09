@@ -59,6 +59,52 @@
     </ul>
   </details>
 
+  {# ── Bang ke canh (V6 pha 09) ──────────────────────────────────────────
+
+     🔴 Truoc pha nay, chuoi tach canh bang ffmpeg, goi model doc TUNG canh —
+        mot buoc co tinh tien — roi quyet dinh bo canh nao. Khach khong thay
+        duoc mot dong nao trong so do: ho tra tien cho mot quyet dinh ho khong
+        duoc xem.
+
+     ⛔ CHI XEM. Khong o chon, khong keo tha, khong nut "giu canh nay". Chuoi
+        thi hanh nam trong MA NGUON (`pipeline.CHUOI`) chu khong trong CSDL, va
+        mot o chon o day la buoc dau tien cua cai do thi ma `MVP_CONTRACT` muc 5
+        cam. Doi y thi chay lai voi preset khac.
+
+     ⚠️ Va khong hien `ly_do` cua tung canh: no viet cho nguoi van hanh, mang
+        ten mot he con va mot con so nguong. Xem `quan_sat.dong_canh`. #}
+  {% if canh and canh.so_canh %}
+  <section class="asv-canh" aria-labelledby="asv-canh-tt">
+    <h2 id="asv-canh-tt" class="asv-nhan-nhom">{{ _("Các cảnh trong video") }}</h2>
+    <p class="asv-ghi-chu">
+      {{ _("%(tong)s cảnh · giữ %(giu)s · bỏ %(bo)s") % {"tong": canh.so_canh, "giu": canh.so_giu, "bo": canh.so_cat} }}
+    </p>
+    <div class="asv-canh-thanh" role="img"
+         aria-label="{{ _('Dải cảnh: phần sáng là giữ lại, phần mờ là bỏ đi.') }}">
+      {% for c in canh.canh %}
+        <span class="asv-canh-vach {{ 'asv-canh-giu' if c.giu else 'asv-canh-bo' }}"
+              style="left:{{ c.bat_pt }}%;width:{{ c.rong_pt }}%"></span>
+      {% endfor %}
+    </div>
+    <ol class="asv-canh-ds">
+      {% for c in canh.canh %}
+        <li class="{{ 'asv-canh-giu' if c.giu else 'asv-canh-bo' }}">
+          <span class="asv-canh-moc">{{ '%.1f'|format(c.bat) }}s – {{ '%.1f'|format(c.ket) }}s</span>
+          <span class="asv-canh-nhan">{{ _("Giữ lại") if c.giu else _("Bỏ đi") }}</span>
+        </li>
+      {% endfor %}
+    </ol>
+    {% if canh.da_hoan_cat %}
+      {# ⭐ Su that nay chi noi duoc o CAP BAN: mot canh duoc hoan cat khong phan
+         biet duoc voi mot canh duoc giu ngay tu dau, neu chi nhin cac truong co
+         cau truc. Xem docstring cua `quan_sat.dong_canh`. #}
+      <p class="asv-ghi-chu">
+        {{ _("Có %(n)s cảnh được giữ lại để video không bị cắt quá nhiều.") % {"n": canh.da_hoan_cat} }}
+      </p>
+    {% endif %}
+  </section>
+  {% endif %}
+
   {# ── Chi tiet van hanh: MAC DINH AN, va chi hien cho operator ──────────
      Prompt 20 muc 6. Khach khong can biet job id hay ten worker; nguoi ho tro
      thi can, va ho can no o cung trang chu khong o mot cong cu khac. #}
