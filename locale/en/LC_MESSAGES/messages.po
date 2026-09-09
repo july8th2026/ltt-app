@@ -14800,3 +14800,10 @@ msgstr "The translation has missing, extra, or misordered cues."
 #: apps/autosubvideo/ai_workflows.py
 msgid "Bản dịch có cue rỗng."
 msgstr "The translation contains an empty cue."
+
+#: platform_core/image_gen/dich_llm.py
+# Trả rỗng KHÔNG được im lặng: `dich_prompt_anh` sẽ gửi một prompt rỗng đi vẽ,
+# và khách nhận về một tấm ảnh không liên quan gì tới thứ họ gõ — một lỗi đắt
+# mà không để lại dấu vết nào.
+msgid "Model trả lời rỗng — thử lại hoặc đổi mô tả."
+msgstr "The model returned an empty reply; try again or reword the description."

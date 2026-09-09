@@ -27,11 +27,29 @@ import pytest
 
 GOC = pathlib.Path(__file__).resolve().parents[1]
 
-#: App đã di trú sang LTT_LLM/LTT_IMAGE. Thêm dòng khi một app xong pha 05/06.
+#: Tệp đã di trú: **không còn lối ra legacy nào**. Thêm dòng khi một app xong.
 DA_DI_TRU = (
     "apps/taovideo/translate.py",
     "apps/prompt_ai_ommi/provider.py",
     "apps/autosubvideo/ai_workflows.py",
+    "apps/anhnoibo/jobs.py",
+)
+
+#: 🔴 Tệp **TỰ GỌI** model nhà ⇒ phải tự giành suất admission.
+#:
+#: ⚠️ Đây là một TẬP KHÁC, không phải một cột khác của cùng tập. Bản đầu của
+#:    tệp này gộp hai mệnh đề vào `DA_DI_TRU`, và phép kiểm lập tức đỏ ở
+#:    `apps/anhnoibo/jobs.py` — đúng, vì tệp ấy **uỷ quyền** việc gọi model cho
+#:    `platform_core/image_gen/dich_llm.py`. Đòi nó tự giành suất là **hỏi sai
+#:    tệp**, và bản sửa dễ dãi (nới phép kiểm) sẽ làm mất luôn thứ nó canh.
+#:
+#: ⭐ Hai mệnh đề, hai tập hợp: *"không còn lối ra legacy"* áp cho **mọi** tệp
+#:    đã di trú; *"phải giành suất"* chỉ áp cho tệp **thật sự mở đường tới máy B**.
+GOI_MODEL_TRUC_TIEP = (
+    "apps/taovideo/translate.py",
+    "apps/prompt_ai_ommi/provider.py",
+    "apps/autosubvideo/ai_workflows.py",
+    "platform_core/image_gen/dich_llm.py",
 )
 
 #: Tên module không được `import` ở tầng app sau khi di trú.
@@ -100,7 +118,7 @@ def test_khong_goi_api_pool_o_tang_APP(rel):
     assert not xau, f"{rel} con tu cap khoa qua api_pool: {xau}"
 
 
-@pytest.mark.parametrize("rel", DA_DI_TRU)
+@pytest.mark.parametrize("rel", GOI_MODEL_TRUC_TIEP)
 def test_CO_gianh_suat_admission_truoc_khi_cham_may_B(rel):
     """🔴 Mệnh đề PHỦ ĐỊNH quan trọng nhất của pha 05.
 
