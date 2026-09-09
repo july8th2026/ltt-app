@@ -159,6 +159,10 @@ def test_template_discloses_provider_privacy_and_precision_limit():
     from pathlib import Path
     src = (Path(__file__).parents[1] / "apps" / "taoanh" / "templates" / "image.html").read_text("utf-8")
     assert "enctype=\"multipart/form-data\"" in src
-    assert "Ảnh tham chiếu được gửi tới Gemini" in src
+    # Bat bien: template phai KHAI anh tham chieu roi nen tang di dau. Dich den
+    # doi o pha 08 (AI CLEAN REBUILD V2) — Gemini bi go, may tao anh noi bo thay
+    # cho. Nen chot CA HAI chieu, de ban viet lai kho xanh hon ban cu:
+    assert "Ảnh tham chiếu chỉ rời nền tảng để tới máy tạo ảnh nội bộ" in src
+    assert "Gemini" not in src, "khai bao quyen rieng tu con ten nha cung cap da go"
     assert "chưa phải công cụ mask chính xác từng pixel" in src
     assert "saved_source_key" in src and "/edit/{{j.id}}/{{loop.index0}}" in src
