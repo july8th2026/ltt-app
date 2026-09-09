@@ -271,6 +271,44 @@ tools/check_multiproc.py  ->  7 passed in 139.55s   exit = 0
 ⇒ Bất biến mà bước ấy canh — *"nhiều worker chạy cùng lúc thì cảnh báo không
   nhân đôi và số credit khớp"* — **đứng vững trên PostgreSQL thật**.
 
+## 5e. 🔴 ĐÍNH CHÍNH: tôi đã giải thích một triệu chứng bằng SAI nguyên nhân
+
+Suốt đêm 09–10/09, `cua_so_yen trang-thai` trả `RANH` **ba lần** trong khi đang có
+gate chạy. Tôi kết luận nó *"trả lời câu có ai XIN khoá, không trả lời câu có gì
+đang CHẠY"*, rồi **gửi kết luận ấy cho ba phiên khác** như một lời khuyên.
+
+⛔ Mệnh đề ấy đúng về cơ chế, nhưng **không phải nguyên nhân**. Phiên
+   `ltt-4bot-workflow-app` đo ra nguyên nhân thật, và tôi **tái hiện độc lập** trên
+   cây trunk: fixture `khoa_sach` (`tests/test_394_nen_da_phien.py`) gọi
+   `dang_giu()` — liệt kê **mọi** khoá trên máy — rồi `nha(ep=True)` từng cái,
+   không monkeypatch `TEP_KHOA`. Nó **xoá khoá thật của máy**, kể cả khoá của phiên
+   khác đang chạy.
+
+Đối chứng hai chiều, tôi tự chạy:
+
+```
+truoc va:  giu khoa True -> pytest 31 passed -> khoa con: False   BI THAO
+sau  va:   giu khoa True -> pytest 32 passed -> khoa con: True    SONG SOT
+```
+
+⭐ `31 passed` là phần đáng sợ nhất: bộ test **XANH** trong khi nó xoá hàng rào
+   đồng thời của cả máy. Họ đo được: khoá vắng **119 giây / lượt 756 giây = 84%**.
+
+Đã vá trên trunk `5694f90c` (cherry-pick `56dfc811` + `598108be` của họ).
+
+### 🔑 Bài học, và nó đắt hơn bản vá
+
+Tôi giải thích một **triệu chứng** bằng một **tính chất có thật nhưng không liên
+quan**, và vì lời giải thích ấy nghe rất đúng nên tôi **ngừng điều tra**.
+
+⇒ Dấu hiệu đáng lẽ phải làm tôi đi tiếp: khoá không chỉ *"không thấy"* mà **TỆP
+  BIẾN MẤT**. Một công cụ trả lời sai câu thì vẫn để lại tệp; tệp biến mất là một
+  sự kiện **khác hạng** — và tôi đã không hỏi *"ai xoá nó"*.
+
+⚠️ Ba phép đo tôi gửi đi đêm nay đều **đúng**; thứ sai là **lời giải thích** đi kèm.
+   Một con số đúng với một nguyên nhân sai vẫn làm người đọc đi sai hướng — và nó
+   đi xa hơn một con số sai, vì không ai kiểm lại một con số đúng.
+
 ## 6. Nén kho
 
 | | Trước | Sau |
