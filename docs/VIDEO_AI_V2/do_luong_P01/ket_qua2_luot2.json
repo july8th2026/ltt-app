@@ -1,0 +1,35 @@
+{
+ "lan_chay": [
+  {
+   "ten_do": "H1_HUY_sau_75giay",
+   "model_type": "t2v_2_2",
+   "seed": 7007,
+   "huy_sau": 75,
+   "da_goi_cancel_luc": 75,
+   "su_kien": {
+    "progress": 0,
+    "preview": 0,
+    "stream": 18,
+    "khac": 6
+   },
+   "tien_do_cuoi": null,
+   "thanh_cong": false,
+   "tep": [],
+   "loi": [
+    "Generation was cancelled"
+   ]
+  }
+ ],
+ "loi": [
+  {
+   "muc": "profile3",
+   "loi": "WanGP runtime already loaded with different root/config/cli args"
+  },
+  {
+   "muc": "profile2",
+   "loi": "WanGP runtime already loaded with different root/config/cli args"
+  }
+ ],
+ "luot": 2,
+ "tong_phut": 8.0
+}

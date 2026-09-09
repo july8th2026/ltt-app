@@ -2597,3 +2597,344 @@ tách ra, fail-closed, ghi `EXITCODE` + thời lượng.
 ⭐ Và khi đọc kết quả, nhớ **Bẫy 30**: `[N BUOC TU BO QUA]` không phải gate xanh.
   Hai điều này không mâu thuẫn — một dòng `[BOQUA]` vẫn là một khoảng trống phải
   nói ra; nó chỉ không phải một khoảng trống được lấp bằng cách bật bừa.
+---
+
+## Bẫy 34 — Bánh cóc chỉ đỏ khi **TĂNG**, nên nó xanh khi phép đo **teo lại**
+
+*(Ghi 06/09/2026 trên nhánh `phien/video-v2-wangp`, đánh số lại 26→34 khi hợp
+nhất 07/09: `claude/chatltt-v3-agentic` đã dùng 26–33, và `docs/16` +
+`BAN_GIAO_S1_S7` đã trỏ tới số của họ. Bên nào **đã có người trỏ tới** thì bên
+đó giữ số — đây là lý do chọn, không phải thứ tự tới trước.)*
+
+### Chuyện gì xảy ra
+
+Phiên `LTTCHAT V3` báo `tools/check_mypy.py` **đỏ từ trước mọi thay đổi của
+họ**: `arg-type 119 → 120`, `assignment 59 → 61`. Họ kiểm bốn phép đo độc lập,
+gồm cả **hai cha** của commit hợp nhất, và **cố ý không chạy `--accept`** — dời
+mốc xuống dưới commit của mình là giặt phần trôi của người khác thành phần của
+mình.
+
+**Kiểm độc lập trên một nhánh khác hẳn** (`phien/video-v2-wangp`): **đúng hai mã
+ấy, đúng hai con số ấy**. Hai nhánh độc lập cùng đỏ ⇒ chỗ trôi nằm ở **tổ tiên
+chung**, không phải của ai trong hai phiên. Kết luận của họ đứng vững.
+
+### 🔴 Nhưng thứ đáng sợ hơn nằm trong **biên bản gate**, không nằm ở ba lỗi
+
+Đọc `test-results/gates/*.json` trên **cùng một cây**:
+
+| Lượt | `mypy` | Giây |
+|---|---|---|
+| 13:53 | **FAIL** | 3,2 |
+| 14:19 | **PASS** | 2,2 |
+| 15:49 | **PASS** | 3,1 |
+| gõ tay, ngay sau | **FAIL** | 7,9 |
+
+Chạy tay ba lượt liền: **3/3 FAIL**, cùng một thông điệp ⇒ *bây giờ* nó tất
+định. Gate **không** đặt biến môi trường nào, **không** chụp cây, và bước `mypy`
+gọi **đúng** `tools/check_mypy.py`. Vậy hai lượt PASS kia đo một thứ khác.
+
+### Lỗ hổng: `giam` **in ghi chú rồi trả 0**
+
+```python
+tang = {... if so > moc.get(ma, 0)}
+giam = {... if hien.get(ma, 0) < moc[ma]}
+if tang:  ...  return 1
+...
+if giam:  print("da GIAM ...")
+return 0          # <- GIAM luon XANH
+```
+
+⇒ Bất cứ điều gì làm mypy **quét được ít hơn** — một gói không nạp được, một
+thư mục rơi khỏi phạm vi, một lượt dừng sớm ở một nhánh — đều làm số đếm **giảm**
+và bánh cóc **xanh**.
+
+⭐ Cay nhất: chính docstring của `check_mypy.py` đã cảnh báo đúng lớp lỗi này —
+*"một thư mục bị đổi tên sẽ âm thầm rơi khỏi phạm vi quét, và số phát hiện GIẢM
+— trông y hệt một cải thiện"* — và tôi đã canh **`THU_MUC`** (truyền tường minh,
+không tự bỏ qua thư mục thiếu) nhưng **không canh khối lượng thật sự được
+kiểm**. Canh danh sách đầu vào không thay được việc canh sản lượng đầu ra.
+
+### ⛔ Đừng đuổi theo cột GIÂY
+
+Phiên kia đề xuất *"thấy `mypy` xanh dưới ~6 giây thì đừng tin"*. **Đo được: đó
+là cache tăng dần của mypy** (`.mypy_cache/`), không phải dấu hiệu hỏng — lượt
+nguội ~15 giây, lượt ấm ~2–3 giây, và lượt **FAIL** ở 13:53 cũng chỉ mất **3,2
+giây**. Một lượt đỏ nhanh bác bỏ chính quy tắc ấy. Lấy nó làm dấu hiệu sẽ đẩy
+các phiên sau đi đuổi một cái bóng.
+
+### Bản sửa — và vì sao **chưa** vá
+
+Sửa đúng lớp: ghi thêm vào `.moc` **số tệp mypy thật sự kiểm**, và đỏ khi nó
+**giảm**. Đầu vào đã canh; đây là canh đầu ra.
+
+⛔ Chưa vá, theo `AGENTS.md` §4c: mỗi worktree chạy bản `tools/` của riêng nó,
+nên một bản vá một phía **phạt đúng cây đã sửa** (cây mới thì đỏ, cây cũ chạy
+tự do), và một trường mới trong `.moc` thì bản cũ đọc qua không thấy. Phải lan
+cùng lúc, hoặc không lan.
+
+⛔ Và **không `--accept`**: mốc hiện tại chưa từng được chứng minh là khớp cây
+nào. Dời nó xuống là khoá vĩnh viễn ba lỗi chưa ai truy ra nguồn.
+
+### ❌ KẾT LUẬN ĐẦU CỦA TÔI — **SAI**. Giữ lại vì cách nó sai mới là bài học
+
+Tôi giải nén **đúng commit đã sinh ra mốc** (`4ece48f8`) ra một cây riêng, chạy
+mypy trên đó, thấy `120/61` trong khi `.moc` commit kèm ghi `119/59`, và kết
+luận: *"mốc sai từ lúc sinh ra"*.
+
+⛔ **Phép đo ấy không chứng minh được điều đó.** Nó giải nén cây **cũ** nhưng
+chạy trong môi trường **hôm nay** — nên nó không phân biệt nổi hai giả thuyết:
+
+| | Giả thuyết | Nó giải thích được gì |
+|---|---|---|
+| (a) | mốc chưa từng khớp | mỗi con số lệch |
+| (b) | **phụ thuộc đã đổi** kể từ lúc chốt | số lệch · **hai nhánh độc lập cùng đỏ** · **không nằm trong commit nào** |
+
+Tôi chọn (a) — cái giải thích **ít hơn**. Đây đúng *"giả thuyết khớp quá vừa kết
+thúc điều tra"*: (a) khớp con số một cách hoàn hảo, nên tôi ngừng hỏi.
+
+### ✅ ĐÃ GIẢI — 07/09: **một bản nâng phụ thuộc, không nằm trong commit nào**
+
+Phiên `LTTCHAT V3` đưa mảnh tôi thiếu: **`pillow 12` đổi stub kiểu**. Phép đo
+quyết định là **dấu thời gian**, không phải số đếm:
+
+```
+commit chot moc `4ece48f8`      06/09  17:02
+pillow-12.3.0.dist-info mtime   06/09  22:57      <- SAU gan 6 tieng
+```
+
+⇒ Lúc viết, mốc **đúng**. Gần sáu tiếng sau, một bản nâng trong `site-packages`
+**dùng chung** thêm 3 lỗi vào mọi cây cùng lúc. Không nhánh nào chứa nó, vì nó
+không nằm trong Git.
+
+### 🔴 Lỗ hổng thật, tổng quát hơn cả hai bánh cóc
+
+**Một bánh cóc chốt SỐ ĐẾM mà không chốt MÔI TRƯỜNG sinh ra số đếm ấy.**
+
+`check_mypy.moc` ghi *"arg-type = 119"* như thể đó là tính chất của **mã**. Nó
+không phải — nó là tính chất của **mã cộng với phiên bản mọi thư viện có stub**.
+Hai cây giống hệt nhau từng byte cho hai con số khác nhau nếu `pillow` khác bản.
+
+Và nó nguy hiểm theo **chiều ngược lại** nhiều hơn: một bản nâng phụ thuộc làm
+**giảm** số lỗi sẽ **hạ chuẩn thật** mà bánh cóc vẫn xanh — vì nhánh `giam` luôn
+`return 0`. Ta sẽ mất một tầng bảo vệ mà không có gì đỏ lên.
+
+⇒ `--accept` ngày 07/09 vẫn là hành động **đúng**, nhưng vì lý do khác lý do tôi
+ghi: đây là **chốt lại mốc sau một bản nâng phụ thuộc**, không phải sửa một mốc
+sai từ đầu. Và `.moc` nên ghi kèm phiên bản của những thư viện nó phụ thuộc,
+để lần sau câu hỏi *"vì sao số đổi"* có chỗ tra.
+
+
+Phép đo quyết định: giải nén **đúng commit đã sinh ra mốc** (`4ece48f8`, *"H9 —
+mypy làm bánh cóc thứ tư"*) ra một cây riêng ngoài kho, rồi chạy mypy trên đó.
+
+```
+tep `check_mypy.moc` COMMIT KEM:   arg-type = 119   assignment = 59
+mypy tren CHINH CAY DO:            arg-type = 120   assignment = 61
+```
+
+⇒ Không phải phần trôi của ai đó chưa commit. **Mốc sai từ lúc sinh ra** — nó
+được `--accept` trên một cây, rồi cây đổi trước khi commit.
+
+Điều đó cũng giải thích các lượt gate `PASS` xen kẽ mà không lời giải thích nào
+khớp: **mọi cây đều lệch cùng 3 lỗi kể từ 22:57**, nên một lượt gate chạy trước
+mốc thời gian ấy thì xanh, sau thì đỏ — và không ai nhìn đồng hồ.
+
+⇒ `--accept` **không** phải giặt phần trôi của người khác: diff chứng minh —
+**chỉ hai dòng đổi**, không mã lỗi nào khác trôi theo.
+
+⛔ **Lỗ hổng cấu trúc thì vẫn còn**: nhánh `giam` in ghi chú rồi `return 0`, nên
+bánh cóc vẫn xanh khi phép đo teo lại — và như trên, một bản nâng phụ thuộc là
+đúng cái làm nó teo. Bản sửa (ghi **số tệp mypy thật sự kiểm** + **phiên bản phụ
+thuộc** vào `.moc`, đỏ khi số tệp giảm) **chưa làm**, theo `AGENTS.md` §4c: mỗi
+worktree chạy bản `tools/` riêng nên một bản vá một phía phạt đúng cây đã sửa.
+
+---
+
+## Bẫy 35 — Một worktree khác **đứng ở nhánh khác**, nên nó có tệp mà nhánh bạn không có
+
+Đo 07/09/2026 trên `phien/video-v2-wangp`.
+
+### Chuyện gì xảy ra
+
+Năm chỗ trong mã V2 viết `from tools.video_cloud import ...`, trong đó có
+`apps/lttvideo/jobs.py:_dieu_phoi_that()` — đường bật máy theo nhu cầu, chạy
+**trong worker thật**. Tệp ấy không tồn tại trên nhánh này. Suốt cả phiên tôi
+chạy hàng chục lệnh `python -c "from tools.video_cloud import nap_env..."` và
+lần nào cũng chạy được.
+
+Vì tôi chạy chúng từ **một worktree khác**, và cây ấy đứng ở nhánh V3.
+
+```
+git ls-tree -r --name-only <nhanh> -- platform_core/video_gen | wc -l
+```
+
+| nhánh | `platform_core/video_gen` | `tools/video_cloud.py` |
+|---|---|---|
+| `master` · `admin-mvp-v3` · **`phien/video-v2-wangp`** | **0 tệp** | **không** |
+| `claude/ltt-video-ai-v3-p00-3f5713` | 5 tệp | có |
+
+### Vì sao bộ test không thấy
+
+`_dieu_phoi_that()` trả `None` sớm khi thiếu `LTTV_POD_ID`, và **mọi** phép kiểm
+đều tiêm `_dieu_phoi` vào để khỏi chạm mạng. Nghĩa là câu lệnh `import` ấy
+**chưa từng được thực thi một lần nào** — không phải nó xanh, mà là nó chưa bao
+giờ chạy. Một `import` không bao giờ chạy trông y hệt một `import` đúng.
+
+### Vì sao nó là một bẫy riêng, không phải Bẫy 24 hay "đọc thứ đại diện"
+
+Ba thứ **cùng lúc** phải sai thì mới ra được lỗi này, và mỗi thứ một mình đều vô
+hại:
+
+1. `sys.path.insert(0, str(Path.cwd()))` — module phân giải theo **thư mục đang
+   đứng**, không theo thư mục chứa tệp gọi. Ai chạy ở đâu thì ra kết quả đó.
+2. Nhiều worktree trên cùng một kho, mỗi cây một nhánh. Cùng đường dẫn tương
+   đối, khác nội dung.
+3. Đường mã ấy chỉ chạy khi có biến môi trường mà máy phát triển không đặt.
+
+⇒ Phép đo *"tôi vừa import nó xong mà"* **đúng** — chỉ là nó trả lời câu
+  *"cây tôi đang đứng có tệp đó không"*, còn câu cần hỏi là *"nhánh sắp deploy
+  có tệp đó không"*.
+
+### Luật rút ra
+
+- **Đo bằng `git ls-tree <nhánh>`, đừng đo bằng `import` hay `ls`.** Nhánh là
+  thứ sẽ deploy; thư mục chỉ là thứ tình cờ đang mở. Cùng họ với
+  `do-nhanh-bang-rev-parse-khong-bang-ten-worktree`.
+- **Phép kiểm phải `import` thật, đừng khớp tên.** `test_733` duyệt AST lấy mọi
+  tên module `tools.*` rồi gọi `importlib.import_module` từng cái. Đối chứng
+  bắt buộc: tiêm lại bản cũ, xác nhận **đỏ**, đọc `returncode` — đã làm, ra đúng
+  `ModuleNotFoundError: No module named 'tools.video_cloud'`.
+- **Nhánh nào chạy `import` lười thì nhánh ấy nợ một phép kiểm nhập.** `import`
+  đặt trong thân hàm để tránh vòng lặp phụ thuộc là hợp lý; nhưng nó dời lỗi từ
+  lúc khởi động sang lúc phục vụ khách, nên phải có ai đó nhập nó sớm.
+
+---
+
+## Bẫy 36 — DOM đúng, **ảnh vẫn không hiện**: CSP chặn ở tầng dưới phép kiểm
+
+Đo 07/09/2026 khi dựng ô xem trước tệp đính kèm của `lttvideo`.
+
+### Chuyện gì xảy ra
+
+Chép cách làm của `apps/taovideo`, dùng `URL.createObjectURL(f)` cho tệp người
+dùng vừa chọn. Kiểm bằng Playwright, đọc DOM:
+
+```
+{"co_anh": true, "src_blob": true, "so_con": 1}
+```
+
+Ba khẳng định đều **đúng**, và ảnh **không bao giờ hiện**. Console mới nói ra:
+
+```
+Loading the image 'blob:http://…' violates the following Content Security
+Policy directive: "img-src 'self' data: https://*.r2.cloudflarestorage.com"
+```
+
+CSP ở `server/app.py` cho `data:` **chứ không** cho `blob:` ở `img-src`, trong
+khi `media-src` thì **có** `blob:`. Nên `createObjectURL` đúng cho **video** và
+sai cho **ảnh**.
+
+⭐ `taovideo` làm đúng từ đầu — nó dùng `FileReader` cho ảnh và `createObjectURL`
+   cho video/audio. Tôi chép một nửa và tưởng đó là cả bài.
+
+### Vì sao phép kiểm cấu trúc không bắt được
+
+`co_anh`/`src_blob` đo **thứ ta dựng ra**. Việc trình duyệt có *chấp nhận* thứ
+ấy hay không nằm ở một tầng thấp hơn, và tầng đó chỉ nói qua console.
+
+⇒ Khẳng định phải là **`img.complete && img.naturalWidth > 0`** — thứ chỉ đúng
+  khi trình duyệt đã **giải mã ảnh thật**. Đó là khác biệt giữa *"tôi đã đặt
+  src"* và *"ảnh đã hiện"*.
+
+### Và bộ dò để canh nó lại tự sập vào Bẫy 22
+
+Phép kiểm đầu tiên tôi viết để chốt bài học này **đỏ trên mã đúng**, hai chỗ:
+
+| Quét | Khớp nhầm vào |
+|---|---|
+| `app.py.split("media-src")` | một **chú thích** nhắc `"media-src/connect-src"` nằm ngay trước khối chính sách |
+| `"createObjectURL" not in nhanh_anh` | dòng **chú thích** cảnh báo *"một `createObjectURL` không `revoke`…"* |
+
+Đây là lần **thứ ba trong một ngày** một bộ dò văn bản ở kho này báo động trên
+chính đoạn giải thích nó *(hai lần trước: chú thích nhắc `t2v_2_2`, và chú thích
+nhắc `nhan_vien`)*.
+
+⇒ Luật: **quét mã, đừng quét lời.** Python thì đọc AST. JS không có AST sẵn thì
+  bỏ chú thích trước đã. Và với CSP, lấy chỉ thị từ **hằng chuỗi** bằng
+  `"img-src\s+([^"]*)"`, không tách thô trên tên chỉ thị.
+
+### Luật rút ra
+
+- **Một khẳng định về hình ảnh phải đo việc GIẢI MÃ, không đo thuộc tính.**
+- **Chép một khuôn thì chép cả hai nhánh của nó.** `taovideo` phân nhánh
+  ảnh/video *có lý do*; nhánh ấy chính là bài học đã trả giá, và nó nằm ở chỗ
+  dễ bỏ qua nhất — một câu `if` không có chú thích.
+- **Chính sách bảo mật là một hợp đồng câm.** Nó không báo lỗi ở máy chủ, không
+  làm test đỏ, chỉ chặn ở trình duyệt người dùng. Phải có phép kiểm đọc **chính
+  chuỗi CSP** để khi ai đó sửa chính sách thì mã dựa vào nó biết mà đỏ theo.
+
+---
+
+## Bẫy 37 — `pre-commit` stash phần UNSTAGED nhưng **không** stash tệp UNTRACKED
+
+Ngày **08/09/2026**, ba phiên cùng làm trên cây chính. Phiên
+`OPERATING_STANDARDIZATION` staged đúng 20 tệp của mình, tất cả sạch, rồi
+`git commit` — và bị chặn:
+
+```
+banh coc ruff (chi do khi TANG)..........................................Failed
+   F401     416 -> 417
+```
+
+Dòng `F401` thứ 417 nằm ở **`tests/test_958_wf_he_kieu_cong.py:16`** — một tệp
+mà phiên **LTT WORKFLOW V2** vừa tạo lúc 15:17 và chưa `git add`.
+
+### Vì sao nó lọt
+
+`pre-commit` in ra `[INFO] Stashing unstaged files` và đúng là nó có stash. Nhưng
+nó stash **thay đổi chưa staged của tệp ĐÃ ĐƯỢC THEO DÕI**. Một tệp **untracked**
+thì không có gì để stash — nó chỉ nằm đó, và `ruff .` quét cả thư mục.
+
+⇒ **Một tệp mới của phiên A được tính vào bánh cóc của phiên B.** Đây là một
+đường ghép giữa các phiên mà **không ai khai**, và nó không xuất hiện trong
+`git diff --cached` của người bị chặn.
+
+### Vì sao nó nguy hơn "một commit bị chặn"
+
+Lần này nó chỉ chặn. Lần sau nó có thể làm **một phiên đi sửa mã của mình vì một
+con số không phải của mình** — bánh cóc chỉ nói *"F401 tăng 1"*, nó không nói
+*"của ai"*.
+
+### Cách phân xử — rẻ, ba mươi giây
+
+```bash
+python -m ruff check --select F401 $(git ls-files --others --exclude-standard | grep '\.py$')
+```
+
+Nếu con số dôi ra nằm ở một tệp **untracked mà bạn không tạo**, thì đó không phải
+việc của bạn. Đừng `--no-verify`, và đừng thêm `# noqa` vào tệp người khác — ở ca
+08/09 dòng `import pytest` thừa là **thật**: chủ tệp đã bỏ hết `pytest.raises`
+trong một lượt siết phép kiểm và quên dòng import. Một `# noqa` do người ngoài
+thêm vào sẽ giấu mất nó.
+
+⇒ Việc đúng là **nhắn cho chủ tệp**, rồi chờ. Xem `AGENTS.md` §10.4.
+
+### ⚠️ Và một bẫy phụ ngay trong lúc phân xử
+
+Đúng lượt kiểm ấy, hai phiên khác nhau cùng viết:
+
+```bash
+python tools/check_ruff.py 2>&1 | tail -4; echo "EXIT=$?"     # SAI — $? la cua `tail`
+```
+
+Câu lệnh **trông như** đang đọc `returncode` — nó có hẳn chữ `EXIT=$?`. Nhưng một
+cái ống làm mất mã thoát y hệt cách khớp mẫu stdout làm mất nó. Ghi ra tệp rồi
+mới đọc:
+
+```bash
+python tools/check_ruff.py > r.log 2>&1; echo "EXIT=$?"       # DUNG
+```
+
+⭐ Cả hai phiên mắc lỗi này **sau khi** một trong hai vừa viết ra luật *"đọc
+`returncode`, đừng khớp mẫu stdout"*. Thứ cứu họ không phải sự cẩn thận — mà là
+`pre-commit` tự chạy lại `ruff` một cách độc lập.

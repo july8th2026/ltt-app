@@ -401,10 +401,20 @@ def test_ban_khong_bi_boc_thanh_loi_giong_noi(monkeypatch):
 
 
 def test_thieu_token_thi_tu_choi_chu_khong_goi_bua(monkeypatch):
+    """Thieu token thi TU CHOI, khong goi bua len cong.
+
+    [!] Truoc 08/09/2026 phep kiem nay goi `sidecar_client.nang_luc()`. Cua ay
+        DA GO — `/health` tra dung noi dung ay ma KHONG nap model, nen ham boc
+        la mot duong dat hon cho cung mot cau tra loi (xem `sidecar_client.py`).
+
+    [!] Va no chuyen sang `giong_dung_san()` chu khong bi xoa: menh de o day
+        khong phai ve `nang_luc`, no la ve **moi cua deu tu choi khi thieu
+        token**. Xoa phep kiem cung voi cua bi go la vut menh de di theo.
+    """
     monkeypatch.delenv("LTT_VOICE_SIDECAR_TOKEN", raising=False)
     assert not sidecar_client.san_sang()
     with pytest.raises(sidecar_client.LoiSidecar):
-        sidecar_client.nang_luc()
+        sidecar_client.giong_dung_san()
 
 
 # ── nghiệp vụ ────────────────────────────────────────────────────────────────

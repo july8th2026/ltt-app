@@ -207,9 +207,8 @@ lượng ở §4 điều đó **không khả thi**. Cơ chế bàn giao chính l
 
 ## 4. Kế hoạch thi hành
 
-Quy ước mọi bước: sau mỗi lô sửa chạy `python tools\gate.py --vong-lap` (~15 s);
-trước khi báo xong một bước chạy `python tools\gate.py` (~5 phút). `--vong-lap`
-**không phải bằng chứng**.
+Quy ước mọi bước: theo **`docs/00_LTT_OPERATING_CONTRACT.md` §4** — vòng lặp là
+`gate.py --doi`, đầy đủ trước khi báo xong một bước.
 
 ### Pha A — Đọc & kiến trúc (prompt 00–05) · READ ONLY
 

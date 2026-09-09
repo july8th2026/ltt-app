@@ -110,8 +110,32 @@ def _bao(ctx, phan_tram: int, loi_nhan: str) -> None:
         log.debug("bao tien do that bai: %s", e)
 
 
+def _cong_gen_s(so_ke, d) -> None:
+    """Cộng `gen_s` của một lượt gọi vào sổ kê. **Không bao giờ ném.**
+
+    🔴 GPU-GIÂY PHẢI CỘNG DỒN, KHÔNG PHẢI LẤY LƯỢT CUỐI. Một bài dài là nhiều
+       lượt `lo_ra_tep`; mỗi lượt trả `gen_s` của **riêng nó**. Ghi đè thay vì
+       cộng sẽ cho ra GPU-giây của lô cuối cùng và gọi nó là của cả bài — một
+       con số nhỏ hơn sự thật nhiều lần, và **trông hoàn toàn hợp lý**.
+
+    ⚠️ Lượt thử-lại-từng-đoạn cũng cộng vào, có chủ ý: GPU đã thật sự chạy
+       ngần ấy. Số này đo **việc máy đã làm**, không đo việc đáng lẽ phải làm.
+
+    ⛔ Nuốt mọi lỗi. Đây là số liệu vận hành đi kèm một lượt sinh **đã thành
+       công**; một `TypeError` ở đây biến một chỉ số thiếu thành một job hỏng
+       và một khoản credit phải hoàn.
+    """
+    if so_ke is None:
+        return
+    try:
+        so_ke["gen_s"] = float(so_ke.get("gen_s") or 0.0) + float(
+            (d or {}).get("gen_s") or 0.0)
+    except (TypeError, ValueError, AttributeError) as e:  # noqa: BLE001
+        log.debug("khong cong duoc gen_s: %s", type(e).__name__)
+
+
 def _sinh_mot_lo(chi_so: list, doan: list, thu_muc: str, *,
-                 ref_b64, preset):
+                 ref_b64, preset, so_ke: dict | None = None):
     """Sinh một lô đoạn ra tệp tạm. **Hàm sinh**, trả từng `(chi_so, duong)`.
 
     ⭐ HỎNG CẢ LÔ THÌ THỬ LẠI TỪNG ĐOẠN, và đây không phải sự cẩn thận thừa.
@@ -127,8 +151,9 @@ def _sinh_mot_lo(chi_so: list, doan: list, thu_muc: str, *,
     """
     ra_tam = [os.path.join(thu_muc, f"{i:04d}.wav") for i in chi_so]
     try:
-        sidecar_client.lo_ra_tep([doan[i] for i in chi_so], ra_tam,
-                                 ref_b64=ref_b64, preset=preset)
+        d = sidecar_client.lo_ra_tep([doan[i] for i in chi_so], ra_tam,
+                                     ref_b64=ref_b64, preset=preset)
+        _cong_gen_s(so_ke, d)
         yield from zip(chi_so, ra_tam)
         return
     except sidecar_client.SidecarBan:
@@ -156,8 +181,8 @@ def _sinh_mot_lo(chi_so: list, doan: list, thu_muc: str, *,
     loi = None
     for i, duong in zip(chi_so, ra_tam):
         try:
-            sidecar_client.lo_ra_tep([doan[i]], [duong],
-                                     ref_b64=ref_b64, preset=preset)
+            _cong_gen_s(so_ke, sidecar_client.lo_ra_tep(
+                [doan[i]], [duong], ref_b64=ref_b64, preset=preset))
         except sidecar_client.SidecarBan:
             raise
         except Exception as e2:                  # noqa: BLE001
@@ -204,10 +229,16 @@ def dung(doan: list, *, thu_muc: str, owner_id: str = "", job_id: str = "",
     _bao(ctx, _TD_DAU, _t("Chuẩn bị {n} đoạn").format(n=n))
 
     # ── 2. sinh phần còn thiếu, GHI VÀO KHO SAU MỖI LÔ ──────────────────────
+    #
+    # ⭐ Sổ kê GPU-giây. Nó đi **cùng** vòng sinh chứ không đo lại sau, vì
+    #    không có cách nào đo lại: `gen_s` chỉ tồn tại trong phản hồi của từng
+    #    lượt `lo_ra_tep`, và phản hồi ấy không được lưu ở đâu.
+    _so_ke: dict = {"gen_s": 0.0}
     for k in range(0, len(con_lai), moi_lo):
         lo = con_lai[k:k + moi_lo]
         for i, tam in _sinh_mot_lo(lo, doan, thu_muc,
-                                   ref_b64=ref_b64, preset=preset):
+                                   ref_b64=ref_b64, preset=preset,
+                                   so_ke=_so_ke):
             khoa = khoa_doan(owner_id, job_id, i)
             # Luồng tệp, KHÔNG `read()`: `LocalStorage.put` dùng
             # `shutil.copyfileobj`, nên đưa nó một handle là chép theo khối.
@@ -231,4 +262,13 @@ def dung(doan: list, *, thu_muc: str, owner_id: str = "", job_id: str = "",
         duong, ra, so_cau=[text_pipeline.dem_cau(t) for t in doan])
     if not os.path.isfile(ra):
         raise LoiHaTang(_t("Ghép xong nhưng không thấy tệp kết quả."))
+    # ⛔ `ho_so` đến từ `ghep_tep`, và `ghep_tep` KHÔNG chạy model — nó không
+    #    biết gì về GPU-giây. Cộng sổ kê vào đây là chỗ duy nhất con số ấy còn
+    #    sống sót ra khỏi hàm này.
+    #
+    # ⚠️ Ghi ĐÈ chứ không `setdefault`: nếu ngày nào `ghep_tep` bắt đầu trả một
+    #    khoá `gen_s` của riêng nó, hai nguồn sẽ tranh nhau — và nguồn đúng cho
+    #    câu hỏi "bài này tốn bao nhiêu GPU" là sổ kê của vòng SINH.
+    ho_so = dict(ho_so or {})
+    ho_so["gen_s"] = round(float(_so_ke.get("gen_s") or 0.0), 3)
     return ra, ho_so

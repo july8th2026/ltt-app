@@ -56,8 +56,20 @@ _STATIC_DIR = pathlib.Path(__file__).resolve().parent / "static"
 #    `tests/test_369_asset_ver_day_du.py` nay đọc khuôn mẫu để biết tệp nào đang
 #    được đính version, rồi đòi danh sách này phủ hết. Thêm tệp mới mà quên khai
 #    là đỏ ngay — một luật cho cả lớp, không phải một danh sách được nhớ tay.
+#: 🔴 So dang ky nay la mot DANH SACH GO TAY, va do la cai bay cua no.
+#:
+#:    Them mot tep static roi dinh `?v={{ asset_ver }}` vao la CHUA DU. Neu ten
+#:    tep khong nam trong tuple nay thi hash **khong doi khi tep doi** — link
+#:    trong ra da cache-bust, nhung no hoan toan tro, va Cloudflare phuc vu ban
+#:    CU cho toi khi het TTL.
+#:
+#: ⚠️ Do dung su co `CLAUDE.md` muc 6, chi khac la lan nay no im lang HON: co
+#:    `?v=` nen khong ai nghi ngo. `tests/test_737` canh dieu do.
+#:
+#: 📌 `lttvideo.js` them 07/09 — cung khuon voi `voice.js` cua `ltt_voice`.
 TAI_SAN_CO_VERSION = ("ltt.css", "sao_chep.js", "cam_chon.js", "chon_tep.js",
                       "voice.js", "dev_playground.js", "nhip_job.js",
+                      "lttvideo.js",
                       #: Man Studio cua Auto Scan V5. Thieu dong nay thi tep van
                       #: duoc phuc vu, nhung `?v=` cua no khong doi khi noi dung
                       #: doi — tuc khach nhan ban CU tu Cloudflare toi het TTL.

@@ -57,9 +57,47 @@ def _gia(params: dict) -> int:
     #
     #    Phép chuẩn hoá này chỉ là regex — vài chục micro giây, và nó chạy ở mọi
     #    lượt báo giá nên không được phép chạm mạng hay CSDL.
+    # ⭐ `preset` LẤY TỪ `params`, KHÔNG TRA CSDL. Đó là thứ làm hồ sơ tốc độ
+    #    theo từng giọng khả thi ở đúng đường này: tên preset đã nằm sẵn trong
+    #    tham số, nên `gia.giay_uoc` chỉ tra một `dict` nạp lúc import.
+    #
+    # ⛔ Giọng nhân bản (`voice_id`) KHÔNG có hồ sơ và sẽ không bao giờ có —
+    #    chúng sinh ra sau lượt đo. Truyền `""` là đúng: `giay_uoc` lùi về hai
+    #    hằng số chung, y như trước 08/09.
+    # 🔴 CHIA ĐOẠN RỒI MỚI TÍNH, và bỏ bước này là GIỮ THIẾU CREDIT.
+    #
+    #    `gia.giay_uoc` là mô hình **hai tham số**: `khoi_dong + n/toc_do`. Phần
+    #    `khoi_dong` là khoảng lặng model thêm vào **mỗi lượt phát**, và một bản
+    #    đọc dài là N lượt phát ghép lại — nên bản ghép thật mang N khoảng lặng,
+    #    không phải một.
+    #
+    #    Bản trước gọi `uoc_tran(so_ky_tu=len(da))`, tức tính như thể cả bài là
+    #    **một** lượt phát. Đo 08/09/2026 trong trần công khai hiện tại:
+    #
+    #        n =   5.000 ky tu ->  4 doan: giu 56 / gia neu that 57   (thieu 1)
+    #        n = 100.000 ky tu -> 67 doan: giu 1112 / gia neu that 1132 (thieu 20)
+    #
+    # ⛔ Lệch nhỏ, nhưng lệch về **đúng phía cấm**: chốt 3.3 nói ước phải
+    #    >= giá thật **LUÔN LUÔN**. Và hậu quả không phải "thu thiếu 20 credit"
+    #    — quyết toán vượt phần giữ thì lượt chạy bị đánh hỏng **sau khi** đã
+    #    tiêu hết GPU, tức khách chờ xong rồi nhận một lỗi.
+    #
+    # ⭐ `uoc_tran_lo` cộng **milli-credit** rồi mới làm tròn đúng một lần, nên
+    #    một bài 67 đoạn không phải trả thừa 67 lượt làm tròn.
+    #
+    # ⚠️ `can_bang=True` để khớp `text_pipeline.chuan_bi` — chính hàm mà worker
+    #    dùng. Chia kiểu khác cho số đoạn khác, và hai số đoạn khác nhau là hai
+    #    hoá đơn khác nhau cho cùng một bài.
+    #
+    # ⛔ VẪN THUẦN TÍNH TOÁN: `chia_doan` chỉ là phép cắt chuỗi. Không CSDL,
+    #    không mạng — điều kiện mà chú thích dài bên trên đặt ra vẫn giữ.
     from . import text_pipeline
+    from .tham_so_cong_khai import TRAN_MOI_LUOT_SINH
     da = text_pipeline.chuan_hoa(str(p.get("text") or ""))
-    return gia.uoc_tran(so_ky_tu=len(da))
+    doan = text_pipeline.chia_doan(da, tran_moi_doan=TRAN_MOI_LUOT_SINH,
+                                   can_bang=True)
+    return gia.uoc_tran_lo(cac_do_dai=[len(d) for d in doan] or [len(da)],
+                           giong=str(p.get("preset") or ""))
 
 
 MANIFEST = AppManifest(

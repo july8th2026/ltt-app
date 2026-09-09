@@ -308,9 +308,11 @@ def _viet_lai(db, run, m: dict, *, chu: str, giay: float, khe: float,
             item_key=f"nan:{m['ma']}:{so_vong}", ctx=ctx)
         # 🔴 Cung mot loi voi `giai_doan_noi_dung`, tim ra o pha 22: `noi_dung`
         #    la CHUOI phan hoi tho cua model, va `doc_nan` goi `.get` tren no.
-        #    `ai.doc_json` la buoc doc-va-kiem-luoc-do bi bo quen o ca hai cho.
+        #    `ai.doc_ket_qua` la buoc doc-va-kiem-luoc-do bi bo quen o ca hai
+        #    cho. (Truoc 09/09 no la `ai.doc_json(kq.get("noi_dung") ...)`, va
+        #    cach boc ay vut mat `finish_reason` — xem `ai._vi_sao_rong`.)
         return nan_cho_vua.doc_nan(
-            ai.doc_json(kq.get("noi_dung") or "", ai.RUT_NGAN_CHO_VUA))
+            ai.doc_ket_qua(kq, ai.RUT_NGAN_CHO_VUA))
     except (ai.AiError, ai.AiMoHo, giong_noi.MayBan,
             nan_cho_vua.NanError) as exc:
         # 🔴 **`MayBan` PHAI nam trong danh sach nay, va no tung khong.**

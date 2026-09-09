@@ -1,0 +1,21 @@
+{
+ "python": "3.10.12 (main, Jul 15 2026, 23:40:17) [GCC 11.4.0]",
+ "platform": "Linux-6.8.0-134-generic-x86_64-with-glibc2.35",
+ "torch": "2.10.0+cu128",
+ "cuda": "12.8",
+ "cuda_available": true,
+ "gpu": [
+  "NVIDIA A100-SXM4-80GB"
+ ],
+ "sm": [
+  [
+   8,
+   0
+  ]
+ ],
+ "vram_gb": [
+  85.09
+ ],
+ "mmgp": "3.7.14",
+ "sageattention": "2.2.0"
+}

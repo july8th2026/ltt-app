@@ -37,6 +37,7 @@ nghe_thu.py — NGHE THỬ một giọng trước khi dùng nó.
 """
 from __future__ import annotations
 
+import hashlib
 import logging
 import re
 
@@ -56,16 +57,61 @@ CAU_NGHE_THU = N_('Xin chào, đây là giọng đọc của tôi. '
                   'Hôm nay là ngày mùng hai tháng chín. '
                   'Rất vui được đồng hành cùng bạn.')
 
-#: 🔴 ĐỔI CÂU TRÊN THÌ PHẢI ĐỔI CHUỖI NÀY.
+def _phien_ban_tham_so() -> str:
+    """`PHIEN_BAN_THAM_SO` của sidecar, hoặc `"?"` nếu không đọc được.
+
+    ⭐ ĐỌC ĐƯỢC, và đó không hiển nhiên: sidecar chạy trong **venv cách ly**,
+       nên phần lớn thứ trong `voice_sidecar/` nền tảng không import nổi. Nhưng
+       `tham_so.py` có đúng **một** dòng import (`from __future__ import
+       annotations`) — nó là một tệp hằng số thuần, cố ý.
+
+    ⛔ Không đọc được thì trả `"?"`, KHÔNG ném và KHÔNG đoán. `"?"` là một giá
+       trị ổn định: mọi khoá sinh ra trên một máy thiếu sidecar đều trùng nhau,
+       nên chúng không nở ra vô hạn. Và nó **khác** mọi giá trị thật, nên tệp
+       dựng trên máy ấy không bao giờ bị nhầm là tệp dựng bằng tham số thật.
+    """
+    try:
+        from voice_sidecar.tham_so import PHIEN_BAN_THAM_SO
+        return str(PHIEN_BAN_THAM_SO)
+    except Exception as e:  # noqa: BLE001 - thieu sidecar la trang thai binh thuong
+        log.debug("khong doc duoc PHIEN_BAN_THAM_SO (%s)", type(e).__name__)
+        return "?"
+
+
+#: 🔴 SUY RA TỪ HAI ĐẦU VÀO, KHÔNG GÕ TAY. Đây là bản vá cho một khớp nối mà
+#:    chú thích cũ ở đúng chỗ này đã **mô tả rất chính xác rồi không cưỡng chế**:
 #:
-#:    Khoá tệp mang phiên bản, nên đổi phiên bản = mọi giọng dựng lại tệp mới,
-#:    còn tệp cũ nằm đó tới khi có ai dọn. Không đổi phiên bản = khách nghe câu
-#:    **cũ** trong khi mã nói câu mới, và không ai phát hiện ra vì cả hai đều là
-#:    tiếng nói bình thường.
+#:        "ĐỔI CÂU TRÊN THÌ PHẢI ĐỔI CHUỖI NÀY … Không đổi phiên bản = khách
+#:         nghe câu CŨ trong khi mã nói câu mới, và không ai phát hiện ra vì cả
+#:         hai đều là tiếng nói bình thường."
+#:        "⚠️ Nó cũng phải đổi khi `PHIEN_BAN_THAM_SO` đổi."
 #:
-#: ⚠️ Nó cũng phải đổi khi `voice_sidecar/tham_so.py::PHIEN_BAN_THAM_SO` đổi —
-#:    cùng một câu sinh bằng hai bộ tham số là hai tệp khác nhau.
-PHIEN_BAN = "v1-2026-09-02"
+#: ⭐ Một chú thích nói "phải nhớ làm X" là một chú thích thừa nhận X sẽ bị
+#:    quên. Ở đây cái giá của việc quên đã được viết ra: **hỏng lặng lẽ, và
+#:    không có triệu chứng nào để lần**. Nên câu trả lời đúng không phải một
+#:    chú thích to hơn, mà là gỡ khả năng quên.
+#:
+#: ⇒ Hai thứ quyết định nội dung tệp — câu đọc và bộ tham số engine — cùng đi
+#:   vào một hàm băm. Đổi bất cứ cái nào thì khoá đổi, tự động, không ai phải
+#:   nhớ gì.
+#:
+#: ⚠️ BĂM `CAU_NGHE_THU` (msgid GỐC), KHÔNG băm `_t(CAU_NGHE_THU)`. Bản dịch
+#:    phụ thuộc ngôn ngữ của lượt gọi, nên băm nó sẽ cho **hai khoá khác nhau
+#:    cho cùng một giọng** tuỳ ai chạm vào vòng bảo trì trước.
+#:
+#: ⛔ NHƯNG ĐIỀU ĐÓ PHƠI RA MỘT KHỚP NỐI THỨ HAI, VÀ TÔI ĐỂ NGUYÊN CÓ Ý THỨC:
+#:    `dung()` gửi `str(_t(CAU_NGHE_THU))` xuống engine, tức **nội dung âm
+#:    thanh phụ thuộc ngôn ngữ**, trong khi khoá thì không. Trên máy chủ hôm
+#:    nay vòng bảo trì chạy ngoài mọi request nên nó luôn rơi về ngôn ngữ mặc
+#:    định, và hai giá trị trùng nhau. Đó là một sự trùng hợp, không phải một
+#:    bảo đảm.
+#:
+#:    Không vá ở đây vì thêm ngôn ngữ vào khoá làm **mọi** tệp nghe thử hiện có
+#:    thành mồ côi, và đó là một thay đổi cần một lượt đo trước. Ghi ra để nó
+#:    không lặng lẽ.
+PHIEN_BAN: str = "v2-" + hashlib.sha256(
+    (CAU_NGHE_THU + "|" + _phien_ban_tham_so()).encode("utf-8")
+).hexdigest()[:12]
 
 #: Trần số giọng dựng trong MỘT lượt bảo trì. Bảo trì chạy mỗi giờ; hai mươi
 #: giọng mẫu warm đủ trong bảy lượt.
@@ -245,10 +291,19 @@ def bao_tri() -> None:
     ⚠️ Im lặng khi cổng chưa bật. Đây là việc nền; sủa mỗi giờ trên một máy
        chưa cài engine chỉ làm nhật ký khó đọc.
     """
+    # ⭐ ĐẾM MỨC DÙNG TRƯỚC, và **ngoài** cổng `san_sang()` bên dưới.
+    #
+    #    Thứ tự giọng là chuyện của giao diện; nó vẫn phải đúng trên một máy
+    #    chưa cài engine. Đặt phép đếm sau `return` kia là để một kho chạy nhiều
+    #    tháng không engine phục vụ mãi mãi một thứ tự bảng chữ cái — hỏng lặng
+    #    lẽ, và hỏng theo cách không ai nghĩ tới khi đọc `bao_tri`.
+    _dem_muc_dung()
+
     from . import sidecar_client
 
     if not sidecar_client.san_sang():
         return
+    _doi_chieu_giong_mau()
     thieu = con_thieu_mau()
     if not thieu:
         return
@@ -278,3 +333,105 @@ def duong_cho_app_khac(*, owner_id: str, ma_mau=(), rieng=()) -> dict:
 
     return duong_cho_trang(duong_audio=f"{MANIFEST.route_prefix}/audio",
                            owner_id=owner_id, ma_mau=ma_mau, rieng=rieng)
+
+
+#: Bao lâu mới đối chiếu ảnh chụp giọng mẫu với engine một lần, tính bằng giây.
+#:
+#: ⚠️ MỘT NGÀY, không phải mỗi giờ. Danh sách preset đi kèm **bản model**, nên
+#:    nó chỉ đổi vào ngày nâng engine. Hỏi mỗi giờ là 24 lượt gọi để phát hiện
+#:    một thay đổi xảy ra vài tháng một lần.
+MOI_LUOT_DOI_CHIEU_S = 86_400
+_LUOT_DOI_CHIEU_CUOI = [0.0]
+
+
+def _doi_chieu_giong_mau() -> None:
+    """Hỏi engine THẬT xem ảnh chụp preset còn đúng không.
+
+    🔴 CÂU NÀY CHÍNH BỘ SINH ẢNH CHỤP ĐÃ BỎ NGỎ, và nó nói ra điều đó:
+
+       *"Ảnh chụp chốt `giong_mau.py` khớp thứ ta đã chụp; nó **không** chốt
+       thứ ta đã chụp còn đúng. Hai câu đó tách nhau đúng vào ngày nâng model —
+       và đó là ngày duy nhất chúng có thể sai."*
+       (`tools/sinh_giong_mau_engine.py`)
+
+    ⭐ VÌ SAO ĐẶT Ở ĐÂY chứ không ở `giong_mau.py`. Cửa `/v1/voices` gọi
+       `c.nap()`, tức **nạp model — 19,4 giây khi nguội**. Một trang liệt kê
+       giọng gọi thẳng vào đó sẽ treo 19 giây ở lượt đầu mỗi sáng; chính
+       `giong_mau.py` từ chối làm vậy vì lý do ấy.
+
+       Nhưng vòng bảo trì này **đã** giữ model ấm để dựng tệp nghe thử. Ở đây
+       phép hỏi gần như miễn phí — cùng một model đã nạp, cùng một tiến trình.
+
+    ⛔ CHỈ GHI NHẬT KÝ, KHÔNG NÉM VÀ KHÔNG SỬA GÌ. Lệch danh sách preset là
+       chuyện của một lượt nâng engine, và bản sửa đúng là **chạy lại
+       `tools/sinh_giong_mau_engine.py` rồi commit phần diff** — một hành động
+       có người xem xét. Tự sửa ảnh chụp lúc chạy là để một vòng bảo trì âm
+       thầm viết lại một tệp trong git.
+
+    ⚠️ Nuốt mọi lỗi: đây là việc nền chạy dưới lease. Một cổng chậm không được
+       phép làm hỏng lượt dựng tệp nghe thử ngay dưới nó.
+    """
+    import time
+
+    from . import giong_mau, sidecar_client
+
+    if time.time() - _LUOT_DOI_CHIEU_CUOI[0] < MOI_LUOT_DOI_CHIEU_S:
+        return
+    _LUOT_DOI_CHIEU_CUOI[0] = time.time()
+    try:
+        that = {str(m.get("id") or m.get("nhan") or "").strip()
+                for m in sidecar_client.giong_dung_san()}
+    except Exception as e:  # noqa: BLE001 - viec nen, khong duoc lam hong luot chinh
+        log.info("doi chieu giong mau: khong hoi duoc cong (%s)", type(e).__name__)
+        return
+    that.discard("")
+    if not that:
+        return
+    anh_chup = {g.ma for g in giong_mau.DANH_SACH}
+    thieu = sorted(anh_chup - that)
+    moi = sorted(that - anh_chup)
+    if thieu or moi:
+        log.warning(
+            "GIONG MAU LECH engine: anh chup thua %s, engine co them %s. "
+            "Chay `tools/sinh_giong_mau_engine.py` roi commit phan diff.",
+            thieu or "-", moi or "-")
+    else:
+        log.info("doi chieu giong mau: khop (%d giong)", len(that))
+#: Bao lâu mới đếm lại mức dùng, tính bằng giây. SÁU GIỜ, không phải mỗi giờ.
+#:
+#: ⚠️ `bao_tri_moi_giay = 3600`, nên không tiết chế là 24 lượt quét bảng `jobs`
+#:    mỗi ngày — để đổi thứ tự một danh sách hai mươi mục. Thứ tự giọng không
+#:    cần tươi tới từng giờ; nó chỉ cần **đúng** và **ổn định**.
+MOI_LUOT_DEM_S = 21_600
+_LUOT_DEM_CUOI = [0.0]
+
+
+def _dem_muc_dung() -> None:
+    """Đếm lại mức dùng thật cho `muc_dung` (U-12).
+
+    ⛔ NUỐT MỌI LỖI, và mở phiên CSDL của chính nó.
+
+       Đây là số liệu **trang trí thứ tự**. Một truy vấn hỏng ở đây không được
+       phép làm hỏng lượt dựng tệp nghe thử ngay dưới nó — và `muc_dung.xep`
+       với ảnh chụp rỗng vẫn cho ra một thứ tự hợp lệ, nên đường lùi đã có sẵn.
+    """
+    import time
+
+    from . import muc_dung
+
+    if time.time() - _LUOT_DEM_CUOI[0] < MOI_LUOT_DEM_S:
+        return
+    _LUOT_DEM_CUOI[0] = time.time()
+    try:
+        from platform_core.db import get_session
+        gen = get_session()
+        db = next(gen)
+        try:
+            muc_dung.lam_moi(db)
+        finally:
+            try:
+                next(gen)
+            except StopIteration:
+                pass
+    except Exception as e:  # noqa: BLE001 - viec nen, khong duoc lam hong luot chinh
+        log.info("dem muc dung: bo qua luot nay (%s: %s)", type(e).__name__, e)

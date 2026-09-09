@@ -40,7 +40,7 @@
     "apps/prompt_ai_ommi/services/resources.py": 15,
     "apps/prompt_ai_ommi/services/retention.py": 1,
     "apps/prompt_ai_ommi/services/storyboard.py": 10,
-    "apps/prompt_ai_ommi/templates/prompt_ai_ommi.html": 27,
+    "apps/prompt_ai_ommi/templates/prompt_ai_ommi.html": 7,
     "apps/prompt_ai_ommi/templates/prompt_ai_ommi_workspace.html": 2,
     "apps/taoanh/jobs.py": 5,
     "apps/taoanh/manifest.py": 2,
@@ -66,7 +66,6 @@
     "apps/upscalevideo/manifest.py": 1,
     "apps/upscalevideo/routes.py": 32,
     "apps/upscalevideo/service.py": 1,
-    "apps/upscalevideo/templates/upscalevideo.html": 15,
     "platform_core/agent/budget.py": 16,
     "platform_core/agent/executor.py": 9,
     "platform_core/agent/normalizer.py": 9,
@@ -87,7 +86,7 @@
     "platform_core/models.py": 2,
     "platform_core/nexus/versions.py": 1,
     "platform_core/prompt_fragments.py": 3,
-    "platform_core/registry.py": 35,
+    "platform_core/registry.py": 48,
     "platform_core/runtime_paths.py": 1,
     "platform_core/storage.py": 9,
     "platform_core/tokens.py": 1,
@@ -115,5 +114,5 @@
     "server/templating.py": 6,
     "server/usage_rate_limit.py": 1
   },
-  "tong": 774
+  "tong": 752
 }

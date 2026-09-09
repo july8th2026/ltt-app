@@ -1050,7 +1050,7 @@ def test_TOM_TAT_ban_dung_phai_noi_ro_CACH_RENDER(bc):
     assert ban_dung.tom_tat(ban)["cach_render"] == che_do_render.CAT_MA_HOA_LAI
 
 
-def test_CUA_GOI_MODEL_tra_ve_CHUOI_va_moi_nguoi_goi_phai_doc_qua_doc_json(bc):
+def test_CUA_GOI_MODEL_tra_ve_CHUOI_va_moi_nguoi_goi_phai_doc_qua_doc_ket_qua(bc):
     """🔴 Hai giai doan tra tien tung goi `.get("doan")` thang tren phan hoi tho.
 
     `ai.goi` tra ve **nguyen van** phan hoi cua model — mot chuoi. Ca
@@ -1059,7 +1059,22 @@ def test_CUA_GOI_MODEL_tra_ve_CHUOI_va_moi_nguoi_goi_phai_doc_qua_doc_json(bc):
     chung tra ve mot **dict** — thu cua that khong bao gio tra ve.
 
     ⭐ Chot o day la chot vao HINH DANG cua cua: moi nguoi goi `goi_tinh_tien`
-       phai dua `noi_dung` qua `ai.doc_json` truoc khi doc no.
+       phai dua KET QUA qua mot ham kiem truoc khi doc no.
+
+    🔴 **Menh de nay duoc viet lai ngay 09/09, va ban moi KHO xanh hon ban cu.**
+
+       Ban cu chi doi "co goi `doc_json`", va `ai.doc_json(kq.get("noi_dung")
+       or "", ...)` **dat** dieu do — trong khi chinh cach boc ay vut mat
+       `finish_reason` va `suy_nghi` ngay tai cho goi. Hau qua do duoc: lan
+       chay `giu_hinh` 09/09 chet ba lan voi dung mot dong *"model tra ve
+       rong"*, va bon phien lien tiep doc dong ay thanh "may B hong". Do that
+       sau do: `fr=length`, `ra=4096` (cham DUNG tran), khoi suy nghi 9.260 ky
+       tu — may B khong hong, no het cho de tra loi.
+
+    ⇒ Menh de moi: phai di qua `ai.doc_ket_qua`, ham DUY NHAT nhin thay ca ba
+      truong. Va **khong** tep nao con goi `doc_json` truc tiep — day la nua
+      thu hai, khong the thieu: giu lai mot duong vong thi banh coc chi chot
+      mot duong trong hai.
     """
     import ast
 
@@ -1067,12 +1082,16 @@ def test_CUA_GOI_MODEL_tra_ve_CHUOI_va_moi_nguoi_goi_phai_doc_qua_doc_json(bc):
 
     for mod in (giai_doan_noi_dung, giai_doan_giong):
         cay = ast.parse(Path(mod.__file__).read_text(encoding="utf-8"))
-        goi = [n for n in ast.walk(cay)
-               if isinstance(n, ast.Call)
-               and isinstance(n.func, ast.Attribute)
-               and n.func.attr == "doc_json"]
-        assert goi, (f"{mod.__name__} goi model nhung khong doc qua "
-                     "`ai.doc_json` — phan hoi tho la mot CHUOI")
+        ten_goi = {n.func.attr for n in ast.walk(cay)
+                   if isinstance(n, ast.Call)
+                   and isinstance(n.func, ast.Attribute)}
+        assert "doc_ket_qua" in ten_goi, (
+            f"{mod.__name__} goi model nhung khong doc qua `ai.doc_ket_qua` — "
+            "phan hoi tho la mot CHUOI, va `finish_reason`/`suy_nghi` la thu "
+            "duy nhat phan biet 'model nghi qua tay' voi 'may B chet'")
+        assert "doc_json" not in ten_goi, (
+            f"{mod.__name__} con mot duong vong qua `doc_json`: no bo qua "
+            "`finish_reason`, tuc bo qua chinh cau tra loi cua loi 09/09")
     # Va cua that phai van tra ve chuoi: neu mot ngay nao do no tra dict, chot
     # tren la thua va phai duoc go — khong de nguoi sau doan.
     assert "noi_dung" in ai.goi.__doc__

@@ -1,0 +1,1583 @@
+{
+ "nguon": "ghi_tu_may",
+ "sha_wangp": "1e1dd2757f24923f008593d9d4ec09062234be20",
+ "luc": "2026-09-08T00:55:05.942919+07:00",
+ "goi": "get_model_availability(<moi model>)",
+ "du_lieu": {
+  "ace_step_v1": {
+   "model_type": "ace_step_v1",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ace_step_v1_5": {
+   "model_type": "ace_step_v1_5",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ace_step_v1_5_turbo_lm_0_6b": {
+   "model_type": "ace_step_v1_5_turbo_lm_0_6b",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ace_step_v1_5_turbo_lm_1_7b": {
+   "model_type": "ace_step_v1_5_turbo_lm_1_7b",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ace_step_v1_5_turbo_lm_4b": {
+   "model_type": "ace_step_v1_5_turbo_lm_4b",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ace_step_v1_5_xl": {
+   "model_type": "ace_step_v1_5_xl",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ace_step_v1_5_xl_turbo_lm_0_6b": {
+   "model_type": "ace_step_v1_5_xl_turbo_lm_0_6b",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ace_step_v1_5_xl_turbo_lm_1_7b": {
+   "model_type": "ace_step_v1_5_xl_turbo_lm_1_7b",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ace_step_v1_5_xl_turbo_lm_4b": {
+   "model_type": "ace_step_v1_5_xl_turbo_lm_4b",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "alpha": {
+   "model_type": "alpha",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "alpha2": {
+   "model_type": "alpha2",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "alpha2_sf": {
+   "model_type": "alpha2_sf",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "alpha_sf": {
+   "model_type": "alpha_sf",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "animate": {
+   "model_type": "animate",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "animate2": {
+   "model_type": "animate2",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "animate2_distilled": {
+   "model_type": "animate2_distilled",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "bernini": {
+   "model_type": "bernini",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "bernini_1.3B": {
+   "model_type": "bernini_1.3B",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "chatterbox": {
+   "model_type": "chatterbox",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "chrono_edit": {
+   "model_type": "chrono_edit",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "chrono_edit_distill": {
+   "model_type": "chrono_edit_distill",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "dramabox_audio": {
+   "model_type": "dramabox_audio",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "fantasy": {
+   "model_type": "fantasy",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "flf2v_720p": {
+   "model_type": "flf2v_720p",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "flux": {
+   "model_type": "flux",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "flux2_dev": {
+   "model_type": "flux2_dev",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "flux2_dev_nvfp4": {
+   "model_type": "flux2_dev_nvfp4",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "flux2_klein_4b": {
+   "model_type": "flux2_klein_4b",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "flux2_klein_9b": {
+   "model_type": "flux2_klein_9b",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "flux2_klein_base_4b": {
+   "model_type": "flux2_klein_base_4b",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "flux2_klein_base_9b": {
+   "model_type": "flux2_klein_base_9b",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "flux_chroma": {
+   "model_type": "flux_chroma",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "flux_chroma_radiance": {
+   "model_type": "flux_chroma_radiance",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "flux_dev_kontext": {
+   "model_type": "flux_dev_kontext",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "flux_dev_kontext_dreamomni2": {
+   "model_type": "flux_dev_kontext_dreamomni2",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "flux_dev_umo": {
+   "model_type": "flux_dev_umo",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "flux_dev_uso": {
+   "model_type": "flux_dev_uso",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "flux_krea": {
+   "model_type": "flux_krea",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "flux_schnell": {
+   "model_type": "flux_schnell",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "flux_srpo": {
+   "model_type": "flux_srpo",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "flux_srpo_uso": {
+   "model_type": "flux_srpo_uso",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "fun_inp": {
+   "model_type": "fun_inp",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "fun_inp_1.3B": {
+   "model_type": "fun_inp_1.3B",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "heartmula_oss_3b": {
+   "model_type": "heartmula_oss_3b",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "heartmula_rl_oss_3b_20260123": {
+   "model_type": "heartmula_rl_oss_3b_20260123",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "hidream_o1": {
+   "model_type": "hidream_o1",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "hidream_o1_dev": {
+   "model_type": "hidream_o1_dev",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "hidream_o1_dev_2604": {
+   "model_type": "hidream_o1_dev_2604",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "hunyuan": {
+   "model_type": "hunyuan",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "hunyuan_1_5_480_i2v": {
+   "model_type": "hunyuan_1_5_480_i2v",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "hunyuan_1_5_480_i2v_step_distilled": {
+   "model_type": "hunyuan_1_5_480_i2v_step_distilled",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "hunyuan_1_5_480_t2v": {
+   "model_type": "hunyuan_1_5_480_t2v",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "hunyuan_1_5_480_t2v_lightx2v": {
+   "model_type": "hunyuan_1_5_480_t2v_lightx2v",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "hunyuan_1_5_i2v": {
+   "model_type": "hunyuan_1_5_i2v",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "hunyuan_1_5_t2v": {
+   "model_type": "hunyuan_1_5_t2v",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "hunyuan_1_5_upsampler": {
+   "model_type": "hunyuan_1_5_upsampler",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "hunyuan_1_5_upsampler_1080": {
+   "model_type": "hunyuan_1_5_upsampler_1080",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "hunyuan_avatar": {
+   "model_type": "hunyuan_avatar",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "hunyuan_custom": {
+   "model_type": "hunyuan_custom",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "hunyuan_custom_audio": {
+   "model_type": "hunyuan_custom_audio",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "hunyuan_custom_edit": {
+   "model_type": "hunyuan_custom_edit",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "hunyuan_i2v": {
+   "model_type": "hunyuan_i2v",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "hunyuan_t2v_accvideo": {
+   "model_type": "hunyuan_t2v_accvideo",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "hunyuan_t2v_fast": {
+   "model_type": "hunyuan_t2v_fast",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "i2v": {
+   "model_type": "i2v",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "i2v_2_2": {
+   "model_type": "i2v_2_2",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "i2v_2_2_Enhanced_Lightning_v2": {
+   "model_type": "i2v_2_2_Enhanced_Lightning_v2",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "i2v_2_2_Enhanced_Lightning_v2_svi2pro": {
+   "model_type": "i2v_2_2_Enhanced_Lightning_v2_svi2pro",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "i2v_2_2_multitalk": {
+   "model_type": "i2v_2_2_multitalk",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "i2v_2_2_svi2pro": {
+   "model_type": "i2v_2_2_svi2pro",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "i2v_720p": {
+   "model_type": "i2v_720p",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "i2v_fusionix": {
+   "model_type": "i2v_fusionix",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "i2v_nvfp4": {
+   "model_type": "i2v_nvfp4",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ideogram4": {
+   "model_type": "ideogram4",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ideogram4_nf4": {
+   "model_type": "ideogram4_nf4",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ideogram4_turbotime": {
+   "model_type": "ideogram4_turbotime",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "index_tts2": {
+   "model_type": "index_tts2",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "index_tts25": {
+   "model_type": "index_tts25",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "infinitetalk": {
+   "model_type": "infinitetalk",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "infinitetalk_multi": {
+   "model_type": "infinitetalk_multi",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "joyai_echo": {
+   "model_type": "joyai_echo",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "joyai_echo_surgical": {
+   "model_type": "joyai_echo_surgical",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "k5_lite_i2v": {
+   "model_type": "k5_lite_i2v",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "k5_lite_t2v": {
+   "model_type": "k5_lite_t2v",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "k5_lite_t2v_10s_distil": {
+   "model_type": "k5_lite_t2v_10s_distil",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "k5_lite_t2v_10s_distil_sparse": {
+   "model_type": "k5_lite_t2v_10s_distil_sparse",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "k5_lite_t2v_5s_distil": {
+   "model_type": "k5_lite_t2v_5s_distil",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "k5_pro_i2v": {
+   "model_type": "k5_pro_i2v",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "k5_pro_t2v": {
+   "model_type": "k5_pro_t2v",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "k5_pro_t2v_10s_sft": {
+   "model_type": "k5_pro_t2v_10s_sft",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "k5_pro_t2v_10s_sft_sparse": {
+   "model_type": "k5_pro_t2v_10s_sft_sparse",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "kiwi_edit": {
+   "model_type": "kiwi_edit",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "kiwi_edit_instruct_only": {
+   "model_type": "kiwi_edit_instruct_only",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "kiwi_edit_reference_only": {
+   "model_type": "kiwi_edit_reference_only",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "krea2_raw": {
+   "model_type": "krea2_raw",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "krea2_raw_edit": {
+   "model_type": "krea2_raw_edit",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "krea2_turbo": {
+   "model_type": "krea2_turbo",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "krea2_turbo_edit": {
+   "model_type": "krea2_turbo_edit",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "kugelaudio_0_open": {
+   "model_type": "kugelaudio_0_open",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "longcat_avatar": {
+   "model_type": "longcat_avatar",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "longcat_avatar_multi": {
+   "model_type": "longcat_avatar_multi",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "longcat_avatar_v1_5": {
+   "model_type": "longcat_avatar_v1_5",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "longcat_video": {
+   "model_type": "longcat_video",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ltx2_19B": {
+   "model_type": "ltx2_19B",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ltx2_19B_nvfp4": {
+   "model_type": "ltx2_19B_nvfp4",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ltx2_22B": {
+   "model_type": "ltx2_22B",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ltx2_22B_1_1": {
+   "model_type": "ltx2_22B_1_1",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ltx2_22B_1_1_edit_anything": {
+   "model_type": "ltx2_22B_1_1_edit_anything",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ltx2_22B_distilled": {
+   "model_type": "ltx2_22B_distilled",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ltx2_22B_distilled_1_1": {
+   "model_type": "ltx2_22B_distilled_1_1",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ltx2_22B_distilled_1_1_edit_anything": {
+   "model_type": "ltx2_22B_distilled_1_1_edit_anything",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ltx2_22B_distilled_edit_anything": {
+   "model_type": "ltx2_22B_distilled_edit_anything",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ltx2_22B_distilled_gguf_q4_k_m": {
+   "model_type": "ltx2_22B_distilled_gguf_q4_k_m",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ltx2_22B_distilled_gguf_q6_k": {
+   "model_type": "ltx2_22B_distilled_gguf_q6_k",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ltx2_22B_distilled_gguf_q8_0": {
+   "model_type": "ltx2_22B_distilled_gguf_q8_0",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ltx2_22B_edit_anything": {
+   "model_type": "ltx2_22B_edit_anything",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ltx2_22B_msr": {
+   "model_type": "ltx2_22B_msr",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ltx2_22B_msr_v2": {
+   "model_type": "ltx2_22B_msr_v2",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ltx2_22B_nvfp4": {
+   "model_type": "ltx2_22B_nvfp4",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ltx2_25_22B": {
+   "model_type": "ltx2_25_22B",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ltx2_25_22B_distilled": {
+   "model_type": "ltx2_25_22B_distilled",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ltx2_25_22B_distilled_nvfp4": {
+   "model_type": "ltx2_25_22B_distilled_nvfp4",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ltx2_distilled": {
+   "model_type": "ltx2_distilled",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ltx2_distilled_gguf_q4_k_m": {
+   "model_type": "ltx2_distilled_gguf_q4_k_m",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ltx2_distilled_gguf_q6_k": {
+   "model_type": "ltx2_distilled_gguf_q6_k",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ltx2_distilled_gguf_q8_0": {
+   "model_type": "ltx2_distilled_gguf_q8_0",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ltxv_13B": {
+   "model_type": "ltxv_13B",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ltxv_distilled": {
+   "model_type": "ltxv_distilled",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "lucy_edit": {
+   "model_type": "lucy_edit",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "lucy_edit_1_1": {
+   "model_type": "lucy_edit_1_1",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "lucy_edit_fastwan": {
+   "model_type": "lucy_edit_fastwan",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "lucy_edit_fastwan_1_1": {
+   "model_type": "lucy_edit_fastwan_1_1",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "lynx": {
+   "model_type": "lynx",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "magi_human": {
+   "model_type": "magi_human",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "magi_human_distill": {
+   "model_type": "magi_human_distill",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "magi_human_distill_sr1080": {
+   "model_type": "magi_human_distill_sr1080",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "magi_human_sr1080": {
+   "model_type": "magi_human_sr1080",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "minimax_h3_fl2va": {
+   "model_type": "minimax_h3_fl2va",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "minimax_h3_fl2va_pdd": {
+   "model_type": "minimax_h3_fl2va_pdd",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "minimax_h3_fl2va_pruned": {
+   "model_type": "minimax_h3_fl2va_pruned",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "minimax_h3_fl2va_pruned_pdd": {
+   "model_type": "minimax_h3_fl2va_pruned_pdd",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "minimax_h3_ref2va": {
+   "model_type": "minimax_h3_ref2va",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "minimax_h3_ref2va_pdd": {
+   "model_type": "minimax_h3_ref2va_pdd",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "minimax_h3_ref2va_pruned": {
+   "model_type": "minimax_h3_ref2va_pruned",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "minimax_h3_ref2va_pruned_pdd": {
+   "model_type": "minimax_h3_ref2va_pruned_pdd",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "minimax_h3_tts_ref2va_pruned": {
+   "model_type": "minimax_h3_tts_ref2va_pruned",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "minimax_h3_vdn": {
+   "model_type": "minimax_h3_vdn",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "minimax_h3_vdn_pruned": {
+   "model_type": "minimax_h3_vdn_pruned",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "minimax_music3": {
+   "model_type": "minimax_music3",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "mocha": {
+   "model_type": "mocha",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "moviigen": {
+   "model_type": "moviigen",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "multitalk": {
+   "model_type": "multitalk",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "multitalk_720p": {
+   "model_type": "multitalk_720p",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "omnivoice": {
+   "model_type": "omnivoice",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ovi": {
+   "model_type": "ovi",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ovi_1_1": {
+   "model_type": "ovi_1_1",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ovi_1_1_10s": {
+   "model_type": "ovi_1_1_10s",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ovi_1_1_10s_fastwan": {
+   "model_type": "ovi_1_1_10s_fastwan",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ovi_1_1_fastwan": {
+   "model_type": "ovi_1_1_fastwan",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ovi_fastwan": {
+   "model_type": "ovi_fastwan",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "phantom_1.3B": {
+   "model_type": "phantom_1.3B",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "phantom_14B": {
+   "model_type": "phantom_14B",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "pi_flux2": {
+   "model_type": "pi_flux2",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "pi_flux2_nvfp4": {
+   "model_type": "pi_flux2_nvfp4",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "qwen3_tts_base": {
+   "model_type": "qwen3_tts_base",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "qwen3_tts_customvoice": {
+   "model_type": "qwen3_tts_customvoice",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "qwen3_tts_voicedesign": {
+   "model_type": "qwen3_tts_voicedesign",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "qwen_image_20B": {
+   "model_type": "qwen_image_20B",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "qwen_image_2512_20B": {
+   "model_type": "qwen_image_2512_20B",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "qwen_image_edit_20B": {
+   "model_type": "qwen_image_edit_20B",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "qwen_image_edit_plus2_20B": {
+   "model_type": "qwen_image_edit_plus2_20B",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "qwen_image_edit_plus_20B": {
+   "model_type": "qwen_image_edit_plus_20B",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "qwen_image_edit_plus_20B_nunchaku_r128_fp4": {
+   "model_type": "qwen_image_edit_plus_20B_nunchaku_r128_fp4",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "qwen_image_edit_plus_20B_nunchaku_r128_int4": {
+   "model_type": "qwen_image_edit_plus_20B_nunchaku_r128_int4",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "qwen_image_layered_20B": {
+   "model_type": "qwen_image_layered_20B",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "recam_1.3B": {
+   "model_type": "recam_1.3B",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "scail": {
+   "model_type": "scail",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "scail2_14B": {
+   "model_type": "scail2_14B",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "scenema_audio": {
+   "model_type": "scenema_audio",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "sensenova_u1_5_8b_mot": {
+   "model_type": "sensenova_u1_5_8b_mot",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "shotplan_t2v": {
+   "model_type": "shotplan_t2v",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "shotplan_t2v_2_2": {
+   "model_type": "shotplan_t2v_2_2",
+   "status": "partial",
+   "status_code": 1,
+   "indicator": "yellow_square",
+   "available": false
+  },
+  "sky_df_1.3B": {
+   "model_type": "sky_df_1.3B",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "sky_df_14B": {
+   "model_type": "sky_df_14B",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "sky_df_720p_14B": {
+   "model_type": "sky_df_720p_14B",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "stable_audio3_medium": {
+   "model_type": "stable_audio3_medium",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "stable_audio3_small": {
+   "model_type": "stable_audio3_small",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "stable_audio3_small_sfx": {
+   "model_type": "stable_audio3_small_sfx",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "standin": {
+   "model_type": "standin",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "steadydancer": {
+   "model_type": "steadydancer",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "t2v": {
+   "model_type": "t2v",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "t2v_1.3B": {
+   "model_type": "t2v_1.3B",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "t2v_1.3B_nvfp4": {
+   "model_type": "t2v_1.3B_nvfp4",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "t2v_2_2": {
+   "model_type": "t2v_2_2",
+   "status": "available",
+   "status_code": 2,
+   "indicator": "blue_square",
+   "available": true
+  },
+  "t2v_fusionix": {
+   "model_type": "t2v_fusionix",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "t2v_nexus_1.3B": {
+   "model_type": "t2v_nexus_1.3B",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "t2v_sf": {
+   "model_type": "t2v_sf",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ti2v_2_2": {
+   "model_type": "ti2v_2_2",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "ti2v_2_2_fastwan": {
+   "model_type": "ti2v_2_2_fastwan",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "vace_1.3B": {
+   "model_type": "vace_1.3B",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "vace_14B": {
+   "model_type": "vace_14B",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "vace_14B_2_2": {
+   "model_type": "vace_14B_2_2",
+   "status": "partial",
+   "status_code": 1,
+   "indicator": "yellow_square",
+   "available": false
+  },
+  "vace_14B_cocktail": {
+   "model_type": "vace_14B_cocktail",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "vace_14B_cocktail_2_2": {
+   "model_type": "vace_14B_cocktail_2_2",
+   "status": "partial",
+   "status_code": 1,
+   "indicator": "yellow_square",
+   "available": false
+  },
+  "vace_14B_fusionix": {
+   "model_type": "vace_14B_fusionix",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "vace_14B_lightning_3p_2_2": {
+   "model_type": "vace_14B_lightning_3p_2_2",
+   "status": "partial",
+   "status_code": 1,
+   "indicator": "yellow_square",
+   "available": false
+  },
+  "vace_14B_sf": {
+   "model_type": "vace_14B_sf",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "vace_ditto_14B": {
+   "model_type": "vace_ditto_14B",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "vace_fun_14B_2_2": {
+   "model_type": "vace_fun_14B_2_2",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "vace_fun_14B_cocktail_2_2": {
+   "model_type": "vace_fun_14B_cocktail_2_2",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "vace_lynx_14B": {
+   "model_type": "vace_lynx_14B",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "vace_multitalk_14B": {
+   "model_type": "vace_multitalk_14B",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "vace_standin_14B": {
+   "model_type": "vace_standin_14B",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "vista4d": {
+   "model_type": "vista4d",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "vista4d_720p": {
+   "model_type": "vista4d_720p",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "wanmove": {
+   "model_type": "wanmove",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "z_image": {
+   "model_type": "z_image",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "z_image_base": {
+   "model_type": "z_image_base",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "z_image_control": {
+   "model_type": "z_image_control",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "z_image_control2": {
+   "model_type": "z_image_control2",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "z_image_control2_1": {
+   "model_type": "z_image_control2_1",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "z_image_control2_1_8s": {
+   "model_type": "z_image_control2_1_8s",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "z_image_nunchaku_r128_fp4": {
+   "model_type": "z_image_nunchaku_r128_fp4",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "z_image_nunchaku_r256_int4": {
+   "model_type": "z_image_nunchaku_r256_int4",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  },
+  "z_image_twinflow_turbo": {
+   "model_type": "z_image_twinflow_turbo",
+   "status": "missing",
+   "status_code": 0,
+   "indicator": "black_square",
+   "available": false
+  }
+ }
+}

@@ -397,8 +397,10 @@
   `docs/NHAT_KY.md` conflicted on a hunk where my side was **empty** — verified
   by counting: zero of my lines were dropped.
 - **last_green_invariant_command**: declared in `tests/bo_bat_bien_v4.py`, two rounds —
-  `VONG_NHANH` (9 files, **~12.5 s**, run after every edit) and
-  `VONG_DU` (+ `test_417`, **~78 s**, run before closing a phase).
+  `VONG_NHANH` (9 files, **~12.5 s**) and `VONG_DU` (+ `test_417`, **~78 s**).
+  ⚠️ **When** each runs is not decided here — see `docs/00_LTT_OPERATING_CONTRACT.md`
+  §4. *(This line read "run after every edit" / "run before closing a phase" until
+  2026-09-08; that was a fifth, private cadence competing with four others.)*
   ⚠️ `test_417` alone is 84 % of the full time. It is **split, not dropped**: it proves
   downstream invalidation, and an 80-second suite gets run once a day instead of after
   every edit — which is how a defect ends up ten edits deep.

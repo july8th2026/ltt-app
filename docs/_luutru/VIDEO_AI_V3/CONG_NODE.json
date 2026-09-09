@@ -1,0 +1,58 @@
+{
+ "_muc_dich": "Ten + THU TU cong cua nhung class_type ta dung. Bo cham va bo test deu doc tu day - MOT ban, KHONG chep tay lan hai.",
+ "_canh_bao": "CHEP TAY tu ComfyUI @ commit da ghim - CHUA co phep doi chieu tu dong. Thu tu sai thi bo cham va bo test deu XANH VI LY DO SAI: chung se dong y voi nhau ve mot bang cung sai. Doi ComfyUI ref thi phai doc lai bang tay.",
+ "cong": {
+  "KSamplerAdvanced": [
+   "add_noise",
+   "noise_seed",
+   "steps",
+   "cfg",
+   "sampler_name",
+   "scheduler",
+   "start_at_step",
+   "end_at_step",
+   "return_with_leftover_noise"
+  ],
+  "ModelSamplingSD3": [
+   "shift"
+  ],
+  "EmptyHunyuanLatentVideo": [
+   "width",
+   "height",
+   "length",
+   "batch_size"
+  ],
+  "WanImageToVideo": [
+   "width",
+   "height",
+   "length",
+   "batch_size"
+  ],
+  "Wan22FunControlToVideo": [
+   "width",
+   "height",
+   "length",
+   "batch_size"
+  ],
+  "CreateVideo": [
+   "fps"
+  ],
+  "UNETLoader": [
+   "unet_name",
+   "weight_dtype"
+  ],
+  "CLIPLoader": [
+   "clip_name",
+   "type",
+   "device"
+  ],
+  "VAELoader": [
+   "vae_name"
+  ],
+  "LoraLoaderModelOnly": [
+   "lora_name",
+   "strength_model"
+  ]
+ },
+ "_da_bat_duoc": "05/09: ban dau _object_info_gia dat w0..wN cho MOI class nen khong phep kiem nao noi duoc ve `unet_name`/`clip_name`. Loi 'ten tep model roi vao cong weight_dtype' di lot qua ca bo test lan bo cham."
+}

@@ -13277,6 +13277,279 @@ msgstr "A single call usually costs a fractional amount. Fractions below one cre
 msgid "Phần lẻ dưới một credit không bị làm tròn lên mà được cộng dồn sang lượt sau, nên số tiền thực trả bám sát giá niêm yết kể cả với những lượt gọi rất nhỏ."
 msgstr "Fractions below one credit are not rounded up; they carry over to the next call, so what you actually pay tracks the listed price even for very small calls."
 
+msgid "Video AI (máy nhà)"
+msgstr "Video AI (in-house)"
+
+msgid "Video AI"
+msgstr "Video AI"
+
+msgid "Tạo video từ mô tả bằng model chạy trên máy thuê của LTT Studios."
+msgstr "Generate video from a description using a model running on LTT Studios' rented machine."
+
+msgid "Bạn chưa có quyền dùng công cụ này."
+msgstr "You do not have permission to use this tool."
+
+msgid "Tính năng này chưa mở. Hiện tại chỉ tạo video từ mô tả."
+msgstr "This feature is not available yet. For now you can only generate video from a description."
+
+msgid "tạo video từ mô tả"
+msgstr "generate video from a description"
+
+msgid "tính năng này"
+msgstr "this feature"
+
+msgid "Thiếu mô tả video."
+msgstr "Please describe the video you want."
+
+msgid "Chưa cấu hình máy dựng video."
+msgstr "The video machine is not configured yet."
+
+msgid "Sinh video thất bại."
+msgstr "Video generation failed."
+
+msgid "Máy dựng báo xong nhưng không trả về tệp nào."
+msgstr "The video machine reported success but returned no file."
+
+msgid "Không tải được kết quả về."
+msgstr "Could not download the result."
+
+msgid "Lưu kết quả thất bại."
+msgstr "Saving the result failed."
+
+msgid "Chuẩn WanGP"
+msgstr "WanGP standard"
+
+msgid "Hãy mô tả video bạn muốn."
+msgstr "Please describe the video you want."
+
+msgid "Mô tả video bạn muốn. Hệ thống lo phần còn lại."
+msgstr "Describe the video you want. We handle the rest."
+
+msgid "Một video mất khoảng vài chục phút. Bạn có thể đóng trang — kết quả sẽ nằm trong Lịch sử."
+msgstr "A video takes tens of minutes. You can close this page — the result will appear in History."
+
+msgid "Sẽ tạo:"
+msgstr "Will create:"
+
+msgid "Tỉ lệ khung hình"
+msgstr "Aspect ratio"
+
+msgid "Ví dụ: một dòng sông lúc bình minh, sương mù trên mặt nước, máy quay tiến chậm về phía trước"
+msgstr "For example: a river at dawn, mist over the water, the camera dollying slowly forward"
+
+msgid "credit (giữ chỗ)"
+msgstr "credits (on hold)"
+
+msgid "video từ mô tả"
+msgstr "video from a description"
+
+msgid "Đã nhận. Video đang được dựng — bạn xem tiến độ ở mục Lịch sử."
+msgstr "Received. Your video is being made — track progress in History."
+
+msgid "Tạo video"
+msgstr "Create video"
+
+msgid "Thêm ảnh hoặc video (không bắt buộc)"
+msgstr "Add an image or video (optional)"
+
+msgid "Đính ảnh để làm khung mở đầu · JPEG/PNG/WebP/MP4"
+msgstr "Attach an image to use as the opening frame · JPEG/PNG/WebP/MP4"
+
+msgid "Không đính gì thì video được dựng hoàn toàn từ mô tả của bạn."
+msgstr "With nothing attached, the video is built entirely from your description."
+
+msgid "Video càng dài, chất lượng càng dễ trôi về cuối: chi tiết có thể nhiễu dần và nhân vật có thể đổi nét."
+msgstr "The longer the video, the more quality drifts toward the end: detail can accumulate artifacts and characters can change appearance."
+
+msgid "video từ ảnh bạn đính kèm"
+msgstr "video from the image you attached"
+
+msgid "Tệp đính kèm rỗng."
+msgstr "The attached file is empty."
+
+msgid "Video đính kèm vượt giới hạn 80 MB."
+msgstr "The attached video exceeds the 80 MB limit."
+
+msgid "Chỉ nhận ảnh PNG/JPEG/WebP hoặc video MP4."
+msgstr "Only PNG/JPEG/WebP images or MP4 video are accepted."
+
+msgid "Video gần đây"
+msgstr "Recent videos"
+
+msgid "Xem"
+msgstr "View"
+
+msgid "Nâng nét"
+msgstr "Enhance"
+
+msgid "Nâng nét chạy trên máy của LTT và tính credit riêng."
+msgstr "Enhancing runs on LTT's own machine and is charged separately."
+
+msgid "(không có mô tả)"
+msgstr "(no description)"
+
+msgid "Không tìm thấy video để nâng nét."
+msgstr "No video found to enhance."
+
+msgid "Hiện không thuê được máy dựng video. Credit đã được hoàn, bạn thử lại sau ít phút."
+msgstr "No video machine is available right now. Your credits were refunded — please try again in a few minutes."
+
+msgid "Máy dựng video chưa sẵn sàng. Credit đã được hoàn, bạn thử lại sau ít phút."
+msgstr "The video machine is not ready. Your credits were refunded — please try again in a few minutes."
+
+msgid "Chuẩn WanGP — có ảnh"
+msgstr "WanGP standard — with image"
+
+msgid "Loại tệp đính kèm này chưa được hỗ trợ."
+msgstr "That attachment type is not supported yet."
+
+msgid "Tự viết lại mô tả cho chi tiết hơn"
+msgstr "Rewrite my description in more detail"
+
+msgid "Máy sẽ viết lại mô tả của bạn thành một đoạn dài và chi tiết hơn trước khi dựng. Kết quả sẽ khác với mô tả gốc."
+msgstr "The machine will expand your description into a longer, more detailed one before rendering. The result will differ from what you wrote."
+
+msgid "mở rộng mô tả tự động"
+msgstr "automatic description expansion"
+
+msgid "Hãy đăng nhập bằng tài khoản người dùng để tạo video."
+msgstr "Please sign in with a user account to create videos."
+
+msgid "Đang đọc mô tả"
+msgstr "Reading your description"
+
+msgid "Đang dựng hình"
+msgstr "Rendering frames"
+
+msgid "Đang ghép video"
+msgstr "Assembling the video"
+
+msgid "Đã gửi yêu cầu tới máy dựng"
+msgstr "Request sent to the render machine"
+
+msgid "Máy dựng video không phản hồi kịp. Credit đã được hoàn, bạn thử lại sau."
+msgstr "The render machine did not respond in time. Your credit was refunded; please try again later."
+
+msgid "Điều hướng Video AI"
+msgstr "Video AI navigation"
+
+msgid "Tạo"
+msgstr "Create"
+
+msgid "Đính kèm"
+msgstr "Attachment"
+
+msgid "Tả cảnh, chủ thể, chuyển động máy quay và ánh sáng."
+msgstr "Describe the scene, subject, camera movement and lighting."
+
+msgid "Mô tả đã dùng"
+msgstr "Previous descriptions"
+
+msgid "Tài sản đã dùng"
+msgstr "Files you used before"
+
+msgid "Chọn lại một tệp từ lượt trước thay vì tải lên lần nữa."
+msgstr "Pick a file from an earlier run instead of uploading it again."
+
+msgid "đã hết hạn"
+msgstr "expired"
+
+msgid "Giữ chỗ"
+msgstr "On hold"
+
+msgid "Kết quả được giữ 3 ngày, sau đó tự xoá. Hãy tải về nếu bạn muốn giữ lâu hơn."
+msgstr "Results are kept for 3 days, then deleted. Download anything you want to keep."
+
+msgid "Đang hỏi trạng thái máy dựng…"
+msgstr "Checking the render machine…"
+
+msgid "Máy dựng bật theo nhu cầu — lượt đầu có thể mất thêm vài phút để khởi động."
+msgstr "The render machine starts on demand — the first run may take a few extra minutes to boot."
+
+msgid "kết quả"
+msgstr "results"
+
+msgid "Đang dựng"
+msgstr "Rendering"
+
+msgid "s"
+msgstr "s"
+
+msgid "Làm lại"
+msgstr "Redo"
+
+msgid "Nội dung đã hết hạn 3 ngày"
+msgstr "Content expired after 3 days"
+
+msgid "Chưa có video nào."
+msgstr "No videos yet."
+
+msgid "Tả video bạn muốn rồi bấm Tạo video."
+msgstr "Describe the video you want, then press Create video."
+
+msgid "Nâng nét video"
+msgstr "Upscale video"
+
+msgid "Xác nhận"
+msgstr "Confirm"
+
+msgid "Tài sản đã chọn không còn dùng được."
+msgstr "The selected file is no longer available."
+
+msgid "Ảnh hoặc video"
+msgstr "Image or video"
+
+msgid "Ảnh sẽ thành khung mở đầu. Không đính gì thì video được dựng hoàn toàn từ mô tả."
+msgstr "The image becomes the opening frame. Attach nothing and the video is built entirely from your description."
+
+msgid "Để trống thì hệ thống tự chọn. Chỉ dùng khi bạn muốn kiểm soát sâu hơn."
+msgstr "Leave blank and the system chooses. Use these only when you want deeper control."
+
+msgid "Seed"
+msgstr "Seed"
+
+msgid "Cùng một seed và cùng mô tả sẽ cho kết quả gần giống nhau — dùng để làm lại một video bạn thích."
+msgstr "The same seed with the same description gives a near-identical result — use it to redo a video you liked."
+
+msgid "Điều không muốn thấy"
+msgstr "What you do not want"
+
+msgid "Ví dụ: chữ trên màn hình, tay bị méo, ánh sáng nhấp nháy"
+msgstr "For example: on-screen text, distorted hands, flickering light"
+
+msgid "Làm mới"
+msgstr "Refresh"
+
+msgid "Làm mới danh sách"
+msgstr "Refresh the list"
+
+msgid "Chỉ đếm video đã hoàn tất. Credit là khoản đã quyết toán, không phải khoản giữ chỗ."
+msgstr "Counts completed videos only. Credit is the settled amount, not the hold."
+
+msgid "Một video mất khoảng vài chục phút. Bạn có thể đóng trang — kết quả nằm trong Lịch sử."
+msgstr "A video takes tens of minutes. You can close the page — the result will be in History."
+
+msgid "Mở ô mô tả ra to hơn để đọc toàn bộ"
+msgstr "Expand the description box to read it all"
+
+msgid "Hoàn tác lần sửa mô tả gần nhất"
+msgstr "Undo the last description edit"
+
+msgid "Huỷ video này? Credit sẽ được hoàn lại."
+msgstr "Cancel this video? Your credit will be refunded."
+
+msgid "Giới thiệu màn này"
+msgstr "About this screen"
+
+msgid "Tả video bạn muốn bằng lời, hoặc đính một ảnh làm khung mở đầu. Video dựng trên máy thuê của LTT Studios, tính 30 credit mỗi giây, và giữ lại 3 ngày."
+msgstr "Describe the video you want, or attach an image as the opening frame. Videos are rendered on machines LTT Studios rents, cost 30 credits per second, and are kept for 3 days."
+
+msgid "Ảnh mở đầu"
+msgstr "Opening image"
+
+msgid "Video làm đầu vào chưa mở. Hiện chỉ nhận ảnh làm khung mở đầu."
+msgstr "Video input is not open yet. For now only an image is accepted, as the opening frame."
+
 #: apps/chatltt/manifest.py
 msgid "Nghiên cứu một câu hỏi trên tài liệu bạn đã đính vào hội thoại này."
 msgstr "Research a question across the documents you attached to this conversation."
@@ -13320,6 +13593,30 @@ msgstr "Something went wrong on the server. It has been logged."
 #: apps/chatltt/services/loi_ra_ngoai.py
 msgid "Không chạy được. Thử lại, hoặc báo cho chúng tôi nếu còn lặp."
 msgstr "Could not run. Try again, or tell us if it keeps happening."
+
+msgid "Tạo video từ mô tả"
+msgstr "Generate video from a description"
+
+msgid "Tạo video từ một ảnh"
+msgstr "Generate video from one image"
+
+msgid "Video theo nhiều ảnh tham chiếu"
+msgstr "Video from several reference images"
+
+msgid "Bối cảnh riêng, nhân vật riêng"
+msgstr "Your own setting, your own characters"
+
+msgid "Video theo chuyển động của video mẫu"
+msgstr "Video that follows a reference video's motion"
+
+msgid "Nối dài một video có sẵn"
+msgstr "Continue an existing video"
+
+msgid "Loại tác vụ"
+msgstr "Task type"
+
+msgid "Loại tác vụ này chưa mở."
+msgstr "This task type is not open yet."
 
 #: apps/auto_scan_video
 msgid "Auto Scan Video"
@@ -13909,10 +14206,6 @@ msgstr "My runs"
 #: apps/auto_scan_video
 msgid "Bạn chưa có lần chạy nào."
 msgstr "You have no runs yet."
-
-#: apps/auto_scan_video
-msgid "Xem"
-msgstr "View"
 
 #: apps/auto_scan_video
 msgid "Lần chạy"
@@ -14532,3 +14825,120 @@ msgstr "At most %(n)d entries per run."
 
 msgid "Nguyễn Huệ = Nguyễn Huê"
 msgstr "Nguyễn Huệ = Nguyễn Huê"
+
+msgid "Dùng để chọn giọng thay thế đúng giới nếu giọng này tạm thời không dùng được. Bỏ trống nếu bạn không chắc."
+msgstr "Used to pick a same-gender stand-in if this voice ever becomes unavailable. Leave blank if you are not sure."
+
+msgid "Giọng bạn chọn hiện không dùng được, nên bài này được đọc bằng {giong_thay} ({mo_ta}). Hãy ghi danh lại giọng của bạn để dùng tiếp."
+msgstr "The voice you picked is currently unavailable, so this was read by {giong_thay} ({mo_ta}). Enrol your voice again to keep using it."
+
+msgid "Giọng này cần được ghi danh lại (bản ghi cũ không còn dùng được với máy đọc hiện tại). Hãy tải lại clip mẫu ở màn Giọng."
+msgstr "This voice needs to be enrolled again (its old recording no longer works with the current engine). Upload your sample clip again on the Voices screen."
+
+msgid "Giọng này đang được ghi danh. Chờ khoảng một phút rồi thử lại."
+msgstr "This voice is still being enrolled. Wait about a minute and try again."
+
+msgid "Giới tính giọng"
+msgstr "Voice gender"
+
+msgid "Không rõ"
+msgstr "Not sure"
+
+msgid "Ngôn ngữ bạn nói trong clip mẫu, không phải ngôn ngữ bạn sẽ đọc sau này."
+msgstr "The language you speak in the sample clip, not the language you will read later."
+
+msgid "Ngôn ngữ của clip"
+msgstr "Clip language"
+
+msgid "Workflow mới"
+msgstr "New workflow"
+
+msgid "Một lượt chạy đã tính tiền. `actual_cost` và `hold_id` ở đây là câu trả lời cho một tranh chấp hoàn tiền sáu tháng sau."
+msgstr "A run that has already been billed. `actual_cost` and `hold_id` here are the answer to a refund dispute six months later."
+
+msgid "Chuỗi ảnh chụp BẤT BIẾN của từng bước, kèm chi phí theo từng lượt thử. Xoá nó là mất khả năng nói VÌ SAO một lượt chạy tốn ngần ấy — kể cả lần chuyển bị từ chối cũng nằm ở đây."
+msgstr "The IMMUTABLE snapshot chain of each step, with the cost of each attempt. Deleting it loses the ability to say WHY a run cost that much — even rejected transitions live here."
+
+msgid "Workflow là thứ khách DỰNG RA. Việc của họ, không phải dấu vết vận hành của ta."
+msgstr "A workflow is something the customer BUILDS. It is their work, not our operational trace."
+
+msgid "Bản đang soạn — mất nó là mất phần khách đang gõ dở."
+msgstr "The working draft — losing it loses what the customer was typing."
+
+msgid "Bản đã xuất bản, BẤT BIẾN. Một lượt chạy ghim vào đây, nên xoá nó là làm một lượt chạy đã tính tiền không còn tái dựng được."
+msgstr "A published version, IMMUTABLE. A run pins to it, so deleting it makes an already-billed run impossible to reconstruct."
+
+msgid "Cấu hình khách đặt để workflow tự chạy."
+msgstr "The configuration the customer set so the workflow runs by itself."
+
+msgid "Siêu dữ liệu tệp khách tạo ra. KHÔNG chứa byte nào; vòng đời thật do `ttl_class` quyết, và backend có lifecycle riêng thì ta không tự xoá."
+msgstr "Metadata for files the customer produced. Holds NO bytes; the real lifetime is decided by `ttl_class`, and a backend with its own lifecycle is not ours to delete from."
+
+msgid "CON TRỎ tới ảnh chụp mới nhất — dựng lại được từ chuỗi ảnh chụp."
+msgstr "A POINTER to the latest snapshot — rebuildable from the snapshot chain."
+
+msgid "Chỉ mục dẫn xuất từ đồ thị của bản đã xuất bản."
+msgstr "An index derived from the published version's graph."
+
+msgid "Trạng thái chờ trong một lượt chạy; chỉ có nghĩa khi lượt chạy còn sống."
+msgstr "A wait state inside a run; it only means anything while the run is alive."
+
+msgid "Tín hiệu từng nhánh gửi tới một điểm chờ."
+msgstr "The signal each branch sends to a waitpoint."
+
+msgid "Bảng nối nhiều-nhiều: waitpoint nào đang chặn node nào."
+msgstr "The many-to-many link table: which waitpoint is blocking which node."
+
+msgid "Một vòng ForEach đang chạy."
+msgstr "A ForEach loop in progress."
+
+msgid "Kết quả từng phần tử của một vòng ForEach — thứ nói CHÍNH XÁC còn phải chạy gì sau một lần chết."
+msgstr "The result of each ForEach element — what says EXACTLY which ones still have to run after a crash."
+
+# LTT VOICE — U-13, cửa nghe thử văn bản của khách (`routes/_p_nghe_thu.py`).
+# Thêm TAY theo đúng chỉ dẫn của `dich thieu ban EN`: mục `VANG` không được
+# chạy `i18n.py trich`, vì msgmerge sẽ ĐOÁN bản dịch cho chúng và xáo lại tệp.
+msgid "Chưa có văn bản."
+msgstr "No text yet."
+
+msgid "Nghe thử tối đa {n} ký tự — một câu."
+msgstr "Preview is limited to {n} characters — one sentence."
+
+msgid "Giọng không hợp lệ."
+msgstr "That voice is not valid."
+
+msgid "Bạn đã dùng hết {n} lượt nghe thử trong giờ này."
+msgstr "You have used all {n} previews for this hour."
+
+msgid "Máy đang bận tạo tiếng cho lượt khác. Thử lại sau ít giây."
+msgstr "The engine is busy generating another request. Try again in a few seconds."
+
+msgid "Không tạo được tiếng lúc này."
+msgstr "Could not generate audio right now."
+
+# U-04 — mô tả kho dữ liệu `voice_quality_profile` trong bản kiểm kê quản trị
+# dữ liệu (`platform_core/public_api/governance.py`). Khách đọc nó ở trang
+# "chúng tôi giữ gì về bạn", nên nó phải có bản EN như bốn bảng giọng kia.
+msgid ""
+"Phán quyết curate một giọng và LÝ DO LOẠI khi loại. Giữ chừng nào giọng còn: "
+"ngày nâng engine, một giọng loại vì rè đáng thử lại, một giọng loại vì thiếu "
+"consent thì không — cùng trạng thái, hai số phận."
+msgstr ""
+"The curation verdict on a voice, and the REASON it was rejected. Kept as long "
+"as the voice is: on the day the engine is upgraded, a voice rejected for "
+"hiss deserves another try, one rejected for missing consent does not — same "
+"status, two different fates."
+
+# U-17 — tên cho `role="progressbar"` ở màn Dự án. axe `aria-progressbar-name`
+# (serious): một thanh tiến độ không tên đọc lên là "bốn mươi phần trăm" mà
+# không nói của cái gì, trong khi màn ấy có nhiều dự án.
+msgid "Tiến độ dự án {ten}: {xong}/{tong} khối"
+msgstr "Project {ten} progress: {xong}/{tong} blocks"
+
+#: apps/agent/routes/drafts_v3.py
+msgid "Thiếu số hiệu bản sửa."
+msgstr "Missing revision number."
+
+#: apps/agent/routes/drafts_v3.py
+msgid "Bản nháp chưa có nội dung để xuất bản."
+msgstr "This draft has nothing to publish yet."

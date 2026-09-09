@@ -178,7 +178,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         #    muon nhan, thay vi thu cua that tra ve, se lam ca bo test xanh
         #    quanh mot loi khong the khong xay ra.
         moi = long_tieng.doc_chuyen(
-            ai.doc_json(kq.get("noi_dung") or "", ai.CHUYEN_LOI_THOAI),
+            ai.doc_ket_qua(kq, ai.CHUYEN_LOI_THOAI),
             ma_da_gui)
         chuyen.update(moi)
 
