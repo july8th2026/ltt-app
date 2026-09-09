@@ -81,3 +81,49 @@ def ban_do_model(*alias: str) -> dict[str, str]:
     if ten not in ALIAS_SANG_ID:
         raise KeyError(f"bi danh la: {ten!r} (hop le: {MODEL_HOP_LE})")
     return {THU_TU_PROVIDER[0]: ALIAS_SANG_ID[ten]}
+
+
+#: Mặc định khi không đọc được bản khai của app. Xem `tai_nguyen_nha()`.
+_TAI_NGUYEN_MAC_DINH: tuple[str, int] = ("llm_remote", 1)
+
+
+def tai_nguyen_nha() -> tuple[str, int]:
+    """`(resource, slots)` để giành suất admission trước khi chạm máy B.
+
+    🔴 **MỌI đường tới máy B phải giành suất.** Máy B chỉ có **một** suất đồng
+    thời (`DONG_THOI_MAY_B=1`), nên một đường quên `admission` không chỉ chen
+    hàng — nó làm chính cơ chế đếm suất **sai**.
+
+    ⚠️ Lỗ đó đã có thật một lần: tới 01/09 `agent/planner.py` là **đường duy
+    nhất** tới máy B không đi qua `admission`; ba đường kia (`streaming`,
+    `chat`, `job_runner`) đều giành. Nó vô hại suốt nhiều tháng chỉ vì một lỗi
+    **thứ hai** che nó (nhánh `ltt_llm` không bao giờ cấp được khoá vì lỗi bí
+    danh) — tức sửa lỗi kia mà không sửa lỗi này là **kích hoạt** một đường lách.
+
+    ⇒ Hàm này nằm ở `canonical` chứ không nằm riêng trong `planner`, vì pha 05
+      di trú **bốn app** sang máy B và mỗi app tự chép sẽ thành bốn bản sao của
+      cùng một quyết định — đúng khuôn hỏng mà chiến dịch này gặp ba lần.
+
+    ⛔ Đọc từ **bản khai của app**, không gõ tay: gõ tay ở đây là bản sao thứ
+      hai của `admission_resource` trong manifest, và hai bản sẽ trôi khỏi nhau.
+    """
+    import logging
+
+    try:
+        from platform_core.registry import discover
+        for it in discover():
+            if it.manifest.slug != THU_TU_PROVIDER[0]:
+                continue
+            for t in it.manifest.tools:
+                r = getattr(t, "admission_resource", "")
+                if r:
+                    return r, int(getattr(t, "admission_slots", 1) or 1)
+    except Exception:                                          # noqa: BLE001
+        # ⛔ NÓI RA. Rơi về mặc định thì vẫn chạy được, nhưng nếu bản khai đã đổi
+        #    mà chỗ này không đọc được thì ta sẽ giành **sai tài nguyên** — và
+        #    một suất giành sai không bảo vệ gì cả. Nuốt im lặng ở đây nghĩa là
+        #    lớp bảo vệ biến mất mà không ai biết.
+        logging.getLogger(__name__).warning(
+            "khong doc duoc ban khai %s; dung mac dinh %s",
+            THU_TU_PROVIDER[0], _TAI_NGUYEN_MAC_DINH, exc_info=True)
+    return _TAI_NGUYEN_MAC_DINH

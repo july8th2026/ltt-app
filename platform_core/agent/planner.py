@@ -76,25 +76,10 @@ def _model_nha() -> str:
     return ""
 
 
-def _tai_nguyen_nha() -> tuple:
-    """`(resource, slots)` cua model nha, lay tu ban khai cua app."""
-    try:
-        from platform_core.registry import discover
-        for it in discover():
-            if it.manifest.slug != "ltt_llm":
-                continue
-            for t in it.manifest.tools:
-                r = getattr(t, "admission_resource", "")
-                if r:
-                    return r, int(getattr(t, "admission_slots", 1) or 1)
-    except Exception:                                          # noqa: BLE001
-        # ⛔ NOI RA. Roi ve mac dinh thi van chay duoc, nhung neu ban khai da doi
-        #    ma cho nay khong doc duoc thi planner se gianh SAI tai nguyen — va
-        #    mot suat gianh sai khong bao ve gi ca. Nuot im lang o day nghia la
-        #    lop bao ve bien mat ma khong ai biet.
-        log.warning("khong doc duoc ban khai ltt_llm; dung mac dinh %s",
-                    _TAI_NGUYEN_MAC_DINH, exc_info=True)
-    return _TAI_NGUYEN_MAC_DINH
+#: ⛔ BÍ DANH, không phải định nghĩa. Chuyển lên `platform_core/llm/canonical.py`
+#:    ở pha 05.4 vì **bốn app** sắp di trú sang máy B cũng cần đúng hàm này —
+#:    mỗi nơi tự chép sẽ thành bốn bản sao của cùng một quyết định.
+from platform_core.llm.canonical import tai_nguyen_nha as _tai_nguyen_nha
 
 
 class PlannerError(RuntimeError):

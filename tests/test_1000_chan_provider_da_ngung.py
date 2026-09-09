@@ -147,11 +147,18 @@ def test_thumbnail_khong_ra_mang(bit_mang):
     assert bit_mang == [], f"co luot ra mang: {bit_mang}"
 
 
-def test_taovideo_khong_ra_mang(bit_mang):
-    from apps.taovideo import translate
-    with pytest.raises(providers.ProviderDaNgung):
-        translate.dich("xin chao")
-    assert bit_mang == [], f"co luot ra mang: {bit_mang}"
+# ⏭️ `taovideo` ĐÃ DI TRÚ ở pha 05.4 — phép kiểm chặn-Gemini của nó **bị gỡ
+#    khỏi đây**, không phải vì nó phiền mà vì **tiền đề của nó biến mất**:
+#    `translate.dich()` không còn một đường nào tới Gemini để mà bị chặn.
+#
+# ⛔ Giữ lại nó bằng cách nới kỳ vọng (bắt `Exception` chẳng hạn) sẽ là một
+#    phép kiểm **xanh mà không canh gì** — nó sẽ xanh cả khi ai đó nối lại
+#    đường Gemini, vì lỗi nào cũng thoả.
+#
+# ⇒ Thứ thay thế nó nằm ở `tests/test_1002_di_tru_khong_con_loi_ra_legacy.py`:
+#   chốt rằng tệp ấy **không còn** `httpx`, URL legacy, `api_pool` hay biến môi
+#   trường khoá — tức chốt sự VẮNG MẶT của cả một lớp đường gọi, mạnh hơn chốt
+#   một lượt gọi cụ thể bị chặn.
 
 
 def test_prompt_ai_ommi_khong_ra_mang(bit_mang):
