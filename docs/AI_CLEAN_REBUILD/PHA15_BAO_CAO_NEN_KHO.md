@@ -70,13 +70,27 @@ chạy; nó là một tấm biển *"đường này đã đóng"* mà cổng đ�
 | LTT_IMAGE sinh thật | job qua Public API → **ảnh 5.519.918 byte**, `held:3 charged:3`, `mode:"live"` | **đo được** |
 | LTT_LLM Text | ba cửa `/chat/completions` · `/messages` · `/responses` đều 200 với token thật | **đo được** |
 | Seedance/BytePlus | **lời xác nhận của chủ sản phẩm** rằng nó đang chạy thật | ⚠️ **không phải phép đo của chiến dịch** |
-| **VLM** | `danh_gia_vision.py --thu-thap` phải chạy **trên máy B** | 🔴 **NOT_TESTED** |
-| **Voice** | cần sidecar VOICE + GPU | 🔴 **NOT_TESTED** |
+| **VLM** | `model=ltt_llm_vision`→`qwen38-vision`; ảnh **sinh bằng mã**, model trả `{"so_hinh_tron": 3, "chu": "K7QX"}` — khớp đáp án | **đo được** |
+| **Voice** | job `7a0ea335` qua hàng đợi production → **8,48 giây tiếng, 814.124 byte RIFF/WAVE**; báo giá 2 = thu 2 | **đo được** |
 
-⛔ Hai dòng cuối **ở lại NOT_TESTED**, và trục E2E **không được cộng điểm** vì
-Seedance rời khỏi phạm vi. Bỏ bớt một dòng chưa đo không biến những dòng còn lại
-thành đã đo; một nghiệm thu tự nâng điểm bằng cách **thu hẹp mẫu số** là một
-nghiệm thu đã hỏng.
+⭐ **Hai dòng cuối đóng ngày 10/09**, và cách đóng đáng ghi lại: kế hoạch cũ định dùng
+   `tools/danh_gia_vision.py` chạy **trên máy B**. Đọc kỹ thì công cụ ấy trả lời một câu
+   **khác**: nó chấm **chất lượng** model. Câu chiến dịch cần là *“đường VLM có đi tới
+   LTT_LLM và trả về thật không”* — một câu **không phụ thuộc** vào việc model trả lời
+   đúng hay sai, và trả lời được từ **máy A** bằng một lượt gọi thật qua Public API.
+
+⚠️ Và một lỗi của chính bộ kiểm VLM, ghi ra thay vì giấu: bước đầu của nó in *“không
+   thấy `ltt_llm_vision` trong catalog”*. Đó là **bộ đọc của tôi sai hình dạng phản hồi**,
+   không phải catalog thiếu — vì ngay sau đó lượt gọi với đúng model ấy trả 200 kèm
+   usage thật. Một phát hiện giả, và nó chỉ lộ ra vì đọc tiếp thay vì dừng ở dòng đầu.
+
+⛔ **Seedance vẫn KHÔNG được cộng điểm.** Nó rời khỏi phạm vi bằng lời xác nhận
+của chủ sản phẩm, không bằng một lượt đo của chiến dịch — và bỏ bớt một dòng
+chưa đo không biến những dòng còn lại thành đã đo. Một nghiệm thu tự nâng điểm
+bằng cách **thu hẹp mẫu số** là một nghiệm thu đã hỏng.
+
+⇒ Nên trục E2E là **9/10**, không phải 10/10: bốn đường đo được thì đã đo, còn
+  đường thứ năm thì ta *tin*, và hai thứ đó không được viết cùng một chữ.
 
 ---
 

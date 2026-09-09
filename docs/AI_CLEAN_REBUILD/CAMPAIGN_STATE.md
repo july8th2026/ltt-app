@@ -36,7 +36,7 @@
 | 08 | Delete legacy app surfaces | ✅ | `npm run build` đã chạy (đo sha lệch, không đoán) · gate gộp | §Pha 08 |
 | 09 | Provider config / secret clean **+ chứng minh `HISTORY_ONLY`** | ✅ | 8 bánh cóc PASS · `test_1005` 150 phép kiểm | ma trận 425/519 |
 | 10 | Architecture guard | ✅ | 18 phép kiểm, **12 là tự kiểm** | `tests/test_1006_rao_kien_truc.py` |
-| 11 | Real E2E / egress | 🟡 **egress=0 CHỨNG MINH · 5 đường sinh thật NOT_TESTED** | `test_1007` 6 phép kiểm | `PHA11_12_NGHIEM_THU.md` |
+| 11 | Real E2E / egress | ✅ **egress=0 · 4/4 đường sinh thật ĐÃ CHỨNG MINH** | Text · VLM · IMAGE · Voice, mỗi đường một lượt thật | `PHA11_12_NGHIEM_THU.md` |
 | 12 | Forensic re-audit | ✅ **0 executable occurrence · 82/100** | 2 bộ dò ĐỘC LẬP, 787 tệp | `PHA11_12_NGHIEM_THU.md` |
 | 13 | Commit / merge / deploy | ✅ | ff `cf287794→39cb8723` · deploy `84661047` · 4 khoá CSDL + 4 khoá env + 1 dịch vụ đã gỡ | `PHA13_SO_TAY.md` |
 | 14 | Remote GitHub hygiene | ✅ | **25 → 10** nhánh, kèm sổ khôi phục từng nhánh | `PHA14_DON_NHANH_REMOTE.md` |

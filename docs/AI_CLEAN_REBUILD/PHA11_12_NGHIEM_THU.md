@@ -38,10 +38,10 @@ trông giống hệt nhau.
 
 | Hạng mục | Trạng thái | Vì sao |
 |---|---|---|
-| LTT_LLM Text sinh thật | **NOT_TESTED** | máy B là **máy khác**; `LTT_LLM_BASE_URL` không đặt trong tiến trình này, cổng 8299 không trả lời từ đây |
-| LTT_LLM VLM | **NOT_TESTED** | như trên |
-| LTT_IMAGE vẽ thật | **NOT_TESTED** | cổng 8199 không trả lời từ đây |
-| Voice regression thật | **NOT_TESTED** | cần sidecar VOICE + GPU |
+| LTT_LLM Text sinh thật | ✅ **09/09 23:35** — `nghiem_thu_chat_l1`, **cả ba cửa** đều 200 với token thật | máy B là **máy khác**; `LTT_LLM_BASE_URL` không đặt trong tiến trình này, cổng 8299 không trả lời từ đây |
+| LTT_LLM VLM | ✅ **10/09 03:33** — `model=ltt_llm_vision`→`qwen38-vision`; ảnh sinh bằng mã, model trả `{"so_hinh_tron": 3, "chu": "K7QX"}`, **khớp đáp án** | như trên |
+| LTT_IMAGE vẽ thật | ✅ **09/09 23:38** — job qua Public API → **ảnh 5.519.918 byte**, `held:3 charged:3`, `mode:"live"` | cổng 8199 không trả lời từ đây |
+| Voice regression thật | ✅ **10/09 03:36** — job `7a0ea335` qua hàng đợi production → **8,48 giây tiếng, 814.124 byte RIFF/WAVE**; báo giá 2 = thu 2, số dư 37→35 | cần sidecar VOICE + GPU |
 | Seedance/BytePlus regression | **NGOÀI PHẠM VI — 09/09** | chủ sản phẩm xác nhận *“đã chạy được thật”*; xem §11.3 |
 
 ⛔ **Không suy PASS từ "test xanh".** Bộ test dùng bộ điều phối giả; nó chứng
@@ -135,17 +135,19 @@ Hai bộ dò độc lập, hai cách đọc khác nhau, **cùng kết luận 0**
 
 | Trục | Điểm | Căn cứ |
 |---|:--:|---|
-| Legacy removal | **10/10** | 0 executable occurrence; 2 bộ dò độc lập |
+| Legacy removal | **9/10** | 0 executable occurrence; 2 bộ dò độc lập. −1 vì **4 khoá legacy đang SỐNG trong CSDL sống sót qua MỌI phép kiểm** — `PHA15` §4 |
 | Canonicality | **10/10** | một cửa `dieu_phoi.goi`, một bảng giá `image_gen/gia`, một `canonical` |
 | App surface cleanliness | **9/10** | 4 lời nói dối với khách đã sửa; −1: `brand_directive` còn có thể khiến model vẽ chữ (chưa đo) |
 | Registry / config | **10/10** | `is_active=False` + `chan_neu_da_ngung`; `test_1005` chốt 5 điều kiện |
-| Secrets | **8/10** | công cụ nhập khoá đã xoá; −2: `LTT_CODEX_SIDECAR_TOKEN` **còn trong `app.env` của máy chủ** — dọn ở pha 13 |
+| Secrets | **10/10** | `app.env` 4 khoá legacy → **0** · CSDL 4 khoá **đang sống** → **0** (có sao lưu) · dịch vụ `LTTStudioCodex` đã gỡ |
 | Guard | **10/10** | `test_1006`: 18 phép kiểm, **12 là tự kiểm** (mẫu dương + âm) |
-| E2E | **6/10** | egress = 0 chứng minh được; **4** đường sinh thật là **NOT_TESTED** (Seedance bỏ khỏi phạm vi 09/09 — §11.3b) |
+| E2E | **9/10** | egress = 0 · **4/4 đường sinh thật đã chứng minh** (Text · VLM · IMAGE · Voice); −1 vì Seedance dựa trên **lời xác nhận**, không phải phép đo |
 | Seedance / Voice preservation | **10/10** | không đụng; `MIEN_TRU_HTTP` khai rõ đích đến, `test_45` PASS |
 | Worktree hygiene | **9/10** | cây riêng, không đụng phiên khác; −1: đã chồng gate 2 lần trong ngày |
 
-**Tổng: 82/100.**
+**Tổng: 86/100** — cập nhật 10/09 (E2E +3 · Secrets +2 · Legacy removal −1).
+
+⚠️ Điểm **tăng 4 nhưng một trục bị HẠ**, và vế bị hạ mới đáng đọc: bốn khoá API của chính các nhà cung cấp đã gỡ **vẫn đang được cấp phát mỗi ngày** sau khi chiến dịch tuyên bố xong. Mọi phép kiểm đều soi **mã**; không phép kiểm nào soi **hàng trong bảng**.
 
 ### ⛔ Ba trục KHÔNG đạt 10, và không trục nào được làm tròn lên
 
