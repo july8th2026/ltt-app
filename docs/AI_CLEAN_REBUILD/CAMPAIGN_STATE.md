@@ -27,10 +27,10 @@
 | ├ 05.6 | `autosubvideo` + phép kiểm thay `responseSchema` | ✅ `00d59086` | | |
 | ├ 05.7a | nâng `loi_ra_ngoai` lên nền tảng | ✅ `be1a6dad` | `test_846` 9 passed | |
 | └ 05.7 | `chataistudio` → `runtime_noi_bo.luong` | ✅ `a425d056` | 38 passed | `apps/chataistudio/luong_chat.py` |
-| **06** | Migrate IMAGE → LTT_IMAGE | 🟡 **1/3** | | |
+| **06** | Migrate IMAGE → LTT_IMAGE | 🟡 **2/3** | | |
 | ├ 06.1 | `anhnoibo` → `dich_llm` | ✅ `fa5afeef` | 16+77 passed | `platform_core/image_gen/dich_llm.py` |
-| ├ 06.2 | `taoanh` | ⬜ **kế tiếp** | | |
-| └ 06.3 | `thumbnail` | ⬜ | | |
+| ├ 06.2 | `taoanh` → LTT_IMAGE (**gỡ 3 chế độ**) | ✅ | 84 passed · 5 bánh cóc PASS | `platform_core/image_gen/http_cong.py` |
+| └ 06.3 | `thumbnail` | ⬜ **kế tiếp** | | |
 | 07 | Delete all legacy runtime | ⬜ | — | — |
 | 08 | Delete legacy app surfaces | ⬜ | — | — |
 | 09 | Provider config / secret clean | ⬜ | — | — |

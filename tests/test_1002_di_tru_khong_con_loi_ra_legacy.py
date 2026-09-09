@@ -33,6 +33,7 @@ DA_DI_TRU = (
     "apps/prompt_ai_ommi/provider.py",
     "apps/autosubvideo/ai_workflows.py",
     "apps/anhnoibo/jobs.py",
+    "apps/taoanh/jobs.py",
 )
 
 #: 🔴 Tệp **TỰ GỌI** model nhà ⇒ phải tự giành suất admission.

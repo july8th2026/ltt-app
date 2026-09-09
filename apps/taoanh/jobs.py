@@ -1,79 +1,49 @@
-"""
-Handler job app `image` (di trú A1). Sinh ảnh từ prompt TỰ DO qua Gemini Image API.
+"""Handler job app `taoanh` — sinh ảnh từ prompt TỰ DO qua **LTT_IMAGE**.
 
-Lõi gọi Gemini + lưu storage + tính tiền theo ảnh giống `apps/thumbnail/jobs.py`
-(L2 copy theo công thức di trú) nhưng KHÔNG ghép prompt từ catalog — prompt là
-văn bản người dùng gõ thẳng. Key lấy từ bộ máy APIKEYS (H8), fallback env.
+🔴 DI TRÚ 09/09/2026 — AI CLEAN REBUILD V2 pha 06.2. Bản cũ tự dựng HTTP tới
+   Gemini Image API, tự cấp khoá qua `api_pool` ở tầng app, và fallback
+   `GEMINI_API_KEY`. Cả ba biến mất; đường mới đi qua
+   `platform_core.image_gen.DieuPhoi` — cùng đường `anhnoibo` đang chạy.
 
-Hợp đồng handler: idempotent theo job (khoá lưu theo job_id) · báo tiến độ qua ctx
-· NÉM exception khi thất bại → nền tảng hoàn credit đã giữ. Khoá API chỉ ở máy chủ.
+## ⚠️ BA CHẾ ĐỘ BỊ GỠ, và đó là quyết định có bằng chứng
+
+`taoanh` có năm chế độ; `hidream-o1` **khai** ba (`t2i` · `edit` · `subject`).
+`semantic_inpaint`, `outpaint`, `style_transfer` không map được nên bị gỡ —
+xem `_CHE_DO_MAP`. Chúng **không** được nguỵ trang thành `edit`.
+
+## Hợp đồng handler giữ nguyên
+
+Idempotent theo `job_id` · báo tiến độ qua `ctx` · NÉM khi thất bại để nền
+tảng hoàn credit đã giữ. Khoá API chỉ ở máy chủ, và nay app **không giữ
+khoá nào** — việc cấp khoá thuộc về nền tảng.
 """
 from __future__ import annotations
 
 from platform_core.i18n import _ as _t
 from platform_core.public_api import costing
-import base64
-import io
-import os
 
-_MODEL = "gemini-2.5-flash-image"
-_BASE = "https://generativelanguage.googleapis.com"
-_TIMEOUT_S = 110
+#: Bí danh công khai của model ảnh nhà. KHÔNG phải id nội bộ — id ấy nằm ở
+#: `providers.REGISTRY` và chỉ được dịch **ngay trước khi ra khỏi nền tảng**.
+_MODEL = "hidream-o1"
 
+#: ⛔ CHẾ ĐỘ: `LTT_IMAGE` khai **ba** (`t2i` · `edit` · `subject`), `taoanh` có
+#:    **năm**. Ba chế độ không map được — `semantic_inpaint`, `outpaint`,
+#:    `style_transfer` — bị **GỠ**, không nguỵ trang thành `edit`.
+#:
+#: ⭐ Đây là NĂNG LỰC KHAI BÁO, không phải phỏng đoán:
+#:      providers.REGISTRY["ltt_image"].models[0].capabilities["modes"]
+#:        -> ['t2i', 'edit', 'subject']
+#:    và `mode` được gửi thẳng xuống cổng, nên một giá trị lạ bị từ chối.
+#:
+#: ⛔ Ánh xạ chúng về `edit` kèm một câu chỉ dẫn sẽ **trông như** còn chạy, rồi
+#:    trả về một tấm ảnh không đúng thứ khách xin. Pack nói rõ: *"feature
+#:    LTT_IMAGE không hỗ trợ ⇒ disable/remove, không fallback."* Một tính năng
+#:    hỏng lặng lẽ đắt hơn một tính năng bị gỡ tử tế.
+_CHE_DO_MAP = {"generate": "t2i", "edit": "edit"}
 
-class GeminiError(RuntimeError):
-    def __init__(self, message: str, status_code: int | None = None):
-        super().__init__(message)
-        self.status_code = status_code
-
-
-def _sanitize(msg: str, key: str) -> str:
-    if key and len(key) > 8:
-        msg = msg.replace(key, "***")
-    return msg[:400]
-
-
-def _lay_key(model: str) -> tuple[str, str | None]:
-    """Lấy credential Gemini từ APIKEYS (category image). Fallback env cho dev."""
-    try:
-        from platform_core import api_keys, api_pool
-        from platform_core.db import get_session
-        from platform_core.models import APIKEY_CAT_IMAGE
-        gen = get_session(); db = next(gen)
-        try:
-            key = api_pool.lay_key(db, "gemini", category=APIKEY_CAT_IMAGE, model=model)
-            cred = api_keys.lay_credential(db, key)
-            db.commit()
-            return cred, key.id
-        finally:
-            try: next(gen)
-            except StopIteration: pass
-    except Exception:
-        return (os.environ.get("GEMINI_API_KEY") or "").strip(), None
-
-
-def _ket_qua_key(key_id: str | None, *, thanh_cong: bool,
-                 last_status: int | None = None) -> None:
-    if not key_id:
-        return
-    try:
-        from platform_core import api_keys, api_pool
-        from platform_core.db import get_session
-        gen = get_session(); db = next(gen)
-        try:
-            key = api_keys.lay_key_theo_id(db, key_id)
-            if key is None:
-                return
-            if thanh_cong:
-                api_pool.danh_dau_thanh_cong(db, key)
-            elif last_status is not None:
-                api_pool.danh_dau_loi(db, key, http_status=last_status)
-            db.commit()
-        finally:
-            try: next(gen)
-            except StopIteration: pass
-    except Exception:
-        pass
+#: `hidream-o1` khai `max_refs: 2`. Bản Gemini cho 8 — đó là năng lực của động
+#: cơ CŨ, và giữ số 8 sau khi đổi động cơ là hứa một thứ không còn.
+_MAX_REFS = 2
 
 
 def _canvas_reference_keys(params: dict, owner_id: str) -> list[str]:
@@ -95,154 +65,111 @@ def _canvas_reference_keys(params: dict, owner_id: str) -> list[str]:
     return keys
 
 
-def _load_canvas_references(params: dict, owner_id: str, storage) -> list[dict]:
-    """Load and verify typed Canvas references before sending them to Gemini."""
-    from PIL import Image, UnidentifiedImageError
+def _dieu_phoi():
+    """Dựng bộ điều phối LTT_IMAGE. Tách ra để test tiêm được mà không chạm mạng."""
+    from platform_core import providers
+    from platform_core.image_gen import cong_render, dich_llm, dieu_phoi
+    from platform_core.storage import get_storage
 
-    mime_by_format = {"JPEG": "image/jpeg", "PNG": "image/png", "WEBP": "image/webp"}
-    result: list[dict] = []
-    total_size = 0
-    for key in _canvas_reference_keys(params, owner_id):
-        if not storage.exists(key):
-            raise ValueError(_t('Ảnh đầu vào không còn tồn tại.'))
-        size = storage.size(key)
-        total_size += size
-        if size <= 0 or size > 8 * 1024 * 1024 or total_size > 20 * 1024 * 1024:
-            raise ValueError(_t('Ảnh đầu vào vượt giới hạn 8 MB/ảnh hoặc 20 MB/node.'))
-        with storage.open(key) as stream:
-            data = stream.read()
+    prov = providers.get("ltt_image")
+    base = getattr(prov, "base_url", "") if prov else ""
+    if not base:
+        # Fail-closed: chưa đặt `LTT_RENDER_BASE_URL` thì KHÔNG đoán bừa một địa chỉ.
+        raise RuntimeError(_t(
+            "Model nội bộ chưa được cấu hình trên máy chủ này "
+            "(thiếu LTT_RENDER_BASE_URL)."))
+
+    from platform_core.db import get_session
+
+    def _voi_db(ham):
+        gen = get_session(); db = next(gen)
         try:
-            with Image.open(io.BytesIO(data)) as image:
-                mime = mime_by_format.get(str(image.format or "").upper())
-                image.verify()
-        except (UnidentifiedImageError, OSError) as exc:
-            raise ValueError(_t('Ảnh đầu vào bị hỏng hoặc không đúng định dạng.')) from exc
-        if not mime:
-            raise ValueError(_t('Node Image chỉ hỗ trợ ảnh JPEG, PNG hoặc WebP.'))
-        result.append({"data": data, "mime": mime, "role": "reference"})
-    return result
+            return ham(db)
+        finally:
+            try: next(gen)
+            except StopIteration: pass
 
+    def goi_llm(text, he_thong):
+        return _voi_db(lambda db: dich_llm.goi_llm(text, he_thong, db=db))
 
-def _goi_gemini(prompt: str, aspect_ratio: str, api_key: str,
-                model: str = _MODEL, references: list[dict] | None = None) -> bytes:
-    """Gọi Gemini Image API một lần → bytes PNG. Ném lỗi nếu thất bại."""
-    import httpx
-    from platform_core import providers as _prov
-    _prov.chan_neu_da_ngung("gemini")       # ⛔ fail-closed (AI CLEAN REBUILD V2)
-    from platform_core.providers import resolve_model_id
-    provider_model = resolve_model_id(model or _MODEL)
-    url = f"{_BASE}/v1beta/models/{provider_model}:generateContent"
-    headers = {"x-goog-api-key": api_key}
-    parts: list[dict] = [{"text": prompt}]
-    for ref in references or []:
-        parts.append({"text": f"The next image has role {ref['role']}."})
-        parts.append({"inlineData": {
-            "mimeType": ref["mime"],
-            "data": base64.b64encode(ref["data"]).decode("ascii"),
-        }})
-    body = {
-        "contents": [{"parts": parts}],
-        "generationConfig": {
-            "responseModalities": ["IMAGE", "TEXT"],
-            "imageConfig": {"aspectRatio": aspect_ratio},
-        },
-    }
-    try:
-        resp = httpx.post(url, json=body, headers=headers, timeout=_TIMEOUT_S)
-    except httpx.HTTPError as e:
-        raise GeminiError(_sanitize(f"Lỗi kết nối Gemini: {e}", api_key), status_code=None)
-    if resp.status_code != 200:
-        raise GeminiError(_sanitize(
-            f"Gemini HTTP {resp.status_code}: {resp.text}", api_key),
-            status_code=resp.status_code)
-    data = resp.json()
-    pf = data.get("promptFeedback", {}) or {}
-    if pf.get("blockReason"):
-        raise RuntimeError(f"Nội dung bị chặn: {pf['blockReason']}")
-    candidates = data.get("candidates", []) or []
-    if not candidates:
-        raise RuntimeError(_t('Gemini không trả candidate nào.'))
-    cand = candidates[0]
-    if cand.get("finishReason") == "SAFETY":
-        raise RuntimeError(_t('Bị chặn vì lý do an toàn nội dung.'))
-    for part in cand.get("content", {}).get("parts", []) or []:
-        inline = part.get("inlineData") or part.get("inline_data")
-        if inline and inline.get("data"):
-            return base64.b64decode(inline["data"])
-    raise RuntimeError(_t('Gemini không trả ảnh nào (chỉ có văn bản).'))
+    from platform_core.image_gen.http_cong import goi_http
+    return dieu_phoi.DieuPhoi(cong=cong_render.CongRender(goi=goi_http(base)),
+                              storage=get_storage(), goi_llm=goi_llm)
 
 
 def handle(params: dict, ctx=None) -> dict:
-    """Sinh 1-4 ảnh từ prompt tự do, lưu qua storage, trả danh sách khoá ảnh."""
+    """Sinh 1–4 ảnh từ prompt tự do qua LTT_IMAGE; trả danh sách khoá ảnh."""
+    from apps.taoanh.features import clean_mode
+    from apps.taoanh.manifest import unit_credit
+    from platform_core.image_gen import cong_render, dieu_phoi
+
     prompt = str(params.get("prompt", "")).strip()
     if not prompt:
         raise ValueError(_t('Chưa nhập mô tả ảnh (prompt).'))
-    aspect_ratio = str(params.get("aspect_ratio", "16:9")) or "16:9"
     owner_id = str(params.get("owner_id", "")) or "unknown"
-    model = str(params.get("model") or _MODEL)
-    from apps.taoanh.features import clean_mode, edit_directive
-    edit_mode = clean_mode(str(params.get("edit_mode") or "generate"))
+    job_id = getattr(ctx, "job_id", "") or "adhoc"
     try:
         count = max(1, min(int(params.get("count", 1)), 4))
     except (TypeError, ValueError):
         count = 1
 
-    api_key, key_id = _lay_key(model)
-    if not api_key:
-        raise RuntimeError("Chưa có API key Gemini (thêm ở /admin → APIKEYS, "
-                           "hoặc đặt GEMINI_API_KEY cho dev).")
+    # ⛔ CHẾ ĐỘ KHÔNG MAP ĐƯỢC THÌ TỪ CHỐI CÓ TÊN, không âm thầm hạ về `edit`.
+    #    Một tính năng hỏng lặng lẽ đắt hơn một tính năng bị gỡ tử tế: khách sẽ
+    #    nhận về một tấm ảnh trông hợp lý mà không phải thứ họ xin.
+    che_do_cu = clean_mode(str(params.get("edit_mode") or "generate"))
+    if che_do_cu not in _CHE_DO_MAP:
+        raise ValueError(_t(
+            'Chế độ "{ten}" không còn được hỗ trợ. Model nội bộ nhận: tạo mới '
+            'và chỉnh sửa.').format(ten=che_do_cu))
+    che_do = _CHE_DO_MAP[che_do_cu]
 
-    from apps.taoanh.manifest import unit_credit
-    from platform_core.storage import get_storage
-    storage = get_storage()
-    job_id = getattr(ctx, "job_id", "") or "adhoc"
-
-    references: list[dict] = _load_canvas_references(params, owner_id, storage)
-    for spec in list(params.get("references") or [])[:2]:
-        key = str(spec.get("key") or "")
-        if not key.startswith(f"taoanh/{owner_id}/") or not storage.exists(key):
+    ref_keys = _canvas_reference_keys(params, owner_id)
+    for spec in list(params.get("references") or [])[:_MAX_REFS]:
+        khoa = str(spec.get("key") or "")
+        if not khoa.startswith(f"taoanh/{owner_id}/"):
             raise ValueError(_t('Ảnh tham chiếu không hợp lệ hoặc không thuộc người dùng.'))
-        with storage.open(key) as stream:
-            references.append({"data": stream.read(),
-                               "mime": str(spec.get("mime") or "image/png"),
-                               "role": str(spec.get("role") or "reference")})
-    if len(references) > 8:
-        raise ValueError(_t('Một node Image chỉ nhận tối đa 8 ảnh tham chiếu.'))
-    if edit_mode != "generate" and not any(r["role"] == "source" for r in references):
+        if khoa not in ref_keys:
+            ref_keys.append(khoa)
+    if len(ref_keys) > _MAX_REFS:
+        # ⚠️ Trần này là NĂNG LỰC KHAI BÁO của `hidream-o1` (`max_refs: 2`), không
+        #    phải một con số ta chọn. Bản Gemini cho 8; giữ số 8 sau khi đổi động
+        #    cơ là hứa một thứ không còn.
+        raise ValueError(_t(
+            'Model nội bộ nhận tối đa {n} ảnh tham chiếu.').format(n=_MAX_REFS))
+    if che_do != "t2i" and not ref_keys:
         raise ValueError(_t('Chế độ chỉnh sửa cần ảnh nguồn.'))
-    final_prompt = edit_directive(edit_mode, prompt, references)
 
-    keys: list[str] = []
-    errors: list[str] = []
-    last_status: int | None = None
-    for i in range(count):
-        key = f"taoanh/{owner_id}/{job_id}/{i}.png"
-        if storage.exists(key):
-            keys.append(key)
-            continue
-        if ctx is not None:
-            ctx.progress(int(i * 100 / count), f"đang tạo ảnh {i + 1}/{count}")
-        try:
-            img = _goi_gemini(final_prompt, aspect_ratio, api_key, model, references)
-        except GeminiError as e:
-            errors.append(str(e)); last_status = e.status_code; continue
-        except Exception as e:  # noqa: BLE001
-            errors.append(str(e)); continue
-        storage.put(key, io.BytesIO(img), content_type="image/png")
-        keys.append(key)
+    dp = _dieu_phoi()
+    if ctx is not None:
+        ctx.progress(10, "đang chuẩn bị")
+    try:
+        kq = dp.chay(job_id=str(job_id), prompt=prompt, model=_MODEL,
+                     mode=che_do, ref_keys=ref_keys, so_anh=count,
+                     tien_to_khoa=f"taoanh/{owner_id}")
+    except cong_render.BanError as e:
+        # ⛔ Máy bận KHÔNG phải "thất bại". Ném `DangBan` của nền tảng để job về
+        #    hàng đợi (`resource_wait`) — không tiêu một lượt thử, không chạm
+        #    tiền. Ném `RuntimeError` ở đây sẽ tiêu ba lượt rồi hỏng job kèm
+        #    hoàn tiền cho một việc CHƯA TỪNG CHẠY.
+        from platform_core.jobs import DangBan
+        eta = getattr(e, "eta_s", 0) or 0
+        phut = int(eta / 60)
+        raise DangBan(
+            _t("Máy tạo ảnh đang bận{them}. Bạn có thể thử lại sau.").format(
+                them=_t(" — còn khoảng {p} phút").format(p=phut) if phut else ""),
+            retry_after_s=eta) from e
+    except dieu_phoi.DieuPhoiError as e:
+        raise RuntimeError(str(e)) from e
 
+    keys = list(kq.image_keys)
     if not keys:
-        _ket_qua_key(key_id, thanh_cong=False, last_status=last_status)
-        raise RuntimeError(errors[-1] if errors else "Không tạo được ảnh nào.")
-    _ket_qua_key(key_id, thanh_cong=True)
+        raise RuntimeError(_t('Không tạo được ảnh nào.'))
     if ctx is not None:
         ctx.progress(100, "xong")
+
+    # 🔴 TÍNH TIỀN THEO ẢNH THẬT SỰ NHẬN ĐƯỢC, không theo số đã xin.
     return {"image_keys": keys, "count": len(keys), "prompt": prompt,
-            "aspect_ratio": aspect_ratio,
-            "edit_mode": edit_mode,
-            "credit_cost": len(keys) * unit_credit(model), "errors": errors[:3],
-            # Bang chung chi phi: bao SO ANH THAT DA TAO, khong phai `count` khach
-            # xin. Mot luot hong o anh thu ba thi ta chi tra tien hai anh — bao
-            # theo yeu cau la tu thoi phong chi phi cua chinh minh.
-            # Khong lo ra khach: tang API chi tra nhung truong `returns` da khai.
-            costing.KHOA_GOI_PROVIDER: [{"model": model, "count": len(keys)}]}
+            "prompt_da_gui": kq.prompt_da_gui, "da_dich": kq.da_dich,
+            "edit_mode": che_do_cu,
+            "credit_cost": len(keys) * unit_credit(_MODEL), "errors": [],
+            costing.KHOA_GOI_PROVIDER: [{"model": _MODEL, "count": len(keys)}]}

@@ -14812,6 +14812,33 @@ msgstr "The translation contains an empty cue."
 msgid "Ảnh đã được lưu nhưng model văn bản chưa đọc được ảnh."
 msgstr "Your image was saved, but this text model cannot read images."
 
+# ── AI CLEAN REBUILD V2 pha 06.2 — `taoanh` sang LTT_IMAGE ──────────────────
+# Cả bốn chuỗi đều HIỆN RA VỚI KHÁCH qua `Job.error` hoặc `ValueError` của
+# handler, và cả bốn đều tránh nhắc tên nhà cung cấp.
+
+#: apps/taoanh/jobs.py
+# ⛔ Ba chế độ (`semantic_inpaint`·`outpaint`·`style_transfer`) bị GỠ vì
+#    `hidream-o1` khai đúng ba chế độ và không có chúng. Câu này phải nói rõ
+#    còn lại gì, chứ không chỉ nói "không hỗ trợ" — khách cần biết làm gì tiếp.
+msgid ""
+"Chế độ \"{ten}\" không còn được hỗ trợ. Model nội bộ nhận: tạo mới và chỉnh "
+"sửa."
+msgstr ""
+"Mode \"{ten}\" is no longer supported. The in-house model accepts: create and "
+"edit."
+
+#: apps/taoanh/jobs.py
+msgid "Model nội bộ nhận tối đa {n} ảnh tham chiếu."
+msgstr "The in-house model accepts at most {n} reference images."
+
+#: apps/taoanh/jobs.py
+msgid "Không tạo được ảnh nào."
+msgstr "No image could be generated."
+
+#: apps/taoanh/jobs.py
+msgid "Máy tạo ảnh đang bận{them}. Bạn có thể thử lại sau."
+msgstr "The image machine is busy{them}. Please try again later."
+
 #: platform_core/image_gen/dich_llm.py
 # Trả rỗng KHÔNG được im lặng: `dich_prompt_anh` sẽ gửi một prompt rỗng đi vẽ,
 # và khách nhận về một tấm ảnh không liên quan gì tới thứ họ gõ — một lỗi đắt

@@ -133,11 +133,7 @@ def test_dieu_phoi_goi_gemini_khong_ra_mang(bit_mang):
     assert bit_mang == [], f"co luot ra mang: {bit_mang}"
 
 
-def test_taoanh_khong_ra_mang(bit_mang):
-    from apps.taoanh import jobs
-    with pytest.raises(providers.ProviderDaNgung):
-        jobs._goi_gemini("mot con meo", "1:1", "khoa-gia")
-    assert bit_mang == [], f"co luot ra mang: {bit_mang}"
+# ⏭️ `taoanh` ĐÃ DI TRÚ ở pha 06.2 — tiền đề biến mất, chuyển sang `test_1002`.
 
 
 def test_thumbnail_khong_ra_mang(bit_mang):
