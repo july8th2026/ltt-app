@@ -154,6 +154,28 @@ phải của chương trình này: `git diff --name-only HEAD | grep -c auto_sca
   ⚠️ **Chưa chốt trên `https://app.lttstudios.com`** — chỉ làm được sau deploy.
 - **Nghiệm thu live: BLOCKED** (B-04) — chưa có VM thử của chương trình.
 
+## Deploy — ĐÃ CHẠY 2026-09-09 20:18–20:20
+
+| | |
+|---|---|
+| Nguồn | **commit** `5bb3a5a0` (`nguon=xuat`, 3946 tệp) — không phải cây làm việc |
+| Trunk | `admin-mvp-v3` ff tới `5bb3a5a0` trước khi deploy; cây chính sạch cả trước lẫn sau |
+| Trước đó production chạy | `99017910` (11:59 cùng ngày) — nay là **đường lùi** ở `app.previous` |
+| `EXITCODE` | `0` — chờ tới khi dòng đó xuất hiện, không đọc tệp một lần rồi kết luận |
+| Migration | `alembic upgrade head` chạy **trước** khi khởi động dịch vụ, rc=0 ⇒ ba revision VPS V2 đã áp |
+| Nghiệm thu vân tay | lệch **0** · thiếu **0** · thừa **0** so với commit đang chạy |
+| `/health/ready` | **200**, `environment=production` |
+| `/health/version` | `5bb3a5a09291` — khớp commit |
+| `/vps` công khai | **200** |
+
+⚠️ Deploy chở theo **2 commit của phiên khác** đã nằm sẵn trên trunk (`3eae396d`,
+`05464239` — việc `test_448`). Production trước đó chậm hơn trunk 2 commit.
+
+⚠️ **Chưa xác minh được trang đã đổi trên URL công khai.** `/vps` ẩn danh là
+trang bán hàng; những trang tôi sửa (`vps_chi_tiet.html`) đòi đăng nhập, và
+phiên này không có mật khẩu tài khoản thử của production. Nghiệm thu trình duyệt
+thật vẫn là **local**. Luật 17 chưa đóng hẳn.
+
 ## Score
 
 | | Điểm | Trần đang áp |

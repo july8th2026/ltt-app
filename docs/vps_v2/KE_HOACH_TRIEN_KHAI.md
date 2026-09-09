@@ -1,5 +1,18 @@
 # KẾ HOẠCH TRIỂN KHAI — LTT VPS V2 (mục tiêu >98/100)
 
+> ✅ **ĐÃ THỰC HIỆN XONG — 2026-09-09.** Cả 12 pha đã chạy, commit `5bb3a5a0`,
+> đã hoà vào trunk `admin-mvp-v3` và đã deploy lên production.
+>
+> Tệp này **giữ nguyên dạng tiền-bay** thay vì viết lại thành hồi ký: giá trị của
+> nó là ở chỗ nó ghi lại *điều đã dự đoán trước khi làm*, và mục §10 mới ở cuối
+> đối chiếu từng dự đoán với kết cục. Một kế hoạch được sửa cho khớp kết quả thì
+> không còn nói được nó đã đúng hay sai ở đâu.
+>
+> Kết quả và bằng chứng: `FINAL_AUDIT.md` · `RELEASE_SCORECARD.md` ·
+> `KNOWN_BLOCKERS.md` · `STATE.md`.
+
+---
+
 > **Tài liệu này là bản kế hoạch TIỀN-BAY.** Nó được viết sau khi đọc toàn bộ pack
 > `G:\My Drive\AI\A\LTT_VPS_V2_ONE_SESSION_PROMPT_PACK` và **đối chiếu với HEAD thật**
 > của kho, trước khi gửi bootstrap prompt.
@@ -266,3 +279,71 @@ bảy phát hiện đã kiểm — nhờ đó Prompt 00 **xác minh lại** thay
 - **Nó chưa chạy một dòng mã nào.** Bảy phát hiện ở §2 được kiểm bằng **đọc mã**, không bằng thi hành. Prompt 00 vẫn phải kiểm lại theo cách của nó.
 - **Nó không biết trạng thái hạ tầng live hôm nay.** D-4/D-5/D-6 là câu hỏi cho máy chủ và cho chủ dự án, không phải cho kho mã. `python tools\api_prod_canary.py trang-thai` trả lời được phần *đang sống*; PBS/CA/VM thử thì phải hỏi người.
 - **Ước lượng điểm ở §6 là ước lượng.** Con số thật do Prompt 11 chấm với bằng chứng thật.
+
+---
+
+## 10. Đối chiếu: kế hoạch đã dự đoán gì, và thực tế ra sao
+
+Viết 09/09/2026 sau khi chạy xong. Mục này **không sửa** chín mục trên — giá trị
+của một kế hoạch nằm ở chỗ nó nói trước được điều gì, và điều đó chỉ đo được khi
+bản dự đoán còn nguyên.
+
+### Sáu quyết định (§4) — chốt ra sao
+
+| ID | Khuyến nghị | Thực tế | Ghi chú |
+|---|---|---|---|
+| D-1 | để pack ngoài kho | ✅ đúng vậy | không một tệp nào của pack vào kho |
+| D-2 | commit theo pha | ❌ **làm khác**: một commit cuối | Giữ đúng chữ của pack. Rủi ro mất việc đã lường trước **không xảy ra** — nhưng đó là may, không phải bằng chứng rằng khuyến nghị sai |
+| D-3 | dải test 550–599 | ✅ dùng 550–560 (11 tệp) | còn trống 561–599 |
+| D-4 | phải có VM thử | ❌ **không có** | `LIVE ACCEPTANCE BLOCKED` → B-04 |
+| D-5 | PBS nhiều khả năng không có | ✅ đúng — không có | Backup/DR trần 50 → B-01 |
+| D-6 | chuẩn bị CA trước Pha 07 | ⚠️ **không chuẩn bị được** | Kịch bản xấu đã lường đúng; xem dưới |
+
+### Ba dự đoán đúng, và một dự đoán đúng theo cách khó chịu
+
+**Đúng — §5 Pha 03 là pha đắt nhất.** Kế hoạch viết: *"chú thích `dieu_khien.py`
+biện hộ việc không dùng hàng đợi bằng lý do 200 ms — điều đó chỉ đúng với hành vi
+bắn-rồi-quên đang sai"*. Đúng nguyên văn, và nó thành ADR-03.
+
+**Đúng — §6 trần điểm.** Dự đoán `SOFTWARE 92–97 · LIVE 40–60 · E2E không thể >98`.
+Chấm thật: **94 · 45 · 62**. Cả ba nằm trong khoảng đã báo trước.
+
+**Đúng — §5 Pha 06 gần như chắc chắn `INFRA BLOCKED`.** Đúng vậy.
+
+**Đúng theo cách khó chịu — D-6.** Kế hoạch cảnh báo: *"bật fail-closed mà chưa
+có CA là tự tắt dịch vụ VPS"*. Tới lúc deploy thì đúng là chưa có CA, và tôi
+**không tự xác minh được** (ACL chặn `secrets/`, và lượt kiểm nâng quyền trả
+`EXITCODE=2` — tệp `C:\LTTPlatform\secrets\app.env` không tồn tại; env của dịch
+vụ do `nssm` nướng lúc cài).
+
+Thứ gỡ bế tắc **không phải một phép đo của tôi** mà là một sự thật chỉ chủ sản
+phẩm có: *"chưa có VPS nào chạy thật trên production, chưa có khách"*. Với 0 máy
+đang chạy, fail-closed không làm hỏng gì của ai.
+
+⭐ Bài học đáng giữ: kế hoạch nhận ra **đúng** rủi ro, nhưng nó xếp D-6 vào loại
+*"chuẩn bị trước"* trong khi thật ra nó là loại *"phải hỏi chủ sản phẩm"*. Một
+rủi ro mà bạn không có dữ liệu để tự đánh giá thì nó là một **câu hỏi**, không
+phải một hạng mục chuẩn bị.
+
+### Bốn thứ kế hoạch KHÔNG nhìn thấy
+
+| | Vì sao kế hoạch bỏ lọt |
+|---|---|
+| Trần chờ tác vụ > trần job chứa nó | chỉ lộ ra khi **viết** phép kiểm duyệt từng job type; đọc mã không thấy |
+| `khoa_idem=''` va vào UNIQUE | chỉ lộ ra khi chạy trên CSDL thật; lược đồ đọc lên hoàn toàn hợp lý |
+| "Cài lại" gỡ cách ly | sinh ra **bởi chính** tính năng cách ly mà kế hoạch chưa có |
+| Tiêm `ngu` mà quên đồng hồ | lỗi của **bộ test**, không của sản phẩm — kế hoạch chỉ nhìn sản phẩm |
+
+Và ba sửa **ngoài phạm vi** (`governance.py`, `restore_drill_schema.py`, ba script
+đo) không mục nào trong kế hoạch lường trước: kế hoạch khoá phạm vi vào `apps/vps`
+mà không hỏi *"thêm một bảng mới thì nền tảng đòi gì"*.
+
+### Chi phí thật so với hình dung
+
+Kế hoạch cảnh báo *"đây KHÔNG phải việc một phiên"*. Thực tế: **một phiên**, không
+lần compaction nào, ~5 giờ đồng hồ. Ba lượt gate đầy đủ (13,0 + 12,3 + ~12 phút),
+trong đó **một lượt bị vứt** vì tôi sửa tệp lúc nó đang chạy.
+
+⇒ Chỗ kế hoạch sai nhiều nhất là **ước lượng thời lượng**, và nó sai về phía bi
+quan. Nhưng nó đúng ở chỗ quan trọng hơn: nó buộc phải chốt D-1…D-6 trước, và
+năm trong sáu quyết định ấy vẫn đứng nguyên sau khi làm xong.

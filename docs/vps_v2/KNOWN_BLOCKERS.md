@@ -54,9 +54,26 @@ Mã không biến một host lồng thành HA, và `START_HERE.md` §12 nói th�
 
 ---
 
-## 🔴 B-03 · VẬN HÀNH — production cần CA của Proxmox TRƯỚC khi deploy
+## 🟡 B-03 · VẬN HÀNH — production cần CA của Proxmox *(đã deploy, chưa đặt CA)*
 
-**Đây là vật cản duy nhất có thể làm gián đoạn dịch vụ nếu deploy mà quên.**
+> **Cập nhật 2026-09-09 sau khi deploy.** Đã deploy `5bb3a5a0` lên production mà
+> **chưa** đặt `LTT_VPS_PROXMOX_CA`. Không phải sơ suất: chủ sản phẩm xác nhận
+> *"chưa có VPS nào chạy thật trên production, chưa có khách"* — với **0 máy**
+> đang chạy thì fail-closed không cắt dịch vụ của ai.
+>
+> Nên vật cản **hạ từ 🔴 xuống 🟡**: nó không còn chặn deploy, nhưng nó **vẫn
+> chặn việc bán máy đầu tiên**. Ngày có máy thật đầu tiên, mọi đường chạm
+> Proxmox (tạo máy, console, bật/tắt, chụp ảnh, đối chiếu) sẽ hỏng cho tới khi
+> CA có mặt.
+>
+> 🔴 **Và một sự thật đo được lúc deploy, ghi lại vì nó ngược với tài liệu:**
+> `C:\LTTPlatform\secrets\app.env` **không đọc được từ phiên thường** (ACL — cố
+> ý), và lượt kiểm nâng quyền trả `EXITCODE=2` nghĩa là **tệp không tồn tại ở
+> đường dẫn đó**. Env của dịch vụ do `nssm` nướng lúc cài (log deploy: *"Da nap
+> bi mat vao moi truong dich vu"*). ⇒ Đừng đi tìm `app.env` để sửa; đường đúng
+> là `setup/dat_bien_env.ps1` / `nap_lai_env.ps1` rồi cài lại cấu hình dịch vụ.
+
+**Nếu deploy khi ĐÃ có máy khách thật thì đây là vật cản chặn dịch vụ.**
 
 Pha 07 đóng lỗ `verify=False`: từ nay `LTT_ENV=production` **và** không có
 `LTT_VPS_PROXMOX_CA` ⇒ `doc_cau_hinh` ném `ChuaCauHinh`, tức app VPS **không nối
