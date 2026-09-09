@@ -1625,4 +1625,84 @@ apps/thumbnail/routes.py:396  _render(..., error=str(exc))   <- render RA TRANG
 
 ---
 
+# 09/09/2026 — ĐÓNG LỘ TRÌNH: 23/23 hạng mục, và `M-1` đã chạy production
+
+```
+gate cuoi   FAIL (1/32) · sha cfb83106 · cay_da_doi_giua_chung: FALSE
+            7 failed, 8859 passed, 59 skipped   -> ca 7 deu la `test_448`
+duong di    6/32 -> 3/32 -> 1/32 -> 2/32 -> 1/32
+```
+
+Bước đỏ duy nhất **không phải của Workflow V2**: hàng rào `test_448` từ chối trả
+lời từ một lượt nghiệm thu ASV bị máy B giết. Nó đang làm đúng việc.
+
+## `M-1` trên production — và một lỗi CHỈ trình duyệt thấy được
+
+```
+chuyen   : 10 nguon -> 9 chuyen, 1 rong        nghiem thu doc lap 8/8 DAT
+va_trang : 9/9 draft du khoa                   canh 1+2+1 = 4, cong con nguyen
+```
+
+⚠️ **Giữa hai lượt ấy là một lỗi tôi đã đẩy lên production trước khi biết.**
+`_trang_v3` sinh **4** khoá; `CanvasPage` khai **8** là bắt buộc. Canvas trắng
+màn với `Cannot read properties of undefined (reading 'map')`.
+
+🔑 Và nó qua được **mọi** phép kiểm đang có:
+
+```
+Python : doc `document` nhu mot dict; dict thieu khoa VAN hop le
+vitest : dung du lieu gia DUNG KIEU, nen khong bao gio thieu khoa
+tsc    : tin loi khai `CanvasPage`; JSON tu CSDL khong qua trinh bien dich
+```
+
+⇒ Chỗ duy nhất thấy được là **một trình duyệt thật mở một bản ghi thật**. Đây là
+  ca cụ thể chứng minh luật *"kiểm GUI bằng trình duyệt, đừng chỉ đọc code"* —
+  không phải một nguyên tắc chung mà là một lỗi đã lên tới dữ liệu người dùng.
+
+`tests/test_968` nay đứng ở giữa: đọc **kiểu** từ nguồn TypeScript rồi đối chiếu
+với **đầu ra thật** của `_trang_v3`. Nó bắt được lớp lỗi ấy mà không cần trình
+duyệt.
+
+## ⛔ Bản vá suýt gây hại hơn khiếm khuyết nó sửa
+
+`va_trang()` cho cạnh **đã là v3** đi qua `_canh_v3`, mà hàm ấy chỉ đọc khoá v2
+(`sourceHandle`). Không thấy ⇒ rơi về `"out"` ⇒ **xoá sạch cổng**, đúng thứ
+`M-1` được viết để cứu. `_canh_v3` nay **luỹ đẳng**: đọc khoá v3 trước, v2 sau.
+
+⭐ Đó là lý do phép nghiệm thu đo *"số draft mang `source_port`"* chứ không đếm
+   cạnh: số cạnh vẫn đúng 4 kể cả khi cổng bên trong đã bị xoá, và **không gì
+   báo**. Một phép đo chọn sai đại lượng thì xanh vô nghĩa.
+
+## Ba lần kết luận sai rồi tự bác, trong đúng một hạng mục
+
+| | Kết luận đầu | Sự thật |
+|---|---|---|
+| 1 | *"dữ liệu gieo sai"* | đúng cho `data`, **sai** cho bốn khoá trang — dữ liệu gieo phản ánh **đúng** thứ `M-1` sinh ra |
+| 2 | *"`_trang_v3` thiếu 6 khoá"* | **bộ đọc kiểu TS của tôi** over-match, nhặt cả trường lồng bên trong (`x`/`y`/`zoom` của `viewport`) |
+| 3 | mypy `assignment` | không khai kiểu ⇒ suy `dict[str, Sequence]`; cách **sai** là ép trang đồng nhất kiểu cho vừa lòng bộ suy kiểu |
+
+⇒ Cả ba đều là **đọc thứ đại diện thay vì thứ thật**: một fixture thay cho dữ
+  liệu thật, văn bản của kiểu thay cho kiểu, một suy diễn thay cho khai báo.
+
+## Sáu bánh cóc chặn chính người viết chúng
+
+`test_178` (bảng năng lực API) · `ruff B905` · `test_394` (bước gate khai tài
+nguyên) · `test_145` (`BUOC_CHAM`) · `check_bo_qua` (hai `pytest.skip` **không
+bao giờ nổ**) · `check_i18n`.
+
+⭐ Ca `check_i18n` đáng nhất: bộ dò **mời** tôi thu hẹp phép đếm, có sẵn ba tiền
+   lệ cùng dạng, và tiền đề vẫn sai — `RegistryError` **có** tới người dùng ở
+   `jobs.py:309` và `thumbnail/routes.py:396`. Thứ chặn lại là hai lệnh `grep`
+   mất mười giây.
+
+## Số cuối
+
+```
+18 commit · 49 tep · +4.662 dong
+19 mo-dun `platform_core/workflow/` · 282 phep kiem dai 950-970
+20+ phep tiem doi chung, moi phep lam do dung phan no bao ve
+```
+
+---
+
 *Cập nhật sau mỗi đợt. Đợt chỉ được ✅ khi cổng đầy đủ xanh trên cây đứng yên.*
