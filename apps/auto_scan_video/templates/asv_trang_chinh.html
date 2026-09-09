@@ -283,6 +283,15 @@
         <p class="asv-ghi-chu" id="asv-vung-tt" aria-live="polite">
           {{ _("Chưa có vùng nào.") }}
         </p>
+        {# 🔴 Danh sach vung, va no ton tai vi mot ly do cu the chu khong vi cho
+           day du: tu V5 `vung_che` da NHAN va LUU `tu_giay`/`den_giay`, nhung
+           khong co cho nao tren man hinh de dat chung. Nang luc co, khong ai di
+           tren duong toi no — dung hinh dang loi kho nay da dat ten.
+
+           ⚠️ Va nua kia cua cung mot lo: bo loc cung khong doc hai truong ay
+              (sua o pha 12a). Mo duong o giao dien ma khong sua bo loc la ban
+              mot thu khong xay ra. #}
+        <ul class="asv-vung-ds" id="asv-vung-ds"></ul>
         <p class="asv-ghi-chu asv-chi-may">
           {{ _("Chỉnh vùng che trên máy tính để chính xác hơn.") }}
         </p>
@@ -382,7 +391,14 @@
   "cat_khong_doc_duoc": {{ _("Đoạn cắt không đọc được.")|tojson }},
   "cat_ngoai_khoang": {{ _("Đoạn cắt phải nằm trong video và điểm đầu phải trước điểm cuối.")|tojson }},
   "cat_qua_ngan": {{ _("Đoạn cắt quá ngắn.")|tojson }},
-  "cat_con_lai": {{ _("Đoạn giữ lại dài %(giay)s.")|tojson }}
+  "cat_con_lai": {{ _("Đoạn giữ lại dài %(giay)s.")|tojson }},
+  "vung_loai_lam_mo": {{ _("Làm mờ")|tojson }},
+  "vung_loai_danh_dau_phu_de": {{ _("Đánh dấu phụ đề gốc")|tojson }},
+  "vung_tu_giay": {{ _("Từ giây")|tojson }},
+  "vung_den_giay": {{ _("Đến giây")|tojson }},
+  "vung_ca_video": {{ _("cả video")|tojson }},
+  "vung_xoa_mot": {{ _("Xoá vùng này")|tojson }},
+  "vung_vi_tri": {{ _("ở %(x)s%%–%(x2)s%% ngang, %(y)s%%–%(y2)s%% dọc")|tojson }}
 }
 </script>
 <script src="/static/asv.js?v={{ asset_ver }}" defer></script>

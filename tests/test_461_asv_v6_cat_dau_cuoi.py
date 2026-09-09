@@ -247,8 +247,12 @@ def test_client_gui_PHAN_SO_chu_khong_gui_GIAY():
     goi. Dem chuoi `"cat"` thi mot dong chu thich cung lam bai nay xanh.
     """
     js = DUONG_JS.read_bytes().decode("utf-8")
-    assert "thoiLuongCat" in js
-    assert "/ thoiLuongCat" in js, "khong thay phep doi giay -> phan so"
+    # ⚠️ Ten bien doi o pha 12b (`thoiLuongCat` -> `thoiLuongVideo`) khi danh
+    #    sach vung bat dau doc chung no. Bai nay DO khi doi ten, va do la
+    #    dung viec no phai lam: mot cai neo theo ten thi phai duoc nhin lai
+    #    moi lan ten doi, chu khong duoc noi long thanh mot phep tim mo ho.
+    assert "thoiLuongVideo" in js
+    assert "/ thoiLuongVideo" in js, "khong thay phep doi giay -> phan so"
     assert "JSON.stringify([fa, fb])" in js
 
 

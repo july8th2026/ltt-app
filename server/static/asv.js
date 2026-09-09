@@ -31,14 +31,29 @@
     var oChu = document.getElementById("asv-chu");
     if (oChu) CHU = JSON.parse(oChu.textContent) || {};
   } catch (e) { CHU = {}; }
+  /* 🔴 `%%` -> `%`, va day la mot lo hong CO SAN tim ra khi kiem trinh duyet o
+   *    pha 12b, khong phai mot nhu cau moi.
+   *
+   *    Cac chuoi o `#asv-chu` viet theo quy uoc printf cua Python, nen mot dau
+   *    phan tram THAT phai go doi: `"Đang tải video lên… %(pct)s%%"`. Ham nay
+   *    truoc day chi thay cho tham so va **khong go doi lai**, nen khach doc
+   *    "tải lên… 50%%". Ban dau toi tuong do la loi cua chuoi minh vua them; do
+   *    lai thi `tai_dang` cua V5 dinh y het.
+   *
+   * ⚠️ Go doi SAU khi thay tham so: mot gia tri thay vao co the chua `%`, va
+   *    go truoc se an vao chinh no.
+   *
+   * ⭐ Va thay TOAN CUC: `String.replace` voi mot chuoi chi doi **lan dau**, nen
+   *    mot chuoi dung `%(x)s` hai lan se lang le giu nguyen lan thu hai.
+   */
   function t(khoa, thay) {
     var s = CHU[khoa] || "";
     if (thay) {
       Object.keys(thay).forEach(function (k) {
-        s = s.replace("%(" + k + ")s", thay[k]);
+        s = s.split("%(" + k + ")s").join(thay[k]);
       });
     }
-    return s;
+    return s.split("%%").join("%");
   }
 
   var oTep = document.getElementById("asv-video");
@@ -104,8 +119,13 @@
     video.addEventListener("loadedmetadata", function () {
       var giay = video.duration;
       if (!isFinite(giay) || giay <= 0) return;
+      /* ⚠️ `batCat` TRUOC `veLai`: no dat `thoiLuongVideo`, va danh sach vung
+       *    doc bien do de dat `max` cho hai o gio. Nguoc thu tu thi lan ve dau
+       *    tien cho ra hai o khong co tran — mot loi khong bao gio no o may nay
+       *    (danh sach luc do dang rong), nhung se no ngay khi co ai goi `veLai`
+       *    som hon. */
+      batCat(giay);
       veLai();   // ti le khung da biet -> ve lai lop phu cho dung
-      batCat(giay);   // hai o cat doi dung con so nay de doi giay -> phan so
 
       var duong = form.getAttribute("data-uoc");
       if (!duong) return;
@@ -251,10 +271,102 @@
       r.setAttribute("class", "asv-hop asv-hop-" + v.loai);
       lop.appendChild(r);
     });
+    veDanhSachVung();
+    dongBoVung();
+  }
+
+  /* ── Danh sach vung: noi DUY NHAT dat duoc khoang thoi gian ──────────────
+   *
+   * 🔴 Ton tai vi mot ly do cu the. Tu V5 `vung_che` da nhan, kiem va luu
+   *    `tu_giay`/`den_giay`, `ban_dung` da ghi chung xuong — va **khong co cho
+   *    nao tren man hinh de dat chung**, cung khong co dong ma nao doc chung khi
+   *    dung bo loc (sua o pha 12a). Nang luc co, khong ai di tren duong toi no.
+   *
+   * ⛔ Mo duong o day ma khong sua bo loc la ban mot thu khong xay ra. Hai nua
+   *    phai di cung nhau, va chung da di cung nhau.
+   */
+  var dsVung = document.getElementById("asv-vung-ds");
+
+  function dongBoVung() {
     if (oVung) oVung.value = vung.length ? JSON.stringify(vung) : "";
     chu(vungTt, vung.length
       ? t("vung_dem", {so: vung.length})
       : t("vung_chua_co"));
+  }
+
+  function pt(x) { return Math.round(x * 100); }
+
+  function oGio(v, khoa, nhan) {
+    var l = document.createElement("label");
+    l.className = "asv-vung-gio";
+    var s = document.createElement("span");
+    s.textContent = nhan;
+    var i = document.createElement("input");
+    i.type = "number";
+    i.min = "0";
+    i.step = "0.1";
+    i.className = "asv-cat-so";
+    i.placeholder = t("vung_ca_video");
+    if (thoiLuongVideo > 0) i.max = String(thoiLuongVideo);
+    if (v[khoa] !== undefined && v[khoa] !== null) i.value = v[khoa];
+    i.addEventListener("input", function () {
+      /* ⛔ O RONG = khong khai, khong phai 0. Ghi `0` vao `tu_giay` la mot cua
+       *    so "tu dau video" — mot cau KHAC HAN "ca video", va tu pha 12a hai
+       *    cau do cho hai van tay khac nhau. Nen phai `delete`, khong duoc
+       *    gan 0. */
+      if (i.value === "") {
+        delete v[khoa];
+      } else {
+        var x = parseFloat(i.value);
+        if (isFinite(x)) v[khoa] = x;
+      }
+      /* Chi dong bo, KHONG `veLai()`: ve lai la dung ca danh sach, va o dang
+         go se mat tieu diem ngay sau ky tu dau tien. */
+      dongBoVung();
+    });
+    l.appendChild(s);
+    l.appendChild(i);
+    return l;
+  }
+
+  function veDanhSachVung() {
+    if (!dsVung) return;
+    while (dsVung.firstChild) dsVung.removeChild(dsVung.firstChild);
+    vung.forEach(function (v, i) {
+      var li = document.createElement("li");
+      li.className = "asv-vung-muc";
+
+      var dau = document.createElement("div");
+      dau.className = "asv-vung-dau";
+      var ten = document.createElement("strong");
+      ten.textContent = t("vung_loai_" + v.loai) || v.loai;
+      var oVt = document.createElement("span");
+      oVt.className = "asv-ghi-chu";
+      oVt.textContent = t("vung_vi_tri", {
+        x: pt(v.x0), x2: pt(v.x1), y: pt(v.y0), y2: pt(v.y1)
+      });
+      dau.appendChild(ten);
+      dau.appendChild(oVt);
+
+      var gio = document.createElement("div");
+      gio.className = "asv-vung-gio-o";
+      gio.appendChild(oGio(v, "tu_giay", t("vung_tu_giay")));
+      gio.appendChild(oGio(v, "den_giay", t("vung_den_giay")));
+
+      var xoa = document.createElement("button");
+      xoa.type = "button";
+      xoa.className = "btn ghost";
+      xoa.textContent = t("vung_xoa_mot");
+      xoa.addEventListener("click", function () {
+        vung.splice(i, 1);
+        veLai();
+      });
+
+      li.appendChild(dau);
+      li.appendChild(gio);
+      li.appendChild(xoa);
+      dsVung.appendChild(li);
+    });
   }
 
   function toaDo(ev) {
@@ -381,13 +493,15 @@
      ban se lech — nhung ban o day chi de NOI SOM, con ban cuong che nam o may
      chu, nen lech chi lam loi toi muon hon chu khong lam sai ket qua. */
   var TOI_THIEU_CAT = 0.02;
-  var thoiLuongCat = 0;
+  /* Do dai video, doc mot lan o `loadedmetadata`. Dung CHUNG: phan CAT
+     doi giay -> phan so, con danh sach VUNG dat tran cho hai o gio. */
+  var thoiLuongVideo = 0;
 
   /* ⭐ Hai o mac dinh `disabled`, va chi mo khi da biet thoi luong. Mot o nhan
    *    GIAY trong khi chua ai biet video dai bao nhieu la mot o khong the doi
    *    ra phan so — khach go vao do se gui len mot con so vo nghia. */
   function batCat(giay) {
-    thoiLuongCat = giay;
+    thoiLuongVideo = giay;
     if (oCatTu) { oCatTu.disabled = false; oCatTu.max = String(giay); }
     if (oCatDen) {
       oCatDen.disabled = false;
@@ -406,17 +520,17 @@
 
   function tinhCat() {
     if (!oCat) return;
-    if (!(thoiLuongCat > 0)) { oCat.value = ""; return; }
+    if (!(thoiLuongVideo > 0)) { oCat.value = ""; return; }
     var coA = oCatTu && oCatTu.value !== "";
     var coB = oCatDen && oCatDen.value !== "";
     if (!coA && !coB) { oCat.value = ""; chu(ttCat, t("cat_ca_video")); return; }
 
     var a = coA ? parseFloat(oCatTu.value) : 0;
-    var b = coB ? parseFloat(oCatDen.value) : thoiLuongCat;
+    var b = coB ? parseFloat(oCatDen.value) : thoiLuongVideo;
     if (!isFinite(a) || !isFinite(b)) {
       oCat.value = ""; chu(ttCat, t("cat_khong_doc_duoc")); return;
     }
-    var fa = a / thoiLuongCat, fb = b / thoiLuongCat;
+    var fa = a / thoiLuongVideo, fb = b / thoiLuongVideo;
     /* L4: khong thu hep gi thi khong gui gi. */
     if (fa <= 0 && fb >= 1) { oCat.value = ""; chu(ttCat, t("cat_ca_video")); return; }
 

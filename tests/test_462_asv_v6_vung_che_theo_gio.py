@@ -357,3 +357,78 @@ def test_ENGINE_vung_chi_mo_TRONG_cua_so(tmp_path):
     x2 = khung(ra["co"], 15.0, "ngoai_co")
     y2 = khung(ra["khong"], 15.0, "ngoai_khong")
     assert _psnr(x2, y2) == float("inf"), "ngoai cua so: vung VAN bi lam mo"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §7  CO DUONG tu giao dien khong — pha 12b
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# ⚠️ Bon bai duoi day chi chot **co duong**. Chung khong chung minh duong ay chay
+#    — mot `addEventListener` co that van co the ghi nham khoa. Cau thu hai
+#    ("co ai dang di tren duong do khong") duoc tra loi tren TRINH DUYET THAT,
+#    va ket qua ghi trong commit cua pha nay.
+
+from pathlib import Path  # noqa: E402
+
+_GOC = Path(__file__).resolve().parents[1]
+_MAU = _GOC / "apps" / "auto_scan_video" / "templates" / "asv_trang_chinh.html"
+_JS = _GOC / "server" / "static" / "asv.js"
+
+
+def test_giao_dien_co_DANH_SACH_vung():
+    """Truoc pha 12b khong co cho nao tren man hinh de dat `tu_giay`."""
+    assert 'id="asv-vung-ds"' in _MAU.read_bytes().decode("utf-8")
+
+
+def test_client_ghi_dung_hai_khoa_ma_may_chu_doc():
+    js = _JS.read_bytes().decode("utf-8")
+    assert '"tu_giay"' in js and '"den_giay"' in js
+
+
+def test_o_RONG_thi_XOA_khoa_chu_khong_ghi_0():
+    """🔑 `0` va "khong khai" la HAI cau khac nhau, va tu pha 12a chung cho hai
+    van tay khac nhau: `tu_giay=0` la "tu dau video", con vang mat la "ca video".
+
+    Ghi `0` khi o rong se lam moi vung khach cham vao roi xoa trang **doi van
+    tay** — tuc vut ca cache cho mot thay doi khong co that.
+    """
+    js = _JS.read_bytes().decode("utf-8")
+    assert "delete v[khoa]" in js
+
+
+def test_xoa_duoc_MOT_vung_bat_ky_chu_khong_chi_vung_cuoi():
+    """`asv-vung-xoa` cu chi `pop()` — muon bo vung thu nhat thi phai xoa het."""
+    js = _JS.read_bytes().decode("utf-8")
+    assert "vung.splice(i, 1)" in js
+
+
+def test_o_gio_lay_TRAN_tu_thoi_luong_video():
+    """Khong co tran thi khach go duoc mot moc dai hon ca video, va may chu tra
+    ve mot cua so rong — mot loi ho khong noi duoc voi thu vua go."""
+    js = _JS.read_bytes().decode("utf-8")
+    assert "if (thoiLuongVideo > 0) i.max" in js
+
+
+def test_client_GO_DOI_dau_phan_tram_truoc_khi_hien():
+    """🔴 Mot lo hong CO SAN, tim ra khi kiem trinh duyet o pha 12b.
+
+    Cac chuoi o `#asv-chu` viet theo quy uoc printf cua Python, nen mot dau phan
+    tram THAT phai go doi (`%%`). Ham `t()` truoc day chi thay tham so va **khong
+    go doi lai**, nen khach doc `"tải lên… 50%%"`.
+
+    ⚠️ Toi tuong do la loi cua chuoi minh vua them; do lai thi `tai_dang` cua V5
+       dinh y het — mot loi song tu V5 va chua ai thay, vi khong bo test nao doc
+       thu KHACH NHIN THAY.
+    """
+    js = _JS.read_bytes().decode("utf-8")
+    assert '.split("%%").join("%")' in js
+    mau = _MAU.read_bytes().decode("utf-8")
+    assert "%%" in mau, "bang chuoi khong con dung quy uoc printf?"
+
+
+def test_thay_tham_so_TOAN_CUC_chu_khong_chi_lan_dau():
+    """`String.replace` voi mot chuoi chi doi **lan dau**. `vung_vi_tri` dung
+    bon tham so khac nhau nen hom nay khong no — nhung mot chuoi dung `%(x)s`
+    hai lan se lang le giu nguyen lan thu hai."""
+    js = _JS.read_bytes().decode("utf-8")
+    assert 's.split("%(" + k + ")s").join(thay[k])' in js

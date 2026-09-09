@@ -14977,3 +14977,31 @@ msgstr "The kept range runs %(giay)s."
 
 msgid "Đoạn cắt bạn chọn không còn lại phần nào để dựng. Hãy chọn một đoạn khác."
 msgstr "Nothing is left to build from the range you picked. Please choose a different one."
+
+# -- Auto Scan Video V6 -- danh sach vung che ----------------------
+
+msgid "Làm mờ"
+msgstr "Blur"
+
+msgid "Từ giây"
+msgstr "From second"
+
+msgid "Đến giây"
+msgstr "To second"
+
+msgid "cả video"
+msgstr "whole video"
+
+msgid "Xoá vùng này"
+msgstr "Delete this area"
+
+msgid "ở %(x)s%%–%(x2)s%% ngang, %(y)s%%–%(y2)s%% dọc"
+msgstr "at %(x)s%%–%(x2)s%% across, %(y)s%%–%(y2)s%% down"
+
+# -- Auto Scan Video V6 -- vung che theo gio ------------------------
+
+msgid "Không dựng được vùng che cho lần chạy này."
+msgstr "The masked areas could not be built for this run."
+
+msgid "Một vùng che nằm trọn trong đoạn đã bị cắt bỏ, nên không còn chỗ nào để che. Hãy sửa hoặc xoá vùng đó."
+msgstr "One masked area sits entirely inside a stretch that was cut out, so there is nothing left to cover. Please adjust or remove it."
