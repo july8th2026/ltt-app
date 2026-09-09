@@ -33,7 +33,7 @@
 | ├ 06.3 | `thumbnail` → LTT_IMAGE (**gỡ chữ-trong-ảnh**) | ✅ | 5 bánh cóc PASS | `PHA06_THUMBNAIL_CHU.md` |
 | └ 06.x | trả nợ do 06.2/05.x để lại (xem §Nợ) | ✅ | `rao_provider_retire` **đã hết hạn và bị xoá** | `platform_core/image_gen/{gia,khung_anh}.py` |
 | 07 | Delete all legacy runtime **+ gỡ hẳn `chataistudio`** | ✅ | 8 bánh cóc PASS · `test_1004` | `MIGRATION_MAP.md` §7 |
-| 08 | Delete legacy app surfaces | ⬜ | — | — |
+| 08 | Delete legacy app surfaces | 🟡 mã xong, **chờ `npm run build` + gate** | — | §Pha 08 |
 | 09 | Provider config / secret clean | ⬜ | — | — |
 | 10 | Architecture guard | ⬜ | — | — |
 | 11 | Real E2E | ⬜ | — | — |
@@ -41,6 +41,68 @@
 | 13 | Commit / merge / deploy | ⬜ | — | — |
 | 14 | Remote GitHub hygiene | ⬜ | — | — |
 | 15 | Final repo compaction report | ⬜ | — | — |
+
+## ⚠️ TRUNK ĐANG ĐỎ HAI BƯỚC — điều kiện chặn của PHA 13
+
+Phiên `workflow 4 bot` báo 09/09 (đo trên **bản export sạch** của chính SHA đó,
+nên không phải cây bẩn của ai):
+
+```
+trunk admin-mvp-v3@05464239 — hai buoc gate DO, ca hai tu commit 3eae396d (ASV v4)
+  mypy                vuot moc 6 loi
+                      tools/do_ngan_sach_chuyen_loi_thoai.py
+                      tools/do_on_dinh_chuyen_loi_thoai.py
+                      tools/do_token_may_b.py
+  "nuot loi lang le"  63 > moc 62   tools/do_token_may_b.py:121
+```
+
+🔴 **Đây là chuyện của chiến dịch này, không phải chuyện riêng phiên VOICE.**
+Pha 13 hoà `phien/aiclean` vào trunk; hoà vào một trunk đang đỏ thì lượt gate
+sau khi hoà sẽ đỏ, và **không tách được** phần đỏ nào là của ai.
+
+⛔ Và **đừng cầm con số này đi dùng ở pha 13**: nó đo lúc 09/09, còn `docs/`
+   ghi rõ trunk đi 134 commit trong 15 phút. Việc đúng là **đo lại ngay trước
+   khi hoà** — xem `dong-bo-trunk-la-viec-lam-ngay-truoc-khi-ff`.
+
+## PHA 08 — hoá ra là **12 dương tính giả và 4 lời nói dối**
+
+Ma trận xếp **18** dòng `UI_DELETE`. Đọc thật từng dòng thì:
+
+### 🔴 12/16 dòng còn lại là DƯƠNG TÍNH GIẢ — xoá chúng là xoá tài liệu bán hàng
+
+| Tệp | Thật ra là gì |
+|---|---|
+| `tools/gui/index.html` · `_cam_chon.html` · `cam_chon.js` | hướng dẫn khách **CẮM Codex CLI vào `/api/v1` của ta** |
+| `dev_docs.html` · `gia_api.html` · `dev_quickstart.html` | *"khoá dùng được với thư viện OpenAI"* — **ta là nhà cung cấp** |
+| `ltt.css` · `tools/gui/ltt.css` | tên **giao thức** (`OPENAI RESPONSES`) trong chú thích CSS |
+| `lttvideo.js` | `BOT GEMINI` = tên **kho tham chiếu chỉ đọc** |
+| `huong_dan.html` · `huong_dan_cong_cu.html` · `dev_cli.html` | `cam` CLI — **công cụ của ta** |
+
+⭐ Cùng đúng lý do mà pha 02 đã dán nhãn `NOT_A_LEGACY_SURFACE` cho **54** tệp
+   khác: `codex`/`openai` có **hai nghĩa đối lập** — một hãng ta gọi ra, và một
+   giao thức ta nói / một client cắm vào ta. Nhóm này lọt qua lưới ấy.
+
+🔑 Một từ khoá hai nghĩa thì đếm theo từ khoá sai **về phía xoá nhầm** — và xoá
+   nhầm một bề mặt đang phục vụ khách thì không đảo lại bằng một dòng.
+
+⇒ 12 dòng đổi nhãn `NOT_A_LEGACY_SURFACE` / `KEEP`, **kèm chứng cứ từng dòng**.
+  Đính chính sổ đáng làm ngang việc xoá: một ma trận nói sai sẽ khiến phiên sau
+  xoá nhầm, và nó nói sai **im lặng**.
+
+### ✅ 4 chỗ legacy THẬT — cả bốn đều là lời nói dối với khách
+
+| Chỗ | Nói gì sai |
+|---|---|
+| `frontend/autosub-studio/src/StudioShell.tsx` | UI hiện *"Đang tạo job Gemini…"*, nhãn `Gemini`, *"Dịch Gemini"* — app sang LTT_LLM từ **pha 05.6** |
+| `apps/prompt_ai_ommi/templates/*.html` | JS **gõ cứng** `'gemini-2.5-flash-image'` làm model mặc định |
+| `apps/taoanh/templates/image.html` | *"Ảnh tham chiếu được gửi tới Gemini để xử lý"* |
+| `server/admin.py:776,783` | placeholder form **tạo khoá mới** gợi ý `gemini-chinh` |
+
+⚠️ `server/admin.py:124` `_PROVCOL` (màu/nhãn ba provider đã ngừng) thì **GIỮ**:
+   nó vẽ khoá cũ ở trang lịch sử — đúng `HISTORY_ONLY`, không phải cửa bán hàng.
+
+⏳ Còn lại: `npm run build` cho `autosub-studio` — **bắt buộc dù bundle không
+   đổi một byte**, vì `build-meta.json` mang `source_sha256`. Chờ tới lượt máy.
 
 ## PHA 07 — cái gì đã BIẾN MẤT
 

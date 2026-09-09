@@ -199,6 +199,6 @@ it('reports optional AI capabilities honestly and exposes the active workflow st
   const capabilities=await screen.findByLabelText('Trạng thái công cụ AI')
   expect(capabilities).toHaveTextContent('WhisperXTranscript và word timingSẵn sàng')
   expect(capabilities).toHaveTextContent('PyannotePhân vai ẩn danhChưa cấu hình')
-  expect(capabilities).toHaveTextContent('GeminiDịch transcript theo cueSẵn sàng')
+  expect(capabilities).toHaveTextContent('LTT LLMDịch transcript theo cueSẵn sàng')
   expect(screen.getByRole('button',{name:/Transcript/})).toHaveAttribute('aria-current','step')
 })

@@ -14885,3 +14885,7 @@ msgstr "PNG/JPEG/WebP · 8 MB max · used as the source image for a remix, never
 #: apps/thumbnail/templates/thumbnail_fragment.html
 msgid "Ảnh sinh ra KHÔNG có chữ — model nội bộ không vẽ được chữ đọc được. Thêm tiêu đề bằng công cụ chỉnh sửa của bạn."
 msgstr "The generated images carry NO text — the in-house model cannot draw legible lettering. Add your title in an editor."
+
+#: apps/taoanh/templates/image.html
+msgid "Ảnh tham chiếu chỉ rời nền tảng để tới máy tạo ảnh nội bộ, và lưu trong vùng dữ liệu riêng của tài khoản. “Thay vùng” dùng mô tả ngôn ngữ tự nhiên; chưa phải công cụ mask chính xác từng pixel."
+msgstr "Reference images leave the platform only to reach the in-house image machine, and are stored in the account private data area. \"Replace region\" takes a natural-language description; it is not yet a pixel-accurate masking tool."
