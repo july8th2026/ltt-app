@@ -152,6 +152,92 @@ function normalizeWorkflow(workflow: Workflow): Workflow {
   return { ...workflow, canvas: normalizeCanvas(workflow.canvas as CanvasDocument | LegacyCanvasDocument) }
 }
 
+// ── Cua v3: `workflow_draft` (Dot 5.2 phan D) ──────────────────────────────
+//
+// ⭐ TRINH SOAN GIU HINH DANG CUA REACT FLOW; v3 la hinh dang LUU TRU.
+//
+//    `@xyflow/react` doi `sourceHandle`/`targetHandle` — do la hop dong cua
+//    thu vien, khong phai mot lua chon cua ta. CSDL doi `source_port`/
+//    `target_port` mang KIEU. Ep mot ben theo ben kia se lam mot trong hai
+//    phai chuyen doi NGAM o giua, va cho chuyen doi ngam ay chinh la cho cong
+//    bi danh roi lan truoc (`canvas_to_plan()`).
+//
+// ⇒ Chuyen doi o RANH GIOI, mot lan, bang `toV3`/`fromV3` — hai ham da co
+//   `tests/test_968` chot rang chung khop tung chu voi may chu.
+
+export type WorkflowV3 = {
+  id: string
+  name: string
+  published_version_id: string
+  revision: number
+  document: CanvasDocumentV3
+}
+
+/** Ban ghi v3 tho -> hinh dang trinh soan dang dung. */
+function tuV3(raw: WorkflowV3): Workflow {
+  return {
+    id: raw.id,
+    name: raw.name,
+    // v3 chua co truong `status` rieng: da publish thi coi la `validated`.
+    status: raw.published_version_id ? 'validated' : 'draft',
+    revision: raw.revision,
+    estimated: 0,
+    canvas: fromV3(raw.document),
+  }
+}
+
+export const listWorkflowsV3 = async (): Promise<{ id: string; name: string;
+  published: boolean }[]> => (await request('/agent/api/v3/workflows')).items
+
+export async function loadWorkflowV3(id: string): Promise<Workflow> {
+  return tuV3(await request(`/agent/api/v3/workflows/${encodeURIComponent(id)}`))
+}
+
+export async function createWorkflowV3(name: string,
+                                       csrfToken: string): Promise<Workflow> {
+  return tuV3(await request('/agent/api/v3/workflows', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+    body: JSON.stringify({ name, csrf_token: csrfToken }),
+  }))
+}
+
+/** Mo workflow v3 dau tien, tao mot cai neu chua co. */
+export async function loadOrCreateWorkflowV3(csrfToken: string): Promise<Workflow> {
+  const items = await listWorkflowsV3()
+  if (items.length) return loadWorkflowV3(items[0].id)
+  return createWorkflowV3('Workflow mới', csrfToken)
+}
+
+export async function saveWorkflowV3(workflow: Workflow, csrfToken: string,
+                                     signal?: AbortSignal): Promise<Workflow> {
+  const response = await fetch(
+    `/agent/api/v3/workflows/${encodeURIComponent(workflow.id)}`, {
+      method: 'PUT',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken,
+        // Khoa lac quan y het cua v2 — mot nguoi dung ca hai cua khong phai
+        // hoc hai luat.
+        'If-Match': `"${workflow.revision}"` },
+      body: JSON.stringify({ document: toV3(workflow.canvas),
+                             csrf_token: csrfToken }),
+      signal,
+    })
+  return tuV3(await decode(response))
+}
+
+/** Dong bang ban nhap. Publish LAI cung noi dung tra ve dung version cu. */
+export async function publishWorkflowV3(workflow: Workflow, csrfToken: string):
+    Promise<{ workflow_id: string; version_id: string; credit_max: number;
+              credit_estimate: number }> {
+  return request(
+    `/agent/api/v3/workflows/${encodeURIComponent(workflow.id)}/publish`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+      body: JSON.stringify({ csrf_token: csrfToken }),
+    })
+}
+
 export const loadPalette = () => request('/agent/api/palette')
 
 export type AgentPreferences = { theme: 'light'|'dark'; catalog_mode: 'simple'|'advanced';

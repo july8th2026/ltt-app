@@ -51,6 +51,8 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--that", action="store_true",
                     help="GHI THAT vao production (mac dinh: chi chay thu)")
+    ap.add_argument("--va-trang", action="store_true",
+                    help="VA khoa trang con thieu cho ban DA di tru (09/09)")
     args = ap.parse_args()
 
     d2 = _nap_d2()
@@ -100,6 +102,20 @@ def main() -> int:
 
     db = next(dbmod.get_session())
     try:
+        if args.va_trang:
+            # ⛔ `chuyen()` LUY DANG nen no khong tu lanh ban da chuyen. Mot
+            #    khiem khuyet trong `_trang_v3` (09/09: sinh 4 khoa thay vi 8)
+            #    chi sua duoc bang duong nay.
+            va = di_tru_m1.va_trang(db, chay_that=args.that)
+            if args.that:
+                db.commit()
+            else:
+                db.rollback()
+            print(f"  [va trang] da_va={va['da_va']}  se_va={va['se_va']}  "
+                  f"da_du={va['da_du']}  tong={va['tong']}")
+            print()
+            print("RESULT: PASS")
+            return 0
         ra = di_tru_m1.chuyen(db, chay_that=args.that)
         if args.that:
             db.commit()

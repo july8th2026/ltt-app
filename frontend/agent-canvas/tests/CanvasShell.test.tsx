@@ -30,6 +30,16 @@ const palette = { version: 1, tools: [
 const workflow = { id: 'w1', name: 'Workflow mới', status: 'draft', revision: 1, estimated: 0,
   canvas: { version: 1, goal: '', budget_max_credit: 50, nodes: [], edges: [],
     viewport: { x: 0, y: 0, zoom: 1 } } }
+// Hinh dang v3 ma cua `/agent/api/v3/*` tra ve (Dot 5.2 phan D). `fromV3`
+// se doi no ve hinh dang React Flow ma trinh soan dang dung, nen phan con lai
+// cua tep nay khong doi.
+const workflowV3 = { id: 'w1', name: 'Workflow mới', published_version_id: '',
+  revision: 1,
+  document: { version: 3, goal: '', budget_max_credit: 50,
+    active_page_id: 'page-1',
+    pages: [{ id: 'page-1', name: 'Page 1', nodes: [], edges: [],
+      viewport: { x: 0, y: 0, zoom: 1 }, frames: [], notes: [], comments: [],
+      view: { grid: true, connections: true, minimap: true } }] } }
 const validatedWorkflow={...workflow,revision:3,validation:{issues:[],step_costs:[],estimated_max_credit:7}}
 const awaitingRun={id:'r1',version:1,status:'awaiting_approval',plan:{steps:[{id:'n1'},{id:'n2'}]},
   checkpoint:{},estimated:7,actual:0,quote_hash:'quote-test',decisions:[]}
@@ -44,6 +54,19 @@ beforeEach(() => {
       const name=file?.name||'owned.png';return new Response(JSON.stringify({key:`agent-assets/u/${name}`,kind:'image',
         name,size:123,content_type:'image/png',url:`/agent/api/assets/${name}`}),{status:200})}
     if (url.endsWith('/agent/api/runs') && !init?.method) return new Response(JSON.stringify({items:[]}),{status:200})
+    // ⚠️ PHAI dung TRUOC cac nhanh `/workflows` cu: duong v3 cung ket thuc
+    //    bang `/workflows`, nen dat sau se bi nhanh cu nuot mat.
+    if (url.includes('/api/v3/workflows')) {
+      if (init?.method === 'PUT')
+        return new Response(JSON.stringify({...workflowV3, revision: workflowV3.revision + 1}), { status: 200 })
+      if (init?.method === 'POST' && !url.endsWith('/publish'))
+        return new Response(JSON.stringify(workflowV3), { status: 201 })
+      if (url.endsWith('/publish'))
+        return new Response(JSON.stringify({workflow_id:'w1',version_id:'v1',credit_max:20,credit_estimate:12}), { status: 200 })
+      if (url.endsWith('/workflows'))
+        return new Response(JSON.stringify({ items: [{ id: 'w1', name: 'Workflow mới', published: false }] }), { status: 200 })
+      return new Response(JSON.stringify(workflowV3), { status: 200 })
+    }
     if (url.endsWith('/validate')) return new Response(JSON.stringify(validatedWorkflow),{status:200})
     if (url.endsWith('/workflows/w1/runs')&&init?.method==='POST') return new Response(JSON.stringify(awaitingRun),{status:201})
     if (url.endsWith('/runs/r1/approve')) return new Response(JSON.stringify({...awaitingRun,version:2,status:'running'}),{status:200})
@@ -303,9 +326,13 @@ describe('CanvasShell', () => {
     fireEvent.click(screen.getByRole('button',{name:'Đóng chèn bước'}))
     fireEvent.click(screen.getByRole('button',{name:'Tháo kết nối Hình ảnh'}))
     expect(screen.queryByLabelText('Đầu vào đã kết nối')).not.toBeInTheDocument()
+    // ⚠️ Doc `document`, khong `canvas`: tu Dot 5.2 phan D trinh soan ghi qua
+    //    cua v3, va hinh dang TREN DAY la v3. Bai nay ghim dung hinh dang ay —
+    //    nen no phai doi cung, khong duoc noi long thanh "co mot PUT nao do".
     await waitFor(()=>expect(vi.mocked(globalThis.fetch).mock.calls.some(([,init])=>{
       if(init?.method!=='PUT'||typeof init.body!=='string')return false
-      return JSON.parse(init.body).canvas?.pages?.[0]?.edges?.length===0
+      const d=JSON.parse(init.body).document
+      return d?.version===3&&d?.pages?.[0]?.edges?.length===0
     })).toBe(true),{timeout:10_000})
   })
 

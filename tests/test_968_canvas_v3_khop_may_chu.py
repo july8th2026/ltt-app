@@ -139,3 +139,94 @@ def test_phep_kiem_nay_doc_duoc_ca_HAI_bo(ts):
     """
     assert len(ts) == 6, f"doc duoc {len(ts)} truong tu TS: {sorted(ts)}"
     assert len(_truong_may_chu_SINH()) == 6
+
+
+# ── TRANG: khoa ma trinh soan doc THANG roi `.map()` ────────────────────────
+
+def _truong_trang_typescript() -> set[str]:
+    """Trường của `CanvasPage` — đọc từ khai báo kiểu, không chép tay."""
+    noi_dung = TS.read_text(encoding="utf-8")
+    m = re.search(r"export type CanvasPage = \{(.*?)\}\nexport type CanvasDocument",
+                  noi_dung, re.S)
+    if m is None:
+        pytest.fail("khong tim thay `export type CanvasPage`")
+    # ⛔ PHAI bo cac khoi `{...}` LONG NHAU truoc khi trich ten.
+    #
+    # Ban dau toi khong bo, va bieu thuc nhat ca truong BEN TRONG:
+    # `viewport: {x,y,zoom}` cho ra `x`/`y`/`zoom`, `view: {grid,...}` cho ra
+    # `grid`/`connections`/`minimap`. Phep kiem do voi mot danh sach thieu SAU
+    # ten — trong khi `_trang_v3` sinh du ca 8 khoa CAP TREN.
+    #
+    # ⇒ Loi nam o BO DOC, khong o ma. Va no la dung lop loi tep nay sinh ra de
+    #   chong: doc mot thu DAI DIEN (van ban cua kieu) roi phat bieu ve thu that.
+    than = m.group(1)
+    while True:
+        gon = re.sub(r"\{[^{}]*\}", "", than)
+        if gon == than:
+            break
+        than = gon
+    return {t.rstrip("?") for t in
+            re.findall(r"([a-z_][a-zA-Z0-9_]*)\??\s*:", than)}
+
+
+def test_M1_sinh_DU_khoa_ma_trinh_soan_doc_thang(ts):
+    """🔴 **Ca nay da xay ra that, 09/09/2026.**
+
+    `_trang_v3` chi sinh 4 khoa (`id`/`name`/`nodes`/`edges`). Kieu `CanvasPage`
+    khai **8** khoa la bat buoc, va trinh soan `.map()` thang tren `frames`,
+    `notes`, `comments`. Canvas **trang man**:
+
+        Cannot read properties of undefined (reading 'map')
+
+    ⛔ Va no da qua duoc MOI phep kiem dang co:
+
+        Python : doc `document` nhu mot `dict`; `dict` thieu khoa VAN hop le
+        vitest : dung du lieu gia DUNG KIEU, nen khong bao gio thieu khoa
+        tsc    : tin loi khai `CanvasPage`; JSON tu CSDL khong qua trinh bien dich
+
+    ⇒ Cho duy nhat thay duoc la mot trinh duyet that mo mot ban ghi that. Bai
+      kiem nay dung o giua: no doc KIEU tu nguon TS, roi doi chieu voi DAU RA
+      that cua `_trang_v3` — nen no bat duoc ma khong can trinh duyet.
+    """
+    from platform_core.workflow.di_tru_m1 import _trang_v3
+
+    can = _truong_trang_typescript()
+    co = set(_trang_v3({"id": "p1", "name": "", "nodes": [], "edges": []}))
+    thieu = sorted(can - co)
+    assert not thieu, (
+        f"`_trang_v3` thieu khoa trinh soan doc thang: {thieu}\n"
+        f"  kieu CanvasPage doi : {sorted(can)}\n"
+        f"  `_trang_v3` sinh    : {sorted(co)}")
+
+
+def test_M1_GIU_viewport_nguoi_dung_da_keo(ts):
+    """⚠️ Điền mặc định **không được** ghi đè. Một `viewport` người dùng đã kéo
+    là thông tin thật; di trú làm mất nó là làm mất việc của họ."""
+    from platform_core.workflow.di_tru_m1 import _trang_v3
+
+    vp = {"x": 120, "y": -40, "zoom": 1.75}
+    assert _trang_v3({"id": "p1", "viewport": vp})["viewport"] == vp
+
+
+def test_ca_HAI_duong_cua_M1_deu_sinh_du_khoa(ts):
+    """⭐ `_tu_document` và `_tu_nodes_edges` là **hai** đường vào, và bản đầu
+    dựng trang bằng tay ở **cả hai** — nên cả hai cùng thiếu bốn khoá.
+
+    Một bản sao của một khiếm khuyết là hai chỗ phải nhớ sửa.
+    """
+    from platform_core.workflow.di_tru_m1 import _tu_document, _tu_nodes_edges
+
+    can = _truong_trang_typescript()
+
+    a = _tu_document({"pages": [{"id": "p1", "nodes": [], "edges": []}]})
+    assert a is not None and not (can - set(a["pages"][0]))
+
+    class _Gia:
+        nodes = [{"id": "n0", "type": "tool", "data": {}}]
+        edges: list = []
+        goal = ""
+        budget_max = 0
+        viewport: dict = {}
+
+    b = _tu_nodes_edges(_Gia())
+    assert b is not None and not (can - set(b["pages"][0]))

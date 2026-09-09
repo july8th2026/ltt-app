@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { approveRun, cloneWorkflow, createAutosave, createRun, exportWorkflow, importWorkflow,
-  fromV3, loadRun, loadRunHistory, restoreRunAsWorkflow, saveWorkflow, toV3,
+  fromV3, loadRun, loadRunHistory, loadWorkflowV3, restoreRunAsWorkflow,
+  saveWorkflow, saveWorkflowV3, toV3,
   WorkflowConflictError,
   type AgentRun, type Workflow } from '../src/workflowApi'
 
@@ -122,5 +123,62 @@ describe('canvas v3', () => {
     const ra = toV3(v1)
     expect(ra.version).toBe(3)
     expect(ra.pages[0].edges[0].source_node).toBe('a')
+  })
+})
+
+// ── Cua v3 (Dot 5.2 phan D) ────────────────────────────────────────────────
+describe('cua v3', () => {
+  const rawV3 = {
+    id: 'w3', name: 'W3', published_version_id: '', revision: 4,
+    document: { version: 3 as const, goal: 'g', budget_max_credit: 10,
+      active_page_id: 'p1',
+      pages: [{ id: 'p1', name: 'P', nodes: [],
+        edges: [{ id: 'e1', source_node: 'a', target_node: 'b',
+          source_port: 'anh_ra', target_port: 'van_ban_vao',
+          kind: 'DATA' as const }],
+        viewport: { x: 0, y: 0, zoom: 1 }, frames: [], notes: [], comments: [] }] },
+  }
+
+  it('nap: v3 -> hinh dang React Flow, cong KHONG mat', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(
+      JSON.stringify(rawV3), { status: 200,
+        headers: { 'Content-Type': 'application/json' } }))
+    const wf = await loadWorkflowV3('w3')
+    expect(wf.revision).toBe(4)
+    expect(wf.canvas.version).toBe(2)          // hinh dang trinh soan
+    const e = wf.canvas.pages[0].edges[0]
+    expect([e.sourceHandle, e.targetHandle]).toEqual(['anh_ra', 'van_ban_vao'])
+  })
+
+  it('luu: gui v3 len may chu, kem If-Match va CSRF', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify(rawV3), { status: 200,
+        headers: { 'Content-Type': 'application/json' } }))
+    const wf = { id: 'w3', name: 'W3', status: 'draft' as const, revision: 4,
+      estimated: 0, canvas: fromV3(rawV3.document) }
+    await saveWorkflowV3(wf, 'csrf-v3')
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(String(url)).toContain('/agent/api/v3/workflows/w3')
+    expect(new Headers(init!.headers).get('If-Match')).toBe('"4"')
+    expect(new Headers(init!.headers).get('X-CSRF-Token')).toBe('csrf-v3')
+    const body = JSON.parse(String(init!.body))
+    // ⭐ Gui di phai la v3: `source_port`, khong phai `sourceHandle`.
+    expect(body.document.version).toBe(3)
+    expect(body.document.pages[0].edges[0].source_port).toBe('anh_ra')
+    expect(JSON.stringify(body.document)).not.toContain('sourceHandle')
+  })
+
+  it('xung dot revision noi len thanh WorkflowConflictError', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 409 }))
+    const wf = { id: 'w3', name: 'W3', status: 'draft' as const, revision: 1,
+      estimated: 0, canvas: fromV3(rawV3.document) }
+    await expect(saveWorkflowV3(wf, 'c')).rejects.toBeInstanceOf(WorkflowConflictError)
+  })
+
+  it('da publish thi status la validated', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(
+      JSON.stringify({ ...rawV3, published_version_id: 'v9' }), { status: 200,
+        headers: { 'Content-Type': 'application/json' } }))
+    expect((await loadWorkflowV3('w3')).status).toBe('validated')
   })
 })
