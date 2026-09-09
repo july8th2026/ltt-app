@@ -101,7 +101,12 @@ async def queue(
         return _trang(request, user, status_code=400,
                       loi=f"`pause_plan` không phải JSON hợp lệ: {e}")
 
-    duoi = "." + ten.rsplit(".", 1)[-1]
+    # 🔴 Lay duoi tu DANH SACH CHO PHEP, khong tu chuoi tho cua khach.
+    #    `ten.rsplit(".", 1)[-1]` tren `a.mp3/../../x` tra ve `mp3/../../x` —
+    #    tuc mot duong vuot thu muc di THANG vao khoa luu tru. `_safe_key` cua
+    #    `storage` co chan, nhung no chan bang cach NEM: mot loi 500 thay vi mot
+    #    cau tra loi tu te, va mot lop phong thu o xa ma App khong duoc dua vao.
+    duoi = next(d for d in DUOI_NHAN if ten.endswith(d))
     khoa = f"audio_pause/{user}/{uuid.uuid4().hex}{duoi}"
     tham_so = {"audio": khoa, "pause_plan": ke_hoach, "language": language,
                "min_pause_ms": min_pause_ms, "max_pause_ms": max_pause_ms,

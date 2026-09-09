@@ -10,6 +10,7 @@ import io
 import json
 import logging
 import uuid
+from pathlib import PurePosixPath
 
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -21,6 +22,7 @@ from server.templating import templates
 
 from .manifest import MANIFEST
 from .services import dung_video
+from .services.tuong_thich.paths import safe_name
 
 log = logging.getLogger("apps.video_assembly.routes")
 
@@ -102,15 +104,27 @@ async def queue(
             return _trang(request, user, status_code=400,
                           loi="Tổng dung lượng vượt 95 MB — tải ít clip hơn "
                               "mỗi lượt.")
-        du_lieu.append((tep.filename or f"{uuid.uuid4().hex}.mp4", b))
+        # 🔴 TEN TEP LA DAU VAO CUA KHACH, va no di THANG vao khoa luu tru.
+        #    `../../x.mp4` se leo ra khoi tien to cua nguoi dung. `_safe_key`
+        #    cua `storage` co chan, nhung no chan bang cach NEM — tuc mot loi
+        #    500 thay vi mot cau tra loi tu te, va mot lop phong thu o xa ma
+        #    App nay khong duoc phep dua vao.
+        #
+        # ⛔ Va ban va KHONG the la "thay bang UUID": che do `sequential` doc
+        #    TIEN TO ten tep (`^\d{3,4}-scene`), nen doi ten la pha dung hanh vi
+        #    production dang dung. Phai lam sach ma VAN giu ten.
+        ten_sach = safe_name(PurePosixPath(
+            (tep.filename or "").replace(chr(92), "/")).name)
+        du_lieu.append((ten_sach or f"{uuid.uuid4().hex}.mp4", b))
 
     nhac_byte = b""
     ten_nhac = ""
     if music is not None and music.filename:
-        ten_nhac = music.filename
         if not music.filename.lower().endswith(DUOI_NHAC):
             return _trang(request, user, status_code=400,
                           loi=f"Nhạc phải là {', '.join(DUOI_NHAC)}.")
+        ten_nhac = safe_name(PurePosixPath(
+            music.filename.replace(chr(92), "/")).name) or "nhac"
         nhac_byte = await music.read()
         if tong + len(nhac_byte) > TRAN_TONG_BYTE:
             return _trang(request, user, status_code=400,

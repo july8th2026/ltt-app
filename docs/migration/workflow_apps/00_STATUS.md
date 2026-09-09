@@ -4,7 +4,7 @@
 > nguồn và `docs/00_LTT_OPERATING_CONTRACT.md`. Một bảng chép tay không có cách
 > nào tự biết nó đã cũ — cơ chế đó đã nói sai năm lần trong kho này.
 
-Cập nhật lần cuối: **2026-09-09 18:20**.
+Cập nhật lần cuối: **2026-09-10 01:20**.
 Nguồn: `docs/migration/workflow_apps/01_SOURCE_MANIFEST.md`.
 
 | Phase | Trạng thái | Bằng chứng | Chặn | Kế |
@@ -17,10 +17,10 @@ Nguồn: `docs/migration/workflow_apps/01_SOURCE_MANIFEST.md`.
 | 05 Audit Video Assembly | **XONG** | `06_AUDIT_BOT_DUNGVIDEO.md` | S10·S11·S14 | — |
 | 06 Cross-bot synthesis | **XONG** | `07_CROSS_BOT_SYNTHESIS.md` | — | — |
 | 07 App contracts + Workflow UX | **XONG** | `23_APP_BOUNDARIES.md` · `24_NODE_CONTRACTS.md` · `26_WORKFLOW_UX.md` | — | 08 |
-| 08 Build Transcript | **KẾ TIẾP** | | service STT dùng chung (changeset riêng) | |
-| 09 Build Pause | CHƯA | | | |
-| 10 Build GEM | CHƯA | | — (đã gỡ chặn; viết lại theo `09`) | |
-| 11 Build Video Assembly | CHƯA | | S10 | |
+| 08 Build Transcript | **XONG** | `apps/transcript` · `platform_core/stt` · `test_1102`+`test_1103` | — | 12 |
+| 09 Build Pause | **XONG** | `apps/audio_pause` · `test_1104` | — | — |
+| 10 Build GEM | **XONG** | `apps/prompt_canh` (đổi slug) · `test_1105` | — | — |
+| 11 Build Video Assembly | **XONG** | `apps/video_assembly` · `test_1106` | — | — |
 | 12 Legacy workflow rebuild | CHƯA | | | |
 | 13 Workflow hardening | CHƯA | | | |
 | 14 Agent re-evaluation | CHƯA | | | |
@@ -39,11 +39,38 @@ Nguồn: `docs/migration/workflow_apps/01_SOURCE_MANIFEST.md`.
 ở `09` §1: `gem` **không còn đo được parity** — chuẩn nghiệm thu của nó là **hợp
 đồng đầu ra**, không phải so với legacy.
 
+## Bốn App đã dựng — 2026-09-10
+
+| App | slug | job_type | engine chuyển |
+|---|---|---|---|
+| Phiên âm | `transcript` | `transcript.run` | 17 tệp / 3.936 dòng |
+| Chèn khoảng lặng | `audio_pause` | `audio_pause.run` | 4 tệp / ~1.700 dòng |
+| Kịch bản → prompt | `prompt_canh` | `prompt_canh.run` | **viết lại**, 3 template |
+| Dựng video | `video_assembly` | `video_assembly.run` | 29 tệp / ~6.900 dòng |
+
+Cả bốn: `group="Workflow"` · `public=False` · `lifecycle="development"` ·
+`api_exposed=False`. Mở từng cổng **sau** khi parity đóng, mỗi lần một cổng.
+
+⭐ **Hai lần `test_60` ép ra một cái tên TỐT HƠN**, không chỉ một cái tên khác:
+hồ sơ STT đổi từ tên App (`transcript`) sang tên **năng lực**
+(`moc_tu_vad_ngoai`), và slug `gem` — chuỗi con của `gemini` trong
+`providers.py` — đổi thành `prompt_canh`.
+
 ## Nợ mở — bảng đầy đủ ở `07_CROSS_BOT_SYNTHESIS.md` §5
 
-`S1`–`S9` đã đóng hết. Năm nợ **mới** sinh ra từ việc đọc cấu hình thật:
-`S10` (`mood.py` không có trong kho git) · `S11` (sửa parity theo `08` §1) ·
-`S12` · `S13` · `S14`.
+`S1`–`S10` đã đóng. `S10` đóng cùng Phase 11: `engine/music/mood.py` (7.698
+byte, chỉ có ở bản chạy) đã vào kho.
+
+Còn lại **bốn**, và cả bốn đều là *đo lại*, không phải *xây thêm*:
+`S11` (sửa parity matrix theo `08` §1) · `S12` (hai chuỗi `silence_text`) ·
+`S13` (hồ sơ STT của pause là hàm của `language` — **đã làm** trong
+`platform_core/stt/ho_so.py`, còn phải sửa `07` §2) · `S14` (`sequential` là
+đường P0 — **đã áp** vào `video_assembly`, còn phải sửa `06`).
+
+⛔ Chưa làm, và phải nói rõ: **chưa có fixture parity nào chạy trên dữ liệu
+thật**. Bốn App có hợp đồng, ranh giới và phép kiểm đơn vị; chúng **chưa** được
+so với legacy trên một tệp âm thanh hay một thư mục clip thật. Đó là phần còn
+lại của Phase 12–15.
 
 ## Hồ sơ vận hành của cây này
 

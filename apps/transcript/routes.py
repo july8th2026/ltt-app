@@ -104,7 +104,12 @@ async def queue(
     # Chuẩn hoá tham số bằng CHÍNH hàm mà worker dùng: một chỗ kiểm, một câu
     # trả lời. Nếu route tự kiểm thì hai bộ luật sẽ lệch nhau, và bên lệch sẽ
     # là bên ít được chạy hơn.
-    duoi = "." + ten.rsplit(".", 1)[-1]
+    # 🔴 Lay duoi tu DANH SACH CHO PHEP, khong tu chuoi tho cua khach.
+    #    `ten.rsplit(".", 1)[-1]` tren `a.mp3/../../x` tra ve `mp3/../../x` —
+    #    tuc mot duong vuot thu muc di THANG vao khoa luu tru. `_safe_key` cua
+    #    `storage` co chan, nhung no chan bang cach NEM: mot loi 500 thay vi mot
+    #    cau tra loi tu te, va mot lop phong thu o xa ma App khong duoc dua vao.
+    duoi = next(d for d in DUOI_NHAN if ten.endswith(d))
     khoa = f"transcript/{user}/{uuid.uuid4().hex}{duoi}"
     try:
         tham_so = {"audio": khoa, "language": language.strip(),
