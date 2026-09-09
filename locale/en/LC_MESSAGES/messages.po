@@ -14721,3 +14721,63 @@ msgstr "Missing revision number."
 #: apps/agent/routes/drafts_v3.py
 msgid "Bản nháp chưa có nội dung để xuất bản."
 msgstr "This draft has nothing to publish yet."
+
+#: apps/ltt_voice/routes/_p_phat_dan.py
+# U-07 — cua PHAT DAN tra 404 khi co `LTT_VOICE_STREAM` tat. Khong phai "loi",
+# la "duong nay khong ton tai o ban cai nay".
+msgid "Không có đường này."
+msgstr "No such endpoint."
+
+#: apps/ltt_voice/routes/_p_phat_dan.py
+msgid "Không đủ credit cho lượt đọc này."
+msgstr "Not enough credit for this read."
+
+#: apps/ltt_voice/templates/ltt_voice_studio.html
+# U-07 — nut PHAT DAN. "Nghe ngay" chu khong phai "Nghe thu": nghe thu la cua
+# MIEN PHI 160 ky tu (`_p_nghe_thu`), con cua nay CO tinh tien.
+msgid "Nghe ngay"
+msgstr "Play now"
+
+#: apps/ltt_voice/templates/_voice_nhan.html
+# Nam nhan cua trinh phat do `voice.js::ganTrinhPhat` dung bang JS. Truoc
+# 09/09/2026 chung GO CUNG tieng Viet khong dau trong .js — va vi chung chi la
+# `aria-label`, khong ai NHIN man hinh phat hien duoc: chi nguoi dung trinh doc
+# man hinh o ban EN nghe thay, va ho nghe tieng Viet.
+msgid "Phát"
+msgstr "Play"
+
+#: apps/ltt_voice/templates/_voice_nhan.html
+msgid "Tạm dừng"
+msgstr "Pause"
+
+#: apps/ltt_voice/templates/_voice_nhan.html
+msgid "Tốc độ phát lại"
+msgstr "Playback speed"
+
+#: apps/ltt_voice/templates/_voice_nhan.html
+msgid "Âm lượng"
+msgstr "Volume"
+
+#: apps/ltt_voice/templates/_voice_chon.html
+# U-03 (09/09/2026) — nhan `role="group"` cho bo loc PHONG CACH. Ba chuoi kia
+# ("Moi vung", "Moi phong cach", "Vung mien") DA CO trong catalog nen khong
+# them lai: mot catalog gettext chi duoc co MOT msgid cho moi chuoi.
+msgid "Phong cách đọc"
+msgstr "Reading style"
+
+# ⛔ KHONG them muc cho "Dung" o day: no DA CO o
+#    `apps/chataistudio/templates/chataistudio.html:46` (dong ~1752), va mot
+#    catalog gettext chi duoc co MOT `msgid` cho moi chuoi.
+#
+#    Toi da them mot ban thu hai va `test_305::test_po_khong_co_msgid_trung`
+#    bat duoc o gate day du — dung cho no sinh ra de bat. Chuoi giong nhau thi
+#    DUNG CHUNG mot muc; do la co che cua gettext, khong phai mot su trung lap
+#    can don.
+
+#: apps/ltt_voice/routes/_p_phat_dan.py
+# `{n}` la `TRAN_MOI_LUOT_SINH`. Giu nguyen dau ngoac nhon trong ban dich —
+# `.format(n=...)` chay tren chuoi DA dich.
+msgid "Phát dần tối đa {n} ký tự một lượt. Bài dài hơn hãy dùng Dự án."
+msgstr ""
+"Streaming is limited to {n} characters per turn. Use Projects for longer "
+"scripts."

@@ -156,6 +156,51 @@ def danh_sach(db, *, owner_id: str, gom_tat: bool = False,
                    VoiceProfile.tao_luc.desc())).scalars())
 
 
+def ung_vien_kho_chung(db) -> tuple:
+    """Ứng viên lùi giọng dựng từ **KHO CHUNG**, cho làn mà giọng mẫu không phủ.
+
+    🔴 VÌ SAO HÀM NÀY TỒN TẠI. `lui_giong.tu_giong_mau()` gán cứng
+       `ngon_ngu="vi"` vì cả 20 preset của engine đều là giọng Việt. Hệ quả:
+       một giọng làn `en` mất biểu diễn thì **không lùi được**, và khách nhận
+       một lỗi thay vì một bản đọc.
+
+       Chính `lui_giong.py` đã viết sẵn cách sửa: *"Ngày kho chung có giọng làn
+       `en` với giới đã khai, mở rộng bằng cách đưa chúng vào `cac`, không phải
+       bằng cách sửa bậc thang."* Kiểm kê 01/09 nói ngày đó đã tới — kho chung
+       có 25 giọng, trong đó 17 làn `en`.
+
+    ⛔ `ma` là `public_id`, KHÔNG phải tên preset. Nơi gọi phải nạp biểu diễn
+       cho nó qua `tim_profile` + `tim_repr_active` — và đi đúng cửa ấy là cố ý:
+       `tim_profile` là chỗ **duy nhất** kiểm quyền đọc, nên đường lùi không
+       được có một lối riêng bỏ qua cổng license (`_dieu_kien_kho_chung`).
+
+    ⚠️ CHỈ trả giọng có `gioi` đã khai. `lui_giong.chon()` cũng từ chối `""`,
+       nên lọc ở đây là thừa về mặt kết quả — nhưng nó làm **ý định** hiện ra ở
+       chỗ dữ liệu được dựng, thay vì để một bộ lọc ở xa gánh hộ.
+
+    ⚠️ KHÔNG lọc theo biểu diễn còn sống ở đây. Nơi gọi thử nạp và bỏ qua ứng
+       viên nạp không được — vì một giọng chung mất biểu diễn là đúng cùng ca
+       hỏng đã kéo ta tới đường lùi, và nó có thể xảy ra giữa hai truy vấn.
+    """
+    from sqlalchemy import select
+
+    from . import lui_giong
+    from .tables import VoiceProfile
+
+    q = (select(VoiceProfile)
+         .where(_dieu_kien_kho_chung(),
+                VoiceProfile.trang_thai == "active",
+                VoiceProfile.gioi.in_(("nam", "nu")))
+         # Tất định: cùng đầu vào phải cho cùng giọng thay. `lui_giong.chon`
+         # cũng sắp lại theo `ma`, nhưng sắp ở đây làm phép đo lặp lại được.
+         .order_by(VoiceProfile.public_id.asc()))
+    return tuple(
+        lui_giong.UngVien(ma=str(p.public_id), gioi=str(p.gioi or ""),
+                          ngon_ngu=str(p.ngon_ngu or ""),
+                          nhan=str(p.ten_hien_thi or ""))
+        for p in db.execute(q).scalars())
+
+
 def tim_repr_active(db, profile_id: int):
     from sqlalchemy import select
 

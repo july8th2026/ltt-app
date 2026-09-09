@@ -82,6 +82,37 @@
       <button type="button" class="lv-loc-nut" aria-pressed="false" data-chon-lan="vi">{{ _("Tiếng Việt") }}</button>
       <button type="button" class="lv-loc-nut" aria-pressed="false" data-chon-lan="en">{{ _("Tiếng Anh") }}</button>
     </div>
+    {#
+      VÙNG + PHONG CÁCH — nốt hai trục của U-03 (thêm 09/09/2026).
+
+      🔴 Hai trục này **đã hiện trên màn hình** từ trước: thẻ giọng mẫu in
+         `Nữ · Miền Bắc · Tin tức` ở dòng `<small>`. Nhưng dữ liệu ấy chỉ tới
+         MẮT, không tới BỘ LỌC — thẻ chỉ mang `data-lan` và `data-gioi`.
+
+         Hệ quả đo được: hai mươi giọng mẫu trải trên **3 vùng × 3 phong cách**,
+         và người muốn *"giọng miền Nam kể chuyện"* phải đọc hết hai mươi thẻ để
+         tìm ra hai. Đúng mô tả của U-03: *"dữ liệu đã có, chỉ chưa thành nút"*.
+
+      ⚠️ CHỈ giọng mẫu có hai trường này; `VoiceProfile` không có cột `vung` hay
+         `phong_cach`. Nên giọng nhân bản sẽ **không bị ẩn** khi lọc theo chúng —
+         cùng quy ước với `gioi`/`lan` ngay trên, và cùng lý do: ẩn thứ mình
+         không phân loại được là làm khách mất giọng của chính họ.
+
+      ⭐ Nhãn lấy từ `nhan_vung` / `nhan_phong_cach` — **cùng nguồn** với dòng
+         `<small>` của thẻ. Gõ lại ở đây là tạo hai bảng nhãn sẽ lệch.
+    #}
+    <div class="lv-loc-nhom" role="group" aria-label="{{ _('Vùng miền') }}">
+      <button type="button" class="lv-loc-nut on" aria-pressed="true" data-chon-vung="">{{ _("Mọi vùng") }}</button>
+      {% for k, nhan in nhan_vung.items() %}
+        <button type="button" class="lv-loc-nut" aria-pressed="false" data-chon-vung="{{ k }}">{{ _(nhan) }}</button>
+      {% endfor %}
+    </div>
+    <div class="lv-loc-nhom" role="group" aria-label="{{ _('Phong cách đọc') }}">
+      <button type="button" class="lv-loc-nut on" aria-pressed="true" data-chon-phongcach="">{{ _("Mọi phong cách") }}</button>
+      {% for k, nhan in nhan_phong_cach.items() %}
+        <button type="button" class="lv-loc-nut" aria-pressed="false" data-chon-phongcach="{{ k }}">{{ _(nhan) }}</button>
+      {% endfor %}
+    </div>
   </div>
 
   <div class="lv-chon-ds" role="radiogroup" aria-label="{{ _('Chọn giọng đọc') }}">
@@ -140,7 +171,8 @@
 
     {% for g in giong_mau %}
       <label class="lv-chon-muc" data-loai="mau" data-ten="{{ g.ma }}"
-             data-lan="vi" data-gioi="{{ g.gioi }}">
+             data-lan="vi" data-gioi="{{ g.gioi }}"
+             data-vung="{{ g.vung }}" data-phongcach="{{ g.phong_cach }}">
         <input type="radio" name="giong" value="m:{{ g.ma }}"
                {{ 'checked' if giong_chon == g.ma }}>
         {% with ma = g.ma %}{% include "_voice_chon_nghe.html" %}{% endwith %}

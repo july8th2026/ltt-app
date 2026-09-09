@@ -49,6 +49,36 @@ def san_sang() -> bool:
     return bool(_token())
 
 
+def _dich_loi_http(e) -> Exception:
+    """`HTTPError` của cổng giọng -> lớp lỗi của ta. **MỘT bảng dịch duy nhất.**
+
+    ⛔ Tách ra khỏi `_goi` khi `phat_dan` ra đời, chứ không chép sang. Chính
+       `features._goi_va_dich_loi` đã ghi vì sao: *"hai bản chép của một bảng
+       dịch lỗi sẽ lệch, và cái lệch đầu tiên gần như chắc chắn là nhánh
+       `SidecarBan` — tức đúng nhánh mà lệch một chút là mất tiền của khách."*
+    """
+    raw = e.read()
+    if e.code == 429:
+        cho = 5.0
+        try:
+            cho = float(json.loads(raw).get("retry_after_s") or 5.0)
+        except (ValueError, AttributeError, TypeError):
+            try:
+                cho = float(e.headers.get("Retry-After") or 5.0)
+            except (TypeError, ValueError):
+                pass
+        return SidecarBan(retry_after_s=cho)
+    if e.code == 413:
+        return VanBanQuaDai(_chi_tiet(raw))
+    return LoiSidecar(f"Cong giong tra {e.code}: {_chi_tiet(raw)}")
+
+
+def _dich_loi_url(e) -> Exception:
+    return LoiSidecar(
+        "Khong ket noi duoc toi cong giong (dich vu LTTStudioVoice co dang "
+        f"chay khong?): {e.reason}")
+
+
 def _goi(duong: str, body: dict | None = None, *, timeout: float = 900.0,
          nhi_phan: bool = False):
     """Một lượt gọi. Trả `(payload, headers)`.
@@ -77,24 +107,9 @@ def _goi(duong: str, body: dict | None = None, *, timeout: float = 900.0,
             noi_dung = r.read()
             headers = dict(r.headers)
     except urllib.error.HTTPError as e:
-        raw = e.read()
-        if e.code == 429:
-            cho = 5.0
-            try:
-                cho = float(json.loads(raw).get("retry_after_s") or 5.0)
-            except (ValueError, AttributeError, TypeError):
-                try:
-                    cho = float(e.headers.get("Retry-After") or 5.0)
-                except (TypeError, ValueError):
-                    pass
-            raise SidecarBan(retry_after_s=cho) from e
-        if e.code == 413:
-            raise VanBanQuaDai(_chi_tiet(raw)) from e
-        raise LoiSidecar(f"Cong giong tra {e.code}: {_chi_tiet(raw)}") from e
+        raise _dich_loi_http(e) from e
     except urllib.error.URLError as e:
-        raise LoiSidecar(
-            "Khong ket noi duoc toi cong giong (dich vu LTTStudioVoice co dang "
-            f"chay khong?): {e.reason}") from e
+        raise _dich_loi_url(e) from e
 
     if nhi_phan:
         return noi_dung, headers
@@ -137,6 +152,67 @@ def noi(text: str, *, ref_b64: str | None = None, preset: str | None = None,
     return _goi("/v1/speech",
                 {"text": text, "ref_b64": ref_b64, "preset": preset},
                 timeout=timeout, nhi_phan=True)
+
+
+#: Cỡ một khối đọc từ cổng. 8 KiB ở 48 kHz/16-bit/mono là ~85 ms tiếng.
+#:
+#: ⚠️ Nhỏ hơn thì độ trễ tới byte đầu KHÔNG giảm thêm — nó bị chặn bởi lượt sinh
+#:    của model, không bởi cỡ khối — nhưng số lượt gọi hệ thống thì tăng.
+KHOI_PHAT_DAN = 8192
+
+
+def phat_dan(text: str, *, ref_b64: str | None = None,
+             preset: str | None = None, timeout: float = 900.0):
+    """`POST /v1/stream` -> generator các khối byte. **Không đệm cả bài.**
+
+    Khối đầu là header WAV (mono · 16-bit · `nframes` giả rất lớn) do sidecar
+    dựng; các khối sau là PCM16 thô. Trình duyệt phát ngay khi byte đầu tới.
+
+    ⛔ KHÔNG dùng `_goi`: nó gọi `r.read()` — đọc trọn thân rồi mới trả. Dùng nó
+       ở đây là đệm cả bài rồi mới "phát dần", tức mất đúng thứ duy nhất đường
+       này sinh ra để có.
+
+    ⚠️ NGƯỜI GỌI PHẢI TIÊU HẾT hoặc đóng generator. Kết nối tới cổng giọng chỉ
+       được nhả khi generator kết thúc — bỏ nó giữa chừng mà không đóng là giữ
+       một suất GPU cho tới `timeout`.
+
+    ⚠️ `LTT_VOICE_STREAM` chưa bật thì cổng trả **404**, và nó tới đây thành
+       `LoiSidecar` chứ không phải một lỗi riêng. Đó là chủ ý: với người gọi,
+       "cửa chưa bật" và "cửa hỏng" đều là *"đường này không dùng được lúc
+       này"*, và cả hai đều phải lùi về đường thường.
+    """
+    tok = _token()
+    if not tok:
+        raise LoiSidecar("LTT_VOICE_SIDECAR_TOKEN chua duoc dat tren may chu.")
+
+    than = {"text": text}
+    if ref_b64:
+        than["ref_b64"] = ref_b64
+    if preset:
+        than["preset"] = preset
+    req = urllib.request.Request(
+        _co_so() + "/v1/stream", data=json.dumps(than).encode("utf-8"),
+        method="POST",
+        headers={"Authorization": f"Bearer {tok}",
+                 "Content-Type": "application/json",
+                 "User-Agent": "ltt-voice/1.0"})
+    try:
+        r = urllib.request.urlopen(req, timeout=timeout)
+    except urllib.error.HTTPError as e:
+        raise _dich_loi_http(e) from e
+    except urllib.error.URLError as e:
+        raise _dich_loi_url(e) from e
+
+    # `finally` chứ không `with`: một generator bị bỏ giữa chừng nhận
+    # `GeneratorExit` tại `yield`, và chỉ `finally` mới chạy để đóng kết nối.
+    try:
+        while True:
+            khoi = r.read(KHOI_PHAT_DAN)
+            if not khoi:
+                return
+            yield khoi
+    finally:
+        r.close()
 
 
 def noi_lo(texts: list, *, ref_b64: str | None = None,

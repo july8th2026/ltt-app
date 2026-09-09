@@ -102,6 +102,7 @@
 {% endblock %}
 
 {% block scripts %}
+{% include "_voice_nhan.html" %}
 <script src="/static/voice.js?v={{ asset_ver }}"></script>
 <script>
 LttVoice.duAnDanhSach({

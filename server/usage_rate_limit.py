@@ -16,9 +16,21 @@ from starlette.responses import JSONResponse
 from server.auth.rate_limit import RateLimiter
 
 # Đuôi path "miễn phí / đốt quota ngoài" — siết chặt hơn (dễ bị script lạm dụng nhất).
+#
+# ⭐ `/phat-dan` (LTT VOICE, U-07, thêm 09/09/2026) — và nó KHÔNG miễn phí, nên
+#    lý do nó ở đây khác các mục trên:
+#
+#      · no giu SUAT `vieneu_gpu` duy nhat suot ca luot phat;
+#      · va mo hinh tinh tien beta thu theo BYTE DA GUI, nen mot lan ngat truoc
+#        byte dau thu **0**.
+#
+#    Hai điều đó cộng lại thành một vòng lặp không tốn tiền mà vẫn chiếm card.
+#    `nghe_thu_cua_toi` chặn đúng lớp ấy cho đường MIỄN PHÍ bằng `MOI_GIO=6`;
+#    đường trả tiền thì credit lo phần kinh tế, còn phần **tài nguyên** cần
+#    đúng bậc này. 120/phút (bậc chung) là quá rộng cho một cửa giữ GPU.
 _EXPENSIVE_SUFFIXES = ("/translate", "/diarize", "/preview", "/estimate", "/upload-url",
                        "/transcribe", "/diarize", "/plan", "/approve",
-                       "/runs", "/again")
+                       "/runs", "/again", "/phat-dan")
 
 # Path KHÔNG áp (có limiter riêng theo IP, hoặc là auth flow) — tránh double-limit.
 # `/api/v1` has its own principal-aware limiter (`platform_core.public_api.limits`).

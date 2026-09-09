@@ -194,6 +194,70 @@ def tinh_lo(cac_giay) -> int:
     return _len_up(tong)
 
 
+# ── đo thời lượng cho đường PHÁT DẦN ─────────────────────────────────────────
+#
+# 🔴 ĐÂY LÀ NGUỒN CHÂN LÝ THỨ HAI CHO TIỀN, VÀ NÓ PHẢI ĐƯỢC KHAI RA.
+#
+#    Đường job đo bằng `ffprobe` trên tệp đã sinh (`jobs._do_thoi_luong`, ghi
+#    thẳng: *"Đây là nguồn chân lý cho tiền"*). Đường phát dần **không có tệp**
+#    lúc tính: khách nghe tới đâu ta thu tới đó, nên thước đo là **số byte PCM
+#    đã thật sự gửi đi**.
+#
+# ⚠️ Hai thước đo cho cùng một đại lượng là một rủi ro có thật — ngày chúng lệch
+#    nhau là ngày một hoá đơn không giải thích được. Ba thứ giữ chúng khớp:
+#
+#      ① định dạng bị GHIM (mono · 16-bit) và kiểm ở đây, nổ nếu khác;
+#      ② `test_504` chốt hợp đồng byte giữa sidecar và app;
+#      ③ cùng một `tinh()` ra giá — chỉ khác cách ra **số giây**.
+#
+# ⛔ Đừng "đơn giản hoá" bằng cách ước giây từ số ký tự ở đường phát dần. Ước là
+#    để GIỮ CHỖ; thu thì phải theo thứ đã giao.
+
+#: Mono, 16-bit — ghim theo `voice_sidecar/server.py::_wav_header_mo`.
+PCM_SO_KENH = 1
+PCM_BYTE_MOI_MAU = 2
+
+#: Header WAV chuẩn do `wave` sinh cho một luồng PCM không có khối phụ.
+DAI_HEADER_WAV = 44
+
+
+class DinhDangLa(ValueError):
+    """Cổng giọng trả một định dạng khác thứ phép tính tiền này giả định.
+
+    ⛔ NÉM chứ không đoán. Một phép chia sai hằng số vẫn cho ra một con số trông
+       hợp lý, và con số ấy đi thẳng vào hoá đơn. Thà hỏng một lượt còn hơn thu
+       sai mọi lượt mà không ai thấy.
+    """
+
+
+def doc_sample_rate(dau: bytes) -> int:
+    """Đọc tần số lấy mẫu từ header WAV, và **kiểm** mono/16-bit.
+
+    `dau` phải chứa ít nhất `DAI_HEADER_WAV` byte đầu của luồng.
+    """
+    if len(dau) < DAI_HEADER_WAV:
+        raise DinhDangLa(f"header WAV ngan hon {DAI_HEADER_WAV} byte")
+    if dau[0:4] != b"RIFF" or dau[8:12] != b"WAVE":
+        raise DinhDangLa("khong phai luong RIFF/WAVE")
+    so_kenh = int.from_bytes(dau[22:24], "little")
+    sr = int.from_bytes(dau[24:28], "little")
+    bit = int.from_bytes(dau[34:36], "little")
+    if so_kenh != PCM_SO_KENH or bit != PCM_BYTE_MOI_MAU * 8:
+        raise DinhDangLa(
+            f"cho doi mono/16-bit, nhan duoc {so_kenh} kenh / {bit} bit")
+    if sr <= 0:
+        raise DinhDangLa(f"sample rate vo nghia: {sr}")
+    return sr
+
+
+def giay_tu_pcm(so_byte_pcm: int, sample_rate: int) -> float:
+    """Số giây tiếng từ số byte PCM **đã gửi đi** (không tính header)."""
+    if sample_rate <= 0:
+        raise DinhDangLa(f"sample rate vo nghia: {sample_rate}")
+    mau = max(0, int(so_byte_pcm)) // (PCM_BYTE_MOI_MAU * PCM_SO_KENH)
+    return mau / float(sample_rate)
+
+
 def bang_gia() -> dict:
     """Bảng giá công bố. Trang `/gia-api` đọc **hàm này**, không gõ lại số.
 

@@ -46,6 +46,7 @@ KIEM_KE = {
     "noi_dai":         "cong_cu",    # tools/do_troi_tong.py — `ban_doc_dai` thay thế
     "ghi_danh_kho":    "cong_cu",    # tools/do_nhan_ban_tu_kho_cu.py
     "giong_dung_san":  "san_pham",   # nghe_thu.py::_doi_chieu_giong_mau
+    "phat_dan":        "san_pham",   # routes/_p_phat_dan.py (U-07, 09/09/2026)
 }
 
 #: Thư mục coi là "đường sản phẩm". `tools/` và `tests/` KHÔNG nằm ở đây, và đó
@@ -147,19 +148,44 @@ def test_cua_khai_CHUA_NOI_thi_dung_la_chua_noi(ten):
                      f"{goi} — cap nhat KIEM_KE thanh 'san_pham'")
 
 
-def test_stream_van_chua_co_client_va_dieu_do_duoc_GHI_RA():
-    """`/v1/stream` có ở sidecar, **không** có hàm bọc ở app.
+def test_stream_NAY_DA_NOI_va_khong_di_qua_duong_dem():
+    """🔴 PHÉP KIỂM NÀY THAY MỘT PHÉP KIỂM CŨ, 09/09/2026 — ghi lại để đọc được.
 
-    ⚠️ Đây không phải một lời phàn nàn — streaming là việc của P3. Phép kiểm
-       này chỉ giữ cho sự thật ấy không trôi: ngày ai đó thêm client, họ phải
-       xoá phép kiểm này, và xoá nó là một hành động người review nhìn thấy.
+    Bản cũ tên `test_stream_van_chua_co_client_va_dieu_do_duoc_GHI_RA`, và nó
+    chốt điều **ngược lại**: *"`/v1/stream` có ở sidecar, KHÔNG có hàm bọc ở
+    app"*. Docstring của nó viết sẵn việc phải làm khi điều đó đổi:
+
+        "ngay ai do them client, ho phai xoa phep kiem nay, va xoa no la mot
+         hanh dong nguoi review nhin thay"
+
+    P2 (U-07) đã thêm client. Nên phép kiểm cũ được **thay**, không phải nới —
+    và cái thay nó phải chốt một mệnh đề **khó hơn**, nếu không thì việc thay
+    chỉ là hạ tiêu chuẩn cho tiện.
+
+    ⛔ Mệnh đề khó hơn: `phat_dan` không được đi qua `_goi`. `_goi` gọi
+       `r.read()` — đọc TRỌN thân rồi mới trả. Dùng nó ở đây là đệm cả bài rồi
+       mới "phát dần", tức mất đúng thứ duy nhất đường này sinh ra để có, **và
+       không một test chức năng nào thấy được**: âm thanh vẫn đúng, tiền vẫn
+       đúng, chỉ độ trễ tới byte đầu là hỏng.
     """
+    import ast
+
     sc = (GOC / "apps/ltt_voice/sidecar_client.py").read_text(encoding="utf-8")
     sv = (GOC / "voice_sidecar/server.py").read_text(encoding="utf-8")
     assert "/v1/stream" in sv, "sidecar khong con cua /v1/stream?"
-    assert "/v1/stream" not in sc, (
-        "sidecar_client da co client cho /v1/stream — go phep kiem nay va "
-        "cap nhat KIEM_KE + docs/LTT_VOICE")
+    assert "/v1/stream" in sc, "sidecar_client mat ham boc cho /v1/stream"
+
+    ham = next(n for n in ast.walk(ast.parse(sc))
+               if isinstance(n, ast.FunctionDef) and n.name == "phat_dan")
+    goi = {c.func.id for c in ast.walk(ham)
+           if isinstance(c, ast.Call) and isinstance(c.func, ast.Name)}
+    assert "_goi" not in goi, (
+        "phat_dan di qua `_goi`, ma `_goi` doc tron than bang r.read() — "
+        "nhu vay la dem ca bai roi moi 'phat dan'")
+
+    # Và nó phải là generator thật, không phải hàm trả list.
+    assert any(isinstance(n, (ast.Yield, ast.YieldFrom)) for n in ast.walk(ham)), \
+        "phat_dan khong phai generator"
 
 
 def test_moi_cua_deu_co_TRAN_THOI_GIAN():

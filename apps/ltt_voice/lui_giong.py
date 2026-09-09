@@ -70,6 +70,17 @@ class UngVien:
     vung: str = ""
     phong_cach: str = ""
 
+    #: Tên cho NGƯỜI ĐỌC, khi `ma` không phải một cái tên.
+    #:
+    #: 🔴 Giọng mẫu thì `ma` **là** tên (`"Mai Anh"`), nên ô này rỗng và cảnh
+    #:    báo dùng `ma` — hành vi cũ, không đổi một byte.
+    #:
+    #: ⛔ Giọng KHO CHUNG thì `ma` là `public_id` (`vc_<32 hex>`). Đưa chuỗi ấy
+    #:    vào câu *"bài này được đọc bằng …"* là đưa một mã máy cho người đọc,
+    #:    và nó còn tệ hơn im lặng: khách không tra được nó ở đâu trên giao
+    #:    diện, nên câu cảnh báo mất luôn chức năng giải thích.
+    nhan: str = ""
+
 
 def _hop(u: UngVien, *, gioi: str, ngon_ngu: str) -> bool:
     """Hai điều kiện KHÔNG BAO GIỜ được nới. Tách ra để nhìn thấy được."""
@@ -131,4 +142,7 @@ def dien_canh_bao(mau: str, u: UngVien) -> str:
         giong_mau.NHAN_GIOI.get(u.gioi, u.gioi),
         giong_mau.NHAN_VUNG.get(u.vung, u.vung),
     ) if n)
-    return str(mau).replace("{giong_thay}", u.ma).replace("{mo_ta}", mo_ta)
+    # `nhan or ma` — giọng mẫu không đặt `nhan` nên nhánh này trả đúng `ma`
+    # như trước. Xem chú thích ở `UngVien.nhan`.
+    return (str(mau).replace("{giong_thay}", u.nhan or u.ma)
+            .replace("{mo_ta}", mo_ta))

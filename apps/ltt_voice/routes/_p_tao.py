@@ -33,6 +33,10 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
     """
     from platform_core import job_history
 
+    # Nhập tại chỗ: `routes/__init__` nạp `_p_tao` TRƯỚC `_p_phat_dan`, nên một
+    # lần nhập ở đầu tệp sẽ chạy lúc mảnh kia chưa có mặt.
+    from . import _p_phat_dan
+
     uid = _uid(user)
     gen = _db()
     db = next(gen)
@@ -132,6 +136,11 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
                     nhan_lan=lan_ngon_ngu.NHAN_LAN,
                     giong_chon=(xin if hop_le else ""),
                     mac_dinh=giong_mau.MAC_DINH,
+                    # PHÁT DẦN (U-07): nút chỉ hiện khi cửa THẬT SỰ mở. Cờ tắt
+                    # thì `/phat-dan` trả 404, và một nút dẫn tới 404 tệ hơn
+                    # không có nút — `manifest.py` gọi đó là "một lời hứa thành
+                    # một lỗi".
+                    phat_dan_bat=_p_phat_dan.bat_phat_dan(),
                     # Các nấc tốc độ lấy từ `toc_do.CAC_NAC` chứ không gõ lại
                     # trong template: một danh sách chép ra hai chỗ sẽ lệch, và
                     # chỗ lệch là chỗ giao diện mời một giá trị mà `hop_le` ép

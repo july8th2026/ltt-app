@@ -335,3 +335,106 @@ def test_giong_LANH_khong_bi_lui(moi_truong, monkeypatch):
     ref, preset, canh_bao = _giai(owner, pid)
     assert ref == "REF64" and preset is None
     assert canh_bao == (), canh_bao
+
+
+# ── 4. Kho chung làm ứng viên lùi (09/09/2026) ──────────────────────────────
+#
+# Trước bản này, `tu_giong_mau()` gán cứng `ngon_ngu="vi"` cho cả 20 preset, nên
+# một giọng làn `en` mất biểu diễn **không lùi được** — khách nhận lỗi thay vì
+# một bản đọc. Kho chung đã có 17 giọng `en` từ 01/09; chúng chỉ chưa bao giờ
+# được đưa vào danh sách ứng viên.
+
+def _tao_kho_chung(*, gioi: str, ngon_ngu: str, ten: str,
+                   license_status: str = "ok") -> str:
+    """Một giọng KHO CHUNG có biểu diễn sống. Trả `public_id`."""
+    from apps.ltt_voice.tables import VoiceProfile, VoiceRepr
+    pid = "vc_" + uuid.uuid4().hex[:20]
+    gen, db = _session()
+    try:
+        p = VoiceProfile(public_id=pid, owner_id="", ten_hien_thi=ten,
+                         ngon_ngu=ngon_ngu, gioi=gioi, trang_thai="active",
+                         dung_chung=True, license_status=license_status)
+        db.add(p)
+        db.flush()
+        db.add(VoiceRepr(profile_id=p.id, ref_id=0, engine="vieneu",
+                         storage_key="k-chung", fingerprint="vt-chung",
+                         trang_thai="dang_dung"))
+        db.commit()
+    finally:
+        _close(gen)
+    return pid
+
+
+def test_lan_EN_mat_bieu_dien_NAY_LUI_DUOC_qua_kho_chung(moi_truong, monkeypatch):
+    """Năng lực mới: làn `en` không còn là ngõ cụt."""
+    from apps.ltt_voice import tham_chieu
+    monkeypatch.setattr(tham_chieu, "nap_ref_b64", lambda bd: "REF-CHUNG")
+    _tao_kho_chung(gioi="nam", ngon_ngu="en", ten="Oliver")
+    owner, pid = _tao_ho_so(gioi="nam", ngon_ngu="en", co_bieu_dien=False)
+
+    ref, preset, canh_bao = _giai(owner, pid)
+
+    assert ref == "REF-CHUNG", "lan en van khong lui duoc"
+    assert preset is None, "kho chung khong phai preset cua engine"
+    assert len(canh_bao) == 1, "lui im lang — dung thu tep nay di sua"
+
+
+def test_lui_kho_chung_dung_TEN_chu_khong_phai_public_id(moi_truong, monkeypatch):
+    """⛔ `ma` của giọng chung là `vc_<hex>`. Đưa mã máy cho khách đọc là vô dụng."""
+    from apps.ltt_voice import tham_chieu
+    monkeypatch.setattr(tham_chieu, "nap_ref_b64", lambda bd: "REF-CHUNG")
+    chung = _tao_kho_chung(gioi="nu", ngon_ngu="en", ten="Amelia")
+    owner, pid = _tao_ho_so(gioi="nu", ngon_ngu="en", co_bieu_dien=False)
+
+    _ref, _preset, canh_bao = _giai(owner, pid)
+
+    assert "Amelia" in canh_bao[0], canh_bao
+    assert chung not in canh_bao[0], "public_id lot ra cau canh bao"
+
+
+def test_lan_VI_VAN_lui_ve_PRESET_du_kho_chung_da_co(moi_truong):
+    """🔴 CHỐNG HỒI QUY — lý do đường lùi đi HAI BƯỚC chứ không gộp một danh sách.
+
+    `giai_giong` gọi `chon()` **không truyền** `vung`/`phong_cach`, nên cả hai là
+    `""`. Giọng kho chung không có hai trường ấy ⇒ chúng khớp nấc ① *"cùng vùng,
+    cùng phong cách"*, trong khi preset của engine — vốn CÓ vùng và phong cách
+    thật — trượt nấc ① lẫn ② và chỉ được nhặt ở nấc ③.
+
+    ⇒ Gộp hai kho vào một danh sách sẽ **lặng lẽ** đổi mọi lượt lùi tiếng Việt
+      sang giọng kho chung. Test này đỏ ngay nếu ai đó gộp lại.
+    """
+    _tao_kho_chung(gioi="nam", ngon_ngu="vi", ten="Khong duoc chon")
+    owner, pid = _tao_ho_so(gioi="nam", ngon_ngu="vi", co_bieu_dien=False)
+
+    ref, preset, canh_bao = _giai(owner, pid)
+
+    assert preset is not None, "lan vi phai lui ve PRESET cua engine"
+    assert ref is None, "lan vi khong duoc lui sang kho chung"
+    assert "Khong duoc chon" not in canh_bao[0], canh_bao
+
+
+def test_kho_chung_CHUA_SOAT_LICENSE_thi_khong_duoc_lam_ung_vien(moi_truong):
+    """⛔ Cổng license phải chặn cả đường LÙI, không chỉ đường chọn giọng.
+
+    Một đường lùi có lối riêng bỏ qua `_dieu_kien_kho_chung()` là một cổng bị
+    vòng — và nó bị vòng ở đúng nhánh không ai nhìn.
+    """
+    from apps.ltt_voice import features
+    _tao_kho_chung(gioi="nam", ngon_ngu="en", ten="Chua soat",
+                   license_status="cho_soat")
+    owner, pid = _tao_ho_so(gioi="nam", ngon_ngu="en", co_bieu_dien=False)
+
+    with pytest.raises(features.LoiGiongNoi):
+        _giai(owner, pid)
+
+
+def test_ung_vien_kho_chung_BO_giong_khong_ro_gioi(moi_truong):
+    """Giới `""` là một giá trị THẬT nghĩa là *không biết* — không đoán hộ."""
+    from apps.ltt_voice import tham_chieu
+    _tao_kho_chung(gioi="", ngon_ngu="en", ten="Khong ro gioi")
+    gen, db = _session()
+    try:
+        cac = tham_chieu.ung_vien_kho_chung(db)
+    finally:
+        _close(gen)
+    assert all(u.gioi in ("nam", "nu") for u in cac), cac
