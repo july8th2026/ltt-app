@@ -52,6 +52,7 @@ exclude = [
     # no khong con giong nua — va luc ay khong ai noi duoc phan nao cua mot
     # khac biet dau ra la do ta.
     "apps/transcript/services/engine",
+    "apps/audio_pause/services/engine",
 ]
 
 [lint]

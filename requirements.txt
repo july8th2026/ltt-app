@@ -78,3 +78,15 @@ markitdown[docx,pptx,outlook]>=0.1.7,<0.2
 # stub luon dong y (vi du: xoa mot key khong ton tai la THANH CONG).
 boto3>=1.35,<2.0
 moto[s3]>=5.0,<6.0
+
+# `rapidfuzz` - khop mo cho App `audio_pause`.
+#
+# Engine cua `bot_pause` dung dung thu vien nay de khop moc van ban trong ban
+# phien am (`fuzzy_span_search`, `match_boundary_anchor`), voi nguong 0.65 lay
+# tu cau hinh dang chay tren production.
+#
+# [!] Doi sang `difflib` cho ket qua khop KHAC - tuc doi vi tri chen khoang
+#     lang, tuc doi tep am thanh giao cho khach. Giu nguyen thu vien la dieu
+#     kien de parity con DO DUOC; mot ban thay the 'tuong duong' o day la mot
+#     thay doi hanh vi khong ai ky ten.
+rapidfuzz>=3.9,<4.0
