@@ -810,3 +810,36 @@ của cả máy. Hình dạng đầy đủ của lỗi không phải *"một bà
 ⇒ Cây này nay chạy gate lại được. Điều kiện tôi tự đặt ở mục trên (*"không chạy
 gate cho tới khi ff"*) đã gỡ, và gỡ bằng **phép đo**, không bằng thông báo của
 người khác.
+
+### Đóng nhánh khoá — bốn tầng, và bài học lớn hơn bốn bản vá
+
+| Tầng chạm khoá thật | Ai đóng | Lộ ra sau khi |
+|---|---|---|
+| lời gọi hàm (`.py`) | quét AST cả kho (phiên `4bot`) | — |
+| cờ CLI — `nha --ep` không kèm `--tai-nguyen` gỡ **TẤT CẢ** | tôi đọc `main()` | AST đã "khép" |
+| chuỗi gợi ý runtime (dòng 397, in **lúc bị từ chối**) | phiên `4bot` (`3eb68e12`) | CLI đã "khép" |
+| **tài liệu `.md`** — khối copy-paste ở `DEVELOPMENT_WORKFLOW.md:85` | tôi (`565ef9a1`) | chuỗi đã "khép" |
+
+🔑 **Ba lần liên tiếp, thứ đóng phạm vi là người đọc một TẦNG KHÁC, không phải
+người quét kỹ hơn ở cùng tầng.** Và không phép quét nào tự nói ra rằng nó thiếu
+một tầng: AST không biết có một chuỗi gợi ý; chuỗi gợi ý không biết có một tệp
+`.md`.
+
+⇒ *"Tôi đã quét kỹ hơn"* không bao giờ là bằng chứng khép phạm vi. Chỉ **liệt kê
+các tầng rồi đánh dấu tầng nào CHƯA quét** mới là.
+
+⚠️ Tầng thứ năm tôi **không** tuyên bố sạch: Scheduled Task · lịch sử shell ·
+tệp untracked ở cây khác.
+
+⭐ Và một đính chính phiên `4bot` tự nêu, đáng giữ vì nó làm bài học **mạnh
+hơn**: `3eb68e12` có sửa docstring mô-đun (dòng 4) **không phải** vì họ nghĩ tới
+tầng tài liệu — đó chỉ là hai chỗ trong **cùng một tệp** đang mở và `grep` chỉ
+ra cả hai. Tức tầng ấy được đóng do **kề nhau**, không do suy luận về tầng. Nếu
+chuỗi gợi ý đã nằm ở một tệp khác thì nó còn nguyên tới giờ.
+
+### Một chi tiết nhỏ mà đúng: dùng lại LỜI, không diễn đạt lại
+
+Bản vá `.md` của tôi chép nguyên câu cảnh báo từ docstring mà phiên kia vừa
+sửa, thay vì tự viết. Bốn cách nói khác nhau về cùng một luật là **bốn chỗ để
+chúng trôi khỏi nhau**, và không chỗ nào tự biết mình đã trôi — cùng họ với
+`⚠️ Đừng gõ lại một con số nào` ở `CLAUDE.md`.
