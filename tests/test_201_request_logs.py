@@ -42,8 +42,8 @@ def portal(tmp_path, monkeypatch):
     Base.metadata.create_all(get_engine())
 
     import apps.thumbnail.jobs as thumbnail_jobs
-    monkeypatch.setattr(thumbnail_jobs, "_goi_gemini",
-                        lambda *a, **k: b"\x89PNG\r\n\x1a\n" + b"0" * 100)
+    from tests.gia_dieu_phoi_anh import tiem as _tiem_dieu_phoi
+    _tiem_dieu_phoi(monkeypatch, thumbnail_jobs)
 
     from server.app import create_app
 
@@ -239,9 +239,9 @@ def test_a_failed_job_is_traceable_from_the_request_that_created_it(portal,
     job_id = created.json()["id"]
 
     import apps.thumbnail.jobs as thumbnail_jobs
-    monkeypatch.setattr(thumbnail_jobs, "_goi_gemini",
-                        lambda *a, **k: (_ for _ in ()).throw(
-                            RuntimeError("provider said no")))
+    from tests.gia_dieu_phoi_anh import tiem as _tiem_dieu_phoi
+    _tiem_dieu_phoi(monkeypatch, thumbnail_jobs,
+                    no=RuntimeError("provider said no"))
     # A failed provider call is retried with a backoff, so one pass leaves the
     # job queued again and the next pass finds nothing until the delay expires.
     # Bring `next_run_at` forward instead of sleeping: the point of the test is

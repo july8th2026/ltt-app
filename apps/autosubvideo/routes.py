@@ -399,9 +399,9 @@ async def project_transcribe(request: Request, project_id: str,
 @router.get("/api/capabilities")
 def studio_capabilities(_identity: str = Depends(require_login),
                         db: Session = Depends(get_db)):
-    from apps.autosubvideo.ai_workflows import diarization_available, gemini_available
+    from apps.autosubvideo.ai_workflows import diarization_available, dich_kha_dung
     return {"whisperx": bool(os.environ.get("LTT_WHISPERX_PYTHON", "").strip()),
-            "diarization": diarization_available(), "translation": gemini_available(db),
+            "diarization": diarization_available(), "translation": dich_kha_dung(db),
             "credit": {"transcribe": 0, "diarize": 0, "translate": 0}}
 
 
@@ -553,7 +553,7 @@ async def project_translate(request: Request, project_id: str,
                             db: Session = Depends(get_db)):
     import re
     from platform_core import app_projects
-    from apps.autosubvideo.ai_workflows import gemini_available
+    from apps.autosubvideo.ai_workflows import dich_kha_dung
     body = await request.json(); _verify_json_csrf(request, body); current = _api_user(request)
     try:
         revision = int(request.headers.get("If-Match", "").strip('"') or body["revision"])
@@ -564,8 +564,8 @@ async def project_translate(request: Request, project_id: str,
         raise HTTPException(status_code=422, detail=_t('Thiếu revision hợp lệ.')) from None
     if row.revision != revision:
         raise HTTPException(status_code=409, detail=_t('Project đã được sửa ở phiên khác.'))
-    if not gemini_available(db):
-        raise HTTPException(status_code=503, detail=_t('Gemini translation chưa cấu hình API key.'))
+    if not dich_kha_dung(db):
+        raise HTTPException(status_code=503, detail=_t('Dịch vụ dịch chưa sẵn sàng.'))
     track_id = str(body.get("track_id", "")); language = str(body.get("target_language", "")).lower()
     if not re.fullmatch(r"[a-z]{2,3}(?:-[a-z]{2,4})?", language):
         raise HTTPException(status_code=422, detail=_t('Mã ngôn ngữ đích không hợp lệ.'))

@@ -184,6 +184,19 @@ def main() -> int:
                     # LAN: mang khong bao loi, no chi im lang hong — va trieu
                     # chung se hien o cho khac, muon hon, va kho truy hon nhieu.
                     "uq_vps_instance_ip",
+                    # THEM 2026-09-09 (VPS V2, Pha 02). Rang buoc chong bam hai
+                    # lan cua bang `vps_thao_tac`.
+                    #
+                    # No la TRONG TAI, khong phai mot cau `if`: `thao_tac.mo`
+                    # co y INSERT thang roi bat `IntegrityError` nhu duong chay
+                    # binh thuong, vi giua "hoi xem co chua" va "ghi" co mot
+                    # khoang ma hai request cua cung mot cu bam dup lot qua.
+                    #
+                    # Mat no sau mot lan khoi phuc thi mot cu bam dup sinh HAI
+                    # thao tac khoi dong lai tren cung mot may — va chung chay
+                    # dan xen nhau: mot cai dang cho may TAT thi cai kia da bat
+                    # len. Khong loi nao duoc ghi ra.
+                    "uq_vps_thao_tac_idem",
                     # LTT VOICE (Q117). Mat mot trong hai la mot lop hong
                     # KHAC NHAU, nen ca hai deu phai o day:
                     #

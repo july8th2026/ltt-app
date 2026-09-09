@@ -111,14 +111,18 @@ def main() -> int:
     vao: dict[str, list] = collections.defaultdict(list)
     ra: dict[str, list] = collections.defaultdict(list)
     giay: dict[str, list] = collections.defaultdict(list)
-    trang = collections.Counter()
+    trang: collections.Counter = collections.Counter()
     for h in hang:
         trang[h["trang_thai"]] += 1
         g = h["ghi_chu"]
         if isinstance(g, str):
             try:
                 g = json.loads(g)
-            except Exception:                                # noqa: BLE001
+            except (json.JSONDecodeError, TypeError):
+                # Ghi chu khong phai JSON hop le -> coi nhu rong. Bat HEP hai
+                # loai that su xay ra o day, khong bat `Exception`: mot loi lap
+                # trinh trong vong lap nay se bien mat cung voi du lieu, va phep
+                # do se ra mot con so THIEU ma khong ai biet la thieu.
                 g = {}
         g = g or {}
         nl = str(h["nang_luc"] or "?")

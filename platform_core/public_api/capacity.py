@@ -93,16 +93,33 @@ def _providers_healthy(db, category: str) -> bool:
     """
     from sqlalchemy import select
 
-    from platform_core import api_pool
+    from platform_core import api_pool, providers
     from platform_core.models import ApiKey
 
     rows = db.execute(select(ApiKey).where(
         ApiKey.enabled.is_(True))).scalars().all()
-    if not any(category in (key.categories or []) for key in rows):
+
+    # ⛔ Khoá của nhà cung cấp ĐÃ NGỪNG không được tính là năng lực — đo được,
+    #    không phải phòng xa. Đêm 09/09 bảng `api_keys` còn **bốn** khoá sống của
+    #    `gemini`/`apiai`/`cheapkeyai`, và hàm này đã chọn một khoá `cheapkeyai`
+    #    lúc 23:35:41 — đúng giây một job ảnh của khách được tạo.
+    #
+    # 🔴 Hậu quả không phải hiệu năng mà là **một câu trả lời SAI cho khách**:
+    #    hàm này nói *"còn phục vụ"* dựa trên một khoá mà `chan_neu_da_ngung` sẽ
+    #    từ chối ngay khi có ai gọi thật — tức chào bán một năng lực không có.
+    #
+    # ⭐ Lọc ở **cả hai** chỗ, vì chúng trả lời hai câu khác nhau: vế `any(...)`
+    #    quyết định *"hồ có phải nguồn chân lý cho nhóm này không"*, còn
+    #    `chon_key` quyết định *"có cái nào dùng được không"*. Lọc một vế thôi thì
+    #    một hồ toàn khoá chết vẫn đi tiếp xuống `chon_key` rồi báo "không phục
+    #    vụ được" — sai theo chiều ngược lại, và cũng sai.
+    song = [k for k in rows if not providers.da_ngung(k.provider or "")]
+    if not any(category in (key.categories or []) for key in song):
         return True
 
     try:
-        api_pool.chon_key(db, category=category)
+        api_pool.chon_key(db, category=category,
+                          thu_tu_provider=sorted({k.provider for k in song}))
         return True
     except Exception as exc:  # noqa: BLE001 - any refusal means "cannot serve"
         # Logged, not swallowed: the refusal is correct, but "which provider,

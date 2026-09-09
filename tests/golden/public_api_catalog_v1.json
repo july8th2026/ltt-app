@@ -23,18 +23,6 @@
               "upl_from_POST_/api/v1/uploads"
             ]
           },
-          "model": {
-            "type": "string",
-            "enum": [
-              "enhanced",
-              "standard",
-              "standard-lite"
-            ],
-            "description": "Quality tier. This is what the price depends on — see the model list for what each alias is for.",
-            "examples": [
-              "standard"
-            ]
-          },
           "aspect_ratio": {
             "type": "string",
             "enum": [
@@ -81,7 +69,7 @@
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "09c21c078eb6ca12"
+      "contract_hash": "6b31aa3ae3590f99"
     },
     {
       "name": "image.ltt",
@@ -169,7 +157,7 @@
     {
       "name": "image.thumbnail",
       "capability": "image",
-      "description": "Generate one to four YouTube thumbnail images from a topic, with optional title text, style and language.",
+      "description": "Generate one to four YouTube thumbnail background images from a topic. The images carry NO text: the internal model cannot render legible lettering, so add your own title afterwards.",
       "execution_mode": "ASYNC_JOB",
       "input_schema": {
         "type": "object",
@@ -180,36 +168,6 @@
             "description": "What the thumbnail is about. The whole image is generated from this, so be specific about subject and mood.",
             "examples": [
               "How to fix a leaking tap in 5 minutes"
-            ]
-          },
-          "title": {
-            "type": "string",
-            "maxLength": 200,
-            "description": "Large text drawn on the image. Leave empty for an image with no text.",
-            "examples": [
-              "5 MINUTE FIX"
-            ]
-          },
-          "subtitle": {
-            "type": "string",
-            "maxLength": 200,
-            "description": "Smaller supporting line under the title.",
-            "examples": [
-              "no plumber needed"
-            ]
-          },
-          "text_style": {
-            "type": "string",
-            "enum": [
-              "bold_impact",
-              "clean_minimal",
-              "dramatic_gold",
-              "neon_glow",
-              "street_art"
-            ],
-            "description": "How the text is drawn. Ignored when both title and subtitle are empty.",
-            "examples": [
-              "bold_impact"
             ]
           },
           "phong_cach": {
@@ -234,30 +192,14 @@
               "khuon_mat_cam_xuc",
               "so_sanh_truoc_sau",
               "bi_an_gay_to_mo",
-              "listicle_numbered",
               "huong_dan_tutorial",
               "reaction_phan_ung",
               "storytelling",
-              "mui_ten_chi_dan",
-              "text_heavy_chu_lon"
+              "mui_ten_chi_dan"
             ],
-            "description": "Composition pattern — what makes the thumbnail work as a thumbnail (a reacting face, a before/after split, a numbered list, and so on).",
+            "description": "Composition pattern — what makes the thumbnail work as a thumbnail (a reacting face, a before/after split, a mystery crop, and so on).",
             "examples": [
               "khuon_mat_cam_xuc"
-            ]
-          },
-          "ngon_ngu": {
-            "type": "string",
-            "enum": [
-              "tieng_viet",
-              "english",
-              "japanese",
-              "korean",
-              "chinese"
-            ],
-            "description": "Language of the text drawn on the image.",
-            "examples": [
-              "english"
             ]
           },
           "aspect_ratio": {
@@ -306,7 +248,7 @@
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "00e6a8906c3c5574"
+      "contract_hash": "6a9ef0c81ac9e3d9"
     },
     {
       "name": "image.upscale",

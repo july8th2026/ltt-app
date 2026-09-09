@@ -1,11 +1,11 @@
 """H15.S9.2 Image Studio: edit/ref privacy, provider IDs and settlement."""
 from __future__ import annotations
 
-import base64
 import io
 import re
 
 import pytest
+
 from PIL import Image
 
 
@@ -26,51 +26,83 @@ def test_reference_validation_and_semantic_directives():
         {"role": "source"}, {"role": "style"}])
 
 
-def test_gemini_request_resolves_legacy_model_and_embeds_reference(monkeypatch):
-    from apps.taoanh import jobs
-    seen = {}
-
-    class Response:
-        status_code = 200
-        def json(self):
-            return {"candidates": [{"content": {"parts": [{"inlineData": {
-                "data": base64.b64encode(b"output").decode("ascii")}}]}}]}
-
-    def fake_post(url, **kwargs):
-        seen.update(url=url, body=kwargs["json"]); return Response()
-
-    monkeypatch.setattr("httpx.post", fake_post)
-    out = jobs._goi_gemini("edit", "16:9", "test-key",
-                           "gemini-3.1-flash-image-preview",
-                           [{"role": "source", "mime": "image/png", "data": _png()}])
-    assert out == b"output" and "/gemini-3.1-flash-image:" in seen["url"]
-    parts = seen["body"]["contents"][0]["parts"]
-    assert parts[2]["inlineData"]["mimeType"] == "image/png"
+# ⏭️ `test_gemini_request_resolves_legacy_model_and_embeds_reference` ĐÃ GỠ ở
+#    pha 06.2. Nó chốt **một cơ chế đã bị xoá**: `_goi_gemini` dựng thân yêu cầu
+#    Gemini và nhét ảnh tham chiếu **inline** (base64). Đường LTT_IMAGE không
+#    nhét ảnh vào thân — máy B tự tải qua **presigned GET** (`DieuPhoi._ve_vao`).
+#
+# ⛔ Viết lại nó cho đường mới sẽ là một phép kiểm KHÁC đội tên cũ. Bất biến nó
+#    canh (ảnh tham chiếu tới được model) nay do `test_1002` + phép kiểm quyền
+#    sở hữu ngay dưới đây canh, mỗi cái một mệnh đề.
 
 
 def test_worker_edit_reads_only_owner_refs_and_settles_by_model(tmp_path, monkeypatch):
+    """Ảnh tham chiếu của người khác **không** dùng được — bất biến BẢO MẬT.
+
+    🔴 Viết lại ở pha 06.2 cho đường LTT_IMAGE. **Kỳ vọng đổi, bất biến thì
+       không**: bản cũ tiêm `_goi_gemini` (đã xoá); bản này tiêm `_dieu_phoi`.
+       Thứ nó canh — *một người không đọc được ảnh của người khác* — y nguyên.
+
+    ⭐ Và bản mới chốt **mạnh hơn**: nó đòi bộ điều phối **không được gọi một
+       lần nào** khi chủ sở hữu sai, tức việc từ chối xảy ra **trước** khi chạm
+       máy B, không phải sau.
+    """
     from apps.taoanh import jobs
     from platform_core.storage import LocalStorage, set_storage
+
     storage = LocalStorage(str(tmp_path / "store")); set_storage(storage)
-    source = "taoanh/u1/refs/source"; storage.put(source, io.BytesIO(_png()), "image/png")
-    monkeypatch.setattr(jobs, "_lay_key", lambda _model: ("key", None))
-    seen = {}
-    def fake_call(prompt, aspect, key, model, references):
-        seen.update(prompt=prompt, references=references); return _png()
-    monkeypatch.setattr(jobs, "_goi_gemini", fake_call)
+    nguon = "taoanh/u1/refs/source"
+    storage.put(nguon, io.BytesIO(_png()), "image/png")
+
+    da_goi = {"n": 0}
+
+    class _KetQua:
+        image_keys = ("taoanh/u1/j1/0.png", "taoanh/u1/j1/1.png")
+        prompt_da_gui = "a cat"
+        da_dich = True
+
+    class _DP:
+        def chay(self, **kw):
+            da_goi["n"] += 1
+            da_goi.update(kw)
+            return _KetQua()
+
+    monkeypatch.setattr(jobs, "_dieu_phoi", lambda: _DP())
     try:
         out = jobs.handle({"owner_id": "u1", "prompt": "đổi nền", "count": 2,
-                           "model": "gemini-3.1-flash-image", "edit_mode": "edit",
-                           "references": [{"key": source, "mime": "image/png",
+                           "edit_mode": "edit",
+                           "references": [{"key": nguon, "mime": "image/png",
                                            "role": "source"}]})
-        assert out["credit_cost"] == 16 and len(out["image_keys"]) == 2
-        assert seen["references"][0]["data"].startswith(b"\x89PNG")
+        assert len(out["image_keys"]) == 2
+        assert da_goi["mode"] == "edit"
+        assert nguon in da_goi["ref_keys"]
+
+        truoc = da_goi["n"]
         with pytest.raises(ValueError, match="không thuộc"):
             jobs.handle({"owner_id": "u2", "prompt": "x", "edit_mode": "edit",
-                         "references": [{"key": source, "mime": "image/png",
+                         "references": [{"key": nguon, "mime": "image/png",
                                          "role": "source"}]})
+        assert da_goi["n"] == truoc, (
+            "tu choi PHAI xay ra truoc khi cham may B — neu bo dieu phoi da duoc "
+            "goi thi anh cua nguoi khac da di ra khoi nen tang")
     finally:
         set_storage(None)
+
+
+def test_che_do_khong_map_duoc_thi_TU_CHOI_co_ten(monkeypatch):
+    """⛔ `semantic_inpaint` · `outpaint` · `style_transfer` bị GỠ ở pha 06.2.
+
+    `hidream-o1` **khai** ba chế độ (`t2i` · `edit` · `subject`); ba chế độ kia
+    không map được. Nguỵ trang chúng thành `edit` sẽ trả về một tấm ảnh **trông
+    hợp lý mà không phải thứ khách xin** — hỏng lặng lẽ, đắt hơn gỡ tử tế.
+    """
+    from apps.taoanh import jobs
+
+    monkeypatch.setattr(jobs, "_dieu_phoi",
+                        lambda: pytest.fail("khong duoc cham may B voi che do la"))
+    for che_do in ("semantic_inpaint", "outpaint", "style_transfer"):
+        with pytest.raises(ValueError, match="không còn được hỗ trợ"):
+            jobs.handle({"owner_id": "u1", "prompt": "x", "edit_mode": che_do})
 
 
 def test_edit_handoff_is_owner_scoped(tmp_path, monkeypatch):
@@ -127,6 +159,10 @@ def test_template_discloses_provider_privacy_and_precision_limit():
     from pathlib import Path
     src = (Path(__file__).parents[1] / "apps" / "taoanh" / "templates" / "image.html").read_text("utf-8")
     assert "enctype=\"multipart/form-data\"" in src
-    assert "Ảnh tham chiếu được gửi tới Gemini" in src
+    # Bat bien: template phai KHAI anh tham chieu roi nen tang di dau. Dich den
+    # doi o pha 08 (AI CLEAN REBUILD V2) — Gemini bi go, may tao anh noi bo thay
+    # cho. Nen chot CA HAI chieu, de ban viet lai kho xanh hon ban cu:
+    assert "Ảnh tham chiếu chỉ rời nền tảng để tới máy tạo ảnh nội bộ" in src
+    assert "Gemini" not in src, "khai bao quyen rieng tu con ten nha cung cap da go"
     assert "chưa phải công cụ mask chính xác từng pixel" in src
     assert "saved_source_key" in src and "/edit/{{j.id}}/{{loop.index0}}" in src

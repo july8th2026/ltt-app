@@ -24,10 +24,18 @@ def test_taoanh_manifest():
     from apps.taoanh.manifest import MANIFEST
     assert MANIFEST.slug == "taoanh" and MANIFEST.route_prefix == "/taoanh"
     assert MANIFEST.job_types == ("taoanh.generate",)
-    assert MANIFEST.credit_cost({"count": 3}) == 15
-    assert MANIFEST.credit_cost({"count": 99}) == 20   # kẹp 4 ảnh
-    assert MANIFEST.credit_cost({"model": "gemini-3.1-flash-image", "count": 2}) == 16
-    assert MANIFEST.credit_cost({"model": "gemini-3-pro-image", "count": 1}) == 16
+    # 🔴 Pha 06.3: app chạy model nhà, giá ở `platform_core.image_gen.gia`.
+    #    Ba dòng cũ chốt giá THEO MODEL Gemini — tham số `model` nay không
+    #    còn ảnh hưởng giá, nên chốt lại theo thứ CÒN quyết định giá:
+    #    **số ảnh** và **có ảnh tham chiếu hay không**.
+    from platform_core.image_gen import gia
+
+    assert MANIFEST.credit_cost({"count": 3}) == 3 * gia.CREDIT_MOI_ANH
+    assert MANIFEST.credit_cost({"count": 99}) == 4 * gia.CREDIT_MOI_ANH  # kẹp 4 ảnh
+    assert MANIFEST.credit_cost({"count": 1, "edit_mode": "edit"}) == (
+        gia.CREDIT_MOI_ANH * gia.HE_SO_THAM_CHIEU)
+    assert MANIFEST.credit_cost({"model": "gemini-3-pro-image", "count": 1}) == (
+        gia.CREDIT_MOI_ANH), "tham so `model` khong duoc quyet dinh gia nua"
 
 
 def test_taoanh_discover_khong_loi():

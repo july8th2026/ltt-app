@@ -234,9 +234,13 @@ def test_the_page_lists_exactly_the_parameters_the_server_accepts(portal):
 def test_the_page_shows_what_a_caller_needs_to_fill_a_parameter_in(portal):
     page = portal.get("/developers/tools/image.thumbnail").text
     # Type, bound, default, enum values and the description all reach the page.
-    assert "bold_impact" in page                      # an enum value
+    # `bold_impact` thuộc nhóm `text_style`, đã gỡ cùng chữ-trong-ảnh ở pha
+    # 06.3. Lấy một giá trị của nhóm CÒN SỐNG.
+    assert "cinematic" in page                        # an enum value
     assert "16:9" in page                             # a default
-    assert "5 MINUTE FIX" in page                     # an example
+    # `5 MINUTE FIX` là ví dụ của tham số `title`, đã rời hợp đồng ở pha
+    # 06.3. Lấy ví dụ của một tham số CÒN SỐNG.
+    assert "How to fix a leaking tap in 5 minutes" in page   # an example
     assert "How many variations to generate" in page  # a description
     assert "tối đa 2000" in page or "2000" in page    # a maxLength bound
 

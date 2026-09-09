@@ -536,8 +536,38 @@ def test_app_TAT_khong_lot_vao_trang_chu_cua_nguoi_da_dang_nhap(moi_truong,
     Đo được ngày 25/08 với chính app `vps`. Lỗi có sẵn từ trước, không phải do
     `public=True`: nhánh đó trả `authenticated or public`, nên `public=False`
     cũng lọt y hệt.
+
+    🔴 **Vì sao ép thẳng `MANIFEST.enabled` chứ không chỉ xoá biến môi trường.**
+
+    `MANIFEST.enabled` được tính **một lần lúc nạp module** (`manifest.py` gọi
+    `vps_app.enabled()` ở mức module). Nên xoá biến môi trường chỉ có tác dụng
+    khi `apps.vps.manifest` **chưa** từng được nạp trong tiến trình này. Dưới
+    `pytest -n`, một test khác trong cùng worker đặt `LTT_VPS=1` rồi nạp manifest
+    là ca này đỏ — và nó đỏ vì **thứ tự nạp**, không vì sản phẩm sai.
+
+    Đo được 09/09: ca này xanh khi chạy riêng và khi chạy cùng vài tệp, nhưng đỏ
+    trong một lượt rộng hơn — cùng một mã sản phẩm, khác mỗi cách chia việc cho
+    worker. Một phép kiểm đổi kết quả theo thứ tự nạp thì nó **không đo** thứ nó
+    khai là đo.
+
+    ⇒ Xoá biến môi trường (cho tiền đề 404, vì route đọc cờ **sống**) VÀ ép cờ
+      trong manifest (cho mệnh đề thật: nhánh đã-đăng-nhập có lọc `enabled`
+      không). Hai lớp, hai câu hỏi khác nhau.
     """
+    from apps.vps.manifest import MANIFEST
+
     monkeypatch.delenv("LTT_VPS", raising=False)
+    # `AppManifest` là `frozen=True`, nên `setattr` trên **thể hiện** bị chặn.
+    # Đặt một `property` trên LỚP thì đi qua được (property là data descriptor,
+    # ưu tiên hơn `__dict__` của thể hiện), và chỉ chạm đúng app `vps` — các app
+    # khác vẫn khai đúng cờ của chúng, để ca này không vô tình tắt cả catalog.
+    monkeypatch.setattr(
+        type(MANIFEST), "enabled",
+        # App khác đọc thẳng giá trị đã lưu trong `__dict__` — `frozen=True` cất
+        # ở đó — nên chúng vẫn khai đúng cờ của chính mình.
+        property(lambda self: False if self.slug == "vps"
+                 else self.__dict__.get("enabled", True)),
+        raising=False)
     _tao_khach(moi_truong)
     client = _client()
     try:

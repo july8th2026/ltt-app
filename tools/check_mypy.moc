@@ -3,11 +3,11 @@
 # mot-doi-mot (xoa mot var-annotated vo hai, them mot attr-defined
 # la AttributeError luc chay -> tong khong doi).
 
-arg-type = 124
+arg-type = 123
 assignment = 63
-attr-defined = 205
+attr-defined = 204
 call-overload = 10
-dict-item = 4
+dict-item = 3
 exit-return = 1
 index = 33
 list-item = 3
