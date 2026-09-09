@@ -101,6 +101,22 @@ phải một nút bấm.
 lần chạy ffmpeg. Phép đo là **thời lượng · codec · số khung · tập clip chọn ·
 mốc thời gian · LUFS**.
 
+## ⚠️ S14 — `sequential` là đường P0, không phải `semantic`
+
+Đọc `configs/pipeline.yaml` **đang chạy**: `timeline.mode: sequential`. Mã
+legacy để `semantic` làm mặc định, nên phần §S4 dưới đây phân tích rất kỹ một
+đường mà **production không đi**.
+
+⇒ Thứ tự ưu tiên đảo lại: `build_sequential_timeline` (khớp theo tiền tố tên
+tệp) là đường phải đúng trước; khớp CLIP vẫn giữ vì nó là một chế độ hợp lệ.
+App `video_assembly` lấy `sequential` làm mặc định — xem
+`08_CAU_HINH_THAT_TREN_PRODUCTION.md` §1.
+
+🔴 Hệ quả cho tầng tải lên: **tên tệp phải giữ nguyên tiền tố**. Một bản vá bảo
+mật "thay tên bằng UUID" sẽ phá đúng chế độ ấy, và phá **im lặng** — `semantic`
+vẫn chạy, video vẫn ra, chỉ sai clip. Đó là lý do bản vá path traversal của
+`routes.py` **làm sạch mà vẫn giữ tên** thay vì đổi tên.
+
 ## S4 ĐÃ ĐÓNG — `matcher.py` chỉ 75 dòng, và có HAI bất ngờ
 
 ### Bất ngờ 1: có **hai** chế độ khớp, không phải một

@@ -72,8 +72,38 @@ Ba bot "cùng gọi whisper". Đo lời gọi thật:
 3. `transcript` cần `word_timestamps=True` (có phép kiểm ném lỗi nếu thiếu);
    `dungvideo` cố ý **tắt** nó vì không cần và nó đắt.
 
-🔑 **Quyết định đóng băng**: **một** service STT, **bốn** hồ sơ tham số đã đặt
-tên, mỗi App khai hồ sơ của mình. **Không có "tham số mặc định hợp lý".**
+🔑 **Quyết định đóng băng**: **một** service STT, hồ sơ tham số **có tên**, mỗi
+App khai hồ sơ của mình. **Không có "tham số mặc định hợp lý".**
+
+## ✅ ĐÃ DỰNG — `platform_core/stt/` (2026-09-10)
+
+Và hai điều đổi so với bảng trên, cả hai do **cấu hình đang chạy** và do một
+chốt của nền tảng ép ra:
+
+**(S13) Hồ sơ của `pause` là một HÀM của ngôn ngữ, không phải một bộ số.**
+`configs/bot_config_pause.json` khai `beam_size_vi=5 / beam_size_en=1` và
+`best_of_vi=3 / best_of_en=1`. Nên nó có **hai** biến thể, và thiếu ngôn ngữ là
+một **lỗi** chứ không phải một lần đoán: một lượt tiếng Anh chạy bằng `beam=5`
+của tiếng Việt vẫn ra kết quả hợp lệ, chỉ là khác đi.
+
+**Tên hồ sơ là tên NĂNG LỰC, không phải tên App:**
+
+| Bảng trên gọi | Tên thật trong mã |
+|---|---|
+| `transcript` | `moc_tu_vad_ngoai` |
+| `pause` (vi/en) | `moc_tu_vad_trong_vi` / `_en` |
+| `video` | `khong_moc_tu_vad_trong` |
+| `video_eval` | `chi_do_ngon_ngu` |
+
+`test_60::test_no_app_slug_is_hardcoded_in_the_platform` ép ra việc này: một tên
+App trong mã nền tảng là dấu hiệu registry bị đi vòng. Chốt ấy cho một cái tên
+**tốt hơn**, không chỉ một cái tên khác — hồ sơ mô tả *thứ nó tạo ra*, nên hai
+App cần cùng hành vi thì dùng chung được.
+
+⚠️ **Khoá cache phải gồm tên hồ sơ.** Legacy khoá theo `(hash, model, lang)` —
+đúng với chúng, vì mỗi bot chỉ có một hồ sơ. Năm hồ sơ dùng chung một thư mục
+cache thì thiếu tên hồ sơ là **trả kết quả của hồ sơ khác**, và kết quả ấy trông
+hoàn toàn hợp lệ.
 
 ⭐ Đây chính là ca mà MASTER-GUARDRAILS #12 mô tả: cùng một *cái tên* năng lực,
 khác *ngữ nghĩa*. Gộp trước khi audit ngữ nghĩa là đẻ ra một `common_utils.py`
@@ -151,11 +181,11 @@ phụ thuộc hơn ở **mọi** trục — dòng mã, số model, số kho ngo�
 | S7 | ~~`gemini_automation` vs `gemini_client`~~ | — | **KHÔNG CÒN** — cả hai bị bỏ theo S2 |
 | S8 | ~~`configs/` thật~~ | — | **ĐÓNG 09/09** — đọc từ `D:\FULL AUTO VIDEO`, xem `08` |
 | S9 | ~~đổi thứ tự build~~ | — | **ĐÓNG 09/09**: giữ thứ tự pack, `transcript` trước |
-| **S10** | `engine/music/mood.py` **chỉ có ở bản chạy**, không có trong kho git | Phase 11 | đọc trước khi viết service |
+| S10 | ~~`mood.py` chỉ có ở bản chạy~~ | — | **ĐÓNG 10/09** — đã vào `apps/video_assembly` |
 | **S11** | sửa parity matrix `03`/`04`/`06` theo bảng đính chính `08` §1 | 08·09·11 | **mở** |
 | **S12** | `smart_silence.default` vs `timeline.silence_text` — hai chuỗi khác nhau | Phase 08 | đo đường nào dùng chuỗi nào |
-| **S13** | hồ sơ STT của `pause` là **hàm của `language`** (vi=5/3, en=1/1) | Phase 09 | sửa §2 tệp này |
-| **S14** | production chạy `timeline.mode=sequential`, **không** phải `semantic` | Phase 11 | đảo thứ tự ưu tiên trong `06` |
+| S13 | ~~hồ sơ STT của pause là hàm của `language`~~ | — | **ĐÓNG 10/09** — `07` §2 |
+| S14 | ~~`sequential` là đường P0~~ | — | **ĐÓNG 10/09** — `06` §S14, đã áp vào App |
 
 ✅ **S4–S6 đóng ngày 09/09, TRƯỚC khi viết một dòng service nào** — đúng thứ tự
 mà MASTER-GUARDRAILS đòi. Cả ba trả về một thứ mà một bản port hợp lý sẽ làm sai
