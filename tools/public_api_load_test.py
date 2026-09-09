@@ -64,8 +64,9 @@ PEPPER = "load-test-pepper-" + "L" * 40
 # runs afterwards — that is exactly how this leaked once: `create_app()` in a
 # much later test found LTT_DATA_DIR still aimed at a deleted temp folder, could
 # not load its config, and the maintenance daemon quietly never started.
-_OWNED_ENV = ("LTT_DATABASE_URL", "LTT_DATA_DIR", "LTT_API_KEY_PEPPER",
-              "GEMINI_API_KEY")
+# `GEMINI_API_KEY` go 09/09/2026 (pha 10): app khong con doc khoa nao cua
+# nha cung cap ngoai — may ve la cong noi bo, xac thuc bang bearer rieng.
+_OWNED_ENV = ("LTT_DATABASE_URL", "LTT_DATA_DIR", "LTT_API_KEY_PEPPER")
 
 
 def _restore_env(saved: dict) -> None:
@@ -87,7 +88,6 @@ def _build(work: Path, **env_extra):
     # Without this the drain scenarios measure the throughput of *failing*
     # jobs, which looks like a healthy number and means nothing. The call
     # itself is stubbed, so this value never reaches a vendor.
-    os.environ.setdefault("GEMINI_API_KEY", "load-test-stub-not-used")
 
     import platform_core.db as dbmod
 

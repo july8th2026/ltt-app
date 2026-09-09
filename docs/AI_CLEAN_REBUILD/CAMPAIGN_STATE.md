@@ -35,7 +35,7 @@
 | 07 | Delete all legacy runtime **+ gỡ hẳn `chataistudio`** | ✅ | 8 bánh cóc PASS · `test_1004` | `MIGRATION_MAP.md` §7 |
 | 08 | Delete legacy app surfaces | 🟡 mã xong, **chờ `npm run build` + gate** | — | §Pha 08 |
 | 09 | Provider config / secret clean **+ chứng minh `HISTORY_ONLY`** | ✅ | 8 bánh cóc PASS · `test_1005` 150 phép kiểm | ma trận 425/519 |
-| 10 | Architecture guard | ⬜ | — | — |
+| 10 | Architecture guard | ✅ | 18 phép kiểm, **12 là tự kiểm** | `tests/test_1006_rao_kien_truc.py` |
 | 11 | Real E2E | ⬜ | — | — |
 | 12 | Forensic re-audit | ⬜ | — | — |
 | 13 | Commit / merge / deploy | ⬜ | — | — |
@@ -63,6 +63,45 @@ sau khi hoà sẽ đỏ, và **không tách được** phần đỏ nào là c�
 ⛔ Và **đừng cầm con số này đi dùng ở pha 13**: nó đo lúc 09/09, còn `docs/`
    ghi rõ trunk đi 134 commit trong 15 phút. Việc đúng là **đo lại ngay trước
    khi hoà** — xem `dong-bo-trunk-la-viec-lam-ngay-truoc-khi-ff`.
+
+## PHA 10 — rào cưỡng chế, và nó **TỰ KIỂM**
+
+Chiến dịch xoá xong là một **trạng thái**; giữ nó là một **cơ chế**.
+`tests/test_1006_rao_kien_truc.py` là cơ chế ấy: đỏ ngay khi một nguồn **thi
+hành** dựng lại được một lượt gọi legacy.
+
+| Luật | Chốt trên |
+|---|---|
+| không host nhà cung cấp | **giá trị hằng** (AST), 5 host kể cả `api.openai.com` |
+| không tra khoá | `GEMINI_API_KEY`, `OPENAI_API_KEY`… trong hằng |
+| không fallback ẩn | **phần tử** của list/tuple hằng |
+| app không tự dựng HTTP | `import` ở `apps/**` |
+
+### ⭐ 12/18 phép kiểm là TỰ KIỂM — và đó là phần đáng giá nhất
+
+`MAU_XAU` (7 mẫu) phải **bắt được từng cái**; `MAU_TOT` (5 mẫu) **không được bắt
+cái nào**. Cả hai chạy qua **đúng** những hàm mà rào thật dùng.
+
+⛔ Vì sao cần: đo 06/09 trong kho này, đổi `dem[ma] + 1` thành `** 1` làm mọi số
+   đếm thành 0 và bánh cóc **xanh vĩnh viễn** — hỏng so với hỏng thì vẫn bằng
+   nhau. Một bộ dò không tự kiểm là một bộ dò không ai biết còn sống.
+
+⭐ `MAU_TOT` quan trọng hơn `MAU_XAU`: dương tính giả ở đây dạy người ta **xoá
+   lời giải thích** để làm rào im — tức xoá đúng thứ ta muốn giữ. Nên có mẫu
+   *"docstring giải thích vì sao đã xoá"* và *"chú thích nhắc tên biến khoá cũ"*,
+   và rào phải **im lặng** với chúng.
+
+### Hai thứ rào bắt được ngay lượt đầu
+
+1. `tools/public_api_load_test.py` còn đặt `GEMINI_API_KEY` (trong `_OWNED_ENV`
+   và một `setdefault`) — công cụ đo tải không còn cần khoá nào của nhà cung cấp
+   ngoài. Đã gỡ.
+2. **8 app tự dựng HTTP.** Đọc thật thì cả 8 gọi **hạ tầng được phép giữ**
+   (yêu cầu 9): cổng máy B · BytePlus/ModelArk · Proxmox/Vultr · máy WanGP.
+
+   ⛔ Không nới luật thành *"app nào cũng được"*. Rào giữ nguyên độ chặt, và bắt
+      mỗi ngoại lệ **khai đích đến** trong `MIEN_TRU_HTTP`. Danh sách ấy phình
+      lên là dấu hiệu đường ra mạng đang tán trở lại ra tầng app.
 
 ## PHA 09 — trả nợ lớn nhất: **51 nhãn `HISTORY_ONLY` với 0 phép kiểm**
 
