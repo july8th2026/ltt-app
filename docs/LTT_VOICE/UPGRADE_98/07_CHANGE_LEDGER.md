@@ -653,3 +653,56 @@ loại bằng chứng ấy.
 *"66 hạng mục còn lại"* (số của 13:37 ngày 09/09) và mục D còn ghi *"cố ý không
 ghi điểm tổng"*. Cả hai **đúng lúc viết và sai lúc đọc** — đúng kiểu bảng chép
 tay mà CLAUDE.md luật 5 cảnh báo, và lần này bảng chép tay ấy là của chính tôi.
+
+## ⚠️ Đính chính 10/09 — `cua_so_yen` KHÔNG gánh được quyết định của tôi
+
+Sổ này ghi điều kiện trước lượt gate cuối là ba tín hiệu **đồng thuận**:
+
+    cua_so_yen RANH  ·  CPU 1 %  ·  0 tien trinh gate/pytest
+
+Vế thứ nhất **không đứng được**. Phiên `ltt-4bot-workflow` quan trắc, tôi đọc
+lại mã và xác nhận độc lập:
+
+- `tests/test_394_nen_da_phien.py:131`, fixture `khoa_sach`, gọi
+  `cua_so_yen.dang_giu()` rồi `nha(ep=True, …)` trên **mọi khoá đang có trên
+  máy** — không riêng khoá của bài kiểm.
+- Tệp ấy **không** monkeypatch `TEP_KHOA`/`_tep`; dòng 208 còn *assert* đúng
+  đường dẫn thật. ⇒ fixture chạm tệp khoá **thật**.
+- **6** bài dùng fixture × 2 lần `don()` = **12** lượt tháo khoá mỗi lượt gate.
+
+⇒ **Mỗi lượt gate đầy đủ tự tháo khoá của chính nó giữa chừng**, rồi
+`trang-thai` trả `RANH` suốt phần còn lại — đúng cửa sổ mà phiên kế tiếp đọc
+rồi bấm.
+
+🔑 Sai số của nó đi về phía **HÀNH ĐỘNG**: nó nói "rảnh" khi đang bận, không
+bao giờ ngược lại. Đó là hạng nguy hiểm hơn hẳn sai số ngẫu nhiên.
+
+### Vậy lượt gate của tôi có hỏng không — không, nhưng vì lý do khác lời tôi ghi
+
+Vế thứ **ba** (`0` tiến trình `gate.py`/`pytest` trong cây tiến trình) mới là
+thứ gánh quyết định, và nó không đi qua tệp khoá nên không dính lỗi này. Kết
+quả cũ đứng nguyên.
+
+Thứ phải sửa là **lời ghi**, không phải kết quả: ba tín hiệu ấy **không độc
+lập** như tôi trình bày — một trong ba là âm tính giả có hệ thống. Ghi ba thứ
+"cùng đồng ý" trong khi một thứ không có tư cách đồng ý là đúng lỗi mà
+`su-that-doc-lap-chan-suy-luan-sai` nói tới.
+
+⚠️ Ngược lại, lúc **commit** `a61c7a0d` thì `cua_so_yen` báo pid 19656 đang giữ
+— tức một **dương tính**, và lỗi này không sinh dương tính giả. Nên căn cứ của
+lượt commit không đổi.
+
+### Không nhận việc vá
+
+`tests/test_394` do phiên `ltt-4bot-workflow` nhận. Tôi **không** viết chồng.
+Đã gửi lại cho họ một chi tiết bản vá dễ trượt: vá `TEP_KHOA` **một mình**
+không đủ, vì `dang_giu()` (dòng 233) vừa đọc hằng số `TEP_KHOA` vừa
+`glob()` trên `tempfile.gettempdir()` — hai nguồn đường dẫn độc lập. Và lever
+cho vế thứ hai phải là `tempfile.tempdir`, **không** phải biến môi trường:
+
+    goi lan 1                     : C:\Users\THANGT~1\AppData\Local\Temp
+    sau khi dat tempfile.tempdir  : C:\ABC_GIA_DINH            <- CO hieu luc
+    chi dat os.environ['TEMP']    : C:\Users\THANGT~1\...\Temp <- KHONG
+
+Vá thiếu vế ấy thì test vẫn **xanh** (nó chỉ assert khoá của chính nó) mà lỗi
+còn nguyên — một bản vá *trông* đúng.
