@@ -1,0 +1,1002 @@
+[
+  {
+    "start": 0.0,
+    "end": 5.14,
+    "text": "Sâu chuỗi bóng nước, mắt tâm bệnh vì muốn sâu thành chuỗi những hạt",
+    "type": "speech",
+    "scene_id": "S0001",
+    "index": 1
+  },
+  {
+    "start": 5.14,
+    "end": 9.4,
+    "text": "ngọc làm từ. Bóng nước, nàng công chúa bé bọng liệu",
+    "type": "speech",
+    "scene_id": "S0002",
+    "index": 2
+  },
+  {
+    "start": 9.4,
+    "end": 14.42,
+    "text": "có tỉnh ngộ trước sự thật mong manh của ảo ảnh trần gian.",
+    "type": "speech",
+    "scene_id": "S0003",
+    "index": 3
+  },
+  {
+    "start": 14.42,
+    "end": 18.66,
+    "text": "Bên trời sương mù đã tan hẳn, vần thái dương ẩn hiện sâu",
+    "type": "speech",
+    "scene_id": "S0004",
+    "index": 4
+  },
+  {
+    "start": 18.66,
+    "end": 23.26,
+    "text": "án mây thua, chiếu ánh sáng huy hoàng trong khoảng không gian trong tạnh.",
+    "type": "speech",
+    "scene_id": "S0005",
+    "index": 5
+  },
+  {
+    "start": 23.26,
+    "end": 27.82,
+    "text": "Từng cơn gió mát lạnh từ phương Nam Thội về làm rơi",
+    "type": "speech",
+    "scene_id": "S0006",
+    "index": 6
+  },
+  {
+    "start": 27.82,
+    "end": 32.36,
+    "text": "những hạt nước trong suốt như pha lê còn động ở đầu cỏ lá cây.",
+    "type": "speech",
+    "scene_id": "S0007",
+    "index": 7
+  },
+  {
+    "start": 32.36,
+    "end": 36.34,
+    "text": "Cảnh vật nơi vườn ngự sau một trận mưa mai vừa tàn,",
+    "type": "speech",
+    "scene_id": "S0008",
+    "index": 8
+  },
+  {
+    "start": 36.34,
+    "end": 39.14,
+    "text": "càng đượm vẻ thanh tân tươi thấm.",
+    "type": "speech",
+    "scene_id": "S0009",
+    "index": 9
+  },
+  {
+    "start": 39.14,
+    "end": 43.58,
+    "text": "Nơi thềm cao của một ngôi đền vàng, một nàng công chúa tuổi còn",
+    "type": "speech",
+    "scene_id": "S0010",
+    "index": 10
+  },
+  {
+    "start": 43.58,
+    "end": 47.94,
+    "text": "thơ bé, ngồi trên chiếc cẩm đôn, đưa mắt thẫn thờ nhìn",
+    "type": "speech",
+    "scene_id": "S0011",
+    "index": 11
+  },
+  {
+    "start": 47.94,
+    "end": 49.98,
+    "text": "ngắm cỏ hoa trong thượng uyển.",
+    "type": "speech",
+    "scene_id": "S0012",
+    "index": 12
+  },
+  {
+    "start": 49.98,
+    "end": 54.24,
+    "text": "Bên này nơi hồ bán nguyệt những đoá hoa sen trắng, đỏ,",
+    "type": "speech",
+    "scene_id": "S0013",
+    "index": 13
+  },
+  {
+    "start": 54.24,
+    "end": 58.76,
+    "text": "tười, đẹp mịn màng sen lẫn thấp cao trên mặt nước Đàn",
+    "type": "speech",
+    "scene_id": "S0014",
+    "index": 14
+  },
+  {
+    "start": 58.76,
+    "end": 63.28,
+    "text": "kia, chung quanh hòn giả sơn, những thứ hoa quý lạ từ bốn phương gửi",
+    "type": "speech",
+    "scene_id": "S0015",
+    "index": 15
+  },
+  {
+    "start": 63.28,
+    "end": 67.16,
+    "text": "về Hương sắc thanh kỳ, phô vẻ nghịnh hồng muôn tía,",
+    "type": "speech",
+    "scene_id": "S0016",
+    "index": 16
+  },
+  {
+    "start": 67.16,
+    "end": 71.58,
+    "text": "như miễn cười duyên dáng trước ngọn gió mai Xa xa,",
+    "type": "speech",
+    "scene_id": "S0017",
+    "index": 17
+  },
+  {
+    "start": 71.58,
+    "end": 76.08,
+    "text": "mấy gốc thùy dương dịu dàng nghiêng, mình soi bóng bên dòng suối nhỏ",
+    "type": "speech",
+    "scene_id": "S0018",
+    "index": 18
+  },
+  {
+    "start": 76.08,
+    "end": 80.36,
+    "text": "Khung cảnh tuy đẹp nhưng không gợi được niềm vui cho công chúa",
+    "type": "speech",
+    "scene_id": "S0019",
+    "index": 19
+  },
+  {
+    "start": 80.36,
+    "end": 84.58,
+    "text": "Vì nó đã thường với mắt nàng lắm Rồi nàng mơ mộng",
+    "type": "speech",
+    "scene_id": "S0020",
+    "index": 20
+  },
+  {
+    "start": 84.58,
+    "end": 88.92,
+    "text": "vơ vẩn và ước mong một cái gì khác lạ hơn nữa Nắng",
+    "type": "speech",
+    "scene_id": "S0021",
+    "index": 21
+  },
+  {
+    "start": 88.92,
+    "end": 93.2,
+    "text": "vàng nhẹ phủ lên hoàng cung Cảnh vật nơi vườn ngự tắm",
+    "type": "speech",
+    "scene_id": "S0022",
+    "index": 22
+  },
+  {
+    "start": 93.2,
+    "end": 97.3,
+    "text": "nắng triêu dương Rung động chập trần trong làng gió sớm",
+    "type": "speech",
+    "scene_id": "S0023",
+    "index": 23
+  },
+  {
+    "start": 97.3,
+    "end": 101.74,
+    "text": "Công chúa đang thơ thận ngồi trong xa gần Bỗng đôi",
+    "type": "speech",
+    "scene_id": "S0024",
+    "index": 24
+  },
+  {
+    "start": 101.74,
+    "end": 106.38,
+    "text": "mắt nàng chăm chú vào một cảnh tượng Từ trên mái ngói tráng men xanh",
+    "type": "speech",
+    "scene_id": "S0025",
+    "index": 25
+  },
+  {
+    "start": 106.38,
+    "end": 111.12,
+    "text": "Nước mưa còn động lại rơi xuống từng giọt đều đều Nối thành",
+    "type": "speech",
+    "scene_id": "S0026",
+    "index": 26
+  },
+  {
+    "start": 111.12,
+    "end": 115.82,
+    "text": "những bóng nước tròn Trôi lăng theo rảnh đá hoa trắng Dưới ánh",
+    "type": "speech",
+    "scene_id": "S0027",
+    "index": 27
+  },
+  {
+    "start": 115.82,
+    "end": 120.0,
+    "text": "chiêu dương Những bóng nước ấy lấp lánh Nổi nhiều màu sắc",
+    "type": "speech",
+    "scene_id": "S0028",
+    "index": 28
+  },
+  {
+    "start": 120.0,
+    "end": 124.78,
+    "text": "kỳ xảo Xinh đẹp lạ thường như những hạt ngọc tuyệt trần vô giá",
+    "type": "speech",
+    "scene_id": "S0029",
+    "index": 29
+  },
+  {
+    "start": 124.78,
+    "end": 129.4,
+    "text": "Nét mặt công chúa sáng lên Nàng miễn cười và thầm nghĩ chà",
+    "type": "speech",
+    "scene_id": "S0030",
+    "index": 30
+  },
+  {
+    "start": 129.4,
+    "end": 133.94,
+    "text": "Những hạt ngọc kia sao mà đẹp thế ta đã có nhiều châu",
+    "type": "speech",
+    "scene_id": "S0031",
+    "index": 31
+  },
+  {
+    "start": 133.94,
+    "end": 138.44,
+    "text": "báu nhưng chưa thấy thứ ngọc nào quý lạ bằng loại này giá",
+    "type": "speech",
+    "scene_id": "S0032",
+    "index": 32
+  },
+  {
+    "start": 138.44,
+    "end": 143.02,
+    "text": "ta có một tràng chuỗi ngọc như thế để hoàng nơi cổ thì thích biết",
+    "type": "speech",
+    "scene_id": "S0033",
+    "index": 33
+  },
+  {
+    "start": 143.02,
+    "end": 147.66,
+    "text": "bao nghĩ xong như thâu thần công chúa lại thừa người",
+    "type": "speech",
+    "scene_id": "S0034",
+    "index": 34
+  },
+  {
+    "start": 147.66,
+    "end": 152.14,
+    "text": "ra nhìn ngắm say xưa quên hẳn bao nhiêu vẻ tươi thắm quanh mình",
+    "type": "speech",
+    "scene_id": "S0035",
+    "index": 35
+  },
+  {
+    "start": 152.14,
+    "end": 156.72,
+    "text": "mặc cho ngọn gió nam cợt đùa cùng cảnh vật giọt mưa đá dứt",
+    "type": "speech",
+    "scene_id": "S0036",
+    "index": 36
+  },
+  {
+    "start": 156.72,
+    "end": 161.24,
+    "text": "từ trên mái ngói nơi lòng rảnh đá hoa Hình dáng những viên",
+    "type": "speech",
+    "scene_id": "S0037",
+    "index": 37
+  },
+  {
+    "start": 161.24,
+    "end": 165.66,
+    "text": "ngọc vô giá không còn nữa Đâu đây Vài tiếng chim ríu",
+    "type": "speech",
+    "scene_id": "S0038",
+    "index": 38
+  },
+  {
+    "start": 165.66,
+    "end": 170.44,
+    "text": "rít điểm thưa thất Đứt khoảng trong mấy tàn cây rậm Vần thái dương",
+    "type": "speech",
+    "scene_id": "S0039",
+    "index": 39
+  },
+  {
+    "start": 170.44,
+    "end": 175.04,
+    "text": "lên đã hơi cao Ánh vàng xiên xiên rọi nữa thèm vàng Mà công",
+    "type": "speech",
+    "scene_id": "S0040",
+    "index": 40
+  },
+  {
+    "start": 175.04,
+    "end": 179.4,
+    "text": "chúa vẫn còn ngồi ngơ ngẩn Tâm hồn như phiêu giạc tận nơi nào",
+    "type": "speech",
+    "scene_id": "S0041",
+    "index": 41
+  },
+  {
+    "start": 179.4,
+    "end": 184.1,
+    "text": "Một tên cung nữ từ phía trong đi ra Xe sẽ đến gần cung",
+    "type": "speech",
+    "scene_id": "S0042",
+    "index": 42
+  },
+  {
+    "start": 184.1,
+    "end": 188.38,
+    "text": "kính thưa Có lệnh mẫu hoàng gọi Như chợt bình tĩnh Công",
+    "type": "speech",
+    "scene_id": "S0043",
+    "index": 43
+  },
+  {
+    "start": 188.38,
+    "end": 192.92,
+    "text": "chúa không đáp nặng nề bước thẳng vào phòng rồi lên giường nằm",
+    "type": "speech",
+    "scene_id": "S0044",
+    "index": 44
+  },
+  {
+    "start": 192.92,
+    "end": 197.42,
+    "text": "con nữ ngạc nhiên chạy vào phía trong một lát hoàng",
+    "type": "speech",
+    "scene_id": "S0045",
+    "index": 45
+  },
+  {
+    "start": 197.42,
+    "end": 201.8,
+    "text": "hậu đến phòng con thấy trên mặt ngây thơ có vẻ bơ phờ ủ dột",
+    "type": "speech",
+    "scene_id": "S0046",
+    "index": 46
+  },
+  {
+    "start": 201.8,
+    "end": 206.5,
+    "text": "tưởng rằng đứa con yêu cảm nhiễm phong hàng nên dịu dàng hang hỏi",
+    "type": "speech",
+    "scene_id": "S0047",
+    "index": 47
+  },
+  {
+    "start": 206.5,
+    "end": 210.7,
+    "text": "vốn là con một hàng được nuôn chiều công chúa",
+    "type": "speech",
+    "scene_id": "S0048",
+    "index": 48
+  },
+  {
+    "start": 210.7,
+    "end": 215.08,
+    "text": "như có dịp để nhỏ nhẽo cùng mẹ vì vậy tuy biết hoàng hậu đến",
+    "type": "speech",
+    "scene_id": "S0049",
+    "index": 49
+  },
+  {
+    "start": 215.08,
+    "end": 219.26,
+    "text": "thăm nhưng nàng vẫn nằm say mặt vào trong im lặng",
+    "type": "speech",
+    "scene_id": "S0050",
+    "index": 50
+  },
+  {
+    "start": 219.26,
+    "end": 223.12,
+    "text": "Hoàng hậu lại càng hốt hoảng kịp báo tin cho đức vua.",
+    "type": "speech",
+    "scene_id": "S0051",
+    "index": 51
+  },
+  {
+    "start": 223.12,
+    "end": 227.36,
+    "text": "Nghe tin con bất thường, đức vua vội vàng đến thăm hỏi.",
+    "type": "speech",
+    "scene_id": "S0052",
+    "index": 52
+  },
+  {
+    "start": 227.36,
+    "end": 230.08,
+    "text": "Công chúa cũng vẫn im lặng không đáp.",
+    "type": "speech",
+    "scene_id": "S0053",
+    "index": 53
+  },
+  {
+    "start": 230.08,
+    "end": 233.48,
+    "text": "Sau khi vua và hoàng hậu dỗ dành khuyên lơn mãi,",
+    "type": "speech",
+    "scene_id": "S0054",
+    "index": 54
+  },
+  {
+    "start": 233.48,
+    "end": 237.84,
+    "text": "nàng công chúa thơ ngây ấy mới thuật chuyện những viên ngọc quý",
+    "type": "speech",
+    "scene_id": "S0055",
+    "index": 55
+  },
+  {
+    "start": 237.84,
+    "end": 240.36,
+    "text": "và nói chủ ước vọng của mình.",
+    "type": "speech",
+    "scene_id": "S0056",
+    "index": 56
+  },
+  {
+    "start": 240.36,
+    "end": 244.04,
+    "text": "Nghe xong đứa vua cười vui vẻ và bảo Ồ,",
+    "type": "speech",
+    "scene_id": "S0057",
+    "index": 57
+  },
+  {
+    "start": 244.04,
+    "end": 248.38,
+    "text": "con ta khéo vớ vẩn thì thôi Những hạt ngọc mà con nói",
+    "type": "speech",
+    "scene_id": "S0058",
+    "index": 58
+  },
+  {
+    "start": 248.38,
+    "end": 252.62,
+    "text": "đó chỉ là những bóng nước Làm sao kết được tràn chuỗi",
+    "type": "speech",
+    "scene_id": "S0059",
+    "index": 59
+  },
+  {
+    "start": 252.62,
+    "end": 256.84,
+    "text": "Nhưng thôi, con hãy yên lòng Các thứ ngọc quý giá",
+    "type": "speech",
+    "scene_id": "S0060",
+    "index": 60
+  },
+  {
+    "start": 256.84,
+    "end": 261.28,
+    "text": "ấy ở trong kho tàn không thiếu gì Cha sẽ cho con tùy ý lựa chọn",
+    "type": "speech",
+    "scene_id": "S0061",
+    "index": 61
+  },
+  {
+    "start": 261.28,
+    "end": 265.74,
+    "text": "Nói đoạn, vua sai quan giữ kho lựa những thứ ngọc thật đẹp",
+    "type": "speech",
+    "scene_id": "S0062",
+    "index": 62
+  },
+  {
+    "start": 265.74,
+    "end": 270.1,
+    "text": "đem đến cho công chúa Nhưng sau khi xem xong từ thứ ngọc",
+    "type": "speech",
+    "scene_id": "S0063",
+    "index": 63
+  },
+  {
+    "start": 270.1,
+    "end": 274.42,
+    "text": "này đến thứ ngọc khác Công chúa vẫn không vừa ý Nhất định",
+    "type": "speech",
+    "scene_id": "S0064",
+    "index": 64
+  },
+  {
+    "start": 274.42,
+    "end": 279.12,
+    "text": "đòi cho được thứ hạt ngọc mà mình đã trông thấy Ước vọng không",
+    "type": "speech",
+    "scene_id": "S0065",
+    "index": 65
+  },
+  {
+    "start": 279.12,
+    "end": 283.78,
+    "text": "thành Lòng mơ tưởng những viên ngọc tuyệt đẹp Làm cho công chúa",
+    "type": "speech",
+    "scene_id": "S0066",
+    "index": 66
+  },
+  {
+    "start": 283.78,
+    "end": 287.56,
+    "text": "âu sầu rã rười Không còn biết đến bao nhiêu thức ngon,",
+    "type": "speech",
+    "scene_id": "S0067",
+    "index": 67
+  },
+  {
+    "start": 287.56,
+    "end": 292.14,
+    "text": "vật lạ Bệnh của công chúa mỗi ngày mỗi nặng Đức vua",
+    "type": "speech",
+    "scene_id": "S0068",
+    "index": 68
+  },
+  {
+    "start": 292.14,
+    "end": 296.72,
+    "text": "và hoàng hậu vô cùng lo lắng Vì vậy thấy sự tưởng nhớ có thể làm gầy",
+    "type": "speech",
+    "scene_id": "S0069",
+    "index": 69
+  },
+  {
+    "start": 296.72,
+    "end": 300.18,
+    "text": "mòn và cướp mất đứa con yêu của mình.",
+    "type": "speech",
+    "scene_id": "S0070",
+    "index": 70
+  },
+  {
+    "start": 300.18,
+    "end": 304.9,
+    "text": "Một buổi chầu đức, vua phán hỏi các quan làm thế nào cho công chúa",
+    "type": "speech",
+    "scene_id": "S0071",
+    "index": 71
+  },
+  {
+    "start": 304.9,
+    "end": 308.92,
+    "text": "hết bệnh. Tất cả triều thần đều nhìn nhau lặng thinh.",
+    "type": "speech",
+    "scene_id": "S0072",
+    "index": 72
+  },
+  {
+    "start": 308.92,
+    "end": 313.14,
+    "text": "Ngài lại hạ chiếu cho đòi những người thợ chuốt ngọc tài giỏi vào",
+    "type": "speech",
+    "scene_id": "S0073",
+    "index": 73
+  },
+  {
+    "start": 313.14,
+    "end": 317.64,
+    "text": "triều và hỏi có thứ ngọc nào như những bóng nước lấp lánh ngũ",
+    "type": "speech",
+    "scene_id": "S0074",
+    "index": 74
+  },
+  {
+    "start": 317.64,
+    "end": 320.74,
+    "text": "sắc để làm tràn chuỗi cho công chúa.",
+    "type": "speech",
+    "scene_id": "S0075",
+    "index": 75
+  },
+  {
+    "start": 320.74,
+    "end": 325.34,
+    "text": "Tất cả thợ ngọc đều tâu, không thể nào tìm được thứ ngọc như thế.",
+    "type": "speech",
+    "scene_id": "S0076",
+    "index": 76
+  },
+  {
+    "start": 325.34,
+    "end": 329.2,
+    "text": "sau cùng Đức Vua cho truyền rao khắp trong nước",
+    "type": "speech",
+    "scene_id": "S0077",
+    "index": 77
+  },
+  {
+    "start": 329.2,
+    "end": 333.42,
+    "text": "nếu người nào làm cho công chúa hết bệnh sẽ được thưởng nghìn",
+    "type": "speech",
+    "scene_id": "S0078",
+    "index": 78
+  },
+  {
+    "start": 333.42,
+    "end": 337.92,
+    "text": "vàng trong khi giờ khắc lặng lẽ trôi qua mà cứu tin vẫn vắng",
+    "type": "speech",
+    "scene_id": "S0079",
+    "index": 79
+  },
+  {
+    "start": 337.92,
+    "end": 342.68,
+    "text": "bóng vì lòng thương con người cha hiền ngồi đứng không yên muôn",
+    "type": "speech",
+    "scene_id": "S0080",
+    "index": 80
+  },
+  {
+    "start": 342.68,
+    "end": 347.12,
+    "text": "phần áo não một buổi sáng tinh sương có người thợ chuốt",
+    "type": "speech",
+    "scene_id": "S0081",
+    "index": 81
+  },
+  {
+    "start": 347.12,
+    "end": 351.78,
+    "text": "Ngọc tuổi già râu tóc bạc phơ sinh vào ra mắt sau khi bái",
+    "type": "speech",
+    "scene_id": "S0082",
+    "index": 82
+  },
+  {
+    "start": 351.78,
+    "end": 356.2,
+    "text": "ít xong người thợ già quỳ xuống tâu muôn",
+    "type": "speech",
+    "scene_id": "S0083",
+    "index": 83
+  },
+  {
+    "start": 356.2,
+    "end": 360.4,
+    "text": "Hãy subscribe kênh Ghiền Gõ Để không bỏ video dẫn",
+    "type": "speech",
+    "scene_id": "S0084",
+    "index": 84
+  },
+  {
+    "start": 360.4,
+    "end": 365.87,
+    "text": "[B-ROLL: ENVIRONMENT]",
+    "type": "silence",
+    "scene_id": "S0085",
+    "index": 85
+  },
+  {
+    "start": 365.87,
+    "end": 371.61,
+    "text": "[B-ROLL: ENVIRONMENT]",
+    "type": "silence",
+    "scene_id": "S0086",
+    "index": 86
+  },
+  {
+    "start": 371.61,
+    "end": 376.07,
+    "text": "[B-ROLL: TRANSITION]",
+    "type": "silence",
+    "scene_id": "S0087",
+    "index": 87
+  },
+  {
+    "start": 376.07,
+    "end": 381.45,
+    "text": "[B-ROLL: ENVIRONMENT]",
+    "type": "silence",
+    "scene_id": "S0088",
+    "index": 88
+  },
+  {
+    "start": 381.45,
+    "end": 384.7,
+    "text": "[B-ROLL: TRANSITION]",
+    "type": "silence",
+    "scene_id": "S0089",
+    "index": 89
+  },
+  {
+    "start": 384.7,
+    "end": 387.18,
+    "text": "sỏ được sâu chuỗi ngọc ấy cho con.",
+    "type": "speech",
+    "scene_id": "S0090",
+    "index": 90
+  },
+  {
+    "start": 387.18,
+    "end": 389.4,
+    "text": "Thôi con đừng buồn rầu nữa.",
+    "type": "speech",
+    "scene_id": "S0091",
+    "index": 91
+  },
+  {
+    "start": 389.4,
+    "end": 392.46,
+    "text": "Lời nói ấy quả có một hiệu lực phi thường.",
+    "type": "speech",
+    "scene_id": "S0092",
+    "index": 92
+  },
+  {
+    "start": 392.46,
+    "end": 396.58,
+    "text": "Trên gương mặt xanh sao tiều tụy của người bệnh nợ nụ cười",
+    "type": "speech",
+    "scene_id": "S0093",
+    "index": 93
+  },
+  {
+    "start": 396.58,
+    "end": 400.38,
+    "text": "và cơn trầm kha bỗng dưng như tiêu tan đi đâu mất.",
+    "type": "speech",
+    "scene_id": "S0094",
+    "index": 94
+  },
+  {
+    "start": 400.38,
+    "end": 404.6,
+    "text": "Một dịp may, sáng hôm sau trời vần vũ đổ mưa xuống.",
+    "type": "speech",
+    "scene_id": "S0095",
+    "index": 95
+  },
+  {
+    "start": 404.6,
+    "end": 409.6,
+    "text": "Khi trận mưa vừa tạnh những bóng nước cũng trôi nơi lòng rảnh đá hoa",
+    "type": "speech",
+    "scene_id": "S0096",
+    "index": 96
+  },
+  {
+    "start": 409.6,
+    "end": 414.48,
+    "text": "như hôm nào. Người thợ già tâu vua xin mời công chúa ra trước thềm",
+    "type": "speech",
+    "scene_id": "S0097",
+    "index": 97
+  },
+  {
+    "start": 414.48,
+    "end": 418.96,
+    "text": "điệu vàng và thưa tôi tuổi già đôi mắt đã mờ không",
+    "type": "speech",
+    "scene_id": "S0098",
+    "index": 98
+  },
+  {
+    "start": 418.96,
+    "end": 423.58,
+    "text": "phân biệt được vẻ tốt xấu xin công chúa tôi ý lựa hạt ngọc nào",
+    "type": "speech",
+    "scene_id": "S0099",
+    "index": 99
+  },
+  {
+    "start": 423.58,
+    "end": 428.02,
+    "text": "đẹp nhất tôi sẽ sỏ cho nhưng bóng nước vẫn là chất mong",
+    "type": "speech",
+    "scene_id": "S0100",
+    "index": 100
+  },
+  {
+    "start": 428.02,
+    "end": 432.06,
+    "text": "manh vừa chạm đến liền tan ngay công chúa hết vỡ bóng",
+    "type": "speech",
+    "scene_id": "S0101",
+    "index": 101
+  },
+  {
+    "start": 432.06,
+    "end": 436.42,
+    "text": "này đến bóng khác kết cuộc đã mệt nhọc mà chẳng được chi",
+    "type": "speech",
+    "scene_id": "S0102",
+    "index": 102
+  },
+  {
+    "start": 436.42,
+    "end": 440.5,
+    "text": "cả người thợ già hỏi thế nào những hạt ngọc",
+    "type": "speech",
+    "scene_id": "S0103",
+    "index": 103
+  },
+  {
+    "start": 440.5,
+    "end": 445.22,
+    "text": "ấy ở đâu Công chúa ngẩn lên nhìn người thợ Rồi quay",
+    "type": "speech",
+    "scene_id": "S0104",
+    "index": 104
+  },
+  {
+    "start": 445.22,
+    "end": 450.06,
+    "text": "lại nhìn vua cha Đáp xin phụ vương bang cho con tràng chuỗi bằng tự kim",
+    "type": "speech",
+    "scene_id": "S0105",
+    "index": 105
+  },
+  {
+    "start": 450.06,
+    "end": 454.38,
+    "text": "Vì thứ ấy rất chắc rơi xuống gạch đá không vỡ Còn",
+    "type": "speech",
+    "scene_id": "S0106",
+    "index": 106
+  },
+  {
+    "start": 454.38,
+    "end": 459.18,
+    "text": "những thứ này chỉ có dán bên ngoài Nhưng lại giả dối mong manh Còn",
+    "type": "speech",
+    "scene_id": "S0107",
+    "index": 107
+  },
+  {
+    "start": 459.18,
+    "end": 463.66,
+    "text": "không thể lấy được Và không còn thấy ưa thích nữa Đức vua",
+    "type": "speech",
+    "scene_id": "S0108",
+    "index": 108
+  },
+  {
+    "start": 463.66,
+    "end": 466.9,
+    "text": "dịu dàng bảo Thì nó chỉ là những bóng nước thôi con",
+    "type": "speech",
+    "scene_id": "S0109",
+    "index": 109
+  },
+  {
+    "start": 466.9,
+    "end": 471.52,
+    "text": "ạ Như tỉnh ngộ ra Công chúa lộ vẽ e thẹn cuối đầu giữa",
+    "type": "speech",
+    "scene_id": "S0110",
+    "index": 110
+  },
+  {
+    "start": 471.52,
+    "end": 475.82,
+    "text": "nụ cười kính đáo của đoàn cung nữ Đức Phật bảo Anan",
+    "type": "speech",
+    "scene_id": "S0111",
+    "index": 111
+  },
+  {
+    "start": 475.82,
+    "end": 480.18,
+    "text": "và đại chúng Tất cả pháp hữu vi đều vô thường Không thật",
+    "type": "speech",
+    "scene_id": "S0112",
+    "index": 112
+  },
+  {
+    "start": 480.18,
+    "end": 484.84,
+    "text": "như bóng nước chóng tan Như ánh nắng chập trần giữa trời mưa Mà loài",
+    "type": "speech",
+    "scene_id": "S0113",
+    "index": 113
+  },
+  {
+    "start": 484.84,
+    "end": 488.8,
+    "text": "nai khao khát lầm tưởng là nước cứ đuổi theo mãi",
+    "type": "speech",
+    "scene_id": "S0114",
+    "index": 114
+  },
+  {
+    "start": 488.8,
+    "end": 493.38,
+    "text": "Sắc thân ngủ ấm Cũng như thế chính tự thân còn không giữ",
+    "type": "speech",
+    "scene_id": "S0115",
+    "index": 115
+  },
+  {
+    "start": 493.38,
+    "end": 497.84,
+    "text": "được Huống là cảnh vật bên ngoài phạm phu trong lúc vì tự thân",
+    "type": "speech",
+    "scene_id": "S0116",
+    "index": 116
+  },
+  {
+    "start": 497.84,
+    "end": 502.32,
+    "text": "đi tìm hạnh phúc chỉ đuổi theo bóng hình giả dối mong manh",
+    "type": "speech",
+    "scene_id": "S0117",
+    "index": 117
+  },
+  {
+    "start": 502.32,
+    "end": 506.74,
+    "text": "sống mãi trong vòng ước vọng kết quốc không được sự vui chơn",
+    "type": "speech",
+    "scene_id": "S0118",
+    "index": 118
+  },
+  {
+    "start": 506.74,
+    "end": 511.48,
+    "text": "thật lại phải chịu bao nhiêu điều thống khổ không khác chi trường",
+    "type": "speech",
+    "scene_id": "S0119",
+    "index": 119
+  },
+  {
+    "start": 511.48,
+    "end": 516.02,
+    "text": "hợp của nàng công chúa nếu chúng sanh nào xét biết ấm thân",
+    "type": "speech",
+    "scene_id": "S0120",
+    "index": 120
+  },
+  {
+    "start": 516.02,
+    "end": 520.74,
+    "text": "vô thường giúp trừ phiền não huyển tưởng tất sẽ chứng được tánh thể",
+    "type": "speech",
+    "scene_id": "S0121",
+    "index": 121
+  },
+  {
+    "start": 520.74,
+    "end": 524.84,
+    "text": "vắng lặng yên vui không còn xoay lăng trong vòng sinh",
+    "type": "speech",
+    "scene_id": "S0122",
+    "index": 122
+  },
+  {
+    "start": 524.84,
+    "end": 528.46,
+    "text": "tử nữa đoạn đức thế tôi nói bài kệ rằng",
+    "type": "speech",
+    "scene_id": "S0123",
+    "index": 123
+  },
+  {
+    "start": 528.46,
+    "end": 533.3,
+    "text": "nên quán tượng bóng nước và ánh nắng chập trờn như thế Thế quán",
+    "type": "speech",
+    "scene_id": "S0124",
+    "index": 124
+  },
+  {
+    "start": 533.3,
+    "end": 536.01,
+    "text": "tưởng thân sẽ thoát vòng sanh tử.",
+    "type": "speech",
+    "scene_id": "S0125",
+    "index": 125
+  }
+]

@@ -12,6 +12,26 @@ PREFIX_PATTERN = re.compile(r'^(\d{3,4})-scene', re.IGNORECASE)
 SCENE_ID_PATTERN = re.compile(r'scene_?id[-_](\d+)(?:-(\d+))?', re.IGNORECASE)
 
 
+
+def _khoa_sap_xep(clip):
+    """Khoa sap xep: (so canh, hau to, ten). Clip khong doc duoc canh thi xuong cuoi.
+
+    Hau to lay o CA HAI nhanh (`prefix` lan `scene_id`) — khac voi bien `suffix`
+    ben trong `build_sequential_timeline`, von chi tinh o nhanh `scene_id`.
+    """
+    ten = str(clip.get("name", ""))
+    pm = PREFIX_PATTERN.search(ten)
+    sm = SCENE_ID_PATTERN.search(ten)
+    if pm:
+        so = int(pm.group(1))
+    elif sm:
+        so = int(sm.group(1))
+    else:
+        return (10 ** 9, 0, ten)
+    hau = int(sm.group(2)) if sm and sm.group(2) else 0
+    return (so, hau, ten)
+
+
 def build_sequential_timeline(cfg, segments, clips, out_json):
     """
     Build timeline by matching scene_id in segments with scene_id in video filenames.
@@ -48,6 +68,34 @@ def build_sequential_timeline(cfg, segments, clips, out_json):
          segments=len(segments),
          clips=len(clips),
          save_embeddings=save_embeddings)
+
+    # ⛔ SAI LECH CO CHU DICH so voi ban goc — doc het truoc khi "sua lai cho
+    #    giong bot cu". Day la thay doi DUY NHAT trong engine chuyen nguyen ven.
+    #
+    # 🔴 Do tren job that `row196` (240 clip / 125 canh): doi thu tu danh sach
+    #    `clips` lam **115/125 canh doi clip**. Ba thu tu khac nhau cho ba ket
+    #    qua khac nhau. Va thu tu ay den tu `clip_sampling.py:75`:
+    #        clip_files = [f for f in os.listdir(video_dir) ...]   # KHONG sorted
+    #    tuc dau ra cua bot phu thuoc thu tu thu muc cua he tep.
+    #
+    # ⭐ Khac han `random.uniform` ben App `transcript`: cai kia NGAU NHIEN CO
+    #    CHU DICH (cat B-ROLL cho do deu). Cai nay thi ma **da co** co che phan
+    #    dinh — bien `suffix` ngay duoi — va chu thich cua no noi ro y dinh:
+    #        "001-scene_id-1.mp4 (suffix=0) > 001-scene_id-1-2.mp4 (suffix=2)"
+    #    Nhung `suffix` chi duoc tinh khi `parse_source == "scene_id"`. Ten that
+    #    tren production deu co tien to (`002-scene_id-2-2.mp4`) nen di nhanh
+    #    `prefix`, va `suffix` **luon bang 0**. Luat `suffix < current_priority`
+    #    khong bao gio can — nguoi THANG la nguoi DEN TRUOC.
+    #
+    # ⇒ Sap xep dau vao theo (so canh, hau to, ten) lam dung hai viec: ket qua
+    #   het phu thuoc thu tu, VA nguoi thang la clip goc chu khong phai bien the
+    #   — tuc dung y dinh ma chu thich kia da viet ra. Do lai sau khi sap: ba
+    #   thu tu cho CUNG mot ket qua, va S0002 -> `002-scene_id-2.mp4`.
+    #
+    # ⚠️ Khong sua nhanh tinh `suffix` o duoi, du no la goc cua van de. Sua o
+    #    day la mot phep sap xep dau vao, doc duoc, va khong doi ngu nghia cua
+    #    bat ky nhanh nao ben trong.
+    clips = sorted(clips, key=_khoa_sap_xep)
 
     timeline = []
     

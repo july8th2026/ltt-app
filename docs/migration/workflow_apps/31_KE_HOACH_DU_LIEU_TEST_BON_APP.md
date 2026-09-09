@@ -65,6 +65,46 @@ Hai tầng **tất định, văn bản, không cần GPU và không cần ffmpeg
 
 ---
 
+### ✅ Đã làm — và nó lộ ra một chỗ phải **cố ý lệch** khỏi bản gốc
+
+`tests/test_1109_parity_video_khop_clip.py` + 4 bộ mẫu job thật (110 KB: chỉ
+`transcript.json` và **tên** clip — tầng này không mở video).
+
+🔴 **Đầu ra của bot phụ thuộc thứ tự thư mục của hệ tệp.** Đo trên `row196`
+(240 clip / 125 cảnh): ba thứ tự đầu vào cho **ba kết quả khác nhau**, và
+**115/125 cảnh đổi clip**. Nguồn: `clip_sampling.py:75` dùng `os.listdir()`
+**không** `sorted()`.
+
+⭐ Khác `random.uniform` của App `transcript`. Cái kia ngẫu nhiên **có chủ đích**.
+Cái này thì mã **đã có** cơ chế phân định — biến `suffix` — và chú thích của nó
+nói rõ ý định:
+
+> `001-scene_id-1.mp4 (suffix=0) > 001-scene_id-1-2.mp4 (suffix=2)`
+
+Nhưng `suffix` chỉ được tính khi `parse_source == "scene_id"`. Tên thật trên
+production **đều có tiền tố** (`002-scene_id-2-2.mp4`) nên đi nhánh `prefix`, và
+`suffix` **luôn bằng 0**. Luật `suffix < current_priority` không bao giờ cắn —
+người thắng là **người đến trước**.
+
+⇒ Đây là **khiếm khuyết**, không phải thiết kế. Bản sửa sắp xếp đầu vào theo
+`(số cảnh, hậu tố, tên)` ngay trong `build_sequential_timeline`: kết quả hết phụ
+thuộc thứ tự, **và** clip gốc thắng biến thể — đúng ý định chú thích đã viết.
+
+⚠️ Đây là thay đổi **duy nhất** trong engine chuyển nguyên vẹn của App này, và
+   nó được khai ở đây vì "parity" với một bản gốc không tất định là một mệnh đề
+   không có nghĩa: không tồn tại **một** đầu ra hợp lệ để so.
+
+Ba mệnh đề khác cũng ghim được, đều đo trên job thật:
+
+| | Mệnh đề |
+|---|---|
+| thiếu clip cho một cảnh | **ném lỗi nêu đích danh** cảnh (`S0069`), không im lặng dựng video hụt |
+| không có clip nào | ném lỗi |
+| `safe_name` | **giữ nguyên tiền tố** — nối tầng bảo mật với tầng khớp clip |
+
+Mệnh đề cuối là ràng buộc thật: bản vá path traversal **không** được thay tên
+bằng UUID, vì `sequential` khớp cảnh bằng tiền tố. Giờ có phép kiểm giữ nó.
+
 ## 3. `audio_pause` — không còn hiện vật, phải đổi phương pháp
 
 ### Vì sao không có
