@@ -23,6 +23,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pathlib
+
 import pytest
 
 from apps.video_assembly import jobs as app_jobs
@@ -268,3 +270,92 @@ def test_cong_tac_TU_CHAM_DIEM_bi_TU_CHOI_khi_chua_co_duong_lay_khoa() -> None:
         **goc, "bat_cham_diem": True,
         "cau_hinh": {"evaluation": {"gemini_api_key": "x" * 8}}})
     assert yc.bat_cham_diem is True
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Mốc tiến độ giữa chừng — và đó là chuyện HUỶ, không phải chuyện hiển thị
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# 🔴 `ctx.progress()` của nền tảng **tự nó** kiểm `JOB_CANCELLED` rồi ném
+#    `JobCancelled` (`job_runner.py:112-116`). Nên huỷ hợp tác đi **nhờ** trên
+#    callback tiến độ, và **mật độ mốc chính là độ trễ huỷ**.
+#
+#    Đo: `video_assembly` chỉ có **3** mốc thẳng trên `est_duration_s=900` ⇒ một
+#    lệnh huỷ phải chờ ~300 giây, và suốt 300 giây đó job vẫn giữ lease **8 GB
+#    VRAM**. `runner.py` có 14 lời gọi `tracker.start_stage`; móc vào đó ⇒ ~64 s.
+
+def test_moc_giai_doan_BAN_len_tien_do(monkeypatch, tmp_path) -> None:
+    from apps.video_assembly.services import dung_video
+    from apps.video_assembly.services.engine import error_context
+
+    clip = tmp_path / "clip"; clip.mkdir()
+    ra = tmp_path / "ra.mp4"
+    moc: list[tuple[int, str]] = []
+
+    def gia_lap(cfg, vin, min_, out, wd):
+        # Giả lập engine: gọi hook như `tracker.start_stage` sẽ gọi.
+        for ten in ("INPUT_VALIDATION", "TRANSCRIPTION", "ASSEMBLE"):
+            if error_context.MOC_NGOAI is not None:
+                error_context.MOC_NGOAI(ten, "")
+        pathlib.Path(out).write_bytes(b"x" * 10)
+
+    monkeypatch.setattr("apps.video_assembly.services.engine.runner.run_local_job",
+                        gia_lap)
+    yc = dung_video.chuan_hoa({"clips": str(clip), "music": ""})
+    dung_video.chay(yc, tmp_path, str(ra), tien_do=lambda p, m: moc.append((p, m)))
+
+    ten_moc = [m[1] for m in moc]
+    assert "INPUT_VALIDATION" in ten_moc and "ASSEMBLE" in ten_moc
+    # Phần trăm phải tăng đều và nằm trong [2, 100].
+    pt = [m[0] for m in moc]
+    assert pt == sorted(pt) and pt[0] >= 2 and pt[-1] == 100
+
+
+def test_HUY_di_thang_qua__khong_bi_goi_lai_thanh_loi_engine(monkeypatch, tmp_path) -> None:
+    """⛔ Bản đầu có `except Exception` gói TẤT CẢ thành `LoiDungVideo`.
+
+    Một lệnh huỷ đi qua `bao()` → `ctx.progress()` → `JobCancelled`, rồi bị cái
+    `except` ấy bắt và **đổi tên thành một thất bại** — khách bấm Huỷ và nhận về
+    một job **LỖI**.
+    """
+    from apps.video_assembly.services import dung_video
+    from apps.video_assembly.services.engine import error_context
+
+    class JobCancelled(Exception):
+        """Cùng TÊN LỚP với lớp của `job_runner` — nhận diện theo tên, không import."""
+
+    clip = tmp_path / "clip"; clip.mkdir()
+
+    def gia_lap(cfg, vin, min_, out, wd):
+        if error_context.MOC_NGOAI is not None:
+            error_context.MOC_NGOAI("TRANSCRIPTION", "")
+
+    def tien_do_huy(pt, mo_ta):
+        raise JobCancelled()
+
+    monkeypatch.setattr("apps.video_assembly.services.engine.runner.run_local_job",
+                        gia_lap)
+    yc = dung_video.chuan_hoa({"clips": str(clip), "music": ""})
+    with pytest.raises(JobCancelled):
+        dung_video.chay(yc, tmp_path, str(tmp_path / "ra.mp4"),
+                        tien_do=tien_do_huy)
+
+
+def test_hook_duoc_GO_trong_finally_du_engine_no(monkeypatch, tmp_path) -> None:
+    """Hook là biến MÔ-ĐUN. Quên gỡ là để nó trỏ vào callback của một job đã chết."""
+    from apps.video_assembly.services import dung_video
+    from apps.video_assembly.services.engine import error_context
+
+    clip = tmp_path / "clip"; clip.mkdir()
+
+    def gia_lap(cfg, vin, min_, out, wd):
+        raise RuntimeError("engine vo")
+
+    monkeypatch.setattr("apps.video_assembly.services.engine.runner.run_local_job",
+                        gia_lap)
+    truoc = error_context.MOC_NGOAI
+    yc = dung_video.chuan_hoa({"clips": str(clip), "music": ""})
+    with pytest.raises(dung_video.LoiDungVideo):
+        dung_video.chay(yc, tmp_path, str(tmp_path / "ra.mp4"),
+                        tien_do=lambda p, m: None)
+    assert error_context.MOC_NGOAI is truoc, "hook khong duoc go sau khi engine no"

@@ -12,7 +12,7 @@ import re
 import traceback
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Callable, Dict, List, Optional, Any
 import json
 
 
@@ -264,6 +264,13 @@ class StageValidator:
         return "\n".join(lines)
 
 
+
+#: Hook tuỳ chọn cho tầng App: `(stage, detail) -> None`, gọi ở đầu mỗi giai đoạn.
+#: `apps/video_assembly/services/dung_video.py` đặt nó rồi gỡ trong `finally`.
+#: `None` = hành vi y hệt bản gốc.
+MOC_NGOAI: "Optional[Callable[[str, str], None]]" = None
+
+
 class ProcessingTracker:
     """
     Tracker để theo dõi progress qua các stages.
@@ -277,7 +284,34 @@ class ProcessingTracker:
         self.start_time = datetime.now()
     
     def start_stage(self, stage: str, detail: str = ""):
-        """Bắt đầu một stage mới"""
+        """Bắt đầu một stage mới.
+
+        ⛔ SAI LECH CO CHU DICH so voi ban goc — hai dong `MOC_NGOAI` duoi day.
+
+        🔴 Vi sao. `ctx.progress()` cua nen tang **tu no** kiem `JOB_CANCELLED`
+           roi nem `JobCancelled` (`job_runner.py:112-116`) — tuc huy hop tac di
+           NHO tren callback tien do. App nao goi tien do thua thi huy nhanh;
+           thua thi huy cham.
+
+           Do: `video_assembly` chi co **3** moc thang tren `est_duration_s=900`
+           => ~300 giay moi moc. Mot lenh huy phai cho toi 5 phut, va trong 5
+           phut do job van giu lease **8 GB VRAM**. Runner nay co **14** loi goi
+           `start_stage`; moc vao day thi con ~64 giay.
+
+        ⚠️ Hook la bien MO-DUN, khong phai tham so — nen no khong an toan neu hai
+           job cua CUNG mot App chay song song trong CUNG mot tien trinh. Hom nay
+           dieu do khong xay ra (worker chay mot job mot luc, va App khai
+           `admission_slots=1`), nhung neu mot ngay nao do doi thi cho nay phai
+           doi theo: chuyen hook thanh tham so cua `__init__`.
+        """
+        if MOC_NGOAI is not None:
+            try:
+                MOC_NGOAI(stage, detail)
+            except Exception:
+                # ⛔ NEM LAI. Ngoai le o day gan nhu chac chan la `JobCancelled`
+                #    — dung thu ta muon truyen len. Nuot no la bien mot lenh huy
+                #    thanh mot job chay tiep tren card.
+                raise
         self.current_stage = stage
         stage_info = {
             "stage": stage,

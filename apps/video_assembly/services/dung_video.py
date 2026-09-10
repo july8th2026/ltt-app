@@ -185,12 +185,47 @@ def chay(yc: YeuCau, thu_muc_lam_viec: Path, duong_ra: str, *,
 
     bao(2, "bat dau")
     cfg = dung_cau_hinh(yc)
+
+    # 🔴 MOC TIEN DO GIUA CHUNG — va no la chuyen HUY, khong phai chuyen hien thi.
+    #
+    #    `ctx.progress()` cua nen tang tu no kiem `JOB_CANCELLED` roi nem
+    #    `JobCancelled` (`job_runner.py:112-116`). Nen mat do moc CHINH LA do tre
+    #    huy. Truoc bản vá: 3 moc thang tren `est_duration_s=900` => mot lenh huy
+    #    phai cho ~300 giay, va trong ca 300 giay do job van giu lease 8 GB VRAM.
+    #
+    #    `runner.py` co 14 loi goi `tracker.start_stage`. Moc vao do => ~64 giay.
+    from .engine import error_context as _ec
+    tong = 14                                    # so `start_stage` trong runner
+    dem = {"n": 0}
+
+    def _moc(stage: str, chi_tiet: str = "") -> None:
+        dem["n"] += 1
+        # 2..96: chua 2 cho "bat dau" va 100 cho "xong".
+        bao(min(96, 2 + int(94 * dem["n"] / tong)), str(stage)[:60])
+
+    _cu = _ec.MOC_NGOAI
+    _ec.MOC_NGOAI = _moc
     try:
         run_local_job(cfg, str(clip), yc.thu_muc_nhac or "", duong_ra,
                       str(thu_muc_lam_viec))
-    except Exception as e:                        # noqa: BLE001 - engine vendor
-        # Gói lại thành lớp lỗi của ta, giữ nguyên chuỗi gốc và traceback.
+    except LoiDungVideo:
+        raise
+    except BaseException as e:
+        # ⛔ `JobCancelled` KHONG duoc goi lai thanh loi engine.
+        #
+        #    Ban dau o day la `except Exception` goi TAT CA thanh
+        #    `LoiDungVideo("engine that bai: ...")`. Mot lenh huy di qua `bao()`
+        #    -> `ctx.progress()` -> `JobCancelled`, roi bi cai `except` ay bat va
+        #    doi ten thanh mot that bai — khach bam Huy va nhan ve mot job LOI.
+        #
+        # ⚠️ Nhan dien theo TEN LOP chu khong import `job_runner`: tang App khong
+        #    duoc phu thuoc vao noi bo cua worker, va `ranh gioi import giua cac
+        #    tang` cua gate soi dung dieu do.
+        if type(e).__name__ == "JobCancelled" or isinstance(e, KeyboardInterrupt):
+            raise
         raise LoiDungVideo(f"engine that bai: {type(e).__name__}: {e}") from e
+    finally:
+        _ec.MOC_NGOAI = _cu
 
     ra = Path(duong_ra)
     if not ra.is_file() or ra.stat().st_size == 0:
