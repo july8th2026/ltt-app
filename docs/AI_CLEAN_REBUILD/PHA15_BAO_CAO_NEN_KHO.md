@@ -125,10 +125,10 @@ văn thân hàm cũ** trên cùng dữ liệu), và xoá 4 hàng khỏi CSDL (c�
 
 ---
 
-## 5. BỐN việc NGOÀI PHẠM VI — báo cáo, không tự sửa
+## 5. NĂM việc NGOÀI PHẠM VI — báo cáo, không tự sửa
 
 Gói chiến dịch dặn: *vấn đề ngoài phạm vi thì viết báo cáo, đừng mở rộng chiến
-dịch*. Bốn thứ dưới đây đều thật, đều không phải việc của chiến dịch này:
+dịch*. Năm thứ dưới đây đều thật, đều không phải việc của chiến dịch này:
 
 1. **`tools/i18n.py thieu` so `mtime`.** Sau bất kỳ lượt `ff`/`merge` nào nó có
    thể báo *"`.mo` cũ hơn `.po`"* thuần tuý vì **thứ tự git ghi hai tệp** —
@@ -234,6 +234,23 @@ Họ tự rút ở `4b89bf94` sau khi phiên `ltt-voice-98-upgrade` bắt đư�
 Gốc chung: **hỏi một câu gần đúng rồi nhận câu trả lời như thể nó là câu mình
 muốn hỏi.**
 
+5. **Bước `ky tu dieu khien` chỉ nằm trong gate đầy đủ, không trong `pre-commit`.**
+
+   Ca thật, và cái giá chia không đều: **một byte của tôi** (`0x07`, §5e) đi
+   qua `pre-commit` — bốn bánh cóc chạy lúc commit **không** có bước ấy — rồi
+   nổ ở **lượt gate của phiên khác**, sau khi họ ff trunk. Họ mất thời gian
+   tìm trong thay đổi của **chính họ** trước khi thấy nó không phải của mình.
+
+   ⭐ Cách đặt vấn đề hay nhất đến từ phiên `auto-scan-video-analysis-plan`,
+      tức chính người trả giá: *“đó là một **tính chất của hàng rào**, không
+      phải một lần bất cẩn của bạn. Người ff sau luôn là người trả giá cho
+      khoảng cách ấy — đó là thứ đáng sửa ở hàng rào, không phải ở người.”*
+
+   ⛔ **Cả hai phiên đều không tự sửa, và cùng một lý do:**
+      `.pre-commit-config.yaml` là tệp **dùng chung**, và thêm một bước vào đó
+      làm chậm **mọi lượt commit của mọi phiên**. Đó là một **đánh đổi** thuộc
+      về chủ dự án, không phải một **lỗi** thuộc về phiên nào phát hiện ra nó.
+
 ### Và một phép đo đóng lại nghi vấn "thu 0"
 
 ```
@@ -329,6 +346,34 @@ dạng **văn bản thuần**, giá trị đầy đủ. Họ không chép giá t
   không còn đường gọi, không còn khoá trong `secrets\app.env` (4→0), và
   không còn khoá trong bảng `api_keys` (4 khoá **đang sống** → 0). Xoay khoá
   của một hệ thống khác là quyết định của chủ dự án.
+
+## 5g. ⭐ HAI LOẠI CHỐT, HAI CÁCH ĐẶT NGƯỠNG
+
+Khi thêm `test_BA_TAP_NEN_khong_duoc_rong` (đặt `DA_XOA >= 4` trên mức thật 5),
+phiên `auto-scan-video-analysis-plan` nêu ra một phân biệt đáng giữ:
+
+| | Bánh cóc | Đối chứng chống-xanh-rỗng |
+|---|---|---|
+| Chốt cái gì | **TẬP HỢP** | **sự tồn tại** của tập |
+| Khi tập đổi | phải sửa, và **bản sửa hiện trong diff** | không được phải sửa |
+| Ai review | người đọc diff thấy ngay | **không ai** — `assert len(...) >= N` trông vô hại |
+| Nên canh | sự **thay đổi** | sự **sụp đổ** |
+
+⇒ Đó là lý do ngưỡng đặt **thấp hơn nhiều** mức thật. Một `>= 4` trên mức 5
+  không bắt ai sửa khi danh sách thêm một mục, nhưng vẫn nổ khi tập sụp xuống
+  rỗng. Ngược lại, một `>= 5` sát mức thật sẽ bắt sửa thường xuyên — và **một
+  phép kiểm phải sửa thường xuyên là một phép kiểm sắp bị ai đó vô hiệu hoá.**
+
+### ⚠️ Và luật ấy quay lại cắn chính người viết ra nó
+
+Họ viết luật *“phải có mệnh đề dương”* trong một tin nhắn gửi tôi, rồi đi soát
+lại và thấy **chính họ** vừa vi phạm nó hai giờ trước ở `test_466`: hai `not in`
+đứng một mình, không kèm khẳng định nào rằng chuỗi lọc **có tồn tại**.
+
+⭐ Và thứ bắt được nó không phải họ tự nhìn, mà là việc tôi đi soát **năm phép
+   kiểm của mình** theo luật của họ rồi **kể lại kết quả** — cả phần tôi thiếu.
+   Một luật được phát biểu thì dễ đồng ý; nó chỉ bắt đầu bắt được lỗi khi có
+   người **áp nó vào một danh sách cụ thể và công bố số đếm**.
 
 ## 6. Nén kho
 
