@@ -30,7 +30,8 @@ pha; chép lại vào đây là tạo một bản sẽ trôi.
 | 11 | Overlay controls | **XONG** | `efbcfb4a` + `42512fd8` (11a chữ) · `d78d1804` (11b logo, sau khi pha 08 mở đường nhập ảnh). Xem `PHA11_LOP_PHU_CHU.md` |
 | 12 | Region editor v2 | **XONG** | `8c4a1d35` (giờ có tác dụng thật) + `8cd5b281` (giao diện đặt giờ) |
 | 13 | Watermark/logo intelligence | **XONG — remove ĐỂ TẮT** | `tools/do_watermark.py`. 🔴 Cổng **tài nguyên ĐẠT** (`delogo` 8,9e-5 s/khung → 4,8 s cho video 30 phút / ngân sách 540 s) nhưng cổng **chất lượng KHÔNG ĐẠT**: bộ dò tìm *vùng tĩnh* chứ không tìm *watermark*. Ba trục đã thử, ba phép đo. Xem `PHA13_NHAN_DIEN_WATERMARK.md` |
-| 14–34 | — | **CHƯA MỞ** | |
+| 14 | Subtitle capability integration | **KHẢO SÁT XONG, chưa viết mã** | Thiết kế đã chốt. 🔴 **Một chặn phải đo trước**: `che_do_render.loc_cat_noi` cắt-rồi-nối nên mốc bản ra khác mốc nguồn, trong khi bộ lọc `ass=` đọc mốc **tuyệt đối** — phải biết `long_tieng.doan[].bat` tính theo trục nguồn hay trục ra. Pha 11 đã giải đúng bài này cho lớp phủ bằng `_anh_xa_cua_so`. Xem `PHA14_KHAO_SAT.md` §0 |
+| 15–34 | — | **CHƯA MỞ** | |
 
 ## Nợ kỹ thuật mở, không thuộc pha nào
 
