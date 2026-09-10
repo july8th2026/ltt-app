@@ -22,16 +22,20 @@ Nguồn: `docs/migration/workflow_apps/01_SOURCE_MANIFEST.md`.
 | 10 Build GEM | **XONG** | `apps/prompt_canh` (đổi slug) · `test_1105` | — | — |
 | 11 Build Video Assembly | **XONG** | `apps/video_assembly` · `test_1106` | — | — |
 | 12 Legacy workflow rebuild | **MỘT PHẦN** | `32_PHASE12_...md` · `tests/test_1111` — 4 App chạy được như node, dữ liệu chảy giữa 2 node | Canvas/V2 **không có bộ thi hành**; Drive/Sheets connector chưa audit | 13 |
-| 13 Workflow hardening | **MỘT PHẦN** | `33_...md` · `tests/test_1112` (hai chỗ khai VRAM) · `tests/test_1106` (mật độ mốc = độ trễ huỷ) | đã quét hết 10 nhóm bằng chứng | 14 |
+| 13 Workflow hardening | **XONG** | `33_...md` · `tests/test_1112` (hai chỗ khai VRAM) · `tests/test_1106` (mật độ mốc = độ trễ huỷ) | đã quét hết 10 nhóm bằng chứng | 14 |
 | 14 Agent re-evaluation | **XONG** | `34_PHASE14_AGENT.md` · `tests/test_1113` — `AGENT_CHANGE_REQUIRED: NO` | planner rate cần máy B | 15 |
 | 15 Final cutover | **MỘT PHẦN** | `29_FINAL_CUTOVER.md` — ma trận + tuyên bố cuối | cả 4 App **NOT READY**: chặn chung là E2E thật qua worker | — |
 
-## Gate L3 chốt — 2026-09-10T18:50Z, commit `82a449aa`
+## Gate L3 chốt — 2026-09-11, commit `7b9f030a`
 
 ```
 RESULT: FAIL (1/32)      7 BUOC TU BO QUA (cau hinh, khong phai tai)
-bo test: 7 failed, 9118 passed, 61 skipped, 1 xfailed   in 607,88s
+bo test: 7 failed, 9122 passed, 61 skipped, 1 xfailed   in 757,90s
 ```
+
+⭐ Hai lượt liên tiếp cho **cùng** kết quả (lượt trước `82a449aa`: 7 failed /
+9118 passed), và tập bỏ qua giữ nguyên 7 bước. Số xanh tăng đúng 4 — bốn phép
+kiểm mới của lượt quét Phase 13.
 
 **Bảy lỗi, tất cả `test_448_asv_v4_e2e_nghiem_thu.py` — không lỗi nào của chương
 trình này.** Đọc từ `test-results/gates/loi-13512-bo-test--song-song.log`, không
