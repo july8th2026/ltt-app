@@ -1051,3 +1051,99 @@ tôi** — [[loc-tien-trinh-bang-chuoi-tu-khop-vao-chinh-no]], lần thứ năm.
 
 ⇒ Con số ấy **không** chứng minh cổng cờ hoạt động. Thứ chốt nó là `test_514`.
 Cờ vẫn **tắt** trên production, nên `/phat-dan` chưa mở cho khách.
+
+---
+
+## B-04 — 20/20 giọng, và bốn lượt để tới đó
+
+**Mục 39: 30 → 92** (trần 75 → 100) · **Mục 40: `UNKNOWN` → 80** (trần 90) ·
+trung bình 74 mục có số: **86,32 → 87,07** · số mục ≥ 98 **vẫn là 0**.
+
+    min 11,31 (Đức Trí)   max 18,49 (Thùy Dung)   chenh 1,63x
+    cham hon hang so 18 : 19/20 giong
+    do lap lai: hai luot doc lap cach nhau 17 phut
+                lech trung binh 0,67%   lon nhat 1,90% (Quang Sơn)
+
+⭐ Chốt tôi viết là `< 1,5 %` và nó trả **False**. Phép kiểm nói thật thay vì tôi
+tự khen — con số đúng là 1,90 %.
+
+### Tiền — và vì sao không phải sửa dòng mã nào
+
+    n=  200  lui  12,61s   Đức Trí can  18,06s   thieu 30%   (lui du cho 6/20)
+    n= 1000  lui  57,06s   Đức Trí can  90,04s   thieu 37%   (lui du cho 1/20)
+    n= 5000  lui 279,28s   Đức Trí can 449,98s   thieu 38%   (lui du cho 0/20)
+
+Chiều nguy hiểm là **giữ THIẾU**: quyết toán thu theo giây **thật** (ffprobe),
+nên ước thấp hơn thật là giữ không đủ. Có dữ liệu thì `gia.giay_uoc` tự chuyển
+sang đường theo giọng ⇒ lỗ đóng **mà không sửa một dòng mã nào**. Mô hình hai
+tham số đặt đúng chỗ từ đầu.
+
+### Bốn lượt, và lượt tệ nhất là lượt THÀNH CÔNG
+
+| lượt | kết cục | nguyên nhân |
+|---|---|---|
+| 11:23 | chết sau 1 s | `UnicodeEncodeError` — stdout chuyển hướng ⇒ `cp1252` |
+| 11:32 | từ chối | rào tự vệ của tool khớp `gate.py|pytest` theo **tên**, không theo tải |
+| 11:42 | 1/20 | 19 giọng nhận 429 |
+| 11:45 | **20/20** | ⛔ **rồi TÔI tự xoá mất** |
+| 12:05 | **20/20** | lượt giữ lại |
+
+⛔ Lượt 11:45 thành công trọn vẹn, rồi tôi viết một kịch bản so sánh giá **ghi
+thẳng vào `ho_so_giong.json`** để đổi qua lại hai trạng thái. Nó `TypeError`
+**giữa chừng**, để tệp ở trạng thái "trước"; bản thứ hai đọc đúng trạng thái
+hỏng ấy làm "sau" rồi ghi đè lại. Kết quả: hai bảng giống hệt nhau, và tôi suýt
+kết luận *"dữ liệu mới không đổi gì về tiền"* — **sai hoàn toàn**, rút từ hai
+lần đọc cùng một tệp rỗng.
+
+Đúng `chot-khong-duoc-ghi-vao-cay`, luật tôi **có sẵn trong memory**.
+
+⭐ Lượt 12:05 làm khác ba chỗ: phép phân tích viết **chỉ đọc** (số học thuần,
+không mutate gì), **thử trên fixture giả** trước khi lượt đo xong, và **sao lưu
+ngay** khi có kết quả. Dữ liệu khớp bản sao sau **mọi** thao tác sau đó.
+
+### Ba bản vá gốc rút ra từ các lượt hỏng
+
+1. **`DauPhanHoi`** — `_goi` trả `dict(r.headers)` làm mất tính không-phân-biệt
+   hoa/thường của HTTP. Lỗi **sống trên production**: `jobs.py` đọc `X-Gen-S`
+   luôn ra `None`, bị `_so()` biến thành `0.0` im lặng ⇒ `gen_s` bằng 0 ở **mọi**
+   lượt sinh và phép đối chiếu ffprobe **chưa từng chạy**.
+2. **`write_text` thiếu `newline="\n"`** — ghi CRLF vào tệp mà git giữ LF.
+   Hỏng ở đây đắt hơn bình thường: tệp bị ghi lại **toàn bộ** nên `git diff`
+   không đọc được, và người sau không phân biệt được *"đo ra số khác"* với
+   *"chỉ đổi kết dòng"*.
+3. **`ra` rỗng vẫn ghi bản ghi "đã đo"** — xem mục trước.
+
+### 🔴 Cơ chế 429 — chẩn lại, và bản sau đúng hơn
+
+Tôi ghi *"lượt của phiên ASV đang giữ suất"*. Phiên ấy đếm `voice-err.log` và
+bác lại: **11:40–11:42 gần như rỗng** — nếu họ giữ semaphore thì cổng phải bận,
+không phải im.
+
+Thứ thật sự xảy ra: `DangBanTam` mang `retry_after_s`, nên worker đưa job về
+`resource_wait` và **lùi** (đo được: 20 s · 20 s · **167 s** · 20 s · 10 s).
+Trong quãng lùi cổng **rảnh**, vòng lặp của tôi lấy được; job họ quay lại thì
+cổng đầy.
+
+🔑 **Với `_Cong` là semaphore một-suất-không-chờ, kết cục không do ai tham lam
+mà do HÌNH DẠNG hai bên: một vòng lặp chặt luôn thắng một job biết lùi.** Càng
+lùi lâu càng thua ⇒ bên lịch sự thua **có hệ thống**.
+
+⇒ Căn cứ thiết kế cho `may_tao_tieng`: **semaphore ở tầng runtime không phân xử
+được, nó chỉ từ chối.** Nó không biết ai đã chờ bao lâu nên không thể công bằng.
+Khoá ở tầng trên — xin trước, không có thì **bỏ cuộc sạch** (mã 75, khuôn
+`tools/giu_may_b.py`) — là thứ duy nhất biến *"ai nhanh tay"* thành *"ai tới
+trước"*. ⛔ Và chốt phải chép là **hành vi bỏ cuộc**, không phải đoạn mã:
+`CuaSoYen` mặc định hết giờ chờ thì **vẫn chạy**, đúng cho `cpu_nhieu` (chen chỉ
+làm chậm) và **sai** cho tài nguyên một suất (chen làm hỏng **cả hai** phía).
+
+### ⚠️ Và một đính chính cho chính tôi
+
+Tôi ghi rằng phép đo *"sidecar CPU 0 giây/15 s"* của mình là một **ảnh chụp rơi
+vào khe** giữa hai lượt gọi. Không phải: lúc ~11:44 phiên kia đang trong nhịp
+lùi **167 giây**, tức họ thật sự không gọi gì. **Phép đo đúng.** Cái sai là câu
+tôi rút ra từ nó — nó trả lời *"lúc này không ai gọi"*, còn tôi đọc thành
+*"không ai đang cần"*. Hai câu ấy khác nhau khi đối thủ là một job biết lùi.
+
+⇒ Ghi đúng hạng: [[pham-vi-phep-do-hep-hon-loi-tuyen-bo]], **không** phải một
+phép đo hỏng. Ghi nhầm hạng thì lần sau tôi sẽ đi cải tiến phép đo — thứ vốn đã
+đúng — thay vì thu hẹp lời tuyên bố.
