@@ -16,6 +16,67 @@
 
 
 
+## 2026-09-11 — DEPLOY Q121 + audit cửa: `4a894036` lên production
+
+`EXITCODE=0` · nghiệm thu **0/0/0** trên 636 tệp `.py` · `/health/ready` **200**
+ở cả loopback lẫn **URL công khai** · `origin` = trunk cục bộ = production.
+
+### 🔴 Kiểm TRƯỚC khi chạm production bắt được một thứ sắp làm hỏng việc người khác
+
+Hỏi máy chủ đang chạy bản nào **trước** khi deploy:
+
+```
+production dang chay   99f199d4   (build 00:22, 28 phut truoc)
+99f199d4 co phai to tien nhanh toi?  ->  KHONG
+```
+
+Một phiên khác (`ltt-voice-inference-hardening`) vừa hoà trunk và deploy. Deploy
+chép **cả cây**, nên deploy nhánh này lúc ấy sẽ **lùi** việc họ vừa đưa lên — trong
+3 commit tôi thiếu có `4bd26f52` *"chặn double-submit ở cửa Studio (thu tiền hai
+lần)"*, một bản vá **tiền** ở đúng cửa tôi vừa audit.
+
+⭐ `memory: hoi-may-chu-dang-chay-ban-nao` ghi *"hỏi SAU deploy thì vô dụng"*. Đây
+   là lần đầu câu ấy **trả công**: hỏi trước đổi một lượt deploy hỏng thành một
+   lượt hoà trunk.
+
+### Lệch mốc lần hai — và lần này mốc có đủ hai vế nên nó bắt được
+
+Gate sau khi hoà: `FAIL (2/32)` thay vì 1. Bước thứ hai: `trung so test` — số
+**502** bị trùng giữa hai tệp, **cả hai đều trên trunk** (08/09 và 10/09). Tức
+chính bản production đang chạy đỏ ở bước đó trước khi tôi chạm vào.
+
+Bánh cóc ấy chốt **TẬP HỢP**: tổng số trùng *giảm* (21 < mốc 22) mà vẫn đỏ, vì
+có một **số MỚI** trùng. Đổi tên tệp mới hơn → `test_519`, không xin miễn trừ.
+
+📌 **Không hạ mốc xuống 20** dù công cụ mời: hạ một mốc dùng chung từ một nhánh
+   riêng là bẫy *"bản vá MỘT PHÍA phạt người sửa đúng"*.
+
+### Cái giữ cho 3 bước postgres bị bỏ qua không thành rủi ro
+
+Ba bước ấy tự bỏ qua vì phiên mất quyền đọc `secrets/app.env` sau resume — và hai
+trong ba là **migration**. Phép đo làm nó vô hại cho ĐÚNG lượt deploy này:
+
+```
+git diff --name-only 99f199d4 HEAD -- alembic/versions/   ->  RONG
+alembic head                                              ->  duy nhat
+```
+
+0 migration mới so với bản đang chạy ⇒ không có gì để migrate, nên bước bị bỏ qua
+không che giấu điều gì. ⚠️ Câu này **chỉ đúng cho lượt này** — lượt sau có migration
+thì ba bước ấy phải chạy thật.
+
+### ⛔ ThỨ TÔI KHÔNG KIỂM ĐƯỢC, nói thẳng
+
+**GUI trên production.** `curl` và trình duyệt tự động đều bị Cloudflare thách đố
+(`Cf-Mitigated: challenge`, trang *"Just a moment..."*). Studio cần đăng nhập bằng
+tài khoản thật.
+
+⇒ Thứ tôi **có** bằng chứng: 636 tệp `.py` trên máy chủ khớp **từng byte** với
+  commit, và toàn bộ hành vi chặn làn đã đo trên trình duyệt thật ở `studio_dev`
+  **của chính bản đã hoà**. Thứ tôi **không** có: một lượt bấm thật trên
+  `app.lttstudios.com`. Hai câu đó khác nhau và tôi không gộp chúng.
+
+
 ## 2026-09-10 (chiều) — Hoà trunk vào Q121: hai lỗ chỉ hiện ra khi hai nhánh gặp nhau, và hai phép kiểm xanh vì lý do sai
 
 Tiếp mục Q121 ở trên. Nhánh `claude/voice-language-compatibility-440bfd`,
