@@ -797,17 +797,12 @@ if (Test-Path $envFile) {
     Ok 'Da sinh app.env voi bi mat ngau nhien'
 }
 
-# Bao dam co token cho SIDECAR Codex (CHAT AI STUDIO). Idempotent: chi them neu thieu.
-# Token bao ve dich vu loopback LTTStudioCodex (chi web/worker cung may goi duoc).
-$envTxt = Get-Content $envFile -Raw
-if ($envTxt -notmatch 'LTT_CODEX_SIDECAR_TOKEN=') {
-    $codexTok = & $venvPy -c "import secrets;print(secrets.token_urlsafe(32))"
-    $add = "LTT_CODEX_SIDECAR_TOKEN=$codexTok`r`nLTT_CODEX_SIDECAR_PORT=8110`r`nCODEX_SERVER_HOME=$dataDir\codex-home"
-    [IO.File]::AppendAllText($envFile, "`r`n" + $add + "`r`n", (New-Object Text.UTF8Encoding($false)))
-    Ok 'Da them LTT_CODEX_SIDECAR_TOKEN + port + CODEX_SERVER_HOME vao app.env'
-} else {
-    Ok 'LTT_CODEX_SIDECAR_TOKEN da co - GIU NGUYEN'
-}
+# Khoi sinh LTT_CODEX_SIDECAR_TOKEN da GO 09/09/2026 (pha 07): khong con dich vu
+# nao doc no.
+#
+# CANH BAO: Go khoi SINH khong xoa token DA CO trong `app.env` cua may chu. Do la mot bi
+#    mat cua mot dich vu da chet, va viec don no thuoc pha 09 (provider config /
+#    secret clean) - ghi ra day de no khong bien mat khoi tam mat.
 
 $envTxt = Get-Content $envFile -Raw
 if ($envTxt -notmatch '(?m)^LTT_WHISPERX_PYTHON=') {
@@ -1003,29 +998,24 @@ if ($existingW) {
 & $nssmExe set $WorkerServiceName AppEnvironmentExtra ($envPairs -join "`r`n") | Out-Null
 Ok 'Da nap bi mat vao moi truong worker'
 
-Head 'Dich vu Sidecar Codex (CHAT AI STUDIO)'
-# SIDECAR giu Codex app-server song (stateful) tach khoi web/worker. Chi nghe loopback,
-# bao ve bang LTT_CODEX_SIDECAR_TOKEN. Chi CHAT + anh (sandbox read-only).
+Head 'Go dich vu Sidecar Codex (da ngung 09/09/2026)'
+# AI CLEAN REBUILD V2 pha 07: app CHAT AI STUDIO va toan bo `codex_sidecar/` da
+# bi xoa khoi ma nguon. Nhung XOA MA KHONG GO MOT DICH VU WINDOWS: dich vu
+# LTTStudioCodex van dang chay tren may chu, van tro vao `app\` (nen no giu thu
+# muc ay khi cap nhat), va van tu khoi dong lai sau moi lan reboot.
+#
+# CAM: Khoi nay phai la GO, khong phai "khong lam gi". Bo khoi cai di ma khong go
+#    thi lan cap nhat sau se co mot dich vu tro toi mot tep khong con ton tai:
+#    no fail lien tuc, ghi day log, va khong ai biet vi sao.
 $CodexServiceName = 'LTTStudioCodex'
 $existingC = Get-Service $CodexServiceName -ErrorAction SilentlyContinue
 if ($existingC) {
     if ($existingC.Status -eq 'Running') { Stop-Service $CodexServiceName -Force; Start-Sleep -Seconds 2 }
-    Ok "Dich vu $CodexServiceName da co - cap nhat cau hinh"
+    & $nssmExe remove $CodexServiceName confirm | Out-Null
+    Ok "Da go dich vu $CodexServiceName (ma nguon da xoa o pha 07)"
 } else {
-    & $nssmExe install $CodexServiceName $venvPy 'codex_sidecar_main.py' | Out-Null
-    Ok "Da tao dich vu $CodexServiceName"
+    Ok "Dich vu $CodexServiceName khong con - khong phai lam gi"
 }
-& $nssmExe set $CodexServiceName AppDirectory   $appDir | Out-Null
-& $nssmExe set $CodexServiceName AppStdout      (Join-Path $logs 'codex-out.log') | Out-Null
-& $nssmExe set $CodexServiceName AppStderr      (Join-Path $logs 'codex-err.log') | Out-Null
-& $nssmExe set $CodexServiceName AppRotateFiles 1 | Out-Null
-& $nssmExe set $CodexServiceName AppRotateOnline 1 | Out-Null
-& $nssmExe set $CodexServiceName AppRotateBytes 10485760 | Out-Null
-& $nssmExe set $CodexServiceName Start          SERVICE_AUTO_START | Out-Null
-& $nssmExe set $CodexServiceName AppExit Default Restart | Out-Null
-& $nssmExe set $CodexServiceName AppRestartDelay 10000 | Out-Null
-& $nssmExe set $CodexServiceName AppEnvironmentExtra ($envPairs -join "`r`n") | Out-Null
-Ok 'Da nap bi mat vao moi truong sidecar codex'
 
 Head 'Dich vu Giong noi (LTT VOICE)'
 # Phan CAI DAT da chay o tren, TRUOC khi dung dich vu nao. Khoi nay chi con viec

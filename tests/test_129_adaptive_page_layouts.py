@@ -34,7 +34,6 @@ def test_multi_column_apps_declare_their_page_mode() -> None:
         "wide": (
             "apps/thumbnail/templates/thumbnail.html",
             "apps/taoanh/templates/image.html",
-            "apps/chataistudio/templates/chataistudio.html",
             "apps/taoclipngan/templates/taoclipngan.html",
         ),
     }

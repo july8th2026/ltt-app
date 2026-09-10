@@ -137,26 +137,34 @@ def test_openai_may_be_NAMED_AS_A_FORMAT_but_never_AS_A_MODEL():
 
 
 def test_model_choice_is_published_only_where_price_follows_it():
-    """Otherwise a caller buys the dearest model at the cheapest price."""
+    """Otherwise a caller buys the dearest model at the cheapest price.
+
+    🔴 Rewritten 2026-09-09 (AI CLEAN REBUILD V2 pha 06.3). The rule in the
+       title is unchanged; what changed is which side of it `image.generate`
+       falls on.
+
+       It used to publish three aliases over three Gemini models, and that was
+       correct *because the price followed the choice* (5 / 5 / 8). The tool now
+       runs a single internal model priced per image, so the choice buys
+       nothing — and publishing it would sell three names for one product.
+       The whole alias block went with the engine; see CHANGELOG.md.
+    """
     config = load_public_api_config(
         {"LTT_PUBLIC_API": "1", "LTT_PUBLIC_API_TOOLS": ",".join(WAVE1)})
     catalog = {tool.name: tool for tool in build_catalog(config)}
 
-    from apps.taoanh.manifest import unit_credit
-
     image = catalog["image.generate"]
-    # 🔴 `pro` DA BI GO 23/08 — mot thay doi PHA VO hop dong, da ghi o
-    #    `docs/PUBLIC_API/CHANGELOG.md` muc "BREAKING - 2026-08-23".
-    #    Ly do: `gemini-3-pro-image` co gia von 35,2 credit/anh trong khi nen tang
-    #    ban 16 — tuc la ban duoi gia von ~55 %. Dong mot bac la cach xu ly dut
-    #    diem hon la mot muc mien tru trong `test_261`.
-    assert set(image.input_schema["properties"]["model"]["enum"]) == {
-        "standard", "standard-lite", "enhanced"}
-    # Each alias resolves to a model the cost function prices differently.
-    prices = {alias: unit_credit(image.resolve_model(alias))
-              for alias in image.model_aliases}
-    assert prices == {"standard": 5, "standard-lite": 5, "enhanced": 8}
-    assert "pro" not in prices, "bac pro da dong — mo lai phai la mot quyet dinh"
+    assert "model" not in image.input_schema["properties"], (
+        "gia thoi phu thuoc model — cong bo lua chon la ban ba ten cho mot mon")
+    assert not image.model_aliases
+
+    # ⭐ Đối chứng: luật này chỉ có nghĩa nếu nó CÒN cho phép công bố ở nơi giá
+    #    thật sự đi theo model. Thiếu vế này thì "không tool nào công bố model"
+    #    cũng làm phép kiểm xanh — kể cả khi cơ chế công bố đã hỏng hẳn.
+    day_du = load_public_api_config(
+        {"LTT_PUBLIC_API": "1", "LTT_PUBLIC_API_TOOLS": ",".join(PUBLISHED)})
+    video = {t.name: t for t in build_catalog(day_du)}["video.generate"]
+    assert video.input_schema["properties"]["model"]["enum"]
 
     # The thumbnail tool prices every image the same, so it publishes no choice.
     assert "model" not in catalog["image.thumbnail"].input_schema["properties"]
@@ -181,17 +189,17 @@ def api(tmp_path, monkeypatch):
 
     Base.metadata.create_all(get_engine())
 
-    # The provider call is the only thing stubbed: the prompt building, storage,
-    # credit reporting and result shape all run for real.
+    # The render gateway is the only thing stubbed: the prompt building,
+    # storage, credit reporting and result shape all run for real.
+    #
+    # 🔴 Pha 06.3: trước đây chỗ này vá `_goi_gemini` của cả hai app. Cả hai
+    #    hàm ấy đã bị xoá cùng động cơ Gemini, nên ranh giới vá mới là
+    #    `_dieu_phoi()` — đúng chỗ được tách ra để tiêm được mà không chạm mạng.
     import apps.taoanh.jobs as taoanh_jobs
     import apps.thumbnail.jobs as thumbnail_jobs
+    from tests.gia_dieu_phoi_anh import tiem as _tiem_dieu_phoi
 
-    def _fake_gemini(prompt, aspect_ratio, api_key, model=None, *args, **kwargs):
-        """One call, one PNG — the same contract the real client has."""
-        return PNG
-
-    monkeypatch.setattr(thumbnail_jobs, "_goi_gemini", _fake_gemini)
-    monkeypatch.setattr(taoanh_jobs, "_goi_gemini", _fake_gemini)
+    _tiem_dieu_phoi(monkeypatch, thumbnail_jobs, taoanh_jobs)
 
     from server.app import create_app
 
@@ -270,20 +278,27 @@ def _run_worker_once() -> bool:
 
 def test_thumbnail_runs_end_to_end_through_the_worker(api):
     user_id, token = _account()
-    payload = {"topic": "cách nướng bánh mì", "title": "5 mẹo",
-               "text_style": "bold_impact", "aspect_ratio": "16:9", "count": 2}
+    # ⛔ `title` và `text_style` đã rời hợp đồng ở pha 06.3 cùng chữ-trong-ảnh —
+    #    gửi chúng nay là `400 Unknown input field`, và đó là hành vi ĐÚNG.
+    payload = {"topic": "cách nướng bánh mì", "phong_cach": "cinematic",
+               "aspect_ratio": "16:9", "count": 2}
     quote, created = _quote_and_run(api, token, "image.thumbnail", payload,
                                     "wave1-thumbnail-001")
     assert created.status_code == 201, created.text
     job_id = created.json()["id"]
-    # Two images at the tool's flat price.
-    assert quote["credit"] == 10 and created.json()["credit"]["held"] == 10
+    # Hai ảnh, theo đúng HÀM GIÁ của app — không gõ lại con số ở đây. Con số cũ
+    # (10) là giá của động cơ cũ; một hằng số gõ tay chỉ đo được rằng ai đó chưa
+    # sửa nó.
+    from apps.thumbnail.manifest import _cost as _gia_thumbnail
+    gia_hai_anh = _gia_thumbnail({"count": 2})
+    assert quote["credit"] == gia_hai_anh
+    assert created.json()["credit"]["held"] == gia_hai_anh
 
     assert _run_worker_once() is True
 
     detail = api.get(f"{API_V1_PREFIX}/jobs/{job_id}", headers=_auth(token)).json()
     assert detail["status"] == "succeeded"
-    assert detail["credit"] == {"held": 10, "charged": 10}
+    assert detail["credit"] == {"held": gia_hai_anh, "charged": gia_hai_anh}
     assert len(detail["outputs"]) == 2
 
     # The artifact resolves, downloads, and never shows a storage key.
@@ -293,35 +308,50 @@ def test_thumbnail_runs_end_to_end_through_the_worker(api):
     assert described.status_code == 200 and "thumbnail/" not in described.text
     content = api.get(f"{API_V1_PREFIX}/artifacts/{artifact}/content",
                       headers=_auth(token))
-    assert content.status_code == 200 and content.content == PNG
+    # Bytes do MÁY VẼ sinh ra (thật hay giả), không phải hằng số của tệp này.
+    assert content.status_code == 200 and content.content[1:4] == b"PNG"
 
     # Usage and balance agree with the ledger.
     usage = api.get(f"{API_V1_PREFIX}/usage", headers=_auth(token)).json()
-    assert usage["totals"]["net_charged_credit"] == 10
+    assert usage["totals"]["net_charged_credit"] == gia_hai_anh
     assert api.get(f"{API_V1_PREFIX}/credits/balance",
-                   headers=_auth(token)).json()["balance"] == 490
+                   headers=_auth(token)).json()["balance"] == 500 - gia_hai_anh
 
 
-def test_image_generation_prices_by_model_alias(api):
+def test_image_generation_no_longer_sells_a_model_choice(api):
+    """🔴 Thay `test_image_generation_prices_by_model_alias` (pha 06.3).
+
+    Bản cũ chốt *"alias rẻ 5, alias đắt 8, và alias tới handler dưới dạng id
+    thật"*. Cả ba mệnh đề chết cùng khối alias: một model, một giá.
+
+    ⭐ Cái thay nó chốt hai thứ MẠNH HƠN, vì cả hai đều là điều kiện an toàn chứ
+       không phải mô tả bảng giá:
+
+         · một alias cũ gửi lên phải bị **từ chối**, không được lặng lẽ rơi về
+           model mặc định rồi tính tiền như thường;
+         · giá **không** đổi theo `model`, nên không có cách nào mua model đắt
+           với giá rẻ — chính điều mà bản cũ phải dùng ba lượt gọi để canh.
+    """
     user_id, token = _account()
-    cheap, _created = _quote_and_run(
-        api, token, "image.generate",
-        {"prompt": "a red bicycle", "model": "standard", "count": 1},
-        "wave1-image-cheap01")
-    # `pro` da dong 23/08 (xem CHANGELOG), nen bac dat nhat con lai la `enhanced`.
-    dear, _created2 = _quote_and_run(
-        api, token, "image.generate",
-        {"prompt": "a red bicycle", "model": "enhanced", "count": 1},
-        "wave1-image-dear001")
-    assert cheap["credit"] == 5 and dear["credit"] == 8
+    tu_choi = api.post(f"{API_V1_PREFIX}/quotes",
+                       json={"tool": "image.generate",
+                             "input": {"prompt": "a red bicycle",
+                                       "model": "enhanced", "count": 1}},
+                       headers=_auth(token))
+    assert tu_choi.status_code == 400, tu_choi.text
+    assert "model" in tu_choi.text
 
-    # And the alias reaches the handler as the real model id, never as the alias.
+    mot, _created = _quote_and_run(
+        api, token, "image.generate", {"prompt": "a red bicycle", "count": 1},
+        "wave1-image-one001")
+    hai, _created2 = _quote_and_run(
+        api, token, "image.generate", {"prompt": "a red bicycle", "count": 2},
+        "wave1-image-two001")
+    assert hai["credit"] == 2 * mot["credit"], "gia phai theo SO ANH"
+
     gen, db = _session()
     try:
         jobs = db.execute(sa.select(Job).order_by(Job.created_at)).scalars().all()
-        assert jobs[0].params["model"] == "gemini-2.5-flash-image"
-        assert jobs[1].params["model"] != "enhanced", (
-            "alias phai duoc giai thanh id that truoc khi toi handler")
         assert jobs[0].params["owner_id"] == user_id
     finally:
         _close(gen)
@@ -336,8 +366,8 @@ def test_the_api_charges_what_the_ui_charges(api):
     for tool, payload, ui_cost in (
         ("image.thumbnail", {"topic": "x", "count": 3},
          thumbnail_cost({"count": 3})),
-        ("image.generate", {"prompt": "x", "count": 2, "model": "enhanced"},
-         taoanh_cost({"count": 2, "model": "gemini-3.1-flash-image"})),
+        ("image.generate", {"prompt": "x", "count": 2},
+         taoanh_cost({"count": 2})),
     ):
         quote = api.post(f"{API_V1_PREFIX}/quotes",
                          json={"tool": tool, "input": payload},
@@ -387,11 +417,15 @@ def test_a_provider_failure_refunds_and_says_nothing_internal(api, monkeypatch):
                                      "wave1-provider-fail")
     job_id = created.json()["id"]
 
-    def _explode(*args, **kwargs):
-        raise thumbnail_jobs.GeminiError(
-            "quota exhausted for key sk-live-abcdef123456", status_code=429)
+    # ⛔ Thông điệp lỗi mang một mẩu trông như khoá thật: phép kiểm này canh
+    #    việc **không một chữ nào của thượng nguồn** đi ra câu trả lời công
+    #    khai. Nguồn lỗi đổi (Gemini → cổng render) nhưng mệnh đề thì không.
+    from platform_core.image_gen.dieu_phoi import DieuPhoiError
+    from tests.gia_dieu_phoi_anh import tiem as _tiem_dieu_phoi
 
-    monkeypatch.setattr(thumbnail_jobs, "_goi_gemini", _explode)
+    _tiem_dieu_phoi(monkeypatch, thumbnail_jobs,
+                    no=DieuPhoiError(
+                        "quota exhausted for key sk-live-abcdef123456"))
     # `max_attempts` retries are the platform's; run until the job is terminal.
     for _ in range(5):
         if not _run_worker_once():

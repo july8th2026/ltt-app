@@ -71,7 +71,7 @@ class KetQuaAnh:
 class DieuPhoi:
     cong: CR.CongRender
     storage: Any
-    #: `goi_llm(text, he_thong) -> str`. Thường là `dich_gemini.tao_ham_dich(db)`.
+    #: `goi_llm(text, he_thong) -> str`. Thường là `dich_llm.tao_ham_dich(db)`.
     goi_llm: Optional[Callable] = None
     tran_cho_s: float = TRAN_CHO_S
     nhip_hoi_s: float = NHIP_HOI_S
@@ -83,11 +83,19 @@ class DieuPhoi:
     def chay(self, *, job_id: str, prompt: str, model: str = "hidream-o1",
              mode: str = "t2i", ref_keys=(), so_anh: int = 1,
              negative_prompt: str = "", params: Optional[dict] = None,
-             tien_to_khoa: str = "anh") -> KetQuaAnh:
-        """Chạy trọn một job. Ném `CR.BanError` khi máy bận, `DieuPhoiError` khi hỏng."""
+             ti_le: str = "", tien_to_khoa: str = "anh") -> KetQuaAnh:
+        """Chạy trọn một job. Ném `CR.BanError` khi máy bận, `DieuPhoiError` khi hỏng.
+
+        `ti_le` ("16:9"…) rỗng thì để cổng dùng khung mặc định của model. Có giá
+        trị thì nó được đổi thành `width`/`height` **do cổng khai**, không do một
+        bảng chép tay — xem `khung_anh`.
+        """
         if not job_id:
             raise DieuPhoiError("thieu job_id")
         so_anh = max(1, int(so_anh or 1))
+        tham_so = dict(params or {})
+        if ti_le:
+            tham_so.update(self._khung(model, ti_le))
 
         # ① Dịch. Hỏng ở đây thì hỏng job — gửi bản gốc là giao ảnh sai (D-027).
         try:
@@ -104,7 +112,7 @@ class DieuPhoi:
         self.cong.gui(job_id=job_id, model=model, mode=mode,
                       prompt=chuan_bi.prompt_model, negative_prompt=negative_prompt,
                       put_urls=put_urls, image_keys=khoa, refs=refs,
-                      params=dict(params or {}))
+                      params=tham_so)
 
         t = self._cho(job_id)
         if not t.thanh_cong:
@@ -131,6 +139,25 @@ class DieuPhoi:
                          chuan_bi.prompt_model, chuan_bi.da_dich, chuan_bi.canh_bao)
 
     # ── các bước ─────────────────────────────────────────────────────────────
+    def _khung(self, model: str, ti_le: str) -> dict:
+        """`{"width", "height"}` cho tỉ lệ khách xin — **HỎI CỔNG**, không tra bảng.
+
+        ⛔ Fail-closed. Không xác nhận được khung thì KHÔNG vẽ: một khách xin 9:16
+           mà nhận 16:9 là giao sai hàng, và sai một cách trông-như-bình-thường
+           (ảnh vẫn đẹp, vẫn đúng chủ đề, chỉ sai khuôn) nên không ai báo lỗi.
+        """
+        from . import khung_anh as KA
+        try:
+            ds = self.cong.models()
+        except CR.CongRenderError as e:
+            raise DieuPhoiError(_t(
+                "Không hỏi được máy tạo ảnh về khung ảnh: {loi}").format(loi=e)) from e
+        try:
+            rong, cao = KA.chon(ti_le, KA.buckets_cua(ds, model))
+        except KA.KhungKhongCo as e:
+            raise DieuPhoiError(str(e)) from e
+        return {"width": rong, "height": cao}
+
     def _ve_vao(self, ref_keys) -> list:
         """Presigned GET cho từng ảnh tham chiếu."""
         ra = []

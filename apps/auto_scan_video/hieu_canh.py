@@ -228,12 +228,27 @@ def _so_trong_khoang(gt, ten: str) -> float:
     return x
 
 
-def doc_hieu_canh(noi_dung: str, ma_canh: str) -> HieuCanh:
-    """Phan hoi VLM -> `HieuCanh`. Nem `HieuCanhError` neu sai luoc do.
+def doc_hieu_canh(kq: dict, ma_canh: str) -> HieuCanh:
+    """KET QUA cua `ai.goi` -> `HieuCanh`. Nem `HieuCanhError` neu sai luoc do.
 
     ⛔ **Mot phan hoi sai luoc do khong phai mot artifact thanh cong** (yeu cau 5).
        Mot truong thieu thanh `None` di tiep se lo ra o pha 12 duoi dang "khong
        canh nao duoc giu" — mot thong bao khong lien quan gi den nguyen nhan.
+
+    🔴 **Tham so la CA KET QUA, khong phai `noi_dung`, va do la ban sua 09/09.**
+
+       Ban cu nhan `noi_dung: str`, nen nguoi goi phai viet
+       `hc.doc_hieu_canh(kq.get("noi_dung") or "", c.ma)` — va dung cho ay vut
+       mat `finish_reason`. Hau qua o duong CHI EM (`chuyen_loi_thoai`) do duoc:
+       lan chay `giu_hinh` 09/09 chet ba lan voi *"model tra ve rong"*, trong
+       khi su that la `finish_reason=length` — het tran token ra 4.096 giua
+       khoi suy nghi. Bon phien lien tiep di do may B vi cau ay.
+
+    ⚠️ `doc_canh` chua bao gio cham tran (do duoc: 1.258 token/luot trung binh
+       tren tran 4.096), nen day la ban va PHONG chu khong phai ban va mot loi
+       dang chay. Ly do van la du: no goi CUNG mot model qua CUNG mot tran, va
+       mot thong diep khong noi duoc `finish_reason` se gui nguoi doc di nham
+       cho y het lan truoc.
     """
     # 🔴 **Cho nay tung co MOT lop boc tuy chon, va lop boc do la nguon cua
     #    khiem khuyet B22-01 o tang luoc do.**
@@ -248,7 +263,7 @@ def doc_hieu_canh(noi_dung: str, ma_canh: str) -> HieuCanh:
     # ⇒ MOT hinh dang, khai mot lan: loi dan hoi phang, `DOC_CANH` khai phang,
     #   `doc_json` kiem phang. Su chiu dung kia khong bao ve ai — no chi lam ba
     #   ban mo ta duoc phep lech nhau ma khong ai thay.
-    goc = ai.doc_json(noi_dung, ai.DOC_CANH)
+    goc = ai.doc_ket_qua(kq, ai.DOC_CANH)
 
     de_xuat = str(goc.get("de_xuat") or "").strip().lower()
     if de_xuat not in DE_XUAT:

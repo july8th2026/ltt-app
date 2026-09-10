@@ -42,8 +42,9 @@ from pathlib import Path
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
+#: `LTTStudioCodex` gỡ 09/09/2026 (pha 07, AI CLEAN REBUILD V2).
 DICH_VU = ("cloudflared", "LTTStudioWeb", "LTTStudioWorker",
-           "LTTStudioVoice", "LTTStudioCodex")
+           "LTTStudioVoice")
 
 
 def ps(lenh: str, timeout: int = 90) -> str:

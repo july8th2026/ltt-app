@@ -55,7 +55,8 @@ GOC = pathlib.Path(__file__).resolve().parent.parent
 #: Cung danh sach voi phep do dat moc. KHONG doc ca kho: `core/` va
 #: `cutclipshort/` da mien trong `mypy.ini`, con `frontend/` la JS.
 THU_MUC = ("apps", "platform_core", "server", "tools", "llm_gateway",
-           "render_gateway", "sdk", "nexus_agent", "codex_sidecar")
+           "render_gateway", "sdk", "nexus_agent")
+#  (`codex_sidecar` go 09/09/2026 — AI CLEAN REBUILD V2 pha 07.)
 
 #: Cay de QUET + thu muc trong no. Cho phep tro sang mot cay MAU da biet
 #: truoc so loi.

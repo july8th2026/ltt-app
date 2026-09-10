@@ -139,15 +139,23 @@ def test_thumbnail_fragment_submits_job_and_redirects_the_whole_shell(tmp_path,
 def test_thumbnail_preview_discloses_full_customer_configuration(tmp_path, monkeypatch):
     client, dbmod = _client(tmp_path, monkeypatch)
     try:
+        # 🔴 Pha 06.3: `title` đã rời sản phẩm cùng chữ-trong-ảnh, và model nhà
+        #    thay ba bậc Gemini. Mệnh đề thì không đổi — *bản xem trước phải nói
+        #    ra ĐỦ cấu hình khách sẽ mua*, để họ đối chiếu trước khi trả tiền.
+        from apps.thumbnail.manifest import MANIFEST
+        from platform_core import providers
+
+        nhan_model = providers.models_for("ltt_image")[0].label()
         response = client.post("/thumbnail/preview", data={
-            "topic": "Ảnh thử", "title": "H32", "count": "3",
-            "model": "gemini-2.5-flash-image", "brand_name": "LTT",
+            "topic": "Ảnh thử", "count": "3",
+            "model": "hidream-o1", "brand_name": "LTT",
             "brand_font": "Barlow", "brand_primary": "#E53935",
             "brand_secondary": "#111111", "brand_tone": "Mạnh mẽ",
             "aspect_ratio": "16:9",
         })
         assert response.status_code == 200
-        for value in ("Gemini 2.5 Flash", "3", "15 credit", "LTT", "Barlow",
+        gia = f"{MANIFEST.credit_cost({'count': 3})} credit"
+        for value in (nhan_model, "3", gia, "LTT", "Barlow",
                       "#E53935 / #111111", "Mạnh mẽ"):
             assert value in response.text
     finally:

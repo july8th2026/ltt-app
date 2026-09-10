@@ -65,8 +65,13 @@ def _child(url: str, data_dir: str, send_log: str, seconds: float,
     import platform_core.models  # noqa: F401
 
     # Nhà cung cấp bị chặn: test này không được tiêu tiền hay gọi ra ngoài.
+    #
+    # 🔴 Pha 06.3: gán thẳng chứ không `monkeypatch` vì đoạn này chạy trong
+    #    TIẾN TRÌNH CON — ở đó không có fixture nào. Ranh giới vá nay là
+    #    `_dieu_phoi()`; `_goi_gemini` đã bị xoá cùng động cơ Gemini.
     import apps.thumbnail.jobs as thumbnail_jobs
-    thumbnail_jobs._goi_gemini = lambda *a, **k: b"\x89PNG\r\n\x1a\n" + b"0" * 200
+    from tests.gia_dieu_phoi_anh import DieuPhoiGia
+    thumbnail_jobs._dieu_phoi = lambda: DieuPhoiGia()
 
     # Người gửi webhook được thay bằng một cái đếm. Mỗi lần gửi ghi một dòng —
     # đó là thứ duy nhất chứng minh được "gửi hai lần", vì hai tiến trình ghi

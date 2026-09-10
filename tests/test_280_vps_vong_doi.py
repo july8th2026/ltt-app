@@ -11,8 +11,32 @@ from __future__ import annotations
 
 import pytest
 
+from apps.vps import trang_thai_may as tt_may
 from apps.vps.services import dieu_khien
 from apps.vps.services.proxmox import ProxmoxError
+from tests.fixtures.vps_proxmox_gia import ProxmoxGia, nhip_gia
+
+
+class _OpGia:
+    """Thao tác trần — `thi_hanh` chỉ cần `buoc` và `upid`."""
+
+    def __init__(self, buoc: str = ""):
+        self.id = "op-1"
+        self.buoc = buoc
+        self.upid = ""
+
+
+def _thi_hanh(may, lenh, *, dien="running", buoc=1):
+    """Chạy một lệnh điều khiển tới nơi tới chốn trên Proxmox giả có trạng thái.
+
+    ⚠️ Từ VPS V2 (ADR-03), `dieu_khien.bat/tat/khoi_dong_lai` **không còn** là ba
+       hàm gọi-rồi-về. Chúng tách làm hai nửa: `xin()` ở web (kết nạp + nộp job)
+       và `thi_hanh()` ở worker (gọi → chờ → xác minh). Bộ test này theo nửa thứ
+       hai, vì đó là nơi hành vi thật xảy ra.
+    """
+    px = ProxmoxGia(dien=dien, buoc=buoc)
+    dieu_khien.thi_hanh(None, may, px, _OpGia(), lenh=lenh, nhip=nhip_gia())
+    return px
 
 
 class _ClientGia:
@@ -63,6 +87,10 @@ class _May:
         self.ly_do = ""
         self.paid_until = None
         self.xoa_sau = None
+        # Đồ gá phải mang **đủ** mô hình của thứ nó thay. Thiếu năm cột mới của
+        # VPS V2 thì ca nào chạm tới chúng sẽ đỏ vì `AttributeError` — một lỗi
+        # của đồ gá đội lốt một lỗi của sản phẩm.
+        tt_may.chuan_hoa(self)
 
 
 @pytest.fixture(autouse=True)
@@ -83,11 +111,9 @@ def _bat_su_kien(monkeypatch):
 
 def test_may_bi_treo_thi_khach_KHONG_tu_bat_lai_duoc():
     """Nếu bật lại được thì 'treo' chỉ là một cái nút — tức không treo gì cả."""
-    c = _ClientGia()
     with pytest.raises(dieu_khien.KhongDuocPhepError) as e:
-        dieu_khien.bat(_DbGia(), _May(trang_thai="bi_treo"), c, boi="khach")
+        dieu_khien.kiem_dieu_khien_duoc(_May(trang_thai="bi_treo"))
     assert "treo" in str(e.value).lower()
-    assert c.da_goi == [], "khong duoc goi Proxmox"
 
 
 def test_loi_treo_noi_ro_phai_lam_gi_de_dung_lai():
@@ -99,56 +125,69 @@ def test_loi_treo_noi_ro_phai_lam_gi_de_dung_lai():
 
 def test_may_dang_tao_thi_khong_ai_duoc_dung_vao():
     """Bật/tắt giữa lúc job đang clone là cách chắc chắn để có máy hỏng nửa chừng."""
-    c = _ClientGia()
     for tt in ("dang_tao", "da_xoa"):
         with pytest.raises(dieu_khien.KhongDuocPhepError):
-            dieu_khien.tat(_DbGia(), _May(trang_thai=tt), c, boi="khach")
-    assert c.da_goi == []
+            dieu_khien.kiem_dieu_khien_duoc(_May(trang_thai=tt))
 
 
 def test_may_chua_co_vmid_thi_tu_choi():
     with pytest.raises(dieu_khien.KhongDuocPhepError):
-        dieu_khien.bat(_DbGia(), _May(vmid=None), _ClientGia(), boi="khach")
+        dieu_khien.kiem_dieu_khien_duoc(_May(vmid=None))
 
 
 # ── 2. Ba thao tác thường ───────────────────────────────────────────────────
 
 def test_bat_va_tat_goi_dung_lenh_va_doi_trang_thai():
-    c, m, db = _ClientGia(), _May(trang_thai="da_tat"), _DbGia()
-    dieu_khien.bat(db, m, c, boi="khach")
-    assert c.da_goi == [("bat", 200)] and m.trang_thai == "dang_chay"
+    """⚠️ Trạng thái đổi **sau khi đo lại**, không phải sau khi gửi lệnh.
 
-    dieu_khien.tat(db, m, c, boi="khach")
-    assert c.da_goi[-1] == ("tat_mem", 200) and m.trang_thai == "da_tat"
+    Bản trước VPS V2 ghi `dang_chay` ngay khi Proxmox nhận UPID. Giờ Proxmox giả
+    chỉ đổi điện khi tác vụ nền thật sự kết thúc, nên ca này chỉ xanh nếu mã có
+    chờ. Xem `tests/test_553` cho các ca chuyên sâu.
+    """
+    m = _May(trang_thai="da_tat")
+    px = _thi_hanh(m, "bat", dien="stopped", buoc=2)
+    assert px.da_goi == ["bat"] and m.trang_thai == "dang_chay"
+    assert m.dien_quan_sat == tt_may.CHAY
+
+    px = _thi_hanh(m, "tat", dien="running", buoc=2)
+    assert px.da_goi == ["tat_mem"] and m.trang_thai == "da_tat"
 
 
 def test_tat_MAC_DINH_la_tat_mem_chu_khong_rut_dien():
     """Rút điện giữa lúc Windows đang ghi đĩa là cách làm hỏng hệ tệp của khách."""
-    c = _ClientGia()
-    dieu_khien.tat(_DbGia(), _May(), c, boi="khach")
-    assert c.da_goi == [("tat_mem", 200)]
-    c2 = _ClientGia()
-    dieu_khien.tat(_DbGia(), _May(), c2, boi="khach", cung=True)
-    assert c2.da_goi == [("tat_cung", 200)]
+    assert _thi_hanh(_May(), "tat").da_goi == ["tat_mem"]
+    assert _thi_hanh(_May(), "tat_cung").da_goi == ["tat_cung"]
 
 
 def test_khoi_dong_lai_KHONG_dung_endpoint_reboot_cua_proxmox():
     """`reboot` của Proxmox chờ guest tự tắt và treo vô hạn nếu Windows đang hiện
-    hộp thoại "có muốn lưu không". Ta tắt mềm, khách tự bật lại."""
-    c = _ClientGia()
-    dieu_khien.khoi_dong_lai(_DbGia(), _May(), c, boi="khach")
-    assert c.da_goi == [("tat_mem", 200)]
+    hộp thoại "có muốn lưu không". Ta tự ghép: tắt mềm → chờ STOPPED → bật.
+
+    🔴 **Câu cuối của bản cũ đã bị xoá.** Nó viết *"khách tự bật lại"* — và mã
+       làm đúng như vậy, tức nút "Khởi động lại" chỉ tắt máy (V-01). Đó là một
+       lời giải thích hợp lý cho một hành vi sai, và nó sống được ba tháng.
+    """
+    m = _May()
+    px = _thi_hanh(m, "khoi_dong_lai", dien="running", buoc=2)
+    assert px.da_goi == ["tat_mem", "bat"]
+    assert m.trang_thai == "dang_chay", "khoi dong lai phai KET THUC o running"
 
 
 # ── 3. Thất bại cũng phải để lại dấu ────────────────────────────────────────
 
-def test_thao_tac_that_bai_van_duoc_ghi_nhat_ky(_bat_su_kien):
-    """Khách hỏi "sao bấm mãi không được" thì phải có thứ để đọc."""
-    m = _May()
+def test_lenh_hong_KHONG_doi_trang_thai_thanh_da_xong():
+    """Proxmox từ chối ⇒ không được ghi kết quả nào cả.
+
+    Nhật ký thất bại nay do **worker** ghi (`jobs._ghi_thao_tac_hong`), không do
+    tầng này — nó đã tách làm hai nửa (ADR-03). Mệnh đề còn lại ở đây là mệnh đề
+    quan trọng hơn: một lệnh hỏng không được để lại một trạng thái nói dối.
+    """
+    m = _May(trang_thai="da_tat")
+    px = ProxmoxGia(dien="stopped", buoc=1)
+    px.tu_choi_ghi = True
     with pytest.raises(ProxmoxError):
-        dieu_khien.bat(_DbGia(), m, _ClientGia(hong=True), boi="khach")
-    assert any("that_bai" in x for x in _bat_su_kien)
-    assert m.trang_thai == "dang_chay", "khong duoc doi trang thai khi lenh hong"
+        dieu_khien.thi_hanh(None, m, px, _OpGia(), lenh="bat", nhip=nhip_gia())
+    assert m.dien_quan_sat != tt_may.CHAY
 
 
 # ── 4. Treo: uỷ quyền phần ghi sổ cho `billing` ─────────────────────────────
@@ -170,7 +209,6 @@ def test_treo_UY_QUYEN_cho_billing_chu_khong_tu_ghi_so(monkeypatch):
 
 def test_treo_van_ghi_so_ke_ca_khi_proxmox_khong_tat_duoc(monkeypatch):
     """Treo là quyết định về TIỀN. Proxmox hỏng không được phép cứu máy khỏi bị treo."""
-    from apps.vps.services import billing
     da_goi = []
     monkeypatch.setattr(dieu_khien.billing, "treo",
                         lambda db, may, ly_do: da_goi.append(ly_do))

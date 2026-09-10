@@ -333,14 +333,10 @@
   "tools": {
     "image.generate": {
       "aliases": [],
-      "contract_hash": "09c21c078eb6ca12",
+      "contract_hash": "6b31aa3ae3590f99",
       "deprecated": "",
       "execution_mode": "ASYNC_JOB",
-      "models": [
-        "enhanced",
-        "standard",
-        "standard-lite"
-      ],
+      "models": [],
       "required_scopes": [
         "jobs:create"
       ]
@@ -357,7 +353,7 @@
     },
     "image.thumbnail": {
       "aliases": [],
-      "contract_hash": "00e6a8906c3c5574",
+      "contract_hash": "6a9ef0c81ac9e3d9",
       "deprecated": "",
       "execution_mode": "ASYNC_JOB",
       "models": [],
