@@ -137,5 +137,43 @@ phục hồi → UX → hiệu năng → mã đẹp), không xếp theo điểm 
 
 ---
 
+## 9. ⛔ Bẫy chờ sẵn ở bước 4 — đọc trước khi đo hiệu năng
+
+Ca thật 10/09 ở chương trình hiệu năng của phiên `ltt-llm` (`33c410fc`, §7b).
+Cùng phần cứng, cùng model, cùng cấu hình, **cùng prompt**:
+
+    bien do thong luong HUU ICH (ky tu/giay khach cho) :  6,5 -> 79,4  = 12,2x
+    bien do decode tok/s ca dot                        : 37,3 -> 73,3  =  2,0x
+
+Cả một chương trình đo cẩn thận đại lượng có dư địa **2×**, trong khi đại lượng
+dư địa **12×** nằm ngay cạnh và **chia chung mẫu số** *"giây khách phải chờ"*.
+
+🔑 Và nó vô hình vì **hai** bộ đếm đang chạy đều cho lượt tệ điểm **đạt**: nó
+*có* trả về kết quả (nên `% hỏng` cho đạt), và nó decode *nhanh* — chỉ là decode
+quá nhiều (nên `tok/s` cho đạt). Không bộ đếm nào sai; cả hai chỉ không đo thứ
+khách chịu.
+
+⚠️ **Hai hạng mục của chương trình này mang đúng hình dạng ấy:**
+
+| ID | Đại lượng có tên | Cái bẫy |
+|---|---|---|
+| 15 | GPU throughput / VRAM | throughput tốt vẫn đi kèm **hàng đợi** dài |
+| 70 | `RTF` theo giọng | `RTF` tốt vẫn đi kèm **khởi động** chậm |
+
+⇒ Khi chạy bước 4 (load test), đo **giây tuyệt đối từ lúc khách bấm tới lúc nghe
+được**, và ghi **phân bố của các lượt THÀNH CÔNG** — không chỉ p50/p95 của
+`runtime`. Hạng lỗi *"đạt mà tệ"* chỉ lộ ở đó.
+
+⭐ Mục **42** thì đã tránh được bẫy này từ đầu, và đáng lấy làm khuôn: mô hình
+thời lượng là **hai tham số** `giây ≈ khởi_động + ký_tự/tốc_độ` — nó đặt khởi
+động lên **cùng mẫu số** với tốc độ thay vì chỉ đo tốc độ. Đó chính là hình dạng
+đúng, chỉ là ở tầng giá chứ chưa ở tầng đo hiệu năng.
+
+(Phát hiện gốc: phiên `ltt-llm`. Tôi nêu trục này từ **ngoài** chương trình ấy —
+và họ tự ghi rằng họ có đủ số để tự thấy từ lâu mà không thấy, vì đo thứ đề bài
+**đặt tên** thay vì thứ khách phải **chờ**.)
+
+---
+
 ⚠️ Tệp này thay `01_SCORECARD_BASELINE.md` §D (*"điểm tổng cố ý không ghi"*).
 Bảng chi tiết 77 hạng mục vẫn ở tệp ấy; tệp này chỉ chốt tổng và phán quyết.
