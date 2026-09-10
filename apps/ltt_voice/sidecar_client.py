@@ -79,6 +79,47 @@ def _dich_loi_url(e) -> Exception:
         f"chay khong?): {e.reason}")
 
 
+class DauPhanHoi(dict):
+    """Header của phản hồi — tra cứu **không phân biệt hoa/thường**, như HTTP.
+
+    🔴 VÌ SAO LỚP NÀY TỒN TẠI, và nó đã âm thầm hỏng bao lâu không ai biết.
+
+    Bản cũ trả thẳng `dict(r.headers)`. `r.headers` là `email.message.Message`
+    — **đã** không phân biệt hoa/thường — còn `dict()` thì **vứt mất** tính chất
+    ấy và giữ đúng chữ nhận trên dây. Starlette ghi tên header **chữ thường**,
+    nên khoá thật là `x-duration-s`.
+
+    ⇒ Mọi chỗ tra bằng `"X-Duration-S"` nhận `None`. Đo 10/09/2026, dựng đúng
+      khuôn `Response(headers={"X-Duration-S": ...})` của `voice_sidecar` rồi
+      đọc lại bằng chính đường `_goi` dùng:
+
+          khoa that su : 'x-duration-s' 'x-gen-s' 'x-rtf' 'x-sample-rate'
+          .get('X-Duration-S') -> None
+          .get('x-duration-s') -> '1.234'
+
+    ⛔ Và nó **không bao giờ nổ**: `jobs.py` bọc bằng `_so()` — thứ được viết để
+       dung thứ một sidecar bản cũ thiếu `X-Gen-S`. Sự dung thứ ấy biến một lỗi
+       thành một **số 0 im lặng**, nên `gen_s` bằng 0 ở *mọi* lượt sinh và phép
+       đối chiếu `X-Duration-S` với ffprobe **chưa từng chạy**.
+
+    ⭐ Sửa ở ĐÂY chứ không hạ chữ thường ở từng chỗ gọi: chỗ gọi thì người sau
+       lại viết hoa, còn ở đây thì cả hai cách đều đúng — hạng lỗi bị đóng, không
+       chỉ một ca.
+    """
+
+    def __init__(self, nguon):
+        super().__init__((str(k).lower(), v) for k, v in dict(nguon).items())
+
+    def __getitem__(self, k):
+        return super().__getitem__(str(k).lower())
+
+    def __contains__(self, k):
+        return super().__contains__(str(k).lower())
+
+    def get(self, k, mac_dinh=None):
+        return super().get(str(k).lower(), mac_dinh)
+
+
 def _goi(duong: str, body: dict | None = None, *, timeout: float = 900.0,
          nhi_phan: bool = False):
     """Một lượt gọi. Trả `(payload, headers)`.
@@ -105,7 +146,7 @@ def _goi(duong: str, body: dict | None = None, *, timeout: float = 900.0,
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
             noi_dung = r.read()
-            headers = dict(r.headers)
+            headers = DauPhanHoi(r.headers)
     except urllib.error.HTTPError as e:
         raise _dich_loi_http(e) from e
     except urllib.error.URLError as e:
