@@ -673,6 +673,20 @@ def _validate_tool(manifest: AppManifest, tool: ToolSpec,
                 key in schema for key in ("values", "source", "depends_on")):
             raise RegistryError(
                 f"[{manifest.slug}] tool {tool.name!r} enum thiếu nguồn giá trị")
+        # `exclusive_with`: hai tham số không được gửi cùng lúc. Cưỡng chế ở
+        # `invocation.validate_public_input` (trước khi tiền động). Kiểm lúc NẠP
+        # để một tên gõ sai không im lặng thành no-op — cùng ethos `depends_on`.
+        exclusive_with = schema.get("exclusive_with")
+        if exclusive_with is not None:
+            if not isinstance(exclusive_with, (list, tuple)):
+                raise RegistryError(
+                    f"[{manifest.slug}] tool {tool.name!r} exclusive_with must be "
+                    f"a list/tuple, got {type(exclusive_with).__name__}")
+            for other in exclusive_with:
+                if other == param or other not in tool.params_schema:
+                    raise RegistryError(
+                        f"[{manifest.slug}] tool {tool.name!r} exclusive_with points "
+                        f"to an invalid param: {other!r}")
 
     # `tuy_chon_dong`: tham số phải có thật, phải là `string`, tham chiếu phải
     # đúng hình `module:attribute`. KHÔNG import module ở đây — `_validate` chạy

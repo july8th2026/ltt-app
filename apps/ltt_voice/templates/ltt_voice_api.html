@@ -155,39 +155,78 @@
                     data-vidu="js">JavaScript</button>
           </div>
 
+          {#
+            ⛔ HAI BƯỚC, KHÔNG PHẢI MỘT — và đây là chỗ bản trước SAI theo đúng
+               kiểu nguy hiểm nhất. Cửa `/api/v1/jobs` KHÔNG nhận `{"tool",
+               "params"}` trong một lượt: nó đọc `input` (không phải `params`),
+               **bắt buộc** một `Idempotency-Key`, và **bắt buộc** một `quote` đã
+               ký lấy từ `/api/v1/quotes` trước đó. Một lệnh thiếu ba thứ này trả
+               400 ngay — trông y hệt "khoá của tôi sai", đúng cái bẫy cả màn này
+               được dựng để tránh. Khuôn hai bước dưới đây khớp CHÍNH hợp đồng mà
+               `/developers/quickstart` sinh ra (`platform_core/public_api/
+               examples.py`); giữ nó khớp, đừng chép lệch.
+
+            ⭐ VÍ DỤ CHỈ DÙNG `preset`, KHÔNG kèm `voice_id`. Gửi cả hai bị từ
+               chối (một yêu cầu hai nguồn giọng không có câu trả lời đúng); ô
+               "Mã giọng của bạn" bên trái là chỗ lấy `voice_id` khi cần — thay
+               `"preset": "…"` bằng `"voice_id": "…"`, đừng thêm.
+          #}
           <div class="lv-api-ma" data-vidu-cho="curl">
             <button type="button" class="lv-ma-chep" data-chep-tu="lv-api-curl"
                     aria-label="{{ _('Chép lệnh mẫu') }}"
                     title="{{ _('Chép lệnh mẫu') }}">⧉</button>
-            <pre id="lv-api-curl" class="mono"><code>curl -X POST https://app.lttstudios.com/api/v1/jobs \
+            <pre id="lv-api-curl" class="mono"><code># 1. Bao gia — nhan mot `quote` da ky, biet truoc gia
+curl -X POST https://app.lttstudios.com/api/v1/quotes \
   -H "Authorization: Bearer $LTT_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"tool": "{{ ten_tool }}",
-       "params": {"text": "{{ vi_du }}",
-                  "preset": "{{ mac_dinh }}"}}'</code></pre>
+       "input": {"text": "{{ vi_du }}", "preset": "{{ mac_dinh }}"}}'
+
+# 2. Chay — gui lai `quote` do, kem DUNG MOT Idempotency-Key
+curl -X POST https://app.lttstudios.com/api/v1/jobs \
+  -H "Authorization: Bearer $LTT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -d '{"tool": "{{ ten_tool }}", "quote": "&lt;quote o buoc 1&gt;",
+       "input": {"text": "{{ vi_du }}", "preset": "{{ mac_dinh }}"}}'
+
+# 3. Hoi lai toi khi xong
+curl https://app.lttstudios.com/api/v1/jobs/&lt;job_id&gt; \
+  -H "Authorization: Bearer $LTT_API_KEY"</code></pre>
           </div>
 
           <div class="lv-api-ma" data-vidu-cho="python" hidden>
             <button type="button" class="lv-ma-chep" data-chep-tu="lv-api-py"
                     aria-label="{{ _('Chép mã mẫu') }}"
                     title="{{ _('Chép mã mẫu') }}">⧉</button>
-            <pre id="lv-api-py" class="mono"><code>import json, os, urllib.request
+            <pre id="lv-api-py" class="mono"><code>import json, os, time, uuid, urllib.request
 
-req = urllib.request.Request(
-    "https://app.lttstudios.com/api/v1/jobs",
-    data=json.dumps({
-        "tool": "{{ ten_tool }}",
-        "params": {"text": "{{ vi_du }}", "preset": "{{ mac_dinh }}"},
-    }).encode("utf-8"),
-    headers={
+BASE = "https://app.lttstudios.com/api/v1"
+
+def goi(method, path, body=None, them=None):
+    data = json.dumps(body).encode("utf-8") if body is not None else None
+    headers = {
         "Authorization": "Bearer " + os.environ["LTT_API_KEY"],
         "Content-Type": "application/json",
         # BAT BUOC. Chuoi urllib tu dien ("Python-urllib/3.x") bi
         # Cloudflare chan bang 403 truoc khi toi may chu — trong y
         # het khoa sai. Dat bat cu User-Agent nao khac la qua.
         "User-Agent": "ltt-client/1.0",
-    })
-print(json.load(urllib.request.urlopen(req)))</code></pre>
+    }
+    headers.update(them or {})
+    req = urllib.request.Request(BASE + path, data=data,
+                                 headers=headers, method=method)
+    return json.load(urllib.request.urlopen(req))
+
+vao = {"text": "{{ vi_du }}", "preset": "{{ mac_dinh }}"}
+bao_gia = goi("POST", "/quotes", {"tool": "{{ ten_tool }}", "input": vao})
+job = goi("POST", "/jobs",
+          {"tool": "{{ ten_tool }}", "quote": bao_gia["quote"], "input": vao},
+          {"Idempotency-Key": uuid.uuid4().hex})
+while job["status"] in ("queued", "running"):
+    time.sleep(2)
+    job = goi("GET", "/jobs/" + job["id"])
+print(job)</code></pre>
           </div>
 
           {#
@@ -207,20 +246,32 @@ print(json.load(urllib.request.urlopen(req)))</code></pre>
                     aria-label="{{ _('Chép mã mẫu') }}"
                     title="{{ _('Chép mã mẫu') }}">⧉</button>
             <pre id="lv-api-js" class="mono"><code>// Chay o PHIA MAY CHU (Node 18+). Dung dat khoa trong ma trinh duyet.
-const r = await fetch("https://app.lttstudios.com/api/v1/jobs", {
-  method: "POST",
-  headers: {
-    "Authorization": `Bearer ${process.env.LTT_API_KEY}`,
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    tool: "{{ ten_tool }}",
-    params: { text: "{{ vi_du }}", preset: "{{ mac_dinh }}" },
-  }),
-});
-console.log(await r.json());</code></pre>
+const BASE = "https://app.lttstudios.com/api/v1";
+const goi = async (method, path, body, them = {}) => {
+  const r = await fetch(BASE + path, {
+    method,
+    headers: {
+      "Authorization": `Bearer ${process.env.LTT_API_KEY}`,
+      "Content-Type": "application/json",
+      ...them,
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  return r.json();
+};
+
+const input = { text: "{{ vi_du }}", preset: "{{ mac_dinh }}" };
+const baoGia = await goi("POST", "/quotes", { tool: "{{ ten_tool }}", input });
+let job = await goi("POST", "/jobs",
+  { tool: "{{ ten_tool }}", quote: baoGia.quote, input },
+  { "Idempotency-Key": crypto.randomUUID() });
+while (["queued", "running"].includes(job.status)) {
+  await new Promise(r =&gt; setTimeout(r, 2000));
+  job = await goi("GET", `/jobs/${job.id}`);
+}
+console.log(job);</code></pre>
           </div>
-          <p class="dim"><small>{{ _("Lượt gọi trả về một job. Hỏi lại trạng thái ở /api/v1/jobs/{id} cho tới khi xong, hoặc đăng ký webhook.") }}</small></p>
+          <p class="dim"><small>{{ _("Báo giá trước để biết giá và nhận một quote đã ký, rồi chạy. Job trả về được hỏi lại ở /api/v1/jobs/{id} cho tới khi xong, hoặc đăng ký webhook.") }}</small></p>
         </div>
       {% endif %}
 

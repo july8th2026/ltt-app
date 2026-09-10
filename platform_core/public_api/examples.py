@@ -64,7 +64,44 @@ def example_input(tool) -> dict:
             payload[name] = examples[0]
         elif name in required:
             payload[name] = f"<{spec.get('type', 'string')}>"
+    _drop_mutually_exclusive(tool, payload)
     return payload
+
+
+def _drop_mutually_exclusive(tool, payload: dict) -> None:
+    """Keep the example a VALID call when the tool forbids a pair together.
+
+    A param may declare ``exclusive_with`` (e.g. ``speech.ltt``: ``voice_id`` vs
+    ``preset``): sending both is rejected by ``validate_public_input`` before any
+    money moves. ``example_input`` fills every param that has a declared example,
+    so without this it would print both and the pasted example would 400 — the
+    exact "example worse than no example" failure EXT-07 tests for.
+
+    ⛔ Reads the INTERNAL schema — the same declaration the validator enforces —
+       not the public one: ``exclusive_with`` is an internal contract between app
+       and platform, so it is deliberately absent from ``to_public_dict`` and
+       moves no ``contract_hash``. When both sides of a pair are present, the one
+       that *declares* the constraint is kept and its siblings dropped.
+    """
+    from platform_core.registry import discover
+
+    schema = None
+    for item in discover():
+        if item.error or item.manifest.slug != getattr(tool, "app_slug", ""):
+            continue
+        for spec in item.manifest.tools:
+            if spec.job_type == getattr(tool, "job_type", "") and (
+                    spec.name == tool.name
+                    or (spec.api_contract or {}).get("public_name") == tool.name):
+                schema = spec.params_schema
+                break
+    if not schema:
+        return
+    for param, khai in schema.items():
+        if param not in payload or not isinstance(khai, dict):
+            continue
+        for other in (khai.get("exclusive_with") or ()):
+            payload.pop(str(other), None)
 
 
 def _json(payload) -> str:

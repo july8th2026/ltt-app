@@ -12737,8 +12737,8 @@ msgid "Chép lệnh mẫu"
 msgstr "Copy the example command"
 
 #: apps/ltt_voice/templates/ltt_voice_api.html
-msgid "Lượt gọi trả về một job. Hỏi lại trạng thái ở /api/v1/jobs/{id} cho tới khi xong, hoặc đăng ký webhook."
-msgstr "The call returns a job. Poll /api/v1/jobs/{id} until it finishes, or register a webhook."
+msgid "Báo giá trước để biết giá và nhận một quote đã ký, rồi chạy. Job trả về được hỏi lại ở /api/v1/jobs/{id} cho tới khi xong, hoặc đăng ký webhook."
+msgstr "Quote first to see the price and get a signed quote, then run. The returned job is polled at /api/v1/jobs/{id} until it finishes, or register a webhook."
 
 #: apps/ltt_voice/templates/ltt_voice_api.html
 msgid "Phần dùng chung"

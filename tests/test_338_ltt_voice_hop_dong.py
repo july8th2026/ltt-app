@@ -430,6 +430,40 @@ def test_van_ban_rong_bi_tu_choi():
         features.chuan_hoa({"text": "   "})
 
 
+def test_public_api_tu_choi_vua_voice_id_vua_preset_TRUOC_khi_tinh_tien(monkeypatch):
+    """🔴 XOR phải chặn Ở CỬA VÀO API, trước khi báo giá/giữ credit.
+
+    `features.chuan_hoa` (worker) đã từ chối cặp này — nhưng qua Public API lượt
+    gọi đã được báo giá, giữ credit và xếp job TRƯỚC khi worker chạm tới nó, rồi
+    hỏng với "The job could not be completed." (có hoàn tiền, nhưng phí một vòng
+    và một job hỏng khó hiểu). `manifest` khai `exclusive_with` và
+    `invocation.validate_public_input` cưỡng chế nó — hàm ấy chạy ở CẢ `/quotes`
+    lẫn `/jobs` trước `price()`, nên phán quyết về đúng chỗ: miễn phí, rõ, tức thì.
+
+    ⛔ Không đụng hợp đồng công khai: `exclusive_with` ở `params_schema` nội bộ,
+       `project_tool` không phát nó ra, nên `contract_hash` không đổi.
+    """
+    monkeypatch.setenv("LTT_PUBLIC_API", "1")
+    monkeypatch.setenv("LTT_PUBLIC_API_TOOLS", "speech.ltt")
+
+    from platform_core.public_api import errors, invocation
+    from platform_core.public_api.catalog import build_catalog, require_tool
+    from platform_core.public_api.config import load_public_api_config
+
+    tool = require_tool(build_catalog(load_public_api_config()), "speech.ltt")
+
+    # Một nguồn giọng — hợp lệ ở cả hai chiều.
+    invocation.validate_public_input(tool, {"text": "a", "preset": "Adam"})
+    invocation.validate_public_input(tool, {"text": "a", "voice_id": "vc_x"})
+
+    # Cả hai — 400 ngay tại cửa vào, trước mọi bước tiền.
+    with pytest.raises(errors.ApiError) as e:
+        invocation.validate_public_input(
+            tool, {"text": "a", "voice_id": "vc_x", "preset": "Adam"})
+    assert e.value.status == 400
+    assert "only one" in str(e.value.detail).lower()
+
+
 def test_giong_khong_thuoc_ve_minh_bao_giong_nhu_khong_ton_tai(monkeypatch):
     """🔴 IDOR — thông điệp phải GIỐNG NHAU cho hai trường hợp.
 
