@@ -71,6 +71,37 @@ def _tep_py():
                     yield p
 
 
+def test_BA_TAP_NEN_khong_duoc_rong():
+    """⛔ ĐỐI CHỨNG DƯƠNG cho cả tệp — và nó thiếu cho tới 10/09/2026.
+
+    Mọi phép kiểm dưới đây đều có dạng **"không được có X"**. Một mệnh đề như
+    thế **xanh hoàn hảo trên tập rỗng**: `DA_XOA` rỗng ⇒ không có gì để tìm;
+    `_tep_py()` không quét được tệp nào ⇒ không có gì để soi. Cả hai trường hợp
+    ấy trông **y hệt** "kho đã sạch".
+
+    ⭐ Phép kiểm này đến từ một ca thật, không từ lo xa. Ngày 10/09 một byte
+       `0x07` lọt vào một tệp `.md` của chiến dịch và làm đỏ bước gate
+       `ky tu dieu khien` cho mọi cây. Bản sửa đầu tiên **xoá mất** cả dấu gạch
+       chéo, và lượt gate sau đó vẫn **XANH** — vì bước ấy đo *sự vắng mặt* của
+       byte điều khiển, nên nó không phân biệt được *"đã phục hồi đúng"* với
+       *"đã xoá mất bằng chứng"*.
+
+       Phiên `auto-scan-video-analysis-plan` rút ra luật: với mọi bánh cóc dạng
+       *"không được có X"*, một lượt xanh sau khi sửa **chưa** là bằng chứng —
+       phải khẳng định thêm một mệnh đề **DƯƠNG** về thứ đáng lẽ phải có ở đó.
+
+    ⚠️ Con số dưới đây cố ý đặt **thấp hơn nhiều** mức thật (5 · 3 · 777) — nó
+       canh "tập sụp xuống rỗng", không canh "tập thay đổi". Đặt sát mức thật
+       thì mỗi lần thêm/bớt một tệp lại phải sửa phép kiểm, và một phép kiểm
+       phải sửa thường xuyên là một phép kiểm sắp bị vô hiệu hoá.
+    """
+    assert len(DA_XOA) >= 4, f"DA_XOA co {len(DA_XOA)} muc — nghi tap bi rong"
+    assert len(CAM_TRONG_HANG) >= 3, (
+        f"CAM_TRONG_HANG co {len(CAM_TRONG_HANG)} muc")
+    so = sum(1 for _ in _tep_py())
+    assert so >= 300, f"chi quet {so} tep — bo do co the dang quet rong"
+
+
 def test_moi_thu_da_xoa_deu_KHONG_con_tren_dia():
     con = [t for t in DA_XOA if (GOC / t).exists()]
     assert con == [], f"pha 07 khai da xoa nhung van con: {con}"

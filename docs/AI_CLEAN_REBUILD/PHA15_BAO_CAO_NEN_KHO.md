@@ -251,7 +251,7 @@ lần đọc mã.
 Lượt gate cuối còn **1 bước tự bỏ qua**: `bat bien da tien trinh`.
 
 Lý do là **cấu trúc, không phải thiếu sót**: `check_multiproc.py` đọc
-`LTT_DATABASE_URL` từ `C:\LTTPlatform\secretspp.env`, mà thư mục đó đã siết về
+`LTT_DATABASE_URL` từ `C:\LTTPlatform\secrets\app.env`, mà thư mục đó đã siết về
 SYSTEM+Administrators từ 27/08. Gate chạy không quyền nâng ⇒ không đọc được ⇒ bỏ
 qua. Chính công cụ in ra: *"Đó **KHÔNG** phải lỗi."*
 
@@ -308,6 +308,27 @@ quan**, và vì lời giải thích ấy nghe rất đúng nên tôi **ngừng �
 ⚠️ Ba phép đo tôi gửi đi đêm nay đều **đúng**; thứ sai là **lời giải thích** đi kèm.
    Một con số đúng với một nguyên nhân sai vẫn làm người đọc đi sai hướng — và nó
    đi xa hơn một con số sai, vì không ai kiểm lại một con số đúng.
+
+## 5f. ⚠️ RANH GIỚI CỦA CÂU “ĐÃ GỠ GEMINI”
+
+Phiên `ltt-4bot-workflow-app` báo (10/09): trong cấu hình **đang chạy** của
+bot dựng video ở `D:\FULL AUTO VIDEO\DUNGVIDEO-FULL\`, khoá `evaluation.gemini_api_key` nằm dưới
+dạng **văn bản thuần**, giá trị đầy đủ. Họ không chép giá trị đi đâu, không
+đụng cây ấy, và đã báo chủ dự án.
+
+⛔ **Đây KHÔNG thuộc phạm vi chiến dịch, và tôi cố ý không đưa nó vào danh
+   mục ở §1.** Đó là một **hệ thống khác**, không phải `D:\LTTSTUDIOSAPP`.
+   Đưa nó vào sẽ khiến báo cáo **tuyên bố một phạm vi nó không có** — đúng
+   kiểu lỗi mà chính báo cáo này đang đi đếm ở những mục khác.
+
+⭐ Nhưng ghi con trỏ này vì một lý do cụ thể: người đọc sau rất dễ rút gọn cả
+   chiến dịch thành câu *“đã gỡ Gemini”*, rồi hiểu nó thành *“máy này không
+   còn khoá Gemini nào”*. Hai câu ấy **khác nhau**, và câu thứ hai **sai**.
+
+⇒ Thứ chiến dịch thực sự chứng minh, đúng phạm vi của nó: **nền tảng LTT**
+  không còn đường gọi, không còn khoá trong `secrets\app.env` (4→0), và
+  không còn khoá trong bảng `api_keys` (4 khoá **đang sống** → 0). Xoay khoá
+  của một hệ thống khác là quyết định của chủ dự án.
 
 ## 6. Nén kho
 
