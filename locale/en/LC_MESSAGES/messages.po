@@ -15645,3 +15645,75 @@ msgstr "The image is larger than %(mb)s MB."
 #: apps/auto_scan_video/templates/asv_trang_chinh.html
 msgid "Chỉ nhận PNG, JPEG hoặc WebP."
 msgstr "Only PNG, JPEG or WebP are accepted."
+
+msgid "Tinh chỉnh phụ đề không đọc được."
+msgstr "Subtitle tuning could not be read."
+
+msgid "Kiểu phụ đề không có trong danh sách."
+msgstr "That subtitle style is not on the list."
+
+msgid "Yêu cầu phụ đề không đọc được."
+msgstr "The subtitle request could not be read."
+
+msgid "Chế độ phụ đề không hợp lệ."
+msgstr "Invalid subtitle mode."
+
+msgid "Cách chia dòng phụ đề không hợp lệ."
+msgstr "Invalid subtitle line-splitting mode."
+
+msgid "Kiểu “Giữ nguyên hình ảnh” sao chép nguyên vẹn từng điểm ảnh, nên không thể khắc phụ đề lên hình. Bỏ chọn “khắc vào hình” để vẫn nhận tệp phụ đề rời, hoặc chọn “Rút gọn có biên tập”."
+msgstr "“Keep the picture” copies every pixel unchanged, so subtitles cannot be burned into the frame. Turn off “burn into picture” to still receive a separate subtitle file, or choose “Shorten with editing”."
+
+msgid "Không chỉnh được thuộc tính: {ten}"
+msgstr "That property cannot be tuned: {ten}"
+
+msgid "Tinh chỉnh phụ đề không hợp lệ: {ly_do}"
+msgstr "Invalid subtitle tuning: {ly_do}"
+
+msgid "Phụ đề khắc vào hình chỉ dùng được với kiểu xử lý có biên tập lại hình. Bản giữ nguyên hình vẫn xuất được tệp phụ đề rời."
+msgstr "Burned-in subtitles only work with a mode that re-edits the picture. The picture-preserving mode can still export a separate subtitle file."
+
+msgid "Chưa có bản dịch để dựng phụ đề."
+msgstr "No translation yet to build subtitles from."
+
+msgid "Phụ đề được dựng từ chính bản dịch, đặt đúng theo thời điểm từng câu được đọc lên."
+msgstr "Subtitles are built from the translation itself, placed exactly when each line is spoken."
+
+msgid "Khắc lên hình"
+msgstr "Burn into the picture"
+
+msgid "Kiểu “Giữ nguyên hình ảnh” sao chép nguyên vẹn từng điểm ảnh, nên không thể khắc phụ đề lên hình. Bạn vẫn xuất được tệp phụ đề rời ở ngay dưới."
+msgstr "“Keep the picture” copies every pixel unchanged, so subtitles cannot be burned into the frame. You can still export a separate subtitle file just below."
+
+msgid "Tinh chỉnh kiểu chữ"
+msgstr "Tune the text style"
+
+msgid "Bỏ trống thì dùng nguyên kiểu bạn chọn. Chỉ những ô bạn thực sự đổi mới được gửi đi."
+msgstr "Leave these alone to use the style as-is. Only the fields you actually change are sent."
+
+msgid "Trả về kiểu gốc"
+msgstr "Reset to the style defaults"
+
+msgid "Xuất thêm tệp phụ đề rời (.srt)"
+msgstr "Also export a separate subtitle file (.srt)"
+
+msgid "Tệp tải về được, dùng cho YouTube hay để chỉnh lại về sau. Không đổi một điểm ảnh nào của video."
+msgstr "A downloadable file for YouTube or for editing later. It changes no pixel of the video."
+
+msgid "Không khắc lên hình"
+msgstr "Do not burn into the picture"
+
+msgid "Video giữ nguyên. Bạn vẫn có thể xuất tệp phụ đề rời."
+msgstr "The video is untouched. You can still export a separate subtitle file."
+
+msgid "Khắc lên hình — kiểu mặc định"
+msgstr "Burn into the picture — default style"
+
+msgid "Phụ đề được khắc thẳng vào video, dùng kiểu chữ chuẩn."
+msgstr "Subtitles are burned straight into the video using the standard text style."
+
+msgid "Khắc lên hình — tự chọn kiểu"
+msgstr "Burn into the picture — pick a style"
+
+msgid "Như trên, nhưng bạn chọn kiểu chữ ở ô bên dưới."
+msgstr "As above, but you choose the text style in the box below."

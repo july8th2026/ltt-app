@@ -145,6 +145,7 @@ def dung_lenh(ban: dict, *, ffmpeg_bin: str, duong_video: str,
               bo_ma_hoa: str = "",
               duong_chu: list[str] | None = None,
               duong_logo: list[str] | None = None,
+              duong_ass: str = "",
               tien_do: bool = True) -> list[str]:
     """Ban dung + duong dan cuc bo -> argv. Khong cham mot tep nao.
 
@@ -261,7 +262,12 @@ def dung_lenh(ban: dict, *, ffmpeg_bin: str, duong_video: str,
                                 cao_khung=int(hinh.get("cao_khung") or 0),
                                 ds_logo=ds_logo_ban,
                                 rong_khung=int(hinh.get("rong_khung") or 0),
-                                chi_so_logo_dau=CHI_SO_LOGO_DAU),
+                                chi_so_logo_dau=CHI_SO_LOGO_DAU,
+                                # ⭐ `.ass` KHONG la mot `-i`: `ass=` la bo loc
+                                #    doc tep truc tiep, nen no khong an mot chi
+                                #    so dau vao. Do la ly do `CHI_SO_LOGO_DAU`
+                                #    khong phai doi khi pha 14 them phu de.
+                                duong_ass=duong_ass),
                 "-map", "[ra]"]
         cmd += list(cdr.tham_so(bo))
 

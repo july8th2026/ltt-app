@@ -315,11 +315,13 @@
          bo loc, bo loc doi hoi giai ma, `-c:v copy` khong giai ma khung nao),
          nen cung khuon `data-preset-can`.
 
-         ⛔ Va no KHONG phai o dat phu de. `apps/autosubvideo` so huu viec do va
-            `CAM_TRONG_MVP` cam `subtitle_burn`. Ranh gioi duoc giu bang CO HOC
-            chu khong bang mot cau ghi chu: moi lop la MOT dong (`maxlength`,
-            va may chu tu choi ky tu xuong dong), toi da {{ lop_phu_toi_da }}
-            lop. Mot ban phu de 400 doan khong di qua duoc cai cua ay. #}
+         ⛔ Va no KHONG phai o dat phu de — nhung ly do da DOI o pha 14. Truoc
+            do `CAM_TRONG_MVP` cam `subtitle_burn`; nay khoi "Phu de" o duoi lam
+            dung viec ay. Ranh gioi con lai la CHUC NANG: lop phu la chu CUA
+            BAN, dat co dinh mot cho; phu de la ban dich cua VIDEO, chay theo
+            thoi diem tung cau. Va no van duoc giu bang CO HOC: moi lop la MOT
+            dong (`maxlength`, va may chu tu choi ky tu xuong dong), toi da
+            {{ lop_phu_toi_da }} lop. #}
       <div class="asv-nhom" id="asv-nhom-lop-phu"
            data-preset-can="{{ preset_can_cho_vung }}"
            data-toi-da="{{ lop_phu_toi_da }}">
@@ -376,6 +378,108 @@
         {# Hình học đi ở đây; ảnh đi ở các ô `logo_anh` do JS dựng. Hai danh
            sách phải CÙNG độ dài — `routes._doc_logo` đối chiếu và từ chối. #}
         <input type="hidden" name="logo" id="asv-logo" value="">
+      </div>
+
+      {# 🔴 Phụ đề — khối DUY NHẤT có HAI trục, và đó là cả thiết kế của pha 14.
+
+           · khắc vào hình — đổi ĐIỂM ẢNH, nên bất khả ở preset giữ hình
+           · xuất tệp .srt — không chạm điểm ảnh, chạy ở CẢ HAI preset
+
+         ⛔ Nên `data-preset-can` ở đây KHÔNG ẩn cả nhóm như bốn khối trên. Nó
+            chỉ điều khiển ô chế độ. Ẩn cả nhóm sẽ khoá mất lựa chọn phụ đề DUY
+            NHẤT còn lại ở preset giữ hình — và khoá **im lặng**: khách không
+            thấy ô nào để hỏi. Xem `asv/phu_de.js`.
+
+         ⭐ Danh sách kiểu đến TỪ `style_registry` qua `phu_de.cho_giao_dien()`,
+            không gõ vào đây. Một bản sao trong HTML sẽ trôi ngay lần đầu app
+            kia thêm một kiểu, và trôi im lặng. #}
+      <div class="asv-nhom" id="asv-nhom-phu-de"
+           data-preset-can="{{ preset_can_cho_vung }}"
+           data-can-kieu="{{ phu_de.che_do_can_kieu }}"
+           data-che-do-tat="{{ phu_de.che_do_mac_dinh }}">
+        <h3>{{ _("Phụ đề") }}</h3>
+        <p class="asv-ghi-chu">
+          {{ _("Phụ đề được dựng từ chính bản dịch, đặt đúng theo thời điểm từng câu được đọc lên.") }}
+        </p>
+        <label class="asv-o">
+          <span>{{ _("Khắc lên hình") }}</span>
+          <select id="asv-phu-de-che-do">
+            {% for ma, ten, mo_ta in phu_de.che_do %}
+              <option value="{{ ma }}" title="{{ _(mo_ta) }}"
+                      {% if ma == phu_de.che_do_mac_dinh %}selected{% endif %}>
+                {{ _(ten) }}
+              </option>
+            {% endfor %}
+          </select>
+        </label>
+        <p class="asv-ghi-chu asv-vung-chan" id="asv-phu-de-chan" hidden>
+          {{ _("Kiểu “Giữ nguyên hình ảnh” sao chép nguyên vẹn từng điểm ảnh, nên không thể khắc phụ đề lên hình. Bạn vẫn xuất được tệp phụ đề rời ở ngay dưới.") }}
+        </p>
+        <label class="asv-o" id="asv-phu-de-kieu-o" hidden>
+          <span>{{ _("Kiểu chữ") }}</span>
+          <select id="asv-phu-de-kieu">
+            {% for k_ma, k_ten, k_mo_ta in phu_de.kieu %}
+              <option value="{{ k_ma }}" title="{{ k_mo_ta }}"
+                      {% if k_ma == phu_de.kieu_mac_dinh %}selected{% endif %}>{{ k_ten }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        {# ⭐ Pha 16 — tinh chỉnh trên nền preset, KHÔNG thay preset.
+
+             Mọi ô dưới đây dựng từ `phu_de.tinh_chinh`, mà `luoc_do_tinh_chinh()`
+             đọc thẳng từ `SubtitleStyleConfig` của `apps/autosubvideo`. Miền giá
+             trị ở đây và miền máy chủ duyệt vì thế là **cùng một con số** — không
+             có bản sao nào để trôi.
+
+           ⛔ Đừng gõ `min`/`max` vào đây. Đó là cách một hạn mức trôi im lặng:
+              giao diện cho kéo tới 200 trong khi máy chủ từ chối ở 120, và khách
+              chỉ biết sau khi bấm Gửi. #}
+        <details class="asv-nhom-con" id="asv-phu-de-tinh-chinh" hidden>
+          <summary>{{ _("Tinh chỉnh kiểu chữ") }}</summary>
+          <p class="asv-ghi-chu">
+            {{ _("Bỏ trống thì dùng nguyên kiểu bạn chọn. Chỉ những ô bạn thực sự đổi mới được gửi đi.") }}
+          </p>
+          <div class="asv-luoi-tinh-chinh">
+            {% for o in phu_de.tinh_chinh %}
+              <label class="asv-o asv-tc" data-ten="{{ o.ten }}">
+                <span title="{{ o.mo_ta }}">{{ o.ten }}</span>
+                {% if o.dang == "co_khong" %}
+                  <input type="checkbox" data-tc="{{ o.ten }}">
+                {% elif o.dang == "chon" %}
+                  <select data-tc="{{ o.ten }}">
+                    {% for c in o.chon %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+                  </select>
+                {% elif o.dang == "mau" %}
+                  <input type="color" data-tc="{{ o.ten }}">
+                {% elif o.dang == "so" %}
+                  <input type="number" data-tc="{{ o.ten }}"
+                         min="{{ o.nho_nhat }}" max="{{ o.lon_nhat }}"
+                         {% if o.lon_nhat is not none and o.lon_nhat <= 1 %}step="0.05"{% endif %}>
+                {% else %}
+                  <input type="text" data-tc="{{ o.ten }}">
+                {% endif %}
+              </label>
+            {% endfor %}
+          </div>
+          <button type="button" class="btn ghost" id="asv-phu-de-tra-lai">
+            {{ _("Trả về kiểu gốc") }}
+          </button>
+        </details>
+        {# 🔑 Giá trị KHỞI ĐIỂM của từng preset đi xuống bằng JSON, vì chúng
+           **không** bằng mặc định của mô hình: `tiktok_bold` khởi điểm ở cỡ 64
+           còn mô hình mặc định 48. Hiện mặc định của mô hình sẽ làm mọi ô khách
+           chạm vào thành một "tinh chỉnh" dù họ không đổi ý gì. #}
+        <script type="application/json" id="asv-phu-de-goc">
+          {{ phu_de.kieu_cau_hinh | tojson }}
+        </script>
+        {# ⭐ Ô này KHÔNG bao giờ bị ẩn theo preset. Đó là lựa chọn phụ đề duy
+           nhất còn lại ở preset giữ hình. #}
+        <label class="asv-chon">
+          <input type="checkbox" id="asv-phu-de-srt">
+          <span><strong>{{ _("Xuất thêm tệp phụ đề rời (.srt)") }}</strong>
+            <small>{{ _("Tệp tải về được, dùng cho YouTube hay để chỉnh lại về sau. Không đổi một điểm ảnh nào của video.") }}</small></span>
+        </label>
+        <input type="hidden" name="phu_de" id="asv-phu-de" value="">
       </div>
 
       <div class="asv-nhom">

@@ -1,7 +1,9 @@
 /* asv/lop_phu.js — LOP PHU CHU.
  *
- * 🔴 **Day KHONG phai o dat phu de.** `apps/autosubvideo` so huu viec do, va
- *    ranh gioi duoc giu bang CO HOC chu khong bang mot cau ghi chu:
+ * 🔴 **Day KHONG phai o dat phu de** — xem `asv/phu_de.js`, pha 14 da dung o
+ *    do. Ranh gioi la CHUC NANG: lop phu la chu CUA BAN, dat co dinh mot cho;
+ *    phu de la ban dich cua VIDEO, chay theo thoi diem tung cau. Va no van
+ *    duoc giu bang CO HOC chu khong bang mot cau ghi chu:
  *
  *      · moi lop la MOT dong — `input` mot dong, va may chu TU CHOI ky tu
  *        xuong dong thay vi loc bo no

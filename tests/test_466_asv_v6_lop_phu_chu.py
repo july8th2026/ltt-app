@@ -584,11 +584,59 @@ def test_logo_anh_DA_ROI_khoi_HAU_MVP_sau_khi_pha_08_mo_duong():
     assert "logo_image" not in hop_dong_v4.CAM_TRONG_MVP
 
 
-def test_subtitle_burn_VAN_bi_cam():
-    """🔑 Doi chung cho ca pha 11: lop phu chu KHONG duoc lam `subtitle_burn`
-    doi ten. `apps/autosubvideo` van so huu viec do."""
-    assert "subtitle_burn" in hop_dong_v4.CAM_TRONG_MVP
-    assert "subtitle_burn" not in hop_dong_v4.NANG_LUC_DOI_DIEM_ANH
+def test_lop_phu_KHONG_PHAI_phu_de():
+    """🔑 Doi chung cho ca pha 11 — VIET LAI o pha 14, va viet CHAT hon.
+
+    ## Ban cu noi gi, va vi sao no het han
+
+    Ban cu la:
+
+        assert "subtitle_burn" in hop_dong_v4.CAM_TRONG_MVP
+        assert "subtitle_burn" not in hop_dong_v4.NANG_LUC_DOI_DIEM_ANH
+
+    Menh de no BAO VE: *lop phu chu khong duoc bien thanh phu de bang cach doi
+    ten*. Menh de no VIET RA: *`subtitle_burn` bi cam*. Hai thu do trung nhau o
+    pha 11 chi vi luc ay ASV chua lam phu de.
+
+    Pha 14 lam phu de — dung duong: doi hop dong, viet `phu_de.py`, ghi quyet
+    dinh. Nen menh de VIET RA het han, con menh de duoc BAO VE thi khong.
+
+    ## Ban moi, va vi sao no KHO xanh hon
+
+    Ranh gioi that khong con la *"mot trong hai bi cam"* ma la *"hai thu khac
+    nhau, va khac nhau bang CO HOC"*:
+
+      · hai **nang luc rieng biet** trong hop dong, khong phai mot
+      · hai **module rieng biet**, moi cai mot mien
+      · va rao co hoc cua pha 11 van dung: moi lop phu la MOT dong, toi da
+        `SO_LOP_PHU_TOI_DA` lop — mot ban phu de 400 doan khong di qua duoc
+
+    ⛔ Ban cu se van XANH neu ai do xoa `subtitle_burn` khoi moi bang (mot phep
+       kiem do SU VANG MAT). Ban moi thi khong: no doi ca hai ten phai CO MAT,
+       moi ten o dung bang cua no.
+    """
+    from apps.auto_scan_video import phu_de
+
+    # Hai nang luc, khong phai mot.
+    assert "text_overlay" in hop_dong_v4.NANG_LUC_DOI_DIEM_ANH
+    assert "subtitle_burn" in hop_dong_v4.NANG_LUC_DOI_DIEM_ANH
+    assert "text_overlay" != "subtitle_burn"
+
+    # Khong ten nao con nam trong bang CAM — mo mot nang luc la doi HOP DONG,
+    # khong phai them mot nhanh `if` o dau do.
+    assert "text_overlay" not in hop_dong_v4.CAM_TRONG_MVP
+    assert "subtitle_burn" not in hop_dong_v4.CAM_TRONG_MVP
+
+    # Hai module rieng, hai mien rieng.
+    assert lp.__name__ != phu_de.__name__
+    assert not hasattr(lp, "su_kien_tu_ke_hoach")
+    assert not hasattr(phu_de, "SO_LOP_PHU_TOI_DA")
+
+    # 🔑 Rao CO HOC cua pha 11 van dung: mot ban phu de that co hang tram doan,
+    #    nen tran nay la thu ngan lop phu bi dung lam phu de — khong phai mot
+    #    cau ghi chu.
+    assert lp.SO_LOP_PHU_TOI_DA <= 8, (
+        "tran lop phu bi noi toi muc mot ban phu de di lot qua duoc")
 
 
 def test_mot_nang_luc_KHONG_duoc_o_hai_bang():

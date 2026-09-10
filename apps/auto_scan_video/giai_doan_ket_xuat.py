@@ -170,6 +170,21 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                     thu_muc / f"logo{i}{Path(str(l['khoa'])).suffix or '.png'}")
             for i, l in enumerate(ds_logo_ban)]
 
+        # ⭐ `.ass` di duong y het chu cua lop phu: sinh o thu muc TAM cua lan
+        #    chay nay, xoa cung no. Su kien da duoc CHOT o COMPOSE va nam trong
+        #    ban dung — o day khong tinh lai mot moc nao.
+        #
+        # ⚠️ Kich thuoc khung la BAT BUOC ve noi dung: `build_ass` tinh co chu
+        #    va le theo no. Mac dinh 1920x1080 ap len mot video doc cho ra phu
+        #    de nho bang mot phan ba, dat sai le, **khong bao mot loi nao**.
+        from . import phu_de as _pd
+        _ho_so_pd = (ban.get("hinh") or {}).get("phu_de") or None
+        _goi_su_kien = (_ho_so_pd or {}).get("su_kien") or []
+        duong_ass = _pd.viet_tep_ass(
+            _ho_so_pd, _goi_su_kien, thu_muc,
+            rong=int((ban.get("hinh") or {}).get("rong_khung") or 0),
+            cao=int((ban.get("hinh") or {}).get("cao_khung") or 0))
+
         duong_ra = str(thu_muc / "ra.mp4")
         bo_thuc = ket_xuat.bo_ma_hoa_thuc_te(ban, co_gpu=co_gpu)
         khai = str((ban.get("hinh") or {}).get("bo_ma_hoa") or "")
@@ -179,7 +194,8 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             ban, ffmpeg_bin=nhap_media.media.ffmpeg_bin(),
             duong_video=duong_video, duong_master=duong_master,
             duong_lop=duong_lop, duong_ra=duong_ra, bo_ma_hoa=bo_thuc,
-            duong_chu=duong_chu, duong_logo=duong_logo)
+            duong_chu=duong_chu, duong_logo=duong_logo,
+            duong_ass=duong_ass)
 
         if bao:
             bao(15, _t('Đang kết xuất video'))
@@ -218,9 +234,28 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         with open(duong_ra, "rb") as f:
             kho.put(khoa, f, content_type="video/mp4")
 
+        # ── `.srt` la MOT BAN GIAO, khong phai mot tep trung gian ───────────
+        #
+        # 🔑 **Vi sao no sinh o RENDER chu khong o COMPOSE**, du du lieu da san
+        #    sang tu COMPOSE: `thi_hanh` dat `la_ban_giao = ten == RENDER`, va
+        #    ban giao la thu **khong co han**. Sinh o COMPOSE thi tep phu de cua
+        #    khach mang `HAN_TRUNG_GIAN = 30 ngay` trong khi video thi khong —
+        #    tuc mot nua ban giao tu bien mat sau mot thang, im lang.
+        phan = [{"staging_key": khoa, "kind": "video", "duoi": "mp4",
+                 "van_tay": vt, "parent_keys": [khoa_ban]}]
+        duong_srt = _pd.viet_tep_srt(_ho_so_pd, _goi_su_kien, thu_muc)
+        if duong_srt:
+            khoa_srt = assets.khoa_staging(
+                owner_id=run.owner_id, run_id=run.id, stage=pipeline.RENDER,
+                van_tay=vt, duoi="srt")
+            with open(duong_srt, "rb") as f:
+                kho.put(khoa_srt, f, content_type="application/x-subrip")
+            phan.append({"staging_key": khoa_srt, "kind": "subtitle",
+                         "duoi": "srt", "van_tay": vt,
+                         "parent_keys": [khoa_ban]})
+
     return {
-        "phan": [{"staging_key": khoa, "kind": "video", "duoi": "mp4",
-                  "van_tay": vt, "parent_keys": [khoa_ban]}],
+        "phan": phan,
         "tom_tat": {
             "thoi_luong_giay": round(float(tt["thoi_luong"]), 3),
             "co_byte": int(tt["co_byte"]),

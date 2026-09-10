@@ -71,7 +71,11 @@ from platform_core.i18n import _ as _t
 #: ⬆️ 3 -> 4 (V6 pha 11) khi `lop_phu` chu vao chuoi loc va vao van tay.
 #: ⬆️ 4 -> 5 (V6 pha 08b) khi `logo` vao chuoi loc va vao van tay — va vi thu tu
 #:    chang doi: `noi -> che -> logo -> chu`.
-PHIEN_BAN_CHE_DO = 5
+# ⭐ 5 -> 6 o pha 14: phu de dot vao hinh la mot bien doi DIEM ANH moi trong
+#    chuoi loc, nen moi ban dung cu phai duoc coi la mot quyet dinh render KHAC.
+#    Thieu buoc tang nay thi mot lan chay co phu de va mot lan khong se dung
+#    chung van tay — hai ket qua khac nhau, mot chuoi bam.
+PHIEN_BAN_CHE_DO = 6
 
 #: Sao chep luong hinh — preset giu hinh.
 SAO_CHEP = "sao_chep"
@@ -348,7 +352,7 @@ def _loc_logo(ds_logo, nhan_vao: str, nhan_ra: str, *,
 def loc_cat_noi(khoang: list[tuple[float, float]], vung=(), *,
                 lop_phu=(), duong_chu=(), cao_khung: int = 0,
                 ds_logo=(), rong_khung: int = 0,
-                chi_so_logo_dau: int = 2) -> str:
+                chi_so_logo_dau: int = 2, duong_ass: str = "") -> str:
     """`filter_complex` cat cac khoang duoc giu roi noi lai — **khong co tieng**.
 
     ⛔ Tieng khong di qua day. Ban phoi am (pha 16) da duoc dung theo dung nhung
@@ -401,10 +405,11 @@ def loc_cat_noi(khoang: list[tuple[float, float]], vung=(), *,
     #    · che truoc logo/chu: nguoc lai thi mot logo roi trung o che se bi
     #      chinh o do lam mo — khach dan logo de nguoi ta NHIN THAY no;
     #    · chu SAU CUNG: chu la thu khach doc, nen no nam tren het.
+    #    · phu de SAU CUNG, tren ca chu: no la thu khach doc de HIEU, con lop
+    #      phu chu la thu khach dan de TRANG TRI. Mot phu de bi logo hay lop phu
+    #      de len la mot phu de khong doc duoc, tuc mot tinh nang khong ton tai.
     sau_che = "ra"
-    if ds_logo:
-        sau_che = "sau_che"
-    elif lop_phu:
+    if ds_logo or lop_phu or duong_ass:
         sau_che = "sau_che"
     if vung:
         phan.append(f"{nhan}concat=n={len(khoang)}:v=1:a=0[noi]")
@@ -420,9 +425,26 @@ def loc_cat_noi(khoang: list[tuple[float, float]], vung=(), *,
                               cua_so=cua_so_ra_logo(khoang, ds_logo)))
         hien = ke
     if lop_phu:
-        phan.extend(_loc_chu(lop_phu, duong_chu, hien, "ra",
+        ke = "sau_chu" if duong_ass else "ra"
+        phan.extend(_loc_chu(lop_phu, duong_chu, hien, ke,
                              cao_khung=cao_khung,
                              cua_so=cua_so_ra_lop_phu(khoang, lop_phu)))
+        hien = ke
+    if duong_ass:
+        # 🔑 **Khong can dieu nhay `cwd` cua `autosubvideo/burn.py`.**
+        #
+        #    `burn._ass_filter_arg` chay ffmpeg voi `cwd` = thu muc chua `.ass`
+        #    roi truyen ten tep tran, *"khoi phai escape duong dan Windows"*.
+        #    Nhung ASV da co loi giai tot hon va da dung no cho `textfile=`:
+        #    `lop_phu.thoat_duong` doi `\` -> `/` va `:` -> `\:`.
+        #
+        # ⭐ Escape tot hon `cwd` o mot cho cu the: `cwd` la trang thai TOAN
+        #    TIEN TRINH, nen no rang buoc ca lenh ffmpeg vao mot thu muc — trong
+        #    khi lenh nay con doc video nguon, anh logo va tep chu o cac thu muc
+        #    KHAC. Mot lenh mot cwd thi khong the phuc vu bon duong dan.
+        from . import lop_phu as _lp
+
+        phan.append(f"[{hien}]ass='{_lp.thoat_duong(duong_ass)}'[ra]")
     return ";".join(phan)
 
 
@@ -493,7 +515,7 @@ def cua_so_ra_lop_phu(khoang: list[tuple[float, float]], lop_phu
 
 def van_tay_che_do(*, che_do: str, bo_ma_hoa: str,
                    khoang: list[tuple[float, float]], vung=(),
-                   lop_phu=(), ds_logo=()) -> str:
+                   lop_phu=(), ds_logo=(), phu_de=None) -> str:
     """Van tay cua quyet dinh render.
 
     ⛔ Gom CA bo ma hoa: doi tu `libx264` sang `h264_nvenc` cho ra mot tep khac —
@@ -505,6 +527,11 @@ def van_tay_che_do(*, che_do: str, bo_ma_hoa: str,
     goi = json.dumps({
         "che_do": che_do,
         "bo": bo_ma_hoa,
+        # ⭐ Ho so phu de vao van tay, khong phai duong dan `.ass`. Duong dan la
+        #    mot tep tam doi ten moi lan chay; ho so moi la thu quyet dinh KET
+        #    QUA. Bam duong dan se lam moi lan chay ra mot van tay khac du cau
+        #    hinh y het — tuc pha huy chinh cai cache ma van tay ton tai de mo.
+        "phu_de": phu_de or None,
         "tham_so": list(THAM_SO.get(bo_ma_hoa, ())),
         "khoang": [[round(float(b), 4), round(float(k), 4)] for b, k in khoang],
         # 🔴 L4 cua `vung_che`: doi vung ma van tay khong doi la **phuc vu lai

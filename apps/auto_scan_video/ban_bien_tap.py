@@ -190,13 +190,16 @@ def lap_ban(*, preset: str, chi_muc, hieu_canh=None, ban_ghi=None) -> BanBienTap
         return ban
 
     theo_ma = {getattr(h, "ma_canh", ""): h for h in (hieu_canh or ())}
-    qd = []
+    # ⚠️ Ten KHAC voi `qd` o nhanh tren: cai kia la `tuple`, cai nay la `list`
+    #    dang duoc boi. Dung chung mot ten bat nguoi doc giu hai hinh dang cho
+    #    mot cai ten, va lam moi cong cu kiem kieu mu voi ca doan phia sau.
+    ds_qd = []
     for c in canh:
         h = theo_ma.get(c.ma)
         co_thoai = _co_thoai(ban_ghi or {}, c.bat, c.ket)
-        qd.append(_quyet_dinh_mot_canh(c, h, co_thoai=co_thoai))
+        ds_qd.append(_quyet_dinh_mot_canh(c, h, co_thoai=co_thoai))
 
-    ban = BanBienTap(preset, tuple(qd), thoi_luong, ghi_chu={
+    ban = BanBienTap(preset, tuple(ds_qd), thoi_luong, ghi_chu={
         "so_canh": len(canh),
         "so_co_bang_chung": sum(1 for c in canh if c.ma in theo_ma),
     })

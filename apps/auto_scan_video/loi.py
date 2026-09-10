@@ -231,6 +231,22 @@ def phan_loai(exc: BaseException) -> str:
     # ⛔ Mot ban dung co logo ma thieu `rong_khung` se nem giua giai doan ket
     #    xuat. Roi xuong `retry` thi ba luot deu hong y het — cung mot ban dung,
     #    cung mot truong thieu.
+    # ── Phu de (V6 pha 14) ──────────────────────────────────────────────────
+    #
+    # Cung nhom voi `LopPhuLoi`/`LogoLoi`, va cung mot ly do CO HOC: `phu_de`
+    # duoc goi ca o bien HTTP lan **trong mot job** (khi `ket_xuat` dung chuoi
+    # loc `ass=`). Duong thu hai moi la ly do dong nay ton tai.
+    #
+    # ⛔ Mot kieu phu de khong con ton tai — `autosubvideo` doi ten mot preset —
+    #    se nem `PhuDeLoi` giua giai doan ket xuat. Roi xuong nhanh `retry` thi
+    #    ba luot deu hong y het: cung mot ho so, cung mot id da bien mat.
+    #
+    # ⭐ `NGUOI_DUNG` o day khong noi "loi cua khach". No noi **that bai cuoi
+    #    cung, dung thu lai** — dung nghia ma bang nay dung cho `CatLoi`.
+    from .phu_de import PhuDeLoi
+    if isinstance(exc, PhuDeLoi):
+        return NGUOI_DUNG
+
     from .logo import LogoLoi
     if isinstance(exc, LogoLoi):
         return NGUOI_DUNG

@@ -46,6 +46,7 @@ from server.templating import templates
 from . import cat_dau_cuoi, hop_dong_v4, features, gia, pipeline, quan_sat, vung_che
 from . import lop_phu as lop_phu_mod
 from . import logo as logo_mod
+from . import phu_de as phu_de_mod
 from . import tu_dien as tu_dien_mod
 from . import cai_dat as cai_dat_mod
 from .manifest import MANIFEST
@@ -210,6 +211,8 @@ def _ngu_canh_studio(db, u, loi: str = "", nap_lai: dict | None = None) -> dict:
         #: Han muc cua logo — cung ly do voi lop phu: khong go `2` va `8` vao
         #: template. Giao dien cho them 3 logo trong khi may chu tu choi o 2 la
         #: cach mot han muc troi im lang.
+        #: Danh sach kieu + che do phu de. Cung ly do voi hai khoi tren.
+        "phu_de": phu_de_mod.cho_giao_dien(),
         "logo_toi_da": logo_mod.SO_LOGO_TOI_DA,
         "logo_tran_mb": features.tran_logo_byte() // (1024 * 1024),
         "nhan_trang_thai": NHAN_TRANG_THAI,
@@ -312,6 +315,9 @@ async def tao(request: Request,
               #: `logo_anh` — xem `_doc_logo` de biet vi sao khong zip mu.
               logo: str = Form(""),
               logo_anh: list[UploadFile] | None = File(None),
+              #: Phu de, JSON `{che_do, kieu, phan_doan, xuat_srt}` (V6 pha 14).
+              #: Rong = khong phu de, va do la truong hop BINH THUONG.
+              phu_de: str = Form(""),
               csrf_token: str = Form(""),
               _g: None = Depends(_cong_co),
                 user: str = Depends(require_login),
@@ -443,6 +449,19 @@ async def tao(request: Request,
     #    chay khong dung tinh nang nay khac di ma khong vi ly do gi.
     if ds_lop_phu:
         cai_dat["lop_phu"] = ds_lop_phu
+
+    # ⭐ Ca tang doc + duyet + doi chieu preset nam o `phu_de.tu_form`, khong o
+    #    day. Tep nay o 880/900 dong (`tools/lint_app_contract.py`), va hop dong
+    #    app noi thang route khong phai cho chua nghiep vu.
+    #
+    # ⛔ `tu_form` chan truc DOT o preset giu hinh, nhung **khong** chan truc
+    #    `.srt` — khac ba tinh nang tren. Xem docstring cua no.
+    try:
+        ho_so_phu_de = phu_de_mod.tu_form(phu_de, preset=preset)
+    except phu_de_mod.PhuDeLoi as exc:
+        return _lai_voi_loi(request, db, u, str(exc))
+    if ho_so_phu_de:
+        cai_dat["phu_de"] = ho_so_phu_de
 
     # ── Logo (V6 pha 11b) ───────────────────────────────────────────────────
     #

@@ -65,7 +65,7 @@ def dung(*, khoa_video: str, khoa_nen: str, ke_hoach: dict,
          tong_giay: float, khoa_master: str = "", che_do: str = "",
          bo_ma_hoa: str = "", khoang_giu=None, preset: str = "",
          vung=None, lop_phu=None, cao_khung: int = 0,
-         ds_logo=None, rong_khung: int = 0) -> dict:
+         ds_logo=None, rong_khung: int = 0, phu_de=None) -> dict:
     """Dung ban dung tu cac tai lieu chinh tac. Khong cham mot tep media nao.
 
     `ke_hoach`      ket qua cua `thoi_gian.lap_ke_hoach`
@@ -184,6 +184,10 @@ def dung(*, khoa_video: str, khoa_nen: str, ke_hoach: dict,
             #    nen no phai nam trong tap doi chieu `khoa_hop_le` cua
             #    `kiem()`. Mot dong chu thi khong the "khong ton tai".
             "logo": [dict(l) for l in (ds_logo or ())],
+            # ⭐ Ho so phu de, KHONG phai duong dan `.ass`. Duong dan la mot tep
+            #    tam doi ten moi lan chay; ban dung phai mang QUYET DINH, con
+            #    tep thi do `giai_doan_ban_dung` dung ra tu ho so nay.
+            "phu_de": dict(phu_de) if phu_de else None,
             #: Chieu RONG khung nguon. Cung ly do voi `cao_khung`: be rong
             #: logo phai duoc tinh ra pixel truoc khi dung chuoi loc.
             "rong_khung": int(rong_khung or 0),
@@ -283,6 +287,23 @@ def kiem(ban: dict, *, khoa_hop_le: set[str] | None = None) -> None:
     if hinh.get("lop_phu") and int(hinh.get("cao_khung") or 0) <= 0:
         raise BanDungError(_t(
             'Bản dựng có lớp phủ chữ nhưng không khai chiều cao khung hình.'))
+
+    # ── Phu de (V6 pha 14): cung rang buoc VAT LY, va cau rieng ─────────────
+    #
+    # ⛔ Khong gop vao dieu kien `or` cua lop phu. Ba tinh nang khac nhau thi ba
+    #    cau tra loi khac nhau: khach BAT PHU DE, khach GO MOT DONG CHU va khach
+    #    VE MOT O CHE la ba viec — mot cau chung chung buoc ho phai doan minh
+    #    vua lam gi sai.
+    #
+    # ⭐ Chi chan viec DOT. Mot ho so chi `xuat_srt` khong cham diem anh nao nen
+    #    no hop le o CA HAI preset — do la lua chon phu de duy nhat con lai o
+    #    preset giu hinh, va chan no o day la khoa mat mot tinh nang chay duoc.
+    from . import phu_de as _pd
+    if (_pd.co_dot_vao_hinh(hinh.get("phu_de"))
+            and hinh.get("cach_render") != _cdr.CAT_MA_HOA_LAI):
+        raise BanDungError(_t(
+            'Phụ đề khắc vào hình chỉ dùng được với kiểu xử lý có biên tập lại '
+            'hình. Bản giữ nguyên hình vẫn xuất được tệp phụ đề rời.'))
 
     # ── Logo: cung ba chot, va mot chot THU TU chi no moi co ────────────────
     if hinh.get("logo") and hinh.get("cach_render") != _cdr.CAT_MA_HOA_LAI:

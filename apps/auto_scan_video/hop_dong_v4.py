@@ -110,7 +110,6 @@ CAM_TRONG_MVP: tuple[str, ...] = (
     "crop",
     "zoom",             # motion / camera path
     "broll",            # sinh canh moi
-    "subtitle_burn",    # `apps/autosubvideo` da lam viec nay
     "upscale",          # `apps/upscalevideo` da lam viec nay
     "music_replace",
     "transition",
@@ -121,7 +120,6 @@ CAM_TRONG_MVP: tuple[str, ...] = (
 HAU_MVP: tuple[str, ...] = (
     "reframe",
     "zoom",
-    "subtitle_burn",
     "upscale",
     "broll",
     "multi_speaker_voice",      # nhieu giong cho nhieu nguoi noi
@@ -153,10 +151,33 @@ HAU_MVP: tuple[str, ...] = (
 #:
 #: ⭐ Bang nay ton tai de tra loi cau *"tinh nang nay co thuoc MVP khong"* bang
 #:    MA thay vi bang mot tep `.md`. Mot muc o day la mot muc DA duoc quyet.
+# ⭐ **`subtitle_burn` GIA NHAP o pha 14**, va vong doi cua no giong het
+#    `logo_image`: no nam o `CAM_TRONG_MVP` + `HAU_MVP` vi mot phu thuoc CO
+#    THAT — ASV khong co duong goi nang luc phu de cua `apps/autosubvideo`.
+#    Pha 14 mo duong do (`phu_de.py` + `ass=` trong `-filter_complex` cua
+#    `ket_xuat`), nen phu thuoc het.
+#
+# ⛔ **DOT phu de doi diem anh, nen no BAT KHA o preset giu hinh** — `-c:v copy`
+#    khong giai ma khung nao. Cung rang buoc VAT LY voi `mask_region`,
+#    `text_overlay`, `logo_image`, khong phai mot chinh sach ta chon.
 NANG_LUC_DOI_DIEM_ANH: tuple[str, ...] = (
     "mask_region",      # `vung_che` — V5
     "text_overlay",     # `lop_phu`  — V6 pha 11
     "logo_image",       # `logo`     — V6 pha 08b/11b
+    "subtitle_burn",    # `phu_de`   — V6 pha 14
+)
+
+#: Nang luc KHONG doi diem anh — hop le o MOI preset.
+#:
+#: 🔑 Bang nay ton tai de tra loi mot cau ma `NANG_LUC_DOI_DIEM_ANH` khong tra
+#:    loi duoc: *"khach o preset giu hinh co lay duoc phu de khong?"* Co — chi la
+#:    lay ra mot tep `.srt` roi, khong dot vao hinh.
+#:
+#: ⛔ Gop hai bang lam mot se khoa mat lua chon phu de DUY NHAT con lai o preset
+#:    giu hinh. Do la `hai-rao-bi-gop-lam-mot` o dang khac: hai truc doc lap bi
+#:    buoc vao mot cong tac, va cai bi mat khong bao loi — no chi khong ton tai.
+NANG_LUC_KHONG_DOI_DIEM_ANH: tuple[str, ...] = (
+    "subtitle_srt",     # `phu_de.xuat_srt` — V6 pha 14
 )
 
 

@@ -108,6 +108,54 @@ def _khoa_con_dung(db, kho: Storage, run) -> set[str]:
             if assets.kiem_toan_ven(db, kho, a) == ASSET_OK}
 
 
+def _ho_so_phu_de(db, kho: Storage, run, ke_hoach: dict, cai, cach: str):
+    """Ho so phu de DA CHOT su kien, hoac `None`. Chay o COMPOSE, khong o RENDER.
+
+    🔑 **Su kien duoc chot o day va di theo ban dung.** RENDER mo dung MOT tep —
+       ban dung — nen moi thu no can phai nam trong do. Bat no doc lai ke hoach
+       + van ban la mo mot duong phu thuoc thu hai toi cung mot du lieu, va hai
+       duong doc thi hai lan doc co the lech nhau.
+
+    ⛔ **Nguon chu la tai lieu `CONTENT_PROCESS`, khong phai ban ke tieng.** Ban
+       ke tieng la `{ma, khoa, giay}` — no tro toi tep WAV, no khong mang mot
+       chu nao. `giai_doan_giong` cung phai doc chinh tai lieu nay de co chu.
+
+    ⚠️ **Chi doc khi khach thuc su xin phu de.** Mot lan doc artifact cho moi lan
+       chay, ke ca lan khong dung tinh nang, la mot chi phi tra cho khong.
+    """
+    from . import phu_de as _pd
+
+    ho_so = _pd.chuan_hoa(cai.phu_de)
+    if not ho_so:
+        return None
+
+    # ⭐ Ha truc DOT o preset giu hinh — **khong** bo ca ho so. Xem
+    #    `phu_de.ha_ve_srt`: `.srt` la lua chon phu de duy nhat con lai o do, va
+    #    no khong cham mot diem anh nao.
+    #
+    # ⛔ Va o day khong tin giao dien: giao dien an o "khac vao hinh" khi preset
+    #    la giu hinh, nhung mot yeu cau dung tay van toi duoc.
+    from . import che_do_render as _cdr
+    if cach != _cdr.CAT_MA_HOA_LAI:
+        ho_so = _pd.ha_ve_srt(ho_so)
+    if not ho_so:
+        return None
+
+    from . import features, van_ban
+
+    truoc = features.giai_doan_theo_ten(db, run.id, pipeline.CONTENT_PROCESS)
+    khoa = next((k for k in ((truoc.outputs or {}).get("khoa_asset") or [])
+                 if k.endswith(".json")), "") if truoc else ""
+    if not khoa:
+        raise ThieuDauVao(_t('Chưa có bản dịch để dựng phụ đề.'))
+    tai_lieu = _doc(kho, khoa)
+    van_ban.kiem(tai_lieu)          # doc lai thi kiem lai (I8)
+
+    ho_so["su_kien"] = _pd.su_kien_ra_goi(
+        _pd.su_kien_tu_ke_hoach(ke_hoach, tai_lieu))
+    return ho_so
+
+
 def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     """Doc ke hoach + ban ke tieng -> ban dung, da doi chieu day du."""
     khoa_kh = _khoa_json(db, run, pipeline.TIMING_ALIGN)
@@ -210,6 +258,11 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         lop_phu=(cai.lop_phu if cach == cdr.CAT_MA_HOA_LAI else ()),
         # ⭐ Logo di cung khuon ba tang, va vi CUNG mot ly do vat ly.
         ds_logo=(cai.logo if cach == cdr.CAT_MA_HOA_LAI else ()),
+        # ⭐ Phu de KHONG di theo khuon `... if cach == CAT_MA_HOA_LAI else ()`
+        #    cua ba dong tren, va do la khac biet CO CHU DICH. Ba thu kia co
+        #    dung MOT truc (doi diem anh); phu de co HAI, va truc `.srt` chay
+        #    duoc o CA HAI preset. Xem `_ho_so_phu_de`.
+        phu_de=_ho_so_phu_de(db, kho, run, ke_hoach, cai, cach),
         rong_khung=_rong_khung, cao_khung=_cao_khung)
 
     # 🔑 Muc 5: doi chieu MOI tham chieu TRUOC khi ton mot suat render.

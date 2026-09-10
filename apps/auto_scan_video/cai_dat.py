@@ -66,7 +66,7 @@ PHIEN_BAN = 3
 KHOA_SCHEMA = "schema"
 
 #: Nhung khoa CHI ghi khi khach thuc su dung tinh nang. Xem bang o docstring.
-KHOA_THUA = ("cat", "vung", "lop_phu", "logo")
+KHOA_THUA = ("cat", "vung", "lop_phu", "logo", "phu_de")
 
 #: ⛔ `voice_id` la mot BI DANH cu cua `giong_id`, khong phai mot truong thu hai.
 #:    Xem `rang_giong.tu_thiet_lap`: hai khoa nay da song song mot thoi gian va
@@ -99,6 +99,12 @@ class CaiDat:
     vung: tuple = ()
     lop_phu: tuple = ()
     logo: tuple = ()
+    #: Ho so phu de (V6 pha 14), hoac `None`. Xem `phu_de.chuan_hoa`.
+    #:
+    #: ⚠️ `dict` chu khong `tuple` nhu ba truong tren, va do la khac biet CO
+    #:    THAT chu khong phai thieu nhat quan: `vung`/`lop_phu`/`logo` la N mon
+    #:    khach them tung cai mot, con phu de la MOT quyet dinh cho ca video.
+    phu_de: dict | None = None
 
     @property
     def co_sua_diem_anh(self) -> bool:
@@ -107,7 +113,13 @@ class CaiDat:
         ⭐ Cau hoi nay tung phai tra loi bang cach hoi rieng bon danh sach o bon
            cho. Mot cho hoi la mot cho phai cap nhat khi co dieu khien thu nam.
         """
-        return bool(self.vung or self.lop_phu or self.logo)
+        # ⭐ `co_dot_vao_hinh`, khong phai `bool(self.phu_de)`: mot ho so chi
+        #    `xuat_srt` KHONG cham mot diem anh nao. Hoi sai o day se lam mot
+        #    lan chay chi-xuat-SRT bi doi xu nhu mot lan ma hoa lai — tuc cam
+        #    no o preset giu hinh, dung noi ma no la lua chon DUY NHAT con lai.
+        from . import phu_de as _pd
+        return bool(self.vung or self.lop_phu or self.logo
+                    or _pd.co_dot_vao_hinh(self.phu_de))
 
 
 def _chuoi(tho: Mapping, khoa: str, mac_dinh: str = "") -> str:
@@ -180,7 +192,12 @@ def tu_ho_so(tho: Mapping | None) -> CaiDat:
         cat=(float(cat[0]), float(cat[1])) if cat else None,
         vung=tuple(tho.get("vung") or ()),
         lop_phu=tuple(tho.get("lop_phu") or ()),
-        logo=tuple(tho.get("logo") or ()))
+        logo=tuple(tho.get("logo") or ()),
+        # ⛔ KHONG goi `phu_de.chuan_hoa` o day. Duong GHI da chuan hoa (routes),
+        #    va chuan hoa lan hai o duong DOC lam mot ho so cu bong nhien doc ra
+        #    khac di — tuc doi van tay cua nhung lan chay da xong. Cung luat ma
+        #    `vung` dang theo: *"ban da luu moi la ban that"*.
+        phu_de=(dict(tho.get("phu_de")) if tho.get("phu_de") else None))
 
 
 def doc(run) -> CaiDat:

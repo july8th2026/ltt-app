@@ -17,6 +17,7 @@ from apps.auto_scan_video import loi
 from apps.auto_scan_video.ban_dung import BanDungError
 from apps.auto_scan_video.cat_dau_cuoi import CatLoi
 from apps.auto_scan_video.lop_phu import LopPhuLoi
+from apps.auto_scan_video.phu_de import PhuDeLoi
 from apps.auto_scan_video.logo import LogoLoi
 from apps.auto_scan_video.tu_dien import TuDienLoi
 from apps.auto_scan_video.vung_che import VungLoi
@@ -83,6 +84,18 @@ BANG = {
     #    luot chay lai deu cho cung mot ket qua — cung mot cua so tren cung mot
     #    ban do. Khach cho ba lan de nhan cung mot cau tra loi.
     CatLoi: loi.NGUOI_DUNG,
+    # 🔑 `PhuDeLoi` (V6 pha 14) di toi `phan_loai` qua **HAI** duong, va duong
+    #    thu hai moi la ly do dong nay ton tai:
+    #
+    #      `phu_de.tu_form`       bat ngay o `routes.tao` — chua toi `phan_loai`
+    #      `phu_de.viet_tep_ass`  goi tu `giai_doan_ket_xuat`, tuc TU TRONG mot
+    #                             JOB, dung luc dung tep `.ass`
+    #
+    # ⛔ Mot kieu chu khong con ton tai — `autosubvideo` doi ten mot preset — se
+    #    nem giua giai doan ket xuat. Roi xuong `retry` thi ba luot deu hong y
+    #    het: cung mot ho so, cung mot id da bien mat, va moi luot ton mot suat
+    #    render.
+    PhuDeLoi: loi.NGUOI_DUNG,
     # 🔑 `LopPhuLoi` di toi `phan_loai` qua **HAI** duong, va duong thu hai moi
     #    la ly do dong nay ton tai:
     #

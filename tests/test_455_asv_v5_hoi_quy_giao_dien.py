@@ -277,8 +277,49 @@ def test_GUI_khong_mo_duoc_thao_tac_dang_bi_CAM():
     assert "crop" in hop_dong_v4.CAM_TRONG_MVP
     assert "reframe" in hop_dong_v4.CAM_TRONG_MVP
     assert "music_replace" in hop_dong_v4.CAM_TRONG_MVP
-    assert "subtitle_burn" in hop_dong_v4.CAM_TRONG_MVP
     assert hop_dong_v4.THAO_TAC_CHO_PHEP[hop_dong_v4.PRESET_GIU_HINH] == ()
+
+
+def test_mot_nang_luc_da_MO_thi_phai_MO_HAN_o_bang_hop_dong():
+    """🔑 Nua con lai cua bai tren, them o pha 14.
+
+    Bai tren tra loi *"cai gi con bi cam"*. Bai nay tra loi *"cai da duoc mo thi
+    trong ho so no ra sao"* — va do la cau hoi ma ban cu khong hoi duoc.
+
+    `subtitle_burn` **da roi khoi `CAM_TRONG_MVP`** o pha 14. No duoc mo dung
+    duong: doi hop dong, viet `phu_de.py`, ghi `PHA14_PHU_DE.md`. Nen dong cu
+    (`assert "subtitle_burn" in CAM_TRONG_MVP`) da noi mot dieu khong con dung.
+
+    ⛔ Nhung xoa dong do la mat mot rang chan. Mot lan "tien tay" tiep theo co
+       the go mot muc khoi `CAM_TRONG_MVP` ma **khong** them no vao bang nang
+       luc nao — luc ay tinh nang o trang thai *"khong bi cam, va cung khong
+       ai khai"*: khong phep kiem nao chan, khong tai lieu nao noi. Do dung la
+       `nang-luc-co-nhung-khong-ai-di-tren-duong`.
+
+    ⇒ Bai nay chot mot menh de DUONG: **moi thu da roi khoi bang CAM phai co
+      mat o dung mot bang nang luc.** Roi khoi ca hai la mot lo hong.
+    """
+    from apps.auto_scan_video import hop_dong_v4
+
+    da_khai = (set(hop_dong_v4.NANG_LUC_DOI_DIEM_ANH)
+               | set(hop_dong_v4.NANG_LUC_KHONG_DOI_DIEM_ANH))
+
+    # `subtitle_burn` — truong hop cu the pha 14 vua mo.
+    assert "subtitle_burn" not in hop_dong_v4.CAM_TRONG_MVP
+    assert "subtitle_burn" in hop_dong_v4.NANG_LUC_DOI_DIEM_ANH
+    assert "subtitle_burn" not in hop_dong_v4.NANG_LUC_KHONG_DOI_DIEM_ANH
+
+    # ⭐ Va truc thu hai cua no — `.srt` — o **bang khac**, vi no khong cham
+    #    mot diem anh nao. Gop hai bang lam mot se khoa mat lua chon phu de duy
+    #    nhat con lai o preset giu hinh, va khoa im lang.
+    assert "subtitle_srt" in hop_dong_v4.NANG_LUC_KHONG_DOI_DIEM_ANH
+    assert "subtitle_srt" not in hop_dong_v4.NANG_LUC_DOI_DIEM_ANH
+
+    # Menh de tong quat: khong nang luc nao vua bi cam vua duoc khai.
+    chong = da_khai & set(hop_dong_v4.CAM_TRONG_MVP)
+    assert not chong, (
+        f"{sorted(chong)} vua nam trong CAM_TRONG_MVP vua duoc khai la nang "
+        f"luc — ma thi dang chay, hop dong thi noi 'chua lam'")
 
 
 def test_app_van_CHUA_mo_cho_khach():
