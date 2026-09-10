@@ -533,3 +533,100 @@ phiên"* — và tôi vẫn dùng `Start-Process -Verb RunAs` cho một lô 32 p
 ⭐ Không đổi kết luận (5/5 ở cánh đối chứng là dứt khoát), nhưng nó mất phần
    **tỉ lệ**: với n=5, "4/5 hỏng ở trần cũ" là một ước lượng thô, không phải một
    tỉ lệ. Ai cần con số ấy thì chạy lại **qua Scheduled Task**.
+## 12. ✅ ĐÓNG — `test_448` xanh ở độ trung thực đầy đủ, và bằng một mệnh đề DƯƠNG
+
+```
+26 passed, 1 skipped, 0 failed        (22:46, ghi luc 2026-09-10T12:49:22)
+giong_that = True   model_that = True   thay_the = []
+```
+
+### Mệnh đề dương, đọc từ chính tệp bằng chứng chứ không từ dòng `RESULT`
+
+| cánh | giai đoạn | `tai_ve` | `qc` | `chuyen_loi_thoai` |
+|---|---|---|---|---|
+| `giu_hinh` / `localize_preserve_picture` | **11/11** | 200, 2.193.981 B | đạt, 13/13 mục | **5.768** token |
+| `cat_thong_minh` / `smart_localize` | **11/11** | 200, 1.837.772 B | đạt, 13/13 mục | **4.961** token |
+
+`ma_nguoi_khac = 404` cả hai (ranh giới sở hữu giữ), `doi_soat.khop = True`,
+`tu_choi = 0`, mỗi cánh 6 mục lồng tiếng bằng `LTTStudioVoice` thật ở `:8120`.
+
+⭐ Đây là điều mục 11 hứa mà chưa làm được: mục 11 đo **nhu cầu** trên một
+   đường riêng; mục này cho thấy **đúng giai đoạn từng hỏng nay chạy qua**, trên
+   đường thật, với model thật và PostgreSQL thật.
+
+### 🔑 Hai con số ấy giết luôn cách đọc "trần cũ hơi chật"
+
+Cả **5.768** và **4.961** đều **trên** trần cũ 4.096, và cả hai rơi đúng vào cửa
+sổ nhu cầu **4.186–6.843** đo được ở mục 11.
+
+⛔ Nhưng phần đắt nhất là so với lượt **09/09**: chính cánh `cat_thong_minh` khi
+   ấy dùng **3.985** token và **lọt** — dưới trần cũ. Hôm nay cùng cánh, cùng
+   đầu vào, dùng **4.961** và sẽ **vượt**.
+
+⇒ Với trần 4.096, cánh ấy không hề "an toàn" — nó là một **đồng xu**; cánh kia
+  thì hỏng chắc. Đúng nghĩa đen `phanh-luon-an-te-hon-khong-co-phanh`: thất bại
+  là **mặc định**, và lượt xanh 09/09 là một **ngoại lệ may mắn**, không phải
+  bằng chứng trần đủ dùng. Ai chạy lại hôm ấy và thấy cánh đó xanh sẽ kết luận
+  sai — `chay-lai-mot-phep-kiem-do-khong-phai-bang-chung`.
+
+### Vì sao tệp bằng chứng cũ đỏ, nói cho gọn
+
+Tệp cũ ghi lúc **2026-09-09 12:31**, tức **trước** commit `6fcc39ed`
+(2026-09-10 03:22) nới trần 4.096 → 16.384. Hai cánh nằm hai phía đúng cái trần
+đó. Không có bug nào trong đường ống; có một **rào đặt dưới sàn nhu cầu**.
+
+⚠️ Phạm vi của câu kết luận này, và nó hẹp hơn nó nghe: nguyên nhân của **các
+   cánh này**, ở **cỡ đầu vào này**, là trần token — `finish_reason = length`.
+   Nó **không** giải thích chế độ `stop` + nội dung rỗng mà phiên
+   `ltt-llm-api-http-guide` đo được ở ngữ cảnh 13.487 token, nơi model tự kết
+   thúc với **3.062 token ngân sách còn thừa**. Hai cơ chế khác nhau tình cờ in
+   ra cùng một chuỗi `chuyen_loi_thoai: model tra ve rong`. Nới trần chữa cái
+   thứ nhất và **vô ích** với cái thứ hai.
+
+⇒ Cột `finish_reason` nối vào sổ cái ở `a0666981` là thứ phân biệt hai cơ chế
+  ngay trong dữ liệu vận hành, không cần dựng lại một lô đo.
+
+### ⛔ Lượt 11:47 hỏng vì tranh tài nguyên — và nó dạy một bài không về ASV
+
+Lượt trước đó (ghi lúc 11:47) có `giu_hinh` **11/11** nhưng `cat_thong_minh`
+chết ở `voice_synthesis` với năm lần `BanError: May tao tieng dang ban`. Cổng
+giọng `:8120` là semaphore **một suất, không hàng đợi**
+(`voice_sidecar/engine.py:_Cong`), và một phiên khác đang chạy một lô đo trên đó.
+
+🔑 Cơ chế đáng ghi **không** phải "hai phiên tranh nhau" mà là hình dạng của
+   chúng. `DangBanTam` mang `retry_after_s`, nên job ASV lùi lại theo nhịp
+   **20 / 20 / 167 / 20 / 10** giây; trong quãng lùi cổng rảnh và vòng lặp chặt
+   của bên kia lấy được; job ASV quay lại thì cổng đầy.
+
+⇒ **Một semaphore không hàng đợi thì không phân xử — nó chỉ từ chối.** Nó không
+  biết ai đã chờ bao lâu, nên thứ nó chọn là *ai nhanh tay hơn*: một vòng lặp
+  chặt **luôn** thắng một job biết lùi, và bên lịch sự thua **có hệ thống**.
+  Chỉ một khoá ở tầng trên mới biến điều đó thành *ai tới trước*.
+
+Lượt 12:26 xin bốn khoá `cua_so_yen` — `cpu_nhieu`, `may_b`, `may_tao_tieng`,
+`postgres_test` — kèm chốt **fail-closed** (hết giờ chờ thì bỏ cuộc với mã 75,
+KHÔNG chen). Đối chứng: `voice-err.log` chỉ có **40 dòng trong 17 phút** sau
+12:21, so với 6–9 dòng **mỗi phút** khi lô kia chạy. Khác đúng một biến:
+
+```
+11:39-11:47  khong khoa  -> mat voice_synthesis mot canh (va ben kia mat 19/20)
+12:26-12:49  co khoa     -> 11/11 va 11/11, khong mot 429 nao
+```
+
+### ⚠️ Và một đường chết thứ hai, không liên quan gì tới ASV
+
+Lượt 11:19 chạy **dưới Scheduled Task** — đúng thứ memory `lo-do-dai-tren-may-b`
+yêu cầu — mà vẫn chết ở phút **6,5** với
+`LastTaskResult = 0xC000013A = STATUS_CONTROL_C_EXIT`: một **sự kiện điều khiển
+console**. Thủ phạm chưa quy được vì log
+`Microsoft-Windows-TaskScheduler/Operational` mặc định **tắt**.
+
+⇒ Scheduled Task là điều kiện **cần, chưa đủ**. Bản chạy được dùng `pythonw.exe`
+  (không cấp phát console), con sinh với `CREATE_NO_WINDOW |
+  CREATE_NEW_PROCESS_GROUP`, `AllowHardTerminate = $false`, và **nhịp tim 15
+  giây** — chính nhịp tim cho ra con số "phút 6,5", thứ làm cả chẩn đoán này khả
+  dĩ. Đã cập nhật memory `lo-do-dai-tren-may-b`.
+
+⛔ Và đừng đọc `Get-ScheduledTask … State` thành kết quả: `Ready` là trạng thái
+   của một lượt **đã kết thúc**, không phân biệt kết thúc kiểu nào. Câu trả lời
+   ở `(Get-ScheduledTaskInfo …).LastTaskResult`.
