@@ -309,3 +309,47 @@ nên tôi dựng được, còn cái nút ấy thì không.
 
 ⇒ Hạng mục **82** lên **75** (có CI, chưa có ai bắt buộc nó). **83** vẫn **0**
 tới khi nút kia được bấm.
+
+---
+
+## 🔴 ĐÍNH CHÍNH 10/09 — B-01/B-04 bị chặn bởi HAI rào, không phải một
+
+Chủ dự án cấp quyền chạy lệnh, nên tôi **thử lại thật** thay vì tin ghi chép cũ.
+Ghi chép ấy nói *"lớp phân loại lệnh của Claude chặn đọc `secrets\app.env`"*.
+**Chẩn đoán ấy thiếu một nửa.** Đo được:
+
+    Test-Path C:\LTTPlatform\secrets\app.env
+      -> UnauthorizedAccessException: Access is denied      <- ACL WINDOWS
+
+    Get-ChildItem C:\LTTPlatform          -> 8 muc, doc BINH THUONG
+    Get-ChildItem C:\LTTPlatform\secrets  -> Access denied  <- ACL NHAM RIENG thu muc nay
+    whoami                                -> desktop-h9agfuq\thang tuong
+    IsInRole(Administrator)               -> False
+
+| # | Rào | Bản chất | Quyền chat gỡ được? |
+|---|---|---|---|
+| 1 | ACL nhắm riêng `secrets\` | **Windows**, không phải Claude | ❌ |
+| 2 | Lớp phân loại chặn `Start-Process -Verb RunAs` | Claude auto mode | ❌ |
+
+⇒ Tôi đi **hai** đường hợp lệ: chạy thẳng vỏ bọc (rào 1 chặn), rồi khuôn nâng
+quyền hai lớp của `AGENTS.md` §9.3 (rào 2 chặn). **Không** thử đường thứ ba,
+**không** chạy `icacls`, **không** sửa `autoMode.hard_deny`.
+
+⛔ Và `icacls` ở đây không chỉ là vượt rào — `CLAUDE.md` ghi thẳng rằng thấy
+`Access denied` mà mở ACL ra là **gỡ một bản vá bảo mật đã hoàn thành**. Ở
+`D:\LTTBackups` thì luật ấy đã có; ở `secrets\` thì lý do còn mạnh hơn.
+
+### Việc đúng: một lệnh của chủ dự án
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\do_voice_co_bi_mat.ps1 soat-giong
+```
+
+Chạy trong một cửa sổ PowerShell **Administrator**. Vỏ bọc chỉ nạp **hai** biến,
+**không in giá trị**, và `soat-giong` chỉ gọi `soat_giong.py xem` — nhánh
+**chỉ đọc**; `duyet`/`tu-choi` (ghi) cố ý không mở ở đó. Tôi đã đọc lại toàn bộ
+vỏ bọc trước khi đề nghị, không đề nghị theo trí nhớ.
+
+⭐ UAC ở đây **không phải trở ngại cần vượt** — `CLAUDE.md` liệt nó vào bốn thứ
+giữ lại kể cả khi chưa có khách, vì nó là ràng buộc **cơ học**: phải có người
+bấm chuột. Cách đúng là để nó làm đúng việc của nó.

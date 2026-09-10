@@ -7,6 +7,58 @@
 
 ---
 
+## 🔴 ĐỐI CHIẾU 10/09/2026 — BẢNG `U-` DƯỚI ĐÂY LÀ ẢNH CHỤP 07/09, KHÔNG PHẢI DANH SÁCH VIỆC
+
+**Đọc khối này trước khi đọc bảng 19 mục ở §18.** Bảng ấy đúng **lúc nó được
+viết** và chưa bao giờ được đối chiếu lại với thứ đã ship. Ba ngày sau, phần lớn
+đã xong — nhưng bảng vẫn liệt kê chúng như việc còn mở, và một mục (`U-06`) là
+**phát hiện sai** do chính tác giả đính chính ở §19.0.
+
+⇒ Ai đọc bảng ấy theo mặt chữ sẽ **làm lại việc đã xong**. Đó là hạng lỗi
+`CLAUDE.md` luật 5 gọi tên: *một bảng chép tay không có cách nào tự biết nó đã
+cũ*.
+
+### Trạng thái ĐO ĐƯỢC, 10/09/2026
+
+| U- | Việc | Trạng thái đo được | Bằng chứng |
+|---|---|---|---|
+| U-01 | `VoiceRuntimeProfile` | **CƠ CHẾ XONG · DỮ LIỆU RỖNG** | `ho_so_giong.py` đủ; `ho_so_giong.json` có `"giong": {}` ⇒ hạng mục 39 = 30/75 |
+| U-02 | Fallback có kiểm soát | **XONG** | `lui_giong.py` bậc thang 4 nấc, cấm nới giới/làn, bắt sinh cảnh báo |
+| U-03 | Facet lọc giọng | **XONG 09/09** | P7 — vùng + phong cách nay lọc được; `test_352` ghim cả năm trục |
+| U-04 | `VoiceQualityProfile` | **XONG** | 6 bảng tách bạch; `ly_do_loai` bắt buộc khi `rejected` |
+| U-05 | Cổng license | **CƠ CHẾ XONG · DỮ LIỆU CHẶN** | `LICENSE_CHO_PHEP=("ok",)` + `_dieu_kien_kho_chung()` ở **cả hai** cửa đọc; số dòng thật chặn ở B-01 |
+| ~~U-06~~ | ~~Gộp lô GPU~~ | **PHÁT HIỆN SAI** | §19.0 — đã xong từ trước khi bản này được viết |
+| U-07 | Nối streaming vào Studio | **MÃ XONG · CỜ TẮT** | P2 — `/phat-dan` + `sidecar_client.phat_dan` + trình phát Web Audio; chờ `LTT_VOICE_STREAM=1` |
+| U-08 | Kiểm model theo nội dung | **XONG** | `kiem_model.kiem()` gọi ở `engine.nap()` **trước** `self._tts = tts`; log production 09/09 `snapshot lanh` |
+| U-09 | Preview đóng gói | **XONG** | Dựng sẵn một lần, phục vụ như tệp tĩnh; không tính tiền nghe thử |
+| U-10 | Benchmark VI/EN cùng corpus | ⛔ **CHƯA** | Corpus 6 câu; hạng mục 30/31/32 vẫn trần 85 |
+| U-11 | ETA hiển thị cho khách | ⛔ **CHƯA** | Phụ thuộc U-01; hạng mục 40 = `UNKNOWN` |
+| U-12 | Xếp giọng theo mức dùng thật | **XONG** | `muc_dung.py`, gọi thật từ `nghe_thu.py:300` (`_dem_muc_dung`) |
+| U-13 | Nghe thử văn bản của khách | **XONG** | `nghe_thu_cua_toi.py`, `TRAN_KY_TU = 160`, đứng sau admission |
+| U-14 | Chỉ số theo giọng | **XONG** | `chi_so_giong.py`; có người gọi thật ở `routes/_p_chi_so.py:52` |
+| U-15 | Khuôn chuẩn hoá theo cỡ engine | **XONG** | `KhuonChuanHoa` tách phiên âm khỏi đọc số; hạng mục 24 = 95 |
+| U-16 | Bổ sung giọng VI | **XONG** | 20 preset + 8 kho chung = **28 VI**, chạm mục tiêu 20–30 |
+| U-17 | Soát a11y + mobile | **MỘT PHẦN** | P6 sửa 5 nhãn; quét lại 0 nút thiếu tên. Thiếu **thiết bị thật** ⇒ hạng mục 81 chưa chấm |
+| U-18 | Dọn bề mặt chết | **XONG — phán quyết là GIỮ** | Đo: **0** hàm bọc mồ côi; `/v1/stream` có test ghim ⇒ "để sẵn có chủ đích", không phải rác |
+| U-19 | Benchmark OmniVoice | ⛔ **CHƯA** | Chờ license trọng số rõ (R-11) |
+
+    XONG               : 11      (U-02,03,04,08,09,12,13,14,15,16,18)
+    XONG CO CHE, chan  :  3      (U-01 du lieu · U-05 du lieu · U-07 co)
+    MOT PHAN           :  1      (U-17)
+    CHUA               :  3      (U-10, U-11, U-19)
+    PHAT HIEN SAI      :  1      (U-06)
+
+⚠️ **Ba nhóm giữa quan trọng hơn hai nhóm ngoài.** *"Cơ chế xong, dữ liệu rỗng"*
+và *"mã xong, cờ tắt"* đọc ra giống **CHƯA** với người quét nhanh, nhưng việc
+phải làm khác hẳn: không phải viết mã, mà là **chạy một phép đo** hoặc **bật một
+cờ**. Gộp chúng vào "chưa" là cách một lượt soát sau sẽ ước lượng sai công việc
+còn lại.
+
+🔒 Khối này được ghim bằng `tests/test_516_doi_chieu_u_viral.py`: mỗi mục khai
+**XONG** phải còn mô-đun/hàm mà nó viện dẫn. Bảng nói sai thì gate đỏ.
+
+---
+
 ## ⛔ ĐỌC DÒNG NÀY TRƯỚC MỌI DÒNG KHÁC
 
 Kết luận nặng nhất của cả lượt soát này **không phải** về chất lượng giọng, kiến trúc hay UX.

@@ -909,3 +909,74 @@ sửa tạm tệp trong kho sẽ tự phá lượt gate chứa nó, và phá c�
 Tính lại **bằng máy** từ chính bảng A: 77 dòng · 73 có số · trung bình
 **86,15** (trước P8: 86,11). Số hạng mục **≥ 98 vẫn là 0** — P8 không chạm cái
 đó và không được phép trông như đã chạm.
+
+---
+
+## P9 - `test_516`: bang `U-` la ANH CHUP, khong phai danh sach viec
+
+**Hang muc 86 - 80 -> 92 (tran 100)** - `tests/test_516_doi_chieu_u_viral.py`
+
+### Van de THAT rong hon thu so sach ghi
+
+So sach cu ghi ly do tru diem la *"U-06 tu dinh chinh la PHAT HIEN SAI"*. Doc
+lai ca 19 muc thi thay U-06 chi la trieu chung. Van de la bang 19 muc ay la
+**anh chup 07/09 chua ai doi chieu lai voi thu da ship** - va phan lon DA XONG,
+mot so do chinh chuong trinh nay lam (U-03 = P7, U-07 = P2).
+
+=> Nguoi doc theo mat chu se **lam lai viec da xong**. Dung hang loi `CLAUDE.md`
+luat 5 goi ten: *mot bang chep tay khong co cach nao tu biet no da cu*.
+
+### Do tung muc, khong doan
+
+    XONG               : 11   U-02,03,04,08,09,12,13,14,15,16,18
+    XONG CO CHE, chan  :  3   U-01 (du lieu rong) - U-05 (B-01) - U-07 (co tat)
+    MOT PHAN           :  1   U-17
+    CHUA               :  3   U-10, U-11, U-19
+    PHAT HIEN SAI      :  1   U-06
+
+U-12 va U-16 la hai muc toi khong chac nen di do: `muc_dung.py` CO nguoi goi
+that (`nghe_thu.py:300`), va catalog VI dem duoc 28 giong. Ca hai XONG.
+
+### Ba nhom giua quan trong hon hai nhom ngoai
+
+*"Co che xong, du lieu rong"* va *"ma xong, co tat"* doc ra giong **CHUA** voi
+nguoi quet nhanh, nhung viec phai lam khac han: khong phai viet ma, ma la **chay
+mot phep do** hoac **bat mot co**. Gop chung vao "chua" la cach mot luot soat sau
+uoc luong sai cong viec con lai.
+
+### KHONG viet lai bang goc - va do la nua kho hon
+
+Ban kiem toan la mot tai lieu LICH SU. Sua bang cho dung la xoa mat ban ghi ve
+viec luot soat ay da ket luan gi. Thu thieu khong phai mot bang dung hon, ma la
+mot **moc doi chieu co ngay thang dung TRUOC no**.
+
+`test_516::test_khoi_doi_chieu_dung_TRUOC_bang_U` chot ca **vi tri**: khoi nam
+sau bang thi nguoi quet nhanh doc bang truoc, rut ra danh sach viec, roi di lam
+- dung kieu hong no sinh ra de chan.
+
+### Mot bang doi chieu cung la mot bang chep tay
+
+Do la ly do co `test_516`. Ban va cho "bang cu noi sai" ma lai la MOT BANG NUA
+thi chi doi ngay het han ra xa - va te hon, no **trong moi hon** nen dang tin
+hon. Nen moi muc khai XONG phai vien dan mot thu **may kiem duoc**.
+
+14 test / 14 xanh. Bon dot bien, ca bon do dung cho:
+
+    1) sua 11 -> 12 o tong ket   -> tong     = False
+    2) bo gach ngang U-06        -> u06      = False
+    3) xoa khoi doi chieu        -> tong     = False
+    4) go muc_dung.py            -> vien_dan = False
+
+⚠️ Gioi han duoc NOI RA thay vi giau: `test_516` chot duoc chieu *"khai xong ma
+da mat"*, KHONG chot duoc chieu *"khai chua ma that ra da co"* - muc CHUA khong
+co gi de tro toi.
+
+⭐ Va mot lan phep kiem bat loi cua chinh toi: lan chay dau
+`test_con_so_tong_ket_KHOP_voi_bang` **do**, vi regex cua toi khong khop dong
+tong ket co chu thich duoi. Bai kiem sai truoc khi bang sai - va no do that,
+khong xanh-rong.
+
+### Diem tong
+
+Tinh lai bang may: 77 dong - 73 co so - trung binh **86,32** (P8: 86,15; ban
+chot dau: 86,11). So hang muc **>= 98 VAN LA 0**.

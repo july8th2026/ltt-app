@@ -33,7 +33,7 @@ Trong 73 hạng mục chấm được bằng số:
     80 - 89   23
     <  80      7   -> 13 (62) · 14 (30) · 20 (78) · 30 (70) · 39 (30) · 82 (75) · 83 (0)
 
-Trung bình 73 hạng mục ấy là **86,15** (10/09, sau P8 — mục 62 lên 88; bản chốt đầu ghi 86,11). ⚠️ Con số này KHÔNG phải điểm của hệ
+Trung bình 73 hạng mục ấy là **86,32** (10/09, sau P8+P9 — mục 62 lên 88, mục 86 lên 92; bản chốt đầu ghi 86,11). ⚠️ Con số này KHÔNG phải điểm của hệ
 thống: 14 hạng mục không có mặt trong nó, và mọi hạng mục vắng mặt đều vắng vì
 **chưa đo** — tức là phía chưa biết, không phải phía tốt.
 
@@ -114,7 +114,7 @@ là trạng thái **đúng** khi bằng chứng còn thiếu. Áp đúng luật 
     LTT VOICE, 10/09/2026
     ---------------------------------------------------
     dat muc tieu >= 98        :  0 / 87
-    co bang chung, cham duoc  : 77 / 87   (trung binh 86,15 tren 73 muc co so)
+    co bang chung, cham duoc  : 77 / 87   (trung binh 86,32 tren 73 muc co so)
     BLOCKED_WITH_EVIDENCE     : 10 / 87
     ---------------------------------------------------
     PHAN QUYET: CHUA DAT. Va phan lon khoang cach con lai
