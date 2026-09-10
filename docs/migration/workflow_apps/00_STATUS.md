@@ -4,7 +4,7 @@
 > nguồn và `docs/00_LTT_OPERATING_CONTRACT.md`. Một bảng chép tay không có cách
 > nào tự biết nó đã cũ — cơ chế đó đã nói sai năm lần trong kho này.
 
-Cập nhật lần cuối: **2026-09-10 05:30**.
+Cập nhật lần cuối: **2026-09-11**.
 Nguồn: `docs/migration/workflow_apps/01_SOURCE_MANIFEST.md`.
 
 | Phase | Trạng thái | Bằng chứng | Chặn | Kế |
@@ -22,8 +22,8 @@ Nguồn: `docs/migration/workflow_apps/01_SOURCE_MANIFEST.md`.
 | 10 Build GEM | **XONG** | `apps/prompt_canh` (đổi slug) · `test_1105` | — | — |
 | 11 Build Video Assembly | **XONG** | `apps/video_assembly` · `test_1106` | — | — |
 | 12 Legacy workflow rebuild | **MỘT PHẦN** | `32_PHASE12_...md` · `tests/test_1111` — 4 App chạy được như node, dữ liệu chảy giữa 2 node | Canvas/V2 **không có bộ thi hành**; Drive/Sheets connector chưa audit | 13 |
-| 13 Workflow hardening | CHƯA | | | |
-| 14 Agent re-evaluation | CHƯA | | | |
+| 13 Workflow hardening | **MỘT PHẦN** | `33_...md` · `tests/test_1112` (hai chỗ khai VRAM) · `tests/test_1106` (mật độ mốc = độ trễ huỷ) | chưa quét hết nhóm bằng chứng | 14 |
+| 14 Agent re-evaluation | **XONG** | `34_PHASE14_AGENT.md` · `tests/test_1113` — `AGENT_CHANGE_REQUIRED: NO` | planner rate cần máy B | 15 |
 | 15 Final cutover | CHƯA | | | |
 
 ## Bốn quyết định của chủ dự án — 2026-09-09

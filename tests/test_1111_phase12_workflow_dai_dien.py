@@ -138,11 +138,25 @@ def test_NOI_HAI_App_bang_tham_chieu_giua_cac_buoc(db) -> None:
     ở bot cũ, đó là việc mà mã bot-local làm.
     """
     from platform_core.agent import runs
+    # ⛔ Bản đầu của bài này nối `$s1.text` vào `prompt_canh.kich_ban`. HAI cái
+    #    sai trong một dòng, và nó vẫn XANH:
+    #      · `transcript.run` khai `returns={"transcript": "json"}` — **không có**
+    #        cổng `text`;
+    #      · và `json` nối vào `kich_ban` (`text`) là **lệch kiểu**.
+    #
+    #    Nó xanh vì `executor` **không** cưỡng chế `returns`: nó chỉ tra
+    #    `outputs[port]` lúc chạy. Thứ cưỡng chế là **bộ kiểm**, và bài này gọi
+    #    thẳng executor nên đi vòng qua nó — đúng cái bẫy "phép kiểm đi một đường
+    #    production không đi" đã ghi ở `test_1112`.
+    #
+    # ⇒ Đổi sang một chuỗi **hợp kiểu thật**, đã đối chiếu với `validate_plan`:
+    #   `audio_pause` trả `audio`, `transcript` nhận `audio`. Nghĩa nghiệp vụ
+    #   cũng đúng: chèn khoảng lặng rồi phiên âm bản đã chèn.
     plan = _plan([
-        {"id": "s1", "tool": "transcript.run", "after": [],
-         "params": {"audio": "$input.audio"}},
-        {"id": "s2", "tool": "prompt_canh.run", "after": ["s1"],
-         "params": {"kich_ban": "$s1.text", "so_canh": 3}},
+        {"id": "s1", "tool": "audio_pause.run", "after": [],
+         "params": {"audio": "$input.audio", "pause_plan": []}},
+        {"id": "s2", "tool": "transcript.run", "after": ["s1"],
+         "params": {"audio": "$s1.audio"}},
     ], inputs={"audio": "artifact://a.wav"})
     run, con = _chay(db, plan)
     # Nhịp đầu: chỉ `s1` chạy — `s2` chờ `after`.
@@ -161,13 +175,13 @@ def test_NOI_HAI_App_bang_tham_chieu_giua_cac_buoc(db) -> None:
     from platform_core.agent import executor
     from platform_core.models import JOB_DONE
     con[0].status = JOB_DONE
-    con[0].result = {"text": "loi thoai"}
+    con[0].result = {"audio": "artifact://ra.wav"}
     db.commit()
     run = executor.tick(db, run_id=run.id, user_id=NGUOI)
     db.commit()
     s2 = [j for j in runs.children(db, run) if j.step_id == "s2"]
     assert len(s2) == 1, "s2 khong chay sau khi s1 xong"
-    assert s2[0].params["kich_ban"] == "loi thoai", "dau ra s1 khong chay sang s2"
+    assert s2[0].params["audio"] == "artifact://ra.wav", "dau ra s1 khong chay sang s2"
 
 
 def test_bang_chung_cho_moi_run__job_credit_va_trang_thai(db) -> None:

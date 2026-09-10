@@ -75,6 +75,24 @@ MANIFEST = AppManifest(
         # goi co ke toan rieng, nen no luy dang duoc. Ban cu khai `external` vi
         # moi luot tieu mot suat trong han muc PHIEN cua mot tai khoan nguoi
         # that — dieu do khong con dung.
+        # ⛔ CUA THU NHAT trong bon cua, va no dang MO khi khong nen mo.
+        #
+        # 🔴 Do o Phase 14: bo loc bang cong cu cua khach la
+        #    `presentationAdapter.ts:65` — `tool.customer_visible!==false`, HET.
+        #    Khong co bo loc `lifecycle` nao trong ca duong Agent.
+        #
+        #    Nen mot App khai `lifecycle="development"`, `public=False`, CHUA
+        #    nghiem thu E2E, van hien trong palette cua khach va bam chay duoc.
+        #    `public=False` chi giau trang web cua App; no khong giau tool.
+        #
+        # ⇒ Dong cua nay lai cho toi khi parity dong va nghiem thu E2E xong. Day
+        #   la sua METADATA cua Tool, dung nhu Phase 14 yeu cau ("uu tien sua
+        #   Tool metadata truoc planner; khong nhet luat App-specific vao Agent").
+        #
+        # ⚠️ `customer_visible=False` KHONG go nang luc: `discover_tools()` van
+        #    thay, `runtime_noi_bo.bao_gia()` van tra duoc gia, va workflow da
+        #    dung no van chay. Cung khuon `apps/chatltt` da dung.
+        customer_visible=False,
         side_effect="external",
         idempotency={"key_fields": ("kich_ban", "so_canh")},
         # Khong tu khai suat: admission cua `text.chat` lo phan gianh cho.

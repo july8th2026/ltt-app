@@ -67,6 +67,24 @@ MANIFEST = AppManifest(
         # tieu thu. Tra ve mot minh tep am thanh la lam dut mach.
         returns={"audio": "audio", "transcript": "json"},
 
+        # ⛔ CUA THU NHAT trong bon cua, va no dang MO khi khong nen mo.
+        #
+        # 🔴 Do o Phase 14: bo loc bang cong cu cua khach la
+        #    `presentationAdapter.ts:65` — `tool.customer_visible!==false`, HET.
+        #    Khong co bo loc `lifecycle` nao trong ca duong Agent.
+        #
+        #    Nen mot App khai `lifecycle="development"`, `public=False`, CHUA
+        #    nghiem thu E2E, van hien trong palette cua khach va bam chay duoc.
+        #    `public=False` chi giau trang web cua App; no khong giau tool.
+        #
+        # ⇒ Dong cua nay lai cho toi khi parity dong va nghiem thu E2E xong. Day
+        #   la sua METADATA cua Tool, dung nhu Phase 14 yeu cau ("uu tien sua
+        #   Tool metadata truoc planner; khong nhet luat App-specific vao Agent").
+        #
+        # ⚠️ `customer_visible=False` KHONG go nang luc: `discover_tools()` van
+        #    thay, `runtime_noi_bo.bao_gia()` van tra duoc gia, va workflow da
+        #    dung no van chay. Cung khuon `apps/chatltt` da dung.
+        customer_visible=False,
         side_effect="external",
         # `language` NAM TRONG khoa o day — khac `transcript.run`. Ly do that:
         # no chon HO SO STT, nen doi no la doi ket qua phien am, tuc doi vi tri
