@@ -157,18 +157,33 @@ def _thoi_luong_wav(duong: str) -> float:
         raise LoiChenLang(f"ffprobe tra ve khong phai so: {r.stdout[:80]!r}") from e
 
 
-def _ghep_voi_khoang_lang(duong_wav: str, ke_hoach_chen: list[dict],
-                          thu_muc: Path, sample_rate: int,
-                          channels: int = 1) -> str:
-    """Cắt · chèn lặng · nối. Chuyển từ `bot/worker.py::splice_audio_with_pauses`.
 
-    ⚠️ Hai mốc rơi đúng cùng một giây thì **gộp và lấy cái LỚN HƠN**, không cộng
-       dồn. Cộng dồn nghe có vẻ hợp lý hơn, nhưng nó không phải hành vi đã chạy
-       một năm — và ở đây "hợp lý hơn" chính là cách một bản port làm mất parity.
+def ke_hoach_ghep(thoi_luong: float,
+                  ke_hoach_chen: list[dict]) -> list[tuple[str, int, float, float]]:
+    """Phần QUYẾT ĐỊNH của `_ghep_voi_khoang_lang`, tách ra để kiểm được.
+
+    Trả về dãy thao tác: `("lang", i, pause_ms, 0.0)` hoặc `("doan", i, đầu, cuối)`,
+    đúng thứ tự sẽ nối. Không đụng đĩa, không gọi ffmpeg.
+
+    🔴 Vì sao tách. Bot `Bot_PausePipeline` **không để lại hiện vật nào** trên
+       máy — `workdir_bot` rỗng, kết quả nằm trên Drive. Nên mệnh đề *"kết quả
+       như bot đã giao"* hiện **không kiểm được**. Thứ kiểm được là bốn quyết
+       định của thuật toán, và chúng nằm lẫn trong lời gọi ffmpeg nên không phép
+       kiểm nào chạm tới nếu không tách.
+
+    Bốn quyết định, đối chiếu `bot/worker.py:999-1043`:
+
+    1. điểm cắt = `{0.0} ∪ {mọi at_sec} ∪ {thời lượng}`, **khử trùng rồi sắp**
+       (dòng 1006-1007);
+    2. hai mốc trùng một `at_sec` thì **gộp lấy cái LỚN HƠN**, không cộng dồn
+       (dòng 1018);
+    3. đoạn ngắn hơn `0.001` giây thì **bỏ** (dòng 1029-1030);
+    4. khoảng lặng đặt **TRƯỚC** đoạn bắt đầu tại mốc đó (dòng 1032-1039).
+
+    ⚠️ Quyết định 2 là chỗ dễ "sửa cho hợp lý" nhất. Cộng dồn nghe đúng hơn, và
+       nó **không phải** hành vi đã chạy một năm.
     """
     theo_thu_tu = sorted(ke_hoach_chen, key=lambda x: x["at_sec"])
-    thoi_luong = _thoi_luong_wav(duong_wav)
-
     diem_cat = sorted(set([0.0] + [p["at_sec"] for p in theo_thu_tu]
                           + [thoi_luong]))
 
@@ -182,22 +197,43 @@ def _ghep_voi_khoang_lang(duong_wav: str, ke_hoach_chen: list[dict],
         else:
             lang_tai[khoa] = int(p["pause_ms"])
 
-    thu_muc_doan = thu_muc / "doan"
-    thu_muc_doan.mkdir(exist_ok=True)
-
-    cac_tep: list[str] = []
+    ra: list[tuple[str, int, float, float]] = []
     for i in range(len(diem_cat) - 1):
         bat_dau, ket_thuc = diem_cat[i], diem_cat[i + 1]
         if ket_thuc - bat_dau < 0.001:
             continue
         if bat_dau in lang_tai:
+            ra.append(("lang", i, float(lang_tai[bat_dau]), 0.0))
+        ra.append(("doan", i, bat_dau, ket_thuc))
+    return ra
+
+
+def _ghep_voi_khoang_lang(duong_wav: str, ke_hoach_chen: list[dict],
+                          thu_muc: Path, sample_rate: int,
+                          channels: int = 1) -> str:
+    """Cắt · chèn lặng · nối. Chuyển từ `bot/worker.py::splice_audio_with_pauses`.
+
+    ⚠️ Hai mốc rơi đúng cùng một giây thì **gộp và lấy cái LỚN HƠN**, không cộng
+       dồn. Cộng dồn nghe có vẻ hợp lý hơn, nhưng nó không phải hành vi đã chạy
+       một năm — và ở đây "hợp lý hơn" chính là cách một bản port làm mất parity.
+    """
+    thoi_luong = _thoi_luong_wav(duong_wav)
+    thao_tac = ke_hoach_ghep(thoi_luong, ke_hoach_chen)
+
+    thu_muc_doan = thu_muc / "doan"
+    thu_muc_doan.mkdir(exist_ok=True)
+
+    cac_tep: list[str] = []
+    for loai, i, a, b in thao_tac:
+        if loai == "lang":
             lang = thu_muc_doan / f"lang_{i:03d}.wav"
-            audio_splicer.generate_silence(str(lang), lang_tai[bat_dau],
+            audio_splicer.generate_silence(str(lang), int(a),
                                            sample_rate, channels=channels)
             cac_tep.append(str(lang))
-        doan = thu_muc_doan / f"doan_{i:03d}.wav"
-        audio_splicer.cut_audio_segment(duong_wav, str(doan), bat_dau, ket_thuc)
-        cac_tep.append(str(doan))
+        else:
+            doan = thu_muc_doan / f"doan_{i:03d}.wav"
+            audio_splicer.cut_audio_segment(duong_wav, str(doan), a, b)
+            cac_tep.append(str(doan))
 
     if not cac_tep:
         raise LoiChenLang("khong sinh ra doan nao de noi")

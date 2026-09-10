@@ -184,6 +184,38 @@ chứng minh *"kết quả như bot đã giao"*. Với App này thì mệnh đ�
 
 ---
 
+### ✅ Đã làm — tách phần QUYẾT ĐỊNH ra khỏi phần gọi ffmpeg
+
+`ke_hoach_ghep(thoi_luong, ke_hoach_chen)` tách khỏi `_ghep_voi_khoang_lang`:
+trả về dãy thao tác `("lang", i, ms, 0)` / `("doan", i, đầu, cuối)`, không đụng
+đĩa. Bốn quyết định giờ kiểm được mà **không cần audio**, đối chiếu từng dòng với
+`bot/worker.py:999-1043`:
+
+| | Quyết định | Dòng gốc |
+|---|---|---|
+| 1 | điểm cắt = `{0.0} ∪ {at_sec} ∪ {thời lượng}`, khử trùng rồi sắp | 1006-1007 |
+| 2 | hai mốc trùng `at_sec` → **gộp lấy cái LỚN HƠN**, không cộng dồn | 1018 |
+| 3 | đoạn < 0,001 s → bỏ | 1029-1030 |
+| 4 | khoảng lặng đặt **TRƯỚC** đoạn bắt đầu tại mốc đó | 1032-1039 |
+
+⚠️ Quyết định 2 là chỗ dễ "sửa cho hợp lý" nhất: cộng dồn nghe đúng hơn
+(800 + 1800 = 2600) và **không phải** hành vi đã chạy một năm.
+
+Và hai biên kế thừa, **ghi lại chứ không sửa**:
+
+- mốc rơi **đúng cuối tệp** → bị bỏ im lặng (vòng lặp chạy tới `len-1`);
+- mốc **vượt thời lượng** → sinh một đoạn quá đuôi audio.
+
+⭐ Không sửa vì **đường thật không chạm tới**: `at_sec` sinh từ việc khớp văn bản
+với mốc thời gian của chính bản ghi lời ấy. Khác hẳn ca `sequential_timeline`
+bên `video_assembly` — ở đó khiếm khuyết **đo được là đang xảy ra** trên 115/125
+cảnh của một job thật, nên sửa. Ở đây không có phép đo nào nói nó từng xảy ra,
+và sửa một thứ chưa từng hỏng là đổi hành vi mà không có căn cứ.
+
+⛔ Nhắc lại giới hạn: bốn bài này chứng minh **thuật toán khớp bản gốc**, chúng
+**không** chứng minh *"kết quả như bot đã giao"*. Mệnh đề đó ở App này vẫn không
+kiểm được — không có hiện vật nào.
+
 ## 4. `prompt_canh` — khác loại, đừng ép vào cùng một khuôn
 
 Đầu ra là văn bản của LLM. Không tất định, và **không có** một đầu ra "đúng" để

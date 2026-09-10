@@ -237,3 +237,82 @@ def test_handler_nhan_params_va_ctx() -> None:
     import inspect
     assert list(inspect.signature(app_jobs.handle).parameters)[:2] == \
         ["params", "ctx"]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# `ke_hoach_ghep` — phần QUYẾT ĐỊNH của phép ghép, tách ra để kiểm không cần audio
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# 🔴 Vì sao bốn bài dưới đây là thứ duy nhất kiểm được ở App này.
+#
+#    `Bot_PausePipeline` **không để lại hiện vật nào** trên máy: `workdir_bot`
+#    rỗng, `state_pause.json` ghi 3.099 chu kỳ, log có 1.398 lượt `job_done`
+#    nhưng bản ghi chỉ mang `elapsed_s` và một liên kết Drive — không tệp kết
+#    quả, không số mốc khớp/trượt.
+#
+# ⇒ Mệnh đề *"kết quả như bot đã giao"* ở App này **không kiểm được**, và sẽ vẫn
+#   thế trừ khi lấy lại được tệp từ Drive. Thứ kiểm được là bốn quyết định của
+#   thuật toán, đối chiếu từng dòng với `bot/worker.py:999-1043`.
+
+def test_ke_hoach_ghep_giu_DUNG_bon_quyet_dinh_cua_ban_goc() -> None:
+    """Bốn quyết định, đối chiếu `bot/worker.py:999-1043`."""
+    k = chen_lang.ke_hoach_ghep
+
+    # 1. Điểm cắt = {0.0} ∪ {mọi at_sec} ∪ {thời lượng}, khử trùng rồi sắp.
+    ra = k(10.0, [{"at_sec": 4.0, "pause_ms": 800}])
+    assert [(x[0], x[2], x[3]) for x in ra] == [
+        ("doan", 0.0, 4.0), ("lang", 800.0, 0.0), ("doan", 4.0, 10.0)]
+
+    # 4. Khoảng lặng đặt TRƯỚC đoạn bắt đầu tại mốc đó (dòng 1032-1039).
+    assert ra[1][0] == "lang" and ra[2][0] == "doan"
+
+    # 3. Đoạn ngắn hơn 0.001 giây thì bỏ (dòng 1029-1030).
+    assert all(b - a >= 0.001 for loai, _i, a, b in k(
+        10.0, [{"at_sec": 9.9999, "pause_ms": 500}]) if loai == "doan")
+
+
+def test_HAI_MOC_cung_mot_giay_thi_lay_cai_LON_HON_chu_khong_cong_don() -> None:
+    """⚠️ Chỗ dễ "sửa cho hợp lý" nhất trong cả App.
+
+    Cộng dồn nghe đúng hơn — 800 + 1800 = 2600 — và nó **không phải** hành vi đã
+    chạy một năm. `bot/worker.py:1018` dùng `max`, và chú thích ngay trên đó gọi
+    đây là *"Collision — merge (use larger pause)"*.
+    """
+    ra = chen_lang.ke_hoach_ghep(10.0, [
+        {"at_sec": 4.0, "pause_ms": 800}, {"at_sec": 4.0, "pause_ms": 1800}])
+    lang = [x for x in ra if x[0] == "lang"]
+    assert len(lang) == 1, "hai moc cung giay phai thanh MOT khoang lang"
+    assert lang[0][2] == 1800.0, "phai lay cai LON HON"
+    assert lang[0][2] != 2600.0, "cong don la mat parity"
+
+
+def test_MOC_O_DAU_tep_sinh_lang_truoc_moi_thu() -> None:
+    ra = chen_lang.ke_hoach_ghep(10.0, [{"at_sec": 0.0, "pause_ms": 1500}])
+    assert ra[0][0] == "lang" and ra[0][2] == 1500.0
+
+
+def test_HAI_BIEN_ke_thua_tu_ban_goc__khong_sua_vi_duong_that_khong_cham_toi() -> None:
+    """Hai biên có thật, và tệp này ghi lại chúng thay vì lặng lẽ sửa.
+
+    ⛔ **Mốc rơi đúng cuối tệp thì bị BỎ IM LẶNG.** Vòng lặp chạy tới
+       `len(diem_cat) - 1`, nên `thoi_luong` không bao giờ là `bat_dau` của một
+       đoạn — khoảng lặng khai ở đó không bao giờ được sinh.
+
+    ⛔ **Mốc vượt thời lượng sinh một đoạn QUÁ ĐUÔI audio** (`[10.0, 12.0]`), và
+       `cut_audio_segment` sẽ được yêu cầu cắt sau EOF.
+
+    ⭐ Không sửa, vì **đường thật không chạm tới**: `at_sec` sinh ra từ việc khớp
+       văn bản với mốc thời gian của **chính bản ghi lời ấy**, nên nó luôn ≤ thời
+       lượng. Khác hẳn ca `sequential_timeline` bên `video_assembly` — ở đó
+       khiếm khuyết **đo được là đang xảy ra** trên 115/125 cảnh của một job
+       thật, nên sửa; ở đây thì không có phép đo nào nói nó từng xảy ra.
+
+    ⚠️ Nhưng nếu sau này có người gọi `ke_hoach_ghep` với mốc thô do người dùng
+       nhập thẳng, hai biên này thành **có thật**. Bài kiểm ở đây là chỗ họ đọc
+       được điều đó.
+    """
+    cuoi = chen_lang.ke_hoach_ghep(10.0, [{"at_sec": 10.0, "pause_ms": 1500}])
+    assert [x[0] for x in cuoi] == ["doan"], "moc o cuoi tep bi bo — ghi nhan"
+
+    vuot = chen_lang.ke_hoach_ghep(10.0, [{"at_sec": 12.0, "pause_ms": 900}])
+    assert vuot[-1][3] == 12.0 > 10.0, "sinh doan qua duoi audio — ghi nhan"
