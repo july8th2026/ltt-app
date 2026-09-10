@@ -4,7 +4,7 @@
 > nguồn và `docs/00_LTT_OPERATING_CONTRACT.md`. Một bảng chép tay không có cách
 > nào tự biết nó đã cũ — cơ chế đó đã nói sai năm lần trong kho này.
 
-Cập nhật lần cuối: **2026-09-10 01:25**.
+Cập nhật lần cuối: **2026-09-10 05:30**.
 Nguồn: `docs/migration/workflow_apps/01_SOURCE_MANIFEST.md`.
 
 | Phase | Trạng thái | Bằng chứng | Chặn | Kế |
@@ -21,7 +21,7 @@ Nguồn: `docs/migration/workflow_apps/01_SOURCE_MANIFEST.md`.
 | 09 Build Pause | **XONG** | `apps/audio_pause` · `test_1104` | — | — |
 | 10 Build GEM | **XONG** | `apps/prompt_canh` (đổi slug) · `test_1105` | — | — |
 | 11 Build Video Assembly | **XONG** | `apps/video_assembly` · `test_1106` | — | — |
-| 12 Legacy workflow rebuild | CHƯA | | | |
+| 12 Legacy workflow rebuild | **MỘT PHẦN** | `32_PHASE12_...md` · `tests/test_1111` — 4 App chạy được như node, dữ liệu chảy giữa 2 node | Canvas/V2 **không có bộ thi hành**; Drive/Sheets connector chưa audit | 13 |
 | 13 Workflow hardening | CHƯA | | | |
 | 14 Agent re-evaluation | CHƯA | | | |
 | 15 Final cutover | CHƯA | | | |
