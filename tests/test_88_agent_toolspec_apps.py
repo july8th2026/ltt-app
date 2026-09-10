@@ -97,7 +97,29 @@ def test_cong_THU_NHAT_that_su_chan_chu_khong_chi_ton_tai():
     """
     tools = discover_tools()
     an = {n for n, s in tools.items() if not s.customer_visible}
-    assert an == {"chatltt.trich_tep", "chatltt.nghien_cuu"}, (
+    assert an == {
+        "chatltt.trich_tep", "chatltt.nghien_cuu",
+        # ⚠️ CAP NHAT 11/09 — bon App migrate tu bot legacy (Phase 14).
+        #
+        #    Do o Phase 14: bo loc palette khach la DUNG MOT dieu kien
+        #    `customer_visible!==false` (`presentationAdapter.ts:65`); KHONG co
+        #    bo loc `lifecycle` nao trong ca duong Agent. Nen bon App
+        #    `lifecycle="development"`, `public=False`, CHUA nghiem thu E2E qua
+        #    worker, van hien trong palette va bam chay duoc. `public=False`
+        #    chi giau TRANG WEB cua App — no khong giau TOOL.
+        #
+        # ⇒ Dong cua lai cho toi khi parity dong va E2E xong. Day la soft-retire:
+        #   `discover_tools()` van thay ca bon (bang EXPECTED o tren van du),
+        #   `runtime_noi_bo.bao_gia()` van tra gia, workflow da dung van chay.
+        #
+        # ⛔ KHONG khai quat thanh luat "development => an": 7 tool o 6 App khac
+        #    (thumbnail · taoanh x2 · anhnoibo · autosubvideo · taoclipngan ·
+        #    ltt_llm) cung `development` ma van hien — va do la App DANG BAN
+        #    THAT. `lifecycle` o day la nhan truong thanh dung long, khong phai
+        #    mot cong. Xem `tests/test_1113_phase14_agent_danh_gia.py`.
+        "transcript.run", "audio_pause.run",
+        "prompt_canh.run", "video_assembly.run",
+    }, (
         f"tap tool AN da doi: {an} — moi thay doi o day la mot quyet dinh "
         "ve thu khach nhin thay trong palette Agent")
 
