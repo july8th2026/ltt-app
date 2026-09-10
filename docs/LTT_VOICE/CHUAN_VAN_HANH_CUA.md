@@ -128,6 +128,7 @@ Ba phép kiểm phụ giữ cho chính bánh cóc không mục:
 |---|---|
 | **Nghe thử cho qua thứ cửa nộp từ chối.** Khách nghe thử EN trên giọng VI được, rồi bấm Tạo thì bị từ chối. | Đây là **quyết định sản phẩm**, không phải lỗi. Nghe thử tồn tại để khách *nghe thấy* giọng không hợp — chặn nó là bỏ mất cách rẻ nhất để khám phá ràng buộc. Nhưng bất đối xứng này đang **không được nói ra ở đâu**, nên nó trông như một chỗ sót. Cần một câu ở giao diện, không cần một cửa chặn. |
 | **Đường Public API giữ credit rồi mới từ chối.** | `ToolSpec` không có hook kiểm tham số trước `submit_with_credit`; thêm hook là sửa `platform_core`. Credit **được hoàn**, GPU không bị chạm. |
+| **Màn Dự án chặn ĐÚNG nhưng không trả `ma_loi`.** `_p_du_an.py` có **0** chỗ nhắc `ma_loi`, trong khi `_p_tao.py` có 3 và `_p_lich_su.py` có 1. | Cửa Dự án **chặn đúng** (nó gọi `giai_giong`), chỉ là câu trả lời của nó chỉ có `loi` dạng chuỗi. Nên GUI màn Dự án muốn phân biệt "lệch làn" với "hết credit" phải **so chuỗi tiếng Việt** — thứ vỡ sẵn với khách xem giao diện tiếng Anh, đúng lý do `ma_loi` ra đời. Sửa là một dòng, cùng khuôn `_loi_400`. **Không sửa ở lượt này**: `_p_du_an.py` thuộc workstream Dự án, và một cửa chặn-đúng-nhưng-báo-thô là khiếm khuyết về **chất lượng thông điệp**, không phải một lỗ nghiệp vụ. Đã báo phiên đó. |
 | **`jobs.py::_ghi_danh` chưa truyền làn xuống `nghe_thu.dung`.** | WS02 sở hữu `jobs.py`. Hôm nay không đổi hành vi (hồ sơ mới luôn `ngon_ngu` mặc định). |
 
 ## 7. Điều đáng nhớ hơn cả bản đồ
