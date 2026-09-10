@@ -128,21 +128,17 @@ HAU_MVP: tuple[str, ...] = (
     "multilingual_target",      # ngon ngu dich khac `vi`
     "social_ingest",
     "social_publish",
-    # 🔴 **Logo cua khach (V6 pha 11b).** No o day chu khong o `CAM_TRONG_MVP`,
-    #    va su khac nhau la mot lan quyet dinh chu khong phai mot cach xep chu:
-    #    logo **se mo**, no chi dang cho mot thu khac.
-    #
-    #    Thu do la duong NHAP ANH. ASV nhan mot video va khong nhan gi khac;
-    #    `platform_core.image_input.validate_reference` ton tai nhung ASV chua
-    #    co route nao goi no, va do la pham vi cua pha 08.
-    #
-    # ⛔ Viet ra o day vi mot ly do da co gia trong tep nay: mot muc chi VANG
-    #    MAT thi "chua khai" va "bi cam" trong giong het nhau, va mot pha sau
-    #    chi can them mot dong la du. `FEATURE_PARITY_MATRIX.md` xep "Logo cua
-    #    toi" va "Watermark chu" la `DEFER` tu V5 — nhung khong dong ma nao noi
-    #    dieu do, nen no la mot quyet dinh chi ton tai trong mot tep `.md`.
-    "logo_image",
 )
+
+# ⭐ **`logo_image` DA ROI khoi bang tren o pha 08b/11b**, va vong doi ay dung
+#    la vong doi ma `HAU_MVP` mo ta: *"cai nay se mo, cai kia thi khong"*.
+#
+#    No nam o day tu pha 11 vi mot phu thuoc CO THAT — ASV khong co duong nhap
+#    anh. Pha 08 mo duong do (`features.gan_logo`), nen phu thuoc het, va muc ay
+#    chuyen sang `NANG_LUC_DOI_DIEM_ANH`.
+#
+# ⛔ Ghi lai buoc chuyen o day chu khong xoa lang le: mot muc bien mat khoi ca
+#    hai bang se lam nguoi doc sau tuong no chua bao gio duoc quyet.
 
 
 # ── Nang luc DOI DIEM ANH ────────────────────────────────────────────────────
@@ -160,6 +156,7 @@ HAU_MVP: tuple[str, ...] = (
 NANG_LUC_DOI_DIEM_ANH: tuple[str, ...] = (
     "mask_region",      # `vung_che` — V5
     "text_overlay",     # `lop_phu`  — V6 pha 11
+    "logo_image",       # `logo`     — V6 pha 08b/11b
 )
 
 

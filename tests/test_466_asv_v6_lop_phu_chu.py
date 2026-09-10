@@ -561,10 +561,23 @@ def test_text_overlay_DA_duoc_khai_la_dang_phuc_vu():
     assert "mask_region" in hop_dong_v4.NANG_LUC_DOI_DIEM_ANH
 
 
-def test_logo_anh_DA_duoc_khai_la_HOAN_lai():
-    """⭐ Khac `CAM_TRONG_MVP`: logo **se mo**, no dang cho duong nhap anh (pha
-    08). Viet ra de mot pha sau khong phai doan."""
-    assert "logo_image" in hop_dong_v4.HAU_MVP
+def test_logo_anh_DA_ROI_khoi_HAU_MVP_sau_khi_pha_08_mo_duong():
+    """🔑 Bai nay **viet lai** ban cua pha 11, va cho doi la cho dang ghi.
+
+    Pha 11 khang dinh `logo_image` nam trong `HAU_MVP`, kem ly do: ASV chua co
+    duong nhap anh. Pha 08b mo duong do (`features.gan_logo`), nen phu thuoc
+    het — va muc ay chuyen sang `NANG_LUC_DOI_DIEM_ANH`.
+
+    ⭐ Do dung la vong doi ma `HAU_MVP` mo ta (*"cai nay SE MO"*), nen buoc
+       chuyen la mot xac nhan chu khong phai mot lan doi y.
+
+    ⛔ Va bai kiem chot CA HAI ve: co mat o bang moi **va** vang mat o bang cu.
+       Chi chot mot ve thi mot muc nam o ca hai bang van xanh — dung tinh huong
+       ma `_kiem_tra_hop_dong` ton tai de no.
+    """
+    assert "logo_image" in hop_dong_v4.NANG_LUC_DOI_DIEM_ANH
+    assert "logo_image" not in hop_dong_v4.HAU_MVP
+    assert "logo_image" not in hop_dong_v4.CAM_TRONG_MVP
 
 
 def test_subtitle_burn_VAN_bi_cam():
