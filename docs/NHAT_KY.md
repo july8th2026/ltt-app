@@ -187,7 +187,7 @@ xanh; `app contract lint` · `test_60` · `test_1004` xanh.
    Bảy bước ấy: 4 frontend (bundle chưa build — vẫn bỏ qua ở **mọi** lượt) và **3
    bước MỚI**: `bat bien da tien trinh` · `migration tren postgres` · `M-1 tren
    postgres`. Ba bước này do **lượt hoà mang về từ trunk** (29 bước → 32), và
-   chúng tự bỏ qua vì phiên này **KHÔNG ĐỌC ĐƯỢC** `C:\LTTPlatform\secretspp.env`
+   chúng tự bỏ qua vì phiên này **KHÔNG ĐỌC ĐƯỢC** `C:\LTTPlatform\secrets\app.env`
    (`UnauthorizedAccessException`) — quyền mất sau khi phiên bị **resume**, đúng
    điều `lenh-nang-quyen-tren-may-chu` đã ghi.
 
