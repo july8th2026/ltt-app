@@ -29,14 +29,15 @@ pha; chép lại vào đây là tạo một bản sẽ trôi.
 | 10b | kiểm GUI thật | **XONG** | `395b29dd` — bắt một lỗi bố cục bộ kiểm không thấy |
 | 11 | Overlay controls | **XONG** | `efbcfb4a` + `42512fd8` (11a chữ) · `d78d1804` (11b logo, sau khi pha 08 mở đường nhập ảnh). Xem `PHA11_LOP_PHU_CHU.md` |
 | 12 | Region editor v2 | **XONG** | `8c4a1d35` (giờ có tác dụng thật) + `8cd5b281` (giao diện đặt giờ) |
-| 13–34 | — | **CHƯA MỞ** | |
+| 13 | Watermark/logo intelligence | **XONG — remove ĐỂ TẮT** | `tools/do_watermark.py`. 🔴 Cổng **tài nguyên ĐẠT** (`delogo` 8,9e-5 s/khung → 4,8 s cho video 30 phút / ngân sách 540 s) nhưng cổng **chất lượng KHÔNG ĐẠT**: bộ dò tìm *vùng tĩnh* chứ không tìm *watermark*. Ba trục đã thử, ba phép đo. Xem `PHA13_NHAN_DIEN_WATERMARK.md` |
+| 14–34 | — | **CHƯA MỞ** | |
 
 ## Nợ kỹ thuật mở, không thuộc pha nào
 
 | Mục | Hiện trạng | Vì sao chưa đóng |
 |---|---|---|
 | `test_448` | ✅ **XANH 10/09 12:49** — 26 passed, 1 skipped, 0 failed | Ba nguyên nhân đều đã vá **có đối chứng**: trần token · `sqlite3 database is locked` · LUFS T4. Trần token nay có mệnh đề **dương** — đúng giai đoạn từng hỏng chạy qua ở cả hai cánh. Xem `CHAN_DOAN_TEST_448.md` §12 |
-| Đo `chuyen_loi_thoai` trên đường thật | **XONG 10/09** | 15 lượt. Nhu cầu thật **4.186–6.843** token; trần cũ 4.096 nằm dưới nhu cầu ở **5/5** lượt. Trần mới 16.384 dư 2,4×. Xem `CHAN_DOAN_TEST_448.md` §11 + `bang_chung/do_tran_token_20260910.log` |
+| Đo `chuyen_loi_thoai` trên đường thật | **XONG 10/09** | 15 lượt. Nhu cầu thật **4.186–6.843** token; trần cũ 4.096 nằm dưới nhu cầu ở **5/5** lượt. Trần mới 16.384 dư 2,4×. Xem `CHAN_DOAN_TEST_448.md` §11 + `bang_chung/do_tran_token_20260910.txt` |
 | `nghiem_thu_hien_hanh.json` | ✅ **TÁI SINH XONG 10/09 12:49** | `giong_that=True`, `model_that=True`, `thay_the=[]` — giọng `LTTStudioVoice` thật ở `:8120`, model thật qua pool → máy B, PostgreSQL thật. **Cả hai** cánh 11/11 giai đoạn, `tai_ve` 200, QC 13/13 mục. Không tái sinh từ một lượt xanh: lượt trước đó (11:47) bị loại vì `cat_thong_minh` hỏng do **tranh cổng giọng**, không phải do sản phẩm |
 | Xem trước lớp phủ/logo trên khung hình | chưa có | `vung_che` kéo thả được, lớp phủ và logo thì chưa — khách đặt toạ độ bằng số |
 | 🔴 **Trần job `content_process` dưới sàn nhu cầu** | ASV nhận video **120 phút**; ở 142 giây/lô (đo được) chỉ **~20 phút video** lọt trần job 60 phút. Các lô chạy **tuần tự** và vượt trần job **không được thử lại** (`test_217`). Xem `CHAN_DOAN_TEST_448.md` §10 — ba đường sửa, và không đường nào chọn được trước khi đo `giây/lô` trên đường thật của ASV |
