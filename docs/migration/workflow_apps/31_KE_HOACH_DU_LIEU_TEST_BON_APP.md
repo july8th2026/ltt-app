@@ -105,6 +105,31 @@ Ba mệnh đề khác cũng ghim được, đều đo trên job thật:
 Mệnh đề cuối là ràng buộc thật: bản vá path traversal **không** được thay tên
 bằng UUID, vì `sequential` khớp cảnh bằng tiền tố. Giờ có phép kiểm giữ nó.
 
+### ✅ Tầng sinh phụ đề `.ass` — chốt theo cấu hình đang chạy
+
+Bốn mô-đun `subtitle/` **giống hệt** bản gốc (0 dòng khác), nên đối chứng vi sai
+vô nghĩa ở đây. Giá trị nằm ở việc chốt **cấu hình thật** và bất biến đầu ra.
+
+Kiểu production đọc từ `configs/pipeline.yaml` đang chạy: `style_preset: default`
+(Arial 48, trắng, viền đen 2, bóng 1, đậm, `alignment=2`, lề 20/20/30),
+`segment_mode: sentence`, `max_chars_per_line: 42`, `max_lines: 2`.
+
+⚠️ `font_family: ''` và `font_size: 0` **không** phải "đặt thành rỗng" mà là
+"dùng mặc định preset" — GUI dùng `0` làm ô trống. `runner.py:585` lọc chúng ra,
+và chú thích nói rõ hậu quả nếu quên: *"font_size=0 sẽ override preset
+font_size=48 → render lỗi"*.
+
+⛔ Phép lọc ấy **cố ý bất đối xứng**: `outline_width` và `shadow_offset` bị loại
+khỏi luật "0 = mặc định", vì `0` ở đó là lựa chọn hợp lệ (không viền / không
+bóng). Trước `tests/test_1110_...` thì thứ **duy nhất** giữ sự bất đối xứng ấy là
+một dòng chú thích — và cả hai chiều hỏng đều **im lặng**.
+
+Đối chứng đã chạy: tiêm `outline_width` vào tập, và bỏ `font_size` khỏi tập —
+phép kiểm bắt được **cả hai**.
+
+Khác App `transcript` ở một điểm đáng ghi: tầng này **tất định**, không có nguồn
+ngẫu nhiên nào, nên phép kiểm đòi **đúng từng byte** giữa hai lần sinh.
+
 ### ⛔ Nợ mở: giai đoạn "tự chấm điểm" chưa có đường lấy khoá
 
 Bot legacy lấy khoá Gemini từ **một trường văn bản thuần** trong
