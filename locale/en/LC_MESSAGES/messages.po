@@ -14685,6 +14685,9 @@ msgstr "Dub another video"
 msgid "Cài đặt đã dùng"
 msgstr "Settings used"
 
+msgid "Hồ sơ cấu hình"
+msgstr "Settings profile"
+
 msgid "không có"
 msgstr "none"
 
