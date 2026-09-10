@@ -32,6 +32,9 @@ MANIFEST = AppManifest(
 
     job_types=("audio_pause.run",),
     requires=("gpu",),
+    # Cung Whisper `large-v3` nhu `transcript` — cung con so.
+    gpu_vram_mb={"audio_pause.run": 5000},
+    cho_tai_nguyen_s={"audio_pause.run": 20},
     credit_cost=_gia,
 
     enabled=True,

@@ -571,8 +571,40 @@ class AppManifest:
         return max(1, khai) if khai > 0 else max(1, int(default))
 
     def vram_for(self, job_type: str) -> int:
-        """VRAM tối thiểu cho một `job_type`. 0 = không cần GPU riêng."""
-        return int((self.gpu_vram_mb or {}).get(job_type, 0))
+        """VRAM tối thiểu cho một `job_type`. 0 = không cần GPU riêng.
+
+        🔴 HAI chỗ khai được cùng một con số, và trước bản vá này chỉ **một**
+           chỗ được đọc:
+
+               `AppManifest.gpu_vram_mb[job_type]`      <- `job_runner` doc
+               `ToolSpec.resource["vram_min_mb"]`       <- khong ai doc
+
+           Bốn App dựng năm 2026-09 khai ở chỗ thứ hai (nó nằm ngay cạnh
+           `class="gpu"`, đọc tự nhiên hơn) và để trống chỗ thứ nhất. Hệ quả:
+           `vram_for` trả **0**, `_giu_gpu` bỏ qua, và ba App GPU chạy **không
+           có lease nào** — đè thẳng lên `taoclipngan`/`upscalevideo` trên cùng
+           một card.
+
+        ⇒ Không phép kiểm nào bắt được, vì cả hai bản khai đều **hợp lệ**: một
+          cái rỗng, một cái đầy, và không có gì nói chúng phải khớp.
+
+        ⭐ Bản vá là một phép **hợp nhất**, không phải một luật mới: nếu
+           `gpu_vram_mb` không khai cho `job_type` này thì lấy con số ở
+           `ToolSpec.resource["vram_min_mb"]` của tool sinh ra nó. Sau đó hai
+           bản khai không thể lệch nhau nữa — cái nào có cũng ra cùng kết quả.
+
+        ⚠️ `gpu_vram_mb` vẫn **thắng** khi cả hai cùng khai: nó là bản khai theo
+           `job_type`, mịn hơn `ToolSpec` (một tool có thể sinh nhiều job_type).
+        """
+        khai = int((self.gpu_vram_mb or {}).get(job_type, 0))
+        if khai:
+            return khai
+        for t in (self.tools or ()):
+            if getattr(t, "job_type", "") != job_type:
+                continue
+            return max(0, int((getattr(t, "resource", None) or {})
+                              .get("vram_min_mb", 0) or 0))
+        return 0
 
     def runtime_limit_for(self, job_type: str, *, default: int = 0) -> int:
         """Trần thời gian chạy cho một `job_type`, giây. 0 = không giới hạn.

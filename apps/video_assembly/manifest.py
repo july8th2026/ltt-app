@@ -46,6 +46,11 @@ MANIFEST = AppManifest(
 
     job_types=("video_assembly.run",),
     requires=("gpu", "ffmpeg"),
+    # Whisper + CLIP + YOLO + Demucs co the nap chong nhau trong mot luot
+    # dung. 8000 la muc khai o `ToolSpec.resource`; con so CHUA DO THAT
+    # (ghi trong `docs/migration/workflow_apps/`), nen day la uoc tren.
+    gpu_vram_mb={"video_assembly.run": 8000},
+    cho_tai_nguyen_s={"video_assembly.run": 30},
     credit_cost=_gia,
 
     enabled=True,

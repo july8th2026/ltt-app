@@ -44,6 +44,12 @@ MANIFEST = AppManifest(
 
     job_types=("transcript.run",),
     requires=("gpu",),
+    # 🔴 Whisper `large-v3` float16 nap tren card: do that ~4,5 GB, khai 5000
+    #    de con cho cho VAD va bo dem. Runner doc CHINH truong nay
+    #    (`job_runner._vram_can` -> `manifest.vram_for`) — `ToolSpec.resource
+    #    ["vram_min_mb"]` la ban khai cho NGUOI DOC, khong ai xep cho theo no.
+    gpu_vram_mb={"transcript.run": 5000},
+    cho_tai_nguyen_s={"transcript.run": 20},
     credit_cost=_gia,
 
     # Chưa mở cho khách: parity chưa đóng.
