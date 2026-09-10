@@ -251,7 +251,7 @@ lần đọc mã.
 Lượt gate cuối còn **1 bước tự bỏ qua**: `bat bien da tien trinh`.
 
 Lý do là **cấu trúc, không phải thiếu sót**: `check_multiproc.py` đọc
-`LTT_DATABASE_URL` từ `C:\LTTPlatform\secretspp.env`, mà thư mục đó đã siết về
+`LTT_DATABASE_URL` từ `C:\LTTPlatform\secrets\app.env`, mà thư mục đó đã siết về
 SYSTEM+Administrators từ 27/08. Gate chạy không quyền nâng ⇒ không đọc được ⇒ bỏ
 qua. Chính công cụ in ra: *"Đó **KHÔNG** phải lỗi."*
 
