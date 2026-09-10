@@ -15338,3 +15338,155 @@ msgstr "This snapshot cannot be used to restore. Please pick another one."
 #: apps/vps/routes.py
 msgid "lý do"
 msgstr "reason"
+
+#: apps/auto_scan_video/lop_phu.py
+msgid "Lớp phủ chữ có giá trị không đọc được."
+msgstr "The text overlay has a value that cannot be read."
+
+#: apps/auto_scan_video/lop_phu.py
+msgid "Lớp phủ chữ có giá trị ngoài khoảng cho phép."
+msgstr "The text overlay has a value outside the allowed range."
+
+#: apps/auto_scan_video/lop_phu.py
+msgid "Lớp phủ chữ không đọc được."
+msgstr "The text overlay cannot be read."
+
+#: apps/auto_scan_video/lop_phu.py
+msgid "Lớp phủ chữ không được để trống."
+msgstr "The text overlay cannot be empty."
+
+#: apps/auto_scan_video/lop_phu.py
+msgid "Lớp phủ chữ dài quá {n} ký tự."
+msgstr "The text overlay is longer than {n} characters."
+
+#: apps/auto_scan_video/lop_phu.py
+msgid "Lớp phủ chữ chỉ nhận MỘT dòng, không có ký tự điều khiển. Muốn phụ đề theo lời thoại thì dùng công cụ phụ đề, không dùng lớp phủ."
+msgstr "A text overlay takes ONE line with no control characters. For subtitles that follow the dialogue, use the subtitle tool, not an overlay."
+
+#: apps/auto_scan_video/lop_phu.py
+msgid "Màu chữ không hợp lệ."
+msgstr "That text colour is not valid."
+
+#: apps/auto_scan_video/lop_phu.py
+msgid "Khoảng thời gian của lớp phủ chữ không đọc được."
+msgstr "The time range of the text overlay cannot be read."
+
+#: apps/auto_scan_video/lop_phu.py
+msgid "Khoảng thời gian của lớp phủ chữ không hợp lệ."
+msgstr "The time range of the text overlay is not valid."
+
+#: apps/auto_scan_video/lop_phu.py
+msgid "Danh sách lớp phủ chữ không đọc được."
+msgstr "The list of text overlays cannot be read."
+
+#: apps/auto_scan_video/lop_phu.py
+msgid "Tối đa {n} lớp phủ chữ trong một lần chạy."
+msgstr "At most {n} text overlays per run."
+
+#: apps/auto_scan_video/lop_phu.py
+msgid "Máy chủ không có phông chữ nào để vẽ lớp phủ. Đặt {b} trỏ tới một tệp .ttf."
+msgstr "This server has no font available to draw the overlay. Point {b} at a .ttf file."
+
+#: apps/auto_scan_video/lop_phu.py
+msgid "Không biết chiều cao khung hình để vẽ viền chữ."
+msgstr "The frame height needed to size the text outline is unknown."
+
+#: apps/auto_scan_video/che_do_render.py
+msgid "Không dựng được lớp phủ chữ cho lần chạy này."
+msgstr "The text overlays could not be built for this run."
+
+#: apps/auto_scan_video/che_do_render.py
+msgid "Một lớp phủ chữ được đặt giờ nằm trọn trong đoạn đã bị cắt bỏ, nên nó sẽ không bao giờ hiện ra. Hãy sửa giờ hoặc xoá lớp đó."
+msgstr "A timed text overlay falls entirely inside a stretch that was cut out, so it would never appear. Change its timing or remove it."
+
+#: apps/auto_scan_video/ban_dung.py
+msgid "Lớp phủ chữ chỉ dùng được với kiểu xử lý có biên tập lại hình."
+msgstr "Text overlays only work with the processing mode that re-edits the picture."
+
+#: apps/auto_scan_video/ban_dung.py
+msgid "Bản dựng có lớp phủ chữ nhưng không khai chiều cao khung hình."
+msgstr "The manifest has text overlays but does not declare the frame height."
+
+#: apps/auto_scan_video/ket_xuat.py
+msgid "Số tệp chữ ({co}) không khớp số lớp phủ trong bản dựng ({can})."
+msgstr "The number of text files ({co}) does not match the overlays in the manifest ({can})."
+
+#: apps/auto_scan_video/routes.py
+msgid "Kiểu “Giữ nguyên hình ảnh” sao chép nguyên vẹn từng điểm ảnh, nên không thể vẽ chữ lên hình. Chọn “Rút gọn có biên tập” nếu bạn muốn thêm lớp phủ chữ."
+msgstr "“Keep the picture” copies every pixel untouched, so no text can be drawn onto it. Choose “Shorten with editing” if you want a text overlay."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Lớp phủ chữ"
+msgstr "Text overlay"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Thêm một dòng chữ của bạn lên video — tên kênh, lời kêu gọi. Tối đa %(n)s dòng."
+msgstr "Add a line of your own text to the video — a channel name, a call to action. Up to %(n)s lines."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Công cụ lớp phủ chữ"
+msgstr "Text overlay tools"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Thêm dòng chữ"
+msgstr "Add a line"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Chưa có dòng chữ nào."
+msgstr "No lines yet."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "%(so)s dòng chữ."
+msgstr "%(so)s lines of text."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Ví dụ: Đăng ký kênh nhé!"
+msgstr "For example: Subscribe to the channel!"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Ngang (%)"
+msgstr "Across (%)"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Dọc (%)"
+msgstr "Down (%)"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Cỡ chữ (%)"
+msgstr "Text size (%)"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Màu"
+msgstr "Colour"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Trắng"
+msgstr "White"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Đen"
+msgstr "Black"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Vàng"
+msgstr "Yellow"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Viền"
+msgstr "Outline"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Xoá dòng này"
+msgstr "Remove this line"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Tối đa %(n)s dòng chữ."
+msgstr "At most %(n)s lines of text."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Dòng chữ không được để trống."
+msgstr "A line of text cannot be empty."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Lớp phủ chữ chỉ nhận MỘT dòng."
+msgstr "A text overlay takes ONE line."

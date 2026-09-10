@@ -44,6 +44,7 @@ from server.deps import get_db, user_hien_tai
 from server.templating import templates
 
 from . import cat_dau_cuoi, hop_dong_v4, features, gia, pipeline, quan_sat, vung_che
+from . import lop_phu as lop_phu_mod
 from . import tu_dien as tu_dien_mod
 from .manifest import MANIFEST
 
@@ -195,6 +196,15 @@ def _ngu_canh_studio(db, u, loi: str = "", nap_lai: dict | None = None) -> dict:
         #: ⛔ Lay TU hop dong, khong go chuoi `"smart_localize"` vao template:
         #:    mot chuoi go tay o giao dien la mot cho se lech khi hop dong doi.
         "preset_can_cho_vung": hop_dong_v4.PRESET_CAT_THONG_MINH,
+        #: ── Ba han muc cua lop phu chu, LAY TU MODULE ─────────────────────
+        #:
+        #: ⛔ Khong go `3` va `80` vao template. Do la cach mot han muc troi im
+        #:    lang: giao dien cho go 100 ky tu, may chu tu choi o 80, va khach
+        #:    chi biet sau khi bam Gui. Cung ly do `preset_can_cho_vung` o tren
+        #:    lay tu hop dong chu khong go chuoi.
+        "lop_phu_toi_da": lop_phu_mod.SO_LOP_PHU_TOI_DA,
+        "lop_phu_chu_toi_da": lop_phu_mod.CHU_TOI_DA,
+        "lop_phu_mau": list(lop_phu_mod.MAU),
         "nhan_trang_thai": NHAN_TRANG_THAI,
         #: Tran hien cho khach doc, tinh tu hang so — khong go tay mot so thu hai.
         "tran_mb": TRAN_TAI_LEN // (1024 * 1024),
@@ -288,6 +298,9 @@ async def tao(request: Request,
               #: Cua so cat dau/cuoi, JSON `[bat_dau, ket_thuc]` phan so 0..1.
               #: Rong = giu ca video, va do la truong hop BINH THUONG.
               cat: str = Form(""),
+              #: Lop phu chu, JSON mot mang toi da `SO_LOP_PHU_TOI_DA` muc.
+              #: Rong = khong ve gi, va do la truong hop BINH THUONG.
+              lop_phu: str = Form(""),
               csrf_token: str = Form(""),
               _g: None = Depends(_cong_co),
                 user: str = Depends(require_login),
@@ -366,6 +379,27 @@ async def tao(request: Request,
             'Kiểu “Giữ nguyên hình ảnh” hứa video ra dài đúng bằng video vào, '
             'nên không cắt bớt được. Chọn “Rút gọn có biên tập” nếu bạn muốn cắt.'))
 
+    # ── Lop phu chu (V6 pha 11) ─────────────────────────────────────────────
+    #
+    # ⭐ Tang thu nhat trong ba tang, y het `vung`. Va no dung o day — TRUOC khi
+    #    giu credit — chu khong o `ban_dung.kiem`: mot lan chay bi chan o do la
+    #    mot lan chay da di qua chin giai doan.
+    try:
+        ds_lop_phu = lop_phu_mod.chuan_hoa(
+            json.loads(lop_phu) if lop_phu.strip() else [])
+    except lop_phu_mod.LopPhuLoi as exc:
+        return _lai_voi_loi(request, db, u, str(exc))
+    except (ValueError, TypeError):
+        return _lai_voi_loi(request, db, u, _t('Lớp phủ chữ không đọc được.'))
+    # 🔴 Cung mot cau voi cau giao dien hien khi khoa cong cu, va cung mot ly do
+    #    VAT LY voi vung che: `drawtext` la mot bo loc, bo loc doi hoi giai ma,
+    #    `-c:v copy` khong giai ma khung nao.
+    if ds_lop_phu and preset != hop_dong_v4.PRESET_CAT_THONG_MINH:
+        return _lai_voi_loi(request, db, u, _t(
+            'Kiểu “Giữ nguyên hình ảnh” sao chép nguyên vẹn từng điểm ảnh, nên '
+            'không thể vẽ chữ lên hình. Chọn “Rút gọn có biên tập” nếu bạn muốn '
+            'thêm lớp phủ chữ.'))
+
     # ⚠️ Cung luat voi vung che: sai thi TU CHOI, khong doan. Mot dong
     #    `Ten - cach doc` khong duoc tu hieu thanh dau `=` — doan dung mot
     #    lan thi lan sau khach tin rang ta luon doan dung.
@@ -389,6 +423,11 @@ async def tao(request: Request,
     #    cat cung mang mot truong ma khong lan nao dung toi.
     if cua_so_cat:
         cai_dat["cat"] = [cua_so_cat[0], cua_so_cat[1]]
+    # ⛔ Cung luat: khong co lop nao thi KHONG ghi khoa. Mot mang rong ghi vao
+    #    moi lan chay la mot truong khong ai doc, va no lam ho so cua nhung lan
+    #    chay khong dung tinh nang nay khac di ma khong vi ly do gi.
+    if ds_lop_phu:
+        cai_dat["lop_phu"] = ds_lop_phu
     # ── Duong BEN VUNG: tep da nam trong kho, ta chi nhan mot ma ve ───────────
     #
     # ⭐ Dat truoc duong multipart co chu y. Khi ca hai cung co mat, duong ben

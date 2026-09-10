@@ -297,6 +297,40 @@
         </p>
       </div>
 
+      {# 🔴 Lop phu chu — cung rang buoc VAT LY voi vung che (`drawtext` la mot
+         bo loc, bo loc doi hoi giai ma, `-c:v copy` khong giai ma khung nao),
+         nen cung khuon `data-preset-can`.
+
+         ⛔ Va no KHONG phai o dat phu de. `apps/autosubvideo` so huu viec do va
+            `CAM_TRONG_MVP` cam `subtitle_burn`. Ranh gioi duoc giu bang CO HOC
+            chu khong bang mot cau ghi chu: moi lop la MOT dong (`maxlength`,
+            va may chu tu choi ky tu xuong dong), toi da {{ lop_phu_toi_da }}
+            lop. Mot ban phu de 400 doan khong di qua duoc cai cua ay. #}
+      <div class="asv-nhom" id="asv-nhom-lop-phu"
+           data-preset-can="{{ preset_can_cho_vung }}"
+           data-toi-da="{{ lop_phu_toi_da }}">
+        <h3>{{ _("Lớp phủ chữ") }}</h3>
+        <p class="asv-ghi-chu">
+          {{ _("Thêm một dòng chữ của bạn lên video — tên kênh, lời kêu gọi. Tối đa %(n)s dòng.")|format(n=lop_phu_toi_da) }}
+        </p>
+        <p class="asv-ghi-chu asv-vung-chan" id="asv-lop-phu-chan" hidden>
+          {{ _("Kiểu “Giữ nguyên hình ảnh” sao chép nguyên vẹn từng điểm ảnh, nên không thể vẽ chữ lên hình. Chọn “Rút gọn có biên tập” nếu bạn muốn thêm lớp phủ chữ.") }}
+        </p>
+        <div class="asv-vung-thanh" role="group" aria-label="{{ _('Công cụ lớp phủ chữ') }}">
+          <button type="button" class="btn ghost" id="asv-lop-phu-them">
+            {{ _("Thêm dòng chữ") }}
+          </button>
+        </div>
+        <p class="asv-ghi-chu" id="asv-lop-phu-tt" aria-live="polite">
+          {{ _("Chưa có dòng chữ nào.") }}
+        </p>
+        <ul class="asv-vung-ds" id="asv-lop-phu-ds"></ul>
+        {# ⭐ Toa do gui len may chu la PHAN SO 0..1 (`lop_phu` L1). Giao dien
+           cho khach nghi bang phan tram vi mot con so tinh bang pixel tro thanh
+           sai ngay khi ban xem truoc co do phan giai khac ban goc. #}
+        <input type="hidden" name="lop_phu" id="asv-lop-phu" value="">
+      </div>
+
       <div class="asv-nhom">
         <h3>{{ _("Giọng") }}</h3>
         <fieldset class="asv-o">
@@ -398,7 +432,23 @@
   "vung_den_giay": {{ _("Đến giây")|tojson }},
   "vung_ca_video": {{ _("cả video")|tojson }},
   "vung_xoa_mot": {{ _("Xoá vùng này")|tojson }},
-  "vung_vi_tri": {{ _("ở %(x)s%%–%(x2)s%% ngang, %(y)s%%–%(y2)s%% dọc")|tojson }}
+  "vung_vi_tri": {{ _("ở %(x)s%%–%(x2)s%% ngang, %(y)s%%–%(y2)s%% dọc")|tojson }},
+  "lp_chua_co": {{ _("Chưa có dòng chữ nào.")|tojson }},
+  "lp_dem": {{ _("%(so)s dòng chữ.")|tojson }},
+  "lp_chu": {{ _("Nội dung")|tojson }},
+  "lp_chu_goi_y": {{ _("Ví dụ: Đăng ký kênh nhé!")|tojson }},
+  "lp_ngang": {{ _("Ngang (%)")|tojson }},
+  "lp_doc": {{ _("Dọc (%)")|tojson }},
+  "lp_co_chu": {{ _("Cỡ chữ (%)")|tojson }},
+  "lp_mau": {{ _("Màu")|tojson }},
+  "lp_mau_trang": {{ _("Trắng")|tojson }},
+  "lp_mau_den": {{ _("Đen")|tojson }},
+  "lp_mau_vang": {{ _("Vàng")|tojson }},
+  "lp_vien": {{ _("Viền")|tojson }},
+  "lp_xoa_mot": {{ _("Xoá dòng này")|tojson }},
+  "lp_het_cho": {{ _("Tối đa %(n)s dòng chữ.")|tojson }},
+  "lp_trong": {{ _("Dòng chữ không được để trống.")|tojson }},
+  "lp_mot_dong": {{ _("Lớp phủ chữ chỉ nhận MỘT dòng.")|tojson }}
 }
 </script>
 <script src="/static/asv.js?v={{ asset_ver }}" defer></script>

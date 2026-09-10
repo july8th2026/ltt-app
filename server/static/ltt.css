@@ -3534,6 +3534,25 @@ button.lv-the-song.dang-phat .lv-nghe-dau::before{width:4px;height:14px;
 .asv-vung-dau{display:flex;flex-direction:column;gap:2px;flex:1 1 160px;min-width:0}
 .asv-vung-dau .asv-ghi-chu{margin:0}
 .asv-vung-gio-o{display:flex;gap:8px;flex:1 1 200px;min-width:0}
+/* -- Lop phu chu ---------------------------------------------------------
+   O NOI DUNG chiem ca hang rieng: mot dong chu la thu khach doc lai nhieu
+   nhat, con toa do/co chu thi liec qua. Cac o so dung chung .asv-vung-gio
+   nen chung khong the lech nhau khi ai do chinh mot ben. */
+.asv-lp-chu{display:flex;flex-direction:column;gap:4px;font-size:13px;
+  color:var(--muted);flex:1 1 100%;min-width:0}
+.asv-lp-chu input{width:100%;min-width:0}
+.asv-lp-vien{flex:0 0 auto;flex-direction:row;align-items:center;gap:6px}
+/* 🔴 Do THAT tren trinh duyet o 375px, va khong phep kiem nao thay duoc:
+   hang nay co BON o dieu khien, con hang cua vung che chi co hai. Bon o
+   `flex:1 1 90px` chia nhau 234px cho ra **40px moi cai** — mot o so 40px
+   khong hien noi `100`, mot o chon 40px khong hien noi mot ten mau. Va no
+   KHONG tran ngang, nen mot chot `overflow` cung im lang.
+   ⇒ Cho XUONG DONG thay vi co lai, kem mot san chieu rong that. */
+.asv-lp-o{flex-wrap:wrap}
+.asv-lp-o>.asv-vung-gio{flex:1 1 100px;min-width:100px}
+.asv-lp-o>.asv-lp-vien{min-width:0}
+.asv-lp-vien input{flex:0 0 auto}
+
 .asv-vung-gio{display:flex;flex-direction:column;gap:4px;font-size:13px;
   color:var(--muted);flex:1 1 90px;min-width:0}
 
