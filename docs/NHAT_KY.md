@@ -177,6 +177,29 @@ Cả **7** đều thuộc `test_448_asv_v4_e2e_nghiem_thu.py`. Không lỗi nào
 Bốn phép kiểm đã vá sau lượt trước (`test_503`×2, `test_509`×2, `test_435`) đều
 xanh; `app contract lint` · `test_60` · `test_1004` xanh.
 
+🔴 **NHƯNG “31/32 XANH” LÀ MỘT CÂU NÓI RỘNG HƠN THỨ ĐÃ ĐO.** Dòng `RESULT` còn
+   mang một cụm dễ lướt qua: **`[7 BUOC TU BO QUA, KHONG PHAI BANG CHUNG]`**.
+
+   ```
+   32 bước = 24 có bằng chứng + 7 tự bỏ qua + 1 đỏ
+   ```
+
+   Bảy bước ấy: 4 frontend (bundle chưa build — vẫn bỏ qua ở **mọi** lượt) và **3
+   bước MỚI**: `bat bien da tien trinh` · `migration tren postgres` · `M-1 tren
+   postgres`. Ba bước này do **lượt hoà mang về từ trunk** (29 bước → 32), và
+   chúng tự bỏ qua vì phiên này **KHÔNG ĐỌC ĐƯỢC** `C:\LTTPlatform\secretspp.env`
+   (`UnauthorizedAccessException`) — quyền mất sau khi phiên bị **resume**, đúng
+   điều `lenh-nang-quyen-tren-may-chu` đã ghi.
+
+⛔ Và đây là chỗ nó **dễ lướt qua thật**: trong dòng chạy trực tiếp, cả ba in ra
+   `[ok  ]` — chỉ có **thời gian** tố cáo (0,1–0,2 giây cho một lượt migration
+   PostgreSQL). Phần tổng kết mới đổi chúng thành `[BOQUA]`.
+
+⭐ Mốc tôi viết trước khi chạy chỉ khai **cái được đỏ** (“đúng 7 lỗi `test_448`”),
+   không khai **cái được vắng mặt**. Nên nó bắt được phần đỏ và **mù** phần thiếu.
+   Một mốc đủ phải có cả hai vế. (Phiên ASV V6 khai cả hai từ đầu và vì thế họ
+   phát hiện ra ngay — còn tôi phải đợi họ nhắc.)
+
 ⭐ Thứ làm con số này **dùng được** không phải là nó nhỏ, mà là mốc đã được
    viết ra **trước khi chạy**: *"đúng 7 lỗi `test_448` và không lỗi nào khác ⇒
    không phải hồi quy; khác thì báo"*. Đọc kết quả rồi mới quyết định con số nào
