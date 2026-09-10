@@ -258,8 +258,18 @@ MANIFEST = AppManifest(
                          "max_length": TRAN_KY_TU_CONG_KHAI},
                 # `voice_id` là danh tính CÔNG KHAI, ổn định qua mọi lần nâng
                 # engine. Khách không bao giờ thấy speaker embedding.
+                #
+                # 🔴 `exclusive_with`: gửi kèm `preset` là một yêu cầu hai nguồn
+                #    giọng — không có câu trả lời đúng. `features.chuan_hoa` đã từ
+                #    chối nó, NHƯNG chỉ ở worker: qua Public API lượt gọi đã được
+                #    báo giá, giữ credit và xếp job trước khi hỏng (dù có hoàn).
+                #    Khai ở đây để nền tảng từ chối NGAY tại `/quotes` — trước
+                #    khi tiền động (`invocation.validate_public_input`). Cùng
+                #    khuôn `depends_on`/`_check_model_constraints`: app khai bằng
+                #    dữ liệu, nền tảng cưỡng chế chung, không route nào chép lại.
                 "voice_id": {"type": "string", "required": False,
-                             "max_length": 40},
+                             "max_length": 40,
+                             "exclusive_with": ("preset",)},
                 "preset": {"type": "string", "required": False,
                            "max_length": 64},
             },

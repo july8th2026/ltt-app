@@ -131,6 +131,51 @@ def test_cua_mo_thi_hien_lenh_goi_dung_ten_tool(khach, cua_mo):
     assert "/api/v1/jobs" in than
 
 
+def _khoi_ma(than: str) -> list:
+    """Nội dung của từng `<pre>` ví dụ trên trang."""
+    return re.findall(r'<pre id="lv-api-[^"]*"[^>]*>(.*?)</pre>', than, re.S)
+
+
+def test_vi_du_khop_hop_dong_that_khong_phai_mot_luot_params(khach, cua_mo):
+    """🔴 Ví dụ chép được PHẢI khớp hợp đồng `/api/v1/jobs` thật.
+
+    Bản trước POST `{"tool","params"}` trong MỘT lượt — sai ba chỗ so với cửa
+    thật (`server/api/jobs.py`): khoá thân là `input` không phải `params`,
+    `Idempotency-Key` là bắt buộc, và một `quote` đã ký lấy từ `/api/v1/quotes`
+    là bắt buộc. Cả ba đều trả 400 ngay, trông y hệt "khoá sai" — đúng cái bẫy
+    màn này được dựng để tránh. `test_364` cũ chỉ soi *có chữ* `curl`, nên nó
+    xanh suốt trong khi ví dụ hỏng. Chốt này soi HÌNH DẠNG.
+
+    Nguồn chân lý của hình dạng: `platform_core/public_api/examples.py`, thứ
+    `/developers/quickstart` sinh ra. Giữ hai bên khớp.
+    """
+    than = _than(khach.get("/ltt-voice/api").text)
+    assert "/api/v1/quotes" in than, "thieu buoc bao gia — cua that bat buoc quote"
+    assert "Idempotency-Key" in than, "thieu Idempotency-Key — cua that bat buoc"
+
+    khoi = _khoi_ma(than)
+    assert khoi, "khong tim thay khoi ma vi du nao"
+    for ma in khoi:
+        assert '"params"' not in ma, (
+            "vi du con dung khoa `params` — cua that doc `input`, se tra 400")
+        assert ("input" in ma), "vi du khong dung khoa `input` cua hop dong that"
+        assert "quote" in ma, "vi du khong gui `quote` — cua that bat buoc"
+
+
+def test_vi_du_chi_dung_preset_khong_kem_voice_id(khach, cua_mo):
+    """Ví dụ trong khối mã chỉ dùng `preset`, không kèm `voice_id`.
+
+    Gửi cả hai bị `features.chuan_hoa` từ chối ("chỉ chọn một"). Một ví dụ
+    chép-được mà gửi cả hai là một lượt gọi chắc chắn hỏng — đúng thứ trang này
+    có mặt để chặn. (`voice_id` vẫn xuất hiện ở cột trái như một hướng dẫn, nên
+    chốt chỉ soi trong KHỐI MÃ.)
+    """
+    than = _than(khach.get("/ltt-voice/api").text)
+    for ma in _khoi_ma(than):
+        assert "voice_id" not in ma, (
+            "khoi ma vi du kem ca voice_id lan preset — cua that tu choi ca hai")
+
+
 def test_cua_mo_chi_doc_thi_noi_ra(khach, monkeypatch):
     """`read_only` bật thì cửa "mở" vẫn từ chối tạo việc — phải nói trước."""
     monkeypatch.setenv("LTT_PUBLIC_API", "1")

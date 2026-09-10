@@ -102,7 +102,40 @@ def validate_public_input(tool, payload: dict) -> dict:
         spec = properties[name]
         clean[name] = _validate_value(name, value, spec)
     _check_model_constraints(tool, clean)
+    _check_mutually_exclusive(tool, clean)
     return clean
+
+
+def _check_mutually_exclusive(tool, clean: dict) -> None:
+    """Reject two params the app declared cannot be sent together.
+
+    ⭐ WHY HERE AND NOT IN THE APP. Like ``_check_model_constraints``, this runs
+       from both ``/quotes`` and ``/jobs`` **before** ``price()`` — so a request
+       carrying two mutually-exclusive inputs is refused before a quote is
+       minted, before credit is held, and before a worker slot is taken. The app
+       (``speech.ltt``: ``voice_id`` vs ``preset``) already rejects the pair, but
+       only in the worker: over the API the caller had already been quoted, held
+       and queued, then failed opaquely (refunded, but a wasted round trip and a
+       "The job could not be completed." with no cause).
+
+    ⛔ IT INVENTS NO PUBLIC CONTRACT SURFACE. ``exclusive_with`` lives in the
+       app's own ``params_schema`` (validated at registration), and
+       ``project_tool`` never emits it — so declaring it moves no ``contract_hash``.
+       The rule enforced is exactly the rule the app declared, in one place.
+    """
+    from platform_core.registry import discover
+
+    schema = (tool.params_schema if hasattr(tool, "params_schema")
+              else _internal_schema(tool, discover()))
+    for param, khai in (schema or {}).items():
+        if param not in clean or not isinstance(khai, dict):
+            continue
+        for other in (khai.get("exclusive_with") or ()):
+            if str(other) in clean:
+                raise _field_error(
+                    param,
+                    f"cannot be combined with {other!r}; send only one.")
+    return
 
 
 def _check_model_constraints(tool, clean: dict) -> None:
