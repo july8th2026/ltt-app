@@ -122,11 +122,18 @@ def test_palette_khach_loc_DUNG_MOT_dieu_kien() -> None:
 
     Nếu ai đó thêm một bộ lọc `lifecycle` ở frontend, bài này đỏ và họ đọc được
     rằng bốn App trên đang dựa vào `customer_visible` chứ không vào `lifecycle`.
+
+    ⛔ **Không `pytest.skip`.** Bản đầu bỏ qua khi không thấy tệp frontend, và
+       `check_bo_qua` bắt đúng: *"một test bị bỏ qua là một test không canh gì
+       cả"*. Tệp ấy **được git theo dõi** (`git ls-files` xác nhận), nên vắng mặt
+       không phải một điều kiện môi trường hợp lệ — đó là một cây hỏng, và bài
+       này phải nói ra chứ không im lặng xanh.
     """
     f = (pathlib.Path(__file__).resolve().parent.parent / "frontend"
          / "agent-canvas" / "src" / "presentationAdapter.ts")
-    if not f.is_file():
-        pytest.skip("khong co ma nguon frontend trong cay nay")
+    assert f.is_file(), (
+        "khong thay `presentationAdapter.ts` — tep nay duoc git theo doi, nen "
+        "vang mat nghia la cay hong chu khong phai mot moi truong khac")
     van = f.read_text(encoding="utf-8", errors="ignore")
     assert "customer_visible" in van
     assert "lifecycle" not in van, (
