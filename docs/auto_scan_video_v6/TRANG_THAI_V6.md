@@ -20,11 +20,12 @@ pha; chép lại vào đây là tạo một bản sẽ trôi.
 
 | Pha | Tên | Trạng thái | Ghi chú / chặn |
 |---|---|---|---|
-| 00–08 | nền, hợp đồng, kiến trúc GUI, upload | **CHƯA MỞ** | 06/07/08 chưa bắt đầu |
+| 00–07 | nền, hợp đồng, kiến trúc GUI | **CHƯA MỞ** | 06/07 chưa bắt đầu |
+| 08 | Durable upload + source preview | **XONG** | `ef7b3425` (08a) + `d78d1804`/`cc9b1e8d` (08b). Xem `PHA08_TAI_LEN.md`. 🔴 Tìm ra đường tải lên 2 GiB **chưa bao giờ chạy được từ giao diện** |
 | 09 | Timeline + Scene Browser | **XONG** | `d4066def` — khách XEM được cảnh, và chỉ xem |
 | 10 | Core edit controls | **MỘT PHẦN** | `a9cecb42` cắt đầu/cuối. `zoom`/`crop`/`reframe` nằm trong `CAM_TRONG_MVP` — mở chúng cần một ADR, không phải một lượt code |
 | 10b | kiểm GUI thật | **XONG** | `395b29dd` — bắt một lỗi bố cục bộ kiểm không thấy |
-| 11 | Overlay controls | **11a XONG · 11b HOÃN** | `efbcfb4a` + `42512fd8`. Xem `PHA11_LOP_PHU_CHU.md`. Logo ảnh chặn ở **pha 08** (đường nhập ảnh) |
+| 11 | Overlay controls | **XONG** | `efbcfb4a` + `42512fd8` (11a chữ) · `d78d1804` (11b logo, sau khi pha 08 mở đường nhập ảnh). Xem `PHA11_LOP_PHU_CHU.md` |
 | 12 | Region editor v2 | **XONG** | `8c4a1d35` (giờ có tác dụng thật) + `8cd5b281` (giao diện đặt giờ) |
 | 13–34 | — | **CHƯA MỞ** | |
 
@@ -35,7 +36,9 @@ pha; chép lại vào đây là tạo một bản sẽ trôi.
 | `test_448` ×7 đỏ | **đúng là đỏ** | Ba nguyên nhân đã tách: trần token · `sqlite3 database is locked` · LUFS T4. Hai cái sau **đã vá có đối chứng**; cái đầu còn là giả thuyết chưa phân biệt được với "chế độ rỗng lưỡng cực" của `ltt_llm`. Xem `CHAN_DOAN_TEST_448.md` |
 | Đo `chuyen_loi_thoai` qua `goi_tinh_tien` | **bị chặn** | Cần `LTT_DATABASE_URL` + `LTT_TOKEN_ENCRYPTION_KEY` + `LTT_LLM_BASE_URL` từ `C:\LTTPlatform\secrets\app.env` (ACL chặn — **cố ý**). Đường hợp lệ đã có sẵn: `setup\do_on_dinh_nang_quyen.ps1`. Việc chủ dự án bấm |
 | `nghiem_thu_hien_hanh.json` | **không tái sinh được ở độ trung thực đầy đủ** | Chặn cùng chỗ ở trên. ⛔ Không được tái sinh từ **một** lượt xanh (p(hỏng) ≈ ½) cũng không từ một lượt có **thay thế** |
-| Xem trước lớp phủ trên khung hình | chưa có | `vung_che` kéo thả được, lớp phủ thì chưa — khách đặt toạ độ bằng số |
+| Xem trước lớp phủ/logo trên khung hình | chưa có | `vung_che` kéo thả được, lớp phủ và logo thì chưa — khách đặt toạ độ bằng số |
+| **Resume thật** khi tải lên | chưa có | Hiện là *thử lại cả tệp* 3 lần. Resume theo byte cần multipart upload của R2 + một bản ghi tiến độ |
+| `vung_che`/`cat_dau_cuoi` chưa dùng `hinh_hoc` | 2 bản chép còn lại | Đã ghi tên ở `REBASE_MAP_V4.md`; di trú phải đi cùng đối chứng của chính nó |
 
 ## Quy tắc riêng của chương trình này
 
