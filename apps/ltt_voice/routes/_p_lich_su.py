@@ -122,6 +122,41 @@ def doc_lai(request: Request, job_id: str, csrf_token: str = Form(""),
         # đâu", và một lượt đọc lại vẫn đến từ chỗ cũ.
         p["owner_id"] = uid
 
+        # 🔴 KIỂM LẠI TRƯỚC KHI GIỮ CREDIT — và đây là cửa DỄ SÓT NHẤT, không
+        #    phải cửa ít quan trọng nhất.
+        #
+        #    Ba cửa kia (`_p_tao`, `_p_du_an`, `_p_phat_dan`) đều gọi
+        #    `features.giai_giong` trước khi tiêu tiền. Cửa này thì không, và
+        #    nó **tái tạo đúng sự cố production 31/08/2026** mà ba cửa kia được
+        #    sửa để tránh: *"job vẫn được giữ credit, vẫn xếp hàng, và bị thử
+        #    lại — cho một câu trả lời mà cửa vào đã biết ngay từ đầu."*
+        #
+        # ⭐ Và nó là cửa **có nhiều khả năng mang tham chiếu ôi nhất**, theo
+        #    đúng thiết kế: nó phát lại `params` CŨ. Giữa lần chạy đầu và lần
+        #    bấm "đọc lại", ba thứ có thể đã đổi:
+        #      · giọng nhân bản bị **tắt / thu hồi** (`trang_thai != active`);
+        #      · làn ngôn ngữ được khai lại, biến một cặp từng hợp lệ thành
+        #        lệch làn (Q121);
+        #      · engine nâng cấp, một `preset` cũ không còn tồn tại.
+        #
+        #    Đo thật 2026-09-11 trên `studio_dev`, cùng một cặp văn-bản/giọng:
+        #        POST /ltt-voice/tao            -> 400 voice_language_mismatch
+        #        POST /ltt-voice/lich-su/…/doc-lai -> 200, job queued, so du 500 -> 499
+        #
+        # ⛔ KIỂM bằng `chuan_hoa`, nhưng vẫn NỘP `p` GỐC. Dựng lại params từ
+        #    `YeuCau` sẽ đánh rơi mọi khoá mà `YeuCau` không biết (`nguon`,
+        #    `project_id`, `block_id`, và khoá tiếp theo ai đó thêm) — đúng thứ
+        #    docstring trên đã cảnh báo, chỉ theo chiều ngược lại. Hai việc
+        #    khác nhau: `chuan_hoa` là **phép kiểm**, `p` là **tải trọng**.
+        try:
+            yc = features.chuan_hoa(p)
+            features.giai_giong(db, yc)
+        except features.LoiGiongNoi as e:
+            db.rollback()
+            return JSONResponse(
+                {"ok": False, "loi": str(e),
+                 "ma_loi": str(getattr(e, "ma", "") or "")}, status_code=400)
+
         tool = MANIFEST.tools[0]
         try:
             job = submit_with_credit(
