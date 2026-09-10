@@ -24,7 +24,7 @@ Nguồn: `docs/migration/workflow_apps/01_SOURCE_MANIFEST.md`.
 | 12 Legacy workflow rebuild | **MỘT PHẦN** | `32_PHASE12_...md` · `tests/test_1111` — 4 App chạy được như node, dữ liệu chảy giữa 2 node | Canvas/V2 **không có bộ thi hành**; Drive/Sheets connector chưa audit | 13 |
 | 13 Workflow hardening | **MỘT PHẦN** | `33_...md` · `tests/test_1112` (hai chỗ khai VRAM) · `tests/test_1106` (mật độ mốc = độ trễ huỷ) | chưa quét hết nhóm bằng chứng | 14 |
 | 14 Agent re-evaluation | **XONG** | `34_PHASE14_AGENT.md` · `tests/test_1113` — `AGENT_CHANGE_REQUIRED: NO` | planner rate cần máy B | 15 |
-| 15 Final cutover | CHƯA | | | |
+| 15 Final cutover | **MỘT PHẦN** | `29_FINAL_CUTOVER.md` — ma trận + tuyên bố cuối | cả 4 App **NOT READY**: chặn chung là E2E thật qua worker | — |
 
 ## Bốn quyết định của chủ dự án — 2026-09-09
 
