@@ -176,3 +176,50 @@ là 20 giây; 554 × 20 s ≈ **3 giờ** chỉ để chờ.
 
 ⚠️ Đây là quan sát, **không** phải đề xuất sửa: nó thuộc `ltt_llm` và máy B, ngoài
    phạm vi chương trình này. Ghi ra để người phụ trách nó có con số.
+
+---
+
+## 9. Quét nốt bốn nhóm bằng chứng còn lại (Phase 13)
+
+| Nhóm | Kết quả |
+|---|---|
+| `version pinning` | ✅ `type_version=1` đồng nhất cả bốn |
+| `observability` | ✅ không phải khoảng cách của riêng tôi — `autosubvideo`, `taoclipngan` cũng 0 sự kiện khai trực tiếp; cả nền tảng dựa vào sự kiện của `ctx.progress` |
+| `artifact limits` | 🔶 cả ba App cưỡng chế 95 MB, mỗi App một hằng số riêng cùng giá trị — rủi ro **trôi**, không phải no-op im lặng |
+| `wait/resume` | 🔴 **một khiếm khuyết thật** — xem dưới |
+
+### 🔴 `prompt_canh`: trần đầu vào và trần thời gian KHÔNG khớp nhau
+
+Ba sự thật, đo được:
+
+1. `chuan_hoa` chỉ kiểm `so_canh >= 1`. Manifest khai `params_schema["so_canh"]
+   ["max"] = 500`, nhưng **đường route không cưỡng chế schema** — nó gọi thẳng
+   `chuan_hoa`. ⇒ Thực tế **không có trần trên**.
+2. Số lượt gọi model = `1 + ⌈n/10⌉ + ⌈n/5⌉`. Đo trên kịch bản production **thật**
+   của bot dựng video: 21 · 59 · 108 · 125 · 141 · 177 · 189 · **202** cảnh.
+   177 cảnh = 55 lượt; 202 cảnh = 63 lượt; 500 cảnh = **151 lượt**.
+3. Trần thời gian của lớp `api` là **1800 s**. 151 lượt trong 1800 s là **11,9
+   giây mỗi lượt** — qua máy B vốn chỉ có **một** suất đồng thời.
+
+⇒ Trần đã khai (500) là **một lời hứa không phục vụ được**, và không có gì bắt
+  hai con số ấy khớp nhau.
+
+⛔ **Và nó là chuyện tiền.** `runtime_noi_bo` thu theo **từng lượt gọi** và quyết
+   toán ngay, không giữ chỗ. Job chết ở trần thời gian nghĩa là khách **đã trả**
+   cho những lượt đã chạy và nhận về **không gì**. Đúng hạng
+   `tran-dat-duoi-san-nhu-cau`: một trần đặt dưới nhu cầu bình thường biến thất
+   bại thành **mặc định** — và ở đây "nhu cầu bình thường" **đo được**.
+
+**Bản vá** (app-level, đúng cổng Phase 13 vì chỉ một App cần):
+
+* `TRAN_SO_CANH = 250` ở tầng dịch vụ — **một nguồn duy nhất**; manifest **nhập**
+  nó thay vì gõ lại `500`. Đúng bài học từ con bọ VRAM: hai chỗ khai cùng một
+  con số là hai chỗ để chúng trôi.
+* `max_runtime_s={"prompt_canh.run": 3600}`.
+* `chuan_hoa` chặn ở cổng, và câu lỗi **nói số lượt gọi** chứ không chỉ nói "quá lớn".
+* Phép kiểm chốt **bất đẳng thức**: `so_luot_goi(TRAN_SO_CANH) ×
+  NGAN_SACH_MOI_LUOT_S ≤ trần`. Hôm nay: 76 × 40 = 3040 ≤ 3600.
+
+⚠️ `NGAN_SACH_MOI_LUOT_S = 40` là một **ước lượng**, không phải phép đo — và nó
+   nằm trong mã chính là để phép kiểm chốt được nó. Đo lại được thì sửa số ấy
+   trước; bài kiểm sẽ nói cho biết trần nào phải đổi theo.

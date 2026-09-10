@@ -291,3 +291,80 @@ def test_handler_doi_owner_id() -> None:
     tính tiền theo chính giá trị ấy."""
     with pytest.raises(app_jobs.LoiPromptCanh):
         app_jobs.handle({"kich_ban": "k", "so_canh": 3})
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Trần đầu vào và trần thời gian phải KHỚP NHAU — và đó là chuyện tiền
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# 🔴 `runtime_noi_bo` thu tiền theo **từng lượt gọi model** và quyết toán ngay,
+#    không giữ chỗ. Nên một job chết ở trần thời gian nghĩa là khách **đã trả**
+#    cho những lượt đã chạy và nhận về **không gì**.
+#
+# ⛔ Trước bản vá: `chuan_hoa` chỉ kiểm `so_canh >= 1`; manifest khai
+#    `params_schema["so_canh"]["max"] = 500`; và **đường route không cưỡng chế
+#    schema** (nó gọi thẳng `chuan_hoa`). Nên thực tế không có trần trên. Và
+#    ngay cả 500 cũng là một lời hứa không phục vụ được: 151 lượt gọi trong trần
+#    1800 s là **11,9 giây mỗi lượt**, qua máy B vốn chỉ có MỘT suất đồng thời.
+
+def test_so_luot_goi_dung_cong_thuc_cua_hai_vong_lo() -> None:
+    """Đối chiếu với số cảnh THẬT của bot dựng video: 21 · 59 · 125 · 177 · 202."""
+    f = kich_ban.so_luot_goi
+    assert f(20) == 1 + 2 + 4          # mặc định
+    assert f(177) == 1 + 18 + 36       # một job production thật
+    assert f(202) == 1 + 21 + 41       # job lớn nhất đã quan sát
+    assert f(0) == 0
+
+
+def test_so_canh_VUOT_TRAN_bi_tu_choi_o_CONG_chu_khong_chet_giua_chung() -> None:
+    """Chặn ở cổng, không để job chạy rồi chết sau khi đã tiêu tiền."""
+    goc = {"kich_ban": "mot kich ban"}
+    kich_ban.chuan_hoa({**goc, "so_canh": kich_ban.TRAN_SO_CANH})
+    with pytest.raises(kich_ban.LoiKichBan) as e:
+        kich_ban.chuan_hoa({**goc, "so_canh": kich_ban.TRAN_SO_CANH + 1})
+    assert "so_canh" in str(e.value)
+    # Câu lỗi phải nói SỐ LƯỢT, không chỉ nói "quá lớn" — người đọc cần biết vì sao.
+    assert str(kich_ban.so_luot_goi(kich_ban.TRAN_SO_CANH + 1)) in str(e.value)
+
+
+def test_TRAN_DAU_VAO_va_TRAN_THOI_GIAN_phai_khop_nhau() -> None:
+    """Bất đẳng thức làm quan hệ giữa hai con số **kiểm được**, thay vì nằm trong đầu.
+
+    ⛔ Đây chính là hạng lỗi `tran-dat-duoi-san-nhu-cau`: một trần đặt dưới sàn
+       nhu cầu bình thường biến thất bại thành **mặc định**. Ở đây "nhu cầu bình
+       thường" đo được — kịch bản production thật có tới 202 cảnh.
+
+    ⚠️ `NGAN_SACH_MOI_LUOT_S` là một **ước lượng**, không phải phép đo. Nó nằm
+       trong mã chính là để bài này chốt được nó. Đo lại được thì sửa số ấy
+       trước, rồi bài này sẽ nói cho biết trần nào phải đổi theo.
+    """
+    from platform_core.job_runner import RUNTIME_LIMIT_DEFAULT_S, RUNTIME_LIMIT_S
+    from platform_core.public_api.limits import resource_class
+    from platform_core.registry import discover
+
+    m = next(a.manifest for a in discover()
+             if not a.error and a.manifest.slug == "prompt_canh")
+    lop = resource_class(m)
+    tran_s = m.runtime_limit_for(
+        "prompt_canh.run",
+        default=RUNTIME_LIMIT_S.get(lop, RUNTIME_LIMIT_DEFAULT_S))
+    can_s = kich_ban.so_luot_goi(kich_ban.TRAN_SO_CANH) * kich_ban.NGAN_SACH_MOI_LUOT_S
+    assert can_s <= tran_s, (
+        f"{kich_ban.TRAN_SO_CANH} canh = {kich_ban.so_luot_goi(kich_ban.TRAN_SO_CANH)} "
+        f"luot goi, can {can_s}s nhung tran chi {tran_s}s — mot job dung tran "
+        f"dau vao se CHET o tran thoi gian SAU KHI da thu tien tung luot")
+
+
+def test_schema_va_TRAN_lay_tu_MOT_nguon() -> None:
+    """Hai chỗ khai cùng một con số là hai chỗ để chúng trôi khỏi nhau.
+
+    Đúng hình dạng con bọ VRAM ở `test_1112`: `gpu_vram_mb` và
+    `ToolSpec.resource["vram_min_mb"]` cùng nói một điều mà không ai bắt khớp.
+    Ở đây manifest **nhập** `TRAN_SO_CANH` thay vì gõ lại `500`.
+    """
+    from platform_core.registry import discover
+    m = next(a.manifest for a in discover()
+             if not a.error and a.manifest.slug == "prompt_canh")
+    schema = next(t.params_schema["so_canh"] for t in m.tools)
+    assert schema["max"] == kich_ban.TRAN_SO_CANH
+    assert schema["min"] == 1

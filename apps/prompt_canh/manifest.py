@@ -7,6 +7,7 @@ dự án ngày 2026-09-09. Toàn văn + hệ quả:
 from __future__ import annotations
 
 from platform_core.i18n import N_
+from .services.kich_ban import TRAN_SO_CANH
 from platform_core.registry import AppManifest, NavEntry, ToolSpec
 
 
@@ -43,6 +44,12 @@ MANIFEST = AppManifest(
     job_types=("prompt_canh.run",),
     # `api` — khong GPU, khong trinh duyet. Xem `09_QUYET_DINH_...`.
     requires=("api",),
+    # 🔴 Trần thời gian phải KHỚP với `TRAN_SO_CANH`. Job này gọi model tuần tự
+    #    qua máy B (MỘT suất đồng thời), và `runtime_noi_bo` thu tiền từng lượt
+    #    — chết ở trần nghĩa là khách đã trả mà không nhận gì.
+    #    250 cảnh = 76 lượt gọi; 3600 s / 76 = 47 s mỗi lượt.
+    #    `tests/test_1105` chốt bất đẳng thức ấy để hai con số không trôi khỏi nhau.
+    max_runtime_s={"prompt_canh.run": 3600},
     credit_cost=_gia,
 
     enabled=True,
@@ -57,7 +64,8 @@ MANIFEST = AppManifest(
         description=N_('Sinh prompt cảnh từ một kịch bản.'),
         params_schema={
             "kich_ban": {"type": "text", "required": True, "max_length": 100000},
-            "so_canh": {"type": "int", "min": 1, "max": 500, "default": 20},
+            "so_canh": {"type": "int", "min": 1, "max": TRAN_SO_CANH,
+                        "default": 20},
             "batch_step2": {"type": "int", "min": 1, "max": 50, "default": 10},
             "batch_step3": {"type": "int", "min": 1, "max": 50, "default": 5},
             "visual_style": {"type": "string", "max_length": 200},

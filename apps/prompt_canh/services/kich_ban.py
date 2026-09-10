@@ -58,6 +58,39 @@ LICH_SU_CANH = 5
 LO_BUOC2 = 10
 LO_BUOC3 = 5
 
+#: 🔴 TRAN TREN cua `so_canh` — va no la mot rang buoc ve TIEN, khong phai ve
+#: hinh thuc.
+#:
+#: `runtime_noi_bo` thu tien theo TUNG luot goi model va quyet toan ngay, khong
+#: giu cho. Nen mot job chet o tran thoi gian nghia la khach DA TRA cho nhung
+#: luot da chay va nhan ve khong gi.
+#:
+#: So luot goi = 1 + ceil(n/LO_BUOC2) + ceil(n/LO_BUOC3). Do tren du lieu job
+#: THAT cua bot dung video: kich ban production co 21 · 59 · 108 · 125 · 141 ·
+#: 177 · 189 · 202 canh. Tran 250 phu het, con du 24%.
+#:
+#: ⛔ Ban dau `chuan_hoa` chi kiem `so_canh >= 1`, con manifest khai
+#:    `params_schema["so_canh"]["max"] = 500` — va DUONG ROUTE khong cuong che
+#:    schema (no goi thang `chuan_hoa`). Nen thuc te KHONG co tran tren. Va ngay
+#:    ca 500 cung la mot loi hua khong phuc vu duoc: 151 luot goi trong tran
+#:    1800s la 11,9 giay moi luot, qua may B von chi co MOT suat dong thoi.
+TRAN_SO_CANH = 250
+
+#: Ngan sach thoi gian cho MOT luot goi model, giay. ⚠️ Day la MOT UOC LUONG,
+#: khong phai mot phep do — no o day de quan he giua `TRAN_SO_CANH` va
+#: `max_runtime_s` KIEM DUOC thay vi nam trong dau ai do.
+#: `tests/test_1105` chot bat dang thuc ay. Do lai duoc thi sua so nay truoc.
+NGAN_SACH_MOI_LUOT_S = 40
+
+
+def so_luot_goi(so_canh: int, lo2: int = LO_BUOC2, lo3: int = LO_BUOC3) -> int:
+    """So luot goi model cho `so_canh` canh. Buoc 1 mot luot, roi hai vong lo."""
+    import math
+    n = max(0, int(so_canh))
+    if n < 1:
+        return 0
+    return 1 + math.ceil(n / max(1, lo2)) + math.ceil(n / max(1, lo3))
+
 TOOL_LLM = "text.chat"
 
 
@@ -110,6 +143,12 @@ def chuan_hoa(params: dict) -> YeuCau:
         raise LoiKichBan(f"tham so so khong hop le: {e}") from e
     if so_canh < 1:
         raise LoiKichBan(f"`so_canh` phai >= 1, nhan {so_canh}")
+    if so_canh > TRAN_SO_CANH:
+        # ⛔ Chan o day chu khong de job chay roi chet o tran thoi gian: tien da
+        #    bi thu theo tung luot goi model truoc khi no chet.
+        raise LoiKichBan(
+            f"`so_canh` toi da {TRAN_SO_CANH}, nhan {so_canh} — {so_luot_goi(so_canh)} "
+            f"luot goi model khong chay het duoc trong tran thoi gian cua job")
     if lo2 < 1 or lo3 < 1:
         raise LoiKichBan(f"kich thuoc lo phai >= 1, nhan {lo2}/{lo3}")
     return YeuCau(kich_ban=kich_ban, so_canh=so_canh, lo_buoc2=lo2,
