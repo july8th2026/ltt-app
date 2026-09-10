@@ -40,7 +40,9 @@ from pathlib import Path
 
 import pytest
 
-from apps.auto_scan_video import features, routes
+from apps.auto_scan_video import che_do_render as cdr
+from apps.auto_scan_video import features, logo as lg, routes
+from tests import rao_chan_nang
 
 GOC = Path(__file__).resolve().parent.parent
 JS = GOC / "server" / "static" / "asv.js"
@@ -280,3 +282,167 @@ def test_soi_TRUOC_khi_promote():
     assert "promote" in dong, "khong co loi goi `promote` nao"
     assert dong["soi"] < dong["promote"], (
         f"promote (dong {dong['promote']}) chay truoc soi (dong {dong['soi']})")
+# ══════════════════════════════════════════════════════════════════════════════
+#  §6  Logo — đường nhập ảnh mà pha 11b đang chờ
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_anh_la_mot_LOAI_artifact_co_phep_kiem_rieng():
+    """⛔ Thêm một `kind` mới mà không thêm phép kiểm nội dung là mở một loại
+    artifact **không ai soi** — tức bất biến I8 (*"DONE nghĩa là có một kết quả
+    HỢP LỆ"*) mất hiệu lực cho đúng loại đó, và mất im lặng."""
+    import ast as _ast
+    import inspect
+
+    from apps.auto_scan_video import assets
+    from apps.auto_scan_video.tables import KINDS, KIND_ANH
+
+    assert KIND_ANH in KINDS
+    cay = _ast.parse(inspect.getsource(assets.kiem_hop_le))
+    ten = {n.id for n in _ast.walk(cay) if isinstance(n, _ast.Name)}
+    assert "KIND_ANH" in ten, (
+        "`kiem_hop_le` khong co nhanh nao cho anh — mot loai artifact khong ai "
+        "soi noi dung")
+
+
+def test_phep_kiem_anh_DUNG_LAI_nen_tang_khong_tu_doc_PNG():
+    """⭐ Hạn mức (8 MiB, 24 Mpx) là chính sách của **nền tảng**. Một bản sao ở
+    đây là một bản sẽ trôi khi chính sách ấy đổi."""
+    import inspect
+
+    from apps.auto_scan_video import assets, features
+
+    assert "image_input" in inspect.getsource(assets.kiem_hop_le)
+    assert "image_input" in inspect.getsource(features.tran_logo_byte)
+
+
+def test_logo_luu_thanh_artifact_CUA_LAN_CHAY():
+    """🔑 `ban_dung.kiem(ban, khoa_hop_le=...)` đòi mọi khoá là `AsvAsset` **của
+    chính lần chạy**. Một logo lưu ở phạm vi chủ sở hữu sẽ không qua được cửa
+    đó — và nới cửa đó là gỡ một chốt đang chặn một bản dựng trỏ tới artifact
+    của người khác."""
+    import ast as _ast
+    import inspect
+
+    from apps.auto_scan_video import features
+
+    cay = _ast.parse(inspect.getsource(features.gan_logo))
+    for n in _ast.walk(cay):
+        if (isinstance(n, _ast.Call) and isinstance(n.func, _ast.Attribute)
+                and n.func.attr == "promote_va_ghi"):
+            kw = {k.arg for k in n.keywords}
+            assert "run_id" in kw and "owner_id" in kw, kw
+            return
+    pytest.fail("`gan_logo` khong di qua `assets.promote_va_ghi`")
+
+
+def test_logo_KHONG_co_cua_tai_len_rieng():
+    """🔑 Một cửa riêng cấp ra một **khoá** khách cầm theo, rồi lần chạy sau nhắc
+    lại khoá đó — tức ta phải trả lời *"khoá này có thật sự của người đang
+    gọi không"* ở mọi lần dùng. Đó đúng là bề mặt IDOR mà `upload_sessions.owned`
+    phải lọc trong truy vấn để đóng lại.
+
+    ⇒ Ảnh đi cùng POST tạo lần chạy: nó đến **từ chính yêu cầu này**. Câu hỏi
+      quyền sở hữu **biến mất** thay vì được trả lời.
+    """
+    van = (GOC / "apps" / "auto_scan_video" / "routes.py"
+           ).read_bytes().decode("utf-8")
+    assert "logo_anh: list[UploadFile]" in van, "logo khong di cung bieu mau"
+    # Khong co route rieng nao nhan logo.
+    import re as _re
+    for m in _re.finditer(r'@router\.(post|put)\("([^"]+)"', van):
+        assert "logo" not in m.group(2), f"co mot cua rieng cho logo: {m.group(2)}"
+
+
+def test_hai_danh_sach_logo_KHONG_duoc_zip_mu():
+    """⛔ Lệch số lượng hay lệch thứ tự đều KHÔNG làm gì hỏng — chúng chỉ làm
+    logo thứ nhất mang ảnh của logo thứ hai, đặt ở toạ độ của logo thứ nhất.
+    Cùng hình dạng lỗi mà `dung_lenh` đã phải tự kiểm cho `duong_lop`."""
+    import inspect
+
+    from apps.auto_scan_video import routes as r
+
+    ma = inspect.getsource(r._doc_logo)
+    assert "len(ds_tep) != len(ds)" in ma, "khong doi chieu do dai hai danh sach"
+
+
+def test_tran_anh_ap_TRONG_luc_doc():
+    """⚠️ Một tệp 100 MB không được cấp phát 100 MB rồi mới bị từ chối."""
+    import inspect
+
+    from apps.auto_scan_video import routes as r
+
+    ma = inspect.getsource(r._doc_logo)
+    assert "tran_logo_byte()" in ma
+    assert ma.index("await t.read()") < ma.index("> tran")
+@rao_chan_nang.NANG
+@pytest.mark.skipif(__import__("os").environ.get(rao_chan_nang.BIEN) != "1",
+                    reason=rao_chan_nang.LY_DO)
+def test_engine_dan_logo_DUNG_LUC_va_khong_dong_gi_ngoai_cua_so(tmp_path):
+    """🔑 Bằng chứng ENGINE, cùng thiết kế với pha 11 — và cùng một cái bẫy.
+
+    ⛔ Ghi bằng **FFV1 (không mất mát)**. Với `libx264`, các khung sau cửa sổ
+       tham chiếu một lịch sử khác nên PSNR ra ~53 dB dù bộ lọc không dán gì —
+       xem `test_466` §8. `inf` chỉ có nghĩa "từng điểm ảnh" khi codec không
+       mất mát.
+
+    ⭐ Đường chéo (t=3,0 so t=1,0 của CÙNG một bản) để chắc rằng phép đo phân
+       biệt được gì đó; thiếu nó thì hai con `inf` có thể chỉ nghĩa là mọi khung
+       đều giống nhau.
+    """
+    import re as _re
+    import subprocess
+
+    rong, cao, khoang = 640, 360, [(0.0, 6.0)]
+
+    def chay(cmd):
+        return subprocess.run(cmd, capture_output=True, text=True,
+                              timeout=300, errors="replace")
+
+    anh = tmp_path / "logo.png"
+    r = chay(["ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+              "-f", "lavfi", "-i", "color=c=red:s=120x60,format=rgba",
+              "-frames:v", "1", str(anh)])
+    assert r.returncode == 0, r.stderr[-400:]
+
+    def render(ten, ds):
+        loc = cdr.loc_cat_noi(khoang, ds_logo=ds, rong_khung=rong,
+                              chi_so_logo_dau=1)
+        cmd = ["ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+               "-f", "lavfi", "-i",
+               f"testsrc2=size={rong}x{cao}:rate=25:duration=6"]
+        for _ in ds:
+            cmd += ["-i", str(anh)]
+        cmd += ["-filter_complex", loc, "-map", "[ra]", "-t", "6",
+                "-c:v", "ffv1", "-level", "3", str(tmp_path / f"{ten}.mkv")]
+        r = chay(cmd)
+        assert r.returncode == 0, f"{loc} :: {r.stderr[-1000:]}"
+        return tmp_path / f"{ten}.mkv"
+
+    def khung(v, giay, ten):
+        ra = tmp_path / f"{ten}.png"
+        r = chay(["ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+                  "-ss", f"{giay:.3f}", "-i", str(v), "-frames:v", "1", str(ra)])
+        assert r.returncode == 0 and ra.exists(), r.stderr[-400:]
+        return ra
+
+    def psnr(a, b):
+        r = chay(["ffmpeg", "-hide_banner", "-i", str(a), "-i", str(b),
+                  "-lavfi", "psnr", "-f", "null", "-"])
+        m = _re.search(r"average:(inf|[0-9.]+)", r.stderr or "")
+        assert m, (r.stderr or "")[-600:]
+        return float("inf") if m.group(1) == "inf" else float(m.group(1))
+
+    ds = lg.chuan_hoa([{"khoa": "asv/x/y/logo/z.png", "x": 0.05, "y": 0.05,
+                        "rong": 0.20, "do_mo": 1.0,
+                        "tu_giay": 2.0, "den_giay": 4.0}])
+    assert lg.rong_px(ds[0], rong) == 128, "20% cua 640 phai la 128 px"
+    co, khong = render("co", ds), render("khong", [])
+
+    for giay in (1.0, 5.0):
+        d = psnr(khung(co, giay, f"a{giay}"), khung(khong, giay, f"b{giay}"))
+        assert d == float("inf"), (
+            f"t={giay}s nam NGOAI cua so ma ban ra van khac ({d} dB)")
+    trong = psnr(khung(co, 3.0, "a3"), khung(khong, 3.0, "b3"))
+    assert trong < 60, f"t=3,0s nam TRONG cua so ma khong doi gi ({trong} dB)"
+    cheo = psnr(khung(co, 3.0, "c3"), khung(co, 1.0, "c1"))
+    assert cheo < 60, "duong cheo trung khop => phep do khong phan biet duoc gi"

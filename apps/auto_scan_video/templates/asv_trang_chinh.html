@@ -345,6 +345,39 @@
         <input type="hidden" name="lop_phu" id="asv-lop-phu" value="">
       </div>
 
+      {# 🔴 Logo — cùng ràng buộc VẬT LÝ với vùng che và lớp phủ chữ, nên cùng
+         khuôn `data-preset-can`.
+
+         ⚠️ Ảnh đi **cùng biểu mẫu này**, không qua một cửa tải lên riêng. Một
+            cửa riêng cấp ra một khoá khách cầm theo, và khi đó ta phải trả lời
+            *"khoá này có thật sự của người đang gọi không"* ở mọi lần dùng —
+            đúng bề mặt IDOR mà `upload_sessions.owned` phải lọc trong truy vấn
+            để đóng lại. Đi cùng POST thì câu hỏi ấy **biến mất**. #}
+      <div class="asv-nhom" id="asv-nhom-logo"
+           data-preset-can="{{ preset_can_cho_vung }}"
+           data-toi-da="{{ logo_toi_da }}"
+           data-tran-mb="{{ logo_tran_mb }}">
+        <h3>{{ _("Logo") }}</h3>
+        <p class="asv-ghi-chu">
+          {{ _("Dán logo của bạn lên video. PNG nền trong suốt cho kết quả đẹp nhất. Tối đa %(n)s logo, mỗi ảnh dưới %(mb)s MB.")|format(n=logo_toi_da, mb=logo_tran_mb) }}
+        </p>
+        <p class="asv-ghi-chu asv-vung-chan" id="asv-logo-chan" hidden>
+          {{ _("Kiểu “Giữ nguyên hình ảnh” sao chép nguyên vẹn từng điểm ảnh, nên không thể dán logo lên hình. Chọn “Rút gọn có biên tập” nếu bạn muốn thêm logo.") }}
+        </p>
+        <div class="asv-vung-thanh" role="group" aria-label="{{ _('Công cụ logo') }}">
+          <button type="button" class="btn ghost" id="asv-logo-them">
+            {{ _("Thêm logo") }}
+          </button>
+        </div>
+        <p class="asv-ghi-chu" id="asv-logo-tt" aria-live="polite">
+          {{ _("Chưa có logo nào.") }}
+        </p>
+        <ul class="asv-vung-ds" id="asv-logo-ds"></ul>
+        {# Hình học đi ở đây; ảnh đi ở các ô `logo_anh` do JS dựng. Hai danh
+           sách phải CÙNG độ dài — `routes._doc_logo` đối chiếu và từ chối. #}
+        <input type="hidden" name="logo" id="asv-logo" value="">
+      </div>
+
       <div class="asv-nhom">
         <h3>{{ _("Giọng") }}</h3>
         <fieldset class="asv-o">
@@ -466,7 +499,16 @@
   "tai_thu_lai": {{ _("Đang thử lại lần %(lan)s…")|tojson }},
   "tai_hong_lon": {{ _("Tải lên bị gián đoạn. Video này lớn hơn %(mb)s MB nên không gửi kèm biểu mẫu được — hãy bấm “Thử tải lên lại”.")|tojson }},
   "tai_hong_nho": {{ _("Tải lên trực tiếp không chạy được. Đang gửi theo đường thường…")|tojson }},
-  "vuot_tran_kieu": {{ _("vượt quá %(mb)s MB — định dạng này chỉ gửi được bản nhỏ. Hãy đổi sang MP4 hoặc MOV.")|tojson }}
+  "vuot_tran_kieu": {{ _("vượt quá %(mb)s MB — định dạng này chỉ gửi được bản nhỏ. Hãy đổi sang MP4 hoặc MOV.")|tojson }},
+  "lg_chua_co": {{ _("Chưa có logo nào.")|tojson }},
+  "lg_dem": {{ _("%(so)s logo.")|tojson }},
+  "lg_chon_anh": {{ _("Chọn ảnh")|tojson }},
+  "lg_chua_chon": {{ _("Chưa chọn ảnh — logo này sẽ không được gửi.")|tojson }},
+  "lg_rong": {{ _("Bề rộng (%)")|tojson }},
+  "lg_xoa_mot": {{ _("Xoá logo này")|tojson }},
+  "lg_het_cho": {{ _("Tối đa %(n)s logo.")|tojson }},
+  "lg_qua_lon": {{ _("Ảnh vượt quá %(mb)s MB.")|tojson }},
+  "lg_sai_kieu": {{ _("Chỉ nhận PNG, JPEG hoặc WebP.")|tojson }}
 }
 </script>
 <script src="/static/asv.js?v={{ asset_ver }}" defer></script>

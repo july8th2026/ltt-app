@@ -223,6 +223,18 @@ def phan_loai(exc: BaseException) -> str:
     if isinstance(exc, LopPhuLoi):
         return NGUOI_DUNG
 
+    # ── Logo (V6 pha 11b) ───────────────────────────────────────────────────
+    #
+    # Cung nhom voi `LopPhuLoi`, va cung ly do: `logo.rong_px()` duoc goi tu
+    # `che_do_render._loc_logo`, tuc tu trong mot JOB, dung luc dung chuoi loc.
+    #
+    # ⛔ Mot ban dung co logo ma thieu `rong_khung` se nem giua giai doan ket
+    #    xuat. Roi xuong `retry` thi ba luot deu hong y het — cung mot ban dung,
+    #    cung mot truong thieu.
+    from .logo import LogoLoi
+    if isinstance(exc, LogoLoi):
+        return NGUOI_DUNG
+
     # ── QC bang AI va ke hoach sua (pha 19) ─────────────────────────────────
     #
     # ⛔ `NGUOI_DUNG` — that bai cuoi cung. Ca hai deu la mau thuan trong du lieu

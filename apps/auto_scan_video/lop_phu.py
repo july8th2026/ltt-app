@@ -64,6 +64,8 @@ from pathlib import Path
 
 from platform_core.i18n import _ as _t
 
+from . import hinh_hoc
+
 #: So lop phu toi da mot lan chay. Xem doan "ranh gioi CO HOC" o dau tep: con
 #: so nay la thu ngan `lop_phu` bien thanh `subtitle_burn`, khong phai mot han
 #: muc hieu nang.
@@ -112,17 +114,16 @@ class LopPhuLoi(ValueError):
 
 
 def _so(gia_tri, *, ten: str, thap: float, cao: float) -> float:
-    try:
-        x = float(gia_tri)
-    except (TypeError, ValueError):
-        raise LopPhuLoi(_t('Lớp phủ chữ có giá trị không đọc được.')) from None
-    # ⛔ Cung cai bay `vung_che._so` da chan: `float("nan")` doc duoc, va MOI
-    #    phep so sanh voi no deu False — nen no lot qua `thap <= x <= cao`.
-    if x != x or x in (float("inf"), float("-inf")):
-        raise LopPhuLoi(_t('Lớp phủ chữ có giá trị không đọc được.'))
-    if not (thap <= x <= cao):
-        raise LopPhuLoi(_t('Lớp phủ chữ có giá trị ngoài khoảng cho phép.'))
-    return x
+    """Doc mot phan so. Luat song o `hinh_hoc`, cau tieng Viet song o day.
+
+    ⭐ Chia the nay vi hai thu troi theo hai nhip khac nhau: phep chan `NaN`
+       giong nhau o moi module, con cau noi voi khach thi phai noi ve **thu
+       khach vua lam** — mot cau chung chung buoc ho doan minh sai o dau.
+    """
+    return hinh_hoc.so_phan_so(
+        gia_tri, thap=thap, cao=cao, loi=LopPhuLoi,
+        khong_doc_duoc=_t('Lớp phủ chữ có giá trị không đọc được.'),
+        ngoai_khoang=_t('Lớp phủ chữ có giá trị ngoài khoảng cho phép.'))
 
 
 def _chu_sach(tho) -> str:
@@ -170,24 +171,12 @@ def chuan_hoa_mot(tho: dict) -> dict:
         raise LopPhuLoi(_t('Màu chữ không hợp lệ.'))
     ra["mau"] = mau
 
-    # Khoang thoi gian: rong = ca video. Cung khuon `vung_che.chuan_hoa_mot`, va
-    # cung ly do — hai cho doc mot luat thi chung khong lech nhau duoc.
-    tu = tho.get("tu_giay")
-    den = tho.get("den_giay")
-    if tu is not None or den is not None:
-        try:
-            t0 = float(tu if tu is not None else 0.0)
-            t1 = float(den) if den is not None else None
-        except (TypeError, ValueError):
-            raise LopPhuLoi(
-                _t('Khoảng thời gian của lớp phủ chữ không đọc được.')) from None
-        if t0 != t0 or (t1 is not None and t1 != t1):
-            raise LopPhuLoi(_t('Khoảng thời gian của lớp phủ chữ không đọc được.'))
-        if t0 < 0 or (t1 is not None and t1 <= t0):
-            raise LopPhuLoi(_t('Khoảng thời gian của lớp phủ chữ không hợp lệ.'))
-        ra["tu_giay"] = t0
-        if t1 is not None:
-            ra["den_giay"] = t1
+    # Khoang thoi gian: rong = ca video. Luat o `hinh_hoc.khoang_thoi_gian` —
+    # mot chu so huu, vi ba ban cua mot quy tac la ba ban se lech.
+    ra.update(hinh_hoc.khoang_thoi_gian(
+        tho, loi=LopPhuLoi,
+        khong_doc_duoc=_t('Khoảng thời gian của lớp phủ chữ không đọc được.'),
+        khong_hop_le=_t('Khoảng thời gian của lớp phủ chữ không hợp lệ.')))
     return ra
 
 

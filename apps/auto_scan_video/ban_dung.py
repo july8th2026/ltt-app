@@ -64,7 +64,8 @@ def dung(*, khoa_video: str, khoa_nen: str, ke_hoach: dict,
          ban_ke_tieng: dict, phien_ban_ffmpeg: str,
          tong_giay: float, khoa_master: str = "", che_do: str = "",
          bo_ma_hoa: str = "", khoang_giu=None, preset: str = "",
-         vung=None, lop_phu=None, cao_khung: int = 0) -> dict:
+         vung=None, lop_phu=None, cao_khung: int = 0,
+         ds_logo=None, rong_khung: int = 0) -> dict:
     """Dung ban dung tu cac tai lieu chinh tac. Khong cham mot tep media nao.
 
     `ke_hoach`      ket qua cua `thoi_gian.lap_ke_hoach`
@@ -173,6 +174,19 @@ def dung(*, khoa_video: str, khoa_nen: str, ke_hoach: dict,
             #    mot ban dung co `cao_khung: 0` la hai thu khac nhau voi nguoi
             #    doc lai.
             "cao_khung": int(cao_khung or 0),
+            # ── Logo (V6 pha 08b) ────────────────────────────────────────
+            #
+            # 🔴 Cung rang buoc VAT LY voi `vung` va `lop_phu`: `overlay` la
+            #    mot bo loc, bo loc doi hoi giai ma, `-c:v copy` khong giai
+            #    ma khung nao.
+            #
+            # ⚠️ KHAC hai thu kia o mot cho: moi logo la mot **khoa luu tru**,
+            #    nen no phai nam trong tap doi chieu `khoa_hop_le` cua
+            #    `kiem()`. Mot dong chu thi khong the "khong ton tai".
+            "logo": [dict(l) for l in (ds_logo or ())],
+            #: Chieu RONG khung nguon. Cung ly do voi `cao_khung`: be rong
+            #: logo phai duoc tinh ra pixel truoc khi dung chuoi loc.
+            "rong_khung": int(rong_khung or 0),
         },
         # ── Tieng: BAN PHOI da dung o pha 16 ────────────────────────────
         #
@@ -270,6 +284,17 @@ def kiem(ban: dict, *, khoa_hop_le: set[str] | None = None) -> None:
         raise BanDungError(_t(
             'Bản dựng có lớp phủ chữ nhưng không khai chiều cao khung hình.'))
 
+    # ── Logo: cung ba chot, va mot chot THU TU chi no moi co ────────────────
+    if hinh.get("logo") and hinh.get("cach_render") != _cdr.CAT_MA_HOA_LAI:
+        raise BanDungError(_t(
+            'Logo chỉ dùng được với kiểu xử lý có biên tập lại hình.'))
+    if hinh.get("logo") and int(hinh.get("rong_khung") or 0) <= 0:
+        raise BanDungError(_t(
+            'Bản dựng có logo nhưng không khai chiều rộng khung hình.'))
+    for _l in (hinh.get("logo") or []):
+        if not _l.get("khoa"):
+            raise BanDungError(_t('Bản dựng có logo thiếu khoá lưu trữ.'))
+
     tieng = ban.get("tieng") or {}
     if not (tieng.get("nen") or {}).get("khoa"):
         raise BanDungError(_t('Bản dựng thiếu nhạc nền.'))
@@ -308,6 +333,10 @@ def kiem(ban: dict, *, khoa_hop_le: set[str] | None = None) -> None:
         #    chung, sau khi da tai vai tram MB.
         moi = {hinh["khoa"], tieng["nen"]["khoa"], tieng["master"]["khoa"]}
         moi |= {lop["khoa"] for lop in (tieng.get("lop") or [])}
+        # 🔑 Logo la mot artifact THAT, nen no phai qua cung mot cua doi chieu.
+        #    Mot ban dung tro toi mot logo khong con la mot lan render hong o
+        #    giua chung — sau khi da tai vai tram MB.
+        moi |= {str(l.get("khoa") or "") for l in (hinh.get("logo") or [])}
         thieu = sorted(moi - khoa_hop_le)
         if thieu:
             raise BanDungError(

@@ -640,6 +640,75 @@ def tao_run_tu_ve(db: Session, kho, *, owner_id: str, upload_id: str,
                    settings=settings, uoc_luong_credit=uoc)
 
 
+def tran_logo_byte() -> int:
+    """Tran mot tep logo. LAY TU nen tang, khong go tay mot so thu hai.
+
+    ⭐ `image_input.MAX_REFERENCE_BYTES` la chinh sach cua nen tang; mot ban sao
+       o day la mot so se troi khi chinh sach ay doi, va troi im lang.
+    """
+    from platform_core import image_input
+
+    return int(image_input.MAX_REFERENCE_BYTES)
+
+
+def gan_logo(db: Session, kho, *, run: AsvRun,
+             anh: list[tuple[bytes, str]]) -> list[str]:
+    """Luu tung anh logo thanh artifact CUA CHINH lan chay. Tra khoa theo thu tu.
+
+    ## 🔑 Vi sao logo di cung BIEU MAU chu khong co mot cua tai len rieng
+
+    Mot cua rieng se cap ra mot **khoa** ma khach cam theo, roi lan chay sau
+    nhac lai khoa do. Nghia la ta phai tra loi cau *"khoa nay co that su cua
+    nguoi dang goi khong"* o moi lan dung — dung be mat IDOR ma
+    `upload_sessions.owned(...)` phai loc ngay trong truy van de dong lai.
+
+    ⇒ Anh di cung POST tao lan chay: no den **tu chinh yeu cau nay**, khong tu
+      mot ten do khach doc ra. Cau hoi quyen so huu **bien mat** thay vi duoc
+      tra loi — va do la ly do `logo.chuan_hoa_mot` co the thuan hinh hoc.
+
+    ⚠️ Logo nho (tran `image_input.MAX_REFERENCE_BYTES` = 8 MiB) nen no khong
+       can duong ben vung. Duong do ton tai cho tep hang tram MB.
+
+    ## Artifact cua LAN CHAY, khong phai cua chu so huu
+
+    `ban_dung.kiem(ban, khoa_hop_le=...)` doi MOI khoa trong ban dung phai la
+    mot `AsvAsset` **cua chinh lan chay**. Mot logo luu o pham vi chu so huu se
+    khong qua duoc cua do — va noi long cua do la go mot chot dang chan mot ban
+    dung tro toi artifact cua nguoi khac.
+
+    ## Di dung nam buoc cua `assets`, khong di tat
+
+    ⛔ Khong `kho.put()` thang vao khoa ben vung. Giao thuc la
+       *staging -> KIEM -> promote -> ghi tham chieu*, va buoc KIEM la thu bien
+       "engine khong nem" thanh "co mot ket qua hop le" (I8). Voi anh, phep kiem
+       ay doc chu ky + kich thuoc diem anh — xem `assets.kiem_hop_le`.
+    """
+    import io
+
+    from platform_core import image_input
+
+    from . import assets
+    from .tables import KIND_ANH
+
+    ra: list[str] = []
+    for du_lieu, kieu in anh:
+        # Kiem SOM de cau tu choi noi ve ANH chu khong ve "artifact"; `assets`
+        # se kiem lai tren ban staging, va hai lan kiem la co y — cai o day cho
+        # khach doc, cai o kia la hang rao.
+        kieu_that, _co = image_input.validate_reference(du_lieu, kieu)
+        duoi = {"image/png": "png", "image/jpeg": "jpg",
+                "image/webp": "webp"}.get(kieu_that, "png")
+        vt = assets.bam(du_lieu)[:32]
+        khoa_tam = assets.khoa_staging(owner_id=run.owner_id, run_id=run.id,
+                                       stage="logo", van_tay=vt, duoi=duoi)
+        kho.put(khoa_tam, io.BytesIO(du_lieu), content_type=kieu_that)
+        tai_san = assets.promote_va_ghi(
+            db, kho, owner_id=run.owner_id, run_id=run.id, stage="logo",
+            van_tay=vt, kind=KIND_ANH, duoi=duoi, staging_key=khoa_tam)
+        ra.append(tai_san.storage_key)
+    return ra
+
+
 def bao_tri() -> None:
     """Viec nen dinh ky cua app. Nen tang goi moi `bao_tri_moi_giay` giay.
 

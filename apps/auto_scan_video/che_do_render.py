@@ -69,7 +69,9 @@ from platform_core.i18n import _ as _t
 #:    khoang thoi gian con la mot truong CHET, nen no khong the tra loi cho mot
 #:    cau hoi nay da khac.
 #: ⬆️ 3 -> 4 (V6 pha 11) khi `lop_phu` chu vao chuoi loc va vao van tay.
-PHIEN_BAN_CHE_DO = 4
+#: ⬆️ 4 -> 5 (V6 pha 08b) khi `logo` vao chuoi loc va vao van tay — va vi thu tu
+#:    chang doi: `noi -> che -> logo -> chu`.
+PHIEN_BAN_CHE_DO = 5
 
 #: Sao chep luong hinh — preset giu hinh.
 SAO_CHEP = "sao_chep"
@@ -291,8 +293,62 @@ def _loc_chu(lop_phu, duong_chu, nhan_vao: str, nhan_ra: str, *,
     return ve
 
 
+def cua_so_ra_logo(khoang: list[tuple[float, float]], ds_logo
+                   ) -> list[list[tuple[float, float]] | None]:
+    """`_anh_xa_cua_so` cho LOGO. `None` = hien suot ca video."""
+    ra = _anh_xa_cua_so(khoang, ds_logo)
+    for cs in ra:
+        if cs is not None and not cs:
+            raise CheDoError(_t('Một logo được đặt giờ nằm trọn trong đoạn đã '
+                                'bị cắt bỏ, nên nó sẽ không bao giờ hiện ra. '
+                                'Hãy sửa giờ hoặc xoá logo đó.'))
+    return ra
+
+
+def _loc_logo(ds_logo, nhan_vao: str, nhan_ra: str, *,
+              rong_khung: int, chi_so_dau: int, cua_so=None) -> list[str]:
+    """Cac ve `filter_complex` dan tung logo len mot luong hinh.
+
+    `chi_so_dau` la so thu tu dau vao ffmpeg cua logo dau tien — trinh render
+    truyen video la `0`, ban phoi am la `1`, nen logo bat dau tu `2`.
+
+    ⛔ **So nay phai den TU NGUOI GOI.** Neu module nay tu doan `2`, thi ngay ai
+       do them mot dau vao thu ba, moi logo se lay diem anh cua **ban phoi am** —
+       va ffmpeg khong bao gi ca, no chi dan mot thu khac len.
+
+    ⚠️ `format=rgba` TRUOC `colorchannelmixer`: mot PNG khong co kenh alpha se
+       vao `colorchannelmixer` o `yuv`/`rgb`, va `aa=` khi do khong tro toi kenh
+       nao — do mo bi bo qua trong im lang.
+    """
+    from . import logo as lg
+
+    ds_cua_so = list(cua_so) if cua_so is not None else [None] * len(ds_logo)
+    if len(ds_cua_so) != len(ds_logo):
+        raise CheDoError(_t('Không dựng được logo cho lần chạy này.'))
+
+    ve: list[str] = []
+    hien = nhan_vao
+    for i, l in enumerate(ds_logo):
+        vao = chi_so_dau + i
+        px = lg.rong_px(l, rong_khung)
+        do_mo = float(l["do_mo"])
+        ve.append(f"[{vao}:v]scale=w={px}:h=-2,format=rgba,"
+                  f"colorchannelmixer=aa={do_mo:.6f}[lg{i}]")
+        # 🔴 `overlay` KHONG CO `iw`/`ih` — no dung `W`/`H` cho khung chinh va
+        #    `w`/`h` cho lop dan len. Cung cai bay `_loc_lam_mo` da ghi.
+        x = f"trunc(W*{float(l['x']):.6f}/2)*2"
+        y = f"trunc(H*{float(l['y']):.6f}/2)*2"
+        ke = f"lo{i}" if i + 1 < len(ds_logo) else nhan_ra
+        ve.append(f"[{hien}][lg{i}]overlay={x}:{y}"
+                  f"{_bat_khi(ds_cua_so[i])}[{ke}]")
+        hien = ke
+    return ve
+
+
 def loc_cat_noi(khoang: list[tuple[float, float]], vung=(), *,
-                lop_phu=(), duong_chu=(), cao_khung: int = 0) -> str:
+                lop_phu=(), duong_chu=(), cao_khung: int = 0,
+                ds_logo=(), rong_khung: int = 0,
+                chi_so_logo_dau: int = 2) -> str:
     """`filter_complex` cat cac khoang duoc giu roi noi lai — **khong co tieng**.
 
     ⛔ Tieng khong di qua day. Ban phoi am (pha 16) da duoc dung theo dung nhung
@@ -338,16 +394,33 @@ def loc_cat_noi(khoang: list[tuple[float, float]], vung=(), *,
     # ⭐ Lam mo SAU khi noi, khong phai tren tung manh: mot vung ap cho ca video
     #    thi mo tren ban da noi la MOT chuoi bo loc, con mo tung manh la N chuoi.
     #
-    # ⚠️ Thu tu ba chang la mot phan cua hop dong: noi -> che -> ve chu. Doi cho
-    #    hai chang cuoi lam mot dong chu roi trung o che bi lam mo cung o do.
-    cuoi = "ra" if not lop_phu else "sau_che"
+    # ⚠️ Thu tu BON chang la mot phan cua hop dong:
+    #
+    #        noi -> che -> logo -> chu
+    #
+    #    · che truoc logo/chu: nguoc lai thi mot logo roi trung o che se bi
+    #      chinh o do lam mo — khach dan logo de nguoi ta NHIN THAY no;
+    #    · chu SAU CUNG: chu la thu khach doc, nen no nam tren het.
+    sau_che = "ra"
+    if ds_logo:
+        sau_che = "sau_che"
+    elif lop_phu:
+        sau_che = "sau_che"
     if vung:
         phan.append(f"{nhan}concat=n={len(khoang)}:v=1:a=0[noi]")
-        phan.extend(_loc_lam_mo(vung, "noi", cuoi, cua_so_ra(khoang, vung)))
+        phan.extend(_loc_lam_mo(vung, "noi", sau_che, cua_so_ra(khoang, vung)))
     else:
-        phan.append(f"{nhan}concat=n={len(khoang)}:v=1:a=0[{cuoi}]")
+        phan.append(f"{nhan}concat=n={len(khoang)}:v=1:a=0[{sau_che}]")
+
+    hien = sau_che
+    if ds_logo:
+        ke = "sau_logo" if lop_phu else "ra"
+        phan.extend(_loc_logo(ds_logo, hien, ke, rong_khung=rong_khung,
+                              chi_so_dau=chi_so_logo_dau,
+                              cua_so=cua_so_ra_logo(khoang, ds_logo)))
+        hien = ke
     if lop_phu:
-        phan.extend(_loc_chu(lop_phu, duong_chu, cuoi, "ra",
+        phan.extend(_loc_chu(lop_phu, duong_chu, hien, "ra",
                              cao_khung=cao_khung,
                              cua_so=cua_so_ra_lop_phu(khoang, lop_phu)))
     return ";".join(phan)
@@ -420,7 +493,7 @@ def cua_so_ra_lop_phu(khoang: list[tuple[float, float]], lop_phu
 
 def van_tay_che_do(*, che_do: str, bo_ma_hoa: str,
                    khoang: list[tuple[float, float]], vung=(),
-                   lop_phu=()) -> str:
+                   lop_phu=(), ds_logo=()) -> str:
     """Van tay cua quyet dinh render.
 
     ⛔ Gom CA bo ma hoa: doi tu `libx264` sang `h264_nvenc` cho ra mot tep khac —
@@ -474,6 +547,20 @@ def van_tay_che_do(*, che_do: str, bo_ma_hoa: str,
                      None if l.get("tu_giay") is None else round(float(l["tu_giay"]), 3),
                      None if l.get("den_giay") is None else round(float(l["den_giay"]), 3)]
                     for l in (lop_phu or ())],
+        # 🔑 Bam `khoa` cua logo, khong bam noi dung anh. Khoa duoc dan xuat tu
+        #    van tay cua chinh tep (`assets`), nen hai anh khac nhau khong the
+        #    dung chung mot khoa — bam khoa la bam anh, qua mot tang gian tiep
+        #    da co bao dam.
+        #
+        # ⚠️ `rong_khung` KHONG vao day: no la thuoc tinh cua NGUON, va nguon da
+        #    nam trong van tay ban dung o mot tang khac. Cung ly do voi
+        #    `cao_khung`.
+        "logo": [[l.get("khoa"),
+                  round(float(l["x"]), 4), round(float(l["y"]), 4),
+                  round(float(l["rong"]), 4), round(float(l["do_mo"]), 3),
+                  None if l.get("tu_giay") is None else round(float(l["tu_giay"]), 3),
+                  None if l.get("den_giay") is None else round(float(l["den_giay"]), 3)]
+                 for l in (ds_logo or ())],
         "phien_ban": PHIEN_BAN_CHE_DO,
     }, sort_keys=True)
     return hashlib.sha256(goi.encode("utf-8")).hexdigest()[:32]

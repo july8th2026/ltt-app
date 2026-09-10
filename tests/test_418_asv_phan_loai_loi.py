@@ -17,6 +17,7 @@ from apps.auto_scan_video import loi
 from apps.auto_scan_video.ban_dung import BanDungError
 from apps.auto_scan_video.cat_dau_cuoi import CatLoi
 from apps.auto_scan_video.lop_phu import LopPhuLoi
+from apps.auto_scan_video.logo import LogoLoi
 from apps.auto_scan_video.tu_dien import TuDienLoi
 from apps.auto_scan_video.vung_che import VungLoi
 from apps.auto_scan_video.ban_ghi import BanGhiError
@@ -94,6 +95,11 @@ BANG = {
     #    xuong `retry` thi ba lan chay lai deu hong y het — may van khong co
     #    phong chu — va khach cho ba lan de nhan cung mot cau tra loi.
     LopPhuLoi: loi.NGUOI_DUNG,
+    # Cung nhom, cung ly do: `logo.rong_px()` duoc goi tu
+    # `che_do_render._loc_logo`, tuc tu trong mot JOB. Mot ban dung thieu
+    # `rong_khung` se nem giua giai doan ket xuat, va ba luot thu lai deu
+    # hong y het — cung mot ban dung, cung mot truong thieu.
+    LogoLoi: loi.NGUOI_DUNG,
     # ⭐ THU LAI la viec dung: nen tang co the cap mot card KHAC lan sau. Truoc
     #    pha 13 truong hop nay khong nem gi ca — no **im lang chay CPU**, cham
     #    hon 9,5 lan, va giu suat `tach_nguon_cuc_bo` suot ~37 phut o tran 2 gio.

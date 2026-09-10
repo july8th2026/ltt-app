@@ -73,27 +73,22 @@ def _khoa_master(db, kho, run) -> str:
     return khoa[0]
 
 
-def _cao_khung(db, kho: Storage, run) -> int:
-    """Chieu cao khung NGUON, doc tu ho so soi cua `MEDIA_PREPARE`.
+def _co_khung(db, kho: Storage, run) -> tuple[int, int]:
+    """`(rong, cao)` khung NGUON, doc tu ho so soi cua `MEDIA_PREPARE`.
 
-    🔴 Chi mot cho can no: do day vien cua lop phu chu. `borderw` cua `drawtext`
-       **khong nhan bieu thuc** (do duoc: `borderw=H*0.004` -> *"Invalid
-       argument"*), nen do day phai duoc tinh ra PIXEL truoc khi dung chuoi loc.
-
-    ⛔ Doc lai ho so da luu chu khong `ffprobe` lai: pha soi da tra loi cau nay
-       roi, va hoi lai la mo duong cho hai cau tra loi khac nhau — dung dieu
-       `giai_doan_ban_dung` da ghi ve `cach`/`khoang`.
-
-    Tra `0` khi khong doc duoc. Nguoi goi quyet dinh do co la loi hay khong:
-    khong co lop phu thi `0` vo hai, co lop phu thi `ban_dung.kiem` tu choi.
+    ⭐ Tra CA HAI trong mot lan doc. Hai lan doc mot tep de lay hai truong cua
+       cung mot ho so la hai co hoi de chung lech nhau — va o day chung khong
+       duoc lech: mot logo dat theo chieu rong cua khung nay tren mot khung
+       khac la mot logo sai cho.
     """
     khoa = _khoa_json(db, run, pipeline.MEDIA_PREPARE)
     if not khoa:
-        return 0
+        return (0, 0)
     try:
-        return int((_doc(kho, khoa) or {}).get("cao") or 0)
+        ho_so = _doc(kho, khoa) or {}
+        return (int(ho_so.get("rong") or 0), int(ho_so.get("cao") or 0))
     except (OSError, ValueError, TypeError):
-        return 0
+        return (0, 0)
 
 
 def _khoa_con_dung(db, kho: Storage, run) -> set[str]:
@@ -183,6 +178,8 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     bo_ma_hoa = (cdr.chon_bo_ma_hoa(cho_phep_gpu=True)
                  if cach == cdr.CAT_MA_HOA_LAI else "")
 
+    # ⭐ MOT lan doc, hai truong. Xem docstring cua `_co_khung`.
+    _rong_khung, _cao_khung = _co_khung(db, kho, run)
     ban = ban_dung.dung(
         khoa_video=run.source_key,
         khoa_nen=khoa_nen,
@@ -208,7 +205,10 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         #    giai ma, `-c:v copy` khong giai ma khung nao.
         lop_phu=((run.settings or {}).get("lop_phu") or ()
                  if cach == cdr.CAT_MA_HOA_LAI else ()),
-        cao_khung=_cao_khung(db, kho, run))
+        # ⭐ Logo di cung khuon ba tang, va vi CUNG mot ly do vat ly.
+        ds_logo=((run.settings or {}).get("logo") or ()
+                 if cach == cdr.CAT_MA_HOA_LAI else ()),
+        rong_khung=_rong_khung, cao_khung=_cao_khung)
 
     # 🔑 Muc 5: doi chieu MOI tham chieu TRUOC khi ton mot suat render.
     if ctx is not None and getattr(ctx, "progress", None):

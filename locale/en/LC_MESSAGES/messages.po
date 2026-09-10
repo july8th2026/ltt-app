@@ -15510,3 +15510,135 @@ msgstr "Direct upload is unavailable. Sending the usual way…"
 #: apps/auto_scan_video/templates/asv_trang_chinh.html
 msgid "vượt quá %(mb)s MB — định dạng này chỉ gửi được bản nhỏ. Hãy đổi sang MP4 hoặc MOV."
 msgstr "over %(mb)s MB — this format can only be sent in small sizes. Please convert it to MP4 or MOV."
+
+#: apps/auto_scan_video/logo.py
+msgid "Logo có giá trị không đọc được."
+msgstr "The logo has a value that cannot be read."
+
+#: apps/auto_scan_video/logo.py
+msgid "Logo có giá trị ngoài khoảng cho phép."
+msgstr "The logo has a value outside the allowed range."
+
+#: apps/auto_scan_video/logo.py
+msgid "Logo không đọc được."
+msgstr "The logo cannot be read."
+
+#: apps/auto_scan_video/logo.py
+msgid "Logo trỏ tới một tệp không hợp lệ."
+msgstr "The logo points at an invalid file."
+
+#: apps/auto_scan_video/logo.py
+msgid "Khoảng thời gian của logo không đọc được."
+msgstr "The logo's time range cannot be read."
+
+#: apps/auto_scan_video/logo.py
+msgid "Khoảng thời gian của logo không hợp lệ."
+msgstr "The logo's time range is not valid."
+
+#: apps/auto_scan_video/logo.py
+msgid "Danh sách logo không đọc được."
+msgstr "The list of logos cannot be read."
+
+#: apps/auto_scan_video/logo.py
+msgid "Tối đa {n} logo trong một lần chạy."
+msgstr "At most {n} logos per run."
+
+#: apps/auto_scan_video/logo.py
+msgid "Không biết chiều rộng khung hình để đặt logo."
+msgstr "The frame width needed to place the logo is unknown."
+
+#: apps/auto_scan_video/ban_dung.py
+msgid "Logo chỉ dùng được với kiểu xử lý có biên tập lại hình."
+msgstr "Logos only work with the processing mode that re-edits the picture."
+
+#: apps/auto_scan_video/ban_dung.py
+msgid "Bản dựng có logo nhưng không khai chiều rộng khung hình."
+msgstr "The manifest has logos but does not declare the frame width."
+
+#: apps/auto_scan_video/ban_dung.py
+msgid "Bản dựng có logo thiếu khoá lưu trữ."
+msgstr "A logo in the manifest has no storage key."
+
+#: apps/auto_scan_video/che_do_render.py
+msgid "Không dựng được logo cho lần chạy này."
+msgstr "The logos could not be built for this run."
+
+#: apps/auto_scan_video/che_do_render.py
+msgid "Một logo được đặt giờ nằm trọn trong đoạn đã bị cắt bỏ, nên nó sẽ không bao giờ hiện ra. Hãy sửa giờ hoặc xoá logo đó."
+msgstr "A timed logo falls entirely inside a stretch that was cut out, so it would never appear. Change its timing or remove it."
+
+#: apps/auto_scan_video/ket_xuat.py
+msgid "Số tệp logo ({co}) không khớp số logo trong bản dựng ({can})."
+msgstr "The number of logo files ({co}) does not match the logos in the manifest ({can})."
+
+#: apps/auto_scan_video/ket_xuat.py
+msgid "Bản dựng khai preset giữ hình nhưng có logo."
+msgstr "The manifest declares the picture-preserving preset but carries logos."
+
+#: apps/auto_scan_video/routes.py
+msgid "Kiểu “Giữ nguyên hình ảnh” sao chép nguyên vẹn từng điểm ảnh, nên không thể dán logo lên hình. Chọn “Rút gọn có biên tập” nếu bạn muốn thêm logo."
+msgstr "“Keep the picture” copies every pixel untouched, so no logo can be pasted onto it. Choose “Shorten with editing” if you want a logo."
+
+#: apps/auto_scan_video/routes.py
+msgid "Số ảnh logo ({co}) không khớp số logo đã đặt ({can})."
+msgstr "The number of logo images ({co}) does not match the logos configured ({can})."
+
+#: apps/auto_scan_video/routes.py
+msgid "Ảnh logo vượt quá {mb} MB."
+msgstr "The logo image is larger than {mb} MB."
+
+#: apps/auto_scan_video/routes.py
+msgid "Ảnh logo rỗng."
+msgstr "The logo image is empty."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Logo"
+msgstr "Logo"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Dán logo của bạn lên video. PNG nền trong suốt cho kết quả đẹp nhất. Tối đa %(n)s logo, mỗi ảnh dưới %(mb)s MB."
+msgstr "Paste your logo onto the video. A PNG with a transparent background looks best. Up to %(n)s logos, each under %(mb)s MB."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Công cụ logo"
+msgstr "Logo tools"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Thêm logo"
+msgstr "Add a logo"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Chưa có logo nào."
+msgstr "No logos yet."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "%(so)s logo."
+msgstr "%(so)s logos."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Chọn ảnh"
+msgstr "Choose an image"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Chưa chọn ảnh — logo này sẽ không được gửi."
+msgstr "No image chosen — this logo will not be sent."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Bề rộng (%)"
+msgstr "Width (%)"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Xoá logo này"
+msgstr "Remove this logo"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Tối đa %(n)s logo."
+msgstr "At most %(n)s logos."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Ảnh vượt quá %(mb)s MB."
+msgstr "The image is larger than %(mb)s MB."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Chỉ nhận PNG, JPEG hoặc WebP."
+msgstr "Only PNG, JPEG or WebP are accepted."

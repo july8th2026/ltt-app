@@ -158,6 +158,18 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         duong_chu = _lp.viet_tep_chu(
             list((ban.get("hinh") or {}).get("lop_phu") or ()), thu_muc)
 
+        # ⭐ Logo la ARTIFACT trong kho, nen no di duong `_tai_ve` y het lop
+        #    tieng — khong phai duong tep tam nhu chu cua lop phu.
+        #
+        # ⚠️ Duoi tep giu nguyen tu KHOA: ffmpeg chon bo giai ma theo noi dung
+        #    chu khong theo duoi, nhung mot `.png` doc ra `.bin` lam moi lan doc
+        #    log ve sau kho hon ma khong duoc gi.
+        ds_logo_ban = list((ban.get("hinh") or {}).get("logo") or ())
+        duong_logo = [
+            _tai_ve(kho, str(l["khoa"]),
+                    thu_muc / f"logo{i}{Path(str(l['khoa'])).suffix or '.png'}")
+            for i, l in enumerate(ds_logo_ban)]
+
         duong_ra = str(thu_muc / "ra.mp4")
         bo_thuc = ket_xuat.bo_ma_hoa_thuc_te(ban, co_gpu=co_gpu)
         khai = str((ban.get("hinh") or {}).get("bo_ma_hoa") or "")
@@ -167,7 +179,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             ban, ffmpeg_bin=nhap_media.media.ffmpeg_bin(),
             duong_video=duong_video, duong_master=duong_master,
             duong_lop=duong_lop, duong_ra=duong_ra, bo_ma_hoa=bo_thuc,
-            duong_chu=duong_chu)
+            duong_chu=duong_chu, duong_logo=duong_logo)
 
         if bao:
             bao(15, _t('Đang kết xuất video'))
