@@ -29,6 +29,19 @@ trạng thái khối nào che, và `submit_with_credit` chỉ chống trùng khi
    trùng **khi job trước còn đang chạy** mới bị gộp. Đó đúng là ranh giới ta
    muốn.
 """
+
+# ⚠️ ĐỔI SỐ 502 → 519 ngày 2026-09-11, và đây không phải một việc dọn dẹp.
+#
+#    Tệp này vào kho ngày 10/09 (`4bd26f52`) với số **502**, trong khi
+#    `test_502_voice_kiem_model.py` đã giữ số ấy từ 08/09. Cả hai cùng nằm trên
+#    trunk, nên bước gate `trung so test` đỏ trên chính trunk.
+#
+# ⭐ Bánh cóc ấy chốt **TẬP HỢP**, không chốt số lượng: tổng số trùng giảm
+#    (21 < mốc 22) mà nó vẫn đỏ, vì có một **số MỚI** bị trùng. Đó là thiết kế
+#    đúng — một mốc đếm được sẽ cho phép đổi một va chạm cũ lấy một va chạm mới.
+#
+# ⛔ ĐỔI TÊN chứ không xin miễn trừ, theo đúng tiền lệ của kho này. Số 519 là
+#    số trống đầu tiên trong dải 5xx. Nội dung phép kiểm không đổi một dòng nào.
 from __future__ import annotations
 
 import re
@@ -64,7 +77,7 @@ def khach(tmp_path, monkeypatch):
         u = tao_nguoi_dung(db, email="voice-studio@test.com",
                            password="matkhau-tot-12", is_verified=True)
         db.flush()
-        credit.nap(db, u.id, 500, note="test_502")
+        credit.nap(db, u.id, 500, note="test_519")
         db.commit()
         uid = str(u.id)
     finally:
