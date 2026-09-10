@@ -66,8 +66,14 @@ def test_validator_tinh_verifier_vao_tran_moi_attempt():
         "on_fail": "regenerate", "verify": {"check": "vlm_judge"},
     }]}
     result = validate_plan(plan)
-    assert result.valid and result.estimated_max_credit == 12
-    assert result.step_costs[0]["unit"] == 5
+    # Đọc đơn giá từ app rồi suy ra trần, thay vì gõ lại hai con số — chúng
+    # đổi cùng bảng giá model nhà (pha 06.3).
+    from apps.taoanh.manifest import MANIFEST as M_TAO
+    don_gia = M_TAO.credit_cost({"count": 1})
+    assert result.step_costs[0]["unit"] == don_gia
+    assert result.valid and result.estimated_max_credit == (
+        (don_gia + result.step_costs[0]["verifier_unit"])
+        * (1 + result.step_costs[0]["max_retry"]))
     assert result.step_costs[0]["verifier_unit"] == 1
 
 

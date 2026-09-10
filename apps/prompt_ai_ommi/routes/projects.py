@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from platform_core.i18n import _ as _t
+from platform_core.llm import canonical as _C
 import copy
 
 from fastapi import Depends, HTTPException, Request
@@ -214,7 +215,10 @@ def _chat_model(value: str) -> str:
     allowed = {item["value"] for item in _models("chat")}
     if value in allowed:
         return value
-    return next(iter(allowed), "gemini-2.5-flash")
+    # Bí danh model NHÀ, không phải tên một hãng đã ngừng. Nhánh này chỉ chạy
+    # khi `allowed` rỗng — tức lúc registry chưa nạp — nên nó ít khi nổ, và
+    # một giá trị sai ở đây sống rất lâu mà không ai thấy.
+    return next(iter(allowed), _C.MODEL_MAC_DINH)
 
 
 @router.post("/api/projects/{project_id}/quote")

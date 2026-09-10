@@ -1,6 +1,6 @@
 """Bảng CSDL riêng của app VPS. Tiền tố `vps_` theo `MANIFEST.table_prefix`.
 
-Năm bảng, và ranh giới giữa chúng không phải chuyện gọn gàng:
+Sáu bảng, và ranh giới giữa chúng không phải chuyện gọn gàng:
 
 * `vps_gateway`   — **cổng vào**. Q104/V12 chốt khách tự chọn vùng (VN / Singapore
   / chỉ-cổng), nên đây là **nhiều bản ghi** chứ không phải một dải cổng cứng trong
@@ -13,6 +13,10 @@ Năm bảng, và ranh giới giữa chúng không phải chuyện gọn gàng:
   web chạy nhiều tiến trình.
 * `vps_event`     — nhật ký vòng đời. Không phải log gỡ lỗi: đây là thứ trả lời
   "vì sao máy tôi bị tắt" khi khách hỏi, nên nó phải sống lâu hơn log ứng dụng.
+* `vps_thao_tac`  — **một mutation dài đang chạy trên một máy** (VPS V2). Khác
+  `vps_event` ở chỗ sự kiện là *đã xảy ra rồi*, còn thao tác là *đang xảy ra* —
+  nó có hạn chót, có UPID để nối lại, và nó kết thúc. Ép nhật ký làm hàng đợi
+  là mất cả hai: nhật ký thì không được xoá, hàng đợi thì phải dọn được.
 
 ## Vì sao `paid_until` nằm ở đây chứ không ở một bảng hoá đơn
 
@@ -170,6 +174,23 @@ class VpsInstance(Base):
 
     __tablename__ = "vps_instance"
 
+    def __init__(self, **kw):
+        """Dựng xong là **nhất quán ngay**, không chờ ai nhớ gọi thêm gì.
+
+        `VpsInstance(trang_thai="dang_chay")` phải cho ra `vong_doi="hoat_dong"`,
+        không phải giá trị mặc định `"dang_tao"` của cột. Không có bước này thì
+        mọi chỗ dựng máy bằng mã cũ — kể cả trong test — đẻ ra một hàng mà hình
+        chiếu và mô hình nói hai điều khác nhau, và cái sai đó chỉ lộ ra ở lần
+        `dat()` kế tiếp, cách xa chỗ gây ra nó.
+
+        Hàng **đọc từ CSDL** không đi qua đây (SQLAlchemy dựng chúng bằng
+        `__new__`), nên lớp tương thích cho hàng cũ nằm ở `chuan_hoa()` bên trong
+        `dat()`. Hai chỗ, hai loại đối tượng, cùng một bảng ánh xạ.
+        """
+        super().__init__(**kw)
+        from apps.vps import trang_thai_may
+        trang_thai_may.chuan_hoa(self)
+
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     user_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     ten: Mapped[str] = mapped_column(String(80), default="", nullable=False)
@@ -183,10 +204,52 @@ class VpsInstance(Base):
     #: Địa chỉ trong mạng riêng, vd `10.51.0.50`. NULL = chưa cấp.
     ip_noi_bo: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
+    #: ⚠️ **HÌNH CHIẾU, không phải nguồn sự thật.** Từ VPS V2 cột này được tính
+    #: ra từ năm cột dưới, ở đúng một chỗ (`trang_thai_may.chieu`), và chỉ được
+    #: ghi qua `trang_thai_may.dat()`. Nó ở lại vì 18 tệp test, 7 template và bốn
+    #: bảng tra trong `nhan.py` đọc nó — xoá là viết lại cả app mà không giảm rủi
+    #: ro nào. Gán thẳng cột này ở nơi khác là dựng nguồn sự thật thứ hai.
     trang_thai: Mapped[str] = mapped_column(
         String(16), default="dang_tao", nullable=False, index=True)
+
+    #: Vòng đời **nghiệp vụ**: máy này còn là khách hàng đang phục vụ không.
+    #: `bi_treo` ở đây là khái niệm TIỀN — nó phải sống sót qua mọi thứ xảy ra
+    #: với nguồn điện của máy.
+    vong_doi: Mapped[str] = mapped_column(
+        String(16), default="dang_tao", nullable=False, index=True)
+    #: Khách **muốn** máy bật hay tắt. Chỉ `chay`/`tat` — không có "không biết".
+    dien_mong_muon: Mapped[str] = mapped_column(
+        String(16), default="chay", nullable=False)
+    #: Ta **đo được** gì trên hypervisor. `khong_ro` là một giá trị THẬT: nó
+    #: nghĩa là đã hỏi và không có câu trả lời, khác hẳn `tat`.
+    dien_quan_sat: Mapped[str] = mapped_column(
+        String(16), default="khong_ro", nullable=False)
+    #: Tác vụ dài đang chạy dở. Rỗng = không có gì. Đây là thứ trả lời câu
+    #: "vì sao trang không đổi gì sau khi tôi bấm".
+    tac_vu: Mapped[str] = mapped_column(
+        String(16), default="", nullable=False)
+    #: Sức khoẻ suy ra từ lần đo gần nhất.
+    suc_khoe: Mapped[str] = mapped_column(
+        String(16), default="khong_ro", nullable=False)
+    #: Lần đo gần nhất lúc nào. NULL = chưa đo lần nào — và với việc hiểu hiện
+    #: tại thì "chưa đo" ngang bằng "đo từ tuần trước": không biết gì cả.
+    quan_sat_luc: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+
     #: Lời giải thích cho khách khi trạng thái là `loi` hoặc `bi_treo`.
     ly_do: Mapped[str] = mapped_column(Text, default="", nullable=False)
+
+    #: Bị cách ly vì lạm dụng từ lúc nào. NULL = không bị.
+    #:
+    #: ⚠️ **Khác `bi_treo`**, và khác một cách quan trọng. `bi_treo` là khái niệm
+    #: TIỀN: nó đặt luôn mốc `xoa_sau` bảy ngày. Dùng nó cho lạm dụng là ghi vào
+    #: sổ rằng khách nợ tiền — sai sự thật — và xoá máy của một khách đang trả
+    #: tiền đầy đủ sau một tuần. Cách ly thì cắt mạng, giữ đĩa, và gỡ lại được.
+    #: Xem `services/cach_ly.py`.
+    cach_ly_luc: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    #: Vì sao. Bắt buộc khi cách ly — đây là thứ người ta đọc lại sau ba tháng.
+    cach_ly_ly_do: Mapped[str] = mapped_column(Text, default="", nullable=False)
 
     #: Thuê bao trả tới lúc nào. NULL = chưa thu chu kỳ nào (khuôn Q98).
     paid_until: Mapped[datetime | None] = mapped_column(
@@ -313,3 +376,112 @@ class VpsEvent(Base):
     chi_tiet: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_now, nullable=False, index=True)
+
+
+class VpsThaoTac(Base):
+    """Mot mutation dai tren MOT may: ai bao, muon gi, toi dau roi, ket qua sao.
+
+    ## Vi sao khong tai dung `Job`
+
+    Hai vong doi khac nhau, va gop chung lai lam mat ca hai.
+
+    `Job` tra loi *"luot viec nay cua worker da xong chua"*. No co the duoc thu
+    lai nhieu lan, va **moi lan la mot dong `Job` khac**. Thao tac tra loi
+    *"cai may nay dang bi lam gi, ai bao, toi dau roi"* — no song **xuyen qua**
+    nhieu lan thu, va no la thu giao dien hien cho khach.
+
+    Gop lam mot thi hoac la khach thay ba dong "dang khoi dong lai" cho mot lan
+    bam nut, hoac la mat dau vet cua nhung lan thu that bai. Ca hai deu te.
+
+    ⚠️ Nhung KHONG dung hang doi thu hai: thao tac **chay bang** job cua nen tang
+    va **duoc serialize bang** lease `vps-may:{id}` da co. Xem ADR-02.
+
+    ## `khoa_idem` — chong bam hai lan, va chong hon the
+
+    Khoa idempotency la thu phan biet *"khach bam hai lan"* voi *"khach that su
+    muon khoi dong lai hai lan"*. Bam hai lan trong cung mot phut sinh cung mot
+    khoa ⇒ lan thu hai tra ve chinh thao tac dang chay, khong tao them gi.
+
+    No cung chong duoc thu ma trong hon nhieu: **worker chet roi chay lai**.
+    Lan chay thu hai tim thay thao tac cu qua khoa, doc `upid` da luu, va **noi
+    lai vao tac vu dang chay** thay vi ban them mot lenh nua vao Proxmox.
+    """
+
+    __tablename__ = "vps_thao_tac"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    instance_id: Mapped[str] = mapped_column(String(36), nullable=False,
+                                             index=True)
+    #: Ma trong `trang_thai_may.TAC_VU` — cung bang tu vung voi cot `tac_vu`
+    #: tren `vps_instance`, khong phai mot bang thu hai.
+    loai: Mapped[str] = mapped_column(String(16), nullable=False)
+    #: user id, "he_thong" (vong bao tri), hoac "admin:<email>".
+    boi: Mapped[str] = mapped_column(String(190), default="", nullable=False)
+    #: NULL = thao tac nay khong chong trung (vd vong bao tri tu nop).
+    #:
+    #: ⚠️ **NULL chu khong phai chuoi rong**, va day khong phai chuyen phong
+    #: cach. Chuoi rong THAM GIA vao rang buoc duy nhat, nen `''` va vao `''`:
+    #: mot may se chi bao gio co duoc **mot** thao tac khong khoa trong ca doi
+    #: no. NULL thi khong tinh vao UNIQUE — cung khuon voi `uq_vps_instance_vmid`
+    #: (nhieu may `dang_tao` cung luc deu co `vmid` NULL va deu hop le).
+    #: `tests/test_552` co mot ca ghim dieu nay.
+    khoa_idem: Mapped[str | None] = mapped_column(String(64), nullable=True,
+                                                  default=None)
+
+    #: cho | dang_chay | xong | hong | qua_han | huy
+    #:
+    #: ⚠️ **`tinh_trang` chu khong `trang_thai`**, va do khong phai chuyen phong
+    #: cach. `VpsInstance.trang_thai` la mot HINH CHIEU chi duoc ghi qua
+    #: `trang_thai_may.dat()` (ADR-01), va co mot phep quet canh dieu do. Hai cot
+    #: trung ten thi phep quet ay khong phan biet duoc `op.trang_thai = XONG`
+    #: (hop le) voi `may.trang_thai = "dang_chay"` (bug) — no se hoac bao dong
+    #: gia, hoac bi noi long roi bo lot ca that.
+    #:
+    #: Bang nay moi hoan toan (VPS V2) va chua chay o dau, nen doi ten khong ton
+    #: gi. Dat ten trung roi day phep quet phai thong minh hon la tra tien mai.
+    tinh_trang: Mapped[str] = mapped_column(String(16), default="cho",
+                                            nullable=False, index=True)
+    #: UPID cua Proxmox, moi dong mot cai. `Text` chu khong `String(n)`: mot
+    #: thao tac nhieu buoc (khoi dong lai = tat + bat) sinh nhieu UPID, va cat
+    #: bot chuoi nao la mat dung duong noi lai vao tac vu do.
+    upid: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    lan_thu: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    #: Buoc con dang chay, vd "cho may tat". Cho khach doc, nen viet tieng nguoi.
+    buoc: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+
+    #: Anh chieu dien: truoc khi lam / muon toi / do duoc sau khi xong.
+    #: Ba cot chu khong mot: khong co `dien_truoc` thi khong khoi phuc duoc y
+    #: dinh ban dau sau mot lan khoi phuc anh chup.
+    dien_truoc: Mapped[str] = mapped_column(String(16), default="",
+                                            nullable=False)
+    dien_mong_doi: Mapped[str] = mapped_column(String(16), default="",
+                                               nullable=False)
+    dien_sau: Mapped[str] = mapped_column(String(16), default="",
+                                          nullable=False)
+
+    #: Ma loi co CAU TRUC (`tac_vu_qua_han`, `dien_khong_dat`…), khong phai mot
+    #: cau tieng Anh. Ma thi dem duoc va canh bao duoc; cau thi khong.
+    ma_loi: Mapped[str] = mapped_column(String(32), default="", nullable=False)
+    chi_tiet_loi: Mapped[str] = mapped_column(Text, default="", nullable=False)
+
+    tao_luc: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False, index=True)
+    bat_dau_luc: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    #: Han chot. Qua moc nay ma van `dang_chay` thi vong bao tri quet no thanh
+    #: `qua_han` — day la duong phuc hoi khi mot worker chet giua chung, va no
+    #: la ly do cot nay khong duoc phep NULL cho thao tac dang chay.
+    han_luc: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    ket_thuc_luc: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        # Hai lan bam sinh cung khoa ⇒ INSERT thu hai chet vi rang buoc nay, va
+        # do la **duong chay binh thuong**: nguoi goi bat `IntegrityError` roi
+        # tra ve thao tac dang co. Cung khuon voi `uq_vps_instance_ip`.
+        UniqueConstraint("instance_id", "khoa_idem",
+                         name="uq_vps_thao_tac_idem"),
+        # Trang may hoi "co gi dang chay tren may nay khong" moi lan mo.
+        Index("ix_vps_thao_tac_may_tinhtrang", "instance_id", "tinh_trang"),
+    )

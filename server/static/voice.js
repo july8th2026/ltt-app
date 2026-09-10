@@ -143,6 +143,35 @@
    * ⚠️ Song am chi ve khi bam PHAT lan dau. Mot trang Lich su muoi dong ma tai
    *    truoc ca muoi tep la vai chuc MB cho mot thu khach co the khong bam.
    */
+  /* ── Nhan cho cac nut dung bang JS ────────────────────────────────────────
+   *
+   * [!] Nam `aria-label` cua trinh phat truoc day GO CUNG tieng Viet khong dau
+   *     ("Phat", "Tam dung", ...). Chung CHI trinh doc man hinh nghe thay, nen
+   *     khong ai nhin man hinh phat hien duoc — va nguoi dung ban tieng Anh
+   *     nghe may doc tieng Viet.
+   *
+   * Nguon: `_voice_nhan.html` (mot cho, da dich o may chu).
+   *
+   * [!] Doc MOT lan roi nho: `ganTrinhPhat` chay cho tung the <audio>, va co
+   *     man co chin the. Parse JSON chin lan cho cung mot khoi la lang phi.
+   */
+  var _nhan = null;
+  function nhan(khoa, lui) {
+    if (_nhan === null) {
+      _nhan = {};
+      var o = document.getElementById("lv-nhan");
+      if (o) {
+        /* Hong thi ve ban lui — mot nhan tieng Viet van tot hon mot nut khong
+           co nhan nao. Nhung DUNG nuot im: khong co nhan la mot loi a11y. */
+        try { _nhan = JSON.parse(o.textContent) || {}; }
+        catch (e) {
+          if (window.console) console.warn("lv-nhan hong:", e);
+        }
+      }
+    }
+    return _nhan[khoa] || lui;
+  }
+
   function ganTrinhPhat(au) {
     if (!au || au.dataset.daNang === "1") return;
     au.dataset.daNang = "1";
@@ -155,7 +184,7 @@
     var nut = document.createElement("button");
     nut.type = "button";
     nut.className = "lv-phat-nut";
-    nut.setAttribute("aria-label", "Phat");
+    nut.setAttribute("aria-label", nhan("phat", "Phat"));
     nut.textContent = "▶";
 
     var song = document.createElement("canvas");
@@ -192,7 +221,7 @@
       var nacTd = [1, 1.25, 1.5, 0.75];
       var iTd = 0;
       nutTd.textContent = "1×";
-      nutTd.setAttribute("aria-label", "Toc do phat lai");
+      nutTd.setAttribute("aria-label", nhan("tocDo", "Toc do phat lai"));
       nutTd.addEventListener("click", function () {
         iTd = (iTd + 1) % nacTd.length;
         au.playbackRate = nacTd[iTd];
@@ -203,7 +232,7 @@
       am.type = "range";
       am.className = "lv-phat-am";
       am.min = "0"; am.max = "1"; am.step = "0.05"; am.value = "1";
-      am.setAttribute("aria-label", "Am luong");
+      am.setAttribute("aria-label", nhan("amLuong", "Am luong"));
       am.addEventListener("input", function () { au.volume = Number(am.value); });
 
       hop.appendChild(nutTd);
@@ -334,14 +363,14 @@
 
     au.addEventListener("play", function () {
       nut.textContent = "⏸";
-      nut.setAttribute("aria-label", "Tam dung");
+      nut.setAttribute("aria-label", nhan("tamDung", "Tam dung"));
       hop.classList.add("dang-phat");
       /* Nguon vua doi thi ve lai ngay o luot phat dau tien sau do. */
       if (!daVe) { daVe = true; veSong(song, au.src, au); }
     });
     function dungLai() {
       nut.textContent = "▶";
-      nut.setAttribute("aria-label", "Phat");
+      nut.setAttribute("aria-label", nhan("phat", "Phat"));
       hop.classList.remove("dang-phat");
     }
     au.addEventListener("pause", dungLai);
@@ -1162,31 +1191,43 @@
       }
       if (nutTao) nutTao.disabled = vuot;
       if (oUocDong) oUocDong.hidden = n === 0;
-      if (oUoc && n) oUoc.textContent = String(Math.max(1, Math.ceil((1.5 + n / 18) * 0.2)));
+      /* ⭐ MOT CONG THUC, DUNG MOT LAN, CHO CA THOI LUONG LAN CREDIT.
+       *
+       * 🔴 Ba con so cua cong thuc gia deu den TU MAY CHU (`vo.py`), khong con
+       *    con nao go tay o day. Ban truoc go `(1.5 + n / 18) * 0.2` — ba ban
+       *    chep cua ba hang so Python — va no thanh SAI ngay 08/09/2026 khi
+       *    gia bat dau cong phi khoi dong cho TUNG doan.
+       *
+       * ⚠️ `soDoan` vao ca hai o, va do la toan bo diem cua lan sua nay: mot bai
+       *    dai la N luot phat ghep lai, moi luot mang khoang lang rieng. Tinh
+       *    ca bai nhu MOT luot lam o "uoc credit" thap hon phan that su bi giu.
+       *
+       * ⚠️ So doan o day van la UOC (phep chia don gian). So chinh xac do
+       *    `/xem-truoc` tra ve vi no chay dung `chia_doan`. */
+      var moiLuot = cfg.tranMoiLuot || 0;
+      var tocDo = cfg.kyTuMoiGiay || 18;
+      var khoiDong = cfg.giayKhoiDong || 0;
+      var soDoan = (n && moiLuot) ? Math.max(1, Math.ceil(n / moiLuot)) : 1;
+      var giayUoc = n ? (soDoan * khoiDong + n / tocDo) : 0;
+
+      if (oUoc && n) {
+        oUoc.textContent = String(
+          Math.max(1, Math.ceil(giayUoc * (cfg.creditMoiGiay || 0))));
+      }
 
       /* ⭐ THOI LUONG + SO DOAN, hien ngay khi go.
        *
        *    Truoc 03/09 o dem chi noi "0 / 1500 ky tu", va 1.500 khi ay la tran
        *    cua MODEL — tuc giao dien dang phoi mot gioi han ky thuat ra lam
        *    gioi han san pham. Nay tran la ngan sach tai nguyen, va thu khach
-       *    that su muon biet la bai nay DAI BAO LAU.
-       *
-       * ⚠️ `kyTuMoiGiay` lay tu `gia.KY_TU_MOI_GIAY_UOC` — CUNG hang so ma
-       *    phan giu credit dung. Go mot ti le rieng o day la de giao dien va
-       *    hoa don noi hai con so khac nhau ve cung mot van ban.
-       *
-       * ⚠️ So doan la UOC (phep chia don gian). So chinh xac do `/xem-truoc`
-       *    tra ve vi no chay dung `chia_doan`. */
+       *    that su muon biet la bai nay DAI BAO LAU. */
       if (oUocDai) {
-        var tocDo = cfg.kyTuMoiGiay || 18;
-        var moiLuot = cfg.tranMoiLuot || 0;
         if (!n || !moiLuot) {
           oUocDai.hidden = true;
         } else {
-          var soDoan = Math.max(1, Math.ceil(n / moiLuot));
           var mau = soDoan > 1 ? (chu.uocNhieuDoan || "") : (chu.uocMotDoan || "");
           oUocDai.textContent = " · " + mau
-            .replace("{t}", docThoiLuong(n / tocDo))
+            .replace("{t}", docThoiLuong(giayUoc))
             .replace("{n}", String(soDoan));
           oUocDai.hidden = false;
         }
@@ -1263,6 +1304,20 @@
       var fd = new FormData();
       fd.append("csrf_token", form.csrf_token.value);
       fd.append("text", oText.value);
+      /* 🔴 GIONG PHAI DI THEO. Tu 08/09/2026 `gia.uoc_tran` nhan them `giong`:
+         mot giong da DO co ho so toc do rieng, nen hai giong cho HAI con so
+         khac nhau tren cung mot van ban.
+
+         Bo no o day thi o "uoc credit" hien so cua giong MAC DINH trong khi
+         phan tam giu dung so cua giong khach da chon — dung cai lop loi
+         "mot cua co, cua kia khong" ma khoi nop ben duoi da tra gia mot lan
+         voi nut toc do.
+
+         ⚠️ Chi gui nhanh "m:" (preset). Nhanh "v:" la giong nhan ban, chua co
+            ho so do, va `manifest._gia` cung chi doc `preset` — hai dau phai
+            roi ve CUNG mot hang so chung. */
+      var gXt = (form.querySelector('input[name="giong"]:checked') || {}).value || "";
+      if (gXt.indexOf("m:") === 0) fd.append("preset", gXt.slice(2));
       fetch(duong + "/xem-truoc", {method: "POST", body: fd})
         .then(function (r) { return r.json(); })
         .then(function (d) {
@@ -1276,9 +1331,25 @@
             if (d.so_doan > 1) ghi.push((chu.doanNhieu || "").replace("{n}", d.so_doan));
             ghi.push(d.so_ky_tu + " / " + (cfg.tranKyTu || "?"));
             oGhi.textContent = ghi.join(" · ");
-            // Con so nay den tu CHINH ham ra hoa don (`gia.uoc_tran`), nen no
-            // khong the lech voi phan se bi tam giu.
+            // Con so nay den tu CHINH ham ra hoa don (`gia.uoc_tran_lo`),
+            // nen no khong the lech voi phan se bi tam giu.
             if (oUoc && d.uoc_credit != null) oUoc.textContent = String(d.uoc_credit);
+            /* ⭐ U-11 — ETA THAT thay cho uoc luc go.
+             *
+             *    O dem luc go chia doan bang `Math.ceil(n / tranMoiLuot)`; may
+             *    chu chia bang `chia_doan(can_bang=True)` — CUNG phep chia ma
+             *    worker dung. Hai phep chia cho hai so doan khac nhau tren cung
+             *    mot bai, va so doan la mot he so cua ca thoi luong lan tien.
+             *
+             * ⇒ Khi da co cau tra loi that thi thoi hien cau uoc. */
+            if (oUocDai && d.giay_uoc) {
+              var mauXt = d.so_doan > 1 ? (chu.uocNhieuDoan || "")
+                                        : (chu.uocMotDoan || "");
+              oUocDai.textContent = " · " + mauXt
+                .replace("{t}", docThoiLuong(d.giay_uoc))
+                .replace("{n}", String(d.so_doan));
+              oUocDai.hidden = false;
+            }
           }
           oXt.hidden = false;
         })
@@ -1332,6 +1403,26 @@
       hien("xong");
       nhan("b-ok", chu.xong);
       nutTao.disabled = false;
+
+      /* Canh bao cua mot luot DA XONG: lech lan, hoac DA LUI GIONG.
+       *
+       * ⛔ `textContent`, KHONG `innerHTML`. Cau nay di qua bao nhieu tang thi
+       *    van la chuoi cua may chu, nhung o day no duoc dat vao DOM — va mot
+       *    cho dat chuoi vao DOM bang innerHTML la mot cho se bi dung sai sau
+       *    ba lan sua. Moi canh bao mot dong rieng: hai cau noi lien nhau doc
+       *    thanh mot cau vo nghia. */
+      var oCanh = document.getElementById("lv-kq-canh-bao");
+      if (oCanh) {
+        var ds = (d.canh_bao || []).filter(function (c) { return !!c; });
+        oCanh.textContent = "";
+        ds.forEach(function (c) {
+          var p = document.createElement("p");
+          p.style.margin = "0";
+          p.textContent = c;
+          oCanh.appendChild(p);
+        });
+        oCanh.hidden = ds.length === 0;
+      }
 
       var au = document.getElementById("lv-player");
       au.src = d.audio_url;
@@ -1403,6 +1494,10 @@
         });
     }
 
+    /* Phat dan (U-07). Tu thoat khi template khong dung nut — tuc khi co
+       `LTT_VOICE_STREAM` dang tat. */
+    ganPhatDan(form, oText, duong);
+
     form.addEventListener("submit", function (e) {
       e.preventDefault();
       if (dongHo) clearTimeout(dongHo);
@@ -1464,6 +1559,14 @@
      *    la bat khach chon "giong cua toi" HOAC "tieng Anh" thay vi ca hai —
      *    va dung luc kho giong dong len thi do la luc ho can ca hai nhat. */
     var locLan = "";
+    /* Gioi tinh cua giong (nam | nu | "" = moi gioi). Bien RIENG, cung ly do
+     * voi `locLan` ngay tren: gop hai mat loc vao mot bien la bat khach chon
+     * MOT trong hai thay vi ca hai. */
+    var locGioi = "";
+    /* Vung + phong cach — hai truc con lai cua U-03 (09/09/2026).
+       Chi giong mau co chung; the khong khai thi khong bi an. */
+    var locVung = "";
+    var locPhongCach = "";
 
     function locChon() {
       var q = ((oTimChon && oTimChon.value) || "").trim().toLowerCase();
@@ -1476,9 +1579,24 @@
          *    tung la mot cot khong noi nao doc, nen du lieu cu hoan toan co the
          *    trong — an chung di la khach mat giong cua chinh minh ma khong
          *    hieu vi sao. Chua biet lan thi hien o moi lan. */
+        /* ⛔ Muc chua khai GIOI (`data-gioi` rong) cung KHONG bi loc bo —
+         *    cung quy uoc voi `data-lan` ngay tren, va cung mot ly do: cot
+         *    `gioi` chi co tu 07/09/2026 nen moi giong nhan ban tao TRUOC do
+         *    deu rong. An chung di la khach mat giong cua chinh minh ngay lan
+         *    dau ho bam mot bo loc.
+         *
+         * ⚠️ Man Giong lam KHAC (an, roi DEM so the bi an) — xem chu thich o
+         *    `_voice_chon.html`. Khac nhau la co chu y, khong phai lech. */
         var hop = d.loai === ""
           || ((!locLoai || d.loai === locLoai)
               && (!locLan || !d.lan || d.lan === locLan)
+              && (!locGioi || !d.gioi || d.gioi === locGioi)
+              /* Vung + phong cach: CHI giong mau co hai truong nay, nen the
+                 khong khai thi KHONG bi an — cung quy uoc voi `gioi`/`lan`
+                 ngay tren, va cung ly do (an thu minh khong phan loai duoc la
+                 lam khach mat giong cua chinh ho). */
+              && (!locVung || !d.vung || d.vung === locVung)
+              && (!locPhongCach || !d.phongcach || d.phongcach === locPhongCach)
               && (!q || (d.ten || "").toLowerCase().indexOf(q) >= 0));
         m.hidden = !hop;
         if (hop && d.loai !== "") con++;
@@ -1505,6 +1623,36 @@
           locChon();
         });
       })(nutChonLan[j]);
+    }
+    var nutChonGioi = document.querySelectorAll("[data-chon-gioi]");
+    for (var k = 0; k < nutChonGioi.length; k++) {
+      (function (nut) {
+        nut.addEventListener("click", function () {
+          locGioi = nut.dataset.chonGioi || "";
+          batNut(nut);
+          locChon();
+        });
+      })(nutChonGioi[k]);
+    }
+    var nutChonVung = document.querySelectorAll("[data-chon-vung]");
+    for (var v = 0; v < nutChonVung.length; v++) {
+      (function (nut) {
+        nut.addEventListener("click", function () {
+          locVung = nut.dataset.chonVung || "";
+          batNut(nut);
+          locChon();
+        });
+      })(nutChonVung[v]);
+    }
+    var nutChonPc = document.querySelectorAll("[data-chon-phongcach]");
+    for (var pc = 0; pc < nutChonPc.length; pc++) {
+      (function (nut) {
+        nut.addEventListener("click", function () {
+          locPhongCach = nut.dataset.chonPhongcach || "";
+          batNut(nut);
+          locChon();
+        });
+      })(nutChonPc[pc]);
     }
     if (oTimChon) oTimChon.addEventListener("input", locChon);
 
@@ -1896,6 +2044,129 @@
     }
     return fetch(duong, {method: "POST", body: fd}).then(function (r) {
       return r.json();
+    });
+  }
+
+  /* ── Phat dan (U-07) ──────────────────────────────────────────────────────
+   *
+   * [!] VI SAO TU GIAI PCM CHU KHONG DUNG THE `<audio>`:
+   *
+   *     · `<audio src>` chi lam GET, ma cua nay la POST (CSRF + giu credit);
+   *     · `MediaSource` KHONG ho tro WAV, nen duong MSE cung dong.
+   *
+   *     Con lai Web Audio. Ta lam duoc vi dinh dang DA GHIM o hai dau:
+   *     `voice_sidecar/server.py::_wav_header_mo` sinh, `apps/ltt_voice/gia.py`
+   *     doc — mono, 16-bit, sample rate nam trong header.
+   *
+   * [*] Doc sample rate TU HEADER, khong go 48000 vao day. Go tay la dung mot
+   *     hang so thu ba canh hai hang so da co, va no se lech vao ngay engine
+   *     doi tan so — luc ay tieng phat ra sai cao do ma khong loi nao bao.
+   */
+  function ganPhatDan(form, oText, duong) {
+    var nut = document.getElementById("lv-nut-phat");
+    if (!nut) return;                  /* co tat -> template khong dung nut */
+    var ACtx = window.AudioContext || window.webkitAudioContext;
+    if (!ACtx) { nut.hidden = true; return; }
+
+    var ctx = null, boHuy = null, dangPhat = false, keTiep = 0;
+    var nhanPhat = nut.getAttribute("data-nhan-phat") || nut.textContent;
+    var nhanDung = nut.getAttribute("data-nhan-dung") || nhanPhat;
+
+    function dung() {
+      dangPhat = false;
+      nut.textContent = nhanPhat;
+      if (boHuy) { try { boHuy.abort(); } catch (e) {} boHuy = null; }
+      if (ctx) { try { ctx.close(); } catch (e) {} ctx = null; }
+    }
+
+    /* Int16 little-endian -> Float32 [-1,1]. DataView chu khong Int16Array:
+       Int16Array doc theo endianness cua MAY, con luong thi luon LE. */
+    function raFloat(u8, so_mau) {
+      var dv = new DataView(u8.buffer, u8.byteOffset, so_mau * 2);
+      var f = new Float32Array(so_mau);
+      for (var i = 0; i < so_mau; i++) f[i] = dv.getInt16(i * 2, true) / 32768;
+      return f;
+    }
+
+    function xepLich(f32, sr) {
+      var buf = ctx.createBuffer(1, f32.length, sr);
+      buf.copyToChannel ? buf.copyToChannel(f32, 0)
+                        : buf.getChannelData(0).set(f32);
+      var ng = ctx.createBufferSource();
+      ng.buffer = buf;
+      ng.connect(ctx.destination);
+      /* Dem 150ms truoc khi phat: mang loopback nhanh nhung luot sinh thi
+         khong deu, va mot khoang trong giua hai khoi nghe ro hon mot cho cho. */
+      keTiep = Math.max(keTiep, ctx.currentTime + 0.15);
+      ng.start(keTiep);
+      keTiep += buf.duration;
+    }
+
+    function phat() {
+      var g = (form.querySelector('input[name="giong"]:checked') || {}).value || "";
+      var fd = new FormData();
+      fd.append("csrf_token", form.csrf_token.value);
+      fd.append("text", oText.value);
+      if (g.indexOf("v:") === 0) fd.append("voice_id", g.slice(2));
+      else if (g.indexOf("m:") === 0) fd.append("preset", g.slice(2));
+
+      dangPhat = true;
+      nut.textContent = nhanDung;
+      boHuy = ("AbortController" in window) ? new AbortController() : null;
+      ctx = new ACtx();
+      keTiep = 0;
+
+      fetch(duong + "/phat-dan", {
+        method: "POST", body: fd,
+        signal: boHuy ? boHuy.signal : undefined
+      }).then(function (r) {
+        if (!r.ok || !r.body) {
+          return r.json().catch(function () { return {}; })
+                  .then(function (d) { throw new Error(d.loi || r.status); });
+        }
+        /* [!] Canh bao LUI GIONG phai hien ra, nguyen van. May chu ma hoa phan
+           tram vi dau HTTP chi nhan latin-1 — xem `_p_phat_dan.py`. */
+        var cb = r.headers.get("X-Canh-Bao");
+        if (cb) {
+          try { baoTin(decodeURIComponent(cb)); } catch (e) { baoTin(cb); }
+        }
+        var doc = r.body.getReader();
+        var sr = 0, thua = new Uint8Array(0);
+
+        function tiep() {
+          return doc.read().then(function (o) {
+            if (o.done || !dangPhat) return;
+            var khoi = new Uint8Array(thua.length + o.value.length);
+            khoi.set(thua, 0);
+            khoi.set(o.value, thua.length);
+
+            if (sr === 0) {
+              if (khoi.length < 44) { thua = khoi; return tiep(); }
+              sr = new DataView(khoi.buffer, khoi.byteOffset, 44)
+                     .getUint32(24, true);
+              khoi = khoi.subarray(44);
+            }
+            /* Byte le chua du mot mau thi giu lai cho khoi sau. Bo no di la
+               lech mot byte, va tu do moi mau sau deu sai. */
+            var so_mau = Math.floor(khoi.length / 2);
+            thua = khoi.subarray(so_mau * 2);
+            if (so_mau > 0) xepLich(raFloat(khoi, so_mau), sr);
+            return tiep();
+          });
+        }
+        return tiep();
+      }).catch(function (e) {
+        if (e && e.name === "AbortError") return;   /* nguoi dung bam Dung */
+        baoTin(String(e && e.message ? e.message : e));
+      }).then(function () {
+        /* Doi tieng phat het roi moi doi nhan — tat ngay se cat duoi bai. */
+        var con = ctx ? Math.max(0, (keTiep - ctx.currentTime) * 1000) : 0;
+        setTimeout(dung, Math.min(con, 60000));
+      });
+    }
+
+    nut.addEventListener("click", function () {
+      if (dangPhat) dung(); else phat();
     });
   }
 

@@ -1,0 +1,103 @@
+# Cong chat luong tren PR — `gate --quick`.
+#
+# VI SAO TEP NAY RA DOI (09/09/2026)
+#
+#   Kho co remote GitHub, co mot cong chat luong 32 buoc rat tot, va KHONG CO GI
+#   bat ai chay no truoc khi commit vao nhanh dung chung. Toan bo viec cuong che
+#   la cuc bo va tu nguyen.
+#
+#   Bang chung song, cung ngay: commit `3eae396d` day HAI banh coc sang do tren
+#   trunk (`mypy` + `nuot loi lang le`). Phien tac gia ket thuc. Ba phien khac
+#   lan luot mat mot luot chan doan de phat hien do khong phai loi cua minh.
+#
+#   `--quick` chay ~40 giay. Chi phi gan bang khong so voi mot lan trunk do.
+#
+# ⛔ CHI `--quick`, KHONG chay gate day du tren CI.
+#
+#   Gate day du can GPU, can may B, va mat 11,6 phut. No cung chay `bo test`
+#   voi `-n 6` — mot ngan sach dat theo 10 loi VAT LY cua may chu, khong theo
+#   runner. Chay no o day la do mot con so cua may khac.
+#
+#   ⚠️ Va `--quick` TU KHAI o dong RESULT rang no khong phai bang chung day du.
+#      Cong nay chan hoi quy TINH; no khong thay cho mot luot gate day du truoc
+#      khi bao xong.
+#
+# ⛔ UBUNTU, KHONG PHAI WINDOWS — va day la ly do da tra gia.
+#
+#   Buoc `kieu xuong dong` so kieu ket dong cua cay lam viec voi HEAD, TUNG TEP.
+#   Kho nay co ca tep LF lan tep CRLF (vd `apps/ltt_voice/gia.py` la CRLF).
+#
+#   Tren runner Windows, git thuong bat `core.autocrlf=true` va doi LF -> CRLF
+#   luc checkout. Khi ay MOI tep LF deu "da doi kieu ket dong" va buoc ay do
+#   toan bo — mot cong do vinh vien, khong ai sua duoc bang cach sua ma.
+#
+#   Tren Linux `core.autocrlf` mac dinh la false, nen tep ra dung dang da luu.
+#   Van dat tuong minh o duoi de khong phu thuoc mac dinh cua runner.
+
+name: gate --quick
+
+on:
+  pull_request:
+    branches: [admin-mvp-v3, master]
+  workflow_dispatch:
+
+# Mot PR day them commit thi huy luot cu — khong xep hang nhieu luot cho cung
+# mot nhanh.
+concurrency:
+  group: gate-quick-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  quick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Tat autocrlf TRUOC khi checkout
+        run: git config --global core.autocrlf false
+
+      - uses: actions/checkout@v4
+        with:
+          # `check_xuong_dong` va vai buoc khac hoi HEAD. Lay du lich su de
+          # `git show HEAD:<tep>` tra loi duoc.
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          # Khop ban may chu dang chay (do 09/09: Python 3.13.12).
+          python-version: '3.13'
+          cache: pip
+
+      - name: Cai phu thuoc
+        # ⛔ KHONG cai `requirements-vieneu.txt` / `requirements-whisperx.txt`:
+        #    chung keo torch + CUDA (hang GB), va da do 09/09 rang KHONG cong cu
+        #    nao gate goi can chung:
+        #        for f in $(grep -oE "tools/[a-z_0-9]+\.py" tools/gate.py | sort -u);
+        #          do grep -qE "^\s*(import|from)\s+(torch|vieneu|whisper|ultralytics)" $f
+        #        -> rong
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-server.txt
+          pip install -r requirements-dev.txt
+
+      - name: gate --quick
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+          # Khong bi mat nao. Da do 09/09: `--quick` chay xanh tren mot shell
+          # KHONG co `LTT_DATABASE_URL` lan `LTT_VOICE_SIDECAR_TOKEN`.
+          PYTHONIOENCODING: utf-8
+        run: python tools/gate.py --quick
+
+      - name: Giu ban ghi gate
+        # Chay ca khi do: ban ghi cua luot DO moi la thu can doc.
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-quick-${{ github.run_id }}
+          path: test-results/gates/
+          if-no-files-found: warn
+          retention-days: 14

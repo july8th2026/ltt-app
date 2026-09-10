@@ -92,7 +92,18 @@ def _tao_tieng(params: dict, ctx=None) -> dict:
             "Máy tạo tiếng nói chưa được thiết lập trên máy chủ này "
             "(thiếu LTT_VOICE_SIDECAR_TOKEN)."))
 
-    ref_b64, preset, _ = _voi_db(lambda db: features.giai_giong(db, yc))
+    # 🔴 THÀNH PHẦN THỨ BA KHÔNG ĐƯỢC VỨT ĐI NỮA.
+    #
+    #    Trước 07/09/2026 dòng này là `ref_b64, preset, _ = ...`, và dấu gạch
+    #    dưới ấy làm **cả chuỗi cảnh báo chết**: `lan_ngon_ngu.doi_chieu` được
+    #    gọi ở cả hai nhánh của `giai_giong`, `KetQua` có sẵn trường `canh_bao`,
+    #    `as_result()` có sẵn khoá `canh_bao` — và không có gì đi giữa hai đầu
+    #    đó. Một đường ống đủ mọi khớp nối, không bao giờ có nước.
+    #
+    # ⛔ Và nó vừa thành thứ KHÔNG ĐƯỢC PHÉP chết: `lui_giong` báo qua đúng
+    #    kênh này. Một đường lùi im lặng là chính cái lỗi mà `lui_giong.py`
+    #    được viết ra để sửa — mất dòng cảnh báo là mất toàn bộ điểm của nó.
+    ref_b64, preset, canh_bao = _voi_db(lambda db: features.giai_giong(db, yc))
 
     # ── chia đoạn: văn bản dài đi ĐƯỜNG KHÁC, không phải bị từ chối ──────────
     #
@@ -173,6 +184,9 @@ def _tao_tieng(params: dict, ctx=None) -> dict:
                 doan, thu_muc=thu_muc, owner_id=yc.owner_id or "",
                 job_id=job_id, ref_b64=ref_b64, preset=preset, ctx=ctx)
             khai = ho_so.get("giay")
+            # ⭐ `ban_doc_dai` cộng dồn `gen_s` của TỪNG lô. Đó là con số đúng:
+            #    một bài dài là nhiều lượt GPU, và ta muốn tổng.
+            gen_s = _so(ho_so.get("gen_s"))
         else:
             wav_bytes, headers = features.goi_cong(
                 doan[0], ref_b64=ref_b64, preset=preset)
@@ -180,13 +194,29 @@ def _tao_tieng(params: dict, ctx=None) -> dict:
             with open(duong, "wb") as f:
                 f.write(wav_bytes)
             khai = headers.get("X-Duration-S")
+            gen_s = _so(headers.get("X-Gen-S"))
 
         return _cat_kho(yc, duong, thu_muc, job_id=job_id, khai=khai,
-                        chuan=chuan, so_doan=len(doan), ctx=ctx)
+                        chuan=chuan, so_doan=len(doan), ctx=ctx,
+                        canh_bao=canh_bao, giong_that=preset, gen_s=gen_s)
 
 
-def _cat_kho(yc, duong: str, thu_muc: str, *, job_id: str, khai,
-             chuan, so_doan: int, ctx=None) -> dict:
+def _so(x) -> float:
+    """Header/hồ sơ -> `float`, và **không bao giờ ném**.
+
+    ⛔ Đây là số liệu vận hành. Một sidecar bản cũ không trả `X-Gen-S`, và một
+       `ValueError` ở đây sẽ đánh hỏng một lượt sinh **đã thành công** — biến
+       một chỉ số thiếu thành một job hỏng và một khoản credit phải hoàn.
+    """
+    try:
+        return max(0.0, float(x))
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _cat_kho(yc, duong: str, thu_muc: str, *, job_id: str, khai, gen_s: float = 0.0,
+             chuan, so_doan: int, ctx=None, canh_bao=(),
+             giong_that: str = "") -> dict:
     """Đo, đổi tốc độ, cất kho. Tách ra vì thân `_tao_tieng` đã đủ dài.
 
     ⚠️ Nhận `duong` chứ không nhận `bytes`: đây là chỗ duy nhất còn chạm tới cả
@@ -249,9 +279,14 @@ def _cat_kho(yc, duong: str, thu_muc: str, *, job_id: str, khai,
     with open(duong, "rb") as f:
         get_storage().put(khoa, f, content_type="audio/wav")
 
+    # ⭐ `giong_that` chi khac `yc.preset` khi `giai_giong` DA LUI GIONG. Ghi
+    #    lai o day de lich su tra loi duoc cau *"vi sao bai nay nghe khac"* —
+    #    mot dong canh bao tren man hinh song het mot phien, ban ghi thi khong.
     ket = features.KetQua(
         yeu_cau=yc, audio_key=khoa, giay=giay, giay_phat=giay_phat,
-        text_da_chuan_hoa=chuan.da_chuan_hoa, so_doan=so_doan)
+        text_da_chuan_hoa=chuan.da_chuan_hoa, so_doan=so_doan,
+        canh_bao=tuple(canh_bao or ()), giong_that=giong_that or "",
+        gen_s=gen_s)
 
     if giay <= 0:
         log.warning("job %s: khong do duoc thoi luong -> thu 0 credit", job_id)

@@ -64,7 +64,6 @@ modules =
     apps.agent
     apps.anhnoibo
     apps.autosubvideo
-    apps.chataistudio
     apps.chatltt
     apps.ltt_llm
     apps.ltt_voice
@@ -96,11 +95,19 @@ source_modules =
 forbidden_modules =
     apps
 ignore_imports =
-    # NO KY THUAT. `server/api/streaming.py` doc ngan sach va bang alias cua
-    # `ltt_llm`. CLAUDE.md noi ro: "Neu thay buoc phai sua nen tang thi DUNG
-    # LAI va noi ro vi sao -- do la dau hieu hop dong app con thieu."
+    # NO KY THUAT. `server/api/streaming.py` doc ngan sach cua `ltt_llm`.
+    # CLAUDE.md noi ro: "Neu thay buoc phai sua nen tang thi DUNG LAI va noi ro
+    # vi sao -- do la dau hieu hop dong app con thieu."
     #
-    # Duong ra dung la day hai thu ay len `platform_core` (mot diem noi cho
+    # Duong ra dung la day thu ay len `platform_core` (mot diem noi cho
     # provider LLM), khong phai noi long hop dong.
+    #
+    # [+] TRA MOT NUA 08/09/2026 (AI CLEAN REBUILD V2, pha 05.1). Dong thu hai
+    #     -- `-> apps.ltt_llm.features` -- DA XOA khoi day, khong phai duoc mien
+    #     them: bang bi danh chuyen len `platform_core/llm/canonical.py` vi BA
+    #     ben deu can no va ca ba deu bi mot contract khac nhau chan.
+    #
+    # [!] Con lai `ngan_sach`: ngan sach token la viec cua APP, khong phai cua
+    #     nen tang. Day no len `platform_core` la mot quyet dinh kien truc rieng,
+    #     khong phai phan thua cua ban va nay. Giu nguyen MOT ngoai le CO TEN.
     server.api.streaming -> apps.ltt_llm.ngan_sach
-    server.api.streaming -> apps.ltt_llm.features

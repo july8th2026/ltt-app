@@ -162,7 +162,9 @@ def test_giong_dung_chung_cua_nen_tang_thi_ai_cung_doc_duoc(moi_truong, monkeypa
     gen, db = _session()
     try:
         db.execute(VoiceProfile.__table__.update()
-                   .where(VoiceProfile.public_id == vid).values(dung_chung=True))
+                   .where(VoiceProfile.public_id == vid)
+                   # U-05: `dung_chung` mot minh KHONG du de ra kho chung.
+                   .values(dung_chung=True, license_status="ok"))
         db.commit()
     finally:
         _close(gen)

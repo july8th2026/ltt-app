@@ -65,8 +65,11 @@ MANIFEST = AppManifest(
                 "audience": {"type": "string", "max_length": 300},
                 "language": {"type": "enum", "values": ["vi", "en"], "default": "vi"},
                 "resources": {"type": "json"},
+                # 🔴 Pha 05.5 đổi động cơ sang LTT_LLM nhưng **quên dòng
+                #    này** — bảng chọn model vẫn khai một nhà đã ngừng, và
+                #    hệ quả là enum rỗng ⇒ tool không chọn được model nào.
                 "model": {"type": "model_ref", "category": "chat",
-                          "providers": ["gemini"]},
+                          "providers": ["ltt_llm"]},
             },
             returns={"prompt_package": "json", "master_prompt": "text"},
             verifiable=("structural",),
@@ -150,7 +153,7 @@ MANIFEST = AppManifest(
                 "style": {"type": "string", "max_length": 500},
                 "resources": {"type": "json"},
                 "model": {"type": "model_ref", "category": "chat",
-                          "providers": ["gemini"]},
+                          "providers": ["ltt_llm"]},
             },
             returns={"storyboard": "json", "master_prompt": "text"},
             verifiable=("structural",),

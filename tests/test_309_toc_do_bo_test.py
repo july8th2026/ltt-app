@@ -216,3 +216,106 @@ def test_MOI_dong_sinh_dau_ra_cua_test_nhanh_deu_la_ASCII():
         + "; ".join(f"dong {s}: {d}" for s, d in xau)
         + " -- duoi mot trinh hung dung cp1252, chung in ra rac hoac lam VO"
           " ca buoc truoc khi bo test kip chay.")
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Trang thai thu BA cua `--lf`: cache day id nhung khong id nao con song
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _con_id_song(*a, **k):
+    import importlib.util
+    import sys
+    goc = pathlib.Path(__file__).resolve().parents[1]
+    spec = importlib.util.spec_from_file_location("tn", goc / "tools" / "test_nhanh.py")
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["tn"] = mod
+    spec.loader.exec_module(mod)
+    return mod._con_id_song(*a, **k)
+
+
+def _canh_bao_lf(*a, **k):
+    import importlib.util
+    import sys
+    goc = pathlib.Path(__file__).resolve().parents[1]
+    spec = importlib.util.spec_from_file_location("tn2", goc / "tools" / "test_nhanh.py")
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["tn2"] = mod
+    spec.loader.exec_module(mod)
+    return mod._canh_bao_lf(*a, **k)
+
+
+def test_id_MAT_HAM_va_MAT_TEP_deu_duoc_dem_la_chet():
+    """🔴 `--lf` co ba trang thai, khong phai hai — va cai thu ba khong ai canh bao.
+
+    `_da_do` da ke ba trang thai cua TEP cache (vang mat / doc duoc / doc hong).
+    Nhung con mot truc khac: cache doc duoc, DAY id, va khong id nao con phan
+    giai duoc. Luc do pytest thay "co failure da biet" nen `--lfnf=none` khong
+    ap, roi khong id nao khop nen no khong deselect gi — mot luot **day du**
+    chay duoi cai ten `--vong-lap`.
+
+    ⭐ Do 05/09 tren `phien/asv-v4`: 20 id trong cache, **ca 20 deu chet**. Va
+       chung chet mot cach lanh manh — pha 27 go nhung chot da het ly do ton
+       tai. Tuc `--lf` tu xuong cap nhu he qua cua viec lam DUNG.
+    """
+    song, tong = _con_id_song({
+        "tests/tep_khong_bao_gio_ton_tai_xyz.py::test_gi_do",
+        "tests/test_309_toc_do_bo_test.py::test_ham_nay_da_bi_go_roi",
+    })
+    assert (song, tong) == (0, 2)
+
+
+def test_MOT_id_song_thi_KHONG_bao_dong_du_co_nhieu_id_chet():
+    """⚠️ Day la nua quan trong hon: mot canh bao luon bat la mot canh bao bi tat.
+
+    Do bang thuc nghiem (phien LTTCHAT V3, 05/09): mot id chet nam canh mot id
+    song thi `--lf` VAN thu hep binh thuong — id chet bi bo lang le, khong dau
+    doc gi. Nen dieu kien canh bao phai la "khong con id nao song", KHONG phai
+    "co id chet".
+    """
+    song, tong = _con_id_song({
+        "tests/tep_khong_bao_gio_ton_tai_xyz.py::test_gi_do",
+        "tests/test_309_toc_do_bo_test.py::test_MOT_id_song_thi_KHONG_bao_dong_du_co_nhieu_id_chet",
+    })
+    assert song == 1 and tong == 2
+
+
+def test_id_o_TEP_KHONG_DOC_DUOC_duoc_dem_la_SONG():
+    """⛔ Mot tep dang sua do (SyntaxError) khong duoc bien thanh 'da bi go'.
+
+    Neu dem no la chet thi dung luc nguoi ta dang sua mot tep, canh bao se bao
+    "khong con id nao song" va noi sai ve nguyen nhan. Nghi ngo thi nghieng ve
+    IM LANG, vi canh bao nay chi de thong tin.
+    """
+    goc = pathlib.Path(__file__).resolve().parents[1]
+    tam = goc / "tests" / "zz_thu_lf_syntax_loi.py"
+    tam.write_text("def test_a(:" + chr(10) + "    pass" + chr(10),
+                   encoding="utf-8")
+    try:
+        song, tong = _con_id_song({"tests/zz_thu_lf_syntax_loi.py::test_a"})
+        assert (song, tong) == (1, 1)
+    finally:
+        tam.unlink(missing_ok=True)
+
+
+def test_QUYET_DINH_canh_bao_chi_bat_khi_KHONG_con_id_nao_song():
+    """🔑 Chot chinh PHAN QUYET, khong chi chot phep do ben duoi no.
+
+    ⛔ Ba bai tren chot `_con_id_song` — mot dai luong. Neu chi co chung, mot
+       ban sua doi `song == 0` thanh `song < tong` van xanh het, va canh bao se
+       bat o moi luot co bat ky id chet nao — tuc bat gan nhu luon, tuc bi tat
+       trong dau nguoi doc. Do dung la khe da cat toi ba lan trong mot phien:
+       bai kiem do mot thu NAM CANH thu no tuyen bo.
+    """
+    chet = "tests/tep_khong_bao_gio_ton_tai_xyz.py::test_gi_do"
+    song = ("tests/test_309_toc_do_bo_test.py::"
+            "test_QUYET_DINH_canh_bao_chi_bat_khi_KHONG_con_id_nao_song")
+
+    assert _canh_bao_lf(set()) == [], "cache rong da co nhanh rieng, dung noi hai lan"
+    assert _canh_bao_lf({song}) == [], "con id song thi `--lf` van thu hep"
+    assert _canh_bao_lf({song, chet}) == [], (
+        "mot id chet canh mot id song KHONG lam `--lf` hong — do bang thuc nghiem")
+
+    ra = _canh_bao_lf({chet})
+    assert ra, "toan id chet ma khong canh bao gi"
+    assert any("chay TOAN BO" in d for d in ra), (
+        "canh bao phai noi ro HAU QUA, khong chi noi cache co van de")
+    assert all(d.isascii() for d in ra), "moi dong dau ra cua test_nhanh phai ASCII"

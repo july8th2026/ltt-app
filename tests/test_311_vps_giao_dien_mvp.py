@@ -700,12 +700,24 @@ def test_dai_hanh_dong_THEO_TRANG_THAI():
     không có nút.
     """
     t = _chi_tiet_html()
-    i = t.index('class="vps-hd"')
+    # ⚠️ Neo vào dải nút CHÍNH (dải chứa "Cài Windows"), không vào `vps-hd` đầu
+    #    tiên. Từ VPS V2 có một dải `vps-hd` **trước** nó: nhánh "đang có việc
+    #    chạy", chỉ hiện Console. Neo vào cái đầu tiên là đo nhầm khối.
+    i = t.rindex('class="vps-hd"', 0, t.index("Cài Windows"))
 
     # `dang_tao` và `bi_treo` ra nhánh CHỈ THÔNG TIN — tức trước cả dải nút.
     for tt in ("bi_treo", "dang_tao"):
         assert f'may.trang_thai == "{tt}"' in t[:i], (
             f"trang thai {tt!r} khong co nhanh rieng truoc dai hanh dong")
+
+    # Và nhánh "đang có việc chạy" phải đứng TRƯỚC mọi nhánh trạng thái.
+    #
+    # Vì sao đây là mệnh đề mạnh nhất trong ba mệnh đề ở đây: từ ADR-03, bấm một
+    # nút điều khiển **không** đổi `trang_thai` ngay. Nên một máy `dang_chay` mà
+    # đang tắt dở vẫn khớp nhánh `dang_chay` và vẫn bày đủ nút — khách bấm tiếp
+    # vào một máy đang bận. Nhánh `viec` là thứ duy nhất chặn được điều đó.
+    assert t.index("{% if viec %}") < t.index('may.trang_thai == "bi_treo"'), (
+        "nhanh 'dang co viec chay' phai dung TRUOC moi nhanh trang thai")
 
     # Trong dải nút, `da_tat` đổi NÚT CHÍNH: "Bật" thay cho "Khởi động lại /
     # Tắt máy". Không phải hai dải khác nhau — cùng một dải, khác nút.

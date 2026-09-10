@@ -165,7 +165,10 @@ def test_dieu_phoi_KHONG_tu_chuyen_sang_dam_may():
     """D-010: đổi model sau lưng khách là đánh tráo sản phẩm. Tầng này chỉ báo bận."""
     import inspect
     ma = inspect.getsource(DP)
-    assert "gemini" not in ma.lower().replace("dich_gemini", ""), (
+    # 🔴 Pha 07 xoá `dich_gemini.py`, nên chỗ trừ ấy KHÔNG còn cần — và bỏ nó
+    #    đi làm phép kiểm CHẶT HƠN: nay không một chữ `gemini` nào được phép
+    #    xuất hiện, kể cả trong một tên module.
+    assert "gemini" not in ma.lower(), (
         "dieu_phoi khong duoc tu goi model dam may")
 
 

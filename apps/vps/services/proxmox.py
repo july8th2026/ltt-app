@@ -29,13 +29,27 @@ Token đọc từ biến môi trường (`secrets/app.env`), không bao giờ v�
 **API token có bật privilege separation**, không dùng `root@pam`: quyền của token
 luôn là tập con quyền của user, nên một token rò rỉ vẫn bị chặn ở tầng thứ hai.
 
-## Chứng chỉ TLS
+## Chứng chỉ TLS — và vì sao production KHÔNG được lùi
 
 Proxmox cài mặc định dùng chứng chỉ tự ký. Đường gọi là **LAN nội bộ**
-(`192.168.2.17` → `192.168.2.168`), cổng 8006 **không bao giờ** ra Internet. Vẫn
-để `LTT_VPS_PROXMOX_CA` cho ai muốn ghim CA thật; thiếu nó thì bỏ qua xác minh và
-**ghi cảnh báo một lần** — im lặng bỏ qua xác minh là cách để quên mất mình đang
-bỏ qua.
+(`192.168.2.17` → `192.168.2.168`), cổng 8006 **không bao giờ** ra Internet.
+
+Bản trước VPS V2 lập luận từ đó rằng thiếu CA thì **bỏ qua xác minh** và ghi một
+dòng cảnh báo. Lập luận ấy có hai chỗ hỏng:
+
+1. *"LAN nội bộ"* là một tính chất của **triển khai hôm nay**, không phải của mã.
+   Ngày người ta dời Proxmox sang một mạng khác, hoặc dựng đường hầm qua một nhà
+   cung cấp, câu ấy thôi đúng — và không có gì kêu lên;
+2. một dòng `log.warning` phát **một lần mỗi tiến trình** là một dòng không ai
+   đọc. Nó không chặn được gì, nên nó không phải một hàng rào; nó là một ghi chú.
+
+⇒ Từ VPS V2: `LTT_ENV=production` **và** không có CA ⇒ `ChuaCauHinh`, fail-closed.
+Ngoài production thì vẫn chạy được, nhưng phải **khai tường minh**
+`LTT_VPS_PROXMOX_TLS_BO_QUA=1` — một biến có tên nói đúng thứ nó làm, để không ai
+bỏ qua xác minh mà không biết mình đang bỏ qua.
+
+`san_sang_tls()` là phép kiểm để `/health/ready` gọi: nó trả lời câu *"cấu hình
+này có phát hành được không"* mà không cần chạm mạng.
 """
 from __future__ import annotations
 
@@ -70,6 +84,14 @@ class ChuaCauHinh(ProxmoxError):
     """Thiếu biến môi trường. Tách riêng để routes phân biệt được với lỗi mạng."""
 
 
+#: Biến bật đường bỏ qua xác minh TLS. Tên nói đúng thứ nó làm — cố ý.
+#:
+#: Một biến tên `LTT_VPS_PROXMOX_CA` để trống thì im lặng; một biến tên
+#: `..._TLS_BO_QUA=1` thì người đặt nó biết mình vừa làm gì, và người đọc
+#: `app.env` sau này cũng biết.
+KHOA_BO_QUA_TLS = "LTT_VPS_PROXMOX_TLS_BO_QUA"
+
+
 @dataclass(frozen=True)
 class ProxmoxConfig:
     """Cấu hình kết nối. Đọc từ môi trường, không bao giờ từ CSDL hay code."""
@@ -79,18 +101,37 @@ class ProxmoxConfig:
     token_secret: str
     node: str = "pve"
     ca_bundle: str = ""
+    #: Đã khai tường minh là chấp nhận không xác minh TLS. **Chỉ ngoài production.**
+    bo_qua_tls: bool = False
+
+    def __str__(self) -> str:
+        """Không bao giờ in `token_secret`.
+
+        `repr()` là thứ lọt vào traceback, log gỡ lỗi và Sentry — im lặng, và
+        đúng vào lúc có sự cố nên có nhiều người đang đọc log nhất.
+        """
+        return (f"ProxmoxConfig({self.base_url} node={self.node} "
+                f"token={self.token_id} ca={'co' if self.ca_bundle else 'khong'})")
+
+    __repr__ = __str__
 
     @property
     def verify(self) -> Any:
-        """Giá trị `verify` cho `requests`: đường dẫn CA, hoặc False."""
+        """Giá trị `verify` cho `requests`: đường dẫn CA, hoặc `False`.
+
+        Tới được đây nghĩa là `doc_cau_hinh` đã cho phép — production không có CA
+        thì đã ném từ lúc dựng cấu hình, không phải lúc gọi mạng. Đặt hàng rào ở
+        chỗ **dựng** thay vì chỗ **dùng** là để nó nổ một lần lúc khởi động, thay
+        vì nổ giữa một lần khôi phục dữ liệu của khách.
+        """
         global _DA_CANH_BAO_TLS
         if self.ca_bundle:
             return self.ca_bundle
         if not _DA_CANH_BAO_TLS:
             _DA_CANH_BAO_TLS = True
             log.warning(
-                "Proxmox: khong xac minh chung chi TLS (LTT_VPS_PROXMOX_CA trong). "
-                "Chap nhan duoc vi duong goi la LAN noi bo; dat bien do de ghim CA.")
+                "Proxmox: KHONG xac minh chung chi TLS — %s da duoc khai. "
+                "Chi chap nhan duoc ngoai production.", KHOA_BO_QUA_TLS)
         return False
 
 
@@ -124,8 +165,70 @@ def doc_cau_hinh(env: dict | None = None) -> ProxmoxConfig:
 
     if not url.startswith(("http://", "https://")):
         url = f"https://{url}"
+
+    bo_qua = str(src.get(KHOA_BO_QUA_TLS, "")).strip().lower() in (
+        "1", "true", "yes", "co")
+    thieu_tls = _ly_do_tls_khong_dat(url, ca, bo_qua, src)
+    if thieu_tls:
+        raise ChuaCauHinh(thieu_tls)
+
     return ProxmoxConfig(base_url=url, token_id=token_id, token_secret=secret,
-                         node=node, ca_bundle=ca)
+                         node=node, ca_bundle=ca, bo_qua_tls=bo_qua)
+
+
+def _ly_do_tls_khong_dat(url: str, ca: str, bo_qua: bool,
+                         src) -> str:
+    """Lý do cấu hình TLS này **không** dùng được, hoặc chuỗi rỗng.
+
+    Tách khỏi `doc_cau_hinh` để `san_sang_tls()` hỏi được cùng một câu mà không
+    phải dựng cấu hình — hai nơi hỏi cùng một câu bằng hai đoạn mã là hai câu trả
+    lời sẽ lệch nhau.
+    """
+    from platform_core.settings import Environment, resolve_environment
+
+    if ca or not url.startswith("https://"):
+        # `http://` không có gì để xác minh — nó là một vấn đề khác, và nó đã bị
+        # chặn ở chỗ khác (cổng 8006 của Proxmox luôn là HTTPS).
+        return ""
+    try:
+        moi_truong = resolve_environment(src if isinstance(src, dict) else None)
+    except Exception as exc:                     # noqa: BLE001
+        # `LTT_ENV` lạ ⇒ coi như production. Đoán về phía an toàn: một lỗi gõ
+        # phím trong biến môi trường không được mở ra một đường không xác minh.
+        #
+        # **Và phải kêu lên.** Nuốt im lặng ở đây nghĩa là một máy chủ gõ nhầm
+        # `LTT_ENV` sẽ từ chối nối Proxmox mà không nói vì sao — người vận hành
+        # đi tìm lỗi TLS trong khi lỗi thật nằm ở một chữ cái.
+        log.warning("Proxmox: khong doc duoc ho so moi truong (%s) — coi nhu "
+                    "production va doi CA that.", exc)
+        moi_truong = Environment.PRODUCTION
+    if moi_truong is Environment.PRODUCTION:
+        return (f"production ma khong co {'LTT_VPS_PROXMOX_CA'}: tu choi noi toi "
+                f"Proxmox khi khong xac minh duoc chung chi. Ghim CA that, "
+                f"hoac chay o moi truong khac.")
+    if not bo_qua:
+        return (f"khong co LTT_VPS_PROXMOX_CA. Ngoai production van chay duoc, "
+                f"nhung phai khai tuong minh {KHOA_BO_QUA_TLS}=1 de khong ai "
+                f"bo qua xac minh ma khong biet.")
+    return ""
+
+
+def san_sang_tls(env: dict | None = None) -> tuple[bool, str]:
+    """Cấu hình TLS hiện tại có phát hành được không, và vì sao không.
+
+    Dành cho `/health/ready`. **Không chạm mạng** — nó trả lời câu hỏi về *cấu
+    hình*, và một phép kiểm sẵn sàng gọi ra ngoài là một phép kiểm sẽ đỏ vì
+    những lý do không liên quan tới nó.
+    """
+    src = os.environ if env is None else env
+    url = str(src.get("LTT_VPS_PROXMOX_URL", "")).strip().rstrip("/")
+    if url and not url.startswith(("http://", "https://")):
+        url = f"https://{url}"
+    ca = str(src.get("LTT_VPS_PROXMOX_CA", "")).strip()
+    bo_qua = str(src.get(KHOA_BO_QUA_TLS, "")).strip().lower() in (
+        "1", "true", "yes", "co")
+    ly_do = _ly_do_tls_khong_dat(url, ca, bo_qua, src)
+    return (not ly_do), ly_do
 
 
 class ProxmoxClient:
@@ -221,6 +324,21 @@ class ProxmoxClient:
     def danh_sach_vm(self) -> list:
         """Mọi VM trên node, kèm `vmid`, `status`, `maxmem`, `maxdisk`."""
         return self._goi("GET", f"/nodes/{self.config.node}/qemu") or []
+
+    def trang_thai_vm(self, vmid: int) -> dict:
+        """Trạng thái **hiện tại** của một VM: `status`, `qmpstatus`, `uptime`…
+
+        Đây là *authority* về nguồn điện của máy — CSDL chỉ giữ một quan sát gần
+        đây, không giữ sự thật. Trước VPS V2 không ai gọi endpoint này: mọi thứ
+        suy từ chỗ ta vừa gửi lệnh gì, tức suy từ **ý định**.
+
+        Đọc riêng từng máy thay vì lọc `danh_sach_vm()`: danh sách trả về cả
+        chục VM của chủ nhà và tốn một lần duyệt cho một câu hỏi về một máy — mà
+        vòng chờ ở `services/tac_vu.py` hỏi câu đó vài lần mỗi giây.
+        """
+        return self._goi(
+            "GET",
+            f"/nodes/{self.config.node}/qemu/{int(vmid)}/status/current") or {}
 
     def vmid_ke_tiep(self) -> int:
         """Số VMID trống theo Proxmox.

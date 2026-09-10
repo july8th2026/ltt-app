@@ -14,6 +14,7 @@ Bốn tính chất neo ở đây:
 """
 from __future__ import annotations
 
+import dataclasses
 import sys
 import types
 
@@ -23,15 +24,20 @@ from platform_core.llm import dieu_phoi as DP
 from platform_core.llm.cong_vlm import BanError, CongVlmError, VuotNganSachError
 
 
+#: Provider thứ hai **không có thật**, chỉ để đo cascade. Xem `GiaLap.cai`.
+PROVIDER_GIA = "ltt_llm_thu_hai"
+
+
 class GiaLap:
     """Thay `api_pool`/`api_keys`/`providers` bằng đồ giả, không cần CSDL."""
 
-    def __init__(self, cho_key=("ltt_llm", "gemini"), base_url_khoa="http://khoa:8299"):
+    def __init__(self, cho_key=("ltt_llm", PROVIDER_GIA), base_url_khoa="http://khoa:8299"):
         self.cho_key = set(cho_key)
         self.base_url_khoa = base_url_khoa
         self.loi = []          # provider bi danh_dau_loi
         self.thanh_cong = []   # provider bi danh_dau_thanh_cong
         self.da_thu = []       # provider da duoc goi that
+        self.pid_hien_tai = ""  # provider dang duoc thu (xem `_chon_key`)
 
     def cai(self, monkeypatch):
         gl = self
@@ -41,10 +47,17 @@ class GiaLap:
                 self.provider = p
                 self.base_url = gl.base_url_khoa
 
+        def _chon_key(db, *, category=None, model=None, thu_tu_provider=None):
+            # ⭐ Ghi lai provider DANG duoc thu. Tu pha 07 ca hai provider di
+            #    CHUNG mot nhanh giao thuc, nen ham goi gia khong con suy duoc
+            #    "minh dang dong vai ai" tu tham so — chi tu thu tu.
+            gl.pid_hien_tai = thu_tu_provider[0]
+            if thu_tu_provider[0] in gl.cho_key:
+                return Key(thu_tu_provider[0])
+            raise LookupError("het key")
+
         api_pool = types.SimpleNamespace(
-            chon_key=lambda db, *, category=None, model=None, thu_tu_provider=None: (
-                Key(thu_tu_provider[0]) if thu_tu_provider[0] in gl.cho_key
-                else (_ for _ in ()).throw(LookupError("het key"))),
+            chon_key=_chon_key,
             danh_dau_loi=lambda db, key, **k: gl.loi.append(key.provider),
             danh_dau_thanh_cong=lambda db, key, **k: gl.thanh_cong.append(key.provider),
         )
@@ -71,6 +84,38 @@ class GiaLap:
         monkeypatch.setattr(_ak, "lay_credential", api_keys.lay_credential,
                             raising=False)
         monkeypatch.setattr(_pv, "get", providers.get, raising=False)
+
+        # ⭐ TEST TỰ KHAI THẾ GIỚI CỦA NÓ — và đây là điểm sống còn của tệp này.
+        #
+        #    Tệp này chốt **CƠ CHẾ CASCADE** (bận thì đi tiếp · lỗi thật thì
+        #    đánh dấu · thứ tự bên gọi khai được tôn trọng), chứ không chốt
+        #    provider nào đang sống. Mệnh đề ấy phải **BẤT BIẾN với tập hợp
+        #    provider** — nếu không, mỗi lần nền tảng retire một provider thì
+        #    một phép kiểm về cơ chế lại đỏ, và người ta sẽ sửa nó bằng cách
+        #    hạ kỳ vọng, tức làm mất luôn thứ nó canh.
+        #
+        # 🔴 CẬP NHẬT 09/09/2026 (pha 07). Trước đây provider thứ hai ở đây là
+        #    `"gemini"` — nhà cung cấp thật duy nhất từng nói một giao thức khác.
+        #    Pha 07 xoá nó, và cùng với nó là **họ giao thức thứ hai**.
+        #
+        # ⛔ Cách sửa dễ (bỏ vế thứ hai đi, chỉ đo một provider) sẽ giết đúng thứ
+        #    tệp này canh: **cascade** không đo được với một provider. Cách sửa
+        #    dễ thứ hai (giữ tên `"gemini"`) thì để một phép kiểm cơ chế phụ thuộc
+        #    vào một cái tên đã chết.
+        #
+        # ⇒ Provider thứ hai nay là `PROVIDER_GIA` — một cái tên **không có thật**,
+        #   khai vào `PROVIDER_OPENAI` để nó đi đúng nhánh giao thức đang sống.
+        #   Cơ chế được đo, cái tên thì không còn nghĩa lý gì — đúng như phải thế.
+        monkeypatch.setattr(DP, "PROVIDER_OPENAI",
+                            tuple(DP.PROVIDER_OPENAI) + (PROVIDER_GIA,))
+
+        _pv_that = __import__("platform_core.providers", fromlist=["x"])
+        monkeypatch.setattr(
+            _pv_that, "REGISTRY",
+            {pid: dataclasses.replace(p, is_active=True)
+             for pid, p in _pv_that.REGISTRY.items()},
+            raising=False)
+
         monkeypatch.setattr("platform_core.models.APIKEY_CAT_CHAT", "chat",
                             raising=False)
         gl.mo_dun = types.SimpleNamespace(api_pool=_ap, api_keys=_ak, providers=_pv)
@@ -92,10 +137,12 @@ def _dat_hanh_vi(monkeypatch, gl, hanh_vi: dict):
                 su_dung=SuDung(token_vao=10, token_ra=5, dang_tin=True))
         return f
 
+    # 🔴 Hai provider nay CUNG di mot nhanh giao thuc (pha 07 go ho thu hai), nen
+    #    ham gia phai biet no dang dong vai AI. Tham so khong noi duoc dieu do
+    #    (credential la chuoi chung, base_url giong nhau), nen `GiaLap._chon_key`
+    #    ghi lai provider dang duoc thu — xem chu thich o do.
     monkeypatch.setattr(DP, "_goi_openai",
-                        lambda base, cred, than, t: gia("ltt_llm")())
-    monkeypatch.setattr(DP, "_goi_gemini",
-                        lambda m, cred, msg, mt, t: gia("gemini")())
+                        lambda base, cred, than, t: gia(gl.pid_hien_tai)())
 
 
 TIN = [{"role": "user", "content": "xin chao"}]
@@ -106,7 +153,7 @@ TIN = [{"role": "user", "content": "xin chao"}]
 def test_provider_dau_tien_chay_thi_khong_thu_cai_sau(monkeypatch):
     gl = GiaLap().cai(monkeypatch)
     _dat_hanh_vi(monkeypatch, gl, {})
-    kq = DP.goi(None, messages=TIN, thu_tu_provider=["ltt_llm", "gemini"])
+    kq = DP.goi(None, messages=TIN, thu_tu_provider=["ltt_llm", PROVIDER_GIA])
     assert kq.noi_dung == "tu ltt_llm"
     assert gl.da_thu == ["ltt_llm"]
     assert gl.thanh_cong == ["ltt_llm"]
@@ -135,18 +182,18 @@ def test_on_dispatch_chi_goi_ngay_truoc_http_that(monkeypatch):
 def test_ban_thi_di_tiep_va_KHONG_danh_dau_loi(monkeypatch):
     gl = GiaLap().cai(monkeypatch)
     _dat_hanh_vi(monkeypatch, gl, {"ltt_llm": BanError("may B dang ban")})
-    kq = DP.goi(None, messages=TIN, thu_tu_provider=["ltt_llm", "gemini"])
-    assert kq.noi_dung == "tu gemini"
-    assert gl.da_thu == ["ltt_llm", "gemini"]
+    kq = DP.goi(None, messages=TIN, thu_tu_provider=["ltt_llm", PROVIDER_GIA])
+    assert kq.noi_dung == f"tu {PROVIDER_GIA}"
+    assert gl.da_thu == ["ltt_llm", PROVIDER_GIA]
     assert gl.loi == [], "ban ma danh dau loi -> key model nha tu tat sau 5 lan (D-005)"
 
 
 def test_moi_provider_deu_ban_thi_KhongCoProviderNao(monkeypatch):
     gl = GiaLap().cai(monkeypatch)
     _dat_hanh_vi(monkeypatch, gl, {"ltt_llm": BanError("ban"),
-                                   "gemini": BanError("ban")})
+                                   PROVIDER_GIA: BanError("ban")})
     with pytest.raises(DP.KhongCoProviderNao) as e:
-        DP.goi(None, messages=TIN, thu_tu_provider=["ltt_llm", "gemini"])
+        DP.goi(None, messages=TIN, thu_tu_provider=["ltt_llm", PROVIDER_GIA])
     assert gl.loi == []
     assert all("ban" in d for d in e.value.chi_tiet)
 
@@ -158,14 +205,14 @@ def test_loi_that_thi_danh_dau_loi_roi_moi_di_tiep(monkeypatch):
     _dat_hanh_vi(monkeypatch, gl, {"ltt_llm": CongVlmError("502")})
     states = []
     kq = DP.goi(
-        None, messages=TIN, thu_tu_provider=["ltt_llm", "gemini"],
+        None, messages=TIN, thu_tu_provider=["ltt_llm", PROVIDER_GIA],
         on_dispatch=lambda provider: states.append((provider, "dispatched")),
         on_rejected=lambda provider: states.append((provider, "rejected")))
-    assert kq.noi_dung == "tu gemini"
+    assert kq.noi_dung == f"tu {PROVIDER_GIA}"
     assert gl.loi == ["ltt_llm"], "hong that thi PHAI danh dau"
     assert states == [
         ("ltt_llm", "dispatched"), ("ltt_llm", "rejected"),
-        ("gemini", "dispatched"),
+        (PROVIDER_GIA, "dispatched"),
     ], "phan hoi xac dinh phai go ambiguity truoc khi fallback"
 
 
@@ -175,7 +222,7 @@ def test_vuot_ngan_sach_thi_nem_ngay_khong_thu_provider_khac(monkeypatch):
     gl = GiaLap().cai(monkeypatch)
     _dat_hanh_vi(monkeypatch, gl, {"ltt_llm": VuotNganSachError("qua to")})
     with pytest.raises(VuotNganSachError):
-        DP.goi(None, messages=TIN, thu_tu_provider=["ltt_llm", "gemini"])
+        DP.goi(None, messages=TIN, thu_tu_provider=["ltt_llm", PROVIDER_GIA])
     assert gl.da_thu == ["ltt_llm"], "qua to o day thi qua to o moi noi"
     assert gl.loi == [], "khong phai loi cua provider"
 
@@ -183,18 +230,18 @@ def test_vuot_ngan_sach_thi_nem_ngay_khong_thu_provider_khac(monkeypatch):
 # ── 5. Hết key thì bỏ qua provider đó ────────────────────────────────────────
 
 def test_provider_khong_cap_duoc_key_thi_bo_qua(monkeypatch):
-    gl = GiaLap(cho_key=("gemini",)).cai(monkeypatch)
+    gl = GiaLap(cho_key=(PROVIDER_GIA,)).cai(monkeypatch)
     _dat_hanh_vi(monkeypatch, gl, {})
-    kq = DP.goi(None, messages=TIN, thu_tu_provider=["ltt_llm", "gemini"])
-    assert kq.noi_dung == "tu gemini"
-    assert gl.da_thu == ["gemini"]
+    kq = DP.goi(None, messages=TIN, thu_tu_provider=["ltt_llm", PROVIDER_GIA])
+    assert kq.noi_dung == f"tu {PROVIDER_GIA}"
+    assert gl.da_thu == [PROVIDER_GIA]
 
 
 def test_provider_la_thi_khong_no(monkeypatch):
-    gl = GiaLap(cho_key=("la", "gemini")).cai(monkeypatch)
+    gl = GiaLap(cho_key=("la", PROVIDER_GIA)).cai(monkeypatch)
     _dat_hanh_vi(monkeypatch, gl, {})
-    kq = DP.goi(None, messages=TIN, thu_tu_provider=["la", "gemini"])
-    assert kq.noi_dung == "tu gemini"
+    kq = DP.goi(None, messages=TIN, thu_tu_provider=["la", PROVIDER_GIA])
+    assert kq.noi_dung == f"tu {PROVIDER_GIA}"
 
 
 # ── 6. Thứ tự là của bên gọi ─────────────────────────────────────────────────
@@ -204,9 +251,9 @@ def test_ben_goi_khai_thu_tu_nguoc_lai_thi_theo_dung_the(monkeypatch):
     lung khach o API ban ra ngoai)."""
     gl = GiaLap().cai(monkeypatch)
     _dat_hanh_vi(monkeypatch, gl, {})
-    kq = DP.goi(None, messages=TIN, thu_tu_provider=["gemini", "ltt_llm"])
-    assert kq.noi_dung == "tu gemini"
-    assert gl.da_thu == ["gemini"]
+    kq = DP.goi(None, messages=TIN, thu_tu_provider=[PROVIDER_GIA, "ltt_llm"])
+    assert kq.noi_dung == f"tu {PROVIDER_GIA}"
+    assert gl.da_thu == [PROVIDER_GIA]
 
 
 # ── 7. Đếm token về sổ ───────────────────────────────────────────────────────
@@ -226,8 +273,13 @@ def test_token_ra_duoc_bao_ve_api_pool(monkeypatch):
 # ── 8. Moi provider co id model rieng ────────────────────────────────────────
 
 def test_model_theo_provider_gui_dung_ten_cho_tung_ben(monkeypatch):
-    """⛔ Model nha ten `ltt_llm`, Gemini ten `gemini-2.5-flash`. Gui nham ten sang
-    provider kia thi no tu choi, va ben goi se tuong provider do 'dang hong'."""
+    """⛔ Mỗi provider có id model riêng. Gửi nhầm tên sang provider kia thì nó
+    từ chối, và bên gọi sẽ tưởng provider đó 'đang hỏng'.
+
+    🔴 Pha 07 gỡ Gemini — họ giao thức thứ hai duy nhất. Vế đối chiếu của phép
+       kiểm này vì thế biến mất, nhưng mệnh đề thì không: tên model khai cho
+       một provider phải tới ĐÚNG provider đó, không phải một tên nào khác.
+    """
     from platform_core.llm.cong_vlm import KetQuaChat, SuDung
     gl = GiaLap().cai(monkeypatch)
     thay = {}
@@ -236,31 +288,30 @@ def test_model_theo_provider_gui_dung_ten_cho_tung_ben(monkeypatch):
                         lambda base, cred, than, t: (
                             thay.update(openai=than.get("model")),
                             KetQuaChat(noi_dung="x", su_dung=SuDung(dang_tin=True)))[1])
-    monkeypatch.setattr(DP, "_goi_gemini",
-                        lambda m, cred, msg, mt, t: (
-                            thay.update(gemini=m),
-                            KetQuaChat(noi_dung="y", su_dung=SuDung(dang_tin=True)))[1])
 
     DP.goi(None, messages=TIN, thu_tu_provider=["ltt_llm"],
-           model_theo_provider={"ltt_llm": "ltt_llm", "gemini": "gemini-2.5-flash"})
-    assert thay.get("openai") == "ltt_llm"
+           model_theo_provider={"ltt_llm": "qwen38-api"})
+    assert thay.get("openai") == "qwen38-api"
 
+    # ⭐ Và tên của MỘT provider khác không được rơi sang đây.
     thay.clear()
-    DP.goi(None, messages=TIN, thu_tu_provider=["gemini"],
-           model_theo_provider={"ltt_llm": "ltt_llm", "gemini": "gemini-2.5-flash"})
-    assert thay.get("gemini") == "gemini-2.5-flash"
+    DP.goi(None, messages=TIN, thu_tu_provider=["ltt_llm"],
+           model_theo_provider={"ltt_llm": "qwen38-api", "provider-khac": "ten-la"})
+    assert thay.get("openai") == "qwen38-api"
+    assert gl is not None
 
 
 def test_thieu_khai_thi_roi_ve_model_chung(monkeypatch):
     from platform_core.llm.cong_vlm import KetQuaChat, SuDung
     gl = GiaLap().cai(monkeypatch)
     thay = {}
-    monkeypatch.setattr(DP, "_goi_gemini",
-                        lambda m, cred, msg, mt, t: (
-                            thay.update(gemini=m),
+    monkeypatch.setattr(DP, "_goi_openai",
+                        lambda base, cred, than, t: (
+                            thay.update(openai=than.get("model")),
                             KetQuaChat(noi_dung="y", su_dung=SuDung(dang_tin=True)))[1])
-    DP.goi(None, messages=TIN, thu_tu_provider=["gemini"], model="chung-chung")
-    assert thay.get("gemini") == "chung-chung"
+    DP.goi(None, messages=TIN, thu_tu_provider=["ltt_llm"], model="chung-chung")
+    assert thay.get("openai") == "chung-chung"
+    assert gl is not None
 
 
 # ── 9. base_url cua KHOA di truoc base_url cua REGISTRY ──────────────────────

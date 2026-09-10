@@ -90,7 +90,10 @@ cây" (CLAUDE.md đã gỡ `ho_so_he_thong.txt` đúng vì lý do này).
 
 ## 2. LỘ TRÌNH — 8 PHASE
 
-Ký hiệu gate: `VL` = `python tools\gate.py --vong-lap` (~15s) · `FULL` = `python tools\gate.py` (~5 phút)
+Ký hiệu gate: `VL` = vòng lặp nhanh · `FULL` = gate đầy đủ. Cấp nào dùng khi nào,
+và giá **đo được** của từng cấp: `docs/00_LTT_OPERATING_CONTRACT.md` §4.
+*(Chỗ này từng ghi "~15s" và "~5 phút" — cả hai đã trôi; đo thật là 21,4 s và
+11,4 phút.)*
 
 ### Phase A — Preflight + inventory + baseline (prompt 01)
 Việc thật ở kho này:
@@ -191,12 +194,15 @@ Gate G: ma trận xanh cho core flow · bằng chứng lưu đúng convention ·
    safe-area · `100vh` sót (phân biệt cố ý vs bug) · video thiếu `playsinline` ·
    drag-only · giá/model/credit bị chép vào frontend.
 2. Build 4 frontend đúng thứ tự AGENTS.md.
-3. `python tools\test_nhanh.py` (~4 phút).
-4. **`python tools\gate.py` — bắt buộc, cuối cùng.**
-5. Chạy lại ma trận browser **sau** build cuối (bundle đã đổi thì bằng chứng trước build vô giá trị).
-6. Kiểm cache-bust static (CLAUDE.md luật 6 — `?v={{ asset_ver }}`).
-7. Cập nhật `docs/NHAT_KY.md` + `docs/_luutru/PROJECT_MEMORY.md` đúng convention.
-8. Ghi rollback.
+3. **`python tools\gate.py` — bắt buộc, cuối cùng.**
+   ⛔ **Đừng chạy `test_nhanh.py` trước nó.** Bước `bo test` **bên trong** gate
+   *chính là* `test_nhanh.py` (`tools/gate.py:844`), nên chạy cả hai là trả ~4
+   phút hai lần cho cùng một tập pass/fail. *(Hai dòng riêng ở đây trước
+   2026-09-08 chính là chỗ dạy ra lỗi đó.)*
+4. Chạy lại ma trận browser **sau** build cuối (bundle đã đổi thì bằng chứng trước build vô giá trị).
+5. Kiểm cache-bust static (CLAUDE.md luật 6 — `?v={{ asset_ver }}`).
+6. Cập nhật `docs/NHAT_KY.md` + `docs/_luutru/PROJECT_MEMORY.md` đúng convention.
+7. Ghi rollback.
 
 Verdict chỉ được là `MOBILE RELEASE PASS` khi hội đủ điều kiện mục 11 của master prompt.
 Không có thiết bị thật ⇒ **`AUTOMATED MOBILE GATE PASS / REAL-DEVICE GATE PENDING`**,

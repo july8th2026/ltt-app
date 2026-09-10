@@ -1,0 +1,59 @@
+{# Manh tien do — dung chung boi trang chi tiet va bo hoi lai cua htmx.
+
+   ⛔ Manh nay KHONG bao gio nhan `van_hanh`. No duoc hoi lai vai giay mot lan,
+      va mot manh chi tiet van hanh bi hoi lai lien tuc la mot cho ro ri lap lai
+      thay vi mot lan. Chi tiet van hanh chi hien o lan dung trang dau tien, cho
+      operator, trong `asv_chi_tiet.html`. #}
+<div id="asv-tien-do"
+     {% if run.status in ("queued", "running") %}
+     hx-get="{{ app.route_prefix }}/run/{{ run.id }}/tien-do"
+     hx-trigger="every 3s" hx-swap="outerHTML"
+     {% endif %}>
+
+  <p class="asv-tom-tat">
+    {% if run.status == "done" %}{{ _("Đã xong.") }}
+    {% elif run.status == "cancelled" %}{{ _("Bạn đã huỷ lần chạy này.") }}
+    {% elif run.status == "error" %}{{ _("Lần chạy dừng lại vì một bước không hoàn tất.") }}
+    {% else %}{{ _("Đang xử lý…") }}{% endif %}
+  </p>
+
+  <ol class="asv-buoc">
+    {% for m in dong.giai_doan %}
+      <li class="asv-buoc-{{ m.trang_thai }}">
+        <span class="asv-buoc-ten">{{ _(nhan_giai_doan.get(m.giai_doan, m.giai_doan)) }}</span>
+        <span class="asv-buoc-tt">
+          {% if m.trang_thai == "succeeded" %}{{ _("xong") }}
+          {% elif m.trang_thai == "running" %}{{ _("đang chạy") }}
+          {% elif m.trang_thai == "queued" %}{{ _("đang chờ") }}
+          {% elif m.trang_thai == "cancelled" %}{{ _("đã huỷ") }}
+          {% elif m.trang_thai.startswith("failed") %}{{ _("không hoàn tất") }}
+          {% else %}{{ _("chưa tới") }}{% endif %}
+        </span>
+        {% if m.giay %}<span class="asv-buoc-giay">{{ "%.1f"|format(m.giay) }}s</span>{% endif %}
+      </li>
+    {% endfor %}
+  </ol>
+
+  {% if loi_khach %}
+    <div class="alert alert-err" role="alert">
+      {{ _("Bước không hoàn tất:") }} {{ _(nhan_giai_doan.get(loi_khach.split(":")[0], loi_khach.split(":")[0])) }}
+    </div>
+    <form method="post" action="{{ app.route_prefix }}/run/{{ run.id }}/thu-lai">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="giai_doan" value="{{ loi_khach.split(':')[0] }}">
+      <button class="btn" type="submit">{{ _("Thử lại bước này") }}</button>
+    </form>
+  {% endif %}
+
+  {% if co_ket_qua %}
+    <a class="btn primary" href="{{ app.route_prefix }}/run/{{ run.id }}/tai">
+      {{ _("Tải video đã lồng tiếng") }}</a>
+  {% endif %}
+
+  {% if run.status in ("queued", "running") %}
+    <form method="post" action="{{ app.route_prefix }}/run/{{ run.id }}/huy">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="btn ghost" type="submit">{{ _("Huỷ lần chạy") }}</button>
+    </form>
+  {% endif %}
+</div>

@@ -20,11 +20,17 @@ router = APIRouter(tags=["image"])
 _ASPECTS = ("16:9", "9:16", "1:1", "4:3", "3:4")
 
 
+#: Nhà cung cấp ảnh DUY NHẤT còn phục vụ (pha 06, AI CLEAN REBUILD V2).
+#: ⛔ Đừng viết lại `"gemini"` ở đây: bảng chọn model là **cửa bán hàng**, và một
+#:    cửa bán thứ không còn chạy thì khách chọn xong mới biết.
+_PROVIDER = "ltt_image"
+
+
 def _models() -> list:
     from platform_core import providers
     from platform_core.models import APIKEY_CAT_IMAGE
     return [(m.id, m.label())
-            for m in providers.models_for("gemini", category=APIKEY_CAT_IMAGE)
+            for m in providers.models_for(_PROVIDER, category=APIKEY_CAT_IMAGE)
             if m.is_active]
 
 
@@ -154,7 +160,7 @@ async def queue(
     count = max(1, min(int(count or 1), 4))
     model_ids = [m[0] for m in _models()]
     if model not in model_ids:
-        model = model_ids[0] if model_ids else "gemini-2.5-flash-image"
+        model = model_ids[0] if model_ids else "hidream-o1"
 
     u = user_hien_tai(request)
     if u is None:

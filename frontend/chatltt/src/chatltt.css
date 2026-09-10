@@ -134,13 +134,26 @@
   background: var(--surface-canvas);
 }
 
+/* 🔴 `flex-wrap: wrap` — do 07/09 tren ma tran 390 px (P09 "Dat khi").
+   Voi `nowrap`, bon phan tu (65+77+56+100 = 298 px + 3 gap) bi ep trong 366 px
+   kha dung: chip "Model chua san sang" co lai con 56 px RONG va 72 px CAO, tuc
+   chu gay bon dong trong mot hinh bau duc. O chon du an co lai con "— k".
+
+   ⛔ Khong sua bang `overflow-x: auto`: mot thanh cuon ngang o hang dinh la mot
+      hang dinh nguoi dung khong thay het, va tren dien thoai thi ho khong biet
+      la con thu de cuon toi. Xuong dong thi moi thu deu nhin thay duoc. */
 .ltc-dinh {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 12px;
   padding: 10px 16px;
   border-bottom: 1px solid var(--border-subtle);
 }
+
+/* ⭐ Chip trang thai KHONG duoc co lai: no la mot cau, khong phai mot nhan
+   trang tri, va mot cau gay bon dong trong hinh bau duc thi doc khong ra. */
+.ltc-dinh > .ltc-chip { flex: 0 0 auto; }
 
 .ltc-model { display: flex; align-items: center; gap: 8px; color: var(--text-secondary); }
 .ltc-model select {
@@ -762,3 +775,60 @@
   font-size: 12px;
   font-family: var(--font-mono, monospace);
 }
+
+/* ── The duyet (H44 P09) ─────────────────────────────────── */
+
+.ltc-duyet__ds { display: flex; flex-direction: column; gap: 10px; margin: 8px 0; }
+
+/* 🔴 Vien canh bao, khong phai vien loi: day la mot cau hoi, khong phai
+   mot su co. Nhung no phai NOI BAT hon moi khoi khac trong dong thoi gian —
+   day la cho duy nhat nguoi dung phai DUNG LAI va quyet dinh. */
+.ltc-duyet {
+  padding: 12px 14px;
+  background: var(--surface-overlay);
+  border: 1px solid var(--status-warn-border, var(--border-subtle));
+  border-left-width: 4px;
+  border-radius: var(--radius-sm);
+}
+.ltc-duyet__dau { display: flex; align-items: baseline; gap: 10px; }
+.ltc-duyet__tieude { margin: 0; font-size: 15px; color: var(--text-primary); }
+.ltc-duyet__han { margin-left: auto; font-size: 12px; color: var(--text-muted); }
+.ltc-duyet__hequa { margin: 6px 0 10px; color: var(--text-secondary); }
+
+.ltc-duyet__doiso { margin: 0 0 10px; }
+.ltc-duyet__dong { display: flex; gap: 8px; padding-top: 6px; align-items: baseline; }
+.ltc-duyet__dong dt { color: var(--text-muted); min-width: 92px; }
+.ltc-duyet__dong dd { margin: 0; flex: 1; word-break: break-word; }
+.ltc-duyet__dong input {
+  width: 100%;
+  padding: 4px 8px;
+  background: var(--surface-canvas);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  font: inherit;
+}
+
+.ltc-duyet__gia { margin: 0 0 10px; color: var(--text-primary); }
+.ltc-duyet__chuagia { color: var(--status-danger); margin-right: 8px; }
+.ltc-duyet__loi { margin: 0 0 10px; color: var(--status-danger); }
+
+.ltc-duyet__nut { display: flex; gap: 8px; align-items: center; }
+.ltc-duyet button {
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-canvas);
+  color: var(--text-secondary);
+  font: inherit;
+  cursor: pointer;
+}
+.ltc-duyet button:disabled { opacity: .45; cursor: default; }
+
+/* ⭐ "Tu choi" va "Duyet" CUNG co chu, cung padding. Chi khac mau vien. Mot
+   the ma nut dong y to hon nut tu choi la mot the day nguoi ta bam dong y —
+   va o day "dong y" nghia la tieu tien that. */
+.ltc-duyet__dongy { border-color: var(--status-warn-border, var(--border-subtle)); }
+.ltc-duyet__dongy:not(:disabled) { color: var(--text-primary); }
+.ltc-duyet__sua { margin-left: auto; }
+.ltc-duyet__baogia { padding: 2px 10px !important; }

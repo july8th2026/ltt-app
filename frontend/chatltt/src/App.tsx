@@ -17,8 +17,9 @@ import { BangGhiNho } from './BangGhiNho'
 import { BangNghienCuu } from './BangNghienCuu'
 import { SoanThao } from './SoanThao'
 import { TaoMedia } from './TaoMedia'
+import { TheDuyet } from './TheDuyet'
 import { ThongDiepView } from './ThongDiepView'
-import type { HoiThoai, NangLuc, SuThat, ThongDiep } from './kieu'
+import type { HoiThoai, NangLuc, PhieuDuyet, SuThat, ThongDiep } from './kieu'
 
 const MA_LOI: Record<string, string> = {
   ban: 'Model đang bận. Thử lại sau ít giây.',
@@ -158,6 +159,7 @@ export function App({ api }: AppProps) {
   const [dsDuAn, datDsDuAn] = useState<{ id: string; ten: string }[]>([])
   const [duAnCuaConv, datDuAnCuaConv] = useState('')
   const [moGhiNho, datMoGhiNho] = useState(false)
+  const [phieuDuyet, datPhieuDuyet] = useState<PhieuDuyet[]>([])
   const [coNghienCuu, datCoNghienCuu] = useState(false)
   const [moNghienCuu, datMoNghienCuu] = useState(false)
 
@@ -243,6 +245,28 @@ export function App({ api }: AppProps) {
    *    của hội thoại là sự thật. Ở mọi lời gọi khác, thứ đúng là **lựa chọn
    *    người dùng vừa làm**, không phải giá trị cũ trong CSDL.
    */
+  /**
+   * Phieu duyet con cho. Nguon BEN — song qua F5, dong tab, restart.
+   *
+   * ⛔ Lay o DAY, mot lan, roi truyen xuong. Mot the tu goi mang la N lan
+   *    goi cho N tin nhan tren man hinh.
+   */
+  const napPhieuDuyet = useCallback(() => {
+    api.duyetDangCho()
+      // 🔴 `r.items` PHAI duoc kiem hinh dang. Do 07/09: mot than tra ve khong
+      //    co `items` (bo gia lap, mot trang loi cua proxy dung JSON, mot lech
+      //    phien ban) lam `phieuDuyet` thanh `undefined`, roi `.length` o duoi
+      //    NEM va **ca khung hoi thoai trang man hinh**.
+      //
+      // ⛔ `.catch()` khong do duoc ca nay: promise KHONG bi tu choi, no thanh
+      //    cong voi mot hinh dang khac. Hai chuyen khac nhau, va toi da viet
+      //    mot chu thich rat can than cho `.catch` roi bo qua duong thanh cong.
+      .then((r) => datPhieuDuyet(Array.isArray(r?.items) ? r.items : []))
+      // ⭐ Hong thi de DANH SACH CU nguyen — xoa no di la lam bien mat nut
+      //    duyet cua mot phieu van dang cho that.
+      .catch(() => undefined)
+  }, [api])
+
   const napSuThat = useCallback(async (id: string,
                                        { dongBoAlias = false } = {}) => {
     const st = await api.suThat(id)
@@ -260,6 +284,7 @@ export function App({ api }: AppProps) {
     if (!convId) { datSuThat(null); return }
     // ⭐ CHO DUY NHAT truyen `dongBoAlias: true` — day la luc VUA MO mot hoi
     //    thoai, nen model cua no la su that. Xem docstring `napSuThat`.
+    napPhieuDuyet()
     napSuThat(convId, { dongBoAlias: true }).catch((e) => {
       datLoi(nhanLoi(e))
       // ⛔ VA TRA VE MAN HINH TRONG, khong dung o mot man hinh loi.
@@ -680,6 +705,17 @@ export function App({ api }: AppProps) {
               onChuyenNhanh={chuyenNhanh}
               duongTaiSan={(k) => api.duongTaiSan(k)}
               onDocTo={coTieng ? (_m, c) => datChuDocTo(c) : undefined}
+              theDuyet={phieuDuyet.length > 0 ? (
+                <div className="ltc-duyet__ds">
+                  {phieuDuyet.map((p) => (
+                    <TheDuyet key={p.approval_id} api={api} phieu={p}
+                              onXong={() => {
+                                napPhieuDuyet()
+                                if (convId) napSuThat(convId).catch(() => undefined)
+                              }} />
+                  ))}
+                </div>
+              ) : undefined}
               onTaoLai={(x) => guiLuot({ taoLaiCua: x.id })}
               onSuaGuiLai={(x) => {
                 const chu = window.prompt('Sửa câu hỏi',

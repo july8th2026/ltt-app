@@ -40,27 +40,62 @@ job này cũng giữ-và-thu theo lượt, mỗi lượt bị **tính hai lần*
 
 ## Ước trần đến từ đâu
 
-Neo vào giá đã có thật, không bịa: `apps/ltt_llm` bán **400 credit / 1M token**.
-Một lượt của vòng này mang ngữ cảnh vài nghìn ký tự nguồn:
+### 🔴 Bản đầu của mục này SAI 13 LẦN, và nó đã lên production
+
+Tôi viết:
 
     ~4.000 token vao + ~1.000 token ra = ~5.000 token
-    5.000 x 400 / 1.000.000              = 2 credit
+    5.000 x 400 / 1.000.000              = 2 credit          <- SAI
 
-⚠️ Ước phải **cao hơn** thật, cùng luật `gia_trich.uoc_tran`: ước thấp thì khách
-   bấm đồng ý rồi lượt hỏng giữa chừng vì hết tiền — hỏng **sau** khi đã hứa.
-   Nên lấy **3**, và cộng một lượt cho bước tổng hợp cuối.
+⛔ Tôi áp **giá RA** cho **cả token vào**. `platform_core/llm/gia_token.py` có
+   **ba** giá, không một:
 
-🟡 Đây là một **neo**, không phải một phép đo. Đo lại sau 20–50 lượt thật rồi
-   chốt — cùng hạng mục M3 của B4 và §6 của P06.
+    GIA_VAO_MOI_CREDIT_1M    =  50
+    GIA_VAO_CACHE_CREDIT_1M  =  10
+    GIA_RA_CREDIT_1M         = 400        <- toi ap so nay cho tat ca
+
+Token vào **rẻ hơn 8 lần** token ra, và một vòng nghiên cứu **phần lớn là token
+vào** (nguồn đưa vào nhắc). Nên phép nhân của tôi lệch về đúng phía đắt nhất.
+
+### Đo lại bằng chính bảng giá đó
+
+    vong 1  1.619 vao +  60 ra  ->  104 mcredit
+    vong 2  2.939 vao +  60 ra  ->  170 mcredit
+    vong 3  3.467 vao +  60 ra  ->  197 mcredit
+    tong hop 3.567 vao + 800 ra ->  498 mcredit
+    -------------------------------------------
+    TONG                            969 mcredit  =  1 credit
+
+`uoc_tran(3)` cũ trả **13**. Thật là **1**.
+
+### Hậu quả người dùng THẤY
+
+`_p_nghien_cuu.chay` từ chối khi số dư dưới `uoc_tran()`. Tức nó **chặn một
+khách có 12 credit** khỏi một việc tốn 1.
+
+⭐ Đúng lớp `phanh-luon-an-te-hon-khong-co-phanh`, chỉ khác chiều: bài học cũ
+   nói về trần đặt **dưới** nhu cầu; đây là một cửa đặt **trên** nhu cầu, và nó
+   biến một tính năng chạy được thành một tính năng bị từ chối.
+
+⚠️ Vẫn giữ nguyên tắc **ước cao hơn thật** — nhưng "cao hơn" nghĩa là một biên,
+   không phải một bậc độ lớn. Lấy **1 credit/vòng + 1 cho tổng hợp** ⇒
+   `uoc_tran(3) = 4`, tức **gấp ~4 lần** số đo. Đủ để một lượt nặng bất thường
+   không hỏng giữa chừng, không đủ để chặn ai.
+
+🔴 Và vì sao `test_841` KHÔNG bắt được: bốn phép kiểm của nó chỉ hỏi *"ước có
+   > 0 không"* và *"có tăng theo vòng không"*. Một hằng số sai 13 lần vẫn dương
+   và vẫn tăng đơn điệu. Phép kiểm **yếu hơn** thứ nó cần đo — mặt trái của
+   `phep-kiem-manh-hon-thu-no-do`. `test_847` neo thẳng vào `gia_token`.
 """
 from __future__ import annotations
 
 #: Ước credit cho MỘT vòng (kế hoạch → thu → trích). Xem docstring.
-CREDIT_UOC_MOI_VONG = 3
+#: 🔴 Từ 3 xuống 1 (07/09): số 3 sinh ra từ một phép nhân sai — xem docstring.
+CREDIT_UOC_MOI_VONG = 1
 
 #: Bước tổng hợp cuối cũng là một lượt model, và nó mang ngữ cảnh **dài nhất**
 #: (toàn bộ nguồn đã thu). Đếm nó riêng thay vì gộp vào trần vòng.
-CREDIT_UOC_TONG_HOP = 4
+CREDIT_UOC_TONG_HOP = 1
 
 #: Phiên bản giá — đi vào bản ghi để đối soát. Chữ `tam` có chủ đích, cùng lý do
 #: `gia_trich.PHIEN_BAN_GIA`: ngày chốt giá thật, mọi bút toán cũ lọc ra được.

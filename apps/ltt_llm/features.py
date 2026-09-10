@@ -26,25 +26,21 @@ log = logging.getLogger("apps.ltt_llm.features")
 #:    `ltt_llm` mà nhận về Gemini là bán sai hàng (D-010). Máy B bận thì báo bận,
 #:    và để khách quyết định — khác hẳn `planner.py`, nơi cascade là hợp lệ vì
 #:    đó là việc nội bộ và không có lời hứa nào với khách về model nào.
-THU_TU_PROVIDER = ("ltt_llm",)
-
-#: ⭐ ALIAS CÔNG KHAI -> ID NỘI BỘ. Đây là lớp đệm, và nó có lý do sống:
+#: ⛔ BÍ DANH, không phải định nghĩa — nguồn chân lý nay ở
+#:    `platform_core/llm/canonical.py` (chuyển lên ở pha 05 của AI CLEAN
+#:    REBUILD V2). Tên ở đây **giữ nguyên**, nên hợp đồng công khai của app
+#:    không đổi một chữ.
 #:
-#:    "Aliases exist so a vendor change is not a breaking change. If the raw id
-#:     leaks anywhere a customer reads, integrations start pinning to it and the
-#:     alias stops being a layer of insulation."   — test_212
-#:
-#: ⚠️ Bản đầu của tôi đặt alias TRÙNG HỆT id nội bộ (`ltt_llm` -> `ltt_llm`), tức
-#:    là xoá sạch lớp đệm. `test_no_vendor_model_id_reaches_a_customer_surface`
-#:    bắt được. Khách gọi `ltt_llm`; đằng sau là `qwen38-api`, và ngày ta đổi sang
-#:    model khác thì **mã của khách không phải sửa một dòng nào**.
-ALIAS_SANG_ID = {
-    "ltt_llm": "qwen38-api",
-    "ltt_llm_vision": "qwen38-vision",
-}
-
-MODEL_MAC_DINH = "ltt_llm"
-MODEL_HOP_LE = tuple(ALIAS_SANG_ID)
+#: ⭐ Vì sao phải chuyển: **ba bên** cần cùng bảng này và không bên nào được
+#:    import `apps/ltt_llm` — `.importlinter` cưỡng chế cả ba:
+#:      app khác          -> contract `app-doc-lap-voi-nhau`
+#:      agent/planner.py  -> contract `nen-tang-khong-phu-thuoc-app`
+#:      server/streaming  -> contract `server-khong-phu-thuoc-app-cu-the`
+#:    Bốn dòng chú thích gốc (D-010, lý do lớp đệm, và lỗi alias-trùng-id đã
+#:    mắc một lần) đi theo sang tệp mới, không bị bỏ lại.
+from platform_core.llm.canonical import (ALIAS_SANG_ID,  # noqa: F401
+                                         MODEL_HOP_LE, MODEL_MAC_DINH,
+                                         THU_TU_PROVIDER)
 
 
 #: ⛔ BÍ DANH, không phải định nghĩa — nguồn chân lý ở `ngan_sach.py`.

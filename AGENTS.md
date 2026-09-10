@@ -340,14 +340,16 @@ lượt gate xanh. Commit trên nhánh riêng thì rẻ và không ai chịu h�
 - *"Chạy tay xanh rồi, chắc ổn"* → **lớp C**
 - *"Gate lâu quá, commit trước rồi chạy sau"* → **lớp D**
 
-## 4b. Chạy test — ba lệnh, và **đừng gọi `pytest` trực tiếp**
+## 4b. Chạy test — phần KỸ THUẬT
 
-| Lệnh | Dùng khi | Thời gian |
-|---|---|---|
-| `python tools\gate.py --vong-lap` | sau **mỗi** lần sửa — **mặc định** | **~15 giây** |
-| `python tools\test_nhanh.py` | muốn chạy cả bộ test | ~4 phút |
-| `python tools\gate.py` | **trước khi báo xong** | ~5 phút |
-| `python tools\gate.py --noi-tiep` | khi nghi kết quả bị **nhiễu** bởi song song hoặc tải máy | ~25–30 phút |
+🔑 **Cấp nào chạy khi nào là ở `docs/00_LTT_OPERATING_CONTRACT.md` §4, không ở
+đây.** Mục này chỉ giữ những sự thật kỹ thuật mà hợp đồng trỏ tới.
+
+*(Trước 2026-09-08 chỗ này có một bảng bốn lệnh **trùng** với `CLAUDE.md` §4 và
+**mâu thuẫn** với `docs/DEVELOPMENT_WORKFLOW.md` §2 — hai nơi bảo `--vong-lap`
+sau mỗi lần sửa, một nơi bảo `--doi`. Bảng đó cũng ghi "~5 phút" cho gate đầy đủ,
+trong khi đo trên 43 lượt thật là **11,4 phút**. Hai bản chép của cùng một luật
+là hai bản sẽ trôi khác nhau.)*
 
 ⚠️ **`npm run build` phải là việc CUỐI trước gate, sau cả việc sửa test.**
 
@@ -379,18 +381,13 @@ Nơi tìm là `tests/test_631_cach_ly_bo_test.py` — hai luật hay bị phá n
 khi chạy. `cua_so_yen` chỉ thấy ai **xin khoá**; nó không thấy `pytest` gõ tay,
 deploy, hay bốn dịch vụ production. Đo 03/09: khoá báo RẢNH trong khi CPU 65%.
 
-🔑 **Gate là công cụ ra PHÁN QUYẾT, không phải công cụ CHẨN ĐOÁN.**
+🔑 Gate là công cụ ra **PHÁN QUYẾT**, không phải **CHẨN ĐOÁN** — lý do đầy đủ và
+cadence ở `docs/00_LTT_OPERATING_CONTRACT.md` §4.2.
 
-Ngày 27/08 gate đầy đủ được chạy **sáu lần** chỉ để dò lỗi, ~5 phút mỗi lượt.
-Bốn trong sáu lượt đỏ vì một thứ mà một bước con lẻ trả lời trong nửa giây:
-baseline của phiên khác · một emoji trong stdout của một công cụ · hồ sơ hệ
-thống stale · một phép kiểm đo bất biến qua hình dạng mã nguồn. Đó là 20 phút
-trả cho bốn câu trả lời vốn đã có sẵn.
+`--vong-lap` giữ **toàn bộ** nhóm kiểm tĩnh vì song song hoá làm chúng chỉ còn
+~7 giây. Nó chỉ đổi bước `bộ test` thành `--lf`.
 
-`--vong-lap` giữ **toàn bộ** nhóm kiểm tĩnh — chính là thứ bắt bốn lỗi đó — vì
-song song hoá làm chúng chỉ còn 7 giây. Nó chỉ đổi `bộ test` thành `--lf`.
-
-⚠️ Hai điều phải biết trước khi tin nó:
+⚠️ Hai điều **kỹ thuật** phải biết trước khi tin nó:
 
 1. **`--lf` một mình chạy TẤT CẢ** khi lượt trước không có gì đỏ (đúng như tài
    liệu pytest). `gate.py` thêm `--lfnf=none`, nên đừng gọi `test_nhanh --lf`
@@ -401,7 +398,7 @@ song song hoá làm chúng chỉ còn 7 giây. Nó chỉ đổi `bộ test` thà
    giây. Hành vi đúng, nhưng nếu không biết thì trông y hệt một chế độ hỏng.
 
 ⛔ `--vong-lap` và `--quick` **không phải bằng chứng**, và dòng `RESULT` của
-chúng nói thẳng ra như vậy. Trước khi báo xong vẫn là `python tools\gate.py`.
+chúng nói thẳng ra như vậy.
 
 ⛔ **Đừng chạy `python -m pytest` cho toàn bộ kho.** Hai lý do, và lý do thứ hai
 mới là lý do thật:
@@ -433,7 +430,7 @@ Tốc độ đến từ hai chỗ, và chỗ thứ nhất lớn hơn:
   chúng chạy nối tiếp ở pha 2. Danh sách ở `tools/test_nhanh.py::TEP_NOI_TIEP`,
   và `test_309` chốt nó.
 
-### Thêm test mới thì nhớ hai điều
+### Thêm test mới thì nhớ ba điều
 
 1. Test **ghi vào tệp thật trong kho** phải khai vào `TEP_NOI_TIEP`, và phải
    khôi phục **đúng từng byte VÀ đúng dấu thời gian** (`write_bytes` + `os.utime`).
@@ -444,6 +441,27 @@ Tốc độ đến từ hai chỗ, và chỗ thứ nhất lớn hơn:
    `test_193` (hạn mức nhịp phụ thuộc tốc độ máy) và `test_250` (đọc tải GPU
    thật). **Một phép kiểm đọc trạng thái máy không đo thứ nó nói là đang đo —
    nó đo cái máy.**
+3. **`skip` cho điều kiện của MÔI TRƯỜNG; `assert` cho dữ liệu nằm TRONG KHO.**
+
+   Đúng: `test_74::pytestmark` (thiếu `LTT_SMOKE_URL`), `test_821::pg`,
+   `test_826::pg_engine` — thiếu Postgres, thiếu cổng, thiếu GPU là những thứ
+   máy này **có thể thật sự thiếu**.
+
+   Sai — đo 08/09/2026, `tests/test_507_muc_dung_thu_tu_giong.py`:
+
+   ```
+   skip "khong co tang nao co hai giong"     20 giong / 3 tang: 4 · 8 · 8
+   skip "chi co mot tang phong cach"         -> ca hai dieu kien KHONG BAO GIO dung
+   ```
+
+   Ảnh chụp giọng là **một tệp trong chính kho này**, nên hai `skip` ấy không
+   nổ được. ⛔ Và một `skip` không nổ được **tệ hơn vô dụng**: nó cộng vào bánh
+   cóc `bo qua`, *và* làm bản kiểm kê nói rằng phép kiểm ấy **có thể vắng mặt
+   một cách hợp lệ**.
+
+   ⇒ Nếu ngày nào ảnh chụp thật sự mất một tầng, thứ ta muốn là một lượt **ĐỎ**
+   bắt người ta nhìn — không phải một dòng `skipped` trôi qua. Đổi sang `assert`
+   kèm số đo trong thông điệp, đừng chạy `check_bo_qua.py --accept`.
 
 ---
 

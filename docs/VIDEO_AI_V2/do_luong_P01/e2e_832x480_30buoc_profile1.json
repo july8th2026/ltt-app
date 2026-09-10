@@ -1,0 +1,29 @@
+{
+  "bat_dau": "2026-09-06T23:17:49",
+  "health": {
+    "ok": true,
+    "wangp_sha": "1e1dd2757f24923f008593d9d4ec09062234be20",
+    "profile": "1",
+    "attention": "sage2",
+    "san_sang": true,
+    "loi_ham_nong": ""
+  },
+  "gui": {
+    "resolution": "832x480",
+    "num_inference_steps": 30,
+    "video_length": 81,
+    "seed": 1001
+  },
+  "job_id": "j3Qg4CMLIfZ8hG_Vel-oxrg",
+  "progress_dau": {
+    "giay_da_chay": 30.8
+  },
+  "ket_qua": {
+    "thanh_cong": true,
+    "tep": [
+      "/data/Wan2GP/outputs/2026-09-06-16h38m37s_seed1001_A red paper boat drifts down a narrow rain-soaked street at night, neon signs reflecting on the wate.mp4"
+    ],
+    "loi": []
+  },
+  "tong_giay": 1269.8
+}

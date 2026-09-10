@@ -1,0 +1,17 @@
+{
+  "name": "LTT_VIDEO_WANGP_ONE_ENGINE_PROMPT_PACK_V2_1",
+  "date": "2026-09-06",
+  "phases": 10,
+  "recommended_chat_strategy": "fresh chat per phase",
+  "engine_target": "WanGP only",
+  "legacy_delete_phase": "P06 after real LTT-WanGP E2E P05",
+  "commercial_gate": "closed",
+  "audit_changes": [
+    "moved physical legacy deletion after real LTT-WanGP integration",
+    "split engine acceptance from LTT R2/cloud lifecycle acceptance",
+    "added baseline profiles before GUI/integration",
+    "moved automated cloud lifecycle to P08",
+    "fixed final-phase next-state wording",
+    "clarified WebUI is operator-only and optional to production path"
+  ]
+}

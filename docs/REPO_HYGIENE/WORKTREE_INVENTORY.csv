@@ -1,0 +1,8 @@
+Path,Branch,HEAD,Dirty,Ahead,Behind,ActiveSession,UniqueCommits,Upstream,Classification,Action,Evidence
+D:/LTTSTUDIOSAPP,admin-mvp-v3,d83fb7f6,43,258,0,YES,0,(none; equal to origin/admin-mvp-v3),ACTIVE_PROTECT+DIRTY_INVESTIGATE,DO_NOT_TOUCH,HEAD moved 21fa7e2b->b4a71551 (16:27)->d83fb7f6 (16:34) during W0; owner confirmed session running
+D:/LTTSTUDIOSAPP/.claude/worktrees/auto-scan-video-v4-mvp-7173d9,phien/asv-v4,9d7f7044,33,159,0,YES,0,origin/phien/asv-v4 (0/0),ACTIVE_PROTECT+DIRTY_INVESTIGATE,DO_NOT_TOUCH,ASV GUI V5 session; OWNER-CONFIRMED alive at 16:34 despite zero writes since 11:56 (write-cadence false negative)
+D:/LTTSTUDIOSAPP/.claude/worktrees/chatltt-v3-agentic,claude/chatltt-v3-agentic,139cb1d1,0,25,0,NO,0,(none; tip on origin/claude/chatltt-v3-agentic),CLEAN_CANDIDATE,REMOVE_SAFE_CANDIDATE_W2,clean tree; no writes in 6h; unpushed=0
+D:/LTTSTUDIOSAPP/.claude/worktrees/ltt-llm-api-http-guide-a3e123,DETACHED@989353c2,989353c2,0,49,339,NO,0,(none; tip = origin/claude/ltt-video-ai-v3-p00-3f5713),CLEAN_CANDIDATE,REMOVE_SAFE_CANDIDATE_W2,detached at another branch tip; dir name misleading
+D:/LTTSTUDIOSAPP/.claude/worktrees/video-v2-wangp,phien/video-v2-wangp,f19b072d,0,249,0,YES,0,(none; tip on origin/phien/video-v2-wangp),ACTIVE_PROTECT,DO_NOT_TOUCH,source write 15:04; import-linter cache 15:59 => gate run
+D:/LTTSTUDIOSAPP-wf2,phien/wf2,b92839a3,2,255,0,YES,0,(none; tip on origin/phien/wf2),ACTIVE_PROTECT+DIRTY_INVESTIGATE,DO_NOT_TOUCH,source write 16:22 (3370 files under 2h)
+D:/LTTSTUDIOSAPP_RELEASE_H42,h42-release-clean,b4adf873,0,2,672,NO,0,(none; tip on origin/h42-release-clean),CLEAN_CANDIDATE,ARCHIVE_THEN_REMOVE_CANDIDATE_W2,clean; 672 behind origin/master; release snapshot

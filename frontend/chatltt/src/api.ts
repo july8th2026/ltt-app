@@ -7,7 +7,7 @@
  */
 import type {
   AnhChup, BaoCaoNghienCuu, BaoGiaNghienCuu, DuAn, GhiNho, HoiThoai,
-  NangLuc, SuThat,
+  NangLuc, PhieuDuyet, SuThat,
 } from './kieu'
 
 export class LoiApi extends Error {
@@ -78,6 +78,37 @@ export class Api {
   }> {
     return this.goi('/danh-muc')
   }
+
+  // ── Duyet (H44 P04 + P09) ────────────────────────────────────────────
+
+  /**
+   * Phieu con cho cua CHINH nguoi goi.
+   *
+   * ⭐ Day la nguon chan ly BEN — no song qua F5, dong tab, restart tien
+   *    trinh. Su kien SSE `approval.required` chi la duong NHANH; mot giao
+   *    dien chi nghe SSE se mat nut sau khi tai lai trang.
+   */
+  duyetDangCho(runId = ''): Promise<{ items: PhieuDuyet[] }> {
+    const q = runId ? `?run_id=${encodeURIComponent(runId)}` : ''
+    return this.goi(`/duyet/dang-cho${q}`)
+  }
+
+  /**
+   * Dong y hoac tu choi mot phieu.
+   *
+   * ⛔ `quyetDinh` la enum DONG — may chu khop CHINH XAC, khong `.lower()`.
+   *    Sai chinh ta o day la mot quyet dinh thay nguoi dung.
+   */
+  duyetQuyet(approvalId: string, quyetDinh: 'duyet' | 'tu_choi',
+             doiSoDaSua?: Record<string, unknown>):
+  Promise<{ type: string; approval_id: string; chay_tiep: boolean }> {
+    const than: Record<string, unknown> = { quyet_dinh: quyetDinh }
+    if (doiSoDaSua) than.doi_so_da_sua = doiSoDaSua
+    return this.goi(`/duyet/${encodeURIComponent(approvalId)}`, {
+      method: 'POST', body: JSON.stringify(than),
+    })
+  }
+
 
   // ── Nghien cuu (H44 B6) ──────────────────────────────────
 

@@ -59,8 +59,8 @@ def portal(tmp_path, monkeypatch):
     Base.metadata.create_all(get_engine())
 
     import apps.thumbnail.jobs as thumbnail_jobs
-    monkeypatch.setattr(thumbnail_jobs, "_goi_gemini",
-                        lambda *a, **k: b"\x89PNG\r\n\x1a\n" + b"0" * 100)
+    from tests.gia_dieu_phoi_anh import tiem as _tiem_dieu_phoi
+    _tiem_dieu_phoi(monkeypatch, thumbnail_jobs)
 
     from server.app import create_app
 

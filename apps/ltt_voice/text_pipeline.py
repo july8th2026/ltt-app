@@ -29,8 +29,9 @@ from __future__ import annotations
 
 import re
 import unicodedata
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
+from . import tham_so_cong_khai as _TSCK
 from . import tu_dien
 
 # ── ký hiệu: chắc chắn phải thay, không ai đọc được một ký hiệu ───────────────
@@ -502,9 +503,86 @@ def _bo_ky_tu_vo_hinh(t: str) -> str:
     return "".join(ra)
 
 
-def chuan_hoa(text: str, *, doc_so_tran: bool = False,
-              tu_dien_rieng: dict | None = None) -> str:
-    """Một chuỗi vào, một chuỗi ra. Không trạng thái, test được từng phép."""
+@dataclass(frozen=True)
+class KhuonChuanHoa:
+    """Engine này cần ta chuẩn hoá tới đâu (U-15 / T-07).
+
+    ## Vì sao một khuôn, chứ không phải một cờ
+
+    `chuan_hoa()` làm **hai** việc rất khác nhau trong một khối:
+
+        PHIÊN ÂM   từ điển phát âm · hạ chữ hoa viết tắt
+        ĐỌC SỐ     số thứ tự · ngày · giờ · ký hiệu · số lớn · phân cách nghìn
+
+    Với engine hiện tại cả hai đều cần. Nhưng chúng cần vì **hai lý do khác
+    nhau**, và một engine khác sẽ đổi từng vế độc lập:
+
+      · một engine đã có bộ chuẩn hoá số riêng ⇒ ta mở rộng số là **đọc hai
+        lần** (`"15%"` → `"15 phần trăm"` → `"mười lăm phần trăm phần trăm"`);
+      · một engine có từ vựng rộng hơn ⇒ từ điển `ch`/`tr` thành thừa, và mỗi
+        mục thừa là một chỗ có thể phiên âm sai một tên riêng.
+
+    ⇒ Gộp chúng vào một cờ `chuan_hoa=True/False` sẽ buộc engine thứ hai chọn
+      **cả hai hoặc không cái nào** — tức nó sẽ chọn "cả hai" và mang theo lỗi.
+
+    ## ⛔ KHUÔN CHỈ BỎ QUA, KHÔNG BAO GIỜ ĐẢO THỨ TỰ
+
+    Thứ tự trong `chuan_hoa()` là **chịu lực**, và ba chú thích trong đó ghi lại
+    ba lần đã trả giá bằng một lần hỏng thật (từ điển trước số · `_ha_chuoi`
+    sau từ điển · `_KY_HIEU` → `_doc_so_lon` → `_NGAN`).
+
+    Một khuôn cho phép **đổi thứ tự** sẽ mở lại cả ba lỗ ấy cùng lúc, và mở
+    chúng ở một chỗ mà không chú thích nào nhìn thấy. Nên khuôn này chỉ có
+    quyền **tắt một nhóm**.
+
+    ## ⚠️ ĐỔI KHUÔN LÀ ĐỔI TIỀN
+
+    `manifest._gia()` đếm ký tự **sau** chuẩn hoá. Tắt `doc_so` làm văn bản
+    ngắn đi ⇒ hoá đơn nhỏ đi; bật `doc_so_tran` làm nó dài ra ⇒ hoá đơn to lên.
+    Nên khuôn **không** phải một tuỳ chọn của khách, và `KHUON_MAC_DINH` phải
+    cho ra chuỗi **giống hệt từng byte** với hành vi trước 08/09/2026.
+    """
+
+    #: Từ điển phát âm + hạ chữ hoa viết tắt.
+    phien_am: bool = True
+    #: Số thứ tự · ngày · giờ · ký hiệu · số lớn · dấu phân cách nghìn.
+    doc_so: bool = True
+    #: Đọc **mọi** số trần thành chữ. TẮT mặc định — xem `chuan_hoa`.
+    doc_so_tran: bool = False
+
+
+#: Khuôn cho engine đang chạy (VieNeu-TTS v3 Turbo).
+#:
+#: ⭐ Cả hai nhóm BẬT, và đó là một phán quyết về engine này chứ không phải một
+#:    mặc định cho tiện: upstream #168 báo engine đọc `ch` thành `tr` ở một số
+#:    từ (⇒ cần `phien_am`), và nó đọc `1.250.000` theo từng chữ số (⇒ cần
+#:    `doc_so`).
+#:
+#: ⛔ `doc_so_tran` TẮT, và lý do đã đo: chưa xác minh `sea-g2p` có tự đọc số
+#:    đúng chưa, nên bật bừa có thể sinh ra **đọc hai lần**.
+#
+# ⚠️ DỰNG TỪ `tham_so_cong_khai.KHUON_CHUAN_HOA`, không gõ lại ở đây. Hai bản
+#    khai cho cùng một engine là hai bản sẽ lệch, và bên lệch là bên ít người
+#    đọc hơn — cùng cơ chế đã hỏng năm lần với bảng "cái gì đang sống".
+#
+# ⛔ Và `tham_so_cong_khai` là tệp hằng số THUẦN (một dòng `import`), nên đọc
+#    nó từ đây không tạo vòng phụ thuộc.
+KHUON_MAC_DINH = KhuonChuanHoa(**_TSCK.KHUON_CHUAN_HOA)
+
+
+def chuan_hoa(text: str, *, doc_so_tran: bool | None = None,
+              tu_dien_rieng: dict | None = None,
+              khuon: "KhuonChuanHoa | None" = None) -> str:
+    """Một chuỗi vào, một chuỗi ra. Không trạng thái, test được từng phép.
+
+    ⚠️ `doc_so_tran=None` nghĩa là *"theo khuôn"*, không phải *"tắt"*. Tham số
+       này giữ lại vì nó là bề mặt **liên app** — `apps/auto_scan_video` gọi nó
+       trực tiếp — và đổi một chữ ký dùng chung để cho gọn là cách làm hỏng một
+       app không ai đang đọc.
+    """
+    k = khuon or KHUON_MAC_DINH
+    if doc_so_tran is not None:
+        k = replace(k, doc_so_tran=bool(doc_so_tran))
     # 🔴 XOÁ KÝ TỰ VÔ HÌNH **TRƯỚC** `NFC`, VÀ THỨ TỰ NÀY ĐÃ ĐƯỢC ĐO.
     #
     #    Ca khó: `'a'` + `U+200B` + dấu sắc tổ hợp `U+0301`.
@@ -523,15 +601,37 @@ def chuan_hoa(text: str, *, doc_so_tran: bool = False,
     t = _URL.sub(" đường dẫn ", t)
     t = _EMAIL.sub(" địa chỉ email ", t)
 
+    # ── NHÓM PHIÊN ÂM (`khuon.phien_am`) ────────────────────────────────────
+    #
     # Từ điển phát âm TRƯỚC khi đụng số: nó chứa tên riêng và cặp ch/tr, và một
     # số phép thay ở dưới có thể cắt mất ranh giới từ.
-    t = tu_dien.ap_dung(t, them=tu_dien_rieng)
-
+    #
     # ⚠️ SAU từ điển, không phải trước. Từ điển bung `CPU` thành "xi pi diu"
     #    trước, nên tới đây không còn chữ hoa của viết tắt đã biết để hạ
     #    nhầm. Thứ tự ở đây là một phần của bản vá, không phải chi tiết.
-    t = _ha_chuoi_viet_hoa(t)
+    if k.phien_am:
+        t = tu_dien.ap_dung(t, them=tu_dien_rieng)
+        t = _ha_chuoi_viet_hoa(t)
 
+    # ── NHÓM ĐỌC SỐ (`khuon.doc_so`) ────────────────────────────────────────
+    #
+    # ⛔ CẢ KHỐI, KHÔNG TỪNG DÒNG. Ba dòng dưới phụ thuộc thứ tự lẫn nhau (xem
+    #    chú thích ngay dưới), nên cho phép tắt lẻ từng luật là mở lại đúng ba
+    #    cái lỗ mà thứ tự ấy sinh ra để bịt.
+    if k.doc_so:
+        t = _khoi_doc_so(t, doc_so_tran=k.doc_so_tran)
+
+    t = _KHOANG.sub(" ", t)
+    t = _XUONG_DONG.sub("\n\n", t)
+    return t.strip()
+
+
+def _khoi_doc_so(t: str, *, doc_so_tran: bool) -> str:
+    """Số thứ tự · ngày · giờ · ký hiệu · số lớn · dấu phân cách nghìn.
+
+    Tách thành hàm để `khuon.doc_so` tắt được **cả khối** bằng một nhánh, chứ
+    không phải rải sáu nhánh `if` vào giữa sáu phép thay phụ thuộc thứ tự.
+    """
     t = _STT.sub(lambda m: _doc_so_nho(int(m.group(1))).capitalize() + ". ", t)
     t = _NGAY.sub(_thay_ngay, t)
     t = _GIO.sub(_thay_gio, t)
@@ -554,10 +654,7 @@ def chuan_hoa(text: str, *, doc_so_tran: bool = False,
 
     if doc_so_tran:
         t = re.sub(r"\b\d+\b", lambda m: _doc_so(int(m.group(0))), t)
-
-    t = _KHOANG.sub(" ", t)
-    t = _XUONG_DONG.sub("\n\n", t)
-    return t.strip()
+    return t
 
 
 # ── chia đoạn ────────────────────────────────────────────────────────────────

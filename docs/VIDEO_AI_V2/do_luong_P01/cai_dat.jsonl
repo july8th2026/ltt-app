@@ -1,0 +1,11 @@
+{"buoc":"apt_update","ma_thoat":0,"giay":4}
+{"buoc":"apt_install","ma_thoat":0,"giay":38}
+{"buoc":"clone","ma_thoat":0,"giay":41}
+{"buoc":"checkout","ma_thoat":0,"giay":2}
+{"buoc":"venv","ma_thoat":0,"giay":29}
+{"buoc":"pip_upgrade","ma_thoat":0,"giay":62}
+{"buoc":"torch","ma_thoat":0,"giay":645}
+{"buoc":"requirements","ma_thoat":0,"giay":1413}
+{"buoc":"sage_clone","ma_thoat":0,"giay":2}
+{"buoc":"sage_patch","ma_thoat":0,"giay":0}
+{"buoc":"sage_build","ma_thoat":0,"giay":272}

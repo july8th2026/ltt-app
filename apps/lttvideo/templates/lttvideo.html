@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+{% from "_o_chon_tep.html" import o_chon_tep %}
+{% block page_mode %}immersive{% endblock %}
+{% block title %}{{ _('Video AI') }} — LTT AI Studio{% endblock %}
+
+{#
+  Studio ba khoang — **mượn khung của `apps/taovideo` (Seedance)**, không phát
+  minh lại.
+
+  ⭐ Lớp `.tv-*` đã nằm sẵn trong `server/static/ltt.css`. Đó là lý do màn này
+     dựng được mà không thêm một dòng CSS nào, và cũng là lý do nó trông giống
+     hệt các studio khác của LTT — style đã chuẩn hoá một chỗ.
+
+  ⛔ KHÔNG có khoang chọn model. `A1` đã khoá: người dùng mô tả thứ họ muốn,
+     A-CONTROL chọn `profile_id`. Có phép kiểm canh (`test_724`): tệp này không
+     được chứa t2v/i2v/v2v/vace/animate.
+
+  📌 Khác Seedance ba chỗ, mỗi chỗ một lý do đo được:
+       1. không có `01 Model`      — `A1` khoá
+       2. có dải trạng thái máy    — máy ta BẬT THEO NHU CẦU, lượt đầu chờ tới
+                                     900 giây; im lặng ở đây đọc thành "hỏng"
+       3. có nhãn hạn giữ 3 ngày   — `C2`; nền tảng mặc định 30 ngày nên người
+                                     dùng quen nền tảng sẽ tưởng 30
+#}
+
+{% block content %}
+<div class="tv-studio">
+
+  <aside class="tv-nav" aria-label="{{ _('Điều hướng Video AI') }}">
+    <b>◉ LTT</b>
+    <a class="on" href="{{ app.route_prefix }}" aria-current="page">▶<small>{{ _('Tạo') }}</small></a>
+    <a href="/jobs?app=lttvideo">▣<small>{{ _('Lịch sử') }}</small></a>
+    <a href="#tv-assets" data-open-assets>▦<small>{{ _('Tài sản') }}</small></a>
+  </aside>
+
+  <button class="tv-drawer" type="button" aria-controls="tv-compose" aria-expanded="false"
+    aria-label="{{ _('Mở bảng tạo video') }}" data-open-label="{{ _('Tạo video') }}"
+    data-close-label="{{ _('Đóng bảng tạo video') }}">☰ {{ _('Tạo video') }}</button>
+  <button class="tv-compose-scrim" type="button" aria-label="{{ _('Đóng bảng tạo video') }}" tabindex="-1"></button>
+
+  {# ───────────────────────── BẢNG TẠO ───────────────────────── #}
+  <section class="tv-compose" id="tv-compose" aria-label="{{ _('Thiết lập tạo video') }}">
+    <button class="tv-compose-close" type="button" aria-label="{{ _('Đóng bảng tạo video') }}">✕ <span>{{ _('Đóng') }}</span></button>
+
+    {% if not duoc_dung %}
+      <div class="ltt-alert ltt-alert-warn" role="alert">{{ ly_do_tu_choi }}</div>
+    {% else %}
+
+    {% if request.query_params.get('loi') %}
+      <div class="ltt-alert ltt-alert-warn" role="alert">{{ request.query_params.get('loi') }}</div>
+    {% endif %}
+
+    <form method="post" action="{{ app.route_prefix }}/tao" id="tvform"
+          enctype="multipart/form-data">
+      <div class="tv-compose-scroll">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+        {# 🔑 Tac vu dung DAU TIEN vi no quyet dinh ca man: no chon model, no
+           quyet dinh co duoc dinh kem khong va toi da may tep. Dat no trong muc
+           "dinh kem" (ban truoc) lam no trong nhu mot tuy chon con cua dinh kem
+           — nguoc voi thu tu that cua quyet dinh. #}
+        <div class="tv-section"><h2><strong>01</strong> {{ _('Loại tác vụ') }}</h2>
+          {# ⭐ Dung lai `.tv-models` — khuon DA CO cua chinh app nay (luoi 2
+             cot, vien, `:has(input:checked)` lam noi o dang chon). De tu che
+             mot lop moi la de mot khoi trong cung mot man hinh trong khac
+             nhau, va la de mot tep static moi phai cache-bust. #}
+          <div class="tv-models" role="radiogroup"
+               aria-label="{{ _('Loại tác vụ') }}">
+            {% for t in tac_vu %}
+            <label>
+              <input type="radio" name="tac_vu" value="{{ t.ma }}"
+                     {% if loop.first %}checked{% endif %}
+                     data-so-tep="{{ t.so_tep_toi_da }}">
+              <b>{{ _(t.nhan) }}</b>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="tv-section"><h2><strong>02</strong> {{ _('Mô tả') }}</h2>
+          <label class="sr-only" for="tv-prompt">{{ _('Mô tả video') }}</label>
+          <textarea id="tv-prompt" name="prompt" rows="4" class="ltt-input" required
+                    maxlength="10000" aria-describedby="tv-prompt-hint"
+                    placeholder="{{ _('Ví dụ: một dòng sông lúc bình minh, sương mù trên mặt nước, máy quay tiến chậm về phía trước') }}"></textarea>
+          <p id="tv-prompt-hint" class="dim">{{ _('Tả cảnh, chủ thể, chuyển động máy quay và ánh sáng.') }}</p>
+          {# ⭐ Hang cong cu muon tu bot van hanh: no co "Mo prompt ra bang lon"
+             va "Hoan tac N buoc" ngay canh o nhap. Prompt la thu nguoi dung sua
+             nhieu nhat, nen hai nut nay dat dung cho tay dang o. #}
+          <div class="tv-tools">
+            <button type="button" id="tv-mo-rong" class="btn ghost"
+                    aria-controls="tv-prompt" aria-expanded="false"
+                    title="{{ _('Mở ô mô tả ra to hơn để đọc toàn bộ') }}">⤢</button>
+            <button type="button" id="tv-hoan-tac" class="btn ghost" disabled
+                    title="{{ _('Hoàn tác lần sửa mô tả gần nhất') }}">↶</button>
+            {% if prompt_gan_day %}
+            <label class="sr-only" for="tv-history">{{ _('Mô tả đã dùng') }}</label>
+            <select id="tv-history">
+              <option value="">{{ _('Mô tả đã dùng') }}</option>
+              {% for p in prompt_gan_day %}<option value="{{ p }}">{{ p[:60] }}</option>{% endfor %}
+            </select>
+            {% endif %}
+          </div>
+        </div>
+
+        {# 🔑 Chi hien muc dinh kem khi CO tac vu dang mo nhan tep. `dang_mo()`
+           doi ca ba dieu kien, trong do co "trong so da tren dia" — nen khi
+           `i2v_2_2` chua tai ve thi tac vu anh dong lai, va o chon tep phai
+           bien theo. Moi tep no van moi la moi nguoi vao mot canh cua khoa. #}
+        {% if tac_vu | selectattr('so_tep_toi_da') | list %}
+        <div class="tv-section"><h2><strong>03</strong> {{ _('Đính kèm') }}</h2>
+          {# ⭐ Khuon `tv-ref-pickers` cua `taovideo`, khong dung macro
+             `o_chon_tep`: macro dung mot hop gach dut CAO, con day la mot the
+             GON — cung ngon ngu hinh anh voi cac studio khac cua LTT.
+             Ta chi nhan MOT tep nen chi mot the, khong ba nhu Seedance. #}
+          <div class="tv-ref-pickers">
+            {# 🔴 CHI NHAN ANH. Do tren `metadata` that cua WanGP: ca
+               `t2v_2_2` lan `i2v_2_2` deu khai khe video (`control`,
+               `continue`), NHUNG ta chua co ho so tham so cho duong do — va ho
+               so phai RUT tu may that, khong go tay duoc.
+
+               ⛔ Ban truoc nhan `video/mp4` o day trong khi
+                  `ho_so.HO_SO_THEO_DAU_VAO` khong co muc `"video"`. Nguoi dung
+                  tai MP4 len => bi GIU CREDIT => job hong => hoan credit. Mot
+                  vong tron tra tien lai nhung lay mat thoi gian va niem tin.
+                  Cua dong o day thi ho biet ngay, khong phai sau hai muoi phut. #}
+            {# 🔑 O chon TAC VU — sinh tu `tac_vu.dang_mo()`, khong go tay.
+               Mot tac vu chi hien khi no THAT SU chay duoc: `test_741` chot moi
+               tac vu `mo=True` phai co ban ghi `mac_dinh__<model>.json`. Cua
+               truoc khop cua sau, do la bat bien da tra gia mot lan. #}
+            <label for="media">
+              <span aria-hidden="true">▧</span>
+              <strong>{{ _('Ảnh mở đầu') }}</strong>
+              <small>JPEG · PNG · WebP</small>
+              <input class="tv-file-input" id="media" type="file" name="media"
+                     accept="image/jpeg,image/png,image/webp"
+                     aria-describedby="tv-media-hint">
+            </label>
+          </div>
+          <div id="tv-refs" class="tv-refs" aria-live="polite"></div>
+          <p id="tv-media-hint" class="dim">
+            {{ _('Ảnh sẽ thành khung mở đầu. Không đính gì thì video được dựng hoàn toàn từ mô tả.') }}
+          </p>
+        </div>
+
+        {% if tai_san %}
+        <details class="tv-fieldset tv-assets" id="tv-assets">
+          <summary><strong>02B</strong> {{ _('Tài sản đã dùng') }} <small>{{ tai_san|length }}</small></summary>
+          <p class="dim">{{ _('Chọn lại một tệp từ lượt trước thay vì tải lên lần nữa.') }}</p>
+          <div class="tv-asset-list">
+            {% for a in tai_san %}
+            <label class="tv-asset {{ 'het-han' if a.het_han else '' }}">
+              <input type="radio" name="tai_san_khoa" value="{{ a.khoa }}"
+                     {{ 'disabled' if a.het_han }}>
+              <span aria-hidden="true">{{ '▶' if a.loai == 'video' else '▧' }}</span>
+              <b>{{ a.ten }}</b>
+              {# ⚠️ `C2` xoá nội dung sau 3 ngày, nên một tài sản cũ có thể KHÔNG
+                 còn tệp. Nói thẳng "đã hết hạn" chứ đừng im lặng bỏ qua — im
+                 lặng thì người dùng tưởng mình bấm hỏng. #}
+              <small>{{ _('đã hết hạn') if a.het_han else a.loai }}</small>
+            </label>
+            {% endfor %}
+          </div>
+        </details>
+        {% endif %}
+        {% endif %}
+
+        <fieldset class="tv-fieldset"><legend><strong>04</strong> {{ _('Thiết lập') }}</legend>
+          <div class="tv-selects">
+            <label>{{ _('Tỉ lệ khung hình') }}
+              <select name="ti_le" id="tv-tile">
+                {% for t in ti_le %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+              </select>
+            </label>
+            <label>{{ _('Độ dài') }}
+              <select name="do_dai_s" id="tv-dodai">
+                {% for g in do_dai %}<option value="{{ g }}" data-gia="{{ uoc_gia[g] }}">{{ g }} {{ _('giây') }}</option>{% endfor %}
+              </select>
+            </label>
+          </div>
+
+          {% if duoc_mo_rong %}
+          <label class="tv-audio">
+            <input type="checkbox" name="mo_rong_prompt" value="1">
+            {{ _('Tự viết lại mô tả cho chi tiết hơn') }}
+          </label>
+          {% endif %}
+        </fieldset>
+
+        {# ⭐ Khoi gap, dung khuon `tv-assist` cua `taovideo`. Hai khoa nay DA
+           nam trong `ho_so.KHOA_NGUOI_DUNG_DOI_DUOC` tu dau ma chua bao gio lo
+           ra giao dien — tuc nguoi dung khong dieu khien duoc thu ma kien truc
+           da cho phep ho dieu khien. #}
+        <details class="tv-fieldset tv-assist" id="tv-tuychon">
+          <summary>{{ _('Tuỳ chọn nâng cao') }} <small>{{ _('Không bắt buộc') }}</small></summary>
+          <p class="dim">{{ _('Để trống thì hệ thống tự chọn. Chỉ dùng khi bạn muốn kiểm soát sâu hơn.') }}</p>
+          <div class="tv-selects">
+            <label>{{ _('Seed') }}
+              <input type="number" name="seed" min="0" max="2147483647"
+                     inputmode="numeric" class="ltt-input"
+                     placeholder="{{ _('Để trống = ngẫu nhiên') }}"
+                     aria-describedby="tv-seed-hint">
+            </label>
+          </div>
+          <p id="tv-seed-hint" class="dim">
+            {{ _('Cùng một seed và cùng mô tả sẽ cho kết quả gần giống nhau — dùng để làm lại một video bạn thích.') }}
+          </p>
+          <label class="ltt-label" for="tv-negative">{{ _('Điều không muốn thấy') }}</label>
+          <textarea id="tv-negative" name="negative_prompt" rows="2" class="ltt-input"
+                    maxlength="2000"
+                    placeholder="{{ _('Ví dụ: chữ trên màn hình, tay bị méo, ánh sáng nhấp nháy') }}"></textarea>
+        </details>
+
+        {# Cảnh báo trôi chất lượng — ý lấy từ `PROCESSING.md` của WanGP: video
+           dài hơn một cửa sổ được ghép từ nhiều cửa sổ, nên đây là đánh đổi CÓ
+           THẬT, không phải chi tiết kỹ thuật giấu đi được. #}
+        <div class="ltt-alert ltt-alert-warn" id="tv-canh-bao-dai" hidden>
+          {{ _('Video càng dài, chất lượng càng dễ trôi về cuối: chi tiết có thể nhiễu dần và nhân vật có thể đổi nét.') }}
+        </div>
+
+        <p class="ltt-hint">
+          {{ _('Một video mất khoảng vài chục phút. Bạn có thể đóng trang — kết quả nằm trong Lịch sử.') }}
+          {{ _('Kết quả được giữ 3 ngày, sau đó tự xoá. Hãy tải về nếu bạn muốn giữ lâu hơn.') }}
+        </p>
+
+        {# `B1`: máy bật theo nhu cầu. Lượt đầu sau khi máy nghỉ phải chờ khởi
+           động — nói trước thì người dùng chờ, im lặng thì họ tưởng hỏng. #}
+        <p class="ltt-hint" id="tv-may" aria-live="polite"
+           hx-get="{{ app.route_prefix }}/trang-thai-may" hx-trigger="load"
+           hx-swap="innerHTML">{{ _('Đang hỏi trạng thái máy dựng…') }}</p>
+      </div>
+
+      {# ⭐ Day chi giu GIA + NUT, giong het `taovideo`. Ban truoc nhet ca doan
+         van han giu vao day: day nang len, than khoang lai, va hai loi rong o
+         giua. Chu thich nen nam trong THAN, canh thu no noi ve. #}
+      <div class="tv-submit-dock">
+        <div class="tv-cost" aria-live="polite">
+          <span>{{ _('Giữ chỗ') }}</span> <b id="tv-gia">{{ uoc_gia[do_dai[0]] }} credit</b>
+        </div>
+        <button class="tv-create" type="submit">✦ {{ _('Tạo video') }}</button>
+      </div>
+    </form>
+    {% endif %}
+  </section>
+
+  {# ───────────────────────── THƯ VIỆN ───────────────────────── #}
+  <main class="tv-library">
+    <header>
+      <div>
+        {# ⭐ Muon `sdv-strip-info` cua bot van hanh: giai thich man lam gi ma
+           khong ton mot dong nao tren be mat. #}
+        <span class="eyebrow">LTT Video Studio
+          <span title="{{ _('Tả video bạn muốn bằng lời, hoặc đính một ảnh làm khung mở đầu. Video dựng trên máy thuê của LTT Studios, tính 30 credit mỗi giây, và giữ lại 3 ngày.') }}"
+                aria-label="{{ _('Giới thiệu màn này') }}" tabindex="0"
+                style="cursor:help">ⓘ</span>
+        </span>
+        <h1>{{ _('Video của tôi') }}</h1>
+        {# ⭐ Dai so lieu THAT, khong phai trang tri. Mo tu bot van hanh: dat
+           SO do duoc canh nhau, va phan giai thich thi day vao tooltip. #}
+        <small class="dim" title="{{ _('Chỉ đếm video đã hoàn tất. Credit là khoản đã quyết toán, không phải khoản giữ chỗ.') }}">
+          {{ so_dem.all|default(0) }} {{ _('kết quả') }}
+          {%- if tom_tat and tom_tat.so_video %}
+            · {{ tom_tat.so_video }} {{ _('đã xong') }}
+            · {{ tom_tat.giay }}{{ _('s') }}
+            · {{ '{:,}'.format(tom_tat.credit).replace(',', '.') }} credit
+          {%- endif %}
+        </small>
+      </div>
+      <div class="tv-view-toggle" role="group" aria-label="{{ _('Kiểu hiển thị') }}">
+        <button type="button" data-view="grid" aria-pressed="true" aria-label="{{ _('Dạng lưới') }}">▦</button>
+        <button type="button" data-view="list" aria-pressed="false" aria-label="{{ _('Dạng danh sách') }}">☷</button>
+      </div>
+    </header>
+
+    <nav class="tv-tabs" aria-label="{{ _('Lọc video') }}">
+      {% for key, nhan in trang_thai_tab %}
+      <a class="{{ 'on' if loc_trang_thai == key }}"
+         {% if loc_trang_thai == key %}aria-current="page"{% endif %}
+         href="?trang_thai={{ key }}&sap_xep={{ loc_sap_xep }}">{{ nhan }} <b>{{ so_dem[key]|default(0) }}</b></a>
+      {% endfor %}
+    </nav>
+
+    <form class="tv-library-filters" method="get">
+      <input type="hidden" name="trang_thai" value="{{ loc_trang_thai }}">
+      <label><span class="sr-only">{{ _('Sắp xếp') }}</span>
+        <select name="sap_xep" aria-label="{{ _('Sắp xếp') }}">
+          <option value="moi" {{ 'selected' if loc_sap_xep == 'moi' }}>{{ _('Mới nhất') }}</option>
+          <option value="cu" {{ 'selected' if loc_sap_xep == 'cu' }}>{{ _('Cũ nhất') }}</option>
+        </select>
+      </label>
+      <button type="submit">{{ _('Áp dụng') }}</button>
+      {# Lam moi: job chay hang chuc phut, nen nguoi dung se muon xem lai ma
+         khong phai tim nut tai trang cua trinh duyet. #}
+      <a class="ltt-btn" href="?trang_thai={{ loc_trang_thai }}&sap_xep={{ loc_sap_xep }}"
+         aria-label="{{ _('Làm mới danh sách') }}">↻ {{ _('Làm mới') }}</a>
+    </form>
+
+    {% include "_tv_luoi.html" %}
+  </main>
+</div>
+
+{# Nâng nét: báo giá TRƯỚC khi xác nhận — mượn đúng khuôn của Seedance. Một
+   thao tác tiêu credit mà không nói giá trước là một thao tác người dùng không
+   đồng ý được. #}
+<dialog id="tv-upscale-dialog" aria-labelledby="tv-upscale-title">
+  <form method="dialog">
+    <h3 id="tv-upscale-title">{{ _('Nâng nét video') }}</h3>
+    <p id="tv-quote" aria-live="polite">{{ _('Đang tính chi phí…') }}</p>
+    <label for="tv-height">{{ _('Độ phân giải đầu ra') }}</label>
+    <select id="tv-height"><option value="1080">1080p</option><option value="1440">1440p</option></select>
+    <div class="tv-dialog-actions">
+      <button value="cancel" class="btn ghost">{{ _('Huỷ') }}</button>
+      <button id="tv-confirm" value="default" class="btn">{{ _('Xác nhận') }}</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="/static/htmx.min.js"></script>
+<script src="/static/lttvideo.js?v={{ asset_ver }}"></script>
+{% endblock %}

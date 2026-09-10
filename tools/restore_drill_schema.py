@@ -118,7 +118,23 @@ def main() -> int:
         # 3. Rang buoc SONG CON phai con nguyen ten. Danh sach nay duoc
         # `test_155` doi chieu voi luoc do that, nen them mot UNIQUE moi ma
         # quen dua vao day se bao do ngay - khong doi toi luc khoi phuc that.
-        for ten in ("uq_gpu_lease_host_uuid",
+        for ten in (
+                    # ── LTT WORKFLOW V2 ──────────────────────────────────────
+                    # Mat rang buoc nay = xuat ban HAI LAN cung mot noi dung ra
+                    # HAI version. Lich su day version gia, va cai gia that la
+                    # `estimated_max` bi dong bang lai o moi ban — tuc mot tran
+                    # chi phi cho cung mot do thi ra hai con so.
+                    "uq_workflow_version_hash",
+                    # Mat rang buoc nay = hai version cung mot so thu tu. So ay
+                    # la thu HIEN CHO NGUOI, nen trung no la hai thu khac nhau
+                    # mang cung mot ten trong moi bao cao.
+                    "uq_workflow_version_seq",
+                    # Mat rang buoc nay = mot lan danh thuc duoc hen HAI LAN
+                    # (bang va NOTIFY cung hen la trang thai BINH THUONG, chot
+                    # `Q4` doi ca hai duong luy dang). Hai lan danh thuc = mot
+                    # node tien hai lan.
+                    "uq_wakeup_khu_trung",
+                    "uq_gpu_lease_host_uuid",
                     "uq_execution_lease_resource_slot",
                     "uq_job_events_job_sequence",
                     "uq_job_events_job_event_key",
@@ -168,6 +184,19 @@ def main() -> int:
                     # LAN: mang khong bao loi, no chi im lang hong — va trieu
                     # chung se hien o cho khac, muon hon, va kho truy hon nhieu.
                     "uq_vps_instance_ip",
+                    # THEM 2026-09-09 (VPS V2, Pha 02). Rang buoc chong bam hai
+                    # lan cua bang `vps_thao_tac`.
+                    #
+                    # No la TRONG TAI, khong phai mot cau `if`: `thao_tac.mo`
+                    # co y INSERT thang roi bat `IntegrityError` nhu duong chay
+                    # binh thuong, vi giua "hoi xem co chua" va "ghi" co mot
+                    # khoang ma hai request cua cung mot cu bam dup lot qua.
+                    #
+                    # Mat no sau mot lan khoi phuc thi mot cu bam dup sinh HAI
+                    # thao tac khoi dong lai tren cung mot may — va chung chay
+                    # dan xen nhau: mot cai dang cho may TAT thi cai kia da bat
+                    # len. Khong loi nao duoc ghi ra.
+                    "uq_vps_thao_tac_idem",
                     # LTT VOICE (Q117). Mat mot trong hai la mot lop hong
                     # KHAC NHAU, nen ca hai deu phai o day:
                     #
@@ -191,6 +220,14 @@ def main() -> int:
                     #     khac nhau giua hai lan chay, khong loi nao bao, va
                     #     khach khong co cach nao tai hien de bao loi.
                     "uq_voice_tudien_owner_tu",
+                    #   uq_voice_quality_profile -> mot giong co HAI phan quyet
+                    #     curate. Hai dong cho cung mot giong la hai cau tra loi
+                    #     cho cung mot cau hoi, va khong ai biet cau nao dang co
+                    #     hieu luc. Hau qua cu the: `tools/soat_giong.py` doc
+                    #     bang `scalar_one_or_none()` — hai dong lam no NEM,
+                    #     nen mat rang buoc nay khong hong lang le, no hong o
+                    #     dung cho nguoi ta dang co soat mot giong.
+                    "uq_voice_quality_profile",
                     # Ten gateway trung -> cau hinh mang tro nham node.
                     "uq_vps_gateway_ten",
                     # Mat rang buoc nay = hai phien ban gia cung nhan cho mot

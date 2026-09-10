@@ -403,3 +403,102 @@ def test_moi_o_nhap_deu_co_ten_doc_duoc(khach_tc, duong):
     assert thieu == [], (
         f"{duong}: {thieu} khong co ten doc duoc. `placeholder` KHONG tinh — no "
         f"bien mat khi go va nhieu trinh doc man hinh khong doc no.")
+
+
+# ── 4. Nhãn của trình phát phải ĐƯỢC DỊCH (09/09/2026) ─────────────────────
+#
+# 🔴 `voice.js::ganTrinhPhat` dựng trình phát bằng JS, và năm `aria-label` của
+#    nó từng GÕ CỨNG tiếng Việt không dấu: "Phat" · "Tam dung" · "Toc do phat
+#    lai" · "Am luong".
+#
+#    Chúng rơi vào đúng mô tả ở đầu tệp này — **vô hình với con mắt đang nhìn
+#    màn hình đúng**. Không ảnh chụp nào sai, không log nào kêu. Chỉ người dùng
+#    trình đọc màn hình ở **bản tiếng Anh** biết, và thứ họ nghe là tiếng Việt.
+
+NHAN_TP = GOC / "apps" / "ltt_voice" / "templates" / "_voice_nhan.html"
+
+
+def test_voice_js_KHONG_con_aria_label_go_cung():
+    """Mọi nhãn phải đi qua `nhan()`, tức đi qua bộ dịch của máy chủ."""
+    import re
+    con = re.findall(r'setAttribute\(\s*"aria-label"\s*,\s*"([^"]+)"\s*\)',
+                     JS.read_text(encoding="utf-8"))
+    assert not con, (
+        f"aria-label go cung trong voice.js: {con} — nguoi dung ban EN se nghe "
+        "tieng Viet. Dua chung qua `nhan()` + `_voice_nhan.html`")
+
+
+def test_nguon_nhan_ton_tai_va_di_qua_bo_dich():
+    s = NHAN_TP.read_text(encoding="utf-8")
+    assert 'id="lv-nhan"' in s
+    assert "tojson" in s, "noi chuoi tay se vo JSON khi ban dich co dau nhay"
+    for khoa in ("phat", "tamDung", "tocDo", "amLuong"):
+        assert f'"{khoa}"' in s, f"thieu nhan `{khoa}`"
+    assert s.count("_(") >= 4, "co nhan khong di qua `_()` — se khong duoc dich"
+
+
+def test_MOI_trang_nap_voice_js_deu_nap_ca_nguon_nhan():
+    """⛔ Đối chứng quan trọng hơn: thiếu một trang thì trang ấy im lặng quay về
+    bản gõ cứng — và nó im lặng đúng ở nơi không ai nhìn."""
+    thu_muc = GOC / "apps" / "ltt_voice" / "templates"
+    thieu = []
+    for f in sorted(thu_muc.glob("ltt_voice_*.html")):
+        s = f.read_text(encoding="utf-8")
+        if "/static/voice.js" in s and "_voice_nhan.html" not in s:
+            thieu.append(f.name)
+    assert not thieu, f"nap voice.js ma khong nap nguon nhan: {thieu}"
+
+
+def test_bon_nhan_deu_CO_BAN_DICH_trong_catalog():
+    """Có `_()` mà catalog thiếu mục thì vẫn ra tiếng Việt trên bản EN."""
+    po = (GOC / "locale" / "en" / "LC_MESSAGES" / "messages.po").read_text(
+        encoding="utf-8")
+    for cau in ("Phát", "Tạm dừng", "Tốc độ phát lại", "Âm lượng"):
+        assert f'msgid "{cau}"' in po, f"`{cau}` chua vao catalog"
+
+
+# ── 5. U-03 — NĂM trục lọc, không phải ba (09/09/2026) ─────────────────────
+#
+# 🔴 `vung` và `phong_cach` **đã hiện trên màn hình** từ trước: thẻ giọng mẫu in
+#    `Nữ · Miền Bắc · Tin tức`. Nhưng dữ liệu ấy chỉ tới MẮT, không tới BỘ LỌC —
+#    thẻ chỉ mang `data-lan` + `data-gioi`.
+#
+#    Hai mươi giọng mẫu trải trên **3 vùng × 3 phong cách**, nên người muốn
+#    *"giọng miền Nam kể chuyện"* phải đọc hết hai mươi thẻ để tìm ra hai. Đúng
+#    mô tả của U-03: *"dữ liệu đã có, chỉ chưa thành nút"*.
+
+CHON_TP = GOC / "apps" / "ltt_voice" / "templates" / "_voice_chon.html"
+
+
+def test_du_NAM_truc_loc():
+    s = CHON_TP.read_text(encoding="utf-8")
+    for truc in ("data-chon-loai", "data-chon-gioi", "data-chon-lan",
+                 "data-chon-vung", "data-chon-phongcach"):
+        assert truc in s, f"thieu truc loc `{truc}`"
+
+
+def test_the_giong_mau_MANG_du_lieu_vung_va_phong_cach():
+    """⛔ Nút lọc mà thẻ không mang dữ liệu thì bấm vào **ẩn sạch** — một bộ lọc
+    luôn trả rỗng còn tệ hơn không có bộ lọc."""
+    s = CHON_TP.read_text(encoding="utf-8")
+    i = s.index('data-loai="mau"')
+    the = s[i:i + 300]
+    assert 'data-vung="' in the, "the giong mau khong mang `data-vung`"
+    assert 'data-phongcach="' in the, "the giong mau khong mang `data-phongcach`"
+
+
+def test_js_loc_theo_ca_NAM_truc():
+    js = JS.read_text(encoding="utf-8")
+    for bien in ("locLoai", "locGioi", "locLan", "locVung", "locPhongCach"):
+        assert bien in js, f"voice.js khong loc theo `{bien}`"
+
+
+def test_the_KHONG_khai_vung_thi_KHONG_bi_an():
+    """🔴 Giọng nhân bản không có `vung`/`phong_cach` — `VoiceProfile` không có
+    hai cột ấy. Ẩn thứ mình không phân loại được là làm khách **mất giọng của
+    chính họ**, và đó là quy ước `gioi`/`lan` ngay trên đã chốt."""
+    js = JS.read_text(encoding="utf-8")
+    for m in ("!d.vung || d.vung === locVung",
+              "!d.phongcach || d.phongcach === locPhongCach"):
+        assert m in js, (
+            f"thieu chot `{m}` — loc theo vung se AN het giong nhan ban")

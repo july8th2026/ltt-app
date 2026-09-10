@@ -17,6 +17,7 @@ import json
 import os
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -25,6 +26,12 @@ GOC = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(GOC / "tools"))
 
 import cua_so_yen  # noqa: E402
+
+#: Duong dan THAT, chup luc IMPORT — truoc khi bat ky fixture nao monkeypatch.
+#: Phai chup o day chu khong hoi luc chay: `khoa_sach` da doi ca `TEP_KHOA` lan
+#: `tempfile.tempdir`, nen trong than mot bai kiem thi "thu muc tam" khong con
+#: la thu muc tam cua may nua.
+_TEMP_THAT = Path(tempfile.gettempdir())
 import thanh_phan as tp  # noqa: E402
 
 
@@ -131,8 +138,32 @@ def test_mo_rong_nguoi_tieu_thu_khong_bo_sot_chieu_nguoc():
 # ---------------------------------------------------------------------------
 
 @pytest.fixture
-def khoa_sach():
-    """Don moi khoa truoc va sau — bo kiem nay khong duoc de lai rac."""
+def khoa_sach(tmp_path, monkeypatch):
+    """Don moi khoa truoc va sau — trong MOT THU MUC RIENG, khong phai cua may.
+
+    🔴 Ban dau cua fixture nay don khoa THAT: `dang_giu()` liet ke moi khoa tren
+       may, va `nha(ep=True)` la duong vong CO CHU DICH bo qua phep doi chieu chu
+       khoa. Nen moi luot gate day du (bat ky cay nao) chay toi day la **tu thao
+       khoa cua chinh no giua chung**, roi phien ke tiep go `trang-thai` doc
+       RANH va bam. Do duoc 10/09: hai khoa cua pid 19656 bien mat luc 04:33:27
+       trong khi ca `gate.py` lan `test_nhanh.py` con song.
+
+    ⛔ HAI don bay, khong phai mot. Chi va `TEP_KHOA` thi bo kiem van XANH ma lo
+       hong CON NGUYEN: `dang_giu()` doc `tempfile.gettempdir()` **luc goi** roi
+       glob, nen no van nhat `ltt_khoa_postgres_test.json` cua luot gate dang
+       chay. Bo kiem khong thay, vi no chi khang dinh ve khoa cua chinh no.
+
+    ⚠️ Don bay thu muc phai la `tempfile.tempdir`, KHONG phai `os.environ`:
+       `gettempdir()` cache vao `tempfile.tempdir` sau lan goi dau, va trong mot
+       luot pytest thi no da duoc goi tu lau. Dat `TEMP`/`TMP` luc nay la vo hieu.
+
+    ⭐ `test_tai_nguyen_mac_dinh_giu_DUNG_ten_tep_cu` van dung: `_tep` tra thang
+       `TEP_KHOA` cho nhanh mac dinh, nen va hang so ay giu nguyen dang thuc.
+    """
+    monkeypatch.setattr(tempfile, "tempdir", str(tmp_path))
+    monkeypatch.setattr(cua_so_yen, "TEP_KHOA",
+                        tmp_path / "ltt_cua_so_yen.json")
+
     def don():
         for bg in cua_so_yen.dang_giu():
             cua_so_yen.nha(ep=True, tai_nguyen=bg.get("tai_nguyen",
@@ -201,6 +232,45 @@ def test_sau_khi_thoat_van_bao_duoc_da_giu_gi(khoa_sach):
     assert k.da_giu == [], "phai rong sau khi thoat, neu khong se nha khoa hai lan"
     assert k.da_giu_xong == ["postgres_test"], (
         "sau khi thoat phai van bao duoc luot nay da giu gi")
+
+
+def test_khoa_sach_KHONG_xoa_duoc_khoa_THAT_cua_may(khoa_sach):
+    """Doi chung cho chinh ban va o `khoa_sach` — va no do TINH CHAT, khong do co che.
+
+    🔴 Vi sao bai nay phai ton tai. Ban dau cua `khoa_sach` don khoa THAT cua
+       may: `dang_giu()` liet ke moi khoa, `nha(ep=True)` bo qua phep doi chieu
+       chu khoa. Do duoc 10/09 tren mot luot gate day du: hai khoa cua pid 19656
+       bien mat luc 04:33:27 trong khi ca `gate.py` lan `test_nhanh.py` con
+       song, va chung chi duoc giu **119 giay tren mot luot 756 giay**. 84% thoi
+       gian cua moi luot gate chay khong co hang rao dong thoi.
+
+    ⛔ Va vi sao bai nay dat mot tep THAT thay vi khang dinh ve `monkeypatch`.
+       Mot bai kiem dang `assert cua_so_yen.TEP_KHOA == tmp_path / ...` chi chot
+       rang **mot** don bay da duoc keo. Ban va thieu don bay thu hai
+       (`tempfile.tempdir`) van lam bai do XANH — trong khi `dang_giu()` doc
+       `gettempdir()` **luc goi** roi glob thu muc that, va van xoa
+       `ltt_khoa_postgres_test.json` cua luot gate dang chay.
+
+       Nen bai nay lam dung thu nguy hiem — goi lai chinh vong `don()` — roi hoi
+       mot cau khong the tra loi bang cach keo nua don bay: **tep khoa nam trong
+       thu muc tam THAT co con khong.**
+
+    ⚠️ Tep moi tha ra mang `pid` de hai worker xdist khong dam nhau, va duoc don
+       trong `finally` du bai co do.
+    """
+    moi = _TEMP_THAT / f"ltt_khoa_kiem_cach_ly_{os.getpid()}.json"
+    moi.write_text(json.dumps({"phien": "doi-chung-cach-ly", "pid": os.getpid(),
+                               "tai_nguyen": f"kiem_cach_ly_{os.getpid()}"}),
+                   encoding="utf-8")
+    try:
+        for bg in cua_so_yen.dang_giu():
+            cua_so_yen.nha(ep=True, tai_nguyen=bg.get("tai_nguyen",
+                                                      cua_so_yen.MAC_DINH))
+        assert moi.exists(), (
+            "`khoa_sach` van cham duoc thu muc tam THAT — mot luot gate dang "
+            "chay se bi thao khoa giua chung")
+    finally:
+        moi.unlink(missing_ok=True)
 
 
 def test_tai_nguyen_mac_dinh_giu_DUNG_ten_tep_cu():
@@ -292,6 +362,20 @@ def test_chi_buoc_that_su_doc_quyen_moi_khai_tai_nguyen():
         "bo test (pham vi)",
         # `check_multiproc.py` goi `drop_all()` tren CSDL test dung chung.
         "bat bien da tien trinh",
+        # `do_migration_tren_postgres.py` DUNG roi XOA mot CSDL nhap canh CSDL
+        # chinh (`..._test`), va chay ca chuoi alembic tren do. Hai luot gate
+        # cung luc se giam nhau dung o buoc `CREATE DATABASE` / `DROP DATABASE`
+        # — cung ho voi `drop_all()` o dong tren, chi khac cap: mot ben xoa
+        # BANG, ben nay xoa ca CSDL.
+        "migration tren postgres",
+        # `dien_tap_m1_tren_postgres.py` dung CUNG mot CSDL nhap (`..._test`)
+        # va cung goi `create_all`/`drop_all` tren do. Hai luot gate cung luc
+        # se giam nhau y het buoc tren — cung tai nguyen, cung lop va cham.
+        #
+        # ⛔ No PHAI khai `tai_nguyen`, khong duoc bo di cho qua phep kiem nay:
+        #    bo di se mo lai dung lop loi `drop_all()` vao nhau ma
+        #    `postgres_test` sinh ra de chan.
+        "M-1 tren postgres",
     }
     thua = co_tn - du_kien
     assert not thua, f"buoc khai tai nguyen ngoai du kien: {sorted(thua)}"

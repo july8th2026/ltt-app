@@ -61,15 +61,14 @@ Thêm một ranh giới **của riêng phiên này**, vì có phiên khác đang
    Hệ quả trực tiếp: **Mục G** (§4-D) bị chặn bởi ranh giới này, không phải bởi
    kỹ thuật.
 
-Và quy tắc chạy test, chép từ `CLAUDE.md`:
+Quy tắc chạy test: **`docs/00_LTT_OPERATING_CONTRACT.md` §4.**
 
-```powershell
-python tools\gate.py --vong-lap     # sau MOI lan sua       (~15 giay - 4 phut)
-python tools\gate.py                # TRUOC KHI BAO XONG    (~5 phut)
-```
+*(Trước 2026-09-08 chỗ này chép lại khối lệnh của `CLAUDE.md`. Bản chép đó đã
+trôi — nó ghi "~5 phút" cho gate đầy đủ, trong khi đo trên 43 lượt thật là
+**11,4 phút**. Một cadence chép tay không có cách nào tự biết nó đã cũ.)*
 
-⛔ `--vong-lap` **không phải bằng chứng**. Và một lượt gate chạy trên cây đang bị
-phiên khác sửa cũng **không phải bằng chứng** — gate tự nói ra điều đó
+⛔ Một lượt gate chạy trên cây đang bị phiên khác sửa **không phải bằng chứng** —
+gate tự nói ra điều đó
 (`CAY DA DOI TRONG LUC CHAY`). Cần một cửa sổ cây đứng yên trước khi báo xong.
 
 ---

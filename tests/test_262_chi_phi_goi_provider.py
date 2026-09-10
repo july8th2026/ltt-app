@@ -155,16 +155,34 @@ def test_moi_app_goi_provider_deu_BAO_LAI(goi):
     assert "KHOA_GOI_PROVIDER" in ma, f"apps/{goi} khong bao chi phi goi provider"
 
 
-def test_thumbnail_bao_MODEL_THAT_chu_khong_phai_gia_phang():
-    """App này tính giá **phẳng bất kể model**, nên handler là chỗ **duy nhất** biết
-    model thật đã dùng. Báo sai ở đây thì không còn nguồn nào khác để đối chiếu."""
-    import inspect
+def test_thumbnail_bao_MODEL_THAT_chu_khong_phai_gia_phang(tmp_path, monkeypatch):
+    """Báo cáo chi phí phải nói **đúng model đã gửi đi**.
 
+    🔴 Viết lại 09/09/2026 (pha 06.3). Bản cũ đọc **văn bản mã nguồn** và tìm
+       chuỗi `'"model": model'` — nó đo một CÁCH VIẾT, không đo giá trị báo
+       về. Khi app chuyển sang một model duy nhất, `_MODEL` là hằng số và
+       cách viết ấy biến mất, trong khi mệnh đề thật vẫn nguyên.
+
+    ⭐ Bản này đo **thứ thật**: chạy handler, rồi so model trong báo cáo với
+       model mà bộ điều phối **thực sự nhận được**. Nó đỏ đúng lúc phải đỏ —
+       khi hai bên lệch nhau — dù mã được viết theo kiểu gì.
+    """
     from apps.thumbnail import jobs
-    ma = inspect.getsource(jobs)
-    i = ma.index("KHOA_GOI_PROVIDER")
-    doan = ma[i:i + 200]
-    assert '"model": model' in doan, "phai bao bien `model` that su dung, khong hardcode"
+    from platform_core.storage import LocalStorage, set_storage
+    from tests.gia_dieu_phoi_anh import tiem
+
+    set_storage(LocalStorage(str(tmp_path / "st")))
+    try:
+        gia = tiem(monkeypatch, jobs)
+        ra = jobs.handle({"topic": "x", "owner_id": "u1", "count": 2},
+                         type("C", (), {"job_id": "j1",
+                                        "progress": lambda *a, **k: None})())
+    finally:
+        set_storage(None)
+
+    bao = ra[costing.KHOA_GOI_PROVIDER]
+    assert bao == [{"model": gia.da_goi[0]["model"], "count": 2}], (
+        "bao cao chi phi phai khop model that su gui di")
 
 
 def test_KHOA_GOI_PROVIDER_khong_lo_ra_hop_dong_cong_khai():

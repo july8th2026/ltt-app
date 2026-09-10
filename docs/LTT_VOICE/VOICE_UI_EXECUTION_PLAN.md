@@ -460,8 +460,23 @@ Nội dung: đổi hình dạng khoá kho sang `voice/out/{owner}/{job}/tieng.wa
 
 ## 12. Cách nghiệm thu — mỗi P phải qua
 
-1. `python tools\gate.py --vong-lap` sau **mỗi** lần sửa (~15 giây).
-2. `python tools\gate.py` **trước khi báo xong** (~5 phút). ⛔ Đừng dùng gate để dò lỗi.
+1. **Cadence chạy cổng: xem `docs/00_LTT_OPERATING_CONTRACT.md` §4.** Không
+   chép lại tên cờ hay số giây vào đây.
+
+   🔴 Hai dòng cũ ở đúng chỗ này đã sai **cả hai vế**, và chúng sai một cách
+   không ai phát hiện được từ trong tệp này:
+
+   | dòng cũ | thực tế 08/09/2026 |
+   |---|---|
+   | `gate.py --vong-lap` sau **mỗi** lần sửa | vòng lặp nay là `gate.py --doi`; `--vong-lap` trước 08/09 **luôn tự hạ cấp** xuống chạy đầy đủ |
+   | gate đầy đủ "~5 phút" | **11,4 phút** trung vị, đo trên 43 bản ghi |
+
+   ⭐ Đó là toàn bộ lý do dòng này nay là một **con trỏ**. Một con số chép tay
+   không có cách nào tự biết nó đã cũ — và một cadence chép tay còn tệ hơn một
+   bảng chép tay, vì nó không chỉ mô tả sai mà còn **bảo người ta làm sai**.
+
+2. `python tools\gate.py` ở **checkpoint** — không phải sau mỗi lần sửa.
+   ⛔ Đừng dùng gate để dò lỗi: nó là công cụ ra **phán quyết**.
 3. **Kiểm bằng trình duyệt thật** (Playwright), theo quy tắc 5b: soi nhanh ở
    `127.0.0.1:8100`, **chốt ở `https://app.lttstudios.com`** — Cloudflare có
    cache/CSP/minify riêng, và trang đẹp ở loopback vẫn có thể vỡ với khách thật.

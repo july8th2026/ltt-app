@@ -1878,3 +1878,577 @@ Memory moi: `thay-chuoi-toan-cuc-cham-dong-phong-thu`,
 
 Tai lieu: `docs/LTT_VOICE/NGUON_CHAN_LY.md` (chi muc), `AUTONOMOUS_AUDIT/00-08`,
 `KHO_GIONG/00-01`.
+
+---
+
+## 2026-09-07 — ChatLTT V3: P10 (ba lỗ tiền), deploy, và PHÁT HÀNH sáu cờ
+
+**Kết quả:** `33a76d8b` lên production 16:53; sáu cờ V3 bật 17:06; trunk đóng ở
+`a0ef52cf`. Nghiệm thu ba chiều: 515 tệp `.py`, lệch 0 / thiếu 0 / **thừa 0**.
+
+⚠️ **Chủ dự án quyết định phát hành TRƯỚC P11 (red team)** và xử lý P11 sau. Ghi
+   ra đây là một quyết định **thương mại**, không phải kết luận kỹ thuật.
+
+### P10 — ba lỗ tiền thật, cùng MỘT hình dạng
+
+> Mọi đường phòng thủ đều canh lúc **có luồng đang chạy**.
+> Lúc lượt **đứng chờ** thì không ai canh.
+
+| # | Lỗ | Hậu quả |
+|---|---|---|
+| 1 | Dừng lúc lượt đang chờ là **no-op im lặng** | duyệt xong lượt vẫn chạy tiếp, tiêu tiền sau khi người dùng bảo dừng |
+| 2 | Hai nguồn cùng chạy tiếp **một** run | **hai lượt model cho một lần duyệt** ⇒ tiền đi hai lần |
+| 3 | Huỷ rồi mà **thẻ duyệt vẫn hiện** | bấm Duyệt, không có gì xảy ra, không lời giải thích |
+
+Cả ba đều **tiêm bản cũ để xem có đỏ không** trước khi tin màu xanh. Lỗ 2 vá
+bằng `platform_core.leases` chứ không lật cột trạng thái — lật cột chặn được đua
+nhưng tạo ra một cách **kẹt vĩnh viễn** mới.
+
+⭐ Lỗ 2 là đúng cái bẫy mà `duyet._quyet` **đã học và ghi vào mã của chính nó**
+  (*"Điều kiện nằm TRONG WHERE"*). Cùng kho, cùng tuần — một chỗ học được, một
+  chỗ chưa. Bài học không tự lan sang tệp bên cạnh.
+
+### Bẫy 33 — bật một bước gate đang tắt cũng là một THAY ĐỔI
+
+Đặt `LTT_TEST_DATABASE_URL` để cứu một bước `[BOQUA]` ⇒ bước chạy thật 140,7 s,
+**và gate ĐỎ**: biến ấy tới **mọi worker pytest**, `pg_scratch.py` dùng nó làm
+công tắc bật năm tệp sang PostgreSQL thật, chúng đâm nhau qua xdist.
+
+Cách đúng: chạy **cạnh** gate, không **trong** gate ⇒ được cả hai vế.
+
+### 🔴 Giải thích được một chặn mà mục 05/09 đã ghi
+
+Mục **2026-09-05** viết: *"đăng nhập production từ máy này bị Cloudflare chặn"*.
+Hôm nay tìm ra nguyên nhân, và nó **không phải bot-detection**:
+
+```
+brunhild.challenges.cloudflare.com  ->  CHI CO IPv6
+ket noi IPv6 tu may nay             ->  KHONG DUOC (may khong co IPv6 toan cuc)
+```
+
+Challenge cần một host chỉ có IPv6 ⇒ không tải nổi ⇒ treo vĩnh viễn ở *"Just a
+moment…"*. Lỗi **hạ tầng mạng**, không phải phán quyết bot.
+
+🚨 **Và hệ quả chưa xác định bán kính:** nếu Cloudflare cũng phát challenge cho
+   khách thường thì **mọi khách ở mạng chỉ có IPv4 đều kẹt**. Đo từ một IP thì
+   không phân biệt được "chính sách chung" với "IP máy này bị chấm điểm". Phép
+   kiểm rẻ nhất: mở site trên điện thoại 4G.
+
+### Còn nợ — không cờ nào che được
+
+| Nợ | Trạng thái |
+|---|---|
+| **P11** red team | chưa chạy; bản giao ở `docs/CHATLTT_V3/15_BAN_GIAO_P11_RED_TEAM.md` |
+| **CK1** | ma trận 5 mốc + CLS đã đo trên Chrome thật; vế **URL công khai** chưa |
+| **Hạn mức lưu trữ** | tải lên **miễn phí**, không giới hạn số lượng; `C:` còn 458,6 GB ≈ 23.500 lượt là đầy ⇒ **sập cả nền tảng** |
+| **M3 · R3** | hai hằng số vẫn là **neo tự suy**; R3 **đã từng sai 13 lần** |
+| **D1 · D2** | hai lỗ trong chính đường ray deploy — xem `docs/16` |
+
+### Ba lần tôi sai trong ngày, đều cùng hình dạng
+
+Một lời giải thích **khớp vừa đủ** làm điều tra dừng sớm:
+
+| Tôi tưởng | Thật ra |
+|---|---|
+| Huỷ hỏng vì **đa tiến trình** | `_danh_thuc_run` chạy ở tiến trình web |
+| URL công khai chặn vì **Cloudflare coi là bot** | **thiếu IPv6** |
+| Phụ phí V3 là **204 ms** | 987 ms lượt đầu (nạp module) rồi **2,7 ms** |
+
+⭐ Và một lần nữa do phiên khác bắt: tôi ghi bài học deploy đổ lỗi cho **thời
+  điểm**, trong khi lỗi thật là tôi **đã thấy** dòng `??` và **đọc nó thành
+  "không sao"**. Phép kiểm chạy đúng; người đọc nó sai.
+
+Tài liệu: `docs/CHATLTT_V3/STATE.md` · `docs/BAY_TRONG_CONG_CHAT_LUONG.md`
+(Bẫy 33) · `docs/16_CAP_NHAT_VA_DEPLOY.md` (D1/D2).
+
+---
+
+## 2026-09-08 — OPERATING STANDARDIZATION: một hợp đồng vận hành, và một cửa giả
+
+Bốn commit: `229927d6` · `144c4847` · `9484e5f1` · `974cb984`. Đã đẩy GitHub.
+
+### Vấn đề
+
+Cadence chép lại trong **10 tệp kế hoạch**, và **5 bản chép KHÁC NHAU**:
+`--vong-lap` sau mỗi lần sửa · `--doi` trong vòng lặp · `test_nhanh --lf` sau mỗi
+lần sửa · một tập bất biến riêng · và `test_nhanh.py` **rồi** `gate.py`.
+
+Không ai cố ý viết sai. Cái sai là **không có chỗ nào để trả lời**, nên ai cần
+một cadence thì tự viết một cái.
+
+⇒ `docs/00_LTT_OPERATING_CONTRACT.md` (mới) · `CLAUDE.md` 375 → 186 dòng ·
+`tools/check_luat_van_hanh.py` (bánh cóc trong gate, 1,9 s, chốt TẬP HỢP).
+
+### 🔴 `--doi` tồn tại, được tài liệu hoá, và CHƯA TỪNG thu hẹp gì
+
+Đếm 59 bản ghi `test-results/gates/*.json`: `doi` **0 lượt**, `pham-vi` **0 lượt**.
+`thanh_phan.toml` không khai `tests/`, nên **mọi thay đổi chạm một tệp test đều
+hạ cấp xuống gate đầy đủ** — mà gần như mọi thay đổi thật đều kèm một tệp test.
+
+| Thay đổi | Trước | Sau |
+|---|---|---|
+| chỉ một tệp test | 532/532 | **1/532** |
+| app + test của nó | 532/532 | **118/532** |
+
+⛔ Bản sửa **đầu tiên sai**: suy chủ tệp test từ `import` của chính nó → **86 %**,
+một phạm vi *trông hẹp mà không hề hẹp*. Phép đo giết giả thuyết, không phải trực giác.
+
+### Tài liệu sai gấp đôi ở 6 chỗ
+
+Gate đầy đủ: tài liệu ghi "~5 phút"; trung vị 43 lượt là **11,4 phút**, và lượt
+đo trực tiếp hôm nay là **12,4 phút**. Cả sáu chỗ đều chép tay từ nhau.
+
+### Ba lần tôi sai, và cả ba đều được phiên khác hoặc phép đo bắt
+
+| Tôi tưởng | Thật ra |
+|---|---|
+| gate có **26 bước** (đếm `Step(` bằng AST) | **30** — ba lời gọi frontend nằm trong vòng lặp có điều kiện |
+| deploy chép **cây sống** ⇒ việc dở của phiên Voice sẽ lên production | `git archive` từ **commit** (`setup/2-cai-dat.ps1:201`); tệp chưa commit **không** lên |
+| hai phiên sửa bánh cóc **sau khi tôi nhắn** | Workflow V2 sửa **trước**; tôi gán nhân quả cho một phép đo không trả lời câu đó |
+
+Và một lỗi tôi tự mắc **ngay sau khi viết luật cấm nó**: đọc `check_ruff.py 2>&1
+| tail -4; echo "EXIT=$?"` — `$?` đó là của `tail`. Thứ cứu tôi không phải sự cẩn
+thận mà là `pre-commit` tự chạy lại ruff.
+
+### 🔴 Bài học đắt nhất — một PHÂN BIỆT
+
+Chủ sản phẩm bảo các phiên khác **"dừng chạy pytest"**. Họ **giữ lời tuyệt đối**:
+máy chỉ `0.9/20` lõi bận suốt 12,4 phút. Lượt gate vẫn ra `CAY DA DOI GIUA CHUNG`
+— 16 tệp. Họ không **chạy** gì cả; họ **gõ**.
+
+> **"Không dùng CPU" ≠ "cây đứng yên".** Một lượt gate cần **cả hai**, và
+> `cua_so_yen` chỉ đo được vế đầu.
+
+Cái bẫy không nằm ở sự sơ ý mà ở chỗ **hai câu nghe giống nhau**: "đừng dùng CPU"
+thoả mãn được bằng cách viết mã suốt 12 phút. Một phiên **tuân thủ hoàn hảo** vẫn
+phá lượt đo của người khác. ⇒ `docs/00_LTT_OPERATING_CONTRACT.md` **§4.9**.
+
+⚠️ Và tôi mắc đúng lỗi đó trong cùng lượt: sửa `docs/BAY_TRONG_CONG_CHAT_LUONG.md`
+giữa lượt gate của **chính mình**, chỉ thoát vì `docs/` không nằm trong `THU_MUC_CHUP`.
+
+### Bẫy 37 — `pre-commit` stash UNSTAGED nhưng không stash UNTRACKED
+
+Một tệp untracked của phiên A cộng vào bánh cóc của phiên B, và **không** hiện
+trong `git diff --cached` của người bị chặn. Hôm nay đánh trúng **hai** bánh cóc:
+`ruff` F401 và `bo qua`.
+
+### Nợ
+
+| Nợ | Trạng thái |
+|---|---|
+| **Deploy** | ⛔ **CHƯA** — bị chặn bởi chế độ quyền của phiên, không phải bởi mã. 10 commit từ bản đang chạy (`03a83a1c`) tới `974cb984`, gồm **5 migration Workflow V2** |
+| Số giây thật cho `--doi` | chưa đo được — cả ngày chưa có cửa sổ nào cây đứng yên |
+| `docs/**` vẫn hạ cấp xuống đầy đủ | **70 tệp test đọc `docs/`** ⇒ cần bản khai chủ sở hữu, không phải luật miễn trừ |
+| `@pytest.mark.slow` | dùng 1 lần mà chưa khai trong `pytest.ini` |
+
+
+---
+
+## 2026-09-08 — LTT VOICE: 15/20 hạng mục của bản kiểm toán VIRAL_VOICE
+
+**Commit:** `2d9dcf1a` (13 hạng mục) · `c8a9eed0` (U-15, U-17) · đẩy GitHub xong
+**Quyết định:** `docs/LTT_VOICE/DECISIONS.md` DV-012 → DV-018
+
+### Ba lỗ TIỀN, tìm ra khi nối hồ sơ tốc độ vào đường báo giá
+
+| lỗ | đo được |
+|---|---|
+| `_gia` tính cả bài như **một** lượt phát | bài 100.000 ký tự = 67 đoạn: giữ **1.112**, giá thật **1.132** |
+| ô "ước credit" không nhận `preset` | hiện số của giọng **mặc định**, phần tạm giữ dùng số giọng khách chọn |
+| nhận/bác hồ sơ **theo từng trường** | `1,0 + n/18` **<** `1,5 + n/18` — ước thấp hơn cả đường lùi thuần |
+
+Cả ba lệch về **đúng phía chốt 3.3 cấm**: giữ thiếu credit.
+
+### 🔴 Một cánh cửa MỘT CHIỀU KHÔNG CÓ CHÌA — do chính lượt sửa gây ra
+
+`license_status` (U-05) được cổng **đọc**, và **không ai ghi**. Trước bản vá,
+`dung_chung=True` là **đủ**; sau nó là **cần nhưng không đủ**, và điều kiện đủ
+**không đường nào đạt tới**.
+
+⭐ Đúng lớp lỗi `DV-010` mà chính lượt ấy viết cảnh báo về nó. Một bảng đọc được
+mà không ai ghi trông **y hệt** một bảng đang hoạt động.
+
+⇒ `tools/soat_giong.py`, bắt buộc `--ly-do` ở **cả hai** chiều. Chủ sản phẩm hỏi
+*"còn sót hạng mục nào"* là thứ bắt được nó — nếu không nó đã vào gate và **xanh**,
+vì mọi phép kiểm đều chỉ đo phía đọc.
+
+### Bốn ca cùng một họ trong một ngày, bốn người khác nhau tìm ra
+
+```
+license_status          cong DOC duoc, khong ai GHI
+--cookie cua a11y_quet  docstring khai, CHUA BAO GIO chay
+NHAN_LOC[phong_cach]    route loc du 3 mat, template ve 2 o  (ASV tim ra)
+doc_so_tran cua ASV     nhanh "theo khuon" khong ai vao       (ASV tim ra)
+```
+
+Hai câu hỏi rẻ bắt được cả bốn — và cần **cả hai**:
+
+1. **có ĐƯỜNG tới người dùng không?** → bắt hai ca đầu
+2. **có XE trên đường đó không?** → bắt hai ca sau
+
+⚠️ Câu 2 khó hơn hẳn: câu 1 trả lời được bằng `grep` một tên; câu 2 phải phân
+biệt **phía nhận** với **phía gọi**.
+
+### Bộ đo hỏng ở đúng chỗ nó được cần tới lần đầu
+
+`tools/a11y_quet.js` gọi `new URL(...)` — không tồn tại trong sandbox
+`playwright-cli run-code`. Nằm **trong** nhánh `if (CAU_HINH.cookie)`, mà
+`ROUTE_MAC_DINH` chỉ có bốn route **công khai** ⇒ nhánh ấy **chưa bao giờ chạy**.
+
+⭐ Bản vá **đã nằm sẵn** ở `tools/mobile_quet.js:189` kèm nguyên chú thích giải
+thích. Ai đó gặp lỗi, sửa ở **một** tệp, ghi lại lý do — tệp anh em cùng đoạn mã
+thì không ai sửa.
+
+> **Chép lại bộ đo mà không chép bài học là cách một lớp lỗi sống sót qua chính
+> bản vá của nó.**
+
+⇒ `tests/test_513` chốt **cả hai** tệp, và dò danh sách **bằng nội dung**
+(`const CAU_HINH`) nên bản sao thứ ba cũng bị bắt.
+
+### Kết quả soát a11y — lần đầu ba màn cần đăng nhập được đo
+
+`55 nút / 5 mã` → sửa `aria-progressbar-name` → `53 nút / 4 mã`.
+
+⛔ **36 nút còn lại là một QUYẾT ĐỊNH, không phải một bản vá.** Chúng đến từ một
+dòng: `<article role="button" tabindex="0">` bọc hai `<button>` thật. Cấu trúc ấy
+đã gây **hai lỗi thật đã vá bằng JS** (04/09 chuột không mở được panel; Enter trên
+nút nghe thử bị nuốt). Gỡ nó đổi điều hướng bàn phím của **mọi** khách. Nêu kèm
+bằng chứng ở DV-018, chưa làm.
+
+### 🔴 Bảy phép kiểm chặn gate của MỌI phiên, và không phiên nào sửa được
+
+`test_448` đọc một tệp báo cáo **TĨNH** ghi nguyên văn
+`'khong provider nao phuc vu duoc: ltt_llm: ban'`. Đo ở **ba** cây: cùng
+`20.475 B`, sửa lần cuối `09-07 20:25`.
+
+⚠️ Sinh lại chạy qua `setup/nghiem_thu_asv.ps1`, script ấy đọc `secrets\app.env`
+đang bị ACL chặn ⇒ **bật UAC** ⇒ **chủ sản phẩm phải bấm chuột**.
+
+⛔ `icacls` để đi vòng là **gỡ hạng mục W1.5**. `CLAUDE.md` xếp UAC vào bốn thứ
+giữ lại kể cả khi chưa có khách: *"ràng buộc **cơ học** — không phải chuyện quyền"*.
+
+⭐ Phiên ASV tự sửa một chỗ đáng ghi: họ từng từ chối sinh lại vì tưởng là **ghi
+đè bằng chứng không đảo được**. Kiểm lại: tệp được git theo dõi và đang sạch ⇒
+`git checkout` đảo được. **Hai rào bị gộp làm một, và chỉ một là thật** — cái rào
+không tồn tại đã giữ tệp ấy đứng yên qua **năm** lượt chẩn đoán sai của bốn phiên.
+
+### Ba vòng chẩn đoán sai về PostgreSQL, và cả ba đều "đúng" ở tầng của nó
+
+```
+vong 1  "thieu PostgreSQL"       -> sai. Postgres DANG CHAY
+vong 2  "thieu quyen CREATEDB"   -> sai. Xac thuc TRUOT TRUOC do
+vong 3  doc nham TEP app.env, vi tep dung bi ACL chan
+```
+
+⚠️ Thứ cắt được vòng lặp không phải sự cẩn thận — là in `user=` và `host=` thay
+vì chỉ in `type(ex).__name__`. **Một tên lớp ngoại lệ tương thích với mọi giả
+thuyết.**
+
+⇒ Đã đính chính `docs/OPERATING_STANDARDIZATION/FINAL_REPORT.md` (phiên
+OPERATING đã kết thúc), và đổi mục P0 từ một **lệnh sửa** sang một **lệnh đo** —
+một P0 ghi sẵn `GRANT CREATEDB` sẽ được ai đó chạy, và nó **không sửa gì**.
+
+### Hình dạng lỗi lặp nhiều nhất trong ngày
+
+**Phạm vi phép đo hẹp hơn phạm vi lời tuyên bố** — ít nhất **chín** lần, ở cả bốn
+phiên. Ba lần rõ nhất của tôi:
+
+| tôi ĐO | tôi TUYÊN BỐ |
+|---|---|
+| `grep` trong `tests/test_50*` + `test_51*` | *"không còn ai gọi `nang_luc`"* (sót `test_338`) |
+| **7** công cụ tĩnh chạy `rc=0` | *"bánh cóc xanh"* (gate có **24**) |
+| commit **cùng cây** đổi mtime | *"commit chạm cây của **mọi** phiên"* |
+
+⭐ Cái thứ hai đắt nhất: bước làm lượt L3 đỏ trả lời trong **2,6 giây**, và tôi
+tiêu **15 phút** cộng một cửa sổ ba phiên đứng yên để học nó.
+
+> **Một tập con không tự khai rằng nó là tập con.** Bảy dòng `rc=0` trông y hệt
+> hai mươi bốn dòng `rc=0` — khác biệt nằm ở thứ *không có mặt*.
+
+⇒ `DV-016`. Danh sách bước tĩnh nay lấy **từ `tools/gate.py::_steps`**, chạy hết
+trong ~50 giây — tỉ lệ 1:15 so với một lượt L3 đỏ.
+
+### Điều kiện thứ BA của một lượt gate
+
+Ngoài *"máy rảnh"* (§4.8) và *"cây đứng yên"* (§4.9), có vế thứ ba chưa ai nói:
+
+> **Đừng chạm cây làm việc qua git** — và `commit` đứng **đầu** danh sách, không
+> phải cuối.
+
+Đo được: commit `0d1ffe5a` lúc `16:56:48`, và `16:56:49` **năm tệp unstaged của
+phiên khác đổi mtime**. `pre_commit/staged_files_only.py` dùng
+`git checkout -- .` rồi `git apply` — xoá sạch rồi đắp lại.
+
+⚠️ **Đính chính của chính tôi:** tôi suy rộng thành *"commit chạm cây của **mọi**
+phiên"*. Sai — `_CHECKOUT_CMD` dùng `'.'` = **thư mục hiện tại**, nên nó chỉ chạm
+**cùng cây**. Phiên `AI Clean Rebuild` bắt được, bằng cách đọc nguồn.
+
+⭐ Và kết luận của họ mạnh hơn cả bản sửa:
+
+> **Đường thoát không phải thêm một cửa sổ, mà là đứng ở cây khác. Cửa sổ phải
+> thương lượng mỗi lần và hỏng khi một bên quên; cây riêng thì hỏng không được.**
+
+Hôm nay **cả bốn phiên** đều vi phạm đúng cái luật mình vừa tự viết ra. Tôi viết
+§4.9 rồi vi phạm nó ở **lượt kế tiếp**.
+
+### Còn lại — và mỗi cái chặn bởi một thứ ĐO ĐƯỢC
+
+| | chặn bởi |
+|---|---|
+| U-07 streaming | mô hình **tính tiền mới** (luồng không có tệp cuối) + cửa đang tắt + PCM16 kém float32 |
+| U-10, phần đo U-01 | **sidecar không chạy** (`san_sang()=False`, 0 giọng đã đo) |
+| U-16 | clip có **consent** — chủ sản phẩm |
+| U-19 | license trọng số |
+| U-20 | XL |
+
+**Bàn giao:** `tests/test_514` (bất biến liên app: không app nào ghim cứng khuôn
+chuẩn hoá) đã soạn xong nhưng **chưa thả vào** — nó sẽ đỏ cho tới khi ASV đổi
+`giong_noi.py:148` `bool = False` → `bool | None = None`. ASV đang sửa tệp ấy
+trong changeset của họ.
+
+---
+
+# Phiên 09/09/2026 — VPS V2 lên production, và hai lỗ rò chỉ URL công khai mới thấy
+
+Deploy `84661047`. Trunk `admin-mvp-v3`, nhánh phiên và production **cùng một băm**.
+
+```
+nghiem_thu_deploy   635 tep .py   lech 0 · thieu 0 · THUA 0
+/health/ready 200   ·   gate: 7 do, ca 7 la test_448
+```
+
+## Việc chính: VPS V2 (11 tệp test, 3 migration, 7 lỗi P0)
+
+Tách năm khái niệm trạng thái (vòng đời / điện mong muốn / điện quan sát / tác vụ
+đang chạy / độ tươi), cột `trang_thai` cũ thành **phép chiếu**. Bốn lệnh điều
+khiển chuyển sang hàng đợi job. Bảng `vps_thao_tac` — bản ghi thao tác bền, khác
+hàng đợi job và khác nhật ký sự kiện. TLS **fail-closed**: production không có CA
+thì từ chối nối Proxmox.
+
+Chi tiết ở `docs/vps_v2/` (kế hoạch · STATE · ADR · KNOWN_BLOCKERS · scorecard).
+
+## 🔴 Bài học đắt nhất — và nó không nằm trong mã
+
+Sau khi deploy, **một lượt `curl` lên URL công khai** tìm ra trang bán hàng `/vps`
+đang in cho khách chưa đăng nhập:
+
+```
+Hien chua nhan may moi. (chua cau hinh Proxmox: production ma khong co
+LTT_VPS_PROXMOX_CA: tu choi noi toi Proxmox ...)
+```
+
+Vá xong, **quét AST cả `apps/vps/` theo HẠNG lỗi** (f-string mang tên biến ngoại
+lệ, không nằm trong `log.*`) ra 14 chỗ — và một chỗ đang sống, trên **trang máy
+của khách**:
+
+```
+{'thong_diep': 'ProxmoxError: 500 loi tai https://10.10.0.2:8006/api2/json/nodes/pve1'}
+```
+
+Tên class Python + IP nội bộ + cổng quản trị + đường dẫn cụm. Cả hai **có sẵn từ
+trước** chương trình này, và cả hai lọt qua `test_557` + `test_559`.
+
+⛔ **Không phải vì hai bộ test yếu.** Vì chúng đo **mã** và đo **render local**.
+
+⭐ Và `RELEASE_SCORECARD.md` đã **viết ra** hạn chế ấy — dòng *"⚠️ local, chưa phải
+   `app.lttstudios.com`"* nằm ngay trong bảng, tôi đọc qua nó rồi vẫn chấm 95.
+
+> **Một hạn chế đã biết và đã ghi ra giấy không tự biến thành một phép đo.** Nó
+> chỉ đổi trạng thái khi có người chạy một lệnh và đọc kết quả.
+
+⇒ Bản vá dài hạn không phải hai commit sửa chuỗi, mà là **`tools/vps_quet_ro_ri.py`**
+  — quét chuỗi cấm trên chính URL công khai, chạy sau mỗi deploy, cạnh
+  `nghiem_thu_deploy.py`. Không nằm trong gate: gate phải chạy được khi không có
+  mạng và nó đo *commit ở cây*, còn công cụ này đo *bản đang phục vụ khách*.
+
+  Nó đòi **tiền đề** (HTTP 200 + ≥2 KB) trước khi kết luận, và nó **đỏ trên bản
+  production cũ** — đó là đối chứng, không phải một cái vỏ luôn xanh.
+
+Điểm hạ thật thà: SOFTWARE 94 → **91** · Bảo mật 94 → **88** · GUI 95 → **90**.
+
+## Bài học thứ hai: git xoá thứ nó theo dõi, để lại thứ nó bỏ qua
+
+Lượt hoà chiến dịch AI CLEAN REBUILD V2 xoá `chataistudio` + `codex_sidecar`.
+`git status` sạch **0 dòng** ở cả hai cây. Nhưng:
+
+```
+apps/chataistudio/__pycache__/  6 .pyc      codex_sidecar/__pycache__/  3 .pyc
+tep nguon: 0        git ls-files: 0
+```
+
+Ba phép kiểm **có sẵn** bắt được (`test_60` · `test_85` · `test_1004`). Và
+`robocopy` trong `setup\2-cai-dat.ps1` lọc `/XD` theo **tên thư mục**, không theo
+trạng thái git — nên nó sẽ chép `apps\chataistudio\` lên production thành một
+thư mục con của `apps/` **không có `manifest.py`**.
+
+🔑 Thứ thiếu không phải phép kiểm, mà là **chạy chúng trên cây sẽ được chép đi**.
+   Gate của phiên xoá chạy *trước* ff; gate của phiên deploy chạy *sau* lượt hoà.
+   Chỉ vị trí thời gian ấy quyết định ai nhìn thấy.
+
+⇒ **Sau mỗi ff/merge có xoá thư mục: `git clean -ndX` trên cây ĐÍCH.** Và lượt
+  gate cuối phải chạy trên cây **sẽ được deploy**, sau khi mọi thao tác git xong.
+
+## Bài học thứ ba: `cua_so_yen` trả lời một câu KHÁC
+
+Lần thứ ba trong bốn ngày. Hai phiên bấm gate cách nhau **56 giây**; tôi có chạy
+`cua_so_yen.py trang-thai` và nó trả `RANH`.
+
+**Nó không sai.** `tools/test_nhanh.py:414-436` ghi từ 05-06/09: nó trả lời câu
+*"có ai **xin** khoá không"*, không trả lời *"có gì đang **chạy** không"*. Tôi đọc
+`RANH` rồi bỏ bước kiểm **cây tiến trình** — vế quyết định.
+
+⇒ Đo khoá (điều kiện **cần**) rồi đo cây tiến trình (điều kiện **quyết định**),
+  lọc theo `Name -eq 'python.exe'` chứ **không** theo `CommandLine -like '*gate.py*'`
+  — chuỗi ấy nằm trong chính lệnh mình vừa gõ nên nó tự khớp vào mình.
+
+## Còn lại — chặn bởi thứ ĐO ĐƯỢC, không phải bởi mã
+
+| | chặn bởi |
+|---|---|
+| `lifecycle` vẫn `development` | chưa chạy mạch nghiệm thu live (B-04) — cần VM thử |
+| Bán máy đầu tiên | `LTT_VPS_PROXMOX_CA` chưa đặt (B-03); 0 máy đang chạy nên hôm nay không cắt gì |
+| Backup/DR trần **50** | không có đích sao lưu độc lập (B-01) — phải mua/dựng |
+| LIVE INFRA **45** | một node PVE chạy lồng, không HA (B-02) |
+| `/api/v1` đóng cho VPS | ba quyết định sản phẩm (B-06) |
+
+---
+
+## 2026-09-09 → 10 · Phiên **Dọn Dẹp hệ thống API** — AI CLEAN REBUILD V2 đóng
+
+**Chiến dịch: 19/19 pha.** Trunk `3b22503c` · production `3b22503cc590` (build 2026-09-10T10:18:13).
+
+### Cái đã gỡ — đo **có phạm vi**
+
+```
+21 tep xoa han · 2.978 dong
+```
+
+⛔ Không phải `git diff --shortstat` của cả nhánh (`328 tệp, +29.153/−5.524`).
+Nhánh `phien/aiclean` mang **51 commit** kể từ nền, chỉ ~15 là của chiến dịch —
+số còn lại là LTT VOICE, WORKFLOW V2, VPS V2. Lấy con số tổng rồi gán cho chiến
+dịch là **nhận công của bốn phiên khác**.
+
+| | Trước | Sau |
+|---|---|---|
+| Nhà cung cấp ngoài gọi được | 5 | **1** (BytePlus) |
+| Khoá API legacy trong CSDL | 4 **đang sống**, ~455 lượt/cái | **0** |
+| Khoá legacy trong `secrets\app.env` | 4 | **0** |
+| Dịch vụ Windows của đường đã gỡ | 1 (`LTTStudioCodex`) | **0** |
+| Nhánh remote | 25 | **10** |
+
+### Bốn đường sinh thật — chứng minh, không suy
+
+| | Bằng chứng |
+|---|---|
+| Text | ba cửa `/chat/completions` · `/messages` · `/responses`, 200 với token thật |
+| IMAGE | ảnh **5.519.918 byte** qua Cloudflare, `held:3 charged:3`, `mode:"live"` |
+| VLM | `{"so_hinh_tron": 3, "chu": "K7QX"}` — khớp đáp án **máy sinh** |
+| Voice | job `7a0ea335` qua hàng đợi production → **8,48s tiếng**, báo giá 2 = thu 2 |
+
+⚠️ **Seedance ⊘ ngoài phạm vi** bằng **lời xác nhận của chủ sản phẩm**, không
+phải phép đo. Nên E2E là **9/10**, không phải 10/10 — bốn đường đo được thì đã
+đo, đường thứ năm thì ta *tin*, và hai thứ đó không được viết cùng một chữ.
+
+**Điểm 82 → 86**, trong đó **một trục bị HẠ**: `Legacy removal` 10 → 9.
+
+### 🔑 Bài học lớn nhất: mọi phép kiểm soi MÃ, không cái nào soi HÀNG TRONG BẢNG
+
+Sau khi mọi phép kiểm đã xanh và báo cáo đã viết, việc dọn **dữ liệu** lôi ra
+thứ việc dọn **mã** không thấy: bảng `api_keys` production còn **bốn khoá đang
+bật** của chính các nhà cung cấp đã gỡ. Một khoá `cheapkeyai` được cấp phát lúc
+**23:35:41** — đúng giây một job ảnh của khách được tạo.
+
+`public_api/capacity.py::_providers_healthy` xin khoá **không lọc nhà cung cấp**,
+nên `/api/v1/capacity` đã trả lời khách *"còn phục vụ"* dựa trên một khoá mà
+`chan_neu_da_ngung` sẽ từ chối ngay khi có ai gọi thật — **chào bán một năng lực
+không tồn tại**.
+
+⇒ Đã vá ở **mã** (`tests/test_1008`, 6 phép kiểm, một là đối chứng chạy lại
+  nguyên văn thân hàm cũ), và xoá 4 hàng khỏi CSDL (có sao lưu). Xoá dữ liệu chỉ
+  dập triệu chứng của hôm nay.
+
+### Ba lỗi của tôi, ghi ra vì một báo cáo chỉ liệt kê lỗi người khác thì không ai tin phần còn lại
+
+1. **Giải thích một triệu chứng bằng sai nguyên nhân, rồi phát tán nó.** Ba lần
+   `cua_so_yen` báo `RANH` khi gate đang chạy; tôi kết luận *"nó trả lời câu
+   khác"* và gửi kết luận ấy cho **ba phiên**. Nguyên nhân thật: một fixture test
+   (`test_394`) **xoá khoá thật của máy** — khoá vắng **84%** thời lượng mỗi lượt
+   gate. Tôi tự tái hiện: bộ test **31 passed** trong khi nó xoá hàng rào.
+   ⇒ Dấu hiệu đáng lẽ phải làm tôi đi tiếp: khoá không chỉ *"không thấy"* mà
+     **tệp biến mất**. Một công cụ trả lời sai câu thì vẫn để lại tệp.
+
+2. **Một byte BEL chặn gate cho mọi cây.** `C:\LTTPlatform\secrets\app.env` viết
+   trong chuỗi Python không raw → `\a` thành `0x07`. Tôi **đọc lại đoạn văn ấy
+   vài lần** và không thấy — vì mắt đọc **ký tự**, lỗi ở tầng **byte**. Và bản
+   sửa đầu tiên của tôi **xoá luôn dấu gạch chéo**: phép thoát là *hai-đổi-một*
+   nên phục hồi phải là *một-đổi-hai*.
+
+3. **Cảnh báo sai về việc hạ mốc.** Tôi tự khai hạ mốc `ruff` là "tác dụng phụ
+   phạt cây chưa hoà" — **sai**: mốc là **tệp trong cây**, nó đi cùng mã biện
+   minh cho nó. Tôi khớp mẫu vào một bài học đúng cho trạng thái **toàn cục**,
+   cho một cơ chế **khác hình dạng**.
+
+### Việc phối hợp — sáu phiên, một máy 10 lõi
+
+Cơ chế **đo-lại-sau-khi-bấm** chạy nhiều lần, hai chiều. Ca hẹp nhất: **2 giây**.
+Luật bổ sung rút ra cùng phiên `4bot`: **lệch dưới ~5 giây thì đừng phân xử bằng
+thời điểm** — nó nhỏ hơn độ phân giải của chính cơ chế — mà phân xử bằng **cây
+nào mất nhiều hơn**; cây chính thắng.
+
+Và tách được phạm vi của câu *"chồng gate làm sai"*: nó làm sai **bộ test**,
+không làm sai **bánh cóc đếm** (đọc mã rồi đếm, ra cùng số dù CPU 2% hay 100%).
+Hai phiên suýt vứt một lượt gate hợp lệ vì câu ấy được truyền đi **không kèm
+phạm vi**.
+
+### Còn lại — nói rõ để không ai đọc rộng hơn phạm vi
+
+- **`test_448` × 7** — nợ của ASV v4, truy được về commit `3eae396d` của chính
+  phiên ấy, kèm tệp bằng chứng do cùng commit ghi ra. **Không phải của chiến dịch.**
+- **Năm phát hiện ngoài phạm vi** — báo cáo, **cố ý không tự sửa** (`PHA15` §5).
+- **`llm_gateway/dem.py` không có trên trunk** ⇒ lượt deploy này **không** mang
+  phần gia cố LLM gateway của phiên `LLM LTT`; phần ấy chạy trên **máy B** qua
+  một đường deploy khác.
+- **Một khoá Gemini ngoài kho** (`D:\FULL AUTO VIDEO\`) — **không** thuộc phạm vi
+  chiến dịch. Ghi con trỏ vì *"đã gỡ Gemini"* rất dễ bị đọc thành *"máy này không
+  còn khoá Gemini nào"*, và câu thứ hai **sai**.
+
+### ⚠️ Một câu tôi viết SAI, và phiên `4bot` hỏi ngược đúng lúc
+
+Tôi gọi bản vá khoá (`test_394`/`test_361`) là *"bản vá `tests/`, không đổi hành
+vi sản phẩm"*. Họ hỏi ngược: **đúng với sản phẩm, sai với máy chủ — nếu ai đó
+chạy bộ test trên chính máy production.**
+
+Đo được, và câu trả lời là **CÓ**:
+
+```
+Test-Path C:\LTTPlatform  ->  True          (may nay LA may chu)
+ba luot gate day du trong 12 gio qua, deu chay o day, deu do TOI chay
+```
+
+⇒ Trước bản vá, mỗi lượt ấy gọi `nha(ep=True)` trên **mọi khoá thật của máy
+  chủ**. Nên nó **là** một bản vá hành vi trên máy này.
+
+⭐ Và nó làm rõ một điều dễ quên: `D:\LTTSTUDIOSAPP` **vừa là cây phát triển
+   vừa là nguồn deploy của máy chủ**. Mọi thứ ta chạy ở đây đều chạy *trên*
+   production theo nghĩa vật lý — kể cả bộ test.
+
+### Nghiệm thu deploy — ba chiều, và một chiều thứ tư do phiên ASV V6 đề nghị
+
+```
+[OK] Xuat commit 3b22503cc590: 3943 tep (nguon BAT BIEN)   <- di duong git archive
+lech 0 · thieu 0 · THUA 0   ->  "khop tuyet doi mot commit xac dinh"
+app\.claude False · app\.git False · app	est-results False · app	mp False
+production  commit 3b22503cc590 · asset_ver 9b7ae80d · build 2026-09-10T10:18:13
+```
+
+⛔ `setup\2-cai-dat.ps1` có một **đường lui** (`$srcChep = $src`, dòng 248) chép
+   **cây sống**, và danh sách `/XD` **không có `.claude`**. Nếu `git archive` hỏng,
+   deploy sẽ chép **sáu worktree của sáu phiên** lên production — và **không đỏ ở
+   đâu cả**: bản xuất vẫn đủ tệp, dịch vụ vẫn lên, `/health/version` vẫn đúng.
+
+⭐ Giá trị của phép kiểm ấy không nằm ở việc nó bắt được gì hôm nay (đường bất
+   biến đã chạy). Nó nằm ở chỗ: **thứ chỉ hỏng im lặng là loại duy nhất đáng
+   dựng thêm một cửa riêng.**
+
+⚠️ Không sửa `setup/` ngay trước một lượt deploy — đó là đổi một rủi ro **đã
+   hiểu** lấy một rủi ro **chưa hiểu**.

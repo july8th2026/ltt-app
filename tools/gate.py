@@ -581,6 +581,15 @@ def _steps(quick: bool, noi_tiep: bool = False) -> list[Step]:
         # Banh coc: khong cho THEM cho nuot loi lang le. Xem
         # tools/check_silent_except.py vi sao khong doi ve 0 ngay.
         Step("nuot loi lang le", [sys.executable, "tools/check_silent_except.py"], ROOT),
+        # 🔴 Banh coc cho chinh LUAT VAN HANH. Truoc 08/09 cadence duoc chep lai
+        #    trong 10 tep ke hoach, va 5 ban chep KHONG giong nhau — trong do hai
+        #    ban bao chay `test_nhanh.py` ROI `gate.py`, tuc tra ~4 phut hai lan
+        #    cho cung mot tap pass/fail (buoc `bo test` ngay trong tep nay CHINH
+        #    LA `test_nhanh.py`).
+        #
+        # ⛔ Khong ai co y viet sai. Cai sai la khong co CHO NAO de tra loi, nen
+        #    ai can mot cadence thi tu viet mot cai. Buoc nay giu cho do duy nhat.
+        Step("luat van hanh", [sys.executable, "tools/check_luat_van_hanh.py"], ROOT),
         # 🔴 `ruff` đã nằm sẵn trong máy nhiều tháng mà **không có cấu hình** và
         #    không nằm trong gate. Đo 06/09 nó bắt một bộ phát hiện lớn với bộ luật
         #    `F,B` (đã bỏ `B008` vì nó là `Depends()` của FastAPI) — trong đó có
@@ -759,6 +768,52 @@ def _steps(quick: bool, noi_tiep: bool = False) -> list[Step]:
                           [sys.executable, "tools/check_multiproc.py"], ROOT,
                           nhom="nang", tai_nguyen=("postgres_test",),
                           so_loi=2, giay_toi_thieu=3.0))
+        # 🔴 THEM 08/09/2026. Do duoc hom do: KHONG phep kiem nao trong kho thi
+        #    hanh `alembic upgrade` tren PostgreSQL.
+        #
+        #        moi tep goi `command.upgrade`: test_103 · test_451 · test_45
+        #                                       · test_505 · test_616
+        #        -> postgres = 0 o TAT CA (chung deu tro `sqlite:///`)
+        #
+        #    Va buoc `bat bien da tien trinh` ngay tren KHONG lap duoc lo do: no
+        #    dung luoc do bang `drop_all()`/metadata — tuc di duong SQLAlchemy
+        #    MODEL, khong di duong MIGRATION. Hai duong khac nhau, va chi duong
+        #    thu hai la duong production di.
+        #
+        # ⇒ He qua that: `BOOLEAN DEFAULT 1` (PostgreSQL tu choi, SQLite nhan)
+        #   song sot qua BA commit, moi commit deu kem cau "thi hanh that tu
+        #   base toi head" — cau ay dung, va no dung TREN SQLITE.
+        steps.append(Step("migration tren postgres",
+                          [sys.executable, "tools/do_migration_tren_postgres.py"],
+                          ROOT, nhom="nang", tai_nguyen=("postgres_test",),
+                          giay_toi_thieu=2.0))
+        # ⭐ TRUC THU HAI, va no khac buoc tren chu khong trung.
+        #
+        # Buoc tren hoi: *migration* co chay tren PostgreSQL khong (DDL).
+        # Buoc nay hoi:  *ma chay luc runtime* co chay tren PostgreSQL khong
+        #                (DML) — voi du lieu THAT cua production.
+        #
+        # ⇒ He qua that, do 08/09/2026: `M-1` danh dau ban da di tru bang
+        #   `"m1:" + id` = 39 ky tu vao cot `String(36)`. SQLite khong cuong
+        #   che do dai VARCHAR nen bo test xanh, va ca mot lan dien tap tren
+        #   BAN SAO SQLITE CUA CHINH DU LIEU PRODUCTION cung xanh. PostgreSQL:
+        #   `StringDataRightTruncation`. Buoc tren khong the thay — no khong
+        #   chay mot dong ma san pham nao.
+        # ⚠️ SAN 0.8s, KHONG phai 2.0s. Ban dau toi chep `2.0` tu buoc tren ma
+        #    khong do — va gate do vi chinh cai san do: buoc chay THAT, in
+        #    `RESULT: PASS`, roi bi danh truot vi xong trong 1.63s.
+        #
+        # Do ba luot tren may ranh: 1466 / 1400 / 1376 ms. Buoc nay nhanh hon
+        # buoc migration vi no chi nap 10 hang, khong chay ca chuoi alembic.
+        #
+        # ⭐ San chi can phan biet CHAY THAT voi TRA 0 AM THAM — duong `BO QUA`
+        #    da duoc `_tu_khai_bo_qua` mien roi (`step.ok and not step.bo_qua`).
+        #    Duong tra 0 am tham la doc secrets roi thoat: ~0.2s. Nen 0.8s nam
+        #    giua hai cum voi bien ca hai phia.
+        steps.append(Step("M-1 tren postgres",
+                          [sys.executable, "tools/dien_tap_m1_tren_postgres.py"],
+                          ROOT, nhom="nang", tai_nguyen=("postgres_test",),
+                          giay_toi_thieu=0.8))
     npm = _npm()
     for name in FRONTENDS:
         folder = ROOT / "frontend" / name
@@ -1254,7 +1309,8 @@ THU_MUC_CHUP = (
     "apps", "platform_core", "server", "tools", "tests", "alembic", "locale",
     # Mã chạy trên máy B và bộ cài chạy trên máy khách. Cả hai deploy đi xa
     # khỏi kho này, nên một lần sửa giữa lượt gate là một lần sai không ai thấy.
-    "llm_gateway", "render_gateway", "sdk", "nexus_agent", "codex_sidecar",
+    "llm_gateway", "render_gateway", "sdk", "nexus_agent",
+    # (`codex_sidecar` gỡ 09/09/2026 — AI CLEAN REBUILD V2 pha 07.)
     # Nguồn frontend. `node_modules` bị cắt ở `_BO_QUA_THU_MUC`.
     "frontend",
 )
@@ -1383,6 +1439,14 @@ def _thu_hep(steps: list[Step], args, ho_so: str
         nguon = f"{len(duong)} duong dan doi"
 
     tep_test = tp_mod.test_can_chay(phan, ROOT)
+    # ⭐ Tep test DA DOI di thang vao danh sach, khong qua do thi thanh phan.
+    #    `bi_anh_huong` co y khong nhan chu cho chung (khong ai import mot
+    #    module test, nen khong co canh tieu thu de mo rong). Thieu dong nay
+    #    thi mot thay doi CHI cham tep test se chay 0 test — te hon han so voi
+    #    ha cap xuong day du.
+    if ho_so == "doi":
+        tep_test |= {t for t in tp_mod.tep_test_da_doi(duong)
+                     if (ROOT / t).is_file()}
     if not tep_test:
         return None, (f"  [pham vi] {len(phan)} thanh phan nhung KHONG test nao"
                       " cham toi chung -> chay DAY DU")

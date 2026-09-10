@@ -86,8 +86,14 @@ def test_ket_qua_bi_cat_van_la_JSON_HOP_LE():
 
 def test_KHONG_doan_nao_mat_trich_dan():
     """🔴 Phép kiểm quyết định. Một đoạn có `noi_dung` mà không có `trich_dan`
-    là đúng thứ P06 bước 5 tồn tại để chặn."""
+    là đúng thứ P06 bước 5 tồn tại để chặn.
+
+    ⚠️ Dòng `assert d["doan"]` KHÔNG thừa. Không có nó, vòng `for` dưới đây
+       **xanh rỗng** khi `_cat_dict` bỏ hết mục — và đo 07/09 cho thấy nó bỏ
+       hết được thật (một đoạn duy nhất dài hơn trần ⇒ `doan: []`).
+    """
     d = json.loads(_ket(12).cho_model())
+    assert d["doan"], "khong con doan nao — vong duoi se xanh RONG"
     for i, m in enumerate(d["doan"]):
         assert "noi_dung" in m, i
         assert m.get("trich_dan"), f"doan {i} MAT nguon"
@@ -98,6 +104,7 @@ def test_muc_giu_lai_la_NGUYEN_VEN_khong_bi_xen():
     """Một mục hoặc đủ, hoặc vắng. Không có mục thứ ba bị xén nửa."""
     goc = _doan(12)
     d = json.loads(_ket(12).cho_model())
+    assert d["doan"], "khong con doan nao — vong duoi se xanh RONG"
     for m in d["doan"]:
         assert m in goc, "mot muc da bi doi noi dung khi cat"
 
@@ -109,6 +116,25 @@ def test_bo_tu_CUOI_giu_muc_diem_cao_nhat():
 
 
 # ── 2. Nói ra việc cắt, và nói ở chỗ không giả mạo được ────────────────────
+
+def test_bo_HET_muc_van_la_JSON_HOP_LE_va_NOI_RA():
+    """⭐ Ca `_cat_dict` bỏ **hết**: một đoạn duy nhất dài hơn trần.
+
+    🔴 Phát hiện 07/09 bằng cách áp một bài học của phiên khác vào chính phép
+       kiểm của mình: hai phép kiểm trên duyệt `for m in d["doan"]`, nên nếu
+       `doan` rỗng thì chúng **PASS mà không kiểm gì**. Ca này tồn tại để
+       trạng thái ấy có người canh, chứ không phải để nó lặng lẽ hợp lệ.
+    """
+    to = [{"noi_dung": "y" * (TH.TRAN_KY_TU_KET_QUA + 500),
+           "trich_dan": {"tep_id": "t", "doan_id": "d1", "trang": 1}}]
+    d = json.loads(TH.KetQua(ok=True,
+                             noi_dung={"doan": to, "so_khop": 1}).cho_model())
+    assert d["doan"] == []
+    assert d[TH.KHOA_DA_CAT]["da_bo"] == 1
+    # ⛔ `so_khop` PHAI con: no la thu duy nhat noi cho model biet co mot doan
+    #    khop ma no khong duoc doc.
+    assert d["so_khop"] == 1
+
 
 def test_bao_CAT_nam_TRONG_json():
     d = json.loads(_ket(12).cho_model())
