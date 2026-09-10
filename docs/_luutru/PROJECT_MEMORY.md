@@ -2310,3 +2310,145 @@ Lần thứ ba trong bốn ngày. Hai phiên bấm gate cách nhau **56 giây**;
 | Backup/DR trần **50** | không có đích sao lưu độc lập (B-01) — phải mua/dựng |
 | LIVE INFRA **45** | một node PVE chạy lồng, không HA (B-02) |
 | `/api/v1` đóng cho VPS | ba quyết định sản phẩm (B-06) |
+
+---
+
+## 2026-09-09 → 10 · Phiên **Dọn Dẹp hệ thống API** — AI CLEAN REBUILD V2 đóng
+
+**Chiến dịch: 19/19 pha.** Trunk `3b22503c` · production `3b22503cc590` (build 2026-09-10T10:18:13).
+
+### Cái đã gỡ — đo **có phạm vi**
+
+```
+21 tep xoa han · 2.978 dong
+```
+
+⛔ Không phải `git diff --shortstat` của cả nhánh (`328 tệp, +29.153/−5.524`).
+Nhánh `phien/aiclean` mang **51 commit** kể từ nền, chỉ ~15 là của chiến dịch —
+số còn lại là LTT VOICE, WORKFLOW V2, VPS V2. Lấy con số tổng rồi gán cho chiến
+dịch là **nhận công của bốn phiên khác**.
+
+| | Trước | Sau |
+|---|---|---|
+| Nhà cung cấp ngoài gọi được | 5 | **1** (BytePlus) |
+| Khoá API legacy trong CSDL | 4 **đang sống**, ~455 lượt/cái | **0** |
+| Khoá legacy trong `secrets\app.env` | 4 | **0** |
+| Dịch vụ Windows của đường đã gỡ | 1 (`LTTStudioCodex`) | **0** |
+| Nhánh remote | 25 | **10** |
+
+### Bốn đường sinh thật — chứng minh, không suy
+
+| | Bằng chứng |
+|---|---|
+| Text | ba cửa `/chat/completions` · `/messages` · `/responses`, 200 với token thật |
+| IMAGE | ảnh **5.519.918 byte** qua Cloudflare, `held:3 charged:3`, `mode:"live"` |
+| VLM | `{"so_hinh_tron": 3, "chu": "K7QX"}` — khớp đáp án **máy sinh** |
+| Voice | job `7a0ea335` qua hàng đợi production → **8,48s tiếng**, báo giá 2 = thu 2 |
+
+⚠️ **Seedance ⊘ ngoài phạm vi** bằng **lời xác nhận của chủ sản phẩm**, không
+phải phép đo. Nên E2E là **9/10**, không phải 10/10 — bốn đường đo được thì đã
+đo, đường thứ năm thì ta *tin*, và hai thứ đó không được viết cùng một chữ.
+
+**Điểm 82 → 86**, trong đó **một trục bị HẠ**: `Legacy removal` 10 → 9.
+
+### 🔑 Bài học lớn nhất: mọi phép kiểm soi MÃ, không cái nào soi HÀNG TRONG BẢNG
+
+Sau khi mọi phép kiểm đã xanh và báo cáo đã viết, việc dọn **dữ liệu** lôi ra
+thứ việc dọn **mã** không thấy: bảng `api_keys` production còn **bốn khoá đang
+bật** của chính các nhà cung cấp đã gỡ. Một khoá `cheapkeyai` được cấp phát lúc
+**23:35:41** — đúng giây một job ảnh của khách được tạo.
+
+`public_api/capacity.py::_providers_healthy` xin khoá **không lọc nhà cung cấp**,
+nên `/api/v1/capacity` đã trả lời khách *"còn phục vụ"* dựa trên một khoá mà
+`chan_neu_da_ngung` sẽ từ chối ngay khi có ai gọi thật — **chào bán một năng lực
+không tồn tại**.
+
+⇒ Đã vá ở **mã** (`tests/test_1008`, 6 phép kiểm, một là đối chứng chạy lại
+  nguyên văn thân hàm cũ), và xoá 4 hàng khỏi CSDL (có sao lưu). Xoá dữ liệu chỉ
+  dập triệu chứng của hôm nay.
+
+### Ba lỗi của tôi, ghi ra vì một báo cáo chỉ liệt kê lỗi người khác thì không ai tin phần còn lại
+
+1. **Giải thích một triệu chứng bằng sai nguyên nhân, rồi phát tán nó.** Ba lần
+   `cua_so_yen` báo `RANH` khi gate đang chạy; tôi kết luận *"nó trả lời câu
+   khác"* và gửi kết luận ấy cho **ba phiên**. Nguyên nhân thật: một fixture test
+   (`test_394`) **xoá khoá thật của máy** — khoá vắng **84%** thời lượng mỗi lượt
+   gate. Tôi tự tái hiện: bộ test **31 passed** trong khi nó xoá hàng rào.
+   ⇒ Dấu hiệu đáng lẽ phải làm tôi đi tiếp: khoá không chỉ *"không thấy"* mà
+     **tệp biến mất**. Một công cụ trả lời sai câu thì vẫn để lại tệp.
+
+2. **Một byte BEL chặn gate cho mọi cây.** `C:\LTTPlatform\secrets\app.env` viết
+   trong chuỗi Python không raw → `\a` thành `0x07`. Tôi **đọc lại đoạn văn ấy
+   vài lần** và không thấy — vì mắt đọc **ký tự**, lỗi ở tầng **byte**. Và bản
+   sửa đầu tiên của tôi **xoá luôn dấu gạch chéo**: phép thoát là *hai-đổi-một*
+   nên phục hồi phải là *một-đổi-hai*.
+
+3. **Cảnh báo sai về việc hạ mốc.** Tôi tự khai hạ mốc `ruff` là "tác dụng phụ
+   phạt cây chưa hoà" — **sai**: mốc là **tệp trong cây**, nó đi cùng mã biện
+   minh cho nó. Tôi khớp mẫu vào một bài học đúng cho trạng thái **toàn cục**,
+   cho một cơ chế **khác hình dạng**.
+
+### Việc phối hợp — sáu phiên, một máy 10 lõi
+
+Cơ chế **đo-lại-sau-khi-bấm** chạy nhiều lần, hai chiều. Ca hẹp nhất: **2 giây**.
+Luật bổ sung rút ra cùng phiên `4bot`: **lệch dưới ~5 giây thì đừng phân xử bằng
+thời điểm** — nó nhỏ hơn độ phân giải của chính cơ chế — mà phân xử bằng **cây
+nào mất nhiều hơn**; cây chính thắng.
+
+Và tách được phạm vi của câu *"chồng gate làm sai"*: nó làm sai **bộ test**,
+không làm sai **bánh cóc đếm** (đọc mã rồi đếm, ra cùng số dù CPU 2% hay 100%).
+Hai phiên suýt vứt một lượt gate hợp lệ vì câu ấy được truyền đi **không kèm
+phạm vi**.
+
+### Còn lại — nói rõ để không ai đọc rộng hơn phạm vi
+
+- **`test_448` × 7** — nợ của ASV v4, truy được về commit `3eae396d` của chính
+  phiên ấy, kèm tệp bằng chứng do cùng commit ghi ra. **Không phải của chiến dịch.**
+- **Năm phát hiện ngoài phạm vi** — báo cáo, **cố ý không tự sửa** (`PHA15` §5).
+- **`llm_gateway/dem.py` không có trên trunk** ⇒ lượt deploy này **không** mang
+  phần gia cố LLM gateway của phiên `LLM LTT`; phần ấy chạy trên **máy B** qua
+  một đường deploy khác.
+- **Một khoá Gemini ngoài kho** (`D:\FULL AUTO VIDEO\`) — **không** thuộc phạm vi
+  chiến dịch. Ghi con trỏ vì *"đã gỡ Gemini"* rất dễ bị đọc thành *"máy này không
+  còn khoá Gemini nào"*, và câu thứ hai **sai**.
+
+### ⚠️ Một câu tôi viết SAI, và phiên `4bot` hỏi ngược đúng lúc
+
+Tôi gọi bản vá khoá (`test_394`/`test_361`) là *"bản vá `tests/`, không đổi hành
+vi sản phẩm"*. Họ hỏi ngược: **đúng với sản phẩm, sai với máy chủ — nếu ai đó
+chạy bộ test trên chính máy production.**
+
+Đo được, và câu trả lời là **CÓ**:
+
+```
+Test-Path C:\LTTPlatform  ->  True          (may nay LA may chu)
+ba luot gate day du trong 12 gio qua, deu chay o day, deu do TOI chay
+```
+
+⇒ Trước bản vá, mỗi lượt ấy gọi `nha(ep=True)` trên **mọi khoá thật của máy
+  chủ**. Nên nó **là** một bản vá hành vi trên máy này.
+
+⭐ Và nó làm rõ một điều dễ quên: `D:\LTTSTUDIOSAPP` **vừa là cây phát triển
+   vừa là nguồn deploy của máy chủ**. Mọi thứ ta chạy ở đây đều chạy *trên*
+   production theo nghĩa vật lý — kể cả bộ test.
+
+### Nghiệm thu deploy — ba chiều, và một chiều thứ tư do phiên ASV V6 đề nghị
+
+```
+[OK] Xuat commit 3b22503cc590: 3943 tep (nguon BAT BIEN)   <- di duong git archive
+lech 0 · thieu 0 · THUA 0   ->  "khop tuyet doi mot commit xac dinh"
+app\.claude False · app\.git False · app	est-results False · app	mp False
+production  commit 3b22503cc590 · asset_ver 9b7ae80d · build 2026-09-10T10:18:13
+```
+
+⛔ `setup\2-cai-dat.ps1` có một **đường lui** (`$srcChep = $src`, dòng 248) chép
+   **cây sống**, và danh sách `/XD` **không có `.claude`**. Nếu `git archive` hỏng,
+   deploy sẽ chép **sáu worktree của sáu phiên** lên production — và **không đỏ ở
+   đâu cả**: bản xuất vẫn đủ tệp, dịch vụ vẫn lên, `/health/version` vẫn đúng.
+
+⭐ Giá trị của phép kiểm ấy không nằm ở việc nó bắt được gì hôm nay (đường bất
+   biến đã chạy). Nó nằm ở chỗ: **thứ chỉ hỏng im lặng là loại duy nhất đáng
+   dựng thêm một cửa riêng.**
+
+⚠️ Không sửa `setup/` ngay trước một lượt deploy — đó là đổi một rủi ro **đã
+   hiểu** lấy một rủi ro **chưa hiểu**.
