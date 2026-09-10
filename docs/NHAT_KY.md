@@ -16,6 +16,129 @@
 
 
 
+## 2026-09-10 (chiều) — Hoà trunk vào Q121: hai lỗ chỉ hiện ra khi hai nhánh gặp nhau, và hai phép kiểm xanh vì lý do sai
+
+Tiếp mục Q121 ở trên. Nhánh `claude/voice-language-compatibility-440bfd`,
+commit `7771be24` (hoà) + `be15238d` (vá phép kiểm).
+
+### Vì sao phải hoà ngay, không để sau
+
+Base của nhánh là `9e73bf1f`. Trunk đã đi **375 commit** kể từ đó, và **cả bảy
+tệp phiên này sửa đều đã đổi** (+541 dòng). Đo trước khi hoà chứ không hoà rồi
+mới biết — cùng khuôn *"đồng bộ trunk là việc làm NGAY TRƯỚC khi ff"*.
+
+Bốn xung đột. Ba giải bằng "giữ cả hai" vì hai bên thêm hai thứ khác nhau vào
+cùng một chỗ. Cái thứ tư thì không:
+
+⭐ **Trunk đã tự tìm ra và sửa một trong bốn lỗi tôi báo ở Q121** — mục ②,
+`dien_canh_bao` không người gọi, sửa ngày 07/09 trong lúc phiên này đang chạy.
+
+⛔ Và bản của tôi **đã tái tạo đúng lỗi ấy**: `doi_chieu` của tôi
+`return (MAU_LECH_LAN,)` — một khuôn còn chỗ trống — viết ra **sau khi** chính
+tôi đã ghi lại lỗi đó trong phần chẩn đoán. Giữ bản của trunk, không giữ bản của
+tôi. Và sửa lại câu Q121: mệnh đề ấy **đúng ở base `9e73bf1f`, hết đúng từ
+07/09** — ghi mốc thời gian thay vì lặng lẽ bỏ câu đó đi.
+
+### Hai lỗ chỉ xuất hiện khi hai nhánh gặp nhau
+
+Không bên nào tự thấy được, vì mỗi bên đều đúng ở phía mình.
+
+**(a) Đường lùi giọng có vượt làn được không?** Trunk thêm `lui_giong`: giọng
+nhân bản mất biểu diễn (ca nâng engine) thì **thay bằng giọng khác** thay vì từ
+chối. Q121 chốt làn của giọng khách **chọn**. Ghép lại thì có một câu hỏi mà cả
+hai bên đều không hỏi: giọng **thay thế** có cùng làn không?
+
+Đo: trunk đã làm đúng — `_hop` khớp **cứng** `u.ngon_ngu == ngon_ngu`, và
+`chon()` trả `None` ngay khi làn không thuộc `{vi, en}`. Không có lỗ. Nhưng nó
+đang được giữ bởi một tệp mà người sửa Q121 không có lý do gì để mở ra ⇒ thêm
+`test_duong_lui_giong_khong_the_vuot_lan` để **khoá** hành vi ấy.
+
+**(b) Vân tay tệp nghe thử chỉ băm MỘT câu.** Trunk dựng `PHIEN_BAN` bằng cách
+**băm câu nghe thử** — để *"đổi câu ⇒ đổi khoá"* không phải nhớ bằng tay. Đúng,
+và là một bản vá tốt. Nhưng lúc ấy chỉ có **một** câu.
+
+Q121 thêm câu thứ hai theo làn, và hàm băm **không tự nhìn thấy nó** ⇒ sửa câu
+tiếng Anh sẽ **không** đổi khoá ⇒ khách nghe câu EN cũ mãi mãi. Đúng cái bẫy im
+lặng mà cả khối đó dựng ra để chặn, chỉ khác làn.
+
+Vá: băm **mọi** câu trong `CAU_THEO_LAN`. Đánh đổi nói thẳng trong chú thích:
+thêm làn thứ ba sẽ đổi khoá của **cả hai** làn cũ và bắt dựng lại toàn bộ — chiều
+sai **rẻ** (dựng thừa một lượt) đổi lấy việc không bao giờ phục vụ một tệp cũ.
+
+### Bốn phép kiểm của trunk gặp Q121 — và hai cái xanh vì LÝ DO SAI
+
+Gate sau hoà: 15 test đỏ. **Bốn** là của tôi.
+
+`test_503` (lùi giọng): `VAN_BAN` của tệp là tiếng Việt, nhưng bốn ca dùng hồ sơ
+làn `en` — tức một cặp **văn bản VI + giọng EN**, cặp mà Q121 từ chối ngay tại
+cửa nộp. Hai ca đỏ vì thế.
+
+🔴 Nhưng hai ca **kia** thì không đỏ — chúng dùng `pytest.raises(LoiGiongNoi)`,
+và chúng **xanh vì lý do sai**: chờ một lỗi từ *"không có ứng viên"* / *"license
+chưa soát"*, nhận được một lỗi từ *"lệch làn"*. **Một phép kiểm xanh vì lý do
+sai trông y hệt một phép kiểm xanh** — và nếu tôi chỉ sửa hai ca đỏ rồi đi tiếp
+thì hai ca kia sẽ nằm đó, mãi mãi không đo thứ chúng nói là đang đo.
+
+Sửa: hồ sơ làn nào đọc văn bản làn ấy, và hai ca `raises` chốt thêm **mã lỗi**
+để không bị một cửa chặn khác mua chuộc lần nữa.
+
+`test_509` (vân tay nghe thử): chốt **công thức** chứ không chốt **mệnh đề**.
+Tập hợp rộng ra ⇒ công thức lệch ⇒ đỏ, nhưng đỏ vì việc đúng đang xảy ra. Và
+cách "sửa" hiển nhiên — gõ lại công thức mới — giữ nguyên điểm yếu gốc. Viết lại
+theo mệnh đề, bất biến với số làn: *đổi câu của **bất kỳ** làn nào thì vân tay
+phải đổi*. **Khó xanh hơn** bản cũ (canh mọi câu thay vì một câu).
+
+`test_435` (ràng giọng ASV): đòi tập mặt của ASV **bằng** tập mặt của catalog.
+`GiongMau` nay có thêm `ngon_ngu` nên hai tập lệch. Nới thành **tập con**, vì
+hai hướng lệch không cân nhau: ASV có mặt mà catalog không có ⇒ bộ lọc không bao
+giờ khớp và **thất bại im lặng** (vẫn chặn y nguyên); catalog có mặt mà ASV
+không lọc ⇒ vô hại **ở tầng kiểu**.
+
+⚠️ Nhưng vô hại ở tầng kiểu **không** có nghĩa vô hại ở tầng sản phẩm: ASV nay
+chọn giọng mà không nhìn làn, trong khi cửa nộp từ chối cặp VI-text/EN-voice. Hôm
+nay chưa nổ được vì cả 20 preset đều làn `vi`. Nó sẽ nổ đúng vào ngày kho giọng
+mẫu có giọng `en`. Đã báo phiên ASV; không sửa `apps/auto_scan_video/`.
+
+### Hai thư mục bytecode mồ côi — do CHÍNH lượt hoà này để lại
+
+Trunk xoá `apps/chataistudio` và `codex_sidecar`. Lượt hoà xoá tệp git theo dõi
+và **để nguyên `__pycache__`**, nên linter · `test_60` · `test_1004` vẫn thấy hai
+"app" không có manifest. Đúng hạng lỗi đã có tên trong nhật ký. Đã dọn, rào ba
+điều kiện (0 tệp không phải `.pyc` **và** 0 tệp git theo dõi **và** có tệp).
+
+### Va chạm giữa các phiên — việc chưa ai chốt
+
+Ba workstream đã cài **cùng một hợp đồng làn** vào **cùng những tệp**, trên ba
+nhánh, cùng base `9e73bf1f`. Chưa nhánh nào lên trunk:
+
+| | GUI MVP (`ltt-voice-gui-mvp-ed62d6`) | Phiên này (Q121) |
+|---|---|---|
+| khách KHAI lệch làn | chặn | chặn |
+| máy ĐOÁN lệch làn | **cảnh báo** | **chặn** |
+| giọng chưa rõ làn | chặn *khi khách đã khai* | chặn **luôn** |
+
+Và WS03 (`my-voices-enrollment-prod`) vừa đổi `VoiceProfile.ngon_ngu` mặc định
+`"vi"→""` — tức **mọi giọng nhân bản cũ thành "chưa rõ"**, đúng tập dữ liệu mà
+hai luật trên xử khác nhau.
+
+⇒ Tôi **không** cho rằng bản của tôi đúng hơn ở cả hai chỗ. Với khách Public API
+(không có ô khai) và với dữ liệu cũ của WS03, bản của GUI MVP an toàn hơn. Đã
+gửi bảng đối chiếu cho cả ba phiên. **Quyết định hợp nhất là của chủ dự án** —
+điều phải tránh là hai bản cùng lên trunk rồi mới phát hiện ra nhau.
+
+### Cổng
+
+Gate sau hoà: **32 bước**, 9406 passed. Bốn test của tôi đã vá. Còn `test_448`
+(ASV E2E, 7 phép kiểm) đỏ ở `chuyen_loi_thoai: model tra ve rong` — hành vi đã
+có tên trong nhật ký, và **mọi dòng phiên này viết đều nằm trong
+`apps/ltt_voice/`, `docs/`, `locale/`, `tests/`**, không một dòng ASV nào.
+
+⛔ Ghi lại một phép đo **sai chiều** tôi suýt tin: `git diff 9e73bf1f HEAD --
+apps/auto_scan_video` trả về đầy tệp, trông y như tôi có chạm ASV. Không phải —
+nó hiện ASV vì **lượt hoà mang ASV về từ trunk** (ASV chưa tồn tại ở `9e73bf1f`).
+Phép đo đúng là `git show --stat` trên chính hai commit của mình.
+
+
 ## 2026-09-10 — Q121: làn ngôn ngữ của giọng thành CỬA CHẶN, và bốn tầng cùng im lặng cho qua
 
 **Phạm vi:** `apps/ltt_voice` — hợp đồng tương thích VI/EN giữa văn bản và giọng.
