@@ -843,3 +843,69 @@ Bản vá `.md` của tôi chép nguyên câu cảnh báo từ docstring mà phi
 sửa, thay vì tự viết. Bốn cách nói khác nhau về cùng một luật là **bốn chỗ để
 chúng trôi khỏi nhau**, và không chỗ nào tự biết mình đã trôi — cùng họ với
 `⚠️ Đừng gõ lại một con số nào` ở `CLAUDE.md`.
+
+---
+
+## P8 — `test_515`: `enroll` KHÔNG mở qua API, và nay có bằng chứng
+
+**Hạng mục 62 · 85 → 88 (trần 90)** · `tests/test_515_ltt_voice_be_mat_api_cong_khai.py`
+
+### Vì sao đây là việc còn với tới được
+
+§8 xếp sáu bước; bốn bước đầu và bước 6 **chờ chủ dự án**, bước 5 (mục 13/14)
+chạm `platform_core/` — ngoài phạm vi tôi tự khai và luật 20 bảo dừng lại nói
+rõ. Nên tôi đi tìm thứ bảng §36 bỏ qua vì **ưu tiên thấp hơn**, chứ không phải
+vì không làm được. Mục 62 là một trong số đó.
+
+### Phát hiện: sự vắng mặt ĐÚNG, nhưng không ai ghi ra
+
+`manifest.py` khai **hai** job type và **một** `ToolSpec`. `ltt_voice.enroll`
+có đủ `_gia` (`CREDIT_GHI_DANH`), `gpu_vram_mb`, `max_runtime_s`,
+`cho_tai_nguyen_s`, `SO_LAN_THU_JOB` — nhưng không có `ToolSpec`.
+
+⛔ Trạng thái ấy đúng. Cái sai là nó **không phân biệt được với việc bỏ quên**:
+một job type khai đủ tham số vận hành trông y hệt một job type sắp được mở, và
+cách sửa cho hai chẩn đoán ấy **ngược nhau**.
+
+### Bằng chứng nó CỐ Ý — đọc mã, không suy
+
+`routes/_p_giong.py:117` ghi `VoiceConsent` **trước khi** `submit_with_credit`,
+với bốn trường chỉ tồn tại ở tầng HTTP **của chính người đồng ý**:
+
+    ip=(request.client.host ...)        <- may cua NGUOI DONG Y
+    user_agent=(request.headers ...)    <- trinh duyet cua NGUOI DONG Y
+    phien_ban_dieu_khoan=PHIEN_BAN_...  <- ban dieu khoan HO da doc
+    ref_sha256=sha                      <- rang consent vao DUNG clip do
+
+🔑 Một lượt `jobs:create` từ máy chủ bên tích hợp mang `ip`/`user_agent` **của
+bên tích hợp**. ⇒ Mở `enroll` qua API không sinh ra *"consent yếu hơn"* — nó
+sinh ra một **bản ghi consent nói SAI về người đã đồng ý**, trong khi trông vẫn
+đầy đủ. Hạng lỗi **sở hữu/pháp lý**, §36 xếp trên hiệu năng và UX, và **không**
+sửa được bằng cách thêm trường vào `params_schema`.
+
+### Chốt bằng phép kiểm, không bằng chú thích
+
+Một chú thích *"đừng mở enroll"* không ngăn được ai thêm `ToolSpec`; nó chỉ
+trách người ấy **sau khi** việc đã xong.
+
+5 test / 5 xanh, và ⭐ bài thứ tư chốt **tiền đề** chứ không chỉ chốt kết luận:
+nếu ai dời việc ghi consent xuống `jobs.py` thì tiền đề đổi và mở `enroll` có
+thể thành hợp lệ — bài ấy **đỏ** đúng lúc đó, tức nó **không cấm thay đổi**, nó
+bắt người thay đổi quay lại đọc phán quyết.
+
+**Đối chứng — bốn đột biến, cả bốn đỏ đúng chỗ:**
+
+    1) them ToolSpec cho enroll   -> khong_mo  = False
+    2) them job_type thu ba       -> phan_quyet = False
+    3) go `ip=` khoi VoiceConsent -> consent   = False
+    4) doi consent khoi route     -> consent   = False
+
+⛔ Đột biến chạy **trong bộ nhớ**, không sửa tệp nào trong cây — một phép kiểm
+sửa tạm tệp trong kho sẽ tự phá lượt gate chứa nó, và phá cả lượt phiên khác
+([[chot-khong-duoc-ghi-vao-cay]]).
+
+### Điểm tổng
+
+Tính lại **bằng máy** từ chính bảng A: 77 dòng · 73 có số · trung bình
+**86,15** (trước P8: 86,11). Số hạng mục **≥ 98 vẫn là 0** — P8 không chạm cái
+đó và không được phép trông như đã chạm.
