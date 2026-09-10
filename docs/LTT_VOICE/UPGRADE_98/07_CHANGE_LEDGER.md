@@ -980,3 +980,74 @@ khong xanh-rong.
 
 Tinh lai bang may: 77 dong - 73 co so - trung binh **86,32** (P8: 86,15; ban
 chot dau: 86,11). So hang muc **>= 98 VAN LA 0**.
+
+---
+
+## DEPLOY 10/09/2026 — và một sự cố 6 phút do CHÍNH TÔI gây ra
+
+### Kết quả cuối
+
+    production  c28a9b5d6cbe  build 2026-09-10T11:12:22  asset_ver 1471b271
+    duong lui   3b22503cc590
+    nghiem thu  lech 0 · thieu 0 · thua 0  -> DAT
+    remote      c28a9b5d = local = production   (ba chieu khop)
+    URL cong khai https://app.lttstudios.com/health/version -> 200, dung commit
+
+Đi đủ quy trình `docs/16_CAP_NHAT_VA_DEPLOY.md`: §1 đồng bộ · §2 gate · §2b CVE ·
+§2c a11y · §3 ff + kiểm "production thừa gì" (**0**) · §4 deploy · §5 đẩy GitHub
+(sau khi `scan_source_secrets.py` ra `Findings: 0`).
+
+### 🔴 SỰ CỐ — production xuống 6 phút, và nguyên nhân là tôi
+
+    11:04:42  chu du an phong deploy (c28a9b5d). CHAY THAT, ADMIN=True.
+    11:06:14  TOI phong lop ngoai THU HAI. UAC bat len lan nua.
+    11:06:18  luot cua toi bi `deploy.lock` tu choi (dung), EXITCODE=2
+    11:07:10  luot cua CHU DU AN chet giua buoc `Copy ma nguon`,
+              KHONG co dong EXITCODE -> tuc bi ket thuc, khong tu thoat
+    ...       ba dich vu Web/Worker/Voice nam Stopped, khong ai bat len
+    11:10:58  toi bat lai bang khuon hai lop -> health 200 tro lai
+
+**Lỗi:** tôi bắn lượt thứ hai mà **không kiểm `deploy.lock`** — nó đã nằm đó từ
+11:04:42 và tôi đọc được nó bất cứ lúc nào. Khoá chặn được *lượt* của tôi, nhưng
+**không chặn được cái UAC của tôi bật lên đè giữa lúc một cửa sổ deploy đang
+chạy**. Tôi không chứng minh được nhân quả; thứ tự thời gian chỉ đúng vào đó, và
+tôi là người tạo ra cửa sổ ấy.
+
+⛔ Và đây là chỗ đắng: tôi đã viết *"kiểm RỒI MỚI chạy"* vào sổ này nhiều lần
+trong cùng phiên, rồi bỏ qua ở **đúng lệnh nguy hiểm nhất**. Cùng hình dạng với
+[[luat-viet-ra-khong-mien-nhiem-cho-nguoi-viet]].
+
+### Vì sao thiệt hại dừng ở 6 phút
+
+Không phải nhờ phản ứng nhanh, mà nhờ **thiết kế của người khác**:
+
+- `deploy.lock` khiến lượt thứ hai **không** chạy song song. Hai robocopy cùng
+  ghi `app\` thì mất trắng, không phải mất 6 phút.
+- Lượt chết **trước** khi chép, nên `app\` vẫn nguyên bản cũ (`_p_phat_dan.py`
+  KHÔNG có ⇒ chưa ghi gì). Không cần `rollback.ps1`.
+- `.ket.txt` ghi `BAT DAU=` **ngay lập tức**, nên "không có tệp" phân biệt được
+  với "chạy rồi hỏng" — đúng thứ `AGENTS.md` §9.3 dựng nó để làm.
+
+### Chẩn đoán phục hồi — đo, không suy
+
+    app\            4.412 tep, KHONG co _p_phat_dan.py  -> VAN LA BAN CU
+    app.previous\   3.778 tep, nguyen
+    LTTStudioWeb/Worker/Voice   Stopped
+    LTTNexus                    Running
+
+⇒ Không mất mã, không cần rollback. Chỉ thiếu **một lệnh bật dịch vụ**. Gỡ
+`deploy.lock` treo sau khi **xác nhận pid 19584 đã chết** (tệp khoá ghi sẵn pid,
+nên câu hỏi trả lời được thay vì đoán).
+
+⚠️ Và một dương tính giả tôi tự tạo khi truy: lọc tiến trình bằng
+`CommandLine -match 'deploy_nang_quyen|2-cai-dat'` khớp vào **chính lệnh của
+tôi** — [[loc-tien-trinh-bang-chuoi-tu-khop-vao-chinh-no]], lần thứ năm.
+
+### Điều không quan sát được từ ngoài — nói ra thay vì suy
+
+`POST https://app.lttstudios.com/ltt-voice/phat-dan` trả **403**, không phải
+404. Vì `require_login` là `Depends`, chạy **trước** thân hàm nơi cổng cờ
+`LTT_VOICE_STREAM` nằm ([[cong-co-phai-dung-truoc-require-login]]).
+
+⇒ Con số ấy **không** chứng minh cổng cờ hoạt động. Thứ chốt nó là `test_514`.
+Cờ vẫn **tắt** trên production, nên `/phat-dan` chưa mở cho khách.
