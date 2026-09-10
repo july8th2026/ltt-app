@@ -1147,3 +1147,66 @@ tôi rút ra từ nó — nó trả lời *"lúc này không ai gọi"*, còn t�
 ⇒ Ghi đúng hạng: [[pham-vi-phep-do-hep-hon-loi-tuyen-bo]], **không** phải một
 phép đo hỏng. Ghi nhầm hạng thì lần sau tôi sẽ đi cải tiến phép đo — thứ vốn đã
 đúng — thay vì thu hẹp lời tuyên bố.
+
+---
+
+## B-01 — cổng license đang chặn TẤT CẢ, và điểm đi xuống
+
+`soat-giong` 10/09, `EXITCODE=0`, 25 dòng trên CSDL production:
+
+    25 giong kho chung   license = cho_soat : 25/25   ok : 0   da curate : 0/25
+
+⭐ Chiều tốt trước: đây là **bằng chứng dương** cho cổng license, không phải một
+khoảng trống. `LICENSE_CHO_PHEP=("ok",)` + `_dieu_kien_kho_chung()` đang **thật
+sự** chặn cả 25 giọng chưa soát, ở **cả hai** cửa đọc. ⇒ Mục **07:
+`BLOCKED_DATA` → 88**, và `BLOCKED_DATA` trong bảng nay còn **0**.
+
+⛔ Rồi chiều còn lại, và nó chạm hạng mục của chính tôi — cổng chặn *tất cả*:
+
+| ID | Trước | Sau | Vì sao |
+|---|---|---|---|
+| 38 Fallback EN | 82 | **72** | P1 nối bậc hai qua cổng license — **mã đúng, 0 ứng viên chảy qua** |
+| 47 VI catalog | 85 | **75** | "28 VI" đếm **có mặt**; dùng được chỉ **20** preset |
+| 48 EN catalog | 85 | **60** | 17/17 EN đều `cho_soat` ⇒ **0 dùng được**, không preset nào đỡ |
+| 53 Human curation | 90 | **85** | quy trình có, **0/25** đã chạy |
+
+🔑 *"25 giọng đã nằm trong CSDL"* đúng về **CÓ MẶT**, sai về **DÙNG ĐƯỢC**. Tôi
+chấm mục 38 lên 82 dựa trên vế thứ nhất; B-04 chỉ đo tốc độ nên không bao giờ lộ
+vế thứ hai. Chỉ một phép đếm ở **đúng cột license** trả lời được.
+
+⇒ Trung bình **87,07 → 86,41**. Một chương trình chấm điểm mà **mọi** phép đo
+đều đẩy điểm **lên** là một chương trình đang đo sai thứ.
+
+## 🔴 Và một phép đo HỎNG của tôi — báo sai HAI lần cho chủ dự án
+
+Tôi kiểm cờ `LTT_VOICE_STREAM` bằng:
+
+    (& nssm get <svc> AppEnvironmentExtra) -join "`n"  -match 'LTT_VOICE_STREAM'
+
+và báo **hai lần** rằng cờ chưa vào dịch vụ. **Sai cả hai lần.**
+
+`nssm get` xuất **UTF-16LE**; PowerShell đọc theo byte nên chuỗi thật là
+`L\0T\0T\0_\0V\0...`. Tìm chuỗi phẳng trong đó **không bao giờ khớp được**.
+Đo lại sau khi bỏ NUL:
+
+    LTTStudioWeb / Worker / Voice   so khoa=73   co LTT_VOICE_STREAM=True
+
+⚠️ **Vì sao tôi tin phép đo hỏng ấy:** nó cho ra `73` — một con số **hợp lý**,
+khớp với số biến thật. Một phép đo hỏng trả về `0` hay ném lỗi thì tôi đã nghi;
+cái này trả về một con số đúng cho **một** câu hỏi (đếm dòng có `=`) rồi tôi
+dùng nó cho **câu khác** (có chứa khoá không). Cùng họ với
+[[get-content-raw-doc-utf8-bang-ansi]] — bẫy mã hoá **im lặng ở vòng một**.
+
+⛔ **Cái giá là thật:** chủ dự án đã bật cờ đúng từ đầu; tôi báo là chưa, rồi
+chạy `nap_lai_env.ps1` — **khởi động lại ba dịch vụ production** — dựa trên phép
+đo hỏng ấy. Không mất dữ liệu, nhưng là một lần gián đoạn không cần thiết.
+
+🔑 Luật rút ra: **khi một phép đo trả lời "không có", hãy hỏi nó có đọc được
+thứ CÓ không.** Ở đây câu đối chứng rẻ là *"liệt kê tên khoá bắt đầu bằng
+`LTT_VOICE`"* — nó ra **rỗng** trong khi chắc chắn phải có `LTT_VOICE_SIDECAR_TOKEN`,
+và một dòng ấy đã đủ lật toàn bộ kết luận. Tôi có đối chứng ấy trong tầm tay và
+không chạy nó cho tới lượt thứ ba.
+
+⇒ Mục **20 (Streaming) giữ nguyên 78**. Cờ nay đã bật **đo được**, nhưng trần 90
+đòi E2E thật — và tôi vừa mới chấm mục 38 xuống vì đúng lỗi *"năng lực có, không
+ai đi trên đường"*. Không lặp lại nó ở mục kế bên.
