@@ -287,7 +287,7 @@ def tao(request: Request, text: str = Form(""), voice_id: str = Form(""),
     if not verify_csrf_token(request, csrf_token):
         return _het_phien()
 
-    from platform_core.job_submit import submit_with_credit
+    from platform_core.job_submit import dedupe_key_for, submit_with_credit
 
     # Nghiệp vụ ở `features`, kể cả phép kiểm "không được vừa voice_id vừa preset".
     try:
@@ -329,20 +329,35 @@ def tao(request: Request, text: str = Form(""), voice_id: str = Form(""),
             db.rollback()
             return JSONResponse({"ok": False, "loi": str(e)}, status_code=400)
 
+        # 🔴 `nguon` GHI NGAY TỪ BÂY GIỜ, dù màn Lịch sử chưa dùng tới.
+        #
+        #    Ảnh tham chiếu 05 lọc lịch sử theo nguồn (Studio · Dự án · Lô ·
+        #    API) — và đó là thứ **không thể bù lại sau**. Thêm cột lọc thì
+        #    làm lúc nào cũng được; nhưng một job đã chạy mà không ghi nó
+        #    đến từ đâu thì mãi mãi không biết. Ghi ở P1 tốn một dòng; ghi
+        #    sau P6 tốn một dòng Y HỆT **cộng với** một khoảng lịch sử
+        #    khuyết mà không lệnh nào vá được.
+        params = {"text": yc.text, "voice_id": yc.voice_id,
+                  "preset": yc.preset, "owner_id": _uid(user),
+                  "toc_do": yc.toc_do, "nguon": "studio"}
+        # 🔴 DEDUPE Ở CỬA STUDIO — chốt double-submit / F5 / hai tab.
+        #
+        #    Màn Dự án chống trùng bằng TRẠNG THÁI KHỐI (`dang_tao`), Public API
+        #    chống trùng bằng `dedupe_key_for` (xem `public_api/invocation.py`).
+        #    Studio trước đây không có gì che, nên hai lần bấm khi job đầu còn
+        #    `queued` (một GPU = một việc, nó có thể phải chờ) sinh HAI job và
+        #    giữ credit HAI lần cho đúng một đoạn — khách trả gấp đôi, nhận về
+        #    hai tệp giống nhau. `job_submit.py` đã dặn thẳng: *"Mọi route
+        #    submit NÊN truyền khoá này."* `tests/test_502` chốt cả hai chiều.
+        #
+        # ⭐ KHÔNG phá tính năng phiên bản (V1/V2/V3): `jobs.submit` chỉ gộp job
+        #    CHƯA kết thúc. Tạo lại cùng văn bản SAU khi job cũ `done` vẫn ra
+        #    job mới — chỉ những cú bấm trùng lúc job trước còn chạy mới bị gộp.
         job = submit_with_credit(
             db, user_id=_uid(user), app_slug=MANIFEST.slug,
             job_type="ltt_voice.synthesize",
-            # 🔴 `nguon` GHI NGAY TỪ BÂY GIỜ, dù màn Lịch sử chưa dùng tới.
-            #
-            #    Ảnh tham chiếu 05 lọc lịch sử theo nguồn (Studio · Dự án · Lô ·
-            #    API) — và đó là thứ **không thể bù lại sau**. Thêm cột lọc thì
-            #    làm lúc nào cũng được; nhưng một job đã chạy mà không ghi nó
-            #    đến từ đâu thì mãi mãi không biết. Ghi ở P1 tốn một dòng; ghi
-            #    sau P6 tốn một dòng Y HỆT **cộng với** một khoảng lịch sử
-            #    khuyết mà không lệnh nào vá được.
-            params={"text": yc.text, "voice_id": yc.voice_id,
-                    "preset": yc.preset, "owner_id": _uid(user),
-                    "toc_do": yc.toc_do, "nguon": "studio"},
+            params=params,
+            dedupe_key=dedupe_key_for("ltt_voice.synthesize", params),
             # Một GPU = một việc, và cả ba cửa giành cùng một slot (Q114).
             admission_resource=tool.admission_resource,
             admission_slots=tool.admission_slots,
