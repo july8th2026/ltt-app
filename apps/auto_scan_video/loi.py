@@ -202,6 +202,27 @@ def phan_loai(exc: BaseException) -> str:
     if isinstance(exc, CatLoi):
         return NGUOI_DUNG
 
+    # ── Lop phu chu (V6 pha 11) ─────────────────────────────────────────────
+    #
+    # ⚠️ Nam cung nhom voi `CatLoi` chu khong voi `VungLoi`: no **that su di toi
+    #    day**, va qua HAI duong khac nhau.
+    #
+    #      `routes.tao`            -> bat ngay tai cho, chua toi ham nay
+    #      `lop_phu.duong_font()`  -> goi tu `che_do_render._loc_chu`, tuc tu
+    #                                 trong mot JOB, luc dung chuoi loc
+    #      `lop_phu.vien_px()`     -> nhu tren
+    #
+    # ⛔ Va hai duong sau moi la ly do dong nay ton tai. Mot may chu khong co
+    #    phong chu nao se nem `LopPhuLoi` giua giai doan ket xuat; roi xuong
+    #    nhanh `retry` thi lan chay lai hong y het — vi may van khong co phong
+    #    chu — va khach cho ba lan de nhan cung mot ket qua.
+    #
+    # ⭐ `NGUOI_DUNG` o day khong noi "loi cua khach". No noi **that bai cuoi
+    #    cung, dung thu lai** — dung nghia ma bang nay dung cho ca `CatLoi`.
+    from .lop_phu import LopPhuLoi
+    if isinstance(exc, LopPhuLoi):
+        return NGUOI_DUNG
+
     # ── QC bang AI va ke hoach sua (pha 19) ─────────────────────────────────
     #
     # ⛔ `NGUOI_DUNG` — that bai cuoi cung. Ca hai deu la mau thuan trong du lieu
