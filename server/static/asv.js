@@ -100,11 +100,29 @@
     var mb = (f.size / (1024 * 1024)).toFixed(1);
     chu(tenTep, f.name + " · " + mb + " MB");
 
-    // ⚠️ Kiem tran o PHIA CLIENT, truoc khi gui. May chu van kiem lai — day chi
-    //    la de khach biet NGAY thay vi sau khi tai len xong mot tep 200 MB.
-    var tran = parseInt(form.getAttribute("data-tran-mb") || "0", 10);
+    /* 🔴 **Tran phai la tran cua DUONG SE DUOC DUNG, khong phai tran nho nhat.**
+
+       Truoc pha 08 dong nay luon do voi `data-tran-mb` (90 MB, tran cua duong
+       multipart). Hau qua do duoc TREN TRINH DUYET: mot tep MP4 500 MB — dung
+       thu ma duong BEN VUNG ton tai de cho — bi KHOA NUT ngay luc chon, kem
+       cau *"vuot qua 90 MB"*.
+
+       ⛔ Tuc ca tinh nang tai len truc tiep (tran 2 GiB, khong qua Cloudflare)
+          **khong ai di toi duoc tu giao dien**, dung cho nhung tep no sinh ra
+          de phuc vu. Nang luc co, khong ai di tren duong — va lan nay chinh
+          hang rao chan duong.
+
+       ⚠️ Hai duong nhan HAI tap kieu khac nhau (`x-matroska`/`webm` chi di duoc
+          duong multipart), nen tran phu thuoc TEP chu khong phai mot hang so. */
+    var duocBenVung = benVungKieuDuocKhong(f);
+    var tran = parseInt(
+      (duocBenVung ? (oVe && oVe.getAttribute("data-tran-ben-vung"))
+                   : form.getAttribute("data-tran-mb")) || "0", 10);
     if (tran > 0 && f.size > tran * 1024 * 1024) {
-      chu(tenTep, f.name + " · " + t("vuot_tran", {mb: tran}));
+      /* Kieu khong di duoc duong ben vung thi noi RO ly do: doi sang MP4 la
+         dung duoc ngay, con "cat ngan video" thi khong giai quyet gi. */
+      chu(tenTep, f.name + " · "
+          + t(duocBenVung ? "vuot_tran" : "vuot_tran_kieu", {mb: tran}));
       if (nutBatDau) nutBatDau.disabled = true;
     } else if (nutBatDau) {
       nutBatDau.disabled = false;
@@ -786,13 +804,21 @@
     chu(ttTai, t("tai_dang", {pct: pct}));
   }
 
-  function benVungDuocKhong(f) {
+  /* ⚠️ Duong ben vung nhan IT kieu hon o chon tep (`KIEU_VIDEO_HOP_LE` khong co
+     `x-matroska`/`webm`). Kieu ngoai danh sach -> lui ve multipart NGAY, dung
+     xin mot cai ve chac chan bi tu choi.
+
+     ⭐ Tach RIENG phep kiem kieu vi `moTep` can dung mot minh no: no phai biet
+        tep se di duong nao **truoc** khi do kich thuoc, de chon dung cai tran.
+        Gop hai phep kiem lam mot chinh la ly do dong ay tung do voi tran sai. */
+  function benVungKieuDuocKhong(f) {
     if (!oVe || !f) return false;
-    // ⚠️ Duong ben vung nhan IT kieu hon o chon tep (`KIEU_VIDEO_HOP_LE` khong
-    //    co `x-matroska`/`webm`). Kieu ngoai danh sach -> lui ve multipart NGAY,
-    //    dung xin mot cai ve chac chan bi tu choi.
     var duoc = (oVe.getAttribute("data-kieu-ben-vung") || "").split(",");
-    if (duoc.indexOf(f.type) < 0) return false;
+    return duoc.indexOf(f.type) >= 0;
+  }
+
+  function benVungDuocKhong(f) {
+    if (!benVungKieuDuocKhong(f)) return false;
     var tran = parseInt(oVe.getAttribute("data-tran-ben-vung") || "0", 10);
     return !(tran > 0 && f.size > tran * 1024 * 1024);
   }
@@ -831,7 +857,82 @@
     });
   }
 
+  var nutTaiLai = document.getElementById("asv-tai-lai");
+
+  /* So lan THU LAI mot PUT hong. Ve presigned con han sau mot lan hong mang,
+     nen thu lai chinh no la phep sua re nhat — khong phai xin ve moi.
+
+     ⚠️ Ba lan tong cong, khong nhieu hon: mot loi CO HE THONG (sai chu ky, kho
+        tu choi) se hong y het ca ba lan, va lam khach cho ba luot cho cung mot
+        cau tra loi la dung cai gia ma `loi.py` tu choi tra o tang job. */
+  var LAN_THU_TOI_DA = 3;
+  var CHO_THU_LAI_MS = 1500;
+
+  function dayLenCoThuLai(ve, f, lan) {
+    lan = lan || 1;
+    return dayLen(ve, f).catch(function (ma) {
+      if (lan >= LAN_THU_TOI_DA) throw ma;
+      chu(ttTai, t("tai_thu_lai", {lan: lan + 1}));
+      return new Promise(function (ok) {
+        setTimeout(ok, CHO_THU_LAI_MS * lan);
+      }).then(function () { return dayLenCoThuLai(ve, f, lan + 1); });
+    });
+  }
+
+  /* 🔴 **Duong lui phai HOI KICH THUOC truoc khi lui.**
+
+     Truoc pha 08, moi that bai cua duong ben vung deu `form.submit()` — tuc
+     day lai NGUYEN tep qua duong multipart. Voi mot tep 1,5 GB vua PUT hong o
+     90%, duong lui ay:
+
+       · day lai 1,5 GB qua Cloudflare (tran 100 MB)
+       · bi cat, hoac bi may chu tu choi o `TRAN_TAI_LEN` = 90 MB
+       · tra ve *"Video vuot qua 90 MB. Hay cat ngan hoac giam chat luong"*
+
+     ⛔ Cau cuoi la mot loi khuyen SAI. Tep cua khach khong qua lon — tran that
+        la 2 GiB — thu hong la duong tai len. Ta gui ho di sua nham thu, sau
+        khi da bat ho cho hai lan.
+
+     ⇒ Duong lui chi con hop le khi tep THUC SU di qua duong multipart duoc.
+       Lon hon thi noi that va cho mot nut bam. */
+  function luiVeMultipartDuocKhong(f) {
+    var tran = parseInt(form.getAttribute("data-tran-mb") || "0", 10);
+    return !(tran > 0 && f && f.size > tran * 1024 * 1024);
+  }
+
+  function taiThatBai(f) {
+    dangTai = false;
+    if (oUploadId) oUploadId.value = "";
+    if (luiVeMultipartDuocKhong(f)) {
+      /* Duoi tran multipart: duong cu van chay that, nen lui la dung. Van NOI
+         ra — mot lan lui im lang la mot lan khach khong hieu vi sao cham. */
+      chu(ttTai, t("tai_hong_nho"));
+      form.submit();
+      return;
+    }
+    var tran = parseInt(form.getAttribute("data-tran-mb") || "0", 10);
+    chu(ttTai, t("tai_hong_lon", {mb: tran}));
+    if (khoiTai) khoiTai.hidden = false;
+    if (nutTaiLai) nutTaiLai.hidden = false;
+    /* Mo khoa nut Bat dau: khach phai bam duoc "Thu tai len lai". */
+    if (nutBatDau) {
+      nutBatDau.disabled = false;
+      nutBatDau.classList.remove("asv-dang-gui");
+    }
+  }
+
   var dangTai = false;
+
+  if (nutTaiLai) {
+    nutTaiLai.addEventListener("click", function () {
+      nutTaiLai.hidden = true;
+      /* `requestSubmit` chu khong `submit`: `submit()` **khong** phat su kien
+         `submit`, nen no se bo qua chinh doan xu ly ben vung o duoi va day tep
+         qua duong multipart — dung cai ta vua tu choi lam. */
+      if (form.requestSubmit) form.requestSubmit();
+      else form.dispatchEvent(new Event("submit", {cancelable: true}));
+    });
+  }
 
   form.addEventListener("submit", function (ev) {
     var f = oTep && oTep.files && oTep.files[0];
@@ -866,7 +967,7 @@
       if (!ve || ve.mode !== "direct" || !ve.url) {
         throw new Error("khong-co-ve");
       }
-      return dayLen(ve, f).then(function () {
+      return dayLenCoThuLai(ve, f).then(function () {
         oUploadId.value = ve.upload_id;
         // ⛔ TAT o chon tep: xem ghi chu dai o dau muc 5.
         oTep.disabled = true;
@@ -874,12 +975,10 @@
         form.submit();
       });
     }).catch(function () {
-      // Lui ve multipart. Khong bao loi: duong cu van chay duoi 90 MB, va mot
-      // lan xin ve hong khong duoc bien thanh mot lan chay khong xay ra.
-      dangTai = false;
-      if (khoiTai) khoiTai.hidden = true;
-      if (oUploadId) oUploadId.value = "";
-      form.submit();
+      // ⛔ KHONG lui vo dieu kien nua. `taiThatBai` hoi kich thuoc truoc: duoi
+      //    tran multipart thi lui (va NOI ra), tren tran thi noi that va cho
+      //    mot nut bam. Xem ghi chu dai o `luiVeMultipartDuocKhong`.
+      taiThatBai(f);
     });
   });
 })();

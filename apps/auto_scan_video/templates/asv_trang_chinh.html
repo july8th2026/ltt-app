@@ -98,6 +98,20 @@
             <i style="width:0%"></i>
           </div>
           <p class="asv-ghi-chu" id="asv-tai-tt" aria-live="polite"></p>
+          {# 🔴 Nut nay ton tai vi mot duong lui IM LANG.
+
+             Truoc pha 08, hong o BAT KY buoc nao cua duong ben vung deu nop
+             form theo duong multipart — ke ca khi tep lon hon tran multipart
+             (90 MB). Voi mot tep 1,5 GB vua PUT hong o 90%, duong lui ay day
+             lai 1,5 GB qua Cloudflare, bi cat o 100 MB, roi tra ve cau
+             *"Video vuot qua 90 MB. Hay cat ngan hoac giam chat luong truoc."*
+
+             ⛔ Cau do la mot loi khuyen SAI: tep cua khach khong he qua lon
+                (2 GiB moi la tran that), thu hong la duong tai len. Ta gui ho
+                di sua nham thu — sau khi da bat ho cho hai lan. #}
+          <button type="button" class="btn ghost" id="asv-tai-lai" hidden>
+            {{ _("Thử tải lên lại") }}
+          </button>
         </div>
       </div>
 
@@ -448,7 +462,11 @@
   "lp_xoa_mot": {{ _("Xoá dòng này")|tojson }},
   "lp_het_cho": {{ _("Tối đa %(n)s dòng chữ.")|tojson }},
   "lp_trong": {{ _("Dòng chữ không được để trống.")|tojson }},
-  "lp_mot_dong": {{ _("Lớp phủ chữ chỉ nhận MỘT dòng.")|tojson }}
+  "lp_mot_dong": {{ _("Lớp phủ chữ chỉ nhận MỘT dòng.")|tojson }},
+  "tai_thu_lai": {{ _("Đang thử lại lần %(lan)s…")|tojson }},
+  "tai_hong_lon": {{ _("Tải lên bị gián đoạn. Video này lớn hơn %(mb)s MB nên không gửi kèm biểu mẫu được — hãy bấm “Thử tải lên lại”.")|tojson }},
+  "tai_hong_nho": {{ _("Tải lên trực tiếp không chạy được. Đang gửi theo đường thường…")|tojson }},
+  "vuot_tran_kieu": {{ _("vượt quá %(mb)s MB — định dạng này chỉ gửi được bản nhỏ. Hãy đổi sang MP4 hoặc MOV.")|tojson }}
 }
 </script>
 <script src="/static/asv.js?v={{ asset_ver }}" defer></script>

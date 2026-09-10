@@ -15490,3 +15490,23 @@ msgstr "A line of text cannot be empty."
 #: apps/auto_scan_video/templates/asv_trang_chinh.html
 msgid "Lớp phủ chữ chỉ nhận MỘT dòng."
 msgstr "A text overlay takes ONE line."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Thử tải lên lại"
+msgstr "Try uploading again"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Đang thử lại lần %(lan)s…"
+msgstr "Retrying, attempt %(lan)s…"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Tải lên bị gián đoạn. Video này lớn hơn %(mb)s MB nên không gửi kèm biểu mẫu được — hãy bấm “Thử tải lên lại”."
+msgstr "The upload was interrupted. This video is larger than %(mb)s MB, so it cannot be sent with the form — please press “Try uploading again”."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Tải lên trực tiếp không chạy được. Đang gửi theo đường thường…"
+msgstr "Direct upload is unavailable. Sending the usual way…"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "vượt quá %(mb)s MB — định dạng này chỉ gửi được bản nhỏ. Hãy đổi sang MP4 hoặc MOV."
+msgstr "over %(mb)s MB — this format can only be sent in small sizes. Please convert it to MP4 or MOV."
