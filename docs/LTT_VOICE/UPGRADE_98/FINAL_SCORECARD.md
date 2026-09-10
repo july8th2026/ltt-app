@@ -20,9 +20,9 @@ con số duy nhất tôi được phép viết là con số ở trên.
 
 | | số hạng mục |
 |---|---|
-| chấm được bằng số | **73** |
-| `UNKNOWN` (đã đọc, chưa đủ mẫu để chấm) | 3 — 31, 32, 40 |
-| `BLOCKED_DATA` (cơ chế đủ, dữ liệu chưa đếm được) | 1 — 07 |
+| chấm được bằng số | **75** (10/09: +07 nhờ B-01, +40 nhờ B-04) |
+| `UNKNOWN` (đã đọc, chưa đủ mẫu để chấm) | 2 — 31, 32 |
+| `BLOCKED_DATA` | **0** — 07 đã gỡ bằng B-01 (10/09) |
 | **chưa có dòng nào** (chưa đo lượt này) | **10** — 15, 33, 34, 35, 36, 66, 78, 79, 80, 81 |
 | tổng | 87 |
 
@@ -33,7 +33,7 @@ Trong 73 hạng mục chấm được bằng số:
     80 - 89   23
     <  80      7   -> 13 (62) · 14 (30) · 20 (78) · 30 (70) · 39 (30) · 82 (75) · 83 (0)
 
-Trung bình 73 hạng mục ấy là **87,07** (10/09, sau P8+P9+B-04 — 62→88, 86→92, 39→92, 40→ có số; bản chốt đầu 86,11). ⚠️ Con số này KHÔNG phải điểm của hệ
+Trung bình **75** hạng mục có số là **86,41** (10/09 — lên: 62→88, 86→92, 39→92, 07 và 40 từ chưa-có-số thành 88 và 80; **xuống sau B-01**: 38→72, 47→75, 48→60, 53→85. Bản chốt đầu 86,11). ⚠️ Con số này KHÔNG phải điểm của hệ
 thống: 14 hạng mục không có mặt trong nó, và mọi hạng mục vắng mặt đều vắng vì
 **chưa đo** — tức là phía chưa biết, không phải phía tốt.
 
@@ -96,8 +96,8 @@ Không chấm. Ghi thẳng phép đo và **người duy nhất chạy được n
 
 | Mã | Việc | Lệnh |
 |---|---|---|
-| B-01 | Đếm giấy phép giọng thật trong CSDL (gỡ `BLOCKED_DATA` của 07, nâng trần 47/48) | `tools\do_voice_co_bi_mat.ps1 soat-giong` |
-| B-04 | Đo hồ sơ giọng (gỡ trần 75 của 39, 40) — ~15 phút GPU | `tools\do_voice_co_bi_mat.ps1 ho-so-giong` |
+| ~~B-01~~ | ✅ **XONG 10/09** — 25 giọng, **25/25 `cho_soat`**, 0 `ok`. Gỡ `BLOCKED_DATA` của 07 (→88) nhưng **HẠ** 38/47/48/53: cổng license đang chặn đúng, và nó chặn **tất cả** | — |
+| ~~B-04~~ | ✅ **XONG 10/09** — 20/20 giọng, độ lặp lại 0,67 %. 39 → 92, 40 → 80 | — |
 | B-02 | Chấm mù bởi người (80, và mọi hạng mục acoustic) | §19 |
 | — | Bật `LTT_VOICE_STREAM=1` để `/phat-dan` sống (20 đang ở 78 vì chưa bật) | sửa `secrets\app.env` rồi **`setup\nap_lai_env.ps1`** — `Restart-Service` là KHÔNG đủ |
 | 83 | Bật branch protection để CI ở 82 có hiệu lực | Cài đặt kho — §26 cấm tôi tự bật |
@@ -114,7 +114,7 @@ là trạng thái **đúng** khi bằng chứng còn thiếu. Áp đúng luật 
     LTT VOICE, 10/09/2026
     ---------------------------------------------------
     dat muc tieu >= 98        :  0 / 87
-    co bang chung, cham duoc  : 77 / 87   (trung binh 87,07 tren 74 muc co so)
+    co bang chung, cham duoc  : 77 / 87   (trung binh 86,41 tren 75 muc co so)
     BLOCKED_WITH_EVIDENCE     : 10 / 87
     ---------------------------------------------------
     PHAN QUYET: CHUA DAT. Va phan lon khoang cach con lai
@@ -187,3 +187,43 @@ và họ tự ghi rằng họ có đủ số để tự thấy từ lâu mà kh�
 
 ⚠️ Tệp này thay `01_SCORECARD_BASELINE.md` §D (*"điểm tổng cố ý không ghi"*).
 Bảng chi tiết 77 hạng mục vẫn ở tệp ấy; tệp này chỉ chốt tổng và phán quyết.
+
+---
+
+## 10. 🔴 B-01 làm điểm ĐI XUỐNG — và đó là phép đo làm đúng việc
+
+Chạy `soat-giong` 10/09 (`EXITCODE=0`, 25 dòng):
+
+    25 giong kho chung   license = cho_soat : 25/25    license = ok : 0
+                         da curate          :  0/25
+
+⭐ **Đọc theo chiều tốt trước:** đây là **bằng chứng dương** cho cổng license.
+`LICENSE_CHO_PHEP=("ok",)` + `_dieu_kien_kho_chung()` đang **thật sự** chặn 25
+giọng chưa soát, ở **cả hai** cửa đọc. Cổng đóng-mặc-định hoạt động đúng, và
+đúng vào loại rủi ro mà `VIRAL_VOICE_AUDIT` nêu ở dòng đầu tiên. ⇒ Mục 07:
+`BLOCKED_DATA` → **88**.
+
+⛔ **Rồi chiều còn lại, và nó chạm hạng mục của chính tôi.** Cổng chặn *tất cả*,
+nên:
+
+| ID | Trước | Sau | Vì sao |
+|---|---|---|---|
+| 38 Fallback EN | 82 | **72** | P1 nối bậc hai của thang qua cổng license — **mã đúng, 0 ứng viên chảy qua** |
+| 47 VI catalog | 85 | **75** | "28 VI" là đếm **có mặt**; dùng được chỉ **20** preset engine |
+| 48 EN catalog | 85 | **60** | 17/17 giọng EN đều `cho_soat` ⇒ **0 dùng được**, và không có preset nào đỡ |
+| 53 Human curation | 90 | **85** | quy trình tồn tại, **0/25** đã chạy |
+
+🔑 Câu đáng giữ: **"25 giọng đã nằm trong CSDL" đúng về CÓ MẶT và sai về DÙNG
+ĐƯỢC.** Tôi đã chấm mục 38 lên 82 dựa trên vế thứ nhất, và B-04 chỉ đo tốc độ
+nên không bao giờ lộ ra vế thứ hai. Chỉ một phép đếm ở **đúng cột license** mới
+trả lời được — đúng `nang-luc-co-nhung-khong-ai-di-tren-duong`.
+
+⇒ Trung bình **87,07 → 86,41**. Một chương trình chấm điểm mà mọi phép đo đều
+đẩy điểm **lên** là một chương trình đang đo sai thứ.
+
+### Việc gỡ nó KHÔNG phải sửa mã
+
+`python tools\soat_giong.py duyet <public_id> --ly-do "<căn cứ>"` — người thật
+soát xuất xứ từng giọng. Công cụ bắt `--ly-do` ở **cả hai** chiều có chủ đích.
+⛔ Đừng nới `LICENSE_CHO_PHEP` để bảng đẹp lên: cột ấy là thứ duy nhất đứng giữa
+kho giọng và đúng vấn đề pháp lý mà bản kiểm toán đặt lên đầu.

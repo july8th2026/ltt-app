@@ -45,6 +45,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import pathlib
 import statistics
 import subprocess
@@ -164,6 +165,9 @@ def main(argv=None) -> int:
     ap.add_argument("--giong", default="",
                     help="Danh sach preset, phay ngan cach. Rong = tat ca.")
     ap.add_argument("--bo-qua-kiem-may", action="store_true")
+    ap.add_argument("--cho-toi-da-s", type=float, default=1200.0,
+                    help="Cho khoa `may_tao_tieng` toi da bao lau (mac dinh "
+                         "1200s = 20 phut, hon mot lo ~17 phut mot chut).")
     ap.add_argument("--ra", default=str(RA))
     args = ap.parse_args(argv)
 
@@ -185,6 +189,50 @@ def main(argv=None) -> int:
 
     ten_giong = ([t.strip() for t in args.giong.split(",") if t.strip()]
                  or [g.ma for g in giong_mau.DANH_SACH])
+
+    # ── Khoa `may_tao_tieng` — cong 8120 chi co MOT suat ────────────────────
+    #
+    # 🔴 VI SAO CAN, va vi sao `_Cong` cua sidecar KHONG du. Do 10/09: lo nay
+    #    va mot luot nghiem thu ASV cung goi 8120 trong 11:39-11:47. Ket cuc:
+    #    ASV mat mot canh `voice_synthesis`, lo nay mat 19/20 giong.
+    #
+    #    Khong ben nao tham lam. `_Cong` (voice_sidecar/engine.py) la semaphore
+    #    MOT SUAT, KHONG CHO: het cho thi nem 429 ngay. Job cua ASV mang
+    #    `DangBanTam` nen worker dua no ve `resource_wait` va LUI (do duoc:
+    #    20s, 20s, 167s, 20s, 10s). Trong quang lui cong RANH, vong lap chat
+    #    cua ta lay duoc; job ho quay lai thi cong day.
+    #
+    # 🔑 => MOT VONG LAP CHAT LUON THANG MOT JOB BIET LUI, va ben lich su thua
+    #      CO HE THONG. Semaphore o tang runtime khong PHAN XU duoc -- no chi
+    #      TU CHOI, va no khong biet ai da cho bao lau. Chi mot khoa o tang tren
+    #      moi bien "ai nhanh tay" thanh "ai toi truoc".
+    #
+    # ⛔ CHOT THAT NAM O DAY, KHONG O CAI KHOA. `CuaSoYen` het gio cho thi
+    #    **VAN CHAY** (xem docstring cua no) -- dung cho `cpu_nhieu`, vi chen
+    #    chi lam CHAM. Voi mot tai nguyen mot-suat thi chen lam HONG CA HAI
+    #    phia. Nen o day ta doc `chay_khong_khoa` va BO CUOC voi ma 75, khong
+    #    lam mot byte cong viec nao. Thieu chot nay thi cai khoa chi la mot dong
+    #    chu dep: no in canh bao roi dam vao nguoi kia y nhu cu.
+    sys.path.insert(0, str(GOC / "tools"))
+    from cua_so_yen import CuaSoYen  # noqa: PLC0415
+
+    khoa = CuaSoYen(f"ho-so-giong:{os.getpid()}", "do ho so giong (8120)",
+                    cho_toi_da_s=args.cho_toi_da_s,
+                    tai_nguyen=("may_tao_tieng",))
+    with khoa:
+        if khoa.chay_khong_khoa:
+            print(f"\nCONG GIONG 8120 DANG CO NGUOI DUNG sau khi cho "
+                  f"{args.cho_toi_da_s / 60:.0f} phut.", file=sys.stderr)
+            print("  -> BO CUOC (ma 75). KHONG do gi ca.", file=sys.stderr)
+            print("  -> Chen vao se lam HONG CA HAI luot, khong chi lam cham: "
+                  "cong chi co mot suat va no tu choi ngay chu khong xep hang.",
+                  file=sys.stderr)
+            return 75
+        return _do_het(sidecar_client, tham_so, ten_giong, args)
+
+
+def _do_het(sidecar_client, tham_so, ten_giong, args) -> int:
+    """Vòng đo — tách ra để thân `main` chỉ còn phần **quyết định có chạy hay không**."""
     print(f"Do {len(ten_giong)} giong x 2 bac x {args.luot} luot "
           f"= {len(ten_giong) * 2 * args.luot} luot sinh\n")
 
