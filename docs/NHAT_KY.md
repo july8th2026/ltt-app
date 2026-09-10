@@ -129,9 +129,32 @@ gửi bảng đối chiếu cho cả ba phiên. **Quyết định hợp nhất l
 ### Cổng
 
 Gate sau hoà: **32 bước**, 9406 passed. Bốn test của tôi đã vá. Còn `test_448`
-(ASV E2E, 7 phép kiểm) đỏ ở `chuyen_loi_thoai: model tra ve rong` — hành vi đã
-có tên trong nhật ký, và **mọi dòng phiên này viết đều nằm trong
-`apps/ltt_voice/`, `docs/`, `locale/`, `tests/`**, không một dòng ASV nào.
+(ASV E2E, 7 phép kiểm) đỏ ở `chuyen_loi_thoai: model tra ve rong`, và **mọi dòng
+phiên này viết đều nằm trong `apps/ltt_voice/`, `docs/`, `locale/`, `tests/`** —
+không một dòng ASV nào.
+
+🔴 **TÔI ĐÃ GÁN SAI NGUYÊN NHÂN, và ghi lại ở đây vì cái sai đáng nhớ hơn cái
+   đúng.** Tôi viết *"hành vi đã có tên trong nhật ký"* và trỏ vào mục *model
+   nhà trả về rỗng khoảng một nửa số lượt*. Nghe rất vừa: triệu chứng là *"model
+   trả về rỗng"*, và có sẵn một mục nhật ký nói đúng chuỗi ấy.
+
+   Phiên ASV V6 đo thật và cho câu trả lời khác hẳn: đó là một **trần token**.
+   Nhu cầu thật của `chuyen_loi_thoai` đo 15 lượt: **4.186–6.843**; trần cũ là
+   **4.096** — nằm **dưới sàn nhu cầu ở 5/5 lượt** đối chứng. Model không trả
+   rỗng ngẫu nhiên; nó bị **cắt** ở `finish_reason=length`, và một câu cắt giữa
+   chừng thì `LuocDoSai` đọc ra rỗng. Đã đóng ở `6fcc39ed` trên `phien/asv-v6`
+   (nới 4.096 → 16.384), **chưa lên trunk** — nên trên cây này nó vẫn đỏ, và
+   **cái đỏ ấy đúng**.
+
+⛔ Bài học là hạng lỗi, không phải con số: *một giả thuyết khớp quá vừa đã kết
+   thúc cuộc điều tra*. Tôi có hai dữ kiện đúng (triệu chứng rỗng; một mục
+   nhật ký về trả rỗng) và nối chúng lại, trong khi điều kiện đủ để kết luận là
+   một thứ tôi không hề có: một **phép đo token**. Đây không phải việc của phiên
+   này nên tôi không đo — nhưng lúc đó tôi phải nói *"không phải của tôi, chưa
+   rõ nguyên nhân"*, chứ không phải gán cho một nguyên nhân có sẵn tên.
+
+⭐ Mốc đã biết, xác nhận trên **ba cây** (phiên này, `ltt-llm-api-http-guide`,
+   ASV V6): đúng **7** lỗi `test_448` và không lỗi nào khác ⇒ không phải hồi quy.
 
 ⛔ Ghi lại một phép đo **sai chiều** tôi suýt tin: `git diff 9e73bf1f HEAD --
 apps/auto_scan_video` trả về đầy tệp, trông y như tôi có chạm ASV. Không phải —
