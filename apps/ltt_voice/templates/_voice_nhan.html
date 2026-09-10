@@ -1,0 +1,36 @@
+{#
+  _voice_nhan.html — NHÃN cho các nút `voice.js` dựng bằng JS.
+
+  🔴 VÌ SAO PARTIAL NÀY RA ĐỜI (09/09/2026)
+
+     `voice.js::ganTrinhPhat` dựng trình phát bằng JS, và nó gõ CỨNG năm
+     `aria-label`:
+
+         "Phat" · "Tam dung" · "Toc do phat lai" · "Am luong"
+
+     Năm chuỗi ấy **chỉ trình đọc màn hình nghe thấy**, nên không ai nhìn màn
+     hình phát hiện được. Hệ quả: người dùng bản **tiếng Anh** dùng trình đọc
+     màn hình nghe máy đọc "Phat" — tiếng Việt, lại còn không dấu.
+
+  ⛔ VÌ SAO KHÔNG ĐẶT VÀO `data-*` CỦA TỪNG THẺ `<audio>`
+
+     Có **chín** thẻ `<audio data-nang="1">` trên bốn màn. Năm nhãn × chín thẻ
+     là bốn mươi lăm bản chép, và chúng sẽ lệch — đúng cơ chế mà cả kho này ghi
+     đi ghi lại. Ở đây chuỗi nằm **một chỗ**; sáu template chỉ `include` một
+     dòng trỏ tới nó.
+
+  ⚠️ `application/json` chứ không phải `data-*` trên `<body>`: `base.html` dùng
+     chung cho MỌI app, và nhãn của trình phát giọng nói không có việc gì ở đó.
+
+  ⭐ `tojson` lo phần thoát ký tự. Đừng nối chuỗi tay — một dấu nháy trong bản
+     dịch sẽ phá cả khối JSON, và nó phá **im lặng**: `JSON.parse` ném, `catch`
+     nuốt, nhãn lặng lẽ quay về bản gõ cứng.
+#}
+<script type="application/json" id="lv-nhan">
+{{ {
+  "phat": _("Phát"),
+  "tamDung": _("Tạm dừng"),
+  "tocDo": _("Tốc độ phát lại"),
+  "amLuong": _("Âm lượng")
+} | tojson }}
+</script>

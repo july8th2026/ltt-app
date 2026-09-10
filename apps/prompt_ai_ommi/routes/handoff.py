@@ -27,7 +27,7 @@ def _handoff_params(project, scene: dict, kind: str, body: dict) -> tuple[str, d
         tool_name = "image.generate"
         params = {"prompt": str(scene.get("prompt") or "")[:4000],
                   "model": str(body.get("model") or next(
-                      (item["value"] for item in _models("image")), "gemini-2.5-flash-image")),
+                      (item["value"] for item in _models("image")), "hidream-o1")),
                   "aspect_ratio": str((project.payload or {}).get("brief", {}).get(
                       "aspect_ratio") or "16:9"),
                   "count": _as_int(body.get("count"), 1, 1, 4)}

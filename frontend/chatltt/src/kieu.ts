@@ -209,3 +209,27 @@ export type BaoGiaNghienCuu = {
   pham_vi: string
   phien_ban_gia: string
 }
+
+// ── Phieu duyet (H44 P04 + P09) ─────────────────────────────────────────
+
+/** Lop chinh sach cua mot nang luc — quyet dinh HE QUA noi voi nguoi dung. */
+export type LopChinhSach =
+  | 'READ_ONLY' | 'FREE' | 'PAID' | 'EXTERNAL_WRITE' | 'DESTRUCTIVE'
+
+/**
+ * Mot phieu con CHO nguoi dung quyet. Hinh dang do `duyet.su_kien_can_duyet`
+ * dat — "chi thu giao dien can de ve nut".
+ *
+ * ⛔ `credit` la so NGUOI DUNG DA NHIN THAY. May chu tinh lai luc chay va tu
+ *    choi neu lech (`tao_media.tao`), nen no khong phai mot uoc luong de trang
+ *    tri — no la mot phan cua thoa thuan.
+ */
+export type PhieuDuyet = {
+  approval_id: string
+  tool_name: string
+  doi_so: Record<string, unknown>
+  credit: number
+  policy_class: LopChinhSach | string
+  /** ISO. Phieu het han thi KHONG duyet duoc — may chu tra 409. */
+  het_han_luc: string
+}

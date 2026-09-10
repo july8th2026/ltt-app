@@ -311,6 +311,27 @@ def duong_da_doi(root: Path = ROOT, goc_so: str = "") -> set[str]:
     return ra
 
 
+def _la_tep_test(duong: str) -> bool:
+    """`tests/test_*.py` — module test THAT, khong phai ma ho tro trong `tests/`.
+
+    Cung phep loc ma `test_cua_thanh_phan` dung (tien to `test_`), va co cung ly
+    do: `tests/__init__.py`, `conftest.py`, `fixtures/*.py` la ma HO TRO — sua
+    chung thi anh huong lan ra ca bo, nen chung KHONG duoc huong luat nay.
+    """
+    d = _chuan(duong)
+    return (d.startswith("tests/") and d.endswith(".py")
+            and d.rpartition("/")[2].startswith("test_"))
+
+
+def tep_test_da_doi(duong: set[str]) -> set[str]:
+    """Cac tep test trong tap duong dan da doi — nop THANG vao danh sach chay.
+
+    Sua mot tep test thi phai chay chinh tep do, ke ca khi khong co thanh phan
+    san pham nao doi. Xem `bi_anh_huong` ve vi sao khong di vong qua thanh phan.
+    """
+    return {_chuan(d) for d in duong if _la_tep_test(d)}
+
+
 def bi_anh_huong(duong: set[str], root: Path = ROOT, *,
                  mo_rong_tieu_thu: bool = True) -> set[str] | None:
     """Thanh phan can kiem cho tap duong dan nay. `None` = phai chay TAT CA.
@@ -322,8 +343,32 @@ def bi_anh_huong(duong: set[str], root: Path = ROOT, *,
     tp = cac_thanh_phan(root)
     if any(_chuan(d) in DUNG_CHUNG for d in duong):
         return None
+    # ⭐ MOT TEP TEST KHONG CO NGUOI TIEU THU — nen no khong dong gop THANH PHAN.
+    #
+    # 🔴 Vi sao can. `thanh_phan.toml` khai duong cho ma SAN PHAM, khong khai
+    #    `tests/`. Nen truoc 08/09 moi thay doi cham mot tep test deu roi vao
+    #    nhanh `chu is None` ngay duoi va ha cap xuong DAY DU — va gan nhu moi
+    #    thay doi that deu kem mot tep test. Do tren 59 ban ghi trong
+    #    `test-results/gates/`: ho so `doi` va `pham-vi` co **0 luot chay**.
+    #    Duong `--doi` ton tai, duoc tai lieu hoa, va **chua tung thu hep gi**.
+    #
+    # ⛔ VA DUNG DOI NO SANG "suy chu tu import cua chinh tep test". Da thu
+    #    08/09 va do duoc: `tests/test_500` import mot module nen, nen phep dao
+    #    nguoc tra ve 36 thanh phan -> **456/530 tep test (86%)**. Do la mot
+    #    pham vi TRONG NHU HEP ma khong he hep — dung cai bay `HO_SO` canh bao.
+    #
+    # ⭐ Cai dung hep la: sua mot tep test chi anh huong CHINH TEP DO. Khong co
+    #    ai `import` mot module test, nen khong co canh tieu thu nao de mo rong.
+    #    Tep test da doi duoc nop THANG vao danh sach chay — xem
+    #    `tep_test_da_doi()` va `gate.py::_thu_hep`.
+    #
+    # ⚠️ Chi ap cho `tests/test_*.py`. `tests/conftest.py` nam trong DUNG_CHUNG
+    #    (da chan o tren), con `tests/fixtures/*.py` va moi thu khac trong
+    #    `tests/` van roi xuong `chu is None` -> chay TAT CA. Fail-open giu nguyen.
     ra: set[str] = set()
     for d in duong:
+        if _la_tep_test(d):
+            continue
         chu = thanh_phan_cua(d, tp)
         if chu is None:
             return None

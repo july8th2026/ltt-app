@@ -50,7 +50,6 @@ curl -X POST "$LTT_BASE_URL/api/v1/quotes" \
   "input": {
     "prompt": "a paper boat on a rain-soaked street at night",
     "image_key": "upl_from_POST_/api/v1/uploads",
-    "model": "standard",
     "aspect_ratio": "16:9",
     "count": 1
   }
@@ -68,7 +67,6 @@ curl -X POST "$LTT_BASE_URL/api/v1/jobs" \
   "input": {
     "prompt": "a paper boat on a rain-soaked street at night",
     "image_key": "upl_from_POST_/api/v1/uploads",
-    "model": "standard",
     "aspect_ratio": "16:9",
     "count": 1
   }
@@ -498,13 +496,12 @@ Input:
 
 - `prompt` — string, **required**, max length 4000, What to draw. Everything about the image comes from this text.
 - `image_key` — string, Optional reference image, given as the id of an upload you confirmed or of an artifact from an earlier job. The result follows its subject and composition.
-- `model` — string, one of `enhanced`, `standard`, `standard-lite`, Quality tier. This is what the price depends on — see the model list for what each alias is for.
 - `aspect_ratio` — string, one of `16:9`, `9:16`, `1:1`, `4:3`, `3:4`, default 16:9, Shape of the output image.
 - `count` — integer, min 1, max 4, default 1, How many images to generate. Each one is charged.
 
 Output: `image_keys` (artifact[]), `prompt` (string)
 
-Contract hash: `09c21c078eb6ca12`
+Contract hash: `6b31aa3ae3590f99`
 
 ### `image.ltt`
 
@@ -528,7 +525,7 @@ Contract hash: `f049eda67a1f475a`
 
 ### `image.thumbnail`
 
-Generate one to four YouTube thumbnail images from a topic, with optional title text, style and language.
+Generate one to four YouTube thumbnail background images from a topic. The images carry NO text: the internal model cannot render legible lettering, so add your own title afterwards.
 
 Execution mode: `ASYNC_JOB`
 
@@ -537,18 +534,14 @@ Scopes: `jobs:create`
 Input:
 
 - `topic` — string, **required**, max length 2000, What the thumbnail is about. The whole image is generated from this, so be specific about subject and mood.
-- `title` — string, max length 200, Large text drawn on the image. Leave empty for an image with no text.
-- `subtitle` — string, max length 200, Smaller supporting line under the title.
-- `text_style` — string, one of `bold_impact`, `clean_minimal`, `dramatic_gold`, `neon_glow`, `street_art`, How the text is drawn. Ignored when both title and subtitle are empty.
 - `phong_cach` — string, one of `chuyen_nghiep_toi_gian`, `hoat_hinh_cartoon`, `cinematic`, `flat_design`, `3d_render`, `collage`, `retro_vintage`, Visual style of the image itself. The name is Vietnamese because it is a stable identifier, not a label; the values are listed in `enum`.
-- `kieu_trend` — string, one of `khuon_mat_cam_xuc`, `so_sanh_truoc_sau`, `bi_an_gay_to_mo`, `listicle_numbered`, `huong_dan_tutorial`, `reaction_phan_ung`, `storytelling`, `mui_ten_chi_dan`, `text_heavy_chu_lon`, Composition pattern — what makes the thumbnail work as a thumbnail (a reacting face, a before/after split, a numbered list, and so on).
-- `ngon_ngu` — string, one of `tieng_viet`, `english`, `japanese`, `korean`, `chinese`, Language of the text drawn on the image.
+- `kieu_trend` — string, one of `khuon_mat_cam_xuc`, `so_sanh_truoc_sau`, `bi_an_gay_to_mo`, `huong_dan_tutorial`, `reaction_phan_ung`, `storytelling`, `mui_ten_chi_dan`, Composition pattern — what makes the thumbnail work as a thumbnail (a reacting face, a before/after split, a mystery crop, and so on).
 - `aspect_ratio` — string, one of `16:9`, `9:16`, `1:1`, `4:3`, `3:4`, default 16:9, Shape of the output. 16:9 is the YouTube thumbnail shape.
 - `count` — integer, min 1, max 4, default 1, How many variations to generate. Each one is charged, so a quote for count=4 costs four times a quote for count=1.
 
 Output: `image_keys` (artifact[]), `prompt` (string)
 
-Contract hash: `00e6a8906c3c5574`
+Contract hash: `6a9ef0c81ac9e3d9`
 
 ### `image.upscale`
 
@@ -730,13 +723,10 @@ Aliases, not vendor model ids. What a call *costs* comes from `POST /quotes`: pr
 
 | Alias | Capability | Stability | Tools | Notes |
 |---|---|---|---|---|
-| `enhanced` | image | stable | `image.generate` | Better prompt adherence and fine detail than standard. |
 | `ltt_llm` | text | stable | `text.chat` | Text only, 156K usable input context. Coding, chat, agentic tool use, summarisation. |
 | `ltt_llm_vision` | text | stable | `text.chat` | Same model plus image reading, but a smaller 89K usable input context. Send images as OpenAI image_url parts. |
 | `seedance-2.0` | video | stable | `video.generate` | Seedance 2.0 |
 | `seedance-2.0-fast` | video | stable | `video.generate` | Seedance 2.0 Fast |
 | `seedance-2.0-mini` | video | stable | `video.generate` | Seedance 2.0 Mini |
-| `standard` | image | stable | `image.generate` | Balanced quality and cost. Start here. |
-| `standard-lite` | image | stable | `image.generate` | Same price as standard, tuned for speed over detail. |
 
 <!-- END GENERATED TOOLS -->

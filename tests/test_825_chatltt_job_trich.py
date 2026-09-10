@@ -93,7 +93,7 @@ def co_gia(monkeypatch):
 
 # ── 1. Giá fail-closed ─────────────────────────────────────────────────────
 
-def test_gia_TAM_phai_TU_KHAI_la_tam_chu_khong_im_lang():
+def test_gia_DA_CHOT_va_con_so_dung_thu_chu_du_an_chot():
     """🔴 Mệnh đề 1, viết lại 06/09.
 
     Bản đầu chốt `MCREDIT_MOI_1000_KY_TU is None` — fail-closed. Nghe an toàn,
@@ -114,12 +114,11 @@ def test_gia_TAM_phai_TU_KHAI_la_tam_chu_khong_im_lang():
 
     assert gia_trich.MCREDIT_MOI_1000_KY_TU is not None, (
         "gia bi go ve None — xem docstring: fail-closed o day chan buoc 4-6")
-    assert gia_trich.CHU_DU_AN_DA_CHOT is False, (
-        "neu chu du an DA chot that thi sua ca phep kiem nay VA `STATE.md`, "
-        "va noi ro AI chot, NGAY nao")
-    assert "tam" in gia_trich.PHIEN_BAN_GIA, (
-        "phien ban gia di vao TUNG ban ghi duyet — chu `tam` la thu cho phep "
-        "loc ra moi but toan tinh theo gia tam vao ngay chot gia that")
+    assert gia_trich.CHU_DU_AN_DA_CHOT is True, (
+        "gia da duoc chu du an chot 07/09/2026 — dung ha co nay ve False")
+    assert gia_trich.MCREDIT_MOI_1000_KY_TU == 20, (
+        "chu du an chot GIU 20 mcredit/1.000 ky tu (07/09/2026). Doi so nay la "
+        "doi mot quyet dinh THUONG MAI, khong phai mot hang so ky thuat")
 
 
 def test_gia_van_NEM_khi_bi_go_ve_None():

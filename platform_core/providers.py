@@ -59,62 +59,116 @@ class Provider:
     list_models_path: Optional[str] = None   # endpoint liệt kê model (nếu có), vd /v1/models
     async_poll: bool = False                 # True = submit->poll (video)
     notes: str = ""
+    #: ⛔ `False` = **ĐÃ NGỪNG**. Không tạo được lượt gọi mới và không hiện ở bộ
+    #: chọn nào — nhưng `get()` · `resolve_model_id()` · `model_capabilities()`
+    #: **vẫn trả về**, để một job cũ trong DB còn đọc được tên model của nó.
+    #:
+    #: ⭐ Đây là mức PROVIDER của `ModelInfo.is_active` đã có sẵn, **không phải**
+    #:    một cơ chế mới. Ranh giới *"chặn tạo mới / giữ đọc lịch sử"* vốn đã nằm
+    #:    trong chính tệp này: `model_options()` và `model_catalog()` **lọc**
+    #:    theo `is_active`, còn `get()` và `resolve_model_id()` thì **không**.
+    is_active: bool = True
+
+
+class ProviderDaNgung(RuntimeError):
+    """Có người cố tạo một lượt gọi MỚI tới provider đã ngừng.
+
+    ⛔ **Đây là fail-closed, và nó KHÔNG có đường lui.** Bắt được lỗi này rồi
+    thử một provider khác chính là cái `HARD_DELETE_POLICY` cấm — rollback đi
+    bằng Git SHA, không bằng một nhánh `except`.
+
+    ⚠️ Nó **không** phải `BanError`. `BanError` nghĩa *"bận, đi tiếp provider
+    sau"*; lỗi này nghĩa *"provider này không còn tồn tại với tư cách đường
+    chạy"*. Lẫn hai cái là dựng lại đúng đường lui vừa gỡ.
+    """
+
+
+def da_ngung(provider_id: str) -> bool:
+    """Provider này đã ngừng chưa? Đọc THẲNG `REGISTRY`, đúng một nguồn.
+
+    🔴 **Cố ý không đi qua `get()`.** `get()` bị monkeypatch trong nhiều phép
+    kiểm (chúng trả `SimpleNamespace` giả không có trường `is_active`), nên một
+    cổng đọc qua nó vừa **nổ nhầm** ở test, vừa **im lặng hỏng** nếu ai đó thay
+    `get()` bằng thứ luôn báo "còn sống". Sự thật về việc retire nằm ở
+    `REGISTRY`, nên cổng phải hỏi đúng chỗ đó.
+
+    Provider **không có trong registry** ⇒ `False`: id lạ không phải việc của
+    hàm này, và biến nó thành lỗi ở đây sẽ chặn nhầm các đường hợp lệ khác.
+    """
+    p = REGISTRY.get((provider_id or "").strip().lower())
+    return p is not None and not p.is_active
+
+
+def chan_neu_da_ngung(provider_id: str) -> None:
+    """Cổng fail-closed — gọi NGAY TRƯỚC mỗi lượt ra mạng.
+
+    Đặt ở đây chứ không ở tầng HTTP vì tám nơi tự dựng HTTP riêng: một cổng
+    trong `httpx` không tồn tại, còn một cổng theo **danh tính provider** thì
+    mọi nơi đều gọi được.
+    """
+    if da_ngung(provider_id):
+        # 🔴 CHUỖI NÀY HIỆN RA VỚI KHÁCH — đo được, không phải phỏng đoán:
+        #      platform_core/models.py:297                Job.error  (cot Text)
+        #      apps/autosubvideo/templates/…:97           {{ j.error }}
+        #    Một job hỏng vì cổng này lưu thông điệp vào `Job.error`, và trang
+        #    danh sách job render thẳng nó. Nên nó phải được **dịch**, không
+        #    phải một chuỗi kỹ thuật.
+        #
+        # ⚠️ Cám dỗ ở đây là xếp nó vào *"lỗi nội bộ, không cần dịch"*. Hai
+        #    đường gọi trên bác điều đó bằng mã, không bằng ý kiến.
+        from platform_core.i18n import _ as _t
+        raise ProviderDaNgung(
+            _t('Nhà cung cấp này đã ngừng phục vụ. Nội dung cũ vẫn xem được, '
+               'nhưng không tạo lượt mới được nữa.'))
 
 
 # ── Seed 5 provider hiện có trong BOT GEMINI (chỉ key CHÍNH THỨC) ──────────────
 REGISTRY: dict[str, Provider] = {
+    # ─────────────────────────────────────────────────────────────────────
+    # ⛔ BA NHÀ CUNG CẤP ĐÃ XOÁ — AI CLEAN REBUILD V2, 10/09/2026
+    #
+    # Chủ dự án chốt: *"Codex, gemini, apikey, shopapi các api ngoài hệ thống
+    # trừ api byteplus thì ta cần dọn và xoá hết."*
+    #
+    # 🔴 THỨ ĐÃ XOÁ là toàn bộ phần **GỌI THẾ NÀO**: `base_url` (ba host thật),
+    #    `auth_style`, `list_models_path`, và mọi `ModelInfo`. Sau đây không còn
+    #    một mẩu công thức nào để dựng lại một lượt gọi ra ba nhà cung cấp này —
+    #    kể cả khi ai đó có sẵn khoá API.
+    #
+    # ⭐ THỨ CỐ Ý GIỮ là đúng ba dòng khai `is_active=False`, và lý do là CƠ HỌC
+    #    chứ không phải tình cảm: `da_ngung()` trả `False` cho một id **không có
+    #    trong registry**. Xoá hẳn ba dòng này ⇒ `chan_neu_da_ngung("gemini")`
+    #    thôi ném, tức cổng fail-closed của pha 04 **im lặng mở ra**.
+    #
+    #    Nói cách khác: ở đây, xoá nốt dòng cuối không làm hệ thống sạch hơn —
+    #    nó gỡ mất lời từ chối. Cái còn lại không phải một đường chạy; nó là một
+    #    tấm biển "đường này đã đóng" mà cổng đọc được.
+    #
+    # ⚠️ Hệ quả đã cân: `resolve_model_id`/`model_capabilities` không còn tra
+    #    được tên hiển thị của model Gemini cũ. Job cũ vẫn đọc được **id thô**
+    #    đã lưu trong hàng của nó; thứ mất là nhãn đẹp, không phải dữ liệu.
+    # ─────────────────────────────────────────────────────────────────────
     "gemini": Provider(
-        id="gemini", display_name="Google Gemini (API key)",
-        auth_style=AUTH_QUERY_KEY,
-        base_url="https://generativelanguage.googleapis.com/v1beta",
-        categories=(APIKEY_CAT_MODEL, APIKEY_CAT_CHAT, APIKEY_CAT_IMAGE),
-        models=(
-            ModelInfo("gemini-2.5-flash-image", (APIKEY_CAT_IMAGE,),
-                      display_name="Gemini 2.5 Flash"),
-            ModelInfo("gemini-3.1-flash-lite-image", (APIKEY_CAT_IMAGE,),
-                      display_name="Gemini 3.1 Flash Lite"),
-            ModelInfo("gemini-3.1-flash-image", (APIKEY_CAT_IMAGE,),
-                      display_name="Gemini 3.1 Flash"),
-            # ⛔ ĐÓNG 2026-08-23 — LÝ DO KINH TẾ, KHÔNG PHẢI KỸ THUẬT.
-            #    Giá vốn $0,134/ảnh = 35,2 credit (`platform_core/gia_von.json`).
-            #    Nền tảng bán 16 credit ở `taoanh` và **5 credit** ở `thumbnail`
-            #    (app đó tính giá phẳng bất kể model) ⇒ lỗ 1.924đ và 3.024đ mỗi ảnh.
-            #    Chủ dự án chốt: giữ giá các bậc rẻ như chi phí thu hút khách, nhưng
-            #    **đóng đúng bậc lỗ nặng nhất**.
-            #    Mở lại khi giá bán ≥ giá vốn — `tests/test_261` sẽ kiểm hộ.
-            ModelInfo("gemini-3-pro-image", (APIKEY_CAT_IMAGE,),
-                      display_name="Gemini 3 Pro", is_active=False),
-            # Alias bất hoạt: job/draft cũ vẫn gọi đúng model ổn định, nhưng UI
-            # không tiếp tục tạo dữ liệu mới với tên preview đã lỗi thời.
-            ModelInfo("gemini-3.1-flash-image-preview", (APIKEY_CAT_IMAGE,),
-                      provider_model_id="gemini-3.1-flash-image", is_active=False),
-            ModelInfo("gemini-3-pro-image-preview", (APIKEY_CAT_IMAGE,),
-                      provider_model_id="gemini-3-pro-image", is_active=False),
-            ModelInfo("gemini-2.5-flash", (APIKEY_CAT_CHAT,),
-                      display_name="Gemini 2.5 Flash (chat)"),
-            ModelInfo("gemini-2.5-flash-preview-tts", ("audio",),
-                      display_name="Gemini 2.5 Flash TTS (Preview)", capabilities={
-                          "voices": ["Kore", "Puck", "Charon", "Zephyr", "Fenrir",
-                                     "Leda", "Orus", "Aoede"],
-                          "sample_rate": 24000, "preview": True,
-                      }),
-        ),
-        list_models_path="/models",   # kèm ?key= khi gọi
-        notes="Key dạng AIza...; ảnh generateContent đồng bộ; ảnh: responseModalities+imageConfig.",
+        id="gemini", display_name="Google Gemini (da xoa)",
+        auth_style="", base_url="", categories=(), models=(),
+        list_models_path=None,
+        notes="XOA 2026-09-10 (AI CLEAN REBUILD V2). Giu bia mo de cong "
+              "`chan_neu_da_ngung` con no. Khong con base_url/auth/model.",
+        is_active=False,
     ),
     "apiai": Provider(
-        id="apiai", display_name="apiai.vn (OpenAI-compat gateway)",
-        auth_style=AUTH_BEARER, base_url="https://api.apiai.vn/api/v1",
-        categories=(APIKEY_CAT_CHAT, APIKEY_CAT_IMAGE),
-        models=(), list_models_path="/models",
-        notes="Gateway OpenAI-compat; /chat/completions, /images/generations.",
+        id="apiai", display_name="apiai gateway (da xoa)",
+        auth_style="", base_url="", categories=(), models=(),
+        list_models_path=None,
+        notes="XOA 2026-09-10 (AI CLEAN REBUILD V2). Nhu tren.",
+        is_active=False,
     ),
     "cheapkeyai": Provider(
-        id="cheapkeyai", display_name="cheapkeyai.shop (OpenAI-compat gateway)",
-        auth_style=AUTH_BEARER, base_url="https://cheapkeyai.shop/v1",
-        categories=(APIKEY_CAT_CHAT, APIKEY_CAT_IMAGE),
-        models=(), list_models_path="/models",
-        notes="Gateway OpenAI-compat.",
+        id="cheapkeyai", display_name="cheapkeyai gateway (da xoa)",
+        auth_style="", base_url="", categories=(), models=(),
+        list_models_path=None,
+        notes="XOA 2026-09-10 (AI CLEAN REBUILD V2). Nhu tren.",
+        is_active=False,
     ),
     "byteplus": Provider(
         id="byteplus", display_name="BytePlus ModelArk (Seedance video)",
@@ -271,17 +325,30 @@ REGISTRY: dict[str, Provider] = {
                "429 = BẬN, không phải lỗi — đánh dấu lỗi cho key ở đây sẽ tự tắt "
                "model nhà sau 5 lần (D-005). Gọi qua platform_core/llm/dieu_phoi.py."),
     ),
+    # ⛔ PLENX ĐÃ XOÁ — AI CLEAN REBUILD V2, 10/09/2026. Cùng không gian với ba
+    #    mục trên: *"các api ngoài hệ thống trừ api byteplus thì ta cần dọn và
+    #    xoá hết."* PLENX là một cổng ngoài, không phải BytePlus.
+    #
+    # 📊 Số liệu đứng sau quyết định, không phải suy đoán — đếm trên CSDL
+    #    production 10/09: **1 khoá, 4 lượt gọi từ trước tới nay, im từ 08/09**.
+    #    Đường video đang sống là WanGP (LTT VIDEO V2.1), không phải cổng này.
+    #
+    # ⚠️ **CÁI MẤT, nói thẳng để đảo lại được bằng MỘT commit:** `kling-3.0` và
+    #    `seedance-2.0-pro` rời khỏi catalog video. BytePlus vẫn phục vụ
+    #    `seedance-2.0`, `-fast`, `-mini`, nên nhóm video **không chết**; thứ
+    #    mất là hai bậc model, và đó là một quyết định **sản phẩm** đã được
+    #    chủ dự án ra, không phải một hệ quả kỹ thuật tôi tự chọn.
+    #
+    # ⭐ Giữ `is_active=False` vì cùng lý do cơ học ở khối trên: `da_ngung()` trả
+    #    `False` cho một id **vắng mặt**, nên xoá hẳn dòng này sẽ **tắt** cổng
+    #    fail-closed thay vì siết nó.
     "plenx": Provider(
-        id="plenx", display_name="PLENX (Seedance/Kling video)",
-        auth_style=AUTH_X_API_KEY,
-        base_url="https://api.plenxai.com/api/v1/developer",
-        categories=(APIKEY_CAT_VIDEO,), async_poll=True,
-        models=(
-            ModelInfo("seedance-2.0", (APIKEY_CAT_VIDEO,)),
-            ModelInfo("seedance-2.0-pro", (APIKEY_CAT_VIDEO,)),
-            ModelInfo("kling-3.0", (APIKEY_CAT_VIDEO,)),
-        ),
-        notes="Key dạng pk_...; video async: POST /generate/video -> GET /status/{id}.",
+        id="plenx", display_name="PLENX video (da xoa)",
+        auth_style="", base_url="", categories=(), models=(),
+        async_poll=False,
+        notes="XOA 2026-09-10 (AI CLEAN REBUILD V2). Cong video ngoai, khong "
+              "phai BytePlus. Do 10/09: 1 khoa, 4 luot, im tu 08/09.",
+        is_active=False,
     ),
 }
 
@@ -336,6 +403,8 @@ def model_options(category: str, provider_ids_filter: Optional[tuple] = None) ->
     for provider in REGISTRY.values():
         if allowed and provider.id not in allowed:
             continue
+        if not provider.is_active:
+            continue          # ⛔ provider đã ngừng: không hiện ở bộ chọn nào
         for model in provider.models:
             if (model.is_active and category in model.categories
                     and model.id not in seen):
@@ -348,6 +417,8 @@ def model_catalog() -> list[dict]:
     """Public capability catalog for schema-driven UIs; never exposes keys/endpoints."""
     indexed: dict[str, dict] = {}
     for provider in REGISTRY.values():
+        if not provider.is_active:
+            continue          # ⛔ provider đã ngừng: không lên catalog công khai
         for model in provider.models:
             if not model.is_active:
                 continue

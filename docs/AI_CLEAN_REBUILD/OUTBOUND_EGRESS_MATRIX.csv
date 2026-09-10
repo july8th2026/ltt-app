@@ -1,0 +1,9 @@
+ID,Family,File,Line,Endpoint,HttpClient,Product,Classification,BlockedAtPhase,Evidence
+E01,GEMINI,apps/autosubvideo/ai_workflows.py,140,generativelanguage.googleapis.com/v1beta/models/{model}:generateContent,requests/httpx,autosubvideo (dich phu de),PRODUCT_MIGRATE,04 (fail-closed),git grep URL + HTTP client tai apps/autosubvideo/ai_workflows.py:140
+E02,GEMINI,apps/prompt_ai_ommi/provider.py,10,generativelanguage.googleapis.com,requests/httpx,prompt_ai_ommi (prompt),PRODUCT_MIGRATE,04 (fail-closed),git grep URL + HTTP client tai apps/prompt_ai_ommi/provider.py:10
+E03,GEMINI,apps/taoanh/jobs.py,20,generativelanguage.googleapis.com,requests/httpx,taoanh (sinh anh),PRODUCT_MIGRATE,04 (fail-closed),git grep URL + HTTP client tai apps/taoanh/jobs.py:20
+E04,GEMINI,apps/taovideo/translate.py,11,generativelanguage.googleapis.com,requests/httpx,taovideo (dich),PRODUCT_MIGRATE,04 (fail-closed),git grep URL + HTTP client tai apps/taovideo/translate.py:11
+E05,GEMINI,apps/thumbnail/jobs.py,25,generativelanguage.googleapis.com,requests/httpx,thumbnail (anh bia),PRODUCT_MIGRATE,04 (fail-closed),git grep URL + HTTP client tai apps/thumbnail/jobs.py:25
+E06,GEMINI,platform_core/image_gen/dich_gemini.py,44,generativelanguage.googleapis.com/v1beta,requests/httpx,-,EXECUTION_DELETE,04 (fail-closed),git grep URL + HTTP client tai platform_core/image_gen/dich_gemini.py:44
+E07,GEMINI,platform_core/llm/dieu_phoi.py,108,generativelanguage.googleapis.com/v1beta/models/{model}:generateContent,requests/httpx,-,EXECUTION_DELETE,04 (fail-closed),git grep URL + HTTP client tai platform_core/llm/dieu_phoi.py:108
+E08,GEMINI,tools/doi_chung_gemini.py,163,generativelanguage.googleapis.com/v1beta/models/,requests/httpx,-,EXECUTION_DELETE,04 (fail-closed),git grep URL + HTTP client tai tools/doi_chung_gemini.py:163

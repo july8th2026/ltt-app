@@ -220,6 +220,29 @@
                 {% if not cong_san_sang %}disabled{% endif %}>
           {{ _("Tạo tiếng nói") }}
         </button>
+        {#
+          PHÁT DẦN (U-07). Nút chỉ tồn tại khi `LTT_VOICE_STREAM` bật ở
+          `secrets/app.env` — cùng cờ mà sidecar đọc, nên không có trạng thái
+          "nút có mà cổng đóng". Tắt thì `/phat-dan` trả 404, và một nút dẫn
+          tới 404 tệ hơn không có nút.
+
+          ⭐ Tăng cường dần: không có JS thì nút này không làm gì, và nút
+             "Tạo tiếng nói" bên trên vẫn là đường đầy đủ.
+        #}
+        {#
+          ⛔ KHÔNG dùng thẻ `<audio src>`: nó chỉ nhận GET, mà cửa này là POST
+             (có CSRF, có giữ credit). Và `MediaSource` **không hỗ trợ WAV**,
+             nên đường MSE cũng đóng. Trình phát nằm ở `voice.js`, giải PCM
+             bằng Web Audio — định dạng đã ghim ở `gia.py` (48k · mono · 16-bit).
+        #}
+        {% if phat_dan_bat %}
+        <button class="btn sm ghost" type="button" id="lv-nut-phat"
+                data-nhan-phat="{{ _('Nghe ngay') }}"
+                data-nhan-dung="{{ _('Dừng') }}"
+                {% if not cong_san_sang %}disabled{% endif %}>
+          {{ _("Nghe ngay") }}
+        </button>
+        {% endif %}
         <p class="lv-st-uoc" id="lv-uoc-dong" hidden>
           {{ _("Tạm giữ") }} <b id="lv-uoc">0</b> {{ _("credit") }}
           · <span class="dim">{{ _("hoàn phần dư khi xong") }}</span>
@@ -467,6 +490,21 @@
                chung lech nhau — va cai o day con giu lai dung thanh xam ma
                ca dot nay sinh ra de go.
           #}
+          {#
+            CANH BAO CUA MOT LUOT DA XONG — lech lan, hoac DA LUI GIONG.
+
+            🔴 Truoc 07/09/2026 khong co o nay, va hau qua khong phai "thieu mot
+               dong chu": `KetQua.canh_bao` duoc dung day du roi **chet o cua**,
+               nen `lan_ngon_ngu.doi_chieu` chay o moi luot ma chua bao gio noi
+               duoc gi. Nay no con phai cho `lui_giong` nua — mot duong lui im
+               lang chinh la thu `lui_giong.py` duoc viet ra de sua.
+
+            ⚠️ `role="status"` chu khong phai `role="alert"`: day la thong tin
+               ve mot luot DA THANH CONG. `alert` ngat loi trinh doc man hinh
+               nhu mot loi, va dung no cho moi canh bao nho la cach lam cho
+               nguoi dung trinh doc tat het thong bao.
+          #}
+          <div id="lv-kq-canh-bao" class="alert alert-warn" role="status" hidden></div>
           <audio id="lv-player" data-nang="1" controls preload="metadata"></audio>
           <div class="lv-kq-nut">
             <a class="btn primary sm" id="lv-tai" download>{{ _("Tải WAV") }}</a>
@@ -580,6 +618,7 @@
 
 {% block scripts %}
 {# `?v=` bat buoc: static di qua Cloudflare co TTL (CLAUDE.md quy tac 6). #}
+{% include "_voice_nhan.html" %}
 <script src="/static/voice.js?v={{ asset_ver }}"></script>
 <script>
 LttVoice.studio({
@@ -587,6 +626,8 @@ LttVoice.studio({
   tranKyTu: {{ tran_ky_tu | tojson }},
   tranMoiLuot: {{ tran_moi_luot | tojson }},
   kyTuMoiGiay: {{ ky_tu_moi_giay | tojson }},
+  giayKhoiDong: {{ giay_khoi_dong | tojson }},
+  creditMoiGiay: {{ credit_moi_giay | tojson }},
   chu: {
     dangCho:   {{ _("Đang xếp hàng…") | tojson }},
     dangTao:   {{ _("Đang tạo tiếng…") | tojson }},

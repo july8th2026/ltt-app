@@ -29,22 +29,15 @@ nhánh từ một *commit*. Lệnh `tao` in ra số tệp đang dở chính vì 
 
 ```
 sửa  →  gate --doi  →  sửa  →  gate --doi  →  ...  →  gate (đầy đủ)  →  commit
-        (giây/phút)                                   (~7 phút)
 ```
 
-| Lệnh | Chạy gì | Chứng minh gì | **Không** chứng minh gì |
-|---|---|---|---|
-| `gate.py --vong-lap` | tĩnh + `--lf` | không có lỗi tĩnh mới | ⛔ **không phải bằng chứng** — `--lf` chỉ chạy lại test *đã đỏ* |
-| `gate.py --doi` | tĩnh + test của phần đã đổi | mọi test **chạm tới** phần đã đổi đều xanh | không nói gì về phần còn lại; **tự hạ cấp** xuống đầy đủ khi không chắc |
-| `gate.py --pham-vi <tp>` | như trên, phạm vi chọn tay | như trên | ⚠️ **tin người gọi** — `--doi` tự kiểm, cái này thì không |
-| `gate.py --quick` | bỏ hai bước nặng | lỗi tĩnh | ⛔ không phải bằng chứng |
-| `gate.py` | tất cả | toàn bộ cổng chất lượng trên cây này | không nói gì về production |
+🔑 **Bảng "cấp nào chứng minh gì" nay ở `docs/00_LTT_OPERATING_CONTRACT.md` §4** —
+một chỗ duy nhất, cạnh giá **đo được** của từng cấp.
 
-🔑 **Gate là công cụ ra PHÁN QUYẾT, không phải công cụ CHẨN ĐOÁN.** Dùng nó để
-dò lỗi là trả 7 phút cho một câu trả lời mà một bước con đã có trong nửa giây.
-
-⛔ **Trước khi báo xong luôn là `python tools/gate.py` đầy đủ.** Mọi chế độ khác
-đều tự khai điều đó ở dòng `RESULT` của chúng.
+*(Tệp này từng giữ bảng đó, và bảng ấy **đúng** — nó là nguồn duy nhất đặt `--doi`
+làm vòng lặp mặc định, trong khi `CLAUDE.md` và `AGENTS.md` bảo `--vong-lap`. Hợp
+đồng canonical giữ lại lựa chọn của tệp này. Cái bỏ đi chỉ là **bản thứ hai** của
+cùng một luật — và con số "~7 phút", vốn đã trôi: đo trên 43 lượt thật là 11,4.)*
 
 ---
 
@@ -89,8 +82,16 @@ lõi; CSDL test dùng chung; cổng 8100; GPU.
 
 ```powershell
 python tools/cua_so_yen.py trang-thai   # ai đang giữ gì, từ bao giờ
-python tools/cua_so_yen.py nha --ep     # gỡ khoá treo (hiếm khi cần)
+python tools/cua_so_yen.py nha --ep --tai-nguyen cpu_nhieu   # gỡ MỘT khoá treo
 ```
+
+⛔ **`nha --ep` không kèm `--tai-nguyen` gỡ TẤT CẢ khoá trên máy**, kể cả khoá
+của một lượt gate đang chạy — `--ep` là đường vòng có chủ đích bỏ qua phép đối
+chiếu chủ khoá. Gỡ **từng cái**, và chỉ khi `trang-thai` in `CANH BAO: TREO`.
+
+⚠️ `pid` chủ khoá đã biến mất **không** có nghĩa khoá treo — nó có thể đang
+**đổi chủ**. `cua_so_yen` tự đoạt khoá treo; không thấy `CANH BAO: TREO` thì
+khoá còn hiệu lực. Toàn văn: `docs/QUY_TAC_CHAY_LENH_NANG.md`.
 
 - Hai lượt cần **tài nguyên khác nhau** thì **không** đợi nhau.
 - Chỉ lượt **đầy đủ / phạm vi** xếp hàng. `--vong-lap` và `--quick` thì không —

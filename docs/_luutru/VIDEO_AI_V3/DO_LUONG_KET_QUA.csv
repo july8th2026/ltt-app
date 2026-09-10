@@ -1,0 +1,16 @@
+ma,hang_muc,gia_tri,nguon,ngay,ghi_chu
+Đ1,Tach nap model / khuech tan,~300 s nap + ~520 s khuech tan,"do 814 s @20 buoc, doi chieu bang chinh chu 1041,5 s @40 buoc",2026-09-05,Bang: assets/comp_effic.png H100/H800 T2V-A14B 720P 1 GPU
+Đ2,Thoi gian mot video 720P 81 khung 20 buoc,"814,6 s (cold) / ~675 s (am)",executionTime cua job 2467b29e,2026-09-05,"cold gom 154,7 s khoi dong nguoi"
+Đ3,Dinh VRAM 720P,"59,8 GB","bang chinh chu Wan2.2 (ta do 43,8 GB DANG GIU, khong phai dinh)",2026-09-05,"=> VRAM_TOI_THIEU_GB=80 dung, bien 20 GB"
+Đ4,Gia von mot video 720P (cold start),"$1,29","969,3 s x $0,00133/s (gia H100 DO DUOC)",2026-09-05,"KHONG chia tong hoa don $3,2280 - tong do gom 6 job hong"
+Đ4b,Gia von mot video 720P (worker am),"$0,90","675 s x $0,00133/s",2026-09-05,ap dung khi job lien tiep trong cua so idleTimeout=300s
+Đ4c,Hoa don ngay 05/09 (da on dinh),"$3,2280 / 2425 s","GET /v1/billing/endpoints, khong doi trong 57 phut",2026-09-05,gom ca 6 job hong va cac luot kiem - KHONG phai gia von
+Đ5,Chat luong - kiem CO HOC (tang T0),7/7 DAT,tools/video_kiem_tep.py tren ComfyUI_00001_.mp4,2026-09-05,"1280x720 · 16fps · 81 khung · 81/81 khung KHAC nhau · khong den/trang · lech 1,71-5,28. Noi video DUNG HINH DANG, KHONG noi no dep."
+Đ5b,Chat luong - VBench 7 chieu,CHUA DO,,,chi dang chay khi tang co hoc da sach (nay da sach). Can cai vbench + vai GB model danh gia tren may A.
+Q1,"Do sang 188-191/255, bien do hep 3 don vi",CAN NGUOI XEM,video_kiem_tep.py,2026-09-05,"Chuyen dong CO that nhung nhe (lech 3,61/255 trung binh). Co the binh thuong (prompt template la canh tinh), co the video hoi phang. Kiem co hoc KHONG phan biet duoc."
+TT1,fal.ai — Wan2.2 A14B 720p,"$0,08 / giay video","fal.ai/models/fal-ai/wan/v2.2-a14b/text-to-video (browser, 05/09)",2026-09-05,"chay CHINH model cua ta, 16 fps giong het. 580p $0,06 · 480p $0,04"
+TT2,Replicate — wan-2.2-t2v-fast,"$0,10 / video","replicate.com/wan-video/wan-2.2-t2v-fast (browser, 05/09)",2026-09-05,ban DISTILL (it buoc) nen re hon nhieu
+TT3,P14a — gia von ta / gia BAN fal,"2,2 lan","$0,90 vs $0,41 cho video 5,06 giay 720p",2026-09-05,KHONG hoa von duoc ke ca khi ban BANG gia fal => V-018 CONG DUNG
+TT4,fal.ai ban H100 (GPU thue),"$1,89/gio","fal.ai/pricing (browser, 05/09)",2026-09-05,"Ta tra RunPod Serverless Flex $4,79/gio = dat gap 2,53 lan"
+TT5,Kling 2.5 Turbo Pro,"$0,07/giay",fal.ai/pricing,2026-09-05,"doi thu khac, cung mac gia"
+TT6,GOC khoang cach: gia GPU chu khong phai so buoc,"2,53 lan vs 2,2 lan",doi chieu TT4 voi Đ4b,2026-09-05,Hai con so KHOP => duong C (doi hang may) khong dung toi V-012

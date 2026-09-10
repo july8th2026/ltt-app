@@ -87,6 +87,137 @@ APP_DUOC_DUNG_APP: dict = {
         ("apps.upscalevideo", "cost"),                        # bao gia nang cap
         ("apps.upscalevideo.service", "submit_upscale_job"),  # nop job nang cap
     },
+
+    # ── Auto Scan Video: MOT san pham, BA app (ADR-001 D5) ──────────────────
+    #
+    # 🔴 Hai canh duoi KHONG phai hai san pham voi tay sang nhau. `asv_media` va
+    #    `asv_gpu` la executor AN cua chinh `auto_scan_video`
+    #    (`surface="runtime"`, `catalog_parent="auto_scan_video"`); khach chi
+    #    thay mot san pham.
+    #
+    # ⭐ Chung phai la app RIENG vi mot ly do ky thuat, khong phai vi to chuc ma:
+    #    quyen nhat job duoc loc theo **APP** (`platform_core/jobs.py:158-164`),
+    #    khong theo `job_type`. Mot app khai `requires=("ffmpeg","gpu")` chi duoc
+    #    nhat boi mot lan co DU CA HAI; tren doi hinh chia lan
+    #    (`LTT_WORKER_POOLS="ffmpeg:2, gpu:2"`) job cua no vo hinh voi moi worker
+    #    va nam `queued` **mai mai, khong loi nao bao** — dung kieu hong ma
+    #    `apps/ltt_voice/manifest.py:112` da ghi lai.
+    #    `tests/test_389...::test_app_gop_ca_hai_nang_luc_bi_ca_HAI_lan_le_tu_choi`
+    #    tai hien canh do bang mot app that.
+    #
+    # ⭐ Be mat chi hai ten, va no ngan duoc vi linter da bat mot loi THIET KE:
+    #    ban dau `asv_gpu` import `_chay_giai_doan` tu `asv_media` — mot ten
+    #    rieng tu cua app khac. Cach sua khong phai khai them ngoai le ma la dua
+    #    than dung chung ve app so huu mo hinh run/stage (`thi_hanh.py`).
+    ("asv_media", "auto_scan_video"): {
+        ("apps.auto_scan_video", "pipeline"),
+        ("apps.auto_scan_video.thi_hanh", "chay_theo_job_type"),
+    },
+    ("asv_gpu", "auto_scan_video"): {
+        ("apps.auto_scan_video", "pipeline"),
+        ("apps.auto_scan_video.thi_hanh", "chay_theo_job_type"),
+    },
+    ("asv_voice", "auto_scan_video"): {
+        ("apps.auto_scan_video", "pipeline"),
+        ("apps.auto_scan_video.thi_hanh", "chay_theo_job_type"),
+    },
+
+    # ── Auto Scan Video BOC duong chep loi cua autosubvideo ─────────────────
+    #
+    # ⭐ Day la mot canh xuyen-san-pham that, khac hai canh o tren. Ly do no la
+    #    BOC chu khong phai UY QUYEN mot job: `apps/autosubvideo/manifest.py:47,51`
+    #    khai `requires=("ffmpeg",)` trong khi khai `gpu_vram_mb` cho
+    #    `transcribe`/`diarize` (RISK-00-11). Nop job sang app do la ke thua ban
+    #    khai sai — tren doi hinh chia lan, viec GPU se roi vao lan ffmpeg.
+    #
+    #    Boc ham thi Auto Scan chay no trong `asv_gpu`, la app khai
+    #    `requires=("gpu",)` trung thuc. Xem ADR-001 D5.
+    #
+    # ⭐ Va `autosubvideo` KHONG bi sua dong nao: duong cu cua no chay nguyen —
+    #    dung dieu O10 va cong thoat pha 10 doi.
+    ("auto_scan_video", "autosubvideo"): {
+        ("apps.autosubvideo.transcription", "transcribe_file"),
+        # Pha 07: phan vai nguoi noi. Cung ly do BOC nhu tren — `diarize` khai
+        # `gpu_vram_mb=2000` nhung app chu khai `requires=("ffmpeg",)`, nen nop
+        # job sang do la de viec GPU roi vao lan ffmpeg.
+        ("apps.autosubvideo.ai_workflows", "diarize_file"),
+        ("apps.autosubvideo.ai_workflows", "assign_speakers"),
+    },
+
+    # ── Auto Scan Video doc NGAN SACH TOKEN cua model nha ───────────────────
+    #
+    # ⭐ `apps/ltt_llm/ngan_sach.py` la **mot nguon chan ly** cho moi ngan sach
+    #    token cua model nha (CLAUDE.md, don tham so 30/08): ba so go tay, con
+    #    lai deu dan xuat. Auto Scan goi model qua `platform_core/llm/dieu_phoi.py`
+    #    nen no can dung con so do.
+    #
+    # 🔴 Cach SAI la go lai mot con so thu hai vao ma cua Auto Scan. CLAUDE.md
+    #    ghi mot loi da xay ra that vi dung kieu do: cua stream muon ngan sach
+    #    1.024 cua cua dong bo, va moi cau tra loi dai cut o dung 1.024 token,
+    #    **im lang**. Mot con so bi nhan ban la mot con so se lech, va lech kieu
+    #    do khong lam do phep kiem nao.
+    #
+    # ⛔ Chi `ngan_sach`. Mot app khac duoc biet ngan sach la bao nhieu; no khong
+    #    duoc biet model nay chay the nao.
+    ("auto_scan_video", "ltt_llm"): {
+        ("apps.ltt_llm", "ngan_sach"),
+    },
+
+    # ── Auto Scan Video sinh tieng cho TUNG DOAN ban dich ───────────────────
+    #
+    # ⭐ Ba ham di voi nhau thanh MOT chuoi: doc tham so -> kiem quyen so huu
+    #    giong -> sinh mot luot. Auto Scan tu so huu tep, khoa va checkpoint, vi
+    #    no can MOT tep cho MOI doan (TIMING dat tung doan vao khe cua no), con
+    #    `ltt_voice.synthesize` sinh MOT tep cho MOT yeu cau va dat khoa theo
+    #    `ctx.job_id` — goi N lan voi cung mot ctx thi ghi de len chinh no.
+    #
+    # 🔴 `giai_giong` BAT BUOC nam trong chuoi: docstring cua no ghi *"day la
+    #    cho quyen so huu duoc kiem, va no la cho duy nhat"*. Goi `goi_cong` ma
+    #    khong qua no la mo mot duong dung giong cua nguoi khac (I6/I7).
+    #
+    # ⛔ KHONG mo `chuan_bi_van_ban` hay cac tham so temperature/top_k/top_p:
+    #    cache CUDA graph khoa theo bo do, va tran 1.500 ky tu la tran CHAT
+    #    LUONG cua `ltt_voice` chu khong phai mot con so ai cung duoc chinh.
+    ("auto_scan_video", "ltt_voice"): {
+        ("apps.ltt_voice.features", "chuan_hoa"),
+        ("apps.ltt_voice.features", "giai_giong"),
+        ("apps.ltt_voice.features", "goi_cong"),
+        ("apps.ltt_voice", "features"),
+        ("apps.ltt_voice", "sidecar_client"),
+        ("apps.ltt_voice.tham_so_cong_khai", "TRAN_MOI_LUOT_SINH"),
+        # 🔴 Chuan hoa van ban truoc khi doc — bo qua no la mot lo da co that:
+        #    ngay thang doc thanh chuoi ky tu, URL doc tung chu cai, ky tu vo
+        #    hinh thanh token la. Chi `chuan_hoa`, KHONG mo `chuan_bi` (ham do
+        #    con chia doan, va chia mot cau thoai la doi giong doc giua cau).
+        ("apps.ltt_voice.text_pipeline", "chuan_hoa"),
+        ("apps.ltt_voice", "text_pipeline"),
+        # ── Pha 20: liet ke giong cho man tao lan chay ──────────────────────
+        #
+        # 🔑 Goi ham cua `ltt_voice` thay vi tu truy van bang cua no. Ham nay da
+        #    loc `owner_id`, da xu ly kho giong dung chung, va da bo giong khong
+        #    con `active` — ba viec deu de lam sai neu viet lai, va cai thu nhat
+        #    lam sai thi hau qua la khach chon duoc giong nhan ban CUA NGUOI KHAC.
+        #
+        # ⚠️ Chi doc, chi cua chinh chu so huu. Auto Scan khong bao gio tao, sua
+        #    hay go mot giong nao — man do thuoc ve LTT VOICE.
+        ("apps.ltt_voice.doc_man_api", "ma_giong_cua_toi"),
+        # ── Pha 09: catalog giong mau, thu ma AUTO_MATCH khop VAO ───────────
+        #
+        # 🔑 Khong co no thi "tu khop giong" khong con gi de khop va se thoai
+        #    hoa thanh "lay giong mac dinh" — dung dieu `ADR-V4-001` D-V4-04 cam.
+        #
+        # ⭐ Goi `loc` chu khong tu duyet `DANH_SACH`: phep loc la mot QUY TAC,
+        #    va hai ban cua mot quy tac la hai ban se lech nhau.
+        #
+        # ⚠️ Chi DOC. Tao/sua/go giong van chi lam duoc o man cua LTT VOICE.
+        ("apps.ltt_voice.giong_mau", "loc"),
+        ("apps.ltt_voice.giong_mau", "tim"),
+        ("apps.ltt_voice.giong_mau", "hop_le"),
+        ("apps.ltt_voice.giong_mau", "DANH_SACH"),
+        ("apps.ltt_voice.giong_mau", "NHAN_GIOI"),
+        ("apps.ltt_voice.giong_mau", "NHAN_VUNG"),
+        ("apps.ltt_voice.giong_mau", "NHAN_PHONG_CACH"),
+    },
 }
 
 

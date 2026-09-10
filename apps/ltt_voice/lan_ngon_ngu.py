@@ -36,7 +36,13 @@ trúc:
      tồn tại.
   ② Ngay cả khi có người đọc, nó **không đọc được**: `doi_chieu` trả khuôn còn
      nguyên chỗ trống `{lan_giong}`/`{lan_text}`, và `dien_canh_bao` — hàm điền
-     chỗ trống ấy — **chưa từng được gọi ở đâu**.
+     chỗ trống ấy — không có người gọi nào.
+
+     ⚠️ ĐÚĐỢC Ở BASE `9e73bf1f`, **HẾT ĐÚNG TỪ 07/09**: trunk tự tìm ra và sửa
+        độc lập trong lúc phiên này đang chạy. Bản hoà 10/09 giữ **bản sửa của
+        trunk**, không giữ bản của tôi — vì bản của tôi (`return (MAU_LECH_LAN,)`)
+        đã **tái tạo đúng lỗi ấy**: tôi trả một khuôn chưa điền, sau khi vừa
+        viết ra chẩn đoán nói rằng trả khuôn chưa điền là sai.
   ③ Và ô `Ngôn ngữ` của khách **không xuống tới worker**: `routes/_p_tao.tao`
      nhận `ngon_ngu` rồi bỏ nó ra khỏi `params` lúc nộp job. Nên nhánh "khách
      tự khai" — nhánh mạnh nhất — chưa bao giờ chạy trong sản phẩm.
@@ -211,6 +217,18 @@ def lan_tu_vung(vung: str) -> str:
     return LAN_VI if str(vung or "").strip().lower() in VUNG_VI else KHONG_RO
 
 
+# 🔴 HOÀ TRUNK 2026-09-10 — `_MAU_LECH_LAN` CỦA TRUNK ĐÃ GỠ Ở ĐÂY, có chủ ý.
+#
+#    Trunk (07/09) tách một hằng `_MAU_LECH_LAN` cho `doi_chieu`. Việc tách ấy
+#    ĐÚNG và bản sửa đi kèm nó cũng đúng (xem `doi_chieu`). Nhưng nội dung câu
+#    thì hết đúng từ Q121: nó kết bằng *"Bạn vẫn tạo được, chỉ là chất lượng có
+#    thể không bằng một giọng cùng làn"* — trong khi cửa nộp nay **từ chối**.
+#
+# ⛔ Giữ cả hai hằng là giữ hai câu nói hai điều trái nhau về cùng một tình
+#    huống, và câu sai lại là câu nói nhẹ nhàng hơn — thứ khó phát hiện hơn hẳn
+#    một câu sai nói to. `MAU_LECH_LAN` ở trên là bản DUY NHẤT.
+
+
 def doan_ngon_ngu(text: str):
     """`"vi"` · `"en"` · `None` khi không chắc.
 
@@ -356,7 +374,21 @@ def doi_chieu(lan_giong: str, text: str, khai_bao: str = "") -> tuple:
     pq = quyet_dinh(lan_giong, text, khai_bao)
     if pq.ma_loi != MA_LOI_LECH_LAN:
         return ()
-    return (MAU_LECH_LAN,)
+    # 🔴 TRẢ CÂU ĐÃ ĐIỀN, KHÔNG TRẢ KHUÔN — bản sửa của trunk (07/09), giữ nguyên.
+    #
+    #    Trước 07/09/2026 hàm này trả về **khuôn còn chỗ trống**, và người gọi
+    #    được kỳ vọng gọi `dien_canh_bao` sau. Không người gọi nào làm thế, nên
+    #    nếu cảnh báo có bao giờ tới được màn hình thì khách đọc đúng chuỗi
+    #    `"...làn {lan_giong}, nhưng văn bản có vẻ là {lan_text}"`.
+    #
+    # ⚠️ BẢN CỦA TÔI ĐÃ TÁI TẠO ĐÚNG LỖI ẤY: nó `return (MAU_LECH_LAN,)` — một khuôn
+    #    chưa điền. Tôi viết nó sau khi đã đọc và ghi lại chính lỗi này trong phần
+    #    chẩn đoán của mình. Trunk bắt được trước, và đây là bản của trunk.
+    #
+    # ⭐ `cau_cho_khach` là biên hiển thị: nó DỊCH khuôn rồi điền nhãn đã dịch qua
+    #    `dien_canh_bao`. Nên `dien_canh_bao` vẫn là chỗ duy nhất điền, và không
+    #    có f-string nào trong `doi_chieu` (`test_384` chốt bằng AST).
+    return (cau_cho_khach(pq),)
 
 
 def dien_canh_bao(mau: str, lan_giong: str, lan_text: str) -> str:

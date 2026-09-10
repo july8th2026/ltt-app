@@ -361,7 +361,9 @@ không chặn; không có đường nào ở đây ném lỗi."*
    ở `jobs.py` lẫn `routes/_p_tao.py`).
 3. Kể cả có người đọc thì nó **không đọc được**: `doi_chieu` trả khuôn còn
    nguyên `{lan_giong}`/`{lan_text}`, và `dien_canh_bao` — hàm điền chỗ trống ấy
-   — **chưa từng được gọi ở đâu**.
+   — không có người gọi nào. **Đúng ở base `9e73bf1f`, hết đúng từ 07/09**: trunk
+   tự tìm ra và sửa độc lập. Bản hoà 10/09 giữ **bản sửa của trunk** — vì bản
+   đầu của tôi đã tái tạo đúng lỗi này (trả `MAU_LECH_LAN` chưa điền).
 4. Ô `Ngôn ngữ` của khách **không xuống tới worker**: `routes/_p_tao.tao` nhận
    `ngon_ngu` rồi bỏ nó ra khỏi `params` lúc nộp job, nên nhánh mạnh nhất của
    hợp đồng (khách tự khai) chưa bao giờ chạy ở cửa thật.

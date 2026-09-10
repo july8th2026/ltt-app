@@ -2,11 +2,11 @@
 theo dõi kết quả."""
 from __future__ import annotations
 
-from ._chung import (MANIFEST, SO_LAN_THU_JOB, TRAN_KY_TU_CONG_KHAI, Depends, File, Form,
+from ._chung import (MANIFEST, SO_LAN_THU_JOB, TRAN_KY_TU_CONG_KHAI, Depends, Form,
                      HTMLResponse, JSONResponse, Request, Response,
                      StreamingResponse, UploadFile, _db, _het_phien,
                      _t, _uid, doc_man_giong, doc_man_lich_su, du_an, features,
-                     gia, giong_mau, io, lan_ngon_ngu, nghe_thu,
+                     gia, giong_mau, io, lan_ngon_ngu, muc_dung, nghe_thu,
                      require_login,
                      router, templates,
                      tham_chieu, tu_dien_rieng, user_hien_tai,
@@ -48,6 +48,10 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
        (`features.giai_giong`) như cũ — chỗ này không phải một cửa.
     """
     from platform_core import job_history
+
+    # Nhập tại chỗ: `routes/__init__` nạp `_p_tao` TRƯỚC `_p_phat_dan`, nên một
+    # lần nhập ở đầu tệp sẽ chạy lúc mảnh kia chưa có mặt.
+    from . import _p_phat_dan
 
     uid = _uid(user)
     gen = _db()
@@ -133,7 +137,11 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
     return templates.TemplateResponse(
         request, "ltt_voice_studio.html",
         vo.ngu_canh(request, user, nav_key=vo.NAV_STUDIO, hang_doi=hang_doi,
-                    giong=cua_toi, giong_mau=giong_mau.DANH_SACH,
+                    giong=cua_toi,
+                    # ⭐ U-12 — thu tu den tu MUC DUNG THAT cua ta, khong tu
+                    #    thu tu khai bao trong anh chup cua engine. Anh chup
+                    #    rong thi ket qua bang het thu tu (phong cach, ma).
+                    giong_mau=muc_dung.xep(giong_mau.DANH_SACH),
                     nhan_gioi=giong_mau.NHAN_GIOI,
                     nhan_vung=giong_mau.NHAN_VUNG,
                     nhan_phong_cach=giong_mau.NHAN_PHONG_CACH,
@@ -144,6 +152,11 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
                     nhan_lan=lan_ngon_ngu.NHAN_LAN,
                     giong_chon=(xin if hop_le else ""),
                     mac_dinh=giong_mau.MAC_DINH,
+                    # PHÁT DẦN (U-07): nút chỉ hiện khi cửa THẬT SỰ mở. Cờ tắt
+                    # thì `/phat-dan` trả 404, và một nút dẫn tới 404 tệ hơn
+                    # không có nút — `manifest.py` gọi đó là "một lời hứa thành
+                    # một lỗi".
+                    phat_dan_bat=_p_phat_dan.bat_phat_dan(),
                     # Các nấc tốc độ lấy từ `toc_do.CAC_NAC` chứ không gõ lại
                     # trong template: một danh sách chép ra hai chỗ sẽ lệch, và
                     # chỗ lệch là chỗ giao diện mời một giá trị mà `hop_le` ép
@@ -158,6 +171,7 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
 
 @router.post("/xem-truoc")
 def xem_truoc(request: Request, text: str = Form(""),
+              preset: str = Form(""),
               csrf_token: str = Form(""), user=Depends(user_hien_tai),
               _=Depends(require_login)):
     """Văn bản này máy sẽ đọc thành gì, và tốn khoảng bao nhiêu.
@@ -235,7 +249,42 @@ def xem_truoc(request: Request, text: str = Form(""),
         "so_doan": len(chuan.doan),
         # Cùng một hàm mà `manifest.credit_cost` gọi — nên con số hiện ra ở đây
         # là con số sẽ bị tạm giữ, không phải một ước lượng thứ hai.
-        "uoc_credit": gia.uoc_tran(so_ky_tu=len(da)),
+        #
+        # 🔴 `preset` PHẢI ĐI THEO, và câu trên là lý do.
+        #
+        #    Từ 08/09/2026 `uoc_tran` nhận thêm `giong`: một giọng đã ĐO có hồ sơ
+        #    tốc độ riêng, và giữ chỗ theo hồ sơ ấy thay vì theo hằng số bi quan
+        #    chung. Tức hai giọng cho hai con số khác nhau trên cùng một văn bản.
+        #
+        # ⛔ Nên bỏ `preset` ở đây không làm con số "gần đúng" — nó làm chú thích
+        #    hai dòng bên trên thành một lời nói dối, đúng cái lớp lỗi mà
+        #    `features.py` cảnh báo và mà chính route này đã mắc một lần với
+        #    từ điển riêng: nối vào `jobs.py` rồi quên `xem_truoc`.
+        #
+        # ⚠️ Chỉ `preset`, KHÔNG `voice_id`: `manifest._gia` cũng chỉ đọc
+        #    `preset`. Giọng nhân bản chưa có hồ sơ đo, nên nó rơi về hằng số
+        #    chung ở cả hai đầu — và hai đầu phải rơi về CÙNG một chỗ.
+        #
+        # ⚠️ `uoc_tran_LO`, không phải `uoc_tran`. Cả bài là N lượt phát
+        #    ghép lại, mỗi lượt mang khoảng lặng riêng — xem chú thích dài
+        #    ở `manifest._gia`. Ở đây `chuan.doan` đã có sẵn phép chia thật.
+        "uoc_credit": gia.uoc_tran_lo(
+            cac_do_dai=[len(d) for d in chuan.doan] or [len(da)],
+            giong=preset),
+        # ⭐ U-11 — ETA THẬT, không phải một thanh chạy vô định.
+        #
+        #    Ô đếm lúc gõ đã ước thời lượng, nhưng bằng phép chia đơn giản
+        #    `n / tranMoiLuot` cho số đoạn. Ở đây `chuan.doan` là phép chia
+        #    THẬT (`chia_doan`, `can_bang=True`) — cùng phép chia mà worker
+        #    dùng — nên con số này là con số duy nhất đáng hiện sau khi
+        #    khách bấm Xem trước.
+        #
+        # ⚠️ Giây ƯỚC, không phải giây sẽ thu tiền. Tiền thu theo thời lượng
+        #    **đo được** (ffprobe) sau khi sinh — chốt 3.4. Hai số này khác
+        #    nhau có chủ ý, và ước thì cố ý cao hơn.
+        "giay_uoc": round(sum(gia.giay_uoc(len(d), preset)
+                              for d in chuan.doan) or gia.giay_uoc(len(da),
+                                                                  preset), 1),
         "doi_khac": da != tho,
     })
 
@@ -277,6 +326,13 @@ def ket_qua(job_id: str, user=Depends(user_hien_tai), _=Depends(require_login)):
             "giay": kq.get("duration_s"),
             "credit": kq.get("credit_cost"),
             "so_doan": kq.get("so_doan"),
+            # ⛔ CẢNH BÁO PHẢI RA TỚI ĐÂY. Trước 07/09/2026 `KetQua.canh_bao`
+            #    được dựng, được đưa vào `as_result()`, rồi dừng lại ở cửa này
+            #    — Studio không bao giờ hỏi tới nó. Nghĩa là hai thứ im lặng:
+            #    cảnh báo lệch làn, và (từ nay) **đường lùi giọng**. Một đường
+            #    lùi không nói ra là đúng cái lỗi `lui_giong.py` đi sửa.
+            "canh_bao": list(kq.get("canh_bao") or ()),
+            "giong_that": kq.get("giong_that") or "",
         }
         if job.status == "error":
             from platform_core import job_events

@@ -81,11 +81,9 @@ def platform(tmp_path, monkeypatch):
 
     import apps.thumbnail.jobs as thumbnail_jobs
 
-    def _stub(*args, **kwargs):
-        PROVIDER_CALLS.append(1)
-        return b"\x89PNG\r\n\x1a\n" + b"0" * 200
-
-    monkeypatch.setattr(thumbnail_jobs, "_goi_gemini", _stub)
+    from tests.gia_dieu_phoi_anh import tiem as _tiem_dieu_phoi
+    _tiem_dieu_phoi(monkeypatch, thumbnail_jobs,
+                    khi_goi=lambda: PROVIDER_CALLS.append(1))
 
     from server.app import create_app
 
@@ -573,10 +571,9 @@ def test_a_provider_refusing_with_429_refunds_and_says_nothing_internal(
                                   "scopes": list(SCOPES)})
     token = re.search(r"<code>(ltt_sk_[^<]+)</code>", created.text).group(1)
 
-    def _refuse(*args, **kwargs):
-        raise RuntimeError("429 Too Many Requests from vendor-api.example")
-
-    monkeypatch.setattr(thumbnail_jobs, "_goi_gemini", _refuse)
+    from tests.gia_dieu_phoi_anh import tiem as _tiem_dieu_phoi
+    _tiem_dieu_phoi(monkeypatch, thumbnail_jobs,
+                    no=RuntimeError("429 Too Many Requests from vendor-api.example"))
 
     before = _balance(platform, token)
     payload = {"topic": "throttled upstream", "count": 1}

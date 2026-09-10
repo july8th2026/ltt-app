@@ -1,0 +1,72 @@
+{#
+  Manh LUOI KET QUA — tach rieng de htmx tu lam moi.
+
+  🔴 Vi sao can: mot video mat HANG CHUC PHUT. Mot man tinh bat nguoi dung tu
+     bam lai de biet viec cua minh toi dau — va ho se bam, lien tuc, vi khong
+     co cach nao khac. Day la khac biet lon nhat giua mot MAN va mot STUDIO.
+
+  ⭐ Chi tu lam moi khi CO viec dang chay (`so_dem.running`). Hoi may chu moi 15
+     giay trong khi khong co gi chay la dot bang thong cua ca hai phia de doi
+     lay khong gi.
+#}
+<div class="tv-grid"
+     {%- if so_dem.running %}
+     hx-get="{{ app.route_prefix }}/luoi?trang_thai={{ loc_trang_thai }}&sap_xep={{ loc_sap_xep }}"
+     hx-trigger="every 15s" hx-swap="outerHTML"
+     {%- endif %}>
+
+      {% for v in video %}
+      <article class="tv-card">
+        <div class="tv-preview">
+          {% if v.khoa %}
+            <video controls playsinline preload="metadata" src="{{ app.route_prefix }}/video/{{ v.khoa }}"></video>
+          {% else %}<span aria-hidden="true">▶</span>{% endif %}
+        </div>
+        <div class="tv-card-head">
+          <b class="{{ v.trang_thai }}">
+            {%- if v.trang_thai == 'done' %}✓ {{ _('Hoàn tất') }}
+            {%- elif v.trang_thai == 'error' %}△ {{ _('Lỗi') }}
+            {%- elif v.trang_thai == 'cancelled' %}○ {{ _('Đã huỷ') }}
+            {%- elif v.trang_thai == 'queued' %}● {{ _('Đang chờ') }}
+            {%- else %}● {{ _('Đang dựng') }} · {{ v.phan_tram }}%{% endif %}
+          </b>
+          <small>{{ v.ti_le }} · {{ v.do_dai }}{{ _('s') }}</small>
+        </div>
+        {% if v.trang_thai in ('queued', 'running') %}
+        <div class="tv-job-progress progress" role="progressbar"
+             aria-label="{{ _('Tiến độ tạo video') }}" aria-valuemin="0" aria-valuemax="100"
+             aria-valuenow="{{ v.phan_tram }}"><i style="width:{{ v.phan_tram }}%"></i></div>
+        {% if v.loi_nhan %}<small class="dim">{{ v.loi_nhan }}</small>{% endif %}
+        {% endif %}
+        <p>{{ v.prompt or _('(không có mô tả)') }}</p>
+        {% if v.loi %}<small class="tv-card-error">{{ v.loi }}</small>{% endif %}
+        <footer>
+          <button type="button" class="tv-remix" data-prompt="{{ v.prompt_day_du|e }}"
+                  data-tile="{{ v.ti_le|e }}" data-dodai="{{ v.do_dai|e }}">{{ _('Làm lại') }}</button>
+          {% if v.khoa %}
+            <a href="{{ app.route_prefix }}/video/{{ v.khoa }}" download>{{ _('Tải về') }}</a>
+            <button type="button" class="tv-upscale" data-job="{{ v.job_id }}" data-khoa="{{ v.khoa }}" data-dodai="{{ v.do_dai }}">{{ _('Nâng nét') }}</button>
+          {% endif %}
+          <a href="/jobs/{{ v.job_id }}">{{ _('Nhật ký') }}</a>
+          {% if v.trang_thai in ('queued', 'running') %}
+          {# ⭐ Huy ngay tren the. Duong nay la cua NEN TANG
+             (`server/routes/jobs.py:258`): no kiem so huu VA **hoan credit**.
+             Khong co nut thi nguoi dung phai vao trang job moi huy duoc — ba
+             cu bam cho mot viec ho da doi y. #}
+          <form method="post" action="/jobs/{{ v.job_id }}/cancel" style="margin:0"
+                data-xac-nhan="{{ _('Huỷ video này? Credit sẽ được hoàn lại.') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button type="submit" class="ltt-btn">{{ _('Huỷ') }}</button>
+          </form>
+          {% endif %}
+          {% if v.het_han %}<small class="dim">{{ _('Nội dung đã hết hạn 3 ngày') }}</small>{% endif %}
+        </footer>
+      </article>
+      {% else %}
+      <div class="tv-empty" role="status">
+        <strong>{{ _('Chưa có video nào.') }}</strong>
+        <span>{{ _('Tả video bạn muốn rồi bấm Tạo video.') }}</span>
+        <button type="button" data-open-compose>{{ _('Mở bảng tạo video') }}</button>
+      </div>
+      {% endfor %}
+    </div>

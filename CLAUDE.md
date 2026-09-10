@@ -1,299 +1,221 @@
-# Hướng dẫn cho Claude
+# CLAUDE.md — hợp đồng khởi động
 
-Đọc file này trước khi làm bất cứ việc gì trong thư mục này.
+Đọc tệp này trước khi làm bất cứ việc gì. Nó **ngắn có chủ ý**: nó chỉ chứa những
+gì phải biết trong ba mươi giây đầu, rồi trỏ đi.
+
+## ⭐ Trước việc thực chất, đọc
+
+```
+docs/00_LTT_OPERATING_CONTRACT.md
+```
+
+Đó là **nguồn chân lý duy nhất** cho quy trình: khi nào chạy test, cấp nào, sau
+khi sửa phải làm gì, trước khi commit phải làm gì, worktree, deploy, nghiệm thu.
+
+⛔ **Nếu một tệp `.md` nào khác định nghĩa lại quy trình đó, tệp đó SAI.** Đừng
+làm theo, và đừng sửa hợp đồng cho khớp nó. Ghi vào
+`docs/OPERATING_STANDARDIZATION/` rồi tiếp tục theo hợp đồng.
 
 ## Đây là gì
 
-Nền tảng SaaS đa người dùng bán công cụ AI theo credit, chạy trên Windows.
-Mỗi công cụ là một **app** ở một đường dẫn dưới `app.lttstudios.com`. Vào
-Internet qua **Cloudflare Tunnel** (không mở cổng, không cần IP tĩnh).
+Nền tảng SaaS đa người dùng bán công cụ AI theo credit, chạy trên Windows. Mỗi
+công cụ là một **app** ở một đường dẫn dưới `app.lttstudios.com`. Ra Internet qua
+**Cloudflare Tunnel**.
 
-**Nguồn chân lý là `docs/QUYET_DINH_NEN_TANG.md`** — đọc nó trước, rồi
-`docs/KE_HOACH_TRIEN_KHAI.md` và `docs/NHAT_KY.md`. Định vị code thì đọc
-**chính mã nguồn**: `grep`/`Glob` trên `apps/`, `platform_core/`, `server/`.
+Nguồn chân lý về **sản phẩm** là `docs/QUYET_DINH_NEN_TANG.md`, rồi
+`docs/KE_HOACH_TRIEN_KHAI.md` và `docs/NHAT_KY.md`. Định vị code thì đọc **chính
+mã nguồn**: `grep`/`Glob` trên `apps/`, `platform_core/`, `server/`.
 
-⛔ **`ho_so_he_thong.txt` đã gỡ 2026-09-04.** Nó là một ảnh chụp toàn cây,
-nên nó cũ đi sau **mỗi** lần bất kỳ ai sửa bất kỳ tệp nào — và một bản đồ
-cũ nguy hiểm hơn không có bản đồ, vì nó trả lời tự tin. Đọc mã.
-Quy tắc làm việc đầy đủ (kể cả quy tắc cập nhật memory và giao thức đổi quyết
-định) ở `AGENTS.md`.
+---
 
-## ⛔ Đừng đọc cả kho — khám phá trước, đọc sau
+# 20 luật cứng
 
-Một phiên đọc đệ quy cả cây sẽ nuốt hết ngữ cảnh trước khi chạm được việc thật,
-và phần lớn thứ nó nuốt là **rác sinh ra**: `tmp/`, `dist/`, `logs/`,
-`data/files/`, `__pycache__/`, `.playwright-*/`, ảnh bằng chứng trong `docs/`.
+### Định hướng
 
-Thứ tự đúng: **KHÁM PHÁ → ĐẾM → LỌC → PHÂN LOẠI → NHẮM → ĐỌC**.
+1. **Trước việc thực chất: đọc `docs/00_LTT_OPERATING_CONTRACT.md`.**
+2. **Đừng tự sáng tạo quy trình.** Thiếu luật thì ghi đề xuất, tiếp tục theo luật
+   hiện có, **không** đẻ ra một luật cạnh tranh trong tệp kế hoạch của bạn.
+3. **Đừng đọc cả kho.** Thứ tự: KHÁM PHÁ → ĐẾM → LỌC → PHÂN LOẠI → NHẮM → ĐỌC.
+   `docs/` có **872 tệp `.md`** và **788 tệp ảnh (90 MB)**. Không nạp sản phẩm
+   build, log, cache, kết xuất sinh ra, dữ liệu vận hành.
+4. **Đang ở máy nào?** `Test-Path C:\LTTPlatform` → **Có**: đây là máy chủ, đang
+   chạy thật, cẩn thận. **Không**: máy phát triển, hoặc máy chủ chưa cài — hỏi.
+5. **Cái gì đang sống thì HỎI MÁY CHỦ**, đừng đọc một bảng chép tay:
+   `python tools\api_prod_canary.py trang-thai`. Một bảng chép tay không có cách
+   nào tự biết nó đã cũ — bảng cũ ở đây đã nói sai **năm lần**, cả năm đều về
+   phía nguy hiểm.
 
-- Định vị bằng `grep`/`Glob`, không bằng `cat` cả thư mục.
-- Thư mục lớn: đo **siêu dữ liệu** (số tệp, dung lượng, mtime) trước; chỉ đọc
-  nội dung khi cần phân biệt *bản chuẩn* với *bản đã lỗi thời*.
-- Đầu ra lệnh có thể lớn thì ghi ra tệp tạm rồi tóm tắt, đừng đổ vào ngữ cảnh.
-- Không nạp: sản phẩm build, log, cache, kết xuất sinh ra, bản sao lưu, dữ liệu
-  vận hành, artefact của phiên cũ — trừ khi việc đang làm cần đúng cái đó.
+### Test và cổng chất lượng — chi tiết ở hợp đồng §4
 
-⭐ Cỡ thật để bạn liệu: `docs/` có **645 tệp `.md`** và **788 tệp ảnh (90 MB)**.
-Đọc theo nhu cầu, không đọc theo thứ tự.
+6. **Mặc định của vòng lặp là `python tools\gate.py --doi`** (L1) — chỉ chạy test
+   chạm tới thứ bạn vừa sửa, và tự hạ cấp xuống đầy đủ khi không chắc.
+7. ⛔ **KHÔNG chạy gate đầy đủ sau mỗi lần sửa.** Gate là công cụ ra **PHÁN
+   QUYẾT**, không phải công cụ **CHẨN ĐOÁN**. Đo thật: L3 trung vị **11,4 phút**
+   trên 43 lượt — không phải "5 phút".
+8. **Trước khi báo xong: `python tools\gate.py`** đầy đủ. Mọi chế độ khác đều tự
+   khai ở dòng `RESULT` rằng chúng **không phải bằng chứng**.
+9. ⛔ **Đừng gọi `pytest` trực tiếp cho toàn kho** — nó bỏ qua test frontend, nên
+   "full regression xanh" sẽ là một câu nói sai.
+10. ⛔ **`test_nhanh.py` rồi `gate.py` là trả tiền HAI LẦN.** Bước `bo test` bên
+    trong gate *chính là* `test_nhanh.py`.
+11. **Trước mọi lệnh nặng:** `python tools\cua_so_yen.py trang-thai`. Có phiên
+    khác đang giữ thì **chờ**. Đây là điều kiện *cần*, không phải *đủ* —
+    `docs/QUY_TAC_CHAY_LENH_NANG.md`.
 
-⚠️ **`D:\BOT GEMINI` là kho tham chiếu CHỈ ĐỌC.** Nó đang phục vụ người dùng
-thật trên cổng 8000. Không sửa, không tạo, không xoá gì bên đó. Nền tảng này
-dùng cổng **8100**.
+### Nhiều phiên — cây này KHÔNG phải của riêng bạn
 
-Thư mục này vừa là **mã nguồn** vừa là **bộ cài**. Người dùng chép nguyên nó
-sang máy chủ, rồi mở Claude Code **ngay trên máy đó**.
+12. **Một dòng `??` lạ trong `git status` là một PHIÊN KHÁC đang làm việc**, không
+    phải rác. Không `stash`, không `checkout --`, không `reset`.
+13. **`git add` tường minh từng tệp.** Không `-A`, không `.`.
+14. **Tệp dùng chung (`CLAUDE.md`, `AGENTS.md`, `tools/gate.py`, `messages.po`)
+    chỉ sửa bằng `Edit`, không bao giờ `Write`** — `Write` đè im lặng cả tệp.
+15. **Deploy chép CẢ CÂY nguồn.** Không tách được phần của một phiên ⇒ hỏi phiên
+    khác trước (`ListAgents`). `docs/16_CAP_NHAT_VA_DEPLOY.md`.
 
-## Kiểm tra đầu tiên: đang ở máy nào?
+### Kỹ thuật — sẽ cắn nếu quên
 
-```powershell
-Test-Path C:\LTTPlatform
-```
+16. **Ghi file cấu hình phải KHÔNG BOM**; **`.ps1` thuần ASCII**; **đừng viết
+    Python inline qua PowerShell**. Cả ba đã thực sự làm sập production ở dự án
+    này. Toàn văn + luật thứ tư: `AGENTS.md` §5.
 
-- **Có** → đây là máy chủ, đã cài. Làm việc bình thường, cẩn thận vì đang chạy thật.
-- **Không** → hoặc là máy phát triển, hoặc là máy chủ chưa cài. Hỏi người dùng.
+    ```powershell
+    [IO.File]::WriteAllText($path, $text, (New-Object Text.UTF8Encoding($false)))
+    ```
 
-## Cài lần đầu trên máy chủ
+    ⛔ Đoạn mã này nằm ở đây chứ không chỉ ở `AGENTS.md` vì lời văn *"phải không
+    BOM"* **không ngăn được** lỗi: `Out-File -Encoding utf8` trông đúng và vẫn
+    chèn BOM, `json.load()` vỡ, `/health/ready` trả 503 trong khi dịch vụ vẫn
+    chạy. Người đọc cần biết viết **thế nào**, không chỉ biết **đừng** làm gì.
+    `tests/test_61_setup_scripts.py::test_claude_md_exists_at_root` ghim đúng
+    chuỗi này.
+17. **Kiểm bằng trình duyệt sau mỗi thay đổi giao diện**, và chốt trên **URL công
+    khai** (`https://app.lttstudios.com`), không chỉ loopback `127.0.0.1:8100` —
+    loopback bỏ qua Cloudflare (cache, CSP biên, minify).
+18. **Đổi static (CSS/JS) phải cache-bust.** `ltt.css` đính `?v={{ asset_ver }}`
+    (`server/templating.py:ASSET_VER`). Thêm asset tĩnh MỚI ở nơi dựng HTML bằng
+    chuỗi (vd `server/admin.py`) cũng phải đính version.
+19. **Việc dài hơn vài giây phải đi qua hàng đợi job.** Cloudflare: upload
+    **100 MB**/request, chờ phản hồi **100 giây**.
+20. **Thêm app mới = thêm MỘT thư mục vào `apps/`.** Không sửa `platform_core/`
+    hay `server/`. Buộc phải sửa nền tảng ⇒ **dừng lại và nói rõ vì sao** — đó là
+    dấu hiệu hợp đồng app còn thiếu. `docs/03_THEM_APP_MOI.md`, `AGENTS.md` §8.
 
-Chạy đúng thứ tự. **Đừng bỏ qua bước 1.**
+---
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\setup\1-kiem-tra-may.ps1   # chỉ đọc
-powershell -ExecutionPolicy Bypass -File .\setup\2-cai-dat.ps1        # cần Administrator
-powershell -ExecutionPolicy Bypass -File .\setup\3-cloudflare.ps1     # DỪNG chờ người dùng
-powershell -ExecutionPolicy Bypass -File .\setup\4-nghiem-thu.ps1     # chỉ đọc
-```
+## ⭐ CHƯA CÓ KHÁCH ở lớp Agent/Canvas — đừng tiêu công vào rà soát khách hàng
 
-**Bước 2 in mật khẩu admin đúng MỘT LẦN.** Nhắc người dùng lưu lại ngay. Mật
-khẩu không lưu ở đâu cả, chỉ lưu dạng hash.
+Chủ sản phẩm chốt **07/09/2026**: *"Hệ thống không có khách nên không cần tra rà
+soát hay lo ngại vấn đề liên quan."*
 
-**Bước 3 sẽ dừng ở phần đăng nhập Cloudflare.** `cloudflared tunnel login` in
-ra một đường link rồi **đợi**. Đưa link đó cho người dùng, họ mở trên trình
-duyệt máy nào cũng được, đăng nhập và chọn tên miền `lttstudios.com`. Xong thì
-script tự chạy tiếp. Đừng ngắt lệnh vì tưởng nó treo.
+⇒ **Đừng** rà soát tương thích ngược, chia pha, bật cờ từ từ, viết lớp tương
+thích cho dữ liệu cũ khi chưa có dữ liệu cũ nào, hay nêu "khách sẽ gặp lỗi" như
+lý do không làm. Thấy một thiết kế sai thì **sửa thẳng**.
 
-Giữa bước 2 và 3, người dùng cần sửa `C:\LTTPlatform\data\config.json`
-(Sheet ID, tên cột, thông tin app).
+### ⚠️ Phạm vi thật — đo được, đừng suy rộng
 
-## Bố cục trên máy chủ sau khi cài
+Đo 28 ngày (11/08 → 07/09) từ `C:\LTTPlatform\logs\ltt-job-worker*.jsonl`:
+**10.663** lượt `ltt_llm.chat` · **1.075** `anhnoibo.generate` · **147**
+`ltt_voice.synthesize` · **0** job `agent.advance`.
 
-```
-C:\LTTPlatform\
-├── app\            MÃ NGUỒN — bị xoá và thay TOÀN BỘ mỗi lần cập nhật
-├── app.previous\   bản trước, dùng để rollback
-├── data\           dữ liệu vận hành — cập nhật KHÔNG chạm tới
-├── secrets\        app.env: khoá phiên, khoá mã hoá token, hash mật khẩu
-├── venv\           Python + thư viện
-├── cloudflare\     config.yml + credentials tunnel
-├── logs\
-└── tools\          nssm.exe, cloudflared.exe
-```
+⇒ Có lưu lượng thật và **bút toán credit thật**. Cái *thật sự* không có khách là
+lớp **Agent/Canvas/Workflow** — tự do thiết kế lại. Còn `credit.py`, `jobs.py`,
+`job_runner.py`, `gpu_lease.py` **đang chạy thật**: vẫn sửa được, nhưng lý do cẩn
+thận ở đó là **tính đúng của sổ sách**. Đừng dùng câu "chưa có khách" để bỏ qua
+một bút toán lệch.
 
-**Đừng bao giờ sửa file trực tiếp trong `app\`.** Lần cập nhật sau là mất
-trắng, mất âm thầm, không báo lỗi. Sửa trong thư mục nguồn rồi chạy lại
-`setup\2-cai-dat.ps1`.
+#### 🔑 `0 job` nói KHÔNG AI CHẠY — nó không nói KHÔNG AI ĐÃ DỰNG
 
-## Quy tắc bắt buộc
-
-**1. Ghi file cấu hình phải KHÔNG BOM.**
-```powershell
-[IO.File]::WriteAllText($path, $text, (New-Object Text.UTF8Encoding($false)))
-```
-Đừng dùng `Out-File -Encoding utf8` hay `Set-Content -Encoding utf8` —
-PowerShell 5.1 chèn BOM, `json.load()` vỡ, và `/health/ready` trả 503 trong
-khi dịch vụ vẫn chạy bình thường. Lỗi này **đã thực sự làm sập production** ở
-dự án này. Có test chốt (`tests/test_61_setup_scripts.py`).
-
-**2. File `.ps1` phải thuần ASCII.** PowerShell 5.1 đọc `.ps1` không BOM theo
-bảng mã ANSI; một dấu tiếng Việt làm hỏng cả câu lệnh và báo lỗi ở dòng khác.
-
-**3. Đừng viết Python inline qua PowerShell.** PowerShell nuốt dấu ngoặc kép
-khi truyền cho `.exe`. Ghi ra file `.py` rồi chạy.
-
-**4. Chạy test — ĐỪNG gọi `pytest` trực tiếp, và đừng dùng gate để dò lỗi.**
-
-```powershell
-python tools\gate.py --vong-lap     # sau MOI lan sua              (~15 giay)
-python tools\test_nhanh.py          # muon chay ca bo test         (~4 phut)
-python tools\gate.py                # TRUOC KHI BAO XONG           (~5 phut)
-```
-
-🔑 **Gate là công cụ ra PHÁN QUYẾT, không phải công cụ CHẨN ĐOÁN.**
-
-Ngày 27/08 gate đầy đủ được chạy **sáu lần** chỉ để dò lỗi, mỗi lần ~5 phút.
-Bốn trong sáu lượt đỏ vì một thứ mà một bước con lẻ trả lời trong nửa giây:
-baseline của phiên khác · một emoji trong stdout của một công cụ · hồ sơ hệ
-thống stale · một phép kiểm lệch thứ tự. `--vong-lap` chạy **toàn bộ** nhóm
-kiểm tĩnh (chính là thứ bắt bốn lỗi đó) trong ~15 giây.
-
-⛔ Nhưng `--vong-lap` và `--quick` **không phải bằng chứng** — dòng `RESULT` của
-chúng nói thẳng điều đó. Trước khi báo xong vẫn là `python tools\gate.py`.
-
-⛔ **Đừng chạy `python -m pytest` cho toàn bộ kho.** Hai lý do, và lý do thứ hai
-mới là lý do thật:
-
-1. Nó **không** chạy 77 test frontend ở `frontend/*` ⇒ "full regression xanh" là
-   một câu nói sai.
-2. Nó chạy **một luồng, mất 25 phút**, trong khi `test_nhanh.py` cho **cùng tập
-   pass/fail** trong 4 phút *(đo 26/08: 4096 passed / 26 skipped ở cả hai)*.
-
-⭐ Trước 26/08 bộ test mất **2 giờ**, và điều đó đổi cách người ta làm việc:
-`pytest` thôi là một vòng lặp và thành một sự kiện. Hệ quả đo được — H40 đóng mà
-**chưa lượt `pytest` đầy đủ nào chạy xong**, và lượt đầy đủ đầu tiên sau đó tìm
-ra **36 lỗi**, gồm một phép kiểm **chưa bao giờ xanh** trên máy này.
-
-Chi tiết + luật cho test mới: `AGENTS.md` mục **4b**.
-
-**5. Kiểm tra thật bằng trình duyệt sau mỗi thay đổi giao diện.** Test xanh
-không chứng minh trang hiển thị đúng. Việc này đã hai lần bắt được lỗi mà test
-không thấy.
-
-**5b. Kiểm trên URL CÔNG KHAI thật (`https://app.lttstudios.com`), KHÔNG chỉ
-loopback `127.0.0.1:8100`.** Loopback **bỏ qua Cloudflare** (cache, CSP biên, minify)
-nên trang có thể đẹp ở loopback mà VỠ với người dùng thật. Đã dính: sau khi sửa
-`ltt.css`, CF phục vụ bản CSS **cũ** (TTL 4h) → chip hiện thành radio thô, dù
-origin đã đúng. Quy trình: loopback để soi nhanh → **URL công khai để chốt**.
-
-**6. Đổi static (CSS/JS) PHẢI cache-bust.** Static đi qua Cloudflare có TTL; đổi
-file mà URL không đổi thì người dùng nhận bản cũ tới khi hết TTL. Link `ltt.css`
-đính `?v={{ asset_ver }}` (hash nội dung, `server/templating.py:ASSET_VER`) — đổi
-CSS = đổi hash = đổi URL = tải mới ngay. Thêm asset tĩnh MỚI hay dùng ở nơi build
-HTML bằng chuỗi (vd `server/admin.py`) thì cũng phải đính version. Trang HTML đã
-`Cache-Control: no-store` (CF không cache) nên link version tới người dùng ngay
-sau deploy.
-
-## Thêm app mới
-
-Thêm **một thư mục** vào `apps/`. **Không sửa** `platform_core/` hay `server/`.
-
-Nếu thấy buộc phải sửa nền tảng thì **dừng lại và nói rõ vì sao** — đó là dấu
-hiệu hợp đồng app còn thiếu, phải bổ sung vào hợp đồng chứ không đi vòng.
-
-Xem `docs/03_THEM_APP_MOI.md` — khuôn đầy đủ nằm trong chính tài liệu đó.
-⚠️ **Không còn app mẫu để copy**: `apps/demo/` đã gỡ 2026-08-25 (Q109). App thật
-nhỏ gọn để tham khảo: `apps/anhnoibo/` (chỉ job) hoặc `apps/thumbnail/` (có route).
-
-### Đặt file đúng chỗ ngay từ đầu
-
-Đây là phần **hay bị làm sai nhất** khi phiên khác vào xây tiếp. Quy tắc đầy đủ
-ở `AGENTS.md` mục 8; bản rút gọn:
+Đếm thẳng trên CSDL production (08/09/2026, chỉ đọc):
 
 ```
-apps/<slug>/
-  manifest.py   bản khai — nền tảng CHỈ đọc file này
-  routes.py     CHỈ lo HTTP (đọc request, quyền/CSRF, gọi service, dựng phản hồi)
-  jobs.py       handler chạy trong worker
-  services/     quy tắc nghiệp vụ khi app nhiều miền
-  features.py   quy tắc nghiệp vụ khi app một miền
-  tables.py     bảng CSDL riêng (kèm `table_prefix` trong manifest)
+agent_workflows 10 · agent_runs 4 · agent_workflow_snapshots 83
+doi chung: users 27 · jobs 1770 · credit_entries 5500
 ```
 
-**`routes.py` không phải chỗ chứa nghiệp vụ.** Trần cứng: 900 dòng / 30 handler,
-`tools/lint_app_contract.py` cảnh báo khi vượt. Hợp đồng trước đây không nói
-logic nghiệp vụ nằm ở đâu, nên route thành chỗ để mọi thứ rơi vào — đã có file
-route 1.799 dòng vì vậy.
+Con số `0 job agent.advance` ở trên **đúng**. Nhưng nó trả lời câu *"có ai chạy
+không"*, còn câu người đọc rút ra là *"có ai dựng không"* — hai câu khác nhau,
+và **mười người thật đã dựng**.
 
-**Việc dùng chung thì gọi `platform_core`, đừng chép lại:**
-`image_input.validate_reference` (kiểm ảnh tải lên),
-`frontend_bundle.bundle_assets` (đường dẫn bundle React).
+⇒ Quyền ở trên **không đổi**: vẫn tự do thiết kế lại lớp Agent/Canvas/Workflow,
+  vẫn không phải viết lớp tương thích runtime (`0 run` ⇒ không có trạng thái thi
+  hành nào để chuyển). Thứ **đổi** là một chữ: *"thiết kế lại"* ≠ *"xoá"*. Bản
+  nháp của họ đi qua `platform_core/workflow/di_tru_m1.py`, không đi ra thùng rác.
 
-**Đừng neo đường dẫn bằng `Path(__file__).parents[n]`** — đếm cấp thư mục sai
-ngay khi file đổi chỗ, và hỏng lặng lẽ (trang vẫn trả 200, chỉ là vỏ trống).
+⚠️ Và đừng suy *cách làm* từ con số **tổng** ấy — đó là lỗi thứ hai của cùng một
+   ngày. Tổng nói được **có làm hay không**; chỉ **hình dạng** nói được **làm thế
+   nào**: 10/10 mang tên mặc định, ≤3 node, và **4/10 `document` rỗng** — tức
+   việc di trú phải xử ba lớp chứ không một. Toàn văn:
+   `docs/architecture/workflow_v2_audit/27_29 §27.1`.
 
-## Giới hạn Cloudflare quyết định cách viết app
+### ⛔ Bốn thứ KHÔNG phải chuyện khách hàng, nên vẫn giữ
 
-| Giới hạn | Free/Pro | Hệ quả |
-|---|---|---|
-| Upload mỗi request | **100 MB** | Lớn hơn bị HTTP 413 trước khi tới máy chủ |
-| Chờ phản hồi | **100 giây** | Lâu hơn bị 524 dù bot vẫn chạy tốt |
-| Serve video lớn ngoài Cloudflare | hạn chế ToS | Phải chuyển sang R2 |
+| | Vì sao |
+|---|---|
+| **Gate phải xanh trước khi báo xong** | Bảo vệ **ta** khỏi mất thời gian |
+| **Xoá dữ liệu không đảo được** | "Chưa có khách" không làm một lệnh `DROP` đảo lại được |
+| **UAC** | Ràng buộc **cơ học** — người dùng phải bấm chuột |
+| **Hỏi phiên khác trước khi deploy** | Deploy chép **cả cây** |
 
-**Việc dài hơn vài giây bắt buộc đi qua hàng đợi job**, không được làm đồng bộ
-trong một request. *(App cũ `apps/demo` chạy thẳng trong request được chỉ vì nó
-mất vài mili-giây; nó đã bị gỡ, và cách làm đó chưa bao giờ là mẫu cho app thật.)*
+⚠️ Quyền này hết hiệu lực ngày có khách trả tiền thật.
 
-Khi chạm trần: thêm backend R2 vào `platform_core/storage.py`, **không sửa app
-nào**.
+---
 
-## Hiện giờ cái gì đang sống — HỎI MÁY CHỦ, đừng đọc ở đây
+## Máy chủ
 
-```powershell
-python tools\api_prod_canary.py trang-thai
-```
+Bố cục sau khi cài: `app\` (**bị xoá và thay TOÀN BỘ mỗi lần cập nhật**) ·
+`app.previous\` · `data\` · `secrets\` · `venv\` · `cloudflare\` · `logs\` · `tools\`.
 
-Một lệnh, mười giây, không cần khoá production. Nó trả lời: app nào đang công
-khai, tool nào đang mở ở `/api/v1`, dịch vụ có sống không.
+⛔ **Đừng bao giờ sửa file trực tiếp trong `app\`** — lần cập nhật sau là mất
+trắng, **âm thầm**. Sửa trong thư mục nguồn rồi chạy lại `setup\2-cai-dat.ps1`.
 
-🔴 **Vì sao mục này không còn là một bảng.** Trước 2026-09-02 chỗ này là một
-bảng 280 dòng chép tay — **56% cả tệp**. Nó đã nói sai **năm lần**, và **cả năm
-đều về phía nguy hiểm**: báo một thứ đang TẮT trong khi nó đang BẬT và **đang
-thu tiền thật**. Bốn lần được sửa bằng cách viết lại bảng; lần thứ năm vẫn xảy
-ra.
+Cài lần đầu: `docs/01_COPY_LEN_SERVER.md`. Bước 2 in mật khẩu admin **đúng một
+lần**. Bước 3 dừng chờ đăng nhập Cloudflare — đưa link cho người dùng, **đừng
+ngắt lệnh vì tưởng nó treo**.
 
-⭐ Cái sai không nằm ở người viết. Một bảng chép tay **không có cách nào tự biết
-nó đã cũ**. Nên thứ đổi là *nơi câu trả lời đến từ*.
-
-⛔ Nếu một tệp `.md` nào nói khác lệnh trên, **tệp đó sai**. Đừng sửa máy chủ
-cho khớp tài liệu.
-
-Toàn văn bảng cũ giữ nguyên ở `docs/_luutru/CLAUDE_lich_su_2026-09.md`.
-
-### Luật của từng hệ con nằm ở đâu
-
-Bảng này chỉ chứa **con trỏ**, không chứa giá trị — một giá trị chép lại là một
-giá trị sẽ trôi.
-
-| Hệ con | Luật (nguồn chân lý) | Vì sao thành ra thế |
-|---|---|---|
-| Sổ credit · thanh toán | `platform_core/credit.py`, `billing.py` | `docs/AUDIT_MVP_2026-07-31.md` |
-| Hàng đợi job · worker · lease | `platform_core/job_runner.py`, `leases.py` | `docs/PUBLIC_API/` (H36) |
-| Public API `/api/v1` | `platform_core/public_api/`, `server/api/inventory.py` (24 route đóng băng) | `docs/PUBLIC_API/APP_API_COVERAGE_FINAL.md` |
-| Khoá API · provider | `platform_core/api_pool.py`, `providers.py` | `docs/KHAO_SAT_APIKEYS.md` |
-| Model ảnh nội bộ (máy B) | `render_gateway/ngan_sach.py`, `apps/anhnoibo/gia.py` | `docs/ANH_NOI_BO/DECISIONS.md` |
-| LLM nội bộ (máy B) | `apps/ltt_llm/ngan_sach.py` | `docs/VLM_NOI_BO/` |
-| LTT VOICE | `apps/ltt_voice/tham_so_cong_khai.py` | `docs/LTT_VOICE/` |
-| Bán VPS | `apps/vps/services/mang.py`, `apps/vps/bao_tri.py` | `docs/VPS/` |
-| LTT Nexus | `nexus_agent/`, `platform_core/nexus/` | `docs/nexus/` |
-| Lưu trữ · R2 | `platform_core/storage.py` | |
-| Cây riêng · cổng chất lượng | `tools/cay_rieng.py`, `tools/gate.py`, `tools/thanh_phan.py` | `docs/DEVELOPMENT_WORKFLOW.md` |
-
-⚠️ **Đừng gõ lại một con số nào từ các tệp trên vào đây.** Đó chính xác là cơ
-chế đã hỏng năm lần. Ví dụ thật: trần ký tự của `ltt_voice` được tách thành
-**hai** hằng số ngày 31/08 — bảng cũ vẫn mô tả **một**, và không ai phát hiện
-cho tới khi có người đối chiếu từng giá trị với mã.
-
-## ⛔ `D:\LTTBackups` — ACL chặn ở đó là CỐ Ý, đừng "sửa"
-
-Thư mục ấy chứa `app.env` và dump CSDL **mang bí mật thật**. Hạng mục **W1.5**
-của `docs/AUDIT_MVP_2026-07-31.md` yêu cầu đúng điều đang thấy: *"thư mục backup
-chỉ SYSTEM/Admin đọc"*.
-
-Thấy `Access denied` ở đó mà chạy `icacls` để mở ra là **gỡ một bản vá bảo mật
-đã hoàn thành**. Remote git `backup` trỏ vào đó đã được **gỡ 04/09**; bản sao
-off-site nay là **GitHub riêng tư** (`origin`).
-
-## Không bao giờ commit hay copy đi
+## ⛔ Không bao giờ commit hay copy đi
 
 ```
-data/config.json      data/*.enc      secrets/
-cloudflare/config.yml cloudflare/*.json
+data/config.json   data/*.enc   secrets/   cloudflare/config.yml   cloudflare/*.json
 ```
+
+⚠️ **`D:\BOT GEMINI` là kho tham chiếu CHỈ ĐỌC** — đang phục vụ người dùng thật
+trên cổng 8000. Nền tảng này dùng cổng **8100**.
+
+⛔ **`D:\LTTBackups` — ACL chặn ở đó là CỐ Ý.** Thấy `Access denied` mà chạy
+`icacls` để mở ra là **gỡ một bản vá bảo mật đã hoàn thành** (W1.5,
+`docs/AUDIT_MVP_2026-07-31.md`).
 
 ## Tài liệu
 
-| File | Nội dung |
+| Tệp | Nội dung |
 |---|---|
-| `docs/00_BAT_DAU_TU_DAY.md` | bố cục, nguyên tắc |
-| `docs/01_COPY_LEN_SERVER.md` | chuyển sang máy chủ + cập nhật |
-| `docs/16_CAP_NHAT_VA_DEPLOY.md` | **quy trình cho MỌI phiên**: đồng bộ → gate → ff → deploy → đẩy GitHub |
-| `docs/02_LENH_CHO_CLAUDE.md` | câu lệnh mẫu người dùng đưa cho bạn |
+| **`docs/00_LTT_OPERATING_CONTRACT.md`** | **quy trình canonical — đọc trước** |
+| `AGENTS.md` | quy ước kỹ thuật: Windows, bố cục app, memory, hai phiên cùng cây |
+| `docs/DEVELOPMENT_WORKFLOW.md` | nhiều phiên song song, cây riêng, phạm vi |
+| `docs/16_CAP_NHAT_VA_DEPLOY.md` | đồng bộ → gate → ff → deploy → đẩy GitHub |
+| `docs/QUY_TAC_CHAY_LENH_NANG.md` | bốn bước trước mọi lệnh nặng |
+| `docs/QUY_TRINH_WORKTREE.md` | trước khi tạo hay gỡ worktree |
+| `docs/BAY_TRONG_CONG_CHAT_LUONG.md` | 17 cái bẫy trong chính cổng chất lượng |
 | `docs/03_THEM_APP_MOI.md` | thêm app |
-| `docs/04_CLOUDFLARE_TUNNEL.md` | Tunnel chi tiết + xử lý sự cố |
-| `docs/05_LEN_MANG_CLOUDFLARE.md` | đưa nền tảng ra Internet |
-| `docs/06_DON_HA_TANG.md` | dọn hạ tầng — việc Claude làm được và việc bạn phải tự làm |
-| `docs/QUY_TRINH_WORKTREE.md` | **đọc TRƯỚC khi tạo hay gỡ worktree** — vì sao máy treo, và luật để nó không lặp |
-| `docs/QUY_TAC_CHAY_LENH_NANG.md` | **đọc TRƯỚC mọi lệnh nặng** — bốn bước bắt buộc, ba điều tuyệt đối không làm |
+| `docs/04_CLOUDFLARE_TUNNEL.md` | Tunnel + xử lý sự cố |
 | `docs/PUBLIC_API/APP_API_COVERAGE_FINAL.md` | app/tool/model nào mở, nào đóng, **vì sao** |
-| `docs/PUBLIC_API/API_PLATFORM_FULL_RELEASE_READINESS.md` | trạng thái Public API + điều kiện còn lại |
 | `docs/_luutru/PROJECT_MEMORY.md` | nhật ký — **cập nhật cuối mỗi phiên** |
-| `docs/BAY_TRONG_CONG_CHAT_LUONG.md` | những cái bẫy trong chính cổng chất lượng — đọc trước khi tin một dòng `RESULT: PASS` |
-| `AGENTS.md` | quy ước kỹ thuật chi tiết |
+
+### Luật của từng hệ con — con trỏ, không phải giá trị
+
+⚠️ **Đừng gõ lại một con số nào từ các tệp dưới vào đây.** Đó chính xác là cơ chế
+đã hỏng năm lần.
+
+| Hệ con | Nguồn chân lý |
+|---|---|
+| Sổ credit · thanh toán | `platform_core/credit.py`, `billing.py` |
+| Hàng đợi job · worker · lease | `platform_core/job_runner.py`, `leases.py` |
+| Public API `/api/v1` | `platform_core/public_api/`, `server/api/inventory.py` |
+| Khoá API · provider | `platform_core/api_pool.py`, `providers.py` |
+| Model ảnh nội bộ (máy B) | `render_gateway/ngan_sach.py`, `apps/anhnoibo/gia.py` |
+| LLM nội bộ (máy B) | `apps/ltt_llm/ngan_sach.py` |
+| LTT VOICE | `apps/ltt_voice/tham_so_cong_khai.py` |
+| Bán VPS | `apps/vps/services/mang.py`, `apps/vps/bao_tri.py` |
+| LTT Nexus | `nexus_agent/`, `platform_core/nexus/` |
+| Lưu trữ · R2 | `platform_core/storage.py` |
+| Cây riêng · cổng chất lượng | `tools/cay_rieng.py`, `tools/gate.py`, `tools/thanh_phan.py` |

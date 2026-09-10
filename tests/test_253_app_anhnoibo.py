@@ -56,17 +56,38 @@ def test_app_nap_duoc_va_khong_trung_gi_voi_app_dang_chay():
     assert "anhnoibo.generate" not in {j for a in khac for j in a.manifest.job_types}
 
 
-def test_khong_doi_mot_dong_nao_cua_taoanh_va_thumbnail():
-    """⛔ Ràng buộc của cả hạng mục: model nội bộ được **thêm vào**, không phải
-    thay thế. `taoanh`/`thumbnail` đang phục vụ khách trả tiền qua Gemini."""
+def test_taoanh_va_thumbnail_KHONG_khai_provider_da_ngung():
+    """🔴 VIẾT LẠI 09/09/2026 — AI CLEAN REBUILD V2 pha 06.3.
+
+    Bản cũ tên là `test_khong_doi_mot_dong_nao_cua_taoanh_va_thumbnail` và chốt
+    `providers == ["gemini"]`. Đó là một **hàng rào phạm vi của hạng mục H37**
+    ("model nội bộ được THÊM VÀO, không thay thế"), và cả hai tiền đề của nó nay
+    đã hết:
+
+      · hàng rào ấy thuộc H37; pha 06 của chiến dịch này **được giao** đúng việc
+        đổi động cơ của `taoanh`/`thumbnail`;
+      · lý do ghi trong docstring cũ — *"đang phục vụ khách trả tiền qua
+        Gemini"* — **đo được là sai**: 28 ngày `taoanh` chạy **2** lượt,
+        `thumbnail` chạy **0** (`MIGRATION_MAP.md` mục 3).
+
+    ⭐ Bất biến thì không mất mà **mạnh lên**: bảng chọn model là một **cửa bán
+       hàng**, nên nó không được khai một nhà cung cấp đã ngừng phục vụ. Bản này
+       đỏ với `gemini`, `apiai` lẫn `cheapkeyai` — rộng hơn bản cũ, không hẹp
+       hơn. (Chính bản cũ sẽ ĐỎ dưới luật này.)
+    """
+    from platform_core import providers as P
+
     for slug in ("taoanh", "thumbnail"):
         a = [x for x in registry.discover() if x.slug == slug][0]
         assert not a.error, f"{slug} hong: {a.error}"
         for t in a.manifest.tools:
-            nha = t.params_schema.get("model", {}).get("providers")
-            assert nha == ["gemini"], (
-                f"{slug}/{t.name} da bi doi provider thanh {nha} — hang muc nay "
-                "chi DUNG, khong doi Gemini")
+            nha = t.params_schema.get("model", {}).get("providers") or ()
+            assert nha, f"{slug}/{t.name}: khai rong la khong model nao chon duoc"
+            for pid in nha:
+                assert P.get(pid) is not None, f"{slug}/{t.name}: khong co {pid!r}"
+                assert not P.da_ngung(pid), (
+                    f"{slug}/{t.name} khai {pid!r} — nha cung cap nay DA NGUNG, "
+                    "khach chon xong moi biet")
 
 
 # ═══════════ fail-closed: ba cổng độc lập, thiếu một là không ra ════════════

@@ -13,7 +13,9 @@ import { fieldLabel, mediaKind, nodeModality, outputLabel, primaryFields } from 
 import { CANVAS_PRESENTATION_VERSION, customerPaletteTools, customerToolLabel,
   destinationLabel, primaryOutputHandle } from './presentationAdapter'
 import { applyAssistant, approveRun, cancelRun, cloneWorkflow, createRun, createShare, exportWorkflow, importWorkflow,
-  loadOrCreateWorkflow, loadPalette, loadPreferences, loadRun, loadRunHistory, loadSnapshots, planWorkflow, restoreSnapshot, savePreferences, saveWorkflow,
+  loadOrCreateWorkflowV3, loadPalette, loadPreferences,
+  loadRun, loadRunHistory, loadSnapshots, planWorkflow, restoreSnapshot,
+  savePreferences, saveWorkflowV3,
   previewAssistant, quoteTool, restoreRunAsWorkflow, runAgain, tickRun, uploadAsset, WorkflowConflictError, validateWorkflow, type AgentRun, type AgentRunSummary, type AssistantResult, type CanvasDocument,
   type CanvasEdge, type CanvasNode, type RunScope, type Workflow, type WorkflowSnapshot } from './workflowApi'
 
@@ -178,7 +180,7 @@ function Editor() {
 
   useEffect(() => {
     let active = true
-    Promise.all([loadPalette(), loadOrCreateWorkflow(csrf), loadPreferences()]).then(([result, loaded, preferences]) => {
+    Promise.all([loadPalette(), loadOrCreateWorkflowV3(csrf), loadPreferences()]).then(([result, loaded, preferences]) => {
       if (!active) return
       setPalette(result.tools); setCatalogMeta({models:result.models?.length??0,
         routing:result.routing?.mode??''}); setTheme(preferences.theme); setCatalogMode(preferences.catalog_mode)
@@ -224,7 +226,7 @@ function Editor() {
     autosaveTimer.current = window.setTimeout(async () => {
       setPhase('saving')
       try {
-        const saved = await saveWorkflow({ ...workflow, canvas: state.document }, csrf)
+        const saved = await saveWorkflowV3({ ...workflow, canvas: state.document }, csrf)
         setWorkflow(saved); setPhase('saved')
       } catch (error) { setPhase(error instanceof WorkflowConflictError ? 'conflict' : 'error') }
     }, 800)
@@ -362,7 +364,7 @@ function Editor() {
     setDesktopPanel('run');setPhase('saving');setRunError('')
     let saved:Workflow
     try{
-      saved=await saveWorkflow({...workflow,canvas:state.document},csrf)
+      saved=await saveWorkflowV3({...workflow,canvas:state.document},csrf)
       setPhase('saved')
     }catch(error){
       setPhase(error instanceof WorkflowConflictError?'conflict':'error')
@@ -622,7 +624,7 @@ function Editor() {
     aria-label="LTT Agent Canvas" tabIndex={0} onKeyDown={onKeyDown}>
     <header className="canvas-toolbar"><a className="canvas-home" href="/agent" aria-label="Về Agent AI">LTT</a><div className="workflow-identity"><input aria-label="Tên workflow"
       value={workflow?.name ?? ''} disabled={!workflow || readOnly} onChange={event=>workflow&&setWorkflow({...workflow,name:event.target.value})}
-      onBlur={()=>workflow&&saveWorkflow({...workflow,canvas:state.document},csrf).then(setWorkflow).catch(()=>setPhase('error'))}/>
+      onBlur={()=>workflow&&saveWorkflowV3({...workflow,canvas:state.document},csrf).then(setWorkflow).catch(()=>setPhase('error'))}/>
       <span>{readOnly ? 'Mobile · chỉ xem' : `Canvas v2 · ${page.name} · ${page.nodes.length} node · ${page.edges.length} kết nối`}</span></div>
       <div className="canvas-top-actions"><span className={`save-state ${phase}`} aria-live="polite">{offline ? 'Ngoại tuyến' : phase === 'saving' ? 'Đang lưu…' : phase === 'conflict' ? 'Xung đột' : phase === 'error' ? 'Lỗi lưu' : 'Đã lưu'}</span>
         {phase==='conflict'&&<button className="save-recovery" onClick={()=>location.reload()}>Tải bản mới</button>}

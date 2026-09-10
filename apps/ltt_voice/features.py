@@ -22,7 +22,7 @@ from dataclasses import dataclass, field
 from platform_core.i18n import _ as _t
 from platform_core.jobs import DangBan, LoiNguoiGoi
 
-from . import lan_ngon_ngu
+from . import lan_ngon_ngu, lui_giong
 from . import gia, sidecar_client, tham_chieu, text_pipeline
 
 log = logging.getLogger(__name__)
@@ -197,6 +197,35 @@ class KetQua:
     text_da_chuan_hoa: str
     so_doan: int = 1
     canh_bao: tuple = field(default_factory=tuple)
+    #: 🔴 GIỌNG THẬT SỰ ĐÃ ĐỌC — chỉ điền khi nó KHÁC thứ khách yêu cầu.
+    #:
+    #:    `lui_giong` cho phép một bài vẫn đọc được khi giọng được chọn hỏng.
+    #:    Cảnh báo trên màn hình nói điều đó **một lần**; bản ghi này nói điều
+    #:    đó **mãi mãi**. Không có nó thì ba tháng sau, khách hỏi *"sao bản này
+    #:    nghe khác bản kia"* và không ai trả lời được — hai bản ghi trông y hệt
+    #:    nhau, cùng `voice_id`, cùng giá.
+    #:
+    #: ⚠️ Rỗng = **không lùi**, không phải "không biết". Đó là lý do nó chỉ vào
+    #:    `as_result()` khi có giá trị: thêm một trường luôn-luôn-rỗng vào mọi
+    #:    bản ghi để phục vụ một ca hiếm là làm nặng tất cả.
+    giong_that: str = ""
+    #: 🔴 GPU-GIÂY của lượt này — thứ `X-Gen-S` của sidecar nói ra và trước
+    #:    08/09/2026 **không ai lưu**.
+    #:
+    #:    Hệ quả không phải "thiếu một chỉ số đẹp": mọi câu hỏi vận hành dạng
+    #:    *"giọng nào tốn GPU nhất"*, *"bản engine mới nhanh hơn bao nhiêu"*,
+    #:    *"RTF có trôi không"* đều **không trả lời được bằng dữ liệu ta có** —
+    #:    chỉ trả lời được bằng một lượt đo mới, tức bằng cách tiêu thêm GPU.
+    #:
+    #: ⛔ `0.0` = KHÔNG BIẾT, và nó chỉ vào `as_result()` khi khác 0. Một
+    #:    trường luôn-luôn-có với giá trị 0 sẽ được đọc thành "lượt này tốn 0
+    #:    giây GPU", và trung vị tính trên nó là một con số sai một cách tự tin.
+    #:
+    #: ⚠️ KHÔNG dùng để tính tiền. Tiền theo **giây tiếng đo được** (chốt 3.4);
+    #:    trường này là số liệu VẬN HÀNH. Trộn hai thứ là mở một lỗ: khách
+    #:    không điều khiển được GPU-giây, nên tính tiền theo nó là tính tiền
+    #:    theo tình trạng máy của ta.
+    gen_s: float = 0.0
     #: 🔴 HAI THỜI LƯỢNG, và trộn chúng là một lỗi TIỀN.
     #:
     #:    `giay`      — thời lượng SINH RA. Cơ sở tính credit, vì đó là lượng
@@ -238,6 +267,12 @@ class KetQua:
             **({"toc_do": self.yeu_cau.toc_do,
                 "duration_played_s": round(self.giay_phat, 3)}
                if self.giay_phat else {}),
+            # Chỉ khi ĐÃ LÙI — xem chú thích ở `giong_that`.
+            **({"giong_that": self.giong_that}
+               if self.giong_that and self.giong_that != self.yeu_cau.preset
+               else {}),
+            # Chỉ khi ĐO ĐƯỢC — xem chú thích ở `gen_s`.
+            **({"gen_s": round(self.gen_s, 3)} if self.gen_s else {}),
         }
 
 
@@ -298,6 +333,16 @@ def giai_giong(db, yc: YeuCau) -> tuple:
         # ⛔ Cùng một thông điệp cho "không tồn tại" và "không phải của bạn".
         #    Phân biệt hai câu đó là cho phép dò xem `voice_id` nào có thật.
         raise LoiGiongNoi(_t("Không tìm thấy giọng này trong tài khoản của bạn."))
+    # ⛔ HAI TRẠNG THÁI, HAI CÂU — trước 07/09/2026 chúng dùng CHUNG một câu.
+    #
+    #    `dang_ghi_danh` và `disabled` đều rơi vào `!= "active"`, và câu duy
+    #    nhất ở đó nói *"Giọng này đang bị tắt. Hãy bật lại"*. Với một giọng
+    #    vừa nộp xong và đang chờ worker, câu ấy sai theo kiểu tệ nhất: nó bảo
+    #    khách đi làm một việc **không tồn tại** (không có nút bật nào cho một
+    #    giọng chưa ghi danh xong), nên họ sẽ đi tìm cho tới khi bỏ cuộc.
+    if ho_so.trang_thai == "dang_ghi_danh":
+        raise LoiGiongNoi(_t(
+            "Giọng này đang được ghi danh. Chờ khoảng một phút rồi thử lại."))
     if ho_so.trang_thai != "active":
         raise LoiGiongNoi(_t("Giọng này đang bị tắt. Hãy bật lại hoặc tạo giọng mới."))
 
@@ -309,8 +354,73 @@ def giai_giong(db, yc: YeuCau) -> tuple:
 
     bieu_dien = tham_chieu.tim_repr_active(db, ho_so.id)
     if bieu_dien is None:
+        # 🔴 ĐẾN ĐƯỢC ĐÂY NGHĨA LÀ GHI DANH ĐÃ XONG MÀ BIỂU DIỄN KHÔNG CÒN.
+        #
+        #    Nhánh `dang_ghi_danh` đã bị chặn ngay trên, nên trạng thái ở đây
+        #    là `active` — tức từng có biểu diễn và nay không có cái nào
+        #    `dang_dung`. Đó là ca **nâng engine**: `voice_repr` gắn với một
+        #    phiên bản engine, và bản cũ bị cho nghỉ.
+        #
+        # ⛔ Câu cũ ở đây là *"chưa ghi danh xong, hãy thử lại sau ít phút"* —
+        #    và chờ thì **không bao giờ** giúp được, vì không có job nào đang
+        #    chạy. Một lời khuyên không dẫn tới đâu tệ hơn một lời từ chối.
+        #
+        # ⭐ Nên đây là chỗ ĐƯỜNG LÙI đứng: bài vẫn đọc được, chỉ là bằng một
+        #    giọng khác — và khách **được nói cho biết** (`lui_giong.CANH_BAO`).
+        thay = lui_giong.chon(gioi=(ho_so.gioi or ""),
+                              ngon_ngu=(ho_so.ngon_ngu or ""),
+                              cac=lui_giong.tu_giong_mau())
+        if thay is not None:
+            log.info("lui giong: %s -> preset %s (gioi=%s lan=%s)",
+                     ho_so.public_id, thay.ma, ho_so.gioi, ho_so.ngon_ngu)
+            return (None, thay.ma,
+                    (lui_giong.dien_canh_bao(lui_giong.CANH_BAO, thay),))
+
+        # ⭐ BƯỚC HAI — KHO CHUNG, và nó chạy **SAU** giọng mẫu chứ không gộp.
+        #
+        #    Gộp hai kho vào một danh sách sẽ đổi hành vi của làn `vi` đang chạy
+        #    tốt: `chon()` được gọi ở đây **không truyền** `vung`/`phong_cach`,
+        #    nên cả hai là `""`. Giọng kho chung không có hai trường ấy (bảng
+        #    `VoiceProfile` chỉ có `gioi` + `ngon_ngu`) nên chúng khớp nấc ①
+        #    *"cùng vùng, cùng phong cách"*, trong khi preset của engine — vốn
+        #    CÓ vùng và phong cách thật — trượt nấc ① lẫn ② và chỉ được nhặt ở
+        #    nấc ③. Kết quả: một bài tiếng Việt đang lùi về preset sẽ lặng lẽ
+        #    đổi sang một giọng kho chung.
+        #
+        # ⇒ Hai bước, không một danh sách. Bước hai chỉ nổ khi bước một trả
+        #   `None` — tức đúng ca làn `en` (không preset nào qua được `_hop`).
+        #
+        # ⚠️ Vòng lặp co dần thay vì gọi `chon()` một lần: một giọng chung cũng
+        #    có thể mất biểu diễn — đúng cùng ca hỏng đã đưa ta tới đây. Bỏ qua
+        #    ứng viên nạp không được rồi hỏi lại **cùng bậc thang ấy**, chứ
+        #    không chép lại luật xếp hạng ra chỗ này.
+        con_lai = tham_chieu.ung_vien_kho_chung(db)
+        while con_lai:
+            thay = lui_giong.chon(gioi=(ho_so.gioi or ""),
+                                  ngon_ngu=(ho_so.ngon_ngu or ""),
+                                  cac=con_lai)
+            if thay is None:
+                break
+            # ⛔ Đi qua `tim_profile`, KHÔNG tự truy vấn: đó là chỗ duy nhất
+            #    kiểm quyền đọc, và cổng license (`_dieu_kien_kho_chung`) nằm
+            #    trong nó. Một đường lùi có lối riêng là một cổng bị vòng.
+            hs2 = tham_chieu.tim_profile(db, thay.ma, owner_id=yc.owner_id,
+                                         cho_dung_chung=True)
+            bd2 = (tham_chieu.tim_repr_active(db, hs2.id)
+                   if hs2 is not None else None)
+            if bd2 is not None:
+                log.info("lui giong: %s -> kho chung %s (gioi=%s lan=%s)",
+                         ho_so.public_id, thay.ma, ho_so.gioi, ho_so.ngon_ngu)
+                return (tham_chieu.nap_ref_b64(bd2), None,
+                        (lui_giong.dien_canh_bao(lui_giong.CANH_BAO, thay),))
+            con_lai = tuple(u for u in con_lai if u.ma != thay.ma)
+
+        # Không lùi được thì nói THẬT vì sao, và nói việc phải làm.
         raise LoiGiongNoi(_t(
-            "Giọng này chưa ghi danh xong. Hãy thử lại sau ít phút."))
+            "Giọng này cần được ghi danh lại (bản ghi cũ không còn dùng được "
+            "với máy đọc hiện tại). Hãy tải lại clip mẫu ở màn Giọng."))
+    # ⭐ HOÀ TRUNK: câu lỗi lấy bản của trunk (nói đúng việc phải làm), cảnh báo
+    #    lấy bản của Q121 (`_chot_lan` đã chạy ở trên và đã **chặn** nếu lệch).
     return tham_chieu.nap_ref_b64(bieu_dien), None, canh_bao
 
 
@@ -342,10 +452,22 @@ def _goi_va_dich_loi(ham, *doi_so, **tham_so):
             "Máy tạo tiếng nói chưa sẵn sàng. Vui lòng thử lại sau.")) from e
 
 
-def goi_cong(text: str, *, ref_b64=None, preset=None) -> tuple:
-    """Một lượt sinh. Trả `(wav_bytes, headers)`."""
-    return _goi_va_dich_loi(sidecar_client.noi, text,
-                            ref_b64=ref_b64, preset=preset)
+def goi_cong(text: str, *, ref_b64=None, preset=None,
+             timeout: float | None = None) -> tuple:
+    """Một lượt sinh. Trả `(wav_bytes, headers)`.
+
+    ⭐ `timeout=None` giữ nguyên trần của `sidecar_client.noi` (900 giây) — trần
+       của một lượt **job**, nơi khách đã xếp hàng và đang chờ có ý thức.
+
+    ⚠️ Đường **web đồng bộ** phải truyền một trần ngắn hơn nhiều. Trần 900 giây
+       ở đó không bảo vệ ai: Cloudflare cắt ở 100 giây, nên phần còn lại chỉ là
+       một worker web bị giữ cho một phản hồi **không ai còn nhận được**.
+       Xem `nghe_thu_cua_toi.TRAN_THOI_GIAN_S`.
+    """
+    tham = {"ref_b64": ref_b64, "preset": preset}
+    if timeout is not None:
+        tham["timeout"] = float(timeout)
+    return _goi_va_dich_loi(sidecar_client.noi, text, **tham)
 
 
 #: 🔴 `goi_cong_dai` ĐÃ GỠ 03/09/2026, và chỗ này ghi lại vì sao — không phải để

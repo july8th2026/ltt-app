@@ -122,22 +122,59 @@ def tinh(giay: float) -> int:
     return _len_up(tinh_mcredit(giay))
 
 
-def giay_uoc(so_ky_tu: int) -> float:
+def giay_uoc(so_ky_tu: int, giong: str = "") -> float:
     """Số giây tiếng ƯỚC từ số ký tự **đã chuẩn hoá**. Cố ý ước THỪA.
 
     Mô hình hai tham số, không phải một phép chia — xem chú thích dài ở
     `GIAY_KHOI_DONG_UOC`. Phần khởi động là thứ làm câu ngắn tốn nhiều giây trên
     mỗi ký tự hơn bài dài.
+
+    ⭐ `giong` — tên preset. Có hồ sơ ĐO ĐƯỢC cho giọng ấy thì dùng số của nó;
+       không có thì lùi về hai hằng số chung. Xem `ho_so_giong.py`.
+
+       Vì sao tham số này an toàn ở đây: nó chỉ tra một `dict` đã nạp sẵn lúc
+       import — không CSDL, không mạng. `manifest._gia()` chạy ở mọi lượt báo
+       giá và chú thích của nó cấm đúng hai thứ đó.
+
+    ⛔ `giong` rỗng hay lạ ⇒ **hằng số chung**, không ném. Giọng nhân bản của
+       khách không bao giờ có trong ảnh chụp, và đó là trạng thái bình thường
+       của gần như mọi khách mới.
     """
-    return GIAY_KHOI_DONG_UOC + max(1, int(so_ky_tu)) / float(KY_TU_MOI_GIAY_UOC)
+    from . import ho_so_giong
+
+    n = max(1, int(so_ky_tu))
+
+    # 🔴 NHẬN HAY BÁC MỘT HỒ SƠ **NGUYÊN KHỐI**, KHÔNG THEO TỪNG TRƯỜNG.
+    #
+    #    Bản đầu tra hai trường riêng rẽ, và `tests/test_506` bắt được một lỗi
+    #    TIỀN lệch về phía nguy hiểm: khi `do_lech_chuan` phồng tới mức không
+    #    tin được, tốc độ lùi về 18 nhưng **phí khởi động vẫn lấy số đã đo**
+    #    (1,0 thay vì 1,5). Kết quả:
+    #
+    #        1,0 + 1000/18 = 56,56   <   1,5 + 1000/18 = 57,06
+    #
+    #    Tức trộn phần BỊ BÁC của một hồ sơ với phần lùi cho ra ước **thấp hơn
+    #    cả đường lùi thuần** — nghĩa là **giữ thiếu credit**, đúng lỗi sổ sách
+    #    mà chú thích ở `KY_TU_MOI_GIAY_UOC` cảnh báo.
+    #
+    # ⭐ Lý do đúng đắn hơn cả con số: nếu một phép đo không đủ tin để lấy tốc
+    #    độ, thì phí khởi động **rút từ chính phép đo ấy** cũng không đủ tin.
+    #    Hai trường không độc lập — chúng là hai ẩn của cùng một hệ phương trình.
+    toc_do = ho_so_giong.ky_tu_moi_giay_an_toan(giong) if giong else None
+    if toc_do is None:
+        return GIAY_KHOI_DONG_UOC + n / float(KY_TU_MOI_GIAY_UOC)
+
+    khoi_dong = ho_so_giong.giay_khoi_dong(giong)
+    return ((khoi_dong if khoi_dong is not None else GIAY_KHOI_DONG_UOC)
+            + n / float(toc_do))
 
 
-def uoc_tran(*, so_ky_tu: int) -> int:
+def uoc_tran(*, so_ky_tu: int, giong: str = "") -> int:
     """Trần ước CAO để giữ chỗ. **Luôn >= `tinh()` của lượt đó** (chốt 3.3)."""
-    return _len_up(tinh_mcredit(giay_uoc(so_ky_tu)))
+    return _len_up(tinh_mcredit(giay_uoc(so_ky_tu, giong)))
 
 
-def uoc_tran_lo(*, cac_do_dai) -> int:
+def uoc_tran_lo(*, cac_do_dai, giong: str = "") -> int:
     """Trần ước cho một lô nhiều đoạn. Cộng **milli-credit** rồi mới làm tròn.
 
     ⛔ Đừng cộng kết quả của `uoc_tran()` từng đoạn: làm tròn lên N lần thì một
@@ -147,7 +184,7 @@ def uoc_tran_lo(*, cac_do_dai) -> int:
     ⚠️ Phần khởi động cộng cho TỪNG đoạn, và đó là đúng: mỗi đoạn là một lượt
        phát riêng, nên nó thật sự trả phí khởi động riêng.
     """
-    tong = sum(tinh_mcredit(giay_uoc(n)) for n in cac_do_dai)
+    tong = sum(tinh_mcredit(giay_uoc(n, giong)) for n in cac_do_dai)
     return _len_up(tong)
 
 
@@ -155,6 +192,70 @@ def tinh_lo(cac_giay) -> int:
     """Giá thật của một lô. Cộng milli-credit rồi làm tròn đúng một lần."""
     tong = sum(tinh_mcredit(g) for g in cac_giay)
     return _len_up(tong)
+
+
+# ── đo thời lượng cho đường PHÁT DẦN ─────────────────────────────────────────
+#
+# 🔴 ĐÂY LÀ NGUỒN CHÂN LÝ THỨ HAI CHO TIỀN, VÀ NÓ PHẢI ĐƯỢC KHAI RA.
+#
+#    Đường job đo bằng `ffprobe` trên tệp đã sinh (`jobs._do_thoi_luong`, ghi
+#    thẳng: *"Đây là nguồn chân lý cho tiền"*). Đường phát dần **không có tệp**
+#    lúc tính: khách nghe tới đâu ta thu tới đó, nên thước đo là **số byte PCM
+#    đã thật sự gửi đi**.
+#
+# ⚠️ Hai thước đo cho cùng một đại lượng là một rủi ro có thật — ngày chúng lệch
+#    nhau là ngày một hoá đơn không giải thích được. Ba thứ giữ chúng khớp:
+#
+#      ① định dạng bị GHIM (mono · 16-bit) và kiểm ở đây, nổ nếu khác;
+#      ② `test_504` chốt hợp đồng byte giữa sidecar và app;
+#      ③ cùng một `tinh()` ra giá — chỉ khác cách ra **số giây**.
+#
+# ⛔ Đừng "đơn giản hoá" bằng cách ước giây từ số ký tự ở đường phát dần. Ước là
+#    để GIỮ CHỖ; thu thì phải theo thứ đã giao.
+
+#: Mono, 16-bit — ghim theo `voice_sidecar/server.py::_wav_header_mo`.
+PCM_SO_KENH = 1
+PCM_BYTE_MOI_MAU = 2
+
+#: Header WAV chuẩn do `wave` sinh cho một luồng PCM không có khối phụ.
+DAI_HEADER_WAV = 44
+
+
+class DinhDangLa(ValueError):
+    """Cổng giọng trả một định dạng khác thứ phép tính tiền này giả định.
+
+    ⛔ NÉM chứ không đoán. Một phép chia sai hằng số vẫn cho ra một con số trông
+       hợp lý, và con số ấy đi thẳng vào hoá đơn. Thà hỏng một lượt còn hơn thu
+       sai mọi lượt mà không ai thấy.
+    """
+
+
+def doc_sample_rate(dau: bytes) -> int:
+    """Đọc tần số lấy mẫu từ header WAV, và **kiểm** mono/16-bit.
+
+    `dau` phải chứa ít nhất `DAI_HEADER_WAV` byte đầu của luồng.
+    """
+    if len(dau) < DAI_HEADER_WAV:
+        raise DinhDangLa(f"header WAV ngan hon {DAI_HEADER_WAV} byte")
+    if dau[0:4] != b"RIFF" or dau[8:12] != b"WAVE":
+        raise DinhDangLa("khong phai luong RIFF/WAVE")
+    so_kenh = int.from_bytes(dau[22:24], "little")
+    sr = int.from_bytes(dau[24:28], "little")
+    bit = int.from_bytes(dau[34:36], "little")
+    if so_kenh != PCM_SO_KENH or bit != PCM_BYTE_MOI_MAU * 8:
+        raise DinhDangLa(
+            f"cho doi mono/16-bit, nhan duoc {so_kenh} kenh / {bit} bit")
+    if sr <= 0:
+        raise DinhDangLa(f"sample rate vo nghia: {sr}")
+    return sr
+
+
+def giay_tu_pcm(so_byte_pcm: int, sample_rate: int) -> float:
+    """Số giây tiếng từ số byte PCM **đã gửi đi** (không tính header)."""
+    if sample_rate <= 0:
+        raise DinhDangLa(f"sample rate vo nghia: {sample_rate}")
+    mau = max(0, int(so_byte_pcm)) // (PCM_BYTE_MOI_MAU * PCM_SO_KENH)
+    return mau / float(sample_rate)
 
 
 def bang_gia() -> dict:

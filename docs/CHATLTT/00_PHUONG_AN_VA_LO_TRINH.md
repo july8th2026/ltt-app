@@ -275,7 +275,7 @@ hành vi khách API (test hiện có là chốt).
 2. **Trạng thái máy đọc được:** `docs/CHATLTT/state.json` (`phase, verdict, sha,
    worktree, blocking_external, next_phase`) + `STATE.md` (sự thật hiện tại) —
    tương đương repo-approved của `.ltt/chatltt/state.json`.
-3. **Kiểm:** `gate.py --doi` sau mỗi cụm sửa; đầy đủ trước commit đóng phase; ghi
+3. **Kiểm:** theo `docs/00_LTT_OPERATING_CONTRACT.md` §4; ghi
    id `test-results/gates/<id>.json` vào báo cáo. Frontend: `npm ci` trong
    `frontend/chatltt` của cây này, `npm test`, `npm run build` (commit output
    `server/static/chatltt/`). **Không** `pytest -n auto` tay.

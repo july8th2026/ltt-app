@@ -129,6 +129,25 @@ STORES: tuple = (
           N_("Nhật ký vòng đời một máy — thứ trả lời \"vì sao máy tôi bị tắt\". "
           "Chính bảng này ghi rằng nó tồn tại vì log xoay vòng rồi mất, còn câu "
           "hỏi của khách thì đến sau ba tháng.")),
+    # `vps_thao_tac` là **OPERATIONAL, có hạn xoá** — khác hẳn `vps_event` ngay
+    # trên nó, và khác biệt ấy là cả lý do hai bảng tồn tại riêng.
+    #
+    #   `vps_event` = **đã xảy ra rồi**. Nó là bằng chứng, không bao giờ xoá.
+    #   `vps_thao_tac` = **đang xảy ra**. Nó có hạn chót, có UPID để nối lại,
+    #     và nó KẾT THÚC. Một hàng đợi không dọn được là một hàng đợi phình mãi.
+    #
+    # 180 ngày, không phải 30: một thao tác hỏng là thứ khách hỏi lại sau vài
+    # tháng ("hồi tháng trước bấm khởi động lại mà máy không lên"), và câu trả
+    # lời nằm ở `ma_loi` của chính hàng này. Ngắn hơn thì ta xoá mất câu trả lời
+    # trước khi câu hỏi tới.
+    #
+    # ⚠️ KHÔNG chứa bí mật: `upid` là mã tác vụ của Proxmox, `chi_tiet_loi` là
+    #    thông điệp lỗi. Cả hai chỉ tới người vận hành — `suc_khoe.dong_thoi_gian`
+    #    lọc chúng ra trước khi bất cứ thứ gì tới trang của khách.
+    Store("vps_thao_tac", OPERATIONAL, 180, N_("chủ tài khoản + vận hành"),
+          N_("Một thao tác dài đang chạy trên một máy: ai yêu cầu, muốn gì, tới "
+          "đâu rồi, hỏng vì sao. Khác nhật ký vòng đời ở chỗ nó KẾT THÚC."),
+          "thao_tac.don_cu (bao tri VPS)"),
 
     # ── LTT VOICE ────────────────────────────────────────────────────────────
     #
@@ -164,6 +183,16 @@ STORES: tuple = (
           N_("Cam kết sở hữu giọng: ai, lúc nào, bản điều khoản nào, hash tệp "
           "nào. Đây là bảng duy nhất trả lời được câu hỏi pháp lý, và nó là lý "
           "do consent phải là DỮ LIỆU chứ không phải một ô tick.")),
+    # ⚠️ `nguoi_soat` giữ id của NGƯỜI VẬN HÀNH đã ra phán quyết, không phải của
+    #    khách. Nhưng bảng vẫn xếp loại như bốn bảng trên, và có chủ ý: nó gắn
+    #    một-một với `voice_profile`, và `ly_do_loai` nói vì sao một giọng biến
+    #    mất — tức nó là nửa còn lại của câu trả lời cho khách hỏi *"giọng của
+    #    tôi đâu"*. Xếp nó là "không phải dữ liệu khách" sẽ đúng về cột và sai
+    #    về câu hỏi.
+    Store("voice_quality_profile", EVIDENCE, None, N_("chủ tài khoản + vận hành"),
+          N_("Phán quyết curate một giọng và LÝ DO LOẠI khi loại. Giữ chừng nào "
+          "giọng còn: ngày nâng engine, một giọng loại vì rè đáng thử lại, một "
+          "giọng loại vì thiếu consent thì không — cùng trạng thái, hai số phận.")),
 
     # ── Dự án và Chạy lô: bản thảo của khách, không phải kết quả một job ─────
     #
@@ -413,9 +442,96 @@ STORES: tuple = (
     Store("ommi_scene_version", CONTENT, None, N_("chủ tài khoản"),
           N_("Phiên bản một cảnh, kèm góp ý của người dùng.")),
 
+    # ── Auto Scan Video ──────────────────────────────────────────────────────
+    #
+    # Cả ba đều là CONTENT, không phải EVIDENCE, và ranh giới đó đã có sẵn lời
+    # giải thích ở mục `jobs` phía trên: *bằng chứng và nội dung là hai thứ khác
+    # nhau*. Tiền của một lần chạy nằm ở `credit_entries` (EVIDENCE, giữ mãi);
+    # ba bảng này chỉ giữ **tài liệu của khách** và trỏ tới tệp của họ.
+    #
+    # 🔑 Hạn 30 ngày KHỚP CỐ Ý với hạn của `jobs`, và đó là điều đáng nói nhất ở
+    #    đây. LTT VOICE đã trả giá cho việc lệch: `voice_block.audio_key` sống
+    #    mãi cùng dự án còn tệp nó trỏ tới sống 30 ngày theo `jobs`, nên sau 30
+    #    ngày khách mở dự án cũ và thấy một trình phát 404 **không kèm lời giải
+    #    thích nào**. Một hàng dữ liệu sống lâu hơn tệp nó trỏ tới không phải là
+    #    "giữ được nhiều hơn" — nó là một lời hứa hỏng.
+    Store("asv_run", CONTENT, 30, N_("chủ tài khoản"),
+          N_("Một lần lồng tiếng: video nguồn của khách, ngôn ngữ, giọng đã "
+          "chọn. Hết hạn cùng lúc với tệp mà nó trỏ tới."),
+          "job_content.purge_expired (worker)"),
+    Store("asv_stage", CONTENT, 30, N_("chủ tài khoản"),
+          N_("Trạng thái từng giai đoạn và khoá kết quả của nó. Chứa bản chép "
+          "lời và bản dịch — tức chính lời nói trong video của khách."),
+          "job_content.purge_expired (worker)"),
+    Store("asv_asset", CONTENT, 30, N_("chủ tài khoản"),
+          N_("Sổ tài nguyên đã sinh ra: khoá lưu trữ, vân tay, và nó bắt nguồn "
+          "từ tài nguyên nào. Không giữ bytes, chỉ giữ đường tới chúng."),
+          "job_content.purge_expired (worker)"),
+    Store("asv_work_item", CONTENT, 30, N_("chủ tài khoản"),
+          N_("Checkpoint từng đoạn bên trong một giai đoạn: đoạn nào đã đọc "
+          "thành tiếng, tốn bao nhiêu, thử mấy lần. Cùng hạn với giai đoạn "
+          "chứa nó — một checkpoint sống lâu hơn kết quả nó trỏ tới là một "
+          "lời hứa hỏng."),
+          "job_content.purge_expired (worker)"),
+    Store("asv_usage", CONTENT, 30, N_("chủ tài khoản"),
+          N_("Sổ cái từng lượt gọi năng lực: năng lực nào đã chạy, đo bằng đơn "
+          "vị gì, hết bao nhiêu credit. Đây là thứ trả lời câu hỏi \"tôi trả "
+          "cho cái gì\" — nên nó phải sống đúng bằng lần chạy mà nó giải "
+          "thích, không lâu hơn."),
+          "job_content.purge_expired (worker)"),
+
     # ── Derived: rebuildable ─────────────────────────────────────────────────
     Store("sdk/postman/*", DERIVED, None, N_("công khai"),
           N_("Sinh từ OpenAPI.")),
+
+    # ── LTT WORKFLOW V2 ──────────────────────────────────────────────────────
+    #
+    # ⭐ Ranh giới giữa ba lớp ở đây là một quyết định về TIỀN và về VIỆC CỦA
+    #    KHÁCH, không phải về dung lượng:
+    #
+    #      EVIDENCE   trả lời được "vì sao khách bị trừ ngần ấy" sau sáu tháng
+    #      CONTENT    thứ khách TẠO RA — xoá là mất việc của họ
+    #      DERIVED    dựng lại được từ hai loại trên
+    Store("workflow_run", EVIDENCE, None, N_("chủ tài khoản + vận hành"),
+          N_("Một lượt chạy đã tính tiền. `actual_cost` và `hold_id` ở đây là "
+             "câu trả lời cho một tranh chấp hoàn tiền sáu tháng sau.")),
+    Store("node_run_snapshot", EVIDENCE, None, N_("chủ tài khoản + vận hành"),
+          N_("Chuỗi ảnh chụp BẤT BIẾN của từng bước, kèm chi phí theo từng lượt "
+             "thử. Xoá nó là mất khả năng nói VÌ SAO một lượt chạy tốn ngần ấy "
+             "— kể cả lần chuyển bị từ chối cũng nằm ở đây.")),
+    Store("workflow", CONTENT, None, N_("chủ tài khoản"),
+          N_("Workflow là thứ khách DỰNG RA. Việc của họ, không phải dấu vết "
+             "vận hành của ta.")),
+    Store("workflow_draft", CONTENT, None, N_("chủ tài khoản"),
+          N_("Bản đang soạn — mất nó là mất phần khách đang gõ dở.")),
+    Store("workflow_version", CONTENT, None, N_("chủ tài khoản"),
+          N_("Bản đã xuất bản, BẤT BIẾN. Một lượt chạy ghim vào đây, nên xoá nó "
+             "là làm một lượt chạy đã tính tiền không còn tái dựng được.")),
+    Store("workflow_trigger", CONTENT, None, N_("chủ tài khoản"),
+          N_("Cấu hình khách đặt để workflow tự chạy.")),
+    Store("artifact", CONTENT, None, N_("chủ tài khoản"),
+          N_("Siêu dữ liệu tệp khách tạo ra. KHÔNG chứa byte nào; vòng đời thật "
+             "do `ttl_class` quyết, và backend có lifecycle riêng thì ta không "
+             "tự xoá."),
+          "platform_core.workflow.artifact.het_han"),
+    Store("node_run", DERIVED, None, N_("chủ tài khoản + vận hành"),
+          N_("CON TRỎ tới ảnh chụp mới nhất — dựng lại được từ chuỗi ảnh chụp.")),
+    Store("workflow_version_node", DERIVED, None, N_("chủ tài khoản"),
+          N_("Chỉ mục dẫn xuất từ đồ thị của bản đã xuất bản.")),
+    Store("workflow_version_edge", DERIVED, None, N_("chủ tài khoản"),
+          N_("Chỉ mục dẫn xuất từ đồ thị của bản đã xuất bản.")),
+    Store("waitpoint", DERIVED, None, N_("chủ tài khoản + vận hành"),
+          N_("Trạng thái chờ trong một lượt chạy; chỉ có nghĩa khi lượt chạy "
+             "còn sống.")),
+    Store("waitpoint_signal", DERIVED, None, N_("chủ tài khoản + vận hành"),
+          N_("Tín hiệu từng nhánh gửi tới một điểm chờ.")),
+    Store("node_run_waitpoint", DERIVED, None, N_("chủ tài khoản + vận hành"),
+          N_("Bảng nối nhiều-nhiều: waitpoint nào đang chặn node nào.")),
+    Store("foreach_vong", DERIVED, None, N_("chủ tài khoản + vận hành"),
+          N_("Một vòng ForEach đang chạy.")),
+    Store("foreach_muc", DERIVED, None, N_("chủ tài khoản + vận hành"),
+          N_("Kết quả từng phần tử của một vòng ForEach — thứ nói CHÍNH XÁC còn "
+             "phải chạy gì sau một lần chết.")),
 )
 
 
@@ -456,6 +572,10 @@ NOT_CUSTOMER_DATA = frozenset({
     # cổng. Không có `user_id` và không có gì của khách — máy của khách nằm ở
     # `vps_instance`, và bảng đó đã được xếp loại ở trên.
     "vps_gateway",
+    # Một lời hẹn giờ của scheduler: `run_id` + `kind` + `due_at`. Không có gì
+    # của khách ở đây — nội dung lượt chạy nằm ở `workflow_run`, và bảng đó ĐÃ
+    # được xếp loại.
+    "wakeup",
 })
 
 

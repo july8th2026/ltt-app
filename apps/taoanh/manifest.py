@@ -14,6 +14,10 @@ from __future__ import annotations
 from platform_core.i18n import N_
 from platform_core.registry import AppManifest, NavEntry, ToolSpec
 
+#: ⛔ BẢNG NÀY NAY CHỈ ĐỂ **TRA LẠI JOB CŨ**. Từ pha 06.3 app chạy `hidream-o1`
+#:    và giá của model đó ở `platform_core.image_gen.gia` — một chỗ duy nhất mà
+#:    `anhnoibo` cũng đọc. Thêm `hidream-o1` vào đây sẽ tạo lại đúng cái bảng giá
+#:    thứ hai mà chú thích dưới cảnh báo.
 MODEL_CREDIT_PER_IMAGE = {
     "gemini-2.5-flash-image": 5,
     "gemini-3.1-flash-lite-image": 5,
@@ -33,12 +37,26 @@ def unit_credit(model: str) -> int:
 
 
 def _cost(params: dict) -> int:
+    """Trần giữ chỗ. Đọc bảng giá MODEL NHÀ — cùng hàm `anhnoibo` gọi.
+
+    ⛔ Không nhân `unit_credit()` nữa: từ pha 06.3 app chỉ chạy `hidream-o1`, và
+       `unit_credit` của bảng trên sẽ trả về **5** cho nó (rơi vào nhánh mặc
+       định) trong khi `anhnoibo` bán đúng model ấy **3**. Cùng model hai giá là
+       lỗ hổng doanh thu, không phải một chi tiết.
+
+    ⚠️ Ảnh có tham chiếu đắt gấp 3 — nên trần phải biết chế độ, không chỉ số ảnh.
+       Giữ chỗ THIẾU thì khách tiêu quá số dư; giữ dư thì hoàn lại.
+    """
+    from apps.taoanh.features import clean_mode
+    from platform_core.image_gen import gia
+
     try:
         count = int(params.get("count", 1))
     except (TypeError, ValueError):
         count = 1
-    count = max(1, min(count, 4))
-    return count * unit_credit(str(params.get("model") or ""))
+    che_do = "edit" if clean_mode(
+        str(params.get("edit_mode") or "generate")) == "edit" else "t2i"
+    return gia.uoc_tran(so_anh_xin=count, che_do=che_do)
 
 
 MANIFEST = AppManifest(
@@ -56,12 +74,12 @@ MANIFEST = AppManifest(
     credit_cost=_cost,
     tools=(ToolSpec(
         name="image.generate", job_type="taoanh.generate",
-        description=N_('Sinh từ một đến bốn ảnh bằng Gemini Image từ mô tả tự do.'),
+        description=N_('Sinh từ một đến bốn ảnh từ mô tả tự do, bằng model nội bộ.'),
         params_schema={
             "prompt": {"type": "string", "required": True, "max_length": 4000},
             "image_key": {"type": "image", "required": False},
             "image_keys": {"type": "image[]", "required": False},
-            "model": {"type": "model_ref", "category": "image", "providers": ["gemini"]},
+            "model": {"type": "model_ref", "category": "image", "providers": ["ltt_image"]},
             "aspect_ratio": {"type": "enum", "values": ["16:9", "9:16", "1:1", "4:3", "3:4"], "default": "16:9"},
             "count": {"type": "int", "min": 1, "max": 4, "default": 1},
         },
@@ -74,39 +92,24 @@ MANIFEST = AppManifest(
             "scopes": ("jobs:create",),
             "description": ("Generate one to four images from a text prompt, "
                             "optionally guided by one reference image."),
-            # Aliases, never provider model ids: the public contract must not
-            # name the vendor, and it must survive the day a model id changes.
-            # The alias names describe what a caller is buying (quality tier),
-            # which is also what `_cost` prices — so quote, charge and choice
-            # all move together.
-            # An alias may be a bare internal id or carry the metadata a caller
-            # needs to choose between aliases. What it must never carry is
-            # anything a customer could use to identify or reach the vendor
-            # directly — the descriptions below say what you get, not who makes
-            # it.
-            "models": {
-                "standard": {
-                    "id": "gemini-2.5-flash-image",
-                    "description": "Balanced quality and cost. Start here.",
-                    "stability": "stable",
-                },
-                "standard-lite": {
-                    "id": "gemini-3.1-flash-lite-image",
-                    "description": ("Same price as standard, tuned for speed "
-                                    "over detail."),
-                    "stability": "stable",
-                },
-                "enhanced": {
-                    "id": "gemini-3.1-flash-image",
-                    "description": ("Better prompt adherence and fine detail "
-                                    "than standard."),
-                    "stability": "stable",
-                },
-            },
+            # 🔴 KHỐI ALIAS BA BẬC ĐÃ GỠ 09/09/2026 (pha 06.3) — BREAKING,
+            #    xem `docs/PUBLIC_API/CHANGELOG.md`.
+            #
+            #    `standard` · `standard-lite` · `enhanced` trỏ tới ba model
+            #    Gemini, và chúng tồn tại được là nhờ đúng một điều kiện mà
+            #    chú thích cũ nói thẳng: *"quote, charge and choice all move
+            #    together"* — tức **giá đi theo model**. Sau di trú, app chỉ
+            #    chạy một model và giá không còn phụ thuộc bậc nào.
+            #
+            # ⛔ Nên giữ ba bậc lại sẽ là bán ba thứ khác nhau, giao cùng một
+            #    thứ, ở ba mức giá — đúng cái mà `test_187` gọi tên: *"model
+            #    choice is published only where price follows it"*. Nay giá
+            #    không đi theo model nữa, nên lựa chọn không được công bố.
+            #
             # One reference image is supported through the public upload flow;
             # the multi-image form is a Canvas/UI path that takes a list, and
             # the API media contract handles single references only today.
-            "hidden": ("image_keys",),
+            "hidden": ("image_keys", "model"),
             # As for the thumbnail tool: `count` multiplies the output.
             "output_counts": {"image_keys": "count"},
             "params": {
@@ -122,12 +125,6 @@ MANIFEST = AppManifest(
                                     "follows its subject and composition."),
                     "example": "upl_from_POST_/api/v1/uploads",
                 },
-                "model": {
-                    "description": ("Quality tier. This is what the price "
-                                    "depends on — see the model list for what "
-                                    "each alias is for."),
-                    "example": "standard",
-                },
                 "aspect_ratio": {
                     "description": "Shape of the output image.",
                     "example": "16:9",
@@ -141,12 +138,12 @@ MANIFEST = AppManifest(
         },
     ), ToolSpec(
         name="image.batch_generate", job_type="taoanh.generate",
-        description=N_('Sinh một lô 2–4 ảnh đồng nhất từ cùng mô tả và model.'),
+        description=N_('Sinh một lô 2–4 ảnh đồng nhất từ cùng mô tả.'),
         params_schema={
             "prompt": {"type": "string", "required": True, "max_length": 4000},
             "image_key": {"type": "image", "required": False},
             "image_keys": {"type": "image[]", "required": False},
-            "model": {"type": "model_ref", "category": "image", "providers": ["gemini"]},
+            "model": {"type": "model_ref", "category": "image", "providers": ["ltt_image"]},
             "aspect_ratio": {"type": "enum", "values": ["16:9", "9:16", "1:1", "4:3", "3:4"], "default": "16:9"},
             "count": {"type": "int", "min": 2, "max": 4, "default": 4},
         },

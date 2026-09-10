@@ -2,8 +2,5 @@ YouTube thumbnail {aspect_ratio}.
 Topic: {user_input}
 {phong_cach_style}
 {kieu_trend_layout}
-{text_style_directive}
-{title_text}
-{subtitle_text}
-{ngon_ngu_directive}
+No text, no lettering, no captions, no numbers and no watermark anywhere in the image.
 Professional thumbnail design, eye-catching and click-worthy, high resolution, sharp details.

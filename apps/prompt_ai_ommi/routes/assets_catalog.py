@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from platform_core.i18n import _ as _t
+from platform_core.llm import canonical as _C
 import io
 import json
 import uuid
@@ -32,7 +33,12 @@ def admin_health(request: Request, _identity: str = Depends(require_login),
         Job.app_slug == MANIFEST.slug).group_by(Job.status)).all())
     return {"app_slug": MANIFEST.slug, "projects": int(projects),
             "jobs": {str(key): int(value) for key, value in statuses.items()},
-            "provider": "gemini", "secret_values_exposed": False}
+            # 🔴 Pha 09: app chạy LTT_LLM/LTT_IMAGE từ pha 05.5. Trường này
+            #    là thứ khách ĐỌC ĐƯỢC, nên gõ cứng tên một nhà cung cấp đã
+            #    ngừng là khai sai với họ. Đọc từ `canonical` để nó không
+            #    thể trôi khỏi sự thật một lần nữa.
+            "provider": _C.THU_TU_PROVIDER[0],
+            "secret_values_exposed": False}
 
 
 @router.post("/api/assets", status_code=201)

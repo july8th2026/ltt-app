@@ -488,3 +488,77 @@ def test_bao_tri_truyen_lan_cua_tung_giong():
     assert goi, "bao_tri khong con dung tep nghe thu"
     assert any(k.arg == "ngon_ngu" for n in goi for k in n.keywords), (
         "bao_tri khong truyen lan xuong `dung()`")
+# ── 7. HOÀ TRUNK 2026-09-10: đường lùi giọng KHÔNG được vượt làn ───────────
+
+def test_duong_lui_giong_khong_the_vuot_lan():
+    """🔴 BẤT BIẾN SINH RA TỪ VIỆC HAI NHÁNH GẶP NHAU — không nhánh nào tự có.
+
+    Trunk (07/09) thêm `lui_giong`: khi biểu diễn của một giọng nhân bản không
+    còn (ca nâng engine), `giai_giong` **thay bằng một giọng khác** thay vì từ
+    chối. Q121 (10/09) thêm cửa chặn làn, và nó chốt làn của giọng khách CHỌN.
+
+    ⛔ Ghép hai thứ đó lại thì có một câu hỏi mà **cả hai bên đều không hỏi**:
+       giọng THAY THẾ có cùng làn không? Nếu `lui_giong` chỉ *ưu tiên* cùng làn
+       thay vì *bắt buộc*, thì một bài tiếng Việt có thể lặng lẽ được đọc bằng
+       một giọng làn `en` — tức Q121 bị vòng qua bởi một đường mà Q121 không
+       biết là có.
+
+    ⭐ Đo cho thấy trunk đã làm đúng: `_hop` khớp CỨNG `u.ngon_ngu == ngon_ngu`,
+       và `chon` trả `None` ngay khi làn không thuộc `{vi, en}`. Phép kiểm này
+       **khoá** hành vi ấy lại, vì nó là thứ duy nhất giữ cho đường lùi không
+       thành một lỗ trong hợp đồng — và nó nằm ở một tệp (`lui_giong.py`) mà
+       người sửa Q121 không có lý do gì để mở ra.
+    """
+    from apps.ltt_voice import lui_giong
+
+    def _uv(ma, gioi, lan):
+        return lui_giong.UngVien(ma=ma, gioi=gioi, ngon_ngu=lan,
+                                 vung="", phong_cach="")
+
+    kho = [_uv("EN_A", "nam", "en"), _uv("VI_A", "nam", "vi"),
+           _uv("EN_B", "nu", "en")]
+
+    # Cùng làn thì chọn được…
+    assert lui_giong.chon(gioi="nam", ngon_ngu="vi", cac=kho).ma == "VI_A"
+    assert lui_giong.chon(gioi="nu", ngon_ngu="en", cac=kho).ma == "EN_B"
+
+    # …và KHÔNG có ứng viên cùng làn thì trả None, KHÔNG hạ tiêu chuẩn.
+    assert lui_giong.chon(gioi="nu", ngon_ngu="vi", cac=kho) is None
+
+    # Giọng chưa rõ làn: không lùi được — cùng chiều fail-safe với `quyet_dinh`.
+    for la in ("", "xx", None, "auto"):
+        assert lui_giong.chon(gioi="nam", ngon_ngu=la, cac=kho) is None, la
+
+
+def test_cau_nghe_thu_cua_MOI_lan_deu_vao_van_tay_phien_ban():
+    """⛔ Sửa câu tiếng Anh mà khoá không đổi ⇒ khách nghe câu EN cũ mãi mãi.
+
+    🔴 Đây cũng là một lỗ do hoà nhánh: trunk dựng `PHIEN_BAN` bằng cách BĂM câu
+       nghe thử (để "đổi câu ⇒ đổi khoá" không phải nhớ bằng tay), nhưng lúc ấy
+       chỉ có **một** câu. Q121 thêm câu thứ hai theo làn — và hàm băm không tự
+       nhìn thấy nó.
+
+    ⭐ Đo bằng HÀNH VI: đổi thật một câu trong `CAU_THEO_LAN` rồi dựng lại vân
+       tay, và đòi nó khác. Một phép kiểm đọc chuỗi mã nguồn sẽ xanh cả với bản
+       cũ.
+    """
+    import hashlib
+
+    from apps.ltt_voice import nghe_thu as N
+
+    def _van_tay(bang: dict) -> str:
+        return hashlib.sha256(
+            ("|".join([f"{k}={v}" for k, v in sorted(bang.items())]
+                      + [N._phien_ban_tham_so()])).encode("utf-8")
+        ).hexdigest()[:12]
+
+    goc = dict(N.CAU_THEO_LAN)
+    assert N.PHIEN_BAN.endswith(_van_tay(goc)), (
+        "PHIEN_BAN khong con dung tu CAU_THEO_LAN — cap nhat ca hai cho")
+
+    for lan in goc:
+        doi = dict(goc, **{lan: goc[lan] + " mot chu them vao"})
+        assert _van_tay(doi) != _van_tay(goc), (
+            f"doi cau lan {lan!r} KHONG lam doi van tay — tep nghe thu cu se "
+            f"duoc phuc vu mai mai, va khong ai phat hien vi ca hai deu la "
+            f"tieng noi binh thuong")

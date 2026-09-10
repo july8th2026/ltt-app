@@ -1,0 +1,106 @@
+[
+  {
+    "ma": "S1",
+    "mo_ta": "duong hanh phuc, mot video dai dien",
+    "node": "tests/test_402_asv_mach_doc_gia.py::test_run_chay_het_CHIN_giai_doan_va_ve_done",
+    "ket_qua": "PASS",
+    "giay": 10.2,
+    "tom_tat": "1 passed in 8.92s"
+  },
+  {
+    "ma": "S2",
+    "mo_ta": "hai nguoi dung: run/asset/output rieng",
+    "node": "tests/test_419_asv_tiem_loi.py::test_hai_nguoi_dung_chay_dong_thoi_khong_lan_du_lieu",
+    "ket_qua": "PASS",
+    "giay": 17.8,
+    "tom_tat": "1 passed in 16.45s"
+  },
+  {
+    "ma": "S3",
+    "mo_ta": "nop trung — dedupe job dieu phoi",
+    "node": "tests/test_402_asv_mach_doc_gia.py::test_moi_dong_giai_doan_deu_mang_chu_so_huu",
+    "ket_qua": "PASS",
+    "giay": 1.9,
+    "tom_tat": "1 passed in 0.74s"
+  },
+  {
+    "ma": "S4",
+    "mo_ta": "provider truot thoang qua -> thu lai an toan",
+    "node": "tests/test_418_asv_phan_loai_loi.py::test_loi_TAM_THOI_duoc_giu_NGUYEN_de_nen_tang_thu_lai",
+    "ket_qua": "PASS",
+    "giay": 1.4,
+    "tom_tat": "1 passed in 0.44s"
+  },
+  {
+    "ma": "S5",
+    "mo_ta": "dispatch MO HO -> khong bao gio tu dong thu lai",
+    "node": "tests/test_418_asv_phan_loai_loi.py::test_mo_ho_thanh_AmbiguousProviderError_KHONG_BAO_GIO_tu_dong_thu_lai",
+    "ket_qua": "PASS",
+    "giay": 1.4,
+    "tom_tat": "1 passed in 0.44s"
+  },
+  {
+    "ma": "S6",
+    "mo_ta": "giong hong sau khi thuong nguon xong -> chay tiep",
+    "node": "tests/test_409_asv_giong_noi.py::TestPhucHoiTungDoan",
+    "ket_qua": "PASS",
+    "giay": 3.7,
+    "tom_tat": "4 passed in 2.63s"
+  },
+  {
+    "ma": "S7",
+    "mo_ta": "render hong -> chay lai TU BAN DUNG",
+    "node": "tests/test_415_asv_cong_thoat_render.py::test_render_lai_KHONG_danh_thuc_mot_giai_doan_thuong_nguon_nao",
+    "ket_qua": "PASS",
+    "giay": 11.0,
+    "tom_tat": "1 passed in 9.78s"
+  },
+  {
+    "ma": "S8",
+    "mo_ta": "ngat worker sau moi giai doan ben vung",
+    "node": "tests/test_403_asv_vong_doi_artifact.py",
+    "ket_qua": "PASS",
+    "giay": 18.8,
+    "tom_tat": "21 passed in 17.50s"
+  },
+  {
+    "ma": "S9",
+    "mo_ta": "huy giua mot giai doan dai",
+    "node": "tests/test_414_asv_ket_xuat.py::test_huy_giua_chung_thi_GIET_tien_trinh_va_khong_de_lai_ket_qua",
+    "ket_qua": "PASS",
+    "giay": 2.3,
+    "tom_tat": "1 passed in 1.36s"
+  },
+  {
+    "ma": "S10",
+    "mo_ta": "dau vao hong / khong ho tro",
+    "node": "tests/test_419_asv_tiem_loi.py::test_video_KHONG_CO_TIENG_hong_ngay_va_khong_thu_lai",
+    "ket_qua": "PASS",
+    "giay": 2.6,
+    "tom_tat": "1 passed in 1.38s"
+  },
+  {
+    "ma": "S11",
+    "mo_ta": "artifact trung gian mat -> vo hieu cache",
+    "node": "tests/test_419_asv_tiem_loi.py::test_artifact_bien_mat_thi_CACHE_khong_dung_lai_no",
+    "ket_qua": "PASS",
+    "giay": 10.2,
+    "tom_tat": "1 passed in 8.89s"
+  },
+  {
+    "ma": "S12",
+    "mo_ta": "tranh chap tai nguyen / dinh tuyen GPU",
+    "node": "tests/test_402_asv_mach_doc_gia.py::test_lan_ffmpeg_KHONG_nhat_duoc_job_GPU",
+    "ket_qua": "PASS",
+    "giay": 5.5,
+    "tom_tat": "1 passed in 4.23s"
+  },
+  {
+    "ma": "S13",
+    "mo_ta": "QC tu choi ban ra hong",
+    "node": "tests/test_420_asv_qc.py::test_QC_hong_thi_RUN_KHONG_ve_done",
+    "ket_qua": "PASS",
+    "giay": 10.2,
+    "tom_tat": "1 passed in 8.96s"
+  }
+]

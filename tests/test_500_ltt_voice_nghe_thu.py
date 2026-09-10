@@ -523,3 +523,145 @@ def test_nut_nghe_thu_la_BUTTON_that_va_co_ten_doc_duoc(khach, monkeypatch):
     assert '<button type="button" class="lv-the-song lv-nghe"' in r.text
     assert 'aria-label="Nghe thử giọng' in r.text
 
+
+# ── 5. Ảnh chụp giọng mẫu vs engine THẬT ─────────────────────────────────────
+#
+# 🔴 CHỐT MỘT CÂU MÀ BỘ SINH ẢNH CHỤP ĐÃ TỰ NÓI LÀ NÓ KHÔNG CHỐT ĐƯỢC.
+#    `tools/sinh_giong_mau_engine.py` viết thẳng ra: *"nó không chốt thứ ta đã
+#    chụp còn đúng"*. Một tệp `.json` không có cách nào tự biết engine dưới nó
+#    đã đổi — và ngày nâng model là ngày duy nhất câu ấy có thể sai.
+#
+# ⭐ Nên phép đối chiếu phải hỏi **engine đang chạy**, không hỏi một tệp khác.
+#    Nó sống trong vòng bảo trì vì đó là chỗ duy nhất model đã ấm sẵn.
+#
+# ⛔ Và nó là một cái CHUÔNG, không phải một bàn tay. Bốn phép kiểm dưới đây
+#    canh đúng bốn cách một cái chuông biến thành một bàn tay:
+#      1. nó ném ⇒ giết luôn lượt bảo trì đang chạy dưới nó
+#      2. nó im khi lệch ⇒ vô dụng
+#      3. nó kêu khi khớp ⇒ nhiễu, rồi bị bỏ qua, rồi thành vô dụng
+#      4. nó **tự sửa ảnh chụp** ⇒ một vòng nền âm thầm viết lại một tệp trong git
+
+
+def _khong_nhip():
+    """Xoá nhịp tiết chế để mỗi phép kiểm bắt đầu từ trạng thái sạch."""
+    nghe_thu._LUOT_DOI_CHIEU_CUOI[0] = 0.0
+
+
+def _cac_ma_that() -> list:
+    from apps.ltt_voice import giong_mau
+    return [{"id": g.ma, "nhan": g.ma} for g in giong_mau.DANH_SACH]
+
+
+def test_doi_chieu_KHONG_NEM_khi_cong_chet(monkeypatch):
+    """⛔ Cửa `/v1/voices` gọi `c.nap()`. Nó chậm, và nó chết được.
+
+    Người gọi là `bao_tri()`, chạy **dưới lease**. Một ngoại lệ ở đây không chỉ
+    làm hỏng phép đối chiếu — nó làm hỏng cả lượt dựng tệp nghe thử ngay dưới
+    nó, tức khách mất tính năng nghe thử vì một phép tự kiểm nội bộ.
+    """
+    from apps.ltt_voice import sidecar_client
+
+    _khong_nhip()
+
+    def no():
+        raise RuntimeError("cong chet")
+
+    monkeypatch.setattr(sidecar_client, "giong_dung_san", no)
+    nghe_thu._doi_chieu_giong_mau()   # khong duoc nem
+
+
+def test_doi_chieu_KEU_khi_engine_lech_anh_chup(monkeypatch, caplog):
+    from apps.ltt_voice import sidecar_client
+
+    _khong_nhip()
+    that = _cac_ma_that()
+    assert that, "khong co giong mau nao — phep kiem nay se xanh rong"
+    # engine bo mot giong va them mot giong la
+    monkeypatch.setattr(sidecar_client, "giong_dung_san",
+                        lambda: that[1:] + [{"id": "giong-la-hoac", "nhan": "x"}])
+    with caplog.at_level("WARNING"):
+        nghe_thu._doi_chieu_giong_mau()
+    assert "GIONG MAU LECH" in caplog.text
+    assert that[0]["id"] in caplog.text, "khong noi ra giong nao bien mat"
+    assert "giong-la-hoac" in caplog.text, "khong noi ra giong nao moi xuat hien"
+
+
+def test_doi_chieu_IM_khi_khop(monkeypatch, caplog):
+    """⛔ ĐỐI CHỨNG NGƯỢC. Không có nó thì `assert "LECH" in ...` ở trên vẫn
+       xanh với một hàm kêu ở **mọi** lượt — và một chuông kêu mãi thì tương
+       đương một chuông không kêu."""
+    from apps.ltt_voice import sidecar_client
+
+    _khong_nhip()
+    monkeypatch.setattr(sidecar_client, "giong_dung_san", _cac_ma_that)
+    with caplog.at_level("WARNING"):
+        nghe_thu._doi_chieu_giong_mau()
+    assert "GIONG MAU LECH" not in caplog.text
+
+
+def test_doi_chieu_IM_khi_cong_tra_RONG(monkeypatch, caplog):
+    """Danh sách rỗng = *"không trả lời được"*, không phải *"engine mất sạch
+    giọng"*. Kết tội trên một câu trả lời rỗng là đúng cách sinh ra một báo
+    động sai mỗi lần cổng khởi động lại."""
+    from apps.ltt_voice import sidecar_client
+
+    _khong_nhip()
+    monkeypatch.setattr(sidecar_client, "giong_dung_san", lambda: [])
+    with caplog.at_level("WARNING"):
+        nghe_thu._doi_chieu_giong_mau()
+    assert "GIONG MAU LECH" not in caplog.text
+
+
+def test_doi_chieu_TIET_CHE_mot_ngay_mot_lan(monkeypatch):
+    """`bao_tri` chạy mỗi 3600 giây. Không tiết chế = 24 lượt nạp-model mỗi
+    ngày để dò một thay đổi xảy ra vài tháng một lần."""
+    from apps.ltt_voice import sidecar_client
+
+    _khong_nhip()
+    dem = []
+    monkeypatch.setattr(sidecar_client, "giong_dung_san",
+                        lambda: dem.append(1) or _cac_ma_that())
+    nghe_thu._doi_chieu_giong_mau()
+    nghe_thu._doi_chieu_giong_mau()
+    nghe_thu._doi_chieu_giong_mau()
+    assert len(dem) == 1, f"hoi cong {len(dem)} lan trong cung mot cua so"
+    assert nghe_thu.MOI_LUOT_DOI_CHIEU_S >= 3600
+
+
+def test_doi_chieu_KHONG_TU_SUA_anh_chup(monkeypatch):
+    """⛔ Bản sửa đúng cho một lượt lệch là chạy `tools/sinh_giong_mau_engine.py`
+       rồi **commit phần diff** — một hành động có người nhìn. Tự vá lúc chạy
+       là để một vòng nền viết lại một tệp trong git mà không ai thấy."""
+    import pathlib as _pl
+
+    from apps.ltt_voice import giong_mau, sidecar_client
+
+    _khong_nhip()
+    truoc = tuple(giong_mau.DANH_SACH)
+    goc = _pl.Path(giong_mau.__file__).resolve().parent
+    tep = [p for p in goc.rglob("giong_mau*") if p.is_file()]
+    dau = {p: p.stat().st_mtime_ns for p in tep}
+
+    monkeypatch.setattr(sidecar_client, "giong_dung_san",
+                        lambda: [{"id": "chi-mot-giong-la", "nhan": "x"}])
+    nghe_thu._doi_chieu_giong_mau()
+
+    assert tuple(giong_mau.DANH_SACH) == truoc, "da sua DANH_SACH luc chay"
+    assert {p: p.stat().st_mtime_ns for p in tep} == dau, "da ghi de anh chup"
+
+
+def test_bao_tri_CO_GOI_doi_chieu(monkeypatch):
+    """Nối vào sản phẩm, không phải một hàm mồ côi có test riêng.
+
+    ⚠️ Đây đúng là kiểu lỗi `test_504` sinh ra để bắt: một hàm có bánh cóc đầy
+       đủ, chạy xanh, và **không nơi nào gọi**.
+    """
+    from apps.ltt_voice import sidecar_client
+
+    goi = []
+    monkeypatch.setattr(sidecar_client, "san_sang", lambda: True)
+    monkeypatch.setattr(nghe_thu, "_doi_chieu_giong_mau",
+                        lambda: goi.append(1))
+    monkeypatch.setattr(nghe_thu, "con_thieu_mau", lambda: [])
+    nghe_thu.bao_tri()
+    assert goi, "bao_tri() khong goi _doi_chieu_giong_mau()"

@@ -12737,8 +12737,8 @@ msgid "Chép lệnh mẫu"
 msgstr "Copy the example command"
 
 #: apps/ltt_voice/templates/ltt_voice_api.html
-msgid "Lượt gọi trả về một job. Hỏi lại trạng thái ở /api/v1/jobs/{id} cho tới khi xong, hoặc đăng ký webhook."
-msgstr "The call returns a job. Poll /api/v1/jobs/{id} until it finishes, or register a webhook."
+msgid "Báo giá trước để biết giá và nhận một quote đã ký, rồi chạy. Job trả về được hỏi lại ở /api/v1/jobs/{id} cho tới khi xong, hoặc đăng ký webhook."
+msgstr "Quote first to see the price and get a signed quote, then run. The returned job is polled at /api/v1/jobs/{id} until it finishes, or register a webhook."
 
 #: apps/ltt_voice/templates/ltt_voice_api.html
 msgid "Phần dùng chung"
@@ -13281,6 +13281,279 @@ msgstr "A single call usually costs a fractional amount. Fractions below one cre
 msgid "Phần lẻ dưới một credit không bị làm tròn lên mà được cộng dồn sang lượt sau, nên số tiền thực trả bám sát giá niêm yết kể cả với những lượt gọi rất nhỏ."
 msgstr "Fractions below one credit are not rounded up; they carry over to the next call, so what you actually pay tracks the listed price even for very small calls."
 
+msgid "Video AI (máy nhà)"
+msgstr "Video AI (in-house)"
+
+msgid "Video AI"
+msgstr "Video AI"
+
+msgid "Tạo video từ mô tả bằng model chạy trên máy thuê của LTT Studios."
+msgstr "Generate video from a description using a model running on LTT Studios' rented machine."
+
+msgid "Bạn chưa có quyền dùng công cụ này."
+msgstr "You do not have permission to use this tool."
+
+msgid "Tính năng này chưa mở. Hiện tại chỉ tạo video từ mô tả."
+msgstr "This feature is not available yet. For now you can only generate video from a description."
+
+msgid "tạo video từ mô tả"
+msgstr "generate video from a description"
+
+msgid "tính năng này"
+msgstr "this feature"
+
+msgid "Thiếu mô tả video."
+msgstr "Please describe the video you want."
+
+msgid "Chưa cấu hình máy dựng video."
+msgstr "The video machine is not configured yet."
+
+msgid "Sinh video thất bại."
+msgstr "Video generation failed."
+
+msgid "Máy dựng báo xong nhưng không trả về tệp nào."
+msgstr "The video machine reported success but returned no file."
+
+msgid "Không tải được kết quả về."
+msgstr "Could not download the result."
+
+msgid "Lưu kết quả thất bại."
+msgstr "Saving the result failed."
+
+msgid "Chuẩn WanGP"
+msgstr "WanGP standard"
+
+msgid "Hãy mô tả video bạn muốn."
+msgstr "Please describe the video you want."
+
+msgid "Mô tả video bạn muốn. Hệ thống lo phần còn lại."
+msgstr "Describe the video you want. We handle the rest."
+
+msgid "Một video mất khoảng vài chục phút. Bạn có thể đóng trang — kết quả sẽ nằm trong Lịch sử."
+msgstr "A video takes tens of minutes. You can close this page — the result will appear in History."
+
+msgid "Sẽ tạo:"
+msgstr "Will create:"
+
+msgid "Tỉ lệ khung hình"
+msgstr "Aspect ratio"
+
+msgid "Ví dụ: một dòng sông lúc bình minh, sương mù trên mặt nước, máy quay tiến chậm về phía trước"
+msgstr "For example: a river at dawn, mist over the water, the camera dollying slowly forward"
+
+msgid "credit (giữ chỗ)"
+msgstr "credits (on hold)"
+
+msgid "video từ mô tả"
+msgstr "video from a description"
+
+msgid "Đã nhận. Video đang được dựng — bạn xem tiến độ ở mục Lịch sử."
+msgstr "Received. Your video is being made — track progress in History."
+
+msgid "Tạo video"
+msgstr "Create video"
+
+msgid "Thêm ảnh hoặc video (không bắt buộc)"
+msgstr "Add an image or video (optional)"
+
+msgid "Đính ảnh để làm khung mở đầu · JPEG/PNG/WebP/MP4"
+msgstr "Attach an image to use as the opening frame · JPEG/PNG/WebP/MP4"
+
+msgid "Không đính gì thì video được dựng hoàn toàn từ mô tả của bạn."
+msgstr "With nothing attached, the video is built entirely from your description."
+
+msgid "Video càng dài, chất lượng càng dễ trôi về cuối: chi tiết có thể nhiễu dần và nhân vật có thể đổi nét."
+msgstr "The longer the video, the more quality drifts toward the end: detail can accumulate artifacts and characters can change appearance."
+
+msgid "video từ ảnh bạn đính kèm"
+msgstr "video from the image you attached"
+
+msgid "Tệp đính kèm rỗng."
+msgstr "The attached file is empty."
+
+msgid "Video đính kèm vượt giới hạn 80 MB."
+msgstr "The attached video exceeds the 80 MB limit."
+
+msgid "Chỉ nhận ảnh PNG/JPEG/WebP hoặc video MP4."
+msgstr "Only PNG/JPEG/WebP images or MP4 video are accepted."
+
+msgid "Video gần đây"
+msgstr "Recent videos"
+
+msgid "Xem"
+msgstr "View"
+
+msgid "Nâng nét"
+msgstr "Enhance"
+
+msgid "Nâng nét chạy trên máy của LTT và tính credit riêng."
+msgstr "Enhancing runs on LTT's own machine and is charged separately."
+
+msgid "(không có mô tả)"
+msgstr "(no description)"
+
+msgid "Không tìm thấy video để nâng nét."
+msgstr "No video found to enhance."
+
+msgid "Hiện không thuê được máy dựng video. Credit đã được hoàn, bạn thử lại sau ít phút."
+msgstr "No video machine is available right now. Your credits were refunded — please try again in a few minutes."
+
+msgid "Máy dựng video chưa sẵn sàng. Credit đã được hoàn, bạn thử lại sau ít phút."
+msgstr "The video machine is not ready. Your credits were refunded — please try again in a few minutes."
+
+msgid "Chuẩn WanGP — có ảnh"
+msgstr "WanGP standard — with image"
+
+msgid "Loại tệp đính kèm này chưa được hỗ trợ."
+msgstr "That attachment type is not supported yet."
+
+msgid "Tự viết lại mô tả cho chi tiết hơn"
+msgstr "Rewrite my description in more detail"
+
+msgid "Máy sẽ viết lại mô tả của bạn thành một đoạn dài và chi tiết hơn trước khi dựng. Kết quả sẽ khác với mô tả gốc."
+msgstr "The machine will expand your description into a longer, more detailed one before rendering. The result will differ from what you wrote."
+
+msgid "mở rộng mô tả tự động"
+msgstr "automatic description expansion"
+
+msgid "Hãy đăng nhập bằng tài khoản người dùng để tạo video."
+msgstr "Please sign in with a user account to create videos."
+
+msgid "Đang đọc mô tả"
+msgstr "Reading your description"
+
+msgid "Đang dựng hình"
+msgstr "Rendering frames"
+
+msgid "Đang ghép video"
+msgstr "Assembling the video"
+
+msgid "Đã gửi yêu cầu tới máy dựng"
+msgstr "Request sent to the render machine"
+
+msgid "Máy dựng video không phản hồi kịp. Credit đã được hoàn, bạn thử lại sau."
+msgstr "The render machine did not respond in time. Your credit was refunded; please try again later."
+
+msgid "Điều hướng Video AI"
+msgstr "Video AI navigation"
+
+msgid "Tạo"
+msgstr "Create"
+
+msgid "Đính kèm"
+msgstr "Attachment"
+
+msgid "Tả cảnh, chủ thể, chuyển động máy quay và ánh sáng."
+msgstr "Describe the scene, subject, camera movement and lighting."
+
+msgid "Mô tả đã dùng"
+msgstr "Previous descriptions"
+
+msgid "Tài sản đã dùng"
+msgstr "Files you used before"
+
+msgid "Chọn lại một tệp từ lượt trước thay vì tải lên lần nữa."
+msgstr "Pick a file from an earlier run instead of uploading it again."
+
+msgid "đã hết hạn"
+msgstr "expired"
+
+msgid "Giữ chỗ"
+msgstr "On hold"
+
+msgid "Kết quả được giữ 3 ngày, sau đó tự xoá. Hãy tải về nếu bạn muốn giữ lâu hơn."
+msgstr "Results are kept for 3 days, then deleted. Download anything you want to keep."
+
+msgid "Đang hỏi trạng thái máy dựng…"
+msgstr "Checking the render machine…"
+
+msgid "Máy dựng bật theo nhu cầu — lượt đầu có thể mất thêm vài phút để khởi động."
+msgstr "The render machine starts on demand — the first run may take a few extra minutes to boot."
+
+msgid "kết quả"
+msgstr "results"
+
+msgid "Đang dựng"
+msgstr "Rendering"
+
+msgid "s"
+msgstr "s"
+
+msgid "Làm lại"
+msgstr "Redo"
+
+msgid "Nội dung đã hết hạn 3 ngày"
+msgstr "Content expired after 3 days"
+
+msgid "Chưa có video nào."
+msgstr "No videos yet."
+
+msgid "Tả video bạn muốn rồi bấm Tạo video."
+msgstr "Describe the video you want, then press Create video."
+
+msgid "Nâng nét video"
+msgstr "Upscale video"
+
+msgid "Xác nhận"
+msgstr "Confirm"
+
+msgid "Tài sản đã chọn không còn dùng được."
+msgstr "The selected file is no longer available."
+
+msgid "Ảnh hoặc video"
+msgstr "Image or video"
+
+msgid "Ảnh sẽ thành khung mở đầu. Không đính gì thì video được dựng hoàn toàn từ mô tả."
+msgstr "The image becomes the opening frame. Attach nothing and the video is built entirely from your description."
+
+msgid "Để trống thì hệ thống tự chọn. Chỉ dùng khi bạn muốn kiểm soát sâu hơn."
+msgstr "Leave blank and the system chooses. Use these only when you want deeper control."
+
+msgid "Seed"
+msgstr "Seed"
+
+msgid "Cùng một seed và cùng mô tả sẽ cho kết quả gần giống nhau — dùng để làm lại một video bạn thích."
+msgstr "The same seed with the same description gives a near-identical result — use it to redo a video you liked."
+
+msgid "Điều không muốn thấy"
+msgstr "What you do not want"
+
+msgid "Ví dụ: chữ trên màn hình, tay bị méo, ánh sáng nhấp nháy"
+msgstr "For example: on-screen text, distorted hands, flickering light"
+
+msgid "Làm mới"
+msgstr "Refresh"
+
+msgid "Làm mới danh sách"
+msgstr "Refresh the list"
+
+msgid "Chỉ đếm video đã hoàn tất. Credit là khoản đã quyết toán, không phải khoản giữ chỗ."
+msgstr "Counts completed videos only. Credit is the settled amount, not the hold."
+
+msgid "Một video mất khoảng vài chục phút. Bạn có thể đóng trang — kết quả nằm trong Lịch sử."
+msgstr "A video takes tens of minutes. You can close the page — the result will be in History."
+
+msgid "Mở ô mô tả ra to hơn để đọc toàn bộ"
+msgstr "Expand the description box to read it all"
+
+msgid "Hoàn tác lần sửa mô tả gần nhất"
+msgstr "Undo the last description edit"
+
+msgid "Huỷ video này? Credit sẽ được hoàn lại."
+msgstr "Cancel this video? Your credit will be refunded."
+
+msgid "Giới thiệu màn này"
+msgstr "About this screen"
+
+msgid "Tả video bạn muốn bằng lời, hoặc đính một ảnh làm khung mở đầu. Video dựng trên máy thuê của LTT Studios, tính 30 credit mỗi giây, và giữ lại 3 ngày."
+msgstr "Describe the video you want, or attach an image as the opening frame. Videos are rendered on machines LTT Studios rents, cost 30 credits per second, and are kept for 3 days."
+
+msgid "Ảnh mở đầu"
+msgstr "Opening image"
+
+msgid "Video làm đầu vào chưa mở. Hiện chỉ nhận ảnh làm khung mở đầu."
+msgstr "Video input is not open yet. For now only an image is accepted, as the opening frame."
+
 #: apps/chatltt/manifest.py
 msgid "Nghiên cứu một câu hỏi trên tài liệu bạn đã đính vào hội thoại này."
 msgstr "Research a question across the documents you attached to this conversation."
@@ -13324,3 +13597,1503 @@ msgstr "Something went wrong on the server. It has been logged."
 #: apps/chatltt/services/loi_ra_ngoai.py
 msgid "Không chạy được. Thử lại, hoặc báo cho chúng tôi nếu còn lặp."
 msgstr "Could not run. Try again, or tell us if it keeps happening."
+
+msgid "Tạo video từ mô tả"
+msgstr "Generate video from a description"
+
+msgid "Tạo video từ một ảnh"
+msgstr "Generate video from one image"
+
+msgid "Video theo nhiều ảnh tham chiếu"
+msgstr "Video from several reference images"
+
+msgid "Bối cảnh riêng, nhân vật riêng"
+msgstr "Your own setting, your own characters"
+
+msgid "Video theo chuyển động của video mẫu"
+msgstr "Video that follows a reference video's motion"
+
+msgid "Nối dài một video có sẵn"
+msgstr "Continue an existing video"
+
+msgid "Loại tác vụ"
+msgstr "Task type"
+
+msgid "Loại tác vụ này chưa mở."
+msgstr "This task type is not open yet."
+
+#: apps/auto_scan_video
+msgid "Auto Scan Video"
+msgstr "Auto Scan Video"
+
+#: apps/auto_scan_video
+msgid "Auto Scan Video — xử lý GPU"
+msgstr "Auto Scan Video — GPU worker"
+
+#: apps/auto_scan_video
+msgid "Auto Scan Video — xử lý media"
+msgstr "Auto Scan Video — media worker"
+
+#: apps/auto_scan_video
+msgid "Chi phí thực tế sẽ vượt mức đã giữ cho phiên chạy này."
+msgstr "The actual cost would exceed the amount reserved for this run."
+
+#: apps/auto_scan_video
+msgid "Executor nội bộ của Auto Scan Video. Không phải sản phẩm riêng."
+msgstr "Internal executor for Auto Scan Video. Not a separate product."
+
+#: apps/auto_scan_video
+msgid "Giai đoạn đã được cập nhật ở tiến trình khác."
+msgstr "This stage was updated by another process."
+
+#: apps/auto_scan_video
+msgid "Không tìm thấy phiên chạy."
+msgstr "Run not found."
+
+#: apps/auto_scan_video
+msgid "Không tìm thấy tài nguyên."
+msgstr "Resource not found."
+
+#: apps/auto_scan_video
+msgid "Không đọc được thông tin tệp (quá hạn)."
+msgstr "Could not read the file's information (timed out)."
+
+#: apps/auto_scan_video
+msgid "Không đọc được thông tin tệp."
+msgstr "Could not read the file's information."
+
+#: apps/auto_scan_video
+msgid "Không đọc được thời lượng — tệp có thể đã hỏng."
+msgstr "Could not read the duration — the file may be corrupt."
+
+#: apps/auto_scan_video
+msgid "Không đọc được tệp media."
+msgstr "Could not read the media file."
+
+#: apps/auto_scan_video
+msgid "Lồng tiếng Việt cho video: giữ nguyên hình ảnh và độ dài, thay lời thoại gốc bằng giọng đọc tiếng Việt khớp thời điểm, giữ lại nhạc nền và tiếng động."
+msgstr "Vietnamese voice-over for video: the picture and length stay exactly as they were, the original dialogue is replaced by a time-matched Vietnamese voice, and the background music and sound effects are kept."
+
+#: apps/auto_scan_video
+msgid "Phiên chạy không có tệp nguồn."
+msgstr "This run has no source file."
+
+#: apps/auto_scan_video
+msgid "Phiên chạy đã bị huỷ giữa chừng."
+msgstr "The run was cancelled partway through."
+
+#: apps/auto_scan_video
+msgid "Thiếu chủ sở hữu."
+msgstr "Missing owner."
+
+#: apps/auto_scan_video
+msgid "Thiếu tệp nguồn."
+msgstr "Missing source file."
+
+#: apps/auto_scan_video
+msgid "Tách tiếng quá hạn."
+msgstr "Extracting the audio timed out."
+
+#: apps/auto_scan_video
+msgid "Tách tiếng thất bại: {loi}"
+msgstr "Extracting the audio failed: {loi}"
+
+#: apps/auto_scan_video
+msgid "Tách tiếng xong nhưng tệp rỗng."
+msgstr "The audio was extracted but the file is empty."
+
+#: apps/auto_scan_video
+msgid "Tệp không có luồng hình."
+msgstr "The file has no video stream."
+
+#: apps/auto_scan_video
+msgid "Tệp không có luồng tiếng nên không có gì để lồng tiếng."
+msgstr "The file has no audio stream, so there is nothing to dub."
+
+#: apps/auto_scan_video
+msgid "Video"
+msgstr "Video"
+
+#: apps/auto_scan_video
+msgid "Video dài {co} phút, vượt giới hạn {tran} phút."
+msgstr "The video is {co} minutes long, over the {tran}-minute limit."
+
+#: apps/auto_scan_video
+msgid "không rõ"
+msgstr "unknown"
+
+#: apps/auto_scan_video
+msgid "Đang lưu kết quả"
+msgstr "Saving the result"
+
+#: apps/auto_scan_video
+msgid "Đang tách tiếng"
+msgstr "Extracting the audio"
+
+#: apps/auto_scan_video
+msgid "Đang đọc thông tin tệp"
+msgstr "Reading the file's information"
+
+#: apps/auto_scan_video
+msgid "Định dạng hình {codec} chưa hỗ trợ; cần H.264 hoặc HEVC trong MP4/MOV."
+msgstr "Video format {codec} is not supported yet; H.264 or HEVC in MP4/MOV is required."
+
+#: apps/auto_scan_video
+msgid "Không tìm thấy phần nhạc nền sau khi tách."
+msgstr "Could not find the background music after separation."
+
+#: apps/auto_scan_video
+msgid "Không đo được âm lượng."
+msgstr "Could not measure the loudness."
+
+#: apps/auto_scan_video
+msgid "Nhạc nền lệch thời lượng so với bản gốc."
+msgstr "The background track's duration does not match the original."
+
+#: apps/auto_scan_video
+msgid "Nhạc nền sai số kênh."
+msgstr "The background track has the wrong channel count."
+
+#: apps/auto_scan_video
+msgid "Nhạc nền sai tần số lấy mẫu."
+msgstr "The background track has the wrong sample rate."
+
+#: apps/auto_scan_video
+msgid "Tách nguồn tiếng quá hạn."
+msgstr "Separating the audio sources timed out."
+
+#: apps/auto_scan_video
+msgid "Tách nguồn tiếng thất bại: {loi}"
+msgstr "Separating the audio sources failed: {loi}"
+
+#: apps/auto_scan_video
+msgid "Tách nguồn tiếng không trả về kết quả đọc được."
+msgstr "Separating the audio sources returned no readable result."
+
+#: apps/auto_scan_video
+msgid "Trộn nhạc nền quá hạn."
+msgstr "Mixing the background track timed out."
+
+#: apps/auto_scan_video
+msgid "Trộn nhạc nền thất bại: {loi}"
+msgstr "Mixing the background track failed: {loi}"
+
+#: apps/auto_scan_video
+msgid "Đang chuẩn bị tiếng"
+msgstr "Preparing the audio"
+
+#: apps/auto_scan_video
+msgid "Đang tách giọng khỏi nhạc nền"
+msgstr "Separating the voice from the background"
+
+#: apps/auto_scan_video
+msgid "Đang trộn nhạc nền"
+msgstr "Mixing the background track"
+
+#: apps/auto_scan_video
+msgid "Bản ghi có hai đoạn chồng thời gian lên nhau."
+msgstr "The transcript has two segments overlapping in time."
+
+#: apps/auto_scan_video
+msgid "Bản ghi có mã đoạn trùng hoặc thiếu."
+msgstr "The transcript has duplicate or missing segment ids."
+
+#: apps/auto_scan_video
+msgid "Bản ghi có từ nằm ngoài đoạn chứa nó."
+msgstr "The transcript has a word outside the segment containing it."
+
+#: apps/auto_scan_video
+msgid "Bản ghi có đoạn rỗng."
+msgstr "The transcript has an empty segment."
+
+#: apps/auto_scan_video
+msgid "Bản ghi có đoạn thiếu mốc thời gian."
+msgstr "The transcript has a segment with no timestamp."
+
+#: apps/auto_scan_video
+msgid "Bản ghi có đoạn với mốc thời gian không hợp lệ."
+msgstr "The transcript has a segment with an invalid timestamp."
+
+#: apps/auto_scan_video
+msgid "Bản ghi dài hơn bản tiếng — mốc thời gian đã trôi."
+msgstr "The transcript runs longer than the audio — the timestamps have drifted."
+
+#: apps/auto_scan_video
+msgid "Bản ghi không có đoạn nào."
+msgstr "The transcript has no segments."
+
+#: apps/auto_scan_video
+msgid "Bản ghi không đúng định dạng."
+msgstr "The transcript is not in a valid format."
+
+#: apps/auto_scan_video
+msgid "Bản ghi thuộc phiên bản cấu trúc khác."
+msgstr "The transcript belongs to a different schema version."
+
+#: apps/auto_scan_video
+msgid "Chưa có bản tiếng để chép lời."
+msgstr "There is no audio track to transcribe yet."
+
+#: apps/auto_scan_video
+msgid "Không nghe được lời nói nào trong tệp."
+msgstr "No speech could be heard in the file."
+
+#: apps/auto_scan_video
+msgid "Đang chép lời"
+msgstr "Transcribing"
+
+#: apps/auto_scan_video
+msgid "Bản ghi nguồn không có đoạn nào."
+msgstr "The source transcript has no segments."
+
+#: apps/auto_scan_video
+msgid "Chưa có bản ghi để dịch."
+msgstr "There is no transcript to translate yet."
+
+#: apps/auto_scan_video
+msgid "Model không trả về JSON đọc được."
+msgstr "The model did not return readable JSON."
+
+#: apps/auto_scan_video
+msgid "Model thiếu bản dịch cho {n}/{tong} đoạn."
+msgstr "The model is missing translations for {n} of {tong} segments."
+
+#: apps/auto_scan_video
+msgid "Model trả về JSON hỏng."
+msgstr "The model returned malformed JSON."
+
+#: apps/auto_scan_video
+msgid "Model trả về JSON sai hình dạng."
+msgstr "The model returned JSON in the wrong shape."
+
+#: apps/auto_scan_video
+msgid "Mã đoạn của bản dịch không khớp với bản ghi gốc."
+msgstr "The translation's segment ids do not match the source transcript."
+
+#: apps/auto_scan_video
+msgid "Thiếu bản dịch cho {n} đoạn."
+msgstr "Missing translations for {n} segments."
+
+#: apps/auto_scan_video
+msgid "Văn bản đã xử lý có hai mục chồng thời gian."
+msgstr "The processed text has two entries overlapping in time."
+
+#: apps/auto_scan_video
+msgid "Văn bản đã xử lý có mã đoạn trùng hoặc thiếu."
+msgstr "The processed text has duplicate or missing segment ids."
+
+#: apps/auto_scan_video
+msgid "Văn bản đã xử lý có mốc thời gian không hợp lệ."
+msgstr "The processed text has an invalid timestamp."
+
+#: apps/auto_scan_video
+msgid "Văn bản đã xử lý có mục rỗng."
+msgstr "The processed text has an empty entry."
+
+#: apps/auto_scan_video
+msgid "Văn bản đã xử lý không có mục nào."
+msgstr "The processed text has no entries."
+
+#: apps/auto_scan_video
+msgid "Văn bản đã xử lý không đúng định dạng."
+msgstr "The processed text is not in a valid format."
+
+#: apps/auto_scan_video
+msgid "Văn bản đã xử lý thuộc phiên bản cấu trúc khác."
+msgstr "The processed text belongs to a different schema version."
+
+#: apps/auto_scan_video
+msgid "Đang dịch"
+msgstr "Translating"
+
+#: apps/auto_scan_video
+msgid "Auto Scan Video — tạo tiếng nói"
+msgstr "Auto Scan Video — voice worker"
+
+#: apps/auto_scan_video
+msgid "Chưa có bản dịch để đọc thành tiếng."
+msgstr "There is no translation to read aloud yet."
+
+#: apps/auto_scan_video
+msgid "Máy tạo tiếng nói chưa được thiết lập trên máy chủ này."
+msgstr "The voice engine is not set up on this server."
+
+#: apps/auto_scan_video
+msgid "Tệp tiếng sinh ra không có luồng tiếng."
+msgstr "The generated audio file has no audio stream."
+
+#: apps/auto_scan_video
+msgid "Tệp tiếng sinh ra quá ngắn ({giay}s)."
+msgstr "The generated audio file is too short ({giay}s)."
+
+#: apps/auto_scan_video
+msgid "Đoạn dài {co} ký tự, vượt trần {tran} của một lượt đọc."
+msgstr "The segment is {co} characters, over the {tran} limit for one reading."
+
+#: apps/auto_scan_video
+msgid "Đoạn rỗng, không có gì để đọc."
+msgstr "The segment is empty — there is nothing to read."
+
+#: apps/auto_scan_video
+msgid "Đang đọc thành tiếng"
+msgstr "Reading aloud"
+
+#: apps/auto_scan_video
+msgid "Bản lồng tiếng dài hơn video và không còn đoạn nào vừa."
+msgstr "The dub is longer than the video and no segment still fits."
+
+#: apps/auto_scan_video
+msgid "Bản lồng tiếng dài hơn video nguồn."
+msgstr "The dub is longer than the source video."
+
+#: apps/auto_scan_video
+msgid "Chưa có bản dịch để lập kế hoạch thời gian."
+msgstr "There is no translation to plan timing from yet."
+
+#: apps/auto_scan_video
+msgid "Chưa có bản kê tiếng để lập kế hoạch thời gian."
+msgstr "There is no voice index to plan timing from yet."
+
+#: apps/auto_scan_video
+msgid "Không biết thời lượng video nguồn."
+msgstr "The source video's duration is unknown."
+
+#: apps/auto_scan_video
+msgid "Không có mục nào để lập kế hoạch thời gian."
+msgstr "There are no entries to plan timing for."
+
+#: apps/auto_scan_video
+msgid "Kế hoạch có hai đoạn chồng lấn quá {ms} ms."
+msgstr "The plan has two segments overlapping by more than {ms} ms."
+
+#: apps/auto_scan_video
+msgid "Kế hoạch có mốc thời gian âm."
+msgstr "The plan has a negative timestamp."
+
+#: apps/auto_scan_video
+msgid "Kế hoạch thời gian không có đoạn nào."
+msgstr "The timing plan has no segments."
+
+#: apps/auto_scan_video
+msgid "Kế hoạch thời gian thuộc phiên bản khác."
+msgstr "The timing plan belongs to a different schema version."
+
+#: apps/auto_scan_video
+msgid "Kế hoạch vượt trần tăng tốc {tran}."
+msgstr "The plan exceeds the {tran} speed-up limit."
+
+#: apps/auto_scan_video
+msgid "Đang lập kế hoạch thời gian"
+msgstr "Planning the timing"
+
+#: apps/auto_scan_video
+msgid "Đoạn {ma} chưa có tiếng."
+msgstr "Segment {ma} has no audio yet."
+
+#: apps/auto_scan_video
+msgid "Bản dựng chứa trường nhạy cảm: {ten}."
+msgstr "The render manifest contains a sensitive field: {ten}."
+
+#: apps/auto_scan_video
+msgid "Bản dựng có hai lớp tiếng chồng quá 200 ms."
+msgstr "The render manifest has two audio layers overlapping by more than 200 ms."
+
+#: apps/auto_scan_video
+msgid "Bản dựng có hệ số tốc độ nhỏ hơn 1."
+msgstr "The render manifest has a speed factor below 1."
+
+#: apps/auto_scan_video
+msgid "Bản dựng có mốc thời gian âm."
+msgstr "The render manifest has a negative timestamp."
+
+#: apps/auto_scan_video
+msgid "Bản dựng khai chế độ hình khác \"copy\" — MVP không mã hoá lại hình."
+msgstr "The render manifest declares a video mode other than \"copy\" — the MVP never re-encodes the picture."
+
+#: apps/auto_scan_video
+msgid "Bản dựng không đúng định dạng."
+msgstr "The render manifest is not in a valid format."
+
+#: apps/auto_scan_video
+msgid "Bản dựng thiếu luồng hình nguồn."
+msgstr "The render manifest has no source video stream."
+
+#: apps/auto_scan_video
+msgid "Bản dựng thiếu nhạc nền."
+msgstr "The render manifest has no background track."
+
+#: apps/auto_scan_video
+msgid "Bản dựng thuộc phiên bản cấu trúc khác."
+msgstr "The render manifest belongs to a different schema version."
+
+#: apps/auto_scan_video
+msgid "Bản dựng trỏ tới {n} tài nguyên không tồn tại."
+msgstr "The render manifest points at {n} resources that no longer exist."
+
+#: apps/auto_scan_video
+msgid "Chưa có bản kê tiếng để dựng."
+msgstr "There is no voice index to compose from yet."
+
+#: apps/auto_scan_video
+msgid "Chưa có kế hoạch thời gian để dựng."
+msgstr "There is no timing plan to compose from yet."
+
+#: apps/auto_scan_video
+msgid "Chưa có nhạc nền để dựng."
+msgstr "There is no background track to compose from yet."
+
+#: apps/auto_scan_video
+msgid "Lớp tiếng {ma} thiếu khoá lưu trữ."
+msgstr "Audio layer {ma} has no storage key."
+
+#: apps/auto_scan_video
+msgid "Đoạn {ma} có trong kế hoạch nhưng không có tệp tiếng."
+msgstr "Segment {ma} is in the plan but has no audio file."
+
+#: apps/auto_scan_video
+msgid "Đang dựng bản dựng"
+msgstr "Building the render manifest"
+
+#: apps/auto_scan_video
+msgid "Đang đối chiếu tài nguyên"
+msgstr "Verifying the resources"
+msgid "· ẩn {n} giọng của bạn: giọng nhân bản không có nhãn giới tính, vùng miền hay phong cách"
+msgstr "· {n} of your voices hidden: cloned voices carry no gender, region or style label"
+
+msgid "Tệp dài {n} ký tự, đã cắt còn {t}."
+msgstr "File was {n} characters, trimmed to {t}."
+
+#: platform_core/public_api/governance.py
+msgid "Một lần lồng tiếng: video nguồn của khách, ngôn ngữ, giọng đã chọn. Hết hạn cùng lúc với tệp mà nó trỏ tới."
+msgstr "One dubbing run: the customer's source video, language and chosen voice. It expires at the same time as the files it points to."
+
+#: platform_core/public_api/governance.py
+msgid "Trạng thái từng giai đoạn và khoá kết quả của nó. Chứa bản chép lời và bản dịch — tức chính lời nói trong video của khách."
+msgstr "Per-stage status and the storage keys of its results. Holds the transcript and the translation — that is, the actual speech in the customer's video."
+
+#: platform_core/public_api/governance.py
+msgid "Sổ tài nguyên đã sinh ra: khoá lưu trữ, vân tay, và nó bắt nguồn từ tài nguyên nào. Không giữ bytes, chỉ giữ đường tới chúng."
+msgstr "The ledger of generated resources: storage key, fingerprint, and which resource it came from. It holds no bytes, only the paths to them."
+
+#: apps/auto_scan_video
+msgid "Chưa có bản dựng để kết xuất."
+msgstr "There is no render manifest to execute yet."
+
+#: apps/auto_scan_video
+msgid "Kết xuất quá hạn."
+msgstr "The render timed out."
+
+#: apps/auto_scan_video
+msgid "Render xong nhưng không có tệp kết quả."
+msgstr "The render finished but produced no output file."
+
+#: apps/auto_scan_video
+msgid "Số tệp tiếng ({co}) không khớp số lớp trong bản dựng ({can})."
+msgstr "The number of audio files ({co}) does not match the number of layers in the render manifest ({can})."
+
+#: apps/auto_scan_video
+msgid "Tệp kết quả dài {that:.1f}s, bản dựng mong đợi {mong:.1f}s."
+msgstr "The output file is {that:.1f}s long; the render manifest expected {mong:.1f}s."
+
+#: apps/auto_scan_video
+msgid "Tệp kết quả không có luồng hình."
+msgstr "The output file has no video stream."
+
+#: apps/auto_scan_video
+msgid "Tệp kết quả không có luồng tiếng."
+msgstr "The output file has no audio stream."
+
+#: apps/auto_scan_video
+msgid "ffmpeg lỗi (mã {ma})."
+msgstr "ffmpeg failed (exit code {ma})."
+
+#: apps/auto_scan_video
+msgid "Đang kiểm tệp kết quả"
+msgstr "Checking the output file"
+
+#: apps/auto_scan_video
+msgid "Đang kết xuất video"
+msgstr "Rendering the video"
+
+#: apps/auto_scan_video
+msgid "Không có giai đoạn tên này."
+msgstr "There is no stage by that name."
+
+#: apps/auto_scan_video
+msgid "Lần chạy đã kết thúc — hãy tạo một lần chạy mới."
+msgstr "This run has already finished — start a new one instead."
+
+#: apps/auto_scan_video
+msgid "Bản kết xuất không đạt {n} mục kiểm chất lượng: {ds}."
+msgstr "The render failed {n} quality checks: {ds}."
+
+#: apps/auto_scan_video
+msgid "Chưa có bản kết xuất để kiểm."
+msgstr "There is no render to check yet."
+
+#: apps/auto_scan_video
+msgid "Chưa đủ tài liệu thượng nguồn để kiểm chất lượng."
+msgstr "Not enough upstream documents to run the quality check."
+
+#: apps/auto_scan_video
+msgid "Không băm được luồng hình."
+msgstr "Could not hash the video stream."
+
+#: apps/auto_scan_video
+msgid "Đang lưu báo cáo"
+msgstr "Saving the report"
+
+#: apps/auto_scan_video
+msgid "Đang đo bản kết xuất"
+msgstr "Measuring the render"
+
+#: apps/auto_scan_video
+msgid "Đang đo âm lượng"
+msgstr "Measuring loudness"
+
+#: apps/auto_scan_video
+msgid "Đang đối chiếu luồng hình"
+msgstr "Comparing the video stream"
+
+#: apps/auto_scan_video
+msgid "Lồng tiếng Việt"
+msgstr "Vietnamese dubbing"
+
+#: apps/auto_scan_video
+msgid "Lồng tiếng Việt cho video"
+msgstr "Vietnamese dubbing for video"
+
+#: apps/auto_scan_video
+msgid "Giữ nguyên hình ảnh và độ dài. Thay lời thoại gốc bằng giọng đọc tiếng Việt khớp thời điểm, giữ lại nhạc nền và tiếng động."
+msgstr "Keeps the picture and the length. Replaces the original dialogue with a time-matched Vietnamese voice, and keeps the music and sound effects."
+
+#: apps/auto_scan_video
+msgid "MP4, MOV, MKV hoặc WEBM. Tối đa 90 MB. Video phải có tiếng nói."
+msgstr "MP4, MOV, MKV or WEBM. Up to 90 MB. The video must contain speech."
+
+#: apps/auto_scan_video
+msgid "Cách khớp thời gian"
+msgstr "Timing style"
+
+#: apps/auto_scan_video
+msgid "Bám sát câu gốc"
+msgstr "Follow the original lines"
+
+#: apps/auto_scan_video
+msgid "Mỗi câu bắt đầu đúng lúc người nói bắt đầu. Phù hợp khi hình có khẩu hình hoặc chữ chạy theo lời."
+msgstr "Each line starts exactly when the speaker starts. Best when the picture shows lip movement or on-screen text follows the speech."
+
+#: apps/auto_scan_video
+msgid "Nghe tự nhiên"
+msgstr "Sound natural"
+
+#: apps/auto_scan_video
+msgid "Ưu tiên nhịp đọc dễ nghe, chấp nhận lệch nhẹ so với câu gốc. Phù hợp với video kể chuyện hoặc thuyết minh."
+msgstr "Favours an easy reading rhythm, accepting a slight drift from the original lines. Best for narration or storytelling."
+
+#: apps/auto_scan_video
+msgid "Đang dùng giọng mặc định. Bạn có thể nhân bản giọng riêng ở LTT VOICE."
+msgstr "Using the default voice. You can clone your own in LTT VOICE."
+
+#: apps/auto_scan_video
+msgid "Chi phí được ước theo độ dài video và giữ chỗ khi bắt đầu. Phần không dùng đến sẽ được hoàn lại khi chạy xong."
+msgstr "The cost is estimated from the video length and held when you start. Whatever is not used is refunded when the run finishes."
+
+#: apps/auto_scan_video
+msgid "Bắt đầu lồng tiếng"
+msgstr "Start dubbing"
+
+#: apps/auto_scan_video
+msgid "Lần chạy của tôi"
+msgstr "My runs"
+
+#: apps/auto_scan_video
+msgid "Bạn chưa có lần chạy nào."
+msgstr "You have no runs yet."
+
+#: apps/auto_scan_video
+msgid "Lần chạy"
+msgstr "Run"
+
+#: apps/auto_scan_video
+msgid "Tiến độ lồng tiếng"
+msgstr "Dubbing progress"
+
+#: apps/auto_scan_video
+msgid "Về danh sách"
+msgstr "Back to the list"
+
+#: apps/auto_scan_video
+msgid "Đã xong."
+msgstr "Finished."
+
+#: apps/auto_scan_video
+msgid "Bạn đã huỷ lần chạy này."
+msgstr "You cancelled this run."
+
+#: apps/auto_scan_video
+msgid "Lần chạy dừng lại vì một bước không hoàn tất."
+msgstr "The run stopped because a step did not finish."
+
+#: apps/auto_scan_video
+msgid "Đang xử lý…"
+msgstr "Working…"
+
+#: apps/auto_scan_video
+msgid "đang chạy"
+msgstr "running"
+
+#: apps/auto_scan_video
+msgid "đang chờ"
+msgstr "waiting"
+
+#: apps/auto_scan_video
+msgid "đã huỷ"
+msgstr "cancelled"
+
+#: apps/auto_scan_video
+msgid "không hoàn tất"
+msgstr "did not finish"
+
+#: apps/auto_scan_video
+msgid "chưa tới"
+msgstr "not started"
+
+#: apps/auto_scan_video
+msgid "Bước không hoàn tất:"
+msgstr "Step that did not finish:"
+
+#: apps/auto_scan_video
+msgid "Thử lại bước này"
+msgstr "Retry this step"
+
+#: apps/auto_scan_video
+msgid "Tải video đã lồng tiếng"
+msgstr "Download the dubbed video"
+
+#: apps/auto_scan_video
+msgid "Huỷ lần chạy"
+msgstr "Cancel the run"
+
+#: apps/auto_scan_video
+msgid "Chi tiết vận hành"
+msgstr "Operational details"
+
+#: apps/auto_scan_video
+msgid "Bước"
+msgstr "Step"
+
+#: apps/auto_scan_video
+msgid "Làn"
+msgstr "Lane"
+
+#: apps/auto_scan_video
+msgid "Giây"
+msgstr "Seconds"
+
+#: apps/auto_scan_video
+msgid "giữ"
+msgstr "held"
+
+#: apps/auto_scan_video
+msgid "Chế độ thời gian không hợp lệ."
+msgstr "That timing style is not valid."
+
+#: apps/auto_scan_video
+msgid "Tệp rỗng."
+msgstr "The file is empty."
+
+#: apps/auto_scan_video
+msgid "Video vượt quá 90 MB. Hãy cắt ngắn hoặc giảm chất lượng trước."
+msgstr "The video is larger than 90 MB. Shorten it or lower the quality first."
+
+#: apps/auto_scan_video
+msgid "Không tìm thấy lần chạy."
+msgstr "Run not found."
+
+#: apps/auto_scan_video
+msgid "Lần chạy này chưa có kết quả."
+msgstr "This run has no result yet."
+
+#: apps/auto_scan_video
+msgid "Chuẩn bị video"
+msgstr "Preparing the video"
+
+#: apps/auto_scan_video
+msgid "Tách nhạc nền khỏi giọng"
+msgstr "Separating music from speech"
+
+#: apps/auto_scan_video
+msgid "Chép lời thoại gốc"
+msgstr "Transcribing the original dialogue"
+
+#: apps/auto_scan_video
+msgid "Dịch sang tiếng Việt"
+msgstr "Translating to Vietnamese"
+
+#: apps/auto_scan_video
+msgid "Tạo giọng đọc"
+msgstr "Generating the voice"
+
+#: apps/auto_scan_video
+msgid "Khớp thời điểm"
+msgstr "Aligning the timing"
+
+#: apps/auto_scan_video
+msgid "Dựng bản ghép"
+msgstr "Building the mix"
+
+#: apps/auto_scan_video
+msgid "Kết xuất video"
+msgstr "Rendering the video"
+
+#: apps/auto_scan_video
+msgid "Kiểm chất lượng"
+msgstr "Quality check"
+
+#: apps/auto_scan_video
+msgid "xong"
+msgstr "done"
+msgid "đồng"
+msgstr "VND"
+
+#: apps/auto_scan_video/features.py
+msgid "Không tìm thấy lượt tải lên."
+msgstr "Upload not found."
+
+#: platform_core/public_api/governance.py
+msgid "Checkpoint từng đoạn bên trong một giai đoạn: đoạn nào đã đọc thành tiếng, tốn bao nhiêu, thử mấy lần. Cùng hạn với giai đoạn chứa nó — một checkpoint sống lâu hơn kết quả nó trỏ tới là một lời hứa hỏng."
+msgstr "Per-segment checkpoints inside a stage: which segment has been spoken, what it cost, how many attempts. Expires with the stage that owns it — a checkpoint outliving the result it points at is a broken promise."
+
+#: apps/auto_scan_video/su_dung.py
+msgid "Còn {n} lần gọi chưa rõ đã chạy hay chưa — cần xác nhận trước khi chạy lại để tránh trả tiền hai lần."
+msgstr "{n} call(s) may or may not have run - confirm before retrying so you are not charged twice."
+msgid "Xin chào, đây là giọng đọc của tôi. Hôm nay là ngày mùng hai tháng chín. Rất vui được đồng hành cùng bạn."
+msgstr "Hello, this is my reading voice. Today is the second of September. I am glad to be here with you."
+
+#: apps/auto_scan_video/giai_doan_chep_loi.py
+msgid "Đang phân vai người nói"
+msgstr "Identifying who is speaking"
+
+#: platform_core/public_api/governance.py
+msgid "Sổ cái từng lượt gọi năng lực: năng lực nào đã chạy, đo bằng đơn vị gì, hết bao nhiêu credit. Đây là thứ trả lời câu hỏi \"tôi trả cho cái gì\" — nên nó phải sống đúng bằng lần chạy mà nó giải thích, không lâu hơn."
+msgstr "Per-call ledger of capability usage: which capability ran, in what unit it was measured, how many credits it cost. This is what answers \"what am I paying for\" - so it must live exactly as long as the run it explains, no longer."
+
+#: apps/auto_scan_video/ai.py
+msgid "Lần chạy đã bị hủy."
+msgstr "This run has been cancelled."
+
+#: apps/auto_scan_video/rang_giong.py
+msgid "Chưa chọn được giọng cho lần chạy này — cần hồ sơ nội dung trước khi tự khớp."
+msgstr "No voice has been chosen for this run yet - auto-matching needs the content profile first."
+
+#: apps/auto_scan_video/giai_doan_ban_bien_tap.py
+msgid "Chưa có bản media để phân tích cảnh."
+msgstr "No prepared media yet to analyse scenes from."
+
+#: apps/auto_scan_video/giai_doan_ban_bien_tap.py
+msgid "Đang lưu bản biên tập"
+msgstr "Saving the edit plan"
+
+#: apps/auto_scan_video/routes.py
+msgid "Chọn phần giữ lại"
+msgstr "Choosing what to keep"
+
+msgid "Nền tảng đã cấp card nhưng tiến trình tách không thấy GPU."
+msgstr "The platform assigned a GPU but the separation process cannot see it."
+
+msgid "Bản biên tập không giữ lại đoạn thoại nào."
+msgstr "The edit plan kept no dialogue segments."
+
+msgid "Bản lồng tiếng không ghi giọng đã chọn."
+msgstr "The dubbing document does not record the chosen voice."
+
+msgid "Bản lồng tiếng không phủ đúng phần giữ lại: thừa {thua}, thiếu {thieu}."
+msgstr "The dubbing document does not match the retained segments: {thua} extra, {thieu} missing."
+
+msgid "Bản lồng tiếng sai lược đồ."
+msgstr "The dubbing document has the wrong schema."
+
+msgid "Chưa có bản biên tập nên chưa biết giữ phần nào."
+msgstr "No edit plan yet, so there is no way to know what is kept."
+
+msgid "Chưa ràng giọng nên chưa thể viết lời thoại."
+msgstr "No voice has been bound yet, so the lines cannot be written."
+
+msgid "Không có đoạn nào được giữ lại để lồng tiếng."
+msgstr "No segments were retained for dubbing."
+
+msgid "Lối nói không nằm trong bảng cho phép."
+msgstr "Speech style is not in the allowed vocabulary."
+
+msgid "Sắc thái không nằm trong bảng cho phép."
+msgstr "Mood is not in the allowed vocabulary."
+
+msgid "Model không trả về bảng đoạn."
+msgstr "The model did not return a segment table."
+
+msgid "Thiếu lời thoại cho {n} đoạn."
+msgstr "Missing dubbed lines for {n} segments."
+
+msgid "Đang viết lời thoại"
+msgstr "Writing dubbed lines"
+
+msgid "Model không trả về câu đã viết lại."
+msgstr "The model did not return a rewritten line."
+
+msgid "Bản phối lệch thời lượng {lech} giây so với dự kiến."
+msgstr "The audio master is {lech} seconds off the expected duration."
+
+msgid "Bản phối sai số kênh."
+msgstr "The audio master has the wrong channel count."
+
+msgid "Bản phối sai tần số lấy mẫu."
+msgstr "The audio master has the wrong sample rate."
+
+msgid "Bản đồ thời gian có hai khoảng chồng lấn."
+msgstr "The time map has two overlapping intervals."
+
+msgid "Bản đồ thời gian có khoảng rỗng hoặc ngược."
+msgstr "The time map has an empty or reversed interval."
+
+msgid "Bản đồ thời gian không giữ lại khoảng nào."
+msgstr "The time map retains no intervals."
+
+msgid "Bản đồ thời gian vượt quá thời lượng nguồn."
+msgstr "The time map extends past the source duration."
+
+msgid "Chưa có bản biên tập để dựng bản đồ thời gian."
+msgstr "No edit plan yet, so the time map cannot be built."
+
+msgid "Chưa có bản nền để trộn bản phối."
+msgstr "No background bed yet, so the audio master cannot be mixed."
+
+msgid "Kế hoạch thời gian không còn đoạn nào có tiếng."
+msgstr "The timing plan has no segments with audio left."
+
+msgid "Đoạn {ma} chưa có tệp tiếng."
+msgstr "Segment {ma} has no audio file."
+
+msgid "Đoạn {ma} thuộc phần đã cắt nhưng vẫn có tiếng."
+msgstr "Segment {ma} belongs to a cut section but still has audio."
+
+msgid "Lô trộn không có đoạn nào."
+msgstr "The mix batch has no segments."
+
+msgid "Số đoạn và số mốc không khớp."
+msgstr "The number of segments does not match the number of marks."
+
+msgid "Hệ số co giãn {h} ngoài khoảng một lần `atempo`."
+msgstr "Stretch factor {h} is outside the range of a single `atempo` pass."
+
+msgid "Trộn lô tiếng quá hạn."
+msgstr "Mixing the voice batch timed out."
+
+msgid "Trộn lô tiếng thất bại: {loi}"
+msgstr "Mixing the voice batch failed: {loi}"
+
+msgid "Trộn bản phối quá hạn."
+msgstr "Mixing the audio master timed out."
+
+msgid "Trộn bản phối thất bại: {loi}"
+msgstr "Mixing the audio master failed: {loi}"
+
+msgid "Đang trộn bản phối"
+msgstr "Mixing the audio master"
+
+msgid "Bản dựng cắt nối nhưng không khai khoảng nào được giữ."
+msgstr "The manifest cuts and joins but declares no retained ranges."
+
+msgid "Bản dựng khai cách render không hợp lệ."
+msgstr "The manifest declares an invalid render path."
+
+msgid "Bản dựng khai preset {p} nhưng xin cách render {c}."
+msgstr "The manifest declares preset {p} but asks for render path {c}."
+
+msgid "Bộ mã hoá không được khai: {b}"
+msgstr "Encoder not declared: {b}"
+
+msgid "Chưa có bản phối âm để dựng bản dựng."
+msgstr "No audio master yet, so the manifest cannot be built."
+
+msgid "Khoảng cắt nối rỗng hoặc ngược."
+msgstr "A cut range is empty or reversed."
+
+msgid "Không có khoảng nào để cắt nối."
+msgstr "There are no ranges to cut and join."
+
+msgid "Preset không hợp lệ: {p}"
+msgstr "Invalid preset: {p}"
+
+msgid "Đang kiểm bản ra có hình"
+msgstr "Checking the output has picture"
+
+msgid "Không có khung hình nào để hỏi."
+msgstr "There are no frames to ask about."
+
+msgid "Loại khiếm khuyết không hợp lệ: {l}"
+msgstr "Invalid defect type: {l}"
+
+msgid "Model không trả về bảng phán đoán."
+msgstr "The model did not return a verdict table."
+
+msgid "Model không trả về phán đoán hình."
+msgstr "The model did not return a visual verdict."
+
+msgid "Tiếng đọc ra không khớp lời đã viết."
+msgstr "The spoken audio does not match the written line."
+
+msgid "Đoạn không vừa khe kể cả sau khi co giãn."
+msgstr "The segment does not fit its slot even after time-stretching."
+
+msgid "Kiểu xử lý"
+msgstr "Processing type"
+
+msgid "Cách chọn giọng"
+msgstr "How to pick the voice"
+
+msgid "Giữ nguyên hình ảnh"
+msgstr "Keep the picture"
+
+msgid "Chỉ thay tiếng. Hình ảnh được sao chép nguyên vẹn, không cắt cảnh nào và không giảm chất lượng. Video ra dài đúng bằng video vào."
+msgstr "Only the audio changes. The picture is copied untouched — no scene is cut and no quality is lost. The output is exactly as long as the input."
+
+msgid "Rút gọn có biên tập"
+msgstr "Shorten with editing"
+
+msgid "Bỏ bớt những cảnh ít nội dung để video ngắn lại. Vì phải ghép lại các đoạn được giữ nên hình ảnh sẽ được mã hoá lại — chất lượng gần như bản gốc nhưng không còn giống hệt từng điểm ảnh. Nếu không cảnh nào đủ căn cứ để bỏ thì video giữ nguyên độ dài, và vẫn được mã hoá lại."
+msgstr "Removes low-content scenes so the video is shorter. Because the kept parts must be joined, the picture is re-encoded — near-identical quality, but no longer pixel-for-pixel the original. If no scene has enough evidence to drop, the video keeps its length and is still re-encoded."
+
+msgid "Tôi tự chọn giọng"
+msgstr "I pick the voice myself"
+
+msgid "Bạn chọn một giọng trong danh sách bên dưới."
+msgstr "You choose a voice from the list below."
+
+msgid "Để hệ thống gợi ý giọng"
+msgstr "Let the system suggest a voice"
+
+msgid "Hệ thống chọn giọng hợp với nội dung. Tính năng này đang được hoàn thiện — hiện tại hãy tự chọn giọng."
+msgstr "The system picks a voice that suits the content. This is still being finished — for now, please pick one yourself."
+
+msgid "Bạn có thể nhân bản giọng riêng ở LTT VOICE."
+msgstr "You can clone your own voice in LTT VOICE."
+
+msgid "Kiểu xử lý không hợp lệ."
+msgstr "Invalid processing type."
+
+msgid "Cách chọn giọng không hợp lệ."
+msgstr "Invalid voice selection mode."
+
+msgid "Hãy chọn một giọng đọc."
+msgstr "Please choose a voice."
+
+msgid "Bản dựng thiếu bản phối âm."
+msgstr "The build is missing its audio master."
+
+msgid "Đang đọc cảnh"
+msgstr "Reading the scene"
+
+msgid "Đơn vị việc đã được cập nhật ở tiến trình khác."
+msgstr "This work item was updated by another process."
+
+msgid "Bản dựng thiếu bản phối âm để kết xuất."
+msgstr "The build has no audio master to render from."
+
+msgid "Soát lại nghĩa bản dịch"
+msgstr "Reviewing the translation"
+
+msgid "Đang soát nghĩa bản dịch"
+msgstr "Reviewing the translation"
+
+msgid "Chưa có bản dịch để soát."
+msgstr "No translation available to review."
+
+msgid "Dùng để chọn giọng thay thế đúng giới nếu giọng này tạm thời không dùng được. Bỏ trống nếu bạn không chắc."
+msgstr "Used to pick a same-gender stand-in if this voice ever becomes unavailable. Leave blank if you are not sure."
+
+msgid "Giọng bạn chọn hiện không dùng được, nên bài này được đọc bằng {giong_thay} ({mo_ta}). Hãy ghi danh lại giọng của bạn để dùng tiếp."
+msgstr "The voice you picked is currently unavailable, so this was read by {giong_thay} ({mo_ta}). Enrol your voice again to keep using it."
+
+msgid "Giọng này cần được ghi danh lại (bản ghi cũ không còn dùng được với máy đọc hiện tại). Hãy tải lại clip mẫu ở màn Giọng."
+msgstr "This voice needs to be enrolled again (its old recording no longer works with the current engine). Upload your sample clip again on the Voices screen."
+
+msgid "Giọng này đang được ghi danh. Chờ khoảng một phút rồi thử lại."
+msgstr "This voice is still being enrolled. Wait about a minute and try again."
+
+msgid "Giới tính giọng"
+msgstr "Voice gender"
+
+msgid "Không rõ"
+msgstr "Not sure"
+
+msgid "Ngôn ngữ bạn nói trong clip mẫu, không phải ngôn ngữ bạn sẽ đọc sau này."
+msgstr "The language you speak in the sample clip, not the language you will read later."
+
+msgid "Ngôn ngữ của clip"
+msgstr "Clip language"
+
+msgid "Workflow mới"
+msgstr "New workflow"
+
+msgid "Một lượt chạy đã tính tiền. `actual_cost` và `hold_id` ở đây là câu trả lời cho một tranh chấp hoàn tiền sáu tháng sau."
+msgstr "A run that has already been billed. `actual_cost` and `hold_id` here are the answer to a refund dispute six months later."
+
+msgid "Chuỗi ảnh chụp BẤT BIẾN của từng bước, kèm chi phí theo từng lượt thử. Xoá nó là mất khả năng nói VÌ SAO một lượt chạy tốn ngần ấy — kể cả lần chuyển bị từ chối cũng nằm ở đây."
+msgstr "The IMMUTABLE snapshot chain of each step, with the cost of each attempt. Deleting it loses the ability to say WHY a run cost that much — even rejected transitions live here."
+
+msgid "Workflow là thứ khách DỰNG RA. Việc của họ, không phải dấu vết vận hành của ta."
+msgstr "A workflow is something the customer BUILDS. It is their work, not our operational trace."
+
+msgid "Bản đang soạn — mất nó là mất phần khách đang gõ dở."
+msgstr "The working draft — losing it loses what the customer was typing."
+
+msgid "Bản đã xuất bản, BẤT BIẾN. Một lượt chạy ghim vào đây, nên xoá nó là làm một lượt chạy đã tính tiền không còn tái dựng được."
+msgstr "A published version, IMMUTABLE. A run pins to it, so deleting it makes an already-billed run impossible to reconstruct."
+
+msgid "Cấu hình khách đặt để workflow tự chạy."
+msgstr "The configuration the customer set so the workflow runs by itself."
+
+msgid "Siêu dữ liệu tệp khách tạo ra. KHÔNG chứa byte nào; vòng đời thật do `ttl_class` quyết, và backend có lifecycle riêng thì ta không tự xoá."
+msgstr "Metadata for files the customer produced. Holds NO bytes; the real lifetime is decided by `ttl_class`, and a backend with its own lifecycle is not ours to delete from."
+
+msgid "CON TRỎ tới ảnh chụp mới nhất — dựng lại được từ chuỗi ảnh chụp."
+msgstr "A POINTER to the latest snapshot — rebuildable from the snapshot chain."
+
+msgid "Chỉ mục dẫn xuất từ đồ thị của bản đã xuất bản."
+msgstr "An index derived from the published version's graph."
+
+msgid "Trạng thái chờ trong một lượt chạy; chỉ có nghĩa khi lượt chạy còn sống."
+msgstr "A wait state inside a run; it only means anything while the run is alive."
+
+msgid "Tín hiệu từng nhánh gửi tới một điểm chờ."
+msgstr "The signal each branch sends to a waitpoint."
+
+msgid "Bảng nối nhiều-nhiều: waitpoint nào đang chặn node nào."
+msgstr "The many-to-many link table: which waitpoint is blocking which node."
+
+msgid "Một vòng ForEach đang chạy."
+msgstr "A ForEach loop in progress."
+
+msgid "Kết quả từng phần tử của một vòng ForEach — thứ nói CHÍNH XÁC còn phải chạy gì sau một lần chết."
+msgstr "The result of each ForEach element — what says EXACTLY which ones still have to run after a crash."
+
+# LTT VOICE — U-13, cửa nghe thử văn bản của khách (`routes/_p_nghe_thu.py`).
+# Thêm TAY theo đúng chỉ dẫn của `dich thieu ban EN`: mục `VANG` không được
+# chạy `i18n.py trich`, vì msgmerge sẽ ĐOÁN bản dịch cho chúng và xáo lại tệp.
+msgid "Chưa có văn bản."
+msgstr "No text yet."
+
+msgid "Nghe thử tối đa {n} ký tự — một câu."
+msgstr "Preview is limited to {n} characters — one sentence."
+
+msgid "Giọng không hợp lệ."
+msgstr "That voice is not valid."
+
+msgid "Bạn đã dùng hết {n} lượt nghe thử trong giờ này."
+msgstr "You have used all {n} previews for this hour."
+
+msgid "Máy đang bận tạo tiếng cho lượt khác. Thử lại sau ít giây."
+msgstr "The engine is busy generating another request. Try again in a few seconds."
+
+msgid "Không tạo được tiếng lúc này."
+msgstr "Could not generate audio right now."
+
+# U-04 — mô tả kho dữ liệu `voice_quality_profile` trong bản kiểm kê quản trị
+# dữ liệu (`platform_core/public_api/governance.py`). Khách đọc nó ở trang
+# "chúng tôi giữ gì về bạn", nên nó phải có bản EN như bốn bảng giọng kia.
+msgid ""
+"Phán quyết curate một giọng và LÝ DO LOẠI khi loại. Giữ chừng nào giọng còn: "
+"ngày nâng engine, một giọng loại vì rè đáng thử lại, một giọng loại vì thiếu "
+"consent thì không — cùng trạng thái, hai số phận."
+msgstr ""
+"The curation verdict on a voice, and the REASON it was rejected. Kept as long "
+"as the voice is: on the day the engine is upgraded, a voice rejected for "
+"hiss deserves another try, one rejected for missing consent does not — same "
+"status, two different fates."
+
+# U-17 — tên cho `role="progressbar"` ở màn Dự án. axe `aria-progressbar-name`
+# (serious): một thanh tiến độ không tên đọc lên là "bốn mươi phần trăm" mà
+# không nói của cái gì, trong khi màn ấy có nhiều dự án.
+msgid "Tiến độ dự án {ten}: {xong}/{tong} khối"
+msgstr "Project {ten} progress: {xong}/{tong} blocks"
+
+# AI CLEAN REBUILD V2 pha 04 — cổng fail-closed khi một nhà cung cấp đã ngừng.
+# Chuỗi này HIỆN RA VỚI KHÁCH, đo được chứ không phỏng đoán: job hỏng lưu
+# thông điệp vào `Job.error` (`platform_core/models.py:297`), và trang danh
+# sách job render thẳng nó (`apps/autosubvideo/templates/…:97` `{{ j.error }}`).
+msgid ""
+"Nhà cung cấp này đã ngừng phục vụ. Nội dung cũ vẫn xem được, nhưng không tạo "
+"lượt mới được nữa."
+msgstr ""
+"This provider has been retired. Existing content remains viewable, but no "
+"new requests can be created."
+
+#: apps/agent/routes/drafts_v3.py
+msgid "Thiếu số hiệu bản sửa."
+msgstr "Missing revision number."
+
+#: apps/agent/routes/drafts_v3.py
+msgid "Bản nháp chưa có nội dung để xuất bản."
+msgstr "This draft has nothing to publish yet."
+
+#: apps/ltt_voice/routes/_p_phat_dan.py
+# U-07 — cua PHAT DAN tra 404 khi co `LTT_VOICE_STREAM` tat. Khong phai "loi",
+# la "duong nay khong ton tai o ban cai nay".
+msgid "Không có đường này."
+msgstr "No such endpoint."
+
+#: apps/ltt_voice/routes/_p_phat_dan.py
+msgid "Không đủ credit cho lượt đọc này."
+msgstr "Not enough credit for this read."
+
+#: apps/ltt_voice/templates/ltt_voice_studio.html
+# U-07 — nut PHAT DAN. "Nghe ngay" chu khong phai "Nghe thu": nghe thu la cua
+# MIEN PHI 160 ky tu (`_p_nghe_thu`), con cua nay CO tinh tien.
+msgid "Nghe ngay"
+msgstr "Play now"
+
+#: apps/ltt_voice/templates/_voice_nhan.html
+# Nam nhan cua trinh phat do `voice.js::ganTrinhPhat` dung bang JS. Truoc
+# 09/09/2026 chung GO CUNG tieng Viet khong dau trong .js — va vi chung chi la
+# `aria-label`, khong ai NHIN man hinh phat hien duoc: chi nguoi dung trinh doc
+# man hinh o ban EN nghe thay, va ho nghe tieng Viet.
+msgid "Phát"
+msgstr "Play"
+
+#: apps/ltt_voice/templates/_voice_nhan.html
+msgid "Tạm dừng"
+msgstr "Pause"
+
+#: apps/ltt_voice/templates/_voice_nhan.html
+msgid "Tốc độ phát lại"
+msgstr "Playback speed"
+
+#: apps/ltt_voice/templates/_voice_nhan.html
+msgid "Âm lượng"
+msgstr "Volume"
+
+#: apps/ltt_voice/templates/_voice_chon.html
+# U-03 (09/09/2026) — nhan `role="group"` cho bo loc PHONG CACH. Ba chuoi kia
+# ("Moi vung", "Moi phong cach", "Vung mien") DA CO trong catalog nen khong
+# them lai: mot catalog gettext chi duoc co MOT msgid cho moi chuoi.
+msgid "Phong cách đọc"
+msgstr "Reading style"
+
+# ⛔ KHONG them muc cho "Dung" o day: no DA CO o
+#    `apps/chataistudio/templates/chataistudio.html:46` (dong ~1752), va mot
+#    catalog gettext chi duoc co MOT `msgid` cho moi chuoi.
+#
+#    Toi da them mot ban thu hai va `test_305::test_po_khong_co_msgid_trung`
+#    bat duoc o gate day du — dung cho no sinh ra de bat. Chuoi giong nhau thi
+#    DUNG CHUNG mot muc; do la co che cua gettext, khong phai mot su trung lap
+#    can don.
+
+#: apps/ltt_voice/routes/_p_phat_dan.py
+# `{n}` la `TRAN_MOI_LUOT_SINH`. Giu nguyen dau ngoac nhon trong ban dich —
+# `.format(n=...)` chay tren chuoi DA dich.
+msgid "Phát dần tối đa {n} ký tự một lượt. Bài dài hơn hãy dùng Dự án."
+msgstr ""
+"Streaming is limited to {n} characters per turn. Use Projects for longer "
+"scripts."
+#: apps/autosubvideo/routes.py
+# AI CLEAN REBUILD V2 pha 05.6 — thay chuỗi cũ "Gemini translation chưa cấu
+# hình API key." Tên nhà cung cấp không nên nằm trong thông điệp cho khách:
+# khách không mua Gemini, họ mua "dịch phụ đề", và ngày ta đổi động cơ thì
+# một chuỗi khai tên nhà cung cấp sẽ nói dối mà không ai sửa.
+msgid "Dịch vụ dịch chưa sẵn sàng."
+msgstr "The translation service is not available yet."
+
+# ── AI CLEAN REBUILD V2 pha 05.4–05.6 — thông điệp của các app vừa di trú ────
+# Cả bảy đều HIỆN RA VỚI KHÁCH: chúng đi qua `Job.error` hoặc `HTTPException`
+# rồi được render. Không xếp chúng vào "lỗi nội bộ" — hai đường gọi đã đo được
+# ở `platform_core/models.py:297` và `apps/autosubvideo/templates/…:97`.
+#
+# ⚠️ KHÔNG nhắc tên nhà cung cấp trong các chuỗi này. Khách mua "dịch phụ đề"
+#    và "sinh prompt", không mua một model cụ thể; ngày ta đổi động cơ, một
+#    chuỗi khai tên nhà cung cấp sẽ nói dối mà không ai nghĩ tới việc sửa nó.
+
+#: apps/taovideo/translate.py
+msgid "Chưa có nội dung để dịch."
+msgstr "Nothing to translate yet."
+
+#: apps/taovideo/translate.py
+msgid "Model không trả bản dịch."
+msgstr "The model returned no translation."
+
+#: apps/taovideo/translate.py apps/prompt_ai_ommi/provider.py
+msgid "Model đang bận, thử lại sau ít phút."
+msgstr "The model is busy; please try again in a few minutes."
+
+#: apps/prompt_ai_ommi/provider.py
+msgid "Dịch vụ AI đang bận, thử lại sau."
+msgstr "The AI service is busy; please try again shortly."
+
+#: apps/prompt_ai_ommi/provider.py
+msgid "Dịch vụ AI không trả dữ liệu."
+msgstr "The AI service returned no data."
+
+#: apps/prompt_ai_ommi/provider.py
+msgid "Dịch vụ AI trả cấu trúc không hợp lệ; hãy thử lại."
+msgstr "The AI service returned an invalid structure; please try again."
+
+#: apps/prompt_ai_ommi/provider.py
+msgid "Dịch vụ AI trả sai loại dữ liệu."
+msgstr "The AI service returned the wrong data type."
+
+#: apps/autosubvideo/ai_workflows.py
+msgid "Dịch vụ dịch đang bận, thử lại sau."
+msgstr "The translation service is busy; please try again shortly."
+
+#: apps/autosubvideo/ai_workflows.py
+msgid "Bản dịch trả về không phải JSON hợp lệ."
+msgstr "The translation returned is not valid JSON."
+
+#: apps/autosubvideo/ai_workflows.py
+# Chuỗi này thay cho bảo đảm `responseSchema` đã mất khi rời Gemini: hình dạng
+# `[{id, text}]` nay được kiểm ở tầng ứng dụng, nên lỗi phải nói rõ hình dạng
+# đang thiếu — người đọc log cần biết *cái gì* sai, không chỉ *có* sai.
+msgid "Bản dịch trả về sai cấu trúc (cần mảng object)."
+msgstr "The translation has the wrong structure (an array of objects is required)."
+
+#: apps/autosubvideo/ai_workflows.py
+msgid "Bản dịch thiếu/thừa hoặc sai thứ tự cue."
+msgstr "The translation has missing, extra, or misordered cues."
+
+#: apps/autosubvideo/ai_workflows.py
+msgid "Bản dịch có cue rỗng."
+msgstr "The translation contains an empty cue."
+
+#: apps/chataistudio/routes.py
+# AI CLEAN REBUILD V2 pha 05.7 — `chataistudio` chuyển từ sidecar Codex sang
+# LTT_LLM (model VĂN BẢN). Ảnh khách tải lên vẫn được lưu vì đó là dữ liệu của
+# họ, nhưng model không đọc được chúng.
+#
+# ⛔ Phải NÓI RA. Khách gửi ảnh rồi nhận một câu trả lời không nhắc gì tới nó sẽ
+#    tưởng model đã xem và đang trả lời về ảnh — im lặng ở đây là để họ tin một
+#    điều không có.
+msgid "Ảnh đã được lưu nhưng model văn bản chưa đọc được ảnh."
+msgstr "Your image was saved, but this text model cannot read images."
+
+# ── AI CLEAN REBUILD V2 pha 06.2 — `taoanh` sang LTT_IMAGE ──────────────────
+# Cả bốn chuỗi đều HIỆN RA VỚI KHÁCH qua `Job.error` hoặc `ValueError` của
+# handler, và cả bốn đều tránh nhắc tên nhà cung cấp.
+
+#: apps/taoanh/jobs.py
+# ⛔ Ba chế độ (`semantic_inpaint`·`outpaint`·`style_transfer`) bị GỠ vì
+#    `hidream-o1` khai đúng ba chế độ và không có chúng. Câu này phải nói rõ
+#    còn lại gì, chứ không chỉ nói "không hỗ trợ" — khách cần biết làm gì tiếp.
+msgid ""
+"Chế độ \"{ten}\" không còn được hỗ trợ. Model nội bộ nhận: tạo mới và chỉnh "
+"sửa."
+msgstr ""
+"Mode \"{ten}\" is no longer supported. The in-house model accepts: create and "
+"edit."
+
+#: apps/taoanh/jobs.py
+msgid "Model nội bộ nhận tối đa {n} ảnh tham chiếu."
+msgstr "The in-house model accepts at most {n} reference images."
+
+#: apps/taoanh/jobs.py
+msgid "Không tạo được ảnh nào."
+msgstr "No image could be generated."
+
+#: apps/taoanh/jobs.py
+msgid "Máy tạo ảnh đang bận{them}. Bạn có thể thử lại sau."
+msgstr "The image machine is busy{them}. Please try again later."
+
+#: platform_core/image_gen/dich_llm.py
+# Trả rỗng KHÔNG được im lặng: `dich_prompt_anh` sẽ gửi một prompt rỗng đi vẽ,
+# và khách nhận về một tấm ảnh không liên quan gì tới thứ họ gõ — một lỗi đắt
+# mà không để lại dấu vết nào.
+msgid "Model trả lời rỗng — thử lại hoặc đổi mô tả."
+msgstr "The model returned an empty reply; try again or reword the description."
+
+#: platform_core/image_gen/dieu_phoi.py
+msgid "Không hỏi được máy tạo ảnh về khung ảnh: {loi}"
+msgstr "Could not ask the image machine which frame sizes it serves: {loi}"
+
+#: platform_core/image_gen/khung_anh.py
+msgid "Model nội bộ không dựng được tỉ lệ {ti_le}."
+msgstr "The in-house model cannot produce a {ti_le} frame."
+
+#: apps/taoanh/jobs.py
+msgid "Ảnh đầu vào không còn tồn tại: {khoa}"
+msgstr "That input image no longer exists: {khoa}"
+
+#: apps/taoanh/manifest.py
+msgid "Sinh từ một đến bốn ảnh từ mô tả tự do, bằng model nội bộ."
+msgstr "Generate one to four images from a free-form description, in house."
+
+#: apps/taoanh/manifest.py
+msgid "Sinh một lô 2–4 ảnh đồng nhất từ cùng mô tả."
+msgstr "Generate a batch of 2–4 consistent images from one description."
+
+#: apps/thumbnail/jobs.py
+msgid "Model nội bộ không vẽ được chữ trong ảnh. Hãy để trống tiêu đề và phụ đề, rồi thêm chữ bằng công cụ chỉnh sửa của bạn."
+msgstr "The in-house model cannot draw text into an image. Leave the title and subtitle empty, then add your own text in an editor."
+
+#: apps/thumbnail/jobs.py
+msgid "Chỉ dùng được tối đa {n} ảnh tham chiếu."
+msgstr "At most {n} reference images can be used."
+
+#: apps/thumbnail/manifest.py
+msgid "Sinh ảnh nền thumbnail YouTube theo phong cách và bố cục."
+msgstr "Generate YouTube thumbnail backgrounds by style and composition."
+
+#: apps/thumbnail/templates/thumbnail.html
+msgid "PNG/JPEG/WebP · tối đa 8 MB · dùng làm ảnh nguồn để remix, không công khai"
+msgstr "PNG/JPEG/WebP · 8 MB max · used as the source image for a remix, never public"
+
+#: apps/thumbnail/templates/thumbnail_fragment.html
+msgid "Ảnh sinh ra KHÔNG có chữ — model nội bộ không vẽ được chữ đọc được. Thêm tiêu đề bằng công cụ chỉnh sửa của bạn."
+msgstr "The generated images carry NO text — the in-house model cannot draw legible lettering. Add your title in an editor."
+
+#: apps/taoanh/templates/image.html
+msgid "Ảnh tham chiếu chỉ rời nền tảng để tới máy tạo ảnh nội bộ, và lưu trong vùng dữ liệu riêng của tài khoản. “Thay vùng” dùng mô tả ngôn ngữ tự nhiên; chưa phải công cụ mask chính xác từng pixel."
+msgstr "Reference images leave the platform only to reach the in-house image machine, and are stored in the account private data area. \"Replace region\" takes a natural-language description; it is not yet a pixel-accurate masking tool."
+
+#: apps/vps/routes.py
+#, python-format
+msgid "Máy đang bận với một thao tác khác (%(viec)s). Đợi nó xong rồi thử lại."
+msgstr "The machine is busy with another operation (%(viec)s). Wait for it to finish, then try again."
+
+#: apps/vps/nhan.py
+msgid "Đang khởi động lại"
+msgstr "Restarting"
+
+#: apps/vps/nhan.py
+msgid "Đang chụp ảnh"
+msgstr "Taking snapshot"
+
+#: apps/vps/nhan.py
+msgid "Đang khôi phục"
+msgstr "Restoring"
+
+#: apps/vps/nhan.py
+msgid "Đang cài lại"
+msgstr "Reinstalling"
+
+#: apps/vps/nhan.py
+msgid "Đang xoá"
+msgstr "Deleting"
+
+#: apps/vps/nhan.py
+msgid "Đang gửi lệnh tắt"
+msgstr "Sending shutdown command"
+
+#: apps/vps/nhan.py
+msgid "Đang chờ máy tắt"
+msgstr "Waiting for the machine to stop"
+
+#: apps/vps/nhan.py
+msgid "Đang gửi lệnh bật"
+msgstr "Sending start command"
+
+#: apps/vps/nhan.py
+msgid "Đang chờ máy bật"
+msgstr "Waiting for the machine to start"
+
+#: apps/vps/nhan.py
+msgid "Yêu cầu bật máy"
+msgstr "Start requested"
+
+#: apps/vps/nhan.py
+msgid "Yêu cầu tắt máy"
+msgstr "Shutdown requested"
+
+#: apps/vps/nhan.py
+msgid "Yêu cầu tắt cứng"
+msgstr "Force stop requested"
+
+#: apps/vps/nhan.py
+msgid "Yêu cầu khởi động lại"
+msgstr "Restart requested"
+
+#: apps/vps/nhan.py
+msgid "Đang tắt máy trước khi khôi phục"
+msgstr "Stopping the machine before restore"
+
+#: apps/vps/nhan.py
+msgid "Đang khôi phục ảnh chụp"
+msgstr "Restoring snapshot"
+
+#: apps/vps/nhan.py
+msgid "Đang bật lại máy"
+msgstr "Starting the machine again"
+
+#: apps/vps/nhan.py
+msgid "Yêu cầu khôi phục ảnh chụp"
+msgstr "Snapshot restore requested"
+
+#: apps/vps/nhan.py
+msgid "Máy bị cách ly mạng"
+msgstr "Machine network-quarantined"
+
+#: apps/vps/nhan.py
+msgid "Đã gỡ cách ly mạng"
+msgstr "Network quarantine lifted"
+
+#: server/templates/vps_chi_tiet.html
+msgid "Máy đang bị cách ly mạng"
+msgstr "Machine network-quarantined"
+
+#: server/templates/vps_chi_tiet.html
+msgid "Đường ra Internet của máy đã bị cắt vì nghi lạm dụng. Dữ liệu và đĩa còn nguyên, và bạn vẫn vào được bằng Console. Liên hệ hỗ trợ để gỡ."
+msgstr "This machine's Internet access has been cut off over suspected abuse. Your data and disk are intact, and you can still reach it through the Console. Contact support to lift it."
+
+#: server/templates/vps_chi_tiet.html
+msgid "Chưa hỏi được máy chủ"
+msgstr "Could not reach the server"
+
+#: server/templates/vps_chi_tiet.html
+msgid "Trạng thái bên dưới là lần đo gần nhất, không phải hiện tại. Chúng tôi đang thử lại."
+msgstr "The status below is the last reading, not the current one. We are retrying."
+
+#: server/templates/vps_chi_tiet.html
+msgid "Trạng thái bên dưới là lần đo gần nhất và có thể đã cũ."
+msgstr "The status below is the last reading and may be out of date."
+
+#: server/templates/vps_chi_tiet.html
+msgid "Tải lại trang sau ít phút để xem kết quả."
+msgstr "Reload this page in a few minutes to see the result."
+
+#: platform_core/public_api/governance.py
+msgid "Một thao tác dài đang chạy trên một máy: ai yêu cầu, muốn gì, tới đâu rồi, hỏng vì sao. Khác nhật ký vòng đời ở chỗ nó KẾT THÚC."
+msgstr "A long-running operation on one machine: who asked for it, what they wanted, how far it got, and why it failed. Unlike the lifecycle log, this one ENDS."
+
+#: apps/vps/routes.py
+msgid "Hệ thống đang bảo trì, tạm chưa nhận máy mới."
+msgstr "The service is under maintenance and is not taking new machines right now."
+
+#: apps/vps/nhan.py
+msgid "Hạ tầng từ chối lệnh này. Đội vận hành đã nhận được nhật ký; thử lại sau ít phút."
+msgstr "The infrastructure refused this command. Our operations team has the logs; try again in a few minutes."
+
+#: apps/vps/nhan.py
+msgid "Máy chủ xử lý quá lâu nên chúng tôi dừng chờ. Trạng thái máy có thể đã đổi — tải lại trang để xem."
+msgstr "The server took too long, so we stopped waiting. The machine's state may have changed — reload the page to check."
+
+#: apps/vps/nhan.py
+msgid "Lệnh chạy nhưng không hoàn tất. Đội vận hành đã nhận được nhật ký."
+msgstr "The command ran but did not finish. Our operations team has the logs."
+
+#: apps/vps/nhan.py
+msgid "Lệnh đã chạy xong nhưng máy không về đúng trạng thái mong muốn. Thử lại, hoặc liên hệ hỗ trợ."
+msgstr "The command finished but the machine did not reach the expected state. Try again, or contact support."
+
+#: apps/vps/nhan.py
+msgid "Tạm thời không đọc được trạng thái máy. Tải lại trang sau ít phút."
+msgstr "We cannot read the machine's state right now. Reload the page in a few minutes."
+
+#: apps/vps/nhan.py
+msgid "Thao tác không hoàn tất. Đội vận hành đã nhận được nhật ký."
+msgstr "The operation did not finish. Our operations team has the logs."
+
+#: apps/vps/nhan.py
+msgid "Ảnh chụp này không dùng được để khôi phục. Hãy chọn một ảnh khác."
+msgstr "This snapshot cannot be used to restore. Please pick another one."
+
+#: apps/vps/routes.py
+msgid "lý do"
+msgstr "reason"

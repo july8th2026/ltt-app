@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy import (BigInteger, Boolean, DateTime, ForeignKey, Index, Integer,
                         JSON, String, Text,
-                        UniqueConstraint)
+                        UniqueConstraint, text)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from platform_core.db import Base
@@ -360,6 +360,28 @@ class Job(Base):
               "created_at"),
         Index("ix_jobs_fairness", "admission_resource", "user_id",
               "last_claimed_at"),
+        # 🔴 KHỬ TRÙNG BẰNG RÀNG BUỘC, KHÔNG BẰNG `SELECT` RỒI `INSERT`.
+        #
+        #    `jobs.submit()` chống double-submit bằng cách tìm job cùng
+        #    `dedupe_key` chưa kết thúc rồi mới chèn nếu không thấy. Giữa hai câu
+        #    đó là một cửa sổ tranh chấp thật: hai request song song (F5, hai tab,
+        #    script gọi API) cùng thấy "chưa có", cùng chèn — và khách bị trừ tiền
+        #    hai lần cho một yêu cầu.
+        #
+        # ⭐ Ba hệ độc lập hội tụ về đúng lời giải này: Activepieces
+        #    `UNIQUE(flowRunId, stepName)` · n8n `UNIQUE(deduplicationKey) WHERE
+        #    NOT NULL` · Trigger.dev `UNIQUE(environmentId, idempotencyKey)`.
+        #
+        # ⚠️ Phải là chỉ mục **BỘ PHẬN**, hai vế đều bắt buộc:
+        #    - `dedupe_key <> ''` : mặc định là chuỗi rỗng và phần lớn job không
+        #      dùng nó; một UNIQUE đầy đủ sẽ chặn mọi job thứ hai của một người.
+        #    - chỉ khi chưa kết thúc : xong rồi thì gửi lại cùng yêu cầu là hợp lệ
+        #      (bấm "Tạo lại"), và job cũ vẫn phải nằm đó làm bằng chứng cho sổ tiền.
+        Index("ux_jobs_dedupe_active", "user_id", "dedupe_key", unique=True,
+              postgresql_where=text(
+                  "dedupe_key <> '' AND status IN ('queued', 'running')"),
+              sqlite_where=text(
+                  "dedupe_key <> '' AND status IN ('queued', 'running')")),
     )
 
     def __repr__(self) -> str:      # pragma: no cover
@@ -936,3 +958,497 @@ class SingletonLease(Base):
 
     def __repr__(self) -> str:      # pragma: no cover
         return f"<SingletonLease {self.name} holder={self.holder}>"
+
+
+# ── LTT WORKFLOW V2 · Đợt 2.1 — định nghĩa workflow ──────────────────────────
+#
+# Nguồn thiết kế: `docs/architecture/workflow_v2_audit/23_24 §4.1`.
+#
+# ⚠️ KHÔNG dùng lại `agent_workflows`. Bảng cũ trộn ba thứ vào một hàng — bản
+#    đang soạn (sửa được), bản đang chạy (phải bất biến), và phóng chiếu thi
+#    hành. Ba vòng đời khác nhau trong một hàng là lý do không thể ghim một
+#    lượt chạy vào đúng nội dung nó khởi động cùng.
+
+
+class Workflow(Base):
+    """Danh tính một workflow. KHÔNG chứa nội dung — nội dung ở draft/version."""
+
+    __tablename__ = "workflow"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    # Tên mặc định do TẦNG SERVICE đặt, không phải CSDL: nó là chữ hiện cho
+    # người dùng nên phải đi qua `N_()` để bộ trích dịch thấy. Một `default=`
+    # tiếng Việt ở đây là một chuỗi giao diện nằm ngoài tầm với của i18n.
+    name: Mapped[str] = mapped_column(String(160), default="", nullable=False)
+    # Version mà trigger đang dùng. Rỗng = chưa xuất bản lần nào.
+    published_version_id: Mapped[str] = mapped_column(
+        String(36), default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+    archived_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        Index("ix_workflow_owner_updated", "owner_id", "updated_at"),
+    )
+
+
+class WorkflowDraft(Base):
+    """Bản đang soạn — SỬA ĐƯỢC. Một draft cho mỗi workflow.
+
+    `revision` là khoá lạc quan: hai tab cùng mở thì tab đến sau nhận 409 thay
+    vì ghi đè âm thầm phần người kia vừa gõ.
+    """
+
+    __tablename__ = "workflow_draft"
+
+    workflow_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    document: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    revision: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+
+
+class WorkflowVersion(Base):
+    """Một bản đã xuất bản — **BẤT BIẾN** sau khi tạo.
+
+    ⭐ `UNIQUE (workflow_id, graph_hash)` khiến "xuất bản hai lần cùng nội dung"
+       trở thành **không thể**, bằng ràng buộc CSDL chứ không bằng mã cẩn thận.
+       Ba hệ độc lập đã hội tụ về đúng khuôn này (`12_19 §16`).
+
+    ⚠️ `estimated_max` đóng băng **cùng** graph. Tính lại lúc chạy nghĩa là một
+       lượt chạy có thể vượt trần mà người duyệt chưa từng thấy con số ấy.
+    """
+
+    __tablename__ = "workflow_version"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    workflow_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    seq: Mapped[int] = mapped_column(Integer, nullable=False)
+    graph: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    graph_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    estimated_max: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+    created_by: Mapped[str] = mapped_column(String(36), default="", nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("workflow_id", "seq", name="uq_workflow_version_seq"),
+        UniqueConstraint("workflow_id", "graph_hash",
+                         name="uq_workflow_version_hash"),
+    )
+
+
+class WorkflowVersionNode(Base):
+    """Chỉ mục DẪN XUẤT từ `graph`, sinh tại `xuat_ban()`.
+
+    Tồn tại để trả lời "tool X đang được dùng ở workflow nào?" bằng một câu SQL
+    thay vì quét jsonb toàn bảng. Không phải nguồn chân lý — `graph` mới là.
+    """
+
+    __tablename__ = "workflow_version_node"
+
+    version_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    node_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    node_type: Mapped[str] = mapped_column(String(96), nullable=False)
+    type_version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+
+    __table_args__ = (
+        Index("ix_wvn_type", "node_type"),
+    )
+
+
+class WorkflowVersionEdge(Base):
+    """Chỉ mục dẫn xuất cho cạnh. `kind` ∈ {DATA, CONTROL, RESOURCE}."""
+
+    __tablename__ = "workflow_version_edge"
+
+    version_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    edge_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    source_node: Mapped[str] = mapped_column(String(64), nullable=False)
+    source_port: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    target_node: Mapped[str] = mapped_column(String(64), nullable=False)
+    target_port: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    kind: Mapped[str] = mapped_column(String(16), default="DATA", nullable=False)
+    condition: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+
+    __table_args__ = (
+        Index("ix_wve_version", "version_id"),
+    )
+
+
+# ── LTT WORKFLOW V2 · Đợt 2.2 — thi hành (mô hình C) ─────────────────────────
+#
+# Chốt `Q3` (`12_19 §16.2`): trạng thái mỗi node là một **chuỗi ảnh chụp BẤT
+# BIẾN**, không phải một khối JSON sửa tại chỗ.
+#
+# 🔴 `M1` là lý do tồn tại. `agent/executor.tick()` đọc cả `checkpoint`, sửa,
+#    ghi lại — `O(31+N)` mỗi lượt tiến dù chỉ một node đổi. Ở đây một lượt tiến
+#    là `INSERT` đúng những node vừa đổi + `UPDATE` con trỏ.
+
+
+class WorkflowRun(Base):
+    """Một lượt chạy. `version_id` GHIM và không bao giờ đổi.
+
+    ⭐ Ghim là điểm khác cốt lõi với `AgentRun`: sửa workflow lúc 10:00 **không**
+       được đổi lượt chạy bắt đầu 09:58. Không ghim thì một lượt chạy dài không
+       có nội dung xác định — báo cáo sự cố của nó nói về một đồ thị không còn
+       tồn tại.
+    """
+
+    __tablename__ = "workflow_run"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    workflow_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    version_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    status: Mapped[str] = mapped_column(String(24), default="queued",
+                                        nullable=False, index=True)
+    trigger_kind: Mapped[str] = mapped_column(String(24), default="manual",
+                                              nullable=False)
+    # Rỗng = lượt này không dùng khoá. Ràng buộc duy nhất phải là BỘ PHẬN, nếu
+    # không mọi lượt chạy thứ hai của một người sẽ bị chặn — cùng bài học với
+    # `ux_jobs_dedupe_active` (`c9d4e1a77b02`).
+    idempotency_key: Mapped[str] = mapped_column(String(120), default="",
+                                                 nullable=False)
+    estimated_max: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    actual_cost: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    hold_id: Mapped[str] = mapped_column(String(36), default="", nullable=False)
+    # ⭐ Dấu KẾT SỔ. Nó là thứ làm hệ con `finally` **luỹ đẳng**, và luỹ đẳng là
+    #   điều kiện để gọi được nó ở nhiều chỗ mà vẫn an toàn — một hệ con chỉ an
+    #   toàn ở một chỗ thì sớm muộn cũng bị bỏ sót ở chỗ thứ hai.
+    #   `NULL` = chưa kết sổ. Xem `platform_core/workflow/ket_so.py`.
+    ket_so_luc: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    ly_do_ket_so: Mapped[str] = mapped_column(String(200), default="",
+                                              nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+    started_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    finished_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        Index("ux_workflow_run_idem", "owner_id", "idempotency_key",
+              unique=True, postgresql_where=text("idempotency_key <> ''"),
+              sqlite_where=text("idempotency_key <> ''")),
+        Index("ix_workflow_run_owner_created", "owner_id", "created_at"),
+    )
+
+
+class NodeRun(Base):
+    """CON TRỎ: một hàng mỗi node mỗi run, trỏ tới ảnh chụp mới nhất.
+
+    Bảng này **được sửa**; `node_run_snapshot` thì không. Tách hai vai đó là
+    điều khiến `M1` đạt được: đọc trạng thái hiện tại là một `JOIN` chứ không
+    phải một lần quét lịch sử.
+    """
+
+    __tablename__ = "node_run"
+
+    run_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    node_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    latest_snapshot_id: Mapped[str] = mapped_column(String(36), nullable=False)
+
+
+class NodeRunSnapshot(Base):
+    """⭐⭐ CHỈ THÊM — KHÔNG BAO GIỜ SỬA.
+
+    Bốn thứ được giải quyết cùng lúc bởi bảng này (`21_22`:
+    `G18`·`G19`·`G20`·`G21`·`G44`), và đó là lý do nó thay được **hai** bảng:
+
+      lịch sử đầy đủ          mỗi lần chuyển là một hàng, không đè lên nhau
+      chuyển bị TỪ CHỐI       `is_valid=False` — điều tra được ai thua và vì sao
+      chi phí theo attempt    `cost_credit` ghi LÚC KẾT THÚC, không tính lại
+      dòng thời gian          không cần một bảng nhật ký thứ hai
+
+    ⛔ `output_ref` chỉ giữ **tham chiếu** artifact, không giữ bytes. Một ảnh
+       chụp là siêu dữ liệu; nhét nội dung vào đây biến bảng chỉ-thêm thành một
+       kho nhị phân không xoá được.
+    """
+
+    __tablename__ = "node_run_snapshot"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    run_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    node_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    # Rỗng = ảnh chụp đầu tiên của node này. Chuỗi liên kết ngược cho phép đọc
+    # lại đúng đường đi mà không cần sắp theo thời gian — hai ảnh chụp có thể
+    # cùng mốc thời gian, nhưng không thể cùng một cha.
+    previous_snapshot_id: Mapped[str] = mapped_column(
+        String(36), default="", nullable=False)
+    execution_status: Mapped[str] = mapped_column(String(24), nullable=False)
+    run_status: Mapped[str] = mapped_column(String(24), default="",
+                                            nullable=False)
+    attempt_number: Mapped[int] = mapped_column(Integer, default=1,
+                                                nullable=False)
+    is_valid: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    error: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    description: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    job_id: Mapped[str] = mapped_column(String(36), default="", nullable=False)
+    output_ref: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    cost_credit: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+
+    __table_args__ = (
+        Index("ix_nrs_run", "run_id", "created_at"),
+    )
+
+
+# ── LTT WORKFLOW V2 · Đợt 2.3 — waitpoint ────────────────────────────────────
+#
+# Nguồn thiết kế: `23_24 §4.3`. Ba quyết định, ba khiếm khuyết đo được ở kho
+# khác: nhiều-nhiều (Activepieces không biểu đạt nổi 20 node chờ 1 job) ·
+# `sealed` (không có nó thì `ALL` vô nghĩa khi số nhánh động) ·
+# `NOT_DISPATCHED` (một nhánh chết treo barrier vĩnh viễn).
+
+
+class Waitpoint(Base):
+    """Một thứ mà node đang chờ. KHÔNG gắn cứng vào một node — xem `NodeRunWaitpoint`."""
+
+    __tablename__ = "waitpoint"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    run_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    # DELAY | JOB | WEBHOOK | HUMAN | CHILD_RUN | BARRIER
+    kind: Mapped[str] = mapped_column(String(16), nullable=False)
+    # PENDING | COMPLETED | EXPIRED | CANCELLED
+    status: Mapped[str] = mapped_column(String(16), default="PENDING",
+                                        nullable=False)
+    # ⭐ "sẽ không còn tín hiệu nào nữa". Không có cờ này thì `ALL` không định
+    #    nghĩa được: "đủ tất cả" so với cái gì, khi nhánh còn có thể sinh thêm?
+    sealed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # 0 = ALL (chỉ kết luận được sau khi `sealed`). >0 = N-of-M.
+    required_successes: Mapped[int] = mapped_column(Integer, default=0,
+                                                    nullable=False)
+    release_on_first_failure: Mapped[bool] = mapped_column(
+        Boolean, default=False, nullable=False)
+    due_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    token_hash: Mapped[str] = mapped_column(String(64), default="",
+                                            nullable=False)
+    output_ref: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    output_is_error: Mapped[bool] = mapped_column(Boolean, default=False,
+                                                  nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(120), default="",
+                                                 nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+
+    __table_args__ = (
+        # Bộ phận: phần lớn waitpoint không dùng khoá. Cùng bài học với
+        # `ux_jobs_dedupe_active` (`c9d4e1a77b02`).
+        Index("ux_waitpoint_idem", "owner_id", "idempotency_key", unique=True,
+              postgresql_where=text("idempotency_key <> ''"),
+              sqlite_where=text("idempotency_key <> ''")),
+        # ⭐ Chỉ số BỘ PHẬN: bộ quét chỉ quan tâm cái đang chờ và có hẹn giờ.
+        #    Hội tụ độc lập ba lần (Activepieces · n8n · Trigger.dev, `23_24 §3`).
+        Index("ix_waitpoint_due", "due_at",
+              postgresql_where=text("status = 'PENDING' AND due_at IS NOT NULL"),
+              sqlite_where=text("status = 'PENDING' AND due_at IS NOT NULL")),
+    )
+
+
+class WaitpointSignal(Base):
+    """Một tín hiệu tới một waitpoint. `seq` phân biệt nhánh.
+
+    ⭐ `NOT_DISPATCHED` = tín hiệu **lẽ ra phải gửi mà chưa bao giờ gửi**. Thiếu
+       trạng thái này, một nhánh chết không SUCCEEDED cũng không FAILED — nó
+       **vắng mặt**, và `ALL` sau khi niêm phong đứng mãi. Ghi nó ra biến một
+       treo vô hạn thành một kết luận.
+    """
+
+    __tablename__ = "waitpoint_signal"
+
+    waitpoint_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    seq: Mapped[int] = mapped_column(Integer, primary_key=True)
+    # PENDING | SUCCEEDED | FAILED | CANCELLED | NOT_DISPATCHED
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    ref_id: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    result_ref: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+
+
+class NodeRunWaitpoint(Base):
+    """⭐ NHIỀU-NHIỀU: một waitpoint chặn N node, một node chờ N waitpoint.
+
+    `WF-204`: 20 node ForEach cùng chờ **một** job GPU. Mô hình
+    một-waitpoint-một-bước không biểu đạt nổi kịch bản ấy, và nó không phải
+    kịch bản hiếm — nó là hình dạng mặc định của ForEach có tài nguyên chung.
+    """
+
+    __tablename__ = "node_run_waitpoint"
+
+    run_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    node_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    waitpoint_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+
+
+# ── LTT WORKFLOW V2 · Đợt 2.4 — đánh thức ────────────────────────────────────
+
+
+class Wakeup(Base):
+    """Nguồn CHÂN LÝ của việc đánh thức. `LISTEN/NOTIFY` chỉ rút ngắn độ trễ.
+
+    🔴 Vì sao bảng chứ không phải `NOTIFY` — một con số, không phải sở thích:
+       worker restart **13,6 lần/ngày** (`01 §A.6`). Một `NOTIFY` phát đúng lúc
+       worker đang khởi động lại **biến mất không dấu vết**. Bảng thì không.
+
+    🔴 `M2`: một run chờ 60 phút có **một** hàng ở đây và phát sinh **0** câu
+       SQL trong 60 phút đó. Bộ quét hỏi *"có hàng nào tới hạn chưa"* bằng
+       **một** truy vấn cho **toàn hệ thống**, đi thẳng vào `ix_wakeup_due`.
+    """
+
+    __tablename__ = "wakeup"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    run_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    node_run_id: Mapped[str] = mapped_column(String(64), default="",
+                                             nullable=False)
+    # job_done | waitpoint_due | approval | child_run | resource_free
+    kind: Mapped[str] = mapped_column(String(24), nullable=False)
+    due_at: Mapped[datetime] = mapped_column(DateTime(timezone=True),
+                                             nullable=False)
+    claimed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+
+    __table_args__ = (
+        # ⭐ Khử trùng bằng RÀNG BUỘC. Hai đường (bảng và `NOTIFY`) cùng hẹn một
+        #    lần đánh thức là trạng thái BÌNH THƯỜNG, không phải sự cố — chốt
+        #    `Q4` đòi cả hai đường luỹ đẳng, và chỗ cưỡng chế là đây.
+        UniqueConstraint("run_id", "node_run_id", "kind", "due_at",
+                         name="uq_wakeup_khu_trung"),
+        # ⭐ Chỉ số BỘ PHẬN: hàng đã nhặt không còn là việc, đừng để nó làm
+        #    phình chỉ số mà bộ quét đi qua mỗi 5 giây.
+        Index("ix_wakeup_due", "due_at",
+              postgresql_where=text("claimed_at IS NULL"),
+              sqlite_where=text("claimed_at IS NULL")),
+    )
+
+
+# ── LTT WORKFLOW V2 · Đợt 4.3 — ForEach ──────────────────────────────────────
+
+
+class ForeachVong(Base):
+    """Một vòng ForEach. `max_items` là **chặn trên**, không phải gợi ý."""
+
+    __tablename__ = "foreach_vong"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    run_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    node_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    max_items: Mapped[int] = mapped_column(Integer, nullable=False)
+    # `M4`: hôm nay 4 **cứng**. V2 khai được, mặc định 8.
+    parallelism: Mapped[int] = mapped_column(Integer, default=8, nullable=False)
+    so_muc: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+
+
+class ForeachMuc(Base):
+    """MỘT hàng cho MỖI phần tử, ghi sẵn ngay lúc mở vòng.
+
+    ⭐ Đây là thứ làm `M7` đạt được. Một **con trỏ** "đã tới đâu" chỉ đúng khi
+       các phần tử chạy tuần tự; với `parallelism > 1` thì phần tử 7 có thể xong
+       trước phần tử 3, và con trỏ **không biểu đạt nổi** trạng thái ấy.
+
+    ⇒ Sau một lần chết, "còn phải chạy gì" là một câu `WHERE xong = false` —
+      chính xác, không suy đoán.
+    """
+
+    __tablename__ = "foreach_muc"
+
+    vong_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    chi_so: Mapped[int] = mapped_column(Integer, primary_key=True)
+    dau_vao: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    ket_qua: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    xong: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    __table_args__ = (
+        Index("ix_foreach_muc_chua_xong", "vong_id",
+              postgresql_where=text("xong = false"),
+              sqlite_where=text("xong = 0")),
+    )
+
+
+# ── LTT WORKFLOW V2 · Đợt 5.1 — artifact ─────────────────────────────────────
+
+
+class Artifact(Base):
+    """Tệp sinh ra bởi một lượt chạy. `id = "<backend>:<key>"` — **TỰ MÔ TẢ**.
+
+    🔴 Bản vá cho một lỗ **sẽ nổ**: ngày R2 chạy song song Local,
+       `storage.get_storage()` là singleton toàn cục ⇒ mọi khoá cũ thành mơ hồ.
+       Tham chiếu đi vào `output_ref` của bước sau, và **JSONB không tra bảng
+       được** — nên backend phải nằm ngay trong id (bài học n8n, `05 §4.1`).
+    """
+
+    __tablename__ = "artifact"
+
+    id: Mapped[str] = mapped_column(String(255), primary_key=True)
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    # ⭐ LINEAGE: "tệp này từ đâu ra" trả lời được bằng MỘT cột.
+    created_by_snapshot_id: Mapped[str] = mapped_column(
+        String(36), default="", nullable=False)
+    kind: Mapped[str] = mapped_column(String(16), default="file", nullable=False)
+    mime: Mapped[str] = mapped_column(String(120), default="", nullable=False)
+    size_bytes: Mapped[int] = mapped_column(BigInteger, default=0, nullable=False)
+    checksum_sha256: Mapped[str] = mapped_column(String(64), default="",
+                                                 nullable=False)
+    # EPHEMERAL | RUN | PROJECT | PERMANENT
+    ttl_class: Mapped[str] = mapped_column(String(16), default="RUN",
+                                           nullable=False)
+    expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    meta: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+
+    __table_args__ = (
+        Index("ix_artifact_expiry", "expires_at",
+              postgresql_where=text(
+                  "ttl_class <> 'PERMANENT' AND expires_at IS NOT NULL"),
+              sqlite_where=text(
+                  "ttl_class <> 'PERMANENT' AND expires_at IS NOT NULL")),
+    )
+
+
+# ── LTT WORKFLOW V2 · Đợt 5.4 — trigger ──────────────────────────────────────
+
+
+class WorkflowTrigger(Base):
+    """Cái gì làm một workflow chạy. Mỗi `kind` là một MÔ-ĐUN, không phải một `if`.
+
+    Nền tảng **không biết tên** loại nào: nó chỉ biết một loại phải trả lời được
+    `toi_han()` và `lan_ke_tiep()`. Thêm loại thứ năm là một lần `dang_ky()`,
+    không phải một lần sửa `platform_core` (`G42`, bài học Windmill).
+    """
+
+    __tablename__ = "workflow_trigger"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    workflow_id: Mapped[str] = mapped_column(String(36), nullable=False,
+                                             index=True)
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    kind: Mapped[str] = mapped_column(String(24), nullable=False)
+    config: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    next_fire_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+
+    __table_args__ = (
+        Index("ix_trigger_due", "next_fire_at",
+              postgresql_where=text("enabled AND next_fire_at IS NOT NULL"),
+              sqlite_where=text("enabled = 1 AND next_fire_at IS NOT NULL")),
+    )

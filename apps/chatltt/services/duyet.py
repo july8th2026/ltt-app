@@ -243,11 +243,40 @@ def su_kien_quyet(p: ChatlttApproval) -> dict:
 
 
 def dang_cho(db, *, user_id: str, run_id: str = "") -> list:
-    """Phiếu còn chờ của một người dùng — để dựng lại giao diện sau reload."""
-    from sqlalchemy import select
+    """Phiếu còn chờ của một người dùng — để dựng lại giao diện sau reload.
 
-    q = select(ChatlttApproval).where(ChatlttApproval.user_id == str(user_id),
-                                      ChatlttApproval.quyet_dinh == CHO)
+    ## ⛔ Phiếu của một run ĐÃ HUỶ không còn là phiếu chờ
+
+    Trạng thái đúng mà giao diện sai thì người dùng vẫn gặp một sản phẩm hỏng.
+    Sau khi huỷ một lượt đang chờ, `ChatlttRun.trang_thai` thành `CANCELLED` —
+    đúng. Nhưng `quyet_dinh` của phiếu vẫn là `CHO`, nên **thẻ duyệt vẫn hiện**.
+    Người dùng bấm "Duyệt", `_quyet` chạy trót lọt, rồi `nen_chay_tiep` trả
+    `False` và **không có gì xảy ra** — không kết quả, không lời giải thích.
+
+    ⭐ Lọc ở phía **ĐỌC**, không phía ghi. Nếu thay vào đó ta đi cập nhật từng
+      hàng phiếu mỗi lần huỷ một run, thì **mọi** đường huỷ trong tương lai phải
+      nhớ làm thêm bước ấy — và sẽ có đường quên. Lọc một lần ở đây thì mọi
+      người đọc, kể cả người chưa được viết, tự đúng theo.
+
+    ⚠️ `outerjoin` chứ không `join`: một phiếu mà `run_id` không trỏ tới hàng nào
+       vẫn phải hiện. `join` trong sẽ **im lặng nuốt** nó, và lúc ấy một dữ liệu
+       hỏng biến thành một phiếu vô hình thay vì một phiếu đáng ngờ.
+
+    ⛔ CHỈ lọc `CANCELLED`. `FAILED` cũng có vẻ đáng lọc, nhưng đường ấy chưa
+       được đo — và nới một bộ lọc theo suy đoán là cách một bộ lọc bắt đầu
+       giấu thứ nó không nên giấu. Ghi lại cho P11 xem xét.
+    """
+    from sqlalchemy import or_, select
+
+    from apps.chatltt.services import dieu_phoi as DP
+    from apps.chatltt.tables import ChatlttRun
+
+    q = (select(ChatlttApproval)
+         .outerjoin(ChatlttRun, ChatlttRun.id == ChatlttApproval.run_id)
+         .where(ChatlttApproval.user_id == str(user_id),
+                ChatlttApproval.quyet_dinh == CHO,
+                or_(ChatlttRun.id.is_(None),
+                    ChatlttRun.trang_thai != DP.CANCELLED)))
     if run_id:
         q = q.where(ChatlttApproval.run_id == str(run_id))
     return [su_kien_can_duyet(p)

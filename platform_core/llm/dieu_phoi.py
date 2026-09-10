@@ -5,6 +5,7 @@ dieu_phoi.py — MỘT đường gọi model ngôn ngữ cho toàn nền tảng.
 
      platform_core/agent/planner.py    ghi cứng `thu_tu_provider=["gemini"]` VÀ
                                        ghi cứng luôn HTTP của Gemini
+                                       (cả hai đã gỡ ở pha 05.3 / 07)
      apps/autosubvideo/ai_workflows.py
      apps/<slug>/jobs.py
 
@@ -47,8 +48,14 @@ log = logging.getLogger(__name__)
 #: thì thêm vào đây, **không** viết thêm một nhánh `if` ở dưới.
 PROVIDER_OPENAI = ("ltt_llm",)
 
-#: Provider nói giao thức Gemini.
-PROVIDER_GEMINI = ("gemini",)
+# 🔴 `PROVIDER_GEMINI` ĐÃ GỠ 09/09/2026 (AI CLEAN REBUILD V2 pha 07) cùng hàm
+#    `_goi_gemini` và nhánh `if` của nó trong vòng lặp bên dưới.
+#
+# ⛔ Đừng thêm lại một hằng số nào có hình dạng ấy. Chú thích ngay trên đã nói
+#    luật: *"thêm provider mới cùng loại thì thêm vào `PROVIDER_OPENAI`, KHÔNG
+#    viết thêm một nhánh `if` ở dưới"*. Một họ giao thức thứ hai chỉ đáng có khi
+#    nó **thật sự** khác giao thức — Gemini là họ duy nhất từng như vậy, và nó
+#    không còn được phục vụ.
 
 
 class KhongCoProviderNao(RuntimeError):
@@ -84,56 +91,6 @@ def _goi_openai(base_url: str, credential: str, than: dict, timeout_s: float) ->
     return CongVlm(goi=goi, timeout_s=timeout_s).chat(**than)
 
 
-def _goi_gemini(model: str, credential: str, messages: list,
-                max_tokens: Optional[int], timeout_s: float) -> KetQuaChat:
-    """Dịch sang dạng dây của Gemini. Chỉ ở ĐÂY, không rải khắp nơi."""
-    import httpx
-
-    phan = []
-    for tin in messages:
-        noi = tin.get("content")
-        if isinstance(noi, str) and noi:
-            phan.append({"text": noi})
-        elif isinstance(noi, list):
-            for p in noi:
-                if isinstance(p, dict) and p.get("type") in ("text", "input_text"):
-                    phan.append({"text": str(p.get("text") or "")})
-
-    than: dict[str, Any] = {"contents": [{"parts": phan}]}
-    if max_tokens:
-        than["generationConfig"] = {"maxOutputTokens": int(max_tokens)}
-
-    try:
-        r = httpx.post(
-            f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
-            headers={"x-goog-api-key": credential}, json=than, timeout=timeout_s)
-    except httpx.HTTPError as e:
-        raise AmbiguousProviderError(
-            f"gemini mat ket noi sau khi bat dau gui: {type(e).__name__}") from None
-
-    if r.status_code == 429:
-        # Gemini cung dung 429 cho "qua nhieu yeu cau". Cung mot luat: khong phai loi.
-        raise BanError("gemini gioi han tan suat")
-    if r.status_code != 200:
-        raise CongVlmError(f"gemini HTTP {r.status_code}")
-
-    d = r.json()
-    ung = (d.get("candidates") or [{}])[0]
-    van = "".join(str(p.get("text") or "")
-                  for p in ((ung.get("content") or {}).get("parts") or []))
-    um = d.get("usageMetadata") or {}
-    co_so = "promptTokenCount" in um
-    return KetQuaChat(
-        noi_dung=van,
-        finish_reason=str(ung.get("finishReason") or ""),
-        model=model,
-        su_dung=SuDung(token_vao=int(um.get("promptTokenCount") or 0),
-                       token_ra=int(um.get("candidatesTokenCount") or 0),
-                       dang_tin=co_so),
-        tho=d,
-    )
-
-
 def goi(db, *, messages: list, thu_tu_provider: Sequence[str],
         category: Optional[str] = None, model: Optional[str] = None,
         model_theo_provider: Optional[dict] = None,
@@ -148,7 +105,7 @@ def goi(db, *, messages: list, thu_tu_provider: Sequence[str],
        sang provider kia thì nó từ chối, và bên gọi sẽ tưởng provider đó "đang
        hỏng". Khai rõ:
 
-           model_theo_provider={"ltt_llm": "qwen38-api", "gemini": "gemini-2.5-flash"}
+           model_theo_provider={"ltt_llm": "qwen38-api"}
 
     🔴 VÍ DỤ TRÊN TỪNG GHI `{"ltt_llm": "ltt_llm"}`, VÀ NÓ ĐÃ DẠY SAI HAI NƠI.
 
@@ -181,6 +138,25 @@ def goi(db, *, messages: list, thu_tu_provider: Sequence[str],
     ly_do: list[str] = []
 
     for pid in thu_tu_provider:
+        # ⛔ AI CLEAN REBUILD V2 — CỔNG FAIL-CLOSED, ĐẶT TRƯỚC MỌI THỨ KHÁC.
+        #
+        #    Provider đã ngừng thì **không bao giờ** tới được `chon_key`, nên
+        #    không có đường nào lọt xuống HTTP. Ghi vào `ly_do` để thông điệp
+        #    lỗi cuối nói thật ra chuyện gì, thay vì đổ cho "bận".
+        #
+        # ⚠️ ĐÂY KHÔNG PHẢI `BanError`. "Bận" nghĩa *đi tiếp rồi quay lại sau*;
+        #    "đã ngừng" nghĩa *không còn là một đường chạy*. Nếu ai đó về sau
+        #    đổi nhánh này thành `BanError` thì đường lui legacy sống lại y
+        #    nguyên — chỉ khác cái tên.
+        #    ⚠️ Hỏi `providers.da_ngung()` chứ KHÔNG đọc `.is_active` trên vật
+        #       thể `get()` trả về: `get()` bị monkeypatch ở nhiều phép kiểm và
+        #       trả `SimpleNamespace` không có trường đó. Sự thật về retire nằm
+        #       ở `REGISTRY`, nên hỏi đúng chỗ ấy.
+        if providers.da_ngung(pid):
+            ly_do.append(f"{pid}: da ngung phuc vu (khong phai ban)")
+            log.info("provider %s da ngung, bo qua", pid)
+            continue
+
         ten_model = ban_do.get(pid, model) or ""
         try:
             key = api_pool.chon_key(db, category=cat, model=ten_model or None,
@@ -205,11 +181,7 @@ def goi(db, *, messages: list, thu_tu_provider: Sequence[str],
         base = (getattr(key, "base_url", "") or "").strip() \
             or (getattr(prov, "base_url", "") or "").strip()
         try:
-            if pid in PROVIDER_GEMINI:
-                if on_dispatch is not None:
-                    on_dispatch(pid)
-                kq = _goi_gemini(ten_model, credential, messages, max_tokens, timeout_s)
-            elif pid in PROVIDER_OPENAI:
+            if pid in PROVIDER_OPENAI:
                 than = {"model": ten_model, "messages": messages, "tools": tools,
                         "max_tokens": max_tokens, "temperature": temperature,
                         "reasoning_effort": reasoning_effort}

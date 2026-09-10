@@ -621,6 +621,31 @@ def giu_cho_treo(db: DbSession, *, treo_sau: timedelta = TREO_SAU,
                                      Job.status.in_((JOB_QUEUED, JOB_RUNNING)))
             ).all()
         }
+        # 🔴 MỘT KHOÁ Ở ĐÂY CÓ THỂ LÀ MỘT `WorkflowRun`, KHÔNG PHẢI MỘT `Job`.
+        #
+        # Cột `job_id` không có khoá ngoại, và `platform_core/workflow/tien.py`
+        # dùng `run.id` làm khoá sổ cho khoản giữ *1 lần/run* (`23_24` dòng 33).
+        # Hỏi mỗi bảng `jobs` thì **mọi lượt chạy đang chạy bình thường** rơi ra
+        # ngoài `con_song` ⇒ bị xếp là tiền treo.
+        #
+        # ⛔ Và hậu quả không dừng ở một báo động giả: `tu_hoan_treo()` dùng lại
+        #    chính hàm này, nên sau `TU_HOAN_SAU` nó sẽ **hoàn tiền cho một lượt
+        #    đang chạy** — sổ chỉ ghi thêm, nên khoản hoàn nhầm ấy không xoá
+        #    được, chỉ bù được.
+        #
+        # ⭐ Điều kiện là "CHƯA kết thúc", không phải một danh sách trạng thái
+        #    sống: thêm một trạng thái trung gian mới về sau sẽ tự động được
+        #    coi là sống, thay vì im lặng bị tính là treo.
+        from platform_core.models import WorkflowRun
+        from platform_core.workflow.may_trang_thai import RUN_KET_THUC
+
+        con_song |= {
+            row[0] for row in db.execute(
+                select(WorkflowRun.id)
+                .where(WorkflowRun.id.in_(khoa),
+                       WorkflowRun.status.notin_(tuple(RUN_KET_THUC)))
+            ).all()
+        }
 
     ra: list[GiuChoTreo] = []
     for r in hang:

@@ -132,8 +132,34 @@ def test_validate_server_price_and_palette_are_authoritative(api):
     assert palette["version"] == 2
     assert {tool["name"] for tool in palette["tools"]} == set(discover_tools())
     assert palette["routing"]["mode"] == "platform_auto"
-    assert any(model["id"] == "seedance-2.0" and len(model["providers"]) == 2
-               for model in palette["models"])
+    # ⭐ Bản cũ: `len(model["providers"]) == 2` cho `seedance-2.0` — đúng khi có
+    #    `byteplus` + `plenx`. AI CLEAN REBUILD V2 cho PLENX nghỉ (10/09/2026)
+    #    nên con số thành 1; nhưng đổi `2` thành `1` chỉ dời điểm gãy sang lần
+    #    sau, và mâu thuẫn với chính chú thích ba dòng trên đây — *"bất biến
+    #    mạnh hơn một con số"*.
+    #
+    #    Bất biến thật: palette **không được lệch với registry**, và nó không
+    #    được chào một nhà cung cấp đã nghỉ. Suy ra từ registry nên nó không trôi.
+    from platform_core import providers as _pv
+
+    # `providers` trong palette là **list dict** `{"id", "label"}` — nên phải
+    # rút `id` ra trước khi so. Bản nháp viết `set(sd["providers"]) == mong or
+    # {…} == mong` và nó **tự chặn mình**: `set()` trên dict ném `TypeError`
+    # trước khi kịp tới `or`. Một cách viết "thử hai kiểu cho chắc" mà kiểu thứ
+    # nhất nổ thì kiểu thứ hai không bao giờ được chạy.
+    def _ids(ds):
+        return {p["id"] if isinstance(p, dict) else p for p in ds}
+
+    sd = next(m for m in palette["models"] if m["id"] == "seedance-2.0")
+    mong = {p.id for p in _pv.REGISTRY.values()
+            if p.is_active and any(x.id == "seedance-2.0" for x in p.models)}
+    assert mong, "khong con nha cung cap song nao phuc vu seedance-2.0"
+    assert _ids(sd["providers"]) == mong, (
+        f"palette lech registry: {sd['providers']} vs {mong}")
+    for m in palette["models"]:
+        for pid in _ids(m["providers"]):
+            assert not _pv.da_ngung(pid), (
+                f"palette van chao {pid} cho {m['id']} - nha cung cap da nghi")
     assert all("price" not in tool and "params_schema" in tool for tool in palette["tools"])
     # ⛔ SUA 26/08 — bang nay khoa PALETTE CUA THOI TRUOC Q109.
     #

@@ -68,6 +68,21 @@ NHAN_PHONG_CACH = {
     "doc_truyen": N_('Kể chuyện'),
 }
 
+#: Thứ tự ƯU TIÊN của phong cách khi xếp giọng. Số nhỏ đứng trước.
+#:
+#: 🔴 XẾP BẰNG DỮ LIỆU, KHÔNG BẰNG NHÃN. `NHAN_PHONG_CACH` ở trên đã qua `_()`,
+#:    nên so sánh chuỗi nhãn sẽ **trượt theo ngôn ngữ giao diện** — hỏng lặng
+#:    lẽ, và chỉ hỏng với khách xem bản dịch.
+#:
+#: ⭐ Và thứ tự này là một QUYẾT ĐỊNH SẢN PHẨM, không phải một chi tiết: bên
+#:    tiêu thụ lấy phần tử **đầu** làm mặc định, nên để `tu_nhien` đứng đầu
+#:    nghĩa là mọi khách chưa chọn gì đều được đọc bằng giọng tự nhiên.
+#:
+#: ⛔ Hằng số này từng có **hai** bản — một ở `tham_chieu.py`, một ở nơi khác.
+#:    Hai bảng thứ tự cho cùng một kho giọng là hai màn hình mời cùng một khách
+#:    hai giọng mặc định khác nhau. Đây là bản DUY NHẤT.
+UU_TIEN_PHONG_CACH = {"tu_nhien": 0, "doc_truyen": 1, "tin_tuc": 2}
+
 
 @dataclass(frozen=True)
 class GiongMau:

@@ -34,6 +34,28 @@ from . import tham_so
 
 log = logging.getLogger("ltt.voice.engine")
 
+#: Trần luồng CPU mặc định cho torch. **Dẫn xuất, không đặt bừa** — xem khối
+#: chú thích ở `Engine.nap()`:
+#:
+#:     loi vat ly 10 − tran pytest 6 (`-n 6`, CLAUDE.md) = 4 cho sidecar
+#:
+#: Máy chủ chỉ chạy giọng nói thì đặt `LTT_VOICE_TORCH_THREADS=10`.
+TRAN_LUONG_MAC_DINH = 4
+
+
+def tran_luong() -> int:
+    """Số luồng CPU cho torch. `0` hoặc giá trị lạ ⇒ mặc định, không ném.
+
+    ⛔ Không ném: một biến môi trường gõ sai không được làm dịch vụ không khởi
+       động được. Lùi về mặc định là hành vi đúng, và mặc định thì an toàn.
+    """
+    tho = (os.environ.get("LTT_VOICE_TORCH_THREADS") or "").strip()
+    try:
+        n = int(tho)
+    except ValueError:
+        return TRAN_LUONG_MAC_DINH
+    return n if n >= 1 else TRAN_LUONG_MAC_DINH
+
 
 class DangBan(RuntimeError):
     """Hết suất chạy. Ánh xạ ra HTTP 429 + Retry-After."""
@@ -140,6 +162,25 @@ class CongGiong:
         self._warmup = warmup
 
     # ── nạp ──────────────────────────────────────────────────────────────────
+    def _dat_tran_luong(self) -> None:
+        """Ép trần luồng CPU của torch. Nuốt lỗi — đây là tinh chỉnh, không phải cổng.
+
+        ⚠️ Đặt cả `OMP_NUM_THREADS`: một phần công việc CPU nằm trong ONNX
+           Runtime và BLAS, và chúng đọc biến môi trường chứ không đọc
+           `torch.set_num_threads`. Đặt một thứ mà quên thứ kia là để nửa số
+           luồng thoát ra ngoài trần — đúng kiểu hỏng mà `-n 6` đã mắc.
+        """
+        n = tran_luong()
+        os.environ.setdefault("OMP_NUM_THREADS", str(n))
+        try:
+            import torch
+            truoc = torch.get_num_threads()
+            torch.set_num_threads(n)
+            log.info("[luong] torch %d -> %d (OMP=%s)", truoc,
+                     torch.get_num_threads(), os.environ["OMP_NUM_THREADS"])
+        except Exception:  # noqa: BLE001 - tinh chinh, khong duoc chan khoi dong
+            log.warning("[luong] khong dat duoc tran luong torch", exc_info=True)
+
     def nap(self) -> None:
         if self._tts is not None:
             return
@@ -147,6 +188,61 @@ class CongGiong:
             if self._tts is not None:
                 return
             t0 = time.perf_counter()
+
+            # 🔴 TRẦN LUỒNG CPU CỦA TORCH — đặt TRƯỚC khi nạp model.
+            #
+            #    Đo 09/09/2026 trên máy này: lõi **vật lý 10**, và
+            #    `torch.get_num_threads()` trong `vieneu-venv` trả **10** — tức
+            #    một lượt sinh lấy **trọn** số lõi cho phần CPU (tokenise, ONNX
+            #    khử nhiễu, hậu kỳ âm thanh).
+            #
+            #    Đây đúng khuyết tật CLAUDE.md ghi cho
+            #    `apps/auto_scan_video/demucs_runner.py`, ở một module khác:
+            #    *"tiến trình con KHÔNG nằm trong ngân sách"*. Một tiến trình
+            #    cháu không xin khoá và không nằm trong `-n`; nó chỉ hiện ra ở
+            #    CPU — và ngày 03/09 máy đã sập vì đúng lớp việc ấy.
+            #
+            # ⭐ VÌ SAO SỐ MẶC ĐỊNH LÀ 4, và nó DẪN XUẤT chứ không đặt bừa:
+            #
+            #        loi vat ly                     10
+            #        tran pytest cua CLAUDE.md      -6      (`-n 6`, tran cung)
+            #        con lai cho sidecar             4
+            #
+            #    Tức sidecar + một lượt gate đầy đủ = đúng 10, không vượt. Chọn
+            #    một số lớn hơn là cố ý cho phép vượt lõi.
+            #
+            # ⚠️ Trên một máy chủ **chỉ** chạy giọng nói thì 4 là phí:
+            #    `admission_slots=1` nên chỉ có một job, và nó nên lấy cả máy.
+            #    Vì thế đây là **biến môi trường**, không phải hằng số chôn: đặt
+            #    `LTT_VOICE_TORCH_THREADS=10` ở máy chủ riêng.
+            #
+            # ⛔ Đặt SAU khi model nạp thì vô nghĩa — các pool luồng của torch
+            #    dựng lúc nạp, và `set_num_threads` sau đó không thu chúng lại.
+            self._dat_tran_luong()
+
+            # 🔴 KIỂM TỆP MODEL TRƯỚC KHI ĐƯA CHO THƯ VIỆN BÊN THỨ BA.
+            #
+            #    Cùng họ với chốt watermark ngay dưới: cả hai từ chối khởi động
+            #    thay vì ghi một dòng log rồi đi tiếp. Khác biệt là ở đây thứ
+            #    hỏng nằm **trước** cả `import` — một blob bị cắt cụt hay một
+            #    trang HTML mang tên `model.safetensors`.
+            #
+            # ⭐ Vì sao không để `Vieneu(...)` tự ném: nó **có** ném, nhưng ném
+            #    một lỗi về tensor ở trong một thư viện khác. Người vận hành đọc
+            #    lên sẽ đi tìm nhầm chỗ. Cổng này đổi một lỗi vô hướng thành một
+            #    câu có hướng: *tệp nào, hỏng thế nào, chạy lệnh gì để sửa*.
+            #
+            # ⛔ Không định vị được cache thì **bỏ qua** (fail-open) — xem
+            #    `kiem_model` đầu tệp. Máy phát triển không có cache vẫn phải
+            #    chạy được, nếu không thì cổng này bị gỡ trong một tuần.
+            from . import kiem_model
+            _che = kiem_model.che_do()
+            if _che != "tat":
+                try:
+                    kiem_model.kiem(bat_buoc=(_che == "bat_buoc"))
+                except kiem_model.ModelHong as e:
+                    raise LoiEngine(str(e)) from e
+
             from vieneu import Vieneu
 
             tts = Vieneu(mode="v3turbo", backend=self.backend_xin,
