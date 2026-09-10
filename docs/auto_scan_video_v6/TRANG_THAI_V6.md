@@ -22,7 +22,7 @@ pha; chép lại vào đây là tạo một bản sẽ trôi.
 |---|---|---|---|
 | 00–05 | nền, hợp đồng, kiến trúc | **CHƯA MỞ** | |
 | 06 | Studio frontend architecture | **XONG** | `asv.js` 1.154 dòng → **tám module** `server/static/asv/`. Một nguồn `ASV_STUDIO_JS` cho ba nơi (thẻ `<script>` · `asset_ver` · bộ kiểm). Trần 320 dòng/module, 4 đối chứng đỏ đúng chỗ. 🔴 Kiểm trình duyệt bắt một nút giả — `[hidden]` bị `.btn{display:inline-flex}` đè. Xem `PHA06_KIEN_TRUC_GUI.md` |
-| 07 | ProductSettings + RenderManifest v3 | **CHƯA MỞ** | |
+| 07 | ProductSettings + RenderManifest v3 | **XONG** | `cai_dat.py` — schema `asv.cai_dat.v3`, vân tay toàn hồ sơ, **mười nơi đọc → một**. 🔴 Sửa một lần trôi THẬT: `timing_mode` có hai mặc định (`fit_original` vs ``), nên một run thiếu khoá **chạy** một đằng còn **bằng chứng QC ghi** một nẻo. Lưu THƯA / đọc TOÀN PHẦN. 4 đối chứng đỏ đúng chỗ. Xem `PHA07_CAI_DAT_CHUAN_TAC.md` |
 | 08 | Durable upload + source preview | **XONG** | `ef7b3425` (08a) + `d78d1804`/`cc9b1e8d` (08b). Xem `PHA08_TAI_LEN.md`. 🔴 Tìm ra đường tải lên 2 GiB **chưa bao giờ chạy được từ giao diện** |
 | 09 | Timeline + Scene Browser | **XONG** | `d4066def` — khách XEM được cảnh, và chỉ xem |
 | 10 | Core edit controls | **MỘT PHẦN** | `a9cecb42` cắt đầu/cuối. `zoom`/`crop`/`reframe` nằm trong `CAM_TRONG_MVP` — mở chúng cần một ADR, không phải một lượt code |

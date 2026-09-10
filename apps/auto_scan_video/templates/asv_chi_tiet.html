@@ -43,18 +43,28 @@
   <details class="asv-nang-cao">
     <summary>{{ _("Cài đặt đã dùng") }}</summary>
     <ul class="asv-cai-dat">
+      {#- ⛔ Doc qua `cai` — ban doc TOAN PHAN do `cai_dat.doc(run)` cho.
+          Truoc pha 07 khoi nay goi `run.settings.get(...)` **khong kem mac
+          dinh**, nen mot ho so thieu khoa lam ca dong bien mat: vong lap
+          khong khop gi, va khach doc mot o trong o cho le ra phai noi cach
+          khop thoi gian. -#}
       <li>{{ _("Kiểu xử lý") }}:
-        {% set p = run.settings.get("preset") %}
-        {% for ma, ten, _mo_ta in preset %}{% if ma == p %}{{ _(ten) }}{% endif %}{% endfor %}
+        {% for ma, ten, _mo_ta in preset %}{% if ma == cai.preset %}{{ _(ten) }}{% endif %}{% endfor %}
       </li>
       <li>{{ _("Cách khớp thời gian") }}:
-        {% set c = run.settings.get("timing_mode") %}
-        {% for ma, ten, _mo_ta in che_do %}{% if ma == c %}{{ _(ten) }}{% endif %}{% endfor %}
+        {% for ma, ten, _mo_ta in che_do %}{% if ma == cai.timing_mode %}{{ _(ten) }}{% endif %}{% endfor %}
       </li>
-      <li>{{ _("Giọng đọc") }}: {{ run.settings.get("giong_id") or "—" }}</li>
+      <li>{{ _("Giọng đọc") }}: {{ cai.giong_id or "—" }}</li>
       <li>{{ _("Vùng che") }}:
-        {% set v = run.settings.get("vung") or [] %}
-        {% if v %}{{ v | length }}{% else %}{{ _("không có") }}{% endif %}
+        {% if cai.vung %}{{ cai.vung | length }}{% else %}{{ _("không có") }}{% endif %}
+      </li>
+      {#- ⭐ Hai dong cho NGUOI VAN HANH, khong phai cho khach doc thuong: hai
+          lan chay "trong nhu nhau" ma khac van tay la hai lan chay KHAC nhau,
+          va do la cau hoi dau tien khi ai do hoi vi sao hai video khong giong
+          nhau. `v0` nghia la ho so tao truoc khi schema duoc danh so — mot ho
+          so cu hop le, khong phai mot ho so hong. -#}
+      <li class="asv-ghi-chu">{{ _("Hồ sơ cấu hình") }}:
+        v{{ ho_so_phien_ban }} · <code>{{ ho_so_van_tay }}</code>
       </li>
     </ul>
   </details>

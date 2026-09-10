@@ -134,9 +134,14 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     # ⭐ Ca hai suy tu **khai bao** (preset) va tu **ban do** ma pha 16 da luu
     #    cung ke hoach — khong tinh lai tu du lieu. Tinh lai mot quyet dinh da
     #    chot la mo duong cho hai cau tra loi khac nhau cho cung mot cau hoi.
-    from . import ban_do_thoi_gian, cat_dau_cuoi, che_do_render as cdr, hop_dong_v4
+    from . import (ban_do_thoi_gian, cai_dat as cd, cat_dau_cuoi,
+                   che_do_render as cdr)
 
-    preset = str((run.settings or {}).get("preset") or hop_dong_v4.PRESET_MAC_DINH)
+    # 🔑 MOT ban doc cho ca giai doan. Truoc pha 07 cho nay doc
+    #    `run.settings` NAM lan rieng le, moi lan mot mac dinh cua
+    #    rieng no.
+    cai = cd.doc(run)
+    preset = cai.preset
     cach = cdr.che_do_cho(preset)
     ban_do = ban_do_thoi_gian.BanDoThoiGian.tu_dict(ke_hoach.get("ban_do") or {})
     khoang = list(ban_do.giu)
@@ -159,7 +164,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     #    giu hinh, nhung mot yeu cau dung tay van toi duoc.
     if cach == cdr.CAT_MA_HOA_LAI:
         khoang = cat_dau_cuoi.giao(
-            khoang, (run.settings or {}).get("cat"),
+            khoang, cai.cat,
             float(ke_hoach.get("tong_ms") or 0) / 1000.0)
 
     # 🔴 **Doc `ctx.gpu_uuid` O DAY la mot phep do sai cho, va no da lam
@@ -198,16 +203,13 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         #    choi — va tu choi o day thi khach mat mot lan chay da tra tien.
         #    Giao dien khong cho ve vung khi preset la giu hinh, nhung mot yeu
         #    cau dung tay van co the toi, nen cho nay khong duoc tin giao dien.
-        vung=((run.settings or {}).get("vung") or ()
-              if cach == cdr.CAT_MA_HOA_LAI else ()),
+        vung=(cai.vung if cach == cdr.CAT_MA_HOA_LAI else ()),
         # ⭐ Lop phu chu (V6 pha 11) di cung khuon ba tang voi `vung`, va vi
         #    CUNG mot ly do vat ly: `drawtext` la mot bo loc, bo loc doi hoi
         #    giai ma, `-c:v copy` khong giai ma khung nao.
-        lop_phu=((run.settings or {}).get("lop_phu") or ()
-                 if cach == cdr.CAT_MA_HOA_LAI else ()),
+        lop_phu=(cai.lop_phu if cach == cdr.CAT_MA_HOA_LAI else ()),
         # ⭐ Logo di cung khuon ba tang, va vi CUNG mot ly do vat ly.
-        ds_logo=((run.settings or {}).get("logo") or ()
-                 if cach == cdr.CAT_MA_HOA_LAI else ()),
+        ds_logo=(cai.logo if cach == cdr.CAT_MA_HOA_LAI else ()),
         rong_khung=_rong_khung, cao_khung=_cao_khung)
 
     # 🔑 Muc 5: doi chieu MOI tham chieu TRUOC khi ton mot suat render.

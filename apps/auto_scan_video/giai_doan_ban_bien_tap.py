@@ -38,10 +38,9 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
        roi ban chep loi moi duoc loc ve phan giu lai. Doi thu tu la quay lai dung
        `V4-R07` — dich va tra tien cho nhung cau thuoc canh se bi cat.
     """
-    from . import features
+    from . import cai_dat as cd, features
 
-    settings = dict(run.settings or {})
-    preset = str(settings.get("preset") or hop_dong_v4.PRESET_MAC_DINH)
+    preset = cd.doc(run).preset
 
     tt = features.giai_doan_theo_ten(db, run.id, "media_prepare")
     thoi_luong = float(((tt.outputs or {}) if tt else {}).get("thoi_luong") or 0.0)

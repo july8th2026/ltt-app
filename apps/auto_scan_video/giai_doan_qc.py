@@ -35,7 +35,7 @@ import tempfile
 from platform_core.i18n import _ as _t
 from platform_core.storage import Storage
 
-from . import assets, nhap_media, pipeline, qc, tach_tieng
+from . import assets, cai_dat, nhap_media, pipeline, qc, tach_tieng
 from .giai_doan_media import ThieuNguon, _duong_doc_duoc
 
 log = logging.getLogger(__name__)
@@ -151,7 +151,18 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             ke_hoach=ke_hoach, ban_ke_tieng=ban_ke,
             ban_dung_lop=(ban_dung.get("tieng") or {}).get("lop") or [],
             bam_ra=bam_ra, bam_nguon=bam_nguon,
-            che_do_thoi_gian=str((run.settings or {}).get("timing_mode") or ""),
+            # 🔴 **Sua loi o pha 07, khong phai mot doi ten.**
+            #
+            #    Dong nay tung mac dinh `""` trong khi
+            #    `giai_doan_thoi_gian` mac dinh `"fit_original"`. Tuc
+            #    mot lan chay thieu khoa se CHAY o `fit_original` con
+            #    **bang chung QC ghi rong** — hai cau tra loi khac nhau
+            #    cho cung mot cau hoi, va khong cho nao bao loi vi ca hai
+            #    deu tim thay mot gia tri hop le cua rieng minh.
+            #
+            # ⭐ Ban vá lay gia tri ma duong ong THUC SU dung, nen bang
+            #    chung thanh dung thay vi thanh khac.
+            che_do_thoi_gian=cai_dat.doc(run).timing_mode,
             che_do_render=cach, thoi_luong_mong_doi=mong_doi,
             do_sang=do_sang)
 

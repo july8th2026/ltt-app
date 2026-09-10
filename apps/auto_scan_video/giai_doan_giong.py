@@ -72,9 +72,10 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             _t('Máy tạo tiếng nói chưa được thiết lập trên máy chủ này.'))
 
     tai_lieu = _doc_ban_dich(db, kho, run)
-    cai_dat = run.settings or {}
+    from . import cai_dat as cd
+    cai = cd.doc(run)
     # Tu dien ten rieng cua khach; `{}` khi khong co. Xem `tu_dien.py`.
-    tu_dien = dict(cai_dat.get("tu_dien") or {})
+    tu_dien = dict(cai.tu_dien)
 
     # 🔴 **Giong lay tu BAN LONG TIENG, khong tu `settings`.**
     #
@@ -86,7 +87,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     #
     # ⭐ Mot cau hoi ("giong nao?") phai co MOT cho tra loi. `settings` chi con la
     #    duong lui cho nhung run cu chua co truong nay.
-    ma_giong = str(tai_lieu.get("ma_giong") or cai_dat.get("voice_id") or "")
+    ma_giong = str(tai_lieu.get("ma_giong") or cai.giong_id or "")
 
     # Giai giong MOT LAN cho ca lan chay — day cung la noi quyen so huu giong
     # duoc kiem (I6/I7). Lam lai cho tung doan la N luot tra CSDL cho mot cau

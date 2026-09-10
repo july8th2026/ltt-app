@@ -92,7 +92,10 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     if tong_giay <= 0:
         raise ThieuDauVao(_t('Không biết thời lượng video nguồn.'))
 
-    che_do = str((run.settings or {}).get("timing_mode") or "fit_original")
+    # ⛔ Truoc pha 07 dong nay chep CUNG chuoi `"fit_original"` — ban thu
+    #    BA cua `gia.CHE_DO_MAC_DINH`, va mot trong ba ban do da lech.
+    from . import cai_dat as cd
+    che_do = cd.doc(run).timing_mode
     ban_do = _ban_do(db, kho, run, tong_giay=tong_giay)
     ke_hoach = thoi_gian.lap_ke_hoach(
         tl_vb.get("muc") or [], do_dai, tong_giay=tong_giay, che_do=che_do,
@@ -141,10 +144,9 @@ def _ban_do(db, kho: Storage, run, *, tong_giay: float):
        **quyet dinh da chot**, va tinh lai mot quyet dinh la mo duong cho hai
        cau tra loi khac nhau cho cung mot cau hoi.
     """
-    from . import ban_bien_tap, canh as canh_mod, features
+    from . import ban_bien_tap, cai_dat as cd, canh as canh_mod, features
 
-    settings = dict(run.settings or {})
-    preset = str(settings.get("preset") or hop_dong_v4.PRESET_MAC_DINH)
+    preset = cd.doc(run).preset
     if preset == hop_dong_v4.PRESET_GIU_HINH:
         # ⛔ Preset giu hinh **sao chep** luong hinh: khong canh nao bi cat, nen
         #    ban do la dong nhat. Doc ban bien tap o day khong sai nhung thua —

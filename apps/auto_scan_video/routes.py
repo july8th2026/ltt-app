@@ -47,6 +47,7 @@ from . import cat_dau_cuoi, hop_dong_v4, features, gia, pipeline, quan_sat, vung
 from . import lop_phu as lop_phu_mod
 from . import logo as logo_mod
 from . import tu_dien as tu_dien_mod
+from . import cai_dat as cai_dat_mod
 from .manifest import MANIFEST
 
 log = logging.getLogger(__name__)
@@ -418,6 +419,10 @@ async def tao(request: Request,
     except tu_dien_mod.TuDienLoi as exc:
         return _lai_voi_loi(request, db, u, str(exc))
 
+    # ⛔ Ban THO. Ho so that duoc `cai_dat_mod.chuan_hoa` sinh ra o duoi:
+    #    no khai `schema`, gom `giong_id`/`voice_id` lam mot, va dat moi
+    #    mac dinh o DUNG MOT cho. Truoc pha 07, muoi cho doc tu dat mac
+    #    dinh cua rieng minh va hai trong so do da lech ve `timing_mode`.
     cai_dat = {"timing_mode": che_do, "preset": preset,
                "che_do_giong": che_do_giong, "giong_id": giong_id,
                "vung": ds_vung,
@@ -465,7 +470,7 @@ async def tao(request: Request,
             _kho = get_storage()
             run = features.tao_run_tu_ve(
                 db, _kho, owner_id=u.id, upload_id=upload_id,
-                settings=dict(cai_dat))
+                settings=cai_dat_mod.chuan_hoa(cai_dat))
             _gan_logo_vao_run(db, _kho, run=run, ds_hinh_hoc=ds_logo_hh,
                               anh=anh_logo)
             db.commit()
@@ -522,7 +527,7 @@ async def tao(request: Request,
             run = features.tao_run_tu_tai_len(
                 db, owner_id=u.id, duong_tep=str(tep),
                 ten_tep=video.filename or "video.mp4",
-                settings=dict(cai_dat))
+                settings=cai_dat_mod.chuan_hoa(cai_dat))
             from platform_core.storage import get_storage as _lay_kho
             _gan_logo_vao_run(db, _lay_kho(), run=run, ds_hinh_hoc=ds_logo_hh,
                               anh=anh_logo)
@@ -588,7 +593,11 @@ def _gan_logo_vao_run(db, kho, *, run, ds_hinh_hoc: list[dict],
     #    duoc thu mot bai kiem doc HANH VI bo sot.
     cai["logo"] = [dict(h, khoa=k)
                    for h, k in zip(ds_hinh_hoc, khoa, strict=True)]
-    run.settings = cai
+    # ⭐ Chuan hoa LAI sau khi them logo. Mot ho so duoc ghi hai lan ma
+    #    chi chuan hoa mot lan la mot ho so co the ra khoi dang chuan o
+    #    lan thu hai — va `cai_dat.chuan_hoa` luy dang nen goi lai khong
+    #    ton gi.
+    run.settings = cai_dat_mod.chuan_hoa(cai)
     db.flush()
 
 
@@ -629,6 +638,22 @@ def chi_tiet(request: Request, run_id: str,
         #    hai ban cua mot nhan la hai ban se lech.
         "preset": gia.PRESET_BANG,
         "che_do": gia.CHE_DO_THOI_GIAN,
+        # ⭐ Hai con so cua ho so (V6 pha 07). Truoc do khong ai tra loi duoc
+        #    *"ho so nay theo schema nao"* va *"ca cau hinh bam ra gi"* — va cau
+        #    thu hai la cau hoi DAU TIEN khi mot khach hoi vi sao hai lan chay
+        #    trong nhu nhau lai cho hai ket qua khac nhau.
+        #
+        # ⚠️ `van_tay` tinh TAI CHO, khong doc mot gia tri da luu. Mot van tay
+        #    duoc luu la mot van tay se cu di trong khi thu no dai dien thi doi,
+        #    va no cu **im lang** — mot chuoi bam trong khong khac gi mot chuoi
+        #    bam dung.
+        # ⛔ Ban doc TOAN PHAN cho template. Truoc pha 07 template tu goi
+        #    `run.settings.get(...)` **khong kem mac dinh**, nen mot ho so
+        #    thieu khoa lam mot dong bien mat khoi man hinh — khach doc mot o
+        #    trong o cho le ra phai noi cach khop thoi gian.
+        "cai": cai_dat_mod.doc(run),
+        "ho_so_phien_ban": cai_dat_mod.phien_ban_ho_so(run.settings),
+        "ho_so_van_tay": cai_dat_mod.van_tay(run.settings),
     })
 
 
