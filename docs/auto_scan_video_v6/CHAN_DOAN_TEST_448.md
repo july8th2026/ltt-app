@@ -303,3 +303,91 @@ bình thường, vẫn rỗng.
 
 ⇒ Mỗi lượt ghi: `len(content)` · `len(reasoning_content)` · `token_ra` ·
   `finish_reason` · giây. **Bốn cột sau là MÔ TẢ; chỉ cột đầu là PHÁN QUYẾT.**
+
+## 9. Cả HAI rào cũ đều dưới sàn — và biên an toàn của rào MỚI hẹp hơn tôi tính
+
+Phiên `ltt-llm-api-http-guide` đo bốn lượt ở **1.891 token vào** — đúng cỡ lô 12
+của `chuyen_loi_thoai`, prompt thường, trần 12.000:
+
+```
+luot  pred_n   finish  content  reasoning   giay
+  1    9.831   stop        0     22.016    140,1
+  2      499   stop      787      1.199      9,9
+  3    9.886   stop    1.022     23.885    142,0
+  4   10.508   stop      978     24.810    150,5
+```
+
+Đối chiếu với hai rào mà `test_448` chạy dưới:
+
+| rào cũ | số đo được | bị cắt |
+|---|---|---|
+| `max_tokens` = 4.096 | `pred_n` 9.831 · 9.886 · 10.508 | **3/4** |
+| `timeout` = 120 s | 140,1 · 142,0 · 150,5 giây | **3/4** |
+
+⇒ Đây là đối chứng **độc lập** cho §2: hai đường khác nhau (họ gọi thẳng
+`POST /v1/chat/completions` ở 8299; ta đi qua `goi_tinh_tien` → `goi` →
+`dieu_phoi.goi` với pool + `secretbox`), cùng một kết luận. Và nó xác nhận
+`tran-dat-duoi-san-nhu-cau-o-hai-tang` bằng phép đo ở **cả hai** tầng thay vì đo
+một tầng rồi suy tầng kia.
+
+### ⛔ ĐÍNH CHÍNH: "dư 56 %" là một con số có PHẠM VI, và tôi đã nói nó không kèm phạm vi
+
+Commit `2ed99b9d` viết *"giá trị tôi đặt (16.384 / 300s) dư 56 % và ~2× so với
+nhu cầu đo được"*. **56 % ấy tính so với 10.508 — mức cao nhất ở ngữ cảnh
+NGẮN.** Ở ngữ cảnh **dài** (13.527 token vào), cùng bảng đo của họ có:
+
+```
+tran 12.000   pred_n = 12.000   finish = length    <- CHAM TRAN
+tran  3.000   pred_n =  3.000   finish = length
+tran  3.000   pred_n =  3.000   finish = length
+```
+
+Model **có** chạm trần khi được cho 12.000 chỗ. Nên nhu cầu thật của lượt ấy là
+**≥ 12.000**, và vì nó bị **cắt** nên ta **không biết** nó cần bao nhiêu.
+
+⇒ Biên đúng phải viết là: **≥12.000 so với 16.384, tức dư ≤36 %, và cận dưới ấy
+  là một cận KHÔNG ĐO ĐƯỢC** — không phải một con số.
+
+⭐ Đây đúng hạng lỗi `pham-vi-phep-do-hep-hon-loi-tuyen-bo`, và lần này nó nằm
+   trong một commit của chính tôi. Câu *"model không chạm trần khi được cho
+   chỗ"* đúng cho bốn lượt ngắn và **sai** cho lượt dài; tôi phát biểu nó như
+   một tính chất của model.
+
+### 🔑 Hệ quả cho sản phẩm: `finish_reason` phải vào SỔ VẬN HÀNH
+
+Hai triệu chứng khác hẳn nhau, cùng biểu hiện ra ngoài là *"lô hỏng"*:
+
+```
+finish = length                    -> TRAN CON THAP        -> nới trần
+finish = stop  +  content rỗng     -> CHE DO RONG          -> thử lại
+```
+
+`ai.goi` đã trả về `finish_reason` và `suy_nghi` từ 09/09. Nhưng
+`goi_tinh_tien` ghi sổ cái chỉ với `token_vao` / `token_ra` / `model` — **hai
+trường chẩn đoán ấy không được lưu ở đâu cả**. Tức năng lực có, không ai đi trên
+đường: sau này, khi không còn ai ngồi đo, không có cách nào phân biệt hai chế độ
+từ dữ liệu vận hành.
+
+⇒ Ghi `finish_reason`, độ dài `content` và độ dài `suy_nghi` vào `ghi_chu` của
+  bút toán. Nó rẻ, nó không đổi một quyết định nào, và nó là **báo động duy
+  nhất** phân biệt được hai bản sửa.
+
+### ⚠️ Và nới trần là CẦN chứ chưa ĐỦ
+
+Lượt 1 của bảng trên: `finish = stop`, `pred_n` 9.831, `content` **rỗng** — ở
+ngữ cảnh ngắn, dưới trần. Tức chế độ rỗng xảy ra **cả khi không rào nào bị
+chạm**. 1/4 ở đây, 4/8 ở ngữ cảnh dài; `n` quá nhỏ để nói hai ngữ cảnh khác
+nhau, nhưng đủ để nói **nới trần không xoá được chế độ này**.
+
+⇒ Một lượt `test_448` xanh sau khi nới vẫn là một đồng xu — đúng điều §6 đã tự
+  đính chính. Không báo "đã vá" dựa trên một lượt xanh.
+
+### ⛔ Và bản THỬ LẠI của ASV không được là một vòng `for`
+
+Đường của họ gọi thẳng cổng nên không có bút toán nào. `goi_tinh_tien` thì ghi
+sổ cái ở **cả ba** nhánh (đã giao / từ chối / mơ hồ), có chủ đích — xem
+docstring của nó. Một `retry` ngây thơ đặt quanh lời gọi sẽ ghi **hai** bút toán
+cho một việc khách nhận **một** lần.
+
+⇒ Phép thử lại phải nằm **trong** một lần ghi sổ, không phải hai lời gọi cạnh
+  nhau. Đây là ràng buộc thiết kế, không phải một chi tiết hiện thực.

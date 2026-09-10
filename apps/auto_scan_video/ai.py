@@ -572,19 +572,51 @@ def goi_tinh_tien(db, run, thao_tac: ThaoTac, messages: list, *,
     # ── 3. Ghi so cai voi thu DO DUOC ─────────────────────────────────────
     do = kq.get("su_dung")
     tin = bool(getattr(do, "dang_tin", False))
+    chan_doan = _chan_doan(kq)
     if tin:
         tong = int(getattr(do, "token_vao", 0)) + int(getattr(do, "token_ra", 0))
         _ghi(sd.DA_GIAO, sd.TOKEN, float(max(1, tong)), 0,
              token_vao=int(getattr(do, "token_vao", 0)),
              token_ra=int(getattr(do, "token_ra", 0)),
-             model=kq.get("model", ""))
+             model=kq.get("model", ""), **chan_doan)
     else:
         # 🔴 Provider khong tra so do. Xem ghi chu dai o `su_dung.LUOT`: bia mot
         #    so token la noi doi, ghi `TU_CHOI` cung la noi doi. Thu do duoc la
         #    **mot luot da giao**, va ta ghi dung cai do.
         _ghi(sd.DA_GIAO, sd.LUOT, 1.0, 0, khong_do_duoc=True,
-             model=kq.get("model", ""))
+             model=kq.get("model", ""), **chan_doan)
     return kq
+
+
+def _chan_doan(kq: dict) -> dict:
+    """Ba truong CHAN DOAN cho so cai. Khong doi mot quyet dinh nao.
+
+    🔑 **Hai trieu chung khac han nhau, cung bieu hien ra ngoai la "lo hong":**
+
+        finish = "length"              -> TRAN CON THAP   -> noi tran
+        finish = "stop" + content rong -> CHE DO RONG     -> thu lai
+
+    Hai bo sua khac nhau, va khong co truong nao khac phan biet duoc chung. Do
+    duoc 10/09 (phien `ltt-llm-api-http-guide`, 1.891 token vao):
+
+        luot 1   pred_n  9.831   stop     content 0        <- che do rong
+        luot 4   pred_n 10.508   stop     content 978      <- binh thuong
+        (ngu canh dai)  pred_n 12.000  length              <- cham tran
+
+    ⛔ `ai.goi` da tra ve `finish_reason` va `suy_nghi` tu 09/09 — nhung khong
+       cho nao LUU chung. Nang luc co, khong ai di tren duong: sau nay, khi
+       khong con ai ngoi do, khong co cach nao phan biet hai che do tu du lieu
+       van hanh.
+
+    ⚠️ Ghi DO DAI chu khong ghi noi dung: `suy_nghi` cua model dai hang chuc
+       nghin ky tu va co the mang nguyen van doan hoi thoai cua khach. So cai
+       khong phai cho de no nam.
+    """
+    return {
+        "finish_reason": str(kq.get("finish_reason") or ""),
+        "noi_dung_ky_tu": len(str(kq.get("noi_dung") or "")),
+        "suy_nghi_ky_tu": len(str(kq.get("suy_nghi") or "")),
+    }
 
 
 def _la_ban(exc: BaseException) -> bool:

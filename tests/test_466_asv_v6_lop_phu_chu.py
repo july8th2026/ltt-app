@@ -201,10 +201,32 @@ def test_expansion_none_luon_co_mat(tmp_path):
 
 def test_chu_KHONG_bao_gio_nam_trong_chuoi_loc(tmp_path):
     """Doi chung cho bai tren, va no manh hon: du chu co ky tu hiem toi dau,
-    chuoi loc cung khong chua no."""
+    chuoi loc cung khong chua no.
+
+    🔑 **Bai nay da tung XANH-RONG, va toi tu bat duoc sau khi viet luat cho mot
+       phien khac.**
+
+       Ban dau no chi khang dinh HAI menh de AM (`"12:30" not in loc`,
+       `"50%" not in loc`). Mot chuoi loc **rong** — vi `loc_cat_noi` nem, vi
+       lop phu bi bo im lang, vi bat cu ly do gi — cung lam ca hai dung.
+
+    ⛔ Mot phep kiem chi do SU VANG MAT cua thu xau khong phan biet duoc "da lam
+       dung" voi "khong lam gi". Nen o day khang dinh mot menh de **DUONG**
+       truoc: bo loc CO duoc dung, va chu CO duoc truyen — roi moi hoi no khong
+       nam o dau.
+
+    ⭐ Va ly do ghi lai dai the nay: toi viet dung luat ay cho phien
+       `Don Dep he thong API` roi vi pham no o tep minh commit hai gio truoc.
+       `luat-viet-ra-khong-mien-nhiem-cho-nguoi-viet`.
+    """
     ds = lp.chuan_hoa([_lop(chu="Gio: 12:30 - 50%")])
     loc = cdr.loc_cat_noi(KHOANG, lop_phu=ds,
                           duong_chu=_duong_chu(tmp_path, ds), cao_khung=360)
+    # MENH DE DUONG — thieu ba dong nay thi ba dong duoi xanh-rong.
+    assert "drawtext=" in loc, "khong co bo loc chu nao trong chuoi"
+    assert "textfile=" in loc, "chu khong duoc truyen qua tep"
+    assert loc.count("drawtext=") == len(ds)
+    # MENH DE AM
     assert "12:30" not in loc
     assert "50%" not in loc
 

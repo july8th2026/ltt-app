@@ -204,3 +204,80 @@ def test_thao_tac_KHONG_khai_thi_dieu_phoi_giu_mac_dinh(monkeypatch):
 
     assert "timeout_s" not in da_nhan, "gui `timeout_s` cho ca thao tac chua do"
     assert da_nhan.get("max_tokens") == ai.tran_token_ra()
+# ══════════════════════════════════════════════════════════════════════════════
+#  §5  SO CAI phai giu duoc thu phan biet HAI che do hong
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_so_cai_GHI_finish_reason_va_hai_do_dai(monkeypatch):
+    """🔑 Hai trieu chung khac han nhau, cung bieu hien ra ngoai la "lo hong":
+
+        finish = "length"               -> TRAN CON THAP   -> noi tran
+        finish = "stop" + content rong  -> CHE DO RONG     -> thu lai
+
+    Hai ban sua khac nhau, va **khong truong nao khac phan biet duoc chung**.
+
+    ⛔ `ai.goi` da tra ve `finish_reason` va `suy_nghi` tu 09/09 — nhung truoc
+       pha 11 khong cho nao LUU chung. Nang luc co, khong ai di tren duong: sau
+       nay, khi khong con ai ngoi do, khong co cach nao phan biet hai che do tu
+       du lieu van hanh.
+
+    ⭐ Bai nay chan `sd.ghi` va doc **but toan that su duoc ghi**, khong doc AST:
+       cau can hoi la *"dong ma do co CHAY khong"*, khong phai *"co dong ma do
+       khong"* — bai hoc `test_465` da tra gia.
+    """
+    from apps.auto_scan_video import su_dung as sd
+
+    da_ghi: dict = {}
+
+    def _ghi_gia(db, run, *, stage, item_key, su_dung):
+        da_ghi["su_dung"] = su_dung
+
+    monkeypatch.setattr(sd, "ghi", _ghi_gia)
+    monkeypatch.setattr(ai, "goi", lambda *a, **k: {
+        "noi_dung": "", "provider": "ltt_llm", "model": "m", "su_dung": None,
+        "finish_reason": "length", "suy_nghi": "x" * 22016})
+
+    class _Run:
+        id = "r1"
+        owner_id = "u1"
+
+    ai.goi_tinh_tien(object(), _Run(), ai.CHUYEN_LOI_THOAI, [],
+                     stage="content_process", item_key="lo1")
+
+    gc = dict(getattr(da_ghi["su_dung"], "ghi_chu", None) or {})
+    assert gc.get("finish_reason") == "length", gc
+    assert gc.get("noi_dung_ky_tu") == 0, gc
+    assert gc.get("suy_nghi_ky_tu") == 22016, gc
+
+
+def test_so_cai_KHONG_luu_NGUYEN_VAN_khoi_suy_nghi(monkeypatch):
+    """⛔ Doi chung cho bai tren, va no la mot chot RIENG TU.
+
+    `suy_nghi` cua model dai hang chuc nghin ky tu va co the mang nguyen van
+    doan hoi thoai cua khach. So cai — thu duoc doc lai de doi soat tien — khong
+    phai cho de no nam. Ghi **do dai**, khong ghi noi dung.
+    """
+    from apps.auto_scan_video import su_dung as sd
+
+    BI_MAT = "doan hoi thoai rieng tu cua khach hang"
+    da_ghi: dict = {}
+
+    def _ghi_gia(db, run, *, stage, item_key, su_dung):
+        da_ghi["su_dung"] = su_dung
+
+    monkeypatch.setattr(sd, "ghi", _ghi_gia)
+    monkeypatch.setattr(ai, "goi", lambda *a, **k: {
+        "noi_dung": BI_MAT, "provider": "ltt_llm", "model": "m",
+        "su_dung": None, "finish_reason": "stop", "suy_nghi": BI_MAT})
+
+    class _Run:
+        id = "r1"
+        owner_id = "u1"
+
+    ai.goi_tinh_tien(object(), _Run(), ai.CHUYEN_LOI_THOAI, [],
+                     stage="content_process", item_key="lo1")
+
+    import json
+    goi = json.dumps(dict(getattr(da_ghi["su_dung"], "ghi_chu", None) or {}),
+                     ensure_ascii=False)
+    assert BI_MAT not in goi, "so cai dang giu nguyen van noi dung cua khach"
