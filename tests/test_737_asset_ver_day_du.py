@@ -84,6 +84,16 @@ def test_hash_DOI_khi_mot_tai_san_doi(tmp_path, monkeypatch):
     gia = tmp_path / "static"
     gia.mkdir()
     for ten in tp.TAI_SAN_CO_VERSION:
+        # ⚠️ `parents=True` vi tu V6 pha 06 mot ten tai san co the mang THU MUC
+        #    CON (`asv/nen.js`). Truoc do moi ten deu phang, nen dong nay khong
+        #    can — va cai gia dinh ay khong duoc ai viet ra, nen no vo im lang
+        #    voi `FileNotFoundError` ngay lan dau co mot tep nam trong thu muc.
+        #
+        # ⭐ Ban chi em `test_369` khong dinh vi no doc TEP THAT thay vi dung tep
+        #    gia. Do la mot lap luan cho ca hai phia: tep gia cho phep sua noi
+        #    dung (thu bai nay can), nhung no phai dung duoc CA hinh dang ma ma
+        #    san pham dung.
+        (gia / ten).parent.mkdir(parents=True, exist_ok=True)
         (gia / ten).write_bytes(b"noi dung goc")
 
     monkeypatch.setattr(tp, "_STATIC_DIR", gia)
