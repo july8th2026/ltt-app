@@ -199,6 +199,28 @@ def main(argv=None) -> int:
                   f"(sd {ho_so['do_lech_chuan']}), khoi dong "
                   f"{ho_so['giay_khoi_dong']}s")
 
+    # ⛔ KHONG DO DUOC GI THI KHONG GHI GI. Do 10/09/2026: mot luot hong 20/20
+    #    (loi header, xem `DauPhanHoi` o sidecar_client) van ghi de tep bang
+    #    chung -- dat `phien_ban: do-2026-09-10`, XOA khoa `_chua_do`, va de
+    #    `giong` rong. Tuc tep khai DA DO ma khong co mot con so nao, va dong
+    #    duy nhat giai thich "rong = chua do" thi bien mat.
+    #
+    # 🔑 Mot ban ghi "da do" rong TE HON khong ghi gi: no bien mot khoang
+    #    trong THANH THAT thanh mot loi bao dam sai, va nguoi doc sau khong con
+    #    cach nao phan biet "da do, giong nao cung hong" voi "chua chay bao gio".
+    if not ra:
+        print(f"\nKHONG do duoc giong nao (0/{len(ten_giong)}) "
+              f"({time.time() - t0:.0f}s)")
+        print(f"  -> KHONG ghi {args.ra}. Tep cu giu nguyen.")
+        print("  -> Sua nguyen nhan roi chay lai; dung ha ky vong xuong.")
+        return 1
+
+    cu = {}
+    try:
+        cu = json.loads(pathlib.Path(args.ra).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        pass
+
     d = {
         "_ghi_chu": ("Ho so toc do doc DO DUOC cua tung giong. SINH RA bang "
                      "tools/do_ho_so_giong.py, dung sua tay."),
@@ -210,12 +232,23 @@ def main(argv=None) -> int:
         "engine_tham_so": tham_so.PHIEN_BAN_THAM_SO,
         "giong": ra,
     }
+    thieu = [t for t in ten_giong if t not in ra]
+    if thieu:
+        # Ghi ra AI thieu, khong chi ghi BAO NHIEU: mot lan sau con nguoi phai
+        # biet giong nao dang lui ve hang so chung ma khong phai do lai het.
+        d["_thieu"] = (f"Chua do duoc {len(thieu)}/{len(ten_giong)} giong; "
+                       f"chung lui ve hang so chung trong gia.py: "
+                       f"{', '.join(thieu)}")
+    elif "_chua_do" in cu:
+        pass  # do du het -> khoa `_chua_do` khong con nghia, bo di
+
     pathlib.Path(args.ra).write_text(
         json.dumps(d, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     print(f"\nDa ghi {len(ra)}/{len(ten_giong)} ho so vao {args.ra} "
           f"({time.time() - t0:.0f}s)")
-    if len(ra) < len(ten_giong):
-        print("⚠ Mot so giong KHONG do duoc - chung se lui ve hang so chung.")
+    if thieu:
+        print(f"⚠ {len(thieu)} giong KHONG do duoc - chung se lui ve hang so "
+              f"chung. Da ghi danh sach vao khoa `_thieu`.")
     return 0
 
 

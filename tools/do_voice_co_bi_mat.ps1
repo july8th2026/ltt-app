@@ -28,7 +28,17 @@ param(
     [string]$Viec,
 
     [int]$Luot = 3,
-    [string]$Giong = ''
+    [string]$Giong = '',
+
+    # `ho-so-giong` co rao tu ve: thay tien trinh nao co cmdline chua
+    # `gate.py|test_nhanh|pytest` thi TU CHOI chay. Rao ay khop theo TEN, khong
+    # theo TAI THAT, nen mot phien khac dang mo mot tep test cung chan duoc lo do.
+    #
+    # [!] Chi bat co nay khi DA DO tai that va tai that THAP, va phai ghi so do
+    #     KEM con so do duoc. Ly do rao ton tai la that: do luc may ban lam
+    #     `do_lech_chuan` phong len, va con so ay di THANG vao phep giu cho
+    #     credit -- tuc mot phep do ban se lam khach bi giu thua tien.
+    [switch]$BoQuaKiemMay
 )
 
 $ErrorActionPreference = 'Stop'
@@ -75,6 +85,7 @@ switch ($Viec) {
     'ho-so-giong' {
         $doiSo = @((Join-Path $goc 'tools\do_ho_so_giong.py'), '--luot', $Luot)
         if ($Giong -ne '') { $doiSo += @('--giong', $Giong) }
+        if ($BoQuaKiemMay) { $doiSo += '--bo-qua-kiem-may' }
         & $py $doiSo
     }
     'gia-von'    { & $py (Join-Path $goc 'tools\do_gia_von_voice.py') }
