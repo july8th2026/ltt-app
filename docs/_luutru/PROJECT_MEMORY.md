@@ -2233,3 +2233,108 @@ Hôm nay **cả bốn phiên** đều vi phạm đúng cái luật mình vừa t
 chuẩn hoá) đã soạn xong nhưng **chưa thả vào** — nó sẽ đỏ cho tới khi ASV đổi
 `giong_noi.py:148` `bool = False` → `bool | None = None`. ASV đang sửa tệp ấy
 trong changeset của họ.
+
+---
+
+# Phiên 09/09/2026 — VPS V2 lên production, và hai lỗ rò chỉ URL công khai mới thấy
+
+Deploy `84661047`. Trunk `admin-mvp-v3`, nhánh phiên và production **cùng một băm**.
+
+```
+nghiem_thu_deploy   635 tep .py   lech 0 · thieu 0 · THUA 0
+/health/ready 200   ·   gate: 7 do, ca 7 la test_448
+```
+
+## Việc chính: VPS V2 (11 tệp test, 3 migration, 7 lỗi P0)
+
+Tách năm khái niệm trạng thái (vòng đời / điện mong muốn / điện quan sát / tác vụ
+đang chạy / độ tươi), cột `trang_thai` cũ thành **phép chiếu**. Bốn lệnh điều
+khiển chuyển sang hàng đợi job. Bảng `vps_thao_tac` — bản ghi thao tác bền, khác
+hàng đợi job và khác nhật ký sự kiện. TLS **fail-closed**: production không có CA
+thì từ chối nối Proxmox.
+
+Chi tiết ở `docs/vps_v2/` (kế hoạch · STATE · ADR · KNOWN_BLOCKERS · scorecard).
+
+## 🔴 Bài học đắt nhất — và nó không nằm trong mã
+
+Sau khi deploy, **một lượt `curl` lên URL công khai** tìm ra trang bán hàng `/vps`
+đang in cho khách chưa đăng nhập:
+
+```
+Hien chua nhan may moi. (chua cau hinh Proxmox: production ma khong co
+LTT_VPS_PROXMOX_CA: tu choi noi toi Proxmox ...)
+```
+
+Vá xong, **quét AST cả `apps/vps/` theo HẠNG lỗi** (f-string mang tên biến ngoại
+lệ, không nằm trong `log.*`) ra 14 chỗ — và một chỗ đang sống, trên **trang máy
+của khách**:
+
+```
+{'thong_diep': 'ProxmoxError: 500 loi tai https://10.10.0.2:8006/api2/json/nodes/pve1'}
+```
+
+Tên class Python + IP nội bộ + cổng quản trị + đường dẫn cụm. Cả hai **có sẵn từ
+trước** chương trình này, và cả hai lọt qua `test_557` + `test_559`.
+
+⛔ **Không phải vì hai bộ test yếu.** Vì chúng đo **mã** và đo **render local**.
+
+⭐ Và `RELEASE_SCORECARD.md` đã **viết ra** hạn chế ấy — dòng *"⚠️ local, chưa phải
+   `app.lttstudios.com`"* nằm ngay trong bảng, tôi đọc qua nó rồi vẫn chấm 95.
+
+> **Một hạn chế đã biết và đã ghi ra giấy không tự biến thành một phép đo.** Nó
+> chỉ đổi trạng thái khi có người chạy một lệnh và đọc kết quả.
+
+⇒ Bản vá dài hạn không phải hai commit sửa chuỗi, mà là **`tools/vps_quet_ro_ri.py`**
+  — quét chuỗi cấm trên chính URL công khai, chạy sau mỗi deploy, cạnh
+  `nghiem_thu_deploy.py`. Không nằm trong gate: gate phải chạy được khi không có
+  mạng và nó đo *commit ở cây*, còn công cụ này đo *bản đang phục vụ khách*.
+
+  Nó đòi **tiền đề** (HTTP 200 + ≥2 KB) trước khi kết luận, và nó **đỏ trên bản
+  production cũ** — đó là đối chứng, không phải một cái vỏ luôn xanh.
+
+Điểm hạ thật thà: SOFTWARE 94 → **91** · Bảo mật 94 → **88** · GUI 95 → **90**.
+
+## Bài học thứ hai: git xoá thứ nó theo dõi, để lại thứ nó bỏ qua
+
+Lượt hoà chiến dịch AI CLEAN REBUILD V2 xoá `chataistudio` + `codex_sidecar`.
+`git status` sạch **0 dòng** ở cả hai cây. Nhưng:
+
+```
+apps/chataistudio/__pycache__/  6 .pyc      codex_sidecar/__pycache__/  3 .pyc
+tep nguon: 0        git ls-files: 0
+```
+
+Ba phép kiểm **có sẵn** bắt được (`test_60` · `test_85` · `test_1004`). Và
+`robocopy` trong `setup\2-cai-dat.ps1` lọc `/XD` theo **tên thư mục**, không theo
+trạng thái git — nên nó sẽ chép `apps\chataistudio\` lên production thành một
+thư mục con của `apps/` **không có `manifest.py`**.
+
+🔑 Thứ thiếu không phải phép kiểm, mà là **chạy chúng trên cây sẽ được chép đi**.
+   Gate của phiên xoá chạy *trước* ff; gate của phiên deploy chạy *sau* lượt hoà.
+   Chỉ vị trí thời gian ấy quyết định ai nhìn thấy.
+
+⇒ **Sau mỗi ff/merge có xoá thư mục: `git clean -ndX` trên cây ĐÍCH.** Và lượt
+  gate cuối phải chạy trên cây **sẽ được deploy**, sau khi mọi thao tác git xong.
+
+## Bài học thứ ba: `cua_so_yen` trả lời một câu KHÁC
+
+Lần thứ ba trong bốn ngày. Hai phiên bấm gate cách nhau **56 giây**; tôi có chạy
+`cua_so_yen.py trang-thai` và nó trả `RANH`.
+
+**Nó không sai.** `tools/test_nhanh.py:414-436` ghi từ 05-06/09: nó trả lời câu
+*"có ai **xin** khoá không"*, không trả lời *"có gì đang **chạy** không"*. Tôi đọc
+`RANH` rồi bỏ bước kiểm **cây tiến trình** — vế quyết định.
+
+⇒ Đo khoá (điều kiện **cần**) rồi đo cây tiến trình (điều kiện **quyết định**),
+  lọc theo `Name -eq 'python.exe'` chứ **không** theo `CommandLine -like '*gate.py*'`
+  — chuỗi ấy nằm trong chính lệnh mình vừa gõ nên nó tự khớp vào mình.
+
+## Còn lại — chặn bởi thứ ĐO ĐƯỢC, không phải bởi mã
+
+| | chặn bởi |
+|---|---|
+| `lifecycle` vẫn `development` | chưa chạy mạch nghiệm thu live (B-04) — cần VM thử |
+| Bán máy đầu tiên | `LTT_VPS_PROXMOX_CA` chưa đặt (B-03); 0 máy đang chạy nên hôm nay không cắt gì |
+| Backup/DR trần **50** | không có đích sao lưu độc lập (B-01) — phải mua/dựng |
+| LIVE INFRA **45** | một node PVE chạy lồng, không HA (B-02) |
+| `/api/v1` đóng cho VPS | ba quyết định sản phẩm (B-06) |

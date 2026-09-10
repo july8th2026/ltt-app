@@ -70,13 +70,27 @@ chạy; nó là một tấm biển *"đường này đã đóng"* mà cổng đ�
 | LTT_IMAGE sinh thật | job qua Public API → **ảnh 5.519.918 byte**, `held:3 charged:3`, `mode:"live"` | **đo được** |
 | LTT_LLM Text | ba cửa `/chat/completions` · `/messages` · `/responses` đều 200 với token thật | **đo được** |
 | Seedance/BytePlus | **lời xác nhận của chủ sản phẩm** rằng nó đang chạy thật | ⚠️ **không phải phép đo của chiến dịch** |
-| **VLM** | `danh_gia_vision.py --thu-thap` phải chạy **trên máy B** | 🔴 **NOT_TESTED** |
-| **Voice** | cần sidecar VOICE + GPU | 🔴 **NOT_TESTED** |
+| **VLM** | `model=ltt_llm_vision`→`qwen38-vision`; ảnh **sinh bằng mã**, model trả `{"so_hinh_tron": 3, "chu": "K7QX"}` — khớp đáp án | **đo được** |
+| **Voice** | job `7a0ea335` qua hàng đợi production → **8,48 giây tiếng, 814.124 byte RIFF/WAVE**; báo giá 2 = thu 2 | **đo được** |
 
-⛔ Hai dòng cuối **ở lại NOT_TESTED**, và trục E2E **không được cộng điểm** vì
-Seedance rời khỏi phạm vi. Bỏ bớt một dòng chưa đo không biến những dòng còn lại
-thành đã đo; một nghiệm thu tự nâng điểm bằng cách **thu hẹp mẫu số** là một
-nghiệm thu đã hỏng.
+⭐ **Hai dòng cuối đóng ngày 10/09**, và cách đóng đáng ghi lại: kế hoạch cũ định dùng
+   `tools/danh_gia_vision.py` chạy **trên máy B**. Đọc kỹ thì công cụ ấy trả lời một câu
+   **khác**: nó chấm **chất lượng** model. Câu chiến dịch cần là *“đường VLM có đi tới
+   LTT_LLM và trả về thật không”* — một câu **không phụ thuộc** vào việc model trả lời
+   đúng hay sai, và trả lời được từ **máy A** bằng một lượt gọi thật qua Public API.
+
+⚠️ Và một lỗi của chính bộ kiểm VLM, ghi ra thay vì giấu: bước đầu của nó in *“không
+   thấy `ltt_llm_vision` trong catalog”*. Đó là **bộ đọc của tôi sai hình dạng phản hồi**,
+   không phải catalog thiếu — vì ngay sau đó lượt gọi với đúng model ấy trả 200 kèm
+   usage thật. Một phát hiện giả, và nó chỉ lộ ra vì đọc tiếp thay vì dừng ở dòng đầu.
+
+⛔ **Seedance vẫn KHÔNG được cộng điểm.** Nó rời khỏi phạm vi bằng lời xác nhận
+của chủ sản phẩm, không bằng một lượt đo của chiến dịch — và bỏ bớt một dòng
+chưa đo không biến những dòng còn lại thành đã đo. Một nghiệm thu tự nâng điểm
+bằng cách **thu hẹp mẫu số** là một nghiệm thu đã hỏng.
+
+⇒ Nên trục E2E là **9/10**, không phải 10/10: bốn đường đo được thì đã đo, còn
+  đường thứ năm thì ta *tin*, và hai thứ đó không được viết cùng một chữ.
 
 ---
 
@@ -111,10 +125,10 @@ văn thân hàm cũ** trên cùng dữ liệu), và xoá 4 hàng khỏi CSDL (c�
 
 ---
 
-## 5. Ba việc NGOÀI PHẠM VI — báo cáo, không tự sửa
+## 5. BỐN việc NGOÀI PHẠM VI — báo cáo, không tự sửa
 
 Gói chiến dịch dặn: *vấn đề ngoài phạm vi thì viết báo cáo, đừng mở rộng chiến
-dịch*. Ba thứ dưới đây đều thật, đều không phải việc của chiến dịch này:
+dịch*. Bốn thứ dưới đây đều thật, đều không phải việc của chiến dịch này:
 
 1. **`tools/i18n.py thieu` so `mtime`.** Sau bất kỳ lượt `ff`/`merge` nào nó có
    thể báo *"`.mo` cũ hơn `.po`"* thuần tuý vì **thứ tự git ghi hai tệp** —
@@ -135,6 +149,91 @@ dịch*. Ba thứ dưới đây đều thật, đều không phải việc của
    sau) — chỉ chú thích mâu thuẫn, và nó nằm trong tệp tự nhận là *"chỗ duy nhất
    được phép đại diện cho giá"*.
 
+4. **`tools/check_ps_bien_trung_tham_so.py` — docstring và mã nói ngược nhau.**
+   *(phát hiện của phiên `ltt-llm-api-http-guide-a3e123`, họ chủ động không tự sửa)*
+
+   Docstring nói luật chỉ cấm gán tham số **trong thân vòng lặp** (nguyên văn:
+   *"gan tham so ngoai vong lap = duoc"*), nhưng `kiem()` báo lỗi cho **mọi**
+   phép gán trùng tên tham số ngoài mẫu miễn trừ `if (-not $X) { $X = ... }`.
+   Nó chỉ đổi **nhãn vị trí** (`"than vong lap"` / `"cap ngoai"`), không đổi
+   phán quyết.
+
+   ⭐ Hai dữ kiện làm mục này **tự chứng minh**:
+   - **ca dính thật**: `tools/quet_mtp.ps1:82-84` — ba phép gán ở **cấp ngoài
+     cùng**, không vòng lặp nào. Docstring nói được, mã nói không.
+   - và docstring **có lý do tốt** cho luật hẹp: nó kể lần chạy đầu báo nhầm
+     `setup/cai_dich_vu_giong.ps1:42` (`if (-not $VenvRoot) { $VenvRoot = ... }`)
+     rồi kết luận *"mot phep kiem bao dong o do se bi tat di trong mot tuan"*.
+
+   ⇒ Tức **bản hẹp là bản đã được cân nhắc**, và phần thi hành mới là bản đi
+     lệch. Đây là một **quyết định**, không phải một lỗi chính tả: nới mã cho
+     khớp docstring là **hạ** một bánh cóc đang bảo vệ thật; sửa docstring cho
+     khớp mã thì giữ nguyên mức bảo vệ. Hai hướng đi hai nơi khác hẳn nhau.
+
+## 5c. 🔴 MỘT CẢNH BÁO TÔI ĐÃ ĐƯA RA, VÀ NÓ SAI
+
+Chiến dịch đã hạ mốc `check_ruff` (09/09): `B904` 24→21, `F401` 416→415,
+`F841` 25→23 — mức giảm đến từ 21 tệp chiến dịch xoá.
+
+Tôi tự khai điều này như một **tác dụng phụ**, với lập luận: *"một cây chưa hoà
+trunk vẫn mang đủ 21 tệp, nên số đếm vượt mốc mới và gate của nó đỏ ở một bước
+nó không gây ra"*.
+
+⛔ **Lập luận ấy sai**, và phiên `ltt-llm-api-http-guide` bắt được. Đo lại:
+
+```
+tools/check_ruff.moc la mot TEP DUOC GIT THEO DOI, moi nhanh giu ban rieng:
+  admin-mvp-v3                          B904=21  F401=415  F841=23
+  claude/ltt-llm-master-upgrade-ddcfc9  B904=26  F401=416  F841=25
+```
+
+⇒ Cây chưa hoà chạy **mốc của chính nó** với **mã của chính nó** — xanh. Khi hoà,
+  nó nhận **cả hai cùng lúc**: mốc thấp hơn *và* 21 tệp đã xoá. Số đếm tụt cùng
+  nhịp với mốc. **Không có cửa sổ nào để ai đỏ oan.**
+
+⭐ **Vì sao tôi sai** mới đáng giữ: tôi **khớp mẫu** vào một bài học có thật —
+   *"bản vá MỘT PHÍA phạt người sửa đúng"* — mà **không kiểm cơ chế này có cùng
+   hình dạng không**. Bài học ấy đúng cho trạng thái **toàn cục** (một khoá, một
+   bảng, một biến môi trường). Mốc ở đây không toàn cục — nó đi theo nhánh, tức
+   đi **cùng** mã biện minh cho nó.
+
+⇒ Luật đúng, hẹp hơn bản tôi viết lần đầu: **hạ mốc chỉ nguy hiểm khi mốc sống
+  NGOÀI cây.** Thấy một bánh cóc đỏ ở cây chưa hoà thì **so mốc của hai nhánh
+  trước, đừng chẩn đoán mã.**
+
+## 5d. MỘT PHÉP KIỂM KHÔNG BAO GIỜ ĐỎ ĐƯỢC
+
+*(ví dụ của phiên `ltt-llm-api-http-guide`, họ đề nghị ghi kèm tên)*
+
+Họ dựng một "phép phân định" cho việc model trả về rỗng:
+
+```
+reasoning / predicted_n = 34.210 / 12.000 = 2,851
+                           8.458 /  3.000 = 2,819     -> "ti le giu nguyen"
+```
+
+⛔ Tử số là **KÝ TỰ**, mẫu số là **TOKEN**. Đó là *ký tự trên một token* — một
+   **hằng số của bộ tách token**, quanh 2,8 dù model làm gì. Một phép kiểm **không
+   bao giờ đỏ được**, và màu xanh của nó được đọc thành bằng chứng.
+
+⭐ Bằng chứng **đúng** nằm ngay trong cùng hai dòng và không cần chia gì:
+   `predicted_n` chạm **đúng trần** ở cả hai mức (model bị cắt, không tự dừng), và
+   `ky_tu_content = 0` ở **cả hai** — nhân ngân sách bốn lần, khách vẫn nhận 0 ký tự.
+
+Họ tự rút ở `4b89bf94` sau khi phiên `ltt-voice-98-upgrade` bắt được.
+
+### ⭐ Bốn biến thể, một gốc
+
+| Ai | Sai ở đâu |
+|---|---|
+| họ | `git log -- <tệp>` **quá hẹp** → *"không có commit sửa"* đọc thành *"chưa sửa"* |
+| tôi | `git diff 0d1ffe5a..HEAD` **quá rộng** → suýt báo một lỗ hổng của pha 08 |
+| họ | ký tự / token — **đúng đơn vị, sai đại lượng** |
+| tôi | §5c — **khớp mẫu vào một bài học đúng, cho một cơ chế khác hình dạng** |
+
+Gốc chung: **hỏi một câu gần đúng rồi nhận câu trả lời như thể nó là câu mình
+muốn hỏi.**
+
 ### Và một phép đo đóng lại nghi vấn "thu 0"
 
 ```
@@ -146,6 +245,69 @@ Không có lỗ doanh thu. Kết luận này đến từ **sổ sách production
 lần đọc mã.
 
 ---
+
+## 5b. Bước gate TỰ BỎ QUA — biến một dấu hỏi thành một phép đo
+
+Lượt gate cuối còn **1 bước tự bỏ qua**: `bat bien da tien trinh`.
+
+Lý do là **cấu trúc, không phải thiếu sót**: `check_multiproc.py` đọc
+`LTT_DATABASE_URL` từ `C:\LTTPlatform\secretspp.env`, mà thư mục đó đã siết về
+SYSTEM+Administrators từ 27/08. Gate chạy không quyền nâng ⇒ không đọc được ⇒ bỏ
+qua. Chính công cụ in ra: *"Đó **KHÔNG** phải lỗi."*
+
+⭐ Nhưng *"bỏ qua có lý do"* vẫn là một **dấu hỏi**, không phải một phép đo. Và
+   `gate.py` biết điều đó — chúnh nó giữ một **trạng thái thứ ba** riêng cho việc
+   bỏ qua, sau khi đo được 31/08 rằng *"một bước bỏ qua và một bước đạt trông **Y
+   HỆT nhau** trên dòng RESULT"*.
+
+Đã chạy tay 10/09 03:5x, với một CSDL **vứt đi** tự tạo (tên chứa chữ `test` —
+`tests/pg_scratch.py` từ chối mọi URL không chứng minh được nó vứt đi được, vì các
+test này gọi `drop_all()`):
+
+```
+tools/check_multiproc.py  ->  7 passed in 139.55s   exit = 0
+```
+
+⇒ Bất biến mà bước ấy canh — *"nhiều worker chạy cùng lúc thì cảnh báo không
+  nhân đôi và số credit khớp"* — **đứng vững trên PostgreSQL thật**.
+
+## 5e. 🔴 ĐÍNH CHÍNH: tôi đã giải thích một triệu chứng bằng SAI nguyên nhân
+
+Suốt đêm 09–10/09, `cua_so_yen trang-thai` trả `RANH` **ba lần** trong khi đang có
+gate chạy. Tôi kết luận nó *"trả lời câu có ai XIN khoá, không trả lời câu có gì
+đang CHẠY"*, rồi **gửi kết luận ấy cho ba phiên khác** như một lời khuyên.
+
+⛔ Mệnh đề ấy đúng về cơ chế, nhưng **không phải nguyên nhân**. Phiên
+   `ltt-4bot-workflow-app` đo ra nguyên nhân thật, và tôi **tái hiện độc lập** trên
+   cây trunk: fixture `khoa_sach` (`tests/test_394_nen_da_phien.py`) gọi
+   `dang_giu()` — liệt kê **mọi** khoá trên máy — rồi `nha(ep=True)` từng cái,
+   không monkeypatch `TEP_KHOA`. Nó **xoá khoá thật của máy**, kể cả khoá của phiên
+   khác đang chạy.
+
+Đối chứng hai chiều, tôi tự chạy:
+
+```
+truoc va:  giu khoa True -> pytest 31 passed -> khoa con: False   BI THAO
+sau  va:   giu khoa True -> pytest 32 passed -> khoa con: True    SONG SOT
+```
+
+⭐ `31 passed` là phần đáng sợ nhất: bộ test **XANH** trong khi nó xoá hàng rào
+   đồng thời của cả máy. Họ đo được: khoá vắng **119 giây / lượt 756 giây = 84%**.
+
+Đã vá trên trunk `5694f90c` (cherry-pick `56dfc811` + `598108be` của họ).
+
+### 🔑 Bài học, và nó đắt hơn bản vá
+
+Tôi giải thích một **triệu chứng** bằng một **tính chất có thật nhưng không liên
+quan**, và vì lời giải thích ấy nghe rất đúng nên tôi **ngừng điều tra**.
+
+⇒ Dấu hiệu đáng lẽ phải làm tôi đi tiếp: khoá không chỉ *"không thấy"* mà **TỆP
+  BIẾN MẤT**. Một công cụ trả lời sai câu thì vẫn để lại tệp; tệp biến mất là một
+  sự kiện **khác hạng** — và tôi đã không hỏi *"ai xoá nó"*.
+
+⚠️ Ba phép đo tôi gửi đi đêm nay đều **đúng**; thứ sai là **lời giải thích** đi kèm.
+   Một con số đúng với một nguyên nhân sai vẫn làm người đọc đi sai hướng — và nó
+   đi xa hơn một con số sai, vì không ai kiểm lại một con số đúng.
 
 ## 6. Nén kho
 
