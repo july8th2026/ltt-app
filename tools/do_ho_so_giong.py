@@ -242,8 +242,16 @@ def main(argv=None) -> int:
     elif "_chua_do" in cu:
         pass  # do du het -> khoa `_chua_do` khong con nghia, bo di
 
+    # ⛔ `newline="\n"` BAT BUOC tren Windows. `write_text` mac dinh dich moi
+    #    `\n` thanh `\r\n`, va `ho_so_giong.json` trong git LA LF -> lan chay
+    #    10/09 lam `check_xuong_dong` DO voi "HEAD=LF -> hien tai=CRLF, 232 dong".
+    #
+    # 🔑 Hong o day ton kem hon binh thuong: tep bi ghi lai TOAN BO nen
+    #    `git diff` khong con doc duoc, va nguoi doc sau khong phan biet duoc
+    #    "phep do ra so khac" voi "chi doi ket dong".
     pathlib.Path(args.ra).write_text(
-        json.dumps(d, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+        json.dumps(d, ensure_ascii=False, indent=1) + "\n",
+        encoding="utf-8", newline="\n")
     print(f"\nDa ghi {len(ra)}/{len(ten_giong)} ho so vao {args.ra} "
           f"({time.time() - t0:.0f}s)")
     if thieu:

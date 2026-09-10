@@ -1,8 +1,228 @@
 {
-  "_ghi_chu": "Ho so toc do doc DO DUOC cua tung giong. SINH RA bang tools/do_ho_so_giong.py, dung sua tay.",
-  "_cach_doc": "ky_tu_moi_giay = trung binh; do_lech_chuan rut tu chinh cac luot do; giay_khoi_dong = chan tuyen tinh. `ho_so_giong.ky_tu_moi_giay_an_toan` tra CAN DUOI (tb - 2*sd) vi con so nay dung de GIU CHO credit.",
-  "_chua_do": "Map `giong` rong nghia la CHUA CHAY phep do lan nao. Moi giong se lui ve hai hang so chung trong gia.py (1,5 giay khoi dong + 18 ky tu/giay). Do la hanh vi dung, khong phai mot khoang trong cho lap.",
-  "phien_ban": "",
-  "engine_tham_so": "",
-  "giong": {}
+ "_ghi_chu": "Ho so toc do doc DO DUOC cua tung giong. SINH RA bang tools/do_ho_so_giong.py, dung sua tay.",
+ "_cach_doc": "ky_tu_moi_giay = trung binh; do_lech_chuan rut tu chinh cac luot do; giay_khoi_dong = chan tuyen tinh. `ho_so_giong.ky_tu_moi_giay_an_toan` tra CAN DUOI (tb - 2*sd) vi con so nay dung de GIU CHO credit.",
+ "phien_ban": "do-2026-09-10",
+ "engine_tham_so": "ltt-voice-2026-08-30a",
+ "giong": {
+  "Minh Đức": {
+   "ky_tu_moi_giay": 12.949,
+   "do_lech_chuan": 0.22,
+   "giay_khoi_dong": 0.0,
+   "so_luot": 3,
+   "mau_giay_dai": [
+    91.48,
+    94.44,
+    91.96
+   ]
+  },
+  "Phạm Tuyên": {
+   "ky_tu_moi_giay": 16.738,
+   "do_lech_chuan": 0.037,
+   "giay_khoi_dong": 0.346,
+   "so_luot": 3,
+   "mau_giay_dai": [
+    72.04,
+    72.2,
+    71.88
+   ]
+  },
+  "Thanh Bình": {
+   "ky_tu_moi_giay": 17.151,
+   "do_lech_chuan": 0.338,
+   "giay_khoi_dong": 0.0,
+   "so_luot": 3,
+   "mau_giay_dai": [
+    69.32,
+    68.76,
+    71.4
+   ]
+  },
+  "Quang Sơn": {
+   "ky_tu_moi_giay": 14.179,
+   "do_lech_chuan": 0.068,
+   "giay_khoi_dong": 0.154,
+   "so_luot": 3,
+   "mau_giay_dai": [
+    84.36,
+    85.16,
+    84.84
+   ]
+  },
+  "Adam": {
+   "ky_tu_moi_giay": 16.731,
+   "do_lech_chuan": 0.254,
+   "giay_khoi_dong": 0.025,
+   "so_luot": 3,
+   "mau_giay_dai": [
+    72.92,
+    70.76,
+    71.56
+   ]
+  },
+  "Minh Triết": {
+   "ky_tu_moi_giay": 17.707,
+   "do_lech_chuan": 0.214,
+   "giay_khoi_dong": 0.0,
+   "so_luot": 3,
+   "mau_giay_dai": [
+    67.24,
+    68.36,
+    66.76
+   ]
+  },
+  "Thái Sơn": {
+   "ky_tu_moi_giay": 14.425,
+   "do_lech_chuan": 0.18,
+   "giay_khoi_dong": 0.0,
+   "so_luot": 3,
+   "mau_giay_dai": [
+    84.04,
+    82.36,
+    82.12
+   ]
+  },
+  "Xuân Vĩnh": {
+   "ky_tu_moi_giay": 14.128,
+   "do_lech_chuan": 0.038,
+   "giay_khoi_dong": 0.328,
+   "so_luot": 3,
+   "mau_giay_dai": [
+    85.4,
+    85.0,
+    85.4
+   ]
+  },
+  "Đức Trí": {
+   "ky_tu_moi_giay": 11.311,
+   "do_lech_chuan": 0.099,
+   "giay_khoi_dong": 0.06,
+   "so_luot": 3,
+   "mau_giay_dai": [
+    105.96,
+    107.16,
+    105.32
+   ]
+  },
+  "Mai Anh": {
+   "ky_tu_moi_giay": 15.182,
+   "do_lech_chuan": 0.176,
+   "giay_khoi_dong": 0.04,
+   "so_luot": 3,
+   "mau_giay_dai": [
+    79.48,
+    78.04,
+    79.72
+   ]
+  },
+  "Ngọc Huyền": {
+   "ky_tu_moi_giay": 16.955,
+   "do_lech_chuan": 0.195,
+   "giay_khoi_dong": 0.144,
+   "so_luot": 3,
+   "mau_giay_dai": [
+    71.08,
+    70.04,
+    71.64
+   ]
+  },
+  "Ngọc Linh": {
+   "ky_tu_moi_giay": 15.765,
+   "do_lech_chuan": 0.038,
+   "giay_khoi_dong": 0.0,
+   "so_luot": 3,
+   "mau_giay_dai": [
+    75.96,
+    75.96,
+    76.28
+   ]
+  },
+  "Quỳnh Anh": {
+   "ky_tu_moi_giay": 15.087,
+   "do_lech_chuan": 0.139,
+   "giay_khoi_dong": 0.0,
+   "so_luot": 3,
+   "mau_giay_dai": [
+    78.84,
+    79.32,
+    80.28
+   ]
+  },
+  "Trúc Ly": {
+   "ky_tu_moi_giay": 14.781,
+   "do_lech_chuan": 0.109,
+   "giay_khoi_dong": 0.271,
+   "so_luot": 3,
+   "mau_giay_dai": [
+    80.84,
+    82.04,
+    81.48
+   ]
+  },
+  "Đoan Trang": {
+   "ky_tu_moi_giay": 15.499,
+   "do_lech_chuan": 0.157,
+   "giay_khoi_dong": 0.134,
+   "so_luot": 3,
+   "mau_giay_dai": [
+    77.32,
+    78.44,
+    76.92
+   ]
+  },
+  "Ngọc Trân": {
+   "ky_tu_moi_giay": 14.363,
+   "do_lech_chuan": 0.146,
+   "giay_khoi_dong": 0.0,
+   "so_luot": 3,
+   "mau_giay_dai": [
+    83.0,
+    84.52,
+    83.08
+   ]
+  },
+  "Kim Thanh": {
+   "ky_tu_moi_giay": 11.377,
+   "do_lech_chuan": 0.062,
+   "giay_khoi_dong": 0.0,
+   "so_luot": 3,
+   "mau_giay_dai": [
+    104.68,
+    105.8,
+    105.48
+   ]
+  },
+  "Mỹ Duyên": {
+   "ky_tu_moi_giay": 12.232,
+   "do_lech_chuan": 0.047,
+   "giay_khoi_dong": 0.0,
+   "so_luot": 3,
+   "mau_giay_dai": [
+    97.8,
+    98.36,
+    97.64
+   ]
+  },
+  "Thùy Dung": {
+   "ky_tu_moi_giay": 18.489,
+   "do_lech_chuan": 0.365,
+   "giay_khoi_dong": 0.0,
+   "so_luot": 3,
+   "mau_giay_dai": [
+    65.96,
+    64.76,
+    63.4
+   ]
+  },
+  "Thục Đoan": {
+   "ky_tu_moi_giay": 14.878,
+   "do_lech_chuan": 0.32,
+   "giay_khoi_dong": 0.0,
+   "so_luot": 3,
+   "mau_giay_dai": [
+    82.44,
+    80.2,
+    79.0
+   ]
+  }
+ }
 }

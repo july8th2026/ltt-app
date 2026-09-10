@@ -33,7 +33,7 @@ Trong 73 hạng mục chấm được bằng số:
     80 - 89   23
     <  80      7   -> 13 (62) · 14 (30) · 20 (78) · 30 (70) · 39 (30) · 82 (75) · 83 (0)
 
-Trung bình 73 hạng mục ấy là **86,32** (10/09, sau P8+P9 — mục 62 lên 88, mục 86 lên 92; bản chốt đầu ghi 86,11). ⚠️ Con số này KHÔNG phải điểm của hệ
+Trung bình 73 hạng mục ấy là **87,07** (10/09, sau P8+P9+B-04 — 62→88, 86→92, 39→92, 40→ có số; bản chốt đầu 86,11). ⚠️ Con số này KHÔNG phải điểm của hệ
 thống: 14 hạng mục không có mặt trong nó, và mọi hạng mục vắng mặt đều vắng vì
 **chưa đo** — tức là phía chưa biết, không phải phía tốt.
 
@@ -114,7 +114,7 @@ là trạng thái **đúng** khi bằng chứng còn thiếu. Áp đúng luật 
     LTT VOICE, 10/09/2026
     ---------------------------------------------------
     dat muc tieu >= 98        :  0 / 87
-    co bang chung, cham duoc  : 77 / 87   (trung binh 86,32 tren 73 muc co so)
+    co bang chung, cham duoc  : 77 / 87   (trung binh 87,07 tren 74 muc co so)
     BLOCKED_WITH_EVIDENCE     : 10 / 87
     ---------------------------------------------------
     PHAN QUYET: CHUA DAT. Va phan lon khoang cach con lai
@@ -126,18 +126,28 @@ Xếp theo §36 (đúng → tiền → sở hữu → dữ liệu → chất lư
 phục hồi → UX → hiệu năng → mã đẹp), không xếp theo điểm thấp:
 
 1. **B-01** — 07 đang `BLOCKED_DATA` ở trục *pháp lý*, hạng nặng nhất còn mở.
-2. **B-04 + corpus benchmark** — gỡ trần 85 cho 27/30/31/32 và trần 75 cho 39/40.
-   Đây là **một** phép đo gỡ **sáu** hạng mục; không việc nào khác có tỉ lệ ấy.
-3. **Bật `LTT_VOICE_STREAM=1` rồi E2E thật** — gỡ trần 90 cho 16/20/37/62/64.
-4. **Load test** — gỡ trần 88 cho 12/13/14/18/19/29.
-5. **13, 14 (GPU fairness / priority)** — điểm thấp nhất còn sửa được bằng mã,
+2. **B-04** — gỡ trần 75 cho **39, 40**. `tools/do_ho_so_giong.py` đo **tốc độ
+   đọc** từng giọng, và chỉ hai hạng mục ấy có gap `DATA` mà nó lấp được.
+3. **Corpus benchmark âm thanh** — gỡ trần 85 cho **27, 30, 31, 32**. Bốn hạng
+   mục này có gap `BENCHMARK`: chúng cần CER/DNSMOS trên một corpus đủ mẫu, thứ
+   `do_ho_so_giong.py` **không** đo.
+
+   🔴 **ĐÍNH CHÍNH 10/09.** Bản trước gộp hai việc trên thành một dòng rồi viết
+   *"đây là **một** phép đo gỡ **sáu** hạng mục"* — tự mâu thuẫn ngay trong câu
+   ấy, vì chính nó liệt kê **hai** phép đo. Tôi đã nhắc lại con số 6 nhiều lần
+   trước khi đọc lại cột `gap` và thấy 27/30/31/32 là `BENCHMARK` chứ không phải
+   `DATA`. Tốc độ đọc và chất lượng âm là hai trục, và một phép đo tốc độ không
+   nói gì về CER.
+4. **Bật `LTT_VOICE_STREAM=1` rồi E2E thật** — gỡ trần 90 cho 16/20/37/62/64.
+5. **Load test** — gỡ trần 88 cho 12/13/14/18/19/29.
+6. **13, 14 (GPU fairness / priority)** — điểm thấp nhất còn sửa được bằng mã,
    nhưng là **đổi lược đồ + migration** (`Job` không có cột `priority` — đính
-   chính ở hạng mục 14), nên đứng sau bốn việc trên.
-6. **83** — một cú bấm của chủ dự án, và nó làm 82 có hiệu lực thật.
+   chính ở hạng mục 14), nên đứng sau năm việc trên.
+7. **83** — một cú bấm của chủ dự án, và nó làm 82 có hiệu lực thật.
 
 ---
 
-## 9. ⛔ Bẫy chờ sẵn ở bước 4 — đọc trước khi đo hiệu năng
+## 9. ⛔ Bẫy chờ sẵn ở bước 5 (load test) — đọc trước khi đo hiệu năng
 
 Ca thật 10/09 ở chương trình hiệu năng của phiên `ltt-llm` (`33c410fc`, §7b).
 Cùng phần cứng, cùng model, cùng cấu hình, **cùng prompt**:
@@ -160,7 +170,7 @@ khách chịu.
 | 15 | GPU throughput / VRAM | throughput tốt vẫn đi kèm **hàng đợi** dài |
 | 70 | `RTF` theo giọng | `RTF` tốt vẫn đi kèm **khởi động** chậm |
 
-⇒ Khi chạy bước 4 (load test), đo **giây tuyệt đối từ lúc khách bấm tới lúc nghe
+⇒ Khi chạy bước 5 (load test), đo **giây tuyệt đối từ lúc khách bấm tới lúc nghe
 được**, và ghi **phân bố của các lượt THÀNH CÔNG** — không chỉ p50/p95 của
 `runtime`. Hạng lỗi *"đạt mà tệ"* chỉ lộ ở đó.
 
