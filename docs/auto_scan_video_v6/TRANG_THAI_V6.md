@@ -37,6 +37,7 @@ pha; chép lại vào đây là tạo một bản sẽ trôi.
 | Đo `chuyen_loi_thoai` qua `goi_tinh_tien` | **bị chặn** | Cần `LTT_DATABASE_URL` + `LTT_TOKEN_ENCRYPTION_KEY` + `LTT_LLM_BASE_URL` từ `C:\LTTPlatform\secrets\app.env` (ACL chặn — **cố ý**). Đường hợp lệ đã có sẵn: `setup\do_on_dinh_nang_quyen.ps1`. Việc chủ dự án bấm |
 | `nghiem_thu_hien_hanh.json` | **không tái sinh được ở độ trung thực đầy đủ** | Chặn cùng chỗ ở trên. ⛔ Không được tái sinh từ **một** lượt xanh (p(hỏng) ≈ ½) cũng không từ một lượt có **thay thế** |
 | Xem trước lớp phủ/logo trên khung hình | chưa có | `vung_che` kéo thả được, lớp phủ và logo thì chưa — khách đặt toạ độ bằng số |
+| 🔴 **Trần job `content_process` dưới sàn nhu cầu** | ASV nhận video **120 phút**; ở 142 giây/lô (đo được) chỉ **~20 phút video** lọt trần job 60 phút. Các lô chạy **tuần tự** và vượt trần job **không được thử lại** (`test_217`). Xem `CHAN_DOAN_TEST_448.md` §10 — ba đường sửa, và không đường nào chọn được trước khi đo `giây/lô` trên đường thật của ASV |
 | **Resume thật** khi tải lên | chưa có | Hiện là *thử lại cả tệp* 3 lần. Resume theo byte cần multipart upload của R2 + một bản ghi tiến độ |
 | `vung_che`/`cat_dau_cuoi` chưa dùng `hinh_hoc` | 2 bản chép còn lại | Đã ghi tên ở `REBASE_MAP_V4.md`; di trú phải đi cùng đối chứng của chính nó |
 

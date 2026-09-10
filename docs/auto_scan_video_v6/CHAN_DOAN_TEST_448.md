@@ -391,3 +391,72 @@ cho một việc khách nhận **một** lần.
 
 ⇒ Phép thử lại phải nằm **trong** một lần ghi sổ, không phải hai lời gọi cạnh
   nhau. Đây là ràng buộc thiết kế, không phải một chi tiết hiện thực.
+
+## 10. 🔴 Rào THỨ BA nằm dưới sàn — và nó rộng gấp 6 lần
+
+§9 nới hai rào của **một lời gọi** (trần token, timeout lời gọi). Câu chưa ai
+hỏi: *một lần chạy có bao nhiêu lời gọi, và chúng có kịp trong trần của JOB
+không?*
+
+Số học, mọi hằng số lấy **từ mã**, không gõ tay:
+
+```
+tran video nhan vao   : 120 phut   (nhap_media.THOI_LUONG_TOI_DA_S)
+doan moi lo           : 12         (long_tieng.DOAN_MOI_LO)
+tran job content_proc : 60 phut    (manifest.max_runtime_s)
+giay/lo do duoc       : p50 142,0  cao nhat 150,5   (do 10/09, LLM LTT)
+```
+
+| mật độ đoạn | số đoạn | số lô | giây (p50) | vượt trần job |
+|---|---:|---:|---:|---|
+| thưa (10/phút) | 1.200 | 100 | 14.200 | **CÓ** |
+| vừa (15/phút) | 1.800 | 150 | 21.300 | **CÓ** |
+| dày (20/phút) | 2.400 | 200 | 28.400 | **CÓ** |
+
+⇒ Ở p50, chỉ **25 lô** lọt trần job — tức ~300 đoạn, tức **~20 phút video**.
+
+**ASV nhận 120 phút. `content_process` chỉ chạy hết được ~20 phút.** Gấp **6
+lần**, và đây là rào rộng nhất trong ba rào đã tìm ra.
+
+### Hai điều kiểm rồi mới nói, vì cả hai đều có thể lật kết luận
+
+**1. Các lô chạy TUẦN TỰ.** `giai_doan_noi_dung.py:147` là một `for` thẳng —
+không `gather`, không worker pool. Và ngay cả khi có, máy B chỉ có **một suất
+đồng thời** (`DONG_THOI_MAY_B=1`), nên các lời gọi vẫn xếp hàng. Phép nhân ở
+trên là đúng phép.
+
+**2. Vượt trần job KHÔNG được thử lại.** `test_217::test_job_vuot_tran_khong_duoc_thu_lai`
+chốt `jobq.fail(..., retry=False)` → `JOB_ERROR`, kết thúc.
+
+⇒ Nên đây **không** phải "chậm hơn dự kiến". Đây là *"video dài hơn ~20 phút
+  không hoàn thành được"*, và khách nhận một lần chạy hỏng.
+
+### ⚠️ Ba giới hạn của con số này — nói ra để không ai trích nó quá phạm vi
+
+1. **142 giây/lô đo trên đường KHÁC.** Phiên `LLM LTT` gọi thẳng
+   `POST /v1/chat/completions` ở 8299; đường của ASV đi qua `goi_tinh_tien` →
+   `dieu_phoi` với pool + `secretbox`. Chưa ai đo đường của ASV — đó chính là
+   phép đo đang bị chặn.
+2. **Mật độ đoạn là ƯỚC, không phải đo.** 10–20 đoạn/phút là khoảng hợp lý cho
+   lời thoại, nhưng bản nghiệm thu hiện hành chỉ có **6 đoạn**, quá ít để suy.
+3. **Giai đoạn CÓ nối lại.** `su_dung.da_xong` + `_lay_lai_doan_da_xong` bỏ qua
+   đoạn đã xong, nên một lần chạy lại **thủ công** tiến thêm được. Khách không
+   mất trắng — họ mất một lần chạy và phải tự bấm lại.
+
+### ⛔ Và vì sao KHÔNG nâng trần job ngay
+
+Nâng `max_runtime_s` lên 2 giờ là để **một job giữ một suất worker suốt 2
+giờ**. Đó là một quyết định tài nguyên, không phải một dòng cấu hình — và kho
+này đã ghi rằng một cái phanh đặt sai chỗ ăn tệ hơn không có phanh, ở **cả hai
+chiều**.
+
+Ba đường có thật, và chọn giữa chúng cần số của phép đo đang bị chặn:
+
+| đường | đổi cái gì | rủi ro |
+|---|---|---|
+| hạ trần video nhận vào | 120 phút → ~20 phút | thu hẹp sản phẩm, nhưng **trung thực** |
+| chia `content_process` thành nhiều job | mỗi job vài lô | phức tạp thêm ở tầng hàng đợi |
+| nâng `max_runtime_s` | 60 → 120+ phút | một job giữ worker rất lâu |
+
+⇒ Việc đúng lúc này **không** phải chọn. Là ghi nó ra, và đo `giây/lô` trên
+  đường thật của ASV — cùng lô đo đang chờ suất máy B.
