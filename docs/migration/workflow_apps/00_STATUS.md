@@ -26,6 +26,36 @@ Nguồn: `docs/migration/workflow_apps/01_SOURCE_MANIFEST.md`.
 | 14 Agent re-evaluation | **XONG** | `34_PHASE14_AGENT.md` · `tests/test_1113` — `AGENT_CHANGE_REQUIRED: NO` | planner rate cần máy B | 15 |
 | 15 Final cutover | **MỘT PHẦN** | `29_FINAL_CUTOVER.md` — ma trận + tuyên bố cuối | cả 4 App **NOT READY**: chặn chung là E2E thật qua worker | — |
 
+## Gate L3 chốt — 2026-09-10T18:50Z, commit `82a449aa`
+
+```
+RESULT: FAIL (1/32)      7 BUOC TU BO QUA (cau hinh, khong phai tai)
+bo test: 7 failed, 9118 passed, 61 skipped, 1 xfailed   in 607,88s
+```
+
+**Bảy lỗi, tất cả `test_448_asv_v4_e2e_nghiem_thu.py` — không lỗi nào của chương
+trình này.** Đọc từ `test-results/gates/loi-13512-bo-test--song-song.log`, không
+đọc stdout.
+
+⛔ Bảy lỗi ấy **ngoài tầm cây này**, và đồng bộ trunk **không** gỡ được:
+
+```
+admin-mvp-v3   ghi_luc 2026-09-09  giai_doan_hong=7  -> DO
+phien/asv-v6   ghi_luc 2026-09-10  giai_doan_hong=0  -> XANH, thay_the=0
+HEAD           ghi_luc 2026-09-09  giai_doan_hong=7  -> DO
+```
+
+Bản bằng chứng xanh sống ở `phien/asv-v6` và chưa hoà trunk; trunk đang mang
+chính bản hỏng. ⭐ `thay_the=0` là chi tiết đáng giữ: đó là một lượt nghiệm thu
+**toàn phần**, không thay cửa nào — tức một bản xanh **thật**, không phải xanh
+mua bằng cách hạ chuẩn.
+
+⚠️ **Một lượt gate trước đó tôi đọc SAI.** Tôi `grep "^FAILED"` trên **stdout**;
+gate chỉ in phần đuôi của pha song song ra đó và tự chỉ đường tới bản đầy đủ
+(`[dau ra DAY DU] <tệp>`). Tôi thấy 1 lỗi trong khi có **12**, rồi báo cho hai
+phiên khác rằng `test_448` đã hết đỏ — sai, và đã đính chính. Chỗ nào công cụ
+nói *"đầu ra ĐẦY ĐỦ ở tệp X"* thì đó là lời mời đọc tệp X.
+
 ## Bốn quyết định của chủ dự án — 2026-09-09
 
 | | Quyết định |
