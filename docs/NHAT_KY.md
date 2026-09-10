@@ -139,8 +139,18 @@ không một dòng ASV nào.
    trả về rỗng"*, và có sẵn một mục nhật ký nói đúng chuỗi ấy.
 
    Phiên ASV V6 đo thật và cho câu trả lời khác hẳn: đó là một **trần token**.
-   Nhu cầu thật của `chuyen_loi_thoai` đo 15 lượt: **4.186–6.843**; trần cũ là
-   **4.096** — nằm **dưới sàn nhu cầu ở 5/5 lượt** đối chứng. Model không trả
+   Nhu cầu thật của `chuyen_loi_thoai`, đo ở cánh **đối chứng trần rộng** (5 lượt,
+   **không lượt nào bị cắt** — đó mới là lý do dải này là nhu cầu **thật** chứ
+   không phải cận dưới): **4.186–6.843**. Trần cũ **4.096** nằm dưới **cả 5/5**
+   lượt ấy.
+
+   ⚠️ Ở cánh trần cũ thì 4/5 lượt hỏng. **Đó là một lần đếm, không phải một
+      tỉ lệ.** Với n=5, viết "80%" là hứa một điều về lượt thứ sáu mà không ai
+      đo. Câu dùng được là *"trần cũ nằm dưới sàn nhu cầu"*.
+
+   ⛔ Và bản đầu của chính mục này ghi *"đo **15 lượt**"* — sai, đó là **5**. Tôi
+      sửa một khẳng định sai bằng một con số cũng sai, trong cùng một đoạn. Giữ cả
+      hai lần ấy ở đây: một bản sửa không miễn nhiễm với chính lỗi nó đang sửa. Model không trả
    rỗng ngẫu nhiên; nó bị **cắt** ở `finish_reason=length`, và một câu cắt giữa
    chừng thì `LuocDoSai` đọc ra rỗng. Đã đóng ở `6fcc39ed` trên `phien/asv-v6`
    (nới 4.096 → 16.384), **chưa lên trunk** — nên trên cây này nó vẫn đỏ, và
@@ -155,6 +165,40 @@ không một dòng ASV nào.
 
 ⭐ Mốc đã biết, xác nhận trên **ba cây** (phiên này, `ltt-llm-api-http-guide`,
    ASV V6): đúng **7** lỗi `test_448` và không lỗi nào khác ⇒ không phải hồi quy.
+
+### Phán quyết — và mốc được viết TRƯỚC khi chạy
+
+```
+RESULT: FAIL (1/32)      <- dung MOT buoc do: `bo test (song song)`
+7 failed, 9414 passed, 61 skipped, 1 xfailed   in 644,79s
+```
+
+Cả **7** đều thuộc `test_448_asv_v4_e2e_nghiem_thu.py`. Không lỗi nào khác.
+Bốn phép kiểm đã vá sau lượt trước (`test_503`×2, `test_509`×2, `test_435`) đều
+xanh; `app contract lint` · `test_60` · `test_1004` xanh.
+
+⭐ Thứ làm con số này **dùng được** không phải là nó nhỏ, mà là mốc đã được
+   viết ra **trước khi chạy**: *"đúng 7 lỗi `test_448` và không lỗi nào khác ⇒
+   không phải hồi quy; khác thì báo"*. Đọc kết quả rồi mới quyết định con số nào
+   là chấp nhận được thì chốt chẳng chốt gì — đó là một phán quyết tự uốn theo dữ
+   liệu.
+
+⚠️ ĐIỀU KIỆN ĐO, và nó không tự có: lượt này sạch **vì phiên ASV chủ động rút**.
+   Họ thấy gate của họ đang xếp hàng (CPU tích luỹ 1,45 giây sau 6 phút) và giết
+   nó, vì `CuaSoYen` **fail-open**: hết `cho_toi_da_s` thì lượt chờ sẽ chạy **không
+   khoá**, song song — hai gate đầy đủ trên 10 lõi.
+
+🔴 VÀ HAI CƠ CHẾ CỘNG LẠI VẪN KHÔNG CHẮN ĐƯỢC CA NÀY:
+   · `CuaSoYen` fail-open ⇒ hết hạn là chạy, không ai bị chặn;
+   · tầng `[tai may]` của `gate.py` đo tải **một lần lúc bắt đầu** ⇒ nó trả lời
+     *"lúc khởi động máy có rảnh không"*, không trả lời *"máy có rảnh suốt 16
+     phút tới không"*. Lượt vào SAU làm tải tăng **sau** khi lượt trước đã đo xong.
+
+   Đúng hình dạng `bat-bien-canh-tren-trang-thai-dong`: canh lúc tài nguyên **đứng
+   im**, rồi tài nguyên động lại. Thứ thật sự bảo vệ lượt này là **một tác nhân
+   nhìn thấy và lùi lại**, không phải một cơ chế. Không sửa ở phiên này — hạ tầng
+   dùng chung, và vá một cơ chế khoá từ MỘT nhánh là đúng bẫy
+   `ngan-sach-loi-khong-cuong-che-duoc-tu-mot-nhanh`.
 
 ⛔ Ghi lại một phép đo **sai chiều** tôi suýt tin: `git diff 9e73bf1f HEAD --
 apps/auto_scan_video` trả về đầy tệp, trông y như tôi có chạm ASV. Không phải —
