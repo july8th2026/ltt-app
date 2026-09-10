@@ -359,7 +359,7 @@ def tao(request: Request, text: str = Form(""), voice_id: str = Form(""),
     if not verify_csrf_token(request, csrf_token):
         return _het_phien()
 
-    from platform_core.job_submit import submit_with_credit
+    from platform_core.job_submit import dedupe_key_for, submit_with_credit
 
     # Nghiệp vụ ở `features`, kể cả phép kiểm "không được vừa voice_id vừa preset".
     try:
@@ -401,31 +401,47 @@ def tao(request: Request, text: str = Form(""), voice_id: str = Form(""),
             db.rollback()
             return _loi_400(e)
 
+        # 🔴 `nguon` GHI NGAY TỪ BÂY GIỜ, dù màn Lịch sử chưa dùng tới.
+        #
+        #    Ảnh tham chiếu 05 lọc lịch sử theo nguồn (Studio · Dự án · Lô ·
+        #    API) — và đó là thứ **không thể bù lại sau**. Thêm cột lọc thì
+        #    làm lúc nào cũng được; nhưng một job đã chạy mà không ghi nó
+        #    đến từ đâu thì mãi mãi không biết. Ghi ở P1 tốn một dòng; ghi
+        #    sau P6 tốn một dòng Y HỆT **cộng với** một khoảng lịch sử
+        #    khuyết mà không lệnh nào vá được.
+        # 🔴 `ngon_ngu` PHẢI ĐI CÙNG. Trước 2026-09-10 nó **vắng mặt** ở đây,
+        #    và hậu quả im lặng: route nhận ô `Ngôn ngữ` của khách, dùng nó cho
+        #    đúng một lượt kiểm rồi vứt — worker gọi lại `features.chuan_hoa(params)`
+        #    trên một dict không có nó, nên `yc.ngon_ngu` trong worker **luôn** là
+        #    `"auto"`. Tức nhánh mạnh nhất của hợp đồng làn (khách tự khai) chưa
+        #    từng chạy ở cửa thật.
+        #
+        # ⭐ VÀ NÓ LÀM `dedupe_key` ĐÚNG HƠN, không chỉ đầy đủ hơn: hai lượt chỉ
+        #    khác nhau ở ô `Ngôn ngữ` là hai yêu cầu **khác nhau** (một cái bị
+        #    chặn, một cái không — xem Q121). Băm chúng thành cùng một khoá sẽ
+        #    gộp hai việc khác nhau làm một.
+        params = {"text": yc.text, "voice_id": yc.voice_id,
+                  "preset": yc.preset, "owner_id": _uid(user),
+                  "toc_do": yc.toc_do, "ngon_ngu": yc.ngon_ngu,
+                  "nguon": "studio"}
+        # 🔴 DEDUPE Ở CỬA STUDIO — chốt double-submit / F5 / hai tab.
+        #
+        #    Màn Dự án chống trùng bằng TRẠNG THÁI KHỐI (`dang_tao`), Public API
+        #    chống trùng bằng `dedupe_key_for` (xem `public_api/invocation.py`).
+        #    Studio trước đây không có gì che, nên hai lần bấm khi job đầu còn
+        #    `queued` (một GPU = một việc, nó có thể phải chờ) sinh HAI job và
+        #    giữ credit HAI lần cho đúng một đoạn — khách trả gấp đôi, nhận về
+        #    hai tệp giống nhau. `job_submit.py` đã dặn thẳng: *"Mọi route
+        #    submit NÊN truyền khoá này."* `tests/test_502` chốt cả hai chiều.
+        #
+        # ⭐ KHÔNG phá tính năng phiên bản (V1/V2/V3): `jobs.submit` chỉ gộp job
+        #    CHƯA kết thúc. Tạo lại cùng văn bản SAU khi job cũ `done` vẫn ra
+        #    job mới — chỉ những cú bấm trùng lúc job trước còn chạy mới bị gộp.
         job = submit_with_credit(
             db, user_id=_uid(user), app_slug=MANIFEST.slug,
             job_type="ltt_voice.synthesize",
-            # 🔴 `nguon` GHI NGAY TỪ BÂY GIỜ, dù màn Lịch sử chưa dùng tới.
-            #
-            #    Ảnh tham chiếu 05 lọc lịch sử theo nguồn (Studio · Dự án · Lô ·
-            #    API) — và đó là thứ **không thể bù lại sau**. Thêm cột lọc thì
-            #    làm lúc nào cũng được; nhưng một job đã chạy mà không ghi nó
-            #    đến từ đâu thì mãi mãi không biết. Ghi ở P1 tốn một dòng; ghi
-            #    sau P6 tốn một dòng Y HỆT **cộng với** một khoảng lịch sử
-            #    khuyết mà không lệnh nào vá được.
-            # 🔴 `ngon_ngu` PHẢI ĐI CÙNG. Trước 2026-09-10 nó **vắng mặt** ở
-            #    đây, và hậu quả im lặng: route nhận ô `Ngôn ngữ` của khách,
-            #    dùng nó cho đúng một lượt kiểm rồi vứt — worker gọi lại
-            #    `features.chuan_hoa(params)` trên một dict không có nó, nên
-            #    `yc.ngon_ngu` trong worker LUÔN là `"auto"`.
-            #
-            #    Tức nhánh mạnh nhất của hợp đồng làn (khách tự khai, thay hẳn
-            #    cho phép đoán) chưa từng chạy ở cửa thật. Cùng lớp lỗi mà
-            #    `test_392` đã bắt một lần: form gửi một trường mà `fd.append`
-            #    không gửi — chỉ lần này chỗ đánh rơi nằm ở phía máy chủ.
-            params={"text": yc.text, "voice_id": yc.voice_id,
-                    "preset": yc.preset, "owner_id": _uid(user),
-                    "toc_do": yc.toc_do, "ngon_ngu": yc.ngon_ngu,
-                    "nguon": "studio"},
+            params=params,
+            dedupe_key=dedupe_key_for("ltt_voice.synthesize", params),
             # Một GPU = một việc, và cả ba cửa giành cùng một slot (Q114).
             admission_resource=tool.admission_resource,
             admission_slots=tool.admission_slots,

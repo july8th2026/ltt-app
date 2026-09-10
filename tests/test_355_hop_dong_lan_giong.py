@@ -408,24 +408,57 @@ def test_khong_con_hang_so_lan_go_tay_trong_features():
     assert not xau, f"lan go tay trong giai_giong: {xau}"
 
 
+def _khoa_params_cua_loi_nop(ten_ham: str) -> set:
+    """Tập khoá của `params` mà một cửa NỘP xuống job — dù nó viết kiểu nào.
+
+    🔴 VIẾT LẠI 2026-09-11, và lý do là chính lỗi tôi vừa sửa cho `test_509`.
+
+       Bản đầu đọc thẳng `params={...}` **nội tuyến** trong lời gọi
+       `submit_with_credit`. Ngày 11/09 trunk tách nó ra một biến để thêm
+       `dedupe_key_for(..., params)` — và hai phép kiểm của tôi ĐỎ, dù mệnh đề
+       chúng chốt (*"`ngon_ngu` xuống tới worker"*) vẫn đúng nguyên.
+
+    ⛔ Tức tôi chốt **hình dạng lời gọi**, không chốt **điều phải đúng** — đúng
+       cái bẫy tôi vừa gỡ ở `test_509` và ghi vào nhật ký, rồi mắc lại ở tệp
+       bên cạnh trong cùng một ngày. Ranh giới cơ học thắng giao ước, kể cả
+       giao ước với chính mình.
+
+    ⇒ Bản này **giải biến**: nếu `params=` là một tên, đi tìm phép gán gần nhất
+      của tên ấy trong cùng hàm. Bất biến với việc dict nằm nội tuyến hay tách
+      ra — và vẫn đỏ nếu một khoá thật sự biến mất.
+    """
+    src = (GOC / "apps" / "ltt_voice" / "routes"
+           / "_p_tao.py").read_text(encoding="utf-8")
+    cay = ast.parse(src)
+    ham = next(n for n in ast.walk(cay)
+               if isinstance(n, ast.FunctionDef) and n.name == ten_ham)
+    goi = [n for n in ast.walk(ham)
+           if isinstance(n, ast.Call)
+           and getattr(n.func, "id", "") == "submit_with_credit"]
+    assert len(goi) == 1, f"khong tim thay dung mot loi nop job o `{ten_ham}`"
+    nut = next(k.value for k in goi[0].keywords if k.arg == "params")
+
+    if isinstance(nut, ast.Name):          # `params=params` -> giai bien
+        ten = nut.id
+        gan = [n for n in ast.walk(ham)
+               if isinstance(n, ast.Assign)
+               and any(getattr(t, "id", "") == ten for t in n.targets)]
+        assert gan, f"`params={ten}` nhung khong thay phep gan nao cho `{ten}`"
+        nut = gan[-1].value
+    assert isinstance(nut, ast.Dict), (
+        f"`params` khong giai ra mot dict doc duoc: {type(nut).__name__}")
+    return {k.value for k in nut.keys if isinstance(k, ast.Constant)}
+
+
 def test_ngon_ngu_KHACH_KHAI_di_toi_duoc_worker():
     """🔴 Lỗi ③: route nhận `ngon_ngu` rồi bỏ nó ra khỏi `params` lúc nộp job.
 
     ⛔ Đo bằng CÂY CÚ PHÁP của chính dict `params`, không bằng `"ngon_ngu" in
-       src` — chuỗi ấy có mặt trong tệp ở bốn chỗ khác (tham số form, chú thích,
-       lời gọi `chuan_hoa`), nên một phép so chuỗi sẽ **xanh cả trước khi sửa**.
-       Đúng hạng lỗi "phép kiểm rộng hơn thứ nó đo".
+       src` — chuỗi ấy có mặt trong tệp ở nhiều chỗ khác (tham số form, chú
+       thích, lời gọi `chuan_hoa`), nên một phép so chuỗi sẽ **xanh cả trước
+       khi sửa**. Đúng hạng lỗi "phép kiểm rộng hơn thứ nó đo".
     """
-    src = (GOC / "apps" / "ltt_voice" / "routes"
-           / "_p_tao.py").read_text(encoding="utf-8")
-    ham = next(n for n in ast.walk(ast.parse(src))
-               if isinstance(n, ast.FunctionDef) and n.name == "tao")
-    goi = [n for n in ast.walk(ham)
-           if isinstance(n, ast.Call)
-           and getattr(n.func, "id", "") == "submit_with_credit"]
-    assert len(goi) == 1, "khong tim thay dung mot loi nop job o `tao`"
-    params = next(k.value for k in goi[0].keywords if k.arg == "params")
-    khoa = {k.value for k in params.keys if isinstance(k, ast.Constant)}
+    khoa = _khoa_params_cua_loi_nop("tao")
     assert "ngon_ngu" in khoa, (
         f"`params` nop job danh roi `ngon_ngu` — worker se luon thay 'auto'. "
         f"Co: {sorted(khoa)}")
@@ -437,15 +470,7 @@ def test_ca_ba_khoa_quyet_dinh_LAN_deu_co_trong_params():
     ⭐ Và hai cửa phán quyết khác nhau về cùng một yêu cầu là lỗi tệ hơn hẳn cả
        hai cùng sai: khách được nhận job rồi mới bị từ chối, sau khi đã giữ tiền.
     """
-    src = (GOC / "apps" / "ltt_voice" / "routes"
-           / "_p_tao.py").read_text(encoding="utf-8")
-    ham = next(n for n in ast.walk(ast.parse(src))
-               if isinstance(n, ast.FunctionDef) and n.name == "tao")
-    goi = next(n for n in ast.walk(ham)
-               if isinstance(n, ast.Call)
-               and getattr(n.func, "id", "") == "submit_with_credit")
-    params = next(k.value for k in goi.keywords if k.arg == "params")
-    khoa = {k.value for k in params.keys if isinstance(k, ast.Constant)}
+    khoa = _khoa_params_cua_loi_nop("tao")
     assert {"text", "voice_id", "preset", "ngon_ngu"} <= khoa, sorted(khoa)
 
 
