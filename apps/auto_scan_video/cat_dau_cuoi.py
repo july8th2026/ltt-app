@@ -43,6 +43,8 @@ from __future__ import annotations
 
 from platform_core.i18n import _ as _t
 
+from . import hinh_hoc
+
 #: Cua so ngan hon the thi moi phep chia thoi gian phia sau vo: `nan_cho_vua`
 #: chia do dai tieng doc cho do dai khe, va mot khe vai phan tram giay cho ra
 #: mot he so nen khong bo loc nao thuc hien duoc.
@@ -60,17 +62,23 @@ def chuan_hoa(tho) -> tuple[float, float] | None:
     """
     if tho is None or (isinstance(tho, (str, list, tuple)) and len(tho) == 0):
         return None
+    # ⭐ Di tru sang `hinh_hoc` o pha 08b. Chan `NaN`/`inf` la CUNG mot luat
+    #    voi `vung_che` va `lop_phu`; ba ban cua no la ba ban se lech im lang.
+    #
+    # ⚠️ Nhung phep so sanh `a < b` thi O LAI DAY, va do la ranh gioi dung:
+    #    `hinh_hoc.so_phan_so` doc MOT so trong MOT khoang. Quan he giua HAI so
+    #    la luat cua chinh truc nay (mot cua so cat), khong phai luat chung —
+    #    gom no vao module chung se buoc module do biet ve khai niem "cua so",
+    #    tuc keo mot khai niem cua mien nay vao mot cho chi biet hinh hoc.
     try:
         a, b = tho
-        a, b = float(a), float(b)
     except (TypeError, ValueError):
         raise CatLoi(_t('Đoạn cắt không đọc được.')) from None
-    # ⛔ `float("nan")` doc duoc, va MOI phep so sanh voi no deu False — nen mot
-    #    NaN lot qua `0.0 <= a < b <= 1.0` o duoi neu ta khong chan rieng. Cung
-    #    cai bay da ghi o `vung_che._so`.
-    if a != a or b != b or a in (float("inf"), float("-inf")) \
-            or b in (float("inf"), float("-inf")):
-        raise CatLoi(_t('Đoạn cắt không đọc được.'))
+    _ngoai = _t('Đoạn cắt phải nằm trong video và điểm đầu phải trước điểm cuối.')
+    a, b = [hinh_hoc.so_phan_so(
+        x, thap=0.0, cao=1.0, loi=CatLoi,
+        khong_doc_duoc=_t('Đoạn cắt không đọc được.'),
+        ngoai_khoang=_ngoai) for x in (a, b)]
     if not (0.0 <= a < b <= 1.0):
         raise CatLoi(
             _t('Đoạn cắt phải nằm trong video và điểm đầu phải trước điểm cuối.'))

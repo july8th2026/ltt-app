@@ -446,3 +446,99 @@ def test_engine_dan_logo_DUNG_LUC_va_khong_dong_gi_ngoai_cua_so(tmp_path):
     assert trong < 60, f"t=3,0s nam TRONG cua so ma khong doi gi ({trong} dB)"
     cheo = psnr(khung(co, 3.0, "c3"), khung(co, 1.0, "c1"))
     assert cheo < 60, "duong cheo trung khop => phep do khong phan biet duoc gi"
+# ══════════════════════════════════════════════════════════════════════════════
+#  §7  `hinh_hoc` — MỘT chủ sở hữu cho hai quy tắc từng bị chép ba lần
+# ══════════════════════════════════════════════════════════════════════════════
+
+MODULE_HINH_HOC = ("vung_che", "cat_dau_cuoi", "lop_phu", "logo")
+
+
+def _tu_chan_nan(mod) -> list[int]:
+    """Dòng nào TỰ kiểm NaN bằng `x != x`. Đọc **AST**, không đọc chuỗi.
+
+    🔑 Bản đầu của phép đo này dùng `"x != x" in getsource(...)` và báo rằng
+       `vung_che` vẫn tự chặn — **sai**, nó khớp vào một dòng *docstring* mô tả
+       cái bẫy. AST chỉ thấy thứ thực sự chạy.
+
+    ⭐ Đúng bài học mà `test_467::test_soi_TRUOC_khi_promote` đã trả giá trong
+       cùng pha này: *grep khớp cách người ta VIẾT, AST khớp cái người ta LÀM.*
+    """
+    import ast as _ast
+    import inspect
+
+    ra = []
+    for n in _ast.walk(_ast.parse(inspect.getsource(mod))):
+        if (isinstance(n, _ast.Compare) and len(n.ops) == 1
+                and isinstance(n.ops[0], _ast.NotEq)
+                and isinstance(n.left, _ast.Name)
+                and isinstance(n.comparators[0], _ast.Name)
+                and n.left.id == n.comparators[0].id):
+            ra.append(n.lineno)
+    return ra
+
+
+def test_phep_chan_NaN_co_DUNG_MOT_chu_so_huu():
+    """⛔ `float("nan")` đọc được, và **mọi** phép so sánh với nó đều `False` —
+    nên một bản quên chặn nó vẫn lọt `thap <= x <= cao` và vẫn xanh ở mọi phép
+    kiểm của chính nó. Ba bản của một quy tắc là ba bản sẽ lệch **im lặng**.
+
+    ⭐ Trước pha 08b có **ba** bản (`vung_che`, `cat_dau_cuoi`, `lop_phu`), và
+       bản thứ tư sắp ra đời cùng `logo`. Bài này khoá lại con số 1.
+    """
+    import importlib
+
+    from apps.auto_scan_video import hinh_hoc
+
+    assert _tu_chan_nan(hinh_hoc), (
+        "`hinh_hoc` khong con phep chan NaN nao — luat da di dau mat")
+    for ten in MODULE_HINH_HOC:
+        mod = importlib.import_module(f"apps.auto_scan_video.{ten}")
+        dong = _tu_chan_nan(mod)
+        assert not dong, (
+            f"`{ten}` tu chan NaN o dong {dong} — mot ban chep thu hai cua luat")
+
+
+def test_moi_module_hinh_hoc_deu_DI_QUA_hinh_hoc():
+    """Đối chứng cho bài trên, và nó là nửa **dương**.
+
+    ⛔ Thiếu nửa này thì một module xoá sạch phép kiểm NaN cũng làm bài kia
+       xanh — *"đã gom về một chủ"* và *"đã vứt mất luật"* trông giống hệt nhau
+       khi ta chỉ đếm sự vắng mặt.
+    """
+    import importlib
+    import inspect
+
+    for ten in MODULE_HINH_HOC:
+        mod = importlib.import_module(f"apps.auto_scan_video.{ten}")
+        van = inspect.getsource(mod)
+        assert "hinh_hoc.so_phan_so" in van, (
+            f"`{ten}` khong doc phan so qua `hinh_hoc`")
+
+
+def test_cau_tu_choi_van_RIENG_cho_tung_mien():
+    """⚠️ Gom **luật** thì đúng; gom **câu nói với khách** thì sai.
+
+    Một câu chung chung (*"giá trị không hợp lệ"*) buộc khách đoán mình vừa làm
+    gì sai — họ vừa vẽ một vùng che, gõ một dòng chữ, hay chọn một logo?
+    """
+    from apps.auto_scan_video import cat_dau_cuoi as cdc
+    from apps.auto_scan_video import logo as lg
+    from apps.auto_scan_video import lop_phu as lp
+    from apps.auto_scan_video import vung_che as vc
+
+    cau = {}
+    for ten, goi, xau in (
+            ("vung_che", lambda: vc.chuan_hoa_mot(
+                {"loai": "lam_mo", "x0": float("nan"), "y0": 0.1,
+                 "x1": 0.5, "y1": 0.5}), vc.VungLoi),
+            ("cat_dau_cuoi", lambda: cdc.chuan_hoa((float("nan"), 0.5)), cdc.CatLoi),
+            ("lop_phu", lambda: lp.chuan_hoa_mot(
+                {"chu": "x", "x": float("nan"), "y": 0.5}), lp.LopPhuLoi),
+            ("logo", lambda: lg.chuan_hoa_mot(
+                {"x": float("nan"), "y": 0.5}), lg.LogoLoi)):
+        with pytest.raises(xau) as e:
+            goi()
+        cau[ten] = str(e.value)
+
+    assert len(set(cau.values())) == len(cau), (
+        f"hai mien dung chung mot cau tu choi: {cau}")

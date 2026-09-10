@@ -48,6 +48,8 @@ from __future__ import annotations
 
 from platform_core.i18n import _ as _t
 
+from . import hinh_hoc
+
 #: Che kin mot vung bang mot o mo. Khong xoa gi — chi lam khong doc duoc.
 LOAI_LAM_MO = "lam_mo"
 
@@ -82,18 +84,24 @@ class VungLoi(ValueError):
 
 
 def _so(gia_tri, ten: str) -> float:
-    try:
-        x = float(gia_tri)
-    except (TypeError, ValueError):
-        raise VungLoi(_t('Vùng che có toạ độ không đọc được.')) from None
-    # ⛔ `float("nan")` doc duoc, va moi phep so sanh voi no deu False — nen mot
-    #    NaN lot qua `0 <= x <= 1` o duoi neu ta khong chan rieng. No se di toi
-    #    ffmpeg va thanh mot bo loc khong hop le o giua chuoi.
-    if x != x or x in (float("inf"), float("-inf")):
-        raise VungLoi(_t('Vùng che có toạ độ không đọc được.'))
-    if not (0.0 <= x <= 1.0):
-        raise VungLoi(_t('Vùng che nằm ngoài khung hình.'))
-    return x
+    """Doc mot toa do phan so. Luat song o `hinh_hoc`, cau tieng Viet o day.
+
+    🔑 **Di tru o pha 08b, va no khong doi mot hanh vi nao.** Ban cu chan `NaN`
+       va `inf` bang dung hai dong ay; `hinh_hoc.so_phan_so` chan cung hai thu
+       do va nem cung hai cau ay.
+
+    ⭐ Ly do di tru: ba ban cua mot quy tac la ba ban se lech IM LANG — mot ban
+       quen chan `NaN` van xanh o moi phep kiem cua chinh no, vi `float("nan")`
+       doc duoc va MOI phep so sanh voi no deu `False`.
+
+    ⚠️ Cau noi voi khach thi KHONG gom: no phai noi ve thu khach vua lam
+       (*"vùng che"*, *"lớp phủ"*, *"logo"*), va mot cau chung chung buoc ho doan
+       minh sai o dau.
+    """
+    return hinh_hoc.so_phan_so(
+        gia_tri, thap=0.0, cao=1.0, loi=VungLoi,
+        khong_doc_duoc=_t('Vùng che có toạ độ không đọc được.'),
+        ngoai_khoang=_t('Vùng che nằm ngoài khung hình.'))
 
 
 def chuan_hoa_mot(tho: dict) -> dict:
@@ -118,20 +126,15 @@ def chuan_hoa_mot(tho: dict) -> dict:
 
     ra = {"loai": loai, "y0": y0, "y1": y1, "x0": x0, "x1": x1}
 
-    # Khoang thoi gian: rong = ap ca video. Chi kiem khi khach thuc su dat.
-    tu = tho.get("tu_giay")
-    den = tho.get("den_giay")
-    if tu is not None or den is not None:
-        try:
-            t0 = float(tu if tu is not None else 0.0)
-            t1 = float(den) if den is not None else None
-        except (TypeError, ValueError):
-            raise VungLoi(_t('Khoảng thời gian của vùng che không đọc được.')) from None
-        if t0 < 0 or (t1 is not None and t1 <= t0):
-            raise VungLoi(_t('Khoảng thời gian của vùng che không hợp lệ.'))
-        ra["tu_giay"] = t0
-        if t1 is not None:
-            ra["den_giay"] = t1
+    # Khoang thoi gian: rong = ap ca video. Luat o `hinh_hoc.khoang_thoi_gian`.
+    #
+    # ⚠️ Ban cu o day KHONG chan `NaN` cho `tu_giay`/`den_giay` (chi ban cua
+    #    `lop_phu` co). Di tru mang phep chan ay sang day — tuc no SIET hon ban
+    #    cu, khong phai loi ngang.
+    ra.update(hinh_hoc.khoang_thoi_gian(
+        tho, loi=VungLoi,
+        khong_doc_duoc=_t('Khoảng thời gian của vùng che không đọc được.'),
+        khong_hop_le=_t('Khoảng thời gian của vùng che không hợp lệ.')))
     return ra
 
 
