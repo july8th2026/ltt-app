@@ -309,6 +309,27 @@ quan**, và vì lời giải thích ấy nghe rất đúng nên tôi **ngừng �
    Một con số đúng với một nguyên nhân sai vẫn làm người đọc đi sai hướng — và nó
    đi xa hơn một con số sai, vì không ai kiểm lại một con số đúng.
 
+## 5f. ⚠️ RANH GIỚI CỦA CÂU “ĐÃ GỠ GEMINI”
+
+Phiên `ltt-4bot-workflow-app` báo (10/09): trong cấu hình **đang chạy** của
+bot dựng video ở `D:\FULL AUTO VIDEO\DUNGVIDEO-FULL\`, khoá `evaluation.gemini_api_key` nằm dưới
+dạng **văn bản thuần**, giá trị đầy đủ. Họ không chép giá trị đi đâu, không
+đụng cây ấy, và đã báo chủ dự án.
+
+⛔ **Đây KHÔNG thuộc phạm vi chiến dịch, và tôi cố ý không đưa nó vào danh
+   mục ở §1.** Đó là một **hệ thống khác**, không phải `D:\LTTSTUDIOSAPP`.
+   Đưa nó vào sẽ khiến báo cáo **tuyên bố một phạm vi nó không có** — đúng
+   kiểu lỗi mà chính báo cáo này đang đi đếm ở những mục khác.
+
+⭐ Nhưng ghi con trỏ này vì một lý do cụ thể: người đọc sau rất dễ rút gọn cả
+   chiến dịch thành câu *“đã gỡ Gemini”*, rồi hiểu nó thành *“máy này không
+   còn khoá Gemini nào”*. Hai câu ấy **khác nhau**, và câu thứ hai **sai**.
+
+⇒ Thứ chiến dịch thực sự chứng minh, đúng phạm vi của nó: **nền tảng LTT**
+  không còn đường gọi, không còn khoá trong `secrets\app.env` (4→0), và
+  không còn khoá trong bảng `api_keys` (4 khoá **đang sống** → 0). Xoay khoá
+  của một hệ thống khác là quyết định của chủ dự án.
+
 ## 6. Nén kho
 
 | | Trước | Sau |
