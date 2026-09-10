@@ -32,6 +32,7 @@ from pathlib import Path
 #    (tham so cung ten "dinh nghia lai" cai ten vua nhap) — nam bao dong gia cho
 #    mot thanh ngu pytest hoan toan binh thuong, va banh coc `ruff` dem chung.
 from tests import test_423_asv_giao_dien as _mt
+from tests import asv_js
 
 moi_truong = _mt.moi_truong
 _tao_run_cho = _mt._tao_run_cho
@@ -451,11 +452,11 @@ def test_o_giong_chi_BAT_BUOC_o_dung_che_do_may_chu_doi():
         "ngu canh dang phat mot gia tri KHAC hang so hop dong")
 
     # Va JS phai DOC thuoc tinh do, khong duoc chep lai gia tri.
-    js = (DUONG_ROUTES.parents[2] / "server" / "static" / "asv.js"
-          ).read_text(encoding="utf-8")
-    assert "dataset.canGiong" in js, "asv.js khong doc `data-can-giong`"
+    js = asv_js.doc("asv/giong.js")
+    assert "dataset.canGiong" in js, (
+        "asv/giong.js khong doc `data-can-giong`")
     assert f'"{hop_dong_v4.CHE_DO_GIONG_TU_CHON}"' not in _bo_chu_thich_js(js), (
-        f"asv.js dang chep hang so hop dong ({hop_dong_v4.CHE_DO_GIONG_TU_CHON}) "
+        f"asv/giong.js dang chep hang so hop dong ({hop_dong_v4.CHE_DO_GIONG_TU_CHON}) "
         "vao ma client — mot ban sao se troi khi hop dong doi, va troi im lang")
 
 

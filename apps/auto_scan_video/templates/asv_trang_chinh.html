@@ -511,5 +511,16 @@
   "lg_sai_kieu": {{ _("Chỉ nhận PNG, JPEG hoặc WebP.")|tojson }}
 }
 </script>
-<script src="/static/asv.js?v={{ asset_ver }}" defer></script>
+{#- Pha 06: man Studio la TAM module, khong con mot tep phinh.
+
+     Danh sach + THU TU den tu `server/templating.py:ASV_STUDIO_JS`, chinh bo
+     ma `asset_ver` bam. Go tay tung dong o day se tao mot danh sach thu hai,
+     va no se troi — mot module them vao ma quen dong nay thi trang van chay,
+     chi thieu dung tinh nang do.
+
+     `defer` giu nguyen thu tu thuc thi theo thu tu tai lieu, nen `asv/nen.js`
+     luon chay truoc. -#}
+{% for tep in asv_studio_js %}
+<script src="/static/{{ tep }}?v={{ asset_ver }}" defer></script>
+{%- endfor %}
 {% endblock %}

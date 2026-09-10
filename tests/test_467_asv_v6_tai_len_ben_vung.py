@@ -43,14 +43,14 @@ import pytest
 from apps.auto_scan_video import che_do_render as cdr
 from apps.auto_scan_video import features, logo as lg, routes
 from tests import rao_chan_nang
+from tests import asv_js
 
 GOC = Path(__file__).resolve().parent.parent
-JS = GOC / "server" / "static" / "asv.js"
 MAU = GOC / "apps" / "auto_scan_video" / "templates" / "asv_trang_chinh.html"
 
 
 def _js() -> str:
-    return JS.read_bytes().decode("utf-8")
+    return asv_js.doc()
 
 
 # ══════════════════════════════════════════════════════════════════════════════

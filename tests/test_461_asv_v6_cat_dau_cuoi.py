@@ -35,6 +35,7 @@ from apps.auto_scan_video import hop_dong_v4
 #    dong gia cho mot thanh ngu pytest binh thuong, va banh coc `ruff` dem chung.
 from tests import test_423_asv_giao_dien as _gd
 from tests import test_447_asv_v4_giao_dien_san_pham as _sp
+from tests import asv_js
 
 # ⛔ Gan qua THUOC TINH, khong `from ... import moi_truong`. Dang nhap truc tiep
 #    lam `ruff` bao F811 o **moi** ham nhan fixture cung ten — bon ham o §4 la
@@ -49,7 +50,6 @@ GOC = Path(__file__).resolve().parents[1]
 DUONG_GIAI_DOAN = GOC / "apps" / "auto_scan_video" / "giai_doan_ban_dung.py"
 DUONG_ROUTES = GOC / "apps" / "auto_scan_video" / "routes.py"
 DUONG_MAU = GOC / "apps" / "auto_scan_video" / "templates" / "asv_trang_chinh.html"
-DUONG_JS = GOC / "server" / "static" / "asv.js"
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -246,7 +246,7 @@ def test_client_gui_PHAN_SO_chu_khong_gui_GIAY():
     Neo theo **hanh vi**: phai co mot phep chia cho thoi luong truoc khi dong
     goi. Dem chuoi `"cat"` thi mot dong chu thich cung lam bai nay xanh.
     """
-    js = DUONG_JS.read_bytes().decode("utf-8")
+    js = asv_js.doc("asv/cat.js")
     # ⚠️ Ten bien doi o pha 12b (`thoiLuongCat` -> `thoiLuongVideo`) khi danh
     #    sach vung bat dau doc chung no. Bai nay DO khi doi ten, va do la
     #    dung viec no phai lam: mot cai neo theo ten thi phai duoc nhin lai

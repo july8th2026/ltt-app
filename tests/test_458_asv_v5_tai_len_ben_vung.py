@@ -31,16 +31,16 @@ from pathlib import Path
 import pytest
 
 from tests import test_423_asv_giao_dien as _mt
+from tests import asv_js
 
 moi_truong = _mt.moi_truong
 
-DUONG_JS = (Path(__file__).resolve().parents[1] / "server" / "static" / "asv.js")
 DUONG_HTML = (Path(__file__).resolve().parents[1] / "apps" / "auto_scan_video"
               / "templates" / "asv_trang_chinh.html")
 
 
 def _js() -> str:
-    return DUONG_JS.read_bytes().decode("utf-8")
+    return asv_js.doc()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -48,7 +48,7 @@ def _js() -> str:
 # ══════════════════════════════════════════════════════════════════════════════
 
 def test_client_CO_goi_duong_cap_ve():
-    """🔴 Truoc R1, `asv.js` khong nhac toi `/ve` mot lan nao, va o `upload_id`
+    """🔴 Truoc R1, ma client khong nhac toi `/ve` mot lan nao, va o `upload_id`
     khong co trong form. Route song, nhung khong ai voi toi.
 
     ⚠️ Chot theo **duong dan lay tu template** chu khong theo chuoi `"/ve"` go

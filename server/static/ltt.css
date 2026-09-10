@@ -3661,3 +3661,26 @@ button.lv-the-song.dang-phat .lv-nghe-dau::before{width:4px;height:14px;
  * mot y nghia. */
 .asv-tai{display:flex;flex-direction:column;gap:4px;margin:4px 0 0}
 .asv-tai .asv-ghi-chu{margin:0}
+/* 🔴 `[hidden]` PHAI THANG `display` — TREN MOI PHAN TU cua man ASV Studio.
+ *
+ * Thuoc tinh HTML `hidden` chi la `display:none` o bang kieu cua TRINH DUYET,
+ * nen bat ky luat `display` nao cua ta cung de bep no. Markup dung, JS dung,
+ * chi CSS lat nguoc y dinh — va no lat mot cach hoan toan im lang.
+ *
+ * Do that o pha 06 (1280 va 375): ba phan tu `hidden` van render —
+ *   #asv-tai      <- `.asv-tai{display:flex}`
+ *   #asv-tai-lai  <- `.btn{display:inline-flex}`
+ *   #asv-lop      <- svg lop ve
+ * Hau qua khach nhin thay: nut "Thu tai len lai" hien ngay khi mo trang, giai
+ * thich mot su co chua he xay ra.
+ *
+ * ⭐ Man Voice da dinh dung bay nay va da rut ra dung ket luan (xem khoi
+ *    `.lv-man [hidden]` o tren): mot DANH SACH LOP chi bao ve nhung gi da tung
+ *    hong, va no tai dien trong mot gio o `.btn`. Nen day la mot luat CHUNG
+ *    cho ca man, khong phai mot danh sach.
+ *
+ * ⚠️ Pham vi gioi han trong `.asv-trang` — cung ly do ho gioi han trong
+ *    `.lv-man`: de khong doi hanh vi render cua app khac.
+ */
+.asv-trang [hidden],
+.asv-trang[hidden]{display:none!important}

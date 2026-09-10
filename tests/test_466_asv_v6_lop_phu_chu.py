@@ -47,6 +47,7 @@ import pytest
 from apps.auto_scan_video import ban_dung, che_do_render as cdr, hop_dong_v4
 from apps.auto_scan_video import ket_xuat, lop_phu as lp
 from tests import rao_chan_nang
+from tests import asv_js
 
 # ⚠️ Nhap MODULE roi lay THUOC TINH, khong `from ... import moi_truong`. Dang
 #    nhap truc tiep tao mot ten thu hai trong khong gian ten cua tep nay va
@@ -433,8 +434,9 @@ def test_hang_o_dieu_khien_co_SAN_chieu_rong_tren_man_hep():
     from pathlib import Path
 
     goc = Path(__file__).resolve().parent.parent
-    js = (goc / "server/static/asv.js").read_text(encoding="utf-8")
-    assert "asv-vung-gio-o asv-lp-o" in js, "JS khong gan lop danh dau"
+    js = asv_js.doc("asv/lop_phu.js")
+    assert "asv-vung-gio-o asv-lp-o" in js, (
+        "asv/lop_phu.js khong gan lop danh dau")
 
     css = (goc / "server/static/ltt.css").read_text(encoding="utf-8")
     assert ".asv-lp-o{flex-wrap:wrap}" in css, "hang khong duoc phep xuong dong"
@@ -454,10 +456,12 @@ def test_giao_dien_KHONG_dung_o_nhieu_dong():
     j = van.index("</div>", van.index('id="asv-lop-phu"', i))
     assert "<textarea" not in van[i:j]
 
-    js = (goc / "server/static/asv.js").read_text(encoding="utf-8")
-    k = js.index("4c. Lop phu chu")
-    l = js.index("5. Tai len BEN VUNG", k)
-    assert 'createElement("textarea")' not in js[k:l]
+    # ⭐ Truoc pha 06 dong nay cat mot LAT giua hai moc chu thich trong
+    #    `asv.js`. Sau khi tach, ca khoi lop phu la MOT tep — nen pham
+    #    vi chot rong ra tu mot lat sang ca module. Chat hon, va khong
+    #    con phu thuoc vao viec ai do giu nguyen hai dong chu thich.
+    js = asv_js.doc("asv/lop_phu.js")
+    assert 'createElement("textarea")' not in js
 
 
 # ══════════════════════════════════════════════════════════════════════════════
