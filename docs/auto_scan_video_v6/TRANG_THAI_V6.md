@@ -34,7 +34,7 @@ pha; chép lại vào đây là tạo một bản sẽ trôi.
 | Mục | Hiện trạng | Vì sao chưa đóng |
 |---|---|---|
 | `test_448` ×7 đỏ | **đúng là đỏ** | Ba nguyên nhân đã tách: trần token · `sqlite3 database is locked` · LUFS T4. Hai cái sau **đã vá có đối chứng**; cái đầu còn là giả thuyết chưa phân biệt được với "chế độ rỗng lưỡng cực" của `ltt_llm`. Xem `CHAN_DOAN_TEST_448.md` |
-| Đo `chuyen_loi_thoai` qua `goi_tinh_tien` | **bị chặn** | Cần `LTT_DATABASE_URL` + `LTT_TOKEN_ENCRYPTION_KEY` + `LTT_LLM_BASE_URL` từ `C:\LTTPlatform\secrets\app.env` (ACL chặn — **cố ý**). Đường hợp lệ đã có sẵn: `setup\do_on_dinh_nang_quyen.ps1`. Việc chủ dự án bấm |
+| Đo `chuyen_loi_thoai` trên đường thật | **XONG 10/09** | 15 lượt. Nhu cầu thật **4.186–6.843** token; trần cũ 4.096 nằm dưới nhu cầu ở **5/5** lượt. Trần mới 16.384 dư 2,4×. Xem `CHAN_DOAN_TEST_448.md` §11 + `bang_chung/do_tran_token_20260910.log` |
 | `nghiem_thu_hien_hanh.json` | **không tái sinh được ở độ trung thực đầy đủ** | Chặn cùng chỗ ở trên. ⛔ Không được tái sinh từ **một** lượt xanh (p(hỏng) ≈ ½) cũng không từ một lượt có **thay thế** |
 | Xem trước lớp phủ/logo trên khung hình | chưa có | `vung_che` kéo thả được, lớp phủ và logo thì chưa — khách đặt toạ độ bằng số |
 | 🔴 **Trần job `content_process` dưới sàn nhu cầu** | ASV nhận video **120 phút**; ở 142 giây/lô (đo được) chỉ **~20 phút video** lọt trần job 60 phút. Các lô chạy **tuần tự** và vượt trần job **không được thử lại** (`test_217`). Xem `CHAN_DOAN_TEST_448.md` §10 — ba đường sửa, và không đường nào chọn được trước khi đo `giây/lô` trên đường thật của ASV |

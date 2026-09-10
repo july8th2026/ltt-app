@@ -460,3 +460,76 @@ Ba đường có thật, và chọn giữa chúng cần số của phép đo đa
 
 ⇒ Việc đúng lúc này **không** phải chọn. Là ghi nó ra, và đo `giây/lô` trên
   đường thật của ASV — cùng lô đo đang chờ suất máy B.
+
+## 11. ✅ ĐO XONG — trần token LÀ nguyên nhân, và nhu cầu nằm TRÊN trần cũ ở MỌI lượt
+
+Lô đo `do_on_dinh_nang_quyen.ps1` chạy 10:29–10:44 trên đường thật của ASV
+(`ai.goi` → `dieu_phoi.goi` → pool + `secretbox` → máy B). **5 vòng × 3 cánh =
+15 lượt.**
+
+```
+canh                 tran      luot  xong  bi cat   token ra (min/p50/max)   vuot 4.096
+THAT/tran-job         4.096      5     1      4      3.844 / 4.096 / 4.096      0/5
+THAT/tran-rong(DC)   12.288      5     5      0      4.186 / 6.091 / 6.843      5/5
+NGAN/tran-job(DC)     4.096      5     5      0        799 / 1.133 / 1.296      0/5
+```
+
+### 🔑 Cánh đối chứng là thứ chứng minh, không phải cánh chính
+
+Ba cánh khác nhau **đúng một biến mỗi lần**:
+
+* `THAT/tran-job` và `THAT/tran-rong` — **cùng lời nhắc, cùng đầu vào**, chỉ
+  khác trần. 4.096 hỏng 4/5; 12.288 xong 5/5.
+* `THAT/tran-job` và `NGAN/tran-job` — **cùng trần**, chỉ khác cỡ đầu vào.
+  Đầu vào ngắn xong 5/5 ở đúng cái trần làm đầu vào dài hỏng.
+
+⇒ Trần không sai *nói chung*. Nó sai **cho cỡ đầu vào của `chuyen_loi_thoai`**.
+  Điều này giết giả thuyết *"lời nhắc hỏng"* và giả thuyết *"máy B ốm"* cùng
+  lúc — cả hai sẽ làm cánh `NGAN` hỏng theo.
+
+### 🔴 Và con số đắt nhất: nhu cầu thật là **4.186 – 6.843** token
+
+Cánh trần-rộng **không bị cắt lần nào**, nên số của nó là nhu cầu **thật**, không
+phải một cận dưới. Và **5/5 lượt đều vượt 4.096**.
+
+⇒ Trần cũ không "hơi chật". Nó nằm **dưới sàn nhu cầu ở mọi lượt**, và lượt duy
+  nhất sống sót (3.844) sống vì tình cờ, không vì đủ chỗ. Đúng nghĩa đen của
+  `phanh-luon-an-te-hon-khong-co-phanh`: thất bại là **mặc định**, thành công là
+  ngoại lệ may mắn.
+
+Giá trị đặt ở `6fcc39ed` — **16.384** — dư **2,4×** so với mức cao nhất đo được.
+
+### ⚠️ Cái KHÔNG thấy, và nó cũng là một kết quả
+
+Trong 15 lượt **không có lượt nào `stop` + `content` rỗng**. "Chế độ rỗng lưỡng
+cực" mà phiên `ltt-llm-api-http-guide` đo được ở đường khác (1/4 ở ngữ cảnh
+ngắn) **không xuất hiện**.
+
+⛔ n=15 nên đây **không** phải bằng chứng nó không tồn tại. Nó chỉ nói: trên
+   đường của ASV, ở cỡ đầu vào này, **mọi** thất bại quan sát được đều là
+   `length` — tức có **một** nguyên nhân cần vá, không phải hai.
+
+⭐ Và `finish_reason` là thứ phân biệt được hai chế độ ấy — đúng cột đã nối vào
+   sổ cái ở `a0666981`. Nếu chế độ rỗng xuất hiện ở production sau khi nới trần,
+   dữ liệu vận hành sẽ nói ra thay vì phải dựng lại một lô đo.
+
+### Ba con số phụ đáng giữ
+
+| | |
+|---|---|
+| giây/lượt ở trần cũ | 61–72 s (không phải 140–150 s — số đó ở **1.891** token vào, lô này **595**) |
+| giây/lượt ở trần rộng | 63–103 s — dài hơn vì nó được phép nghĩ hết |
+| khối suy nghĩ | 8.221–15.603 ký tự; lượt bị cắt đều ở ~9.700 |
+
+⇒ Trần timeout 300 s (đặt cùng lúc ở `6fcc39ed`) dư **~3×** so với lượt dài
+  nhất đo được.
+
+### ⛔ Lô dừng ở 5/12 vòng, và lý do là lỗi quy trình của tôi
+
+Tiến trình chết khi phiên Claude kết thúc. Memory `lo-do-dai-tren-may-b` đã ghi
+đúng điều này — *"phải dùng Scheduled Task; ssh và `Start-Process` đều chết theo
+phiên"* — và tôi vẫn dùng `Start-Process -Verb RunAs` cho một lô 32 phút.
+
+⭐ Không đổi kết luận (5/5 ở cánh đối chứng là dứt khoát), nhưng nó mất phần
+   **tỉ lệ**: với n=5, "4/5 hỏng ở trần cũ" là một ước lượng thô, không phải một
+   tỉ lệ. Ai cần con số ấy thì chạy lại **qua Scheduled Task**.
