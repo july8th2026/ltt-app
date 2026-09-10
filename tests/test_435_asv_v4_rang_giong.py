@@ -186,15 +186,41 @@ def test_ASV_KHONG_go_lai_bo_loc_cua_app_chu():
 
 
 def test_ba_mat_dac_diem_KHOP_voi_catalog_cua_app_chu():
-    """🔴 Bia them mot mat thu tu se cho ra mot bo loc khong bao gio khop."""
+    """🔴 Bia them mot mat thu tu se cho ra mot bo loc khong bao gio khop.
+
+    ⚠️ NOI LONG THANH TAP CON 2026-09-10 (Q121), va chieu noi long la phan quan
+       trong nhat cua chu thich nay.
+
+       Ban cu doi HAI TAP BANG NHAU. Nhung hai huong lech KHONG can nhau:
+
+         · ASV co mot mat ma catalog KHONG co  ->  bo loc khong bao gio khop,
+           va ASV im lang tra ve rong. Day la huong NGUY HIEM, va no van bi
+           chan y nguyen o duoi.
+         · catalog co mot mat ma ASV khong loc  ->  ASV chi don gian khong loc
+           theo mat do. Vo hai o tang KIEU.
+
+       Q121 them `ngon_ngu` vao `GiongMau` (lan cua giong, suy tu `vung`). Doi
+       bang nhau nghia la moi lan app chu them mot mat, ASV do — dung cai ma
+       `test_ASV_KHONG_go_lai_bo_loc_cua_app_chu` ngay tren dang chong lai:
+       hai ban cua mot quy tac.
+
+    ⛔ NHUNG "vo hai o tang KIEU" KHONG co nghia la vo hai o tang SAN PHAM.
+       ASV nay chon giong ma khong nhin lan, trong khi `lan_ngon_ngu.quyet_dinh`
+       TU CHOI cap van-ban-VI + giong-EN o cua nop. Voi 20 preset hien tai deu
+       la lan `vi` thi chua the xay ra; ngay kho giong mau co giong `en` thi
+       ASV can loc theo lan. Da bao phien ASV; viec do thuoc ho, khong thuoc
+       phep kiem nay.
+    """
     import dataclasses as dc
 
     from apps.ltt_voice import giong_mau
 
     mat_asv = {f.name for f in dc.fields(rg.DacDiemMongMuon)}
     mat_chu = {f.name for f in dc.fields(giong_mau.GiongMau)} - {"ma"}
-    assert mat_asv == mat_chu, (
-        f"ASV mong {sorted(mat_asv)}, catalog phan loai theo {sorted(mat_chu)}")
+    thua = mat_asv - mat_chu
+    assert not thua, (
+        f"ASV loc theo mat ma catalog KHONG co: {sorted(thua)} — bo loc nay "
+        f"khong bao gio khop, va no that bai IM LANG (tra ve rong)")
 
 
 def test_gia_tri_hop_le_lay_tu_NHAN_cua_app_chu():

@@ -34,6 +34,22 @@ from apps.ltt_voice import lui_giong
 GOC = pathlib.Path(__file__).resolve().parents[1]
 VAN_BAN = "Xin chào các bạn, hôm nay chúng ta nói về một chủ đề mới."
 
+#: 🔴 VĂN BẢN TIẾNG ANH CHO HỒ SƠ LÀN `en` — thêm 2026-09-10 (Q121).
+#:
+#:    Trước đó mọi ca ở tệp này dùng `VAN_BAN` tiếng Việt, kể cả khi hồ sƠ
+#:    mang làn `en`. Tức chúng dựng một cặp **văn bản VI + giọng EN** — cặp mà
+#:    `lan_ngon_ngu.quyet_dinh` nay TỪ CHỐI ngay tại cửa nộp, nên đường lùi **không
+#:    bao giờ tới được** trong sản phẩm thật.
+#:
+#: ⛔ Và đó không chỉ làm hai ca đỏ — nó còn làm hai ca `pytest.raises` **XANH VÌ
+#:    LÝ DO SAI**: chúng chờ một `LoiGiongNoi` từ *"không có ứng viên"* / *"license
+#:    chưa soát"*, nhưng nhận được một `LoiGiongNoi` từ *"lệch làn"*. Một phép
+#:    kiểm xanh vì lý do sai trông y hệt một phép kiểm xanh.
+#:
+#: ⭐ Nên hồ sơ làn nào đọc văn bản làn ấy, và hai ca `raises` nay chốt thêm
+#:    **MÃ LỖI** để không bị một cửa chặn khác mua chuộc lần nữa.
+VAN_BAN_EN = "Hello everyone, today we will talk about a brand new topic."
+
 U = lui_giong.UngVien
 
 
@@ -256,9 +272,9 @@ def _tao_ho_so(*, gioi: str, trang_thai: str = "active",
     return owner, pid
 
 
-def _giai(owner: str, pid: str):
+def _giai(owner: str, pid: str, text: str = VAN_BAN):
     from apps.ltt_voice import features
-    yc = features.chuan_hoa({"text": VAN_BAN, "voice_id": pid, "owner_id": owner})
+    yc = features.chuan_hoa({"text": text, "voice_id": pid, "owner_id": owner})
     gen, db = _session()
     try:
         return features.giai_giong(db, yc)
@@ -303,8 +319,10 @@ def test_lan_en_chua_lui_duoc_va_noi_that(moi_truong):
     """Giới hạn ĐÃ BIẾT: chưa có giọng mẫu làn `en` nên chưa có ứng viên."""
     from apps.ltt_voice import features
     owner, pid = _tao_ho_so(gioi="nu", ngon_ngu="en", co_bieu_dien=False)
-    with pytest.raises(features.LoiGiongNoi):
-        _giai(owner, pid)
+    with pytest.raises(features.LoiGiongNoi) as e:
+        _giai(owner, pid, VAN_BAN_EN)
+    assert getattr(e.value, "ma", "") == "", (
+        "phai hong vi KHONG CO UNG VIEN, khong phai vi lech lan")
 
 
 def test_DANG_GHI_DANH_co_cau_RIENG_khong_bao_la_dang_bi_tat(moi_truong):
@@ -372,7 +390,7 @@ def test_lan_EN_mat_bieu_dien_NAY_LUI_DUOC_qua_kho_chung(moi_truong, monkeypatch
     _tao_kho_chung(gioi="nam", ngon_ngu="en", ten="Oliver")
     owner, pid = _tao_ho_so(gioi="nam", ngon_ngu="en", co_bieu_dien=False)
 
-    ref, preset, canh_bao = _giai(owner, pid)
+    ref, preset, canh_bao = _giai(owner, pid, VAN_BAN_EN)
 
     assert ref == "REF-CHUNG", "lan en van khong lui duoc"
     assert preset is None, "kho chung khong phai preset cua engine"
@@ -386,7 +404,7 @@ def test_lui_kho_chung_dung_TEN_chu_khong_phai_public_id(moi_truong, monkeypatch
     chung = _tao_kho_chung(gioi="nu", ngon_ngu="en", ten="Amelia")
     owner, pid = _tao_ho_so(gioi="nu", ngon_ngu="en", co_bieu_dien=False)
 
-    _ref, _preset, canh_bao = _giai(owner, pid)
+    _ref, _preset, canh_bao = _giai(owner, pid, VAN_BAN_EN)
 
     assert "Amelia" in canh_bao[0], canh_bao
     assert chung not in canh_bao[0], "public_id lot ra cau canh bao"
@@ -424,8 +442,10 @@ def test_kho_chung_CHUA_SOAT_LICENSE_thi_khong_duoc_lam_ung_vien(moi_truong):
                    license_status="cho_soat")
     owner, pid = _tao_ho_so(gioi="nam", ngon_ngu="en", co_bieu_dien=False)
 
-    with pytest.raises(features.LoiGiongNoi):
-        _giai(owner, pid)
+    with pytest.raises(features.LoiGiongNoi) as e:
+        _giai(owner, pid, VAN_BAN_EN)
+    assert getattr(e.value, "ma", "") == "", (
+        "phai hong vi LICENSE CHUA SOAT, khong phai vi lech lan")
 
 
 def test_ung_vien_kho_chung_BO_giong_khong_ro_gioi(moi_truong):

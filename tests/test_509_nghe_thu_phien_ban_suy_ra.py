@@ -44,22 +44,47 @@ def test_PHIEN_BAN_khong_con_la_hang_so_go_tay():
         "thu hoac PHIEN_BAN_THAM_SO doi")
 
 
+def _van_tay(bang: dict, tham_so: str) -> str:
+    """Dựng lại vân tay từ ĐÚNG những đầu vào mà sản phẩm dùng."""
+    import hashlib
+    return "v2-" + hashlib.sha256(
+        ("|".join([f"{lan}={cau}" for lan, cau in sorted(bang.items())]
+                  + [tham_so])).encode("utf-8")).hexdigest()[:12]
+
+
 def test_doi_CAU_NGHE_THU_thi_PHIEN_BAN_DOI():
     """🔴 Đây là mệnh đề chính. Không có nó thì khách nghe câu **cũ** trong khi
     mã nói câu mới — và cả hai đều là tiếng nói bình thường, nên không ai phát
-    hiện ra."""
-    import hashlib
+    hiện ra.
 
+    ⚠️ VIẾT LẠI 2026-09-10 (Q121), và lý do đáng ghi. Bản cũ chốt **công thức**:
+       `PHIEN_BAN == bam(CAU_NGHE_THU, tham_so)`. Khi nghe thử có thêm câu thứ
+       hai theo làn (`CAU_THEO_LAN`), công thức đổi và phép kiểm đỏ — nhưng nó
+       đỏ vì **tập hợp rộng ra**, không vì một hồi quy.
+
+    ⛔ Và cách "sửa" hiển nhiên — gõ lại công thức mới — sẽ giữ nguyên điểm yếu
+       gốc: nó chốt *cách tính*, không chốt *điều phải đúng*. Ngày thêm làn thứ
+       ba nó lại đỏ y hệt.
+
+    ⭐ Nên bản này chốt MỆNH ĐỀ và bất biến với số làn: **đổi câu của BẤT KỲ làn
+       nào thì vân tay phải đổi.** Nó khó xanh hơn bản cũ, không dễ hơn — bản cũ
+       chỉ canh một câu, bản này canh mọi câu.
+    """
     from apps.ltt_voice import nghe_thu
 
-    def _bam(cau, tham_so):
-        return "v2-" + hashlib.sha256(
-            (cau + "|" + tham_so).encode("utf-8")).hexdigest()[:12]
-
     ts = nghe_thu._phien_ban_tham_so()
-    assert nghe_thu.PHIEN_BAN == _bam(nghe_thu.CAU_NGHE_THU, ts), (
-        "PHIEN_BAN khong phai bam cua (cau, tham_so) — cong thuc da lech")
-    assert _bam(nghe_thu.CAU_NGHE_THU + " ", ts) != nghe_thu.PHIEN_BAN
+    goc = dict(nghe_thu.CAU_THEO_LAN)
+    assert nghe_thu.PHIEN_BAN == _van_tay(goc, ts), (
+        "PHIEN_BAN khong phai bam cua (moi cau theo lan, tham_so)")
+
+    assert nghe_thu.CAU_NGHE_THU in goc.values(), (
+        "cau tieng Viet khong con nam trong bang — cap nhat phep kiem nay")
+
+    for lan in goc:
+        doi = dict(goc, **{lan: goc[lan] + " "})
+        assert _van_tay(doi, ts) != nghe_thu.PHIEN_BAN, (
+            f"doi cau lan {lan!r} KHONG lam doi khoa — tep nghe thu cu se duoc "
+            f"phuc vu mai mai")
 
 
 def test_doi_PHIEN_BAN_THAM_SO_thi_PHIEN_BAN_DOI():
@@ -69,12 +94,9 @@ def test_doi_PHIEN_BAN_THAM_SO_thi_PHIEN_BAN_DOI():
 
     from apps.ltt_voice import nghe_thu
 
-    def _bam(cau, tham_so):
-        return "v2-" + hashlib.sha256(
-            (cau + "|" + tham_so).encode("utf-8")).hexdigest()[:12]
-
-    a = _bam(nghe_thu.CAU_NGHE_THU, "ltt-voice-2026-08-30a")
-    b = _bam(nghe_thu.CAU_NGHE_THU, "ltt-voice-2026-12-01z")
+    bang = dict(nghe_thu.CAU_THEO_LAN)
+    a = _van_tay(bang, "ltt-voice-2026-08-30a")
+    b = _van_tay(bang, "ltt-voice-2026-12-01z")
     assert a != b
 
 
@@ -89,7 +111,9 @@ def test_bam_MSGID_GOC_chu_khong_bam_ban_DICH():
                and "PHIEN_BAN" in ast.unparse(n).split("=")[0]
                and "sha256" in ast.unparse(n))
     ma = ast.unparse(gan)
-    assert "CAU_NGHE_THU" in ma
+    # `CAU_THEO_LAN` chua chinh `CAU_NGHE_THU` (msgid goc) — chap nhan ca hai
+    # ten, vi cai phai chot la "bam msgid GOC", khong phai ten bien nao.
+    assert "CAU_NGHE_THU" in ma or "CAU_THEO_LAN" in ma, ma
     assert "_t(" not in ma and "_t (" not in ma, (
         "dang bam ban DICH — khoa se doi theo ngon ngu")
 
