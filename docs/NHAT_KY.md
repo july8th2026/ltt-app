@@ -16,6 +16,127 @@
 
 
 
+## 2026-09-10 — Q121: làn ngôn ngữ của giọng thành CỬA CHẶN, và bốn tầng cùng im lặng cho qua
+
+**Phạm vi:** `apps/ltt_voice` — hợp đồng tương thích VI/EN giữa văn bản và giọng.
+Nhánh `claude/voice-language-compatibility-440bfd`, base `9e73bf1f`.
+
+### Cái đã tìm ra, và vì sao không tầng nào kêu
+
+Đề bài nói *"hệ thống có dữ liệu language trong `giong_mau_engine.json`"*. **Không
+có.** Ảnh chụp preset của engine mang `gender`/`style`/`description`/`vung` — và
+không một trường ngôn ngữ nào. Nguồn chân lý của làn giọng mẫu ở thời điểm đó là
+**ba bản chép tay**, không bản nào biết hai bản kia tồn tại:
+
+| Bản chép | Ở đâu | Nói gì |
+|---|---|---|
+| ① hằng số chuỗi | `features.giai_giong` | `doi_chieu("vi", …)` cho **mọi** preset |
+| ② thuộc tính HTML | `_voice_chon.html:119` | `data-lan="vi"` cho **mọi** preset |
+| ③ **không nói gì** | `tham_chieu.tuy_chon_preset` | danh mục cho ChatLTT/palette đánh rơi làn |
+
+Và bốn tầng cưỡng chế đều hỏng theo **cùng một hướng — hướng im lặng cho qua**:
+
+1. Cảnh báo sinh ra rồi **bị vứt** ở cả hai người gọi: `ref_b64, preset, _ = …`
+   ở `jobs.py:95` lẫn `routes/_p_tao.py`.
+2. Kể cả có người đọc thì nó **không đọc được**: `doi_chieu` trả khuôn còn
+   nguyên `{lan_giong}`/`{lan_text}`, và `dien_canh_bao` — đúng hàm điền chỗ
+   trống ấy — **chưa từng được gọi ở đâu**. Một chỗ trống không ai điền trông
+   giống hệt một chỗ đã điền đúng.
+3. Ô `Ngôn ngữ` của khách **không xuống tới worker**: `_p_tao.tao` nhận
+   `ngon_ngu`, dùng nó cho đúng một lượt kiểm rồi **bỏ khỏi `params`** lúc nộp
+   job. Worker gọi lại `chuan_hoa(params)` trên dict không có nó ⇒ `yc.ngon_ngu`
+   trong worker **luôn** là `"auto"`. Nhánh mạnh nhất của hợp đồng chưa bao giờ
+   chạy ở cửa thật.
+4. Giọng **chưa rõ làn** (`ngon_ngu = ""`, có thật ở dữ liệu nhập kho cũ) rơi
+   vào nhánh *"chưa có làn ⇒ im lặng"* và đi thẳng tới GPU.
+
+Thêm một cái tìm ra ngoài đề: **nghe thử đọc câu theo NGÔN NGỮ GIAO DIỆN**.
+`dung()` gọi `str(_t(CAU_NGHE_THU))` trong khi `khoa_mau()` không mang ngôn ngữ
+trong khoá — nên tệp dựng đầu tiên thắng, và một giọng làn `vi` có thể vĩnh viễn
+nghe thử bằng câu tiếng Anh chỉ vì lượt bảo trì đầu tiên tình cờ chạy dưới ngữ
+cảnh tiếng Anh. Không ai phát hiện, vì cả hai đều là tiếng nói bình thường.
+
+⇒ **Hệ quả tiền:** một yêu cầu lệch làn tạo job hợp lệ, **giữ credit**, chạy hết
+GPU, và khách trả tiền cho một bản đọc mà nền tảng đã biết trước là sẽ kém.
+
+### Cái đã làm
+
+Thẩm quyền **duy nhất** nay là `lan_ngon_ngu.quyet_dinh` (bảng năm ô ở Q121).
+Cả ba cửa — web, worker, Public API — đi qua nó bằng `features._chot_lan`, gọi ở
+**cả hai** nhánh của `giai_giong` và **trước** lượt đọc kho.
+
+Làn của giọng mẫu **suy từ `vung`** (`bac`/`trung`/`nam` là ba miền tiếng Việt) —
+một phép đọc dữ liệu đã có, không phải một hệ metadata thứ hai, và không phải
+sửa tay một tệp đã ghi *"SINH RA, dung sua tay"*. Trường tên `ngon_ngu`, **đúng
+tên và đúng tập giá trị** với `VoiceProfile.ngon_ngu`, nên khuôn mẫu viết một
+biểu thức cho cả hai loại giọng và bản chép ② biến mất.
+
+Hai luật giữ cho cửa chặn **không chặn nhầm**:
+
+- `auto` được **giải** ba nấc: khách khai → máy đoán (chỉ khi chắc) → **làn của
+  chính giọng**. Nấc ba nghĩa là *văn bản mập mờ không bao giờ là thứ chặn* —
+  đó là cách giữ nguyên lý do của quyết định cũ (tiếng Việt không dấu chỉ gồm
+  ASCII) mà vẫn có cửa chặn.
+- Trộn ngôn ngữ: **bằng chứng dương thắng**. Một chữ có dấu tiếng Việt ⇒ `vi`.
+
+Lỗi nay mang **mã ổn định** (`voice_language_mismatch`,
+`voice_language_unknown`) trên `LoiGiongNoi.ma`, và `/tao` trả `ma_loi` cạnh
+`loi` — trước đó bên gọi muốn phân biệt "hết credit" với "lệch làn" phải **so
+chuỗi tiếng Việt**, thứ vỡ sẵn với khách xem giao diện tiếng Anh.
+
+### Số đo — trình duyệt thật, không phải chỉ test
+
+`tools/studio_dev.py` cổng 8123, đăng nhập qua form thật, nộp qua `/ltt-voice/tao`:
+
+```
+1 VI text + VI voice  (auto)  -> 200  job tao          <- khong chan nham
+2 EN text + VI voice  (auto)  -> 400  voice_language_mismatch
+3 EN text + VI voice  (khai vi)-> 200 job tao          <- khai bo qua phep doan
+4 "Ban co the mua ve o day"   -> 200  job tao          <- VN khong dau KHONG bi chan
+5 tron VI/EN co dau           -> 200  job tao
+6 giong nhan ban + VI text    -> qua cua lan (hong o seed, khong phai o lan)
+7 giong nhan ban + EN text    -> 400  voice_language_mismatch
+```
+
+⭐ **Đối chứng đắt nhất lại đến miễn phí:** lượt đo đầu chạy khi tài khoản dev có
+**0 credit**. Ca 1/4/5 dừng ở *"Khong du credit"* còn ca 2/7 dừng ở
+*`voice_language_mismatch`* — tức cửa làn đứng **trước** cửa credit, đo được chứ
+không phải suy từ thứ tự dòng lệnh.
+
+`ngon_ngu` trong `params` của **4/4** job tạo qua `/tao` (đọc thẳng CSDL). Bộ lọc
+làn trên trang: 21 → VI 21 → EN 0 → mọi làn 21. 0 lỗi console ngoài chính các
+400 của phép đo.
+
+### Cổng
+
+`tests/test_355_hop_dong_lan_giong.py` — **32 phép kiểm mới**. Bốn bánh cóc chính
+đã **đối chứng ngược**: dựng lại tệp bản gốc từ `HEAD` và kiểm rằng chúng ĐỎ
+(`params` thiếu `ngon_ngu` ✓, `data-lan="vi"` gõ tay ✓, hằng `"vi"` trong
+`giai_giong` ✓, không có `ma_loi` ✓). *Không đối chứng thì số 0 không phải phát
+hiện.*
+
+`test_384` giữ nguyên nhưng **phạm vi đã hẹp lại** và tệp nói rõ điều đó — nó
+chốt hàm `doi_chieu`, không chốt sản phẩm. Một phép kiểm ở đó phải viết lại:
+bản cũ đếm lời gọi `doi_chieu` **theo tên**, nên nó đỏ khi hai nhánh chuyển sang
+`_chot_lan` — nó bắt được một lần đổi tên, không bắt được một hồi quy. Bản mới
+chốt **chuỗi hai mắt xích** và bất biến với tên hàm trung gian.
+
+### Còn tồn đọng
+
+- `speech.ltt` chưa nhận `ngon_ngu` ở `params_schema` công khai ⇒ khách Public
+  API chỉ đi đường `auto` (an toàn, nhưng chưa tự khai được làn). Mở nó là đổi
+  **hợp đồng API công khai** (kho 24 route đóng băng) — để chủ sản phẩm quyết.
+- Đường Public API chặn ở **worker**, không ở lúc nộp: `ToolSpec` không có hook
+  kiểm tham số trước `submit_with_credit`, và thêm hook là sửa `platform_core`.
+  Credit **được giữ rồi hoàn**, GPU không bị chạm (`LoiNguoiGoi` ⇒ không thử lại).
+- Giọng nhân bản làn `en` ghi danh trước hôm nay còn giữ tệp nghe thử đọc câu
+  tiếng Việt trong kho. Khoá không đổi nên chúng **không tự dựng lại**; muốn dọn
+  thì xoá khoá `preview-*` của đúng những giọng ấy.
+- `jobs.py::_ghi_danh` chưa truyền làn xuống `nghe_thu.dung` (WS này không sửa
+  `jobs.py`). Hôm nay không đổi hành vi — hồ sơ mới luôn mang `ngon_ngu="vi"` —
+  nhưng ngày cửa ghi danh cho khách chọn làn thì đó là dòng phải sửa.
+
+
 ## 2026-09-07 — ĐÓNG PHIÊN `admin-mvp-v3`: plan lắp ráp 17/19, và bốn lỗi tôi tự bắt
 
 **Phiên này bị xoá khỏi nhật ký chat theo yêu cầu chủ dự án, nên mục này là bản

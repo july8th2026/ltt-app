@@ -13,8 +13,20 @@ kho dùng chung đều mang `ngon_ngu = "vi"`, kể cả hai giọng mà chính 
    sai chưa có hậu quả là dữ liệu sai trốn được lâu nhất** — nó chỉ nổ vào ngày
    ai đó bắt đầu tin nó.
 
-⇒ Tệp này chốt hai điều: làn **được đọc** ở những chỗ nó phải được đọc, và nó
-  **cảnh báo chứ không chặn**.
+⇒ Tệp này chốt hai điều: làn **được đọc** ở những chỗ nó phải được đọc, và
+  `doi_chieu` **cảnh báo chứ không chặn**.
+
+## ⚠️ PHẠM VI ĐÃ HẸP LẠI — đọc trước khi tin một dòng xanh ở đây
+
+~~Trước 2026-09-10, "cảnh báo chứ không chặn" là hợp đồng của **cả sản phẩm**.~~
+**ĐÃ THAY bởi Q121 (2026-09-10):** cửa nộp nay **chặn** một yêu cầu lệch làn.
+
+`doi_chieu` thì vẫn cảnh-báo-không-chặn, và mọi phép kiểm ở đây vẫn đúng — chúng
+nói về **hàm ấy**. Nhưng chúng không còn nói gì về *sản phẩm*, nên đừng đọc dòng
+xanh của tệp này thành "một yêu cầu lệch làn vẫn chạy được".
+
+Hợp đồng đang hiệu lực: `apps/ltt_voice/lan_ngon_ngu.py::quyet_dinh`, chốt ở
+`tests/test_355_hop_dong_lan_giong.py`.
 """
 from __future__ import annotations
 
@@ -135,21 +147,43 @@ def test_chuoi_canh_bao_la_HANG_de_dich_duoc():
 
 # ── nối vào ứng dụng ────────────────────────────────────────────────────────
 
-def test_giai_giong_tra_canh_bao_lan():
-    """`features.giai_giong` phải THẬT SỰ gọi đối chiếu làn.
+def test_giai_giong_doi_chieu_lan_o_CA_HAI_nhanh():
+    """`features.giai_giong` phải THẬT SỰ hỏi hợp đồng làn, ở **cả hai** nhánh.
 
     ⛔ Trước 01/09 nó trả `()` cứng ở cả hai nhánh. Một chỗ trống có sẵn cho
        cảnh báo mà không ai điền vào trông giống hệt một chỗ đã điền đúng.
+
+    ⚠️ VIẾT LẠI 2026-09-10 (Q121), và lý do đáng ghi: bản cũ đếm lời gọi
+       `doi_chieu` **theo tên**. Khi cửa chặn ra đời, cả hai nhánh chuyển sang
+       `_chot_lan` — cùng mệnh đề, cùng hai nhánh, nhưng phép kiểm ĐỎ. Nó không
+       bắt được một hồi quy; nó bắt được một lần đổi tên.
+
+    ⭐ Nên nay chốt **chuỗi hai mắt xích**: hai nhánh cùng gọi một cửa duy nhất,
+       và cửa ấy hỏi `lan_ngon_ngu.quyet_dinh`. Mệnh đề ấy bất biến với tên hàm
+       trung gian, và nó vẫn đỏ nếu một nhánh bỏ qua hợp đồng.
+
+    Phần *chặn* của hợp đồng chốt ở `tests/test_355_hop_dong_lan_giong.py`.
     """
     import ast
     src = (GOC / "apps" / "ltt_voice" / "features.py").read_text(encoding="utf-8")
-    ham = next(n for n in ast.walk(ast.parse(src))
-               if isinstance(n, ast.FunctionDef) and n.name == "giai_giong")
-    goi = [n for n in ast.walk(ham)
+    cay = ast.parse(src)
+
+    def _ham(ten):
+        return next(n for n in ast.walk(cay)
+                    if isinstance(n, ast.FunctionDef) and n.name == ten)
+
+    gg = _ham("giai_giong")
+    cua = [n for n in ast.walk(gg)
+           if isinstance(n, ast.Call) and getattr(n.func, "id", "") == "_chot_lan"]
+    assert len(cua) >= 2, (
+        "giai_giong phai hoi hop dong lan o CA HAI nhanh (preset va nhan ban)")
+
+    # Mắt xích thứ hai: cửa ấy phải thật sự hỏi hợp đồng, không tự phán.
+    chot = _ham("_chot_lan")
+    hoi = [n for n in ast.walk(chot)
            if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
-           and n.func.attr == "doi_chieu"]
-    assert len(goi) >= 2, (
-        "giai_giong phai doi chieu lan o CA HAI nhanh (preset va giong nhan ban)")
+           and n.func.attr == "quyet_dinh"]
+    assert hoi, "_chot_lan khong goi lan_ngon_ngu.quyet_dinh"
 
 
 def test_danh_sach_co_bo_loc_lan_va_MAC_DINH_KHONG_LOC():

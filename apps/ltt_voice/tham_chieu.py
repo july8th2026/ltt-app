@@ -15,6 +15,8 @@ import hashlib
 import io
 import logging
 
+from . import lan_ngon_ngu
+
 log = logging.getLogger(__name__)
 
 #: Tiền tố khoá trong `platform_core.storage`. Có `owner_id` trong đường dẫn để
@@ -222,7 +224,15 @@ def tuy_chon_preset(db, user_id: str) -> list:
         ) if x)
         ra.append({"value": g.public_id,
                    "label": f"{g.ten_hien_thi} ({nhan})" if nhan else g.ten_hien_thi,
-                   "gioi": g.gioi, "vung": g.vung, "phong_cach": g.phong_cach})
+                   "gioi": g.gioi, "vung": g.vung, "phong_cach": g.phong_cach,
+                   # 🔴 LÀN PHẢI ĐI THEO DANH MỤC. Đây là danh sách mà một sản
+                   #    phẩm KHÁC (ChatLTT, palette Agent) dựng ô chọn giọng từ
+                   #    đó, và nó không import app này. Danh mục nào đánh rơi
+                   #    làn thì bên kia chỉ còn hai đường: mời khách chọn một
+                   #    giọng mà cửa nộp sẽ từ chối, hoặc **chép tay** một danh
+                   #    sách VI/EN của riêng nó — tức đúng bản chép thứ ba mà
+                   #    Q121 vừa dọn đi hai bản.
+                   "ngon_ngu": g.ngon_ngu})
     return ra
 
 
@@ -242,5 +252,11 @@ def tuy_chon_voice_id(db, user_id: str) -> list:
         if getattr(ho_so, "trang_thai", "") != "active":
             continue
         ra.append({"value": str(ho_so.public_id),
-                   "label": str(getattr(ho_so, "ten_hien_thi", "") or ho_so.public_id)})
+                   "label": str(getattr(ho_so, "ten_hien_thi", "") or ho_so.public_id),
+                   # Cùng lý do với `tuy_chon_preset`: bên tiêu thụ cần lọc
+                   # được theo làn, và nó chỉ lọc được thứ danh mục nói ra.
+                   # `chuan_lan` ép về đúng ba giá trị — cột này là `String(16)`
+                   # tự do nên `"VI"` hay `"xx"` đều có thể có thật.
+                   "ngon_ngu": lan_ngon_ngu.chuan_lan(
+                       getattr(ho_so, "ngon_ngu", ""))})
     return ra

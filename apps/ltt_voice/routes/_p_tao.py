@@ -14,6 +14,22 @@ from ._chung import (MANIFEST, SO_LAN_THU_JOB, TRAN_KY_TU_CONG_KHAI, Depends, Fi
                      NHAN_NGUON, so_viet)
 
 
+def _loi_400(e) -> JSONResponse:
+    """Một `LoiGiongNoi` ⇒ phản hồi 400 **kèm mã lỗi**.
+
+    🔴 VÌ SAO CÓ `ma_loi` CHỨ KHÔNG CHỈ `loi`. Trước 2026-09-10 phản hồi lỗi của
+       cửa này chỉ có một câu tiếng Việt, nên bên gọi muốn phân biệt "hết credit"
+       với "văn bản lệch làn" phải **so chuỗi** — thứ vỡ ngay khi ai đó viết lại
+       câu cho dễ đọc, và vỡ sẵn với khách đang xem giao diện tiếng Anh.
+
+    ⭐ Trường thêm vào, không thay: `loi` giữ nguyên vị trí và ý nghĩa, nên JS
+       hiện có không phải sửa. `ma_loi` rỗng nghĩa là lỗi chưa phân loại.
+    """
+    return JSONResponse({"ok": False, "loi": str(e),
+                         "ma_loi": str(getattr(e, "ma", "") or "")},
+                        status_code=400)
+
+
 # ── Tạo tiếng nói ────────────────────────────────────────────────────────────
 
 @router.get("", response_class=HTMLResponse)
@@ -298,7 +314,7 @@ def tao(request: Request, text: str = Form(""), voice_id: str = Form(""),
                                  "preset": preset, "owner_id": _uid(user),
                                  "toc_do": toc_do, "ngon_ngu": ngon_ngu})
     except features.LoiGiongNoi as e:
-        return JSONResponse({"ok": False, "loi": str(e)}, status_code=400)
+        return _loi_400(e)
 
     if len(yc.text) > TRAN_KY_TU_CONG_KHAI:
         return JSONResponse({"ok": False, "loi": _t(
@@ -327,7 +343,7 @@ def tao(request: Request, text: str = Form(""), voice_id: str = Form(""),
             features.giai_giong(db, yc)
         except features.LoiGiongNoi as e:
             db.rollback()
-            return JSONResponse({"ok": False, "loi": str(e)}, status_code=400)
+            return _loi_400(e)
 
         job = submit_with_credit(
             db, user_id=_uid(user), app_slug=MANIFEST.slug,
@@ -340,9 +356,20 @@ def tao(request: Request, text: str = Form(""), voice_id: str = Form(""),
             #    đến từ đâu thì mãi mãi không biết. Ghi ở P1 tốn một dòng; ghi
             #    sau P6 tốn một dòng Y HỆT **cộng với** một khoảng lịch sử
             #    khuyết mà không lệnh nào vá được.
+            # 🔴 `ngon_ngu` PHẢI ĐI CÙNG. Trước 2026-09-10 nó **vắng mặt** ở
+            #    đây, và hậu quả im lặng: route nhận ô `Ngôn ngữ` của khách,
+            #    dùng nó cho đúng một lượt kiểm rồi vứt — worker gọi lại
+            #    `features.chuan_hoa(params)` trên một dict không có nó, nên
+            #    `yc.ngon_ngu` trong worker LUÔN là `"auto"`.
+            #
+            #    Tức nhánh mạnh nhất của hợp đồng làn (khách tự khai, thay hẳn
+            #    cho phép đoán) chưa từng chạy ở cửa thật. Cùng lớp lỗi mà
+            #    `test_392` đã bắt một lần: form gửi một trường mà `fd.append`
+            #    không gửi — chỉ lần này chỗ đánh rơi nằm ở phía máy chủ.
             params={"text": yc.text, "voice_id": yc.voice_id,
                     "preset": yc.preset, "owner_id": _uid(user),
-                    "toc_do": yc.toc_do, "nguon": "studio"},
+                    "toc_do": yc.toc_do, "ngon_ngu": yc.ngon_ngu,
+                    "nguon": "studio"},
             # Một GPU = một việc, và cả ba cửa giành cùng một slot (Q114).
             admission_resource=tool.admission_resource,
             admission_slots=tool.admission_slots,

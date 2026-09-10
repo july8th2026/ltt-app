@@ -31,12 +31,27 @@ log = logging.getLogger(__name__)
 class LoiGiongNoi(LoiNguoiGoi):
     """Thông điệp đưa thẳng ra cho khách — phải nói được cách sửa.
 
+    ⭐ MANG THEO MỘT MÃ LỖI (`ma`), tuỳ chọn. Câu chữ đổi theo ngôn ngữ giao
+       diện và theo mỗi lần ai đó viết lại cho dễ đọc hơn; mã thì không. Khách
+       tích hợp Public API và mã JS ở Studio đều cần bắt lỗi theo **thứ không
+       đổi**, và trước 2026-09-10 lớp này không có thứ đó — nên cách duy nhất
+       để phân biệt "giọng không phải của bạn" với "văn bản lệch làn" là so
+       chuỗi tiếng Việt.
+
+    ⛔ Rỗng là hợp lệ và là mặc định: hàng chục chỗ đang ném lớp này không phải
+       sửa theo. Chỗ nào có mã thì khai mã.
+
     ⛔ Kế thừa `platform_core.jobs.LoiNguoiGoi` để nền tảng **không thử lại**.
        Mọi lỗi ném ra từ đây đều là lỗi của *yêu cầu* (thiếu văn bản, giọng
        không phải của bạn, văn bản quá dài) — chạy lại y hệt sẽ hỏng y hệt.
 
        Máy bận thì đi đường khác: `DangBanTam`, và nó PHẢI được thử lại.
     """
+
+    def __init__(self, thong_diep="", ma: str = ""):
+        super().__init__(thong_diep)
+        #: Mã lỗi ổn định cho GUI/API. Rỗng = chưa phân loại.
+        self.ma = str(ma or "")
 
 
 class LoiHaTang(RuntimeError):
@@ -236,16 +251,44 @@ def chuan_bi_van_ban(yc: YeuCau, *, tran_moi_doan: int,
         doc_so_tran=yc.doc_so_tran, tu_dien_rieng=tu_dien_rieng)
 
 
+def _chot_lan(lan_giong: str, yc: YeuCau) -> tuple:
+    """Áp hợp đồng tương thích làn. Ném `LoiGiongNoi` khi KHÔNG hợp lệ.
+
+    🔴 ĐÂY LÀ CỬA CHẶN, và nó phải ở `features` chứ không ở route — Public API
+       đi **thẳng** xuống job và không qua cánh cửa nào của web. Đặt phép chặn
+       trong một cửa nghĩa là cửa kia không có nó, tức đúng cái bẫy docstring
+       đầu tệp này cảnh báo, ở đúng hạng mục tốn tiền của khách.
+
+    ⭐ Trả về tuple cảnh báo để chữ ký của `giai_giong` không đổi. Từ Q121 tuple
+       ấy gần như luôn rỗng — một yêu cầu lệch làn không còn đi qua được đây để
+       mà cảnh báo. Giữ chỗ vì làn thứ ba (`bilingual`) sẽ cần đúng chỗ đó.
+    """
+    pq = lan_ngon_ngu.quyet_dinh(lan_giong, yc.text, yc.ngon_ngu)
+    if not pq.cho_phep:
+        raise LoiGiongNoi(lan_ngon_ngu.cau_cho_khach(pq), ma=pq.ma_loi)
+    return lan_ngon_ngu.doi_chieu(lan_giong, yc.text, yc.ngon_ngu)
+
+
 def giai_giong(db, yc: YeuCau) -> tuple:
     """`YeuCau` -> `(ref_b64, preset, canh_bao)`.
 
-    Đây là chỗ **quyền sở hữu** được kiểm, và nó là chỗ duy nhất.
+    Đây là chỗ **quyền sở hữu** được kiểm, và từ Q121 cũng là chỗ **làn ngôn
+    ngữ** được chốt. Cả hai là chỗ duy nhất.
+
+    ⛔ THỨ TỰ CÓ NGHĨA: giải giọng trước, chốt làn sau. Ta không nói được một
+       yêu cầu lệch làn khi còn chưa biết giọng nào — và "giọng này không phải
+       của bạn" là câu phải ra trước, vì nó đúng bất kể văn bản viết bằng gì.
     """
     if not yc.voice_id:
-        # Preset là giọng người nói TIẾNG VIỆT ba miền (`giong_mau.py`), nên
-        # chúng thuộc làn `vi` — dù engine song ngữ đọc được cả tiếng Anh.
-        return None, (yc.preset or None), lan_ngon_ngu.doi_chieu(
-            "vi", yc.text, yc.ngon_ngu)
+        # ⛔ KHÔNG gõ `"vi"` ở đây nữa. Trước 2026-09-10 chỗ này là một hằng số
+        #    chuỗi, và nó là **bản chép thứ nhất** của danh sách VI/EN (bản thứ
+        #    hai nằm trong `_voice_chon.html`). Hai bản chép không có phép kiểm
+        #    là hai bản sẽ lệch — và bản trong HTML thì không có cách nào tự
+        #    biết nó đã cũ.
+        from . import giong_mau
+        lan = giong_mau.lan_cua(yc.preset) if yc.preset else giong_mau.lan_cua(
+            giong_mau.MAC_DINH)
+        return None, (yc.preset or None), _chot_lan(lan, yc)
 
     # `cho_dung_chung=True`: kho giọng chung của nền tảng đọc được cho mọi
     # khách. Đây là cửa DÙNG, nên nó mở; cửa SỬA (`_p_giong`) thì không.
@@ -258,12 +301,17 @@ def giai_giong(db, yc: YeuCau) -> tuple:
     if ho_so.trang_thai != "active":
         raise LoiGiongNoi(_t("Giọng này đang bị tắt. Hãy bật lại hoặc tạo giọng mới."))
 
+    # ⛔ CHỐT LÀN TRƯỚC KHI NẠP BIỂU DIỄN. `nap_ref_b64` là một lượt đọc kho —
+    #    trên production đó là một lượt gọi MẠNG tới R2 cho một yêu cầu ta vừa
+    #    biết chắc là sẽ bị từ chối. Đặt sau thì vẫn đúng, chỉ là trả tiền cho
+    #    một việc không ai cần.
+    canh_bao = _chot_lan(ho_so.ngon_ngu, yc)
+
     bieu_dien = tham_chieu.tim_repr_active(db, ho_so.id)
     if bieu_dien is None:
         raise LoiGiongNoi(_t(
             "Giọng này chưa ghi danh xong. Hãy thử lại sau ít phút."))
-    return (tham_chieu.nap_ref_b64(bieu_dien), None,
-            lan_ngon_ngu.doi_chieu(ho_so.ngon_ngu, yc.text, yc.ngon_ngu))
+    return tham_chieu.nap_ref_b64(bieu_dien), None, canh_bao
 
 
 def _goi_va_dich_loi(ham, *doi_so, **tham_so):

@@ -1,5 +1,9 @@
 """
-lan_ngon_ngu.py — LÀN của một giọng, và việc đối chiếu nó với văn bản.
+lan_ngon_ngu.py — LÀN của một giọng, và HỢP ĐỒNG tương thích văn bản ↔ giọng.
+
+Đây là **thẩm quyền duy nhất** trả lời câu hỏi *"văn bản này có được đọc bằng
+giọng kia không"*. Mọi cửa (Studio, Dự án, worker, Public API) đi qua
+`quyet_dinh()`; không cửa nào được tự phán.
 
 ## Làn là gì, và vì sao nó tồn tại khi engine đã song ngữ
 
@@ -10,34 +14,101 @@ trong cùng một câu. Đo 01/09/2026 trên engine thật, ASR nghe lại:
     VAO : The quick brown fox jumps over the lazy dog.
     ASR : The quick brown fox jumps over the lazy dog.       [en 0,996]
 
-Đúng từng chữ. Nên **làn KHÔNG phải một giới hạn kỹ thuật** — không có gì chặn
+Đúng từng chữ. Nên làn **không phải một giới hạn kỹ thuật** — không có gì chặn
 một giọng nguồn tiếng Anh đọc tiếng Việt.
 
-Làn là một chốt **chất lượng**, chốt 01/09/2026 bởi chủ sản phẩm: clip nguồn
-tiếng Việt phục vụ văn bản tiếng Việt, clip nguồn tiếng Anh phục vụ văn bản
-tiếng Anh. Lý do đến từ cách kho giọng cũ được xây — F5-TTS train bằng giọng
-Việt, XTTS bằng giọng Anh — và đó là kinh nghiệm mua bằng thời gian.
+Làn là một chốt **chất lượng**: clip nguồn tiếng Việt phục vụ văn bản tiếng
+Việt, clip nguồn tiếng Anh phục vụ văn bản tiếng Anh. Lý do đến từ cách kho
+giọng cũ được xây — F5-TTS train bằng giọng Việt, XTTS bằng giọng Anh — và đó là
+kinh nghiệm mua bằng thời gian.
 
-## ⛔ CẢNH BÁO, KHÔNG CHẶN. Và đây là chỗ dễ làm sai nhất.
+## 🔴 QUYẾT ĐỊNH ĐÃ ĐỔI — Q121 (2026-09-10): CHẶN, không còn chỉ cảnh báo
 
-Tiếng Việt **viết không dấu vẫn là tiếng Việt**, và nó chỉ gồm chữ cái ASCII —
-tức không phân biệt được với tiếng Anh bằng bảng mã. "Ban co the mua ve o day"
-và "Ban co the" là cùng một tập ký tự với một câu tiếng Anh.
+~~Chốt 01/09/2026: đối chiếu làn chỉ sinh **cảnh báo**, không có đường nào ở đây
+ném lỗi.~~ **ĐÃ THAY bởi Q121 (2026-09-10).**
 
-Một cổng CHẶN theo phán đoán ngôn ngữ sẽ từ chối công việc hợp lệ của khách
-đang gõ không dấu — và nó từ chối với một lý do khách không sửa được, vì họ
-đang gõ đúng thứ họ định gõ.
+Vì sao đổi — ba thứ đo được trên chính cây này, không phải một sở thích kiến
+trúc:
 
-⇒ Nên `doan_ngon_ngu` chỉ trả lời khi nó **chắc**, và trả `None` khi mập mờ.
-  Và `doi_chieu` chỉ sinh **cảnh báo**. Không có đường nào ở đây ném lỗi.
+  ① Cảnh báo **không tới ai cả.** `giai_giong` trả tuple cảnh báo, và **cả hai**
+     người gọi vứt nó đi (`ref_b64, preset, _ = …` ở `jobs.py` lẫn ở
+     `routes/_p_tao.py`). Một cảnh báo không có người đọc là một cảnh báo không
+     tồn tại.
+  ② Ngay cả khi có người đọc, nó **không đọc được**: `doi_chieu` trả khuôn còn
+     nguyên chỗ trống `{lan_giong}`/`{lan_text}`, và `dien_canh_bao` — hàm điền
+     chỗ trống ấy — **chưa từng được gọi ở đâu**.
+  ③ Và ô `Ngôn ngữ` của khách **không xuống tới worker**: `routes/_p_tao.tao`
+     nhận `ngon_ngu` rồi bỏ nó ra khỏi `params` lúc nộp job. Nên nhánh "khách
+     tự khai" — nhánh mạnh nhất — chưa bao giờ chạy trong sản phẩm.
 
-⭐ Hệ quả thiết kế: thứ làm việc chính không phải cảnh báo mà là **bộ lọc ở
-   danh sách giọng** — khách chọn đúng làn từ đầu thì không bao giờ chạm tới
-   cảnh báo này.
+⇒ Ba tầng đều hỏng theo hướng **im lặng cho qua**. Một yêu cầu lệch làn tạo ra
+  một job GPU hợp lệ, giữ credit của khách, chạy hết, và trả về một bản đọc
+  chất lượng thấp mà khách vẫn phải trả tiền.
+
+⭐ Và lý do CŨ vẫn đúng — nó không bị vứt đi, nó được **giữ bằng luật giải
+   ngôn ngữ** dưới đây, không bằng cách bỏ cửa chặn. Xem `giai_lan_van_ban`.
+
+## ⛔ TIẾNG VIỆT KHÔNG DẤU — cái bẫy mà cửa chặn PHẢI đi vòng qua
+
+Tiếng Việt viết không dấu vẫn là tiếng Việt, và nó chỉ gồm chữ cái ASCII — tức
+không phân biệt được với tiếng Anh bằng bảng mã. *"Ban co the mua ve o day"* là
+cùng một tập ký tự với một câu tiếng Anh.
+
+Một cổng chặn theo phán đoán ngôn ngữ **thô** sẽ từ chối công việc hợp lệ của
+khách đang gõ không dấu — và nó từ chối với một lý do khách không sửa được, vì
+họ đang gõ đúng thứ họ định gõ.
+
+⇒ Nên luật giải là: `doan_ngon_ngu` chỉ trả lời khi nó **chắc**; và khi nó không
+  chắc, văn bản **nhận làn của chính giọng đang chọn** (`NGUON_THEO_GIONG`).
+  Hệ quả là *sự mập mờ không bao giờ là thứ chặn* — chỉ bằng chứng dương mới
+  chặn được. Phép kiểm chốt đúng mệnh đề đó ở
+  `tests/test_355_hop_dong_lan_giong.py`.
+
+## ⛔ GIỌNG chưa rõ làn thì KHÔNG cho đọc — và đây là chiều sai ngược lại
+
+`voice_profile.ngon_ngu` là `String(16)` mặc định `"vi"`, nên một hàng mang
+`""` hay `"xx"` là chuyện có thật (dữ liệu nhập từ kho cũ). Trước Q121, giá trị
+lạ rơi vào nhánh *"chưa có làn ⇒ im lặng"* và đi thẳng tới GPU.
+
+Đó là hướng sai **đắt hơn**: với văn bản ta chỉ mất một cảnh báo, còn với giọng
+ta bán một bản đọc mà chính ta không biết nó thuộc làn nào. Nên hai chiều **cố ý
+không cân nhau**: văn bản mập mờ ⇒ cho qua; giọng mập mờ ⇒ chặn.
 """
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from platform_core.i18n import N_
+
+#: Ba giá trị làn, và **chỉ** ba. `KHONG_RO` là chuỗi rỗng có chủ ý: nó là thứ
+#: `str(x or "")` cho ra khi dữ liệu khuyết, nên không ai phải nhớ một hằng số
+#: đặc biệt để biểu diễn "không biết".
+LAN_VI = "vi"
+LAN_EN = "en"
+KHONG_RO = ""
+
+#: Tập làn **hợp lệ**. Mọi nơi hỏi "giá trị này có phải một làn không" phải hỏi
+#: tập này, đừng gõ lại `("vi", "en")` — gõ lại là chỗ làn thứ ba sẽ bị bỏ sót.
+LAN_HOP_LE = (LAN_VI, LAN_EN)
+
+#: Vùng miền của một giọng mẫu ⇒ bằng chứng làn. Xem `lan_tu_vung`.
+VUNG_VI = frozenset(("bac", "trung", "nam"))
+
+#: Mã lỗi ỔN ĐỊNH cho GUI và Public API. **Chuỗi, không phải số**, và tiếng Anh
+#: không dấu: nó đi vào JSON, vào log, vào mã của khách tích hợp — ba nơi mà
+#: một câu tiếng Việt có dấu là một gánh nặng chứ không phải một thông tin.
+#:
+#: ⛔ ĐỔI GIÁ TRỊ Ở ĐÂY LÀ MỘT THAY ĐỔI PHÁ VỠ. Khách bắt lỗi theo mã, không
+#:    theo câu chữ — câu chữ còn đổi theo ngôn ngữ giao diện.
+MA_LOI_LECH_LAN = "voice_language_mismatch"
+MA_LOI_LAN_KHONG_RO = "voice_language_unknown"
+
+#: Làn của văn bản đến TỪ ĐÂU. Đi kèm phán quyết vì nó là thứ duy nhất trả lời
+#: được câu *"vì sao lượt này bị chặn còn lượt kia thì không"*.
+NGUON_KHAI_BAO = "khai_bao"      # khách tự chọn ở ô Ngôn ngữ
+NGUON_DOAN = "doan"              # máy đoán, và đoán CHẮC
+NGUON_THEO_GIONG = "theo_giong"  # không đoán được ⇒ nhận làn của giọng
+NGUON_KHONG_RO = "khong_ro"      # chưa giải được vì chính GIỌNG chưa rõ làn
 
 #: Ký tự CHỈ có trong tiếng Việt (không kể chữ cái ASCII trần). Thấy một cái là
 #: đủ kết luận `vi` — không ngôn ngữ nào khác trong phạm vi sản phẩm dùng chúng.
@@ -75,6 +146,10 @@ CHU_VIET |= {c.upper() for c in CHU_VIET}
 #:    `tests/test_384_lan_ngon_ngu.py::test_tu_chuc_nang_khong_trung_am_tiet_tieng_viet_khong_dau`.
 #:    Một từ như "can", "co", "la", "ma" lọt vào là biến "Ban co the mua ve"
 #:    thành tiếng Anh.
+#:
+#: 🔴 VÀ TỪ Q121 TẬP NÀY CÒN CHẶN ĐƯỢC VIỆC, không chỉ cảnh báo được. Một từ
+#:    thêm sai ở đây nay từ chối công việc của khách. Ngưỡng an toàn không đổi;
+#:    cái đổi là **giá của việc sai**.
 TU_ANH = frozenset("""
 about after also because been before being between could does during each
 even every first from give have having into just know last like make many
@@ -88,68 +163,219 @@ which while will with within would year your
 #: Một từ thì quá dễ trúng ngẫu nhiên trong một câu tiếng Việt có chèn thuật ngữ.
 TOI_THIEU_TU_ANH = 2
 
-NHAN_LAN = {"vi": N_('Tiếng Việt'), "en": N_('Tiếng Anh')}
+NHAN_LAN = {LAN_VI: N_('Tiếng Việt'), LAN_EN: N_('Tiếng Anh')}
+
+#: Khuôn câu từ chối. Chỗ trống điền bằng `dien_canh_bao`, **không** bằng
+#: f-string — xem docstring của `dien_canh_bao`.
+MAU_LECH_LAN = N_(
+    'Giọng này thuộc làn {lan_giong}, nhưng văn bản là {lan_text}. '
+    'Hãy chọn một giọng cùng làn với văn bản, hoặc sửa ô Ngôn ngữ cho khớp.')
+
+MAU_LAN_KHONG_RO = N_(
+    'Giọng này chưa xác định được làn ngôn ngữ nên chưa dùng để đọc được. '
+    'Hãy chọn một giọng đã ghi rõ Tiếng Việt hoặc Tiếng Anh.')
+
+
+def chuan_lan(x) -> str:
+    """Bất cứ thứ gì ⇒ `"vi"` · `"en"` · `""`.
+
+    ⭐ MỘT chỗ chuẩn hoá cho cả cột CSDL, ô form, tham số API và trường JSON.
+       Bốn nơi tự ép kiểu là bốn nơi sẽ ép khác nhau — và cái lệch đầu tiên gần
+       như chắc chắn là hoa/thường (`"EN"` từ một khách tích hợp).
+    """
+    lan = str(x or "").strip().lower()
+    return lan if lan in LAN_HOP_LE else KHONG_RO
+
+
+def lan_tu_vung(vung: str) -> str:
+    """Vùng miền của một giọng mẫu ⇒ làn của nó.
+
+    🔴 VÌ SAO SUY TỪ `vung` CHỨ KHÔNG KHAI THÊM MỘT CỘT `language`.
+
+       Ảnh chụp preset của engine (`giong_mau_engine.json`) **không có** trường
+       ngôn ngữ, và nó không nên có: tệp ấy là ảnh chụp thứ engine nói, sinh ra
+       bởi `tools/sinh_giong_mau_engine.py`, và engine không nói gì về ngôn ngữ.
+       Thêm một trường mà máy sinh không sinh được là mời người ta sửa tay một
+       tệp đã ghi rõ *"SINH RA, dung sua tay"*.
+
+    ⭐ Nhưng dữ liệu để trả lời thì **đã có sẵn**: `vung ∈ {bac, trung, nam}` là
+       ba miền của tiếng Việt. Một giọng mang giọng vùng Bắc Bộ là một giọng
+       tiếng Việt — đó không phải một suy đoán, đó là đọc đúng thứ dữ liệu đang
+       nói. Nên ở đây không có hệ metadata thứ hai, chỉ có một phép đọc.
+
+    ⛔ Và ngày engine ship một preset KHÔNG thuộc ba miền ấy, hàm này trả
+       `KHONG_RO` — tức preset đó bị **chặn** cho tới khi có người khai làn cho
+       nó. Đó là hướng sai đúng: một giọng mới xuất hiện không được tự nhận là
+       tiếng Việt chỉ vì mọi giọng trước nó đều thế.
+    """
+    return LAN_VI if str(vung or "").strip().lower() in VUNG_VI else KHONG_RO
 
 
 def doan_ngon_ngu(text: str):
     """`"vi"` · `"en"` · `None` khi không chắc.
 
     ⛔ `None` là một câu trả lời ĐẦY ĐỦ, không phải một thất bại. Nó nói "văn
-       bản này không đủ dấu hiệu", và tầng trên phải im lặng khi gặp nó. Trả
-       bừa `"vi"` cho mọi thứ mập mờ sẽ đẻ ra cảnh báo sai ở mọi câu tiếng Anh
-       ngắn — và một cảnh báo hay sai là một cảnh báo bị bỏ qua, kể cả lúc đúng.
+       bản này không đủ dấu hiệu", và `giai_lan_van_ban` xử lý nó bằng cách
+       nhận làn của giọng — chứ không bằng cách chặn.
+
+    ⭐ TRỘN NGÔN NGỮ đi qua đây, và luật là **bằng chứng dương thắng**: chỉ cần
+       một chữ có dấu tiếng Việt là `vi`, kể cả khi câu đầy thuật ngữ tiếng Anh
+       (*"Xin chào, đây là bản demo của the new API"* ⇒ `vi`). Không đối xứng,
+       và cố ý: dấu tiếng Việt là bằng chứng **không thể nhầm**, còn từ chức
+       năng tiếng Anh thì có thể trùng âm tiết Việt không dấu.
     """
     t = (text or "").strip()
     if not t:
         return None
     if any(c in CHU_VIET for c in t):
-        return "vi"
+        return LAN_VI
     tu = {w.strip(".,!?;:\"'()[]").lower() for w in t.split()}
     if len(tu & TU_ANH) >= TOI_THIEU_TU_ANH:
-        return "en"
+        return LAN_EN
     return None
 
 
-def doi_chieu(lan_giong: str, text: str, khai_bao: str = "") -> tuple:
-    """Cảnh báo (dạng tuple chuỗi) khi văn bản lệch làn của giọng. Không ném.
+def giai_lan_van_ban(text: str, khai_bao: str = "",
+                     mac_dinh: str = KHONG_RO) -> tuple:
+    """`(lan, nguon)` — giải làn của VĂN BẢN về một giá trị **cụ thể**.
 
-    Trả tuple rỗng khi khớp, khi không đoán được, hoặc khi giọng chưa có làn.
+    Ba nấc, theo đúng thứ tự độ tin cậy:
 
-    ⭐ `khai_bao` — ngôn ngữ khách TỰ NÓI, từ ô `Ngôn ngữ` ở Studio. Khi có, nó
-       **thay cho phép đoán**, và đó là toàn bộ giá trị của ô ấy.
+      ① `khai_bao` — khách tự chọn ở ô `Ngôn ngữ`. Chắc nhất, vì nó không đoán.
+      ② `doan_ngon_ngu` — máy đoán, và chỉ nhận khi nó **chắc**.
+      ③ `mac_dinh` — làn của chính GIỌNG đang chọn.
 
-       `doan_ngon_ngu` cố ý trả `None` khi không đủ dấu hiệu, và im lặng khi
-       `None` là quyết định đúng: một cảnh báo hay sai là một cảnh báo bị bỏ
-       qua. Nhưng cái giá của nó là **ca im lặng nhiều nhất lại là ca cần cảnh
-       báo nhất** — một câu tiếng Anh ngắn đọc bằng giọng Việt không đủ dấu hiệu
-       để máy đoán, nên khách không được nhắc gì cả.
+    🔴 NẤC ③ LÀ NƠI QUYẾT ĐỊNH CŨ ĐƯỢC GIỮ. Trước Q121, "không đoán được" nghĩa
+       là im lặng cho qua; nay nó nghĩa là *"coi như cùng làn với giọng"* — và
+       hai câu đó cho ra **cùng một hành vi**: không chặn. Khác biệt duy nhất là
+       nay ta nói ra vì sao không chặn, và nói được thành dữ liệu (`nguon`).
 
-    ⇒ Khách khai được thì máy hết phải đoán. Đó là một điều khiển THẬT: chọn
-      `Tiếng Anh` cho một giọng làn `vi` sẽ ra cảnh báo mà `Tự động` bỏ qua.
-
-    ⛔ Và nó KHÔNG chặn việc tạo — cùng chính sách với bản đoán: sản phẩm này
-       cảnh báo, không cấm.
+    ⛔ Nên `auto` KHÔNG BAO GIỜ tự nó chặn ai. Muốn biết một lượt bị chặn vì cái
+       gì, đọc `nguon`: chỉ `khai_bao` và `doan` mới chặn được.
     """
-    lan = (lan_giong or "").strip().lower()
-    if lan not in ("vi", "en"):
+    khai = chuan_lan(khai_bao)
+    if khai:
+        return khai, NGUON_KHAI_BAO
+    do = doan_ngon_ngu(text)
+    if do:
+        return do, NGUON_DOAN
+    return chuan_lan(mac_dinh), NGUON_THEO_GIONG
+
+
+@dataclass(frozen=True)
+class PhanQuyet:
+    """Câu trả lời đầy đủ cho *"có được đọc không"* — kèm **vì sao**.
+
+    ⛔ Một `bool` trần thì không đủ. Cửa gọi cần mã lỗi để trả cho khách tích
+       hợp, cần khuôn câu để dịch, và cần `nguon` để trả lời câu hỏi hỗ trợ hay
+       gặp nhất: *"sao lượt này bị chặn còn lượt hôm qua thì không"*.
+    """
+
+    cho_phep: bool
+    lan_giong: str = KHONG_RO
+    lan_text: str = KHONG_RO
+    nguon: str = NGUON_KHONG_RO
+    ma_loi: str = ""
+    #: Khuôn `N_()` chưa điền chỗ trống và **chưa dịch**. Dịch ở biên hiển thị,
+    #: bằng `cau_cho_khach` — không dịch ở đây, vì hàm này chạy cả trong worker
+    #: nơi không có ngôn ngữ của người dùng nào cả.
+    mau: str = ""
+
+
+def quyet_dinh(lan_giong: str, text: str, khai_bao: str = "") -> PhanQuyet:
+    """🔴 THẨM QUYỀN DUY NHẤT của hợp đồng tương thích. Bốn luật, không hơn.
+
+    ====================  ====================  ==========================
+    Làn GIỌNG             Làn VĂN BẢN (đã giải)  Phán quyết
+    ====================  ====================  ==========================
+    ``vi``                ``vi``                cho phép
+    ``en``                ``en``                cho phép
+    ``vi``                ``en``                CHẶN ``voice_language_mismatch``
+    ``en``                ``vi``                CHẶN ``voice_language_mismatch``
+    ``""`` (chưa rõ)      —                     CHẶN ``voice_language_unknown``
+    ====================  ====================  ==========================
+
+    ⛔ Bảng này KHÔNG có ô "song ngữ". Engine đọc được cả hai làn, nhưng *đọc
+       được* và *đọc hay* là hai câu khác nhau, và thứ khách trả tiền là câu thứ
+       hai. Ngày có bằng chứng đo được rằng một giọng phục vụ tốt cả hai làn thì
+       thêm làn thứ ba (`bilingual`) vào `LAN_HOP_LE` — **kèm phép đo**, không
+       kèm một suy luận.
+
+    ⚠️ KHÔNG NÉM. Trả phán quyết; việc dịch nó thành lỗi là của `features`. Tách
+       vậy để chính hàm này gọi được từ chỗ chỉ muốn *hiện* trạng thái (bộ chọn
+       giọng) mà không phải bọc `try`.
+    """
+    lan_g = chuan_lan(lan_giong)
+    if not lan_g:
+        # Giọng mập mờ ⇒ CHẶN. Chiều ngược với văn bản mập mờ, và cố ý —
+        # xem docstring đầu tệp.
+        return PhanQuyet(cho_phep=False, ma_loi=MA_LOI_LAN_KHONG_RO,
+                         mau=MAU_LAN_KHONG_RO)
+
+    lan_t, nguon = giai_lan_van_ban(text, khai_bao, mac_dinh=lan_g)
+    if lan_t == lan_g:
+        return PhanQuyet(cho_phep=True, lan_giong=lan_g, lan_text=lan_t,
+                         nguon=nguon)
+    return PhanQuyet(cho_phep=False, lan_giong=lan_g, lan_text=lan_t,
+                     nguon=nguon, ma_loi=MA_LOI_LECH_LAN, mau=MAU_LECH_LAN)
+
+
+def cau_cho_khach(pq: PhanQuyet) -> str:
+    """Phán quyết ⇒ câu người dùng đọc, **đã dịch và đã điền chỗ trống**.
+
+    ⭐ Đây là biên hiển thị, nên dịch ở đây chứ không sớm hơn. `quyet_dinh` chạy
+       cả trong worker — dịch trong đó là ghim ngôn ngữ của tiến trình vào một
+       thông điệp mà nhiều phiên cùng đọc (đúng cái bẫy `tuy_chon_preset` ghi).
+    """
+    from platform_core.i18n import _ as _t
+
+    if not pq.mau:
+        return ""
+    return dien_canh_bao(str(_t(pq.mau)), pq.lan_giong, pq.lan_text)
+
+
+def doi_chieu(lan_giong: str, text: str, khai_bao: str = "") -> tuple:
+    """Cảnh báo (tuple chuỗi) khi văn bản lệch làn. **Không ném, không chặn.**
+
+    ⚠️ TỪ Q121 ĐÂY KHÔNG CÒN LÀ CỬA QUYẾT ĐỊNH. Cửa quyết định là `quyet_dinh`;
+       hàm này chỉ còn phục vụ những màn *hiển thị* trạng thái. Giữ nguyên chữ
+       ký và ngữ nghĩa cũ để không nơi nào đang gọi nó phải sửa theo.
+
+    ⛔ Và giữ nguyên cả điểm mù cũ, có chủ ý: giọng **chưa rõ làn** ở đây trả
+       tuple rỗng (không có gì để *cảnh báo*), trong khi `quyet_dinh` **chặn**
+       đúng ca ấy. Hai hàm trả lời hai câu khác nhau — "có gì đáng nói không"
+       và "có được chạy không" — nên chúng được phép khác nhau. Nhập chúng làm
+       một là mất đúng một trong hai câu.
+
+    ⭐ DÙNG LẠI ĐÚNG KHUÔN CÂU của cửa chặn (`MAU_LECH_LAN`) chứ không giữ khuôn
+       cảnh báo cũ. Khuôn cũ kết bằng *"Bạn vẫn tạo được, chỉ là chất lượng có
+       thể không bằng…"* — một câu **hết đúng** từ Q121, và một câu sai nói với
+       giọng nhẹ nhàng thì còn khó phát hiện hơn một câu sai nói to. Hai chỗ nói
+       về cùng một tình huống thì phải nói cùng một điều.
+    """
+    pq = quyet_dinh(lan_giong, text, khai_bao)
+    if pq.ma_loi != MA_LOI_LECH_LAN:
         return ()
-    khai = (khai_bao or "").strip().lower()
-    do = khai if khai in ("vi", "en") else doan_ngon_ngu(text)
-    if do is None or do == lan:
-        return ()
-    return (N_(
-        'Giọng này thuộc làn {lan_giong}, nhưng văn bản có vẻ là {lan_text}. '
-        'Bạn vẫn tạo được, chỉ là chất lượng có thể không bằng một giọng '
-        'cùng làn.'),)
+    return (MAU_LECH_LAN,)
 
 
 def dien_canh_bao(mau: str, lan_giong: str, lan_text: str) -> str:
-    """Điền nhãn vào khuôn cảnh báo. Tách khỏi `doi_chieu` để chuỗi dịch được.
+    """Điền nhãn vào khuôn. Tách khỏi `doi_chieu` để chuỗi dịch được.
 
-    ⛔ Đừng nối chuỗi bằng f-string ở `doi_chieu`: `N_()` phải nhìn thấy một
-       chuỗi HẰNG thì bộ trích mới lấy được nó vào tệp `.po`. Một câu ghép động
-       sẽ không bao giờ xuất hiện trong bản dịch, và nó hỏng **lặng lẽ** — trang
-       tiếng Anh hiện một câu tiếng Việt.
+    ⛔ Đừng nối chuỗi bằng f-string ở `doi_chieu` hay `quyet_dinh`: `N_()` phải
+       nhìn thấy một chuỗi HẰNG thì bộ trích mới lấy được nó vào tệp `.po`. Một
+       câu ghép động sẽ không bao giờ xuất hiện trong bản dịch, và nó hỏng
+       **lặng lẽ** — trang tiếng Anh hiện một câu tiếng Việt.
+
+    ⭐ Nhãn làn cũng dịch ở đây. Trước Q121 hàm này điền nhãn **thô** (`N_()`
+       chưa qua `_()`), nên một câu tiếng Anh sẽ kẹp hai chữ tiếng Việt vào
+       giữa. Nó không lộ ra vì hàm này **chưa từng được gọi**.
     """
-    return str(mau).replace("{lan_giong}", str(NHAN_LAN.get(lan_giong, lan_giong))) \
-                   .replace("{lan_text}", str(NHAN_LAN.get(lan_text, lan_text)))
+    from platform_core.i18n import _ as _t
+
+    def _nhan(lan: str) -> str:
+        nhan = NHAN_LAN.get(lan)
+        return str(_t(nhan)) if nhan else str(lan)
+
+    return str(mau).replace("{lan_giong}", _nhan(lan_giong)) \
+                   .replace("{lan_text}", _nhan(lan_text))

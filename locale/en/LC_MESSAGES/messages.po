@@ -12793,8 +12793,12 @@ msgid "Mọi làn"
 msgstr "All lanes"
 
 #: apps/ltt_voice/lan_ngon_ngu.py
-msgid "Giọng này thuộc làn {lan_giong}, nhưng văn bản có vẻ là {lan_text}. Bạn vẫn tạo được, chỉ là chất lượng có thể không bằng một giọng cùng làn."
-msgstr "This voice belongs to the {lan_giong} lane, but the text looks like {lan_text}. You can still generate it — the quality just may not match a voice from the same lane."
+msgid "Giọng này thuộc làn {lan_giong}, nhưng văn bản là {lan_text}. Hãy chọn một giọng cùng làn với văn bản, hoặc sửa ô Ngôn ngữ cho khớp."
+msgstr "This voice is in the {lan_giong} lane, but the text is {lan_text}. Pick a voice in the same lane as your text, or set the Language field to match."
+
+#: apps/ltt_voice/lan_ngon_ngu.py
+msgid "Giọng này chưa xác định được làn ngôn ngữ nên chưa dùng để đọc được. Hãy chọn một giọng đã ghi rõ Tiếng Việt hoặc Tiếng Anh."
+msgstr "This voice has no language lane set, so it cannot be used for speech yet. Pick a voice marked either Vietnamese or English."
 
 msgid "· ẩn {n} giọng của bạn: giọng nhân bản không có nhãn giới tính, vùng miền hay phong cách"
 msgstr "· {n} of your voices hidden: cloned voices carry no gender, region or style label"

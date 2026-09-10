@@ -23,13 +23,26 @@ giong_mau.py — hai mươi GIỌNG MẪU mà engine dựng sẵn, khai thành h
 
 ⭐ BA MẶT LỌC DƯỚI ĐÂY LÀ THẬT, và chúng thay cho thứ ảnh tham chiếu vẽ.
 
-   Ảnh `02_VOICES.png` lọc theo `VI / EN / Bilingual` và `All Families`. Nền tảng
-   **không có** hai khái niệm đó: engine tự xử tiếng Việt lẫn tiếng Anh nên không
-   có giọng nào "chỉ EN", và "Voice Family" không tồn tại ở đâu cả.
+   Ảnh `02_VOICES.png` lọc theo `VI / EN / Bilingual` và `All Families`. Dữ liệu
+   thật cho ba mặt **tốt hơn** — giới tính, vùng miền, phong cách — và đó đúng
+   là ba câu người chọn giọng thực sự hỏi.
 
-   Nhưng dữ liệu thật lại cho ba mặt **tốt hơn** — giới tính, vùng miền, phong
-   cách — và đó đúng là ba câu người chọn giọng thực sự hỏi. Nên ở đây ảnh không
-   bị "cắt bớt", nó được thay bằng thứ đúng hơn.
+⛔ CHÚ THÍCH CŨ Ở ĐÂY NÓI SAI, đã sửa 2026-09-10. Nó viết: *"Nền tảng không có
+   khái niệm VI/EN … không có giọng nào chỉ EN"*. Câu ấy đúng lúc viết và đã
+   chết hai lần từ đó:
+
+     · 01/09/2026 — 17 giọng nguồn tiếng Anh vào kho dùng chung, nên "không có
+       giọng nào chỉ EN" hết đúng;
+     · 10/09/2026 (Q121) — làn nay là một **cửa chặn**, nên "nền tảng không có
+       khái niệm VI/EN" không chỉ sai mà còn nguy hiểm: nó mời người đọc sau bỏ
+       qua trường `ngon_ngu` dưới đây.
+
+⭐ Nên mỗi giọng mẫu nay mang `ngon_ngu` — **cùng tên trường với
+   `VoiceProfile.ngon_ngu`** của giọng nhân bản, có chủ ý: khuôn mẫu, bộ lọc và
+   danh mục nhờ đó hỏi **một câu duy nhất** cho cả hai loại giọng. Trước đó
+   `_voice_chon.html` phải gõ thẳng `data-lan="vi"` cho nhánh giọng mẫu — một
+   danh sách VI/EN chép tay nằm trong HTML, tức đúng thứ không có cách nào tự
+   biết là nó đã cũ.
 
 ⚠️ `phong_cach` là **nhãn mô tả giọng, KHÔNG phải nút vặn**. `v3turbo.py` ghi rõ:
    *"Style is deprecated on v3 Turbo: it is implied by the reference … Kept only
@@ -44,6 +57,8 @@ import pathlib
 from dataclasses import dataclass
 
 from platform_core.i18n import N_
+
+from . import lan_ngon_ngu
 
 NHAN_GIOI = {"nam": N_('Nam'), "nu": N_('Nữ')}
 NHAN_VUNG = {"bac": N_('Miền Bắc'), "trung": N_('Miền Trung'), "nam": N_('Miền Nam')}
@@ -62,6 +77,20 @@ class GiongMau:
     gioi: str
     vung: str
     phong_cach: str
+
+    #: 🔴 LÀN NGÔN NGỮ — `"vi"` · `"en"` · `""` (chưa rõ). Suy từ `vung` bằng
+    #:    `lan_ngon_ngu.lan_tu_vung`, xem docstring của hàm đó để biết vì sao
+    #:    **suy** chứ không **khai thêm một cột**.
+    #:
+    #: ⛔ Cùng TÊN và cùng TẬP GIÁ TRỊ với `VoiceProfile.ngon_ngu`. Đó là điều
+    #:    kiện để `_voice_chon.html` viết `g.ngon_ngu` một lần cho cả hai nhánh
+    #:    thay vì gõ tay `"vi"` cho nhánh giọng mẫu.
+    #:
+    #: ⚠️ Rỗng nghĩa là **chặn**, không phải "mọi làn" — `lan_ngon_ngu.quyet_dinh`
+    #:    từ chối một giọng chưa rõ làn. Ngày engine ship một preset ngoài ba
+    #:    miền tiếng Việt, nó sẽ rơi vào đúng ô đó và phải được khai làn trước
+    #:    khi bán.
+    ngon_ngu: str = ""
 
     @property
     def public_id(self) -> str:
@@ -120,11 +149,18 @@ def _nap() -> tuple:
     d = json.loads(ANH_CHUP.read_text(encoding="utf-8"))
     ra = []
     for ten, v in d.get("presets", {}).items():
+        vung = str(v.get("vung") or "")
         ra.append(GiongMau(
             ma=ten,
             gioi=_DOI_GIOI.get(str(v.get("gender") or ""), ""),
-            vung=str(v.get("vung") or ""),
+            vung=vung,
             phong_cach=str(v.get("style") or ""),
+            # Ảnh chụp ĐƯỢC PHÉP khai thẳng `language` — ngày engine bắt đầu
+            # nói ra ngôn ngữ của preset thì `sinh_giong_mau_engine.py` chép nó
+            # xuống và dòng này nhận ngay, không phải sửa gì. Chưa có thì suy
+            # từ vùng miền. Hai đường, một trường; không có hệ metadata thứ hai.
+            ngon_ngu=(lan_ngon_ngu.chuan_lan(v.get("language"))
+                      or lan_ngon_ngu.lan_tu_vung(vung)),
         ))
     # Sắp cho người đọc: nam trước nữ, rồi Bắc → Trung → Nam, rồi theo tên.
     # Thứ tự trong JSON là thứ tự của engine và không có nghĩa gì với ai.
@@ -158,12 +194,33 @@ def hop_le(ma: str) -> bool:
     return (ma or "").strip() in THEO_MA
 
 
+def lan_cua(ma: str) -> str:
+    """Làn của một giọng mẫu. `""` khi không có giọng đó, **hoặc** khi có mà
+    chưa rõ làn — và hai ca ấy cố ý trả cùng một giá trị.
+
+    ⭐ Vì `lan_ngon_ngu.quyet_dinh` đối xử với cả hai y hệt: **chặn**. Một tên
+       preset gõ sai và một preset chưa khai làn đều là "ta không biết giọng này
+       là gì", nên phân biệt chúng ở đây chỉ mời người gọi viết hai nhánh cho
+       một hành vi. Tên gõ sai vẫn có thông điệp riêng — `hop_le` nói câu đó,
+       và nó chạy trước.
+    """
+    g = tim(ma)
+    return g.ngon_ngu if g else ""
+
+
 def loc(*, gioi: str = "", vung: str = "", phong_cach: str = "",
-        tim_kiem: str = "") -> list[GiongMau]:
-    """Lọc theo ba mặt + tìm theo tên. Chuỗi rỗng nghĩa là **không lọc mặt đó**."""
+        ngon_ngu: str = "", tim_kiem: str = "") -> list[GiongMau]:
+    """Lọc theo bốn mặt + tìm theo tên. Chuỗi rỗng nghĩa là **không lọc mặt đó**.
+
+    ⛔ `ngon_ngu` MẶC ĐỊNH TẮT, cùng lý do với `tham_chieu.danh_sach`: một bộ
+       lọc bật sẵn giấu mất giọng chưa khai làn, và khách không có cách nào biết
+       vì sao danh sách ngắn đi.
+    """
     kq = list(DANH_SACH)
     if gioi:
         kq = [g for g in kq if g.gioi == gioi]
+    if ngon_ngu:
+        kq = [g for g in kq if g.ngon_ngu == ngon_ngu]
     if vung:
         kq = [g for g in kq if g.vung == vung]
     if phong_cach:

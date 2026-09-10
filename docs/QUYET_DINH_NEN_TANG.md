@@ -27,7 +27,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 
 ---
 
-## 1. Quyết định đã chốt (đến Q120; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91, Q116→Q120 (phần con số) đã thay)
+## 1. Quyết định đã chốt (đến Q121; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91, Q116→Q120 (phần con số) đã thay)
 
 | # | Vấn đề | Quyết định | Lý do / hệ quả |
 |---|---|---|---|
@@ -315,6 +315,70 @@ lần trong nhật ký 29/08.
 nhận 413 **do cấu hình máy B**, không phải do trần. Việc này thuộc lần deploy
 máy B kế tiếp của chủ sản phẩm; ChatLTT hiển thị trần đọc từ catalog và dịch
 413 thành "vượt trần ngữ cảnh" kèm số, không đoán.
+
+### Q121 — Làn ngôn ngữ của giọng là một CỬA CHẶN ở backend, không phải một cảnh báo (2026-09-10)
+
+**Chốt:** một yêu cầu sinh tiếng mà **làn của giọng** lệch **làn của văn bản**
+bị **từ chối** ở backend, trước khi có job GPU và trước khi giữ credit. Thẩm
+quyền duy nhất là `apps/ltt_voice/lan_ngon_ngu.py::quyet_dinh`, và nó có đúng
+năm ô:
+
+| Làn giọng | Làn văn bản (đã giải) | Phán quyết |
+|---|---|---|
+| `vi` | `vi` | cho phép |
+| `en` | `en` | cho phép |
+| `vi` | `en` | CHẶN `voice_language_mismatch` |
+| `en` | `vi` | CHẶN `voice_language_mismatch` |
+| `""` chưa rõ | — | CHẶN `voice_language_unknown` |
+
+Ba luật đi kèm, và cả ba đều đo được:
+
+1. **`auto` được GIẢI về một làn cụ thể** trước khi đối chiếu, theo ba nấc:
+   khách tự khai → máy đoán (chỉ khi chắc) → **làn của chính giọng**. Nấc ba
+   nghĩa là **văn bản mập mờ không bao giờ là thứ chặn** — đó là cách giữ
+   nguyên lý do của quyết định cũ (tiếng Việt viết không dấu chỉ gồm ASCII,
+   không phân biệt được với tiếng Anh bằng bảng mã) mà vẫn có cửa chặn.
+2. **Giọng mập mờ thì CHẶN.** Hai chiều cố ý không cân nhau: với văn bản ta chỉ
+   mất một cảnh báo, còn với giọng ta bán một bản đọc mà chính ta không biết nó
+   thuộc làn nào.
+3. **Trộn ngôn ngữ: bằng chứng dương thắng.** Một chữ có dấu tiếng Việt ⇒ `vi`,
+   kể cả khi phần lớn từ là tiếng Anh. Tất định, và có phép kiểm.
+
+Làn của **giọng mẫu** suy từ `vung ∈ {bac, trung, nam}` của chính ảnh chụp
+engine — không thêm cột, không thêm tệp metadata. Preset ngoài ba miền ấy ra
+`""` ⇒ bị chặn cho tới khi có người khai làn.
+
+**~~ĐÃ THAY~~ quyết định cũ (01/09/2026, chỉ nằm trong mã):** *"làn cảnh báo,
+không chặn; không có đường nào ở đây ném lỗi."*
+
+**Vì sao đổi — bốn thứ đo được trên cây, và cả bốn im lặng cho qua:**
+
+1. `features.giai_giong` gõ thẳng hằng số `"vi"` cho **mọi** giọng mẫu; bản chép
+   thứ hai của danh sách VI/EN nằm trong `_voice_chon.html` (`data-lan="vi"`) —
+   một bản chép trong khuôn mẫu **không có cách nào tự biết nó đã cũ**, và nó
+   đã cũ thật từ 01/09 khi 17 giọng nguồn tiếng Anh vào kho chung.
+2. Cảnh báo sinh ra rồi **bị vứt** ở cả hai người gọi (`ref_b64, preset, _ = …`
+   ở `jobs.py` lẫn `routes/_p_tao.py`).
+3. Kể cả có người đọc thì nó **không đọc được**: `doi_chieu` trả khuôn còn
+   nguyên `{lan_giong}`/`{lan_text}`, và `dien_canh_bao` — hàm điền chỗ trống ấy
+   — **chưa từng được gọi ở đâu**.
+4. Ô `Ngôn ngữ` của khách **không xuống tới worker**: `routes/_p_tao.tao` nhận
+   `ngon_ngu` rồi bỏ nó ra khỏi `params` lúc nộp job, nên nhánh mạnh nhất của
+   hợp đồng (khách tự khai) chưa bao giờ chạy ở cửa thật.
+
+⇒ Hệ quả tiền: một yêu cầu lệch làn tạo job hợp lệ, **giữ credit**, chạy hết
+GPU, và khách trả tiền cho một bản đọc chất lượng thấp mà nền tảng đã biết
+trước là sẽ thấp. *Một cảnh báo ở trình duyệt chưa bao giờ là một bất biến
+nghiệp vụ.*
+
+**Chốt bằng:** `tests/test_355_hop_dong_lan_giong.py` (32 phép kiểm, gồm đối
+chứng "văn bản mập mờ KHÔNG bao giờ bị chặn"). `test_384` giữ nguyên nhưng
+phạm vi đã hẹp lại — nó nói về hàm `doi_chieu`, không nói về sản phẩm.
+
+**Còn mở (không chặn quyết định):** `speech.ltt` chưa nhận tham số `ngon_ngu` ở
+`params_schema` công khai, nên khách gọi Public API chỉ đi đường `auto` — an
+toàn theo luật 1, nhưng chưa tự khai được làn. Mở nó là một thay đổi **hợp đồng
+API công khai** (kho 24 route đóng băng), nên để chủ sản phẩm quyết.
 
 ## 2. Ràng buộc bất biến
 

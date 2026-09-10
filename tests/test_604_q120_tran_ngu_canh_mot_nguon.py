@@ -18,19 +18,47 @@ ROOT = Path(__file__).resolve().parents[1]
 QD = ROOT / "docs" / "QUYET_DINH_NEN_TANG.md"
 
 
+def _so_q_cao_nhat(van: str) -> int:
+    """Số hiệu quyết định LỚN NHẤT đang có trong tài liệu."""
+    so = [int(m) for m in re.findall(r"^### Q(\d+) —", van, flags=re.M)]
+    assert so, "khong tim thay muc `### Q<n> —` nao"
+    return max(so)
+
+
 def test_q120_ton_tai_va_q116_da_thay():
     van = QD.read_text(encoding="utf-8")
     assert "### Q120 —" in van
     dau_q116 = van.index("### Q116 —")
     dong_q116 = van[dau_q116:van.index("\n", dau_q116)]
     assert "ĐÃ THAY" in dong_q116 and "Q120" in dong_q116
-    assert "đến Q120" in van[:van.index("### Q1")]      # header mục 1 đã đẩy số
+
+    # 🔴 HEADER MỤC 1 PHẢI ĐẨY SỐ THEO QUYẾT ĐỊNH MỚI NHẤT — và chốt bằng
+    #    **số cao nhất đang có**, không bằng hằng `"đến Q120"` gõ tay.
+    #
+    # ⛔ Bản cũ viết `assert "đến Q120" in …`. Nó đỏ ngày 2026-09-10 khi Q121
+    #    được thêm — tức nó bắt được **việc đúng đang xảy ra**, không bắt được
+    #    một hồi quy. Và cách "sửa" hiển nhiên (đổi thành `"đến Q121"`) chỉ dời
+    #    quả bom sang Q122.
+    #
+    # ⭐ Đây là hạng lỗi đã có tên trong dự án: *chốt TẬP HỢP, đừng chốt SỐ
+    #    LƯỢNG*. Mệnh đề thật là "header nói đúng mốc trên", và nó bất biến với
+    #    việc có bao nhiêu quyết định.
+    cao_nhat = _so_q_cao_nhat(van)
+    header = van[:van.index("### Q1")]
+    assert f"đến Q{cao_nhat}" in header, (
+        f"header muc 1 con dung o mot moc cu: tai lieu da co Q{cao_nhat}")
 
 
 def test_khong_con_quy_tac_hien_hanh_nao_noi_cap_65000():
     """Nhắc lịch sử (nhật ký, changelog, Q116 gốc) thì được; luật hiện hành thì không."""
     van = QD.read_text(encoding="utf-8")
-    q120 = van[van.index("### Q120 —"):van.index("## 2. Ràng buộc bất biến")]
+    # ⛔ CẮT TỚI MỤC `### Q` KẾ TIẾP, không cắt tới hết mục 1. Từ 2026-09-10 có
+    #    Q121 nằm giữa Q120 và `## 2.`, nên lát cắt cũ **nuốt luôn quyết định
+    #    sau** — và một lát cắt rộng ra làm phép kiểm DỄ xanh hơn, tức nó âm
+    #    thầm thôi đo Q120. Cùng hạng lỗi "phạm vi phép đo rộng hơn lời tuyên bố".
+    dau = van.index("### Q120 —")
+    sau = re.search(r"^(### Q\d+ —|## \d+\. )", van[dau + 10:], flags=re.M)
+    q120 = van[dau:dau + 10 + sau.start()] if sau else van[dau:]
     # Q120 phải trỏ về tên HẰNG trong mã, không gõ lại con số làm luật.
     assert "CONG_BO_CHO_CLIENT" in q120 and "TOKEN_VAO_TRAN" in q120
     assert "ngan_sach.py" in q120

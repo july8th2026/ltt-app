@@ -56,6 +56,47 @@ CAU_NGHE_THU = N_('Xin chào, đây là giọng đọc của tôi. '
                   'Hôm nay là ngày mùng hai tháng chín. '
                   'Rất vui được đồng hành cùng bạn.')
 
+#: 🔴 CÂU NGHE THỬ THEO **LÀN CỦA GIỌNG**, KHÔNG THEO NGÔN NGỮ GIAO DIỆN.
+#:
+#:    Tới 2026-09-10 `dung()` gọi `str(_t(CAU_NGHE_THU))` — tức nó đọc câu **đã
+#:    dịch sang ngôn ngữ của tiến trình đang chạy**. Ba thứ hỏng cùng lúc:
+#:
+#:      ① Một giọng làn `vi` có thể được dựng bằng câu tiếng Anh, chỉ vì lượt
+#:         bảo trì tình cờ chạy dưới một ngữ cảnh tiếng Anh. Nghe thử khi ấy
+#:         không còn trả lời câu nó sinh ra để trả lời — *"giọng này đọc tiếng
+#:         Việt nghe thế nào"*.
+#:      ② `khoa_mau()` **không mang ngôn ngữ** trong khoá, nên tệp dựng đầu tiên
+#:         thắng và mọi khách sau đó nghe nó — kể cả khách đang xem trang tiếng
+#:         Việt. Một trạng thái quyết định bởi *lượt chạy nào tới trước*.
+#:      ③ Và nó **không so sánh được**: hai giọng dựng ở hai lượt bảo trì khác
+#:         ngữ cảnh sẽ đọc hai câu khác nhau, trong khi toàn bộ lý do câu này cố
+#:         định là để hai giọng so được với nhau.
+#:
+#: ⭐ Nên câu phụ thuộc **làn**, thứ thuộc về chính giọng và không đổi theo ai
+#:    đang xem. Cùng nội dung có chủ ý ở cả hai làn: một lời chào, một câu có
+#:    **số** và **đơn vị** (nơi phép chuẩn hoá lộ ra), một câu kết ngắn.
+#:
+#: ⚠️ Vẫn bọc `N_()` cho `CAU_NGHE_THU` để bộ trích i18n không kêu, nhưng **cố ý
+#:    không gọi `_()`** khi dùng: bản dịch của câu này không được phép đổi thứ
+#:    engine đọc. Đây là dữ liệu vào của model, không phải chữ trên màn hình.
+CAU_THEO_LAN = {
+    "vi": CAU_NGHE_THU,
+    "en": ("Hello, this is my reading voice. "
+           "Today is the second of September. "
+           "I am glad to be here with you."),
+}
+
+
+def cau_cho_lan(lan: str) -> str:
+    """Câu nghe thử của một làn. Làn lạ ⇒ câu tiếng Việt.
+
+    ⛔ Lối lui là `vi` chứ không phải ném: nghe thử là **vật liệu chọn hàng**,
+       và `dung()` đã có hợp đồng "không bao giờ hỏng vì một tệp nghe thử". Một
+       giọng chưa rõ làn nay bị `lan_ngon_ngu.quyet_dinh` chặn ở cửa nộp — đó
+       mới là chỗ nói câu đó, không phải ở đây.
+    """
+    return str(CAU_THEO_LAN.get(str(lan or "").strip().lower(), CAU_NGHE_THU))
+
 #: 🔴 ĐỔI CÂU TRÊN THÌ PHẢI ĐỔI CHUỖI NÀY.
 #:
 #:    Khoá tệp mang phiên bản, nên đổi phiên bản = mọi giọng dựng lại tệp mới,
@@ -174,8 +215,12 @@ def co_san(khoa: str) -> bool:
     return co
 
 
-def dung(khoa: str, *, ref_b64=None, preset=None) -> bool:
+def dung(khoa: str, *, ref_b64=None, preset=None, ngon_ngu: str = "") -> bool:
     """Sinh MỘT tệp nghe thử rồi cất vào kho. Trả `True` nếu vừa dựng xong.
+
+    `ngon_ngu` là **làn của giọng** — nó chọn câu đọc. Rỗng ⇒ câu tiếng Việt;
+    xem `cau_cho_lan` và khối chú thích ở `CAU_THEO_LAN` để biết vì sao tham số
+    này thay cho `_t()`.
 
     ⛔ Không ném ra ngoài. Người gọi là vòng bảo trì và đuôi của job ghi danh —
        cả hai đều **không được** hỏng vì một tệp nghe thử. Một giọng không nghe
@@ -183,7 +228,6 @@ def dung(khoa: str, *, ref_b64=None, preset=None) -> bool:
     """
     import io
 
-    from platform_core.i18n import _ as _t
     from platform_core.storage import get_storage
 
     from . import features
@@ -191,7 +235,7 @@ def dung(khoa: str, *, ref_b64=None, preset=None) -> bool:
     if co_san(khoa):
         return False
     try:
-        wav, _ = features.goi_cong(str(_t(CAU_NGHE_THU)),
+        wav, _ = features.goi_cong(cau_cho_lan(ngon_ngu),
                                    ref_b64=ref_b64, preset=preset)
         get_storage().put(khoa, io.BytesIO(wav), content_type="audio/wav")
         log.info("da dung nghe thu: %s (%d byte)", khoa, len(wav))
@@ -255,4 +299,6 @@ def bao_tri() -> None:
     log.info("nghe thu: con thieu %d giong mau, dung toi da %d luot nay",
              len(thieu), MOI_LUOT_TOI_DA)
     for g in thieu[:MOI_LUOT_TOI_DA]:
-        dung(khoa_mau(g.ma), preset=g.ma)
+        # Làn đi theo giọng, lấy từ chính danh mục — không phải từ ngôn ngữ của
+        # tiến trình bảo trì, thứ chẳng liên quan gì tới giọng này.
+        dung(khoa_mau(g.ma), preset=g.ma, ngon_ngu=g.ngon_ngu)

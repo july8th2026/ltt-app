@@ -45,13 +45,16 @@
       LÀN NGÔN NGỮ — chốt 01/09/2026: kho giọng tách làn theo ngôn ngữ của clip
       NGUỒN (kho cũ: F5-TTS train giọng Việt, XTTS train giọng Anh).
 
-      ⭐ Đây mới là chỗ làn thật sự làm việc. Có cảnh báo lúc nộp bài, nhưng nếu
-         bộ lọc này làm đúng việc thì cảnh báo ấy **không bao giờ nổ** — khách
-         chọn đúng làn từ đầu.
+      ⭐ Đây là chỗ làn làm việc **êm** — nhưng từ Q121 (2026-09-10) nó không
+         còn là chỗ DUY NHẤT làn làm việc. Cửa nộp nay **chặn** một yêu cầu
+         lệch làn (`lan_ngon_ngu.quyet_dinh`), nên bộ lọc này là tiện lợi, không
+         phải bất biến. Đó đúng là thứ tự phải có: một cảnh báo ở trình duyệt
+         chưa bao giờ là một bất biến nghiệp vụ — nó chỉ là lời mời làm đúng.
 
       ⚠️ Ghi chú trong `giong_mau.py` từng nói nền tảng "không có khái niệm
          VI/EN" và "không có giọng nào chỉ EN". Đúng khi chỉ có 20 giọng mẫu;
-         hết đúng từ khi 17 giọng nguồn tiếng Anh vào kho chung.
+         hết đúng từ khi 17 giọng nguồn tiếng Anh vào kho chung. Đã sửa tại
+         nguồn 2026-09-10.
     #}
     <div class="lv-loc-nhom" role="group" aria-label="{{ _('Làn ngôn ngữ') }}">
       <button type="button" class="lv-loc-nut on" aria-pressed="true" data-chon-lan="">{{ _("Mọi làn") }}</button>
@@ -114,9 +117,20 @@
       </label>
     {% endfor %}
 
+    {#
+      ⛔ `data-lan` ĐỌC TỪ DỮ LIỆU, không gõ tay. Tới 2026-09-10 dòng này viết
+         thẳng `data-lan="vi"` — một danh sách VI/EN chép tay nằm trong HTML,
+         và một bản chép trong khuôn mẫu là bản chép **không có cách nào tự
+         biết nó đã cũ**: ngày engine ship một giọng ngoài ba miền tiếng Việt,
+         bộ lọc vẫn khai nó là tiếng Việt và không phép kiểm nào kêu.
+
+      ⭐ Nay `giong_mau.GiongMau.ngon_ngu` mang đúng tên và đúng tập giá trị với
+         `VoiceProfile.ngon_ngu`, nên hai nhánh dùng **một biểu thức giống hệt
+         nhau** — xem nhánh "Giọng của tôi" ở trên.
+    #}
     {% for g in giong_mau %}
       <label class="lv-chon-muc" data-loai="mau" data-ten="{{ g.ma }}"
-             data-lan="vi">
+             data-lan="{{ g.ngon_ngu or '' }}">
         <input type="radio" name="giong" value="m:{{ g.ma }}"
                {{ 'checked' if giong_chon == g.ma }}>
         {% with ma = g.ma %}{% include "_voice_chon_nghe.html" %}{% endwith %}
