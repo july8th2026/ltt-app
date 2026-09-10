@@ -178,24 +178,17 @@ def _clip_handle(params, ctx=None):
 
 clip_jobs.handle = _clip_handle
 
-# Chat fixture: SSE thật qua route/credit/DB, chỉ thay sidecar ngoài tiến trình.
-from apps.chataistudio import routes as chat_routes
+# ⏭️ KHỐI "chat fixture" ĐÃ GỠ 09/09/2026 (AI CLEAN REBUILD V2 pha 07).
+#
+#    Nó tiêm `apps.chataistudio.routes` để kiểm GUI chat bằng trình duyệt.
+#    App ấy đã gỡ hẳn: sau khi mất Codex nó chỉ còn là bản sao thứ hai của
+#    `chatltt` (đo 09/09: 3 hội thoại, 8 tin, im từ 25/08).
+#
+# ⚠️ Máy chủ giả này vì thế KHÔNG còn phục vụ một màn chat nào. Muốn kiểm
+#    GUI chat thì dựng fixture cho `chatltt` — nó có cửa runtime riêng và
+#    một bộ test riêng (dải 800–899), nên đó là một việc có chủ, không
+#    phải một dòng sửa ở đây.
 
-chat_routes.sc.account = lambda: {"account": {"email": "browser@test"}}
-chat_routes._models_cached = lambda: [
-    {"id": "gpt-5.6-sol", "display_name": "GPT-5.6 Codex"},
-    {"id": "gpt-5.6-terra", "display_name": "GPT-5.6 Terra"},
-]
-chat_routes.sc.thread_start = lambda *_args, **_kwargs: "browser-chat-thread"
-
-
-async def _chat_turn(*_args, **_kwargs):
-    yield {"method": "item/agentMessage/delta", "payload": {"delta": "Xin chào "}}
-    yield {"method": "item/agentMessage/delta", "payload": {"delta": "từ LTT Studio."}}
-    yield {"method": "tokens", "payload": {"total": 12}}
-
-
-chat_routes.sc.turn_stream = _chat_turn
 
 _judge_counts: dict[str, int] = {}
 

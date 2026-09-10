@@ -115,8 +115,20 @@ def _owned_production(db: Session, project_id: str, user_id: str):
 
 
 def _models(category: str) -> list[dict]:
+    """Model cho bộ chọn trên giao diện.
+
+    🔴 SỬA 08/09/2026 — AI CLEAN REBUILD V2 pha 05.5. Bản cũ ghi cứng
+       `("gemini",)` cho `chat`/`image`. Khi pha 04 retire Gemini, bộ lọc ấy làm
+       danh sách thành **RỖNG** — và một enum rỗng từng làm `validate_tool_params`
+       **tự tắt** (lỗ fail-open đã vá ở `platform_core/agent/tools.py`).
+
+    ⛔ Không ghi cứng tên provider ở tầng app nữa. `model_options` đã lọc theo
+       `is_active` ở **cả hai** mức (provider và model), nên bỏ bộ lọc là đủ:
+       app hỏi *"model nào phục vụ được category này"* và nền tảng trả lời.
+       Ngày nền tảng đổi động cơ, chỗ này **không phải sửa một dòng nào**.
+    """
     from platform_core import providers
-    return providers.model_options(category, ("gemini",) if category in {"chat", "image"} else None)
+    return providers.model_options(category)
 
 
 def _preference_row(db: Session, user_id: str):

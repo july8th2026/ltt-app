@@ -166,12 +166,26 @@ def main() -> int:
     done = subprocess.run(
         [sys.executable, "-m", "pytest", "-q",
          "tests/test_214_multi_process_runtime.py"],
-        cwd=str(ROOT), env=env, capture_output=True, text=True)
+        # 🔴 `encoding=` + `errors=`, KHONG chi `text=True`.
+        #
+        #    `text=True` giai ma bang bang ma MAC DINH cua he — tren Windows la
+        #    cp1252 — va bo test nay in tieng Viet khi mot phep kiem hong. Ket
+        #    qua: cong cu chet o `UnicodeDecodeError` **trong khi dang doc thong
+        #    bao loi**, roi `done.stdout` la None va dong ke tiep nem
+        #    `TypeError: 'NoneType' object is not subscriptable`.
+        #
+        # ⛔ Tuc mot lan hong THAT bien thanh mot crash cua chinh cong cu chan
+        #    doan, va nguoi doc khong bao gio thay duoc phep kiem nao do. Da
+        #    xay ra that: `bat bien da tien trinh` bao FAIL ma khong mot dong
+        #    nao noi vi sao.
+        cwd=str(ROOT), env=env, capture_output=True,
+        text=True, encoding="utf-8", errors="replace")
     if done.returncode != 0:
-        print(done.stdout[-3000:])
-        print(done.stderr[-1500:])
+        print((done.stdout or "")[-3000:])
+        print((done.stderr or "")[-1500:])
         return done.returncode
-    print(done.stdout.strip().splitlines()[-1] if done.stdout.strip() else "OK")
+    ra = (done.stdout or "").strip()
+    print(ra.splitlines()[-1] if ra else "OK")
     return 0
 
 

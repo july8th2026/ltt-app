@@ -147,10 +147,19 @@ export type ThongDiepViewProps = {
   duongTaiSan?: (k: string) => string
   /** Doc to chinh cau tra loi nay. Vang mat = nang luc tieng khong san sang. */
   onDocTo?: (m: ThongDiep, chu: string) => void
+  /**
+   * The duyet de ve tai cho khoi `status.code === 'cho_duyet'`.
+   *
+   * ⭐ Truyen XUONG chu khong tu lay: mot component trong danh sach tu goi
+   *    mang la N lan goi cho N tin nhan. `App` lay mot lan tu `dang-cho` —
+   *    nguon BEN, song qua F5.
+   */
+  theDuyet?: React.ReactNode
 }
 
 export function ThongDiepView({
   m, phang, onChuyenNhanh, onTaoLai, onSuaGuiLai, duongTaiSan, onDocTo,
+  theDuyet,
 }: ThongDiepViewProps) {
   const ds = anhEm(phang, m)
   const idx = ds.findIndex((x) => x.id === m.id)
@@ -247,11 +256,21 @@ export function ThongDiepView({
           {loiDocDuoc(String(loi.code || ''), String(loi.text || ''))}
         </p>
       )}
-      {trangThai && (
-        <p className="ltc-tin__nhan">
-          {NHAN_TRANG_THAI[String(trangThai.code)] ?? String(trangThai.code)}
-        </p>
-      )}
+      {/*
+        🔴 `cho_duyet` KHONG ve thanh mot nhan chu. Truoc P09 no roi vao
+           nhanh duoi va hien NGUYEN MA `cho_duyet` ra man hinh — dung cai chu
+           thich cua `NHAN_TRANG_THAI` da canh bao. Va mot nhan chu cung khong
+           tra loi duoc cau hoi that: *bam vao dau de duyet?*
+      */}
+      {trangThai && String(trangThai.code) === 'cho_duyet'
+        ? theDuyet ?? (
+          <p className="ltc-tin__nhan">Đang chờ bạn duyệt…</p>
+        )
+        : trangThai && (
+          <p className="ltc-tin__nhan">
+            {NHAN_TRANG_THAI[String(trangThai.code)] ?? String(trangThai.code)}
+          </p>
+        )}
 
       <div className="ltc-tin__thanhcong">
         {ds.length > 1 && (

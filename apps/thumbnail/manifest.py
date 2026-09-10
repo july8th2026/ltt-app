@@ -1,5 +1,10 @@
 """
-App `thumbnail` — tạo thumbnail YouTube bằng Gemini Image API (H5, Q11).
+App `thumbnail` — tạo thumbnail YouTube bằng **LTT_IMAGE** (H5, Q11).
+
+🔴 DI TRÚ 09/09/2026 (AI CLEAN REBUILD V2 pha 06.3). Động cơ đổi từ Gemini
+   Image sang model nhà, và **tính năng chữ-trong-ảnh bị gỡ** cùng lúc —
+   model nhà không vẽ được chữ. Xem khối đầu `jobs.py` và
+   `docs/AI_CLEAN_REBUILD/PHA06_THUMBNAIL_CHU.md`.
 
 Tool tính phí ĐẦU TIÊN của nền tảng. Chọn nó vì (KHAO_SAT_BOT_GEMINI mục 3):
 API thuần ~5-15 giây (không đụng trần 100 giây của Cloudflare), kết quả là ảnh
@@ -7,9 +12,8 @@ vài MB (không đụng trần 100 MB) → chứng minh đủ chuỗi user → j
 tải về mà chưa cần object storage R2.
 
 Viết MỚI theo hợp đồng app (Q3) — chỉ tham chiếu `D:/BOT GEMINI/app/modules/
-thumbnail_api`, KHÔNG kéo theo api-pool/cascade/prompt-fragment của họ. Khoá
-Gemini đọc từ biến môi trường phía máy chủ (`GEMINI_API_KEY`), KHÔNG BAO GIỜ
-xuống trình duyệt.
+thumbnail_api`, KHÔNG kéo theo api-pool/cascade/prompt-fragment của họ. Nay
+app **không giữ khoá nào**: máy B nhận vé presigned do nền tảng cấp (Q102).
 """
 from __future__ import annotations
 
@@ -28,6 +32,10 @@ from platform_core.registry import AppManifest, NavEntry, ToolSpec
 #    Bảng giá giữ đúng con số của `apps/taoanh` — cùng model thì cùng giá, dù bán
 #    qua tool nào. Hai bảng lệch nhau là khách tự tìm ra tool rẻ hơn cho cùng
 #    một model, và đó là một lỗ hổng doanh thu chứ không phải một tính năng.
+#: ⛔ BẢNG NÀY NAY CHỈ ĐỂ **TRA LẠI JOB CŨ**. Từ pha 06.3 app chạy
+#:    `hidream-o1`, và giá của model đó ở `platform_core.image_gen.gia` —
+#:    một chỗ duy nhất mà `anhnoibo` và `taoanh` cũng đọc. Thêm `hidream-o1`
+#:    vào đây là dựng lại đúng cái bảng giá thứ hai mà chú thích dưới cảnh báo.
 MODEL_CREDIT_PER_IMAGE = {
     "gemini-2.5-flash-image": 5,
     "gemini-3.1-flash-lite-image": 5,
@@ -48,41 +56,47 @@ def unit_credit(model: str) -> int:
 
 
 def _cost(params: dict) -> int:
-    """Giá credit = số ảnh × đơn giá CỦA MODEL ĐÓ. LÀ HÀM (giá phụ thuộc tham số)."""
+    """Trần giữ chỗ. Đọc bảng giá MODEL NHÀ — cùng hàm `anhnoibo`/`taoanh` gọi.
+
+    ⚠️ Ảnh có tham chiếu (remix) đắt gấp 3 vì máy vẽ lâu gấp ~3,3 lần, nên
+       trần phải biết có tham chiếu hay không, không chỉ biết số ảnh.
+    """
+    from platform_core.image_gen import gia
+
     try:
         count = int(params.get("count", 1))
     except (TypeError, ValueError):
         count = 1
-    count = max(1, min(count, 4))
-    return count * unit_credit(params.get("model"))
+    che_do = "edit" if str(params.get("reference_key") or "") else "t2i"
+    return gia.uoc_tran(so_anh_xin=count, che_do=che_do)
 
 
 MANIFEST = AppManifest(
     slug="thumbnail",
     display_name=N_('Tạo Thumbnail YouTube'),
     route_prefix="/thumbnail",
-    summary="Sinh ảnh thumbnail YouTube từ mô tả bằng Gemini Image. "
-            "Nhập chủ đề + tiêu đề, chọn tỉ lệ, nhận ảnh tải về.",
+    summary="Sinh ảnh nền thumbnail YouTube từ mô tả, bằng model nội bộ. "
+            "Ảnh KHÔNG có chữ — chữ thêm bằng công cụ chỉnh sửa của bạn.",
     icon="🖼️",
     accent="#C2410C",
 
     nav=(NavEntry("Tạo Thumbnail", "/thumbnail", "🖼️", "thumbnail"),),
 
     job_types=("thumbnail.generate",),
-    requires=("api",),          # chỉ gọi API Gemini → chạy được ở cloud
+    requires=("api",),          # chỉ gọi HTTP tới cổng render → chạy được ở cloud
     credit_cost=_cost,
     tools=(ToolSpec(
         name="image.thumbnail", job_type="thumbnail.generate",
-        description=N_('Sinh thumbnail YouTube có tiêu đề, phong cách và kiểu chữ.'),
+        description=N_('Sinh ảnh nền thumbnail YouTube theo phong cách và bố cục.'),
+        # 🔴 BỐN THAM SỐ ĐÃ GỠ Ở PHA 06.3: `title`, `subtitle`, `text_style`,
+        #    `ngon_ngu`. Cả bốn chỉ phục vụ chữ vẽ trong ảnh — thứ model nhà
+        #    không làm được (`capabilities["canh_bao"]` + D-048). Giữ chúng
+        #    lại trong hợp đồng là bán một năng lực không còn.
         params_schema={
             "topic": {"type": "string", "required": True, "max_length": 2000},
-            "title": {"type": "string", "max_length": 200},
-            "subtitle": {"type": "string", "max_length": 200},
-            "text_style": {"type": "enum", "source": "prompts/text_style"},
             "phong_cach": {"type": "enum", "source": "prompts/phong_cach"},
             "kieu_trend": {"type": "enum", "source": "prompts/kieu_trend"},
-            "ngon_ngu": {"type": "enum", "source": "prompts/ngon_ngu"},
-            "model": {"type": "model_ref", "category": "image", "providers": ["gemini"]},
+            "model": {"type": "model_ref", "category": "image", "providers": ["ltt_image"]},
             "aspect_ratio": {"type": "enum", "values": ["16:9", "9:16", "1:1", "4:3", "3:4"], "default": "16:9"},
             "count": {"type": "int", "min": 1, "max": 4, "default": 1},
         },
@@ -93,9 +107,10 @@ MANIFEST = AppManifest(
         api_exposed=True,
         api_contract={
             "scopes": ("jobs:create",),
-            "description": ("Generate one to four YouTube thumbnail images from "
-                            "a topic, with optional title text, style and "
-                            "language."),
+            "description": ("Generate one to four YouTube thumbnail background "
+                            "images from a topic. The images carry NO text: "
+                            "the internal model cannot render legible "
+                            "lettering, so add your own title afterwards."),
             # `model` stays hidden — but the ORIGINAL REASON EXPIRED on
             # 2026-08-23, so here is the current one.
             #
@@ -126,20 +141,6 @@ MANIFEST = AppManifest(
                                     "specific about subject and mood."),
                     "example": "How to fix a leaking tap in 5 minutes",
                 },
-                "title": {
-                    "description": ("Large text drawn on the image. Leave "
-                                    "empty for an image with no text."),
-                    "example": "5 MINUTE FIX",
-                },
-                "subtitle": {
-                    "description": "Smaller supporting line under the title.",
-                    "example": "no plumber needed",
-                },
-                "text_style": {
-                    "description": ("How the text is drawn. Ignored when both "
-                                    "title and subtitle are empty."),
-                    "example": "bold_impact",
-                },
                 "phong_cach": {
                     "description": ("Visual style of the image itself. The "
                                     "name is Vietnamese because it is a stable "
@@ -150,13 +151,9 @@ MANIFEST = AppManifest(
                 "kieu_trend": {
                     "description": ("Composition pattern — what makes the "
                                     "thumbnail work as a thumbnail (a reacting "
-                                    "face, a before/after split, a numbered "
-                                    "list, and so on)."),
+                                    "face, a before/after split, a mystery "
+                                    "crop, and so on)."),
                     "example": "khuon_mat_cam_xuc",
-                },
-                "ngon_ngu": {
-                    "description": "Language of the text drawn on the image.",
-                    "example": "english",
                 },
                 "aspect_ratio": {
                     "description": ("Shape of the output. 16:9 is the YouTube "
@@ -175,18 +172,17 @@ MANIFEST = AppManifest(
             # set keeps entries named after people and experiments, which are
             # neither a promise to customers nor safe to freeze into a contract.
             "enums": {
-                "text_style": ["bold_impact", "clean_minimal", "dramatic_gold",
-                               "neon_glow", "street_art"],
                 "phong_cach": ["chuyen_nghiep_toi_gian", "hoat_hinh_cartoon",
                                "cinematic", "flat_design", "3d_render",
                                "collage", "retro_vintage"],
+                # `listicle_numbered` và `text_heavy_chu_lon` đã gỡ: cả hai
+                # bố cục ấy ĐÒI chữ vẽ ra (một con số lớn, một khối chữ
+                # chiếm 60–70 % khung) nên chúng mâu thuẫn với chính
+                # `base_prompt` nay cấm chữ.
                 "kieu_trend": ["khuon_mat_cam_xuc", "so_sanh_truoc_sau",
-                               "bi_an_gay_to_mo", "listicle_numbered",
-                               "huong_dan_tutorial", "reaction_phan_ung",
-                               "storytelling", "mui_ten_chi_dan",
-                               "text_heavy_chu_lon"],
-                "ngon_ngu": ["tieng_viet", "english", "japanese", "korean",
-                             "chinese"],
+                               "bi_an_gay_to_mo", "huong_dan_tutorial",
+                               "reaction_phan_ung", "storytelling",
+                               "mui_ten_chi_dan"],
             },
         },
     ),),
@@ -197,5 +193,5 @@ MANIFEST = AppManifest(
     catalog_parent="taoanh",
     group="Ảnh",
     badge="MỚI",
-    notes="Cần GEMINI_API_KEY trong secrets/app.env. Tool tính phí đầu tiên (H5).",
+    notes="Chạy model nhà qua cổng render (LTT_RENDER_BASE_URL). Ảnh không có chữ.",
 )

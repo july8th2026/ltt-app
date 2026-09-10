@@ -21,6 +21,104 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-09-09 — `image.generate` và `image.thumbnail` đổi động cơ
+
+**BREAKING · Hai hợp đồng đổi. `image.thumbnail` mất bốn tham số;
+`image.generate` mất tham số `model` cùng ba bí danh của nó.**
+
+### Cái gì đổi
+
+| Tool | Mất | Còn |
+|---|---|---|
+| `image.thumbnail` | `title` · `subtitle` · `text_style` · `ngon_ngu` | `topic` · `phong_cach` · `kieu_trend` · `aspect_ratio` · `count` |
+| `image.generate` | `model` (và bí danh `standard`, `standard-lite`, `enhanced`) | `prompt` · `image_key` · `aspect_ratio` · `count` |
+
+Cả hai tool nay chạy **model nội bộ của LTT Studios**. Giá theo **số ảnh**, và
+ảnh có ảnh tham chiếu đắt hơn ảnh thường — xem `GET /api/v1/tools`.
+
+### ⚠️ Điều quan trọng nhất: `image.thumbnail` KHÔNG vẽ chữ nữa
+
+Model nội bộ không dựng được chữ đọc được, nhất là chữ có dấu. Nên tool này nay
+sinh **ảnh nền thumbnail**: bố cục, phong cách, chủ thể — không có chữ. Ai đang
+dùng nó để lấy ảnh có sẵn tiêu đề phải thêm chữ ở bước sau.
+
+⛔ Chúng tôi **không** giữ bốn tham số ấy như thứ bị bỏ qua âm thầm. Gửi chúng
+lên nay là `400 Unknown input field`. Một tính năng bị gỡ tử tế rẻ hơn một tính
+năng hỏng lặng lẽ: nếu vẫn nhận `title` rồi trả về một tấm ảnh không có chữ,
+bạn sẽ mất nhiều ngày mới biết vì sao.
+
+### Vì sao `image.generate` thôi công bố `model`
+
+Ba bí danh cũ tồn tại được nhờ đúng một điều kiện: **giá đi theo lựa chọn**
+(5 · 5 · 8 credit/ảnh). Nay chỉ còn một model và giá không phụ thuộc bậc nào.
+Giữ ba tên cho một món hàng là bán ba thứ khác nhau ở ba mức giá mà giao cùng
+một thứ. Gửi `model` nay là `400`.
+
+### Phải làm gì
+
+1. Bỏ `title`, `subtitle`, `text_style`, `ngon_ngu` khỏi mọi lượt gọi
+   `image.thumbnail`; thêm chữ ở phía bạn.
+2. Bỏ `model` khỏi mọi lượt gọi `image.generate`.
+3. **Xin báo giá lại.** Đơn giá đổi ở cả hai tool; đừng gõ lại con số cũ trong
+   mã của bạn — `POST /api/v1/quotes` luôn trả số đang có hiệu lực.
+
+### Vì sao không có lịch ngừng hỗ trợ
+
+Đường cũ chạy trên một nhà cung cấp bên ngoài đã bị gỡ khỏi nền tảng trong đợt
+dọn dẹp này. Không còn động cơ nào để chạy bản cũ song song, nên một lịch
+sunset sẽ là một lời hứa không giữ được. Hai tool này chưa có tích hợp ngoài
+nào gọi tới (đo 28 ngày: **0 lượt**), nên chi phí thực tế của thay đổi là con
+số 0 — nhưng nó vẫn là BREAKING, và được ghi như BREAKING.
+
+## 2026-09-08 — chạy workflow qua API (`WF-802`)
+
+**ADDED · Năm route mới. Không có gì đang chạy bị đổi.**
+
+```
+POST /api/v1/workflows/{workflow_id}/quotes   báo giá một lượt chạy
+POST /api/v1/workflows/{workflow_id}/runs     chạy nó
+GET  /api/v1/runs/{run_id}
+POST /api/v1/runs/{run_id}/cancel
+GET  /api/v1/runs/{run_id}/artifacts
+```
+
+**Có phá vỡ tương thích không?** Không. Không route nào đổi, không trường nào
+mất, không mã lỗi nào đổi nghĩa. Client không gọi tới thì không thấy gì.
+
+**Phải làm gì?** Không bắt buộc. Nếu muốn dùng: xin một khoá có scope
+`workflows:run` (chạy), `workflows:read` (đọc) và `workflows:cancel` (huỷ). Ba
+scope tách rời vì **đọc không bao giờ suy ra từ ghi** — đó là luật chung của
+bảng scope, không phải một ngoại lệ ở đây.
+
+### ⭐ Báo giá trả **HAI** số, và cả hai đều cần
+
+```json
+{"credit_max": 120, "credit_estimate": 72}
+```
+
+`credit_max` là **trần** — nó được ký, được giữ, và là số tối đa bạn có thể bị
+trừ. `credit_estimate` là số bạn nhiều khả năng trả thật. Một con số duy nhất
+buộc bạn phải đoán con số kia: trần thì làm bạn tưởng đắt gấp đôi, ước tính thì
+làm bạn không biết mình đang cam kết tới đâu.
+
+Chạy xong, `GET /runs/{id}` trả `credit_charged` — phần dư được hoàn.
+
+### ⚠️ Ba điều khác với `POST /jobs`
+
+1. **Báo giá gắn với đồ thị đã publish, không gắn với tham số.** Publish lại
+   giữa lúc báo giá và lúc chạy ⇒ `400`, xin báo giá mới. Trần cũ không còn mô
+   tả đồ thị mới, nên chạy tiếp là chạy một thứ bạn chưa từng thấy giá.
+2. **`Idempotency-Key` quan trọng hơn.** Ở `/jobs` một khoá mới mua thêm một
+   job; ở đây nó mua thêm **một lượt chạy cả đồ thị**, ở trần của đồ thị đó.
+   Sinh khoá **một lần** rồi dùng lại cho mọi lần thử lại — SDK làm sẵn.
+3. **Không đủ credit ⇒ `409`, và không còn lượt chạy nào.** Khoản giữ và lượt
+   chạy nằm trong cùng một transaction: cùng sống hoặc cùng chết.
+
+### Huỷ thì được hoàn
+
+`POST /runs/{id}/cancel` chuyển trạng thái **và** kết sổ trong cùng một
+transaction. Không có bước "nhớ hoàn tiền" nào để quên. Huỷ hai lần là an toàn.
+
 ## 2026-09-04 — bộ cài `1.6.0`: Claude Code cũng nén đúng lúc
 
 **FIXED · Thêm `CLAUDE_CODE_AUTO_COMPACT_WINDOW` và `MAX_MCP_OUTPUT_TOKENS`.**

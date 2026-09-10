@@ -49,6 +49,77 @@ def san_sang() -> bool:
     return bool(_token())
 
 
+def _dich_loi_http(e) -> Exception:
+    """`HTTPError` của cổng giọng -> lớp lỗi của ta. **MỘT bảng dịch duy nhất.**
+
+    ⛔ Tách ra khỏi `_goi` khi `phat_dan` ra đời, chứ không chép sang. Chính
+       `features._goi_va_dich_loi` đã ghi vì sao: *"hai bản chép của một bảng
+       dịch lỗi sẽ lệch, và cái lệch đầu tiên gần như chắc chắn là nhánh
+       `SidecarBan` — tức đúng nhánh mà lệch một chút là mất tiền của khách."*
+    """
+    raw = e.read()
+    if e.code == 429:
+        cho = 5.0
+        try:
+            cho = float(json.loads(raw).get("retry_after_s") or 5.0)
+        except (ValueError, AttributeError, TypeError):
+            try:
+                cho = float(e.headers.get("Retry-After") or 5.0)
+            except (TypeError, ValueError):
+                pass
+        return SidecarBan(retry_after_s=cho)
+    if e.code == 413:
+        return VanBanQuaDai(_chi_tiet(raw))
+    return LoiSidecar(f"Cong giong tra {e.code}: {_chi_tiet(raw)}")
+
+
+def _dich_loi_url(e) -> Exception:
+    return LoiSidecar(
+        "Khong ket noi duoc toi cong giong (dich vu LTTStudioVoice co dang "
+        f"chay khong?): {e.reason}")
+
+
+class DauPhanHoi(dict):
+    """Header của phản hồi — tra cứu **không phân biệt hoa/thường**, như HTTP.
+
+    🔴 VÌ SAO LỚP NÀY TỒN TẠI, và nó đã âm thầm hỏng bao lâu không ai biết.
+
+    Bản cũ trả thẳng `dict(r.headers)`. `r.headers` là `email.message.Message`
+    — **đã** không phân biệt hoa/thường — còn `dict()` thì **vứt mất** tính chất
+    ấy và giữ đúng chữ nhận trên dây. Starlette ghi tên header **chữ thường**,
+    nên khoá thật là `x-duration-s`.
+
+    ⇒ Mọi chỗ tra bằng `"X-Duration-S"` nhận `None`. Đo 10/09/2026, dựng đúng
+      khuôn `Response(headers={"X-Duration-S": ...})` của `voice_sidecar` rồi
+      đọc lại bằng chính đường `_goi` dùng:
+
+          khoa that su : 'x-duration-s' 'x-gen-s' 'x-rtf' 'x-sample-rate'
+          .get('X-Duration-S') -> None
+          .get('x-duration-s') -> '1.234'
+
+    ⛔ Và nó **không bao giờ nổ**: `jobs.py` bọc bằng `_so()` — thứ được viết để
+       dung thứ một sidecar bản cũ thiếu `X-Gen-S`. Sự dung thứ ấy biến một lỗi
+       thành một **số 0 im lặng**, nên `gen_s` bằng 0 ở *mọi* lượt sinh và phép
+       đối chiếu `X-Duration-S` với ffprobe **chưa từng chạy**.
+
+    ⭐ Sửa ở ĐÂY chứ không hạ chữ thường ở từng chỗ gọi: chỗ gọi thì người sau
+       lại viết hoa, còn ở đây thì cả hai cách đều đúng — hạng lỗi bị đóng, không
+       chỉ một ca.
+    """
+
+    def __init__(self, nguon):
+        super().__init__((str(k).lower(), v) for k, v in dict(nguon).items())
+
+    def __getitem__(self, k):
+        return super().__getitem__(str(k).lower())
+
+    def __contains__(self, k):
+        return super().__contains__(str(k).lower())
+
+    def get(self, k, mac_dinh=None):
+        return super().get(str(k).lower(), mac_dinh)
+
+
 def _goi(duong: str, body: dict | None = None, *, timeout: float = 900.0,
          nhi_phan: bool = False):
     """Một lượt gọi. Trả `(payload, headers)`.
@@ -75,26 +146,11 @@ def _goi(duong: str, body: dict | None = None, *, timeout: float = 900.0,
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
             noi_dung = r.read()
-            headers = dict(r.headers)
+            headers = DauPhanHoi(r.headers)
     except urllib.error.HTTPError as e:
-        raw = e.read()
-        if e.code == 429:
-            cho = 5.0
-            try:
-                cho = float(json.loads(raw).get("retry_after_s") or 5.0)
-            except (ValueError, AttributeError, TypeError):
-                try:
-                    cho = float(e.headers.get("Retry-After") or 5.0)
-                except (TypeError, ValueError):
-                    pass
-            raise SidecarBan(retry_after_s=cho) from e
-        if e.code == 413:
-            raise VanBanQuaDai(_chi_tiet(raw)) from e
-        raise LoiSidecar(f"Cong giong tra {e.code}: {_chi_tiet(raw)}") from e
+        raise _dich_loi_http(e) from e
     except urllib.error.URLError as e:
-        raise LoiSidecar(
-            "Khong ket noi duoc toi cong giong (dich vu LTTStudioVoice co dang "
-            f"chay khong?): {e.reason}") from e
+        raise _dich_loi_url(e) from e
 
     if nhi_phan:
         return noi_dung, headers
@@ -114,9 +170,21 @@ def _chi_tiet(raw: bytes) -> str:
 
 # ── các cửa ──────────────────────────────────────────────────────────────────
 
-def nang_luc() -> dict:
-    d, _ = _goi("/v1/capabilities", timeout=180.0)
-    return d
+# 🔴 `nang_luc()` ĐÃ GỠ 08/09/2026 — nó là đường ĐẮT HƠN cho cùng một câu trả lời.
+#
+#    Nó bọc `GET /v1/capabilities`, và cửa đó gọi `c.nap()` trước khi trả lời:
+#    **nạp model, 19,4 giây khi nguội** (`docs/LTT_VOICE/do_v1.json`).
+#
+#    Nhưng `GET /health` trả `{"ok": True, **lay().nang_luc()}` — **cùng nội
+#    dung, KHÔNG nạp model** (`voice_sidecar/server.py:250`). Và `song()` ngay
+#    dưới đã gọi `/health` ở **mọi lượt dựng trang**.
+#
+# ⇒ Dữ liệu ấy đã chảy sẵn qua một đường rẻ hơn. `nang_luc()` không phải "chưa
+#   nối" — nó **thừa**, và một wrapper thừa là một wrapper sẽ có người gọi nhầm.
+#
+# ⚠️ Endpoint `/v1/capabilities` GIỮ NGUYÊN ở sidecar: nó là cửa duy nhất **ép
+#    nạp model** để chẩn đoán, và đó là một năng lực thật, chỉ không thuộc
+#    đường sản phẩm.
 
 
 def noi(text: str, *, ref_b64: str | None = None, preset: str | None = None,
@@ -125,6 +193,67 @@ def noi(text: str, *, ref_b64: str | None = None, preset: str | None = None,
     return _goi("/v1/speech",
                 {"text": text, "ref_b64": ref_b64, "preset": preset},
                 timeout=timeout, nhi_phan=True)
+
+
+#: Cỡ một khối đọc từ cổng. 8 KiB ở 48 kHz/16-bit/mono là ~85 ms tiếng.
+#:
+#: ⚠️ Nhỏ hơn thì độ trễ tới byte đầu KHÔNG giảm thêm — nó bị chặn bởi lượt sinh
+#:    của model, không bởi cỡ khối — nhưng số lượt gọi hệ thống thì tăng.
+KHOI_PHAT_DAN = 8192
+
+
+def phat_dan(text: str, *, ref_b64: str | None = None,
+             preset: str | None = None, timeout: float = 900.0):
+    """`POST /v1/stream` -> generator các khối byte. **Không đệm cả bài.**
+
+    Khối đầu là header WAV (mono · 16-bit · `nframes` giả rất lớn) do sidecar
+    dựng; các khối sau là PCM16 thô. Trình duyệt phát ngay khi byte đầu tới.
+
+    ⛔ KHÔNG dùng `_goi`: nó gọi `r.read()` — đọc trọn thân rồi mới trả. Dùng nó
+       ở đây là đệm cả bài rồi mới "phát dần", tức mất đúng thứ duy nhất đường
+       này sinh ra để có.
+
+    ⚠️ NGƯỜI GỌI PHẢI TIÊU HẾT hoặc đóng generator. Kết nối tới cổng giọng chỉ
+       được nhả khi generator kết thúc — bỏ nó giữa chừng mà không đóng là giữ
+       một suất GPU cho tới `timeout`.
+
+    ⚠️ `LTT_VOICE_STREAM` chưa bật thì cổng trả **404**, và nó tới đây thành
+       `LoiSidecar` chứ không phải một lỗi riêng. Đó là chủ ý: với người gọi,
+       "cửa chưa bật" và "cửa hỏng" đều là *"đường này không dùng được lúc
+       này"*, và cả hai đều phải lùi về đường thường.
+    """
+    tok = _token()
+    if not tok:
+        raise LoiSidecar("LTT_VOICE_SIDECAR_TOKEN chua duoc dat tren may chu.")
+
+    than = {"text": text}
+    if ref_b64:
+        than["ref_b64"] = ref_b64
+    if preset:
+        than["preset"] = preset
+    req = urllib.request.Request(
+        _co_so() + "/v1/stream", data=json.dumps(than).encode("utf-8"),
+        method="POST",
+        headers={"Authorization": f"Bearer {tok}",
+                 "Content-Type": "application/json",
+                 "User-Agent": "ltt-voice/1.0"})
+    try:
+        r = urllib.request.urlopen(req, timeout=timeout)
+    except urllib.error.HTTPError as e:
+        raise _dich_loi_http(e) from e
+    except urllib.error.URLError as e:
+        raise _dich_loi_url(e) from e
+
+    # `finally` chứ không `with`: một generator bị bỏ giữa chừng nhận
+    # `GeneratorExit` tại `yield`, và chỉ `finally` mới chạy để đóng kết nối.
+    try:
+        while True:
+            khoi = r.read(KHOI_PHAT_DAN)
+            if not khoi:
+                return
+            yield khoi
+    finally:
+        r.close()
 
 
 def noi_lo(texts: list, *, ref_b64: str | None = None,

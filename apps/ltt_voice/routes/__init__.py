@@ -11,6 +11,9 @@ Nền tảng chỉ cần biến `router`. Import từng mảnh ở đây để h
     _p_lich_su.py   Lịch sử: lọc và liệt kê
     _p_api.py       API: mã giọng để dán vào mã nguồn + trạng thái cửa thật
     _p_audio.py     Phục vụ tệp tiếng — cửa duy nhất đọc kho của khách
+    _p_chi_so.py    Chỉ số vận hành theo từng giọng (U-14) — sau `is_operator`
+    _p_nghe_thu.py  Nghe thử VĂN BẢN CỦA KHÁCH (U-13) — miễn phí, trần cứng
+    _p_phat_dan.py  Phát dần (U-07) — CÓ tính tiền, quyết toán theo byte đã gửi
 
 ⭐ TỪ P8 KHÔNG CÒN MẢNH GIỮ CHỖ. `_p_chua_xay.py` đã gỡ cùng màn cuối được xây.
    Nó từng phải nằm **sau** mọi mảnh khác vì FastAPI khớp theo thứ tự đăng ký,
@@ -20,6 +23,7 @@ Nền tảng chỉ cần biến `router`. Import từng mảnh ở đây để h
 """
 from apps.ltt_voice.routes._chung import router
 from apps.ltt_voice.routes import (  # noqa: F401  (import để đăng ký route)
-    _p_tao, _p_giong, _p_du_an, _p_lich_su, _p_api, _p_audio)
+    _p_tao, _p_giong, _p_du_an, _p_lich_su, _p_api, _p_audio, _p_chi_so,
+    _p_nghe_thu, _p_phat_dan)
 
 __all__ = ["router"]

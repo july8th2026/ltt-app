@@ -7,7 +7,7 @@ from ._chung import (MANIFEST, SO_LAN_THU_JOB, TRAN_KY_TU_CONG_KHAI, Depends, Fi
                      _t, _uid, doc_man_giong, doc_man_lich_su, features,
                      gia, giong_mau, io, require_login, router, templates,
                      tham_chieu, user_hien_tai, verify_csrf_token, vo,
-                     NHAN_NGUON, lan_ngon_ngu, nghe_thu)
+                     NHAN_NGUON, lan_ngon_ngu, muc_dung, nghe_thu)
 
 
 # ── Giọng của tôi ────────────────────────────────────────────────────────────
@@ -40,7 +40,8 @@ def trang_giong(request: Request, user=Depends(user_hien_tai),
     return templates.TemplateResponse(
         request, "ltt_voice_giong.html",
         vo.ngu_canh(request, user, nav_key=vo.NAV_GIONG, hang_doi=hang_doi,
-                    giong=giong, giong_mau=giong_mau.DANH_SACH,
+                    giong=giong,
+                    giong_mau=muc_dung.xep(giong_mau.DANH_SACH),  # U-12
                     nhan_gioi=giong_mau.NHAN_GIOI,
                     nhan_vung=giong_mau.NHAN_VUNG,
                     nhan_phong_cach=giong_mau.NHAN_PHONG_CACH,
@@ -57,6 +58,7 @@ def trang_giong(request: Request, user=Depends(user_hien_tai),
 @router.post("/giong/tao")
 async def tao_giong(request: Request, ten: str = Form(""),
                     dong_y: str = Form(""), csrf_token: str = Form(""),
+                    gioi: str = Form(""), ngon_ngu: str = Form("vi"),
                     tep: UploadFile = File(...),
                     user=Depends(user_hien_tai), _=Depends(require_login)):
     """Ghi danh một giọng mới. Consent lưu thành **dữ liệu**, không phải ghi chú."""
@@ -90,7 +92,18 @@ async def tao_giong(request: Request, ten: str = Form(""),
     gen = _db()
     db = next(gen)
     try:
+        # ⛔ ÉP VỀ TẬP ĐÓNG, KHÔNG TIN Ô FORM. Một giá trị lạ ở `gioi` sẽ được
+        #    `lui_giong.chon` đọc là "không rõ" và từ chối lùi — an toàn — nhưng
+        #    nó vẫn lên thẻ giọng và vào bộ lọc, nơi nó thành một mặt lọc rác.
+        #    `ngon_ngu` lạ thì tệ hơn: bộ lọc làn và `doi_chieu` đều so bằng
+        #    `in ("vi", "en")`, nên một giá trị thứ ba làm giọng **biến mất**
+        #    khỏi cả hai làn mà không có thông báo nào.
+        _gioi = gioi.strip().lower()
+        _gioi = _gioi if _gioi in ("nam", "nu") else ""
+        _lan = ngon_ngu.strip().lower()
+        _lan = _lan if _lan in ("vi", "en") else "vi"
         ho_so = VoiceProfile(owner_id=uid, ten_hien_thi=ten.strip(),
+                             gioi=_gioi, ngon_ngu=_lan,
                              trang_thai="dang_ghi_danh")
         db.add(ho_so)
         db.flush()

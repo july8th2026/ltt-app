@@ -54,11 +54,27 @@ def db(tmp_path, monkeypatch):
         dbmod.reset_engine()
 
 
-def _ho_so(db, owner: str, ten: str, dung_chung: bool = False):
+def _ho_so(db, owner: str, ten: str, dung_chung: bool = False,
+            license_status: str | None = None):
+    """Dựng một hồ sơ giọng.
+
+    🔴 `dung_chung=True` KÉO THEO `license_status="ok"` — và đó là hợp đồng mới
+       từ 08/09/2026 (U-05), không phải một tiện nghi của phép kiểm.
+
+       "Ở kho chung" nay là **hai** điều kiện: nền tảng muốn chia sẻ nó
+       (`dung_chung`) **và** xuất xứ đã được soát (`license_status == "ok"`).
+       Một fixture chỉ đặt điều kiện thứ nhất rồi mong thấy giọng ấy là một
+       fixture mô tả hợp đồng CŨ.
+
+    ⚠️ Truyền `license_status=` tường minh để dựng ca ngược — xem
+       `test_kho_chung_CHUA_SOAT_thi_KHONG_AI_thay`.
+    """
     from apps.ltt_voice.tables import VoiceProfile
 
+    if license_status is None:
+        license_status = "ok" if dung_chung else "cho_soat"
     h = VoiceProfile(owner_id=owner, ten_hien_thi=ten, trang_thai="active",
-                     dung_chung=dung_chung)
+                     dung_chung=dung_chung, license_status=license_status)
     db.add(h)
     db.flush()
     return h
@@ -177,3 +193,65 @@ def test_danh_sach_MAC_DINH_khong_gom_kho_chung(db):
     assert len(ca) == 2
     # Giọng của chính khách đứng TRƯỚC kho chung — thứ họ tự tạo là thứ họ tìm.
     assert ca[0].dung_chung is False
+# ── ⑤ U-05: `dung_chung` MỘT MÌNH không đủ ──────────────────────────────────
+#
+# ⭐ Mục này là vế **đối xứng** của cả tệp, và nó phải có mặt vì bốn phép kiểm
+#    trên vừa được sửa fixture để đặt `license_status="ok"`. Sửa fixture cho một
+#    lượt đỏ xanh lại là thao tác dễ mắc lỗi nhất trong cả kho: nó làm phép kiểm
+#    **dễ xanh hơn**, và nếu chỉ có thế thì cổng U-05 sẽ không còn ai canh.
+#
+# ⇒ Hai phép kiểm dưới đây chốt đúng phần vừa được thêm vào hợp đồng.
+
+def test_kho_chung_CHUA_SOAT_thi_KHONG_AI_thay(db):
+    """🔴 Xuất xứ chưa soát ⇒ giọng KHÔNG ra kho chung, dù cờ `dung_chung` đã bật.
+
+    Bản kiểm toán 07/09/2026 viết ranh giới bằng một câu: *"tải được ≠ dùng
+    thương mại được"*. Đây là chỗ câu ấy thành một hành vi quan sát được.
+    """
+    from apps.ltt_voice import tham_chieu
+
+    chung = _ho_so(db, "nen_tang", "Chua soat", dung_chung=True,
+                   license_status="cho_soat")
+    db.commit()
+
+    assert tham_chieu.tim_profile(db, chung.public_id, owner_id="u1",
+                                  cho_dung_chung=True) is None
+    ca = tham_chieu.danh_sach(db, owner_id="u1", gom_dung_chung=True)
+    assert chung.public_id not in {g.public_id for g in ca}
+
+
+@pytest.mark.parametrize("trang_thai", ["cho_soat", "thieu_bang_chung",
+                                        "tu_choi", "", "OK", "trang_thai_moi"])
+def test_chi_DUNG_chuoi_ok_moi_qua_cong(db, trang_thai):
+    """⛔ Danh sách CHO, không phải danh sách CẤM.
+
+    Dòng `"trang_thai_moi"` là dòng quan trọng nhất: nó là cái sẽ tồn tại vào
+    ngày có người thêm một trạng thái license và quên cổng này. Với
+    danh-sách-cấm nó **lọt qua** (mở, im lặng); với danh-sách-cho nó bị chặn cho
+    tới khi có người cố ý thêm vào.
+    """
+    from apps.ltt_voice import tham_chieu
+
+    g = _ho_so(db, "nen_tang", f"Giong {trang_thai or 'rong'}",
+               dung_chung=True, license_status=trang_thai)
+    db.commit()
+    assert tham_chieu.tim_profile(db, g.public_id, owner_id="u1",
+                                  cho_dung_chung=True) is None
+
+
+def test_SUA_van_chi_chu_so_huu_du_da_soat(db):
+    """⚠️ Cổng U-05 chỉ gác đường **ĐỌC**. Nó không được nới quyền SỬA.
+
+    Gộp hai câu ấy là cách một khách tắt mất giọng của cả nền tảng — chính là
+    lỗi mà `chi_chu_so_huu` sinh ra để chặn, và một cột mới không được phép
+    mở lại nó.
+    """
+    from apps.ltt_voice import tham_chieu
+
+    chung = _ho_so(db, "nen_tang", "Da soat", dung_chung=True)
+    db.commit()
+    ho_so = tham_chieu.tim_profile(db, chung.public_id, owner_id="u1",
+                                   cho_dung_chung=True)
+    assert ho_so is not None, "giong da soat ma van khong doc duoc"
+    assert tham_chieu.chi_chu_so_huu(ho_so, "u1") is False
+    assert tham_chieu.chi_chu_so_huu(ho_so, "nen_tang") is True

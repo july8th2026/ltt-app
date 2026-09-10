@@ -97,6 +97,34 @@ class VoiceProfile(Base):
     owner_id: Mapped[str] = mapped_column(String(36), index=True)
     ten_hien_thi: Mapped[str] = mapped_column(String(120))
     ngon_ngu: Mapped[str] = mapped_column(String(16), default="vi")
+
+    #: 🔴 GIỚI TÍNH CỦA GIỌNG — `"nam"` · `"nu"` · `""` (KHÔNG RÕ).
+    #:
+    #:    Cột này tồn tại vì **hai** thứ khác nhau cùng cần nó, và trước
+    #:    07/09/2026 không thứ nào làm được:
+    #:
+    #:      ① `lui_giong.py` — khi một giọng hỏng, đường lùi phải giữ NGUYÊN
+    #:         giới. Không biết giới thì không lùi được, và cách duy nhất còn
+    #:         lại là lùi bừa. Hệ `D:\Viral` đã đi đúng con đường đó và khách
+    #:         báo lỗi ngày 26/08/2026: *"giọng nam bị biến thành giọng nữ"* —
+    #:         backend của họ không có bảng giới nên mọi đường lùi rơi về giọng
+    #:         mặc định, vốn là nữ.
+    #:      ② bộ lọc ở `_voice_chon.html` — giới là câu hỏi đầu tiên người chọn
+    #:         giọng hỏi, và 20 giọng mẫu đã trả lời được từ lâu
+    #:         (`giong_mau_engine.json`). Giọng nhân bản thì không, nên một bộ
+    #:         lọc giới sẽ **làm biến mất** đúng những giọng của chính khách.
+    #:
+    #: ⛔ MẶC ĐỊNH `""` = KHÔNG RÕ, và đó là một giá trị THẬT chứ không phải một
+    #:    chỗ trống chờ điền. Mọi dòng có trước migration này đều không rõ giới,
+    #:    và **đoán hộ là sai**: đoán bằng F0 nghe thì hợp lý, nhưng chính
+    #:    `toc_do.py` đã ghi lại một ca bộ dò cao độ nhầm quãng tám trên một
+    #:    clip giọng nữ (báo 105,6 Hz). Một cột "giới" sai còn tệ hơn một cột
+    #:    trống, vì nó **được tin**.
+    #:
+    #: ⇒ Không rõ thì `lui_giong` TỪ CHỐI lùi, và bộ lọc LUÔN HIỆN giọng đó.
+    #:   Hai hành vi ấy đều là "không biết thì đừng làm gì hộ người ta".
+    gioi: Mapped[str] = mapped_column(String(8), default="", nullable=False)
+
     ghi_chu: Mapped[str] = mapped_column(Text, default="")
 
     #: `dang_ghi_danh` -> `active` -> `disabled` | `revoked`.
@@ -129,6 +157,36 @@ class VoiceProfile(Base):
     #:    chịu trách nhiệm**.
     dung_chung: Mapped[bool] = mapped_column(Boolean, default=False,
                                              nullable=False, index=True)
+
+    #: 🔴 XUẤT XỨ GIỌNG NÀY ĐÃ RÕ CHƯA — cổng của U-05.
+    #:
+    #:    Bốn giá trị, và ba trong bốn đều là "KHÔNG":
+    #:
+    #:      "cho_soat"          chưa ai soát. **Mặc định.**
+    #:      "thieu_bang_chung"  đã soát, thiếu giấy tờ / thiếu consent
+    #:      "tu_choi"           đã soát, và câu trả lời là không
+    #:      "ok"                đã soát, dùng thương mại được
+    #:
+    #: ⛔ NÓ GÁC ĐÚNG MỘT THỨ: giọng có ra tới **kho chung** hay không.
+    #:
+    #:    Nó KHÔNG gác giọng riêng của một khách. Xuất xứ của giọng riêng đã có
+    #:    `VoiceConsent` trả lời, và bắt một cột thứ hai cùng trả lời câu ấy sẽ
+    #:    làm biến mất giọng của chính khách vào ngày migration chạy — một
+    #:    thiệt hại thật để đổi lấy một phép kiểm trùng.
+    #:
+    #: 🔴 MẶC ĐỊNH `"cho_soat"`, TỨC ĐÓNG. Và điều đó là bắt buộc.
+    #:
+    #:    `dung_chung=True` nghĩa là **mọi tài khoản** đọc được giọng ấy. Nếu
+    #:    cột này mặc định `"ok"` thì bật `dung_chung` là đủ để phát tán một
+    #:    giọng chưa ai soát xuất xứ — và bản kiểm toán 07/09/2026 ghi thẳng
+    #:    ranh giới ấy: *"tải được ≠ dùng thương mại được"*.
+    #:
+    #: ⚠️ Migration đặt `"cho_soat"` cho MỌI dòng cũ, kể cả dòng đang
+    #:    `dung_chung=True`. Đó không phải một sơ suất: chưa ai soát thật thì
+    #:    ghi `"ok"` là **bịa một phán quyết**, và một phán quyết bịa trong cột
+    #:    license là thứ sẽ được trích dẫn trong một tranh chấp.
+    license_status: Mapped[str] = mapped_column(String(24), default="cho_soat",
+                                                nullable=False, index=True)
 
     tao_luc: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     sua_luc: Mapped[datetime] = mapped_column(DateTime(timezone=True),
@@ -187,6 +245,64 @@ class VoiceRepr(Base):
     trang_thai: Mapped[str] = mapped_column(String(24), default="dang_dung",
                                             index=True)
     tao_luc: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class VoiceQualityProfile(Base):
+    """Kết quả CURATE một giọng — và **lý do loại** khi loại (U-04).
+
+    ## Vì sao lý do loại là một CỘT, không phải một dòng nhật ký
+
+    Bản kiểm toán 07/09/2026 (§17.2) ghi lại một cách làm đáng mượn từ kho đối
+    chiếu: mỗi giọng bị loại đều kèm **một câu vì sao**. Nghe như thủ tục, cho
+    tới lúc có người hỏi *"sao giọng này biến mất?"* — và không ai trả lời được
+    vì lý do nằm trong đầu người đã loại nó, hoặc trong một tin nhắn đã trôi.
+
+    ⭐ Một cột thì trả lời được, và nó trả lời **mãi mãi**: ngày nâng engine,
+       một giọng bị loại vì *"rè ở âm /s/"* đáng được thử lại; một giọng bị loại
+       vì *"không có consent"* thì **không** — cùng một trạng thái `rejected`,
+       hai số phận hoàn toàn khác nhau.
+
+    ⛔ KHÔNG ĐẶT ĐIỂM VÀO ĐÂY KHI CHƯA ĐO. Bản kiểm toán viết "NOT YET
+       BENCHMARKED" ở ba ô thay vì điền số, và bảng này giữ đúng kỷ luật ấy:
+       `diem` mặc định `None`, và `None` nghĩa là **chưa đo**, không phải 0.
+    """
+
+    __tablename__ = "voice_quality_profile"
+    __table_args__ = (
+        # Một giọng, một phán quyết curate. Hai dòng cho cùng một giọng là hai
+        # câu trả lời cho cùng một câu hỏi, và không ai biết câu nào đang có
+        # hiệu lực.
+        UniqueConstraint("profile_id", name="uq_voice_quality_profile"),
+    )
+
+    id: Mapped[int] = mapped_column(KHOA_CHINH, primary_key=True,
+                                    autoincrement=True)
+    profile_id: Mapped[int] = mapped_column(BigInteger, index=True)
+
+    #: `cho_soat` (mặc định) | `accepted` | `rejected`
+    trang_thai_curate: Mapped[str] = mapped_column(String(24),
+                                                   default="cho_soat",
+                                                   nullable=False, index=True)
+
+    #: 🔴 BẮT BUỘC KHI `rejected`, và phép kiểm chốt đúng điều đó.
+    #:    Một `rejected` không lý do là một quyết định không xem lại được.
+    ly_do_loai: Mapped[str] = mapped_column(Text, default="")
+
+    #: Điểm chất lượng, thang do phép đo quyết định. `None` = **CHƯA ĐO**.
+    #: ⛔ Đừng đổi thành `default=0.0`: 0 là một điểm, và một điểm bịa thì tệ
+    #:    hơn một ô trống — ô trống thì người ta đi đo, con số thì người ta tin.
+    diem: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+    #: Phiên bản bộ benchmark đã sinh ra `diem`. Không có nó thì hai điểm của
+    #: hai đợt đo khác nhau nằm chung một cột mà không so được với nhau.
+    benchmark_version: Mapped[str] = mapped_column(String(64), default="")
+
+    #: Khoá kho của mẫu tiếng đã dùng để chấm. Giữ để chấm lại được.
+    sample_key: Mapped[str] = mapped_column(String(255), default="")
+
+    nguoi_soat: Mapped[str] = mapped_column(String(36), default="")
+    soat_luc: Mapped[datetime] = mapped_column(DateTime(timezone=True),
+                                               default=_now, onupdate=_now)
 
 
 class VoiceConsent(Base):

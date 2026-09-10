@@ -188,6 +188,20 @@
       "in_schema": false,
       "sunset_on": ""
     },
+    "GET /api/v1/runs/{run_id}": {
+      "authenticated": true,
+      "deprecated_on": "",
+      "execution_mode": "SYNC",
+      "in_schema": true,
+      "sunset_on": ""
+    },
+    "GET /api/v1/runs/{run_id}/artifacts": {
+      "authenticated": true,
+      "deprecated_on": "",
+      "execution_mode": "SYNC",
+      "in_schema": true,
+      "sunset_on": ""
+    },
     "GET /api/v1/tools": {
       "authenticated": true,
       "deprecated_on": "",
@@ -265,6 +279,13 @@
       "in_schema": true,
       "sunset_on": ""
     },
+    "POST /api/v1/runs/{run_id}/cancel": {
+      "authenticated": true,
+      "deprecated_on": "",
+      "execution_mode": "SYNC",
+      "in_schema": true,
+      "sunset_on": ""
+    },
     "POST /api/v1/uploads": {
       "authenticated": true,
       "deprecated_on": "",
@@ -292,20 +313,30 @@
       "execution_mode": "SYNC",
       "in_schema": true,
       "sunset_on": ""
+    },
+    "POST /api/v1/workflows/{workflow_id}/quotes": {
+      "authenticated": true,
+      "deprecated_on": "",
+      "execution_mode": "SYNC",
+      "in_schema": true,
+      "sunset_on": ""
+    },
+    "POST /api/v1/workflows/{workflow_id}/runs": {
+      "authenticated": true,
+      "deprecated_on": "",
+      "execution_mode": "ASYNC_JOB",
+      "in_schema": true,
+      "sunset_on": ""
     }
   },
   "snapshot_version": 1,
   "tools": {
     "image.generate": {
       "aliases": [],
-      "contract_hash": "09c21c078eb6ca12",
+      "contract_hash": "6b31aa3ae3590f99",
       "deprecated": "",
       "execution_mode": "ASYNC_JOB",
-      "models": [
-        "enhanced",
-        "standard",
-        "standard-lite"
-      ],
+      "models": [],
       "required_scopes": [
         "jobs:create"
       ]
@@ -322,7 +353,7 @@
     },
     "image.thumbnail": {
       "aliases": [],
-      "contract_hash": "00e6a8906c3c5574",
+      "contract_hash": "6a9ef0c81ac9e3d9",
       "deprecated": "",
       "execution_mode": "ASYNC_JOB",
       "models": [],

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{{ _("Lần chạy") }} — LTT AI Studio{% endblock %}
+{% block topbar_title %}<strong>{{ _("Lồng tiếng Việt") }}</strong>{% endblock %}
+
+{% block content %}
+<script src="/static/htmx.min.js"></script>
+<section class="asv-trang" aria-labelledby="asv-ct">
+
+  <header class="asv-dau">
+    <div>
+      <h1 id="asv-ct">{{ _("Tiến độ lồng tiếng") }}</h1>
+      <p class="asv-ghi-chu">
+        {{ _("Bắt đầu") }}: {{ run.created_at.strftime("%d/%m/%Y %H:%M") if run.created_at else "—" }}
+      </p>
+    </div>
+    <a class="btn ghost" href="{{ app.route_prefix }}">{{ _("Về danh sách") }}</a>
+  </header>
+
+  {% include "asv_tien_do.html" %}
+
+  {# ── Chi tiet van hanh: MAC DINH AN, va chi hien cho operator ──────────
+     Prompt 20 muc 6. Khach khong can biet job id hay ten worker; nguoi ho tro
+     thi can, va ho can no o cung trang chu khong o mot cong cu khac. #}
+  {% if van_hanh %}
+    <details class="asv-van-hanh">
+      <summary>{{ _("Chi tiết vận hành") }}</summary>
+      <table class="asv-bang">
+        <thead><tr>
+          <th>{{ _("Bước") }}</th><th>{{ _("Trạng thái") }}</th>
+          <th>{{ _("Lần thử") }}</th><th>{{ _("Làn") }}</th>
+          <th>{{ _("Giây") }}</th><th>{{ _("Lỗi") }}</th>
+        </tr></thead>
+        <tbody>
+        {% for m in van_hanh.giai_doan %}
+          <tr>
+            <td>{{ m.giai_doan }}</td>
+            <td>{{ m.trang_thai }}</td>
+            <td>{{ m.get("so_lan_thu", "—") }}</td>
+            <td>{{ m.get("lan", "—") }}</td>
+            <td>{{ "%.1f"|format(m.giay) if m.giay else "—" }}</td>
+            <td>{{ m.get("loi", "") }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      <p class="asv-ghi-chu">
+        run <code>{{ van_hanh.run_id }}</code> ·
+        {{ _("giữ") }} {{ van_hanh.credit_da_giu }} ·
+        {{ _("tính") }} {{ van_hanh.credit_da_tinh }}
+      </p>
+    </details>
+  {% endif %}
+
+</section>
+{% endblock %}

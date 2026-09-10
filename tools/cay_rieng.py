@@ -204,6 +204,32 @@ def _chep_thu_khong_o_trong_git(dich: Path) -> None:
         print(f"  chep {nguon.relative_to(GOC).as_posix()} ({mb:.0f} MB) - "
               "git khong giu no, ma gate thi doi")
         shutil.copytree(nguon, dich_con)
+    # 🔴 THEM 08/09/2026. `apps/*/vendor` khong du: hai duong dan nua bi
+    #    `.gitignore` loai ma phep kiem doi, va chung nam NGOAI `apps/`:
+    #
+    #      yolov8n.pt              <- cutclipshort/adapters/yolo.py:29
+    #      tools/vendor_a11y/      <- tools/check_a11y.py
+    #
+    #    Do 08/09: `test_505::test_moi_duong_khai_deu_CO_THAT_tren_dia` va
+    #    `::test_DANH_SACH_VAN_CHUYEN_khop_dung_tap_DO_DUOC` do o MOI cay rieng
+    #    va XANH o cay chinh — tuc mot lan do vi cay, khong vi ma. Dung kieu do
+    #    ma docstring tren vua canh bao: no day nguoi ta bo qua chinh no.
+    #
+    # ⭐ Danh sach nay la CUNG danh sach `$VAN_CHUYEN` cua `setup/2-cai-dat.ps1`
+    #    (deploy `git archive` cung phai chep tay chung). Hai cho, mot su that —
+    #    neu them mot duong thu tu thi phai sua CA HAI.
+    for duong in ("yolov8n.pt", "tools/vendor_a11y"):
+        nguon = GOC / duong
+        dich_con = dich / duong
+        if not nguon.exists() or dich_con.exists():
+            continue
+        if nguon.is_dir():
+            shutil.copytree(nguon, dich_con)
+        else:
+            dich_con.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(nguon, dich_con)
+        print(f"  chep {duong} - git khong giu no, ma phep kiem thi doi")
+
     if nguon_vendor:
         print("  (node_modules KHONG chep - ~700 MB; buoc frontend se tu khai BO QUA)")
 

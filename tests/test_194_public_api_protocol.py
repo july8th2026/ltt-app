@@ -154,9 +154,42 @@ def test_every_route_declares_a_mode_the_platform_can_honour():
 
 
 def test_exactly_one_route_is_chargeable_and_it_is_the_async_one():
+    """Cac cua ASYNC_JOB la mot DANG KY co chu dich, khong phai mot bo dem.
+
+    ⚠️ TEN BAI GIU NGUYEN du con so da la HAI. Doi ten thanh "hai cua" se phai
+       doi lai o cua thu ba, va moi lan doi ten la mot lan mat lien ket voi lich
+       su. Thu bai nay canh khong phai con so — la **moi cua o day deu phai giu
+       cung mot loi hua**.
+
+    Moi ten trong danh sach nay phai dung CA BA dieu, va ca ba deu do duoc:
+
+        1. `execution_mode == ASYNC_JOB`  -> viec chay sau, khach hoi lai sau
+        2. doi BAO GIA da ky              -> co mot con so khach dong y TRUOC
+        3. doi `Idempotency-Key`          -> mot lan thu lai khong mua hai lan
+
+    ⇒ `protocol.check_mode_rules` cuong che (2)+(3) cho bat ky hop dong
+      chargeable nao khai ASYNC_JOB; danh sach nay la cho DUY NHAT liet ke
+      chung, nen them mot ten vao day la mot quyet dinh ve **be mat cong khai**,
+      khong phai mot dong khai bao.
+
+    ⭐ `POST /workflows/{id}/runs` them 08/09/2026 (`WF-802`). No la cua tieu
+       tien thu hai, va no dat hon cua thu nhat: `/jobs` giu gia cua MOT loi goi
+       tool, con no giu TRAN CHI PHI CUA CA DO THI. Hanh vi cua no do o
+       `tests/test_966_public_api_workflows.py` — thieu `Idempotency-Key` thi
+       400, bao gia cua workflow khac thi 400, khong du tien thi 409 va KHONG
+       de lai mot `WorkflowRun` mo coi nao.
+
+    ⛔ Va no chi trung thuc tu khi `platform_core/workflow/tien.py` ton tai.
+       Truoc do khong gi trong `platform_core/workflow/` cham so credit —
+       `hold_id` chi tung bi XOA, chua tung duoc DAT — nen khai `chargeable`
+       khi ay la mot loi hua khong co gi dung sau.
+    """
     async_routes = [f"{r.method} {r.path}" for r in API_V1_ROUTES
                     if r.execution_mode == ASYNC_JOB]
-    assert async_routes == [f"POST {API_V1_PREFIX}/jobs"]
+    assert async_routes == [
+        f"POST {API_V1_PREFIX}/jobs",
+        f"POST {API_V1_PREFIX}/workflows/{{workflow_id}}/runs",
+    ]
 
 
 def test_no_sync_route_creates_a_job(api):

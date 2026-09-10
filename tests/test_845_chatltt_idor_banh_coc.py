@@ -50,8 +50,13 @@ MIEN = {
     ("dang_chay.py", "tim"),
     ("dang_chay.py", "ket_thuc"),
     ("dang_chay.py", "yeu_cau_dung"),
-    # Hàm THUẦN: băm ba chuỗi, không chạm CSDL, không trả dữ liệu của ai.
+    # Hàm THUẦN: băm/ghép chuỗi, không chạm CSDL, không trả dữ liệu của ai.
+    # `ten_lease` thêm 07/09: nó trả chuỗi `chatltt-run:<run_id>` và chỉ có MỘT
+    # người gọi (`tiep_sau_duyet`), gọi SAU khi đã kiểm `run_row.user_id`.
+    # Không có route nào nhận tên lease, và id run là uuid nên hai người dùng
+    # không thể đụng cùng một tên.
     ("duyet.py", "khoa_idem"),
+    ("luot_v3.py", "ten_lease"),
     # Bộ phận nội bộ (`_`), gọi từ trong hàm ĐÃ kiểm sở hữu.
     ("du_an.py", "_cham"),
     ("luot.py", "_da_huy_trong_csdl"),

@@ -148,3 +148,21 @@ TRAN_KY_TU_CONG_KHAI = 100_000
 #:    `queued` mãi mãi, không ai được báo: đúng cái hỏng mà `manifest.py` cảnh
 #:    báo về làn worker `voice`.
 SO_LAN_THU_JOB = 5
+#: 🔴 ENGINE NÀY CẦN TA CHUẨN HOÁ TỚI ĐÂU (U-15 / T-07).
+#:
+#:    Hai vế, và chúng bật vì **hai lý do khác nhau** — đó là toàn bộ điểm của
+#:    việc tách chúng ra thay vì dùng một cờ `chuan_hoa=True`:
+#:
+#:      "phien_am"  upstream #168 báo engine đọc `ch` thành `tr` ở một số từ,
+#:                  và tên riêng thì không bảng nào đoán trước được.
+#:      "doc_so"    engine đọc `1.250.000` theo từng chữ số.
+#:
+#: ⚠️ ĐỂ Ở ĐÂY, KHÔNG Ở `text_pipeline.py`, và đó không phải chuyện gọn gàng.
+#:    Tệp này là chỗ giữ **sự thật về engine đang chạy** — cùng chỗ với
+#:    `TRAN_MOI_LUOT_SINH` và `SO_LAN_THU_JOB`. Ngày có engine thứ hai, khuôn
+#:    của nó nằm cạnh tham số của nó, chứ không nằm lẫn trong bộ chuẩn hoá.
+#:
+#: ⛔ ĐỔI KHUÔN LÀ ĐỔI TIỀN. `manifest._gia()` đếm ký tự **sau** chuẩn hoá:
+#:    tắt `doc_so` làm hoá đơn nhỏ đi, bật `doc_so_tran` làm nó to lên. Nên nó
+#:    không bao giờ là một tuỳ chọn của khách.
+KHUON_CHUAN_HOA = {"phien_am": True, "doc_so": True, "doc_so_tran": False}

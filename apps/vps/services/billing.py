@@ -29,6 +29,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session as DbSession
 
+from apps.vps import trang_thai_may
 from apps.vps.cost import CHU_KY_NGAY, credit_thang
 from apps.vps.services.provisioning import ghi_su_kien
 from apps.vps.tables import VpsInstance
@@ -167,8 +168,14 @@ def treo(db: DbSession, may: VpsInstance, ly_do: str, *,
     client Proxmox, mà module này cố ý không biết Proxmox tồn tại).
     """
     thoi_diem = now or _now()
-    may.trang_thai = "bi_treo"
-    may.ly_do = ly_do
+    # `bi_treo` là **vòng đời**, không phải trạng thái điện: nó nghĩa là hết hạn
+    # thanh toán, và nó phải sống sót qua mọi thứ xảy ra với nguồn điện của máy.
+    # Ý định đi kèm là `tat` (người gọi sẽ tắt cứng), nhưng ta chưa đo lại —
+    # nên quan sát về `khong_ro`, không phải một khẳng định.
+    trang_thai_may.dat(may, vong_doi=trang_thai_may.BI_TREO,
+                       dien_mong_muon=trang_thai_may.TAT,
+                       dien_quan_sat=trang_thai_may.KHONG_RO,
+                       ly_do=ly_do)
     if may.xoa_sau is None:
         may.xoa_sau = thoi_diem + timedelta(days=AN_HAN_TRUOC_KHI_XOA_NGAY)
     ghi_su_kien(db, may.id, "bi_treo", boi="he_thong", ly_do=ly_do,

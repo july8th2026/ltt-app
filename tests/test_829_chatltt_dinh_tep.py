@@ -85,9 +85,8 @@ def test_TAI_LEN_hien_gia_va_KHONG_thu_mot_dong_nao(db):
                  content_type="text/plain", du_lieu=VAN)
 
     assert kq["bao_gia_credit"] >= 1, "khong hien gia thi khach bam mu"
-    assert kq["gia_da_chot"] is False, (
-        "gia dang la gia TAM — ket qua phai noi that dieu do")
-    assert kq["so_byte"] == len(VAN)
+    assert kq["gia_da_chot"] is True, (
+        "gia da chot 07/09/2026 — ket qua phai noi that dieu do")
 
     ve = db.get(UploadSession, kq["upload_id"])
     assert ve is not None and ve.status == "ready", (

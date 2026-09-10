@@ -206,10 +206,15 @@ def _chup_anh_den_han(db, client, *, now=None) -> int:
             continue
         try:
             ten = sao_luu.chup_va_don(client, may, now=now)
-        except ProxmoxError as exc:              # bắt HẸP
+        except (ProxmoxError, sao_luu.SaoLuuError) as exc:      # bắt HẸP
+            # ⚠️ `SaoLuuError` là loại lỗi MỚI của VPS V2, và bắt nó là cả điểm
+            #    của bản sửa: trước đây `chup_va_don` không chờ tác vụ nên nó
+            #    **không bao giờ** ném vì tác vụ hỏng — dòng dưới vẫn chạy, và
+            #    máy khoe một ảnh chụp không tồn tại suốt bảy ngày.
             log.warning("VPS bao tri: khong chup duoc anh cho may %s: %s",
                         may.id, exc)
             continue
+        # Tới đây thì ảnh đã được **xác minh có mặt đúng tên** trên máy chủ.
         may.sao_luu_luc = now or _bay_gio()
         billing.ghi_su_kien(db, may.id, "sao_luu", boi="he_thong", anh=ten)
         da_chup += 1
@@ -321,13 +326,58 @@ def _doi_chieu_dinh_ky(db, client) -> int:
     from apps.vps import doi_chieu
 
     kq = doi_chieu.quet(db, client)
+    # `quet` nay GHI vao may: no dong dau `dien_quan_sat`/`quan_sat_luc` cua
+    # tung may. Khong commit thi ca luot do bi vut di, va `qua_cu()` van bao
+    # moi may deu cu — dung thu ma phep do sinh ra de sua.
+    if kq.da_do_dien:
+        db.commit()
+
     for x in kq.khong_doc_duoc:
         log.warning('VPS doi chieu: %s', x)
+    # Ghi log theo MUC, khong gop mot dong. Mot `VO_BAT_BIEN` lan giua muoi dong
+    # `NGHI_MO_COI` la mot dong khong ai doc — va no la dong duy nhat dang doc.
     for lech in kq.lech:
-        log.warning('VPS MO COI - %s', lech)
+        if lech.muc_do in doi_chieu.CAM_TU_XU:
+            log.warning('VPS CAN NGUOI XU - %s', lech)
+        else:
+            log.info('VPS doi chieu - %s', lech)
     if not kq.lech:
-        log.info('VPS doi chieu: sach (%s may, %s IP)', kq.so_may, kq.so_ip)
+        log.info('VPS doi chieu: sach (%s may, %s IP, %s phep do dien)',
+                 kq.so_may, kq.so_ip, kq.da_do_dien)
     return kq.tong_mo_coi
+
+
+def _don_thao_tac_qua_han(db, *, now=None) -> int:
+    """Dong nhung thao tac qua han ma worker khong kip dong lai.
+
+    ## Day la duong phuc hoi DUY NHAT sau khi mot worker chet
+
+    Worker bi kill giua chung thi khong ai goi `xong()` hay `hong()`. Thao tac
+    nam lai `dang_chay` **vinh vien**, va `tac_vu` tren may khong bao gio duoc
+    go — khach khong bam duoc gi va khong ai biet vi sao. Loai hong im lang te
+    nhat, vi no trong giong mot giao dien dang tai.
+
+    ⚠️ No **khong** ket luan viec da that bai: ma loi la `tac_vu_qua_han`, va
+       viec do co the van dang chay tren Proxmox. Vong doi chieu ngay ben duoi
+       se di hoi lai the gioi that.
+
+    Chay TRUOC `_doi_chieu_dinh_ky` co chu y: thao tac con mo thi `dang_ban(may)`
+    con True, va vong doi chieu **bo qua** may dang ban khi bao lech dien. Chay
+    sau thi mot may bi ket 35 phut se khong duoc bao lech trong 35 phut do.
+    """
+    from apps.vps.services import thao_tac
+
+    da_dong = thao_tac.don_qua_han(db, now=now)
+    # Dọn hàng CŨ trong cùng lượt: chính sách lưu trữ khai `vps_thao_tac` giữ
+    # 180 ngày (`governance.STORES`), và một hạn lưu trữ không ai thi hành là
+    # một lời hứa — đúng lớp lỗi mà `test_211` sinh ra để bắt.
+    da_xoa = thao_tac.don_cu(db, now=now)
+    if da_dong or da_xoa:
+        db.commit()
+    if da_xoa:
+        log.info("VPS bao tri: xoa %s thao tac cu hon %s ngay",
+                 da_xoa, thao_tac.GIU_NGAY)
+    return len(da_dong)
 
 
 def mot_luot(db, *, now=None) -> dict:
@@ -357,6 +407,7 @@ def mot_luot(db, *, now=None) -> dict:
         db.commit()
     ket_qua["da_don_ve"] = da_don
     ket_qua["da_hoan"] = _hoan_may_tao_hong(db)
+    ket_qua["thao_tac_qua_han"] = _don_thao_tac_qua_han(db, now=now)
     ket_qua["mo_coi"] = _doi_chieu_dinh_ky(db, client)
 
     da_nop_xoa = 0
@@ -386,9 +437,10 @@ def chay() -> None:
         # rác mỗi ngày, và nó làm người đọc bỏ qua đúng dòng cần đọc.
         if any(kq.values()):
             log.info("VPS bao tri: thu %s, treo %s, nop xoa %s, doi giam toc %s, "
-                     "chup anh %s, don ve %s, hoan %s, mo coi %s",
+                     "chup anh %s, don ve %s, hoan %s, thao tac qua han %s, "
+                     "mo coi %s",
                      kq["da_thu"], kq["da_treo"], kq["da_nop_xoa"],
                      kq["da_doi_giam_toc"], kq["da_chup"], kq["da_don_ve"],
-                     kq["da_hoan"], kq["mo_coi"])
+                     kq["da_hoan"], kq["thao_tac_qua_han"], kq["mo_coi"])
     finally:
         gen.close()

@@ -36,10 +36,30 @@ async (page) => {
 
   if (CAU_HINH.cookie) {
     const [ten, ...phan] = CAU_HINH.cookie.split('=');
-    const u = new URL(CAU_HINH.goc);
+    // ⚠️ `URL` KHONG ton tai trong ngu canh `run-code`. Tach ten may bang
+    //    chuoi — mot dong, va no khong phu thuoc vao thu gi ca.
+    //
+    // 🔴 DONG NAY DA HONG TU DAU, VA KHONG AI THAY — vi hai ly do cong lai:
+    //
+    //    1. `new URL(...)` nam TRONG `if (CAU_HINH.cookie)`, nen luot chay
+    //       khong cookie khong bao gio cham toi no;
+    //    2. `ROUTE_MAC_DINH` cua `check_a11y.py` chi co bon route CONG KHAI
+    //       (`/`, `/login`, `/dang-ky`, `/bang-gia`) — khong route nao can
+    //       dang nhap, nen `--cookie` khong bao gio duoc gate dung toi.
+    //
+    //    ⇒ Mot duong duoc KHAI trong docstring (*"route can dang nhap thi
+    //      phai truyen --cookie"*) ma chua bao gio co nuoc chay qua. Tim ra
+    //      08/09/2026 khi quet man Du an va the giong cho U-17 — lan dau
+    //      co route can dang nhap duoc do.
+    //
+    // ⭐ Va ban va da ton tai san o `tools/mobile_quet.js:189`, kem dung chu
+    //    thich nay. Bai hoc duoc hoc va ghi lai o MOT tep; tep anh em co cung
+    //    doan ma thi khong ai sua. Chep lai bo do ma khong chep bai hoc la
+    //    cach mot lop loi song sot qua chinh ban va cua no.
     await page.context().addCookies([{
       name: ten.trim(), value: phan.join('=').trim(),
-      domain: u.hostname, path: '/'
+      domain: CAU_HINH.goc.replace(/^https?:\/\//, '').split(/[:/]/)[0],
+      path: '/'
     }]);
   }
 

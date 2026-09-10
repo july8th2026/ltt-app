@@ -39,17 +39,34 @@ Trong thực tế, Windows xả bộ đệm sau vài giây nên khoảng mất l
 mô tả tính năng này là "khôi phục về đúng phút đó" — nó không phải vậy, và người
 duy nhất phát hiện ra sự khác biệt sẽ là người đang cần khôi phục.
 
-## Giữ ĐÚNG một bản, và tạo trước khi xoá
+## Giữ ĐÚNG một bản, và tạo **xong** trước khi xoá
 
 Tạo bản mới **rồi** mới xoá bản cũ. Ngược lại thì có một khoảng — dài bằng thời
 gian tạo — mà khách **không có bản nào**, và đó đúng là khoảng mà một sự cố sẽ
 tìm tới.
+
+⚠️ **"Tạo xong", không phải "đã gửi lệnh tạo".** Bản trước VPS V2 gọi `chup_anh()`
+   rồi hỏi danh sách ảnh và xoá bản thừa **ngay lập tức** — trong khi `chup_anh`
+   chỉ trả về một UPID và Proxmox còn đang làm việc ở nền. Hai hệ quả, và cái thứ
+   hai mới là cái đắt:
+
+   1. ảnh mới thường **chưa hiện** trong danh sách, nên lượt dọn không thấy nó và
+      không xoá gì — vô hại;
+   2. nhưng `bao_tri` vẫn ghi `sao_luu_luc = now` **dù tác vụ sau đó thất bại**.
+      Máy khoe "Ảnh chụp gần nhất: hôm nay" cho một bản **không tồn tại**, và
+      `den_han_chup` sẽ không chụp lại trong bảy ngày. Khách phát hiện đúng vào
+      lúc cần khôi phục.
+
+   ⇒ Từ VPS V2: chờ tác vụ kết thúc OK, **xác minh ảnh có mặt đúng tên**, rồi mới
+     dọn bản cũ và mới trả tên về cho người gọi ghi sổ.
 """
 from __future__ import annotations
 
 import logging
 import re
 from datetime import datetime, timedelta, timezone
+
+from apps.vps.services import tac_vu
 
 log = logging.getLogger(__name__)
 
@@ -109,17 +126,55 @@ def den_han_chup(may, *, now: datetime | None = None) -> bool:
     return luc <= (now or _now()) - timedelta(days=MOI_NGAY)
 
 
-def chup_va_don(client, may, *, now: datetime | None = None) -> str:
-    """Chụp một bản mới rồi xoá bản cũ. Trả tên ảnh vừa tạo.
+#: Chờ tối đa cho một tác vụ chụp/xoá ảnh (giây).
+#:
+#: Ảnh chụp LVM-thin xong trong vài giây, nhưng một node đang tải nặng có thể
+#: chậm hơn nhiều. 10 phút là trần để một lượt bảo trì không đứng lại vì một máy.
+HAN_CHUP_S = 10 * 60
 
-    Thứ tự **tạo trước, xoá sau** là cố ý: ngược lại thì có một khoảng khách
-    không có bản nào.
 
-    Lỗi lúc dọn bản cũ **không** làm hỏng cả việc: bản mới đã có, và bản cũ thừa
-    chỉ tốn chỗ chứ không mất gì. Lượt sau dọn tiếp.
+class AnhKhongXuatHien(SaoLuuError):
+    """Tác vụ báo OK nhưng ảnh **không có mặt** trong danh sách.
+
+    Hiếm, và chính vì hiếm nên nó là loại lỗi không ai kiểm: nếu không hỏi lại,
+    ta ghi `sao_luu_luc` cho một bản không tồn tại và khách chỉ biết lúc cần
+    khôi phục — tức lúc tệ nhất có thể.
+    """
+
+
+def co_anh(client, vmid: int, ten: str) -> bool:
+    """Ảnh mang đúng tên này có thật trên máy chủ không."""
+    return any(str(x.get("name")) == ten for x in client.danh_sach_anh(vmid))
+
+
+def chup_va_don(client, may, *, now: datetime | None = None,
+                nhip: tac_vu.Nhip = tac_vu.NHIP_THAT) -> str:
+    """Chụp một bản mới, **xác minh nó có thật**, rồi mới xoá bản cũ.
+
+    Trả tên ảnh vừa tạo. Ném `SaoLuuError`/`AnhKhongXuatHien` nếu không tạo được
+    — người gọi **không** được ghi `sao_luu_luc` khi có ngoại lệ.
+
+    Bốn bước, và thứ tự của chúng là cả nội dung của hàm:
+
+    1. gửi lệnh chụp;
+    2. **chờ tác vụ nền kết thúc và kiểm `exitstatus`** — `chup_anh` chỉ trả UPID;
+    3. **hỏi lại danh sách xem ảnh có mặt đúng tên chưa** — tác vụ OK vẫn có thể
+       không để lại thứ ta mong đợi, và đây là chỗ duy nhất phát hiện được;
+    4. chỉ khi đó mới dọn bản cũ.
+
+    Lỗi lúc **dọn** bản cũ không làm hỏng cả việc: bản mới đã có và đã kiểm, còn
+    bản cũ thừa chỉ tốn chỗ chứ không mất gì. Lượt sau dọn tiếp.
     """
     ten = ten_anh(now)
-    client.chup_anh(may.vmid, ten, mo_ta="LTT VPS - anh chup hang tuan")
+    try:
+        upid = client.chup_anh(may.vmid, ten, mo_ta="LTT VPS - anh chup hang tuan")
+        tac_vu.cho_xong(client, str(upid), han_s=HAN_CHUP_S, nhip=nhip)
+    except tac_vu.TacVuLoi as exc:
+        raise SaoLuuError(f"khong chup duoc anh: {exc}") from exc
+
+    if not co_anh(client, may.vmid, ten):
+        raise AnhKhongXuatHien(
+            f"tac vu bao OK nhung anh {ten!r} khong co trong danh sach")
 
     cu = sorted((x.get("name") for x in client.danh_sach_anh(may.vmid)
                  if cua_ta(x.get("name"))), reverse=True)
@@ -129,8 +184,8 @@ def chup_va_don(client, may, *, now: datetime | None = None) -> str:
         try:
             client.xoa_anh(may.vmid, thua)
         except Exception as exc:                 # noqa: BLE001
-            # Bắt rộng có chủ ý và CHỈ ở đây: bản mới đã tạo xong, nên không lý
-            # do gì để một lỗi dọn dẹp làm cả lượt bảo trì hỏng.
+            # Bắt rộng có chủ ý và CHỈ ở đây: bản mới đã tạo xong VÀ đã xác minh,
+            # nên không lý do gì để một lỗi dọn dẹp làm cả lượt bảo trì hỏng.
             log.warning("VPS: khong xoa duoc anh cu %s cua may %s: %s",
                         thua, may.id, exc)
     return ten
@@ -150,3 +205,133 @@ def doc_duoc(ten: str) -> str:
     lo = ten[len(TIEN_TO):]
     ngay = f"{lo[6:8]}/{lo[4:6]}/{lo[0:4]}"
     return f"{ngay} {lo[9:11]}:{lo[11:13]}" if len(lo) >= 13 else ngay
+
+
+# ── Khôi phục ───────────────────────────────────────────────────────────────
+#
+# Job type RIÊNG, không dùng chung `vps.control`: khôi phục là thao tác **phá
+# huỷ dữ liệu** và nó có trần thời gian khác hẳn (tắt máy + rollback + bật lại).
+# Gộp vào một job type là làm mất khả năng đặt hai trần khác nhau và mất luôn
+# khả năng đọc log theo loại việc.
+
+JOB_TYPE = "vps.snapshot"
+
+#: Chờ tối đa cho tác vụ rollback (giây). Rollback trên LVM-thin là thao tác
+#: siêu dữ liệu — vài giây. Trần rộng để chịu được một node đang tải nặng.
+HAN_KHOI_PHUC_S = 10 * 60
+
+
+def xin_khoi_phuc(db, may, ten: str, *, boi: str, now: datetime | None = None):
+    """Khách xin khôi phục về một ảnh chụp. Mở thao tác + nộp job. Trả thao tác.
+
+    **Không chạm Proxmox** — cùng lý do với `dieu_khien.xin`: một lần khôi phục
+    đầy đủ (tắt → chờ STOPPED → rollback → chờ → bật lại) vượt trần 100 giây của
+    Cloudflare.
+
+    `dien_truoc` ghi lại **ý định điện trước khi khôi phục**, để bước cuối trả
+    máy về đúng trạng thái khách đang có. Không ghi thì mọi lần khôi phục đều
+    giao lại một máy đang tắt, và khách phải tự bật — trên một máy họ vừa cứu.
+    """
+    from apps.vps import trang_thai_may as tt
+    from apps.vps.services import provisioning, thao_tac
+
+    op = thao_tac.mo(db, may, tt.DANG_KHOI_PHUC, boi=boi,
+                     khoa_idem=f"khoi_phuc:{ten}"[:64],
+                     dien_mong_doi=str(may.dien_mong_muon or tt.CHAY), now=now)
+    op.dien_truoc = str(may.dien_mong_muon or tt.CHAY)
+    provisioning.ghi_su_kien(db, may.id, "xin_khoi_phuc", boi=boi,
+                             anh=ten, thao_tac_id=op.id)
+
+    from apps.vps.manifest import MANIFEST
+    from platform_core import jobs as job_queue
+    job_queue.submit(db, user_id=boi, app_slug=MANIFEST.slug,
+                     job_type=JOB_TYPE,
+                     params={"instance_id": may.id, "viec": "khoi_phuc",
+                             "anh": ten, "thao_tac_id": op.id, "boi": boi})
+    return op
+
+
+#: Bước con của một lần khôi phục. Mã, không phải câu — `nhan.BUOC` dịch.
+BUOC_TAT_TRUOC = "tat_truoc_khoi_phuc"
+BUOC_KHOI_PHUC = "dang_khoi_phuc_anh"
+BUOC_BAT_LAI = "bat_lai_sau_khoi_phuc"
+
+#: Bước nào nghĩa là **rollback đã chạy xong**. Dùng khi nối lại sau khi worker
+#: chết: chạy rollback lần thứ hai là quay về ảnh chụp một lần nữa và **xoá luôn
+#: mọi thứ khách làm sau lần khôi phục đầu**.
+BUOC_DA_QUA_ROLLBACK = frozenset({BUOC_BAT_LAI})
+
+
+def thi_hanh_khoi_phuc(db, may, client, op, *, ten: str,
+                       nhip: tac_vu.Nhip = tac_vu.NHIP_THAT,
+                       luu=None, now: datetime | None = None) -> str:
+    """Khôi phục tới nơi tới chốn. Trả điện **đo được** cuối cùng.
+
+    ## Vì sao KHÔNG chụp một "ảnh an toàn trước khi khôi phục"
+
+    Hợp đồng cho phép chụp một điểm an toàn trước khi rollback *"nếu hạ tầng đỡ
+    được và nó không tạo ra một bảo đảm giả"*. Ở cụm này thì **không**:
+
+    * ảnh nằm **cùng pool** với đĩa gốc, nên nó không cứu được thứ mà khách sợ
+      nhất khi bấm nút này (hỏng phần cứng) — gọi nó là "an toàn" là nói quá;
+    * đĩa là **nút thắt** của cả sản phẩm (475 GB LVM-thin cho mọi khách). Một
+      ảnh thêm cho mỗi lần khôi phục, không nằm trong vòng dọn hằng tuần, là một
+      đường rò dung lượng không có ai đóng.
+
+    ⇒ Không chụp. Thay vào đó, đường phá huỷ đã có **hai** rào của chính nó: gõ
+      đúng tên máy để xác nhận, và tên ảnh phải khớp chính xác. Xem ADR-04.
+
+    ## Nối lại sau khi worker chết
+
+    `buoc` phân biệt "chưa rollback" với "đã rollback, đang bật lại". Không có
+    nó, một lần chạy lại sẽ rollback **lần thứ hai** — xoá sạch mọi thứ khách
+    làm sau lần khôi phục đầu. Đây là ca mất dữ liệu, không phải ca phiền toái.
+    """
+    from apps.vps import trang_thai_may as tt
+    from apps.vps.services import thao_tac
+
+    _luu = luu or (lambda: None)
+
+    def ghi(buoc: str) -> None:
+        thao_tac.ghi_buoc(None, op, buoc)
+        _luu()
+
+    if str(op.buoc or "") not in BUOC_DA_QUA_ROLLBACK:
+        # 1) Máy PHẢI tắt trước: Proxmox từ chối rollback một máy đang chạy khi
+        #    ảnh không kèm RAM — và ảnh của ta cố ý không kèm RAM.
+        if tac_vu.doc_dien(client, may.vmid) != tt.TAT:
+            ghi(BUOC_TAT_TRUOC)
+            upid = client.tat_cung(int(may.vmid))
+            thao_tac.ghi_upid(None, op, str(upid))
+            # ⚠️ Bản cũ nuốt lỗi ở đây (`except ProxmoxError: pass`) rồi gọi
+            #    rollback ngay dòng sau. Nuốt lỗi tắt máy rồi rollback là đường
+            #    ngắn nhất tới một đĩa hỏng.
+            tac_vu.cho_va_xac_minh(client, upid, may.vmid, tt.TAT,
+                                   han_tac_vu_s=HAN_KHOI_PHUC_S,
+                                   han_dien_s=tac_vu.HAN_DIEN_S, nhip=nhip)
+
+        # 2) Ảnh phải còn đó. Hỏi lại ngay trước khi rollback, không tin danh
+        #    sách đọc lúc mở trang: giữa hai thời điểm đó có một vòng bảo trì.
+        if not co_anh(client, may.vmid, ten):
+            raise SaoLuuError(f"anh {ten!r} khong con tren may chu")
+
+        ghi(BUOC_KHOI_PHUC)
+        upid = client.khoi_phuc_anh(may.vmid, ten)
+        thao_tac.ghi_upid(None, op, str(upid))
+        tac_vu.cho_xong(client, str(upid), han_s=HAN_KHOI_PHUC_S, nhip=nhip)
+
+    # 3) Trả máy về đúng trạng thái điện khách đang có trước khi khôi phục.
+    #    Ảnh không kèm RAM nên máy khởi động **mới**, không phải tiếp tục.
+    dien_dich = str(op.dien_truoc or tt.CHAY)
+    if dien_dich == tt.CHAY:
+        ghi(BUOC_BAT_LAI)
+        upid = client.bat(int(may.vmid))
+        thao_tac.ghi_upid(None, op, str(upid))
+        dien = tac_vu.cho_va_xac_minh(client, upid, may.vmid, tt.CHAY,
+                                      han_tac_vu_s=HAN_KHOI_PHUC_S,
+                                      han_dien_s=tac_vu.HAN_DIEN_S, nhip=nhip)
+    else:
+        dien = tac_vu.doc_dien(client, may.vmid)
+
+    tt.ghi_quan_sat(may, dien, now=now)
+    return dien

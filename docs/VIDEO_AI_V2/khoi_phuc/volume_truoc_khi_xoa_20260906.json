@@ -1,0 +1,58 @@
+{
+ "luc": "2026-09-06T08:23:09.777437+00:00",
+ "bucket": "uizchbiet5",
+ "so_doi_tuong": 10,
+ "tong_byte": 183088712942,
+ "doi_tuong": [
+  {
+   "key": "_NAP_TIEN_DO.json",
+   "byte": 1678,
+   "sua": "2026-09-04T20:41:38+00:00"
+  },
+  {
+   "key": "_NAP_XONG.json",
+   "byte": 1665,
+   "sua": "2026-09-04T20:41:38+00:00"
+  },
+  {
+   "key": "diffusion_models/wan2.2_fun_control_high_noise_14B_bf16.safetensors",
+   "byte": 28579237064,
+   "sua": "2026-09-04T20:29:45+00:00"
+  },
+  {
+   "key": "diffusion_models/wan2.2_fun_control_low_noise_14B_bf16.safetensors",
+   "byte": 28579237064,
+   "sua": "2026-09-04T20:41:38+00:00"
+  },
+  {
+   "key": "diffusion_models/wan2.2_i2v_high_noise_14B_fp16.safetensors",
+   "byte": 28577914792,
+   "sua": "2026-09-04T20:09:25+00:00"
+  },
+  {
+   "key": "diffusion_models/wan2.2_i2v_low_noise_14B_fp16.safetensors",
+   "byte": 28577914792,
+   "sua": "2026-09-04T20:18:09+00:00"
+  },
+  {
+   "key": "diffusion_models/wan2.2_t2v_high_noise_14B_fp16.safetensors",
+   "byte": 28577095592,
+   "sua": "2026-09-04T19:52:35+00:00"
+  },
+  {
+   "key": "diffusion_models/wan2.2_t2v_low_noise_14B_fp16.safetensors",
+   "byte": 28577095592,
+   "sua": "2026-09-04T20:02:11+00:00"
+  },
+  {
+   "key": "text_encoders/umt5_xxl_fp16.safetensors",
+   "byte": 11366399385,
+   "sua": "2026-09-04T19:41:51+00:00"
+  },
+  {
+   "key": "vae/wan_2.1_vae.safetensors",
+   "byte": 253815318,
+   "sua": "2026-09-04T19:41:54+00:00"
+  }
+ ]
+}

@@ -150,6 +150,19 @@ def validate_tool_params(
         if kind in ("string", "text"):
             if "max_length" in rule and len(value) > rule["max_length"]:
                 raise ToolParamsError(f"tham số {name} quá dài")
-        if kind == "model_ref" and rule.get("values") and value not in rule["values"]:
-            raise ToolParamsError(f"model không hợp lệ cho {name}")
+        if kind == "model_ref":
+            # 🔴 FAIL-CLOSED. Bản trước viết `and rule.get("values") and ...`, tức
+            #    danh sách **rỗng** làm phép kiểm **tự tắt** — mọi chuỗi đều lọt.
+            #
+            #    Lỗ đó có sẵn nhưng chưa ai chạm vì enum chưa bao giờ rỗng. Pha 04
+            #    (AI CLEAN REBUILD V2) retire `gemini`, mà `taoanh/manifest.py:64,149`
+            #    và `thumbnail/manifest.py:85` đều khai `"providers": ["gemini"]`
+            #    ⇒ enum thành rỗng ⇒ lỗ **được kích hoạt**: `image.generate` nhận
+            #    bất kỳ tên model nào, kể cả `"model-khong-co"`.
+            #
+            # ⭐ Danh sách rỗng nghĩa là **không model nào hợp lệ**, không phải
+            #    "không có ràng buộc nào". Hai câu ấy ngược nhau, và cách viết cũ
+            #    chọn đúng câu nguy hiểm.
+            if value not in (rule.get("values") or ()):
+                raise ToolParamsError(f"model không hợp lệ cho {name}")
     return out

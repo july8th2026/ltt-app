@@ -15,9 +15,9 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
-import pytest
 
 from apps.vps.services import sao_luu
+from tests.fixtures.vps_proxmox_gia import ProxmoxGia, nhip_gia
 
 NOW = datetime(2026, 8, 24, 19, 30, tzinfo=timezone.utc)
 
@@ -30,26 +30,34 @@ class _May:
         self.sao_luu_luc = luc
 
 
-class _Client:
+class _Client(ProxmoxGia):
+    """Proxmox giả **có trạng thái**, giữ nguyên chữ ký cũ của bộ test này.
+
+    ⚠️ Bản cũ của lớp này thêm ảnh vào danh sách **ngay trong `chup_anh`**, tức
+       nó mô hình hoá một Proxmox đồng bộ không tồn tại. Nhờ vậy mọi ca dưới đây
+       xanh cả với bản mã **không chờ tác vụ** — đúng lỗi V-03 mà chúng lẽ ra
+       phải bắt.
+
+       `ProxmoxGia` thì chỉ cho ảnh xuất hiện khi tác vụ nền kết thúc tốt, nên
+       cùng những `assert` ấy giờ thật sự đo được thứ chúng khai là đo.
+    """
+
     def __init__(self, anh=(), hong_xoa=False):
-        self.anh = [{"name": x} for x in anh]
+        super().__init__(buoc=2)
+        for x in anh:
+            self.them_anh(x)
         self.hong_xoa = hong_xoa
         self.thao_tac: list[tuple[str, str]] = []
 
-    def danh_sach_anh(self, vmid):
-        return list(self.anh)
-
     def chup_anh(self, vmid, ten, *, mo_ta=""):
         self.thao_tac.append(("chup", ten))
-        self.anh.append({"name": ten})
-        return "UPID:chup"
+        return super().chup_anh(vmid, ten, mo_ta=mo_ta)
 
     def xoa_anh(self, vmid, ten):
         if self.hong_xoa:
             raise RuntimeError("Proxmox tu choi xoa")
         self.thao_tac.append(("xoa", ten))
-        self.anh = [x for x in self.anh if x["name"] != ten]
-        return "UPID:xoa"
+        return super().xoa_anh(vmid, ten)
 
 
 # ── 1. Tên ảnh ──────────────────────────────────────────────────────────────
@@ -128,20 +136,20 @@ def test_TAO_TRUOC_roi_moi_XOA():
     """Xoá trước thì có một khoảng — dài bằng thời gian tạo — mà khách **không có
     bản nào**, và đó đúng là khoảng mà một sự cố sẽ tìm tới."""
     c = _Client(anh=["ltt20260817_1930"])
-    sao_luu.chup_va_don(c, _May(), now=NOW)
+    sao_luu.chup_va_don(c, _May(), now=NOW, nhip=nhip_gia())
     assert [x[0] for x in c.thao_tac] == ["chup", "xoa"]
 
 
 def test_giu_dung_MOT_ban():
     c = _Client(anh=["ltt20260803_1930", "ltt20260810_1930", "ltt20260817_1930"])
-    ten = sao_luu.chup_va_don(c, _May(), now=NOW)
+    ten = sao_luu.chup_va_don(c, _May(), now=NOW, nhip=nhip_gia())
     con = sorted(x["name"] for x in c.anh)
     assert con == [ten], f"phai chi con ban vua chup, dang con {con}"
 
 
 def test_KHONG_dung_toi_anh_nguoi_khac_tao():
     c = _Client(anh=["truoc-khi-nang-cap", "ltt20260817_1930"])
-    sao_luu.chup_va_don(c, _May(), now=NOW)
+    sao_luu.chup_va_don(c, _May(), now=NOW, nhip=nhip_gia())
     assert "truoc-khi-nang-cap" in [x["name"] for x in c.anh]
 
 
@@ -149,7 +157,7 @@ def test_xoa_ban_cu_that_bai_thi_VAN_giu_ban_moi():
     """Bản mới đã tạo xong, nên một lỗi dọn dẹp không có lý do gì làm hỏng cả
     lượt bảo trì. Bản cũ thừa chỉ tốn chỗ."""
     c = _Client(anh=["ltt20260817_1930"], hong_xoa=True)
-    ten = sao_luu.chup_va_don(c, _May(), now=NOW)
+    ten = sao_luu.chup_va_don(c, _May(), now=NOW, nhip=nhip_gia())
     assert ten in [x["name"] for x in c.anh]
 
 
@@ -232,11 +240,37 @@ def test_khoi_phuc_doi_go_dung_ten_may():
 
 
 def test_khoi_phuc_TAT_MAY_truoc():
-    """Proxmox từ chối `rollback` một máy đang chạy nếu ảnh không kèm RAM — và
-    ảnh của ta cố ý không kèm RAM."""
-    import inspect
+    """Proxmox từ chối `rollback` một máy đang chạy nếu ảnh không kèm RAM.
 
-    from apps.vps import routes
+    🔴 **Bản cũ của ca này là một phép kiểm THỨ TỰ NGUỒN**, đúng thứ mà
+       `CORE/OPERATING_CONTRACT.md` §M nêu tên làm ví dụ SAI:
 
-    nguon = inspect.getsource(routes.khoi_phuc_may)
-    assert nguon.index("tat_cung") < nguon.index("khoi_phuc_anh")
+           assert nguon.index("tat_cung") < nguon.index("khoi_phuc_anh")
+
+       Nó xanh cho **cả** bản đúng lẫn bản sai, vì cả hai đều viết `tat_cung`
+       trước `khoi_phuc_anh` trong mã nguồn. Khác biệt duy nhất — bản đúng **chờ
+       máy tắt xong** giữa hai lệnh — không để lại dấu vết nào trong văn bản.
+       Và bản sai (V-04) còn nuốt luôn lỗi của `tat_cung` bằng
+       `except ProxmoxError: pass`, mà phép kiểm ấy vẫn không thấy gì.
+
+    Bản mới hỏi câu đúng: **lúc `khoi_phuc_anh` được gọi, máy đang ở đâu?**
+    """
+    from apps.vps import trang_thai_may as tt
+
+    px = ProxmoxGia(dien="running", buoc=3)
+    px.them_anh("ltt20260817_1930")
+    may = _May()
+    tt.chuan_hoa(may)
+
+    class _Op:
+        id, buoc, upid, dien_truoc = "op", "", "", tt.CHAY
+
+    dien_luc_rollback = []
+    goc = px.khoi_phuc_anh
+    px.khoi_phuc_anh = lambda vmid, ten: (
+        dien_luc_rollback.append(px.dien), goc(vmid, ten))[1]
+
+    sao_luu.thi_hanh_khoi_phuc(None, may, px, _Op(), ten="ltt20260817_1930",
+                               nhip=nhip_gia(), now=NOW)
+    assert dien_luc_rollback == ["stopped"], (
+        f"rollback goi luc may dang {dien_luc_rollback}")

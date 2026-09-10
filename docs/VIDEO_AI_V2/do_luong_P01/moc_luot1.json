@@ -1,0 +1,26 @@
+[
+ {
+  "nhan": "init_profile4",
+  "bat_dau": 1788686557.8776808,
+  "ket_thuc": 1788686640.9345014,
+  "giay": 83.1
+ },
+ {
+  "nhan": "models.json",
+  "bat_dau": 1788686640.9530635,
+  "ket_thuc": 1788686641.21206,
+  "giay": 0.3
+ },
+ {
+  "nhan": "model_metadata.json",
+  "bat_dau": 1788686641.2345939,
+  "ket_thuc": 1788686641.4451447,
+  "giay": 0.2
+ },
+ {
+  "nhan": "R1_t2v_profile4_seed1001",
+  "bat_dau": 1788686641.5168483,
+  "ket_thuc": 1788688743.2109327,
+  "giay": 2101.7
+ }
+]

@@ -42,12 +42,17 @@ Cột **Nhà mới** chỉ bắt buộc với `MIGRATE_*`: một năng lực b�
 | `taovideo` | **EXPOSE_V1** *(30/08, was MIGRATE_CAPABILITY_THEN_EXPOSE)* | `upscalevideo` (đã có hợp đồng video ổn định) | ASYNC_JOB | ~~Tập giá trị hợp lệ của `resolution/duration/aspect_ratio` đổi theo model, publish hợp nhất sẽ để khách trả tiền cho tổ hợp provider từ chối.~~ Lý do đó **vẫn đúng nguyên** — thứ đổi là ta thôi phải publish hợp nhất. Mỗi model công bố `constraints` của riêng nó, và tổ hợp sai bị chặn **trước** `price()`. Xem dòng `video.generate` ở mục dưới. |
 | `autosubvideo` | EXPOSE_V1 | — | ASYNC_JOB | ~~Giá theo `duration_s` do client khai và worker nâng hold khi đo thật — phá lời hứa của một quote đã ký (Q84).~~ **MỞ 2026-08-29 (H35.10a+b).** Hai việc, không một: (a) máy chủ **đo** thời lượng từ chính tệp đã tải lên trước khi tính giá (`measured_from` trong manifest), nên `duration_s` vào `hidden` và khách không gửi nó được nữa; (b) giữ chỗ của job đến từ API bị **niêm phong** ở con số đã ký — worker đòi nâng thì nền tảng **hấp thụ** phần chênh, không thu thêm và cũng không giết job. Chỉ (a) là chưa đủ: worker chạy ffprobe riêng và `math.ceil` có thể lệch một credit. |
 | `taoclipngan` | MIGRATE_CAPABILITY_THEN_EXPOSE | `upscalevideo` (đã có trần GPU và huỷ-hoàn) | ASYNC_JOB | Cùng nguyên nhân nâng hold, cộng thêm GPU nên trần đồng thời phải chốt trước. |
-| `chataistudio` | DEFER | — | không có hợp đồng job | Không sinh Job: credit giữ theo id tin nhắn và chạy streaming qua sidecar, nên toàn bộ hợp đồng quote/settle không áp được. |
 | `agent` | DEFER | — | không có hợp đồng job | Là runtime điều phối chứ không phải một tool; mở nó là mở cả một cơ chế chạy. |
 | `qualitylab` | INTERNAL_ONLY | — | ASYNC_JOB nội bộ | `surface=admin`, chỉ dành cho người vận hành (Q83). |
 | `nexus` | DEFER | — | không có hợp đồng job | Không sinh Job và không có `ToolSpec`: đây là bề mặt **quản lý thiết bị** (ghép máy, thu hồi, nhật ký phiên) chứ không phải một tool tính tiền. Mở nó ra API nghĩa là công bố một hợp đồng về **danh tính thiết bị**, và điều đó phải chờ hạ tầng relay (D2) cùng legal review AGPL — xem `docs/nexus/`. Q93. |
 | `chatltt` | DEFER | — | có **một** hợp đồng job, không bán | Sản phẩm hội thoại trên ba model nhà (H43). ⚠️ **CẬP NHẬT 06/09 (H44 B1a).** Câu *"không khai `ToolSpec` nào"* ở đây đã **hết đúng**: `chatltt.trich_tep` được khai để `runtime_noi_bo.bao_gia()` tra được giá — thiếu nó thì **không hiện được giá trước khi khách bấm**, điều P06 §7 đã chốt. Nhưng lý do DEFER thì **không đổi**, và đó mới là phần quan trọng: nó là nó là **khách hàng nội bộ** của `text.chat` / `image.ltt` / `speech.ltt` qua `platform_core/runtime_noi_bo`, không phải một năng lực mới để bán. Mở nó ra `/api/v1` sẽ là bán lại đúng ba tool đã bán, qua một hợp đồng thứ hai — và hợp đồng thứ hai là chỗ hai bảng giá bắt đầu lệch nhau. App còn **TẮT** (`enabled=False`) tới khi H43 Phase 13 PASS. |
+| `lttvideo` | INTERNAL_ONLY | — | không khai `ToolSpec` nào | Video AI chạy bằng **WanGP** trên C-CLOUD (V2.1). Lý do đóng ở đây **không phải kế hoạch mà là GIẤY PHÉP**: `WanGP Community License 2.0` §5.2(g) cấm *"exposing the Software to customers or end users as a paid feature, add-on, or monetized backend component"* nếu không có giấy phép thương mại riêng — liên hệ cấp phép ghi ở §5.4 của chính giấy phép. ⇒ Mở tool ở đây là một quyết định **pháp lý**, chưa được đưa ra. Bằng chứng đầy đủ: `docs/VIDEO_AI_V2/P01_UPSTREAM_PIN.md` mục 2. |
 | `vps` | DEFER | — | không có hợp đồng job | Bán **máy chủ ảo** (H39). Không khai `ToolSpec` nào, và đó không phải thiếu sót: một máy ảo là một **hợp đồng thuê** có thời hạn, không phải một lượt chạy tính tiền một lần. Quote → giữ chỗ → quyết toán không mô tả được nó. ⚠️ Dòng này ghi lại **trạng thái thật** (không có ToolSpec), không phải một quyết định sản phẩm — chủ H39 muốn bán qua `/api/v1` thì phải nói được hợp đồng là gì trước. App vẫn **TẮT** (`LTT_VPS` chưa đặt). |
+
+| `auto_scan_video` | DEFER | — | chuỗi 11 giai đoạn, không phải một lượt gọi | **Lồng tiếng Việt cho video** (pha 00–14). Một lần chạy là **mười một giai đoạn**, mỗi giai đoạn một job riêng, bốn trong số đó chạy lại độc lập được. Ép vào `ToolSpec` một-vào-một-ra thì hoặc mất khả năng chạy lại một giai đoạn, hoặc bịa ra một hợp đồng mà chuỗi thật không có. ⛔ App còn `enabled=False` và `surface="runtime"` (chưa có `routes.py`) — chưa mở cho khách trên web, nên bàn mở qua API là bàn trước một bước. |
+| `asv_media` | DEFER | — | không phải app bán được | Vỏ thi hành làn `ffmpeg` của `auto_scan_video`. Khai `catalog_parent`, không `ToolSpec`, không thẻ catalog. Tồn tại vì quyền nhặt job lọc theo **APP** chứ không theo `job_type` (`platform_core/jobs.py:158-164`). |
+| `asv_gpu` | DEFER | — | không phải app bán được | Như trên, làn `gpu`. |
+| `asv_voice` | DEFER | — | không phải app bán được | Như trên, làn `voice`. |
 
 ## 2. 24/24 ToolSpec
 
@@ -78,13 +83,18 @@ Alias tồn tại để **đổi nhà cung cấp không thành breaking change**
 mọi surface khách đọc được: id thật của vendor lọt ra một chỗ là tích hợp bắt
 đầu ghim vào nó, và alias hết còn là lớp đệm.
 
+
+⛔ **`image.generate` thôi công bố bí danh model từ 09/09/2026.** Ba bí danh
+`standard` · `standard-lite` · `enhanced` trỏ tới ba model Gemini và tồn tại
+được nhờ đúng một điều kiện: **giá đi theo lựa chọn** (5 · 5 · 8 credit/ảnh).
+Tool nay chạy một model nội bộ duy nhất, giá theo số ảnh — nên lựa chọn không
+mua được gì, và công bố nó là bán ba tên cho một món. Xem `CHANGELOG.md`
+mục **BREAKING 2026-09-09**.
+
 | Alias | Tool | Đằng sau | Trạng thái | Lý do |
 |---|---|---|---|---|
-| `standard` | `image.generate` | `gemini-2.5-flash-image` | công khai | Điểm khởi đầu cân bằng giữa chất lượng và giá. |
 | `ltt_llm` | `text.chat` | `qwen38-api` | công khai | Model ngôn ngữ **chạy tại nhà** (máy B). Alias cố ý khác id nội bộ: ngày đổi GGUF bên dưới, mã của khách không phải sửa. |
 | `ltt_llm_vision` | `text.chat` | `qwen38-vision` | công khai | Cùng model, nạp thêm bộ chiếu ảnh (+1,1 GB VRAM đo thật). |
-| `standard-lite` | `image.generate` | `gemini-3.1-flash-lite-image` | công khai | Cùng giá với `standard`, đổi chi tiết lấy tốc độ. |
-| `enhanced` | `image.generate` | `gemini-3.1-flash-image` | công khai | Bám prompt và chi tiết tốt hơn `standard`, giá cao hơn. |
 | `seedance-2.0-mini` | `video.generate` | `dreamina-seedance-2-0-mini-260615` | công khai | Rẻ nhất. **480p/720p** — không có 1080p/4k. Alias đầu tiên của nền tảng công bố `constraints` riêng. |
 | `seedance-2.0` | `video.generate` | `dreamina-seedance-2-0-260128` | công khai | Bản đầy đủ: thêm **1080p và 4k**. Đây chính là lý do không publish được một tập hợp nhất — hợp nhất sẽ nói với khách rằng `mini` + `4k` hợp lệ. |
 | `seedance-2.0-fast` | `video.generate` | `dreamina-seedance-2-0-fast-260128` | công khai | Đổi chi tiết lấy tốc độ; cùng tập độ phân giải với `mini`. |
@@ -180,8 +190,14 @@ báo trong manifest, registry từ chối giá trị nền tảng chưa thi hàn
 Nghĩa là operation `SYNC`, `STREAM` hay `BATCH` đầu tiên **không thể lọt vào**:
 nó phải khai, và lời khai đó sẽ bị từ chối cho tới khi nền tảng thật sự làm được
 — chứ không phải chạy được rồi mới phát hiện hợp đồng job không mô tả nổi nó.
-Đây đúng là chỗ `chataistudio` mắc: nó streaming, giữ credit theo id tin nhắn,
-và **không** sinh Job — nên nó DEFER chứ không phải "chưa kịp làm".
+Đây đúng là chỗ `chataistudio` đã mắc: nó streaming, giữ credit theo id tin
+nhắn, và **không** sinh Job — nên nó DEFER chứ không phải "chưa kịp làm".
+
+⚠️ **App ấy đã bị xoá cứng ngày 09/09/2026** (chiến dịch AI CLEAN REBUILD V2,
+pha 07): bản chất nó là một chat gọi ra pool Codex bên ngoài, nên nó đi theo
+cả họ nhà cung cấp bị gỡ. **Bài học thì ở lại**, và nó không phụ thuộc vào app:
+hợp đồng job hiện tại **không mô tả nổi** một đường streaming. Người kế tiếp
+muốn bán streaming vẫn phải viết hợp đồng chạy mới — xem `runtime_noi_bo`.
 
 ## 6. Không có gì lọt ra ngoài ý muốn
 
@@ -216,7 +232,7 @@ thể, nó kiểm:
 |---|---|---|
 | Đo thời lượng phía server lúc báo giá | 3 tool video (`video.subtitle`, `video.short_clips`, `video.upscale`) | Một chỗ: đọc metadata từ file đã upload rồi khoá giá. Sửa một chỗ mở được cả ba. |
 | Hợp đồng tuỳ chọn theo model | `video.generate` | Cho `models` khai luôn tập giá trị hợp lệ riêng, thay vì publish hợp nhất. |
-| Hợp đồng streaming | `chataistudio` | Cần một hợp đồng chạy mới, không phải một tool mới. |
+| Hợp đồng streaming | *(không còn app nào)* | `chataistudio` đã xoá 09/09; rào vẫn đứng đó cho đường streaming tiếp theo. |
 | Ranh giới chi phí cho runtime điều phối | `agent` | Cần sandbox và trần chi phí riêng trước khi bàn tới hợp đồng. |
 
 Ba dòng đầu **cùng một hình dạng**: hợp đồng job hiện tại giả định giá chốt được

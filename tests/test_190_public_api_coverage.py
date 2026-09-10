@@ -90,9 +90,6 @@ DISPOSITION = {
     "autosubvideo": (EXPOSE_V1, ("video.subtitle",)),
     "taoclipngan": (MIGRATE, ()),
 
-    # No Job at all: credit is held against a message id, streamed through a
-    # sidecar. Nothing about the job contract applies to it yet.
-    "chataistudio": (DEFER, ()),
     # An orchestrator, not a tool: publishing it publishes a runtime.
     "agent": (DEFER, ()),
     # Device management, not a priced tool: no ToolSpec and no Job. Publishing
@@ -107,7 +104,41 @@ DISPOSITION = {
     # to drift apart. H43, docs/CHATLTT/.
     "chatltt": (DEFER, ()),
 
+    # Video AI chay bang WanGP tren C-CLOUD (V2.1). INTERNAL_ONLY, va lan nay
+    # ly do KHONG phai ke hoach ma la GIAY PHEP: `WanGP Community License 2.0`
+    # §5.2(g) cam "exposing the Software to customers or end users as a paid
+    # feature, add-on, or monetized backend component" neu khong co giay phep
+    # thuong mai rieng. Xem `docs/VIDEO_AI_V2/P01_UPSTREAM_PIN.md` muc 2.
+    # ⇒ Mo tool o day khong phai mot quyet dinh san pham, no la mot quyet dinh
+    #   PHAP LY, va no chua duoc dua ra.
+    "lttvideo": (INTERNAL_ONLY, ()),
+
     "qualitylab": (INTERNAL_ONLY, ()),
+
+    # ── Auto Scan Video (pha 00-14) ──────────────────────────────────────────
+    #
+    # DEFER, và lý do là **hình dạng của sản phẩm**, không phải "chưa làm xong".
+    # Một lần lồng tiếng không phải một lần gọi tool: nó là chín giai đoạn, mỗi
+    # giai đoạn một job riêng, và bốn trong số đó có thể chạy lại độc lập. Ép nó
+    # vào `ToolSpec` một-vào-một-ra sẽ hoặc là mất khả năng chạy lại một giai
+    # đoạn, hoặc là bịa ra một hợp đồng mà chuỗi thật không có.
+    #
+    # ⛔ Và app còn `enabled=False` — nó chưa mở cho cả khách trên web, nên bàn
+    #    chuyện mở qua API là bàn trước một bước.
+    "auto_scan_video": (DEFER, ()),
+
+    # Ba vỏ thi hành của CÙNG sản phẩm trên, không phải app bán được. Chúng khai
+    # `surface="runtime"` + `catalog_parent="auto_scan_video"`: không thẻ
+    # catalog, không mục nav, không ToolSpec. Chúng tồn tại vì quyền nhặt job
+    # lọc theo APP chứ không theo `job_type` (`platform_core/jobs.py:158-164`),
+    # nên mỗi làn worker phải là một thư mục riêng.
+    #
+    # ⚠️ Nếu một lượt sau thấy ba dòng này và định "dọn cho gọn": đừng gộp chúng
+    #    vào một dòng. Sổ này chốt theo TỪNG slug trong registry, và gộp lại sẽ
+    #    làm phép kiểm đỏ theo một cách chẳng nói lên điều gì.
+    "asv_media": (DEFER, ()),
+    "asv_gpu": (DEFER, ()),
+    "asv_voice": (DEFER, ()),
 }
 
 
@@ -186,14 +217,15 @@ def test_the_removed_apps_stay_removed():
         assert da_go not in DISPOSITION, da_go
 
 
-def test_the_chat_app_still_has_no_job_contract():
-    """The reason chat is deferred, checked against the code rather than memory."""
-    manifest = _apps()["chataistudio"].manifest
-    assert manifest.job_types == ()
-    assert manifest.credit_cost is None
-    source = Path("apps/chataistudio/routes.py").read_text(encoding="utf-8")
-    # Credit is held against a message id, not a job — that is the gap.
-    assert "credit.giu_cho" in source
+# ⏭️ `test_the_chat_app_still_has_no_job_contract` ĐÃ GỠ ở pha 07 cùng app.
+#
+#    `chataistudio` bị gỡ hẳn 09/09/2026: sau khi Codex biến mất nó chỉ còn
+#    là bản sao thứ hai của `chatltt` (đo: 3 hội thoại · 8 tin · im từ
+#    25/08). Xem `docs/AI_CLEAN_REBUILD/MIGRATION_MAP.md` §7.
+#
+# ⭐ Bảng `DISPOSITION` ngay trên là chỗ phép kiểm này thật sự sống: một app
+#    biến mất mà quên xoá dòng của nó ở đó thì `test_every_app_is_classified`
+#    đỏ. Nên bất biến *"mọi app đều có một phán quyết"* không mất người canh.
 
 
 def test_the_agent_app_is_an_orchestrator_not_a_tool():

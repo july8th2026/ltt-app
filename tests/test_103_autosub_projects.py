@@ -607,7 +607,7 @@ def test_auxiliary_routes_quota_owner_cancel_and_soft_disable(studio_api, monkey
     cancelled = a.post(f"/autosubvideo/api/jobs/{job_id}/cancel",
                        headers={"X-CSRF-Token": token_a}, json={})
     assert cancelled.status_code == 200 and cancelled.json()["status"] == "cancelled"
-    monkeypatch.setattr("apps.autosubvideo.ai_workflows.gemini_available", lambda _db: True)
+    monkeypatch.setattr("apps.autosubvideo.ai_workflows.dich_kha_dung", lambda _db: True)
     translated = a.post(f"/autosubvideo/api/projects/{made['id']}/translate", headers={
         "X-CSRF-Token": token_a, "If-Match": '"1"'},
         json={"track_id": "source", "target_language": "en"})

@@ -65,12 +65,19 @@ def _dem_crlf(b: bytes) -> tuple:
     return crlf, b.count(b"\n") - crlf
 
 
+def _dang_hoa() -> bool:
+    """Cay co dang o giua mot luot `git merge` khong."""
+    r = _git("rev-parse", "--verify", "--quiet", "MERGE_HEAD")
+    return r.returncode == 0 and bool(r.stdout.strip())
+
+
 def main() -> int:
     r = _git("status", "--porcelain")
     if r.returncode != 0:
         print("khong chay duoc git status - bo qua (khong phai loi)")
         return 0
 
+    hoa = _dang_hoa()
     lech = []
     for dong in r.stdout.decode("utf-8", "replace").splitlines():
         if len(dong) < 4:
@@ -95,6 +102,23 @@ def main() -> int:
         # Kieu doi khi mot tep thuan LF thanh thuan CRLF hoac nguoc lai.
         thuan_cu = "CRLF" if crlf_cu and not lf_cu else ("LF" if lf_cu and not crlf_cu else "tron")
         thuan_moi = "CRLF" if crlf_moi and not lf_moi else ("LF" if lf_moi and not crlf_moi else "tron")
+        if thuan_cu != thuan_moi and hoa:
+            # \U0001F534 **Giua mot luot HOA, `HEAD` la cha THU NHAT.**
+            #
+            #    Nhanh kia mang kieu xuong dong cua no vao, va do la dieu DUNG:
+            #    ban hoa phai giong ban ta hoa vao. Neu chot chi biet `HEAD` thi
+            #    khong luot hoa nao giua hai nhanh khac kieu commit duoc — va
+            #    "sua" theo loi khuyen cua chot se lam cay LECH voi nhanh kia.
+            #
+            # \u2b50 No van bat dung cai no sinh ra de bat: mot tep bi `write_text`
+            #    lat kieu se khong khop cha NAO, nen van bi bao.
+            kia = _git("show", f"MERGE_HEAD:{ten}")
+            if kia.returncode == 0:
+                crlf_kia, lf_kia = _dem_crlf(kia.stdout)
+                thuan_kia = ("CRLF" if crlf_kia and not lf_kia
+                             else ("LF" if lf_kia and not crlf_kia else "tron"))
+                if thuan_moi == thuan_kia:
+                    continue
         if thuan_cu != thuan_moi:
             that = _git("diff", "--ignore-cr-at-eol", "--numstat", "--", ten)
             # ⭐ `--numstat` RONG chinh la ca dang noi nhat: bo qua CR thi

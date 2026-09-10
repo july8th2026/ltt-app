@@ -65,11 +65,9 @@ def portal(tmp_path, monkeypatch):
 
     import apps.thumbnail.jobs as thumbnail_jobs
 
-    def _stub(*args, **kwargs):
-        PROVIDER_CALLS.append(1)
-        return b"\x89PNG\r\n\x1a\n" + b"0" * 100
-
-    monkeypatch.setattr(thumbnail_jobs, "_goi_gemini", _stub)
+    from tests.gia_dieu_phoi_anh import tiem as _tiem_dieu_phoi
+    _tiem_dieu_phoi(monkeypatch, thumbnail_jobs,
+                    khi_goi=lambda: PROVIDER_CALLS.append(1))
 
     from server.app import create_app
 
@@ -284,8 +282,15 @@ def test_a_hard_budget_does_not_refuse_a_call_that_spends_nothing(portal):
 
     live_token = _issue(portal, "live")
     test_token = _issue(portal, "test")
-    # Three images cost more than the cap allows in the whole period.
-    over = {"topic": "sandbox", "count": 3}
+    # ⭐ Số ảnh phải VƯỢT trần — tính từ hàm giá, không gõ cứng. Bản trước
+    #    ghi `count: 3` với chú thích "three images cost more than the cap":
+    #    đúng khi một ảnh 5 credit, sai ngay khi giá xuống 3.
+    from apps.thumbnail.manifest import _cost as _gia_thumbnail
+    so = next((n for n in range(1, 5)
+               if _gia_thumbnail({"count": n}) > budgets.MIN_AMOUNT), 4)
+    assert _gia_thumbnail({"count": so}) > budgets.MIN_AMOUNT, (
+        "tran ngan sach toi thieu nay khong con vuot duoc bang mot luot goi")
+    over = {"topic": "sandbox", "count": so}
 
     # The live call is refused by the cap — that is EXT-11 still working…
     quote = portal.post(f"{API_V1_PREFIX}/quotes",

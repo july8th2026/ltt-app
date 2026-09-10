@@ -10,4 +10,4 @@
 #    khi pham vi khac.
 # PHAM VI: routes=/,/bang-gia,/dang-ky,/login khung=d1280,p390
 
-color-contrast = 32
+color-contrast = 30

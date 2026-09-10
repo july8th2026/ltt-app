@@ -155,13 +155,18 @@ MANIFEST = AppManifest(
     #    `apps/anhnoibo/manifest.py` mô tả chính xác kịch bản trên. App này thì
     #    không, nên nó rơi vào.
     #
-    #    Chọn `chataistudio` làm cha: đó là sản phẩm văn bản/hội thoại mà khách
+    #    Chọn `chatltt` làm cha: đó là sản phẩm văn bản/hội thoại mà khách
     #    thấy được. Model nhà là **một executor nữa** dưới sản phẩm đó — đúng
     #    nghĩa mà hợp đồng đặt ra cho `catalog_parent`.
     #
+    # 🔴 Cha CŨ là `chataistudio`, đã **gỡ hẳn** ở pha 07 (AI CLEAN REBUILD V2)
+    #    vì nó là bản sao thứ hai của `chatltt` sau khi mất Codex. Một
+    #    `catalog_parent` trỏ tới app không tồn tại làm mục này **rơi khỏi**
+    #    catalog — mất chứ không báo lỗi.
+    #
     # ⛔ KHÔNG đổi `surface` để chữa: Public API chỉ nhận `"customer"`
     #    (`PUBLIC_SURFACES`), nên đổi surface là đóng luôn đường bán API.
-    catalog_parent="chataistudio",
+    catalog_parent="chatltt",
     job_types=("ltt_llm.chat",),
     requires=("api",),          # KHÔNG cần GPU của máy A: việc nặng ở máy B
     credit_cost=_cost,

@@ -36,8 +36,36 @@
 #     setuptools  78.1.0 -> 78.1.1, 4 advisory. KHONG khai o requirements nao
 #                 (phu thuoc build cua venv), nen khong sua duoc tu kho. Va
 #                 vat, re nhat, nhung phai lam luc deploy.
-#     sqladmin    0.20.1 -> 0.25.1 vuot tran `<0.21`. Nam minor tren giao dien
-#                 ADMIN. Chua danh gia; khong gop chung voi dot nay.
+#
+# SQLADMIN -- danh gia 10/09/2026, va DIEU KIEN de no het hieu luc
+#
+#   Ghim hien tai `sqladmin>=0.20.1,<0.21` (requirements-server.txt:31) mang BA
+#   advisory. Ca ba deu duoc NHAN, khong phai vi "khong quan trong" ma vi cach
+#   ta GAN sqladmin lam chung vo hai:
+#
+#     ajax_lookup (0.25.1)  vuot `is_accessible()`, KHONG vuot dang nhap.
+#     sortBy      (0.27.1)  vuot `column_sortable_list`, doi dang nhap admin.
+#
+#   Do duoc, khong suy:
+#     - `server/admin.py:87 AdminAuth.authenticate()` -> `_is_admin(request)`,
+#       khong phai thi 303 ve `/login`. Panel KHONG mo cho nguoi la.
+#     - `grep is_accessible server/admin.py server/admin_api.py` -> KHONG dong
+#       nao. Chi co `can_create/can_edit/can_delete`, la thu khac.
+#     - `column_sortable_list` xuat hien 4 lan -> 4 ModelView co allowlist.
+#
+#   HAI DIEU KIEN LAM DANH GIA NAY HET HIEU LUC -- kiem lai neu gap:
+#
+#     1. Ai do override `is_accessible()` de han che model theo nguoi dung.
+#        Luc do `ajax_lookup` co mot han che THAT de vuot, va PYSEC-2026-3073
+#        tro thanh lo hong that chu khong con la mot dong trong tep nay.
+#     2. Ai do mo panel admin cho vai tro thap hon admin, hoac bo `AdminAuth`.
+#
+#   BAN VA DUNG la nang ghim len `>=0.27.1`. Do la BAY minor tren mot thu
+#   vien 0.x dung o 5+ tep admin -- doi API gan nhu chac chan, va khong kiem
+#   duoc bang gate (man admin can trinh duyet + dang nhap). Nen no la mot
+#   lot cong viec RIENG co nghiem thu rieng, khong phai mot dong sua kem
+#   truoc mot lan deploy. Chu du an quyet khi nao lam.
 
 PYSEC-2026-2132 | click | ban va 8.3.3. KHONG duoc ghim o requirements nao (phu thuoc gian tiep cua celery/uvicorn), nen ban cai moi tu lay ban thoa man; 8.2.1 chi la ban dang co. Va no la CLI noi bo, khong nam tren duong request cua khach.
-PYSEC-2026-3073 | sqladmin | ban va 0.25.1 vuot tran `<0.21` -- nam minor tren giao dien admin. Man admin chi Admin dang nhap moi vao. QUYET DINH RIENG, chua danh gia.
+PYSEC-2026-3073 | sqladmin | ban va 0.25.1 vuot tran `<0.21`, nam minor tren giao dien admin. DA DANH GIA 10/09 (khoi SQLADMIN o cuoi tep): `ajax_lookup` vuot `is_accessible()`, KHONG vuot dang nhap (`PR:L`) -- ma `server/admin.py` KHONG override `is_accessible()` o dau ca, nen khong co han che nao de vuot. Ly do cu ("man admin chi Admin vao duoc") dung nhung tra loi SAI cau hoi.
+CVE-2026-54529 | sqladmin | `sortBy` khong doi chieu `column_sortable_list` (`ModelView.sort_query`); ban va 0.27.1, tuc BAY minor tren tran `<0.21`. Da danh gia 10/09: doi dang nhap admin that (`AdminAuth.authenticate` -> `_is_admin`, khong phai la dang nhap mac dinh cua sqladmin), va mot admin von doc duoc moi cot qua chinh man hinh do, nen sap xep ngoai allowlist khong lo them gi. CVSS ghi `PR:N` la diem CHUNG cua thu vien (gia dinh panel mo cho moi nguoi) -- KHONG ap cho cach ta gan.

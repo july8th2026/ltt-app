@@ -68,8 +68,8 @@ KHU = "platform_core"
 
 #: Nơi lời gọi ĐƯỢC TÍNH. `tests/` cố ý KHÔNG có ở đây: đó chính là cái bẫy —
 #: `costing.scan_for_alerts` CÓ test, và test đó là thứ duy nhất gọi nó.
-NGUOI_GOI = ("platform_core", "server", "apps", "job_worker.py",
-             "codex_sidecar_main.py")
+#: (`codex_sidecar_main.py` gỡ 09/09/2026 — AI CLEAN REBUILD V2 pha 07.)
+NGUOI_GOI = ("platform_core", "server", "apps", "job_worker.py")
 
 
 def _tep(khu: str):

@@ -426,3 +426,112 @@ def test_nen_chay_tiep_dung_theo_tung_giai_doan(web, may, bat_co):
         assert luot_v3.nen_chay_tiep(db, user_id="u-la", run_id=rid) is False
     finally:
         _dong(gen)
+# ── 5. ĐUA: hai nguồn cùng chạy tiếp MỘT run ───────────────────────────────
+
+def test_chay_tiep_bi_chan_khi_da_co_nguoi_chay(web, may, bat_co,
+                                               monkeypatch):
+    """🔴 Hạng mục P10 *"đua credit"* + *"POST/duyệt trùng"*.
+
+    ## Có THẬT hai nguồn gọi, không phải một
+
+    ```
+    routes/_p_duyet.py:113   nguoi bam Duyet
+    services/tao_media.py    _danh_thuc_run() khi job xong (dong_bo goi)
+    ```
+
+    Cả hai đều theo cùng một khuôn: hỏi `nen_chay_tiep()` rồi mới
+    `chay_tiep_nen()`. Đó là **đọc-rồi-ghi**, và khe giữa hai câu ấy đủ rộng cho
+    người thứ hai lọt vào.
+
+    ⭐ Chính `duyet._quyet` đã ghi lại bài học này ở ngay trong mã của nó:
+      *"Điều kiện nằm TRONG `WHERE`. Đọc-rồi-ghi có một khe giữa hai câu lệnh,
+      và hai yêu cầu song song lọt vừa vào khe ấy."* Cổng duyệt học được;
+      đường chạy tiếp thì chưa.
+
+    ## Mệnh đề: tới lúc BẮT ĐẦU LÀM VIỆC, run phải đã bị giữ chỗ
+
+    Không phát biểu bằng luồng — luồng làm phép kiểm chập chờn, và một phép kiểm
+    chập chờn về đồng thời là thứ người ta tắt đi. Phát biểu bằng **thời điểm**:
+    chặn ngay trước `dung_lai` (việc thật đầu tiên) rồi hỏi từ một **phiên CSDL
+    khác** xem người thứ hai còn vào được không.
+
+    ⛔ Còn vào được ⇒ hai lượt model cho một lần duyệt ⇒ **thu tiền hai lần**,
+       và cây hội thoại có hai nhánh trả lời cho cùng một câu hỏi.
+    """
+    from apps.chatltt.services import duyet as D
+    from apps.chatltt.services import luot_v3
+    from apps.chatltt.services import luu_run as LR
+
+    uid, c, h, _cv = _dung_cho_duyet(web, may)
+    rid, _ = _run_dang_cho(uid)
+    ap = c.get("/chatltt/api/duyet/dang-cho", headers=h).json()["items"][0]
+    may.dat(_chu("Ket qua la 36317933."))
+
+    thay = {}
+    that = LR.dung_lai
+
+    def do(*a, **k):
+        # ⛔ Chỉ chen MỘT lần. `dung_lai` đang bị thay bằng chính hàm này, nên
+        #    người thứ hai mà chạy được tới đây sẽ đệ quy vô hạn — và lúc ấy
+        #    phép kiểm chết vì `RecursionError` chứ không vì mệnh đề nó chốt.
+        if thay:
+            return that(*a, **k)
+        thay["da_chen"] = True
+
+        # ⭐ Phiên CSDL RIÊNG — người thứ hai là một request khác, không dùng
+        #    chung `Session` với người thứ nhất. Hỏi chung một phiên là hỏi
+        #    trạng thái chưa commit, tức hỏi sai câu.
+        gen2, db2 = _phien_db()
+        try:
+            luot_v3.tiep_sau_duyet(db2, run_id=rid, user_id=uid, so=SoGia())
+            thay["hai_lam_duoc"] = True
+        except luot_v3.KhongChayTiepDuoc:
+            thay["hai_lam_duoc"] = False
+        finally:
+            _dong(gen2)
+        return that(*a, **k)
+
+    monkeypatch.setattr(LR, "dung_lai", do)
+
+    gen, db = _phien_db()
+    try:
+        D.duyet(db, user_id=uid, approval_id=ap["approval_id"])
+        db.commit()
+        luot_v3.tiep_sau_duyet(db, run_id=rid, user_id=uid, so=SoGia())
+    finally:
+        _dong(gen)
+
+    # 🔴 ĐỐI CHỨNG. Không có dòng này thì một `do()` không bao giờ chạy cũng
+    #    làm phép kiểm xanh — Bẫy 31 hình thái 1, tập rỗng đọc thành "đạt".
+    assert thay.get("da_chen") is True, (
+        "khong chen duoc vao truoc `dung_lai` — phep kiem nay chua do gi ca")
+    assert thay["hai_lam_duoc"] is False, (
+        "nguoi thu hai van CHAY TIEP duoc mot run dang chay tiep => hai luot "
+        "model cho mot lan duyet, va tien di hai lan")
+
+
+def test_nha_cho_xong_thi_nguoi_sau_van_vao_duoc(web, may, bat_co):
+    """⚠️ Đối chứng ngược: lease phải được NHẢ, không giữ mãi.
+
+    Một bản vá chặn được người thứ hai bằng cách chặn **luôn mọi người** thì
+    cũng làm phép kiểm trên xanh. Phép kiểm này là thứ phân biệt *"giữ chỗ"*
+    với *"khoá chết"*.
+    """
+    from apps.chatltt.services import luot_v3
+    from platform_core import leases
+
+    uid, c, h, _cv = _dung_cho_duyet(web, may)
+    rid, _ = _run_dang_cho(uid)
+    ap = c.get("/chatltt/api/duyet/dang-cho", headers=h).json()["items"][0]
+    may.dat(_chu("Ket qua la 36317933."))
+
+    gen, db = _phien_db()
+    try:
+        from apps.chatltt.services import duyet as D
+        D.duyet(db, user_id=uid, approval_id=ap["approval_id"])
+        db.commit()
+        luot_v3.tiep_sau_duyet(db, run_id=rid, user_id=uid, so=SoGia())
+        assert leases.current_holder(
+            db, name=luot_v3.ten_lease(rid)) == "", "lease chua duoc nha"
+    finally:
+        _dong(gen)

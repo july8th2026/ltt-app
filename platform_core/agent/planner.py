@@ -13,11 +13,31 @@ from platform_core.models import APIKEY_CAT_CHAT
 
 log = logging.getLogger(__name__)
 
-PLANNER_MODEL = "gemini-2.5-flash"
-
-#: Thu tu thu provider cho viec lap ke hoach. MODEL NHA DI TRUOC: re hon nhieu,
-#: va prompt khong roi may. May B ban thi `dieu_phoi` tu di tiep sang Gemini.
-PLANNER_PROVIDERS = ("ltt_llm", "gemini")
+#: Thu tu thu provider cho viec lap ke hoach. MOT phan tu, khong duong lui.
+#:
+#: 🔴 GO `"gemini"` NGAY 08/09/2026 — AI CLEAN REBUILD V2 pha 05.3.
+#:
+#:    Ban cu la `("ltt_llm", "gemini")` kem `PLANNER_MODEL = "gemini-2.5-flash"`
+#:    va chu thich *"May B ban thi `dieu_phoi` tu di tiep sang Gemini"*. Do la
+#:    mot **duong lui duoc thiet ke**, va no kich hoat dung luc khong ai nhin:
+#:    chi khi may B ban. Hoa don xuat hien sau, khong gan voi luot nao.
+#:
+#: ⭐ DO TRUOC KHI GO, chu khong go roi hy vong. Log worker production, cua so
+#:    28 ngay (11/08 -> 08/09), 41.622 dong:
+#:
+#:        ltt_llm.chat                      3.435 job
+#:        hong vi "may B ban"                  38 job   (~1,1%)
+#:        thong diep loi nguyen van:
+#:            "khong provider nao phuc vu duoc: ltt_llm: ban"
+#:                                              ^^^ danh sach CHI co ltt_llm
+#:
+#:    Gemini **khong he nam trong cascade** cua nhung luot hong ay ⇒ no khong
+#:    dang do 1,1% kia ⇒ go no **khong tao ra mot che do hong moi**. No chi xoa
+#:    mot duong lui dang khong duoc dung.
+#:
+#: ⛔ Dung them provider ngoai vao day. May B khong du nang luc thi cau tra loi
+#:    la **nang nang luc may B**, khong phai lang le tra tien cho ben khac.
+from platform_core.llm.canonical import THU_TU_PROVIDER as PLANNER_PROVIDERS
 
 MAX_GOAL_CHARS = 8000
 
@@ -56,25 +76,10 @@ def _model_nha() -> str:
     return ""
 
 
-def _tai_nguyen_nha() -> tuple:
-    """`(resource, slots)` cua model nha, lay tu ban khai cua app."""
-    try:
-        from platform_core.registry import discover
-        for it in discover():
-            if it.manifest.slug != "ltt_llm":
-                continue
-            for t in it.manifest.tools:
-                r = getattr(t, "admission_resource", "")
-                if r:
-                    return r, int(getattr(t, "admission_slots", 1) or 1)
-    except Exception:                                          # noqa: BLE001
-        # ⛔ NOI RA. Roi ve mac dinh thi van chay duoc, nhung neu ban khai da doi
-        #    ma cho nay khong doc duoc thi planner se gianh SAI tai nguyen — va
-        #    mot suat gianh sai khong bao ve gi ca. Nuot im lang o day nghia la
-        #    lop bao ve bien mat ma khong ai biet.
-        log.warning("khong doc duoc ban khai ltt_llm; dung mac dinh %s",
-                    _TAI_NGUYEN_MAC_DINH, exc_info=True)
-    return _TAI_NGUYEN_MAC_DINH
+#: ⛔ BÍ DANH, không phải định nghĩa. Chuyển lên `platform_core/llm/canonical.py`
+#:    ở pha 05.4 vì **bốn app** sắp di trú sang máy B cũng cần đúng hàm này —
+#:    mỗi nơi tự chép sẽ thành bốn bản sao của cùng một quyết định.
+from platform_core.llm.canonical import tai_nguyen_nha as _tai_nguyen_nha
 
 
 class PlannerError(RuntimeError):
@@ -110,10 +115,23 @@ def _goi_model(db: DbSession, prompt: str) -> str:
        `dieu_phoi` gom việc dịch giao thức về một chỗ, nên nay đổi nhà cung cấp là
        đổi **một danh sách**, không phải sửa ba tệp.
 
-    ⭐ MODEL NHÀ ĐI TRƯỚC. Nó rẻ hơn nhiều, và prompt lập kế hoạch **không rời máy**.
-       Máy B bận thì `dieu_phoi` tự đi tiếp sang Gemini — và đó **không** phải
-       "đổi model sau lưng khách" (D-010): việc lập kế hoạch là việc nội bộ, khách
-       không mua "một kế hoạch do model X sinh ra", và thứ tự được **khai ra ở đây**.
+    ⭐ CHỈ MODEL NHÀ. Nó rẻ hơn nhiều, và prompt lập kế hoạch **không rời máy**.
+
+    🔴 CẬP NHẬT 08/09/2026 — pha 05.3 GỠ đường lui sang Gemini.
+
+       Đoạn này trước đây viết: *"Máy B bận thì `dieu_phoi` tự đi tiếp sang
+       Gemini — và đó không phải 'đổi model sau lưng khách' (D-010)."* Lập luận
+       D-010 ấy **vẫn đúng** (lập kế hoạch là việc nội bộ, khách không mua "một
+       kế hoạch do model X sinh ra"), nhưng nó chỉ trả lời câu *"có được phép
+       không"*, không trả lời câu *"có nên không"*.
+
+       Câu thứ hai được trả lời bằng **phép đo**: trong 28 ngày, thông điệp lỗi
+       thật ghi `khong provider nao phuc vu duoc: ltt_llm: ban` — danh sách
+       **chỉ có `ltt_llm`**, tức đường lui ấy **không hề được dùng**. Nó là một
+       nhánh mã chỉ chạy khi không ai nhìn, và hoá đơn xuất hiện sau.
+
+    ⛔ Máy B bận thì **hỏng có tên** (xem đường suy biến ở thân hàm), không có
+       provider ngoài nào phục vụ thay.
 
     🔴 VÀ PHẢI GIÀNH SUẤT ADMISSION TRƯỚC KHI CHẠM MÁY B (P08 F-06).
 
@@ -135,7 +153,7 @@ def _goi_model(db: DbSession, prompt: str) -> str:
     from platform_core.llm import admission, dieu_phoi
 
     thu_tu = list(PLANNER_PROVIDERS)
-    ban_do = {"gemini": PLANNER_MODEL}
+    ban_do: dict[str, str] = {}
     id_nha = _model_nha()
     ve = None
     tai_nguyen, suat = _tai_nguyen_nha()
@@ -146,8 +164,22 @@ def _goi_model(db: DbSession, prompt: str) -> str:
             mode="job", holder_id="planner:" + _uuid.uuid4().hex[:12])
         if ve is not None:
             ban_do["ltt_llm"] = id_nha
+
+    # 🔴 DUONG SUY BIEN — PHAI NOI RA, KHONG DUOC TRONG NHU MOT LOI NGAU NHIEN.
+    #
+    #    Truoc pha 05.3, khong giành duoc suat thi `ltt_llm` bi loai khoi thu tu
+    #    va Gemini phuc vu thay — **im lang**. Nay khong con provider sau, nen
+    #    tinh huong ay la mot **that bai co ten**, khong phai mot danh sach rong
+    #    truyen xuong `dieu_phoi` roi ne ra `KhongCoProviderNao` mo ho.
+    #
+    # ⭐ `AGENTS.md` §4c cau 2: *co y* phai phan biet duoc voi *tai nan*. Hai
+    #    trang thai ay nhin tu ngoai giong het nhau neu ta khong viet ra.
     if "ltt_llm" not in ban_do:
-        thu_tu = [p for p in thu_tu if p != "ltt_llm"]
+        raise PlannerError(
+            "Planner: model nha khong san sang "
+            + ("(khong gianh duoc suat admission)" if id_nha else
+               "(registry khong khai model text nao cho `ltt_llm`)")
+            + ". Viec lap ke hoach KHONG co duong lui sang provider ngoai.")
 
     try:
         kq = dieu_phoi.goi(
@@ -163,8 +195,14 @@ def _goi_model(db: DbSession, prompt: str) -> str:
         #    `dieu_phoi` đã lo việc đánh dấu lỗi cho đúng trường hợp rồi.
         raise PlannerError(f"Planner: {exc}") from None
     finally:
-        # Nhả suất dù đi đường nào — kể cả khi `dieu_phoi` đã rơi sang Gemini và
-        # máy B không hề được chạm tới. Giữ một suất không dùng đúng bằng chiếm nó.
+        # Nhả suất dù đi đường nào — kể cả khi `dieu_phoi` ném trước lúc chạm
+        # máy B (hết khoá, vượt ngân sách, provider báo bận). Giữ một suất không
+        # dùng đúng bằng chiếm nó.
+        #
+        # ⚠️ Câu này trước 08/09 viết "kể cả khi `dieu_phoi` đã rơi sang Gemini".
+        #    Đường đó đã bị gỡ ở pha 05.3; nhánh `finally` thì **không đổi** vì
+        #    lý do thật của nó chưa bao giờ là Gemini — nó là *"có thể nhả một
+        #    suất chưa từng được dùng"*, và điều đó vẫn đúng.
         if ve is not None:
             admission.release_by_id(ve.id)
 

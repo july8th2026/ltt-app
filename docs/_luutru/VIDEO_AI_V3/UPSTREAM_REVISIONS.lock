@@ -1,0 +1,77 @@
+# UPSTREAM_REVISIONS.lock — P02, chot 2026-09-04 · GHIM DAY DU 2026-09-04 toi
+#
+# Moi dong la MOT thu phai ghim. Khong ghim = lan chay sau khong tai hien duoc,
+# va mot ban cap nhat cua nguoi khac tro thanh mot thay doi ta khong biet.
+#
+# ⛔ CHUA XAC MINH LUC CHAY. Day la ban khai doc tu API cua GitHub va
+#    HuggingFace. P05 phai doi chieu lai khi tai that, va ghi sha256 tung tep
+#    vao MODEL_BOM_ACTUAL.csv.
+#
+# Dinh dang:  <loai> <ten> <revision> <giay_phep> <ghi_chu>
+
+# ── Trong so model ────────────────────────────────────────────────────────────
+model  Comfy-Org/Wan_2.2_ComfyUI_Repackaged  c4f60d30c55a624e35427060fdd217579a6c1d77  apache-2.0  "lastModified 2026-08-17; 4,9 trieu luot tai - duong pho bien nhat"
+model  Wan-AI/Wan2.2-Animate-14B             cb93a225fbaf1ca100f54e79da8f994995b689b3  apache-2.0  "lastModified 2025-11-05; ban goc, dung khi can doi chieu voi ban repackaged"
+
+# ⚠️ NGUON THU BA/TU/NAM - chi mode Character can, va rat de bo sot
+model  Comfy-Org/Wan_2.1_ComfyUI_repackaged   617a7633e636506f850e043bc4605f290a466a8e  apache-2.0  "clip_vision_h.safetensors 1,264 GB - kho Wan 2.1 CHU KHONG PHAI 2.2"
+model  Kijai/sam2-safetensors                 f885607d88bb3f9145efa49c3e3c50a9e5bf13eb  apache-2.0  "sam2_hiera_base_plus.safetensors 0,323 GB - giay phep XAC MINH 04/09 qua HF API"
+model  hr16/DWPose-TorchScript-BatchSize5     359d662a9b33b73f6d0f21732baf8845f17bb4be  apache-2.0  "dw-ll_ucoco_384_bs5.torchscript.pt 0,135 GB - giay phep XAC MINH 04/09 qua HF API"
+
+# ── Workflow — ✅ DA GHIM 2026-09-04 ──────────────────────────────────────────
+# 🔴 Vi sao ghim bang TAG chu khong bang commit dau HEAD: kho nay day RAT nhanh.
+#    Do that ngay 04/09/2026: release v0.11.55 luc 15:17Z, roi mot commit moi
+#    luc 16:03Z - **46 phut**. Lay 'main' la lay mot thu khac nhau moi gio.
+#    Tag co nguoi quyet dinh dat ra; commit dau HEAD thi khong.
+#
+# Ca bon tep da KIEM TON TAI o dung tag nay (HTTP 200, 04/09/2026).
+workflow  Comfy-Org/workflow_templates  v0.11.55/bffc534e4c881751de2eb641c01ae2f8d5aad26b  MIT  "templates/video_wan2_2_14B_t2v.json"
+workflow  Comfy-Org/workflow_templates  v0.11.55/bffc534e4c881751de2eb641c01ae2f8d5aad26b  MIT  "templates/video_wan2_2_14B_i2v.json"
+workflow  Comfy-Org/workflow_templates  v0.11.55/bffc534e4c881751de2eb641c01ae2f8d5aad26b  MIT  "templates/video_wan2_2_14B_fun_control.json"
+workflow  Comfy-Org/workflow_templates  v0.11.55/bffc534e4c881751de2eb641c01ae2f8d5aad26b  MIT  "templates/video_wan2_2_14B_animate.json"
+
+# ── Ma nguon tham chieu (doc de hieu, KHONG chep) ────────────────────────────
+repo  Wan-Video/Wan2.2                 pushed_2026-03-17  apache-2.0  "README la nguon cua con so 80GB VRAM (V-008)"
+repo  runpod-workers/worker-comfyui    pushed_2026-09-01  AGPL-3.0    "⛔ AGPL - doc de hoc hinh dang, KHONG chep ma vao video_gateway"
+
+# ── Custom node — CHI mode Character can ─────────────────────────────────────
+# ⭐ T2V, I2V va V2V chay duoc voi 0 custom node. Day la mot uu the phai giu, va
+#    no vua co them mot ly do: hai trong bon goi duoi day la GPL-3.0.
+node  ComfyUI-segment-anything-2       kijai/ComfyUI-segment-anything-2       apache-2.0  "DownloadAndLoadSAM2Model - TU TAI LUC CHAY, phai doi. pushed 2025-09-28"
+node  comfyui_controlnet_aux           Fannovel16/comfyui_controlnet_aux      apache-2.0  "DWPreprocessor (DWPose). pushed 2026-08-27"
+node  ComfyUI-KJNodes                  kijai/ComfyUI-KJNodes                  GPL-3.0     "BlockifyMask, DrawMaskOnImage, GrowMask. pushed 2026-08-29"
+node  ComfyUI-VideoHelperSuite         Kosinkadink/ComfyUI-VideoHelperSuite   GPL-3.0     "Chi can neu dung VHS_VideoCombine. Node LOI SaveVideo/CreateVideo la du => co the KHONG can goi nay"
+
+# ⚖️ GPL-3.0 va mo hinh SaaS cua ta: GPL-3.0 rang buoc khi **phan phoi ban sao**,
+#    khong rang buoc khi chay dich vu qua mang (do la AGPL, va ta da loai
+#    worker-comfyui vi ly do do). ComfyUI loi cung GPL-3.0 va ta van chay duoc.
+#    ⇒ DIEU KIEN: image `lttvideo-worker` phai o registry RIENG TU. Day khong
+#    phai luu y phap ly chung chung - no la mot rang buoc cau hinh cua P06.
+
+# ── Runtime — ✅ DA CHON 2026-09-04 ──────────────────────────────────────────
+runtime  ComfyUI  v0.34.0/12d5279438bfefc058a269eae805ceab6047777f  GPL-3.0  "release 2026-08-26. render_gateway ghim 0.30.0/6f7cd7f nhung do la cong ANH tren may B - C-CLOUD ghim ban RIENG, co y"
+runtime  base_image  nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04  -  "linux/amd64. minCudaVersion cua endpoint dat 12.4 cho khop"
+
+# ── ✅ DA DO 2026-09-04: subgraph la that, va no doi cach dong goi workflow ──
+#
+# Do tren dung tep da ghim (v0.11.55, video_wan2_2_14B_t2v.json):
+#
+#     nodes cap 1        : 4       <- MarkdownNote, SaveVideo, va MOT node
+#                                     co type la UUID 'cb63cc72-...'
+#     definitions.subgraphs: 1     <- ten "Text to Video(Wan2.2)"
+#     node THAT ben trong  : 30
+#
+# ⇒ 30 node that KHONG nam o cap 1. Bat ky ma nao duyet `workflow["nodes"]` de
+#   tim node theo ten se thay **bon** node va khong thay cai nao minh can - va
+#   no se that bai IM LANG, tra ve mot workflow khong doi tham so gi.
+#
+# ⭐ QUYET DINH (V-009): **KHONG BAO GIO dong goi tep template dang UI vao image.**
+#    Dong goi ban 'API format' da LAM PHANG, ghim trong kho, sinh mot lan.
+#    Ly do khong phai tien loi ma la tinh xac dinh: bo thuc thi cua ComfyUI
+#    (`/prompt`) khong co khai niem subgraph, nen viec lam phang PHAI xay ra o
+#    dau do; de no xay ra luc build thi ta kiem tra duoc, de no xay ra luc chay
+#    thi ta phu thuoc vao mot hanh vi cua frontend theo tung phien ban.
+#
+#    Kem theo mot phep kiem (dai 700-799): moi cho danh dau tham so ('@ten')
+#    phai giai duoc ra dung mot node trong ban API format. Khong giai duoc =>
+#    gate do, khong phai video sai.

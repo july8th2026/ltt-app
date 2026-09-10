@@ -28,6 +28,8 @@ explicitly approved exercise.
 """
 from __future__ import annotations
 
+import io
+import base64
 import argparse
 import json
 import os
@@ -41,6 +43,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+
+#: Ảnh giả cho đường đo tải — một PNG 1×1 hợp lệ, đủ để `technical_score`
+#: đọc được mà không phải dựng ảnh thật.
+_PNG_GIA = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmM"
+    "IQAAAABJRU5ErkJggg==")
 
 TOOL = "image.thumbnail"
 #: The upload scenario needs a tool that actually accepts a file. Pointing
@@ -56,8 +64,9 @@ PEPPER = "load-test-pepper-" + "L" * 40
 # runs afterwards — that is exactly how this leaked once: `create_app()` in a
 # much later test found LTT_DATA_DIR still aimed at a deleted temp folder, could
 # not load its config, and the maintenance daemon quietly never started.
-_OWNED_ENV = ("LTT_DATABASE_URL", "LTT_DATA_DIR", "LTT_API_KEY_PEPPER",
-              "GEMINI_API_KEY")
+# `GEMINI_API_KEY` go 09/09/2026 (pha 10): app khong con doc khoa nao cua
+# nha cung cap ngoai — may ve la cong noi bo, xac thuc bang bearer rieng.
+_OWNED_ENV = ("LTT_DATABASE_URL", "LTT_DATA_DIR", "LTT_API_KEY_PEPPER")
 
 
 def _restore_env(saved: dict) -> None:
@@ -79,7 +88,6 @@ def _build(work: Path, **env_extra):
     # Without this the drain scenarios measure the throughput of *failing*
     # jobs, which looks like a healthy number and means nothing. The call
     # itself is stubbed, so this value never reaches a vendor.
-    os.environ.setdefault("GEMINI_API_KEY", "load-test-stub-not-used")
 
     import platform_core.db as dbmod
 
@@ -353,8 +361,25 @@ def _drain(client, token: str, scenario: str, seconds: float, workers: int,
     from platform_core.job_runner import _chay_mot_job
     from platform_core.models import Job
 
-    original = thumbnail_jobs._goi_gemini
-    thumbnail_jobs._goi_gemini = lambda *a, **k: b"\x89PNG\r\n\x1a\n" + b"0" * 200
+    # 🔴 Pha 06.3: thay MÁY VẼ, không thay khoá API — app không giữ khoá
+    #    nào nữa. Đo tải mà gọi máy B thật thì đo GPU chứ không đo cổng API,
+    #    và tốn hàng trăm lượt vẽ thật.
+    #
+    # ⛔ Không import `tests/gia_dieu_phoi_anh.py` ở đây: `tools/` chạy được
+    #    trên máy chủ, nơi thư mục `tests/` không được chép lên.
+    class _DieuPhoiGia:
+        def chay(self, *, job_id, so_anh=1, tien_to_khoa="anh", **_kw):
+            from platform_core.image_gen.dieu_phoi import KetQuaAnh
+            from platform_core.storage import get_storage
+            st, keys = get_storage(), []
+            for i in range(so_anh):
+                k = f"{str(tien_to_khoa).strip(chr(47))}/{job_id}/{i}.png"
+                st.put(k, io.BytesIO(_PNG_GIA), content_type="image/png")
+                keys.append(k)
+            return KetQuaAnh(job_id, tuple(keys), "load test", False, ())
+
+    original = thumbnail_jobs._dieu_phoi
+    thumbnail_jobs._dieu_phoi = lambda: _DieuPhoiGia()
 
     headers = {"Authorization": f"Bearer {token}"}
     if scenario == "webhooklag":
@@ -386,7 +411,7 @@ def _drain(client, token: str, scenario: str, seconds: float, workers: int,
         drained += 1
     drain_seconds = time.monotonic() - drain_started
 
-    thumbnail_jobs._goi_gemini = original
+    thumbnail_jobs._dieu_phoi = original
 
     # Throughput of failing jobs is a meaningless number that looks fine, so
     # the count of jobs that actually produced a result is reported next to it.

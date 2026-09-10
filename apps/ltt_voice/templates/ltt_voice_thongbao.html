@@ -49,5 +49,6 @@
 
 {% block scripts %}
 {# `?v=` bat buoc: static di qua Cloudflare co TTL (CLAUDE.md quy tac 6). #}
+{% include "_voice_nhan.html" %}
 <script src="/static/voice.js?v={{ asset_ver }}"></script>
 {% endblock %}

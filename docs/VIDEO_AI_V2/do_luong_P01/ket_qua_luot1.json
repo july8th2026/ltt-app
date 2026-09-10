@@ -1,0 +1,27 @@
+{
+ "lan_chay": [
+  {
+   "ten_do": "R1_t2v_profile4_seed1001",
+   "model_type": "t2v_2_2",
+   "seed": 1001,
+   "huy_sau": null,
+   "su_kien": {
+    "progress": 786,
+    "preview": 20,
+    "stream": 217,
+    "khac": 7
+   },
+   "tien_do_cuoi": [
+    "decoding",
+    20,
+    20
+   ],
+   "thanh_cong": true,
+   "tep": [
+    "/data/Wan2GP/outputs/2026-09-06-09h58m58s_seed1001_A large orange octopus is seen resting on the bottom of the ocean floor, blending in with the sandy.mp4"
+   ],
+   "loi": []
+  }
+ ],
+ "loi": []
+}

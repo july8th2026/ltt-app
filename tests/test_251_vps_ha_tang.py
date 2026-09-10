@@ -97,7 +97,22 @@ def test_manifest_khong_thu_theo_luot_job():
     assert MANIFEST.credit_cost is not None
     assert MANIFEST.credit_cost({}) == 0
     assert MANIFEST.table_prefix == "vps"
-    assert set(MANIFEST.job_types) == {"vps.provision", "vps.rebuild", "vps.destroy"}
+    # ⚠️ **Không** liệt kê cứng tập job type nữa. Mệnh đề cần canh không phải
+    #    *"có đúng ba job"* — nó đổi mỗi lần thêm một khả năng (VPS V2 thêm
+    #    `vps.control`) và mỗi lần đổi lại phải sửa một danh sách chép tay.
+    #
+    #    Mệnh đề **bất biến với tập hợp** là: mỗi job type đã khai phải có trần
+    #    thời gian VÀ có người xử lý. Thiếu trần ⇒ job treo giữ suất worker vô
+    #    hạn; thiếu handler ⇒ nền tảng nhận việc rồi ném ở runtime. Cả hai đều
+    #    im lặng cho tới khi có khách bấm.
+    import inspect
+
+    from apps.vps import jobs as vps_jobs
+    nguon_handle = inspect.getsource(vps_jobs.handle)
+    for jt in MANIFEST.job_types:
+        assert jt in MANIFEST.max_runtime_s, f"{jt} thieu max_runtime_s"
+        assert f'"{jt}"' in nguon_handle, f"{jt} khong co nhanh trong handle()"
+    assert {"vps.provision", "vps.rebuild", "vps.destroy"} <= set(MANIFEST.job_types)
     # Trần thời gian phải có: job treo mà vẫn đập nhịp sẽ giữ slot vô hạn.
     for jt in MANIFEST.job_types:
         assert MANIFEST.runtime_limit_for(jt) > 0
@@ -420,6 +435,11 @@ def _cau_hinh():
         "LTT_VPS_PROXMOX_TOKEN_ID": "vpsapp@pve!ltt",
         "LTT_VPS_PROXMOX_TOKEN_SECRET": "bi-mat",
         "LTT_VPS_PROXMOX_NODE": "pve",
+        # Từ VPS V2 (Pha 07): không có CA thì phải khai tường minh là chấp nhận
+        # bỏ qua xác minh TLS — và ở production thì **không** khai được, nó ném.
+        # Đồ gá này nói ra điều đó thay vì im lặng đi qua, đúng như mã sản phẩm
+        # bắt mọi nơi khác phải làm. Xem `tests/test_557`.
+        proxmox.KHOA_BO_QUA_TLS: "1",
     })
 
 

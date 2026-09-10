@@ -9,7 +9,7 @@ mà worker (tạo file) và web (phục vụ) là hai tiến trình khác nhau n
 không dùng chung được. Kiểm sở hữu: khoá có dạng `thumbnail/{owner_id}/...`,
 chỉ chủ mới xem được ảnh của mình.
 
-Các nhóm lựa chọn (style chữ / phong cách / trend / ngôn ngữ) render ĐỘNG từ
+Các nhóm lựa chọn (phong cách / trend) render ĐỘNG từ
 `apps/thumbnail/prompts/*/_labels.json` — thêm/bớt lựa chọn = sửa tài nguyên,
 không sửa code (di trú trung thành từ BOT GEMINI).
 """
@@ -18,7 +18,6 @@ from __future__ import annotations
 from platform_core.i18n import _ as _t
 from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, Response, StreamingResponse
-
 from apps.thumbnail.jobs import _PROMPTS_DIR
 from apps.thumbnail.manifest import MANIFEST
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
@@ -26,11 +25,18 @@ from server.auth.session import require_login
 from server.deps import user_hien_tai
 from server.templating import templates
 
+from apps.thumbnail.jobs import NHOM_LUA_CHON as _NHOM_LUA_CHON
+
 router = APIRouter(tags=["thumbnail"])
 
-# Tỉ lệ Gemini hỗ trợ (khớp registry BOT GEMINI). Thứ tự = thứ tự hiện trên UI.
+#: Tỉ lệ bán ra. Mỗi tỉ lệ ở đây phải có một khung `hidream-o1` khai được —
+#: `DieuPhoi._khung` hỏi cổng và **từ chối** nếu không, nên một dòng thừa ở
+#: đây thành một job hỏng chứ không thành một ảnh sai khuôn.
 _ASPECTS = ("16:9", "9:16", "1:1", "4:3", "3:4")
-_GROUPS = ("text_style", "phong_cach", "kieu_trend", "ngon_ngu")
+
+#: Nhóm lựa chọn còn sống — `jobs` giữ danh sách, không gõ lại ở đây.
+#: (`text_style` và `ngon_ngu` đã gỡ cùng chữ-trong-ảnh, pha 06.3.)
+_GROUPS = _NHOM_LUA_CHON
 
 
 def _catalog() -> dict:
@@ -44,12 +50,18 @@ def _defaults() -> dict:
     return {g: pf.default_option(_PROMPTS_DIR, g) for g in _GROUPS}
 
 
+#: Nhà cung cấp ảnh DUY NHẤT còn phục vụ (pha 06, AI CLEAN REBUILD V2).
+#: ⛔ Đừng viết lại `"gemini"` ở đây: bảng chọn model là **cửa bán hàng**, và
+#:    một cửa bán thứ không còn chạy thì khách chọn xong mới biết.
+_PROVIDER = "ltt_image"
+
+
 def _models() -> list:
     """Model ảnh đang bật (từ Provider Registry) — (id, nhãn)."""
     from platform_core import providers
     from platform_core.models import APIKEY_CAT_IMAGE
     return [(m.id, m.label())
-            for m in providers.models_for("gemini", category=APIKEY_CAT_IMAGE)
+            for m in providers.models_for(_PROVIDER, category=APIKEY_CAT_IMAGE)
             if m.is_active]
 
 
@@ -208,12 +220,8 @@ def remix(request: Request, job_id: str, image_index: int,
 def preview(
     request: Request,
     topic: str = Form(""),
-    title: str = Form(""),
-    subtitle: str = Form(""),
-    text_style: str = Form(""),
     phong_cach: str = Form(""),
     kieu_trend: str = Form(""),
-    ngon_ngu: str = Form(""),
     model: str = Form(""),
     aspect_ratio: str = Form("16:9"),
     count: int = Form(1),
@@ -248,13 +256,9 @@ def preview(
     selected_model = model if model in model_map else next(iter(model_map), model)
     count = max(1, min(int(count or 1), 4))
     rows = [(_t("Chủ đề"), topic.strip()[:2000]),
-            (_t("Tiêu đề"), title.strip()[:200]),
-            (_t("Phụ đề"), subtitle.strip()[:200]),
-            (_t("Kiểu chữ"), _lbl("text_style", text_style)),
             (_t("Phong cách"), _lbl("phong_cach", phong_cach)),
             (_t("Kiểu trend"), _lbl("kieu_trend", kieu_trend)),
             (_t("Model"), model_map.get(selected_model, selected_model)),
-            (_t("Ngôn ngữ"), _lbl("ngon_ngu", ngon_ngu)),
             (_t("Tỉ lệ"), aspect_ratio if aspect_ratio in _ASPECTS else "16:9"),
             (_t("Số ảnh"), count),
             (_t("Chi phí dự kiến"), f"{MANIFEST.credit_cost({'count': count})} credit"),
@@ -275,12 +279,8 @@ async def queue(
     request: Request,
     csrf_token: str = Form(...),
     topic: str = Form(""),
-    title: str = Form(""),
-    subtitle: str = Form(""),
-    text_style: str = Form(""),
     phong_cach: str = Form(""),
     kieu_trend: str = Form(""),
-    ngon_ngu: str = Form(""),
     model: str = Form(""),
     aspect_ratio: str = Form("16:9"),
     count: int = Form(1),
@@ -310,7 +310,7 @@ async def queue(
     count = max(1, min(int(count or 1), 4))
     model_ids = [m[0] for m in _models()]
     if model not in model_ids:
-        model = model_ids[0] if model_ids else "gemini-2.5-flash-image"
+        model = model_ids[0] if model_ids else "hidream-o1"
 
     u = user_hien_tai(request)
     if u is None:
@@ -344,12 +344,9 @@ async def queue(
 
     # Cap do dai input (nguon cap user_input 2000) — chong phi token tren gia phang.
     params = {
-        "topic": topic.strip()[:2000], "title": title.strip()[:200],
-        "subtitle": subtitle.strip()[:200],
-        "text_style": _clean_choice("text_style", text_style),
+        "topic": topic.strip()[:2000],
         "phong_cach": _clean_choice("phong_cach", phong_cach),
         "kieu_trend": _clean_choice("kieu_trend", kieu_trend),
-        "ngon_ngu": _clean_choice("ngon_ngu", ngon_ngu),
         "model": model, "aspect_ratio": aspect_ratio, "count": count, "owner_id": u.id,
         "brand": brand, "reference_key": reference_key, "reference_mime": reference_mime,
     }

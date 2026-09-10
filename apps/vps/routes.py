@@ -26,11 +26,12 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
 
 import apps.vps as vps_app
-from apps.vps import bang_thong, dieu_khoan, nhan, os_images, ten_may
+from apps.vps import (bang_thong, dieu_khoan, nhan, os_images, ten_may,
+                      trang_thai_may)
 from apps.vps.cost import CHU_KY_NGAY, PLANS, dia_tong_gb, lay_plan
 from apps.vps.manifest import MANIFEST
 from apps.vps.services import (billing, capacity, console, dieu_khien,
-                               provisioning, sao_luu)
+                               provisioning, sao_luu, thao_tac)
 from apps.vps.services.proxmox import (ChuaCauHinh, ProxmoxError,
                                        client_tu_moi_truong)
 from apps.vps.tables import VpsEvent, VpsInstance, VpsIp
@@ -61,11 +62,31 @@ def _chu(request: Request) -> str:
 
 
 def _suc_chua(db) -> tuple[capacity.SucChua | None, str]:
-    """Sức chứa hiện tại, và lý do nếu không đọc được.
+    """Sức chứa hiện tại, và **câu cho khách đọc** nếu không đọc được.
 
     Không đọc được Proxmox **không** phải lỗi trang: trang vẫn phải mở để khách
     xem máy của mình. Nhưng nút "Tạo máy" thì phải khoá — bán khi không biết còn
     bao nhiêu chỗ là đúng thứ `capacity.py` sinh ra để phòng.
+
+    ## Lý do KỸ THUẬT đi vào log, không đi ra trang
+
+    🔴 Đo được trên production 09/09/2026, ngay sau khi deploy VPS V2: trang bán
+    hàng **công khai** (khách chưa đăng nhập cũng thấy) in nguyên văn
+
+        Hiện chưa nhận máy mới. (chua cau hinh Proxmox: production ma khong co
+        LTT_VPS_PROXMOX_CA: tu choi noi toi Proxmox khi khong xac minh duoc
+        chung chi. Ghim CA that, hoac chay o moi truong khac.)
+
+    Ba thứ sai cùng lúc: một câu tiếng Việt-không-dấu trộn thuật ngữ trên trang
+    bán hàng; **tên biến môi trường** của hệ thống nội bộ; và cái tên `Proxmox`
+    — thứ mà chính `proxmox.py` nói là khách **không bao giờ** được thấy.
+
+    ⚠️ Rò rỉ này **có sẵn từ trước**, không phải do bản sửa TLS: dòng cũ là
+    `f"chua cau hinh Proxmox: {exc}"`. Bản sửa TLS chỉ làm `exc` dài hơn, và
+    nhờ dài hơn mà nó lộ ra. Một lỗi nhỏ ẩn sau một chuỗi ngắn vẫn là lỗi.
+
+    ⇒ Hàm này nay trả **đúng một câu viết cho khách**. Chi tiết kỹ thuật đi vào
+    `log.warning` — nơi người vận hành đọc, và nơi nó thật sự có ích.
     """
     try:
         client = client_tu_moi_truong()
@@ -73,10 +94,35 @@ def _suc_chua(db) -> tuple[capacity.SucChua | None, str]:
             db, client.trang_thai_node(), client.kho_luu_tru(),
             client.danh_sach_vm()), ""
     except ChuaCauHinh as exc:
-        return None, f"chua cau hinh Proxmox: {exc}"
+        # `ChuaCauHinh` gồm cả ca "thiếu biến môi trường" lẫn ca "production
+        # không có CA" (Pha 07). Cả hai đều là **việc của nhà**, và với khách
+        # thì chúng giống hệt nhau: chưa mua được.
+        log.warning("vps: chua cau hinh de doc suc chua: %s", exc)
+        return None, _t("Hệ thống đang bảo trì, tạm chưa nhận máy mới.")
     except ProxmoxError as exc:
         log.warning("vps: khong doc duoc suc chua: %s", exc)
-        return None, "khong ket noi duoc may chu ao"
+        return None, _t("Hệ thống đang bảo trì, tạm chưa nhận máy mới.")
+
+
+def _viec_dang_chay(db, may) -> dict:
+    """Việc đang chạy trên một máy, ở dạng template đọc được. Rỗng = rảnh.
+
+    ## Vì sao trang phải biết điều này
+
+    Từ VPS V2, bấm "Khởi động lại" **không** đổi trạng thái ngay: nó mở một thao
+    tác và nộp một job. Trang không biết chuyện đó thì khách thấy trạng thái y
+    nguyên sau khi bấm, kết luận là nút hỏng, và bấm lại — đúng hành vi mà khoá
+    idempotency phải chặn, nhưng ta không nên bắt nó phải chặn nếu giao diện
+    trả lời được.
+
+    Nhãn dịch **ở đây**, không trong template: một bảng tra chép tay trong Jinja
+    là bản sao thứ hai của `nhan.TAC_VU`, và bản sao sẽ lệch.
+    """
+    op = thao_tac.dang_mo(db, may.id)
+    if op is None:
+        return {}
+    return {"loai": nhan.tac_vu(op.loai), "buoc": nhan.buoc(op.buoc),
+            "tu_luc": op.tao_luc}
 
 
 def _may_cua_toi(db, user_id: str) -> list:
@@ -122,6 +168,7 @@ def _may_cua_toi(db, user_id: str) -> list:
             "dia_chi": x.dia_chi if x is not None else "",
             "con_han": billing.con_han(m),
             "con_ngay": billing.con_bao_nhieu_ngay(m),
+            "viec": _viec_dang_chay(db, m),
         })
     return ket_qua
 
@@ -176,6 +223,10 @@ _NHAN_KHOA = {
     "loi": N_("lỗi"),
     "cu": N_("tên cũ"),
     "moi": N_("tên mới"),
+    # `ma_loi` là **mã**, và `_gia_tri_doc_duoc` đổi nó thành câu. Ghi mã chứ
+    # không ghi câu vào `vps_event` là có chủ ý: nhật ký tra được bằng mã, và
+    # một câu đã dịch nằm trong dữ liệu thì đóng băng ngôn ngữ theo lúc GHI.
+    "ma_loi": N_("lý do"),
 }
 
 
@@ -189,6 +240,11 @@ def _gia_tri_doc_duoc(khoa: str, gt) -> str:
     """
     if khoa == "den" and isinstance(gt, str) and len(gt) >= 10:
         return f"{gt[8:10]}/{gt[5:7]}/{gt[0:4]}"
+    if khoa == "ma_loi":
+        # Mã → câu, và **dịch ngay tại đây**: `nhan.ma_loi` trả về msgid thô
+        # (`N_()` chỉ đánh dấu). Trả msgid ra template thì bản EN hiện tiếng
+        # Việt, vì template chỉ dịch những gì nó tự bọc `_()`.
+        return _t(nhan.ma_loi(str(gt)))
     return str(gt)
 
 
@@ -400,7 +456,7 @@ def tao_may(request: Request,
     may = VpsInstance(user_id=user_id, plan_id=plan_id, os_id=os_id,
                       ten=ten_may_moi,
                       dia_them_gb=int(dia_them_gb or 0),
-                      gateway_id=gateway.id, trang_thai="dang_tao")
+                      gateway_id=gateway.id, **trang_thai_may.moi())
     db.add(may)
     db.flush()
 
@@ -436,26 +492,33 @@ def _may_cua_khach(db, request: Request, instance_id: str) -> VpsInstance:
     return may
 
 
-def _thao_tac(request: Request, csrf_token: str, instance_id: str, db, ham):
-    """Khuôn chung của bật/tắt/khởi động lại: CSRF → chủ sở hữu → gọi → về trang.
+def _xin_lenh(request: Request, csrf_token: str, instance_id: str, db,
+              lenh: str):
+    """Khuôn chung của bật/tắt/khởi động lại: CSRF → chủ sở hữu → **nộp việc**.
 
-    Ba thao tác này chạy THẲNG, không qua hàng đợi — xem docstring của
-    `services/dieu_khien.py`.
+    ## Không còn gọi Proxmox ở đây, và đó là cả điểm của ADR-03
+
+    Một lần khởi động lại **thật** (tắt → chờ STOPPED → bật → chờ RUNNING) mất
+    hàng chục giây tới vài phút, mà Cloudflare cắt request ở 100 giây. Nên route
+    chỉ mở sổ và nộp job; worker làm phần chờ. Khách nhận lại trang ngay, với
+    trạng thái "Đang …" — thật, thay vì một chữ "Đã tắt" phát ra trước khi máy tắt.
+
+    Route này vì thế **không thể** hỏng vì Proxmox: nó không chạm tới Proxmox.
     """
     if not verify_csrf_token(request, csrf_token):
         return _ve_trang(_t("Phiên đã hết hạn — tải lại trang rồi thử lại."))
     may = _may_cua_khach(db, request, instance_id)
     try:
-        client = client_tu_moi_truong()
-    except ChuaCauHinh:
-        return _ve_trang(_t("Hệ thống đang bận, thử lại sau."))
-    try:
-        ham(db, may, client, boi=_chu(request))
+        dieu_khien.xin(db, may, lenh, boi=_chu(request))
     except dieu_khien.KhongDuocPhepError as exc:
         return _ve_trang(str(exc))
-    except ProxmoxError as exc:
-        log.warning("VPS: thao tac tren may %s that bai: %s", may.id, exc)
-        return _ve_trang(_t("Máy chủ không nhận lệnh lúc này. Thử lại sau ít phút."))
+    except thao_tac.DangBanError as exc:
+        # V-07: máy đang có việc chạy dở. Nói ra **cái gì** đang chạy — một câu
+        # "bận" không kèm lý do là thứ khách sẽ bấm lại năm lần.
+        return _ve_trang(_t("Máy đang bận với một thao tác khác (%(viec)s). "
+                            "Đợi nó xong rồi thử lại.")
+                         % {"viec": nhan.tac_vu(exc.dang_chay.loai)})
+    db.commit()
     return RedirectResponse(f"{MANIFEST.route_prefix}/{may.id}", status_code=303)
 
 
@@ -463,14 +526,14 @@ def _thao_tac(request: Request, csrf_token: str, instance_id: str, db, ham):
 def bat_may(instance_id: str, request: Request, csrf_token: str = Form(...),
             _g: None = Depends(_cong_co), _u: str = Depends(require_login),
             db=Depends(get_db)):
-    return _thao_tac(request, csrf_token, instance_id, db, dieu_khien.bat)
+    return _xin_lenh(request, csrf_token, instance_id, db, "bat")
 
 
 @router.post("/{instance_id}/tat")
 def tat_may(instance_id: str, request: Request, csrf_token: str = Form(...),
             _g: None = Depends(_cong_co), _u: str = Depends(require_login),
             db=Depends(get_db)):
-    return _thao_tac(request, csrf_token, instance_id, db, dieu_khien.tat)
+    return _xin_lenh(request, csrf_token, instance_id, db, "tat")
 
 
 @router.post("/{instance_id}/khoi-dong-lai")
@@ -478,15 +541,31 @@ def khoi_dong_lai_may(instance_id: str, request: Request,
                       csrf_token: str = Form(...),
                       _g: None = Depends(_cong_co),
                       _u: str = Depends(require_login), db=Depends(get_db)):
-    return _thao_tac(request, csrf_token, instance_id, db, dieu_khien.khoi_dong_lai)
+    return _xin_lenh(request, csrf_token, instance_id, db, "khoi_dong_lai")
 
 
 @router.post("/{instance_id}/go-dia-cai")
 def go_dia_cai(instance_id: str, request: Request, csrf_token: str = Form(...),
                _g: None = Depends(_cong_co), _u: str = Depends(require_login),
                db=Depends(get_db)):
-    """Khách bấm khi đã cài xong Windows. Xem `dieu_khien.go_dia_cai`."""
-    return _thao_tac(request, csrf_token, instance_id, db, dieu_khien.go_dia_cai)
+    """Khách bấm khi đã cài xong Windows. Xem `dieu_khien.go_dia_cai`.
+
+    Vẫn chạy THẲNG, không qua hàng đợi — khác ba nút điện ở trên. Đây là một lần
+    `qm set`: nó không sinh tác vụ nền nào và không có gì để chờ, nên đẩy vào
+    hàng đợi chỉ thêm một tầng để hỏng mà không nhanh hơn.
+    """
+    if not verify_csrf_token(request, csrf_token):
+        return _ve_trang(_t("Phiên đã hết hạn — tải lại trang rồi thử lại."))
+    may = _may_cua_khach(db, request, instance_id)
+    try:
+        dieu_khien.go_dia_cai(db, may, client_tu_moi_truong(),
+                              boi=_chu(request))
+    except dieu_khien.KhongDuocPhepError as exc:
+        return _ve_trang(str(exc))
+    except (ChuaCauHinh, ProxmoxError) as exc:
+        log.warning("VPS: go dia cai may %s that bai: %s", may.id, exc)
+        return _ve_trang(_t("Máy chủ không nhận lệnh lúc này. Thử lại sau ít phút."))
+    return RedirectResponse(f"{MANIFEST.route_prefix}/{may.id}", status_code=303)
 
 
 @router.post("/{instance_id}/doi-ten")
@@ -572,7 +651,12 @@ def cai_lai_may(instance_id: str, request: Request, csrf_token: str = Form(...),
     if os_id and not os_images.hop_le(may.plan_id, os_id, may.dia_them_gb)[0]:
         return _ve_trang(os_images.hop_le(may.plan_id, os_id, may.dia_them_gb)[1])
 
-    may.trang_thai = "dang_tao"
+    # Vòng đời về `dang_tao` VÀ đánh dấu tác vụ: máy sắp bị xoá rồi dựng lại, nên
+    # mọi thao tác khác phải bị chặn từ đây tới lúc job xong — chứ không chỉ từ
+    # lúc worker nhặt được job.
+    trang_thai_may.dat(may, vong_doi=trang_thai_may.DANG_TAO,
+                       tac_vu=trang_thai_may.DANG_DUNG_LAI,
+                       dien_quan_sat=trang_thai_may.KHONG_RO)
     provisioning.ghi_su_kien(db, may.id, "xin_cai_lai", boi=_chu(request),
                              os_id=os_id or may.os_id)
     from platform_core import jobs as job_queue
@@ -593,9 +677,18 @@ def khoi_phuc_may(instance_id: str, request: Request, csrf_token: str = Form(...
     Đòi gõ đúng tên máy, cùng khuôn với "Cài lại": cả hai đều không hoàn tác
     được, và cả hai đều nằm cạnh những nút vô hại.
 
-    Chạy THẲNG chứ không qua hàng đợi — `rollback` của Proxmox trên LVM-thin là
-    một thao tác siêu dữ liệu, xong trong vài giây. Đẩy nó vào hàng đợi chỉ thêm
-    một tầng để hỏng mà không nhanh hơn.
+    ## Từ VPS V2: đi qua hàng đợi, và route KHÔNG còn tự rollback
+
+    Chú thích cũ ở đây viết *"rollback trên LVM-thin là thao tác siêu dữ liệu,
+    xong trong vài giây"* — đúng về **rollback**, và bỏ sót phần đắt nhất: máy
+    phải **tắt xong** trước đã. Bản cũ gửi `tat_cung`, nuốt luôn lỗi
+    (`except ProxmoxError: pass`), rồi gọi rollback ở dòng kế — trên một máy có
+    thể vẫn đang chạy và đang ghi đĩa (V-04).
+
+    Làm cho đúng thì phải chờ: tắt → chờ STOPPED → rollback → chờ → bật lại. Đó
+    là hàng chục giây tới vài phút, tức vượt trần 100 giây của Cloudflare.
+
+    Route giờ chỉ: kiểm quyền → kiểm ảnh có thật → mở thao tác → nộp job.
     """
     from apps.vps.services import sao_luu
 
@@ -609,25 +702,24 @@ def khoi_phuc_may(instance_id: str, request: Request, csrf_token: str = Form(...
     except dieu_khien.KhongDuocPhepError as exc:
         return _ve_trang(str(exc))
 
+    # Đọc tên ảnh ở đây (một lần gọi đọc, nhanh) để nói với khách ngay nếu chưa
+    # có ảnh nào. Worker vẫn **hỏi lại** trước khi rollback: giữa hai thời điểm
+    # đó có một vòng bảo trì, và nó có thể đã dọn mất bản này.
     try:
-        client = client_tu_moi_truong()
-        ten_anh = sao_luu.anh_moi_nhat(client, may.vmid)
-        if not ten_anh:
-            return _ve_trang(_t("Máy này chưa có ảnh chụp nào."))
-        # Máy PHẢI tắt trước khi quay lại ảnh: Proxmox từ chối rollback một máy
-        # đang chạy nếu ảnh không kèm RAM — và ảnh của ta cố ý không kèm RAM.
-        try:
-            client.tat_cung(may.vmid)
-        except ProxmoxError:
-            pass                                 # đã tắt sẵn — không phải lỗi
-        client.khoi_phuc_anh(may.vmid, ten_anh)
-    except ProxmoxError as exc:
-        log.warning("VPS: khoi phuc may %s that bai: %s", may.id, exc)
+        ten_anh = sao_luu.anh_moi_nhat(client_tu_moi_truong(), may.vmid)
+    except (ChuaCauHinh, ProxmoxError) as exc:
+        log.warning("VPS: khong doc duoc anh chup cua may %s: %s", may.id, exc)
         return _ve_trang(_t("Máy chủ không nhận lệnh lúc này. Thử lại sau ít phút."))
+    if not ten_anh:
+        return _ve_trang(_t("Máy này chưa có ảnh chụp nào."))
 
-    may.trang_thai = "da_tat"
-    provisioning.ghi_su_kien(db, may.id, "khoi_phuc", boi=_chu(request),
-                             anh=ten_anh)
+    try:
+        sao_luu.xin_khoi_phuc(db, may, ten_anh, boi=_chu(request))
+    except thao_tac.DangBanError as exc:
+        return _ve_trang(_t("Máy đang bận với một thao tác khác (%(viec)s). "
+                            "Đợi nó xong rồi thử lại.")
+                         % {"viec": nhan.tac_vu(exc.dang_chay.loai)})
+
     db.commit()
     return RedirectResponse(f"{MANIFEST.route_prefix}/{may.id}", status_code=303)
 
@@ -708,6 +800,13 @@ def trang_chi_tiet(instance_id: str, request: Request,
         "trang_thai_nhan": nhan.trang_thai(may.trang_thai),
         "badge": nhan.badge(may.trang_thai),
         "buoc_tiep": nhan.buoc_tiep(may.trang_thai),
+        "viec": _viec_dang_chay(db, may),
+        # Độ tươi của phép đo. `mat_lien_lac` nghĩa là ta ĐÃ HỎI và không có
+        # trả lời — khác hẳn "chưa hỏi", và khách cần biết ta đang ở đâu trong
+        # hai cái đó thay vì nhìn một trạng thái không có tuổi.
+        "mat_lien_lac": may.suc_khoe == trang_thai_may.MAT_LIEN_LAC,
+        "quan_sat_cu": trang_thai_may.qua_cu(may),
+        "bi_cach_ly": getattr(may, "cach_ly_luc", None) is not None,
         "sao_luu_luc": may.sao_luu_luc,
         "bang_thong": {
             "da_dung": bang_thong.doc_duoc(may.bang_thong_byte),
@@ -881,7 +980,7 @@ async def cau_console(websocket: WebSocket, instance_id: str, ve: str = ""):
             for t in con_lai:
                 t.cancel()
     except WebSocketDisconnect:
-        pass
+        pass                            # khách đóng tab — đường chạy bình thường
     except Exception as exc:            # noqa: BLE001 - biên của một cầu nối
         log.warning("VPS console: cau dut giua chung: %s: %s",
                     type(exc).__name__, exc)

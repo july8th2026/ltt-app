@@ -90,6 +90,13 @@ TOI_THIEU_TU_ANH = 2
 
 NHAN_LAN = {"vi": N_('Tiếng Việt'), "en": N_('Tiếng Anh')}
 
+#: Khuôn cảnh báo lệch làn. Tách thành hằng số để `N_()` thấy một chuỗi bất
+#: động, và để `doi_chieu` chỉ còn một lời gọi thay vì một biểu thức ghép.
+_MAU_LECH_LAN = N_(
+    'Giọng này thuộc làn {lan_giong}, nhưng văn bản có vẻ là {lan_text}. '
+    'Bạn vẫn tạo được, chỉ là chất lượng có thể không bằng một giọng '
+    'cùng làn.')
+
 
 def doan_ngon_ngu(text: str):
     """`"vi"` · `"en"` · `None` khi không chắc.
@@ -137,10 +144,22 @@ def doi_chieu(lan_giong: str, text: str, khai_bao: str = "") -> tuple:
     do = khai if khai in ("vi", "en") else doan_ngon_ngu(text)
     if do is None or do == lan:
         return ()
-    return (N_(
-        'Giọng này thuộc làn {lan_giong}, nhưng văn bản có vẻ là {lan_text}. '
-        'Bạn vẫn tạo được, chỉ là chất lượng có thể không bằng một giọng '
-        'cùng làn.'),)
+    # 🔴 TRẢ CÂU ĐÃ ĐIỀN, KHÔNG TRẢ KHUÔN — và đây là một bản sửa, không phải
+    #    một lựa chọn phong cách.
+    #
+    #    Trước 07/09/2026 hàm này trả về **khuôn còn chỗ trống**, và người gọi
+    #    được kỳ vọng gọi `dien_canh_bao` sau. Không người gọi nào làm thế:
+    #    `dien_canh_bao` có **0 nơi gọi** trong mã sản phẩm. Nghĩa là nếu cảnh
+    #    báo có bao giờ tới được màn hình thì khách sẽ đọc đúng chuỗi
+    #    `"...làn {lan_giong}, nhưng văn bản có vẻ là {lan_text}"`.
+    #
+    # ⭐ Hàm này biết CẢ HAI giá trị. Bắt người gọi mang chúng đi để điền hộ là
+    #    tạo ra một hợp đồng hai bước mà bước thứ hai không ai nhớ.
+    #
+    # ⛔ `dien_canh_bao` VẪN Ở LẠI và vẫn là chỗ duy nhất điền — `N_()` phải
+    #    thấy một chuỗi HẰNG thì bộ trích mới đưa nó vào `.po`, nên khuôn không
+    #    được ghép bằng f-string ngay tại đây (`tests/test_384` chốt bằng AST).
+    return (dien_canh_bao(_MAU_LECH_LAN, lan, do),)
 
 
 def dien_canh_bao(mau: str, lan_giong: str, lan_text: str) -> str:

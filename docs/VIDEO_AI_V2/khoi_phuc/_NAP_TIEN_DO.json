@@ -1,0 +1,57 @@
+{
+ "dang_lam": null,
+ "xong": [
+  {
+   "tep": "text_encoders/umt5_xxl_fp16.safetensors",
+   "byte": 11366399385,
+   "sha256": "7b8850f1961e1cf8a77cca4c964a358d303f490833c6c087d0cff4b2f99db2af",
+   "MBps": 59.1
+  },
+  {
+   "tep": "vae/wan_2.1_vae.safetensors",
+   "byte": 253815318,
+   "sha256": "2fc39d31359a4b0a64f55876d8ff7fa8d780956ae2cb13463b0223e15148976b",
+   "MBps": 90.6
+  },
+  {
+   "tep": "diffusion_models/wan2.2_t2v_high_noise_14B_fp16.safetensors",
+   "byte": 28577095592,
+   "sha256": "c793e1515320fc8883ac8f97e2a45270c35edd8c4e334a6d42d3e95455bd8da2",
+   "MBps": 42.5
+  },
+  {
+   "tep": "diffusion_models/wan2.2_t2v_low_noise_14B_fp16.safetensors",
+   "byte": 28577095592,
+   "sha256": "431d1613ffa809ae1f735b661a01788c6d74991f51efd01f45d5aee955ccd224",
+   "MBps": 47.3
+  },
+  {
+   "tep": "diffusion_models/wan2.2_i2v_high_noise_14B_fp16.safetensors",
+   "byte": 28577914792,
+   "sha256": "c21c21efa368d529a982a7d89dd11d86608b5937cae9a125d0ffe5491918a100",
+   "MBps": 62.8
+  },
+  {
+   "tep": "diffusion_models/wan2.2_i2v_low_noise_14B_fp16.safetensors",
+   "byte": 28577914792,
+   "sha256": "edb89340c8a6fbf1a70e76a839ae01eaf7d289f05ea1ebd6b1a3fc6f533826e9",
+   "MBps": 52.0
+  },
+  {
+   "tep": "diffusion_models/wan2.2_fun_control_high_noise_14B_bf16.safetensors",
+   "byte": 28579237064,
+   "sha256": "e4be07ca25d67aaf3461ef87fbb5ad8762f602a5efa620aea9dc250ac2747a9d",
+   "MBps": 39.2
+  },
+  {
+   "tep": "diffusion_models/wan2.2_fun_control_low_noise_14B_bf16.safetensors",
+   "byte": 28579237064,
+   "sha256": "d82bc21cd703e089eee4f6fabc25e90ebbd00965623fdc5e83d46d01dbeac2c3",
+   "MBps": 38.2
+  }
+ ],
+ "bo_qua": [],
+ "loi": [],
+ "tong_tep": 8,
+ "giay": 3770.1
+}

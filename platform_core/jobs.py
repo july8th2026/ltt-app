@@ -24,11 +24,11 @@ import importlib
 from datetime import datetime, timedelta, timezone
 from typing import Callable, Optional
 
-from sqlalchemy import case, func, select
+from sqlalchemy import case, func, or_, select
 from sqlalchemy.orm import Session as DbSession, aliased
 
-from platform_core.models import (JOB_CANCELLED, JOB_DONE, JOB_ERROR, JOB_QUEUED, JOB_RUNNING,
-                                  Job)
+from platform_core.models import (ExecutionLease, JOB_CANCELLED, JOB_DONE, JOB_ERROR,
+                                  JOB_QUEUED, JOB_RUNNING, Job)
 from platform_core import job_events
 from platform_core.i18n import N_
 
@@ -182,9 +182,121 @@ def submit(db: DbSession, *, user_id: str, app_slug: str, job_type: str,
 
 # ── Worker nhặt job ───────────────────────────────────────────────────────────
 
+def _con_cho_tai_nguyen(now: datetime):
+    """Điều kiện SQL: job này còn chỗ ở tài nguyên dùng chung của nó.
+
+    🔴 VÌ SAO NÓ TỒN TẠI — đo từ log worker production 28 ngày (11/08→07/09/2026):
+
+        9.833 / 10.663 = 92,2 %  lượt nhặt `ltt_llm.chat` kết thúc bằng
+                                 "hoãn Ns: tài nguyên llm_remote đang bận"
+        11.929 lượt nhặt  →  868 job xong  =  13,7 lượt nhặt cho MỖI job hoàn tất
+
+    Trước đây `claim()` nhặt job **trước**, rồi worker mới giành `ExecutionLease`
+    **sau**; hụt thì `defer_resource` xếp lại. Với `llm_remote` chỉ có MỘT suất,
+    mọi job chat loại trừ nhau — nên 92 % kia là trạng thái **bình thường**, không
+    phải sự cố. Mỗi lượt nhặt-rồi-nhả vẫn tốn một vòng truy vấn, một lượt ghi
+    `job_events`, và một khoảng chờ mà khách nhìn thấy.
+
+    ⭐ Cách sửa là **hỏi trước, nhặt sau**. Đếm lease còn sống của tài nguyên rồi
+    loại job của những tài nguyên đã đầy ra khỏi câu truy vấn — bộ nhặt không bao
+    giờ nhìn thấy chúng.
+
+    ⛔ Đừng "sửa" bằng cách nới `ORPHAN_TIMEOUT` hay giảm giãn cách thử lại: cả
+       hai làm vòng quay **dày hơn**, không làm nó ngắn đi.
+
+    ⚠️ Đây là **bộ lọc cơ hội, không phải khoá**. Hai worker vẫn có thể cùng thấy
+       một suất trống rồi cùng nhặt hai job khác nhau của cùng tài nguyên. Lớp
+       giành thật vẫn là `ExecutionLease` với `UNIQUE(resource, slot)`, và
+       `job_runner` vẫn `defer_resource` khi hụt. Bộ lọc này chỉ làm chuyện đó
+       thành **hiếm** thay vì **thường trực**.
+    """
+    from platform_core.llm.admission import ORPHAN_TIMEOUT
+
+    # Lease quá hạn đập nhịp là lease của worker đã chết — `admission.acquire`
+    # thu hồi chúng, nên ở đây cũng không được tính là đang chiếm suất.
+    con_song = now - ORPHAN_TIMEOUT
+    dang_giu = (
+        select(func.count(ExecutionLease.id))
+        .where(ExecutionLease.resource == Job.admission_resource,
+               ExecutionLease.heartbeat_at >= con_song)
+        .correlate(Job)
+        .scalar_subquery()
+    )
+    return or_(
+        Job.admission_resource == "",      # job không dùng tài nguyên chia sẻ
+        Job.admission_slots <= 0,          # app chưa khai sức chứa ⇒ giữ hành vi cũ
+        dang_giu < Job.admission_slots,
+    )
+
+
+def _app_hop_nang_luc(capabilities: Optional[set[str]]) -> Optional[list[str]]:
+    """Slug các app mà worker với năng lực này phục vụ được.
+
+    ``None`` nghĩa là worker đa năng — không lọc gì cả. Danh sách **rỗng** là
+    một câu trả lời khác hẳn: worker này không phục vụ được app nào.
+    """
+    if capabilities is None:
+        return None
+    from platform_core.registry import discover
+    return [item.slug for item in discover() if not item.error and
+            set(item.manifest.requires).issubset(capabilities)]
+
+
+def co_job_dang_cho_tai_nguyen(
+        db: DbSession, capabilities: Optional[set[str]] = None) -> bool:
+    """Có job đến hạn nhưng đang bị chặn **chỉ vì** tài nguyên hết suất không?
+
+    🔴 VÌ SAO CẦN HÀM NÀY. Từ khi `claim()` lọc theo suất, `None` mang hai
+    nghĩa (xem docstring của nó). Mọi bên gọi ngoài vòng worker đều viết
+
+        job = jobs.claim(db, worker_id=...)
+        if job is None:
+            break            # ← DỪNG ở một trạng thái chỉ là tạm
+
+    ⛔ Bản vá hiển nhiên — "thấy `None` thì ngủ rồi thử lại" — **sai**, vì nó
+       phạt cả những lượt hàng đợi rỗng thật bằng đúng số giây ấy. Cái cần sửa
+       không phải phản ứng, mà là **câu hỏi**: bên gọi phải hỏi được theo Ý
+       NGHĨA thay vì đoán từ HÌNH DẠNG của giá trị trả về.
+
+    Trả ``True`` khi tồn tại ít nhất một job `queued` đã đến hạn, thuộc app
+    worker này phục vụ được, có khai tài nguyên chia sẻ, và tài nguyên đó hiện
+    **không còn suất**. Trả ``False`` cho mọi trạng thái khác — kể cả hàng đợi
+    rỗng, và kể cả khi có job nhưng nó nhặt được ngay.
+
+    ⚠️ Đây là một **ảnh chụp**, không phải lời hứa: suất có thể được nhả ngay
+       sau khi hàm trả về. Nó trả lời *"lúc này có đáng chờ không"*, không trả
+       lời *"chờ bao lâu"*. Chỉ đọc — không khoá dòng nào.
+    """
+    now = _bay_gio()
+    stmt = select(func.count(Job.id)).where(
+        Job.status == JOB_QUEUED,
+        Job.next_run_at <= now,
+        Job.admission_resource != "",
+        Job.admission_slots > 0,
+        ~_con_cho_tai_nguyen(now),
+    )
+    eligible = _app_hop_nang_luc(capabilities)
+    if eligible is not None:
+        if not eligible:
+            return False
+        stmt = stmt.where(Job.app_slug.in_(eligible))
+    return bool(db.execute(stmt).scalar_one())
+
+
 def claim(db: DbSession, *, worker_id: str,
           capabilities: Optional[set[str]] = None) -> Optional[Job]:
-    """Nhặt một job đến hạn chạy. Trả None nếu hàng đợi trống.
+    """Nhặt một job đến hạn chạy, hoặc ``None`` nếu lượt này không nhặt được gì.
+
+    ⚠️ ``None`` KHÔNG còn nghĩa là "hàng đợi trống". Nó có **hai** nguyên nhân:
+
+        1. không có job nào đến hạn cho worker này — hết việc thật;
+        2. có job đến hạn, nhưng tài nguyên dùng chung của nó đã hết suất
+           (`_con_cho_tai_nguyen`) — việc vẫn còn đó, chỉ là chưa tới lượt.
+
+    Hai nguyên nhân đó cần hai phản ứng khác nhau, và **giá trị trả về không
+    phân biệt được chúng**. Vòng worker thật ngủ rồi thử lại nên nó đúng ở cả
+    hai; bên gọi nào cần biết mình đang ở trạng thái nào thì hỏi
+    `co_job_dang_cho_tai_nguyen()` — đừng suy từ `None`.
 
     `FOR UPDATE SKIP LOCKED`: nếu một worker khác đã khoá dòng này, ta bỏ qua
     nó thay vì chờ — nên nhiều worker chạy song song không giẫm chân nhau và
@@ -196,13 +308,12 @@ def claim(db: DbSession, *, worker_id: str,
     """
     now = _bay_gio()
     stmt = select(Job).where(Job.status == JOB_QUEUED, Job.next_run_at <= now)
-    if capabilities is not None:
-        from platform_core.registry import discover
-        eligible = [item.slug for item in discover() if not item.error and
-                    set(item.manifest.requires).issubset(capabilities)]
+    eligible = _app_hop_nang_luc(capabilities)
+    if eligible is not None:
         if not eligible:
             return None
         stmt = stmt.where(Job.app_slug.in_(eligible))
+    stmt = stmt.where(_con_cho_tai_nguyen(now))
     peer = aliased(Job)
     last_account_claim = (
         select(func.max(peer.last_claimed_at))

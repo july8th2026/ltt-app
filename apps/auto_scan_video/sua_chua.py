@@ -1,0 +1,303 @@
+"""Ke hoach SUA: tu mot khiem khuyet, tim giai doan SOM NHAT co the sua no.
+
+## Vi sao "som nhat CO THE" chu khong phai "som nhat"
+
+Mot lan chay lai ca chuoi sua duoc moi thu — va tra tien cho moi thu. Pha 19 cam
+dieu do bang chu ("No full-run automatic rerun"), va ly do khong chi la tien:
+
+⛔ Chay lai mot giai doan da dung se cho ra mot ket qua **khac** (model la ngau
+   nhien). Nen mot lan chay lai rong khong phai "sua mot loi" — no la "danh doi
+   mot loi da biet lay mot tap ket qua chua biet".
+
+⭐ Nen moi loai khiem khuyet duoc anh xa toi **dung** giai doan sua duoc no:
+
+    doc sai      -> VOICE_SYNTHESIS   (doc lai DUNG doan do)
+    dich sai     -> CONTENT_PROCESS   (viet lai DUNG cau do)
+    khong vua    -> VOICE_SYNTHESIS   (nan lai — pha 15 da co bac thang)
+    cat sai      -> EDIT_PLAN         (xem lai DUNG canh do)
+    hinh hong    -> RENDER            (dung lai — khong phai loi noi dung)
+
+🔴 **Va chieu nguoc lai moi la cho de sai.** Mot cau bi may doc sai (TTS nuot mot
+   tu) **khong duoc** day nguoc ve `CONTENT_PROCESS`: cau van ban do dang DUNG,
+   va viet lai no la tra tien de doi mot cau dung lay mot cau khac cung dung —
+   roi van co the bi doc sai lan nua.
+
+   Mot ban dich sai thi nguoc lai: doc lai bao nhieu lan cung ra cung mot y sai.
+
+⇒ "Som nhat co the" = giai doan som nhat ma **noi dung cua no la nguyen nhan**.
+  Di som hon la lam lai viec dung; di muon hon la khong sua duoc gi.
+
+## Vong sua co TRAN, va tran do la mot con so nho
+
+Mot vong "sua roi kiem lai" tren nhung dich vu tra tien la mot hoa don khong co
+day. Va khac vong nan cua pha 15 (vong do sua mot dai luong DO DUOC — do dai —
+nen no hoi tu), vong nay sua mot phan doan CHU QUAN cua model. Hai lan lien tiep
+model cho hai phan doan khac nhau ve cung mot cau la binh thuong; lap ba lan la
+tra tien de xem model doi y.
+"""
+from __future__ import annotations
+
+import hashlib
+import json
+from dataclasses import dataclass, field
+
+from platform_core.i18n import _ as _t
+
+#: Doi khi doi bat cu thu gi o duoi. Vao van tay cua ke hoach.
+PHIEN_BAN_SUA = 1
+
+# ── Loai khiem khuyet ────────────────────────────────────────────────────────
+DOC_SAI = "doc_sai"          #: tieng doc ra khong khop van ban dich
+DICH_SAI = "dich_sai"        #: nghia tieng Viet lech so voi nguon
+KHONG_VUA = "khong_vua"      #: doan khong vua khe (pha 15 danh dau `CAN_SUA`)
+CAT_SAI = "cat_sai"          #: canh bi cat lam dut mach hinh
+HINH_HONG = "hinh_hong"      #: ban ra hong ve ky thuat, khong phai noi dung
+LOAI = (DOC_SAI, DICH_SAI, KHONG_VUA, CAT_SAI, HINH_HONG)
+
+#: 🔑 Bang nay LA chinh sach. Mot chuoi `if` rai rac cho cung viec se lech nhau
+#:    o mot nhanh nao do, va nhanh lech se la nhanh it duoc chay nhat.
+GIAI_DOAN_SUA = {
+    DOC_SAI: "voice_synthesis",
+    DICH_SAI: "content_process",
+    KHONG_VUA: "voice_synthesis",
+    CAT_SAI: "edit_plan",
+    HINH_HONG: "render",
+}
+
+#: So vong sua tu dong toi da cho MOT lan chay.
+#:
+#: ⛔ Khac vong nan cua pha 15: vong do sua mot dai luong DO DUOC (do dai tieng)
+#:    nen no hoi tu. Vong nay sua mot phan doan CHU QUAN cua model — hai lan chay
+#:    co the cho hai phan doan khac nhau ve cung mot cau, va lap ba lan la tra
+#:    tien de xem model doi y.
+VONG_SUA_TOI_DA = 1
+
+#: Nguong khop giua van ban da viet va thu may doc ra (0-1).
+#:
+#: ⚠️ CHUA DO tren ban ghi that. ASR tren chinh tieng minh vua sinh ra thuong rat
+#:    chinh xac, nhung no van sai o so, ten rieng va tu muon — nen nguong khong
+#:    the la 1,0. 0,80 chon theo huong **it bao dong gia**, vi mot bao dong gia o
+#:    day ton mot lan doc lai co tra tien. Pha 21 do lai.
+NGUONG_KHOP_DOC = 0.80
+
+#: Do tin toi thieu de tin mot phan doan cua model.
+#:
+#: ⭐ Duoi muc nay, ket luan duoc ghi lai nhung **khong** sinh viec sua: mot model
+#:    khong chac chan khong phai mot ly do de tra tien lam lai.
+DO_TIN_TOI_THIEU = 0.70
+
+
+class SuaChuaError(ValueError):
+    """Ke hoach sua khong dung hop dong."""
+
+
+@dataclass(frozen=True)
+class KhiemKhuyet:
+    """MOT khiem khuyet, gan voi MOT don vi cu the."""
+
+    loai: str
+    #: Ma doan (loi noi) hoac ma canh (hinh). Rong = ca ban ra.
+    ma: str = ""
+    ly_do: str = ""
+    do_tin: float = 1.0
+    bang_chung: dict = field(default_factory=dict)
+
+    def __post_init__(self):
+        if self.loai not in LOAI:
+            raise SuaChuaError(
+                _t('Loại khiếm khuyết không hợp lệ: {l}').format(l=self.loai))
+
+    @property
+    def giai_doan(self) -> str:
+        return GIAI_DOAN_SUA[self.loai]
+
+    @property
+    def dang_tin(self) -> bool:
+        return float(self.do_tin) >= DO_TIN_TOI_THIEU
+
+
+def khop_van_ban(a: str, b: str) -> float:
+    """Do khop giua hai chuoi, 0-1. Dung cho QC giong noi.
+
+    ⭐ So tren TU da chuan hoa chu khong tren ky tu: ASR viet "hai muoi ba" con
+       ban dich viet "23", va mot phep so ky tu se goi do la lech 100% trong khi
+       tai nguoi nghe thay dung. So theo tu **va** bo dau cham cau la phep xap xi
+       tho nhung no sai theo huong AN TOAN — no bao dong it hon, chu khong nhieu
+       hon.
+
+    ⛔ Khong dung `difflib.SequenceMatcher` tren ca chuoi: no nhay voi thu tu tu
+       den muc mot cau dao hai menh de se bi cham diem rat thap, trong khi ve mat
+       long tieng do van la mot cau doc dung.
+    """
+    import re
+
+    def tach(s: str) -> list[str]:
+        s = re.sub(r"[^\w\s]", " ", str(s or "").lower(), flags=re.UNICODE)
+        return [t for t in s.split() if t]
+
+    x, y = tach(a), tach(b)
+    if not x and not y:
+        return 1.0
+    if not x or not y:
+        return 0.0
+    from collections import Counter
+
+    cx, cy = Counter(x), Counter(y)
+    chung = sum((cx & cy).values())
+    return round(2.0 * chung / (len(x) + len(y)), 4)
+
+
+def tu_qc_giong(doan: list[dict], *, nguong: float | None = None) -> list[KhiemKhuyet]:
+    """Khiem khuyet tu QC GIONG NOI: `[{ma, chu, doc_ra}]`.
+
+    ⛔ `nguong=None` chu khong `nguong=NGUONG_KHOP_DOC`: mot mac dinh duoc gan
+       LUC DINH NGHIA HAM thi doi hang so sau do khong doi duoc gi. Bai hoc tra
+       gia o pha 14.
+    """
+    n = NGUONG_KHOP_DOC if nguong is None else float(nguong)
+    ra = []
+    for d in doan or []:
+        diem = khop_van_ban(d.get("chu"), d.get("doc_ra"))
+        if diem < n:
+            ra.append(KhiemKhuyet(
+                DOC_SAI, ma=str(d.get("ma") or ""),
+                ly_do=_t('Tiếng đọc ra không khớp lời đã viết.'),
+                do_tin=1.0,   # phep DO, khong phai phan doan
+                bang_chung={"diem_khop": diem, "nguong": n,
+                            "doc_ra": str(d.get("doc_ra") or "")[:200]}))
+    return ra
+
+
+def tu_qc_ngu_nghia(phan_doan: list[dict]) -> list[KhiemKhuyet]:
+    """Khiem khuyet tu QC NGU NGHIA: `[{ma, dat, ly_do, do_tin}]`."""
+    ra = []
+    for d in phan_doan or []:
+        if bool(d.get("dat", True)):
+            continue
+        ra.append(KhiemKhuyet(
+            DICH_SAI, ma=str(d.get("ma") or ""),
+            ly_do=str(d.get("ly_do") or ""),
+            do_tin=float(d.get("do_tin") or 0.0),
+            bang_chung={"nguon": str(d.get("nguon") or "")[:200],
+                        "dich": str(d.get("dich") or "")[:200]}))
+    return ra
+
+
+def tu_qc_hinh(phan_doan: list[dict]) -> list[KhiemKhuyet]:
+    """Khiem khuyet tu QC HINH: `[{ma_canh, dat, ly_do, do_tin}]`."""
+    ra = []
+    for d in phan_doan or []:
+        if bool(d.get("dat", True)):
+            continue
+        ra.append(KhiemKhuyet(
+            CAT_SAI, ma=str(d.get("ma_canh") or ""),
+            ly_do=str(d.get("ly_do") or ""),
+            do_tin=float(d.get("do_tin") or 0.0),
+            bang_chung={"moc_giay": d.get("moc_giay")}))
+    return ra
+
+
+def tu_nan(cac_nan: list[dict]) -> list[KhiemKhuyet]:
+    """Khiem khuyet tu bac thang nan cua pha 15: trang thai `can_sua`."""
+    from .nan_cho_vua import CAN_SUA
+
+    return [KhiemKhuyet(KHONG_VUA, ma=str(d.get("ma") or ""),
+                        ly_do=_t('Đoạn không vừa khe kể cả sau khi co giãn.'),
+                        do_tin=1.0,
+                        bang_chung={"giay": d.get("giay"), "khe": d.get("khe")})
+            for d in cac_nan or []
+            if str(d.get("trang_thai_nan") or "") == CAN_SUA]
+
+
+@dataclass(frozen=True)
+class KeHoachSua:
+    """Nhung gi phai lam lai, va o dau."""
+
+    khiem_khuyet: tuple[KhiemKhuyet, ...]
+    vong: int = 0
+
+    @property
+    def dang_tin(self) -> tuple[KhiemKhuyet, ...]:
+        return tuple(k for k in self.khiem_khuyet if k.dang_tin)
+
+    @property
+    def can_sua(self) -> bool:
+        return bool(self.dang_tin)
+
+    def giai_doan_sua(self) -> dict[str, list[str]]:
+        """`{giai_doan: [ma, ...]}` — dung nhung don vi phai lam lai.
+
+        ⛔ Chi gom khiem khuyet **dang tin**: mot model khong chac chan khong phai
+           mot ly do de tra tien lam lai.
+        """
+        ra: dict[str, list[str]] = {}
+        for k in self.dang_tin:
+            ra.setdefault(k.giai_doan, [])
+            if k.ma and k.ma not in ra[k.giai_doan]:
+                ra[k.giai_doan].append(k.ma)
+        return {g: sorted(m) for g, m in ra.items()}
+
+    def con_vong(self) -> bool:
+        return int(self.vong) < VONG_SUA_TOI_DA
+
+    def sang_dict(self) -> dict:
+        return {
+            "phien_ban": PHIEN_BAN_SUA,
+            "vong": int(self.vong),
+            "can_sua": self.can_sua,
+            "con_vong": self.con_vong(),
+            "giai_doan_sua": self.giai_doan_sua(),
+            "khiem_khuyet": [
+                {"loai": k.loai, "ma": k.ma, "ly_do": k.ly_do,
+                 "do_tin": round(float(k.do_tin), 3),
+                 "dang_tin": k.dang_tin,
+                 "giai_doan": k.giai_doan,
+                 "bang_chung": dict(k.bang_chung)}
+                for k in self.khiem_khuyet],
+        }
+
+    def van_tay(self) -> str:
+        goi = json.dumps(self.sang_dict(), sort_keys=True, ensure_ascii=False)
+        return hashlib.sha256(goi.encode("utf-8")).hexdigest()[:32]
+
+
+def lap_ke_hoach(*, qc_giong=None, qc_ngu_nghia=None, qc_hinh=None,
+                 cac_nan=None, vong: int = 0) -> KeHoachSua:
+    """Gom moi nguon khiem khuyet thanh MOT ke hoach.
+
+    ⭐ Mot ke hoach chu khong phai bon danh sach: neu mot doan vua bi doc sai vua
+       bi dich sai, ta phai sua o `content_process` (som hon) va lan doc lai se
+       tu den sau — chu khong phai sua hai lan o hai cho.
+    """
+    kk = (list(tu_qc_giong(qc_giong or []))
+          + list(tu_qc_ngu_nghia(qc_ngu_nghia or []))
+          + list(tu_qc_hinh(qc_hinh or []))
+          + list(tu_nan(cac_nan or [])))
+    return KeHoachSua(tuple(kk), vong=int(vong))
+
+
+def gon_theo_don_vi(ke: KeHoachSua) -> dict[str, str]:
+    """`{ma: giai_doan}` — MOT giai doan cho MOI don vi, la giai doan SOM NHAT.
+
+    🔴 Day la cho "pham vi nho nhat an toan" duoc cuong che.
+
+       Neu doan `seg_0007` vua bi bao doc sai (sua o `voice_synthesis`) vua bi bao
+       dich sai (sua o `content_process`), thi sua o `voice_synthesis` la vo ich:
+       doc lai mot cau dich sai van ra mot cau dich sai. Phai sua o cho som hon,
+       va lan doc lai se tu den sau no.
+
+    ⛔ Nguoc lai KHONG dung: mot doan CHI bi doc sai khong duoc day nguoc ve
+       `content_process`. Cau van ban do dang DUNG; viet lai no la tra tien de
+       doi mot cau dung lay mot cau khac cung dung.
+    """
+    from .pipeline import CHUOI
+
+    thu_tu = {g.ten: i for i, g in enumerate(CHUOI)}
+    ra: dict[str, str] = {}
+    for k in ke.dang_tin:
+        if not k.ma:
+            continue
+        cu = ra.get(k.ma)
+        if cu is None or thu_tu.get(k.giai_doan, 99) < thu_tu.get(cu, 99):
+            ra[k.ma] = k.giai_doan
+    return ra
