@@ -62,6 +62,9 @@ async page => {
   function kiemTrang(page) {
     const vanDe = [];
     const choPhep = [];
+    // Cac yeu cau media bi HUY do `preload="metadata"` — khong tinh la van de
+    // nhung KHONG bi nuot im: in ra cuoi luot chay de nguoi doc thay.
+    const daBo = [];
     page.on('console', (m) => {
       if (m.type() !== 'error') return;
       // Cung khuon `ltt_voice_rc1.js`: loc dong "Failed to load resource:..."
@@ -78,7 +81,25 @@ async page => {
     page.on('pageerror', (e) => vanDe.push('pageerror: ' + e.message));
     page.on('requestfailed', (r) => {
       const tb = r.failure();
-      vanDe.push('requestfailed: ' + r.url() + ' — ' + (tb ? tb.errorText : '?'));
+      const loi = tb ? tb.errorText : '?';
+      // ⛔ MOT ngoai le HEP, va CHI o tang THAT: the <audio id="lv-player">
+      //    cua Studio khai `preload="metadata"` (ltt_voice_studio.html). Voi
+      //    mot WAV THAT (hang tram KB) Chromium doc xong phan dau roi HUY
+      //    chinh yeu cau do — Playwright bao lai thanh `requestfailed` voi
+      //    `net::ERR_ABORTED`, resourceType `media`. Do la hanh vi BINH
+      //    THUONG cua trinh duyet, khong phai loi ung dung: cung URL do
+      //    `page.request.get` o `taoVaCho` tra 200 + RIFF hop le ngay sau do.
+      //    Tang mock khong bao gio thay no vi WAV gia lap qua nho (ve trong
+      //    MOT response, khong con gi de huy).
+      //    HEP co y — dung BA dieu kien cung luc, khong phai mot: resourceType
+      //    `media`, `net::ERR_ABORTED`, va URL di qua `/ltt-voice/audio/`.
+      //    Moi requestfailed khac (ke ca ERR_ABORTED o resource khac) van bao.
+      if (r.resourceType() === 'media' && loi === 'net::ERR_ABORTED'
+          && r.url().includes('/ltt-voice/audio/')) {
+        daBo.push(r.url());
+        return;
+      }
+      vanDe.push('requestfailed: ' + r.url() + ' — ' + loi);
     });
     page.on('response', (r) => {
       const st = r.status();
@@ -97,6 +118,8 @@ async page => {
       khangDinh(nhan) {
         if (vanDe.length) throw new Error(`${nhan}: ${vanDe.length} van de — ${vanDe.join(' | ')}`);
       },
+      // Bao cao nhung yeu cau media bi huy da duoc tha (xem chu thich tren).
+      daBoRa() { return daBo.slice(); },
     };
   }
 
@@ -196,6 +219,11 @@ async page => {
     throw new Error('EN: WAV mang dau van tay ltt-voice-mock — sai tang');
   kt.khangDinh('that-en');
 
+  const bo = kt.daBoRa();
+  if (bo.length) {
+    console.log(`  (da THA ${bo.length} yeu cau media bi huy boi preload="metadata" `
+      + '— xem chu thich trong `kiemTrang`; cung URL do tai ve 200 + RIFF hop le)');
+  }
   console.log('THAT OK — luong VI (preset) + luong EN (giong ghi danh) qua '
     + 'cong giong THAT, 0 loi console/pageerror/requestfailed/HTTP>=400.');
 }
