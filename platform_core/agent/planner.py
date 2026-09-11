@@ -70,12 +70,38 @@ def _model_nha() -> str:
 
     ⛔ Dung go lai id o day. Doi GGUF ben duoi thi registry doi, va cho nay
        phai di theo -- do chinh la viec cua registry.
+
+    🔴 D09 (dual-model 2.4) DOI CACH CHON, KHONG DOI BAT BIEN.
+
+       Ban truoc chon "model text dau tien KHONG co co `vision`". Phep chon ay
+       hong o hai chieu, va ca hai deu that:
+
+       (a) **No khong tra loi dung cau hoi.** Tu 11/09 may B chay HAI model tren
+           HAI card. Lap ke hoach la viec **noi bo**, nen model cua no la thu
+           `MODEL_NOI_BO_MAC_DINH` khai (`ltt-3.5`, 5060 Ti) — khong phai "cai
+           dau tien khong doc anh". Truoc 2.4 phep chon ay tra ve `qwen38-api`
+           trong khi `_goi_model` giu suat cua... cung `MODEL_MAC_DINH`, nen hai
+           ve trung nhau **do trung hop**, khong do thiet ke.
+
+       (b) **No tu vo o Task 3.3.** Khi `qwen38-api` nap mmproj va khai
+           `vision: True`, ca hai model deu co co ⇒ vong lap khong tra ve gi ⇒
+           `PlannerError("registry khong khai model text nao")`, va planner
+           chet han. Cung lop loi ma `apps/auto_scan_video/ai.py::model_cho`
+           dang mang (bao cao 2.3 §1.2), o mot tep khac.
+
+    ⇒ Nay: hoi **ban khai** lay bi danh, doi bi danh sang id noi bo, roi **van
+      doi chieu voi registry** — id khong co trong registry thi tra `""`, giu
+      nguyen thong diep loi cu. Phan "hoi registry" khong mat; phan "doan bang
+      mot co" thi mat.
     """
     from platform_core import providers
-    for m in providers.models_for("ltt_llm", APIKEY_CAT_CHAT):
-        if not (getattr(m, "capabilities", None) or {}).get("vision"):
-            return m.id
-    return ""
+    from platform_core.llm import canonical
+
+    id_nha = canonical.ALIAS_SANG_ID.get(canonical.MODEL_NOI_BO_MAC_DINH, "")
+    if not id_nha:
+        return ""
+    co_that = {m.id for m in providers.models_for("ltt_llm", APIKEY_CAT_CHAT)}
+    return id_nha if id_nha in co_that else ""
 
 
 #: ⛔ BÍ DANH, không phải định nghĩa. Chuyển lên `platform_core/llm/canonical.py`
@@ -115,11 +141,13 @@ def _luat_cho_planner(prompt: str) -> dict:
     #    RỖNG, nên đọc thẳng nó sẽ ra 0 ⇒ `{}` ⇒ lease **vô hình** với sổ ngân
     #    sách KV, đúng cái hướng an toàn ở dưới sinh ra để tránh.
     try:
-        suc = tool.admission_cho(canonical.MODEL_MAC_DINH) if tool else None
+        # D09: việc lập kế hoạch là việc NỘI BỘ ⇒ ngân sách KV của model nội bộ
+        # (`ltt-3.5`), không phải của model mặc định bán cho khách (`ltt-3.8`).
+        suc = tool.admission_cho(canonical.MODEL_NOI_BO_MAC_DINH) if tool else None
     except KeyError:
         logging.getLogger(__name__).exception(
             "model nha %r khong co trong ban khai admission cua tool",
-            canonical.MODEL_MAC_DINH)
+            canonical.MODEL_NOI_BO_MAC_DINH)
         return {}
     pool = int(suc.token_pool) if suc else 0
     if pool <= 0:
@@ -210,7 +238,10 @@ def _goi_model(db: DbSession, prompt: str) -> str:
     ban_do: dict[str, str] = {}
     id_nha = _model_nha()
     ve = None
-    suc = _tai_nguyen_nha(canonical.MODEL_MAC_DINH)
+    # D09: suất giành phải là suất của model SẮP GỌI (`_model_nha()` đọc cùng
+    # một hằng), nếu không thì lease nằm ở pool KV của card kia — và một suất
+    # giành sai pool không bảo vệ gì.
+    suc = _tai_nguyen_nha(canonical.MODEL_NOI_BO_MAC_DINH)
 
     if id_nha:
         ve = admission.acquire(
