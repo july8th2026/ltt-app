@@ -201,6 +201,50 @@ def test_moi_MIEN_TRU_deu_co_LY_DO_du_dai_de_cai_lai():
             f"mien tru {khoa} co ly do qua ngan de ai do cai lai: {ly_do!r}")
 
 
+#: Cua duoc mien `dedupe_key`, kem ly do. Khoa `(tep, ham)`.
+#:
+#: Danh sach nay phai NGAN - moi muc la mot cua `submit_with_credit` khong
+#: chong double-submit. `_p_phat_dan.py::phat_dan` KHONG nam o day: no chi
+#: goi `credit.giu_cho` (giu theo phien qua `admission.acquire`), khong goi
+#: `submit_with_credit` - nen no khong lot vao phep quet duoi day va khong
+#: can mien tru nao.
+MIEN_TRU_DEDUPE = {}
+
+
+def test_moi_submit_with_credit_deu_truyen_DEDUPE_KEY():
+    """Moi loi goi `submit_with_credit` phai truyen `dedupe_key=` - ke ca
+
+    khi khoa duoc TINH TRUOC vao mot bien cuc bo roi truyen bang ten (khuon
+    `khoa_lap = dedupe_key_for(...); submit_with_credit(..., dedupe_key=khoa_lap)`
+    o `_p_giong.py`/`_p_lich_su.py`): do van la mot tu khoa ten `dedupe_key`
+    tai diem goi - phep quet doc CAY CU PHAP cua chinh loi goi, khong doc
+    nguoc lai xem bien ay duoc gan tu dau.
+    """
+    sai = []
+    for tep in APP.rglob("*.py"):
+        if "__pycache__" in str(tep):
+            continue
+        for fn in _cac_ham(tep):
+            khoa = (tep.relative_to(APP).as_posix(), fn.name)
+            for n in ast.walk(fn):
+                if (isinstance(n, ast.Call)
+                        and (getattr(n.func, "id", "") or getattr(n.func, "attr", "")) == "submit_with_credit"
+                        and "dedupe_key" not in {k.arg for k in n.keywords}
+                        and khoa not in MIEN_TRU_DEDUPE):
+                    sai.append(f"{khoa} dong {n.lineno}")
+    assert not sai, f"cua tieu tien khong chong nop trung: {sai}"
+
+
+def test_moi_MIEN_TRU_DEDUPE_tro_toi_ham_co_that():
+    """Mien tru tro toi mot ham da doi ten/xoa la mot lo mo ra am tham -
+
+    cung ly do voi `test_moi_MIEN_TRU_deu_tro_toi_mot_ham_CO_THAT` o tren. Voi
+    dict rong, vong lap khong chay va phep kiem xanh - dung nhu ky vong.
+    """
+    for (tep, ham) in MIEN_TRU_DEDUPE:
+        assert any(f.name == ham for f in _cac_ham(APP / tep)), (tep, ham)
+
+
 def test_doc_lai_KHONG_dung_YeuCau_lam_tai_trong():
     """⛔ `doc_lai` phải KIỂM bằng `chuan_hoa` nhưng NỘP `params` gốc.
 
