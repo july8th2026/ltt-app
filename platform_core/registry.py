@@ -99,6 +99,31 @@ def tai_tham_chieu(reference: str):
 
 
 @dataclass(frozen=True)
+class AdmissionModel:
+    """Sức chứa admission của MỘT model trong một tool (multijob 2.1).
+
+    Vì sao tách khỏi `ToolSpec.admission_resource/slots/token_pool`: bộ ba đó
+    tả được đúng MỘT pool cho cả tool, còn `text.chat` sắp phục vụ hai model
+    (`ltt-3.8`, `ltt-3.5`) trên hai pool KV khác nhau của CÙNG một tool. Khoá
+    `"*"` trong `ToolSpec.admission_theo_model` nghĩa là "áp cho mọi model của
+    tool" — dùng cho tool không phân biệt theo model (vd Task 5.5, ảnh trên
+    3090: `{"*": AdmissionModel("anh_3090", 1, 0, "rtx3090", "theo_lo")}`).
+    """
+    #: Tên tài nguyên dùng chung phải giành trước khi chạm provider.
+    resource: str
+    #: Số lượt thực thi đồng thời tài nguyên trên cho phép.
+    slots: int
+    #: Ngân sách token KV dùng chung. 0 = không áp ngân sách.
+    token_pool: int = 0
+    #: Nhóm cư trú GPU để trọng tài residency (vd "rtx3090"). Rỗng = không
+    #: trọng tài — chưa có tool nào dùng tới field này ở 2.1, nhưng nó là một
+    #: phần của hợp đồng đã chốt (Task 5.5 sẽ dùng), không phải suy đoán.
+    residency_group: str = ""
+    #: "mac_dinh" | "theo_lo" | "" — vai trò của model trong nhóm cư trú.
+    vai_tro: str = ""
+
+
+@dataclass(frozen=True)
 class ToolSpec:
     """Metadata tất định để Agent/Canvas gọi một job đã tồn tại.
 
@@ -157,6 +182,22 @@ class ToolSpec:
     # admission đặt chỗ `prompt + max_tokens + đệm` và chỉ nhận khi còn vừa
     # (multijob, `platform_core/llm/luat_nhan.py`).
     admission_token_pool: int = 0
+
+    # ── Admission THEO MODEL (multijob 2.1) ─────────────────────────────────
+    #
+    # `{model_id | "*": AdmissionModel(...)}`. Rỗng (mặc định) = tool dùng ba
+    # trường tĩnh ở trên — KHÔNG tool nào hiện có phải đổi để giữ hành vi cũ
+    # (`admission_cho()` tự rơi về nhánh tương thích, xem bên dưới).
+    #
+    # 🔴 VÌ SAO CẦN. `text.chat` sắp phục vụ `ltt-3.8` VÀ `ltt-3.5` — hai model
+    #    trên hai pool KV khác nhau của CÙNG một tool (`docs/.../ltt-llm-dual-
+    #    model`). `admission_resource/slots/token_pool` tĩnh chỉ tả được MỘT
+    #    pool; tool cần một ánh xạ theo model, không phải ba con số dùng chung.
+    #
+    # ⭐ Khoá `"*"` = áp cho MỌI model của tool (Task 5.5: ảnh trên 3090 khai
+    #    `{"*": AdmissionModel("anh_3090", 1, 0, "rtx3090", "theo_lo")}` — tool
+    #    đó không phân biệt sức chứa theo model).
+    admission_theo_model: dict = field(default_factory=dict)
 
     # Optional adapter for protocol routes that must execute synchronously.
     # This is a dotted reference owned by the app; the platform resolves it
@@ -295,6 +336,34 @@ class ToolSpec:
             spec = (self.params_schema or {}).get(self.job_type_by) or {}
             gia_tri = spec.get("default")
         return (self.job_type_lanes or {}).get(gia_tri, self.job_type)
+
+    def admission_cho(self, model: str = "") -> "AdmissionModel | None":
+        """Sức chứa admission cho một model cụ thể (multijob 2.1).
+
+        Ba nhánh, fail-closed:
+
+        1. Có `admission_theo_model`: khớp đúng `model` thì trả nó; không thì
+           rơi về `"*"` nếu tool có khai; không có cả hai ⇒ `KeyError` — một
+           model lạ không được âm thầm chạy KHÔNG có admission (tức không
+           giành lease, không áp ngân sách token) trên một tool đã chủ động
+           phân biệt theo model.
+        2. Không có `admission_theo_model` nhưng có `admission_resource` +
+           `admission_slots > 0`: tool cũ trước 2.1 — trả `AdmissionModel`
+           tương đương, không phân biệt `model`. Hành vi giữ NGUYÊN.
+        3. Không khai gì: tool không giành lease nào ⇒ `None`.
+        """
+        m = self.admission_theo_model
+        if m:
+            if model in m:
+                return m[model]
+            if "*" in m:
+                return m["*"]
+            raise KeyError(
+                f"{self.name}: model {model!r} khong co trong admission_theo_model")
+        if self.admission_resource and self.admission_slots > 0:
+            return AdmissionModel(self.admission_resource, self.admission_slots,
+                                  int(getattr(self, "admission_token_pool", 0) or 0))
+        return None
 
 
 @dataclass(frozen=True)

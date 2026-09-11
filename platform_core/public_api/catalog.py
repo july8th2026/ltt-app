@@ -111,6 +111,10 @@ class PublicTool:
     admission_resource: str = ""
     admission_slots: int = 0
     admission_token_pool: int = 0
+    #: `{model_id | "*": AdmissionModel}` (multijob 2.1). Cùng khuôn với
+    #: `admission_token_pool` ngay trên: vận hành nội bộ, deliberately absent
+    #: từ `to_public_dict` — ánh xạ theo model có thể phơi ra id model nội bộ.
+    admission_theo_model: dict = field(default_factory=dict)
     sync_executor: str = ""
 
     def to_public_dict(self) -> dict:
@@ -350,6 +354,7 @@ def project_tool(manifest, tool) -> PublicTool:
         admission_token_pool=max(
             0, int(getattr(tool, "admission_token_pool", 0) or 0)),
         sync_executor=str(getattr(tool, "sync_executor", "") or ""),
+        admission_theo_model=dict(getattr(tool, "admission_theo_model", {}) or {}),
     )
 
 
