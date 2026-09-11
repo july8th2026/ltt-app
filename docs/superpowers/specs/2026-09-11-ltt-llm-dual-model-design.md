@@ -119,7 +119,7 @@ tiền **sau khi được nhận** → gọi máy B → quyết toán theo `usag
 | **Stream** (`/messages`, `/responses`, ChatLTT) | 200 + SSE ngay; chờ trong phòng chờ, nhịp tim `: ltt-cho` 15 s, mã lý do; hết trần ⇒ sự kiện lỗi đúng khuôn (Anthropic `event: error overloaded_error`, OpenAI Responses `response.failed`, ChatLTT `response.failed code="ban"`) | Multi-Job D-06 (KEEP) |
 | **Đồng bộ** (`/chat/completions`, `_mot_cuc`) | `idempotency.begin` → **commit "đang xử lý" (nhả khoá)** → chờ phòng chờ ≤ `min(60 s, ngân sách thời gian cửa)` → nhận ⇒ giữ tiền ⇒ gọi; hết giờ ⇒ 429 + `Retry-After` (ước tới lúc cửa sổ ảnh đóng nếu lý do là residency), đóng bản ghi, 0 khoản giữ | D04 B |
 | **Job** (`POST /jobs`, job app) | hàng `jobs` bền (Scheduler V1 xếp giữa các job) → worker claim → `hold_persisted` lớp `nen` + đặt chỗ token (`luat_cho`) → không nhận ⇒ `_tra_ve_hang_doi` (không tính attempt) | Multi-Job T9 WIP (KEEP) + TD-D11 |
-| **Planner** (nội bộ) | lớp `noi_bo`, thử **một lần**, không chờ, không lấy slot chừa; hết chỗ ⇒ Gemini như F-06 (việc nội bộ nền tảng, không phải yêu cầu khách — L-2 không áp) | Multi-Job D-03 |
+| **Planner** (nội bộ) | lớp `noi_bo`, thử **một lần**, không chờ, không lấy slot chừa; hết chỗ ⇒ `PlannerError`. ⚠️ **Đính chính 2026-09-11 (Task 1.5):** bản đầu ghi "rơi sang Gemini như F-06" — cascade đó **đã bị gỡ 08/09** (`platform_core/agent/planner.py:18-20`; `canonical.THU_TU_PROVIDER = ("ltt_llm",)`). Mã sống là nguồn chân lý. | Multi-Job D-03 |
 
 **Gateway máy B từ chối** (sổ token/slot của nó, VRAM theo UUID) khi máy A đã nhận ⇒ máy A coi là **bận**: nhả lease, đưa
 lượt về phòng chờ (tối đa `SO_LAN_QUAY_LAI`), không đánh dấu khoá hỏng (INV-004/013).

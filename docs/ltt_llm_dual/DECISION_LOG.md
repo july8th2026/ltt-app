@@ -231,7 +231,7 @@ tính cả chi phí nạp lại.
   đường gọi LLM từ trong job giữ `anh_3090` (dịch prompt ảnh) **không bao giờ** trỏ `ltt-3.8`.
 - **Consequences:** (1) việc nội bộ không bị kẹt residency 3090; 3090 dành cho khách chọn LTT-3.8; (2) chất lượng dịch
   phụ đề/prompt AI trên 9B phải được chấm trong benchmark — nâng app nào lên 3.8 là một dòng khai, không cần REOPEN;
-  (3) planner vẫn được rơi Gemini (việc nội bộ, F-06) nhưng model nhà đầu tiên của nó là 3.5; (4) giá: việc nội bộ đi
+  (3) planner: model nhà của nó là 3.5; **không** có cascade Gemini (gỡ 08/09, `planner.py:18-20`) ⇒ hết chỗ là `PlannerError` — đính chính 11/09 khi làm Task 1.5; (4) giá: việc nội bộ đi
   theo giá model được khai.
 - **Affected:** `platform_core/llm/canonical.py`, `platform_core/registry.py` (trường khai), manifest của
   `anhnoibo/taoanh/thumbnail/taovideo/autosubvideo/prompt_ai_ommi`, `platform_core/image_gen/dich_llm.py`,
