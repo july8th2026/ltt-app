@@ -85,9 +85,24 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     #    loi cho mot giong roi **doc len bang mot giong khac**, va khong cho nao
     #    bao loi vi ca hai deu tim thay mot gia tri hop le cua rieng minh.
     #
-    # ⭐ Mot cau hoi ("giong nao?") phai co MOT cho tra loi. `settings` chi con la
-    #    duong lui cho nhung run cu chua co truong nay.
-    ma_giong = str(tai_lieu.get("ma_giong") or cai.giong_id or "")
+    # ⭐ Mot cau hoi ("giong nao?") phai co MOT cho tra loi.
+    #
+    # 🔴 **V6 pha 19 dong duong lui `or cai.giong_id`, va no KHONG vo hai.**
+    #    Voi `AUTO_MATCH`, `settings.giong_id` RONG — giong duoc chot sau, tu ho
+    #    so noi dung. Nen mot ban long tieng thieu `ma_giong` se roi xuong `""`,
+    #    va `giai_giong("")` tra `(None, ...)`: khong giong tham chieu, tuc
+    #    **giong mac dinh cua engine**, khong ai bam nut — dung loi D-V4-04 cam.
+    #
+    # ⭐ Moi ban long tieng hop le deu CO `ma_giong` (`long_tieng.kiem` doi no
+    #    luc ghi), nen voi moi dau vao hop le dau ra khong doi mot byte. Chi dau
+    #    vao THIEU truong nay — nay tu choi to thay vi doc bang giong khac.
+    ma_giong = str(tai_lieu.get("ma_giong") or "")
+    if not ma_giong:
+        from .rang_giong import ChuaRangError
+
+        raise ChuaRangError(_t(
+            'Bản lồng tiếng không ghi giọng đã chọn — cần chạy lại bước xử lý '
+            'nội dung.'))
 
     # Giai giong MOT LAN cho ca lan chay — day cung la noi quyen so huu giong
     # duoc kiem (I6/I7). Lam lai cho tung doan la N luot tra CSDL cho mot cau

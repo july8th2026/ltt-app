@@ -52,6 +52,11 @@ def moi_truong(tmp_path, monkeypatch):
     #    voi `no such table: asv_run`. Mot phep kiem phu thuoc thu tu import la
     #    mot phep kiem dang do thu tu import.
     import apps.auto_scan_video.tables  # noqa: F401
+    # ⭐ V6 pha 19: cua `routes.tao` nay KIEM quyen so huu giong qua LTT Voice, tuc
+    #    doc bang `voice_profile`. Production luon co bang nay; mot fixture thieu
+    #    no la mot fixture LECH production, va lech theo huong lam loi ha tang
+    #    (500) trong nhu mot loi san pham.
+    import apps.ltt_voice.tables  # noqa: F401
     dbmod.reset_engine()
     if _nhap:
         # ⚠️ CSDL nhap song qua nhieu lan chay, nen phai don TRUOC. Khong don thi

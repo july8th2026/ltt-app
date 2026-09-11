@@ -218,6 +218,43 @@ def _rang_tu_khop(dac_diem: DacDiemMongMuon) -> KetQua:
                      "phong_cach": dac_diem.phong_cach}})
 
 
+def kiem_o_cua(db, *, owner_id: str, che_do: str, giong_id: str) -> None:
+    """Tu choi mot yeu cau giong KHONG THE chot, O CUA — truoc khi giu credit.
+
+    🔴 **Truoc pha 19 cua chi hoi mot cau: "USER_SELECTED co kem ma giong
+       khong"**. Quyen so huu chi duoc kiem o `giai_doan_noi_dung` — tuc SAU
+       khi khach bi giu credit va sau tach nguon + ASR, hai giai doan dat nhat
+       cua chuoi. Mot ma giong cua nguoi khac, mot giong da tat, mot ma go sai:
+       ca ba di het doan dat tien roi moi hong.
+
+    ⭐ Kiem bang **chinh** `_rang_khach_chon` — cung duong ma giai doan noi dung
+       dung. Khong viet phep kiem so huu thu hai: docstring cua `rang` noi ro
+       ly do, va cai sai dau tien cua mot ban sao la mot khach doc video bang
+       **giong nhan ban cua nguoi khac**.
+
+    ⚠️ **Cung MOT cau cho "khong co" va "khong phai cua ban"** — LTT Voice da
+       co y noi vay (`features.giai_giong`): phan biet hai cau la cho phep do
+       xem ma giong nao ton tai. Ta chuyen nguyen cau cua ho, khong viet lai.
+
+    ⛔ `AUTO_MATCH` khong kiem gi o day: giong cua no chot SAU, tu ho so noi
+       dung. Doi mot ma giong o cua cho che do nay la dung loi D-V4-04 cam.
+    """
+    if che_do != CHE_DO_GIONG_TU_CHON:
+        return
+    if not str(giong_id or "").strip():
+        raise RangGiongError(_t('Hãy chọn một giọng đọc.'))
+
+    from apps.ltt_voice import features as _vf
+
+    try:
+        _rang_khach_chon(db, owner_id=owner_id, giong_id=str(giong_id).strip())
+    except _vf.LoiGiongNoi as exc:
+        # ⭐ Chi bat dung lop loi CUA KHACH. Mot loi CSDL hay mang di thang len
+        #    tren: bien no thanh "giong khong hop le" la bao khach sua mot thu
+        #    ho khong he lam sai.
+        raise RangGiongError(str(exc)) from exc
+
+
 def can_cho_ho_so(yeu_cau: YeuCau) -> bool:
     """Lan chay nay co phai doi `HoSoNoiDung` truoc khi chot giong khong?
 

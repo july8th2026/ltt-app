@@ -15717,3 +15717,6 @@ msgstr "Burn into the picture — pick a style"
 
 msgid "Như trên, nhưng bạn chọn kiểu chữ ở ô bên dưới."
 msgstr "As above, but you choose the text style in the box below."
+
+msgid "Bản lồng tiếng không ghi giọng đã chọn — cần chạy lại bước xử lý nội dung."
+msgstr "The dubbing script does not record the chosen voice — the content step needs to run again."

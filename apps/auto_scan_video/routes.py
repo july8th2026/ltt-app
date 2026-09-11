@@ -43,7 +43,7 @@ from server.auth.session import require_login
 from server.deps import get_db, user_hien_tai
 from server.templating import templates
 
-from . import cat_dau_cuoi, hop_dong_v4, features, gia, pipeline, quan_sat, vung_che
+from . import cat_dau_cuoi, hop_dong_v4, features, gia, pipeline, quan_sat, vung_che, rang_giong
 from . import lop_phu as lop_phu_mod
 from . import logo as logo_mod
 from . import phu_de as phu_de_mod
@@ -348,12 +348,12 @@ async def tao(request: Request,
     if not gia.che_do_giong_hop_le(che_do_giong):
         return _lai_voi_loi(request, db, u, _t('Cách chọn giọng không hợp lệ.'))
 
-    # ⭐ Bat SOM: `USER_SELECTED` ma khong co giong thi pha 14 se nem o giua chuoi
-    #    — sau khi khach da doi qua bon giai doan va da bi giu credit. Mot cau
-    #    tra loi "ban chua chon giong" o day tot hon mot lan chay hong o phut thu
-    #    muoi.
-    if (che_do_giong == hop_dong_v4.CHE_DO_GIONG_TU_CHON and not giong_id):
-        return _lai_voi_loi(request, db, u, _t('Hãy chọn một giọng đọc.'))
+    # ⭐ Bat SOM, TRUOC khi giu credit: giong trong, giong cua nguoi khac, giong da
+    #    tat deu bi tu choi o day (V6 pha 19). Xem `rang_giong.kiem_o_cua`.
+    try:
+        rang_giong.kiem_o_cua(db, owner_id=u.id, che_do=che_do_giong, giong_id=giong_id)
+    except rang_giong.RangGiongError as exc:
+        return _lai_voi_loi(request, db, u, str(exc))
 
     # ── Vung che ────────────────────────────────────────────────────────────
     #
