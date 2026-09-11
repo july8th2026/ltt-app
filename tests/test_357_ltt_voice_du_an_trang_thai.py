@@ -1,0 +1,398 @@
+r"""
+Trạng thái DỰ ÁN suy ra từ khối — không phải một cột trôi được (D005/SC-11).
+
+🔴 LỖI ĐÃ TÌM RA (`ca6a00ce`, số cũ `test_351`): `ltt_voice_du_an.html` vẽ huy
+   hiệu theo `voice_project.trang_thai`. Nhưng KHÔNG chỗ nào đặt dự án sang
+   `xong`, và cột đó cũng không biết tệp đã mất (xoá ở Lịch sử, hết hạn 30
+   ngày) — một khối "xong" theo cột có thể không còn tệp nghe được. Task 8 đã
+   dựng `du_an.trang_thai_hien`/`tom_tat(..., duong_tieng=...)` cho MỨC KHỐI
+   (`test_525`); tệp này chốt MỨC DỰ ÁN: `du_an.trang_thai_suy`.
+
+⭐ 5 TRẠNG THÁI, không còn 3 như `ca6a00ce`:
+   `{"trong", "dang_lam", "can_tao_lai", "loi", "xong"}` — xem thứ tự các
+   nhánh ở chính docstring của `trang_thai_suy`. ĐỔI so với bản cũ: một dự án
+   đã có khối nhưng CHƯA khối nào được đọc (`moi`) nay rơi vào `dang_lam`,
+   không còn là `nhap`/`trong` — `trong` CHỈ dành cho dự án không khối nào.
+   Đây là thay đổi có chủ ý của Task 9, không phải sót khi port.
+
+Bốn thứ tệp này canh:
+  1. `du_an.trang_thai_suy` phân loại đúng 5 trạng thái, đúng THỨ TỰ ưu tiên.
+  2. Huy hiệu SỐNG QUA RELOAD: dựng từ CSDL mỗi lần mở, nên không trôi.
+  3. Khối của dự án khác không với tới được qua URL của dự án này (cross-project).
+  4. T-10/T-06: mọi lỗi 400 của `_p_du_an.py` kèm `ma_loi`; `/doc` một khối
+     chặn nộp trùng bằng cả trạng thái khối (409) lẫn `dedupe_key`.
+"""
+from __future__ import annotations
+
+import re
+
+import pytest
+
+from apps.ltt_voice import du_an
+
+
+# ── 1. phân loại (đơn vị, không CSDL) ────────────────────────────────────────
+
+class _K:
+    """Khối giả TỐI GIẢN — đủ thuộc tính `tom_tat()`/`trang_thai_hien()` cần.
+
+    ⛔ `id` và `audio_key` KHÔNG có trong `_K` của `ca6a00ce` (test_351 cũ):
+       bản đó ra đời TRƯỚC `tom_tat()` mang `khoi_hien` (Task 8). Thiếu hai
+       thuộc tính này thì `tom_tat()` hiện tại ném `AttributeError` ngay ở
+       `k.id` — đây là phần "port lên tệp hiện tại" mà brief Task 9 dặn.
+
+    `audio_key` mặc định KHÔNG rỗng khi `tt="xong"`: một khối "xong" bình
+    thường có tệp thật (đó là điều `gan_ket_qua` làm). Test nào cần mô phỏng
+    "xong nhưng mất tệp" (D005) thì tự truyền `audio_key=""`.
+    """
+
+    def __init__(self, tt="moi", text="co chu", giong="", *, id=0, audio_key=None):
+        self.id = id
+        self.trang_thai, self.text, self.giong = tt, text, giong
+        self.giay, self.credit = 0.0, 0
+        self.audio_key = (audio_key if audio_key is not None
+                          else ("k" if tt == "xong" else ""))
+
+
+def test_trang_thai_suy_khong_khoi_la_trong():
+    assert du_an.trang_thai_suy(du_an.tom_tat([])) == "trong"
+
+
+def test_trang_thai_suy_khoi_chua_sinh_gi_la_dang_lam():
+    """⚠️ THAY ĐỔI HÀNH VI CÓ CHỦ Ý so với `ca6a00ce` (coi mọi khối `moi` là
+    "nhap"): xem docstring đầu tệp + `du_an.trang_thai_suy`."""
+    assert du_an.trang_thai_suy(
+        du_an.tom_tat([_K("moi"), _K("moi")])) == "dang_lam"
+
+
+def test_trang_thai_suy_dang_tao_thang_moi_thu_khac():
+    assert du_an.trang_thai_suy(
+        du_an.tom_tat([_K("xong"), _K("dang_tao")])) == "dang_lam"
+    assert du_an.trang_thai_suy(
+        du_an.tom_tat([_K("dang_tao"), _K("can_tao_lai")])) == "dang_lam"
+
+
+def test_trang_thai_suy_co_khoi_can_tao_lai_thi_CAN_TAO_LAI():
+    assert du_an.trang_thai_suy(
+        du_an.tom_tat([_K("xong"), _K("can_tao_lai")])) == du_an.TT_CAN_TAO_LAI
+
+
+def test_trang_thai_suy_mot_phan_loi_mot_phan_xong_la_dang_lam():
+    """Đối chứng cho lượng từ MỌI: một khối `loi` + một khối `xong` không phải
+    "mọi khối loi" cũng không phải "mọi khối xong"."""
+    assert du_an.trang_thai_suy(
+        du_an.tom_tat([_K("loi"), _K("xong")])) == "dang_lam"
+
+
+def test_trang_thai_suy_moi_khoi_xong_la_XONG():
+    assert du_an.trang_thai_suy(
+        du_an.tom_tat([_K("xong"), _K("xong")])) == "xong"
+
+
+# ── Step 1 của brief Task 9 — chốt lỗi CHÍNH (D005 ở mức dự án) ─────────────
+
+def test_du_an_co_khoi_MAT_TEP_khong_bao_gio_XONG():
+    """🔴 Khối "xong" theo cột NHƯNG mất tệp (`trang_thai_hien` đã suy thành
+    `TT_CAN_TAO_LAI`) phải kéo CẢ DỰ ÁN xuống "cần tạo lại" — không được để
+    khối kia (thật sự xong) che mất, và tuyệt đối không hiện "xong"."""
+    tt = {"khoi": [{"trang_thai": "xong", "trang_thai_hien": "xong"},
+                   {"trang_thai": "xong", "trang_thai_hien": du_an.TT_CAN_TAO_LAI}]}
+    assert du_an.trang_thai_suy(tt) == du_an.TT_CAN_TAO_LAI
+
+
+def test_moi_khoi_loi_thi_LOI():
+    tt = {"khoi": [{"trang_thai": "loi", "trang_thai_hien": "loi"}] * 2}
+    assert du_an.trang_thai_suy(tt) == "loi"
+
+
+# ── router thật: huy hiệu sống qua reload ────────────────────────────────────
+
+@pytest.fixture()
+def khach(tmp_path, monkeypatch):
+    """Một khách đã đăng nhập, có credit, trên SQLite tạm. Chép từ `test_519`."""
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'voice-tt.db').as_posix()}")
+    monkeypatch.setenv("LTT_ENV", "development")
+    monkeypatch.setenv("LTT_SESSION_SECRET", "test-voice-trang-thai")
+    monkeypatch.delenv("TURNSTILE_SECRET_KEY", raising=False)
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import apps.ltt_voice.tables  # noqa: F401
+    import platform_core.models  # noqa: F401
+
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+    from platform_core import credit
+    from platform_core.storage import LocalStorage, set_storage
+    from platform_core.users import tao_nguoi_dung
+    set_storage(LocalStorage(str(tmp_path / "store")))
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        u = tao_nguoi_dung(db, email="voice-tt@test.com",
+                           password="matkhau-tot-12", is_verified=True)
+        db.flush()
+        credit.nap(db, u.id, 500, note="test_357")
+        db.commit()
+        uid = str(u.id)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    from fastapi.testclient import TestClient
+
+    from server.app import create_app
+    client = TestClient(create_app(), base_url="https://testserver",
+                        follow_redirects=False)
+    login = client.get("/login")
+    m = re.search(r'name="csrf_token" value="([^"]+)"', login.text)
+    assert m
+    client.post("/login", data={"username": "voice-tt@test.com",
+                                "password": "matkhau-tot-12",
+                                "csrf_token": m.group(1)})
+    try:
+        yield client, uid
+    finally:
+        client.close()
+        set_storage(None)
+        dbmod.reset_engine()
+
+
+def _csrf_da(client) -> str:
+    m = re.search(r'name="csrf_token" value="([^"]+)"',
+                  client.get("/ltt-voice/du-an").text)
+    assert m
+    return m.group(1)
+
+
+def _tao_du_an(client, ten="Du an TT") -> str:
+    """POST /ltt-voice/du-an/tao — giọng mặc định `m:Adam` (làn `vi`), để các
+    test nộp job (ma_loi lệch làn, chặn nộp trùng) có sẵn một giọng hợp lệ."""
+    r = client.post("/ltt-voice/du-an/tao",
+                    data={"ten": ten, "giong": "m:Adam", "csrf_token": _csrf_da(client)})
+    assert r.status_code == 200, r.text
+    return r.json()["id"]
+
+
+def _them_khoi(client, pid, text) -> int:
+    """POST /ltt-voice/du-an/{pid}/khoi/them — MỘT khối, trả `id` (int)."""
+    r = client.post(f"/ltt-voice/du-an/{pid}/khoi/them",
+                    data={"text": text, "csrf_token": _csrf_da(client)})
+    assert r.status_code == 200, r.text
+    return r.json()["id"]
+
+
+def _them_n_khoi(client, pid, n: int) -> None:
+    for i in range(n):
+        _them_khoi(client, pid, f"Cau so {i}.")
+
+
+def _dat_trang_thai_khoi(pid, uid, gia_tri: list, *, mat_tep_o: list | None = None):
+    """Đặt trạng thái CỘT từng khối trực tiếp trong CSDL — mô phỏng job đã
+    xong. `mat_tep_o`: chỉ số (0-based, trong `gia_tri`) của khối "xong" mà
+    KHÔNG gán `audio_key` — mô phỏng tệp đã mất (D005): cột vẫn "xong", chỉ
+    `trang_thai_hien`/`trang_thai_suy` mới thấy được sự khác biệt.
+    """
+    mat_tep_o = set(mat_tep_o or ())
+    import platform_core.db as dbmod
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        d = du_an.tim(db, pid, owner_id=uid)
+        cac = list(du_an.cac_khoi(db, d.id))
+        for i, (k, tt) in enumerate(zip(cac, gia_tri, strict=False)):
+            k.trang_thai = tt
+            if tt == "xong" and i not in mat_tep_o:
+                k.audio_key = f"voice/out/{uid}/j{k.id}/tieng.wav"
+                k.giay = 3.0
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+def test_badge_XONG_hien_sau_khi_moi_khoi_xong_va_song_qua_reload(khach):
+    """🔴 Chốt lỗi cũ: dự án đọc xong hết phải hiện "Xong", không kẹt "Đang
+    làm". Reload = GET lại trang danh sách — mỗi request mở phiên CSDL mới và
+    dựng lại huy hiệu từ khối, nên nếu đúng ở đây thì không trôi theo thời gian.
+    """
+    client, uid = khach
+    pid = _tao_du_an(client)
+    _them_n_khoi(client, pid, 2)
+    _dat_trang_thai_khoi(pid, uid, ["xong", "xong"])
+
+    html = client.get("/ltt-voice/du-an").text
+    assert "b-ok" in html and "Xong" in html, (
+        "du an moi khoi da xong nhung khong hien huy hieu Xong")
+    assert "b-warn" not in html, "van con hien 'Dang lam' du da xong het"
+
+
+def test_badge_DANG_LAM_khi_mot_phan_xong(khach):
+    client, uid = khach
+    pid = _tao_du_an(client)
+    _them_n_khoi(client, pid, 2)
+    _dat_trang_thai_khoi(pid, uid, ["xong", "moi"])
+
+    html = client.get("/ltt-voice/du-an").text
+    assert "b-warn" in html, "mot phan xong phai hien 'Dang lam'"
+    assert "b-ok" not in html, "chua xong het ma da hien 'Xong'"
+
+
+def test_badge_TRONG_khi_khong_co_khoi(khach):
+    client, uid = khach
+    _tao_du_an(client, ten="Rong")
+    html = client.get("/ltt-voice/du-an").text
+    assert "b-grey" in html, "du an khong khoi nao phai hien 'Nhap'"
+
+
+def test_badge_LOI_khi_moi_khoi_loi(khach):
+    client, uid = khach
+    pid = _tao_du_an(client)
+    _them_n_khoi(client, pid, 2)
+    _dat_trang_thai_khoi(pid, uid, ["loi", "loi"])
+    html = client.get("/ltt-voice/du-an").text
+    assert "b-err" in html, "moi khoi loi phai hien huy hieu Loi"
+
+
+def test_badge_CAN_TAO_LAI_khi_mot_khoi_XONG_nhung_MAT_TEP(khach):
+    """🔴 D005/SC-11 ở tầng router: cột `trang_thai` của khối vẫn "xong" (job
+    đã xong thật) nhưng `audio_key` KHÔNG được đặt — mô phỏng tệp đã hết hạn/
+    bị xoá ở Lịch sử. Huy hiệu dự án phải hiện "Cần tạo lại", KHÔNG "Xong"."""
+    client, uid = khach
+    pid = _tao_du_an(client)
+    _them_n_khoi(client, pid, 2)
+    _dat_trang_thai_khoi(pid, uid, ["xong", "xong"], mat_tep_o=[1])
+
+    html = client.get("/ltt-voice/du-an").text
+    assert "Cần tạo lại" in html, "khoi mat tep phai keo huy hieu xuong 'Can tao lai'"
+    assert "b-ok" not in html, "khong duoc hien 'Xong' khi mot khoi da mat tep"
+
+
+def test_poll_tra_ve_trang_thai_du_an_suy(khach):
+    """Cửa poll cũng trả trạng thái dự án suy ra, để giao diện cập nhật huy
+    hiệu mà không phải tải lại cả trang."""
+    client, uid = khach
+    pid = _tao_du_an(client)
+    _them_n_khoi(client, pid, 1)
+    _dat_trang_thai_khoi(pid, uid, ["xong"])
+    r = client.get(f"/ltt-voice/du-an/{pid}/trang-thai")
+    assert r.status_code == 200, r.text
+    assert r.json()["tom_tat"]["trang_thai"] == "xong", r.json()["tom_tat"]
+
+
+def test_poll_tra_ve_CAN_TAO_LAI_khi_khoi_mat_tep(khach):
+    client, uid = khach
+    pid = _tao_du_an(client)
+    _them_n_khoi(client, pid, 1)
+    _dat_trang_thai_khoi(pid, uid, ["xong"], mat_tep_o=[0])
+    r = client.get(f"/ltt-voice/du-an/{pid}/trang-thai")
+    assert r.status_code == 200, r.text
+    assert r.json()["tom_tat"]["trang_thai"] == du_an.TT_CAN_TAO_LAI, r.json()["tom_tat"]
+
+
+# ── cô lập cross-project: khối của dự án khác không với tới được ────────────
+
+def test_khoi_cua_du_an_khac_la_404_qua_du_an_nay(khach):
+    """`tim_khoi` kiểm khối thuộc ĐÚNG dự án. Một `block_id` có thật của dự án
+    A truyền vào URL của dự án B (cùng chủ) phải là 404 ở mọi cửa khối — nếu
+    không, ranh giới giữa hai dự án chỉ là trang trí."""
+    client, uid = khach
+    pa = _tao_du_an(client, ten="A")
+    pb = _tao_du_an(client, ten="B")
+    bid_a = _them_khoi(client, pa, "Khoi cua A.")
+    c = _csrf_da(client)
+
+    for duong, du_lieu in (
+            (f"/ltt-voice/du-an/{pb}/khoi/{bid_a}/sua", {"text": "trom"}),
+            (f"/ltt-voice/du-an/{pb}/khoi/{bid_a}/xoa", {}),
+            (f"/ltt-voice/du-an/{pb}/khoi/{bid_a}/doc", {})):
+        rr = client.post(duong, data=dict(du_lieu, csrf_token=c))
+        assert rr.status_code == 404, f"{duong} tra {rr.status_code}, phai 404"
+
+    # Va khoi van con nguyen trong du an A.
+    r = client.get(f"/ltt-voice/du-an/{pb}/khoi/{bid_a}/phien-ban")
+    assert r.status_code == 404
+
+
+# ── T-10 — mọi 400 của `_p_du_an.py` mang `ma_loi` ──────────────────────────
+
+def test_cua_du_an_tra_MA_LOI_khi_lech_lan(khach):     # fixture từ test_519
+    client, uid = khach
+    pid = _tao_du_an(client, "Du an A")                  # helper POST /ltt-voice/du-an
+    bid = _them_khoi(client, pid, "The quick brown fox jumps over the lazy dog that we know.")
+    r = client.post(f"/ltt-voice/du-an/{pid}/khoi/{bid}/doc",
+                    data={"preset": "Adam", "csrf_token": _csrf_da(client)},
+                    headers={"Accept": "application/json"})
+    assert r.status_code == 400 and r.json()["ma_loi"] == "voice_language_mismatch"
+
+
+def test_tao_du_an_rong_ten_co_truong_ma_loi(khach):
+    client, uid = khach
+    r = client.post("/ltt-voice/du-an/tao",
+                    data={"ten": "", "csrf_token": _csrf_da(client)})
+    assert r.status_code == 400
+    assert "ma_loi" in r.json(), "loi 400 cua /du-an/tao thieu truong ma_loi"
+
+
+def test_sua_khoi_qua_dai_co_ma_loi(khach):
+    client, uid = khach
+    pid = _tao_du_an(client)
+    bid = _them_khoi(client, pid, "ngan")
+
+    from apps.ltt_voice.tham_so_cong_khai import TRAN_MOI_LUOT_SINH
+    qua_dai = "a" * (TRAN_MOI_LUOT_SINH + 1)
+    r = client.post(f"/ltt-voice/du-an/{pid}/khoi/{bid}/sua",
+                    data={"text": qua_dai, "csrf_token": _csrf_da(client)})
+    assert r.status_code == 400
+    assert r.json()["ma_loi"] == "van_ban_qua_dai"
+
+
+def test_doc_khoi_rong_van_ban_co_ma_loi(khach):
+    client, uid = khach
+    pid = _tao_du_an(client)
+    bid = _them_khoi(client, pid, "   ")  # rong sau khi strip
+    r = client.post(f"/ltt-voice/du-an/{pid}/khoi/{bid}/doc",
+                    data={"csrf_token": _csrf_da(client)})
+    assert r.status_code == 400
+    assert r.json()["ma_loi"] == "khoi_rong"
+
+
+# ── T-06 — chống nộp trùng khối ─────────────────────────────────────────────
+
+def test_khoi_dang_tao_bi_chan_nop_lai(khach):
+    """🔴 Chốt THỨ NHẤT: đọc trạng thái khối NGAY TẠI CỬA. Job đầu chưa xong
+    (không worker nào chạy trong test) nên khối vẫn `dang_tao` khi bấm lại."""
+    client, uid = khach
+    pid = _tao_du_an(client, "Du an C")
+    bid = _them_khoi(client, pid, "Cau tieng Viet binh thuong de doc thu nay.")
+
+    r1 = client.post(f"/ltt-voice/du-an/{pid}/khoi/{bid}/doc",
+                     data={"csrf_token": _csrf_da(client)})
+    assert r1.status_code == 200, r1.text
+
+    r2 = client.post(f"/ltt-voice/du-an/{pid}/khoi/{bid}/doc",
+                     data={"csrf_token": _csrf_da(client)})
+    assert r2.status_code == 409, r2.text
+    assert r2.json()["ma_loi"] == "khoi_dang_tao"
+
+
+def test_nop_mot_khoi_truyen_dedupe_key():
+    """Chốt THỨ HAI (đua giữa hai request gần như đồng thời, xem chú thích ở
+    `_nop_mot_khoi`): đọc CÂY CÚ PHÁP, không khớp chuỗi — cùng khuôn
+    `test_525::test_doc_lai_VAN_qua_cong_va_CO_dedupe`."""
+    import ast
+    import inspect
+
+    from apps.ltt_voice.routes import _p_du_an
+    src = inspect.getsource(_p_du_an._nop_mot_khoi)
+    tree = ast.parse(src.lstrip())
+    kw = {k.arg for n in ast.walk(tree) if isinstance(n, ast.Call)
+          and (getattr(n.func, "id", "") or getattr(n.func, "attr", "")) == "submit_with_credit"
+          for k in n.keywords}
+    assert "dedupe_key" in kw, "_nop_mot_khoi khong truyen dedupe_key cho submit_with_credit"

@@ -24,10 +24,15 @@ du_an.py — nghiệp vụ của màn DỰ ÁN.
    issue #142, tác giả trả lời: *"việc gọi API cho từng chunk riêng lẻ làm mất
    đi tính liên tục của trạng thái cảm xúc và nhịp điệu từ đoạn trước đó."*
 
-   Đó là lý do `xuat_mot_luot()` tồn tại: khi cả dự án dùng **một** giọng, đọc
-   liền một lượt cho ra bản mượt hơn hẳn ghép N tệp. Ghép chỉ là đường lui khi
-   các khối dùng giọng khác nhau — và lúc đó ranh giới là **có chủ ý**, vì đổi
-   người nói thì tai người mong đợi một chỗ nối.
+   Đó là lý do dự án cần một lối xuất một lượt khi cả dự án dùng **một**
+   giọng: đọc liền một lượt cho ra bản mượt hơn hẳn ghép N tệp. Ghép chỉ là
+   đường lui khi các khối dùng giọng khác nhau — và lúc đó ranh giới là **có
+   chủ ý**, vì đổi người nói thì tai người mong đợi một chỗ nối.
+
+   ⚠️ `xuat_mot_luot()` CHƯA DỰNG (SC-15). Đoạn trên từng viết "tồn tại" —
+      sai: `tom_tat()` đã cắm sẵn cờ `mot_giong` cho nút bấm, nhưng chưa có
+      hàm nào đọc liền một lượt thật. Câu này SỬA lại đúng thực trạng, không
+      phải một lời hứa sẽ xây — xem `docs/superpowers/specs/…§3 SC-15`.
 """
 from __future__ import annotations
 
@@ -420,6 +425,46 @@ def tom_tat(cac: list, *, duong_tieng: dict | None = None) -> dict:
         # trường này để suy trạng thái cấp DỰ ÁN (`trang_thai_suy`).
         "khoi": khoi_hien,
     }
+
+
+def trang_thai_suy(tt: dict) -> str:
+    """Trạng thái DỰ ÁN — suy TỪNG KHỐI, không phải từ các con số gộp (D005).
+
+    ∈ `{"trong", "dang_lam", "can_tao_lai", "loi", "xong"}`.
+
+    🔴 VÌ SAO ĐỌC `tt["khoi"]` (mỗi phần tử mang `trang_thai_hien`) CHỨ KHÔNG
+       ĐỌC `tt["can_tao_lai"]`/`tt["xong"]`. Các đếm gộp trong `tom_tat()` đếm
+       theo CỘT ĐÃ GHI (`k.trang_thai`) — đúng thứ `trang_thai_hien()` tồn tại
+       để KHÔNG dùng, vì cột đó không biết tệp đã mất. Một dự án mà mọi khối
+       "xong" theo cột nhưng một khối đã mất tệp (xoá ở Lịch sử, hoặc hết hạn
+       30 ngày) phải KHÔNG BAO GIỜ hiện "Xong" — đó chính là lỗi badge chết
+       (SC-11) mà tệp này tồn tại để sửa.
+
+    ⭐ THỨ TỰ CÁC NHÁNH LÀ MỘT PHẦN CỦA HỢP ĐỒNG, không phải tối ưu tình cờ:
+       một khối `dang_tao` LUÔN thắng — dự án còn việc đang chạy thì không thể
+       "cần tạo lại" hay "lỗi" dù các khối khác ở trạng thái gì. `can_tao_lai`
+       thắng `loi`/`xong` cùng lý do: còn khối cần bấm lại thì dự án chưa xong.
+
+    ⚠️ `trong` CHỈ khi KHÔNG có khối nào — không phải khi mọi khối đều `moi`.
+       Một dự án đã có khối (dù chưa khối nào được đọc) là một dự án đang được
+       soạn, không còn là một trang trống — nên nó rơi vào nhánh "còn lại"
+       (`dang_lam`), khác quy ước 3-trạng-thái cũ (`ca6a00ce`) coi mọi khối
+       `moi` là "nhap". Đây là một THAY ĐỔI HÀNH VI có chủ ý của Task 9, không
+       phải một chỗ sót khi port — xem `test_357::test_khoi_chua_sinh_gi_la_dang_lam`.
+    """
+    khoi = tt.get("khoi") or []
+    if not khoi:
+        return "trong"
+    hien = [k.get("trang_thai_hien") for k in khoi]
+    if any(h == "dang_tao" for h in hien):
+        return "dang_lam"
+    if any(h == TT_CAN_TAO_LAI for h in hien):
+        return TT_CAN_TAO_LAI
+    if all(h == "loi" for h in hien):
+        return "loi"
+    if all(h == "xong" for h in hien):
+        return "xong"
+    return "dang_lam"
 
 
 def cac_phien_ban(db, owner_id: str, block_id: int, *, tran: int = 10,

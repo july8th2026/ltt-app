@@ -322,6 +322,14 @@ DICH = {
         "be removed from the server and cannot be recovered.",
     "Không thu hồi được giọng này.": "Could not delete this voice.",
 
+    # du_an — badge suy tu tep that (RC1 Task 9, D005)
+    "Cần tạo lại": "Needs regenerating",
+    "Lỗi": "Failed",
+    "Khối này đang được đọc — đợi lượt trước xong đã.":
+        "This block is already being read — wait for it to finish first.",
+    "Lượt đọc này không còn văn bản để lưu.":
+        "This reading no longer has text to save.",
+
     # lich_su — het han + xoa nguoi dung + hop xac nhan (RC1 Task 8, D005)
     "Đã hết hạn": "Expired",
     "Nội dung đã hết hạn sau {n} ngày lưu trữ và được dọn. Bản ghi vẫn được "

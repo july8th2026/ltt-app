@@ -53,9 +53,17 @@
         <a class="lv-da-the" href="{{ manifest.route_prefix }}/du-an/{{ d.public_id }}">
           <div class="lv-da-the-dau">
             <b>{{ d.ten }}</b>
-            {% if d.trang_thai == 'xong' %}
+            {# 🔴 SUY TỪ KHỐI (`t.trang_thai`, chính là `du_an.trang_thai_suy`),
+               KHÔNG đọc `d.trang_thai` — cột đó là một cột TRÔI: không cửa
+               nào đặt nó sang `xong`, và nó không biết tệp đã mất (D005/SC-11).
+               Xem chú thích đầy đủ ở `du_an.trang_thai_suy`. #}
+            {% if t.trang_thai == 'xong' %}
               <span class="badge b-ok"><span class="dot"></span>{{ _("Xong") }}</span>
-            {% elif d.trang_thai == 'dang_lam' %}
+            {% elif t.trang_thai == 'can_tao_lai' %}
+              <span class="badge b-warn"><span class="dot"></span>{{ _("Cần tạo lại") }}</span>
+            {% elif t.trang_thai == 'loi' %}
+              <span class="badge b-err"><span class="dot"></span>{{ _("Lỗi") }}</span>
+            {% elif t.trang_thai == 'dang_lam' %}
               <span class="badge b-warn"><span class="dot"></span>{{ _("Đang làm") }}</span>
             {% else %}
               <span class="badge b-grey"><span class="dot"></span>{{ _("Nháp") }}</span>
@@ -79,7 +87,7 @@
                ⚠️ Nói cả HAI số, không chỉ phần trăm: *"3/8 khối"* trả lời được
                   câu "còn bao nhiêu", còn "37%" thì không. #}
             <div class="lv-da-thanh" role="progressbar"
-                 aria-label="{{ _('Tiến độ dự án {ten}: {xong}/{tong} khối').format(ten=t.ten, xong=t.xong, tong=t.so_khoi) }}"
+                 aria-label="{{ _('Tiến độ dự án {ten}: {xong}/{tong} khối').format(ten=d.ten, xong=t.xong, tong=t.so_khoi) }}"
                  aria-valuemin="0" aria-valuemax="100"
                  aria-valuenow="{{ (t.xong * 100 // t.so_khoi) }}">
               <div style="width:{{ (t.xong * 100 // t.so_khoi) }}%"></div>

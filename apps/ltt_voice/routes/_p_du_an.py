@@ -14,6 +14,17 @@ from ._chung import (MANIFEST, SO_LAN_THU_JOB, TRAN_MOI_LUOT_SINH, Depends, Form
                      router, templates, tham_chieu, user_hien_tai,
                      verify_csrf_token, vo, lan_ngon_ngu, nghe_thu,
                      so_viet)
+from ._p_tao import _loi_400
+
+#: Mã lỗi CỦA RIÊNG màn Dự án — không đụng `lan_ngon_ngu.MA_LOI` (những mã đó
+#: chỉ được khai TRONG `lan_ngon_ngu.py`, `tests/test_522` chốt việc đó).
+#: Lỗi lệch làn ném ra từ `_nop_mot_khoi` đã tự mang `ma_loi` riêng của nó
+#: (`features.LoiGiongNoi.ma`, xem `_loi_400`) — bốn mã dưới đây chỉ cho
+#: những cửa của CHÍNH tệp này không đi qua một exception có `.ma`.
+MA_LOI_KHOI_RONG = "khoi_rong"
+MA_LOI_KHOI_DANG_TAO = "khoi_dang_tao"
+MA_LOI_VAN_BAN_QUA_DAI = "van_ban_qua_dai"
+MA_LOI_LUOT_KHONG_CON_VAN_BAN = "luot_khong_con_van_ban"
 
 
 def _mo_du_an(db, request, user, public_id: str):
@@ -68,7 +79,18 @@ def trang_du_an(request: Request, user=Depends(user_hien_tai),
     try:
         ds = du_an.danh_sach(db, uid)
         # Đếm khối cho từng dự án trong MỘT vòng, không một truy vấn mỗi thẻ.
-        dem = {d.public_id: du_an.tom_tat(du_an.cac_khoi(db, d.id)) for d in ds}
+        #
+        # 🔴 `duong_tieng` PHẢI ĐƯỢC TRUYỀN VÀO `tom_tat`, không thì huy hiệu
+        #    lại đọc đúng cái cột trôi mà D005/SC-11 tồn tại để sửa: khối
+        #    "xong" theo cột nhưng tệp đã mất (xoá ở Lịch sử, hết hạn 30 ngày)
+        #    sẽ vẫn được `trang_thai_suy` tính là "xong" nếu thiếu bước này.
+        dem = {}
+        for d in ds:
+            khoi = du_an.cac_khoi(db, d.id)
+            duong = du_an.duong_tieng(db, khoi, MANIFEST.route_prefix)
+            tt = du_an.tom_tat(khoi, duong_tieng=duong)
+            tt["trang_thai"] = du_an.trang_thai_suy(tt)
+            dem[d.public_id] = tt
         hang_doi = vo.dem_dang_chay(db, uid)
         # `gom_dung_chung=True`: DU AN la cua DUNG, nen kho giong chung
         # cua nen tang phai thay duoc — giong nhu `_p_tao` va `_p_giong`.
@@ -104,7 +126,7 @@ def tao_du_an(request: Request, ten: str = Form(""), giong: str = Form(""),
         return JSONResponse({"ok": True, "id": d.public_id})
     except du_an.LoiDuAn as e:
         db.rollback()
-        return JSONResponse({"ok": False, "loi": str(e)}, status_code=400)
+        return _loi_400(e)
     finally:
         try:
             next(gen)
@@ -166,7 +188,10 @@ def trang_mot_du_an(request: Request, public_id: str,
                 status_code=404)
         khoi = du_an.cac_khoi(db, d.id)
         duong = du_an.duong_tieng(db, khoi, MANIFEST.route_prefix)
-        tt = du_an.tom_tat(khoi)
+        # `duong_tieng=duong`: cùng lý do ở `trang_du_an` — không truyền thì
+        # `tt["khoi"]` (badge suy theo D005) suy theo `bool(audio_key)`, bỏ
+        # sót ca tệp đã hết hạn/bị xoá dù khoá vẫn còn trên cột.
+        tt = du_an.tom_tat(khoi, duong_tieng=duong)
         hang_doi = vo.dem_dang_chay(db, uid)
         # `gom_dung_chung=True`: DU AN la cua DUNG, nen kho giong chung
         # cua nen tang phai thay duoc — giong nhu `_p_tao` va `_p_giong`.
@@ -248,7 +273,7 @@ def them_khoi(request: Request, public_id: str, text: str = Form(""),
         return JSONResponse({"ok": True, "id": k.id})
     except du_an.LoiDuAn as e:
         db.rollback()
-        return JSONResponse({"ok": False, "loi": str(e)}, status_code=400)
+        return _loi_400(e)
     finally:
         try:
             next(gen)
@@ -291,7 +316,8 @@ def sua_khoi(request: Request, public_id: str, block_id: int,
         if text is not None and len(text) > TRAN_MOI_LUOT_SINH:
             return JSONResponse({"ok": False, "loi": _t(
                 "Khối dài {n} ký tự, vượt giới hạn {t} cho một lượt đọc."
-            ).format(n=so_viet(len(text)), t=so_viet(TRAN_MOI_LUOT_SINH))}, status_code=400)
+            ).format(n=so_viet(len(text)), t=so_viet(TRAN_MOI_LUOT_SINH)),
+                                 "ma_loi": MA_LOI_VAN_BAN_QUA_DAI}, status_code=400)
         du_an.sua_khoi(db, k, text=text, giong=giong)
         db.commit()
         return JSONResponse({"ok": True, "trang_thai": k.trang_thai})
@@ -347,7 +373,7 @@ def nhap_van_ban(request: Request, public_id: str, text: str = Form(""),
         return JSONResponse({"ok": True, "so_khoi": so})
     except du_an.LoiDuAn as e:
         db.rollback()
-        return JSONResponse({"ok": False, "loi": str(e)}, status_code=400)
+        return _loi_400(e)
     finally:
         try:
             next(gen)
@@ -363,8 +389,16 @@ def _nop_mot_khoi(db, user, du_an_row, khoi) -> str:
     ⛔ Kiểm quyền giọng **ngay tại cửa**, trước khi giữ credit — cùng lý do đã
        ghi ở `_p_tao.tao`: không kiểm thì job vẫn được giữ tiền, vẫn xếp hàng,
        và bị thử lại ba lần cho một câu trả lời cửa vào đã biết.
+
+    🔴 `dedupe_key` — CHỐT THỨ HAI cho double-submit, KHÔNG THAY cho chốt thứ
+       nhất. `doc_mot_khoi` đã chặn ở CỬA khi `khoi.trang_thai == "dang_tao"`
+       (đọc TRƯỚC khi gọi hàm này), nhưng đó là một phép đọc-rồi-quyết: hai
+       request chạm cửa đó gần như cùng lúc có thể CÙNG đọc thấy khối chưa
+       `dang_tao` rồi cùng lọt qua. `dedupe_key` dựa trên `jobs.submit` —
+       khoá theo (owner, khối) nên nó bắt được đúng khe hở đó, cùng khuôn
+       T-06 đã áp cho Studio (`test_519`) và Lịch sử (`test_525`).
     """
-    from platform_core.job_submit import submit_with_credit
+    from platform_core.job_submit import dedupe_key_for, submit_with_credit
 
     uid = _uid(user)
     chon = khoi.giong or du_an_row.giong_mac_dinh
@@ -382,6 +416,8 @@ def _nop_mot_khoi(db, user, du_an_row, khoi) -> str:
                 "owner_id": uid, "nguon": "du_an",
                 # Hai khoá này để Lịch sử và hỗ trợ truy ngược được về đúng khối.
                 "project_id": du_an_row.public_id, "block_id": khoi.id},
+        dedupe_key=dedupe_key_for("ltt_voice.synthesize",
+                                  {"owner": uid, "khoi": khoi.id}),
         admission_resource=tool.admission_resource,
         admission_slots=tool.admission_slots,
         max_attempts=SO_LAN_THU_JOB)
@@ -407,13 +443,28 @@ def doc_mot_khoi(request: Request, public_id: str, block_id: int,
             return JSONResponse({"ok": False}, status_code=404)
         if not (k.text or "").strip():
             return JSONResponse({"ok": False, "loi": _t(
-                "Khối này chưa có văn bản.")}, status_code=400)
+                "Khối này chưa có văn bản."),
+                                 "ma_loi": MA_LOI_KHOI_RONG}, status_code=400)
+        # 🔴 T-06 — CHỐT THỨ NHẤT cho double-submit của khối này: đọc trạng
+        #    thái NGAY TẠI CỬA, trước khi nộp job. `dedupe_key` trong
+        #    `_nop_mot_khoi` là chốt thứ hai (đua giữa hai request gần như
+        #    đồng thời) — xem chú thích ở đó. Không đợi worker: một khối
+        #    đang `dang_tao` không cần thêm một job thứ hai chạy song song
+        #    cho đúng một khối, kể cả khi job đầu rồi cũng bị dedupe gộp lại.
+        if k.trang_thai == "dang_tao":
+            return JSONResponse({"ok": False, "loi": _t(
+                "Khối này đang được đọc — đợi lượt trước xong đã."),
+                                 "ma_loi": MA_LOI_KHOI_DANG_TAO},
+                                status_code=409)
         jid = _nop_mot_khoi(db, user, d, k)
         db.commit()
         return JSONResponse({"ok": True, "job_id": jid})
+    except features.LoiGiongNoi as e:
+        db.rollback()
+        return _loi_400(e)
     except Exception as e:  # noqa: BLE001 - thieu credit cung di duong nay
         db.rollback()
-        return JSONResponse({"ok": False, "loi": str(e)}, status_code=400)
+        return _loi_400(e)
     finally:
         try:
             next(gen)
@@ -492,8 +543,13 @@ def trang_thai_du_an(public_id: str, user=Depends(user_hien_tai),
                 du_an.gan_ket_qua(db, k, job_history.get_owned(db, uid, k.job_id))
         db.commit()
 
-        tt = du_an.tom_tat(khoi)
+        # `duong_tieng` TRƯỚC `tom_tat`: cùng lý do ở `trang_du_an`/
+        # `trang_mot_du_an` — không truyền thì huy hiệu suy sai cho khối đã
+        # mất tệp. Đây là cửa POLL nên nó chạy mỗi vài giây trong lúc sinh —
+        # càng phải đúng, vì đây là chỗ giao diện cập nhật huy hiệu trực tiếp.
         duong = du_an.duong_tieng(db, khoi, MANIFEST.route_prefix)
+        tt = du_an.tom_tat(khoi, duong_tieng=duong)
+        tt["trang_thai"] = du_an.trang_thai_suy(tt)
         return JSONResponse({
             "ok": True,
             "tom_tat": tt,
@@ -569,7 +625,9 @@ def luu_tu_studio(request: Request, job_id: str = Form(""),
         van_ban = str(kq.get("text") or p.get("text") or "").strip()
         if not van_ban:
             return JSONResponse({"ok": False, "loi": _t(
-                "Lượt đọc này không còn văn bản để lưu.")}, status_code=400)
+                "Lượt đọc này không còn văn bản để lưu."),
+                                 "ma_loi": MA_LOI_LUOT_KHONG_CON_VAN_BAN},
+                                status_code=400)
 
         # Giọng: dựng lại chuỗi `v:`/`m:` mà khối dùng, từ params của job.
         giong = ""
@@ -592,7 +650,7 @@ def luu_tu_studio(request: Request, job_id: str = Form(""),
             khoi = du_an.them_khoi(db, d, text=van_ban, giong=giong)
         except du_an.LoiDuAn as e:
             db.rollback()
-            return JSONResponse({"ok": False, "loi": str(e)}, status_code=400)
+            return _loi_400(e)
 
         du_an.gan_ket_qua(db, khoi, job)
         db.commit()

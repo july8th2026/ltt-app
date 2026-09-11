@@ -15245,3 +15245,11 @@ msgstr "Block {so} in project “{ten}” will lose its audio and need to be reg
 #: apps/ltt_voice
 msgid "Không kiểm được các dự án đang dùng tệp này. Việc xoá vẫn tiếp tục nếu bạn xác nhận."
 msgstr "Could not check which projects use this file. Deleting will still go ahead if you confirm."
+
+#: apps/ltt_voice
+msgid "Cần tạo lại"
+msgstr "Needs regenerating"
+
+#: apps/ltt_voice
+msgid "Khối này đang được đọc — đợi lượt trước xong đã."
+msgstr "This block is already being read — wait for it to finish first."
