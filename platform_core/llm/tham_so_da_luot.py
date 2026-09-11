@@ -48,6 +48,27 @@ class ThamSoDaLuot:
     lao_hoa_s: float
 
 
+def luat_cho(pool: int, *, lop: str, token_vao_uoc: int, xin_ra: int,
+             so_anh: int = 0, token_prefill_moi: int = 0,
+             la_whale: bool = False) -> dict:
+    """Tham số đa lượt cho `admission.acquire`/`xet_va_giu` — MỘT phép tính đặt chỗ.
+
+    `pool <= 0` ⇒ `{}` ⇒ đúng hành vi cũ (tool không khai ngân sách KV).
+
+    ⛔ Kẹp về `pool`: một lượt dùng trọn cửa sổ + đệm + ảnh vượt pool và sẽ KHÔNG
+       BAO GIỜ được nhận, trong khi engine vẫn phục vụ được nó khi chạy một mình.
+    ⭐ Năm chỗ gọi (stream, ChatLTT, đồng bộ ×2, job, planner) cùng đi qua đây —
+       năm bản sao của phép tính này là năm chỗ lệch nhau (memory "hai chỗ khai
+       cùng một điều").
+    """
+    if int(pool or 0) <= 0:
+        return {}
+    ts = doc()
+    dat = int(token_vao_uoc) + int(xin_ra) + ts.dem_dat_truoc + int(so_anh) * ts.token_moi_anh
+    return dict(lop=lop, token_pool=int(pool), token_dat_truoc=min(int(pool), dat),
+                token_prefill_moi=int(token_prefill_moi), la_whale=bool(la_whale))
+
+
 def doc() -> ThamSoDaLuot:
     return ThamSoDaLuot(
         nguong_whale=int(_so("LTT_LLM_NGUONG_WHALE", 16_384)),

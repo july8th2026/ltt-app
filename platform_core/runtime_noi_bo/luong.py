@@ -169,7 +169,7 @@ class ChuanBi:
 
 # ── Bước 0 (multijob D-06): tiền kiểm TRƯỚC 200, chờ + nhận + giữ tiền SAU 200 ──
 
-def _dem_anh(than: dict) -> int:
+def dem_anh(than: dict) -> int:
     """Số ảnh trong đầu vào (mọi giao thức) — mỗi ảnh chiếm thêm ô KV."""
     n = 0
     for khoa in ("messages", "input"):
@@ -276,12 +276,10 @@ def tien_kiem(db, *, user_id: str, tool_name: str, than: dict, duong: str,
     tai_nguyen = str(getattr(tool, "admission_resource", "") or "")
     so_suat = int(getattr(tool, "admission_slots", 0) or 0)
     pool = int(getattr(tool, "admission_token_pool", 0) or 0)
-    dat = vao_uoc + xin_ra + ts.dem_dat_truoc + _dem_anh(than) * ts.token_moi_anh
-    if pool > 0:
-        # 🔴 Kẹp về pool: một lượt dùng TRỌN cửa sổ (vào + ra = CUA_SO − LE) cộng
-        #    đệm + ảnh sẽ vượt pool và KHÔNG BAO GIỜ được nhận — chờ đủ 5 phút rồi
-        #    hết hạn, trong khi engine vẫn phục vụ được nó khi chạy một mình.
-        dat = min(dat, pool)
+    # Kẹp về pool nằm trong `luat_cho` — MỘT phép tính đặt chỗ cho mọi cửa.
+    dat = tham_so_da_luot.luat_cho(pool, lop="", token_vao_uoc=vao_uoc,
+                                   xin_ra=xin_ra,
+                                   so_anh=dem_anh(than)).get("token_dat_truoc", 0)
     moi = uoc_moi.uoc_token_moi(user_id, tin, executor.estimate_input)
 
     if not thanh_toan.du_so_du(db, user_id=user_id, token_vao_uoc=vao_uoc,
@@ -367,6 +365,113 @@ def vao_va_cho(tk: TienKiem, *, db_luong, han_s: float, dong_ho=None, ngu=None):
                    xin_ra=tk.xin_ra, model_alias=tk.model_alias, executor=tk.executor,
                    correlation_id=tk.correlation_id, waiter_id=waiter_id,
                    la_whale=tk.la_whale)
+
+
+# ── Cửa ĐỒNG BỘ: chờ trong phòng chờ, giữ tiền SAU khi được nhận (D04) ───────
+#
+# ⭐ VÌ SAO ĐIỂM CHỜ NẰM Ở ĐÂY CHỨ KHÔNG NẰM TRONG GIAO DỊCH CỦA REQUEST.
+#
+#    `idempotency.begin` lấy `pg_advisory_xact_lock` và khoá đó sống hết giao
+#    dịch. Chờ 60 giây bên trong giao dịch ấy là giữ khoá 60 giây — mọi lượt
+#    trùng khoá treo theo thay vì nhận ngay câu "đang xử lý", và một kết nối
+#    CSDL bị giữ suốt lúc chờ. Nên cửa **commit trước**, rồi mới gọi hàm dưới
+#    đây (phiên MỚI, như `vao_va_cho` của cửa stream).
+
+#: ⛔ SEAM CHO PHÉP KIỂM, production để `None` (đồng hồ thật + `time.sleep`).
+#:    Một trần chờ 60 giây không kiểm được bằng cách ngủ 60 giây thật; và mỗi
+#:    nhịp chờ là điểm quan sát duy nhất mà phép kiểm chen vào được để đo
+#:    INV-MJ-1 ("đang chờ thì không có dòng giữ tiền nào").
+DONG_HO_CHO: Optional[Callable[[], Any]] = None
+NGU_CHO: Optional[Callable[[float], None]] = None
+
+
+def han_cho_dong_bo(*, ngan_sach_s: float, da_tieu_s: float = 0.0,
+                    tran_s: Optional[float] = None) -> float:
+    """`min(trần chờ, ngân sách thời gian CÒN LẠI của cửa)` — không âm. (D04)
+
+    ⛔ Trần 60 giây một mình là không đủ. Cửa đồng bộ hứa trả lời trong
+       `SYNC_BILLED_MAX_SECONDS`, và `max_tokens` của khách đã được kẹp theo
+       đúng ngân sách ấy. Chờ hết 60 giây rồi mới bắt đầu gọi model là đẩy lượt
+       vượt qua đồng hồ của Cloudflare — khách nhận 524, ta đã đốt GPU.
+    """
+    from platform_core.llm import tham_so_da_luot
+
+    tran = (tham_so_da_luot.doc().cho_dong_bo_toi_da_s if tran_s is None
+            else float(tran_s))
+    return max(0.0, min(float(tran), float(ngan_sach_s) - float(da_tieu_s)))
+
+
+@dataclass(frozen=True)
+class SuatDongBo:
+    """Kết quả của phòng chờ ở cửa đồng bộ. **Chưa** giữ đồng tiền nào."""
+
+    lease_id: str
+    waiter_id: str
+
+
+def cho_suat_dong_bo(*, tai_nguyen: str, so_suat: int, token_pool: int,
+                     user_id: str, request_id: str, cua: str,
+                     token_vao_uoc: int, xin_ra: int, so_anh: int = 0,
+                     token_prefill_moi: int = 0, la_whale: bool = False,
+                     han_s: float, ngat_chua=None) -> SuatDongBo:
+    """Vào phòng chờ → chờ chặn ≤ `han_s` → trả suất. **Không** chạm sổ tiền.
+
+    Ném `phong_cho.HetCho` (hết trần ⇒ cửa trả 429) hoặc `phong_cho.KhachDi`
+    (khách đi giữa lúc chờ). Cả hai đường đều để lại **0 khoản giữ** — đó là
+    toàn bộ lý do hàm này không biết gì về tiền (INV-MJ-1, INV-MJ-2).
+    """
+    from platform_core.llm import (admission, luat_nhan, phong_cho,
+                                   tham_so_da_luot)
+
+    if not tai_nguyen or so_suat <= 0:
+        return SuatDongBo("", "")
+
+    ts = tham_so_da_luot.doc()
+    luat = tham_so_da_luot.luat_cho(
+        token_pool, lop=luat_nhan.TUONG_TAC, token_vao_uoc=token_vao_uoc,
+        xin_ra=xin_ra, so_anh=so_anh, token_prefill_moi=token_prefill_moi,
+        la_whale=la_whale)
+
+    if not luat:
+        # Tool KHÔNG khai ngân sách KV ⇒ đường cũ nguyên vẹn: một lần thử, không
+        # phòng chờ, không dòng chờ nào trong sổ lượt.
+        gen, db = _phien_moi()
+        try:
+            ve = admission.acquire(db, resource=tai_nguyen, slots=so_suat,
+                                   user_id=user_id, mode="sync",
+                                   holder_id=request_id)
+            db.commit()
+        finally:
+            _dong_phien(gen)
+        if ve is None:
+            raise phong_cho.HetCho(luat_nhan.CHO_SLOT)
+        return SuatDongBo(ve.id, "")
+
+    kw: dict = {}
+    if DONG_HO_CHO is not None:
+        kw["dong_ho"] = DONG_HO_CHO
+    if NGU_CHO is not None:
+        kw["ngu"] = NGU_CHO
+    bay_gio = DONG_HO_CHO() if DONG_HO_CHO is not None else None
+
+    yc = phong_cho.YeuCauCho(
+        resource=tai_nguyen, slots=so_suat, token_pool=int(token_pool),
+        user_id=user_id, mode="sync", holder_id=request_id,
+        request_id=request_id, cua=cua, lop=luat_nhan.TUONG_TAC,
+        token_dat_truoc=int(luat["token_dat_truoc"]),
+        token_prefill_moi=int(token_prefill_moi), la_whale=bool(la_whale))
+
+    gen, db = _phien_moi()
+    try:
+        waiter_id = phong_cho.vao(db, yc, now=bay_gio)
+        db.commit()
+    finally:
+        _dong_phien(gen)
+
+    lease_id = phong_cho.cho_nhan_chan(
+        yc, waiter_id=waiter_id, han_s=float(han_s), ngat_chua=ngat_chua,
+        cho_whale_toi_da_s=ts.cho_whale_toi_da_s, **kw)
+    return SuatDongBo(lease_id, waiter_id)
 
 
 def luong_co_cho(tk: TienKiem, *, loi_sse: Callable[[str, str, str], bytes],
@@ -475,13 +580,10 @@ def chuan_bi(db, *, user_id: str, tool_name: str, than: dict, duong: str,
     so_suat = int(getattr(tool, "admission_slots", 0) or 0)
     pool = int(getattr(tool, "admission_token_pool", 0) or 0)
     if tai_nguyen and so_suat > 0:
-        luat: dict = {}
-        if pool > 0:
-            from platform_core.llm import luat_nhan, tham_so_da_luot
-            ts = tham_so_da_luot.doc()
-            luat = dict(lop=luat_nhan.TUONG_TAC, token_pool=pool,
-                        token_dat_truoc=min(pool, vao_uoc + xin_ra + ts.dem_dat_truoc
-                                            + _dem_anh(than) * ts.token_moi_anh))
+        from platform_core.llm import luat_nhan, tham_so_da_luot
+        luat = tham_so_da_luot.luat_cho(pool, lop=luat_nhan.TUONG_TAC,
+                                        token_vao_uoc=vao_uoc, xin_ra=xin_ra,
+                                        so_anh=dem_anh(than))
         ticket = admission.acquire(
             db, resource=tai_nguyen, slots=so_suat, user_id=user_id,
             mode="stream", holder_id=holder_id or request_id, **luat)

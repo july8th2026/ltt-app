@@ -228,7 +228,8 @@ def _chay_mot_job(worker_id: str, *, capabilities=None) -> bool:
     execution = (
         admission.hold_persisted(
             resource=admission_resource, slots=admission_slots,
-            user_id=user_id, mode="job", holder_id=job_id, job_id=job_id)
+            user_id=user_id, mode="job", holder_id=job_id, job_id=job_id,
+            **_luat_cho_job(job_type, params))
         if admission_resource and admission_slots > 0
         else nullcontext(True)
     )
@@ -251,6 +252,49 @@ def _chay_mot_job(worker_id: str, *, capabilities=None) -> bool:
 
             with trusted_scope("worker", "internal"):
                 return _chay_handler(worker_id, job_id, job_type, params, ctx)
+
+
+def _luat_cho_job(job_type: str, params: dict) -> dict:
+    """Tham số đa lượt cho job NỀN (multijob D-03): lớp `nen` + phần đặt chỗ KV.
+
+    Tool không khai `admission_token_pool` ⇒ `{}` ⇒ đúng hành vi cũ.
+    ⛔ Ước hỏng ⇒ đặt chỗ CẢ POOL (job chỉ chạy khi không ai khác chạy) — hướng AN
+       TOÀN. Lùi về "đếm slot" thì lease vô hình với sổ ngân sách, và một job 150K
+       lọt vào cạnh ba phiên dài là tràn pool ⇒ llama.cpp giết MỌI slot.
+    """
+    from platform_core.llm import luat_nhan, tham_so_da_luot
+
+    tool = None
+    try:
+        from platform_core.registry import discover
+        for item in discover():
+            if item.error:
+                continue
+            for t in item.manifest.tools:
+                if t.job_type == job_type:
+                    tool = t
+                    break
+            if tool is not None:
+                break
+    except Exception:  # noqa: BLE001 - registry hỏng: không đoán được pool
+        log.exception("khong doc duoc tool cua %s de dat cho KV", job_type)
+        return {}
+    pool = int(getattr(tool, "admission_token_pool", 0) or 0) if tool else 0
+    if pool <= 0:
+        return {}
+    try:
+        from platform_core.public_api.executor import for_tool
+        ex = for_tool(tool)
+        tin = list((params or {}).get("messages") or [])
+        cong_cu = (params or {}).get("tools")
+        vao = int(ex.estimate_input(tin, cong_cu) if cong_cu else ex.estimate_input(tin))
+        ra = int((params or {}).get("max_tokens") or ex.mac_dinh_cho("job"))
+        ra = min(ra, int(ex.context_output_cap(vao)))
+        return tham_so_da_luot.luat_cho(pool, lop=luat_nhan.NEN, token_vao_uoc=vao,
+                                        xin_ra=ra)
+    except Exception:  # noqa: BLE001 - đặt chỗ cả pool là đường an toàn
+        log.exception("khong uoc duoc token cua job %s — dat cho CA POOL", job_type)
+        return dict(lop=luat_nhan.NEN, token_pool=pool, token_dat_truoc=pool)
 
 
 def _vram_can(job_type: str) -> int:

@@ -86,6 +86,47 @@ class PlannerError(RuntimeError):
     pass
 
 
+def _luat_cho_planner(prompt: str) -> dict:
+    """Tham số đa lượt của một lượt LẬP KẾ HOẠCH: lớp `noi_bo` + đặt chỗ KV. (spec §6)
+
+    ⭐ Lớp `noi_bo` là nửa quan trọng hơn. Không khai lớp thì lease đi đường
+       `tuong_tac` — tức việc nội bộ của nền tảng tranh chỗ **ngang hàng** với
+       một khách đang trả tiền và đang nhìn màn hình. Luật 3 của `luat_nhan`
+       tồn tại để chặn đúng chuyện đó, và nó chỉ chặn được thứ nó **nhìn thấy**.
+
+    ⛔ Ước hỏng ⇒ đặt chỗ CẢ POOL — cùng hướng an toàn với job nền: một lease
+       không mang số token là một lease **vô hình** với sổ ngân sách KV, và hai
+       đường cộng lại vượt pool thì llama.cpp giết mọi slot.
+    """
+    import logging
+
+    from platform_core.llm import canonical, luat_nhan, tham_so_da_luot
+
+    try:
+        tool = canonical.tool_nha()
+    except Exception:                                          # noqa: BLE001
+        logging.getLogger(__name__).exception(
+            "khong doc duoc ban khai model nha de dat cho KV")
+        return {}
+    pool = int(getattr(tool, "admission_token_pool", 0) or 0) if tool else 0
+    if pool <= 0:
+        return {}
+    try:
+        from platform_core.public_api.executor import for_tool
+
+        ex = for_tool(tool)
+        tin = [{"role": "user", "content": prompt}]
+        vao = int(ex.estimate_input(tin))
+        ra = int(ex.mac_dinh_cho("job"))
+        ra = min(ra, int(ex.context_output_cap(vao)))
+        return tham_so_da_luot.luat_cho(pool, lop=luat_nhan.NOI_BO,
+                                        token_vao_uoc=vao, xin_ra=ra)
+    except Exception:                                          # noqa: BLE001
+        logging.getLogger(__name__).exception(
+            "khong uoc duoc token cua lượt lap ke hoach — dat cho CA POOL")
+        return dict(lop=luat_nhan.NOI_BO, token_pool=pool, token_dat_truoc=pool)
+
+
 def build_prompt(goal: str, *, budget_max_credit: int, input_types: dict | None = None) -> str:
     tools = discover_tools()
     lines = ["[AVAILABLE TOOLS]"]
@@ -161,7 +202,8 @@ def _goi_model(db: DbSession, prompt: str) -> str:
     if id_nha:
         ve = admission.acquire(
             db, resource=tai_nguyen, slots=suat, user_id="he-thong:planner",
-            mode="job", holder_id="planner:" + _uuid.uuid4().hex[:12])
+            mode="job", holder_id="planner:" + _uuid.uuid4().hex[:12],
+            **_luat_cho_planner(prompt))
         if ve is not None:
             ban_do["ltt_llm"] = id_nha
 

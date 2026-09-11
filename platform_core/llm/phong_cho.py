@@ -254,14 +254,23 @@ def cho_nhan(yc: YeuCauCho, *, waiter_id: str, han_s: float,
             _chot(waiter_id, "roi", "khach_di", dong_ho())
 
 
-def cho_nhan_chan(yc: YeuCauCho, *, waiter_id: str, han_s: float, **kw) -> str:
-    """Chờ CHẶN tới khi được nhận (cửa đồng bộ). Ném `HetCho` khi quá `han_s`."""
+def cho_nhan_chan(yc: YeuCauCho, *, waiter_id: str, han_s: float,
+                  ngat_chua: Callable[[], bool] | None = None, **kw) -> str:
+    """Chờ CHẶN tới khi được nhận (cửa đồng bộ). Ném `HetCho` khi quá `han_s`.
+
+    `ngat_chua` được hỏi sau mỗi nhịp: khách đi trong lúc chờ ⇒ đóng generator
+    (dòng thành `roi`) rồi ném `KhachDi`. Chưa giữ tiền ở đây nên **không có gì
+    phải hoàn** — đó chính là lý do điểm giữ tiền nằm sau chỗ này (INV-MJ-1).
+    """
     g = cho_nhan(yc, waiter_id=waiter_id, han_s=han_s, **kw)
     while True:
         try:
             next(g)
         except StopIteration as e:
             return e.value
+        if ngat_chua is not None and ngat_chua():
+            g.close()
+            raise KhachDi(waiter_id)
 
 
 def ghi_ket_thuc(waiter_id: str, ket_qua: str, *, now: datetime | None = None) -> None:

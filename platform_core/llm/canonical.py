@@ -87,6 +87,25 @@ def ban_do_model(*alias: str) -> dict[str, str]:
 _TAI_NGUYEN_MAC_DINH: tuple[str, int] = ("llm_remote", 1)
 
 
+def tool_nha():
+    """`ToolSpec` của tool model nhà, đọc từ **bản khai của app**. `None` nếu không có.
+
+    ⭐ Một hàm chứ không phải ba vòng lặp giống nhau: `tai_nguyen_nha()` cần
+       `(resource, slots)`, phòng chờ cần `admission_token_pool`, và đường ước
+       token cần chính `ToolSpec` để lấy executor. Ba bên đọc ba lần cùng một
+       bản khai là ba chỗ sẽ trôi khỏi nhau khi bản khai đổi.
+    """
+    from platform_core.registry import discover
+
+    for it in discover():
+        if it.manifest.slug != THU_TU_PROVIDER[0]:
+            continue
+        for t in it.manifest.tools:
+            if getattr(t, "admission_resource", ""):
+                return t
+    return None
+
+
 def tai_nguyen_nha() -> tuple[str, int]:
     """`(resource, slots)` để giành suất admission trước khi chạm máy B.
 
@@ -110,14 +129,10 @@ def tai_nguyen_nha() -> tuple[str, int]:
     import logging
 
     try:
-        from platform_core.registry import discover
-        for it in discover():
-            if it.manifest.slug != THU_TU_PROVIDER[0]:
-                continue
-            for t in it.manifest.tools:
-                r = getattr(t, "admission_resource", "")
-                if r:
-                    return r, int(getattr(t, "admission_slots", 1) or 1)
+        t = tool_nha()
+        if t is not None:
+            return (str(getattr(t, "admission_resource", "")),
+                    int(getattr(t, "admission_slots", 1) or 1))
     except Exception:                                          # noqa: BLE001
         # ⛔ NÓI RA. Rơi về mặc định thì vẫn chạy được, nhưng nếu bản khai đã đổi
         #    mà chỗ này không đọc được thì ta sẽ giành **sai tài nguyên** — và

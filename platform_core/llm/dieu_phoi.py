@@ -75,11 +75,23 @@ class KhongCoProviderNao(RuntimeError):
 def _goi_openai(base_url: str, credential: str, than: dict, timeout_s: float) -> KetQuaChat:
     import httpx
 
+    from platform_core.llm import ngat
+
+    # 🔴 MỘT `Client` CÓ TÊN, KHÔNG PHẢI `httpx.request`. Hai lý do, và lý do thứ
+    #    hai mới là lý do đổi:
+    #      1. dùng lại kết nối giữa hai lượt liên tiếp tới cùng máy B;
+    #      2. **có thứ để đóng**. Khách ngắt giữa một lượt đồng bộ thì cửa phải
+    #         cắt được kết nối tới máy B (spec §16) — `httpx.request` dựng client
+    #         bên trong rồi vứt đi, nên không ai cầm được cái tay nắm ấy, và lượt
+    #         vẫn chạy hết trên GPU cho một người đã đi.
+    client = httpx.Client(timeout=timeout_s)
+    ngat.ghi_nhan(client.close)
+
     def goi(method, path, *, json=None, timeout=None):
         headers = {"Authorization": f"Bearer {credential}"} if credential else {}
         try:
-            r = httpx.request(method, base_url.rstrip("/") + path, json=json,
-                              headers=headers, timeout=timeout or timeout_s)
+            r = client.request(method, base_url.rstrip("/") + path, json=json,
+                               headers=headers, timeout=timeout or timeout_s)
         except httpx.HTTPError as e:
             raise AmbiguousProviderError(
                 f"mat ket noi sau khi bat dau gui: {type(e).__name__}") from None
@@ -88,7 +100,10 @@ def _goi_openai(base_url: str, credential: str, than: dict, timeout_s: float) ->
         except ValueError:
             return r.status_code, {}
 
-    return CongVlm(goi=goi, timeout_s=timeout_s).chat(**than)
+    try:
+        return CongVlm(goi=goi, timeout_s=timeout_s).chat(**than)
+    finally:
+        client.close()
 
 
 def goi(db, *, messages: list, thu_tu_provider: Sequence[str],
