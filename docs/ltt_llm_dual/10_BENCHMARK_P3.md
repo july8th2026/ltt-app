@@ -397,56 +397,6 @@ cả production hôm nay — nó không phân biệt được "hỏng" với "đ
 kết luận không đổi (1.400/1.400 token + chạm trần là bằng chứng độc lập), nhưng
 phải sửa trước khi dùng số của nó làm **cổng**.
 
-## Phụ lục — Có cần nâng llama.cpp lên bản mới không? **Chưa cần**
-
-Máy B chạy **b10883** (`91f6a6cf3`); master ở **b10909** — đúng **31 commit**.
-Soát cả 31: phần lớn là Vulkan / Metal / s390x / OpenCL / CI, không chạm
-CUDA-Windows. Ba cái đáng nhìn:
-
-| commit | nội dung | cắn ta không |
-|---|---|---|
-| `b0dcb819` (**b10906**) | server: fix speculation after an image | phải đo |
-| `5cdd3d1d` | fix MTP KV allocation | **không** — chỉ deepseek2, glm4moe, cohere2moe (đã kiểm danh sách đầy đủ, **không có qwen35**) |
-| `fa676981` | fix mtmd chunk với DFlash | **không** — DFlash, ta dùng MTP |
-
-`b0dcb819` đáng lo trên giấy: trước nó, server truyền **số token** thay vì **vị
-trí** cho bộ nháp sau khi xử lý ảnh, làm suy đoán tụt hiệu quả **im lặng**. PR
-nói rõ nó ảnh hưởng *"every drafter, not just DFlash"* — kể cả MTP. Và đó đúng
-là hình dạng hồ sơ gộp text+vision + `draft-mtp` của LTT-3.8 sau L-14.
-
-Nhưng con số 152 → 51 tok/s trong báo cáo gốc đo trên **ROCm với DFlash2**.
-Kiến trúc khác, bộ nháp khác, card khác. "Lỗi có trong mã" không trả lời được
-câu **"nó làm chậm máy của TA bao nhiêu"** — mà chỉ câu đó mới quyết được lúc
-nâng cấp.
-
-### Đo (`probe_anh_spec.py`, b10883, hồ sơ 3.8 đã chốt, `-np 1`)
-
-| bài | tok/s | token ra | spec chấp nhận / token |
-|---|---:|---:|---:|
-| A — 4 lượt text, **không** ảnh trước | 64,06 | 1.200 | 1,165 |
-| B — 1 lượt **ảnh**, rồi 4 lượt text y hệt | 62,57 | 1.200 | 1,145 |
-| **tỉ lệ B/A** | **0,977** | — | **0,983** |
-
-⇒ Chênh **~2 %** ở cả tốc độ lẫn tỉ lệ chấp nhận suy đoán — nằm trong nhiễu.
-**Lỗi #28715 không cắn vào cấu hình của ta.** (`-np 1` để loại may rủi về việc
-lượt text rơi vào slot chưa từng thấy ảnh.)
-
-### Kết luận
-
-**Giữ b10883 hết P3.** Mọi con số của G1/G1b/G2/G3 nằm trên bản này; đổi engine
-là chúng hết hiệu lực (kho đã có bài học: b10883 so với b10689 **đổi cả đầu ra**,
-không chỉ tốc độ).
-
-**Nâng ở Task 3.3** — lúc viết lại `llama-swap.yaml` thì phải chạy lại cổng đo
-sẵn rồi, nên một lượt chạy lại phục vụ cả hai việc. Lên **b10906 trở lên**, giữ
-nguyên dòng CUDA 13 (bản đang cài dùng `cublas64_13.dll`, chạy tốt), có sẵn bản
-dựng Windows CUDA đóng gói theo từng build nên là **tải + thay**, không phải
-biên dịch. Bắt buộc chạy lại C1 + G1 + G2 trên bản mới trước khi cho khách dùng.
-
-⚠️ Ghi chú đã kiểm chứ không suy: ghi nhớ cũ *"cuBLAS INVALID_VALUE thì phải hạ
-CUDA"* là chuyện **torch cu130 trên pod thuê cho WanGP**, không liên quan
-llama.cpp ở máy B. Không áp dụng ở đây.
-
 ## G3c — Tiếng Việt trả rỗng: nguyên nhân, và bản vá đưa bộ đề lên **36/36**
 
 ### Đây KHÔNG phải "model không biết tiếng Việt"
@@ -535,6 +485,129 @@ chứng mạnh nhưng **trên một model khác**. Task 3.3 phải áp cùng b�
 
 ---
 
-## G4–G5
+## G4 — Bốn tham số theo model (đo 2026-09-12, 02:0x)
+
+Đo trên **đúng cấu hình sẽ triển khai** (L-14 ngữ cảnh + slot, L-15 bộ cờ).
+
+| | LTT-3.8 (3090) | LTT-3.5 (5060 Ti) |
+|---|---:|---:|
+| **token mỗi ảnh** 1024×768 | **770** | **770** |
+| nạp từ kho **ấm** | **16,3 s** | **12,1 s** |
+| prefill @ 786 token | 977 tok/s | 1.765 |
+| prefill @ 6,7K | 1.239 | **2.238** |
+| prefill @ 32,6K | 1.132 | 2.059 |
+| prefill @ 98K | 842 | 1.630 |
+| prefill @ 163K | 646 | **1.350** |
+| điện ở C1 | **314 W** | **119 W** |
+
+### `token_moi_anh` = 770, và nó giống nhau ở cả hai model
+
+Đo bằng **hiệu** giữa cùng một câu hỏi có ảnh và không ảnh (17 → 787 token), nên
+phần chữ triệt tiêu và phần còn lại đúng là của ảnh. Không ước bằng công thức
+patch: mỗi bản mmproj băm ảnh một kiểu, và con số này **đi thẳng vào hoá đơn**.
+
+⇒ Một ảnh ≈ 770 token vào. Với trần vào công khai thì **4 ảnh ≈ 3.080 token**,
+tức chưa tới 2 % ngữ cảnh — giới hạn ≤ 4 ảnh của spec §2 không phải ràng buộc
+về bộ nhớ, nó là ràng buộc về chất lượng/giá.
+
+### `T_NAP_LLM` thật là **16,3 s**, không phải 45,0
+
+Máy trạng thái residency (Task 5.2, `t_nap_llm_s = 45.0`) đang giả định con số
+gấp **2,8 lần** thực tế. Đây là một tham số **quyết định khi nào đáng đổi cư
+trú** giữa model ảnh và LTT-3.8 trên 3090 — giả định quá cao làm trọng tài ngần
+ngại đổi, tức 3090 nằm sai chỗ lâu hơn cần thiết.
+
+⇒ Task 5.2 phải thay `45.0` bằng **16,3** và dẫn nguồn về đây.
+⚠️ 16,3 s là **kho ấm** (tệp vừa đọc ở lượt trước). Cổng **G5** đo kho lạnh —
+trọng tài gặp cả hai, nên nó cần cả hai con số chứ không một.
+
+### Prefill: LTT-3.5 nhanh gấp ~2 lần ở mọi độ dài
+
+Và khoảng cách **không** thu hẹp khi prompt dài ra (1,8× ở 6,7K, 2,1× ở 163K).
+Với một lượt 163K token vào, khách chờ prefill **257 s trên 3.8** so với **125 s
+trên 3.5** — chênh hơn hai phút, trong khi phần sinh chữ chỉ khác nhau vài giây.
+
+⇒ `NGUONG_WHALE` (từ độ dài nào thì một lượt là "cá voi" đủ làm nghèo slot của
+người khác) phải **khác nhau theo model**, không dùng chung một con số.
+
+### Điện: 3.5 rẻ hơn **2,6 lần**
+
+314 W so với 119 W cho cùng một lượt C1. Cộng với việc 3.5 còn **nhanh hơn**, chi
+phí điện trên mỗi triệu token ra của 3.5 thấp hơn khoảng **ba lần** — đó là số
+đi vào công thức giá D07 (Task 2.5).
+
+### ⚠️ Một con số của G4 buộc phải kiểm lại, chưa được dùng
+
+`dien_c1` đo LTT-3.8 ở **56,0 tok/s** — **dưới** ngưỡng cổng nghiệm thu B
+(60,0 tok/s, R18). Nếu đúng thì cấu hình sẽ triển khai không đạt cổng của chính
+nó. Nhưng đó là **một** lượt, và phép đo "giá của bộ cờ" ngay sau đó cho thấy
+phương sai giữa các lần chạy ~5–8 % (một cấu hình còn *nhanh hơn* bản không cờ,
+điều vô lý về mặt cơ chế). Một lượt không kết luận được.
+
+⇒ Đang đo lại: 5 khối **xen kẽ** (X, Y, X, Y…) thay vì hai lô liền, lấy trung vị
+— xen kẽ để máy nóng lên hay một tiến trình chen ngang ảnh hưởng **đều** lên cả
+hai nhánh thay vì đổ trọn vào một bên.
+
+### Điều G4 đã loại trừ
+
+`spec_decode_num_accepted` giữ ~1.000 ở **cả bốn** biến thể cờ (không cờ · chỉ
+tham số lấy mẫu · chỉ `--reasoning-budget` · cả hai) ⇒ **không cờ nào của L-15
+làm hỏng suy đoán MTP**. Giả thuyết đó chết.
+
+---
+
+## G5
 
 Chưa chạy.
+
+---
+
+## Phụ lục — Có cần nâng llama.cpp lên bản mới không? **Chưa cần**
+
+Máy B chạy **b10883** (`91f6a6cf3`); master ở **b10909** — đúng **31 commit**.
+Soát cả 31: phần lớn là Vulkan / Metal / s390x / OpenCL / CI, không chạm
+CUDA-Windows. Ba cái đáng nhìn:
+
+| commit | nội dung | cắn ta không |
+|---|---|---|
+| `b0dcb819` (**b10906**) | server: fix speculation after an image | phải đo |
+| `5cdd3d1d` | fix MTP KV allocation | **không** — chỉ deepseek2, glm4moe, cohere2moe (đã kiểm danh sách đầy đủ, **không có qwen35**) |
+| `fa676981` | fix mtmd chunk với DFlash | **không** — DFlash, ta dùng MTP |
+
+`b0dcb819` đáng lo trên giấy: trước nó, server truyền **số token** thay vì **vị
+trí** cho bộ nháp sau khi xử lý ảnh, làm suy đoán tụt hiệu quả **im lặng**. PR
+nói rõ nó ảnh hưởng *"every drafter, not just DFlash"* — kể cả MTP. Và đó đúng
+là hình dạng hồ sơ gộp text+vision + `draft-mtp` của LTT-3.8 sau L-14.
+
+Nhưng con số 152 → 51 tok/s trong báo cáo gốc đo trên **ROCm với DFlash2**.
+Kiến trúc khác, bộ nháp khác, card khác. "Lỗi có trong mã" không trả lời được
+câu **"nó làm chậm máy của TA bao nhiêu"** — mà chỉ câu đó mới quyết được lúc
+nâng cấp.
+
+### Đo (`probe_anh_spec.py`, b10883, hồ sơ 3.8 đã chốt, `-np 1`)
+
+| bài | tok/s | token ra | spec chấp nhận / token |
+|---|---:|---:|---:|
+| A — 4 lượt text, **không** ảnh trước | 64,06 | 1.200 | 1,165 |
+| B — 1 lượt **ảnh**, rồi 4 lượt text y hệt | 62,57 | 1.200 | 1,145 |
+| **tỉ lệ B/A** | **0,977** | — | **0,983** |
+
+⇒ Chênh **~2 %** ở cả tốc độ lẫn tỉ lệ chấp nhận suy đoán — nằm trong nhiễu.
+**Lỗi #28715 không cắn vào cấu hình của ta.** (`-np 1` để loại may rủi về việc
+lượt text rơi vào slot chưa từng thấy ảnh.)
+
+### Kết luận
+
+**Giữ b10883 hết P3.** Mọi con số của G1/G1b/G2/G3 nằm trên bản này; đổi engine
+là chúng hết hiệu lực (kho đã có bài học: b10883 so với b10689 **đổi cả đầu ra**,
+không chỉ tốc độ).
+
+**Nâng ở Task 3.3** — lúc viết lại `llama-swap.yaml` thì phải chạy lại cổng đo
+sẵn rồi, nên một lượt chạy lại phục vụ cả hai việc. Lên **b10906 trở lên**, giữ
+nguyên dòng CUDA 13 (bản đang cài dùng `cublas64_13.dll`, chạy tốt), có sẵn bản
+dựng Windows CUDA đóng gói theo từng build nên là **tải + thay**, không phải
+biên dịch. Bắt buộc chạy lại C1 + G1 + G2 trên bản mới trước khi cho khách dùng.
+
+⚠️ Ghi chú đã kiểm chứ không suy: ghi nhớ cũ *"cuBLAS INVALID_VALUE thì phải hạ
+CUDA"* là chuyện **torch cu130 trên pod thuê cho WanGP**, không liên quan
+llama.cpp ở máy B. Không áp dụng ở đây.
