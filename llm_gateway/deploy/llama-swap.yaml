@@ -158,7 +158,7 @@ models:
   #    Ghim bang UUID, KHONG bang chi so: thu tu liet ke CUDA doi duoc (lap them
   #    card, doi khe) con UUID thi khong. Dat O DAY chu khong o env cua dich vu
   #    `LTTLlamaSwap`: `cai_dat_dich_vu.ps1` co nhanh go-cai-lai dich vu, va env
-  #    dich vu mat AM THAM o lan do. `tests/test_950` doi moi ho so co dong nay.
+  #    dich vu mat AM THAM o lan do. `tests/test_1200` doi moi ho so co dong nay.
   # ==========================================================================
 
   # ============================================================ KHACH NGOAI

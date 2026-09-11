@@ -120,7 +120,7 @@ Lệnh một lần trên máy B trong các task dưới: `ssh … lengo@192.168.
 
 ### Task 1.2: Đánh số lại test + đăng ký dải  `[TEST]`
 
-**Files:** `git mv tests/test_950_ghim_gpu_may_b.py tests/test_1200_…` … `test_956_uoc_token_moi.py → test_1206_uoc_token_moi.py`; Modify `docs/KE_HOACH_TRIEN_KHAI.md` (bảng cấp phát: dòng "**1200–1249** — LTT LLM Dual-Model (Spec 1+2)").
+**Files:** `git mv` bảy tệp `tests/test_1200_ghim_gpu_may_b.py` … `tests/test_1206_uoc_token_moi.py` (đổi số từ dải 950–956 cũ, xem báo cáo Task 1.2); Modify `docs/KE_HOACH_TRIEN_KHAI.md` (bảng cấp phát: dòng "**1200–1249** — LTT LLM Dual-Model (Spec 1+2)").
 
 - [ ] **Step 1:** `git grep -n "test_95[0-6]"` ⇒ sửa **mọi** tham chiếu (kể cả chú thích mã sản xuất và tài liệu — memory "dải test": chú thích trỏ số test trôi lặng lẽ nhất).
 - [ ] **Step 2:** `git grep -n "test_95[0-6]_\(ghim\|mot_nguon\|so_ngan\|luat_nhan\|admission_ngan\|phong_cho\|uoc_token\)"` ⇒ 0 dòng. Commit.

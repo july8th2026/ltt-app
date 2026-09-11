@@ -32,7 +32,7 @@ def _principal(user_id: str):
 
 def test_ltt_llm_khai_resource_remote_mot_slot():
     # multijob: số slot đọc từ MỘT nguồn (`ngan_sach.SO_SLOT_MAY_B`), không ghim
-    # cứng 1 ở đây — xem `tests/test_951_mot_nguon_so_slot.py`.
+    # cứng 1 ở đây — xem `tests/test_1201_mot_nguon_so_slot.py`.
     from apps.ltt_llm import ngan_sach
     from apps.ltt_llm.manifest import MANIFEST
     from platform_core.public_api.catalog import project_tool

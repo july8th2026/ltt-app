@@ -278,7 +278,7 @@ KY_TU_MOI_TOKEN = 2.5
 #: Số slot song song của `llama-server` trên máy B (`--parallel`). **MỘT nguồn**:
 #: manifest `admission_slots`, env gateway `LTT_LLM_MAX_DONG_THOI` và cờ
 #: `--parallel` trong `llm_gateway/deploy/llama-swap.yaml` đều phải bằng số này
-#: (`tests/test_951`, `tests/test_334`).
+#: (`tests/test_1201`, `tests/test_334`).
 #:
 #: 🔴 LÝ DO CŨ "1 vì speculative decoding chỉ tối ưu một luồng; `--parallel 2`
 #:    thấp ~20%" ĐÃ ĐO LẠI VÀ KHÔNG ĐÚNG TRÊN 3090 (multijob M-1, 11/09): con số

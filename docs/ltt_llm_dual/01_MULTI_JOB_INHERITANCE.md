@@ -44,13 +44,13 @@
 
 | Task | Commit | Tệp chính | Nhãn | Ghi chú |
 |---|---|---|---|---|
-| T1 ghim GPU | `8dbedd13` | `llm_gateway/deploy/llama-swap.yaml`, `tests/test_950_ghim_gpu_may_b.py` | **KEEP** | Chưa deploy. Test số 950 **trùng** `test_950_wf_dinh_nghia.py` trên trunk |
-| T2 một nguồn số slot | `ab4d998e` | `apps/ltt_llm/{manifest,ngan_sach}.py`, `platform_core/{registry,public_api/catalog}.py`, `test_951` | **KEEP + GENERALIZE** | `ToolSpec.admission_token_pool` là bổ sung hợp đồng app đúng luật. Hiện MỘT pool `POOL_KV_MAY_B` ⇒ phải theo model |
-| T3 mô hình + migration | `fd9b41b3` | `platform_core/models.py` (4 cột lease + `llm_waiters`), `alembic/…20260911_1200_llm_multijob_ngan_sach.py`, `governance.py`, `restore_drill_schema.py`, `test_952` | **KEEP · MODIFY khi hợp nhất** | Migration nối head cũ ⇒ multi-head trên trunk; `models.py` trunk +530 dòng |
-| T4 `luat_nhan.xet()` | `1c5cb232` | `platform_core/llm/luat_nhan.py`, `tham_so_da_luot.py`, `test_953` | **KEEP** | Hàm thuần tham số hoá `ThamSo(so_slot, pool)` ⇒ dùng lại nguyên cho pool thứ hai |
-| T5 `admission.xet_va_giu()` | `a2518468` | `platform_core/llm/admission.py`, `test_954` | **KEEP** | Advisory lock theo `resource` ⇒ hai resource = hai khoá độc lập |
-| T6 phòng chờ | `739ba02d` | `platform_core/llm/phong_cho.py`, `test_955` | **KEEP** | |
-| T7 `uoc_moi` | `0e3305a7` | `platform_core/llm/uoc_moi.py`, `test_956` | **KEEP** | Ước qua `executor.estimate_input` ⇒ kiểm tokenizer 9B vs 27B |
+| T1 ghim GPU | `8dbedd13` | `llm_gateway/deploy/llama-swap.yaml`, `tests/test_1200_ghim_gpu_may_b.py` | **KEEP** | Chưa deploy. Test số 950 (đổi thành 1200, Task 1.2) **trùng** `test_950_wf_dinh_nghia.py` trên trunk |
+| T2 một nguồn số slot | `ab4d998e` | `apps/ltt_llm/{manifest,ngan_sach}.py`, `platform_core/{registry,public_api/catalog}.py`, `test_1201` | **KEEP + GENERALIZE** | `ToolSpec.admission_token_pool` là bổ sung hợp đồng app đúng luật. Hiện MỘT pool `POOL_KV_MAY_B` ⇒ phải theo model |
+| T3 mô hình + migration | `fd9b41b3` | `platform_core/models.py` (4 cột lease + `llm_waiters`), `alembic/…20260911_1200_llm_multijob_ngan_sach.py`, `governance.py`, `restore_drill_schema.py`, `test_1202` | **KEEP · MODIFY khi hợp nhất** | Migration nối head cũ ⇒ multi-head trên trunk; `models.py` trunk +530 dòng |
+| T4 `luat_nhan.xet()` | `1c5cb232` | `platform_core/llm/luat_nhan.py`, `tham_so_da_luot.py`, `test_1203` | **KEEP** | Hàm thuần tham số hoá `ThamSo(so_slot, pool)` ⇒ dùng lại nguyên cho pool thứ hai |
+| T5 `admission.xet_va_giu()` | `a2518468` | `platform_core/llm/admission.py`, `test_1204` | **KEEP** | Advisory lock theo `resource` ⇒ hai resource = hai khoá độc lập |
+| T6 phòng chờ | `739ba02d` | `platform_core/llm/phong_cho.py`, `test_1205` | **KEEP** | |
+| T7 `uoc_moi` | `0e3305a7` | `platform_core/llm/uoc_moi.py`, `test_1206` | **KEEP** | Ước qua `executor.estimate_input` ⇒ kiểm tokenizer 9B vs 27B |
 | T8 cửa stream D-06 | `b3b11dbc` | `runtime_noi_bo/luong.py` (+339), `server/api/streaming.py`, `su_kien_loi.py`, `llm/thanh_toan.py`, `test_272` | **KEEP** | Lệch nhỏ: test dự kiến `test_957_cua_stream_cho.py` không tạo, phủ vào `test_272`. `streaming.py` trunk đổi +10 |
 
 ## 3. WIP chưa commit (Task 9)

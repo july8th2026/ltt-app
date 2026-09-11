@@ -200,7 +200,7 @@ MANIFEST = AppManifest(
         description=N_('Sinh văn bản từ hội thoại: coding, chat, agent, tóm tắt.'),
         # Cả job, sync và stream cùng tranh MỘT pool slot + MỘT ngân sách KV của
         # model nhà. Metadata vận hành, không phải alias công khai và không lộ
-        # model id. Số lấy từ `ngan_sach.py` — đừng gõ số ở đây (test_951).
+        # model id. Số lấy từ `ngan_sach.py` — đừng gõ số ở đây (test_1201).
         admission_resource="llm_remote", admission_slots=SO_SLOT_MAY_B,
         admission_token_pool=POOL_KV_MAY_B,
         sync_executor="apps.ltt_llm.executor:EXECUTOR",

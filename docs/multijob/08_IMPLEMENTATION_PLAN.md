@@ -25,7 +25,7 @@ httpx, llama.cpp b10689 + llama-swap v250 trên Windows.
 - Cấu hình ghi **không BOM**; `.ps1` **ASCII thuần**; không Python inline qua PowerShell (CLAUDE.md 1–3).
 - Không `pytest` toàn kho. Một tệp test: `python -m pytest tests/<tệp> -q`. Vòng lặp: `python tools\gate.py --doi`.
   Trước khi báo xong: `python tools\cua_so_yen.py trang-thai` rồi `python tools\gate.py`. Trần `-n 6`.
-- Dải test mới của chương trình: **950–969** (ghi vào bảng cấp phát `docs/KE_HOACH_TRIEN_KHAI.md`).
+- Dải test mới của chương trình: **1200–1249** (đổi 2026-09-11: 950–969 trùng chương trình Workflow trên trunk) (ghi vào bảng cấp phát `docs/KE_HOACH_TRIEN_KHAI.md`).
 - Mọi con số (N, pool, ngưỡng) dẫn xuất từ `apps/ltt_llm/ngan_sach.py`; bản sao phía máy B có phép kiểm đối chiếu.
 - Bận = 429/chờ, không bao giờ đánh dấu khoá hỏng (INV-004/013). Hủy do người dùng = 499, không phải 502.
 - Bảng mới: `Store(...)` trong `platform_core/public_api/governance.py` + hàm dọn thật + tên UNIQUE vào
@@ -56,27 +56,27 @@ httpx, llama.cpp b10689 + llama-swap v250 trên Windows.
 
 - [ ] **Task 1 — P0 ghim GPU (Pha 0).** Đồng bộ `llama-swap.yaml` với bản đang chạy trên máy B (khối
   `--metrics`), thêm `env: ["CUDA_VISIBLE_DEVICES=GPU-26623278-4fa5-82db-4306-237651b03e78"]` cho mọi
-  hồ sơ. Test `tests/test_950_ghim_gpu_may_b.py`: mọi model có env UUID; `--metrics` có mặt.
+  hồ sơ. Test `tests/test_1200_ghim_gpu_may_b.py`: mọi model có env UUID; `--metrics` có mặt.
 - [ ] **Task 2 — Một nguồn cho số slot.** `SO_SLOT_MAY_B`, `DONG_THOI_MAY_B` = bí danh, `POOL_KV_MAY_B`;
   `ToolSpec.admission_token_pool`; manifest đọc ngan_sach; chiếu catalog không lộ khoá mới. Test
-  `tests/test_951_mot_nguon_so_slot.py`; sửa `test_313:33-43` so với `SO_SLOT_MAY_B`.
+  `tests/test_1201_mot_nguon_so_slot.py`; sửa `test_313:33-43` so với `SO_SLOT_MAY_B`.
 - [ ] **Task 3 — Mô hình + migration.** 4 cột mới trên `ExecutionLease`; bảng `llm_waiters` (phòng chờ +
   sổ lượt: cửa, lớp, token, whale, `created_at/heartbeat_at/admitted_at/finished_at`, `trang_thai`,
   `ly_do_cho`, `so_nhip`, `ket_qua`, `lease_id`); governance `Store` OPERATIONAL 30 ngày; drill UNIQUE.
-  Test `tests/test_952_so_ngan_sach_mo_hinh.py`.
+  Test `tests/test_1202_so_ngan_sach_mo_hinh.py`.
 - [ ] **Task 4 — `luat_nhan.xet()` thuần.** Luật §5 spec: slot · ngân sách · nền ≤ N−1 & nhường tương
   tác · trần tài khoản khi có người chờ · ≤1 whale, whale nhường ≤30 s rồi chặn · FCFS chặt (bỏ qua
-  người chỉ bị trần tài khoản / whale đang nhường). Test `tests/test_953_luat_nhan.py` (mỗi luật một ca +
+  người chỉ bị trần tài khoản / whale đang nhường). Test `tests/test_1203_luat_nhan.py` (mỗi luật một ca +
   đối chứng).
 - [ ] **Task 5 — `admission.xet_va_giu()`.** Advisory lock `llm-admission:<resource>` (PostgreSQL), chụp
   lease + người chờ, gọi `luat_nhan`, INSERT; `acquire()` giữ nguyên hành vi khi `token_pool=0` và
   không có `lop`. `hold_persisted(**kw)` chuyển tiếp. `xoa_co_whale(lease_id)`. Test
-  `tests/test_954_admission_ngan_sach.py`; hồi quy `test_313`, `test_363`, `test_389`.
+  `tests/test_1204_admission_ngan_sach.py`; hồi quy `test_313`, `test_363`, `test_389`.
 - [ ] **Task 6 — `phong_cho`.** `kiem_phong` (PhongDay trước 200), `vao`, `cho_nhan` (generator: yield lý
   do mỗi nhịp, `return lease_id`; HetCho; đóng ⇒ `roi`), `cho_nhan_chan`, `ghi_ket_thuc`, `don_het_han`.
-  Đồng hồ tiêm được. Test `tests/test_955_phong_cho.py`.
+  Đồng hồ tiêm được. Test `tests/test_1205_phong_cho.py`.
 - [ ] **Task 7 — `uoc_moi.uoc_token_moi()`.** Chuỗi băm tiền tố tin nhắn theo tài khoản (LRU trong tiến
-  trình). Test `tests/test_956_uoc_token_moi.py`.
+  trình). Test `tests/test_1206_uoc_token_moi.py`.
 - [ ] **Task 8 — Cửa stream (D-06).** `thanh_toan.du_so_du`; `luong.tien_kiem` (alias/đầu vào/413/402/
   phòng đầy — trước 200), `luong.vao_va_cho` (chờ → nhận → **giữ tiền sau nhận**), `luong.luong_co_cho`
   (nhịp tim `: ltt-cho` 15 s, lỗi đúng khuôn giao thức sau 200, xoá cờ whale ở byte đầu);
