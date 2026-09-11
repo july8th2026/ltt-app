@@ -33,7 +33,7 @@ thì không.*
 |---|:--:|:--:|---|---|
 | `routes/_p_tao.py::tao` — Studio | ✅ | ✅ | `submit_with_credit` | qua hàng đợi job |
 | `routes/_p_du_an.py::_nop_mot_khoi` — Dự án | ✅ | ✅ | `submit_with_credit` | qua hàng đợi job |
-| `routes/_p_phat_dan.py::phat_dan` — phát dần | ✅ | ✅ | `giu_cho` + `_quyet_toan` | `admission.acquire` (giữ suốt generator) |
+| `routes/_p_phat_dan.py::phat_dan` — phát dần | ✅ | ✅ | `giu_cho` + `_quyet_toan` | `admission.acquire` (giữ suốt generator) ⁴ |
 | `routes/_p_lich_su.py::doc_lai` — đọc lại | ✅¹ | ✅¹ | `submit_with_credit` | qua hàng đợi job |
 | `routes/_p_nghe_thu.py::nghe_thu_van_ban` | — ² | — ² | **miễn phí** + rate-limit/giờ | `admission.hold_persisted` |
 | `routes/_p_giong.py::tao_giong` — ghi danh | — ³ | — ³ | `submit_with_credit` (giá cố định) | qua hàng đợi job |
@@ -46,6 +46,11 @@ rate-limit + admission.
 ³ Miễn trừ có lý do: ghi danh giọng **mới** — không có giọng cũ để kiểm sở hữu,
 không có văn bản để đối chiếu làn. Cổng riêng: `dong_y == "1"` (cổng pháp lý),
 tên không rỗng, `features.kiem_ghi_danh`.
+⁴ **Không có `dedupe_key`** (khác 4 cửa `submit_with_credit`, xem §5): cửa này
+không nộp job — nó giữ **một suất GPU theo phiên** qua `admission.acquire` suốt
+generator, và một khách chỉ giành được một suất tại một thời điểm, nên chính
+suất ấy đã là khoá chống trùng (bấm lần hai trong lúc lần một còn phát dần bị
+`admission` từ chối, không cần băm tham số).
 
 ## 3. Thứ tự bắt buộc của một cửa tiêu tiền
 
@@ -108,6 +113,12 @@ theo chiều ngược lại.
 `tests/test_356_moi_cua_tieu_tien_deu_qua_mot_cong.py` — quét **cây cú pháp**
 (không khớp chuỗi) mọi hàm trong `apps/ltt_voice/`, tìm hàm nào gọi
 `submit_with_credit` · `giu_cho` · `goi_cong`, và đòi nó cũng gọi `giai_giong`.
+
+Cùng tệp còn một bánh cóc thứ hai (INV-TIEN-2): mọi lời gọi `submit_with_credit`
+phải truyền `dedupe_key=` — `routes/_p_phat_dan.py::phat_dan` không cần khai
+miễn trừ cho bánh cóc này vì nó không gọi `submit_with_credit` (xem chú thích ⁴
+ở §2: cửa phát dần chống trùng bằng suất `admission` theo phiên, không bằng
+khoá băm).
 
 Miễn trừ phải khai **từng cái, kèm lý do dài đủ để cãi lại**, theo khoá
 `(tệp, hàm)` — không phải tên hàm trần, vì một miễn trừ trôi sang tệp khác là
