@@ -241,6 +241,13 @@ STORES: tuple = (
           N_("Quyền giữ slot thực thi tạm thời; chỉ giữ định danh vận hành để "
              "chẩn đoán và tự thu hồi tiến trình đã chết."),
           "admission.reclaim_expired (admission + worker)"),
+    # 30 ngày chứ không 1 như `execution_leases`: bảng này còn là SỔ TỪNG LƯỢT
+    # để phân tích sau khi mở vận hành (thời gian chờ, lý do nghẽn, whale) — chủ
+    # dự án yêu cầu 11/09. Không chứa prompt/payload.
+    Store("llm_waiters", OPERATIONAL, 30, N_("vận hành"),
+          N_("Phòng chờ của cửa tương tác tới model nhà và sổ từng lượt: chờ bao "
+             "lâu, vì sao, ngân sách token đặt chỗ. Không chứa nội dung hội thoại."),
+          "phong_cho.don_het_han (worker)"),
     Store("api_notifications", OPERATIONAL, 90, N_("chủ tài khoản"),
           N_("Cảnh báo đã đọc rồi thì hết giá trị."),
           "notifications.purge_expired (worker)"),

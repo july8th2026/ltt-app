@@ -427,6 +427,66 @@ class ExecutionLease(Base):
     heartbeat_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_bay_gio, nullable=False, index=True)
 
+    # ── Sổ ngân sách KV (multijob, `platform_core/llm/luat_nhan.py`) ─────────
+    # Rỗng/0 ở mọi lease cũ và mọi tool không khai `admission_token_pool` —
+    # luật nhận khi đó giữ nguyên hành vi "đếm slot" như trước.
+    #: `tuong_tac` | `nen` | `noi_bo` — lớp ưu tiên (D-03).
+    lop: Mapped[str] = mapped_column(String(16), default="", nullable=False)
+    #: `prompt_ước + max_tokens + đệm` — TOÀN BỘ ngữ cảnh chiếm trong pool KV.
+    token_dat_truoc: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    #: Ước token phải prefill MỚI (sau phần cache trúng) — chỉ để xếp thứ tự.
+    token_prefill_moi: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    #: Lượt prefill dài (D-05). Tắt khi byte đầu tiên về (prefill đã xong).
+    la_whale: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+
+class LlmWaiter(Base):
+    """Phòng chờ của cửa TƯƠNG TÁC tới model nhà — và **sổ từng lượt** của nó.
+
+    Hai việc trong một bảng, có chủ ý (multijob, chủ dự án 11/09: "xây log lưu
+    để phân tích sau"): dòng sinh ra khi request vào hàng, được cập nhật khi nó
+    được nhận / rời / hết hạn / xong, rồi **ở lại 30 ngày**. Truy vấn bảng này
+    trả lời được: chờ bao lâu, vì sao chờ, ngân sách nào nghẽn, whale nào gây áp
+    lực — mà không phải dựng thêm một hệ log thứ hai.
+
+    ⛔ KHÔNG chứa prompt, payload, tool, token bí mật hay credential.
+    ⛔ Việc NỀN không có dòng ở đây — hàng bền của nó là bảng `jobs`.
+    """
+
+    __tablename__ = "llm_waiters"
+    __table_args__ = (
+        UniqueConstraint("request_id", name="uq_llm_waiters_request"),
+        Index("ix_llm_waiters_resource_state", "resource", "trang_thai", "created_at"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    resource: Mapped[str] = mapped_column(String(96), nullable=False)
+    #: `stream` | `sync` | `chatltt` — cửa vào.
+    cua: Mapped[str] = mapped_column(String(16), default="", nullable=False)
+    lop: Mapped[str] = mapped_column(String(16), default="", nullable=False)
+    user_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    request_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    token_dat_truoc: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    token_prefill_moi: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    la_whale: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+    heartbeat_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+    admitted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    finished_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    #: `cho` → `nhan` → `xong` | `roi` (khách đi khi đang chờ) | `het_han`
+    #: (quá trần chờ hoặc mất nhịp tim).
+    trang_thai: Mapped[str] = mapped_column(String(16), default="cho", nullable=False)
+    #: Mã lý do của nhịp chờ CUỐI (`luat_nhan.CHO_*`).
+    ly_do_cho: Mapped[str] = mapped_column(String(32), default="", nullable=False)
+    so_nhip: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    #: Kết cục sau khi được nhận: `xong` | `khach_ngat` | `loi` | `thieu_credit` …
+    ket_qua: Mapped[str] = mapped_column(String(32), default="", nullable=False)
+    lease_id: Mapped[str] = mapped_column(String(36), default="", nullable=False)
+
 
 class JobEvent(Base):
     """Nhật ký append-only của một job, đã tách nội dung khách và nội bộ.

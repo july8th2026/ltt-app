@@ -1268,7 +1268,7 @@ def _don_du_lieu_het_han() -> None:
     from platform_core.public_api import (costing, idempotency, metrics,
                                           notifications, outbox, request_log,
                                           security_log)
-    from platform_core.llm import admission
+    from platform_core.llm import admission, phong_cho
 
     rules = (
         ("nhat ky request API", request_log.purge_expired),
@@ -1279,6 +1279,8 @@ def _don_du_lieu_het_han() -> None:
         ("ban ghi idempotency", idempotency.purge_expired),
         ("mau metrics", metrics.purge_expired),
         ("execution lease mo coi", admission.reclaim_expired),
+        # Phòng chờ + sổ lượt LLM (multijob): chốt dòng chờ mồ côi, xoá sau 30 ngày.
+        ("phong cho LLM", phong_cho.don_het_han),
         # Nội dung của job: file sinh ra + prompt + payload kết quả. Hàng `jobs`
         # ở lại (bằng chứng), nội dung thì hết hạn — trước đây cả hai chung một
         # số phận là giữ vĩnh viễn, nên kho file phình không trần.

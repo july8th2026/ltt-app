@@ -136,6 +136,10 @@ def main() -> int:
                     "uq_wakeup_khu_trung",
                     "uq_gpu_lease_host_uuid",
                     "uq_execution_lease_resource_slot",
+                    # multijob: mat no sau restore thi CUNG mot request vao
+                    # phong cho HAI lan -> hai dong cho, hai lease, nua ngan
+                    # sach KV bi dat cho mot luot.
+                    "uq_llm_waiters_request",
                     "uq_job_events_job_sequence",
                     "uq_job_events_job_event_key",
                     "uq_ommi_scene_version",
