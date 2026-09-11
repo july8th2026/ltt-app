@@ -227,9 +227,18 @@ def _dat_lan_va_chung(public_id: str, ngon_ngu: str, ghi_chu: str) -> None:
     ⛔ Cửa HTTPS **cố ý** không đặt `dung_chung` (xem `_p_giong.py`): một giọng
        khách tự tạo mà tự vào kho chung là công khai dữ liệu sinh trắc của họ.
        Nên bước này tách riêng, và nó chỉ chạy cho đúng những giọng ta nhập.
+
+    ⭐ Từ D003 (2026-09-11) cửa `/giong/tao` đã nhận `ngon_ngu` ngay lúc ghi
+       danh (xem `main`, `ngon_ngu` trong `data=` của lượt POST) và tự đặt
+       `ngon_ngu_nguon=NGUON_KHAI_BAO` — hai dòng `hs.ngon_ngu`/
+       `hs.ngon_ngu_nguon` ở đây về lý thuyết là GHI LẠI đúng giá trị đã có.
+       Giữ chúng có chủ ý: hàm này là bước VÁ cho những dòng lỡ tạo trước khi
+       cửa HTTPS biết khai (hoặc bởi một phiên bản kịch bản cũ hơn), nên nó
+       không được coi `ngon_ngu_nguon` đã đúng — nó tự đặt lại, tường minh.
     """
     from sqlalchemy import select
 
+    from apps.ltt_voice import giong_vong_doi
     from apps.ltt_voice.tables import VoiceProfile
     from platform_core.db import get_session
 
@@ -244,6 +253,7 @@ def _dat_lan_va_chung(public_id: str, ngon_ngu: str, ghi_chu: str) -> None:
             raise KhongLam(f"{public_id} dang `{hs.trang_thai}`, chua the "
                            f"dua vao kho chung")
         hs.ngon_ngu = ngon_ngu
+        hs.ngon_ngu_nguon = giong_vong_doi.NGUON_KHAI_BAO
         hs.ghi_chu = ghi_chu
         hs.dung_chung = True
         db.commit()
@@ -313,12 +323,25 @@ def main(argv=None) -> int:
         except StopIteration:
             pass
 
+    # D003 (2026-09-11): cua ghi danh nay BAT KHAI `ngon_ngu` — thieu la 400
+    # `voice_language_required`. Kich ban nay da BIET lan tu `engine` (② o
+    # dau tep, ASR xac nhan 24/24), nen phai GUI no trong POST thay vi de cua
+    # tu doan/tu choi. `chuan_lan` chi la mot lop chan phong thu: neu mot
+    # dong `LAN_THEO_ENGINE` sau nay lo them gia tri thu ba thi giong ay BO
+    # QUA voi ly do in ra, khong nop mot `ngon_ngu` sai.
+    from apps.ltt_voice import lan_ngon_ngu
+
     ke_hoach, da_co, thieu_clip = [], [], []
     for ma in sorted(hoso):
         hs = hoso[ma]
         lan = LAN_THEO_ENGINE.get(str(hs.get("engine") or ""))
         if lan is None:
             print(f"  [bo] {ma}: engine la `{hs.get('engine')}`, khong biet lan")
+            continue
+        lan = lan_ngon_ngu.chuan_lan(lan)
+        if not lan:
+            print(f"  [bo] {ma}: lan `{LAN_THEO_ENGINE.get(str(hs.get('engine') or ''))}` "
+                  f"khong hop le (khong phai vi/en)")
             continue
         duong = os.path.join(a.clip, f"{ma}.wav")
         if not os.path.isfile(duong):
@@ -404,7 +427,7 @@ def main(argv=None) -> int:
             data = f.read()
         rr = s.post(f"{a.goc}/ltt-voice/giong/tao",
                     data={"ten": m["ten"], "dong_y": "1",
-                          "csrf_token": tok[0]},
+                          "ngon_ngu": m["lan"], "csrf_token": tok[0]},
                     files={"tep": (f"{m['ma']}.wav", data, "audio/wav")},
                     timeout=300)
         if rr.status_code != 200 or not (rr.json() or {}).get("ok"):

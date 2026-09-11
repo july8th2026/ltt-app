@@ -67,6 +67,12 @@ def main(argv=None) -> int:
     ap.add_argument("--goc", default="https://app.lttstudios.com")
     ap.add_argument("--clip", required=True)
     ap.add_argument("--ten", default="Clip 30 giay thu bo chon")
+    # D003 (2026-09-11): `/ltt-voice/giong/tao` nay BAT KHAI lan — thieu
+    # `ngon_ngu` la 400 `voice_language_required`. BAT BUOC o day, khong co
+    # mac dinh, de nguoi chay kich ban phai TU noi ro clip nay la lan gi thay
+    # vi de cua nop tu doan "vi".
+    ap.add_argument("--ngon-ngu", required=True, choices=("vi", "en"),
+                    help="Lan cua clip mau: vi hoac en (bat buoc, D003).")
     ap.add_argument("--cho-giay", type=int, default=420)
     a = ap.parse_args(argv)
 
@@ -99,7 +105,8 @@ def main(argv=None) -> int:
     with open(a.clip, "rb") as f:
         data = f.read()
     r = s.post(f"{a.goc}/ltt-voice/giong/tao",
-               data={"ten": a.ten, "dong_y": "1", "csrf_token": tot[0]},
+               data={"ten": a.ten, "dong_y": "1", "ngon_ngu": a.ngon_ngu,
+                     "csrf_token": tot[0]},
                files={"tep": (os.path.basename(a.clip), data, "audio/wav")},
                timeout=180)
     print(f"[3] POST ghi danh -> {r.status_code}  {r.text[:300]}")
