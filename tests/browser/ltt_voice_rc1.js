@@ -24,14 +24,9 @@ const SEL = {
   // ── Studio (D002) — CO THE DOI khi Task 11 hop nhat ──────────────────────
   ngonNguNut: (ma) => `[data-ngonngu="${ma}"]`,      // nut chon Tu dong/VI/EN
   ngonNguAn: '#lv-ngon-ngu',                          // input an giu gia tri
-  giongRadio: (nhan) => `input[name="giong"]`,        // radiogroup chon giong
   vanBan: '#lv-text',                                 // textarea kich ban
   nutTao: '#lv-nut-tao',                              // nut "Tao"
   ketQuaLoi: '#lv-kq-loi',                            // hop loi sau khi nop
-  // ── Man Giong (D003/D004/T-08) — on dinh, khong thuoc pham vi Task 11 ────
-  formGhiDanh: '#lv-form-giong',
-  detailsGhiDanh: '#lv-tao-giong',
-  gioLoiGhiDanh: '#lv-g-loi',
   // ── Lich su (D005) — on dinh ──────────────────────────────────────────────
   dongLichSu: '.lv-ls-dong',
   nutXoaLichSu: '.lv-ls-xoa',
@@ -96,6 +91,15 @@ async page => {
   const BASE = process.env.LTT_QA_BASE_URL || 'http://127.0.0.1:8129';
   const kt = kiemTrang(page);
 
+  // TANG-2: du lieu seed (_seed_rc1) va buoc XOA that su (D005) CHI an toan
+  // tren may chu E2E loopback — LTT_QA_BASE_URL co the tro toi MOT DICH KHAC
+  // (nguoi goi tu dat). `LA_LOOPBACK` phat hien dieu do; `CHO_XOA_TANG2` la
+  // canh mo THEM cho mot dong do CHINH luot chay nay tu tao duoi tai khoan
+  // test — KHONG bao gio bat mot buoc XOA chi vi co bien nay ma khong co
+  // dong do luot nay tu tao (xem LUONG 4 duoi day).
+  const LA_LOOPBACK = /^https?:\/\/(127\.0\.0\.1|localhost)(:|\/|$)/.test(BASE);
+  const CHO_XOA_TANG2 = process.env.LTT_QA_CHO_XOA === '1';
+
   // ── Dang nhap MOT LAN (tai khoan E2E dung mot lan) ─────────────────────────
   await page.goto(BASE + '/ltt-voice');
   if (/\/login/.test(page.url())) {
@@ -132,6 +136,7 @@ async page => {
   // dung lan EN.
   // ═══════════════════════════════════════════════════════════════════════
   {
+    kt.xoaCho();
     await page.goto(BASE + '/ltt-voice/giong');
     kt.dat();
 
@@ -196,62 +201,67 @@ async page => {
   // xac nhan hoat dong; giong DO_ASR khong hien form doi.
   // ═══════════════════════════════════════════════════════════════════════
   {
-    await page.goto(BASE + '/ltt-voice/giong');
-    kt.dat();
+    kt.xoaCho();
+    if (!LA_LOOPBACK) {
+      console.log('SKIP LUONG 2 (D004) — du lieu seed (_seed_rc1: giong LEGACY + DO_ASR) chi ton tai tren may chu E2E loopback; LTT_QA_BASE_URL dang tro toi mot dich khac (tang-2).');
+    } else {
+      await page.goto(BASE + '/ltt-voice/giong');
+      kt.dat();
 
-    // 2a. Giong LEGACY (seed `vce_e2e_legacy_vi`, D004).
-    const theLegacy = page.locator('article[data-ma="vce_e2e_legacy_vi"]');
-    await theLegacy.waitFor({ state: 'attached', timeout: 15000 });
-    const coXacNhan = await theLegacy.getByText('Xác nhận ngôn ngữ của giọng này')
-      .isVisible().catch(() => false);
-    if (!coXacNhan)
-      throw new Error('D004: giong LEGACY (mac_dinh_cu) khong hien "Xac nhan ngon ngu"');
+      // 2a. Giong LEGACY (seed `vce_e2e_legacy_vi`, D004).
+      const theLegacy = page.locator('article[data-ma="vce_e2e_legacy_vi"]');
+      await theLegacy.waitFor({ state: 'attached', timeout: 15000 });
+      const coXacNhan = await theLegacy.getByText('Xác nhận ngôn ngữ của giọng này')
+        .isVisible().catch(() => false);
+      if (!coXacNhan)
+        throw new Error('D004: giong LEGACY (mac_dinh_cu) khong hien "Xac nhan ngon ngu"');
 
-    const csrfXn = await theLegacy.locator('input[name="csrf_token"]').getAttribute('value');
-    const r3 = await page.request.post(
-      BASE + `/ltt-voice/giong/vce_e2e_legacy_vi/ngon-ngu`,
-      { form: { csrf_token: csrfXn, ngon_ngu: 'vi' },
-        headers: { Accept: 'application/json' } });
-    if (r3.status() !== 200)
-      throw new Error(`D004: xac nhan giong LEGACY mong 200, nhan ${r3.status()}`);
-    const b3 = await r3.json();
-    if (!b3.ok || b3.ngon_ngu !== 'vi')
-      throw new Error('D004: xac nhan giong LEGACY khong tra ok+ngon_ngu=vi: ' + JSON.stringify(b3));
+      const csrfXn = await theLegacy.locator('input[name="csrf_token"]').getAttribute('value');
+      const r3 = await page.request.post(
+        BASE + `/ltt-voice/giong/vce_e2e_legacy_vi/ngon-ngu`,
+        { form: { csrf_token: csrfXn, ngon_ngu: 'vi' },
+          headers: { Accept: 'application/json' } });
+      if (r3.status() !== 200)
+        throw new Error(`D004: xac nhan giong LEGACY mong 200, nhan ${r3.status()}`);
+      const b3 = await r3.json();
+      if (!b3.ok || b3.ngon_ngu !== 'vi')
+        throw new Error('D004: xac nhan giong LEGACY khong tra ok+ngon_ngu=vi: ' + JSON.stringify(b3));
 
-    await page.reload();
-    kt.khangDinh('D004-legacy');
-    kt.dat();
-    // Sau xac nhan, nguon thanh `khai_bao` — the phai doi sang "Doi ngon ngu",
-    // KHONG con "Xac nhan…" nua.
-    const theLegacy2 = page.locator('article[data-ma="vce_e2e_legacy_vi"]');
-    if (await theLegacy2.getByText('Xác nhận ngôn ngữ của giọng này').isVisible().catch(() => false))
-      throw new Error('D004: giong LEGACY VAN hien "Xac nhan…" sau khi da xac nhan');
-    if (!(await theLegacy2.getByText('Đổi ngôn ngữ').isVisible().catch(() => false)))
-      throw new Error('D004: giong LEGACY khong chuyen sang "Doi ngon ngu" sau xac nhan');
+      await page.reload();
+      kt.khangDinh('D004-legacy');
+      kt.dat();
+      // Sau xac nhan, nguon thanh `khai_bao` — the phai doi sang "Doi ngon ngu",
+      // KHONG con "Xac nhan…" nua.
+      const theLegacy2 = page.locator('article[data-ma="vce_e2e_legacy_vi"]');
+      if (await theLegacy2.getByText('Xác nhận ngôn ngữ của giọng này').isVisible().catch(() => false))
+        throw new Error('D004: giong LEGACY VAN hien "Xac nhan…" sau khi da xac nhan');
+      if (!(await theLegacy2.getByText('Đổi ngôn ngữ').isVisible().catch(() => false)))
+        throw new Error('D004: giong LEGACY khong chuyen sang "Doi ngon ngu" sau xac nhan');
 
-    // 2b. Giong DO_ASR (seed `vce_e2e_do_asr_en`, D004) — KHONG co form doi.
-    const theAsr = page.locator('article[data-ma="vce_e2e_do_asr_en"]');
-    await theAsr.waitFor({ state: 'attached', timeout: 15000 });
-    if (await theAsr.locator('form[action*="/ngon-ngu"]').count() > 0)
-      throw new Error('D004: giong DO_ASR hien mot FORM doi lan — phai KHONG co cua bam nao');
-    if (!(await theAsr.getByText('Đo từ clip').isVisible().catch(() => false)))
-      throw new Error('D004: giong DO_ASR khong hien nhan "Do tu clip"');
+      // 2b. Giong DO_ASR (seed `vce_e2e_do_asr_en`, D004) — KHONG co form doi.
+      const theAsr = page.locator('article[data-ma="vce_e2e_do_asr_en"]');
+      await theAsr.waitFor({ state: 'attached', timeout: 15000 });
+      if (await theAsr.locator('form[action*="/ngon-ngu"]').count() > 0)
+        throw new Error('D004: giong DO_ASR hien mot FORM doi lan — phai KHONG co cua bam nao');
+      if (!(await theAsr.getByText('Đo từ clip').isVisible().catch(() => false)))
+        throw new Error('D004: giong DO_ASR khong hien nhan "Do tu clip"');
 
-    // Va server van CHAN neu ai co tinh POST doi lan nguoc voi phep do
-    // (`voice_language_measured`) — xac nhan cua chan that su ton tai, khong
-    // chi la thieu mot form tren giao dien.
-    const csrfAsr = await theLegacy2.locator('input[name="csrf_token"]').getAttribute('value')
-      || (await page.getAttribute('#lv-form-giong input[name="csrf_token"]', 'value'));
-    kt.choPhep400(`/ltt-voice/giong/vce_e2e_do_asr_en/ngon-ngu`);
-    const r4 = await page.request.post(
-      BASE + `/ltt-voice/giong/vce_e2e_do_asr_en/ngon-ngu`,
-      { form: { csrf_token: csrfAsr, ngon_ngu: 'vi' },
-        headers: { Accept: 'application/json' } });
-    if (r4.status() !== 400)
-      throw new Error(`D004: doi lan nguoc PHEP DO mong 400, nhan ${r4.status()}`);
-    const b4 = await r4.json();
-    if (b4.ma_loi !== 'voice_language_measured')
-      throw new Error('D004: ma_loi sai cho doi nguoc PHEP DO: ' + JSON.stringify(b4));
+      // Va server van CHAN neu ai co tinh POST doi lan nguoc voi phep do
+      // (`voice_language_measured`) — xac nhan cua chan that su ton tai, khong
+      // chi la thieu mot form tren giao dien.
+      const csrfAsr = await theLegacy2.locator('input[name="csrf_token"]').getAttribute('value')
+        || (await page.getAttribute('#lv-form-giong input[name="csrf_token"]', 'value'));
+      kt.choPhep400(`/ltt-voice/giong/vce_e2e_do_asr_en/ngon-ngu`);
+      const r4 = await page.request.post(
+        BASE + `/ltt-voice/giong/vce_e2e_do_asr_en/ngon-ngu`,
+        { form: { csrf_token: csrfAsr, ngon_ngu: 'vi' },
+          headers: { Accept: 'application/json' } });
+      if (r4.status() !== 400)
+        throw new Error(`D004: doi lan nguoc PHEP DO mong 400, nhan ${r4.status()}`);
+      const b4 = await r4.json();
+      if (b4.ma_loi !== 'voice_language_measured')
+        throw new Error('D004: ma_loi sai cho doi nguoc PHEP DO: ' + JSON.stringify(b4));
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -259,24 +269,29 @@ async page => {
   // KHONG PHAI CHU (seed `vce_e2e_kho_chung`, chu la mot tai khoan gia khac).
   // ═══════════════════════════════════════════════════════════════════════
   {
-    await page.goto(BASE + '/ltt-voice/giong');
-    kt.dat();
-    const theChung = page.locator('article[data-ma="vce_e2e_kho_chung"]');
-    await theChung.waitFor({ state: 'attached', timeout: 15000 });
-    const nutNghe = theChung.locator('button.lv-nghe[data-nghe]');
-    if (await nutNghe.count() === 0)
-      throw new Error('T-08: giong KHO CHUNG khong hien nut nghe thu (data-nghe vang mat)');
-    const urlNghe = await nutNghe.getAttribute('data-nghe');
-    if (!urlNghe || !urlNghe.includes('/audio/voice/chung/'))
-      throw new Error('T-08: url nghe thu khong di qua tien to voice/chung/: ' + urlNghe);
-    const rNghe = await page.request.get(
-      urlNghe.startsWith('http') ? urlNghe : BASE + urlNghe);
-    if (rNghe.status() !== 200)
-      throw new Error(`T-08: GET nghe thu kho chung (khong phai chu) mong 200, nhan ${rNghe.status()}`);
-    const bufNghe = await rNghe.body();
-    if (!(bufNghe[0] === 0x52 && bufNghe[1] === 0x49 && bufNghe[2] === 0x46 && bufNghe[3] === 0x46))
-      throw new Error('T-08: tep nghe thu kho chung tra ve KHONG phai WAV (thieu RIFF)');
-    kt.khangDinh('T-08-kho-chung-nghe-thu');
+    kt.xoaCho();
+    if (!LA_LOOPBACK) {
+      console.log('SKIP LUONG 3 (T-08) — giong KHO CHUNG seed (_seed_rc1) chi ton tai tren may chu E2E loopback; LTT_QA_BASE_URL dang tro toi mot dich khac (tang-2).');
+    } else {
+      await page.goto(BASE + '/ltt-voice/giong');
+      kt.dat();
+      const theChung = page.locator('article[data-ma="vce_e2e_kho_chung"]');
+      await theChung.waitFor({ state: 'attached', timeout: 15000 });
+      const nutNghe = theChung.locator('button.lv-nghe[data-nghe]');
+      if (await nutNghe.count() === 0)
+        throw new Error('T-08: giong KHO CHUNG khong hien nut nghe thu (data-nghe vang mat)');
+      const urlNghe = await nutNghe.getAttribute('data-nghe');
+      if (!urlNghe || !urlNghe.includes('/audio/voice/chung/'))
+        throw new Error('T-08: url nghe thu khong di qua tien to voice/chung/: ' + urlNghe);
+      const rNghe = await page.request.get(
+        urlNghe.startsWith('http') ? urlNghe : BASE + urlNghe);
+      if (rNghe.status() !== 200)
+        throw new Error(`T-08: GET nghe thu kho chung (khong phai chu) mong 200, nhan ${rNghe.status()}`);
+      const bufNghe = await rNghe.body();
+      if (!(bufNghe[0] === 0x52 && bufNghe[1] === 0x49 && bufNghe[2] === 0x46 && bufNghe[3] === 0x46))
+        throw new Error('T-08: tep nghe thu kho chung tra ve KHONG phai WAV (thieu RIFF)');
+      kt.khangDinh('T-08-kho-chung-nghe-thu');
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -284,52 +299,70 @@ async page => {
   // xoa that; khoi Du an tuong ung sau do bao "Can tao lai".
   // ═══════════════════════════════════════════════════════════════════════
   {
-    await page.goto(BASE + '/ltt-voice/lich-su');
-    kt.dat();
+    kt.xoaCho();
+    if (!LA_LOOPBACK) {
+      console.log('SKIP LUONG 4 (D005) — du lieu seed (_seed_rc1: job + khoi du an prj_e2e_0001) chi ton tai tren may chu E2E loopback; LTT_QA_BASE_URL dang tro toi mot dich khac (tang-2).');
+    } else {
+      await page.goto(BASE + '/ltt-voice/lich-su');
+      kt.dat();
 
-    const dong = page.locator(SEL.dongLichSu, {
-      hasText: 'Khoi co tieng, cho luot xoa Lich su (RC1 D005).' });
-    await dong.waitFor({ state: 'attached', timeout: 15000 });
-    const jobId = await dong.getAttribute('data-id');
-    if (!jobId) throw new Error('D005: khong doc duoc data-id cua dong lich su vua seed');
+      const dong = page.locator(SEL.dongLichSu, {
+        hasText: 'Khoi co tieng, cho luot xoa Lich su (RC1 D005).' });
+      await dong.waitFor({ state: 'attached', timeout: 15000 });
+      const jobId = await dong.getAttribute('data-id');
+      if (!jobId) throw new Error('D005: khong doc duoc data-id cua dong lich su vua seed');
 
-    // /anh-huong PHAI liet ke dung khoi thu ba cua du an E2E TRUOC khi xoa.
-    const rAh = await page.request.get(BASE + `/ltt-voice/lich-su/${jobId}/anh-huong`);
-    if (rAh.status() !== 200)
-      throw new Error(`D005: GET /anh-huong mong 200, nhan ${rAh.status()}`);
-    const bAh = await rAh.json();
-    const khoi = (bAh && bAh.khoi) || [];
-    if (!khoi.some((k) => k.du_an === 'Kich ban E2E' && k.khoi_so === 3))
-      throw new Error('D005: /anh-huong khong liet ke dung "Kich ban E2E" khoi so 3: '
-        + JSON.stringify(bAh));
+      // /anh-huong PHAI liet ke dung khoi thu ba cua du an E2E TRUOC khi xoa.
+      const rAh = await page.request.get(BASE + `/ltt-voice/lich-su/${jobId}/anh-huong`);
+      if (rAh.status() !== 200)
+        throw new Error(`D005: GET /anh-huong mong 200, nhan ${rAh.status()}`);
+      const bAh = await rAh.json();
+      const khoi = (bAh && bAh.khoi) || [];
+      if (!khoi.some((k) => k.du_an === 'Kich ban E2E' && k.khoi_so === 3))
+        throw new Error('D005: /anh-huong khong liet ke dung "Kich ban E2E" khoi so 3: '
+          + JSON.stringify(bAh));
 
-    // Hop confirm() liet ke dung khoi do — bat dialog TRUOC khi bam Xoa.
-    let dongConfirm = '';
-    page.once('dialog', async (d) => { dongConfirm = d.message(); await d.accept(); });
-    await dong.locator(SEL.nutXoaLichSu).click();
-    await page.waitForTimeout(400);   // cho fetch xoa + reload
-    if (!dongConfirm.includes('3') || !dongConfirm.includes('Kich ban E2E'))
-      throw new Error('D005: hop xac nhan KHONG nhac khoi 3 / "Kich ban E2E": ' + dongConfirm);
+      // RAO PHA HUY (khong the dao nguoc — tep bi xoa that khoi kho): buoc
+      // XOA duoi day CHI chay khi dich la may chu E2E loopback, HOAC khi
+      // nguoi goi tu bat LTT_QA_CHO_XOA=1 CHO MOT dong do CHINH luot chay nay
+      // tao duoi tai khoan test. Dong D005 o day luon la du lieu SEED co san
+      // (_seed_rc1), KHONG phai dong luot nay tu tao — nen `CHO_XOA_TANG2`
+      // MOT MINH KHONG BAO GIO du de mo cua xoa mot dong CO SAN tren dich
+      // khac loopback.
+      const dongDoLuotNayTao = false;   // D005 dung SEED co san, khong tu tao dong
+      const coTheXoa = LA_LOOPBACK || (CHO_XOA_TANG2 && dongDoLuotNayTao);
+      if (!coTheXoa) {
+        console.log('SKIP buoc XOA cua D005 — khong phai may chu E2E loopback va LTT_QA_CHO_XOA chua duoc bat cho mot dong do CHINH luot nay tao; xoa lich su la KHONG THE DAO NGUOC nen khong tu chay tren dich khac.');
+      } else {
+        // Hop confirm() liet ke dung khoi do — bat dialog TRUOC khi bam Xoa.
+        let dongConfirm = '';
+        page.once('dialog', async (d) => { dongConfirm = d.message(); await d.accept(); });
+        await dong.locator(SEL.nutXoaLichSu).click();
+        await page.waitForTimeout(400);   // cho fetch xoa + reload
+        if (!dongConfirm.includes('3') || !dongConfirm.includes('Kich ban E2E'))
+          throw new Error('D005: hop xac nhan KHONG nhac khoi 3 / "Kich ban E2E": ' + dongConfirm);
 
-    await page.waitForLoadState('networkidle');
-    kt.khangDinh('D005-xoa-lich-su');
-    kt.dat();
+        await page.waitForLoadState('networkidle');
+        kt.khangDinh('D005-xoa-lich-su');
+        kt.dat();
 
-    // Dong da xoa phai bao "Da xoa".
-    const dongSauXoa = page.locator(SEL.dongLichSu, { hasText: 'RC1 D005' });
-    if (!(await dongSauXoa.getByText('Bạn đã xoá lượt này').isVisible().catch(() => false)))
-      throw new Error('D005: dong lich su KHONG bao "da xoa" sau khi xoa');
+        // Dong da xoa phai bao "Da xoa".
+        const dongSauXoa = page.locator(SEL.dongLichSu, { hasText: 'RC1 D005' });
+        if (!(await dongSauXoa.getByText('Bạn đã xoá lượt này').isVisible().catch(() => false)))
+          throw new Error('D005: dong lich su KHONG bao "da xoa" sau khi xoa');
 
-    // Khoi thu ba cua du an E2E gio phai bao "Can tao lai".
-    await page.goto(BASE + '/ltt-voice/du-an');
-    kt.dat();
-    const theDuAn = page.getByText('Kich ban E2E').first();
-    await theDuAn.waitFor({ state: 'visible', timeout: 15000 });
-    await theDuAn.click();
-    await page.waitForLoadState('networkidle');
-    if (!(await page.getByText('Cần tạo lại').first().isVisible().catch(() => false)))
-      throw new Error('D005: sau khi xoa lich su, du an KHONG hien badge "Can tao lai"');
-    kt.khangDinh('D005-du-an-can-tao-lai');
+        // Khoi thu ba cua du an E2E gio phai bao "Can tao lai".
+        await page.goto(BASE + '/ltt-voice/du-an');
+        kt.dat();
+        const theDuAn = page.getByText('Kich ban E2E').first();
+        await theDuAn.waitFor({ state: 'visible', timeout: 15000 });
+        await theDuAn.click();
+        await page.waitForLoadState('networkidle');
+        if (!(await page.getByText('Cần tạo lại').first().isVisible().catch(() => false)))
+          throw new Error('D005: sau khi xoa lich su, du an KHONG hien badge "Can tao lai"');
+        kt.khangDinh('D005-du-an-can-tao-lai');
+      }
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -340,6 +373,7 @@ async page => {
   // ghi ro o day theo dung brief.)
   // ═══════════════════════════════════════════════════════════════════════
   {
+    kt.xoaCho();
     await page.goto(BASE + '/ltt-voice');
     kt.dat();
 
@@ -374,6 +408,12 @@ async page => {
     kt.khangDinh('D002-studio-mismatch');
   }
 
-  console.log('RC1 OK — 6 khung hinh x 4 man, D003, D004, T-08, D005, D002: '
-    + '5/5 luong dat (D006 bo qua — khong co nguoi goi tren giao dien, xem chu thich).');
+  if (LA_LOOPBACK) {
+    console.log('RC1 OK — 6 khung hinh x 4 man, D003, D004, T-08, D005, D002: '
+      + '5/5 luong dat (D006 bo qua — khong co nguoi goi tren giao dien, xem chu thich).');
+  } else {
+    console.log('RC1 OK (tang-2) — 6 khung hinh x 4 man, D003, D002: 2/5 luong dat; '
+      + 'D004, T-08, D005 SKIP (phu thuoc du lieu seed _seed_rc1 chi co tren loopback) — '
+      + 'xem dong SKIP o tren cho tung luong.');
+  }
 }

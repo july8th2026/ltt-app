@@ -170,6 +170,28 @@ def rao_tinh() -> list[str]:
         if "LTT_QA_BASE_URL" not in rc1:
             loi.append(f"BROWSER-RC1: {BROWSER_FLOW_RC1} khong ho tro tang-2 LTT_QA_BASE_URL")
 
+        # G-BROWSER-RC1-XOACHO (fix round 1/5): moi luong phai TU xoa danh
+        # sach cho-phep-400 cua rieng no truoc khi chay — thieu buoc nay, mot
+        # `choPhep400(...)` cua luong TRUOC ro sang luong SAU va che mat mot
+        # 400/500 bat ngo. Nam luong ⇒ it nhat nam lan goi `xoaCho(`.
+        if rc1.count("xoaCho(") < 5:
+            loi.append(f"BROWSER-RC1: {BROWSER_FLOW_RC1} goi xoaCho() duoi 5 lan "
+                       "- cho-phep-400 co the ro tu luong truoc sang luong sau")
+
+        # G-BROWSER-RC1-TANG2 (fix round 1/5): buoc XOA lich su (D005) la
+        # KHONG THE DAO NGUOC — phai co bien phat hien loopback, gac
+        # LTT_QA_CHO_XOA quanh buoc XOA, VA it nhat ba duong SKIP (D004,
+        # T-08, D005 phu thuoc seed _seed_rc1, chi ton tai tren loopback).
+        if "LA_LOOPBACK" not in rc1:
+            loi.append(f"BROWSER-RC1: {BROWSER_FLOW_RC1} thieu bien phat hien loopback "
+                       "(LA_LOOPBACK) - khong the gac buoc seed/XOA khoi tang-2")
+        if "LTT_QA_CHO_XOA" not in rc1:
+            loi.append(f"BROWSER-RC1: {BROWSER_FLOW_RC1} thieu gac LTT_QA_CHO_XOA "
+                       "quanh buoc XOA lich su (D005) - nguy co xoa that tren tang-2")
+        if rc1.count("SKIP") < 3:
+            loi.append(f"BROWSER-RC1: {BROWSER_FLOW_RC1} thieu duong SKIP cho cac luong "
+                       "phu thuoc seed tren tang-2 (D004/T-08/D005)")
+
     # G-BROWSER-THAT (Task 15): flow THAT phai GAC bang
     # LTT_VOICE_SIDECAR_TOKEN (khong tu chay, khong tu doan mot may chu that
     # nao, KHONG tu dat bien do), in SKIP khi vang token, va van phai bat DU

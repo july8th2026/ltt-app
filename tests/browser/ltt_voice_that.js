@@ -24,13 +24,10 @@
 
 const SEL = {
   ngonNguNut: (ma) => `[data-ngonngu="${ma}"]`,
-  ngonNguAn: '#lv-ngon-ngu',
   vanBan: '#lv-text',
   nutTao: '#lv-nut-tao',
   ketQuaXong: '#lv-kq-xong',
-  ketQuaLoi: '#lv-kq-loi',
   taiWav: '#lv-tai',
-  formGhiDanh: '#lv-form-giong',
 };
 
 /**
@@ -55,6 +52,10 @@ function kiemTrang(page) {
   });
   return {
     choPhep400(...chuoiCon) { choPhep.push(...chuoiCon); },
+    // Xoa danh sach cho phep — dung GIUA hai luong doc lap trong CUNG mot
+    // `page` de mot cho-phep cua luong truoc khong lay sang luong sau (cung
+    // khuon `ltt_voice_rc1.js`).
+    xoaCho() { choPhep.length = 0; },
     dat() { vanDe.length = 0; },
     khangDinh(nhan) {
       if (vanDe.length) throw new Error(`${nhan}: ${vanDe.length} van de — ${vanDe.join(' | ')}`);
@@ -90,6 +91,7 @@ async page => {
   kt.dat();
 
   async function taoVaCho(vanBan, { chonAdam = false } = {}) {
+    kt.xoaCho();
     await page.goto(BASE + '/ltt-voice');
     kt.dat();
     if (chonAdam) await page.getByRole('radio', { name: /Adam/ }).first().check();
@@ -135,6 +137,7 @@ async page => {
       + 'that). Luong VI o tren van la bang chung day du cho token hien co.');
     return;
   }
+  kt.xoaCho();
   await page.goto(BASE + '/ltt-voice');
   kt.dat();
   await page.locator(SEL.ngonNguNut('en')).click();
