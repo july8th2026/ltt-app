@@ -140,6 +140,28 @@ def _dat(db, public_id: str, lenh: str, ly_do: str, nguoi: str) -> int:
     print(f"{public_id}: license {truoc} -> {lic} · curate {cur_tt}")
     print(f"  ly do : {ly_do}")
     print(f"  nguoi : {nguoi}")
+    if truoc == "ok" and lic != "ok" and ho_so.dung_chung:
+        # [!] RUT LICENSE THI XOA LUON BAN NGHE THU KHO CHUNG DA DUNG.
+        #     Lop 1 - CUA DOC: tu RC1 (eb896da7) `routes/_p_audio.py` chi phuc
+        #     vu `voice/chung/*.wav` khi giong CON dung_chung + license ok +
+        #     active (tra CSDL), nen ngay sau lenh nay tep da KHONG tai duoc.
+        #     Lop 2 - O DAY: xoa TAI NGUON, vi day la tieng noi cua mot nguoi
+        #     that - khong de no nam lai trong kho sau khi giay to bi rut. Cung
+        #     lop voi `giong_vong_doi.khoa_da_biet` (thu hoi / doi lan).
+        #
+        #     Best-effort nhu `_p_giong._xoa_khoa`: phan quyet da commit, mot
+        #     kho chap khong duoc lam no nem - nhung phai NOI RA de xoa tay.
+        from apps.ltt_voice import nghe_thu
+        from platform_core.storage import get_storage
+        khoa = nghe_thu.khoa_chung(str(ho_so.public_id))
+        try:
+            get_storage().delete(khoa)
+        except Exception as e:  # noqa: BLE001 - xem tren
+            # ASCII co y: `print` mot emoji tren console cp1252 se nem
+            # UnicodeEncodeError - dung ngay trong nhanh "khong duoc nem".
+            print(f"  [!] KHONG xoa duoc ban nghe thu kho chung `{khoa}` "
+                  f"({e!r}) - cua doc da chan no, nhung tep VAN nam trong "
+                  "kho: xoa tay.")
     if lic == "ok" and not ho_so.dung_chung:
         # [!] NOI RA, KHONG TU BAT. Duyet xuat xu va quyet dinh mang ra kho
         #     chung la hai cau hoi khac nhau, va gop chung lai la cach mot lenh

@@ -280,3 +280,115 @@ def test_duyet_KHONG_tu_bat_dung_chung():
     assert "dung_chung = True" not in ma and "dung_chung=True" not in ma, (
         "lenh duyet TU BAT `dung_chung` — mot lenh ghi nhan giay to dang xuat "
         "ban mot giong")
+
+
+# ── 6. 🔴 HẠ LICENSE khỏi "ok" PHẢI xoá bản nghe thử KHO CHUNG đã dựng
+#
+# HAI LỚP. Lớp 1 — cửa đọc: từ RC1 (`eb896da7`) `routes/_p_audio.py` chỉ phục
+# vụ `voice/chung/*.wav` khi giọng CÒN dung_chung + license ok + active (tra
+# CSDL), nên rút license là tệp hết tải được ngay — `test_528` ghim lớp đó.
+# Lớp 2 — ở đây: `_dat()` rút license thì xoá TẠI NGUỒN bản nghe thử kho chung,
+# vì đó là tiếng nói của một người thật; nó không được nằm lại trong kho sau
+# khi giấy tờ bị rút.
+#
+# Cùng lớp với thu hồi / đổi làn (`giong_vong_doi.khoa_da_biet`,
+# `nghe_thu.dung_lai_cho_giong`).
+
+def _nap_soat(ten: str):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(ten, SOAT)
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
+@pytest.fixture()
+def kho_soat(tmp_path, monkeypatch):
+    """CSDL sqlite + LocalStorage tạm, và một giọng KHO CHUNG `license="ok"`
+    đã có bản nghe thử thật ở `nghe_thu.khoa_chung(public_id)`."""
+    import io
+
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'soat.db').as_posix()}")
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import apps.ltt_voice.tables  # noqa: F401
+    import platform_core.models  # noqa: F401
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+
+    from platform_core.storage import LocalStorage, get_storage, set_storage
+    set_storage(LocalStorage(str(tmp_path / "store")))
+
+    from apps.ltt_voice import nghe_thu
+    from apps.ltt_voice.tables import VoiceProfile
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        ho_so = VoiceProfile(
+            owner_id="00000000-0000-0000-0000-0000000000ee",
+            ten_hien_thi="Kho chung soat", ngon_ngu="vi",
+            ngon_ngu_nguon="khai_bao", trang_thai="active",
+            dung_chung=True, license_status="ok")
+        db.add(ho_so)
+        db.commit()
+        pid = str(ho_so.public_id)
+        khoa = nghe_thu.khoa_chung(pid)
+        get_storage().put(khoa, io.BytesIO(b"RIFF-gia"),
+                          content_type="audio/wav")
+        assert get_storage().exists(khoa), "chua dat duoc tep de kiem xoa"
+        yield db, pid, khoa
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+        set_storage(None)
+        dbmod.reset_engine()
+
+
+@pytest.mark.parametrize("lenh", ["tu-choi", "thieu-bang-chung"])
+def test_ha_license_khoi_OK_XOA_ban_nghe_thu_kho_chung(kho_soat, lenh):
+    """🔴 MỆNH ĐỀ TRUNG TÂM (privacy): rút license một giọng kho chung thì bản
+    nghe thử kho chung của nó phải biến mất khỏi kho. Cửa đọc `_p_audio` đã
+    chặn phục vụ nó (lớp 1, `test_528`); phép này ghim lớp 2 — tệp tiếng của
+    một người thật không nằm lại trong kho."""
+    from platform_core.storage import get_storage
+    db, pid, khoa = kho_soat
+    m = _nap_soat("_soat_ha")
+    assert m._dat(db, pid, lenh, "giay uy quyen het han", "tester") == 0
+    assert not get_storage().exists(khoa), (
+        f"`{lenh}` ha license khoi 'ok' ma KHONG xoa ban nghe thu kho chung "
+        "— _p_audio van phuc vu no cho moi khach")
+
+
+def test_duyet_lai_giong_DA_ok_GIU_ban_nghe_thu(kho_soat):
+    """Đối chứng: `ok -> ok` không rút gì cả, nên không được xoá. Thiếu phép
+    này thì một bản vá "xoá mỗi lần gọi `_dat`" cũng xanh ở phép trên."""
+    from platform_core.storage import get_storage
+    db, pid, khoa = kho_soat
+    m = _nap_soat("_soat_duyet")
+    assert m._dat(db, pid, "duyet", "bo sung giay to lan hai", "tester") == 0
+    assert get_storage().exists(khoa), "duyet lai giong da ok XOA mat preview"
+
+
+def test_xoa_that_bai_KHONG_lam_hong_phan_quyet(kho_soat, monkeypatch, capsys):
+    """Xoá kho là best-effort (`_p_giong._xoa_khoa`): kho chập không được làm
+    `_dat` ném sau khi phán quyết đã ghi vào CSDL — nó phải NÓI RA để người
+    soát xoá tay."""
+    from sqlalchemy import select
+
+    from apps.ltt_voice.tables import VoiceProfile
+    from platform_core.storage import get_storage
+    db, pid, khoa = kho_soat
+
+    def _hong(_k):
+        raise OSError("kho chap")
+    monkeypatch.setattr(get_storage(), "delete", _hong)
+
+    m = _nap_soat("_soat_hong")
+    assert m._dat(db, pid, "tu-choi", "giay uy quyen het han", "tester") == 0
+    assert khoa in capsys.readouterr().out, "xoa that bai ma khong in khoa ra"
+    lic = db.execute(select(VoiceProfile.license_status).where(
+        VoiceProfile.public_id == pid)).scalar_one()
+    assert lic == "tu_choi"
