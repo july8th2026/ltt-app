@@ -16108,3 +16108,11 @@ msgstr "Amount"
 
 msgid "Chưa có việc nào được tính tiền."
 msgstr "Nothing has been charged yet."
+
+#: apps/ltt_voice
+msgid "Giọng này đang bị tắt và không dùng để đọc được nữa. Hãy tạo giọng mới."
+msgstr "That voice is switched off and can no longer be used to read. Create a new voice."
+
+#: apps/ltt_voice
+msgid "Ghi danh lỗi, cần tạo giọng mới"
+msgstr "Enrolment failed, create a new voice"

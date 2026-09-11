@@ -209,14 +209,28 @@ async def tao_giong(request: Request, ten: str = Form(""),
                   "nguon": "giong",
                   "_job_type": "ltt_voice.enroll"}
         # Chặn double-submit (F5 / hai tab) cùng khuôn với Studio (`test_519`):
-        # cùng khách + cùng TÊN giọng trong lúc job trước còn chạy ⇒ MỘT job.
-        # ⚠️ Tính TRƯỚC, ngoài lời gọi `submit_with_credit` — `test_501` soi
-        #    "MỖI cửa nộp job khai SO_LAN_THU_JOB" bằng một mẫu chuỗi khớp
-        #    tới một lớp ngoặc lồng; `ten.strip()` lồng bên trong lời gọi sẽ
-        #    làm mẫu đó KHÔNG khớp và cửa này biến mất khỏi tầm nhìn của nó.
-        ten_chuan = ten.strip()
+        # cùng khách + cùng CLIP (nội dung) trong lúc job trước còn chạy ⇒
+        # MỘT job.
+        #
+        # ⛔ Đợt sửa cuối RC1 (item 9): khoá CŨ là `(owner, ten)` — nhưng
+        #    `uq_voice_owner_ten` (flush ngay phía trên) đã NÉM `IntegrityError`
+        #    và RETURN 400 cho mọi lượt trùng TÊN trước khi luồng chạy tới được
+        #    dòng này. Với đúng lượt double-submit khoá này định chặn (F5/hai
+        #    tab gửi lại CÙNG form, nên `ten` không đổi), khoá `ten` không bao
+        #    giờ có việc để làm — ràng buộc DB đã chặn trước rồi.
+        #
+        #    ⭐ Đổi sang `sha256` CỦA CHÍNH CLIP — dùng LẠI `sha` đã tính ở
+        #    `features.hash_noi_dung(data)` phía trên (KHÔNG băm lại tệp lần
+        #    hai). Đây là định danh đúng của "cùng một lượt ghi danh": hai lượt
+        #    gửi CÙNG một clip là cùng một việc, bất kể khách gõ tên gì mỗi lần
+        #    — còn `ten` chỉ là một nhãn khách tự đặt, không phải bằng chứng
+        #    "đây là cùng một lượt nộp". Khoá này CÓ việc thật để làm ở đường
+        #    mà `uq_voice_owner_ten` không phủ: cùng clip, TÊN khác nhau giữa
+        #    hai lượt gửi liền nhau (gõ lại tên rồi bấm lại trước khi job đầu
+        #    xong) — trường hợp đó vẫn lọt qua ràng buộc tên nhưng đúng là một
+        #    lượt double-submit của cùng một clip.
         khoa_lap = dedupe_key_for("ltt_voice.enroll",
-                                  {"owner": uid, "ten": ten_chuan})
+                                  {"owner": uid, "sha256": sha})
         job = submit_with_credit(
             db, user_id=str(uid), app_slug=MANIFEST.slug,
             job_type="ltt_voice.enroll",

@@ -52,7 +52,8 @@ trúc:
   chất lượng thấp mà khách vẫn phải trả tiền.
 
 ⭐ Và lý do CŨ vẫn đúng — nó không bị vứt đi, nó được **giữ bằng luật giải
-   ngôn ngữ** dưới đây, không bằng cách bỏ cửa chặn. Xem `giai_lan_van_ban`.
+   ngôn ngữ** dưới đây, không bằng cách bỏ cửa chặn. Xem `quyet_dinh` (nấc
+   `NGUON_THEO_GIONG`, khi `doan_ngon_ngu` không chắc và khách không khai).
 
 ## ⛔ TIẾNG VIỆT KHÔNG DẤU — cái bẫy mà cửa chặn PHẢI đi vòng qua
 
@@ -233,8 +234,8 @@ def doan_ngon_ngu(text: str):
     """`"vi"` · `"en"` · `None` khi không chắc.
 
     ⛔ `None` là một câu trả lời ĐẦY ĐỦ, không phải một thất bại. Nó nói "văn
-       bản này không đủ dấu hiệu", và `giai_lan_van_ban` xử lý nó bằng cách
-       nhận làn của giọng — chứ không bằng cách chặn.
+       bản này không đủ dấu hiệu", và `quyet_dinh` xử lý nó bằng cách nhận làn
+       của giọng (`NGUON_THEO_GIONG`) — chứ không bằng cách chặn.
 
     ⭐ TRỘN NGÔN NGỮ đi qua đây, và luật là **bằng chứng dương thắng**: chỉ cần
        một chữ có dấu tiếng Việt là `vi`, kể cả khi câu đầy thuật ngữ tiếng Anh
@@ -251,35 +252,6 @@ def doan_ngon_ngu(text: str):
     if len(tu & TU_ANH) >= TOI_THIEU_TU_ANH:
         return LAN_EN
     return None
-
-
-def giai_lan_van_ban(text: str, khai_bao: str = "",
-                     mac_dinh: str = KHONG_RO) -> tuple:
-    """`(lan, nguon)` — giải làn của VĂN BẢN về một giá trị **cụ thể**.
-
-    Ba nấc, theo đúng thứ tự độ tin cậy:
-
-      ① `khai_bao` — khách tự chọn ở ô `Ngôn ngữ`. Chắc nhất, vì nó không đoán.
-      ② `doan_ngon_ngu` — máy đoán, và chỉ nhận khi nó **chắc**.
-      ③ `mac_dinh` — làn của chính GIỌNG đang chọn.
-
-    🔴 NẤC ③ LÀ NƠI QUYẾT ĐỊNH CŨ ĐƯỢC GIỮ. Trước Q121, "không đoán được" nghĩa
-       là im lặng cho qua; nay nó nghĩa là *"coi như cùng làn với giọng"* — và
-       hai câu đó cho ra **cùng một hành vi**: không chặn. Khác biệt duy nhất là
-       nay ta nói ra vì sao không chặn, và nói được thành dữ liệu (`nguon`).
-
-    🔴 D002 (2026-09-11): `quyet_dinh` không còn dùng hàm này để phán — xem
-       docstring của `quyet_dinh`. Ở đó lời khai chỉ THẮT (thêm ràng buộc), còn
-       ở đây nấc ① vẫn là "khai thắng đoán" cho câu hỏi khác: *văn bản giải ra
-       làn nào*. Hai câu hỏi khác nhau, nên được phép trả lời khác nhau.
-    """
-    khai = chuan_lan(khai_bao)
-    if khai:
-        return khai, NGUON_KHAI_BAO
-    do = doan_ngon_ngu(text)
-    if do:
-        return do, NGUON_DOAN
-    return chuan_lan(mac_dinh), NGUON_THEO_GIONG
 
 
 @dataclass(frozen=True)

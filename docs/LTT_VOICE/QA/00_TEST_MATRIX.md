@@ -21,7 +21,7 @@ chung minh **chat luong nghe duoc**. Chat luong la viec cua `cong_chat_luong_voi
 |---|---|---|---|---|
 | Create Voice (synthesize) | `test_347_ltt_voice_studio`, `test_338_ltt_voice_hop_dong` | `ltt_voice_golden.js` | golden | `chay_thu_ltt_voice.py` |
 | Preset preview (xem-truoc / nghe-thu) | `test_347` (`xem_truoc`), `test_500_ltt_voice_nghe_thu` | golden (Studio) | — | — |
-| Language compatibility (lan vi/en) | `test_384_lan_ngon_ngu` | `ltt_voice_negative.js` (CANH BAO, khong chan) | — | — |
+| Language compatibility (lan vi/en) | `test_384_lan_ngon_ngu`, `test_355_hop_dong_lan_giong` | `ltt_voice_negative.js` (mo ho, khong chan); `ltt_voice_rc1.js` LUONG 5 (doan CHAC, CHAN — D002) | — | — |
 | My Voices | `test_345_ltt_voice_giong_mau`, `test_382_kho_tham_chieu` | `ltt_voice_smoke.js` | — | — |
 | Enrollment (ghi danh) | `test_367_chon_doan_tham_chieu`, `test_382_kho_tham_chieu` | — | — | `chay_thu_ghi_danh.py` |
 | Projects (du an) | `test_350_ltt_voice_du_an` | `ltt_voice_smoke.js` | — | — |
@@ -53,10 +53,21 @@ Chay tren `voice_e2e_server.py` (cach ly, cong 8129) + `voice_mock_sidecar.py`
   CSRF sai) deu **400 + ok:false**.
 - **smoke**: My voices / Projects / History deu render du lieu seed, **0 loi console**.
 
-⭐ Ve "VI + EN mismatch": san pham **CANH BAO, khong chan** — co chu y
-(`apps/ltt_voice/lan_ngon_ngu.py`: tieng Viet khong dau khong phan biet duoc voi
-tieng Anh bang bang ma, nen chan la tu choi viec hop le). Nen "xu ly dung" o day
-= van tao duoc, chi hien mot loi nhac. Cac chan CUNG la vuot-tran va van-ban-rong.
+⭐ Ve "VI + EN mismatch": **hai truong hop khac nhau, KHONG con cung mot hanh vi**
+tu Q121/D002 (`apps/ltt_voice/lan_ngon_ngu.py::quyet_dinh`):
+
+- Van ban **mo ho** (tieng Viet khong dau, khong co dau hieu chac chan) — VAN
+  cho tao, khong chan. Ly do khong doi: tieng Viet khong dau khong phan biet
+  duoc voi tieng Anh bang bang ma, nen chan o day la tu choi mot viec hop le.
+  Day la ca `ltt_voice_negative.js` chay.
+- Van ban **doan CHAC** (du dau hieu — vi du du tieng Anh chuc nang, hoac co
+  dau tieng Viet) ma lech lan voi giong dang chon — **CHAN**, tra
+  `ma_loi=voice_language_mismatch` (D002/INV-LAN-1). Dung cho ca truong hop
+  khach da khai lan: loi khai KHONG mien tru mot van ban ma may biet chac la
+  lan kia. Luong nay chay o `tests/browser/ltt_voice_rc1.js` (LUONG 5): khai
+  `vi` + giong `vi` (Adam) + van ban `en` chac -> 400, `voice_language_mismatch`.
+
+Cac chan KHONG-lien-quan-ngon-ngu (vuot tran, van ban rong) van giu nguyen.
 
 ## Tang LIVE — CHUA CHAY trong luot nay
 

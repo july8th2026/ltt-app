@@ -343,7 +343,14 @@ def _tim_ho_so_giong(db, yc: YeuCau):
             "Ghi danh giọng này không thành công. Hãy tạo lại giọng với một "
             "clip khác."))
     if ho_so.trang_thai != "active":
-        raise LoiGiongNoi(_t("Giọng này đang bị tắt. Hãy bật lại hoặc tạo giọng mới."))
+        # ⛔ KHÔNG nói "Hãy bật lại": KHÔNG có route nào bật lại một giọng đã
+        #    tắt (`_p_giong.py` chỉ có `/giong/{id}/tat`, không có `/bat`) dù
+        #    `giong_vong_doi._CHUYEN` cho phép chuyển `disabled -> active` về
+        #    mặt MÔ HÌNH — mô hình cho phép không có nghĩa GUI có nút. Câu cũ
+        #    chỉ khách đi tìm một nút không tồn tại.
+        raise LoiGiongNoi(_t(
+            "Giọng này đang bị tắt và không dùng để đọc được nữa. Hãy tạo "
+            "giọng mới."))
     return ho_so
 
 

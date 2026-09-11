@@ -98,6 +98,29 @@ def test_hinh_dang_sai_thi_noi_ra(hong, can):
     assert any(can in s for s in loi), loi
 
 
+@pytest.mark.parametrize("ket_cuc", ["KEEP", "FIX"])
+def test_hinh_dang_KEEP_FIX_rong_rc_sha_thi_bi_bat(ket_cuc):
+    """🔴 Đợt sửa cuối RC1 (item 8): một dòng KEEP/FIX không `rc_sha` là một
+    dòng "việc này có trong RC" mà không ai chỉ ra được commit RC nào mang nó
+    — không xác minh được. `kiem_hinh_dang` phải bắt được, không chỉ
+    `ly_do`/`ket_cuc`/`sha` như trước."""
+    m = _nap_cong_cu()
+    dong = {"sha": "a" * 8, "nhanh": "n", "hang_muc": "x", "ket_cuc": ket_cuc,
+            "ly_do": "D002", "rc_sha": "", "test": ""}
+    loi = m.kiem_hinh_dang(_so([dong]))
+    assert any("rc_sha" in s for s in loi), loi
+
+
+def test_hinh_dang_DROP_rong_rc_sha_thi_KHONG_bi_bat():
+    """DROP là một quyết định "bỏ" — không để lại dấu vết ở RC, nên `rc_sha`
+    rỗng ở đó là ĐÚNG, không phải một lỗ hổng đối soát."""
+    m = _nap_cong_cu()
+    dong = {"sha": "a" * 8, "nhanh": "n", "hang_muc": "x", "ket_cuc": "DROP",
+            "ly_do": "T-03", "rc_sha": "", "test": ""}
+    loi = m.kiem_hinh_dang(_so([dong]))
+    assert not any("rc_sha" in s for s in loi), loi
+
+
 def test_so_cai_THAT_dung_hinh_dang():
     m = _nap_cong_cu()
     so = m.nap_so_cai(GOC / "docs" / "LTT_VOICE" / "HOP_NHAT" / "SO_CAI.json")

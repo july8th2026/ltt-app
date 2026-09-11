@@ -760,8 +760,14 @@
       // hai lan trong bon dong, va lan thu hai khong them thong tin nao.
       var oTinh = t.querySelector(".lv-the-tinh");
       dat("lv-ct-tinh", (laMau && oTinh) ? oTinh.textContent.trim() : "");
+      // ⛔ Đợt sửa cuối RC1 (item 6): `loi` (ghi danh hỏng vĩnh viễn) KHÔNG
+      //    được rơi vào nhanh `daTat` ("Đã tắt") — đó là câu nói cho MỘT
+      //    giọng khách TỰ tắt (đảo ngược được), còn `loi` không có nút "bật
+      //    lại" nào cả. Nhãn lấy từ `chu.ghiDanhLoi` (template `chu` config,
+      //    đã dịch qua `_()`), không phải một chuỗi tiếng Việt gõ thẳng ở đây.
       dat("lv-ct-tt", d.trangthai === "active" ? chu.sanSang
-        : (d.trangthai === "dang_ghi_danh" ? chu.dangGhiDanh : chu.daTat));
+        : (d.trangthai === "dang_ghi_danh" ? chu.dangGhiDanh
+        : (d.trangthai === "loi" ? chu.ghiDanhLoi : chu.daTat)));
 
       var nutChep = document.getElementById("lv-ct-chep");
       if (nutChep) nutChep.dataset.ma = d.ma;

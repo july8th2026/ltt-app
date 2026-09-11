@@ -21,8 +21,8 @@
       "hang_muc": "GUI MVP + chinh sach lan thu hai",
       "ket_cuc": "FIX",
       "ly_do": "giu: preview kho chung (T-08), cua khai lan (D004), GUI lan (Task 11); bo: SC-1, SC-6, SC-7, SC-13, T-03",
-      "rc_sha": "",
-      "test": ""
+      "rc_sha": "21b00ffc,eb896da7,f521dd89",
+      "test": "test_521_ltt_voice_ghi_danh_ngon_ngu.py,test_528_kho_chung_nghe_thu.py"
     },
     {
       "sha": "0915f1f3fbc926d33861530685b86fdc9a2b2e49",
@@ -30,8 +30,8 @@
       "hang_muc": "nguon goc lan + thu hoi",
       "ket_cuc": "FIX",
       "ly_do": "D003, T-04, T-07; bo mac dinh \"\" (D003)",
-      "rc_sha": "",
-      "test": ""
+      "rc_sha": "1f0fab13,fa8b43f5",
+      "test": "test_521_ltt_voice_ghi_danh_ngon_ngu.py,test_520_ltt_voice_so_huu.py"
     },
     {
       "sha": "29ac2300febb668d5d9bfe90287a23a97fd77350",
@@ -39,8 +39,8 @@
       "hang_muc": "cua khai lan (JSON)",
       "ket_cuc": "FIX",
       "ly_do": "gop voi 65e099af (D004, SC-2)",
-      "rc_sha": "",
-      "test": ""
+      "rc_sha": "21b00ffc",
+      "test": "test_521_ltt_voice_ghi_danh_ngon_ngu.py"
     },
     {
       "sha": "27baa1a85a7b0cd86e9eb54a99f8c2adccb14aa6",
@@ -48,8 +48,8 @@
       "hang_muc": "Lich su: het han",
       "ket_cuc": "KEEP",
       "ly_do": "Task 8",
-      "rc_sha": "",
-      "test": ""
+      "rc_sha": "684b4285,6ba9b343",
+      "test": "test_525_lich_su_xoa_trang_thai_suy.py"
     },
     {
       "sha": "31878cc2f0c8c9401f863b42d42855f2dd601d15",
@@ -57,8 +57,8 @@
       "hang_muc": "Lich su: xoa + da tai",
       "ket_cuc": "FIX",
       "ly_do": "D005, T-04, T-11; giu hotfix doc_lai (SC-8)",
-      "rc_sha": "",
-      "test": ""
+      "rc_sha": "684b4285,6ba9b343,732f88e9",
+      "test": "test_525_lich_su_xoa_trang_thai_suy.py,test_357_ltt_voice_du_an_trang_thai.py"
     },
     {
       "sha": "dca96e847c3cfda84439892a114ca1cb0771d4f2",
@@ -66,8 +66,8 @@
       "hang_muc": "nghia vu nen tang bang moi",
       "ket_cuc": "KEEP",
       "ly_do": "Task 8",
-      "rc_sha": "",
-      "test": ""
+      "rc_sha": "684b4285,6ba9b343",
+      "test": "test_525_lich_su_xoa_trang_thai_suy.py"
     },
     {
       "sha": "ca6a00cef4ced1576e5de4b612cbb80a34ad4782",
@@ -75,8 +75,8 @@
       "hang_muc": "badge du an suy ra",
       "ket_cuc": "FIX",
       "ly_do": "D005 (suy ca tu tep het han), T-05",
-      "rc_sha": "",
-      "test": ""
+      "rc_sha": "ffce3e30,732f88e9",
+      "test": "test_357_ltt_voice_du_an_trang_thai.py"
     },
     {
       "sha": "a3a2a46e098a784fddd6ff933be904b50d325568",
@@ -84,8 +84,8 @@
       "hang_muc": "hang rao QA",
       "ket_cuc": "FIX",
       "ly_do": "T-12 (mock them 3 cua)",
-      "rc_sha": "",
-      "test": ""
+      "rc_sha": "4e580622",
+      "test": "tools/check_voice_qa.py,test_358_ban_doc_dai_ranh_gioi.py"
     },
     {
       "sha": "3634412ae932d092bc991e5f6e1d7f968553a78b",
@@ -93,8 +93,8 @@
       "hang_muc": "nut nghe thu loading/loi",
       "ket_cuc": "FIX",
       "ly_do": "T-13 (i18n)",
-      "rc_sha": "",
-      "test": ""
+      "rc_sha": "2b1ed1bc,eb896da7",
+      "test": "test_526_nghe_thu_phan_quyet.py"
     },
     {
       "sha": "891d93db3d11aee8ed584582f99e725cd9f74912",
@@ -102,8 +102,8 @@
       "hang_muc": "duong_cho_app_khac cho ASV",
       "ket_cuc": "KEEP",
       "ly_do": "T-09, D008",
-      "rc_sha": "",
-      "test": ""
+      "rc_sha": "2b1ed1bc",
+      "test": "test_528_kho_chung_nghe_thu.py"
     }
   ],
   "yeu_cau": [],

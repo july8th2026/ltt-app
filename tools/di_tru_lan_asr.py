@@ -272,6 +272,15 @@ def dao(nhat_ky) -> dict:
                 .where(VoiceProfile.public_id == m["public_id"])
             ).scalar_one_or_none()
             if hs is None:
+                # ⛔ `public_id` không còn giải được (giọng đã bị xoá/thu hồi
+                #    sau khi nhật ký được ghi). Trước đây nhánh này `continue`
+                #    IM LẶNG, không tăng `bo_qua` — nên `da_dao + bo_qua` KHÔNG
+                #    khớp `len(muc)`, và người vận hành không có cách nào biết
+                #    một mục trong nhật ký đã biến mất mà không xem lại CSDL.
+                bo_qua += 1
+                print(f"  BO QUA {m.get('public_id')}: khong con giai duoc "
+                      f"(giong da bi xoa/thu hoi sau khi ghi nhat ky) — "
+                      f"khong co gi de dao.")
                 continue
             moi = m.get("moi") or {}
             hien = (hs.ngon_ngu, hs.ngon_ngu_nguon)

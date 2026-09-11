@@ -274,6 +274,36 @@ def test_badge_CAN_TAO_LAI_khi_mot_khoi_XONG_nhung_MAT_TEP(khach):
     assert "b-ok" not in html, "khong duoc hien 'Xong' khi mot khoi da mat tep"
 
 
+def test_dem_va_thanh_tien_do_theo_TRANG_THAI_HIEN_khong_theo_cot_tho(khach):
+    """🔴 Đợt sửa cuối RC1 (item 2): huy hiệu ĐÃ đúng từ Task 8/9 (đọc
+    `tt["khoi"]`), nhưng các ĐẾM GỘP của `tom_tat()` (`xong`/`can_tao_lai`,
+    và `giay`/`credit` suy từ đó) vẫn đọc cột `k.trang_thai` thô. Một dự án
+    MỘT khối "xong" theo cột mà đã mất tệp (xoá ở Lịch sử/hết hạn 30 ngày)
+    từng hiện đồng thời huy hiệu "Cần tạo lại" CẠNH dòng "1 đã đọc" và thanh
+    tiến độ 100% — hai tín hiệu mâu thuẫn trên cùng một thẻ dự án (SC-11 ở
+    tầng đếm, không chỉ tầng badge)."""
+    client, uid = khach
+    pid = _tao_du_an(client)
+    _them_n_khoi(client, pid, 1)
+    _dat_trang_thai_khoi(pid, uid, ["xong"], mat_tep_o=[0])
+
+    html = client.get("/ltt-voice/du-an").text
+    assert "Cần tạo lại" in html
+    assert "1 đã đọc" not in html, "khoi da mat tep khong duoc tinh vao 'da doc'"
+    assert 'aria-valuenow="100"' not in html, (
+        "thanh tien do khong duoc hien 100% khi khoi duy nhat da mat tep")
+    assert 'aria-valuenow="0"' in html
+
+    # Cùng câu chuyện ở tầng hàm thuần, không qua HTTP/HTML.
+    duong = {}  # không khối nào có URL tiếng còn dùng được — mô phỏng mất tệp
+    k = _K("xong", id=1, audio_key="")
+    tt = du_an.tom_tat([k], duong_tieng=duong)
+    assert tt["xong"] == 0
+    assert tt["can_tao_lai"] == 1
+    assert tt["giay"] == 0.0
+    assert tt["credit"] == 0
+
+
 def _dat_khoi_het_han(pid, uid, idx: int = 0) -> None:
     """Khối tại `idx` có một `Job` THẬT, `status="done"`, `audio_key` THẬT —
     nhưng `Job.content_expired_at` đã đặt (mô phỏng hết hạn 30 ngày thật,

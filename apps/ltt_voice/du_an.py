@@ -402,9 +402,17 @@ def tom_tat(cac: list, *, duong_tieng: dict | None = None) -> dict:
     mất. Khi KHÔNG truyền (mọi lời gọi trước D005), suy theo `bool(audio_key)`
     — tức không phát hiện được tệp hết hạn/đã xoá, giữ nguyên hành vi cũ, để
     không âm thầm đổi kết quả ở những nơi chưa được nối dây tới `duong_tieng`.
+
+    ⚠️ Các đếm gộp (`xong`/`dang_tao`/`loi`/`can_tao_lai`/`giay`/`credit`) khi
+    CÓ `duong_tieng` cũng đọc `trang_thai_hien`, KHÔNG đọc cột `trang_thai` đã
+    ghi — cùng lý do `trang_thai_suy()` đọc `tt["khoi"]`: một khối "xong" theo
+    cột mà đã mất tệp (xoá ở Lịch sử, hoặc hết hạn 30 ngày) phải đếm vào
+    `can_tao_lai`, không phải `xong` (SC-11 ở tầng đếm, không chỉ tầng badge).
+    Khi KHÔNG truyền `duong_tieng`, các đếm này vẫn đọc thẳng `k.trang_thai` —
+    y hệt trước D005.
     """
-    xong = [k for k in cac if k.trang_thai == "xong"]
     khoi_hien = []
+    hien_theo_id: dict = {}
     for k in cac:
         # ⚠️ `getattr(..., None)`, KHÔNG `k.id`/`k.audio_key` thẳng: lời hứa
         #    D005 là "tom_tat(duong_tieng=None) hành xử Y HỆT trước D005" —
@@ -413,13 +421,22 @@ def tom_tat(cac: list, *, duong_tieng: dict | None = None) -> dict:
         k_id = getattr(k, "id", None)
         co_tieng = (bool(duong_tieng.get(k_id)) if duong_tieng is not None
                    else bool(getattr(k, "audio_key", None)))
-        khoi_hien.append({"id": k_id, "trang_thai_hien": trang_thai_hien(k, co_tieng)})
+        hien = trang_thai_hien(k, co_tieng)
+        khoi_hien.append({"id": k_id, "trang_thai_hien": hien})
+        hien_theo_id[k_id] = hien
+
+    def _tt(k):
+        if duong_tieng is None:
+            return k.trang_thai
+        return hien_theo_id.get(getattr(k, "id", None), k.trang_thai)
+
+    xong = [k for k in cac if _tt(k) == "xong"]
     return {
         "so_khoi": len(cac),
         "xong": len(xong),
-        "dang_tao": len([k for k in cac if k.trang_thai == "dang_tao"]),
-        "loi": len([k for k in cac if k.trang_thai == "loi"]),
-        "can_tao_lai": len([k for k in cac if k.trang_thai == "can_tao_lai"]),
+        "dang_tao": len([k for k in cac if _tt(k) == "dang_tao"]),
+        "loi": len([k for k in cac if _tt(k) == "loi"]),
+        "can_tao_lai": len([k for k in cac if _tt(k) == TT_CAN_TAO_LAI]),
         "giay": round(sum(float(k.giay or 0) for k in xong), 1),
         "credit": sum(int(k.credit or 0) for k in xong),
         "so_ky_tu": sum(len(k.text or "") for k in cac),

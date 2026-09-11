@@ -44,8 +44,10 @@ DICH = {
         "Pick one: your own voice or a built-in voice.",
     "Không tìm thấy giọng này trong tài khoản của bạn.":
         "That voice is not in your account.",
-    "Giọng này đang bị tắt. Hãy bật lại hoặc tạo giọng mới.":
-        "That voice is switched off. Turn it back on, or create a new one.",
+    "Giọng này đang bị tắt và không dùng để đọc được nữa. Hãy tạo "
+    "giọng mới.":
+        "That voice is switched off and can no longer be used to read. "
+        "Create a new voice.",
     "Giọng này chưa ghi danh xong. Hãy thử lại sau ít phút.":
         "That voice has not finished enrolling. Try again in a few minutes.",
     "Đoạn văn bản quá dài cho một lượt đọc. Hãy chia thành nhiều đoạn "
@@ -184,6 +186,7 @@ DICH = {
     "Mã giọng": "Voice id",
     "Sẵn sàng": "Ready",
     "Đang ghi danh…": "Enrolling…",
+    "Ghi danh lỗi, cần tạo giọng mới": "Enrolment failed, create a new voice",
     "Bạn chưa có giọng nào.": "You do not have any voices yet.",
     "Tạo giọng mới": "Create a new voice",
     "Tên giọng": "Voice name",

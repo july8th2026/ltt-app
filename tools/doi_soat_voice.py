@@ -54,6 +54,15 @@ def kiem_hinh_dang(so: dict) -> list:
             loi.append(f"nguon[{i}].ket_cuc phai la {KET_CUC}: {d.get('ket_cuc')!r}")
         if len(str(d.get("ly_do") or "").strip()) < 3:
             loi.append(f"nguon[{i}].ly_do rong — mot ket cuc khong ly do la mot cua bi quen")
+        # ⛔ Đợt sửa cuối RC1 (item 8): KEEP/FIX là "việc này CÓ mặt trong RC"
+        #    — mà không `rc_sha` thì không ai chỉ ra được commit RC nào mang
+        #    nó, và một dòng sổ cái không trỏ tới đâu cả là một dòng không thể
+        #    xác minh. DROP thì được miễn: một quyết định "bỏ" hợp lệ không
+        #    để lại dấu vết ở RC — không có gì để trỏ tới.
+        if d.get("ket_cuc") in ("KEEP", "FIX") and not str(d.get("rc_sha") or "").strip():
+            loi.append(
+                f"nguon[{i}].rc_sha rong nhung ket_cuc={d.get('ket_cuc')!r} "
+                f"— KEEP/FIX phai tro toi it nhat mot commit RC mang no")
     return loi
 
 
