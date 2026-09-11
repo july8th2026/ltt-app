@@ -42,3 +42,47 @@ def test_thua_KHONG_duoc_khai_van_that_bai():
 def test_doc_van_chuyen_doc_duoc_tu_setup_that():
     m = _m()
     assert r"apps\*\vendor" in m.doc_van_chuyen()
+
+
+def test_mau_KHONG_khop_doan_moi_MOT_PHAN():
+    """Fix round 2 — mau dang Windows `apps/*/vendor` phai khop THEO DOAN, khong khop
+    chuoi con. Ba duong gan giong deu KHONG duoc khai; chi duong thuc su
+    nam duoi thu muc `vendor/` moi duoc khai."""
+    m = _m()
+    tc = {"apps/x/t.py": m.bam_git(b"a")}
+    tren_may = {
+        "apps/x/t.py": b"a",
+        "apps/upscalevideo/vendor_x.py": b"Z1",
+        "apps/upscalevideo/vendor_extra/readme.txt": b"Z2",
+        "apps/other/some_vendor_thing/file.bin": b"Z3",
+        "apps/upscalevideo/vendor/engine/models/x.bin": b"Z4",
+    }
+    ra = m.so_sanh(tc, tren_may, van_chuyen=[r"apps\*\vendor"])
+    assert ra["van_chuyen"] == ["apps/upscalevideo/vendor/engine/models/x.bin"]
+    assert ra["thua"] == [
+        "apps/other/some_vendor_thing/file.bin",
+        "apps/upscalevideo/vendor_extra/readme.txt",
+        "apps/upscalevideo/vendor_x.py",
+    ]
+
+
+def test_doc_van_chuyen_bo_qua_moi_gia_trong_chu_thich(tmp_path):
+    """Fix round 2 — mot cau van/chu thich nhac toi `$VAN_CHUYEN = @('apps')`
+    PHAI bi bo qua; chi khai bao THAT (ngoai chu thich) moi duoc doc."""
+    m = _m()
+    gia = tmp_path / "gia_2-cai-dat.ps1"
+    gia.write_text("# vi du cu (KHONG dung nua): $VAN_CHUYEN = @('apps')\n$khac = 1\n$VAN_CHUYEN = @(\n    'apps\\*\\vendor',\n    'yolov8n.pt'\n)\n", encoding="ascii")
+    assert m.doc_van_chuyen(gia) == ['apps\\*\\vendor', "yolov8n.pt"]
+
+
+def test_doc_van_chuyen_khong_doc_duoc_NEM_LOI_THAT(tmp_path):
+    """Fix round 2 — khong tim thay `$VAN_CHUYEN` phai NEM LOI, khong duoc
+    lang le tra ve danh sach rong (an toan gia)."""
+    m = _m()
+    gia = tmp_path / "khong_co_van_chuyen.ps1"
+    gia.write_text("$khac = 1\n", encoding="ascii")
+    try:
+        m.doc_van_chuyen(gia)
+        assert False, "phai nem RuntimeError"
+    except RuntimeError:
+        pass

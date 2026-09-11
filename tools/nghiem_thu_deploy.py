@@ -40,6 +40,15 @@ co chu dich (`apps/upscalevideo/vendor/...`) vi chung duoc `setup/2-cai-dat.ps1`
 chep RIENG qua $VAN_CHUYEN, khong qua `git archive`. Doc lai danh sach nay TU
 CHINH tep .ps1 do (khong go lai) va xep rieng thanh nhom `van_chuyen` -- KHONG
 tinh la loi. Mot `thua` KHONG nam trong $VAN_CHUYEN thi van la loi that.
+
+Fix round 2 (11/09): hai lo o round 1 -- (a) `_phu_boi` so CHUOI CON sau
+dau `*` nen mau dang Windows (vd `apps/*/vendor`) khop nham ca
+`apps/upscalevideo/vendor_x.py` (mot tep KHONG duoc khai lot qua am tham);
+sua bang so THEO TUNG DOAN duong dan. (b) `doc_van_chuyen` doc VAN BAN THO
+cua .ps1 nen mot cau van/chu thich nhac toi `$VAN_CHUYEN = @(...)` co the bi
+khop nham; sua bang cach bo chu thich/here-string TRUOC (cung logic voi
+`test_505::_ma_thuc`). Va: khong doc duoc `$VAN_CHUYEN` gio NEM LOI THAT,
+khong con lang le tra ve danh sach rong.
 """
 from __future__ import annotations
 
@@ -100,27 +109,59 @@ def so_sanh(trong_commit: dict[str, str], tren_may: dict[str, bytes],
 
 
 def _phu_boi(mau: str, duong: str) -> bool:
-    """Mau kieu Windows (co the co `*`), co the phu `duong` (posix) khong —
-    giong het `tests/test_505_nguon_ban_giao.py::_phu_boi`."""
-    m = mau.replace("\\", "/")
-    if "*" not in m:
-        return duong == m or duong.startswith(m.rstrip("/") + "/")
-    dau, sau = m.split("*", 1)
-    return duong.startswith(dau) and sau.strip("/") in duong
+    """Mau kieu Windows (co the co `*`, MOI `*` la DUNG MOT doan duong day
+    du), co phu `duong` (posix) khong — so THEO TUNG DOAN, khong so chuoi
+    con tu do.
+
+    ⛔ Fix round 2: ban dau ham nay chep `tests/test_505_nguon_ban_giao.py::
+    _phu_boi`, dung `sau.strip("/") in duong` — mot phep so CHUOI CON. Voi
+    mau `apps/*/vendor` (dang Windows) no khop CA `apps/upscalevideo/vendor_x.py` (chi
+    vi "vendor" nam trong "vendor_x.py"), tuc am tham cho qua mot tep KHONG
+    duoc khai. So theo DOAN duong dan moi dung: mot doan phai khop HET, khong
+    duoc la mot phan cua doan khac."""
+    m_doan = [d for d in mau.replace("\\", "/").split("/") if d]
+    d_doan = [d for d in duong.split("/") if d]
+    if len(d_doan) < len(m_doan):
+        return False
+    for i, doan_mau in enumerate(m_doan):
+        if doan_mau != "*" and doan_mau != d_doan[i]:
+            return False
+    return True
+
+
+def _ma_thuc(t: str) -> str:
+    """Bo chu thich va here-string, giu MA CHAY DUOC — ban thu gon cua
+    `tests/test_505_nguon_ban_giao.py::_ma_thuc` (nguon that cho logic nay).
+    Khong co ham nay, mot cau van ban NHAC TOI `$VAN_CHUYEN = @(...)` trong
+    CHINH LOI GIAI THICH no cung khop duoc regex — mot bang cong khop vao
+    chinh chu thich cua no thi khong chot gi ca."""
+    t = re.sub(r"@'.*?'@", "", t, flags=re.S)      # here-string nguyen van
+    t = re.sub(r'@".*?"@', "", t, flags=re.S)      # here-string co noi suy
+    return "\n".join(d for d in t.splitlines()
+                     if not d.lstrip().startswith("#"))
 
 
 def doc_van_chuyen(setup_ps1: pathlib.Path | None = None) -> list[str]:
     """Doc `$VAN_CHUYEN` tu `setup/2-cai-dat.ps1` — NGUON DUY NHAT cho danh
     sach tai san gitignored ma deploy van chep rieng, dung chung voi
     `tests/test_505_nguon_ban_giao.py::_van_chuyen`. Khong go lai danh sach
-    o day."""
+    o day.
+
+    ⛔ KHONG BAO GIO tra ve [] khi khong doc duoc — mot danh sach RONG lam
+    moi tep vendor bien thanh `thua` (loi), nhung mot LOI DOC bi nuot lai lam
+    NGUOC LAI: moi tep vendor lang le duoc coi la da khai (bao an toan gia).
+    Nem loi that de nguoi doc thay ngay, khong de gate xanh sai."""
     tep = setup_ps1 or (GOC / "setup" / "2-cai-dat.ps1")
     if not tep.exists():
-        return []
+        raise RuntimeError(f"khong thay {tep} de doc $VAN_CHUYEN")
     van_ban = tep.read_text(encoding="ascii", errors="replace")
-    m = re.search(r"\$VAN_CHUYEN = @\((.*?)\)", van_ban, re.S)
+    nguon = _ma_thuc(van_ban)
+    m = re.search(r"\$VAN_CHUYEN = @\((.*?)\)", nguon, re.S)
     if not m:
-        return []
+        raise RuntimeError(
+            f"khong tim thay '$VAN_CHUYEN = @(...)' trong MA CHAY DUOC cua "
+            f"{tep} (da bo chu thich/here-string) — co the ten bien da doi "
+            "hoac cau truc @() da doi; sua ham doc_van_chuyen()")
     return re.findall(r"'([^']+)'", m.group(1))
 
 
@@ -196,7 +237,11 @@ def main() -> int:
         return 1
 
     tren_may = _tep_tren_may(CHAY)
-    van_chuyen = doc_van_chuyen()
+    try:
+        van_chuyen = doc_van_chuyen()
+    except RuntimeError as loi:
+        print(f"  LOI doc $VAN_CHUYEN: {loi}")
+        return 1
     ket_qua = so_sanh(trong_commit, tren_may, van_chuyen)
     so_khong_py = sum(1 for d in trong_commit if not d.endswith(".py"))
     so_van_chuyen = len(ket_qua["van_chuyen"])
