@@ -52,13 +52,17 @@ function DonDep {
 }
 
 # ctx, np, co mmproj khong
+# !! DOI CHUNG PHAI DI DAU TIEN: dong dau la CHINH XAC cau hinh production
+# dang phuc vu khach (204800, --parallel 1, KHONG mmproj), thu da do 03/09 va
+# ghi 21.959 MiB, khong he co dau hieu tran. Neu bo dem cua CHINH no cung bao
+# "Shared Usage" khac 0 thi con so do KHONG phai thuoc do tran, va nguong
+# "Shared = 0" cua cong G1 la mot nguong SAI - phai bo, khong phai sua.
+# Khong co dong nay thi moi con so con lai deu khong dien giai duoc.
 $DsCauHinh = @(
-    @{ ctx = 262144; np = 4; mm = $true }
-    @{ ctx = 262144; np = 4; mm = $false }
-    @{ ctx = 262144; np = 1; mm = $true }
-    @{ ctx = 229376; np = 4; mm = $true }
-    @{ ctx = 212992; np = 4; mm = $true }
-    @{ ctx = 204800; np = 4; mm = $true }
+    @{ ctx = 245760; np = 4; mm = $true; nommoff = $true }
+    @{ ctx = 262144; np = 4; mm = $true; nommoff = $true }
+    @{ ctx = 262144; np = 3; mm = $true; nommoff = $true }
+    @{ ctx = 229376; np = 4; mm = $true; nommoff = $true }
 )
 
 New-Item -ItemType Directory -Force -Path $Thu | Out-Null
@@ -67,6 +71,7 @@ Ghi "=== MA TRAN G1 === $($DsCauHinh.Count) cau hinh"
 
 foreach ($ch in $DsCauHinh) {
     $nhan = "ctx$($ch.ctx)_np$($ch.np)_mm$(if($ch.mm){'1'}else{'0'})"
+    if ($ch.nommoff) { $nhan += '_nooff' }
     DonDep
     $truoc = Vram38
     Ghi "---- $nhan | VRAM truoc = $truoc MiB"
@@ -78,6 +83,10 @@ foreach ($ch in $DsCauHinh) {
            '--cache-type-k', 'q4_0', '--cache-type-v', 'q4_0',
            '--host', '127.0.0.1', '--port', "$Port")
     if ($ch.mm) { $a += @('--mmproj', $Mmproj) }
+    # `--no-mmproj-offload`: giu vision nhung de bo chieu da phuong tien
+    # nam o RAM chu thay vi VRAM. Doi lai: ma hoa anh cham hon. Day la nut
+    # co san cua llama.cpp, khong phai thu ta tu che.
+    if ($ch.nommoff) { $a += @('--no-mmproj-offload') }
 
     $env:CUDA_VISIBLE_DEVICES = $Uuid38
     $t0 = Get-Date
