@@ -15,7 +15,10 @@
   `docs/superpowers/specs/2026-09-11-ltt-llm-dual-model-design.md` — **DUYỆT 2026-09-11** (chủ dự án: *"thực hiện
   triển khai theo quy trình bạn đã xây dựng, commit tài liệu tránh thất lạc"*; kèm cấp quyền điều khiển máy B qua
   Nexus/OpenSSH). Tiếp theo: implementation plan → chủ dự án duyệt plan → triển khai.
-- Kênh máy B: **Nexus** (SSH trên máy B đang `DISABLED` theo `Ket_noi.md` — không bật lại, không cần).
+- Kênh máy B: **OpenSSH là kênh chính** (`ssh -i %USERPROFILE%\.ssh\nexus_b lengo@192.168.2.66`; đo 2026-09-11: sshd
+  `Running/Automatic`, đăng nhập 0,37–0,47 s) + **Nexus** cho LocalSystem/Scheduled Task/API GPU và làm đường sửa khi
+  SSH hỏng. ⚠️ Đính chính: bản đầu dòng này ghi "SSH DISABLED" theo `Ket_noi.md` sinh 30/08 mà không đo — sai; chủ dự
+  án chỉ ra. `Ket_noi.md` đã được sinh lại (bộ sinh nay thử đăng nhập thật).
 
 ## Ý định chủ dự án đã khoá (không hỏi lại)
 
@@ -206,6 +209,25 @@ tính cả chi phí nạp lại.
   (3) ~38 ảnh/ngày là đầu vào đầu tiên để chốt tham số cửa sổ ảnh D01.
 - **Affected:** plan (thứ tự pha), runbook deploy A+B, mục nghiệm thu "rollback".
 
+### D09 — Model cho việc LLM nội bộ của nền tảng/app — **LOCKED 2026-09-11** (phát hiện khi lập plan)
+- **Bối cảnh:** trên trunk, bí danh `ltt_llm` là điểm nối nội bộ `platform_core/llm/canonical.py` (AI CLEAN REBUILD V2
+  pha 05–07). Người gọi: `platform_core/image_gen/dich_llm.py` (dịch prompt ảnh, gọi **bên trong** job của
+  `apps/{anhnoibo,taoanh,thumbnail}`), `apps/taovideo/translate`, `apps/autosubvideo/ai_workflows.py`,
+  `apps/prompt_ai_ommi`, `platform_core/agent/planner.py`; mọi đường giành chung `llm_remote` qua
+  `canonical.tai_nguyen_nha()`. D02 cắt bí danh ⇒ mỗi người gọi phải chọn tường minh. D01 B ⇒ trong cửa sổ ảnh LTT-3.8
+  không nằm trên GPU ⇒ dịch prompt từ trong job ảnh mà trỏ 3.8 là **vòng chờ** (job ảnh chờ LLM, LLM chờ cửa sổ ảnh đóng).
+- **Options:** A tất cả → 3.5 · B chỉ job ảnh → 3.5, còn lại 3.8 · **C mỗi app khai, mặc định 3.5**.
+- **Selected: C.** Hợp đồng app thêm trường khai model cho việc LLM nội bộ của app (giá trị `ltt-3.8`|`ltt-3.5`,
+  **mặc định `ltt-3.5`** cho mọi app lúc bật); `canonical` đọc khai báo đó thay cho `MODEL_MAC_DINH`. Phép kiểm máy chặn:
+  đường gọi LLM từ trong job giữ `anh_3090` (dịch prompt ảnh) **không bao giờ** trỏ `ltt-3.8`.
+- **Consequences:** (1) việc nội bộ không bị kẹt residency 3090; 3090 dành cho khách chọn LTT-3.8; (2) chất lượng dịch
+  phụ đề/prompt AI trên 9B phải được chấm trong benchmark — nâng app nào lên 3.8 là một dòng khai, không cần REOPEN;
+  (3) planner vẫn được rơi Gemini (việc nội bộ, F-06) nhưng model nhà đầu tiên của nó là 3.5; (4) giá: việc nội bộ đi
+  theo giá model được khai.
+- **Affected:** `platform_core/llm/canonical.py`, `platform_core/registry.py` (trường khai), manifest của
+  `anhnoibo/taoanh/thumbnail/taovideo/autosubvideo/prompt_ai_ommi`, `platform_core/image_gen/dich_llm.py`,
+  `platform_core/agent/planner.py`, test canonical (`test_1001`, `test_1002`).
+
 ## ✅ DECISION LOCK — Spec 1 (2026-09-11)
-D01 B · D02 C · D03 đầy đủ/dự phòng C · D04 B · D05 A · D06 B · D07 A · D08 A-rút-gọn · L-1…L-12 · TD-D1…TD-D11.
+D01 B · D02 C · D03 đầy đủ/dự phòng C · D04 B · D05 A · D06 B · D07 A · D08 A-rút-gọn · D09 C · L-1…L-12 · TD-D1…TD-D11.
 Không còn quyết định người dùng mở cho Spec 1. Tiếp theo: viết spec → chủ dự án duyệt.

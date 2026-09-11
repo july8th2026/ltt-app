@@ -40,6 +40,12 @@ llama.cpp · 500K/1M/YaRN · tệp/đa tệp/video (Spec 2) · khung N-GPU tổn
 - Trần vào/ra/công bố cho client dẫn xuất **theo model** từ cùng công thức hiện có (`ngan_sach.py`:
   `TOKEN_VAO_TRAN = CUA_SO − TOKEN_RA_TRAN − LE`, `CONG_BO_CHO_CLIENT = 0,92 × …`) qua `CUA_SO_THEO_MODEL`.
 - Route Claude Desktop `ltt-llm-claude-compat` trỏ `ltt-3.8`.
+- **Việc LLM nội bộ (D09):** điểm nối trên trunk là `platform_core/llm/canonical.py`. Bảng `ALIAS_SANG_ID` đổi sang
+  `{"ltt-3.8": "qwen38-api", "ltt-3.5": "qwen35-api"}`; `MODEL_MAC_DINH` bị thay bằng **khai báo từng app** (trường hợp
+  đồng app mới, mặc định `ltt-3.5`); `tai_nguyen_nha()` trả resource **theo model** (`ltt_38_3090` / `ltt_35_5060`).
+  Người gọi: `image_gen/dich_llm.py` (từ job của `anhnoibo`, `taoanh`, `thumbnail`), `taovideo/translate`,
+  `autosubvideo/ai_workflows.py`, `prompt_ai_ommi`, `agent/planner.py`. Phép kiểm: đường dịch prompt ảnh không bao giờ
+  trỏ `ltt-3.8` (vòng chờ với cửa sổ ảnh).
 
 ## 3. Hướng tiếp cận đã cân nhắc
 
@@ -222,8 +228,9 @@ hơn trần chờ stream 300 s (D-06). Không đổi quyết định nào: trầ
 từ chối nếu VRAM UUID 3090 > `VRAM_SACH` (2.500 MiB, cấu hình). render gateway chỉ gửi prompt khi admission `anh_3090` đã
 nhận (máy A giữ lease). Không còn chỗ nào trên máy B tự quyết đuổi ai.
 
-`apps/anhnoibo/manifest.py` khai `admission_resource="anh_3090"`, `admission_slots=1`, `residency_group="rtx3090"`,
-`vai_tro="theo_lo"`; `apps/ltt_llm` khai `ltt_38_3090` với `vai_tro="mac_dinh"`. Nền tảng chỉ biết **vai trò**, không biết
+Ba app vẽ trên 3090 qua `platform_core/image_gen/cong_render` (`anhnoibo`, `taoanh`, `thumbnail`) cùng khai
+`admission_resource="anh_3090"`, `admission_slots=1`, `residency_group="rtx3090"`, `vai_tro="theo_lo"` (hôm nay cả ba
+**không** khai admission); `apps/ltt_llm` khai `ltt_38_3090` với `vai_tro="mac_dinh"`. Nền tảng chỉ biết **vai trò**, không biết
 tên app (test_147 layering).
 
 ## 13. Kho ấm RAM (224 GB) — TD-D8
