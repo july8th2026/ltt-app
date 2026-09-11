@@ -147,10 +147,48 @@
                   {% if d.giay %}· {{ d.giay }}s{% endif %}
                   {% if d.credit is not none %}· {{ d.credit }} credit{% endif %}
                 </p>
+                {#
+                  HẾT HẠN / ĐÃ XOÁ — một trạng thái RIÊNG, phải nói ra.
+
+                  🔴 Sau hạn lưu trữ, `job_content.purge_expired` dọn tệp +
+                     `params`/`result`, chỉ giữ lại hàng làm bằng chứng bút toán.
+                     Trình phát tự biến mất (không còn `audio_key`), nên KHÔNG có
+                     "200 nhưng player chết". Nhưng một dòng `done` trống rỗng đọc
+                     như *thiếu dữ liệu*; nói thẳng lý do để khách đi tìm một tệp
+                     cũ không kết luận sai rằng nó bị mất ngoài ý muốn.
+
+                  ⭐ ĐÃ XOÁ ưu tiên hơn HẾT HẠN: xoá kéo theo hết hạn (cùng dọn
+                     tệp), nhưng với khách đây là "tôi đã xoá", không phải "hệ
+                     thống dọn theo hạn". Nói đúng nguyên nhân.
+                #}
+                {% if d.da_xoa %}
+                  <p class="lv-ls-hethan dim">{{
+                    _("Bạn đã xoá lượt này. Tệp tiếng đã được xoá; bản ghi vẫn được giữ để đối chiếu.")
+                  }}</p>
+                {% elif d.het_han %}
+                  <p class="lv-ls-hethan dim">{{
+                    _("Nội dung đã hết hạn sau {n} ngày lưu trữ và được dọn. Bản ghi vẫn được giữ để đối chiếu.").format(n=retention_ngay)
+                  }}</p>
+                {% endif %}
               </div>
               <div class="lv-ls-phai">
                 {% if d.nguon %}<span class="chip m">{{ _(nhan_nguon.get(d.nguon, d.nguon)) }}</span>{% endif %}
-                {% with tt = d.trang_thai %}{% include "_voice_trangthai.html" %}{% endwith %}
+                {#
+                  ⛔ Hàng đã xoá / hết hạn KHÔNG mang badge trạng thái job. Nó vẫn
+                     là `done`/`error` ở tầng CSDL, nhưng với khách nó là "đã xoá"
+                     hoặc "đã hết hạn" — hiện `done` cạnh một dòng trống là mâu
+                     thuẫn. Badge `b-grey` (xám, cùng lớp "Đã huỷ") nói đúng nghĩa.
+                  ⭐ "Đã tải" là một CHIP trên dòng còn sống, không phải một badge
+                     trạng thái — nó bổ nghĩa cho trạng thái, không thay nó.
+                #}
+                {% if d.da_xoa %}
+                  <span class="badge b-grey"><span class="dot"></span>{{ _("Đã xoá") }}</span>
+                {% elif d.het_han %}
+                  <span class="badge b-grey"><span class="dot"></span>{{ _("Đã hết hạn") }}</span>
+                {% else %}
+                  {% if d.da_tai %}<span class="chip m">{{ _("Đã tải") }}</span>{% endif %}
+                  {% with tt = d.trang_thai %}{% include "_voice_trangthai.html" %}{% endwith %}
+                {% endif %}
               </div>
               {% if d.audio_url %}
                 <audio class="lv-ls-phat" data-nang="1" controls preload="none"
@@ -208,6 +246,30 @@
                          hứa cùng một thứ.
                     #}
                     <a class="btn sm ghost" href="/jobs/{{ d.id }}">{{ _("Trang việc") }}</a>
+                    {#
+                      XOÁ — dọn tệp sớm, giữ hàng làm bằng chứng (D005).
+
+                      🔴 KHÔNG hard-delete: hàng job là bằng chứng sổ credit. Cửa
+                         `/lich-su/{id}/xoa` gọi `job_content.expire_content` rồi
+                         đánh dấu `da_xoa`. Dòng ở lại dưới trạng thái "Đã xoá".
+
+                      ⭐ Trước khi hỏi xác nhận, `voice.js` gọi `/anh-huong` để
+                         biết khối Dự án nào đang dùng đúng audio này, rồi liệt
+                         kê chúng trong hộp `confirm()` — khách phải biết hậu quả
+                         TRƯỚC khi bấm, không phải sau khi dự án đã vỡ. Cả hai
+                         câu mẫu dưới đây là `data-nhan-*`, KHÔNG phải chuỗi gõ
+                         tay trong voice.js — giữ mọi chữ hiện ra cho khách nằm
+                         trong template, dịch được qua `_()`.
+
+                      ⛔ Nằm trong `{% if d.audio_url %}`: chỉ hiện khi CÒN tệp để
+                         xoá. Dòng đã xoá/hết hạn không có `audio_url` nên không
+                         có nút này — không mời xoá một thứ đã mất.
+                    #}
+                    <button type="button" class="btn sm ghost danger lv-ls-xoa"
+                            data-job="{{ d.id }}"
+                            data-nhan-khoi-mot="{{ _('Khối {so} trong dự án "{ten}" sẽ mất tiếng và cần tạo lại.') }}"
+                            data-nhan-tieu-de="{{ _('Xoá lượt này? Tệp tiếng sẽ bị xoá và không lấy lại được. Bản ghi vẫn được giữ để đối chiếu.') }}"
+                            title="{{ _('Xoá lượt này — tệp tiếng sẽ bị xoá, không lấy lại được.') }}">{{ _("Xoá") }}</button>
                   {% endif %}
                 </div>
               {% endif %}

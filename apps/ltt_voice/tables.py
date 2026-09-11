@@ -388,6 +388,54 @@ class VoiceTuDien(Base):
                                               default=_now, onupdate=_now)
 
 
+class VoiceLichSu(Base):
+    """Trạng thái NGƯỜI DÙNG áp lên một lượt lịch sử: đã tải, đã xoá.
+
+    🔴 VÌ SAO LÀ BẢNG RIÊNG, KHÔNG PHẢI CỘT TRÊN `jobs`.
+
+       `jobs` là bảng của **nền tảng**, dùng chung mọi app. Một cột
+       `downloaded_at`/`deleted_at` ở đó là quyết định cho cả nền tảng, và nó
+       kéo theo một migration chạm mọi app — trong khi đây chỉ là trạng thái
+       của **màn Lịch sử ltt_voice**. Giữ nó ở bảng của app là giữ đúng ranh
+       giới "thêm app thì thêm thư mục, không sửa platform_core".
+
+    ⛔ XOÁ KHÔNG hard-delete hàng job. Hàng job là **bằng chứng** mà sổ credit
+       trỏ về (`credit_entries` khoá ngoài RESTRICT). Xoá ở đây nghĩa là: dọn
+       **tệp** sớm qua `job_content.expire_content` (đặt `content_expired_at`)
+       rồi đánh dấu `da_xoa_luc`. Bằng chứng còn nguyên, chỉ nội dung là mất —
+       cùng bất biến mà `voice_profile` giữ ("KHÔNG có deleted").
+
+    ⭐ `da_tai_luc` — "đã tải" là một sự thật về VÒNG ĐỜI, không phải một lần
+       phát. Ghi nó ở đây (bền, theo tài khoản) chứ không ở `localStorage`
+       (mất khi đổi máy) để backend phân biệt được trạng thái, đúng như hợp
+       đồng của màn hình đòi.
+    """
+
+    __tablename__ = "voice_lich_su"
+    __table_args__ = (
+        # Một chủ chỉ có MỘT dòng trạng thái cho một job. Ràng buộc ở tầng CSDL
+        # để "đánh dấu tải" gọi nhiều lần (bấm tải hai lần) không sinh hai dòng —
+        # cùng khuôn "cứ INSERT, coi IntegrityError là đường bình thường".
+        UniqueConstraint("owner_id", "job_id", name="uq_voice_lichsu_owner_job"),
+        Index("ix_voice_lichsu_owner", "owner_id"),
+    )
+
+    id: Mapped[int] = mapped_column(KHOA_CHINH, primary_key=True,
+                                    autoincrement=True)
+    #: ⛔ String(36): `User.id` và `Job.id` của nền tảng đều là UUID chuỗi. Ép
+    #:    số ở đây là đúng cái lỗi `voice_profile` từng mắc (mọi khách thành chủ 0).
+    owner_id: Mapped[str] = mapped_column(String(36), index=True)
+    job_id: Mapped[str] = mapped_column(String(36))
+    #: Rỗng (NULL) nghĩa là CHƯA — không phải 0, không phải một mốc giả.
+    da_tai_luc: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    da_xoa_luc: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    tao_luc: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    sua_luc: Mapped[datetime] = mapped_column(DateTime(timezone=True),
+                                              default=_now, onupdate=_now)
+
+
 # ── Bảng của màn Dự án ───────────────────────────────────────────────────────
 #
 # 🔴 MỘT DÒNG NÀY LÀ BẮT BUỘC, và thiếu nó hỏng theo kiểu tệ nhất.

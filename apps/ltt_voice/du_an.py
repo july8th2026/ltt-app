@@ -42,6 +42,13 @@ log = logging.getLogger(__name__)
 #: màn hình còn dùng được và một lần "sinh tất cả" không nộp vài trăm job.
 TRAN_KHOI = 200
 
+#: Trạng thái HIỂN khi một khối đã `xong` nhưng tệp tiếng không còn nghe được
+#: nữa (xoá qua Lịch sử, hoặc hết hạn 30 ngày). CÙNG chuỗi với giá trị đã có
+#: sẵn trên cột `VoiceBlock.trang_thai` cho lý do "văn bản đổi sau khi sinh" —
+#: có chủ ý: cả hai đều là "cần tạo lại", chỉ khác NGUYÊN NHÂN, và khách chỉ
+#: cần biết phải bấm tạo lại, không cần phân biệt hai nguyên nhân đó.
+TT_CAN_TAO_LAI = "can_tao_lai"
+
 #: Khoảng cách thứ tự khi thêm vào cuối. Rộng để chèn giữa còn chỗ.
 BUOC_THU_TU = 10.0
 
@@ -359,8 +366,44 @@ def gan_ket_qua(db, khoi, job) -> None:
         khoi.trang_thai = "dang_tao"
 
 
-def tom_tat(cac: list) -> dict:
+def trang_thai_hien(khoi, co_tieng: bool) -> str:
+    """Trạng thái HIỂN của một khối — khác `khoi.trang_thai` (cột đã GHI).
+
+    ⭐ HÀM THUẦN: không đọc DB, không có tác dụng phụ. `co_tieng` do người gọi
+       tính sẵn (qua `duong_tieng()`), vì đó là thứ cần một truy vấn cho CẢ
+       DANH SÁCH — hàm này chỉ hỏi một khối.
+
+    🔴 VÌ SAO CẦN TÁCH KHỎI CỘT `trang_thai`. `gan_ket_qua()` ghi `"xong"` một
+       lần, ngay khi job xong — và không ai QUAY LẠI cập nhật cột đó nữa. Nếu
+       sau đó khách xoá lượt này ở màn Lịch sử (D005), hoặc 30 ngày trôi qua và
+       `job_content.purge_expired` dọn tệp, cột `trang_thai` VẪN đọc `"xong"`
+       trong khi tệp đã mất thật. Trang Dự án sẽ dựng một badge "Hoàn tất" cạnh
+       một trình phát trỏ vào hư không — đúng lỗi `duong_tieng()` đã trả giá,
+       chỉ khác là lần này ở tầng HIỂN THỊ TRẠNG THÁI thay vì tầng URL.
+
+    ⚠️ Chỉ khối ĐÃ `"xong"` mới bị suy lại. Một khối `"dang_tao"`/`"loi"`/`"moi"`
+       chưa từng có tệp để mất — `co_tieng=False` ở đó không nói lên điều gì.
+    """
+    if khoi.trang_thai == "xong" and not co_tieng:
+        return TT_CAN_TAO_LAI
+    return khoi.trang_thai
+
+
+def tom_tat(cac: list, *, duong_tieng: dict | None = None) -> dict:
+    """Tóm tắt một danh sách khối.
+
+    `duong_tieng`: `{block.id: url}` từ `du_an.duong_tieng()` — khi truyền,
+    trường `"khoi"` của kết quả mang `trang_thai_hien` ĐÃ SUY theo tệp còn hay
+    mất. Khi KHÔNG truyền (mọi lời gọi trước D005), suy theo `bool(audio_key)`
+    — tức không phát hiện được tệp hết hạn/đã xoá, giữ nguyên hành vi cũ, để
+    không âm thầm đổi kết quả ở những nơi chưa được nối dây tới `duong_tieng`.
+    """
     xong = [k for k in cac if k.trang_thai == "xong"]
+    khoi_hien = []
+    for k in cac:
+        co_tieng = (bool(duong_tieng.get(k.id)) if duong_tieng is not None
+                   else bool(k.audio_key))
+        khoi_hien.append({"id": k.id, "trang_thai_hien": trang_thai_hien(k, co_tieng)})
     return {
         "so_khoi": len(cac),
         "xong": len(xong),
@@ -373,6 +416,9 @@ def tom_tat(cac: list) -> dict:
         # ⭐ Một giọng cho cả dự án ⇒ xuất được MỘT LƯỢT LIỀN MẠCH. Nhiều giọng
         #    thì không — và đó là câu trả lời cho việc có hiện nút đó hay không.
         "mot_giong": len({(k.giong or "") for k in cac}) <= 1 if cac else True,
+        # Trạng thái HIỂN theo từng khối — xem `trang_thai_hien()`. Task 9 dùng
+        # trường này để suy trạng thái cấp DỰ ÁN (`trang_thai_suy`).
+        "khoi": khoi_hien,
     }
 
 

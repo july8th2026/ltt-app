@@ -1962,6 +1962,70 @@
         });
       })(nutDocLai[q]);
     }
+    /* ── Danh dau DA TAI khi bam mot lien ket tai ve ───────────────────────
+       ⭐ Tai la mot su that ve VONG DOI, khong phai mot lan phat. Ghi lai
+          (ban-roi-quen) de Lich su phan biet "da tai". KHONG chan lien ket:
+          tai van chay ngay ca khi ghi dau that bai. */
+    var nutTai = document.querySelectorAll(".lv-ls-tai a[download]");
+    for (var q = 0; q < nutTai.length; q++) {
+      (function (a) {
+        a.addEventListener("click", function () {
+          var dong = a.closest(".lv-ls-dong");
+          var job = dong && dong.dataset.id;
+          if (!job) return;
+          var fd = new FormData();
+          fd.append("csrf_token", csrfLs);
+          // `keepalive` de yeu cau song sot qua luc trinh duyet bat dau tai.
+          try {
+            fetch(duong + "/lich-su/" + job + "/da-tai",
+                  {method: "POST", body: fd, keepalive: true});
+          } catch (e) { /* tai quan trong hon dau vet: nuot loi ghi dau */ }
+        });
+      })(nutTai[q]);
+    }
+    /* ── Xoa mot luot khoi Lich su (D005) ──────────────────────────────────
+       🔴 KHONG hard-delete: hang job la bang chung so credit. Xoa = don TEP
+          som + danh dau da_xoa (server lo). Truoc khi hoi XAC NHAN, hoi
+          `/anh-huong` de biet khoi Du an nao dang dung dung audio nay va
+          liet ke chung ra — khach phai biet HAU QUA truoc khi bam, khong
+          phai sau khi du an da vo.
+       ⛔ Moi chuoi khach nhin thay lay tu `data-nhan-*` cua nut (template),
+          KHONG go tay tieng Viet o day — giu dich duoc qua `_()`. */
+    var nutXoa = document.querySelectorAll(".lv-ls-xoa");
+    for (var q = 0; q < nutXoa.length; q++) {
+      (function (n) {
+        n.addEventListener("click", function () {
+          var job = n.dataset.job;
+          var mauKhoi = n.getAttribute("data-nhan-khoi-mot") || "";
+          var tieuDe = n.getAttribute("data-nhan-tieu-de") || "";
+          fetch(duong + "/lich-su/" + job + "/anh-huong")
+            .then(function (r) { return r.ok ? r.json() : {khoi: []}; })
+            .catch(function () { return {khoi: []}; })
+            .then(function (d) {
+              var dong = [tieuDe];
+              var ds = d.khoi || [];
+              for (var i = 0; i < ds.length; i++) {
+                dong.push(mauKhoi
+                  .replace("{so}", ds[i].khoi_so)
+                  .replace("{ten}", ds[i].du_an));
+              }
+              if (!window.confirm(dong.join("\n"))) return;
+              n.disabled = true;
+              var fd = new FormData();
+              fd.append("csrf_token", csrfLs);
+              fetch(duong + "/lich-su/" + job + "/xoa",
+                    {method: "POST", body: fd})
+                .then(function (r) { return r.json(); })
+                .then(function (d2) {
+                  if (d2.ok) { window.location.reload(); return; }
+                  n.disabled = false;
+                  window.alert(d2.loi || "?");
+                })
+                .catch(function () { n.disabled = false; });
+            });
+        });
+      })(nutXoa[q]);
+    }
     var oCt = document.getElementById("lv-ls-ct");
     if (!oCt) return;
 

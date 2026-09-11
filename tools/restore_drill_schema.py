@@ -228,6 +228,13 @@ def main() -> int:
                     #     nen mat rang buoc nay khong hong lang le, no hong o
                     #     dung cho nguoi ta dang co soat mot giong.
                     "uq_voice_quality_profile",
+                    #   uq_voice_lichsu_owner_job -> mot khach co HAI dong danh
+                    #     dau cho CUNG mot job. Khuon "danh dau tai/xoa" dua vao
+                    #     INSERT-bat-IntegrityError de idempotent (bam tai hai
+                    #     lan van mot dong); mat rang buoc thi hai lan bam sinh
+                    #     hai dong, va `lich_su_nd.trang_thai` doc mot trong hai
+                    #     tuy thu tu - trang thai "da tai/da xoa" nhap nhay.
+                    "uq_voice_lichsu_owner_job",
                     # Ten gateway trung -> cau hinh mang tro nham node.
                     "uq_vps_gateway_ten",
                     # Mat rang buoc nay = hai phien ban gia cung nhan cho mot

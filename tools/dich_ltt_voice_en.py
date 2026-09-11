@@ -321,6 +321,42 @@ DICH = {
         "Delete this voice permanently? The source clip and voice data will "
         "be removed from the server and cannot be recovered.",
     "Không thu hồi được giọng này.": "Could not delete this voice.",
+
+    # lich_su — het han + xoa nguoi dung + hop xac nhan (RC1 Task 8, D005)
+    "Đã hết hạn": "Expired",
+    "Nội dung đã hết hạn sau {n} ngày lưu trữ và được dọn. Bản ghi vẫn được "
+    "giữ để đối chiếu.":
+        "Content expired after {n} days of retention and was cleaned up. The "
+        "record is kept for reconciliation.",
+    "Đã tải": "Downloaded",
+    "Bạn đã xoá lượt này. Tệp tiếng đã được xoá; bản ghi vẫn được giữ để đối "
+    "chiếu.":
+        "You deleted this item. The audio file has been removed; the record "
+        "is kept for reconciliation.",
+    "Xoá lượt này — tệp tiếng sẽ bị xoá, không lấy lại được.":
+        "Delete this item — the audio file will be removed and cannot be "
+        "recovered.",
+    "Xoá lượt này? Tệp tiếng sẽ bị xoá và không lấy lại được. Bản ghi vẫn "
+    "được giữ để đối chiếu.":
+        "Delete this item? The audio file will be removed and cannot be "
+        "recovered. The record is kept for reconciliation.",
+    "Lượt đang xử lý chưa xoá được. Chờ nó xong hoặc huỷ trước.":
+        "This item is still processing and cannot be deleted yet. Wait for "
+        "it to finish or cancel it first.",
+    "Không xoá được lượt này. Thử lại sau.":
+        "Could not delete this item. Try again later.",
+    'Khối {so} trong dự án "{ten}" sẽ mất tiếng và cần tạo lại.':
+        'Block {so} in project "{ten}" will lose its audio and need to be '
+        "regenerated.",
+
+    # governance.py — Store("voice_lich_su", ...) reason (RC1 Task 8)
+    "Dấu người dùng đặt lên một lượt lịch sử: đã tải về chưa, đã xoá chưa. "
+    "Không chứa văn bản hay tệp — chỉ hai cột thời điểm. Xoá một lượt dọn "
+    "TỆP theo vòng đời của job; dòng này chỉ ghi rằng khách đã xoá.":
+        "A user-set marker on a history item: whether it has been "
+        "downloaded, whether it has been deleted. Holds no text or files — "
+        "just two timestamps. Deleting an item removes the FILE per the "
+        "job's lifecycle; this row only records that the customer deleted it.",
 }
 
 

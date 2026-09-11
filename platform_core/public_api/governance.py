@@ -230,6 +230,18 @@ STORES: tuple = (
           "engine không đoán được. Áp cho MỌI lượt đọc của họ, kể cả khi gọi "
           "qua API, nên nó quyết định thứ khách nghe được.")),
 
+    # ⭐ `retention_days=None` vì đây là trạng thái NGƯỜI DÙNG áp lên lịch sử —
+    #    sống theo vòng đời tài khoản, đi khi tài khoản đi. KHÔNG có sweeper
+    #    riêng, nên không có nghĩa vụ `purged_by` (khác các bảng CONTENT có hạn).
+    # ⛔ Nó KHÔNG giữ nội dung — chỉ hai mốc "đã tải" / "đã xoá" trên một job.
+    #    Xoá ở đây dọn TỆP qua `job_content.expire_content` (vòng đời của `jobs`),
+    #    còn dòng này chỉ là dấu người dùng đặt lên, nên xếp cạnh các bảng lịch
+    #    sử khác của khách chứ không phải EVIDENCE (mất nó không mất bằng chứng).
+    Store("voice_lich_su", CONTENT, None, N_("chủ tài khoản"),
+          N_("Dấu người dùng đặt lên một lượt lịch sử: đã tải về chưa, đã xoá "
+          "chưa. Không chứa văn bản hay tệp — chỉ hai cột thời điểm. Xoá một lượt "
+          "dọn TỆP theo vòng đời của job; dòng này chỉ ghi rằng khách đã xoá.")),
+
     # ── Operational: aged out on a schedule ──────────────────────────────────
     Store("public_api_requests", OPERATIONAL, 30, N_("chủ tài khoản + vận hành"),
           N_("Gỡ lỗi một tích hợp. Không chứa payload, chỉ metadata."),

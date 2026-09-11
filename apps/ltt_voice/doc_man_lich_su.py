@@ -157,9 +157,16 @@ def doc(db, owner_id: str, app_slug: str, *, trang_thai: str = "",
         log.warning("khong doc duoc lich su cua %s", owner_id, exc_info=True)
         tat_ca = []
 
+    # Trạng thái NGƯỜI DÙNG (đã tải · đã xoá) — MỘT truy vấn cho cả trang. Đây
+    # là bảng của app (`voice_lich_su`), không phải cột trên `jobs`. Đọc rồi
+    # phẳng hoá vào từng dòng ở `dong_cho_trang`.
+    from . import lich_su_nd
+    nd = lich_su_nd.trang_thai(db, owner_id, [j.id for j in tat_ca])
+
     return {
         "tat_ca": tat_ca,
         "dong": loc(tat_ca, trang_thai=trang_thai, nguon=nguon, giong=giong),
+        "nd": nd,
         "tom_tat": tom_tat(tat_ca),
         # Đúng bằng trần nghĩa là **có thể** còn nữa. Giao diện phải nói ra.
         "bi_cat": len(tat_ca) >= TRAN_DOC,
@@ -171,13 +178,42 @@ def doc(db, owner_id: str, app_slug: str, *, trang_thai: str = "",
     }
 
 
-def dong_cho_trang(job, duong_audio: str) -> dict:
-    """Một dòng lịch sử, đã phẳng hoá cho template."""
+def dong_cho_trang(job, duong_audio: str, *, da_tai: bool = False,
+                   da_xoa: bool = False) -> dict:
+    """Một dòng lịch sử, đã phẳng hoá cho template.
+
+    `da_tai`/`da_xoa` đến từ bảng `voice_lich_su` (xem `lich_su_nd`). Chúng là
+    trạng thái NGƯỜI DÙNG áp lên lượt này, tách hẳn trạng thái job ở CSDL.
+    """
     kq = job.result or {}
+    # ── HẾT HẠN NỘI DUNG — một trạng thái RIÊNG, không lẫn vào "done" ─────────
+    #
+    # 🔴 Sau `job_content.RETENTION_DAYS` ngày, `purge_expired` xoá tệp, đặt
+    #    `content_expired_at`, rồi dọn `params`/`result` về `{}`. Hàng vẫn còn —
+    #    nó là **bằng chứng** mà bút toán credit trỏ về — nhưng KHÔNG còn tệp để
+    #    phát và KHÔNG còn tham số để biết đọc bằng giọng nào.
+    #
+    # ⭐ Vì `result` đã rỗng nên `audio_url` tự thành `""` và trang không dựng
+    #    trình phát — tức không có "200 nhưng player chết". Điều còn thiếu là
+    #    **nói ra** rằng đây là hết hạn, chứ không phải một lượt done trống rỗng.
+    #
+    # ⛔ Và phải TẮT `giong_mac_dinh`: `_giong_cua` rỗng ở đây KHÔNG có nghĩa
+    #    "khách không chọn giọng" (đường mà `giong_mac_dinh` phục vụ) — nó có
+    #    nghĩa "tham số đã bị dọn". Để `True` thì màn hình BỊA ra "Giọng mặc
+    #    định (…)" cho một lượt ta không còn biết giọng gì; một sự thật bịa còn
+    #    tệ hơn một ô trống. Cùng bài học `du_an.duong_tieng` đã trả giá cho
+    #    audio_key hết hạn.
+    het_han = getattr(job, "content_expired_at", None) is not None
+    # Đã xoá kéo theo hết hạn (xoá = dọn tệp qua `expire_content`); OR phòng thủ
+    # vì cả hai đều nghĩa là NỘI DUNG ĐÃ MẤT, nên không được bịa giọng.
+    da_mat = het_han or da_xoa
     return {
         "id": str(job.id),
         "luc": job.created_at,
         "trang_thai": job.status,
+        "het_han": het_han,
+        "da_tai": bool(da_tai),
+        "da_xoa": bool(da_xoa),
         "text": str((job.params or {}).get("text") or "")[:160],
         "giong": _giong_cua(job),
         # 🔴 Lượt không chọn giọng vẫn ĐƯỢC ĐỌC bằng một giọng có thật. Trước
@@ -185,7 +221,7 @@ def dong_cho_trang(job, duong_audio: str) -> dict:
         #    thời gian và thời lượng, đọc như "thiếu dữ liệu" chứ không như
         #    "mặc định". Với hai mươi giọng trong danh mục, đó đúng là câu hỏi
         #    khách quay lại lịch sử để hỏi: *lượt này đọc bằng giọng nào?*
-        "giong_mac_dinh": not _giong_cua(job),
+        "giong_mac_dinh": (not _giong_cua(job)) and not da_mat,
         "nguon": _nguon_cua(job),
         "giay": kq.get("duration_s"),
         "credit": kq.get("credit_cost"),

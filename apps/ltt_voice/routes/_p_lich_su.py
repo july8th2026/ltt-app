@@ -57,11 +57,19 @@ def trang_lich_su(request: Request, tt: str = "", nguon: str = "",
         except StopIteration:
             pass
 
+    # Hạn lưu trữ nội dung — LẤY từ nguồn chân lý, không gõ tay: màn Lịch sử nói
+    # với khách "bản ghi đã hết hạn sau bao nhiêu ngày", và con số ấy phải khớp
+    # đúng hạn mà `job_content.purge_expired` thi hành. Gõ tay thì hai chỗ trôi.
+    from platform_core import job_content
     duong_audio = f"{MANIFEST.route_prefix}/audio"
     return templates.TemplateResponse(
         request, "ltt_voice_lich_su.html",
         vo.ngu_canh(request, user, nav_key=vo.NAV_LICH_SU, hang_doi=hang_doi,
-                    dong=[doc_man_lich_su.dong_cho_trang(j, duong_audio)
+                    retention_ngay=job_content.RETENTION_DAYS,
+                    dong=[doc_man_lich_su.dong_cho_trang(
+                              j, duong_audio,
+                              da_tai=goi["nd"].get(str(j.id), {}).get("da_tai", False),
+                              da_xoa=goi["nd"].get(str(j.id), {}).get("da_xoa", False))
                           for j in goi["dong"]],
                     tom_tat=goi["tom_tat"], bi_cat=goi["bi_cat"],
                     tran=goi["tran"],
@@ -102,7 +110,7 @@ def doc_lai(request: Request, job_id: str, csrf_token: str = Form(""),
         return _het_phien()
 
     from platform_core import job_history
-    from platform_core.job_submit import submit_with_credit
+    from platform_core.job_submit import dedupe_key_for, submit_with_credit
 
     uid = _uid(user)
     gen = _db()
@@ -159,9 +167,21 @@ def doc_lai(request: Request, job_id: str, csrf_token: str = Form(""),
 
         tool = MANIFEST.tools[0]
         try:
+            # 🔴 DEDUPE — chặn double-submit / F5 / hai tab bấm "Đọc lại" cùng
+            #    một lượt trong khi bản đầu còn `queued`/`running`. Khoá KHÔNG
+            #    hash `p` (params ĐẦY ĐỦ bên trên): hai lượt "đọc lại" job A
+            #    trong hai lần bấm khác nhau phải cùng một khoá dù `p` mang
+            #    những khoá `YeuCau` không biết (`project_id`…) — băm nguyên
+            #    `p` thì một trường lạ thêm sau này âm thầm đổi khoá. Băm
+            #    `(owner, job_id_gốc)` là đúng thứ cần: "đọc lại ĐÚNG lượt này".
+            #    `jobs.submit` chỉ gộp job CHƯA kết thúc nên tính năng phiên bản
+            #    (V1/V2/V3) không bị phá — đọc lại SAU khi job trước `done` vẫn
+            #    ra job mới. Cùng khuôn `_p_tao.py` (test_502/test_519).
             job = submit_with_credit(
                 db, user_id=uid, app_slug=MANIFEST.slug,
                 job_type="ltt_voice.synthesize", params=p,
+                dedupe_key=dedupe_key_for(
+                    "ltt_voice.synthesize", {"owner": uid, "doc_lai": job_id}),
                 admission_resource=tool.admission_resource,
                 admission_slots=tool.admission_slots,
                 max_attempts=SO_LAN_THU_JOB)
@@ -172,6 +192,132 @@ def doc_lai(request: Request, job_id: str, csrf_token: str = Form(""),
             return JSONResponse({"ok": False, "loi": str(e)}, status_code=400)
         db.commit()
         return JSONResponse({"ok": True, "job_id": str(job.id)})
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+@router.get("/lich-su/{job_id}/anh-huong")
+def anh_huong(request: Request, job_id: str,
+             user=Depends(user_hien_tai), _=Depends(require_login)):
+    """Khối Dự án nào đang dùng audio của lượt này — TRƯỚC khi khách xoá (D005).
+
+    ⭐ Đây là lý do hộp xác nhận XOÁ không hỏi ngay ở `voice.js`: một khách xoá
+       một lượt Studio bình thường thì không mất gì ngoài chính tệp đó, nhưng
+       nếu lượt ấy đã được "Lưu vào dự án" thì xoá nó cũng làm khối đó mất
+       tiếng — và khách cần biết TRƯỚC khi bấm, không phải sau khi dự án đã vỡ.
+
+    ⛔ Vẫn kiểm sở hữu: hỏi hậu quả của job người khác vẫn là một câu hỏi cần
+       quyền, dù nội dung câu trả lời (tên dự án) không phải bí mật tài chính.
+    """
+    from platform_core import job_history
+
+    from .. import lich_su_nd
+    uid = _uid(user)
+    gen = _db()
+    db = next(gen)
+    try:
+        cu = job_history.get_owned(db, uid, (job_id or "").strip())
+        if cu is None or cu.app_slug != MANIFEST.slug:
+            return JSONResponse({"ok": False, "loi": _t(
+                "Không tìm thấy lượt đọc này.")}, status_code=404)
+        khoi = lich_su_nd.khoi_bi_anh_huong(db, owner_id=uid, job_id=str(cu.id))
+        return JSONResponse({"ok": True, "khoi": khoi})
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+@router.post("/lich-su/{job_id}/da-tai")
+def danh_dau_tai(request: Request, job_id: str, csrf_token: str = Form(""),
+                 user=Depends(user_hien_tai), _=Depends(require_login)):
+    """Đánh dấu một lượt là **đã tải**. Khách bấm liên kết tải thì giao diện gọi
+    đây (bắn-rồi-quên) — tải vẫn chạy dù ghi dấu hỏng.
+
+    ⭐ Tải là một sự thật về VÒNG ĐỜI, không phải một lần phát. Ghi ở CSDL (bền,
+       theo tài khoản) để backend phân biệt được trạng thái, không ở localStorage.
+
+    ⛔ Vẫn kiểm CSRF + sở hữu: một dấu vết ghi vào CSDL cho một job của người
+       khác vẫn là một phép ghi cần quyền, dù nó vô hại về nội dung.
+    """
+    if not verify_csrf_token(request, csrf_token):
+        return _het_phien()
+
+    from platform_core import job_history
+
+    from .. import lich_su_nd
+    uid = _uid(user)
+    gen = _db()
+    db = next(gen)
+    try:
+        cu = job_history.get_owned(db, uid, (job_id or "").strip())
+        if cu is None or cu.app_slug != MANIFEST.slug:
+            return JSONResponse({"ok": False, "loi": _t(
+                "Không tìm thấy lượt đọc này.")}, status_code=404)
+        lich_su_nd.danh_dau_tai(db, uid, str(cu.id))
+        db.commit()
+        return JSONResponse({"ok": True})
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+@router.post("/lich-su/{job_id}/xoa")
+def xoa_luot(request: Request, job_id: str, csrf_token: str = Form(""),
+             user=Depends(user_hien_tai), _=Depends(require_login)):
+    """Xoá một lượt khỏi Lịch sử — dọn TỆP sớm, giữ hàng làm bằng chứng.
+
+    🔴 KHÁC HẲN hard-delete. Hàng `jobs` là bằng chứng mà sổ credit trỏ về
+       (`credit_entries` khoá ngoài RESTRICT); xoá cứng nó là làm mồ côi một
+       bút toán. Nên xoá ở đây = `job_content.expire_content` (xoá tệp, dọn
+       `params`/`result`, đặt `content_expired_at`) + đánh dấu `da_xoa_luc` —
+       và (T-11) thử dọn thêm khoá lưu trữ CŨ nếu job sinh trước 31/08/2026
+       (xem `lich_su_nd._khoa_cu`). Dòng vẫn hiện trong lịch sử dưới trạng thái
+       "Đã xoá", đối chiếu được.
+
+    ⛔ CHỈ job đã KẾT THÚC. Một job đang chờ/đang chạy còn cần `params` để chạy;
+       dọn giữa chừng là bẻ gãy worker. Cùng lý do `job_content.purge_expired`
+       chỉ đụng job terminal.
+
+    ⛔ Không hoàn tác được (tệp mất thật). Giao diện hỏi xác nhận — và liệt kê
+       khối Dự án bị ảnh hưởng qua `/anh-huong` — trước khi gọi cửa này.
+    """
+    if not verify_csrf_token(request, csrf_token):
+        return _het_phien()
+
+    from platform_core import job_history
+    from platform_core.storage import get_storage
+
+    from .. import lich_su_nd
+    uid = _uid(user)
+    gen = _db()
+    db = next(gen)
+    try:
+        cu = job_history.get_owned(db, uid, (job_id or "").strip())
+        if cu is None or cu.app_slug != MANIFEST.slug:
+            return JSONResponse({"ok": False, "loi": _t(
+                "Không tìm thấy lượt đọc này.")}, status_code=404)
+        if cu.status not in lich_su_nd.TRANG_THAI_XOA_DUOC:
+            return JSONResponse({"ok": False, "loi": _t(
+                "Lượt đang xử lý chưa xoá được. Chờ nó xong hoặc huỷ trước.")},
+                status_code=400)
+        try:
+            lich_su_nd.xoa(db, get_storage(), cu)
+        except Exception as e:  # noqa: BLE001 - kho co the nem nhieu loai loi
+            db.rollback()
+            import logging
+            logging.getLogger(__name__).warning(
+                "khong xoa duoc luot %s: %s", job_id, e)
+            return JSONResponse({"ok": False, "loi": _t(
+                "Không xoá được lượt này. Thử lại sau.")}, status_code=500)
+        db.commit()
+        return JSONResponse({"ok": True})
     finally:
         try:
             next(gen)
