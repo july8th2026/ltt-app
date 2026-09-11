@@ -680,6 +680,35 @@ class AppManifest:
     #    `so_lan_thu_for()`. Cùng hình dạng ba bảng ngay trên.
     so_lan_thu: dict = field(default_factory=dict)
 
+    #: Model nhà dùng cho việc LLM **NỘI BỘ** của app (D09, dual-model 2.4).
+    #:
+    #: 🔴 KHÔNG PHẢI model khách chọn. Khách chọn model ở `params_schema` của
+    #:    tool (`text.chat`); trường này nói app dùng model nào cho việc *của
+    #:    nó*: dịch prompt ảnh, dịch phụ đề, sinh JSON gợi ý — thứ khách không
+    #:    thấy tên và không trả tiền theo tên.
+    #:
+    #: 🔴 VÌ SAO NÓ PHẢI LÀ MỘT BẢN KHAI CHỨ KHÔNG PHẢI MỘT HẰNG SỐ NỀN TẢNG.
+    #:
+    #:    Tới 11/09/2026 mọi đường nội bộ đều gọi
+    #:    `canonical.tai_nguyen_nha(MODEL_MAC_DINH)`, tức **một** hằng số cho
+    #:    mọi app. Từ D01 B, `ltt-3.8` cư trú trên RTX 3090 và **rời card đó**
+    #:    trong cửa sổ sinh ảnh. Job ảnh (`anhnoibo`/`taoanh`/`thumbnail`) dịch
+    #:    prompt *từ bên trong* job — tức nó đang **giữ** 3090 và lại đi **chờ**
+    #:    một model chỉ nạp được sau khi 3090 rảnh. Đó là một vòng chờ: không
+    #:    lỗi, không log, chỉ một job treo tới hết trần thời gian.
+    #:
+    #: ⇒ Mặc định `ltt-3.5` (5060 Ti) cho MỌI app, và đó **không phải một sự hy
+    #:   sinh**: đo 11/09/2026 trên máy B, LTT-3.5 chạy 73 tok/s so với 66,7
+    #:   tok/s của LTT-3.8, cửa sổ 262.144 so với 221.184, cùng 3 slot. Việc nội
+    #:   bộ vừa hết kẹt residency vừa **nhanh hơn**. App nào cần 3.8 thì nâng
+    #:   bằng **một dòng khai** ở manifest của chính nó (D09 hệ quả 2).
+    #:
+    #: ⛔ Giá trị phải là một bí danh công khai hợp lệ (`canonical.MODEL_HOP_LE`).
+    #:    Một tên lạ ở đây KHÔNG được âm thầm rơi về mặc định lúc nạp — nó bị
+    #:    `_validate` từ chối, vì "app khai sai" và "app không khai" là hai
+    #:    trạng thái khác nhau và chỉ một trong hai là ý định.
+    model_llm_noi_bo: str = "ltt-3.5"
+
     def cho_tai_nguyen_for(self, job_type: str, *, default: int = 20) -> int:
         """Giãn cách thử lại khi tài nguyên bận, giây. Kẹp sàn 1 giây."""
         khai = int((self.cho_tai_nguyen_s or {}).get(job_type, 0))
@@ -1259,6 +1288,17 @@ def _validate(manifest: AppManifest, seen_slugs: set, seen_prefixes: set,
         raise RegistryError(
             _t("[{slug}] lifecycle không hợp lệ: {value!r}").format(
                 slug=manifest.slug, value=manifest.lifecycle))
+    # ⛔ Model cho việc LLM nội bộ (D09): tên lạ bị TỪ CHỐI lúc nạp, không rơi
+    #    về mặc định. Nếu rơi im lặng thì một lỗi gõ (`ltt-3.50`) chạy suốt đời
+    #    trên model *khác* model app tưởng — và hoá đơn/GPU đều đi theo model
+    #    kia. Import trễ: `canonical` import `AdmissionModel` từ chính tệp này.
+    from platform_core.llm.canonical import MODEL_HOP_LE as _MODEL_HOP_LE
+    if manifest.model_llm_noi_bo not in _MODEL_HOP_LE:
+        raise RegistryError(
+            _t("[{slug}] model_llm_noi_bo không hợp lệ: {value!r} — "
+               "hợp lệ: {ok}").format(
+                   slug=manifest.slug, value=manifest.model_llm_noi_bo,
+                   ok=list(_MODEL_HOP_LE)))
     if (not isinstance(manifest.capabilities, tuple) or
             any(not isinstance(value, str) or not value.strip()
                 for value in manifest.capabilities)):

@@ -63,6 +63,25 @@ ALIAS_SANG_ID: dict[str, str] = {
 MODEL_MAC_DINH = "ltt-3.8"
 MODEL_HOP_LE = tuple(ALIAS_SANG_ID)
 
+#: 🔑 Mặc định cho việc LLM **NỘI BỘ** (D09 phương án C, dual-model 2.4).
+#:
+#: ⚠️ ĐỪNG gộp nó với `MODEL_MAC_DINH`. Hai hằng số này trả lời hai câu khác
+#:    nhau và **cố ý** mang hai giá trị khác nhau:
+#:
+#:        MODEL_MAC_DINH          khách gọi `text.chat` mà không nói model
+#:                                ⇒ `ltt-3.8` (hàng đầu bảng, cư trú 3090)
+#:        MODEL_NOI_BO_MAC_DINH   nền tảng/app tự gọi LLM cho việc của mình
+#:                                ⇒ `ltt-3.5` (5060 Ti)
+#:
+#: 🔴 Lý do CƠ HỌC, không phải khẩu vị: D01 B cho model ảnh mượn 3090 trong cửa
+#:    sổ sinh ảnh, nên `ltt-3.8` **không nạp được** trong lúc một job ảnh đang
+#:    chạy. Một job ảnh vừa GIỮ 3090 vừa CHỜ `ltt-3.8` là một vòng chờ kín.
+#:
+#: ⭐ Và nó còn là lựa chọn NHANH HƠN, nên đừng đọc dòng trên như một sự hy
+#:    sinh: đo 11/09/2026 trên máy B — LTT-3.5 73 tok/s ở cửa sổ 262.144
+#:    (5060 Ti); LTT-3.8 66,7 tok/s ở 221.184 (3090); cùng 3 slot.
+MODEL_NOI_BO_MAC_DINH = "ltt-3.5"
+
 
 def ban_do_model(*alias: str) -> dict[str, str]:
     """`model_theo_provider` cho `dieu_phoi.goi()` — id THẬT, không phải bí danh.
@@ -100,6 +119,52 @@ def ban_do_model(*alias: str) -> dict[str, str]:
     if ten not in ALIAS_SANG_ID:
         raise KeyError(f"bi danh la: {ten!r} (hop le: {MODEL_HOP_LE})")
     return {THU_TU_PROVIDER[0]: ALIAS_SANG_ID[ten]}
+
+
+def model_noi_bo_cua(slug_app: str) -> str:
+    """Model mà app `slug_app` khai cho việc LLM **nội bộ** của nó (D09).
+
+        >>> model_noi_bo_cua("anhnoibo")      # "ltt-3.5"
+
+    Không đọc được bản khai (app không tồn tại, registry lỗi, giá trị lạ) ⇒
+    `MODEL_NOI_BO_MAC_DINH` **kèm một dòng cảnh báo**.
+
+    ⭐ VÌ SAO ĐỌC BẢN KHAI THAY VÌ MỘT HẰNG SỐ. Trước 2.4 mọi đường nội bộ
+       truyền `MODEL_MAC_DINH` — một hằng số duy nhất cho sáu người gọi ở sáu
+       app. D01 B làm hằng số ấy **sai với một nhóm app**: job ảnh giữ 3090 rồi
+       đi chờ một model chỉ nạp được khi 3090 rảnh. Sửa bằng cách đổi hằng số
+       thì nhóm kia mất quyền chọn; sửa bằng một `if` theo tên app thì nền tảng
+       biết tên app (điều `test_60` cấm). Nên app **khai**, nền tảng **đọc** —
+       đúng khuôn `credit_cost`/`bang_gia`/`suc_khoe` ngay cạnh nó.
+
+    ⛔ Cảnh báo chứ không ném: đây là đường nội bộ của một app đang chạy, và
+       một `RegistryError` ở đây làm hỏng job của khách để đổi lấy đúng không
+       gì cả — bản khai sai đã bị `registry._validate` từ chối **lúc nạp**, nên
+       tới được đây nghĩa là app hỏng ở chỗ khác. Rơi về 3.5 là hướng an toàn:
+       3.5 không bao giờ tranh card với model ảnh.
+    """
+    import logging
+
+    log = logging.getLogger(__name__)
+    try:
+        from platform_core.registry import discover
+
+        for it in discover():
+            if it.manifest.slug != slug_app:
+                continue
+            ten = (getattr(it.manifest, "model_llm_noi_bo", "") or "").strip()
+            if ten in ALIAS_SANG_ID:
+                return ten
+            log.warning(
+                "app %r khai model noi bo la %r (khong hop le); dung %r",
+                slug_app, ten, MODEL_NOI_BO_MAC_DINH)
+            return MODEL_NOI_BO_MAC_DINH
+        log.warning("khong tim thay app %r trong registry; dung model noi bo %r",
+                    slug_app, MODEL_NOI_BO_MAC_DINH)
+    except Exception:                                          # noqa: BLE001
+        log.warning("khong doc duoc ban khai model noi bo cua %r; dung %r",
+                    slug_app, MODEL_NOI_BO_MAC_DINH, exc_info=True)
+    return MODEL_NOI_BO_MAC_DINH
 
 
 #: Mặc định khi không đọc được bản khai của app. Xem `tai_nguyen_nha()`.
@@ -156,8 +221,8 @@ def tai_nguyen_nha(model: str) -> AdmissionModel:
        hai pool KV khác nhau, nên "tài nguyên của model nhà" không còn là MỘT
        câu trả lời. Một mặc định ngầm ở đây sẽ cho mọi bên gọi câu trả lời của
        model *khác* mà không ai thấy — nên bên gọi phải nói ra nó đang dùng model
-       nào. Task 2.4 dạy từng app khai model của nó; tới lúc ấy bên gọi nội bộ
-       truyền `MODEL_MAC_DINH`.
+       nào. Từ 2.4 bên gọi nội bộ truyền `model_noi_bo_cua(<slug app>)`, tức
+       bản khai của chính app đó — **không** `MODEL_MAC_DINH` nữa (D09).
 
     🔴 `KeyError` KHÔNG bị nuốt. Model lạ trên một tool đã phân biệt theo model
        là fail-closed có chủ ý (`suc_chua_admission`); rơi về `_TAI_NGUYEN_MAC_DINH`
