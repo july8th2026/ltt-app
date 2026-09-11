@@ -406,9 +406,14 @@ def tom_tat(cac: list, *, duong_tieng: dict | None = None) -> dict:
     xong = [k for k in cac if k.trang_thai == "xong"]
     khoi_hien = []
     for k in cac:
-        co_tieng = (bool(duong_tieng.get(k.id)) if duong_tieng is not None
-                   else bool(k.audio_key))
-        khoi_hien.append({"id": k.id, "trang_thai_hien": trang_thai_hien(k, co_tieng)})
+        # ⚠️ `getattr(..., None)`, KHÔNG `k.id`/`k.audio_key` thẳng: lời hứa
+        #    D005 là "tom_tat(duong_tieng=None) hành xử Y HỆT trước D005" —
+        #    các lời gọi cũ (và fake block tối giản trong test, vốn chỉ mang
+        #    text/trang_thai/giong) không hề có hai cột này.
+        k_id = getattr(k, "id", None)
+        co_tieng = (bool(duong_tieng.get(k_id)) if duong_tieng is not None
+                   else bool(getattr(k, "audio_key", None)))
+        khoi_hien.append({"id": k_id, "trang_thai_hien": trang_thai_hien(k, co_tieng)})
     return {
         "so_khoi": len(cac),
         "xong": len(xong),

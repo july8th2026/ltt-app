@@ -205,14 +205,20 @@ async def tao_giong(request: Request, ten: str = Form(""),
                   "source_key": khoa, "ref_id": ref.id,
                   "nguon": "giong",
                   "_job_type": "ltt_voice.enroll"}
+        # Chặn double-submit (F5 / hai tab) cùng khuôn với Studio (`test_519`):
+        # cùng khách + cùng TÊN giọng trong lúc job trước còn chạy ⇒ MỘT job.
+        # ⚠️ Tính TRƯỚC, ngoài lời gọi `submit_with_credit` — `test_501` soi
+        #    "MỖI cửa nộp job khai SO_LAN_THU_JOB" bằng một mẫu chuỗi khớp
+        #    tới một lớp ngoặc lồng; `ten.strip()` lồng bên trong lời gọi sẽ
+        #    làm mẫu đó KHÔNG khớp và cửa này biến mất khỏi tầm nhìn của nó.
+        ten_chuan = ten.strip()
+        khoa_lap = dedupe_key_for("ltt_voice.enroll",
+                                  {"owner": uid, "ten": ten_chuan})
         job = submit_with_credit(
             db, user_id=str(uid), app_slug=MANIFEST.slug,
             job_type="ltt_voice.enroll",
             params=params,
-            # Chặn double-submit (F5 / hai tab) cùng khuôn với Studio (`test_519`):
-            # cùng khách + cùng TÊN giọng trong lúc job trước còn chạy ⇒ MỘT job.
-            dedupe_key=dedupe_key_for(
-                "ltt_voice.enroll", {"owner": uid, "ten": ten.strip()}),
+            dedupe_key=khoa_lap,
             max_attempts=SO_LAN_THU_JOB)
         db.commit()
         return JSONResponse({"ok": True, "voice_id": ho_so.public_id,

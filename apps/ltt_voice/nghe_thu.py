@@ -475,7 +475,14 @@ def bao_tri() -> None:
             # Làn đi theo giọng, lấy từ chính danh mục — không phải từ ngôn
             # ngữ của tiến trình bảo trì, thứ chẳng liên quan gì tới giọng này.
             dung(khoa_mau(g.ma), preset=g.ma, ngon_ngu=g.ngon_ngu)
-    _dung_giong_rieng_con_thieu()
+    # 🔴 fail-soft giống bước dọn hồ sơ treo ở trên: đây là việc DB (bảng
+    #    voice_profile), tách khỏi bước ① (giọng mẫu, không chạm DB). Một
+    #    DB chưa cấu hình / lỗi tạm thời không được làm bao_tri() ném và bỏ
+    #    dở phần preset đã chạy phía trên.
+    try:
+        _dung_giong_rieng_con_thieu()
+    except Exception:  # noqa: BLE001 - viec nen, khong duoc chan cac buoc khac
+        log.exception("khong dung duoc nghe thu rieng con thieu")
 
 
 def _dung_giong_rieng_con_thieu() -> None:

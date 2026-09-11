@@ -183,11 +183,16 @@ def doc_lai(request: Request, job_id: str, csrf_token: str = Form(""),
             #    chuẩn hoá). `job_id` là chuỗi khách gõ trên URL — khoảng
             #    trắng/hoa-thường thừa (nếu route ever nới lỏng kiểm tra) sẽ
             #    băm ra một khoá KHÁC cho cùng một job, làm dedupe không gộp.
+            # ⚠️ Tính khoá lặp TRƯỚC, ngoài lời gọi `submit_with_credit` —
+            #    `str(cu.id)` lồng bên trong lời gọi làm mẫu quét của
+            #    `test_501` (khớp một lớp ngoặc lồng) không khớp được, và cửa
+            #    này biến mất khỏi tầm nhìn của nó.
+            khoa_lap = dedupe_key_for(
+                "ltt_voice.synthesize", {"owner": uid, "doc_lai": str(cu.id)})
             job = submit_with_credit(
                 db, user_id=uid, app_slug=MANIFEST.slug,
                 job_type="ltt_voice.synthesize", params=p,
-                dedupe_key=dedupe_key_for(
-                    "ltt_voice.synthesize", {"owner": uid, "doc_lai": str(cu.id)}),
+                dedupe_key=khoa_lap,
                 admission_resource=tool.admission_resource,
                 admission_slots=tool.admission_slots,
                 max_attempts=SO_LAN_THU_JOB)

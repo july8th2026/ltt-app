@@ -405,6 +405,19 @@ def _nop_mot_khoi(db, user, du_an_row, khoi) -> str:
        `dang_tao` rồi cùng lọt qua. `dedupe_key` dựa trên `jobs.submit` —
        khoá theo (owner, khối) nên nó bắt được đúng khe hở đó, cùng khuôn
        T-06 đã áp cho Studio (`test_519`) và Lịch sử (`test_525`).
+
+    ⚠️ KHOÁ CÒN MANG `khoi.job_id` HIỆN TẠI (test_375) — không chỉ (owner,
+       khối). `jobs.submit` chỉ gộp job **CHƯA kết thúc** (queued/running); một
+       khoá tĩnh thuần (owner, khối) thì MỌI lần nộp lại của cùng khối này,
+       mãi mãi, đều băm ra đúng một chuỗi — nên nếu job trước đó vì lý do gì
+       (worker chết, treo) còn nằm `queued`/`running` trong CSDL dù khối đã
+       chuyển `loi`, một lượt "Đọc lại"/"Đọc tất cả" hợp lệ sẽ bị gộp câm vào
+       cái job chết đó và KHÔNG sinh việc mới — đúng lỗi test_375 bắt được.
+       `khoi.job_id` đổi giá trị đúng lúc một lượt nộp MỚI thành công (dòng
+       cuối hàm này), nên đưa nó vào khoá làm hai lượt nộp GẦN NHAU cho cùng
+       một khối — trước khi job đầu kịp đổi `khoi.job_id` — vẫn băm ra CÙNG
+       một khoá (T-06 vẫn đứng), còn một lượt nộp lại SAU một job đã có
+       (dù job đó còn kẹt `queued` trong CSDL) thì băm ra khoá KHÁC.
     """
     from platform_core.job_submit import dedupe_key_for, submit_with_credit
 
@@ -424,8 +437,9 @@ def _nop_mot_khoi(db, user, du_an_row, khoi) -> str:
                 "owner_id": uid, "nguon": "du_an",
                 # Hai khoá này để Lịch sử và hỗ trợ truy ngược được về đúng khối.
                 "project_id": du_an_row.public_id, "block_id": khoi.id},
-        dedupe_key=dedupe_key_for("ltt_voice.synthesize",
-                                  {"owner": uid, "khoi": khoi.id}),
+        dedupe_key=dedupe_key_for(
+            "ltt_voice.synthesize",
+            {"owner": uid, "khoi": khoi.id, "tu_job": khoi.job_id or ""}),
         admission_resource=tool.admission_resource,
         admission_slots=tool.admission_slots,
         max_attempts=SO_LAN_THU_JOB)
