@@ -46,16 +46,28 @@ def test_model_nha_la_ID_NOI_BO_khong_phai_bi_danh():
         f"{id_nha!r} khong phai id noi bo nao ma app khai")
 
 
-def test_model_nha_KHONG_chon_ban_doc_anh():
-    """Lập kế hoạch là việc chữ. Chọn nhầm bản vision là chọn một model có cửa
-    sổ nhỏ hơn một nửa (65.536 thay vì 131.072) mà không được gì."""
-    from platform_core import providers
-    from platform_core.models import APIKEY_CAT_CHAT
+def test_model_nha_LA_MODEL_NOI_BO_DA_KHAI():
+    """Planner đi model **nội bộ** đã khai (`ltt-3.5`), không phải một suy luận.
 
-    id_nha = planner._model_nha()
-    cua_anh = {m.id for m in providers.models_for("ltt_llm", APIKEY_CAT_CHAT)
-               if (getattr(m, "capabilities", None) or {}).get("vision")}
-    assert id_nha not in cua_anh
+    🔴 PHÉP ĐO CŨ ĐÃ BỊ **BỎ**, KHÔNG PHẢI SỬA — và lý do đáng ghi lại.
+
+       Bản trước chốt *"`_model_nha()` không được chọn bản đọc ảnh"*, với lý do
+       *"bản vision có cửa sổ nhỏ hơn một nửa (65.536 thay vì 131.072)"*. Mệnh
+       đề ấy đúng khi model thứ hai là hồ sơ `qwen38-vision` `-c 65536`. Hồ sơ
+       đó **đã gỡ 11/09/2026** (D02). Hai model công khai hôm nay chạy cùng ngữ
+       cảnh engine, và model nội bộ `ltt-3.5` **có** `vision: True` — nên phép
+       kiểm cũ đỏ **vì bản khai ĐÚNG**, và cách duy nhất làm nó xanh lại là
+       chọn sai model. Nó đã thành một phép kiểm *cưỡng chế khuyết tật*.
+
+    ⇒ Thay bằng mệnh đề về **nguồn**: planner đọc bản khai model nội bộ (D09),
+      không suy ra model từ một cờ năng lực. Xem thêm
+      `tests/test_1212_llm_noi_bo_theo_app.py` — nó dựng lại tương lai Task 3.3
+      (cả hai model đều khai `vision`) và chốt planner vẫn sống.
+    """
+    from platform_core.llm import canonical
+
+    assert planner._model_nha() == canonical.ALIAS_SANG_ID[
+        canonical.MODEL_NOI_BO_MAC_DINH]
 
 
 def test_KHONG_con_hang_so_go_tay_bi_danh_trong_tep():
@@ -121,8 +133,10 @@ def test_planner_GIANH_SUAT_truoc_khi_goi_model(monkeypatch):
     # ⛔ ĐỌC TỪ BẢN KHAI, không gõ `"llm_remote"`. Từ dual-model 2.3 sức chứa
     #    khai THEO MODEL, nên một tên gõ tay ở đây đỏ vì chính nó đã cũ — và
     #    ngày nó được "sửa" bằng một tên gõ tay khác, khuyết tật quay lại.
-    from platform_core.llm.canonical import MODEL_MAC_DINH, tai_nguyen_nha
-    suc = tai_nguyen_nha(MODEL_MAC_DINH)
+    #    ⭐ D09 (2.4): và model là model **NỘI BỘ**, không phải mặc định bán cho
+    #      khách — lease phải nằm ở pool KV của đúng card sắp chạy lượt này.
+    from platform_core.llm.canonical import MODEL_NOI_BO_MAC_DINH, tai_nguyen_nha
+    suc = tai_nguyen_nha(MODEL_NOI_BO_MAC_DINH)
     assert da_giu.get("resource") == suc.resource, (
         "khong gianh suat -> day la mot duong toi may B lach admission")
     assert da_giu.get("slots") == suc.slots
