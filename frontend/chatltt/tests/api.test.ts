@@ -22,7 +22,7 @@ describe('Api', () => {
     ))
     vi.stubGlobal('fetch', goi)
     const api = new Api('/chatltt/api', 'tok-1')
-    await expect(api.taoHoiThoai('ltt_llm')).rejects.toMatchObject({
+    await expect(api.taoHoiThoai('ltt-3.8')).rejects.toMatchObject({
       code: 'ban', status: 503,
     })
     const init = goi.mock.calls[0][1]!

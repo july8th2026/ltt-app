@@ -34,7 +34,7 @@ import urllib.error
 import urllib.request
 
 MAC_DINH_BASE = "https://app.lttstudios.com"
-MODEL = "ltt_llm"
+MODEL = "ltt-3.8"
 BIEN_KHOA = "LTT_API_KEY"
 
 #: Cua so ngu canh CONG BO cho client.
@@ -112,7 +112,7 @@ TRAN_KET_QUA_TOOL = TOKEN_RA_TRAN // 2
 #:
 #: ⚠️ Bien nay co san **toi thieu 100.000**. Nguong vision cua ta (55.787) nam
 #:    duoi muc do va bien moi truong thi khong tach duoc theo model — nhung
-#:    `ANTHROPIC_MODEL` la `ltt_llm`, nen con so text moi la con so dung cho
+#:    `ANTHROPIC_MODEL` la `ltt-3.8`, nen con so cua 3.8 moi la con so dung cho
 #:    phien Claude Code.
 CUA_SO_NEN_CLAUDE = NEN_HOI_THOAI
 
@@ -127,14 +127,20 @@ CUA_SO_NEN_CLAUDE = NEN_HOI_THOAI
 #: 📈 03/09: 28.262 -> 88.555, khi vision len `-c 131072` + KV q4_0. Do that:
 #:    89.868 token vao doc lai dung moc dau-cuoi, VRAM 21.099 MiB (+748 so voi
 #:    ho so 65K cu), va A/B doc anh tren cung mot anh: ca hai ho so tra dung moc.
-CUA_SO_NGU_CANH_VISION = 88555
+#: ⛔ HAI CON SO NAY NGANG BANG con so cua `ltt-3.8` KE TU 11/09/2026, va do la
+#:    mot su THAT chu khong phai cho trong: ca hai model chay cung mot ngu canh
+#:    engine (constraints.md). Ho so vision cu (`qwen38-vision`, 65.536 roi
+#:    131.072) da bi go — xem D02. **Task 2.6** do lai ho so 5060 Ti va thay so
+#:    o `apps/ltt_llm/ngan_sach.py`; tep nay chep theo, va `test_334` buoc hai
+#:    dau lai voi nhau nen khong lech duoc trong im lang.
+CUA_SO_NGU_CANH_35 = 156385
 #: Nguong nen cua vision, khop `ngan_sach.nen_cua("qwen38-vision")`.
 #:
 #: ⭐ TRUOC 03/09 SO NAY LA **0**, va so 0 do la mot cau tra loi that: cua so
 #:    cong bo cua vision khi ay (28.262) HEP HON mot luot sinh dai nhat (32.768),
 #:    nen khong nguong nen nao giu duoc loi hua va bo cai phai bo han truong do.
 #:    Nang cua so len 131K la thu lam cho no dinh nghia duoc tro lai.
-NEN_HOI_THOAI_VISION = 55787
+NEN_HOI_THOAI_35 = 123617
 
 #: Khoa BAT BUOC trong `[model_providers.ltt]`, kem ly do.
 #:
@@ -195,9 +201,9 @@ def _catalog() -> str:
         return d
 
     return json.dumps(
-        {"models": [mot("ltt_llm", CUA_SO_NGU_CANH, NEN_HOI_THOAI),
-                    mot("ltt_llm_vision", CUA_SO_NGU_CANH_VISION,
-                        NEN_HOI_THOAI_VISION, doc_anh=True)]},
+        {"models": [mot("ltt-3.8", CUA_SO_NGU_CANH, NEN_HOI_THOAI),
+                    mot("ltt-3.5", CUA_SO_NGU_CANH_35,
+                        NEN_HOI_THOAI_35, doc_anh=True)]},
         indent=1)
 
 
@@ -303,9 +309,9 @@ def claude_code(base: str, goc_claude: pathlib.Path) -> list:
         #    thi co. Tuc khach macOS/Linux nhan mot ban cai **yeu hon**, va
         #    khong co gi trong tep nay noi ra dieu do.
         #
-        #    Claude Code khong biet `ltt_llm` nen no GIA DINH cua so 200.000 va
+        #    Claude Code khong biet `ltt-3.8` nen no GIA DINH cua so 200.000 va
         #    noi thang ra:
-        #        "ltt_llm" is not a model this version of Claude Code
+        #        "ltt-3.8" is not a model this version of Claude Code
         #        recognizes, so auto-compact will keep this session within
         #        200k tokens (the context window it assumes).
         #    Tran vao that cua ta nho hon nhieu, nen auto-compact khong bao gio

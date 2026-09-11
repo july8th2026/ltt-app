@@ -42,7 +42,7 @@ BASE = "https://app.lttstudios.com"
 EMAIL = "autosub-test@lttstudios.com"     # tai khoan TEST co san, khong phai admin
 NAP_THEM = 200                             # credit nap them de chay nghiem thu
 TOOL = "text.chat"
-MODEL = "ltt_llm"
+MODEL = "ltt-3.8"
 # !! BAT BUOC. urllib mac dinh bi Cloudflare tra 403 TRUOC khi cham may chu.
 UA = "ltt-nghiem-thu-l1/1.0"
 

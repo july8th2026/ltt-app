@@ -14,7 +14,7 @@ function m(
     role: id.startsWith('u') ? 'user' : 'assistant',
     blocks: [{ type: 'text', text: id }],
     status: 'done',
-    model_alias: 'ltt_llm',
+    model_alias: 'ltt-3.8',
     execution_id: null,
     created_at: `2026-09-03T00:00:${String(giay).padStart(2, '0')}.000000+00:00`,
     ...g,

@@ -92,13 +92,13 @@ GOC_MAC_DINH = "https://app.lttstudios.com"
 #:    ho tro.
 PHIEN_BAN = "1.6.0"
 
-MODEL = "ltt_llm"
+MODEL = "ltt-3.8"
 
 #: Ten tuyen RIENG cho Claude Desktop. Xem `server/api/streaming.py`
 #: (`TUYEN_TUONG_THICH`) de biet vi sao no phai chua chuoi "claude".
 #:
 #: 🔴 Claude Desktop LOC danh sach model truoc khi hien picker: ten khong chua
-#:    "claude"/"anthropic"/ten dong Claude thi bi bo. `ltt_llm` bi bo, va hau qua
+#:    "claude"/"anthropic"/ten dong Claude thi bi bo. `ltt-3.8` bi bo, va hau qua
 #:    la **nut gui vo hieu, khong mot loi bao loi**. Dung "sua" dong nay ve
 #:    `MODEL` cho gon - do la dung lai chinh cai bay da mat mot buoi de tim.
 MODEL_DESKTOP = "ltt-llm-claude-compat"
@@ -179,14 +179,14 @@ TRAN_KET_QUA_TOOL = TOKEN_RA_TRAN // 2
 #:
 #: ⚠️ Bien nay co san **toi thieu 100.000**. Nguong vision cua ta (55.787) nam
 #:    duoi muc do va bien moi truong thi khong tach duoc theo model — nhung
-#:    `ANTHROPIC_MODEL` la `ltt_llm`, nen con so text moi la con so dung cho
+#:    `ANTHROPIC_MODEL` la `ltt-3.8`, nen con so cua 3.8 moi la con so dung cho
 #:    phien Claude Code.
 CUA_SO_NEN_CLAUDE = NEN_HOI_THOAI
 
-#: Cua so cong bo cua model VISION. **KHONG dung chung so voi model text.**
+#: Cua so cong bo cua model THU HAI (`ltt-3.5`). **KHONG dung chung so voi 3.8.**
 #:
 #: ⛔ DAY LA MOT LOI DA SONG NHIEU NGAY. Ban truoc cua tep nay khai **cung mot
-#:    con so cho ca hai model**, tuc noi voi Codex rang `ltt_llm_vision` co ngu
+#:    con so cho ca hai model**, tuc noi voi Codex rang model doc anh co ngu
 #:    canh **gap 3,1 lan** su that (88.555 trong khi that la 28.262, vi luc do
 #:    `qwen38-vision` nap `-c 65536`); hoi thoai anh dai vua phai la an 413 ma
 #:    khong hieu vi sao.
@@ -204,15 +204,21 @@ CUA_SO_NEN_CLAUDE = NEN_HOI_THOAI
 #: 📈 03/09: 28.262 -> 88.555. Do that tren mot ho so thu rieng: 89.868 token
 #:    vao doc lai dung moc dau-cuoi, VRAM 21.099 MiB (+748 so voi ho so 65K),
 #:    va A/B doc anh tren cung mot anh — ca hai ho so tra dung moc ngau nhien.
-CUA_SO_NGU_CANH_VISION = 88555
-#: Nguong nen cua vision, khop `ngan_sach.nen_cua("qwen38-vision")`.
+#: ⛔ HAI CON SO NAY NGANG BANG con so cua `ltt-3.8` KE TU 11/09/2026, va do la
+#:    mot su THAT chu khong phai cho trong: ca hai model chay cung mot ngu canh
+#:    engine (constraints.md). Ho so vision cu (`qwen38-vision`, 65.536 roi
+#:    131.072) da bi go — xem D02. **Task 2.6** do lai ho so 5060 Ti va thay so
+#:    o `apps/ltt_llm/ngan_sach.py`; tep nay chep theo, va `test_334` buoc hai
+#:    dau lai voi nhau nen khong lech duoc trong im lang.
+CUA_SO_NGU_CANH_35 = 156385
+#: Nguong nen cua model thu hai, khop `ngan_sach.nen_cua()` cua id noi bo cua no.
 #:
 #: ⭐ TRUOC 03/09 SO NAY LA **0**, va so 0 do la mot cau tra loi that chu khong
 #:    phai mot cho trong: cua so cong bo cua vision khi ay (28.262) HEP HON mot
 #:    luot sinh dai nhat (32.768), nen khong nguong nen nao giu duoc loi hua va
 #:    bo cai phai bo han truong do. Nang cua so len 131K la thu lam cho no
 #:    dinh nghia duoc tro lai.
-NEN_HOI_THOAI_VISION = 55787
+NEN_HOI_THOAI_35 = 123617
 
 MOC_MO = "# >>> LTT Studios - them boi cam_cli.py. Dung sua tay trong khoi nay. >>>"
 MOC_DONG = "# <<< LTT Studios <<<"
@@ -516,12 +522,12 @@ def _codex_config(goc: str) -> str:
 #:    `model="gpt-5.6-luna"` toi cong cua ta va an 400 (fail-closed tu choi dung).
 #:
 #: ⭐ `model_catalog_json` la duong CHINH THUC cua Codex de khai model. Dat no
-#:    thi canh bao *"Model metadata for `ltt_llm` not found"* bien mat, Codex
+#:    thi canh bao *"Model metadata for `ltt-3.8` not found"* bien mat, Codex
 #:    biet dung cua so ngu canh that va khong con lui ve model cua hang khac.
 #:
 #: ⛔ VI SAO KHONG DUNG "TUYEN TUONG THICH" NHU CLAUDE DESKTOP. Tuyen do dung mot
 #:    ten TA TU DAT (`ltt-llm-claude-compat`) chi de lot bo loc phia client.
-#:    Anh xa `gpt-5.6-luna` -> `ltt_llm` thi nguoc lai: nhan TEN SAN PHAM THAT
+#:    Anh xa `gpt-5.6-luna` -> `ltt-3.8` thi nguoc lai: nhan TEN SAN PHAM THAT
 #:    cua hang khac roi am tham tra model nha. Do la noi doi voi khach, khong
 #:    phai tuong thich.
 TEP_CATALOG = NHA / ".codex" / "ltt_model_catalog.json"
@@ -600,9 +606,9 @@ def _catalog_codex() -> str:
         return d
 
     return json.dumps(
-        {"models": [mot("ltt_llm", CUA_SO_NGU_CANH, NEN_HOI_THOAI),
-                    mot("ltt_llm_vision", CUA_SO_NGU_CANH_VISION,
-                        NEN_HOI_THOAI_VISION, doc_anh=True)]},
+        {"models": [mot("ltt-3.8", CUA_SO_NGU_CANH, NEN_HOI_THOAI),
+                    mot("ltt-3.5", CUA_SO_NGU_CANH_35,
+                        NEN_HOI_THOAI_35, doc_anh=True)]},
         indent=1)
 
 
@@ -1079,7 +1085,7 @@ def go_codex(tt: dict) -> list:
                         ('model_provider = "ltt"',))
     ra += _tra_hoac_xoa(TEP_CATALOG,
                         tt.get("codex", {}).get("ta_tao_catalog"),
-                        ('"slug": "ltt_llm"', '(LTT Studios)'))
+                        ('"slug": "ltt-3.8"', '(LTT Studios)'))
     return ra
 
 
@@ -1551,10 +1557,10 @@ def cam_claude(goc: str, tt: dict, toan_cuc: bool) -> list:
     ra = []
     # 🔴 HAI DONG CUOI KHONG PHAI TINH CHINH — THIEU CHUNG LA MOT LOI TIEN.
     #
-    #    Claude Code khong biet `ltt_llm`, nen no GIA DINH cua so 200.000 token
+    #    Claude Code khong biet `ltt-3.8`, nen no GIA DINH cua so 200.000 token
     #    va bao thang ra:
     #
-    #        "ltt_llm" is not a model this version of Claude Code recognizes,
+    #        "ltt-3.8" is not a model this version of Claude Code recognizes,
     #        so auto-compact will keep this session within 200k tokens
     #        (the context window it assumes).
     #

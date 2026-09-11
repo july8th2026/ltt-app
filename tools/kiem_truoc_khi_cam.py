@@ -149,12 +149,12 @@ def main() -> int:
             vi_sao = f"than tra ve khong phai JSON ({e})"
     else:
         vi_sao = f"HTTP {ma}"
-    bao("ltt_llm co trong danh muc", "ltt_llm" in ten_model,
+    bao("ltt-3.8 co trong danh muc", "ltt-3.8" in ten_model,
         ", ".join(t for t in ten_model if t) or vi_sao)
 
     # ── 4. Cửa Codex thật sự dùng ───────────────────────────────────────────
     print("\n4. Cua /responses — dung cua Codex noi")
-    than_thu = {"model": "ltt_llm", "stream": True, "max_output_tokens": 24,
+    than_thu = {"model": "ltt-3.8", "stream": True, "max_output_tokens": 24,
                 "input": "Tra loi dung mot tu: OK"}
     ma, than, giay = _goi("/responses", a.khoa, than_thu, timeout=300)
     bao("goi duoc, co luong tra ve", ma == 200, f"HTTP {ma} trong {giay}s")
@@ -193,7 +193,7 @@ def main() -> int:
         #    nghĩa là ta đang đo một đường KHÔNG tính tiền, và khi đó mọi kết
         #    luận về "đường gọi thông" đều đúng một cách tầm thường.
         ma, _t, _g = _goi("/responses", a.khoa,
-                          {"model": "ltt_llm", "stream": True,
+                          {"model": "ltt-3.8", "stream": True,
                            "max_output_tokens": 32,
                            "input": "Dem tu 1 den 5."}, timeout=300)
         time.sleep(6)

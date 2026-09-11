@@ -419,8 +419,8 @@ const HANG_MUC = [
     },
   },
   {
-    dot: 0, ten: 'model-mac-dinh-la-ltt_llm',
-    hoi: 'Model chon san co phai `ltt_llm` khong — hay la vision (ngu canh 28K thay vi 89K)?',
+    dot: 0, ten: 'model-mac-dinh-la-ltt-3.8',
+    hoi: 'Model chon san co phai `ltt-3.8` khong — hay la vision (ngu canh 28K thay vi 89K)?',
     async chay(p) {
       // ⛔ Doi CATALOG ve truoc khi doc. Ban dau doc ngay va nhan "", roi bao
       //    "mac dinh sai" — mot bao cao SAI ve mot san pham DUNG. Mot bo kiem
@@ -428,7 +428,7 @@ const HANG_MUC = [
       await doiDen('danh sach model co du lieu', async () =>
         (await p.locator('select[aria-label="Chọn model"] option').count()) > 0);
       const v = await p.locator('select[aria-label="Chọn model"]').inputValue();
-      if (v !== 'ltt_llm') throw new Error(`mac dinh la "${v}", phai la "ltt_llm"`);
+      if (v !== 'ltt-3.8') throw new Error(`mac dinh la "${v}", phai la "ltt-3.8"`);
       return { mac_dinh: v };
     },
   },
@@ -752,15 +752,15 @@ const HANG_MUC = [
     async chay(p) {
       const sel = p.locator('select[aria-label="Chọn model"]');
       const cacModel = await sel.locator('option').evaluateAll((o) => o.map((x) => x.value));
-      if (!cacModel.includes('ltt_llm_vision')) return { bo_qua: 'khong co alias vision' };
+      if (!cacModel.includes('ltt-3.5')) return { bo_qua: 'khong co alias vision' };
 
-      await sel.selectOption('ltt_llm');
+      await sel.selectOption('ltt-3.8');
       await cho(600);
       const khiText = await p.locator('input[type=file]').count();
-      await sel.selectOption('ltt_llm_vision');
+      await sel.selectOption('ltt-3.5');
       await cho(600);
       const khiVision = await p.locator('input[type=file]').count();
-      await sel.selectOption('ltt_llm');
+      await sel.selectOption('ltt-3.8');
       if (khiText !== 0) throw new Error(`model text-only VAN co o chon tep (${khiText})`);
       if (khiVision !== 1) throw new Error(`model vision KHONG co o chon tep (${khiVision})`);
       return { text: khiText, vision: khiVision };

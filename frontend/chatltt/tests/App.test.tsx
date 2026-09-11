@@ -14,7 +14,7 @@ const NANG_LUC = {
   nang_luc: [
     {
       ten: 'text.chat', phuong_thuc: 'text', che_do: 'stream', nhan: 'Chat',
-      models: { ltt_llm: { description: 'text' }, ltt_llm_vision: { description: 'vision' } },
+      models: { 'ltt-3.8': { description: 'text' }, 'ltt-3.5': { description: 'vision' } },
       tuy_chon: {}, gia: {}, duong_dan_app: '/ltt-llm', san_sang: 'san_sang', hop_dong: {},
     },
     {
@@ -27,7 +27,7 @@ const NANG_LUC = {
 
 const SU_THAT = {
   conversation: {
-    id: 'cv1', title: 'Thử', model_alias: 'ltt_llm', current_leaf_id: 'a1',
+    id: 'cv1', title: 'Thử', model_alias: 'ltt-3.8', current_leaf_id: 'a1',
     archived: false, created_at: '2026-09-03T00:00:00+00:00',
     updated_at: '2026-09-03T00:00:03+00:00',
   },
@@ -40,7 +40,7 @@ const SU_THAT = {
     {
       id: 'a1', parent_id: 'u1', role: 'assistant',
       blocks: [{ type: 'text', text: 'trả lời' }], status: 'done',
-      model_alias: 'ltt_llm', execution_id: 'ex1',
+      model_alias: 'ltt-3.8', execution_id: 'ex1',
       created_at: '2026-09-03T00:00:02+00:00',
       execution: {
         id: 'ex1', status: 'done', mode: 'stream', tool_name: 'text.chat',
@@ -334,5 +334,5 @@ describe('nang luc chua san sang', () => {
  * ⭐ Đường thật đi qua `guiLuot` → `napSuThat(cid)` (`App.tsx`), tức cần một
  *    lượt gửi thật với SSE. Thứ đang canh mệnh đề này là hạng mục `9.1` của bộ
  *    kiểm giao diện — nó chạy trên sản phẩm thật và **chính nó đã bắt được lỗi
- *    này**, với thông điệp nói rõ ô chọn quay về `ltt_llm`.
+ *    này**, với thông điệp nói rõ ô chọn quay về `ltt-3.8`.
  */
