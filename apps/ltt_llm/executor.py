@@ -39,6 +39,16 @@ class _Executor:
         from apps.ltt_llm.manifest import tran_theo_ngu_canh
         return tran_theo_ngu_canh(token_input)
 
+    def input_cap(self, alias):
+        """Trần token VÀO của một alias (theo model: vision nhỏ hơn text).
+
+        multijob D-06: cửa stream nay gửi 200 TRƯỚC khi chạm máy B, nên "quá dài
+        ⇒ 413" phải được nền tảng hỏi trước 200 — Codex/Claude Code dựa vào HTTP
+        413 để TỰ NÉN hội thoại. Nền tảng không import app; nó hỏi qua đây.
+        """
+        from apps.ltt_llm.ngan_sach import tran_vao_cua
+        return tran_vao_cua(features.ALIAS_SANG_ID[alias])
+
     def run(self, db, params, *, timeout_s, on_dispatch=None, on_rejected=None):
         kwargs = {"timeout_s": timeout_s}
         if on_dispatch is not None:

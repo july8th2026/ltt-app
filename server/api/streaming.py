@@ -42,7 +42,7 @@ from platform_core.public_api.errors import (insufficient_credit,
 from platform_core.public_api.principal import Principal
 from platform_core.public_api.protocol import (STREAM, PublicOperationContract)
 from platform_core.public_api.scopes import SCOPE_JOBS_CREATE
-from server.api import tool_dich
+from server.api import su_kien_loi, tool_dich
 from server.api.auth import require_scope
 from server.deps import get_db
 from apps.ltt_llm import ngan_sach
@@ -648,6 +648,41 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
     #    `platform_core/runtime_noi_bo/luong.py`, để client nội bộ (ChatLTT) và
     #    cửa này đi MỘT đường đếm token và quyết toán. Ở đây chỉ còn việc của
     #    HTTP: dịch bốn lỗi trước-byte-đầu sang mã trạng thái + `problem+json`.
+    # ── multijob D-06: tool khai ngân sách KV ⇒ tiền kiểm TRƯỚC 200, rồi chờ trong
+    #    SSE (nhịp tim), được nhận mới giữ tiền và mở luồng máy B. Bốn lỗi dưới
+    #    đây vẫn là MÃ HTTP vì chúng xảy ra trước 200 — đặc biệt 413: Codex và
+    #    Claude Code dựa vào nó để TỰ NÉN hội thoại (xem nhánh 413 bên dưới).
+    try:
+        tk = cua_luong.tien_kiem(
+            db, user_id=principal.user_id, tool_name=TOOL_CHAT,
+            than={**than, "model": ten}, duong=duong)
+    except cua_luong.ThamSoSai as e:
+        raise _bao_400(str(e), than) from None
+    except cua_luong.ThieuCredit as e:
+        raise insufficient_credit(str(e)) from None
+    except cua_luong.DangBan as e:
+        # Phòng chờ đã chạm trần (số người / token prefill) — không có hàng vô hạn.
+        raise limits.execution_busy(e.tai_nguyen) from None
+    except cua_luong.KhongMoDuoc:
+        raise payload_too_large(
+            "The input exceeds the model's context limit. Drop or summarise "
+            "older turns and retry with a shorter conversation.",
+            limit_name="input_tokens",
+            limit_value=_tran_vao_cua_model(ten)) from None
+    if tk.dung_phong_cho:
+        # 🔴 CHỐT GIAO DỊCH CỦA REQUEST TRƯỚC KHI STREAM — cùng bài học của
+        #    `chuan_bi` (đường cũ commit trước khi chạm model). Generator mở phiên
+        #    MỚI để ghi dòng chờ và giữ tiền; để giao dịch của request (rate-limit,
+        #    idempotency) còn mở là SQLite "database is locked" và PostgreSQL giữ
+        #    khoá hàng suốt lúc chờ.
+        db.commit()
+        return StreamingResponse(
+            cua_luong.luong_co_cho(tk, loi_sse=su_kien_loi.loi_sse,
+                                   trang_thai=getattr(request, "state", None),
+                                   timeout_s=MO_LUONG_GIAY),
+            media_type="text/event-stream", headers=_SSE)
+
+    # ── Tool KHÔNG khai ngân sách KV: đường cũ, nguyên vẹn ────────────────────
     try:
         cb = cua_luong.chuan_bi(
             db, user_id=principal.user_id, tool_name=TOOL_CHAT,

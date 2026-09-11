@@ -94,6 +94,20 @@ def giu_cho_luot(db, *, user_id: str, request_id: str,
     return so
 
 
+def du_so_du(db, *, user_id: str, token_vao_uoc: int, max_tokens: int) -> bool:
+    """Số dư có đủ cho phần giữ chỗ của lượt này không — CHỈ ĐỌC, không giữ gì.
+
+    ⭐ Cửa stream chờ trong SSE (multijob D-06): tiền chỉ được giữ SAU khi được
+       nhận, mà 200 đã gửi từ trước đó. Nên "không đủ tiền ⇒ 402" phải hỏi ở
+       ĐÂY, trước 200 — cùng phép tính `giu_cho_luot` dùng, không phải một phép
+       tính thứ hai.
+    ⚠️ Không khoá: số dư có thể tụt giữa lúc hỏi và lúc giữ (khách chạy song
+       song). Khi đó `giu_cho_luot` vẫn là chốt thật và ném `ThieuCreditError`.
+    """
+    tran = gia_token.uoc_tran(token_vao_uoc=token_vao_uoc, max_tokens=max_tokens)
+    return credit.so_du(db, user_id) >= tran.tong_credit_lam_tron_len
+
+
 #: 🟢 **C3 LÀ MẶC ĐỊNH TỪ 2026-09-06** — chủ dự án chốt.
 #:
 #: Trước đó C3 là opt-in, vì đây là **quyết định giá** chứ không phải một bản sửa
