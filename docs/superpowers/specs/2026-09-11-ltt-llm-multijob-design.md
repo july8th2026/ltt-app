@@ -80,7 +80,8 @@ không đi vòng) — manifest khai, nền tảng đọc, không import ngược
 Nhận request R khi **tất cả** đúng:
 1. có slot trống (`count(lease) < SO_SLOT_MAY_B`);
 2. `Σ token_dat_truoc(lease sống) + R.token_dat_truoc ≤ POOL` (204.800);
-3. nếu `R.lop = nen`: `count(lease nen) < N−1` **và** không có người `tuong_tac` nào đang chờ
+3. nếu `R.lop = nen`: `count(lease nen) < max(1, N−1)` **và** không có người `tuong_tac` nào đang chờ
+   *(sửa khi code 11/09: bản đầu ghi `N−1`, ở N = 1 thành 0 ⇒ job nền bị bỏ đói vĩnh viễn ở pha 1)*
    (dù người đó đang chờ slot hay chờ ngân sách — nền không được chen vào phần họ đang đợi);
 4. trần tài khoản (TD-8): nếu có người khác đang chờ, lease đang chạy của tài khoản R `< ceil(N/2)`;
 5. whale (D-05): tối đa 1 lease `la_whale`; whale R chỉ vào khi không còn lease `tuong_tac` nào
