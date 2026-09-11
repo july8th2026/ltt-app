@@ -12,6 +12,45 @@ from ._chung import (MANIFEST, TRAN_KY_TU_CONG_KHAI, Depends, File, Form,
                      NHAN_NGUON)
 
 
+def _giong_chung_dang_hop_le(public_id: str) -> bool:
+    """`public_id` CÓ ĐANG là một giọng KHO CHUNG hợp lệ không — dùng làm cổng
+    đọc cho `voice/chung/…` trong `audio()` (fix round 2/5, xem chú thích ở
+    chỗ gọi).
+
+    Điều kiện = ĐÚNG điều kiện của chính catalog kho chung
+    (`tham_chieu._dieu_kien_kho_chung`: `dung_chung` + `license_status`) CỘNG
+    `trang_thai == "active"` — một giọng đã tắt/thu hồi không còn đáng phục vụ
+    bản demo của nó dù hai cột kia còn nguyên.
+
+    ⭐ DÙNG LẠI `tham_chieu.tim_profile(..., cho_dung_chung=True)` — MỘT lượt
+       SELECT theo index `public_id`, cùng hàm mà mọi cửa ĐỌC kho chung khác
+       (`routes/_p_giong.py`, `routes/_p_tao.py`, …) đã đi qua, không phải một
+       truy vấn mới viết riêng cho cửa này. `owner_id=""` vì ở đây không có
+       khách nào để so — câu hỏi chỉ là "giọng này CÓ ĐANG công khai không".
+
+    ⛔ KHÔNG NÉM. Một lỗi CSDL tạm thời ở đây phải đọc thành "không phục vụ
+       được" (`False` → 404 ở nơi gọi), không phải 500 — cùng kỷ luật
+       "không phát được thì nói KHÔNG PHÁT ĐƯỢC, không sập trang" xuyên suốt
+       `nghe_thu.py`.
+    """
+    gen = _db()
+    db = next(gen)
+    try:
+        ho_so = tham_chieu.tim_profile(db, public_id, owner_id="",
+                                       cho_dung_chung=True)
+        return ho_so is not None and ho_so.trang_thai == "active"
+    except Exception as e:  # noqa: BLE001 - xem docstring: khong nem
+        import logging
+        logging.getLogger(__name__).warning(
+            "khong tra duoc giong kho chung %s: %s", public_id, e)
+        return False
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
 # ── Phục vụ tệp tiếng ────────────────────────────────────────────────────────
 
 @router.get("/audio/{key:path}")
@@ -43,6 +82,11 @@ def audio(request: Request, key: str, mp3: int = 0,
     ⛔ Vẫn kiểm bằng **hình dạng khoá**, không bằng một phép tra CSDL. Một phép
        kiểm rẻ và không thể quên là thứ đang giữ an toàn cho đường này; đổi nó
        thành một truy vấn là mời một nhánh nào đó sau này quên gọi.
+
+       ⚠️ NGOẠI LỆ DUY NHẤT: `voice/chung/…` (fix round 2/5, xem khối chú
+          thích ngay tại chỗ tính `la_nghe_thu_chung` bên dưới) — hình dạng
+          khoá không đổi khi một giọng thu hồi/hạ license/tắt chia sẻ, nên chỉ
+          hình dạng không đủ để giữ an toàn ở ĐÚNG tiền tố này.
 
     🔴 VÀ ĐÂY LÀ CHỖ PHẢI CẨN THẬN NHẤT CỦA CẢ TỆP.
 
@@ -84,7 +128,8 @@ def audio(request: Request, key: str, mp3: int = 0,
     la_nghe_thu_rieng = (key.startswith(f"voice/{uid}/")
                          and ten_tep.startswith("preview-"))
 
-    # ── NGHE THỬ KHO CHUNG — tiền tố thứ tư ───────────────────────────────────
+    # ── NGHE THỬ KHO CHUNG — tiền tố thứ tư, và NGOẠI LỆ DUY NHẤT trong tệp
+    #    này với luật "chỉ kiểm hình dạng khoá" ──────────────────────────────
     #
     # ⭐ Luật đọc GIỐNG `voice/mau/`, và vì đúng cùng một lý do: giọng kho chung
     #    thuộc **nền tảng**, mọi tài khoản đều được đọc nó (đó là định nghĩa của
@@ -98,8 +143,44 @@ def audio(request: Request, key: str, mp3: int = 0,
     #
     # ⚠️ Vẫn dưới `require_login`, cùng lý do với `voice/mau/`: không phải để
     #    giấu nội dung, mà để đường này không thành một CDN mở.
-    la_nghe_thu_chung = (key.startswith("voice/chung/")
-                         and ten_tep.endswith(".wav"))
+    #
+    # 🔴 FIX ROUND 2/5 (Task 10, 2026-09-11, controller ruling) — TẠI SAO
+    #    TIỀN TỐ NÀY PHẢI TRA CSDL, KHÁC MỌI TIỀN TỐ KHÁC Ở TRÊN.
+    #
+    #    Ba nguyên nhân ĐỘC LẬP có thể làm một giọng không còn xứng đáng ở kho
+    #    chung nữa TRONG KHI tệp nghe thử của nó vẫn còn nguyên trong kho
+    #    (`Storage` không có API liệt-kê-theo-tiền-tố để dọn — xem
+    #    `giong_vong_doi.khoa_can_xoa`): thu hồi, đổi làn (cả hai đã xoá tệp
+    #    TẠI NGUỒN ở fix round 1/5 — `giong_vong_doi.khoa_da_biet`,
+    #    `nghe_thu.dung_lai_cho_giong`), và HẠ LICENSE qua
+    #    `tools/soat_giong.py` (công cụ vận hành đó không chạm kho, và sẽ
+    #    KHÔNG BAO GIỜ là công cụ cuối cùng từng chạm tới cột `license_status`
+    #    — không có cách nào chắc MỌI công cụ tương lai đều nhớ dọn kho).
+    #
+    #    ⭐ Gác cổng tại ĐÂY — nơi DUY NHẤT phục vụ tệp — đóng CẢ BA đường
+    #       (và mọi đường tương lai chưa ai viết) bằng MỘT chốt, thay vì phải
+    #       nhớ dọn kho ở từng nơi ghi. Tệp cũ có thể còn sót lại trong kho
+    #       (residue vô hại — không đường nào phục vụ nó nữa), nhưng không
+    #       còn *đọc được*, và đọc được mới là thứ gây hại.
+    #
+    #    ⚠️ Cái giá là ĐÚNG MỘT truy vấn theo index `public_id`
+    #       (`tham_chieu.tim_profile`, hàm ĐÃ CÓ — không viết truy vấn mới),
+    #       và chỉ chạy khi khoá THẬT SỰ mang tiền tố này. Không đáng giữ
+    #       nguyên tắc "không CSDL" bằng giá một giọng đã thu hồi/hạ license
+    #       vẫn phát được cho bất kỳ ai đoán đúng khoá.
+    #
+    #    ⛔ 404 CHO CẢ "không tồn tại" LẪN "không còn hợp lệ" — CÙNG MỘT PHẢN
+    #       HỒI (`_giong_chung_dang_hop_le` trả `bool`, không trả lý do). Một
+    #       mã khác cho "có tồn tại nhưng hết hợp lệ" là để lộ trạng thái nội
+    #       bộ (license, đã thu hồi…) cho bất kỳ ai đoán đúng khoá.
+    la_nghe_thu_chung = False
+    if key.startswith("voice/chung/") and ten_tep.endswith(".wav"):
+        doan = key.split("/")
+        # `nghe_thu.khoa_chung` luôn dựng ĐÚNG bốn đoạn:
+        # `voice/chung/{public_id}/{PHIEN_BAN}.wav`. Sai hình dạng ⇒ từ chối
+        # thẳng, không đoán `public_id` từ một chuỗi không đúng khuôn.
+        if len(doan) == 4 and doan[2]:
+            la_nghe_thu_chung = _giong_chung_dang_hop_le(doan[2])
 
     if not (la_ket_qua or la_clip_goc or la_nghe_thu_mau or la_nghe_thu_rieng
             or la_nghe_thu_chung):

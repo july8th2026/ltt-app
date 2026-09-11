@@ -235,6 +235,99 @@ def test_giong_chung_KHONG_co_preview_thi_KHONG_hien_nut(khach):
     assert m is None, "khong duoc dung nut nghe thu khi chua co tep preview"
 
 
+# ── Fix round 2/5 — CỔNG TẠI CỬA ĐỌC (`_p_audio.py`), MỘT chỗ chặn CẢ thu
+#    hồi, đổi làn, hạ license (`tools/soat_giong.py`) lẫn mọi đường tương lai
+#    chưa ai viết. Xem chú thích ở `_giong_chung_dang_hop_le`. ──────────────
+
+def _dat_license(pid: str, license_status: str) -> None:
+    """Đặt `license_status` trực tiếp trong CSDL — mô phỏng một lượt
+    `tools/soat_giong.py tu-choi`/`thieu-bang-chung` (công cụ đó KHÔNG chạm
+    kho, nên tệp preview vẫn còn nguyên sau lệnh này — đúng ca cần kiểm)."""
+    import platform_core.db as dbmod
+    from apps.ltt_voice.tables import VoiceProfile
+    from sqlalchemy import select
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        ho_so = db.execute(select(VoiceProfile).where(
+            VoiceProfile.public_id == pid)).scalar_one()
+        ho_so.license_status = license_status
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+def test_cong_doc_CHO_giong_chung_license_ok(khach):
+    """Đối chứng cơ bản, viết lại tường minh cho bộ phép kiểm round 2/5: một
+    giọng kho chung `license_status="ok"` + `active` đọc được (200)."""
+    client, uid = khach
+    from apps.ltt_voice import nghe_thu
+    pid = _tao_giong_chung(ngon_ngu="vi")
+    _dat_preview_chung(pid)
+    khoa = nghe_thu.khoa_chung(pid)
+    assert client.get(f"/ltt-voice/audio/{khoa}").status_code == 200
+
+
+def test_cong_doc_TU_CHOI_khi_license_HA_du_tep_VAN_CON(khach):
+    """🔴 MỆNH ĐỀ TRUNG TÂM round 2/5. `tools/soat_giong.py` hạ
+    `license_status` khỏi `"ok"` (tu-choi/thieu-bang-chung) KHÔNG chạm kho —
+    tệp preview vẫn còn nguyên. Trước fix, `_p_audio.py` chỉ kiểm hình dạng
+    khoá nên vẫn phát 200. Cổng đọc mới phải tự tra CSDL và từ chối, BẤT KỂ
+    tệp có tồn tại trên kho hay không."""
+    client, uid = khach
+    from apps.ltt_voice import nghe_thu
+    from platform_core.storage import get_storage
+
+    pid = _tao_giong_chung(ngon_ngu="vi")
+    _dat_preview_chung(pid)
+    khoa = nghe_thu.khoa_chung(pid)
+    assert client.get(f"/ltt-voice/audio/{khoa}").status_code == 200
+
+    _dat_license(pid, "tu_choi")
+
+    assert get_storage().exists(khoa), (
+        "test sai gia thiet: tools/soat_giong.py khong dong nao xoa kho, "
+        "nen tep PHAI con nguyen o day de phep kiem co y nghia")
+    assert client.get(f"/ltt-voice/audio/{khoa}").status_code == 404, (
+        "ha license roi ma van phat duoc ban nghe thu kho chung CU")
+
+
+def test_cong_doc_TU_CHOI_sau_khi_thu_hoi(khach):
+    """Cùng cổng, đường vào KHÁC (thu hồi thay vì hạ license) — chốt rằng
+    cổng đọc tự nó đã đủ để chặn, không phụ thuộc riêng vào việc fix round
+    1/5 có xoá tệp kịp hay không."""
+    client, uid = khach
+    from apps.ltt_voice import nghe_thu
+
+    pid = _tao_giong_chung(owner_id=uid, ngon_ngu="en")
+    _dat_preview_chung(pid)
+    khoa = nghe_thu.khoa_chung(pid)
+    assert client.get(f"/ltt-voice/audio/{khoa}").status_code == 200
+
+    r = client.post(f"/ltt-voice/giong/{pid}/xoa",
+                    data={"csrf_token": _csrf(client)})
+    assert r.status_code in (200, 303), r.text
+    assert client.get(f"/ltt-voice/audio/{khoa}").status_code == 404
+
+
+def test_cong_doc_TU_CHOI_khoa_khong_dung_hinh_dang(khach):
+    """Một khoá mang tiền tố `voice/chung/` nhưng KHÔNG đúng khuôn 4 đoạn của
+    `nghe_thu.khoa_chung` (`voice/chung/{public_id}/{PHIEN_BAN}.wav`) phải bị
+    từ chối thẳng — không được ĐOÁN `public_id` từ một chuỗi sai khuôn."""
+    client, uid = khach
+    for khoa_la in (
+        "voice/chung/khong-du-doan.wav",             # 3 doan, thieu 1
+        "voice/chung/ma-lam/them/mot/doan/x.wav",     # qua 4 doan
+        "voice/chung//x.wav",                          # public_id RONG
+    ):
+        r = client.get(f"/ltt-voice/audio/{khoa_la}")
+        assert r.status_code == 404, f"{khoa_la!r} -> {r.status_code}"
+
+
 # ── IMPORTANT 1 (fix round 1/5) — thu hồi / đổi làn PHẢI xoá luôn preview
 #    kho chung, không chỉ preview riêng. Xem khối chú thích ở
 #    `giong_vong_doi.khoa_da_biet` và `nghe_thu.dung_lai_cho_giong`. ─────────
