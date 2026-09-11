@@ -382,6 +382,26 @@ phạm vi đã hẹp lại — nó nói về hàm `doi_chieu`, không nói về 
 toàn theo luật 1, nhưng chưa tự khai được làn. Mở nó là một thay đổi **hợp đồng
 API công khai** (kho 24 route đóng băng), nên để chủ sản phẩm quyết.
 
+**Sửa đổi 2026-09-11 (D002, RC1):** lời khai của khách chỉ được **THẮT** hợp
+đồng, không bao giờ **NỚI** nó. Trước bản sửa này, khai đúng làn giọng miễn cho
+văn bản khỏi mọi phép đoán — nên khai `vi` rồi dán một đoạn CHẮC CHẮN là tiếng
+Anh vẫn lọt qua, và giọng Việt đọc tiếng Anh: khách trả tiền cho đúng lỗi chất
+lượng mà Q121 dựng ra để chặn. Bảng năm ô ở trên có thêm một ô:
+
+| Làn giọng | Khai | Đoán (chắc) | Phán quyết |
+|---|---|---|---|
+| `vi` | `vi` | `en` | CHẶN `voice_language_mismatch`, `nguon=doan` |
+
+Tức: khai đúng làn giọng **không còn** tắt được phép đoán — phép đoán vẫn chạy
+và vẫn chặn nếu nó chắc và trái làn. Chiều duy nhất lời khai được phép làm là
+chặn thêm (khai lệch làn giọng ⇒ chặn ngay, `nguon=khai_bao`, như cũ). Văn bản
+mập mờ (không đủ dấu hiệu cho `doan_ngon_ngu`) vẫn không bao giờ là thứ chặn —
+luật 1 ở trên không đổi. Thẩm quyền vẫn chỉ một: `lan_ngon_ngu.quyet_dinh`, và
+danh sách làn vẫn chỉ một nguồn: `lan_ngon_ngu.LAN_HOP_LE` (INV-02, T-16).
+Chốt bằng: `tests/test_355_hop_dong_lan_giong.py::test_khai_bao_chi_THAT_khong_NOI`,
+`tests/test_522_mot_tham_quyen_lan.py`. Chi tiết:
+`docs/superpowers/specs/2026-09-11-ltt-voice-system-reconciliation-design.md` §4.
+
 ## 2. Ràng buộc bất biến
 
 Những điều dưới đây **không được vi phạm**, kể cả khi tiện tay:

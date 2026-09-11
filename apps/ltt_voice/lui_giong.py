@@ -52,6 +52,8 @@ from dataclasses import dataclass
 
 from platform_core.i18n import N_
 
+from . import lan_ngon_ngu
+
 #: Cảnh báo hiển thị cho khách. Điền nhãn bằng `dien_canh_bao` — cùng lý do
 #: `lan_ngon_ngu` tách khuôn khỏi phép điền: `N_()` phải thấy một chuỗi HẰNG
 #: thì bộ trích mới lấy được nó vào `.po`, nên đừng nối bằng f-string.
@@ -99,7 +101,7 @@ def chon(*, gioi: str, ngon_ngu: str, vung: str = "", phong_cach: str = "",
        "cùng giới với một giới không biết", và đoán hộ là đúng cái lỗi mà cả
        tệp này đi sửa.
     """
-    if gioi not in ("nam", "nu") or ngon_ngu not in ("vi", "en"):
+    if gioi not in ("nam", "nu") or ngon_ngu not in lan_ngon_ngu.LAN_HOP_LE:
         return None
 
     # ⭐ Sắp theo `ma` để phép chọn TẤT ĐỊNH. Cùng đầu vào phải cho cùng giọng
@@ -124,13 +126,15 @@ def chon(*, gioi: str, ngon_ngu: str, vung: str = "", phong_cach: str = "",
 def tu_giong_mau() -> tuple:
     """Ứng viên dựng từ 20 giọng mẫu của engine.
 
-    ⛔ Cả 20 đều thuộc làn `vi` — xem chú thích *"Preset là giọng người nói
-       TIẾNG VIỆT ba miền"* ở `features.giai_giong`. Gán cứng `"vi"` ở đây là
-       nói ra sự thật ấy tại chỗ nó được dùng, chứ không phải một mặc định lười.
+    🔴 T-16: làn ĐỌC từ `giong_mau.lan_cua`, không còn gán cứng `"vi"`. Cả 20
+       preset hiện có đều thuộc làn `vi` (xem *"Preset là giọng người nói TIẾNG
+       VIỆT ba miền"* ở `features.giai_giong`), nên hành vi hôm nay không đổi —
+       nhưng ngày kho preset có thêm giọng làn `en`, hàm này thấy đúng làn của
+       nó mà không cần ai quay lại sửa một hằng số gõ tay.
     """
     from . import giong_mau
-    return tuple(UngVien(ma=g.ma, gioi=g.gioi, ngon_ngu="vi", vung=g.vung,
-                         phong_cach=g.phong_cach)
+    return tuple(UngVien(ma=g.ma, gioi=g.gioi, ngon_ngu=giong_mau.lan_cua(g.ma),
+                         vung=g.vung, phong_cach=g.phong_cach)
                  for g in giong_mau.DANH_SACH)
 
 

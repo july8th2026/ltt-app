@@ -236,18 +236,30 @@ def test_auto_giai_ve_mot_lan_CU_THE():
                 assert pq.nguon in (L.NGUON_DOAN, L.NGUON_THEO_GIONG)
 
 
-def test_khai_bao_THANG_phep_doan():
-    """Khách khai `en` cho một giọng `vi` ⇒ chặn, kể cả khi máy đoán ra `vi`.
+def test_khai_bao_chi_THAT_khong_NOI():
+    """D002 (2026-09-11): lời khai chỉ THÊM ràng buộc, không bao giờ miễn trừ.
 
-    ⭐ Đây là nhánh mạnh nhất của hợp đồng, và trước 2026-09-10 nó **chưa từng
-       chạy ở cửa thật**: route bỏ `ngon_ngu` ra khỏi `params` lúc nộp job.
+    ⭐ Trước D002 test này tên là `test_khai_bao_THANG_phep_doan` và nó GHIM một
+       đường vòng: khai `vi` rồi dán văn bản tiếng Anh ⇒ giọng Việt đọc tiếng Anh,
+       khách trả tiền cho đúng lỗi chất lượng Q121 dựng ra để chặn.
     """
+    # Khai lệch giọng ⇒ chặn, nguồn là lời khai (như cũ).
     pq = L.quyet_dinh(L.LAN_VI, VI_RO, "en")
     assert not pq.cho_phep and pq.nguon == L.NGUON_KHAI_BAO
 
-    # Và chiều ngược lại: khai đúng làn thì cho qua dù văn bản trông khác.
+    # 🔴 Ô MỚI: khai ĐÚNG làn giọng nhưng văn bản CHẮC là làn kia ⇒ chặn.
     pq = L.quyet_dinh(L.LAN_VI, EN_RO, "vi")
+    assert not pq.cho_phep
+    assert pq.nguon == L.NGUON_DOAN and pq.ma_loi == L.MA_LOI_LECH_LAN
+    assert pq.lan_text == L.LAN_EN
+
+    # Văn bản không dấu, chỉ MỘT từ chức năng tiếng Anh ("the") ⇒ đoán không
+    # chắc ⇒ lời khai đứng ⇒ cho. Đây là ca khách gõ không dấu phải KHÔNG bị hại.
+    pq = L.quyet_dinh(L.LAN_VI, "Ban co the mua ve o day", "vi")
     assert pq.cho_phep and pq.nguon == L.NGUON_KHAI_BAO
+
+    # Khai + đoán + giọng cùng một làn ⇒ cho.
+    assert L.quyet_dinh(L.LAN_EN, EN_RO, "en").cho_phep
 
 
 def test_van_ban_map_mo_KHONG_BAO_GIO_bi_chan():

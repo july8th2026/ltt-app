@@ -15097,3 +15097,11 @@ msgstr "This snapshot cannot be used to restore. Please pick another one."
 #: apps/vps/routes.py
 msgid "lý do"
 msgstr "reason"
+
+#: apps/ltt_voice
+msgid "Chuyển văn bản thành giọng nói tiếng Việt tự nhiên. Tạo giọng riêng của bạn từ một clip ba tới tám giây."
+msgstr "Turn text into natural Vietnamese speech. Create your own voice from a three-to-eight-second clip."
+
+#: apps/ltt_voice
+msgid "Chọn ngôn ngữ của văn bản. Giọng phải cùng ngôn ngữ; lượt lệch sẽ bị từ chối trước khi trừ credit."
+msgstr "Choose the language of your script. The voice must match it; a mismatched request is refused before any credit is charged."

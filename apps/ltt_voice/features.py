@@ -175,7 +175,7 @@ def chuan_hoa(params: dict) -> YeuCau:
     # Giá trị lạ -> `auto`. Một tham số hỏng không được làm hỏng job, và
     # `auto` là hành vi cũ nên nó là lối lui đúng.
     ngon_ngu = str(p.get("ngon_ngu") or "auto").strip().lower()
-    if ngon_ngu not in ("auto", "vi", "en"):
+    if ngon_ngu not in ("auto", *lan_ngon_ngu.LAN_HOP_LE):
         ngon_ngu = "auto"
 
     from . import toc_do as _toc_do

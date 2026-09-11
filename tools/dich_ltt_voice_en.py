@@ -228,6 +228,12 @@ DICH = {
         "The ownership attestation for a voice: who, when, which version of the "
         "terms, which file hash. This is the only table that can answer a legal "
         "question, and it is why consent has to be DATA rather than a tickbox.",
+
+    # D002 / T-15 (2026-09-11): cau o o Ngon ngu van ban, Studio.
+    "Chọn ngôn ngữ của văn bản. Giọng phải cùng ngôn ngữ; lượt lệch sẽ bị "
+    "từ chối trước khi trừ credit.":
+        "Choose the language of your script. The voice must match it; a "
+        "mismatched request is refused before any credit is charged.",
 }
 
 
@@ -237,7 +243,12 @@ def esc(s: str) -> str:
 
 def main() -> int:
     po = pathlib.Path("locale/en/LC_MESSAGES/messages.po")
-    noi_dung = po.read_text(encoding="utf-8")
+    # ⛔ ĐỌC/GHI VỚI `newline=""`: mặc định `open()`/`Path.write_text()` trên
+    #    Windows DỊCH `\n` thành `\r\n` khi ghi (và ngược lại khi đọc ở chế độ
+    #    text) — bẫy đã ghi trong bộ nhớ dự án (`write_text tren Windows doi ket
+    #    dong`). Tệp `.po` này đang LF; một lượt chạy script không giữ
+    #    `newline=""` sẽ lật CẢ TỆP sang CRLF dù nội dung chữ không đổi gì.
+    noi_dung = po.read_text(encoding="utf-8", newline="")
     them, bo_qua = [], 0
     for vi, en in DICH.items():
         if 'msgid "%s"' % esc(vi) in noi_dung:
@@ -245,7 +256,8 @@ def main() -> int:
             continue
         them.append('\n#: apps/ltt_voice\nmsgid "%s"\nmsgstr "%s"\n'
                     % (esc(vi), esc(en)))
-    po.write_text(noi_dung.rstrip("\n") + "\n" + "".join(them), encoding="utf-8")
+    po.write_text(noi_dung.rstrip("\n") + "\n" + "".join(them),
+                  encoding="utf-8", newline="")
     print("da them %d muc, bo qua %d (da co san)" % (len(them), bo_qua))
     return 0
 

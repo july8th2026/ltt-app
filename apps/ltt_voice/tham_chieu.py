@@ -148,7 +148,7 @@ def danh_sach(db, *, owner_id: str, gom_tat: bool = False,
     # ⛔ Mặc định RỖNG = không lọc. Một bộ lọc bật sẵn sẽ giấu mất giọng của
     #    chính khách nếu làn của nó chưa được đặt — và `ngon_ngu` từng là một
     #    cột không ai đọc nên dữ liệu cũ hoàn toàn có thể trống hoặc sai.
-    if ngon_ngu in ("vi", "en"):
+    if ngon_ngu in lan_ngon_ngu.LAN_HOP_LE:
         q = q.where(VoiceProfile.ngon_ngu == ngon_ngu)
     if not gom_tat:
         q = q.where(VoiceProfile.trang_thai != "revoked")

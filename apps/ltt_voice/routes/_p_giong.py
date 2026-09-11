@@ -101,7 +101,7 @@ async def tao_giong(request: Request, ten: str = Form(""),
         _gioi = gioi.strip().lower()
         _gioi = _gioi if _gioi in ("nam", "nu") else ""
         _lan = ngon_ngu.strip().lower()
-        _lan = _lan if _lan in ("vi", "en") else "vi"
+        _lan = _lan if _lan in lan_ngon_ngu.LAN_HOP_LE else "vi"
         ho_so = VoiceProfile(owner_id=uid, ten_hien_thi=ten.strip(),
                              gioi=_gioi, ngon_ngu=_lan,
                              trang_thai="dang_ghi_danh")

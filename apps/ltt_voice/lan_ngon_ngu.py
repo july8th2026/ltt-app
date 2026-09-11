@@ -268,8 +268,10 @@ def giai_lan_van_ban(text: str, khai_bao: str = "",
        hai câu đó cho ra **cùng một hành vi**: không chặn. Khác biệt duy nhất là
        nay ta nói ra vì sao không chặn, và nói được thành dữ liệu (`nguon`).
 
-    ⛔ Nên `auto` KHÔNG BAO GIỜ tự nó chặn ai. Muốn biết một lượt bị chặn vì cái
-       gì, đọc `nguon`: chỉ `khai_bao` và `doan` mới chặn được.
+    🔴 D002 (2026-09-11): `quyet_dinh` không còn dùng hàm này để phán — xem
+       docstring của `quyet_dinh`. Ở đó lời khai chỉ THẮT (thêm ràng buộc), còn
+       ở đây nấc ① vẫn là "khai thắng đoán" cho câu hỏi khác: *văn bản giải ra
+       làn nào*. Hai câu hỏi khác nhau, nên được phép trả lời khác nhau.
     """
     khai = chuan_lan(khai_bao)
     if khai:
@@ -301,17 +303,17 @@ class PhanQuyet:
 
 
 def quyet_dinh(lan_giong: str, text: str, khai_bao: str = "") -> PhanQuyet:
-    """🔴 THẨM QUYỀN DUY NHẤT của hợp đồng tương thích. Bốn luật, không hơn.
+    """🔴 THẨM QUYỀN DUY NHẤT của hợp đồng tương thích.
 
-    ====================  ====================  ==========================
-    Làn GIỌNG             Làn VĂN BẢN (đã giải)  Phán quyết
-    ====================  ====================  ==========================
-    ``vi``                ``vi``                cho phép
-    ``en``                ``en``                cho phép
-    ``vi``                ``en``                CHẶN ``voice_language_mismatch``
-    ``en``                ``vi``                CHẶN ``voice_language_mismatch``
-    ``""`` (chưa rõ)      —                     CHẶN ``voice_language_unknown``
-    ====================  ====================  ==========================
+    ====================  ==========================================================
+    Điều kiện              Phán quyết
+    ====================  ==========================================================
+    giọng chưa rõ làn      CHẶN ``voice_language_unknown``
+    khai ≠ làn giọng       CHẶN ``voice_language_mismatch``, ``nguon=khai_bao``
+    khai == làn giọng
+      + đoán CHẮC ≠ làn giọng  CHẶN ``voice_language_mismatch``, ``nguon=doan`` (D002)
+    còn lại, cùng làn      cho phép
+    ====================  ==========================================================
 
     ⛔ Bảng này KHÔNG có ô "song ngữ". Engine đọc được cả hai làn, nhưng *đọc
        được* và *đọc hay* là hai câu khác nhau, và thứ khách trả tiền là câu thứ
@@ -330,12 +332,29 @@ def quyet_dinh(lan_giong: str, text: str, khai_bao: str = "") -> PhanQuyet:
         return PhanQuyet(cho_phep=False, ma_loi=MA_LOI_LAN_KHONG_RO,
                          mau=MAU_LAN_KHONG_RO)
 
-    lan_t, nguon = giai_lan_van_ban(text, khai_bao, mac_dinh=lan_g)
-    if lan_t == lan_g:
-        return PhanQuyet(cho_phep=True, lan_giong=lan_g, lan_text=lan_t,
-                         nguon=nguon)
-    return PhanQuyet(cho_phep=False, lan_giong=lan_g, lan_text=lan_t,
-                     nguon=nguon, ma_loi=MA_LOI_LECH_LAN, mau=MAU_LECH_LAN)
+    khai = chuan_lan(khai_bao)
+    if khai and khai != lan_g:
+        return PhanQuyet(cho_phep=False, lan_giong=lan_g, lan_text=khai,
+                         nguon=NGUON_KHAI_BAO, ma_loi=MA_LOI_LECH_LAN,
+                         mau=MAU_LECH_LAN)
+    # 🔴 D002 (2026-09-11): phép đoán CHẮC vẫn chạy khi khách đã khai. Lời khai
+    #    chỉ được THÊM ràng buộc; nó không bao giờ là giấy miễn trừ cho một văn
+    #    bản mà máy biết chắc là làn kia. Trước D002, khai `vi` rồi dán văn bản
+    #    tiếng Anh CHẮC chắn lọt qua — giọng Việt đọc tiếng Anh, khách trả tiền
+    #    cho đúng lỗi chất lượng mà Q121 dựng ra để chặn.
+    doan = doan_ngon_ngu(text)
+    if doan and doan != lan_g:
+        return PhanQuyet(cho_phep=False, lan_giong=lan_g, lan_text=doan,
+                         nguon=NGUON_DOAN, ma_loi=MA_LOI_LECH_LAN,
+                         mau=MAU_LECH_LAN)
+    if khai:
+        return PhanQuyet(cho_phep=True, lan_giong=lan_g, lan_text=khai,
+                         nguon=NGUON_KHAI_BAO)
+    if doan:
+        return PhanQuyet(cho_phep=True, lan_giong=lan_g, lan_text=doan,
+                         nguon=NGUON_DOAN)
+    return PhanQuyet(cho_phep=True, lan_giong=lan_g, lan_text=lan_g,
+                     nguon=NGUON_THEO_GIONG)
 
 
 def cau_cho_khach(pq: PhanQuyet) -> str:
