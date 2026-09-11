@@ -187,8 +187,21 @@ def test_cat_o_dau_CAU_chu_khong_giua_tu():
 
 
 def test_tran_ngu_canh_hop_ly_so_voi_cua_so_THI_GIAC():
+    """Cua so thi giac KHONG duoc lon hon cua so van ban.
+
+    🔴 DẤU `<` ĐỔI THÀNH `<=` NGÀY 12/09/2026 (D02, dual-model 2.3), và đó
+       là sửa **chiều đo**, không phải nới lỏng.
+
+       Bất biến cần canh là: *đừng xếp một lô khung hình theo trần của model
+       VĂN BẢN*, tức cửa sổ thị giác **không được lớn hơn**. Dấu `<` đòi
+       thêm một điều khác hẳn — *hai model phải khác cỡ* — và điều đó chỉ
+       đúng chừng nào hai hồ sơ còn nạp `-c` khác nhau. `qwen38-vision` đã gỡ;
+       hai model công khai nay chạy cùng một ngữ cảnh engine, nên dấu `<`
+       đỏ vì bản khai ĐÚNG — và cách duy nhất làm nó xanh lại là khai sai
+       một trong hai con số.
+    """
     assert hc.NGU_CANH_MOI_CANH <= 4000
-    assert ai.cua_so_ngu_canh(ai.DOC_CANH) < ai.cua_so_ngu_canh(ai.DICH_THUAT)
+    assert 0 < ai.cua_so_ngu_canh(ai.DOC_CANH) <= ai.cua_so_ngu_canh(ai.DICH_THUAT)
 
 
 # ══════════════════════════════════════════════════════════════════════════════

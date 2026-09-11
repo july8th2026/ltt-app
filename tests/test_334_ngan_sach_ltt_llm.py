@@ -630,15 +630,26 @@ class TestCamCliKhopNganSach:
         return mod
 
     #: Bí danh công khai → id nội bộ, để đối chiếu **theo từng model**.
-    _THEO_ALIAS = {"ltt_llm": "qwen38-api", "ltt_llm_vision": "qwen38-vision"}
+    #:
+    #: ⛔ ĐỌC TỪ `canonical.ALIAS_SANG_ID`, KHÔNG GÕ LẠI (D02, dual-model 2.3).
+    #:    Bản cũ gõ tay `{"ltt_llm": ..., "ltt_llm_vision": ...}`, nên ngày tên
+    #:    công khai bị cắt thì phép kiểm đỏ vì **chính nó** đã cũ — chứ không vì
+    #:    bộ cài sai. Một bảng chép tay ở đây là bản chân lý thứ hai cho đúng
+    #:    câu hỏi mà `ALIAS_SANG_ID` sinh ra để trả lời.
+    @property
+    def _THEO_ALIAS(self):
+        from platform_core.llm.canonical import ALIAS_SANG_ID
+        return dict(ALIAS_SANG_ID)
 
     def test_cua_so_va_tran_ra_khop_nguon_chan_ly(self):
         cc = self._cam_cli()
         assert cc.CUA_SO_NGU_CANH == ngan_sach.CONG_BO_CHO_CLIENT
         assert cc.TOKEN_RA_TRAN == ngan_sach.TOKEN_RA_TRAN
         assert cc.NEN_HOI_THOAI == ngan_sach.NEN_CHO_CLIENT
-        assert cc.CUA_SO_NGU_CANH_VISION == ngan_sach.cong_bo_cua("qwen38-vision")
-        assert cc.NEN_HOI_THOAI_VISION == ngan_sach.nen_cua("qwen38-vision")
+        from platform_core.llm.canonical import ALIAS_SANG_ID
+        id_35 = ALIAS_SANG_ID["ltt-3.5"]
+        assert cc.CUA_SO_NGU_CANH_35 == ngan_sach.cong_bo_cua(id_35)
+        assert cc.NEN_HOI_THOAI_35 == ngan_sach.nen_cua(id_35)
 
     def test_ca_HAI_client_deu_duoc_noi_that_cua_so(self):
         """Codex qua `model_catalog_json`; Claude Code qua biến môi trường.

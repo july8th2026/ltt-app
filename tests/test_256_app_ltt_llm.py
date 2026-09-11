@@ -66,7 +66,10 @@ def test_cua_so_ngu_canh_khop_moc_da_do():
     assert CUA_SO_NGU_CANH == CUA_SO_MODEL
     engine_k = f"{round(CUA_SO_MODEL / 1000)}K"
     models = MANIFEST.tools[0].api_contract["models"]
-    for ten in ("ltt_llm", "ltt_llm_vision"):
+    # ⛔ VONG TREN CHINH BAN KHAI, khong tren mot danh sach ten go tay: D02 cat
+    #    `ltt_llm`/`ltt_llm_vision` ngay 11/09/2026 va mot danh sach go tay o
+    #    day se do vi CHINH NO da cu, chu khong vi mo ta sai.
+    for ten in models:
         mo_ta = models[ten]["description"]
         cua_so = f"{round(cong_bo_cua(models[ten]['id']) / 1000)}K"
         assert cua_so in mo_ta, (ten, cua_so, mo_ta)
@@ -97,7 +100,8 @@ def test_tool_len_duoc_catalog_cong_khai():
                                   "LTT_PUBLIC_API_TOOLS": "text.chat"})
     cat = build_catalog(cfg)
     assert "text.chat" in [t.name for t in cat]
-    assert {m.name for m in build_models(cat)} >= {"ltt_llm", "ltt_llm_vision"}
+    from platform_core.llm.canonical import ALIAS_SANG_ID
+    assert {m.name for m in build_models(cat)} >= set(ALIAS_SANG_ID)
 
 
 def test_khong_bat_co_thi_khong_len_catalog():

@@ -118,9 +118,14 @@ def test_planner_GIANH_SUAT_truoc_khi_goi_model(monkeypatch):
 
     planner._goi_model(None, "prompt thu")
 
-    assert da_giu.get("resource") == "llm_remote", (
+    # ⛔ ĐỌC TỪ BẢN KHAI, không gõ `"llm_remote"`. Từ dual-model 2.3 sức chứa
+    #    khai THEO MODEL, nên một tên gõ tay ở đây đỏ vì chính nó đã cũ — và
+    #    ngày nó được "sửa" bằng một tên gõ tay khác, khuyết tật quay lại.
+    from platform_core.llm.canonical import MODEL_MAC_DINH, tai_nguyen_nha
+    suc = tai_nguyen_nha(MODEL_MAC_DINH)
+    assert da_giu.get("resource") == suc.resource, (
         "khong gianh suat -> day la mot duong toi may B lach admission")
-    assert da_giu.get("slots") == 1
+    assert da_giu.get("slots") == suc.slots
     assert str(da_giu.get("holder", "")).startswith("planner:")
     assert "ltt_llm" in goi["thu_tu_provider"], "co suat ma van bo model nha"
     assert goi["model_theo_provider"]["ltt_llm"] == planner._model_nha()

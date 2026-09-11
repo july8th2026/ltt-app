@@ -24,11 +24,24 @@ def test_bi_danh_cu_la_cung_mot_so():
 
 
 def test_manifest_doc_tu_nguon():
+    """🔴 HỎI BẰNG `admission_cho(model)`, KHÔNG BẰNG BỘ BA TĨNH (dual-model 2.3).
+
+    Từ 2.3 `text.chat` khai `admission_theo_model`, nên `tool.admission_slots`
+    là **0** và `tool.admission_token_pool` là **0** — bản cũ của phép kiểm này
+    sẽ đỏ, và đỏ vì một lý do sai: nó đang đọc một trường không còn mang câu trả
+    lời chứ không phải vì ai gõ số tay.
+
+    Điều nó ĐO vẫn nguyên: bản khai đọc từ `ngan_sach.py`, không gõ số.
+    """
     from apps.ltt_llm.manifest import MANIFEST
 
     tool = MANIFEST.tools[0]
-    assert tool.admission_slots == ngan_sach.SO_SLOT_MAY_B
-    assert tool.admission_token_pool == ngan_sach.POOL_KV_MAY_B
+    for model, pool in (("ltt-3.8", ngan_sach.POOL_38),
+                        ("ltt-3.5", ngan_sach.POOL_35)):
+        suc = tool.admission_cho(model)
+        assert suc is not None, f"{model} khong co trong admission_theo_model"
+        assert suc.slots == ngan_sach.SO_SLOT
+        assert suc.token_pool == pool
 
 
 def test_manifest_khong_go_so_tay():
@@ -61,8 +74,10 @@ def test_chieu_catalog_mang_pool_nhung_khong_lo_ra_khach():
     from platform_core.public_api.catalog import project_tool
 
     projected = project_tool(MANIFEST, MANIFEST.tools[0])
-    assert projected.admission_token_pool == ngan_sach.POOL_KV_MAY_B
+    assert projected.admission_cho("ltt-3.8").token_pool == ngan_sach.POOL_38
     assert "admission_token_pool" not in projected.to_public_dict()
+    assert "admission_theo_model" not in projected.to_public_dict(), (
+        "ban chieu cong khai dang lo ten tai nguyen noi bo")
 
 
 def test_tool_khac_mac_dinh_khong_ap_ngan_sach_token():

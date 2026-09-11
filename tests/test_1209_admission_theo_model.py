@@ -129,8 +129,8 @@ def test_catalog_khong_lo_admission_theo_model_ra_khach():
 
     goc = MANIFEST.tools[0]
     anh_xa = {
-        "ltt-3.8": AdmissionModel("llm_remote", 4, 1000, "rtx3090", "mac_dinh"),
-        "ltt-3.5": AdmissionModel("llm_remote", 4, 500, "rtx3090", "mac_dinh"),
+        "ltt-3.8": AdmissionModel("tn_bi_mat_lon", 4, 1000, "rtx3090", "mac_dinh"),
+        "ltt-3.5": AdmissionModel("tn_bi_mat_nho", 4, 500, "rtx5060", "phu"),
     }
     tool_moi = dataclasses.replace(goc, admission_theo_model=anh_xa)
 
@@ -138,8 +138,13 @@ def test_catalog_khong_lo_admission_theo_model_ra_khach():
     assert projected.admission_theo_model == anh_xa
     cong_khai = projected.to_public_dict()
     assert "admission_theo_model" not in cong_khai
-    assert "ltt-3.8" not in str(cong_khai)
-    assert "ltt-3.5" not in str(cong_khai)
+    # ⚠️ DÒ BẰNG **GIÁ TRỊ**, KHÔNG BẰNG KHOÁ. Trước 2.3 phép kiểm này dò
+    #    `"ltt-3.8" not in str(...)` — và từ 2.3 `ltt-3.8` là một bí danh **được
+    #    công bố**, nên phép dò ấy đỏ vì đúng thứ đáng lẽ phải có mặt. Thứ không
+    #    được rò là **tên tài nguyên và nhóm cư trú** nội bộ.
+    for bi_mat in ("tn_bi_mat_lon", "tn_bi_mat_nho", "rtx3090", "rtx5060"):
+        assert bi_mat not in str(cong_khai), (
+            f"ban chieu cong khai dang lo metadata van hanh: {bi_mat}")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -506,7 +511,12 @@ def test_cua_dong_bo_tra_4xx_chu_khong_phai_500_khi_ban_khai_thieu_model(
                 API_V1_PREFIX + "/chat/completions",
                 headers={"Authorization": "Bearer " + token,
                          "Idempotency-Key": uuid.uuid4().hex},
-                json={"model": "ltt_llm", "max_tokens": 100,
+                # 🔴 MODEL **HỢP LỆ** (`ltt-3.8`), bản khai admission thì thiếu.
+                #    Từ 2.3 cửa có một chốt TÊN chạy trước (`kiem_ten_model`),
+                #    nên xin một tên đã cắt (`ltt_llm`) sẽ dừng ở chốt ấy và
+                #    phép kiểm này lặng lẽ thôi đo đường `KeyError` mà nó sinh
+                #    ra để đo — xanh, và rỗng.
+                json={"model": "ltt-3.8", "max_tokens": 100,
                       "messages": [{"role": "user", "content": "xin chao"}]})
         assert r.status_code != 500, r.text
         assert 400 <= r.status_code < 500, r.text

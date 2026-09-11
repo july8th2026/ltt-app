@@ -88,14 +88,34 @@ def test_gioi_han_model_DOC_tu_ban_khai_khong_import_app():
         assert gh[alias]["cong_bo"] == cong_bo
 
 
-def test_hai_model_KHONG_dung_chung_mot_con_so():
-    """Đối chứng cho phép kiểm trên: nếu hai model tình cờ bằng nhau thì phép
-    kiểm kia vẫn xanh khi bản vá F-02 bị hoàn nguyên."""
+def test_moi_alias_cong_bo_con_so_cua_CHINH_NO():
+    """Đối chứng cho phép kiểm trên — và nó đo **nguồn**, không đo **sự khác nhau**.
+
+    🔴 BẢN CŨ ĐÒI HAI CON SỐ PHẢI KHÁC NHAU, và đó là một phép đo **lệch chiều**.
+
+       Nó ra đời để bắt F-02 (alias vision quảng cáo con số của alias text), và
+       lúc ấy hai model tình cờ có cửa sổ khác nhau, nên "khác nhau" trông như
+       một phép đo tốt. Từ D02 (11/09/2026) hai model công khai chạy **cùng một
+       ngữ cảnh engine** — nên phép kiểm cũ đỏ vì bản khai ĐÚNG, và cách duy
+       nhất làm nó xanh lại là nói dối khách về một trong hai con số.
+
+    ⭐ Thứ F-02 thật sự là: *một alias nói con số của model KHÁC*. Mệnh đề ấy
+       viết được mà không cần hai số khác nhau — hỏi thẳng `ngan_sach` theo
+       **id nội bộ của chính alias đó**. Bằng nhau hay không thành chuyện của
+       phần cứng, không còn là điều kiện để phép kiểm có nghĩa.
+    """
+    from apps.ltt_llm import ngan_sach
+    from platform_core.llm.canonical import ALIAS_SANG_ID
+
     gh = dk.gioi_han_model()
-    so = {v["cong_bo"] for v in gh.values()}
-    assert len(so) == len(gh), (
-        "hai alias dang cong bo CUNG mot con so — hoac mot trong hai dang noi "
-        "con so cua model kia")
+    assert gh, "khong alias nao cong bo gioi han — phep kiem nay khong do gi ca"
+    for alias, v in gh.items():
+        noi_bo = ALIAS_SANG_ID.get(alias)
+        if noi_bo is None:          # alias của app khác, không thuộc model nhà
+            continue
+        assert v["cong_bo"] == ngan_sach.cong_bo_cua(noi_bo), (
+            f"{alias} cong bo {v['cong_bo']} nhung cua so that cua {noi_bo} "
+            f"cho {ngan_sach.cong_bo_cua(noi_bo)}")
 
 
 def test_dong_thoi_DOC_tu_admission_slots_cua_ban_khai():

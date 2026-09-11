@@ -28,6 +28,11 @@ from platform_core.public_api.scopes import (SCOPE_JOBS_CREATE, SCOPE_JOBS_READ,
                                              SCOPE_TOOLS_READ)
 from server.api.inventory import API_V1_PREFIX
 
+#: Ten model cong khai, doc tu `canonical` chu KHONG go tay: D02 cat
+#: `ltt_llm`/`ltt_llm_vision` ngay 11/09/2026, va mot ten go tay o day se do
+#: vi CHINH NO da cu chu khong vi cua hong.
+from platform_core.llm.canonical import MODEL_MAC_DINH as MODEL
+
 PEPPER = "stream-test-pepper-" + "s" * 40
 MSG = API_V1_PREFIX + "/messages"
 RSP = API_V1_PREFIX + "/responses"
@@ -111,7 +116,7 @@ def _so_du(user_id):
 
 
 def _than(**g):
-    d = {"model": "ltt_llm", "stream": True, "max_tokens": 500,
+    d = {"model": MODEL, "stream": True, "max_tokens": 500,
          "messages": [{"role": "user", "content": "xin chao"}]}
     d.update(g)
     return d
@@ -168,11 +173,21 @@ def _dat_luong(monkeypatch, khoi=None, *, nem=None, ban=False):
 
 
 def _giu_execution_slot() -> str:
+    """Giữ hết suất của **model mặc định**, đọc tên tài nguyên từ BẢN KHAI.
+
+    ⛔ Trước 11/09/2026 chỗ này gõ `resource="llm_remote"`. Từ dual-model 2.3
+       sức chứa khai **theo model**, nên một tên gõ tay giành tài nguyên không
+       ai dùng: cửa vẫn chạy thông, phép kiểm xanh, và nó thôi đo điều nó sinh
+       ra để đo.
+    """
     from platform_core.llm import admission
+    from platform_core.llm.canonical import tai_nguyen_nha
+
+    suc = tai_nguyen_nha(MODEL)
     gen, db = _session()
     try:
         lease = admission.acquire(
-            db, resource="llm_remote", slots=1, user_id="u-khac",
+            db, resource=suc.resource, slots=suc.slots, user_id="u-khac",
             mode="job", holder_id="job-khac")
         assert lease is not None
         db.commit()
@@ -686,7 +701,7 @@ def test_trang_cli_day_du_ba_cong_cu(api):
     page = api.get("/developers/cli").text
     for manh in ("model_providers.ltt", "ltt.config.toml", "wire_api",
                  "ANTHROPIC_BASE_URL", "ANTHROPIC_DEFAULT_HAIKU_MODEL",
-                 "Third-Party Inference", "inferenceModels", "ltt_llm"):
+                 "Third-Party Inference", "inferenceModels", MODEL):
         assert manh in page, "trang /developers/cli thieu " + repr(manh)
 
 
@@ -710,7 +725,7 @@ def test_cau_hinh_codex_KHONG_dung_id_noi_bo():
     from platform_core.public_api import examples
     ma = examples.codex_profile()
     assert "qwen38" not in ma, "lo id noi bo -> tich hop se ghim vao no"
-    assert examples.CLI_MODEL == "ltt_llm"
+    assert examples.CLI_MODEL == MODEL
 
 
 # ── 9. Giám sát KHÁCH, không phải giám sát máy ──────────────────────────────

@@ -28,6 +28,9 @@ import importlib
 
 import pytest
 
+#: Ten model cong khai, doc tu `canonical` chu KHONG go tay (D02, 2.3).
+from platform_core.llm.canonical import MODEL_MAC_DINH as MODEL
+
 
 class _Db:
     def __init__(self):
@@ -62,6 +65,16 @@ def moi_truong(monkeypatch):
     monkeypatch.setattr(features, "uoc_token_vao", lambda tin: 10)
     monkeypatch.setattr(chat, "_tran_max_tokens", lambda *_: 1024)
     monkeypatch.setattr(thanh_toan, "ma_luot", lambda tien: "ms:thu")
+    # 🔴 THÊM 12/09/2026 — nợ của `ltt-llm dual 1.5` (`4f1966d6`), không phải của
+    #    2.3. Commit ấy chèn một phép **đọc số dư** (402 trước phòng chờ, D04)
+    #    vào `_mot_cuc`, và phép đọc đó chạm CSDL thật — trong khi cả tệp này cố
+    #    ý chạy trên một `_Db` giả. Năm phép kiểm ở đây đã đỏ từ lúc ấy với
+    #    `AttributeError: '_Db' object has no attribute 'execute'`.
+    #
+    # ⛔ Không phải "nới lỏng phép kiểm": số dư KHÔNG phải thứ tệp này đo — nó đo
+    #    *mọi đường thoát khỏi chỗ đặt hold đều trả hold lại*. Một lượt không đủ
+    #    tiền thì chẳng có hold nào để mà kẹt.
+    monkeypatch.setattr(thanh_toan, "du_so_du", lambda db, **kw: True)
     monkeypatch.setattr(thanh_toan, "giu_cho_luot",
                         lambda db, **kw: 7)
     monkeypatch.setattr(thanh_toan, "hoan_luot",
@@ -72,8 +85,8 @@ def moi_truong(monkeypatch):
 
 
 def _goi(st, db):
-    return st._mot_cuc("/v1/messages", {"model": "ltt_llm"}, [{"role": "user",
-                       "content": "hi"}], "ltt_llm", _Principal(), db, None)
+    return st._mot_cuc("/v1/messages", {"model": MODEL}, [{"role": "user",
+                       "content": "hi"}], MODEL, _Principal(), db, None)
 
 
 def test_ngoai_le_LA_MAT_van_phai_hoan_tien(moi_truong):

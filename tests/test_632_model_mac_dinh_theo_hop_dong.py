@@ -56,12 +56,20 @@ def _text_chat(db):
 
 # ── 1. Mặc định là `ltt_llm`, và KHÔNG phải vision ──────────────────────────
 
-def test_mac_dinh_cua_text_chat_la_ltt_llm(db):
+def test_mac_dinh_cua_text_chat_la_model_MAC_DINH_cua_nen_tang(db):
+    """⛔ Đọc tên từ `canonical`, không gõ `"ltt_llm"`.
+
+    D02 (11/09/2026) cắt `ltt_llm`/`ltt_llm_vision`. Một tên gõ tay ở đây đỏ
+    vì **chính nó** đã cũ, chứ không vì mặc định trôi — và người sửa sẽ
+    không có cách nào biết chỗ nào là chốt thật.
+
+    Điều phép kiểm ĐO vẫn nguyên: mặc định của danh mục phải là mặc định
+    **đã khai**, không phải phần tử đầu của một dict.
+    """
+    from platform_core.llm.canonical import MODEL_MAC_DINH
+
     n = _text_chat(db)
-    assert n.model_mac_dinh == "ltt_llm"
-    assert n.model_mac_dinh != "ltt_llm_vision", (
-        "vision co ngu canh 28K thay vi 89K — no khong bao gio duoc lam mac dinh "
-        "cho chat, ke ca khi no duoc quang cao trong danh sach")
+    assert n.model_mac_dinh == MODEL_MAC_DINH
 
 
 def test_mac_dinh_nam_trong_danh_sach_model_duoc_mo(db):
@@ -82,12 +90,12 @@ def test_khong_lay_phan_tu_dau_cua_dict(db, monkeypatch):
 
     class _PT:
         description = "x"
-        input_schema = {"properties": {"model": {"default": "ltt_llm"}}}
+        input_schema = {"properties": {"model": {"default": "model-b"}}}
 
-    # `models` đảo thứ tự: vision đứng TRƯỚC.
-    dao = {"ltt_llm_vision": {}, "ltt_llm": {}}
-    assert next(iter(dao)) == "ltt_llm_vision"          # tiền đề của phép kiểm
-    assert DM._mac_dinh(_PT(), dao) == "ltt_llm"
+    # `models` đảo thứ tự: cái KHÔNG phải mặc định đứng TRƯỚC.
+    dao = {"model-a": {}, "model-b": {}}
+    assert next(iter(dao)) == "model-a"                 # tiền đề của phép kiểm
+    assert DM._mac_dinh(_PT(), dao) == "model-b"
 
 
 def test_hop_dong_cam_thi_lui_ve_phan_tu_dau_chu_khong_tra_rong():
@@ -106,9 +114,9 @@ def test_default_tro_toi_alias_khong_ton_tai_thi_khong_dung(db):
     from platform_core.runtime_noi_bo import danh_muc as DM
 
     class _Sai:
-        input_schema = {"properties": {"model": {"default": "ltt_llm_go_nham"}}}
+        input_schema = {"properties": {"model": {"default": "go-nham"}}}
 
-    assert DM._mac_dinh(_Sai(), {"ltt_llm": {}, "ltt_llm_vision": {}}) == "ltt_llm"
+    assert DM._mac_dinh(_Sai(), {"model-a": {}, "model-b": {}}) == "model-a"
 
 
 # ── 3. Hai đầu dây phải khớp nhau ───────────────────────────────────────────
@@ -124,11 +132,14 @@ def test_manifest_khai_dung_ltt_llm_lam_default():
         #    ban CHIEU cong khai va no duoc `project_tool` sinh ra TU day —
         #    nen doc `params_schema` la doc nguon, doc `api_contract` la doc
         #    mot ban sao co the vang mat truong nay.
+        from platform_core.llm.canonical import ALIAS_SANG_ID, MODEL_MAC_DINH
         model = (tool.params_schema or {}).get("model") or {}
-        assert model.get("default") == "ltt_llm", (
-            "params_schema cua text.chat phai khai `ltt_llm` lam default")
-        assert "ltt_llm_vision" in (model.get("values") or []), (
-            "vision van phai duoc MO — no chi khong duoc lam mac dinh")
+        assert model.get("default") == MODEL_MAC_DINH, (
+            f"params_schema cua text.chat phai khai {MODEL_MAC_DINH!r} lam default")
+        # ⛔ MOI bi danh cong khai phai duoc MO o o chon, khong chi rieng mac
+        #    dinh: mot model ban ra ma khach khong chon duoc la mot model khong
+        #    ban duoc. (Ban cu ghim ten `ltt_llm_vision` — D02 da cat ten do.)
+        assert set(model.get("values") or []) == set(ALIAS_SANG_ID)
         return
     pytest.fail("khong tim thay tool text.chat trong manifest ltt_llm")
 
@@ -166,12 +177,29 @@ def test_bundle_da_dung_lai_sau_khi_doi_App():
 
 
 def test_manifest_va_hop_dong_khong_lech_nhau(db):
-    """Con số ngữ cảnh phải nói cùng một chuyện ở cả hai chỗ."""
+    """Con số ngữ cảnh phải nói cùng một chuyện ở cả hai chỗ.
+
+    🔴 BẢN CŨ ĐO MỘT THỨ KHÁC, VÀ PHẢI Bỏ CHỨ KHÔNG SỬA (D02, 12/09/2026).
+
+       Nó đòi *"mặc định phải có ngữ cảnh LỚN HƠN model kia"* — một lập luận
+       đúng **vào tháng 8/2026**, khi model thứ hai là hồ sơ vision `-c 65536`.
+       Nay hai model công khai chạy cùng một ngữ cảnh engine, nên mệnh đề đó
+       không còn là lý do chọn mặc định, và giữ nó là **cưỡng chế** một
+       chên lệch không ai muốn.
+
+    ⭐ Thứ tên tệp này hứa — *manifest và hợp đồng không lệch nhau* — vẫn
+       đo được, và đo thẳng: từng alias phải công bố đúng con số của
+       **id nội bộ của chính nó**.
+    """
+    from apps.ltt_llm import ngan_sach
+    from platform_core.llm.canonical import ALIAS_SANG_ID
+
     n = _text_chat(db)
-    rang_buoc = (n.models.get("ltt_llm") or {}).get("constraints") or {}
-    rb_vision = (n.models.get("ltt_llm_vision") or {}).get("constraints") or {}
-    assert rang_buoc.get("context_window", 0) > rb_vision.get("context_window", 0), (
-        "gia dinh cua phep kiem nay: `ltt_llm` co ngu canh LON hon vision. Neu "
-        "dieu do doi thi ly do chon mac dinh cung phai duoc xem lai, "
-        "khong chi doi con so.")
+    assert set(n.models) == set(ALIAS_SANG_ID), (
+        f"danh muc chieu {sorted(n.models)}, ban khai co {sorted(ALIAS_SANG_ID)}")
+    for alias, noi_bo in ALIAS_SANG_ID.items():
+        rb = (n.models.get(alias) or {}).get("constraints") or {}
+        assert rb.get("context_window") == ngan_sach.cong_bo_cua(noi_bo), (
+            f"{alias} cong bo {rb.get('context_window')} nhung cua so that cua "
+            f"{noi_bo} cho {ngan_sach.cong_bo_cua(noi_bo)}")
     assert json.dumps(n.hop_dong)  # hợp đồng phải serialise được cho giao diện

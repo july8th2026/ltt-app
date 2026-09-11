@@ -30,6 +30,11 @@ from platform_core.public_api.scopes import (SCOPE_JOBS_CREATE, SCOPE_JOBS_READ,
                                              SCOPE_TOOLS_READ)
 from server.api.inventory import API_V1_PREFIX
 
+#: Ten model cong khai, doc tu `canonical` chu KHONG go tay: D02 cat
+#: `ltt_llm`/`ltt_llm_vision` ngay 11/09/2026, va mot ten go tay o day se do
+#: vi CHINH NO da cu chu khong vi cua hong.
+from platform_core.llm.canonical import MODEL_MAC_DINH as MODEL
+
 PEPPER = "chat-test-pepper-" + "c" * 40
 DUONG = f"{API_V1_PREFIX}/chat/completions"
 TOOL = "text.chat"
@@ -112,7 +117,7 @@ def _h(token, idem=None):
 
 
 def _than(**ghi_de):
-    d = {"model": "ltt_llm", "messages": [{"role": "user", "content": "xin chao"}],
+    d = {"model": MODEL, "messages": [{"role": "user", "content": "xin chao"}],
          "max_tokens": 500}
     d.update(ghi_de)
     return d
@@ -156,11 +161,21 @@ def _dem_job() -> int:
 
 
 def _giu_execution_slot() -> str:
+    """Giữ hết suất của **model mặc định**, đọc tên tài nguyên từ BẢN KHAI.
+
+    ⛔ Trước 11/09/2026 chỗ này gõ `resource="llm_remote"`. Từ dual-model 2.3
+       `text.chat` khai sức chứa **theo model**, nên tên gõ tay ấy giành một
+       tài nguyên **không ai dùng** — phép kiểm vẫn chạy, cửa vẫn 200, và nó
+       thôi đo điều nó sinh ra để đo mà không ai thấy.
+    """
     from platform_core.llm import admission
+    from platform_core.llm.canonical import tai_nguyen_nha
+
+    suc = tai_nguyen_nha(MODEL)
     gen, db = _session()
     try:
         lease = admission.acquire(
-            db, resource="llm_remote", slots=1, user_id="u-khac",
+            db, resource=suc.resource, slots=suc.slots, user_id="u-khac",
             mode="job", holder_id="job-khac")
         assert lease is not None
         db.commit()
@@ -292,7 +307,7 @@ def test_lot_binh_thuong_va_thu_theo_TOKEN_DA_DO(api, monkeypatch):
     assert b["choices"][0]["message"]["content"] == "chao ban"
     assert b["usage"]["prompt_tokens"] == 10_000
     assert b["usage"]["completion_tokens"] == 1_250
-    assert goi and goi[0]["model"] == "ltt_llm"
+    assert goi and goi[0]["model"] == MODEL
 
     thu = b["x_ltt"]["credit_charged"]
     assert thu == truoc - _so_du(user_id), "hoa don khong khop so du"
@@ -731,7 +746,7 @@ def test_SDK_openai_goi_TRAN_thi_400_va_loi_DAY_CACH_SUA(sdk, api, monkeypatch):
     c = _client(sdk, api, token)
 
     with pytest.raises(sdk.BadRequestError) as e:
-        c.chat.completions.create(model="ltt_llm", max_tokens=100,
+        c.chat.completions.create(model=MODEL, max_tokens=100,
                                   messages=[{"role": "user", "content": "hi"}])
     loi = str(e.value)
     assert "Idempotency-Key" in loi
@@ -747,7 +762,7 @@ def test_SDK_openai_kem_extra_headers_thi_CHAY(sdk, api, monkeypatch):
     c = _client(sdk, api, token)
 
     r = c.chat.completions.create(
-        model="ltt_llm", max_tokens=300,
+        model=MODEL, max_tokens=300,
         messages=[{"role": "user", "content": "Viet mot cau chao"}],
         extra_headers={"Idempotency-Key": uuid.uuid4().hex})
 
@@ -770,7 +785,7 @@ def test_BAY_khoa_co_dinh_o_default_headers(sdk, api, monkeypatch):
 
     def hoi(noi_dung):
         return c.chat.completions.create(
-            model="ltt_llm", max_tokens=100,
+            model=MODEL, max_tokens=100,
             messages=[{"role": "user", "content": noi_dung}])
 
     hoi("thu do Viet Nam la gi")
@@ -843,7 +858,7 @@ def test_quickstart_day_cua_chat_khi_tool_DA_MO(api):
     page = api.get("/developers/quickstart").text
     for manh in ("/api/v1/chat/completions", "Idempotency-Key", "extra_headers",
                  "default_headers", "base_url", "x_ltt", "credit_charged",
-                 "ltt_llm", "503"):
+                 MODEL, "503"):
         assert manh in page, f"trang quickstart thieu {manh!r}"
 
 

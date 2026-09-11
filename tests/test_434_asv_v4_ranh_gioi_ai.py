@@ -185,8 +185,19 @@ def test_cua_so_ngu_canh_THI_GIAC_nho_hon_van_ban():
     ⚠️ Con so o day la cai registry KHAI. `docs/audit_ltt_llm/STATE.md` tung do
        duoc mot tran THAP HON NHIEU cho ban thi giac; pha 11 phai do lai truoc
        khi sap lo khung hinh theo no.
+
+    🔴 DẤU `<` ĐỔI THÀNH `<=` NGÀY 12/09/2026 (D02, dual-model 2.3), và đó
+       là sửa **chiều đo**, không phải nới lỏng.
+
+       Bất biến cần canh là: *đừng xếp một lô khung hình theo trần của model
+       VĂN BẢN*, tức cửa sổ thị giác **không được lớn hơn**. Dấu `<` đòi
+       thêm một điều khác hẳn — *hai model phải khác cỡ* — và điều đó chỉ
+       đúng chừng nào hai hồ sơ còn nạp `-c` khác nhau. `qwen38-vision` đã gỡ;
+       hai model công khai nay chạy cùng một ngữ cảnh engine, nên dấu `<`
+       đỏ vì bản khai ĐÚNG — và cách duy nhất làm nó xanh lại là khai sai
+       một trong hai con số.
     """
-    assert 0 < ai.cua_so_ngu_canh(ai.DOC_CANH) < ai.cua_so_ngu_canh(ai.DICH_THUAT)
+    assert 0 < ai.cua_so_ngu_canh(ai.DOC_CANH) <= ai.cua_so_ngu_canh(ai.DICH_THUAT)
 
 
 # ══════════════════════════════════════════════════════════════════════════════

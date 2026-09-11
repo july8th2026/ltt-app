@@ -47,6 +47,9 @@ from platform_core.public_api.scopes import (SCOPE_JOBS_CREATE, SCOPE_JOBS_READ,
                                              SCOPE_TOOLS_READ)
 from server.api.inventory import API_V1_PREFIX
 
+#: Ten model cong khai, doc tu `canonical` chu KHONG go tay (D02, 2.3).
+from platform_core.llm.canonical import MODEL_MAC_DINH as MODEL
+
 PEPPER = "cho-test-pepper-" + "d" * 40
 DUONG = f"{API_V1_PREFIX}/chat/completions"
 MSG = f"{API_V1_PREFIX}/messages"
@@ -126,7 +129,7 @@ def _h(token, idem=None):
 
 
 def _than(**ghi_de):
-    d = {"model": "ltt_llm", "messages": [{"role": "user", "content": "xin chao"}],
+    d = {"model": MODEL, "messages": [{"role": "user", "content": "xin chao"}],
          "max_tokens": 500}
     d.update(ghi_de)
     return d
@@ -186,13 +189,20 @@ def _dong_cho(user_id: str):
 
 
 def _giu_het_suat() -> str:
-    """Một lượt khác giữ trọn suất của `llm_remote` (`SO_SLOT_MAY_B` = 1)."""
-    from apps.ltt_llm.ngan_sach import SO_SLOT_MAY_B
+    """Một lượt khác giữ **trọn suất của model mặc định**.
+
+    ⛔ Tên tài nguyên đọc từ BẢN KHAI, không gõ `"llm_remote"`: từ dual-model
+       2.3 mỗi model có tài nguyên riêng, nên một tên gõ tay sẽ giữ một
+       tài nguyên không ai dùng — cửa vẫn thông và phép kiểm xanh rỗng.
+    """
     from platform_core.llm import admission
+    from platform_core.llm.canonical import tai_nguyen_nha
+
+    suc = tai_nguyen_nha(MODEL)
     gen, db = _session()
     try:
         lease = admission.acquire(
-            db, resource="llm_remote", slots=SO_SLOT_MAY_B, user_id="u-khac",
+            db, resource=suc.resource, slots=suc.slots, user_id="u-khac",
             mode="job", holder_id="job-khac")
         assert lease is not None
         db.commit()
@@ -454,7 +464,7 @@ def test_het_tien_o_cua_MOT_CUC_cung_402_truoc_phong_cho(api, monkeypatch):
     from platform_core.runtime_noi_bo import luong
     monkeypatch.setattr(luong, "cho_suat_dong_bo", cam_cho)
 
-    r = api.post(MSG, json={"model": "ltt_llm", "max_tokens": 200,
+    r = api.post(MSG, json={"model": MODEL, "max_tokens": 200,
                             "messages": [{"role": "user", "content": "hi"}]},
                  headers={"Authorization": f"Bearer {token}"})
 
@@ -758,7 +768,7 @@ def test_mot_cuc_cung_CHO_va_khong_giu_tien_luc_cho(api, monkeypatch):
             admission.release_by_id(lease_id)
 
     _tiem_dong_ho(monkeypatch, DongHoGia(moi_nhip))
-    r = api.post(MSG, json={"model": "ltt_llm", "max_tokens": 200,
+    r = api.post(MSG, json={"model": MODEL, "max_tokens": 200,
                             "messages": [{"role": "user", "content": "hi"}]},
                  headers={"Authorization": f"Bearer {token}"})
 
@@ -776,7 +786,7 @@ def test_mot_cuc_het_tran_cho_thi_429_khong_but_toan(api, monkeypatch):
     but_toan_truoc = _dem_but_toan(user_id)
     _tiem_dong_ho(monkeypatch, DongHoGia())
 
-    r = api.post(MSG, json={"model": "ltt_llm", "max_tokens": 200,
+    r = api.post(MSG, json={"model": MODEL, "max_tokens": 200,
                             "messages": [{"role": "user", "content": "hi"}]},
                  headers={"Authorization": f"Bearer {token}"})
 

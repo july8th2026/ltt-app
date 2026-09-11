@@ -31,6 +31,11 @@ import tomllib
 
 import pytest
 
+#: Ten model cong khai, doc tu `canonical` chu KHONG go tay: D02 cat
+#: `ltt_llm`/`ltt_llm_vision` ngay 11/09/2026, va mot ten go tay o day se do
+#: vi CHINH NO da cu chu khong vi cua hong.
+from platform_core.llm.canonical import ALIAS_SANG_ID, MODEL_MAC_DINH as MODEL
+
 GOC = pathlib.Path(__file__).resolve().parents[1]
 
 
@@ -710,7 +715,7 @@ def test_vscode_ket_qua_LA_TOML_HOP_LE_du_khach_da_co_provider_ltt(cc):
     cc.cam_codex("https://app.lttstudios.com", {}, cho_vscode=True)
     van = cfg.read_text(encoding="utf-8")
     d = tomllib.loads(van)                       # <-- CHÍNH LÀ phép kiểm còn thiếu
-    assert d["model"] == "ltt_llm"
+    assert d["model"] == MODEL
     assert d["model_provider"] == "ltt"
     assert van.count("[model_providers.ltt]") == 1   # KHÔNG nhân đôi provider
 
@@ -760,7 +765,7 @@ def test_catalog_dung_khuon_Codex_chap_nhan(cc):
     """Ba chỗ từng làm Codex từ chối tệp — tìm ra bằng cách lặp thật 30/08."""
     import json
     d = json.loads(cc._catalog_codex())
-    assert [m["slug"] for m in d["models"]] == ["ltt_llm", "ltt_llm_vision"]
+    assert [m["slug"] for m in d["models"]] == list(ALIAS_SANG_ID)
     for m in d["models"]:
         # `web_search_tool_type: null` bi tu choi -> phai BO HAN, khong phai null
         assert "web_search_tool_type" not in m
@@ -774,12 +779,12 @@ def test_catalog_dung_khuon_Codex_chap_nhan(cc):
 
     # ⛔ MOI MODEL KHAI CUA SO CUA NO. Ban truoc cua doan nay la
     #       assert m["context_window"] == cc.CUA_SO_NGU_CANH
-    #    — MOT hang so cho HAI model, va no doi `ltt_llm_vision` (cua so that
-    #    28.262, vi `qwen38-vision` nap `-c 65536`) phai noi 88.555. Phep kiem
+    #    — MOT hang so cho HAI model, va no doi model thu hai (cua so that
+    #    28.262, vi ho so vision cu nap `-c 65536`) phai noi 88.555. Phep kiem
     #    khong bat duoc khuyet tat; no CUONG CHE khuyet tat, nen sua ma cho dung
     #    thi gate do. Xem `test_334::test_MOI_model_trong_catalog_khai_cua_so_CUA_NO`.
-    mong = {"ltt_llm": cc.CUA_SO_NGU_CANH,
-            "ltt_llm_vision": cc.CUA_SO_NGU_CANH_VISION}
+    mong = {"ltt-3.8": cc.CUA_SO_NGU_CANH,
+            "ltt-3.5": cc.CUA_SO_NGU_CANH_35}
     for m in d["models"]:
         assert m["context_window"] == mong[m["slug"]]
         assert m["max_context_window"] == mong[m["slug"]]

@@ -30,19 +30,31 @@ def _principal(user_id: str):
     return SimpleNamespace(user_id=user_id)
 
 
-def test_ltt_llm_khai_resource_remote_mot_slot():
-    # multijob: số slot đọc từ MỘT nguồn (`ngan_sach.SO_SLOT_MAY_B`), không ghim
-    # cứng 1 ở đây — xem `tests/test_1201_mot_nguon_so_slot.py`.
+def test_ltt_llm_khai_resource_theo_model_va_khong_lo_ra_khach():
+    """Mỗi model công khai khai sức chứa CỦA NÓ, và bản chiếu mang theo.
+
+    🔴 ĐỔI HÌNH DẠNG 11/09/2026 (dual-model 2.3). Bản cũ đòi
+       `tool.admission_resource == "llm_remote"` — MỘT tên tài nguyên cho cả
+       tool. Từ 2.3 `text.chat` phục vụ hai model trên hai card, nên bộ ba tĩnh
+       ấy **rỗng** và câu hỏi đúng là *"model này giành tài nguyên nào"*.
+
+       Điều phép kiểm ĐO vẫn nguyên: (a) app tự khai sức chứa, (b) số đọc từ
+       `ngan_sach` chứ không gõ tay, (c) metadata vận hành không rò ra khách.
+    """
     from apps.ltt_llm import ngan_sach
     from apps.ltt_llm.manifest import MANIFEST
     from platform_core.public_api.catalog import project_tool
 
     tool = MANIFEST.tools[0]
-    assert tool.admission_resource == "llm_remote"
-    assert tool.admission_slots == ngan_sach.SO_SLOT_MAY_B
     projected = project_tool(MANIFEST, tool)
-    assert projected.admission_resource == "llm_remote"
-    assert projected.admission_slots == ngan_sach.SO_SLOT_MAY_B
+    cong_khai = str(projected.to_public_dict())
+    for model, ten_tn in (("ltt-3.8", ngan_sach.TAI_NGUYEN_38),
+                          ("ltt-3.5", ngan_sach.TAI_NGUYEN_35)):
+        for t in (tool, projected):
+            suc = t.admission_cho(model)
+            assert suc is not None and suc.resource == ten_tn
+            assert suc.slots == ngan_sach.SO_SLOT
+        assert ten_tn not in cong_khai, f"ten tai nguyen {ten_tn} ro ra khach"
     assert "admission_resource" not in projected.to_public_dict()
 
 
