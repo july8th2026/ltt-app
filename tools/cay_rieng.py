@@ -59,6 +59,9 @@ from pathlib import Path
 
 GOC = Path(__file__).resolve().parent.parent
 
+#: Mot authority cho diem tach va diem hop cua moi task worktree.
+NHANH_TRUNK = "main"
+
 #: Duoi ngan nay thi mot cay rieng nua la lieu. Mot cay ~1,5 GB ke ca `.git`
 #: chung khong nhan doi, nhung `__pycache__` + thu muc tam pytest thi co.
 TRONG_TOI_THIEU_GB = 20.0
@@ -296,7 +299,7 @@ def _tao(ten: str) -> int:
             print(f"    ... con {len(do) - 10} tep nua")
         print("  Commit truoc neu ban muon mang chung sang.\n")
 
-    print(_git("worktree", "add", str(dich), "-b", nhanh))
+    print(_git("worktree", "add", str(dich), "-b", nhanh, NHANH_TRUNK))
     _chep_thu_khong_o_trong_git(dich)
     print(f"\nDa tao cay rieng:\n  {dich}\n  nhanh: {nhanh}\n")
     _cap_dai_so_test(dich)

@@ -275,8 +275,20 @@ def test_hook_KHONG_duoc_lam_hong_commit_o_cay_CHUA_dong_bo(tmp_path):
         "o cac cay chua dong bo")
 
     # Doi chung SONG: chay hook trong mot thu muc KHONG co cau hinh.
+    # Windows khong nhat thiet dat Git Bash `sh.exe` len PATH, du `git.exe`
+    # van co. Tim shell theo quan he voi ban Git dang chay thay vi phu thuoc
+    # vao nhan `sh` tren PATH.
+    import shutil
     import subprocess
-    r = subprocess.run(["sh", str(hook)], cwd=tmp_path,
+
+    sh = shutil.which("sh")
+    if sh is None and (git := shutil.which("git")) is not None:
+        ung_vien = Path(git).resolve().parents[1] / "bin" / "sh.exe"
+        if ung_vien.is_file():
+            sh = str(ung_vien)
+    assert sh is not None, "khong tim thay Git Bash sh de kiem hanh vi hook"
+
+    r = subprocess.run([sh, str(hook)], cwd=tmp_path,
                        capture_output=True, text=True,
                        encoding="utf-8", errors="replace")
     assert r.returncode == 0, (

@@ -1,7 +1,7 @@
 r"""Do phu cua DONG MOI — khong do phu ca kho.
 
-    py tools\do_phu_diff.py                    # so voi origin/master
-    py tools\do_phu_diff.py --nhanh-goc master
+    py tools\do_phu_diff.py                    # so voi origin/main
+    py tools\do_phu_diff.py --nhanh-goc main
     py tools\do_phu_diff.py --san 80           # do neu dong moi phu < 80%
 
 ## Vi sao do phu THEO DIFF chu khong phai phu TOAN KHO
@@ -46,6 +46,10 @@ sys.path.insert(0, str(GOC / "tools"))
 DO_PHU = ("apps", "platform_core", "server", "llm_gateway", "render_gateway",
           "sdk", "nexus_agent")
 
+#: Q123: khong fallback ve lineage da bi thay. Diff rong do chon sai base cho
+#: mot con so dep nhung vo nghia, nen thieu ca hai ref phai fail closed.
+NHANH_GOC_MAC_DINH = ("origin/main", "main")
+
 
 def _ra(*phan: object) -> None:
     for luong in (sys.stdout, sys.stderr):
@@ -57,23 +61,23 @@ def _ra(*phan: object) -> None:
 
 
 def _nhanh_goc_mac_dinh() -> str:
-    """`origin/master` neu co, khong thi `master`.
+    """`origin/main` neu co, khong thi `main` cuc bo.
 
     ⛔ Doan mo ta `--compare-branch` cua diff-cover: no chay `git diff
        <nhanh>...HEAD`. Neu nhanh do khong ton tai thi diff rong, va mot diff
        rong cho ra "100% phu" — mot con so DEP vi khong do gi ca.
     """
-    for ten in ("origin/master", "master"):
+    for ten in NHANH_GOC_MAC_DINH:
         r = subprocess.run(["git", "rev-parse", "--verify", "--quiet", ten],
                            cwd=GOC, capture_output=True, text=True)
         if r.returncode == 0:
             return ten
-    raise SystemExit("khong tim thay `origin/master` lan `master` de so sanh")
+    raise SystemExit("khong tim thay `origin/main` lan `main` de so sanh")
 
 
 def main() -> int:
     p = argparse.ArgumentParser(description="Do phu cua dong MOI so voi mot nhanh goc.")
-    p.add_argument("--nhanh-goc", default=None, help="mac dinh: origin/master")
+    p.add_argument("--nhanh-goc", default=None, help="mac dinh: origin/main")
     p.add_argument("--san", type=float, default=None,
                    help="tra ma 1 neu phu duoi muc nay (%%)")
     p.add_argument("--loi", type=int, default=None, help="so worker pytest")
@@ -86,7 +90,7 @@ def main() -> int:
     goc = a.nhanh_goc or _nhanh_goc_mac_dinh()
 
     # ⛔ `diff-cover` so `<goc>...HEAD`. Tren mot nhanh song lau nhu
-    #    `admin-mvp-v3`, diff voi `origin/master` la TOAN BO do lech cua nhanh
+    #    mot task branch song lau, diff voi base cu la TOAN BO do lech cua nhanh
     #    — hang nghin dong cua nhieu phien khac, khong phai "thu toi vua sua".
     #    In ro so tep de nguoi doc biet minh dang doc pham vi nao.
     _dem = subprocess.run(["git", "diff", "--name-only", f"{goc}...HEAD"],

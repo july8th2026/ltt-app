@@ -38,7 +38,7 @@ name: gate --quick
 
 on:
   pull_request:
-    branches: [admin-mvp-v3, master]
+    branches: [main, admin-mvp-v3, master]
   workflow_dispatch:
 
 # Mot PR day them commit thi huy luot cu — khong xep hang nhieu luot cho cung

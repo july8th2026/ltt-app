@@ -15,9 +15,8 @@
 - Never modify, switch, reset, clean, commit, merge or rebase the three `SESSION_PROTECTED` worktrees listed in the spec.
 - Never write to `D:\BOT GEMINI` and never deploy production.
 - Do not create a new worktree for LTT-CMC.
-- Before every gate, `test_nhanh.py`, or run of at least three test files, run `python tools\tai_may.py` and `python tools\cua_so_yen.py trang-thai`.
-- `QUÁ TẢI` means do not run; `BẬN` means postpone or narrow the test.
-- Use `python tools\gate.py --doi` for L1 and one `python tools\gate.py` for final L3 evidence.
+- Test cadence and load admission are defined only in
+  `docs/00_LTT_OPERATING_CONTRACT.md` §4; this plan does not restate them.
 - Run `python tools\scan_source_secrets.py` before every commit.
 - Do not run `git gc`, `git prune`, force push, destructive reset or worktree removal in Phase 1.
 - Keep repository-local `gc.auto=0`, `gc.autoPackLimit=0` and
