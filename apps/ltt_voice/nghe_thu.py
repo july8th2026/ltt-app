@@ -275,8 +275,8 @@ def khoa_rieng(owner_id: str, public_id: str) -> str:
 
 
 def dung_lai_cho_giong(db, ho_so) -> None:
-    """HUỶ tệp nghe thử ĐANG CÓ của một giọng — để vòng bảo trì dựng lại theo
-    làn MỚI (`CAU_THEO_LAN[ho_so.ngon_ngu]`) ở lượt sau (D004).
+    """HUỶ (các) tệp nghe thử ĐANG CÓ của một giọng — để vòng bảo trì dựng lại
+    theo làn MỚI (`CAU_THEO_LAN[ho_so.ngon_ngu]`) ở lượt sau (D004).
 
     🔴 VÌ SAO CẦN, VÀ VÌ SAO KHÔNG THỂ BỎ QUA.
 
@@ -286,6 +286,22 @@ def dung_lai_cho_giong(db, ho_so) -> None:
        giọng KHÔNG tự đổi khoá tệp nghe thử của nó — `dung()` sẽ thấy
        `co_san(khoa)` vẫn `True` (tệp làn CŨ còn nằm đúng khoá đó) và không
        dựng lại, nên khách nghe câu của làn cũ mãi mãi dù hồ sơ đã nói làn mới.
+
+    🔴 FIX ROUND 1/5 (Task 10 IMPORTANT 1, 2026-09-11) — CÙNG LỖ VỚI
+       `giong_vong_doi.khoa_da_biet`, KHÁC ĐƯỜNG VÀO.
+
+       Chủ một giọng ĐÃ TỪNG được đưa ra kho chung (`dung_chung=True`) vẫn tìm
+       được chính hồ sơ của mình qua `tham_chieu.tim_profile(db, pid,
+       owner_id=uid)` (điều kiện `owner_id` khớp không đòi `dung_chung=False`)
+       — nên `routes/_p_giong.py:khai_ngon_ngu_giong` VẪN gọi được hàm này trên
+       một giọng kho chung. Trước bản vá, hàm chỉ huỷ `khoa_rieng` — bản nghe
+       thử KHO CHUNG (`khoa_chung`, dựng bởi vòng bảo trì trong lúc giọng còn
+       `dung_chung=True`) sống sót qua lượt đổi làn và tiếp tục phát câu của
+       làn CŨ cho MỌI khách khác qua `voice/chung/…`, không chỉ cho chủ giọng.
+
+       ⭐ XOÁ CẢ HAI KHOÁ VÔ ĐIỀU KIỆN, cùng lý do đã ghi ở `khoa_da_biet`: xoá
+          một khoá chưa từng tồn tại là vô hại (`get_storage().delete` bọc
+          try/except, chỉ log).
 
     ⛔ KHÔNG gọi engine đồng bộ ở đây — người gọi là một request HTTP
        (`routes/_p_giong.py:khai_ngon_ngu_giong`), và một lượt sinh tiếng nói
@@ -297,29 +313,31 @@ def dung_lai_cho_giong(db, ho_so) -> None:
     ⚠️ `db` không dùng tới Ở ĐÂY (chữ ký khớp `giong_vong_doi.khoa_da_biet(db,
        ho_so)` có chủ ý — hai hàm cùng hình dạng, cùng nhận một hồ sơ và xoá
        khoá kho của nó), nhưng KHÔNG ĐOÁN tên tệp theo kiểu liệt kê: chỉ có
-       ĐÚNG MỘT khoá khả dĩ ở phiên bản engine hiện hành
-       (`khoa_rieng(owner_id, public_id)`), vì `Storage`
-       (`platform_core/storage.py`) không có API liệt-kê-theo-tiền-tố để quét
-       những `PHIEN_BAN` cũ hơn. `giong_vong_doi.khoa_da_biet` (Task 4, đổi
-       tên ở Task 6 khi `khoa_can_xoa` chuyển sang trả TOÀN TIỀN TỐ — xem
-       docstring của cả hai) đứng trước đúng giới hạn này và cũng chỉ tính
-       MỘT khoá cho tệp nghe thử: Task 6 (THU HỒI) đứng trước cùng giới hạn
-       ấy, không gỡ được nó vì `platform_core/storage.py` vẫn chưa có API
-       liệt kê. Đổi làn thì không cần liệt kê gì thêm — một giọng chỉ có MỘT
-       bản nghe thử sống tại một thời điểm.
+       ĐÚNG HAI khoá khả dĩ ở phiên bản engine hiện hành (`khoa_rieng` +
+       `khoa_chung`), vì `Storage` (`platform_core/storage.py`) không có API
+       liệt-kê-theo-tiền-tố để quét những `PHIEN_BAN` cũ hơn. `giong_vong_doi.
+       khoa_da_biet` (Task 4, đổi tên ở Task 6 khi `khoa_can_xoa` chuyển sang
+       trả TOÀN TIỀN TỐ — xem docstring của cả hai) đứng trước đúng giới hạn
+       này: Task 6 (THU HỒI) đứng trước cùng giới hạn ấy, không gỡ được nó vì
+       `platform_core/storage.py` vẫn chưa có API liệt kê. Đổi làn thì không
+       cần liệt kê gì thêm — một giọng chỉ có MỘT bản nghe thử RIÊNG và MỘT
+       bản nghe thử KHO CHUNG sống tại một thời điểm.
 
     ⛔ KHÔNG NÉM. Người gọi không được hỏng vì một tệp nghe thử không xoá
        được — cùng hợp đồng "không ném" với `dung()`/`co_san()` ở trên.
     """
-    khoa = khoa_rieng(str(ho_so.owner_id), str(ho_so.public_id))
-    # Đừng để đệm `co_san` nói "có" cho một tệp vừa xoá — xem `_DEM` bên dưới.
-    _DEM.pop(khoa, None)
-    try:
-        from platform_core.storage import get_storage
-        get_storage().delete(khoa)
-    except Exception as e:  # noqa: BLE001 - xem docstring: khong nem
-        log.warning("khong xoa duoc tep nghe thu cu khi doi lan (%s): %s",
-                    khoa, e)
+    from platform_core.storage import get_storage
+
+    for khoa in (khoa_rieng(str(ho_so.owner_id), str(ho_so.public_id)),
+                khoa_chung(str(ho_so.public_id))):
+        # Đừng để đệm `co_san` nói "có" cho một tệp vừa xoá — xem `_DEM` dưới.
+        _DEM.pop(khoa, None)
+        try:
+            get_storage().delete(khoa)
+        except Exception as e:  # noqa: BLE001 - xem docstring: khong nem
+            log.warning(
+                "khong xoa duoc tep nghe thu cu khi doi lan (%s): %s",
+                khoa, e)
 
 
 #: Bộ nhớ đệm `khoá -> (lúc, có)`.
@@ -656,8 +674,8 @@ def _dung_giong_rieng_con_thieu() -> None:
 
 
 def _dung_kho_chung(ds, con: int = TOI_DA_GIONG_CHUNG_MOI_LUOT) -> int:
-    """Dựng dần tệp nghe thử cho các mục KHO CHUNG trong `ds`. Trả số tệp vừa
-    dựng THẬT.
+    """Dựng dần tệp nghe thử cho các mục KHO CHUNG trong `ds`. Trả số LƯỢT ĐÃ
+    THỬ DỰNG (không phải số tệp dựng THÀNH CÔNG — xem fix round 1/5 dưới đây).
 
     `ds`: `[(VoiceProfile, VoiceRepr)]` — hình dạng của
     `tham_chieu.danh_sach_kho_chung(db)`. Tách khỏi hàm đó (không tự mở phiên
@@ -672,9 +690,20 @@ def _dung_kho_chung(ds, con: int = TOI_DA_GIONG_CHUNG_MOI_LUOT) -> int:
        cho MỌI giọng kho chung ở MỌI lượt bảo trì, không chỉ cho giọng thật sự
        còn thiếu. Cùng kỷ luật với `_dung_giong_rieng_con_thieu`.
 
-    ⛔ TRẦN `con`, cùng lý do `MOI_LUOT_TOI_DA`/`TOI_DA_GIONG_RIENG_MOI_LUOT`:
-       vòng bảo trì chạy CÙNG tiến trình với worker job. Đếm theo số tệp ĐÃ
-       DỰNG THẬT, không theo số mục đã quét.
+    🔴 TRẦN `con` ĐẾM LƯỢT GỌI `dung()`, KHÔNG ĐẾM LƯỢT THÀNH CÔNG (fix round
+       1/5, Task 10 IMPORTANT 2). Bản trước chỉ tăng `da` khi `dung()` trả
+       `True` — nghĩa là một engine ĐANG HỎNG (mọi lượt gọi trả `False`) không
+       bao giờ chạm trần: vòng lặp thử DỰNG LẠI MỌI giọng kho chung còn thiếu
+       trong CÙNG một lượt bảo trì. `dung()` không truyền `timeout`, nên nó rơi
+       về trần của `features.goi_cong` khi không có sidecar phản hồi —
+       **900 giây MỘT LƯỢT** (xem `features.goi_cong`) — và vòng bảo trì chạy
+       CÙNG tiến trình với worker job thật. Một kho chung có hàng chục giọng
+       thiếu tệp gặp đúng lúc engine hỏng là hàng chục lần 900 giây liên tiếp
+       chiếm đúng cái tiến trình khách đang chờ job của họ.
+
+       ⇒ Đếm NGAY SAU lời gọi `dung()`, bất kể nó trả gì — cùng kỷ luật với
+       `_dung_giong_rieng_con_thieu` (tăng `da_dung` ngay sau `dung(...)`,
+       không đặt điều kiện `if dung(...)`).
     """
     from . import tham_chieu
 
@@ -692,8 +721,8 @@ def _dung_kho_chung(ds, con: int = TOI_DA_GIONG_CHUNG_MOI_LUOT) -> int:
                 "khong doc duoc bieu dien de dung nghe thu kho chung %s: %s",
                 ho_so.public_id, e)
             continue
-        if dung(khoa, ref_b64=ref_b64, ngon_ngu=str(ho_so.ngon_ngu or "")):
-            da += 1
+        dung(khoa, ref_b64=ref_b64, ngon_ngu=str(ho_so.ngon_ngu or ""))
+        da += 1
     return da
 
 

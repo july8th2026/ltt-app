@@ -70,6 +70,50 @@ def _dieu_kien_kho_chung():
                 VoiceProfile.license_status.in_(LICENSE_CHO_PHEP))
 
 
+def du_dieu_kien_kho_chung(ho_so) -> bool:
+    """Bản THUẦN PYTHON của `_dieu_kien_kho_chung()` — cho MỘT đối tượng
+    `VoiceProfile` đã nạp sẵn (không phải một biểu thức SQL), dùng ở nơi ĐÃ CÓ
+    SẴN danh sách trong tay và chỉ cần hỏi "hồ sơ NÀY có đủ điều kiện không",
+    không đáng một truy vấn CSDL thứ hai.
+
+    ⛔ PHẢI SUY TỪ ĐÚNG HAI CỘT VỚI `_dieu_kien_kho_chung()` (`dung_chung` +
+       `license_status`) — hai bản của CÙNG một câu hỏi lệch nhau là đúng lớp
+       lỗi mà docstring `_dieu_kien_kho_chung` đã cảnh báo: một cửa nói "kho
+       chung", cửa kia nói "không", về CÙNG một giọng. Xem `tach_rieng_chung`
+       cho nơi dùng thật.
+    """
+    return (bool(ho_so.dung_chung)
+            and str(ho_so.license_status or "") in LICENSE_CHO_PHEP)
+
+
+def tach_rieng_chung(ds) -> tuple:
+    """Tách một danh sách `VoiceProfile` thành `(rieng_ids, chung_ids)` —
+    hình dạng đúng cho `nghe_thu.duong_cho_trang(rieng=, chung=)`.
+
+    🔴 FIX ROUND 1/5 (Task 10, PULLED IN item 5, 2026-09-11) — MỘT HÀM DÙNG Ở
+       CẢ BA NƠI (`routes/_p_tao.py`, `_p_giong.py`, `_p_du_an.py`), thay ba
+       bản `if g.dung_chung else ...` tự viết. Ba bản cũ bỏ sót ĐÚNG MỘT ô:
+
+       một giọng ĐÃ được đánh `dung_chung=True` (curation) nhưng
+       `license_status` CHƯA `"ok"` (`tools/soat_giong.py` đợi soát xuất xứ
+       riêng — hai bước, hai câu hỏi khác nhau, xem docstring lệnh `duyet`).
+       Với `if g.dung_chung`, giọng đó bị xếp vào `chung` — nhưng
+       `nghe_thu._dung_kho_chung` (qua `danh_sach_kho_chung`, đi qua
+       `_dieu_kien_kho_chung`) KHÔNG BAO GIỜ dựng preview kho chung cho nó
+       (license chưa "ok"), nên `khoa_chung` không bao giờ trúng. Nó cũng bị
+       ĐẨY RA KHỎI `rieng` — nơi bản nghe thử dựng LÚC GHI DANH (`khoa_rieng`,
+       từ trước khi `dung_chung` được bật) vẫn còn sống. Kết quả: nút nghe
+       thử biến mất im lặng cho đúng CHỦ giọng đó, ngay trên trang của họ.
+
+    ⭐ Điều kiện "là chung" PHẢI khớp `_dieu_kien_kho_chung()` — dùng lại
+       `du_dieu_kien_kho_chung`, không viết lại một bản thứ ba.
+    """
+    rieng, chung = [], []
+    for g in ds:
+        (chung if du_dieu_kien_kho_chung(g) else rieng).append(g.public_id)
+    return rieng, chung
+
+
 def tim_profile(db, public_id: str, *, owner_id: str, cho_dung_chung: bool = False):
     """Tìm theo `public_id` **và** chủ sở hữu, trong MỘT truy vấn.
 

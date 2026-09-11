@@ -175,11 +175,31 @@ def khoa_da_biet(db, ho_so) -> list[str]:
       · clip nguồn      — `storage_key` của mọi `VoiceRef` của giọng này;
       · biểu diễn engine — `storage_key` của mọi `VoiceRepr` (chứa `speaker_emb`,
                           thứ `tables.py` nói thẳng là "KHÔNG BAO GIỜ ra ngoài");
-      · tệp nghe thử     — khoá HIỆN HÀNH suy được từ `(owner_id, public_id)`
+      · tệp nghe thử RIÊNG — khoá HIỆN HÀNH suy được từ `(owner_id, public_id)`
                           (`nghe_thu.khoa_rieng`). Chỉ MỘT phiên bản — một
                           bản nghe thử của một `PHIEN_BAN` engine cũ hơn (nếu
                           còn sót từ trước một lần nâng cấp) sẽ KHÔNG bị liệt
                           ở đây, vì không có cách liệt kê nó (xem `khoa_can_xoa`).
+      · tệp nghe thử KHO CHUNG — khoá suy được từ `public_id` (`nghe_thu.
+                          khoa_chung`), xem 🔴 ngay dưới.
+
+    🔴 FIX ROUND 1/5 (Task 10 IMPORTANT 1, 2026-09-11) — LỖ RÒ RIÊNG TƯ.
+
+       Trước bản vá này, thu hồi một giọng ĐÃ TỪNG là kho chung
+       (`dung_chung=True` một lúc nào đó) chỉ xoá `khoa_rieng`. Tệp ở
+       `nghe_thu.khoa_chung(public_id)` — dựng bởi vòng bảo trì khi giọng còn
+       `dung_chung=True` + `license_status="ok"` — vẫn nằm nguyên trong kho, và
+       `_p_audio.py` phục vụ mọi khoá `voice/chung/*.wav` cho BẤT KỲ khách nào
+       đã đăng nhập CHỈ bằng hình dạng khoá, không tra CSDL. Kết quả: khách thu
+       hồi giọng (rút quyền), tưởng dữ liệu đã bị xoá — nhưng bản nghe thử kho
+       chung của chính họ vẫn tải được, mãi mãi. Đúng điều khoản đã hứa nói
+       ngược lại (`_thu_hoi_mot`: *"quyền được xoá của khách"*).
+
+       ⭐ XOÁ VÔ ĐIỀU KIỆN, không chỉ khi `ho_so.dung_chung` đang `True` lúc
+          gọi: `_xoa_khoa` (nơi gọi hàm này) đã best-effort và im lặng bỏ qua
+          khoá không tồn tại, nên thêm một khoá CHƯA TỪNG được dựng là vô hại.
+          Kiểm `dung_chung` trước rồi mới quyết có xoá hay không là thêm một
+          nhánh có thể sai cho một phép xoá vốn đã an toàn khi thiếu tệp.
 
     ⛔ Tệp KẾT QUẢ (`voice/out/{uid}/{job_id}/…`) KHÔNG nằm ở đây: nó thuộc về
        một LƯỢT TẠO, có `job_id`, và đã được `job_content.py` dọn theo hạn 30
@@ -212,6 +232,8 @@ def khoa_da_biet(db, ho_so) -> list[str]:
             exc_info=True)
     # Tệp nghe thử riêng — cùng thư mục giọng, tên `preview-*`.
     khoa.append(nghe_thu.khoa_rieng(str(ho_so.owner_id), str(ho_so.public_id)))
+    # 🔴 Fix round 1/5: tệp nghe thử KHO CHUNG — xem khối chú thích ở trên.
+    khoa.append(nghe_thu.khoa_chung(str(ho_so.public_id)))
     return khoa
 
 

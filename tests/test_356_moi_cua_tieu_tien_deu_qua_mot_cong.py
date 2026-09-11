@@ -55,7 +55,13 @@ APP = GOC / "apps" / "ltt_voice"
 
 #: Hàm nào nghĩa là "cửa này TIÊU TIỀN hoặc CHẠM GPU".
 TIEU_TIEN = {"submit_with_credit", "giu_cho"}
-CHAM_GPU = {"goi_cong", "noi", "noi_dan"}
+#: ⚠️ `"sinh"` thêm 2026-09-11 (fix round 1/5, Task 10 IMPORTANT 3):
+#:    `routes/_p_nghe_thu.py::nghe_thu_van_ban` gọi `NT.sinh(...)`
+#:    (`nghe_thu_cua_toi.sinh`) chứ không còn gọi thẳng `features.goi_cong` —
+#:    thiếu tên này thì phép quét KHÔNG THẤY `nghe_thu_van_ban` nữa (nó không
+#:    còn gọi trực tiếp bất cứ tên nào trong `CHAM_GPU` cũ), và một cửa vừa
+#:    đổi hình dạng lọt ra khỏi tầm nhìn của chính bánh cóc sinh ra để canh nó.
+CHAM_GPU = {"goi_cong", "noi", "noi_dan", "sinh"}
 
 #: Cổng nghiệp vụ bắt buộc — trực tiếp hay qua một hàm bọc trong cùng tệp.
 CONG = {"giai_giong", "_chot_lan"}
@@ -69,14 +75,19 @@ MIEN_TRU = {
     ("nghe_thu_cua_toi.py", "sinh"): (
         "Nghe thu MIEN PHI: khong giu credit, chi nhan `preset` (khong nhan "
         "`voice_id`) nen khong co cau hoi so huu nao de kiem. Ham nay la ranh "
-        "gioi mong quanh `features.goi_cong` ma `routes/_p_nghe_thu.py::"
-        "nghe_thu_van_ban` goi — tach ra de test_526 mock duoc dung MOT cho "
-        "(lot sinh THAT) ma khong dung ca sidecar gia. Cong rieng cua duong "
-        "nay nam o CHINH nghe_thu_van_ban: `giong_mau.hop_le` + tran ky tu + "
-        "rate-limit theo gio + `admission.hold_persisted`. D006 (2026-09-11): "
-        "nghe_thu_van_ban CO goi `lan_ngon_ngu.quyet_dinh`, nhung de HIEN phan "
-        "quyet canh bao canh nut phat — khong de CHAN luot sinh (van khong co "
-        "credit nao de bao ve o day)."),
+        "gioi mong quanh `features.goi_cong` — tach ra de test_526 mock duoc "
+        "dung MOT cho (luot sinh THAT) ma khong dung ca sidecar gia. Cong "
+        "rieng cua DUONG nay nam o nguoi goi no, `routes/_p_nghe_thu.py::"
+        "nghe_thu_van_ban` — xem mien tru ngay duoi day."),
+    ("routes/_p_nghe_thu.py", "nghe_thu_van_ban"): (
+        "Nghe thu MIEN PHI: khong giu credit, chi nhan `preset` (khong nhan "
+        "`voice_id`) nen khong co cau hoi so huu nao de kiem. Cong rieng cua "
+        "no la: `giong_mau.hop_le` + tran ky tu + rate-limit theo gio "
+        "(`nghe_thu_cua_toi.xin_luot`) + xep sau khach tra tien "
+        "(`admission.hold_persisted`). D006 (2026-09-11): cua nay CO goi "
+        "`lan_ngon_ngu.quyet_dinh`, nhung de HIEN phan quyet canh bao canh nut "
+        "phat — khong de CHAN luot sinh (van khong co credit nao de bao ve o "
+        "day, nen khong co gi de `giai_giong` giu chan)."),
     ("nghe_thu.py", "dung"): (
         "Vong bao tri dung tep nghe thu cho giong MAU. Khong khach nao goi, "
         "khong tien nao bi cham, va giong den tu chinh danh muc."),
@@ -138,6 +149,7 @@ def test_quet_tim_duoc_dung_nhung_cua_da_biet():
         ("routes/_p_lich_su.py", "doc_lai"),
         ("routes/_p_phat_dan.py", "phat_dan"),
         ("nghe_thu_cua_toi.py", "sinh"),
+        ("routes/_p_nghe_thu.py", "nghe_thu_van_ban"),
         ("routes/_p_giong.py", "tao_giong"),
         ("jobs.py", "_tao_tieng"),
     }

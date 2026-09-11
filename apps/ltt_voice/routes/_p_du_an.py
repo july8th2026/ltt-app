@@ -61,14 +61,13 @@ def _ngu_canh_giong(*, owner_id: str = "", **them) -> dict:
          "nhan_lan": lan_ngon_ngu.NHAN_LAN,
          "mac_dinh": giong_mau.MAC_DINH}
     d.update(them)
-    # Xem chú thích ở `_p_tao.py`: kho chung khoá theo tiền tố riêng.
+    # Xem chú thích ở `_p_tao.py`: `tham_chieu.tach_rieng_chung` là MỘT hàm
+    # dùng ở cả ba màn (fix round 1/5), không phải ba bản `if g.dung_chung`.
+    rieng, chung = tham_chieu.tach_rieng_chung(d.get("giong") or ())
     d["duong_nghe"] = nghe_thu.duong_cho_trang(
         duong_audio=f"{MANIFEST.route_prefix}/audio", owner_id=owner_id,
         ma_mau=[g.ma for g in giong_mau.DANH_SACH],
-        rieng=[g.public_id for g in (d.get("giong") or ())
-              if not g.dung_chung],
-        chung=[g.public_id for g in (d.get("giong") or ())
-              if g.dung_chung])
+        rieng=rieng, chung=chung)
     return d
 
 
