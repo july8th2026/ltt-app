@@ -282,6 +282,84 @@ def test_trung_ten_tra_cau_sua_duoc_khong_de_lai_tep_mo_coi(khach):
             pass
 
 
+def test_hai_ho_so_KHAC_TEN_cung_CLIP_deu_co_job_RIENG_khong_trung_khoa(khach):
+    """🔴 Fix round 2 (item 9 — regression của chính round 1). Round 1 đổi khoá
+    dedupe ghi danh (`_p_giong.py::tao_giong`) từ `(owner, ten)` sang
+    `(owner, sha256_clip)`, với lý lẽ "cùng clip là cùng một việc". Đó là một
+    lỗi THẬT: hai lượt ghi danh HỢP LỆ của CÙNG một clip nhưng KHÁC TÊN (hai
+    tab, hoặc cố ý tạo hai hồ sơ từ một bản thu) sẽ TRÙNG khoá trong lúc job
+    đầu còn `queued` — `jobs.submit` trả lại JOB THỨ NHẤT cho lượt thứ hai, nên
+    hồ sơ thứ hai không bao giờ có job nào trỏ tới (kẹt vĩnh viễn ở
+    `dang_ghi_danh`), và response của lượt hai trả `voice_id` của hồ sơ hai
+    kèm `job_id` của hồ sơ MỘT — hai giá trị không khớp nhau.
+
+    Khoá ĐÚNG (ruling round 2) là danh tính của CHÍNH HỒ SƠ vừa tạo
+    (`ho_so.public_id`): mỗi lượt ghi danh hợp lệ luôn tạo một hàng
+    `VoiceProfile` MỚI, nên hai lượt khác tên/khác public_id không bao giờ
+    trùng khoá — HAI job riêng, mỗi job tham chiếu ĐÚNG hồ sơ của lượt đã tạo
+    ra nó. TestClient không chạy worker nền nên job đầu chắc chắn còn
+    `queued` khi lượt hai được nộp — đúng kịch bản "job trước còn chạy".
+    """
+    client, uid = khach
+    clip = _wav()  # CÙNG bytes cho cả hai lượt — cố ý.
+
+    r1 = client.post(
+        "/ltt-voice/giong/tao",
+        data={"ten": "Ban ghi A", "dong_y": "1", "ngon_ngu": "vi",
+              "csrf_token": _csrf_giong(client)},
+        files={"tep": ("clip.wav", clip, "audio/wav")})
+    assert r1.status_code == 200, r1.text
+    d1 = r1.json()
+
+    r2 = client.post(
+        "/ltt-voice/giong/tao",
+        data={"ten": "Ban ghi B", "dong_y": "1", "ngon_ngu": "vi",
+              "csrf_token": _csrf_giong(client)},
+        files={"tep": ("clip.wav", clip, "audio/wav")})
+    assert r2.status_code == 200, r2.text
+    d2 = r2.json()
+
+    # Hai hồ sơ khác nhau, và mỗi response mang ĐÚNG cặp voice_id/job_id của
+    # chính lượt đó — không lệch chéo.
+    assert d1["voice_id"] != d2["voice_id"]
+    assert d1["job_id"] != d2["job_id"], (
+        "hai lượt khác tên bị GỘP một job — đúng hồi quy round 1")
+
+    from apps.ltt_voice.tables import VoiceProfile
+    from platform_core.models import Job
+    from sqlalchemy import func, select
+    import platform_core.db as dbmod
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        assert db.execute(
+            select(func.count()).select_from(VoiceProfile)).scalar() == 2
+        assert db.execute(select(func.count()).select_from(Job)).scalar() == 2
+
+        j1 = db.get(Job, d1["job_id"])  # `Job.id` la chuoi UUID, khong phai int
+        j2 = db.get(Job, d2["job_id"])
+        assert j1 is not None and j2 is not None
+        # Job của lượt 1 tham chiếu ĐÚNG hồ sơ của lượt 1 — không phải hồ sơ
+        # của lượt 2 (và ngược lại). Đây là chính đường mà round 1 làm sai.
+        assert j1.params.get("voice_id") == d1["voice_id"]
+        assert j2.params.get("voice_id") == d2["voice_id"]
+
+        # Không hồ sơ nào mồ côi: cả hai đều còn `dang_ghi_danh` (bình thường
+        # — không worker nào chạy trong test), nhưng cả hai đều có MỘT job
+        # đang chạy tham chiếu chính nó, không phải kẹt vĩnh viễn không job.
+        p1 = db.execute(select(VoiceProfile).where(
+            VoiceProfile.public_id == d1["voice_id"])).scalar_one()
+        p2 = db.execute(select(VoiceProfile).where(
+            VoiceProfile.public_id == d2["voice_id"])).scalar_one()
+        assert p1.trang_thai == "dang_ghi_danh"
+        assert p2.trang_thai == "dang_ghi_danh"
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
 # ── ④ CÁCH LY A ↔ B (phần KHÔNG cần cửa `/xoa` — Task 6) ─────────────────────
 
 def test_A_khong_TAT_duoc_giong_cua_B(khach):

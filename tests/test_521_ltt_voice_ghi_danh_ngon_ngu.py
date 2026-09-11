@@ -49,10 +49,21 @@ def test_lan_hop_le_lay_tu_tham_quyen():
 
 
 def test_migration_mot_head_va_danh_dau_dong_cu():
+    """⚠️ `down_revision` KHÔNG còn là `d15b8c30f7a4` (bản viết lúc Task 4, khi
+    đó đúng — một head duy nhất). Đợt sửa cuối RC1 (item 1) đổi nó sang
+    `e26c9a41d8b5`: trunk merge mang theo `20260910_1000_job_scheduler_envelope`
+    với CÙNG cha `d15b8c30f7a4`, tạo hai head song song
+    (`alembic upgrade head` hỏng). Nối `voice_ngon_ngu_nguon` sau
+    `job_scheduler_envelope` gộp lại còn đúng một head — xem
+    `alembic/versions/20260911_1000_voice_ngon_ngu_nguon.py` cho lý do đầy đủ.
+    Test này CHỐT hình dạng migration hiện tại, không chốt một chuỗi cha cụ
+    thể đã lỗi thời — giữ nguyên assertion cũ ở đây sẽ dạy người sửa sau tái
+    tạo đúng lỗi hai head mà đợt sửa cuối vừa dọn.
+    """
     import pathlib, re
     goc = pathlib.Path(__file__).resolve().parents[1]
     m = (goc / "alembic" / "versions" / "20260911_1000_voice_ngon_ngu_nguon.py").read_text(encoding="utf-8")
-    assert re.search(r'down_revision\s*=\s*"d15b8c30f7a4"', m)
+    assert re.search(r'down_revision\s*=\s*"e26c9a41d8b5"', m)
     assert "mac_dinh_cu" in m
     # Migration KHÔNG được gán lại `ngon_ngu` của dòng cũ (spec §6.2).
     assert not re.search(r"ngon_ngu\s*=\s*'", m.replace("ngon_ngu_nguon", ""))

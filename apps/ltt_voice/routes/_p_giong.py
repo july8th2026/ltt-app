@@ -209,28 +209,33 @@ async def tao_giong(request: Request, ten: str = Form(""),
                   "nguon": "giong",
                   "_job_type": "ltt_voice.enroll"}
         # Chặn double-submit (F5 / hai tab) cùng khuôn với Studio (`test_519`):
-        # cùng khách + cùng CLIP (nội dung) trong lúc job trước còn chạy ⇒
-        # MỘT job.
+        # CÙNG một lượt nộp (retry của đúng request này) trong lúc job trước
+        # còn chạy ⇒ MỘT job.
         #
-        # ⛔ Đợt sửa cuối RC1 (item 9): khoá CŨ là `(owner, ten)` — nhưng
-        #    `uq_voice_owner_ten` (flush ngay phía trên) đã NÉM `IntegrityError`
-        #    và RETURN 400 cho mọi lượt trùng TÊN trước khi luồng chạy tới được
-        #    dòng này. Với đúng lượt double-submit khoá này định chặn (F5/hai
-        #    tab gửi lại CÙNG form, nên `ten` không đổi), khoá `ten` không bao
-        #    giờ có việc để làm — ràng buộc DB đã chặn trước rồi.
+        # ⛔ Fix round 2 (item 9 — ĐẢO lại bản băm nội dung của round 1):
+        #    round 1 đổi khoá sang `sha256` của clip (`{"owner": uid, "sha256":
+        #    sha}`), với lý lẽ "cùng clip là cùng một việc". Đó là một lỗi THẬT
+        #    mới, không phải một cải tiến: hai lượt ghi danh HỢP LỆ của CÙNG
+        #    một clip nhưng KHÁC TÊN (hai tab, hoặc cố ý tạo hai hồ sơ từ một
+        #    bản thu) SẼ TRÙNG khoá trong lúc job đầu còn `queued`/`running`.
+        #    `jobs.submit` khi trùng khoá trả lại JOB THỨ NHẤT — nên hồ sơ THỨ
+        #    HAI (`ho_so` của chính request này) không bao giờ có job nào trỏ
+        #    tới, kẹt vĩnh viễn ở `dang_ghi_danh` (không `loi`, không
+        #    `active`), và response trả `voice_id` của hồ sơ hai kèm `job_id`
+        #    của hồ sơ một — hai giá trị không khớp nhau.
         #
-        #    ⭐ Đổi sang `sha256` CỦA CHÍNH CLIP — dùng LẠI `sha` đã tính ở
-        #    `features.hash_noi_dung(data)` phía trên (KHÔNG băm lại tệp lần
-        #    hai). Đây là định danh đúng của "cùng một lượt ghi danh": hai lượt
-        #    gửi CÙNG một clip là cùng một việc, bất kể khách gõ tên gì mỗi lần
-        #    — còn `ten` chỉ là một nhãn khách tự đặt, không phải bằng chứng
-        #    "đây là cùng một lượt nộp". Khoá này CÓ việc thật để làm ở đường
-        #    mà `uq_voice_owner_ten` không phủ: cùng clip, TÊN khác nhau giữa
-        #    hai lượt gửi liền nhau (gõ lại tên rồi bấm lại trước khi job đầu
-        #    xong) — trường hợp đó vẫn lọt qua ràng buộc tên nhưng đúng là một
-        #    lượt double-submit của cùng một clip.
+        #    ⭐ Khoá ĐÚNG là danh tính của CHÍNH HỒ SƠ vừa tạo
+        #    (`ho_so.public_id`), không phải nội dung clip cũng không phải
+        #    tên: MỖI lượt ghi danh hợp lệ luôn tạo MỘT hàng `VoiceProfile`
+        #    mới (dòng `db.add(ho_so)` + flush phía trên) — nên thứ có thể
+        #    trộn vào nhau chỉ có thể là một retry của ĐÚNG request đã tạo ra
+        #    hồ sơ này (không phải một hồ sơ khác, dù trùng tên hay trùng nội
+        #    dung). Trùng TÊN đã bị `uq_voice_owner_ten` (flush phía trên)
+        #    chặn và trả 400 TRƯỚC khi luồng chạy tới dòng này rồi — ràng buộc
+        #    DB đó mới là hàng rào thật chống hai hồ sơ trùng tên, khoá dedupe
+        #    ở đây không cần (và không được) gánh việc đó.
         khoa_lap = dedupe_key_for("ltt_voice.enroll",
-                                  {"owner": uid, "sha256": sha})
+                                  {"owner": uid, "voice_id": str(ho_so.public_id)})
         job = submit_with_credit(
             db, user_id=str(uid), app_slug=MANIFEST.slug,
             job_type="ltt_voice.enroll",
