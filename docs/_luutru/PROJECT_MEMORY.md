@@ -2480,3 +2480,26 @@ production  commit 3b22503cc590 · asset_ver 9b7ae80d · build 2026-09-10T10:18:
 
 ⚠️ Không sửa `setup/` ngay trước một lượt deploy — đó là đổi một rủi ro **đã
    hiểu** lấy một rủi ro **chưa hiểu**.
+
+---
+
+## 2026-09-12 — LTT Voice RC1: hợp nhất năm phiên, Tầng 1 `READY_FOR_DEPLOYMENT`
+
+`claude/ltt-voice-reconciliation-165a40` @ `473b744f` · 99/100 ·
+`docs/LTT_VOICE/HOP_NHAT/TANG1_RC1.md`
+
+Điều đáng nhớ **không** phải con số, mà là ba thứ cơ chế đã đổi:
+
+1. **Sổ cái Voice máy đọc được** (`SO_CAI.json`) + `tools/doi_soat_voice.py`
+   chạy trong cổng: mỗi commit Voice của mọi phiên phải có một dòng nói nó đã
+   được GIỮ / SỬA / BỎ và landed ở `rc_sha` nào. Trước đó, câu *"đã hợp nhất
+   hết chưa"* không có cách nào trả lời ngoài trí nhớ.
+2. **Một thẩm quyền duy nhất cho làn giọng** —
+   `apps/ltt_voice/lan_ngon_ngu.py::quyet_dinh`. Bốn phiên từng có bốn cách trả
+   lời câu *"văn bản này đi làn nào"*.
+3. **Tầng đối chứng THẬT** (`tests/browser/ltt_voice_that.js`): tầng mock luôn
+   trả tiếng giả lập, nên nó **không thể** nói lên rằng engine thật còn chạy.
+   Tệp này chặn đúng chỗ đó bằng cách từ chối một WAV mang dấu `ltt-voice-mock`.
+
+⚠️ **Tầng 2 (`RELEASED`) chưa chạy một ô nào** — xem spec §10.2. Đừng đọc
+`READY_FOR_DEPLOYMENT` thành "đã lên production".

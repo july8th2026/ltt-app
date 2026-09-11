@@ -99,6 +99,24 @@ Get-ChildItem . -Recurse -Directory | Where-Object {
   (Get-ChildItem $_.FullName -Recurse -File -Force).Count -eq 0 }   # thu muc rong
 ```
 
+🔴 **`git clean -fdX apps/` XOÁ LUÔN `apps/upscalevideo/vendor/` — tức nó phá
+đúng thứ §1b ngay trên kia bắt phải có.** `-X` xoá *mọi* thứ bị gitignore dưới
+`apps/`, và 48 MB nhị phân của `upscalevideo` nằm đúng trong tập đó.
+
+Đo 12/09/2026: dọn thư mục ma làm 5 test đỏ thành xanh, rồi lượt cổng kế tiếp
+đỏ **3 test khác** — `test_82::test_vendor_engine_co_mat` và hai test
+`test_505_nguon_ban_giao`. Không dòng đỏ nào nhắc tới worktree hay tới lệnh
+`clean` vừa chạy.
+
+⇒ Chạy `clean` xong thì **chép lại ngay**, đừng đợi cổng nhắc:
+
+```powershell
+robocopy D:\LTTSTUDIOSAPP\apps\upscalevideo\vendor <cây>\apps\upscalevideo\vendor /E
+```
+
+⚠️ Cái bẫy ở đây không phải tài liệu thiếu: §1b và §1c đều **đúng**, nhưng
+không mục nào biết mục kia, nên làm đúng mục sau là phá mục trước.
+
 ⛔ **Và đừng hạ mốc `ruff`/`mypy` sau lần dọn này.** Dọn xong thì số phát hiện
 **giảm** (đo 09/09: `attr-defined` 204 → 188, `F401` 415 → 414) vì mã của app đã
 xoá không còn được quét. Hạ mốc theo con số ấy sẽ làm **đỏ mọi cây chưa dọn** —

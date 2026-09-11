@@ -16,6 +16,53 @@
 
 
 
+## 2026-09-12 — LTT Voice RC1: Tầng 1 `READY_FOR_DEPLOYMENT` (99/100) tại `473b744f`
+
+Hợp nhất công việc Voice của **năm phiên song song** thành một dòng RC duy nhất
+trên `claude/ltt-voice-reconciliation-165a40`. Báo cáo nghiệm thu đầy đủ:
+`docs/LTT_VOICE/HOP_NHAT/TANG1_RC1.md`; sổ cái máy đọc được:
+`docs/LTT_VOICE/HOP_NHAT/SO_CAI.json`.
+
+- Cổng đầy đủ **PASS** trên đúng SHA đỉnh RC `473b744f` (957 s · 10.180 test
+  xanh · `cay_da_doi_giua_chung=False`), bản ghi
+  `test-results/gates/20260911T183256Z-19848.json`.
+- Playwright tầng mock: **5/5 luồng** (D002·D003·D004·D005·T-08) và **24/24** tổ
+  hợp khung hình, 0 lỗi ở cả bốn lớp bắt lỗi.
+- Tổng hợp **THẬT**: VI (preset) + EN (giọng ghi danh từ một clip tiếng Anh
+  thật) chạy qua **cổng giọng 8120 thật**, trên CSDL `voice-e2e` cách ly. Ô này
+  trước đó là `BLOCKED`.
+- Di trú: một `alembic head`, hai migration chỉ **thêm**; diễn tập khôi phục
+  giữ 100/100 bảng + 155/155 ràng buộc; công cụ đo làn ASR chạy khô cho
+  `vi -> en` với `do_tin=0.998` trên tiếng nói thật.
+
+### 🔴 Ba lượt cổng, hai lượt đầu ĐỎ — và không lượt nào đỏ vì mã
+
+Ghi ra vì một lượt đỏ bị viết lại thành "xanh ngay từ đầu" là cách dạy người
+đọc bỏ qua màu đỏ.
+
+1. **Thư mục ma** (`apps/chataistudio`, `codex_sidecar`… chỉ còn `__pycache__`
+   sau khi hoà trunk) làm đỏ `test_60`, `test_85`, `test_1004`. Đúng ca
+   `QUY_TRINH_WORKTREE.md` §1c.
+2. **Chính báo cáo E2E của tôi** làm đỏ `test_44`: nó dán hai chuỗi hex 32 ký
+   tự (`public_id` + vân tay `repr-*.npz`), bộ quét bắt `bare_32_char_hex`. Xử
+   bằng cách **rút ngắn chuỗi**, không đụng vào luật quét.
+3. Dọn xong lại đỏ **3 test khác**: `git clean -fdX apps/` xoá luôn
+   `apps/upscalevideo/vendor/` — thứ mà **§1b của cùng tài liệu ấy** bắt phải
+   có. Làm đúng §1c thì phá §1b. Đã bổ sung cảnh báo chéo vào
+   `docs/QUY_TRINH_WORKTREE.md` §1c.
+
+⭐ Bài học chung của cả ba: **không dòng đỏ nào nhắc tới worktree**, nên cả ba
+lần người đọc đều bị đẩy đi tìm lỗi trong mã.
+
+### Tầng 2 — chưa có gì
+
+Mọi ô của spec §10.2 (SHA khớp `/health/version`, `nghiem_thu_deploy` 0/0/0,
+`alembic upgrade head` trên production, di trú ASR thật, Playwright trên URL
+công khai, Public API live) **chưa chạy**. RC này **chưa** được gọi là
+`RELEASED`.
+
+---
+
 ## 2026-09-11 — DEPLOY Q121 + audit cửa: `4a894036` lên production
 
 `EXITCODE=0` · nghiệm thu **0/0/0** trên 636 tệp `.py` · `/health/ready` **200**

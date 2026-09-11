@@ -122,5 +122,28 @@
     "528": "test_528_kho_chung_nghe_thu.py",
     "529": "test_529_nghiem_thu_deploy_moi_tep.py",
     "530-549": "du tru RC1"
+  },
+  "tang1": {
+    "sha_duoc_cong_chung_nhan": "473b744f3feb8b46837a351c7156bfa4c8367258",
+    "ban_ghi_cong": "test-results/gates/20260911T183256Z-19848.json",
+    "ket_cong": "PASS (day-du, 957.4s, 10180 passed / 0 failed, cay khong doi giua chung)",
+    "cong_bo_qua": [
+      "frontend agent-canvas",
+      "frontend autosub-studio",
+      "frontend prompt-ai-ommi",
+      "frontend chatltt"
+    ],
+    "vi_sao_bo_qua_vo_hai": "RC doi 0 tep duoi frontend/ (git diff --name-only 34b4626e HEAD -- frontend/)",
+    "playwright_mock": "5/5 luong PASS, 24/24 khung hinh PASS, 0 loi 4 lop",
+    "tong_hop_that": "VI (preset Adam) + EN (giong ghi danh tu clip tieng Anh that) qua cong giong THAT 8120 — PASS",
+    "di_tru": {
+      "alembic_head": "d9a1f6c2b3e5 (mot head)",
+      "dien_tap_khoi_phuc": "100/100 bang, 155/155 rang buoc; uq_voice_owner_ten + uq_voice_ref_hash con nguyen",
+      "asr_chay_kho": "Xet 2 / Se doi 1 (do_tin=0.998) / Da ghi 0 / Khong chac 1"
+    },
+    "diem": "99/100",
+    "phan_quyet": "READY_FOR_DEPLOYMENT",
+    "bao_cao": "docs/LTT_VOICE/HOP_NHAT/TANG1_RC1.md",
+    "tang2": "CHUA CHAY — moi o cua spec §10.2 con trong; RC nay KHONG duoc goi la RELEASED"
   }
 }
