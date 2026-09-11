@@ -297,18 +297,26 @@ REGISTRY: dict[str, Provider] = {
                     ],
                 },
             ),
+            # 🔴 `qwen38-vision` ĐÃ GỠ 11/09/2026 (D02, dual-model 2.3). Nó là
+            #    hồ sơ **thứ hai của cùng một model** trên cùng một card, tồn
+            #    tại chỉ vì mmproj; llama-swap phải giết lượt đang chạy để hoán
+            #    hồ sơ. Nay `qwen38-api` tự nạp mmproj, và model thứ hai bán ra
+            #    là một model KHÁC trên một CARD khác — đó là `qwen35-api`.
             ModelInfo(
-                "qwen38-vision", (APIKEY_CAT_CHAT,),
-                display_name=N_("LTT LLM — đọc ảnh"),
+                "qwen35-api", (APIKEY_CAT_CHAT,),
+                display_name=N_("LTT LLM 3.5 (nhanh · rẻ · đọc ảnh)"),
                 is_active=True,
                 capabilities={
-                    "context_window": 65_536,
+                    # ⛔ SỐ ĐO của hồ sơ 5060 Ti do **Task 2.6/3.2** chốt. Tới
+                    #    lúc ấy nó dùng chung con số với hồ sơ text — cùng con
+                    #    số `apps/ltt_llm/ngan_sach.py` đang khai, để hai nguồn
+                    #    không nói hai điều khác nhau về cùng một model.
+                    "context_window": 204_800,
                     "vision": True,
                     "tool_calling": True,
                     "license": "Apache-2.0",
-                    "do_duoc": {"decode_tok_s": 58.5, "vram_dinh_mb": 21_451},
                     "canh_bao": [
-                        N_("nạp thêm bộ chiếu ảnh nên tốn hơn ~1,1 GB VRAM so với bản không ảnh"),
+                        N_("chạy trên card thứ hai của máy B — bận thì trả 429, không phải lỗi"),
                     ],
                 },
             ),

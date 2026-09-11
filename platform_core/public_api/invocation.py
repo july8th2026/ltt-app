@@ -492,6 +492,14 @@ def submit(db, *, principal, tool, params: dict, quote: dict,
     dedupe = dedupe_key_for(lane, {
         "intent": meta["quote_intent"], "key_id": principal.key_id})
 
+    # 🔴 Hai cột admission ghi LÚC NỘP, THEO MODEL (multijob 2.3, R20). Trước
+    #    2.3 cả hai nhánh dưới đọc `tool.admission_resource` — bộ ba TĨNH — và
+    #    trường ấy rỗng với mọi tool khai `admission_theo_model`; hậu quả đầy đủ
+    #    ở `registry.admission_luc_nop`.
+    from platform_core.registry import admission_luc_nop
+
+    tai_nguyen, so_suat = admission_luc_nop(tool, job_params, mac_dinh="api")
+
     if is_test(getattr(principal, "mode", "live")):
         # A test key never reaches the ledger. Not "spends little" — cannot
         # spend, which is the property that makes a leaked test key harmless.
@@ -502,8 +510,8 @@ def submit(db, *, principal, tool, params: dict, quote: dict,
         return jobq.submit(
             db, user_id=principal.user_id, app_slug=tool.app_slug,
             job_type=lane, params=job_params, dedupe_key=dedupe,
-            admission_resource=getattr(tool, "admission_resource", "") or "api",
-            admission_slots=getattr(tool, "admission_slots", 0),
+            admission_resource=tai_nguyen,
+            admission_slots=so_suat,
         )
     # The quote is a promise: hold exactly what it said. Recomputing here would
     # skip the published price bounds and charge past a number the customer was
@@ -516,8 +524,8 @@ def submit(db, *, principal, tool, params: dict, quote: dict,
         # qua API chết ở mỗi lần deploy trong khi cùng job đó qua web sống sót.
         max_attempts=_so_lan_thu(tool, lane),
         quoted_credit=int(quote.get("credit", 0)),
-        admission_resource=getattr(tool, "admission_resource", "") or "api",
-        admission_slots=getattr(tool, "admission_slots", 0),
+        admission_resource=tai_nguyen,
+        admission_slots=so_suat,
     )
 
 

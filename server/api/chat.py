@@ -41,6 +41,7 @@ from platform_core.public_api.catalog import build_catalog, require_tool
 from platform_core.public_api.executor import for_tool, for_tool_name
 from platform_core.public_api.errors import (insufficient_credit,
                                              invalid_request,
+                                             model_not_found,
                                              payload_too_large,
                                              service_unavailable)
 from platform_core.public_api.principal import Principal
@@ -68,6 +69,35 @@ _THU_LAI_S = 10
 MA_KHACH_NGAT = 499
 _KHACH_NGAT = {"code": "client_disconnected",
                "detail": "The client disconnected before the answer was ready."}
+
+
+def kiem_ten_model(tool, ten) -> None:
+    """Tên `model` không có trong danh mục công khai ⇒ `model_not_found` (D02).
+
+    🔑 NGUỒN LÀ `tool.model_aliases` — **đúng dict** mà `GET /api/v1/models`
+       chiếu ra. Nên câu trả lời ở đây không bao giờ lệch với danh sách khách
+       vừa đọc; một danh sách gõ tay ở cửa là bản chân lý thứ hai.
+
+    🔴 VÌ SAO KHÔNG ĐỂ `executor.validate` LO (dual-model 2.3, Step 2c). Nó có
+       bắt, nhưng bắt thành `invalid_request` — câu nói *"yêu cầu của bạn sai
+       hình dạng"*. Khách vừa bị cắt tên `ltt_llm` cần nghe *"tên model ấy không
+       còn"*, và họ phải nghe **cùng một câu** dù đi đường nào:
+
+         · tên đã cắt (`ltt_llm`, `ltt_llm_vision`)         -> ở đây
+         · tên bản khai admission không phủ (`KeyError`)    -> chỗ giải admission
+
+       Hai đường, một mã lỗi, một chỉ dẫn: gọi `GET /api/v1/models`.
+
+    ⛔ Rỗng thì KHÔNG ném: model là tham số **tuỳ chọn** và mặc định do app khai.
+    """
+    ten = str(ten or "")
+    if not ten:
+        return
+    bi_danh = getattr(tool, "model_aliases", None) or {}
+    if bi_danh and ten not in bi_danh:
+        raise model_not_found(
+            f"`model` {ten!r} is not served here. Call GET /api/v1/models for "
+            f"the names in service: {', '.join(sorted(bi_danh))}.")
 
 
 def _tran_max_tokens(token_vao_uoc: int = 0, executor=None) -> int:
@@ -154,6 +184,9 @@ def register_chat_routes(api, config, tag: str) -> None:
         # "a typo must never reach the ledger".
         if "max_tokens" not in payload:
             payload["max_tokens"] = executor.mac_dinh_cho("sync")
+        # Tên model TRƯỚC hình dạng: một tên đã cắt phải nghe "model không còn",
+        # không phải "yêu cầu sai hình dạng" (D02, Step 2c).
+        kiem_ten_model(tool, payload.get("model"))
         try:
             sach = executor.validate(payload)
         except executor.parameter_error as e:
@@ -192,9 +225,13 @@ def register_chat_routes(api, config, tag: str) -> None:
         except KeyError as e:
             # Bản khai của app nói tool này không phục vụ model ấy. KHÔNG phải
             # 500: ta biết chính xác chuyện gì xảy ra và nói được ra.
+            # ⭐ CÙNG MỘT CÂU với tên đã cắt (`kiem_ten_model`) — D02, Step 2c.
+            #    Trước 2.3 chỗ này nói `invalid_request`, tức khách nhận hai câu
+            #    khác nhau cho cùng một sự thật "model này không phục vụ được".
             log.error("ban khai admission thieu model %r: %s", sach["model"], e)
-            raise invalid_request(
-                f"`model` {sach['model']!r} is not served by this endpoint."
+            raise model_not_found(
+                f"`model` {sach['model']!r} is not served here. Call "
+                f"GET /api/v1/models for the names in service."
             ) from None
 
         tran = _tran_max_tokens(token_vao_uoc, executor)

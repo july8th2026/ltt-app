@@ -58,6 +58,7 @@ CODE_IDEMPOTENCY_IN_PROGRESS = "idempotency_in_progress"
 CODE_QUOTE_EXPIRED = "quote_expired"
 CODE_QUOTE_INVALID = "quote_invalid"
 CODE_CONCURRENCY_LIMITED = "concurrency_limited"
+CODE_MODEL_NOT_FOUND = "model_not_found"
 CODE_QUOTA_EXCEEDED = "quota_exceeded"
 
 _TITLES = {
@@ -82,6 +83,7 @@ _TITLES = {
     CODE_QUOTE_EXPIRED: "Quote expired",
     CODE_QUOTE_INVALID: "Quote invalid",
     CODE_CONCURRENCY_LIMITED: "Too many concurrent jobs",
+    CODE_MODEL_NOT_FOUND: "Model not found",
     CODE_QUOTA_EXCEEDED: "Quota exceeded",
 }
 
@@ -280,6 +282,29 @@ def idempotency_in_progress(detail: object = "", **extra) -> ApiError:
     """
     return ApiError(409, CODE_IDEMPOTENCY_IN_PROGRESS, detail,
                     extra=extra or None)
+
+
+def model_not_found(detail: object = "", **extra) -> ApiError:
+    """The `model` asked for is not one this platform serves (D02).
+
+    Two different ways to arrive here must say the **same** sentence, or the
+    customer has to guess whether the name is gone or the server is broken:
+
+    * a name that was cut — `ltt_llm`, `ltt_llm_vision` — which integrations
+      pinned to before 2026-09-11;
+    * a name the admission declaration does not cover, which `suc_chua_admission`
+      reports as `KeyError` (fail-closed: never run a model with no lease).
+
+    Both used to come back as the generic `invalid_request`, which reads as "you
+    sent malformed JSON" and sends the reader looking in the wrong place.
+
+    ⛔ STATUS STAYS 400, not 404. The rule this module states for every specific
+       cause is "same status as the generic helper it replaces; only the code and
+       the advice change", so a client matching on status keeps working. A 404 on
+       a POST body field would also be indistinguishable from "this route does
+       not exist" — the one reading a caller is most likely to act on wrongly.
+    """
+    return ApiError(400, CODE_MODEL_NOT_FOUND, detail, extra=extra or None)
 
 
 def quote_expired(detail: object = "") -> ApiError:

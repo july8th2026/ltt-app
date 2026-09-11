@@ -134,8 +134,16 @@ CONG_BO_CHO_CLIENT = int(TOKEN_VAO_TRAN * 0.92)                   # 156_385
 
 #: Cửa sổ engine theo **id model nội bộ**. Khoá là id của máy B, không phải
 #: bí danh công khai — bí danh không bao giờ được rời máy A (INV-015).
+#:
+#: ⚠️ `qwen35-api` VÀO ĐÂY Ở 2.3 CHỈ ĐỂ NỐI DÂY, KHÔNG PHẢI ĐỂ CHỐT SỐ. Bản khai
+#:    công khai (`manifest.py`) hỏi `cong_bo_cua("qwen35-api")` từ lúc tên
+#:    `ltt-3.5` ra đời, nên khoá phải có mặt ngay; **Task 2.6** mới đặt số ĐO
+#:    của hồ sơ 5060 Ti (và gỡ `qwen38-vision` cùng `CUA_SO_MODEL_VISION`).
+#:    Tới lúc đó nó dùng chung cửa sổ với model text — cùng ngữ cảnh engine đã
+#:    chốt ở `constraints.md`, không phải một con số tôi nghĩ ra.
 CUA_SO_THEO_MODEL = {
     "qwen38-api": CUA_SO_MODEL,
+    "qwen35-api": CUA_SO_MODEL,
     "qwen38-vision": CUA_SO_MODEL_VISION,
 }
 
@@ -297,6 +305,34 @@ DONG_THOI_MAY_B = SO_SLOT_MAY_B
 #: Pool KV dùng chung giữa các slot khi `-kvu`: chính là cửa sổ engine. Nền tảng
 #: nhận nó qua `ToolSpec.admission_token_pool` (không import app).
 POOL_KV_MAY_B = CUA_SO_MODEL
+
+# ── Sức chứa THEO MODEL (dual-model 2.3 nối dây, Task 2.6 chốt số) ───────────
+#
+# 🔑 Hai model công khai chạy trên **hai card khác nhau** của máy B, nên mỗi cái
+#    có pool KV riêng. Bản khai admission ở `manifest.py` đọc đúng ba hằng dưới
+#    đây — **đừng gõ số vào manifest** (test_1201 chốt điều đó).
+#
+# ⛔ 2.3 KHÔNG ĐẶT SỐ MỚI. Ba hằng này hôm nay trỏ về đúng những con số đang
+#    chạy, tức hành vi không đổi một chữ so với trước khi tách; **Task 2.6** đo
+#    trên phần cứng thật rồi thay. Đặt một con số đoán ở đây là dựng một phép đo
+#    giả mà chẳng ai biết là giả.
+
+#: Số slot song song cho MỖI model. Bí danh của `SO_SLOT_MAY_B`.
+SO_SLOT = SO_SLOT_MAY_B
+
+#: Ngân sách KV của `ltt-3.8` (3090) và `ltt-3.5` (5060 Ti).
+POOL_38 = CUA_SO_THEO_MODEL["qwen38-api"]
+POOL_35 = CUA_SO_THEO_MODEL["qwen35-api"]
+
+#: Tên tài nguyên admission của từng model. Chúng phải **khác nhau**: hai card
+#: khác nhau thì một suất giành trên card này không nói gì về card kia, và gộp
+#: tên là biến hai hàng đợi thành một cách âm thầm.
+TAI_NGUYEN_38 = "ltt_38_3090"
+TAI_NGUYEN_35 = "ltt_35_5060"
+
+#: Nhóm cư trú GPU của `ltt-3.8` (trọng tài residency, Task 5.x). `ltt-3.5` nằm
+#: trên card riêng nên không tranh cư trú với ai.
+NHOM_CU_TRU_38 = "rtx3090"
 
 
 def tran_theo_ngu_canh(token_vao_uoc: int) -> int:

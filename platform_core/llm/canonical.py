@@ -43,20 +43,37 @@ THU_TU_PROVIDER: tuple[str, ...] = ("ltt_llm",)
 #:    "Aliases exist so a vendor change is not a breaking change. If the raw id
 #:     leaks anywhere a customer reads, integrations start pinning to it and the
 #:     alias stops being a layer of insulation."   — test_212
+#:
+#: 🔴 CẮT TÊN CŨ 11/09/2026 (D02, dual-model 2.3). Trước ngày này bảng là
+#:    `{"ltt_llm": "qwen38-api", "ltt_llm_vision": "qwen38-vision"}` — hai bí
+#:    danh **trùng hệt tên app**, tức lớp đệm chỉ tồn tại trên giấy. Nay đúng
+#:    HAI tên công khai, và cả hai đều khác app slug:
+#:
+#:        ltt-3.8   -> qwen38-api    (mặc định, cư trú 3090)
+#:        ltt-3.5   -> qwen35-api    (5060 Ti)
+#:
+#: ⛔ `ltt_llm`, `ltt_llm_vision`, `qwen38-vision` **không còn là model**. Mọi
+#:    cửa phải trả `model_not_found`, không phải 500 và không phải "im lặng rơi
+#:    về mặc định" — một tên cũ âm thầm chạy trên model khác là bán sai hàng.
 ALIAS_SANG_ID: dict[str, str] = {
-    "ltt_llm": "qwen38-api",
-    "ltt_llm_vision": "qwen38-vision",
+    "ltt-3.8": "qwen38-api",
+    "ltt-3.5": "qwen35-api",
 }
 
-MODEL_MAC_DINH = "ltt_llm"
+MODEL_MAC_DINH = "ltt-3.8"
 MODEL_HOP_LE = tuple(ALIAS_SANG_ID)
 
 
 def ban_do_model(*alias: str) -> dict[str, str]:
     """`model_theo_provider` cho `dieu_phoi.goi()` — id THẬT, không phải bí danh.
 
-        >>> ban_do_model()                 # {"ltt_llm": "qwen38-api"}
-        >>> ban_do_model("ltt_llm_vision") # {"ltt_llm": "qwen38-vision"}
+        >>> ban_do_model()            # {"ltt_llm": "qwen38-api"}   (provider -> id)
+        >>> ban_do_model("ltt-3.5")   # {"ltt_llm": "qwen35-api"}
+
+    ⚠️ KHOÁ của dict là **provider id** (`ltt_llm`, `THU_TU_PROVIDER[0]`), không
+       phải bí danh model. Hai thứ trùng chữ cho tới 11/09/2026 và chính sự
+       trùng đó là thứ dạy sai ba nơi; nay bí danh là `ltt-3.8`/`ltt-3.5` nên
+       khoảng cách nhìn thấy được.
 
     🔴 **HÀM NÀY TỒN TẠI ĐỂ CHẶN MỘT LỖI ĐÃ XẢY RA HAI LẦN.**
 
@@ -65,7 +82,7 @@ def ban_do_model(*alias: str) -> dict[str, str]:
         model_theo_provider={"ltt_llm": "ltt_llm"}      # ⛔ SAI
 
     `ltt_llm` là **bí danh app**, không phải id model — khoá provider chỉ khai
-    `qwen38-api`/`qwen38-vision`. Nên `api_pool.chon_key(model="ltt_llm")`
+    `qwen38-api`/`qwen35-api`. Nên `api_pool.chon_key(model="ltt_llm")`
     **luôn** ném `ThieuKeyError`, và `dieu_phoi.goi()` đọc đó thành *"provider
     không phục vụ được, đi tiếp"* ⇒ **bỏ qua model nhà trong im lặng** rồi
     xuống provider sau. Không lỗi, không cảnh báo, chỉ một hoá đơn.

@@ -159,6 +159,40 @@ def suc_chua_admission(tool, model: str = "") -> "AdmissionModel | None":
     return None
 
 
+def admission_luc_nop(tool, params, *, mac_dinh: str = "") -> tuple[str, int]:
+    """Hai cột `Job.admission_resource` / `Job.admission_slots` ghi **lúc nộp**.
+
+    🔴 VÌ SAO MỘT HÀM CHỨ KHÔNG PHẢI HAI DÒNG CHÉP HAI CHỖ (multijob 2.3, R20).
+
+       `platform_core/jobs.py::claim` và `job_scheduler` gác hàng đợi bằng đúng
+       hai **cột CSDL** này (index `ix_jobs_admission_queue`, `ix_jobs_fairness`,
+       `ix_jobs_scheduler_queue`) — không bằng bản khai. Hai chỗ nộp
+       (`runtime_noi_bo/job.py`, `public_api/invocation.py`) từng đọc thẳng
+       `tool.admission_resource`, bộ ba **tĩnh**. Ngày `text.chat` chuyển sang
+       `admission_theo_model` (2.3) trường tĩnh ấy thành rỗng ⇒ hai cột mang
+       `slots=0` ⇒ `claim()` coi mọi job chat là "không dùng tài nguyên chia sẻ"
+       và nhặt tự do.
+
+       Lease vẫn là khoá thật nên **không** chạy quá suất; thứ hỏng là hàng đợi
+       nhặt-rồi-trả vô ích, **fairness**, **scheduler envelope**, và nhãn
+       `resource_wait` của `job_runner` (`defer_resource` dán tên tài nguyên
+       lấy từ chính cột này).
+
+    ⛔ `KeyError` KHÔNG bị nuốt. Cả hai bên gọi đã validate `model` theo
+       `params_schema` (enum) trước khi tới đây, nên một `KeyError` ở đây nghĩa
+       là **bản khai tự mâu thuẫn** — enum cho phép một model mà
+       `admission_theo_model` không biết. Rơi về `(mac_dinh, 0)` ở đó là ghi
+       một hàng job không được gác, tức đúng khuyết tật hàm này sinh ra để dẹp.
+
+    Trả `(mac_dinh, 0)` khi tool **không khai gì** — đó là hành vi cũ nguyên
+    vẹn cho mọi app chụp tài nguyên theo giai đoạn (vd `auto_scan_video`).
+    """
+    suc = suc_chua_admission(tool, str((params or {}).get("model") or ""))
+    if suc is None:
+        return (mac_dinh, 0)
+    return (str(suc.resource or "") or mac_dinh, int(suc.slots or 0))
+
+
 @dataclass(frozen=True)
 class ToolSpec:
     """Metadata tất định để Agent/Canvas gọi một job đã tồn tại.

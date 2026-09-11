@@ -12,7 +12,7 @@ Bản khai của `ltt_llm` — model ngôn ngữ chạy trên máy nhà, bán ra
    Nên chat **phải** khai như một tool. Đổi lại ta được miễn phí:
 
      GET  /api/v1/tools              liệt kê `text.chat`
-     GET  /api/v1/models             liệt kê `ltt_llm`, `ltt_llm_vision`
+     GET  /api/v1/models             liệt kê `ltt-3.8`, `ltt-3.5`
      POST /api/v1/jobs               ĐƯỜNG BẤT ĐỒNG BỘ, chạy ngay, không viết gì thêm
      principal.may_use_tool(...)     phân quyền theo khoá khách
 
@@ -37,11 +37,11 @@ Bản khai của `ltt_llm` — model ngôn ngữ chạy trên máy nhà, bán ra
    Số đúng tại thời điểm viết:
 
      * engine `qwen38-api`     `-c 131072`, trần vào 96.256, **công bố 89K**
-     * engine `qwen38-vision`  `-c 65536`,  trần vào 30.720, **công bố 28K**
+     * engine `qwen35-api`     hồ sơ 5060 Ti — số ĐO do Task 2.6 chốt
 
-   ⛔ Vision **không** "vẫn 64K" như bản cũ nói — 65.536 là cửa sổ *engine*, còn
-      thứ khách nhét vào được nhỏ hơn nhiều vì phải chừa chỗ cho câu trả lời.
-      Nói "64K" với khách là đúng lỗi đã bị bắt ngày 01/09.
+   ⛔ Bài học còn nguyên giá trị sau khi hồ sơ vision bị gỡ (D02, 11/09): cửa sổ
+      *engine* KHÔNG phải thứ khách nhét vào được — phải chừa chỗ cho câu trả
+      lời. Nói con số engine với khách là đúng lỗi đã bị bắt ngày 01/09.
 
    Cửa job vẫn là đường lui cho tác vụ dài.
 
@@ -54,7 +54,7 @@ Bản khai của `ltt_llm` — model ngôn ngữ chạy trên máy nhà, bán ra
 from __future__ import annotations
 
 from platform_core.i18n import N_
-from platform_core.registry import AppManifest, ToolSpec
+from platform_core.registry import AdmissionModel, AppManifest, ToolSpec
 
 from apps.ltt_llm import features as _features
 
@@ -66,7 +66,9 @@ from apps.ltt_llm import features as _features
 from apps.ltt_llm.ngan_sach import (CONG_BO_CHO_CLIENT,
                                     CUA_SO_MODEL as CUA_SO_NGU_CANH,
                                     LE as LE_NGU_CANH,
-                                    POOL_KV_MAY_B, SO_SLOT_MAY_B,
+                                    NHOM_CU_TRU_38,
+                                    POOL_35, POOL_38, SO_SLOT,
+                                    TAI_NGUYEN_35, TAI_NGUYEN_38,
                                     TOKEN_RA_TRAN as MAX_TOKENS_TRAN,
                                     cong_bo_cua, mac_dinh_cho,
                                     tran_theo_ngu_canh)
@@ -81,7 +83,7 @@ def _cua_so_noi_voi_khach(model_id: str) -> str:
     🔴 THAM SỐ `model_id` LÀ BẢN VÁ CHO MỘT LỜI HỨA SAI THỨ HAI (01/09, P08 F-02).
 
        Bản đầu của hàm này **không có tham số** — nó trả một con số cho **mọi**
-       alias. Nên `ltt_llm_vision` được quảng cáo *"same 89K usable input
+       alias. Nên alias đọc ảnh được quảng cáo *"same 89K usable input
        context"* trong khi máy B chặn nó ở 65.536, và đo thật cho `413`.
 
        ⭐ Điều đáng học: bản vá 30/08 dưới đây sửa **con số** (131K → 89K) và
@@ -198,17 +200,33 @@ MANIFEST = AppManifest(
     tools=(ToolSpec(
         name="text.chat", job_type="ltt_llm.chat",
         description=N_('Sinh văn bản từ hội thoại: coding, chat, agent, tóm tắt.'),
-        # Cả job, sync và stream cùng tranh MỘT pool slot + MỘT ngân sách KV của
-        # model nhà. Metadata vận hành, không phải alias công khai và không lộ
-        # model id. Số lấy từ `ngan_sach.py` — đừng gõ số ở đây (test_1201).
-        admission_resource="llm_remote", admission_slots=SO_SLOT_MAY_B,
-        admission_token_pool=POOL_KV_MAY_B,
+        # ── Sức chứa admission THEO MODEL (dual-model 2.3) ───────────────────
+        #
+        # 🔴 BỘ BA TĨNH (`admission_resource`/`admission_slots`/
+        #    `admission_token_pool`) ĐÃ GỠ, KHÔNG PHẢI QUÊN. Tới 2.3 tool này
+        #    phục vụ **hai model trên hai card**, nên một tên tài nguyên duy
+        #    nhất (`llm_remote`) tả sai sức chứa: mọi lượt 3.5 sẽ xếp cùng hàng
+        #    với 3.8 và một suất giành được ở card này không bảo vệ card kia.
+        #
+        # ⛔ Hệ quả phải biết khi đọc mã khác: từ đây `tool.admission_resource`
+        #    là **rỗng**. Mọi chỗ hỏi "tool này giành tài nguyên nào" phải hỏi
+        #    `admission_cho(model)` — kể cả HAI CHỖ NỘP JOB
+        #    (`runtime_noi_bo/job.py`, `public_api/invocation.py`) ghi hai cột
+        #    `Job.admission_resource/slots`, vì `jobs.claim` và `job_scheduler`
+        #    gác hàng đợi bằng đúng hai cột đó (R20).
+        #
+        # Số lấy từ `ngan_sach.py` — đừng gõ số ở đây (test_1201).
+        admission_theo_model={
+            "ltt-3.8": AdmissionModel(TAI_NGUYEN_38, SO_SLOT, POOL_38,
+                                      NHOM_CU_TRU_38, "mac_dinh"),
+            "ltt-3.5": AdmissionModel(TAI_NGUYEN_35, SO_SLOT, POOL_35),
+        },
         sync_executor="apps.ltt_llm.executor:EXECUTOR",
         params_schema={
             "messages": {"type": "json[]", "required": True},
             "model": {"type": "enum",
-                      "values": ["ltt_llm", "ltt_llm_vision"],
-                      "default": "ltt_llm"},
+                      "values": ["ltt-3.8", "ltt-3.5"],
+                      "default": "ltt-3.8"},
             "max_tokens": {"type": "int", "min": 1, "max": MAX_TOKENS_TRAN,
                            "default": MAX_TOKENS_MAC_DINH},
             "temperature": {"type": "number", "min": 0.0, "max": 2.0},
@@ -229,9 +247,14 @@ MANIFEST = AppManifest(
                             "reading. OpenAI-compatible message format."),
             # ⭐ ALIAS ≠ ID NỘI BỘ, và khoảng cách đó chính là giá trị của alias:
             #    "Aliases exist so a vendor change is not a breaking change."
-            #    Khách ghim vào `ltt_llm`; ngày ta đổi GGUF bên dưới thì mã của họ
+            #    Khách ghim vào `ltt-3.8`; ngày ta đổi GGUF bên dưới thì mã của họ
             #    không phải sửa một dòng nào.
             #    ⚠️ Bản đầu tôi đặt alias trùng hệt id — `test_212` bắt được.
+            #    🔴 VÀ BẢN THỨ HAI ĐẶT ALIAS TRÙNG HỆT **SLUG APP** (`ltt_llm`),
+            #       thứ cũng xoá lớp đệm, chỉ theo chiều khác: khách ghim vào
+            #       `ltt_llm` thì ngày ta tách app hay đổi chủ tool, tên họ ghim
+            #       không còn nghĩa gì. Cắt 11/09/2026 (D02): đúng HAI tên,
+            #       `ltt-3.8` và `ltt-3.5`, không tên nào trùng slug hay id.
             # ⛔ `constraints.context_window` KHÔNG PHẢI TRANG TRÍ. Thiếu nó thì
             #    `server/api/tools.py:_dang_codex` rơi về hằng số lùi
             #    `CUA_SO_CONG_BO_MAC_DINH` (60.000) — và khách nhận **hai con số
@@ -239,35 +262,42 @@ MANIFEST = AppManifest(
             #    `context_window` nói 60000 (P08 F-03).
             #
             #    `test_334::TestBanSaoConLai` nay buộc **mọi** alias ở đây phải
-            #    tự khai, nên đường lùi không bao giờ áp cho `ltt_llm` nữa.
+            #    tự khai, nên đường lùi không bao giờ áp cho model nhà nữa.
             "models": {
-                "ltt_llm": {
+                # ⛔ `reads_images` CHỈ Ở `ltt-3.5` HÔM NAY, và đó là một sự thật
+                #    về **engine đang chạy**, không phải một thiếu sót. Hồ sơ
+                #    `qwen38-api` trên máy B chưa nạp `mmproj`; hứa đọc ảnh ở
+                #    đây là đúng lớp lỗi F-02 (bản khai nói một đằng, máy B làm
+                #    một nẻo) chỉ đổi chiều. **Task 3.3** nạp mmproj cho hồ sơ
+                #    3.8 rồi mới bật cờ này — cùng lượt, không sớm hơn.
+                "ltt-3.8": {
                     "id": "qwen38-api",
                     "description": (f"Text only, {_cua_so_noi_voi_khach('qwen38-api')} "
-                                    f"usable input context. Coding, chat, agentic "
-                                    f"tool use, summarisation."),
+                                    f"usable input context. Deepest model: coding, "
+                                    f"chat, agentic tool use, summarisation."),
                     "stability": "stable",
                     "constraints": {
                         "context_window": cong_bo_cua("qwen38-api"),
                         "max_output_tokens": MAX_TOKENS_TRAN,
                     },
                 },
-                "ltt_llm_vision": {
-                    "id": "qwen38-vision",
-                    "description": (f"Same model plus image reading, but a smaller "
-                                    f"{_cua_so_noi_voi_khach('qwen38-vision')} usable "
-                                    f"input context. Send images as OpenAI image_url "
-                                    f"parts."),
+                "ltt-3.5": {
+                    "id": "qwen35-api",
+                    "description": (f"Faster and much cheaper, "
+                                    f"{_cua_so_noi_voi_khach('qwen35-api')} usable "
+                                    f"input context. Same message format, and it "
+                                    f"reads images — send them as OpenAI "
+                                    f"image_url parts."),
                     "stability": "stable",
                     "constraints": {
-                        "context_window": cong_bo_cua("qwen38-vision"),
+                        "context_window": cong_bo_cua("qwen35-api"),
                         "max_output_tokens": MAX_TOKENS_TRAN,
                         "reads_images": True,
                     },
                 },
             },
             "enums": {
-                "model": ["ltt_llm", "ltt_llm_vision"],
+                "model": ["ltt-3.8", "ltt-3.5"],
                 "reasoning_effort": ["low", "medium", "xhigh"],
             },
             "params": {
@@ -278,13 +308,13 @@ MANIFEST = AppManifest(
                     "example": [{"role": "user", "content": "Explain HTTP 429."}],
                 },
                 "model": {
-                    "description": (f"`ltt_llm` for text "
+                    "description": (f"`ltt-3.8` is the deepest model, text only "
                                     f"({_cua_so_noi_voi_khach('qwen38-api')} usable "
-                                    f"input context). `ltt_llm_vision` also reads "
-                                    f"images, with a smaller "
-                                    f"{_cua_so_noi_voi_khach('qwen38-vision')} "
-                                    f"input context."),
-                    "example": "ltt_llm",
+                                    f"input context). `ltt-3.5` answers faster, "
+                                    f"costs much less and reads images, with "
+                                    f"{_cua_so_noi_voi_khach('qwen35-api')} "
+                                    f"usable input context."),
+                    "example": "ltt-3.8",
                 },
                 "max_tokens": {
                     "description": ("Ceiling on generated tokens. Credit is held "

@@ -69,6 +69,9 @@ REGISTRY = {spec.code: spec for spec in (
     _spec(E.CODE_QUOTE_INVALID, 400, RETRY_NEVER,
           "The quote does not belong to this account/tool/input. Request one "
           "for the exact call you are making."),
+    _spec(E.CODE_MODEL_NOT_FOUND, 400, RETRY_AFTER_FIX,
+          "That `model` is not served here. Call GET /api/v1/models for the "
+          "names in service and send one of those."),
 
     # ── 401: credentials. One answer for all causes, on purpose. ─────────────
     _spec(E.CODE_UNAUTHORIZED, 401, RETRY_NEVER,

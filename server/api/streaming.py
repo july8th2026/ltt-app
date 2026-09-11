@@ -38,6 +38,7 @@ from platform_core.public_api.catalog import build_catalog, require_tool
 from platform_core.public_api.executor import for_tool, for_tool_name
 from platform_core.public_api.errors import (insufficient_credit,
                                              invalid_request,
+                                             model_not_found,
                                              payload_too_large,
                                              service_unavailable)
 from platform_core.public_api.principal import Principal
@@ -80,7 +81,11 @@ TOOL_CHAT = "text.chat"
 #: ⚠️ ĐỪNG đưa tên này vào `features.ALIAS_SANG_ID`. Chỗ đó là **từ vựng sản phẩm**
 #:    của app; mục này là **chi tiết giao thức của một client**. Trộn hai thứ là
 #:    cách một hằng số tạm bợ trở thành thứ ta phải đỡ mãi mãi.
-TUYEN_TUONG_THICH = {"ltt-llm-claude-compat": "ltt_llm"}
+#: 🔴 ĐÍCH ĐỔI 11/09/2026 (D02): `ltt_llm` → `ltt-3.8`. **KHOÁ giữ nguyên** — nó
+#:    là tên tuyến của giao thức, thứ Claude Desktop lọc theo chuỗi `claude`;
+#:    đổi nó là đóng cửa với một client đang chạy, và `test_290` ghim đúng ranh
+#:    giới ấy. Thứ bị cắt là *bí danh sản phẩm* ở vế phải.
+TUYEN_TUONG_THICH = {"ltt-llm-claude-compat": "ltt-3.8"}
 
 
 def _giai_ten_model(ten: str) -> str:
@@ -221,9 +226,11 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
     try:
         suc = tool.admission_cho(ten) if tool is not None else None
     except KeyError as e:
+        # Cùng mã với tên đã cắt ở `_cua` — D02, Step 2c.
         log.error("ban khai admission thieu model %r: %s", ten, e)
         raise _bao_400(
-            f"`model` {ten!r} is not served by this endpoint.", than) from None
+            f"`model` {ten!r} is not served here. Call GET /api/v1/models for "
+            f"the names in service.", than, dung=model_not_found) from None
     tai_nguyen = str(suc.resource or "") if suc else ""
     so_suat = int(suc.slots or 0) if suc else 0
     pool = int(suc.token_pool or 0) if suc else 0
@@ -549,10 +556,16 @@ def _thu_mot_cuc(ten: str) -> dict:
     }
 
 
-def _bao_400(detail: str, than: dict):
+def _bao_400(detail: str, than: dict, *, dung=invalid_request):
     """Ghi lại LÝ DO + HÌNH DẠNG request mỗi khi ta trả 400 — để soi vì sao Codex
     bị vứt lượt. (Tạm; gỡ khi đã chẩn xong.) KHÔNG log nội dung nhạy cảm, chỉ
-    khoá/kiểu."""
+    khoá/kiểu.
+
+    `dung` chọn **mã lỗi**, không đổi việc ghi log: 400 vì tên model đã cắt là
+    `model_not_found` (D02), 400 vì hình dạng vẫn là `invalid_request`. Một
+    hàm ghi log, hai mã — chép hàm này ra để đổi mỗi mã lỗi là dựng bản thứ hai
+    của đúng đoạn log ta đang cần để chẩn.
+    """
     tc = than.get("tool_choice")
     vao = than.get("input")
     log.warning(
@@ -562,7 +575,7 @@ def _bao_400(detail: str, than: dict):
         (tc.get("type") if isinstance(tc, dict) else tc),
         type(vao).__name__, (len(vao) if isinstance(vao, (list, str)) else "-"),
         len(than.get("tools") or []), sorted(than.keys()))
-    return invalid_request(detail)
+    return dung(detail)
 
 
 #: Tiền tố của tên model **do chính client bịa ra** khi nó không biết model của
@@ -629,12 +642,16 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
     ten = _giai_ten_model(str(than.get("model") or ""))
     aliases = executor.aliases()
     if ten not in aliases:
+        # 🔴 `model_not_found`, KHÔNG `invalid_request` (D02, Step 2c). Tên cũ
+        #    `ltt_llm` / `ltt_llm_vision` rơi vào đúng nhánh này từ 11/09/2026,
+        #    và khách phải nghe cùng một câu ở mọi cửa: *tên model ấy không còn*,
+        #    chứ không phải *yêu cầu của bạn sai hình dạng*.
         raise _bao_400(
             f"`model` must be one of {list(aliases)}"
             f"{' or ' + str(list(TUYEN_TUONG_THICH)) if TUYEN_TUONG_THICH else ''}. "
             f"Claude Code sends whatever ANTHROPIC_MODEL is set to, and Codex "
             f"sends `model` from its profile — set them to one of these."
-            + _goi_y_ten_la(ten), than)
+            + _goi_y_ten_la(ten), than, dung=model_not_found)
 
     tin = _tin_nhan(than)
     if not tin:
