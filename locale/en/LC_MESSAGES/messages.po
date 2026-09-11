@@ -15105,3 +15105,31 @@ msgstr "Turn text into natural Vietnamese speech. Create your own voice from a t
 #: apps/ltt_voice
 msgid "Chọn ngôn ngữ của văn bản. Giọng phải cùng ngôn ngữ; lượt lệch sẽ bị từ chối trước khi trừ credit."
 msgstr "Choose the language of your script. The voice must match it; a mismatched request is refused before any credit is charged."
+
+#: apps/ltt_voice
+msgid "Hãy chọn ngôn ngữ của clip giọng: Tiếng Việt hoặc Tiếng Anh."
+msgstr "Please choose the language of the voice clip: Vietnamese or English."
+
+#: apps/ltt_voice
+msgid "Clip nguồn của giọng này đo được là {lan}. Không đổi được sang ngôn ngữ khác."
+msgstr "This voice's source clip measured as {lan}. It cannot be switched to another language."
+
+#: apps/ltt_voice
+msgid "Giọng này đã bị thu hồi, không sửa được nữa."
+msgstr "This voice has been revoked and can no longer be edited."
+
+#: apps/ltt_voice
+msgid "Bạn đã có một giọng tên này. Hãy đặt tên khác."
+msgstr "You already have a voice with this name. Please choose another one."
+
+#: apps/ltt_voice
+msgid "Chọn ngôn ngữ của clip"
+msgstr "Choose the language of the clip"
+
+#: apps/ltt_voice
+msgid "Xác nhận ngôn ngữ của giọng này"
+msgstr "Confirm this voice's language"
+
+#: apps/ltt_voice
+msgid "Đo từ clip"
+msgstr "Measured from the clip"

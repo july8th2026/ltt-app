@@ -296,10 +296,21 @@
         </select>
         <small>{{ _("Dùng để chọn giọng thay thế đúng giới nếu giọng này tạm thời không dùng được. Bỏ trống nếu bạn không chắc.") }}</small></label>
 
-      <label class="lv-field"><span class="lv-nhan">{{ _("Ngôn ngữ của clip") }}</span>
-        <select name="ngon_ngu">
+      {#
+        D003 (2026-09-11): BẮT KHAI, KHÔNG CHỌN SẴN.
+
+        🔴 Trước RC1 ô này chọn sẵn `vi` — nên một khách không đụng tới ô chọn
+           vẫn "khai" tiếng Việt, dù clip của họ có thể là tiếng Anh. Đó chính
+           là điều D003 cấm: một khẳng định KHÔNG hề khai. `required` +
+           `option` rỗng bị `disabled` buộc khách phải TỰ CHỌN — cửa nộp
+           (`tao_giong`) từ chối rỗng/lạ bằng `ma_loi="voice_language_required"`
+           nếu JS/HTML nào đó lọt qua ràng buộc này.
+      #}
+      <label class="lv-field"><span class="lv-nhan">{{ _("Ngôn ngữ của clip") }} <strong>*</strong></span>
+        <select name="ngon_ngu" required>
+          <option value="" selected disabled>{{ _("Chọn ngôn ngữ của clip") }}</option>
           {% for k, nhan in nhan_lan.items() %}
-            <option value="{{ k }}"{{ ' selected' if k == 'vi' }}>{{ _(nhan) }}</option>
+            <option value="{{ k }}">{{ _(nhan) }}</option>
           {% endfor %}
         </select>
         <small>{{ _("Ngôn ngữ bạn nói trong clip mẫu, không phải ngôn ngữ bạn sẽ đọc sau này.") }}</small></label>

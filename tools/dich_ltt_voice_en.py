@@ -234,6 +234,21 @@ DICH = {
     "từ chối trước khi trừ credit.":
         "Choose the language of your script. The voice must match it; a "
         "mismatched request is refused before any credit is charged.",
+
+    # D003/D004 (2026-09-11): bat khai lan luc ghi danh + cua khai lan gop.
+    "Hãy chọn ngôn ngữ của clip giọng: Tiếng Việt hoặc Tiếng Anh.":
+        "Please choose the language of the voice clip: Vietnamese or English.",
+    "Clip nguồn của giọng này đo được là {lan}. Không đổi được sang ngôn "
+    "ngữ khác.":
+        "This voice's source clip measured as {lan}. It cannot be switched "
+        "to another language.",
+    "Giọng này đã bị thu hồi, không sửa được nữa.":
+        "This voice has been revoked and can no longer be edited.",
+    "Bạn đã có một giọng tên này. Hãy đặt tên khác.":
+        "You already have a voice with this name. Please choose another one.",
+    "Chọn ngôn ngữ của clip": "Choose the language of the clip",
+    "Xác nhận ngôn ngữ của giọng này": "Confirm this voice's language",
+    "Đo từ clip": "Measured from the clip",
 }
 
 

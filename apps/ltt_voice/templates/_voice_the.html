@@ -131,4 +131,67 @@
     {% endif %}
     <button class="btn sm ghost lv-the-xem" type="button">{{ _("Chi tiết") }}</button>
   </div>
+
+  {#
+    CỬA KHAI LÀN (D004) — MỘT cửa cho cả XÁC NHẬN và ĐỔI, `POST
+    {{ manifest.route_prefix }}/giong/{{ ma }}/ngon-ngu`.
+
+    🔴 Chỉ hiện cho giọng CỦA CHÍNH KHÁCH: `not la_mau` loại giọng mẫu (một
+       `GiongMau`, không có `dung_chung`/`ngon_ngu_nguon` — xem lỗi 21-biểu-mẫu
+       đã đo được ở `65e099af`, cùng lý do `not la_mau` đứng ĐẦU điều kiện bên
+       dưới); `not g.dung_chung` loại kho chung (làn của kho chung đổi bằng
+       công cụ vận hành, không bằng nút trên web của một khách — cùng lý do
+       `tat_giong`/`khai_ngon_ngu_giong` không mở `cho_dung_chung`). Giọng còn
+       lại trong `not la_mau` khi đã qua `not g.dung_chung` chắc chắn là của
+       CHÍNH khách đang xem trang này, vì `tham_chieu.danh_sach(gom_dung_chung=
+       True)` chỉ trộn thêm giọng kho chung, không trộn giọng của khách khác.
+
+    ⛔ Không hiện cho giọng đã `revoked`: cửa `khai_ngon_ngu_giong` chặn thẳng
+       (`voice_revoked`) — một biểu mẫu bấm được mà luôn nhận lỗi là thứ tệ hơn
+       không có biểu mẫu.
+  #}
+  {% if not la_mau and not g.dung_chung and g.trang_thai != 'revoked' %}
+    {% if g.ngon_ngu_nguon == 'mac_dinh_cu' %}
+      {#
+        DÒNG CŨ (trước D003) — làn là một MẶC ĐỊNH CỘT, chưa ai khai. Đây là
+        XÁC NHẬN, không phải một cảnh báo lỗi: khách chỉ cần nói làn đang đúng
+        hay chọn lại, không phải "sửa" gì cả.
+      #}
+      <form class="lv-the-lan" method="post"
+            action="{{ manifest.route_prefix }}/giong/{{ ma | urlencode }}/ngon-ngu">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <p class="dim">{{ _("Xác nhận ngôn ngữ của giọng này") }}</p>
+        <select name="ngon_ngu">
+          {% for k, nhan in nhan_lan.items() %}
+            <option value="{{ k }}"{{ ' selected' if k == g.ngon_ngu }}>{{ _(nhan) }}</option>
+          {% endfor %}
+        </select>
+        <button class="btn sm vien" type="submit">{{ _("Xác nhận") }}</button>
+      </form>
+    {% elif g.ngon_ngu_nguon == 'khai_bao' %}
+      {# Đã khai rồi — chỉ một lối tắt THU GỌN để đổi, không choán chỗ mặc định
+         trên mọi thẻ. `<details>` KHÔNG cần JS. #}
+      <details class="lv-the-lan lv-the-lan-gon">
+        <summary class="btn sm ghost">{{ _("Đổi ngôn ngữ") }}</summary>
+        <form method="post"
+              action="{{ manifest.route_prefix }}/giong/{{ ma | urlencode }}/ngon-ngu">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <select name="ngon_ngu">
+            {% for k, nhan in nhan_lan.items() %}
+              <option value="{{ k }}"{{ ' selected' if k == g.ngon_ngu }}>{{ _(nhan) }}</option>
+            {% endfor %}
+          </select>
+          <button class="btn sm vien" type="submit">{{ _("Xác nhận") }}</button>
+        </form>
+      </details>
+    {% elif g.ngon_ngu_nguon == 'do_asr' %}
+      {#
+        PHÉP ĐO — không có form. `khai_ngon_ngu_giong` chặn khai ngược lại
+        (`voice_language_measured`), nên mời khách bấm vào một nút sẽ luôn bị
+        từ chối là một biểu mẫu bấm được mà không kêu — đúng thứ tệ nhất mà
+        `nghe_thu.py` đã cảnh báo ở một trường hợp khác.
+      #}
+      <p class="dim lv-the-lan-do">{{ _("Đo từ clip") }}</p>
+    {% endif %}
+  {% endif %}
 </article>

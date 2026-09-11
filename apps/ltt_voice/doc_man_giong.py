@@ -109,6 +109,8 @@ def chi_tiet_cho_trang(db, giong: list, thong_ke: dict, duong_audio: str) -> dic
     ⚠️ Đổi lại: đừng bao giờ nhét thứ **nặng** hay thứ **bí mật** vào đây. Không
        `speaker_emb`, không khoá kho thô — chỉ đường dẫn phát đã kiểm quyền.
     """
+    from .giong_vong_doi import NGUON_MAC_DINH_CU as _NGUON_MAC_DINH_CU
+
     ra: dict = {}
     for g in giong:
         tk = thong_ke.get(g.public_id) or {}
@@ -120,6 +122,15 @@ def chi_tiet_cho_trang(db, giong: list, thong_ke: dict, duong_audio: str) -> dic
             "so_luot": int(tk.get("so_luot") or 0),
             "phut": round(giay / 60.0, 1),
             "lan_cuoi": lan_cuoi.strftime("%d/%m/%Y") if lan_cuoi else "",
+            # D003/D004: LÀN + xuất xứ của nó, cho panel chi tiết (JS đọc
+            # `chi_tiet[ma]`, không đọc thẳng ORM). `can_xac_nhan_lan` gói sẵn
+            # phép so `ngon_ngu_nguon == NGUON_MAC_DINH_CU` — thẩm quyền của ba
+            # giá trị hợp lệ là `giong_vong_doi.py`, đọc từ đó thay vì gõ lại
+            # chuỗi ở đây.
+            "ngon_ngu": str(getattr(g, "ngon_ngu", "") or ""),
+            "ngon_ngu_nguon": str(getattr(g, "ngon_ngu_nguon", "") or ""),
+            "can_xac_nhan_lan": str(getattr(g, "ngon_ngu_nguon", "") or "")
+                == _NGUON_MAC_DINH_CU,
             "clip": [
                 {
                     "ten": (r.storage_key or "").rsplit("/", 1)[-1],

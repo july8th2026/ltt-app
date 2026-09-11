@@ -231,6 +231,51 @@ def khoa_rieng(owner_id: str, public_id: str) -> str:
     return f"voice/{owner_id}/{public_id}/preview-{PHIEN_BAN}.wav"
 
 
+def dung_lai_cho_giong(db, ho_so) -> None:
+    """HUỶ tệp nghe thử ĐANG CÓ của một giọng — để vòng bảo trì dựng lại theo
+    làn MỚI (`CAU_THEO_LAN[ho_so.ngon_ngu]`) ở lượt sau (D004).
+
+    🔴 VÌ SAO CẦN, VÀ VÌ SAO KHÔNG THỂ BỎ QUA.
+
+       `khoa_rieng(owner_id, public_id)` KHÔNG mang làn trong khoá — chỉ mang
+       `PHIEN_BAN`, một hằng số TOÀN CỤC không phụ thuộc `ngon_ngu` của giọng
+       (xem khối chú thích ở `PHIEN_BAN` bên trên). Hệ quả: đổi làn của một
+       giọng KHÔNG tự đổi khoá tệp nghe thử của nó — `dung()` sẽ thấy
+       `co_san(khoa)` vẫn `True` (tệp làn CŨ còn nằm đúng khoá đó) và không
+       dựng lại, nên khách nghe câu của làn cũ mãi mãi dù hồ sơ đã nói làn mới.
+
+    ⛔ KHÔNG gọi engine đồng bộ ở đây — người gọi là một request HTTP
+       (`routes/_p_giong.py:khai_ngon_ngu_giong`), và một lượt sinh tiếng nói
+       tốn hàng chục giây GPU. Chỉ HUỶ tệp cũ; `bao_tri()` (vòng nền, dưới
+       lease) dựng lại tệp mới ở lượt kế tiếp — đúng cách ③ đầu tệp này giải
+       thích, không phải cách ① (sinh ngay, đồng bộ).
+
+    ⚠️ `db` không dùng tới Ở ĐÂY (chữ ký khớp `giong_vong_doi.khoa_can_xoa(db,
+       ho_so)` có chủ ý — hai hàm cùng hình dạng, cùng nhận một hồ sơ và xoá
+       khoá kho của nó), nhưng KHÔNG ĐOÁN tên tệp theo kiểu liệt kê: chỉ có
+       ĐÚNG MỘT khoá khả dĩ ở phiên bản engine hiện hành
+       (`khoa_rieng(owner_id, public_id)`), vì `Storage`
+       (`platform_core/storage.py`) không có API liệt-kê-theo-tiền-tố để quét
+       những `PHIEN_BAN` cũ hơn. `giong_vong_doi.khoa_can_xoa` (Task 4) đứng
+       trước đúng giới hạn này và cũng chỉ tính MỘT khoá cho tệp nghe thử;
+       Task 6 (`khoa_can_xoa` → toàn tiền tố) sẽ cần thêm khả năng liệt kê đó
+       cho lượt THU HỒI. Đổi làn thì không cần — một giọng chỉ có MỘT bản
+       nghe thử sống tại một thời điểm.
+
+    ⛔ KHÔNG NÉM. Người gọi không được hỏng vì một tệp nghe thử không xoá
+       được — cùng hợp đồng "không ném" với `dung()`/`co_san()` ở trên.
+    """
+    khoa = khoa_rieng(str(ho_so.owner_id), str(ho_so.public_id))
+    # Đừng để đệm `co_san` nói "có" cho một tệp vừa xoá — xem `_DEM` bên dưới.
+    _DEM.pop(khoa, None)
+    try:
+        from platform_core.storage import get_storage
+        get_storage().delete(khoa)
+    except Exception as e:  # noqa: BLE001 - xem docstring: khong nem
+        log.warning("khong xoa duoc tep nghe thu cu khi doi lan (%s): %s",
+                    khoa, e)
+
+
 #: Bộ nhớ đệm `khoá -> (lúc, có)`.
 #:
 #: 🔴 VÌ SAO CẦN, và nó không lộ ra trên máy dev.
