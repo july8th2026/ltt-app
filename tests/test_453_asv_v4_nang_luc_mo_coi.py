@@ -144,7 +144,8 @@ MO_COI_DA_BIET = frozenset({
     # `asset_cua` roi danh sach 11/09: `cache_chung` (V6 pha 25) goi no.
     "don_theo_run",
     "cua_chan_cho_lo", "giai_quyet_mo_ho", "loi_khong_du_ngan_sach",
-    "tong_credit", "tom_tat_cho_khach",
+    # `tom_tat_cho_khach` roi danh sach 11/09: trang chi tiet goi no (V6 pha 30).
+    "tong_credit",
     "cua_so_ngu_canh", "dung_gpu", "van_tay_che_do", "van_tay_van_ban",
     "tu_json", "doc_wav", "ghi_wav",
 })
