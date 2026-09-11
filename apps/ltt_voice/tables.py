@@ -98,6 +98,11 @@ class VoiceProfile(Base):
     ten_hien_thi: Mapped[str] = mapped_column(String(120))
     ngon_ngu: Mapped[str] = mapped_column(String(16), default="vi")
 
+    #: D003 (RC1): `ngon_ngu` đến từ ĐÂU — `khai_bao` · `do_asr` · `mac_dinh_cu`.
+    #: Thẩm quyền của các giá trị: `giong_vong_doi.NGUON_HOP_LE`.
+    ngon_ngu_nguon: Mapped[str] = mapped_column(String(16), default="",
+                                                server_default="", nullable=False)
+
     #: 🔴 GIỚI TÍNH CỦA GIỌNG — `"nam"` · `"nu"` · `""` (KHÔNG RÕ).
     #:
     #:    Cột này tồn tại vì **hai** thứ khác nhau cùng cần nó, và trước
