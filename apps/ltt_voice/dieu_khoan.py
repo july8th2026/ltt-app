@@ -33,7 +33,12 @@ from .tham_so_cong_khai import TRAN_KY_TU_CONG_KHAI
 #: khác "Tắt" ở chỗ không đảo ngược được). Bản cam kết cũ vẫn trỏ tới
 #: `…-2026-08-31a`, và đó cũng là đúng việc: khách đã đồng ý với bản KHÔNG có
 #: quyền đó.
-PHIEN_BAN_DIEU_KHOAN = "ltt-voice-dk-2026-09-11a"
+#: 11/09/2026 (review round 1, item 6) — SỬA câu "Xoá giọng": bản trước hứa
+#: "gỡ hẳn ... khỏi máy chủ" (đọc như MỌI byte biến mất); câu mới nói đúng
+#: thứ xoá được (clip gốc + biểu diễn) và không giấu giới hạn (một bản nghe
+#: thử của engine cũ có thể còn sót — thiếu API liệt kê ở storage.py). Bản
+#: cam kết cũ vẫn trỏ tới `…-2026-09-11a`, đã đồng ý với câu CŨ.
+PHIEN_BAN_DIEU_KHOAN = "ltt-voice-dk-2026-09-11b"
 
 
 def cac_dieu() -> list:
@@ -100,11 +105,21 @@ def cac_dieu() -> list:
             #    trắc của khách: tắt (giữ lại, đảo ngược được) và xoá vĩnh viễn
             #    (xoá clip gốc + dữ liệu giọng, không khôi phục). Xem
             #    `giong_vong_doi.py` và `routes/_p_giong.py::xoa_giong`.
+            #
+            # 🔴 review round 1, item 6: CÂU CŨ HỨA QUÁ — "gỡ hẳn ... khỏi máy
+            #    chủ" đọc như MỌI byte biến mất, trong khi
+            #    `giong_vong_doi.khoa_da_biet` chỉ xoá được những khoá CSDL
+            #    biết (clip nguồn, biểu diễn, bản nghe thử HIỆN HÀNH) —
+            #    `platform_core/storage.py` không có API liệt-kê-theo-tiền-tố
+            #    nên một bản nghe thử của một `PHIEN_BAN` engine CŨ (nếu còn
+            #    sót từ một lần nâng cấp) KHÔNG bị dọn. Câu mới nói đúng thứ
+            #    xoá được (clip gốc + biểu diễn) và không giấu giới hạn đó.
             "noi_dung": _t(
                 "Bạn có thể tắt một giọng bất cứ lúc nào để ngừng dùng nó, hoặc "
-                "xoá vĩnh viễn để gỡ hẳn clip gốc và dữ liệu giọng khỏi máy chủ. "
-                "Xoá vĩnh viễn không khôi phục được; lịch sử lượt đọc và bút toán "
-                "credit vẫn được giữ để đối chiếu."),
+                "xoá vĩnh viễn để xoá clip gốc và dữ liệu giọng (biểu diễn) khỏi "
+                "máy chủ — không khôi phục được. Một bản nghe thử của phiên bản "
+                "engine cũ có thể còn sót tới lượt dọn kế tiếp. Lịch sử lượt đọc "
+                "và bút toán credit vẫn được giữ để đối chiếu."),
         },
     ]
 

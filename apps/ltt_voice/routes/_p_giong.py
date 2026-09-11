@@ -10,6 +10,24 @@ from ._chung import (MANIFEST, SO_LAN_THU_JOB, TRAN_KY_TU_CONG_KHAI, Depends, Fi
                      NHAN_NGUON, lan_ngon_ngu, muc_dung, nghe_thu)
 from .. import giong_vong_doi
 
+#: Trạng thái NGUỒN hợp lệ cho một UPDATE có điều kiện, suy TỪ máy trạng thái
+#: (`giong_vong_doi.co_the_chuyen`) thay vì gõ lại — review round 1, item 5:
+#: `tat_giong`/`_thu_hoi_mot` giờ đổi trạng thái bằng MỘT câu UPDATE nguyên tử
+#: `WHERE id=:id AND trang_thai IN (...)`, không phải đọc-rồi-gán-rồi-commit
+#: (khoảng trống TOCTOU giữa hai bước đó là chỗ một cú `/tat` và một cú
+#: `/xoa` cùng lúc có thể cùng "thành công" trên hai tiền đề đã lỗi thời).
+_TU_CHO_TAT = frozenset(
+    tu for tu in giong_vong_doi.TRANG_THAI_HOP_LE
+    if giong_vong_doi.co_the_chuyen(tu, giong_vong_doi.TT_DISABLED))
+_TU_CHO_THU_HOI = frozenset(
+    tu for tu in giong_vong_doi.TRANG_THAI_HOP_LE
+    if giong_vong_doi.co_the_chuyen(tu, giong_vong_doi.TT_REVOKED))
+
+#: review round 1, IMPORTANT 3: trần một lô `xoa-nhieu` — không giới hạn thì
+#: một `public_ids` dài bất tận là N truy vấn CSDL + N lượt xoá kho trong MỘT
+#: request, không đi qua job nào để giới hạn thời gian.
+TRAN_XOA_NHIEU = 50
+
 
 def _loi_400_ma(loi: str, ma: str = "") -> JSONResponse:
     """Mirror TỐI GIẢN của `_loi_400` (`_p_tao.py:17`) — cùng khuôn phản hồi
@@ -228,17 +246,28 @@ def tat_giong(request: Request, public_id: str, csrf_token: str = Form(""),
         if ho_so is None or not tham_chieu.chi_chu_so_huu(ho_so, _uid(user)):
             return JSONResponse({"ok": False, "loi": _t("Không tìm thấy giọng.")},
                                 status_code=404)
-        # 🔴 T-07: qua `co_the_chuyen`, KHÔNG gán thẳng nữa. `_CHUYEN` chỉ cho
-        #    `active -> disabled` — một giọng `revoked` (đã xoá dữ liệu sinh
-        #    trắc) hay `loi`/`dang_ghi_danh` (chưa từng có gì để "tắt") không
-        #    còn đường này. Trước bản vá này gán thẳng sẽ ÂM THẦM đưa một
-        #    giọng `revoked` "trở lại" `disabled` — trông như còn cứu được,
-        #    trong khi dữ liệu đã xoá thật.
-        if not giong_vong_doi.co_the_chuyen(ho_so.trang_thai,
-                                            giong_vong_doi.TT_DISABLED):
+        # 🔴 T-07 + review round 1 item 5: UPDATE NGUYÊN TỬ có điều kiện, KHÔNG
+        #    đọc-rồi-gán-rồi-commit. `_CHUYEN` chỉ cho `active -> disabled` —
+        #    một giọng `revoked` (đã xoá dữ liệu sinh trắc) hay
+        #    `loi`/`dang_ghi_danh` (chưa từng có gì để "tắt") không còn đường
+        #    này. Đọc-rồi-gán từng để lại một khoảng TOCTOU: giữa lúc đọc
+        #    `ho_so.trang_thai` và lúc `commit()`, một request khác (vd
+        #    `/xoa` cùng giọng) có thể đã đổi trạng thái — gán thẳng theo giá
+        #    trị ĐÃ ĐỌC sẽ ÂM THẦM đưa một giọng vừa `revoked` "trở lại"
+        #    `disabled`, trông như còn cứu được trong khi dữ liệu đã xoá
+        #    thật. `rowcount == 0` nghĩa là "trạng thái không như lúc đọc" —
+        #    dù đó là "chưa từng hợp lệ" hay "vừa đổi concurrent", câu trả lời
+        #    cho khách như nhau: không tắt được NGAY BÂY GIỜ.
+        from ..tables import VoiceProfile
+        ket = db.execute(
+            VoiceProfile.__table__.update()
+            .where(VoiceProfile.id == ho_so.id,
+                  VoiceProfile.trang_thai.in_(_TU_CHO_TAT))
+            .values(trang_thai=giong_vong_doi.TT_DISABLED))
+        if ket.rowcount == 0:
+            db.rollback()
             return JSONResponse({"ok": False, "loi": _t(
                 "Giọng đang ở trạng thái không tắt được.")}, status_code=400)
-        ho_so.trang_thai = giong_vong_doi.TT_DISABLED
         db.commit()
         return JSONResponse({"ok": True})
     finally:
@@ -252,8 +281,12 @@ def _xoa_khoa(khoa: list) -> None:
     """Xoá best-effort các khoá kho. **Không bao giờ ném.**
 
     ⛔ Một khoá xoá không được (kho chập, tệp đã mất) không được làm hỏng một
-       lượt thu hồi đã ghi vào CSDL. Nó được ghi lại để một vòng dọn về sau nhặt
-       nốt — mất một tệp là một vết rác, không phải một lỗi cho khách.
+       lượt thu hồi đã ghi vào CSDL. Lỗi CHỈ được GHI LOG (`logging.warning`)
+       — KHÔNG có một vòng dọn nền nào tự động nhặt lại tệp còn sót (sửa
+       docstring review round 1, item 4: bản trước hứa "một vòng dọn về sau
+       nhặt nốt", và không hàm nào trong kho làm việc đó). Đường thử lại THẬT
+       là gọi lại chính `_thu_hoi_mot` trên hồ sơ đã `revoked` — xem docstring
+       của nó, nhánh idempotent.
     """
     import logging
 
@@ -269,28 +302,56 @@ def _xoa_khoa(khoa: list) -> None:
 
 def _thu_hoi_mot(db, ho_so) -> tuple:
     """Thu hồi MỘT hồ sơ đã xác nhận là của khách. Trả `(True, "")` nếu vừa
-    thu hồi, `(False, "voice_state_invalid")` nếu trạng thái hiện tại không
-    cho phép (INV-THU-HOI-1: chỉ qua `co_the_chuyen`, không có đường tắt).
+    thu hồi (hoặc đã thu hồi từ trước — xem nhánh idempotent), `(False, mã)`
+    nếu không thu hồi được — `mã` là `"voice_state_invalid"` (trạng thái
+    KHÔNG BAO GIỜ cho đi tới `revoked`, `INV-THU-HOI-1`) hoặc
+    `"voice_state_conflict"` (ĐÃ từng hợp lệ nhưng đổi trạng thái ĐÚNG LÚC
+    UPDATE thi hành — xem review round 1, item 5).
 
-    🔴 KHÔNG idempotent trên `revoked` — gọi lại một hồ sơ ĐÃ thu hồi trả về
-       `(False, "voice_state_invalid")`, không phải `(True, "")` im lặng.
-       `revoked` là điểm cuối (`_CHUYEN[TT_REVOKED] = set()`), và một cửa
-       "thu hồi lần nữa" thành công không có ý nghĩa nghiệp vụ nào — nó chỉ
-       có ý nghĩa khi trạng thái TRƯỚC ĐÓ thật sự cho phép đi tới `revoked`.
+    🔴 IDEMPOTENT trên `revoked` (sửa lại ở review round 1, item 4). Gọi lại
+       một hồ sơ ĐÃ thu hồi KHÔNG đổi trạng thái (đã ở đích, không có gì để
+       chuyển) nhưng VẪN dọn lại các khoá kho ĐÃ BIẾT — đây là đường THỬ LẠI
+       thật cho một lượt thu hồi trước đó mà `_xoa_khoa` gặp lỗi kho giữa
+       chừng (kho chập, mất mạng R2): không có nó, một tệp `.npz` sinh trắc
+       mắc kẹt vĩnh viễn dù hồ sơ đã nói "đã xoá", và khách không có nút nào
+       để thử lại việc xoá — cửa `xoa_giong` từ chối thẳng một hồ sơ `revoked`
+       nếu nhánh này không tồn tại.
 
     ⭐ Đánh dấu `revoked` và COMMIT TRƯỚC, xoá tệp SAU. Trạng thái là thứ quyết
        định "còn dùng được không" (`features.giai_giong` chặn mọi thứ khác
        `active`), nên nó phải là thật ngay cả khi một lượt xoá tệp lỗi giữa
        chừng. Một tệp còn sót là rác dọn được; một giọng nói "đã thu hồi" mà
        vẫn dùng được thì không.
+
+    🔴 review round 1, item 5: UPDATE NGUYÊN TỬ có điều kiện
+       (`WHERE trang_thai IN (_TU_CHO_THU_HOI)`), KHÔNG đọc-rồi-gán-rồi-commit.
+       `rowcount == 0` ở đây nghĩa là hồ sơ đã ĐỔI TRẠNG THÁI giữa lúc gom
+       `khoa_da_biet` (ở trên, dựa vào `ho_so.trang_thai` lúc ĐỌC) và lúc
+       UPDATE thi hành — vd một `/tat` hoặc một `/xoa` khác cùng giọng chạy
+       gần như đồng thời. Không suy đoán: trả `voice_state_conflict`, để
+       người gọi đọc lại hồ sơ thay vì âm thầm coi một lượt nửa vời là xong.
     """
-    if not giong_vong_doi.co_the_chuyen(ho_so.trang_thai, giong_vong_doi.TT_REVOKED):
+    from ..tables import VoiceProfile
+
+    if ho_so.trang_thai == giong_vong_doi.TT_REVOKED:
+        khoa = giong_vong_doi.khoa_da_biet(db, ho_so)
+        _xoa_khoa(khoa)
+        return True, ""
+    if ho_so.trang_thai not in _TU_CHO_THU_HOI:
         return False, "voice_state_invalid"
+
     khoa = giong_vong_doi.khoa_da_biet(db, ho_so)
     # Chỉ để LOG — xem docstring `giong_vong_doi.khoa_can_xoa` cho vì sao
     # không xoá được thẳng bằng tiền tố này (thiếu API liệt kê ở storage.py).
     tien_to = giong_vong_doi.khoa_can_xoa(str(ho_so.owner_id), str(ho_so.public_id))
-    ho_so.trang_thai = giong_vong_doi.TT_REVOKED
+    ket = db.execute(
+        VoiceProfile.__table__.update()
+        .where(VoiceProfile.id == ho_so.id,
+              VoiceProfile.trang_thai.in_(_TU_CHO_THU_HOI))
+        .values(trang_thai=giong_vong_doi.TT_REVOKED))
+    if ket.rowcount == 0:
+        db.rollback()
+        return False, "voice_state_conflict"
     db.commit()
     _xoa_khoa(khoa)
     import logging
@@ -360,8 +421,14 @@ def xoa_giong(request: Request, public_id: str, csrf_token: str = Form(""),
                                 status_code=404)
         ok, ma_loi = _thu_hoi_mot(db, ho_so)
         if not ok:
+            # review round 1, item 5: `voice_state_conflict` (đổi trạng thái
+            # ĐÚNG LÚC UPDATE thi hành) trả 409 — khác "chưa bao giờ hợp lệ"
+            # (`voice_state_invalid`, 400). Client đọc `ma_loi` để phân biệt,
+            # không phải mã HTTP; mã HTTP chỉ theo đúng ngữ nghĩa REST.
+            ma_http = 409 if ma_loi == "voice_state_conflict" else 400
             return _tra_loi_xoa(muon_json, _t(
-                "Giọng đang ở trạng thái không thu hồi được."), ma_loi)
+                "Giọng đang ở trạng thái không thu hồi được."), ma_loi,
+                that_bai=ma_http)
         if muon_json:
             return JSONResponse({"ok": True})
         from fastapi.responses import RedirectResponse
@@ -381,17 +448,27 @@ def xoa_nhieu_giong(request: Request, public_ids: str = Form(""),
 
     ⛔ MỖI GIỌNG QUA ĐÚNG PHÉP KIỂM SỞ HỮU + MÁY TRẠNG THÁI của cửa đơn
        (`_thu_hoi_mot`) — không có đường tắt nào cho lô. Một id không phải
-       của khách, hay một id ở trạng thái không thu hồi được (`dang_ghi_danh`,
-       hoặc đã `revoked` từ trước), chỉ bị **bỏ qua**: không báo lỗi cho cả lô,
-       và không tiết lộ "không phải của bạn" khác gì "trạng thái không hợp lệ".
+       của khách, hay một id ở trạng thái không cho phép đi tới `revoked`
+       (`dang_ghi_danh` — xem `giong_vong_doi._CHUYEN`), chỉ bị **bỏ qua**:
+       không báo lỗi cho cả lô, và không tiết lộ "không phải của bạn" khác gì
+       "trạng thái không hợp lệ". Một id ĐÃ `revoked` từ trước KHÔNG bị bỏ qua
+       — `_thu_hoi_mot` idempotent trên nó (review round 1, item 4) — nên nó
+       vào `da_thu_hoi` như một lượt dọn lại thành công.
 
-    Trả tóm tắt JSON: `da_thu_hoi` (id đã thu hồi xong) và `bo_qua` (mọi id
-    còn lại — không phân biệt lý do, cùng lý do ẩn danh ở trên).
+    Trả tóm tắt JSON: `da_thu_hoi` (id đã thu hồi xong — kể cả id đã `revoked`
+    từ trước, dọn lại idempotent) và `bo_qua` (mọi id còn lại — không phân
+    biệt lý do, cùng lý do ẩn danh ở trên).
     """
     if not verify_csrf_token(request, csrf_token):
         return _het_phien()
     uid = _uid(user)
     ids = [x.strip() for x in (public_ids or "").split(",") if x.strip()]
+    # review round 1, IMPORTANT 3: trần `TRAN_XOA_NHIEU` — từ chối THẲNG
+    # trước khi chạm CSDL/kho, không cắt lặng lẽ còn `TRAN_XOA_NHIEU` cái đầu.
+    if len(ids) > TRAN_XOA_NHIEU:
+        return JSONResponse({"ok": False, "loi": _t(
+            "Chỉ thu hồi được tối đa {n} giọng trong một lượt."
+        ).format(n=TRAN_XOA_NHIEU)}, status_code=400)
     gen = _db()
     db = next(gen)
     da_thu_hoi: list = []

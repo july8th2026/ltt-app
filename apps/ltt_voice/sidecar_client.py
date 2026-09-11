@@ -20,7 +20,20 @@ import urllib.request
 
 
 class LoiSidecar(RuntimeError):
-    """Cổng hỏng thật, hoặc trả thứ không đọc được."""
+    """Cổng hỏng thật, hoặc trả thứ không đọc được.
+
+    ⭐ `status` — mã HTTP nếu lỗi này đến từ một `HTTPError` THẬT
+       (`_dich_loi_http`); `0` khi không có mã nào đứng sau nó (token thiếu ở
+       `_goi`, JSON hỏng, hay `_dich_loi_url` — mất kết nối, không có phản hồi
+       HTTP nào để đọc mã). Thêm ở review round 1 (T-14, IMPORTANT 1): người
+       gọi (`jobs.py::_ghi_danh`) cần phân biệt lỗi VĨNH VIỄN của chính YÊU
+       CẦU (cổng đã đọc được, trả thẳng "cái này sai" — 4xx trừ 408/409/429)
+       với lỗi HẠ TẦNG (5xx, hoặc không rõ mã) — chỉ nhánh sau đáng thử lại.
+    """
+
+    def __init__(self, thong_diep: str = "", *, status: int = 0):
+        super().__init__(thong_diep)
+        self.status = int(status or 0)
 
 
 class SidecarBan(RuntimeError):
@@ -70,7 +83,7 @@ def _dich_loi_http(e) -> Exception:
         return SidecarBan(retry_after_s=cho)
     if e.code == 413:
         return VanBanQuaDai(_chi_tiet(raw))
-    return LoiSidecar(f"Cong giong tra {e.code}: {_chi_tiet(raw)}")
+    return LoiSidecar(f"Cong giong tra {e.code}: {_chi_tiet(raw)}", status=e.code)
 
 
 def _dich_loi_url(e) -> Exception:

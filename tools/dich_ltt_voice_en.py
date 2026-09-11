@@ -252,6 +252,9 @@ DICH = {
 
     # T-07/T-14 (2026-09-11): thu hoi giong + worker khong bat lai.
     "Xoá giọng": "Delete voice",
+    # review round 1, item 6 (2026-09-11b): cau cu (ban tren) da doi noi dung,
+    # giu lai ban dich cu (khoa .po khong con ai tham chieu, vo hai) va them
+    # ban moi cho dung chuoi hien tai.
     "Bạn có thể tắt một giọng bất cứ lúc nào để ngừng dùng nó, hoặc xoá vĩnh "
     "viễn để gỡ hẳn clip gốc và dữ liệu giọng khỏi máy chủ. Xoá vĩnh viễn "
     "không khôi phục được; lịch sử lượt đọc và bút toán credit vẫn được giữ "
@@ -260,6 +263,29 @@ DICH = {
         "permanently to remove the source clip and voice data from the "
         "server. Permanent deletion cannot be undone; usage history and "
         "credit entries are still kept for reconciliation.",
+    "Bạn có thể tắt một giọng bất cứ lúc nào để ngừng dùng nó, hoặc xoá vĩnh "
+    "viễn để xoá clip gốc và dữ liệu giọng (biểu diễn) khỏi máy chủ — không "
+    "khôi phục được. Một bản nghe thử của phiên bản engine cũ có thể còn sót "
+    "tới lượt dọn kế tiếp. Lịch sử lượt đọc và bút toán credit vẫn được giữ "
+    "để đối chiếu.":
+        "You can turn off a voice at any time to stop using it, or delete it "
+        "permanently to remove the source clip and voice data (embedding) "
+        "from the server — this cannot be undone. A preview from an older "
+        "engine version may remain until the next cleanup. Usage history and "
+        "credit entries are still kept for reconciliation.",
+    "Clip này không dùng được để ghi danh. Hãy tạo lại giọng với một clip "
+    "khác.":
+        "This clip cannot be used to enroll a voice. Please create the voice "
+        "again with a different clip.",
+    "Giọng này đã được đánh dấu lỗi ở một lượt ghi danh khác.":
+        "This voice was already marked as failed by another enrollment "
+        "attempt.",
+    "Giọng này đã bị tắt trong lúc ghi danh.":
+        "This voice was turned off while it was being enrolled.",
+    "Giọng này không còn ở trạng thái ghi danh nữa.":
+        "This voice is no longer in the enrolling state.",
+    "Chỉ thu hồi được tối đa {n} giọng trong một lượt.":
+        "You can delete at most {n} voices in one request.",
     "Giọng này đã bị thu hồi và không dùng được nữa.":
         "This voice has been deleted and can no longer be used.",
     "Ghi danh giọng này không thành công. Hãy tạo lại giọng với một clip khác.":

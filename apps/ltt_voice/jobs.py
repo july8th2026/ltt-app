@@ -18,12 +18,21 @@ import os
 import tempfile
 
 from platform_core.i18n import _ as _t
-from platform_core.jobs import LoiNguoiGoi
+from platform_core.jobs import DangBan, LoiNguoiGoi
 
 from .features import DangBanTam, LoiGiongNoi, LoiHaTang  # noqa: F401 (giữ tên cho chỗ import)
-from .tham_so_cong_khai import TRAN_MOI_LUOT_SINH
+from .tham_so_cong_khai import SO_LAN_THU_JOB, TRAN_MOI_LUOT_SINH
 
 log = logging.getLogger(__name__)
+
+#: Mã HTTP 4xx mà `sidecar_client.LoiSidecar` mang theo nhưng KHÔNG coi là lỗi
+#: vĩnh viễn của chính clip (review round 1, IMPORTANT 1):
+#:   408 Request Timeout    — mạng/cổng chậm, không phải clip sai;
+#:   409 Conflict           — trạng thái phía cổng, không phải clip sai;
+#:   429 Too Many Requests  — đã tách thành `SidecarBan` riêng ở
+#:                            `_dich_loi_http`; giữ ở đây cho rõ Ý ĐỊNH nếu
+#:                            đường tách đó đổi.
+_HTTP_4XX_TAM_THOI = frozenset({408, 409, 429})
 
 
 def _voi_db(ham):
@@ -78,8 +87,78 @@ def handle(params: dict, ctx=None) -> dict:
     """
     loai = str(getattr(ctx, "job_type", "") or params.get("_job_type") or "")
     if loai.endswith(".enroll"):
-        return _ghi_danh(params, ctx)
+        # 🔴 T-14 (review round 1, IMPORTANT 1-b): AN TOÀN CUỐI ở LƯỢT THỬ
+        #    CUỐI. Không phải mọi thất bại của `_ghi_danh` tự đặt `loi` — một
+        #    lỗi HẠ TẦNG (`LoiHaTang`, vd cổng trả 5xx) vẫn PHẢI được thử lại,
+        #    và nền tảng (`platform_core/job_runner.py::_chay_handler`) tự
+        #    làm việc đó tới `SO_LAN_THU_JOB` lần. Nhưng nền tảng KHÔNG BIẾT
+        #    gì về `VoiceProfile.trang_thai` — đó là dữ liệu của app này —
+        #    nên khi nó âm thầm bỏ cuộc sau lượt cuối, hồ sơ mắc kẹt vĩnh
+        #    viễn ở `dang_ghi_danh` (và thu hồi bị chặn ở trạng thái đó, xem
+        #    `giong_vong_doi._CHUYEN`). Bắt Ở ĐÂY, không sửa `_ghi_danh`:
+        #    `tests/test_367_...::test_ghi_danh_dich_loi_HA_TANG_dung_lop`
+        #    đọc `inspect.getsource(jobs._ghi_danh)` và giả định thân hàm đó
+        #    KHÔNG đổi hình dạng ngoài các nhánh `except` đã có.
+        try:
+            return _ghi_danh(params, ctx)
+        except DangBan:
+            # "Bận" (`DangBanTam` kế thừa `DangBan`) KHÔNG tiêu một lượt thử
+            # (`job_runner._provider_failure_kind`: nhánh `resource_wait`
+            # không tăng `job.attempts`) — `ctx.attempt` ở lượt kế vẫn y hệt
+            # lượt này, nên đây KHÔNG PHẢI lượt cuối thật. Ném thẳng.
+            raise
+        except Exception:
+            _dat_loi_khi_het_luot(params, ctx)
+            raise
     return _tao_tieng(params, ctx)
+
+
+def _dat_loi_khi_het_luot(params: dict, ctx=None) -> None:
+    """AN TOÀN CUỐI của T-14 (review round 1, IMPORTANT 1-b) — xem chú thích
+    ở `handle()`. Chỉ đặt `loi` khi ĐÂY THẬT SỰ là lượt thử CUỐI của job
+    `ltt_voice.enroll` và hồ sơ vẫn còn `dang_ghi_danh`; mọi nhánh khác là
+    no-op im lặng.
+
+    ⚠️ `ctx.attempt` là số 1-based mà `job_runner._chay_handler` gán TRƯỚC khi
+       gọi handler (`int(job.attempts or 0) + 1`) — lượt cuối là khi nó bằng
+       đúng số lần thử job này được khai lúc nộp. `ltt_voice.enroll` LUÔN khai
+       đúng `SO_LAN_THU_JOB` (cả cửa web `tao_giong` lẫn Public API đều đi
+       qua `AppManifest.so_lan_thu_for`, xem `manifest.py:so_lan_thu`) — nên
+       so với hằng số MODULE này an toàn, không cần đọc CSDL `Job.max_attempts`
+       (tránh một phép đọc `platform_core.models.Job` không cần thiết).
+
+    ⛔ `ctx=None` (gọi `_ghi_danh`/`handle` trực tiếp trong test hay từ một
+       lời gọi không qua worker) ⇒ bỏ qua: không có lượt thử nào để đếm.
+    """
+    if ctx is None:
+        return
+    try:
+        if int(getattr(ctx, "attempt", 0) or 0) < SO_LAN_THU_JOB:
+            return
+    except (TypeError, ValueError):
+        return
+    p = params or {}
+    owner_id = str(p.get("owner_id") or "").strip()
+    public_id = str(p.get("voice_id") or "").strip()
+    if not (owner_id and public_id):
+        return
+
+    def _dat(db):
+        from . import giong_vong_doi, tham_chieu
+        from .tables import VoiceProfile
+        ho_so = tham_chieu.tim_profile(db, public_id, owner_id=owner_id)
+        if ho_so is None:
+            return
+        db.execute(
+            VoiceProfile.__table__.update()
+            .where(VoiceProfile.id == ho_so.id,
+                  VoiceProfile.trang_thai == giong_vong_doi.TT_DANG_GHI_DANH)
+            .values(trang_thai=giong_vong_doi.TT_LOI))
+    try:
+        _voi_db(_dat)
+    except Exception:  # noqa: BLE001 - an toan cuoi, khong duoc lam vo mot loi dang bay len
+        log.warning("khong dat duoc trang thai loi o luot cuoi cho %s/%s",
+                   owner_id, public_id, exc_info=True)
 
 
 def _tao_tieng(params: dict, ctx=None) -> dict:
@@ -330,38 +409,61 @@ def _ghi_danh(params: dict, ctx=None) -> dict:
         with st.open(nguon_key) as f:
             tmp.write(f.read())
         tmp.close()
+
+        def _dat_loi_dieu_kien(db):
+            """`UPDATE ... WHERE trang_thai = 'dang_ghi_danh'` — dùng ở CẢ HAI
+            nhánh `except` dưới đây (4xx vĩnh viễn của sidecar, và
+            `LoiNguoiGoi` ném thẳng ra từ `sidecar_client.ghi_danh`). Điều
+            kiện chặn worker ghi đè một hồ sơ đã bị THU HỒI giữa lúc job đang
+            chạy — cùng lý do với UPDATE `active` ở `_ghi` bên dưới."""
+            from .tables import VoiceProfile
+            db.execute(
+                VoiceProfile.__table__.update()
+                .where(VoiceProfile.id == ho_so.id,
+                      VoiceProfile.trang_thai == giong_vong_doi.TT_DANG_GHI_DANH)
+                .values(trang_thai=giong_vong_doi.TT_LOI))
+
         try:
             kq = sidecar_client.ghi_danh(tmp.name, denoise=True)
         except sidecar_client.SidecarBan as e:
             raise DangBanTam(retry_after_s=e.retry_after_s) from e
         except sidecar_client.LoiSidecar as e:
+            ma = int(getattr(e, "status", 0) or 0)
+            if 400 <= ma < 500 and ma not in _HTTP_4XX_TAM_THOI:
+                # 🔴 T-14 (review round 1, IMPORTANT 1-a): LỖI VĨNH VIỄN của
+                #    chính CLIP — cổng đã ĐỌC ĐƯỢC yêu cầu (không phải
+                #    5xx/mất mạng) và trả lời THẲNG "cái này sai" (4xx, vd
+                #    422 clip không thoả điều kiện engine). Thử lại y hệt
+                #    clip đó sẽ hỏng y hệt.
+                #
+                #    Trước bản vá này nhánh 4xx đi CHUNG đường với 5xx (dưới
+                #    đây) — `LoiHaTang`, retryable — nên nền tảng cứ thử lại
+                #    `SO_LAN_THU_JOB` lần cho một thứ chắc chắn hỏng cả
+                #    `SO_LAN_THU_JOB` lần, rồi ÂM THẦM bỏ cuộc mà KHÔNG BAO
+                #    GIỜ đặt `loi` — hồ sơ mắc kẹt VĨNH VIỄN ở `dang_ghi_danh`,
+                #    và khách KHÔNG THỂ thu hồi nó (thu hồi bị chặn ở trạng
+                #    thái đó, `giong_vong_doi._CHUYEN`).
+                _voi_db(_dat_loi_dieu_kien)
+                raise LoiGiongNoi(_t(
+                    "Clip này không dùng được để ghi danh. Hãy tạo lại "
+                    "giọng với một clip khác.")) from e
             # ⛔ `LoiHaTang`, KHÔNG phải `LoiGiongNoi` — cùng lỗi đã sửa ở
             #    `features._goi_va_dich_loi` (09b5ab6), và bản sửa đó BỎ SÓT chỗ
             #    này. `LoiGiongNoi` kế thừa `LoiNguoiGoi` nên nền tảng không thử
             #    lại, trong khi thông điệp hứa với khách là "vui lòng thử lại".
-            #    Cổng giọng khởi động lại sau deploy ⇒ mọi lượt ghi danh đang
-            #    bay hỏng vĩnh viễn thay vì được xếp lại vài giây sau.
+            #    Cổng giọng khởi động lại sau deploy (502/503), hay 408/409/429
+            #    tạm thời ⇒ mọi lượt ghi danh đang bay phải được xếp lại, không
+            #    hỏng vĩnh viễn.
             raise LoiHaTang(_t("Không ghi danh được giọng. Vui lòng thử lại.")) from e
         except LoiNguoiGoi:
             # 🔴 T-14: LỖI VĨNH VIỄN của chính YÊU CẦU (vd `LoiGiongNoi("clip
-            #    hỏng")`) — không phải hạ tầng, thử lại sẽ hỏng y hệt. Trước
-            #    bản vá này một hồ sơ hỏng kiểu này bị BỎ QUÊN mãi ở
-            #    `dang_ghi_danh`, và `features.giai_giong` lặp lại câu *"chờ
-            #    khoảng một phút rồi thử lại"* — một lời hứa không bao giờ
-            #    thành (xem `TT_LOI` ở `giong_vong_doi.py`).
-            #
-            #    CÓ ĐIỀU KIỆN (`WHERE trang_thai = 'dang_ghi_danh'`) — cùng lý
-            #    do với UPDATE `active` bên dưới: nếu khách đã THU HỒI hồ sơ
-            #    này trong lúc job đang chạy, worker không được ghi đè
-            #    `revoked` thành `loi`.
-            def _dat_loi(db):
-                from .tables import VoiceProfile
-                db.execute(
-                    VoiceProfile.__table__.update()
-                    .where(VoiceProfile.id == ho_so.id,
-                          VoiceProfile.trang_thai == giong_vong_doi.TT_DANG_GHI_DANH)
-                    .values(trang_thai=giong_vong_doi.TT_LOI))
-            _voi_db(_dat_loi)
+            #    hỏng")` ném THẲNG từ `sidecar_client.ghi_danh`, không qua
+            #    `LoiSidecar` — khác nhánh 4xx ở trên) — không phải hạ tầng,
+            #    thử lại sẽ hỏng y hệt. Trước bản vá này một hồ sơ hỏng kiểu
+            #    này bị BỎ QUÊN mãi ở `dang_ghi_danh`, và `features.giai_giong`
+            #    lặp lại câu *"chờ khoảng một phút rồi thử lại"* — một lời
+            #    hứa không bao giờ thành (xem `TT_LOI` ở `giong_vong_doi.py`).
+            _voi_db(_dat_loi_dieu_kien)
             raise
     finally:
         try:
@@ -383,6 +485,8 @@ def _ghi_danh(params: dict, ctx=None) -> dict:
     chon = kq.get("chon_doan") or {}
 
     def _ghi(db):
+        from sqlalchemy import select
+
         from .tables import VoiceProfile, VoiceRepr
         r = VoiceRepr(profile_id=ho_so.id, ref_id=int(p.get("ref_id") or 0),
                       engine="vieneu",
@@ -392,6 +496,7 @@ def _ghi_danh(params: dict, ctx=None) -> dict:
                       storage_key=khoa, fingerprint=vt,
                       trang_thai="dang_dung")
         db.add(r)
+        db.flush()  # can `r.id` de tu phan biet dong VUA THEM voi cac dong khac
         # ⛔ Profile chỉ sang `active` SAU KHI có biểu diễn. Đảo thứ tự là để lại
         #    một giọng "dùng được" mà gọi tới thì không có gì để đọc.
         #
@@ -410,27 +515,71 @@ def _ghi_danh(params: dict, ctx=None) -> dict:
                   VoiceProfile.trang_thai == giong_vong_doi.TT_DANG_GHI_DANH)
             .values(trang_thai=giong_vong_doi.TT_ACTIVE))
         if ket.rowcount == 0:
-            # Hồ sơ không còn ở `dang_ghi_danh` nữa (thu hồi giữa chừng, hoặc
-            # một lượt thử lại khác đã chạy qua). `db.rollback()` bỏ luôn
-            # `VoiceRepr` vừa `add()` ở trên — nó CHƯA commit, nên lùi ở đây
-            # là an toàn và không để lại một dòng `voice_repr` mồ côi.
+            # 🔴 review round 1, IMPORTANT 2: KHÔNG được kết luận "đã thu hồi"
+            #    chỉ từ `rowcount == 0` — đó CŨNG chính là dấu vết của một
+            #    LƯỢT THỬ LẠI của CHÍNH job này SAU KHI lượt trước đã kích
+            #    hoạt xong (worker chết giữa chừng đâu đó SAU khi UPDATE
+            #    `active` commit — vd lúc dựng tệp nghe thử ở đuôi hàm này).
+            #    Đọc trạng thái THẬT trước khi kết luận.
+            trang_hien = db.execute(
+                select(VoiceProfile.trang_thai)
+                .where(VoiceProfile.id == ho_so.id)).scalar_one_or_none()
+
+            if trang_hien == giong_vong_doi.TT_ACTIVE:
+                # THÀNH CÔNG IDEMPOTENT — không phải lỗi. `khoa` đặt tên theo
+                # sha256 của chính biểu diễn (`tham_chieu.khoa_bieu_dien`), nên
+                # một lượt thử lại SINH LẠI cùng embedding sẽ trùng khoá với
+                # dòng `VoiceRepr` đã có. Dòng vừa `add()` ở trên khi đó là
+                # THỪA — xoá nó (KHÔNG xoá `khoa` trong kho: dòng CŨ vẫn trỏ
+                # tới đúng khoá đó). Embedding KHÔNG trùng (khoá khác) thì
+                # dòng vừa thêm là một biểu diễn hợp lệ THỨ HAI — giữ lại,
+                # không sai gì khi có nhiều `VoiceRepr` cùng `dang_dung`
+                # (`tham_chieu.tim_repr_active` tự chọn dòng MỚI NHẤT).
+                trung = db.execute(
+                    select(VoiceRepr.id)
+                    .where(VoiceRepr.profile_id == ho_so.id,
+                          VoiceRepr.storage_key == khoa,
+                          VoiceRepr.id != r.id)).scalar_one_or_none()
+                if trung is not None:
+                    db.delete(r)
+                return r
+
+            # revoked / loi / disabled: hồ sơ không còn muốn biểu diễn NÀY
+            # nữa (thu hồi/đánh dấu lỗi/tắt xảy ra giữa lúc job đang chạy).
+            # Kiểm TRƯỚC KHI LÙI: còn dòng CSDL nào khác (không phải dòng vừa
+            # `add()` ở trên) trỏ tới đúng `khoa` này không — xoá một khoá mà
+            # một dòng khác ĐANG SỐNG còn tham chiếu là làm mồ côi dòng đó.
+            con_dung = db.execute(
+                select(VoiceRepr.id)
+                .where(VoiceRepr.profile_id == ho_so.id,
+                      VoiceRepr.storage_key == khoa,
+                      VoiceRepr.id != r.id)).scalar_one_or_none()
+            # `db.rollback()` bỏ luôn `VoiceRepr` vừa `add()` ở trên — nó CHƯA
+            # commit, nên lùi ở đây là an toàn và không để lại một dòng
+            # `voice_repr` mồ côi.
             db.rollback()
-            raise LoiGiongNoi(_t("Giọng này đã bị thu hồi."))
+            if con_dung is None:
+                # KHÔNG dòng CSDL nào khác còn trỏ tới `khoa` — xoá an toàn.
+                # Đây là TỆP THẬT trên đĩa/R2; rollback CSDL không đụng tới
+                # nó. Best-effort: một `.npz` mồ côi là rác, không phải một
+                # lỗi cho khách.
+                try:
+                    st.delete(khoa)
+                except Exception:  # noqa: BLE001 - don duoc thi don, khong thi thoi
+                    log.warning("khong xoa duoc khoa bieu dien mo coi %s", khoa,
+                               exc_info=True)
+            cau = {
+                giong_vong_doi.TT_REVOKED: _t("Giọng này đã bị thu hồi."),
+                giong_vong_doi.TT_LOI: _t(
+                    "Giọng này đã được đánh dấu lỗi ở một lượt ghi danh khác."),
+                giong_vong_doi.TT_DISABLED: _t(
+                    "Giọng này đã bị tắt trong lúc ghi danh."),
+            }
+            raise LoiGiongNoi(cau.get(trang_hien, _t(
+                "Giọng này không còn ở trạng thái ghi danh nữa.")))
         return r
 
-    try:
-        _voi_db(_ghi)
-    except LoiGiongNoi:
-        # CSDL đã tự lùi (rollback trong `_ghi`), nhưng KHOÁ KHO cho biểu diễn
-        # vừa ghi (`khoa`, từ `luu_bieu_dien` phía trên) là một TỆP THẬT trên
-        # đĩa/R2 — rollback CSDL không đụng tới nó. Dọn tay, best-effort: một
-        # `.npz` mồ côi là rác, không phải một lỗi cho khách.
-        try:
-            st.delete(khoa)
-        except Exception:  # noqa: BLE001 - don duoc thi don, khong thi thoi
-            log.warning("khong xoa duoc khoa bieu dien mo coi %s", khoa,
-                       exc_info=True)
-        raise
+    _voi_db(_ghi)
 
     # ── TỆP NGHE THỬ, dựng ngay ở ĐUÔI job ghi danh ─────────────────────────
     #

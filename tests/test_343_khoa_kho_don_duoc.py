@@ -131,8 +131,10 @@ def test_doi_dieu_khoan_thi_phai_doi_phien_ban():
     #: Cập nhật CẢ HAI khi đổi điều khoản. Đây là một bản chụp có chủ ý.
     #: 11/09/2026 (T-07): thêm điều "Xoá giọng" (quyền thu hồi) -> 7 điều, bump
     #: phiên bản.
+    #: 11/09/2026 (review round 1, item 6): SỬA câu "Xoá giọng" (không hứa quá
+    #: — xem `dieu_khoan.py`) -> vẫn 7 điều, bump phiên bản lần nữa (b).
     SO_DIEU = 7
-    PHIEN_BAN = "ltt-voice-dk-2026-09-11a"
+    PHIEN_BAN = "ltt-voice-dk-2026-09-11b"
 
     assert len(cac_dieu()) == SO_DIEU, (
         f"so dieu khoan doi ({len(cac_dieu())} != {SO_DIEU}) — hay bump "
