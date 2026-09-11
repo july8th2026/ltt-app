@@ -109,14 +109,58 @@ macros:
   #
   # !! DANH DOI PHAI BIET: reasoning_effort medium re hon xhigh nhung diem IFBench
   #    78,3 cua cong dong do o xhigh. P3 phai do CA HAI muc roi moi chot.
+  # --metrics    MO CUA DOC /metrics cua llama-server (Prometheus).
+  #
+  #   !! CO NAY KHONG BAT VIEC DEM. Viec dem CHAY SAN, vo dieu kien, trong vong
+  #      lap suy luan — doi chieu ma nguon llama.cpp (tools/server):
+  #
+  #        server-context.cpp:4066   metrics.add_prompt(...)
+  #        server-context.cpp:4072   metrics.n_decode++
+  #        server-context.cpp:3412   metrics.add_prompt_cached(n_past)
+  #        server-context.cpp:4129   metrics_on_prediction(slot)
+  #
+  #      Con co nay chi gac CUA DOC:
+  #
+  #        server-context.cpp:4669   if (!params.endpoint_metrics) { ... }
+  #
+  #   => Truoc dong nay, may B DEM ROI VUT DI. Bat len ton 0 tren duong nong:
+  #      khong them mot phep tinh nao, chi them mot endpoint chi-doc tren
+  #      127.0.0.1:8281 — noi chi llama-swap voi toi duoc.
+  #
+  #   Thu mo khoa duoc, ma khong cach nao khac lay duoc:
+  #     * token prompt/sinh ra, prefill & decode tok/s
+  #     * KV cache, slot dang ban
+  #     * llamacpp:spec_decode_num_accepted_tokens_per_pos_total
+  #       <- TI LE CHAP NHAN SUY DOAN. `--spec-type draft-mtp` o duoi dang bat,
+  #          nen day la cach duy nhat biet no co dang giup gi khong.
+  #
+  #   ! Cong 8299 KHONG phoi /metrics ra ngoai. Muon xem thi hoi qua llama-swap
+  #     tren loopback cua may B. Cong chi phoi so cua RIENG no (`/health` ->
+  #     `dem`), vi do la thu llama-server khong bao gio nhin thay: moi luot bi
+  #     TU CHOI deu khong cham toi engine.
   CHUNG: >-
     --jinja
     --chat-template-file H:/LTT_LLM/models/chat_template.jinja
     --reasoning-format deepseek
     -fa 1 -ngl 999 --parallel 1
     --spec-type draft-mtp --spec-draft-n-max 2
+    --metrics
 
 models:
+  # ============================================================ GHIM GPU (P0)
+  # !! MAY B CO HAI GPU TU 09/2026: `llama-server --list-devices` in
+  #      CUDA0: RTX 3090 (24.575 MiB)   CUDA1: RTX 5060 Ti (16.310 MiB)
+  #    Voi `-ngl 999` va KHONG ghim, llama.cpp mac dinh CHIA LOP qua MOI thiet bi
+  #    no thay => model 27B tu chia sang ca 5060 Ti (cham hon, va trai quyet dinh
+  #    cua chu du an: Qwen CHI chay 3090, 5060 Ti de danh model khac - D-09a,
+  #    `docs/multijob/DECISION_LOG.md`).
+  #
+  #    Ghim bang UUID, KHONG bang chi so: thu tu liet ke CUDA doi duoc (lap them
+  #    card, doi khe) con UUID thi khong. Dat O DAY chu khong o env cua dich vu
+  #    `LTTLlamaSwap`: `cai_dat_dich_vu.ps1` co nhanh go-cai-lai dich vu, va env
+  #    dich vu mat AM THAM o lan do. `tests/test_950` doi moi ho so co dong nay.
+  # ==========================================================================
+
   # ============================================================ KHACH NGOAI
   # Ho so MAC DINH, phuc vu khach goi API qua Cloudflare. Chot 2026-08-27.
   #
@@ -155,6 +199,8 @@ models:
       -c 204800
       --cache-type-k q4_0 --cache-type-v q4_0
       --host 127.0.0.1 --port ${PORT}
+    env:
+      - "CUDA_VISIBLE_DEVICES=GPU-26623278-4fa5-82db-4306-237651b03e78"
     proxy: "http://127.0.0.1:${PORT}"
     # Dai hon `ops`: khach ngoai goi rai rac, nap lai giua cac lan la tra tien
     # bang do tre cho nguoi dung cuoi.
@@ -199,6 +245,8 @@ models:
       -c 131072
       --cache-type-k q4_0 --cache-type-v q4_0
       --host 127.0.0.1 --port ${PORT}
+    env:
+      - "CUDA_VISIBLE_DEVICES=GPU-26623278-4fa5-82db-4306-237651b03e78"
     proxy: "http://127.0.0.1:${PORT}"
     ttl: 600
     unloadTimeout: 30
