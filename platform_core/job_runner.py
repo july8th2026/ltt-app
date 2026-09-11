@@ -247,7 +247,10 @@ def _chay_mot_job(worker_id: str, *, capabilities=None) -> bool:
             _mark_job_admitted(job_id)
             # 2. Chạy handler NGOÀI transaction claim.
             ctx = JobContext(job_id, gpu_uuid=(lease.gpu_uuid if lease else ""))
-            return _chay_handler(worker_id, job_id, job_type, params, ctx)
+            from platform_core.job_ingress import trusted_scope
+
+            with trusted_scope("worker", "internal"):
+                return _chay_handler(worker_id, job_id, job_type, params, ctx)
 
 
 def _vram_can(job_type: str) -> int:

@@ -93,6 +93,7 @@ def test_child_job_nhan_owner_tu_run_va_khong_tin_client(db):
         db, run, step_id="s1", app_slug="appthu", job_type="appthu.dao_nguoc",
         params={"text": "a", "owner_id": "attacker"})
     assert child.params["owner_id"] == "owner-a"
+    assert (child.origin, child.priority_class) == ("agent", "internal")
 
 
 def test_bon_child_cung_parent_va_mot_loi_duoc_dem_dung(db):

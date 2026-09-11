@@ -3819,3 +3819,37 @@ URL máy, không engine song song). Dữ liệu hội thoại dạng cây, bản
 | H43.11 | 11 | Mở rộng: ba fixture + hai phép kiểm tĩnh (không `if <tên model>`, không import provider) + `docs/CHATLTT/11_THEM_MODEL_MOI.md` có test canh (`test_626`, `reports/11_mo_rong.md`) | [x] 2026-09-03 |
 | H43.12 | 12 | Torture: đồng thời/tiền/bảo mật/dữ liệu/hiệu năng | [ ] |
 | H43.13 | 13 | Nghiệm thu tươi + gate đầy đủ + báo cáo cuối; **không deploy** | [ ] |
+
+## H44 — Priority Scheduler + Queue Intelligence V1 (2026-09-10)
+
+Nguồn yêu cầu: campaign `PRIORITY SCHEDULER + QUEUE INTELLIGENCE V1`.
+Quyết định: Q122. Hồ sơ canonical: `docs/SCHEDULER_V1/`.
+
+- [x] H44.0 Preflight + baseline + audit kiến trúc — 2026-09-10: tách worktree
+      `architecture/scheduler-priority-v1`; xác nhận một queue PostgreSQL,
+      SKIP LOCKED, fair-share, admission/lease, polling/events/webhook hiện hữu;
+      full gate baseline chưa chạy và được ghi `NOT_RUN`, không mượn bằng chứng.
+- [x] H44.1 Scheduler contract — 2026-09-10: khóa Q122, strict
+      `INTERNAL > EXTERNAL`, non-preemptive, fairness trong lớp, một ranking cho
+      claim/snapshot/ETA, metadata lạ fail-closed về external.
+- [x] H44.2 Job metadata + additive migration — 2026-09-10: thêm
+      origin/priority_class, default fail-closed và migration/index additive.
+- [x] H44.3 Canonical ranking + claim/fairness/concurrency regression —
+      2026-09-10: strict priority, fair account/aging/FIFO, non-preemptive;
+      kiểm PostgreSQL hai worker đã PASS.
+- [x] H44.4 Trusted ingress classification + chống spoof — 2026-09-10:
+      middleware/server scope đóng lớp, public body/header không nâng quyền.
+- [x] H44.5 Queue snapshot + dynamic position — 2026-09-10: claim và snapshot
+      dùng chung ranking; position cập nhật theo trạng thái thật.
+- [x] H44.6 ETA MVP + fallback trung thực — 2026-09-10: rolling median theo
+      resource/priority; thiếu lịch sử trả null.
+- [x] H44.7 Public/web status + polling; SSE/webhook compatibility —
+      2026-09-10: status trả queue + nhịp poll; event/webhook hiện hữu giữ nguyên.
+- [x] H44.8 Observability/admin + starvation visibility — 2026-09-10: metric
+      depth/wait/lifecycle/override/fair rotation và cảnh báo external 300 giây.
+- [ ] H44.9 Performance 1k/5k/10k + full regression — benchmark đạt
+      20,585/81,586/174,181 ms; L3 2026-09-10 có 9.392 PASS nhưng FAIL 2/32
+      do 7 assertion bằng chứng ASV, test hook thiếu sh và ký tự VT trong
+      scorecard Voice, đều ngoài changeset Scheduler.
+- [x] H44.10 Real E2E + `FINAL_REPORT.md` — 2026-09-10: Playwright local
+      cô lập PASS, console 0 error, failed request 0; chưa deploy production.

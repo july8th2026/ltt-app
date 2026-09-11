@@ -851,21 +851,17 @@ def test_a_job_is_refused_before_the_hold_when_capacity_is_gone(portal,
 # ── What is deliberately absent ──────────────────────────────────────────────
 
 def test_no_paid_priority_field_is_offered_by_fair_scheduler():
-    """The brief allows priority classes "only if the scheduler supports it".
-
-    `jobs.claim()` now schedules fair-share + aging, but deliberately has no
-    paid priority class. Fairness is operational safety, not a product promise
-    that a richer account may jump the queue.
-    """
+    """Operational priority exists, but money cannot buy or spoof it."""
     import inspect
 
-    from platform_core import jobs as jobq
+    from platform_core import job_scheduler
     from platform_core.models import Job
 
     assert not hasattr(Job, "priority")
+    assert hasattr(Job, "priority_class")
     assert "priority" not in policy.LIMIT_FIELDS
-    source = inspect.getsource(jobq.claim)
-    assert "FAIR_AGING" in source and "last_account_claim" in source
+    source = inspect.getsource(job_scheduler.order_expressions)
+    assert "priority" in source and "last_account_claim" in source
     assert "credit" not in source.lower()
 
 

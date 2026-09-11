@@ -17020,6 +17020,52 @@ Safari thật · bàn phím ảo thật · phóng to 200% (195px CSS, 15/15 rout
 đòi 320px và ở đó đạt) · tải lại giữa job (môi trường đo không có provider
 `san_sang`) · `prompt_ai_ommi` React chưa seed dữ liệu.
 
+---
+
+## 2026-09-10 — H44 Priority Scheduler + Queue Intelligence V1
+
+Worktree `D:\LTTSTUDIOSAPP-scheduler-v1`, nhánh
+`architecture/scheduler-priority-v1`. Đã thêm envelope origin/priority,
+migration additive, ranking canonical cho claim/snapshot, trusted ingress,
+position/ETA/polling, metric và starvation alert. Không deploy production và
+không đưa hai sửa Voice/gate hook của phiên khác vào changeset.
+
+Đã chạy thật:
+
+- Các cụm test mục tiêu: 33 PASS; scheduler/public/history: 18 PASS.
+- Migration PostgreSQL và kiểm claim đồng thời hai worker: PASS.
+- Benchmark 1k/5k/10k: snapshot 20,585 / 81,586 / 174,181 ms.
+- Playwright local cô lập: position 2, higher-priority ahead 1, ETA null,
+  console 0 error, failed request 0.
+- L2 chọn nhầm phạm vi gồm 476 file đã bị dừng sau 61 phút; **không tính PASS**.
+  Nguyên nhân là core:job vốn phủ 452 test, nên không chạy lại một L2 gần-trùng
+  L3. Theo hợp đồng, hoàn tất changeset rồi gom một L3 cuối.
+
+Phán quyết L3 cuối: **FAIL 2/32**; 30 bước PASS. Bộ test có 9.392 PASS,
+63 skipped, 1 xfailed và 8 failed; pha nối tiếp 96 PASS. Bảy lỗi thuộc
+`test_448_asv_v4_e2e_nghiem_thu.py`, một lỗi hook thiếu `sh` thuộc
+`test_365_gate_ba_trang_thai.py`; bước ký tự điều khiển đỏ vì VT trong
+scorecard Voice. Tất cả là baseline ngoài Scheduler; test Scheduler, migration,
+M-1 PostgreSQL và bất biến đa tiến trình đều PASS. Kết quả:
+`test-results/gates/20260910T110641Z-5568.json`. Không chạy lại L3.
+
+### Khôi phục 2026-09-11
+
+Đã rebase Scheduler lên trunk `3100c317`. Trunk dùng Q121 cho cửa ngôn ngữ
+Voice, nên quyết định Scheduler được đánh số kế tiếp Q122; giữ nguyên cả hai
+lịch sử và giữ test header động của trunk. Test sau rebase:
+`python tools\test_nhanh.py tests/test_604_q120_tran_ngu_canh_mot_nguon.py tests/test_971_priority_scheduler_v1.py`
+— **PASS 115**, trong đó 19 test mục tiêu và 96 test pha nối tiếp.
+
+Không chạy L3: ASV đã có sửa ở nhánh sở hữu `710aa7c1` nhưng chưa vào trunk,
+hook Windows thiếu `sh` vẫn đỏ; chạy lúc này chỉ lặp lại lỗi đã biết. CPU được
+kiểm trước lệnh và báo RẢNH.
+
+Rà lại sau khi phiên ASV kết thúc: worktree ASV sạch tại `694b8a4b`, nhưng
+`TRANG_THAI_V6.md` còn nhiều pha CHƯA/MỘT PHẦN và nhánh lệch trunk 42/56
+commit. Hai commit evidence của test_448 phụ thuộc code engine/QC trên nhánh;
+không cherry-pick evidence rời và không chạy L3 biết trước sẽ đỏ.
+
 ### Cách lùi lại
 
 Bỏ nhánh `phien/mobile-v1` là bỏ hết. Không migration Alembic nào, không chạm

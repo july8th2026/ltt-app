@@ -1,0 +1,30 @@
+{
+  "engine": "sqlite",
+  "command": "python bench\\scheduler_v1_benchmark.py",
+  "samples": [
+    {
+      "queued_jobs": 1000,
+      "fifo_select_median_ms": 0.319,
+      "canonical_select_median_ms": 2.158,
+      "queue_snapshot_median_ms": 20.585,
+      "subject_position": 1000,
+      "subject_eta": null
+    },
+    {
+      "queued_jobs": 5000,
+      "fifo_select_median_ms": 0.82,
+      "canonical_select_median_ms": 10.288,
+      "queue_snapshot_median_ms": 81.586,
+      "subject_position": 5000,
+      "subject_eta": null
+    },
+    {
+      "queued_jobs": 10000,
+      "fifo_select_median_ms": 3.845,
+      "canonical_select_median_ms": 23.99,
+      "queue_snapshot_median_ms": 174.181,
+      "subject_position": 10000,
+      "subject_eta": null
+    }
+  ]
+}
