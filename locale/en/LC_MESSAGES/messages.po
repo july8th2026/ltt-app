@@ -15765,3 +15765,24 @@ msgstr "Fade-in / fade-out must be between 0 and {n} seconds."
 
 msgid "Đã tắt nhạc nền thì không còn gì để hạ theo lời thoại."
 msgstr "With the music turned off there is nothing to lower under the dialogue."
+
+msgid "Nguồn giọng"
+msgstr "Voice source"
+
+msgid "Giọng mẫu LTT"
+msgstr "LTT voices"
+
+msgid "Tìm theo tên"
+msgstr "Search by name"
+
+msgid "chưa có mẫu nghe"
+msgstr "no preview yet"
+
+msgid "Không có giọng nào khớp bộ lọc — hãy bỏ bớt điều kiện."
+msgstr "No voice matches these filters — remove some of them."
+
+msgid "Đã cập nhật danh sách: %(so)s giọng."
+msgstr "List updated: %(so)s voices."
+
+msgid "Không làm mới được danh sách giọng."
+msgstr "Could not refresh the voice list."

@@ -133,8 +133,24 @@
         <div class="asv-o">
           <label for="asv-giong"><strong>{{ _("Giọng đọc") }}</strong></label>
 
+          {# ⭐ V6 pha 18 — hai nguon giong tach ra: giong khach NHAN BAN o LTT VOICE
+               va giong MAU cua LTT. Nut chu khong phai radio: radio co `name`
+               se di theo form len may chu, trong khi day chi la mot cach NHIN. #}
+          <div class="asv-loc" role="group" aria-label="{{ _('Nguồn giọng') }}">
+            <button type="button" class="btn" data-nguon-giong=""
+                    aria-pressed="true">{{ _("Tất cả") }}</button>
+            <button type="button" class="btn ghost" data-nguon-giong="rieng"
+                    aria-pressed="false">{{ _("Giọng của tôi") }} <span data-dem></span></button>
+            <button type="button" class="btn ghost" data-nguon-giong="mau"
+                    aria-pressed="false">{{ _("Giọng mẫu LTT") }} <span data-dem></span></button>
+          </div>
+
           {# Ba mat loc. Nhan lay TU `ltt_voice`, khong go tay o template. #}
           <div class="asv-loc" role="group" aria-label="{{ _('Lọc giọng') }}">
+            {# Tim KHONG DAU theo ten. Khong co `name`: khong gui len may chu. #}
+            <input type="search" id="asv-tim-giong" class="asv-loc-o"
+                   placeholder="{{ _('Tìm theo tên') }}"
+                   aria-label="{{ _('Tìm giọng theo tên') }}">
             <select id="asv-loc-gioi" class="asv-loc-o" aria-label="{{ _('Giới') }}">
               <option value="">{{ _("Mọi giới") }}</option>
               {% for ma, ten in nhan_loc.gioi.items() %}
@@ -170,10 +186,12 @@
             {% for g in giong %}
               <option value="{{ g.ma }}"
                       {% if g.ma == giong_chon %}selected{% endif %}
+                      data-ten="{{ g.ten }}"
+                      data-nguon="{{ 'mau' if g.la_mau else 'rieng' }}"
                       data-gioi="{{ g.gioi }}" data-vung="{{ g.vung }}"
                       data-phong-cach="{{ g.phong_cach }}"
                       {% if g.duong_nghe %}data-nghe="{{ g.duong_nghe }}"{% endif %}
-                      >{{ g.ten }}</option>
+                      >{{ g.ten }}{% if not g.duong_nghe %} · {{ _("chưa có mẫu nghe") }}{% endif %}</option>
             {% endfor %}
           </select>
 
@@ -185,7 +203,13 @@
                ma khong keu. `nghe_thu.duong_cho_trang` CO Y bo khoa khoi dict. #}
             <span class="asv-ghi-chu" id="asv-nghe-tt" aria-live="polite"></span>
             <audio id="asv-nghe-am" preload="none"></audio>
+            {# ⭐ Catalog SONG: giong vua nhan ban o tab khac hien ma khong phai tai
+               lai trang (mat video da chon). JS cung tu lam moi khi tab duoc
+               nhin lai. Nguon: `routes.danh_muc_giong`, da loc theo chu so huu. #}
+            <button type="button" class="btn ghost" id="asv-giong-lam-moi"
+                    data-url="{{ app.route_prefix }}/giong">{{ _("Làm mới danh sách") }}</button>
           </div>
+          <p class="asv-ghi-chu" id="asv-giong-tt" aria-live="polite"></p>
           <p class="asv-ghi-chu">{{ _("Bạn có thể nhân bản giọng riêng ở LTT VOICE.") }}</p>
         </div>
       </div>
@@ -613,6 +637,10 @@
   "giay": {{ _("giây")|tojson }},
   "nghe_chua_co": {{ _("Giọng này đang được chuẩn bị bản nghe thử.")|tojson }},
   "nghe_hong": {{ _("Không phát được bản nghe thử.")|tojson }},
+  "giong_khong_khop": {{ _("Không có giọng nào khớp bộ lọc — hãy bỏ bớt điều kiện.")|tojson }},
+  "giong_chua_mau": {{ _("chưa có mẫu nghe")|tojson }},
+  "giong_da_lam_moi": {{ _("Đã cập nhật danh sách: %(so)s giọng.")|tojson }},
+  "giong_lam_moi_hong": {{ _("Không làm mới được danh sách giọng.")|tojson }},
   "vung_chua_co": {{ _("Chưa có vùng nào.")|tojson }},
   "vung_dem": {{ _("%(so)s vùng đã đánh dấu.")|tojson }},
   "vung_keo": {{ _("Kéo trên khung hình để vẽ vùng.")|tojson }},
