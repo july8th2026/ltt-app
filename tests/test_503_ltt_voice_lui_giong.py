@@ -166,11 +166,42 @@ def _ham(tep: str, ten: str):
 
 
 def test_giai_giong_THUC_SU_goi_duong_lui():
-    goi = {ast.unparse(n.func) for n in ast.walk(_ham("apps/ltt_voice/features.py",
-                                                      "giai_giong"))
-           if isinstance(n, ast.Call)}
-    assert any("lui_giong.chon" in g for g in goi), \
-        "giai_giong khong goi lui_giong.chon — duong lui dang khong duoc gan vao"
+    """`giai_giong` phai THAT SU noi vao duong lui, khong chi co ve nhu the.
+
+    ⛔ VIET LAI Task 12 / D007 (2026-09-11): ban cu dem loi goi
+       `lui_giong.chon` THEO TEN ngay trong than `giai_giong`. D007 tach
+       phan chon duong lui ra `_chon_duong_lui` (dung chung voi ban CHI
+       KIEM `giai_giong_kiem`, khong cham storage) -- cung mot cach ma
+       `test_384::test_giai_giong_doi_chieu_lan_o_CA_HAI_nhanh` da tach
+       `_chot_lan` khoi `giai_giong` truoc do. Dem theo ten se DO ngay ca
+       khi duong lui van noi nguyen ven, chi vi mot lop goi ham trung gian
+       doi ten -- dung cai bay chinh test_384 da ghi lai.
+
+    ⭐ Nen nay chot CHUOI HAI MAT XICH: `giai_giong` goi `_chon_duong_lui`,
+       va `_chon_duong_lui` goi that `lui_giong.chon`. Menh de nay bat bien
+       voi ten ham trung gian, va van do neu mot mat xich bi cat.
+    """
+    gg = _ham("apps/ltt_voice/features.py", "giai_giong")
+    goi_gg = {getattr(n.func, "id", "") for n in ast.walk(gg)
+             if isinstance(n, ast.Call)}
+    assert "_chon_duong_lui" in goi_gg, \
+        "giai_giong khong goi _chon_duong_lui — duong lui dang khong duoc gan vao"
+
+    # Mat xich thu hai: _chon_duong_lui phai THAT SU hoi lui_giong.chon.
+    dl = _ham("apps/ltt_voice/features.py", "_chon_duong_lui")
+    goi_dl = {ast.unparse(n.func) for n in ast.walk(dl) if isinstance(n, ast.Call)}
+    assert any("lui_giong.chon" in g for g in goi_dl), \
+        "_chon_duong_lui khong goi lui_giong.chon — duong lui dang khong duoc gan vao"
+
+    # D007: ban CHI KIEM cung phai voi toi duong lui (khong chi ban NAP
+    # that) -- neu khong thi mot yeu cau se lui giong khi chay that lai
+    # KHONG bi tu choi som o /quotes, vi ban chi-kiem khong biet duong lui
+    # co ton tai hay khong.
+    gk = _ham("apps/ltt_voice/features.py", "giai_giong_kiem")
+    goi_gk = {getattr(n.func, "id", "") for n in ast.walk(gk)
+             if isinstance(n, ast.Call)}
+    assert "_chon_duong_lui" in goi_gk, \
+        "giai_giong_kiem khong goi _chon_duong_lui — pre-check khong chot duong lui"
 
 
 def test_jobs_KHONG_VUT_canh_bao_di():
