@@ -293,6 +293,16 @@ def test_A_khong_TAT_duoc_giong_cua_B(khach):
     assert _profile(pidB).trang_thai == "active", "giong B bi doi trang thai"
 
 
+def test_A_khong_XOA_duoc_giong_cua_B(khach):
+    client, uid = khach
+    pidB = _profile_cua_B()
+    r = client.post(f"/ltt-voice/giong/{pidB}/xoa",
+                    data={"csrf_token": _csrf_giong(client)},
+                    headers={"Accept": "application/json"})
+    assert r.status_code == 404, r.text
+    assert _profile(pidB).trang_thai == "active", "giong B bi doi trang thai"
+
+
 def test_A_khong_LIET_KE_duoc_giong_rieng_cua_B(khach):
     client, uid = khach
     pidB = _profile_cua_B()
@@ -457,3 +467,128 @@ def test_bao_tri_dung_giong_rieng_ton_trong_tran(khach, monkeypatch):
 
     assert len(goi) == nghe_thu.TOI_DA_GIONG_RIENG_MOI_LUOT, (
         f"dung {len(goi)} tep cho {so_giong} giong dang thieu — tran khong duoc tuan thu")
+
+
+# ── ⑥ THU HỒI + WORKER — Task 6 (T-07, T-14, INV-THU-HOI-1) ──────────────────
+#
+# ⛔ `test_thu_hoi_xoa_CA_TIEN_TO_giu_ho_so` của brief gốc (task-6-brief.md)
+#    dựng 4 tệp bất kỳ dưới `voice/{uid}/{pid}/` (kể cả hai "phiên bản nghe
+#    thử cũ" không hàng CSDL nào trỏ tới) rồi đòi CẢ BỐN biến mất sau khi thu
+#    hồi. Điều đó đòi một API liệt-kê-theo-tiền-tố ở `platform_core.storage`
+#    — xác nhận lại ở Task 6 (đã xác nhận từ Task 5 review): `Storage`/
+#    `LocalStorage` KHÔNG có hàm đó, và task này KHÔNG được thêm nó (thay đổi
+#    tầng nền tảng, ngoài phạm vi một task app — xem `khoa_can_xoa` bên dưới).
+#
+#    ⇒ Bài dưới đây đo đúng những gì hiện thực THẬT sự làm: xoá mọi khoá mà
+#      `giong_vong_doi.khoa_da_biet` BIẾT (nguồn qua `VoiceRef`, biểu diễn
+#      qua `VoiceRepr`, bản nghe thử HIỆN HÀNH qua `nghe_thu.khoa_rieng`) —
+#      không phải "mọi khoá dưới tiền tố". Một bản nghe thử của một
+#      `PHIEN_BAN` engine CŨ hơn (nếu còn sót từ một lần nâng cấp) sẽ KHÔNG bị
+#      dọn bằng thu hồi — hạn chế đã ghi trong docstring `khoa_can_xoa` và
+#      trong `task-6-report.md`.
+
+def test_thu_hoi_xoa_CAC_KHOA_DA_BIET_giu_ho_so(khach):
+    client, uid = khach
+    from apps.ltt_voice import nghe_thu
+    from apps.ltt_voice.tables import VoiceRef, VoiceRepr
+    from platform_core.storage import get_storage
+    import platform_core.db as dbmod
+
+    pid = _tao_giong_active(uid, ngon_ngu="vi", nguon="khai_bao")
+    st = get_storage()
+    khoa_nguon = f"voice/{uid}/{pid}/nguon.wav"
+    khoa_repr = f"voice/{uid}/{pid}/repr.npz"
+    khoa_preview = nghe_thu.khoa_rieng(uid, pid)
+    for k in (khoa_nguon, khoa_repr, khoa_preview):
+        st.put(k, io.BytesIO(b"x"), content_type="application/octet-stream")
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        hs = _ho_so_theo_pid(pid)
+        db.add(VoiceRef(profile_id=hs.id, storage_key=khoa_nguon,
+                        sha256="a" * 64, mime="audio/wav"))
+        db.add(VoiceRepr(profile_id=hs.id, ref_id=0, engine="vieneu",
+                         storage_key=khoa_repr, fingerprint="f",
+                         trang_thai="dang_dung"))
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    r = client.post(f"/ltt-voice/giong/{pid}/xoa",
+                    data={"csrf_token": _csrf_giong(client)})
+    assert r.status_code == 303
+    assert _ho_so_theo_pid(pid).trang_thai == "revoked"
+    for k in (khoa_nguon, khoa_repr, khoa_preview):
+        assert not st.exists(k), k
+
+
+def test_thu_hoi_khi_DANG_GHI_DANH_bi_chan(khach):
+    client, uid = khach
+    pid = _tao_giong_active(uid, ngon_ngu="vi", nguon="khai_bao",
+                            trang_thai="dang_ghi_danh")
+    r = client.post(f"/ltt-voice/giong/{pid}/xoa",
+                    data={"csrf_token": _csrf_giong(client)},
+                    headers={"Accept": "application/json"})
+    assert r.status_code == 400
+    assert _ho_so_theo_pid(pid).trang_thai == "dang_ghi_danh"
+
+
+def _dat_nguon(uid: str, pid: str) -> str:
+    """Ghi một clip NGUỒN giả vào đúng khoá mà `tham_chieu.luu_nguon` dùng —
+    để `jobs._ghi_danh` đọc được nó qua `params["source_key"]`, cùng khuôn
+    `tao_giong` (`routes/_p_giong.py`)."""
+    from apps.ltt_voice import tham_chieu
+    return tham_chieu.luu_nguon(owner_id=uid, public_id=pid, data=b"gia-nguon",
+                                mime="audio/wav")
+
+
+def _params_ghi_danh(uid: str, pid: str) -> dict:
+    """Params dựng THẲNG cho `jobs._ghi_danh(params)`, cùng hình dạng
+    `tao_giong` gửi vào job. ĐỘC LẬP với `_dat_nguon` (không nhận khoá làm
+    tham số) nhưng vẫn khớp khoá: cả hai cùng suy `source_key` từ
+    `tham_chieu.khoa_nguon(uid, pid) + ".wav"` — đúng kết quả `luu_nguon` trả
+    về cho `mime="audio/wav"` (`tham_chieu.luu_nguon`, đuôi `.wav`)."""
+    from apps.ltt_voice import tham_chieu
+    khoa = f"{tham_chieu.khoa_nguon(uid, pid)}.wav"
+    return {"owner_id": uid, "voice_id": pid, "source_key": khoa, "ref_id": 0,
+           "nguon": "giong", "_job_type": "ltt_voice.enroll"}
+
+
+def test_worker_KHONG_bat_lai_giong_da_thu_hoi(khach, monkeypatch):
+    client, uid = khach
+    pid = _tao_giong_active(uid, ngon_ngu="vi", nguon="khai_bao",
+                            trang_thai="revoked")
+    from apps.ltt_voice import jobs, sidecar_client
+    from apps.ltt_voice.features import LoiGiongNoi
+    monkeypatch.setattr(sidecar_client, "san_sang", lambda: True)
+    monkeypatch.setattr(sidecar_client, "ghi_danh",
+                        lambda *a, **k: {"ref_b64": "QUJD", "chon_doan": {}})
+    _dat_nguon(uid, pid)  # helper: put một clip nguồn vào kho đúng khoá jobs đọc
+    # ⛔ `LoiGiongNoi`, KHÔNG `Exception` trần (bánh cóc ruff B017 chặn
+    #    `pytest.raises(Exception)` — quá rộng để chứng minh đúng nhánh nào đã
+    #    ném). `_ghi_danh` ném đúng lớp này khi UPDATE kích hoạt khớp 0 dòng
+    #    (`jobs.py::_ghi`, T-07).
+    with pytest.raises(LoiGiongNoi):
+        jobs._ghi_danh(_params_ghi_danh(uid, pid))  # helper dựng params như tao_giong
+    assert _ho_so_theo_pid(pid).trang_thai == "revoked"
+
+
+def test_ghi_danh_hong_VINH_VIEN_dat_loi(khach, monkeypatch):
+    client, uid = khach
+    pid = _tao_giong_active(uid, ngon_ngu="vi", nguon="khai_bao",
+                            trang_thai="dang_ghi_danh")
+    from apps.ltt_voice import jobs, sidecar_client
+    from apps.ltt_voice.features import LoiGiongNoi
+
+    def _hong(*a, **k):
+        raise LoiGiongNoi("clip hong")
+    monkeypatch.setattr(sidecar_client, "san_sang", lambda: True)
+    monkeypatch.setattr(sidecar_client, "ghi_danh", _hong)
+    _dat_nguon(uid, pid)
+    with pytest.raises(LoiGiongNoi):
+        jobs._ghi_danh(_params_ghi_danh(uid, pid))
+    assert _ho_so_theo_pid(pid).trang_thai == "loi"

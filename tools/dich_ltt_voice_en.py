@@ -249,6 +249,39 @@ DICH = {
     "Chọn ngôn ngữ của clip": "Choose the language of the clip",
     "Xác nhận ngôn ngữ của giọng này": "Confirm this voice's language",
     "Đo từ clip": "Measured from the clip",
+
+    # T-07/T-14 (2026-09-11): thu hoi giong + worker khong bat lai.
+    "Xoá giọng": "Delete voice",
+    "Bạn có thể tắt một giọng bất cứ lúc nào để ngừng dùng nó, hoặc xoá vĩnh "
+    "viễn để gỡ hẳn clip gốc và dữ liệu giọng khỏi máy chủ. Xoá vĩnh viễn "
+    "không khôi phục được; lịch sử lượt đọc và bút toán credit vẫn được giữ "
+    "để đối chiếu.":
+        "You can turn off a voice at any time to stop using it, or delete it "
+        "permanently to remove the source clip and voice data from the "
+        "server. Permanent deletion cannot be undone; usage history and "
+        "credit entries are still kept for reconciliation.",
+    "Giọng này đã bị thu hồi và không dùng được nữa.":
+        "This voice has been deleted and can no longer be used.",
+    "Ghi danh giọng này không thành công. Hãy tạo lại giọng với một clip khác.":
+        "Enrolling this voice failed. Please create it again with a "
+        "different clip.",
+    "Giọng này đã bị thu hồi.": "This voice has already been deleted.",
+    "Giọng đang ở trạng thái không tắt được.":
+        "This voice is in a state where it cannot be turned off.",
+    "Giọng đang ở trạng thái không thu hồi được.":
+        "This voice is in a state where it cannot be deleted.",
+    "Xoá vĩnh viễn": "Delete permanently",
+    "Xoá vĩnh viễn thì clip gốc và dữ liệu giọng bị xoá khỏi máy chủ, không "
+    "khôi phục được. Lịch sử lượt đọc và bút toán credit vẫn giữ để đối "
+    "chiếu.":
+        "Permanent deletion removes the source clip and voice data from the "
+        "server, and cannot be undone. Usage history and credit entries are "
+        "still kept for reconciliation.",
+    "Xoá vĩnh viễn giọng này? Clip gốc và dữ liệu giọng sẽ bị xoá khỏi máy "
+    "chủ và không khôi phục được.":
+        "Delete this voice permanently? The source clip and voice data will "
+        "be removed from the server and cannot be recovered.",
+    "Không thu hồi được giọng này.": "Could not delete this voice.",
 }
 
 

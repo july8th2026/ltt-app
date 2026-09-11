@@ -260,17 +260,19 @@ def dung_lai_cho_giong(db, ho_so) -> None:
        lượt kế tiếp — đúng cách ③ đầu tệp này giải thích, không phải cách ①
        (sinh ngay, đồng bộ). Xem `_dung_giong_rieng_con_thieu` cho cơ chế đó.
 
-    ⚠️ `db` không dùng tới Ở ĐÂY (chữ ký khớp `giong_vong_doi.khoa_can_xoa(db,
+    ⚠️ `db` không dùng tới Ở ĐÂY (chữ ký khớp `giong_vong_doi.khoa_da_biet(db,
        ho_so)` có chủ ý — hai hàm cùng hình dạng, cùng nhận một hồ sơ và xoá
        khoá kho của nó), nhưng KHÔNG ĐOÁN tên tệp theo kiểu liệt kê: chỉ có
        ĐÚNG MỘT khoá khả dĩ ở phiên bản engine hiện hành
        (`khoa_rieng(owner_id, public_id)`), vì `Storage`
        (`platform_core/storage.py`) không có API liệt-kê-theo-tiền-tố để quét
-       những `PHIEN_BAN` cũ hơn. `giong_vong_doi.khoa_can_xoa` (Task 4) đứng
-       trước đúng giới hạn này và cũng chỉ tính MỘT khoá cho tệp nghe thử;
-       Task 6 (`khoa_can_xoa` → toàn tiền tố) sẽ cần thêm khả năng liệt kê đó
-       cho lượt THU HỒI. Đổi làn thì không cần — một giọng chỉ có MỘT bản
-       nghe thử sống tại một thời điểm.
+       những `PHIEN_BAN` cũ hơn. `giong_vong_doi.khoa_da_biet` (Task 4, đổi
+       tên ở Task 6 khi `khoa_can_xoa` chuyển sang trả TOÀN TIỀN TỐ — xem
+       docstring của cả hai) đứng trước đúng giới hạn này và cũng chỉ tính
+       MỘT khoá cho tệp nghe thử: Task 6 (THU HỒI) đứng trước cùng giới hạn
+       ấy, không gỡ được nó vì `platform_core/storage.py` vẫn chưa có API
+       liệt kê. Đổi làn thì không cần liệt kê gì thêm — một giọng chỉ có MỘT
+       bản nghe thử sống tại một thời điểm.
 
     ⛔ KHÔNG NÉM. Người gọi không được hỏng vì một tệp nghe thử không xoá
        được — cùng hợp đồng "không ném" với `dung()`/`co_san()` ở trên.

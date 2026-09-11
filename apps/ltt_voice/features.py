@@ -23,7 +23,7 @@ from platform_core.i18n import _ as _t
 from platform_core.jobs import DangBan, LoiNguoiGoi
 
 from . import lan_ngon_ngu, lui_giong
-from . import gia, sidecar_client, tham_chieu, text_pipeline
+from . import gia, giong_vong_doi, sidecar_client, tham_chieu, text_pipeline
 
 log = logging.getLogger(__name__)
 
@@ -343,6 +343,18 @@ def giai_giong(db, yc: YeuCau) -> tuple:
     if ho_so.trang_thai == "dang_ghi_danh":
         raise LoiGiongNoi(_t(
             "Giọng này đang được ghi danh. Chờ khoảng một phút rồi thử lại."))
+    # ⛔ T-07: `revoked` và `loi` PHẢI có câu RIÊNG, không rơi vào nhánh
+    #    `!= "active"` chung ở dưới — cùng bài học đã sửa cho `dang_ghi_danh`
+    #    ngay trên: một câu nói "bật lại" cho một trạng thái KHÔNG CÓ nút bật
+    #    lại (thu hồi không đảo ngược được; ghi danh hỏng vĩnh viễn thì không
+    #    có gì để "bật") chỉ dẫn khách đi tìm một đường không tồn tại.
+    if ho_so.trang_thai == giong_vong_doi.TT_REVOKED:
+        raise LoiGiongNoi(_t(
+            "Giọng này đã bị thu hồi và không dùng được nữa."))
+    if ho_so.trang_thai == giong_vong_doi.TT_LOI:
+        raise LoiGiongNoi(_t(
+            "Ghi danh giọng này không thành công. Hãy tạo lại giọng với một "
+            "clip khác."))
     if ho_so.trang_thai != "active":
         raise LoiGiongNoi(_t("Giọng này đang bị tắt. Hãy bật lại hoặc tạo giọng mới."))
 

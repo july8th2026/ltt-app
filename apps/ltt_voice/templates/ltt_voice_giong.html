@@ -230,6 +230,23 @@
             <button class="btn danger sm" type="submit">{{ _("Tắt giọng này") }}</button>
           </form>
           <p class="dim">{{ _("Tắt thì giọng không dùng được nữa, nhưng lịch sử và các tệp đã tạo vẫn giữ nguyên.") }}</p>
+
+          {#
+            XOÁ VĨNH VIỄN (THU HỒI) — quyền được xoá dữ liệu sinh trắc, khác hẳn
+            "Tắt" ngay trên: không đảo ngược được, và xoá thật clip gốc + biểu
+            diễn + bản nghe thử trong kho (T-07).
+
+            ⛔ Nút này POST tới `/giong/{ma}/xoa` (thu hồi), không phải `/tat`.
+               Wiring nằm trong `<script>` của CHÍNH template này (đọc
+               `#lv-ct-ma`), KHÔNG trong `voice.js` — để không chạm tệp tĩnh
+               dùng chung. Có `confirm()` vì đây là hành động không đảo
+               ngược được.
+          #}
+          <form method="post" id="lv-ct-xoa">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button class="btn danger sm" type="submit">{{ _("Xoá vĩnh viễn") }}</button>
+          </form>
+          <p class="dim">{{ _("Xoá vĩnh viễn thì clip gốc và dữ liệu giọng bị xoá khỏi máy chủ, không khôi phục được. Lịch sử lượt đọc và bút toán credit vẫn giữ để đối chiếu.") }}</p>
         </div>
       </div>
 
@@ -376,6 +393,33 @@
       anViThieuNhan: {{ _("· ẩn {n} giọng của bạn: giọng nhân bản không có nhãn giới tính, vùng miền hay phong cách") | tojson }}
     }
   });
+
+  // XOÁ VĨNH VIỄN (thu hồi, T-07). Đọc mã giọng đang xem từ `#lv-ct-ma`
+  // (voice.js đặt khi chọn thẻ), POST tới `/giong/{ma}/xoa`. Không đụng voice.js.
+  //
+  // ⛔ `Accept: application/json` TƯỜNG MINH — cửa `xoa_giong` thương lượng nội
+  //    dung (cùng khuôn `/ngon-ngu`): không có header này nó trả về một 303
+  //    chuyển hướng HTML (đúng cho một `<form>` không JS), và `r.json()` dưới
+  //    đây sẽ ném vì thân trang không phải JSON.
+  var formXoa = document.getElementById('lv-ct-xoa');
+  if (formXoa) {
+    formXoa.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var maEl = document.getElementById('lv-ct-ma');
+      var ma = (maEl && maEl.textContent || '').trim();
+      if (!ma) { return; }
+      if (!window.confirm({{ _("Xoá vĩnh viễn giọng này? Clip gốc và dữ liệu giọng sẽ bị xoá khỏi máy chủ và không khôi phục được.") | tojson }})) { return; }
+      fetch(duong + '/giong/' + encodeURIComponent(ma) + '/xoa',
+            {method: 'POST', body: new FormData(e.target),
+             headers: {'Accept': 'application/json'}})
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (d && d.ok) { window.location.reload(); return; }
+          window.alert((d && d.loi) || {{ _("Không thu hồi được giọng này.") | tojson }});
+        })
+        .catch(function () {});
+    });
+  }
 
   document.getElementById('lv-form-giong').addEventListener('submit', function (e) {
     e.preventDefault();

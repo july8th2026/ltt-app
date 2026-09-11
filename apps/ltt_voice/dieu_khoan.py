@@ -29,7 +29,11 @@ from .tham_so_cong_khai import TRAN_KY_TU_CONG_KHAI
 #: 31/08/2026 — thêm điều "Giữ tệp bao lâu". Bản cam kết cũ vẫn trỏ tới
 #: `…-2026-08-30a`, và đó là đúng việc: khách đã đồng ý với bản KHÔNG có
 #: điều đó, nên bản ghi phải nói vậy.
-PHIEN_BAN_DIEU_KHOAN = "ltt-voice-dk-2026-08-31a"
+#: 11/09/2026 (T-07) — thêm điều "Xoá giọng" (quyền THU HỒI dữ liệu sinh trắc,
+#: khác "Tắt" ở chỗ không đảo ngược được). Bản cam kết cũ vẫn trỏ tới
+#: `…-2026-08-31a`, và đó cũng là đúng việc: khách đã đồng ý với bản KHÔNG có
+#: quyền đó.
+PHIEN_BAN_DIEU_KHOAN = "ltt-voice-dk-2026-09-11a"
 
 
 def cac_dieu() -> list:
@@ -89,6 +93,18 @@ def cac_dieu() -> list:
             "noi_dung": _t(
                 "Mọi tệp tiếng tạo ra đều được đóng một dấu chìm không nghe thấy "
                 "để nhận diện nội dung do máy tạo."),
+        },
+        {
+            "tieu_de": _t("Xoá giọng"),
+            # ⭐ Nói rõ HAI mức, vì chúng làm hai việc khác nhau với dữ liệu sinh
+            #    trắc của khách: tắt (giữ lại, đảo ngược được) và xoá vĩnh viễn
+            #    (xoá clip gốc + dữ liệu giọng, không khôi phục). Xem
+            #    `giong_vong_doi.py` và `routes/_p_giong.py::xoa_giong`.
+            "noi_dung": _t(
+                "Bạn có thể tắt một giọng bất cứ lúc nào để ngừng dùng nó, hoặc "
+                "xoá vĩnh viễn để gỡ hẳn clip gốc và dữ liệu giọng khỏi máy chủ. "
+                "Xoá vĩnh viễn không khôi phục được; lịch sử lượt đọc và bút toán "
+                "credit vẫn được giữ để đối chiếu."),
         },
     ]
 

@@ -138,14 +138,48 @@ def khai_lan_hop_le(lan_moi: str, *, lan_hien: str, nguon_hien: str) -> str:
 
 # ── Thu hồi: những khoá kho phải xoá ─────────────────────────────────────────
 
-def khoa_can_xoa(db, ho_so) -> list[str]:
-    """Mọi khoá `platform_core.storage` phải xoá khi THU HỒI `ho_so`.
+def khoa_can_xoa(owner_id: str, public_id: str) -> str:
+    """TIỀN TỐ kho phải coi là bị xoá khi THU HỒI một giọng (T-07).
+
+    🔴 Task 4 (`db, ho_so -> list[str]`, xem `khoa_da_biet` — hàm CHỊ EM ngay
+       dưới đây) chỉ tính được từng khoá NÓ BIẾT (từ `VoiceRef`/`VoiceRepr` +
+       một khoá nghe thử suy được). Đó không phải "mọi khoá dưới tiền tố":
+       `platform_core.storage` (`Storage`/`LocalStorage`,
+       `platform_core/storage.py`) KHÔNG có API liệt-kê-theo-tiền-tố, nên
+       không hàm nào ở tầng app này biết chắc CÓ hay KHÔNG một tệp lạ nằm
+       cùng thư mục mà không hàng CSDL nào trỏ tới (vd một `preview-*` phiên
+       bản engine CŨ, còn sống từ trước một lần nâng cấp).
+
+    ⭐ HÀM NÀY VẪN CÓ ÍCH dù không tự xoá được gì bằng nó một mình:
+         ① căn cứ để LOG một cảnh báo vận hành ("dọn tay mọi thứ còn sót dưới
+           tiền tố này nếu có"), cho `_thu_hoi_mot` (`routes/_p_giong.py`);
+         ② chỗ một backend liệt-kê-được-theo-tiền-tố sau này (R2 có
+           `list_objects_v2`, hay `LocalStorage` được thêm một hàm xoá cả thư
+           mục) cắm vào mà không đổi chữ ký gọi từ route — xem README của
+           Task 6 (task-6-report.md) cho lý do KHÔNG thêm hàm đó vào
+           `platform_core/storage.py` ở lượt này (thay đổi tầng nền tảng, cần
+           một quyết định riêng, không phải việc âm thầm chèn vào một task app).
+
+    ⛔ THUẦN — không chạm CSDL, không chạm kho. Chỉ nối chuỗi, nên không bao
+       giờ ném và không cần `db`.
+    """
+    return f"voice/{owner_id}/{public_id}/"
+
+
+def khoa_da_biet(db, ho_so) -> list[str]:
+    """Mọi khoá `platform_core.storage` mà TA BIẾT CHẮC phải xoá khi THU HỒI
+    `ho_so` — không phải "mọi khoá dưới tiền tố" (đó là `khoa_can_xoa`, hàm
+    chị em ngay trên; đọc docstring của nó để biết vì sao hai hàm tách nhau).
 
     Gom TỪ DỮ LIỆU chứ không đoán tên tệp:
       · clip nguồn      — `storage_key` của mọi `VoiceRef` của giọng này;
       · biểu diễn engine — `storage_key` của mọi `VoiceRepr` (chứa `speaker_emb`,
                           thứ `tables.py` nói thẳng là "KHÔNG BAO GIỜ ra ngoài");
-      · tệp nghe thử     — một khoá suy được từ `(owner_id, public_id)`.
+      · tệp nghe thử     — khoá HIỆN HÀNH suy được từ `(owner_id, public_id)`
+                          (`nghe_thu.khoa_rieng`). Chỉ MỘT phiên bản — một
+                          bản nghe thử của một `PHIEN_BAN` engine cũ hơn (nếu
+                          còn sót từ trước một lần nâng cấp) sẽ KHÔNG bị liệt
+                          ở đây, vì không có cách liệt kê nó (xem `khoa_can_xoa`).
 
     ⛔ Tệp KẾT QUẢ (`voice/out/{uid}/{job_id}/…`) KHÔNG nằm ở đây: nó thuộc về
        một LƯỢT TẠO, có `job_id`, và đã được `job_content.py` dọn theo hạn 30

@@ -15133,3 +15133,43 @@ msgstr "Confirm this voice's language"
 #: apps/ltt_voice
 msgid "Đo từ clip"
 msgstr "Measured from the clip"
+
+#: apps/ltt_voice
+msgid "Xoá giọng"
+msgstr "Delete voice"
+
+#: apps/ltt_voice
+msgid "Bạn có thể tắt một giọng bất cứ lúc nào để ngừng dùng nó, hoặc xoá vĩnh viễn để gỡ hẳn clip gốc và dữ liệu giọng khỏi máy chủ. Xoá vĩnh viễn không khôi phục được; lịch sử lượt đọc và bút toán credit vẫn được giữ để đối chiếu."
+msgstr "You can turn off a voice at any time to stop using it, or delete it permanently to remove the source clip and voice data from the server. Permanent deletion cannot be undone; usage history and credit entries are still kept for reconciliation."
+
+#: apps/ltt_voice
+msgid "Giọng này đã bị thu hồi và không dùng được nữa."
+msgstr "This voice has been deleted and can no longer be used."
+
+#: apps/ltt_voice
+msgid "Ghi danh giọng này không thành công. Hãy tạo lại giọng với một clip khác."
+msgstr "Enrolling this voice failed. Please create it again with a different clip."
+
+#: apps/ltt_voice
+msgid "Giọng này đã bị thu hồi."
+msgstr "This voice has already been deleted."
+
+#: apps/ltt_voice
+msgid "Giọng đang ở trạng thái không tắt được."
+msgstr "This voice is in a state where it cannot be turned off."
+
+#: apps/ltt_voice
+msgid "Giọng đang ở trạng thái không thu hồi được."
+msgstr "This voice is in a state where it cannot be deleted."
+
+#: apps/ltt_voice
+msgid "Xoá vĩnh viễn thì clip gốc và dữ liệu giọng bị xoá khỏi máy chủ, không khôi phục được. Lịch sử lượt đọc và bút toán credit vẫn giữ để đối chiếu."
+msgstr "Permanent deletion removes the source clip and voice data from the server, and cannot be undone. Usage history and credit entries are still kept for reconciliation."
+
+#: apps/ltt_voice
+msgid "Xoá vĩnh viễn giọng này? Clip gốc và dữ liệu giọng sẽ bị xoá khỏi máy chủ và không khôi phục được."
+msgstr "Delete this voice permanently? The source clip and voice data will be removed from the server and cannot be recovered."
+
+#: apps/ltt_voice
+msgid "Không thu hồi được giọng này."
+msgstr "Could not delete this voice."

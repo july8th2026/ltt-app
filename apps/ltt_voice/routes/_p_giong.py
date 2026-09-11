@@ -228,9 +228,184 @@ def tat_giong(request: Request, public_id: str, csrf_token: str = Form(""),
         if ho_so is None or not tham_chieu.chi_chu_so_huu(ho_so, _uid(user)):
             return JSONResponse({"ok": False, "loi": _t("Không tìm thấy giọng.")},
                                 status_code=404)
-        ho_so.trang_thai = "disabled"
+        # 🔴 T-07: qua `co_the_chuyen`, KHÔNG gán thẳng nữa. `_CHUYEN` chỉ cho
+        #    `active -> disabled` — một giọng `revoked` (đã xoá dữ liệu sinh
+        #    trắc) hay `loi`/`dang_ghi_danh` (chưa từng có gì để "tắt") không
+        #    còn đường này. Trước bản vá này gán thẳng sẽ ÂM THẦM đưa một
+        #    giọng `revoked` "trở lại" `disabled` — trông như còn cứu được,
+        #    trong khi dữ liệu đã xoá thật.
+        if not giong_vong_doi.co_the_chuyen(ho_so.trang_thai,
+                                            giong_vong_doi.TT_DISABLED):
+            return JSONResponse({"ok": False, "loi": _t(
+                "Giọng đang ở trạng thái không tắt được.")}, status_code=400)
+        ho_so.trang_thai = giong_vong_doi.TT_DISABLED
         db.commit()
         return JSONResponse({"ok": True})
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+def _xoa_khoa(khoa: list) -> None:
+    """Xoá best-effort các khoá kho. **Không bao giờ ném.**
+
+    ⛔ Một khoá xoá không được (kho chập, tệp đã mất) không được làm hỏng một
+       lượt thu hồi đã ghi vào CSDL. Nó được ghi lại để một vòng dọn về sau nhặt
+       nốt — mất một tệp là một vết rác, không phải một lỗi cho khách.
+    """
+    import logging
+
+    from platform_core.storage import get_storage
+    st = get_storage()
+    for k in dict.fromkeys(x for x in khoa if x):  # khử trùng, giữ thứ tự
+        try:
+            st.delete(k)
+        except Exception:  # noqa: BLE001 - xem docstring
+            logging.getLogger(__name__).warning(
+                "khong xoa duoc khoa kho khi thu hoi: %s", k, exc_info=True)
+
+
+def _thu_hoi_mot(db, ho_so) -> tuple:
+    """Thu hồi MỘT hồ sơ đã xác nhận là của khách. Trả `(True, "")` nếu vừa
+    thu hồi, `(False, "voice_state_invalid")` nếu trạng thái hiện tại không
+    cho phép (INV-THU-HOI-1: chỉ qua `co_the_chuyen`, không có đường tắt).
+
+    🔴 KHÔNG idempotent trên `revoked` — gọi lại một hồ sơ ĐÃ thu hồi trả về
+       `(False, "voice_state_invalid")`, không phải `(True, "")` im lặng.
+       `revoked` là điểm cuối (`_CHUYEN[TT_REVOKED] = set()`), và một cửa
+       "thu hồi lần nữa" thành công không có ý nghĩa nghiệp vụ nào — nó chỉ
+       có ý nghĩa khi trạng thái TRƯỚC ĐÓ thật sự cho phép đi tới `revoked`.
+
+    ⭐ Đánh dấu `revoked` và COMMIT TRƯỚC, xoá tệp SAU. Trạng thái là thứ quyết
+       định "còn dùng được không" (`features.giai_giong` chặn mọi thứ khác
+       `active`), nên nó phải là thật ngay cả khi một lượt xoá tệp lỗi giữa
+       chừng. Một tệp còn sót là rác dọn được; một giọng nói "đã thu hồi" mà
+       vẫn dùng được thì không.
+    """
+    if not giong_vong_doi.co_the_chuyen(ho_so.trang_thai, giong_vong_doi.TT_REVOKED):
+        return False, "voice_state_invalid"
+    khoa = giong_vong_doi.khoa_da_biet(db, ho_so)
+    # Chỉ để LOG — xem docstring `giong_vong_doi.khoa_can_xoa` cho vì sao
+    # không xoá được thẳng bằng tiền tố này (thiếu API liệt kê ở storage.py).
+    tien_to = giong_vong_doi.khoa_can_xoa(str(ho_so.owner_id), str(ho_so.public_id))
+    ho_so.trang_thai = giong_vong_doi.TT_REVOKED
+    db.commit()
+    _xoa_khoa(khoa)
+    import logging
+    logging.getLogger(__name__).info(
+        "thu hoi giong %s: xoa %d khoa da biet duoi tien to %s (co the con sot "
+        "mot ban nghe thu PHIEN_BAN cu hon — khong liet ke duoc, xem "
+        "giong_vong_doi.khoa_can_xoa)", ho_so.public_id, len(khoa), tien_to)
+    return True, ""
+
+
+def _tra_loi_xoa(muon_json: bool, loi: str, ma: str, *,
+                 that_bai: int = 400) -> Response:
+    """Cùng khuôn content-negotiation với `_tra_loi_ngon_ngu` ngay dưới đây:
+    303 kèm câu lỗi cho một `<form>` HTML thật, JSON cho fetch có
+    `Accept: application/json`. TÁCH RIÊNG (không tái dùng `_tra_loi_ngon_ngu`)
+    vì tên hàm đó neo vào ngữ cảnh ngôn ngữ, còn cửa xoá không liên quan gì
+    tới làn — dùng chung tên sẽ đọc sai ở một trong hai chỗ gọi."""
+    if muon_json:
+        return JSONResponse({"ok": False, "loi": loi, "ma_loi": ma},
+                            status_code=that_bai)
+    from urllib.parse import quote
+
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(f"{MANIFEST.route_prefix}/giong?loi={quote(loi)}",
+                            status_code=303)
+
+
+@router.post("/giong/{public_id}/xoa")
+def xoa_giong(request: Request, public_id: str, csrf_token: str = Form(""),
+              user=Depends(user_hien_tai), _=Depends(require_login)):
+    """THU HỒI một giọng: xoá dữ liệu sinh trắc, GIỮ lịch sử đã tính tiền
+    (T-07, T-14, INV-THU-HOI-1).
+
+    🔴 KHÁC `tat` (`disabled`) Ở HAI ĐIỂM:
+         · `disabled` đảo ngược được, mọi tệp còn nguyên (điều khoản hứa giữ clip
+           gốc để dựng lại giọng khi nâng engine);
+         · `xoa` (`revoked`) là **quyền được xoá** của khách — nó xoá mọi khoá
+           kho TA BIẾT (clip nguồn, biểu diễn, bản nghe thử hiện hành — xem
+           `giong_vong_doi.khoa_da_biet`), và KHÔNG đảo ngược được. Đó là chủ
+           ý: dữ liệu sinh trắc thuộc về người, không thuộc về ta.
+
+    ⛔ CÙNG PHÉP KIỂM SỞ HỮU với `tat`: tìm theo `owner_id`, KHÔNG mở kho chung.
+       Một khách không được thu hồi giọng của người khác, và không được xoá một
+       giọng kho chung của nền tảng.
+
+    ⛔ Lịch sử lượt tạo và bút toán credit GIỮ NGUYÊN. Xoá cả hàng là làm mồ côi
+       tiền đã thu — đúng lý do `tables.py` không có trạng thái `deleted`.
+
+    ⭐ CONTENT-NEGOTIATION cùng khuôn `khai_ngon_ngu_giong` (`/ngon-ngu`): một
+       `<form>` HTML thật (không JS) nhận 303 kèm `?loi=`; một lời gọi khai
+       `Accept: application/json` nhận JSON. Mẫu template ở
+       `ltt_voice_giong.html` gọi qua `fetch` với `Accept: application/json`
+       tường minh — xem chú thích ở đó.
+    """
+    if not verify_csrf_token(request, csrf_token):
+        return _het_phien()
+    uid = _uid(user)
+    muon_json = "application/json" in (request.headers.get("accept") or "")
+    gen = _db()
+    db = next(gen)
+    try:
+        ho_so = tham_chieu.tim_profile(db, public_id, owner_id=uid)
+        if ho_so is None or not tham_chieu.chi_chu_so_huu(ho_so, uid):
+            # Một câu cho cả "không tồn tại" lẫn "không phải của bạn" — không để
+            # cửa này thành máy dò `public_id` nào có thật.
+            return JSONResponse({"ok": False, "loi": _t("Không tìm thấy giọng.")},
+                                status_code=404)
+        ok, ma_loi = _thu_hoi_mot(db, ho_so)
+        if not ok:
+            return _tra_loi_xoa(muon_json, _t(
+                "Giọng đang ở trạng thái không thu hồi được."), ma_loi)
+        if muon_json:
+            return JSONResponse({"ok": True})
+        from fastapi.responses import RedirectResponse
+        return RedirectResponse(f"{MANIFEST.route_prefix}/giong", status_code=303)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+@router.post("/giong/xoa-nhieu")
+def xoa_nhieu_giong(request: Request, public_ids: str = Form(""),
+                    csrf_token: str = Form(""),
+                    user=Depends(user_hien_tai), _=Depends(require_login)):
+    """Thu hồi HÀNG LOẠT. `public_ids` là danh sách ngăn bằng dấu phẩy.
+
+    ⛔ MỖI GIỌNG QUA ĐÚNG PHÉP KIỂM SỞ HỮU + MÁY TRẠNG THÁI của cửa đơn
+       (`_thu_hoi_mot`) — không có đường tắt nào cho lô. Một id không phải
+       của khách, hay một id ở trạng thái không thu hồi được (`dang_ghi_danh`,
+       hoặc đã `revoked` từ trước), chỉ bị **bỏ qua**: không báo lỗi cho cả lô,
+       và không tiết lộ "không phải của bạn" khác gì "trạng thái không hợp lệ".
+
+    Trả tóm tắt JSON: `da_thu_hoi` (id đã thu hồi xong) và `bo_qua` (mọi id
+    còn lại — không phân biệt lý do, cùng lý do ẩn danh ở trên).
+    """
+    if not verify_csrf_token(request, csrf_token):
+        return _het_phien()
+    uid = _uid(user)
+    ids = [x.strip() for x in (public_ids or "").split(",") if x.strip()]
+    gen = _db()
+    db = next(gen)
+    da_thu_hoi: list = []
+    bo_qua: list = []
+    try:
+        for pid in ids:
+            ho_so = tham_chieu.tim_profile(db, pid, owner_id=uid)
+            if ho_so is None or not tham_chieu.chi_chu_so_huu(ho_so, uid):
+                bo_qua.append(pid)
+                continue
+            ok, _ma = _thu_hoi_mot(db, ho_so)
+            (da_thu_hoi if ok else bo_qua).append(pid)
+        return JSONResponse({"ok": True, "da_thu_hoi": da_thu_hoi,
+                             "bo_qua": bo_qua})
     finally:
         try:
             next(gen)
