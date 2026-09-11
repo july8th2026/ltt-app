@@ -427,6 +427,25 @@ def _internal_schema(tool, apps) -> dict:
     raise invalid_request("This tool is no longer available.")
 
 
+def kiem_truoc(db, tool, params: dict, *, user_id: str) -> None:
+    """Run the app's business pre-check, if it declared one (D007).
+
+    Placed after shape validation and before any price exists: a request the
+    app can already refuse must never hold credit, queue, or reach a worker.
+    """
+    ref = str(getattr(tool, "kiem_truoc", "") or "")
+    if not ref:
+        return None
+    from platform_core.jobs import LoiNguoiGoi
+    from platform_core.registry import tai_tham_chieu
+
+    try:
+        tai_tham_chieu(ref)(db, str(user_id), dict(params))
+    except LoiNguoiGoi as exc:
+        raise invalid_request(str(exc), reason=str(getattr(exc, "ma", "") or "")) from exc
+    return None
+
+
 def price(tool, params: dict) -> int:
     """What this call costs, from the platform's single pricing source."""
     from platform_core.registry import RegistryError, credit_for

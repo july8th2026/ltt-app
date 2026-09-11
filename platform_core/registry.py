@@ -158,6 +158,22 @@ class ToolSpec:
     # without knowing an app slug or importing app code directly.
     sync_executor: str = ""
 
+    # Kiem NGHIEP VU truoc khi co gia va truoc khi giu tien (D007, RC1 2026-09-11).
+    #
+    #   kiem_truoc="apps.myapp.kiem:kiem"   # (db, user_id, params) -> None
+    #
+    # Nem `jobs.LoiNguoiGoi` (co `ma` thi cang tot) => `/api/v1` tra 400 voi
+    # `reason=<ma>` truoc khi quote/hold. Rong => khong doi gi. Cung khuon tham
+    # chieu dotted cua `sync_executor` o tren: nen tang resolve luc can, khong
+    # import app.
+    #
+    # Day la thay doi o `platform_core`, khong o mot app rieng le: luat 20
+    # (CLAUDE.md) cam sua nen tang tu trong thu muc mot app, nhung hop dong
+    # app hom nay khong co diem moc nao TRUOC khi gia/hold xay ra -- thieu
+    # dung diem moc do la ly do `speech.ltt` phai giu tien roi moi tu choi
+    # (D007). Bo sung diem moc la viec cua nen tang.
+    kiem_truoc: str = ""
+
     # ── Tuỳ chọn ĐỘNG theo người dùng (H43 Phase 02, 2026-09-02) ───────────
     #
     #   tuy_chon_dong={"voice_id": "apps.myapp.kho:tuy_chon_voice_id"}
@@ -709,6 +725,16 @@ def _validate_tool(manifest: AppManifest, tool: ToolSpec,
                 "[{slug}] tool {tool!r} tuy_chon_dong[{param!r}] phải là "
                 "`module:attribute`, nhận {ref!r}").format(
                     slug=manifest.slug, tool=tool.name, param=param, ref=ref))
+
+    # `kiem_truoc`: rong la hop le (khong app nao bat buoc phai khai). Khac
+    # rong thi phai dung hinh `module:attribute` -- cung khuon `tuy_chon_dong`
+    # o tren, va cung ly do: mot tham chieu go sai khong duoc im lang thanh
+    # no-op -- no phai do ngay luc `discover()`, khong doi toi luot goi dau tien.
+    kt = str(tool.kiem_truoc or "")
+    if kt and not _THAM_CHIEU_RE.fullmatch(kt):
+        raise RegistryError(_t(
+            "[{slug}] tool {tool!r} kiem_truoc phai la `module:attribute`, "
+            "nhan {ref!r}").format(slug=manifest.slug, tool=tool.name, ref=kt))
 
     _validate_lanes(manifest, tool)
 
