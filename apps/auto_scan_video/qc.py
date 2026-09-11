@@ -42,7 +42,10 @@ from . import tach_tieng, thoi_gian
 #: ⭐ 1 → 2 o pha 18: QC tro thanh **biet che do render**. Neu khong nang so nay
 #:    thi mot lan chay lai se dung lai bao cao QC cu tu cache — bao cao duoc lam
 #:    boi mot bo luat khong biet preset cat ton tai.
-PHIEN_BAN_QC = 2
+#: ⭐ 2 → 3 o pha 27: bo kiem co them T14/T15/T16. Khong nang so nay thi mot
+#:    lan chay lai se dung lai bao cao cu tu cache — bao cao do mot bo luat
+#:    **chua biet ba phep kiem nay ton tai** lam ra, va no se bao "dat".
+PHIEN_BAN_QC = 3
 
 #: T13 — do sang trung binh toi thieu cua ban ra (thang 0-255 tren kenh Y).
 #:
@@ -57,6 +60,39 @@ DO_SANG_TOI_THIEU = 2.0
 
 #: T13 — so khung lay mau de do do sang. Trai deu tren ca ban ra.
 SO_KHUNG_DO_SANG = 12
+
+#: T14 — chinh sach render. Khong co nguong: hoac khop, hoac khong.
+#:
+#: 🔑 T3 da hoi *"luong hinh co giong nguon tung bit khong"* — nhung no roi ve
+#:    `KHONG_AP_DUNG` khi khong bam duoc, va do la mot lo that: khi ay **khong
+#:    ai** kiem loi hua cua preset giu hinh. T14 la luoi thu hai, va no mien
+#:    phi: bon truong duoi da nam san trong ket qua ffprobe da chay.
+
+#: T15 — bien phu de. Dung sai cho phep mot dong ket dung o cuoi ban ra.
+#:
+#: ⭐ Bang `ket_xuat.LECH_THOI_LUONG_GIAY` co chu dich: `kiem_tep_ra` da cuong
+#:    che tep ra khong lech qua nguong do so voi ban dung, nen mot dong phu de
+#:    nam trong ban dung cung khong the vuot ban ra qua nguong do. Dat chat hon
+#:    la bao hong nhung lan chay hoan toan binh thuong.
+BIEN_PHU_DE_DUNG_SAI_S = 0.50
+
+#: T16 — lech giua do dai luong HINH va luong TIENG.
+#:
+#: 🔴 **Do tren chuoi lenh THAT, khong muon.** Do 11/09/2026 bang chinh
+#:    `ket_xuat.dung_lenh`, ca hai duong render, gom ca nhip le 30000/1001:
+#:
+#:        giu hinh   30 fps        lech 0,0000 s
+#:        cat        30 fps        lech 0,0000 s
+#:        cat        29,97 fps     lech 0,0206 s
+#:
+#: ⭐ 0,50 s cho du dia **24 lan** muc te nhat da do. Rong the la co y: mot muc
+#:    HONG o day CHAN mot video da render xong, nen sai so phai day ve phia
+#:    KHONG hanh dong. Va 0,5 giay lech tieng-hinh thi tai nguoi nghe duoc.
+#:
+#: ⚠️ Ban do dau tien cua toi dung mot lenh ffmpeg TU VIET (0,0234 s) — no do
+#:    mot thu khac: chuoi that con `trim`+`concat`, `amix`+`loudnorm` va
+#:    `-shortest`, moi mat xich deu doi duoc do dai mot luong.
+LECH_TIENG_HINH_S = 0.50
 
 DAT = "dat"
 HONG = "hong"
@@ -168,7 +204,7 @@ def kiem(*, tt_ra: dict, tt_nguon: dict, am_luong: dict, ke_hoach: dict,
          bam_ra: str = "", bam_nguon: str = "",
          che_do_thoi_gian: str = "fit_original",
          che_do_render: str = "", thoi_luong_mong_doi: float = 0.0,
-         do_sang: float | None = None) -> dict:
+         do_sang: float | None = None, ban_hinh: dict | None = None) -> dict:
     """Do het muoi hai dung sai. Tra ve bao cao; KHONG nem khi co muc hong.
 
     ⭐ Khong nem la mot quyet dinh, khong phai mot thieu sot: mot bao cao QC liet
@@ -226,7 +262,7 @@ def kiem(*, tt_ra: dict, tt_nguon: dict, am_luong: dict, ke_hoach: dict,
     #    tran 2 gio uoc ~3,5 giay — canh mot luot render tinh bang phut. Pha 18
     #    doi "profile roi thay bang cach re hon **neu bang chung ung ho**"; bang
     #    chung noi khong can thay, va moi cach re hon deu la bang chung YEU HON.
-    from .che_do_render import CAT_MA_HOA_LAI
+    from .che_do_render import CAT_MA_HOA_LAI, SAO_CHEP
 
     if str(che_do_render) == CAT_MA_HOA_LAI:
         muc.append(_muc("T3", KHONG_AP_DUNG,
@@ -354,6 +390,141 @@ def kiem(*, tt_ra: dict, tt_nguon: dict, am_luong: dict, ke_hoach: dict,
                         do_sang=round(float(do_sang), 3),
                         toi_thieu=DO_SANG_TOI_THIEU,
                         so_khung=SO_KHUNG_DO_SANG))
+
+    hinh = dict(ban_hinh or {})
+
+    # ── T14 — chinh sach render: preset giu hinh KHONG duoc ma hoa lai ──────
+    #
+    # 🔴 **Loi hua cua preset giu hinh la mot loi hua VE DIEM ANH**, va truoc
+    #    pha 27 no chi duoc kiem boi T3 — thu roi ve `KHONG_AP_DUNG` ngay khi
+    #    khong bam duoc luong hinh. Tuc co mot duong ma **khong ai** kiem.
+    #
+    # ⭐ T14 mien phi va khong the sai: `-c:v copy` cho byte hinh di thang tu
+    #    nguon sang tep ra, nen no **khong the** doi bo ma hoa, kich thuoc hay
+    #    goc xoay. Bon truong nay da nam san trong ket qua ffprobe da chay.
+    #
+    # ⛔ Chi so nhung truong CA HAI ben deu khai. Mot truong vang mat la mot
+    #    truong ffprobe khong doc duoc — khong phai mot truong da doi.
+    if str(che_do_render) != SAO_CHEP:
+        muc.append(_muc("T14", KHONG_AP_DUNG,
+                        "che do CAT co quyen ma hoa lai — khong co loi hua nao "
+                        "ve bo ma hoa hay kich thuoc de doi chieu",
+                        che_do_render=str(che_do_render)))
+    else:
+        # 🔴 **"Thieu du lieu" khac nhau theo TUNG TRUONG, va gop chung lam
+        #    mot da giet mot truc.**
+        #
+        #    Ban dau toi coi `0` la thieu cho ca bon truong. Voi `rong`/`cao`
+        #    dieu do dung — mot luong hinh khong the rong 0. Voi `xoay` thi
+        #    **sai**: `0` la gia tri HOP LE va la gia tri pho bien nhat, nen
+        #    truc xoay khong bao gio duoc so. Mot phep kiem chet lang le.
+        #
+        # ⭐ `test_473[doi2]` bat duoc no ngay lan chay dau — do la ly do bai
+        #    kiem liet ke ca ba truc thay vi tin mot ca dai dien.
+        def _co(truong: str, gia_tri) -> bool:
+            if gia_tri is None:
+                return False
+            if truong == "codec_video":
+                return gia_tri != ""
+            if truong in ("rong", "cao"):
+                return int(gia_tri) > 0
+            return True          # `xoay`: 0 la mot goc that
+
+        lech_t14 = {}
+        so_sanh, thuc_chat = 0, 0
+        for truong in ("codec_video", "rong", "cao", "xoay"):
+            a, b = tt_ra.get(truong), tt_nguon.get(truong)
+            if not _co(truong, a) or not _co(truong, b):
+                continue
+            so_sanh += 1
+            # ⭐ `xoay` mot minh KHONG du de tuyen bo "khong ma hoa lai": mot
+            #    lan ma hoa lai giu nguyen goc xoay la chuyen binh thuong. Doi
+            #    it nhat mot truc THUC CHAT (bo ma hoa hoac kich thuoc), neu
+            #    khong thi pham vi phep do hep hon loi tuyen bo — dung hang
+            #    `pham-vi-phep-do-hep-hon-loi-tuyen-bo`.
+            if truong != "xoay":
+                thuc_chat += 1
+            if a != b:
+                lech_t14[truong] = {"ra": a, "nguon": b}
+        if not thuc_chat:
+            muc.append(_muc("T14", KHONG_AP_DUNG,
+                            "ffprobe khong doc duoc bo ma hoa hay kich thuoc "
+                            "de doi chieu — goc xoay mot minh khong du",
+                            so_truong_da_so_sanh=so_sanh))
+        else:
+            muc.append(_muc("T14", DAT if not lech_t14 else HONG,
+                            "preset giu hinh khong ma hoa lai luong hinh",
+                            so_truong_da_so_sanh=so_sanh,
+                            lech=lech_t14 or None))
+
+    # ── T15 — bien phu de: moi dong phai NAM TRONG ban ra ───────────────────
+    #
+    # 🔴 **Mot dong phu de dat qua cuoi ban ra la mot dong khong ai thay.**
+    #    Khach tra tien cho phu de, tep `.ass` hop le, ffmpeg khong bao gi, va
+    #    dong chu do khong bao gio hien ra. Dung hinh dang *tinh nang khong ton
+    #    tai* ma chuong trinh nay lien tuc gap.
+    #
+    # ⭐ Doc su kien DA CHOT trong ban dung, khong tinh lai tu ke hoach: cho
+    #    nay hoi *"thu da giao co dung khong"*, va thu da giao la ban dung.
+    ho_pd = hinh.get("phu_de") or {}
+    su_kien = list(ho_pd.get("su_kien") or [])
+    if not su_kien:
+        muc.append(_muc("T15", KHONG_AP_DUNG,
+                        "ban dung khong mang su kien phu de nao"))
+    elif d_ra <= 0:
+        muc.append(_muc("T15", KHONG_AP_DUNG,
+                        "chua biet thoi luong ban ra de doi chieu"))
+    else:
+        # ⚠️ Ten RIENG: `tran` da duoc T11 dung cho ngan sach troi (mot
+        #    `int`). Dung lai no cho mot `float` la dung lai mot ten cho hai
+        #    kieu — thu lam moi cong cu kiem kieu mu voi ca doan phia sau.
+        tran_phu_de = d_ra + BIEN_PHU_DE_DUNG_SAI_S
+        ngoai, xuoi_nguoc = [], []
+        for i, e in enumerate(su_kien):
+            bat = float(e.get("start") or 0.0)
+            ket = float(e.get("end") or 0.0)
+            if ket <= bat:
+                xuoi_nguoc.append(i)
+            if bat < -BIEN_PHU_DE_DUNG_SAI_S or ket > tran_phu_de:
+                ngoai.append({"i": i, "bat": round(bat, 3),
+                              "ket": round(ket, 3)})
+        # ⚠️ Chong lan KHONG phai loi: `ass_builder` xep chong duoc, va mot ban
+        #    phu de karaoke co the co hai dong cung luc. Chi dem, khong danh
+        #    truot — dem de nguoi doc bao cao thay, khong de chan lan chay.
+        truoc, sau = su_kien[:-1], su_kien[1:]
+        chong = sum(1 for a, b in zip(truoc, sau, strict=True)
+                    if float(b.get("start") or 0) < float(a.get("end") or 0))
+        t15 = not ngoai and not xuoi_nguoc
+        muc.append(_muc("T15", DAT if t15 else HONG,
+                        "moi dong phu de nam trong ban ra",
+                        so_dong=len(su_kien), thoi_luong_ra=round(d_ra, 3),
+                        dung_sai=BIEN_PHU_DE_DUNG_SAI_S,
+                        ngoai_bien=ngoai or None,
+                        xuoi_nguoc=xuoi_nguoc or None, so_chong_lan=chong))
+
+    # ── T16 — luong hinh va luong tieng phai dai bang nhau ──────────────────
+    #
+    # 🔴 **Day la hong dung thu san pham nay ban.** Mot ban long tieng ma tieng
+    #    va hinh lech nhau thi moi thu khac deu vo nghia — va truoc pha 27
+    #    khong chot nao hoi: T2 do do dai CONTAINER, mot con so van dung khi hai
+    #    luong ben trong lech nhau.
+    #
+    # ⚠️ `None` = luong khong tu khai `duration` (MP4 duoc phep). Do KHONG phai
+    #    `0`, va doan bang `0` se bien mot tep binh thuong thanh bao cao hong.
+    dv = tt_ra.get("thoi_luong_video")
+    da = tt_ra.get("thoi_luong_tieng")
+    if dv is None or da is None:
+        muc.append(_muc("T16", KHONG_AP_DUNG,
+                        "tep ra khong khai do dai tung luong",
+                        co_do_dai_video=dv is not None,
+                        co_do_dai_tieng=da is not None))
+    else:
+        lech_av = abs(float(dv) - float(da))
+        muc.append(_muc("T16", DAT if lech_av <= LECH_TIENG_HINH_S else HONG,
+                        "luong hinh va luong tieng dai bang nhau",
+                        thoi_luong_video=round(float(dv), 3),
+                        thoi_luong_tieng=round(float(da), 3),
+                        lech=round(lech_av, 4), toi_da=LECH_TIENG_HINH_S))
 
     hong = [m["ma"] for m in muc if m["trang_thai"] == HONG]
     return {

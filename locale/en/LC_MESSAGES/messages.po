@@ -14609,6 +14609,230 @@ msgstr "Reviewing the translation"
 msgid "Chưa có bản dịch để soát."
 msgstr "No translation available to review."
 
+# ── Auto Scan Video — GUI V5 ─────────────────────────────────
+
+msgid "Video của bạn"
+msgstr "Your video"
+
+msgid "Bạn muốn gì"
+msgstr "What you want"
+
+msgid "Chọn video để bắt đầu"
+msgstr "Choose a video to start"
+
+msgid "Chọn video…"
+msgstr "Choose video…"
+
+msgid "MP4, MOV, MKV hoặc WEBM. Video phải có tiếng nói."
+msgstr "MP4, MOV, MKV or WEBM. The video must contain speech."
+
+msgid "Lọc giọng"
+msgstr "Filter voices"
+
+msgid "Giới"
+msgstr "Gender"
+
+msgid "Vùng"
+msgstr "Region"
+
+msgid "Nghe thử"
+msgstr "Preview"
+
+msgid "Chi phí được giữ chỗ khi bắt đầu. Phần không dùng đến sẽ được hoàn lại."
+msgstr "The cost is held when you start. Anything unused is refunded."
+
+msgid "Vùng che"
+msgstr "Masked areas"
+
+msgid "Công cụ vùng che"
+msgstr "Masking tools"
+
+msgid "Vẽ một khung lên video để che logo hoặc phụ đề gốc. Kéo trên khung hình ở trên."
+msgstr "Draw a box on the video to cover a logo or the original subtitles. Drag on the frame above."
+
+msgid "Thêm vùng làm mờ"
+msgstr "Add a blur area"
+
+msgid "Đánh dấu phụ đề gốc"
+msgstr "Mark the original subtitles"
+
+msgid "Xoá vùng cuối"
+msgstr "Remove last area"
+
+msgid "Chưa có vùng nào."
+msgstr "No areas yet."
+
+msgid "Chỉnh vùng che trên máy tính để chính xác hơn."
+msgstr "Edit masked areas on a computer for finer control."
+
+msgid "Đang lồng tiếng"
+msgstr "Dubbing in progress"
+
+msgid "Video đã lồng tiếng"
+msgstr "Dubbed video"
+
+msgid "Đang chuẩn bị…"
+msgstr "Getting ready…"
+
+msgid "đã chạy"
+msgstr "elapsed"
+
+msgid "Video gốc"
+msgstr "Original video"
+
+msgid "Bản lồng tiếng Việt"
+msgstr "Vietnamese dub"
+
+msgid "Lồng tiếng video khác"
+msgstr "Dub another video"
+
+msgid "Cài đặt đã dùng"
+msgstr "Settings used"
+
+msgid "Hồ sơ cấu hình"
+msgstr "Settings profile"
+
+msgid "không có"
+msgstr "none"
+
+msgid "Bộ mã hoá"
+msgstr "Encoder"
+
+msgid "Không hoàn tất bước:"
+msgstr "Step did not finish:"
+
+msgid "Lần chạy dừng lại giữa chừng."
+msgstr "The run stopped partway through."
+
+msgid "Một bước không hoàn tất nên chúng tôi dừng lại thay vì giao một bản chưa đạt."
+msgstr "A step did not finish, so we stopped rather than deliver a result that is not up to standard."
+
+msgid "Bạn có thể thử lại bước đó. Những bước đã xong sẽ không phải chạy lại."
+msgstr "You can retry that step. Steps already finished will not run again."
+
+msgid "Thử lại không tính thêm credit."
+msgstr "Retrying costs no extra credit."
+
+msgid "Vùng che có toạ độ không đọc được."
+msgstr "A masked area has coordinates we cannot read."
+
+msgid "Vùng che nằm ngoài khung hình."
+msgstr "A masked area falls outside the frame."
+
+msgid "Vùng che không đọc được."
+msgstr "A masked area could not be read."
+
+msgid "Loại vùng che không hợp lệ."
+msgstr "That kind of masked area is not supported."
+
+msgid "Vùng che quá nhỏ hoặc bị vẽ ngược."
+msgstr "A masked area is too small or was drawn backwards."
+
+msgid "Danh sách vùng che không đọc được."
+msgstr "The list of masked areas could not be read."
+
+msgid "Quá nhiều vùng che trong một lần chạy."
+msgstr "Too many masked areas in a single run."
+
+msgid "Khoảng thời gian của vùng che không đọc được."
+msgstr "The time range of a masked area could not be read."
+
+msgid "Khoảng thời gian của vùng che không hợp lệ."
+msgstr "The time range of a masked area is not valid."
+
+msgid "Lần chạy này không còn video nguồn."
+msgstr "This run no longer has its source video."
+
+# ── Auto Scan Video — GUI V5 ─────────────────────────────────
+
+msgid "%(so)s vùng đã đánh dấu."
+msgstr "%(so)s areas marked."
+
+msgid "Giọng này đang được chuẩn bị bản nghe thử."
+msgstr "A preview clip for this voice is still being prepared."
+
+msgid "Không phát được bản nghe thử."
+msgstr "The preview clip would not play."
+
+msgid "Kéo trên khung hình để vẽ vùng."
+msgstr "Drag on the frame to draw an area."
+
+msgid "Vùng quá nhỏ — hãy kéo một khung lớn hơn."
+msgstr "That area is too small — drag a larger box."
+
+msgid "khoảng"
+msgstr "about"
+
+msgid "vượt quá %(mb)s MB"
+msgstr "over the %(mb)s MB limit"
+
+msgid "Đang gửi video…"
+msgstr "Sending video…"
+
+# ── Auto Scan Video — GUI V5 ─────────────────────────────────
+
+msgid "Vùng che cần kiểu xử lý “Rút gọn có biên tập”, vì phải dựng lại hình mới che được. Kiểu “Giữ nguyên hình ảnh” sao chép nguyên khung hình nên không sửa được điểm ảnh nào."
+msgstr "Masking needs the “Shorten with editing” mode, because the picture has to be rebuilt before anything can be covered. “Keep the picture” copies the frames untouched, so no pixel can be changed."
+
+# ── Auto Scan Video — GUI V5 ─────────────────────────────────
+
+msgid "Vùng che chỉ dùng được với kiểu xử lý có biên tập lại hình."
+msgstr "Masking only works with a mode that rebuilds the picture."
+
+# ── Auto Scan Video — GUI V5 ─────────────────────────────────
+
+msgid "Đang tải video lên… %(pct)s%%"
+msgstr "Uploading video… %(pct)s%%"
+
+msgid "Đã tải lên xong."
+msgstr "Upload complete."
+
+msgid "Không tải lên được. Hãy thử lại."
+msgstr "The upload did not go through. Please try again."
+
+msgid "Video vượt quá %(mb)s MB."
+msgstr "The video is over %(mb)s MB."
+
+# ── Auto Scan Video — GUI V5 ─────────────────────────────────
+
+msgid "Chạy lại với cài đặt này"
+msgstr "Run again with these settings"
+
+msgid "Đã điền sẵn cài đặt của lần chạy trước. Hãy chọn lại video."
+msgstr "Settings from your previous run are filled in. Choose a video again."
+
+# ── Auto Scan Video — GUI V5 ─────────────────────────────────
+
+msgid "Lần chạy chưa hoàn tất"
+msgstr "Run did not finish"
+
+msgid "Lần chạy đã huỷ"
+msgstr "Run cancelled"
+
+msgid "Cách đọc tên riêng"
+msgstr "How names are pronounced"
+
+msgid "Mỗi dòng một tên, dạng: Tên = cách đọc"
+msgstr "One name per line, as: Name = pronunciation"
+
+msgid "Dòng %(so)d thiếu dấu bằng. Mỗi dòng viết dạng: Tên = cách đọc"
+msgstr "Line %(so)d has no equals sign. Write each line as: Name = pronunciation"
+
+msgid "Dòng %(so)d thiếu tên hoặc cách đọc."
+msgstr "Line %(so)d is missing the name or the pronunciation."
+
+msgid "Dòng %(so)d dài quá %(dai)d ký tự."
+msgstr "Line %(so)d is longer than %(dai)d characters."
+
+msgid "Tên %(ten)s được khai hai lần với hai cách đọc khác nhau."
+msgstr "The name %(ten)s is given twice with two different pronunciations."
+
+msgid "Tối đa %(n)d mục trong một lần chạy."
+msgstr "At most %(n)d entries per run."
+
+msgid "Nguyễn Huệ = Nguyễn Huê"
+msgstr "Nguyễn Huệ = Nguyễn Huê"
+
 msgid "Dùng để chọn giọng thay thế đúng giới nếu giọng này tạm thời không dùng được. Bỏ trống nếu bạn không chắc."
 msgstr "Used to pick a same-gender stand-in if this voice ever becomes unavailable. Leave blank if you are not sure."
 
@@ -14796,6 +15020,89 @@ msgid "Phát dần tối đa {n} ký tự một lượt. Bài dài hơn hãy dù
 msgstr ""
 "Streaming is limited to {n} characters per turn. Use Projects for longer "
 "scripts."
+# -- Auto Scan Video V6 -- cat dau/cuoi -----------------------------
+
+msgid "Cắt đầu/cuối"
+msgstr "Trim start/end"
+
+msgid "Kiểu “Giữ nguyên hình ảnh” hứa video ra dài đúng bằng video vào, nên không cắt bớt được. Chọn “Rút gọn có biên tập” nếu bạn muốn cắt."
+msgstr "“Keep the picture” promises the output runs exactly as long as the input, so it cannot trim. Choose “Shorten with editing” if you want to cut."
+
+msgid "Bắt đầu từ (giây)"
+msgstr "Start at (seconds)"
+
+msgid "Kết thúc ở (giây)"
+msgstr "End at (seconds)"
+
+msgid "Bỏ cắt"
+msgstr "Clear trim"
+
+msgid "Để trống thì giữ cả video."
+msgstr "Leave blank to keep the whole video."
+
+msgid "Đoạn cắt không đọc được."
+msgstr "The trim range could not be read."
+
+msgid "Đoạn cắt phải nằm trong video và điểm đầu phải trước điểm cuối."
+msgstr "The trim range must lie inside the video, and the start must come before the end."
+
+msgid "Đoạn cắt quá ngắn."
+msgstr "The trim range is too short."
+
+msgid "Đoạn giữ lại dài %(giay)s."
+msgstr "The kept range runs %(giay)s."
+
+msgid "Đoạn cắt bạn chọn không còn lại phần nào để dựng. Hãy chọn một đoạn khác."
+msgstr "Nothing is left to build from the range you picked. Please choose a different one."
+
+# -- Auto Scan Video V6 -- danh sach vung che ----------------------
+
+msgid "Làm mờ"
+msgstr "Blur"
+
+msgid "Từ giây"
+msgstr "From second"
+
+msgid "Đến giây"
+msgstr "To second"
+
+msgid "cả video"
+msgstr "whole video"
+
+msgid "Xoá vùng này"
+msgstr "Delete this area"
+
+msgid "ở %(x)s%%–%(x2)s%% ngang, %(y)s%%–%(y2)s%% dọc"
+msgstr "at %(x)s%%–%(x2)s%% across, %(y)s%%–%(y2)s%% down"
+
+# -- Auto Scan Video V6 -- vung che theo gio ------------------------
+
+msgid "Không dựng được vùng che cho lần chạy này."
+msgstr "The masked areas could not be built for this run."
+
+msgid "Một vùng che nằm trọn trong đoạn đã bị cắt bỏ, nên không còn chỗ nào để che. Hãy sửa hoặc xoá vùng đó."
+msgstr "One masked area sits entirely inside a stretch that was cut out, so there is nothing left to cover. Please adjust or remove it."
+
+# -- Auto Scan Video V6 -- bang ke canh ----------------------------
+
+msgid "Các cảnh trong video"
+msgstr "Scenes in the video"
+
+msgid "%(tong)s cảnh · giữ %(giu)s · bỏ %(bo)s"
+msgstr "%(tong)s scenes · %(giu)s kept · %(bo)s dropped"
+
+msgid "Dải cảnh: phần sáng là giữ lại, phần mờ là bỏ đi."
+msgstr "Scene strip: solid segments are kept, hatched ones are dropped."
+
+msgid "Giữ lại"
+msgstr "Kept"
+
+msgid "Bỏ đi"
+msgstr "Dropped"
+
+msgid "Có %(n)s cảnh được giữ lại để video không bị cắt quá nhiều."
+msgstr "%(n)s scenes were kept so the video is not cut down too far."
+
 #: apps/autosubvideo/routes.py
 # AI CLEAN REBUILD V2 pha 05.6 — thay chuỗi cũ "Gemini translation chưa cấu
 # hình API key." Tên nhà cung cấp không nên nằm trong thông điệp cho khách:
@@ -15097,3 +15404,508 @@ msgstr "This snapshot cannot be used to restore. Please pick another one."
 #: apps/vps/routes.py
 msgid "lý do"
 msgstr "reason"
+
+#: apps/auto_scan_video/lop_phu.py
+msgid "Lớp phủ chữ có giá trị không đọc được."
+msgstr "The text overlay has a value that cannot be read."
+
+#: apps/auto_scan_video/lop_phu.py
+msgid "Lớp phủ chữ có giá trị ngoài khoảng cho phép."
+msgstr "The text overlay has a value outside the allowed range."
+
+#: apps/auto_scan_video/lop_phu.py
+msgid "Lớp phủ chữ không đọc được."
+msgstr "The text overlay cannot be read."
+
+#: apps/auto_scan_video/lop_phu.py
+msgid "Lớp phủ chữ không được để trống."
+msgstr "The text overlay cannot be empty."
+
+#: apps/auto_scan_video/lop_phu.py
+msgid "Lớp phủ chữ dài quá {n} ký tự."
+msgstr "The text overlay is longer than {n} characters."
+
+#: apps/auto_scan_video/lop_phu.py
+msgid "Lớp phủ chữ chỉ nhận MỘT dòng, không có ký tự điều khiển. Muốn phụ đề theo lời thoại thì dùng công cụ phụ đề, không dùng lớp phủ."
+msgstr "A text overlay takes ONE line with no control characters. For subtitles that follow the dialogue, use the subtitle tool, not an overlay."
+
+#: apps/auto_scan_video/lop_phu.py
+msgid "Màu chữ không hợp lệ."
+msgstr "That text colour is not valid."
+
+#: apps/auto_scan_video/lop_phu.py
+msgid "Khoảng thời gian của lớp phủ chữ không đọc được."
+msgstr "The time range of the text overlay cannot be read."
+
+#: apps/auto_scan_video/lop_phu.py
+msgid "Khoảng thời gian của lớp phủ chữ không hợp lệ."
+msgstr "The time range of the text overlay is not valid."
+
+#: apps/auto_scan_video/lop_phu.py
+msgid "Danh sách lớp phủ chữ không đọc được."
+msgstr "The list of text overlays cannot be read."
+
+#: apps/auto_scan_video/lop_phu.py
+msgid "Tối đa {n} lớp phủ chữ trong một lần chạy."
+msgstr "At most {n} text overlays per run."
+
+#: apps/auto_scan_video/lop_phu.py
+msgid "Máy chủ không có phông chữ nào để vẽ lớp phủ. Đặt {b} trỏ tới một tệp .ttf."
+msgstr "This server has no font available to draw the overlay. Point {b} at a .ttf file."
+
+#: apps/auto_scan_video/lop_phu.py
+msgid "Không biết chiều cao khung hình để vẽ viền chữ."
+msgstr "The frame height needed to size the text outline is unknown."
+
+#: apps/auto_scan_video/che_do_render.py
+msgid "Không dựng được lớp phủ chữ cho lần chạy này."
+msgstr "The text overlays could not be built for this run."
+
+#: apps/auto_scan_video/che_do_render.py
+msgid "Một lớp phủ chữ được đặt giờ nằm trọn trong đoạn đã bị cắt bỏ, nên nó sẽ không bao giờ hiện ra. Hãy sửa giờ hoặc xoá lớp đó."
+msgstr "A timed text overlay falls entirely inside a stretch that was cut out, so it would never appear. Change its timing or remove it."
+
+#: apps/auto_scan_video/ban_dung.py
+msgid "Lớp phủ chữ chỉ dùng được với kiểu xử lý có biên tập lại hình."
+msgstr "Text overlays only work with the processing mode that re-edits the picture."
+
+#: apps/auto_scan_video/ban_dung.py
+msgid "Bản dựng có lớp phủ chữ nhưng không khai chiều cao khung hình."
+msgstr "The manifest has text overlays but does not declare the frame height."
+
+#: apps/auto_scan_video/ket_xuat.py
+msgid "Số tệp chữ ({co}) không khớp số lớp phủ trong bản dựng ({can})."
+msgstr "The number of text files ({co}) does not match the overlays in the manifest ({can})."
+
+#: apps/auto_scan_video/routes.py
+msgid "Kiểu “Giữ nguyên hình ảnh” sao chép nguyên vẹn từng điểm ảnh, nên không thể vẽ chữ lên hình. Chọn “Rút gọn có biên tập” nếu bạn muốn thêm lớp phủ chữ."
+msgstr "“Keep the picture” copies every pixel untouched, so no text can be drawn onto it. Choose “Shorten with editing” if you want a text overlay."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Lớp phủ chữ"
+msgstr "Text overlay"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Thêm một dòng chữ của bạn lên video — tên kênh, lời kêu gọi. Tối đa %(n)s dòng."
+msgstr "Add a line of your own text to the video — a channel name, a call to action. Up to %(n)s lines."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Công cụ lớp phủ chữ"
+msgstr "Text overlay tools"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Thêm dòng chữ"
+msgstr "Add a line"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Chưa có dòng chữ nào."
+msgstr "No lines yet."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "%(so)s dòng chữ."
+msgstr "%(so)s lines of text."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Ví dụ: Đăng ký kênh nhé!"
+msgstr "For example: Subscribe to the channel!"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Ngang (%)"
+msgstr "Across (%)"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Dọc (%)"
+msgstr "Down (%)"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Cỡ chữ (%)"
+msgstr "Text size (%)"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Màu"
+msgstr "Colour"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Trắng"
+msgstr "White"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Đen"
+msgstr "Black"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Vàng"
+msgstr "Yellow"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Viền"
+msgstr "Outline"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Xoá dòng này"
+msgstr "Remove this line"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Tối đa %(n)s dòng chữ."
+msgstr "At most %(n)s lines of text."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Dòng chữ không được để trống."
+msgstr "A line of text cannot be empty."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Lớp phủ chữ chỉ nhận MỘT dòng."
+msgstr "A text overlay takes ONE line."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Thử tải lên lại"
+msgstr "Try uploading again"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Đang thử lại lần %(lan)s…"
+msgstr "Retrying, attempt %(lan)s…"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Tải lên bị gián đoạn. Video này lớn hơn %(mb)s MB nên không gửi kèm biểu mẫu được — hãy bấm “Thử tải lên lại”."
+msgstr "The upload was interrupted. This video is larger than %(mb)s MB, so it cannot be sent with the form — please press “Try uploading again”."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Tải lên trực tiếp không chạy được. Đang gửi theo đường thường…"
+msgstr "Direct upload is unavailable. Sending the usual way…"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "vượt quá %(mb)s MB — định dạng này chỉ gửi được bản nhỏ. Hãy đổi sang MP4 hoặc MOV."
+msgstr "over %(mb)s MB — this format can only be sent in small sizes. Please convert it to MP4 or MOV."
+
+#: apps/auto_scan_video/logo.py
+msgid "Logo có giá trị không đọc được."
+msgstr "The logo has a value that cannot be read."
+
+#: apps/auto_scan_video/logo.py
+msgid "Logo có giá trị ngoài khoảng cho phép."
+msgstr "The logo has a value outside the allowed range."
+
+#: apps/auto_scan_video/logo.py
+msgid "Logo không đọc được."
+msgstr "The logo cannot be read."
+
+#: apps/auto_scan_video/logo.py
+msgid "Logo trỏ tới một tệp không hợp lệ."
+msgstr "The logo points at an invalid file."
+
+#: apps/auto_scan_video/logo.py
+msgid "Khoảng thời gian của logo không đọc được."
+msgstr "The logo's time range cannot be read."
+
+#: apps/auto_scan_video/logo.py
+msgid "Khoảng thời gian của logo không hợp lệ."
+msgstr "The logo's time range is not valid."
+
+#: apps/auto_scan_video/logo.py
+msgid "Danh sách logo không đọc được."
+msgstr "The list of logos cannot be read."
+
+#: apps/auto_scan_video/logo.py
+msgid "Tối đa {n} logo trong một lần chạy."
+msgstr "At most {n} logos per run."
+
+#: apps/auto_scan_video/logo.py
+msgid "Không biết chiều rộng khung hình để đặt logo."
+msgstr "The frame width needed to place the logo is unknown."
+
+#: apps/auto_scan_video/ban_dung.py
+msgid "Logo chỉ dùng được với kiểu xử lý có biên tập lại hình."
+msgstr "Logos only work with the processing mode that re-edits the picture."
+
+#: apps/auto_scan_video/ban_dung.py
+msgid "Bản dựng có logo nhưng không khai chiều rộng khung hình."
+msgstr "The manifest has logos but does not declare the frame width."
+
+#: apps/auto_scan_video/ban_dung.py
+msgid "Bản dựng có logo thiếu khoá lưu trữ."
+msgstr "A logo in the manifest has no storage key."
+
+#: apps/auto_scan_video/che_do_render.py
+msgid "Không dựng được logo cho lần chạy này."
+msgstr "The logos could not be built for this run."
+
+#: apps/auto_scan_video/che_do_render.py
+msgid "Một logo được đặt giờ nằm trọn trong đoạn đã bị cắt bỏ, nên nó sẽ không bao giờ hiện ra. Hãy sửa giờ hoặc xoá logo đó."
+msgstr "A timed logo falls entirely inside a stretch that was cut out, so it would never appear. Change its timing or remove it."
+
+#: apps/auto_scan_video/ket_xuat.py
+msgid "Số tệp logo ({co}) không khớp số logo trong bản dựng ({can})."
+msgstr "The number of logo files ({co}) does not match the logos in the manifest ({can})."
+
+#: apps/auto_scan_video/ket_xuat.py
+msgid "Bản dựng khai preset giữ hình nhưng có logo."
+msgstr "The manifest declares the picture-preserving preset but carries logos."
+
+#: apps/auto_scan_video/routes.py
+msgid "Kiểu “Giữ nguyên hình ảnh” sao chép nguyên vẹn từng điểm ảnh, nên không thể dán logo lên hình. Chọn “Rút gọn có biên tập” nếu bạn muốn thêm logo."
+msgstr "“Keep the picture” copies every pixel untouched, so no logo can be pasted onto it. Choose “Shorten with editing” if you want a logo."
+
+#: apps/auto_scan_video/routes.py
+msgid "Số ảnh logo ({co}) không khớp số logo đã đặt ({can})."
+msgstr "The number of logo images ({co}) does not match the logos configured ({can})."
+
+#: apps/auto_scan_video/routes.py
+msgid "Ảnh logo vượt quá {mb} MB."
+msgstr "The logo image is larger than {mb} MB."
+
+#: apps/auto_scan_video/routes.py
+msgid "Ảnh logo rỗng."
+msgstr "The logo image is empty."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Logo"
+msgstr "Logo"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Dán logo của bạn lên video. PNG nền trong suốt cho kết quả đẹp nhất. Tối đa %(n)s logo, mỗi ảnh dưới %(mb)s MB."
+msgstr "Paste your logo onto the video. A PNG with a transparent background looks best. Up to %(n)s logos, each under %(mb)s MB."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Công cụ logo"
+msgstr "Logo tools"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Thêm logo"
+msgstr "Add a logo"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Chưa có logo nào."
+msgstr "No logos yet."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "%(so)s logo."
+msgstr "%(so)s logos."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Chọn ảnh"
+msgstr "Choose an image"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Chưa chọn ảnh — logo này sẽ không được gửi."
+msgstr "No image chosen — this logo will not be sent."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Bề rộng (%)"
+msgstr "Width (%)"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Xoá logo này"
+msgstr "Remove this logo"
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Tối đa %(n)s logo."
+msgstr "At most %(n)s logos."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Ảnh vượt quá %(mb)s MB."
+msgstr "The image is larger than %(mb)s MB."
+
+#: apps/auto_scan_video/templates/asv_trang_chinh.html
+msgid "Chỉ nhận PNG, JPEG hoặc WebP."
+msgstr "Only PNG, JPEG or WebP are accepted."
+
+msgid "Tinh chỉnh phụ đề không đọc được."
+msgstr "Subtitle tuning could not be read."
+
+msgid "Kiểu phụ đề không có trong danh sách."
+msgstr "That subtitle style is not on the list."
+
+msgid "Yêu cầu phụ đề không đọc được."
+msgstr "The subtitle request could not be read."
+
+msgid "Chế độ phụ đề không hợp lệ."
+msgstr "Invalid subtitle mode."
+
+msgid "Cách chia dòng phụ đề không hợp lệ."
+msgstr "Invalid subtitle line-splitting mode."
+
+msgid "Kiểu “Giữ nguyên hình ảnh” sao chép nguyên vẹn từng điểm ảnh, nên không thể khắc phụ đề lên hình. Bỏ chọn “khắc vào hình” để vẫn nhận tệp phụ đề rời, hoặc chọn “Rút gọn có biên tập”."
+msgstr "“Keep the picture” copies every pixel unchanged, so subtitles cannot be burned into the frame. Turn off “burn into picture” to still receive a separate subtitle file, or choose “Shorten with editing”."
+
+msgid "Không chỉnh được thuộc tính: {ten}"
+msgstr "That property cannot be tuned: {ten}"
+
+msgid "Tinh chỉnh phụ đề không hợp lệ: {ly_do}"
+msgstr "Invalid subtitle tuning: {ly_do}"
+
+msgid "Phụ đề khắc vào hình chỉ dùng được với kiểu xử lý có biên tập lại hình. Bản giữ nguyên hình vẫn xuất được tệp phụ đề rời."
+msgstr "Burned-in subtitles only work with a mode that re-edits the picture. The picture-preserving mode can still export a separate subtitle file."
+
+msgid "Chưa có bản dịch để dựng phụ đề."
+msgstr "No translation yet to build subtitles from."
+
+msgid "Phụ đề được dựng từ chính bản dịch, đặt đúng theo thời điểm từng câu được đọc lên."
+msgstr "Subtitles are built from the translation itself, placed exactly when each line is spoken."
+
+msgid "Khắc lên hình"
+msgstr "Burn into the picture"
+
+msgid "Kiểu “Giữ nguyên hình ảnh” sao chép nguyên vẹn từng điểm ảnh, nên không thể khắc phụ đề lên hình. Bạn vẫn xuất được tệp phụ đề rời ở ngay dưới."
+msgstr "“Keep the picture” copies every pixel unchanged, so subtitles cannot be burned into the frame. You can still export a separate subtitle file just below."
+
+msgid "Tinh chỉnh kiểu chữ"
+msgstr "Tune the text style"
+
+msgid "Bỏ trống thì dùng nguyên kiểu bạn chọn. Chỉ những ô bạn thực sự đổi mới được gửi đi."
+msgstr "Leave these alone to use the style as-is. Only the fields you actually change are sent."
+
+msgid "Trả về kiểu gốc"
+msgstr "Reset to the style defaults"
+
+msgid "Xuất thêm tệp phụ đề rời (.srt)"
+msgstr "Also export a separate subtitle file (.srt)"
+
+msgid "Tệp tải về được, dùng cho YouTube hay để chỉnh lại về sau. Không đổi một điểm ảnh nào của video."
+msgstr "A downloadable file for YouTube or for editing later. It changes no pixel of the video."
+
+msgid "Không khắc lên hình"
+msgstr "Do not burn into the picture"
+
+msgid "Video giữ nguyên. Bạn vẫn có thể xuất tệp phụ đề rời."
+msgstr "The video is untouched. You can still export a separate subtitle file."
+
+msgid "Khắc lên hình — kiểu mặc định"
+msgstr "Burn into the picture — default style"
+
+msgid "Phụ đề được khắc thẳng vào video, dùng kiểu chữ chuẩn."
+msgstr "Subtitles are burned straight into the video using the standard text style."
+
+msgid "Khắc lên hình — tự chọn kiểu"
+msgstr "Burn into the picture — pick a style"
+
+msgid "Như trên, nhưng bạn chọn kiểu chữ ở ô bên dưới."
+msgstr "As above, but you choose the text style in the box below."
+
+msgid "Bản lồng tiếng không ghi giọng đã chọn — cần chạy lại bước xử lý nội dung."
+msgstr "The dubbing script does not record the chosen voice — the content step needs to run again."
+
+msgid "Nhạc nền và tiếng động của video gốc được giữ lại; chỉ lời thoại gốc được thay bằng giọng lồng tiếng."
+msgstr "Background music and sound effects from the original are kept; only the original dialogue is replaced by the dubbed voice."
+
+msgid "Nhạc nền so với lời thoại"
+msgstr "Background music relative to dialogue"
+
+msgid "Tắt nhạc nền"
+msgstr "Turn off background music"
+
+msgid "Chỉ còn giọng lồng tiếng."
+msgstr "Only the dubbed voice remains."
+
+msgid "Hạ nhạc nền khi có lời"
+msgstr "Lower the music while someone speaks"
+
+msgid "Nhạc nền nhỏ đi khoảng 7 dB lúc có người nói và trở lại giữa hai câu."
+msgstr "The music drops by about 7 dB while someone speaks and comes back between lines."
+
+msgid "To dần ở đầu (giây)"
+msgstr "Fade in at the start (seconds)"
+
+msgid "Nhỏ dần ở cuối (giây)"
+msgstr "Fade out at the end (seconds)"
+
+msgid "Độ to chung của video luôn được chuẩn về −14 LUFS, mức các nền tảng video dùng."
+msgstr "The overall loudness is always normalised to −14 LUFS, the level video platforms use."
+
+msgid "Giá trị âm thanh không hợp lệ: {ten}."
+msgstr "Invalid audio setting: {ten}."
+
+msgid "Hồ sơ âm thanh không đọc được."
+msgstr "The audio settings could not be read."
+
+msgid "Hồ sơ âm thanh có trường lạ: {ds}."
+msgstr "The audio settings contain unknown fields: {ds}."
+
+msgid "Mức nhạc nền phải từ {a} đến {b} dB."
+msgstr "The music level must be between {a} and {b} dB."
+
+msgid "Thời gian to dần / nhỏ dần phải từ 0 đến {n} giây."
+msgstr "Fade-in / fade-out must be between 0 and {n} seconds."
+
+msgid "Đã tắt nhạc nền thì không còn gì để hạ theo lời thoại."
+msgstr "With the music turned off there is nothing to lower under the dialogue."
+
+msgid "Nguồn giọng"
+msgstr "Voice source"
+
+msgid "Giọng mẫu LTT"
+msgstr "LTT voices"
+
+msgid "Tìm theo tên"
+msgstr "Search by name"
+
+msgid "chưa có mẫu nghe"
+msgstr "no preview yet"
+
+msgid "Không có giọng nào khớp bộ lọc — hãy bỏ bớt điều kiện."
+msgstr "No voice matches these filters — remove some of them."
+
+msgid "Đã cập nhật danh sách: %(so)s giọng."
+msgstr "List updated: %(so)s voices."
+
+msgid "Không làm mới được danh sách giọng."
+msgstr "Could not refresh the voice list."
+
+msgid "Huỷ là dừng hẳn: phần credit chưa dùng được hoàn lại, nhưng lần chạy này không tiếp tục được nữa — muốn làm lại phải tạo lần chạy mới."
+msgstr "Cancelling is final: unused credit is refunded, but this run cannot continue — to try again you must start a new run."
+
+msgid "Xác nhận huỷ"
+msgstr "Confirm cancel"
+
+msgid "Đọc lời lồng tiếng"
+msgstr "Voicing the dubbed lines"
+
+msgid "Dịch"
+msgstr "Translation"
+
+msgid "Viết lời thoại tiếng Việt"
+msgstr "Writing the Vietnamese dialogue"
+
+msgid "Rút gọn cho vừa thời lượng"
+msgstr "Shortening to fit the timing"
+
+msgid "Xem từng cảnh"
+msgstr "Reviewing each scene"
+
+msgid "Phân tích nội dung"
+msgstr "Content analysis"
+
+msgid "Kiểm tra nghĩa bản dịch"
+msgstr "Checking the translation's meaning"
+
+msgid "Vòng sửa tự động"
+msgstr "Automatic repair round"
+
+msgid "Ghi nhận lỗi còn lại"
+msgstr "Recording remaining defects"
+
+msgid "Việc khác"
+msgstr "Other work"
+
+msgid "token"
+msgstr "tokens"
+
+msgid "khung hình"
+msgstr "frames"
+
+msgid "Chi phí"
+msgstr "Cost"
+
+msgid "Đã giữ khi tạo lần chạy"
+msgstr "Reserved when the run was created"
+
+msgid "Hoàn lại"
+msgstr "Refunded"
+
+msgid "Phần chưa dùng được hoàn lại khi lần chạy kết thúc."
+msgstr "Unused credit is refunded when the run finishes."
+
+msgid "Khối lượng"
+msgstr "Amount"
+
+msgid "Chưa có việc nào được tính tiền."
+msgstr "Nothing has been charged yet."

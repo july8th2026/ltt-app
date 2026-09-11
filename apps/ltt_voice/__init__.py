@@ -63,4 +63,24 @@ BE_MAT_CONG_KHAI = {
     ("apps.ltt_voice.giong_mau", "NHAN_GIOI"),
     ("apps.ltt_voice.giong_mau", "NHAN_VUNG"),
     ("apps.ltt_voice.giong_mau", "NHAN_PHONG_CACH"),
+
+    # ── V5 cua Auto Scan: nghe thu giong TRUOC khi chon ────────────────────
+    #
+    # 🔑 Man chon giong cua Auto Scan hoi dung cau ma `nghe_thu.py` mo dau bang:
+    #    *"giong nay nghe nhu the nao"*. Ba nhan (gioi · vung · phong cach)
+    #    khong tra loi duoc no, va cach duy nhat con lai la chay that mot lan —
+    #    tuc **tra tien de xem minh co muon mua khong**.
+    #
+    # ⭐ Xuat `duong_cho_trang` chu KHONG xuat `khoa_mau`/`khoa_rieng`.
+    #    Docstring cua chinh no ghi ly do, va do la mot bai hoc da tra gia o
+    #    `du_an.duong_tieng()`: **MOT tham quyen duy nhat dung duong nghe thu**.
+    #    Xuat ham dung khoa la moi ben goi tu ghep URL — va nam ban ghep la nam
+    #    ban se lech.
+    #
+    # ⛔ Va no khong mo them mot cua doc nao: tep duoc phuc vu boi chinh route
+    #    `/audio` cua LTT VOICE, noi phep kiem so huu da o san (`_p_audio.py`).
+    #    Auto Scan chi nhan **URL**, khong nhan tep va khong nhan khoa.
+    #
+    # ⚠️ Ham nay chi hoi KHO, khong cham CSDL — nen goi duoc ngoai phien.
+    ("apps.ltt_voice.nghe_thu", "duong_cho_app_khac"),
 }

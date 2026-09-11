@@ -1,0 +1,101 @@
+{
+  "ngay": "2026-09-11",
+  "may": "A (production), sau khoi dong lai: RTX 5060 Ti, driver 596.21",
+  "nguon": "testsrc2 1280x720 30fps 20.0s, FFV1 khong mat mat",
+  "duong": "ket_xuat.dung_lenh, duong CAT (ma hoa lai)",
+  "nguong_ghi_truoc": {
+    "lech_ssim_toi_da": 0.01,
+    "ti_le_kich_thuoc": [
+      0.5,
+      2.0
+    ]
+  },
+  "ket_qua": {
+    "h264_nvenc": {
+      "trang_thai": "chay",
+      "giay": 0.92,
+      "nhanh_x": 21.69,
+      "ssim": 0.975,
+      "byte": 7983776,
+      "so_co_c_v_trong_lenh": 1
+    },
+    "h264_qsv": {
+      "trang_thai": "chay",
+      "giay": 2.52,
+      "nhanh_x": 7.94,
+      "ssim": 0.97341,
+      "byte": 5841763,
+      "so_co_c_v_trong_lenh": 1
+    },
+    "h264_amf": {
+      "trang_thai": "khong_chay"
+    },
+    "libx264": {
+      "trang_thai": "chay",
+      "giay": 1.4,
+      "nhanh_x": 14.27,
+      "ssim": 0.97536,
+      "byte": 7493743,
+      "so_co_c_v_trong_lenh": 1
+    }
+  },
+  "phan_quyet": {
+    "h264_nvenc": {
+      "lech_ssim": 0.00036,
+      "ti_le_kich_thuoc": 1.065,
+      "tuong_duong": true
+    },
+    "h264_qsv": {
+      "lech_ssim": 0.00195,
+      "ti_le_kich_thuoc": 0.78,
+      "tuong_duong": true
+    }
+  },
+  "gia_cpu_720p": {
+    "h264_nvenc": {
+      "cpu": 2.66,
+      "wall": 0.84
+    },
+    "h264_qsv": {
+      "cpu": 5.06,
+      "wall": 2.62
+    },
+    "libx264": {
+      "cpu": 11.7,
+      "wall": 1.54
+    }
+  },
+  "gia_cpu_1080p": {
+    "h264_nvenc": {
+      "cpu": 5.5,
+      "wall": 1.53
+    },
+    "h264_qsv": {
+      "cpu": 10.94,
+      "wall": 4.63
+    },
+    "libx264": {
+      "cpu": 25.61,
+      "wall": 2.28
+    }
+  },
+  "luat_uu_tien_ghi_truoc": {
+    "A_giu_phan_cung_truoc": "1080p: cpu(hw) <= 0.5*cpu(x264) va wall(hw) <= 2.0*wall(x264)",
+    "B_dat_x264_truoc": "1080p: wall(hw) > wall(x264) va cpu(hw) > 0.5*cpu(x264)",
+    "C": "con lai: khong doi"
+  },
+  "phan_quyet_uu_tien": "A — giu phan cung truoc (NVENC 0,21x CPU, 0,67x thoi gian o 1080p)",
+  "mot_lan_ma_hoa": {
+    "bien_doi": [
+      "boxblur (vung)",
+      "drawtext (lop phu)",
+      "overlay (logo)",
+      "ass= (phu de)"
+    ],
+    "so_filter_complex": 1,
+    "so_c_v": 1,
+    "so_tep_ra": 1,
+    "ffmpeg_that_returncode": 0
+  },
+  "luot_do_hong_truoc_khoi_dong_lai": "truoc khi khoi dong lai may, driver NVIDIA khong phan hoi: NVENC khong chay, may LUI VE QSV — cham hon ca libx264 (1080p: 2,03x thoi gian) nhung chi 0,43x CPU"
+}

@@ -3424,3 +3424,263 @@ button.lv-the-song.dang-phat .lv-nghe-dau::before{width:4px;height:14px;
   .asv-dau{flex-direction:column}
   .asv-buoc li{grid-template-columns:1fr auto}
 }
+
+/* ══ Auto Scan Video — man Studio V5 ═════════════════════════════════════════
+ *
+ * Kien truc thong tin: `docs/auto_scan_video_v5/V5_UI_INFORMATION_ARCHITECTURE.md`.
+ *
+ * ⭐ Cac lop `.asv-*` o tren van dung nguyen — `.asv-chon`, `.asv-o`,
+ *    `.asv-buoc`, `.asv-bang` khong doi. Khoi nay THEM bo cuc Studio, khung xem
+ *    truoc, lop phu vung che va thanh hanh dong dinh day.
+ */
+
+.asv-studio{display:flex;flex-direction:column;gap:20px;padding:20px}
+.asv-trang:has(.asv-studio){max-width:1120px}
+
+/* Hai cot tren may tinh, mot cot tu 900px tro xuong. */
+.asv-luoi{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:24px}
+.asv-cot{display:flex;flex-direction:column;gap:12px;min-width:0}
+.asv-nhan-nhom{margin:0;font-size:13px;font-weight:600;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.04em}
+
+/* ── Khung xem truoc ─────────────────────────────────────────────────────── */
+.asv-khung{position:relative;aspect-ratio:16/9;background:var(--surface-canvas);
+  border:1px solid var(--line);border-radius:var(--radius-md);overflow:hidden;
+  display:flex;align-items:center;justify-content:center}
+/* 🔴 `:not([hidden])` la BAT BUOC o day, khong phai mot chi tiet.
+ *
+ *    `[hidden]{display:none}` nam trong bang kieu cua TRINH DUYET (UA), va
+ *    UA co do uu tien THAP hon bang kieu cua tac gia. Nen mot dong
+ *    `display:block` khong dieu kien o day **de len** `hidden`: the
+ *    `<video>` chua co nguon van chiem 100% be rong va day khoi trang thai
+ *    rong ra ngoai khung.
+ *
+ * ⭐ Da nhin thay tren trinh duyet that o 375px: "Choose a video to start"
+ *    hien ra thanh "ueo / tart", va bo test khong thay gi ca. Do dung la
+ *    ly do `CLAUDE.md` quy tac 5 ton tai. */
+.asv-khung video:not([hidden]){width:100%;height:100%;object-fit:contain;
+  display:block}
+/* ⚠️ `min-width:0` + `max-width:100%` la BAT BUOC, khong phai lam dep.
+ *    Mot flex item mac dinh la `min-width:auto`, nen no KHONG co xuong duoi
+ *    be rong min-content cua chu ben trong. O 375px, khoi nay rong hon
+ *    `.asv-khung`, va `justify-content:center` day phan thua ra CA HAI ben —
+ *    `overflow:hidden` cat mat dau dong. Do la loi da nhin thay tren trinh
+ *    duyet that: "Choose a video to start" hien ra thanh "ueo / tart". */
+.asv-rong{text-align:center;padding:20px;color:var(--muted);
+  min-width:0;max-width:100%}
+.asv-rong-lon{margin:0 0 6px;font-size:15px;color:var(--fg)}
+
+/* Lop phu vung che. `viewBox` 0..1 nen toa do trong SVG CHINH LA toa do gui di. */
+.asv-lop{position:absolute;inset:0;width:100%;height:100%}
+.asv-hop{fill:var(--brand-primary);fill-opacity:.22;
+  stroke:var(--brand-hover);stroke-width:.004;vector-effect:non-scaling-stroke}
+.asv-hop-danh_dau_phu_de{fill:var(--status-warning);fill-opacity:.2;
+  stroke:var(--status-warning)}
+/* Chi bat con tro khi DANG ve — ngoai luc do, dieu khien cua `<video>` phai bam duoc. */
+.asv-lop{pointer-events:none}
+.asv-dang-ve .asv-lop{pointer-events:auto;cursor:crosshair}
+.asv-dang-ve{outline:2px solid var(--focus-ring);outline-offset:-2px}
+
+.asv-an-input{position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.asv-chon-tep{align-self:flex-start;cursor:pointer}
+/* Nhan `<legend>` an voi mat nhung con cho trinh doc man hinh. */
+.asv-an-doc{position:absolute;width:1px;height:1px;overflow:hidden;
+  clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ── Loc + nghe thu giong ────────────────────────────────────────────────── */
+.asv-loc{display:flex;gap:8px;flex-wrap:wrap}
+.asv-loc-o{flex:1 1 140px;min-width:0}
+.asv-nghe{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.asv-nghe .asv-ghi-chu{margin:0}
+
+/* ── Nang cao ────────────────────────────────────────────────────────────── */
+.asv-nang-cao{border:1px solid var(--line);border-radius:var(--radius-md);
+  background:var(--panel2);padding:12px 14px}
+.asv-nang-cao > summary{cursor:pointer;font-size:14px;font-weight:600}
+.asv-nang-cao[open] > summary{margin-bottom:14px}
+.asv-nhom{padding:14px 0;border-top:1px solid var(--line)}
+.asv-nhom:first-of-type{border-top:0;padding-top:0}
+.asv-nhom h3{margin:0 0 8px;font-size:14px}
+.asv-vung-thanh{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 6px}
+
+/* -- Cat dau/cuoi -----------------------------------------------------
+   ⭐ Mot nhom CON, khong phai `.asv-nhom`: no nam BEN TRONG nhom "Thoi
+      luong" cung voi cach khop thoi gian, vi ca hai deu tra loi cung mot
+      cau hoi — *video ra dai bao nhieu*. Tach ra thanh mot nhom rieng se
+      tach hai nua cua mot quyet dinh ra hai cho. */
+.asv-nhom-con{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
+.asv-nhom-con h4{margin:0 0 8px}
+.asv-cat-o{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin:8px 0 4px}
+.asv-cat-nhan{display:flex;flex-direction:column;gap:4px;font-size:13px;
+  color:var(--muted);flex:1 1 100px;min-width:0}
+/* 🔴 `100px` chu khong `130px`, va con so nay DO TREN TRINH DUYET chu khong
+   uoc: o 375px cot con lai rong 245px, nen hai o co so 130 + khe 10 + nut
+   "Bo cat" khong vua mot dong. Flex xuong dong o giua HAI O — o dau nong ra
+   245px, o sau con 149px, va hai o anh em cua mot cap hien ra hai co khac
+   nhau. Voi 100px thi hai o o lai cung mot dong (100+100+10 <= 245) va nut
+   xuong dong duoi mot minh. */
+#asv-cat-xoa{flex:0 0 auto}
+
+/* -- Danh sach vung che ---------------------------------------------------
+   ⭐ Mot DANH SACH chu khong phai cac tay cam tren khung hinh: khoang thoi
+      gian la mot con so, va mot con so go bang ban phim thi doc duoc bang
+      trinh doc man hinh, con mot tay cam keo tha thi khong. */
+.asv-vung-ds{list-style:none;margin:10px 0 0;padding:0;display:flex;
+  flex-direction:column;gap:8px}
+.asv-vung-muc{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;
+  padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius-md);
+  background:var(--panel2)}
+.asv-vung-dau{display:flex;flex-direction:column;gap:2px;flex:1 1 160px;min-width:0}
+.asv-vung-dau .asv-ghi-chu{margin:0}
+.asv-vung-gio-o{display:flex;gap:8px;flex:1 1 200px;min-width:0}
+/* -- Lop phu chu ---------------------------------------------------------
+   O NOI DUNG chiem ca hang rieng: mot dong chu la thu khach doc lai nhieu
+   nhat, con toa do/co chu thi liec qua. Cac o so dung chung .asv-vung-gio
+   nen chung khong the lech nhau khi ai do chinh mot ben. */
+.asv-lp-chu{display:flex;flex-direction:column;gap:4px;font-size:13px;
+  color:var(--muted);flex:1 1 100%;min-width:0}
+.asv-lp-chu input{width:100%;min-width:0}
+.asv-lp-vien{flex:0 0 auto;flex-direction:row;align-items:center;gap:6px}
+/* 🔴 Do THAT tren trinh duyet o 375px, va khong phep kiem nao thay duoc:
+   hang nay co BON o dieu khien, con hang cua vung che chi co hai. Bon o
+   `flex:1 1 90px` chia nhau 234px cho ra **40px moi cai** — mot o so 40px
+   khong hien noi `100`, mot o chon 40px khong hien noi mot ten mau. Va no
+   KHONG tran ngang, nen mot chot `overflow` cung im lang.
+   ⇒ Cho XUONG DONG thay vi co lai, kem mot san chieu rong that. */
+.asv-lp-o{flex-wrap:wrap}
+.asv-lp-o>.asv-vung-gio{flex:1 1 100px;min-width:100px}
+.asv-lp-o>.asv-lp-vien{min-width:0}
+.asv-lp-vien input{flex:0 0 auto}
+
+.asv-vung-gio{display:flex;flex-direction:column;gap:4px;font-size:13px;
+  color:var(--muted);flex:1 1 90px;min-width:0}
+
+/* -- Bang ke canh ---------------------------------------------------------
+   ⛔ CHI XEM. Khong o chon, khong keo tha: chuoi thi hanh nam trong ma nguon
+      chu khong trong CSDL, va mot o chon o day la buoc dau tien cua cai do
+      thi ma hop dong san pham cam. */
+.asv-canh{display:flex;flex-direction:column;gap:8px;margin-top:18px}
+/* `position:relative` de cac vach dinh vi theo THANH, khong theo trang. */
+.asv-canh-thanh{position:relative;height:14px;border-radius:999px;
+  background:var(--panel2);border:1px solid var(--line);overflow:hidden}
+.asv-canh-vach{position:absolute;top:0;bottom:0}
+/* Giu = dac, bo = mo va co van. Hai dau hieu chu khong mot: mot nguoi khong
+   phan biet duoc mau van doc duoc dai nay. */
+.asv-canh-thanh .asv-canh-giu{background:var(--accent)}
+.asv-canh-thanh .asv-canh-bo{background:repeating-linear-gradient(45deg,
+  var(--line) 0 3px,transparent 3px 6px);opacity:.85}
+.asv-canh-ds{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.asv-canh-ds li{display:flex;gap:8px;align-items:baseline;font-size:12px;
+  padding:4px 9px;border:1px solid var(--line);border-radius:999px}
+.asv-canh-ds li.asv-canh-bo{opacity:.62}
+.asv-canh-moc{font-variant-numeric:tabular-nums;color:var(--muted)}
+.asv-canh-nhan{font-weight:600}
+/* `min-width:0` + `width:100%` de o so khong day nhom tran ngang o 375px. */
+.asv-cat-so{width:100%;min-width:0;font-variant-numeric:tabular-nums}
+/* Chi hien tren man hinh nho — xem `@media` cuoi khoi. */
+.asv-chi-may{display:none}
+
+/* ── Thanh hanh dong ─────────────────────────────────────────────────────── */
+.asv-thanh{display:flex;align-items:center;justify-content:space-between;gap:18px;
+  flex-wrap:wrap;border-top:1px solid var(--line);padding-top:16px}
+.asv-uoc{display:flex;flex-direction:column;gap:2px;min-width:0}
+.asv-uoc-tien{font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}
+.asv-uoc .asv-ghi-chu{margin:0}
+.asv-dang-gui{opacity:.7}
+
+/* ── Lich su: THE, khong phai bang ───────────────────────────────────────── */
+.asv-the-ds{list-style:none;margin:0;padding:0;display:flex;
+  flex-direction:column;gap:8px}
+.asv-the a{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:12px 14px;border:1px solid var(--line);border-radius:var(--radius-md);
+  background:var(--panel);text-decoration:none;color:inherit;
+  transition:border-color var(--motion-fast),background var(--motion-fast)}
+.asv-the a:hover{border-color:var(--line2);background:var(--panel2)}
+.asv-the-gio{color:var(--muted);font-size:13px}
+.asv-tt-queued,.asv-tt-running{border-color:var(--brand-border);color:var(--accent2)}
+.asv-tt-cancelled{color:var(--dim)}
+
+/* ── Tien do ─────────────────────────────────────────────────────────────── */
+.asv-buoc-hien{font-size:17px;font-weight:600;margin:0 0 8px}
+.asv-thanh-tien{height:8px;border-radius:999px;background:var(--panel3);
+  overflow:hidden;margin:0 0 8px}
+.asv-thanh-tien > i{display:block;height:100%;background:var(--accent);
+  transition:width var(--motion-normal)}
+.asv-dong-ho{color:var(--muted);font-size:13px;margin:0 0 16px;
+  font-variant-numeric:tabular-nums}
+/* Buoc XONG thu gon thanh luoi — 11 dong doc doc nhu mot ban log. */
+.asv-buoc-xong{list-style:none;margin:0 0 16px;padding:0;display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px 16px}
+.asv-buoc-xong li{font-size:13px;color:var(--muted)}
+.asv-buoc-xong li::before{content:"✓";color:var(--ok);margin-right:6px}
+/* ⚠️ Danh sach CAI DAT DA DUNG dung mot lop RIENG, khong dung lai
+ * `.asv-buoc-xong`. Hai danh sach nhin giong nhau nhung mang hai nghia:
+ * mot cai la "buoc da xong" (nen co dau ✓), mot cai la "gia tri da chon"
+ * (khong). Dung chung mot ten lam chinh phep do cua bai audit dem nham
+ * 9 muc thay vi 5 — mot lop CSS dung sai cho khong chi hong tham my. */
+.asv-cai-dat{list-style:none;margin:0;padding:0;display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px 16px}
+.asv-cai-dat li{font-size:13px;color:var(--muted)}
+
+/* ── Ket qua: nguon canh ket qua ─────────────────────────────────────────── */
+.asv-doi-chieu{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:0 0 16px}
+.asv-doi-chieu figure{margin:0;display:flex;flex-direction:column;gap:6px}
+.asv-doi-chieu video{width:100%;border-radius:var(--radius-md);
+  background:var(--surface-canvas);display:block}
+.asv-doi-chieu figcaption{font-size:13px;color:var(--muted)}
+.asv-hanh-dong{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.asv-hanh-dong form{margin:0}
+
+/* ── Loi: chuyen gi · lam gi tiep · ton gi ───────────────────────────────── */
+.asv-loi{border:1px solid var(--err-line);background:var(--err-bg);
+  border-radius:var(--radius-md);padding:14px 16px;margin:0 0 16px}
+.asv-loi h3{margin:0 0 6px;font-size:15px;color:var(--err)}
+.asv-loi p{margin:0 0 8px;font-size:14px}
+.asv-loi .asv-ghi-chu{margin:8px 0 0}
+
+@media (max-width:900px){
+  .asv-luoi{grid-template-columns:1fr}
+  .asv-doi-chieu{grid-template-columns:1fr}
+}
+@media (max-width:640px){
+  .asv-thanh{position:sticky;bottom:0;z-index:5;background:var(--panel);
+    margin:0 -20px -20px;padding:14px 20px calc(14px + var(--ltt-day-an-toan));
+    border-top:1px solid var(--line2)}
+  .asv-thanh .btn{flex:1 1 100%}
+  /* ⭐ Ve hop chinh xac bang ngon tay tren 375px cho ket qua te hon han. Mot
+   *    cong cu chinh xac GIA con te hon khong co cong cu — nen o day no thanh
+   *    CHI XEM, va giao dien noi thang ly do. */
+  .asv-vung-thanh{display:none}
+  .asv-chi-may{display:block}
+  .asv-buoc-xong{grid-template-columns:1fr}
+}
+
+/* Tien do tai len ben vung (R1). Dung lai `.asv-thanh-tien` cua man tien do —
+ * mot thanh tien do thu hai voi hinh dang khac la mot ngon ngu thu hai cho cung
+ * mot y nghia. */
+.asv-tai{display:flex;flex-direction:column;gap:4px;margin:4px 0 0}
+.asv-tai .asv-ghi-chu{margin:0}
+/* 🔴 `[hidden]` PHAI THANG `display` — TREN MOI PHAN TU cua man ASV Studio.
+ *
+ * Thuoc tinh HTML `hidden` chi la `display:none` o bang kieu cua TRINH DUYET,
+ * nen bat ky luat `display` nao cua ta cung de bep no. Markup dung, JS dung,
+ * chi CSS lat nguoc y dinh — va no lat mot cach hoan toan im lang.
+ *
+ * Do that o pha 06 (1280 va 375): ba phan tu `hidden` van render —
+ *   #asv-tai      <- `.asv-tai{display:flex}`
+ *   #asv-tai-lai  <- `.btn{display:inline-flex}`
+ *   #asv-lop      <- svg lop ve
+ * Hau qua khach nhin thay: nut "Thu tai len lai" hien ngay khi mo trang, giai
+ * thich mot su co chua he xay ra.
+ *
+ * ⭐ Man Voice da dinh dung bay nay va da rut ra dung ket luan (xem khoi
+ *    `.lv-man [hidden]` o tren): mot DANH SACH LOP chi bao ve nhung gi da tung
+ *    hong, va no tai dien trong mot gio o `.btn`. Nen day la mot luat CHUNG
+ *    cho ca man, khong phai mot danh sach.
+ *
+ * ⚠️ Pham vi gioi han trong `.asv-trang` — cung ly do ho gioi han trong
+ *    `.lv-man`: de khong doi hanh vi render cua app khac.
+ */
+.asv-trang [hidden],
+.asv-trang[hidden]{display:none!important}

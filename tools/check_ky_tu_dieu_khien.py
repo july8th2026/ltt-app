@@ -107,8 +107,55 @@ def quet(tep: pathlib.Path) -> list[tuple[int, int, str]]:
     return ra
 
 
-def main() -> int:
-    tep = _tep_can_quet()
+def _tep_tu_doi_so(doi_so: list[str]) -> list[pathlib.Path]:
+    """Chi nhung tep duoc DUA VAO, da loc theo `DUOI` va `BO_QUA`.
+
+    🔑 **Duong nay ton tai cho `pre-commit`, va no khac duong cua gate o mot
+       cho co that.**
+
+       Gate hoi *"ca kho co sach khong"* — no phai quet het. `pre-commit` hoi
+       *"lan commit nay co dua vao mot ky tu dieu khien khong"*, va cau ay chi
+       phu thuoc nhung tep DANG duoc commit.
+
+    ⭐ Va khac biet ay DO DUOC (10/09, 955 tep duoc git theo doi):
+
+           ca kho          0,85 giay
+           hai tep .md     0,06 giay
+
+       Tep `.pre-commit-config.yaml` mo dau bang mot cau: *"moi hook o day phai
+       NHANH"*. Tong bon hook hien co la 0,6 giay; them 0,85 giay la tang gap
+       hai ruoi, va mot cong cham la mot cong se bi `--no-verify` mot lan roi
+       bi go mai.
+
+    ⚠️ Tep khong ton tai bi BO QUA im lang: `pre-commit` co the dua vao mot
+       duong vua bi xoa trong cung lan commit, va do khong phai loi.
+    """
+    ra = []
+    for ten in doi_so:
+        if not ten.endswith(DUOI):
+            continue
+        if any(bo in ten.replace("\\", "/") for bo in BO_QUA):
+            continue
+        p = pathlib.Path(ten)
+        if not p.is_absolute():
+            p = ROOT / ten
+        if p.is_file():
+            ra.append(p)
+    return ra
+
+
+def main(doi_so: list[str] | None = None) -> int:
+    # ⛔ Doi so RONG khong phai la "quet ca kho". `pre-commit` voi
+    #    `pass_filenames: true` co the goi ma khong co tep nao khop bo loc, va
+    #    khi do dung viec la KHONG QUET GI — quet ca kho o do se bien mot hook
+    #    0,01 giay thanh 0,90 giay o dung nhung commit khong lien quan.
+    #
+    # ⇒ `None` (khong ai truyen gi) = gate, quet het.
+    #   `[]` (truyen mot danh sach rong) = khong co gi de quet.
+    if doi_so is None:
+        tep = _tep_can_quet()
+    else:
+        tep = _tep_tu_doi_so(doi_so)
     loi = []
     for f in tep:
         for dong, cot, ma in quet(f):
@@ -128,10 +175,14 @@ def main() -> int:
         print("RESULT: FAIL")
         return 1
 
-    print(f"Ky tu dieu khien: 0 trong {len(tep)} tep van ban duoc git theo doi.")
+    if doi_so is None:
+        print(f"Ky tu dieu khien: 0 trong {len(tep)} tep van ban duoc git theo doi.")
+    else:
+        print(f"Ky tu dieu khien: 0 trong {len(tep)} tep dua vao.")
     print("RESULT: PASS")
     return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    # ⭐ `sys.argv[1:]` chu khong `None` khi CO doi so: xem ghi chu o `main`.
+    raise SystemExit(main(sys.argv[1:] if len(sys.argv) > 1 else None))

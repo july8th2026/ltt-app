@@ -1,0 +1,36 @@
+{
+  "ngay": "2026-09-11",
+  "cau_hoi": "lech do dai luong HINH va luong TIENG la bao nhieu tren chuoi lenh THAT",
+  "cach_do": "ket_xuat.dung_lenh() -> ffmpeg -> nhap_media.soi()",
+  "vi_sao_khong_dung_ban_do_dau": "ban do dau dung mot lenh ffmpeg tu viet (0,0234 s). No do mot thu khac: chuoi that con trim+concat tren hinh, amix+loudnorm tren tieng va -shortest.",
+  "phep_do": [
+    {
+      "duong_render": "giu hinh",
+      "nhip": "30",
+      "container": 6.0,
+      "video": 6.0,
+      "tieng": 6.0,
+      "lech": 0.0
+    },
+    {
+      "duong_render": "cat",
+      "nhip": "30",
+      "container": 6.0,
+      "video": 6.0,
+      "tieng": 6.0,
+      "lech": 0.0
+    },
+    {
+      "duong_render": "cat",
+      "nhip": "30000/1001",
+      "container": 5.973,
+      "video": 5.973,
+      "tieng": 5.952,
+      "lech": 0.0206
+    }
+  ],
+  "lech_te_nhat": 0.0206,
+  "nguong_chon": 0.5,
+  "du_dia": "24 lan",
+  "vi_sao_rong": "mot muc HONG o T16 CHAN mot video da render xong, nen sai so phai day ve phia KHONG hanh dong. Va 0,5 giay lech tieng-hinh thi tai nguoi nghe duoc."
+}

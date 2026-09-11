@@ -52,7 +52,7 @@ from platform_core.i18n import _ as _t
 from platform_core.storage import Storage, StorageError
 
 from .tables import (ASSET_CORRUPT, ASSET_EXPIRED, ASSET_MISSING, ASSET_OK,
-                     KINDS, AsvAsset)
+                     KINDS, KIND_ANH, AsvAsset)
 
 #: Han luu tru mac dinh cua artifact TRUNG GIAN. Ngan hon vong doi mot du an,
 #: vi chung la vat lieu chu khong phai san pham; ban giao cho khach la
@@ -333,6 +333,26 @@ def kiem_hop_le(kho: Storage, khoa: str, *, kind: str) -> tuple[int, str]:
             json.loads(du_lieu.decode("utf-8"))
         except (UnicodeDecodeError, json.JSONDecodeError) as exc:
             raise AssetError(f"artifact JSON hong: {khoa}") from exc
+
+    if kind == KIND_ANH:
+        # 🔑 Kiem bang CHU KY + kich thuoc diem anh, khong bang duoi tep hay
+        #    `content_type` da luu — ca hai deu do khach dat.
+        #    `validate_reference` doc NOI DUNG va tra ve kieu THAT; no nem khi
+        #    khong doc duoc.
+        #
+        # ⭐ Dung lai nen tang thay vi viet mot phep doc PNG/JPEG o day: han muc
+        #    (8 MiB, 24 Mpx) la chinh sach cua NEN TANG, va mot ban sao la mot
+        #    ban se troi.
+        #
+        # ⛔ Them mot `kind` moi ma khong them nhanh nay la mo mot loai artifact
+        #    **khong ai soi noi dung** — tuc bat bien I8 (*"DONE nghia la co mot
+        #    ket qua HOP LE"*) mat hieu luc cho dung loai do, va mat im lang.
+        from platform_core import image_input
+
+        try:
+            image_input.validate_reference(du_lieu, "")
+        except Exception as exc:            # noqa: BLE001 — dich sang loi cua ta
+            raise AssetError(f"artifact anh khong hop le: {khoa}") from exc
 
     return len(du_lieu), bam(du_lieu)
 

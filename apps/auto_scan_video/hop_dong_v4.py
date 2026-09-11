@@ -110,7 +110,6 @@ CAM_TRONG_MVP: tuple[str, ...] = (
     "crop",
     "zoom",             # motion / camera path
     "broll",            # sinh canh moi
-    "subtitle_burn",    # `apps/autosubvideo` da lam viec nay
     "upscale",          # `apps/upscalevideo` da lam viec nay
     "music_replace",
     "transition",
@@ -121,13 +120,64 @@ CAM_TRONG_MVP: tuple[str, ...] = (
 HAU_MVP: tuple[str, ...] = (
     "reframe",
     "zoom",
-    "subtitle_burn",
     "upscale",
     "broll",
     "multi_speaker_voice",      # nhieu giong cho nhieu nguoi noi
     "multilingual_target",      # ngon ngu dich khac `vi`
     "social_ingest",
     "social_publish",
+)
+
+# ⭐ **`logo_image` DA ROI khoi bang tren o pha 08b/11b**, va vong doi ay dung
+#    la vong doi ma `HAU_MVP` mo ta: *"cai nay se mo, cai kia thi khong"*.
+#
+#    No nam o day tu pha 11 vi mot phu thuoc CO THAT — ASV khong co duong nhap
+#    anh. Pha 08 mo duong do (`features.gan_logo`), nen phu thuoc het, va muc ay
+#    chuyen sang `NANG_LUC_DOI_DIEM_ANH`.
+#
+# ⛔ Ghi lai buoc chuyen o day chu khong xoa lang le: mot muc bien mat khoi ca
+#    hai bang se lam nguoi doc sau tuong no chua bao gio duoc quyet.
+
+
+# ── Nang luc DOI DIEM ANH ────────────────────────────────────────────────────
+
+#: Nhung thu **sua diem anh cua khung hinh**, tuc chung khong the ton tai o
+#: duong `-c:v copy`.
+#:
+#: 🔴 Day khong phai mot chinh sach ta chon. `localize_preserve_picture` phat
+#:    `-c:v copy`: khong khung nao duoc giai ma, nen khong co khung nao trong bo
+#:    nho de sua mot diem anh cua no. `ban_dung.kiem` cuong che, giao dien noi
+#:    truoc, va `che_do_render` giai thich.
+#:
+#: ⭐ Bang nay ton tai de tra loi cau *"tinh nang nay co thuoc MVP khong"* bang
+#:    MA thay vi bang mot tep `.md`. Mot muc o day la mot muc DA duoc quyet.
+# ⭐ **`subtitle_burn` GIA NHAP o pha 14**, va vong doi cua no giong het
+#    `logo_image`: no nam o `CAM_TRONG_MVP` + `HAU_MVP` vi mot phu thuoc CO
+#    THAT — ASV khong co duong goi nang luc phu de cua `apps/autosubvideo`.
+#    Pha 14 mo duong do (`phu_de.py` + `ass=` trong `-filter_complex` cua
+#    `ket_xuat`), nen phu thuoc het.
+#
+# ⛔ **DOT phu de doi diem anh, nen no BAT KHA o preset giu hinh** — `-c:v copy`
+#    khong giai ma khung nao. Cung rang buoc VAT LY voi `mask_region`,
+#    `text_overlay`, `logo_image`, khong phai mot chinh sach ta chon.
+NANG_LUC_DOI_DIEM_ANH: tuple[str, ...] = (
+    "mask_region",      # `vung_che` — V5
+    "text_overlay",     # `lop_phu`  — V6 pha 11
+    "logo_image",       # `logo`     — V6 pha 08b/11b
+    "subtitle_burn",    # `phu_de`   — V6 pha 14
+)
+
+#: Nang luc KHONG doi diem anh — hop le o MOI preset.
+#:
+#: 🔑 Bang nay ton tai de tra loi mot cau ma `NANG_LUC_DOI_DIEM_ANH` khong tra
+#:    loi duoc: *"khach o preset giu hinh co lay duoc phu de khong?"* Co — chi la
+#:    lay ra mot tep `.srt` roi, khong dot vao hinh.
+#:
+#: ⛔ Gop hai bang lam mot se khoa mat lua chon phu de DUY NHAT con lai o preset
+#:    giu hinh. Do la `hai-rao-bi-gop-lam-mot` o dang khac: hai truc doc lap bi
+#:    buoc vao mot cong tac, va cai bi mat khong bao loi — no chi khong ton tai.
+NANG_LUC_KHONG_DOI_DIEM_ANH: tuple[str, ...] = (
+    "subtitle_srt",     # `phu_de.xuat_srt` — V6 pha 14
 )
 
 
@@ -205,6 +255,25 @@ def _kiem_tra_hop_dong() -> None:
         if va_cham:
             raise ValueError(
                 f"preset {ten!r} vua cho phep vua cam {sorted(va_cham)}")
+
+    # ── Nang luc doi diem anh: mot muc, dung MOT trang thai ────────────────
+    #
+    # 🔑 Ba bang tren la ba TRANG THAI loai tru nhau — dang phuc vu, bi cam,
+    #    hoan lai. Mot ma nam o hai bang la mot hop dong noi hai cau khac nhau
+    #    ve cung mot tinh nang, va nguoi doc sau se lay cau nao tien cho ho.
+    #
+    # ⛔ Va cai nguy hiem khong phai mau thuan tho ("vua cho vua cam") — cai do
+    #    ai cung thay. Cai nguy hiem la mot ma trong `NANG_LUC_DOI_DIEM_ANH`
+    #    **cung** nam trong `HAU_MVP`: ma thi dang chay, tai lieu thi noi "chua
+    #    lam", va khong ai doi chieu hai cho ay.
+    doi = set(NANG_LUC_DOI_DIEM_ANH)
+    for ten_bang, bang in (("CAM_TRONG_MVP", CAM_TRONG_MVP),
+                           ("HAU_MVP", HAU_MVP)):
+        va_cham = doi & set(bang)
+        if va_cham:
+            raise ValueError(
+                f"nang luc {sorted(va_cham)} vua dang phuc vu vua nam trong "
+                f"{ten_bang}")
 
     if NGON_NGU_DICH not in NGON_NGU_DICH_HOP_LE:
         raise ValueError("NGON_NGU_DICH khong nam trong tap hop le")

@@ -253,6 +253,22 @@ def tom_tat(cac: list[KetQuaNan]) -> dict:
         "so_vong_tong": sum(k.so_vong for k in cac),
         "lech_lon_nhat": round(max((abs(lech(k.giay, k.khe)) for k in cac),
                                    default=0.0), 4),
+        # ⭐ V6 pha 22. Tung doan, de NGUONG `DUNG_SAI_DAI` do duoc tren du lieu
+        #    that. Truoc day chi co con so gop (so_vua / so_can_sua / lech lon
+        #    nhat), va con so gop khong tra loi duoc *"bao nhieu doan nam gan
+        #    nguong 0,08"* — tuc khong tra loi duoc chinh cau hoi ma chu thich
+        #    cua hang so do tu khai la CHUA DO.
+        #
+        # ⛔ KHONG ghi `chu`: day la sieu du lieu cua giai doan, con loi thoai
+        #    la noi dung cua khach. Mot con so thi du de do nguong.
+        #
+        # ⚠️ Khong nang `PHIEN_BAN_NAN`: day la hinh dang BAO CAO, khong phai
+        #    chinh sach nan — khong mot doan nao doi trang thai hay doi am thanh.
+        "tung_doan": [{"ma": k.ma, "trang_thai": k.trang_thai,
+                       "giay": round(k.giay, 3), "khe": round(k.khe, 3),
+                       "lech": round(lech(k.giay, k.khe), 4),
+                       "so_vong": k.so_vong,
+                       "he_so_co_gian": k.he_so_co_gian} for k in cac],
     }
 
 

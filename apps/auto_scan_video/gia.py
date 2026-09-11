@@ -220,3 +220,141 @@ def giong_chon_duoc(db, owner_id: str) -> list[dict]:
             #    cua ta o lan doi sau.
             ra.append({"ma": ma, "ten": str(getattr(g, "ten", "") or ma)})
     return ra
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  V5 — thu giao dien can, va chi giao dien can
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# ⚠️ Ba ham duoi day **khong** tham gia mach tinh tien. Chung dung `uoc_credit`
+#    o tren lam nguon duy nhat, va viec cua chung la BAY con so do ra cho khach
+#    nhin thay truoc khi bam. Mot cong thuc thu hai o day se la mot bang gia thu
+#    hai, va no se troi khoi bang gia that.
+
+#: Bien do cua khoang hien cho khach, quanh `uoc_credit`.
+#:
+#: 🔴 Vi sao la mot KHOANG chu khong phai mot so.
+#:
+#:    `uoc_credit` uoc theo **do dai video**, vi luc bam ta chua co ban chep loi.
+#:    Chi phi that ti le voi **luong noi**: mot video 10 phut im lang gan nhu
+#:    khong ton gi, mot video 10 phut noi lien mach ton nhieu hon han. Mot con so
+#:    don cho hai truong hop do la mot con so noi doi o it nhat mot trong hai.
+#:
+#: ⭐ Va no phai la mot khoang CO CAN TREN, khong phai "khoang 120". Khach can
+#:    biet **toi da** mat bao nhieu de quyet dinh, va `features.tao_run` giu cho
+#:    theo `uoc_credit` roi hoan phan du — nen can tren la thu ho thuc su doi mat.
+BIEN_DO_UOC = 0.20
+
+
+def uoc_khoang(thoi_luong_giay: float) -> tuple[int, int]:
+    """`(thap, cao)` credit de hien cho khach. `cao` la thu ho doi mat."""
+    giua = uoc_credit(thoi_luong_giay)
+    thap = max(GIA_TOI_THIEU, int(giua * (1.0 - BIEN_DO_UOC)))
+    cao = max(thap, int(round(giua * (1.0 + BIEN_DO_UOC))))
+    return thap, cao
+
+
+#: Boi so thoi gian xu ly so voi do dai video — cho DONG CHU "khoang bao lau".
+#:
+#: ⛔ CHUA DO, giong ba con so gia o dau tep. No o day de mot khach biet minh
+#:    doi vai phut hay vai chuc phut, khong phai de ai tin no la mot cam ket.
+#:
+#: ⚠️ Va no **khong** duoc dung lam ETA cua mot lan chay dang chay:
+#:    `V5_UI_INFORMATION_ARCHITECTURE.md` §7 cam gia ETA. ETA luc dang chay phai
+#:    do tu chinh lan chay do; con so nay chi tra loi "co nen bat dau bay gio
+#:    khong".
+BOI_SO_THOI_GIAN = 3.0
+THOI_GIAN_TOI_THIEU_S = 60
+
+
+def uoc_thoi_gian_giay(thoi_luong_giay: float) -> int:
+    return max(THOI_GIAN_TOI_THIEU_S,
+               int(round(max(0.0, float(thoi_luong_giay or 0)) * BOI_SO_THOI_GIAN)))
+
+
+def _nhan_loc() -> dict:
+    """Ba mat de loc giong. Nhan lay TU `ltt_voice`, khong go tay o day.
+
+    ⛔ Go tay ba bang nay la tao mot ban sao thu hai cua mot danh muc app khac
+       so huu — va ngay ho them mot vung hay mot phong cach, ban sao o day im
+       lang cu di.
+    """
+    try:
+        # ⚠️ MOT dong, khong ngoac xuong dong.
+        #
+        #    `tools/lint_app_contract.py:427` doc import bang mot regex MOT
+        #    DONG. Voi dang ngoac xuong dong, no doc ten dau thanh `(NHAN_GIOI`
+        #    va **khong kiem chut nao** nhung ten nam o dong tiep theo.
+        from apps.ltt_voice.giong_mau import NHAN_GIOI, NHAN_PHONG_CACH, NHAN_VUNG
+    except Exception as exc:      # noqa: BLE001 - app kia co the chua nap
+        log.warning("khong nap duoc nhan giong (%s: %s)", type(exc).__name__, exc)
+        return {"gioi": {}, "vung": {}, "phong_cach": {}}
+    return {"gioi": dict(NHAN_GIOI), "vung": dict(NHAN_VUNG),
+            "phong_cach": dict(NHAN_PHONG_CACH)}
+
+
+NHAN_LOC = _nhan_loc()
+
+
+def giong_cho_giao_dien(db, owner_id: str) -> list[dict]:
+    """`giong_chon_duoc` + ba nhan de loc + duong nghe thu.
+
+    🔑 Vi sao khong sua thang `giong_chon_duoc`: ham do da co nguoi goi va da
+       duoc chot o `test_447`. Mot ham RIENG cho giao dien giu cho mach cu khong
+       doi hinh dang, va lam ro rang phan "nhan + duong nghe" la nhu cau cua
+       **man hinh**, khong phai cua mach xu ly.
+
+    ⚠️ Giong NHAN BAN cua khach khong co ba nhan — chung khong phai giong mau.
+       Chung tra ve `gioi=""` va giao dien xep chung vao nhom rieng, thay vi bia
+       ra mot nhan.
+
+    ⭐ Giong khong co tep nghe thu thi **vang mat khoi `duong_nghe`**, khong phai
+       mot chuoi rong. Do la hop dong cua `nghe_thu.duong_cho_trang`, va no co
+       ly do: mot URL 404 cho ra mot nut phat bam duoc ma khong keu — dung thu
+       te nhat.
+    """
+    co_ban = giong_chon_duoc(db, owner_id)
+
+    thuoc_tinh: dict = {}
+    try:
+        from apps.ltt_voice.giong_mau import loc
+        for g in loc() or []:
+            thuoc_tinh[str(getattr(g, "ma", ""))] = {
+                "gioi": str(getattr(g, "gioi", "") or ""),
+                "vung": str(getattr(g, "vung", "") or ""),
+                "phong_cach": str(getattr(g, "phong_cach", "") or ""),
+            }
+    except Exception as exc:      # noqa: BLE001
+        log.warning("khong nap duoc thuoc tinh giong mau (%s: %s)",
+                    type(exc).__name__, exc)
+
+    duong: dict = {}
+    try:
+        # ⛔ KHONG doc `ltt_voice.manifest`. Mot manifest la thu ca nen tang
+        #    doc — xuat no cho mot app khac la xuat ca `job_types`,
+        #    `credit_cost`, `bao_tri`, `tables`, chi de lay mot chuoi duong dan.
+        #    `test_435` chan dung viec do, va no chan dung.
+        from apps.ltt_voice.nghe_thu import duong_cho_app_khac
+        ma_mau = [m for m in thuoc_tinh]
+        rieng = [g["ma"] for g in co_ban if g["ma"] not in thuoc_tinh]
+        duong = duong_cho_app_khac(
+            owner_id=owner_id, ma_mau=ma_mau, rieng=rieng) or {}
+    except Exception as exc:      # noqa: BLE001 - kho co the chua san sang
+        log.warning("khong dung duoc duong nghe thu (%s: %s)",
+                    type(exc).__name__, exc)
+
+    # ⚠️ Ten bien KHAC `g` o vong lap tren. Dung lai `g` khong sai luc chay,
+    #    nhung `mypy` da suy `g: GiongMau` tu vong truoc va bao ba loi o day —
+    #    `dict` khong gan duoc vao `GiongMau`, va `GiongMau` khong index duoc.
+    #    Mot ten rieng noi dung thu no dang la, va lam ba loi do bien mat.
+    ra = []
+    for muc_goc in co_ban:
+        ma = muc_goc["ma"]
+        tt = thuoc_tinh.get(ma) or {}
+        muc = {"ma": ma, "ten": muc_goc["ten"], "la_mau": ma in thuoc_tinh,
+               "gioi": tt.get("gioi", ""), "vung": tt.get("vung", ""),
+               "phong_cach": tt.get("phong_cach", "")}
+        if ma in duong:
+            muc["duong_nghe"] = duong[ma]
+        ra.append(muc)
+    return ra

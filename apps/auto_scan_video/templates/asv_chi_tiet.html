@@ -1,3 +1,8 @@
+{# Man mot lan chay. CUNG mot URL cho "dang chay" va "da xong".
+
+   ⭐ Khong tach hai trang: khach gui link cho nguoi khac thi link van dung o moi
+      thoi diem. Noi dung doi theo `run.status`, dia chi thi khong.
+#}
 {% extends "base.html" %}
 {% block title %}{{ _("Lần chạy") }} — LTT AI Studio{% endblock %}
 {% block topbar_title %}<strong>{{ _("Lồng tiếng Việt") }}</strong>{% endblock %}
@@ -8,7 +13,17 @@
 
   <header class="asv-dau">
     <div>
-      <h1 id="asv-ct">{{ _("Tiến độ lồng tiếng") }}</h1>
+      {# 🔴 Bon trang thai, bon tieu de. Ban dau cho nay chi phan biet `done` voi
+         "moi thu con lai", nen mot lan chay **da hong** van doi tieu de "Dang
+         long tieng" — khach doc mot dong noi viec dang chay ben tren mot khung
+         do noi viec da dung. `R4` bat duoc dieu nay, va no chi lo ra khi co du
+         lieu THAT o tung trang thai. #}
+      <h1 id="asv-ct">
+        {% if run.status == "done" %}{{ _("Video đã lồng tiếng") }}
+        {% elif run.status == "error" %}{{ _("Lần chạy chưa hoàn tất") }}
+        {% elif run.status == "cancelled" %}{{ _("Lần chạy đã huỷ") }}
+        {% else %}{{ _("Đang lồng tiếng") }}{% endif %}
+      </h1>
       <p class="asv-ghi-chu">
         {{ _("Bắt đầu") }}: {{ run.created_at.strftime("%d/%m/%Y %H:%M") if run.created_at else "—" }}
       </p>
@@ -17,6 +32,123 @@
   </header>
 
   {% include "asv_tien_do.html" %}
+  {# ── Chi phi (V6 pha 30) ──────────────────────────────────────────────────
+     🔴 `quan_sat.tom_tat_cho_khach` da tinh san bang nay tu V4 — va KHONG AI
+        GOI no. Khach tra tien ma khong thay minh tra cho viec gi.
+     ⭐ Theo NANG LUC (doc loi, dich, xem canh), khong theo ten nha cung cap.
+     ⛔ "Hoan lai" chi hien sau khi quyet toan — truoc do con so con dang tang. #}
+  {% if chi_phi %}
+  <details class="asv-nang-cao" id="asv-chi-phi">
+    <summary>{{ _("Chi phí") }}</summary>
+    <ul class="asv-cai-dat">
+      <li>{{ _("Đã giữ khi tạo lần chạy") }}: {{ chi_phi.credit_da_giu }} {{ _("credit") }}</li>
+      {% if chi_phi.da_quyet_toan %}
+        <li>{{ _("Đã tính") }}: {{ chi_phi.credit_da_tinh }} {{ _("credit") }}</li>
+        <li>{{ _("Hoàn lại") }}: {{ chi_phi.hoan_lai }} {{ _("credit") }}</li>
+      {% else %}
+        <li class="asv-ghi-chu">{{ _("Phần chưa dùng được hoàn lại khi lần chạy kết thúc.") }}</li>
+      {% endif %}
+    </ul>
+    {% if chi_phi.chi_phi_theo_nang_luc %}
+      <div style="overflow-x:auto">
+        <table class="asv-bang">
+          <thead><tr><th>{{ _("Việc") }}</th><th>{{ _("Khối lượng") }}</th><th>{{ _("Credit") }}</th></tr></thead>
+          <tbody>
+          {% for m in chi_phi.chi_phi_theo_nang_luc %}
+            <tr><td>{{ _(m.nhan) }}</td>
+                <td>{{ "%g"|format(m.so_luong) }} {{ _(m.nhan_don_vi) if m.nhan_don_vi else "" }}</td>
+                <td>{{ m.credit }}</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="asv-ghi-chu">{{ _("Chưa có việc nào được tính tiền.") }}</p>
+    {% endif %}
+  </details>
+  {% endif %}
+
+  {# ── Cai dat da dung ───────────────────────────────────────────────────
+     🔑 Khach xem lai mot lan chay cu **khong biet minh da chon gi**. Ban truoc
+        cua man nay khong hien mot lua chon nao, nen "chay lai giong the nay"
+        la mot viec khach phai nho bang dau.
+
+     ⛔ Chi hien nhung gi khach DA CHON, khong dump `run.settings`. Trong do co
+        `voice_id` trung lap va nhung khoa noi bo cua cac pha truoc. #}
+  <details class="asv-nang-cao">
+    <summary>{{ _("Cài đặt đã dùng") }}</summary>
+    <ul class="asv-cai-dat">
+      {#- ⛔ Doc qua `cai` — ban doc TOAN PHAN do `cai_dat.doc(run)` cho.
+          Truoc pha 07 khoi nay goi `run.settings.get(...)` **khong kem mac
+          dinh**, nen mot ho so thieu khoa lam ca dong bien mat: vong lap
+          khong khop gi, va khach doc mot o trong o cho le ra phai noi cach
+          khop thoi gian. -#}
+      <li>{{ _("Kiểu xử lý") }}:
+        {% for ma, ten, _mo_ta in preset %}{% if ma == cai.preset %}{{ _(ten) }}{% endif %}{% endfor %}
+      </li>
+      <li>{{ _("Cách khớp thời gian") }}:
+        {% for ma, ten, _mo_ta in che_do %}{% if ma == cai.timing_mode %}{{ _(ten) }}{% endif %}{% endfor %}
+      </li>
+      <li>{{ _("Giọng đọc") }}: {{ cai.giong_id or "—" }}</li>
+      <li>{{ _("Vùng che") }}:
+        {% if cai.vung %}{{ cai.vung | length }}{% else %}{{ _("không có") }}{% endif %}
+      </li>
+      {#- ⭐ Hai dong cho NGUOI VAN HANH, khong phai cho khach doc thuong: hai
+          lan chay "trong nhu nhau" ma khac van tay la hai lan chay KHAC nhau,
+          va do la cau hoi dau tien khi ai do hoi vi sao hai video khong giong
+          nhau. `v0` nghia la ho so tao truoc khi schema duoc danh so — mot ho
+          so cu hop le, khong phai mot ho so hong. -#}
+      <li class="asv-ghi-chu">{{ _("Hồ sơ cấu hình") }}:
+        v{{ ho_so_phien_ban }} · <code>{{ ho_so_van_tay }}</code>
+      </li>
+    </ul>
+  </details>
+
+  {# ── Bang ke canh (V6 pha 09) ──────────────────────────────────────────
+
+     🔴 Truoc pha nay, chuoi tach canh bang ffmpeg, goi model doc TUNG canh —
+        mot buoc co tinh tien — roi quyet dinh bo canh nao. Khach khong thay
+        duoc mot dong nao trong so do: ho tra tien cho mot quyet dinh ho khong
+        duoc xem.
+
+     ⛔ CHI XEM. Khong o chon, khong keo tha, khong nut "giu canh nay". Chuoi
+        thi hanh nam trong MA NGUON (`pipeline.CHUOI`) chu khong trong CSDL, va
+        mot o chon o day la buoc dau tien cua cai do thi ma `MVP_CONTRACT` muc 5
+        cam. Doi y thi chay lai voi preset khac.
+
+     ⚠️ Va khong hien `ly_do` cua tung canh: no viet cho nguoi van hanh, mang
+        ten mot he con va mot con so nguong. Xem `quan_sat.dong_canh`. #}
+  {% if canh and canh.so_canh %}
+  <section class="asv-canh" aria-labelledby="asv-canh-tt">
+    <h2 id="asv-canh-tt" class="asv-nhan-nhom">{{ _("Các cảnh trong video") }}</h2>
+    <p class="asv-ghi-chu">
+      {{ _("%(tong)s cảnh · giữ %(giu)s · bỏ %(bo)s") % {"tong": canh.so_canh, "giu": canh.so_giu, "bo": canh.so_cat} }}
+    </p>
+    <div class="asv-canh-thanh" role="img"
+         aria-label="{{ _('Dải cảnh: phần sáng là giữ lại, phần mờ là bỏ đi.') }}">
+      {% for c in canh.canh %}
+        <span class="asv-canh-vach {{ 'asv-canh-giu' if c.giu else 'asv-canh-bo' }}"
+              style="left:{{ c.bat_pt }}%;width:{{ c.rong_pt }}%"></span>
+      {% endfor %}
+    </div>
+    <ol class="asv-canh-ds">
+      {% for c in canh.canh %}
+        <li class="{{ 'asv-canh-giu' if c.giu else 'asv-canh-bo' }}">
+          <span class="asv-canh-moc">{{ '%.1f'|format(c.bat) }}s – {{ '%.1f'|format(c.ket) }}s</span>
+          <span class="asv-canh-nhan">{{ _("Giữ lại") if c.giu else _("Bỏ đi") }}</span>
+        </li>
+      {% endfor %}
+    </ol>
+    {% if canh.da_hoan_cat %}
+      {# ⭐ Su that nay chi noi duoc o CAP BAN: mot canh duoc hoan cat khong phan
+         biet duoc voi mot canh duoc giu ngay tu dau, neu chi nhin cac truong co
+         cau truc. Xem docstring cua `quan_sat.dong_canh`. #}
+      <p class="asv-ghi-chu">
+        {{ _("Có %(n)s cảnh được giữ lại để video không bị cắt quá nhiều.") % {"n": canh.da_hoan_cat} }}
+      </p>
+    {% endif %}
+  </section>
+  {% endif %}
 
   {# ── Chi tiet van hanh: MAC DINH AN, va chi hien cho operator ──────────
      Prompt 20 muc 6. Khach khong can biet job id hay ten worker; nguoi ho tro
@@ -48,6 +180,17 @@
         {{ _("giữ") }} {{ van_hanh.credit_da_giu }} ·
         {{ _("tính") }} {{ van_hanh.credit_da_tinh }}
       </p>
+      {# ── Ho so ket xuat — thu ma `SUA-GPU-CHAM.bat` cua he tham chieu ton tai vi
+         thieu: bo ma hoa nao da chay, va nhanh cham the nao.
+         ⛔ Chi cho operator. Khach khong bao gio thay ten encoder. #}
+      {% if van_hanh.ket_xuat %}
+        <p class="asv-ghi-chu">
+          {{ _("Bộ mã hoá") }}: <code>{{ van_hanh.ket_xuat.bo_ma_hoa }}</code>
+          {% if van_hanh.ket_xuat.lan_realtime %}
+            · {{ "%.1f"|format(van_hanh.ket_xuat.lan_realtime) }}× realtime
+          {% endif %}
+        </p>
+      {% endif %}
     </details>
   {% endif %}
 

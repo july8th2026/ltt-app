@@ -22,11 +22,6 @@
     "apps/autosubvideo/subtitle_adapter.py": 1,
     "apps/autosubvideo/templates/autosubvideo.html": 17,
     "apps/autosubvideo/transcription.py": 9,
-    "apps/chataistudio/features.py": 4,
-    "apps/chataistudio/manifest.py": 1,
-    "apps/chataistudio/routes.py": 4,
-    "apps/chataistudio/sidecar_client.py": 2,
-    "apps/chataistudio/templates/chataistudio_admin.html": 9,
     "apps/ltt_voice/manifest.py": 1,
     "apps/prompt_ai_ommi/jobs.py": 7,
     "apps/prompt_ai_ommi/manifest.py": 4,
@@ -113,5 +108,5 @@
     "server/templating.py": 6,
     "server/usage_rate_limit.py": 1
   },
-  "tong": 732
+  "tong": 712
 }

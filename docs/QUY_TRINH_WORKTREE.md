@@ -45,6 +45,7 @@ Khác 0 nghĩa là `master` lại tụt lại. Đừng tạo worktree từ nó.
 
 ```powershell
 robocopy D:\LTTSTUDIOSAPP\apps\upscalevideo\vendor <cây-mới>\apps\upscalevideo\vendor /E
+Copy-Item D:\LTTSTUDIOSAPP\yolov8n.pt <cây-mới>\yolov8n.pt
 ```
 
 ⛔ Không có bước này thì **gate không bao giờ xanh được** trong worktree mới, và
@@ -54,6 +55,55 @@ cái đỏ đó không nói lên điều gì về code. `.gitignore` loại `app
 
 ⚠️ Một lượt gate đỏ vì thiếu tài sản còn tệ hơn không chạy gate: nó dạy người
 đọc bỏ qua màu đỏ.
+
+🔴 **`yolov8n.pt` thêm 09/09, sau khi mục này đã tồn tại và vẫn bỏ sót nó.**
+Nó nằm ở **gốc kho**, untracked, không nằm dưới `apps/*/vendor/` — nên đọc câu
+`.gitignore` ở trên rồi suy ra "chỉ có `vendor/`" là suy sai. Thiếu nó thì
+`test_505::test_moi_duong_khai_deu_CO_THAT_tren_dia` đỏ, và câu nó nói —
+*"khai nhưng không có trên đĩa: ['yolov8n.pt']"* — **không nhắc một chữ nào tới
+worktree**, nên người đọc đi tìm lỗi trong mã.
+
+⇒ Cách đúng để lấy danh sách này là **hỏi cây chính**, không phải chép lại một
+bảng trong tài liệu (bảng chép tay không có cách nào tự biết nó đã cũ):
+
+```powershell
+git -C D:\LTTSTUDIOSAPP status --ignored --porcelain |
+  Where-Object { $_ -like '!!*' -and $_ -notlike '*__pycache__*' }
+```
+
+Đo 09/09 nó trả về đúng hai mục thật: `apps/upscalevideo/vendor/` và
+`yolov8n.pt` (cộng `desktop.ini` của Windows, bỏ qua được).
+
+### 1c. Sau khi hoà trunk có XOÁ app: dọn thư mục ma
+
+🔴 `git` theo dõi **tệp**, không theo dõi **thư mục**. Một commit xoá cả một app
+sẽ xoá hết tệp của nó, nhưng thư mục vẫn nằm lại trên đĩa nếu trong đó còn thứ
+`.gitignore` bỏ qua — và `__pycache__` thì luôn còn. `git status` **sạch**, còn
+`apps/<app đã xoá>/` thì vẫn **tồn tại**.
+
+Đo 09/09 sau khi hoà 47 commit trunk vào một nhánh V6:
+
+```
+apps/chataistudio/     chỉ còn 6 tệp .pyc   -> test_60, test_85, `app contract lint` ĐỎ
+codex_sidecar/         thư mục RỖNG hoàn toàn -> test_1004 ĐỎ
+```
+
+⚠️ Ba bước đỏ đó **không nói gì về worktree**: chúng nói "một thư mục trong
+`apps/` không có manifest" và "pha 07 khai đã xoá nhưng vẫn còn". Người đọc đi
+tìm lỗi trong mã.
+
+```powershell
+git clean -ndX apps/          # xem truoc, chua xoa gi
+git clean -fdX apps/          # xoa that
+Get-ChildItem . -Recurse -Directory | Where-Object {
+  (Get-ChildItem $_.FullName -Recurse -File -Force).Count -eq 0 }   # thu muc rong
+```
+
+⛔ **Và đừng hạ mốc `ruff`/`mypy` sau lần dọn này.** Dọn xong thì số phát hiện
+**giảm** (đo 09/09: `attr-defined` 204 → 188, `F401` 415 → 414) vì mã của app đã
+xoá không còn được quét. Hạ mốc theo con số ấy sẽ làm **đỏ mọi cây chưa dọn** —
+mà cây chưa dọn là trạng thái **mặc định**, vì git để thư mục ma lại. Hạ mốc là
+việc làm sau, một lần, khi mọi cây đã sạch.
 
 ### 2. Mỗi phiên tự kiểm cây mình đang đứng
 

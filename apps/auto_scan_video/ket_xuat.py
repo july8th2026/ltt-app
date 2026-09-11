@@ -143,6 +143,9 @@ def dung_lenh(ban: dict, *, ffmpeg_bin: str, duong_video: str,
               duong_master: str,
               duong_lop: list[str], duong_ra: str,
               bo_ma_hoa: str = "",
+              duong_chu: list[str] | None = None,
+              duong_logo: list[str] | None = None,
+              duong_ass: str = "",
               tien_do: bool = True) -> list[str]:
     """Ban dung + duong dan cuc bo -> argv. Khong cham mot tep nao.
 
@@ -150,6 +153,11 @@ def dung_lenh(ban: dict, *, ffmpeg_bin: str, duong_video: str,
        voi mot danh sach lech thu tu se ra mot ban long tieng trong do moi cau
        nam o cho cua mot cau khac — va no **khong hong**, no chi sai. Nen ham
        tu kiem thay vi tin nguoi goi.
+
+    ⭐ `duong_chu` di theo dung khuon do, va vi dung mot ly do: `drawtext` doc
+       chu tu mot TEP UTF-8 (`textfile=`) chu khong tu chuoi dong lenh — xem
+       `lop_phu` doan "`textfile=` chu khong `text=`". Ham nay **khong ghi** tep
+       nao; nguoi goi ghi truoc roi dua duong dan vao, y het `duong_lop`.
     """
     from . import che_do_render as cdr
 
@@ -187,8 +195,30 @@ def dung_lenh(ban: dict, *, ffmpeg_bin: str, duong_video: str,
                 .format(p=preset, c=cach))
 
     ra = ban["ra"]
+    # 🔴 **Thu tu dau vao la mot phan cua hop dong, va no khong duoc doan.**
+    #
+    #    `0` = hinh, `1` = ban phoi am, `2..` = logo. `che_do_render._loc_logo`
+    #    nhan chi so dau tu day chu KHONG tu suy ra — neu no tu doan `2`, thi
+    #    ngay ai do them mot dau vao thu ba, moi logo se lay diem anh cua **ban
+    #    phoi am**, va ffmpeg khong bao gi ca: no chi dan mot thu khac len.
+    CHI_SO_LOGO_DAU = 2
+    ds_logo_ban = list((ban.get("hinh") or {}).get("logo") or ())
+    dlogo = list(duong_logo or ())
+    if len(dlogo) != len(ds_logo_ban):
+        raise KetXuatError(
+            _t('Số tệp logo ({co}) không khớp số logo trong bản dựng ({can}).')
+            .format(co=len(dlogo), can=len(ds_logo_ban)))
+
     cmd = [ffmpeg_bin, "-y", "-hide_banner", "-loglevel", "error",
            "-i", duong_video, "-i", duong_master]
+    for _d in dlogo:
+        cmd += ["-i", str(_d)]
+
+    if cach == cdr.SAO_CHEP and ds_logo_ban:
+        # ⛔ Da bi `ban_dung.kiem` chan, nhung chot lai o day: mot dau vao logo
+        #    da duoc them vao `cmd` o tren, va `-c:v copy` se lang le bo qua no.
+        raise KetXuatError(
+            _t('Bản dựng khai preset giữ hình nhưng có logo.'))
 
     if cach == cdr.SAO_CHEP:
         # ── Preset giu hinh: luong hinh di THANG tu nguon sang ban ra ─────
@@ -212,7 +242,33 @@ def dung_lenh(ban: dict, *, ffmpeg_bin: str, duong_video: str,
         if bo not in cdr.THAM_SO:
             raise KetXuatError(
                 _t('Bộ mã hoá không được khai: {b}').format(b=bo))
-        cmd += ["-filter_complex", cdr.loc_cat_noi(khoang), "-map", "[ra]"]
+        # ⭐ `vung` di CUNG mot duong voi `khoang_giu`, va no chi ton tai o day.
+        #    `ban_dung.kiem` da chan mot ban dung vua `sao_chep` vua co vung, nen
+        #    toi cho nay khong con truong hop nao phai xu ly rieng.
+        # ⭐ `lop_phu` di CUNG duong voi `vung` — cung mot rang buoc vat ly, va
+        #    `ban_dung.kiem` da chan mot ban dung vua `sao_chep` vua co lop phu.
+        lp = list(hinh.get("lop_phu") or ())
+        dchu = list(duong_chu or ())
+        if len(dchu) != len(lp):
+            # ⛔ Cung hinh dang loi voi `duong_lop` o tren: lech thu tu hay lech
+            #    so luong deu KHONG lam ffmpeg hong, chung chi lam ban ra sai —
+            #    dong chu thu nhat mang noi dung cua dong thu hai.
+            raise KetXuatError(
+                _t('Số tệp chữ ({co}) không khớp số lớp phủ trong bản dựng ({can}).')
+                .format(co=len(dchu), can=len(lp)))
+        cmd += ["-filter_complex",
+                cdr.loc_cat_noi(khoang, vung=(hinh.get("vung") or ()),
+                                lop_phu=lp, duong_chu=dchu,
+                                cao_khung=int(hinh.get("cao_khung") or 0),
+                                ds_logo=ds_logo_ban,
+                                rong_khung=int(hinh.get("rong_khung") or 0),
+                                chi_so_logo_dau=CHI_SO_LOGO_DAU,
+                                # ⭐ `.ass` KHONG la mot `-i`: `ass=` la bo loc
+                                #    doc tep truc tiep, nen no khong an mot chi
+                                #    so dau vao. Do la ly do `CHI_SO_LOGO_DAU`
+                                #    khong phai doi khi pha 14 them phu de.
+                                duong_ass=duong_ass),
+                "-map", "[ra]"]
         cmd += list(cdr.tham_so(bo))
 
     # ── Tieng: BAN PHOI cua pha 16, khong tron lai ───────────────────────

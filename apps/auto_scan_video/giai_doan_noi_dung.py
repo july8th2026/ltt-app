@@ -110,7 +110,11 @@ def _giong_da_chot(db, run) -> tuple[str, dict]:
        giong mac dinh o day khong hong ra loi nao: no cho ra mot ban long tieng
        nghe duoc, chi la khong phai giong khach dat.
     """
-    yc = rang_giong.tu_thiet_lap(dict(run.settings or {}))
+    # `tu_thiet_lap` van nhan mot dict — `rang_giong` KHONG duoc import
+    # `cai_dat` (vong tron: `cai_dat` doc `CHE_DO_GIONG_MAC_DINH` cua no).
+    # Nen ta chuan hoa TRUOC roi dua vao.
+    from . import cai_dat as cd
+    yc = rang_giong.tu_thiet_lap(cd.chuan_hoa(run.settings))
     kq = rang_giong.rang(db, owner_id=run.owner_id, yeu_cau=yc)
     return kq.ma_giong(), dict(kq.can_cu or {})
 

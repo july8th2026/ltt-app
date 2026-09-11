@@ -70,6 +70,42 @@ repos:
         pass_filenames: false
         always_run: true
 
+      # 🔴 **Them 10/09, va no la hook DUY NHAT dung `pass_filenames`.**
+      #
+      #    Ly do co that, 10/09: mot byte `0x07` — dau xuoc nguoc dat truoc chu
+      #    `a` trong mot chuoi Python KHONG raw — di vao
+      #    `PHA15_BAO_CAO_NEN_KHO.md` va len trunk. Buoc `ky tu dieu khien` chi
+      #    nam trong GATE DAY DU, nen `pre-commit` cho qua, va no NO o cay cua
+      #    **nguoi ff sau** — tuc nguoi khong gay ra no.
+      #
+      #    ⭐ Van ban nguoi doc thay van xuoi (`secretspp.env` trong nhu mot loi
+      #       go), nen doc ky hon khong bat duoc: loi chi ton tai o tang BYTE.
+      #       Chu tep da doc lai chinh doan ay vai lan ma khong thay.
+      #
+      # 🔴 **Va chinh doan chu thich nay da sinh ra mot byte `0x07` nua khi no
+      #    duoc viet.** Cong cu shell nuot mot lop dau xuoc nguoc, nen chuoi
+      #    tuong la hai ky tu tro thanh mot BEL — dung co che vua mo ta, trong
+      #    chinh lan sua no. `yaml.safe_load` tu choi tep, va do la thu bat duoc.
+      #
+      #    ⇒ Neu can viet mot day thoat vao tai lieu: **dung Write/Edit, dung
+      #      ghi qua shell**, va doc lai bang `read_bytes` truoc khi tin.
+      #
+      # ⚠️ `pass_filenames: true` chu khong `always_run` — khac ba hook tren, va
+      #    khac vi mot ly do:
+      #
+      #      banh coc     do TOAN KHO, nen mot commit chi sua tai lieu van co
+      #                   the doi con so  ->  phai `always_run`
+      #      ky tu        mot ky tu dieu khien trong tep X do mot commit CHAM
+      #                   tep X dua vao   ->  chi can quet tep staged
+      #
+      #    Do duoc (955 tep): ca kho **0,85 giay**, hai tep `.md` **0,06 giay**.
+      #    Gate van quet ca kho — hai duong tra loi hai cau khac nhau.
+      - id: ky-tu-dieu-khien
+        name: ky tu dieu khien trong tai lieu (chi tep dang commit)
+        entry: python tools/check_ky_tu_dieu_khien.py
+        language: system
+        files: \.(md|txt)$
+
       - id: cau-hinh-thuan-ascii
         name: mypy.ini / .importlinter / *.ps1 phai thuan ASCII
         entry: python tools/check_ascii_cau_hinh.py

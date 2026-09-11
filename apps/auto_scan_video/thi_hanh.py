@@ -30,7 +30,7 @@ from platform_core.db import get_session
 from platform_core.i18n import _ as _t
 from platform_core.storage import get_storage
 
-from . import (assets, features, giai_doan_am_thanh, giai_doan_ban_dung,
+from . import (assets, cache_chung, features, giai_doan_am_thanh, giai_doan_ban_dung,
                giai_doan_ban_bien_tap,
                giai_doan_chep_loi, giai_doan_giong, giai_doan_ket_xuat,
                giai_doan_media, giai_doan_noi_dung, giai_doan_qc, giai_doan_qc_ai,
@@ -281,8 +281,21 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
         # Chot BAT BUOC truoc moi lan ton tien (ADR-001 D4).
         features.kiem_tran_chi(db, run, CHI_PHI_GIA)
 
+        # ── Cache DUNG CHUNG xuyen lan chay (V6 pha 25) ─────────────────────
+        # 🔑 Khoa la DIA CHI NOI DUNG, khong phai `vt`: `vt` khong mang danh tinh
+        #    nguon, nen hai video khac nhau cung settings trung `vt`. Xem
+        #    `cache_chung.py`. Ket qua di qua DUNG duong promote ben duoi.
+        # ⚠️ Chi o lan thu DAU. `attempt > 1` la khach bam "thu lai" (hoac mot lan
+        #    engine vua hong): tra lai dung ket qua cu la lam ngo cau hoi. Lech ve
+        #    phia TINH LAI, khong ve phia dung sai.
+        kc = cache_chung.khoa(db, run, ten, engine=phien_ban_engine(ten))
+        ra = (cache_chung.lay(db, kho, run=run, ten=ten, khoa_chung=kc)
+              if int(stage.attempt or 0) <= 1 else None)
+
         # ── Buoc 1: engine ────────────────────────────────────────────────
-        if ten == pipeline.MEDIA_PREPARE:
+        if ra is not None:
+            pass    # da co tu cache dung chung — di thang toi promote
+        elif ten == pipeline.MEDIA_PREPARE:
             ra = giai_doan_media.chay(db, kho, run=run, ctx=ctx)
         elif ten == pipeline.AUDIO_PREPARE:
             ra = giai_doan_am_thanh.chay(db, kho, run=run, ctx=ctx)
@@ -334,6 +347,10 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
 
         ket_qua = {"stage": ten, "khoa_asset": khoa_ra,
                    **(ra.get("tom_tat") or {})}
+        # Ghi khoa ca khi TINH THAT — do chinh la cach mot ket qua duoc cong bo
+        # cho lan chay sau cua cung khach tim thay.
+        if kc:
+            ket_qua["khoa_chung"] = kc
 
         # 🔑 QC la mot CONG, va mot cong phai CHAN duoc (Prompt 18 muc 2).
         #

@@ -142,6 +142,26 @@ APP_DUOC_DUNG_APP: dict = {
         # job sang do la de viec GPU roi vao lan ffmpeg.
         ("apps.autosubvideo.ai_workflows", "diarize_file"),
         ("apps.autosubvideo.ai_workflows", "assign_speakers"),
+        # ── Tang TAC GIA phu de (V6 pha 14) ─────────────────────────────
+        #
+        # ⭐ Cung khuon BOC nhu ba ten tren, nhung mot ly do khac han: ba ten
+        #    kia bi boc vi ban khai tai nguyen cua app chu SAI (viec GPU roi
+        #    vao lan ffmpeg). Sau ten nay bi boc vi mot ly do KIEN TRUC —
+        #    `burn.burn()` chay mot luot ffmpeg day du cua rieng no, con Auto
+        #    Scan da co san mot `-filter_complex` de nhet `ass=` vao.
+        #
+        # ⛔ `burn` khong nam trong danh sach, va do la chu dich. Xem
+        #    `apps/autosubvideo/__init__.py` — hai phia phai giai thich CUNG
+        #    mot quyet dinh, vi hai phia deu sua duoc doc lap.
+        ("apps.autosubvideo.style_registry", "list_ids"),
+        ("apps.autosubvideo.style_registry", "list_presets"),
+        ("apps.autosubvideo.style_registry", "get_config"),
+        ("apps.autosubvideo.segmenter", "SegmentMode"),
+        ("apps.autosubvideo.segmenter", "SubtitleEvent"),
+        ("apps.autosubvideo.ass_builder", "build_ass"),
+        ("apps.autosubvideo.ass_builder", "build_srt"),
+        # Pha 16: mo hinh kieu chu — duyet tinh chinh bang chinh no.
+        ("apps.autosubvideo.schemas", "SubtitleStyleConfig"),
     },
 
     # ── Auto Scan Video doc NGAN SACH TOKEN cua model nha ───────────────────
@@ -217,6 +237,20 @@ APP_DUOC_DUNG_APP: dict = {
         ("apps.ltt_voice.giong_mau", "NHAN_GIOI"),
         ("apps.ltt_voice.giong_mau", "NHAN_VUNG"),
         ("apps.ltt_voice.giong_mau", "NHAN_PHONG_CACH"),
+        # ── V5: nghe thu giong TRUOC khi chon ───────────────────────────────
+        #
+        # 🔑 Ba nhan khong tra loi duoc "giong nay nghe nhu the nao". Truoc muc
+        #    nay, cach duy nhat de biet la chay that mot lan — tra tien de xem
+        #    minh co muon mua khong.
+        #
+        # ⭐ `duong_cho_trang` chu KHONG `khoa_mau`/`khoa_rieng`: MOT tham quyen
+        #    dung duong nghe thu. Bai hoc da tra gia o `du_an.duong_tieng()`,
+        #    noi nam cho tu ghep URL va sua cho dung nghia la phai nho du nam.
+        #
+        # ⛔ Khong mo them cua doc nao: tep van do route `/audio` cua LTT VOICE
+        #    phuc vu, noi phep kiem so huu da o san. Auto Scan nhan URL, khong
+        #    nhan tep va khong nhan khoa.
+        ("apps.ltt_voice.nghe_thu", "duong_cho_app_khac"),
     },
 }
 

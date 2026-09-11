@@ -1,0 +1,37 @@
+{
+  "giay_dung_nguon": 3.79,
+  "co_nguon_byte": 21396684,
+  "giay_lay_khung_khoa": 0.171,
+  "so_khung_khoa": 12,
+  "giay_lay_khung_day_du": 0.516,
+  "so_khung_day_du": 12,
+  "lan_nhanh_hon": 3.02,
+  "giay_do": 0.015,
+  "ket_qua": {
+    "schema": "asv.watermark.v1",
+    "phien_ban": 1,
+    "do_duoc": false,
+    "ly_do": "tuong_phan_thap",
+    "ti_le_o_tinh": 0.8559,
+    "so_khung": 12,
+    "ds": []
+  },
+  "chan_ly_nen": [
+    0.7656,
+    0.0556,
+    0.9606,
+    0.1356
+  ],
+  "tim_thay_gan_dung": false,
+  "giay_encode_moc": 2.99,
+  "giay_encode_delogo": 3.15,
+  "giay_bien_delogo": 0.16,
+  "giay_bien_moi_khung": 8.889e-05,
+  "so_khung_do": 1800,
+  "cong_xoa_video_30_phut": {
+    "mo": true,
+    "ly_do": "du_ngan_sach",
+    "giay_uoc": 4.8,
+    "tran_giay": 540.0
+  }
+}

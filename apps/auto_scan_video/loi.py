@@ -160,6 +160,106 @@ def phan_loai(exc: BaseException) -> str:
     if isinstance(exc, RangGiongError):
         return NGUOI_DUNG
 
+    # ── Vung che (V5) ───────────────────────────────────────────────────────
+    #
+    # 🔑 `VungLoi` la toa do khong hop le: sai dinh dang, ngoai khoang 0..1, ve
+    #    nguoc, hay qua nho. Chay lai cung mot bo toa do se hong y het.
+    #
+    # ⚠️ Hom nay no chi duoc nem trong `routes.tao` va bat ngay tai do, nen no
+    #    **chua bao gio** toi duoc ham nay. Van phan loai, va do la co y: neu mot
+    #    pha sau goi `vung_che.chuan_hoa` tu ben trong mot job, no phai roi vao
+    #    nhanh dung chu khong roi xuong `retry` — dung dieu `test_418` goi la
+    #    "im lang thua ke hanh vi nguy hiem nhat trong bang".
+    from .vung_che import VungLoi
+    if isinstance(exc, VungLoi):
+        return NGUOI_DUNG
+
+    # ── Tu dien ten rieng (V5) ────────────────────────────
+    #
+    # Cung ly do voi `VungLoi` ngay tren: hom nay no chi duoc nem trong
+    # `routes.tao` va bat ngay tai do, nen chua bao gio toi duoc ham nay.
+    # Van phan loai — chay lai cung mot tu dien sai se hong y het, nen no
+    # khong duoc roi xuong nhanh `retry`.
+    from .tu_dien import TuDienLoi
+    if isinstance(exc, TuDienLoi):
+        return NGUOI_DUNG
+
+    # ── Cat dau/cuoi (V6 pha 10) ────────────────────────────────────────────
+    #
+    # ⚠️ **Khac hai muc tren o mot cho, va cho do la ly do muc nay quan trong
+    #    hon ca hai.** `VungLoi` va `TuDienLoi` chi duoc nem o `routes.tao` roi
+    #    bat ngay tai do — chung phan loai o day cho tuong lai.
+    #
+    #    `CatLoi` thi **that su di toi day hom nay**: `giai_doan_ban_dung` goi
+    #    `cat_dau_cuoi.giao`, va `giao` nem khi cua so khong cham khoang giu nao.
+    #    Do la mot job, khong phai mot request.
+    #
+    # ⛔ Nen thieu dong nay khong phai mot thieu sot ly thuyet: mot cua so cat
+    #    khong con lai gi se roi xuong nhanh `retry`, va lan chay lai se hong y
+    #    het — vi cung mot cua so, cung mot ban do. Khach cho ba lan de nhan
+    #    cung mot ket qua, va tra tien cho ca ba.
+    from .cat_dau_cuoi import CatLoi
+    if isinstance(exc, CatLoi):
+        return NGUOI_DUNG
+
+    # ── Lop phu chu (V6 pha 11) ─────────────────────────────────────────────
+    #
+    # ⚠️ Nam cung nhom voi `CatLoi` chu khong voi `VungLoi`: no **that su di toi
+    #    day**, va qua HAI duong khac nhau.
+    #
+    #      `routes.tao`            -> bat ngay tai cho, chua toi ham nay
+    #      `lop_phu.duong_font()`  -> goi tu `che_do_render._loc_chu`, tuc tu
+    #                                 trong mot JOB, luc dung chuoi loc
+    #      `lop_phu.vien_px()`     -> nhu tren
+    #
+    # ⛔ Va hai duong sau moi la ly do dong nay ton tai. Mot may chu khong co
+    #    phong chu nao se nem `LopPhuLoi` giua giai doan ket xuat; roi xuong
+    #    nhanh `retry` thi lan chay lai hong y het — vi may van khong co phong
+    #    chu — va khach cho ba lan de nhan cung mot ket qua.
+    #
+    # ⭐ `NGUOI_DUNG` o day khong noi "loi cua khach". No noi **that bai cuoi
+    #    cung, dung thu lai** — dung nghia ma bang nay dung cho ca `CatLoi`.
+    from .lop_phu import LopPhuLoi
+    if isinstance(exc, LopPhuLoi):
+        return NGUOI_DUNG
+
+    # ── Logo (V6 pha 11b) ───────────────────────────────────────────────────
+    #
+    # Cung nhom voi `LopPhuLoi`, va cung ly do: `logo.rong_px()` duoc goi tu
+    # `che_do_render._loc_logo`, tuc tu trong mot JOB, dung luc dung chuoi loc.
+    #
+    # ⛔ Mot ban dung co logo ma thieu `rong_khung` se nem giua giai doan ket
+    #    xuat. Roi xuong `retry` thi ba luot deu hong y het — cung mot ban dung,
+    #    cung mot truong thieu.
+    # ── Phu de (V6 pha 14) ──────────────────────────────────────────────────
+    #
+    # Cung nhom voi `LopPhuLoi`/`LogoLoi`, va cung mot ly do CO HOC: `phu_de`
+    # duoc goi ca o bien HTTP lan **trong mot job** (khi `ket_xuat` dung chuoi
+    # loc `ass=`). Duong thu hai moi la ly do dong nay ton tai.
+    #
+    # ⛔ Mot kieu phu de khong con ton tai — `autosubvideo` doi ten mot preset —
+    #    se nem `PhuDeLoi` giua giai doan ket xuat. Roi xuong nhanh `retry` thi
+    #    ba luot deu hong y het: cung mot ho so, cung mot id da bien mat.
+    #
+    # ⭐ `NGUOI_DUNG` o day khong noi "loi cua khach". No noi **that bai cuoi
+    #    cung, dung thu lai** — dung nghia ma bang nay dung cho `CatLoi`.
+    from .phu_de import PhuDeLoi
+    if isinstance(exc, PhuDeLoi):
+        return NGUOI_DUNG
+
+    from .logo import LogoLoi
+    if isinstance(exc, LogoLoi):
+        return NGUOI_DUNG
+
+    # ── Am thanh (V6 pha 23) ────────────────────────────────────────────────
+    #
+    # Cung nhom, cung ly do co hoc: `am_thanh.tu_cai_dat` chay ca o bien HTTP
+    # lan **trong job** `timing_align` (duyet lai ho so da luu truoc khi tron).
+    # Mot ho so da luu ma khong con hop le thi ba luot `retry` hong y het.
+    from .am_thanh import AmThanhLoi
+    if isinstance(exc, AmThanhLoi):
+        return NGUOI_DUNG
+
     # ── QC bang AI va ke hoach sua (pha 19) ─────────────────────────────────
     #
     # ⛔ `NGUOI_DUNG` — that bai cuoi cung. Ca hai deu la mau thuan trong du lieu

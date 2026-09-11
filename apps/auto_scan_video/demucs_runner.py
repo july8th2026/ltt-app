@@ -498,6 +498,13 @@ def tach_theo_khoi(model, torch, vao: str, thu_muc: Path, *, thiet_bi: str,
                     for i, t in enumerate(ten_nguon):
                         them_khung(tep_ra[t], ra[i][:, :het])
                 else:
+                    # 🔑 `len_vao`/`len_ra` chi la `None` khi `phu_mau == 0`,
+                    #    va khi do `duoi_truoc` khong bao gio duoc dat — nen
+                    #    nhanh nay khong the chay. Rang buoc do la NGAM: no dung
+                    #    hai bien cach nhau ba muoi dong de suy ra. Khai ro de
+                    #    mot lan sua sau khong pha no ma khong ai thay.
+                    assert len_vao is not None and len_ra is not None, (
+                        "khong the None o day: duoi_truoc chi duoc dat khi phu_mau > 0")
                     n = min(phu_mau, ra.shape[-1], duoi_truoc.shape[-1])
                     for i, t in enumerate(ten_nguon):
                         tron = duoi_truoc[i][:, :n] * len_vao[:n] + ra[i][:, :n] * len_ra[:n]

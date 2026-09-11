@@ -215,7 +215,12 @@ KIND_VIDEO = "video"
 KIND_AUDIO = "audio"
 KIND_JSON = "json"
 KIND_TEXT = "text"
-KINDS = frozenset({KIND_VIDEO, KIND_AUDIO, KIND_JSON, KIND_TEXT})
+#: 🔴 Them o V6 pha 11b (logo cua khach). Mot loai artifact MOI mang mot nghia
+#:    vu: `assets.kiem_hop_le` phai biet kiem no. Them ma nay ma khong them phep
+#:    kiem la mo mot loai artifact **khong ai soi noi dung** — tuc bat bien I8
+#:    ("DONE nghia la co mot ket qua HOP LE") mat hieu luc cho dung loai do.
+KIND_ANH = "image"
+KINDS = frozenset({KIND_VIDEO, KIND_AUDIO, KIND_JSON, KIND_TEXT, KIND_ANH})
 
 
 class AsvAsset(Base):

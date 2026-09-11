@@ -3,57 +3,170 @@
    ⛔ Manh nay KHONG bao gio nhan `van_hanh`. No duoc hoi lai vai giay mot lan,
       va mot manh chi tiet van hanh bi hoi lai lien tuc la mot cho ro ri lap lai
       thay vi mot lan. Chi tiet van hanh chi hien o lan dung trang dau tien, cho
-      operator, trong `asv_chi_tiet.html`. #}
+      operator, trong `asv_chi_tiet.html`.
+
+   ## Ba thay doi cua V5
+
+   1. **Buoc dang chay duoc neu ten TO**, khong chim trong mot danh sach muoi mot
+      dong. Khach hoi "dang lam gi", khong hoi "danh sach cac buoc".
+   2. **Co phan tram va thoi gian da chay.**
+   3. **Buoc da xong thu gon thanh luoi.** Muoi mot dong doc doc nhu mot ban log.
+
+   ⛔ Va KHONG gia ETA (`V5_UI_INFORMATION_ARCHITECTURE.md` §7). `quan_sat` chi
+      tra `con_lai_giay` khi da do duoc tu CHINH lan chay nay; chua du thi cho
+      nay im lang va chi hien thoi gian da chay. Mot ETA bia te hon khong co ETA.
+#}
 <div id="asv-tien-do"
      {% if run.status in ("queued", "running") %}
      hx-get="{{ app.route_prefix }}/run/{{ run.id }}/tien-do"
      hx-trigger="every 3s" hx-swap="outerHTML"
      {% endif %}>
 
-  <p class="asv-tom-tat">
-    {% if run.status == "done" %}{{ _("Đã xong.") }}
-    {% elif run.status == "cancelled" %}{{ _("Bạn đã huỷ lần chạy này.") }}
-    {% elif run.status == "error" %}{{ _("Lần chạy dừng lại vì một bước không hoàn tất.") }}
-    {% else %}{{ _("Đang xử lý…") }}{% endif %}
-  </p>
+  {% if run.status == "done" %}
 
+    {# ── Xong: nguon canh ket qua ─────────────────────────────────────────
+       §11 doi mot phep doi chieu, va do cung la cach re nhat de khach tu
+       nghiem thu — khong ai phai tin mot dong chu "da xong". #}
+    <p class="asv-tom-tat">{{ _("Đã xong.") }}</p>
+
+    {% if co_ket_qua %}
+      <div class="asv-doi-chieu">
+        <figure>
+          <video controls playsinline preload="metadata"
+                 src="{{ app.route_prefix }}/run/{{ run.id }}/nguon"></video>
+          <figcaption>{{ _("Video gốc") }}</figcaption>
+        </figure>
+        <figure>
+          <video controls playsinline preload="metadata"
+                 src="{{ app.route_prefix }}/run/{{ run.id }}/xem"></video>
+          <figcaption>{{ _("Bản lồng tiếng Việt") }}</figcaption>
+        </figure>
+      </div>
+
+      <div class="asv-hanh-dong">
+        <a class="btn primary" href="{{ app.route_prefix }}/run/{{ run.id }}/tai">
+          {{ _("Tải video") }}</a>
+        {# ⭐ Nap lai cai dat cua CHINH lan chay nay. Quyen so huu duoc giai o
+           may chu (`trang_chinh` goi `_run_cua_toi`), khong o day — mot `run_id`
+           trong URL la mot chuoi khach sua duoc. #}
+        <a class="btn ghost"
+           href="{{ app.route_prefix }}?run_id={{ run.id }}">
+          {{ _("Chạy lại với cài đặt này") }}</a>
+        <a class="btn ghost" href="{{ app.route_prefix }}">
+          {{ _("Lồng tiếng video khác") }}</a>
+      </div>
+    {% endif %}
+
+  {% elif run.status == "cancelled" %}
+    <p class="asv-tom-tat">{{ _("Bạn đã huỷ lần chạy này.") }}</p>
+
+  {% elif run.status == "error" %}
+
+    {# ── Loi: bon cau, dung thu tu §13 ──────────────────────────────────── #}
+    <div class="asv-loi" role="alert">
+      <h3>
+        {% if loi_khach %}
+          {{ _("Không hoàn tất bước:") }}
+          {{ _(nhan_giai_doan.get(loi_khach.split(":")[0], loi_khach.split(":")[0])) }}
+        {% else %}
+          {{ _("Lần chạy dừng lại giữa chừng.") }}
+        {% endif %}
+      </h3>
+      <p>{{ _("Một bước không hoàn tất nên chúng tôi dừng lại thay vì giao một bản chưa đạt.") }}</p>
+      <p>{{ _("Bạn có thể thử lại bước đó. Những bước đã xong sẽ không phải chạy lại.") }}</p>
+      {% if loi_khach %}
+        <div class="asv-hanh-dong">
+          <form method="post" action="{{ app.route_prefix }}/run/{{ run.id }}/thu-lai">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="giai_doan" value="{{ loi_khach.split(':')[0] }}">
+            <button class="btn primary" type="submit">{{ _("Thử lại bước này") }}</button>
+          </form>
+        </div>
+        {# ⭐ Khong co dong nay, khach phai DOAN hau qua tien bac cua mot nut —
+           va ho se doan ve phia khong dam bam. #}
+        <p class="asv-ghi-chu">{{ _("Thử lại không tính thêm credit.") }}</p>
+      {% endif %}
+    </div>
+
+  {% else %}
+
+    {# ── Dang chay ──────────────────────────────────────────────────────── #}
+    <p class="asv-buoc-hien">
+      {% if dong.dang_chay %}
+        {{ _(nhan_giai_doan.get(dong.dang_chay, dong.dang_chay)) }}
+      {% else %}
+        {{ _("Đang chuẩn bị…") }}
+      {% endif %}
+    </p>
+
+    <div class="asv-thanh-tien" role="progressbar" aria-valuemin="0"
+         aria-valuemax="100" aria-valuenow="{{ dong.phan_tram }}">
+      <i style="width:{{ dong.phan_tram }}%"></i>
+    </div>
+
+    <p class="asv-dong-ho">
+      {{ dong.phan_tram }}%
+      {# ⚠️ `621s` la mot con so, khong phai mot khoang thoi gian ma nguoi doc
+         duoc. Mot lan chay dai muoi phut hien `621s` bat khach tu chia — va
+         thiet ke (`V5_UI_INFORMATION_ARCHITECTURE.md` §7) noi "3 phut 40 giay".
+         Chu "phút"/"giây" da co san trong catalog, khong them chuoi moi. #}
+      {% if dong.da_chay_giay %}
+        {% set _g = dong.da_chay_giay | int %}
+        · {{ _("đã chạy") }}
+        {%- if _g >= 60 %} {{ _g // 60 }} {{ _("phút") }} {{ _g % 60 }} {{ _("giây") }}
+        {%- else %} {{ _g }} {{ _("giây") }}{% endif %}
+      {% endif %}
+    </p>
+
+  {% endif %}
+
+  {# ── Danh sach buoc — luon hien, ke ca khi xong ───────────────────────── #}
   <ol class="asv-buoc">
     {% for m in dong.giai_doan %}
-      <li class="asv-buoc-{{ m.trang_thai }}">
-        <span class="asv-buoc-ten">{{ _(nhan_giai_doan.get(m.giai_doan, m.giai_doan)) }}</span>
-        <span class="asv-buoc-tt">
-          {% if m.trang_thai == "succeeded" %}{{ _("xong") }}
-          {% elif m.trang_thai == "running" %}{{ _("đang chạy") }}
-          {% elif m.trang_thai == "queued" %}{{ _("đang chờ") }}
-          {% elif m.trang_thai == "cancelled" %}{{ _("đã huỷ") }}
-          {% elif m.trang_thai.startswith("failed") %}{{ _("không hoàn tất") }}
-          {% else %}{{ _("chưa tới") }}{% endif %}
-        </span>
-        {% if m.giay %}<span class="asv-buoc-giay">{{ "%.1f"|format(m.giay) }}s</span>{% endif %}
-      </li>
+      {% if m.trang_thai != "succeeded" %}
+        <li class="asv-buoc-{{ m.trang_thai }}">
+          <span class="asv-buoc-ten">{{ _(nhan_giai_doan.get(m.giai_doan, m.giai_doan)) }}</span>
+          <span class="asv-buoc-tt">
+            {% if m.trang_thai == "running" %}{{ _("đang chạy") }}
+            {% elif m.trang_thai == "queued" %}{{ _("đang chờ") }}
+            {% elif m.trang_thai == "cancelled" %}{{ _("đã huỷ") }}
+            {% elif m.trang_thai.startswith("failed") %}{{ _("không hoàn tất") }}
+            {% else %}{{ _("chưa tới") }}{% endif %}
+          </span>
+          {% if m.giay %}<span class="asv-buoc-giay">{{ "%.1f"|format(m.giay) }}s</span>{% endif %}
+        </li>
+      {% endif %}
     {% endfor %}
   </ol>
 
-  {% if loi_khach %}
-    <div class="alert alert-err" role="alert">
-      {{ _("Bước không hoàn tất:") }} {{ _(nhan_giai_doan.get(loi_khach.split(":")[0], loi_khach.split(":")[0])) }}
-    </div>
-    <form method="post" action="{{ app.route_prefix }}/run/{{ run.id }}/thu-lai">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-      <input type="hidden" name="giai_doan" value="{{ loi_khach.split(':')[0] }}">
-      <button class="btn" type="submit">{{ _("Thử lại bước này") }}</button>
-    </form>
-  {% endif %}
-
-  {% if co_ket_qua %}
-    <a class="btn primary" href="{{ app.route_prefix }}/run/{{ run.id }}/tai">
-      {{ _("Tải video đã lồng tiếng") }}</a>
+  {% set xong = dong.giai_doan | selectattr("trang_thai", "equalto", "succeeded") | list %}
+  {% if xong %}
+    <ul class="asv-buoc-xong">
+      {% for m in xong %}
+        <li>{{ _(nhan_giai_doan.get(m.giai_doan, m.giai_doan)) }}</li>
+      {% endfor %}
+    </ul>
   {% endif %}
 
   {% if run.status in ("queued", "running") %}
-    <form method="post" action="{{ app.route_prefix }}/run/{{ run.id }}/huy">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-      <button class="btn ghost" type="submit">{{ _("Huỷ lần chạy") }}</button>
-    </form>
+    {# 🔴 V6 pha 32: truoc day MOT cu bam la huy — va huy la KHONG quay lai:
+         `huy_run` quyet toan ngay (`RUN_CANCELLED` la trang thai cuoi, `thu_lai`
+         tu choi lan chay da ket thuc). Mot cu bam truot tay la mat mot lan chay
+         da tra tien, da di qua tach nguon va chep loi.
+
+       ⭐ Hai buoc, KHONG JS: `<details>` mo ra cau noi ro hau qua, nut that
+          nam ben trong. Ban phim di duoc (Enter/Space tren `summary`).
+
+       ⚠️ `hx-preserve`: manh nay duoc htmx hoi lai 3 giay mot lan bang
+          `outerHTML`. Khong co no, khung xac nhan dang MO se tu dong lai giua
+          luc khach dang doc — dung loai trang thai cu ma pha 32 ke ten. #}
+    <details class="asv-hanh-dong asv-xac-nhan" id="asv-huy" hx-preserve="true">
+      <summary class="btn ghost">{{ _("Huỷ lần chạy") }}</summary>
+      <p>{{ _("Huỷ là dừng hẳn: phần credit chưa dùng được hoàn lại, nhưng lần chạy này không tiếp tục được nữa — muốn làm lại phải tạo lần chạy mới.") }}</p>
+      <form method="post" action="{{ app.route_prefix }}/run/{{ run.id }}/huy">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button class="btn danger" type="submit">{{ _("Xác nhận huỷ") }}</button>
+      </form>
+    </details>
   {% endif %}
 </div>
