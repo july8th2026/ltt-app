@@ -23,11 +23,17 @@ depends_on = None
 
 
 def upgrade() -> None:
+    # ⛔ `owner_id` KHÔNG mang `index=True` riêng: nó là cột ĐẦU của
+    #    `uq_voice_lichsu_owner_job` bên dưới, nên ràng buộc đó tự phục vụ mọi
+    #    truy vấn lọc riêng `owner_id`. Một chỉ mục riêng ở đây từng lệch với
+    #    mô hình ORM (`tables.py` khai thêm một `Index()` tên khác, cùng cột)
+    #    — hai khai báo, migration chỉ dựng một, và tên tự sinh của cái còn
+    #    lại không khớp cái ORM mong đợi. Xem chú thích dài ở `tables.py`.
     op.create_table(
         "voice_lich_su",
         sa.Column("id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"),
                   primary_key=True, autoincrement=True),
-        sa.Column("owner_id", sa.String(36), nullable=False, index=True),
+        sa.Column("owner_id", sa.String(36), nullable=False),
         sa.Column("job_id", sa.String(36), nullable=False),
         sa.Column("da_tai_luc", sa.DateTime(timezone=True), nullable=True),
         sa.Column("da_xoa_luc", sa.DateTime(timezone=True), nullable=True),

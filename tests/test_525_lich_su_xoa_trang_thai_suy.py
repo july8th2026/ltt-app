@@ -25,9 +25,25 @@ Và một chốt không đổi (SC-8): `doc_lai` vẫn phải đi qua CẢ HAI c
 khi tiêu tiền (`features.chuan_hoa` + `features.giai_giong` — hotfix `dc6d9c6b`,
 sự cố production 31/08/2026), và giờ còn mang `dedupe_key` để chặn double-submit
 (cùng khuôn `test_519`/`test_502`).
+
+## Fix round 1/5 (review sau khi Task 8 xanh lần đầu)
+
+5. **`data-nhan-khoi-mot` không được bị một dấu `"` thẳng cắt cụt.** `_()` trả
+   về `Markup` (`server/templating.py`), nên Jinja KHÔNG escape nó khi chèn
+   vào một thuộc tính HTML — một dấu `"` thẳng trong chuỗi dịch sẽ đóng sớm
+   `data-nhan-khoi-mot="..."`, cắt mất `{ten}` và phần câu phía sau nó. Đọc
+   RAW HTML để bắt đúng lỗi dạng này (test rendering thật, không phải kiểm
+   msgid trong `.po`).
+
+6. **`_lay_hoac_tao` dùng SAVEPOINT, không `db.rollback()` trần.** `xoa()` gọi
+   hàm này SAU khi đã `db.flush()` thay đổi của `expire_content` trong CÙNG
+   session. Một `db.rollback()` trần khi INSERT đánh dấu va chạm (đua với một
+   request khác) sẽ lùi lại CẢ transaction — xoá mất luôn thay đổi đã flush đó,
+   trong khi tệp đã bị xoá thật ở tầng lưu trữ rồi.
 """
 from __future__ import annotations
 
+import datetime as dt
 import io
 import re
 import struct
@@ -331,3 +347,117 @@ def test_doc_lai_VAN_qua_cong_va_CO_dedupe(khach):
           and (getattr(n.func, "id", "") or getattr(n.func, "attr", "")) == "submit_with_credit"
           for k in n.keywords}
     assert "dedupe_key" in kw
+
+
+# ═══════════════════ 5. Fix round 1/5 — IMPORTANT 1: ngoặc kiểu in ═════════
+
+def test_nhan_khoi_mot_khong_bi_dau_ngoac_thang_cat_cut(khach):
+    """`_()` trả về `Markup` (`server/templating.py:153-155`) nên Jinja KHÔNG
+    tự escape nó khi chèn vào một thuộc tính HTML — một dấu `"` THẲNG trong
+    chuỗi dịch sẽ đóng sớm `data-nhan-khoi-mot="..."`. Đọc HTML THẬT (không
+    phải msgid trong `.po`) để bắt đúng dạng lỗi này: giá trị thuộc tính phải
+    mang trọn `{ten}` và đuôi câu "cần tạo lại", không bị cắt ở dấu `"` đầu.
+    """
+    client, uid = khach
+    _job_xong(uid)  # có tệp => nút Xoá (và data-nhan-khoi-mot) hiện ra.
+    html = client.get("/ltt-voice/lich-su").text
+    m = re.search(r'data-nhan-khoi-mot="([^"]*)"', html)
+    assert m, "khong tim thay thuoc tinh data-nhan-khoi-mot trong HTML"
+    gt = m.group(1)
+    assert "{ten}" in gt, (
+        f"thuoc tinh bi mot dau ngoac kep THANG trong chuoi dich cat cut: {gt!r}")
+    assert "cần tạo lại" in gt, (
+        f"thieu duoi cau — thuoc tinh van dang bi cat: {gt!r}")
+    # Đối chứng chiều ngược: KHÔNG còn dấu ngoặc kép thẳng nào lọt vào giá trị
+    # thuộc tính (đó chính là thứ từng đóng sớm nó).
+    assert '"' not in gt
+
+
+# ═══════════════════ 6. Fix round 1/5 — PULLED IN 2: SAVEPOINT ═════════════
+
+def test_lay_hoac_tao_dua_tren_savepoint_khong_xoa_thay_doi_da_flush(khach, monkeypatch):
+    """Mô phỏng ĐUA thật: một dòng đánh dấu (owner, job_id) đã tồn tại THẬT SỰ
+    trong CSDL, nhưng SELECT đầu của `_lay_hoac_tao` "không thấy" nó (mô phỏng
+    khoảng trống đọc-rồi-ghi) — INSERT kế tiếp va `UniqueConstraint` thật, ném
+    `IntegrityError` thật. Trước bản vá, `db.rollback()` trần ở nhánh
+    `except` sẽ lùi lại CẢ transaction, xoá mất luôn việc `job.content_expired_at`
+    + `job.params = {}` đã `flush()` NGAY TRƯỚC ĐÓ trong cùng session — đúng
+    tình huống `xoa()` gặp phải (nó gọi `expire_content()` rồi mới gọi hàm
+    này). Sau bản vá (SAVEPOINT qua `db.begin_nested()`), chỉ INSERT bị lùi.
+    """
+    client, uid = khach
+    jid = _job_xong(uid)
+
+    import platform_core.db as dbmod
+    from apps.ltt_voice import lich_su_nd
+    from apps.ltt_voice.tables import VoiceLichSu
+    from platform_core.models import Job
+    from sqlalchemy import select
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        job = db.get(Job, jid)
+        # Một phần việc THẬT của `expire_content()`: đặt cờ hết nội dung rồi
+        # `flush()` — CHƯA `commit()`. Đây là đúng trạng thái session mang khi
+        # `xoa()` gọi tới `_lay_hoac_tao`.
+        job.content_expired_at = dt.datetime.now(dt.timezone.utc)
+        job.params = {}
+        db.flush()
+
+        # Chèn THẬT dòng đánh dấu cho (uid, jid) qua Core, KHÔNG qua ORM
+        # select() của `_lay_hoac_tao` — dòng này giờ CÓ THẬT trong CSDL.
+        db.execute(VoiceLichSu.__table__.insert().values(
+            owner_id=str(uid), job_id=str(jid)))
+        db.flush()
+
+        # Ép lần `db.execute` ĐẦU (chính là SELECT-kiểm-tồn-tại của
+        # `_lay_hoac_tao`) "không thấy" dòng vừa chèn — mô phỏng khoảng trống
+        # đọc-rồi-ghi của một cuộc đua thật. Từ lần thứ hai trở đi (SELECT ở
+        # nhánh `except`, và mọi câu lệnh khác) đi qua bình thường.
+        goc_execute = db.execute
+        dem = {"n": 0}
+
+        class _KetQuaRong:
+            def scalar_one_or_none(self):
+                return None
+
+        def execute_gia(statement, *a, **kw):
+            dem["n"] += 1
+            if dem["n"] == 1:
+                return _KetQuaRong()
+            return goc_execute(statement, *a, **kw)
+
+        monkeypatch.setattr(db, "execute", execute_gia)
+
+        row = lich_su_nd._lay_hoac_tao(db, uid, jid)
+        assert row is not None
+        assert dem["n"] >= 2, "khong di dung nhanh IntegrityError nhu du dinh"
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    # Đọc lại bằng MỘT SESSION MỚI: thay đổi của `expire_content`-giả phải còn
+    # nguyên — không bị `except IntegrityError` ở trên rollback mất.
+    gen2 = dbmod.get_session()
+    db2 = next(gen2)
+    try:
+        j2 = db2.get(Job, jid)
+        assert j2.content_expired_at is not None, (
+            "IntegrityError trong _lay_hoac_tao da rollback ca thay doi cua job")
+        assert j2.params == {}, "params bi phuc hoi boi mot rollback qua rong"
+        # Và đúng MỘT dòng đánh dấu cho (uid, jid) — không có dòng mồ côi nào
+        # từ INSERT đã bị lùi qua SAVEPOINT.
+        so_dong = db2.execute(
+            select(VoiceLichSu).where(VoiceLichSu.owner_id == str(uid),
+                                      VoiceLichSu.job_id == str(jid))
+        ).scalars().all()
+        assert len(so_dong) == 1
+    finally:
+        try:
+            next(gen2)
+        except StopIteration:
+            pass

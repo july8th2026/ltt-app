@@ -177,11 +177,17 @@ def doc_lai(request: Request, job_id: str, csrf_token: str = Form(""),
             #    `jobs.submit` chỉ gộp job CHƯA kết thúc nên tính năng phiên bản
             #    (V1/V2/V3) không bị phá — đọc lại SAU khi job trước `done` vẫn
             #    ra job mới. Cùng khuôn `_p_tao.py` (test_502/test_519).
+            #
+            #    ⚠️ `str(cu.id)`, KHÔNG phải `job_id` thô từ path: `cu` đã đi
+            #    qua `job_history.get_owned` (id đã được CSDL xác nhận và
+            #    chuẩn hoá). `job_id` là chuỗi khách gõ trên URL — khoảng
+            #    trắng/hoa-thường thừa (nếu route ever nới lỏng kiểm tra) sẽ
+            #    băm ra một khoá KHÁC cho cùng một job, làm dedupe không gộp.
             job = submit_with_credit(
                 db, user_id=uid, app_slug=MANIFEST.slug,
                 job_type="ltt_voice.synthesize", params=p,
                 dedupe_key=dedupe_key_for(
-                    "ltt_voice.synthesize", {"owner": uid, "doc_lai": job_id}),
+                    "ltt_voice.synthesize", {"owner": uid, "doc_lai": str(cu.id)}),
                 admission_resource=tool.admission_resource,
                 admission_slots=tool.admission_slots,
                 max_attempts=SO_LAN_THU_JOB)

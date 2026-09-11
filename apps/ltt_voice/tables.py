@@ -416,15 +416,24 @@ class VoiceLichSu(Base):
         # Một chủ chỉ có MỘT dòng trạng thái cho một job. Ràng buộc ở tầng CSDL
         # để "đánh dấu tải" gọi nhiều lần (bấm tải hai lần) không sinh hai dòng —
         # cùng khuôn "cứ INSERT, coi IntegrityError là đường bình thường".
+        #
+        # ⛔ KHÔNG thêm một `Index("...", "owner_id")` riêng cạnh ràng buộc
+        #    này: `owner_id` là cột ĐẦU của UNIQUE này, nên PostgreSQL/SQLite
+        #    đã dùng được chỉ mục của ràng buộc cho mọi truy vấn lọc riêng
+        #    `owner_id` (`trang_thai()` ở `lich_su_nd.py`) — một chỉ mục thứ
+        #    hai chỉ trùng lặp mà không thêm gì. Từng có hai khai báo (một qua
+        #    `Index(...)`, một qua `mapped_column(index=True)`) và migration
+        #    chỉ dựng ĐÚNG MỘT trong hai — lệch giữa mô hình và CSDL thật, phát
+        #    hiện được bằng cách nạp cả hai vào một SQLite tạm rồi so khớp.
         UniqueConstraint("owner_id", "job_id", name="uq_voice_lichsu_owner_job"),
-        Index("ix_voice_lichsu_owner", "owner_id"),
     )
 
     id: Mapped[int] = mapped_column(KHOA_CHINH, primary_key=True,
                                     autoincrement=True)
     #: ⛔ String(36): `User.id` và `Job.id` của nền tảng đều là UUID chuỗi. Ép
     #:    số ở đây là đúng cái lỗi `voice_profile` từng mắc (mọi khách thành chủ 0).
-    owner_id: Mapped[str] = mapped_column(String(36), index=True)
+    #:    KHÔNG `index=True` riêng — xem chú thích ở `UniqueConstraint` trên.
+    owner_id: Mapped[str] = mapped_column(String(36))
     job_id: Mapped[str] = mapped_column(String(36))
     #: Rỗng (NULL) nghĩa là CHƯA — không phải 0, không phải một mốc giả.
     da_tai_luc: Mapped[datetime | None] = mapped_column(

@@ -1998,11 +1998,16 @@
           var job = n.dataset.job;
           var mauKhoi = n.getAttribute("data-nhan-khoi-mot") || "";
           var tieuDe = n.getAttribute("data-nhan-tieu-de") || "";
+          // Neu /anh-huong hong (mang, 5xx...), KHONG lang le coi nhu "khong
+          // co khoi nao" — noi ro trong hop confirm() rang chua kiem duoc, roi
+          // de khach TU quyet co tiep tuc khong (data-nhan-loi-anh-huong).
+          var loiKhongKiemDuoc = n.getAttribute("data-nhan-loi-anh-huong") || "";
           fetch(duong + "/lich-su/" + job + "/anh-huong")
-            .then(function (r) { return r.ok ? r.json() : {khoi: []}; })
-            .catch(function () { return {khoi: []}; })
+            .then(function (r) { return r.ok ? r.json() : {khoi: [], loi: true}; })
+            .catch(function () { return {khoi: [], loi: true}; })
             .then(function (d) {
               var dong = [tieuDe];
+              if (d.loi && loiKhongKiemDuoc) dong.push(loiKhongKiemDuoc);
               var ds = d.khoi || [];
               for (var i = 0; i < ds.length; i++) {
                 dong.push(mauKhoi

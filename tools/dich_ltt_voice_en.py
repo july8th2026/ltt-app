@@ -345,9 +345,18 @@ DICH = {
         "it to finish or cancel it first.",
     "Không xoá được lượt này. Thử lại sau.":
         "Could not delete this item. Try again later.",
-    'Khối {so} trong dự án "{ten}" sẽ mất tiếng và cần tạo lại.':
-        'Block {so} in project "{ten}" will lose its audio and need to be '
+    # ⛔ Ngoặc KIỂU IN “…”, không phải `"…"` thẳng: `_()` trả về `Markup`
+    #    (server/templating.py) nên Jinja KHÔNG escape nó khi chèn vào một
+    #    thuộc tính HTML (`data-nhan-khoi-mot="..."`) — một dấu `"` thẳng
+    #    trong chuỗi dịch (VI lẫn EN) sẽ đóng sớm thuộc tính. Xem
+    #    `ltt_voice_lich_su.html` chỗ dùng chuỗi này.
+    "Khối {so} trong dự án “{ten}” sẽ mất tiếng và cần tạo lại.":
+        "Block {so} in project “{ten}” will lose its audio and need to be "
         "regenerated.",
+    "Không kiểm được các dự án đang dùng tệp này. Việc xoá vẫn tiếp tục nếu "
+    "bạn xác nhận.":
+        "Could not check which projects use this file. Deleting will still "
+        "go ahead if you confirm.",
 
     # governance.py — Store("voice_lich_su", ...) reason (RC1 Task 8)
     "Dấu người dùng đặt lên một lượt lịch sử: đã tải về chưa, đã xoá chưa. "

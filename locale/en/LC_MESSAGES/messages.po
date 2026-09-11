@@ -15235,9 +15235,13 @@ msgid "Không xoá được lượt này. Thử lại sau."
 msgstr "Could not delete this item. Try again later."
 
 #: apps/ltt_voice
-msgid "Khối {so} trong dự án \"{ten}\" sẽ mất tiếng và cần tạo lại."
-msgstr "Block {so} in project \"{ten}\" will lose its audio and need to be regenerated."
-
-#: apps/ltt_voice
 msgid "Dấu người dùng đặt lên một lượt lịch sử: đã tải về chưa, đã xoá chưa. Không chứa văn bản hay tệp — chỉ hai cột thời điểm. Xoá một lượt dọn TỆP theo vòng đời của job; dòng này chỉ ghi rằng khách đã xoá."
 msgstr "A user-set marker on a history item: whether it has been downloaded, whether it has been deleted. Holds no text or files — just two timestamps. Deleting an item removes the FILE per the job's lifecycle; this row only records that the customer deleted it."
+
+#: apps/ltt_voice
+msgid "Khối {so} trong dự án “{ten}” sẽ mất tiếng và cần tạo lại."
+msgstr "Block {so} in project “{ten}” will lose its audio and need to be regenerated."
+
+#: apps/ltt_voice
+msgid "Không kiểm được các dự án đang dùng tệp này. Việc xoá vẫn tiếp tục nếu bạn xác nhận."
+msgstr "Could not check which projects use this file. Deleting will still go ahead if you confirm."

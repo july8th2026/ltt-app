@@ -71,6 +71,16 @@ def _lay_hoac_tao(db, owner_id: str, job_id: str):
     ⭐ Cứ INSERT và coi `IntegrityError` là đường bình thường — cùng khuôn
        `platform_core/gpu_lease.py` và `apps/vps/tables.py`. Đọc-rồi-ghi có một
        khoảng trống giữa hai bước mà hai request đồng thời lọt qua.
+
+    🔴 INSERT đi trong một SAVEPOINT (`db.begin_nested()`), KHÔNG `db.rollback()`
+       trần. `xoa()` gọi hàm này SAU khi đã `db.flush()` một thay đổi khác trong
+       CÙNG session (`job_content.expire_content` đặt `content_expired_at` +
+       dọn `params`/`result`) — một `db.rollback()` trần ở đây lùi lại TOÀN BỘ
+       transaction, tức xoá mất luôn thay đổi đó dù nó đã flush xong, trong khi
+       TỆP đã bị xoá thật ở tầng lưu trữ rồi. Kết quả: hàng job trông như còn
+       sống (không `content_expired_at`) nhưng tệp đã mất — đúng trạng thái mà
+       `expire_content()` được sinh ra để tránh. SAVEPOINT chỉ lùi lại phần
+       INSERT vừa thử, giữ nguyên mọi thứ session đã flush trước đó.
     """
     from sqlalchemy import select
     from sqlalchemy.exc import IntegrityError
@@ -82,12 +92,15 @@ def _lay_hoac_tao(db, owner_id: str, job_id: str):
     ).scalar_one_or_none()
     if row is not None:
         return row
-    row = VoiceLichSu(owner_id=str(owner_id), job_id=str(job_id))
-    db.add(row)
     try:
-        db.flush()
+        with db.begin_nested():
+            row = VoiceLichSu(owner_id=str(owner_id), job_id=str(job_id))
+            db.add(row)
+            db.flush()
     except IntegrityError:
-        db.rollback()
+        # `begin_nested()` đã tự lùi lại đúng SAVEPOINT khi ngoại lệ thoát khỏi
+        # khối `with` — không cần (và không được) gọi thêm `db.rollback()` ở
+        # đây, nó sẽ lùi lại cả transaction ngoài.
         row = db.execute(
             select(VoiceLichSu).where(VoiceLichSu.owner_id == str(owner_id),
                                       VoiceLichSu.job_id == str(job_id))
@@ -128,12 +141,19 @@ def xoa(db, storage, job) -> None:
     # T-11 — dọn thêm khoá CŨ nếu job này sinh trước 0a07a49e. `content_keys`
     # bỏ sót khoá dạng `{job_id}.wav` (không phải một đoạn đường dẫn `/id/`),
     # nên `expire_content()` ở trên không đụng tới nó — thử xoá RIÊNG ở đây.
-    # `FileNotFoundError` là đường bình thường: phần lớn job không mang khoá
-    # cũ (chỉ những job sinh trước ngày đổi khuôn mới có).
+    #
+    # ⭐ CÙNG mức độ khoan dung với `job_content.expire_content`, không chặt
+    #    hơn: `FileNotFoundError` là đường bình thường (phần lớn job không
+    #    mang khoá cũ), nhưng một lỗi kho KHÁC (mạng, quyền, timeout…) không
+    #    được làm cả yêu cầu xoá thành 500 — tệp hiện hành đã bị xoá xong ở
+    #    dòng trên, và khách sẽ thấy "xoá thất bại" trong khi phần lớn việc
+    #    đã xong. Ghi log rồi tiếp tục, đúng khuôn `expire_content`.
     try:
         storage.delete(_khoa_cu(str(job.user_id), str(job.id)))
     except FileNotFoundError:
         pass
+    except Exception:  # noqa: BLE001 - kho co the nem nhieu loai loi
+        log.exception("khong xoa duoc khoa luu tru CU cua job %s", job.id)
 
     row = _lay_hoac_tao(db, str(job.user_id), str(job.id))
     if row.da_xoa_luc is None:
