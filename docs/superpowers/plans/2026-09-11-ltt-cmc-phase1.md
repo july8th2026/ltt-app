@@ -20,6 +20,10 @@
 - Use `python tools\gate.py --doi` for L1 and one `python tools\gate.py` for final L3 evidence.
 - Run `python tools\scan_source_secrets.py` before every commit.
 - Do not run `git gc`, `git prune`, force push, destructive reset or worktree removal in Phase 1.
+- Keep repository-local `gc.auto=0`, `gc.autoPackLimit=0` and
+  `maintenance.auto=false` throughout CMC; Task 1 observed Git auto-packing
+  after its first commit, then disabled it and verified representative
+  reflog-only commits still existed.
 - Infrastructure pre-answers for changes under `tools/`: partial rollout is safe because the inventory/default-branch logic does not coordinate other trees; failure to read Git exits nonzero and writes no PASS report; worktree ownership is derived from Git relations/porcelain, not names or cwd labels.
 
 ---
@@ -168,7 +172,7 @@ from tools import cmc_inventory
 def git(repo: Path, *args: str) -> str:
     result = subprocess.run(["git", *args], cwd=repo, check=True,
                             capture_output=True, text=True)
-    return result.stdout.strip()
+    return result.stdout.rstrip("\r\n")
 
 
 def test_collect_reads_relationships_and_dirty_state(tmp_path: Path):
