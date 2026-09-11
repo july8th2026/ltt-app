@@ -184,3 +184,52 @@ ShellHost 9,2 · CrossDeviceResume 9,2 ≈ **47 MiB** (đều là app hệ thố
 ⭐ **L-13 (chủ dự án, cùng lúc):** 3090 chỉ dùng cho model AI, và LTT-3.8 phải lấy **trần ngữ cảnh tối
 đa** — nếu 262.144 vừa 24 GB thì **không hạ** số token. Cổng đo G1 (Task 3.2) vì vậy đo theo thứ tự:
 262.144 trước, và chỉ báo cáo con số thấp hơn nếu phép đo chứng minh không vừa.
+
+---
+
+## Task 3.1 — Tải Qwen3.5-9B Q6_K + mmproj về máy B (2026-09-11 21:32–21:40)
+
+Chạy sớm hơn thứ tự trong kế hoạch: đây là việc **chờ mạng**, không chạm mã, nên cho nó chạy
+song song với Task 2.2 thay vì để nó chặn P3.
+
+### Bước 1 — sha256 lấy từ máy, không chép tay
+
+`lfs.oid` mà HuggingFace API trả về **chính là** sha256 của tệp, nên `Get-FileHash -Algorithm
+SHA256` đối chiếu thẳng được. Không có chỗ nào phải tin một con số gõ lại.
+
+| Kho | Tệp | Byte | sha256 |
+|---|---|---:|---|
+| `unsloth/Qwen3.5-9B-MTP-GGUF` | `Qwen3.5-9B-Q6_K.gguf` | 7.684.551.008 | `8AE8FD04E30C5A4AF3EF72654729FB0D7F33615CAC1BA335DD88084A56287934` |
+| `unsloth/Qwen3.5-9B-MTP-GGUF` | `mmproj-F16.gguf` | 918.165.984 | `5A40D1F771686432172A4981018A0D30D03A5AAF5793A5BADD5416573362A232` |
+| `lmstudio-community/Qwen3.5-9B-GGUF` | `Qwen3.5-9B-Q6_K.gguf` | 7.359.259.040 | `B2CCC477F0A2449DE299BEF560B63E498CAE94A2F3A3BAE13DF01168D77773E6` |
+| `lmstudio-community/Qwen3.5-9B-GGUF` | `mmproj-Qwen3.5-9B-BF16.gguf` | 921.704.480 | `330D17547BFDBCD0E7A0CB3F4B06B4CEEAC0AAA1E449122D9D66EF957AEB74B3` |
+
+Tải **cả hai** ứng viên Q6_K vì cổng G3 (Task 3.2) phải chọn một bằng **đo** VRAM đỉnh trên
+5060 Ti + chấm chất lượng, không chọn trước bằng suy luận. Hai tệp lệch nhau 325 MB.
+
+⚠️ `mmproj-F16.gguf` của unsloth **trùng tên** với mmproj của bản 27B đang nằm trên
+`H:\LTT_LLM\models` (927.607.488 B, `CBB841A9…`). Ghi đè là mất mmproj của LTT-3.8 mà không ai
+biết cho tới lần nạp sau. Script lưu dưới tên `mmproj-9B-F16-unsloth.gguf`.
+
+### Bước 2 — chạy bằng Scheduled Task SYSTEM
+
+`E:\AI\ltt_dual\tai_model.ps1` (bản trong kho: `docs/ltt_llm_dual/artifacts/bench/tai_model.ps1`),
+đăng ký `schtasks /tn LTT_Tai_Model_35 /ru SYSTEM`. **Không** chạy thẳng qua ssh: phiên ssh đứt
+thì tiến trình con bị giết giữa chừng ~17 GB. Script chạy lại được — tệp nào đúng hash thì bỏ qua.
+
+Task để lại trên máy B (kiểu `ONCE` giờ đã qua nên không tự chạy lại) để lần sau tải bổ sung chỉ
+cần `schtasks /run`.
+
+### Bước 3 — kết quả
+
+```
+21:36:01  XONG  Qwen3.5-9B-Q6_K-unsloth.gguf   7684551008 byte / 235 s
+21:36:45  XONG  mmproj-9B-F16-unsloth.gguf      918165984 byte / 10,7 s
+21:38:48  XONG  Qwen3.5-9B-Q6_K-lmstudio.gguf  7359259040 byte / 119,3 s
+21:40:44  XONG  mmproj-9B-BF16-lmstudio.gguf    921704480 byte / 84,1 s
+=== KET THUC === 0 loi
+```
+
+Cả 4 tệp: số byte khớp, sha256 khớp oid. 16,9 GB trong 8,7 phút (~32 MB/s). `H:` còn 507 GB trống.
+
+⇒ Task 3.1 xong. Cổng đo Task 3.2 đã có đủ tệp để chạy G3 (hai ứng viên) và G1 (bản 27B sẵn có).
