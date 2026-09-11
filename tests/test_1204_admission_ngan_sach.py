@@ -1,6 +1,6 @@
 """multijob Task 5 — `admission.xet_va_giu()`: luật nhận chạy trên CSDL thật.
 
-`test_953` chứng minh LUẬT; tệp này chứng minh luật được áp đúng lên ẢNH CHỤP
+`test_1203` chứng minh LUẬT; tệp này chứng minh luật được áp đúng lên ẢNH CHỤP
 CSDL (lease sống + người chờ còn nhịp), và đường cũ không đổi một hành vi nào.
 """
 from __future__ import annotations
