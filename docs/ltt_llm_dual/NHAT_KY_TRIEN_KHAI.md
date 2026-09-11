@@ -92,3 +92,51 @@ lượt này đi thẳng qua SSH đồng bộ vì chỉ ~1 phút; `bench.py` ư�
 `/tokenize` nên token vào dao động 1.982–2.039; `power_w_tb` là trung bình lấy mẫu ~1 s, không phải đỉnh;
 sha GGUF là hằng số chép từ `00_CURRENT_BASELINE.md`, phải sửa tay nếu đổi model; máy B **không** có
 `cua_so_yen` nên "rảnh" được xác nhận bằng `/running` + `/slots` trước/trong/sau.
+
+## 2026-09-11 — Tối ưu 3090: dọn TOÀN BỘ desktop sang 5060 Ti (L-12 đạt)
+
+**Nguyên nhân thật, đo được.** LUID `0x38cc5f` = 3090, `0x37fdf5` = 5060 Ti. Mọi tiến trình desktop
+nằm trên 3090 đều thuộc **session 2 = phiên RDP** (`rdp-tcp#0`, user `lengo`): explorer 50,8 · dwm 24,8 ·
+LGHUB 30,1 · M365Copilot 26,6 · StartMenu 13,2 · TextInputHost 10,3 · SearchHost 9,6 · Taskmgr 9,6 ·
+ShellHost 9,3 · PhoneExperienceHost 9,2 ≈ **193 MiB**. Phiên console (session 1, màn hình vật lý) **đã**
+ở 5060 Ti. ⇒ Không phải "ứng dụng cài lung tung": **phiên Remote Desktop dựng hình trên card mạnh nhất**.
+
+**Đã làm (2 bước, đều lùi được).**
+
+1. Chính sách RDS: `HKLM\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services` →
+   `fUseHardwareDefaultGraphicsAdapter = 1` (DWORD) — phiên RDS dùng adapter mặc định phần cứng thay vì
+   tự chọn card mạnh nhất.
+   **Lùi:** `Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services" -Name fUseHardwareDefaultGraphicsAdapter`
+2. `logoff 2` — đóng phiên RDP để giải phóng ngay. Dịch vụ (session 0: llama-swap, hai gateway, ComfyUI)
+   **không** bị ảnh hưởng.
+
+**Sau khi dọn (đo lại).**
+
+| Trên 3090 | MiB |
+|---|---:|
+| `llama-server` | 21.512,7 |
+| `python` = ComfyUI (model ảnh, hợp lệ L-11) | 223,5 |
+| `System` | 4,0 |
+| **Desktop** | **0** |
+
+`nvidia-smi`: 3090 dùng 21.735 MiB, **trống 2.591 MiB**; 5060 Ti 54 MiB. Toàn bộ desktop (dwm, LogonUI,
+csrss) nay ở 5060 Ti.
+
+**Mốc C1 CHÍNH THỨC (đo sau tối ưu, cùng khuôn `bench.py`, hồ sơ production b10883):**
+
+| # | decode tok/s | TTFT (s) | prefill tok/s | tok vào | VRAM (MiB) | W tb |
+|---|---:|---:|---:|---:|---:|---:|
+| 1 | 66,91 | 2,257 | 1.024,7 | 2.035 | 21.735 | 317,9 |
+| 2 | 66,70 | 2,077 | 1.073,0 | 2.020 | 21.735 | 360,0 |
+| 3 | 71,45 | 1,953 | 1.150,4 | 2.024 | 21.735 | 355,7 |
+| 4 | 60,96 | 1,959 | 1.141,8 | 2.006 | 21.807 | 353,1 |
+| 5 | 63,99 | 2,002 | 1.127,1 | 2.012 | 21.826 | 357,5 |
+| **Trung vị** | **66,70** | **2,002** | 1.127,1 | 2.019 | 21.735 | 355,7 |
+
+⇒ **Ngưỡng cổng nghiệm thu B = 60,0 tok/s** (90 % của 66,70). Dọn desktop **không** đổi tốc độ (193 MiB
+là sức chứa, không phải băng thông) — giá trị của nó nằm ở phép thử 262.144.
+
+**Đầu vào cho thiết kế P5.** ComfyUI vẫn giữ **223,5 MiB** ngữ cảnh CUDA trên 3090 kể cả khi rảnh; `/free`
+chỉ nhả **model**, không nhả ngữ cảnh. Muốn 3090 thật sự 100 % cho LLM trong cửa sổ LLM thì trọng tài
+residency phải **dừng hẳn dịch vụ `LTTComfyUI`** rồi bật lại cho cửa sổ ảnh, chứ không chỉ gọi `/free`.
+Ghi vào Task 5.4/5.5 để cân nhắc (giá phải trả: thời gian khởi động ComfyUI).
