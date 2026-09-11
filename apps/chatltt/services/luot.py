@@ -33,7 +33,6 @@ from apps.chatltt.services import hoi_thoai as H
 from apps.chatltt.services import su_kien as S
 from apps.chatltt.tables import ChatlttExecution, ChatlttMessage
 from apps.chatltt.services import loi_ra_ngoai as LRN
-
 log = logging.getLogger("apps.chatltt.luot")
 
 #: Trần ký tự một lượt gửi của người dùng — trần SẢN PHẨM (ngữ cảnh do executor
@@ -257,7 +256,8 @@ def dong_su_kien(db, *, ex, tra_loi, so, params: dict, user_id: str,
 
     ghi_nhan: dict = {}
     it = L.mo_luong(db, user_id=user_id, tool_name=ex.tool_name, params=params,
-                    correlation_id=ex.id, holder_id=ex.id, ghi_nhan=ghi_nhan)
+                    correlation_id=ex.id, holder_id=ex.id, ghi_nhan=ghi_nhan,
+                    cua=chinh_sach.CUA, tien_to=chinh_sach.TIEN_TO)
     luc_ghi = time.monotonic()
     ky_tu = 0
     try:

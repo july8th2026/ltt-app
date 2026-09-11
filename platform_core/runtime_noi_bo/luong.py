@@ -884,7 +884,8 @@ def _su_kien_tu_goi(goi: dict, trang_thai: dict) -> Iterator[dict]:
 def mo_luong(db, *, user_id: str, tool_name: str, params: dict,
              correlation_id: str = "", holder_id: str = "",
              timeout_s: float = MO_LUONG_GIAY,
-             ghi_nhan: Optional[dict] = None) -> Iterator[dict]:
+             ghi_nhan: Optional[dict] = None,
+             cua: str = "stream", tien_to: str = "st") -> Iterator[dict]:
     """Chạy một lượt text và sinh **sự kiện canonical** (§5.3 kế hoạch H43).
 
         response.started {request_id, model, credit_giu}
@@ -916,9 +917,20 @@ def mo_luong(db, *, user_id: str, tool_name: str, params: dict,
     # `DemToken` không thấy usage ⇒ hoàn đủ, thu 0 — đúng luật nhưng là cho không.
     than.setdefault("stream_options", {"include_usage": True})
 
+    # `cua` / `tien_to` do NGUOI GOI dua xuong, khong viet cung o day.
+    #
+    # Ban truoc ghim thang "chatltt" / "cl" — mot ten APP nam trong
+    # `platform_core`, dung thu `test_60::test_no_app_slug_is_hardcoded_in_the
+    # _platform` cam. No lot vao cung voi cong stream cua Multi-Job (52a76dd1)
+    # va song sot vi chua ai chay gate day du tren cay hop nhat.
+    #
+    # Khong phai chuyen hinh thuc: nhan `cua` di vao SO TUNG LUOT cua phong cho
+    # (`llm_waiters.cua`), nen mot ten viet cung nghia la moi app goi ham nay ve
+    # sau deu bi ghi nham la "chatltt" trong so — va bao cao nghen se tro sai
+    # app. Mac dinh "stream" la mo ta DUNG cho mot nguoi goi chua tu khai.
     tk = tien_kiem(db, user_id=user_id, tool_name=tool_name, than=than,
                    duong=DUONG_NOI_BO, correlation_id=correlation_id,
-                   tien_to="cl", cua="chatltt")
+                   tien_to=tien_to, cua=cua)
     if tk.dung_phong_cho:
         # multijob D-06: chờ trong phòng chờ, phát `response.queued` theo nhịp
         # (bên tiêu thụ bỏ qua loại lạ; `_p_luot.py` chuyển xuống trình duyệt và
