@@ -351,3 +351,109 @@ def test_khai_lan_giong_DA_THU_HOI_bi_chan(khach):
                     data={"ngon_ngu": "en", "csrf_token": _csrf_giong(client)},
                     headers={"Accept": "application/json"})
     assert r.status_code == 400
+    assert r.json()["ma_loi"] == "voice_revoked"
+
+
+def test_doi_lan_XOA_tep_nghe_thu_cu(khach):
+    """🔴 D004 + preview: tệp nghe thử CŨ (làn cũ) không được sống sót một lượt
+    đổi làn thật — nó đọc câu SAI làn, và không có gì huỷ nó ngoài đúng cửa
+    này (`nghe_thu.dung_lai_cho_giong`, gọi SAU `db.commit()` — xem review
+    round 1)."""
+    client, uid = khach
+    from apps.ltt_voice import nghe_thu
+    from platform_core.storage import get_storage
+
+    pid = _tao_giong_active(uid, ngon_ngu="vi", nguon="khai_bao")
+    khoa = nghe_thu.khoa_rieng(uid, pid)
+    st = get_storage()
+    st.put(khoa, io.BytesIO(b"tep nghe thu GIA cua lan CU"),
+          content_type="audio/wav")
+    assert st.exists(khoa), "chua dung duoc tien de: tep phai co truoc"
+
+    r = client.post(f"/ltt-voice/giong/{pid}/ngon-ngu",
+                    data={"ngon_ngu": "en", "csrf_token": _csrf_giong(client)},
+                    headers={"Accept": "application/json"})
+    assert r.status_code == 200, r.text
+
+    assert not st.exists(khoa), "tep nghe thu lan CU van con sau khi doi lan"
+
+
+# ── `nghe_thu.bao_tri`: bước dựng lại preview còn thiếu cho giọng NHÂN ────────
+# ── BẢN của khách (khác nguồn với giọng mẫu) — review round 1, IMPORTANT 1 ────
+
+def _them_bieu_dien_gia(uid: str, pid: str):
+    """Ghi một `VoiceRepr` + một tệp `.npz` giả — đủ để `tham_chieu.
+    tim_repr_active`/`nap_ref_b64` đọc được mà không cần engine thật."""
+    from apps.ltt_voice.tables import VoiceRepr
+    from platform_core.storage import get_storage
+    import platform_core.db as dbmod
+
+    khoa = f"voice/{uid}/{pid}/repr-fake.npz"
+    get_storage().put(khoa, io.BytesIO(b"embedding gia"),
+                      content_type="application/octet-stream")
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        hs = _ho_so_theo_pid(pid)
+        db.add(VoiceRepr(profile_id=hs.id, ref_id=0, engine="vieneu",
+                         storage_key=khoa, fingerprint="fake",
+                         trang_thai="dang_dung"))
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+def test_bao_tri_dung_giong_rieng_bo_qua_da_co_va_khong_co_bieu_dien(khach, monkeypatch):
+    client, uid = khach
+    from apps.ltt_voice import nghe_thu
+    from platform_core.storage import get_storage
+
+    # (1) Giọng ĐÃ CÓ preview -> KHÔNG được dựng lại (tốn công vô ích).
+    pid_da_co = _tao_giong_active(uid, ngon_ngu="vi", nguon="khai_bao")
+    khoa_da_co = nghe_thu.khoa_rieng(uid, pid_da_co)
+    get_storage().put(khoa_da_co, io.BytesIO(b"da co san"), content_type="audio/wav")
+    _them_bieu_dien_gia(uid, pid_da_co)
+
+    # (2) Giọng THIẾU preview, CÓ biểu diễn -> PHẢI được dựng, đúng LÀN của nó.
+    pid_thieu = _tao_giong_active(uid, ngon_ngu="en", nguon="khai_bao")
+    _them_bieu_dien_gia(uid, pid_thieu)
+
+    # (3) Giọng THIẾU preview, KHÔNG có biểu diễn -> BỎ QUA, không ném.
+    pid_khong_bieu_dien = _tao_giong_active(uid, ngon_ngu="vi", nguon="khai_bao")
+
+    goi = []
+    monkeypatch.setattr(nghe_thu, "dung",
+                        lambda khoa, **kw: (goi.append((khoa, kw)), True)[1])
+
+    nghe_thu._dung_giong_rieng_con_thieu()
+
+    khoa_thieu = nghe_thu.khoa_rieng(uid, pid_thieu)
+    khoa_khong_bd = nghe_thu.khoa_rieng(uid, pid_khong_bieu_dien)
+    da_goi = dict(goi)
+    assert khoa_thieu in da_goi, "giong thieu preview + co bieu dien phai duoc dung"
+    assert khoa_da_co not in da_goi, "giong DA CO preview khong duoc dung lai"
+    assert khoa_khong_bd not in da_goi, "giong khong co bieu dien phai bi bo qua"
+    assert da_goi[khoa_thieu].get("ngon_ngu") == "en", (
+        "phai dung theo LAN HIEN TAI cua ho so, khong phai mac dinh")
+
+
+def test_bao_tri_dung_giong_rieng_ton_trong_tran(khach, monkeypatch):
+    client, uid = khach
+    from apps.ltt_voice import nghe_thu
+
+    so_giong = nghe_thu.TOI_DA_GIONG_RIENG_MOI_LUOT + 3
+    for _ in range(so_giong):
+        pid = _tao_giong_active(uid, ngon_ngu="vi", nguon="khai_bao")
+        _them_bieu_dien_gia(uid, pid)
+
+    goi = []
+    monkeypatch.setattr(nghe_thu, "dung",
+                        lambda khoa, **kw: (goi.append(khoa), True)[1])
+
+    nghe_thu._dung_giong_rieng_con_thieu()
+
+    assert len(goi) == nghe_thu.TOI_DA_GIONG_RIENG_MOI_LUOT, (
+        f"dung {len(goi)} tep cho {so_giong} giong dang thieu — tran khong duoc tuan thu")

@@ -12,15 +12,18 @@
     exactly what killed every POST door of this app on 31/08.
 
 .EXAMPLE
-    powershell -ExecutionPolicy Bypass -File .\setup\chay_thu_ghi_danh.ps1 -Clip D:\x.wav
+    powershell -ExecutionPolicy Bypass -File .\setup\chay_thu_ghi_danh.ps1 -Clip D:\x.wav -NgonNgu vi
 
 .NOTES
     Needs Administrator (to read the ACL-locked app.env).
     Pure ASCII (CLAUDE.md rule 2).
+    -NgonNgu is mandatory since D003 (2026-09-11): the enroll door now
+    refuses a request with no declared language (400 voice_language_required).
 #>
 [CmdletBinding()]
 param(
     [Parameter(Mandatory=$true)][string]$Clip,
+    [Parameter(Mandatory=$true)][ValidateSet('vi','en')][string]$NgonNgu,
     [string]$Root  = 'C:\LTTPlatform',
     [string]$Repo  = '',
     [string]$Email = '',
@@ -57,7 +60,7 @@ foreach ($dong in (Get-Content $envFile -Encoding UTF8)) {
 Write-Host "  [OK] Nap $so bien tu app.env (khong in gia tri)" -ForegroundColor Green
 $env:PYTHONPATH = $Repo
 
-$doiSo = @('--clip', $Clip, '--cho-giay', "$ChoGiay")
+$doiSo = @('--clip', $Clip, '--ngon-ngu', $NgonNgu, '--cho-giay', "$ChoGiay")
 if ($Email) { $doiSo += @('--email', $Email) }
 if ($Ten)   { $doiSo += @('--ten',   $Ten) }
 

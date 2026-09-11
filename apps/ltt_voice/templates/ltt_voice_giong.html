@@ -33,6 +33,25 @@
     {% include "_voice_vo.html" %}
   {% endwith %}
 
+  {#
+    LỖI TỪ MỘT REDIRECT — cửa `khai_ngon_ngu_giong` (`/giong/{id}/ngon-ngu`)
+    trả 303 kèm `?loi=...` khi khách gửi bằng `<form>` HTML thật (không JS,
+    xem `_voice_the.html`) và bị từ chối. Không hiện câu đó ở đâu thì lỗi
+    RƠI MẤT — trang tải lại y hệt lúc trước, khách không biết vì sao cú bấm
+    "Xác nhận"/"Đổi ngôn ngữ" của họ không có tác dụng.
+
+    ⭐ Cùng khuôn `apps/lttvideo/templates/lttvideo.html:49-51`: đọc thẳng
+       `request.query_params`, không cần route truyền thêm biến context —
+       route GET `/giong` (`trang_giong`) không đổi. Jinja tự thoát HTML cho
+       `{{ }}` (autoescape mặc định của `Jinja2Templates`), nên câu lỗi —
+       vốn luôn là một chuỗi `_t(...)` tĩnh do chính `_p_giong.py` soạn,
+       không bao giờ là văn bản khách gõ — vẫn được thoát an toàn dù nó ĐI
+       QUA URL.
+  #}
+  {% if request.query_params.get('loi') %}
+    <div class="alert alert-err" role="alert">{{ request.query_params.get('loi') }}</div>
+  {% endif %}
+
   <div class="lv-g-khung">
     {# ── Cột trái: lọc + lưới ────────────────────────────────────────────── #}
     <div class="lv-g-trai">

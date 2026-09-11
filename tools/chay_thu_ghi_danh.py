@@ -4,7 +4,7 @@ một khách hàng đi: vé SSO → cookie phiên → đọc `csrf_token` khỏi
 multipart → chờ worker → đọc `result`.
 
     powershell -ExecutionPolicy Bypass -File .\setup\chay_thu_ghi_danh.ps1 `
-        -Clip D:\LTTSTUDIOSAPP\tmp\clip_chuan_b.wav
+        -Clip D:\LTTSTUDIOSAPP\tmp\clip_chuan_b.wav -NgonNgu vi
 
 ⭐ VÌ SAO ĐI HTTPS CHỨ KHÔNG GỌI THẲNG `submit_with_credit`
 

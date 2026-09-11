@@ -179,6 +179,15 @@ PHIEN_BAN: str = "v2-" + hashlib.sha256(
 #:    khoảng đó job của khách chờ mà không ai biết vì sao.
 MOI_LUOT_TOI_DA = 3
 
+#: Trần số giọng NHÂN BẢN CỦA KHÁCH dựng lại trong MỘT lượt bảo trì — cùng lý
+#: do `MOI_LUOT_TOI_DA` ở trên, một hằng số RIÊNG vì đây là một NGUỒN dữ liệu
+#: khác (bảng `voice_profile`, không phải `giong_mau.DANH_SACH`) với một nhịp
+#: phát sinh khác: giọng mẫu chỉ thiếu tệp sau một lần nâng `PHIEN_BAN`, còn
+#: giọng riêng thiếu tệp mỗi khi một khách ĐỔI LÀN
+#: (`routes/_p_giong.py:khai_ngon_ngu_giong` → `dung_lai_cho_giong`) — một sự
+#: kiện có thể dồn dập hơn nhiều so với một lần nâng engine.
+TOI_DA_GIONG_RIENG_MOI_LUOT = 5
+
 
 def _slug(ten: str) -> str:
     """Tên giọng thành một đoạn đường dẫn an toàn.
@@ -246,9 +255,10 @@ def dung_lai_cho_giong(db, ho_so) -> None:
 
     ⛔ KHÔNG gọi engine đồng bộ ở đây — người gọi là một request HTTP
        (`routes/_p_giong.py:khai_ngon_ngu_giong`), và một lượt sinh tiếng nói
-       tốn hàng chục giây GPU. Chỉ HUỶ tệp cũ; `bao_tri()` (vòng nền, dưới
-       lease) dựng lại tệp mới ở lượt kế tiếp — đúng cách ③ đầu tệp này giải
-       thích, không phải cách ① (sinh ngay, đồng bộ).
+       tốn hàng chục giây GPU. Chỉ HUỶ tệp cũ; bước `_dung_giong_rieng_con_thieu`
+       của `bao_tri()` (vòng nền, dưới lease) dựng lại tệp mới bằng LÀN MỚI ở
+       lượt kế tiếp — đúng cách ③ đầu tệp này giải thích, không phải cách ①
+       (sinh ngay, đồng bộ). Xem `_dung_giong_rieng_con_thieu` cho cơ chế đó.
 
     ⚠️ `db` không dùng tới Ở ĐÂY (chữ ký khớp `giong_vong_doi.khoa_can_xoa(db,
        ho_so)` có chủ ý — hai hàm cùng hình dạng, cùng nhận một hồ sơ và xoá
@@ -396,6 +406,17 @@ def bao_tri() -> None:
 
     ⚠️ Im lặng khi cổng chưa bật. Đây là việc nền; sủa mỗi giờ trên một máy
        chưa cài engine chỉ làm nhật ký khó đọc.
+
+    Hai NGUỒN thiếu, hai bước riêng:
+      ① giọng MẪU (`con_thieu_mau`, danh mục tĩnh `giong_mau.DANH_SACH`);
+      ② giọng NHÂN BẢN CỦA KHÁCH đang thiếu (`_dung_giong_rieng_con_thieu`,
+         bảng `voice_profile`) — điển hình sau một lượt ĐỔI LÀN
+         (`dung_lai_cho_giong` huỷ tệp cũ, bước này dựng tệp mới ở lượt kế).
+
+    ⛔ Bước ② PHẢI CHẠY DÙ BƯỚC ① KHÔNG CÓ GÌ ĐỂ DỰNG — hai nguồn độc lập
+       nhau, và một `return` sớm sau bước ① (bản trước D004) từng khiến giọng
+       khách đổi làn không bao giờ có tệp nghe thử lại nếu 20 giọng mẫu đã
+       warm sẵn (`thieu` rỗng ⇒ hàm thoát trước khi chạm tới giọng khách).
     """
     # ⭐ ĐẾM MỨC DÙNG TRƯỚC, và **ngoài** cổng `san_sang()` bên dưới.
     #
@@ -411,14 +432,97 @@ def bao_tri() -> None:
         return
     _doi_chieu_giong_mau()
     thieu = con_thieu_mau()
-    if not thieu:
-        return
-    log.info("nghe thu: con thieu %d giong mau, dung toi da %d luot nay",
-             len(thieu), MOI_LUOT_TOI_DA)
-    for g in thieu[:MOI_LUOT_TOI_DA]:
-        # Làn đi theo giọng, lấy từ chính danh mục — không phải từ ngôn ngữ của
-        # tiến trình bảo trì, thứ chẳng liên quan gì tới giọng này.
-        dung(khoa_mau(g.ma), preset=g.ma, ngon_ngu=g.ngon_ngu)
+    if thieu:
+        log.info("nghe thu: con thieu %d giong mau, dung toi da %d luot nay",
+                 len(thieu), MOI_LUOT_TOI_DA)
+        for g in thieu[:MOI_LUOT_TOI_DA]:
+            # Làn đi theo giọng, lấy từ chính danh mục — không phải từ ngôn
+            # ngữ của tiến trình bảo trì, thứ chẳng liên quan gì tới giọng này.
+            dung(khoa_mau(g.ma), preset=g.ma, ngon_ngu=g.ngon_ngu)
+    _dung_giong_rieng_con_thieu()
+
+
+def _dung_giong_rieng_con_thieu() -> None:
+    """Dựng lại tệp nghe thử còn THIẾU cho giọng NHÂN BẢN của khách — bước ②
+    của `bao_tri()`, tách khỏi bước ① (giọng mẫu) vì khác NGUỒN dữ liệu.
+
+    🔴 VÌ SAO BƯỚC NÀY TỒN TẠI (D004).
+
+       `routes/_p_giong.py:khai_ngon_ngu_giong` gọi `dung_lai_cho_giong` để
+       HUỶ tệp nghe thử cũ ngay khi một khách đổi làn — nhưng nó KHÔNG dựng
+       lại đồng bộ (một request HTTP không được giữ GPU hàng chục giây). Nếu
+       không có bước này, tệp bị huỷ đó không bao giờ có ai dựng lại: giọng
+       vẫn `active`, vẫn dùng được để đọc, nhưng vĩnh viễn "chưa có nghe thử"
+       — một hồi quy im lặng mà chỉ hiện ra khi khách bấm nút phát.
+
+    ⭐ DÙNG LẠI ĐÚNG BỘ DỰNG mà `jobs._ghi_danh` dùng ở đuôi job ghi danh
+       (`nghe_thu.dung`) — không phải một đường dựng thứ hai. `ref_b64` ở đây
+       không có sẵn như lúc job đang chạy (job vừa nhận nó thẳng từ sidecar),
+       nên đọc lại qua `tham_chieu.nap_ref_b64(bieu_dien)` — cùng cách các cửa
+       khác lấy biểu diễn từ kho. Khác biệt với `jobs._ghi_danh`: ở đây
+       `ngon_ngu=ho_so.ngon_ngu` được truyền TƯỜNG MINH bằng làn HIỆN TẠI
+       (có thể vừa đổi) — bước này là bước DUY NHẤT biết một giọng vừa đổi
+       làn.
+
+    ⛔ CHỈ giọng CỦA CHÍNH KHÁCH (`dung_chung=False`) và ĐANG `active`. Giọng
+       kho chung (`dung_chung=True`) CỐ Ý bị loại: dựng nghe thử cho kho
+       chung theo làn là phạm vi của một tính năng CHƯA MỞ (kho chung nhiều
+       khách dùng — không phải việc của D004); dựng nhầm ở đây tiêu GPU cho
+       một luồng chưa ai gọi tới.
+
+    ⚠️ Bỏ qua giọng CHƯA CÓ biểu diễn đang dùng (`tham_chieu.tim_repr_active`
+       trả `None`): không có `ref_b64` thì không dựng được gì, và một hồ sơ
+       `active` mà không có `VoiceRepr` là dữ liệu không nên có (`jobs.
+       _ghi_danh` chỉ chuyển `active` SAU khi ghi biểu diễn) — phòng thủ ở
+       đây rẻ hơn để một dòng dữ liệu lạ làm cả lượt bảo trì ném.
+
+    ⛔ TRẦN `TOI_DA_GIONG_RIENG_MOI_LUOT` — cùng lý do `MOI_LUOT_TOI_DA` của
+       giọng mẫu: vòng bảo trì chạy CÙNG tiến trình với worker job, dựng quá
+       nhiều trong một lượt giữ GPU trong lúc khách khác đang chờ job của họ.
+       Đếm theo số tệp ĐÃ DỰNG THẬT, không theo số hồ sơ đã quét — một hồ sơ
+       đã có tệp hoặc thiếu biểu diễn không tốn ngân sách này.
+    """
+    from sqlalchemy import select
+
+    from . import tham_chieu
+    from .tables import VoiceProfile
+    from platform_core.db import get_session
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        ho_so_list = db.execute(
+            select(VoiceProfile).where(
+                VoiceProfile.trang_thai == "active",
+                VoiceProfile.dung_chung.is_(False),
+            ).order_by(VoiceProfile.tao_luc.desc())
+        ).scalars().all()
+
+        da_dung = 0
+        for ho_so in ho_so_list:
+            if da_dung >= TOI_DA_GIONG_RIENG_MOI_LUOT:
+                break
+            khoa = khoa_rieng(str(ho_so.owner_id), str(ho_so.public_id))
+            if co_san(khoa):
+                continue
+            bieu_dien = tham_chieu.tim_repr_active(db, ho_so.id)
+            if bieu_dien is None:
+                # Không có gì để dựng — xem docstring. Không tính vào trần.
+                continue
+            try:
+                ref_b64 = tham_chieu.nap_ref_b64(bieu_dien)
+            except Exception as e:  # noqa: BLE001 - xem docstring `dung()`
+                log.warning(
+                    "khong doc duoc bieu dien de dung nghe thu rieng %s: %s",
+                    ho_so.public_id, e)
+                continue
+            dung(khoa, ref_b64=ref_b64, ngon_ngu=str(ho_so.ngon_ngu or ""))
+            da_dung += 1
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
 
 
 #: Bao lâu mới đối chiếu ảnh chụp giọng mẫu với engine một lần, tính bằng giây.

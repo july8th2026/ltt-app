@@ -303,17 +303,32 @@ def khai_ngon_ngu_giong(request: Request, public_id: str,
             return _tra_loi_ngon_ngu(muon_json, loi, ma_loi_lan)
 
         lan_moi = lan_ngon_ngu.chuan_lan(ngon_ngu)
+        can_dung_lai = False
         if lan_moi != ho_so.ngon_ngu:
             # ĐỔI làn thật: tệp nghe thử cũ đọc câu của làn CŨ, nên nó không còn
-            # đúng cho giọng này — huỷ để vòng bảo trì dựng lại đúng làn mới.
+            # đúng cho giọng này — huỷ để bước `_dung_giong_rieng_con_thieu`
+            # của `bao_tri()` dựng lại đúng làn mới ở lượt kế.
             ho_so.ngon_ngu = lan_moi
             ho_so.ngon_ngu_nguon = giong_vong_doi.NGUON_KHAI_BAO
-            nghe_thu.dung_lai_cho_giong(db, ho_so)
+            can_dung_lai = True
         elif ho_so.ngon_ngu_nguon == giong_vong_doi.NGUON_MAC_DINH_CU:
             # Cùng làn, chỉ XÁC NHẬN nguồn — không có gì để dựng lại.
             ho_so.ngon_ngu_nguon = giong_vong_doi.NGUON_KHAI_BAO
         # else: cùng làn, nguồn đã là `khai_bao`/`do_asr` — no-op hợp lệ.
         db.commit()
+
+        # 🔴 HUỶ TỆP NGHE THỬ **SAU** COMMIT, KHÔNG TRƯỚC.
+        #
+        #    Đổi làn CSDL và huỷ tệp kho là hai hệ thống khác nhau — không có
+        #    transaction chung. Xoá tệp TRƯỚC rồi `commit()` hỏng giữa chừng
+        #    (deadlock, mất kết nối) để lại một giọng vẫn khai làn CŨ mà đã
+        #    KHÔNG CÒN tệp nghe thử nào — tệ hơn hẳn trạng thái ban đầu (tệp cũ
+        #    đọc sai làn, nhưng ít nhất còn phát được gì đó). Xoá SAU khi commit
+        #    thành công thì trường hợp xấu nhất chỉ là: đổi làn đã ghi xong,
+        #    tệp cũ (sai làn) còn sống thêm tới lượt bảo trì kế — vẫn đúng
+        #    hướng an toàn hơn.
+        if can_dung_lai:
+            nghe_thu.dung_lai_cho_giong(db, ho_so)
 
         if muon_json:
             return JSONResponse({"ok": True, "ngon_ngu": ho_so.ngon_ngu})
