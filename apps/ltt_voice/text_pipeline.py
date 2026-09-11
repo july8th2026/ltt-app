@@ -413,7 +413,8 @@ def _ha_chuoi_viet_hoa(t: str) -> str:
     if not tu:
         return t
 
-    ra, i = [], 0
+    ra: list[tuple[int, int]] = []
+    i = 0
     while i < len(tu):
         if not tu[i].group(0).isupper():
             i += 1

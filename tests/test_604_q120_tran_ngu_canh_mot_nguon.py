@@ -31,7 +31,6 @@ def test_q120_ton_tai_va_q116_da_thay():
     dau_q116 = van.index("### Q116 —")
     dong_q116 = van[dau_q116:van.index("\n", dau_q116)]
     assert "ĐÃ THAY" in dong_q116 and "Q120" in dong_q116
-
     # 🔴 HEADER MỤC 1 PHẢI ĐẨY SỐ THEO QUYẾT ĐỊNH MỚI NHẤT — và chốt bằng
     #    **số cao nhất đang có**, không bằng hằng `"đến Q120"` gõ tay.
     #

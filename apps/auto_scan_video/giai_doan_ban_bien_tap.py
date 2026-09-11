@@ -38,10 +38,9 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
        roi ban chep loi moi duoc loc ve phan giu lai. Doi thu tu la quay lai dung
        `V4-R07` — dich va tra tien cho nhung cau thuoc canh se bi cat.
     """
-    from . import features
+    from . import cai_dat as cd, features
 
-    settings = dict(run.settings or {})
-    preset = str(settings.get("preset") or hop_dong_v4.PRESET_MAC_DINH)
+    preset = cd.doc(run).preset
 
     tt = features.giai_doan_theo_ten(db, run.id, "media_prepare")
     thoi_luong = float(((tt.outputs or {}) if tt else {}).get("thoi_luong") or 0.0)
@@ -282,9 +281,11 @@ def _nguon_soi_duoc(db, kho, run) -> str:
     from . import assets, features
 
     gd = features.giai_doan_theo_ten(db, run.id, "media_prepare")
-    khoa = [k for k in (((gd.outputs or {}) if gd else {}).get("khoa_asset") or [])
-            if str(k).endswith((".mp4", ".mkv", ".mov"))]
-    khoa = khoa[0] if khoa else str(run.source_key or "")
+    # ⚠️ Hai ten cho hai hinh dang: mot danh sach ung vien, roi mot khoa duy
+    #    nhat. Ban truoc dung chung ten `khoa` cho ca hai.
+    ds_khoa = [k for k in (((gd.outputs or {}) if gd else {}).get("khoa_asset") or [])
+               if str(k).endswith((".mp4", ".mkv", ".mov"))]
+    khoa = str(ds_khoa[0]) if ds_khoa else str(run.source_key or "")
     if not khoa:
         raise ThieuChiMuc(_t('Chưa có bản media để phân tích cảnh.'))
     return assets.nguon_soi_duoc(kho, khoa)

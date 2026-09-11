@@ -147,6 +147,44 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         duong_lop = [_tai_ve(kho, l["khoa"], thu_muc / f"s{i}.wav")
                      for i, l in enumerate(lop)]
 
+        # ⭐ Chu cua lop phu di ra TEP, khong di ra dong lenh. Do duoc: mot chuoi
+        #    tieng Viet co dau, mot dau `:` hay mot dau `\` trong `text=` deu lam
+        #    ffmpeg tu choi ca chuoi loc — xem bang do o dau `lop_phu.py`.
+        #
+        # ⚠️ Ghi vao `thu_muc` cua chinh lan chay nay: no bi xoa **du that bai
+        #    hay khong** (`TemporaryDirectory`), nen mot cau chu cua khach khong
+        #    o lai tren dia sau khi job xong.
+        from . import lop_phu as _lp
+        duong_chu = _lp.viet_tep_chu(
+            list((ban.get("hinh") or {}).get("lop_phu") or ()), thu_muc)
+
+        # ⭐ Logo la ARTIFACT trong kho, nen no di duong `_tai_ve` y het lop
+        #    tieng — khong phai duong tep tam nhu chu cua lop phu.
+        #
+        # ⚠️ Duoi tep giu nguyen tu KHOA: ffmpeg chon bo giai ma theo noi dung
+        #    chu khong theo duoi, nhung mot `.png` doc ra `.bin` lam moi lan doc
+        #    log ve sau kho hon ma khong duoc gi.
+        ds_logo_ban = list((ban.get("hinh") or {}).get("logo") or ())
+        duong_logo = [
+            _tai_ve(kho, str(l["khoa"]),
+                    thu_muc / f"logo{i}{Path(str(l['khoa'])).suffix or '.png'}")
+            for i, l in enumerate(ds_logo_ban)]
+
+        # ⭐ `.ass` di duong y het chu cua lop phu: sinh o thu muc TAM cua lan
+        #    chay nay, xoa cung no. Su kien da duoc CHOT o COMPOSE va nam trong
+        #    ban dung — o day khong tinh lai mot moc nao.
+        #
+        # ⚠️ Kich thuoc khung la BAT BUOC ve noi dung: `build_ass` tinh co chu
+        #    va le theo no. Mac dinh 1920x1080 ap len mot video doc cho ra phu
+        #    de nho bang mot phan ba, dat sai le, **khong bao mot loi nao**.
+        from . import phu_de as _pd
+        _ho_so_pd = (ban.get("hinh") or {}).get("phu_de") or None
+        _goi_su_kien = (_ho_so_pd or {}).get("su_kien") or []
+        duong_ass = _pd.viet_tep_ass(
+            _ho_so_pd, _goi_su_kien, thu_muc,
+            rong=int((ban.get("hinh") or {}).get("rong_khung") or 0),
+            cao=int((ban.get("hinh") or {}).get("cao_khung") or 0))
+
         duong_ra = str(thu_muc / "ra.mp4")
         bo_thuc = ket_xuat.bo_ma_hoa_thuc_te(ban, co_gpu=co_gpu)
         khai = str((ban.get("hinh") or {}).get("bo_ma_hoa") or "")
@@ -155,7 +193,9 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         cmd = ket_xuat.dung_lenh(
             ban, ffmpeg_bin=nhap_media.media.ffmpeg_bin(),
             duong_video=duong_video, duong_master=duong_master,
-            duong_lop=duong_lop, duong_ra=duong_ra, bo_ma_hoa=bo_thuc)
+            duong_lop=duong_lop, duong_ra=duong_ra, bo_ma_hoa=bo_thuc,
+            duong_chu=duong_chu, duong_logo=duong_logo,
+            duong_ass=duong_ass)
 
         if bao:
             bao(15, _t('Đang kết xuất video'))
@@ -194,9 +234,28 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         with open(duong_ra, "rb") as f:
             kho.put(khoa, f, content_type="video/mp4")
 
+        # ── `.srt` la MOT BAN GIAO, khong phai mot tep trung gian ───────────
+        #
+        # 🔑 **Vi sao no sinh o RENDER chu khong o COMPOSE**, du du lieu da san
+        #    sang tu COMPOSE: `thi_hanh` dat `la_ban_giao = ten == RENDER`, va
+        #    ban giao la thu **khong co han**. Sinh o COMPOSE thi tep phu de cua
+        #    khach mang `HAN_TRUNG_GIAN = 30 ngay` trong khi video thi khong —
+        #    tuc mot nua ban giao tu bien mat sau mot thang, im lang.
+        phan = [{"staging_key": khoa, "kind": "video", "duoi": "mp4",
+                 "van_tay": vt, "parent_keys": [khoa_ban]}]
+        duong_srt = _pd.viet_tep_srt(_ho_so_pd, _goi_su_kien, thu_muc)
+        if duong_srt:
+            khoa_srt = assets.khoa_staging(
+                owner_id=run.owner_id, run_id=run.id, stage=pipeline.RENDER,
+                van_tay=vt, duoi="srt")
+            with open(duong_srt, "rb") as f:
+                kho.put(khoa_srt, f, content_type="application/x-subrip")
+            phan.append({"staging_key": khoa_srt, "kind": "subtitle",
+                         "duoi": "srt", "van_tay": vt,
+                         "parent_keys": [khoa_ban]})
+
     return {
-        "phan": [{"staging_key": khoa, "kind": "video", "duoi": "mp4",
-                  "van_tay": vt, "parent_keys": [khoa_ban]}],
+        "phan": phan,
         "tom_tat": {
             "thoi_luong_giay": round(float(tt["thoi_luong"]), 3),
             "co_byte": int(tt["co_byte"]),
@@ -214,13 +273,32 @@ def _van_tay(kho: Storage, khoa_ban: str, ban: dict) -> str:
     ⭐ `PHIEN_BAN_KET_XUAT` nam trong van tay chinh la thu lam cong thoat cua pha
        nay dung duoc: doi cach dung lenh ffmpeg ma van tay khong doi thi mot lan
        chay lai se **dung lai tep cu** va khong ai thay cach dung lenh moi.
+
+    🔴 **`PHIEN_BAN_CHE_DO` them o V6 pha 11, va no vá mot lo co that.**
+
+       Cau tren hua *"doi cach dung lenh deu doi no"*. Nhung `dung_lenh` chi
+       DAN chuoi loc lai; nguoi dung no la `che_do_render.loc_cat_noi`. Nen mot
+       thay doi trong chinh cho ay — doi cach lam mo, doi thu tu chang, them
+       `drawtext` — cho ra **cung mot ban dung** va **cung mot van tay**, trong
+       khi tep ra da khac.
+
+       ⛔ Va no khong bao gio no. No hien ra nhu mot lan chay lai "nhanh bat
+          thuong" tra ve dung tep cu — thu ma `assets.py` goi ten la *"sot tham
+          so = serve nham"*.
+
+    ⚠️ `PHIEN_BAN_CHE_DO` khong the thay cho `ban_dung`: `vung` va `lop_phu` nam
+       TRONG ban dung nen chung da vao `cs`. Hai so nay chot hai thu khac nhau —
+       *du lieu* va *ma sinh ra lenh* — va ca hai deu doi duoc doc lap.
     """
     import hashlib
+
+    from . import che_do_render as cdr
 
     with kho.open(khoa_ban) as f:
         cs = assets.bam(f.read())
     goi = json.dumps({"ban_dung": cs,
                       "ket_xuat": ket_xuat.PHIEN_BAN_KET_XUAT,
+                      "che_do": cdr.PHIEN_BAN_CHE_DO,
                       "ffmpeg": (ban.get("cong_cu") or {}).get("ffmpeg", "")},
                      sort_keys=True)
     return hashlib.sha256(goi.encode("utf-8")).hexdigest()

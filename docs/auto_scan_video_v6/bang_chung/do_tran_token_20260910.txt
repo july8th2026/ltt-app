@@ -1,0 +1,32 @@
+  [OK] Chay bang: C:\Users\Thang Tuong\AppData\Local\Programs\Python\Python313\python.exe
+  [OK] Nap 72 bien tu app.env vao tien trinh nay (khong in gia tri)
+  [OK] Bat dau do 12 vong (moi vong goi CA HAI thao tac)
+
+  [OK] nap 1 dong khoa `ltt_llm` tu pool that (chi doc)
+
+  tran token ra cua cua 'job' = 4,096
+  THAT/tran-job          vao ~   595 tok   tran ra   4,096
+  THAT/tran-rong(DC)     vao ~   595 tok   tran ra  12,288
+  NGAN/tran-job(DC)      vao ~   356 tok   tran ra   4,096
+
+do 12 vong, moi vong goi CA HAI (xen ke)
+
+  vong  1  THAT/tran-job               71.87s  fr=stop       nghi=  8221ky_tu ra=  3844tok noi_dung=  1306ky_tu  ok
+  vong  1  THAT/tran-rong(DC)          62.67s  fr=stop       nghi=  9405ky_tu ra=  4186tok noi_dung=  1044ky_tu  ok
+  vong  1  NGAN/tran-job(DC)           13.91s  fr=stop       nghi=  2170ky_tu ra=   799tok noi_dung=   447ky_tu  ok
+  vong  2  THAT/tran-job               60.53s  fr=length     nghi=  9593ky_tu ra=  4096tok noi_dung=     0ky_tu
+           NGUYEN VAN[:200] >>><<<  rong
+  vong  2  THAT/tran-rong(DC)          72.73s  fr=stop       nghi= 10585ky_tu ra=  4949tok noi_dung=   969ky_tu  ok
+  vong  2  NGAN/tran-job(DC)           22.58s  fr=stop       nghi=  3789ky_tu ra=  1262tok noi_dung=   427ky_tu  ok
+  vong  3  THAT/tran-job               62.08s  fr=length     nghi=  9756ky_tu ra=  4096tok noi_dung=     0ky_tu
+           NGUYEN VAN[:200] >>><<<  rong
+  vong  3  THAT/tran-rong(DC)          95.18s  fr=stop       nghi= 14873ky_tu ra=  6297tok noi_dung=  1083ky_tu  ok
+  vong  3  NGAN/tran-job(DC)           16.20s  fr=stop       nghi=  2703ky_tu ra=   956tok noi_dung=   463ky_tu  ok
+  vong  4  THAT/tran-job               63.20s  fr=length     nghi=  9752ky_tu ra=  4096tok noi_dung=     0ky_tu
+           NGUYEN VAN[:200] >>><<<  rong
+  vong  4  THAT/tran-rong(DC)          90.74s  fr=stop       nghi= 14008ky_tu ra=  6091tok noi_dung=  1106ky_tu  ok
+  vong  4  NGAN/tran-job(DC)           18.61s  fr=stop       nghi=  2960ky_tu ra=  1133tok noi_dung=   426ky_tu  ok
+  vong  5  THAT/tran-job               61.70s  fr=length     nghi=  9709ky_tu ra=  4096tok noi_dung=     0ky_tu
+           NGUYEN VAN[:200] >>><<<  rong
+  vong  5  THAT/tran-rong(DC)         102.95s  fr=stop       nghi= 15603ky_tu ra=  6843tok noi_dung=  1051ky_tu  ok
+  vong  5  NGAN/tran-job(DC)           21.59s  fr=stop       nghi=  3781ky_tu ra=  1296tok noi_dung=   458ky_tu  ok

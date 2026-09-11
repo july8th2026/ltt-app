@@ -145,6 +145,20 @@ def giai_giong(db, *, owner_id: str, voice_id: str = "", preset: str = ""):
     return ref_b64, preset_ra
 
 
+# 🔴 `doc_so_tran=False` o day la mot LOI KHAI, khong phai mot mac dinh.
+#
+#    No noi *"ASV co y khong doc so tran"* — trong khi su that la *"ASV chua
+#    tung quyet dinh dieu do"*. Phien LTT VOICE da doi `text_pipeline.chuan_hoa`
+#    de `None` nghia la *theo khuon engine*, va gia tri dung o day la `None`.
+#
+# ⚠️ Nhung KHONG doi duoc o cay nay: ban `chuan_hoa` cua trunk chua hoa toi,
+#    nen `chuan_hoa` o day van khai `doc_so_tran: bool`. Truyen `None` vao do
+#    chi "chay dung" nho truthiness, khong nho mot hop dong — va mypy noi ra
+#    dieu do (`arg-type`, 124 -> 125).
+#
+# ⭐ Nen viec dung la doi no O LUOT HOA, cung luc `chuan_hoa` that su nhan
+#    `None`. Phien VOICE giu `tests/test_514` (bat bien: khong app nao ghim
+#    cung khuon chuan hoa) trong scratchpad cho toi luc do.
 def chuan_hoa_van_ban(chu: str, *, doc_so_tran: bool = False,
                       tu_dien_rieng: dict | None = None) -> str:
     """Chuan hoa van ban TRUOC khi doc. Bat buoc, khong phai tuy chon.
@@ -215,7 +229,8 @@ def doc_mot_doan(chu: str, *, ref_b64=None, preset=None,
         raise GiongError(str(exc)) from exc
 
 
-def van_tay_doan(*, ma_doan: str, chu: str, voice_id: str, preset: str) -> str:
+def van_tay_doan(*, ma_doan: str, chu: str, voice_id: str, preset: str,
+                 tu_dien: dict | None = None) -> str:
     """Van tay cua MOT doan tieng (Prompt 12 muc 6).
 
     O muc DOAN chu khong o muc giai doan — do la thu cho phep sinh lai dung
@@ -224,13 +239,26 @@ def van_tay_doan(*, ma_doan: str, chu: str, voice_id: str, preset: str) -> str:
       `chu`      **noi dung**: sua mot chu la doi tep tieng
       `voice_id` / `preset`  doi giong la doi san pham
     """
-    goi = json.dumps({
+    goi_d = {
         "ma": ma_doan,
         "chu": chu,
         "voice_id": voice_id,
         "preset": preset,
         "phien_ban": PHIEN_BAN_GIONG,
-    }, sort_keys=True, ensure_ascii=False)
+    }
+    # 🔴 Tu dien PHAI o day. Hai tu dien khac nhau tren CUNG mot cau chu
+    #    cho hai tep tieng khac nhau; van tay khong doc no thi hai ket qua ay
+    #    dung chung mot khoa luu tru, va khach thu hai nhan tieng cua khach
+    #    thu nhat.
+    #
+    # ⭐ Chi them khi CO. `{}` va `None` cung nghia “khong co tu dien” nen
+    #    phai cho CUNG mot van tay — them mot khoa rong se lam MOI van tay cu
+    #    doi, va ca kho tieng da sinh bi vut di ma khong ai yeu cau. Day la
+    #    cap bay nguoc nhau: thieu thi hai ket qua khac dung chung van tay,
+    #    thua thi mot ket qua cu mat van tay cua no.
+    if tu_dien:
+        goi_d["tu_dien"] = tu_dien
+    goi = json.dumps(goi_d, sort_keys=True, ensure_ascii=False)
     return hashlib.sha256(goi.encode("utf-8")).hexdigest()
 
 

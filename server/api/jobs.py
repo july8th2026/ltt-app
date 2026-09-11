@@ -126,6 +126,11 @@ def _public_job(db, job: Job, tool=None) -> dict:
         # should never have to infer which world produced it (EXT-12).
         "mode": meta.get("mode") or sandbox.MODE_LIVE,
     }
+    if job.status == JOB_QUEUED:
+        from platform_core import job_scheduler
+
+        body["queue"] = job_scheduler.queue_snapshot(db, job)
+        body["poll_after_ms"] = 2000
     if job.status == JOB_ERROR:
         body["error"] = {"message": "The job could not be completed."}
     if job.status == JOB_DONE and tool is not None:
@@ -373,6 +378,11 @@ def register_job_routes(api, config, tag: str) -> None:
             job = invocation.submit(db, principal=principal, tool=tool,
                                     params=params, quote=quote,
                                     idempotency_key=key)
+            # The authenticated route is the trust boundary. Public JSON and
+            # headers never participate in priority assignment, so even a
+            # future permissive request model cannot mass-assign INTERNAL.
+            job.origin = "public_api"
+            job.priority_class = "external"
             if sessions:
                 # After the hold, never before it: an input that becomes
                 # durable without a paid job is the orphan Q85 prevents.

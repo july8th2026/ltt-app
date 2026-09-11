@@ -95,4 +95,5 @@ def nop_job(db, *, user_id: str, bao_gia: BaoGia, correlation_id: str = "",
         quoted_credit=int(bao_gia.credit),
         admission_resource=getattr(tool, "admission_resource", "") or resource_class(manifest),
         admission_slots=int(getattr(tool, "admission_slots", 0) or 0),
+        origin="internal_runtime", priority_class="internal",
     )

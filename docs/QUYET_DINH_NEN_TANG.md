@@ -27,7 +27,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 
 ---
 
-## 1. Quyết định đã chốt (đến Q121; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91, Q116→Q120 (phần con số) đã thay)
+## 1. Quyết định đã chốt (đến Q122; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91, Q116→Q120 (phần con số) đã thay)
 
 | # | Vấn đề | Quyết định | Lý do / hệ quả |
 |---|---|---|---|
@@ -139,6 +139,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 | Q112 | Một GPU `parallel=1` nhận bao nhiêu request đồng thời trước khi có admission queue thật? | **Đúng một request.** `LTT_LLM_MAX_DONG_THOI=1` là mặc định và bộ cài phải migrate env cũ về 1. Request thứ hai nhận `429` + `Retry-After`, không được xếp hàng bên trong llama.cpp. Hàng đợi có chờ chỉ được sống ở admission plane của nền tảng, nơi có `job_id`, trạng thái, giới hạn, fairness, hủy và metrics. | Baseline thật trên B với hai request 23.224 token cách nhau 200 ms: khi gateway cho 2 suất, lượt 1 mất 24,28 giây còn lượt 2 mất 45,73 giây — cả hai 200, chứng minh request thứ hai chờ vô hình khoảng 21,5 giây. Sau khi về 1 suất: lượt 1 vẫn 200, lượt 2 trả 429 trong 0,05 giây, `prompt_tokens=0`; không chạm upstream/GPU. Nới gateway lên 2 không tạo thêm năng lực khi engine vẫn `parallel=1`, nó chỉ chuyển trách nhiệm queue sang tầng không quan sát và không công bằng. |
 | Q113 | Ngữ cảnh public 90K có đồng nghĩa mọi request đồng bộ được dùng đủ 90K không? | **Không.** Engine vẫn `131072`; stream và async job vẫn được dùng public input cap `90000`. Riêng route trả JSON một cục dùng admission động trong ngân sách `90s`: `25s` dự phòng nạp model + `5s` hạ tầng + `(input_ước+512)/750` prefill + `max_tokens/40` decode. Mặc định output riêng của non-stream là `1024`; request vượt công thức bị `400` trước giữ tiền/GPU và được chỉ sang stream/job. | **Thay phần admission tĩnh của Q106/Q107 từ 2026-08-27; các phần còn lại của hai quyết định đó vẫn hiệu lực.** Canary Q111 gần cap đo `89.716` token ước lượng, chỉ sinh `103` token nhưng đã mất `102,003s`: chỉ kẹp output không bảo vệ được timeout. Throughput thật trên B là prefill thấp nhất `756,49 tok/s`, decode `41,57 tok/s`; lấy `750/40` để nghiêng an toàn. Trần Cloudflare hiện là `125s`, nhưng giữ ngân sách nội bộ `90s` để còn `35s` biên tunnel/524. Hệ quả đo được của công thức: input 0 → tối đa 2.372 output; 20K → 1.306; 40K → 239; gần 90K → 0 ở non-stream. Đây là phân luồng theo mode, không hạ chất lượng/ngữ cảnh của stream hay job. |
 | Q114 | Nhiều cửa API cùng tranh một model/GPU phải xếp hàng ở đâu? | **Một admission plane dùng chung, nhưng chỉ ASYNC_JOB có hàng đợi bền.** `/api/v1/jobs` tiếp tục dùng `jobs` làm nguồn chân lý duy nhất. SYNC_BILLED và STREAM giữ nguyên hợp đồng Q106/Q107 là không tạo job: chúng xin một lease thực thi từ cùng admission plane và trả `429 + Retry-After` trước khi giữ tiền nếu chưa có slot. Tài nguyên do tool khai bằng metadata, không suy từ slug. Gateway máy B vẫn giữ `max_dong_thoi=1` như hàng rào cuối, không làm queue. | Biến sync/stream thành job ngầm sẽ phá hình dạng SDK và tạo queue thứ hai; để chúng gọi thẳng lại cho phép bypass async. Lease thực thi giải đúng giao điểm: cả ba đường phải sở hữu cùng một slot trước provider, nhưng `jobs` vẫn là queue duy nhất có trạng thái/hủy/fairness. Với async, global/resource/account cap phải được kiểm dưới khóa transaction rồi insert job và hold credit trong chính transaction đó; `resource_wait` không tiêu attempt. Nếu worker chết sau khi provider đã nhận mà chưa có kết quả chắc chắn thì đánh dấu `ambiguous_provider`, không tự retry side effect mù. Hợp đồng chi tiết: `docs/VLM_NOI_BO/ADMISSION_QUEUE_LTT_LLM.md`. |
+| Q122 | Thứ tự phục vụ trong hàng đợi job thống nhất | **Ưu tiên tuyệt đối, không cắt ngang: `INTERNAL > EXTERNAL` chỉ giữa các job đang chờ và đủ điều kiện trên cùng tài nguyên; job đã admitted/running/provider-dispatched không bị dừng. Trong mỗi lớp vẫn fair-share theo account, aging rồi FIFO ổn định.** Chỉ có một hàng đợi bền PostgreSQL `jobs`, một ranking canonical dùng cho cả `claim()` lẫn queue snapshot/ETA. Lớp ưu tiên do ingress đáng tin cậy gắn; body/header công khai không có quyền nâng lớp. | Runtime nội bộ cần được phục vụ trước các lượt API đang chờ nhưng không được phá Q114 hay làm mất công việc đã bắt đầu. Hai lớp là đủ cho V1; không thêm broker/queue thứ hai. Job cũ hoặc metadata thiếu/lạ được hiểu là `EXTERNAL`; ETA thiếu bằng chứng trả `null`; external starvation được đo/cảnh báo chứ không tự vượt internal. |
 ---
 
 ### Q115 — Public input cap sau benchmark Q4 (2026-08-28)
@@ -381,6 +382,23 @@ phạm vi đã hẹp lại — nó nói về hàm `doi_chieu`, không nói về 
 `params_schema` công khai, nên khách gọi Public API chỉ đi đường `auto` — an
 toàn theo luật 1, nhưng chưa tự khai được làn. Mở nó là một thay đổi **hợp đồng
 API công khai** (kho 24 route đóng băng), nên để chủ sản phẩm quyết.
+
+### Q122 — Priority Scheduler + Queue Intelligence V1 (2026-09-10)
+
+`jobs` tiếp tục là hàng đợi bền duy nhất. Scheduler chỉ bổ sung envelope nguồn
+gọi, hai lớp `INTERNAL`/`EXTERNAL`, ranking canonical, snapshot vị trí và ETA.
+Priority đứng trước fairness/aging/FIFO nhưng chỉ áp cho job còn `queued` và đủ
+điều kiện trên cùng `admission_resource`; `ExecutionLease` vẫn là trọng tài slot
+cuối cùng. Vì vậy một job API đang chạy không bị kill/pause/cancel khi job nội bộ
+tới, còn internal đang chờ sẽ là ứng viên kế tiếp sau khi slot được nhả.
+
+Nguồn tin cậy, không phải nhãn client, quyết định lớp: `runtime_noi_bo` và Agent
+server-side là internal; `/api/v1` và credential public là external. Metadata
+thiếu/lạ fail-closed về external. Trong từng lớp giữ fair-share theo account,
+aging và FIFO ổn định; external chờ lâu chỉ sinh metric/alert, không tự vượt
+internal. Queue position và ETA phải đọc chính ranking mà `claim()` dùng; không
+đủ dữ liệu thì ETA là `null`, không bịa số. Q114 vẫn nguyên: sync/stream giữ
+immediate lease + 429 mặc định, chỉ async job nằm trong durable queue.
 
 **Sửa đổi 2026-09-11 (D002, RC1):** lời khai của khách chỉ được **THẮT** hợp
 đồng, không bao giờ **NỚI** nó. Trước bản sửa này, khai đúng làn giọng miễn cho

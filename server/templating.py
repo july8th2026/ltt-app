@@ -67,9 +67,31 @@ _STATIC_DIR = pathlib.Path(__file__).resolve().parent / "static"
 #:    `?v=` nen khong ai nghi ngo. `tests/test_737` canh dieu do.
 #:
 #: 📌 `lttvideo.js` them 07/09 — cung khuon voi `voice.js` cua `ltt_voice`.
+#: Man Studio cua Auto Scan Video. Pha 06 (V6) tach `asv.js` — 1.154 dong,
+#: mot IIFE duy nhat — thanh tam module theo dung khoi ma man hinh co.
+#:
+#: 🔑 Bo nay la NGUON DUY NHAT cho ba thu tung co the troi khoi nhau:
+#:
+#:      · thu tu the `<script>` ma `asv_trang_chinh.html` phat ra
+#:      · tap tep duoc bam vao `asset_ver`      (cache-bust, quy tac 6 CLAUDE.md)
+#:      · tap tep ma `test_468` doc de kiem hop dong phia client
+#:
+#: ⛔ Truoc do ba cho ay la ba danh sach chep tay. Them mot module ma quen mot
+#:    trong ba la mot loi **im lang**: tep van duoc phuc vu, chi la `?v=` cua no
+#:    khong doi khi noi dung doi — tuc khach nhan ban CU tu Cloudflare toi het
+#:    TTL. Dung su co ma quy tac 6 ghi lai.
+#:
+#: ⚠️ THU TU CO Y NGHIA o dung mot cho: `asv/nen.js` phai dau tien, vi no tao
+#:    `window.ASV`. Bay tep con lai doc lap nhau — moi loi goi cheo module xay
+#:    ra luc SU KIEN chu khong luc NAP.
+ASV_STUDIO_JS = ("asv/nen.js", "asv/xem_truoc.js", "asv/giong.js",
+                 "asv/vung.js", "asv/cat.js", "asv/lop_phu.js",
+                 "asv/logo.js", "asv/phu_de.js", "asv/am_thanh.js",
+                 "asv/tai_len.js")
+
 TAI_SAN_CO_VERSION = ("ltt.css", "sao_chep.js", "cam_chon.js", "chon_tep.js",
                       "voice.js", "dev_playground.js", "nhip_job.js",
-                      "lttvideo.js")
+                      "lttvideo.js") + ASV_STUDIO_JS
 
 
 def _tinh_asset_ver() -> str:
@@ -118,6 +140,9 @@ def _tinh_asset_ver() -> str:
 
 ASSET_VER = _tinh_asset_ver()
 templates.env.globals["asset_ver"] = ASSET_VER
+#: Template lap qua bo nay de phat the `<script>`, thay vi go tay
+#: tung dong. Mot module moi chi phai khai o MOT cho.
+templates.env.globals["asv_studio_js"] = ASV_STUDIO_JS
 
 # ── Đa ngôn ngữ (H24) ────────────────────────────────────────────────────────
 # `_()` dịch, `u()` sinh link mang đúng tiền tố ngôn ngữ.

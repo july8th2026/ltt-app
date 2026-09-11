@@ -144,6 +144,12 @@ def create_app(*, env: dict | None = None) -> FastAPI:
     # Per-app so separate app instances never share login-attempt counters.
     app.state.login_rate_limiter = RateLimiter(max_attempts=5, window_seconds=60.0)
 
+    # Scheduler provenance comes from this trusted route boundary, never from
+    # request JSON/headers. Public API work is external; product web work is
+    # internal. The context defaults fail closed outside an HTTP request.
+    from server.job_ingress_middleware import JobIngressMiddleware
+    app.add_middleware(JobIngressMiddleware)
+
     # ⭐ KHÔNG đọc tệp cấu hình nào lúc khởi động (từ 2026-08-25).
     #
     # Trước đây chỗ này gọi `load_settings()` để đọc `data/config.json`, và

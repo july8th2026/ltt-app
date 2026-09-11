@@ -249,7 +249,8 @@ def job_api(request: Request, job_id: str, _user: str = Depends(require_login)):
         job = job_history.get_owned(db, current.id, job_id)
         if job is None:
             raise HTTPException(status_code=404, detail=_t('Không tìm thấy job.'))
-        return job_history.customer_payload(db, job, with_events=True)
+        return job_history.customer_payload(
+            db, job, with_events=True, with_queue=True)
     finally:
         try: next(gen)
         except StopIteration: pass

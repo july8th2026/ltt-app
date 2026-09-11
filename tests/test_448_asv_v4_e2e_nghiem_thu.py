@@ -49,6 +49,7 @@ import time
 from pathlib import Path
 
 import pytest
+from _pytest.outcomes import Failed
 
 from tests import rao_chan_nang
 from tests.fixtures import asv_e2e as fx
@@ -227,7 +228,13 @@ def _chay_hang_doi(db, *, toi_da: int = 200) -> list[dict]:
                     #    rang no den tu tai nguyen ban chu khong tu san pham.
                     loi = (f"HET NGAN SACH HOAN sau {da_hoan_s:.0f}s "
                            f"(tai nguyen ban): {loi}")
-                jobs.fail(db, job, str(exc), retry=False)
+                # ⛔ Ghi `loi`, KHONG `str(exc)`.
+                #
+                # 🔴 Dong cu vut mat chinh cai tien to vua dung o tren: `Job.error`
+                #    trong CSDL nhan chuoi tho, trong khi `nhat_ky` nhan ban co
+                #    tien to. Hai nguoi doc cung mot su kien thay hai cau khac
+                #    nhau — va nguoi soi CSDL la nguoi thay ban NGHEO hon.
+                jobs.fail(db, job, loi, retry=False)
         db.commit()
         if hoan:
             time.sleep(hoan)
@@ -569,6 +576,25 @@ def test_NGHIEM_THU_ca_hai_preset_ra_video_dung_duoc(moi_truong, tmp_path,
 #: tai nguyen van ban.
 DAU_HET_NGAN_SACH = "HET NGAN SACH HOAN"
 
+#: Chu ky cua "tai nguyen dung chung dang ban" trong mot dong nhat ky job.
+#:
+#: 🔴 Hai hinh dang, cung MOT su co, va ban dau cai rao chi bat mot:
+#:
+#:    | hinh dang | tien to | vi sao co |
+#:    |---|---|---|
+#:    | tieu het ngan sach hoan | `HET NGAN SACH HOAN ...` | `con_lai <= 0` |
+#:    | hoan lien tuc roi bo cuoc | `HOAN ...` | vong lap het `toi_da` TRUOC khi ngan sach can |
+#:
+#:    Ban ghi 07/09 16:58 la hinh dang thu hai: muoi dong `HOAN BanError: ...
+#:    ltt_llm: ban`, khong mot dong `HET NGAN SACH HOAN`. Nen cai rao dung
+#:    rieng cho su co nay **di qua**, va ta nhan bay cau doc y het bay khiem
+#:    khuyet san pham.
+DAU_HOAN = "HOAN "
+
+#: Chu ky cua cong LLM khi may B ban. `dieu_phoi` dung dung chuoi nay de tinh
+#: `busy_only`, nen bat theo no la bat theo cung mot su that.
+CHU_KY_BAN = ": ban"
+
 
 def _chan_tai_nguyen_ban(bc: dict) -> None:
     """Dung ngay neu bao cao den tu mot lan chay bi TAI NGUYEN BAN giet.
@@ -593,10 +619,26 @@ def _chan_tai_nguyen_ban(bc: dict) -> None:
     """
     ban = []
     for luot in bc.get("luot") or []:
+        # ⚠️ **Mot lan HOAN, mot minh, KHONG phai dau hieu hong.**
+        #
+        #    `HOAN {ten}: {exc}` duoc ghi cho MOI lan hoan vi tai nguyen — ke ca
+        #    lan hoan xong roi chay tiep va thanh cong. Mot lan chay cho tai
+        #    nguyen roi lam duoc viec la mot lan chay TOT; bat no la bao dong
+        #    gia, va mot cai rao hay bao dong gia mat gia tri nhanh hon la khong
+        #    co rao.
+        #
+        # ⇒ Chi ket luan khi CA HAI cung dung: co bang chung tai nguyen ban, VA
+        #   lan chay khong di het chuoi.
+        chua_xong = [g for g in (luot.get("giai_doan") or [])
+                     if g.get("trang_thai") != "succeeded"]
+        if not chua_xong:
+            continue
         for j in luot.get("nhat_ky_job") or []:
-            if str(j.get("loi") or "").startswith(DAU_HET_NGAN_SACH):
-                ban.append((luot.get("nhan"), j.get("job_type"),
-                            str(j.get("loi"))[:160]))
+            lo = str(j.get("loi") or "")
+            la_ban = (lo.startswith(DAU_HET_NGAN_SACH)
+                      or (lo.startswith(DAU_HOAN) and CHU_KY_BAN in lo))
+            if la_ban:
+                ban.append((luot.get("nhan"), j.get("job_type"), lo[:160]))
     if not ban:
         return
     nl = chr(10)
@@ -1287,3 +1329,64 @@ def test_loi_KHONG_phai_ban_thi_van_that_bai_nhu_cu(db_nhe, monkeypatch):
     lai = db_nhe.get(Job, ma_job)
     assert lai.status == JOB_ERROR, f"loi that ma job thanh {lai.status}"
     assert nhat_ky and not nhat_ky[0]["loi"].startswith("HOAN"), nhat_ky
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Cai RAO tai nguyen ban — chot ca hai chieu
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# 🔴 Rao nay da bo lot mot lan that (bao cao 07/09 16:58): no chi khop
+#    `HET NGAN SACH HOAN`, con ban ghi hong chi co `HOAN ...`. Ket qua la bay
+#    cau doc y het bay khiem khuyet san pham, va hai phien khac nhau mat mot
+#    luot do de loai tru dung dieu do.
+#
+# ⚠️ Nhung noi rong dieu kien co mot cai bay ngay ben canh: `HOAN` duoc ghi cho
+#    MOI lan hoan, ke ca lan hoan xong roi chay TIEP va thanh cong. Bat nhu vay
+#    la bao dong gia — va mot cai rao hay bao dong gia mat gia tri nhanh hon la
+#    khong co rao.
+#
+# ⇒ Hai phep kiem duoi day chot HAI CHIEU. Thieu chieu thu hai thi ban "sua"
+#   di qua ma khong ai biet no vua lam hong nhung luot chay TOT.
+
+def _luot(giai_doan_xong: bool, dong_loi: list[str]) -> dict:
+    return {"luot": [{
+        "nhan": "giu_hinh",
+        "giai_doan": [{"giai_doan": "content_process",
+                       "trang_thai": "succeeded" if giai_doan_xong else "failed_terminal"}],
+        "nhat_ky_job": [{"job_type": "auto_scan_video.content_process", "loi": l}
+                        for l in dong_loi],
+    }]}
+
+
+def test_rao_NO_khi_hoan_lien_tuc_roi_bo_cuoc():
+    """Hinh dang da bo lot that: toan `HOAN ... : ban`, khong dong nao
+    `HET NGAN SACH HOAN`, va lan chay khong di het chuoi."""
+    bao_cao = _luot(False, ["HOAN BanError: khong provider nao phuc vu duoc: ltt_llm: ban"])
+    with pytest.raises(Failed) as e:
+        _chan_tai_nguyen_ban(bao_cao)
+    assert "tai nguyen dung chung BAN" in str(e.value)
+
+
+def test_rao_NO_khi_tieu_het_ngan_sach_hoan():
+    """Hinh dang cu — van phai bat duoc."""
+    bao_cao = _luot(False, ["HET NGAN SACH HOAN sau 60s (tai nguyen ban): BanError: ltt_llm: ban"])
+    with pytest.raises(Failed):
+        _chan_tai_nguyen_ban(bao_cao)
+
+
+def test_rao_IM_LANG_khi_hoan_XONG_roi_chay_duoc():
+    """🔴 Chieu quan trong nhat.
+
+    Mot lan chay hoan vi tai nguyen roi **cho duoc** va lam xong viec la mot lan
+    chay TOT — no chung minh dung dieu ta muon: bo chay biet cho. Bat no la bao
+    dong gia, va bao cao ay van noi duoc su that ve san pham.
+    """
+    bao_cao = _luot(True, ["HOAN BanError: khong provider nao phuc vu duoc: ltt_llm: ban"])
+    _chan_tai_nguyen_ban(bao_cao)          # khong duoc nem
+
+
+def test_rao_IM_LANG_khi_hong_vi_ly_do_KHAC():
+    """Mot lan chay hong vi loi san pham that phai di tiep toi cac phep kiem —
+    chinh chung moi la thu chan doan duoc no."""
+    bao_cao = _luot(False, ["LuocDoSai: chuyen_loi_thoai: model tra ve rong"])
+    _chan_tai_nguyen_ban(bao_cao)          # khong duoc nem

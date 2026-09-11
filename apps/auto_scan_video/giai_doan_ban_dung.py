@@ -73,6 +73,24 @@ def _khoa_master(db, kho, run) -> str:
     return khoa[0]
 
 
+def _co_khung(db, kho: Storage, run) -> tuple[int, int]:
+    """`(rong, cao)` khung NGUON, doc tu ho so soi cua `MEDIA_PREPARE`.
+
+    ⭐ Tra CA HAI trong mot lan doc. Hai lan doc mot tep de lay hai truong cua
+       cung mot ho so la hai co hoi de chung lech nhau — va o day chung khong
+       duoc lech: mot logo dat theo chieu rong cua khung nay tren mot khung
+       khac la mot logo sai cho.
+    """
+    khoa = _khoa_json(db, run, pipeline.MEDIA_PREPARE)
+    if not khoa:
+        return (0, 0)
+    try:
+        ho_so = _doc(kho, khoa) or {}
+        return (int(ho_so.get("rong") or 0), int(ho_so.get("cao") or 0))
+    except (OSError, ValueError, TypeError):
+        return (0, 0)
+
+
 def _khoa_con_dung(db, kho: Storage, run) -> set[str]:
     """Moi khoa artifact CUA CHINH chu so huu, da kiem toan ven.
 
@@ -88,6 +106,54 @@ def _khoa_con_dung(db, kho: Storage, run) -> set[str]:
         AsvAsset.owner_id == run.owner_id)).scalars().all()
     return {a.storage_key for a in hang
             if assets.kiem_toan_ven(db, kho, a) == ASSET_OK}
+
+
+def _ho_so_phu_de(db, kho: Storage, run, ke_hoach: dict, cai, cach: str):
+    """Ho so phu de DA CHOT su kien, hoac `None`. Chay o COMPOSE, khong o RENDER.
+
+    🔑 **Su kien duoc chot o day va di theo ban dung.** RENDER mo dung MOT tep —
+       ban dung — nen moi thu no can phai nam trong do. Bat no doc lai ke hoach
+       + van ban la mo mot duong phu thuoc thu hai toi cung mot du lieu, va hai
+       duong doc thi hai lan doc co the lech nhau.
+
+    ⛔ **Nguon chu la tai lieu `CONTENT_PROCESS`, khong phai ban ke tieng.** Ban
+       ke tieng la `{ma, khoa, giay}` — no tro toi tep WAV, no khong mang mot
+       chu nao. `giai_doan_giong` cung phai doc chinh tai lieu nay de co chu.
+
+    ⚠️ **Chi doc khi khach thuc su xin phu de.** Mot lan doc artifact cho moi lan
+       chay, ke ca lan khong dung tinh nang, la mot chi phi tra cho khong.
+    """
+    from . import phu_de as _pd
+
+    ho_so = _pd.chuan_hoa(cai.phu_de)
+    if not ho_so:
+        return None
+
+    # ⭐ Ha truc DOT o preset giu hinh — **khong** bo ca ho so. Xem
+    #    `phu_de.ha_ve_srt`: `.srt` la lua chon phu de duy nhat con lai o do, va
+    #    no khong cham mot diem anh nao.
+    #
+    # ⛔ Va o day khong tin giao dien: giao dien an o "khac vao hinh" khi preset
+    #    la giu hinh, nhung mot yeu cau dung tay van toi duoc.
+    from . import che_do_render as _cdr
+    if cach != _cdr.CAT_MA_HOA_LAI:
+        ho_so = _pd.ha_ve_srt(ho_so)
+    if not ho_so:
+        return None
+
+    from . import features, van_ban
+
+    truoc = features.giai_doan_theo_ten(db, run.id, pipeline.CONTENT_PROCESS)
+    khoa = next((k for k in ((truoc.outputs or {}).get("khoa_asset") or [])
+                 if k.endswith(".json")), "") if truoc else ""
+    if not khoa:
+        raise ThieuDauVao(_t('Chưa có bản dịch để dựng phụ đề.'))
+    tai_lieu = _doc(kho, khoa)
+    van_ban.kiem(tai_lieu)          # doc lai thi kiem lai (I8)
+
+    ho_so["su_kien"] = _pd.su_kien_ra_goi(
+        _pd.su_kien_tu_ke_hoach(ke_hoach, tai_lieu))
+    return ho_so
 
 
 def chay(db, kho: Storage, *, run, ctx=None) -> dict:
@@ -116,12 +182,38 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     # ⭐ Ca hai suy tu **khai bao** (preset) va tu **ban do** ma pha 16 da luu
     #    cung ke hoach — khong tinh lai tu du lieu. Tinh lai mot quyet dinh da
     #    chot la mo duong cho hai cau tra loi khac nhau cho cung mot cau hoi.
-    from . import ban_do_thoi_gian, che_do_render as cdr, hop_dong_v4
+    from . import (ban_do_thoi_gian, cai_dat as cd, cat_dau_cuoi,
+                   che_do_render as cdr)
 
-    preset = str((run.settings or {}).get("preset") or hop_dong_v4.PRESET_MAC_DINH)
+    # 🔑 MOT ban doc cho ca giai doan. Truoc pha 07 cho nay doc
+    #    `run.settings` NAM lan rieng le, moi lan mot mac dinh cua
+    #    rieng no.
+    cai = cd.doc(run)
+    preset = cai.preset
     cach = cdr.che_do_cho(preset)
     ban_do = ban_do_thoi_gian.BanDoThoiGian.tu_dict(ke_hoach.get("ban_do") or {})
     khoang = list(ban_do.giu)
+
+    # ── Cua so cat dau/cuoi (V6 pha 10) ────────────────────────────────────
+    #
+    # ⭐ Mot phep GIAO tai dung mot diem, va no phai o **sau** `ban_do.giu`:
+    #    ban bien tap la quyet dinh hinh anh co tham quyen (xem `pipeline.py`,
+    #    `V4-R07`), con cua so cat la mot lop THU HEP dat len tren no. Lam nguoc
+    #    lai — cat truoc roi moi hoi ban do — la de khach vut mat mot canh ma
+    #    chinh sach da quyet giu, roi khong ai ghi lai chuyen do.
+    #
+    # ⚠️ CHI o duong cat, cung khuon ba tang voi `vung` phia duoi. Nhung ly do
+    #    thi KHAC, va cho khac nhau moi la cho quan trong: vung che khong the co
+    #    o `-c:v copy` vi mot rang buoc VAT LY (khong khung hinh nao duoc giai
+    #    ma), con trim thi `-ss`/`-to` lam duoc — no bi cam vi mot quyet dinh
+    #    SAN PHAM (`DUNG_SAI_DO_DAI_S`: video ra dai bang video vao).
+    #
+    # ⛔ Va o day khong tin giao dien: giao dien an hai tay cam khi preset la
+    #    giu hinh, nhung mot yeu cau dung tay van toi duoc.
+    if cach == cdr.CAT_MA_HOA_LAI:
+        khoang = cat_dau_cuoi.giao(
+            khoang, cai.cat,
+            float(ke_hoach.get("tong_ms") or 0) / 1000.0)
 
     # 🔴 **Doc `ctx.gpu_uuid` O DAY la mot phep do sai cho, va no da lam
     #    B24-01 khong the sua duoc bang mot dong khai bao.**
@@ -139,6 +231,8 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     bo_ma_hoa = (cdr.chon_bo_ma_hoa(cho_phep_gpu=True)
                  if cach == cdr.CAT_MA_HOA_LAI else "")
 
+    # ⭐ MOT lan doc, hai truong. Xem docstring cua `_co_khung`.
+    _rong_khung, _cao_khung = _co_khung(db, kho, run)
     ban = ban_dung.dung(
         khoa_video=run.source_key,
         khoa_nen=khoa_nen,
@@ -148,7 +242,28 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         phien_ban_ffmpeg=nhap_media.phien_ban_ffmpeg(),
         tong_giay=float(ke_hoach.get("tong_ms") or 0) / 1000.0,
         che_do=cach, bo_ma_hoa=bo_ma_hoa, khoang_giu=khoang,
-        preset=preset)
+        preset=preset,
+        # ⭐ Vung che di tu `run.settings` — noi `routes.tao` da ghi CHUNG SAU
+        #    KHI `vung_che.chuan_hoa` duyet. Khong chuan hoa lai o day: hai lan
+        #    chuan hoa la hai bo luat se lech, va ban da luu moi la ban that.
+        #
+        # ⚠️ Chi truyen o duong CAT. O duong sao chep, `ban_dung.kiem` se tu
+        #    choi — va tu choi o day thi khach mat mot lan chay da tra tien.
+        #    Giao dien khong cho ve vung khi preset la giu hinh, nhung mot yeu
+        #    cau dung tay van co the toi, nen cho nay khong duoc tin giao dien.
+        vung=(cai.vung if cach == cdr.CAT_MA_HOA_LAI else ()),
+        # ⭐ Lop phu chu (V6 pha 11) di cung khuon ba tang voi `vung`, va vi
+        #    CUNG mot ly do vat ly: `drawtext` la mot bo loc, bo loc doi hoi
+        #    giai ma, `-c:v copy` khong giai ma khung nao.
+        lop_phu=(cai.lop_phu if cach == cdr.CAT_MA_HOA_LAI else ()),
+        # ⭐ Logo di cung khuon ba tang, va vi CUNG mot ly do vat ly.
+        ds_logo=(cai.logo if cach == cdr.CAT_MA_HOA_LAI else ()),
+        # ⭐ Phu de KHONG di theo khuon `... if cach == CAT_MA_HOA_LAI else ()`
+        #    cua ba dong tren, va do la khac biet CO CHU DICH. Ba thu kia co
+        #    dung MOT truc (doi diem anh); phu de co HAI, va truc `.srt` chay
+        #    duoc o CA HAI preset. Xem `_ho_so_phu_de`.
+        phu_de=_ho_so_phu_de(db, kho, run, ke_hoach, cai, cach),
+        rong_khung=_rong_khung, cao_khung=_cao_khung)
 
     # 🔑 Muc 5: doi chieu MOI tham chieu TRUOC khi ton mot suat render.
     if ctx is not None and getattr(ctx, "progress", None):

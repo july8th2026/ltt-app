@@ -1,3 +1,22 @@
+{# Man STUDIO — tao mot lan chay.
+
+   Kien truc thong tin: `docs/auto_scan_video_v5/V5_UI_INFORMATION_ARCHITECTURE.md`.
+
+   ## Hai cau hoi o tang co ban, khong bon
+
+   🔴 Ban truoc cua tep nay bay BON fieldset radio ngang hang: kieu xu ly, cach
+      khop thoi gian, cach chon giong, va mot `<select>` giong. Cai thu hai —
+      "cach khop thoi gian" — la **he qua** cua preset, khong phai mot lua chon
+      doc lap, va bay no ngang hang la bat khach quyet mot viec ho khong co co so
+      de quyet. No da xuong `Tuy chon nang cao`, va preset dat mac dinh cho no.
+
+   ## Xem truoc la NEN, khong phai trang tri
+
+   Khong co khung hinh thi khong co trim marker, khong co vung che, khong co safe
+   area. Va no khong ton gi: the video phat thang tu kho (`/nguon` chuyen
+   huong sang presigned URL tren R2), lop phu ve bang SVG. Khong job, khong GPU,
+   khong credit.
+#}
 {% extends "base.html" %}
 {% block title %}{{ _("Lồng tiếng Việt") }} — LTT AI Studio{% endblock %}
 {% block topbar_title %}<strong>{{ _("Lồng tiếng Việt") }}</strong>{% endblock %}
@@ -8,96 +27,681 @@
   <header class="asv-dau">
     <div>
       <h1 id="asv-title">{{ _("Lồng tiếng Việt cho video") }}</h1>
-      <p>{{ _("Giữ nguyên hình ảnh và độ dài. Thay lời thoại gốc bằng giọng đọc tiếng Việt khớp thời điểm, giữ lại nhạc nền và tiếng động.") }}</p>
+      <p class="asv-ghi-chu">{{ _("Giữ nguyên hình ảnh và độ dài. Thay lời thoại gốc bằng giọng đọc tiếng Việt khớp thời điểm, giữ lại nhạc nền và tiếng động.") }}</p>
     </div>
   </header>
 
   {% if loi %}<div class="alert alert-err" role="alert">{{ loi }}</div>{% endif %}
 
-  <form class="asv-form card" method="post" enctype="multipart/form-data"
-        action="{{ app.route_prefix }}/tao">
+  {% if nap_lai_tu %}
+    {# ⭐ Noi RA rang cac o da duoc dien san. Khong co dong nay, khach thay mot
+       form khac mac dinh ma khong biet vi sao — va se tuong he thong tu doi. #}
+    <div class="alert" role="status">
+      {{ _("Đã điền sẵn cài đặt của lần chạy trước. Hãy chọn lại video.") }}
+    </div>
+  {% endif %}
+
+  <form class="asv-studio card" method="post" enctype="multipart/form-data"
+        action="{{ app.route_prefix }}/tao" id="asv-form"
+        data-uoc="{{ app.route_prefix }}/uoc-tinh"
+        data-tran-mb="{{ tran_mb }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    {# Vung che — do trinh sua vung ghi vao, dang JSON. Rong la binh thuong. #}
+    <input type="hidden" name="vung" id="asv-vung" value="">
 
-    <div class="asv-o">
-      <label for="asv-video"><strong>{{ _("Chọn video") }}</strong></label>
-      <input id="asv-video" type="file" name="video" required
-             accept="video/mp4,video/quicktime,video/x-matroska,video/webm">
-      <p class="asv-ghi-chu">{{ _("MP4, MOV, MKV hoặc WEBM. Tối đa 90 MB. Video phải có tiếng nói.") }}</p>
+    {# ── Duong tai len BEN VUNG ────────────────────────────────────────────
+       🔑 Tep di THANG tu trinh duyet len kho, khong qua tien trinh nay va
+          khong qua Cloudflare. Do la ca ly do tran 90 MB bien mat: no ton tai
+          vi Cloudflare cat o 100 MB **tren duong vao may chu** — mot duong ma
+          tep khong con di.
+
+       ⛔ O nay chi co gia tri khi cu PUT da XONG. Dat no som la noi doi voi
+          `routes.tao`: no uu tien `upload_id` va se tao mot lan chay tro vao
+          mot tep chua ton tai. #}
+    <input type="hidden" name="upload_id" id="asv-upload-id" value="">
+    <input type="hidden" id="asv-ve" data-url="{{ app.route_prefix }}/ve"
+           data-tran-ben-vung="{{ tran_ben_vung_mb }}"
+           data-kieu-ben-vung="{{ kieu_ben_vung|join(',') }}">
+
+    <div class="asv-luoi">
+
+      {# ── Trai: nguon + xem truoc ──────────────────────────────────────── #}
+      <div class="asv-cot">
+        <h2 class="asv-nhan-nhom">{{ _("Video của bạn") }}</h2>
+
+        <div class="asv-khung" id="asv-khung">
+          {# ⭐ Khung rong CO mot trang thai rieng, khong phai mot o input tran.
+             Truoc day day la mot `<input type=file>` khong hon, va khach khong
+             thay gi ca cho toi khi lan chay xong. #}
+          <div class="asv-rong" id="asv-rong">
+            <p class="asv-rong-lon">{{ _("Chọn video để bắt đầu") }}</p>
+            <p class="asv-ghi-chu">{{ _("MP4, MOV, MKV hoặc WEBM. Video phải có tiếng nói.") }}</p>
+          </div>
+          <video id="asv-xem" playsinline preload="metadata" hidden></video>
+          {# Lop phu vung che. `viewBox` 0..1 nen toa do trong SVG CHINH LA toa do
+             chuan hoa — khong co phep doi don vi nao de lam sai. #}
+          <svg id="asv-lop" class="asv-lop" viewBox="0 0 1 1"
+               preserveAspectRatio="none" hidden aria-hidden="true"></svg>
+        </div>
+
+        <label class="btn ghost asv-chon-tep" for="asv-video">
+          {{ _("Chọn video…") }}
+        </label>
+        <input id="asv-video" type="file" name="video" required class="asv-an-input"
+               accept="video/mp4,video/quicktime,video/x-matroska,video/webm">
+        <p class="asv-ghi-chu" id="asv-tep-ten" aria-live="polite"></p>
+
+        {# Tien do tai len — chi hien khi dang tai that. #}
+        <div class="asv-tai" id="asv-tai" hidden>
+          <div class="asv-thanh-tien" role="progressbar" aria-valuemin="0"
+               aria-valuemax="100" aria-valuenow="0" id="asv-tai-thanh">
+            <i style="width:0%"></i>
+          </div>
+          <p class="asv-ghi-chu" id="asv-tai-tt" aria-live="polite"></p>
+          {# 🔴 Nut nay ton tai vi mot duong lui IM LANG.
+
+             Truoc pha 08, hong o BAT KY buoc nao cua duong ben vung deu nop
+             form theo duong multipart — ke ca khi tep lon hon tran multipart
+             (90 MB). Voi mot tep 1,5 GB vua PUT hong o 90%, duong lui ay day
+             lai 1,5 GB qua Cloudflare, bi cat o 100 MB, roi tra ve cau
+             *"Video vuot qua 90 MB. Hay cat ngan hoac giam chat luong truoc."*
+
+             ⛔ Cau do la mot loi khuyen SAI: tep cua khach khong he qua lon
+                (2 GiB moi la tran that), thu hong la duong tai len. Ta gui ho
+                di sua nham thu — sau khi da bat ho cho hai lan. #}
+          <button type="button" class="btn ghost" id="asv-tai-lai" hidden>
+            {{ _("Thử tải lên lại") }}
+          </button>
+        </div>
+      </div>
+
+      {# ── Phai: hai cau hoi ────────────────────────────────────────────── #}
+      <div class="asv-cot">
+        <h2 class="asv-nhan-nhom">{{ _("Bạn muốn gì") }}</h2>
+
+        <fieldset class="asv-o">
+          <legend class="asv-an-doc">{{ _("Kiểu xử lý") }}</legend>
+          {% for ma, ten, mo_ta in preset %}
+            <label class="asv-chon">
+              <input type="radio" name="preset" value="{{ ma }}"
+                     {% if ma == preset_chon %}checked{% endif %}>
+              <span><strong>{{ _(ten) }}</strong><small>{{ _(mo_ta) }}</small></span>
+            </label>
+          {% endfor %}
+        </fieldset>
+
+        <div class="asv-o">
+          <label for="asv-giong"><strong>{{ _("Giọng đọc") }}</strong></label>
+
+          {# ⭐ V6 pha 18 — hai nguon giong tach ra: giong khach NHAN BAN o LTT VOICE
+               va giong MAU cua LTT. Nut chu khong phai radio: radio co `name`
+               se di theo form len may chu, trong khi day chi la mot cach NHIN. #}
+          <div class="asv-loc" role="group" aria-label="{{ _('Nguồn giọng') }}">
+            <button type="button" class="btn" data-nguon-giong=""
+                    aria-pressed="true">{{ _("Tất cả") }}</button>
+            <button type="button" class="btn ghost" data-nguon-giong="rieng"
+                    aria-pressed="false">{{ _("Giọng của tôi") }} <span data-dem></span></button>
+            <button type="button" class="btn ghost" data-nguon-giong="mau"
+                    aria-pressed="false">{{ _("Giọng mẫu LTT") }} <span data-dem></span></button>
+          </div>
+
+          {# Ba mat loc. Nhan lay TU `ltt_voice`, khong go tay o template. #}
+          <div class="asv-loc" role="group" aria-label="{{ _('Lọc giọng') }}">
+            {# Tim KHONG DAU theo ten. Khong co `name`: khong gui len may chu. #}
+            <input type="search" id="asv-tim-giong" class="asv-loc-o"
+                   placeholder="{{ _('Tìm theo tên') }}"
+                   aria-label="{{ _('Tìm giọng theo tên') }}">
+            <select id="asv-loc-gioi" class="asv-loc-o" aria-label="{{ _('Giới') }}">
+              <option value="">{{ _("Mọi giới") }}</option>
+              {% for ma, ten in nhan_loc.gioi.items() %}
+                <option value="{{ ma }}">{{ _(ten) }}</option>
+              {% endfor %}
+            </select>
+            <select id="asv-loc-vung" class="asv-loc-o" aria-label="{{ _('Vùng') }}">
+              <option value="">{{ _("Mọi vùng") }}</option>
+              {% for ma, ten in nhan_loc.vung.items() %}
+                <option value="{{ ma }}">{{ _(ten) }}</option>
+              {% endfor %}
+            </select>
+            {# 🔴 Mat loc thu BA. `gia.NHAN_LOC` da mang no tu 31/08 va
+               `routes.danh_muc_giong` da loc theo no — nhung template chi ve
+               HAI o, nen nang luc ay vo hinh voi khach suot ca V5.
+
+               ⚠️ Buoc 24 khong bat duoc cho nay, vi no doi chieu voi 22 hang
+                  cua bang audit CU chu khong doi chieu voi cot "V5 lam ngay"
+                  cua chinh `V5_UI_INFORMATION_ARCHITECTURE.md` §4. Mot bai
+                  tai audit chi thay duoc nhung gi thuoc do cua no ke ten. #}
+            <select id="asv-loc-phong-cach" class="asv-loc-o"
+                    aria-label="{{ _('Phong cách') }}">
+              <option value="">{{ _("Mọi phong cách") }}</option>
+              {% for ma, ten in nhan_loc.phong_cach.items() %}
+                <option value="{{ ma }}">{{ _(ten) }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          {# ⛔ KHONG co o "Giọng mặc định". Engine tu choi phuc vu no (pha 09),
+             nen moi khach chon no la moi ho di bon giai doan roi hong. #}
+          <select id="asv-giong" name="giong_id" required>
+            {% for g in giong %}
+              <option value="{{ g.ma }}"
+                      {% if g.ma == giong_chon %}selected{% endif %}
+                      data-ten="{{ g.ten }}"
+                      data-nguon="{{ 'mau' if g.la_mau else 'rieng' }}"
+                      data-gioi="{{ g.gioi }}" data-vung="{{ g.vung }}"
+                      data-phong-cach="{{ g.phong_cach }}"
+                      {% if g.duong_nghe %}data-nghe="{{ g.duong_nghe }}"{% endif %}
+                      >{{ g.ten }}{% if not g.duong_nghe %} · {{ _("chưa có mẫu nghe") }}{% endif %}</option>
+            {% endfor %}
+          </select>
+
+          <div class="asv-nghe">
+            <button type="button" class="btn ghost" id="asv-nghe-nut">
+              {{ _("Nghe thử") }}
+            </button>
+            {# ⭐ Giong chua co tep nghe thu thi noi ra, khong de mot nut bam duoc
+               ma khong keu. `nghe_thu.duong_cho_trang` CO Y bo khoa khoi dict. #}
+            <span class="asv-ghi-chu" id="asv-nghe-tt" aria-live="polite"></span>
+            <audio id="asv-nghe-am" preload="none"></audio>
+            {# ⭐ Catalog SONG: giong vua nhan ban o tab khac hien ma khong phai tai
+               lai trang (mat video da chon). JS cung tu lam moi khi tab duoc
+               nhin lai. Nguon: `routes.danh_muc_giong`, da loc theo chu so huu. #}
+            <button type="button" class="btn ghost" id="asv-giong-lam-moi"
+                    data-url="{{ app.route_prefix }}/giong">{{ _("Làm mới danh sách") }}</button>
+          </div>
+          <p class="asv-ghi-chu" id="asv-giong-tt" aria-live="polite"></p>
+          <p class="asv-ghi-chu">{{ _("Bạn có thể nhân bản giọng riêng ở LTT VOICE.") }}</p>
+        </div>
+      </div>
     </div>
 
-    <fieldset class="asv-o">
-      <legend><strong>{{ _("Kiểu xử lý") }}</strong></legend>
-      {% for ma, ten, mo_ta in preset %}
-        <label class="asv-chon">
-          <input type="radio" name="preset" value="{{ ma }}"
-                 {% if ma == preset_mac_dinh %}checked{% endif %}>
-          <span><strong>{{ _(ten) }}</strong><small>{{ _(mo_ta) }}</small></span>
+    {# ── Nang cao — DONG mac dinh ──────────────────────────────────────── #}
+    <details class="asv-nang-cao">
+      <summary>{{ _("Tuỳ chọn nâng cao") }}</summary>
+
+      <div class="asv-nhom">
+        <h3>{{ _("Cách đọc tên riêng") }}</h3>
+        {# 🔴 `apps/ltt_voice/text_pipeline.chuan_hoa` nhan `tu_dien_rieng` tu
+           truoc, va `giong_noi` truyen no suot bon cho. O nay khong them nang
+           luc nao — no mo mot van da co ma chua ai co duong cap nuoc vao.
+
+           ⚠️ Tu dien di vao MOI doan cua mot lan chay, nen no nam trong
+              vong lap tinh tien. Tran o `tu_dien.SO_MUC_TOI_DA`. #}
+        <label class="asv-o" for="asv-tu-dien">
+          <span class="asv-nhan">{{ _("Mỗi dòng một tên, dạng: Tên = cách đọc") }}</span>
+          <textarea id="asv-tu-dien" name="tu_dien" rows="3"
+                    placeholder="{{ _('Nguyễn Huệ = Nguyễn Huê') }}"></textarea>
         </label>
-      {% endfor %}
-    </fieldset>
+      </div>
 
-    <fieldset class="asv-o">
-      <legend><strong>{{ _("Cách khớp thời gian") }}</strong></legend>
-      {% for ma, ten, mo_ta in che_do %}
-        <label class="asv-chon">
-          <input type="radio" name="che_do" value="{{ ma }}"
-                 {% if ma == che_do_mac_dinh %}checked{% endif %}>
-          <span><strong>{{ _(ten) }}</strong><small>{{ _(mo_ta) }}</small></span>
+      <div class="asv-nhom">
+        <h3>{{ _("Thời lượng") }}</h3>
+        <fieldset class="asv-o">
+          <legend class="asv-an-doc">{{ _("Cách khớp thời gian") }}</legend>
+          {% for ma, ten, mo_ta in che_do %}
+            <label class="asv-chon">
+              <input type="radio" name="che_do" value="{{ ma }}"
+                     {% if ma == che_do_chon %}checked{% endif %}>
+              <span><strong>{{ _(ten) }}</strong><small>{{ _(mo_ta) }}</small></span>
+            </label>
+          {% endfor %}
+        </fieldset>
+
+        {# 🔴 Cat dau/cuoi chi song o preset CAT — cung khuon `data-preset-can`
+           voi vung che, nhung KHONG cung ly do, va cho khac nhau moi la cho
+           dang noi:
+
+             vung che  — khong THE co o `-c:v copy`: khong khung hinh nao duoc
+                         giai ma, nen khong co diem anh nao de sua. Vat ly.
+             cat       — lam duoc ve ky thuat (`-ss`/`-to` cat tren stream copy),
+                         nhung preset giu hinh **hua** do dai ra bang do dai vao.
+                         Quyet dinh san pham.
+
+           ⇒ Nen cau giai thich duoi day noi "loi hua", khong noi "khong the".
+              Noi sai ly do o day thi mot phien sau doc no roi di sua nham cho. #}
+        <div class="asv-nhom-con" id="asv-nhom-cat"
+             data-preset-can="{{ preset_can_cho_vung }}">
+          <h4 class="asv-nhan-nhom">{{ _("Cắt đầu/cuối") }}</h4>
+          <p class="asv-ghi-chu asv-vung-chan" id="asv-cat-chan" hidden>
+            {{ _("Kiểu “Giữ nguyên hình ảnh” hứa video ra dài đúng bằng video vào, nên không cắt bớt được. Chọn “Rút gọn có biên tập” nếu bạn muốn cắt.") }}
+          </p>
+          <div class="asv-cat-o">
+            <label class="asv-cat-nhan">
+              <span>{{ _("Bắt đầu từ (giây)") }}</span>
+              <input type="number" id="asv-cat-tu" class="asv-cat-so"
+                     min="0" step="0.1" inputmode="decimal" disabled>
+            </label>
+            <label class="asv-cat-nhan">
+              <span>{{ _("Kết thúc ở (giây)") }}</span>
+              <input type="number" id="asv-cat-den" class="asv-cat-so"
+                     min="0" step="0.1" inputmode="decimal" disabled>
+            </label>
+            <button type="button" class="btn ghost" id="asv-cat-xoa">
+              {{ _("Bỏ cắt") }}
+            </button>
+          </div>
+          {# ⭐ Hai o tren nhan GIAY vi khach nghi bang giay. Thu gui len may chu
+             la PHAN SO 0..1 (`cat_dau_cuoi` L1) — mot con so tinh bang giay tro
+             thanh sai ngay khi ban xem truoc co do dai khac ban goc. #}
+          <input type="hidden" name="cat" id="asv-cat" value="">
+          <p class="asv-ghi-chu" id="asv-cat-tt" aria-live="polite">
+            {{ _("Để trống thì giữ cả video.") }}
+          </p>
+        </div>
+      </div>
+
+      {# 🔴 Vung che chi song duoc o preset CAT, va do la mot rang buoc vat ly
+         chu khong phai mot lua chon: preset giu hinh phat `-c:v copy`, tuc byte
+         hinh di thang tu nguon sang tep ra ma khong giai ma lan nao — khong co
+         khung hinh nao ton tai de sua mot vung diem anh cua no.
+
+         ⛔ Bay cong cu nay cho ca hai preset la mot **false feature**: khach ve
+            xong, thay no trong "Cai dat da dung", roi nhan mot video khong che
+            gi. `ban_dung.kiem` chan o may chu; cho nay chan o mat khach. #}
+      <div class="asv-nhom" id="asv-nhom-vung"
+           data-preset-can="{{ preset_can_cho_vung }}">
+        <h3>{{ _("Vùng che") }}</h3>
+        <p class="asv-ghi-chu">
+          {{ _("Vẽ một khung lên video để che logo hoặc phụ đề gốc. Kéo trên khung hình ở trên.") }}
+        </p>
+        <p class="asv-ghi-chu asv-vung-chan" id="asv-vung-chan" hidden>
+          {{ _("Vùng che cần kiểu xử lý “Rút gọn có biên tập”, vì phải dựng lại hình mới che được. Kiểu “Giữ nguyên hình ảnh” sao chép nguyên khung hình nên không sửa được điểm ảnh nào.") }}
+        </p>
+        <div class="asv-vung-thanh" role="group" aria-label="{{ _('Công cụ vùng che') }}">
+          <button type="button" class="btn ghost asv-vung-che-nut" data-loai="lam_mo">
+            {{ _("Thêm vùng làm mờ") }}
+          </button>
+          <button type="button" class="btn ghost asv-vung-che-nut" data-loai="danh_dau_phu_de">
+            {{ _("Đánh dấu phụ đề gốc") }}
+          </button>
+          <button type="button" class="btn ghost" id="asv-vung-xoa">
+            {{ _("Xoá vùng cuối") }}
+          </button>
+        </div>
+        <p class="asv-ghi-chu" id="asv-vung-tt" aria-live="polite">
+          {{ _("Chưa có vùng nào.") }}
+        </p>
+        {# 🔴 Danh sach vung, va no ton tai vi mot ly do cu the chu khong vi cho
+           day du: tu V5 `vung_che` da NHAN va LUU `tu_giay`/`den_giay`, nhung
+           khong co cho nao tren man hinh de dat chung. Nang luc co, khong ai di
+           tren duong toi no — dung hinh dang loi kho nay da dat ten.
+
+           ⚠️ Va nua kia cua cung mot lo: bo loc cung khong doc hai truong ay
+              (sua o pha 12a). Mo duong o giao dien ma khong sua bo loc la ban
+              mot thu khong xay ra. #}
+        <ul class="asv-vung-ds" id="asv-vung-ds"></ul>
+        <p class="asv-ghi-chu asv-chi-may">
+          {{ _("Chỉnh vùng che trên máy tính để chính xác hơn.") }}
+        </p>
+      </div>
+
+      {# 🔴 Lop phu chu — cung rang buoc VAT LY voi vung che (`drawtext` la mot
+         bo loc, bo loc doi hoi giai ma, `-c:v copy` khong giai ma khung nao),
+         nen cung khuon `data-preset-can`.
+
+         ⛔ Va no KHONG phai o dat phu de — nhung ly do da DOI o pha 14. Truoc
+            do `CAM_TRONG_MVP` cam `subtitle_burn`; nay khoi "Phu de" o duoi lam
+            dung viec ay. Ranh gioi con lai la CHUC NANG: lop phu la chu CUA
+            BAN, dat co dinh mot cho; phu de la ban dich cua VIDEO, chay theo
+            thoi diem tung cau. Va no van duoc giu bang CO HOC: moi lop la MOT
+            dong (`maxlength`, va may chu tu choi ky tu xuong dong), toi da
+            {{ lop_phu_toi_da }} lop. #}
+      <div class="asv-nhom" id="asv-nhom-lop-phu"
+           data-preset-can="{{ preset_can_cho_vung }}"
+           data-toi-da="{{ lop_phu_toi_da }}">
+        <h3>{{ _("Lớp phủ chữ") }}</h3>
+        <p class="asv-ghi-chu">
+          {{ _("Thêm một dòng chữ của bạn lên video — tên kênh, lời kêu gọi. Tối đa %(n)s dòng.")|format(n=lop_phu_toi_da) }}
+        </p>
+        <p class="asv-ghi-chu asv-vung-chan" id="asv-lop-phu-chan" hidden>
+          {{ _("Kiểu “Giữ nguyên hình ảnh” sao chép nguyên vẹn từng điểm ảnh, nên không thể vẽ chữ lên hình. Chọn “Rút gọn có biên tập” nếu bạn muốn thêm lớp phủ chữ.") }}
+        </p>
+        <div class="asv-vung-thanh" role="group" aria-label="{{ _('Công cụ lớp phủ chữ') }}">
+          <button type="button" class="btn ghost" id="asv-lop-phu-them">
+            {{ _("Thêm dòng chữ") }}
+          </button>
+        </div>
+        <p class="asv-ghi-chu" id="asv-lop-phu-tt" aria-live="polite">
+          {{ _("Chưa có dòng chữ nào.") }}
+        </p>
+        <ul class="asv-vung-ds" id="asv-lop-phu-ds"></ul>
+        {# ⭐ Toa do gui len may chu la PHAN SO 0..1 (`lop_phu` L1). Giao dien
+           cho khach nghi bang phan tram vi mot con so tinh bang pixel tro thanh
+           sai ngay khi ban xem truoc co do phan giai khac ban goc. #}
+        <input type="hidden" name="lop_phu" id="asv-lop-phu" value="">
+      </div>
+
+      {# 🔴 Logo — cùng ràng buộc VẬT LÝ với vùng che và lớp phủ chữ, nên cùng
+         khuôn `data-preset-can`.
+
+         ⚠️ Ảnh đi **cùng biểu mẫu này**, không qua một cửa tải lên riêng. Một
+            cửa riêng cấp ra một khoá khách cầm theo, và khi đó ta phải trả lời
+            *"khoá này có thật sự của người đang gọi không"* ở mọi lần dùng —
+            đúng bề mặt IDOR mà `upload_sessions.owned` phải lọc trong truy vấn
+            để đóng lại. Đi cùng POST thì câu hỏi ấy **biến mất**. #}
+      <div class="asv-nhom" id="asv-nhom-logo"
+           data-preset-can="{{ preset_can_cho_vung }}"
+           data-toi-da="{{ logo_toi_da }}"
+           data-tran-mb="{{ logo_tran_mb }}">
+        <h3>{{ _("Logo") }}</h3>
+        <p class="asv-ghi-chu">
+          {{ _("Dán logo của bạn lên video. PNG nền trong suốt cho kết quả đẹp nhất. Tối đa %(n)s logo, mỗi ảnh dưới %(mb)s MB.")|format(n=logo_toi_da, mb=logo_tran_mb) }}
+        </p>
+        <p class="asv-ghi-chu asv-vung-chan" id="asv-logo-chan" hidden>
+          {{ _("Kiểu “Giữ nguyên hình ảnh” sao chép nguyên vẹn từng điểm ảnh, nên không thể dán logo lên hình. Chọn “Rút gọn có biên tập” nếu bạn muốn thêm logo.") }}
+        </p>
+        <div class="asv-vung-thanh" role="group" aria-label="{{ _('Công cụ logo') }}">
+          <button type="button" class="btn ghost" id="asv-logo-them">
+            {{ _("Thêm logo") }}
+          </button>
+        </div>
+        <p class="asv-ghi-chu" id="asv-logo-tt" aria-live="polite">
+          {{ _("Chưa có logo nào.") }}
+        </p>
+        <ul class="asv-vung-ds" id="asv-logo-ds"></ul>
+        {# Hình học đi ở đây; ảnh đi ở các ô `logo_anh` do JS dựng. Hai danh
+           sách phải CÙNG độ dài — `routes._doc_logo` đối chiếu và từ chối. #}
+        <input type="hidden" name="logo" id="asv-logo" value="">
+      </div>
+
+      {# 🔴 Phụ đề — khối DUY NHẤT có HAI trục, và đó là cả thiết kế của pha 14.
+
+           · khắc vào hình — đổi ĐIỂM ẢNH, nên bất khả ở preset giữ hình
+           · xuất tệp .srt — không chạm điểm ảnh, chạy ở CẢ HAI preset
+
+         ⛔ Nên `data-preset-can` ở đây KHÔNG ẩn cả nhóm như bốn khối trên. Nó
+            chỉ điều khiển ô chế độ. Ẩn cả nhóm sẽ khoá mất lựa chọn phụ đề DUY
+            NHẤT còn lại ở preset giữ hình — và khoá **im lặng**: khách không
+            thấy ô nào để hỏi. Xem `asv/phu_de.js`.
+
+         ⭐ Danh sách kiểu đến TỪ `style_registry` qua `phu_de.cho_giao_dien()`,
+            không gõ vào đây. Một bản sao trong HTML sẽ trôi ngay lần đầu app
+            kia thêm một kiểu, và trôi im lặng. #}
+      <div class="asv-nhom" id="asv-nhom-phu-de"
+           data-preset-can="{{ preset_can_cho_vung }}"
+           data-can-kieu="{{ phu_de.che_do_can_kieu }}"
+           data-che-do-tat="{{ phu_de.che_do_mac_dinh }}">
+        <h3>{{ _("Phụ đề") }}</h3>
+        <p class="asv-ghi-chu">
+          {{ _("Phụ đề được dựng từ chính bản dịch, đặt đúng theo thời điểm từng câu được đọc lên.") }}
+        </p>
+        <label class="asv-o">
+          <span>{{ _("Khắc lên hình") }}</span>
+          <select id="asv-phu-de-che-do">
+            {% for ma, ten, mo_ta in phu_de.che_do %}
+              <option value="{{ ma }}" title="{{ _(mo_ta) }}"
+                      {% if ma == phu_de.che_do_mac_dinh %}selected{% endif %}>
+                {{ _(ten) }}
+              </option>
+            {% endfor %}
+          </select>
         </label>
-      {% endfor %}
-    </fieldset>
-
-    <fieldset class="asv-o">
-      <legend><strong>{{ _("Cách chọn giọng") }}</strong></legend>
-      {% for ma, ten, mo_ta in che_do_giong %}
-        <label class="asv-chon">
-          <input type="radio" name="che_do_giong" value="{{ ma }}"
-                 {% if ma == che_do_giong_mac_dinh %}checked{% endif %}>
-          <span><strong>{{ _(ten) }}</strong><small>{{ _(mo_ta) }}</small></span>
+        <p class="asv-ghi-chu asv-vung-chan" id="asv-phu-de-chan" hidden>
+          {{ _("Kiểu “Giữ nguyên hình ảnh” sao chép nguyên vẹn từng điểm ảnh, nên không thể khắc phụ đề lên hình. Bạn vẫn xuất được tệp phụ đề rời ở ngay dưới.") }}
+        </p>
+        <label class="asv-o" id="asv-phu-de-kieu-o" hidden>
+          <span>{{ _("Kiểu chữ") }}</span>
+          <select id="asv-phu-de-kieu">
+            {% for k_ma, k_ten, k_mo_ta in phu_de.kieu %}
+              <option value="{{ k_ma }}" title="{{ k_mo_ta }}"
+                      {% if k_ma == phu_de.kieu_mac_dinh %}selected{% endif %}>{{ k_ten }}</option>
+            {% endfor %}
+          </select>
         </label>
-      {% endfor %}
-    </fieldset>
+        {# ⭐ Pha 16 — tinh chỉnh trên nền preset, KHÔNG thay preset.
 
-    <div class="asv-o">
-      <label for="asv-giong"><strong>{{ _("Giọng đọc") }}</strong></label>
-      {# ⛔ KHONG co o "Giọng mặc định". Engine từ chối phục vụ nó (pha 09), nên
-         mời khách chọn nó là mời họ đi bốn giai đoạn rồi hỏng. Danh sách luôn có
-         giọng mẫu, nên luôn có thứ CÓ THẬT để chọn. #}
-      <select id="asv-giong" name="giong_id" required>
-        {% for g in giong %}<option value="{{ g.ma }}">{{ g.ten }}</option>{% endfor %}
-      </select>
-      <p class="asv-ghi-chu">{{ _("Bạn có thể nhân bản giọng riêng ở LTT VOICE.") }}</p>
-    </div>
+             Mọi ô dưới đây dựng từ `phu_de.tinh_chinh`, mà `luoc_do_tinh_chinh()`
+             đọc thẳng từ `SubtitleStyleConfig` của `apps/autosubvideo`. Miền giá
+             trị ở đây và miền máy chủ duyệt vì thế là **cùng một con số** — không
+             có bản sao nào để trôi.
 
-    <div class="asv-o asv-tien">
-      <p class="asv-ghi-chu">
-        {{ _("Chi phí được ước theo độ dài video và giữ chỗ khi bắt đầu. Phần không dùng đến sẽ được hoàn lại khi chạy xong.") }}
-      </p>
-      <button class="btn primary" type="submit">{{ _("Bắt đầu lồng tiếng") }}</button>
+           ⛔ Đừng gõ `min`/`max` vào đây. Đó là cách một hạn mức trôi im lặng:
+              giao diện cho kéo tới 200 trong khi máy chủ từ chối ở 120, và khách
+              chỉ biết sau khi bấm Gửi. #}
+        <details class="asv-nhom-con" id="asv-phu-de-tinh-chinh" hidden>
+          <summary>{{ _("Tinh chỉnh kiểu chữ") }}</summary>
+          <p class="asv-ghi-chu">
+            {{ _("Bỏ trống thì dùng nguyên kiểu bạn chọn. Chỉ những ô bạn thực sự đổi mới được gửi đi.") }}
+          </p>
+          <div class="asv-luoi-tinh-chinh">
+            {% for o in phu_de.tinh_chinh %}
+              <label class="asv-o asv-tc" data-ten="{{ o.ten }}">
+                <span title="{{ o.mo_ta }}">{{ o.ten }}</span>
+                {% if o.dang == "co_khong" %}
+                  <input type="checkbox" data-tc="{{ o.ten }}">
+                {% elif o.dang == "chon" %}
+                  <select data-tc="{{ o.ten }}">
+                    {% for c in o.chon %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+                  </select>
+                {% elif o.dang == "mau" %}
+                  <input type="color" data-tc="{{ o.ten }}">
+                {% elif o.dang == "so" %}
+                  <input type="number" data-tc="{{ o.ten }}"
+                         min="{{ o.nho_nhat }}" max="{{ o.lon_nhat }}"
+                         {% if o.lon_nhat is not none and o.lon_nhat <= 1 %}step="0.05"{% endif %}>
+                {% else %}
+                  <input type="text" data-tc="{{ o.ten }}">
+                {% endif %}
+              </label>
+            {% endfor %}
+          </div>
+          <button type="button" class="btn ghost" id="asv-phu-de-tra-lai">
+            {{ _("Trả về kiểu gốc") }}
+          </button>
+        </details>
+        {# 🔑 Giá trị KHỞI ĐIỂM của từng preset đi xuống bằng JSON, vì chúng
+           **không** bằng mặc định của mô hình: `tiktok_bold` khởi điểm ở cỡ 64
+           còn mô hình mặc định 48. Hiện mặc định của mô hình sẽ làm mọi ô khách
+           chạm vào thành một "tinh chỉnh" dù họ không đổi ý gì. #}
+        <script type="application/json" id="asv-phu-de-goc">
+          {{ phu_de.kieu_cau_hinh | tojson }}
+        </script>
+        {# ⭐ Ô này KHÔNG bao giờ bị ẩn theo preset. Đó là lựa chọn phụ đề duy
+           nhất còn lại ở preset giữ hình. #}
+        <label class="asv-chon">
+          <input type="checkbox" id="asv-phu-de-srt">
+          <span><strong>{{ _("Xuất thêm tệp phụ đề rời (.srt)") }}</strong>
+            <small>{{ _("Tệp tải về được, dùng cho YouTube hay để chỉnh lại về sau. Không đổi một điểm ảnh nào của video.") }}</small></span>
+        </label>
+        <input type="hidden" name="phu_de" id="asv-phu-de" value="">
+      </div>
+
+      {# 🔑 Âm thanh (V6 pha 23) — MỘT thanh mức, không phải hai.
+
+           Bản phối kết thúc bằng `loudnorm` về −14 LUFS, nên chỉ TỈ LỆ nền/lời
+           là có nghĩa; một thanh "mức giọng" cạnh thanh này sẽ là thanh kéo
+           không làm gì. Đo ở `PHA23_AUDIO_STUDIO.md` §1.
+
+         ⭐ Không `data-preset-can`: âm thanh không chạm điểm ảnh, cả hai preset
+            đều trộn lại bản phối. Miền giá trị đến TỪ `am_thanh.cho_giao_dien()`. #}
+      <div class="asv-nhom" id="asv-nhom-am-thanh"
+           data-nen-mac-dinh="{{ am_thanh.nen_db }}">
+        <h3>{{ _("Âm thanh") }}</h3>
+        <p class="asv-ghi-chu">
+          {{ _("Nhạc nền và tiếng động của video gốc được giữ lại; chỉ lời thoại gốc được thay bằng giọng lồng tiếng.") }}
+        </p>
+        <label class="asv-o">
+          <span>{{ _("Nhạc nền so với lời thoại") }}
+            <output id="asv-am-nen-so" for="asv-am-nen">{{ am_thanh.nen_db | int }} dB</output></span>
+          <input type="range" id="asv-am-nen" step="1"
+                 min="{{ am_thanh.nen_min | int }}" max="{{ am_thanh.nen_max | int }}"
+                 value="{{ am_thanh.nen_db | int }}">
+        </label>
+        <label class="asv-chon">
+          <input type="checkbox" id="asv-am-tat-nen">
+          <span><strong>{{ _("Tắt nhạc nền") }}</strong>
+            <small>{{ _("Chỉ còn giọng lồng tiếng.") }}</small></span>
+        </label>
+        <label class="asv-chon">
+          <input type="checkbox" id="asv-am-ha-theo-loi">
+          <span><strong>{{ _("Hạ nhạc nền khi có lời") }}</strong>
+            <small>{{ _("Nhạc nền nhỏ đi khoảng 7 dB lúc có người nói và trở lại giữa hai câu.") }}</small></span>
+        </label>
+        <div class="asv-luoi-tinh-chinh">
+          <label class="asv-o">
+            <span>{{ _("To dần ở đầu (giây)") }}</span>
+            <input type="number" id="asv-am-fade-vao" min="0" step="0.5" value="0"
+                   max="{{ am_thanh.fade_max | int }}">
+          </label>
+          <label class="asv-o">
+            <span>{{ _("Nhỏ dần ở cuối (giây)") }}</span>
+            <input type="number" id="asv-am-fade-ra" min="0" step="0.5" value="0"
+                   max="{{ am_thanh.fade_max | int }}">
+          </label>
+        </div>
+        <p class="asv-ghi-chu">
+          {{ _("Độ to chung của video luôn được chuẩn về −14 LUFS, mức các nền tảng video dùng.") }}
+        </p>
+        <input type="hidden" name="am_thanh" id="asv-am-thanh" value="">
+      </div>
+
+      <div class="asv-nhom">
+        <h3>{{ _("Giọng") }}</h3>
+        <fieldset class="asv-o">
+          <legend class="asv-an-doc">{{ _("Cách chọn giọng") }}</legend>
+          {% for ma, ten, mo_ta in che_do_giong %}
+            <label class="asv-chon">
+              <input type="radio" name="che_do_giong" value="{{ ma }}"
+                     {% if ma == che_do_giong_can_giong %}data-can-giong="1"{% endif %}
+                     {% if ma == che_do_giong_chon %}checked{% endif %}>
+              <span><strong>{{ _(ten) }}</strong><small>{{ _(mo_ta) }}</small></span>
+            </label>
+          {% endfor %}
+        </fieldset>
+      </div>
+    </details>
+
+    {# ── Thanh hanh dong — DINH day tren mobile ────────────────────────── #}
+    <div class="asv-thanh">
+      <div class="asv-uoc" aria-live="polite">
+        {# ⛔ Truoc khi co video thi KHONG hien mot con so nao. Mot con so hien
+           truoc khi biet do dai la mot con so bia. #}
+        <span id="asv-uoc-tien" class="asv-uoc-tien"></span>
+        <span id="asv-uoc-gio" class="asv-ghi-chu"></span>
+        <p class="asv-ghi-chu">
+          {{ _("Chi phí được giữ chỗ khi bắt đầu. Phần không dùng đến sẽ được hoàn lại.") }}
+        </p>
+      </div>
+      <button class="btn primary" type="submit" id="asv-batdau">
+        {{ _("Bắt đầu lồng tiếng") }}
+      </button>
     </div>
   </form>
 
+  {# ── Lich su ──────────────────────────────────────────────────────────── #}
   <section class="asv-lich-su" aria-labelledby="asv-ls">
     <h2 id="asv-ls">{{ _("Lần chạy của tôi") }}</h2>
     {% if not lich_su %}
       <p class="asv-ghi-chu">{{ _("Bạn chưa có lần chạy nào.") }}</p>
     {% else %}
-      <table class="asv-bang">
-        <thead><tr>
-          <th>{{ _("Bắt đầu") }}</th><th>{{ _("Trạng thái") }}</th><th></th>
-        </tr></thead>
-        <tbody>
+      {# ⭐ The, khong phai bang. Bang ba cot tran ngang o 375px, va cot
+         `Trạng thái` cua ban cu in `r.status` THO — khach thay `queued`. #}
+      <ul class="asv-the-ds">
         {% for r in lich_su %}
-          <tr>
-            <td>{{ r.created_at.strftime("%d/%m/%Y %H:%M") if r.created_at else "—" }}</td>
-            <td><span class="asv-trang-thai asv-tt-{{ r.status }}">{{ r.status }}</span></td>
-            <td><a class="btn ghost" href="{{ app.route_prefix }}/run/{{ r.id }}">{{ _("Xem") }}</a></td>
-          </tr>
+          <li class="asv-the">
+            <a href="{{ app.route_prefix }}/run/{{ r.id }}">
+              <span class="asv-trang-thai asv-tt-{{ r.status }}">
+                {{ _(nhan_trang_thai.get(r.status, r.status)) }}
+              </span>
+              <span class="asv-the-gio">
+                {{ r.created_at.strftime("%d/%m/%Y %H:%M") if r.created_at else "—" }}
+              </span>
+            </a>
+          </li>
         {% endfor %}
-        </tbody>
-      </table>
+      </ul>
     {% endif %}
   </section>
 
 </section>
+{% endblock %}
+
+{% block scripts %}
+{# ⛔ Chuoi hien cho khach KHONG duoc nam trong `.js`.
+
+   `_()` chay trong ngu canh request va chi voi toi duoc tep Jinja; mot chuoi go
+   thang vao `asv.js` la mot chuoi **khong bao gio dich duoc**, va no se dung
+   giua mot trang da dich het — dung nhu `voice.js` va `cam_chon.js` da tranh
+   (ca hai khong chua mot cau tieng Viet nao cho khach doc).
+
+   ⭐ Mot khoi JSON thay vi muoi thuoc tinh `data-*`: cac chuoi nay thuoc ve
+      **kich ban**, khong thuoc ve mot phan tu nao ca. Treo chung len mot the
+      bat ky la buoc mot chuoi vao mot cho no khong lien quan. #}
+<script type="application/json" id="asv-chu">
+{
+  "vuot_tran": {{ _("vượt quá %(mb)s MB")|tojson }},
+  "dang_gui": {{ _("Đang gửi video…")|tojson }},
+  "credit": {{ _("credit")|tojson }},
+  "khoang": {{ _("khoảng")|tojson }},
+  "phut": {{ _("phút")|tojson }},
+  "giay": {{ _("giây")|tojson }},
+  "nghe_chua_co": {{ _("Giọng này đang được chuẩn bị bản nghe thử.")|tojson }},
+  "nghe_hong": {{ _("Không phát được bản nghe thử.")|tojson }},
+  "giong_khong_khop": {{ _("Không có giọng nào khớp bộ lọc — hãy bỏ bớt điều kiện.")|tojson }},
+  "giong_chua_mau": {{ _("chưa có mẫu nghe")|tojson }},
+  "giong_da_lam_moi": {{ _("Đã cập nhật danh sách: %(so)s giọng.")|tojson }},
+  "giong_lam_moi_hong": {{ _("Không làm mới được danh sách giọng.")|tojson }},
+  "vung_chua_co": {{ _("Chưa có vùng nào.")|tojson }},
+  "vung_dem": {{ _("%(so)s vùng đã đánh dấu.")|tojson }},
+  "vung_keo": {{ _("Kéo trên khung hình để vẽ vùng.")|tojson }},
+  "vung_qua_nho": {{ _("Vùng quá nhỏ — hãy kéo một khung lớn hơn.")|tojson }},
+  "tai_dang": {{ _("Đang tải video lên… %(pct)s%%")|tojson }},
+  "tai_xong": {{ _("Đã tải lên xong.")|tojson }},
+  "tai_hong": {{ _("Không tải lên được. Hãy thử lại.")|tojson }},
+  "tai_qua_lon": {{ _("Video vượt quá %(mb)s MB.")|tojson }},
+  "cat_ca_video": {{ _("Để trống thì giữ cả video.")|tojson }},
+  "cat_khong_doc_duoc": {{ _("Đoạn cắt không đọc được.")|tojson }},
+  "cat_ngoai_khoang": {{ _("Đoạn cắt phải nằm trong video và điểm đầu phải trước điểm cuối.")|tojson }},
+  "cat_qua_ngan": {{ _("Đoạn cắt quá ngắn.")|tojson }},
+  "cat_con_lai": {{ _("Đoạn giữ lại dài %(giay)s.")|tojson }},
+  "vung_loai_lam_mo": {{ _("Làm mờ")|tojson }},
+  "vung_loai_danh_dau_phu_de": {{ _("Đánh dấu phụ đề gốc")|tojson }},
+  "vung_tu_giay": {{ _("Từ giây")|tojson }},
+  "vung_den_giay": {{ _("Đến giây")|tojson }},
+  "vung_ca_video": {{ _("cả video")|tojson }},
+  "vung_xoa_mot": {{ _("Xoá vùng này")|tojson }},
+  "vung_vi_tri": {{ _("ở %(x)s%%–%(x2)s%% ngang, %(y)s%%–%(y2)s%% dọc")|tojson }},
+  "lp_chua_co": {{ _("Chưa có dòng chữ nào.")|tojson }},
+  "lp_dem": {{ _("%(so)s dòng chữ.")|tojson }},
+  "lp_chu": {{ _("Nội dung")|tojson }},
+  "lp_chu_goi_y": {{ _("Ví dụ: Đăng ký kênh nhé!")|tojson }},
+  "lp_ngang": {{ _("Ngang (%)")|tojson }},
+  "lp_doc": {{ _("Dọc (%)")|tojson }},
+  "lp_co_chu": {{ _("Cỡ chữ (%)")|tojson }},
+  "lp_mau": {{ _("Màu")|tojson }},
+  "lp_mau_trang": {{ _("Trắng")|tojson }},
+  "lp_mau_den": {{ _("Đen")|tojson }},
+  "lp_mau_vang": {{ _("Vàng")|tojson }},
+  "lp_vien": {{ _("Viền")|tojson }},
+  "lp_xoa_mot": {{ _("Xoá dòng này")|tojson }},
+  "lp_het_cho": {{ _("Tối đa %(n)s dòng chữ.")|tojson }},
+  "lp_trong": {{ _("Dòng chữ không được để trống.")|tojson }},
+  "lp_mot_dong": {{ _("Lớp phủ chữ chỉ nhận MỘT dòng.")|tojson }},
+  "tai_thu_lai": {{ _("Đang thử lại lần %(lan)s…")|tojson }},
+  "tai_hong_lon": {{ _("Tải lên bị gián đoạn. Video này lớn hơn %(mb)s MB nên không gửi kèm biểu mẫu được — hãy bấm “Thử tải lên lại”.")|tojson }},
+  "tai_hong_nho": {{ _("Tải lên trực tiếp không chạy được. Đang gửi theo đường thường…")|tojson }},
+  "vuot_tran_kieu": {{ _("vượt quá %(mb)s MB — định dạng này chỉ gửi được bản nhỏ. Hãy đổi sang MP4 hoặc MOV.")|tojson }},
+  "lg_chua_co": {{ _("Chưa có logo nào.")|tojson }},
+  "lg_dem": {{ _("%(so)s logo.")|tojson }},
+  "lg_chon_anh": {{ _("Chọn ảnh")|tojson }},
+  "lg_chua_chon": {{ _("Chưa chọn ảnh — logo này sẽ không được gửi.")|tojson }},
+  "lg_rong": {{ _("Bề rộng (%)")|tojson }},
+  "lg_xoa_mot": {{ _("Xoá logo này")|tojson }},
+  "lg_het_cho": {{ _("Tối đa %(n)s logo.")|tojson }},
+  "lg_qua_lon": {{ _("Ảnh vượt quá %(mb)s MB.")|tojson }},
+  "lg_sai_kieu": {{ _("Chỉ nhận PNG, JPEG hoặc WebP.")|tojson }}
+}
+</script>
+{#- Pha 06: man Studio la TAM module, khong con mot tep phinh.
+
+     Danh sach + THU TU den tu `server/templating.py:ASV_STUDIO_JS`, chinh bo
+     ma `asset_ver` bam. Go tay tung dong o day se tao mot danh sach thu hai,
+     va no se troi — mot module them vao ma quen dong nay thi trang van chay,
+     chi thieu dung tinh nang do.
+
+     `defer` giu nguyen thu tu thuc thi theo thu tu tai lieu, nen `asv/nen.js`
+     luon chay truoc. -#}
+{% for tep in asv_studio_js %}
+<script src="/static/{{ tep }}?v={{ asset_ver }}" defer></script>
+{%- endfor %}
 {% endblock %}

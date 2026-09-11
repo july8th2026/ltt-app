@@ -127,7 +127,8 @@ def tach_rieng_chung(ds) -> tuple:
        không, `duong_cho_trang` đơn giản không tìm thấy khoá nào và không
        dựng nút — im lặng đúng cách, không phải một 404.
     """
-    rieng, chung = [], []
+    rieng: list[str] = []
+    chung: list[str] = []
     for g in ds:
         la_chung = (du_dieu_kien_kho_chung(g)
                    and str(getattr(g, "trang_thai", "") or "") == "active")

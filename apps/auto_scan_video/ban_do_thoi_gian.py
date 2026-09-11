@@ -126,6 +126,44 @@ class BanDoThoiGian:
         """Khoang `[bat, ket)` co chong lan bat cu phan duoc giu nao khong."""
         return any(float(ket) > b and float(bat) < k for b, k in self.giu)
 
+    def ra_khoang(self, bat: float, ket: float) -> list[tuple[float, float]]:
+        """Mot KHOANG nguon -> cac khoang tuong ung tren ban ra.
+
+        `ra()` doi mot MOC. Vung che doi mot KHOANG, va hai thu do khong quy ve
+        nhau duoc: goi `ra()` hai lan cho hai dau roi noi lai la SAI ngay khi
+        khoang do bat qua mot cho cat — dau cat co the tra `None`, va mot cap
+        `(None, x)` khong con noi gi.
+
+        ⛔ Tra DANH SACH chu khong mot cap. Mot khoang nguon bat qua **hai** vung
+           duoc giu khong lien nhau se cho hai khoang ra; ep chung thanh mot cap
+           `(min, max)` la che ca doan o giua — doan ma khach **khong** chon.
+
+        ⭐ Nhung hai khoang ra LIEN NHAU thi gop lai la dung, khong phai lam dep:
+           `concat` noi khong ke ho, nen hai manh nguon nam hai ben mot cho cat
+           tro thanh lien tuc tren ban ra. Gop chung bot mot bo loc ma khong doi
+           mot khung hinh nao.
+
+        Rong = ca khoang nay da bi cat het. Nguoi goi phai xu ly, dung bo qua:
+        mot vung che khong con cho de ap la mot vung khach ve ma khong bao gio
+        xay ra.
+        """
+        bat, ket = float(bat), float(ket)
+        tho: list[tuple[float, float]] = []
+        truoc = 0.0
+        for b, k in self.giu:
+            lo, hi = max(bat, b), min(ket, k)
+            if hi - lo > KHIT_GIAY:
+                tho.append((truoc + (lo - b), truoc + (hi - b)))
+            truoc += k - b
+
+        gop: list[tuple[float, float]] = []
+        for b, k in tho:
+            if gop and b - gop[-1][1] <= KHIT_GIAY:
+                gop[-1] = (gop[-1][0], max(gop[-1][1], k))
+            else:
+                gop.append((b, k))
+        return gop
+
     # ── Do ─────────────────────────────────────────────────────────────────
 
     @property

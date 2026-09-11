@@ -226,6 +226,58 @@ def test_claim_khong_nhac_trung_hai_worker(Sess):
     assert len(set(tat_ca)) == N            # không job nào bị nhặt hai lần
 
 
+def test_hai_worker_dong_thoi_deu_chon_internal_khi_con_du_ung_vien(Sess):
+    """P1+P2 trên PostgreSQL thật: strict priority không làm hỏng SKIP LOCKED."""
+    from platform_core import jobs
+
+    seed = Sess()
+    try:
+        for index in range(20):
+            jobs.submit(
+                seed, user_id=f"external-{index}", app_slug="appthu",
+                job_type="appthu.dao_nguoc", params={"i": index},
+                admission_resource="shared-gpu", priority_class="external",
+                origin="public_api")
+        internal_ids = set()
+        for index in range(2):
+            row = jobs.submit(
+                seed, user_id=f"internal-{index}", app_slug="appthu",
+                job_type="appthu.dao_nguoc", params={"i": index},
+                admission_resource="shared-gpu", priority_class="internal",
+                origin="internal_runtime")
+            internal_ids.add(row.id)
+        seed.commit()
+    finally:
+        seed.close()
+
+    start = threading.Barrier(2)
+    claimed: list[tuple[str, str]] = []
+    guard = threading.Lock()
+
+    def worker(name: str) -> None:
+        session = Sess()
+        try:
+            start.wait()
+            row = jobs.claim(session, worker_id=name)
+            assert row is not None
+            session.commit()
+            with guard:
+                claimed.append((row.id, row.priority_class))
+        finally:
+            session.close()
+
+    threads = [threading.Thread(target=worker, args=(name,))
+               for name in ("priority-w1", "priority-w2")]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    assert len(claimed) == 2
+    assert {job_id for job_id, _priority in claimed} == internal_ids
+    assert {priority for _job_id, priority in claimed} == {"internal"}
+
+
 def test_claim_bon_child_agent_khong_trung(Sess):
     """Fan-out Agent dùng cùng queue Q26: hai worker phải chia đúng 4 child."""
     from platform_core import jobs

@@ -24,8 +24,8 @@ import importlib
 from datetime import datetime, timedelta, timezone
 from typing import Callable, Optional
 
-from sqlalchemy import case, func, or_, select
-from sqlalchemy.orm import Session as DbSession, aliased
+from sqlalchemy import exists, func, literal, or_, select
+from sqlalchemy.orm import Session as DbSession
 
 from platform_core.models import (ExecutionLease, JOB_CANCELLED, JOB_DONE, JOB_ERROR,
                                   JOB_QUEUED, JOB_RUNNING, Job)
@@ -141,7 +141,9 @@ def submit(db: DbSession, *, user_id: str, app_slug: str, job_type: str,
            params: dict, dedupe_key: str = "", max_attempts: int = 3,
            parent_id: str = "", plan_id: str = "", step_id: str = "",
            correlation_id: str = "", retry_of_id: str = "",
-           admission_resource: str = "", admission_slots: int = 0) -> Job:
+           admission_resource: str = "", admission_slots: int = 0,
+           origin: str | None = None,
+           priority_class: str | None = None) -> Job:
     """Tạo một job ở trạng thái `queued`. KHÔNG commit — caller commit cùng credit.
 
     Nếu `dedupe_key` khác rỗng và đã có một job **chưa kết thúc** (queued/running)
@@ -160,6 +162,10 @@ def submit(db: DbSession, *, user_id: str, app_slug: str, job_type: str,
         if cu is not None:
             return cu
 
+    from platform_core import job_ingress, job_scheduler
+
+    context_origin, context_priority = job_ingress.current()
+
     job = Job(
         user_id=user_id, app_slug=app_slug, job_type=job_type,
         params=params or {}, dedupe_key=dedupe_key,
@@ -168,6 +174,10 @@ def submit(db: DbSession, *, user_id: str, app_slug: str, job_type: str,
         retry_of_id=retry_of_id,
         admission_resource=str(admission_resource or "")[:96],
         admission_slots=max(0, int(admission_slots or 0)),
+        origin=job_scheduler.normalize_origin(
+            context_origin if origin is None else origin),
+        priority_class=job_scheduler.normalize_priority(
+            context_priority if priority_class is None else priority_class),
     )
     if correlation_id:
         job.correlation_id = correlation_id[:36]
@@ -314,27 +324,43 @@ def claim(db: DbSession, *, worker_id: str,
             return None
         stmt = stmt.where(Job.app_slug.in_(eligible))
     stmt = stmt.where(_con_cho_tai_nguyen(now))
-    peer = aliased(Job)
-    last_account_claim = (
-        select(func.max(peer.last_claimed_at))
-        .where(peer.user_id == Job.user_id,
-               peer.admission_resource == Job.admission_resource)
-        .correlate(Job)
-        .scalar_subquery()
-    )
-    aged_first = case((Job.created_at <= now - FAIR_AGING, 0), else_=1)
-    never_served_first = case((last_account_claim.is_(None), 0), else_=1)
+    from platform_core import job_scheduler
+
     row = db.execute(
         stmt
-        # Aging trước, rồi fair-share theo account, cuối cùng FIFO ổn định trong
-        # account. Không có giá tiền trong phép xếp thứ tự này.
-        .order_by(aged_first, never_served_first, last_account_claim,
-                  Job.created_at, Job.id)
+        .order_by(*job_scheduler.order_expressions(Job, now=now))
         .limit(1)
         .with_for_update(skip_locked=True)
     ).scalars().first()
     if row is None:
         return None
+
+    # One bounded observability query records when the scheduler materially
+    # changed FIFO. It does not participate in arbitration; the locked row and
+    # ExecutionLease remain the only authorities.
+    from platform_core.job_scheduler import normalize_priority
+
+    selected_priority = normalize_priority(row.priority_class)
+    observable = [
+        Job.status == JOB_QUEUED,
+        Job.next_run_at <= now,
+        Job.admission_resource == row.admission_resource,
+        Job.id != row.id,
+    ]
+    if eligible is not None:
+        observable.append(Job.app_slug.in_(eligible))
+    priority_override, fair_rotation = db.execute(select(
+        exists(select(Job.id).where(
+            *observable,
+            Job.priority_class != "internal",
+        )) if selected_priority == "internal" else literal(False),
+        exists(select(Job.id).where(
+            *observable,
+            Job.priority_class == row.priority_class,
+            Job.user_id != row.user_id,
+            Job.created_at < row.created_at,
+        )),
+    )).one()
 
     row.status = JOB_RUNNING
     row.worker_id = worker_id
@@ -344,9 +370,26 @@ def claim(db: DbSession, *, worker_id: str,
     attempt = int(row.attempts or 0) + 1
     job_events.append(
         db, row, "claimed", visibility=job_events.INTERNAL,
-        details={"worker_id": worker_id, "attempt": attempt},
+        details={"worker_id": worker_id, "attempt": attempt,
+                 "origin": row.origin, "priority_class": selected_priority},
         event_key=f"claimed:{attempt}",
     )
+    if priority_override:
+        job_events.append(
+            db, row, "scheduler_priority_override",
+            visibility=job_events.INTERNAL,
+            details={"resource": row.admission_resource,
+                     "priority_class": selected_priority},
+            event_key=f"scheduler-priority:{attempt}",
+        )
+    if fair_rotation:
+        job_events.append(
+            db, row, "scheduler_fair_rotation",
+            visibility=job_events.INTERNAL,
+            details={"resource": row.admission_resource,
+                     "priority_class": selected_priority},
+            event_key=f"scheduler-fair:{attempt}",
+        )
     job_events.append(
         db, row, "started", public_message=N_("Bắt đầu xử lý."),
         details={"attempt": attempt, "max_attempts": row.max_attempts,

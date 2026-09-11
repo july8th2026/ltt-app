@@ -15,6 +15,13 @@ import pytest
 
 from apps.auto_scan_video import loi
 from apps.auto_scan_video.ban_dung import BanDungError
+from apps.auto_scan_video.cat_dau_cuoi import CatLoi
+from apps.auto_scan_video.lop_phu import LopPhuLoi
+from apps.auto_scan_video.phu_de import PhuDeLoi
+from apps.auto_scan_video.logo import LogoLoi
+from apps.auto_scan_video.am_thanh import AmThanhLoi
+from apps.auto_scan_video.tu_dien import TuDienLoi
+from apps.auto_scan_video.vung_che import VungLoi
 from apps.auto_scan_video.ban_ghi import BanGhiError
 from apps.auto_scan_video.dich_thuat import DichError, DichMoHo
 from apps.auto_scan_video.giai_doan_ban_dung import ThieuDauVao
@@ -64,6 +71,52 @@ from tests.rao_chan_nang import demucs_gia_lap  # noqa: F401
 #:    chu khong doi toi luc no roi xuong nhanh mac dinh trong production.
 BANG = {
     MayBan: loi.BAN,
+    # ⛔ Toa do vung che sai — sai dinh dang, ngoai khoang 0..1, ve
+    #    nguoc, hay qua nho. Chay lai cung mot bo toa do hong y het.
+    # ⚠️ Hom nay no bi bat ngay trong `routes.tao`, nen chua bao gio
+    #    toi duoc `phan_loai`. Chot o day de mot pha sau goi
+    #    `vung_che.chuan_hoa` TU TRONG mot job khong roi xuong `retry`.
+    VungLoi: loi.NGUOI_DUNG,
+    TuDienLoi: loi.NGUOI_DUNG,
+    # 🔑 `CatLoi` KHAC hai dong tren o mot cho co that: no **di toi `phan_loai`
+    #    hom nay**. `giai_doan_ban_dung` goi `cat_dau_cuoi.giao` ben trong mot
+    #    JOB, va `giao` nem khi cua so cat khong cham khoang giu nao.
+    # ⛔ Thieu dong nay thi mot cua so cat rong roi xuong nhanh `retry`, va ca ba
+    #    luot chay lai deu cho cung mot ket qua — cung mot cua so tren cung mot
+    #    ban do. Khach cho ba lan de nhan cung mot cau tra loi.
+    CatLoi: loi.NGUOI_DUNG,
+    # 🔑 `PhuDeLoi` (V6 pha 14) di toi `phan_loai` qua **HAI** duong, va duong
+    #    thu hai moi la ly do dong nay ton tai:
+    #
+    #      `phu_de.tu_form`       bat ngay o `routes.tao` — chua toi `phan_loai`
+    #      `phu_de.viet_tep_ass`  goi tu `giai_doan_ket_xuat`, tuc TU TRONG mot
+    #                             JOB, dung luc dung tep `.ass`
+    #
+    # ⛔ Mot kieu chu khong con ton tai — `autosubvideo` doi ten mot preset — se
+    #    nem giua giai doan ket xuat. Roi xuong `retry` thi ba luot deu hong y
+    #    het: cung mot ho so, cung mot id da bien mat, va moi luot ton mot suat
+    #    render.
+    PhuDeLoi: loi.NGUOI_DUNG,
+    # 🔑 `LopPhuLoi` di toi `phan_loai` qua **HAI** duong, va duong thu hai moi
+    #    la ly do dong nay ton tai:
+    #
+    #      `routes.tao`            bat ngay tai cho — chua toi `phan_loai`
+    #      `lop_phu.duong_font()`  goi tu `che_do_render._loc_chu`, tuc tu trong
+    #                              mot JOB, dung luc dung chuoi loc
+    #      `lop_phu.vien_px()`     nhu tren
+    #
+    # ⛔ Mot may chu khong co phong chu nao se nem giua giai doan ket xuat. Roi
+    #    xuong `retry` thi ba lan chay lai deu hong y het — may van khong co
+    #    phong chu — va khach cho ba lan de nhan cung mot cau tra loi.
+    LopPhuLoi: loi.NGUOI_DUNG,
+    # Cung nhom, cung ly do: `logo.rong_px()` duoc goi tu
+    # `che_do_render._loc_logo`, tuc tu trong mot JOB. Mot ban dung thieu
+    # `rong_khung` se nem giua giai doan ket xuat, va ba luot thu lai deu
+    # hong y het — cung mot ban dung, cung mot truong thieu.
+    LogoLoi: loi.NGUOI_DUNG,
+    # V6 pha 23 — cung nhom: `am_thanh.tu_cai_dat` duyet lai ho so da luu TRONG
+    # job `timing_align`; ho so hong thi ba luot thu lai hong y het.
+    AmThanhLoi: loi.NGUOI_DUNG,
     # ⭐ THU LAI la viec dung: nen tang co the cap mot card KHAC lan sau. Truoc
     #    pha 13 truong hop nay khong nem gi ca — no **im lang chay CPU**, cham
     #    hon 9,5 lan, va giu suat `tach_nguon_cuc_bo` suot ~37 phut o tran 2 gio.

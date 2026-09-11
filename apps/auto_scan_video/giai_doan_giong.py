@@ -72,7 +72,10 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             _t('Máy tạo tiếng nói chưa được thiết lập trên máy chủ này.'))
 
     tai_lieu = _doc_ban_dich(db, kho, run)
-    cai_dat = run.settings or {}
+    from . import cai_dat as cd
+    cai = cd.doc(run)
+    # Tu dien ten rieng cua khach; `{}` khi khong co. Xem `tu_dien.py`.
+    tu_dien = dict(cai.tu_dien)
 
     # 🔴 **Giong lay tu BAN LONG TIENG, khong tu `settings`.**
     #
@@ -82,9 +85,24 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     #    loi cho mot giong roi **doc len bang mot giong khac**, va khong cho nao
     #    bao loi vi ca hai deu tim thay mot gia tri hop le cua rieng minh.
     #
-    # ⭐ Mot cau hoi ("giong nao?") phai co MOT cho tra loi. `settings` chi con la
-    #    duong lui cho nhung run cu chua co truong nay.
-    ma_giong = str(tai_lieu.get("ma_giong") or cai_dat.get("voice_id") or "")
+    # ⭐ Mot cau hoi ("giong nao?") phai co MOT cho tra loi.
+    #
+    # 🔴 **V6 pha 19 dong duong lui `or cai.giong_id`, va no KHONG vo hai.**
+    #    Voi `AUTO_MATCH`, `settings.giong_id` RONG — giong duoc chot sau, tu ho
+    #    so noi dung. Nen mot ban long tieng thieu `ma_giong` se roi xuong `""`,
+    #    va `giai_giong("")` tra `(None, ...)`: khong giong tham chieu, tuc
+    #    **giong mac dinh cua engine**, khong ai bam nut — dung loi D-V4-04 cam.
+    #
+    # ⭐ Moi ban long tieng hop le deu CO `ma_giong` (`long_tieng.kiem` doi no
+    #    luc ghi), nen voi moi dau vao hop le dau ra khong doi mot byte. Chi dau
+    #    vao THIEU truong nay — nay tu choi to thay vi doc bang giong khac.
+    ma_giong = str(tai_lieu.get("ma_giong") or "")
+    if not ma_giong:
+        from .rang_giong import ChuaRangError
+
+        raise ChuaRangError(_t(
+            'Bản lồng tiếng không ghi giọng đã chọn — cần chạy lại bước xử lý '
+            'nội dung.'))
 
     # Giai giong MOT LAN cho ca lan chay — day cung la noi quyen so huu giong
     # duoc kiem (I6/I7). Lam lai cho tung doan la N luot tra CSDL cho mot cau
@@ -122,7 +140,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             khe = nan_cho_vua.khe_cua(m)
             chu = str(m["chu"])
             so_vong = 0
-            vt = _van_tay(m["ma"], chu, ma_giong, preset)
+            vt = _van_tay(m["ma"], chu, ma_giong, preset, tu_dien=tu_dien)
 
             # ── Phuc hoi o muc DOAN ───────────────────────────────────────
             khoa_ben = assets.dat_khoa(owner_id=run.owner_id, run_id=run.id,
@@ -168,8 +186,9 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             # ⛔ Vong nay co TRAN CUNG. Mot vong lap "sua cho toi khi vua" tren
             #    mot dich vu tra tien la mot hoa don khong co day.
             while True:
-                wav, _headers = giong_noi.doc_mot_doan(chu, ref_b64=ref_b64,
-                                                       preset=preset)
+                wav, _headers = giong_noi.doc_mot_doan(
+                    chu, ref_b64=ref_b64, preset=preset,
+                    tu_dien_rieng=tu_dien or None)
                 # ⛔ Kiem TRUOC khi coi doan la xong (muc 8). Do tren TEP THAT,
                 #    khong tin header cua may sinh tieng — cung ly do
                 #    `apps/ltt_voice` doi chieu hai phia va ghi log khi lech.
@@ -196,7 +215,8 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                     break
                 chu = moi_chu
                 so_vong += 1
-                vt = _van_tay(m["ma"], chu, ma_giong, preset)
+                vt = _van_tay(m["ma"], chu, ma_giong, preset,
+                              tu_dien=tu_dien)
 
             kq = nan_cho_vua.ket_luan(m["ma"], chu=chu, giay=giay, khe=khe,
                                       so_vong=so_vong)
@@ -263,7 +283,8 @@ class _KhongNanDuoc(RuntimeError):
     """Khong xin duoc cau viet lai — dung bac thang o day, khong lam hong ca run."""
 
 
-def _van_tay(ma: str, chu: str, ma_giong: str, preset: str) -> str:
+def _van_tay(ma: str, chu: str, ma_giong: str, preset: str, *,
+             tu_dien: dict) -> str:
     """Van tay cua MOT doan tieng.
 
     🔑 Gom **van ban da nan** chu khong phai van ban goc: sau mot vong nan, doan
@@ -271,7 +292,8 @@ def _van_tay(ma: str, chu: str, ma_giong: str, preset: str) -> str:
        vua quyet dinh la khong vua.
     """
     return giong_noi.van_tay_doan(ma_doan=ma, chu=chu, voice_id=ma_giong,
-                                  preset=str(preset or ""))
+                                  preset=str(preset or ""),
+                                  tu_dien=tu_dien or None)
 
 
 def _ke_nan(kq) -> dict:

@@ -7,8 +7,11 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session as DbSession
 
 from platform_core import job_events
-from platform_core.models import (JOB_DONE, JOB_ERROR, JOB_QUEUED, JOB_RUNNING,
-                                  CreditEntry, ExecutionLease, Job, JobEvent)
+from platform_core.models import (JOB_CANCELLED, JOB_DONE, JOB_ERROR, JOB_QUEUED,
+                                  JOB_RUNNING, CreditEntry, ExecutionLease, Job,
+                                  JobEvent)
+
+EXTERNAL_STARVATION_S = 300.0
 
 
 def _seconds(start, end) -> float | None:
@@ -48,6 +51,21 @@ def snapshot(db: DbSession, *, now: datetime | None = None,
                        is not None]
     runtime = [value for job in finished
                if (value := _seconds(job.started_at, job.finished_at)) is not None]
+    from platform_core.job_scheduler import normalize_priority
+
+    lifecycle_by_priority = {
+        priority: {
+            "started": sum(normalize_priority(job.priority_class) == priority and
+                           job.started_at is not None for job in rows),
+            "completed": sum(normalize_priority(job.priority_class) == priority and
+                             job.status == JOB_DONE for job in rows),
+            "failed": sum(normalize_priority(job.priority_class) == priority and
+                          job.status == JOB_ERROR for job in rows),
+            "cancelled": sum(normalize_priority(job.priority_class) == priority and
+                             job.status == JOB_CANCELLED for job in rows),
+        }
+        for priority in ("internal", "external")
+    }
     events_stmt = select(
         JobEvent.event_code, func.count(JobEvent.id),
     ).where(JobEvent.created_at >= cutoff)
@@ -84,11 +102,21 @@ def snapshot(db: DbSession, *, now: datetime | None = None,
     queued_rows = list(db.execute(queued_stmt).scalars().all())
     queue_depth_by_resource: dict[str, int] = {}
     oldest_by_resource: dict[str, float] = {}
+    queue_depth_by_resource_priority: dict[str, dict[str, int]] = {}
+    oldest_by_resource_priority: dict[str, dict[str, float]] = {}
+    waits_by_resource_priority: dict[str, dict[str, list[float]]] = {}
     for job in queued_rows:
         resource = job.admission_resource or "unclassified"
+        priority = normalize_priority(job.priority_class)
         queue_depth_by_resource[resource] = queue_depth_by_resource.get(resource, 0) + 1
         age = _seconds(job.created_at, current) or 0.0
         oldest_by_resource[resource] = max(oldest_by_resource.get(resource, 0.0), age)
+        by_priority = queue_depth_by_resource_priority.setdefault(resource, {})
+        by_priority[priority] = by_priority.get(priority, 0) + 1
+        oldest_priority = oldest_by_resource_priority.setdefault(resource, {})
+        oldest_priority[priority] = max(oldest_priority.get(priority, 0.0), age)
+        waits_by_resource_priority.setdefault(resource, {}).setdefault(
+            priority, []).append(age)
 
     lease_stmt = select(ExecutionLease)
     if app_slug:
@@ -122,17 +150,36 @@ def snapshot(db: DbSession, *, now: datetime | None = None,
         "admission_delay_p95_s": _percentile(admission_delay, 0.95),
         "runtime_p50_s": _percentile(runtime, 0.50),
         "runtime_p95_s": _percentile(runtime, 0.95),
+        "lifecycle_by_priority": lifecycle_by_priority,
         "retry_total": int(event_counts.get("retry_scheduled", 0)),
         "refund_total": int(event_counts.get("credit_refunded", 0)),
         "resource_wait_total": int(event_counts.get("resource_wait", 0)),
         "provider_dispatched_total": int(event_counts.get("provider_dispatched", 0)),
         "provider_rejected_total": int(event_counts.get("provider_rejected", 0)),
         "ambiguous_provider_total": int(event_counts.get("ambiguous_provider", 0)),
+        "scheduler_priority_override_total": int(
+            event_counts.get("scheduler_priority_override", 0)),
+        "scheduler_fair_rotation_total": int(
+            event_counts.get("scheduler_fair_rotation", 0)),
         "queue_depth": len(queued_rows),
         "queue_depth_by_resource": dict(sorted(queue_depth_by_resource.items())),
+        "queue_depth_by_resource_priority": {
+            resource: dict(sorted(values.items()))
+            for resource, values in sorted(queue_depth_by_resource_priority.items())},
         "oldest_queued_age_s": round(max(oldest_by_resource.values(), default=0.0), 3),
         "oldest_queued_age_s_by_resource": {
             key: round(value, 3) for key, value in sorted(oldest_by_resource.items())},
+        "oldest_queued_age_s_by_resource_priority": {
+            resource: {priority: round(value, 3)
+                       for priority, value in sorted(values.items())}
+            for resource, values in sorted(oldest_by_resource_priority.items())},
+        "queue_wait_s_by_resource_priority": {
+            resource: {
+                priority: {"p50": _percentile(values, 0.50),
+                           "p95": _percentile(values, 0.95)}
+                for priority, values in sorted(classes.items())
+            }
+            for resource, classes in sorted(waits_by_resource_priority.items())},
         "active_execution_leases": sum(active_leases_by_resource.values()),
         "active_execution_leases_by_resource": dict(
             sorted(active_leases_by_resource.items())),
@@ -194,11 +241,18 @@ def evaluate_slo(metrics: dict, budget: dict) -> dict:
 
 def alerts(metrics: dict) -> list[dict]:
     """Cảnh báo nền tối thiểu; ngưỡng SLO production được khóa ở Phase 4."""
-    found = []
+    found: list[dict[str, object]] = []
     if metrics.get("finished_total", 0) >= 5 and metrics.get("success_rate", 1) < 0.90:
         found.append({"code": "job_success_low", "level": "warning"})
     if metrics.get("stale_jobs", 0) > 0:
         found.append({"code": "job_stale", "level": "error"})
     if metrics.get("event_write_failures", 0) > 0:
         found.append({"code": "job_event_write_failed", "level": "error"})
+    for resource, classes in metrics.get(
+            "oldest_queued_age_s_by_resource_priority", {}).items():
+        age = float(classes.get("external", 0.0) or 0.0)
+        if age >= EXTERNAL_STARVATION_S:
+            found.append({"code": "external_queue_starvation",
+                          "level": "warning", "resource": resource,
+                          "oldest_wait_seconds": age})
     return found

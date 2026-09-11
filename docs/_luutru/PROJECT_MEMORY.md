@@ -1961,6 +1961,34 @@ Một lời giải thích **khớp vừa đủ** làm điều tra dừng sớm:
 Tài liệu: `docs/CHATLTT_V3/STATE.md` · `docs/BAY_TRONG_CONG_CHAT_LUONG.md`
 (Bẫy 33) · `docs/16_CAP_NHAT_VA_DEPLOY.md` (D1/D2).
 
+## 2026-09-08 — ASV GUI V5 (`phien/asv-v4`, `7f658fb3`)
+
+Ba commit: giao dien san pham (24 buoc §15) · mo hai van da co san · ban giao.
+Gate L3 `FAIL (1/29)`, do dung mot buoc — 19 ERROR deu la `test_448`.
+8.072 + 96 passed, **0 FAILED**.
+
+Chi tiet o `docs/auto_scan_video_v5/BAN_GIAO.md`. Ba dieu dang mang sang phien
+sau:
+
+- 🔴 **"Sinh lai bang chung can UAC" la SAI.** Bai ghi bao cao chi doi
+  `LTT_TEST_NANG=1` + `LTT_ASV_E2E_RA`. Script `nghiem_thu_asv.ps1` can quyen de
+  lay **token giong that**; hai `assert` doi giong that thi **co dieu kien**.
+  Toi da go duoc rao "khong dao nguoc duoc" roi **giu nguyen rao UAC ma khong
+  kiem lai no** — nam luot chan doan sai cua bon phien troi qua vi mot cai rao
+  khong ton tai.
+
+- ⛔ **Luot nghiem thu 21:41 khong hop le**: chay thieu co bat duong that nen
+  `thay_the` = 4 cua (LLM + ba cua giong), **khong cham may B**. Hai loi thu duoc
+  la `database is locked` (ha tang test) va truot QC T4 (giong SAPI tieng Anh
+  trong mot bai long tieng Viet). Da hoan nguyen, bam khop ban sao ngoai kho.
+  **Viec dau tien cua phien sau: tim co bat duong MODEL THAT.**
+
+- ⭐ **Bon phien tim ra bon ca cua cung mot hinh dang** trong mot ngay: nang luc
+  dung, phep kiem xanh, ma **khong ai di tren duong toi no** (`license_status` ·
+  `a11y_quet --cookie` · `NHAN_LOC[phong_cach]` · `tu_dien_rieng`). Cai sai nam o
+  khoang giua, cho khong tang nao so huu.
+
+
 ---
 
 ## 2026-09-08 — OPERATING STANDARDIZATION: một hợp đồng vận hành, và một cửa giả

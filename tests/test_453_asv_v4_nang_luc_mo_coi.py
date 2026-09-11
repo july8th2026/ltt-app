@@ -127,23 +127,27 @@ MO_COI_DA_BIET = frozenset({
     #    no la buoc cuoi cua vong sua — danh dau artifact ha nguon la khong con
     #    dung. No tung nam trong nhom "co nguoi goi trong TUONG LAI gan", va
     #    tuong lai gan do dai bon pha.
-    "asset_cua", "don_theo_run",
+    # ✅ `tien_do` da RA khoi danh sach (08/09, V5 R4) bang cach bi XOA,
+    #    khong bang cach duoc noi vao mach. No tra `phan_tram` + danh sach
+    #    giai doan; `quan_sat.dong_thoi_gian` tra dung nhung thu do va NHIEU
+    #    hon (buoc dang chay, giay da chay, so ke), va chinh no la thu man
+    #    tien do dang dung. Giu ca hai la giu hai nguon cho MOT con so.
+    #
+    # ⚠️ Mot phien khac tung go ten nay khoi day voi ly do *"no chi co nguoi
+    #    goi vi mot VA CHAM TEN"*. Ly do do sai: do AST 08/09 cho ket qua ten
+    #    `tien_do` co **khong mot call site nao** trong `apps/` — no la mo coi
+    #    that, va go no khoi danh sach ma khong xoa ham se lam bai kiem DO.
+    #    Nhan xet TONG QUAT cua ho thi dung: `_ten_duoc_goi_trong_san_pham()`
+    #    khop theo ten TRAN nen mot ten trung o app khac co the che mot mon
+    #    no that. Do la mot khiem khuyet co that cua bo do — chi khong phai
+    #    khiem khuyet da xay ra o truong hop nay.
+    # `asset_cua` roi danh sach 11/09: `cache_chung` (V6 pha 25) goi no.
+    "don_theo_run",
     "cua_chan_cho_lo", "giai_quyet_mo_ho", "loi_khong_du_ngan_sach",
-    "tong_credit", "tom_tat_cho_khach",
+    # `tom_tat_cho_khach` roi danh sach 11/09: trang chi tiet goi no (V6 pha 30).
+    "tong_credit",
     "cua_so_ngu_canh", "dung_gpu", "van_tay_che_do", "van_tay_van_ban",
     "tu_json", "doc_wav", "ghi_wav",
-    # 🔴 `tien_do` GO 08/09 boi phien LTT VIDEO V2.1 — banh coc doi dieu do
-    #    ("hay xoa chung khoi MO_COI_DA_BIET de banh coc khong quay nguoc").
-    #
-    #    ⚠️ NHUNG ly do no "co nguoi goi" la mot VA CHAM TEN, khong phai mot
-    #    lan noi mach that: `apps/lttvideo/cong/` co `May.tien_do()` — mot ham
-    #    KHAC HAN cua mot app khac. `_ten_duoc_goi_trong_san_pham()` khop theo
-    #    TEN TRAN tren toan `apps/`, nen hai ham cung ten o hai app khac nhau
-    #    khong phan biet duoc.
-    #
-    #    ⇒ Neu `tien_do` cua ASV VAN mo coi, bo do nay khong con thay no. Do la
-    #      khuyet tat cua phep khop theo ten tran, va no can chu ASV quyet —
-    #      khong phai mot dong phien khac tu them de gate xanh.
 })
 
 
@@ -161,8 +165,33 @@ def _cay(p: Path):
 
 
 def _ten_duoc_goi_trong_san_pham() -> set[str]:
+    """Ten duoc DUNG o trong chinh cac goi ASV. Hai chi tiet, ca hai da tung sai.
+
+    🔴 **Dem THAM CHIEU, khong chi dem loi goi.** Ban dau cho nay chi doc
+       `ast.Call`, nen mot ham truyen di nhu mot GIA TRI trong vo hinh voi no.
+       `tables.sinh_id` la vi du song: no duoc dung qua `default=sinh_id`, tuc
+       SQLAlchemy goi no chu ma ASV thi khong — va bo do se ket no la mo coi.
+
+    🔴 **Chi quet CAC GOI ASV, khong quet ca `apps/`.** Phep khop la theo ten
+       TRAN, nen mot ten trung o app khac "cuu" mot mon no cua ASV ma khong ai
+       thay. Do 08/09: neu quet ca `apps/`, `sinh_id` duoc `apps/chatltt` cuu —
+       dung ket luan, sai ly do, va mot ly do sai thi khong ben.
+
+    ⭐ He qua thu hai, co y: pham vi cu la `GOI_SAN_PHAM`, tuc no con dem ca
+       `platform_core/`, `server/`, `nexus_agent/`, `render_gateway/`. Ban moi
+       **bo** chung. Nghia la mot ham ASV chi duoc goi tu ma NEN TANG se bi ket
+       la mo coi — va do la ket luan dung: hop dong app noi nen tang chi doc
+       `manifest.py`, khong goi thang vao app. Mot loi goi nhu the la mot vi
+       pham hop dong, khong phai mot nguoi goi hop le. (Cua vao qua ban khai
+       da nam trong `CUA_VAO`.)
+
+    ⭐ Doi cA hai cung luc la co y. Chi sua ve pham vi thi `sinh_id` thanh mot
+       mo coi GIA; chi sua ve tham chieu thi va cham ten van con. Do 08/09: sau
+       khi doi ca hai, tap mo coi **khong doi** (23 ten, y het) — bo do manh len
+       ma khong dich mot phan quyet nao.
+    """
     ra: set[str] = set()
-    for goi in GOI_SAN_PHAM:
+    for goi in GOI_ASV:
         d = GOC / goi
         if not d.is_dir():
             continue
@@ -171,10 +200,10 @@ def _ten_duoc_goi_trong_san_pham() -> set[str]:
             if cay is None:
                 continue
             for n in ast.walk(cay):
-                if isinstance(n, ast.Call):
-                    f = n.func
-                    ra.add(f.id if isinstance(f, ast.Name)
-                           else getattr(f, "attr", ""))
+                if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Load):
+                    ra.add(n.id)
+                elif isinstance(n, ast.Attribute) and isinstance(n.ctx, ast.Load):
+                    ra.add(n.attr)
     return ra
 
 

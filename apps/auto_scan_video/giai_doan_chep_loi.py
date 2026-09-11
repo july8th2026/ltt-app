@@ -110,10 +110,9 @@ def can_phan_vai(run) -> bool:
     ⚠️ Mac dinh la KHONG chay. Mot nang luc ton GPU phai duoc XIN, khong duoc tu
        bat — thieu thiet lap thi lan chay do khong yeu cau no.
     """
-    from . import hop_dong_v4
+    from . import cai_dat as cd, hop_dong_v4
 
-    che_do = str((getattr(run, "settings", None) or {}).get("che_do_giong") or "")
-    return che_do == hop_dong_v4.CHE_DO_GIONG_TU_KHOP
+    return cd.doc(run).che_do_giong == hop_dong_v4.CHE_DO_GIONG_TU_KHOP
 
 
 def phan_vai(duong_tieng: str, ban: dict, *, ctx=None) -> dict:
@@ -164,7 +163,8 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         if ctx is not None and getattr(ctx, "progress", None):
             ctx.progress(5, _t('Đang chép lời'))
 
-        tho = chep_loi(duong, ngon_ngu=str((run.settings or {}).get("ngon_ngu_nguon") or ""),
+        from . import cai_dat as cd
+        tho = chep_loi(duong, ngon_ngu=cd.doc(run).ngon_ngu_nguon,
                        ctx=ctx)
 
         tt = nhap_media.soi(duong)

@@ -118,6 +118,7 @@ def submit_child(db: DbSession, run: AgentRun, *, step_id: str, app_slug: str,
         db, user_id=run.user_id, app_slug=app_slug, job_type=job_type,
         params=owned_params, dedupe_key=dedupe_key, max_attempts=max_attempts,
         parent_id=parent_id, plan_id=run.id, step_id=step_id,
+        origin="agent", priority_class="internal",
     )
 
 

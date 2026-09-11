@@ -162,7 +162,8 @@ mo_ta = "Hang doi job, worker, retry, huy, dedupe, lease."
 duong = ["platform_core/jobs.py", "platform_core/job_runner.py",
          "platform_core/job_submit.py", "platform_core/job_events.py",
          "platform_core/job_history.py", "platform_core/job_metrics.py",
-         "platform_core/job_content.py", "platform_core/leases.py"]
+         "platform_core/job_content.py", "platform_core/leases.py",
+         "platform_core/job_scheduler.py", "platform_core/job_ingress.py"]
 he_trong = "thi_hanh"
 tai_nguyen = ["postgres_test"]
 
@@ -229,6 +230,7 @@ duong = ["server/app.py", "server/deps.py", "server/routes/",
          "server/templates/", "server/static/", "server/templating.py",
          "server/i18n_middleware.py", "server/telemetry.py",
          "server/settings.py", "server/run.py",
+         "server/job_ingress_middleware.py",
          "server/request_body_limit.py", "server/usage_rate_limit.py",
          "server/nexus/", "server/nexus_download.py"]
 he_trong = "giao_dien"

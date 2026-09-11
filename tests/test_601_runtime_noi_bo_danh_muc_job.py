@@ -214,6 +214,7 @@ def test_nop_job_giu_dung_so_bao_ep_owner_va_so_lan_thu(app_601):
         assert j.job_type == JOB and j.app_slug == SLUG
         assert j.max_attempts == 5                       # từ manifest.so_lan_thu
         assert j.admission_resource == "thu_gpu2" and j.admission_slots == 1
+        assert (j.origin, j.priority_class) == ("internal_runtime", "internal")
         assert j.correlation_id == "corr-1"
         assert credit.so_da_giu(db, j.id) == 6
         assert int(credit.so_du(db, u)) == 94

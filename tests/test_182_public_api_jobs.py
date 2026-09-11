@@ -179,7 +179,9 @@ def test_a_quote_cannot_be_moved_to_another_account(api):
     quote = _quote(api, alice)
     response = api.post(f"{API_V1_PREFIX}/jobs",
                         json={"tool": TOOL, "quote": quote["quote"],
-                              "input": quote["input"]},
+                              "input": quote["input"],
+                              "origin": "internal_runtime",
+                              "priority_class": "internal"},
                         headers=_auth(bob, "bob-steals-a-quote-1"))
     assert response.status_code == 400
     # Same answer a forged signature gets: "quote_invalid", never a hint that
@@ -232,6 +234,9 @@ def test_creating_a_job_holds_exactly_the_quoted_credit(api):
     body = response.json()
     assert body["status"] == "queued" and body["tool"] == TOOL
     assert body["credit"]["held"] == 10
+    assert body["queue"]["position"] == 1
+    assert body["queue"]["priority_class"] == "external"
+    assert body["poll_after_ms"] == 2000
     assert _balance(user_id) == 90
     assert _rows(user_id, CREDIT_HOLD) == 1
 
@@ -241,8 +246,22 @@ def test_creating_a_job_holds_exactly_the_quoted_credit(api):
         job = db.get(Job, body["id"])
         assert job.params["model"] == "gemini-internal-id"
         assert invocation.api_meta(job)["tool"] == TOOL
+        assert (job.origin, job.priority_class) == ("public_api", "external")
+        from platform_core.jobs import submit
+        submit(db, user_id="internal-product", app_slug="sampleapi",
+               job_type=job.job_type, params={},
+               admission_resource=job.admission_resource,
+               admission_slots=job.admission_slots,
+               origin="internal_runtime", priority_class="internal")
+        db.commit()
     finally:
         _close(gen)
+
+    refreshed = api.get(
+        f"{API_V1_PREFIX}/jobs/{body['id']}", headers=_auth(token))
+    assert refreshed.status_code == 200
+    queue = refreshed.json()["queue"]
+    assert queue["position"] == 2 and queue["higher_priority_ahead"] == 1
 
 
 def test_the_public_job_view_hides_implementation_detail(api):

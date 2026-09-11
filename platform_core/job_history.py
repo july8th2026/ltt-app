@@ -48,7 +48,8 @@ def list_owned(
     return rows[:size], (rows[size - 1].id if len(rows) > size else "")
 
 
-def customer_payload(db: DbSession, job: Job, *, with_events: bool = False) -> dict:
+def customer_payload(db: DbSession, job: Job, *, with_events: bool = False,
+                     with_queue: bool = False) -> dict:
     data = {
         "id": job.id,
         "app_slug": job.app_slug,
@@ -63,6 +64,14 @@ def customer_payload(db: DbSession, job: Job, *, with_events: bool = False) -> d
         "started_at": job.started_at,
         "finished_at": job.finished_at,
     }
+    # Queue ranking is intentionally opt-in for detail/polling endpoints. A
+    # history page can contain 100 queued jobs; doing a ranked CTE for every
+    # row would turn one list request into hundreds of queries.
+    if job.status == "queued" and (with_queue or with_events):
+        from platform_core import job_scheduler
+
+        data["queue"] = job_scheduler.queue_snapshot(db, job)
+        data["poll_after_ms"] = 2000
     if with_events:
         data["events"] = [{
             "sequence": event.sequence,

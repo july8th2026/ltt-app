@@ -92,7 +92,10 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     if tong_giay <= 0:
         raise ThieuDauVao(_t('Không biết thời lượng video nguồn.'))
 
-    che_do = str((run.settings or {}).get("timing_mode") or "fit_original")
+    # ⛔ Truoc pha 07 dong nay chep CUNG chuoi `"fit_original"` — ban thu
+    #    BA cua `gia.CHE_DO_MAC_DINH`, va mot trong ba ban do da lech.
+    from . import cai_dat as cd
+    che_do = cd.doc(run).timing_mode
     ban_do = _ban_do(db, kho, run, tong_giay=tong_giay)
     ke_hoach = thoi_gian.lap_ke_hoach(
         tl_vb.get("muc") or [], do_dai, tong_giay=tong_giay, che_do=che_do,
@@ -141,10 +144,9 @@ def _ban_do(db, kho: Storage, run, *, tong_giay: float):
        **quyet dinh da chot**, va tinh lai mot quyet dinh la mo duong cho hai
        cau tra loi khac nhau cho cung mot cau hoi.
     """
-    from . import ban_bien_tap, canh as canh_mod, features
+    from . import ban_bien_tap, cai_dat as cd, canh as canh_mod, features
 
-    settings = dict(run.settings or {})
-    preset = str(settings.get("preset") or hop_dong_v4.PRESET_MAC_DINH)
+    preset = cd.doc(run).preset
     if preset == hop_dong_v4.PRESET_GIU_HINH:
         # ⛔ Preset giu hinh **sao chep** luong hinh: khong canh nao bi cat, nen
         #    ban do la dong nhat. Doc ban bien tap o day khong sai nhung thua —
@@ -187,11 +189,15 @@ def _dung_ban_phoi(db, kho: Storage, run, *, ke_hoach: dict, ban_ke: dict,
         raise ThieuDauVao(_t('Kế hoạch thời gian không còn đoạn nào có tiếng.'))
 
     tong_giay_ra = float(ban_do.thoi_luong_ra)
+    # V6 pha 23: ho so am thanh cua khach — vao van tay VA vao chuoi tron.
+    from . import am_thanh, cai_dat as cd
+    am = am_thanh.tu_cai_dat(cd.doc(run).am_thanh)
     vt = am_master.van_tay_master(
         van_tay_nen=khoa_nen.rsplit("/", 1)[-1][:32],
         van_tay_ke_hoach=van_tay_ke_hoach,
         van_tay_ban_do=ban_do.van_tay(),
-        phien_ban_ffmpeg_=nhap_media.phien_ban_ffmpeg())
+        phien_ban_ffmpeg_=nhap_media.phien_ban_ffmpeg(),
+        am_thanh=am)
 
     hoi_huy = getattr(ctx, "is_cancelled", None) if ctx is not None else None
 
@@ -217,11 +223,15 @@ def _dung_ban_phoi(db, kho: Storage, run, *, ke_hoach: dict, ban_ke: dict,
 
         dich = str(thu_muc / "master.wav")
         am_master.tron_cuoi(nen, cac_lo, dich, tong_giay=tong_giay_ra,
-                            hoi_huy=hoi_huy)
+                            hoi_huy=hoi_huy, am=am)
 
         do_duoc = am_master.kiem_ban_ra(
             dich, mong_doi_giay=tong_giay_ra,
             dung_sai_giay=hop_dong_v4.DUNG_SAI_DO_DAI_S)
+        # ⭐ Ghi thu DA AP, khong chi thu khach chon: fade bi cat theo do dai ban
+        #    phoi (`fade_ap_dung`), va mot lan cat khong ghi lai la mot lan lang le.
+        fv, fr = am_master.fade_ap_dung(am, tong_giay_ra)
+        do_duoc["am_thanh"] = {**am, "fade_vao": fv, "fade_ra": fr}
 
         khoa = assets.khoa_staging(owner_id=run.owner_id, run_id=run.id,
                                    stage=pipeline.TIMING_ALIGN, van_tay=vt,

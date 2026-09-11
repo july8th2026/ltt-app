@@ -40,7 +40,9 @@ import json
 
 from platform_core.i18n import _ as _t
 
-SCHEMA_BAN_DUNG = 1
+#: ⬆️ 1 -> 2 (V5): them `hinh.vung`. Ban dung SCHEMA 1 khong co khoa do,
+#:    va do la khac biet co nghia — khong phai mot mang rong.
+SCHEMA_BAN_DUNG = 2
 
 #: Chinh sach dau ra. Ke thua tu `assemble.py:199-207` va `replace_audio`.
 CODEC_TIENG = "aac"
@@ -61,7 +63,9 @@ class BanDungError(ValueError):
 def dung(*, khoa_video: str, khoa_nen: str, ke_hoach: dict,
          ban_ke_tieng: dict, phien_ban_ffmpeg: str,
          tong_giay: float, khoa_master: str = "", che_do: str = "",
-         bo_ma_hoa: str = "", khoang_giu=None, preset: str = "") -> dict:
+         bo_ma_hoa: str = "", khoang_giu=None, preset: str = "",
+         vung=None, lop_phu=None, cao_khung: int = 0,
+         ds_logo=None, rong_khung: int = 0, phu_de=None) -> dict:
     """Dung ban dung tu cac tai lieu chinh tac. Khong cham mot tep media nao.
 
     `ke_hoach`      ket qua cua `thoi_gian.lap_ke_hoach`
@@ -143,6 +147,50 @@ def dung(*, khoa_video: str, khoa_nen: str, ke_hoach: dict,
             "cach_render": che_do,
             "bo_ma_hoa": str(bo_ma_hoa or ""),
             "khoang_giu": [[round(b, 4), round(k, 4)] for b, k in khoang_giu],
+            # ── Vung che (V5) ────────────────────────────────────────────
+            #
+            # 🔴 Chi co nghia o duong CAT. Lam mo mot vung doi hoi mot BO LOC,
+            #    va mot bo loc doi hoi giai ma roi ma hoa lai — trong khi duong
+            #    `sao_chep` di bang `-c:v copy`, noi khong co cho nao dat bo loc
+            #    vao. `kiem()` cuong che dieu do, xem o duoi.
+            #
+            # ⭐ Luu CA KHI RONG, va do la co y: mot ban dung khong co khoa
+            #    `vung` va mot ban dung co `vung: []` la hai thu khac nhau voi
+            #    nguoi doc lai — cai dau la ban dung dung SCHEMA CU.
+            "vung": [dict(v) for v in (vung or ())],
+            # ── Lop phu chu (V6 pha 11) ──────────────────────────────────
+            #
+            # 🔴 Cung rang buoc VAT LY voi `vung`: `drawtext` la mot bo loc, va
+            #    mot bo loc doi hoi giai ma. Duong `sao_chep` khong giai ma
+            #    khung nao, nen khong co khung nao de ve len. `kiem()` cuong
+            #    che, giao dien noi truoc.
+            "lop_phu": [dict(l) for l in (lop_phu or ())],
+            # 🔑 Chieu cao khung NGUON. No o day vi mot ly do do duoc: `borderw`
+            #    cua `drawtext` **khong nhan bieu thuc** (`borderw=H*0.004` lam
+            #    ffmpeg tra "Invalid argument"), nen do day vien phai duoc tinh
+            #    ra pixel TRUOC khi dung chuoi loc. Xem `lop_phu.vien_px`.
+            #
+            # ⚠️ Luu ca khi khong co lop phu: mot ban dung khong co khoa nay va
+            #    mot ban dung co `cao_khung: 0` la hai thu khac nhau voi nguoi
+            #    doc lai.
+            "cao_khung": int(cao_khung or 0),
+            # ── Logo (V6 pha 08b) ────────────────────────────────────────
+            #
+            # 🔴 Cung rang buoc VAT LY voi `vung` va `lop_phu`: `overlay` la
+            #    mot bo loc, bo loc doi hoi giai ma, `-c:v copy` khong giai
+            #    ma khung nao.
+            #
+            # ⚠️ KHAC hai thu kia o mot cho: moi logo la mot **khoa luu tru**,
+            #    nen no phai nam trong tap doi chieu `khoa_hop_le` cua
+            #    `kiem()`. Mot dong chu thi khong the "khong ton tai".
+            "logo": [dict(l) for l in (ds_logo or ())],
+            # ⭐ Ho so phu de, KHONG phai duong dan `.ass`. Duong dan la mot tep
+            #    tam doi ten moi lan chay; ban dung phai mang QUYET DINH, con
+            #    tep thi do `giai_doan_ban_dung` dung ra tu ho so nay.
+            "phu_de": dict(phu_de) if phu_de else None,
+            #: Chieu RONG khung nguon. Cung ly do voi `cao_khung`: be rong
+            #: logo phai duoc tinh ra pixel truoc khi dung chuoi loc.
+            "rong_khung": int(rong_khung or 0),
         },
         # ── Tieng: BAN PHOI da dung o pha 16 ────────────────────────────
         #
@@ -200,6 +248,74 @@ def kiem(ban: dict, *, khoa_hop_le: set[str] | None = None) -> None:
         raise BanDungError(
             _t('Bản dựng khai chế độ hình khác "copy" — MVP không mã hoá lại hình.'))
 
+    # ── Vung che chi song duoc o duong CAT (V5) ─────────────────────────────
+    #
+    # 🔴 Day khong phai mot chinh sach ta chon, no la mot rang buoc VAT LY.
+    #
+    #    Duong `sao_chep` phat `-c:v copy`: byte hinh di thang tu nguon sang tep
+    #    ra, khong giai ma lan nao. Khong co khung hinh nao ton tai trong bo nho
+    #    de ma sua mot vung diem anh cua no. Muon lam mo thi phai giai ma — tuc
+    #    thoi `copy` — tuc pha vo ca D-ASV-03 lan loi hua cua preset giu hinh
+    #    (*"hinh anh duoc sao chep nguyen ven, khong giam chat luong"*).
+    #
+    # ⛔ Nen mot ban dung vua `sao_chep` vua co vung la mot ban dung **khong the
+    #    thi hanh dung**. Neu no lot qua day, `ket_xuat` se lang le bo qua vung
+    #    va giao mot video khong che gi — khach tra tien cho mot thu khong xay
+    #    ra, dung kieu that bai ma pha 27 vua go bo o cho khac.
+    #
+    # ⇒ Chan o day, va giao dien noi truoc cho khach de ho khong bao gio ve mot
+    #   vung roi moi biet no vo nghia.
+    from . import che_do_render as _cdr
+    if hinh.get("vung") and hinh.get("cach_render") != _cdr.CAT_MA_HOA_LAI:
+        raise BanDungError(_t(
+            'Vùng che chỉ dùng được với kiểu xử lý có biên tập lại hình.'))
+
+    # ── Lop phu chu: cung mot rang buoc, va no phai duoc VIET RA rieng ──────
+    #
+    # ⛔ Khong gop hai chot lam mot dieu kien `or`. Hai tinh nang khac nhau thi
+    #    hai cau tra loi khac nhau: khach ve mot O CHE va khach go mot DONG CHU
+    #    la hai viec, va mot cau chung chung buoc ho phai doan minh vua lam gi
+    #    sai. `test_453` goi ten cho lo nguoc lai — nang luc co ma khong ai di
+    #    tren duong; o day thi la duong co ma bien bao noi sai loi.
+    if hinh.get("lop_phu") and hinh.get("cach_render") != _cdr.CAT_MA_HOA_LAI:
+        raise BanDungError(_t(
+            'Lớp phủ chữ chỉ dùng được với kiểu xử lý có biên tập lại hình.'))
+
+    # 🔴 Do day vien tinh bang PIXEL, nen no can chieu cao khung. Mot ban dung
+    #    co lop phu ma khong khai `cao_khung` se hong o TRINH RENDER — tuc sau
+    #    khi da chiem mot suat ffmpeg va tai vai tram MB. Chan o day.
+    if hinh.get("lop_phu") and int(hinh.get("cao_khung") or 0) <= 0:
+        raise BanDungError(_t(
+            'Bản dựng có lớp phủ chữ nhưng không khai chiều cao khung hình.'))
+
+    # ── Phu de (V6 pha 14): cung rang buoc VAT LY, va cau rieng ─────────────
+    #
+    # ⛔ Khong gop vao dieu kien `or` cua lop phu. Ba tinh nang khac nhau thi ba
+    #    cau tra loi khac nhau: khach BAT PHU DE, khach GO MOT DONG CHU va khach
+    #    VE MOT O CHE la ba viec — mot cau chung chung buoc ho phai doan minh
+    #    vua lam gi sai.
+    #
+    # ⭐ Chi chan viec DOT. Mot ho so chi `xuat_srt` khong cham diem anh nao nen
+    #    no hop le o CA HAI preset — do la lua chon phu de duy nhat con lai o
+    #    preset giu hinh, va chan no o day la khoa mat mot tinh nang chay duoc.
+    from . import phu_de as _pd
+    if (_pd.co_dot_vao_hinh(hinh.get("phu_de"))
+            and hinh.get("cach_render") != _cdr.CAT_MA_HOA_LAI):
+        raise BanDungError(_t(
+            'Phụ đề khắc vào hình chỉ dùng được với kiểu xử lý có biên tập lại '
+            'hình. Bản giữ nguyên hình vẫn xuất được tệp phụ đề rời.'))
+
+    # ── Logo: cung ba chot, va mot chot THU TU chi no moi co ────────────────
+    if hinh.get("logo") and hinh.get("cach_render") != _cdr.CAT_MA_HOA_LAI:
+        raise BanDungError(_t(
+            'Logo chỉ dùng được với kiểu xử lý có biên tập lại hình.'))
+    if hinh.get("logo") and int(hinh.get("rong_khung") or 0) <= 0:
+        raise BanDungError(_t(
+            'Bản dựng có logo nhưng không khai chiều rộng khung hình.'))
+    for _l in (hinh.get("logo") or []):
+        if not _l.get("khoa"):
+            raise BanDungError(_t('Bản dựng có logo thiếu khoá lưu trữ.'))
+
     tieng = ban.get("tieng") or {}
     if not (tieng.get("nen") or {}).get("khoa"):
         raise BanDungError(_t('Bản dựng thiếu nhạc nền.'))
@@ -238,6 +354,10 @@ def kiem(ban: dict, *, khoa_hop_le: set[str] | None = None) -> None:
         #    chung, sau khi da tai vai tram MB.
         moi = {hinh["khoa"], tieng["nen"]["khoa"], tieng["master"]["khoa"]}
         moi |= {lop["khoa"] for lop in (tieng.get("lop") or [])}
+        # 🔑 Logo la mot artifact THAT, nen no phai qua cung mot cua doi chieu.
+        #    Mot ban dung tro toi mot logo khong con la mot lan render hong o
+        #    giua chung — sau khi da tai vai tram MB.
+        moi |= {str(l.get("khoa") or "") for l in (hinh.get("logo") or [])}
         thieu = sorted(moi - khoa_hop_le)
         if thieu:
             raise BanDungError(

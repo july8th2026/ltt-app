@@ -307,6 +307,15 @@ class Job(Base):
         String(96), default="", nullable=False, index=True)
     admission_slots: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
+    # Scheduler envelope (Q121). ``origin`` is audit metadata; only
+    # ``priority_class`` participates in ranking. Defaults are deliberately
+    # fail-closed so rows created by an older binary never gain internal
+    # priority after an additive migration.
+    origin: Mapped[str] = mapped_column(
+        String(24), default="unknown", nullable=False)
+    priority_class: Mapped[str] = mapped_column(
+        String(16), default="external", nullable=False)
+
     # Quan hệ execution Agent. Chuỗi rỗng giữ tương thích toàn bộ job cũ.
     parent_id: Mapped[str] = mapped_column(String(36), default="", nullable=False,
                                             index=True)
@@ -360,6 +369,10 @@ class Job(Base):
               "created_at"),
         Index("ix_jobs_fairness", "admission_resource", "user_id",
               "last_claimed_at"),
+        Index("ix_jobs_scheduler_queue", "admission_resource", "status",
+              "next_run_at", "priority_class", "created_at"),
+        Index("ix_jobs_priority_fairness", "admission_resource",
+              "priority_class", "user_id", "last_claimed_at"),
         # 🔴 KHỬ TRÙNG BẰNG RÀNG BUỘC, KHÔNG BẰNG `SELECT` RỒI `INSERT`.
         #
         #    `jobs.submit()` chống double-submit bằng cách tìm job cùng

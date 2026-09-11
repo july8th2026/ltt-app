@@ -218,6 +218,9 @@ class TestPhucHoiTungDoan:
                                 thoi_luong_nguon=60.0)
         tl = van_ban.dung(goc, {d["ma"]: f"dich {d['ma']}" for d in goc["doan"]},
                           provider="p", model="m")
+        # V6 pha 19: moi ban long tieng hop le mang `ma_giong` (tu
+        # `giai_doan_noi_dung`); `giai_doan_giong` tu choi ban thieu no.
+        tl["ma_giong"] = "mau:gia"
         goi = json.dumps(tl, sort_keys=True, ensure_ascii=False).encode("utf-8")
         tam = assets.khoa_staging(owner_id="uA", run_id=run.id,
                                   stage=pipeline.CONTENT_PROCESS,
@@ -241,7 +244,11 @@ class TestPhucHoiTungDoan:
         monkeypatch.setattr(giong_noi, "giai_giong",
                             lambda db, **kw: (None, "bac"))
 
-        def doc(chu, *, ref_b64=None, preset=None):
+        # `**_`: ban gia nay do SO LAN GOI, khong do tham so. Liet ke tung
+        # tham so se bat no phai doi moi lan chu ky that moc them mot tuy
+        # chon khong lien quan — va lan nao cung la mot lan do do vi mot
+        # ly do khac voi ly do no ton tai.
+        def doc(chu, *, ref_b64=None, preset=None, **_):
             dem.append(chu)
             return _wav(tmp_path / f"g{len(dem)}.wav", giay=0.4), {}
 
