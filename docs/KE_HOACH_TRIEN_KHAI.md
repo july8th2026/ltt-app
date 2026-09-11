@@ -3847,9 +3847,8 @@ Quyết định: Q122. Hồ sơ canonical: `docs/SCHEDULER_V1/`.
       2026-09-10: status trả queue + nhịp poll; event/webhook hiện hữu giữ nguyên.
 - [x] H44.8 Observability/admin + starvation visibility — 2026-09-10: metric
       depth/wait/lifecycle/override/fair rotation và cảnh báo external 300 giây.
-- [ ] H44.9 Performance 1k/5k/10k + full regression — benchmark đạt
-      20,585/81,586/174,181 ms; L3 2026-09-10 có 9.392 PASS nhưng FAIL 2/32
-      do 7 assertion bằng chứng ASV, test hook thiếu sh và ký tự VT trong
-      scorecard Voice, đều ngoài changeset Scheduler.
+- [x] H44.9 Performance 1k/5k/10k + full regression — 2026-09-11:
+      benchmark đạt 20,585/81,586/174,181 ms; sau tích hợp checkpoint ASV,
+      L3 PASS 32/32, gồm PostgreSQL migration, M-1 và bất biến đa tiến trình.
 - [x] H44.10 Real E2E + `FINAL_REPORT.md` — 2026-09-10: Playwright local
       cô lập PASS, console 0 error, failed request 0; chưa deploy production.

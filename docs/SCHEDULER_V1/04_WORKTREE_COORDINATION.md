@@ -33,3 +33,7 @@ trạng thái canonical vẫn ghi nhiều pha CHƯA/MỘT PHẦN và nhánh lệ
 42/56 commit. Hai commit tái sinh bằng chứng `28f6a8bf`/`710aa7c1` phụ thuộc
 engine/QC trên chính nhánh ASV; không được chép riêng JSON sang Scheduler.
 Đóng cửa sổ làm việc không phải là phán quyết sẵn sàng hợp nhất.
+
+Sau khi người dùng cấp quyền tích hợp, checkpoint ASV `694b8a4b` được merge
+vào nhánh Scheduler tại `b15ef40c`. Xung đột duy nhất là PO/MO; giữ cả chuỗi
+Voice và ASV rồi biên dịch lại MO. L3 trên cây kết hợp PASS 32/32.

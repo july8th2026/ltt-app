@@ -17066,6 +17066,19 @@ Rà lại sau khi phiên ASV kết thúc: worktree ASV sạch tại `694b8a4b`, 
 commit. Hai commit evidence của test_448 phụ thuộc code engine/QC trên nhánh;
 không cherry-pick evidence rời và không chạy L3 biết trước sẽ đỏ.
 
+Sau khi người dùng cấp quyền tích hợp, đã merge nguyên checkpoint ASV
+`694b8a4b` vào nhánh Scheduler tại `b15ef40c`; không sửa lịch sử nhánh ASV
+hay trunk. Xung đột duy nhất là `messages.po/.mo`: giữ cả hai tập msgid rồi
+biên dịch MO từ PO. Chạy với Git bin trong PATH của riêng tiến trình để hook
+Windows tìm được `sh`.
+
+`python tools\gate.py` — **PASS 32/32**, kết quả
+`test-results/gates/20260911T084027Z-25272.json`. Bộ test song song PASS
+721,4 giây; bất biến đa tiến trình PASS 139,8 giây; migration và M-1 PostgreSQL
+PASS; secret scan PASS. Bốn bundle React tự bỏ qua vì changeset không chạm và
+không được tính là bằng chứng. H44.9 đóng; Scheduler V1 hoàn tất ở mức code và
+regression, vẫn chưa deploy production.
+
 ### Cách lùi lại
 
 Bỏ nhánh `phien/mobile-v1` là bỏ hết. Không migration Alembic nào, không chạm

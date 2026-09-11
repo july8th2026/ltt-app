@@ -24,7 +24,11 @@ Ngày: 2026-09-10
 
 ## Trạng thái phát hành
 
-Chưa deploy production. L3 cuối chạy đủ 32 bước: 30 PASS, 2 FAIL; 9.392 test
-PASS và toàn bộ test Scheduler xanh. Blocker là 7 assertion bằng chứng ASV,
-test hook thiếu sh và ký tự VT trong scorecard Voice, đều ngoài changeset
-Scheduler. Không chạy lại gate hoặc sửa lấn các worktree sở hữu chúng.
+Chưa deploy production. Sau khi người dùng cho phép tích hợp checkpoint ASV
+`694b8a4b`, merge commit `b15ef40c` được kiểm bằng L3 ngày 2026-09-11:
+**PASS 32/32**. Bộ regression, migration PostgreSQL, M-1 và bất biến đa tiến
+trình đều PASS. Bốn bước frontend React tự bỏ qua vì changeset không chạm bốn
+bundle đó; gate ghi rõ chúng không phải bằng chứng.
+
+Kết quả máy đọc:
+`test-results/gates/20260911T084027Z-25272.json`.
