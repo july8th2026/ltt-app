@@ -163,7 +163,10 @@ def _dich_mot_lo(db, items: list[dict], target_language: str) -> list[dict]:
                 "\"text\". No markdown fence, no commentary.\nInput JSON:\n" +
                 json.dumps(items, ensure_ascii=False, separators=(",", ":")))
 
-    suc = _C.tai_nguyen_nha(_C.MODEL_MAC_DINH)
+    # D09: model cho việc nội bộ đọc từ **bản khai của app này**, không phải
+    # `MODEL_MAC_DINH` (tên đó trả lời câu "khách không nói model thì dùng gì").
+    model = _C.model_noi_bo_cua("autosubvideo")
+    suc = _C.tai_nguyen_nha(model)
     ve = None
     try:
         ve = admission.acquire(
@@ -177,7 +180,7 @@ def _dich_mot_lo(db, items: list[dict], target_language: str) -> list[dict]:
                 messages=[{"role": "user", "content": loi_nhac}],
                 category=APIKEY_CAT_CHAT,
                 thu_tu_provider=_C.THU_TU_PROVIDER,
-                model_theo_provider=_C.ban_do_model(),
+                model_theo_provider=_C.ban_do_model(model),
                 temperature=0.1,
                 timeout_s=90.0,
             )

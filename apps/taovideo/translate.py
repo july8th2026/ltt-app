@@ -62,7 +62,10 @@ def dich(prompt: str, target: str = "en") -> str:
     if not van_vao:
         raise ValueError(_t('Chưa có nội dung để dịch.'))
 
-    suc = C.tai_nguyen_nha(C.MODEL_MAC_DINH)
+    # D09: model cho việc nội bộ đọc từ **bản khai của app này**, không phải
+    # `MODEL_MAC_DINH` (tên đó trả lời câu "khách không nói model thì dùng gì").
+    model = C.model_noi_bo_cua("taovideo")
+    suc = C.tai_nguyen_nha(model)
     gen = get_session()
     db = next(gen)
     ve = None
@@ -80,7 +83,7 @@ def dich(prompt: str, target: str = "en") -> str:
                 {"role": "user", "content": van_vao}],
             category=APIKEY_CAT_CHAT,
             thu_tu_provider=C.THU_TU_PROVIDER,
-            model_theo_provider=C.ban_do_model(),
+            model_theo_provider=C.ban_do_model(model),
             max_tokens=_MAX_TOKENS,
             timeout_s=_TIMEOUT_S,
         )

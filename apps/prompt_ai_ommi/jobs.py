@@ -60,8 +60,9 @@ def handle(params: dict, ctx=None) -> dict:
     system, prompt = director_prompt(params)
     if ctx is not None:
         ctx.progress(30, "AI Director đang phân cảnh")
-    raw, tokens = provider.generate_json(system, prompt,
-                                         model=str(params.get("model") or provider.DEFAULT_MODEL))
+    # D09: không khai model ⇒ `provider` tự hỏi bản khai của app (`model_mac_dinh`).
+    model = str(params.get("model") or provider.model_mac_dinh())
+    raw, tokens = provider.generate_json(system, prompt, model=model)
     if ctx is not None:
         ctx.progress(85, "đang chuẩn hóa prompt package")
     package = _normalize_result(raw, params)
@@ -71,7 +72,7 @@ def handle(params: dict, ctx=None) -> dict:
         "prompt_package": package,
         "storyboard": package if operation == "storyboard" else None,
         "master_prompt": prompt[:20000], "tokens_used": tokens,
-        "model": str(params.get("model") or provider.DEFAULT_MODEL),
+        "model": model,
         "credit_cost": _cost(params),
     }
     if ctx is not None:

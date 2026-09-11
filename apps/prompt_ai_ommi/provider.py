@@ -45,8 +45,24 @@ from platform_core.llm import canonical as C
 
 log = logging.getLogger(__name__)
 
-#: Bí danh công khai, không phải id nội bộ. `jobs.py` đọc tên này.
-DEFAULT_MODEL = C.MODEL_MAC_DINH
+#: Slug của chính app này — khoá để hỏi bản khai model nội bộ (D09).
+SLUG = "prompt_ai_ommi"
+
+
+def model_mac_dinh() -> str:
+    """Bí danh công khai của model app dùng khi không ai nói model (D09).
+
+    🔴 **HÀM, KHÔNG PHẢI HẰNG SỐ** — và đó là điểm chính. Bản trước là
+       `DEFAULT_MODEL = C.MODEL_MAC_DINH`, tính **lúc import**. Nay giá trị nằm
+       ở `manifest.model_llm_noi_bo`, nên một hằng số ở đây sẽ là **bản sao thứ
+       hai** của bản khai: đổi một dòng manifest mà tệp này vẫn trả tên cũ, và
+       không phép kiểm nào nhìn thấy vì cả hai đều là chuỗi hợp lệ.
+
+    ⚠️ Và tính lúc import thì nó còn gọi `registry.discover()` **trong lúc
+       registry đang nạp chính app này** — một vòng import.
+    """
+    return C.model_noi_bo_cua(SLUG)
+
 
 _MAX_TOKENS = 8192
 _TIMEOUT_S = 115.0
@@ -73,24 +89,31 @@ def _bi_danh(model: str) -> str:
     ten = (model or "").strip()
     if ten in C.MODEL_HOP_LE:
         return ten
+    mac_dinh = model_mac_dinh()
     if ten:
-        log.info("PROMPT AI OMMI: ten model cu %r -> %r", ten, C.MODEL_MAC_DINH)
-    return C.MODEL_MAC_DINH
+        log.info("PROMPT AI OMMI: ten model cu %r -> %r", ten, mac_dinh)
+    return mac_dinh
 
 
 def generate_json(system: str, prompt: str, *,
-                  model: str = DEFAULT_MODEL) -> tuple[dict, int]:
+                  model: str = "") -> tuple[dict, int]:
     """Sinh một object JSON. Trả `(dict, số token)`; ném `ProviderError` khi hỏng.
 
     🔴 Giành **suất admission** trước khi chạm máy B — máy B chỉ có một suất
        đồng thời, và một đường quên bước này làm chính cơ chế đếm suất sai.
+
+    `model` rỗng ⇒ bản khai của app (`model_mac_dinh()`, D09).
     """
     from platform_core.db import get_session
     from platform_core.llm import admission, dieu_phoi
     from platform_core.models import APIKEY_CAT_CHAT
 
     alias = _bi_danh(model)
-    suc = C.tai_nguyen_nha(C.MODEL_MAC_DINH)
+    # ⛔ GIÀNH SUẤT CỦA ĐÚNG MODEL SẮP GỌI. Bản trước giành theo
+    #    `C.MODEL_MAC_DINH` trong khi gửi đi `alias` — hai model, hai card, hai
+    #    pool KV. Một suất giành sai pool không bảo vệ gì (`canonical`), và nó
+    #    xanh trong mọi phép kiểm chừng nào hai tên còn trùng nhau.
+    suc = C.tai_nguyen_nha(alias)
     gen = get_session()
     db = next(gen)
     ve = None
