@@ -38,7 +38,36 @@ ff vào `admin-mvp-v3` rồi deploy sẽ **lùi** 7 commit đang chạy thật. 
 
 ⭐ Đây là lần thứ hai trong hai ngày câu *"hỏi máy chủ TRƯỚC"* trả công.
 
-### 🔴 Hai ô Tầng 2 **BLOCKED** — không ô nào được viết thành PASS
+### ✅ Lượt hai đã gỡ cả hai ô — Tầng 2 nay **`RELEASED`** (7/7 ô)
+
+- **Playwright trên URL công khai chạy thật**: không tự mở trình duyệt (Cloudflare
+  chặn), mà mở **Chrome thật** rồi **nối vào** qua `--remote-debugging-port=9222`
+  — đúng cách memory `kiem-gui-noi-vao-chrome-that` đã chốt từ 04/09. Tài khoản
+  lấy từ `tools/tai_khoan_thu.py` (`thu.giongnoi@lttstudios.local`, có sẵn trong
+  kho, 35 credit). Kết quả trên `app.lttstudios.com`: **D003 PASS · D002 PASS ·
+  24/24 khung hình PASS · 0 lỗi ở 4 lớp**; D004/T-08/D005 SKIP có lý do (phụ
+  thuộc dữ liệu seed cố ý không đưa lên production).
+- 🔑 Bằng chứng mạnh nhất: lượt D003 tạo job `ltt_voice.enroll` thật trên
+  production và nó chạy tới **`done`** — toàn bộ đường cửa web → hàng đợi →
+  worker → cổng giọng → kho → CSDL hoạt động trên bản vừa deploy.
+- **Di trú ASR đo thật trên production**: mượn đúng một hàng của tài khoản thử
+  (có clip thật), chạy công cụ → `do=en/0.442`, dưới ngưỡng 0,90 nên **từ chối
+  đổi** (fail-closed đúng ý), rồi **trả nguyên trạng và đối chiếu lại**.
+  ⛔ Nhưng **0 giọng đổi làn** — `RELEASED` **không** có nghĩa là đã di trú xong.
+
+### 🔑 Một đính chính: "28 giọng khách" là SAI
+
+Báo cáo đầu tôi viết *"28 giọng riêng của khách không dùng được"*. Đếm lại theo
+chủ sở hữu: **cả 29 hồ sơ giọng trên production thuộc đúng một tài khoản
+`thu.giongnoi@lttstudios.local`** — tài khoản **thử** `.local`. Không khách nào
+bị ảnh hưởng; mức nghiêm trọng hạ từ *sự cố dữ liệu khách* xuống *mất dữ liệu
+kiểm thử*.
+
+⚠️ Lỗi suy luận: từ *"28 hàng trong `voice_profile`"* nhảy sang *"28 khách"*. Con
+số **tổng** không nói được **của ai**; một phép `group by owner` nói được, và nó
+rẻ hơn nhiều so với một báo cáo sai.
+
+### 🔴 Hai ô Tầng 2 lúc đầu **BLOCKED** — và không ô nào bị viết thành PASS
 
 1. **Di trú ASR thật: 28/28 không đo được.** CSDL production có 28 `voice_ref`
    + 28 `voice_repr` trỏ tới khoá R2 **không tồn tại**. Đã truy tới gốc: bucket

@@ -15,6 +15,20 @@
 //
 // ⛔ SIMULATED INFERENCE tang CI — xem dau tich o dau `ltt_voice_golden.js`.
 //
+// 🔴 MOT LUOT MOT SEED. Bo nay KHONG idempotent tren cung mot lan seed:
+//    LUONG 2 (D004) BAM nut "Xac nhan ngon ngu" cua giong LEGACY, va sau cu bam
+//    do `ngon_ngu_nguon` da thanh `khai_bao` — nen lan chay THU HAI tren cung
+//    mot may chu se do dung dong:
+//
+//        D004: giong LEGACY (mac_dinh_cu) khong hien "Xac nhan ngon ngu"
+//
+//    Do KHONG phai hoi quy: do la buoc truoc da lam dung viec cua no. Chay lai
+//    thi khoi dong lai `tools/voice_e2e_server.py` (no `seed(lam_lai=True)` mac
+//    dinh, xoa `tmp/voice_e2e/` roi tao lai).
+//
+//    ⚠️ Do 12/09/2026: ba lan chay lien tiep tren cung mot server lam mat 20
+//    phut truy mot "hoi quy" khong ton tai.
+
 // ⛔ CAU TRUC: `run-code --filename=` boc NGUYEN VAN noi dung tep thanh
 //    `await (<noi dung>)(page)` — chi hop le neu noi dung la MOT bieu thuc
 //    duy nhat (`async page => {...}`). Vi vay MOI khai bao (`SEL`,
@@ -159,11 +173,23 @@ async page => {
   // (nhan `Username`/`Password`/`Sign in` gia dinh giao dien tieng Anh mac
   // dinh cua trinh duyet `playwright-cli`; dat cookie VI truoc buoc nay se
   // doi han ca man dang nhap sang tieng Viet va lam ba nhan do khong khop).
+  // ⭐ TANG 2 dung mot tai khoan KHAC. Spec §9 doi bo nay chay ca tren URL
+  //    cong khai bang TAI KHOAN TEST VAN HANH, ma tai khoan do khong the nam
+  //    trong kho. Nen: lay tu `LTT_SMOKE_USER`/`LTT_SMOKE_PASS`
+  //    (dung quy uoc san co cua `tests/test_74_smoke_playwright.py`) khi nguoi
+  //    goi dat chung, va chi roi ve tai khoan seed cua may chu E2E khi khong.
+  //    Khong tep test nao duoc mang mot mat khau that.
+  const NGUOI = process.env.LTT_SMOKE_USER || 'voice-e2e@test.local';
+  const MAT_KHAU = process.env.LTT_SMOKE_PASS || 'khong-phai-mat-khau-that-12';
   await page.goto(BASE + '/ltt-voice');
   if (/\/login/.test(page.url())) {
-    await page.getByRole('textbox', { name: 'Username' }).fill('voice-e2e@test.local');
-    await page.getByRole('textbox', { name: 'Password' }).fill('khong-phai-mat-khau-that-12');
-    await page.getByRole('button', { name: 'Sign in' }).click();
+    // ⛔ Dinh vi bang ID, khong bang NHAN. Man dang nhap cua production hien
+    //    tieng Viet ("Ten dang nhap"/"Mat khau"/"Dang nhap") khi trinh duyet
+    //    khai `Accept-Language: vi`, nen ba nhan tieng Anh cua tang mock truot
+    //    het. `#login-username`/`#login-password` khong doi theo ngon ngu.
+    await page.locator('#login-username').fill(NGUOI);
+    await page.locator('#login-password').fill(MAT_KHAU);
+    await page.locator('form button[type="submit"]').first().click();
     await page.waitForLoadState('networkidle');
     await page.goto(BASE + '/ltt-voice');
   }
