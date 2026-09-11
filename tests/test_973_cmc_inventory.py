@@ -68,3 +68,43 @@ def test_git_failure_does_not_replace_existing_reports(tmp_path: Path):
 
     assert json_path.read_text(encoding="utf-8") == "old-json\n"
     assert md_path.read_text(encoding="utf-8") == "old-md\n"
+
+
+def test_reconciliation_covers_the_frozen_inventory():
+    root = Path(__file__).resolve().parents[1]
+    inventory = json.loads(
+        (root / "docs/LTT_CMC/inventory.json").read_text(encoding="utf-8"))
+    reconciliation = json.loads(
+        (root / "docs/LTT_CMC/reconciliation.json").read_text(encoding="utf-8"))
+
+    assert reconciliation["snapshot_id"] == inventory["snapshot_id"]
+
+    branch_items = reconciliation["branches"]
+    branch_dispositions = {
+        item["name"]: item["disposition"] for item in branch_items}
+    branch_heads = {item["name"]: item["head"] for item in branch_items}
+    assert len(branch_dispositions) == len(branch_items)
+    assert set(branch_dispositions) == {
+        item["name"] for item in inventory["branches"]}
+    assert branch_heads == {
+        item["name"]: item["head"] for item in inventory["branches"]}
+    assert "UNCLASSIFIED" not in set(branch_dispositions.values())
+
+    reflog_items = reconciliation["reflog_only"]
+    reflog_dispositions = {
+        item["sha"]: item["disposition"] for item in reflog_items}
+    assert len(reflog_dispositions) == len(reflog_items)
+    assert set(reflog_dispositions) == set(inventory["reflog_only"])
+    assert "UNCLASSIFIED" not in set(reflog_dispositions.values())
+
+    protected = reconciliation["protected_branches"]
+    assert all(
+        branch_dispositions[name].startswith("DEFER_") for name in protected)
+    assert set(protected) == {
+        name for name, disposition in branch_dispositions.items()
+        if disposition.startswith("DEFER_")}
+
+    selected = {
+        sha for sha, disposition in reflog_dispositions.items()
+        if disposition == "RECONCILE"}
+    assert {item["sha"] for item in reconciliation["rescue_refs"]} == selected
