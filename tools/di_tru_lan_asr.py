@@ -57,11 +57,6 @@ from apps.ltt_voice import giong_vong_doi
 #: `zh`, ...) là NGOÀI làn, và công cụ này giữ nguyên, không tự bịa một làn thứ ba.
 LAN_DO = {"vi": "vi", "en": "en"}
 
-#: Mặc định `--luong` khi `_do_mot` gọi ASR mà không qua `chay()`/`main()` (vd
-#: gọi tay trong một REPL). `chay()` ghi đè giá trị này TRƯỚC khi xử lý bất cứ
-#: hồ sơ nào, theo `--luong` của lượt chạy đó.
-_LUONG_MAC_DINH = 4
-
 
 def quyet_lan(do: dict, *, lan_hien: str, nguong: float) -> tuple[str, str]:
     """`do` (kết quả `_nghe_lai`) -> `(lan_moi, nguon_moi)`.
@@ -140,7 +135,7 @@ def _tim_khoa_nguon(db, ho_so) -> str:
     return str(r or "")
 
 
-def _do_mot(db, ho_so) -> dict:
+def _do_mot(db, ho_so, *, luong: int = 4) -> dict:
     """Đo làn của CLIP NGUỒN của `ho_so` bằng ASR.
 
     Tìm khoá clip nguồn (`_tim_khoa_nguon`), tải về một tệp tạm qua
@@ -164,7 +159,7 @@ def _do_mot(db, ho_so) -> dict:
         except StorageError as e:
             tmp.close()
             return {"loi": f"khong doc duoc kho ({khoa}): {e}"}
-        return _nghe_lai(tmp.name, luong=_LUONG_MAC_DINH)
+        return _nghe_lai(tmp.name, luong=luong)
     finally:
         try:
             os.unlink(tmp.name)
@@ -178,9 +173,6 @@ def chay(*, ghi: bool, nguong: float, nhat_ky, luong: int = 4) -> dict:
 
     Trả `{"xet", "se_doi", "da_ghi", "khong_chac"}`.
     """
-    global _LUONG_MAC_DINH
-    _LUONG_MAC_DINH = int(luong)
-
     from sqlalchemy import select
 
     from apps.ltt_voice.tables import VoiceProfile
@@ -200,7 +192,7 @@ def chay(*, ghi: bool, nguong: float, nhat_ky, luong: int = 4) -> dict:
         muc_nk = []
         for hs in ho_so_list:
             xet += 1
-            do = _do_mot(db, hs)
+            do = _do_mot(db, hs, luong=luong)
             lan_moi, nguon_moi = quyet_lan(do, lan_hien=hs.ngon_ngu, nguong=nguong)
             if not lan_moi:
                 khong_chac += 1
@@ -215,11 +207,16 @@ def chay(*, ghi: bool, nguong: float, nhat_ky, luong: int = 4) -> dict:
             if not ghi:
                 continue
 
+            # ⛔ CHỈ {ngon_ngu, do_tin} — KHÔNG ghi `do["text"]` vào nhật ký.
+            #    `text` là bản chép lời NÓI CỦA KHÁCH (nội dung clip giọng của
+            #    họ); nhật ký di trú là bằng chứng vận hành cho việc SỬA một
+            #    cột ngôn ngữ, không phải chỗ lưu lời nói. Khuôn `do:{...}` đã
+            #    chốt đúng hai khoá này (brief Task 7).
             muc_nk.append({
                 "public_id": hs.public_id,
                 "cu": {"ngon_ngu": hs.ngon_ngu, "ngon_ngu_nguon": hs.ngon_ngu_nguon},
                 "moi": {"ngon_ngu": lan_moi, "ngon_ngu_nguon": nguon_moi},
-                "do": do,
+                "do": {"ngon_ngu": do.get("ngon_ngu"), "do_tin": do.get("do_tin")},
             })
             hs.ngon_ngu = lan_moi
             hs.ngon_ngu_nguon = nguon_moi
@@ -250,7 +247,13 @@ def dao(nhat_ky) -> dict:
     """Đảo ngược một nhật ký đã ghi bởi `chay(ghi=True, ...)`: khôi phục
     `ngon_ngu`/`ngon_ngu_nguon` của mỗi hồ sơ trong nhật ký về giá trị `cu`.
 
-    Trả `{"da_dao": <so ho so>}`.
+    ⛔ CHỈ đảo khi giá trị HIỆN TẠI của hồ sơ còn ĐÚNG BẰNG `moi` đã ghi trong
+       nhật ký. Nếu một lượt sau đó (khách tự khai lại, một lượt di trú khác,
+       một người vận hành sửa tay) đã đổi giá trị này thì `dao()` KHÔNG được
+       đè lên một quyết định mới hơn — mục đó bị BỎ QUA, kèm cảnh báo có
+       `public_id` để người vận hành tự xem lại.
+
+    Trả `{"da_dao": <so ho so da khoi phuc>, "bo_qua": <so ho so bi bo qua>}`.
     """
     from sqlalchemy import select
 
@@ -262,13 +265,22 @@ def dao(nhat_ky) -> dict:
     gen = get_session()
     db = next(gen)
     try:
-        da_dao = 0
+        da_dao = bo_qua = 0
         for m in muc:
             hs = db.execute(
                 select(VoiceProfile)
                 .where(VoiceProfile.public_id == m["public_id"])
             ).scalar_one_or_none()
             if hs is None:
+                continue
+            moi = m.get("moi") or {}
+            hien = (hs.ngon_ngu, hs.ngon_ngu_nguon)
+            ky_vong = (str(moi.get("ngon_ngu", "")), str(moi.get("ngon_ngu_nguon", "")))
+            if hien != ky_vong:
+                bo_qua += 1
+                print(f"  BO QUA {m.get('public_id')}: gia tri hien tai {hien} "
+                      f"khac 'moi' da ghi trong nhat ky {ky_vong} — da bi mot "
+                      f"luot sau doi, khong dao de.")
                 continue
             cu = m.get("cu") or {}
             hs.ngon_ngu = str(cu.get("ngon_ngu", hs.ngon_ngu))
@@ -281,7 +293,7 @@ def dao(nhat_ky) -> dict:
         except StopIteration:
             pass
 
-    return {"da_dao": da_dao}
+    return {"da_dao": da_dao, "bo_qua": bo_qua}
 
 
 def main(argv=None) -> int:
@@ -301,7 +313,8 @@ def main(argv=None) -> int:
 
     if a.dao:
         ket = dao(a.dao)
-        print(f"Da dao {ket['da_dao']} ho so tu {a.dao}")
+        print(f"Da dao {ket['da_dao']} ho so tu {a.dao} "
+              f"(bo qua {ket['bo_qua']} — da bi doi sau khi ghi)")
         return 0
 
     print(f"D003 — do lan giong cu bang ASR ({'GHI THAT' if a.ghi else 'CHAY KHO'}, "
