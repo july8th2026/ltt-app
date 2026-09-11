@@ -118,8 +118,12 @@
                   {% elif k.trang_thai == 'dang_tao' %}
                     <span class="badge b-warn"><span class="dot"></span>{{ _("Đang đọc…") }}</span>
                   {% elif k.trang_thai == 'can_tao_lai' %}
-                    {# ⭐ KHÁC `moi`: vẫn còn tệp cũ nghe được, chỉ là văn bản đã đổi. #}
-                    <span class="badge b-warn"><span class="dot"></span>{{ _("Văn bản đã đổi") }}</span>
+                    {# ⭐ Nhãn dùng chung với màn danh sách (`ltt_voice_du_an.html`)
+                       — cùng trạng thái `TT_CAN_TAO_LAI`, hai NGUYÊN NHÂN khác
+                       nhau (văn bản đã đổi, hoặc tệp đã hết hạn/bị xoá — D005),
+                       nhưng khách chỉ cần biết phải bấm tạo lại, không cần phân
+                       biệt hai nguyên nhân đó (xem `du_an.trang_thai_hien`). #}
+                    <span class="badge b-warn"><span class="dot"></span>{{ _("Cần tạo lại") }}</span>
                   {% elif k.trang_thai == 'loi' %}
                     <span class="badge b-err"><span class="dot"></span>{{ _("Lỗi") }}</span>
                   {% else %}
@@ -176,10 +180,17 @@
                           data-khoi="{{ k.id }}"
                           aria-expanded="false">{{ _("Phiên bản") }}</button>
                   <div class="lv-pb-hop" data-pb-cho="{{ k.id }}" hidden></div>
-                {% elif k.trang_thai == "xong" %}
-                  {# Khoi da doc xong ma khong con tep: job giu noi dung 30 ngay.
-                     Phai NOI ra — mot o trong o dung cho trinh phat trong y het
-                     mot loi hien thi. #}
+                {% elif k.trang_thai == "can_tao_lai" %}
+                  {# Fix round 1/5 — trước là `k.trang_thai == "xong"`: đúng
+                     khi `trang_thai` còn là cột thô, nhưng từ khi route
+                     truyền `trang_thai_hien()` thì một khối mất tệp không
+                     còn đọc "xong" ở đây nữa — nó đọc "can_tao_lai" (cùng
+                     nhánh badge ở trên). Nhánh này CHỈ tới được khi không có
+                     `audio_url` (nhánh `if` trên đã chặn mọi khối còn tệp),
+                     nên nó luôn đúng nghĩa "khối này TỪNG có tệp, giờ mất":
+                     job giữ nội dung 30 ngày, hoặc khách đã xoá ở Lịch sử.
+                     Phải NÓI ra — một ô trống ở đúng chỗ trình phát y hệt
+                     một lỗi hiển thị. #}
                   <small class="lv-het-han dim">{{ _("Tệp tiếng đã hết hạn sau 30 ngày. Đọc lại để có tệp mới.") }}</small>
                 {% endif %}
               </div>
@@ -250,7 +261,10 @@ LttVoice.motDuAn({
     daLuu:     {{ _("Đã lưu") | tojson }},
     dangDoc:   {{ _("Đang đọc…") | tojson }},
     daDoc:     {{ _("Đã đọc") | tojson }},
-    doiChu:    {{ _("Văn bản đã đổi") | tojson }},
+    {# Fix round 1/5: nhãn khớp với badge dựng sẵn trong HTML (cùng `k.trang_thai
+       == "can_tao_lai"` ở trên) và với màn danh sách — JS chỉ CẬP NHẬT badge
+       lúc poll, nhãn hai nơi lệch nhau sẽ đổi chữ ngay dưới mắt khách. #}
+    doiChu:    {{ _("Cần tạo lại") | tojson }},
     chuaDoc:   {{ _("Chưa đọc") | tojson }},
     loi:       {{ _("Lỗi") | tojson }},
     hetKhoi:   {{ _("Mọi khối đã được đọc.") | tojson }},

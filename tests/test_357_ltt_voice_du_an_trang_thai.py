@@ -274,6 +274,79 @@ def test_badge_CAN_TAO_LAI_khi_mot_khoi_XONG_nhung_MAT_TEP(khach):
     assert "b-ok" not in html, "khong duoc hien 'Xong' khi mot khoi da mat tep"
 
 
+def _dat_khoi_het_han(pid, uid, idx: int = 0) -> None:
+    """Khối tại `idx` có một `Job` THẬT, `status="done"`, `audio_key` THẬT —
+    nhưng `Job.content_expired_at` đã đặt (mô phỏng hết hạn 30 ngày thật,
+    khác `mat_tep_o` của `_dat_trang_thai_khoi` — ở đó khối chưa từng có
+    `job_id`/`audio_key` nên `duong_tieng()` không có gì để hỏi bảng `jobs`;
+    ở đây nó PHẢI hỏi `jobs` mới thấy `content_expired_at` và loại khối này
+    ra khỏi kết quả — đúng đường mà `du_an.duong_tieng()` thật sự đi."""
+    import datetime as dt
+
+    import platform_core.db as dbmod
+    from platform_core.models import Job
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        d = du_an.tim(db, pid, owner_id=uid)
+        k = list(du_an.cac_khoi(db, d.id))[idx]
+        khoa = f"voice/out/{uid}/j{k.id}/tieng.wav"
+        j = Job(user_id=uid, app_slug="ltt_voice", job_type="ltt_voice.synthesize",
+               params={"nguon": "du_an", "text": k.text},
+               status="done",
+               result={"duration_s": 1.0, "credit_cost": 1, "audio_key": khoa})
+        db.add(j)
+        db.flush()
+        j.content_expired_at = dt.datetime.now(dt.timezone.utc)
+        k.trang_thai = "xong"
+        k.job_id = str(j.id)
+        k.audio_key = khoa
+        k.giay = 1.0
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+def test_trang_chi_tiet_khong_hien_DA_DOC_khi_khoi_da_HET_HAN(khach):
+    """🔴 Fix round 1/5 (controller ruling — INV-TRANG-THAI-1). Trước bản vá:
+    `trang_mot_du_an` truyền thẳng `k.trang_thai` (cột thô) vào template, nên
+    một khối "xong" theo cột mà tệp đã hết hạn hiện badge XANH "Đã đọc" ngay
+    TRÊN dòng "Tệp tiếng đã hết hạn sau 30 ngày…" bên dưới nó — hai câu MÂU
+    THUẪN trên cùng một màn hình. Route giờ truyền `trang_thai_hien()`."""
+    client, uid = khach
+    pid = _tao_du_an(client)
+    _them_khoi(client, pid, "Mot cau doc thu de kiem tra badge.")
+    _dat_khoi_het_han(pid, uid, 0)
+
+    html = client.get(f"/ltt-voice/du-an/{pid}").text
+    assert "Đã đọc" not in html, (
+        "khong duoc hien badge 'Da doc' cho khoi da mat tep (het han)")
+    assert "Cần tạo lại" in html, (
+        "phai hien badge 'Can tao lai' cho khoi da mat tep (het han)")
+    assert "Tệp tiếng đã hết hạn sau 30 ngày" in html, (
+        "dong giai thich het han phai con, khong bi nhanh moi che mat")
+
+
+def test_poll_du_an_cung_tra_CAN_TAO_LAI_cho_khoi_da_HET_HAN(khach):
+    """Cùng chốt trên, ở cửa poll (`/trang-thai`) — `voice.js::motDuAn` dùng
+    đúng trường `khoi[i].trang_thai` này để SỬA badge mỗi vài giây; nếu cửa
+    này vẫn trả cột thô thì trang mở sẵn tự sửa đúng rồi bị poll ghi đè sai."""
+    client, uid = khach
+    pid = _tao_du_an(client)
+    _them_khoi(client, pid, "Mot cau doc thu de kiem tra badge.")
+    _dat_khoi_het_han(pid, uid, 0)
+
+    r = client.get(f"/ltt-voice/du-an/{pid}/trang-thai")
+    assert r.status_code == 200, r.text
+    khoi_ra = r.json()["khoi"]
+    assert len(khoi_ra) == 1
+    assert khoi_ra[0]["trang_thai"] == du_an.TT_CAN_TAO_LAI, khoi_ra[0]
+
+
 def test_poll_tra_ve_trang_thai_du_an_suy(khach):
     """Cửa poll cũng trả trạng thái dự án suy ra, để giao diện cập nhật huy
     hiệu mà không phải tải lại cả trang."""

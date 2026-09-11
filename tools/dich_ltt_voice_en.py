@@ -324,7 +324,12 @@ DICH = {
 
     # du_an — badge suy tu tep that (RC1 Task 9, D005)
     "Cần tạo lại": "Needs regenerating",
-    "Lỗi": "Failed",
+    # ⛔ KHÔNG khai "Lỗi" ở đây — fix round 1/5. `messages.po` đã có msgid
+    #    "Lỗi" -> "Error" (server/templates/jobs.html va nhieu app khac dung
+    #    chung). Script nay IDEMPOTENT nen mot dong "Lỗi": "Failed" o day
+    #    khong bao gio ghi de duoc no (bo qua vi msgid da co san) — no chi la
+    #    MA CHET, doc vao tuong badge Loi dich la "Failed" trong khi that ra
+    #    van la "Error" nhu moi noi khac trong app.
     "Khối này đang được đọc — đợi lượt trước xong đã.":
         "This block is already being read — wait for it to finish first.",
     "Lượt đọc này không còn văn bản để lưu.":

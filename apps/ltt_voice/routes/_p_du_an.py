@@ -206,9 +206,17 @@ def trang_mot_du_an(request: Request, public_id: str,
         du_an_ds = [{"public_id": x.public_id, "ten": x.ten}
                     for x in du_an.danh_sach(db, uid)]
         # Bản sao phẳng cho template — tránh chạm ORM trong Jinja.
+        #
+        # 🔴 Fix round 1/5 — `"trang_thai"` PHẢI LÀ `trang_thai_hien()`, không
+        #    phải cột thô. Trước bản vá này, một khối "xong" theo cột nhưng
+        #    tệp đã hết hạn/bị xoá hiện badge XANH "Đã đọc" NGAY TRÊN dòng
+        #    "Tệp tiếng đã hết hạn…" bên dưới nó — hai câu mâu thuẫn trên cùng
+        #    một màn hình (INV-TRANG-THAI-1). `duong.get(k.id)` đã có sẵn ở
+        #    đây (dùng cho `audio_url`) nên không tốn thêm một truy vấn nào.
         ds_khoi = [{
             "id": k.id, "thu_tu": k.thu_tu, "text": k.text, "giong": k.giong,
-            "trang_thai": k.trang_thai, "job_id": k.job_id,
+            "trang_thai": du_an.trang_thai_hien(k, bool(duong.get(k.id))),
+            "job_id": k.job_id,
             "giay": k.giay, "credit": k.credit,
             "audio_url": duong.get(k.id, ""),
         } for k in khoi]
@@ -459,10 +467,11 @@ def doc_mot_khoi(request: Request, public_id: str, block_id: int,
         jid = _nop_mot_khoi(db, user, d, k)
         db.commit()
         return JSONResponse({"ok": True, "job_id": jid})
-    except features.LoiGiongNoi as e:
-        db.rollback()
-        return _loi_400(e)
     except Exception as e:  # noqa: BLE001 - thieu credit cung di duong nay
+        # `_loi_400` doc `getattr(e, "ma", "")` nen no dung chung duoc cho ca
+        # `features.LoiGiongNoi` (mang `.ma`, vd "voice_language_mismatch")
+        # lan moi Exception khac (thieu credit, ...) — tach rieng mot nhanh
+        # `except features.LoiGiongNoi` truoc no la trung, hai than giong het.
         db.rollback()
         return _loi_400(e)
     finally:
@@ -550,11 +559,17 @@ def trang_thai_du_an(public_id: str, user=Depends(user_hien_tai),
         duong = du_an.duong_tieng(db, khoi, MANIFEST.route_prefix)
         tt = du_an.tom_tat(khoi, duong_tieng=duong)
         tt["trang_thai"] = du_an.trang_thai_suy(tt)
+        # Fix round 1/5 — cùng lý do ở `trang_mot_du_an`: đây là dữ liệu mà
+        # `voice.js::motDuAn` dùng để cập nhật badge từng khối khi đang poll
+        # (`datTrangThai(li, k.trang_thai)`), nên nó phải là giá trị ĐÃ SUY,
+        # không phải cột thô — nếu không, trang mở sẵn sẽ tự SỬA badge đúng
+        # rồi vài giây sau POLL lại GHI ĐÈ nó về sai.
         return JSONResponse({
             "ok": True,
             "tom_tat": tt,
             "khoi": [{
-                "id": k.id, "trang_thai": k.trang_thai,
+                "id": k.id,
+                "trang_thai": du_an.trang_thai_hien(k, bool(duong.get(k.id))),
                 "giay": k.giay, "credit": k.credit,
                 "audio_url": duong.get(k.id, ""),
             } for k in khoi],
