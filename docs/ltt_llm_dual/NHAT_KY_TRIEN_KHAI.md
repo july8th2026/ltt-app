@@ -170,3 +170,17 @@ trên chính card đó (D06). Muốn chuyển phải lượng tử hoá model �
 
 **Tại sao 5060 Ti chỉ dùng 54 MiB:** trên đó hiện chưa có gì chạy — LTT-3.5 chưa tải (Task 3.1), và
 desktop thì tới nút 3 mới được ghim sang. Con số 54 MiB là đúng, không phải dấu hiệu "chưa chuyển hết".
+
+### Kết quả cuối của việc dọn 3090 (chốt 2026-09-11)
+
+Sau nút 3 (ghim app vào 5060 Ti) + đăng nhập phiên mới: `explorer` và `dwm` **đã rời** 3090.
+Còn lại trên 3090: TextInputHost 10,4 · Taskmgr 9,5 · SearchHost 9,3 · PhoneExperienceHost 9,2 ·
+ShellHost 9,2 · CrossDeviceResume 9,2 ≈ **47 MiB** (đều là app hệ thống kiểu UWP, không tôn trọng
+`UserGpuPreferences`). 
+
+**193 MiB → 47 MiB (−76 %).** Chủ dự án chốt dừng ở đây ("mặc kệ đi"). VRAM 3090: dùng 21.862 MiB,
+**trống 2.464 MiB** với model 204.800 đang nạp.
+
+⭐ **L-13 (chủ dự án, cùng lúc):** 3090 chỉ dùng cho model AI, và LTT-3.8 phải lấy **trần ngữ cảnh tối
+đa** — nếu 262.144 vừa 24 GB thì **không hạ** số token. Cổng đo G1 (Task 3.2) vì vậy đo theo thứ tự:
+262.144 trước, và chỉ báo cáo con số thấp hơn nếu phép đo chứng minh không vừa.

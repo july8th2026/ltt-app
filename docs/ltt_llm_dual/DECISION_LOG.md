@@ -37,6 +37,7 @@
 | L-11 | **Model ảnh vẫn dùng RTX 3090** ⇒ 3090 = LTT-3.8 + model ảnh (chia thời gian); 5060 Ti = LTT-3.5 + màn hình Windows | chủ dự án, chat 2026-09-11 |
 
 | L-12 | **3090 chỉ dành cho model AI** (LTT-3.8 + model ảnh). Mọi VRAM nền (ngữ cảnh đồ hoạ desktop: dwm, explorer, SearchHost, M365Copilot, LGHUB… — `00` §3) và tác vụ không liên quan chuyển hết sang 5060 Ti | chủ dự án, chat 2026-09-11 (trả lời D03) |
+| L-13 | **3090 chỉ dùng cho model AI.** LTT-3.8 lấy **trần ngữ cảnh tối đa**: nếu 262.144 vừa trong 24 GB thì **không hạ** số token để đổi lấy biên. Tối ưu theo hướng nhiều token nhất có thể mà vẫn không vượt trần card | chủ dự án, chat 2026-09-11 (sau khi dọn desktop) |
 
 ⚠️ L-11 thay thế giả định "3090 chuyên dụng cho LTT-3.8 / ComfyUI chuyển sang 5060" của prompt chương trình.
 Hệ quả phải mang vào thiết kế: LTT-3.8 **không** thể "hot liên tục" khi có job ảnh (HiDream đỉnh 18.450 MB +
