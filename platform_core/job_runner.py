@@ -218,6 +218,16 @@ def _chay_mot_job(worker_id: str, *, capabilities=None) -> bool:
         chup_suat = int(job.admission_slots or 0)
         db.commit()
 
+    # Vòng lặp trên hoặc `return False`, hoặc gán đủ ba biến — nhưng `_one_session()`
+    # là generator nên mypy không thấy được điều đó và coi cả ba còn `| None` suốt
+    # phần còn lại của hàm (hơn 20 lỗi `arg-type`, và chúng che mất lỗi thật).
+    # Đây là một lối thoát CÓ THẬT, không phải chiều lòng bộ kiểm: nếu generator
+    # phiên không sinh vòng nào (DB chết lúc mở phiên) thì ba biến thật sự vẫn là
+    # `None`, và chạy tiếp sẽ là `TypeError` ở một dòng ngẫu nhiên phía dưới.
+    if job_id is None or job_type is None or params is None:
+        log.warning("worker %s: phien DB khong sinh vong nao, bo luot nhat", worker_id)
+        return False
+
     log.info("worker %s nhat job %s (%s)", worker_id, job_id[:8], job_type)
 
     # 1a. Sức chứa admission của job này — THEO MODEL nó xin (multijob 2.2).

@@ -11603,6 +11603,15 @@ msgstr "Temporary execution-slot ownership; only operational identifiers are ret
 msgid "Phòng chờ của cửa tương tác tới model nhà và sổ từng lượt: chờ bao lâu, vì sao, ngân sách token đặt chỗ. Không chứa nội dung hội thoại."
 msgstr "Waiting room for the interactive door to the in-house model, plus a per-request ledger: how long each request waited, why, and the token budget it reserved. Holds no conversation content."
 
+msgid "chạy trên card thứ hai của máy B — bận thì trả 429, không phải lỗi"
+msgstr "runs on the second GPU of machine B — when busy it returns 429, which is not an error"
+
+msgid "LTT LLM 3.5 (nhanh · rẻ · đọc ảnh)"
+msgstr "LTT LLM 3.5 (fast · cheap · reads images)"
+
+msgid "[{slug}] model_llm_noi_bo không hợp lệ: {value!r} — hợp lệ: {ok}"
+msgstr "[{slug}] model_llm_noi_bo is not valid: {value!r} — valid values: {ok}"
+
 msgid "Không thể xác định kết quả từ nhà cung cấp; hệ thống đã dừng tự thử lại."
 msgstr "The provider result could not be determined; automatic retries have been stopped."
 

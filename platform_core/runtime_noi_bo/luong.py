@@ -31,7 +31,7 @@ import logging
 import time
 from contextlib import nullcontext
 from dataclasses import dataclass, field
-from typing import Any, Callable, Iterator, Optional
+from typing import Any, Callable, Generator, Iterator, Optional
 
 from platform_core.llm.dem_token_luong import DemToken
 from platform_core.public_api.executor import for_tool
@@ -645,13 +645,29 @@ def chuan_bi(db, *, user_id: str, tool_name: str, than: dict, duong: str,
 
 # ── Bước 2: mở luồng tới máy B ───────────────────────────────────────────────
 
+def _luong_rong() -> Generator[bytes, None, None]:
+    """Generator rỗng làm mặc định cho `LuotLuong.luong`.
+
+    Là một hàm chứ không phải `iter(())`: mặc định phải có `.close()` như mọi
+    giá trị thật của trường này, nếu không thì một `LuotLuong` chưa gán luồng
+    sẽ vỡ đúng ở đường khách ngắt — đường ít được chạy nhất.
+    """
+    return
+    yield b""  # pragma: no cover - không bao giờ tới, chỉ để hàm là generator
+
+
 @dataclass
 class LuotLuong:
     """Một luồng đang chảy. `luong` chuyển byte nguyên xi và **tự quyết toán**."""
 
     chuan_bi: ChuanBi
     content_type: str
-    luong: Iterator[bytes] = field(default=iter(()))
+    #: ⚠️ `Generator` chứ không `Iterator`: hai chỗ dưới gọi `.close()` để đóng
+    #: luồng bên dưới cho `finally` của nó quyết toán tiền (multijob 1.5), mà
+    #: `.close()` chỉ generator mới có. Khai `Iterator` thì mypy báo
+    #: "has no attribute close" — đúng, và nó đúng về một điều thật: truyền vào
+    #: đây một iterator thường sẽ vỡ ở lúc khách ngắt.
+    luong: Generator[bytes, None, None] = field(default_factory=_luong_rong)
     dem: DemToken = field(default_factory=DemToken)
     #: Điền sau khi quyết toán (trong `finally` của `luong`).
     ket_qua: Any = None
@@ -714,7 +730,7 @@ def mo_luong_tho(db, *, user_id: str, tool_name: str, than: dict, duong: str,
 
 # ── Bước 3: chuyển byte, đếm, quyết toán ─────────────────────────────────────
 
-def _phat(mo, luot: LuotLuong, *, trang_thai=None) -> Iterator[bytes]:
+def _phat(mo, luot: LuotLuong, *, trang_thai=None) -> Generator[bytes, None, None]:
     """Chuyển byte nguyên xi, đếm token dọc đường, quyết toán khi hết.
 
     ⛔ `finally` chứ không phải "sau vòng lặp" — xem docstring module.

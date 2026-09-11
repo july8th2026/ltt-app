@@ -15,11 +15,13 @@ import dataclasses
 
 import pytest
 
+from typing import Any
+
 from platform_core.registry import AdmissionModel, ToolSpec
 
 
-def _tool(**overrides) -> ToolSpec:
-    base = dict(
+def _tool(**overrides: Any) -> ToolSpec:
+    base: dict[str, Any] = dict(
         name="test.tool",
         job_type="test.tool",
         description="tool test cho admission_cho",

@@ -15,7 +15,7 @@ import logging
 import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from typing import Callable, Iterator
+from typing import Callable, Generator
 
 from sqlalchemy import delete
 from sqlalchemy.orm import Session
@@ -222,8 +222,16 @@ def _chot(waiter_id: str, trang_thai: str, ket_qua: str,
 def cho_nhan(yc: YeuCauCho, *, waiter_id: str, han_s: float,
              cho_whale_toi_da_s: float = 30.0, moi_nhip_s: float = MOI_NHIP_S,
              dong_ho: Callable[[], datetime] = _dong_ho_that,
-             ngu: Callable[[float], None] = time.sleep) -> Iterator[str]:
+             ngu: Callable[[float], None] = time.sleep,
+             ) -> Generator[str, None, str]:
     """GENERATOR: mỗi nhịp chưa được nhận thì `yield` mã lý do; được nhận thì `return lease_id`.
+
+    ⭐ Kiểu là `Generator[str, None, str]` chứ **không** phải `Iterator[str]`:
+       `Iterator` chỉ mô tả thứ **yield** ra, không mô tả thứ **return** về. Mà
+       cả giá trị của hàm này nằm ở chỗ `return lease_id` — bên gọi lấy nó bằng
+       `lease_id = yield from cho_nhan(...)`. Khai `Iterator` thì mypy đọc
+       `return lease_id` là *"No return value expected"* và đọc lời gọi là
+       *"Function does not return a value"*: hai lỗi, một gốc.
 
     Dùng `lease_id = yield from cho_nhan(...)` trong một generator khác (cửa stream
     chèn nhịp tim SSE giữa các nhịp), hoặc `cho_nhan_chan(...)` khi chờ chặn.
