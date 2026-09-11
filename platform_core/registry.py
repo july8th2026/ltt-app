@@ -152,6 +152,11 @@ class ToolSpec:
     # Số lượt thực thi đồng thời mà tài nguyên trên cho phép. 0 = admission
     # không cấp execution lease (giữ tương thích tool hiện có).
     admission_slots: int = 0
+    # Ngân sách token KV dùng chung của tài nguyên trên (llama.cpp `-kvu`).
+    # 0 = không áp ngân sách token — mọi tool khác giữ nguyên hành vi. >0 thì
+    # admission đặt chỗ `prompt + max_tokens + đệm` và chỉ nhận khi còn vừa
+    # (multijob, `platform_core/llm/luat_nhan.py`).
+    admission_token_pool: int = 0
 
     # Optional adapter for protocol routes that must execute synchronously.
     # This is a dotted reference owned by the app; the platform resolves it

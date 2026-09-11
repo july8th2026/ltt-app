@@ -275,16 +275,28 @@ KY_TU_MOI_TOKEN = 2.5
 #  ĐỒNG THỜI — trần của ta phải biết trần của máy B
 # ══════════════════════════════════════════════════════════════════════════
 
-#: Số lượt máy B phục vụ **cùng lúc** (`LTT_LLM_MAX_DONG_THOI`).
+#: Số slot song song của `llama-server` trên máy B (`--parallel`). **MỘT nguồn**:
+#: manifest `admission_slots`, env gateway `LTT_LLM_MAX_DONG_THOI` và cờ
+#: `--parallel` trong `llm_gateway/deploy/llama-swap.yaml` đều phải bằng số này
+#: (`tests/test_951`, `tests/test_334`).
 #:
-#: ⛔ 1 KHÔNG PHẢI dè dặt — nó là con số đúng: `llama-server` chạy `--parallel 1`
-#:    vì speculative decoding chỉ tối ưu ở một luồng (lợi thế biến mất ở
-#:    `--parallel 4`, và `--parallel 2` đo thấp hơn ~20%).
+#: 🔴 LÝ DO CŨ "1 vì speculative decoding chỉ tối ưu một luồng; `--parallel 2`
+#:    thấp ~20%" ĐÃ ĐO LẠI VÀ KHÔNG ĐÚNG TRÊN 3090 (multijob M-1, 11/09): con số
+#:    −20% đo trên RTX 5090; trên máy B `-np 4 -kvu` giữ C1 60–63 tok/s và gấp
+#:    đôi C4. Xem `docs/multijob/00_BASELINE.md`.
 #:
-#: ⚠️ Hệ quả bên ta: cho **nhiều** việc chạy song song hơn số này thì phần dôi ra
-#:    chắc chắn ăn 429/503 — không phải lỗi của bên nào, là hai trần không biết
-#:    nhau. Ai đặt trần đồng thời cho `text.chat` phải đọc con số này trước.
-DONG_THOI_MAY_B = 1
+#: ⛔ Đổi số này KHÔNG an toàn một mình: `-kvu` + nhiều slot mà thiếu admission
+#:    ngân sách KV thì một lần tràn pool giết MỌI slot (llama.cpp b10689,
+#:    `server-context.cpp:3661-3708`). Ngân sách nằm ở `POOL_KV_MAY_B` bên dưới.
+SO_SLOT_MAY_B = 1
+
+#: Tên cũ, giữ làm **bí danh** (cùng một số, không phải số thứ hai) cho mã và
+#: phép kiểm đang đọc nó.
+DONG_THOI_MAY_B = SO_SLOT_MAY_B
+
+#: Pool KV dùng chung giữa các slot khi `-kvu`: chính là cửa sổ engine. Nền tảng
+#: nhận nó qua `ToolSpec.admission_token_pool` (không import app).
+POOL_KV_MAY_B = CUA_SO_MODEL
 
 
 def tran_theo_ngu_canh(token_vao_uoc: int) -> int:

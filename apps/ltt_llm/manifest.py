@@ -66,6 +66,7 @@ from apps.ltt_llm import features as _features
 from apps.ltt_llm.ngan_sach import (CONG_BO_CHO_CLIENT,
                                     CUA_SO_MODEL as CUA_SO_NGU_CANH,
                                     LE as LE_NGU_CANH,
+                                    POOL_KV_MAY_B, SO_SLOT_MAY_B,
                                     TOKEN_RA_TRAN as MAX_TOKENS_TRAN,
                                     cong_bo_cua, mac_dinh_cho,
                                     tran_theo_ngu_canh)
@@ -197,9 +198,11 @@ MANIFEST = AppManifest(
     tools=(ToolSpec(
         name="text.chat", job_type="ltt_llm.chat",
         description=N_('Sinh văn bản từ hội thoại: coding, chat, agent, tóm tắt.'),
-        # Cả job, sync và stream cùng tranh đúng một slot của model nhà. Đây là
-        # metadata vận hành, không phải alias công khai và không lộ model id.
-        admission_resource="llm_remote", admission_slots=1,
+        # Cả job, sync và stream cùng tranh MỘT pool slot + MỘT ngân sách KV của
+        # model nhà. Metadata vận hành, không phải alias công khai và không lộ
+        # model id. Số lấy từ `ngan_sach.py` — đừng gõ số ở đây (test_951).
+        admission_resource="llm_remote", admission_slots=SO_SLOT_MAY_B,
+        admission_token_pool=POOL_KV_MAY_B,
         sync_executor="apps.ltt_llm.executor:EXECUTOR",
         params_schema={
             "messages": {"type": "json[]", "required": True},
