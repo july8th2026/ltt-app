@@ -23,7 +23,7 @@ def test_migration_noi_dung_chuoi_va_mot_head():
     scripts = ScriptDirectory.from_config(Config(str(GOC / "alembic.ini")))
     assert len(scripts.get_heads()) == 1, scripts.get_heads()
     rev = scripts.get_revision(REV)
-    assert rev.down_revision == "f2c48b71e903"
+    assert rev.down_revision == "e26c9a41d8b5"
     assert "llm_waiters" in (rev.doc or "") or "ngân sách" in (rev.doc or "")
 
 

@@ -12,7 +12,7 @@
 Spec: `docs/superpowers/specs/2026-09-11-ltt-llm-multijob-design.md` §4.
 
 Revision ID: 7c1e4b9a2d58
-Revises: f2c48b71e903
+Revises: e26c9a41d8b5
 """
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision = "7c1e4b9a2d58"
-down_revision = "f2c48b71e903"
+down_revision = "e26c9a41d8b5"
 branch_labels = None
 depends_on = None
 
