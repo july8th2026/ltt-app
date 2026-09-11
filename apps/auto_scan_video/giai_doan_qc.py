@@ -164,7 +164,12 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             #    chung thanh dung thay vi thanh khac.
             che_do_thoi_gian=cai_dat.doc(run).timing_mode,
             che_do_render=cach, thoi_luong_mong_doi=mong_doi,
-            do_sang=do_sang)
+            do_sang=do_sang,
+            # ⭐ V6 pha 27. T14/T15 doc tu day: chinh sach render da khai va
+            #    su kien phu de DA CHOT. Khong truyen thi ca hai luon tra
+            #    `KHONG_AP_DUNG` — mot phep kiem ton tai ma khong ai di qua,
+            #    dung hang `nang-luc-co-nhung-khong-ai-di-tren-duong`.
+            ban_hinh=(ban_dung.get("hinh") or {}))
 
     goi = json.dumps(bao_cao, sort_keys=True, ensure_ascii=False).encode("utf-8")
     vt = _van_tay(kho, khoa_ra, khoa_kh)

@@ -139,9 +139,33 @@ def test_bao_cao_liet_ke_DU_cac_dung_sai():
     ⭐ Mo mot chot theo tap hop la mot hanh dong phai CO Y — do la ca ly do no
        chot tap hop thay vi chot so luong: doi so luong thi khong ai phai giai
        thich gi, doi tap hop thi phai noi ra them cai gi va vi sao.
+
+    ⚠️ **Pha 27 mo tiep thanh T1-T16.** Ba dung sai duoc them, va moi cai bit
+       mot cau hoi ma de bai pha 27 goi ten trong khi khong chot nao hoi:
+
+         T14  preset giu hinh co THUC SU khong ma hoa lai khong. T3 da hoi dieu
+              nay bang cach bam ca luong hinh — nhung T3 roi ve `KHONG_AP_DUNG`
+              ngay khi khong bam duoc, va khi ay **khong ai** kiem loi hua cua
+              preset. T14 la luoi thu hai, mien phi: bo ma hoa, kich thuoc va
+              goc xoay da nam san trong ket qua ffprobe da chay.
+
+         T15  moi dong phu de co NAM TRONG ban ra khong. Mot dong dat qua cuoi
+              la mot dong khong ai thay: khach tra tien, tep `.ass` hop le,
+              ffmpeg khong bao gi. Chot nay ra doi cung pha 14.
+
+         T16  luong hinh va luong tieng co dai bang nhau khong. T2 do do dai
+              CONTAINER — mot con so van dung khi hai luong ben trong lech
+              nhau, tuc dung luc hong dung thu san pham nay ban.
+
+    🔑 Va `PHIEN_BAN_QC` phai tang cung luc, neu khong mot lan chay lai se dung
+       lai bao cao cu tu cache — bao cao do mot bo luat chua biet ba muc nay
+       ton tai lam ra, va no se bao "dat".
     """
     bc = qc.kiem(**_dau_vao_dat())
-    assert {m["ma"] for m in bc["muc"]} == {f"T{i}" for i in range(1, 14)}
+    assert {m["ma"] for m in bc["muc"]} == {f"T{i}" for i in range(1, 17)}
+    assert qc.PHIEN_BAN_QC >= 3, (
+        "mo tap hop ma khong nang PHIEN_BAN_QC: lan chay lai se phuc vu bao "
+        "cao cu tu cache")
 
 
 def test_bao_cao_KHONG_nem_khi_co_muc_hong():

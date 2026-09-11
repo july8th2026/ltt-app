@@ -146,6 +146,16 @@ def _nhip(chuoi: str) -> float:
         return 0.0
 
 
+def _giay(tho) -> float | None:
+    """`duration` cua mot luong -> giay, hoac `None` khi luong khong khai."""
+    if tho in (None, ""):
+        return None
+    try:
+        return float(tho)
+    except (TypeError, ValueError):
+        return None
+
+
 def soi(duong: str, *, hoi_huy=None) -> dict:
     """Soi day du bang ffprobe. Nem `MediaError` neu khong doc duoc.
 
@@ -198,6 +208,16 @@ def soi(duong: str, *, hoi_huy=None) -> dict:
         "co_byte": int(dinh_dang.get("size") or 0),
         "codec_video": (v or {}).get("codec_name") or "",
         "codec_tieng": (a or {}).get("codec_name") or "",
+        # ⭐ Do dai TUNG LUONG, ben canh do dai container o tren. Hai thu khac
+        #    nhau, va cho chung lech nhau chinh la cho tieng va hinh lech nhau
+        #    — dung thu san pham nay ban. QC T16 doc hai truong nay.
+        #
+        # ⚠️ `None` khi luong khong tu khai `duration`, va do KHONG phai `0`:
+        #    MP4 duoc phep bo qua truong nay. Nguoi doc phai phan biet *"khong
+        #    khai"* voi *"dai 0 giay"* — doan bang `0` se bien mot tep hoan toan
+        #    binh thuong thanh mot bao cao hong.
+        "thoi_luong_video": _giay((v or {}).get("duration")),
+        "thoi_luong_tieng": _giay((a or {}).get("duration")),
         "rong": rong,
         "cao": cao,
         "fps": r_fps,
