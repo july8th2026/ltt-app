@@ -501,7 +501,14 @@ def test_the_giong_khong_duoc_NUOT_phim_cua_nut_ben_trong():
     ⇒ Phép kiểm này đọc mã, vì hành vi thật cần một trình duyệt. Nó chốt hai
       thứ: handler `keydown` phải bỏ qua sự kiện không phát từ chính thẻ, và
       handler `click` phải bỏ qua **cả `button`**, không chỉ `<a>`.
+
+    ⭐ Ghim Ý ĐỊNH, không ghim nguyên văn chuỗi selector: soát Task 5 (commit
+       9d08ad72) thêm `summary` và `form` vào BEN_TRONG vì bấm <summary> của
+       khối "Đổi ngôn ngữ" trên thẻ giọng cũng mở nhầm panel chi tiết của thẻ.
+       Phép kiểm phải vẫn ĐỎ nếu một phần tử trong tập bắt buộc biến mất, mà
+       không ĐỎ oan khi RC1 sau này thêm phần tử mới vào danh sách.
     """
+    import re
     import pathlib as _p
     js = (_p.Path(__file__).resolve().parents[1]
           / "server/static/voice.js").read_text(encoding="utf-8")
@@ -510,9 +517,16 @@ def test_the_giong_khong_duoc_NUOT_phim_cua_nut_ben_trong():
         "handler keydown cua the giong khong con bo qua phim go TRONG mot nut "
         "ben trong — Enter tren nut nghe thu se lai bi nuot")
 
-    assert "a, button, input, select, textarea, [role=button]" in js, (
-        "handler click cua the chi bo qua <a> — nut nghe thu ben trong se lam "
-        "the mo panel")
+    khop = re.search(r'var\s+BEN_TRONG\s*=\s*"([^"]+)"', js)
+    assert khop, "khong tim thay khai bao `var BEN_TRONG = \"...\";` trong voice.js"
+    cac_phan_tu = {p.strip() for p in khop.group(1).split(",")}
+
+    bat_buoc = {"a", "button", "input", "select", "textarea",
+                "[role=button]", "summary", "form"}
+    thieu = bat_buoc - cac_phan_tu
+    assert not thieu, (
+        f"BEN_TRONG thieu selector bat buoc {thieu} — bam vao phan tu tuong "
+        f"tac ben trong the giong se lai bi the NUOT mat click/phim")
 
 
 def test_nut_nghe_thu_la_BUTTON_that_va_co_ten_doc_duoc(khach, monkeypatch):
