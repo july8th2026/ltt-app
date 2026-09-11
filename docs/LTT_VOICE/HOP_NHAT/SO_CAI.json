@@ -1,6 +1,6 @@
 {
   "phien_ban": 1,
-  "trunk": "admin-mvp-v3",
+  "trunk": "main",
   "rc": {
     "nhanh": "claude/ltt-voice-reconciliation-165a40",
     "goc": "3100c317df8b7a7c1d9a161723931ae56fc1a318",
@@ -124,9 +124,9 @@
     "530-549": "du tru RC1"
   },
   "tang1": {
-    "sha_duoc_cong_chung_nhan": "473b744f3feb8b46837a351c7156bfa4c8367258",
-    "ban_ghi_cong": "test-results/gates/20260911T183256Z-19848.json",
-    "ket_cong": "PASS (day-du, 957.4s, 10180 passed / 0 failed, cay khong doi giua chung)",
+    "sha_duoc_cong_chung_nhan": "e2676aaa194d0e781c92c2ec9bdac3fb3166ce47",
+    "ban_ghi_cong": "test-results/gates/20260911T193829Z-8904.json",
+    "ket_cong": "PASS (day-du, 929.6s, 0 failed, cay khong doi giua chung) — chay lai sau khi hoa `main`",
     "cong_bo_qua": [
       "frontend agent-canvas",
       "frontend autosub-studio",
@@ -145,5 +145,23 @@
     "phan_quyet": "READY_FOR_DEPLOYMENT",
     "bao_cao": "docs/LTT_VOICE/HOP_NHAT/TANG1_RC1.md",
     "tang2": "CHUA CHAY — moi o cua spec §10.2 con trong; RC nay KHONG duoc goi la RELEASED"
-  }
+  },
+  "tang2": {
+    "ff_vao": "main (KHONG phai admin-mvp-v3 — production chay `main`, xem TANG2_RC1.md §1)",
+    "sha_deploy": "e2676aaa194d0e781c92c2ec9bdac3fb3166ce47",
+    "deploy": "12/09/2026 02:39:33-02:41:21, EXITCODE=0",
+    "duong_lui": "C:/LTTPlatform/app.previous = 7cde3c9d4dac",
+    "o": {
+      "sha_khop_ba_noi": "PASS",
+      "health_version": "PASS (e2676aaa194d, asset_ver de7fdfe7)",
+      "nghiem_thu_deploy": "PASS (922 tep, 266 khong .py, 0/0/0, van_chuyen=9)",
+      "alembic_mot_head": "PASS (d9a1f6c2b3e5 tren CSDL production)",
+      "di_tru_asr_that": "BLOCKED — 28/28 khong do duoc: 28 voice_ref + 28 voice_repr tro toi khoa R2 KHONG ton tai (du lieu 31/08-01/09, co TRUOC lan deploy nay)",
+      "playwright_url_cong_khai": "MOT PHAN — trang cong khai PASS (200, 0 loi, cache-bust ?v=de7fdfe7 dung); luong can dang nhap BLOCKED (thieu LTT_SMOKE_USER/PASS + Cloudflare bot-check)",
+      "public_api_live": "PASS (5 tool mo, co speech.ltt)"
+    },
+    "phan_quyet": "KHONG phai RELEASED — con 2 o chua dat",
+    "bao_cao": "docs/LTT_VOICE/HOP_NHAT/TANG2_RC1.md"
+  },
+  "ghi_chu_trunk": "Q123 (3a6da723, 11/09) chuyen nhanh song sang `main`; `admin-mvp-v3` la nhanh chet. Cong cu doi soat lay `trunk` TU DAY, nen de sai o day thi chinh 22 commit RC vua ff se bi dem la 'chua doi soat'."
 }

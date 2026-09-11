@@ -16,6 +16,56 @@
 
 
 
+## 2026-09-12 — DEPLOY LTT Voice RC1: `e2676aaa` lên production (Tầng 2 **chưa** `RELEASED`)
+
+`EXITCODE=0` · nghiệm thu **0/0/0** trên **922 tệp** (trong đó **266 tệp không
+`.py`**) · `/health/version` = `e2676aaa194d` · `/health/ready` **200** ở cả
+loopback lẫn URL công khai. Báo cáo: `docs/LTT_VOICE/HOP_NHAT/TANG2_RC1.md`.
+
+### 🔴 Hỏi máy chủ trước khi ff đã đổi cả đích ff
+
+Kế hoạch viết ff vào `admin-mvp-v3`. Đo thật trước khi chạm:
+
+```
+production dang chay          7cde3c9d  (build 12/09 00:42)
+admin-mvp-v3                  34b4626e  -> CU HON production 7 commit
+7cde3c9d co phai to tien RC?  KHONG
+```
+
+Trong 7 commit ấy có `3a6da723 refactor: make main the live branch authority`.
+ff vào `admin-mvp-v3` rồi deploy sẽ **lùi** 7 commit đang chạy thật. ⇒ hoà
+`main` vào RC (giữ cả hai bên ở 3 xung đột), ff vào **`main`**.
+
+⭐ Đây là lần thứ hai trong hai ngày câu *"hỏi máy chủ TRƯỚC"* trả công.
+
+### 🔴 Hai ô Tầng 2 **BLOCKED** — không ô nào được viết thành PASS
+
+1. **Di trú ASR thật: 28/28 không đo được.** CSDL production có 28 `voice_ref`
+   + 28 `voice_repr` trỏ tới khoá R2 **không tồn tại**. Đã truy tới gốc: bucket
+   `fb-video-storage` truy cập **được** (thấy `anhnoibo/`, `thumbnail/`,
+   `voice/mau/`), nhưng **không có** khoá `voice/<owner>/…` nào; đĩa máy chủ
+   cũng không có; mọi bản `app.env.bak-*` đều cùng một bucket. Dữ liệu sinh
+   31/08–01/09 ⇒ **trạng thái có TRƯỚC lần deploy này**, không do nó gây ra.
+   ⚠️ Hệ quả: **28 giọng riêng của khách hiện không dùng được.** Cần một lượt
+   điều tra riêng.
+2. **Playwright trên URL công khai: chỉ một phần.** Trang công khai PASS (200,
+   0 lỗi console/mạng, cache-bust `?v=de7fdfe7` khớp `asset_ver` mới). Các luồng
+   cần đăng nhập BLOCKED: không có `LTT_SMOKE_USER`/`LTT_SMOKE_PASS`, và trình
+   duyệt tự động bị Cloudflare bot-check chặn (vượt bot-detection là việc không
+   được phép).
+
+### Một cái bẫy của chính công cụ đối soát
+
+Ngay sau ff, `tools/doi_soat_voice.py` báo **22 commit chưa đối soát** — chính
+22 commit RC vừa landed. Vì sổ cái còn ghi `trunk: admin-mvp-v3`, nên
+`admin-mvp-v3..main` trả về đúng phần mình vừa đưa lên. Sửa **dữ liệu**
+(`trunk: main`), không sửa công cụ ⇒ PASS trở lại.
+
+⇒ Bài học: một công cụ đối soát lấy tên trunk từ một tệp dữ liệu sẽ **tự tố cáo
+mình** ngay lần ff đầu tiên sau khi trunk đổi tên.
+
+---
+
 ## 2026-09-12 — LTT Voice RC1: Tầng 1 `READY_FOR_DEPLOYMENT` (99/100) tại `473b744f`
 
 Hợp nhất công việc Voice của **năm phiên song song** thành một dòng RC duy nhất
