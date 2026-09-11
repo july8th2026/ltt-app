@@ -12,6 +12,38 @@
 
 ---
 
+## 0. ĐÍNH CHÍNH SAU KHI ĐO (2026-09-12) — đọc trước mọi con số bên dưới
+
+Spec này viết **trước** khi có phép đo trên card thật. Cổng G1 (Task 3.2,
+`docs/ltt_llm_dual/10_BENCHMARK_P3.md`) đã đo, và ba chỗ dưới đây **hết đúng**.
+Chủ dự án đã quyết lại — xem **L-14** trong `DECISION_LOG.md`.
+
+| Spec viết | Đo được / chốt lại |
+|---|---|
+| LTT-3.8: ngữ cảnh engine **262.144** | **221.184** — 262.144 × 4 slot tràn ~400 MiB sang RAM chủ, kể cả khi bỏ mmproj khỏi GPU |
+| LTT-3.8: **C4** (`-np 4`, 4 slot) | **C3** (`-np 3`) — chủ dự án bỏ mục tiêu C4 cho model này |
+| `pool` LTT-3.8 = 262.144 | `POOL_38` = **221.184** |
+
+Cụ thể: `-c 221184 -np 3`, mmproj **trên GPU**, `-ub` mặc định ⇒ VRAM 24.131 MiB,
+`Shared Usage` 568 (trong dải sàn, **không tràn**), biên **445 MiB**.
+
+**Ba hệ quả cho phần còn lại của spec:**
+
+1. Mọi chỗ viết **"C4"** cho LTT-3.8 (mục 1, §11 bảng `pool`, nghiệm thu **D**, **F**,
+   **H**) đọc lại là **C3**. Ngưỡng của cổng D (`tổng ≥ 100 tok/s`) phải tính lại theo
+   3 luồng, không phải 4 — số cụ thể chốt khi chạy kịch bản `c4` (nay là `c3`).
+2. **LTT-3.5 chưa bị đính chính:** nó nằm trên card 16 GB khác hẳn, và cổng **G3** mới
+   đo. Con số 262.144 của nó trong bảng §2 vẫn là **đích chưa kiểm**, không phải số đo.
+3. **Ràng buộc cứng mới cho P5:** biên 445 MiB là biên lúc ComfyUI **chưa** nạp ngữ cảnh
+   CUDA. ComfyUI ấm giữ 223,5 MiB và `/free` không nhả ⇒ trọng tài residency phải **dừng
+   hẳn dịch vụ LTTComfyUI** trong cửa sổ LLM. Đây không còn là tối ưu tùy chọn.
+
+⚠️ Đính chính này **không** đổi quyết định kiến trúc nào (D01–D09 giữ nguyên): nó chỉ
+thay những con số spec tự nhận là *"tham số khởi đầu"* bằng con số đo được, đúng như
+dòng cuối của khối trạng thái ở đầu tệp đã dặn.
+
+---
+
 ## 1. Mục tiêu, phi mục tiêu
 
 **Mục tiêu.** Hai model nhà, khách chọn tường minh, mỗi model một GPU của máy B, cùng một hợp đồng đầu vào (text +
@@ -30,7 +62,7 @@ llama.cpp · 500K/1M/YaRN · tệp/đa tệp/video (Spec 2) · khung N-GPU tổn
 | Id nội bộ (máy B, không rời máy A — INV-015) | `qwen38-api` (giữ tên, nay là hồ sơ gộp text+vision) | `qwen35-api` (mới) |
 | Model | Qwen3.8-27B `UD-Q4_K_M` + mmproj F16 | Qwen3.5-9B `Q6_K` + mmproj F16 |
 | GPU (UUID) | 3090 `GPU-26623278-4fa5-82db-4306-237651b03e78` | 5060 Ti `GPU-ebecd0a4-a8a7-14a5-dad1-21565f6dc1df` |
-| Ngữ cảnh engine | 262.144 (đích D03) | 262.144 (D06) |
+| Ngữ cảnh engine | **221.184** (đo 12/09, L-14 — xem §0) | 262.144 (D06, **chưa đo**, cổng G3) |
 | Đầu vào | text + ≤ 4 ảnh | text + ≤ 4 ảnh |
 | Giá (credit/1M: vào / cache / ra) | 50 / 10 / 400 (`ltt-vlm-2026-08-22`, giữ) | ≈ 13 / 3 / 20 (`ltt-3.5-<ngày chốt>`, D07) |
 
@@ -150,7 +182,7 @@ Tham số khởi đầu **theo model** (cấu hình trong `ngan_sach.py`, `platf
 | Tham số | LTT-3.8 | LTT-3.5 | Căn cứ |
 |---|---:|---:|---|
 | `so_slot` | 4 | 4 | L-3 |
-| `pool` (token) | 262.144 | 262.144 | D03, D06 |
+| `pool` (token) | **221.184** (L-14) | 262.144 (chưa đo) | D03, D06, §0 |
 | Slot tối đa lớp `nen` | N−1 = 3 | 3 | D-03 |
 | Trần tài khoản khi có người chờ | 2 | 2 | TD-8 |
 | `NGUONG_WHALE` (token prefill mới) | 16.384 | [CHI TIẾT SPEC] đo ở P3 — khởi đầu 32.768 (9B prefill nhanh hơn) | TD-6 |

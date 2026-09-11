@@ -59,10 +59,12 @@ function DonDep {
 # "Shared = 0" cua cong G1 la mot nguong SAI - phai bo, khong phai sua.
 # Khong co dong nay thi moi con so con lai deu khong dien giai duoc.
 $DsCauHinh = @(
-    @{ ctx = 245760; np = 4; mm = $true; nommoff = $true }
-    @{ ctx = 262144; np = 4; mm = $true; nommoff = $true }
-    @{ ctx = 262144; np = 3; mm = $true; nommoff = $true }
-    @{ ctx = 229376; np = 4; mm = $true; nommoff = $true }
+    @{ ctx = 237568; np = 3; mm = $true }
+    @{ ctx = 229376; np = 3; mm = $true }
+    @{ ctx = 221184; np = 3; mm = $true }
+    @{ ctx = 212992; np = 3; mm = $true }
+    @{ ctx = 245760; np = 3; mm = $true; ub = 256 }
+    @{ ctx = 237568; np = 3; mm = $true; ub = 256 }
 )
 
 New-Item -ItemType Directory -Force -Path $Thu | Out-Null
@@ -72,6 +74,7 @@ Ghi "=== MA TRAN G1 === $($DsCauHinh.Count) cau hinh"
 foreach ($ch in $DsCauHinh) {
     $nhan = "ctx$($ch.ctx)_np$($ch.np)_mm$(if($ch.mm){'1'}else{'0'})"
     if ($ch.nommoff) { $nhan += '_nooff' }
+    if ($ch.ub) { $nhan += "_ub$($ch.ub)" }
     DonDep
     $truoc = Vram38
     Ghi "---- $nhan | VRAM truoc = $truoc MiB"
@@ -87,6 +90,10 @@ foreach ($ch in $DsCauHinh) {
     # nam o RAM chu thay vi VRAM. Doi lai: ma hoa anh cham hon. Day la nut
     # co san cua llama.cpp, khong phai thu ta tu che.
     if ($ch.nommoff) { $a += @('--no-mmproj-offload') }
+    # `-ub` (micro-batch) quyet dinh co BO DEM TINH TOAN. Ha no la cach
+    # cuoi cung con lai de lay VRAM ma khong dong vao ngu canh, so slot hay
+    # vision. Doi lai: prefill cham hon, nen G1 phai ghi lai prompt tok/s.
+    if ($ch.ub) { $a += @('-ub', "$($ch.ub)", '-b', "$($ch.ub)") }
 
     $env:CUDA_VISIBLE_DEVICES = $Uuid38
     $t0 = Get-Date

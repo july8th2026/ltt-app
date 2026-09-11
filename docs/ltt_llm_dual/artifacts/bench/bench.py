@@ -423,13 +423,19 @@ def so_metrics(base):
 
 # ---------------------------------------------------------------- bai do
 def bai_c4(args, ghi):
-    """C4: bon luot text dong thoi. Do THONG LUONG TONG, khong phai toc do mot luot.
+    """Cn: `--luong` luot text dong thoi. Do THONG LUONG TONG, khong phai mot luot.
 
     Con so dang ke la `tok_s_tong` = tong token ra / wall cua CA CUM. Toc do
-    tung luot o C4 bao gio cung thap hon C1 -- do la ky vong, khong phai loi.
+    tung luot bao gio cung thap hon C1 -- do la ky vong, khong phai loi.
+
+    !! So luong KHONG con ghim cung 4. Chot L-14 (12/09) ha ca hai model xuong
+       3 slot, va mot phep do ban 4 luot vao server 3 slot thi luot thu tu nam
+       trong hang doi cua llama.cpp chu khong trong slot -- van ra mot con so,
+       nhung la con so cua mot thu khac. Dat `--luong` bang `-np` cua server.
     """
     cho_ranh(args.base)
-    kq = [None] * 4
+    so = int(getattr(args, "luong", 0) or 4)
+    kq = [None] * so
     lay = LayMau(args.uuid)
     lay.start()
 
@@ -441,7 +447,7 @@ def bai_c4(args, ghi):
         except Exception as e:  # noqa: BLE001
             kq[i] = {"loi": repr(e)}
 
-    ts = [threading.Thread(target=mot, args=(i,)) for i in range(4)]
+    ts = [threading.Thread(target=mot, args=(i,)) for i in range(so)]
     t_bd = time.time()
     for t in ts:
         t.start()
@@ -456,7 +462,7 @@ def bai_c4(args, ghi):
     rec = {
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"), "kich_ban": "c4",
         "model": args.model, "uuid": args.uuid, "sha_gguf": SHA_GGUF_QWEN38,
-        "so_luong": 4, "so_thanh_cong": len(ok),
+        "so_luong": so, "so_thanh_cong": len(ok),
         "wall_s": wall, "tong_token_ra": tong_ra,
         "tok_s_tong": round(tong_ra / wall, 3) if wall else None,
         "tung_luot": [
@@ -583,6 +589,54 @@ def bai_whale(args, ghi):
     return rec
 
 
+KHUON_DAU = "DAU-%d-%03d"
+
+
+def phan_tich_dau(text, dau):
+    """Doc mot tra loi cua `mtp_gate` va noi no co dau hieu lan slot khong.
+
+    Ham THUAN (khong mang, khong trang thai) de `tests/test_1211` goi thang.
+
+    !! DINH NGHIA HEP CO CHU DICH. Ban dau cua ham nay coi **moi** chuoi bat dau
+    bang "DAU-" khac dau cua chinh minh la lan slot. Chay that 200 luot (12/09)
+    thi no bao hai vu -- va ca hai deu GIA:
+
+        luot DAU-1-040 -> thay "DAU-1-0"
+        luot DAU-2-047 -> thay "DAU-2"
+
+    Ca hai la MANH VO tien to cua chinh dau no (model xuong dong hay chen dinh
+    dang giua chuoi), va ca hai luot deu doc lai dung dau minh. Khong co mot
+    byte nao cua slot khac.
+
+    Lan slot THAT phai la mot dau DUNG KHUON `DAU-<slot>-<ba chu so>` va thuoc
+    ve mot **slot khac**. Do la dieu #27572 mo ta, va la dieu cong nay do.
+
+    Manh vo van duoc TRA VE rieng chu khong bi vut: no khong lam truot cong,
+    nhung no la du lieu -- thu hep mot phep kiem cho toi khi no xanh thi de,
+    thu hep cho no do dung thu no tuyen bo moi la viec phai lam.
+    """
+    ra = {"rong": not (text or "").strip(), "co_dau_minh": dau in (text or ""),
+          "dau_slot_khac": [], "manh_vo": []}
+    for tho in (text or "").replace("\n", " ").split():
+        x = tho.strip(".,;:!?\"'()[]{}*`<>")
+        if not x.startswith("DAU-") or x == dau:
+            continue
+        phan = x.split("-")
+        dung_khuon = (len(phan) == 3 and phan[1].isdigit()
+                      and len(phan[2]) == 3 and phan[2].isdigit())
+        if dung_khuon:
+            ra["dau_slot_khac"].append(x)
+        elif dau.startswith(x):
+            ra["manh_vo"].append(x)
+        else:
+            # Khong dung khuon VA khong phai tien to cua dau minh: khong ket
+            # luan duoc gi, nhung cung khong duoc im lang nuot di.
+            ra["manh_vo"].append(x)
+    ra["dau_slot_khac"] = sorted(set(ra["dau_slot_khac"]))
+    ra["manh_vo"] = sorted(set(ra["manh_vo"]))
+    return ra
+
+
 # Dai hon mot ubatch mac dinh (512) de ep prefill chia nhieu lo -- cho ma hai
 # bao cao cong dong (#27572, #26750) noi draft-mtp lan slot voi -np > 1.
 _MTP_NHOI = 900
@@ -607,7 +661,7 @@ def bai_mtp_gate(args, ghi):
     """
     cho_ranh(args.base)
     m_truoc = so_metrics(args.base)
-    luong = 4
+    luong = int(getattr(args, "luong", 0) or 4)
     moi_luong = (args.lan_gate + luong - 1) // luong
     ket = []
     khoa = threading.Lock()
@@ -615,7 +669,7 @@ def bai_mtp_gate(args, ghi):
 
     def mot_luong(slot):
         for n in range(moi_luong):
-            dau = "DAU-%d-%03d" % (slot, n)
+            dau = KHUON_DAU % (slot, n)
             nhoi = sinh_prompt(_MTP_NHOI) if (n % 3 == 0) else sinh_prompt(40)
             chu = ("Doc lai CHINH XAC chuoi dinh danh sau, mot minh no, khong them gi khac: "
                    "%s (ngu canh bo qua: %s)" % (dau, nhoi))
@@ -625,15 +679,10 @@ def bai_mtp_gate(args, ghi):
             try:
                 r = chat_mot_cuc(args.base, args.model, noi, 200, temperature=0.2, timeout=300.0)
                 text = (r["noi_dung"] or "") + " " + (r["reasoning"] or "")
-                la = [x.strip(".,;:!?\"'()[]") for x in text.split() if x.startswith("DAU-")]
-                ban_ghi = {
-                    "slot": slot, "n": n, "dau": dau, "co_anh": deo_anh,
-                    "rong": not text.strip(),
-                    "co_dau_minh": dau in text,
-                    "dau_nguoi_khac": sorted({d for d in la if d != dau}),
-                    "token_vao": (r["usage"] or {}).get("prompt_tokens"),
-                    "token_ra": (r["usage"] or {}).get("completion_tokens"),
-                }
+                ban_ghi = dict(phan_tich_dau(text, dau),
+                               slot=slot, n=n, dau=dau, co_anh=deo_anh,
+                               token_vao=(r["usage"] or {}).get("prompt_tokens"),
+                               token_ra=(r["usage"] or {}).get("completion_tokens"))
             except Exception as e:  # noqa: BLE001
                 ban_ghi = {"slot": slot, "n": n, "dau": dau, "loi": repr(e)}
             with khoa:
@@ -654,7 +703,8 @@ def bai_mtp_gate(args, ghi):
 
     rong = [r for r in ket if r.get("rong")]
     thieu_dau = [r for r in ket if not r.get("loi") and not r.get("co_dau_minh")]
-    lan_slot = [r for r in ket if r.get("dau_nguoi_khac")]
+    lan_slot = [r for r in ket if r.get("dau_slot_khac")]
+    manh_vo = [r for r in ket if r.get("manh_vo")]
     loi = [r for r in ket if r.get("loi")]
     dat = (not rong) and (not lan_slot) and (not loi) and spec_sau > spec_truoc
 
@@ -663,7 +713,7 @@ def bai_mtp_gate(args, ghi):
         "model": args.model, "uuid": args.uuid, "so_luot": len(ket), "so_luong": luong,
         "wall_s": wall,
         "so_rong": len(rong), "so_thieu_dau_minh": len(thieu_dau),
-        "so_lan_slot": len(lan_slot), "so_loi": len(loi),
+        "so_lan_slot": len(lan_slot), "so_manh_vo": len(manh_vo), "so_loi": len(loi),
         "spec_accepted_truoc": spec_truoc, "spec_accepted_sau": spec_sau,
         "ten_metric_spec": sorted(ten_spec),
         "DAT": dat,
@@ -672,6 +722,9 @@ def bai_mtp_gate(args, ghi):
         # engine. Thu lam truot cong la LAN SLOT va TRA LOI RONG -- dung hai
         # dau hieu ma #27572 mo ta.
         "vi_du_lan_slot": lan_slot[:5], "vi_du_rong": rong[:5], "vi_du_loi": loi[:3],
+        # Manh vo KHONG lam truot cong (xem `phan_tich_dau`), nhung van in ra:
+        # mot con so bi giau di la mot con so khong ai kiem lai duoc.
+        "vi_du_manh_vo": manh_vo[:5],
     }
     ghi(rec)
     return rec
@@ -712,6 +765,8 @@ def main():
                     help="tong so luot cua kich ban mtp_gate (chia deu 4 luong)")
     ap.add_argument("--gate-anh", dest="gate_anh", action="store_true",
                     help="mtp_gate deo them anh vao 1/5 so luot (can ho so co mmproj)")
+    ap.add_argument("--luong", type=int, default=4,
+                    help="so luong dong thoi cua mtp_gate (mac dinh 4; dat bang -np cua server)")
     args = ap.parse_args()
     args.base = "http://127.0.0.1:%d" % args.cong
 

@@ -261,7 +261,11 @@ def tinh(su_dung: SuDung, model: str) -> ChiPhi:   # model BẮT BUỘC — khô
 
 ### Task 2.6: Số theo model trong `ngan_sach.py`  `[MACHINE A]`
 
-**Files:** Modify `apps/ltt_llm/ngan_sach.py` (`CUA_SO_THEO_MODEL = {"qwen38-api": 262_144, "qwen35-api": 262_144}`; `CUA_SO_MODEL = CUA_SO_THEO_MODEL["qwen38-api"]`; xoá `CUA_SO_MODEL_VISION`; `SO_SLOT_MAY_B = 4`; `POOL_KV = dict(CUA_SO_THEO_MODEL)`; `NGUONG_WHALE = {"qwen38-api": 16_384, "qwen35-api": 32_768}`; trần vào/ra/công bố dẫn xuất **theo model** bằng cùng công thức), `apps/ltt_llm/executor.py` (`context_output_cap` theo model), `tests/test_334_ngan_sach_ltt_llm.py` (đối chiếu `-c`, `-np`, `-kvu`, `--mmproj`, UUID theo hồ sơ).
+⭐ **SỐ ĐÃ ĐO VÀ ĐÃ CHỐT (L-14, 2026-09-12)** — thay các số giả định dưới đây:
+`qwen38-api` **221_184**, `-np` **3**, mmproj **trên GPU**, `-ub` mặc định. Đo: VRAM 24.131 MiB, `Shared` 568 (không tràn), biên 445 MiB — `docs/ltt_llm_dual/10_BENCHMARK_P3.md` §G1b. `qwen35-api` **chưa đo** (cổng G3 của Task 3.2) ⇒ Task 2.6 chỉ được chạy **sau** G3.
+⛔ `SO_SLOT_MAY_B = 3`, **không phải 4**: 262.144 × 4 tràn ~400 MiB sang RAM chủ. Mọi chỗ plan/spec viết "C4" đọc lại là **C3 cho LTT-3.8**.
+
+**Files:** Modify `apps/ltt_llm/ngan_sach.py` (`CUA_SO_THEO_MODEL = {"qwen38-api": 221_184, "qwen35-api": 262_144}`; `CUA_SO_MODEL = CUA_SO_THEO_MODEL["qwen38-api"]`; xoá `CUA_SO_MODEL_VISION`; `SO_SLOT_MAY_B = 3`; `POOL_KV = dict(CUA_SO_THEO_MODEL)`; `NGUONG_WHALE = {"qwen38-api": 16_384, "qwen35-api": 32_768}`; trần vào/ra/công bố dẫn xuất **theo model** bằng cùng công thức), `apps/ltt_llm/executor.py` (`context_output_cap` theo model), `tests/test_334_ngan_sach_ltt_llm.py` (đối chiếu `-c`, `-np`, `-kvu`, `--mmproj`, UUID theo hồ sơ).
 
 - [ ] **Step 1:** test_334 mở rộng ⇒ FAIL (yaml chưa đổi — sẽ xanh ở Task 3.3; đánh dấu `xfail(strict=True, reason="cho Task 3.3")` cho riêng phần yaml). **Step 2–4:** sửa → PASS phần số. **Step 5:** Commit.
 
@@ -294,6 +298,13 @@ Chạy llama-server **cổng thử 8290/8291** (không đụng llama-swap), khi 
 ### Task 3.3: `llama-swap.yaml` hai model  `[MACHINE B] [3090] [5060]`
 
 **Files:** Modify `llm_gateway/deploy/llama-swap.yaml`; `tests/test_334_ngan_sach_ltt_llm.py` (bỏ `xfail`), `tests/test_1200_ghim_gpu_may_b.py`.
+
+⭐ **L-14 (2026-09-12) đổi macro `CHUNG`:** `-np 3 -kvu -c 221184` cho LTT-3.8, **không phải**
+`-np 4 -c 262144` như khối YAML mẫu dưới đây (viết trước khi đo). 262.144 × 4 tràn ~400 MiB
+sang RAM chủ; 221.184 × 3 + mmproj trên GPU là mốc cao nhất còn sạch — `10_BENCHMARK_P3.md` §G1b.
+⛔ `CHUNG` **không còn dùng chung được** `-c`/`-np` cho cả hai model: LTT-3.5 nằm trên card 16 GB
+   và số của nó do cổng G3 quyết. Tách `-c`/`-np` xuống từng hồ sơ, chỉ để cờ thật sự chung
+   (`--jinja --reasoning-format deepseek -fa 1 -ngl 999 --metrics -kvu`) trong macro.
 
 Khối `models` + `groups` + `hooks` (giữ nguyên macro `BIN`, `MODELS`, `CHUNG` bỏ `--parallel 1`):
 

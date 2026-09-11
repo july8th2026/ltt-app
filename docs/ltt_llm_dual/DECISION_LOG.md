@@ -241,3 +241,42 @@ tính cả chi phí nạp lại.
 ## ✅ DECISION LOCK — Spec 1 (2026-09-11)
 D01 B · D02 C · D03 đầy đủ/dự phòng C · D04 B · D05 A · D06 B · D07 A · D08 A-rút-gọn · D09 C · L-1…L-12 · TD-D1…TD-D11.
 Không còn quyết định người dùng mở cho Spec 1. Tiếp theo: viết spec → chủ dự án duyệt.
+
+---
+
+## ✅ L-14 — Cấu hình engine LTT-3.8 (chủ dự án, 2026-09-12)
+
+**Bối cảnh.** L-13 (11/09) nói: *"vram 3090 chỉ sử dụng cho AI model… cho qwen sử dụng
+trần tối đa… nếu 262k đạt đủ GB với card không vượt trần 24gb thì không cần hạ số token
+xuống."* Điều kiện *"nếu"* đã được đo ở cổng G1 (`10_BENCHMARK_P3.md`) và **không thoả**:
+262.144 × 4 slot tràn ~400 MiB sang RAM chủ ngay cả khi bỏ mmproj khỏi GPU.
+
+**Chủ dự án quyết** (hai lượt): giữ **mmproj trên GPU**, **tối đa 3 slot** (bỏ mục tiêu
+C4), và **hạ ngữ cảnh xuống cho phù hợp**.
+
+⚠️ Lượt quyết đầu chọn *262.144 + mmproj trên GPU* — hai thứ **không cùng vừa card**
+(đo được ~25,2 GB). Đã báo lại kèm số; lượt thứ hai chốt "hạ token, giữ 3 slot".
+
+**Chốt:** `-c 221184 -np 3`, mmproj trên GPU, `-ub` mặc định. VRAM 24.131 MiB,
+`Shared` 568 (trong dải sàn ⇒ **không tràn**), biên **445 MiB**.
+Đây là mốc cao nhất còn sạch ở `-ub` mặc định; 229.376 đã vượt sàn ~140 MiB.
+
+**Consequences:**
+1. **C4 → C3 cho CẢ HAI model.** `SO_SLOT` = 3 (Task 2.6), `-np 3` trong
+   `llama-swap.yaml` (Task 3.3). Mọi chỗ spec/plan viết "C4" đọc lại là **C3**.
+
+   ⚠️ Với LTT-3.5 đây là lựa chọn, **không** phải giới hạn phần cứng: cổng G3 (12/09)
+   đo được 262.144 × **4** slot vừa thoải mái trên 5060 Ti — VRAM 13.423 MiB, biên
+   **2.888 MiB**, không tràn. Chủ dự án chọn 3 **cho nhất quán hai card** (12/09:
+   *"cứ để 3 cho nhất quán 2 card"*). Ghi lại vì đây là chỗ dễ hiểu nhầm về sau:
+   muốn nâng 3.5 lên 4 slot thì **chỉ cần đổi một con số**, không phải mua thêm gì —
+   `admission_theo_model` khai số suất theo từng model nên hai card không buộc bằng nhau.
+2. Ngân sách KV `POOL_38` = 221.184 (thay 204.800). Trần vào public là số **dẫn xuất**
+   (cửa sổ − token ra tối đa − lề ước), không phải con số chọn tay — `ngan_sach.py` tự tính.
+3. **Ràng buộc cứng cho P5:** biên 445 MiB là biên lúc ComfyUI chưa nạp ngữ cảnh CUDA.
+   ComfyUI ấm giữ 223,5 MiB và `/free` **không** nhả ⇒ trọng tài residency (Task 5.4)
+   phải **dừng hẳn dịch vụ LTTComfyUI** trong cửa sổ LLM, không chỉ gọi `/free`.
+4. `qwen38-vision` biến mất: một hồ sơ text+vision duy nhất ⇒ hết nguồn `ConnectionReset`
+   do llama-swap đổi hồ sơ giữa chừng.
+5. **Còn mở, không chặn:** `-ub 256` cho thêm 16.384 token với biên tương đương, đổi lại
+   prefill chậm hơn — chưa đo. Đưa vào G4; đổi chác chưa có giá thì chưa chốt.
