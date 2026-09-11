@@ -11600,6 +11600,9 @@ msgstr "The engine has a 131K context window; the public API caps input at 96,25
 msgid "Quyền giữ slot thực thi tạm thời; chỉ giữ định danh vận hành để chẩn đoán và tự thu hồi tiến trình đã chết."
 msgstr "Temporary execution-slot ownership; only operational identifiers are retained for diagnosis and automatic recovery from dead processes."
 
+msgid "Phòng chờ của cửa tương tác tới model nhà và sổ từng lượt: chờ bao lâu, vì sao, ngân sách token đặt chỗ. Không chứa nội dung hội thoại."
+msgstr "Waiting room for the interactive door to the in-house model, plus a per-request ledger: how long each request waited, why, and the token budget it reserved. Holds no conversation content."
+
 msgid "Không thể xác định kết quả từ nhà cung cấp; hệ thống đã dừng tự thử lại."
 msgstr "The provider result could not be determined; automatic retries have been stopped."
 
