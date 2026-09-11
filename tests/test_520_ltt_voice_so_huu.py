@@ -469,6 +469,109 @@ def test_bao_tri_dung_giong_rieng_ton_trong_tran(khach, monkeypatch):
         f"dung {len(goi)} tep cho {so_giong} giong dang thieu — tran khong duoc tuan thu")
 
 
+# ── Task 11, carried item (c) — giọng `dung_chung=True` NHƯNG license CHƯA
+#    "ok" phải VẪN được bước RIÊNG này dựng lại, không bị loại vì mang cờ
+#    `dung_chung`. Xem chú thích ở `nghe_thu._dung_giong_rieng_con_thieu`. ────
+
+def test_bao_tri_dung_giong_rieng_GOM_dung_chung_CHUA_du_dieu_kien(khach, monkeypatch):
+    """🔴 MỆNH ĐỀ TRUNG TÂM. Trước fix: SQL lọc thẳng `dung_chung.is_(False)`,
+    nên một giọng đã `dung_chung=True` (đưa vào diện xét kho chung) nhưng
+    `license_status` CHƯA `"ok"` (đang chờ soát — `tach_rieng_chung` xếp nó
+    vào `rieng=`, xem `test_528`) bị loại khỏi bước dựng lại RIÊNG này. Vì
+    bước ③ (`_dung_kho_chung_con_thieu`, qua `_dieu_kien_kho_chung`) cũng
+    không bao giờ dựng cho nó (license chưa "ok"), giọng đó KHÔNG BAO GIỜ có
+    ai dựng lại bản nghe thử — mất vĩnh viễn sau lượt `dung_lai_cho_giong`
+    đầu tiên (đổi làn)."""
+    client, uid = khach
+    from apps.ltt_voice import nghe_thu, tham_chieu
+    from apps.ltt_voice.tables import VoiceProfile
+    import platform_core.db as dbmod
+
+    # Giọng CỦA CHÍNH KHÁCH, dung_chung=True nhung license CHUA "ok" — dung
+    # chinh SimpleNamespace/ORM that de dam bao khop dung schema.
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        h = VoiceProfile(owner_id=str(uid), ten_hien_thi="Giong cho soat",
+                         ngon_ngu="vi", ngon_ngu_nguon="khai_bao",
+                         trang_thai="active", dung_chung=True,
+                         license_status="cho_soat")
+        db.add(h)
+        db.commit()
+        pid = h.public_id
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    # Đối chứng: hàm xét điều kiện kho chung THẬT phải nói `False` cho hồ sơ
+    # này — nếu không, cả bài kiểm mất ý nghĩa (nó sẽ đi qua đúng đường của
+    # kho chung THẬT thay vì đường đang được sửa).
+    ho_so = _ho_so_theo_pid(pid)
+    assert not tham_chieu.du_dieu_kien_kho_chung(ho_so), (
+        "tien de sai: ho so nay phai CHUA du dieu kien kho chung that")
+
+    _them_bieu_dien_gia(uid, pid)
+
+    goi = []
+    monkeypatch.setattr(nghe_thu, "dung",
+                        lambda khoa, **kw: (goi.append((khoa, kw)), True)[1])
+
+    nghe_thu._dung_giong_rieng_con_thieu()
+
+    khoa = nghe_thu.khoa_rieng(uid, pid)
+    da_goi = dict(goi)
+    assert khoa in da_goi, (
+        "giong dung_chung=True nhung license CHUA 'ok' phai VAN duoc dung "
+        "lai qua ban RIENG — no khong du dieu kien kho chung that")
+    assert da_goi[khoa].get("ngon_ngu") == "vi"
+
+
+def test_bao_tri_dung_giong_rieng_BO_QUA_dung_chung_DA_du_dieu_kien(khach, monkeypatch):
+    """Đối chứng cho phép kiểm trên: một giọng dung_chung=True VÀ license đã
+    "ok" (đủ điều kiện kho chung thật) phải BỊ BỎ QUA ở bước này — đó là việc
+    của bước ③ (`_dung_kho_chung_con_thieu`), dựng nhầm ở đây tốn GPU cho một
+    luồng đã có bước riêng lo."""
+    client, uid = khach
+    from apps.ltt_voice import nghe_thu, tham_chieu
+    from apps.ltt_voice.tables import VoiceProfile
+    import platform_core.db as dbmod
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        h = VoiceProfile(owner_id=str(uid), ten_hien_thi="Giong kho chung ok",
+                         ngon_ngu="vi", ngon_ngu_nguon="khai_bao",
+                         trang_thai="active", dung_chung=True,
+                         license_status="ok")
+        db.add(h)
+        db.commit()
+        pid = h.public_id
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    ho_so = _ho_so_theo_pid(pid)
+    assert tham_chieu.du_dieu_kien_kho_chung(ho_so), (
+        "tien de sai: ho so nay phai DU dieu kien kho chung that")
+
+    _them_bieu_dien_gia(uid, pid)
+
+    goi = []
+    monkeypatch.setattr(nghe_thu, "dung",
+                        lambda khoa, **kw: (goi.append(khoa), True)[1])
+
+    nghe_thu._dung_giong_rieng_con_thieu()
+
+    khoa = nghe_thu.khoa_rieng(uid, pid)
+    assert khoa not in goi, (
+        "giong DA du dieu kien kho chung that khong duoc dung o buoc RIENG "
+        "— do la viec cua buoc ba (_dung_kho_chung_con_thieu)")
+
+
 # ── ⑥ THU HỒI + WORKER — Task 6 (T-07, T-14, INV-THU-HOI-1) ──────────────────
 #
 # ⛔ `test_thu_hoi_xoa_CA_TIEN_TO_giu_ho_so` của brief gốc (task-6-brief.md)

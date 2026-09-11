@@ -426,7 +426,6 @@
    */
   var auNgheThu = null;
   var nutDangPhat = null;    /* nut dang tai HOAC dang phat */
-  var ngheLoiHen = null;     /* timer tu xoa dau hieu loi */
   var vungBaoNghe = null;    /* vung aria-live dung chung, tao mot lan */
 
   function xoaTrangThaiNghe(nut) {
@@ -457,9 +456,21 @@
    *    (JS khong di qua `_()`, xem quy uoc i18n cua app).
    *
    * ⛔ KHONG dong vao `aria-label` GOC cua nut (`test_500` chot no) va KHONG
-   *    dung `alert`. `title` la phu, khong thay the ten doc duoc. */
-  function baoNgheLoi() {
-    var nut = nutDangPhat;
+   *    dung `alert`. `title` la phu, khong thay the ten doc duoc.
+   *
+   * 🔴 TIMER TREN CHINH NUT LOI, KHONG PHAI MOT BIEN GLOBAL DUNG CHUNG (Task
+   *    11, hang muc mang theo). Ban truoc giu MOT `ngheLoiHen` global va
+   *    `baoNgheLoi()` luon doc `nutDangPhat` global — hai nut loi gan nhau se
+   *    GIANH timer cua nhau: `clearTimeout(ngheLoiHen)` cua nut B se huy mat
+   *    timer dang cho don sach dau hieu loi cua nut A, va nut A ket lai trong
+   *    trang thai "loi" mai mai (khong con timer nao don no nua).
+   *
+   * ⭐ Nhan THAM SO `nutLoi` khi noi goi biet chinh xac nut nao vua loi (xem
+   *    `.catch(...)` o cho goi phat), va roi ve `nutDangPhat` khi khong —
+   *    dung cho su kien `error` cua chinh `auNgheThu` (mot Audio dung chung
+   *    cho moi nut, nen `nutDangPhat` luc do dung la nut dang phat). */
+  function baoNgheLoi(nutLoi) {
+    var nut = nutLoi || nutDangPhat;
     dungNgheThu();
     if (!nut) return;
     var chu = nut.dataset.nhanLoi || "";
@@ -473,10 +484,11 @@
       document.body.appendChild(vungBaoNghe);
     }
     vungBaoNghe.textContent = chu;
-    if (ngheLoiHen) clearTimeout(ngheLoiHen);
-    ngheLoiHen = setTimeout(function () {
+    if (nut._ngheLoiHen) clearTimeout(nut._ngheLoiHen);
+    nut._ngheLoiHen = setTimeout(function () {
       nut.classList.remove("nghe-loi");
       nut.removeAttribute("title");
+      nut._ngheLoiHen = null;
     }, 2500);
   }
 
@@ -509,12 +521,17 @@
                 nutDangPhat.classList.add("dang-phat");
               }
             });
-            /* Tep 404 hay giai ma hong deu vao day. */
-            auNgheThu.addEventListener("error", baoNgheLoi);
+            /* Tep 404 hay giai ma hong deu vao day. `error` cua DOM khong
+               mang nut loi trong tham so cua no (no mang mot Event) — bo qua
+               tham so ay va de `baoNgheLoi()` roi ve `nutDangPhat`, dung cho
+               truong hop nay vi chi co MOT `auNgheThu` dung chung. */
+            auNgheThu.addEventListener("error", function () { baoNgheLoi(); });
           }
 
-          /* Bam bat ky nut nao cung xoa dau hieu loi con dong lai. */
-          if (ngheLoiHen) { clearTimeout(ngheLoiHen); ngheLoiHen = null; }
+          /* Bam bat ky nut nao cung xoa dau hieu loi con dong lai CUA CHINH
+             no — timer nam tren `nut`, khong con la mot bien global dung
+             chung nen khong dung cham gi toi nut khac dang tu don no. */
+          if (nut._ngheLoiHen) { clearTimeout(nut._ngheLoiHen); nut._ngheLoiHen = null; }
           nut.classList.remove("nghe-loi");
           nut.removeAttribute("title");
 
@@ -531,7 +548,10 @@
           nut.classList.add("dang-tai");
           nut.setAttribute("aria-pressed", "true");
           var hua = auNgheThu.play();
-          if (hua && hua.catch) hua.catch(baoNgheLoi);
+          /* Truyen dung `nut` cua CHINH luot bam nay — pass THAM SO, khong
+             doc lai bien global `nutDangPhat` luc `.catch` chay (no co the da
+             doi neu khach bam nut khac rat nhanh). */
+          if (hua && hua.catch) hua.catch(function () { baoNgheLoi(nut); });
         });
       })(ds[i]);
     }
@@ -1229,6 +1249,55 @@
 
     var oUocDai = document.getElementById("lv-uoc-dai");
 
+    /* Muc dang duoc chon trong bo chon giong (hoac null neu khong the nao
+     * dang checked).
+     *
+     * ⛔ Doc `data-lan` cua chinh the dang `checked`, khong doc mot bien nho
+     *    dau do. Bien nho la thu lech duoc voi DOM; the dang checked thi
+     *    khong — no LA cau tra loi. */
+    function theDangChon() {
+      var i = document.querySelector('.lv-chon-ds input[name="giong"]:checked');
+      return i ? i.closest(".lv-chon-muc") : null;
+    }
+
+    /* ── MOT CHO DUY NHAT QUYET DINH NUT `Tao tieng noi` BAT HAY TAT ─────────
+     *
+     * 🔴 VI SAO GOP, va vi sao bang mot LY DO chu khong mot boolean.
+     *
+     *    Ban cu chi co mot dieu kien (`vuot` tran ky tu) va no ghi thang
+     *    `nutTao.disabled = vuot`. Them dieu kien thu hai o mot cho khac la
+     *    tao ra hai chu so huu cho cung mot thuoc tinh: cai nay bat, cai kia
+     *    tat, va thang thua la cai chay sau. Do la mot lop loi khong bao gio
+     *    lo ra trong mot lan bam thu.
+     *
+     * ⛔ Va mot nut bi TAT phai noi VI SAO. Mot nut xam khong ly do la mot ngo
+     *    cut: khach khong biet minh thieu gi nen ho bam lai, roi bo. Nen ham
+     *    nay tra ve mot CAU, khong tra ve `true`/`false` — kieu du lieu ay ep
+     *    moi dieu kien moi phai mang theo loi giai thich cua no.
+     *
+     * ⚠️ CHI thieu van ban / chua chon giong — KHONG co nhanh lech lan
+     *    (D002: Studio khong chan o day; cong chan THAT van la may chu, xem
+     *    `lan_ngon_ngu.quyet_dinh`). Mot chot trinh duyet dua tren mot dieu
+     *    kien may chu chua thuc thi la mot loi hua co the sai. */
+    function lyDoChan() {
+      var n = demKyTu(oText.value);
+      var tran = cfg.tranKyTu || 0;
+      if (n === 0) return chu.chuaCoChu || "";
+      if (tran > 0 && n > tran) return chu.daiQuaTran || "";
+      if (!theDangChon()) return chu.chuaChonGiong || "";
+      return "";
+    }
+
+    function capNhatNutTao() {
+      var ly = lyDoChan();
+      if (nutTao) nutTao.disabled = !!ly;
+      var o = document.getElementById("lv-chan-ly-do");
+      if (o) {
+        o.textContent = ly;
+        o.hidden = !ly;
+      }
+    }
+
     function dem() {
       var n = demKyTu(oText.value);
       oSo.textContent = String(n);
@@ -1251,7 +1320,7 @@
             .replace("{d}", soViet(n - tran));
         }
       }
-      if (nutTao) nutTao.disabled = vuot;
+      capNhatNutTao();
       if (oUocDong) oUocDong.hidden = n === 0;
       /* ⭐ MOT CONG THUC, DUNG MOT LAN, CHO CA THOI LUONG LAN CREDIT.
        *
@@ -1562,6 +1631,23 @@
 
     form.addEventListener("submit", function (e) {
       e.preventDefault();
+      /* 🔴 CHOT CUOI TRUOC KHI CHAM MANG.
+       *
+       *    Nut da bi tat khi co ly do chan, nen dong nay trong nhu thua. No
+       *    khong thua: mot form van submit duoc bang phim Enter trong o van
+       *    ban, va mot nut `disabled` van bam duoc sau khi ai do go thuoc
+       *    tinh trong DevTools. Kiem lai ngay truoc `fetch` bien "nut xam"
+       *    thanh mot BAT BIEN thay vi mot loi de nghi.
+       *
+       * ⛔ `return` TRUOC `hien("chay")`: doi lai thi giao dien nhay sang
+       *    trang thai "dang chay" cho mot job khong bao gio duoc gui — mot
+       *    spinner vo han. */
+      var ly = lyDoChan();
+      if (ly) {
+        capNhatNutTao();
+        baoLoi(ly);
+        return;
+      }
       if (dongHo) clearTimeout(dongHo);
       nutTao.disabled = true;
       hien("chay");
@@ -1630,40 +1716,73 @@
     var locVung = "";
     var locPhongCach = "";
 
+    /* Dong trang thai cua bo chon: dang hien lan nao, va co bao nhieu giong bi
+     * giu lai vi chua khai ngon ngu.
+     *
+     * ⭐ La nua con lai cua quyet dinh an the chua khai lan (xem `locChon`). An
+     *    ma khong noi la mot giong "bien mat"; an co noi la mot cua co bien
+     *    bao — va bien bao mang duong sua (man Giong dat duoc ngon ngu cho
+     *    tung giong).
+     *
+     * ⚠️ CHI noi khi `locLan` la "vi" hoac "en". `auto` (mac dinh Studio, D002)
+     *    khong loc gi ca, nen khong co gi de bao cao — noi "dang hien N giong
+     *    Tieng Viet" trong luc thuc ra dang hien CA HAI lan la mot cau sai. */
+    function capNhatDongLan(con, chuaRo) {
+      var o = document.getElementById("lv-chon-lan-tt");
+      if (!o) return;
+      if (locLan !== "vi" && locLan !== "en") { o.textContent = ""; return; }
+      var ten = locLan === "en" ? (chu.lanEn || "English") : (chu.lanVi || "Tieng Viet");
+      var cau = (chu.dangHienLan || "{n} giong {lan}")
+        .replace("{n}", String(con)).replace("{lan}", ten);
+      if (chuaRo > 0) {
+        cau += " · " + (chu.anChuaRo || "{n} giong chua khai ngon ngu")
+          .replace("{n}", String(chuaRo));
+      }
+      o.textContent = cau;
+    }
+
     function locChon() {
       var q = ((oTimChon && oTimChon.value) || "").trim().toLowerCase();
       var con = 0;
+      var chuaRo = 0;
       for (var i = 0; i < dsMuc.length; i++) {
         var m = dsMuc[i], d = m.dataset;
-        // Muc mac dinh (data-loai rong) LUON hien: no la loi thoat khi bo loc
-        // khong con gi, va la thu khach chon neu ho khong muon nghi.
-        /* ⛔ Muc chua dat lan (`data-lan` rong) KHONG bi loc bo. `ngon_ngu`
-         *    tung la mot cot khong noi nao doc, nen du lieu cu hoan toan co the
-         *    trong — an chung di la khach mat giong cua chinh minh ma khong
-         *    hieu vi sao. Chua biet lan thi hien o moi lan. */
-        /* ⛔ Muc chua khai GIOI (`data-gioi` rong) cung KHONG bi loc bo —
-         *    cung quy uoc voi `data-lan` ngay tren, va cung mot ly do: cot
-         *    `gioi` chi co tu 07/09/2026 nen moi giong nhan ban tao TRUOC do
-         *    deu rong. An chung di la khach mat giong cua chinh minh ngay lan
-         *    dau ho bam mot bo loc.
+        // Muc mac dinh (data-loai rong) LUON hien VA mien tru ca bo loc lan:
+        // no khong mang `data-lan` (khong go cung "vi" o khuon mau — the
+        // hien mot preset THAT nhung khong co `g` nao gan voi no), nen bat no
+        // phai khop lan se AN no moi khi khach loc theo mot lan cu the — dung
+        // luc no can duoc thay nhat, vi no la loi thoat khi bo loc con lai
+        // rong.
+        /* ⛔ Muc chua khai GIOI (`data-gioi` rong) KHONG bi loc bo — cung quy
+         *    uoc voi cac truc con lai: an thu minh khong phan loai duoc la
+         *    lam khach mat giong cua chinh ho.
          *
-         * ⚠️ Man Giong lam KHAC (an, roi DEM so the bi an) — xem chu thich o
-         *    `_voice_chon.html`. Khac nhau la co chu y, khong phai lech. */
+         * ⚠️ Man Giong lam KHAC voi LAN (an, roi DEM so the bi an) — xem chu
+         *    thich o `_voice_chon.html`. Khac nhau la co chu y, khong phai
+         *    lech: `gioi`/`vung`/`phong_cach` chi SAP XEP, con LAN quyet dinh
+         *    CHAT LUONG dau ra — cho mot giong khong ro ngon ngu troi vao mot
+         *    lan cu the la dua no vao luong production nhu mot giong hop le. */
+        var lanHop = !locLan || d.lan === locLan;
         var hop = d.loai === ""
-          || ((!locLoai || d.loai === locLoai)
-              && (!locLan || !d.lan || d.lan === locLan)
+          || (lanHop
+              && (!locLoai || d.loai === locLoai)
               && (!locGioi || !d.gioi || d.gioi === locGioi)
               /* Vung + phong cach: CHI giong mau co hai truong nay, nen the
-                 khong khai thi KHONG bi an — cung quy uoc voi `gioi`/`lan`
-                 ngay tren, va cung ly do (an thu minh khong phan loai duoc la
-                 lam khach mat giong cua chinh ho). */
+                 khong khai thi KHONG bi an — cung quy uoc voi `gioi` ngay
+                 tren, va cung ly do (an thu minh khong phan loai duoc la lam
+                 khach mat giong cua chinh ho). */
               && (!locVung || !d.vung || d.vung === locVung)
               && (!locPhongCach || !d.phongcach || d.phongcach === locPhongCach)
               && (!q || (d.ten || "").toLowerCase().indexOf(q) >= 0));
         m.hidden = !hop;
         if (hop && d.loai !== "") con++;
+        /* Dem RIENG cac the bi an CHI vi chua khai lan. Khong gop vao `con`:
+           chung khong chon duoc, nen dem chung nhu giong dung duoc la noi doi
+           dong trang thai ngay duoi. */
+        if (!hop && locLan && !d.lan && d.loai !== "") chuaRo++;
       }
       if (oChonRong) oChonRong.hidden = con !== 0;
+      capNhatDongLan(con, chuaRo);
     }
 
     var nutChonLoai = document.querySelectorAll("[data-chon-loai]");
@@ -1676,16 +1795,11 @@
         });
       })(nutChonLoai[i]);
     }
-    var nutChonLan = document.querySelectorAll("[data-chon-lan]");
-    for (var j = 0; j < nutChonLan.length; j++) {
-      (function (nut) {
-        nut.addEventListener("click", function () {
-          locLan = nut.dataset.chonLan || "";
-          batNut(nut);
-          locChon();
-        });
-      })(nutChonLan[j]);
-    }
+    /* ⛔ Hang nut `[data-chon-lan]` DA GO khoi `_voice_chon.html` (Task 11,
+     *    D002 UI). Lan nay do o `Ngon ngu` o Studio dieu khien — mot khai
+     *    niem, mot nut. Xem khoi chu thich o `_voice_chon.html` de biet vi
+     *    sao hai dieu khien cho cung mot khai niem la mot loi chu khong phai
+     *    mot tien nghi. */
     var nutChonGioi = document.querySelectorAll("[data-chon-gioi]");
     for (var k = 0; k < nutChonGioi.length; k++) {
       (function (nut) {
@@ -1734,22 +1848,82 @@
       })(nutTocDo[k]);
     }
 
-    /* ── Ngon ngu van ban (Tu dong / VI / EN) ──────────────────────────────
-       KHONG phai tham so cua engine — VieNeu song ngu va tu xu ly. No dieu
-       khien phep DOI CHIEU lan giong (`lan_ngon_ngu.doi_chieu`): khach khai
-       thi may het phai doan, va canh bao "van ban lech lan cua giong" thoi im
-       lang o dung ca no hay im nhat — mot cau tieng Anh NGAN doc bang giong
-       Viet. */
+    /* ── Ngon ngu kich ban (Tu dong / VI / EN) — dieu khien bo loc lan (D002) ─
+       KHONG phai tham so cua engine — VieNeu song ngu va tu xu ly. Tu Task 11
+       (D002 UI) o nay LA dieu khien LAN DUY NHAT cua bo chon giong: bam VI/EN
+       loc danh sach giong ngay xuong, va doi lan tu bo chon mot giong lech
+       lan (`doiLanChon` duoi day). `auto` (mac dinh Studio) khong loc gi —
+       hien MOI giong kem huy hieu lan tren the. */
     var oNgonNgu = document.getElementById("lv-ngon-ngu");
     var nutNgonNgu = document.querySelectorAll("[data-ngonngu]");
+
+    /* Doi ngon ngu -> giong dang chon co the khong con hop le nua.
+     *
+     * 🔴 Hai hanh vi co the co khi doi lan ma giong dang chon lech lan moi, va
+     *    day chon "XOA LUA CHON" chu khong "tu chon giong mac dinh cua lan
+     *    moi": lan `en` KHONG CO giong mac dinh chinh thuc (ca hai muoi preset
+     *    la giong Viet), nen "mac dinh" cho tieng Anh se phai BOC mot giong
+     *    bat ky trong kho chung — tuc chon bua ho khach. Xoa lua chon, keo bo
+     *    chon ve dau, va noi ra; khach bam mot cai, may khong doan gi.
+     *
+     * ⛔ Muc mac dinh (`data-loai` rong) MIEN TRU — cung ly do voi `locChon`:
+     *    no khong mang `data-lan` that (khong go cung "vi"), nen bat no phai
+     *    khop lan se lam no bi BO CHON oan moi khi khach chuyen sang VI/EN,
+     *    dung luc no la giong hop le nhat (giong mac dinh cua engine). */
+    function doiLanChon() {
+      var m = theDangChon();
+      if (!m || m.dataset.loai === "") return;
+      var lan = m.dataset.lan || "";
+      if (!locLan || lan === locLan) return;
+      var i = m.querySelector('input[name="giong"]');
+      if (i) i.checked = false;
+      var o = document.getElementById("lv-chon-lan-bo");
+      if (o) {
+        o.textContent = (chu.daBoGiong || "").replace("{ten}", m.dataset.ten || "");
+        o.hidden = false;
+      }
+      capNhatNutTao();
+    }
+
     for (var kn = 0; kn < nutNgonNgu.length; kn++) {
       (function (nut) {
         nut.addEventListener("click", function () {
-          if (oNgonNgu) oNgonNgu.value = nut.dataset.ngonngu || "auto";
+          var lanKhaiDi = nut.dataset.ngonngu || "auto";
+          if (oNgonNgu) oNgonNgu.value = lanKhaiDi;
           batNut(nut);
+          /* ⭐ MOT cu bam, HAI he qua — va thu tu giua chung quan trong: loc
+           *    TRUOC roi moi xet lai lua chon. Nguoc lai thi `doiLanChon` se
+           *    doc mot danh sach chua kip doi va bo nham mot giong dang hop
+           *    le. `v`: "vi"/"en" thi giu nguyen, "auto" (hoac gia tri la) thi
+           *    ve "" — locLan chi bao gio la "", "vi" hoac "en". */
+          var v = (lanKhaiDi === "vi" || lanKhaiDi === "en") ? lanKhaiDi : "";
+          locLan = v;
+          locChon();
+          doiLanChon();
         });
       })(nutNgonNgu[kn]);
     }
+
+    /* Ap bo loc NGAY LUC NAP, khong doi cu bam dau tien — mot bat bien chi
+     * dung sau mot thao tac cua nguoi dung thi khong phai mot bat bien. */
+    (function () {
+      var vKhoiDong = (oNgonNgu && oNgonNgu.value) || "";
+      locLan = (vKhoiDong === "vi" || vKhoiDong === "en") ? vKhoiDong : "";
+    })();
+    locChon();
+
+    /* Chon mot giong khac -> trang thai nut Tao co the doi (vd tu "chua chon
+     * giong" sang bat). `change` noi tren radiogroup bat duoc moi muc ma
+     * khong phai gan hai muoi lang nghe rieng. */
+    var dsChonGiong = document.querySelector(".lv-chon-ds");
+    if (dsChonGiong) {
+      dsChonGiong.addEventListener("change", function () {
+        var o = document.getElementById("lv-chon-lan-bo");
+        if (o) o.hidden = true;
+        capNhatNutTao();
+      });
+    }
+    capNhatNutTao();
 
     /* ── Dinh dang tai ve (WAV / MP3) ──────────────────────────────────────
        KHONG doi luot sinh — cong giong luon tra WAV. No doi nut tai CHINH o

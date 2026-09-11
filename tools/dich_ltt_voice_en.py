@@ -384,6 +384,22 @@ DICH = {
         "downloaded, whether it has been deleted. Holds no text or files — "
         "just two timestamps. Deleting an item removes the FILE per the "
         "job's lifecycle; this row only records that the customer deleted it.",
+
+    # _voice_chon.html / ltt_voice_studio.html — D002 UI (RC1 Task 11)
+    "Kho chung": "Shared library",
+    "Chưa rõ ngôn ngữ": "Language unknown",
+    "Lọc thêm": "More filters",
+    "Đang hiện {n} giọng {lan}": "Showing {n} {lan} voices",
+    "{n} giọng chưa khai ngôn ngữ, tạm ẩn": "{n} voices with no declared "
+    "language, hidden for now",
+    "Đã bỏ chọn “{ten}” vì giọng đó thuộc ngôn ngữ khác. Hãy chọn một giọng "
+    "trong danh sách.":
+        "Deselected “{ten}” because that voice is a different language. "
+        "Pick a voice from the list.",
+    "Hãy nhập nội dung cần đọc.": "Enter the text you want read aloud.",
+    "Văn bản đang dài quá giới hạn một lượt đọc.":
+        "The text is longer than the limit for a single read.",
+    "Hãy chọn một giọng đọc.": "Pick a voice.",
 }
 
 

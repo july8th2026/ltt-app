@@ -2683,7 +2683,10 @@ button.lv-the-song.dang-phat .lv-nghe-dau::before{width:4px;height:14px;
    nut Tao tieng noi xuong duoi man hinh.
    Danh sach van cuon (22 giong, noi dung 1150px) — thu ngan cua so nhin, khong
    bo bot giong nao. */
-.lv-studio .lv-chon-ds{max-height:150px}
+/* 150px -> 240px (Task 11, D002 UI): gap `Vung mien` + `Phong cach`
+   vao `<details>` (`.lv-loc-them`) tra lai cho danh sach giong. */
+.lv-studio .lv-chon-ds{max-height:240px}
+.lv-studio .lv-st-trai{padding-bottom:64px}
 /* DANH SO 1..N CHO COT TRAI.
    Anh tham chieu danh so tung muc, va do khong phai trang tri: no bien mot
    chong the roi thanh mot QUY TRINH doc duoc bang mat — chon giong, roi ngon
@@ -2968,6 +2971,31 @@ button.lv-the-song.dang-phat .lv-nghe-dau::before{width:4px;height:14px;
 .lv-chon-muc .lv-ma-chep{padding:1px 4px;font-size:11px}
 
 .lv-chon-rong{margin:8px 0 0;color:var(--dim);font-size:11.5px;text-align:center}
+/* ── Lan ngon ngu trong bo chon giong (Task 11, D002 UI) ──────────
+   `lv-lan` la NHAN tren tung the; `lv-lan-mo` la bien the cho the chua khai.
+
+   ⛔ Khac biet giua hai cai KHONG chi bang mau: `lv-lan-mo` co vien dut. Mot
+      dau hieu chi bang mau la mot dau hieu khach mu mau khong doc duoc, va o
+      day thu bi phan biet la "giong nay an toan de dung" — dung loai thong tin
+      khong duoc phep phu thuoc vao mot kenh duy nhat. */
+.lv-lan{display:inline-block;padding:0 5px;border-radius:4px;font-size:10.5px;
+  font-weight:600;letter-spacing:.02em;background:var(--panel2);
+  border:1px solid var(--line2);color:var(--fg2)}
+.lv-lan-mo{border-style:dashed;color:var(--dim)}
+.lv-chon-lan-tt{margin:6px 0 0;color:var(--dim);font-size:11.5px}
+.lv-chon-lan-bo{margin:6px 0 0;padding:6px 8px;border-radius:6px;font-size:11.5px;
+  background:var(--brand-soft);border:1px solid var(--brand-border)}
+/* Ly do nut Tao dang tat. Cung o duoi nut, khong phai mot toast bay qua. */
+.lv-chan-ly-do{margin:0;color:var(--dim);font-size:11.5px;text-align:center}
+/* `Loc them` — hai truc thu hep, gap lai de tra cho chieu cao cho danh sach. */
+.lv-loc-them>summary{cursor:pointer;font-size:11.5px;color:var(--dim);
+  padding:2px 0;list-style:none}
+.lv-loc-them>summary::-webkit-details-marker{display:none}
+.lv-loc-them>summary::before{content:"▸ ";display:inline-block}
+.lv-loc-them[open]>summary::before{content:"▾ "}
+.lv-loc-them>summary:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
+.lv-loc-them[open]>summary{margin-bottom:6px}
+.lv-loc-them .lv-loc-nhom+.lv-loc-nhom{margin-top:6px}
 
 /* == NGHE THU: loi phat (nghe-loi) ==========================================
  *
@@ -3460,3 +3488,9 @@ button.lv-the-song.nghe-loi,.lv-chon-nghe.nghe-loi{
   .asv-dau{flex-direction:column}
   .asv-buoc li{grid-template-columns:1fr auto}
 }
+/* Dat ngon ngu cho mot giong CU chua khai lan (D004). Chi hien tren the
+   nao thieu lan, nen no khong duoc chiem cho o the binh thuong. */
+.lv-the-lan{margin:8px 0 0;padding:8px;border-radius:var(--radius-sm);
+  border:1px dashed var(--line2);background:var(--panel2)}
+.lv-the-lan .dim{margin:0 0 6px;font-size:11.5px}
+.lv-the-lan-nut{display:flex;gap:6px;flex-wrap:wrap}

@@ -15261,3 +15261,35 @@ msgstr "The text changed — needs regenerating."
 #: apps/ltt_voice
 msgid "Không phát được bản nghe thử"
 msgstr "Could not play the preview"
+
+#: apps/ltt_voice
+msgid "Kho chung"
+msgstr "Shared library"
+
+#: apps/ltt_voice
+msgid "Chưa rõ ngôn ngữ"
+msgstr "Language unknown"
+
+#: apps/ltt_voice
+msgid "Lọc thêm"
+msgstr "More filters"
+
+#: apps/ltt_voice
+msgid "Đang hiện {n} giọng {lan}"
+msgstr "Showing {n} {lan} voices"
+
+#: apps/ltt_voice
+msgid "{n} giọng chưa khai ngôn ngữ, tạm ẩn"
+msgstr "{n} voices with no declared language, hidden for now"
+
+#: apps/ltt_voice
+msgid "Đã bỏ chọn “{ten}” vì giọng đó thuộc ngôn ngữ khác. Hãy chọn một giọng trong danh sách."
+msgstr "Deselected “{ten}” because that voice is a different language. Pick a voice from the list."
+
+#: apps/ltt_voice
+msgid "Hãy nhập nội dung cần đọc."
+msgstr "Enter the text you want read aloud."
+
+#: apps/ltt_voice
+msgid "Văn bản đang dài quá giới hạn một lượt đọc."
+msgstr "The text is longer than the limit for a single read."

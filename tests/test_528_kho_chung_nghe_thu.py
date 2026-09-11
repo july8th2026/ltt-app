@@ -148,6 +148,12 @@ def _ds_mot_giong_chung() -> list:
 # ── PULLED IN item 5 (fix round 1/5) — dung_chung=True nhưng license CHƯA
 #    "ok" phải rơi về `rieng=`, không phải `chung=` (nơi nó không bao giờ có
 #    preview thật). Xem `tham_chieu.tach_rieng_chung`. ───────────────────────
+#
+# ── Task 11, carried item (a) — CÒN THIẾU `trang_thai == "active"`. Một giọng
+#    dung_chung=True + license "ok" nhưng chủ vừa TẮT (`disabled`/`revoked`)
+#    vẫn lọt vào `chung=` ở bản trước, trỏ tới một `khoa_chung` mà cổng đọc
+#    (`_p_audio._giong_chung_dang_hop_le`, đòi `trang_thai == "active"`) SẼ
+#    404 — nút nghe thử bấm được mà luôn hỏng. ────────────────────────────────
 
 def test_tach_rieng_chung_dung_chung_CHUA_license_ok_ROI_VE_rieng():
     """Phép kiểm THUẦN (không CSDL/HTTP) cho chính hàm tách."""
@@ -155,16 +161,23 @@ def test_tach_rieng_chung_dung_chung_CHUA_license_ok_ROI_VE_rieng():
 
     from apps.ltt_voice import tham_chieu
     da = SimpleNamespace(public_id="vc_a", dung_chung=True,
-                         license_status="cho_soat")
+                         license_status="cho_soat", trang_thai="active")
     db_ = SimpleNamespace(public_id="vc_b", dung_chung=True,
-                          license_status="ok")
+                          license_status="ok", trang_thai="active")
     dc = SimpleNamespace(public_id="vc_c", dung_chung=False,
-                         license_status="")
+                         license_status="", trang_thai="active")
     dd = SimpleNamespace(public_id="vc_d", dung_chung=True,
-                         license_status="tu_choi")
-    rieng, chung = tham_chieu.tach_rieng_chung([da, db_, dc, dd])
-    assert sorted(rieng) == ["vc_a", "vc_c", "vc_d"], (
-        "dung_chung=True nhung license CHUA/KHONG 'ok' phai roi ve rieng=")
+                         license_status="tu_choi", trang_thai="active")
+    # dung_chung=True + license "ok" NHƯNG giọng đã bị TẮT — phải rơi về
+    # rieng=, không phải chung= (xem docstring `tach_rieng_chung`).
+    de = SimpleNamespace(public_id="vc_e", dung_chung=True,
+                         license_status="ok", trang_thai="disabled")
+    df = SimpleNamespace(public_id="vc_f", dung_chung=True,
+                         license_status="ok", trang_thai="revoked")
+    rieng, chung = tham_chieu.tach_rieng_chung([da, db_, dc, dd, de, df])
+    assert sorted(rieng) == ["vc_a", "vc_c", "vc_d", "vc_e", "vc_f"], (
+        "dung_chung=True nhung license CHUA/KHONG 'ok' HOAC trang_thai KHAC "
+        "'active' deu phai roi ve rieng=")
     assert chung == ["vc_b"]
 
 
@@ -208,6 +221,52 @@ def test_owner_giong_dung_chung_CHUA_license_ok_VAN_co_nut_nghe_thu(khach):
     assert khoa_rieng_ in m.group(1), (
         "phai tro toi ban nghe thu RIENG (enrol-time), khong phai khoa_chung "
         "— khoa_chung cua giong nay se khong bao gio duoc dung")
+
+
+def test_owner_TAT_giong_dung_chung_license_ok_KHONG_con_tro_khoa_chung(khach):
+    """🔴 Đầu-cuối cho carried item (a): một giọng kho chung ĐỦ điều kiện thật
+    (`dung_chung=True` + `license_status="ok"`) nhưng chủ vừa TẮT
+    (`POST /giong/{id}/tat` -> `trang_thai="disabled"`) không còn được đếm là
+    `chung=` — nếu nó vẫn còn hiện nút nghe thử trên trang của chủ (qua bản
+    RIÊNG dựng lúc ghi danh), nút đó phải KHÔNG trỏ tới `khoa_chung` (cổng đọc
+    `_p_audio._giong_chung_dang_hop_le` đòi `trang_thai == "active"`, nên một
+    khoá `khoa_chung` cho giọng đã tắt luôn 404)."""
+    client, uid = khach
+    from apps.ltt_voice import nghe_thu
+    from platform_core.storage import get_storage
+
+    pid = _tao_giong_chung(owner_id=uid, ngon_ngu="vi")  # dung_chung=True, "ok"
+    khoa_chung_ = nghe_thu.khoa_chung(pid)
+    get_storage().put(khoa_chung_, io.BytesIO(_wav()), content_type="audio/wav")
+    khoa_rieng_ = nghe_thu.khoa_rieng(uid, pid)
+    get_storage().put(khoa_rieng_, io.BytesIO(_wav()), content_type="audio/wav")
+
+    r = client.post(f"/ltt-voice/giong/{pid}/tat",
+                    data={"csrf_token": _csrf(client)})
+    assert r.status_code in (200, 303), r.text
+
+    trang = client.get("/ltt-voice/giong").text
+    m = re.search(rf'data-nghe="([^"]*{pid}[^"]*)"', trang)
+    if m:
+        assert khoa_chung_ not in m.group(1), (
+            "giong da TAT khong duoc tro toi khoa_chung — cong doc se 404 no")
+
+    # Đối chứng độc lập với phần dựng UI: chính hàm tách phải nói `rieng`.
+    import platform_core.db as dbmod
+    from apps.ltt_voice import tham_chieu
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        ho_so = tham_chieu.tim_profile(db, pid, owner_id=uid, cho_dung_chung=True)
+        assert ho_so is not None
+        rieng, chung = tham_chieu.tach_rieng_chung([ho_so])
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+    assert chung == [], "giong da tat khong duoc o lai chung="
+    assert rieng == [pid]
 
 
 # ── T-08/T-09: preview kho chung ─────────────────────────────────────────────
@@ -299,9 +358,18 @@ def test_cong_doc_TU_CHOI_khi_license_HA_du_tep_VAN_CON(khach):
 def test_cong_doc_TU_CHOI_sau_khi_thu_hoi(khach):
     """Cùng cổng, đường vào KHÁC (thu hồi thay vì hạ license) — chốt rằng
     cổng đọc tự nó đã đủ để chặn, không phụ thuộc riêng vào việc fix round
-    1/5 có xoá tệp kịp hay không."""
+    1/5 có xoá tệp kịp hay không.
+
+    🔴 Task 11, carried item (b) — MẠNH THÊM: sau khi thu hồi, GHI TỆP TRỞ LẠI
+       đúng khoá rồi kiểm lại. Bản trước chỉ kiểm 404 khi tệp đã bị round-1/5
+       xoá theo — nên nếu round-1/5 có một lỗ (không xoá kịp, hoặc một đường
+       ghi khác tình cờ tạo lại tệp), phép kiểm này vẫn xanh mà không hề chạm
+       tới cổng đọc CSDL thật. Ghi tệp trở lại buộc 404 phải đến từ cổng đọc
+       (`_giong_chung_dang_hop_le` tra CSDL), không phải từ sự vắng mặt của
+       tệp trên kho."""
     client, uid = khach
     from apps.ltt_voice import nghe_thu
+    from platform_core.storage import get_storage
 
     pid = _tao_giong_chung(owner_id=uid, ngon_ngu="en")
     _dat_preview_chung(pid)
@@ -313,14 +381,38 @@ def test_cong_doc_TU_CHOI_sau_khi_thu_hoi(khach):
     assert r.status_code in (200, 303), r.text
     assert client.get(f"/ltt-voice/audio/{khoa}").status_code == 404
 
+    # Ghi tệp TRỞ LẠI đúng khoá đó — mô phỏng ca tệp vẫn còn (hoặc bị tạo lại)
+    # trên kho. Cổng đọc phải VẪN từ chối, vì nó tra CSDL chứ không chỉ tra
+    # sự tồn tại của tệp.
+    get_storage().put(khoa, io.BytesIO(_wav()), content_type="audio/wav")
+    assert get_storage().exists(khoa), "chua ghi lai duoc tep de kiem cong doc"
+    assert client.get(f"/ltt-voice/audio/{khoa}").status_code == 404, (
+        "giong da thu hoi ma tep ton tai tro lai van khong duoc phat — cong "
+        "doc phai tu CSDL, khong duoc suy tu su ton tai cua tep")
+
 
 def test_cong_doc_TU_CHOI_khoa_khong_dung_hinh_dang(khach):
     """Một khoá mang tiền tố `voice/chung/` nhưng KHÔNG đúng khuôn 4 đoạn của
     `nghe_thu.khoa_chung` (`voice/chung/{public_id}/{PHIEN_BAN}.wav`) phải bị
-    từ chối thẳng — không được ĐOÁN `public_id` từ một chuỗi sai khuôn."""
+    từ chối thẳng — không được ĐOÁN `public_id` từ một chuỗi sai khuôn.
+
+    🔴 Task 11, carried item (b) — MẠNH THÊM: PUT một tệp THẬT vào đúng một
+       khoá sai khuôn rồi kiểm lại vẫn 404. Bản trước không đặt tệp nào —
+       nên "404" của nó có thể chỉ là hệ quả của việc tệp không tồn tại
+       (hành vi mặc định của mọi khoá không có gì trên kho), không chứng
+       minh được cổng đọc THỰC SỰ soi hình dạng khoá trước khi đọc."""
     client, uid = khach
+    from platform_core.storage import get_storage
+
+    khoa_that_sai_khuon = "voice/chung/a/b/c.wav"     # 3 doan, thieu 1
+    get_storage().put(khoa_that_sai_khuon, io.BytesIO(_wav()),
+                      content_type="audio/wav")
+    assert get_storage().exists(khoa_that_sai_khuon), (
+        "chua ghi duoc tep that de kiem cong doc")
+
     for khoa_la in (
-        "voice/chung/khong-du-doan.wav",             # 3 doan, thieu 1
+        khoa_that_sai_khuon,                          # 3 doan, THAT SU CO TEP
+        "voice/chung/khong-du-doan.wav",              # 3 doan, thieu 1
         "voice/chung/ma-lam/them/mot/doan/x.wav",     # qua 4 doan
         "voice/chung//x.wav",                          # public_id RONG
     ):

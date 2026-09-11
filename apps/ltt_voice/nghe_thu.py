@@ -612,11 +612,28 @@ def _dung_giong_rieng_con_thieu() -> None:
        (có thể vừa đổi) — bước này là bước DUY NHẤT biết một giọng vừa đổi
        làn.
 
-    ⛔ CHỈ giọng CỦA CHÍNH KHÁCH (`dung_chung=False`) và ĐANG `active`. Giọng
-       kho chung (`dung_chung=True`) CỐ Ý bị loại: dựng nghe thử cho kho
-       chung theo làn là phạm vi của một tính năng CHƯA MỞ (kho chung nhiều
-       khách dùng — không phải việc của D004); dựng nhầm ở đây tiêu GPU cho
-       một luồng chưa ai gọi tới.
+    ⛔ GIỌNG ĐANG `active`. Giọng kho chung ĐÃ ĐỦ ĐIỀU KIỆN kho chung THẬT SỰ
+       (`tham_chieu.du_dieu_kien_kho_chung` — `dung_chung=True` VÀ
+       `license_status` "ok") bị loại: dựng nghe thử cho kho chung theo làn là
+       phạm vi của bước ③ (`_dung_kho_chung_con_thieu`), không phải việc của
+       bước này; dựng nhầm ở đây tiêu GPU cho một luồng đã có bước riêng lo.
+
+    🔴 FIX (Task 11, carried item (c)) — TRƯỚC ĐÂY lọc thẳng bằng SQL
+       `dung_chung.is_(False)`, LOẠI CẢ một giọng CỦA CHỦ đã `dung_chung=True`
+       (đưa vào diện xét kho chung) nhưng `license_status` CHƯA `"ok"` (đang
+       chờ `tools/soat_giong.py` soát xuất xứ). Giọng đó KHÔNG đủ điều kiện
+       kho chung thật (`du_dieu_kien_kho_chung` trả `False`), nên bước ③ không
+       bao giờ dựng `khoa_chung` cho nó — nhưng bước NÀY cũng bỏ qua nó vì
+       `dung_chung=True`, nên `khoa_rieng` của chủ giọng (bản dựng lúc ghi
+       danh, đã bị `dung_lai_cho_giong` huỷ khi đổi làn) không bao giờ được
+       dựng lại. Kết quả: chủ một giọng đang chờ soát mất nút nghe thử VĨNH
+       VIỄN sau lượt đổi làn đầu tiên.
+
+    ⭐ SỬA: lọc theo `tham_chieu.du_dieu_kien_kho_chung` (MỘT điều kiện, dùng
+       lại — không viết một bản SQL thứ hai cho cùng câu hỏi, xem
+       `tham_chieu._dieu_kien_kho_chung`) SAU khi đọc, thay vì lọc thẳng
+       `dung_chung` trong SQL. Một hồ sơ `dung_chung=True` nhưng license CHƯA
+       "ok" giờ đi qua bước này như một giọng riêng bình thường.
 
     ⚠️ Bỏ qua giọng CHƯA CÓ biểu diễn đang dùng (`tham_chieu.tim_repr_active`
        trả `None`): không có `ref_b64` thì không dựng được gì, và một hồ sơ
@@ -642,7 +659,6 @@ def _dung_giong_rieng_con_thieu() -> None:
         ho_so_list = db.execute(
             select(VoiceProfile).where(
                 VoiceProfile.trang_thai == "active",
-                VoiceProfile.dung_chung.is_(False),
             ).order_by(VoiceProfile.tao_luc.desc())
         ).scalars().all()
 
@@ -650,6 +666,9 @@ def _dung_giong_rieng_con_thieu() -> None:
         for ho_so in ho_so_list:
             if da_dung >= TOI_DA_GIONG_RIENG_MOI_LUOT:
                 break
+            if tham_chieu.du_dieu_kien_kho_chung(ho_so):
+                # Đủ điều kiện kho chung THẬT — bước ③ lo, không phải đây.
+                continue
             khoa = khoa_rieng(str(ho_so.owner_id), str(ho_so.public_id))
             if co_san(khoa):
                 continue

@@ -197,16 +197,42 @@ def test_danh_sach_co_bo_loc_lan_va_MAC_DINH_KHONG_LOC():
         "du lieu cu co the trong — bat san la giau mat giong cua chinh khach")
 
 
-def test_muc_chua_dat_lan_KHONG_bi_loc_bo_o_giao_dien():
-    """Giọng chưa có làn phải hiện ở **mọi** làn, không bị ẩn.
+def test_muc_chua_dat_lan_bi_AN_khoi_mot_lan_NHUNG_duoc_DEM_RA():
+    """Giọng chưa khai làn: **ẩn** khỏi một làn cụ thể, và **đếm ra**.
 
-    Cùng lý do với phép kiểm trên, nhưng ở phía trình duyệt: dữ liệu cũ có thể
-    trống `ngon_ngu`, và ẩn nó đi là làm khách mất giọng của chính mình mà
-    không có lời giải thích nào.
+    🔴 PHÉP KIỂM NÀY ĐÃ ĐẢO CHIỀU (Task 11, D002 UI/65e099af), và lý do đáng
+       ghi lại.
+
+       Bản cũ chốt điều ngược hẳn — *"giọng chưa có làn phải hiện ở mọi
+       làn"* — với lý lẽ: dữ liệu cũ có thể trống `ngon_ngu`, ẩn đi là làm
+       khách mất giọng của chính mình.
+
+       Lý lẽ ấy đúng cho `gioi` / `vung` / `phong_cach`: ba trục đó chỉ **sắp
+       xếp**. Nó sai cho làn, vì làn quyết định **chất lượng đầu ra**. Cho một
+       giọng không rõ ngôn ngữ trôi vào làn `vi` là đưa nó vào luồng
+       production như một giọng `vi` hợp lệ.
+
+    ⛔ NHƯNG PHÉP KIỂM MỚI KHÔNG CHỈ CHỐT VẾ "ẨN", và đó là chỗ nó mạnh hơn bản
+       cũ chứ không phải dễ hơn. Chốt mỗi "ẩn" thì một bản vá tương lai xoá
+       luôn phần đếm vẫn xanh — và khi ấy giọng biến mất **im lặng**, tức nỗi
+       lo của bản cũ thành sự thật. Hai vế phải cùng có mặt:
+
+         · `lanHop` — ẩn khỏi làn không khớp;
+         · `chuaRo` + `capNhatDongLan` — đếm và nói ra, kèm đường sửa.
+
+    ⚠️ Đây là phép kiểm TĨNH trên một tệp JS (pytest không chạy được trình
+       duyệt). Hành vi thật được chốt trên Chrome khi kiểm GUI thủ công; ở
+       đây chỉ giữ cho hai cơ chế ấy không bị gỡ mất một vế.
     """
     js = (GOC / "server" / "static" / "voice.js").read_text(encoding="utf-8")
-    assert "!d.lan || d.lan === locLan" in js, (
-        "bo loc lan trong voice.js phai cho qua muc co `data-lan` rong")
+    assert "!d.lan || d.lan === locLan" not in js, (
+        "bo loc lan KHONG duoc cho qua muc `data-lan` rong nua — xem docstring")
+    assert "var lanHop = !locLan || d.lan === locLan;" in js, (
+        "thieu ve AN: muc chua khai lan phai bi loc khoi mot lan cu the")
+    for manh in ("chuaRo", "capNhatDongLan"):
+        assert manh in js, (
+            f"thieu ve DEM RA (`{manh}`): an ma khong noi la giong bien mat "
+            "im lang — dung noi lo ma ban cu cua phep kiem nay neu ra")
 
 
 def test_moi_man_dung_bo_chon_deu_truyen_nhan_lan():

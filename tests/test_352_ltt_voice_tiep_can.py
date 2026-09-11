@@ -470,11 +470,40 @@ def test_bon_nhan_deu_CO_BAN_DICH_trong_catalog():
 CHON_TP = GOC / "apps" / "ltt_voice" / "templates" / "_voice_chon.html"
 
 
-def test_du_NAM_truc_loc():
+def test_du_cac_truc_loc_va_LAN_do_bo_chon_ngon_ngu_dieu_khien():
+    """Bộ chọn giọng có đủ trục lọc; LÀN do ô Ngôn ngữ điều khiển.
+
+    🔴 ĐỔI CHIỀU 11/09/2026 (Task 11, D002 UI), và là bản viết lại MẠNH HƠN
+       chứ không nới lỏng.
+
+       Bản cũ đòi năm nút lọc, gồm `data-chon-lan`. Nhưng có HAI điều khiển
+       cho cùng một khái niệm "ngôn ngữ" — ô `Ngôn ngữ` (làn của kịch bản) và
+       hàng `data-chon-lan` (làn của giọng) — mà không gì nối chúng: khách
+       đặt `Tiếng Việt` ở ô kia vẫn thấy đủ giọng tiếng Anh ở đây.
+
+    ⇒ Hàng `data-chon-lan` đã gỡ; làn nay do ô `Ngôn ngữ` (`data-ngonngu` ở
+      Studio) lọc, qua biến `locLan` trong `voice.js`. Phép kiểm mới chốt CẢ
+      HAI mệnh đề đó — nên nó bắt được cả việc gỡ nhầm bộ lọc lẫn việc bỏ quên
+      đường nối từ ô ngôn ngữ tới `locLan`.
+    """
     s = CHON_TP.read_text(encoding="utf-8")
-    for truc in ("data-chon-loai", "data-chon-gioi", "data-chon-lan",
+    for truc in ("data-chon-loai", "data-chon-gioi",
                  "data-chon-vung", "data-chon-phongcach"):
         assert truc in s, f"thieu truc loc `{truc}`"
+    # Làn KHÔNG còn là một nút lọc trong bộ chọn.
+    assert "data-chon-lan" not in s, (
+        "hang loc lan cu phai bi go — lan nay do o Ngon ngu dieu khien (D002)")
+    # Ô Ngôn ngữ ở Studio là điều khiển làn.
+    studio = (MAU / "ltt_voice_studio.html").read_text(encoding="utf-8")
+    assert "data-ngonngu" in studio, "thieu o Ngon ngu o Studio"
+    # D002: vẫn giữ "Tự động" trong bộ ba lựa chọn của ô ấy (khác 65e099af,
+    # nơi PA gỡ hẳn `auto`) — chốt trên SOURCE nên đọc đúng cặp `("auto", ...)`
+    # thay vì giá trị đã dựng, giá trị dựng được chốt riêng ở test HTTP dưới.
+    assert '("auto",' in studio, "D002 giu 'Tu dong' o Studio"
+    # Và nó thật sự lái bộ lọc: `voice.js` gán `locLan` từ ô ngôn ngữ.
+    js = JS.read_text(encoding="utf-8")
+    assert "locLan = v" in js and 'getElementById("lv-ngon-ngu")' in js, (
+        "voice.js phai lai locLan tu o Ngon ngu, khong con nut data-chon-lan")
 
 
 def test_the_giong_mau_MANG_du_lieu_vung_va_phong_cach():
@@ -502,3 +531,26 @@ def test_the_KHONG_khai_vung_thi_KHONG_bi_an():
               "!d.phongcach || d.phongcach === locPhongCach"):
         assert m in js, (
             f"thieu chot `{m}` — loc theo vung se AN het giong nhan ban")
+
+
+# ── 6. D002 UI — Studio giữ "Tự động", ô Ngôn ngữ điều khiển bộ lọc ──────────
+#
+# 🔴 D002 (locked): Studio GIỮ "Tự động" (mặc định) cộng VI/EN — khác PA đã bị
+#    gỡ ở 65e099af (bỏ hẳn `auto`). Chọn VI/EN thì bộ chọn giọng lọc theo đúng
+#    làn đó; hàng nút lọc `data-chon-lan` riêng (kèm câu sai "Máy đọc được cả
+#    hai thứ tiếng…") đã bị gỡ ở 65e099af và KHÔNG được dựng lại.
+
+def test_studio_giu_TU_DONG_va_o_ngon_ngu_dieu_khien_bo_loc(khach_tc):
+    trang = khach_tc.get("/ltt-voice").text
+    assert 'data-ngonngu="auto"' in trang            # D002: vẫn có "Tự động"
+    assert "data-chon-lan" not in trang              # hàng "Mọi làn" riêng đã gỡ
+    assert "Máy đọc được cả hai thứ tiếng" not in trang
+    # ⚠️ `data-lan="vi"` THẬT xuất hiện trên thẻ giọng mẫu — dữ liệu THẬT, đọc
+    #    từ `g.ngon_ngu` (cả hai mươi preset đều là giọng Việt), không phải
+    #    điều D002 cấm. Điều cấm là GÕ TAY "vi" cho mục KHÔNG gắn với một `g`
+    #    nào (mục "Giọng mặc định") — kiểm đúng mục đó, không kiểm cả trang.
+    m = re.search(r'<label class="lv-chon-muc" data-loai=""[^>]*>', trang)
+    assert m, "khong tim thay muc Giong mac dinh"
+    assert "data-lan" not in m.group(0), (
+        "muc 'Giong mac dinh' khong duoc go tay data-lan — no khong gan voi "
+        "mot `g` nao de doc du lieu that")

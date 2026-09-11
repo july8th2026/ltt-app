@@ -76,9 +76,15 @@
 
     {# ── Cột trái: chọn giọng + đầu ra + nút tạo ─────────────────────────── #}
     <div class="lv-st-trai">
-      {% include "_voice_chon.html" %}
-
       {#
+        ⭐ NGÔN NGỮ ĐỨNG TRƯỚC BỘ CHỌN GIỌNG — đổi thứ tự 11/09/2026 (Task 11).
+
+           Nó không phải sở thích bố cục. Từ D002 UI, ô này **lọc** bộ chọn
+           ngay dưới (`voice.js::locLan`), nên đặt nó sau bộ chọn là bắt khách
+           chọn giọng từ một danh sách đầy đủ rồi mới cho họ biết danh sách ấy
+           đáng lẽ phải ngắn hơn — và giọng họ vừa chọn có thể vừa bị loại.
+           Nguyên nhân phải đứng trước hệ quả.
+
         NGÔN NGỮ — mục ② `LANGUAGE` trong ảnh 01.
 
         🔴 Ô NÀY TỪNG BỊ BỎ, và lý do bỏ đã HẾT HẠN.
@@ -118,6 +124,8 @@
         <input type="hidden" name="ngon_ngu" id="lv-ngon-ngu" value="auto">
         <small class="dim">{{ _("Chọn ngôn ngữ của văn bản. Giọng phải cùng ngôn ngữ; lượt lệch sẽ bị từ chối trước khi trừ credit.") }}</small>
       </div>
+
+      {% include "_voice_chon.html" %}
 
       {#
         TỐC ĐỘ — và đây là một điều khiển THẬT, không phải một nút giả.
@@ -217,9 +225,23 @@
 
       <div class="lv-st-nut">
         <button class="btn primary lv-st-tao" type="submit" id="lv-nut-tao"
+                aria-describedby="lv-chan-ly-do"
                 {% if not cong_san_sang %}disabled{% endif %}>
           {{ _("Tạo tiếng nói") }}
         </button>
+        {#
+          VÌ SAO NÚT ĐANG TẮT — một nút xám không lời giải thích là một ngõ
+          cụt (Task 11). Khách không biết mình thiếu gì, nên họ bấm lại vài
+          lần rồi bỏ.
+
+          ⭐ `aria-describedby` trỏ từ chính cái nút sang câu này, nên trình đọc
+             màn hình đọc "Tạo tiếng nói, đã tắt — Hãy nhập nội dung" thành
+             một mạch. Nguồn DUY NHẤT bật/tắt nút + câu lý do là
+             `voice.js::capNhatNutTao` — thiếu văn bản hoặc chưa chọn giọng,
+             KHÔNG dựa trên lệch làn (D002 không chặn ở Studio; cửa nộp thật
+             vẫn ở máy chủ).
+        #}
+        <p class="lv-chan-ly-do" id="lv-chan-ly-do" role="status" hidden></p>
         {#
           PHÁT DẦN (U-07). Nút chỉ tồn tại khi `LTT_VOICE_STREAM` bật ở
           `secrets/app.env` — cùng cờ mà sidecar đọc, nên không có trạng thái
@@ -645,7 +667,24 @@ LttVoice.studio({
     vuotTran:  {{ _("Đang thừa {d} ký tự — {n} / {t}. Bớt bớt, hoặc đưa sang Dự án để đọc theo từng khối.") | tojson }},
     nhapQuaDai: {{ _("Tệp dài {n} ký tự, vượt giới hạn {t} cho một lượt đọc. Văn bản được giữ nguyên — bạn tự cắt, hoặc đưa sang Dự án.") | tojson }},
     nhapHong:  {{ _("Không đọc được tệp này.") | tojson }},
-    loiMang:   {{ _("Không gửi được yêu cầu. Thử lại nhé.") | tojson }}
+    loiMang:   {{ _("Không gửi được yêu cầu. Thử lại nhé.") | tojson }},
+    {#
+      LÀN NGÔN NGỮ — nhóm chuỗi cho D002 UI (Task 11).
+
+      ⛔ `lanVi`/`lanEn` lấy TỪ ĐÂY chứ không gõ trong `voice.js`: tệp JS là
+         tệp tĩnh, nó không đi qua `_()`, nên một cái tên ngôn ngữ gõ thẳng ở
+         đó sẽ hiện tiếng Việt trên trang tiếng Anh — hỏng lặng lẽ, và chỉ hỏng
+         với khách xem bản dịch. Dùng lại đúng chuỗi của `NHAN_LAN`
+         (`lan_ngon_ngu.py`), không gõ một bản thứ hai.
+    #}
+    lanVi:     {{ _("Tiếng Việt") | tojson }},
+    lanEn:     {{ _("Tiếng Anh") | tojson }},
+    dangHienLan: {{ _("Đang hiện {n} giọng {lan}") | tojson }},
+    anChuaRo:  {{ _("{n} giọng chưa khai ngôn ngữ, tạm ẩn") | tojson }},
+    daBoGiong: {{ _("Đã bỏ chọn “{ten}” vì giọng đó thuộc ngôn ngữ khác. Hãy chọn một giọng trong danh sách.") | tojson }},
+    chuaCoChu: {{ _("Hãy nhập nội dung cần đọc.") | tojson }},
+    daiQuaTran: {{ _("Văn bản đang dài quá giới hạn một lượt đọc.") | tojson }},
+    chuaChonGiong: {{ _("Hãy chọn một giọng đọc.") | tojson }}
   }
 });
 </script>

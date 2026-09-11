@@ -107,10 +107,31 @@ def tach_rieng_chung(ds) -> tuple:
 
     ⭐ Điều kiện "là chung" PHẢI khớp `_dieu_kien_kho_chung()` — dùng lại
        `du_dieu_kien_kho_chung`, không viết lại một bản thứ ba.
+
+    🔴 FIX ROUND 2/5 (Task 11, carried item (a)) — CÒN THIẾU `trang_thai ==
+       "active"`. `du_dieu_kien_kho_chung` chỉ hỏi `dung_chung` + `license_
+       status`, không hỏi giọng có đang PHỤC VỤ được không. Một giọng đã
+       `dung_chung=True` + `license_status="ok"` nhưng chủ vừa TẮT nó
+       (`trang_thai="disabled"`, hoặc `"revoked"`) vẫn lọt vào `chung` — và
+       `nghe_thu.danh_sach_kho_chung`/`_giong_chung_dang_hop_le` (cổng đọc
+       thật) đều đòi `trang_thai == "active"`, nên nút nghe thử trên chính
+       trang của chủ giọng trỏ tới một khoá SẼ 404. Đo được: một khách tắt
+       giọng kho chung của mình rồi mở lại `/ltt-voice/giong` thấy nút nghe
+       thử vẫn còn — bấm vào là lỗi.
+
+    ⭐ Ép thêm `trang_thai == "active"` cho nhánh `chung`: một giọng dung_chung
+       nhưng KHÔNG active rơi về `rieng` — nếu đó là giọng của chính khách
+       đang xem trang (trường hợp DUY NHẤT `rieng` từng chứa một giọng
+       dung_chung=True, xem `nghe_thu._dung_giong_rieng_con_thieu`), họ vẫn có
+       thể còn một bản nghe thử RIÊNG (`khoa_rieng`, dựng lúc ghi danh); nếu
+       không, `duong_cho_trang` đơn giản không tìm thấy khoá nào và không
+       dựng nút — im lặng đúng cách, không phải một 404.
     """
     rieng, chung = [], []
     for g in ds:
-        (chung if du_dieu_kien_kho_chung(g) else rieng).append(g.public_id)
+        la_chung = (du_dieu_kien_kho_chung(g)
+                   and str(getattr(g, "trang_thai", "") or "") == "active")
+        (chung if la_chung else rieng).append(g.public_id)
     return rieng, chung
 
 

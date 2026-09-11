@@ -39,22 +39,33 @@
     <div class="lv-loc-nhom" role="group" aria-label="{{ _('Loại giọng') }}">
       <button type="button" class="lv-loc-nut on" aria-pressed="true" data-chon-loai="">{{ _("Tất cả") }}</button>
       <button type="button" class="lv-loc-nut" aria-pressed="false" data-chon-loai="mau">{{ _("Giọng mẫu") }}</button>
+      <button type="button" class="lv-loc-nut" aria-pressed="false" data-chon-loai="chung">{{ _("Kho chung") }}</button>
       <button type="button" class="lv-loc-nut" aria-pressed="false" data-chon-loai="toi">{{ _("Giọng của tôi") }}</button>
     </div>
     {#
-      LÀN NGÔN NGỮ — chốt 01/09/2026: kho giọng tách làn theo ngôn ngữ của clip
-      NGUỒN (kho cũ: F5-TTS train giọng Việt, XTTS train giọng Anh).
+      🔴 BỘ LỌC LÀN ĐÃ GỠ (11/09/2026, Task 11 · D002 UI), VÀ ĐÓ LÀ MỘT BẢN SỬA
+         CHỨ KHÔNG PHẢI MỘT LƯỢT CẮT.
 
-      ⭐ Đây là chỗ làn làm việc **êm** — nhưng từ Q121 (2026-09-10) nó không
-         còn là chỗ DUY NHẤT làn làm việc. Cửa nộp nay **chặn** một yêu cầu
-         lệch làn (`lan_ngon_ngu.quyet_dinh`), nên bộ lọc này là tiện lợi, không
-         phải bất biến. Đó đúng là thứ tự phải có: một cảnh báo ở trình duyệt
-         chưa bao giờ là một bất biến nghiệp vụ — nó chỉ là lời mời làm đúng.
+         Trước đây đây là một hàng ba nút `Mọi làn · Tiếng Việt · Tiếng Anh`,
+         mặc định `Mọi làn`. Hai hệ quả, cả hai đều đo được trên trình duyệt:
 
-      ⚠️ Ghi chú trong `giong_mau.py` từng nói nền tảng "không có khái niệm
-         VI/EN" và "không có giọng nào chỉ EN". Đúng khi chỉ có 20 giọng mẫu;
-         hết đúng từ khi 17 giọng nguồn tiếng Anh vào kho chung. Đã sửa tại
-         nguồn 2026-09-10.
+           ① Mặc định `Mọi làn` mời khách chọn một giọng tiếng Anh cho một kịch
+              bản tiếng Việt. Chú thích cũ ngay tại đây tự nhận bộ lọc này là
+              *"chỗ làn thật sự làm việc"* — nhưng một bộ lọc **tắt sẵn** thì
+              không làm việc gì cả.
+           ② Hai điều khiển cho một khái niệm: ô `Ngôn ngữ` ở Studio khai ngôn
+              ngữ KỊCH BẢN, hàng này lọc ngôn ngữ GIỌNG, và không gì nối chúng.
+              Khách đặt `Tiếng Việt` ở ô kia vẫn thấy đủ giọng tiếng Anh ở đây.
+
+      ⭐ Nay ô `Ngôn ngữ` ở Studio (`data-ngonngu`, dời LÊN TRÊN bộ chọn này) là
+         điều khiển DUY NHẤT, và nó lọc chính danh sách này qua `locLan` trong
+         `voice.js`. D002 (locked): Studio GIỮ "Tự động" — khác nhánh 65e099af
+         đã gỡ hẳn `auto` — nên `auto` nghĩa là hiện MỌI giọng kèm huy hiệu làn,
+         và chỉ VI/EN mới thật sự lọc. Trạng thái lọc + câu "đã bỏ chọn" nằm
+         NGAY TRÊN danh sách giọng, phía dưới khối lọc này.
+
+      ⚠️ Trang KHÔNG có ô `Ngôn ngữ` (Dự án) thì `locLan` khởi động rỗng — danh
+         sách hiện đủ như trước, không âm thầm khoá về một làn nào.
     #}
     {#
       GIỚI TÍNH — mặt lọc thứ ba, thêm 07/09/2026.
@@ -80,11 +91,6 @@
         <button type="button" class="lv-loc-nut" aria-pressed="false" data-chon-gioi="{{ k }}">{{ _(nhan) }}</button>
       {% endfor %}
     </div>
-    <div class="lv-loc-nhom" role="group" aria-label="{{ _('Làn ngôn ngữ') }}">
-      <button type="button" class="lv-loc-nut on" aria-pressed="true" data-chon-lan="">{{ _("Mọi làn") }}</button>
-      <button type="button" class="lv-loc-nut" aria-pressed="false" data-chon-lan="vi">{{ _("Tiếng Việt") }}</button>
-      <button type="button" class="lv-loc-nut" aria-pressed="false" data-chon-lan="en">{{ _("Tiếng Anh") }}</button>
-    </div>
     {#
       VÙNG + PHONG CÁCH — nốt hai trục của U-03 (thêm 09/09/2026).
 
@@ -104,19 +110,48 @@
       ⭐ Nhãn lấy từ `nhan_vung` / `nhan_phong_cach` — **cùng nguồn** với dòng
          `<small>` của thẻ. Gõ lại ở đây là tạo hai bảng nhãn sẽ lệch.
     #}
-    <div class="lv-loc-nhom" role="group" aria-label="{{ _('Vùng miền') }}">
-      <button type="button" class="lv-loc-nut on" aria-pressed="true" data-chon-vung="">{{ _("Mọi vùng") }}</button>
-      {% for k, nhan in nhan_vung.items() %}
-        <button type="button" class="lv-loc-nut" aria-pressed="false" data-chon-vung="{{ k }}">{{ _(nhan) }}</button>
-      {% endfor %}
-    </div>
-    <div class="lv-loc-nhom" role="group" aria-label="{{ _('Phong cách đọc') }}">
-      <button type="button" class="lv-loc-nut on" aria-pressed="true" data-chon-phongcach="">{{ _("Mọi phong cách") }}</button>
-      {% for k, nhan in nhan_phong_cach.items() %}
-        <button type="button" class="lv-loc-nut" aria-pressed="false" data-chon-phongcach="{{ k }}">{{ _(nhan) }}</button>
-      {% endfor %}
-    </div>
+    {#
+      VÙNG + PHONG CÁCH GẤP LẠI (11/09/2026, Task 11) — đo trên trình duyệt.
+
+      🔴 Năm hàng nút lọc chồng lên nhau, và chúng đứng **giữa** ô `Ngôn ngữ`
+         và danh sách giọng. Hộp giọng chỉ còn chỗ cho vài mục trước khi khách
+         phải cuộn, và nút `Tạo tiếng nói` bị đẩy xuống dưới mép màn hình.
+
+      ⭐ Hai trục này là trục **thu hẹp**, không phải trục **quyết định**: khách
+         mở màn để chọn một giọng, không để duyệt theo vùng miền. Ai cần thì
+         mở; ai không thì được thêm chỗ cho chính danh sách giọng.
+
+      ⛔ GẤP LẠI, KHÔNG GỠ BỎ. `<details>` không cần JS để đóng/mở.
+    #}
+    <details class="lv-loc-them">
+      <summary>{{ _("Lọc thêm") }}</summary>
+      <div class="lv-loc-nhom" role="group" aria-label="{{ _('Vùng miền') }}">
+        <button type="button" class="lv-loc-nut on" aria-pressed="true" data-chon-vung="">{{ _("Mọi vùng") }}</button>
+        {% for k, nhan in nhan_vung.items() %}
+          <button type="button" class="lv-loc-nut" aria-pressed="false" data-chon-vung="{{ k }}">{{ _(nhan) }}</button>
+        {% endfor %}
+      </div>
+      <div class="lv-loc-nhom" role="group" aria-label="{{ _('Phong cách đọc') }}">
+        <button type="button" class="lv-loc-nut on" aria-pressed="true" data-chon-phongcach="">{{ _("Mọi phong cách") }}</button>
+        {% for k, nhan in nhan_phong_cach.items() %}
+          <button type="button" class="lv-loc-nut" aria-pressed="false" data-chon-phongcach="{{ k }}">{{ _(nhan) }}</button>
+        {% endfor %}
+      </div>
+    </details>
   </div>
+
+  {#
+    TRẠNG THÁI LÀN — ngay TRÊN danh sách nó mô tả, không nằm lẫn giữa các hàng
+    nút lọc (một câu ở giữa hàng `Giới tính` và `Vùng miền` đọc như lỗi của bộ
+    lọc giới, không như hệ quả của việc đổi ngôn ngữ).
+
+    ⭐ `lv-chon-lan-tt` nói "đang hiện N giọng {lan}" + số giọng chưa khai làn
+       đang tạm ẩn (chỉ khi ô Ngôn ngữ đang ở VI/EN — `auto` không lọc nên
+       không có gì để nói). `lv-chon-lan-bo` nói khi đổi làn vừa bỏ chọn một
+       giọng lệch làn (D002: đổi làn ⇒ bỏ chọn giọng không cùng làn).
+  #}
+  <p class="lv-chon-lan-tt" id="lv-chon-lan-tt" aria-live="polite"></p>
+  <p class="lv-chon-lan-bo" id="lv-chon-lan-bo" role="status" hidden></p>
 
   <div class="lv-chon-ds" role="radiogroup" aria-label="{{ _('Chọn giọng đọc') }}">
     {# Mặc định luôn đứng đầu và luôn hiện — nó là lối thoát khi bộ lọc không
@@ -130,17 +165,49 @@
       </span>
     </label>
 
+    {#
+      🔴 HAI LOẠI GIỌNG TRONG MỘT VÒNG LẶP, và trước đây chúng đội chung một
+         cái nhãn SAI.
+
+         `cua_toi` đến từ `tham_chieu.danh_sach(..., gom_dung_chung=True)`,
+         nên nó chứa CẢ kho chung của nền tảng. Gắn `data-loai="toi"` và chip
+         *"Giọng của tôi"* cho MỌI mục — kể cả giọng nền tảng — là hứa một
+         quyền sở hữu mà hệ thống không cấp: khách đi tìm chúng ở màn Giọng để
+         sửa hay tắt, và không thấy, vì `_chi_chu_so_huu` từ chối đúng như nó
+         phải từ chối.
+
+      ⭐ `data-loai` VÀ chip đều đi theo `g.dung_chung` — MỘT nguồn, không hai
+         bảng nhãn lệch nhau. `data-loai="chung"` khớp nút lọc `Kho chung` vừa
+         thêm ở trên.
+    #}
     {% for g in cua_toi %}
-      <label class="lv-chon-muc" data-loai="toi" data-ten="{{ g.ten_hien_thi }}"
+      <label class="lv-chon-muc"
+             data-loai="{{ 'chung' if g.dung_chung else 'toi' }}"
+             data-ten="{{ g.ten_hien_thi }}"
              data-lan="{{ g.ngon_ngu or '' }}" data-gioi="{{ g.gioi or '' }}">
         <input type="radio" name="giong" value="v:{{ g.public_id }}"
                {{ 'checked' if giong_chon == g.public_id }}>
         {% include "_voice_chon_nghe.html" %}
         <span class="lv-chon-noi">
           <b>{{ g.ten_hien_thi }}</b>
-          <small><span class="chip v">{{ _("Giọng của tôi") }}</span>
+          <small>
+            {% if g.dung_chung %}
+              <span class="chip">{{ _("Kho chung") }}</span>
+            {% else %}
+              <span class="chip v">{{ _("Giọng của tôi") }}</span>
+            {% endif %}
+            {#
+              NHÃN LÀN — hiện ở MỌI thẻ, kể cả thẻ chưa khai.
+
+              ⛔ Một giọng chưa rõ ngôn ngữ hiện ra y hệt một giọng đã khai,
+                 chỉ thiếu một chữ, là thứ không ai nhìn thấy — và nó lọt vào
+                 luồng production đúng theo cách một giọng lệch làn không nên
+                 lọt.
+            #}
             {% if g.ngon_ngu in ('vi', 'en') %}
-              · {{ _(nhan_lan[g.ngon_ngu]) }}
+              · <span class="lv-lan">{{ _(nhan_lan[g.ngon_ngu]) }}</span>
+            {% else %}
+              · <span class="lv-lan lv-lan-mo">{{ _("Chưa rõ ngôn ngữ") }}</span>
             {% endif %}
           </small>
           {#
@@ -192,7 +259,19 @@
         {% with ma = g.ma %}{% include "_voice_chon_nghe.html" %}{% endwith %}
         <span class="lv-chon-noi">
           <b>{{ g.ma }}</b>
-          <small>{{ _(nhan_gioi[g.gioi]) }} · {{ _(nhan_vung[g.vung]) }} · {{ _(nhan_phong_cach[g.phong_cach]) }}</small>
+          {#
+            ⭐ Nhãn làn trên CẢ giọng mẫu, đọc từ `g.ngon_ngu` — cùng biểu thức
+               với nhánh "Giọng của tôi" ở trên, không gõ tay `nhan_lan['vi']`.
+               Một nhãn chỉ xuất hiện ở vài thẻ không đọc được như một thuộc
+               tính — nó đọc được như một sự bất thường.
+          #}
+          <small>{{ _(nhan_gioi[g.gioi]) }} · {{ _(nhan_vung[g.vung]) }} · {{ _(nhan_phong_cach[g.phong_cach]) }}
+            {% if g.ngon_ngu in ('vi', 'en') %}
+              · <span class="lv-lan">{{ _(nhan_lan[g.ngon_ngu]) }}</span>
+            {% else %}
+              · <span class="lv-lan lv-lan-mo">{{ _("Chưa rõ ngôn ngữ") }}</span>
+            {% endif %}
+          </small>
           {#
             ⛔ KHÔNG có chip mã giọng ở đây, và đó là một quyết định đã thử rồi
                gỡ (02/09/2026).
