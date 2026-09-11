@@ -15909,3 +15909,13 @@ msgstr "Amount"
 
 msgid "Chưa có việc nào được tính tiền."
 msgstr "Nothing has been charged yet."
+
+#: apps/upscalevideo/vulkan_device.py
+#, python-brace-format
+msgid "Có {n} thiết bị Vulkan cùng tên \"{ten}\" ({ds}); đặt {bien} để chỉ rõ dùng cái nào."
+msgstr "Found {n} Vulkan devices named \"{ten}\" ({ds}); set {bien} to say which one to use."
+
+#: apps/upscalevideo/vulkan_device.py
+#, python-brace-format
+msgid "Không thấy card \"{ten}\" trong danh sách thiết bị Vulkan của engine: {ds}"
+msgstr "Card \"{ten}\" is not in the engine's Vulkan device list: {ds}"

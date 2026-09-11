@@ -44,7 +44,13 @@ def _gpu_runtime(ctx) -> tuple[int | None, dict | None]:
     selected = gpu.by_uuid(gpu_uuid)
     if selected is None:
         raise RuntimeError(_t("GPU đã được cấp không còn khả dụng; vui lòng thử lại."))
-    return selected.index, process_env
+    # ⚠ `-g` của NCNN là chỉ số **Vulkan**, KHÔNG phải chỉ số nvidia-smi của lease. Hai hệ
+    # đánh số độc lập: 11/09/2026, sau khi desktop trên máy chủ này chuyển sang iGPU Intel,
+    # thứ tự Vulkan đảo thành [0]=Intel, [1]=NVIDIA — `selected.index` = 0 lúc đó trỏ thẳng
+    # vào card onboard. Dịch theo TÊN card; không dò ra thì để lỗi nổ, đừng đoán (chạy nhầm
+    # iGPU là hỏng ÂM THẦM: job vẫn "chạy", chỉ chậm thảm hoặc chết giữa chừng).
+    from apps.upscalevideo import vulkan_device
+    return vulkan_device.vulkan_index_for(selected.name), process_env
 
 
 def _handle_image(params: dict, ctx=None) -> dict:
