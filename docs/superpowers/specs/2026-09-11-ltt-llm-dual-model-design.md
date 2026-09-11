@@ -111,7 +111,7 @@ bao giờ âm thầm chạy trên `ltt-3.5` (L-2).
 ## 6. Vòng đời theo cửa
 
 Chung cho mọi cửa: kiểm `model` (đúng hai ID) → kiểm tham số + ảnh → ước token (`executor.estimate_input`, theo model)
-→ **413 trước mọi thứ khác** nếu vượt trần vào của model → kiểm số dư đủ (**402**, không giữ) → admission theo cửa → giữ
+→ **413 trước mọi thứ khác** nếu vượt trần vào của model → kiểm số dư đủ (**409 `insufficient_credit`** — mã thật của nền tảng, `public_api/errors.py`; bản đầu của spec ghi 402, sai; không giữ tiền) → admission theo cửa → giữ
 tiền **sau khi được nhận** → gọi máy B → quyết toán theo `usage` đo → nhả lease (`finally` + BackgroundTask).
 
 | Cửa | Khi hết chỗ / đang chờ residency | Nguồn |
