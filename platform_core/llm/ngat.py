@@ -121,6 +121,12 @@ def chay_canh_ngat(chay: Callable[[], Any], *,
     ⛔ Chờ luồng kết thúc chứ không bỏ mặc nó: một luồng còn sống đang cầm phiên
        CSDL và sẽ ghi vào cùng chỗ mà đường hủy sắp quyết toán. Hai bên ghi một
        lượt tiền là đúng khuôn của một sai lệch sổ sách.
+
+    ⚠️ NỢ ĐÃ BIẾT (ghi ở rà soát 1.5): `chay` mang theo `Session` của request
+       sang luồng này, và `Session` của SQLAlchemy **không** an toàn đa luồng.
+       Hiện an toàn vì luồng gọi chỉ `join` chứ không chạm `db` trong lúc chờ,
+       và đường hủy chỉ chạm sau khi `join` xong. Sửa đúng là truyền một phiên
+       RIÊNG cho lời gọi — để lượt rà cuối quyết.
     """
     nhip = NHIP_THAM_S if nhip_s is None else float(nhip_s)
     with so_dong() as ds:

@@ -380,6 +380,145 @@ def test_tran_cho_bi_kep_boi_NGAN_SACH_THOI_GIAN_cua_cua():
     assert luong.han_cho_dong_bo(ngan_sach_s=30.0, da_tieu_s=40.0, tran_s=60.0) == 0.0
 
 
+# ── Hai cổng ĐỨNG TRƯỚC phòng chờ: 413 (trần vào) và 402 (số dư) ───────────
+#
+# ⭐ Cả hai đều là "câu trả lời đã biết trước". Để một lượt quá dài hoặc một
+#    khách hết tiền vào phòng chờ là bắt họ chờ 60 giây để nghe một chữ KHÔNG mà
+#    ta đã biết ngay từ đầu — và giữ một chỗ trong hàng của người khác.
+
+def test_qua_TRAN_VAO_thi_413_TRUOC_ca_phong_cho_lan_tien(api, monkeypatch):
+    """413 đứng trước mọi thứ (spec §6), kể cả trước lúc giành/chờ suất.
+
+    ⛔ Và nó phải là **mã HTTP 413**: Codex/Claude Code dựa đúng vào mã ấy để
+       TỰ NÉN hội thoại. Một câu 400 chung chung làm client ngừng tự nén.
+    """
+    lease_id = _giu_het_suat()          # hết suất: nếu 413 đi sau, lượt sẽ CHỜ
+    goi = _dat_model(monkeypatch)
+    user_id, token = _account()
+    truoc = _so_du(user_id)
+    but_toan_truoc = _dem_but_toan(user_id)
+
+    def cam_cho(*a, **k):               # noqa: ANN002, ANN003
+        raise AssertionError("qua tran vao ma van vao phong cho")
+
+    from platform_core.runtime_noi_bo import luong
+    monkeypatch.setattr(luong, "cho_suat_dong_bo", cam_cho)
+
+    r = api.post(DUONG, json=_than(messages=[{"role": "user",
+                                              "content": "x" * 450_000}],
+                                   max_tokens=16),
+                 headers=_h(token))
+
+    assert r.status_code == 413, r.text
+    assert goi == [], "qua tran vao ma van cham model"
+    assert _so_du(user_id) == truoc
+    assert _dem_but_toan(user_id) == but_toan_truoc, "413 ma da cham so tien"
+    assert _dong_cho(user_id) == [], "413 ma van ghi mot dong cho"
+    from platform_core.llm import admission
+    admission.release_by_id(lease_id)
+
+
+def test_khong_du_so_du_thi_402_TRUOC_phong_cho_va_0_khoan_giu(api, monkeypatch):
+    """402 chỉ ĐỌC số dư — không giữ đồng nào, không lease, không dòng chờ."""
+    goi = _dat_model(monkeypatch)
+    user_id, token = _account(credits=0)
+    but_toan_truoc = _dem_but_toan(user_id)
+
+    def cam_cho(*a, **k):               # noqa: ANN002, ANN003
+        raise AssertionError("het tien ma van vao phong cho")
+
+    from platform_core.runtime_noi_bo import luong
+    monkeypatch.setattr(luong, "cho_suat_dong_bo", cam_cho)
+
+    r = api.post(DUONG, json=_than(), headers=_h(token))
+
+    # ⚠️ Spec §6 viết "402"; nền tảng này trả **409 `insufficient_credit`** cho
+    #    mọi cửa (`errors.insufficient_credit`), và `test_259`/`test_272` đã ghim
+    #    con số ấy từ trước. Đổi mã HTTP là đổi hợp đồng công khai — ngoài phạm
+    #    vi task này. Nên chot theo `code` ỔN ĐỊNH, không theo chữ trong spec.
+    assert r.json()["code"] == "insufficient_credit", r.text
+    assert r.status_code == 409, r.text
+    assert goi == [], "het tien ma van dot GPU"
+    assert _dem_but_toan(user_id) == but_toan_truoc, "402 ma da co but toan"
+    assert _dem_lease() == 0, "402 ma van giu mot suat"
+    assert _dong_cho(user_id) == []
+
+
+def test_het_tien_o_cua_MOT_CUC_cung_402_truoc_phong_cho(api, monkeypatch):
+    goi = _dat_model(monkeypatch)
+    user_id, token = _account(credits=0)
+
+    def cam_cho(*a, **k):               # noqa: ANN002, ANN003
+        raise AssertionError("het tien ma van vao phong cho")
+
+    from platform_core.runtime_noi_bo import luong
+    monkeypatch.setattr(luong, "cho_suat_dong_bo", cam_cho)
+
+    r = api.post(MSG, json={"model": "ltt_llm", "max_tokens": 200,
+                            "messages": [{"role": "user", "content": "hi"}]},
+                 headers={"Authorization": f"Bearer {token}"})
+
+    assert r.json()["code"] == "insufficient_credit", r.text
+    assert goi == []
+    assert _dem_lease() == 0
+
+
+# ── Ngân sách thời gian: CHỜ và GỌI ăn chung MỘT đồng hồ ────────────────────
+
+def test_loi_goi_model_nhan_ngan_sach_CON_LAI_khong_phai_tran_nguyen(api, monkeypatch):
+    """🔴 Chờ 60 s rồi chạy thêm 90 s = 150 s ⇒ đúng cái 524 của Cloudflare.
+
+    Bản đầu đặt mốc đồng hồ **sau** phòng chờ, nên phép trừ "trần − đã tiêu"
+    luôn ra gần đúng trần và không kẹp gì cả. Phép kiểm này đo thứ duy nhất
+    chứng minh được điều ngược lại: `timeout_s` mà lời gọi model thật sự nhận.
+    """
+    from platform_core.public_api.protocol import SYNC_BILLED_MAX_SECONDS
+
+    lease_id = _giu_het_suat()
+    nhan: list = []
+
+    from apps.ltt_llm import features
+
+    def gia(db, params, *, timeout_s=300.0):
+        nhan.append(timeout_s)
+        return features.KetQua(
+            noi_dung="chao", suy_nghi="", tool_calls=(), finish_reason="stop",
+            model=params["model"], token_vao=10, token_ra=5,
+            token_vao_cache=0, do_duoc=True)
+
+    monkeypatch.setattr(features, "chay", gia)
+    _user_id, token = _account()
+
+    from platform_core.llm import admission
+
+    # Đồng hồ giả đẩy 30 giây mỗi nhịp; nhả lease ở nhịp 2 ⇒ đã "chờ" 60 giây.
+    dong_ho = DongHoGia()
+    dong_ho_that = {"tieu": 0.0}
+
+    def moi_nhip(n: int) -> None:
+        dong_ho_that["tieu"] += 30.0
+        if n >= 2:
+            admission.release_by_id(lease_id)
+
+    dong_ho.moi_nhip = moi_nhip
+    _tiem_dong_ho(monkeypatch, dong_ho)
+
+    # `_con_lai_s` đọc `time.monotonic()` thật, nên tiêm luôn cái đó: mỗi nhịp
+    # chờ cộng 30 giây vào đồng hồ mà cửa dùng để tính ngân sách.
+    import server.api.chat as chat_mod
+    goc = chat_mod.time.monotonic
+    monkeypatch.setattr(chat_mod.time, "monotonic",
+                        lambda: goc() + dong_ho_that["tieu"], raising=False)
+
+    r = api.post(DUONG, json=_than(), headers=_h(token))
+
+    assert r.status_code == 200, r.text
+    assert nhan, "khong goi model"
+    assert nhan[0] < float(SYNC_BILLED_MAX_SECONDS) - 50, (
+        f"loi goi model nhan {nhan[0]}s sau khi da cho ~60s — ngan sach "
+        f"KHONG bi tru, tong se vuot dong ho Cloudflare")
+
+
 # ── (c) Hai request cùng khoá cùng chờ ⇒ đúng MỘT lượt chạy model ───────────
 
 def test_hai_request_cung_khoa_cung_cho_thi_dung_MOT_luot_chay_model(api, monkeypatch):
@@ -523,6 +662,80 @@ def test_khach_ngat_giua_luot_thi_DONG_HTTPX_nha_lease_va_khong_treo_tien(
     # KHÔNG được phép là một khoản giữ nằm lại.
     assert _so_du(user_id) == truoc
     assert _dem_but_toan(user_id) >= but_toan_truoc
+
+
+def test_khach_ngat_SAU_KHI_model_da_chay_thi_KHOA_bi_CHOT_khong_mo_lai(
+        api, monkeypatch):
+    """🔴 BẢN ĐẦU THU TIỀN HAI LẦN. Rà soát 1.5 bắt được, phép kiểm này ghim.
+
+    Khách ngắt **sau** khi lời gọi đã về: model đã chạy, tiền đã thu theo
+    `usage`. Bản đầu vẫn gọi `_mo_lai_khoa` ⇒ bản ghi thành `failed` ⇒
+    `idempotency.begin` NHẬN LẠI nó với `replay=False` ⇒ lượt thử lại cùng khoá
+    chạy model **lần hai** và thu **lần hai**. Đúng thứ INV-011/012 cấm, và
+    đúng thứ chú thích ⛔ của `mo_lai` tự nói là không được làm.
+
+    ⇒ Có `usage` ⇒ `complete` với câu trả lời; thử lại ⇒ **replay**, miễn phí.
+    """
+    from platform_core.llm import ngat
+    from platform_core.public_api.tables import IDEMPOTENCY_COMPLETED
+
+    goi = _dat_model(monkeypatch, token_vao=1_000, token_ra=3_000)
+    # Khách "đã đi", nhưng lời gọi kịp về: nhịp thăm chỉ chạy sau khi luồng
+    # gọi model kết thúc, nên `KhachNgat.ket_qua` mang kết quả thật.
+    monkeypatch.setattr(ngat, "do_ngat", lambda request: (lambda: True))
+
+    def canh_gia(chay, *, ngat_chua=None, nhip_s=None):
+        """Đúng ngữ nghĩa của ca này: lời gọi XONG rồi mới phát hiện khách đi."""
+        with ngat.so_dong():
+            return_value = chay()
+        raise ngat.KhachNgat(return_value)
+
+    monkeypatch.setattr(ngat, "chay_canh_ngat", canh_gia)
+
+    user_id, token = _account()
+    key = "idem-" + uuid.uuid4().hex
+    truoc = _so_du(user_id)
+
+    r1 = api.post(DUONG, json=_than(), headers=_h(token, idem=key))
+    assert len(goi) == 1, "chua goi model lan nao"
+    thu = truoc - _so_du(user_id)
+    assert thu > 0, "doi chung TRUOT: luot nay khong thu gi, phep kiem vo nghia"
+    assert _ban_ghi_idem(key) == (IDEMPOTENCY_COMPLETED, True), (
+        "khoa bi MO LAI sau mot luot da thu tien — luot thu lai se thu lan hai")
+
+    # Thử lại cùng khoá: replay, KHÔNG chạy model, KHÔNG thu thêm.
+    sau_lan_mot = _so_du(user_id)
+    r2 = api.post(DUONG, json=_than(), headers=_h(token, idem=key))
+    assert r2.status_code == 200, r2.text
+    assert r2.headers.get("Idempotency-Replayed") == "true"
+    assert len(goi) == 1, "thu lai cung khoa ma model chay LAN HAI"
+    assert _so_du(user_id) == sau_lan_mot, "thu lai cung khoa ma THU LAN HAI"
+    assert r1.status_code in (200, 499)
+    assert _dem_lease() == 0
+
+
+def test_so_luot_ghi_KET_CUC_THAT_khong_phai_luon_luon_xong(api, monkeypatch):
+    """Sổ 30 ngày chỉ biết nói "xong" thì nó không phân tích được gì.
+
+    Chủ dự án giữ `llm_waiters` **để phân tích sau**; một cột kết cục ghi cứng
+    một chữ là một cột giả làm bằng chứng.
+    """
+    from platform_core.llm.cong_vlm import BanError
+
+    from apps.ltt_llm import features
+
+    def gia(db, params, *, timeout_s=300.0):
+        raise BanError("3/3 suat dang dung")
+
+    monkeypatch.setattr(features, "chay", gia)
+    user_id, token = _account()
+    _tiem_dong_ho(monkeypatch, DongHoGia())
+
+    r = api.post(DUONG, json=_than(), headers=_h(token))
+
+    assert r.status_code == 503, r.text
+    assert _dong_cho(user_id) == [("xong", "ban", "", "sync", "tuong_tac")], (
+        "so luot ghi ket cuc SAI — mot luot BAN vao so duoi chu 'xong'")
 
 
 # ── Nhánh không-stream của `/messages` đi cùng một trình tự ──────────────────

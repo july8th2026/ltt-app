@@ -25,6 +25,7 @@ streaming**, và mỗi CLI chỉ nói đúng một giao thức:
 from __future__ import annotations
 
 import logging
+import time
 from typing import Iterator, Optional
 
 from fastapi import Body, Depends, Request
@@ -192,7 +193,8 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
     from platform_core.llm.cong_vlm import (BanError, CongVlmError,
                                             SuDung, VuotNganSachError)
     from platform_core.runtime_noi_bo import luong as cua_luong
-    from server.api.chat import (MA_KHACH_NGAT, _KHACH_NGAT, _tran_max_tokens)
+    from server.api.chat import (MA_KHACH_NGAT, _KHACH_NGAT, _con_lai_s,
+                                 _tran_max_tokens)
 
     executor = for_tool(tool) if tool is not None else for_tool_name(TOOL_CHAT)
 
@@ -211,6 +213,10 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
             f"{_tran_giay()}s budget. Reduce the prompt or max_tokens, set "
             f"stream=true, or submit it to POST /api/v1/jobs.")
     request_id = thanh_toan.ma_luot("ms")
+    # 🔴 ĐỒNG HỒ NGÂN SÁCH CỦA CỬA BẮT ĐẦU Ở ĐÂY, trước phòng chờ. Đặt mốc sau
+    #    khi chờ xong là để một lượt chờ 60 giây rồi chạy thêm 90 giây nữa —
+    #    150 giây, tức đúng cái 524 của Cloudflare mà trần này sinh ra để chặn.
+    t0 = time.monotonic()
 
     # 🔴 402 TRƯỚC KHI XẾP HÀNG, và chỉ ĐỌC số dư. Cùng lý do với `/chat/
     #    completions`: một lượt đang chờ **không được** có dòng giữ tiền nào
@@ -235,7 +241,8 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
             token_vao_uoc=int(vao_uoc), xin_ra=int(xin_ra),
             so_anh=cua_luong.dem_anh(than),
             han_s=cua_luong.han_cho_dong_bo(
-                ngan_sach_s=float(_tran_giay()), da_tieu_s=0.0),
+                ngan_sach_s=float(_tran_giay()),
+                da_tieu_s=time.monotonic() - t0),
             ngat_chua=ngat.do_ngat(request))
     except phong_cho.HetCho as e:
         # Hết trần chờ: 0 khoản giữ (INV-MJ-2), 0 bút toán mồ côi.
@@ -249,11 +256,17 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         return JSONResponse(_KHACH_NGAT, status_code=MA_KHACH_NGAT,
                             headers=_NO_STORE)
 
-    def _release_ticket() -> None:
+    def _release_ticket(ket_qua: str = "loi") -> None:
+        """Nhả suất + ghi KẾT CỤC THẬT vào sổ lượt 30 ngày.
+
+        ⛔ Bản đầu ghi cứng `"xong"` ở mọi đường ra — kể cả bận, lỗi và khách
+           ngắt. Một cuốn sổ chỉ biết nói một chữ không phân tích được gì, mà
+           nó tồn tại chính để phân tích (chủ dự án 11/09).
+        """
         if suat.lease_id:
             admission.release_by_id(suat.lease_id)
         if suat.waiter_id:
-            phong_cho.ghi_ket_thuc(suat.waiter_id, "xong")
+            phong_cho.ghi_ket_thuc(suat.waiter_id, ket_qua)
 
     # ── Được nhận ⇒ GIỮ TIỀN (và chỉ từ đây trở đi) ─────────────────────────
     try:
@@ -262,11 +275,11 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
             token_vao_uoc=vao_uoc, max_tokens=xin_ra)
     except credit.ThieuCreditError as e:
         db.rollback()
-        _release_ticket()
+        _release_ticket("thieu_credit")
         raise insufficient_credit(str(e)) from None
     except BaseException:
         db.rollback()
-        _release_ticket()
+        _release_ticket("loi")
         raise
     db.commit()
 
@@ -314,8 +327,13 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         # ⭐ Spec §16: thăm `is_disconnected` ~1 s song song với lời gọi. Không
         #    stream nghĩa là không byte nào chảy, nên đây là cách DUY NHẤT biết
         #    khách đã đi trước khi GPU chạy trọn một lượt không ai đọc.
+        # ⛔ NGÂN SÁCH **CÒN LẠI**, không phải trần nguyên. `t0` chạy từ trước
+        #    phòng chờ, nên thời gian đã chờ bị trừ đi ở đây — hai chỗ (trần chờ
+        #    và trần gọi) phải cùng ăn MỘT ngân sách, nếu không chúng chia nhau
+        #    một ngân sách tưởng tượng và tổng vượt đồng hồ Cloudflare.
         kq = ngat.chay_canh_ngat(
-            lambda: executor.run(db, sach, timeout_s=float(_tran_giay())),
+            lambda: executor.run(db, sach,
+                                 timeout_s=_con_lai_s(t0, float(_tran_giay()))),
             ngat_chua=ngat.do_ngat(request))
     except ngat.KhachNgat as e:
         # Quyết toán theo `usage` nếu lời gọi kịp về; không thì hoàn trọn.
@@ -330,7 +348,7 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
             thanh_toan.hoan_luot(db, user_id=principal.user_id,
                                  request_id=request_id)
         db.commit()
-        _release_ticket()
+        _release_ticket("khach_ngat")
         return JSONResponse(_KHACH_NGAT, status_code=MA_KHACH_NGAT,
                             headers=_NO_STORE)
     except executor.parameter_error as e:
@@ -338,12 +356,12 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         # phải 500. Hoàn tiền trước, vì hold đã đặt rồi.
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
-        _release_ticket()
+        _release_ticket("tham_so_sai")
         raise invalid_request(str(e)) from None
     except BanError as e:
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
-        _release_ticket()
+        _release_ticket("ban")
         # ⛔ BAN != HONG (D-005). 429/503 + Retry-After, va khach KHONG bi thu tien.
         # 🔴 ĐẾM VÀO `CAPACITY_REFUSED`, KHÔNG CHỈ ĐỂ NÓ RƠI VÀO 5xx.
         #
@@ -369,7 +387,7 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
     except (VuotNganSachError, CongVlmError) as e:
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
-        _release_ticket()
+        _release_ticket("loi")
         log.warning("mot cuc that bai user=%s: %s", principal.user_id[:8], e)
         raise service_unavailable("The model could not serve this request.") from None
     except BaseException:
@@ -387,7 +405,7 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         #    thừa `Exception`. Đó chính là ca hay xảy ra nhất ở một cửa đồng bộ.
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
-        _release_ticket()
+        _release_ticket("loi")
         raise
 
     # `quyet_toan_hoac_hoan` nhan chinh doi tuong `SuDung` do cong tra ve - dung
@@ -418,10 +436,10 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         db.rollback()
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
-        _release_ticket()
+        _release_ticket("loi")
         raise
     db.commit()
-    _release_ticket()
+    _release_ticket("xong")
     metrics.increment("chat:mot_cuc")
     return JSONResponse(_dang_anthropic(kq, ten, request_id),
                         status_code=200, headers=_NO_STORE)

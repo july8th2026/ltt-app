@@ -302,10 +302,18 @@ def register_chat_routes(api, config, tag: str) -> None:
                 return _finish_chat(
                     db=db, sach=sach, principal=principal, record=record,
                     request_id=request_id, da_giu=da_giu, executor=executor,
-                    trang_thai=request.state, request=request)
+                    trang_thai=request.state, request=request,
+                    bat_dau_cua=t0, waiter_id=suat.waiter_id)
         finally:
+            # ⛔ LƯỚI, KHÔNG PHẢI KẾT CỤC. Bản đầu ghi thẳng `"xong"` ở đây —
+            #    tức **mọi** đường ra, kể cả lỗi và khách ngắt, vào sổ 30 ngày
+            #    dưới một chữ. Một cuốn sổ chỉ biết nói "xong" không phân tích
+            #    được gì, mà nó tồn tại chính để phân tích.
+            #    `_finish_chat` chốt kết cục thật ở từng nhánh; `ghi_ket_thuc`
+            #    chỉ ăn khi dòng còn `nhan`, nên dòng dưới đây chỉ chạy khi
+            #    KHÔNG nhánh nào kịp chốt (thoát bất thường).
             if suat.waiter_id:
-                phong_cho.ghi_ket_thuc(suat.waiter_id, "xong")
+                phong_cho.ghi_ket_thuc(suat.waiter_id, "loi")
 
 
 def _mo_lai_khoa(record, ly_do: str) -> None:
@@ -333,6 +341,22 @@ def _mo_lai_khoa(record, ly_do: str) -> None:
             pass
 
 
+def _con_lai_s(bat_dau_cua: float, ngan_sach_s: float, san_s: float = 1.0) -> float:
+    """Ngân sách thời gian CÒN LẠI cho lời gọi model, tính từ lúc vào cửa.
+
+    🔴 ĐỒNG HỒ PHẢI BẮT ĐẦU TRƯỚC PHÒNG CHỜ. Bản đầu của tôi đặt mốc **sau** khi
+       chờ xong, nên phép trừ này luôn ra gần đúng 90 và không kẹp gì cả: một
+       lượt chờ 60 giây rồi chạy thêm 90 giây là 150 giây — đúng kịch bản 524
+       của Cloudflare mà `han_cho_dong_bo` sinh ra để chặn. Hai hàm phải đo
+       **cùng một cái đồng hồ**, nếu không chúng chia nhau một ngân sách tưởng
+       tượng.
+
+    ⚠️ Sàn `san_s`: hết sạch ngân sách thì vẫn gửi đi với một giây, để lỗi là
+       một cái timeout đọc được chứ không phải một số âm ném từ `httpx`.
+    """
+    return max(float(san_s), float(ngan_sach_s) - (time.monotonic() - float(bat_dau_cua)))
+
+
 def _nha(suat, ket_qua: str) -> None:
     """Nhả suất + chốt dòng chờ. Idempotent, và không bao giờ ném."""
     from platform_core.llm import admission, phong_cho
@@ -347,10 +371,18 @@ def _nha(suat, ket_qua: str) -> None:
 
 
 def _finish_chat(*, db, sach: dict, principal, record, request_id: str,
-                 trang_thai=None, request=None,
+                 trang_thai=None, request=None, bat_dau_cua: float = 0.0,
+                 waiter_id: str = "",
                  da_giu: int, executor=None) -> JSONResponse:
-    """Chạy model và định đoạt tiền; caller giữ execution lease bằng finally."""
-    from platform_core.llm import ngat, thanh_toan
+    """Chạy model và định đoạt tiền; caller giữ execution lease bằng finally.
+
+    `bat_dau_cua` là `time.monotonic()` lúc **request vào cửa**, không phải lúc
+    vào hàm này — xem `_con_lai_s`.
+    `waiter_id`: mỗi đường ra tự ghi KẾT CỤC THẬT vào sổ lượt. `ghi_ket_thuc`
+    chỉ ăn khi dòng còn ở trạng thái `nhan`, nên lời ghi ĐẦU TIÊN thắng và lưới
+    "loi" của bên gọi là no-op khi ở đây đã chốt đúng.
+    """
+    from platform_core.llm import ngat, phong_cho, thanh_toan
     from platform_core.llm.cong_vlm import (BanError, CongVlmError, SuDung,
                                             VuotNganSachError)
 
@@ -364,23 +396,49 @@ def _finish_chat(*, db, sach: dict, principal, record, request_id: str,
         kq = ngat.chay_canh_ngat(
             lambda: executor.run(
                 db, sach,
-                timeout_s=max(1.0, float(SYNC_BILLED_MAX_SECONDS)
-                              - (time.monotonic() - bat_dau))),
+                timeout_s=_con_lai_s(bat_dau_cua or bat_dau,
+                                     float(SYNC_BILLED_MAX_SECONDS))),
             ngat_chua=ngat.do_ngat(request))
     except ngat.KhachNgat as e:
-        # Quyết toán theo `usage` NẾU lời gọi kịp về; không thì hoàn trọn.
+        # 🔴 HAI KẾT CỤC KHÁC HẲN NHAU, VÀ CHÚNG ĐỊNH ĐOẠT KHOÁ IDEMPOTENCY
+        #    THEO HAI CHIỀU NGƯỢC NHAU.
+        #
+        #    Lời gọi **kịp về** ⇒ model đã chạy, tiền đã thu theo `usage` đo
+        #    được. Mở lại khoá ở đây là mời lượt thử lại chạy model **lần hai**
+        #    và thu **lần hai** — đúng thứ INV-011/012 và chính chú thích ⛔ của
+        #    `idempotency.mo_lai` cấm. Nên: `complete` với câu trả lời. Khách
+        #    thử lại cùng khoá sẽ **replay** đúng câu ấy, miễn phí.
+        #
+        #    Lời gọi **chưa về** ⇒ hoàn trọn, không thu gì ⇒ mới được mở khoá.
         if e.ket_qua is not None:
-            thanh_toan.quyet_toan_hoac_hoan(
+            thu = thanh_toan.quyet_toan_hoac_hoan(
                 db, user_id=principal.user_id, request_id=request_id,
                 su_dung=SuDung(token_vao=e.ket_qua.token_vao,
                                token_ra=e.ket_qua.token_ra,
                                token_vao_cache=e.ket_qua.token_vao_cache,
                                dang_tin=e.ket_qua.do_duoc))
-        else:
-            thanh_toan.hoan_luot(db, user_id=principal.user_id,
-                                 request_id=request_id)
+            if trang_thai is not None:
+                trang_thai.api_credit_delta = -int(thu.thu_credit)
+            tra_ve = _dang_openai(
+                sach, noi_dung=e.ket_qua.noi_dung, token_vao=e.ket_qua.token_vao,
+                token_ra=e.ket_qua.token_ra, thu_credit=thu.thu_credit,
+                da_do_duoc=thu.da_do_duoc,
+                token_vao_cache=e.ket_qua.token_vao_cache,
+                finish_reason=e.ket_qua.finish_reason,
+                tool_calls=list(e.ket_qua.tool_calls), da_giu=da_giu,
+                giay=round(time.monotonic() - bat_dau, 2))
+            idempotency.complete(db, record, response=tra_ve)
+            db.commit()
+            phong_cho.ghi_ket_thuc(waiter_id, "khach_ngat")
+            # Khách đã đi nên không ai đọc thân này; nó tồn tại để sổ request
+            # ghi đúng **một lượt đã chạy và đã thu**, không phải một lượt hỏng.
+            return JSONResponse(tra_ve, status_code=MA_KHACH_NGAT,
+                                headers=_NO_STORE)
+        thanh_toan.hoan_luot(db, user_id=principal.user_id,
+                             request_id=request_id)
         db.commit()
         _mo_lai_khoa(record, "khach_ngat")
+        phong_cho.ghi_ket_thuc(waiter_id, "khach_ngat")
         return JSONResponse(_KHACH_NGAT, status_code=MA_KHACH_NGAT,
                             headers=_NO_STORE)
     except BanError as e:
@@ -404,21 +462,25 @@ def _finish_chat(*, db, sach: dict, principal, record, request_id: str,
         #
         # ⛔ GIỮ NGUYÊN tiền tố "The model is busy right now" — `test_360` neo
         #    vào đúng chuỗi ấy trên CẢ `chat` lẫn `streaming`. Xem **Bẫy 31**.
+        phong_cho.ghi_ket_thuc(waiter_id, "ban")
         raise service_unavailable(
             "The model is busy right now.", retry_after=30) from None
     except VuotNganSachError as e:
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
+        phong_cho.ghi_ket_thuc(waiter_id, "tham_so_sai")
         raise invalid_request(str(e)) from None
     except (CongVlmError, Exception) as e:                  # noqa: BLE001
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
         log.warning("chat.completions that bai user=%s: %s",
                     principal.user_id[:8], e)
+        phong_cho.ghi_ket_thuc(waiter_id, "loi")
         raise service_unavailable("The model could not serve this request.") from None
     except BaseException:
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
+        phong_cho.ghi_ket_thuc(waiter_id, "loi")
         raise
 
     thu = thanh_toan.quyet_toan_hoac_hoan(
@@ -441,6 +503,7 @@ def _finish_chat(*, db, sach: dict, principal, record, request_id: str,
     idempotency.complete(db, record, response=tra_ve)
     db.commit()
     metrics.increment("chat:completions")
+    phong_cho.ghi_ket_thuc(waiter_id, "xong")
     return JSONResponse(tra_ve, status_code=200, headers=_NO_STORE)
 
 
