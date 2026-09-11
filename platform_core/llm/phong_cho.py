@@ -38,6 +38,29 @@ def _aware(t: datetime) -> datetime:
     return t if t.tzinfo is not None else t.replace(tzinfo=timezone.utc)
 
 
+def chup_nguoi_cho(db: Session, *, resource: str,
+                   now: datetime | None = None) -> list:
+    """Người đang chờ CÒN SỐNG của một tài nguyên, dưới dạng `luat_nhan.Luot`.
+
+    Dòng mất nhịp quá `HAN_NHIP_CHO_S` không còn tranh chỗ: tiến trình giữ nó đã
+    chết hoặc treo, và để nó chặn FCFS là để một xác chết giữ hàng.
+    """
+    from platform_core.llm import luat_nhan
+
+    now = now or _bay_gio()
+    ra = []
+    for w in (db.query(LlmWaiter)
+              .filter(LlmWaiter.resource == resource, LlmWaiter.trang_thai == "cho")
+              .all()):
+        if (now - _aware(w.heartbeat_at)).total_seconds() > HAN_NHIP_CHO_S:
+            continue
+        ra.append(luat_nhan.Luot(
+            id=w.id, user_id=w.user_id, lop=w.lop or luat_nhan.TUONG_TAC,
+            token_dat_truoc=int(w.token_dat_truoc or 0), la_whale=bool(w.la_whale),
+            tuoi_s=max(0.0, (now - _aware(w.created_at)).total_seconds())))
+    return ra
+
+
 def don_het_han(db: Session, *, now: datetime | None = None) -> int:
     """Vòng dọn của worker (`job_runner._don_du_lieu_het_han`). Trả số dòng đã đụng.
 
