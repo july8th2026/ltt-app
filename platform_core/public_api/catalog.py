@@ -111,6 +111,7 @@ class PublicTool:
     admission_resource: str = ""
     admission_slots: int = 0
     sync_executor: str = ""
+    kiem_truoc: str = ""
 
     def to_public_dict(self) -> dict:
         body = {
@@ -347,6 +348,7 @@ def project_tool(manifest, tool) -> PublicTool:
             getattr(tool, "admission_resource", "") or resource_class(manifest)),
         admission_slots=max(0, int(getattr(tool, "admission_slots", 0) or 0)),
         sync_executor=str(getattr(tool, "sync_executor", "") or ""),
+        kiem_truoc=str(getattr(tool, "kiem_truoc", "") or ""),
     )
 
 

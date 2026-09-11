@@ -319,6 +319,12 @@ MANIFEST = AppManifest(
             admission_resource="vieneu_gpu",
             admission_slots=1,
 
+            # D007 (RC1 2026-09-11): tu choi loi so huu/lech lan NGAY tai
+            # /quotes va /jobs, truoc khi tien dong -- cung cong
+            # `features.chuan_hoa` + `features.giai_giong` ma web/worker dang
+            # dung, khong phai mot ban kiem rieng cho Public API.
+            kiem_truoc="apps.ltt_voice.kiem_truoc_api:kiem",
+
             # Giọng nhân bản CỦA NGƯỜI DÙNG cho palette/sản phẩm khác, không
             # import app này (H43 Phase 02). Gợi ý cho giao diện; sở hữu vẫn do
             # `features.giai_giong` kiểm lúc thi hành.

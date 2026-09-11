@@ -31,6 +31,24 @@ commit vao do.
 ⭐ Nen cong cu nay doc `dau_van_tay.json` cua ban DANG CHAY de biet no khai
    minh la commit nao, roi so tung tep voi `git show <sha>:<duong dan>`. Neu
    may chu mang thu khong co trong commit ay, no noi ra.
+
+RC1 11/09: so moi tep, khong chi .py trong GOI -- mot deploy lech JS/CSS/HTML
+truoc day van tra DAT vi phep do cu chi soi .py.
+
+Fix round 1 (11/09): mot deploy DUNG van "thua" 9 tep vendor binary gitignored
+co chu dich (`apps/upscalevideo/vendor/...`) vi chung duoc `setup/2-cai-dat.ps1`
+chep RIENG qua $VAN_CHUYEN, khong qua `git archive`. Doc lai danh sach nay TU
+CHINH tep .ps1 do (khong go lai) va xep rieng thanh nhom `van_chuyen` -- KHONG
+tinh la loi. Mot `thua` KHONG nam trong $VAN_CHUYEN thi van la loi that.
+
+Fix round 2 (11/09): hai lo o round 1 -- (a) `_phu_boi` so CHUOI CON sau
+dau `*` nen mau dang Windows (vd `apps/*/vendor`) khop nham ca
+`apps/upscalevideo/vendor_x.py` (mot tep KHONG duoc khai lot qua am tham);
+sua bang so THEO TUNG DOAN duong dan. (b) `doc_van_chuyen` doc VAN BAN THO
+cua .ps1 nen mot cau van/chu thich nhac toi `$VAN_CHUYEN = @(...)` co the bi
+khop nham; sua bang cach bo chu thich/here-string TRUOC (cung logic voi
+`test_505::_ma_thuc`). Va: khong doc duoc `$VAN_CHUYEN` gio NEM LOI THAT,
+khong con lang le tra ve danh sach rong.
 """
 from __future__ import annotations
 
@@ -38,6 +56,7 @@ import argparse
 import hashlib
 import json
 import pathlib
+import re
 import subprocess
 
 GOC = pathlib.Path(__file__).resolve().parents[1]
@@ -49,8 +68,101 @@ TRUOC = pathlib.Path("C:/LTTPlatform/app.previous")
 GOI = ("server", "platform_core", "apps", "alembic", "sdk")
 
 
-def _bam(b: bytes) -> str:
-    return hashlib.sha256(b).hexdigest()
+def bam_git(b: bytes) -> str:
+    """Sha1 cua mot git blob - de so truc tiep voi blob-sha tu `ls-tree`,
+    khong can `git cat-file` doc lai tung tep tren may chu."""
+    tieu_de = ("blob %d" % len(b)) + chr(0)
+    return hashlib.sha1(tieu_de.encode() + b).hexdigest()
+
+
+def so_sanh(trong_commit: dict[str, str], tren_may: dict[str, bytes],
+            van_chuyen: list[str] | None = None) -> dict:
+    """Ham thuan, khong I/O: so blob-sha cua commit voi noi dung tren may.
+
+    `tren_may` la duong -> bytes (chua bam) — ham nay tu bam bang `bam_git`
+    de so truc tiep voi gia tri co san trong `trong_commit`.
+
+    `van_chuyen` la danh sach mau duong kieu `$VAN_CHUYEN` (vd dang Windows `apps\\*\\vendor`)
+    — tai san gitignored ma deploy VAN chep rieng (`docs/16...`,
+    `tests/test_505_nguon_ban_giao.py`). Mot tep `thua` roi vao mot mau trong do
+    la TAI SAN DA KHAI, xep rieng vao `van_chuyen`, KHONG tinh la loi. Mot tep
+    `thua` khong khop mau nao van la loi that."""
+    lech: list[str] = []
+    thieu: list[str] = []
+    for duong, blob in trong_commit.items():
+        if duong not in tren_may:
+            thieu.append(duong)
+        elif bam_git(tren_may[duong]) != blob:
+            lech.append(duong)
+    mau_khai = van_chuyen or []
+    thua: list[str] = []
+    da_khai: list[str] = []
+    for d in tren_may:
+        if d in trong_commit:
+            continue
+        if any(_phu_boi(m, d) for m in mau_khai):
+            da_khai.append(d)
+        else:
+            thua.append(d)
+    return {"lech": sorted(lech), "thieu": sorted(thieu), "thua": sorted(thua),
+            "van_chuyen": sorted(da_khai)}
+
+
+def _phu_boi(mau: str, duong: str) -> bool:
+    """Mau kieu Windows (co the co `*`, MOI `*` la DUNG MOT doan duong day
+    du), co phu `duong` (posix) khong — so THEO TUNG DOAN, khong so chuoi
+    con tu do.
+
+    ⛔ Fix round 2: ban dau ham nay chep `tests/test_505_nguon_ban_giao.py::
+    _phu_boi`, dung `sau.strip("/") in duong` — mot phep so CHUOI CON. Voi
+    mau `apps/*/vendor` (dang Windows) no khop CA `apps/upscalevideo/vendor_x.py` (chi
+    vi "vendor" nam trong "vendor_x.py"), tuc am tham cho qua mot tep KHONG
+    duoc khai. So theo DOAN duong dan moi dung: mot doan phai khop HET, khong
+    duoc la mot phan cua doan khac."""
+    m_doan = [d for d in mau.replace("\\", "/").split("/") if d]
+    d_doan = [d for d in duong.split("/") if d]
+    if len(d_doan) < len(m_doan):
+        return False
+    for i, doan_mau in enumerate(m_doan):
+        if doan_mau != "*" and doan_mau != d_doan[i]:
+            return False
+    return True
+
+
+def _ma_thuc(t: str) -> str:
+    """Bo chu thich va here-string, giu MA CHAY DUOC — ban thu gon cua
+    `tests/test_505_nguon_ban_giao.py::_ma_thuc` (nguon that cho logic nay).
+    Khong co ham nay, mot cau van ban NHAC TOI `$VAN_CHUYEN = @(...)` trong
+    CHINH LOI GIAI THICH no cung khop duoc regex — mot bang cong khop vao
+    chinh chu thich cua no thi khong chot gi ca."""
+    t = re.sub(r"@'.*?'@", "", t, flags=re.S)      # here-string nguyen van
+    t = re.sub(r'@".*?"@', "", t, flags=re.S)      # here-string co noi suy
+    return "\n".join(d for d in t.splitlines()
+                     if not d.lstrip().startswith("#"))
+
+
+def doc_van_chuyen(setup_ps1: pathlib.Path | None = None) -> list[str]:
+    """Doc `$VAN_CHUYEN` tu `setup/2-cai-dat.ps1` — NGUON DUY NHAT cho danh
+    sach tai san gitignored ma deploy van chep rieng, dung chung voi
+    `tests/test_505_nguon_ban_giao.py::_van_chuyen`. Khong go lai danh sach
+    o day.
+
+    ⛔ KHONG BAO GIO tra ve [] khi khong doc duoc — mot danh sach RONG lam
+    moi tep vendor bien thanh `thua` (loi), nhung mot LOI DOC bi nuot lai lam
+    NGUOC LAI: moi tep vendor lang le duoc coi la da khai (bao an toan gia).
+    Nem loi that de nguoi doc thay ngay, khong de gate xanh sai."""
+    tep = setup_ps1 or (GOC / "setup" / "2-cai-dat.ps1")
+    if not tep.exists():
+        raise RuntimeError(f"khong thay {tep} de doc $VAN_CHUYEN")
+    van_ban = tep.read_text(encoding="ascii", errors="replace")
+    nguon = _ma_thuc(van_ban)
+    m = re.search(r"\$VAN_CHUYEN = @\((.*?)\)", nguon, re.S)
+    if not m:
+        raise RuntimeError(
+            f"khong tim thay '$VAN_CHUYEN = @(...)' trong MA CHAY DUOC cua "
+            f"{tep} (da bo chu thich/here-string) — co the ten bien da doi "
+            "hoac cau truc @() da doi; sua ham doc_van_chuyen()")
+    return re.findall(r"'([^']+)'", m.group(1))
 
 
 def _doc_marker(thu_muc: pathlib.Path) -> tuple[str, str]:
@@ -65,7 +177,7 @@ def _doc_marker(thu_muc: pathlib.Path) -> tuple[str, str]:
 
 
 def _tep_trong_commit(sha: str) -> dict[str, str]:
-    """`duong/dan.py -> sha1 cua blob`, doc tu chinh commit."""
+    """`duong/dan -> sha1 cua blob`, MOI tep trong GOI (khong chi .py), doc tu chinh commit."""
     r = subprocess.run(["git", "ls-tree", "-r", sha, "--"] + list(GOI),
                        cwd=GOC, capture_output=True, text=True)
     if r.returncode != 0:
@@ -77,15 +189,26 @@ def _tep_trong_commit(sha: str) -> dict[str, str]:
             _mode, loai, blob = meta.split()
         except ValueError:
             continue
-        if loai == "blob" and duong.endswith(".py"):
+        if loai == "blob":
             ra[duong] = blob
     return ra
 
 
-def _noi_dung_blob(blob: str) -> bytes:
-    r = subprocess.run(["git", "cat-file", "blob", blob],
-                       cwd=GOC, capture_output=True)
-    return r.stdout if r.returncode == 0 else b"\x00KHONG DOC DUOC"
+def _tep_tren_may(goc: pathlib.Path) -> dict[str, bytes]:
+    """`duong/dan -> noi dung`, quet toan bo GOI tren may (bo __pycache__/.pyc)."""
+    ra: dict[str, bytes] = {}
+    for g in GOI:
+        goc_g = goc / g
+        if not goc_g.is_dir():
+            continue
+        for q in goc_g.rglob("*"):
+            if not q.is_file():
+                continue
+            if "__pycache__" in q.parts or q.suffix == ".pyc":
+                continue
+            duong = q.relative_to(goc).as_posix()
+            ra[duong] = q.read_bytes()
+    return ra
 
 
 def main() -> int:
@@ -113,46 +236,36 @@ def main() -> int:
         print("  Co the may chu dang chay mot commit CHUA duoc day/fetch ve day.")
         return 1
 
-    # ⛔ Khai kiểu rời chứ đừng gộp vào gán bộ: `mypy` không suy được kiểu của
-    #    `[]` trong một phép gán nhiều đích, nên `var-annotated` tăng một và
-    #    bánh cóc `check_mypy.moc` (mốc 44) đỏ. Đo 07/09/2026 — một tệp mới
-    #    làm đỏ **hai** bước gate: `mypy` và `test_306::test_mypy_hien_tai_dat_moc`.
-    #    Một nguyên nhân, hai triệu chứng.
+    tren_may = _tep_tren_may(CHAY)
+    try:
+        van_chuyen = doc_van_chuyen()
+    except RuntimeError as loi:
+        print(f"  LOI doc $VAN_CHUYEN: {loi}")
+        return 1
+    ket_qua = so_sanh(trong_commit, tren_may, van_chuyen)
+    so_khong_py = sum(1 for d in trong_commit if not d.endswith(".py"))
+    so_van_chuyen = len(ket_qua["van_chuyen"])
+
     vi_du: list[str] = []
-    lech = thieu = thua = 0
-    for duong, blob in trong_commit.items():
-        q = CHAY / duong
-        if not q.exists():
-            thieu += 1
-            if len(vi_du) < 6:
-                vi_du.append(f"THIEU ben may chu : {duong}")
-            continue
-        if _bam(q.read_bytes()) != _bam(_noi_dung_blob(blob)):
-            lech += 1
-            if len(vi_du) < 6:
-                vi_du.append(f"LECH noi dung     : {duong}")
+    for duong in ket_qua["lech"]:
+        if len(vi_du) < 6:
+            vi_du.append(f"LECH noi dung     : {duong}")
+    for duong in ket_qua["thieu"]:
+        if len(vi_du) < 6:
+            vi_du.append(f"THIEU ben may chu : {duong}")
+    for duong in ket_qua["thua"]:
+        if len(vi_du) < 6:
+            vi_du.append(f"THUA (khong co trong commit): {duong}")
 
-    # ⭐ Chieu nguoc lai cung phai hoi: may chu co mang tep KHONG co trong
-    #    commit khong? Do la dau hieu deploy di tu mot cay BAN — dung thu
-    #    phep do "so voi cay lam viec" khong bao gio thay.
-    for g in GOI:
-        goc_g = CHAY / g
-        if not goc_g.is_dir():
-            continue
-        for q in goc_g.rglob("*.py"):
-            if "__pycache__" in q.parts:
-                continue
-            duong = q.relative_to(CHAY).as_posix()
-            if duong not in trong_commit:
-                thua += 1
-                if len(vi_du) < 6:
-                    vi_du.append(f"THUA (khong co trong commit): {duong}")
+    lech, thieu, thua = len(ket_qua["lech"]), len(ket_qua["thieu"]), len(ket_qua["thua"])
 
-    print(f"  doi chieu voi commit : {sha[:12]}")
-    print(f"  tep .py trong commit : {len(trong_commit)}")
-    print(f"  lech noi dung        : {lech}")
-    print(f"  thieu ben may chu    : {thieu}")
-    print(f"  thua ben may chu     : {thua}")
+    print(f"  doi chieu voi commit       : {sha[:12]}")
+    print(f"  tep trong commit           : {len(trong_commit)}")
+    print(f"  tep khong .py trong commit : {so_khong_py}")
+    print(f"  lech noi dung              : {lech}")
+    print(f"  thieu ben may chu          : {thieu}")
+    print(f"  thua ben may chu           : {thua}")
+    print(f"  tai san ngoai commit DA KHAI (van_chuyen) : {so_van_chuyen}")
     for v in vi_du:
         print(f"    {v}")
     print()

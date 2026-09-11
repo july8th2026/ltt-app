@@ -253,6 +253,9 @@ def register_job_routes(api, config, tag: str) -> None:
         # disagree (H35.10a).
         params = invocation.apply_server_measurements(
             tool, params, sessions=sessions)
+        # Business pre-check before any price exists (D007): a request the
+        # app can already refuse must never be quoted.
+        invocation.kiem_truoc(db, tool, params, user_id=principal.user_id)
         # The app computes the price; the published regime bounds it and
         # names itself on the quote. Two facts written at the same instant is
         # what makes a charge reconcilable months later (EXT-15).
@@ -320,6 +323,9 @@ def register_job_routes(api, config, tag: str) -> None:
                                        for name, session in sessions.items()})
         params = invocation.apply_server_measurements(
             tool, params, sessions=sessions)
+        # Business pre-check before any price exists (D007): a request the
+        # app can already refuse must never hold credit or queue.
+        invocation.kiem_truoc(db, tool, params, user_id=principal.user_id)
         cost = pricing.apply_bounds(
             invocation.price(tool, params),
             pricing.active_for(db, tool=tool.name))

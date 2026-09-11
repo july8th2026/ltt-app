@@ -304,27 +304,14 @@ def _chot_lan(lan_giong: str, yc: YeuCau) -> tuple:
     return lan_ngon_ngu.doi_chieu(lan_giong, yc.text, yc.ngon_ngu)
 
 
-def giai_giong(db, yc: YeuCau) -> tuple:
-    """`YeuCau` -> `(ref_b64, preset, canh_bao)`.
+def _tim_ho_so_giong(db, yc: YeuCau):
+    """So huu + trang thai cua mot `voice_id` -- KHONG cham storage.
 
-    Đây là chỗ **quyền sở hữu** được kiểm, và từ Q121 cũng là chỗ **làn ngôn
-    ngữ** được chốt. Cả hai là chỗ duy nhất.
-
-    ⛔ THỨ TỰ CÓ NGHĨA: giải giọng trước, chốt làn sau. Ta không nói được một
-       yêu cầu lệch làn khi còn chưa biết giọng nào — và "giọng này không phải
-       của bạn" là câu phải ra trước, vì nó đúng bất kể văn bản viết bằng gì.
+    Tra `ho_so` (VoiceProfile) neu hop le; nem `LoiGiongNoi` neu khong. Dung
+    chung cho `giai_giong()` (nap that) va `giai_giong_kiem()` (D007, chi
+    kiem) -- day la PHAN DUY NHAT ca hai co the chia se ma khong keo theo
+    mot luot doc kho (R2), vi no dung TRUOC ca `_chot_lan` lan `nap_ref_b64`.
     """
-    if not yc.voice_id:
-        # ⛔ KHÔNG gõ `"vi"` ở đây nữa. Trước 2026-09-10 chỗ này là một hằng số
-        #    chuỗi, và nó là **bản chép thứ nhất** của danh sách VI/EN (bản thứ
-        #    hai nằm trong `_voice_chon.html`). Hai bản chép không có phép kiểm
-        #    là hai bản sẽ lệch — và bản trong HTML thì không có cách nào tự
-        #    biết nó đã cũ.
-        from . import giong_mau
-        lan = giong_mau.lan_cua(yc.preset) if yc.preset else giong_mau.lan_cua(
-            giong_mau.MAC_DINH)
-        return None, (yc.preset or None), _chot_lan(lan, yc)
-
     # `cho_dung_chung=True`: kho giọng chung của nền tảng đọc được cho mọi
     # khách. Đây là cửa DÙNG, nên nó mở; cửa SỬA (`_p_giong`) thì không.
     ho_so = tham_chieu.tim_profile(db, yc.voice_id, owner_id=yc.owner_id,
@@ -357,6 +344,178 @@ def giai_giong(db, yc: YeuCau) -> tuple:
             "clip khác."))
     if ho_so.trang_thai != "active":
         raise LoiGiongNoi(_t("Giọng này đang bị tắt. Hãy bật lại hoặc tạo giọng mới."))
+    return ho_so
+
+
+@dataclass(frozen=True)
+class _DuPhongGiong:
+    """Ket qua chon duong lui khi bieu dien GOC da mat (ca nang engine) --
+    KHONG goi `tham_chieu.nap_ref_b64`. Dung chung boi `giai_giong()` (nap
+    that + ghi log) va `giai_giong_kiem()` (D007, khong nap/khong log).
+
+    `bieu_dien` khac None => ben goi phai tu `nap_ref_b64` no (lui ve kho
+    chung); `preset` khac None => tra thang, khong nap gi (lui ve preset).
+    `thay_ma` la ma cua ung vien lui, chi dung de ghi log ben `giai_giong()`.
+    """
+    bieu_dien: object = None
+    preset: object = None
+    canh_bao: tuple = ()
+    thay_ma: str = ""
+
+
+def _chon_duong_lui(db, ho_so, yc: YeuCau) -> "_DuPhongGiong":
+    """Chon duong lui khi `tim_repr_active(ho_so.id)` da tra None.
+
+    🔴 ĐẾN ĐƯỢC ĐÂY NGHĨA LÀ GHI DANH ĐÃ XONG MÀ BIỂU DIỄN KHÔNG CÒN.
+
+    Nhánh `dang_ghi_danh` đã bị chặn ở `_tim_ho_so_giong`, nên trạng thái ở
+    đây là `active` — tức từng có biểu diễn và nay không có cái nào
+    `dang_dung`. Đó là ca **nâng engine**: `voice_repr` gắn với một phiên bản
+    engine, và bản cũ bị cho nghỉ.
+
+    ⛔ Câu cũ ở đây là *"chưa ghi danh xong, hãy thử lại sau ít phút"* — và chờ
+    thì **không bao giờ** giúp được, vì không có job nào đang chạy. Một lời
+    khuyên không dẫn tới đâu tệ hơn một lời từ chối.
+
+    ⭐ Nên đây là chỗ ĐƯỜNG LÙI đứng: bài vẫn đọc được, chỉ là bằng một giọng
+    khác — và khách **được nói cho biết** (`lui_giong.CANH_BAO`).
+    """
+    thay = lui_giong.chon(gioi=(ho_so.gioi or ""),
+                          ngon_ngu=(ho_so.ngon_ngu or ""),
+                          cac=lui_giong.tu_giong_mau())
+    if thay is not None:
+        return _DuPhongGiong(
+            preset=thay.ma, thay_ma=thay.ma,
+            canh_bao=(lui_giong.dien_canh_bao(lui_giong.CANH_BAO, thay),))
+
+    # ⭐ BƯỚC HAI — KHO CHUNG, và nó chạy **SAU** giọng mẫu chứ không gộp.
+    #
+    #    Gộp hai kho vào một danh sách sẽ đổi hành vi của làn `vi` đang chạy
+    #    tốt: `chon()` được gọi ở đây **không truyền** `vung`/`phong_cach`,
+    #    nên cả hai là `""`. Giọng kho chung không có hai trường ấy (bảng
+    #    `VoiceProfile` chỉ có `gioi` + `ngon_ngu`) nên chúng khớp nấc ①
+    #    *"cùng vùng, cùng phong cách"*, trong khi preset của engine — vốn
+    #    CÓ vùng và phong cách thật — trượt nấc ① lẫn ② và chỉ được nhặt ở
+    #    nấc ③. Kết quả: một bài tiếng Việt đang lùi về preset sẽ lặng lẽ
+    #    đổi sang một giọng kho chung.
+    #
+    # ⇒ Hai bước, không một danh sách. Bước hai chỉ nổ khi bước một trả
+    #   `None` — tức đúng ca làn `en` (không preset nào qua được `_hop`).
+    #
+    # ⚠️ Vòng lặp co dần thay vì gọi `chon()` một lần: một giọng chung cũng
+    #    có thể mất biểu diễn — đúng cùng ca hỏng đã đưa ta tới đây. Bỏ qua
+    #    ứng viên nạp không được rồi hỏi lại **cùng bậc thang ấy**, chứ
+    #    không chép lại luật xếp hạng ra chỗ này.
+    con_lai = tham_chieu.ung_vien_kho_chung(db)
+    while con_lai:
+        thay = lui_giong.chon(gioi=(ho_so.gioi or ""),
+                              ngon_ngu=(ho_so.ngon_ngu or ""),
+                              cac=con_lai)
+        if thay is None:
+            break
+        # ⛔ Đi qua `tim_profile`, KHÔNG tự truy vấn: đó là chỗ duy nhất
+        #    kiểm quyền đọc, và cổng license (`_dieu_kien_kho_chung`) nằm
+        #    trong nó. Một đường lùi có lối riêng là một cổng bị vòng.
+        hs2 = tham_chieu.tim_profile(db, thay.ma, owner_id=yc.owner_id,
+                                     cho_dung_chung=True)
+        bd2 = (tham_chieu.tim_repr_active(db, hs2.id)
+               if hs2 is not None else None)
+        if bd2 is not None:
+            return _DuPhongGiong(
+                bieu_dien=bd2, thay_ma=thay.ma,
+                canh_bao=(lui_giong.dien_canh_bao(lui_giong.CANH_BAO, thay),))
+        con_lai = tuple(u for u in con_lai if u.ma != thay.ma)
+
+    # Không lùi được thì nói THẬT vì sao, và nói việc phải làm.
+    raise LoiGiongNoi(_t(
+        "Giọng này cần được ghi danh lại (bản ghi cũ không còn dùng được "
+        "với máy đọc hiện tại). Hãy tải lại clip mẫu ở màn Giọng."))
+
+
+@dataclass(frozen=True)
+class KeHoachGiong:
+    """Ket qua `giai_giong_kiem()`: MOI phep kiem (so huu, trang thai, chot
+    lan, chon duong lui) da chay xong, nhung CHUA cham storage -- chua goi
+    `tham_chieu.nap_ref_b64`.
+
+    `ho_so` la None o nhanh preset thang (khong co `voice_id`). `bieu_dien`
+    khac None nghia la `giai_giong()` se phai `nap_ref_b64` no; `preset`
+    khac None nghia la tra thang, khong nap gi.
+    """
+    ho_so: object = None
+    bieu_dien: object = None
+    preset: object = None
+    canh_bao: tuple = ()
+
+
+def giai_giong_kiem(db, yc: YeuCau) -> "KeHoachGiong":
+    """Phan THUAN cua `giai_giong()` (D007, RC1 2026-09-11): so huu + trang
+    thai + chot lan + chon duong lui -- KHONG goi `tham_chieu.nap_ref_b64`,
+    tuc KHONG cham storage/R2.
+
+    Day la ham `apps.ltt_voice.kiem_truoc_api.kiem` goi cho Public API
+    pre-check (hook `ToolSpec.kiem_truoc`, chay TRUOC khi co gia va TRUOC khi
+    giu tien o `/quotes` va `/jobs`). No chay dung MOI phep kiem nghiep vu ma
+    `giai_giong()` chay, tru dung mot buoc: nap bieu dien tu kho -- buoc do
+    la mot luot doc mang (R2) ma mot lan CHI KIEM khong can, va mot loi
+    storage trong buoc do khong phai `LoiNguoiGoi` nen se thoat ra thanh 500
+    thay vi 400 neu no chay o day.
+
+    ⛔ THỨ TỰ CÓ NGHĨA, giống `giai_giong()`: giải giọng trước, chốt làn sau.
+       Ta không nói được một yêu cầu lệch làn khi còn chưa biết giọng nào —
+       và "giọng này không phải của bạn" là câu phải ra trước, vì nó đúng bất
+       kể văn bản viết bằng gì.
+    """
+    if not yc.voice_id:
+        from . import giong_mau
+        lan = giong_mau.lan_cua(yc.preset) if yc.preset else giong_mau.lan_cua(
+            giong_mau.MAC_DINH)
+        return KeHoachGiong(preset=(yc.preset or None), canh_bao=_chot_lan(lan, yc))
+
+    ho_so = _tim_ho_so_giong(db, yc)
+    canh_bao = _chot_lan(ho_so.ngon_ngu, yc)
+
+    bieu_dien = tham_chieu.tim_repr_active(db, ho_so.id)
+    if bieu_dien is None:
+        dp = _chon_duong_lui(db, ho_so, yc)
+        if dp.bieu_dien is not None:
+            return KeHoachGiong(ho_so=ho_so, bieu_dien=dp.bieu_dien,
+                                canh_bao=dp.canh_bao)
+        return KeHoachGiong(ho_so=ho_so, preset=dp.preset, canh_bao=dp.canh_bao)
+
+    return KeHoachGiong(ho_so=ho_so, bieu_dien=bieu_dien, canh_bao=canh_bao)
+
+
+def giai_giong(db, yc: YeuCau) -> tuple:
+    """`YeuCau` -> `(ref_b64, preset, canh_bao)`.
+
+    Đây là chỗ **quyền sở hữu** được kiểm, và từ Q121 cũng là chỗ **làn ngôn
+    ngữ** được chốt. Cả hai là chỗ duy nhất.
+
+    ⛔ THỨ TỰ CÓ NGHĨA: giải giọng trước, chốt làn sau. Ta không nói được một
+       yêu cầu lệch làn khi còn chưa biết giọng nào — và "giọng này không phải
+       của bạn" là câu phải ra trước, vì nó đúng bất kể văn bản viết bằng gì.
+
+    ⭐ D007 (RC1 2026-09-11): `_tim_ho_so_giong`/`_chon_duong_lui` dùng CHUNG
+       với `giai_giong_kiem()` (Public API pre-check, không đụng storage).
+       Hàm này giữ nguyên hành vi/thông điệp/thứ tự như trước khi tách —
+       `_chot_lan` vẫn đứng ngay đây, TRƯỚC `nap_ref_b64`, ở CẢ HAI nhánh
+       (`test_355`). Log "lui giong" chỉ ghi Ở ĐÂY (đường NẠP thật), không
+       ghi trong `giai_giong_kiem` — một lượt chỉ-kiểm không lùi giọng nào
+       thật cả, nên không có gì để log.
+    """
+    if not yc.voice_id:
+        # ⛔ KHÔNG gõ `"vi"` ở đây nữa. Trước 2026-09-10 chỗ này là một hằng số
+        #    chuỗi, và nó là **bản chép thứ nhất** của danh sách VI/EN (bản thứ
+        #    hai nằm trong `_voice_chon.html`). Hai bản chép không có phép kiểm
+        #    là hai bản sẽ lệch — và bản trong HTML thì không có cách nào tự
+        #    biết nó đã cũ.
+        from . import giong_mau
+        lan = giong_mau.lan_cua(yc.preset) if yc.preset else giong_mau.lan_cua(
+            giong_mau.MAC_DINH)
+        return None, (yc.preset or None), _chot_lan(lan, yc)
+
+    ho_so = _tim_ho_so_giong(db, yc)
 
     # ⛔ CHỐT LÀN TRƯỚC KHI NẠP BIỂU DIỄN. `nap_ref_b64` là một lượt đọc kho —
     #    trên production đó là một lượt gọi MẠNG tới R2 cho một yêu cầu ta vừa
@@ -366,71 +525,15 @@ def giai_giong(db, yc: YeuCau) -> tuple:
 
     bieu_dien = tham_chieu.tim_repr_active(db, ho_so.id)
     if bieu_dien is None:
-        # 🔴 ĐẾN ĐƯỢC ĐÂY NGHĨA LÀ GHI DANH ĐÃ XONG MÀ BIỂU DIỄN KHÔNG CÒN.
-        #
-        #    Nhánh `dang_ghi_danh` đã bị chặn ngay trên, nên trạng thái ở đây
-        #    là `active` — tức từng có biểu diễn và nay không có cái nào
-        #    `dang_dung`. Đó là ca **nâng engine**: `voice_repr` gắn với một
-        #    phiên bản engine, và bản cũ bị cho nghỉ.
-        #
-        # ⛔ Câu cũ ở đây là *"chưa ghi danh xong, hãy thử lại sau ít phút"* —
-        #    và chờ thì **không bao giờ** giúp được, vì không có job nào đang
-        #    chạy. Một lời khuyên không dẫn tới đâu tệ hơn một lời từ chối.
-        #
-        # ⭐ Nên đây là chỗ ĐƯỜNG LÙI đứng: bài vẫn đọc được, chỉ là bằng một
-        #    giọng khác — và khách **được nói cho biết** (`lui_giong.CANH_BAO`).
-        thay = lui_giong.chon(gioi=(ho_so.gioi or ""),
-                              ngon_ngu=(ho_so.ngon_ngu or ""),
-                              cac=lui_giong.tu_giong_mau())
-        if thay is not None:
-            log.info("lui giong: %s -> preset %s (gioi=%s lan=%s)",
-                     ho_so.public_id, thay.ma, ho_so.gioi, ho_so.ngon_ngu)
-            return (None, thay.ma,
-                    (lui_giong.dien_canh_bao(lui_giong.CANH_BAO, thay),))
+        dp = _chon_duong_lui(db, ho_so, yc)
+        if dp.bieu_dien is not None:
+            log.info("lui giong: %s -> kho chung %s (gioi=%s lan=%s)",
+                     ho_so.public_id, dp.thay_ma, ho_so.gioi, ho_so.ngon_ngu)
+            return tham_chieu.nap_ref_b64(dp.bieu_dien), None, dp.canh_bao
+        log.info("lui giong: %s -> preset %s (gioi=%s lan=%s)",
+                 ho_so.public_id, dp.thay_ma, ho_so.gioi, ho_so.ngon_ngu)
+        return None, dp.preset, dp.canh_bao
 
-        # ⭐ BƯỚC HAI — KHO CHUNG, và nó chạy **SAU** giọng mẫu chứ không gộp.
-        #
-        #    Gộp hai kho vào một danh sách sẽ đổi hành vi của làn `vi` đang chạy
-        #    tốt: `chon()` được gọi ở đây **không truyền** `vung`/`phong_cach`,
-        #    nên cả hai là `""`. Giọng kho chung không có hai trường ấy (bảng
-        #    `VoiceProfile` chỉ có `gioi` + `ngon_ngu`) nên chúng khớp nấc ①
-        #    *"cùng vùng, cùng phong cách"*, trong khi preset của engine — vốn
-        #    CÓ vùng và phong cách thật — trượt nấc ① lẫn ② và chỉ được nhặt ở
-        #    nấc ③. Kết quả: một bài tiếng Việt đang lùi về preset sẽ lặng lẽ
-        #    đổi sang một giọng kho chung.
-        #
-        # ⇒ Hai bước, không một danh sách. Bước hai chỉ nổ khi bước một trả
-        #   `None` — tức đúng ca làn `en` (không preset nào qua được `_hop`).
-        #
-        # ⚠️ Vòng lặp co dần thay vì gọi `chon()` một lần: một giọng chung cũng
-        #    có thể mất biểu diễn — đúng cùng ca hỏng đã đưa ta tới đây. Bỏ qua
-        #    ứng viên nạp không được rồi hỏi lại **cùng bậc thang ấy**, chứ
-        #    không chép lại luật xếp hạng ra chỗ này.
-        con_lai = tham_chieu.ung_vien_kho_chung(db)
-        while con_lai:
-            thay = lui_giong.chon(gioi=(ho_so.gioi or ""),
-                                  ngon_ngu=(ho_so.ngon_ngu or ""),
-                                  cac=con_lai)
-            if thay is None:
-                break
-            # ⛔ Đi qua `tim_profile`, KHÔNG tự truy vấn: đó là chỗ duy nhất
-            #    kiểm quyền đọc, và cổng license (`_dieu_kien_kho_chung`) nằm
-            #    trong nó. Một đường lùi có lối riêng là một cổng bị vòng.
-            hs2 = tham_chieu.tim_profile(db, thay.ma, owner_id=yc.owner_id,
-                                         cho_dung_chung=True)
-            bd2 = (tham_chieu.tim_repr_active(db, hs2.id)
-                   if hs2 is not None else None)
-            if bd2 is not None:
-                log.info("lui giong: %s -> kho chung %s (gioi=%s lan=%s)",
-                         ho_so.public_id, thay.ma, ho_so.gioi, ho_so.ngon_ngu)
-                return (tham_chieu.nap_ref_b64(bd2), None,
-                        (lui_giong.dien_canh_bao(lui_giong.CANH_BAO, thay),))
-            con_lai = tuple(u for u in con_lai if u.ma != thay.ma)
-
-        # Không lùi được thì nói THẬT vì sao, và nói việc phải làm.
-        raise LoiGiongNoi(_t(
-            "Giọng này cần được ghi danh lại (bản ghi cũ không còn dùng được "
-            "với máy đọc hiện tại). Hãy tải lại clip mẫu ở màn Giọng."))
     # ⭐ HOÀ TRUNK: câu lỗi lấy bản của trunk (nói đúng việc phải làm), cảnh báo
     #    lấy bản của Q121 (`_chot_lan` đã chạy ở trên và đã **chặn** nếu lệch).
     return tham_chieu.nap_ref_b64(bieu_dien), None, canh_bao
