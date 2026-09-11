@@ -240,8 +240,9 @@ Thu hồi khi `dang_ghi_danh` bị từ chối. Worker kiểm `trang_thai` trư�
 | 525 | `test_525_lich_su_xoa_trang_thai_suy.py` | mới (D005) |
 | 526 | `test_526_nghe_thu_phan_quyet.py` | mới (D006) |
 | 527 | `test_527_doi_soat_voice.py` | mới (INV-CHU-1) |
-| 528 | `test_528_kho_chung_nghe_thu.py` | mới (T-08) |
-| 529–549 | dự trữ cho RC1 | — |
+| 528 | `test_528_kho_chung_nghe_thu.py` | mới (T-08, INV-BE-MAT-1) |
+| 529 | `test_529_nghiem_thu_deploy_moi_tep.py` | mới (§10.3) |
+| 530–549 | dự trữ cho RC1 | — |
 
 Đo trên **mọi nhánh** ngày 11/09: 357–359 và 520–549 trống.
 
@@ -266,9 +267,12 @@ tảng resolve lúc cần, không import app lúc nạp). Callable có chữ ký
 `(db, user_id, params) -> None` và ném `LoiNguoiGoi` mang mã. Với `speech.ltt`:
 `apps.ltt_voice.kiem_truoc_api:kiem` (gọi `features.chuan_hoa` + `giai_giong`).
 `invocation.py` gọi nó **sau**
-phép kiểm hình dạng tham số và **trước** `submit_with_credit`; lỗi đi ra phong bì lỗi
-sẵn có với mã lấy từ ngoại lệ; mã mới đăng ký trong `contract.py`. Tool không khai
-hook ⇒ hành vi không đổi. Worker vẫn kiểm (phòng thủ nhiều lớp).
+phép kiểm hình dạng tham số, ở **cả hai** route `POST /quotes` và `POST /jobs`
+(`server/api/jobs.py`), **trước** khi có giá và trước `submit_with_credit`. Lỗi đi ra
+phong bì lỗi sẵn có: `errors.invalid_request(detail, reason=<ma_loi>)` — mã HTTP
+400, `code = invalid_request` không đổi, mã nghiệp vụ nằm ở trường `reason`; **không**
+đăng ký mã mới trong `contract.py`. Tool không khai hook ⇒ hành vi không đổi. Worker
+vẫn kiểm (phòng thủ nhiều lớp).
 
 ⚠️ Luật 20 (`CLAUDE.md`): đây là sửa `platform_core`. Lý do: hợp đồng app **thiếu**
 một điểm kiểm trước khi giữ tiền — không app nào tự làm được điều đó từ thư mục của nó.
@@ -391,7 +395,7 @@ giữ nguyên dòng kết luận và mã thoát.
 | Schema | hai migration chỉ **thêm** (một cột, một bảng) | code cũ bỏ qua cột/bảng lạ; không cần downgrade để chạy lại bản cũ |
 | Dữ liệu ASR | công cụ ghi giá trị cũ + nguồn gốc cũ trước khi đổi | đảo được bằng chính công cụ (`--dao`) |
 | Tệp đã xoá (thu hồi, xoá lịch sử) | **không đảo được** — đúng ý nghĩa của xoá | có hộp xác nhận; không chạy trên dữ liệu thật trong RC |
-| Public API | hook tuỳ chọn; gỡ khai báo trên `ToolSpec` ⇒ hành vi cũ | không đổi hợp đồng cũ, chỉ thêm mã lỗi |
+| Public API | hook tuỳ chọn; gỡ khai báo trên `ToolSpec` ⇒ hành vi cũ | mã lỗi `invalid_request` không đổi; chỉ thêm trường `reason` |
 
 ---
 

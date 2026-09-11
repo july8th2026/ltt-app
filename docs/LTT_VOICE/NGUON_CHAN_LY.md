@@ -28,6 +28,7 @@ năm đều về phía nguy hiểm. Đừng gõ một con số nào vào đây.
 | Tệp model có lành không | `voice_sidecar/kiem_model.py` | đo **nội dung**, không đo sự tồn tại |
 | Cửa sidecar nào ĐANG phục vụ | `tests/test_504_ltt_voice_be_mat_sidecar.py::KIEM_KE` | bản kiểm kê **có phép kiểm hai chiều** |
 | So sánh với hệ Viral (engine · kho giọng · license) | `docs/LTT_VOICE/VIRAL_VOICE_AUDIT_2026-09-07.md` | lượt soát 07/09 |
+| Nhánh Voice nào chưa hạ cánh, và kết cục của nó | docs/LTT_VOICE/HOP_NHAT/SO_CAI.json + tools/doi_soat_voice.py | máy đo (INV-CHU-1) |
 
 ---
 
@@ -38,6 +39,7 @@ hơn thắng — trừ khi tệp cũ mang một **phép đo** mà tệp mới ch
 
 | Tệp | Ngày | Vai trò |
 |---|---|---|
+| `docs/superpowers/specs/2026-09-11-ltt-voice-system-reconciliation-design.md` | 11/09 | ✅ **hợp đồng** RC1: D001–D009, bất biến |
 | `VIRAL_VOICE_AUDIT_2026-09-07.md` | 07/09 | soát LTT × Viral: engine, kho giọng, **license/provenance** |
 | `DECISIONS.md` DV-009…DV-011 | 07/09 | ✅ **hợp đồng** đường lùi giọng · kênh cảnh báo · cổng model |
 | `NGUON_CHAN_LY.md` | 05/09 | **chỉ mục này** — con trỏ, không giá trị |
@@ -61,7 +63,7 @@ cũ đi khi có phép đo mới bác bỏ nó. Chưa có.
 
 ---
 
-## 🔴 NĂM KHẲNG ĐỊNH KHÔNG CÒN ĐÚNG — đừng dựng lại chúng
+## 🔴 SÁU KHẲNG ĐỊNH KHÔNG CÒN ĐÚNG — đừng dựng lại chúng
 
 Bốn cái đầu (①–④) **nghe rất thuyết phục** khi mới đọc, và cả bốn đều sai **ngay
 từ lúc viết**. Ghi ra vì một phiên sau đọc phải bản cũ sẽ đi "sửa" những thứ vốn
@@ -152,6 +154,24 @@ Từ 05/09 `/audio` đi qua `platform_core.phat_media`: khai `Accept-Ranges`, tr
 ấy thứ phải sửa là **lý do**, không phải dòng mã.
 
 → `docs/MOBILE/02_BASELINE.md` §1a · commit `bec5643d` (phiên `phien/mobile-v1`)
+
+### ⑥ *"Đoán lệch làn chỉ nên cảnh báo"* — ĐÚNG lúc viết (01/09), SAI từ Q121 (10/09)
+
+Nhánh `claude/ltt-voice-gui-mvp-ed62d6` mang đúng chính sách này: khi làn **đoán**
+từ văn bản lệch với làn của giọng, chỉ hiện cảnh báo, không chặn (`_chan_xung_dot_lan`
++ `xung_dot`). Ở thời điểm nhánh đó viết (01/09), đó là chính sách đúng.
+
+Chủ dự án ra Q121 ngày 10/09 (`docs/QUYET_DINH_NEN_TANG.md`): đoán lệch làn phải
+**chặn**, không chỉ cảnh báo — cùng lý do với D002 (RC1, 11/09) *"lời khai chỉ
+THẮT"*. Từ đó câu trên **sai**: một GUI dựng theo chính sách cũ sẽ cho qua đúng
+ca mà sản phẩm muốn chặn.
+
+⇒ RC1 **bỏ tường minh** bản chính sách của nhánh này (SC-1, và các phần ăn theo
+nó: SC-6, SC-7, SC-13) — không tự merge âm thầm (đó chính là R5 ở §1.4 của spec
+hợp nhất). Giữ duy nhất `lan_ngon_ngu.quyet_dinh` làm thẩm quyền (INV-02).
+
+→ `apps/ltt_voice/lan_ngon_ngu.py::quyet_dinh` · D002 (spec RC1 §4) ·
+  `tests/test_522_mot_tham_quyen_lan.py` (INV-02)
 
 ---
 

@@ -1,0 +1,126 @@
+{
+  "phien_ban": 1,
+  "trunk": "admin-mvp-v3",
+  "rc": {
+    "nhanh": "claude/ltt-voice-reconciliation-165a40",
+    "goc": "3100c317df8b7a7c1d9a161723931ae56fc1a318",
+    "spec": "docs/superpowers/specs/2026-09-11-ltt-voice-system-reconciliation-design.md"
+  },
+  "vung": [
+    "apps/ltt_voice",
+    "server/static/voice.js",
+    "voice_sidecar",
+    "tests/browser/ltt_voice_golden.js",
+    "tests/browser/ltt_voice_negative.js",
+    "tests/browser/ltt_voice_smoke.js"
+  ],
+  "nguon": [
+    {
+      "sha": "65e099afed5884c4f9cc60c6361efd8e250541af",
+      "nhanh": "claude/ltt-voice-gui-mvp-ed62d6",
+      "hang_muc": "GUI MVP + chinh sach lan thu hai",
+      "ket_cuc": "FIX",
+      "ly_do": "giu: preview kho chung (T-08), cua khai lan (D004), GUI lan (Task 11); bo: SC-1, SC-6, SC-7, SC-13, T-03",
+      "rc_sha": "",
+      "test": ""
+    },
+    {
+      "sha": "0915f1f3fbc926d33861530685b86fdc9a2b2e49",
+      "nhanh": "claude/my-voices-enrollment-prod-379a22",
+      "hang_muc": "nguon goc lan + thu hoi",
+      "ket_cuc": "FIX",
+      "ly_do": "D003, T-04, T-07; bo mac dinh \"\" (D003)",
+      "rc_sha": "",
+      "test": ""
+    },
+    {
+      "sha": "29ac2300febb668d5d9bfe90287a23a97fd77350",
+      "nhanh": "claude/my-voices-enrollment-prod-379a22",
+      "hang_muc": "cua khai lan (JSON)",
+      "ket_cuc": "FIX",
+      "ly_do": "gop voi 65e099af (D004, SC-2)",
+      "rc_sha": "",
+      "test": ""
+    },
+    {
+      "sha": "27baa1a85a7b0cd86e9eb54a99f8c2adccb14aa6",
+      "nhanh": "claude/history-audio-storage-auth-4cffe3",
+      "hang_muc": "Lich su: het han",
+      "ket_cuc": "KEEP",
+      "ly_do": "Task 8",
+      "rc_sha": "",
+      "test": ""
+    },
+    {
+      "sha": "31878cc2f0c8c9401f863b42d42855f2dd601d15",
+      "nhanh": "claude/history-audio-storage-auth-4cffe3",
+      "hang_muc": "Lich su: xoa + da tai",
+      "ket_cuc": "FIX",
+      "ly_do": "D005, T-04, T-11; giu hotfix doc_lai (SC-8)",
+      "rc_sha": "",
+      "test": ""
+    },
+    {
+      "sha": "dca96e847c3cfda84439892a114ca1cb0771d4f2",
+      "nhanh": "claude/history-audio-storage-auth-4cffe3",
+      "hang_muc": "nghia vu nen tang bang moi",
+      "ket_cuc": "KEEP",
+      "ly_do": "Task 8",
+      "rc_sha": "",
+      "test": ""
+    },
+    {
+      "sha": "ca6a00cef4ced1576e5de4b612cbb80a34ad4782",
+      "nhanh": "claude/projects-longform-slice-ab2e77",
+      "hang_muc": "badge du an suy ra",
+      "ket_cuc": "FIX",
+      "ly_do": "D005 (suy ca tu tep het han), T-05",
+      "rc_sha": "",
+      "test": ""
+    },
+    {
+      "sha": "a3a2a46e098a784fddd6ff933be904b50d325568",
+      "nhanh": "claude/ltt-voice-qa-ci-gate-1c85fb",
+      "hang_muc": "hang rao QA",
+      "ket_cuc": "FIX",
+      "ly_do": "T-12 (mock them 3 cua)",
+      "rc_sha": "",
+      "test": ""
+    },
+    {
+      "sha": "3634412ae932d092bc991e5f6e1d7f968553a78b",
+      "nhanh": "claude/studio-voice-picker-ui-6782bb",
+      "hang_muc": "nut nghe thu loading/loi",
+      "ket_cuc": "FIX",
+      "ly_do": "T-13 (i18n)",
+      "rc_sha": "",
+      "test": ""
+    },
+    {
+      "sha": "891d93db3d11aee8ed584582f99e725cd9f74912",
+      "nhanh": "phien/asv-v4",
+      "hang_muc": "duong_cho_app_khac cho ASV",
+      "ket_cuc": "KEEP",
+      "ly_do": "T-09, D008",
+      "rc_sha": "",
+      "test": ""
+    }
+  ],
+  "yeu_cau": [],
+  "cap_phat_test": {
+    "351": "test_351_ltt_voice_lifecycle_authz.py",
+    "357": "test_357_ltt_voice_du_an_trang_thai.py",
+    "358": "test_358_ban_doc_dai_ranh_gioi.py",
+    "520": "test_520_ltt_voice_so_huu.py",
+    "521": "test_521_ltt_voice_ghi_danh_ngon_ngu.py",
+    "522": "test_522_mot_tham_quyen_lan.py",
+    "523": "test_523_di_tru_lan_asr.py",
+    "524": "test_524_public_api_kiem_truoc.py",
+    "525": "test_525_lich_su_xoa_trang_thai_suy.py",
+    "526": "test_526_nghe_thu_phan_quyet.py",
+    "527": "test_527_doi_soat_voice.py",
+    "528": "test_528_kho_chung_nghe_thu.py",
+    "529": "test_529_nghiem_thu_deploy_moi_tep.py",
+    "530-549": "du tru RC1"
+  }
+}
