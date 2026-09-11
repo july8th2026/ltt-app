@@ -445,7 +445,7 @@ NHA_LLM_LENH, NAP_LLM_LENH, FREE_COMFY_LENH = "nha_llm", "nap_llm", "free_comfy"
 class ThamSoResidency:
     cua_so_anh_toi_da: int = 4        # D01
     cua_so_anh_s: float = 480.0       # D01
-    t_nap_llm_s: float = 45.0         # chốt bằng đo Task 3.2 G4
+    t_nap_llm_s: float = 16.3         # ĐÃ ĐO 12/09 (G4, kho ẤM). ⚠️ kho LẠNH chờ G5
     t_anh_uoc_s: float = 110.0        # docs/ANH_NOI_BO: 92–110 s/ảnh
     bien_s: float = 30.0
     vram_sach_mib: int = 2500
