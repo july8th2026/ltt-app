@@ -41,3 +41,54 @@ mở trên 3090 ⇒ L-12 chưa đạt; đo và xử ở Task 0.3.
 
 **Đường lùi.** Chép `llama-swap.yaml` từ `releases/auto-20260911-194730` về thư mục `gateway`,
 `nssm reset LTTComfyUI AppEnvironmentExtra`, restart bốn dịch vụ theo đúng thứ tự phụ thuộc ở trên.
+
+## 2026-09-11 — Task 0.3: đo VRAM nền trên 3090 (L-12)
+
+Đo bằng `Get-Counter "\GPU Process Memory(*)\Dedicated Usage"` + `nvidia-smi --query-compute-apps`
+(script: `E:/AI/ltt_dual/do_vram_nen.ps1`), lúc `qwen38-api` đang nạp.
+
+| Trên 3090 (UUID `GPU-26623278-…`) | MiB |
+|---|---:|
+| `llama-server` (model) | 21.493 |
+| `python` = ComfyUI thường trú — **hợp lệ** theo L-11 | 224 |
+| Ngữ cảnh desktop: explorer 50,8 · dwm 24,8 · LGHUB 30,1 · M365Copilot 26,6 · StartMenu 13,2 · TextInputHost 10,3 · SearchHost 9,6 · Taskmgr 9,5 · ShellHost 9,3 · PhoneExperienceHost 9,2 · System 8,3 · csrss 3,4 | **≈ 205** |
+
+Hai dữ kiện kèm theo:
+
+- Máy B đang truy cập qua **RDP** (`Microsoft Remote Display Adapter 1920×1080`); màn hình vật lý ở
+  5060 Ti (1024×768); 3090 **không** xuất hình. Vì vậy vẫn còn một `dwm` trên 3090 (phiên RDP) bên
+  cạnh `dwm` của phiên console trên 5060 Ti.
+- ⚠️ `llama-server` có **Shared Usage 568 MiB** (tràn WDDM sang RAM) — `nvidia-smi` **không** hiện con
+  số này. Mọi phép đo VRAM về sau (Task 3.2) phải đọc thêm bộ đếm này, nếu không sẽ kết luận "vừa card"
+  trong khi thực tế đã tràn.
+
+**Ruling R16 — chưa đụng cài đặt đồ hoạ Windows.** 205 MiB nhỏ so với biên cần cho 262.144, và việc
+chuyển ưu tiên GPU của ứng dụng desktop là thay đổi cài đặt hệ thống cần chủ dự án. Để **cổng đo G1**
+(Task 3.2) phán xử: nạp được cấu hình đầy đủ ⇒ L-12 coi như đạt; thiếu trong khoảng vài trăm MiB ⇒
+quay lại dọn desktop rồi đo lại.
+
+## 2026-09-11 — Task 0.4: mốc hồi quy b10883 (cổng nghiệm thu B)
+
+Khuôn đo mới `docs/ltt_llm_dual/artifacts/bench/bench.py` (tổng quát hoá từ `docs/multijob/artifacts/m1/`),
+chạy qua llama-swap loopback trên máy B, **không** restart gì, **không** đổi `-np`.
+
+Danh tính đo được: `system_fingerprint b10883-91f6a6cf3` · GGUF sha256 `322E194F…39123482` ·
+UUID 3090 `GPU-26623278-…` · hồ sơ production `qwen38-api` (`-np 1`, `-c 204800`, KV q4_0, draft-mtp).
+
+| # | decode tok/s | TTFT (s) | tok vào | tok ra | VRAM (MiB) | Shared (MiB) | W tb |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 1 | 65,91 | 2,162 | 1.982 | 600 | 21.893 | 568,0 | 355,3 |
+| 2 | 62,50 | 1,959 | 2.039 | 600 | 21.893 | 568,0 | 315,2 |
+| 3 | 65,83 | 2,027 | 1.993 | 600 | 21.893 | 568,0 | 360,5 |
+| 4 | 66,13 | 1,951 | 2.019 | 600 | 21.893 | 568,0 | 356,9 |
+| 5 | 71,80 | 1,948 | 2.014 | 600 | 21.893 | 568,0 | 357,1 |
+| **Trung vị** | **65,91** | **1,959** | 2.014 | 600 | 21.893 | 568,0 | 356,9 |
+
+⇒ **Ngưỡng cổng B (C1 ≥ 90 % mốc) = 59,3 tok/s decode.** Con số này thay mốc cũ 54 tok/s của TD-14
+(đo trên b10689) — cùng phép đo, build mới.
+
+Hạn chế đã khai (đừng đọc rộng hơn số): `khoi_dong.ps1` (Scheduled Task) **chưa** chạy thử đầu-cuối —
+lượt này đi thẳng qua SSH đồng bộ vì chỉ ~1 phút; `bench.py` ước cỡ prompt bằng số từ chứ không qua
+`/tokenize` nên token vào dao động 1.982–2.039; `power_w_tb` là trung bình lấy mẫu ~1 s, không phải đỉnh;
+sha GGUF là hằng số chép từ `00_CURRENT_BASELINE.md`, phải sửa tay nếu đổi model; máy B **không** có
+`cua_so_yen` nên "rảnh" được xác nhận bằng `/running` + `/slots` trước/trong/sau.
