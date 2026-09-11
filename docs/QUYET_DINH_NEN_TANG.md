@@ -400,6 +400,32 @@ internal. Queue position và ETA phải đọc chính ranking mà `claim()` dùn
 đủ dữ liệu thì ETA là `null`, không bịa số. Q114 vẫn nguyên: sync/stream giữ
 immediate lease + 429 mặc định, chỉ async job nằm trong durable queue.
 
+### Q123 — LTT-CMC: một lịch sử chuẩn mới trên `main` (2026-09-11)
+
+`main` là nhánh chuẩn dài hạn duy nhất sau chiến dịch LTT-CMC. Nhánh này được
+tạo từ lineage `admin-mvp-v3` đã kiểm chứng, không dựng lại lịch sử từ
+`master` cũ. Commit/capability được đối chiếu theo patch và hành vi: bản tương
+đương chỉ giữ một lần; bản riêng có giá trị được port có chủ ý; implementation
+cũ chỉ bị bỏ sau khi caller đã chuyển sang authority mới.
+
+Ba worktree Voice/LLM đã kết thúc hoặc tạm dừng nhưng chưa bàn giao Git hoàn
+toàn mang nhãn `SESSION_PROTECTED`. CMC không commit, switch, merge, reset,
+clean hay sửa chúng trước sync barrier. Phase 1 ghim một `CMC_BASE_SHA` bất
+biến; phiên Voice và LLM sau đó tự reconcile với đúng SHA ấy, không theo một
+tên nhánh đang di chuyển.
+
+Sau full certification, `main` thay vai trò default/protected branch;
+`master`, `admin-mvp-v3`, task branch/worktree và backup tạm đã bị thay thế sẽ
+được xóa theo một ledger có duyệt riêng. Không giữ archive cạnh tranh sau khi
+chứng nhận. LTT-CMC chỉ chứng nhận source; production deployment là một gate
+khác và không được suy ra từ quyết định này.
+
+**Vì sao đổi:** `master` đang đi sau lineage chạy thật hàng trăm commit; 13
+worktree, commit patch-equivalent, reflog-only state và các nhánh Voice/LLM rẽ
+từ nhiều mốc khiến tên branch không còn chứng minh authority. Một nhánh mới,
+một baseline SHA và semantic reconciliation tạo được lịch sử đo lại được mà
+không phát lại trùng hoặc xóa nhầm việc chưa bàn giao.
+
 ## 2. Ràng buộc bất biến
 
 Những điều dưới đây **không được vi phạm**, kể cả khi tiện tay:

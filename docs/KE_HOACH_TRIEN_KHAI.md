@@ -3852,3 +3852,27 @@ Quyết định: Q122. Hồ sơ canonical: `docs/SCHEDULER_V1/`.
       L3 PASS 32/32, gồm PostgreSQL migration, M-1 và bất biến đa tiến trình.
 - [x] H44.10 Real E2E + `FINAL_REPORT.md` — 2026-09-10: Playwright local
       cô lập PASS, console 0 error, failed request 0; chưa deploy production.
+
+## H45 — LTT-CMC: một lịch sử chuẩn, một main worktree (2026-09-11)
+
+Nguồn thiết kế:
+`docs/superpowers/specs/2026-09-11-ltt-cmc-design.md`. Kế hoạch thi hành:
+`docs/superpowers/plans/2026-09-11-ltt-cmc.md`. Quyết định: Q123.
+
+- [ ] **H45.0 — Freeze + inventory:** ghim source SHA, tạo `main`, lập báo cáo
+      máy đọc/người đọc và bảo vệ mọi dirty/untracked state.
+- [ ] **H45.1 — Governance:** `main` và Operating Contract là authority duy
+      nhất; dọn các quy tắc sống mâu thuẫn nhưng không viết lại tài liệu lịch sử.
+- [ ] **H45.2 — Completed histories:** phân loại mọi branch/commit/reflog ngoài
+      hai workstream Voice/LLM; không phát lại patch-equivalent.
+- [ ] **H45.3 — Normalization baseline:** chốt một Alembic head, registry identity
+      duy nhất và frontend/generated freshness trước khi nhận hai handoff.
+- [ ] **H45.4 — Candidate certification:** secret scan + full gate trên cây sạch.
+- [ ] **H45.5 — CMC sync barrier:** ghim `CMC_BASE_SHA`, sinh hai handoff prompt
+      đã điền thật; không dọn branch/worktree tại barrier.
+- [ ] **H45.6 — Final integration + cleanup:** nhận Voice rồi LLM, chứng nhận hợp
+      nhất, chuyển default branch và xóa đúng ledger đã được duyệt riêng.
+
+**Ngoài phạm vi:** deploy production. **Gate:** tuân đúng
+`docs/00_LTT_OPERATING_CONTRACT.md`; trước lệnh nặng phải đo cả tải máy và cửa
+sổ khóa theo `docs/QUY_TAC_CHAY_LENH_NANG.md`.
