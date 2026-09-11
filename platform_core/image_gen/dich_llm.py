@@ -49,11 +49,11 @@ def goi_llm(text: str, he_thong: str, *, db,
     from platform_core.llm import admission, dieu_phoi
     from platform_core.models import APIKEY_CAT_CHAT
 
-    tai_nguyen, suat = _C.tai_nguyen_nha()
+    suc = _C.tai_nguyen_nha(_C.MODEL_MAC_DINH)
     ve = None
     try:
         ve = admission.acquire(
-            db, resource=tai_nguyen, slots=suat, user_id="he-thong:image_gen",
+            db, resource=suc.resource, slots=suc.slots, user_id="he-thong:image_gen",
             mode="sync", holder_id="dich-anh:" + _uuid.uuid4().hex[:12])
         if ve is None:
             raise GoiLLMThatBai(_t("Model đang bận, thử lại sau ít phút."))

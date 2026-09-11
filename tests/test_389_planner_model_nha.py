@@ -192,8 +192,13 @@ def test_NHA_SUAT_ca_khi_dieu_phoi_NEM(monkeypatch):
 # ── 3. Tài nguyên đọc từ bản khai, không phải bản sao thứ hai ────────────────
 
 def test_tai_nguyen_doc_tu_BAN_KHAI_cua_app():
+    """⭐ Từ multijob 2.2 câu hỏi là *"tài nguyên của MODEL nào"*, nên phép so
+    cũng hỏi bản khai bằng đúng câu ấy (`admission_cho`) thay vì đọc ba trường
+    tĩnh — bộ ba đó chỉ tả được MỘT pool, còn `text.chat` sắp có hai.
+    """
     from apps.ltt_llm.manifest import MANIFEST
+    from platform_core.llm import canonical
 
-    tool = next(t for t in MANIFEST.tools if t.admission_resource)
-    assert planner._tai_nguyen_nha() == (tool.admission_resource,
-                                         tool.admission_slots)
+    model = canonical.MODEL_MAC_DINH
+    tool = next(t for t in MANIFEST.tools if t.admission_cho(model) is not None)
+    assert planner._tai_nguyen_nha(model) == tool.admission_cho(model)

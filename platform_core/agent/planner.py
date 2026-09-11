@@ -41,9 +41,11 @@ from platform_core.llm.canonical import THU_TU_PROVIDER as PLANNER_PROVIDERS
 
 MAX_GOAL_CHARS = 8000
 
-#: Tai nguyen admission cua model nha. Doc tu ban khai cua app chu KHONG go tay,
-#: vi go tay o day la ban sao thu hai cua `admission_resource` trong manifest.
-_TAI_NGUYEN_MAC_DINH = ("llm_remote", 1)
+#: ⛔ `_TAI_NGUYEN_MAC_DINH` ĐÃ GỠ (multijob 2.2). Nó là một hằng số chết —
+#:    không dòng nào đọc — và là đúng "bản sao thứ hai của bản khai" mà chú
+#:    thích của chính nó cảnh báo. Mặc định thật sống MỘT bản ở
+#:    `platform_core/llm/canonical.py::_TAI_NGUYEN_MAC_DINH`, và từ 2.2 nó là
+#:    `AdmissionModel`, không còn là bộ đôi `(resource, slots)`.
 
 
 def _model_nha() -> str:
@@ -108,7 +110,18 @@ def _luat_cho_planner(prompt: str) -> dict:
         logging.getLogger(__name__).exception(
             "khong doc duoc ban khai model nha de dat cho KV")
         return {}
-    pool = int(getattr(tool, "admission_token_pool", 0) or 0) if tool else 0
+    # ⛔ Ngân sách KV lấy từ `admission_cho(model)`, KHÔNG từ `admission_token_pool`
+    #    (multijob 2.2): một tool khai `admission_theo_model` có trường tĩnh ấy
+    #    RỖNG, nên đọc thẳng nó sẽ ra 0 ⇒ `{}` ⇒ lease **vô hình** với sổ ngân
+    #    sách KV, đúng cái hướng an toàn ở dưới sinh ra để tránh.
+    try:
+        suc = tool.admission_cho(canonical.MODEL_MAC_DINH) if tool else None
+    except KeyError:
+        logging.getLogger(__name__).exception(
+            "model nha %r khong co trong ban khai admission cua tool",
+            canonical.MODEL_MAC_DINH)
+        return {}
+    pool = int(suc.token_pool) if suc else 0
     if pool <= 0:
         return {}
     try:
@@ -191,17 +204,17 @@ def _goi_model(db: DbSession, prompt: str) -> str:
     """
     import uuid as _uuid
 
-    from platform_core.llm import admission, dieu_phoi
+    from platform_core.llm import admission, canonical, dieu_phoi
 
     thu_tu = list(PLANNER_PROVIDERS)
     ban_do: dict[str, str] = {}
     id_nha = _model_nha()
     ve = None
-    tai_nguyen, suat = _tai_nguyen_nha()
+    suc = _tai_nguyen_nha(canonical.MODEL_MAC_DINH)
 
     if id_nha:
         ve = admission.acquire(
-            db, resource=tai_nguyen, slots=suat, user_id="he-thong:planner",
+            db, resource=suc.resource, slots=suc.slots, user_id="he-thong:planner",
             mode="job", holder_id="planner:" + _uuid.uuid4().hex[:12],
             **_luat_cho_planner(prompt))
         if ve is not None:

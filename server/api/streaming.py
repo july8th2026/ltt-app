@@ -212,6 +212,22 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
             f"leaving room for at most {tran} output tokens inside its "
             f"{_tran_giay()}s budget. Reduce the prompt or max_tokens, set "
             f"stream=true, or submit it to POST /api/v1/jobs.")
+    # ── Sức chứa admission CỦA ĐÚNG MODEL NÀY (multijob 2.2) ────────────────
+    #
+    # 🔴 `ten` là bí danh khách xin, và từ 2.2 nó quyết định **pool nào**:
+    #    `text.chat` phục vụ hai model trên hai pool KV khác nhau, nên bộ ba
+    #    tĩnh của tool không còn tả nổi sức chứa. Phép đọc thuần, đặt trước mọi
+    #    thứ chạm tiền — thứ tự cửa không đổi.
+    try:
+        suc = tool.admission_cho(ten) if tool is not None else None
+    except KeyError as e:
+        log.error("ban khai admission thieu model %r: %s", ten, e)
+        raise _bao_400(
+            f"`model` {ten!r} is not served by this endpoint.", than) from None
+    tai_nguyen = str(suc.resource or "") if suc else ""
+    so_suat = int(suc.slots or 0) if suc else 0
+    pool = int(suc.token_pool or 0) if suc else 0
+
     request_id = thanh_toan.ma_luot("ms")
     # 🔴 ĐỒNG HỒ NGÂN SÁCH CỦA CỬA BẮT ĐẦU Ở ĐÂY, trước phòng chờ. Đặt mốc sau
     #    khi chờ xong là để một lượt chờ 60 giây rồi chạy thêm 90 giây nữa —
@@ -234,9 +250,7 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
 
     try:
         suat = cua_luong.cho_suat_dong_bo(
-            tai_nguyen=str(getattr(tool, "admission_resource", "") or ""),
-            so_suat=int(getattr(tool, "admission_slots", 0) or 0),
-            token_pool=int(getattr(tool, "admission_token_pool", 0) or 0),
+            tai_nguyen=tai_nguyen, so_suat=so_suat, token_pool=pool,
             user_id=principal.user_id, request_id=request_id, cua="sync",
             token_vao_uoc=int(vao_uoc), xin_ra=int(xin_ra),
             so_anh=cua_luong.dem_anh(than),
@@ -249,9 +263,7 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         metrics.increment(metrics.CAPACITY_REFUSED)
         log.warning("HET CHO mot-cuc user=%s ly_do=%s",
                     principal.user_id[:8], e.ly_do)
-        raise limits.execution_busy(
-            str(getattr(tool, "admission_resource", "") or ""),
-            retry_after=10) from None
+        raise limits.execution_busy(tai_nguyen, retry_after=10) from None
     except phong_cho.KhachDi:
         return JSONResponse(_KHACH_NGAT, status_code=MA_KHACH_NGAT,
                             headers=_NO_STORE)

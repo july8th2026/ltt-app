@@ -62,13 +62,13 @@ def dich(prompt: str, target: str = "en") -> str:
     if not van_vao:
         raise ValueError(_t('Chưa có nội dung để dịch.'))
 
-    tai_nguyen, suat = C.tai_nguyen_nha()
+    suc = C.tai_nguyen_nha(C.MODEL_MAC_DINH)
     gen = get_session()
     db = next(gen)
     ve = None
     try:
         ve = admission.acquire(
-            db, resource=tai_nguyen, slots=suat, user_id="he-thong:taovideo",
+            db, resource=suc.resource, slots=suc.slots, user_id="he-thong:taovideo",
             mode="sync", holder_id="taovideo-dich:" + _uuid.uuid4().hex[:12])
         if ve is None:
             raise RuntimeError(_t('Model đang bận, thử lại sau ít phút.'))

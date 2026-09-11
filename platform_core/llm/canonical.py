@@ -33,6 +33,8 @@ sau tự suy.
 """
 from __future__ import annotations
 
+from platform_core.registry import AdmissionModel
+
 #: Thứ tự provider cho **mọi** đường gọi LLM nội bộ. Một phần tử, không đường lui.
 THU_TU_PROVIDER: tuple[str, ...] = ("ltt_llm",)
 
@@ -84,16 +86,21 @@ def ban_do_model(*alias: str) -> dict[str, str]:
 
 
 #: Mặc định khi không đọc được bản khai của app. Xem `tai_nguyen_nha()`.
-_TAI_NGUYEN_MAC_DINH: tuple[str, int] = ("llm_remote", 1)
+_TAI_NGUYEN_MAC_DINH = AdmissionModel("llm_remote", 1)
 
 
 def tool_nha():
     """`ToolSpec` của tool model nhà, đọc từ **bản khai của app**. `None` nếu không có.
 
     ⭐ Một hàm chứ không phải ba vòng lặp giống nhau: `tai_nguyen_nha()` cần
-       `(resource, slots)`, phòng chờ cần `admission_token_pool`, và đường ước
-       token cần chính `ToolSpec` để lấy executor. Ba bên đọc ba lần cùng một
-       bản khai là ba chỗ sẽ trôi khỏi nhau khi bản khai đổi.
+       `AdmissionModel`, phòng chờ cần ngân sách KV của nó, và đường ước token
+       cần chính `ToolSpec` để lấy executor. Ba bên đọc ba lần cùng một bản khai
+       là ba chỗ sẽ trôi khỏi nhau khi bản khai đổi.
+
+    ⛔ "Tool có khai admission" hỏi bằng `admission_cho`, KHÔNG bằng
+       `admission_resource` (multijob 2.2): một tool khai `admission_theo_model`
+       có `admission_resource` RỖNG, nên phép thử cũ sẽ bỏ qua đúng cái tool nó
+       đi tìm — và rơi về mặc định trong im lặng.
     """
     from platform_core.registry import discover
 
@@ -101,13 +108,15 @@ def tool_nha():
         if it.manifest.slug != THU_TU_PROVIDER[0]:
             continue
         for t in it.manifest.tools:
-            if getattr(t, "admission_resource", ""):
+            if t.admission_theo_model:
+                return t
+            if t.admission_cho() is not None:
                 return t
     return None
 
 
-def tai_nguyen_nha() -> tuple[str, int]:
-    """`(resource, slots)` để giành suất admission trước khi chạm máy B.
+def tai_nguyen_nha(model: str) -> AdmissionModel:
+    """`AdmissionModel` để giành suất admission trước khi chạm máy B.
 
     🔴 **MỌI đường tới máy B phải giành suất.** Máy B chỉ có **một** suất đồng
     thời (`DONG_THOI_MAY_B=1`), nên một đường quên `admission` không chỉ chen
@@ -124,15 +133,29 @@ def tai_nguyen_nha() -> tuple[str, int]:
       cùng một quyết định — đúng khuôn hỏng mà chiến dịch này gặp ba lần.
 
     ⛔ Đọc từ **bản khai của app**, không gõ tay: gõ tay ở đây là bản sao thứ
-      hai của `admission_resource` trong manifest, và hai bản sẽ trôi khỏi nhau.
+      hai của bản khai admission trong manifest, và hai bản sẽ trôi khỏi nhau.
+
+    ⭐ `model` BẮT BUỘC (multijob 2.2). `text.chat` sắp phục vụ hai model trên
+       hai pool KV khác nhau, nên "tài nguyên của model nhà" không còn là MỘT
+       câu trả lời. Một mặc định ngầm ở đây sẽ cho mọi bên gọi câu trả lời của
+       model *khác* mà không ai thấy — nên bên gọi phải nói ra nó đang dùng model
+       nào. Task 2.4 dạy từng app khai model của nó; tới lúc ấy bên gọi nội bộ
+       truyền `MODEL_MAC_DINH`.
+
+    🔴 `KeyError` KHÔNG bị nuốt. Model lạ trên một tool đã phân biệt theo model
+       là fail-closed có chủ ý (`suc_chua_admission`); rơi về `_TAI_NGUYEN_MAC_DINH`
+       ở đó nghĩa là giành **sai pool** — và một suất giành sai không bảo vệ gì.
     """
     import logging
 
     try:
         t = tool_nha()
         if t is not None:
-            return (str(getattr(t, "admission_resource", "")),
-                    int(getattr(t, "admission_slots", 1) or 1))
+            suc = t.admission_cho(model)
+            if suc is not None:
+                return suc
+    except KeyError:
+        raise
     except Exception:                                          # noqa: BLE001
         # ⛔ NÓI RA. Rơi về mặc định thì vẫn chạy được, nhưng nếu bản khai đã đổi
         #    mà chỗ này không đọc được thì ta sẽ giành **sai tài nguyên** — và

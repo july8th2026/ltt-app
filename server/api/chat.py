@@ -176,6 +176,27 @@ def register_chat_routes(api, config, tag: str) -> None:
                     "conversation.",
                     limit_name="input_tokens", limit_value=_cap)
 
+        # ── Sức chứa admission CỦA ĐÚNG MODEL NÀY (multijob 2.2) ─────────────
+        #
+        # 🔴 Giải Ở ĐÂY, trước `idempotency.begin`, và đây là một phép ĐỌC
+        #    thuần — không giữ suất, không chạm tiền, nên thứ tự tiền của D04
+        #    (413 → 402 → `begin` → `commit` → chờ → giữ tiền → gọi → quyết
+        #    toán) không đổi một bước nào. Giải sau `begin` thì một bản khai
+        #    lệch sẽ để lại một bản ghi idempotency treo phải đi mở lại.
+        #
+        # ⛔ Sau 413. Quá trần vào là chuyện của **yêu cầu** và Codex/Claude Code
+        #    dựa vào đúng mã 413 để tự nén hội thoại; chen một lỗi khác lên trước
+        #    nó là lấy mất đường tự chữa của client.
+        try:
+            suc = tool.admission_cho(sach["model"])
+        except KeyError as e:
+            # Bản khai của app nói tool này không phục vụ model ấy. KHÔNG phải
+            # 500: ta biết chính xác chuyện gì xảy ra và nói được ra.
+            log.error("ban khai admission thieu model %r: %s", sach["model"], e)
+            raise invalid_request(
+                f"`model` {sach['model']!r} is not served by this endpoint."
+            ) from None
+
         tran = _tran_max_tokens(token_vao_uoc, executor)
         if sach["max_tokens"] > tran:
             raise invalid_request(
@@ -250,8 +271,9 @@ def register_chat_routes(api, config, tag: str) -> None:
         # ── Phòng chờ (D04) — CHƯA giữ đồng nào ──────────────────────────────
         try:
             suat = cua_luong.cho_suat_dong_bo(
-                tai_nguyen=tool.admission_resource, so_suat=tool.admission_slots,
-                token_pool=int(getattr(tool, "admission_token_pool", 0) or 0),
+                tai_nguyen=(suc.resource if suc else ""),
+                so_suat=(suc.slots if suc else 0),
+                token_pool=(suc.token_pool if suc else 0),
                 user_id=principal.user_id, request_id=request_id, cua="sync",
                 token_vao_uoc=int(token_vao_uoc), xin_ra=int(sach["max_tokens"]),
                 han_s=cua_luong.han_cho_dong_bo(
@@ -266,7 +288,7 @@ def register_chat_routes(api, config, tag: str) -> None:
             _mo_lai_khoa(record, "het_cho:" + str(e.ly_do))
             log.warning("HET CHO dong bo user=%s ly_do=%s",
                         principal.user_id[:8], e.ly_do)
-            raise limits.execution_busy(tool.admission_resource,
+            raise limits.execution_busy((suc.resource if suc else ""),
                                         retry_after=_THU_LAI_S) from None
         except phong_cho.KhachDi:
             _mo_lai_khoa(record, "khach_di_luc_cho")

@@ -163,11 +163,11 @@ def _dich_mot_lo(db, items: list[dict], target_language: str) -> list[dict]:
                 "\"text\". No markdown fence, no commentary.\nInput JSON:\n" +
                 json.dumps(items, ensure_ascii=False, separators=(",", ":")))
 
-    tai_nguyen, suat = _C.tai_nguyen_nha()
+    suc = _C.tai_nguyen_nha(_C.MODEL_MAC_DINH)
     ve = None
     try:
         ve = admission.acquire(
-            db, resource=tai_nguyen, slots=suat, user_id="he-thong:autosubvideo",
+            db, resource=suc.resource, slots=suc.slots, user_id="he-thong:autosubvideo",
             mode="sync", holder_id="asv-dich:" + _uuid.uuid4().hex[:12])
         if ve is None:
             raise AuxiliaryAIError(_t("Model đang bận, thử lại sau ít phút."))

@@ -236,6 +236,29 @@ class TienKiem:
         return bool(self.tai_nguyen) and self.so_suat > 0 and self.token_pool > 0
 
 
+def _suc_chua(tool, model: str) -> tuple[str, int, int]:
+    """`(tài nguyên, số suất, pool KV)` của `tool` cho ĐÚNG `model` này. (multijob 2.2)
+
+    🔴 MỘT tool, NHIỀU pool. `text.chat` phục vụ `ltt-3.8` và `ltt-3.5` trên hai
+       pool KV khác nhau, nên `admission_resource/slots/token_pool` tĩnh không
+       còn tả nổi sức chứa: đọc thẳng chúng là đọc sức chứa của model *khác*.
+       Bản khai của app trả lời theo model, qua `ToolSpec.admission_cho`.
+
+    ⛔ `KeyError` → `ThamSoSai`, KHÔNG để nó thoát. `ThamSoSai` là lỗi hai cửa
+       đồng bộ đã biết dịch sang 400 (`_bao_400`); một `KeyError` trần thoát ra
+       khỏi đây thành **500**, tức ta trả lời "server hỏng" cho một model ta
+       đơn giản là không phục vụ.
+    """
+    suc = None
+    try:
+        suc = tool.admission_cho(model)
+    except KeyError as e:
+        raise ThamSoSai(f"model {model!r} khong duoc phuc vu o cua nay: {e}") from None
+    if suc is None:
+        return ("", 0, 0)
+    return (str(suc.resource or ""), int(suc.slots or 0), int(suc.token_pool or 0))
+
+
 def tien_kiem(db, *, user_id: str, tool_name: str, than: dict, duong: str,
               correlation_id: str = "", tien_to: str = "st", cua: str = "stream",
               tim: Optional[Callable[[str], tuple]] = None) -> TienKiem:
@@ -273,9 +296,7 @@ def tien_kiem(db, *, user_id: str, tool_name: str, than: dict, duong: str,
                               qua_dai=True)
 
     ts = tham_so_da_luot.doc()
-    tai_nguyen = str(getattr(tool, "admission_resource", "") or "")
-    so_suat = int(getattr(tool, "admission_slots", 0) or 0)
-    pool = int(getattr(tool, "admission_token_pool", 0) or 0)
+    tai_nguyen, so_suat, pool = _suc_chua(tool, ten)
     # Kẹp về pool nằm trong `luat_cho` — MỘT phép tính đặt chỗ cho mọi cửa.
     dat = tham_so_da_luot.luat_cho(pool, lop="", token_vao_uoc=vao_uoc,
                                    xin_ra=xin_ra,
@@ -576,9 +597,7 @@ def chuan_bi(db, *, user_id: str, tool_name: str, than: dict, duong: str,
     xin_ra = tran_token_ra(than, vao_uoc, executor)
 
     lease_id = ""
-    tai_nguyen = str(getattr(tool, "admission_resource", "") or "")
-    so_suat = int(getattr(tool, "admission_slots", 0) or 0)
-    pool = int(getattr(tool, "admission_token_pool", 0) or 0)
+    tai_nguyen, so_suat, pool = _suc_chua(tool, ten)
     if tai_nguyen and so_suat > 0:
         from platform_core.llm import luat_nhan, tham_so_da_luot
         luat = tham_so_da_luot.luat_cho(pool, lop=luat_nhan.TUONG_TAC,

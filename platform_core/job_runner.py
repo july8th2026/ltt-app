@@ -205,8 +205,7 @@ def _chay_mot_job(worker_id: str, *, capabilities=None) -> bool:
     # 1. Nhặt (transaction ngắn, commit ngay để job thành 'running').
     job_id: Optional[str] = None
     job_type = params = None
-    user_id = admission_resource = ""
-    admission_slots = 0
+    user_id = ""
     for db in _one_session():
         job = jobq.claim(db, worker_id=worker_id,
                          capabilities=capabilities)
@@ -215,11 +214,42 @@ def _chay_mot_job(worker_id: str, *, capabilities=None) -> bool:
             return False
         job_id, job_type, params = job.id, job.job_type, dict(job.params)
         user_id = job.user_id
-        admission_resource = job.admission_resource or ""
-        admission_slots = int(job.admission_slots or 0)
+        chup_tai_nguyen = job.admission_resource or ""
+        chup_suat = int(job.admission_slots or 0)
         db.commit()
 
     log.info("worker %s nhat job %s (%s)", worker_id, job_id[:8], job_type)
+
+    # 1a. Sức chứa admission của job này — THEO MODEL nó xin (multijob 2.2).
+    #
+    # 🔴 BẢN KHAI CỦA TOOL ĐI TRƯỚC, VÀ NÓ TRẢ LỜI THEO MODEL. Hai cột
+    #    `job.admission_resource/slots` được ghi lúc NỘP, tức trước khi ai biết
+    #    `params["model"]` dẫn tới pool nào; với `text.chat` phục vụ hai model
+    #    trên hai pool KV khác nhau, một con số chốt lúc nộp là con số của model
+    #    *khác*.
+    #
+    # ⭐ NHƯNG BẢN CHỤP LÚC NỘP KHÔNG BỊ VỨT — có app cố ý dùng nó, và vứt đi là
+    #    gỡ một chốt an toàn thật. `auto_scan_video` khai sức chứa theo **giai
+    #    đoạn pipeline** chứ không theo tool (`apps/auto_scan_video/manifest.py`
+    #    viết thẳng: *"Tai nguyen admission duoc chup luc nop job… vi no la
+    #    thuoc tinh cua mot lan chay chu khong phai cua ca app"*), nên ToolSpec
+    #    của nó không khai gì. Lấy bản khai của tool làm câu trả lời DUY NHẤT sẽ
+    #    cho giai đoạn `tach_nguon_cuc_bo` (demucs, `suat=1`) chạy **không
+    #    lease** — tức nhiều `demucs` cùng lúc, đúng sự cố đã làm máy chết.
+    #
+    # ⇒ Luật: tool khai gì thì tool thắng (và thắng THEO MODEL); tool không khai
+    #   gì (`None`) thì bản chụp lúc nộp là câu trả lời. Mọi app hiện có rơi vào
+    #   đúng một trong hai nhánh ấy với **cùng con số như trước 2.2**.
+    try:
+        suc = _suc_chua_job(job_type, params)
+    except KeyError as e:
+        # Fail-closed, và fail MỘT LẦN: `params["model"]` không có trong bản khai
+        # của tool là sai vĩnh viễn, nên trả về hàng đợi chỉ tạo một vòng lặp
+        # tiêu slot. Hỏng hẳn + hoàn tiền là kết cục đúng.
+        _hong_khai_bao_model(job_id, job_type, str(e))
+        return True
+    admission_resource = suc.resource if suc is not None else chup_tai_nguyen
+    admission_slots = int(suc.slots) if suc is not None else chup_suat
 
     # 1b. Giành slot của tài nguyên từ xa TRƯỚC GPU cục bộ. Nếu máy B đang bận,
     # không được giữ card trên worker chỉ để ngồi chờ một tài nguyên khác.
@@ -229,7 +259,7 @@ def _chay_mot_job(worker_id: str, *, capabilities=None) -> bool:
         admission.hold_persisted(
             resource=admission_resource, slots=admission_slots,
             user_id=user_id, mode="job", holder_id=job_id, job_id=job_id,
-            **_luat_cho_job(job_type, params))
+            **_luat_cho_job(job_type, params, suc))
         if admission_resource and admission_slots > 0
         else nullcontext(True)
     )
@@ -254,17 +284,12 @@ def _chay_mot_job(worker_id: str, *, capabilities=None) -> bool:
                 return _chay_handler(worker_id, job_id, job_type, params, ctx)
 
 
-def _luat_cho_job(job_type: str, params: dict) -> dict:
-    """Tham số đa lượt cho job NỀN (multijob D-03): lớp `nen` + phần đặt chỗ KV.
+def _tool_cua_job(job_type: str):
+    """`ToolSpec` khai `job_type` này. `None` khi không tìm được / registry hỏng.
 
-    Tool không khai `admission_token_pool` ⇒ `{}` ⇒ đúng hành vi cũ.
-    ⛔ Ước hỏng ⇒ đặt chỗ CẢ POOL (job chỉ chạy khi không ai khác chạy) — hướng AN
-       TOÀN. Lùi về "đếm slot" thì lease vô hình với sổ ngân sách, và một job 150K
-       lọt vào cạnh ba phiên dài là tràn pool ⇒ llama.cpp giết MỌI slot.
+    Một vòng lặp, hai bên đọc (`_suc_chua_job` và `_luat_cho_job`) — trước 2.2
+    mỗi bên tự quét `discover()` một lần, tức hai chỗ sẽ trôi khỏi nhau.
     """
-    from platform_core.llm import luat_nhan, tham_so_da_luot
-
-    tool = None
     try:
         from platform_core.registry import discover
         for item in discover():
@@ -272,14 +297,59 @@ def _luat_cho_job(job_type: str, params: dict) -> dict:
                 continue
             for t in item.manifest.tools:
                 if t.job_type == job_type:
-                    tool = t
-                    break
-            if tool is not None:
-                break
-    except Exception:  # noqa: BLE001 - registry hỏng: không đoán được pool
-        log.exception("khong doc duoc tool cua %s de dat cho KV", job_type)
+                    return t
+    except Exception:  # noqa: BLE001 - registry hỏng: không đoán được bản khai
+        log.exception("khong doc duoc tool cua %s", job_type)
+    return None
+
+
+def _suc_chua_job(job_type: str, params: dict):
+    """`AdmissionModel` của job này theo `params["model"]` (multijob 2.2).
+
+    `None` = tool không khai admission nào ⇒ job không giành lease, đúng hành vi
+    cũ. Ném `KeyError` khi tool ĐÃ phân biệt theo model mà model job xin không
+    có trong bản khai — fail-closed, xem `registry.suc_chua_admission`.
+    """
+    tool = _tool_cua_job(job_type)
+    if tool is None:
+        return None
+    return tool.admission_cho(str((params or {}).get("model") or ""))
+
+
+def _hong_khai_bao_model(job_id: str, job_type: str, ly_do: str) -> None:
+    """Job xin một model tool không khai ⇒ hỏng hẳn (`retry=False`) + hoàn tiền.
+
+    ⛔ KHÔNG `_tra_ve_hang_doi`: đây không phải "tài nguyên đang bận" mà là bản
+       khai và yêu cầu không khớp — hoãn lại chỉ để gặp đúng nó ở lượt sau, mãi
+       mãi. Và KHÔNG chạy handler: chạy mà không giành lease là đúng cái lỗ
+       `admission` sinh ra để bịt.
+    """
+    log.error("job %s (%s) xin model khong co trong ban khai: %s",
+              job_id[:8], job_type, ly_do)
+    for db in _one_session():
+        job = db.get(Job, job_id)
+        if job is not None and job.status not in (JOB_CANCELLED,):
+            jobq.fail(db, job, "Job xin mot model tool khong khai.", retry=False)
+            db.commit()
+            _hoan_tien_neu_can(db, job)
+
+
+def _luat_cho_job(job_type: str, params: dict, suc=None) -> dict:
+    """Tham số đa lượt cho job NỀN (multijob D-03): lớp `nen` + phần đặt chỗ KV.
+
+    `suc` = `AdmissionModel` đã giải theo model ở `_chay_mot_job` — ngân sách KV
+    đi theo MODEL, không phải theo tool (multijob 2.2). Không khai pool ⇒ `{}`
+    ⇒ đúng hành vi cũ.
+    ⛔ Ước hỏng ⇒ đặt chỗ CẢ POOL (job chỉ chạy khi không ai khác chạy) — hướng AN
+       TOÀN. Lùi về "đếm slot" thì lease vô hình với sổ ngân sách, và một job 150K
+       lọt vào cạnh ba phiên dài là tràn pool ⇒ llama.cpp giết MỌI slot.
+    """
+    from platform_core.llm import luat_nhan, tham_so_da_luot
+
+    tool = _tool_cua_job(job_type)
+    if tool is None:
         return {}
-    pool = int(getattr(tool, "admission_token_pool", 0) or 0) if tool else 0
+    pool = int(suc.token_pool) if suc is not None else 0
     if pool <= 0:
         return {}
     try:

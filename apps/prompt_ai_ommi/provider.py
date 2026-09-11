@@ -90,13 +90,13 @@ def generate_json(system: str, prompt: str, *,
     from platform_core.models import APIKEY_CAT_CHAT
 
     alias = _bi_danh(model)
-    tai_nguyen, suat = C.tai_nguyen_nha()
+    suc = C.tai_nguyen_nha(C.MODEL_MAC_DINH)
     gen = get_session()
     db = next(gen)
     ve = None
     try:
         ve = admission.acquire(
-            db, resource=tai_nguyen, slots=suat, user_id="he-thong:prompt_ai_ommi",
+            db, resource=suc.resource, slots=suc.slots, user_id="he-thong:prompt_ai_ommi",
             mode="sync", holder_id="ommi:" + _uuid.uuid4().hex[:12])
         if ve is None:
             raise ProviderError(_t('Model đang bận, thử lại sau ít phút.'))
