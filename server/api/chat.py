@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import logging
 import time
+from contextlib import nullcontext
 
 from fastapi import Body, Depends, Header, Request
 from fastapi.responses import JSONResponse
@@ -40,6 +41,7 @@ from platform_core.public_api.catalog import build_catalog, require_tool
 from platform_core.public_api.executor import for_tool, for_tool_name
 from platform_core.public_api.errors import (insufficient_credit,
                                              invalid_request,
+                                             payload_too_large,
                                              service_unavailable)
 from platform_core.public_api.principal import Principal
 from platform_core.public_api.protocol import SYNC_BILLED_MAX_SECONDS
@@ -55,6 +57,17 @@ OPERATION_CHAT = "chat.completions"
 #: Tool đứng sau cửa này. Nó vẫn phải qua đủ ba cổng của Q92 như mọi tool khác —
 #: có route riêng **không** làm nó bỏ qua `LTT_PUBLIC_API_TOOLS`.
 TOOL_CHAT = "text.chat"
+
+#: `Retry-After` khi hết trần chờ. Đã chờ tới trần rồi mới trả 429, nên khuyên
+#: thử lại sau vài giây là khuyên đúng — không phải 15 giây của cửa "bận ngay".
+_THU_LAI_S = 10
+
+#: Khách đã ngắt trước khi có câu trả lời. 499 là mã của nginx cho đúng tình
+#: huống này; không client nào đọc nó (họ đi rồi) nhưng **sổ request thì đọc**,
+#: và trộn nó vào 5xx là biến một chuyện bình thường thành một báo động giả.
+MA_KHACH_NGAT = 499
+_KHACH_NGAT = {"code": "client_disconnected",
+               "detail": "The client disconnected before the answer was ready."}
 
 
 def _tran_max_tokens(token_vao_uoc: int = 0, executor=None) -> int:
@@ -91,7 +104,12 @@ def register_chat_routes(api, config, tag: str) -> None:
         principal: Principal = Depends(require_scope(SCOPE_JOBS_CREATE)),
         db: Session = Depends(get_db),
     ) -> JSONResponse:
-        from platform_core.llm import admission, thanh_toan
+        from platform_core.llm import admission, ngat, phong_cho, thanh_toan
+        from platform_core.runtime_noi_bo import luong as cua_luong
+
+        # Ngân sách thời gian của cửa được tính từ ĐÂY: mọi giây tiêu ở khâu
+        # kiểm là một giây lượt gọi model không còn (xem `han_cho_dong_bo`).
+        t0 = time.monotonic()
 
         # ⭐ THÔNG BÁO LỖI LÀ TÀI LIỆU, VÀ LÀ TRANG TÀI LIỆU DUY NHẤT CHẮC CHẮN
         #    ĐƯỢC ĐỌC. Đo thật 23/08 với `openai` 2.30.0: một lượt gọi đúng theo
@@ -142,6 +160,22 @@ def register_chat_routes(api, config, tag: str) -> None:
             raise invalid_request(str(e)) from None
 
         token_vao_uoc = executor.estimate_input(sach["messages"], sach.get("tools"))
+
+        # 🔴 413 TRƯỚC MỌI THỨ KHÁC (spec §6). Quá trần vào của model là chuyện
+        #    của **yêu cầu**, không của năng lực — nó sẽ quá dài kể cả khi máy B
+        #    rảnh hoàn toàn, nên đừng để nó đi vào phòng chờ rồi chờ 60 giây để
+        #    nhận một câu trả lời đã biết trước. Và Codex/Claude Code dựa vào
+        #    đúng mã 413 để TỰ NÉN hội thoại.
+        _tran_vao = getattr(executor, "input_cap", None)
+        if _tran_vao is not None:
+            _cap = int(_tran_vao(sach["model"]))
+            if token_vao_uoc > _cap:
+                raise payload_too_large(
+                    "The input exceeds the model's context limit. Drop or "
+                    "summarise older turns and retry with a shorter "
+                    "conversation.",
+                    limit_name="input_tokens", limit_value=_cap)
+
         tran = _tran_max_tokens(token_vao_uoc, executor)
         if sach["max_tokens"] > tran:
             raise invalid_request(
@@ -150,6 +184,16 @@ def register_chat_routes(api, config, tag: str) -> None:
                 f"its {SYNC_BILLED_MAX_SECONDS}s budget. Reduce the prompt or "
                 f"max_tokens, use a streaming endpoint, or submit it to "
                 f"POST /api/v1/jobs.")
+
+        # 🔴 402 TRƯỚC `idempotency.begin` (spec §6). Chỉ ĐỌC số dư — không giữ
+        #    đồng nào ở đây, vì lượt này còn có thể phải chờ, và giữ tiền của
+        #    một lượt đang chờ là đúng thứ INV-MJ-1 cấm.
+        if not sandbox.is_test(principal.mode) and not thanh_toan.du_so_du(
+                db, user_id=principal.user_id, token_vao_uoc=token_vao_uoc,
+                max_tokens=sach["max_tokens"]):
+            metrics.increment(metrics.CREDIT_EXHAUSTED)
+            raise insufficient_credit(
+                "Insufficient credit for the ceiling this request would hold.")
 
         request_hash = idempotency.canonical_hash({"tool": TOOL_CHAT, "input": sach})
         record, replay = idempotency.begin(
@@ -185,18 +229,58 @@ def register_chat_routes(api, config, tag: str) -> None:
         #    cua `credit_entries.job_id`. PostgreSQL ep, SQLite khong — nen loi
         #    nay chay sach qua ca bo test roi no o luot goi that dau tien.
         request_id = thanh_toan.ma_luot("ch")
-        ticket = admission.acquire(
-            db, resource=tool.admission_resource, slots=tool.admission_slots,
-            user_id=principal.user_id, mode="sync", holder_id=record.id)
-        if ticket is None:
-            db.rollback()
-            raise limits.execution_busy(tool.admission_resource)
+
+        # 🔴 CHỐT GIAO DỊCH TRƯỚC KHI CHỜ, VÀ TRƯỚC KHI GỌI MODEL (D04).
+        #
+        #   1. **Khoá idempotency.** `idempotency.begin` lấy
+        #      `pg_advisory_xact_lock`, và khoá đó sống hết giao dịch. Để giao
+        #      dịch trùm lên cả lúc chờ + lượt gọi model thì một yêu cầu trùng
+        #      khoá **treo theo** thay vì nhận ngay câu trả lời đúng ("đang xử
+        #      lý"). D04 dời điểm chờ xuống **sau** dòng này chính vì thế.
+        #   2. **Kết nối CSDL bị giữ suốt lượt gọi.** Pool có N kết nối; N lượt
+        #      chat đồng thời là hết pool, và thứ chết trước là **những trang
+        #      không liên quan gì** — trang đăng nhập, trang nạp tiền.
+        #   3. **Tiến trình chết giữa chừng thì mất cả hai.** Cuộn ngược xoá bản
+        #      ghi idempotency, nên lần thử lại chạy lại từ đầu và đốt GPU lần
+        #      nữa. Chốt lại thì khoá vẫn giữ lời hứa của nó.
+        #
+        # ⛔ Từ dòng này trở xuống, **mọi đường ra phải tự chốt giao dịch của nó.**
+        db.commit()
+
+        # ── Phòng chờ (D04) — CHƯA giữ đồng nào ──────────────────────────────
+        try:
+            suat = cua_luong.cho_suat_dong_bo(
+                tai_nguyen=tool.admission_resource, so_suat=tool.admission_slots,
+                token_pool=int(getattr(tool, "admission_token_pool", 0) or 0),
+                user_id=principal.user_id, request_id=request_id, cua="sync",
+                token_vao_uoc=int(token_vao_uoc), xin_ra=int(sach["max_tokens"]),
+                han_s=cua_luong.han_cho_dong_bo(
+                    ngan_sach_s=float(SYNC_BILLED_MAX_SECONDS),
+                    da_tieu_s=time.monotonic() - t0),
+                ngat_chua=ngat.do_ngat(request))
+        except phong_cho.HetCho as e:
+            # Hết trần chờ: 0 khoản giữ (INV-MJ-2), và **mở lại khoá** — bảo
+            # khách thử lại bằng `Retry-After` rồi trả 409 cho lượt thử lại là
+            # một lời khuyên không thực hiện được.
+            metrics.increment(metrics.CAPACITY_REFUSED)
+            _mo_lai_khoa(record, "het_cho:" + str(e.ly_do))
+            log.warning("HET CHO dong bo user=%s ly_do=%s",
+                        principal.user_id[:8], e.ly_do)
+            raise limits.execution_busy(tool.admission_resource,
+                                        retry_after=_THU_LAI_S) from None
+        except phong_cho.KhachDi:
+            _mo_lai_khoa(record, "khach_di_luc_cho")
+            return JSONResponse(_KHACH_NGAT, status_code=MA_KHACH_NGAT,
+                                headers=_NO_STORE)
+
+        # ── Được nhận ⇒ GIỮ TIỀN (và chỉ từ đây trở đi) ─────────────────────
         try:
             da_giu = thanh_toan.giu_cho_luot(
                 db, user_id=principal.user_id, request_id=request_id,
                 token_vao_uoc=token_vao_uoc, max_tokens=sach["max_tokens"])
+            db.commit()
         except credit.ThieuCreditError as e:
-            # Không đủ tiền thì không đốt GPU. Chốt đúng chỗ, và trước GPU.
+            # Số dư tụt giữa lúc tiền kiểm và lúc được nhận (khách chạy song song).
             #
             # ⭐ Đếm nó: một khách hết credit là người **muốn dùng mà không dùng
             #    được**. Không đếm thì ta chỉ biết chuyện đó khi họ chịu khó viết
@@ -205,44 +289,100 @@ def register_chat_routes(api, config, tag: str) -> None:
             log.info("khach het credit tai chat/completions: user=%s",
                      principal.user_id[:8])
             db.rollback()
+            _nha(suat, "thieu_credit")
             raise insufficient_credit(str(e)) from None
+        except BaseException:
+            db.rollback()
+            _nha(suat, "loi")
+            raise
 
-        # 🔴 CHỐT GIAO DỊCH TRƯỚC KHI GỌI MODEL. Ba thứ hỏng nếu không:
-        #
-        #   1. **Khoá idempotency giữ suốt 90 giây.** `idempotency.begin` lấy
-        #      `pg_advisory_xact_lock`, và khoá đó sống hết giao dịch. Để giao
-        #      dịch trùm lên cả lượt gọi model thì một yêu cầu trùng khoá sẽ
-        #      **treo 90 giây** thay vì nhận ngay câu trả lời đúng ("đang xử lý").
-        #   2. **Kết nối CSDL bị giữ suốt lượt gọi.** Pool có N kết nối; N lượt
-        #      chat đồng thời là hết pool, và thứ chết trước là **những trang
-        #      không liên quan gì** — trang đăng nhập, trang nạp tiền.
-        #   3. **Tiến trình chết giữa chừng thì mất cả hai.** Cuộn ngược xoá phần
-        #      giữ chỗ (nghe có vẻ an toàn) **và** xoá luôn bản ghi idempotency —
-        #      nên lần thử lại chạy lại từ đầu và đốt GPU lần nữa. Chốt lại thì
-        #      phần giữ chỗ còn đó để đối soát, và khoá vẫn giữ lời hứa của nó.
-        #
-        # ⛔ Từ dòng này trở xuống, **mọi đường ra phải tự chốt giao dịch của nó.**
-        #    Không còn một giao dịch bao trùm nào để dựa vào nữa.
-        db.commit()
-        with admission.keep_alive(ticket.id):
-            return _finish_chat(
-                db=db, sach=sach, principal=principal, record=record,
-                request_id=request_id, da_giu=da_giu, executor=executor,
-                trang_thai=request.state)
+        try:
+            with admission.keep_alive(suat.lease_id) if suat.lease_id \
+                    else nullcontext():
+                return _finish_chat(
+                    db=db, sach=sach, principal=principal, record=record,
+                    request_id=request_id, da_giu=da_giu, executor=executor,
+                    trang_thai=request.state, request=request)
+        finally:
+            if suat.waiter_id:
+                phong_cho.ghi_ket_thuc(suat.waiter_id, "xong")
+
+
+def _mo_lai_khoa(record, ly_do: str) -> None:
+    """Đóng bản ghi idempotency ở trạng thái **thử lại được**, phiên mới.
+
+    ⚠️ Phiên của request đã commit và có thể đã được dùng tiếp; mở một phiên
+       riêng để việc này không kéo theo bất cứ thứ gì khác vào cùng giao dịch.
+    """
+    from platform_core.db import get_session
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        row = db.get(type(record), record.id)
+        if row is not None:
+            idempotency.mo_lai(db, row, ly_do=ly_do)
+            db.commit()
+    except Exception:  # noqa: BLE001 - khong duoc lam hong duong tra loi
+        db.rollback()
+        log.exception("khong mo lai duoc khoa idempotency %s", record.id[:8])
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+def _nha(suat, ket_qua: str) -> None:
+    """Nhả suất + chốt dòng chờ. Idempotent, và không bao giờ ném."""
+    from platform_core.llm import admission, phong_cho
+
+    try:
+        if getattr(suat, "lease_id", ""):
+            admission.release_by_id(suat.lease_id)
+    except Exception:  # noqa: BLE001 - ORPHAN_TIMEOUT la luoi cuoi
+        log.exception("khong nha duoc suat cua cua dong bo")
+    if getattr(suat, "waiter_id", ""):
+        phong_cho.ghi_ket_thuc(suat.waiter_id, ket_qua)
 
 
 def _finish_chat(*, db, sach: dict, principal, record, request_id: str,
-                 trang_thai=None,
+                 trang_thai=None, request=None,
                  da_giu: int, executor=None) -> JSONResponse:
     """Chạy model và định đoạt tiền; caller giữ execution lease bằng finally."""
-    from platform_core.llm import thanh_toan
+    from platform_core.llm import ngat, thanh_toan
     from platform_core.llm.cong_vlm import (BanError, CongVlmError, SuDung,
                                             VuotNganSachError)
 
     bat_dau = time.monotonic()
     try:
         executor = executor or for_tool_name(TOOL_CHAT)
-        kq = executor.run(db, sach, timeout_s=float(SYNC_BILLED_MAX_SECONDS))
+        # ⭐ Spec §16: thăm `is_disconnected` ~1 s **song song** với lời gọi.
+        #    Khách đi giữa chừng mà ta không biết là một lượt GPU chạy trọn cho
+        #    một người đã đóng cửa sổ — và ở cửa đồng bộ thì không có byte nào
+        #    chảy để phát hiện chuyện ấy sớm hơn.
+        kq = ngat.chay_canh_ngat(
+            lambda: executor.run(
+                db, sach,
+                timeout_s=max(1.0, float(SYNC_BILLED_MAX_SECONDS)
+                              - (time.monotonic() - bat_dau))),
+            ngat_chua=ngat.do_ngat(request))
+    except ngat.KhachNgat as e:
+        # Quyết toán theo `usage` NẾU lời gọi kịp về; không thì hoàn trọn.
+        if e.ket_qua is not None:
+            thanh_toan.quyet_toan_hoac_hoan(
+                db, user_id=principal.user_id, request_id=request_id,
+                su_dung=SuDung(token_vao=e.ket_qua.token_vao,
+                               token_ra=e.ket_qua.token_ra,
+                               token_vao_cache=e.ket_qua.token_vao_cache,
+                               dang_tin=e.ket_qua.do_duoc))
+        else:
+            thanh_toan.hoan_luot(db, user_id=principal.user_id,
+                                 request_id=request_id)
+        db.commit()
+        _mo_lai_khoa(record, "khach_ngat")
+        return JSONResponse(_KHACH_NGAT, status_code=MA_KHACH_NGAT,
+                            headers=_NO_STORE)
     except BanError as e:
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()

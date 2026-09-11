@@ -136,6 +136,15 @@ tính cả chi phí nạp lại.
   theo thời điểm cửa sổ đóng; (4) áp cho cả hai model.
 - **Affected:** `server/api/chat.py`, `server/api/streaming.py` (`_mot_cuc`), `platform_core/public_api/idempotency.py`
   (trạng thái "đang xử lý" + đóng khi hết chờ), `platform_core/llm/phong_cho.py`, test cửa đồng bộ (đánh số mới).
+- **ĐÃ HIỆN THỰC — Task 1.5 (2026-09-11).** Trình tự B chạy thật ở cả hai cửa đồng bộ
+  (`chat_completions` và `_mot_cuc`): 413 → 402 (`du_so_du`, chỉ đọc) → `idempotency.begin` →
+  `db.commit()` → `luong.cho_suat_dong_bo(han_s=luong.han_cho_dong_bo(...))` → giữ tiền → gọi →
+  quyết toán. Hết giờ ⇒ 429 + `Retry-After` + `idempotency.mo_lai` (trạng thái mới
+  `IDEMPOTENCY_FAILED`, thử lại được) + 0 bút toán. Bằng chứng:
+  `tests/test_1208_cua_dong_bo_cho.py` (12 passed, 1 skipped) — trong đó
+  `test_ban_ghi_idempotency_DA_COMMIT_khi_dang_cho` là **đối chứng cơ học** của chính D04: tiêm
+  bản chờ-trước-commit ⇒ ĐỎ ("database is locked", bản ghi vô hình với phiên khác).
+  Chi tiết: `.superpowers/sdd/2026-09-11-ltt-llm-dual-model/task-1.5-report.md`.
 
 ### D05 — Phạm vi Input Intelligence + cách chia chương trình — **LOCKED 2026-09-11**
 - **Options:** **A hai spec, một nghiệm thu** · B một spec chung · C đợt này chỉ text + ảnh.

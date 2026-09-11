@@ -173,7 +173,7 @@ def register_streaming_routes(api, config, tag: str) -> None:
 
 def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
              principal: Principal, db: Session, config, tool=None,
-             trang_thai=None) -> JSONResponse:
+             trang_thai=None, request=None) -> JSONResponse:
     """Tra loi **mot cuc** cho `/messages` va `/responses`, dung hinh dang
     Anthropic Messages.
 
@@ -188,10 +188,11 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
        cung con so ma `/chat/completions` dung, va vi cung mot ly do.
     """
     from platform_core import credit
-    from platform_core.llm import admission, thanh_toan
+    from platform_core.llm import admission, ngat, phong_cho, thanh_toan
     from platform_core.llm.cong_vlm import (BanError, CongVlmError,
                                             SuDung, VuotNganSachError)
-    from server.api.chat import _tran_max_tokens
+    from platform_core.runtime_noi_bo import luong as cua_luong
+    from server.api.chat import (MA_KHACH_NGAT, _KHACH_NGAT, _tran_max_tokens)
 
     executor = for_tool(tool) if tool is not None else for_tool_name(TOOL_CHAT)
 
@@ -210,25 +211,63 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
             f"{_tran_giay()}s budget. Reduce the prompt or max_tokens, set "
             f"stream=true, or submit it to POST /api/v1/jobs.")
     request_id = thanh_toan.ma_luot("ms")
-    ticket = None
-    if tool is not None and tool.admission_resource and tool.admission_slots > 0:
-        ticket = admission.acquire(
-            db, resource=tool.admission_resource, slots=tool.admission_slots,
-            user_id=principal.user_id, mode="sync", holder_id=request_id)
-    if tool is not None and tool.admission_resource and ticket is None:
-        db.rollback()
-        raise limits.execution_busy(tool.admission_resource)
+
+    # 🔴 402 TRƯỚC KHI XẾP HÀNG, và chỉ ĐỌC số dư. Cùng lý do với `/chat/
+    #    completions`: một lượt đang chờ **không được** có dòng giữ tiền nào
+    #    (INV-MJ-1), nên số dư phải kiểm được mà không giữ.
+    if not thanh_toan.du_so_du(db, user_id=principal.user_id,
+                               token_vao_uoc=vao_uoc, max_tokens=xin_ra):
+        metrics.increment(metrics.CREDIT_EXHAUSTED)
+        raise insufficient_credit(
+            "Insufficient credit for the ceiling this request would hold.")
+
+    # 🔴 CHỐT GIAO DỊCH CỦA REQUEST TRƯỚC KHI CHỜ (D04). Phòng chờ ghi dòng của
+    #    nó ở một phiên MỚI; để giao dịch này còn mở là SQLite "database is
+    #    locked", và trên PostgreSQL là giữ khoá hàng suốt lúc chờ.
+    db.commit()
+
+    try:
+        suat = cua_luong.cho_suat_dong_bo(
+            tai_nguyen=str(getattr(tool, "admission_resource", "") or ""),
+            so_suat=int(getattr(tool, "admission_slots", 0) or 0),
+            token_pool=int(getattr(tool, "admission_token_pool", 0) or 0),
+            user_id=principal.user_id, request_id=request_id, cua="sync",
+            token_vao_uoc=int(vao_uoc), xin_ra=int(xin_ra),
+            so_anh=cua_luong.dem_anh(than),
+            han_s=cua_luong.han_cho_dong_bo(
+                ngan_sach_s=float(_tran_giay()), da_tieu_s=0.0),
+            ngat_chua=ngat.do_ngat(request))
+    except phong_cho.HetCho as e:
+        # Hết trần chờ: 0 khoản giữ (INV-MJ-2), 0 bút toán mồ côi.
+        metrics.increment(metrics.CAPACITY_REFUSED)
+        log.warning("HET CHO mot-cuc user=%s ly_do=%s",
+                    principal.user_id[:8], e.ly_do)
+        raise limits.execution_busy(
+            str(getattr(tool, "admission_resource", "") or ""),
+            retry_after=10) from None
+    except phong_cho.KhachDi:
+        return JSONResponse(_KHACH_NGAT, status_code=MA_KHACH_NGAT,
+                            headers=_NO_STORE)
 
     def _release_ticket() -> None:
-        if ticket is not None:
-            admission.release_by_id(ticket.id)
+        if suat.lease_id:
+            admission.release_by_id(suat.lease_id)
+        if suat.waiter_id:
+            phong_cho.ghi_ket_thuc(suat.waiter_id, "xong")
+
+    # ── Được nhận ⇒ GIỮ TIỀN (và chỉ từ đây trở đi) ─────────────────────────
     try:
         da_giu = thanh_toan.giu_cho_luot(
             db, user_id=principal.user_id, request_id=request_id,
             token_vao_uoc=vao_uoc, max_tokens=xin_ra)
     except credit.ThieuCreditError as e:
         db.rollback()
+        _release_ticket()
         raise insufficient_credit(str(e)) from None
+    except BaseException:
+        db.rollback()
+        _release_ticket()
+        raise
     db.commit()
 
     # 🔴 LƯỚI AN TOÀN CHO TIỀN — VÀ NÓ ĐÃ PHẢI TRẢ GIÁ MỘT LẦN.
@@ -272,7 +311,28 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         cong_cu = tool_dich.sang_openai_tools(than.get("tools"))
         if cong_cu:
             sach["tools"] = cong_cu
-        kq = executor.run(db, sach, timeout_s=float(_tran_giay()))
+        # ⭐ Spec §16: thăm `is_disconnected` ~1 s song song với lời gọi. Không
+        #    stream nghĩa là không byte nào chảy, nên đây là cách DUY NHẤT biết
+        #    khách đã đi trước khi GPU chạy trọn một lượt không ai đọc.
+        kq = ngat.chay_canh_ngat(
+            lambda: executor.run(db, sach, timeout_s=float(_tran_giay())),
+            ngat_chua=ngat.do_ngat(request))
+    except ngat.KhachNgat as e:
+        # Quyết toán theo `usage` nếu lời gọi kịp về; không thì hoàn trọn.
+        if e.ket_qua is not None:
+            thanh_toan.quyet_toan_hoac_hoan(
+                db, user_id=principal.user_id, request_id=request_id,
+                su_dung=SuDung(token_vao=e.ket_qua.token_vao,
+                               token_ra=e.ket_qua.token_ra,
+                               token_vao_cache=e.ket_qua.token_vao_cache,
+                               dang_tin=e.ket_qua.do_duoc))
+        else:
+            thanh_toan.hoan_luot(db, user_id=principal.user_id,
+                                 request_id=request_id)
+        db.commit()
+        _release_ticket()
+        return JSONResponse(_KHACH_NGAT, status_code=MA_KHACH_NGAT,
+                            headers=_NO_STORE)
     except executor.parameter_error as e:
         # Tham số sai là lỗi của **yêu cầu**, không phải của máy chủ: 400, không
         # phải 500. Hoàn tiền trước, vì hold đã đặt rồi.
@@ -626,7 +686,8 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
 
     if not than.get("stream"):
         return _mot_cuc(duong, than, tin, ten, principal, db, config, tool,
-                        trang_thai=getattr(request, "state", None))
+                        trang_thai=getattr(request, "state", None),
+                        request=request)
 
     resolved = policy.resolve(db, config=config, principal=principal,
                               tool_name=TOOL_CHAT)

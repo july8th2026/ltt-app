@@ -302,6 +302,19 @@ def test_lot_binh_thuong_va_thu_theo_TOKEN_DA_DO(api, monkeypatch):
 
 
 def test_execution_slot_ban_tra_429_truoc_credit_va_model(api, monkeypatch):
+    """⚠️ HỢP ĐỒNG ĐỔI 11/09 (D04), BẤT BIẾN THÌ KHÔNG.
+
+    Trước: hết suất ⇒ 429 **ngay**. Nay cửa đồng bộ **chờ** trong phòng chờ tới
+    `min(60 s, ngân sách thời gian còn lại)` rồi mới 429 — vì một lượt bị từ
+    chối trong khi máy B sắp rảnh sau hai giây là doanh thu vứt đi.
+
+    ⇒ Ba lời hứa phép kiểm này canh **y nguyên**: 429 + `Retry-After`, **không**
+      gọi model, **không** chạm một đồng nào của khách. Thứ duy nhất đổi là trần
+      chờ — hạ xuống 0 ở đây để phép kiểm đo *hành vi*, không đo *60 giây*.
+      Đường chờ đầy đủ (nhịp, sổ lượt, đồng hồ tiêm) ở
+      `tests/test_1208_cua_dong_bo_cho.py`.
+    """
+    monkeypatch.setenv("LTT_LLM_CHO_DONG_BO_S", "0")
     lease_id = _giu_execution_slot()
     called = _dat_model(monkeypatch)
     user_id, token = _account()
