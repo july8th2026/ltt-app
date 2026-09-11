@@ -38,7 +38,12 @@ from .tham_so_cong_khai import TRAN_KY_TU_CONG_KHAI
 #: thứ xoá được (clip gốc + biểu diễn) và không giấu giới hạn (một bản nghe
 #: thử của engine cũ có thể còn sót — thiếu API liệt kê ở storage.py). Bản
 #: cam kết cũ vẫn trỏ tới `…-2026-09-11a`, đã đồng ý với câu CŨ.
-PHIEN_BAN_DIEU_KHOAN = "ltt-voice-dk-2026-09-11b"
+#: 11/09/2026 (review round 2, item E) — SỬA lại câu "Xoá giọng" LẦN NỮA:
+#: bản `…-11b` hứa quá ở CHỖ KHÁC — "còn sót TỚI LƯỢT DỌN KẾ TIẾP" ngụ ý có
+#: một lượt dọn sẽ xử lý nốt, và lượt đó không tồn tại. Câu mới chỉ nói "có
+#: thể còn sót lại", không hứa một hành động tương lai không có thật. Bản cam
+#: kết cũ vẫn trỏ tới `…-2026-09-11b`, đã đồng ý với câu CŨ.
+PHIEN_BAN_DIEU_KHOAN = "ltt-voice-dk-2026-09-11c"
 
 
 def cac_dieu() -> list:
@@ -114,11 +119,19 @@ def cac_dieu() -> list:
             #    nên một bản nghe thử của một `PHIEN_BAN` engine CŨ (nếu còn
             #    sót từ một lần nâng cấp) KHÔNG bị dọn. Câu mới nói đúng thứ
             #    xoá được (clip gốc + biểu diễn) và không giấu giới hạn đó.
+            #
+            # 🔴 review round 2, item E: BẢN round-1 lại hứa QUÁ Ở CHỖ KHÁC —
+            #    "còn sót TỚI LƯỢT DỌN KẾ TIẾP" ngụ ý CÓ một lượt dọn sẽ tới
+            #    và xử lý nốt bản nghe thử cũ đó. Không có lượt dọn nào như
+            #    vậy tồn tại trong kho (đúng giới hạn đã nêu: thiếu API liệt
+            #    kê thì không ai LÊN LỊCH dọn được cái không đếm được). Câu
+            #    mới chỉ nói "có thể còn sót lại", không hứa một hành động
+            #    tương lai không có thật.
             "noi_dung": _t(
                 "Bạn có thể tắt một giọng bất cứ lúc nào để ngừng dùng nó, hoặc "
                 "xoá vĩnh viễn để xoá clip gốc và dữ liệu giọng (biểu diễn) khỏi "
                 "máy chủ — không khôi phục được. Một bản nghe thử của phiên bản "
-                "engine cũ có thể còn sót tới lượt dọn kế tiếp. Lịch sử lượt đọc "
+                "engine cũ có thể vẫn còn sót lại trên máy chủ. Lịch sử lượt đọc "
                 "và bút toán credit vẫn được giữ để đối chiếu."),
         },
     ]

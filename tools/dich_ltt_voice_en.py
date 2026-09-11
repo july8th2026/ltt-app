@@ -273,6 +273,19 @@ DICH = {
         "from the server — this cannot be undone. A preview from an older "
         "engine version may remain until the next cleanup. Usage history and "
         "credit entries are still kept for reconciliation.",
+    # review round 2, item E: cau round-1 (tren) hua "toi luot don ke tiep"
+    # - khong ton tai. Ban nay chi noi "co the con sot lai", khong hua mot
+    # hanh dong tuong lai khong co that.
+    "Bạn có thể tắt một giọng bất cứ lúc nào để ngừng dùng nó, hoặc xoá vĩnh "
+    "viễn để xoá clip gốc và dữ liệu giọng (biểu diễn) khỏi máy chủ — không "
+    "khôi phục được. Một bản nghe thử của phiên bản engine cũ có thể vẫn còn "
+    "sót lại trên máy chủ. Lịch sử lượt đọc và bút toán credit vẫn được giữ "
+    "để đối chiếu.":
+        "You can turn off a voice at any time to stop using it, or delete it "
+        "permanently to remove the source clip and voice data (embedding) "
+        "from the server — this cannot be undone. A preview from an older "
+        "engine version may still remain on the server. Usage history and "
+        "credit entries are still kept for reconciliation.",
     "Clip này không dùng được để ghi danh. Hãy tạo lại giọng với một clip "
     "khác.":
         "This clip cannot be used to enroll a voice. Please create the voice "

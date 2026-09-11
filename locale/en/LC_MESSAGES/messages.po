@@ -15197,3 +15197,7 @@ msgstr "This voice is no longer in the enrolling state."
 #: apps/ltt_voice
 msgid "Chỉ thu hồi được tối đa {n} giọng trong một lượt."
 msgstr "You can delete at most {n} voices in one request."
+
+#: apps/ltt_voice
+msgid "Bạn có thể tắt một giọng bất cứ lúc nào để ngừng dùng nó, hoặc xoá vĩnh viễn để xoá clip gốc và dữ liệu giọng (biểu diễn) khỏi máy chủ — không khôi phục được. Một bản nghe thử của phiên bản engine cũ có thể vẫn còn sót lại trên máy chủ. Lịch sử lượt đọc và bút toán credit vẫn được giữ để đối chiếu."
+msgstr "You can turn off a voice at any time to stop using it, or delete it permanently to remove the source clip and voice data (embedding) from the server — this cannot be undone. A preview from an older engine version may still remain on the server. Usage history and credit entries are still kept for reconciliation."

@@ -409,7 +409,7 @@ def bao_tri() -> None:
     ⚠️ Im lặng khi cổng chưa bật. Đây là việc nền; sủa mỗi giờ trên một máy
        chưa cài engine chỉ làm nhật ký khó đọc.
 
-    Hai NGUỒN thiếu, hai bước riêng:
+    Hai NGUỒN thiếu tệp nghe thử, hai bước riêng (chạy SAU khi cổng đã bật):
       ① giọng MẪU (`con_thieu_mau`, danh mục tĩnh `giong_mau.DANH_SACH`);
       ② giọng NHÂN BẢN CỦA KHÁCH đang thiếu (`_dung_giong_rieng_con_thieu`,
          bảng `voice_profile`) — điển hình sau một lượt ĐỔI LÀN
@@ -419,6 +419,13 @@ def bao_tri() -> None:
        nhau, và một `return` sớm sau bước ① (bản trước D004) từng khiến giọng
        khách đổi làn không bao giờ có tệp nghe thử lại nếu 20 giọng mẫu đã
        warm sẵn (`thieu` rỗng ⇒ hàm thoát trước khi chạm tới giọng khách).
+
+    ⭐ Một việc THỨ BA chạy TRƯỚC cả hai, và TRƯỚC CẢ cổng `san_sang()` —
+       `giong_vong_doi.don_ghi_danh_treo` (review round 2, IMPORTANT B): dọn
+       hồ sơ mắc kẹt ở `dang_ghi_danh` mà không còn job nào sống. Đây là dữ
+       liệu (CSDL + bảng `jobs`), không phải tệp nghe thử, nên nó không thuộc
+       về hai bước ①②, và không cần engine để chạy — xem chú thích tại chỗ
+       gọi bên dưới.
     """
     # ⭐ ĐẾM MỨC DÙNG TRƯỚC, và **ngoài** cổng `san_sang()` bên dưới.
     #
@@ -427,6 +434,33 @@ def bao_tri() -> None:
     #    tháng không engine phục vụ mãi mãi một thứ tự bảng chữ cái — hỏng lặng
     #    lẽ, và hỏng theo cách không ai nghĩ tới khi đọc `bao_tri`.
     _dem_muc_dung()
+
+    # 🔴 review round 2, IMPORTANT B: dọn hồ sơ TREO ở `dang_ghi_danh` — CŨNG
+    #    NGOÀI cổng `san_sang()` bên dưới, cùng lý do với `_dem_muc_dung()`:
+    #    đây là một phép dọn DỮ LIỆU (CSDL + bảng `jobs`), không đụng gì tới
+    #    engine. Bọc try/except RIÊNG — một lỗi ở đây không được chặn bước ①/②
+    #    ngay dưới chạy tiếp (đúng luật "Bước ② PHẢI CHẠY DÙ BƯỚC ① không có
+    #    gì" đã ghi ở docstring hàm này, mở rộng sang bước mới này).
+    try:
+        from . import giong_vong_doi
+        from platform_core.db import get_session
+        gen = get_session()
+        db = next(gen)
+        try:
+            so_dat = giong_vong_doi.don_ghi_danh_treo(db)
+            db.commit()
+            if so_dat:
+                log.info(
+                    "nghe thu/bao tri: dat 'loi' cho %d ho so treo o "
+                    "dang_ghi_danh qua %d phut khong con job nao",
+                    so_dat, giong_vong_doi.PHUT_TREO_GHI_DANH)
+        finally:
+            try:
+                next(gen)
+            except StopIteration:
+                pass
+    except Exception:  # noqa: BLE001 - viec nen, khong duoc chan cac buoc sau
+        log.exception("khong don duoc ho so treo o dang_ghi_danh")
 
     from . import sidecar_client
 

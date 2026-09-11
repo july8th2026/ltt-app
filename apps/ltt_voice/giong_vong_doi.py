@@ -213,3 +213,111 @@ def khoa_da_biet(db, ho_so) -> list[str]:
     # Tệp nghe thử riêng — cùng thư mục giọng, tên `preview-*`.
     khoa.append(nghe_thu.khoa_rieng(str(ho_so.owner_id), str(ho_so.public_id)))
     return khoa
+
+
+# ── Bảo trì: dọn hồ sơ TREO ở `dang_ghi_danh` (review round 2, IMPORTANT B) ──
+
+#: Bao lâu thì một hồ sơ còn `dang_ghi_danh` bị coi là TREO. Rộng hơn NHIỀU so
+#: với `max_runtime_s["ltt_voice.enroll"] = 300` (5 phút, `manifest.py`) nhân
+#: `SO_LAN_THU_JOB` (5, `tham_so_cong_khai.py`) cộng giãn cách giữa các lượt
+#: thử lại — đủ để không bắt nhầm một lượt vẫn đang thử lại hợp lệ, nhưng vẫn
+#: đủ hẹp để một hồ sơ THẬT SỰ mồ côi không sống hàng ngày trời.
+PHUT_TREO_GHI_DANH = 60
+
+
+def don_ghi_danh_treo(db) -> int:
+    """AN TOÀN CUỐI CÙNG cho T-14 (review round 2, IMPORTANT B): dọn những hồ
+    sơ mắc kẹt ở `dang_ghi_danh` mà KHÔNG CÒN JOB NÀO đang chạy/chờ để hoàn
+    tất nó, bất kể vì sao job đó biến mất.
+
+    🔴 VÌ SAO CẦN, DÙ `jobs.handle` ĐÃ CÓ AN TOÀN CUỐI RIÊNG (IMPORTANT 1/A,
+       Task 6 review round 1+2).
+
+       An toàn cuối của `handle()` chỉ chạy khi CHÍNH job đó ném một exception
+       mà tiến trình worker BẮT ĐƯỢC trong cùng lời gọi `ham(params, ctx)`. Có
+       những đường một lượt thử KHÔNG BAO GIỜ chạm khối `except` đó:
+         · orphan reaper (`platform_core/job_runner.py`) — một job `running`
+           lâu không đập nhịp (worker chết cứng, mất điện, OOM-killer) bị coi
+           là mồ côi và `fail()` TỪ MỘT TIẾN TRÌNH KHÁC, không chạy lại
+           handler của lượt đã chết;
+         · runtime watchdog (`_canh_gio`/`_het_gio`) — job vượt
+           `max_runtime_s` bị GIẾT tiến trình, không handler nào kịp chạy tới
+           một dòng Python nào, kể cả một khối `except`.
+       Cả hai đường đều có thể tiêu HẾT `SO_LAN_THU_JOB` lượt mà không một
+       lượt nào từng thực thi `handle()`'s `except Exception`.
+
+    ⛔ CHỈ đụng vào một hồ sơ khi CHẮC CHẮN không còn job nào đang tham chiếu
+       nó — một hồ sơ vừa nộp job (`tao_giong`) vài giây trước, còn nằm trong
+       `queued`, KHÔNG được đặt `loi` chỉ vì nó cũng đang `dang_ghi_danh` (đó
+       là lý do có cả ngưỡng `PHUT_TREO_GHI_DANH` LẪN phép kiểm job đang sống
+       — một mình ngưỡng thời gian không đủ, vì `bao_tri()` chạy mỗi GIỜ và
+       một hồ sơ mới nộp có thể trùng đúng lúc lượt bảo trì chạy).
+
+    Trả về SỐ HỒ SƠ vừa đặt `loi`, để nơi gọi (`nghe_thu.bao_tri`) ghi log.
+    """
+    from datetime import datetime, timedelta, timezone
+
+    from sqlalchemy import select
+
+    from .tables import VoiceProfile
+
+    han = datetime.now(timezone.utc) - timedelta(minutes=PHUT_TREO_GHI_DANH)
+    ung_vien = db.execute(
+        select(VoiceProfile.id, VoiceProfile.public_id)
+        .where(VoiceProfile.trang_thai == TT_DANG_GHI_DANH,
+              VoiceProfile.tao_luc < han)
+    ).all()
+    if not ung_vien:
+        return 0
+
+    con_job = _cac_public_id_con_job_enroll(db, [pid for _id, pid in ung_vien])
+
+    so_dat = 0
+    for prof_id, public_id in ung_vien:
+        if public_id in con_job:
+            continue
+        ket = db.execute(
+            VoiceProfile.__table__.update()
+            .where(VoiceProfile.id == prof_id,
+                  VoiceProfile.trang_thai == TT_DANG_GHI_DANH)
+            .values(trang_thai=TT_LOI))
+        so_dat += int(ket.rowcount or 0)
+    return so_dat
+
+
+def _cac_public_id_con_job_enroll(db, public_ids) -> set:
+    """Trong `public_ids`, cái nào còn một job `ltt_voice.enroll` ĐANG CHỜ
+    (`queued`) hoặc ĐANG CHẠY (`running`) tham chiếu tới.
+
+    ⚠️ LỌC JSON BẰNG PYTHON, KHÔNG BẰNG SQL. `Job.params` khai kiểu `JSON`
+       (không phải `JSONB`), và cú pháp truy vấn vào trong nó KHÁC NHAU giữa
+       PostgreSQL (production) và SQLite (test) — một truy vấn JSON viết cho
+       một bên sẽ xanh ở bên đó và đỏ ở bên kia. Cùng bài học đã ghi ở
+       `du_an.py` (`⚠️ Lọc JSON bằng PYTHON, không bằng SQL`): lọc theo cột có
+       CHỈ MỤC (`app_slug`/`job_type`/`status`) ở SQL trước, rồi lọc khoá JSON
+       trong Python trên một tập đã bị chặn nhỏ (chỉ job `queued`/`running`
+       của đúng job_type này — không phải toàn bộ lịch sử job).
+
+    ⚠️ `params["voice_id"]` — ĐÚNG khoá `routes/_p_giong.py::tao_giong` đặt
+       khi nộp job (`params = {"owner_id": ..., "voice_id": ho_so.public_id,
+       ...}`), không phải `"public_id"`.
+    """
+    if not public_ids:
+        return set()
+    from sqlalchemy import select
+
+    from platform_core.models import JOB_QUEUED, JOB_RUNNING, Job
+
+    hang = db.execute(
+        select(Job.params).where(
+            Job.app_slug == "ltt_voice",
+            Job.job_type == "ltt_voice.enroll",
+            Job.status.in_((JOB_QUEUED, JOB_RUNNING)))
+    ).scalars().all()
+    muon = set(public_ids)
+    ra: set = set()
+    for params in hang:
+        pid = str((params or {}).get("voice_id") or "")
+        if pid in muon:
+            ra.add(pid)
+    return ra

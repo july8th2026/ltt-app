@@ -830,9 +830,13 @@ def test_thu_hoi_giua_luc_ghi_danh_KHONG_de_lai_khoa_mo_coi(khach, monkeypatch):
     assert not get_storage().exists(khoa_se_sinh), "khoa mo coi khong bi xoa"
 
 
-def test_thu_hoi_giua_luc_ghi_danh_KHONG_xoa_khoa_dong_khac_dang_song(khach, monkeypatch):
-    """(ii) — vế ĐỐI CHỨNG: nếu khoá TRÙNG với một `VoiceRepr` KHÁC đang sống
-    (cùng embedding, khoá đặt theo sha256), KHÔNG được xoá khoá đó."""
+def test_thu_hoi_giua_luc_ghi_danh_REVOKED_LUON_xoa_khoa_du_co_dong_khac(khach, monkeypatch):
+    """(ii) review round 2, IMPORTANT C: `revoked` LUÔN xoá khoá — kể cả khi
+    một dòng `VoiceRepr` KHÁC (embedding trùng, cùng sha256) đang trỏ tới
+    đúng khoá đó. Thu hồi xoá HẾT TỆP của mọi biểu diễn (`khoa_da_biet` gom
+    `storage_key` của MỌI dòng `VoiceRepr`, không lọc theo dòng nào), chỉ giữ
+    lại DÒNG CSDL làm bằng chứng — "còn một dòng tham chiếu" không phải lý do
+    giữ lại một tệp sinh trắc của một hồ sơ đã nói "đã xoá"."""
     client, uid = khach
     pid = _tao_giong_active(uid, ngon_ngu="vi", nguon="khai_bao",
                             trang_thai="revoked")
@@ -869,6 +873,57 @@ def test_thu_hoi_giua_luc_ghi_danh_KHONG_xoa_khoa_dong_khac_dang_song(khach, mon
         jobs._ghi_danh(_params_ghi_danh(uid, pid))
 
     assert _ho_so_theo_pid(pid).trang_thai == "revoked"
+    assert _dem_repr(pid) == 1, "dong VoiceRepr CU (con song) khong duoc dung vao"
+    assert not get_storage().exists(khoa_cu), (
+        "revoked phai xoa khoa DU co dong CSDL khac tro toi")
+
+
+def test_thu_hoi_giua_luc_ghi_danh_LOI_KHONG_xoa_khoa_dong_khac_dang_song(khach, monkeypatch):
+    """(ii) — vế ĐỐI CHỨNG cho `loi`/`disabled`: khác `revoked`, hai trạng
+    thái này KHÔNG xoá dữ liệu sinh trắc — nếu khoá TRÙNG với một `VoiceRepr`
+    KHÁC đang sống, KHÔNG được xoá khoá đó."""
+    client, uid = khach
+    pid = _tao_giong_active(uid, ngon_ngu="vi", nguon="khai_bao",
+                            trang_thai="dang_ghi_danh")
+    from apps.ltt_voice import jobs, sidecar_client, tham_chieu
+    from apps.ltt_voice.tables import VoiceProfile, VoiceRepr
+    from platform_core.storage import get_storage
+    import platform_core.db as dbmod
+
+    ref_b64 = "SktM"  # base64("JKL")
+    monkeypatch.setattr(sidecar_client, "san_sang", lambda: True)
+    monkeypatch.setattr(sidecar_client, "ghi_danh",
+                        lambda *a, **k: {"ref_b64": ref_b64, "chon_doan": {}})
+    _dat_nguon(uid, pid)
+
+    khoa_cu, vt_cu = tham_chieu.luu_bieu_dien(owner_id=uid, public_id=pid,
+                                              ref_b64=ref_b64)
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        # ⛔ Đọc hồ sơ TRONG CÙNG session (không qua `_ho_so_theo_pid` — xem
+        #    chú thích ở bài kiểm idempotent phía trên cho vì sao).
+        from sqlalchemy import select as _select
+        hs = db.execute(_select(VoiceProfile)
+                        .where(VoiceProfile.public_id == pid)).scalar_one()
+        db.add(VoiceRepr(profile_id=hs.id, ref_id=0, engine="vieneu",
+                         storage_key=khoa_cu, fingerprint=vt_cu,
+                         trang_thai="dang_dung"))
+        # Hồ sơ đã bị đánh dấu `loi` (vd một lượt thử khác) TRƯỚC KHI lượt
+        # ghi danh dưới đây chạy tới — mô phỏng đúng ca `rowcount == 0` với
+        # `trang_hien == "loi"`.
+        hs.trang_thai = "loi"
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    with pytest.raises(jobs.LoiGiongNoi):
+        jobs._ghi_danh(_params_ghi_danh(uid, pid))
+
+    assert _ho_so_theo_pid(pid).trang_thai == "loi"
     assert _dem_repr(pid) == 1, "dong VoiceRepr CU (con song) khong duoc dung vao"
     assert get_storage().exists(khoa_cu), "khoa CON DUOC THAM CHIEU khong duoc xoa"
 
@@ -962,3 +1017,226 @@ def test_thu_hoi_LAI_giong_DA_revoked_don_lai_duoc(khach):
     assert r.status_code == 303
     assert _ho_so_theo_pid(pid).trang_thai == "revoked"
     assert not st.exists(khoa), "lan thu lai khong don duoc tep sot"
+
+
+# ── ⑪ REVIEW ROUND 2 — IMPORTANT A: `LoiNguoiGoi` là VĨNH VIỄN ở BẤT KỲ lượt
+#     nào, không chỉ lượt cuối ───────────────────────────────────────────────
+
+def test_san_sang_FALSE_qua_handle_dat_trang_thai_loi_NGAY_LUOT_DAU(khach, monkeypatch):
+    """`_ghi_danh` ném `LoiGiongNoi` (= `LoiNguoiGoi`) TRƯỚC KHI chạm sidecar
+    khi `san_sang()` sai — nền tảng coi đây là VĨNH VIỄN và dừng NGAY LƯỢT
+    ĐẦU (`job_runner._provider_failure_kind` → `fail(retry=False)`), không
+    chờ `SO_LAN_THU_JOB` lượt. `handle()` phải đặt `loi` ở LƯỢT 1, không chỉ
+    ở lượt cuối (round 1 chỉ bắt được `LoiNguoiGoi` khi nó trùng lượt cuối)."""
+    client, uid = khach
+    pid = _tao_giong_active(uid, ngon_ngu="vi", nguon="khai_bao",
+                            trang_thai="dang_ghi_danh")
+    from apps.ltt_voice import jobs, sidecar_client
+
+    monkeypatch.setattr(sidecar_client, "san_sang", lambda: False)
+    _dat_nguon(uid, pid)
+    with pytest.raises(jobs.LoiGiongNoi):
+        jobs.handle(_params_ghi_danh(uid, pid), _FakeCtx(1))  # LƯỢT 1, không phải cuối
+    assert _ho_so_theo_pid(pid).trang_thai == "loi"
+
+
+def test_khong_tim_thay_ho_so_qua_handle_KHONG_NEM_THEM_LOI(khach, monkeypatch):
+    """Cùng bài trên, nhánh thứ hai trong ba nhánh `_ghi_danh` ném trước khi
+    chạm sidecar: hồ sơ không tìm thấy (id sai, hoặc chủ khác). Không có hồ
+    sơ nào để đặt `loi` — bài này chỉ chắc chắn `_dat_loi_khi_het_luot` không
+    tự ném thêm lỗi khi `tim_profile` trả `None` (đè lên `LoiGiongNoi` gốc)."""
+    client, uid = khach
+    from apps.ltt_voice import jobs, sidecar_client
+
+    monkeypatch.setattr(sidecar_client, "san_sang", lambda: True)
+    with pytest.raises(jobs.LoiGiongNoi):
+        jobs.handle({"owner_id": uid, "voice_id": "vc_khongcothat",
+                    "source_key": "voice/khong-ton-tai/vc_khongcothat/nguon.wav",
+                    "ref_id": 0, "_job_type": "ltt_voice.enroll"},
+                   _FakeCtx(1))
+
+
+# ── ⑫ REVIEW ROUND 2 — IMPORTANT B: dọn hồ sơ TREO khi không job nào chạm
+#     tới `except` của `handle()` nữa (orphan reaper / runtime watchdog) ─────
+
+def _dat_tao_luc_cu(pid: str, phut: int) -> None:
+    """Lùi `VoiceProfile.tao_luc` của `pid` về `phut` phút trước — mô phỏng
+    một hồ sơ đã TREO lâu. Đọc/ghi TRONG CÙNG session (không qua
+    `_ho_so_theo_pid`, xem chú thích ở bài kiểm idempotent phía trên)."""
+    from datetime import datetime, timedelta, timezone
+
+    from apps.ltt_voice.tables import VoiceProfile
+    from sqlalchemy import select
+    import platform_core.db as dbmod
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        hs = db.execute(select(VoiceProfile)
+                        .where(VoiceProfile.public_id == pid)).scalar_one()
+        hs.tao_luc = datetime.now(timezone.utc) - timedelta(minutes=phut)
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+def test_don_ghi_danh_treo_KHONG_CON_JOB_dat_loi(khach):
+    client, uid = khach
+    pid = _tao_giong_active(uid, ngon_ngu="vi", nguon="khai_bao",
+                            trang_thai="dang_ghi_danh")
+    from apps.ltt_voice import giong_vong_doi
+    import platform_core.db as dbmod
+
+    _dat_tao_luc_cu(pid, giong_vong_doi.PHUT_TREO_GHI_DANH + 5)
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        so = giong_vong_doi.don_ghi_danh_treo(db)
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    assert so == 1
+    assert _ho_so_theo_pid(pid).trang_thai == "loi"
+
+
+def test_don_ghi_danh_treo_CON_JOB_song_KHONG_DONG(khach):
+    """Một hồ sơ TREO đủ lâu nhưng còn một job `ltt_voice.enroll` đang
+    `running` tham chiếu tới nó — KHÔNG được đặt `loi` (job có thể vẫn đang
+    thật sự chạy, chỉ là chậm)."""
+    client, uid = khach
+    pid = _tao_giong_active(uid, ngon_ngu="vi", nguon="khai_bao",
+                            trang_thai="dang_ghi_danh")
+    from apps.ltt_voice import giong_vong_doi
+    from platform_core.models import JOB_RUNNING, Job
+    import platform_core.db as dbmod
+
+    _dat_tao_luc_cu(pid, giong_vong_doi.PHUT_TREO_GHI_DANH + 5)
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        db.add(Job(user_id=uid, app_slug="ltt_voice", job_type="ltt_voice.enroll",
+                   params={"owner_id": uid, "voice_id": pid}, status=JOB_RUNNING))
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    gen2 = dbmod.get_session()
+    db2 = next(gen2)
+    try:
+        so = giong_vong_doi.don_ghi_danh_treo(db2)
+        db2.commit()
+    finally:
+        try:
+            next(gen2)
+        except StopIteration:
+            pass
+
+    assert so == 0
+    assert _ho_so_theo_pid(pid).trang_thai == "dang_ghi_danh"
+
+
+def test_don_ghi_danh_treo_CHUA_DU_LAU_KHONG_DONG(khach):
+    """Hồ sơ mới nộp (chưa quá `PHUT_TREO_GHI_DANH`) không bị đụng vào, kể cả
+    khi không job nào đang sống — vẫn còn trong cửa sổ chờ bình thường."""
+    client, uid = khach
+    pid = _tao_giong_active(uid, ngon_ngu="vi", nguon="khai_bao",
+                            trang_thai="dang_ghi_danh")
+    from apps.ltt_voice import giong_vong_doi
+    import platform_core.db as dbmod
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        so = giong_vong_doi.don_ghi_danh_treo(db)
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    assert so == 0
+    assert _ho_so_theo_pid(pid).trang_thai == "dang_ghi_danh"
+
+
+# ── ⑬ REVIEW ROUND 2 — IMPORTANT D: chỉ 400/415/422 là VĨNH VIỄN, không phải
+#     "mọi 4xx" ────────────────────────────────────────────────────────────
+
+def test_sidecar_400_la_loi_VINH_VIEN(khach, monkeypatch):
+    client, uid = khach
+    pid = _tao_giong_active(uid, ngon_ngu="vi", nguon="khai_bao",
+                            trang_thai="dang_ghi_danh")
+    from apps.ltt_voice import jobs, sidecar_client
+
+    def _hong_400(*a, **k):
+        raise sidecar_client.LoiSidecar("Cong giong tra 400: than sai", status=400)
+    monkeypatch.setattr(sidecar_client, "san_sang", lambda: True)
+    monkeypatch.setattr(sidecar_client, "ghi_danh", _hong_400)
+    _dat_nguon(uid, pid)
+    with pytest.raises(jobs.LoiGiongNoi):
+        jobs._ghi_danh(_params_ghi_danh(uid, pid))
+    assert _ho_so_theo_pid(pid).trang_thai == "loi"
+
+
+def test_sidecar_415_la_loi_VINH_VIEN(khach, monkeypatch):
+    client, uid = khach
+    pid = _tao_giong_active(uid, ngon_ngu="vi", nguon="khai_bao",
+                            trang_thai="dang_ghi_danh")
+    from apps.ltt_voice import jobs, sidecar_client
+
+    def _hong_415(*a, **k):
+        raise sidecar_client.LoiSidecar(
+            "Cong giong tra 415: dinh dang khong doc duoc", status=415)
+    monkeypatch.setattr(sidecar_client, "san_sang", lambda: True)
+    monkeypatch.setattr(sidecar_client, "ghi_danh", _hong_415)
+    _dat_nguon(uid, pid)
+    with pytest.raises(jobs.LoiGiongNoi):
+        jobs._ghi_danh(_params_ghi_danh(uid, pid))
+    assert _ho_so_theo_pid(pid).trang_thai == "loi"
+
+
+def test_sidecar_401_KHONG_phai_loi_vinh_vien(khach, monkeypatch):
+    """401 (token sai) là lỗi VẬN HÀNH, không phải clip sai — round 2,
+    IMPORTANT D."""
+    client, uid = khach
+    pid = _tao_giong_active(uid, ngon_ngu="vi", nguon="khai_bao",
+                            trang_thai="dang_ghi_danh")
+    from apps.ltt_voice import jobs, sidecar_client
+
+    def _hong_401(*a, **k):
+        raise sidecar_client.LoiSidecar("Cong giong tra 401: token sai", status=401)
+    monkeypatch.setattr(sidecar_client, "san_sang", lambda: True)
+    monkeypatch.setattr(sidecar_client, "ghi_danh", _hong_401)
+    _dat_nguon(uid, pid)
+    with pytest.raises(jobs.LoiHaTang):
+        jobs._ghi_danh(_params_ghi_danh(uid, pid))
+    assert _ho_so_theo_pid(pid).trang_thai == "dang_ghi_danh"
+
+
+def test_sidecar_404_KHONG_phai_loi_vinh_vien(khach, monkeypatch):
+    """404 (endpoint đổi/mất) là lỗi VẬN HÀNH, không phải clip sai — round 2,
+    IMPORTANT D."""
+    client, uid = khach
+    pid = _tao_giong_active(uid, ngon_ngu="vi", nguon="khai_bao",
+                            trang_thai="dang_ghi_danh")
+    from apps.ltt_voice import jobs, sidecar_client
+
+    def _hong_404(*a, **k):
+        raise sidecar_client.LoiSidecar("Cong giong tra 404: khong tim thay duong", status=404)
+    monkeypatch.setattr(sidecar_client, "san_sang", lambda: True)
+    monkeypatch.setattr(sidecar_client, "ghi_danh", _hong_404)
+    _dat_nguon(uid, pid)
+    with pytest.raises(jobs.LoiHaTang):
+        jobs._ghi_danh(_params_ghi_danh(uid, pid))
+    assert _ho_so_theo_pid(pid).trang_thai == "dang_ghi_danh"

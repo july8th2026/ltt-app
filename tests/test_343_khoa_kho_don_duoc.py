@@ -133,8 +133,10 @@ def test_doi_dieu_khoan_thi_phai_doi_phien_ban():
     #: phiên bản.
     #: 11/09/2026 (review round 1, item 6): SỬA câu "Xoá giọng" (không hứa quá
     #: — xem `dieu_khoan.py`) -> vẫn 7 điều, bump phiên bản lần nữa (b).
+    #: 11/09/2026 (review round 2, item E): SỬA câu "Xoá giọng" LẦN NỮA (bỏ
+    #: lời hứa "lượt dọn kế tiếp" không có thật) -> vẫn 7 điều, bump (c).
     SO_DIEU = 7
-    PHIEN_BAN = "ltt-voice-dk-2026-09-11b"
+    PHIEN_BAN = "ltt-voice-dk-2026-09-11c"
 
     assert len(cac_dieu()) == SO_DIEU, (
         f"so dieu khoan doi ({len(cac_dieu())} != {SO_DIEU}) — hay bump "
