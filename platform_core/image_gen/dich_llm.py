@@ -39,17 +39,44 @@ TIMEOUT_S = 30.0
 MAX_TOKENS = 1024
 
 
-def goi_llm(text: str, he_thong: str, *, db,
+def goi_llm(text: str, he_thong: str, *, db, slug_app: str = "",
             timeout_s: float = TIMEOUT_S) -> str:
     """Dịch `text` theo chỉ dẫn `he_thong`. Ném `GoiLLMThatBai` khi không được.
 
     🔴 Giành **suất admission** trước khi chạm máy B — máy B chỉ có một suất
        đồng thời, và một đường quên bước này làm chính cơ chế đếm suất sai.
+
+    🔴 `slug_app` — app đang chạy job ảnh (`anhnoibo`/`taoanh`/`thumbnail`).
+       Model lấy từ **bản khai của app đó** (D09), không phải `MODEL_MAC_DINH`.
+
+    ⛔ ĐÂY LÀ ĐƯỜNG GỌI NGUY HIỂM NHẤT CỦA D09, và lý do là cơ học:
+
+           job ảnh  GIỮ  3090 (cửa sổ ảnh, D01 B)
+           job ảnh  CHỜ  model dịch prompt
+           `ltt-3.8` chỉ nạp được  SAU KHI  3090 rảnh
+
+       ⇒ app ảnh nào khai `model_llm_noi_bo = "ltt-3.8"` là tự khoá mình trong
+         một vòng chờ kín: không lỗi, không log, job treo tới hết trần thời
+         gian. `tests/test_1212_llm_noi_bo_theo_app.py` chốt điều đó lúc gate
+         chứ không đợi tới lúc chạy — một vòng chờ không tự báo tên nó ra.
+
+    ⚠️ `slug_app` rỗng ⇒ `MODEL_NOI_BO_MAC_DINH` (`ltt-3.5`) + cảnh báo. Không
+       ném: hướng an toàn ở đây là **model không tranh card với ảnh**, và đó
+       đúng là mặc định. Bên gọi quên truyền thì phép kiểm AST bắt, không phải
+       khách hàng bắt.
     """
+    import logging
+
     from platform_core.llm import admission, dieu_phoi
     from platform_core.models import APIKEY_CAT_CHAT
 
-    suc = _C.tai_nguyen_nha(_C.MODEL_MAC_DINH)
+    if slug_app:
+        model = _C.model_noi_bo_cua(slug_app)
+    else:
+        model = _C.MODEL_NOI_BO_MAC_DINH
+        logging.getLogger(__name__).warning(
+            "dich prompt anh khong biet app nao goi; dung model noi bo %r", model)
+    suc = _C.tai_nguyen_nha(model)
     ve = None
     try:
         ve = admission.acquire(
@@ -64,7 +91,7 @@ def goi_llm(text: str, he_thong: str, *, db,
                           {"role": "user", "content": text}],
                 category=APIKEY_CAT_CHAT,
                 thu_tu_provider=_C.THU_TU_PROVIDER,
-                model_theo_provider=_C.ban_do_model(),
+                model_theo_provider=_C.ban_do_model(model),
                 max_tokens=MAX_TOKENS,
                 timeout_s=timeout_s,
             )
@@ -83,8 +110,12 @@ def goi_llm(text: str, he_thong: str, *, db,
     return van
 
 
-def tao_ham_dich(db) -> Callable[[str, str], str]:
-    """Trả một hàm đúng khuôn `goi_llm(text, he_thong)` cho `dich_prompt_anh`."""
+def tao_ham_dich(db, *, slug_app: str = "") -> Callable[[str, str], str]:
+    """Trả một hàm đúng khuôn `goi_llm(text, he_thong)` cho `dich_prompt_anh`.
+
+    `slug_app` đi kèm vì bản khai model nội bộ thuộc về app, không thuộc về
+    nền tảng (D09) — xem `goi_llm`.
+    """
     def _goi(text: str, he_thong: str) -> str:
-        return goi_llm(text, he_thong, db=db)
+        return goi_llm(text, he_thong, db=db, slug_app=slug_app)
     return _goi
