@@ -399,7 +399,6 @@ DICH = {
     "Hãy nhập nội dung cần đọc.": "Enter the text you want read aloud.",
     "Văn bản đang dài quá giới hạn một lượt đọc.":
         "The text is longer than the limit for a single read.",
-    "Hãy chọn một giọng đọc.": "Pick a voice.",
 }
 
 

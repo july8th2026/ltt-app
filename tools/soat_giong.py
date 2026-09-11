@@ -160,7 +160,7 @@ def _dat(db, public_id: str, lenh: str, ly_do: str, nguoi: str) -> int:
             # ASCII co y: `print` mot emoji tren console cp1252 se nem
             # UnicodeEncodeError - dung ngay trong nhanh "khong duoc nem".
             print(f"  [!] KHONG xoa duoc ban nghe thu kho chung `{khoa}` "
-                  f"({e!r}) - cua doc da chan no, nhung tep VAN nam trong "
+                  f"({e!a}) - cua doc da chan no, nhung tep VAN nam trong "
                   "kho: xoa tay.")
     if lic == "ok" and not ho_so.dung_chung:
         # [!] NOI RA, KHONG TU BAT. Duyet xuat xu va quyet dinh mang ra kho

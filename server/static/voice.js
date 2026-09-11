@@ -866,7 +866,7 @@
          *    khong chi duong chuot. `<a>` VA `<button>` -- danh sach cu chi co
          *    `<a>` vi luc viet no the chua co nut nao ben trong.
          */
-        var BEN_TRONG = "a, button, input, select, textarea, [role=button]";
+        var BEN_TRONG = "a, button, input, select, textarea, summary, form, [role=button]";
 
         t.addEventListener("click", function (e) {
           /* 🔴 BUG THAT, DO 04/09/2026: bam chuot vao mot the giong KHONG BAO

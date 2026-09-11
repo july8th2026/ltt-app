@@ -45,6 +45,8 @@ import subprocess
 
 import pytest
 
+from tools.nghiem_thu_deploy import _phu_boi
+
 GOC = pathlib.Path(__file__).resolve().parents[1]
 CAI_DAT = GOC / "setup" / "2-cai-dat.ps1"
 VAN_BAN = CAI_DAT.read_text(encoding="ascii", errors="replace")
@@ -235,13 +237,22 @@ def _gitignored_bi_ma_runtime_nhac() -> set:
     return {d for d in ung_vien if pathlib.PurePosixPath(d).name in than}
 
 
-def _phu_boi(mau: str, duong: str) -> bool:
-    """Mẫu `$VAN_CHUYEN` (dạng Windows, có thể có `*`) có phủ `duong` không."""
-    m = mau.replace("\\", "/")
-    if "*" not in m:
-        return duong == m or duong.startswith(m.rstrip("/") + "/")
-    dau, sau = m.split("*", 1)
-    return duong.startswith(dau) and sau.strip("/") in duong
+def test__phu_boi_khong_khop_gan_dung():
+    """🔴 Fix round 2 cua `tools/nghiem_thu_deploy.py::_phu_boi` (xem chu thich
+    o do): ban dau ham nay so CHUOI CON sau dau `*` (`sau.strip("/") in duong`),
+    nen mau `apps/*/vendor` (dang Windows) khop NHAM `apps/upscalevideo/
+    vendor_x.py` — mot tep KHONG duoc khai lot qua am tham chi vi "vendor" la
+    chuoi con cua "vendor_x.py".
+
+    `_phu_boi` gio import THANG tu `tools/nghiem_thu_deploy.py` — nguon that
+    cho logic nay — thay vi chep lai o day de hai ban khong the lech nhau lan
+    nua. Phep kiem nay ghim ca hai chieu: mau PHAI so THEO TUNG DOAN duong dan,
+    khong so chuoi con tu do."""
+    # Ten gan giong nhung KHONG phai doan duong day du -> KHONG duoc khop.
+    assert not _phu_boi("apps/*/vendor", "apps/upscalevideo/vendor_x.py")
+    assert not _phu_boi("apps/*/vendor", "apps/upscalevideo/xvendor/x.exe")
+    # Doan duong day du -> PHAI khop.
+    assert _phu_boi("apps/*/vendor", "apps/upscalevideo/vendor/engine/x.exe")
 
 
 def test_DANH_SACH_VAN_CHUYEN_khop_dung_tap_DO_DUOC():

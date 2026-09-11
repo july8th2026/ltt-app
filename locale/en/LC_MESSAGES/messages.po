@@ -13158,6 +13158,9 @@ msgstr "[{slug}] tool {tool!r} tuy_chon_dong only supports `string` parameters; 
 msgid "[{slug}] tool {tool!r} tuy_chon_dong[{param!r}] phải là `module:attribute`, nhận {ref!r}"
 msgstr "[{slug}] tool {tool!r} tuy_chon_dong[{param!r}] must be `module:attribute`, got {ref!r}"
 
+msgid "[{slug}] tool {tool!r} kiem_truoc phai la `module:attribute`, nhan {ref!r}"
+msgstr "[{slug}] tool {tool!r} kiem_truoc must be `module:attribute`, got {ref!r}"
+
 msgid "Trò chuyện với model của LTT: văn bản, ảnh và giọng nói trong một hội thoại."
 msgstr "Chat with LTT's own models: text, images and voice in one conversation."
 
