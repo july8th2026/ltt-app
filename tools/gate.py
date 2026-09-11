@@ -538,6 +538,17 @@ def _steps(quick: bool, noi_tiep: bool = False) -> list[Step]:
              ROOT, nhom="cong"),
         Step("secret scan", [sys.executable, "tools/scan_source_secrets.py"], ROOT),
         Step("app contract lint", [sys.executable, "tools/lint_app_contract.py"], ROOT),
+        # 🔴 RAO CHONG-XANH-GIA cho LTT Voice. Bo test Voice da chay trong `bo
+        #    test` o duoi; buoc nay canh chinh BO BANG CHUNG do khong rong ruot:
+        #    tap hop test khong bien mat, cong giong GIA LAP tu khai la gia lap,
+        #    tang LIVE khong dinh mock, may chu E2E cach ly, flow trinh duyet co
+        #    rao. La rao TINH (~1 giay, khong dung server).
+        #
+        # ⛔ KHONG chay `--e2e` o day: no tu dung mock + may chu + worker, tuc mot
+        #    be tien trinh — dat trong mot gate 5 phut tren PRODUCTION la sai. Tang
+        #    chay-that (mock) va tang LIVE nam trong quy trinh nghiem thu phat hanh,
+        #    xem `docs/LTT_VOICE/QA/01_RELEASE_VERIFICATION.md`.
+        Step("voice QA rao", [sys.executable, "tools/check_voice_qa.py"], ROOT),
         # 🔴 Mot tep bi ghi lai TOAN BO thi `git diff` khong doc duoc nua.
         #    Do that: 26/08 mot tep .po lech 10.465 dong; 30/08 **25 tep**
         #    cung luc — 5.356 dong nhieu che 266 dong that.
