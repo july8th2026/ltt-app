@@ -136,7 +136,7 @@ def _luat_cho_planner(prompt: str) -> dict:
                                         token_vao_uoc=vao, xin_ra=ra)
     except Exception:                                          # noqa: BLE001
         logging.getLogger(__name__).exception(
-            "khong uoc duoc token cua lượt lap ke hoach — dat cho CA POOL")
+            "khong uoc duoc token cua luot lap ke hoach - dat cho CA POOL")
         return dict(lop=luat_nhan.NOI_BO, token_pool=pool, token_dat_truoc=pool)
 
 
