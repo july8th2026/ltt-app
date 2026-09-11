@@ -141,10 +141,34 @@ này tồn tại* làm ra, và nó sẽ báo "đạt".
   trả lại nguyên vẹn.
 * Ngưỡng T16 đo bằng chính `ket_xuat.dung_lenh` — bảng ở §4.
 
+## 6b. Lần đầu ba mục mới chạy trên RENDER THẬT
+
+Nâng `PHIEN_BAN_QC` làm `nghiem_thu_hien_hanh.json` thành cũ (`qc/2` vs `qc/3`),
+và `test_448` đỏ đúng như docstring của nó nói phải đỏ. Báo cáo được **tái sinh ở
+độ trung thực đầy đủ** ngày 11/09 (lượt nâng quyền qua Scheduled Task, bốn khoá
+`cua_so_yen` fail-closed, `chen_khong_khoa=false`): `model_that=True`,
+`giong_that=True`, `thay_the=[]`, **26 passed / 1 skipped, 22:19**.
+
+| cánh | T14 | T15 | T16 |
+|---|---|---|---|
+| `giu_hinh` | **đạt** — so đủ 4 trường, không lệch | không áp dụng | **đạt** — lệch **0,0177 s** (32,167 / 32,149) |
+| `cat_thong_minh` | không áp dụng (đường cắt) | không áp dụng | **đạt** — lệch **0,0003 s** |
+
+⭐ T16 trên render thật (0,0177 s) nằm **dưới** mức tệ nhất đã đo ở §4 (0,0206 s)
+   — ngưỡng 0,50 s còn dư địa 28× trên dữ liệu thật, không chỉ trên dữ liệu đo.
+
+⭐ T14 lần đầu chứng minh trên đầu ra thật rằng preset giữ hình **không** mã hoá
+   lại: bộ mã hoá, rộng, cao, xoay đều khớp nguồn.
+
+⚠️ **T15 chưa từng chạy trên một render thật.** Nghiệm thu E2E không bật phụ đề,
+   nên cả hai cánh trả `khong_ap_dung`. Đó là một khoảng trống, không phải một
+   lần đạt — nó cần một cánh nghiệm thu bật phụ đề (việc của pha 33).
+
 ## 7. Còn nợ
 
 * **Hỏng tệp** (`corruption`) chưa có chốt: cần giải mã toàn bộ luồng để phát
   hiện, và chi phí đó phải đo trước khi đưa vào một cổng chạy mỗi lần render.
 * **Tác dụng thật của vùng che / lớp phủ** cần so từng điểm ảnh — thuộc pha 26.
+* **T15 chưa chạy trên render thật** — xem §6b.
 * T15 mới kiểm biên **thời gian**. Biên **không gian** (phụ đề tràn ra ngoài
   khung) cần dựng thử khung — thuộc pha 32 cùng ô xem trước.
