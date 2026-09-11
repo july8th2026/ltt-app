@@ -140,3 +140,33 @@ là sức chứa, không phải băng thông) — giá trị của nó nằm ở
 chỉ nhả **model**, không nhả ngữ cảnh. Muốn 3090 thật sự 100 % cho LLM trong cửa sổ LLM thì trọng tài
 residency phải **dừng hẳn dịch vụ `LTTComfyUI`** rồi bật lại cho cửa sổ ảnh, chứ không chỉ gọi `/free`.
 Ghi vào Task 5.4/5.5 để cân nhắc (giá phải trả: thời gian khởi động ComfyUI).
+
+### Ba nút đã thử, và nút nào thật sự ăn (đo từng bước)
+
+Mục tiêu chủ dự án: 3090 dành **100 %** cho model. Ba nút, đo sau mỗi nút:
+
+| # | Nút | Kết quả đo |
+|---|---|---|
+| 1 | `fUseHardwareDefaultGraphicsAdapter = 1` (policy RDS) + `logoff` | **Không ăn** cho phiên RDP mới: session 3 vẫn dựng hình trên 3090 (~107 MiB) |
+| 2 | `fEnableWddmDriver = 0` (policy RDS) + đăng nhập phiên MỚI | **Ăn một phần**: `dwm` biến mất khỏi 3090; còn từng app tự chọn card mạnh: explorer, TextInputHost, Taskmgr, SearchHost, ShellHost, CrossDeviceResume, PhoneExperienceHost ≈ **60 MiB** |
+| 3 | Ghim 10 app vào 5060 Ti: `HKCU\Software\Microsoft\DirectX\UserGpuPreferences` = `GpuPreference=1;` (Power saving) + đăng xuất | *(đo sau khi chủ dự án đăng nhập lại)* |
+
+⚠️ **Nối lại phiên RDP KHÔNG phải tạo phiên mới.** Chính sách chỉ áp lúc phiên được tạo; bấm Sign out
+(hoặc `logoff <id>`) mới có phiên mới. Đã mất một vòng đo vì chuyện này.
+
+**Đường lùi cho cả ba nút.**
+
+```
+Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services" -Name fUseHardwareDefaultGraphicsAdapter
+Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services" -Name fEnableWddmDriver
+Remove-Item -Path "HKCU:\Software\Microsoft\DirectX\UserGpuPreferences" -Recurse
+```
+
+**Vì sao KHÔNG chuyển ComfyUI sang 5060 Ti** (câu hỏi của chủ dự án 11/09): model ảnh đo đỉnh
+**18.450 MiB** (t2i) và **20.000 MiB** khi có ảnh tham chiếu (`docs/ANH_NOI_BO/CHIA_GPU_HAI_MODEL.md` §1),
+trong khi 5060 Ti chỉ có **16.311 MiB** — không vừa, kể cả khi card trống; và LTT-3.5 sẽ chiếm ~13,7 GiB
+trên chính card đó (D06). Muốn chuyển phải lượng tử hoá model ảnh (fp8/GGUF) — ngoài phạm vi Spec 1.
+Đây chính là lý do L-11 giữ model ảnh trên 3090.
+
+**Tại sao 5060 Ti chỉ dùng 54 MiB:** trên đó hiện chưa có gì chạy — LTT-3.5 chưa tải (Task 3.1), và
+desktop thì tới nút 3 mới được ghim sang. Con số 54 MiB là đúng, không phải dấu hiệu "chưa chuyển hết".
