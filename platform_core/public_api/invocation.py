@@ -442,7 +442,12 @@ def kiem_truoc(db, tool, params: dict, *, user_id: str) -> None:
     try:
         tai_tham_chieu(ref)(db, str(user_id), dict(params))
     except LoiNguoiGoi as exc:
-        raise invalid_request(str(exc), reason=str(getattr(exc, "ma", "") or "")) from exc
+        # `reason` chi gui khi co ma nghiep vu that -- mot `reason=""` la
+        # mot khoa vo nghia trong body loi, va no khac voi KHONG co khoa do.
+        ma = str(getattr(exc, "ma", "") or "")
+        if ma:
+            raise invalid_request(str(exc), reason=ma) from exc
+        raise invalid_request(str(exc)) from exc
     return None
 
 
