@@ -351,7 +351,7 @@ async def tao(request: Request,
     # ⭐ Bat SOM, TRUOC khi giu credit: giong trong, giong cua nguoi khac, giong da
     #    tat deu bi tu choi o day (V6 pha 19). Xem `rang_giong.kiem_o_cua`.
     try:
-        rang_giong.kiem_o_cua(db, owner_id=u.id, che_do=che_do_giong, giong_id=giong_id)
+        rang_giong.kiem_o_cua(db, owner_id=str(getattr(u, "id", "")), che_do=che_do_giong, giong_id=giong_id)
     except rang_giong.RangGiongError as exc:
         return _lai_voi_loi(request, db, u, str(exc))
 

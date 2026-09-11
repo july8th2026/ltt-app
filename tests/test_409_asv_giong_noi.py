@@ -218,6 +218,9 @@ class TestPhucHoiTungDoan:
                                 thoi_luong_nguon=60.0)
         tl = van_ban.dung(goc, {d["ma"]: f"dich {d['ma']}" for d in goc["doan"]},
                           provider="p", model="m")
+        # V6 pha 19: moi ban long tieng hop le mang `ma_giong` (tu
+        # `giai_doan_noi_dung`); `giai_doan_giong` tu choi ban thieu no.
+        tl["ma_giong"] = "mau:gia"
         goi = json.dumps(tl, sort_keys=True, ensure_ascii=False).encode("utf-8")
         tam = assets.khoa_staging(owner_id="uA", run_id=run.id,
                                   stage=pipeline.CONTENT_PROCESS,
