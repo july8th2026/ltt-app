@@ -148,6 +148,18 @@ class PublicTool:
         """
         return self.name.split(".")[0]
 
+    def admission_cho(self, model: str = ""):
+        """Sức chứa admission cho một model — CÙNG luật với `ToolSpec`.
+
+        Một thân hàm ở `platform_core/registry.py`, hai lớp gọi vào: cửa HTTP
+        (`server/api/chat.py`, `streaming.py`) cầm `PublicTool` này, còn worker
+        và `canonical` cầm `ToolSpec`. Hai cửa của cùng một tool phải giành
+        **cùng** tài nguyên cho **cùng** một model; chép luật xuống đây là dựng
+        bản chân lý thứ hai.
+        """
+        from platform_core.registry import suc_chua_admission
+        return suc_chua_admission(self, model)
+
     def resolve_model(self, alias: str) -> str:
         """Public alias -> internal model id. Empty when the alias is unknown."""
         target = self.model_aliases.get(str(alias))

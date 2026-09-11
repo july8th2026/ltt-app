@@ -123,6 +123,42 @@ class AdmissionModel:
     vai_tro: str = ""
 
 
+def suc_chua_admission(tool, model: str = "") -> "AdmissionModel | None":
+    """Sức chứa admission của `tool` cho một model cụ thể (multijob 2.1).
+
+    Ba nhánh, fail-closed:
+
+    1. Có `admission_theo_model`: khớp đúng `model` thì trả nó; không thì rơi
+       về `"*"` nếu tool có khai; không có cả hai ⇒ `KeyError` — một model lạ
+       không được âm thầm chạy KHÔNG có admission (tức không giành lease,
+       không áp ngân sách token) trên một tool đã chủ động phân biệt theo model.
+    2. Không có `admission_theo_model` nhưng có `admission_resource` +
+       `admission_slots > 0`: tool cũ trước 2.1 — trả `AdmissionModel` tương
+       đương, không phân biệt `model`. Hành vi giữ NGUYÊN.
+    3. Không khai gì: tool không giành lease nào ⇒ `None`.
+
+    ⭐ **HÀM TỰ DO, KHÔNG PHẢI PHƯƠNG THỨC** — và đó là điểm chính (multijob
+       2.2). Hai lớp mang cùng bộ trường này: `ToolSpec` (bản khai của app, thứ
+       `job_runner`/`canonical` cầm) và `public_api.catalog.PublicTool` (bản
+       chiếu, thứ `server/api/chat.py` và `streaming.py` cầm). Cả hai đều phải
+       trả lời **cùng một câu** "model này giành tài nguyên nào"; chép luật vào
+       lớp thứ hai là dựng bản chân lý thứ hai, và bản sao sẽ trôi — đúng khuôn
+       hỏng đã gặp ở `ALIAS_SANG_ID`. Nên luật ở đây MỘT bản, hai lớp gọi vào.
+    """
+    m = tool.admission_theo_model
+    if m:
+        if model in m:
+            return m[model]
+        if "*" in m:
+            return m["*"]
+        raise KeyError(
+            f"{tool.name}: model {model!r} khong co trong admission_theo_model")
+    if tool.admission_resource and tool.admission_slots > 0:
+        return AdmissionModel(tool.admission_resource, tool.admission_slots,
+                              int(getattr(tool, "admission_token_pool", 0) or 0))
+    return None
+
+
 @dataclass(frozen=True)
 class ToolSpec:
     """Metadata tất định để Agent/Canvas gọi một job đã tồn tại.
@@ -338,32 +374,8 @@ class ToolSpec:
         return (self.job_type_lanes or {}).get(gia_tri, self.job_type)
 
     def admission_cho(self, model: str = "") -> "AdmissionModel | None":
-        """Sức chứa admission cho một model cụ thể (multijob 2.1).
-
-        Ba nhánh, fail-closed:
-
-        1. Có `admission_theo_model`: khớp đúng `model` thì trả nó; không thì
-           rơi về `"*"` nếu tool có khai; không có cả hai ⇒ `KeyError` — một
-           model lạ không được âm thầm chạy KHÔNG có admission (tức không
-           giành lease, không áp ngân sách token) trên một tool đã chủ động
-           phân biệt theo model.
-        2. Không có `admission_theo_model` nhưng có `admission_resource` +
-           `admission_slots > 0`: tool cũ trước 2.1 — trả `AdmissionModel`
-           tương đương, không phân biệt `model`. Hành vi giữ NGUYÊN.
-        3. Không khai gì: tool không giành lease nào ⇒ `None`.
-        """
-        m = self.admission_theo_model
-        if m:
-            if model in m:
-                return m[model]
-            if "*" in m:
-                return m["*"]
-            raise KeyError(
-                f"{self.name}: model {model!r} khong co trong admission_theo_model")
-        if self.admission_resource and self.admission_slots > 0:
-            return AdmissionModel(self.admission_resource, self.admission_slots,
-                                  int(getattr(self, "admission_token_pool", 0) or 0))
-        return None
+        """Sức chứa admission cho một model cụ thể. Xem `suc_chua_admission`."""
+        return suc_chua_admission(self, model)
 
 
 @dataclass(frozen=True)
