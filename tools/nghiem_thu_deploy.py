@@ -34,6 +34,12 @@ commit vao do.
 
 RC1 11/09: so moi tep, khong chi .py trong GOI -- mot deploy lech JS/CSS/HTML
 truoc day van tra DAT vi phep do cu chi soi .py.
+
+Fix round 1 (11/09): mot deploy DUNG van "thua" 9 tep vendor binary gitignored
+co chu dich (`apps/upscalevideo/vendor/...`) vi chung duoc `setup/2-cai-dat.ps1`
+chep RIENG qua $VAN_CHUYEN, khong qua `git archive`. Doc lai danh sach nay TU
+CHINH tep .ps1 do (khong go lai) va xep rieng thanh nhom `van_chuyen` -- KHONG
+tinh la loi. Mot `thua` KHONG nam trong $VAN_CHUYEN thi van la loi that.
 """
 from __future__ import annotations
 
@@ -41,6 +47,7 @@ import argparse
 import hashlib
 import json
 import pathlib
+import re
 import subprocess
 
 GOC = pathlib.Path(__file__).resolve().parents[1]
@@ -59,11 +66,18 @@ def bam_git(b: bytes) -> str:
     return hashlib.sha1(tieu_de.encode() + b).hexdigest()
 
 
-def so_sanh(trong_commit: dict[str, str], tren_may: dict[str, bytes]) -> dict:
+def so_sanh(trong_commit: dict[str, str], tren_may: dict[str, bytes],
+            van_chuyen: list[str] | None = None) -> dict:
     """Ham thuan, khong I/O: so blob-sha cua commit voi noi dung tren may.
 
     `tren_may` la duong -> bytes (chua bam) — ham nay tu bam bang `bam_git`
-    de so truc tiep voi gia tri co san trong `trong_commit`."""
+    de so truc tiep voi gia tri co san trong `trong_commit`.
+
+    `van_chuyen` la danh sach mau duong kieu `$VAN_CHUYEN` (vd dang Windows `apps\\*\\vendor`)
+    — tai san gitignored ma deploy VAN chep rieng (`docs/16...`,
+    `tests/test_505_nguon_ban_giao.py`). Mot tep `thua` roi vao mot mau trong do
+    la TAI SAN DA KHAI, xep rieng vao `van_chuyen`, KHONG tinh la loi. Mot tep
+    `thua` khong khop mau nao van la loi that."""
     lech: list[str] = []
     thieu: list[str] = []
     for duong, blob in trong_commit.items():
@@ -71,8 +85,43 @@ def so_sanh(trong_commit: dict[str, str], tren_may: dict[str, bytes]) -> dict:
             thieu.append(duong)
         elif bam_git(tren_may[duong]) != blob:
             lech.append(duong)
-    thua = [d for d in tren_may if d not in trong_commit]
-    return {"lech": sorted(lech), "thieu": sorted(thieu), "thua": sorted(thua)}
+    mau_khai = van_chuyen or []
+    thua: list[str] = []
+    da_khai: list[str] = []
+    for d in tren_may:
+        if d in trong_commit:
+            continue
+        if any(_phu_boi(m, d) for m in mau_khai):
+            da_khai.append(d)
+        else:
+            thua.append(d)
+    return {"lech": sorted(lech), "thieu": sorted(thieu), "thua": sorted(thua),
+            "van_chuyen": sorted(da_khai)}
+
+
+def _phu_boi(mau: str, duong: str) -> bool:
+    """Mau kieu Windows (co the co `*`), co the phu `duong` (posix) khong —
+    giong het `tests/test_505_nguon_ban_giao.py::_phu_boi`."""
+    m = mau.replace("\\", "/")
+    if "*" not in m:
+        return duong == m or duong.startswith(m.rstrip("/") + "/")
+    dau, sau = m.split("*", 1)
+    return duong.startswith(dau) and sau.strip("/") in duong
+
+
+def doc_van_chuyen(setup_ps1: pathlib.Path | None = None) -> list[str]:
+    """Doc `$VAN_CHUYEN` tu `setup/2-cai-dat.ps1` — NGUON DUY NHAT cho danh
+    sach tai san gitignored ma deploy van chep rieng, dung chung voi
+    `tests/test_505_nguon_ban_giao.py::_van_chuyen`. Khong go lai danh sach
+    o day."""
+    tep = setup_ps1 or (GOC / "setup" / "2-cai-dat.ps1")
+    if not tep.exists():
+        return []
+    van_ban = tep.read_text(encoding="ascii", errors="replace")
+    m = re.search(r"\$VAN_CHUYEN = @\((.*?)\)", van_ban, re.S)
+    if not m:
+        return []
+    return re.findall(r"'([^']+)'", m.group(1))
 
 
 def _doc_marker(thu_muc: pathlib.Path) -> tuple[str, str]:
@@ -147,8 +196,10 @@ def main() -> int:
         return 1
 
     tren_may = _tep_tren_may(CHAY)
-    ket_qua = so_sanh(trong_commit, tren_may)
+    van_chuyen = doc_van_chuyen()
+    ket_qua = so_sanh(trong_commit, tren_may, van_chuyen)
     so_khong_py = sum(1 for d in trong_commit if not d.endswith(".py"))
+    so_van_chuyen = len(ket_qua["van_chuyen"])
 
     vi_du: list[str] = []
     for duong in ket_qua["lech"]:
@@ -169,6 +220,7 @@ def main() -> int:
     print(f"  lech noi dung              : {lech}")
     print(f"  thieu ben may chu          : {thieu}")
     print(f"  thua ben may chu           : {thua}")
+    print(f"  tai san ngoai commit DA KHAI (van_chuyen) : {so_van_chuyen}")
     for v in vi_du:
         print(f"    {v}")
     print()
