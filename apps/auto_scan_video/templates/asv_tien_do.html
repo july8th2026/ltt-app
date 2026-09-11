@@ -149,11 +149,24 @@
   {% endif %}
 
   {% if run.status in ("queued", "running") %}
-    <div class="asv-hanh-dong">
+    {# 🔴 V6 pha 32: truoc day MOT cu bam la huy — va huy la KHONG quay lai:
+         `huy_run` quyet toan ngay (`RUN_CANCELLED` la trang thai cuoi, `thu_lai`
+         tu choi lan chay da ket thuc). Mot cu bam truot tay la mat mot lan chay
+         da tra tien, da di qua tach nguon va chep loi.
+
+       ⭐ Hai buoc, KHONG JS: `<details>` mo ra cau noi ro hau qua, nut that
+          nam ben trong. Ban phim di duoc (Enter/Space tren `summary`).
+
+       ⚠️ `hx-preserve`: manh nay duoc htmx hoi lai 3 giay mot lan bang
+          `outerHTML`. Khong co no, khung xac nhan dang MO se tu dong lai giua
+          luc khach dang doc — dung loai trang thai cu ma pha 32 ke ten. #}
+    <details class="asv-hanh-dong asv-xac-nhan" id="asv-huy" hx-preserve="true">
+      <summary class="btn ghost">{{ _("Huỷ lần chạy") }}</summary>
+      <p>{{ _("Huỷ là dừng hẳn: phần credit chưa dùng được hoàn lại, nhưng lần chạy này không tiếp tục được nữa — muốn làm lại phải tạo lần chạy mới.") }}</p>
       <form method="post" action="{{ app.route_prefix }}/run/{{ run.id }}/huy">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <button class="btn ghost" type="submit">{{ _("Huỷ lần chạy") }}</button>
+        <button class="btn danger" type="submit">{{ _("Xác nhận huỷ") }}</button>
       </form>
-    </div>
+    </details>
   {% endif %}
 </div>

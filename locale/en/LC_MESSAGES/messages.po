@@ -15786,3 +15786,9 @@ msgstr "List updated: %(so)s voices."
 
 msgid "Không làm mới được danh sách giọng."
 msgstr "Could not refresh the voice list."
+
+msgid "Huỷ là dừng hẳn: phần credit chưa dùng được hoàn lại, nhưng lần chạy này không tiếp tục được nữa — muốn làm lại phải tạo lần chạy mới."
+msgstr "Cancelling is final: unused credit is refunded, but this run cannot continue — to try again you must start a new run."
+
+msgid "Xác nhận huỷ"
+msgstr "Confirm cancel"
