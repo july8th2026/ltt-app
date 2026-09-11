@@ -21,49 +21,85 @@
 // ⛔ KHONG dung du lieu production khi CHUA duoc nguoi dung cho phep ro rang
 //    (CLAUDE.md, muc "Global browser testing policy"). Tep nay chi mo khi
 //    nguoi goi da tu dat token — no khong tu suy hay doan mot may chu nao.
-
-const SEL = {
-  ngonNguNut: (ma) => `[data-ngonngu="${ma}"]`,
-  vanBan: '#lv-text',
-  nutTao: '#lv-nut-tao',
-  ketQuaXong: '#lv-kq-xong',
-  taiWav: '#lv-tai',
-};
-
-/**
- * Cung khuon `kiemTrang` voi `ltt_voice_rc1.js` — 4 loai bat loi + danh sach
- * cho phep 400 theo tung buoc. Xem chu thich day du o `ltt_voice_rc1.js`.
- */
-function kiemTrang(page) {
-  const vanDe = [];
-  const choPhep = [];
-  page.on('console', (m) => { if (m.type() === 'error') vanDe.push('console.error: ' + m.text()); });
-  page.on('pageerror', (e) => vanDe.push('pageerror: ' + e.message));
-  page.on('requestfailed', (r) => {
-    const tb = r.failure();
-    vanDe.push('requestfailed: ' + r.url() + ' — ' + (tb ? tb.errorText : '?'));
-  });
-  page.on('response', (r) => {
-    const st = r.status();
-    if (st < 400) return;
-    const u = r.url();
-    if (choPhep.some((sub) => u.includes(sub))) return;
-    vanDe.push(`response ${st}: ${u}`);
-  });
-  return {
-    choPhep400(...chuoiCon) { choPhep.push(...chuoiCon); },
-    // Xoa danh sach cho phep — dung GIUA hai luong doc lap trong CUNG mot
-    // `page` de mot cho-phep cua luong truoc khong lay sang luong sau (cung
-    // khuon `ltt_voice_rc1.js`).
-    xoaCho() { choPhep.length = 0; },
-    dat() { vanDe.length = 0; },
-    khangDinh(nhan) {
-      if (vanDe.length) throw new Error(`${nhan}: ${vanDe.length} van de — ${vanDe.join(' | ')}`);
-    },
-  };
-}
+//
+// ⛔ CAU TRUC: cung khuon `ltt_voice_rc1.js` — `run-code --filename=` boc
+//    NGUYEN VAN noi dung tep thanh `await (<noi dung>)(page)`, chi hop le
+//    neu la MOT bieu thuc duy nhat. Moi khai bao (`SEL`, `kiemTrang`) nam BEN
+//    TRONG than ham `async page => {...}` duoi day, khong con o top-level.
+//
+// ⛔ SANDBOX cua `run-code` KHONG co `process`/`Buffer`/`require` (xem xac
+//    minh doc lap o `ltt_voice_rc1.js` va bao cao
+//    .superpowers/sdd/2026-09-11-ltt-voice-rc1/tang1-e2e-report.md).
+//      · Ba lan doc `process.env.*` duoi day dung mot shim CUC BO o dau than
+//        ham (`const process = ... || { env: {} }`) — trong sandbox se luon
+//        roi ve rong (tuc TOKEN vang mat -> SKIP, dung tinh an toan ban dau:
+//        khong bao gio tu doan/tu bat mot cong that nao). Neu sau nay tep
+//        nay duoc goi qua mot trinh chay Node khac CO `process` that (vd de
+//        thuc su chay tang THAT voi token that), shim se dung dung
+//        `process` do — khong mat hanh vi.
+//      · Hai cho `buf.includes(Buffer.from('ltt-voice-mock'))` doi mot
+//        Buffer that de dung lam gia tri tim — nhung `Buffer.prototype
+//        .includes(value)` nhan THANG mot chuoi JS (khong can Buffer nao de
+//        dung), nen doi thanh `buf.includes('ltt-voice-mock')`: cung phep
+//        tim, cung ket qua, khong can goi `Buffer.from`.
 
 async page => {
+  // Local shim: xem chu thich sandbox o dau tep.
+  const process = (typeof globalThis !== 'undefined' && globalThis.process) || { env: {} };
+
+  const SEL = {
+    ngonNguNut: (ma) => `[data-ngonngu="${ma}"]`,
+    vanBan: '#lv-text',
+    nutTao: '#lv-nut-tao',
+    ketQuaXong: '#lv-kq-xong',
+    taiWav: '#lv-tai',
+  };
+
+  /**
+   * Cung khuon `kiemTrang` voi `ltt_voice_rc1.js` — 4 loai bat loi + danh sach
+   * cho phep 400 theo tung buoc. Xem chu thich day du o `ltt_voice_rc1.js`.
+   */
+  function kiemTrang(page) {
+    const vanDe = [];
+    const choPhep = [];
+    page.on('console', (m) => {
+      if (m.type() !== 'error') return;
+      // Cung khuon `ltt_voice_rc1.js`: loc dong "Failed to load resource:..."
+      // (Chromium tu sinh cho response HTTP >=400) qua CUNG danh sach
+      // `choPhep400()`, chi theo URL that bai (m.location().url) — khong
+      // dung o tep nay (khong flow nao goi choPhep400 hay mong 400 qua
+      // fetch trong trang) nhung giu dung mold de hai tep khong lech nhau.
+      if (/^Failed to load resource:/.test(m.text())) {
+        const locUrl = (m.location() && m.location().url) || '';
+        if (locUrl && choPhep.some((sub) => locUrl.includes(sub))) return;
+      }
+      vanDe.push('console.error: ' + m.text());
+    });
+    page.on('pageerror', (e) => vanDe.push('pageerror: ' + e.message));
+    page.on('requestfailed', (r) => {
+      const tb = r.failure();
+      vanDe.push('requestfailed: ' + r.url() + ' — ' + (tb ? tb.errorText : '?'));
+    });
+    page.on('response', (r) => {
+      const st = r.status();
+      if (st < 400) return;
+      const u = r.url();
+      if (choPhep.some((sub) => u.includes(sub))) return;
+      vanDe.push(`response ${st}: ${u}`);
+    });
+    return {
+      choPhep400(...chuoiCon) { choPhep.push(...chuoiCon); },
+      // Xoa danh sach cho phep — dung GIUA hai luong doc lap trong CUNG mot
+      // `page` de mot cho-phep cua luong truoc khong lay sang luong sau (cung
+      // khuon `ltt_voice_rc1.js`).
+      xoaCho() { choPhep.length = 0; },
+      dat() { vanDe.length = 0; },
+      khangDinh(nhan) {
+        if (vanDe.length) throw new Error(`${nhan}: ${vanDe.length} van de — ${vanDe.join(' | ')}`);
+      },
+    };
+  }
+
   if (!process.env.LTT_VOICE_SIDECAR_TOKEN) {
     console.log('SKIP ltt_voice_that.js — LTT_VOICE_SIDECAR_TOKEN chua duoc dat. '
       + 'Tep nay CHI chay khi nguoi goi tu tro toi mot may chu dang mo cong '
@@ -109,8 +145,9 @@ async page => {
     if (!(buf[0] === 0x52 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x46))
       throw new Error('tep tai ve KHONG phai WAV (thieu RIFF)');
     // RAO: day la CONG THAT, KHONG duoc mang dau van tay gia lap — thay dau
-    // do o day nghia la duong da vo tinh tro vao mock, sai tang.
-    if (buf.includes(Buffer.from('ltt-voice-mock')))
+    // do o day nghia la duong da vo tinh tro vao mock, sai tang. Tim thang
+    // bang chuoi (khong can `Buffer.from` — xem chu thich sandbox o dau tep).
+    if (buf.includes('ltt-voice-mock'))
       throw new Error('WAV mang dau van tay ltt-voice-mock — duong nay dang '
         + 'CHAY TREN MOCK, khong phai cong giong THAT');
     return buf;
@@ -155,7 +192,7 @@ async page => {
   const bufEn = await resEn.body();
   if (!(bufEn[0] === 0x52 && bufEn[1] === 0x49 && bufEn[2] === 0x46 && bufEn[3] === 0x46))
     throw new Error('EN: tep tai ve KHONG phai WAV (thieu RIFF)');
-  if (bufEn.includes(Buffer.from('ltt-voice-mock')))
+  if (bufEn.includes('ltt-voice-mock'))
     throw new Error('EN: WAV mang dau van tay ltt-voice-mock — sai tang');
   kt.khangDinh('that-en');
 
