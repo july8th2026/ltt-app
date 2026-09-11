@@ -70,7 +70,19 @@ LIVE_TOOLS = ["tools/chay_thu_ltt_voice.py", "tools/cong_chat_luong_voice.py"]
 #: Flow trinh duyet — phai co du rao rieng cua chung.
 BROWSER_FLOWS = ["tests/browser/ltt_voice_golden.js",
                  "tests/browser/ltt_voice_negative.js",
-                 "tests/browser/ltt_voice_smoke.js"]
+                 "tests/browser/ltt_voice_smoke.js",
+                 "tests/browser/ltt_voice_rc1.js"]
+
+#: RC1 (Task 15, spec §9) — flow rieng phai lap DU 6 khung hinh.
+BROWSER_FLOW_RC1 = "tests/browser/ltt_voice_rc1.js"
+KHUNG_HINH_RC1 = ((1280, 720), (1366, 768), (1440, 900), (1920, 1080),
+                  (390, 844), (768, 1024))
+
+#: THAT (Task 15) — chay cong giong THAT, GAC bang
+#: LTT_VOICE_SIDECAR_TOKEN. KHONG nam trong BROWSER_FLOWS (rao rieng ben
+#: duoi kiem ca hinh dang gac lan bon loai bat loi) va KHONG bao gio duoc
+#: CHAY boi rao tinh nay — chi bi PIN hinh dang.
+BROWSER_FLOW_THAT = "tests/browser/ltt_voice_that.js"
 
 MOCK = "tools/voice_mock_sidecar.py"
 E2E_SERVER = "tools/voice_e2e_server.py"
@@ -139,6 +151,52 @@ def rao_tinh() -> list[str]:
         loi.append("BROWSER: golden flow khong thu loi console (rao 'browser thuc su mo')")
     if gold and "RIFF" not in gold and "0x52" not in gold:
         loi.append("BROWSER: golden flow khong khang dinh WAV that (RIFF) — co the xanh rong")
+
+    # G-BROWSER-RC1 (Task 15): flow RC1 phai bat DU 4 loai bat loi (console
+    # error/pageerror/requestfailed/HTTP>=400) VA lap DU 6 khung hinh (spec
+    # §9) — thieu mot khung la mot man hinh khong duoc kiem tran ngang ma
+    # khong ai bao.
+    rc1 = _doc(BROWSER_FLOW_RC1)
+    if not rc1:
+        loi.append(f"THIEU flow {BROWSER_FLOW_RC1}")
+    else:
+        for dau in ("page.on('console'", "page.on('pageerror'",
+                   "page.on('requestfailed'", "page.on('response'"):
+            if dau not in rc1:
+                loi.append(f"BROWSER-RC1: {BROWSER_FLOW_RC1} thieu bat loi {dau!r}")
+        for w, h in KHUNG_HINH_RC1:
+            if f"[{w}, {h}]" not in rc1:
+                loi.append(f"BROWSER-RC1: {BROWSER_FLOW_RC1} thieu khung hinh {w}x{h}")
+        if "LTT_QA_BASE_URL" not in rc1:
+            loi.append(f"BROWSER-RC1: {BROWSER_FLOW_RC1} khong ho tro tang-2 LTT_QA_BASE_URL")
+
+    # G-BROWSER-THAT (Task 15): flow THAT phai GAC bang
+    # LTT_VOICE_SIDECAR_TOKEN (khong tu chay, khong tu doan mot may chu that
+    # nao, KHONG tu dat bien do), in SKIP khi vang token, va van phai bat DU
+    # 4 loai bat loi + ho tro tang-2 tren nhanh chay that.
+    that = _doc(BROWSER_FLOW_THAT)
+    if not that:
+        loi.append(f"THIEU flow {BROWSER_FLOW_THAT}")
+    else:
+        if "app.lttstudios.com" in that:
+            loi.append(f"BROWSER: {BROWSER_FLOW_THAT} tro toi PRODUCTION — flow QA chi chay loopback")
+        if "127.0.0.1:8129" not in that:
+            loi.append(f"BROWSER: {BROWSER_FLOW_THAT} khong tro may chu cach ly 127.0.0.1:8129")
+        if "throw new Error" not in that:
+            loi.append(f"BROWSER: {BROWSER_FLOW_THAT} khong co `throw` nao")
+        if "LTT_VOICE_SIDECAR_TOKEN" not in that:
+            loi.append(f"BROWSER-THAT: {BROWSER_FLOW_THAT} khong gac bang LTT_VOICE_SIDECAR_TOKEN")
+        if ("process.env.LTT_VOICE_SIDECAR_TOKEN =" in that
+                or "process.env.LTT_VOICE_SIDECAR_TOKEN=" in that):
+            loi.append(f"BROWSER-THAT: {BROWSER_FLOW_THAT} TU DAT LTT_VOICE_SIDECAR_TOKEN — cam")
+        if "SKIP" not in that:
+            loi.append(f"BROWSER-THAT: {BROWSER_FLOW_THAT} khong in SKIP khi vang token")
+        for dau in ("page.on('console'", "page.on('pageerror'",
+                   "page.on('requestfailed'", "page.on('response'"):
+            if dau not in that:
+                loi.append(f"BROWSER-THAT: {BROWSER_FLOW_THAT} thieu bat loi {dau!r}")
+        if "LTT_QA_BASE_URL" not in that:
+            loi.append(f"BROWSER-THAT: {BROWSER_FLOW_THAT} khong ho tro tang-2 LTT_QA_BASE_URL")
 
     # G-MOCK-CUA-DAI: mock phai phu ba cua duong van ban dai (lo-ra-tep, ghep-tep,
     # stream) — thieu mot cua la duong van ban dai roi vao 404 ma khong ai bao.
