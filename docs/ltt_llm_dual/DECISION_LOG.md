@@ -280,3 +280,41 @@ C4), và **hạ ngữ cảnh xuống cho phù hợp**.
    do llama-swap đổi hồ sơ giữa chừng.
 5. **Còn mở, không chặn:** `-ub 256` cho thêm 16.384 token với biên tương đương, đổi lại
    prefill chậm hơn — chưa đo. Đưa vào G4; đổi chác chưa có giá thì chưa chốt.
+
+---
+
+## ✅ L-15 — Bộ cờ chống "nghĩ mãi không dứt" cho model nhà (đo 2026-09-12)
+
+**Vấn đề đo được.** LTT-3.5 trả `content` **rỗng 6/6 lượt** với đề tiếng Việt, mỗi lượt
+đốt đúng `max_tokens` — trên **cả hai** ứng viên Q6_K, tất định. Tiếng Anh cùng lúc 3/3 đạt.
+Không phải "model không biết tiếng Việt": lượt thành công trả lời đúng.
+
+**Nguyên nhân** (tài liệu model + cộng đồng, `10_BENCHMARK_P3.md` §G3c): Qwen3.5 ở chế độ
+thinking có lỗi *truncated thinking* đã đo công khai (17,4 % đầu ra không phát `</think>`,
+84 % số đó lặp > 30 %); `</think>` chỉ là một token và lượng tử hoá làm tụt xác suất của nó;
+và **Qwen3.5 luôn nghĩ bằng tiếng Anh** nên đề tiếng Việt bắt nó suy luận bắc cầu.
+Cộng thêm tham số lấy mẫu mặc định của `llama-server` lệch khuyến nghị Qwen ở bốn chỗ —
+nặng nhất là `presence-penalty 0` (chính là phanh chống lặp).
+
+**Chốt — bộ cờ cho mọi hồ sơ model nhà:**
+
+```
+--temp 0.6 --top-p 0.95 --top-k 20 --min-p 0 --presence-penalty 1.5 --reasoning-budget 512
+```
+
+**Bằng chứng:** bộ `tools/danh_gia_llm.py` đầy đủ, cùng tệp GGUF, chỉ khác bộ cờ:
+**27/36 (75 %) → 36/36 (100 %)**. Không nhóm nào tụt; ba nhóm vốn "mất một phần"
+(lập trình · sửa lỗi · sinh dài) lên 100 %. Tiếng Việt 0 % → 100 %. Và nhanh hơn ~3 lần.
+
+**Consequences:**
+1. Tham số lấy mẫu đặt ở **server** (`llama-swap.yaml`), không gửi theo request: cache CUDA
+   graph khoá theo bộ tham số, và `danh_gia_llm.py` cố ý không truyền chúng.
+2. Tham số Qwen **một mình không đủ** (còn 3/6 rỗng) — phải có cả `--reasoning-budget`.
+   Khớp ghi chép cũ: `reasoning_effort` dịch xác suất chứ không chặn.
+3. **Task 3.3 phải áp cùng bộ cờ cho `qwen38-api` và chạy lại `danh_gia_llm` cho nó.**
+   Ghi chép cũ đã đo 3.8 có cùng chế độ hỏng và bỏ ngỏ *"chất lượng của phanh cứng chưa đo"*;
+   nay đã đo — nhưng **trên một model khác**, nên là bằng chứng mạnh, chưa phải kết luận.
+4. `--reasoning-budget` là cờ **server-global**, không gửi được per-request — nên nó là một
+   thuộc tính của hồ sơ, và mọi khách của hồ sơ đó chịu chung.
+5. Chưa đo: `--chat-template-kwargs '{"enable_thinking":false}'` (lượt thử hỏng vì lỗi truyền
+   tham số qua PowerShell, không phải vì cờ). Không cần cho bản vá này.

@@ -447,6 +447,92 @@ biên dịch. Bắt buộc chạy lại C1 + G1 + G2 trên bản mới trước 
 CUDA"* là chuyện **torch cu130 trên pod thuê cho WanGP**, không liên quan
 llama.cpp ở máy B. Không áp dụng ở đây.
 
+## G3c — Tiếng Việt trả rỗng: nguyên nhân, và bản vá đưa bộ đề lên **36/36**
+
+### Đây KHÔNG phải "model không biết tiếng Việt"
+
+Lượt thành công trả lời **đúng** ("Hà Nội", "45000"). Thứ hỏng là model **không
+bao giờ phát ra `</think>`** rồi đốt hết ngân sách token.
+
+Ba sự thật từ tài liệu model + cộng đồng:
+
+1. Qwen3.5 ở chế độ thinking có lỗi **truncated thinking** đã đo công khai:
+   **17,4 %** đầu ra trên LiveCodeBench không phát ra `</think>`, và **84 %**
+   số đó có tỉ lệ lặp > 30 %. `</think>` chỉ là **một token** trong từ điển
+   (id 248069); vòng lặp lặp chữ làm xác suất của nó tụt, và **lượng tử hoá**
+   (ta chạy Q6_K) làm tụt thêm vì nó là token tần số thấp.
+2. **Qwen3.5 luôn "nghĩ" bằng tiếng Anh** (QwenLM issue #35) kể cả khi đề bài là
+   thứ tiếng khác ⇒ đề tiếng Việt bắt nó suy luận **bắc cầu**, chuỗi dài và lỏng
+   hơn, dễ vào vòng lặp hơn. Khớp số đo: **6/8 lượt tiếng Việt rỗng, 1/8 Anh**.
+3. Tham số lấy mẫu mặc định của `llama-server` **lệch khuyến nghị Qwen ở bốn
+   chỗ**, trong đó `presence-penalty 0` là chỗ nặng nhất — nó chính là phanh
+   chống lặp mà chế độ hỏng này cần.
+
+| | llama-server mặc định | Qwen (thinking) |
+|---|---:|---:|
+| temperature | 0,80 | 0,60 |
+| top-k | 40 | 20 |
+| min-p | 0,05 | 0 |
+| **presence-penalty** | **0,00** | **1,50** |
+
+### Bốn cách thử, đo bằng cả "có rỗng không" LẪN "có đúng không"
+
+| cấu hình | vi_1tu rỗng | vi_tinh rỗng | đúng | token TB | giây TB |
+|---|---:|---:|---:|---:|---:|
+| A mặc định | 3/3 | 3/3 | **0/6** | 1400 | 26,5 |
+| B tham số Qwen | 1/3 | 2/3 | 3/6 | ~990 | ~20 |
+| **C + `--reasoning-budget 512`** | **0/3** | **0/3** | **6/6** | ~430 | **~9** |
+| D `enable_thinking:false` | — | — | — | — | — |
+
+Đối chứng dương `en_1tu` giữ **3/3 đúng ở cả ba** cấu hình chạy được — bản vá
+không làm hỏng thứ vốn đã chạy.
+
+⚠️ **B một mình là KHÔNG đủ** (còn 3/6 rỗng). Phải có cả phanh cứng. Khớp ghi
+chép cũ về model 3.8: `reasoning_effort` dịch **xác suất** chứ không **chặn**.
+
+⚠️ D **chưa đo được**: `--chat-template-kwargs '{"enable_thinking":false}'`
+không nạp được vì lỗi truyền tham số của chính tôi qua PowerShell — **không**
+phải kết luận về cờ đó. Không cần nữa vì C đủ, nhưng đừng đọc bảng này thành
+"cờ ấy hỏng".
+
+### ⭐ Chấm lại TOÀN BỘ bộ đề với bản vá: 27/36 → **36/36**
+
+Bản vá hoạt động bằng cách **cắt ngắn khối nghĩ**, nên thứ bị cắt có thể là thứ
+một bài khó đang cần. Phải chấm cả bộ chứ không chỉ hai bài tiếng Việt:
+
+| nhóm | trước | sau |
+|---|---:|---:|
+| tieng_viet | **0 %** | **100 %** |
+| lap_trinh | 66,7 % | **100 %** |
+| sua_loi | 66,7 % | **100 %** |
+| sinh_dai | 66,7 % | **100 %** |
+| cau_truc · chon_tool · ngu_canh_dai · tieng_anh | 100 % | 100 % |
+| **TỔNG** | **27/36 = 75 %** | **36/36 = 100 %** |
+
+⇒ **Không phải một cuộc đổi chác.** Ba nhóm "mất một phần" trước đó cũng do
+chính chế độ nghĩ-lòng-vòng, không phải do model yếu. Và mọi bài đều nhanh lên.
+
+### Cấu hình chốt cho LTT-3.5 (vào `llama-swap.yaml` ở Task 3.3)
+
+```
+--temp 0.6 --top-p 0.95 --top-k 20 --min-p 0 --presence-penalty 1.5
+--reasoning-budget 512
+```
+
+Tham số lấy mẫu đặt ở **server**, không gửi theo request: cache CUDA graph khoá
+theo bộ tham số, và `danh_gia_llm.py` cố ý không truyền chúng.
+
+### 🔴 Việc này CHƯA làm cho LTT-3.8 — và phải làm
+
+Ghi chép cũ đã đo model 3.8 có **cùng** chế độ hỏng (~1/2 lượt ngữ cảnh dài trả
+`content` rỗng, `reasoning` đầy chữ) và đã kết luận *"bản sửa đáng tin duy nhất
+là `--reasoning-budget N`"* — nhưng để lại một dòng: *"chất lượng ở chế độ
+runaway của phanh cứng **chưa đo**"*.
+
+Nay đã đo, trên 3.5: phanh cứng **không** hạ chất lượng, nó nâng. Đó là bằng
+chứng mạnh nhưng **trên một model khác**. Task 3.3 phải áp cùng bộ cờ cho
+`qwen38-api` và **chạy lại `danh_gia_llm` cho nó** trước khi tin.
+
 ---
 
 ## G4–G5
