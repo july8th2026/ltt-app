@@ -15720,3 +15720,48 @@ msgstr "As above, but you choose the text style in the box below."
 
 msgid "Bản lồng tiếng không ghi giọng đã chọn — cần chạy lại bước xử lý nội dung."
 msgstr "The dubbing script does not record the chosen voice — the content step needs to run again."
+
+msgid "Nhạc nền và tiếng động của video gốc được giữ lại; chỉ lời thoại gốc được thay bằng giọng lồng tiếng."
+msgstr "Background music and sound effects from the original are kept; only the original dialogue is replaced by the dubbed voice."
+
+msgid "Nhạc nền so với lời thoại"
+msgstr "Background music relative to dialogue"
+
+msgid "Tắt nhạc nền"
+msgstr "Turn off background music"
+
+msgid "Chỉ còn giọng lồng tiếng."
+msgstr "Only the dubbed voice remains."
+
+msgid "Hạ nhạc nền khi có lời"
+msgstr "Lower the music while someone speaks"
+
+msgid "Nhạc nền nhỏ đi khoảng 7 dB lúc có người nói và trở lại giữa hai câu."
+msgstr "The music drops by about 7 dB while someone speaks and comes back between lines."
+
+msgid "To dần ở đầu (giây)"
+msgstr "Fade in at the start (seconds)"
+
+msgid "Nhỏ dần ở cuối (giây)"
+msgstr "Fade out at the end (seconds)"
+
+msgid "Độ to chung của video luôn được chuẩn về −14 LUFS, mức các nền tảng video dùng."
+msgstr "The overall loudness is always normalised to −14 LUFS, the level video platforms use."
+
+msgid "Giá trị âm thanh không hợp lệ: {ten}."
+msgstr "Invalid audio setting: {ten}."
+
+msgid "Hồ sơ âm thanh không đọc được."
+msgstr "The audio settings could not be read."
+
+msgid "Hồ sơ âm thanh có trường lạ: {ds}."
+msgstr "The audio settings contain unknown fields: {ds}."
+
+msgid "Mức nhạc nền phải từ {a} đến {b} dB."
+msgstr "The music level must be between {a} and {b} dB."
+
+msgid "Thời gian to dần / nhỏ dần phải từ 0 đến {n} giây."
+msgstr "Fade-in / fade-out must be between 0 and {n} seconds."
+
+msgid "Đã tắt nhạc nền thì không còn gì để hạ theo lời thoại."
+msgstr "With the music turned off there is nothing to lower under the dialogue."

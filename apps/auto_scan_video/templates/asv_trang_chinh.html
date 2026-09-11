@@ -482,6 +482,55 @@
         <input type="hidden" name="phu_de" id="asv-phu-de" value="">
       </div>
 
+      {# 🔑 Âm thanh (V6 pha 23) — MỘT thanh mức, không phải hai.
+
+           Bản phối kết thúc bằng `loudnorm` về −14 LUFS, nên chỉ TỈ LỆ nền/lời
+           là có nghĩa; một thanh "mức giọng" cạnh thanh này sẽ là thanh kéo
+           không làm gì. Đo ở `PHA23_AUDIO_STUDIO.md` §1.
+
+         ⭐ Không `data-preset-can`: âm thanh không chạm điểm ảnh, cả hai preset
+            đều trộn lại bản phối. Miền giá trị đến TỪ `am_thanh.cho_giao_dien()`. #}
+      <div class="asv-nhom" id="asv-nhom-am-thanh"
+           data-nen-mac-dinh="{{ am_thanh.nen_db }}">
+        <h3>{{ _("Âm thanh") }}</h3>
+        <p class="asv-ghi-chu">
+          {{ _("Nhạc nền và tiếng động của video gốc được giữ lại; chỉ lời thoại gốc được thay bằng giọng lồng tiếng.") }}
+        </p>
+        <label class="asv-o">
+          <span>{{ _("Nhạc nền so với lời thoại") }}
+            <output id="asv-am-nen-so" for="asv-am-nen">{{ am_thanh.nen_db | int }} dB</output></span>
+          <input type="range" id="asv-am-nen" step="1"
+                 min="{{ am_thanh.nen_min | int }}" max="{{ am_thanh.nen_max | int }}"
+                 value="{{ am_thanh.nen_db | int }}">
+        </label>
+        <label class="asv-chon">
+          <input type="checkbox" id="asv-am-tat-nen">
+          <span><strong>{{ _("Tắt nhạc nền") }}</strong>
+            <small>{{ _("Chỉ còn giọng lồng tiếng.") }}</small></span>
+        </label>
+        <label class="asv-chon">
+          <input type="checkbox" id="asv-am-ha-theo-loi">
+          <span><strong>{{ _("Hạ nhạc nền khi có lời") }}</strong>
+            <small>{{ _("Nhạc nền nhỏ đi khoảng 7 dB lúc có người nói và trở lại giữa hai câu.") }}</small></span>
+        </label>
+        <div class="asv-luoi-tinh-chinh">
+          <label class="asv-o">
+            <span>{{ _("To dần ở đầu (giây)") }}</span>
+            <input type="number" id="asv-am-fade-vao" min="0" step="0.5" value="0"
+                   max="{{ am_thanh.fade_max | int }}">
+          </label>
+          <label class="asv-o">
+            <span>{{ _("Nhỏ dần ở cuối (giây)") }}</span>
+            <input type="number" id="asv-am-fade-ra" min="0" step="0.5" value="0"
+                   max="{{ am_thanh.fade_max | int }}">
+          </label>
+        </div>
+        <p class="asv-ghi-chu">
+          {{ _("Độ to chung của video luôn được chuẩn về −14 LUFS, mức các nền tảng video dùng.") }}
+        </p>
+        <input type="hidden" name="am_thanh" id="asv-am-thanh" value="">
+      </div>
+
       <div class="asv-nhom">
         <h3>{{ _("Giọng") }}</h3>
         <fieldset class="asv-o">

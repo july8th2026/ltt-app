@@ -369,8 +369,69 @@ def bieu_thuc_chuan_am(vao: str, ra: str, *, tong_giay: float = 0.0,
     return f"{lo}{dem}{ra}"
 
 
+def fade_ap_dung(am: dict | None, tong_giay: float) -> tuple[float, float]:
+    """`(vao, ra)` giay THAT SU ap — moi dau toi da mot phan ba ban phoi.
+
+    ⚠️ Ho so duoc duyet o cua, khi chua biet video dai bao nhieu, nen mot fade
+       5 giay co the gap mot ban 6 giay. Cat o day chu khong tu choi — va con
+       so da cat duoc GHI vao tom tat giai doan (`giai_doan_thoi_gian`), khong
+       lang le.
+    """
+    from . import am_thanh
+
+    a = am_thanh.tu_cai_dat(am)
+    tran = max(0.0, float(tong_giay)) / 3.0
+    return round(min(a["fade_vao"], tran), 3), round(min(a["fade_ra"], tran), 3)
+
+
+def bieu_thuc_tron(n: int, *, am: dict | None = None, tong_giay: float = 0.0) -> str:
+    """Chuoi loc: nen (dau vao 0) + `n-1` ban lo tieng -> nhan `[tron]`.
+
+    Tach rieng de KIEM duoc ma khong chay ffmpeg (`test_479`).
+
+    ⭐ Ho so MAC DINH ra **dung tung ky tu** chuoi truoc pha 23: cung `volume`,
+       cung mot `amix` gom het. Doi chuoi cua duong mac dinh la doi ban ra cua
+       moi lan chay khong chinh gi — viec do phai di kem `PHIEN_BAN_MASTER`.
+    """
+    from . import am_thanh
+
+    a = am_thanh.tu_cai_dat(am)
+    muc = "volume=0" if a["nen_db"] is None else f"volume={a['nen_db']}dB"
+    phan = [f"[0:a]{muc},"
+            f"aformat=sample_fmts=fltp:sample_rates={TAN_SO}:"
+            f"channel_layouts=stereo[nen];"]
+    for i in range(1, n):
+        phan.append(f"[{i}:a]aformat=sample_fmts=fltp:sample_rates={TAN_SO}:"
+                    f"channel_layouts=stereo[t{i}];")
+    fade_vao, fade_ra = fade_ap_dung(a, tong_giay)
+    dich = "[tron0]" if (fade_vao or fade_ra) else "[tron]"
+    lo = "".join(f"[t{i}]" for i in range(1, n))
+    if a["giam_theo_loi"]:
+        # 🔑 Khoa cua bo nen = CHINH loi thoai, da **chuan hoa** (khuech dai roi han
+        #    bien): moi cau noi dua khoa len cung mot muc, nen do ha gan nhu khong
+        #    phu thuoc giong to hay nho. Do o `PHA23_AUDIO_STUDIO.md` §2.
+        gop = (f"{lo}amix=inputs={n - 1}:normalize=0:dropout_transition=0[giong];"
+               if n > 2 else f"{lo}anull[giong];")
+        phan.append(gop + "[giong]asplit=2[gk][gm];"
+                    "[gk]volume=40dB,alimiter=limit=0.5:level=0[khoa];"
+                    f"[nen][khoa]sidechaincompress={am_thanh.THAM_SO_HA_THEO_LOI}[nend];"
+                    f"[nend][gm]amix=inputs=2:normalize=0:dropout_transition=0{dich};")
+    else:
+        phan.append(f"[nen]{lo}amix=inputs={n}:normalize=0:dropout_transition=0{dich};")
+    if dich != "[tron]":
+        # Fade TRUOC `loudnorm`: chuan am luong do ca doan fade, nen ban ra van
+        # dung -14 LUFS. Fade sau no se lam ban ra nho hon muc tieu.
+        loc = []
+        if fade_vao:
+            loc.append(f"afade=t=in:st=0:d={fade_vao}")
+        if fade_ra:
+            loc.append(f"afade=t=out:st={max(0.0, tong_giay - fade_ra):.3f}:d={fade_ra}")
+        phan.append(f"[tron0]{','.join(loc)}[tron];")
+    return "".join(phan)
+
+
 def tron_cuoi(nen: str, cac_lo: list[str], dich: str, *, tong_giay: float,
-              hoi_huy=None, timeout: int = 1800) -> str:
+              hoi_huy=None, timeout: int = 1800, am: dict | None = None) -> str:
     """Tron ban nen (da ha muc) voi cac ban lo tieng, roi chuan am luong.
 
     ⭐ Chuan am luong **mot lan o cuoi**, khong phai o tung lo: `loudnorm` doi
@@ -383,15 +444,8 @@ def tron_cuoi(nen: str, cac_lo: list[str], dich: str, *, tong_giay: float,
     for d in cac_lo:
         cmd += ["-i", d]
 
-    n = 1 + len(cac_lo)
-    phan = [f"[0:a]volume={NEN_GIAM_DB}dB,"
-            f"aformat=sample_fmts=fltp:sample_rates={TAN_SO}:"
-            f"channel_layouts=stereo[nen];"]
-    for i in range(1, n):
-        phan.append(f"[{i}:a]aformat=sample_fmts=fltp:sample_rates={TAN_SO}:"
-                    f"channel_layouts=stereo[t{i}];")
-    nhan = "[nen]" + "".join(f"[t{i}]" for i in range(1, n))
-    phan.append(f"{nhan}amix=inputs={n}:normalize=0:dropout_transition=0[tron];")
+    # V6 pha 23: chuoi tron nam o `bieu_thuc_tron`, nhan ho so am thanh `am`.
+    phan = [bieu_thuc_tron(1 + len(cac_lo), am=am, tong_giay=tong_giay)]
     # ⚠️ `dual_mono=true` — mot bai hoc DA TRA GIA o pha 18 cua ban truoc, mang
     #    sang day nguyen ven: mot doan tieng MONO da qua `aformat` thanh stereo
     #    se bi `loudnorm` **do to hon thuc te 3 dB** neu thieu co nay. May sinh
@@ -508,8 +562,15 @@ def chia_lo(n: int, *, moi_lo: int | None = None) -> list[tuple[int, int]]:
     return [(i, min(n, i + k)) for i in range(0, max(0, n), k)]
 
 
+def _am_day_du(am: dict | None) -> dict:
+    from . import am_thanh
+
+    return am_thanh.tu_cai_dat(am)
+
+
 def van_tay_master(*, van_tay_nen: str, van_tay_ke_hoach: str,
-                   van_tay_ban_do: str, phien_ban_ffmpeg_: str) -> str:
+                   van_tay_ban_do: str, phien_ban_ffmpeg_: str,
+                   am_thanh: dict | None = None) -> str:
     """Van tay cua ban phoi.
 
     Nam thanh phan, thieu bat cu cai nao deu lam cache noi doi: ban nen · ke
@@ -524,6 +585,9 @@ def van_tay_master(*, van_tay_nen: str, van_tay_ke_hoach: str,
         "lufs": lufs_dich(),
         "dinh": dinh_that_db(),
         "phien_ban": PHIEN_BAN_MASTER,
+        # V6 pha 23: ho so am thanh DAY DU (ca mac dinh). Thieu no thi mot ban
+        # phoi tron o -6 dB duoc dung lai cho mot lan chay chon -18 dB.
+        "am_thanh": _am_day_du(am_thanh),
     }, sort_keys=True)
     return hashlib.sha256(goi.encode("utf-8")).hexdigest()
 

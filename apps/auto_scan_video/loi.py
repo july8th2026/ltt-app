@@ -251,6 +251,15 @@ def phan_loai(exc: BaseException) -> str:
     if isinstance(exc, LogoLoi):
         return NGUOI_DUNG
 
+    # ── Am thanh (V6 pha 23) ────────────────────────────────────────────────
+    #
+    # Cung nhom, cung ly do co hoc: `am_thanh.tu_cai_dat` chay ca o bien HTTP
+    # lan **trong job** `timing_align` (duyet lai ho so da luu truoc khi tron).
+    # Mot ho so da luu ma khong con hop le thi ba luot `retry` hong y het.
+    from .am_thanh import AmThanhLoi
+    if isinstance(exc, AmThanhLoi):
+        return NGUOI_DUNG
+
     # ── QC bang AI va ke hoach sua (pha 19) ─────────────────────────────────
     #
     # ⛔ `NGUOI_DUNG` — that bai cuoi cung. Ca hai deu la mau thuan trong du lieu

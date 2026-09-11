@@ -19,8 +19,8 @@ tập tên ở ma trận V5 — không thiếu một dòng, không bịa thêm m
 
 | trạng thái | nghĩa | số dòng |
 |---|---|---|
-| `XONG` | đã giao, có chỗ chứng minh | 29 |
-| `MOT_PHAN` | có năng lực, thiếu một phần đề bài gọi tên | 7 |
+| `XONG` | đã giao, có chỗ chứng minh | 30 |
+| `MOT_PHAN` | có năng lực, thiếu một phần đề bài gọi tên | 6 |
 | `CHUA` | chưa làm, pha đích đã rõ | 15 |
 | `CAN_ADR` | nằm trong `CAM_TRONG_MVP` — mở cần một ADR, không phải một lượt code | 3 |
 | `LOAI` | cố ý không làm, **kèm lý do** | 5 |
@@ -78,7 +78,7 @@ Cột "Pha V6": `00`–`34`, hoặc `V4`/`V5` khi đã giao trước V6, hoặc 
 | Nhãn nam/nữ cho cụm nói | ADAPT_VIRAL_IDEA | 21 | CHUA | hạng CẦU |
 | Nhiều giọng cho nhiều người | DEFER | 20 | CHUA | hạng CẦU |
 | Ràng buộc "OCR không có giọng ⇒ không diarize" | KEEP_ASV | 15 | CHUA | luật chỉ có nghĩa khi có nguồn OCR |
-| Âm lượng gốc / giữ nhạc nền | KEEP_ASV | 23 | MOT_PHAN | tách 4 stem + bản phối master đã có; chưa có thanh mức trên giao diện |
+| Âm lượng gốc / giữ nhạc nền | KEEP_ASV | 23 | XONG | `am_thanh.py` — mức nền so với lời, tắt nền, hạ theo lời, fade; MỘT thanh vì sau `loudnorm` giọng/nền không phải hai bậc tự do — `test_479` |
 | Trần nén thời lượng khi khớp | KEEP_ASV | 22 | XONG | `nan_cho_vua.tran_co_gian`, `PHA22_VUA_KHE.md` |
 | Clone giọng | REUSE_LTT | V4 | XONG | giọng của khách qua LTT Voice, `rang_giong._rang_khach_chon` |
 | Cache artifact theo khoá nội dung | ADAPT_VIRAL_IDEA → EXTEND_LTT_CAPABILITY (thuộc platform_core, không thuộc ASV) | 25 | XONG | `cache_chung.py` — khoá địa chỉ nội dung cho tách nguồn + chép lời, `test_478` |

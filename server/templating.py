@@ -86,7 +86,7 @@ _STATIC_DIR = pathlib.Path(__file__).resolve().parent / "static"
 #:    ra luc SU KIEN chu khong luc NAP.
 ASV_STUDIO_JS = ("asv/nen.js", "asv/xem_truoc.js", "asv/giong.js",
                  "asv/vung.js", "asv/cat.js", "asv/lop_phu.js",
-                 "asv/logo.js", "asv/phu_de.js",
+                 "asv/logo.js", "asv/phu_de.js", "asv/am_thanh.js",
                  "asv/tai_len.js")
 
 TAI_SAN_CO_VERSION = ("ltt.css", "sao_chep.js", "cam_chon.js", "chon_tep.js",

@@ -44,11 +44,8 @@ from server.deps import get_db, user_hien_tai
 from server.templating import templates
 
 from . import cat_dau_cuoi, hop_dong_v4, features, gia, pipeline, quan_sat, vung_che, rang_giong
-from . import lop_phu as lop_phu_mod
-from . import logo as logo_mod
-from . import phu_de as phu_de_mod
-from . import tu_dien as tu_dien_mod
-from . import cai_dat as cai_dat_mod
+from . import (am_thanh as am_thanh_mod, cai_dat as cai_dat_mod, logo as logo_mod,
+               lop_phu as lop_phu_mod, phu_de as phu_de_mod, tu_dien as tu_dien_mod)
 from .manifest import MANIFEST
 
 log = logging.getLogger(__name__)
@@ -213,6 +210,7 @@ def _ngu_canh_studio(db, u, loi: str = "", nap_lai: dict | None = None) -> dict:
         #: cach mot han muc troi im lang.
         #: Danh sach kieu + che do phu de. Cung ly do voi hai khoi tren.
         "phu_de": phu_de_mod.cho_giao_dien(),
+        "am_thanh": am_thanh_mod.cho_giao_dien(),
         "logo_toi_da": logo_mod.SO_LOGO_TOI_DA,
         "logo_tran_mb": features.tran_logo_byte() // (1024 * 1024),
         "nhan_trang_thai": NHAN_TRANG_THAI,
@@ -318,6 +316,7 @@ async def tao(request: Request,
               #: Phu de, JSON `{che_do, kieu, phan_doan, xuat_srt}` (V6 pha 14).
               #: Rong = khong phu de, va do la truong hop BINH THUONG.
               phu_de: str = Form(""),
+              am_thanh: str = Form(""),  # JSON ho so am thanh (V6 pha 23); rong = mac dinh
               csrf_token: str = Form(""),
               _g: None = Depends(_cong_co),
                 user: str = Depends(require_login),
@@ -450,18 +449,18 @@ async def tao(request: Request,
     if ds_lop_phu:
         cai_dat["lop_phu"] = ds_lop_phu
 
-    # ⭐ Ca tang doc + duyet + doi chieu preset nam o `phu_de.tu_form`, khong o
-    #    day. Tep nay o 880/900 dong (`tools/lint_app_contract.py`), va hop dong
-    #    app noi thang route khong phai cho chua nghiep vu.
-    #
+    # ⭐ Doc + duyet nam o `phu_de.tu_form` / `am_thanh.tu_form`: route khong chua nghiep vu.
     # ⛔ `tu_form` chan truc DOT o preset giu hinh, nhung **khong** chan truc
-    #    `.srt` — khac ba tinh nang tren. Xem docstring cua no.
+    #    `.srt` — khac ba tinh nang tren. Am thanh khong cham diem anh: ca hai preset.
     try:
         ho_so_phu_de = phu_de_mod.tu_form(phu_de, preset=preset)
-    except phu_de_mod.PhuDeLoi as exc:
+        ho_so_am = am_thanh_mod.tu_form(am_thanh)
+    except (phu_de_mod.PhuDeLoi, am_thanh_mod.AmThanhLoi) as exc:
         return _lai_voi_loi(request, db, u, str(exc))
     if ho_so_phu_de:
         cai_dat["phu_de"] = ho_so_phu_de
+    if ho_so_am:
+        cai_dat["am_thanh"] = ho_so_am
 
     # ── Logo (V6 pha 11b) ───────────────────────────────────────────────────
     #

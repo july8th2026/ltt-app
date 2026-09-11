@@ -141,7 +141,8 @@ MO_COI_DA_BIET = frozenset({
     #    khop theo ten TRAN nen mot ten trung o app khac co the che mot mon
     #    no that. Do la mot khiem khuyet co that cua bo do — chi khong phai
     #    khiem khuyet da xay ra o truong hop nay.
-    "asset_cua", "don_theo_run",
+    # `asset_cua` roi danh sach 11/09: `cache_chung` (V6 pha 25) goi no.
+    "don_theo_run",
     "cua_chan_cho_lo", "giai_quyet_mo_ho", "loi_khong_du_ngan_sach",
     "tong_credit", "tom_tat_cho_khach",
     "cua_so_ngu_canh", "dung_gpu", "van_tay_che_do", "van_tay_van_ban",

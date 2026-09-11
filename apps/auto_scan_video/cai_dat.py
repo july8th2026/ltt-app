@@ -66,7 +66,7 @@ PHIEN_BAN = 3
 KHOA_SCHEMA = "schema"
 
 #: Nhung khoa CHI ghi khi khach thuc su dung tinh nang. Xem bang o docstring.
-KHOA_THUA = ("cat", "vung", "lop_phu", "logo", "phu_de")
+KHOA_THUA = ("cat", "vung", "lop_phu", "logo", "phu_de", "am_thanh")
 
 #: ⛔ `voice_id` la mot BI DANH cu cua `giong_id`, khong phai mot truong thu hai.
 #:    Xem `rang_giong.tu_thiet_lap`: hai khoa nay da song song mot thoi gian va
@@ -105,6 +105,8 @@ class CaiDat:
     #:    THAT chu khong phai thieu nhat quan: `vung`/`lop_phu`/`logo` la N mon
     #:    khach them tung cai mot, con phu de la MOT quyet dinh cho ca video.
     phu_de: dict | None = None
+    #: Ho so am thanh (V6 pha 23), hoac `None` = mac dinh. Xem `am_thanh.py`.
+    am_thanh: dict | None = None
 
     @property
     def co_sua_diem_anh(self) -> bool:
@@ -197,7 +199,8 @@ def tu_ho_so(tho: Mapping | None) -> CaiDat:
         #    va chuan hoa lan hai o duong DOC lam mot ho so cu bong nhien doc ra
         #    khac di — tuc doi van tay cua nhung lan chay da xong. Cung luat ma
         #    `vung` dang theo: *"ban da luu moi la ban that"*.
-        phu_de=(dict(tho.get("phu_de")) if tho.get("phu_de") else None))
+        phu_de=(dict(tho.get("phu_de")) if tho.get("phu_de") else None),
+        am_thanh=(dict(am) if (am := tho.get("am_thanh")) else None))
 
 
 def doc(run) -> CaiDat:
