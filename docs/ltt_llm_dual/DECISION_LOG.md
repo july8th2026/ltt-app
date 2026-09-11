@@ -318,3 +318,65 @@ nặng nhất là `presence-penalty 0` (chính là phanh chống lặp).
    thuộc tính của hồ sơ, và mọi khách của hồ sơ đó chịu chung.
 5. Chưa đo: `--chat-template-kwargs '{"enable_thinking":false}'` (lượt thử hỏng vì lỗi truyền
    tham số qua PowerShell, không phải vì cờ). Không cần cho bản vá này.
+
+---
+
+## ✅ L-16 — Sửa L-15: bỏ `presence-penalty`, giữ phần còn lại (đo 2026-09-12)
+
+**L-15 sai một nửa.** Bộ cờ nó chốt đưa bộ đề lên 36/36, nhưng đo xen kẽ 5 khối cho thấy
+nó lấy đi **11 % tốc độ giải mã** và đẩy **LTT-3.8 xuống dưới ngưỡng cổng nghiệm thu B**
+(56,61 so với ngưỡng 60,0 — hai dải không chồng nhau, nên là hiệu ứng thật).
+
+Gốc của sai: L-15 gộp **hai thứ khác hẳn nhau về cơ chế** vào một "bộ cờ" rồi đo cả gói.
+
+### Sáu ứng viên, chấm cả bộ đề `--lan 5` (10 lượt tiếng Việt mỗi cái)
+
+| | cấu hình | bộ đề | tiếng Việt | LTT-3.8 tok/s | cổng B |
+|---|---|---:|---:|---:|---|
+| — | không cờ gì | 45/60 | **0 %** | 63,60 | đạt |
+| — | chỉ `--reasoning-budget 512` | 58/60 | 80 % | 65,18 | đạt |
+| C | `--reasoning-budget 1024` | 59/60 | 90 % | *(chưa đo)* | — |
+| A | budget 512 + tham số Qwen **đủ** | 59/60 | 100 % | **56,61** | **trượt** |
+| **B** | **budget 512 + tham số Qwen bỏ `presence-penalty`** | **59/60** | **100 %** | **63,01** | **đạt** |
+| E | `--reasoning off` (tắt suy nghĩ) | 48/60 | **10 %** | *(rất nhanh)* | — |
+
+**Chốt: phương án B.**
+
+```
+--reasoning-budget 512 --temp 0.6 --top-p 0.95 --top-k 20 --min-p 0
+```
+
+LTT-3.5 ở cấu hình này: **76,21 tok/s** (dải 74,1–84,8).
+
+### Bốn điều bảng này nói, và không cái nào đoán được trước khi đo
+
+1. **`presence-penalty 1.5` là toàn bộ chi phí, và nó không mua gì.** Bỏ nó: tốc độ
+   56,61 → 63,01 (**+11 %**), chất lượng **không đổi** (59/60, tiếng Việt 100 %). Hợp lý
+   về cơ chế — nó là phanh chạy **mỗi bước giải mã**, còn `temp/top-p/top-k/min-p` gần
+   như miễn phí.
+2. **Phanh cứng một mình là chưa đủ, và kiểu hỏng của nó TỆ HƠN.** Chỉ `--reasoning-budget`
+   thì 2/10 lượt tiếng Việt trả lời **sai** kèm khối nghĩ rò ra `content`
+   (`'Độc lập\n</think>\n\n2/9'`, `'**2 tháng 10**'`) — chứ không phải rỗng. Một câu sai
+   nhìn như thật thì khách **không phát hiện được**; một câu rỗng thì phát hiện ngay.
+3. **Tắt suy nghĩ là hỏng, không phải đánh đổi.** E nhanh gấp ~20 lần (0,15 s/lượt) nhưng
+   tiếng Việt còn **10 %** và sinh dài còn 40 %. Model **cần** khối nghĩ để xử tiếng Việt.
+4. **Cả A, B, C đều 59/60 và mỗi cái mất một ô KHÁC nhau** (A mất `sua_loi`, B mất
+   `json-01`, C mất `vi-01`) ⇒ ô lẻ đó là **nhiễu**, không phải khác biệt thật. Chỉ cột
+   *tiếng Việt* mới tách được chúng, vì đó là chỗ lỗi thật sống.
+
+### Consequences
+
+1. `llama-swap.yaml` (Task 3.3) dùng bộ cờ B cho **cả hai** hồ sơ. `--reasoning-budget`
+   là cờ **server-global** nên nó là thuộc tính của hồ sơ, mọi khách chịu chung.
+2. Mốc tốc độ mới cho nghiệm thu: **LTT-3.8 63,01** · **LTT-3.5 76,21** (c1, trung vị 5 lượt).
+3. ⚠️ Biên của 3.8 mỏng: trung vị 63,01 vượt ngưỡng 60,0 nhưng **2/5 lượt riêng lẻ rơi
+   xuống 57,8 và 58,7**. Trung vị là thước của R18 nên nó ĐẠT, nhưng cổng nghiệm thu D
+   (C3 thật) phải đo lại — đừng coi 5 % biên này là an toàn.
+4. **Chưa đo, để ngỏ có chủ đích:** `--reasoning-budget-message` (chèn một lời kết tử tế
+   kèm `</think>` trước chỗ cắt — PR #25961 nói để trống thì hệ thống chỉ ép mỗi thẻ đóng,
+   tức cắt cụt trần trụi, và nghiên cứu nó dẫn nói chèn lời kết **tốt hơn hẳn**). B đã đạt
+   100 % tiếng Việt nên không cần, nhưng nếu sau này muốn hạ budget xuống cho nhanh hơn
+   thì đây là nút phải thử trước.
+5. Đính chính một ghi chép sai của tôi: `--chat-template-kwargs '{"enable_thinking":false}'`
+   trượt **không phải vì cờ hỏng** mà vì tôi dùng sai công cụ — llama.cpp có
+   `-rea / --reasoning [on|off|auto]` đúng nghĩa, và nó nạp được (chính là phương án E).
