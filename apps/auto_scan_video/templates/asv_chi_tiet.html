@@ -32,6 +32,41 @@
   </header>
 
   {% include "asv_tien_do.html" %}
+  {# ── Chi phi (V6 pha 30) ──────────────────────────────────────────────────
+     🔴 `quan_sat.tom_tat_cho_khach` da tinh san bang nay tu V4 — va KHONG AI
+        GOI no. Khach tra tien ma khong thay minh tra cho viec gi.
+     ⭐ Theo NANG LUC (doc loi, dich, xem canh), khong theo ten nha cung cap.
+     ⛔ "Hoan lai" chi hien sau khi quyet toan — truoc do con so con dang tang. #}
+  {% if chi_phi %}
+  <details class="asv-nang-cao" id="asv-chi-phi">
+    <summary>{{ _("Chi phí") }}</summary>
+    <ul class="asv-cai-dat">
+      <li>{{ _("Đã giữ khi tạo lần chạy") }}: {{ chi_phi.credit_da_giu }} {{ _("credit") }}</li>
+      {% if chi_phi.da_quyet_toan %}
+        <li>{{ _("Đã tính") }}: {{ chi_phi.credit_da_tinh }} {{ _("credit") }}</li>
+        <li>{{ _("Hoàn lại") }}: {{ chi_phi.hoan_lai }} {{ _("credit") }}</li>
+      {% else %}
+        <li class="asv-ghi-chu">{{ _("Phần chưa dùng được hoàn lại khi lần chạy kết thúc.") }}</li>
+      {% endif %}
+    </ul>
+    {% if chi_phi.chi_phi_theo_nang_luc %}
+      <div style="overflow-x:auto">
+        <table class="asv-bang">
+          <thead><tr><th>{{ _("Việc") }}</th><th>{{ _("Khối lượng") }}</th><th>{{ _("Credit") }}</th></tr></thead>
+          <tbody>
+          {% for m in chi_phi.chi_phi_theo_nang_luc %}
+            <tr><td>{{ _(m.nhan) }}</td>
+                <td>{{ "%g"|format(m.so_luong) }} {{ _(m.nhan_don_vi) if m.nhan_don_vi else "" }}</td>
+                <td>{{ m.credit }}</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="asv-ghi-chu">{{ _("Chưa có việc nào được tính tiền.") }}</p>
+    {% endif %}
+  </details>
+  {% endif %}
 
   {# ── Cai dat da dung ───────────────────────────────────────────────────
      🔑 Khach xem lai mot lan chay cu **khong biet minh da chon gi**. Ban truoc

@@ -19,8 +19,8 @@ tập tên ở ma trận V5 — không thiếu một dòng, không bịa thêm m
 
 | trạng thái | nghĩa | số dòng |
 |---|---|---|
-| `XONG` | đã giao, có chỗ chứng minh | 30 |
-| `MOT_PHAN` | có năng lực, thiếu một phần đề bài gọi tên | 6 |
+| `XONG` | đã giao, có chỗ chứng minh | 31 |
+| `MOT_PHAN` | có năng lực, thiếu một phần đề bài gọi tên | 5 |
 | `CHUA` | chưa làm, pha đích đã rõ | 15 |
 | `CAN_ADR` | nằm trong `CAM_TRONG_MVP` — mở cần một ADR, không phải một lượt code | 3 |
 | `LOAI` | cố ý không làm, **kèm lý do** | 5 |
@@ -34,7 +34,7 @@ Cột "Pha V6": `00`–`34`, hoặc `V4`/`V5` khi đã giao trước V6, hoặc 
 | Tải video lớn, bền vững | REUSE_LTT | 08 | XONG | `PHA08_TAI_LEN.md` — đường tải lên 2 GiB bền vững |
 | Kiểm định dạng trước khi gửi | REIMPLEMENT_CLEAN (UI) | 08 | XONG | `PHA08_TAI_LEN.md` |
 | Preview nguồn | ADAPT_VIRAL_IDEA | 08 | XONG | `PHA08_TAI_LEN.md` — 08b xem trước nguồn |
-| Ước giá trước khi chạy | KEEP_ASV + REIMPLEMENT_CLEAN (UI) | 30 | MOT_PHAN | ước tiền đã có trên giao diện; bóc tách chi phí là việc pha 30 |
+| Ước giá trước khi chạy | KEEP_ASV + REIMPLEMENT_CLEAN (UI) | 30 | XONG | `/uoc-tinh` trước khi chạy + khối Chi phí sau khi chạy (`quan_sat.tom_tat_cho_khach`), `test_482` |
 | Ước thời gian | ADAPT_VIRAL_IDEA | 30 | MOT_PHAN | ước giờ đã có; giải thích chi phí/thời gian là việc pha 30 |
 | Preset cấp sản phẩm | KEEP_ASV | 07 | XONG | `PHA07_CAI_DAT_CHUAN_TAC.md` — preset trong hồ sơ chuẩn |
 | Hàng đợi / trạng thái bền | KEEP_ASV | V4 | XONG | hàng đợi job + trạng thái bền của nền tảng, `thi_hanh.py` |
@@ -66,7 +66,7 @@ Cột "Pha V6": `00`–`34`, hoặc `V4`/`V5` khi đã giao trước V6, hoặc 
 | Đốt phụ đề vào hình | REUSE_LTT, hậu MVP | 14 | XONG | `PHA14_PHU_DE.md`, `test_471` |
 | Style phụ đề (font/cỡ/màu/viền) | REUSE_LTT | 16 | XONG | `PHA16_SUBTITLE_STUDIO.md`, `test_472` |
 | Karaoke / chữ chuyển động | DEFER | 16 | XONG | `highlight_mode` + `animation`, `test_472` |
-| Sửa SRT rồi render lại | ADAPT_VIRAL_IDEA, hậu MVP | 29 | CHUA | sửa đúng đơn vị nhỏ nhất là việc của RepairPlan |
+| Sửa SRT rồi render lại | ADAPT_VIRAL_IDEA, hậu MVP | 29 | CHUA | cần luồng sửa hậu kỳ trên lần chạy ĐÃ quyết toán (compose → render) = một luật tiền; chạy lại tự động ra đúng byte cũ — `PHA29_30_SUA_VA_CHI_PHI.md` |
 | Gọi model dịch | KEEP_ASV / REUSE_LTT | V4 | XONG | `giai_doan_noi_dung.py`, `test_408` |
 | Từ điển tên riêng | ADAPT_VIRAL_IDEA (thuộc ASV: ContentProfile) | V5 | XONG | `tu_dien.py`, `test_460` |
 | Nhiều ngôn ngữ đích | DEFER — IA phải chừa chỗ | 24 | CHUA | hạng CẦU — `MA_TRAN_KHOANG_TRONG.md` |

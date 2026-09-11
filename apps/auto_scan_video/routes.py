@@ -642,6 +642,7 @@ def chi_tiet(request: Request, run_id: str,
         "van_hanh": (quan_sat.dong_thoi_gian(db, run, cho_van_hanh=True)
                      if _la_operator(request) else None),
         "loi_khach": quan_sat.tom_tat_loi_cho_khach(db, run),
+        "chi_phi": quan_sat.tom_tat_cho_khach(db, run),  # V6 pha 30: bang chi phi cho khach
         "co_ket_qua": bool(features.khoa_ket_qua(db, run)),
         # ⭐ Bang ke canh (V6 pha 09). `None` khi `edit_plan` chua xong — khoi
         #    giao dien khi do khong hien, chu khong hien mot khoi rong.

@@ -15792,3 +15792,57 @@ msgstr "Cancelling is final: unused credit is refunded, but this run cannot cont
 
 msgid "Xác nhận huỷ"
 msgstr "Confirm cancel"
+
+msgid "Đọc lời lồng tiếng"
+msgstr "Voicing the dubbed lines"
+
+msgid "Dịch"
+msgstr "Translation"
+
+msgid "Viết lời thoại tiếng Việt"
+msgstr "Writing the Vietnamese dialogue"
+
+msgid "Rút gọn cho vừa thời lượng"
+msgstr "Shortening to fit the timing"
+
+msgid "Xem từng cảnh"
+msgstr "Reviewing each scene"
+
+msgid "Phân tích nội dung"
+msgstr "Content analysis"
+
+msgid "Kiểm tra nghĩa bản dịch"
+msgstr "Checking the translation's meaning"
+
+msgid "Vòng sửa tự động"
+msgstr "Automatic repair round"
+
+msgid "Ghi nhận lỗi còn lại"
+msgstr "Recording remaining defects"
+
+msgid "Việc khác"
+msgstr "Other work"
+
+msgid "token"
+msgstr "tokens"
+
+msgid "khung hình"
+msgstr "frames"
+
+msgid "Chi phí"
+msgstr "Cost"
+
+msgid "Đã giữ khi tạo lần chạy"
+msgstr "Reserved when the run was created"
+
+msgid "Hoàn lại"
+msgstr "Refunded"
+
+msgid "Phần chưa dùng được hoàn lại khi lần chạy kết thúc."
+msgstr "Unused credit is refunded when the run finishes."
+
+msgid "Khối lượng"
+msgstr "Amount"
+
+msgid "Chưa có việc nào được tính tiền."
+msgstr "Nothing has been charged yet."

@@ -34,11 +34,31 @@ from sqlalchemy import select
 from platform_core import job_events
 from platform_core.models import Job
 
+from platform_core.i18n import N_
+
 from . import features, pipeline
 
 #: Chuoi hien cho khach khi mot giai doan hong ma ta khong co thong diep an toan.
 #: ⚠️ Khong bao gio boc `str(exc)` tho vao day.
 LOI_CHUNG = "giai doan nay khong hoan tat"
+
+#: Nhan TIENG VIET cho tung nang luc tinh tien (V6 pha 30). Khoa la `nang_luc` ghi
+#: o so cai; ma la cua ta, khong phai cua khach. Nang luc chua co nhan hien la
+#: "Viec khac" — thay vi lo ma noi bo ra man khach.
+NHAN_NANG_LUC = {
+    "tong_hop_tieng": N_("Đọc lời lồng tiếng"),
+    "dich_thuat": N_("Dịch"),
+    "chuyen_loi_thoai": N_("Viết lời thoại tiếng Việt"),
+    "rut_ngan_cho_vua": N_("Rút gọn cho vừa thời lượng"),
+    "doc_canh": N_("Xem từng cảnh"),
+    "ho_so_noi_dung": N_("Phân tích nội dung"),
+    "qc_ngu_nghia": N_("Kiểm tra nghĩa bản dịch"),
+    "sua_chua": N_("Vòng sửa tự động"),
+    "sua_chua_con_lai": N_("Ghi nhận lỗi còn lại"),
+}
+NHAN_NANG_LUC_KHAC = N_("Việc khác")
+NHAN_DON_VI = {"token": N_("token"), "giay": N_("giây"), "ky_tu": N_("ký tự"),
+               "khung_hinh": N_("khung hình"), "luot": N_("lượt")}
 
 
 def _giay(bat, ket) -> float | None:
@@ -294,6 +314,7 @@ def tom_tat_cho_khach(db, run) -> dict:
        ky thuat cua nha cung cap.
     """
     from . import su_dung as sd
+    from .tables import RUN_TERMINAL
 
     ds = features.cac_giai_doan(db, run)
     xong = sum(1 for s in ds if s.status == "succeeded")
@@ -309,8 +330,17 @@ def tom_tat_cho_khach(db, run) -> dict:
         #    nha cung cap, va no khong phai viec cua khach.
         "chi_phi_theo_nang_luc": [
             {"nang_luc": m["nang_luc"], "don_vi": m["don_vi"],
-             "so_luong": round(float(m["so_luong"]), 2), "credit": int(m["credit"])}
+             "so_luong": round(float(m["so_luong"]), 2), "credit": int(m["credit"]),
+             # V6 pha 30: nhan cho man khach — xem `NHAN_NANG_LUC`.
+             "nhan": NHAN_NANG_LUC.get(m["nang_luc"], NHAN_NANG_LUC_KHAC),
+             "nhan_don_vi": NHAN_DON_VI.get(m["don_vi"], m["don_vi"])}
             for m in sk.get("theo_nang_luc") or []],
+        # ⭐ Hoan lai CHI noi khi da quyet toan: truoc do con so "da tinh" con
+        #    dang tang, va mot con so hoan lai tinh giua chung la mot loi hua sai.
+        #    Cung cong thuc voi `features.quyet_toan`: thu min(thuc te, giu).
+        "da_quyet_toan": run.status in RUN_TERMINAL,
+        "hoan_lai": (max(0, int(run.credit_held or 0) - int(run.credit_actual or 0))
+                     if run.status in RUN_TERMINAL else None),
         "loi": tom_tat_loi_cho_khach(db, run),
     }
 
