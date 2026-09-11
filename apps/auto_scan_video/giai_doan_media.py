@@ -124,6 +124,9 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                  "van_tay": vt_tieng},
             ],
             "tom_tat": {
+                # V6 pha 25: danh tinh NOI DUNG cua nguon — `audio_prepare` doc
+                # thang tep nay, va cache dung chung khoa theo no.
+                "checksum_nguon": checksum_nguon,
                 "thoi_luong": tt["thoi_luong"],
                 "codec_video": tt["codec_video"],
                 "doc": tt["doc"],

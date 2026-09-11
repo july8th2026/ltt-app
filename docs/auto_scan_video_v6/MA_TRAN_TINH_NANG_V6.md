@@ -19,8 +19,8 @@ tập tên ở ma trận V5 — không thiếu một dòng, không bịa thêm m
 
 | trạng thái | nghĩa | số dòng |
 |---|---|---|
-| `XONG` | đã giao, có chỗ chứng minh | 28 |
-| `MOT_PHAN` | có năng lực, thiếu một phần đề bài gọi tên | 8 |
+| `XONG` | đã giao, có chỗ chứng minh | 29 |
+| `MOT_PHAN` | có năng lực, thiếu một phần đề bài gọi tên | 7 |
 | `CHUA` | chưa làm, pha đích đã rõ | 15 |
 | `CAN_ADR` | nằm trong `CAM_TRONG_MVP` — mở cần một ADR, không phải một lượt code | 3 |
 | `LOAI` | cố ý không làm, **kèm lý do** | 5 |
@@ -81,8 +81,8 @@ Cột "Pha V6": `00`–`34`, hoặc `V4`/`V5` khi đã giao trước V6, hoặc 
 | Âm lượng gốc / giữ nhạc nền | KEEP_ASV | 23 | MOT_PHAN | tách 4 stem + bản phối master đã có; chưa có thanh mức trên giao diện |
 | Trần nén thời lượng khi khớp | KEEP_ASV | 22 | XONG | `nan_cho_vua.tran_co_gian`, `PHA22_VUA_KHE.md` |
 | Clone giọng | REUSE_LTT | V4 | XONG | giọng của khách qua LTT Voice, `rang_giong._rang_khach_chon` |
-| Cache artifact theo khoá nội dung | ADAPT_VIRAL_IDEA → EXTEND_LTT_CAPABILITY (thuộc platform_core, không thuộc ASV) | 25 | MOT_PHAN | cache theo vân tay trong một lần chạy đã có; xuyên lần chạy thì chưa |
-| "Một tính, các bên kia chờ rồi dùng lại" | EXTEND_LTT_CAPABILITY dùng lease | 25 | CHUA | hạng ĐƯỜNG — `platform_core/leases.py` có sẵn |
+| Cache artifact theo khoá nội dung | ADAPT_VIRAL_IDEA → EXTEND_LTT_CAPABILITY (thuộc platform_core, không thuộc ASV) | 25 | XONG | `cache_chung.py` — khoá địa chỉ nội dung cho tách nguồn + chép lời, `test_478` |
+| "Một tính, các bên kia chờ rồi dùng lại" | EXTEND_LTT_CAPABILITY dùng lease | 25 | CHUA | hai lần chạy cùng video nộp CÙNG LÚC vẫn tính hai lần — `PHA25_CACHE_CHUNG.md` §5 |
 | Nguyên tắc NGHI NGỜ → MISS | ADAPT_VIRAL_IDEA | V4 | XONG | vân tay mang phiên bản engine: nghi ngờ thì trượt cache, `thi_hanh.phien_ban_engine` |
 | Khoá cache gồm đủ tham số + `CACHE_VERSION` | KEEP_ASV + mở rộng | V4 | XONG | `PHIEN_BAN_CHE_DO`, `PHIEN_BAN_QC`, `phien_ban_engine` |
 | Một lần encode duy nhất | KEEP_ASV | 26 | XONG | `PHA26_RENDERER_FUSION.md`, `test_474` |
