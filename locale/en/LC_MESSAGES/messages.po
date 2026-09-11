@@ -16116,3 +16116,13 @@ msgstr "That voice is switched off and can no longer be used to read. Create a n
 #: apps/ltt_voice
 msgid "Ghi danh lỗi, cần tạo giọng mới"
 msgstr "Enrolment failed, create a new voice"
+
+#: apps/upscalevideo/vulkan_device.py
+#, python-brace-format
+msgid "Có {n} thiết bị Vulkan cùng tên \"{ten}\" ({ds}); đặt {bien} để chỉ rõ dùng cái nào."
+msgstr "Found {n} Vulkan devices named \"{ten}\" ({ds}); set {bien} to say which one to use."
+
+#: apps/upscalevideo/vulkan_device.py
+#, python-brace-format
+msgid "Không thấy card \"{ten}\" trong danh sách thiết bị Vulkan của engine: {ds}"
+msgstr "Card \"{ten}\" is not in the engine's Vulkan device list: {ds}"

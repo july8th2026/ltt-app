@@ -1,7 +1,8 @@
 """
-gate.py — MỘT lệnh chạy toàn bộ cổng chất lượng.
+gate.py — MỘT lệnh chạy cổng chất lượng theo hồ sơ tường minh.
 
-    python tools/gate.py             # PHAN QUYET  — day du, ~5 phut
+    python tools/gate.py --doi       # VONG LAP L1 — pham vi tu diff
+    python tools/gate.py             # PHAN QUYET L3 — day du, ~11,4 phut
     python tools/gate.py --quick     # bo hai buoc nang, ~40 giay
     python tools/gate.py --vong-lap  # CHAN DOAN   — tinh + `--lf`, ~15 giay
 
@@ -9,9 +10,10 @@ gate.py — MỘT lệnh chạy toàn bộ cổng chất lượng.
 
 | | Chay gi | Do 27/08 | Dung khi |
 |---|---|---|---|
-| day du | tat ca 23 buoc | **~5 phut** | truoc khi bao xong |
+| `--doi` | thanh phan cham toi diff | tuy diff | vong lap mac dinh |
+| day du | tat ca cac buoc | **~11,4 phut** | checkpoint / truoc khi bao xong |
 | `--quick` | bo `bo test` + da tien trinh | ~40 giay | sua nhieu tep lien tiep |
-| `--vong-lap` | tinh + `test_nhanh --lf` | **~15 giay** | sau MOI lan sua |
+| `--vong-lap` | tinh + `test_nhanh --lf` | **~15 giay** | chan doan last-failed |
 
 🔑 Gate la cong cu ra **phan quyet**, khong phai cong cu **chan doan**.
 
@@ -949,7 +951,7 @@ HO_SO: dict[str, dict] = {
         "xep_hang": False,
     },
     "vong-lap": {
-        "mo_ta": "sau MOI lan sua (~20s)",
+        "mo_ta": "chan doan last-failed (~20s; khong phai cadence mac dinh)",
         "chung_minh": "khong co loi tinh moi, va nhung test vua do da xanh lai",
         "khong_chung_minh": "KHONG phai bang chung. `--lf` chi chay lai test da "
                             "do; mot test dang xanh ma thay doi nay lam hong "
@@ -1109,7 +1111,7 @@ def _da_doi_so_voi_HEAD() -> set[str] | None:
 
 
 def _rut_gon_vong_lap(steps: list[Step]) -> list[Step]:
-    """Chế độ `--vong-lap`: đủ nhanh để chạy sau MỖI lần sửa.
+    """Chế độ `--vong-lap`: chẩn đoán bằng cache last-failed.
 
     ## Vì sao chế độ này phải tồn tại
 

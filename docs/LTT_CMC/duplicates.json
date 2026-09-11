@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "snapshot_id": "770c83c0b8708ffc124ef5ba4b82fc4e51f12f01913b8ca73106857a2fa9337a",
+  "groups": [
+    {
+      "id": "frontend_tsconfig",
+      "paths": [
+        "frontend/agent-canvas/tsconfig.app.json",
+        "frontend/autosub-studio/tsconfig.app.json",
+        "frontend/chatltt/tsconfig.app.json",
+        "frontend/prompt-ai-ommi/tsconfig.app.json"
+      ],
+      "sha256": "26aa6898610dd4c0fa63b4e89e15fdfa56f15df74c643fc6e3327e6b18212a99",
+      "disposition": "INTENTIONAL_DUPLICATE",
+      "reason": "Per-app TypeScript compiler templates remain independently owned."
+    },
+    {
+      "id": "shared_ltt_css",
+      "paths": [
+        "server/static/ltt.css",
+        "tools/gui/ltt.css"
+      ],
+      "sha256": "de890228bc73b31cd0f39fe990dcf234a5f3dadc6ac2e3602ab7e83be3f955ec",
+      "disposition": "INTENTIONAL_DUPLICATE",
+      "reason": "tools/dong_goi_gui.py atomically derives the WebView copy from the server source."
+    },
+    {
+      "id": "g9_prompt_alias",
+      "paths": [
+        "bench/G9_ben_100.json",
+        "bench/G9_prompts.json"
+      ],
+      "sha256": "71aac4ea8acb7ddd6b4f1d92adfb9b75264a913815da14f454d6ec27e33a0c5e",
+      "disposition": "INTENTIONAL_DUPLICATE",
+      "reason": "The runner consumes G9_prompts.json while dated benchmark evidence retains the G9_ben_100 name."
+    },
+    {
+      "id": "comfyui_inventory_history",
+      "paths": [
+        "docs/VIDEO_AI_V2/khoi_phuc/BANG_KE_COMFYUI_V3.json",
+        "docs/_luutru/VIDEO_AI_V3/BANG_KE_MONG_DOI.json"
+      ],
+      "sha256": "568bfae2d1751ff93994b53242bdc16f96639ed0e6205ec3bd36cc8118d10543",
+      "disposition": "INTENTIONAL_DUPLICATE",
+      "reason": "The archived V3 manifest is recovery/history evidence and is not a runtime authority."
+    }
+  ]
+}

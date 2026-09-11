@@ -132,12 +132,17 @@ def test_engine_ghim_ncnn_vulkan_vao_gpu_lease_va_giu_khi_fallback(
 
 
 def test_job_map_uuid_sang_gpu_index_va_ffmpeg_env(monkeypatch):
-    from apps.upscalevideo import jobs
+    from apps.upscalevideo import jobs, vulkan_device
     from platform_core import gpu
 
     selected = gpu.GpuInfo(index=1, name="RTX", uuid="GPU-b", total_mb=16311,
                            free_mb=15000, util_pct=0)
     monkeypatch.setattr(gpu, "by_uuid", lambda uuid: selected if uuid == "GPU-b" else None)
+    # `-g` là chỉ số VULKAN, KHÔNG phải chỉ số nvidia-smi của lease (xem vulkan_device.py).
+    # Ở đây card nvidia-smi #1 lại là thiết bị Vulkan #2 — đúng kiểu lệch đã xảy ra thật
+    # ngày 11/09/2026 khi desktop chuyển sang iGPU và thứ tự Vulkan đảo.
+    monkeypatch.setattr(vulkan_device, "vulkan_index_for",
+                        lambda ten: 2 if ten == "RTX" else 99)
 
     class Context:
         gpu_uuid = "GPU-b"
@@ -147,7 +152,8 @@ def test_job_map_uuid_sang_gpu_index_va_ffmpeg_env(monkeypatch):
             return {"CUDA_VISIBLE_DEVICES": "GPU-b"}
 
     index, env = jobs._gpu_runtime(Context())
-    assert index == 1 and env["CUDA_VISIBLE_DEVICES"] == "GPU-b"
+    assert index == 2, "phải trả chỉ số Vulkan đã dò, không phải chỉ số nvidia-smi"
+    assert env["CUDA_VISIBLE_DEVICES"] == "GPU-b"
     with pytest.raises(RuntimeError, match="không còn khả dụng"):
         jobs._gpu_runtime(type("Missing", (), {
             "gpu_uuid": "GPU-missing", "gpu_env": staticmethod(lambda: {})})())

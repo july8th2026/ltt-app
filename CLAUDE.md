@@ -199,7 +199,8 @@ trên cổng 8000. Nền tảng này dùng cổng **8100**.
 | `docs/03_THEM_APP_MOI.md` | thêm app |
 | `docs/04_CLOUDFLARE_TUNNEL.md` | Tunnel + xử lý sự cố |
 | `docs/PUBLIC_API/APP_API_COVERAGE_FINAL.md` | app/tool/model nào mở, nào đóng, **vì sao** |
-| `docs/_luutru/PROJECT_MEMORY.md` | nhật ký — **cập nhật cuối mỗi phiên** |
+| `docs/NHAT_KY.md` | nhật ký đang sống — **cập nhật cuối mỗi phiên có thay đổi code** |
+| `docs/_luutru/PROJECT_MEMORY.md` | lịch sử desktop → web — chỉ đọc để truy vết |
 
 ### Luật của từng hệ con — con trỏ, không phải giá trị
 

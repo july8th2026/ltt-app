@@ -9,7 +9,7 @@ của nhánh nó** — không chép từ cây gốc, không ai viết mới. Nh�
 cùng sửa một tệp trên các nhánh khác nhau và không ai gộp lại, cùng lúc tồn tại
 **ba bản `gate.py` khác nhau**, mỗi bản chỉ biết một nửa bài toán:
 
-| Nhánh | `03845cb`<br>đếm lõi | `4420b56`<br>đo tải | `de0a77d`<br>11→10 | `3b5e257`<br>trần 6 | `-n` thực |
+| Nhánh (ảnh chụp lịch sử 03/09) | `03845cb`<br>đếm lõi | `4420b56`<br>đo tải | `de0a77d`<br>11→10 | `3b5e257`<br>trần 6 | `-n` thực |
 |---|:--:|:--:|:--:|:--:|:--:|
 | `phien/asv-v4` | ✅ | — | ✅ | ✅ | 6 |
 | `admin-mvp-v3` | ✅ | ✅ | — | — | 14 |
@@ -21,25 +21,25 @@ cùng sửa một tệp trên các nhánh khác nhau và không ai gộp lại, 
 Trong khi `pytest -n auto` trên máy này tự chọn **10** (xdist đọc lõi **vật lý**).
 Bốn phiên chạy song song = tới **56 worker trên 10 lõi**.
 
-🔴 **`master` đi sau `admin-mvp-v3` 505 commit.** Đó là gốc rễ: worktree mới tạo
-từ `master` **ra đời đã cũ**, và lỗi tự tái sinh mà không ai làm gì sai.
+🔴 Ảnh chụp 03/09 cho thấy **`master` đi sau `admin-mvp-v3` 505 commit.** Q123
+đã thay topology ấy bằng `main`; bảng trên được giữ như bằng chứng vì sao tên
+branch không tự chứng minh nó đang ở canonical head.
 
 ## Luật
 
-### 1. Worktree mới tạo từ nhánh trunk, không từ `master` cũ
+### 1. Worktree mới tạo từ nhánh chuẩn `main`
 
 ```powershell
-git -C D:\LTTSTUDIOSAPP worktree add <đường-dẫn> -b <nhánh-mới> admin-mvp-v3
+git -C D:\LTTSTUDIOSAPP worktree add <đường-dẫn> -b <nhánh-mới> main
 ```
 
-Sau khi `master` được ff tới trunk thì tạo từ `master` cũng đúng — nhưng **kiểm
-trước khi tin**:
+Kiểm quan hệ với canonical ref trước khi tin:
 
 ```powershell
-git -C D:\LTTSTUDIOSAPP rev-list --count master..admin-mvp-v3
+git -C D:\LTTSTUDIOSAPP merge-base --is-ancestor main <nhánh-mới>
 ```
 
-Khác 0 nghĩa là `master` lại tụt lại. Đừng tạo worktree từ nó.
+Mã khác 0 nghĩa là task không sinh từ canonical lineage; dừng và reconcile.
 
 ### 1b. Chép tài sản bị gitignore từ cây chính
 
@@ -133,16 +133,19 @@ Không thấy ⇒ **bản cũ**, nó sẽ tự chọn 14 worker. Gộp trunk và
 gate đầy đủ:
 
 ```powershell
-git merge admin-mvp-v3
+git merge main
 ```
 
 ### 3. Trước mọi lệnh nặng
 
 ```powershell
+python tools\tai_may.py
 python tools\cua_so_yen.py trang-thai
 ```
 
-Có phiên khác đang giữ ⇒ **chờ**. Khoá chỉ cảnh báo, nó không tự chặn được bạn.
+Hai lệnh trả lời hai câu khác nhau nên phải chạy cả hai. `QUÁ TẢI` ⇒ không
+chạy; `BẬN` ⇒ hoãn hoặc thu hẹp. Khoá chỉ thấy việc đã xin khoá, còn phép đo tải
+thấy cả tiến trình nặng chạy ngoài cơ chế đó.
 
 Lệnh nặng = `gate.py` (mọi chế độ, kể cả `--quick`), `test_nhanh.py`, từ 3 tệp
 test trở lên, `build_system_profile.py`.
@@ -157,7 +160,7 @@ báo "CÂY ĐÃ ĐỔI" và **tự vứt bỏ phép đo của chính nó** — m
 ### 5. Xong việc thì gộp trunk lại ngay
 
 Nhánh sống lâu mà không gộp là cách sinh ra chính tình huống này. Sau mỗi hạng
-mục xong: `git merge admin-mvp-v3` rồi để nhánh của bạn được gộp về.
+mục xong: `git merge main` rồi để nhánh của bạn được gộp về.
 
 ## Cơ chế ngân sách lõi — một hàm, một đơn vị
 

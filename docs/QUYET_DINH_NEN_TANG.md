@@ -27,7 +27,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 
 ---
 
-## 1. Quyết định đã chốt (đến Q122; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91, Q116→Q120 (phần con số) đã thay)
+## 1. Quyết định đã chốt (đến Q123; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91, Q116→Q120 (phần con số) đã thay)
 
 | # | Vấn đề | Quyết định | Lý do / hệ quả |
 |---|---|---|---|
@@ -419,6 +419,32 @@ danh sách làn vẫn chỉ một nguồn: `lan_ngon_ngu.LAN_HOP_LE` (INV-02, T-
 Chốt bằng: `tests/test_355_hop_dong_lan_giong.py::test_khai_bao_chi_THAT_khong_NOI`,
 `tests/test_522_mot_tham_quyen_lan.py`. Chi tiết:
 `docs/superpowers/specs/2026-09-11-ltt-voice-system-reconciliation-design.md` §4.
+
+### Q123 — LTT-CMC: một lịch sử chuẩn mới trên `main` (2026-09-11)
+
+`main` là nhánh chuẩn dài hạn duy nhất sau chiến dịch LTT-CMC. Nhánh này được
+tạo từ lineage `admin-mvp-v3` đã kiểm chứng, không dựng lại lịch sử từ
+`master` cũ. Commit/capability được đối chiếu theo patch và hành vi: bản tương
+đương chỉ giữ một lần; bản riêng có giá trị được port có chủ ý; implementation
+cũ chỉ bị bỏ sau khi caller đã chuyển sang authority mới.
+
+Ba worktree Voice/LLM đã kết thúc hoặc tạm dừng nhưng chưa bàn giao Git hoàn
+toàn mang nhãn `SESSION_PROTECTED`. CMC không commit, switch, merge, reset,
+clean hay sửa chúng trước sync barrier. Phase 1 ghim một `CMC_BASE_SHA` bất
+biến; phiên Voice và LLM sau đó tự reconcile với đúng SHA ấy, không theo một
+tên nhánh đang di chuyển.
+
+Sau full certification, `main` thay vai trò default/protected branch;
+`master`, `admin-mvp-v3`, task branch/worktree và backup tạm đã bị thay thế sẽ
+được xóa theo một ledger có duyệt riêng. Không giữ archive cạnh tranh sau khi
+chứng nhận. LTT-CMC chỉ chứng nhận source; production deployment là một gate
+khác và không được suy ra từ quyết định này.
+
+**Vì sao đổi:** `master` đang đi sau lineage chạy thật hàng trăm commit; 13
+worktree, commit patch-equivalent, reflog-only state và các nhánh Voice/LLM rẽ
+từ nhiều mốc khiến tên branch không còn chứng minh authority. Một nhánh mới,
+một baseline SHA và semantic reconciliation tạo được lịch sử đo lại được mà
+không phát lại trùng hoặc xóa nhầm việc chưa bàn giao.
 
 ## 2. Ràng buộc bất biến
 
