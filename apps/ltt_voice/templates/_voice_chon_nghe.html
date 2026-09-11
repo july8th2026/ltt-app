@@ -33,6 +33,7 @@
 {%- set _url = duong_nghe.get(_ma) if duong_nghe is defined else none %}
 {%- if _url %}
 <button type="button" class="lv-chon-nghe lv-nghe" data-nghe="{{ _url }}"
+        data-nhan-loi="{{ _('Không phát được bản nghe thử') }}"
         aria-label="{{ _('Nghe thử giọng') }} {{ _ma }}">
   <span class="lv-nghe-dau" aria-hidden="true"></span>
 </button>

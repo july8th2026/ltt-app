@@ -15253,3 +15253,11 @@ msgstr "Needs regenerating"
 #: apps/ltt_voice
 msgid "Khối này đang được đọc — đợi lượt trước xong đã."
 msgstr "This block is already being read — wait for it to finish first."
+
+#: apps/ltt_voice
+msgid "Văn bản đã đổi — cần tạo lại."
+msgstr "The text changed — needs regenerating."
+
+#: apps/ltt_voice
+msgid "Không phát được bản nghe thử"
+msgstr "Could not play the preview"

@@ -136,3 +136,22 @@ def xoa(uid: str = "") -> None:
             _SO.pop(str(uid), None)
         else:
             _SO.clear()
+
+
+def sinh(text: str, *, preset: str, timeout: float) -> bytes:
+    """Sinh MỘT lượt nghe thử. Ranh giới mỏng quanh `features.goi_cong`.
+
+    ⭐ VÌ SAO MỘT HÀM RIÊNG chứ không gọi thẳng `features.goi_cong` từ
+       `routes/_p_nghe_thu.py`. Cửa đó đã giữ suất `vieneu_gpu` (một tài
+       nguyên CẤP TIẾN TRÌNH); phép kiểm cho D006 cần MOCK được đúng một chỗ
+       — lượt sinh THẬT — mà không phải dựng cả một sidecar giả. Một tên hàm
+       ổn định ở đây là chỗ mock đó neo vào.
+
+    ⚠️ Không bọc try/except ở đây: người gọi (`nghe_thu_van_ban`) cần đúng
+       exception gốc để quyết định có hoàn lượt hay không — xem docstring
+       `hoan_luot`.
+    """
+    from . import features
+
+    wav, _dau = features.goi_cong(text, preset=preset, timeout=timeout)
+    return wav

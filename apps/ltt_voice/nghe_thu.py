@@ -188,6 +188,14 @@ MOI_LUOT_TOI_DA = 3
 #: kiện có thể dồn dập hơn nhiều so với một lần nâng engine.
 TOI_DA_GIONG_RIENG_MOI_LUOT = 5
 
+#: Trần số giọng KHO CHUNG dựng lại trong MỘT lượt bảo trì — một hằng số
+#: RIÊNG, cùng lý do `TOI_DA_GIONG_RIENG_MOI_LUOT` ở trên: đây là một NGUỒN dữ
+#: liệu khác (`tham_chieu.danh_sach_kho_chung`, lọc theo `dung_chung=True` +
+#: license) với một nhịp phát sinh khác — giọng kho chung thiếu tệp khi mới
+#: được soát xuất xứ (`tools/soat_giong.py` bật `dung_chung`), không phải khi
+#: một khách tự đổi gì đó.
+TOI_DA_GIONG_CHUNG_MOI_LUOT = 5
+
 
 def _slug(ten: str) -> str:
     """Tên giọng thành một đoạn đường dẫn an toàn.
@@ -224,6 +232,32 @@ def khoa_mau(ten: str) -> str:
     khách đã đăng nhập. Xem `routes/_p_audio.py`.
     """
     return f"voice/mau/{_slug(ten)}/{PHIEN_BAN}.wav"
+
+
+def khoa_chung(public_id: str) -> str:
+    """Khoá kho cho một giọng **KHO CHUNG của nền tảng**.
+
+    🔴 TIỀN TỐ THỨ TƯ, và nó phải tồn tại vì hai tiền tố cũ đều trả lời SAI cho
+       loại giọng này.
+
+       · `khoa_rieng(owner_id, pid)` đặt tệp dưới **chủ sở hữu**. Giọng kho
+         chung thuộc nền tảng, còn người NGHE là một khách bất kỳ — nên cả hai
+         đầu đều lệch: `duong_cho_trang` tra dưới id của người xem (không có
+         tệp nào ở đó), và `_p_audio` chỉ mở `voice/{uid}/`, tức kể cả tra đúng
+         thì cửa đọc vẫn từ chối.
+       · `khoa_mau(ten)` đúng về quyền đọc ("không thuộc ai, ai cũng nghe
+         được") nhưng khoá theo **tên preset**, còn giọng kho chung có
+         `public_id` dạng `vc_<32 hex>`.
+
+    ⭐ Nên đây là `voice/mau/` về mặt **quyền**, và `voice/{uid}/{pid}/` về mặt
+       **danh tính** — một tiền tố riêng nói đúng cả hai.
+
+    ⛔ Và nó KHÔNG nằm trong thư mục giọng (`voice/{owner}/{pid}/`) dù giọng có
+       chủ: cùng thư mục đó chứa `repr-*.npz`, thứ `tables.py` nói thẳng là
+       *"KHÔNG BAO GIỜ ra ngoài"*. Mở một thư mục cho mọi khách đọc khi trong đó
+       có dữ liệu sinh trắc là đúng loại lỗi không lấy lại được bằng một bản vá.
+    """
+    return f"voice/chung/{_slug(public_id)}/{PHIEN_BAN}.wav"
 
 
 def khoa_rieng(owner_id: str, public_id: str) -> str:
@@ -372,7 +406,7 @@ def con_thieu_mau() -> list:
 
 
 def duong_cho_trang(*, duong_audio: str, owner_id: str,
-                    ma_mau=(), rieng=()) -> dict:
+                    ma_mau=(), rieng=(), chung=()) -> dict:
     """`{public_id: url}` cho mọi giọng một trang sắp dựng.
 
     🔴 **MỘT thẩm quyền duy nhất dựng đường nghe thử.** Đây là bài học đã trả
@@ -384,6 +418,12 @@ def duong_cho_trang(*, duong_audio: str, owner_id: str,
        chuỗi rỗng, không phải một URL trỏ vào hư không. Khuôn mẫu hỏi
        `ma in duong` và hiện *"đang chuẩn bị"*; một URL 404 sẽ cho ra một nút
        phát bấm được mà không kêu, tức đúng thứ tệ nhất.
+
+    `chung`: `public_id` của giọng **KHO CHUNG** — tham số **thứ ba**, KHÔNG
+    gộp vào `rieng`. `rieng` tra bằng `khoa_rieng(owner_id, pid)`, tức dưới id
+    của NGƯỜI XEM trang; một giọng kho chung không thuộc người xem nên khoá đó
+    không bao giờ trúng, và nút nghe thử của nó biến mất **im lặng** — đúng lỗi
+    mà việc tách tham số này tồn tại để chặn. Xem `khoa_chung`.
     """
     ra: dict = {}
     for ma in ma_mau:
@@ -394,7 +434,43 @@ def duong_cho_trang(*, duong_audio: str, owner_id: str,
         khoa = khoa_rieng(owner_id, pid)
         if co_san(khoa):
             ra[pid] = f"{duong_audio}/{khoa}"
+    for pid in chung:
+        khoa = khoa_chung(pid)
+        if co_san(khoa):
+            ra[pid] = f"{duong_audio}/{khoa}"
     return ra
+
+
+def duong_cho_app_khac(*, owner_id: str, ma_mau=(), rieng=()) -> dict:
+    """`duong_cho_trang` cho một app KHÁC, không bắt họ biết đường `/audio` của ta.
+
+    🔑 Vì sao tồn tại thay vì để bên gọi tự ghép `f"{MANIFEST.route_prefix}/audio"`:
+
+       Làm thế buộc app kia phải đọc `MANIFEST` của ta — tức phải khai
+       `apps.ltt_voice.manifest.MANIFEST` là bề mặt công khai. Và một manifest là
+       thứ **cả nền tảng** đọc: xuất nó ra cho một app khác là xuất cả
+       `job_types`, `credit_cost`, `bao_tri`, `tables` — mọi thứ, để lấy một
+       chuỗi.
+
+    ⭐ Và nó giữ nguyên luật của `duong_cho_trang`: **MỘT thẩm quyền dựng đường
+       nghe thử**. Hàm này không tự ghép gì, nó gọi hàm kia.
+
+    ⚠️ Giọng không có tệp vẫn **vắng mặt** khỏi dict, không trả chuỗi rỗng — hợp
+       đồng đó không đổi.
+
+    ⛔ KHÔNG nhận `chung`: chữ ký này đã ĐÓNG BĂNG ở nhánh `phien/asv-v4` — Auto
+       Scan Video gọi `duong_cho_app_khac(owner_id=..., ma_mau=..., rieng=...)`
+       qua `try/except` (xem `INV-BE-MAT-1`). `ma_giong_cua_toi` mà nó dùng để
+       dựng `rieng` GOM CẢ kho chung (`gom_dung_chung=True`) — tức một giọng kho
+       chung ở phía ASV hôm nay vẫn tra qua `khoa_rieng`, không qua `khoa_chung`.
+       Đó là một khoản nợ của nhánh kia, không phải việc của tệp này: thêm
+       `chung=()` vào đây bây giờ không sửa được gì (ASV chưa gọi nó), và đổi
+       CHỮ KÝ của một bề mặt đã đóng băng là thứ khoản nợ đó không đáng phải trả.
+    """
+    from .manifest import MANIFEST
+
+    return duong_cho_trang(duong_audio=f"{MANIFEST.route_prefix}/audio",
+                           owner_id=owner_id, ma_mau=ma_mau, rieng=rieng)
 
 
 def bao_tri() -> None:
@@ -409,13 +485,16 @@ def bao_tri() -> None:
     ⚠️ Im lặng khi cổng chưa bật. Đây là việc nền; sủa mỗi giờ trên một máy
        chưa cài engine chỉ làm nhật ký khó đọc.
 
-    Hai NGUỒN thiếu tệp nghe thử, hai bước riêng (chạy SAU khi cổng đã bật):
+    BA NGUỒN thiếu tệp nghe thử, ba bước riêng (chạy SAU khi cổng đã bật):
       ① giọng MẪU (`con_thieu_mau`, danh mục tĩnh `giong_mau.DANH_SACH`);
       ② giọng NHÂN BẢN CỦA KHÁCH đang thiếu (`_dung_giong_rieng_con_thieu`,
          bảng `voice_profile`) — điển hình sau một lượt ĐỔI LÀN
-         (`dung_lai_cho_giong` huỷ tệp cũ, bước này dựng tệp mới ở lượt kế).
+         (`dung_lai_cho_giong` huỷ tệp cũ, bước này dựng tệp mới ở lượt kế);
+      ③ giọng KHO CHUNG của nền tảng đang thiếu (`_dung_kho_chung_con_thieu`,
+         `tham_chieu.danh_sach_kho_chung`) — điển hình sau một lượt soát xuất
+         xứ mới bật `dung_chung=True` cho một giọng (`tools/soat_giong.py`).
 
-    ⛔ Bước ② PHẢI CHẠY DÙ BƯỚC ① KHÔNG CÓ GÌ ĐỂ DỰNG — hai nguồn độc lập
+    ⛔ MỖI BƯỚC PHẢI CHẠY DÙ BƯỚC TRƯỚC KHÔNG CÓ GÌ ĐỂ DỰNG — ba nguồn độc lập
        nhau, và một `return` sớm sau bước ① (bản trước D004) từng khiến giọng
        khách đổi làn không bao giờ có tệp nghe thử lại nếu 20 giọng mẫu đã
        warm sẵn (`thieu` rỗng ⇒ hàm thoát trước khi chạm tới giọng khách).
@@ -483,6 +562,14 @@ def bao_tri() -> None:
         _dung_giong_rieng_con_thieu()
     except Exception:  # noqa: BLE001 - viec nen, khong duoc chan cac buoc khac
         log.exception("khong dung duoc nghe thu rieng con thieu")
+    # 🔴 fail-soft giống hai bước trên — bước ③, nguồn dữ liệu (`voice_profile`
+    #    lọc `dung_chung=True`) và ngân sách (`TOI_DA_GIONG_CHUNG_MOI_LUOT`)
+    #    RIÊNG với bước ②, cùng lý do `_dung_giong_rieng_con_thieu` đã ghi:
+    #    hai nguồn phát sinh độc lập nhau.
+    try:
+        _dung_kho_chung_con_thieu()
+    except Exception:  # noqa: BLE001 - viec nen, khong duoc chan cac buoc khac
+        log.exception("khong dung duoc nghe thu kho chung con thieu")
 
 
 def _dung_giong_rieng_con_thieu() -> None:
@@ -566,6 +653,71 @@ def _dung_giong_rieng_con_thieu() -> None:
             next(gen)
         except StopIteration:
             pass
+
+
+def _dung_kho_chung(ds, con: int = TOI_DA_GIONG_CHUNG_MOI_LUOT) -> int:
+    """Dựng dần tệp nghe thử cho các mục KHO CHUNG trong `ds`. Trả số tệp vừa
+    dựng THẬT.
+
+    `ds`: `[(VoiceProfile, VoiceRepr)]` — hình dạng của
+    `tham_chieu.danh_sach_kho_chung(db)`. Tách khỏi hàm đó (không tự mở phiên
+    CSDL) để phép kiểm gọi được với một danh sách dựng tay, không cần CSDL
+    thật — xem `_dung_kho_chung_con_thieu` cho bản có DB.
+
+    ⛔ KIỂM `co_san` TRƯỚC KHI GỌI `tham_chieu.nap_ref_b64`, không sau. Nạp là
+       đọc kho rồi giải mã base64 một tệp `.npz` — không rẻ, và ở một lượt bảo
+       trì bình thường phần lớn giọng kho chung ĐÃ có tệp nghe thử rồi
+       (`co_san` sẽ nói `True`). Nạp trước rồi mới hỏi `co_san` (thứ tự của
+       `tham_chieu.danh_sach_kho_chung` bản đầu, `65e099af`) là trả giá I/O ấy
+       cho MỌI giọng kho chung ở MỌI lượt bảo trì, không chỉ cho giọng thật sự
+       còn thiếu. Cùng kỷ luật với `_dung_giong_rieng_con_thieu`.
+
+    ⛔ TRẦN `con`, cùng lý do `MOI_LUOT_TOI_DA`/`TOI_DA_GIONG_RIENG_MOI_LUOT`:
+       vòng bảo trì chạy CÙNG tiến trình với worker job. Đếm theo số tệp ĐÃ
+       DỰNG THẬT, không theo số mục đã quét.
+    """
+    from . import tham_chieu
+
+    da = 0
+    for ho_so, bieu_dien in ds:
+        if da >= con:
+            break
+        khoa = khoa_chung(str(ho_so.public_id))
+        if co_san(khoa):
+            continue
+        try:
+            ref_b64 = tham_chieu.nap_ref_b64(bieu_dien)
+        except Exception as e:  # noqa: BLE001 - xem docstring `dung()`
+            log.warning(
+                "khong doc duoc bieu dien de dung nghe thu kho chung %s: %s",
+                ho_so.public_id, e)
+            continue
+        if dung(khoa, ref_b64=ref_b64, ngon_ngu=str(ho_so.ngon_ngu or "")):
+            da += 1
+    return da
+
+
+def _dung_kho_chung_con_thieu() -> None:
+    """Mở phiên CSDL, đọc `tham_chieu.danh_sach_kho_chung`, rồi giao cho
+    `_dung_kho_chung` — bước ③ của `bao_tri()`.
+
+    ⚠️ Tách khỏi `_dung_kho_chung` (thuần, không chạm CSDL) chỉ để một lời gọi
+       nền (`bao_tri()`) và một phép kiểm (đưa thẳng một danh sách dựng tay)
+       không phải chia sẻ cùng một hàm mang hai trách nhiệm khác nhau.
+    """
+    from . import tham_chieu
+    from platform_core.db import get_session
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        ds = list(tham_chieu.danh_sach_kho_chung(db))
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+    _dung_kho_chung(ds)
 
 
 #: Bao lâu mới đối chiếu ảnh chụp giọng mẫu với engine một lần, tính bằng giây.

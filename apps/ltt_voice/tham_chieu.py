@@ -215,6 +215,43 @@ def tim_repr_active(db, profile_id: int):
     ).scalars().first()
 
 
+def danh_sach_kho_chung(db):
+    """`[(VoiceProfile, VoiceRepr)]` cho mọi giọng KHO CHUNG đang `active` và
+    có biểu diễn còn dùng được.
+
+    ⭐ Dựng cho vòng bảo trì nghe thử (`nghe_thu._dung_kho_chung`): nó cần cả
+       hồ sơ (để biết LÀN — đọc câu tiếng Việt hay tiếng Anh, xem
+       `nghe_thu.cau_cho_lan`) lẫn biểu diễn (để nạp `ref_b64` khi cần dựng).
+
+    ⛔ ĐI QUA `_dieu_kien_kho_chung()`, không tự viết `dung_chung.is_(True)`.
+       Cổng license U-05 nằm trong đó, và một giọng chưa soát xuất xứ thì không
+       được dựng bản demo — dựng nghĩa là mang nó ra chào bán.
+
+    ⛔ TRẢ `VoiceRepr` THÔ, KHÔNG GIẢI MÃ Ở ĐÂY. Giải mã (`nap_ref_b64`) là một
+       lượt đọc kho + decode base64 — không rẻ, và ở một lượt bảo trì bình
+       thường phần lớn giọng kho chung ĐÃ có tệp nghe thử rồi. Trả thẳng biểu
+       diễn để người gọi chỉ giải mã cho giọng THẬT SỰ còn thiếu — kiểm
+       `co_san` TRƯỚC `nap_ref_b64`, xem `nghe_thu._dung_kho_chung`.
+
+    ⚠️ Bỏ qua giọng KHÔNG có biểu diễn active (`tim_repr_active` trả `None`):
+       không có gì để nạp, cùng lý do với `_dung_giong_rieng_con_thieu` của
+       `nghe_thu.py`.
+    """
+    from sqlalchemy import select
+
+    from .tables import VoiceProfile
+
+    ra = []
+    q = select(VoiceProfile).where(
+        _dieu_kien_kho_chung(), VoiceProfile.trang_thai == "active"
+    ).order_by(VoiceProfile.tao_luc.asc())
+    for ho_so in db.execute(q).scalars():
+        bd = tim_repr_active(db, ho_so.id)
+        if bd is not None:
+            ra.append((ho_so, bd))
+    return ra
+
+
 def tim_ref_theo_hash(db, profile_id: int, sha256: str):
     from sqlalchemy import select
 

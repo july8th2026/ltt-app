@@ -69,6 +69,7 @@
     {%- set url_nghe = duong_nghe.get(ma) if duong_nghe is defined else none %}
     {%- if url_nghe %}
     <button type="button" class="lv-the-song lv-nghe" data-nghe="{{ url_nghe }}"
+            data-nhan-loi="{{ _('Không phát được bản nghe thử') }}"
             aria-label="{{ _('Nghe thử giọng') }} {{ g.ten_hien_thi }}">
       <svg viewBox="0 0 48 24" width="48" height="24" role="presentation"
            aria-hidden="true">

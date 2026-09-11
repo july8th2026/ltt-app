@@ -324,6 +324,11 @@ DICH = {
 
     # du_an — badge suy tu tep that (RC1 Task 9, D005)
     "Cần tạo lại": "Needs regenerating",
+    # du_an — Task 10 extra item: phan biet nguyen nhan can_tao_lai (sua chu
+    # vs tep het han), xem ltt_voice_mot_du_an.html.
+    "Văn bản đã đổi — cần tạo lại.": "The text changed — needs regenerating.",
+    # nghe_thu — nhan loi cua nut phat (D006, 3634412a, voice.js:baoNgheLoi)
+    "Không phát được bản nghe thử": "Could not play the preview",
     # ⛔ KHÔNG khai "Lỗi" ở đây — fix round 1/5. `messages.po` đã có msgid
     #    "Lỗi" -> "Error" (server/templates/jobs.html va nhieu app khac dung
     #    chung). Script nay IDEMPOTENT nen mot dong "Lỗi": "Failed" o day

@@ -63,4 +63,32 @@ BE_MAT_CONG_KHAI = {
     ("apps.ltt_voice.giong_mau", "NHAN_GIOI"),
     ("apps.ltt_voice.giong_mau", "NHAN_VUNG"),
     ("apps.ltt_voice.giong_mau", "NHAN_PHONG_CACH"),
+
+    # ── Nghe thử TRƯỚC KHI chọn (Auto Scan Video V5) ────────────────────────
+    #
+    # 🔑 Màn chọn giọng của Auto Scan hỏi đúng câu `nghe_thu.py` mở đầu bằng:
+    #    *"giọng này nghe như thế nào"*. Ba nhãn (giới · vùng · phong cách)
+    #    không trả lời được nó, và cách còn lại là chạy thật một lượt — tức trả
+    #    tiền để xem mình có muốn mua không.
+    #
+    # ⭐ Xuất `duong_cho_trang` VÀ `duong_cho_app_khac`, KHÔNG xuất
+    #    `khoa_mau`/`khoa_rieng`/`khoa_chung`. Đây là bài học đã trả giá ở
+    #    `du_an.duong_tieng()`: **MỘT thẩm quyền duy nhất dựng đường nghe
+    #    thử**. Xuất hàm dựng khoá là mời mỗi bên gọi tự ghép URL — và một bản
+    #    ghép là một bản sẽ lệch.
+    #
+    # ⛔ Và không mở thêm một cửa đọc nào: tệp được phục vụ bởi chính route
+    #    `/audio` của LTT VOICE, nơi phép kiểm sở hữu/quyền đọc đã ở sẵn. App
+    #    khác chỉ nhận **URL**, không nhận tệp và không nhận khoá.
+    #
+    # ⚠️ `duong_cho_app_khac` là bề mặt THẬT `apps/auto_scan_video/gia.py`
+    #    import qua `try/except` (`891d93db`, nhánh `phien/asv-v4`) —
+    #    `INV-BE-MAT-1`: mất nó thì preview giọng của ASV biến mất **im lặng**,
+    #    không đỏ ở đâu cả. `duong_cho_trang` chưa có bên gọi ngoài app nhưng
+    #    khai ở đây vì nó là hàm mà `duong_cho_app_khac` GỌI LẠI — hai hàm cùng
+    #    một hợp đồng, khai riêng một nửa là để nửa kia trôi không ai thấy.
+    #
+    # ⚠️ Cả hai chỉ hỏi KHO, không chạm CSDL — gọi được ngoài phiên.
+    ("apps.ltt_voice.nghe_thu", "duong_cho_trang"),
+    ("apps.ltt_voice.nghe_thu", "duong_cho_app_khac"),
 }

@@ -331,6 +331,51 @@ def test_trang_chi_tiet_khong_hien_DA_DOC_khi_khoi_da_HET_HAN(khach):
         "dong giai thich het han phai con, khong bi nhanh moi che mat")
 
 
+def test_trang_chi_tiet_hien_VAN_BAN_DOI_khi_can_tao_lai_la_VI_SUA_CHU(khach):
+    """🔴 Task 10, extra item (review Task 9). `trang_thai_hien()` gộp HAI
+    nguyên nhân khác nhau vào cùng chuỗi `can_tao_lai`:
+
+      · cột thô đã là `can_tao_lai` NGAY TỪ LƯỢT SỬA (`du_an.sua_khoi`,
+        khách đổi văn bản — KHÔNG hề mất tệp, xem docstring của nó);
+      · cột thô là `xong` nhưng tệp đã hết hạn/bị xoá (D005 — ca đã chốt ở
+        `test_trang_chi_tiet_khong_hien_DA_DOC_khi_khoi_da_HET_HAN` ngay trên).
+
+    Trước bản vá này, CẢ HAI đều hiện dòng "Tệp tiếng đã hết hạn sau 30
+    ngày…" — sai cho ca thứ nhất: không có tệp nào hết hạn, khách chỉ vừa
+    sửa chữ. Route nay truyền thêm cột THÔ (`trang_thai_tho`) để template
+    phân biệt được hai nguyên nhân."""
+    client, uid = khach
+    pid = _tao_du_an(client)
+    _them_khoi(client, pid, "Mot cau doc thu de kiem tra badge.")
+    # Đặt cột thô = "can_tao_lai" TRỰC TIẾP (không qua `_dat_khoi_het_han`,
+    # thứ mô phỏng tệp mất). Không audio_key ⇒ không audio_url ⇒ rơi vào
+    # đúng nhánh giải thích ở cột phải.
+    _dat_trang_thai_khoi(pid, uid, ["can_tao_lai"])
+
+    html = client.get(f"/ltt-voice/du-an/{pid}").text
+    assert "Cần tạo lại" in html, "badge van phai hien 'Can tao lai'"
+    assert "Văn bản đã đổi" in html, (
+        "khoi bi can_tao_lai vi SUA CHU phai noi ro nguyen nhan la van ban doi")
+    assert "Tệp tiếng đã hết hạn sau 30 ngày" not in html, (
+        "khong duoc noi 'het han' khi khong co tep nao het han — chi la van "
+        "ban vua doi")
+
+
+def test_trang_chi_tiet_hien_HET_HAN_khi_can_tao_lai_la_VI_MAT_TEP(khach):
+    """Đối chứng của phép kiểm trên, viết lại tường minh: khi nguyên nhân là
+    tệp hết hạn (cột thô vẫn `xong`), dòng "hết hạn" phải hiện và dòng "văn
+    bản đã đổi" KHÔNG được hiện."""
+    client, uid = khach
+    pid = _tao_du_an(client)
+    _them_khoi(client, pid, "Mot cau doc thu de kiem tra badge.")
+    _dat_khoi_het_han(pid, uid, 0)
+
+    html = client.get(f"/ltt-voice/du-an/{pid}").text
+    assert "Tệp tiếng đã hết hạn sau 30 ngày" in html
+    assert "Văn bản đã đổi" not in html, (
+        "khong duoc noi 'van ban doi' khi nguyen nhan that la tep het han")
+
+
 def test_poll_du_an_cung_tra_CAN_TAO_LAI_cho_khoi_da_HET_HAN(khach):
     """Cùng chốt trên, ở cửa poll (`/trang-thai`) — `voice.js::motDuAn` dùng
     đúng trường `khoi[i].trang_thai` này để SỬA badge mỗi vài giây; nếu cửa

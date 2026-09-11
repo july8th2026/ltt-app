@@ -113,10 +113,16 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
         # Đường nghe thử cho bộ chọn giọng. CÙNG thẩm quyền với màn Giọng
         # (`nghe_thu.duong_cho_trang`) — hai chỗ tự ghép URL là hai chỗ
         # sẽ lệch, và bài học đó đã trả giá ở `du_an.duong_tieng()`.
+        # ⛔ TÁCH HAI DANH SÁCH. `cua_toi` gồm CẢ kho chung
+        #    (`gom_dung_chung=True` ngay trên), và kho chung khoá theo một
+        #    tiền tố khác — xem `nghe_thu.khoa_chung`. Gộp chúng vào `rieng`
+        #    là tra tệp của nền tảng dưới id của người xem: không bao giờ
+        #    trúng, nên nút nghe thử biến mất **im lặng**.
         duong_nghe = nghe_thu.duong_cho_trang(
             duong_audio=f"{MANIFEST.route_prefix}/audio", owner_id=uid,
             ma_mau=[g.ma for g in giong_mau.DANH_SACH],
-            rieng=[g.public_id for g in cua_toi])
+            rieng=[g.public_id for g in cua_toi if not g.dung_chung],
+            chung=[g.public_id for g in cua_toi if g.dung_chung])
     finally:
         try:
             next(gen)

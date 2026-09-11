@@ -425,14 +425,59 @@
    *    phan lon nguoi dung khong bam nut nao.
    */
   var auNgheThu = null;
-  var nutDangPhat = null;
+  var nutDangPhat = null;    /* nut dang tai HOAC dang phat */
+  var ngheLoiHen = null;     /* timer tu xoa dau hieu loi */
+  var vungBaoNghe = null;    /* vung aria-live dung chung, tao mot lan */
+
+  function xoaTrangThaiNghe(nut) {
+    if (!nut) return;
+    nut.classList.remove("dang-phat", "dang-tai");
+    nut.setAttribute("aria-pressed", "false");
+  }
 
   function dungNgheThu() {
     if (nutDangPhat) {
-      nutDangPhat.classList.remove("dang-phat");
-      nutDangPhat.setAttribute("aria-pressed", "false");
+      xoaTrangThaiNghe(nutDangPhat);
       nutDangPhat = null;
     }
+  }
+
+  /* == Loi phat: DUNG lai VA noi ro =========================================
+   *
+   * ⛔ Ban truoc gan `error` -> `dungNgheThu`: mot tep 404 hay giai ma hong
+   *    chi lam nut tro ve trang thai tinh, IM LANG. Nguoi dung bam ma khong
+   *    nghe thay gi va khong biet vi sao — dung thu "nut bam duoc ma khong keu"
+   *    ma chinh app nay ghi lai o cho khac la te nhat.
+   *
+   * ⭐ Bao bang mot dau hieu THI GIAC ngan (`.nghe-loi`, JS tu go sau 2,5s)
+   *    cong mot cau cho trinh doc man hinh qua mot vung `role=status`.
+   *
+   * ⚠️ Chuoi bao doc tu `nut.dataset.nhanLoi` — tuc `data-nhan-loi="{{ _(...) }}"`
+   *    tren chinh nut, KHONG phai mot hang so tieng Viet go thang trong JS
+   *    (JS khong di qua `_()`, xem quy uoc i18n cua app).
+   *
+   * ⛔ KHONG dong vao `aria-label` GOC cua nut (`test_500` chot no) va KHONG
+   *    dung `alert`. `title` la phu, khong thay the ten doc duoc. */
+  function baoNgheLoi() {
+    var nut = nutDangPhat;
+    dungNgheThu();
+    if (!nut) return;
+    var chu = nut.dataset.nhanLoi || "";
+    nut.classList.add("nghe-loi");
+    if (chu) nut.setAttribute("title", chu);
+    if (!vungBaoNghe) {
+      vungBaoNghe = document.createElement("span");
+      vungBaoNghe.className = "sr-only";
+      vungBaoNghe.setAttribute("role", "status");
+      vungBaoNghe.setAttribute("aria-live", "polite");
+      document.body.appendChild(vungBaoNghe);
+    }
+    vungBaoNghe.textContent = chu;
+    if (ngheLoiHen) clearTimeout(ngheLoiHen);
+    ngheLoiHen = setTimeout(function () {
+      nut.classList.remove("nghe-loi");
+      nut.removeAttribute("title");
+    }, 2500);
   }
 
   function ganNgheThu(pv) {
@@ -454,10 +499,24 @@
             auNgheThu.preload = "none";
             auNgheThu.addEventListener("ended", dungNgheThu);
             auNgheThu.addEventListener("pause", dungNgheThu);
-            /* Tep 404 hay giai ma hong deu vao day. Phai DUNG trang thai lai,
-               khong thi nut ket o "dang phat" mai mai va trang trong nhu treo. */
-            auNgheThu.addEventListener("error", dungNgheThu);
+            /* ⭐ `playing` chu khong `play`: `play` ban ra NGAY khi goi, luc tep
+               con dang tai; `playing` doi den khi tieng THAT SU keu. Do moi la
+               luc ha "dang tai" xuong "dang phat" — khong thi nut nhay sang
+               bieu tuong pause trong khi chua co tieng, mot loi hua sai. */
+            auNgheThu.addEventListener("playing", function () {
+              if (nutDangPhat) {
+                nutDangPhat.classList.remove("dang-tai");
+                nutDangPhat.classList.add("dang-phat");
+              }
+            });
+            /* Tep 404 hay giai ma hong deu vao day. */
+            auNgheThu.addEventListener("error", baoNgheLoi);
           }
+
+          /* Bam bat ky nut nao cung xoa dau hieu loi con dong lai. */
+          if (ngheLoiHen) { clearTimeout(ngheLoiHen); ngheLoiHen = null; }
+          nut.classList.remove("nghe-loi");
+          nut.removeAttribute("title");
 
           var dangLaNoi = nutDangPhat === nut;
           auNgheThu.pause();
@@ -466,10 +525,13 @@
 
           auNgheThu.src = nut.dataset.nghe;
           nutDangPhat = nut;
-          nut.classList.add("dang-phat");
+          /* Chi "dang tai" luc dau; `playing` moi bat "dang phat". Tep nghe thu
+             tai lan dau (`preload=none`) co mot khoang cho that — day la luc dau
+             hieu tai co gia tri. */
+          nut.classList.add("dang-tai");
           nut.setAttribute("aria-pressed", "true");
           var hua = auNgheThu.play();
-          if (hua && hua.catch) hua.catch(dungNgheThu);
+          if (hua && hua.catch) hua.catch(baoNgheLoi);
         });
       })(ds[i]);
     }

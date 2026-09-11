@@ -84,7 +84,25 @@ def audio(request: Request, key: str, mp3: int = 0,
     la_nghe_thu_rieng = (key.startswith(f"voice/{uid}/")
                          and ten_tep.startswith("preview-"))
 
-    if not (la_ket_qua or la_clip_goc or la_nghe_thu_mau or la_nghe_thu_rieng):
+    # ── NGHE THỬ KHO CHUNG — tiền tố thứ tư ───────────────────────────────────
+    #
+    # ⭐ Luật đọc GIỐNG `voice/mau/`, và vì đúng cùng một lý do: giọng kho chung
+    #    thuộc **nền tảng**, mọi tài khoản đều được đọc nó (đó là định nghĩa của
+    #    "kho chung" ở `tables.VoiceProfile.dung_chung`). Một câu chào cố định
+    #    đọc bằng một giọng ta chào bán không có gì riêng tư.
+    #
+    # ⛔ NÓ KHÔNG THAY `la_nghe_thu_rieng`. Giọng nhân bản CỦA MỘT KHÁCH vẫn đi
+    #    đường cũ, vẫn khoá theo chủ sở hữu — đó là giọng của một người thật.
+    #    Hai loại giọng, hai luật, và gộp chúng lại là cách một giọng riêng lọt
+    #    ra ngoài.
+    #
+    # ⚠️ Vẫn dưới `require_login`, cùng lý do với `voice/mau/`: không phải để
+    #    giấu nội dung, mà để đường này không thành một CDN mở.
+    la_nghe_thu_chung = (key.startswith("voice/chung/")
+                         and ten_tep.endswith(".wav"))
+
+    if not (la_ket_qua or la_clip_goc or la_nghe_thu_mau or la_nghe_thu_rieng
+            or la_nghe_thu_chung):
         return Response(status_code=404)
     from platform_core.storage import get_storage
     kho = get_storage()

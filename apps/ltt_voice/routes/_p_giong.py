@@ -75,10 +75,12 @@ def trang_giong(request: Request, user=Depends(user_hien_tai),
             db, giong, thong_ke, f"{MANIFEST.route_prefix}/audio")
         # Đường nghe thử — MỘT thẩm quyền, dùng chung với màn Tạo tiếng nói.
         # Giọng nào chưa có tệp thì **vắng mặt** khỏi dict, không phải rỗng.
+        # Xem chú thích ở `_p_tao.py`: kho chung khoá theo tiền tố riêng.
         duong_nghe = nghe_thu.duong_cho_trang(
             duong_audio=f"{MANIFEST.route_prefix}/audio", owner_id=uid,
             ma_mau=[g.ma for g in giong_mau.DANH_SACH],
-            rieng=[g.public_id for g in giong])
+            rieng=[g.public_id for g in giong if not g.dung_chung],
+            chung=[g.public_id for g in giong if g.dung_chung])
     finally:
         try:
             next(gen)

@@ -66,11 +66,17 @@ CONG = {"giai_giong", "_chot_lan"}
 #: ⚠️ Khai bằng `(tệp, hàm)` chứ không bằng tên hàm trần: hai tệp có thể có hai
 #:    hàm trùng tên, và một miễn trừ trôi sang tệp khác là một lỗ mở ra âm thầm.
 MIEN_TRU = {
-    ("routes/_p_nghe_thu.py", "nghe_thu_van_ban"): (
+    ("nghe_thu_cua_toi.py", "sinh"): (
         "Nghe thu MIEN PHI: khong giu credit, chi nhan `preset` (khong nhan "
-        "`voice_id`) nen khong co cau hoi so huu nao de kiem. Van co cong "
-        "rieng: `giong_mau.hop_le` + tran ky tu + rate-limit theo gio + "
-        "`admission.hold_persisted`. Xem chu thich cua chinh ham do."),
+        "`voice_id`) nen khong co cau hoi so huu nao de kiem. Ham nay la ranh "
+        "gioi mong quanh `features.goi_cong` ma `routes/_p_nghe_thu.py::"
+        "nghe_thu_van_ban` goi — tach ra de test_526 mock duoc dung MOT cho "
+        "(lot sinh THAT) ma khong dung ca sidecar gia. Cong rieng cua duong "
+        "nay nam o CHINH nghe_thu_van_ban: `giong_mau.hop_le` + tran ky tu + "
+        "rate-limit theo gio + `admission.hold_persisted`. D006 (2026-09-11): "
+        "nghe_thu_van_ban CO goi `lan_ngon_ngu.quyet_dinh`, nhung de HIEN phan "
+        "quyet canh bao canh nut phat — khong de CHAN luot sinh (van khong co "
+        "credit nao de bao ve o day)."),
     ("nghe_thu.py", "dung"): (
         "Vong bao tri dung tep nghe thu cho giong MAU. Khong khach nao goi, "
         "khong tien nao bi cham, va giong den tu chinh danh muc."),
@@ -131,7 +137,7 @@ def test_quet_tim_duoc_dung_nhung_cua_da_biet():
         ("routes/_p_du_an.py", "_nop_mot_khoi"),
         ("routes/_p_lich_su.py", "doc_lai"),
         ("routes/_p_phat_dan.py", "phat_dan"),
-        ("routes/_p_nghe_thu.py", "nghe_thu_van_ban"),
+        ("nghe_thu_cua_toi.py", "sinh"),
         ("routes/_p_giong.py", "tao_giong"),
         ("jobs.py", "_tao_tieng"),
     }

@@ -217,6 +217,23 @@ APP_DUOC_DUNG_APP: dict = {
         ("apps.ltt_voice.giong_mau", "NHAN_GIOI"),
         ("apps.ltt_voice.giong_mau", "NHAN_VUNG"),
         ("apps.ltt_voice.giong_mau", "NHAN_PHONG_CACH"),
+        # ── V5 cua Auto Scan: nghe thu giong TRUOC khi chon ─────────────────
+        #
+        # 🔑 Man chon giong cua Auto Scan hoi dung cau `nghe_thu.py` mo dau:
+        #    *"giong nay nghe nhu the nao"*. Ba nhan (gioi · vung · phong
+        #    cach) khong tra loi duoc no, va cach con lai la chay that mot
+        #    luot — tuc tra tien de xem minh co muon mua khong.
+        #
+        # ⭐ Chi `duong_cho_app_khac` la be mat THAT (`apps/auto_scan_video/
+        #    gia.py`, nhanh `phien/asv-v4`, `891d93db`) — no goi
+        #    `duong_cho_trang` LAI BEN TRONG `apps.ltt_voice.nghe_thu`, nen
+        #    khai `duong_cho_trang` o day la khai mot lien ket ma khong ben
+        #    goi nao ngoai app tu minh dung toi. Nhung `apps/ltt_voice/
+        #    __init__.py` khai CA HAI (xem chu thich o do): `_doi_chieu_
+        #    ban_khai` doi khop CHINH XAC, va `duong_cho_trang` phai co mat
+        #    o day de khong bien thanh mot dong "app khai thua linter".
+        ("apps.ltt_voice.nghe_thu", "duong_cho_trang"),
+        ("apps.ltt_voice.nghe_thu", "duong_cho_app_khac"),
     },
 }
 

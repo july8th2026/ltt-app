@@ -61,10 +61,14 @@ def _ngu_canh_giong(*, owner_id: str = "", **them) -> dict:
          "nhan_lan": lan_ngon_ngu.NHAN_LAN,
          "mac_dinh": giong_mau.MAC_DINH}
     d.update(them)
+    # Xem chú thích ở `_p_tao.py`: kho chung khoá theo tiền tố riêng.
     d["duong_nghe"] = nghe_thu.duong_cho_trang(
         duong_audio=f"{MANIFEST.route_prefix}/audio", owner_id=owner_id,
         ma_mau=[g.ma for g in giong_mau.DANH_SACH],
-        rieng=[g.public_id for g in (d.get("giong") or ())])
+        rieng=[g.public_id for g in (d.get("giong") or ())
+              if not g.dung_chung],
+        chung=[g.public_id for g in (d.get("giong") or ())
+              if g.dung_chung])
     return d
 
 
@@ -213,9 +217,18 @@ def trang_mot_du_an(request: Request, public_id: str,
         #    "Tệp tiếng đã hết hạn…" bên dưới nó — hai câu mâu thuẫn trên cùng
         #    một màn hình (INV-TRANG-THAI-1). `duong.get(k.id)` đã có sẵn ở
         #    đây (dùng cho `audio_url`) nên không tốn thêm một truy vấn nào.
+        # ⭐ Extra item (review Task 9): `trang_thai_tho` ĐI KÈM `trang_thai`
+        #    (đã suy). `trang_thai_hien()` gộp HAI nguyên nhân khác nhau vào
+        #    CÙNG một chuỗi `can_tao_lai`: cột thô đã là `can_tao_lai` (khách
+        #    SỬA VĂN BẢN, `du_an.sua_khoi` — tệp cũ vẫn còn, chỉ không khớp chữ
+        #    nữa), hoặc cột thô là `xong` nhưng tệp đã hết hạn/bị xoá (D005).
+        #    Route KHÔNG suy hộ template được nguyên nhân nào — chỉ có cột thô
+        #    mới nói được — nên nó phải đi cùng, để template chọn đúng câu
+        #    giải thích (xem `ltt_voice_mot_du_an.html`).
         ds_khoi = [{
             "id": k.id, "thu_tu": k.thu_tu, "text": k.text, "giong": k.giong,
             "trang_thai": du_an.trang_thai_hien(k, bool(duong.get(k.id))),
+            "trang_thai_tho": k.trang_thai,
             "job_id": k.job_id,
             "giay": k.giay, "credit": k.credit,
             "audio_url": duong.get(k.id, ""),

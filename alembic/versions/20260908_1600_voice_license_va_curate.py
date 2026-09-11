@@ -8,8 +8,16 @@ Create Date: 2026-09-08
 
 Hai hang muc, nhung mot cau hoi: *"giong nay co duoc mang ra kho chung khong"*.
 `license_status` tra loi ve XUAT XU, `voice_quality_profile` tra loi ve CHAT
-LUONG, va cong o `tham_chieu.py` doc ca hai. Tach lam hai luot thi co mot khoang
-giua ma cong da bat nhung mot nua du lieu chua ton tai.
+LUONG.
+
+[!] SUA 2026-09-11 (Task 10, T-17): dong tren TUNG viet "cong o `tham_chieu.py`
+doc ca hai" - sai voi ma that. Cong kho chung THAT (`tham_chieu.
+_dieu_kien_kho_chung`, cua duy nhat `danh_sach`/`tim_profile`/`danh_sach_kho_
+chung` di qua) chi doc HAI cot: `dung_chung` va `license_status`. No KHONG bao
+gio cham `voice_quality_profile` - bang do chi duoc `tools/soat_giong.py` doc
+(luot soat thu cong, chon giong dua vao kho chung). Hai bang van dung chung
+MOT migration vi cung mot cau hoi xuat xu o tren, nhung do la ly do gop lai
+LUC TAO, khong phai mot cong doc chung o duong chay.
 
 ## [!] MOI DONG CU NHAN "cho_soat", KE CA DONG DANG `dung_chung=True`
 

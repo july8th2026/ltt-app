@@ -2570,6 +2570,27 @@ button.lv-the-song.dang-phat svg rect{fill:rgba(255,255,255,.35)}
 button.lv-the-song.dang-phat .lv-nghe-dau::before{width:4px;height:14px;
   margin-left:0;border:0;background:#fff;
   box-shadow:7px 0 0 0 #fff;transform:translateX(-3px)}
+
+/* == NGHE THU: dang tai (spinner) ===========================================
+ *
+ * Trang thai LOADING cua nut nghe thu, ap cho CA hai kieu (`.lv-the-song` 44px
+ * o the giong, `.lv-chon-nghe` 26px trong bo chon) qua lop chung `.lv-nghe`.
+ * Trong luc "dang tai" chi co lop nay — `.dang-phat` cho toi khi tieng that su
+ * keu — nen khong dam nhau voi cac luat pause o tren.
+ *
+ * ⛔ Vong quay dung `@keyframes`; khoi `@media(prefers-reduced-motion:reduce)`
+ *    o dau tep da ha `animation-iteration-count:1`, nen o do no thanh mot vanh
+ *    TINH — van la dau hieu "dang tai", chi khong quay. */
+@keyframes lv-quay{to{transform:rotate(1turn)}}
+.lv-nghe.dang-tai .lv-nghe-dau{display:grid}
+.lv-nghe.dang-tai .lv-nghe-dau::before{content:"";width:14px;height:14px;
+  margin:0;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;
+  border-radius:50%;background:none;box-shadow:none;transform:none;
+  animation:lv-quay .7s linear infinite}
+/* Nut nho trong bo chon: vanh nho hon cho vua o 26px (giu vien + mau tu tren). */
+.lv-chon-nghe.dang-tai .lv-nghe-dau::before{width:11px;height:11px}
+/* (Luat `.nghe-loi` nam DUOI khoi bo chon giong — no phai thang cac luat
+   `:hover`/`:focus` cua nut nghe o cung do dac dan.) */
 .lv-the-ten{min-width:0;display:flex;flex-direction:column;gap:4px;align-items:flex-start}
 /* ⛔ KHONG `white-space:nowrap`. Ten giong that dai hon o the ("Tam Ly Hoc —
  * nam, thuyet minh"), nen cat mot dong bang dau ba cham lam mat phan PHAN LOAI
@@ -2947,6 +2968,21 @@ button.lv-the-song.dang-phat .lv-nghe-dau::before{width:4px;height:14px;
 .lv-chon-muc .lv-ma-chep{padding:1px 4px;font-size:11px}
 
 .lv-chon-rong{margin:8px 0 0;color:var(--dim);font-size:11.5px;text-align:center}
+
+/* == NGHE THU: loi phat (nghe-loi) ==========================================
+ *
+ * Dat SAU moi luat cua bo chon giong VA cua the giong, co chu dinh: nut nghe
+ * o trang thai `:hover`/`:focus-visible` chuyen nen sang `--brand-hover` (do
+ * tuoi). Nen TOI (`--err-bg`) + dau `!` do ⇒ ro rang "co gi do sai", khong
+ * lan vao bat cu trang thai active nao; va vi khoi nay dung SAU nen no thang
+ * cac luat hover/focus o cung do dac dan. JS go lop `.nghe-loi` sau 2,5s. */
+button.lv-the-song.nghe-loi,.lv-chon-nghe.nghe-loi{
+  background:var(--err-bg);border-color:var(--err-line)}
+.lv-nghe.nghe-loi svg{opacity:0}   /* giau song trang tri, chi con dau `!` */
+.lv-nghe.nghe-loi .lv-nghe-dau{display:grid}
+.lv-nghe.nghe-loi .lv-nghe-dau::before{content:"!";width:auto;height:auto;
+  margin:0;border:0;background:none;box-shadow:none;transform:none;
+  color:var(--err);font-weight:700;font-size:13px;line-height:1}
 
 @media(max-width:1180px){
   .lv-st{grid-template-columns:270px minmax(0,1fr)}
