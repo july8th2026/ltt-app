@@ -20,7 +20,11 @@ pha; chép lại vào đây là tạo một bản sẽ trôi.
 
 | Pha | Tên | Trạng thái | Ghi chú / chặn |
 |---|---|---|---|
-| 00–05 | nền, hợp đồng, kiến trúc | **CHƯA MỞ** | |
+| 00 | Provenance + worktree + baseline | **XONG** | Cây riêng `asv-v6`, gốc chung `768b1dba`, off-site từ 11/09. Xem `PHA00_04_NEN_TANG.md` §1 |
+| 01 | Product contract + 98+ score model | **MỘT PHẦN** | Phạm vi = `MA_TRAN_TINH_NANG_V6.md`; 12 `DEFER` V5 nay đều có pha. ⚠️ Chưa chấm theo `V6_98_SCORECARD.md` — việc chấm độc lập là pha 34 |
+| 02 | Capability ownership map | **XONG** | `REBASE_MAP_V4.md` giữ sống qua V6 + `lint_app_contract` cưỡng chế bề mặt liên-app |
+| 03 | Viral second-pass audit | **CHƯA** | Lượt một có ở V5; lượt hai phải mổ ứng dụng Electron đóng gói `D:\Viral` — chưa làm |
+| 04 | Gap matrix + backlog freeze | **XONG** | `MA_TRAN_TINH_NANG_V6.md`: 59 tính năng → 28 XONG · 8 MỘT PHẦN · 15 CHƯA · 3 CẦN ADR · 5 LOẠI; `test_477` chốt tập hợp bằng đúng V5 |
 | 05 | Regression shield + static-analysis | **XONG** | Bốn hạng mục, đã **đo trước khi sửa**: ① bất biến V4/V5 — `tests/bo_bat_bien_v4.py` + `test_428` chốt mỗi bất biến tầng 2 có một tệp chứng minh; ② lint boundary bằng AST — `lint_app_contract.py:266` đã dùng `ast.parse`; ③ rào chắn test nặng — `tests/rao_chan_nang.py` **có sẵn ở nhánh này**, kèm bánh cóc AST và một self-test; ④ nợ mypy ASV **28 → 19**. 🔑 Kết quả có ích của phép đo: trong 24 phát hiện không thuộc pha 14, **không cái nào là lỗi CHẠY** — 6 là khoảng trống kiểu của `require_login`, 3 là stub SQLAlchemy. Tức nợ 616 của cả kho **không** tập trung ở ASV. Đã sửa 3 chỗ *dùng lại một tên cho hai kiểu* (thứ làm mypy mù) và 1 ràng buộc ngầm ở `demucs_runner` |
 | 06 | Studio frontend architecture | **XONG** | `asv.js` 1.154 dòng → **tám module** `server/static/asv/`. Một nguồn `ASV_STUDIO_JS` cho ba nơi (thẻ `<script>` · `asset_ver` · bộ kiểm). Trần 320 dòng/module, 4 đối chứng đỏ đúng chỗ. 🔴 Kiểm trình duyệt bắt một nút giả — `[hidden]` bị `.btn{display:inline-flex}` đè. Xem `PHA06_KIEN_TRUC_GUI.md` |
 | 07 | ProductSettings + RenderManifest v3 | **XONG** | `cai_dat.py` — schema `asv.cai_dat.v3`, vân tay toàn hồ sơ, **mười nơi đọc → một**. 🔴 Sửa một lần trôi THẬT: `timing_mode` có hai mặc định (`fit_original` vs ``), nên một run thiếu khoá **chạy** một đằng còn **bằng chứng QC ghi** một nẻo. Lưu THƯA / đọc TOÀN PHẦN. 4 đối chứng đỏ đúng chỗ. Xem `PHA07_CAI_DAT_CHUAN_TAC.md` |
