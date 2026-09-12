@@ -39,6 +39,13 @@ def moi_truong(tmp_path, monkeypatch):
     import platform_core.models  # noqa: F401
     from platform_core.db import Base, get_engine
     Base.metadata.create_all(get_engine())
+    # Job ảnh giành `anh_3090` từ dual-model 5.5, và luật 0 fail-closed: không có
+    # dòng `gpu_residency` ⇒ worker chỉ trả job về hàng đợi, không chạy handler.
+    # Lý do đầy đủ: `test_606::_mo_cua_so_anh`.
+    from platform_core.llm import residency
+
+    from tests.conftest import mo_cu_tru_3090
+    mo_cu_tru_3090(residency.ANH)
     yield
     dbmod.reset_engine()
 

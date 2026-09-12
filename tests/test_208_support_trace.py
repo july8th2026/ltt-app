@@ -63,6 +63,13 @@ def portal(tmp_path, monkeypatch):
     from platform_core.db import Base, get_engine
 
     Base.metadata.create_all(get_engine())
+    # Job ảnh (`thumbnail.generate`) giành `anh_3090` từ dual-model 5.5, và luật 0
+    # fail-closed: không có dòng `gpu_residency` ⇒ worker trả job về hàng đợi và
+    # không có lượt chạy nào để lần vết. Lý do đầy đủ: `test_606::_mo_cua_so_anh`.
+    from platform_core.llm import residency
+
+    from tests.conftest import mo_cu_tru_3090
+    mo_cu_tru_3090(residency.ANH)
 
     import apps.thumbnail.jobs as thumbnail_jobs
     from tests.gia_dieu_phoi_anh import tiem as _tiem_dieu_phoi
