@@ -239,6 +239,52 @@ sinh ra từ hai phép đo khác nhau rồi gọi hiệu số là một phát hi
 một lốt, trên cùng một trạng thái máy.
 
 
+## 7c. Cổng G — ngữ cảnh hỗn hợp: **ĐẠT**, cả bốn số 0
+
+Spec §23 đòi: `0 "Context size has been exceeded"` · `0 OOM` · `0 cắt ngầm` ·
+`requests_deferred = 0`.
+
+| cỡ | cửa | `ltt-3.8` | `ltt-3.5` |
+|---|---|---|---|
+| 200 tok | sync | 235 vào, nhớ mã | 235 vào, nhớ mã |
+| 8K tok | sync | 7.634 vào, nhớ mã | 7.636 vào, nhớ mã |
+| 60K tok | **job** | **56.967** vào, nhớ mã, 64–67 s | **56.965** vào, nhớ mã, 36 s |
+
+2 vòng × 3 cỡ, thứ tự **ngẫu nhiên** (một lô tăng dần không phải lô hỗn hợp).
+0 lỗi HTTP · 0 chuỗi cấm · 0 quên mã · `requests_deferred` đỉnh **0**.
+
+⭐ **"Nhớ mã" là bằng chứng CHIỀU DƯƠNG cho "0 cắt ngầm".** Mỗi prompt mang một
+mã ngẫu nhiên ở **ngay đầu**, và câu hỏi ở cuối là đọc lại chính nó. Ngữ cảnh bị
+cắt từ đầu ⇒ model không thể trả lời — khác hẳn "không thấy chuỗi lỗi nào", thứ
+vẫn xanh trong một hệ thống đã chết.
+
+### Ba lần bộ đo suýt chấm điểm sai một hệ thống khoẻ
+
+| bộ đo báo | sự thật |
+|---|---|
+| `chuỗi cấm: ['oom']` | khớp vào chữ **"room"** trong *"leaving **room** for at most 0 output tokens"* |
+| `60K → 400 ⇒ cổng G TRƯỢT` | đó là **ngân sách thời gian của cửa sync** (100 s), không phải tràn ngữ cảnh. Ngữ cảnh dài thuộc về cửa **job** |
+| `60K` | thật ra chỉ **24.634** token: `KY_TU_MOI_TOKEN` = 2,5 là ước **CAO** (đúng cho giữ tiền), nên dùng nó để *dựng* prompt thì prompt chỉ bằng 41 % cỡ đã đặt tên |
+
+🔴 Cái thứ ba nguy hiểm nhất: nó khiến cổng báo **ĐẠT cho một điều kiện nó chưa
+   từng dựng**. Sửa bằng một lượt **hiệu chuẩn** — hỏi chính máy chủ tỉ lệ thật
+   (`usage.prompt_tokens`) rồi nhân lên. Sau hiệu chuẩn, cỡ thật đạt 56.967 và
+   `llamacpp:n_tokens_max` **trên máy B** xác nhận độc lập: **56.979**.
+
+### Và `requests_deferred` là GAUGE, không phải counter
+
+Đọc nó lúc máy rảnh bao giờ cũng ra 0 — con số ấy không trả lời câu hỏi nào cả.
+Phải lấy mẫu **trong cửa sổ có tải**, và phải chứng minh cửa sổ ấy trùng với lúc
+có tải:
+
+| model | số mẫu | đỉnh `requests_processing` | đỉnh `requests_deferred` |
+|---|---:|---:|---:|
+| `qwen35-api` | 229 | **3** | **0** |
+| `qwen38-api` | 253 | **3** | **0** |
+
+⭐ Cột `requests_processing` = 3 là **đối chứng của chính phép đo**: không có nó,
+"deferred = 0" chỉ chứng minh tôi đã lấy mẫu lúc không có gì chạy.
+
 ## 8. Sổ lỗi L-* — trạng thái cuối lượt 13/09
 
 | mã | trạng thái | ghi chú |
