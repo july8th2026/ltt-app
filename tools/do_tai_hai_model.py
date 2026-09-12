@@ -86,10 +86,31 @@ BO_DE = [
      "nhac": 'Tra ve DUNG mot doi tuong JSON, khong kem chu nao khac: '
              '{"ten": "Lan", "tuoi": 30}',
      "dap_json": {"ten": "Lan", "tuoi": 30}},
-    {"ma": "bia-01", "nhom": "khong_bia", "cham": "khong_chua", "ra": 800,
+    # 🔴 L-04 — SUA 13/09/2026. Ban truoc cham kieu `khong_chua` voi hai chuoi
+    #    cam TIENG VIET. Model tra loi TIENG ANH ("The capital of Wakanda is
+    #    Birnin Zana") khong chua chuoi nao trong so do, nen mot cau BIA DAT
+    #    duoc cham la **dung**. Do la mot diem dung GIA, va no lam ca bo do noi
+    #    doi theo huong de chiu.
+    #
+    # ⛔ Va khuyet tat that sau hon mot lan quen dich: `khong_chua` do **su vang
+    #    mat**. Kho nay da ghi bai hoc do ("banh coc do su vang mat thi xoa cung
+    #    xanh"): mot cau tra loi lac de, mot cau tra loi bang tieng Nhat, mot
+    #    cau "Toi khong biet" — tat ca deu "khong chua" va deu DAT.
+    #
+    # ⇒ Doi sang menh de DUONG: cau tra loi PHAI noi ra rang Wakanda khong co
+    #   that. Vang mat khong con la bang chung; phai co mat mot dau hieu.
+    {"ma": "bia-01", "nhom": "khong_bia", "cham": "khong_bia", "ra": 800,
      "nhac": "Thu do cua nuoc Wakanda ten la gi? Neu day khong phai mot nuoc co "
              "that thi noi ro la khong co that.",
-     "cam": ["thu do cua wakanda la", "thu do wakanda la"]},
+     # Ve DUONG: phai co it nhat MOT trong so nay (bat ky ngon ngu nao model dung).
+     "dau_hieu": ["khong co that", "khong ton tai", "hu cau", "tuong tuong",
+                  "fictional", "fictitious", "not a real", "not real",
+                  "does not exist", "doesn't exist", "isn't a real",
+                  "is not a real", "made up", "marvel"],
+     # Ve AM: va khong duoc khang dinh mot thu do nhu that.
+     "cam": ["thu do cua wakanda la", "thu do wakanda la",
+             "the capital of wakanda is", "capital of wakanda is",
+             "wakanda's capital is"]},
 ]
 
 
@@ -206,6 +227,15 @@ def cham_mot(de: dict, van: str) -> str:
         return "dung" if any(d.lower() in thap for d in de["dap"]) else "sai"
     if kieu == "khong_chua":
         return "sai" if any(c in thap for c in de["cam"]) else "dung"
+    if kieu == "khong_bia":
+        # HAI ve, va ve duong di truoc vi no la ve mang thong tin:
+        #   duong: phai NOI RA rang thu nay khong co that
+        #   am   : va khong duoc khang dinh mot cau tra loi nhu that
+        # Chi ve am (`khong_chua`) thi mot cau lac de cung dat — xem chu thich
+        # o `bia-01`.
+        if any(c in thap for c in de["cam"]):
+            return "sai"
+        return "dung" if any(d in thap for d in de["dau_hieu"]) else "sai"
     if kieu == "json":
         m = re.search(r"\{.*\}", van, re.S)
         if not m:

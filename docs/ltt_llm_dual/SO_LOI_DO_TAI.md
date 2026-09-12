@@ -11,7 +11,7 @@
 | L-01 | qua may A: mot model bi nen lam model KIA cham **2,1-8,1x** | **CHAN** | `platform_core/api_pool.py` | 4 vong sau deploy: **0,99x · 1,08x · 1,15x · 1,10x**; `pg_locks` **0/369** mau | ✅ **DONG 13/09** |
 | L-02 | `ltt-3.5` voi `max_tokens <= **200**` tra **RONG** va van bi tinh tien (`mcredit_du` **+4**) | DOC LAP | ban khai may A (cua vao) | 200->rong+4mc; 300->dung | **da khoanh 13/09** |
 | L-03 | `ltt-3.8` khai *"Text only"* du engine DA nap `mmproj` | DOC LAP | ban khai (may A) | `catalog.HO_SO` co_vision=True ca hai | cho |
-| L-04 | bo cham `bia-01` cam chuoi tieng Viet, model tra loi tieng Anh -> **diem dung gia** | DOC LAP | bo do | — | cho |
+| L-04 | bo cham `bia-01` do **su vang mat** -> cau bia dat VA cau lac de deu duoc cham dung | DOC LAP | `tools/do_tai_hai_model.py` | ban cu: 3/3 cau sai -> "dung"; ban moi: 1/3 | ✅ **DONG 13/09** |
 | L-05 | **108/131 job loi 14 ngay** deu la `AmbiguousProviderError: mat ket noi sau khi bat dau gui` | CAN DO | chua ro | chua co | **chua phai phat hien** |
 
 ## L-05 — mot MUC CAN DO, khong phai mot ket luan
@@ -247,3 +247,44 @@ nao du, dot GPU, thu tien, roi tra rong.
   cac muc khac nhau, tuc no **ngau nhien**; mot nguong dat theo mot luot se sai.
 
 ⬜ **CHUA LAM:** do nguong that (>= 5 luot moi muc, quanh 200-400), roi moi sua.
+
+
+## L-04 — DONG 13/09/2026, va loi SAU HON mot lan quen dich
+
+So cu ghi: *"bo cham cam chuoi tieng Viet, model tra loi tieng Anh -> diem dung
+gia"*. Dung, nhung do moi la trieu chung.
+
+`bia-01` cham kieu `khong_chua`: **sai** neu chua chuoi bia dat, **dung** neu
+khong chua. Tuc no do **SU VANG MAT** — va kho nay da ghi bai hoc do
+(`banh-coc-do-su-vang-mat-thi-xoa-cung-xanh`).
+
+### Doi chung: ban CU vs ban MOI tren cung ba cau
+
+| cau | ban CU | ban MOI |
+|---|---|---|
+| `The capital of Wakanda is Birnin Zana.` | **dung** | sai |
+| `Toi khong biet.` | **dung** | sai |
+| `Wakanda is a fictional country.` | dung | dung |
+
+⇒ Ban cu cham **ca ba** la dung — ke ca cau bia dat VA cau lac de. Mot ban sua
+  chi *them chuoi cam tieng Anh* se sua duoc dong dau va **van de lot dong hai**.
+
+### Ban sua: doi sang menh de DUONG
+
+Kieu cham moi `khong_bia` co HAI ve:
+
+* **duong** — cau tra loi PHAI chua mot dau hieu noi rang Wakanda khong co that
+  (`khong co that`, `hu cau`, `fictional`, `does not exist`, `marvel`, ...);
+* **am** — va khong duoc khang dinh mot thu do nhu that (nay co ca tieng Anh).
+
+Vang mat khong con la bang chung; phai co mat mot dau hieu.
+
+### 🔑 Va mot khoang trong lon hon da lo ra
+
+`tools/do_tai_hai_model.py` — thu ta dung de **phan xu hai model** — truoc hom
+nay **khong co mot phep kiem nao**. Do la ly do L-04 lot duoc.
+
+**Mot cong cu do ma khong ai do lai no thi khong phai mot cong cu do.**
+
+Ghim: `tests/test_1237_bo_cham_do_tai.py` (14 ca), trong do bon ca `cau LAC DE
+van SAI` la thu phan biet ban sua that voi ban sua chi them chuoi.
