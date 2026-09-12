@@ -78,6 +78,28 @@ MANIFEST = AppManifest(
     accent="#B45309",
     group=N_('Video'),
 
+    #: 🔴 KHAI TƯỜNG MINH THAY VÌ ĐỂ MẶC ĐỊNH (D09, 12/09/2026).
+    #:
+    #:    Mặc định của hợp đồng là `ltt-3.5`, và lý do của nó là **cơ học**: một
+    #:    app **GIỮ** RTX 3090 của máy B rồi **CHỜ** một model chỉ nạp được khi 3090
+    #:    rảnh là một vòng chờ kín. **ASV không giữ card đó** — nó giữ GPU của
+    #:    máy A (demucs/whisper) và gọi LLM qua mạng — nên lý do ấy không áp.
+    #:
+    #: ⭐ Và đây là lý do thực sự: **bản nghiệm thu đầu-cuối của ASV được đo với
+    #:    `ltt-3.8`**. `tests/test_448` chốt `phien_ban_engine` của từng giai đoạn
+    #:    chính để một bản nghiệm thu không âm thầm hết hạn; đổi model là đổi engine,
+    #:    và đổi engine mà không đo lại thì tờ nghiệm thu chỉ còn là một tờ giấy.
+    #:
+    #: ⚠️ Trước 12/09 ASV đi `qwen38-api` **do tình cờ**: `ai.model_cho` chọn model
+    #:    bằng cờ `vision`, và 3.8 tình cờ là cái duy nhất **không** có cờ đó. Dòng
+    #:    này biến một sự tình cờ thành một lời khai — cùng một đích đến, nhưng nay
+    #:    nó ở trong bản khai và đổi được bằng một dòng, không phải bằng một bộ lọc.
+    #:
+    #: ⇒ Muốn chuyển ASV sang `ltt-3.5` (nhanh hơn, cửa sổ rộng hơn, không tranh
+    #:   3090): đổi dòng này **và chạy lại nghiệm thu đầu-cuối của ASV**, đừng chỉ
+    #:   đổi một trong hai.
+    model_llm_noi_bo="ltt-3.8",
+
     #: Hai loai job, ca hai deu chi can `api`:
     #:   `advance`         — dieu phoi, chi doc/ghi CSDL va nop job con
     #:   `content_process` — goi model dich qua `platform_core/llm/dieu_phoi.py`

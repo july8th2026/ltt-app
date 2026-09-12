@@ -152,8 +152,20 @@ def test_them_mot_frontend_da_CHE_khuyet_tat_chu_khong_sua_no():
     assert _n_truyen_cho_pytest() <= (gate.loi_cong_cu_tu_do()
                                       - gate.LOI_DE_DANH_VAT_LY)
 
-    # Ban moi: bi tran cung keo xuong 6, va con chua 3 loi cho may.
-    assert _n_truyen_cho_pytest() == gate.TRAN_WORKER_BO_TEST == 6
+    # Ban moi: bi TRAN CUNG keo xuong, va van con chua loi cho may.
+    #
+    # 📈 6 -> 8 ngay 12/09/2026 (chu du an chot lai), de danh 3 -> 2. Chot nay
+    #    KHAC chot 03/09 chu khong mau thuan: hom 03/09 co BON phien chay song
+    #    song o bon worktree nen tran 6 la de chia cho bon ben; do duoc hom nay
+    #    chi con MOT phien, nen 8 worker + 2 de danh = dung 10 loi vat ly.
+    #
+    # ⛔ Chot bang QUAN HE, khong bang mot con so go tay o day nua: "so truyen
+    #    cho pytest = tran cung" la menh de that, con "= 6" chi la gia tri cua
+    #    no hom qua. Con so cu the da nam trong `gate.py` kem ly do.
+    assert _n_truyen_cho_pytest() == gate.TRAN_WORKER_BO_TEST
+    assert gate.TRAN_WORKER_BO_TEST + gate.LOI_DE_DANH_VAT_LY <= gate.loi_cong_cu_tu_do(), (
+        "tran + de danh vuot so loi VAT LY cua may — dung hinh dang da lam may "
+        "khoi dong lai ngay 03/09")
 
 
 def test_loi_cong_cu_tu_do_doc_cung_nguon_voi_xdist():
@@ -303,8 +315,11 @@ def test_chen_thi_ngan_sach_TU_TUT_XUONG(monkeypatch):
     day_du = gate.ngan_sach_loi()                                   # per-RUN
     khi_chen = gate.ngan_sach_loi(phien="toi", tru_phien_khac=True)  # per-MAY
 
-    assert day_du == 10 - gate.LOI_DE_DANH_VAT_LY == 7
-    assert khi_chen == max(2, 7 - 4) == 3, (
+    # ⛔ Chot QUAN HE chu khong chot so: `LOI_DE_DANH_VAT_LY` doi duoc (3 -> 2
+    #    ngay 12/09), con menh de "ngan sach day du = loi vat ly TRU phan de
+    #    danh" thi khong.
+    assert day_du == 10 - gate.LOI_DE_DANH_VAT_LY
+    assert khi_chen == max(2, day_du - 4), (
         "chen ma ngan sach khong tut => B3 khong hoat dong")
     assert khi_chen < day_du
 
@@ -415,8 +430,13 @@ def test_phien_khac_giu_thi_tu_tut_xuong(monkeypatch):
     monkeypatch.setattr(c, "dang_giu", lambda: [
         {"phien": "khac", "tai_nguyen": c.MAC_DINH, "so_loi": 4}])
     monkeypatch.setattr(gate, "loi_cong_cu_tu_do", lambda: 10)
-    # 10 - 3 - 4 = 3, nho hon tran 6 -> 3 thang
-    assert gate.loi_cho_bo_test(phien="toi", do_tai=False) == 3
+    # Mot phien khac khai 4 loi => ngan sach tut xuong duoi tran cung.
+    # ⛔ Chot QUAN HE: "10 - de_danh - 4" chu khong go so, vi `LOI_DE_DANH_VAT_LY`
+    #    doi duoc (3 -> 2 ngay 12/09) con menh de thi khong.
+    cho = 10 - gate.LOI_DE_DANH_VAT_LY - 4
+    assert gate.loi_cho_bo_test(phien="toi", do_tai=False) == cho
+    assert cho < gate.TRAN_WORKER_BO_TEST, (
+        "phep kiem nay chi co nghia khi so tinh ra NHO HON tran cung")
 
 
 def test_bo_dem_LICH_cung_dung_don_vi_VAT_LY(monkeypatch):
@@ -435,7 +455,7 @@ def test_bo_dem_LICH_cung_dung_don_vi_VAT_LY(monkeypatch):
     monkeypatch.setattr(gate.os, "cpu_count", lambda: 999)   # logic khong duoc anh huong
 
     ns = gate.ngan_sach_loi()
-    assert ns == 10 - gate.LOI_DE_DANH_VAT_LY == 7
+    assert ns == 10 - gate.LOI_DE_DANH_VAT_LY
     assert ns < 14, "van dang tinh tren loi logic"
 
     bt = gate.loi_cho_bo_test(phien="")

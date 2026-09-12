@@ -2,6 +2,7 @@
 rao_chan_nang.py::CHI_KHI_BAT
 test_1204_admission_ngan_sach.py::test_race_postgresql_khong_bao_gio_vuot_pool
 test_1208_cua_dong_bo_cho.py::test_doi_chung_cho_truoc_commit_giu_khoa_idempotency
+test_1217_residency_admission.py::test_pg_lat_llm_sang_xa_llm_giua_50_luot_xin
 test_166_quality_lab_upscale_video.py::_video
 test_179_developer_api_key.py::postgres_only
 test_221_r2_content_deletion.py::r2_that

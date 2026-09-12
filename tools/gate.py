@@ -239,7 +239,17 @@ def loi_dang_ban(mau_s: float = 1.0) -> float:
 #: ⭐ Do that: nen may 3%-37% tuy gio (0,6-3,7 loi vat ly). De danh 3 phu duoc
 #:    nen thuong; luc nen cao thi `loi_phien_khac_dang_giu` va tran cung o duoi
 #:    keo tiep xuong.
-LOI_DE_DANH_VAT_LY = 3
+#:
+#: 📈 **3 -> 2 ngay 12/09/2026, chu du an chot**: *"cac gate trong phien nay chay
+#:    -n=8 het cho toi, tong cung luc khong vuot qua 10 la duoc."* 8 worker + 2
+#:    de danh = dung 10 loi vat ly, tuc dung tran ho dat.
+#:
+#:    ⚠️ De danh 2 NHO HON nen tai gio cao diem da do (3,7 loi). No an toan vi
+#:       ve DONG o `loi_dang_ban()` van nguyen: luc nen 37% thi
+#:       `thua = 3,7 - 2 = 1,7 -> 2`, va ngan sach tu tut ve `min(8, 10-2-2) = 6`.
+#:       Tuc con so nay la DIEM XUAT PHAT khi may ranh, khong phai mot loi hua.
+#:       Bo `loi_dang_ban()` di thi con so 2 nay moi thanh nguy hiem.
+LOI_DE_DANH_VAT_LY = 2
 
 #: ⛔ TRAN CUNG. Chu du an chon 03/09: **uu tien an toan, chap nhan cham hon**.
 #:
@@ -249,7 +259,23 @@ LOI_DE_DANH_VAT_LY = 3
 #:
 #: ⚠️ Va no la TRAN chu khong phai gia tri: khi may ban, phep tinh o duoi cho ra
 #:    so nho hon va so do thang.
-TRAN_WORKER_BO_TEST = 6
+#:
+#: 📈 **6 -> 8 ngay 12/09/2026, chu du an chot lai**: *"gate lan 2 chay voi -n=8
+#:    cho toi. Cac gate trong phien nay chay -n=8 het, tong cung luc khong vuot
+#:    qua 10 la duoc."*
+#:
+#:    ⭐ Vi sao chot nay KHAC chot 03/09 chu khong mau thuan voi no: ngay 03/09
+#:       co **bon phien** chay song song o bon worktree (56 worker tren 10 loi),
+#:       nen tran 6 la de chia cho bon ben. Hom nay do duoc chi con MOT phien lam
+#:       viec, nen 8 worker + 2 de danh van nam trong 10 loi vat ly.
+#:
+#:    ⛔ Nghia la con so nay gan voi mot GIA DINH: *"chi mot phien dang chay"*.
+#:       Ngay co phien thu hai, `loi_phien_khac_dang_giu` (khai bao) va
+#:       `loi_dang_ban` (do that) keo no xuong — nhung ca hai chi thay duoc phien
+#:       NAO CO XIN KHOA hoac DANG DOT CPU. Mot phien khac go tay `pytest -n 8`
+#:       thi khong co gi thay truoc, va 16 worker tren 10 loi la dung hinh dang
+#:       da lam may khoi dong lai ngay 03/09.
+TRAN_WORKER_BO_TEST = 8
 
 
 def loi_cho_bo_test(*, phien: str = "", do_tai: bool = True) -> int:

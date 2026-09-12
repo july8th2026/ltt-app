@@ -97,6 +97,35 @@ def _build(work: Path, **env_extra):
 
     Base.metadata.create_all(get_engine())
 
+    # The image ops claim `anh_3090` (dual-model 5.5) and admission rule 0 is
+    # fail-closed: with no `gpu_residency` row the worker hands every job back
+    # to the queue and this harness measures the throughput of *refusals* --
+    # exactly the failure mode the note above warns about, one layer lower.
+    #
+    # On a real server the arbiter writes that row on its first maintenance
+    # tick, reading the true state from machine B. A harness has no arbiter, so
+    # it must say who owns the card -- the same thing production says, not a
+    # shortcut around it.
+    from datetime import datetime, timezone
+
+    from apps.ltt_llm.ngan_sach import NHOM_CU_TRU_38
+    from platform_core.db import get_session
+    from platform_core.llm import residency as _residency
+    from platform_core.models import GpuResidency
+
+    _gen = get_session()
+    _db = next(_gen)
+    try:
+        if _db.get(GpuResidency, NHOM_CU_TRU_38) is None:
+            _db.add(GpuResidency(nhom=NHOM_CU_TRU_38, trang_thai=_residency.ANH,
+                                 tu_luc=datetime.now(timezone.utc)))
+            _db.commit()
+    finally:
+        try:
+            next(_gen)
+        except StopIteration:
+            pass
+
     from fastapi.testclient import TestClient
 
     from server.app import create_app
