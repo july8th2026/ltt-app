@@ -218,8 +218,11 @@ def test_san_mac_dinh_700_cho_35_va_KHONG_co_cho_38(monkeypatch):
        giết một lượt đang chạy. Đặt cao thì mất một ít thông lượng; đặt thấp thì
        trả bằng OOM. Hai chiều sai **không** cân nhau, nên chọn phía đắt-ít.
 
-    §G3 đo LTT-3.5 (Q6_K + MTP, 3 slot) để lại ~1.000 MiB trống ở trạng thái phục
-    vụ bình thường ⇒ sàn 700 còn ~300 MiB dư **thật** trước khi cổng ngừng nhận.
+    🔴 SỐ ĐÚNG LÀ SỐ LÚC BẬN. §G6 (12/09, chính 5060 Ti, cấu hình đã chốt):
+    rảnh → trống **1.002 MiB**, nhưng đỉnh ảnh + C3 → trống **756 MiB**. Cửa này
+    chạy trước **mọi** lượt (kể cả lượt thứ ba khi hai lượt kia đang chạy) nên nó
+    đọc 756, không đọc 1.002 ⇒ một sàn 700 chỉ cách đỉnh **56 MiB** và sẽ đẻ ra
+    **429 giả**. 600 để lại 156 MiB — vẫn bắt được tiến trình lạ ăn card.
 
     3090 không có sàn ở đây vì nó đã có `don_dep` + trọng tài ComfyUI lo đúng
     việc ấy; ba chốt cho một card là ba câu trả lời khác nhau về một trạng thái.
@@ -228,7 +231,7 @@ def test_san_mac_dinh_700_cho_35_va_KHONG_co_cho_38(monkeypatch):
         if k.startswith("LTT_LLM_VRAM_TRONG_TOI_THIEU_MB__"):
             monkeypatch.delenv(k, raising=False)
     cfg = Config.from_env()
-    assert cfg.vram_trong_toi_thieu_mb == {M35: 700}
+    assert cfg.vram_trong_toi_thieu_mb == {M35: 600}
     assert 600 <= cfg.vram_trong_toi_thieu_mb[M35] <= 700, (
         "ra ngoai dai chu du an cho phep (L-18)")
 

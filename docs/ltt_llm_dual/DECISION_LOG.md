@@ -492,7 +492,20 @@ Plan Task 4.2 ghi *"khởi đầu 512, chốt ở Task 3.2"*. Task 3.2 **đã ch
 > *"cơ bản thì ngưỡng vram 1gb vẫn rất thoải mái bản chất ta chỉ chạy hệ thống ai là
 > chính nên bạn đặt ngưỡng trần vram 5060 600-700 là được"*
 
-**Chốt: `LTT_LLM_VRAM_TRONG_TOI_THIEU_MB__qwen35-api = 700`** — đầu **cao** của dải
+**Chốt: `LTT_LLM_VRAM_TRONG_TOI_THIEU_MB__qwen35-api = 600`**
+
+> 🔴 **ĐÍNH CHÍNH 12/09 11:50 — bản đầu của entry này chốt 700, và phép đo §G6 bác
+> nó.** Tôi chọn 700 vì *"§G3 đo còn ~1.000 MiB trống"* — nhưng đó là con số **lúc
+> rảnh**, còn cửa sàn chạy **trước mọi lượt**, kể cả lượt thứ ba lúc hai lượt kia
+> đang chạy. Đo đỉnh (ảnh + C3): trống chỉ còn **756 MiB** ⇒ sàn 700 cách đỉnh
+> **56 MiB**, tức nó sẽ đẻ ra **429 giả** ở tải đỉnh bình thường.
+>
+> 600 vẫn **trong dải chủ dự án cho phép** (600–700, nguyên văn ở trên), nên đây là
+> một lựa chọn **bên trong quyền đã được giao**, không phải một quyết định mới.
+>
+> ⭐ Bài học, và nó tổng quát: **một ngưỡng phải được đặt theo số MÀ CỬA ĐÓ SẼ
+>   ĐỌC, không theo số dễ đo nhất.** Số lúc rảnh dễ đo và trông đẹp; số lúc bận mới
+>   là số của cửa. — đầu **cao** của dải
 được cho phép.
 
 ### Vì sao đầu cao, không phải đầu thấp
@@ -505,7 +518,7 @@ không đối xứng:
 |---|---|
 | mất một phần thông lượng, khách thấy "bận" sớm hơn cần | **OOM giữa lượt** — llama.cpp cạn KV thì giết **mọi** slot, không chỉ lượt gây ra |
 
-⇒ Khi dải được phép là 600–700, chọn 700.
+⇒ Khi dải được phép là 600–700, chọn đầu cao **của thứ cửa đó đọc**. §G6 đo được thứ nó đọc là **756 MiB** (đỉnh), nên đầu cao an toàn là **600**, không phải 700.
 
 ### Con số này **không** tự nói ra lý do, nên lý do phải đi kèm
 

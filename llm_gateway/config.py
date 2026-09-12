@@ -152,19 +152,31 @@ class Config:
     #: Sàn VRAM trống theo model, MiB: `LTT_LLM_VRAM_TRONG_TOI_THIEU_MB__<model>`.
     #: Dưới sàn ⇒ **429 bận**, không nhận lượt mới (không giết lượt đang chạy).
     #:
-    #: ⭐ MẶC ĐỊNH **700** CHO `qwen35-api` — CHỦ DỰ ÁN QUYẾT, xem
+    #: ⭐ MẶC ĐỊNH **600** CHO `qwen35-api` — CHỦ DỰ ÁN QUYẾT dải, xem
     #:    `docs/ltt_llm_dual/DECISION_LOG.md` **L-18** (dải được phép 600–700).
     #:    ⛔ Đừng chép lý lẽ của con số sang đây; đọc L-18. Ghi lại ở hai chỗ là
     #:       đúng cơ chế đã nói sai năm lần trong dự án này.
     #:
-    #:    Điều cần biết tại chỗ: §G3 đo LTT-3.5 (Q6_K + MTP, 3 slot) để lại
-    #:    **~1.000 MiB** trống ở trạng thái phục vụ bình thường, nên sàn 700 còn
-    #:    **~300 MiB** dư thật trước khi cổng ngừng nhận. Máy B không chạy gì
-    #:    ngoài hệ AI, và đó chính là lý do chủ dự án yên tâm để dành nhiều thế.
+    #:    🔴 VÀ CON SỐ ĐÚNG LÀ SỐ **LÚC BẬN**, KHÔNG PHẢI SỐ LÚC RẢNH. Đo lại
+    #:    12/09 trên chính 5060 Ti, đúng cấu hình đã chốt (§G6):
+    #:
+    #:        nạp xong, rảnh    15.309 / 16.311 MiB   → trống **1.002**
+    #:        đỉnh C1           15.425                → trống   886
+    #:        đỉnh ảnh + C3     15.555                → trống   **756**
+    #:
+    #:    Cửa này chạy **trước mọi lượt**, kể cả lượt thứ ba lúc hai lượt kia đang
+    #:    chạy — tức nó đọc **756**, không đọc 1.002. Một sàn 700 chỉ cách đỉnh
+    #:    đó **56 MiB**: một lát cắt nhỉnh hơn một chút là một **429 giả**, và khách
+    #:    không phân biệt được "bận thật" với "thước đo quá sát".
+    #:
+    #:    ⇒ **600** — vẫn trong dải chủ dự án cho phép, để lại **156 MiB** trước khi
+    #:    cổng đóng. Nó vẫn bắt được điều nó sinh ra để bắt (một tiến trình lạ
+    #:    ăn card) mà không tự bắn vào chân ở tải đỉnh bình thường.
     #:
     #: ⚠️ Cửa này chỉ gây **429 bận**, không bao giờ giết một lượt đang chạy —
     #:    nên đặt cao thì mất một ít thông lượng, đặt thấp thì trả bằng OOM. Đó là
-    #:    lý do lấy đầu **cao** của dải. Điều còn phải theo dõi: §G3b ghi một phiên
+    #:    lý do dải này được chọn rộng tay. Nhưng "cao" phải cao so với **đỉnh**,
+    #:    không phải so với lúc rảnh — xem §G6 ở trên. Điều còn phải theo dõi: §G3b ghi một phiên
     #:    RDP đang vẽ từng chiếm ~193 MiB, tức dải dư 300 MiB hẹp lại khi chủ dự án
     #:    điều khiển máy B trực tiếp. Thấy `ban_vram` tăng mà card vẫn rảnh thì đó
     #:    là chỗ phải đo, không phải chỗ để tự hạ sàn.
@@ -296,8 +308,9 @@ def _san_vram() -> dict:
        hợp lệ (máy không có `nvidia-smi`, hoặc đang chẩn đoán), nên nó phải nói
        được. `_theo_model` bỏ số 0, nên chỗ này đọc trực tiếp.
     """
-    # 700 = dau CAO cua dai chu du an cho phep (600-700), DECISION_LOG L-18.
-    ra = {"qwen35-api": 700}
+    # 600 = dai chu du an cho phep la 600-700 (L-18). Chon 600 chu khong
+    # phai 700 vi phep do DINH: xem khoi chu thich cua `vram_trong_toi_thieu_mb`.
+    ra = {"qwen35-api": 600}
     tien_to = "LTT_LLM_VRAM_TRONG_TOI_THIEU_MB__"
     for ten, gt in os.environ.items():
         model = _duoi_ten_model(ten, tien_to)

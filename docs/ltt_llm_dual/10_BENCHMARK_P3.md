@@ -666,3 +666,87 @@ biên dịch. Bắt buộc chạy lại C1 + G1 + G2 trên bản mới trước 
 ⚠️ Ghi chú đã kiểm chứ không suy: ghi nhớ cũ *"cuBLAS INVALID_VALUE thì phải hạ
 CUDA"* là chuyện **torch cu130 trên pod thuê cho WanGP**, không liên quan
 llama.cpp ở máy B. Không áp dụng ở đây.
+
+---
+
+## G6 — Đo TRƯỚC cổng nghiệm thu **C** và **E** cho LTT-3.5 (2026-09-12)
+
+⭐ **Chạy được ngay giữa ban ngày, rủi ro bằng không**, và đó là điều đáng nhớ hơn
+   cả các con số: LTT-3.5 ở trên **RTX 5060 Ti**, và **sản xuất không dùng card
+   đó** (ComfyUI ghim 3090; `llama-swap` sống chỉ có hồ sơ 3.8). Nên một
+   `llama-server` riêng ở cổng 8292 **không chạm** gì đang phục vụ khách. Phép đo
+   này chạy **song song** với bốn agent đang viết mã, không làm chậm gì.
+
+⚠️ Đây là **đo trước**, không phải nghiệm thu. Nghiệm thu thật chạy một lần sau
+   Spec 2, **qua llama-swap** với hồ sơ thật. Mục đích ở đây: biết sớm nếu cấu
+   hình đã chốt không đạt cổng, lúc còn sửa được rẻ.
+
+Cấu hình = đúng thứ sẽ chạy thật: L-14 (`-c 262144 -np 3 -kvu`, KV `q8_0`, mmproj
+trên GPU, `draft-mtp n=2`) + bộ cờ L-16. Kịch bản + JSONL từng lượt:
+`artifacts/nghiem_thu_35/`.
+
+### Cổng C — C1 văn bản + ảnh
+
+| | |
+|---|---|
+| decode (trung vị 5 lượt) | **71,41 tok/s** (dải 70,96–73,19) |
+| TTFT | **1,08 s** |
+| prefill | **2.068 tok/s** |
+| nạp từ kho ấm | **9 s** |
+| ảnh (3 lượt) | **3/3 đúng**, trả lời tiếng Việt: *"Hình tròn màu đỏ… bên trái"* |
+
+⇒ **C ĐẠT.** Và nó trả lời luôn một câu bỏ ngỏ: bộ cờ L-16 (`--reasoning-budget
+512` + tham số Qwen, không `presence-penalty`) cho ra tiếng Việt đúng **kể cả ở
+đường ảnh** — khối `reasoning` của lượt ảnh viết bằng tiếng Việt có dấu, không
+rơi về tiếng Anh.
+
+### Cổng E — C3 (ba luồng song song)
+
+| lượt | wall | tổng theo **wall** | tổng theo **decode** | TTFT |
+|---|---|---|---|---|
+| 1 | 16,91 s | 106,4 tok/s | 135,7 | 2,99–3,47 s |
+| 2 | 17,29 s | 104,1 | 136,4 | 3,46–3,93 s |
+| 3 | 17,39 s | 103,5 | 134,6 | 3,38–3,86 s |
+
+🔴 **E KHÔNG ĐẠT theo chữ của spec, và cái sai nằm ở NGƯỠNG chứ không ở máy.**
+Spec §23 viết *"tổng ≥ 2 × C1 của chính nó"* ⇒ 2 × 71,41 = **142,8**. Đo được
+**135,7** (theo decode) hoặc **104,1** (theo wall) — tức **95 %** hoặc **73 %**.
+
+Ba điều bảng này nói:
+
+1. ⛔ **"Tổng" của spec không nói rõ là tổng NÀO**, và hai cách đọc lệch nhau
+   **30 %**. `tok_s_tong` tính `token_ra / wall` nên **gồm cả prefill**; tổng
+   decode thì không. So một số có prefill với `2 × C1` (thuần decode) là so hai
+   đại lượng khác nhau — đúng hạng lỗi *"đo đại lượng đề bài đặt tên, thay vì đại
+   lượng khách phải chờ"*. **Nghiệm thu thật phải chốt định nghĩa trước khi chấm.**
+2. Ngưỡng `2 ×` là **con số viết trước khi đo** (spec ghi `[CHI TIẾT SPEC]` ngay
+   tại chỗ ấy), và nó viết cho **C4**. L-14 hạ xuống **C3**. Một ngưỡng suy từ 4
+   luồng áp lên 3 luồng thì nó không đo gì cả.
+3. Cái **đo được** và đáng giữ làm mốc: ở 3 luồng, mỗi luồng còn **~45 tok/s**
+   (từ 71,4), tức **1,90×** thông lượng decode của một luồng. MTP nhận nháp
+   **6.420/10.238 = 62,7 %** — khoẻ, không có dấu hiệu hỏng của #27572.
+
+⇒ Đề nghị cho nghiệm thu: E chấm bằng **tổng decode ≥ 1,8 × C1** (đo được 1,90×,
+biên 5 %), và **nói rõ** là tổng decode. Ngưỡng `2×` giữ lại trong spec như một
+kỳ vọng đã bị phép đo bác — không âm thầm đổi số rồi coi như nó luôn thế.
+
+### 🔴 Và phép đo này ĐỔI MỘT CON SỐ ĐÃ CHỐT: sàn VRAM 700 → 600
+
+| | VRAM dùng | **trống** |
+|---|---|---|
+| nạp xong, rảnh | 15.309 / 16.311 MiB | **1.002** |
+| đỉnh C1 | 15.425 | 886 |
+| **đỉnh ảnh + C3** | **15.555** | **756** |
+
+L-18 chốt sàn **700** dựa trên con số **lúc rảnh** (~1.000 ⇒ "còn ~300 MiB dư").
+Nhưng cửa sàn chạy **trước mọi lượt**, kể cả lượt thứ ba lúc hai lượt kia đang
+chạy — tức nó đọc **756**, không đọc 1.002. Sàn 700 chỉ cách đỉnh **56 MiB**: một
+lát cắt nhỉnh hơn một chút là một **429 giả**, và khách không phân biệt được
+"bận thật" với "thước đo quá sát".
+
+⇒ Hạ về **600** — vẫn trong dải chủ dự án cho phép (600–700), để lại **156 MiB**.
+Xem `DECISION_LOG.md` **L-18** (đã đính chính).
+
+⚠️ `Shared Usage` đỉnh **672–678 MiB** ở cấu hình này. Đó là **sàn WDDM**, không
+   phải tràn: nó khác 0 ngay cả khi mọi thứ khoẻ, và nó co giãn theo `-ub`. Ai
+   viết báo động cho Task 6.3 phải đọc con số này trước khi đặt ngưỡng `> 0`.
