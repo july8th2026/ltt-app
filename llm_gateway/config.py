@@ -121,6 +121,58 @@ class Config:
     #:    — và prompt hệ thống của một CLI agent là ~22.000 token. Xem `nhip_tim`.
     nhip_tim_giay: float
 
+    # ── Sổ theo model (Dual-model 4.2) ───────────────────────────────────────
+    #
+    # ⛔ BA TRƯỜNG DƯỚI ĐÂY CÓ MẶC ĐỊNH, ĐỪNG BỎ MẶC ĐỊNH ĐI. Không phải vì tiện:
+    #    `Config` được dựng bằng tay ở nhiều bộ test (`Config(**mac_dinh)`), và
+    #    một trường bắt buộc mới làm mọi bộ đó vỡ cùng lúc vì một lý do không liên
+    #    quan đến thứ chúng đo.
+
+    #: Trần đồng thời **riêng cho từng model**, ghi đè `max_dong_thoi`.
+    #: `LTT_LLM_MAX_DONG_THOI__<model>`. Trống = mọi model dùng số chung.
+    #:
+    #: ⭐ Tồn tại vì hai card **không buộc bằng nhau**: §G3 đo 5060 Ti thừa sức 4
+    #:    slot ở ngữ cảnh đầy, còn 3090 chỉ vừa 3 (L-14). Hôm nay chủ dự án chọn
+    #:    3 cho cả hai "cho nhất quán", nên map này thường **rỗng** — nó là chỗ
+    #:    đổi một con số khi muốn, không phải một con số thứ hai.
+    dong_thoi_rieng: dict = field(default_factory=dict)
+
+    #: Bể KV **theo model**, tính bằng token. `LTT_LLM_TOKEN_POOL` (chung) và
+    #: `LTT_LLM_TOKEN_POOL__<model>` (riêng) ghi đè; mặc định **dẫn xuất từ
+    #: `catalog.HO_SO[*].max_context`**.
+    #:
+    #: 🔴 DẪN XUẤT, KHÔNG GÕ. Với `-kvu` thì bể KV **chính là** `-c` của hồ sơ, và
+    #:    `catalog` đã khai `-c` (và `test_334` đã buộc nó khớp `llama-swap.yaml`).
+    #:    Gõ một con số thứ hai vào đây là mở lại đúng cái khe đã nói sai năm lần
+    #:    ở dự án này — và lần này nó sai theo chiều nguy hiểm: bể của 3090 nhỏ
+    #:    hơn bể của 5060 Ti **40.960 token**, nên một con số chung sẽ để 3090
+    #:    nhận quá tay, KV cạn, và llama.cpp huỷ **mọi** slot.
+    token_pool_rieng: dict = field(default_factory=dict)
+
+    #: Sàn VRAM trống theo model, MiB: `LTT_LLM_VRAM_TRONG_TOI_THIEU_MB__<model>`.
+    #: Dưới sàn ⇒ **429 bận**, không nhận lượt mới (không giết lượt đang chạy).
+    #:
+    #: ⭐ VÌ SAO MẶC ĐỊNH 512 CHO `qwen35-api` — VÀ VÌ SAO **KHÔNG** PHẢI 700.
+    #:    Số đo §G3b: LTT-3.5 Q6_K + MTP giữ 15.309 MiB trên card 16.311 ⇒ trống
+    #:    **1.002 MiB** ở trạng thái phục vụ bình thường. Chủ dự án chốt ngưỡng
+    #:    **cảnh báo** 700 MiB (12/09).
+    #:
+    #:    Sàn **vào cửa** phải nằm DƯỚI ngưỡng cảnh báo, không bằng nó. Đặt 700 ở
+    #:    đây thì chỉ cần 302 MiB dao động là cổng từ chối **mọi** lượt 3.5 — mà
+    #:    §G3b ghi rõ một phiên RDP đang vẽ từng chiếm ~193 MiB, tức dao động ấy
+    #:    là chuyện thường. Một cái phanh ăn ở mức nhu cầu bình thường thì tệ hơn
+    #:    không có phanh: nó biến một cảnh báo thành một sự cố ngừng dịch vụ.
+    #:
+    #:    512 để lại ~490 MiB dư so với trạng thái đo được: đủ cho desktop/RDP
+    #:    cộng nhiễu, mà vẫn bắt được ca thật (một hộ lạ ăn > 490 MiB trên card
+    #:    ấy). Hai chốt, hai việc: 700 để **kêu**, 512 để **ngừng nhận**.
+    #:
+    #: ⛔ `qwen38-api` KHÔNG có sàn ở đây. Không phải bỏ quên: 3090 đã có
+    #:    `don_dep` (ngưỡng `vram_sach_mb`) và trọng tài ComfyUI lo đúng việc đó.
+    #:    Thêm một cái sàn thứ ba cho cùng một card là ba chốt nói ba thứ khác
+    #:    nhau về một trạng thái.
+    vram_trong_toi_thieu_mb: dict = field(default_factory=dict)
+
     @staticmethod
     def from_env() -> "Config":
         return Config(
@@ -168,4 +220,89 @@ class Config:
             max_dong_thoi=_int("LTT_LLM_MAX_DONG_THOI", 3),
             rpm=_int("LTT_LLM_RPM", 120),
             nhip_tim_giay=_float("LTT_LLM_NHIP_TIM_S", 15.0),
+            dong_thoi_rieng=_theo_model("LTT_LLM_MAX_DONG_THOI__"),
+            token_pool_rieng=_pool_theo_model(),
+            vram_trong_toi_thieu_mb=_san_vram(),
         )
+
+
+def _theo_model(tien_to: str) -> dict:
+    """Mọi biến `<tien_to><model>` thành `{model: int}`.
+
+    ⛔ TÊN MODEL LẤY TỪ CHÍNH BIẾN MÔI TRƯỜNG, không từ một danh sách cứng: một
+       hồ sơ mới thêm vào `catalog` phải cấu hình được **ngay**, không phải sau
+       khi ai đó nhớ ra còn một danh sách nữa cần sửa.
+    """
+    ra: dict = {}
+    for ten, gt in os.environ.items():
+        model = _duoi_ten_model(ten, tien_to)
+        if model is None:
+            continue
+        try:
+            so = int((gt or "").strip())
+        except ValueError:
+            continue
+        if so > 0:
+            ra[model] = so
+    return ra
+
+
+def _duoi_ten_model(ten_bien: str, tien_to: str) -> "str | None":
+    """Phần đuôi `<model>` của `<tien_to><model>`, đã hạ về chữ thường.
+
+    🔴 WINDOWS **VIẾT HOA** TÊN BIẾN MÔI TRƯỜNG. `os.environ` trên Windows không
+       phân biệt hoa thường và trả khoá đã viết hoa, nên
+       `LTT_LLM_TOKEN_POOL__qwen35-api` đọc ra thành `..._POOL__QWEN35-API` —
+       khớp tiền tố vẫn đúng, nhưng tên model thì **không** khớp `catalog`, và
+       hậu quả là một ghi đè cấu hình **im lặng không có tác dụng**.
+
+    ⚠️ Đây không phải giả thuyết: bộ kiểm của chính Task 4.2 đỏ vì nó, trên đúng
+       hệ điều hành mà máy B chạy. Id model trong kho này đều chữ thường, nên hạ
+       về chữ thường là phép đối chiếu đúng ở cả hai phía.
+    """
+    if not ten_bien.upper().startswith(tien_to.upper()):
+        return None
+    duoi = ten_bien[len(tien_to):].strip().lower()
+    return duoi or None
+
+
+def _pool_theo_model() -> dict:
+    """Bể KV theo model: **dẫn xuất** từ `catalog`, rồi mới cho env ghi đè.
+
+    Thứ tự: `catalog.HO_SO[*].max_context` (số `-c` thật của hồ sơ, đã bị
+    `test_334` buộc khớp `llama-swap.yaml`) → `LTT_LLM_TOKEN_POOL` (chung, cho
+    **mọi** model) → `LTT_LLM_TOKEN_POOL__<model>` (riêng).
+
+    ⭐ Ghi đè chung đứng TRƯỚC ghi đè riêng, nên một lần "hạ tạm cả hai bể" vẫn
+       giữ được một ngoại lệ cho một model. Nếu đảo lại thì biến chung sẽ xoá
+       biến riêng một cách vô hình.
+    """
+    from .catalog import HO_SO
+
+    ra = {m.ten: int(m.max_context) for m in HO_SO}
+    chung = _int("LTT_LLM_TOKEN_POOL", 0)
+    if chung > 0:
+        ra = {ten: chung for ten in ra}
+    ra.update(_theo_model("LTT_LLM_TOKEN_POOL__"))
+    return ra
+
+
+def _san_vram() -> dict:
+    """Sàn VRAM trống theo model. Mặc định: chỉ `qwen35-api` (5060 Ti) có sàn.
+
+    ⚠️ `...__<model>=0` **tắt** sàn của model ấy — và đó là một lựa chọn vận hành
+       hợp lệ (máy không có `nvidia-smi`, hoặc đang chẩn đoán), nên nó phải nói
+       được. `_theo_model` bỏ số 0, nên chỗ này đọc trực tiếp.
+    """
+    ra = {"qwen35-api": 512}
+    tien_to = "LTT_LLM_VRAM_TRONG_TOI_THIEU_MB__"
+    for ten, gt in os.environ.items():
+        model = _duoi_ten_model(ten, tien_to)
+        if model is None:
+            continue
+        try:
+            so = int((gt or "").strip())
+        except ValueError:
+            continue
+        ra[model] = max(0, so)
+    return ra

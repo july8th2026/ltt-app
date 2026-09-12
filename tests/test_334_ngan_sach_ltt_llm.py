@@ -442,9 +442,20 @@ class TestBanSaoConLai:
         assert not [t for t in ho_so if "vision" in t], (
             "con mot ho so vision rieng trong llama-swap.yaml")
 
-    @pytest.mark.xfail(strict=True, reason="cho Task 4.2 (catalog.py theo model)")
     def test_ho_so_vision_da_bien_mat_khoi_catalog_cong_B(self):
-        """`llm_gateway/catalog.py` vẫn còn `ModelSpec(ten="qwen38-vision")`.
+        """`llm_gateway/catalog.py` không còn `ModelSpec(ten="qwen38-vision")`.
+
+        🔵 `xfail(strict=True, reason="cho Task 4.2")` đã được **gỡ** ngày 12/09:
+           Task 4.2 khai lại `catalog.HO_SO` thành đúng hai hồ sơ (`qwen38-api`,
+           `qwen35-api`), **cả hai** `co_vision=True` (L-14 hệ quả 4), và sửa
+           hàng chục nhánh của `test_250` theo đúng cách — đổi điều chúng khẳng
+           định, không thu hẹp cho tới khi xanh. Nhánh "ảnh vào hồ sơ không
+           vision ⇒ 413" thành một **mệnh đề dương**:
+           `test_MOI_ho_so_dang_mo_deu_NHAN_duoc_anh`.
+
+        Dưới đây là lý do phép kiểm này từng được đánh dấu — giữ lại vì nó giải
+        thích vì sao dấu ấy là `xfail(strict=True)` chứ không phải một phép kiểm
+        bị xoá:
 
         ⛔ `xfail(strict=True)` CHO TASK 4.2, KHÔNG PHẢI MỘT PHÉP KIỂM BỊ TẮT —
            và **không phải** một phép kiểm bị thu hẹp cho tới khi nó xanh. Task

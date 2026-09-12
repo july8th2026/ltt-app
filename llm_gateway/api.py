@@ -38,6 +38,7 @@ from .config import Config
 from .don_dep import DonDepGpu
 from . import gpu_uuid as GPU
 from .gioi_han import GioiHan, boc_luong
+from .so_theo_model import SoTheoModel, token_dat_truoc
 from .upstream import MA_HET_GIO
 from .nhip_tim import boc_nhip_tim
 from .dem import Dem, boc_do_ttft
@@ -59,6 +60,7 @@ DUONG = {
 def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
                don_dep: Optional[DonDepGpu] = None,
                gioi_han: Optional[GioiHan] = None,
+               so: Optional[SoTheoModel] = None,
                now=time.monotonic) -> FastAPI:
     app = FastAPI(title="LTT LLM Gateway", version=__version__)
 
@@ -89,8 +91,35 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
         #    n viec dang chay"). Xem nhanh `_model_cua_ta` trong `trong_tai.py`.
         ho_kia_dang_ve=lambda: _comfy_dang_ve())
 
-    gh = gioi_han if gioi_han is not None else GioiHan(
-        max_dong_thoi=cfg.max_dong_thoi, rpm=cfg.rpm, now=now)
+    # ── Sổ suất: MỘT SỔ CHO MỖI MODEL (Dual-model 4.2) ──────────────────────
+    #
+    # 🔴 MỘT SỔ CHUNG NÓI SAI THEO CẢ HAI CHIỀU. Hai model ở hai card: sổ chung
+    #    báo "đầy" khi ba lượt đều nằm trên 3090 và 5060 Ti đang rảnh (⇒ 429 oan,
+    #    và máy A đọc 429 là "bận" nên khách đi ra đám mây), rồi gộp hai bể KV
+    #    khác cỡ thành một con số (⇒ 3090 nhận quá tay, KV cạn, llama.cpp huỷ
+    #    **mọi** slot). Xem `so_theo_model.py`.
+    #
+    # ⭐ `gioi_han=` (một `GioiHan` trần) VẪN NHẬN ĐƯỢC, và nó gói thành sổ gộp.
+    #    `test_258`/`test_363` tiêm nó để đo hàng rào và lưới thu hồi suất treo —
+    #    những phép kiểm ấy không nói gì về hai model. Ép chúng dựng hai sổ là
+    #    đổi thứ chúng đo; giữ cửa này là giữ nguyên phép đo của chúng.
+    if so is not None:
+        pass                                   # đã tiêm (test)
+    elif gioi_han is not None:
+        so = SoTheoModel.gop(gioi_han, tuple(catalog) or tuple(cfg.models_mo))
+    else:
+        so = SoTheoModel(
+            tuple(catalog),
+            max_dong_thoi=cfg.max_dong_thoi, rpm=cfg.rpm,
+            # Bể mặc định của một model không khai = cửa sổ hồ sơ của nó.
+            token_pool=0,
+            dong_thoi_rieng=dict(cfg.dong_thoi_rieng),
+            pool_rieng=dict(cfg.token_pool_rieng),
+            san_vram_mb=dict(cfg.vram_trong_toi_thieu_mb),
+            # lambda: `_vram_trong_cua_model` định nghĩa bên dưới, tên giải lúc
+            # GỌI — cùng khuôn với `model_cua_ta_dang_chay` ở trên.
+            doc_vram_trong=lambda m: _vram_trong_cua_model(m),
+            now=now)
 
     if don_dep is not None:
         pass                                   # đã tiêm (test)
@@ -442,7 +471,10 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
                 "output_tokens": cfg.max_output_tokens,
                 "images": cfg.max_images,
             },
-            "gioi_han": gh.trang_thai(),
+            # Khoi theo model + tong. `max_dong_thoi`/`rpm` la `None` khi hai
+            # model khai khac nhau — mot con so gop o do se tra loi SAI dung cau
+            # `test_334` hoi. Xem `SoTheoModel.trang_thai_chung`.
+            "gioi_han": so.trang_thai_chung(),
             # So cong don theo nhom ket cuc — vet duy nhat cua nhung luot
             # BI TU CHOI, thu ma `/metrics` cua engine khong bao gio thay.
             "dem": dem.trang_thai(),
@@ -539,7 +571,62 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
 
     # ── Đường ống chung của ba giao thức ─────────────────────────────────────
 
-    def _chuyen_tiep(giao_thuc: str, body: dict[str, Any]) -> Response:
+    def _vram_trong_cua_model(model: str) -> "int | None":
+        """VRAM còn trống trên card chạy `model`, MiB. `None` = không hỏi được.
+
+        Ánh xạ hồ sơ → card đi qua `gpu_uuid.vai_cua_model` (theo tiền tố tên hồ
+        sơ), nên một hồ sơ `qwen35-*` mới không phải khai thêm ở đây.
+        """
+        vai = GPU.vai_cua_model(model)
+        if not vai:
+            return None
+        try:
+            return GPU.vram_trong_mib(GPU.uuid_cua(vai))
+        except (GPU.VaiKhongCo, OSError, ValueError):
+            return None
+
+    def _dau_ra(do, request_id: str) -> dict:
+        """Header phản hồi. `X-LTT-Request-Id` chỉ dội lại khi bên gọi có gửi.
+
+        ⭐ Dội lại chứ không tự sinh: một mã do cổng tự đặt thì máy A không có gì
+           để nối vào, nên nó chỉ là một chuỗi đẹp trong log. Mã có ích là mã
+           **chung**, và bên bắt đầu lượt là bên duy nhất đặt được nó.
+        """
+        h = {"X-LTT-Token-Vao": str(do.token_vao)}
+        if request_id:
+            h["X-LTT-Request-Id"] = request_id
+        return h
+
+    def _tran_ra_xin(body: dict[str, Any]) -> int:
+        """Trần token SINH RA của yêu cầu này, theo cả ba giao thức.
+
+        ⛔ Không khai ⇒ lấy trần cấu hình, **không** lấy 0. KV lớn dần theo từng
+           token sinh, nên một lượt không khai `max_tokens` có thể chạy tới trần —
+           đặt chỗ bằng 0 là để bể KV vỡ ở giữa lượt, và lúc bể vỡ thì llama.cpp
+           huỷ **mọi** slot (`server-context.cpp:3688-3724`).
+        """
+        xin = body.get("max_tokens")
+        if xin is None:
+            xin = body.get("max_output_tokens")
+        if isinstance(xin, (int, float)) and xin > 0:
+            return min(int(xin), cfg.max_output_tokens)
+        return cfg.max_output_tokens
+
+    #: Lý do từ chối → nhóm bộ đếm. Ba loại 429 đòi ba hành động khác nhau của
+    #: người trực, nên gộp chúng là vứt đi đúng phần trả lời được "tôi phải làm
+    #: gì bây giờ" — cùng lập luận đã ghi ở `dem.NHOM`.
+    def _nhom_tu_choi(ly_do: str) -> str:
+        if "pool KV" in ly_do or "khong khai token" in ly_do:
+            return "ban_pool"
+        if "whale" in ly_do:
+            return "ban_whale"
+        if "VRAM trong" in ly_do:
+            return "ban_vram"
+        return "ban_day"
+
+    def _chuyen_tiep(giao_thuc: str, body: dict[str, Any], *,
+                     token_dat_khai: int = 0, la_whale: bool = False,
+                     request_id: str = "") -> Response:
         # Moc de do TTFT NHU KHACH THAY: gom ca cho suat, don card va nap
         # model — ba khoan `llama-server` khong bao gio nhin thay.
         t0 = now()
@@ -589,21 +676,32 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
         #    của `boc_luong` với luồng SSE. Quên một nhánh thì cổng tự bóp
         #    cổ mình sau vài lần lỗi, và triệu chứng sẽ là "429 mãi mãi" — rất khó
         #    lần ra vì lúc đó GPU hoàn toàn rảnh.
-        px_gh, suat = gh.cap_suat()
+        #
+        # ⭐ SỐ TOKEN ĐẶT TRƯỚC ĐI KÈM MỖI SUẤT. Máy A khai qua `X-LTT-Token-Dat`
+        #    (nó đã tính đỉnh KV để giữ lease của chính nó); không khai thì cổng
+        #    dùng **số của chính mình** — `do.token_vao` (thật nếu đã `/tokenize`,
+        #    không thì ước) cộng trần ra của yêu cầu. Đó không phải phỏng đoán, nó
+        #    là phép đo cổng vừa làm ở bước ngân sách ngay trên.
+        dat = token_dat_truoc(do.token_vao, _tran_ra_xin(body))
+        if token_dat_khai > 0:
+            dat = token_dat_khai
+        px_gh, suat = so.cap_suat(ten, dat, la_whale)
         if suat is None:
-            dem.cong("ban_day")
+            dem.cong(_nhom_tu_choi(px_gh.ly_do))
             raise HTTPException(
                 status_code=429,
-                detail={"ly_do": "cong dang day", "chi_tiet": px_gh.ly_do},
+                detail={"ly_do": "cong dang day", "chi_tiet": px_gh.ly_do,
+                        "model": ten},
                 headers={"Retry-After": str(px_gh.thu_lai_sau_s)})
         try:
-            return _chay_that(giao_thuc, body, spec, do, suat, t0)
+            return _chay_that(giao_thuc, body, spec, do, suat, t0,
+                              request_id=request_id)
         except BaseException:
             suat.tra()         # ⛔ kể cả HTTPException, kể cả Ctrl-C. Idempotent.
             raise
 
     def _chay_that(giao_thuc: str, body: dict[str, Any], spec: ModelSpec,
-                   do, suat, t0: float) -> Response:
+                   do, suat, t0: float, *, request_id: str = "") -> Response:
         """Phần tốn thời gian, đã cầm suất trong tay.
 
         ⚠️ Nó **không** tự trả suất khi thành công: với phản hồi thường, bên gọi
@@ -695,7 +793,7 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
             luong = boc_nhip_tim(luong, moi_giay=cfg.nhip_tim_giay)
             return StreamingResponse(boc_luong(luong, suat), status_code=ma,
                                      media_type=ct,
-                                     headers={"X-LTT-Token-Vao": str(do.token_vao)},
+                                     headers=_dau_ra(do, request_id),
                                      background=BackgroundTask(_don_dep))
 
         try:
@@ -707,7 +805,7 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
             return _loi_thuong_nguon(ma, thu)
         dem.cong("ok")
         return Response(content=thu, status_code=ma, media_type="application/json",
-                        headers={"X-LTT-Token-Vao": str(do.token_vao)})
+                        headers=_dau_ra(do, request_id))
 
     def _loi_thuong_nguon(ma: int, thu: bytes) -> JSONResponse:
         # ⛔ HẾT GIỜ ≠ HỎNG, VÀ SỰ KHÁC BIỆT ẤY TỐN TIỀN THẬT.
@@ -741,16 +839,70 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
                                      "ma_thuong_nguon": ma,
                                      "chi_tiet": thu[:500].decode("utf-8", "replace")})
 
+    # ── Ba giao thức, cùng ba header vào ────────────────────────────────────
+    #
+    # 🔑 BA HEADER, MỘT NGUỒN: máy A. Nó đã tính đỉnh KV và ngưỡng cá voi **theo
+    #    từng model** (`apps/ltt_llm/ngan_sach.NGUONG_WHALE`: 33.792 cho 3.8,
+    #    56.832 cho 3.5 — hai đường cong prefill khác nhau, §G4). Cổng **không
+    #    tính lại**: hai chỗ cùng tính một điều thì chúng sẽ lệch, và bên lệch là
+    #    bên ta tin.
+    #
+    #      X-LTT-Request-Id   nối log hai máy về một lượt (Task 4.3 ghi log)
+    #      X-LTT-Token-Dat    token KV lượt này chiếm ở đỉnh
+    #      X-LTT-Whale        lượt đủ dài để chặn prefill của người khác
+    #
+    # ⛔ VÀ KHÔNG CÓ HEADER NÀO ĐI LÊN THƯỢNG NGUỒN. `upstream.json/stream` nhận
+    #    đúng `(method, path, body, timeout)` — không có tham số `headers`, nên
+    #    `X-Conversation-Id` (máy A gắn cho hội thoại) **không có đường** lọt sang
+    #    llama-server. Đó là một bảo đảm **cấu trúc**, không phải một chỗ lọc dễ
+    #    quên; `test_1221` chốt đúng tính chất ấy.
+    def _so_header(gt: str) -> int:
+        try:
+            return max(0, int((gt or "").strip() or 0))
+        except ValueError:
+            return 0
+
+    def _co_header(gt: str) -> bool:
+        return (gt or "").strip().lower() in ("1", "true", "yes", "co")
+
+    def _id_sach(gt: str) -> str:
+        """Mã lượt, đã lọc. Cổng **dội lại** nó để hai máy nối được log.
+
+        ⛔ LỌC CHỨ KHÔNG DỘI THÔ. Đây là chuỗi do bên gọi đặt, và nó đi vào một
+           header phản hồi: một `\\r\\n` trong đó là chèn header (response
+           splitting). Chỉ giữ chữ-số-gạch, cắt 64 ký tự.
+        """
+        return "".join(c for c in (gt or "").strip()
+                       if c.isalnum() or c in "-_.:")[:64]
+
     @app.post("/v1/chat/completions")
-    def chat(body: dict = Body(...), _: None = Depends(auth)) -> Response:
-        return _chuyen_tiep("chat", body)
+    def chat(body: dict = Body(...), _: None = Depends(auth),
+             x_ltt_token_dat: str = Header(default=""),
+             x_ltt_whale: str = Header(default=""),
+             x_ltt_request_id: str = Header(default="")) -> Response:
+        return _chuyen_tiep("chat", body,
+                            token_dat_khai=_so_header(x_ltt_token_dat),
+                            la_whale=_co_header(x_ltt_whale),
+                            request_id=_id_sach(x_ltt_request_id))
 
     @app.post("/v1/responses")
-    def responses(body: dict = Body(...), _: None = Depends(auth)) -> Response:
-        return _chuyen_tiep("responses", body)
+    def responses(body: dict = Body(...), _: None = Depends(auth),
+                  x_ltt_token_dat: str = Header(default=""),
+                  x_ltt_whale: str = Header(default=""),
+                  x_ltt_request_id: str = Header(default="")) -> Response:
+        return _chuyen_tiep("responses", body,
+                            token_dat_khai=_so_header(x_ltt_token_dat),
+                            la_whale=_co_header(x_ltt_whale),
+                            request_id=_id_sach(x_ltt_request_id))
 
     @app.post("/v1/messages")
-    def messages(body: dict = Body(...), _: None = Depends(auth)) -> Response:
-        return _chuyen_tiep("messages", body)
+    def messages(body: dict = Body(...), _: None = Depends(auth),
+                 x_ltt_token_dat: str = Header(default=""),
+                 x_ltt_whale: str = Header(default=""),
+                 x_ltt_request_id: str = Header(default="")) -> Response:
+        return _chuyen_tiep("messages", body,
+                            token_dat_khai=_so_header(x_ltt_token_dat),
+                            la_whale=_co_header(x_ltt_whale),
+                            request_id=_id_sach(x_ltt_request_id))
 
     return app

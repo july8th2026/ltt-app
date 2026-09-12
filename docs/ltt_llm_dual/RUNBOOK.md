@@ -84,6 +84,22 @@ Cùng lần deploy đó, hai việc phải làm **tay** (không script nào làm
    `LTT_LLM_MODELS` fail-closed.
 2. `C:\ProgramData\LTTRender\gateway.env`: gỡ `LTT_HO_DUNG_CARD` và
    `LTT_TRA_CARD_GIAY` (Task 5.4).
+3. 🔴 **`gpu_may_b.json` phải có mặt trong cài đặt RENDER** (Task 6.1). Bản gốc
+   nằm ở `llm_gateway/deploy/`, nhưng cài đặt render trên máy B **không có** gói
+   `llm_gateway` — `render_gateway/deploy/deploy.ps1` chỉ chép gói `render_gateway`.
+   ⇒ Trước khi restart `LTTRenderGateway`, xác nhận trên máy B:
+
+   ```powershell
+   ssh ... "dir E:\AI\ltt_render\gateway\render_gateway\deploy\gpu_may_b.json"
+   ```
+
+   ⛔ **Thiếu tệp này là dừng hẳn việc sinh ảnh, không phải giảm chất lượng.**
+   Bộ đọc **fail-closed** có chủ đích: không biết UUID 3090 ⇒ mọi phép đo GPU trả
+   `None` ⇒ `xin_card` **từ chối mãi**. Đó là hướng đúng (thà từ chối hơn chạy
+   mù trên số của card khác), nhưng nó biến một tệp bỏ sót thành một sự cố
+   toàn phần, và log là chỗ duy nhất nói lý do.
+   ⭐ Đường thoát không cần deploy lại: đặt `LTT_GPU_DANH_TINH=<đường tệp>` trong
+   `C:\ProgramData\LTTRender\gateway.env` (ưu tiên cao nhất trong ba đường dò).
 
 ### 2.3 Máy B
 

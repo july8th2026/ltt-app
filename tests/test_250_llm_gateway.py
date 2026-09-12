@@ -127,7 +127,7 @@ class FakeUpstream:
         # ⛔ Khai theo dung duong THAT: `/upstream/<model>/tokenize`. Khai
         #    `/tokenize` tran thi bo gia se tra loi mot duong ma llama-swap
         #    THAT tra 404 — va phep kiem se xanh cho mot ban va da chet.
-        for ten in ("qwen38-api", "qwen38-vision"):
+        for ten in ("qwen38-api", "qwen35-api"):
             self.rieng["/upstream/" + ten + "/tokenize"] = _json.dumps(
                 {"tokens": list(range(so_token))}).encode()
 
@@ -147,7 +147,11 @@ def _cfg(**ghi_de) -> Config:
         comfy_url="http://127.0.0.1:8188", vram_sach_mb=2500, don_dep_bat=False,
         upstream_url="http://127.0.0.1:8280",
         host="127.0.0.1", port=8299, token="",
-        models_mo=("qwen38-api", "qwen38-vision"),
+        # 12/09: hai ho so THAT cua may B (Dual-model 4.2). `qwen38-vision`
+        # da bien mat khoi `catalog` - llama-swap khong con ho so nao khoi
+        # dong duoc no (Task 3.3), nen giu ten cu o day la do mot thu khong
+        # ton tai.
+        models_mo=("qwen38-api", "qwen35-api"),
         max_input_tokens=200_000, max_output_tokens=16_384,
         max_images=4, max_image_bytes=12 * 1024 * 1024,
         upstream_timeout_s=600.0, stream_timeout_s=900.0,
@@ -354,25 +358,36 @@ def test_thuong_nguon_chet_thi_van_413_theo_uoc():
     assert r.json()["detail"]["thay"] == 40_001      # so UOC, vi khong dem duoc
 
 
-def test_anh_gui_vao_ho_so_khong_vision_thi_413():
-    c, up = _client()
-    r = c.post("/v1/chat/completions", json={
-        "model": "qwen38-api",                     # hồ sơ 200K, KHÔNG nạp mmproj
-        "messages": [{"role": "user", "content": [
-            {"type": "image_url", "image_url": {"url": "data:image/png;base64,QUJD"}}]}]})
-    assert r.status_code == 413
-    assert r.json()["detail"]["truong"] == "images"
-    assert up.goi == []
+def test_MOI_ho_so_dang_mo_deu_NHAN_duoc_anh():
+    """🔵 12/09: phep kiem nay TRUOC day la `test_anh_gui_vao_ho_so_khong_vision_
+    thi_413`, va no chot rang `qwen38-api` tra 413 cho mot buc anh.
 
+    Dieu do het dung, khong phai vi ai noi long chot: §G1b do lai o `-np 3` va
+    `-c 221184` + `mmproj` **cung vua** card 24 GB, nen ca hai ho so cua may B
+    gio deu nap mmproj (L-14 he qua 4). Khong con ho so nao tu choi anh.
 
-def test_anh_gui_vao_ho_so_vision_thi_qua():
-    c, up = _client()
-    r = c.post("/v1/chat/completions", json={
-        "model": "qwen38-vision",
-        "messages": [{"role": "user", "content": [
-            {"type": "image_url", "image_url": {"url": "data:image/png;base64,QUJD"}}]}]})
-    assert r.status_code == 200
-    assert len(up.goi) == 1
+    ⭐ VA NO KHONG BI XOA. Xoa mot phep kiem khi tap hop no bao ve rong ra la
+       lam mat ca dieu no dang bao ve: hop dong "anh chi duoc vao ho so nao that
+       su nhin duoc" van con y nghia - chi la ve trai bay gio la MOI ho so. Nen
+       phep kiem doi thanh mot **menh de duong**: moi ho so dang mo deu nhan anh,
+       va bat ky ho so `co_vision=False` nao lot vao `catalog` phai bi bat.
+    """
+    from llm_gateway.catalog import HO_SO
+
+    khong_vision = [m.ten for m in HO_SO if not m.co_vision]
+    assert not khong_vision, (
+        f"ho so khong nhin duoc anh da quay lai: {khong_vision} - `llama-swap.yaml` "
+        f"nap mmproj cho ca hai ho so, nen mot `co_vision=False` o day la mot loi "
+        f"khai bao, va trieu chung se la 413 cho mot buc anh le ra doc duoc")
+
+    anh = {"type": "image_url", "image_url": {"url": "data:image/png;base64,QUJD"}}
+    for m in HO_SO:
+        c, up = _client(_cfg(models_mo=(m.ten,)))
+        r = c.post("/v1/chat/completions", json={
+            "model": m.ten,
+            "messages": [{"role": "user", "content": [anh]}]})
+        assert r.status_code == 200, f"{m.ten}: {r.text}"
+        assert len(up.goi) == 1
 
 
 def test_qua_nhieu_anh_thi_413():
@@ -380,7 +395,7 @@ def test_qua_nhieu_anh_thi_413():
     noi_dung = [{"type": "image_url", "image_url": {"url": "data:image/png;base64,QUJD"}}
                 for _ in range(3)]
     r = c.post("/v1/chat/completions", json={
-        "model": "qwen38-vision", "messages": [{"role": "user", "content": noi_dung}]})
+        "model": "qwen35-api", "messages": [{"role": "user", "content": noi_dung}]})
     assert r.status_code == 413
     assert r.json()["detail"]["truong"] == "images"
 
@@ -388,7 +403,7 @@ def test_qua_nhieu_anh_thi_413():
 def test_anh_qua_lon_thi_413():
     c, _ = _client(_cfg(max_image_bytes=1024))
     r = c.post("/v1/chat/completions", json={
-        "model": "qwen38-vision", "messages": [{"role": "user", "content": [
+        "model": "qwen35-api", "messages": [{"role": "user", "content": [
             {"type": "image_url",
              "image_url": {"url": "data:image/png;base64," + "A" * 8000}}]}]})
     assert r.status_code == 413
@@ -419,7 +434,7 @@ def test_vao_cong_ra_vuot_cua_so_ngu_canh_thi_413():
     """
     from llm_gateway.catalog import HO_SO
 
-    cua_so = {m.ten: m.max_context for m in HO_SO}["qwen38-vision"]
+    cua_so = {m.ten: m.max_context for m in HO_SO}["qwen35-api"]
     # Vào ~55 % cửa sổ, ra ~55 % cửa sổ: mỗi cái vừa trần của nó, cộng lại tràn.
     token_vao = int(cua_so * 0.55)
     token_ra = int(cua_so * 0.55)
@@ -427,7 +442,7 @@ def test_vao_cong_ra_vuot_cua_so_ngu_canh_thi_413():
 
     c, _ = _client(_cfg(max_input_tokens=cua_so * 2, max_output_tokens=cua_so))
     r = c.post("/v1/chat/completions", json={
-        "model": "qwen38-vision",
+        "model": "qwen35-api",
         "messages": [{"role": "user", "content": "x" * ky_tu}],
         "max_tokens": token_ra})
     assert r.status_code == 413, r.text
@@ -439,9 +454,9 @@ def test_vao_cong_ra_vuot_cua_so_ngu_canh_thi_413():
 def test_anh_kieu_anthropic_va_responses_deu_dem_duoc():
     """Ba giao thức khai ảnh ba kiểu khác nhau — không được bỏ sót kiểu nào."""
     c, _ = _client(_cfg(max_images=0))
-    anthropic = {"model": "qwen38-vision", "messages": [{"role": "user", "content": [
+    anthropic = {"model": "qwen35-api", "messages": [{"role": "user", "content": [
         {"type": "image", "source": {"type": "base64", "data": "QUJD"}}]}]}
-    responses = {"model": "qwen38-vision", "input": [{"role": "user", "content": [
+    responses = {"model": "qwen35-api", "input": [{"role": "user", "content": [
         {"type": "input_image", "image_url": "data:image/png;base64,QUJD"}]}]}
     assert c.post("/v1/messages", json=anthropic).status_code == 413
     assert c.post("/v1/responses", json=responses).status_code == 413
@@ -537,7 +552,7 @@ def test_token_dung_thi_qua():
 def test_health_bao_du_thu_can_de_chan_doan():
     c, _ = _client()
     d = c.get("/health").json()
-    assert d["models_mo"] == ["qwen38-api", "qwen38-vision"]
+    assert d["models_mo"] == ["qwen35-api", "qwen38-api"]
     assert d["thuong_nguon"]["song"] is True
     assert d["trong_tai"]["ban"] is False
     assert d["tran"]["input_tokens"] == 200_000
@@ -598,7 +613,7 @@ def test_nap_env_doc_tep_va_ghi_de_moi_truong(tmp_path, monkeypatch):
     tep.write_text(
         "# ghi chu bi bo qua\n"
         "\n"
-        "LTT_LLM_MODELS=qwen38-api,qwen38-vision\n"
+        "LTT_LLM_MODELS=qwen38-api,qwen35-api\n"
         "LTT_LLM_PORT=8299\n"
         "KHONG_PHAI_CUA_TA=x\n",
         encoding="utf-8")
@@ -608,7 +623,7 @@ def test_nap_env_doc_tep_va_ghi_de_moi_truong(tmp_path, monkeypatch):
 
     assert nap_env(tep) == 2
     import os
-    assert os.environ["LTT_LLM_MODELS"] == "qwen38-api,qwen38-vision", \
+    assert os.environ["LTT_LLM_MODELS"] == "qwen38-api,qwen35-api", \
         "tep phai THANG - no la noi nguoi van hanh sua"
     assert os.environ["LTT_LLM_PORT"] == "8299"
     assert "KHONG_PHAI_CUA_TA" not in os.environ, \
@@ -637,7 +652,7 @@ def test_url_anh_tu_xa_bi_tu_choi(url):
     nang cap. Chot o day lam no thanh bao dam CUA TA."""
     c, up = _client()
     r = c.post("/v1/chat/completions", json={
-        "model": "qwen38-vision",
+        "model": "qwen35-api",
         "messages": [{"role": "user", "content": [
             {"type": "image_url", "image_url": {"url": url}}]}]})
     assert r.status_code == 413
@@ -648,7 +663,7 @@ def test_url_anh_tu_xa_bi_tu_choi(url):
 def test_anh_data_url_van_qua():
     c, up = _client()
     r = c.post("/v1/chat/completions", json={
-        "model": "qwen38-vision",
+        "model": "qwen35-api",
         "messages": [{"role": "user", "content": [
             {"type": "image_url", "image_url": {"url": "data:image/png;base64,QUJD"}}]}]})
     assert r.status_code == 200

@@ -191,10 +191,10 @@ def test_doi_sang_ho_so_KHAC_cua_ta_KHONG_bi_chan():
     # Card "ban" 19.973 MiB — nhung do la VRAM CUA TA.
     d, goi = _don([19973, 19973], so_lan_thu=2)
     up = UpDangChayModelKHAC()
-    c = TestClient(create_app(_cfg(models_mo=("qwen38-api", "qwen38-vision")),
+    c = TestClient(create_app(_cfg(models_mo=("qwen38-api", "qwen35-api")),
                               up, trong_tai=_tt_ranh(), don_dep=d))
     r = c.post("/v1/chat/completions",
-               json={"model": "qwen38-vision", "messages": []})
+               json={"model": "qwen35-api", "messages": []})
     assert r.status_code == 200, "llama-swap tu doi duoc — dung chan no bang 429"
     assert goi["nha"] == 0, "khong duoc bao ComfyUI nha VRAM cua chinh ta"
 

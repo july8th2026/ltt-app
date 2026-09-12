@@ -397,8 +397,13 @@ def test_render_gateway_KHONG_con_doc_GPU_theo_dong():
     `render_gateway` sạch thì phép kiểm này **XPASS ⇒ ĐỎ**, buộc người làm 6.1
     gỡ dấu — nên nó vẫn cưỡng chế được điều nó sinh ra để cưỡng chế.
 
-    Tệp còn nợ khi viết dòng này: `render_gateway/busy.py`,
-    `render_gateway/diagnostics/gpu_check.py`.
+    Tệp còn nợ, **đo lại lúc Task 6.1 đã landed** (`_quet_goi("render_gateway")`
+    ngày 12/09): `render_gateway/diagnostics/gpu_check.py::_hoi_smi` và
+    `render_gateway/deploy/chay_baseline.py::run`. `busy.py` đã sạch — 6.1 sửa
+    đúng tệp mà brief của nó nêu, nên hai tệp trên là **phần sót**, không phải
+    phần bị bỏ: chúng cùng đọc `dong[0]` trên đầu ra hai dòng, và
+    `chay_baseline.py` còn đem con số ấy vào một **mốc baseline** — tức một số đo
+    của card sai đội lốt một mốc so chiếu.
     """
     assert _quet_goi("render_gateway") == []
 
