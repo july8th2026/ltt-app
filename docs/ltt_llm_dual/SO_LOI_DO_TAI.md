@@ -9,7 +9,7 @@
 | ma | trieu chung ĐO ĐƯỢC | loai | sua o | doi chung | trang thai |
 |---|---|---|---|---|---|
 | L-01 | qua may A: mot model bi nen lam model KIA cham **2,1-8,1x** | **CHAN** | `platform_core/api_pool.py` | 4 vong sau deploy: **0,99x · 1,08x · 1,15x · 1,10x**; `pg_locks` **0/369** mau | ✅ **DONG 13/09** |
-| L-02 | `ltt-3.5` voi `max_tokens <= 300` tra **RONG** va van bi tinh tien | DOC LAP | may B / ban khai | 300->rong, 600->"391" | cho |
+| L-02 | `ltt-3.5` voi `max_tokens <= **200**` tra **RONG** va van bi tinh tien (`mcredit_du` **+4**) | DOC LAP | ban khai may A (cua vao) | 200->rong+4mc; 300->dung | **da khoanh 13/09** |
 | L-03 | `ltt-3.8` khai *"Text only"* du engine DA nap `mmproj` | DOC LAP | ban khai (may A) | `catalog.HO_SO` co_vision=True ca hai | cho |
 | L-04 | bo cham `bia-01` cam chuoi tieng Viet, model tra loi tieng Anh -> **diem dung gia** | DOC LAP | bo do | — | cho |
 | L-05 | **108/131 job loi 14 ngay** deu la `AmbiguousProviderError: mat ket noi sau khi bat dau gui` | CAN DO | chua ro | chua co | **chua phai phat hien** |
@@ -197,3 +197,53 @@ Hai vong trung khop ⇒ ket luan "hai GPU doc lap" nay co **hai** phep do doc la
 
 Lam theo loi cu — thay 6,2x, doc ma, tim ra khoa, sua, deploy — la sua **nham
 cho** va tin la xong.
+
+## L-02 — da khoanh 13/09/2026, va SO CU SAI O BA CHO
+
+Do qua `https://app.lttstudios.com`, khoa that, quet `max_tokens` 100..800:
+
+| model | max_tokens | noi dung | token_ra | finish | mcredit |
+|---|---:|---|---:|---|---:|
+| `ltt-3.5` | 100 | **RONG** | 100 | `length` | — |
+| `ltt-3.5` | 200 | **RONG** | 200 | `length` | **+4** |
+| `ltt-3.5` | 300 | dung | 294 | `stop` | — |
+| `ltt-3.5` | 600 | dung | 337 | `stop` | +6 |
+| `ltt-3.8` | 100..800 | dung | 63 | `stop` | +25 |
+
+### Ba dinh chinh voi ban ghi cu
+
+| so cu ghi | do duoc |
+|---|---|
+| rong khi `max_tokens <= 300` | rong khi **<= 200**; o 300 tra loi **DUNG** |
+| "model tra rong" | `token_ra` = **dung bang** `max_tokens`, `finish_reason=length` ⇒ model **sinh du**, nhung la SUY NGHI, bi cat truoc khi toi cau tra loi |
+| loi o "may B / ban khai" | may B lam **dung**: sinh het tran roi dung. Cho sua nam o **cua vao may A** |
+
+### 🔴 "Van bi tinh tien" — DUNG, va phep do dau tien cua toi suyt bac bo no
+
+Doc `credit` (so nguyen) truoc/sau: **0**. Ket luan "khong bi thu" la **SAI**.
+`thanh_toan._cong_du` (C3) **chi thu phan NGUYEN** va don phan le vao
+`users.mcredit_du`. Do lai dung tang:
+
+```
+luot RONG (3.5, 200 tok):  credit_charged=0  MA  mcredit_du +4
+```
+
+⇒ Khach tra 4 mcredit va nhan mot chuoi **rong**.
+
+⛔ Bai hoc: **san lam tron la mot tang khac voi bang gia**. Doc sai tang thi ca
+   hai chieu ket luan deu sai duoc — o day no suyt bien mot loi tien THAT thanh
+   "khong co gi".
+
+### Vi sao no KHONG phai "may B hong", va ban sua phai o dau
+
+Hanh vi hien tai **dung chuan OpenAI**: `finish_reason=length` + content rong la
+cach chuan bao "het tran truoc khi xong". Cai sai la nen tang **biet truoc** model
+nay co `--reasoning-budget` (L-15/L-16) ma van nhan mot `max_tokens` khong the
+nao du, dot GPU, thu tien, roi tra rong.
+
+⇒ Sua **o cua vao**, cung khuon 413 cua input qua dai: `max_tokens` duoi nguong
+  kha thi cua model ⇒ tu choi NGAY, khong dot GPU. Nguong phai **do nhieu lan**
+  chu khong lay tu mot luot — `token_ra` cua 3.5 do duoc 294/298/345/284/288 o
+  cac muc khac nhau, tuc no **ngau nhien**; mot nguong dat theo mot luot se sai.
+
+⬜ **CHUA LAM:** do nguong that (>= 5 luot moi muc, quanh 200-400), roi moi sua.
