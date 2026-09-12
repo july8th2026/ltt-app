@@ -87,3 +87,67 @@ def test_drill_khoi_phuc_biet_uq_moi():
            if (getattr(c, "name", "") or "").startswith("uq_")}
     assert ten, "bang gpu_residency khong con rang buoc UNIQUE nao"
     assert all(f'"{t}"' in van for t in ten), ten
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Phần B — máy trạng thái thuần (Task 5.2)
+#
+# Ba mạch: (B1) từ vựng + bảng chuyển hợp lệ · (B2) hàm chuyển · (B3) câu hỏi
+# admission. Không CSDL, không HTTP, không đồng hồ: thời gian vào bằng tham số.
+# ══════════════════════════════════════════════════════════════════════════════
+
+from platform_core.llm import residency as R  # noqa: E402
+
+
+# ── B1. Từ vựng và bảng chuyển hợp lệ ────────────────────────────────────────
+
+def test_tu_vung_du_va_khong_trung():
+    assert len(set(R.TRANG_THAI)) == len(R.TRANG_THAI) == 7
+    assert set(R.TRANG_THAI) == {R.LLM, R.XA_LLM, R.NHA_LLM, R.ANH, R.TRA_ANH,
+                                R.NAP_LLM, R.LOI_NAP}
+    assert len({R.NHA_LLM_LENH, R.NAP_LLM_LENH, R.FREE_COMFY_LENH}) == 3
+
+
+def test_bang_chuyen_khai_du_moi_trang_thai_va_khong_tu_lap():
+    assert set(R.CHUYEN_HOP_LE) == set(R.TRANG_THAI)
+    for tu, den in R.CHUYEN_HOP_LE.items():
+        assert den <= set(R.TRANG_THAI), (tu, den)
+        assert tu not in den, f"{tu} tu lap: 'o lai' khong phai mot chuyen"
+
+
+@pytest.mark.parametrize("tu,den", [
+    # Đổi cư trú mà KHÔNG drain trước — chính là điều cả chương trình cấm (L-9).
+    (R.LLM, R.NHA_LLM),
+    (R.LLM, R.ANH),
+    # Vẽ trước khi máy B xác nhận LTT-3.8 đã rời card ⇒ hai model một card.
+    (R.XA_LLM, R.ANH),
+    # Nạp LLM lại mà bỏ qua bước chờ lượt vẽ chạy hết ⇒ giết việc đang chạy.
+    (R.ANH, R.NAP_LLM),
+    # Khai "LLM đang cư trú" mà chưa nạp ⇒ admission mở cho một model không có.
+    (R.TRA_ANH, R.LLM),
+])
+def test_chuyen_pha_bo_drain_khong_co_trong_bang(tu, den):
+    assert den not in R.CHUYEN_HOP_LE[tu]
+
+
+def test_moi_cap_ngoai_bang_deu_bi_may_tu_choi():
+    """Bảng không phải tài liệu: `_sang` là cửa duy nhất đổi trạng thái, và nó
+    NÉM với mọi cặp ngoài bảng. 7×7 cặp, trừ đường chéo và các cặp hợp lệ."""
+    so_cam = 0
+    for tu in R.TRANG_THAI:
+        for den in R.TRANG_THAI:
+            if tu == den or den in R.CHUYEN_HOP_LE[tu]:
+                continue
+            so_cam += 1
+            with pytest.raises(ValueError):
+                R._sang(R.TrangThai(ten=tu), den, 1.0)
+    assert so_cam == 7 * 7 - 7 - sum(len(v) for v in R.CHUYEN_HOP_LE.values())
+    assert so_cam >= 30, so_cam
+
+
+def test_sang_dat_moc_thoi_gian_va_giu_phan_con_lai():
+    tt = R.TrangThai(ten=R.NAP_LLM, tu_luc=5.0, cua_so_bat_dau=1.0, lan_nap_loi=2)
+    moi = R._sang(tt, R.LOI_NAP, 99.0, lan_nap_loi=3)
+    assert (moi.ten, moi.tu_luc, moi.lan_nap_loi) == (R.LOI_NAP, 99.0, 3)
+    assert moi.cua_so_bat_dau == 1.0
+    assert tt.ten == R.NAP_LLM, "TrangThai phai bat bien (frozen)"
