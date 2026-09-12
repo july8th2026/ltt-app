@@ -288,3 +288,55 @@ nay **khong co mot phep kiem nao**. Do la ly do L-04 lot duoc.
 
 Ghim: `tests/test_1237_bo_cham_do_tai.py` (14 ca), trong do bon ca `cau LAC DE
 van SAI` la thu phan biet ban sua that voi ban sua chi them chuoi.
+
+## L-02 — GOC va BAN SUA (13/09/2026). Mot phan da dong, mot phan CON MO.
+
+### Goc: template CHINH THUC hardcode `xhigh` — khong phai "khach dat tran thap"
+
+Phep do PHAN BIET chi ra dich danh:
+
+```
+ltt-3.5  reasoning_effort = None / low / xhigh  ->  token_ra 250/250/250, RONG ca ba
+ltt-3.8  cung ba gia tri                       ->  token_ra  63/ 63/ 62, dung ca ba
+```
+
+Tham so cua khach KHONG doi duoc gi o 3.5 => co thu khac ghi de no. Khac biet duy
+nhat luc ay: 3.8 dung template froggeric, 3.5 dung template chinh thuc trong GGUF.
+
+[nguon] `froggeric/Qwen-Fixed-Chat-Templates` mo ta dung loi nay tung chu:
+*"Official `xhigh` default burns token budgets with zero content returned"*.
+Model card Qwen: khuyen **32.768** token ra, va co **HAI nut rieng** —
+`max_tokens` (do dai) vs `enable_thinking=False` (tat suy nghi).
+
+⇒ Ha `max_tokens` KHONG phai cach tat suy nghi. Ban sua o cua vao (dat mot san
+  `max_tokens`) la sua nham tang, va no con cuop mat cua khach mot tham so hop le.
+
+### Da lam
+
+1. `qwen35-api` dung `--chat-template-file chat_template_v22.5.jinja` (tep RIENG;
+   3.8 giu v22.3 dang chay tot — mot bien so moi lan).
+2. `reasoning_effort` mo them **`none`** o ca ba cho khai.
+
+### Do sau khi sua — deploy ca hai may, nghiem thu 0/0/0
+
+| model | effort | max_tokens | token_ra | ket qua |
+|---|---|---|---|---|
+| `ltt-3.5` | **none** | 100 · 200 | **4 · 4** | **dung** |
+| `ltt-3.5` | low | 100 · 200 | 100 · 200 | **rong** |
+| `ltt-3.8` | **none** | 100 · 200 | **4 · 4** | **dung** |
+| `ltt-3.8` | low | 100 · 200 | 63 · 63 | dung |
+
+`none` giam token ra **50 lan** (200 -> 4) va tra loi dung ngay o `max_tokens=100`.
+
+### 🔴 CON MO — va toi da DOAN SAI mot lan o day
+
+Toi doan ban va v22.5 se chua luon `low` tren 3.5. **Khong**. Voi `low`/`medium`,
+`ltt-3.5` VAN tieu dung bang `max_tokens` va tra rong.
+
+⇒ Phan con lai cua L-02: mot khach dung `low`/`medium` (hoac khong khai gi) voi
+  `max_tokens` thap VAN nhan rong va VAN bi thu mcredit. Hai duong co the:
+
+  * canh bao/tu choi o cua vao khi `max_tokens` thap VA thinking dang bat; hoac
+  * tra loi RO khi `finish_reason=length` + content rong, thay vi 200 im lang.
+
+⚠️ Chua chon duong nao — can do them va doi chieu nguon truoc (hop dong §1b).
