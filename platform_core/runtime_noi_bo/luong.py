@@ -304,7 +304,7 @@ def tien_kiem(db, *, user_id: str, tool_name: str, than: dict, duong: str,
     moi = uoc_moi.uoc_token_moi(user_id, tin, executor.estimate_input)
 
     if not thanh_toan.du_so_du(db, user_id=user_id, token_vao_uoc=vao_uoc,
-                               max_tokens=xin_ra):
+                               max_tokens=xin_ra, model=ten):
         metrics.increment(metrics.CREDIT_EXHAUSTED)
         raise ThieuCredit("so du khong du cho phan giu cho cua luot nay")
 
@@ -363,7 +363,8 @@ def vao_va_cho(tk: TienKiem, *, db_luong, han_s: float, dong_ho=None, ngu=None):
     try:
         da_giu = thanh_toan.giu_cho_luot(
             db, user_id=tk.user_id, request_id=tk.request_id,
-            token_vao_uoc=tk.token_vao_uoc, max_tokens=tk.xin_ra)
+            token_vao_uoc=tk.token_vao_uoc, max_tokens=tk.xin_ra,
+            model=tk.model_alias)
         db.commit()
     except credit.ThieuCreditError as e:
         # Số dư tụt giữa lúc tiền kiểm và lúc được nhận (khách chạy song song).
@@ -621,7 +622,7 @@ def chuan_bi(db, *, user_id: str, tool_name: str, than: dict, duong: str,
     try:
         da_giu = thanh_toan.giu_cho_luot(
             db, user_id=user_id, request_id=request_id,
-            token_vao_uoc=vao_uoc, max_tokens=xin_ra)
+            token_vao_uoc=vao_uoc, max_tokens=xin_ra, model=ten)
     except credit.ThieuCreditError as e:
         # Không đủ tiền thì không đốt GPU. Chốt trước, không phải sau.
         metrics.increment(metrics.CREDIT_EXHAUSTED)
@@ -771,7 +772,7 @@ def _phat(mo, luot: LuotLuong, *, trang_thai=None) -> Generator[bytes, None, Non
                 (f"{t_byte_dau:.1f}s" if t_byte_dau is not None else "-"),
                 n_khoi, dem.token_ra)
             luot.ket_qua = quyet_toan(cb.user_id, cb.request_id, dem, cb.da_giu,
-                                      trang_thai)
+                                      trang_thai, model=cb.model_alias)
             if vo is not None:
                 mo.hong(vo)
             else:
@@ -782,12 +783,18 @@ def _phat(mo, luot: LuotLuong, *, trang_thai=None) -> Generator[bytes, None, Non
 
 
 def quyet_toan(user_id: str, request_id: str, dem: DemToken, da_giu: int,
-               trang_thai=None):
+               trang_thai=None, *, model: str):
     """Chốt tiền, trong một phiên CSDL **mới**. Trả `KetQuaThu` hoặc `None`.
 
     ⚠️ Phiên của request đã đóng từ lúc phản hồi bắt đầu — generator này chạy sau
        đó. Dùng lại phiên cũ là `DetachedInstanceError` hoặc tệ hơn: một giao
        dịch không bao giờ được commit.
+
+    🔴 `model` là **keyword bắt buộc** (D07): cửa stream giữ tiền lúc được nhận
+       và quyết toán ở đây, hai chỗ cách nhau cả một lượt sinh token. Bí danh đi
+       kèm trong `ChuanBi.model_alias` suốt đường đó, nên không có chỗ nào phải
+       đoán lại — và đặt nó sau `*` là để một bên gọi cũ **đỏ ngay**, chứ không
+       lặng lẽ nhận `trang_thai` vào đúng chỗ của model.
     """
     from platform_core.db import get_session
     from platform_core.llm import thanh_toan
@@ -796,7 +803,8 @@ def quyet_toan(user_id: str, request_id: str, dem: DemToken, da_giu: int,
     db = next(gen)
     try:
         thu = thanh_toan.quyet_toan_hoac_hoan(
-            db, user_id=user_id, request_id=request_id, su_dung=dem.su_dung())
+            db, user_id=user_id, request_id=request_id, su_dung=dem.su_dung(),
+            model=model)
         db.commit()
         # Sổ request của `/api/v1` đọc `api_credit_delta` SAU generator này
         # (`server/api/guard.py:_write_request_log_muon`). Client nội bộ truyền

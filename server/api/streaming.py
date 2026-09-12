@@ -245,7 +245,8 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
     #    completions`: một lượt đang chờ **không được** có dòng giữ tiền nào
     #    (INV-MJ-1), nên số dư phải kiểm được mà không giữ.
     if not thanh_toan.du_so_du(db, user_id=principal.user_id,
-                               token_vao_uoc=vao_uoc, max_tokens=xin_ra):
+                               token_vao_uoc=vao_uoc, max_tokens=xin_ra,
+                               model=ten):
         metrics.increment(metrics.CREDIT_EXHAUSTED)
         raise insufficient_credit(
             "Insufficient credit for the ceiling this request would hold.")
@@ -291,7 +292,7 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
     try:
         da_giu = thanh_toan.giu_cho_luot(
             db, user_id=principal.user_id, request_id=request_id,
-            token_vao_uoc=vao_uoc, max_tokens=xin_ra)
+            token_vao_uoc=vao_uoc, max_tokens=xin_ra, model=ten)
     except credit.ThieuCreditError as e:
         db.rollback()
         _release_ticket("thieu_credit")
@@ -362,7 +363,8 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
                 su_dung=SuDung(token_vao=e.ket_qua.token_vao,
                                token_ra=e.ket_qua.token_ra,
                                token_vao_cache=e.ket_qua.token_vao_cache,
-                               dang_tin=e.ket_qua.do_duoc))
+                               dang_tin=e.ket_qua.do_duoc),
+                model=ten)
         else:
             thanh_toan.hoan_luot(db, user_id=principal.user_id,
                                  request_id=request_id)
@@ -439,7 +441,8 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
             db, user_id=principal.user_id, request_id=request_id,
             su_dung=SuDung(token_vao=kq.token_vao, token_ra=kq.token_ra,
                            token_vao_cache=kq.token_vao_cache,
-                           dang_tin=kq.do_duoc))
+                           dang_tin=kq.do_duoc),
+            model=ten)
         # ⛔ P08 F-01, NHANH KHONG-STREAM. Ban va dau chi cham `_quyet_toan` cua
         #    generator, nen cua nay van ghi `+0` — va do that tren production
         #    ngay sau khi deploy bat duoc: cung mot route `/api/v1/messages`,

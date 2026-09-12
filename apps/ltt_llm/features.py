@@ -152,6 +152,11 @@ class KetQua:
         ⛔ KHÔNG ĐO ĐƯỢC THÌ KHÔNG THU. `dang_tin=False` ⇒ trả **0**, không trả
            phần đã giữ. Thu tiền mà không có bằng chứng còn tệ hơn mất một ít
            tiền — cùng luật với `thanh_toan.quyet_toan_hoac_hoan`.
+
+        🔴 GIÁ THEO `self.model` (D07, dual-model 2.5) — **model thật đã phục
+           vụ**, không phải mặc định của cửa. `self.model` là bí danh khách xin
+           và là chính bí danh `chay()` đã dịch sang id nội bộ để gọi máy B, nên
+           không có khe nào cho "tính giá model này, chạy model kia".
         """
         from platform_core.llm import gia_token
         from platform_core.llm.cong_vlm import SuDung
@@ -161,7 +166,8 @@ class KetQua:
         cp = gia_token.tinh(SuDung(token_vao=self.token_vao,
                                    token_ra=self.token_ra,
                                    token_vao_cache=self.token_vao_cache,
-                                   dang_tin=True))
+                                   dang_tin=True),
+                            self.model)
         return cp.tong_credit_lam_tron_len
 
     def as_result(self) -> dict:

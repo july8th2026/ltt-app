@@ -119,8 +119,17 @@ def _cost(params: dict) -> int:
 
     ⛔ Không tự nghĩ ra công thức ở đây. Gọi `gia_token` — nó là chỗ duy nhất được
        phép đại diện cho giá, và cả cửa đồng bộ lẫn cửa job đều đọc nó.
+
+    🔴 GIÁ THEO MODEL KHÁCH XIN (D07, dual-model 2.5). Trần của cửa job phải
+       dùng **cùng** bảng giá mà quyết toán sẽ dùng; lấy giá 3.8 cho một job 3.5
+       là báo giá gấp 20 lần ở token ra và chặn khách ở cửa số dư.
+
+    ⚠️ `params["model"]` vắng ⇒ `MODEL_MAC_DINH` — **cùng** mặc định mà
+       `features.kiem_tham_so` áp cho chính yêu cầu này, đọc từ `canonical` chứ
+       không gõ lại tên. Tên lạ thì `kiem_tham_so`/`kiem_ten_model` đã chặn từ
+       trước; tới được đây mà vẫn lạ thì `gia_token` ném, không đoán.
     """
-    from platform_core.llm import gia_token
+    from platform_core.llm import canonical, gia_token
 
     from apps.ltt_llm.features import uoc_token_vao
 
@@ -130,7 +139,9 @@ def _cost(params: dict) -> int:
     xin_ra = int(xin_ra) if isinstance(xin_ra, (int, float)) else MAX_TOKENS_MAC_DINH
     xin_ra = max(1, min(xin_ra, MAX_TOKENS_TRAN))
 
-    tran = gia_token.uoc_tran(token_vao_uoc=token_vao_uoc, max_tokens=xin_ra)
+    model = str(params.get("model") or canonical.MODEL_MAC_DINH)
+    tran = gia_token.uoc_tran(token_vao_uoc=token_vao_uoc, max_tokens=xin_ra,
+                              model=model)
     return max(1, tran.tong_credit_lam_tron_len)
 
 

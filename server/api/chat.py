@@ -248,7 +248,7 @@ def register_chat_routes(api, config, tag: str) -> None:
         #    một lượt đang chờ là đúng thứ INV-MJ-1 cấm.
         if not sandbox.is_test(principal.mode) and not thanh_toan.du_so_du(
                 db, user_id=principal.user_id, token_vao_uoc=token_vao_uoc,
-                max_tokens=sach["max_tokens"]):
+                max_tokens=sach["max_tokens"], model=sach["model"]):
             metrics.increment(metrics.CREDIT_EXHAUSTED)
             raise insufficient_credit(
                 "Insufficient credit for the ceiling this request would hold.")
@@ -336,7 +336,8 @@ def register_chat_routes(api, config, tag: str) -> None:
         try:
             da_giu = thanh_toan.giu_cho_luot(
                 db, user_id=principal.user_id, request_id=request_id,
-                token_vao_uoc=token_vao_uoc, max_tokens=sach["max_tokens"])
+                token_vao_uoc=token_vao_uoc, max_tokens=sach["max_tokens"],
+                model=sach["model"])
             db.commit()
         except credit.ThieuCreditError as e:
             # Số dư tụt giữa lúc tiền kiểm và lúc được nhận (khách chạy song song).
@@ -475,7 +476,8 @@ def _finish_chat(*, db, sach: dict, principal, record, request_id: str,
                 su_dung=SuDung(token_vao=e.ket_qua.token_vao,
                                token_ra=e.ket_qua.token_ra,
                                token_vao_cache=e.ket_qua.token_vao_cache,
-                               dang_tin=e.ket_qua.do_duoc))
+                               dang_tin=e.ket_qua.do_duoc),
+                model=sach["model"])
             if trang_thai is not None:
                 trang_thai.api_credit_delta = -int(thu.thu_credit)
             tra_ve = _dang_openai(
@@ -546,7 +548,8 @@ def _finish_chat(*, db, sach: dict, principal, record, request_id: str,
         db, user_id=principal.user_id, request_id=request_id,
         su_dung=SuDung(token_vao=kq.token_vao, token_ra=kq.token_ra,
                        token_vao_cache=kq.token_vao_cache,
-                       dang_tin=kq.do_duoc))
+                       dang_tin=kq.do_duoc),
+        model=sach["model"])
     # ⛔ P08 F-01: cot `credit_delta` cua so request CHI duoc ghi o cua job, nen
     #    hai cua nay doc ra `+0` bat ke thu bao nhieu — va `anomalies.py` dua vao
     #    no de do bat thuong tien. Mot so 0 co cau truc trong o "da thu bao nhieu"

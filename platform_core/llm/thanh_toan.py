@@ -38,6 +38,12 @@ thanh_toan.py — thu tiền một lượt gọi model. Giữ chỗ → chạy �
    toán, không đụng số dư. `public_api/costing.py` nói đúng: **sổ cái là sự thật
    tính tiền**; ở đây chỉ là phép quy đổi.
 
+🔴 TỪ 2026-09-12 (D07, dual-model 2.5): **MỌI HÀM Ở ĐÂY NHẬN `model`.** Hai model
+   công khai, hai bảng giá (`gia_token.BANG_GIA`), và bốn con số dưới đây
+   (50/10/400 + nhãn) là của **`ltt-3.8`** chứ không còn là của "model nhà".
+   Giữ chỗ, cửa 402, quyết toán và nhãn giá đều phải đi theo **model thật đã
+   phục vụ** — một lượt `ltt-3.5` thu theo bảng 3.8 là thu gấp 20 lần ở token ra.
+
 ⛔ KHÔNG ĐO ĐƯỢC THÌ KHÔNG THU. `usage` thiếu ⇒ `gia_token.tinh()` ném lỗi, và
    `quyet_toan_hoac_hoan()` **hoàn đủ rồi ghi cảnh báo**. Thu tiền mà không có
    bằng chứng còn tệ hơn mất một ít tiền, và nó phải hiếm — llama-server luôn trả
@@ -77,7 +83,7 @@ class KetQuaThu:
 
 
 def giu_cho_luot(db, *, user_id: str, request_id: str,
-                 token_vao_uoc: int, max_tokens: int) -> int:
+                 token_vao_uoc: int, max_tokens: int, model: str) -> int:
     """Giữ chỗ TRƯỚC khi gọi model. Trả về số credit đã giữ.
 
     Ném `credit.ThieuCreditError` khi không đủ số dư — và đó là **chốt chặn đúng
@@ -85,16 +91,22 @@ def giu_cho_luot(db, *, user_id: str, request_id: str,
 
     ⛔ Trần ước CAO (`gia_token.uoc_tran` giả định không có cache và sinh đủ
        `max_tokens`). Giữ thiếu thì khách tiêu quá số dư; giữ dư thì hoàn lại.
+
+    🔴 `model` BẮT BUỘC (D07): **giữ và quyết toán phải cùng một bảng giá.** Giữ
+       theo 3.8 rồi thu theo 3.5 là giữ dư gấp 20 lần ở token ra — tức từ chối
+       402 một khách có đủ tiền; ngược lại là giữ thiếu và khách tiêu quá số dư.
     """
     if not request_id:
         raise ValueError("thieu request_id — no la khoa cua giu cho va quyet toan")
-    tran = gia_token.uoc_tran(token_vao_uoc=token_vao_uoc, max_tokens=max_tokens)
+    tran = gia_token.uoc_tran(token_vao_uoc=token_vao_uoc,
+                              max_tokens=max_tokens, model=model)
     so = tran.tong_credit_lam_tron_len
     credit.giu_cho(db, user_id, so, request_id)
     return so
 
 
-def du_so_du(db, *, user_id: str, token_vao_uoc: int, max_tokens: int) -> bool:
+def du_so_du(db, *, user_id: str, token_vao_uoc: int, max_tokens: int,
+             model: str) -> bool:
     """Số dư có đủ cho phần giữ chỗ của lượt này không — CHỈ ĐỌC, không giữ gì.
 
     ⭐ Cửa stream chờ trong SSE (multijob D-06): tiền chỉ được giữ SAU khi được
@@ -103,8 +115,13 @@ def du_so_du(db, *, user_id: str, token_vao_uoc: int, max_tokens: int) -> bool:
        tính thứ hai.
     ⚠️ Không khoá: số dư có thể tụt giữa lúc hỏi và lúc giữ (khách chạy song
        song). Khi đó `giu_cho_luot` vẫn là chốt thật và ném `ThieuCreditError`.
+
+    🔴 `model` BẮT BUỘC, và phải là **cùng** model truyền cho `giu_cho_luot`:
+       cửa 402 hỏi một con số, cửa giữ tiền giữ một con số khác thì cửa 402 đang
+       trả lời một câu hỏi không ai hỏi.
     """
-    tran = gia_token.uoc_tran(token_vao_uoc=token_vao_uoc, max_tokens=max_tokens)
+    tran = gia_token.uoc_tran(token_vao_uoc=token_vao_uoc,
+                              max_tokens=max_tokens, model=model)
     return credit.so_du(db, user_id) >= tran.tong_credit_lam_tron_len
 
 
@@ -168,13 +185,17 @@ TRAN_CANH_BAO_DU_MCREDIT = 5_000
 
 
 def quyet_toan_luot(db, *, user_id: str, request_id: str,
-                    su_dung: SuDung) -> KetQuaThu:
-    """Chốt tiền sau khi lượt gọi xong.
+                    su_dung: SuDung, model: str) -> KetQuaThu:
+    """Chốt tiền sau khi lượt gọi xong, theo giá của **model thật đã phục vụ**.
 
     Ném `gia_token.KhongDoDuocError` khi thượng nguồn không trả `usage`. Bên gọi
     nên dùng `quyet_toan_hoac_hoan()` thay vì tự bắt.
+
+    🔴 `model` BẮT BUỘC (D07 hệ quả 4). Nhãn giá đi vào `KetQuaThu` cũng lấy từ
+       bảng của model ấy — đối soát ba tháng sau đọc **hai** sự thật đã ghi cùng
+       lúc: số tiền và bảng giá nào đã sinh ra nó.
     """
-    chi_phi = gia_token.tinh(su_dung)
+    chi_phi = gia_token.tinh(su_dung, model)
     if _san_moi_luot():                                  # C1 — đường lùi
         thu = chi_phi.tong_credit_lam_tron_len
         kq = credit.quyet_toan(db, user_id, request_id, thu)
@@ -250,14 +271,18 @@ def hoan_luot(db, *, user_id: str, request_id: str) -> None:
 
 
 def quyet_toan_hoac_hoan(db, *, user_id: str, request_id: str,
-                         su_dung: SuDung) -> KetQuaThu:
+                         su_dung: SuDung, model: str) -> KetQuaThu:
     """Chốt tiền; nếu không đo được thì **hoàn đủ và ghi cảnh báo**.
 
     Đây là hàm bên gọi nên dùng. Nó làm cho việc đúng trở thành việc dễ.
+
+    ⚠️ Nhánh hoàn: **hoàn TRƯỚC, đọc nhãn giá SAU**. Nếu `model` là một tên bảng
+       giá không biết thì `bang_cua` ném — và ta muốn nó ném sau khi tiền đã về
+       tay khách, không phải trước.
     """
     try:
         return quyet_toan_luot(db, user_id=user_id, request_id=request_id,
-                               su_dung=su_dung)
+                               su_dung=su_dung, model=model)
     except gia_token.KhongDoDuocError:
         da_giu = credit.so_da_giu(db, request_id)
         hoan_luot(db, user_id=user_id, request_id=request_id)
@@ -268,7 +293,7 @@ def quyet_toan_hoac_hoan(db, *, user_id: str, request_id: str,
             request_id[:8], user_id[:8], da_giu)
         return KetQuaThu(da_giu_credit=da_giu, thu_credit=0, hoan_credit=da_giu,
                          chi_phi_mcredit=0,
-                         phien_ban_gia=gia_token.PHIEN_BAN_GIA,
+                         phien_ban_gia=gia_token.bang_cua(model).phien_ban,
                          da_do_duoc=False)
 
 
