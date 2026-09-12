@@ -17200,3 +17200,46 @@ Và một đề xuất của tôi bị chính tôi đổi hướng: tôi đã đ
 `tools/danh_gia_vision.py`. Chủ sản phẩm vừa hoãn phần ảnh sang phiên sau — xoá bộ
 đo ảnh duy nhất ngay trước phiên dành riêng cho ảnh là đốt đúng thứ phiên ấy cần.
 Nó đã có `--model`; chỉ mặc định là cũ. Đổi mặc định, giữ tệp.
+## 2026-09-12 (chiều) — Một ghi chú "đã đo" nói sai, và nó đắt hơn không có ghi chú
+
+Gate 3 đỏ **đúng một** phép kiểm trong 10.638: `test_188::test_gpu_capacity_stops_
+a_second_concurrent_job` — job GPU thứ hai qua cửa công khai được nhận (201) thay
+vì bị chặn (429).
+
+Chạy riêng: vẫn đỏ ⇒ hồi quy tất định, không phải rò trạng thái. Rồi tôi mở mã và
+gặp một chú thích của phiên trước, đặt đúng chỗ tôi đang đứng, tự khai là **đã đo**,
+và kết luận hai điều: *lỗ này có trước chương trình dual-model*, và *sửa chỗ này
+cũng không làm nó xanh vì trần thật mất ở `policy.resolve`*.
+
+Tôi suýt tin. Thứ cứu là một phép đo rẻ đến mức không có lý do gì để bỏ qua:
+
+```
+git worktree add --detach <tmp> $(git merge-base HEAD master)
+cd <tmp> && pytest "tests/test_188...::test_gpu_capacity..."   ->  1 passed
+```
+
+Bốn giây. Ca ấy **xanh ở điểm rẽ nhánh**. Vế (a) sai. Ghi chú kia đối chiếu bốn
+tệp và thiếu đúng tệp thứ năm — `public_api/invocation.py` — nơi R20 đổi
+`tool.admission_resource or "api"` thành `admission_luc_nop(..., mac_dinh="api")`;
+và đo lại `git diff` từ merge-base thì nhánh này **có** sửa cả `server/api/jobs.py`
+(66 dòng), chính hàm mang ghi chú đó.
+
+Vế (b) tôi cũng đo, bằng cách bẫy `enforce_job_admission` ngay trong ca test:
+`class_concurrency = {'gpu': 1}` **tới nơi đầy đủ**. Thứ sai là `resource='api'`
+mà `_resource_of` trả về, nên `classes.get()` tra nhầm khoá.
+
+Gốc thì gọn: `suc_chua_admission` trả `None` cho tool khai `admission_resource`
+với `admission_slots == 0`. Đó là câu trả lời **đúng** cho câu hỏi *"tool này
+giành mấy suất lease?"*. Nhưng hai chỗ gọi dùng nó để trả lời một câu **khác** —
+*"job này thuộc lớp tài nguyên nào?"* — rồi rơi về hằng `"api"`. `image.upscale`
+đúng hình dạng ấy (`gpu`, `slots=0`: nó chụp sức chứa theo giai đoạn), nên cột
+mang `"api"` và trần `gpu:1` thôi gác.
+
+⭐ Điều tôi muốn giữ lại không phải bản sửa, mà là: **một chú thích tự khai "đã
+   đo" vẫn có thể sai, và khi sai thì nó tệ hơn không có gì** — nó làm người đọc
+   tin câu hỏi đã được trả lời rồi đi tìm chỗ khác. Cách chống duy nhất tôi biết
+   là đo lại, và ở đây phép đo đúng rẻ hơn cả việc đọc chú thích ấy.
+
+Nên tôi viết lại chú thích đó thành thứ nói rõ **cả hai vế đã bị bác bỏ như thế
+nào**, kèm số đo — chứ không xoá nó đi. Một chú thích sai bị xoá lặng lẽ thì
+người sau lại đi đúng con đường ấy lần nữa.
