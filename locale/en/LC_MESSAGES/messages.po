@@ -11612,6 +11612,24 @@ msgstr "LTT LLM 3.5 (fast · cheap · reads images)"
 msgid "[{slug}] model_llm_noi_bo không hợp lệ: {value!r} — hợp lệ: {ok}"
 msgstr "[{slug}] model_llm_noi_bo is not valid: {value!r} — valid values: {ok}"
 
+msgid "Token reasoning tính như token ra."
+msgstr "Reasoning tokens are billed as output tokens."
+
+msgid "Token vào lấy lại từ cache tính {phan_tram}% giá token vào."
+msgstr "Input tokens served from cache are billed at {phan_tram}% of the input price."
+
+msgid "lên credit nguyên, mỗi lượt gọi"
+msgstr "up to a whole credit, on every call"
+
+msgid "tích luỹ phần lẻ, chỉ thu phần nguyên"
+msgstr "fractions carry over; only whole credits are charged"
+
+msgid "Mỗi lượt gọi làm tròn LÊN credit nguyên, tối thiểu 1 credit (100đ) — nên lượt gọi rất nhỏ trả nhiều hơn giá niêm yết."
+msgstr "Every call is rounded UP to a whole credit, minimum 1 credit (100đ) — so very small calls pay more than the listed price."
+
+msgid "Phần lẻ dưới 1 credit được GIỮ LẠI và cộng vào lượt sau, nên bạn trả đúng bảng giá chứ không trả sàn. Không có mức tối thiểu mỗi lượt gọi."
+msgstr "Fractions below one credit are KEPT and carried into the next call, so you pay the listed price rather than a floor. There is no per-call minimum."
+
 msgid "Không thể xác định kết quả từ nhà cung cấp; hệ thống đã dừng tự thử lại."
 msgstr "The provider result could not be determined; automatic retries have been stopped."
 

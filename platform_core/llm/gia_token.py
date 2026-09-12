@@ -41,16 +41,23 @@ gia_token.py — giá token của model nhà, MỘT chỗ duy nhất. (H38)
    ⇒ × 3.000 đ ⇒ ÷ 100 đ = credit.
 
         LTT-3.8 (3090, 314 W ở C1)
-          ra      314 / 66,7    = 4,708  J/tok -> 1,308  kWh/1M -> 3.923 d ->  39 credit/1M
+          ra      314 / 63,0    = 4,983  J/tok -> 1,384  kWh/1M -> 4.153 d -> 41,5 credit/1M
           vao@6,7K 314 / 1.239  = 0,2534 J/tok -> 0,0704 kWh/1M ->   211 d -> 2,1 credit/1M
           vao@163K 314 / 646    = 0,4861 J/tok -> 0,1350 kWh/1M ->   405 d -> 4,1 credit/1M
 
         LTT-3.5 (5060 Ti, 119 W ở C1)
-          ra      119 / 73,0    = 1,630  J/tok -> 0,4528 kWh/1M -> 1.358 d -> 13,6 credit/1M
+          ra      119 / 76,2    = 1,561  J/tok -> 0,4337 kWh/1M -> 1.301 d -> 13,0 credit/1M
           vao@6,7K 119 / 2.238  = 0,0532 J/tok -> 0,0148 kWh/1M ->    44 d -> 0,44 credit/1M
           vao@163K 119 / 1.350  = 0,0881 J/tok -> 0,0245 kWh/1M ->    73 d -> 0,73 credit/1M
 
-   ⇒ Biên gộp trên **điện** ở C1: 3.8 ≈ **10×** token ra, 3.5 ≈ **1,5×**.
+   ⇒ Biên gộp trên **điện** ở C1: 3.8 ≈ **9,6×** token ra, 3.5 ≈ **1,5×**.
+
+   ⚠️ Hai con số tok/s trên là của **bộ cờ L-16** (`--reasoning-budget 512` +
+      `temp/top-p/top-k/min-p` của Qwen, KHÔNG có `presence-penalty`) — tức đúng
+      cấu hình `llama-swap.yaml` sẽ chạy. Bản đầu của khối này tính theo 66,7 và
+      73,0 đo TRƯỚC khi chốt bộ cờ; đổi bộ cờ thì tok/s đổi, mà chi phí điện tỉ
+      lệ NGHỊCH với tok/s nên nó đổi theo. Đổi cấu hình engine ⇒ tính lại khối
+      này, đừng để nó trôi.
 
    🔑 D07 ghi một rủi ro chủ dự án đã CHẤP NHẬN trước khi đo: *"ước chi phí điện
       biên LTT-3.5 ~31 credit/1M ra ở C1 [INFERRED] > giá ra 20 ⇒ có thể bán
@@ -92,6 +99,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from platform_core.i18n import _ as _t
 from platform_core.llm.cong_vlm import SuDung
 
 #: Số milli-credit trong một credit. Đừng đổi — `credit.tru()` nhận credit nguyên.
@@ -314,9 +322,21 @@ def bang_gia(model: str = MODEL_GIA_MAC_DINH) -> dict:
         # ⚠️ Tỉ lệ cache **tính ra**, không gõ "20%". Nó là 1/5 ở `ltt-3.8` và
         #    ~23 % ở `ltt-3.5`; một câu gõ cứng là một điều khoản công bố SAI ở
         #    đúng model thứ hai — cùng lớp lỗi ba dòng 🔴 ở trên cảnh báo.
-        "ghi_chu": ("Token reasoning tinh nhu token ra. "
-                    f"Token vao lay lai tu cache tinh {_phan_tram_cache(g)}% "
-                    "gia token vao. " + _ghi_chu_lam_tron()),
+        # 🔴 VIẾT CÓ DẤU, VÀ BỌC `_t()`. Bản trước viết tiếng Việt **không
+        #    dấu** và không bọc, nên khách đọc trang điều khoản bản tiếng Anh
+        #    thấy nguyên một đoạn tiếng Việt không dấu (phát hiện 12/09 khi mở
+        #    `/api-dieu-khoan` bằng trình duyệt thật).
+        #
+        # ⚠️ Và nó lọt qua bánh cóc i18n suốt thời gian đó vì `check_i18n.py`
+        #    dò chuỗi cần dịch **bằng DẤU tiếng Việt** (`VN` regex). Một câu
+        #    tiếng Việt không dấu vì thế vô hình với nó. Đây là chỗ mù của bộ
+        #    dò, không phải chỗ hở của người viết — nên cách sửa đúng là viết
+        #    có dấu (để bộ dò nhìn thấy được nếu ai đó bỏ `_t()` sau này), chứ
+        #    không phải chỉ thêm `_t()` rồi giữ nguyên chữ không dấu.
+        "ghi_chu": (_t("Token reasoning tính như token ra.") + " "
+                    + _t("Token vào lấy lại từ cache tính {phan_tram}% giá "
+                         "token vào.").format(phan_tram=_phan_tram_cache(g))
+                    + " " + _ghi_chu_lam_tron()),
     }
 
 
@@ -339,8 +359,8 @@ def _san_moi_luot() -> bool:
 
 
 def _mo_ta_lam_tron() -> str:
-    return ("len credit nguyen, moi luot goi" if _san_moi_luot()
-            else "tich luy phan le, chi thu phan nguyen")
+    return (_t("lên credit nguyên, mỗi lượt gọi") if _san_moi_luot()
+            else _t("tích luỹ phần lẻ, chỉ thu phần nguyên"))
 
 
 def _toi_thieu_moi_luot() -> int:
@@ -349,8 +369,8 @@ def _toi_thieu_moi_luot() -> int:
 
 def _ghi_chu_lam_tron() -> str:
     if _san_moi_luot():
-        return ("Moi luot goi lam tron LEN credit nguyen, toi thieu 1 credit "
-                "(100d) — nen luot goi rat nho tra nhieu hon gia niem yet.")
-    return ("Phan le duoi 1 credit duoc GIU LAI va cong vao luot sau, nen ban "
-            "tra dung bang gia chu khong tra san. Khong co muc toi thieu moi "
-            "luot goi.")
+        return _t("Mỗi lượt gọi làm tròn LÊN credit nguyên, tối thiểu 1 credit "
+                  "(100đ) — nên lượt gọi rất nhỏ trả nhiều hơn giá niêm yết.")
+    return _t("Phần lẻ dưới 1 credit được GIỮ LẠI và cộng vào lượt sau, nên "
+              "bạn trả đúng bảng giá chứ không trả sàn. Không có mức tối thiểu "
+              "mỗi lượt gọi.")
