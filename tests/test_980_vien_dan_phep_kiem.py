@@ -99,7 +99,18 @@ PHAM_VI = (
 )
 
 #: `test_312` (số trần) hoặc `test_312_vps_khoa_dich_vu` (có tên).
-MAU = re.compile(r"test_(\d{3})(_[a-z0-9_]+)?")
+#:
+#: 🔴 `\d{3,4}`, KHÔNG `\d{3}`. Bản cũ chỉ biết số hiệu **ba** chứ số, nên nó
+#:    cắt `test_1200` thành `test_120` rồi báo *"không khớp tệp test nào"* — một
+#:    phép kiểm đúng đang **báo một lỗi không có**, và nó đỏ ở 6 vị trí cùng lúc.
+#:
+#:    Nguồn: `5998b192` đổi dải test Multi-Job 950–956 → **1200–1206**, tức kho
+#:    có số hiệu **bốn** chứ số lần đầu tiên. Một hằng `{3}` gõ tay là một giả
+#:    thiết về hình dạng dữ liệu, và nó sống được đúng tới ngày hình dạng đổi.
+#:
+#: ⚠️ `{3,4}` **tham lam** nên nó ăn 4 chứ số trước khi thử 3 — đó là chiều đúng:
+#:    `test_1200` phải đọc là `1200`, không bao giờ là `120` + một chứ số lạc.
+MAU = re.compile(r"test_(\d{3,4})(_[a-z0-9_]+)?")
 
 
 def _ung_vien(so: str) -> list[str]:
@@ -111,6 +122,23 @@ def _vien_dan(duong_dan: str) -> list[tuple[str, str]]:
     """`(so, duoi)` của mọi viện dẫn trong một tệp. `duoi` rỗng = số trần."""
     van = (GOC / duong_dan).read_text(encoding="utf-8")
     return [(m.group(1), m.group(2) or "") for m in MAU.finditer(van)]
+
+
+def test_DOI_CHUNG_bo_do_doc_dung_so_hieu_BON_chu_so():
+    """Đối chứng cho `MAU`: nửa "đọc đúng" **và** nửa "vẫn bắt được cái sai".
+
+    ⛔ Nới `{3}` thành `{3,4}` là làm bộ dò **dễ xanh hơn**, nên nó phải trả giá
+       bằng một ca chứng minh nó chưa mù: một số hiệu bốn chứ số **không tồn
+       tại** vẫn phải bị nhận ra là không tồn tại.
+    """
+    assert MAU.fullmatch("test_1200").group(1) == "1200", (
+        "bo do doc `test_1200` thanh mot so khac — day chinh la loi vua sua")
+    assert MAU.fullmatch("test_312").group(1) == "312"
+    assert MAU.fullmatch("test_1200_ghim_gpu_may_b").group(2) == "_ghim_gpu_may_b"
+
+    # Chieu con lai: so 4 chu so la KHONG co tep nao thi `_ung_vien` phai rong.
+    assert _ung_vien("1200"), "test_1200_* phai co that (neo cua ca nay)"
+    assert not _ung_vien("9998"), "so hieu bia dat lai khop mot tep — neo sai"
 
 
 def test_moi_vien_dan_co_ten_thi_tep_do_phai_ton_tai():

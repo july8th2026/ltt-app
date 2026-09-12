@@ -35,7 +35,6 @@ import pytest
 
 from render_gateway import busy as B
 from render_gateway import danh_tinh_gpu as DT
-from render_gateway import nhuong_card as NC
 
 GOC = Path(__file__).resolve().parents[1]
 
@@ -265,8 +264,19 @@ def test_compute_apps_thieu_cot_gpu_uuid_thi_KHONG_dem_tam(smi, monkeypatch):
 
 
 def test_khong_co_tep_danh_tinh_thi_TU_CHOI(smi, monkeypatch, tmp_path):
-    """Không biết UUID nào là 3090 ⇒ không phép đo nào của card ấy hợp lệ. Và ở
-    `xin_card` "không biết" phải thành **TỪ CHỐI**, không phải "đi luôn"."""
+    """Không biết UUID nào là 3090 ⇒ không phép đo nào của card ấy hợp lệ.
+
+    🔴 BẢN ĐẦU CÒN CHỐT THÊM *"và `xin_card` phải TỪ CHỐI"*. `xin_card` **đã bị
+       gỡ** (dual-model 5.4a): trọng tài cũ nằm trong chính cổng render và nhả model
+       bằng `GET /unload` — một lệnh không mang tên model, nay đo được là nó nhả
+       **mọi** model đang chạy (L-17).
+
+    ⭐ Nửa còn lại — *"không biết UUID thì mọi bộ đọc trả `None`"* — **vẫn là bất
+       biến sống, và nó mới là nửa chiịu lực**: fail-closed ở tầng ĐO thì mọi bên
+       gọi đều thừa hưởng, còn fail-closed ở một bên gọi cụ thể thì chỉ bên đó an
+       toàn. Ai nối bộ đọc này vào một cửa mới: `None` nghĩa là **từ chối**, không
+       phải "coi như 0".
+    """
     monkeypatch.setenv(DT.BIEN_MOI_TRUONG, str(tmp_path / "khong-co.json"))
     monkeypatch.setattr(DT, "_GOC_GOI", tmp_path)      # chan ca hai ung vien con lai
     DT.xoa_nho()
@@ -276,25 +286,9 @@ def test_khong_co_tep_danh_tinh_thi_TU_CHOI(smi, monkeypatch, tmp_path):
         assert B.vram_dung_mb_qua_smi() is None
         assert B.so_python_tinh_tren_gpu() is None
         assert B.tai_gpu_phan_tram() is None
-
-        px = NC.xin_card(ho_khac=(), doc_vram=B.vram_dung_mb_qua_smi,
-                         goi_nha=lambda _d: True, han_giay=0.0, nhip_giay=0.0,
-                         now=lambda: 0.0, ngu=lambda _s: None)
-        assert not px.duoc and "khong chay mu" in px.ly_do
     finally:
         DT.xoa_nho()
 
-
-def test_khong_doc_duoc_thi_KHONG_nhuong_card(smi):
-    """`_nhuong_duoc` là đường "card đang bị hộ bảo-được ôm, ta lấy lại được".
-    Không đếm được python thì không biết có ai đang tính ⇒ **không** nhường, vì
-    nhường lúc đó là mời `xin_card` đi giết một lượt đang chạy (L-9)."""
-    smi.th["ma"] = 9
-    w = B.BusyWatcher(comfy=ComfyGia(), co_ho_bao_duoc=lambda: True)
-    assert w._nhuong_duoc() is False
-
-
-# ── Ca 4: đối chứng chứng minh BỘ LỌC LÀ THẬT ─────────────────────────────────
 
 def test_bo_loc_uuid_that_su_thay_doi_ket_luan(smi):
     """⭐ ĐÂY LÀ PHÉP KIỂM QUAN TRỌNG NHẤT CỦA TỆP.

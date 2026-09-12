@@ -5,12 +5,23 @@ Nhường card giữa LLM và model ảnh — bốn nhánh, và mỗi nhánh m�
    18.450 MB. Hai model không bao giờ cùng lúc được, nên swap không phải tối ưu
    hoá — nó là **chế độ vận hành duy nhất**.
 
-⭐ Bốn nhánh, viết theo đúng thứ tự thiệt hại giảm dần:
+🔴 HAI NHÁNH ĐẦU ĐÃ ĐƯỢC GỠ (dual-model 5.4a, 12/09/2026).
 
-     1. đang TÍNH thì KHÔNG đuổi — đuổi là cắt ngang câu trả lời của khách;
-     2. chỉ GIỮ bộ nhớ thì đuổi được — không ai thiệt;
+     1. ~~đang TÍNH thì KHÔNG đuổi~~   ─┐
+     2. ~~chỉ GIỮ bộ nhớ thì đuổi được~~  ─┘ `xin_card` không còn tồn tại
      3. lấy lại được thì đừng báo bận — báo bận là khoá chết cả đường ảnh;
      4. không lấy lại được thì báo bận — và đó là câu trả lời đúng.
+
+   Trọng tài cũ nằm **trong chính cổng render** và nhả model bằng `GET /unload` —
+   một lệnh **không mang tên model**, nay đo được là nó nhả **mọi** model đang chạy
+   (DECISION_LOG L-17), tức từ khi máy B có hai model thì nó giết luôn LTT-3.5 trên
+   card không ai tranh. Thay bằng trọng tài residency (D01 B): xả trước, nhả theo
+   **tên model**, không bao giờ giết lượt đang chạy.
+
+   ⭐ Bất biến của hai nhánh bỏ đi **không mất**, nó đổi chỗ:
+       `platform_core/llm/residency.py` — `buoc_thuan` chỉ rời `LLM` khi đã drain,
+       và chỉ phát `nap_llm` khi `vram_3090_mib <= vram_sach_mib`;
+       `tests/test_1216_residency_thuan.py` — ca `vram_con_ban` / `vram_sach`.
 
 ⛔ Cả bốn đo được **không cần GPU**: mọi nguồn tín hiệu đều tiêm được. Một phép
    kiểm đòi GPU là một phép kiểm sẽ bị tắt.
@@ -20,101 +31,6 @@ from __future__ import annotations
 import pytest
 
 from render_gateway import busy as B
-from render_gateway import nhuong_card as N
-
-
-HO_LLM = N.HoDung(ten="llm", duong_nha="http://127.0.0.1:8280/unload")
-HO_VIDEO = N.HoDung(ten="video")            # chỉ chờ được
-
-
-def _xin(*, vram, dang_tinh=None, ho=(HO_LLM,), han=3.0, **kw):
-    """Gọi `xin_card` với đồng hồ giả — không ngủ thật một giây nào."""
-    dong_ho = {"t": 0.0}
-    doc = iter(vram) if isinstance(vram, list) else None
-
-    def _vram():
-        return next(doc) if doc is not None else vram
-
-    da_goi = []
-    return N.xin_card(
-        ho_khac=ho, doc_vram=_vram,
-        goi_nha=lambda d: (da_goi.append(d), True)[1],
-        dang_tinh=dang_tinh, han_giay=han, nhip_giay=0.1,
-        now=lambda: dong_ho["t"],
-        ngu=lambda s: dong_ho.__setitem__("t", dong_ho["t"] + s),
-        **kw), da_goi
-
-
-# ── Nhánh 1: đang TÍNH thì không đuổi ──────────────────────────────────────
-
-def test_ho_dang_tinh_thi_KHONG_goi_unload():
-    """⛔ Đây là nhánh đắt nhất, và nó bảo vệ một thứ khách nhìn thấy.
-
-    `llama-swap` **giết một lượt đang chạy** để nhả model — đo 03/09/2026 và ghi
-    trong `llama-swap.yaml`. Lượt bị giết chỉ nhận `ConnectionReset`, không lỗi
-    nào nói vì sao. Với khách ChatLTT đó là câu trả lời đang chảy **biến mất giữa
-    chừng**, và nó trông y hệt một lần OOM.
-    """
-    px, da_goi = _xin(vram=20_000, dang_tinh=lambda: True)
-    assert px.duoc is False
-    assert da_goi == [], "da goi /unload trong luc ho kia DANG TINH"
-    assert "DANG TINH" in px.ly_do
-
-
-def test_ho_dang_tinh_roi_XONG_thi_di_tiep_ma_khong_duoi():
-    """Nó tự xong và tự nhả ⇒ đi luôn, không cần đuổi ai."""
-    lan = {"n": 0}
-
-    def dang_tinh():
-        lan["n"] += 1
-        return lan["n"] <= 2          # bận hai nhịp rồi rảnh
-
-    px, da_goi = _xin(vram=[20_000, 20_000, 1_200], dang_tinh=dang_tinh)
-    assert px.duoc is True
-    assert da_goi == [], "khong duoc duoi ai khi card tu trong ra"
-
-
-def test_khong_do_duoc_dang_tinh_thi_CHO_chu_khong_duoi():
-    """⛔ "Không biết" ở đây phải xử như "khoan đã", ngược với nhánh VRAM.
-
-    Hai chỗ, hai hướng, và ngược nhau có chủ ý: đọc VRAM hỏng ⇒ **từ chối** (ta
-    sắp tiêu GPU và tiêu tiền khách, chạy mù là tạo ra sự cố im lặng); đo "đang
-    tính" hỏng ⇒ **chờ** (ta sắp phá việc người khác).
-    """
-    def no():
-        raise RuntimeError("nvidia-smi im")
-
-    px, da_goi = _xin(vram=20_000, dang_tinh=no)
-    assert px.duoc is False and da_goi == []
-
-
-# ── Nhánh 2: chỉ GIỮ bộ nhớ thì đuổi được ──────────────────────────────────
-
-def test_ho_chi_giu_bo_nho_thi_duoi_va_di_tiep():
-    px, da_goi = _xin(vram=[20_000, 20_000, 1_500], dang_tinh=lambda: False)
-    assert px.duoc is True
-    assert da_goi == [HO_LLM.duong_nha], "phai bao dung ho bao-duoc nha"
-    assert px.da_bao_nha == ("llm",)
-
-
-def test_ho_chi_cho_duoc_thi_KHONG_BAO_GIO_bi_bao_nha():
-    """Dự án video không có endpoint nhả — đuổi nó là phá việc của người khác."""
-    px, da_goi = _xin(vram=20_000, dang_tinh=lambda: False, ho=(HO_VIDEO,))
-    assert da_goi == []
-    assert px.duoc is False, "card van day thi khong duoc cho qua"
-
-
-def test_card_da_trong_thi_khong_duoi_ai_va_khong_hoi_gi():
-    """Nhánh thường gặp nhất: một lô ảnh liên tiếp không được đuổi ai."""
-    goi_dang_tinh = {"n": 0}
-
-    def dem():
-        goi_dang_tinh["n"] += 1
-        return False
-
-    px, da_goi = _xin(vram=1_200, dang_tinh=dem)
-    assert px.duoc is True and da_goi == []
-    assert goi_dang_tinh["n"] == 0, "card trong roi ma van di hoi ai do dang tinh"
 
 
 # ── Nhánh 3+4: `/health` chỉ báo bận khi KHÔNG lấy lại được ─────────────────
