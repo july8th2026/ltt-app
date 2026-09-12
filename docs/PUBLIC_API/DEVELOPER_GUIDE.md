@@ -724,7 +724,7 @@ Aliases, not vendor model ids. What a call *costs* comes from `POST /quotes`: pr
 | Alias | Capability | Stability | Tools | Notes |
 |---|---|---|---|---|
 | `ltt-3.5` | text | stable | `text.chat` | Faster and much cheaper, 209K usable input context. Same message format, and it reads images — send them as OpenAI image_url parts. |
-| `ltt-3.8` | text | stable | `text.chat` | Text only, 171K usable input context. Deepest model: coding, chat, agentic tool use, summarisation. |
+| `ltt-3.8` | text | stable | `text.chat` | 171K usable input context. Deepest model: coding, chat, agentic tool use, summarisation. It reads images too — send them as OpenAI image_url parts. |
 | `seedance-2.0` | video | stable | `video.generate` | Seedance 2.0 |
 | `seedance-2.0-fast` | video | stable | `video.generate` | Seedance 2.0 Fast |
 | `seedance-2.0-mini` | video | stable | `video.generate` | Seedance 2.0 Mini |
