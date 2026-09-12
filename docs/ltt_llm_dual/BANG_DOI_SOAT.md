@@ -54,14 +54,14 @@ Quy trình đã chốt: `P0→P7 → Spec 2 → nghiệm thu tích hợp A–Q *
 | **A** | Tĩnh: hai ID, UUID, hash engine | ✅ | test 1200·1210·1220·1233 |
 | **B** | C1 LTT-3.8 ≥ 90 % mốc b10883 | ✅ | đo ở P3 |
 | **C** | C1 LTT-3.5 text + ảnh | ✅ | đo ở P3 |
-| **D** | C3 LTT-3.8 | ⚠️ | ngưỡng `≥100 tok/s` viết cho **4 luồng**; L-14 hạ xuống **3** ⇒ **phải tính lại**, chưa chốt |
+| **D** | C3 LTT-3.8 | ⚠️ **đo lần 1** | 93,7 tok/s tổng, scaling 1,88×. Chưa chốt — §7 dưới nói vì sao |
 | **E** | C4 LTT-3.5 | ⬜ | ngưỡng `2 × C1` chưa chốt số |
 | **F** | Hai model đồng thời ≥ 85 % | ✅ **ĐẠT 13/09** | 4 vòng: 0,99× · 1,08× · 1,15× · 1,10× (ngưỡng ≥ 85 % ⇔ ≤ 1,18×); `pg_locks` 0/369 |
 | **G** | Ngữ cảnh hỗn hợp, `requests_deferred=0` | ⬜ | |
 | **H** | 3.8 ngữ cảnh dài + cổng MTP | ⚠️ | đích **221.184 / `-np 3`** (L-14), không phải 262.144/`-np 4` |
 | **I** | Residency: ảnh ↔ LLM xen kẽ | ⬜ | |
 | **J** | 3.5 chạy khi 3090 vẽ ≥ 90 % | ⬜ | 3.5 không thuộc nhóm residency ⇒ kỳ vọng ~100 % |
-| **K** | Kho ấm: nạp lạnh vs ấm | ⬜ | |
+| **K** | Kho ấm: nạp lạnh vs ấm | ⚠️ **một nửa** | nạp ấm đo được (3.5 ~10,5 s · 3.8 ~19,4 s); nạp **lạnh** chưa đo (xả standby trên máy đang phục vụ là không đảo được) |
 | **L** | Đa tệp | ⬜ | Spec 2 |
 | **M** | Hủy 6 trạng thái, slot trống ≤ 2 s | ⬜ | test 1222 phủ tầng mã, chưa phủ đường thật |
 | **N** | 7 lỗi hạ tầng | ⬜ | |
@@ -129,3 +129,47 @@ nhân thì lớp lỗi này phải **biến mất**, không phải giảm.
 4. **hai vòng liên tiếp trùng khớp** mới chốt (điều kiện dừng của chủ sản phẩm)
 5. chốt ngưỡng **D**/**E** theo 3 luồng (L-14)
 6. G–Q theo lô, máy B đi trước
+
+## 7. Cổng D — đo lần 1 (13/09/2026), **chưa chốt**
+
+Spec §23 ghi cổng D là *"C4 LTT-3.8: tổng ≥ 100 tok/s"*. L-14 đã hạ **C4 → C3**,
+nên con số 100 — viết cho 4 luồng — không còn trả lời được câu hỏi này.
+
+⛔ Và **không được** suy `100 × 3/4 = 75`. Thông lượng không tỉ lệ tuyến tính với
+số luồng: nó bị chặn bởi băng thông bộ nhớ, và phần chia ấy không chia đều. Đo
+được scaling **1,88×** từ 1 → 3 luồng, không phải 3×.
+
+| | đo được |
+|---|---:|
+| C1 đơn, **qua máy A** | 49,9 tok/s |
+| **C3 tổng** | **93,7 tok/s** |
+| mỗi luồng ở C3 | 31,7 tok/s (3 luồng đều nhau: 31,3 / 31,7 / 32,5) |
+| scaling 1 → 3 luồng | **1,88×** |
+
+### ⚠️ Hai lý do con số này CHƯA chốt được
+
+1. **Khác đường đo.** Mốc C1 `63,01 tok/s` (G3b, 12/09) đo **thẳng máy B**; phép
+   đo này đi **qua máy A + Cloudflare**. Hai con số trả lời hai câu khác nhau —
+   so trực tiếp là đúng lỗi *"phạm vi phép đo hẹp hơn lời tuyên bố"*.
+2. **Máy có tải.** Một lượt gate đang chạy trong lúc đo. `docs/BAY_TRONG_CONG_CHAT_LUONG.md`
+   ghi rõ tải nặng làm phép đo **sai**, không chỉ chậm.
+
+⇒ Phải đo lại khi máy rảnh, **≥ 3 lượt**, và đo **cả hai đường** (qua máy A và
+  thẳng máy B) để tách phần overhead của máy A ra khỏi thông lượng của engine.
+
+⛔ Chưa đề xuất ngưỡng mới cho C3. Một ngưỡng đặt theo một lượt đo có nhiễu là
+   đúng thứ `nguong-dat-theo-mot-luot-do-tin-hieu-ngau-nhien` cảnh báo — và
+   phiên này đã vấp nó một lần ở L-02 (300 → "đúng" ở 1 lượt, rỗng 3/5 khi đo 5).
+
+## 8. Sổ lỗi L-* — trạng thái cuối lượt 13/09
+
+| mã | trạng thái | ghi chú |
+|---|---|---|
+| **L-01** | ✅ **đóng** | 4 vòng 0,99–1,15×; `pg_locks` 0/369; deploy + nghiệm thu 0/0/0 |
+| **L-02** | ⚠️ **một nửa** | `none` giải xong (token ra 200 → 4). `low`/`medium` — tức **mặc định** — vẫn rỗng ở `max_tokens` thấp |
+| **L-03** | ✅ **đóng** | cả hai model khai `reads_images`; `DEVELOPER_GUIDE` + CHANGELOG đã sinh lại |
+| **L-04** | ✅ **đóng** | bộ chấm đổi sang mệnh đề dương; bản cũ chấm 3/3 câu sai thành "đúng" |
+| **L-05** | ⚠️ **dấu hiệu** | 6 job đồng thời → 6 done / 0 lỗi (đầu tiên từ 10/09). 6 là ít |
+
+⚠️ **Hai mục "một nửa" không được đọc thành "xong".** Chúng là phần việc còn
+lại, và cách nhanh nhất để mất chúng là ghi ✅ cho tiện.
