@@ -16,15 +16,53 @@ GOC = pathlib.Path(__file__).resolve().parents[1]
 COT_LEASE_MOI = {"lop", "token_dat_truoc", "token_prefill_moi", "la_whale"}
 
 
+#: Nam migration cua chuong trinh dual-model, theo dung thu tu chuoi.
+CHUOI_DUAL = ("7c1e4b9a2d58", "b4d7f2c19e30", "c7a3f1e5b904",
+              "d91f6c37ab24", "a3f7c214e8b9")
+
+
 def test_migration_noi_dung_chuoi_va_mot_head():
+    """Chuoi dual phai NOI VAO dong kia va khong de ra head thu hai.
+
+    🔴 BAN TRUOC GHIM MOT CHUOI CU THE: `rev.down_revision == "e26c9a41d8b5"`.
+       Do la head cua trunk **luc viet** (H45.1), khong phai mot bat bien — va no
+       do ngay lan dau ai do forward-port chuoi nay len mot head moi hon, du viec
+       forward-port ay CHINH LA dieu dung phai lam.
+
+       Da xay ra 12/09: CSDL production dung o `d9a1f6c2b3e5` (head do Voice RC1
+       tao), con `alembic/versions` cua nhanh dual khong co revision ay ⇒
+       `alembic upgrade head` khong ve duoc duong di, deploy may A chet va
+       production tat ~4 phut. Ban sua la doi `down_revision` sang head hien
+       hanh — va phep kiem cu do vi chinh ban sua do.
+
+    ⭐ Nen o day ghim DIEU CAN DUNG, khong ghim CON SO:
+         1. dung MOT head;
+         2. goc chuoi dual noi vao mot revision CO THAT va KHONG thuoc chuoi dual
+            (tuc no bam vao dong kia, khong lo lung, khong tu vong);
+         3. ca nam mat xich deu di den duoc head.
+
+    ⛔ Menh de 2 la thu giu lai suc manh cua ban cu: mot `down_revision = None`
+       hay tro vao chinh chuoi dual van de ra head thu hai, va van bi bat.
+    """
     from alembic.config import Config
     from alembic.script import ScriptDirectory
 
     scripts = ScriptDirectory.from_config(Config(str(GOC / "alembic.ini")))
     assert len(scripts.get_heads()) == 1, scripts.get_heads()
-    rev = scripts.get_revision(REV)
-    assert rev.down_revision == "e26c9a41d8b5"
-    assert "llm_waiters" in (rev.doc or "") or "ngân sách" in (rev.doc or "")
+
+    goc = scripts.get_revision(REV)
+    assert goc.down_revision, "goc chuoi dual khong duoc lo lung (down_revision None)"
+    assert goc.down_revision not in CHUOI_DUAL, (
+        f"goc chuoi dual tro vao chinh chuoi ({goc.down_revision}) - do la mot "
+        f"vong, khong phai mot moi noi sang dong kia")
+    cha = scripts.get_revision(goc.down_revision)
+    assert cha is not None, f"down_revision {goc.down_revision} khong ton tai"
+
+    duong = {r.revision for r in scripts.walk_revisions("base", "heads")}
+    thieu = [r for r in CHUOI_DUAL if r not in duong]
+    assert not thieu, f"mat xich khong den duoc head: {thieu}"
+
+    assert "llm_waiters" in (goc.doc or "") or "ngân sách" in (goc.doc or "")
 
 
 @pytest.mark.timeout(240)
