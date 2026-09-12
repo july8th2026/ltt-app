@@ -170,14 +170,59 @@ def _quote_secret(request: Request) -> str:
 def register_job_routes(api, config, tag: str) -> None:
     """Attach the chargeable routes directly onto the public sub-application."""
 
-    def _resource_of(tool) -> str:
-        return str(getattr(tool, "admission_resource", "") or "api")
+    def _resource_of(tool, params=None) -> str:
+        """Tên tài nguyên khan hiếm mà lượt gọi này tranh — **theo model nó xin**.
 
-    def _class_slugs(tool) -> list:
+        🔴 ĐỌC BẢN KHAI QUA `admission_cho`, KHÔNG đọc trường tĩnh
+           `tool.admission_resource` (multijob 2.3, cùng lớp lỗi với R20).
+
+           `text.chat` từ Task 2.3 khai `admission_theo_model`, nên trường tĩnh
+           ấy **rỗng** và hàm này từng rơi về `"api"`. Hậu quả im lặng: mọi trần
+           cấu hình theo tài nguyên (`LTT_PUBLIC_API_RESOURCE_QUEUE_LIMITS`, ví
+           dụ ngay trong `public_api/config.py` là `llm_remote:8,gpu:20`) thôi
+           áp cho lượt LLM — cửa đo một tài nguyên tên `"api"` mà không ai đặt
+           trần, và hai tài nguyên thật (`ltt_38_3090`, `ltt_35_5060`) không bao
+           giờ được nhắc tới.
+
+           Nó **không** làm chạy quá suất — lease vẫn là khoá thật ở tầng dưới —
+           nhưng nó gỡ mất lớp áp lực ngược *trước khi giữ tiền*, tức khách bị
+           nhận việc rồi mới xếp hàng thay vì bị từ chối sớm.
+
+        ⛔ Nuốt `KeyError` ở đây là sai: model đã qua validate theo `params_schema`
+           trước khi tới, nên một `KeyError` nghĩa là bản khai tự mâu thuẫn.
+           Rơi về `"api"` lúc đó là lặng lẽ bỏ gác đúng thứ cần gác.
+        """
+        from platform_core.registry import suc_chua_admission
+
+        suc = suc_chua_admission(tool, str((params or {}).get("model") or ""))
+        if suc is not None and suc.resource:
+            return str(suc.resource)
+        # Tool không khai pool admission nào (vd `auto_scan_video`,
+        # `upscalevideo` — chúng chụp sức chứa theo giai đoạn) ⇒ giữ nguyên
+        # `"api"` như trước.
+        #
+        # ⚠️ PHÁT HIỆN, CỐ Ý KHÔNG SỬA Ở ĐÂY: chỗ nộp KIA của cùng một quyết
+        #    định (`runtime_noi_bo/job.py:95`) rơi về `resource_class(manifest)`
+        #    — tức `"gpu"` cho app GPU — chứ không phải `"api"`. Hai cửa trả hai
+        #    câu khác nhau cho cùng một câu hỏi, và hệ quả là
+        #    `LTT_PUBLIC_API_CLASS_CONCURRENCY="gpu:N"` không gác được job GPU
+        #    vào qua cửa công khai (`test_188::test_gpu_capacity_stops_a_second_
+        #    concurrent_job` đỏ vì đúng điều đó).
+        #
+        #    Lỗ ấy CÓ TRƯỚC chương trình dual-model — nhánh này không chạm một
+        #    dòng nào của `server/api/jobs.py`, `public_api/limits.py`,
+        #    `capacity.py` hay `apps/upscalevideo/` (đo bằng `git diff` từ điểm
+        #    rẽ nhánh) — và sửa nó đổi hành vi hàng đợi của một chương trình
+        #    khác. Đổi `"api"` thành `resource_class(manifest)` ở đây cũng KHÔNG
+        #    làm phép kiểm ấy xanh: trần thật bị mất ở `policy.resolve`, nơi
+        #    `class_concurrency` của cấu hình không đi vào bộ giới hạn đã giải.
+        return "api"
+
+    def _class_slugs(tool, params=None) -> list:
         """Apps competing for the same scarce resource as this tool."""
         from platform_core.registry import discover
 
-        resource = _resource_of(tool)
+        resource = _resource_of(tool, params)
         return [item.manifest.slug for item in discover()
                 if not item.error and limits.resource_class(item.manifest) == resource]
 
@@ -351,7 +396,8 @@ def register_job_routes(api, config, tag: str) -> None:
                                    user_id=principal.user_id)
         limits.enforce_active_jobs(
             db, principal=principal, config=config, app_slug=tool.app_slug,
-            class_slugs=_class_slugs(tool), resource=_resource_of(tool),
+            class_slugs=_class_slugs(tool, clean),
+            resource=_resource_of(tool, clean),
             limits=resolved)
         # Spending limits apply to spending. A test call moves no credit, so a
         # daily ceiling or a budget would be metering something that cannot
