@@ -154,7 +154,7 @@ def test_han_cho_nap_du_cho_TRUONG_HOP_XAU_NHAT(van):
         "15 GiB tu dia lanh")
 
 
-def test_ttl_khong_bao_gio_NGAN_ma_khac_khong(van):
+def test_ttl_khong_bao_gio_NGAN_ma_khac_khong(cau_hinh):
     """TTL quá ngắn thì mỗi lượt khách là một lần nạp lại — đắt và chậm.
 
     ⚠️ Chốt về **hướng**, không về một con số: nó chỉ kêu khi ai đó hạ TTL
@@ -172,7 +172,20 @@ def test_ttl_khong_bao_gio_NGAN_ma_khac_khong(van):
        không bao giờ nhả; `≥ 300` ở ngoài nó vì một khách đang hỏi liên tiếp
        không đợi đủ 5 phút giữa hai câu.
     """
-    ttl = [int(x) for x in re.findall(r"^\s*ttl:\s*(\d+)", van, re.MULTILINE)]
+    # 🔴 DOC GIA TRI DA PHAN TICH, KHONG QUET VAN BAN — sua 13/09/2026.
+    #
+    #    Ban truoc dung `re.findall(r"^\s*ttl:\s*(\d+)", van)`. Ngay 13/09 ho so
+    #    doi sang YAML anchor de mot cho dinh nghia va cac cho sau tham chieu:
+    #
+    #        ttl: &ttl_nha 1800     <- `\d+` khong khop, co `&ttl_nha` chen giua
+    #        ttl: *ttl_nha          <- khong co chu so nao ca
+    #
+    #    Regex tra ve **rong**, va phep kiem do voi "khong ho so nao khai `ttl`"
+    #    trong khi CA HAI ho so deu khai 1800. Mot phep kiem doc VAN BAN mu truoc
+    #    moi cu phap YAML hop le ma no khong luong truoc — anchor, trich dan,
+    #    dong gap. Thu no muon biet la **gia tri**, nen phai hoi bo phan tich.
+    ttl = [int(h["ttl"]) for h in (cau_hinh.get("models") or {}).values()
+           if h.get("ttl") is not None]
     assert ttl, "khong ho so nao khai `ttl`"
     xau = [t for t in ttl if 0 < t < 300]
     assert not xau, (
@@ -191,12 +204,20 @@ def test_DOI_CHUNG_ttl_ngan_van_bi_BAT(tmp_path):
     assert [t for t in ttl if 0 < t < 300] == [60]
 
 
-def test_moi_ho_so_deu_co_unloadTimeout(van):
-    """Nhả phải có hạn: một tiến trình không chịu chết là card không bao giờ về."""
-    so_ho_so = len(re.findall(r"^\s*ttl:\s*\d+", van, re.MULTILINE))
-    so_han = len(re.findall(r"^\s*unloadTimeout:\s*\d+", van, re.MULTILINE))
-    assert so_han == so_ho_so, (
-        f"{so_ho_so} ho so nhung chi {so_han} khai `unloadTimeout`")
+def test_moi_ho_so_deu_co_unloadTimeout(cau_hinh):
+    """Nhả phải có hạn: một tiến trình không chịu chết là card không bao giờ về.
+
+    ⛔ Dem tren CAU TRUC, khong dem dong van ban — cung ly do voi
+       `test_ttl_khong_bao_gio_NGAN_ma_khac_khong`: ban regex cu dem
+       mot mau regex tren dong `ttl:` va ra **0 ho so** sau khi ho so doi sang
+       YAML anchor,
+       nen phep so `2 == 0` do trong khi ca hai ho so deu khai du.
+    """
+    ho_so = cau_hinh.get("models") or {}
+    thieu = [ten for ten, h in ho_so.items() if not h.get("unloadTimeout")]
+    assert ho_so, "khong doc duoc ho so nao"
+    assert not thieu, (
+        f"{len(ho_so)} ho so nhung {thieu} khong khai `unloadTimeout`")
 
 
 def _nhom_sai(cau_hinh: dict) -> list:

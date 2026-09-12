@@ -217,13 +217,62 @@ def test_doc_anh_duoc_theo_HOP_DONG_chu_khong_theo_TEN(moi_truong):
     co_anh = [a for a, s in models.items()
               if (s.get("constraints") or {}).get("reads_images")]
     khong_anh = [a for a in models if a not in co_anh]
-    assert co_anh and khong_anh, (
-        "ban khai khong con mot cap co/khong doc anh — phep kiem nay khong do gi")
+
+    # 🔴 BAN TRUOC DOI `co_anh and khong_anh` — VA NO DO NGAY 13/09 KHI BAN KHAI
+    #    DUNG LEN. L-03 bat `ltt-3.8` khai `reads_images` (engine nap `mmproj`
+    #    cho ca hai ho so tu Task 3.3), nen `khong_anh` thanh RONG va phep kiem
+    #    do truoc mot thay doi **hop le**.
+    #
+    # ⇒ Loi khong o ban khai ma o phep kiem: no lay "co ca hai loai" lam DIEU
+    #   KIEN, trong khi do chi la mot dac diem tinh co cua ban khai hom no duoc
+    #   viet. Xem `viet-lai-phep-kiem-khi-tap-hop-rong-ra`.
+    #
+    # ⭐ Phan no THAT SU muon chung minh — `doc_anh_duoc` doc CO chu khong doc
+    #   TEN — nay kiem tren mot ban khai GIA co du ca hai loai. Bat bien voi so
+    #   luong model that, va manh hon: ban khai that co the khong bao gio chua
+    #   mot model "khong doc anh" nao nua.
+    assert co_anh, "ban khai khong con model nao khai `reads_images`"
     for alias in co_anh:
         assert L.doc_anh_duoc(moi_truong, alias) is True
     for alias in khong_anh:
         assert L.doc_anh_duoc(moi_truong, alias) is False
     assert L.doc_anh_duoc(moi_truong, "khong-ton-tai") is False
+
+
+def test_doc_anh_theo_CO_chu_khong_theo_TEN__ban_khai_GIA(moi_truong, monkeypatch):
+    """⛔ VE CHUNG MINH THAT SU, tach ra khoi ban khai that.
+
+    Ca tren chi con chung minh duoc mot chieu: moi model CO co thi `True`. Chieu
+    kia — model KHONG co co thi `False` — bien mat cung luc `ltt-3.8` duoc bat
+    co (L-03), va mot ngay nao do ban khai that co the khong bao gio chua mot
+    model "khong doc anh" nao nua.
+
+    ⭐ Nen ve ay kiem tren mot ban khai **gia** co du ca hai loai, VA co mot ten
+       de danh lua: `vision-nhung-khong-doc` mang chu "vision" ma KHONG co co.
+       Neu `doc_anh_duoc` suy theo ten thi no se noi True — day la cai bay.
+    """
+    from apps.chatltt.services import chinh_sach, luot as L
+
+    class _NangLuc:
+        ten = chinh_sach.NANG_LUC_TEXT
+        models = {
+            "co-co": {"constraints": {"reads_images": True}},
+            "khong-co": {"constraints": {"context_window": 1000}},
+            # Ten CO chu "vision" nhung KHONG khai co -> phai la False.
+            "vision-nhung-khong-doc": {"constraints": {}},
+            # Ten KHONG co chu "vision" nhung CO khai co -> phai la True.
+            "ltt-3.8": {"constraints": {"reads_images": True}},
+        }
+
+    monkeypatch.setattr(chinh_sach, "danh_muc",
+                        lambda db, **kw: [_NangLuc()])
+
+    assert L.doc_anh_duoc(moi_truong, "co-co") is True
+    assert L.doc_anh_duoc(moi_truong, "ltt-3.8") is True
+    assert L.doc_anh_duoc(moi_truong, "khong-co") is False
+    assert L.doc_anh_duoc(moi_truong, "vision-nhung-khong-doc") is False, (
+        "`doc_anh_duoc` dang suy theo TEN: mot alias co chu 'vision' ma khong "
+        "khai `reads_images` van duoc cho doc anh")
 
 
 # ── 4. Trần ─────────────────────────────────────────────────────────────────

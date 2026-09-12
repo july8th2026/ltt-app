@@ -46,6 +46,60 @@ BẮT ĐẦU
 KẾT THÚC — cập nhật `docs/_luutru/PROJECT_MEMORY.md` + memory
 ```
 
+## 1b. 🔴 TRA NGUỒN TRƯỚC KHI TỰ SUY — chủ sản phẩm chốt 2026-09-13
+
+*"Nên lên cộng đồng GitHub hoặc tra cứu tài liệu từ model để lấy thông số, hoặc
+cách làm — thay vì tự suy."*
+
+Gặp một hành vi lạ của model, engine hay thư viện ngoài: **tra nguồn trước**, và
+đo để **kiểm chứng** nguồn — không đo để **thay** nguồn.
+
+| Thứ tự | Nguồn | Ví dụ đường |
+|---|---|---|
+| 1 | model card của nhà sản xuất | `huggingface.co/<org>/<model>/raw/main/README.md` |
+| 2 | README của chính engine | `raw.githubusercontent.com/ggml-org/llama.cpp/master/tools/server/README.md` |
+| 3 | kho bản vá / issue của cộng đồng cho **đúng** model ấy | `huggingface.co/api/models/<repo>/tree/main` |
+| 4 | **rồi mới** đo trên máy ta, để xác nhận nó áp đúng ở đây | |
+
+⚠️ `WebFetch`/`WebSearch` **hỏng trên máy này** — dùng
+`curl -sL --max-time 60 -A "Mozilla/5.0" <url>`.
+
+### Ca đã trả giá, 13/09/2026 — L-02
+
+Tôi đo `ltt-3.5` trả **rỗng 5/5 lượt** ở `max_tokens` 150/200/250, rồi định đặt
+một **sàn `max_tokens`** ở cửa vào. Con số đo **đúng**; bản sửa **sai tầng**.
+Bốn phút tra nguồn đổi hẳn kết luận:
+
+* model card Qwen: *"we recommend an output length of **32.768 tokens**"*, và có
+  **hai nút riêng biệt** — `max_tokens` (độ dài) vs `enable_thinking=False` /
+  `/no_think` (tắt suy nghĩ). Tôi đang nhầm chúng làm một.
+* `froggeric/Qwen-Fixed-Chat-Templates`: template **chính thức** của Qwen
+  *"hardcodes `xhigh` by default, **burns token budgets with zero content
+  returned**"*. Bản vá mặc định `medium`, thêm `none`/`off`.
+
+⇒ Gốc không phải *"khách đặt `max_tokens` thấp"* mà là **template hardcode
+  `xhigh`**. Chặn ở cửa vào là chữa triệu chứng, và nó còn **cướp mất của khách
+  một tham số hợp lệ**.
+
+### ⭐ Phép đo phân biệt rẻ hơn mọi suy luận
+
+Nghi một tham số **không được engine tôn trọng**? Gửi ba giá trị khác nhau của
+nó và xem đầu ra có đổi không. Đo 13/09:
+
+```
+ltt-3.5  reasoning_effort = None / low / xhigh  ->  token_ra = 250 / 250 / 250
+                                                    (dung bang max_tokens, RONG ca ba)
+ltt-3.8  cung ba gia tri                        ->  token_ra =  63 /  63 /  62, dung ca ba
+```
+
+Một tham số không đổi được gì là một tham số **đang bị hardcode ghi đè**.
+
+⛔ Và chỗ tinh tế nhất: kho **đã** cân nhắc áp bản vá cho 3.5 rồi cố ý **không**
+làm, với lý do viết rõ trong `llama-swap.yaml` — *"áp nó cho 3.5 là áp một bản vá
+cho một lỗi **chưa được đo** ở model này"*. Lý do ấy **đúng lúc nó được viết**.
+Phép đo L-02 chính là thứ còn thiếu. **Một chú thích nói về lúc nó được viết,
+không nói về lúc bạn đọc nó** — luôn hỏi điều kiện nó đặt ra đã đổi chưa.
+
 ## 2. Đọc trước khi ghi
 
 Không sửa một dòng mã trước khi biết:
