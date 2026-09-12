@@ -44,10 +44,40 @@ def test_app_nap_sach():
 
 
 def test_vendor_engine_co_mat():
+    """Engine Real-ESRGAN phải có mặt ở cây mà **deploy chép từ**.
+
+    ⛔ Hỏi cây nguồn deploy, không hỏi cây hiện tại. `vendor/` bị gitignore có
+       chủ ý nên nó **không đi theo `git worktree add`** — hỏi cây hiện tại thì
+       phép kiểm này đỏ vĩnh viễn ở mọi worktree, tức ở gần như mọi phiên làm
+       việc. Toàn văn lý do: `tests/cay_nguon_deploy.py`.
+
+    ⭐ Và nó **mạnh hơn** bản cũ chứ không yếu đi: xoá `vendor/` ở cây chính
+       vẫn đỏ, kể cả khi lượt chạy này xuất phát từ một worktree.
+    """
+    from tests.cay_nguon_deploy import duong_nguon, ghi_chu_cay
+
+    eng = duong_nguon("apps/upscalevideo/vendor/engine")
+    assert (eng / "realesrgan-ncnn-vulkan.exe").is_file() and (
+        eng / "models").is_dir(), f"thiếu vendor/engine (exe + models) {ghi_chu_cay()}"
+    for ten in ("realesr-general-x4v3", "realesrgan-x4plus"):
+        assert (eng / "models" / f"{ten}.param").is_file() and (
+            eng / "models" / f"{ten}.bin").is_file(), (
+                f"thiếu model {ten} trong vendor/engine/models {ghi_chu_cay()}")
+
+
+def test_check_engine_doc_dung_thu_muc_vendor():
+    """⛔ ĐỐI CHỨNG cho phép kiểm trên: nó hỏi đường dẫn, nên đường dẫn ấy phải
+    đúng **cái mà mã sản phẩm thật sự đọc**.
+
+    Không có ca này thì `test_vendor_engine_co_mat` có thể xanh trong khi
+    `engine.py` đọc một thư mục hoàn toàn khác — một phép kiểm về đĩa không tự
+    biết nó đang canh sai chỗ.
+    """
     from apps.upscalevideo import engine
-    assert engine.check_engine(), "thiếu vendor/engine (exe + models)"
-    assert engine.model_available("realesr-general-x4v3")
-    assert engine.model_available("realesrgan-x4plus")
+
+    assert engine.engine_dir().name == "engine"
+    assert engine.engine_dir().parent.name == "vendor"
+    assert engine.engine_dir().parent.parent.name == "upscalevideo"
 
 
 def test_manifest_cost():

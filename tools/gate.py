@@ -3,17 +3,35 @@ gate.py — MỘT lệnh chạy cổng chất lượng theo hồ sơ tường mi
 
     python tools/gate.py --doi       # VONG LAP L1 — pham vi tu diff
     python tools/gate.py             # PHAN QUYET L3 — day du, ~11,4 phut
-    python tools/gate.py --quick     # bo hai buoc nang, ~40 giay
+    python tools/gate.py --quick     # bo hai buoc nang, ~3 phut
     python tools/gate.py --vong-lap  # CHAN DOAN   — tinh + `--lf`, ~15 giay
+    python tools/gate.py --doi --dung-som   # nhu tren, nhung DO thi dung ngay
 
 ## Ba che do, va chon nham thi hong theo hai kieu khac nhau
 
-| | Chay gi | Do 27/08 | Dung khi |
+| | Chay gi | Do | Dung khi |
 |---|---|---|---|
 | `--doi` | thanh phan cham toi diff | tuy diff | vong lap mac dinh |
 | day du | tat ca cac buoc | **~11,4 phut** | checkpoint / truoc khi bao xong |
-| `--quick` | bo `bo test` + da tien trinh | ~40 giay | sua nhieu tep lien tiep |
+| `--quick` | bo `bo test` + da tien trinh | **~3 phut** | sua nhieu tep lien tiep |
 | `--vong-lap` | tinh + `test_nhanh --lf` | **~15 giay** | chan doan last-failed |
+| `--dung-som` | *(co ghep them)* dung o loi RE dau tien | tiet kiem ~575s | vong lap |
+
+⚠️ **"~40 giay" cua `--quick` la mot con so DA TROI** — sua 13/09/2026. Do that
+   tren cay nay: rieng buoc `mypy` mat **124,0s**, va tong moi buoc khong phai
+   `bo test`/`bat bien` la **182s**. Con so cu co tu truoc khi `mypy` vao gate.
+   ⛔ Day dung la co che ma `CLAUDE.md` canh bao: mot gia tri chep tay trong chu
+      thich khong co cach nao tu biet no da cu.
+
+## Chi phi that — do 12/09/2026, mot luot `--doi` day du 33 buoc
+
+    bo test (song song)  735,5s  60,3%      <- 3 buoc = 95,3%
+    bat bien da tien...  302,4s  24,8%
+    mypy                 124,0s  10,2%
+    30 buoc con lai       58,1s   4,7%      <- cong LAI chua toi mot phut
+
+⇒ "33 buoc" khong phai cho dat. Chi co BA buoc dat, va `--dung-som` ton tai de
+  khong tra tien cho hai buoc cuoi khi buoc dau da bao hong.
 
 🔑 Gate la cong cu ra **phan quyet**, khong phai cong cu **chan doan**.
 
@@ -1201,7 +1219,36 @@ def _rut_gon_vong_lap(steps: list[Step]) -> list[Step]:
     return ra
 
 
-def _chay_theo_lich(steps: list[Step], *, j: int, tuan_tu: bool) -> None:
+#: ── `--dung-som`: dung ngay khi mot buoc RE do (opt-in) ─────────────────────
+#:
+#: 🔴 DO DUOC 12/09/2026, mot luot `--doi` that tren cay nay:
+#:
+#:      buoc 12  mypy                 124,0s   FAIL   <- da biet phan quyet o day
+#:      buoc 26  bat bien da tien..   302,4s   PASS
+#:      buoc 33  bo test (song song)  735,5s   FAIL
+#:      ------------------------------------------------
+#:      tong 33 buoc = 1220s CPU / 734s dong ho
+#:
+#:    Ba buoc chiem **95,3%**; 30 buoc con lai cong lai **58,1 giay**. Va gate
+#:    da biet minh FAIL tu giay thu 159 roi van chay them 575 giay nua.
+#:
+#: ⛔ VI SAO NO LA CO, KHONG PHAI MAC DINH. `_chay_theo_lich` da viet ro o nhanh
+#:    `cong`: *"KHONG bo qua phan con lai: nguyen tac 'chay het roi moi bao' van
+#:    giu"*. Nguyen tac do dung cho mot luot PHAN QUYET — chay het moi thay
+#:    **moi** loi trong mot luot, thay vi sua mot cai roi phat hien cai ke tiep.
+#:
+#: ⇒ Hai cong viec khac nhau, hai che do khac nhau:
+#:      vong lap  (`--dung-som`) — ky vong CO loi, muon biet SOM
+#:      phan quyet (mac dinh)    — ky vong XANH, muon biet DU
+#:
+#: ⚠️ Va no **khong duoc** im lang: buoc chua chay phai hien ra o dong RESULT,
+#:    cung luat da ap cho `--quick`, `--vong-lap` va cay-doi. Mot dong `FAIL
+#:    (1/33)` cua che do nay va cua mot luot day du noi hai dieu khac han nhau.
+NHOM_RE = ("cong", "tinh", "frontend")
+
+
+def _chay_theo_lich(steps: list[Step], *, j: int, tuan_tu: bool,
+                    dung_som: bool = False, _da_tach: bool = False) -> None:
     """Chạy các bước theo lịch, in mỗi bước khi nó **xong**.
 
     ## Vì sao không chạy tuần tự nữa
@@ -1239,6 +1286,43 @@ def _chay_theo_lich(steps: list[Step], *, j: int, tuan_tu: bool) -> None:
         dau = "ok  " if step.ok else "LOI "
         print(f"  [{dau}] {step.name:<28} {step.seconds:6.1f}s "
               f"({len(xong)}/{len(steps)})", flush=True)
+
+    if dung_som and not _da_tach:
+        # `_da_tach` chan de quy vo han: lan goi cho nhom DAT van mang
+        # `dung_som=True` (de `chay_co_ngan_sach` biet ma cat), nhung no KHONG
+        # duoc tach lan nua — `dat` cua `dat` chinh la `dat`.
+        #
+        # Hai pha, RE truoc. Doi lai tinh song song (mot luot XANH cham hon
+        # ~180s vi nhom re khong con nap duoc vao bong cua `bo test`) de lay
+        # mot luot DO nhanh hon ~575s. Danh doi do chi dung trong vong lap —
+        # xem `NHOM_RE`.
+        re = [s for s in steps if s.nhom in NHOM_RE]
+        dat = [s for s in steps if s.nhom not in NHOM_RE]
+        # ⛔ MOT TRONG HAI NHOM CO THE RONG, va goi tiep voi danh sach rong thi
+        #    `ThreadPoolExecutor(max_workers=0)` nem `ValueError`. Da vap that
+        #    ngay 13/09 o `--quick --dung-som`: `--quick` bo ca hai buoc `nang`
+        #    nen `dat` rong, va gate chet SAU khi da chay xong 24/24 buoc —
+        #    tuc mat trang ca luot do vi mot phep chia cho khong.
+        if re:
+            _chay_theo_lich(re, j=j, tuan_tu=tuan_tu)
+        if any(s.ok is False for s in re):
+            if dat:
+                # ⛔ THUAN ASCII o moi dong xuat ra man hinh. `gate.py > gate.log`
+                #    lam stdout roi ve cp1252 tren Windows, va MOT ky tu ngoai
+                #    bang ma nem `UnicodeEncodeError` — vo o cho it nguoi nhin
+                #    nhat. Dong duoi day tung mang mot dau mui ten Unicode va da
+                #    lam do `test_145::..._dau_ra_bi_HUNG` (13/09/2026).
+                #
+                # ⚠️ Va chu thich nay cung phai tranh chuoi ma bo do tim: no soi
+                #    VAN BAN tung dong, nen mot dong GIAI THICH ve luat cung bi
+                #    luat ay bat. Vong dau cua chu thich nay chinh la vi du.
+                print(f"\n  [dung som] mot buoc RE da do -> {len(dat)} buoc DAT "
+                      f"chua chay: {', '.join(s.name for s in dat)}", flush=True)
+            return
+        if dat:
+            _chay_theo_lich(dat, j=j, tuan_tu=tuan_tu, dung_som=True,
+                            _da_tach=True)
+        return
 
     if tuan_tu:
         for step in steps:
@@ -1290,6 +1374,26 @@ def _chay_theo_lich(steps: list[Step], *, j: int, tuan_tu: bool) -> None:
         with khoa:
             khoa.wait_for(lambda: con_lai >= can)
             con_lai -= can
+        # 🔴 KIEM SAU KHI DA GIANH DUOC NGAN SACH, khong o vong nop.
+        #
+        #    Cac buoc NANG khong chay song song that: `bo test` an gan het ngan
+        #    sach loi, nen `bat bien da tien trinh` **xep hang** sau no. Do
+        #    13/09/2026, mot luot `--doi` that:
+        #
+        #        00:34:30  gate bat dau
+        #        00:46:49  `bo test` DO (725,6s) -> phan quyet da la FAIL
+        #        00:46:49  `bat bien` MOI khoi dong, chay them 302s
+        #
+        #    Tuc gate tra them 5 phut cho mot buoc khong con doi duoc ket qua.
+        #    Loc o vong nop thi KHONG bat duoc: luc nop, `bo test` chua do —
+        #    no chi do 12 phut sau, dung luc `bat bien` roi hang doi.
+        #
+        # ⛔ Chi ap trong nhom DAT. Nhom re van chay het (xem `NHOM_RE`).
+        if dung_som and any(s.ok is False for s in steps):
+            with khoa:
+                con_lai += can
+                khoa.notify_all()
+            return
         try:
             chay_va_in(step)
         finally:
@@ -1305,9 +1409,16 @@ def _chay_theo_lich(steps: list[Step], *, j: int, tuan_tu: bool) -> None:
     #      `ngan_sach` — bao nhieu LOI duoc dung cung luc
     #    Bo `j` di thi mot may co 40 buoc tinh se mo 40 luong chi de xep hang;
     #    bo `ngan_sach` di thi ta quay lai dung cho da lam treo may hai lan.
-    with ThreadPoolExecutor(max_workers=min(len(thu_tu), max(1, j))) as ex:
-        for f in [ex.submit(chay_co_ngan_sach, s) for s in thu_tu]:
-            f.result()
+    # ⛔ `if thu_tu` KHONG phai phong thu thua. `ThreadPoolExecutor(0)` nem
+    #    `ValueError`, va mot tap buoc chi gom nhom `sau_test` la co that: do
+    #    chinh la thu `--quick --dung-som` truyen vao ngay 13/09/2026 (quick bo
+    #    ca hai buoc `nang`, con `tinh`/`frontend` da chay o pha truoc). Gate
+    #    chet SAU khi 24/24 buoc da xanh — mat trang ca luot do vi mot phep
+    #    `min()` cham day. `tests/test_1235::test_mot_nhom_RONG...` ghim lai.
+    if thu_tu:
+        with ThreadPoolExecutor(max_workers=min(len(thu_tu), max(1, j))) as ex:
+            for f in [ex.submit(chay_co_ngan_sach, s) for s in thu_tu]:
+                f.result()
 
     # ⛔ SAU khi `bo test` xong hẳn, KHÔNG song song với nó.
     #
@@ -1542,6 +1653,10 @@ def main() -> int:
                         help="ho so chay; xem HO_SO trong tep nay")
     parser.add_argument("--pham-vi", default="",
                         help="chi kiem mot thanh phan (vd core:tien, app:vps)")
+    parser.add_argument("--dung-som", action="store_true",
+                        help="chay nhom RE truoc; mot buoc re do thi DUNG, "
+                             "khong chay `bo test`/`bat bien`. Cho VONG LAP; "
+                             "mot luot phan quyet phai chay het (xem NHOM_RE)")
     parser.add_argument("--doi", action="store_true",
                         help="suy pham vi tu cay hien tai")
     args = parser.parse_args()
@@ -1673,13 +1788,20 @@ def main() -> int:
                   "may. Ket qua co the bi nhieu; xem `--noi-tiep`.")
         print()
         t0_chay = time.time()
-        _chay_theo_lich(steps, j=args.j, tuan_tu=tuan_tu)
+        _chay_theo_lich(steps, j=args.j, tuan_tu=tuan_tu,
+                        dung_som=args.dung_som)
         tong_s = time.time() - t0_chay
 
     print("\n" + "=" * 62)
-    failed = [s for s in steps if not s.ok]
+    # 🔴 BA trang thai, khong phai hai. `s.ok is None` = buoc CHUA CHAY
+    #    (`--dung-som` da cat luot). Gop no vao `failed` la bao mot loi khong
+    #    ton tai; gop vao PASS la bao mot bang chung khong ton tai. Ca hai deu
+    #    sai, va cai thu hai sai theo huong nguy hiem.
+    failed = [s for s in steps if s.ok is False]
+    chua_chay = [s for s in steps if s.ok is None]
     for step in steps:
-        mark = "BOQUA" if step.bo_qua else ("PASS" if step.ok else "FAIL")
+        mark = ("CHUA " if step.ok is None else
+                "BOQUA" if step.bo_qua else ("PASS" if step.ok else "FAIL"))
         print(f"  [{mark}] {step.name:<28} {step.seconds:6.1f}s")
     if failed:
         print("\nChi tiet buoc that bai:")
@@ -1722,6 +1844,12 @@ def main() -> int:
     if bo_qua:
         ket += (f"  [{len(bo_qua)} BUOC TU BO QUA, KHONG PHAI BANG CHUNG: "
                 f"{', '.join(s.name for s in bo_qua)}]")
+    # 🔴 CUNG LUAT: mot luot `--dung-som` da cat bo cac buoc DAT thi dong RESULT
+    #    phai noi ra. Nguoi doc dang voi chi doc dong nay, va `FAIL (1/33)` cua
+    #    mot luot cat va cua mot luot day du trong y het nhau neu khong noi.
+    if chua_chay:
+        ket += (f"  [DUNG SOM: {len(chua_chay)} BUOC CHUA CHAY, KHONG PHAI "
+                f"BANG CHUNG: {', '.join(s.name for s in chua_chay)}]")
     # 🔴 CUNG LUAT VOI `--quick` VA `--vong-lap`: mot luot chay it tin cay
     #    hon thi DONG KET QUA cua no phai trong khac. Truoc day cay-doi chi duoc
     #    noi trong mot doan van phia tren, con dong RESULT in y het mot luot
@@ -1807,7 +1935,10 @@ def _ghi_ket_qua(ho_so: str, steps: list[Step], ket: str, tong_s: float,
             "sha": sha,
             "nhanh": _git_gon(["git", "rev-parse", "--abbrev-ref", "HEAD"]),
             "cay_da_doi_giua_chung": cay_da_doi,
-            "buoc": [{"ten": s.name, "ket": ("BOQUA" if s.bo_qua else
+            # `CHUA` = `--dung-som` da cat truoc khi buoc nay chay. Bang chung
+            # may sinh phai phan biet duoc no voi PASS — xem `NHOM_RE`.
+            "buoc": [{"ten": s.name, "ket": ("CHUA" if s.ok is None else
+                                             "BOQUA" if s.bo_qua else
                                              "PASS" if s.ok else "FAIL"),
                       "giay": round(s.seconds, 1)} for s in steps],
         }

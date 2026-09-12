@@ -45,9 +45,23 @@ import subprocess
 
 import pytest
 
+from tests.cay_nguon_deploy import ghi_chu_cay, goc_nguon_deploy
 from tools.nghiem_thu_deploy import _phu_boi
 
 GOC = pathlib.Path(__file__).resolve().parents[1]
+
+#: 🔴 HAI GOC, VA CHUNG TRA LOI HAI CAU HOI KHAC NHAU.
+#:
+#:    `GOC`       — cay HIEN TAI. Dung cho *"ma dang sua co nhac ten tep nao"*.
+#:    `GOC_NGUON` — cay ma DEPLOY CHEP TU (o worktree: cay chinh). Dung cho
+#:                  *"tep gitignored co that tren dia khong"*.
+#:
+#: ⛔ Truoc 13/09/2026 ca hai deu la `GOC`, va hau qua la ba phep kiem trong tep
+#:    nay do VINH VIEN o moi worktree: tep gitignored khong di theo
+#:    `git worktree add`. Tuc mot phien lam viec dung luat (§5: moi chien dich
+#:    mot cay rieng) thi khong bao gio dat duoc mot luot gate xanh — xem
+#:    `tests/cay_nguon_deploy.py`.
+GOC_NGUON = goc_nguon_deploy()
 CAI_DAT = GOC / "setup" / "2-cai-dat.ps1"
 VAN_BAN = CAI_DAT.read_text(encoding="ascii", errors="replace")
 
@@ -93,11 +107,11 @@ def _tep_dai_dien(mau: str) -> list:
     """Vài tệp THẬT nằm dưới một mẫu đường dẫn. Rỗng nếu không có tệp nào."""
     phan = mau.split("\\")
     if "*" not in mau:
-        d = GOC / mau.replace("\\", "/")
+        d = GOC_NGUON / mau.replace("\\", "/")
         if d.is_file():
             return [d]
         return [x for x in d.rglob("*") if x.is_file()][:1] if d.is_dir() else []
-    goc = GOC / phan[0]
+    goc = GOC_NGUON / phan[0]
     duoi = "/".join(phan[2:])
     ra = []
     for con in (sorted(goc.iterdir()) if goc.is_dir() else []):
@@ -178,7 +192,7 @@ def test_moi_duong_khai_deu_CO_THAT_tren_dia():
     """⛔ ĐỐI CHỨNG NGƯỢC. Một đường khai mà không tồn tại là một dòng chết: nó
     làm danh sách trông đầy đủ hơn thực tế, và che đúng chỗ đang thiếu."""
     thieu = [m for m in _van_chuyen() if not _tep_dai_dien(m)]
-    assert not thieu, f"khai nhung khong co tren dia: {thieu}"
+    assert not thieu, (f"khai nhung khong co tren dia: {thieu} {ghi_chu_cay()}")
 
 
 def test_moi_duong_khai_deu_THAT_SU_bi_gitignore():
@@ -193,9 +207,9 @@ def test_moi_duong_khai_deu_THAT_SU_bi_gitignore():
     for mau in _van_chuyen():
         for tep in _tep_dai_dien(mau)[:1]:
             r = subprocess.run(["git", "check-ignore", "-q", str(tep)],
-                               cwd=GOC, capture_output=True)
+                               cwd=GOC_NGUON, capture_output=True)
             if r.returncode != 0:
-                thua.append(f"{mau} (vd {tep.relative_to(GOC).as_posix()})")
+                thua.append(f"{mau} (vd {tep.relative_to(GOC_NGUON).as_posix()})")
     assert not thua, f"cac duong nay KHONG bi gitignore nen da co trong archive: {thua}"
 
 
@@ -214,7 +228,9 @@ def _gitignored_bi_ma_runtime_nhac() -> set:
     """
     r = subprocess.run(
         ["git", "ls-files", "--others", "--ignored", "--exclude-standard"],
-        cwd=GOC, capture_output=True, text=True)
+        # Hoi cay NGUON DEPLOY: day la cau "tren dia co gi", va dia co nghia la
+        # dia ma `2-cai-dat.ps1` se doc. Xem `tests/cay_nguon_deploy.py`.
+        cwd=GOC_NGUON, capture_output=True, text=True)
     ung_vien = []
     for d in r.stdout.split("\n"):
         d = d.strip()

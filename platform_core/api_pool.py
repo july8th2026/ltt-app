@@ -61,13 +61,111 @@ def _cuon_cua_so(key: ApiKey, now: datetime) -> None:
         key.window_tokens = 0
 
 
-def _dinh_muc_con(key: ApiKey) -> bool:
-    """True nếu key CÒN quota trong cửa sổ hiện tại (đã cuộn cửa sổ trước khi gọi)."""
-    if key.rpm_limit and key.window_requests >= key.rpm_limit:
+def _cua_so_hieu_luc(key: ApiKey, now: datetime) -> tuple[int, int]:
+    """`(window_requests, window_tokens)` HIỆU LỰC tại `now` — **không ghi gì**.
+
+    Cùng phép tính với `_cuon_cua_so`, khác đúng một điều: nó không chạm đối
+    tượng. Cần bản không-ghi vì `_ung_vien` chỉ đang **lọc**, và một phép lọc
+    không được để lại khoá hàng — xem `_ghi_so_pool`.
+    """
+    ws = _aware(key.window_start)
+    if ws is None or (now - ws).total_seconds() >= WINDOW_S:
+        return 0, 0
+    return int(key.window_requests or 0), int(key.window_tokens or 0)
+
+
+def _dinh_muc_con(key: ApiKey, w_req: int, w_tok: int) -> bool:
+    """True nếu key CÒN quota trong cửa sổ hiện tại.
+
+    `w_req`/`w_tok` là số ĐÃ cuộn cửa sổ (`_cua_so_hieu_luc`), truyền vào chứ
+    không đọc từ `key`: bên gọi có thể chưa ghi việc cuộn xuống đối tượng.
+    """
+    if key.rpm_limit and w_req >= key.rpm_limit:
         return False
-    if key.tpm_limit and key.window_tokens >= key.tpm_limit:
+    if key.tpm_limit and w_tok >= key.tpm_limit:
         return False
     return True
+
+
+#: ── 🔴 SỔ CỦA POOL KHOÁ ĐI Ở GIAO DỊCH RIÊNG (L-01) ─────────────────────────
+#:
+#: Chú thích đầu tệp này nói: *"một API key CHIA SẺ được cho nhiều request đồng
+#: thời, nên KHÔNG cần khoá độc quyền (`FOR UPDATE`)"*. Câu ấy đúng về **ý định**
+#: và sai về **cơ chế**: không xin `FOR UPDATE` không có nghĩa là không có khoá.
+#: Trên PostgreSQL, một `UPDATE` thường **cũng** lấy khoá hàng độc quyền, và khoá
+#: đó sống **tới khi giao dịch commit**.
+#:
+#: Hậu quả đo được 12/09/2026: `chon_key` tăng bộ đếm rồi chỉ `flush()`, còn giao
+#: dịch nghiệp vụ thì commit **sau khi model trả lời** — giữa hai mốc là 3-20
+#: giây gọi máy B. Production có **đúng một** hàng khoá `ltt_llm` và **cả hai**
+#: model đi qua nó, nên một lượt LTT-3.8 chặn một lượt LTT-3.5 dù hai GPU hoàn
+#: toàn rời nhau. Đo: lượt thứ hai chờ **2,015 s** ở `chon_key` trong khi lượt
+#: thứ nhất giữ 2,0 s. Sổ lỗi: `docs/ltt_llm_dual/SO_LOI_DO_TAI.md` §L-01.
+#:
+#: ⇒ Sổ của pool khoá (ai được cấp, bao nhiêu lượt, sức khoẻ) **không thuộc** giao
+#:   dịch nghiệp vụ. Nó có giao dịch của chính nó: mở, ghi, commit ngay — khoá
+#:   hàng sống vài mili giây thay vì vài chục giây.
+#:
+#: ⛔ CHỈ PostgreSQL. Cùng khuôn `admission._khoa_resource`: SQLite khoá **cả
+#:    CSDL** khi ghi, nên một kết nối thứ hai ở đó là một đường tự khoá mình.
+#:    Đường cũ giữ nguyên từng byte cho SQLite và cho mọi `db` giả trong test.
+_COT_SO_POOL = frozenset({
+    "last_used_at", "total_requests", "window_start", "window_requests",
+    "window_tokens", "total_tokens", "total_success", "status", "cooldown_until",
+    "error_count", "auth_error_count", "health_score", "total_failed",
+    "last_error",
+})
+
+
+def _ghi_rieng_duoc(db: DbSession) -> bool:
+    """`db` có phải một phiên PostgreSQL thật không (⇒ ghi sổ pool ở giao dịch riêng).
+
+    ⛔ Hai đường "không phải" ở đây được bắt **hẹp và có tên**, không bằng một
+       `except Exception`. Bắt rộng ở đúng chỗ này là tự bịt mắt: một lỗi cấu
+       hình thật (engine sai, driver thiếu) sẽ lặng lẽ thành "à thôi, đi đường
+       SQLite" — tức sổ pool quay về ghi trong giao dịch nghiệp vụ và L-01 sống
+       lại mà không một dòng log nào nói tại sao.
+    """
+    from sqlalchemy.exc import UnboundExecutionError
+
+    lay = getattr(db, "get_bind", None)
+    if lay is None:
+        return False        # `db` giả trong test — đi đường cũ, từng byte
+    try:
+        bind = lay()
+    except UnboundExecutionError:
+        return False        # phiên chưa gắn engine nào
+    dialect = getattr(bind, "dialect", None)
+    return getattr(dialect, "name", "") == "postgresql"
+
+
+def _ghi_so_pool(db: DbSession, key: ApiKey, cau_set: str, tham_so: dict,
+                 cot_doi: Sequence[str]) -> None:
+    """Chạy `UPDATE api_keys SET <cau_set> WHERE id=...` ở GIAO DỊCH RIÊNG.
+
+    `cot_doi` là các cột câu lệnh chạm tới; chúng được `expire` khỏi đối tượng
+    trong phiên của bên gọi, nên lần đọc sau lấy giá trị mới bằng một `SELECT`
+    thuần — không phải bằng một `UPDATE` thứ hai (thứ sẽ khoá lại đúng hàng ta
+    vừa cố gỡ).
+    """
+    from sqlalchemy import text
+
+    la = [c for c in cot_doi if c not in _COT_SO_POOL]
+    if la:
+        raise ValueError(f"cot khong nam trong so pool: {la}")
+
+    # `get_bind()` trả `Engine` HOẶC `Connection` (phiên đã gắn sẵn kết nối).
+    # Cần `Engine` để mở một kết nối **thứ hai**; `Connection.engine` trả nó,
+    # và `Engine.engine` trả chính nó — nên một dòng phục vụ cả hai.
+    from sqlalchemy.engine import Connection
+
+    bind = db.get_bind()
+    engine = bind.engine if isinstance(bind, Connection) else bind
+    with engine.connect() as con:
+        con.execute(text(f"UPDATE api_keys SET {cau_set} WHERE id = :_id"),
+                    {**tham_so, "_id": key.id})
+        con.commit()
+    db.expire(key, list(cot_doi))
 
 
 #: ── PHẠM VI CẤP KHOÁ (H43/Q120, O15) ────────────────────────────────────────
@@ -125,20 +223,38 @@ def _ung_vien(db: DbSession, now: datetime, *, providers: Optional[Sequence[str]
 
     rows = db.execute(stmt).scalars().all()
 
+    # 🔴 MỘT PHÉP LỌC KHÔNG ĐƯỢC ĐỂ LẠI KHOÁ HÀNG (L-01).
+    #
+    #    Bản trước gán thẳng lên đối tượng ở đây — tự hồi cooldown và cuộn cửa
+    #    sổ — cho **mọi** ứng viên, kể cả những key rốt cuộc không được chọn.
+    #    Mỗi lần gán là một hàng `dirty`, và `autoflush` biến nó thành `UPDATE`
+    #    ngay ở câu truy vấn kế tiếp ⇒ khoá hàng độc quyền sống tới hết giao
+    #    dịch nghiệp vụ, tức suốt cả lượt gọi model.
+    #
+    #    Trên PostgreSQL ta chỉ **tính**; việc ghi thuộc về `chon_key`, nó ghi
+    #    đúng một hàng (hàng được chọn) trong giao dịch của riêng sổ pool.
+    chi_doc = _ghi_rieng_duoc(db)
+
     out = []
     for k in rows:
-        # Tự hồi cooldown đã hết hạn.
-        if k.status == APIKEY_COOLDOWN and k.cooldown_until and _aware(k.cooldown_until) <= now:
+        _cd = _aware(k.cooldown_until)
+        het_cooldown = bool(k.status == APIKEY_COOLDOWN and _cd and _cd <= now)
+        if het_cooldown and not chi_doc:
+            # Đường cũ (SQLite, `db` giả): ghi ngay tại đây, từng byte như trước.
             k.status = APIKEY_ACTIVE
             k.cooldown_until = None
-        if k.status != APIKEY_ACTIVE:
+        if not (k.status == APIKEY_ACTIVE or het_cooldown):
             continue
         if category and k.categories and category not in k.categories:
             continue
         if model and k.supported_models and model not in k.supported_models:
             continue
-        _cuon_cua_so(k, now)
-        if not _dinh_muc_con(k):
+        if chi_doc:
+            w_req, w_tok = _cua_so_hieu_luc(k, now)
+        else:
+            _cuon_cua_so(k, now)
+            w_req, w_tok = int(k.window_requests or 0), int(k.window_tokens or 0)
+        if not _dinh_muc_con(k, w_req, w_tok):
             continue          # đã chạm rpm/tpm trong cửa sổ này -> tạm bỏ
         out.append(k)
     return out
@@ -190,13 +306,49 @@ def chon_key(db: DbSession, *, category: Optional[str] = None,
             return len(order)
 
     ung_vien.sort(key=lambda k: (_rank_prov(k.provider), -k.priority,
-                                 -k.health_score, k.window_requests, k.total_requests))
+                                 -k.health_score, _cua_so_hieu_luc(k, now)[0],
+                                 k.total_requests))
     chon = ung_vien[0]
-    chon.last_used_at = now
-    chon.total_requests += 1
-    _cuon_cua_so(chon, now)      # bảo đảm cửa sổ hợp lệ trước khi tăng
-    chon.window_requests += 1
-    db.flush()
+
+    if not _ghi_rieng_duoc(db):
+        # Đường cũ — SQLite và `db` giả trong test. Từng byte như trước.
+        chon.last_used_at = now
+        chon.total_requests += 1
+        _cuon_cua_so(chon, now)  # bảo đảm cửa sổ hợp lệ trước khi tăng
+        chon.window_requests += 1
+        db.flush()
+        return chon
+
+    # ── PostgreSQL: một câu, giao dịch riêng, commit ngay (L-01) ─────────────
+    #
+    # ⭐ Cuộn cửa sổ và tự hồi cooldown làm **trong chính câu lệnh**, không làm
+    #    trong Python rồi ghi đè. Hai cái lợi, và cái thứ hai mới là cái chính:
+    #      1. nguyên tử — hai lượt đồng thời không đọc rồi cùng ghi đè nhau;
+    #      2. `total_requests = total_requests + 1` cộng vào giá trị **thật đang
+    #         nằm trong hàng**, chứ không vào giá trị phiên này đọc được lúc
+    #         nào đó. Gỡ khoá đi thì hai lượt song song KHÔNG còn xếp hàng, nên
+    #         một phép `đọc rồi ghi` ở Python sẽ bắt đầu mất lượt đếm.
+    #
+    # ⚠️ Chỉ hàng ĐƯỢC CHỌN được hồi cooldown, khác bản trước (hồi mọi ứng
+    #    viên). Có chủ ý: một hàng ta không dùng thì không có lý do gì để ghi
+    #    vào, và nó sẽ được hồi đúng ở lượt nó được chọn.
+    moc = now - timedelta(seconds=WINDOW_S)
+    het_cd = ("status = :cd_status AND cooldown_until IS NOT NULL "
+              "AND cooldown_until <= :now")
+    moi = "window_start IS NULL OR window_start < :moc"
+    _ghi_so_pool(
+        db, chon,
+        "last_used_at = :now, "
+        "total_requests = total_requests + 1, "
+        f"window_start   = CASE WHEN {moi} THEN :now ELSE window_start END, "
+        f"window_requests = CASE WHEN {moi} THEN 1 ELSE window_requests + 1 END, "
+        f"window_tokens  = CASE WHEN {moi} THEN 0 ELSE window_tokens END, "
+        f"status         = CASE WHEN {het_cd} THEN :cd_active ELSE status END, "
+        f"cooldown_until = CASE WHEN {het_cd} THEN NULL ELSE cooldown_until END",
+        {"now": now, "moc": moc,
+         "cd_status": APIKEY_COOLDOWN, "cd_active": APIKEY_ACTIVE},
+        ("last_used_at", "total_requests", "window_start", "window_requests",
+         "window_tokens", "status", "cooldown_until"))
     return chon
 
 
@@ -263,49 +415,103 @@ def thu_lan_luot(db: DbSession, *, provider: Optional[str] = None,
 
 
 def danh_dau_thanh_cong(db: DbSession, key: ApiKey, *, tokens: int = 0) -> None:
-    key.total_success += 1
-    key.error_count = 0
-    key.auth_error_count = 0
-    key.health_score = min(100, key.health_score + 5)
+    """Kế toán một lượt thành công. Ghi ở **giao dịch riêng** trên PostgreSQL.
+
+    ⛔ Vì sao hàm này cũng phải đi đường riêng, không chỉ `chon_key`: ở
+       `dieu_phoi.goi` nó chạy **ngay sau** lượt gọi model rồi hàm trả về, còn
+       commit thì xảy ra mãi ở cửa (`_finish_chat`). Để nó ghi qua phiên nghiệp
+       vụ là dời chỗ nghẽn của L-01 chứ không gỡ: lượt kế tiếp sẽ đứng ở đây
+       thay vì ở `chon_key`.
+    """
+    if not _ghi_rieng_duoc(db):
+        # Đường cũ — SQLite và `db` giả trong test. Từng byte như trước.
+        key.total_success += 1
+        key.error_count = 0
+        key.auth_error_count = 0
+        key.health_score = min(100, key.health_score + 5)
+        if tokens:
+            now = _bay_gio()
+            _cuon_cua_so(key, now)
+            key.window_tokens += int(tokens)
+            key.total_tokens += int(tokens)
+        if key.status == APIKEY_ERROR:
+            key.status = APIKEY_ACTIVE
+        db.flush()
+        return
+
+    now = _bay_gio()
+    dat = ["total_success = total_success + 1",
+           "error_count = 0",
+           "auth_error_count = 0",
+           "health_score = LEAST(100, health_score + 5)",
+           "status = CASE WHEN status = :er THEN :ac ELSE status END"]
+    cot = ["total_success", "error_count", "auth_error_count", "health_score",
+           "status"]
+    tham: dict = {"er": APIKEY_ERROR, "ac": APIKEY_ACTIVE}
     if tokens:
-        now = _bay_gio()
-        _cuon_cua_so(key, now)
-        key.window_tokens += int(tokens)
-        key.total_tokens += int(tokens)
-    if key.status == APIKEY_ERROR:
-        key.status = APIKEY_ACTIVE
-    db.flush()
+        moi = "window_start IS NULL OR window_start < :moc"
+        dat += [
+            f"window_start    = CASE WHEN {moi} THEN :now ELSE window_start END",
+            f"window_requests = CASE WHEN {moi} THEN 0 ELSE window_requests END",
+            f"window_tokens   = CASE WHEN {moi} THEN :tok "
+            f"                       ELSE window_tokens + :tok END",
+            "total_tokens = total_tokens + :tok"]
+        cot += ["window_start", "window_requests", "window_tokens", "total_tokens"]
+        tham |= {"now": now, "moc": now - timedelta(seconds=WINDOW_S),
+                 "tok": int(tokens)}
+    _ghi_so_pool(db, key, ", ".join(dat), tham, cot)
 
 
 def danh_dau_loi(db: DbSession, key: ApiKey, *, http_status: Optional[int] = None,
                  retry_after_s: Optional[int] = None, message: str = "") -> None:
-    key.total_failed += 1
-    key.last_error = (message or "")[:500]
+    """Phạt một key theo phân loại lỗi. Ghi ở **giao dịch riêng** trên PostgreSQL.
+
+    ⛔ Cũng phải đi đường riêng vì cùng lý do với `danh_dau_thanh_cong`: ở
+       `dieu_phoi.goi` nó chạy rồi `continue` sang provider kế, và ở
+       `luong_vlm.LuongMo.hong()` nó chạy giữa lúc luồng đang vỡ — cả hai chỗ
+       đều còn cách điểm commit rất xa.
+
+    ⚠️ Các ngưỡng (`AUTH_DISABLE_THRESHOLD`, `ERROR_TO_STATUS_THRESHOLD`) vẫn
+       tính từ giá trị phiên này đọc được, y như bản trước. Đường ghi đổi, phép
+       tính **không** đổi — đây không phải chỗ để sửa kèm một thứ khác.
+    """
+    now = _bay_gio()
     s = http_status
+    moi: dict = {"total_failed": int(key.total_failed or 0) + 1,
+                 "last_error": (message or "")[:500]}
 
     if s in (401, 403):
-        key.auth_error_count += 1
-        key.health_score = max(0, key.health_score - 10)
-        if key.auth_error_count >= AUTH_DISABLE_THRESHOLD:
-            key.status = APIKEY_DISABLED       # hỏng thật -> tắt hẳn, chờ admin
+        moi["auth_error_count"] = int(key.auth_error_count or 0) + 1
+        moi["health_score"] = max(0, int(key.health_score or 0) - 10)
+        if moi["auth_error_count"] >= AUTH_DISABLE_THRESHOLD:
+            moi["status"] = APIKEY_DISABLED    # hỏng thật -> tắt hẳn, chờ admin
         else:
-            key.status = APIKEY_COOLDOWN       # có thể chỉ trục trặc tạm
-            key.cooldown_until = _bay_gio() + timedelta(seconds=DEFAULT_COOLDOWN_S)
+            moi["status"] = APIKEY_COOLDOWN    # có thể chỉ trục trặc tạm
+            moi["cooldown_until"] = now + timedelta(seconds=DEFAULT_COOLDOWN_S)
     elif s == 429:
         cd = int(retry_after_s) if retry_after_s else DEFAULT_COOLDOWN_S
-        key.status = APIKEY_COOLDOWN
-        key.cooldown_until = _bay_gio() + timedelta(seconds=cd)
-        key.health_score = max(0, key.health_score - 5)
+        moi["status"] = APIKEY_COOLDOWN
+        moi["cooldown_until"] = now + timedelta(seconds=cd)
+        moi["health_score"] = max(0, int(key.health_score or 0) - 5)
     elif s is not None and 400 <= s < 500:
         # Bad request CỦA TA — không phải lỗi của key. KHÔNG phạt.
         pass
     else:
         # 5xx hoặc lỗi mạng.
-        key.error_count += 1
-        key.health_score = max(0, key.health_score - 10)
-        if key.error_count >= ERROR_TO_STATUS_THRESHOLD:
-            key.status = APIKEY_ERROR
-    db.flush()
+        moi["error_count"] = int(key.error_count or 0) + 1
+        moi["health_score"] = max(0, int(key.health_score or 0) - 10)
+        if moi["error_count"] >= ERROR_TO_STATUS_THRESHOLD:
+            moi["status"] = APIKEY_ERROR
+
+    if not _ghi_rieng_duoc(db):
+        # Đường cũ — SQLite và `db` giả trong test.
+        for ten, gt in moi.items():
+            setattr(key, ten, gt)
+        db.flush()
+        return
+
+    _ghi_so_pool(db, key, ", ".join(f"{c} = :{c}" for c in moi), dict(moi),
+                 tuple(moi))
 
 
 def rpm(key: ApiKey, *, now: Optional[datetime] = None) -> int:

@@ -82,6 +82,18 @@ và `cho_suat_dong_bo` (`runtime_noi_bo/luong.py:474`) gọi
 
 ## 3. Vì sao máy A KHÔNG deploy được từ nhánh này — đo được, không suy
 
+> ⚠️ **HẾT HIỆU LỰC từ 13/09/2026.** Mục này mô tả trạng thái ngày 12/09. Đo lại
+> hôm nay, **chặn này đã được gỡ** — `main` đã gộp và đã deploy:
+>
+> ```
+> CSDL production : a3f7c214e8b9
+> alembic của cây : a3f7c214e8b9      -> KHỚP
+> mã .py của cây vs C:\LTTPlatform\app: khác ĐÚNG 1 tệp (platform_core/api_pool.py)
+> ```
+>
+> Giữ nguyên văn bên dưới vì nó ghi **vì sao** chặn từng tồn tại, và vì lần thử
+> đi vòng qua nó đã làm production tắt 4 phút — bài học đó không hết hạn.
+
 ```
 CSDL production : d9a1f6c2b3e5     (head của baseline CMC — Voice RC1)
 alembic của ta  : a3f7c214e8b9     (rẽ TRƯỚC revision đó)

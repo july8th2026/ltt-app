@@ -8,10 +8,33 @@
 
 | ma | trieu chung ĐO ĐƯỢC | loai | sua o | doi chung | trang thai |
 |---|---|---|---|---|---|
-| L-01 | qua may A: mot model bi nen lam model KIA cham **2,1-8,1x** | **CHAN** | may A (chua khoanh xong) | goi THANG may B: **0,85x / 1,05x** | dang truy |
+| L-01 | qua may A: mot model bi nen lam model KIA cham **2,1-8,1x** | **CHAN** | `platform_core/api_pool.py` | hai luot song song: luot 2 cho **2,015s** o `chon_key` | **da khoanh** — xem duoi |
 | L-02 | `ltt-3.5` voi `max_tokens <= 300` tra **RONG** va van bi tinh tien | DOC LAP | may B / ban khai | 300->rong, 600->"391" | cho |
 | L-03 | `ltt-3.8` khai *"Text only"* du engine DA nap `mmproj` | DOC LAP | ban khai (may A) | `catalog.HO_SO` co_vision=True ca hai | cho |
 | L-04 | bo cham `bia-01` cam chuoi tieng Viet, model tra loi tieng Anh -> **diem dung gia** | DOC LAP | bo do | — | cho |
+| L-05 | **108/131 job loi 14 ngay** deu la `AmbiguousProviderError: mat ket noi sau khi bat dau gui` | CAN DO | chua ro | chua co | **chua phai phat hien** |
+
+## L-05 — mot MUC CAN DO, khong phai mot ket luan
+
+Do 13/09 tren `jobs` (14 ngay): `ltt_llm.chat` co **1423 done / 118 error** o cua
+so 7 ngay; mo rong 14 ngay thi 131 loi, trong do **108 cung MOT kieu**:
+
+```
+AmbiguousProviderError: mat ket noi sau khi bat dau gui
+```
+
+Tap trung 08/09 (**64**) va 09/09 (**34**) = 75% tong so. Tu 11/09 khong con job
+`ltt_llm.chat` nao.
+
+⚠️ **Gia thuyet — CHUA do:** L-01 lam cac luot xep hang, ma `timeout_s` truyen
+   xuong `_goi_openai` la `_con_lai_s(bat_dau_cua, SYNC_BILLED_MAX_SECONDS)` —
+   tinh tu luc request **vao cua**, khong phai luc goi. Cho khoa lau ⇒ ngan sach
+   con lai ngan ⇒ httpx dut giua chung ⇒ dung lop loi nay.
+
+⛔ **Dung sua theo gia thuyet nay.** No khop qua vua, va phien 12/09 da mat mot
+   vong vi dung mot gia thuyet khop qua vua ("khoa advisory theo tai khoan").
+   Phep do dung: sau khi deploy ban sua L-01, lop loi nay phai **bien mat** —
+   khong phai giam. Neu no chi giam, nguyen nhan la thu khac.
 
 ## L-01 — nhung gi da LOAI TRU duoc
 
@@ -28,9 +51,99 @@
 ⭐ Ket luan chac chan: **kien truc dual-model khong hong**. Toan bo can thiep cheo
    do **ung dung may A** sinh ra.
 
-⚠️ Chua xac dinh: cho nao trong may A. Con lai: pool ket noi CSDL (`db.py` khong
-   dat `pool_size` => mac dinh 5+10), khoa advisory theo *tai nguyen*, hoac mot
-   cho tuan tu hoa khac.
+## L-01 — GOC, do duoc 12/09 cuoi phien
+
+🔴 **Moi luot chat qua may A giu mot khoa hang PostgreSQL DOC QUYEN tren DUNG
+   MOT hang `api_keys` suot ca luot goi model.**
+
+Chuoi su kien, doc thang tu ma:
+
+```
+dieu_phoi.goi(db, ...)
+  api_pool.chon_key(db, ...)      api_pool.py:195-199
+      chon.last_used_at = now
+      chon.total_requests += 1
+      chon.window_requests += 1
+      db.flush()                  <-- UPDATE hang, CHI flush, KHONG commit
+  _goi_openai(...)                dieu_phoi.py:296   <-- 3-20 giay goi may B
+  api_pool.danh_dau_thanh_cong()  dieu_phoi.py:347   <-- UPDATE hang lan hai
+... commit mai o server/api/chat.py::_finish_chat, SAU khi model tra loi
+```
+
+PostgreSQL giu khoa hang cua mot UPDATE **toi khi giao dich commit**. Giao dich
+o day trum len ca luot goi model. => luot thu hai dung o `chon_key` cho luot
+thu nhat xong han.
+
+### Ba su that lam no thanh loi CHEO GIUA HAI MODEL
+
+| | |
+|---|---|
+| Production co **dung 1 hang** `api_keys` provider `ltt_llm` | do 12/09, `status=active`, `total_requests=923` |
+| **Ca hai model** di qua provider ay | `features.chay` -> `model_theo_provider={"ltt_llm": ...}` |
+| Hang khoa **khong mang user_id** | nen doi tai khoan khong go duoc — dung nhu da do (7,15x/2,36x) |
+
+### Doi chung (khong phai doc ma — do duoc)
+
+`scratchpad/do_khoa_hang_khoa.py`, PostgreSQL **that** (`lttplatform_test`),
+mot hang khoa, hai luong, moi luong `chon_key -> ngu 2s -> commit`:
+
+```
+luot1: chon_key mat  0.011s | ca luot  2.014s
+luot2: chon_key mat  2.015s | ca luot  4.016s     <-- cho DUNG bang luot1
+TONG: 4.017s     song song => ~2.0s | TUAN TU => ~4.0s
+PHAN QUYET: TUAN TU HOA
+```
+
+### Vi sao no khop voi TAT CA phep do cu
+
+| Phep do cu | Giai thich |
+|---|---|
+| thang may B: 0,85x/1,05x | khong di qua `api_pool` — khong co hang nao de khoa |
+| loopback 8100 van 2,09x/8,11x | khoa nam o may A, khong lien quan Cloudflare |
+| tai khoan khac van 7,15x | hang khoa la cua **provider**, khong cua user |
+| may B `/health`: tu choi 0 | may B khong he xep hang — luot thu hai chua toi noi |
+| pid 8100: cpu 6-14%, luong CHO | luong bi chan tren khoa hang, khong phai CPU |
+
+⚠️ Duong **streaming** (`/api/v1/messages`, `/api/v1/responses` — Claude Code va
+   Codex di loi nay) con nang hon: `luong_vlm.mo` goi `chon_key` roi giu giao
+   dich suot **ca luong**, khong chi luot goi.
+
+⚠️ `ltt_image` cung co dung 1 hang (`total_requests=2340`) nen job anh tuan tu
+   hoa theo dung co che ay — chua do, ghi de khong quen.
+
+## L-01 — BAN SUA (13/09/2026)
+
+`platform_core/api_pool.py`. Mot nguyen tac: **so cua pool khoa khong ky sinh
+vao giao dich nghiep vu** — no co giao dich cua chinh no, mo/ghi/commit ngay,
+nen khoa hang song vai mili giay thay vi vai chuc giay.
+
+| cho | truoc | sau |
+|---|---|---|
+| `_ung_vien` | gan len ORM MOI ung vien (tu hoi cooldown, cuon cua so) ⇒ autoflush ⇒ UPDATE ⇒ khoa hang | chi TINH, khong ghi |
+| `chon_key` | `+= 1` roi `flush()` | MOT cau UPDATE o ket noi rieng, commit ngay; cuon cua so + tu hoi cooldown **trong chinh cau lenh** (nguyen tu) |
+| `danh_dau_thanh_cong` · `danh_dau_loi` | nhu tren | nhu tren |
+
+⛔ Chi ap cho **PostgreSQL**, cung khuon `admission._khoa_resource`. SQLite va
+   `db` gia trong test giu duong cu **tung byte** — do la ly do 428 test cua cum
+   `api_pool` xanh ma khong phai sua mot dong test nao.
+
+⚠️ Khong sua `danh_dau_thanh_cong`/`danh_dau_loi` thi la **doi cho** nghen chu
+   khong go: luot ke tiep se dung o do thay vi o `chon_key`.
+
+### Doi chung
+
+| | ma cu | ma moi |
+|---|---|---|
+| `tests/test_1234_khoa_hang_api_key.py` | **2 FAILED** (luot 2 cho **8,0s**) | **3 passed** |
+| thoi luong ca tep | 18,87s | **3,15s** |
+
+Ca thu ba (`test_bo_dem_van_tang_that`) la **doi chung nguoc**: mot ban sua go
+khoa bang cach bo luon phep dem se lam hai ca kia xanh ngay, va lam
+`rpm_limit`/`tpm_limit` thanh do trang tri.
+
+🔴 **CHUA do tren duong that.** Ba con so 2,1-8,1x do qua may A, va may A **chua
+   deploy** ban sua nay. Cho toi khi do lai qua `https://app.lttstudios.com`,
+   L-01 chi moi duoc chung minh o TANG CO CHE, chua o tang trieu chung.
 
 ## Hai lan quy trinh nay SUA TOI
 
