@@ -275,7 +275,19 @@ LOI_DE_DANH_VAT_LY = 2
 #:       NAO CO XIN KHOA hoac DANG DOT CPU. Mot phien khac go tay `pytest -n 8`
 #:       thi khong co gi thay truoc, va 16 worker tren 10 loi la dung hinh dang
 #:       da lam may khoi dong lai ngay 03/09.
-TRAN_WORKER_BO_TEST = 8
+#: 📉 **8 -> 7 ngay 12/09/2026 (chieu), chu du an chot lai**: *"chay gate lai.
+#:    Toi vua bi tat may. Chay voi -n = 7."*
+#:
+#:    ⚠️ VA DAY LA LAN THU HAI MAY TAT GIUA MOT LUOT GATE trong cung mot buoi:
+#:       gate 4 chet o ~10 phut, gate 5 chet o ~8,3 phut (khoa treo cua pid
+#:       21092 con lai la dau vet). Hai lan, cung hinh dang, deu dung luc buoc
+#:       `bo test` dang chay 8 worker — do la mot MAU, khong phai trung hop.
+#:
+#:    ⭐ Nen con so nay khong phai khau vi: no ha mot bac de mua lai xac suat
+#:       chay tron mot luot. Mot gate cham hon mot chut khong lam ai mat gi;
+#:       mot luot gate chet o phut thu 10 lam mat tron ca luot do — va o day no
+#:       da lam mat HAI.
+TRAN_WORKER_BO_TEST = 7
 
 
 def loi_cho_bo_test(*, phien: str = "", do_tai: bool = True) -> int:
