@@ -69,6 +69,22 @@ llama-swap.yaml  →  hai cổng máy B  →  máy A
 máy B. Máy A đi trước ⇒ khách gửi được một prompt mà engine không chứa nổi ⇒ lỗi
 nổ ở **tầng dưới cùng**, sau khi đã qua mọi cửa kiểm. Cùng lý do với số slot.
 
+### 2.1b ⛔ R27 — trên **cùng máy A**, Task 5.3 và 5.5 là MỘT đơn vị deploy
+
+`apps/ltt_llm/manifest.py` **đã khai** `residency_group="rtx3090"`, và luật 0
+`CHO_RESIDENCY` **fail-closed** khi không đọc được dòng `gpu_residency` của nhóm đó.
+Migration **không gieo dòng nào** — dòng đó do **trọng tài (Task 5.5)** tạo ở bước
+đầu tiên của nó.
+
+⇒ Máy A mang 5.3 mà thiếu 5.5 thì **mọi lượt `ltt-3.8` chờ hết ngân sách rồi 429.**
+Mô hình chính **chết**, `ltt-3.5` vẫn sống (khác card, không có `residency_group`),
+nên triệu chứng nhìn như *"3.8 bị bận mãi"* — một câu trỏ sai hướng hoàn toàn.
+
+⭐ Fail-closed ở đây là **đúng**: mở cửa khi chưa biết ai đang cư trú 3090 là cách
+   cấp suất cho cả hai bên cùng lúc. Cái phải sửa là **thứ tự**, không phải hướng
+   fail. Và trọng tài phải tạo được dòng đó **ngay cả khi máy B im lặng**, nếu
+   không thì một lần máy B không trả lời biến thành một lần LLM ngừng bán.
+
 ### 2.2 ⛔ `llama-swap.yaml` KHÔNG đi một mình (L-17)
 
 Nó đi **cùng Task 5.4** (lệnh residency theo model + gỡ hai trọng tài cũ). Lý do cơ

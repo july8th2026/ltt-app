@@ -27,7 +27,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 
 ---
 
-## 1. Quyết định đã chốt (đến Q122; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91, Q116→Q120 (phần con số) đã thay)
+## 1. Quyết định đã chốt (đến Q123; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91, Q116→Q120 (phần con số) đã thay)
 
 | # | Vấn đề | Quyết định | Lý do / hệ quả |
 |---|---|---|---|
@@ -140,6 +140,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 | Q113 | Ngữ cảnh public 90K có đồng nghĩa mọi request đồng bộ được dùng đủ 90K không? | **Không.** Engine vẫn `131072`; stream và async job vẫn được dùng public input cap `90000`. Riêng route trả JSON một cục dùng admission động trong ngân sách `90s`: `25s` dự phòng nạp model + `5s` hạ tầng + `(input_ước+512)/750` prefill + `max_tokens/40` decode. Mặc định output riêng của non-stream là `1024`; request vượt công thức bị `400` trước giữ tiền/GPU và được chỉ sang stream/job. | **Thay phần admission tĩnh của Q106/Q107 từ 2026-08-27; các phần còn lại của hai quyết định đó vẫn hiệu lực.** Canary Q111 gần cap đo `89.716` token ước lượng, chỉ sinh `103` token nhưng đã mất `102,003s`: chỉ kẹp output không bảo vệ được timeout. Throughput thật trên B là prefill thấp nhất `756,49 tok/s`, decode `41,57 tok/s`; lấy `750/40` để nghiêng an toàn. Trần Cloudflare hiện là `125s`, nhưng giữ ngân sách nội bộ `90s` để còn `35s` biên tunnel/524. Hệ quả đo được của công thức: input 0 → tối đa 2.372 output; 20K → 1.306; 40K → 239; gần 90K → 0 ở non-stream. Đây là phân luồng theo mode, không hạ chất lượng/ngữ cảnh của stream hay job. |
 | Q114 | Nhiều cửa API cùng tranh một model/GPU phải xếp hàng ở đâu? | **Một admission plane dùng chung, nhưng chỉ ASYNC_JOB có hàng đợi bền.** `/api/v1/jobs` tiếp tục dùng `jobs` làm nguồn chân lý duy nhất. SYNC_BILLED và STREAM giữ nguyên hợp đồng Q106/Q107 là không tạo job: chúng xin một lease thực thi từ cùng admission plane và trả `429 + Retry-After` trước khi giữ tiền nếu chưa có slot. Tài nguyên do tool khai bằng metadata, không suy từ slug. Gateway máy B vẫn giữ `max_dong_thoi=1` như hàng rào cuối, không làm queue. | Biến sync/stream thành job ngầm sẽ phá hình dạng SDK và tạo queue thứ hai; để chúng gọi thẳng lại cho phép bypass async. Lease thực thi giải đúng giao điểm: cả ba đường phải sở hữu cùng một slot trước provider, nhưng `jobs` vẫn là queue duy nhất có trạng thái/hủy/fairness. Với async, global/resource/account cap phải được kiểm dưới khóa transaction rồi insert job và hold credit trong chính transaction đó; `resource_wait` không tiêu attempt. Nếu worker chết sau khi provider đã nhận mà chưa có kết quả chắc chắn thì đánh dấu `ambiguous_provider`, không tự retry side effect mù. Hợp đồng chi tiết: `docs/VLM_NOI_BO/ADMISSION_QUEUE_LTT_LLM.md`. |
 | Q122 | Thứ tự phục vụ trong hàng đợi job thống nhất | **Ưu tiên tuyệt đối, không cắt ngang: `INTERNAL > EXTERNAL` chỉ giữa các job đang chờ và đủ điều kiện trên cùng tài nguyên; job đã admitted/running/provider-dispatched không bị dừng. Trong mỗi lớp vẫn fair-share theo account, aging rồi FIFO ổn định.** Chỉ có một hàng đợi bền PostgreSQL `jobs`, một ranking canonical dùng cho cả `claim()` lẫn queue snapshot/ETA. Lớp ưu tiên do ingress đáng tin cậy gắn; body/header công khai không có quyền nâng lớp. | Runtime nội bộ cần được phục vụ trước các lượt API đang chờ nhưng không được phá Q114 hay làm mất công việc đã bắt đầu. Hai lớp là đủ cho V1; không thêm broker/queue thứ hai. Job cũ hoặc metadata thiếu/lạ được hiểu là `EXTERNAL`; ETA thiếu bằng chứng trả `null`; external starvation được đo/cảnh báo chứ không tự vượt internal. |
+| Q123 | Model nhà: một model hay nhiều, và ai được ở trên card nào | **HAI model nhà bán ra, trên HAI card của máy B, thường trú cùng lúc: `ltt-3.8` (RTX 3090) và `ltt-3.5` (RTX 5060 Ti). Khách CHỌN model; giá đi THEO MODEL. Cắt hẳn ba tên cũ `ltt_llm`, `ltt_llm_vision`, `qwen38-vision` — chúng trả `model_not_found`, không âm thầm rơi về mặc định. Việc LLM **nội bộ** của nền tảng đi `ltt-3.5` theo bản khai của từng app (`manifest.model_llm_noi_bo`), không đi mặc định của khách. RTX 3090 do MỘT trọng tài chia giữa LLM và model ảnh: xả trước, không bao giờ giết việc đang chạy.** ⛔ **Không con số nào của quyết định này nằm trong tài liệu này** — mỗi con số có đúng một nguồn chân lý trong mã. Toàn văn, lý do từng nhánh và mọi phép đo: **`### Q123` bên dưới**, `docs/ltt_llm_dual/DECISION_LOG.md` (D01–D09, L-12…L-18), `docs/ltt_llm_dual/10_BENCHMARK_P3.md`; vận hành ở `docs/ltt_llm_dual/RUNBOOK.md`. | Ba lý do cơ học, chi tiết ở `### Q123`: (a) một model 27B **không vừa** card 16 GB nên "một model, hai card" là bất khả, còn "hai hồ sơ của cùng một model" đã thử và **đã gỡ**; (b) job ảnh **giữ** 3090 rồi **chờ** một model chỉ nạp được khi 3090 rảnh là một **vòng chờ kín** — không log, không mã lỗi, job treo tới hết trần thời gian; (c) `unload` thủ công của llama-swap **không** drain, nên trọng tài phải **xả trước**. **Đổi lại:** một bảng trạng thái (`gpu_residency`), một luật admission mới (`CHO_RESIDENCY`), và một **thứ tự deploy bắt buộc** (`llama-swap.yaml` → cổng máy B → máy A). |
 ---
 
 ### Q115 — Public input cap sau benchmark Q4 (2026-08-28)
@@ -399,6 +400,56 @@ aging và FIFO ổn định; external chờ lâu chỉ sinh metric/alert, không
 internal. Queue position và ETA phải đọc chính ranking mà `claim()` dùng; không
 đủ dữ liệu thì ETA là `null`, không bịa số. Q114 vẫn nguyên: sync/stream giữ
 immediate lease + 429 mặc định, chỉ async job nằm trong durable queue.
+
+### Q123 — Hai model nhà trên hai card, khách chọn model, và MỘT trọng tài cho RTX 3090 (2026-09-12)
+
+Máy B bán ra **hai** model nhà, thường trú **cùng lúc** trên hai card khác nhau:
+`ltt-3.8` ở RTX 3090 và `ltt-3.5` ở RTX 5060 Ti. Khách **chọn** model, và **giá đi
+theo model** — hai model có giá vốn thật khác nhau (điện × thời gian card), nên một
+giá cho cả hai là bán lỗ ở một phía.
+
+Ba tên cũ **bị cắt hẳn**: `ltt_llm`, `ltt_llm_vision`, `qwen38-vision`. Chúng phải
+trả `model_not_found`, **không** được âm thầm rơi về mặc định — một tên cũ chạy trên
+một model khác là **bán sai hàng**. Và lớp đệm alias chỉ có nghĩa khi alias ≠ id nội
+bộ: bảng cũ ánh xạ `ltt_llm → ltt_llm`, tức lớp đệm chỉ tồn tại trên giấy.
+
+⛔ **Vision không còn là một hồ sơ riêng.** `qwen38-api` tự nạp `mmproj`, đổi ~40.000
+token ngữ cảnh lấy khả năng đọc ảnh thường trú. Hệ quả cho người viết mã: đừng chọn
+model bằng cờ `vision` — *"model nào KHÔNG đọc ảnh"* là một câu hỏi **tự vỡ** ngày
+mọi model đều đọc được ảnh, và nó đã làm vỡ hai chỗ thật (`planner._model_nha`,
+`auto_scan_video.ai.model_cho`).
+
+Việc LLM **nội bộ** của nền tảng đi `ltt-3.5`, đọc từ **bản khai của từng app**
+(`manifest.model_llm_noi_bo`), không đọc mặc định của khách. Lý do là **cơ học**, không
+phải khẩu vị: job ảnh **giữ** 3090 rồi đi **chờ** một model chỉ nạp được khi 3090
+rảnh — một vòng chờ kín, không ngoại lệ, không log, không mã lỗi; job treo tới hết
+trần thời gian rồi chết vì "quá giờ", một thông điệp trỏ sai hướng hoàn toàn. Và
+`ltt-3.5` còn **nhanh hơn** ở cửa sổ rộng hơn, nên đây không phải một sự hy sinh.
+
+RTX 3090 do **một** trọng tài chia giữa LLM và model ảnh (bảng `gpu_residency`, máy
+trạng thái thuần ở `platform_core/llm/residency.py`, luật admission `CHO_RESIDENCY`).
+Nguyên tắc bất khả xâm phạm: **xả trước, không bao giờ giết việc đang chạy.** `unload`
+thủ công của llama-swap **không** drain — nó `taskkill`, và lượt đang sinh chữ chết
+theo. Ngừng nhận lượt mới → chờ in-flight = 0 → mới nhả.
+
+Thứ tự deploy là **ràng buộc cứng**, không phải quy ước: `llama-swap.yaml` → hai cổng
+máy B → máy A. Trần đầu vào máy A khai **rộng hơn** `-c` đang chạy ở máy B, nên máy A
+đi trước nghĩa là khách gửi được một prompt mà engine không chứa nổi — lỗi nổ ở tầng
+dưới cùng, **sau** khi đã qua mọi cửa kiểm.
+
+⛔ **Không con số nào của quyết định này được gõ vào tài liệu này.** Mỗi con số có đúng
+một nguồn chân lý, và một bảng chép tay ở đây đã nói sai **năm lần**:
+
+| cần biết | hỏi ở đâu |
+|---|---|
+| cửa sổ ngữ cảnh · trần token · pool KV · số slot | `apps/ltt_llm/ngan_sach.py` |
+| giá theo model | `platform_core/llm/gia_token.py` |
+| danh tính GPU (UUID) | `llm_gateway/deploy/gpu_may_b.json` |
+| cờ engine đang chạy | `llm_gateway/deploy/llama-swap.yaml` |
+
+Toàn văn quyết định + mọi phép đo: `docs/ltt_llm_dual/DECISION_LOG.md` (D01–D09,
+L-12…L-18) và `docs/ltt_llm_dual/10_BENCHMARK_P3.md`. Vận hành, điểm lùi từng pha:
+`docs/ltt_llm_dual/RUNBOOK.md`.
 
 ## 2. Ràng buộc bất biến
 
