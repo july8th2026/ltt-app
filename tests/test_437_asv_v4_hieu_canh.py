@@ -201,7 +201,11 @@ def test_tran_ngu_canh_hop_ly_so_voi_cua_so_THI_GIAC():
        một trong hai con số.
     """
     assert hc.NGU_CANH_MOI_CANH <= 4000
-    assert 0 < ai.cua_so_ngu_canh(ai.DOC_CANH) <= ai.cua_so_ngu_canh(ai.DICH_THUAT)
+    # Ràng buộc thật: ngân sách ngữ cảnh mỗi cảnh phải lọt cửa sổ của **chính
+    # model thao tác này gọi**, không phải của model kia.
+    cua = ai.cua_so_ngu_canh(ai.DOC_CANH)
+    assert 0 < hc.NGU_CANH_MOI_CANH < cua, (
+        f"ngan sach moi canh {hc.NGU_CANH_MOI_CANH} khong lot cua so {cua}")
 
 
 # ══════════════════════════════════════════════════════════════════════════════

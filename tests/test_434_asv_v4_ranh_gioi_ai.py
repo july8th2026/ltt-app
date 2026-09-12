@@ -179,25 +179,47 @@ def test_ASV_khong_go_lai_mot_con_so_token_nao():
     assert xau == [], f"go lai hang so token: {xau}"
 
 
-def test_cua_so_ngu_canh_THI_GIAC_nho_hon_van_ban():
-    """🔴 Mot lo khung hinh sap theo tran cua model VAN BAN se thanh 413 luc chay.
+def test_cua_so_ngu_canh_LAY_DUNG_MODEL_CUA_TUNG_THAO_TAC():
+    """Mỗi thao tác phải đọc cửa sổ của **đúng model nó sẽ gọi**.
 
-    ⚠️ Con so o day la cai registry KHAI. `docs/audit_ltt_llm/STATE.md` tung do
-       duoc mot tran THAP HON NHIEU cho ban thi giac; pha 11 phai do lai truoc
-       khi sap lo khung hinh theo no.
+    🔴 PHÉP KIỂM NÀY THAY MỘT PHÉP KIỂM ĐÃ LẬT CHIỀU (12/09/2026, dual-model).
 
-    🔴 DẤU `<` ĐỔI THÀNH `<=` NGÀY 12/09/2026 (D02, dual-model 2.3), và đó
-       là sửa **chiều đo**, không phải nới lỏng.
+       Bản trước khẳng định *cửa sổ thị giác ≤ cửa sổ văn bản*, và nó canh một
+       mối nguy có thật **của thời đó**: hai hồ sơ là hai bản của **cùng một
+       model** (`qwen38-api` 131.072 so với `qwen38-vision` 65.536), nên xếp một
+       lô khung hình theo trần của bản văn bản sẽ thành 413 lúc chạy.
 
-       Bất biến cần canh là: *đừng xếp một lô khung hình theo trần của model
-       VĂN BẢN*, tức cửa sổ thị giác **không được lớn hơn**. Dấu `<` đòi
-       thêm một điều khác hẳn — *hai model phải khác cỡ* — và điều đó chỉ
-       đúng chừng nào hai hồ sơ còn nạp `-c` khác nhau. `qwen38-vision` đã gỡ;
-       hai model công khai nay chạy cùng một ngữ cảnh engine, nên dấu `<`
-       đỏ vì bản khai ĐÚNG — và cách duy nhất làm nó xanh lại là khai sai
-       một trong hai con số.
+       Nay hai thao tác đi tới **hai model khác nhau trên hai card khác nhau**:
+       thị giác → `ltt-3.5` (262.144), văn bản → `ltt-3.8` (221.184). Quan hệ
+       **đã lật**, và mối nguy cũ biến mất cùng nó.
+
+    ⛔ Cách sai là đảo dấu cho nó xanh lại. Một phép đo lệch chiều thì phải BỎ,
+       không phải sửa — đảo dấu chỉ ghim ngược lại đúng một quan hệ ngẫu nhiên
+       giữa hai con số, và nó sẽ lật lần nữa ngày ai đó đổi ngữ cảnh một model.
+
+    ⭐ Thứ **luôn** đúng, và là thứ mối nguy cũ thật sự nói tới: đừng đo một
+       thao tác bằng cửa sổ của model **khác**. Nên phép kiểm nay hỏi thẳng điều
+       đó cho TỪNG thao tác, và nó bất biến với việc model nào lớn hơn.
     """
-    assert 0 < ai.cua_so_ngu_canh(ai.DOC_CANH) <= ai.cua_so_ngu_canh(ai.DICH_THUAT)
+    from platform_core import providers
+
+    for tt in (ai.DOC_CANH, ai.DICH_THUAT):
+        model = ai.model_cho(tt)
+        khai = (providers.model_capabilities(model) or {}).get("context_window")
+        assert khai, f"{tt.ma}: registry khong khai context_window cho {model!r}"
+        assert ai.cua_so_ngu_canh(tt) == int(khai), (
+            f"{tt.ma} doc cua so cua mot model KHAC: "
+            f"{ai.cua_so_ngu_canh(tt)} != {khai} cua {model!r}")
+
+
+def test_hai_thao_tac_KHONG_dung_chung_mot_cua_so_bang_ngau_nhien():
+    """Đối chứng cho phép kiểm trên: hai thao tác phải thật sự đi hai model.
+
+    Không có ca này thì phép kiểm trên vẫn xanh cả khi `model_cho` trả về **cùng
+    một model** cho mọi thao tác — lúc đó nó chỉ đang so một con số với chính nó.
+    """
+    assert ai.model_cho(ai.DOC_CANH) != ai.model_cho(ai.DICH_THUAT), (
+        "hai thao tac tro cung mot model => phep kiem cua so khong do duoc gi")
 
 
 # ══════════════════════════════════════════════════════════════════════════════

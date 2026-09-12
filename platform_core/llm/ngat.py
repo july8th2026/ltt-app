@@ -31,6 +31,8 @@ import threading
 from contextlib import contextmanager
 from typing import Any, Callable, Iterator, Optional
 
+_log = logging.getLogger(__name__)
+
 log = logging.getLogger("platform_core.llm.ngat")
 
 #: Sổ các hàm "đóng cửa ra mạng" của lượt đang chạy trong ngữ cảnh này.
@@ -104,7 +106,17 @@ def do_ngat(request) -> Callable[[], bool]:
             import anyio.from_thread
 
             return bool(anyio.from_thread.run(request.is_disconnected))
-        except Exception:  # noqa: BLE001 - khong hoi duoc thi coi nhu con ket noi
+        except Exception as e:  # noqa: BLE001 - khong hoi duoc thi coi nhu con ket noi
+            # ⚠️ Nuốt lỗi ở đây là CỐ Ý — hỏi không được thì coi như khách còn
+            #    kết nối, tức nghiêng về "chạy tiếp" thay vì huỷ nhầm một lượt
+            #    đang tính tiền. Nhưng nuốt **lặng lẽ** thì khác: nếu
+            #    `anyio.from_thread.run` hỏng vì một lý do cấu trúc (đổi phiên
+            #    bản, gọi ngoài luồng worker) thì tính năng huỷ-khi-khách-ngắt
+            #    chết hẳn mà không ai biết — và nó chỉ lộ ra ở hoá đơn.
+            #
+            # `debug` chứ không `warning`: hàm này chạy theo NHỊP TIM, một cảnh
+            # báo mỗi nhịp sẽ nhấn chìm log thật.
+            _log.debug("khong hoi duoc trang thai ket noi: %r", e)
             return False
 
     return _hoi

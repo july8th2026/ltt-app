@@ -29,6 +29,18 @@ import uuid
 
 import pytest
 
+#: 🔴 BÍ DANH CỦA TOOL THỬ PHẢI LÀ MỘT MODEL **CÓ GIÁ** (D07, dual-model 2.5).
+#:    Trước 2.5 chỗ này là chuỗi bịa `_ALIAS_THU` và nó chạy được **chỉ vì**
+#:    `gia_token` bỏ qua model. Từ D07 giá đi theo model, nên mọi tool đi qua
+#:    `runtime_noi_bo/luong.py` — tức qua `thanh_toan` — phải khai một model mà
+#:    bảng giá biết. Đây là ràng buộc thật của tầng đó, không phải phiền toái
+#:    của phép kiểm: một model không có giá mà vẫn giữ được tiền nghĩa là tiền
+#:    đang được tính bằng bảng giá của một model **khác**.
+#:
+#: ⛔ Lấy từ `gia_token`, đừng gõ thẳng `"ltt-3.8"`: ngày đổi model mặc định thì
+#:    một hằng số gõ tay sẽ làm sáu tệp này hỏng lại cùng lúc.
+from platform_core.llm.gia_token import MODEL_GIA_MAC_DINH as _ALIAS_THU
+
 NL = bytes([10])
 TOOL_THU = "text.thu800"
 JOB_THU = "appthu800.luong"
@@ -56,7 +68,7 @@ class _ExecutorGia:
         return {"sync": 1024, "stream": 4096, "job": 4096}[cua]
 
     def aliases(self):
-        return {"thu_alias": "noi-bo-model-1"}
+        return {_ALIAS_THU: "noi-bo-model-1"}
 
     def model_id(self, alias):
         return self.aliases()[alias]
@@ -106,8 +118,8 @@ def app_luong(monkeypatch, moi_truong):
         tools=(reg.ToolSpec(
             name=TOOL_THU, job_type=JOB_THU, description="tool thu 800",
             params_schema={"messages": {"type": "json[]", "required": True},
-                           "model": {"type": "enum", "values": ["thu_alias"],
-                                     "default": "thu_alias"},
+                           "model": {"type": "enum", "values": [_ALIAS_THU],
+                                     "default": _ALIAS_THU},
                            "tools": {"type": "json[]"}},
             returns={"content": "text", "tool_calls": "json[]"},
             admission_resource="thu_gpu800", admission_slots=1,
@@ -217,7 +229,7 @@ def _chay(user_id, params, **kw):
 
 
 def _params(**g):
-    d = {"model": "thu_alias",
+    d = {"model": _ALIAS_THU,
          "messages": [{"role": "user", "content": "tinh 8123 * 4471 giup toi"}]}
     d.update(g)
     return d

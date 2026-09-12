@@ -118,9 +118,9 @@
       "o_dau": "platform_core/llm/gia_token.py",
       "ly_do": "H38 so huu mang LLM va da co bang gia rieng, chat che hon. Chep sang day la tao cho tinh tien thu hai."
     },
-    "qwen38-vision": {
+    "qwen35-api": {
       "o_dau": "platform_core/llm/gia_token.py",
-      "ly_do": "nhu tren"
+      "ly_do": "MODEL NHA thu hai (dual-model D02/D07, 12/09/2026) - chay tren RTX 5060 Ti cua may B. Gia ban o bang `ltt-3.5` cua gia_token.py; chi phi dien do duoc o cong G4: 119 W / 76,2 tok/s = 13,0 credit/1M token ra (docs/ltt_llm_dual/10_BENCHMARK_P3.md). Chep sang day la tao cho tinh tien thu hai, dung ly do voi qwen38-api."
     }
   },
   "chua_tra": {
