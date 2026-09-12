@@ -155,13 +155,44 @@ def _dem_but_toan(user_id: str) -> int:
         _close(gen)
 
 
+#: Người giữ chỗ giả trong `_giu_het_suat` — KHÔNG phải tài khoản đang thử.
+NGUOI_GIU_CHO = "u-khac"
+
+
 def _dem_lease() -> int:
+    """Số lease **của lượt đang thử** — không đếm lease của người giữ chỗ.
+
+    🔴 Bản cũ đếm TOÀN BỘ bảng và đúng chỉ vì `_giu_het_suat` tạo đúng một
+       lease. Từ dual-model 2.6 nó tạo `SO_SLOT` = 3 cái, nên "0" trong các
+       phép kiểm dưới đây sẽ là "2" mà chẳng có gì hỏng thật.
+
+    ⭐ Mọi câu khẳng định ở tệp này đều là *"lượt CỦA TA không rò suất"*, nên
+       phép đếm phải hỏi đúng câu đó. Lease của người giữ chỗ đếm riêng ở
+       `_dem_lease_giu_cho()`.
+    """
     from platform_core.models import ExecutionLease
     gen, db = _session()
     try:
-        return int(db.query(ExecutionLease).count())
+        return int(db.query(ExecutionLease)
+                   .filter(ExecutionLease.user_id != NGUOI_GIU_CHO).count())
     finally:
         _close(gen)
+
+
+def _dem_lease_giu_cho() -> int:
+    from platform_core.models import ExecutionLease
+    gen, db = _session()
+    try:
+        return int(db.query(ExecutionLease)
+                   .filter(ExecutionLease.user_id == NGUOI_GIU_CHO).count())
+    finally:
+        _close(gen)
+
+
+def _so_suat() -> int:
+    """Sức chứa của tài nguyên model mặc định, đọc từ **bản khai**."""
+    from platform_core.llm.canonical import tai_nguyen_nha
+    return int(tai_nguyen_nha(MODEL).slots)
 
 
 def _ban_ghi_idem(key: str):
@@ -189,11 +220,21 @@ def _dong_cho(user_id: str):
 
 
 def _giu_het_suat() -> str:
-    """Một lượt khác giữ **trọn suất của model mặc định**.
+    """Những lượt khác giữ **trọn suất của model mặc định**.
 
     ⛔ Tên tài nguyên đọc từ BẢN KHAI, không gõ `"llm_remote"`: từ dual-model
        2.3 mỗi model có tài nguyên riêng, nên một tên gõ tay sẽ giữ một
        tài nguyên không ai dùng — cửa vẫn thông và phép kiểm xanh rỗng.
+
+    🔴 VÀ SỐ SUẤT CŨNG PHẢI ĐỌC TỪ BẢN KHAI, KHÔNG CHỈ TÊN — một lần `acquire`
+       giữ **một** suất, còn `slots=` là **sức chứa** của tài nguyên, không phải
+       số suất người gọi lấy. Chừng nào `SO_SLOT` còn bằng 1 thì hai nghĩa ấy
+       trùng nhau và không ai thấy khác biệt; dual-model 2.6 nâng lên **3**
+       (L-14) và lập tức tám phép kiểm ở tệp này xanh rỗng — cửa còn 2 suất
+       trống nên lượt thử **được nhận**, không hề chờ.
+
+    ⭐ Nên hàm này lặp cho tới hết sức chứa. Nó trả id của lease **cuối**, giữ
+       đúng giao ước cũ với bên gọi (chúng chỉ dùng id để nhả một suất ra).
     """
     from platform_core.llm import admission
     from platform_core.llm.canonical import tai_nguyen_nha
@@ -201,12 +242,16 @@ def _giu_het_suat() -> str:
     suc = tai_nguyen_nha(MODEL)
     gen, db = _session()
     try:
-        lease = admission.acquire(
-            db, resource=suc.resource, slots=suc.slots, user_id="u-khac",
-            mode="job", holder_id="job-khac")
-        assert lease is not None
+        cuoi = None
+        for i in range(int(suc.slots)):
+            lease = admission.acquire(
+                db, resource=suc.resource, slots=suc.slots, user_id=NGUOI_GIU_CHO,
+                mode="job", holder_id=f"job-khac-{i}")
+            assert lease is not None, f"khong giu duoc suat thu {i + 1}/{suc.slots}"
+            cuoi = lease
         db.commit()
-        return lease.id
+        assert cuoi is not None
+        return cuoi.id
     finally:
         _close(gen)
 
@@ -361,7 +406,10 @@ def test_het_tran_cho_thi_429_va_KHONG_mot_but_toan_nao(api, monkeypatch):
         "het tran cho ma van co but toan — INV-MJ-2 vo")
     assert dong_ho.da_ngu >= 5.0, (
         "khong cho du tran — 429 nay la 429 cu, khong phai 429 sau khi cho")
-    assert _dem_lease() == 1, "chi con lease cua nguoi giu cho"
+    assert _dem_lease() == 0, "het gio cho ma luot CUA TA van giu mot suat"
+    assert _dem_lease_giu_cho() == _so_suat(), (
+        "nguoi giu cho phai van giu TRON suc chua — khong thi phep kiem nay "
+        "khong con do canh gi (cua da thong tu truoc)")
     # Đóng bản ghi ⇒ lượt thử lại cùng khoá chạy được, không nhận 409 vĩnh viễn.
     trang_thai, _co = _ban_ghi_idem(key)
     from platform_core.public_api.tables import IDEMPOTENCY_IN_PROGRESS
@@ -414,8 +462,15 @@ def test_qua_TRAN_VAO_thi_413_TRUOC_ca_phong_cho_lan_tien(api, monkeypatch):
     from platform_core.runtime_noi_bo import luong
     monkeypatch.setattr(luong, "cho_suat_dong_bo", cam_cho)
 
+    # ⛔ ĐỘ DÀI PHẢI DẪN XUẤT TỪ TRẦN, KHÔNG GÕ TAY. Bản đầu gõ `450_000` ký tự
+    #    — vượt trần 169.984 token của hồ sơ 204.800. Dual-model 2.6 nâng cửa sổ
+    #    lên 221.184 ⇒ trần vào thành 186.368 ⇒ 450.000 ký tự (≈180.001 token)
+    #    **lọt**, và 413 đổi thành 400 của ngân sách thời gian. Phép kiểm không
+    #    bắt được gì nữa mà vẫn trông như đang bắt.
+    from apps.ltt_llm import ngan_sach
+    qua_tran = int((ngan_sach.TOKEN_VAO_TRAN + 5_000) * ngan_sach.KY_TU_MOI_TOKEN)
     r = api.post(DUONG, json=_than(messages=[{"role": "user",
-                                              "content": "x" * 450_000}],
+                                              "content": "x" * qua_tran}],
                                    max_tokens=16),
                  headers=_h(token))
 

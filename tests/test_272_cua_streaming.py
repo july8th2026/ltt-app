@@ -186,12 +186,19 @@ def _giu_execution_slot() -> str:
     suc = tai_nguyen_nha(MODEL)
     gen, db = _session()
     try:
-        lease = admission.acquire(
-            db, resource=suc.resource, slots=suc.slots, user_id="u-khac",
-            mode="job", holder_id="job-khac")
-        assert lease is not None
+        # 🔴 MỘT LẦN `acquire` GIỮ MỘT SUẤT; `slots=` là **sức chứa**. Hai nghĩa
+        #    ấy trùng nhau đúng chừng nào `SO_SLOT` = 1 — dual-model 2.6 nâng
+        #    lên 3 (L-14) và hàm này chỉ còn giữ 1/3, tức cửa vẫn thông.
+        cuoi = None
+        for i in range(int(suc.slots)):
+            lease = admission.acquire(
+                db, resource=suc.resource, slots=suc.slots, user_id="u-khac",
+                mode="job", holder_id=f"job-khac-{i}")
+            assert lease is not None, f"khong giu duoc suat {i + 1}/{suc.slots}"
+            cuoi = lease
         db.commit()
-        return lease.id
+        assert cuoi is not None
+        return cuoi.id
     finally:
         _close(gen)
 
@@ -452,7 +459,12 @@ def test_stream_qua_tran_vao_van_413_TRUOC_200(api, monkeypatch):
     called = _dat_luong(monkeypatch)
     user_id, token = _account()
     truoc = _so_du(user_id)
-    than = _than(messages=[{"role": "user", "content": "x" * 450_000}])
+    # ⛔ DẪN XUẤT TỪ TRẦN, KHÔNG GÕ TAY: `450_000` ký tự (≈180.001 token) vượt
+    #    trần 169.984 của hồ sơ 204.800 nhưng **lọt** trần 186.368 của hồ sơ
+    #    221.184 (dual-model 2.6) — phép kiểm sẽ thôi đo 413 mà vẫn trông như đo.
+    from apps.ltt_llm import ngan_sach
+    qua_tran = int((ngan_sach.TOKEN_VAO_TRAN + 5_000) * ngan_sach.KY_TU_MOI_TOKEN)
+    than = _than(messages=[{"role": "user", "content": "x" * qua_tran}])
     r = api.post(MSG, json=than, headers=_h(token))
     assert r.status_code == 413, r.text
     assert called == []
