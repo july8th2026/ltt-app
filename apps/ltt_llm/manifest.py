@@ -314,21 +314,40 @@ MANIFEST = AppManifest(
             #    `test_334::TestBanSaoConLai` nay buộc **mọi** alias ở đây phải
             #    tự khai, nên đường lùi không bao giờ áp cho model nhà nữa.
             "models": {
-                # ⛔ `reads_images` CHỈ Ở `ltt-3.5` HÔM NAY, và đó là một sự thật
-                #    về **engine đang chạy**, không phải một thiếu sót. Hồ sơ
-                #    `qwen38-api` trên máy B chưa nạp `mmproj`; hứa đọc ảnh ở
-                #    đây là đúng lớp lỗi F-02 (bản khai nói một đằng, máy B làm
-                #    một nẻo) chỉ đổi chiều. **Task 3.3** nạp mmproj cho hồ sơ
-                #    3.8 rồi mới bật cờ này — cùng lượt, không sớm hơn.
+                # ⭐ `reads_images` Ở CẢ HAI — sửa 2026-09-13 (L-03).
+                #
+                #    Chú thích cũ ở đây viết *"hồ sơ `qwen38-api` trên máy B chưa
+                #    nạp `mmproj`... Task 3.3 nạp rồi mới bật cờ này"*. Task 3.3
+                #    **đã xong**, và chú thích thì không tự biết điều đó.
+                #
+                # 📏 Đo 13/09 trên máy B thật (`llama-swap /running`), không suy:
+                #
+                #      qwen38-api  --mmproj H:/LTT_LLM/models/mmproj-F16.gguf
+                #      qwen35-api  --mmproj H:/LTT_LLM/models/mmproj-9B-F16-unsloth.gguf
+                #
+                #    và chính llama-swap khai cả hai hồ sơ là *"doc anh"*. Đối
+                #    chứng hành vi: gửi ảnh cho `ltt-3.8` thì nó **đọc và trả
+                #    lời về ảnh**; không gửi thì nó nói *"I don't see any image
+                #    attached"* — tức nó phân biệt được có ảnh hay không.
+                #
+                # 🔴 VÀ ĐÂY LÀ CHIỀU NGUY HIỂM CỦA LỚP LỖI F-02, không phải chiều
+                #    chú thích cũ lo. Chú thích cũ lo *hứa thừa* (khai đọc ảnh mà
+                #    engine không đọc được). Thứ đã thực sự xảy ra là *hứa
+                #    thiếu*: engine đọc được suốt, còn bản khai bảo khách rằng
+                #    không — nên `server/api/tools.py:52` tắt nút đính ảnh, và
+                #    một năng lực đã trả tiền để dựng thì **không ai dùng được**.
                 "ltt-3.8": {
                     "id": "qwen38-api",
-                    "description": (f"Text only, {_cua_so_noi_voi_khach('qwen38-api')} "
-                                    f"usable input context. Deepest model: coding, "
-                                    f"chat, agentic tool use, summarisation."),
+                    "description": (f"{_cua_so_noi_voi_khach('qwen38-api')} usable "
+                                    f"input context. Deepest model: coding, chat, "
+                                    f"agentic tool use, summarisation. It reads "
+                                    f"images too — send them as OpenAI image_url "
+                                    f"parts."),
                     "stability": "stable",
                     "constraints": {
                         "context_window": cong_bo_cua("qwen38-api"),
                         "max_output_tokens": MAX_TOKENS_TRAN,
+                        "reads_images": True,
                     },
                 },
                 "ltt-3.5": {

@@ -297,6 +297,46 @@ ngược — xem `CLAUDE.md`. Một lệnh `DROP` không đảo lại được d
 
 ---
 
+# 10b. 🔴 KHÔNG DỪNG GIỮA CÁC PHA — chủ sản phẩm chốt 2026-09-13
+
+*"Thực hiện full quy trình, không dừng lại giữa các phase, tiếp quản chạy full
+plan tự động."*
+
+Một pha xong **không** phải một điểm xin phép. Chạy thẳng sang pha kế tiếp.
+
+| ⛔ Đừng làm | ✅ Làm |
+|---|---|
+| "Pha 1 xong, tôi có nên tiếp?" | tiếp luôn, báo kết quả **sau** |
+| dừng lại xin duyệt deploy | deploy, rồi báo kèm phép đo trước/sau |
+| kết một báo cáo bằng câu hỏi | kết bằng **việc đã làm** + việc **đang làm tiếp** |
+| chờ trả lời rồi mới chạy gate | bấm gate, dùng thời gian chờ làm việc khác |
+
+⭐ **Làm việc song song trong lúc chờ.** Một lượt gate ~12 phút; ràng buộc thật
+trong khoảng đó **không phải CPU** (đo 13/09: CPU 3 %, gate dùng ~6/10 lõi) mà
+là **cấm ghi cây**. Nên: gom mọi việc ghi vào **trước** khi bấm gate, rồi trong
+lúc gate chạy chỉ làm việc **đọc/đo** — đo production, đo máy B, đọc mã. Phép đo
+thẳng máy B chạy được ngay giữa một lượt gate, vì việc thật nằm ở máy B.
+
+## ⛔ Bốn thứ VẪN dừng — và không cái nào là chuyện xin phép
+
+| | Vì sao |
+|---|---|
+| **Gate đỏ** | dừng, sửa, chạy lại. Không đi tiếp trên một cây chưa xanh |
+| **Thao tác không đảo được** trên dữ liệu thật (`DROP`, xoá, ghi đè backup) | §10 mục 3 — uỷ quyền không làm một lệnh `DROP` đảo lại được |
+| **Thay đổi chưa commit không rõ của ai** | §10 mục 1 |
+| **Rủi ro bảo mật / mất dữ liệu chưa giải quyết** | §10 mục 4 |
+
+⚠️ Và một thứ **không còn** là điểm dừng: **UAC**. Máy đặt
+`ConsentPromptBehaviorAdmin = 0` ⇒ nâng quyền **im lặng**, không có hộp thoại
+nào hiện lên. Đừng bảo chủ dự án "bấm Yes" — sẽ không có gì để bấm. Đường chuẩn:
+`python tools\nang_quyen.py <script.py> [-- <tham số>]`.
+
+⛔ Uỷ quyền này **không** bao gồm nới ACL hay `icacls`. ACL ở `secrets\` và
+`D:\LTTBackups` là một bản vá bảo mật **đã hoàn thành** (W1.5). "Full quyền"
+nghĩa là *đừng dừng lại hỏi*, không phải *hạ mức an toàn xuống*.
+
+---
+
 # 11. Khi bạn nghi mình đi sai hướng
 
 Người dùng nói *"Check LTT execution policy"* hoặc *"Check lại quy tắc gate/pytest"*
