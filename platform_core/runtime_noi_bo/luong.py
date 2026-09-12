@@ -745,7 +745,16 @@ def dam_bao_quyet_toan(luot: "LuotLuong") -> None:
         luot.ket_thuc = "khach_ngat_truoc_byte_dau"
     log.warning("STREAM CHUA TUNG CHAY rid=%s - quyet toan bang luoi an toan",
                 cb.request_id[-8:])
-    luot.ket_qua = quyet_toan(cb.user_id, cb.request_id, luot.dem, cb.da_giu, None)
+    # 🔴 `model=` LÀ BẮT BUỘC (D07) VÀ ĐƯỜNG NÀY TẮT ĐÃ QUÊN NÓ.
+    #    `quyet_toan` đặt `model` sau `*` **có ý** để một bên gọi cũ đỏ ngay thay
+    #    vì lặng lẽ nhận `trang_thai` vào đúng chỗ của model. Đường thứ nhất
+    #    (bên dưới) truyền đúng; **lưới an toàn này thì không** — tức nó sẽ ném
+    #    `TypeError` đúng lúc nó được gọi: khi một lượt stream **chưa từng chạy**
+    #    mà vẫn phải quyết toán. Đổi một bút toán lấy một ngoại lệ, ở đúng cái
+    #    nhánh sinh ra để cứu những lượt không ai nhìn.
+    #    `mypy` bắt được (`call-arg 0 → 1`); không phép kiểm nào đi qua nhánh này.
+    luot.ket_qua = quyet_toan(cb.user_id, cb.request_id, luot.dem, cb.da_giu, None,
+                              model=cb.model_alias)
 
 
 def _nha_suat(lease_id: str) -> None:

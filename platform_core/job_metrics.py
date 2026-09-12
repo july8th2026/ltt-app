@@ -291,7 +291,7 @@ def snapshot(db: DbSession, *, now: datetime | None = None,
     ).where(JobEvent.created_at >= cutoff)
     if app_slug:
         events_stmt = events_stmt.where(JobEvent.app_slug == app_slug[:64])
-    event_counts = dict(db.execute(
+    event_counts: dict[str, int] = dict(db.execute(
         events_stmt.group_by(JobEvent.event_code)).all())
     stale_cutoff = current - timedelta(minutes=max(1, stale_minutes))
     stale = 0

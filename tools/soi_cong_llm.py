@@ -459,7 +459,8 @@ def _lenh_bao_dong() -> str:
 
 def _cat_khuc(ra: str) -> dict:
     """Tách stdout thành ba khúc theo ba dòng ngăn. Thiếu khúc nào ⇒ khúc rỗng."""
-    khuc, ten = {NGAN_HEALTH: [], NGAN_PROC: [], NGAN_SHARED: []}, ""
+    khuc: dict[str, list[str]] = {NGAN_HEALTH: [], NGAN_PROC: [], NGAN_SHARED: []}
+    ten = ""
     for dong in (ra or "").splitlines():
         d = dong.strip()
         if d in khuc:
@@ -520,7 +521,9 @@ def gom_shared_theo_model(health: dict, proc: list, shared: dict) -> dict:
        con số của 3090 — đúng lớp lỗi đã phải sửa ở ba tệp ngày 12/09.
     """
     theo_vai = ((health.get("gpu") or {}).get("theo_vai") or {})
-    ra = {}
+    # `None` = khong quy duoc ve tien trinh nao cua card ay (khac 0 = co
+    # tien trinh nhung khong dung Shared). Hai cau tra loi khac nhau.
+    ra: dict[str, int | None] = {}
     for model in (health.get("gioi_han") or {}):
         vai = _vai_cua(model)
         uu = str((theo_vai.get(vai) or {}).get("uuid") or "")
