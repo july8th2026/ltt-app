@@ -91,14 +91,89 @@ def test_nam_thao_tac_deu_co_trong_bang():
 #  §2  Chon model theo ngu nghia — va chot lai loi bi danh
 # ══════════════════════════════════════════════════════════════════════════════
 
-def test_thao_tac_van_ban_va_thi_giac_ra_HAI_model_khac_nhau():
-    van = ai.model_cho(ai.DICH_THUAT)
-    thi = ai.model_cho(ai.DOC_CANH)
-    assert van != thi, "van ban va thi giac phai ra hai model khac nhau"
+class _M:
+    """Model gia cho registry — chi can `.id`."""
 
+    def __init__(self, mid):
+        self.id = mid
+
+
+def _tiem_registry(monkeypatch, ban: dict):
+    """`{id: {"vision": bool}}` → `models_for` + `model_capabilities`.
+
+    ⛔ Phai tiem CA HAI: `model_cho` doc danh sach tu `models_for` roi hoi kha
+       nang qua `model_capabilities`. Tiem mot nua thi phep do van sai — va no
+       sai theo huong XANH, vi nua kia tra ve du lieu that.
+    """
     from platform_core import providers
-    assert providers.model_capabilities(thi).get("vision") is True
-    assert providers.model_capabilities(van).get("vision") is not True
+
+    monkeypatch.setattr(providers, "models_for",
+                        lambda *a, **k: [_M(mid) for mid in ban])
+    monkeypatch.setattr(providers, "model_capabilities",
+                        lambda mid: dict(ban.get(mid) or {}))
+
+
+def test_thao_tac_THI_GIAC_luon_ra_mot_model_co_thi_giac():
+    """Rang buoc THAT, va no chi co mot chieu.
+
+    🔴 BAN TRUOC DOI CA CHIEU NGUOC: *"van ban va thi giac phai ra HAI
+       model khac nhau"*, kem `assert ...(van).get("vision") is not True`. Do la
+       mot **bat bien giua hai con so cua hai may khac nhau** — tuc mot su trung
+       hop dang cho lat, khong phai bat bien:
+
+         * Truoc 11/09 no dung vi may B chay hai HO SO cua cung mot model, va ho
+           so thi giac la mot ban rieng.
+         * Tu Task 3.3 `qwen38-api` tu nap mmproj ⇒ CA HAI model cong khai deu
+           khai `vision` ⇒ ve `is not True` do, va `model_cho` cu con nem
+           `AiError` cho MOI thao tac van ban.
+
+    ⭐ Thu ASV that su can: **thao tac doc anh khong bao gio duoc phuc vu boi
+       model khong doc duoc anh.** "Van ban phai di model khac" thi khong —
+       chay van ban tren mot model co mmproj chi la mmproj ngoi khong.
+    """
+    from platform_core import providers
+
+    id_that = {m.id for m in providers.models_for("ltt_llm")}
+    for t in ai.THAO_TAC:
+        mid = ai.model_cho(t)
+        assert mid in id_that, f"{t.ma}: {mid!r} khong co trong registry"
+        if t.can_thi_giac:
+            assert providers.model_capabilities(mid).get("vision") is True, (
+                f"{t.ma} can thi giac ma {mid!r} khong khai `vision`")
+
+
+def test_MOI_model_deu_co_thi_giac_thi_van_ban_VAN_chay(monkeypatch):
+    """Ca hoi quy cho Task 3.3 — dung hinh dang lam ban truoc no.
+
+    ⛔ Khong co ca nay, phep kiem o tren xanh tren registry hom nay va do o
+       ngay `qwen38-api` bat mmproj. Tiem thang hinh dang cua ngay ay.
+    """
+    _tiem_registry(monkeypatch, {"qwen38-api": {"vision": True},
+                                 "qwen35-api": {"vision": True}})
+    assert ai.model_cho(ai.DICH_THUAT) in {"qwen38-api", "qwen35-api"}
+    assert ai.model_cho(ai.DOC_CANH) in {"qwen38-api", "qwen35-api"}
+
+
+def test_DOI_CHUNG_thi_giac_khong_nhan_model_KHONG_doc_duoc_anh(monkeypatch):
+    """Model app khai khong co thi giac ⇒ phai di tim model khac, khong lang le
+    tra ve no; va khong ai co thi giac ⇒ `AiError`, khong roi ve mac dinh.
+
+    ⛔ Day la ca giu cho rang buoc con RANG. Neu `model_cho` doi thanh "cu tra
+       ve thu app khai" thi hai ca tren van xanh — chi ca nay do.
+    """
+    import pytest as _pt
+    from platform_core.llm import canonical
+
+    khai = canonical.ALIAS_SANG_ID[canonical.model_noi_bo_cua(ai.SLUG)]
+    khac = next(m for m in canonical.ALIAS_SANG_ID.values() if m != khai)
+
+    _tiem_registry(monkeypatch, {khai: {}, khac: {"vision": True}})
+    assert ai.model_cho(ai.DOC_CANH) == khac
+    assert ai.model_cho(ai.DICH_THUAT) == khai      # van ban van theo ban khai
+
+    _tiem_registry(monkeypatch, {khai: {}, khac: {}})
+    with _pt.raises(ai.AiError):
+        ai.model_cho(ai.DOC_CANH)
 
 
 def test_KHONG_go_bi_danh_lam_id_model():
@@ -189,9 +264,14 @@ def test_cua_so_ngu_canh_LAY_DUNG_MODEL_CUA_TUNG_THAO_TAC():
        model** (`qwen38-api` 131.072 so với `qwen38-vision` 65.536), nên xếp một
        lô khung hình theo trần của bản văn bản sẽ thành 413 lúc chạy.
 
-       Nay hai thao tác đi tới **hai model khác nhau trên hai card khác nhau**:
-       thị giác → `ltt-3.5` (262.144), văn bản → `ltt-3.8` (221.184). Quan hệ
-       **đã lật**, và mối nguy cũ biến mất cùng nó.
+       Nay hai thao tác đi tới **hai model khác nhau trên hai card khác nhau**,
+       và quan hệ giữa hai cửa sổ **đã lật** — mối nguy cũ biến mất cùng nó.
+
+    ⚠️ Và đừng viết *thao tác nào đi model nào* vào đây: bản trước của chú
+       thích này ghi "thị giác → `ltt-3.5`, văn bản → `ltt-3.8`" và câu ấy sống
+       đúng **một ngày**. Phép chia ấy là hệ quả của một bộ lọc `vision` đã bị
+       bỏ (§2): từ D09, **cả hai** thao tác đi model mà app **khai**, và chỉ
+       thao tác thị giác mới rẽ sang model khác khi model ấy không đọc được ảnh.
 
     ⛔ Cách sai là đảo dấu cho nó xanh lại. Một phép đo lệch chiều thì phải BỎ,
        không phải sửa — đảo dấu chỉ ghim ngược lại đúng một quan hệ ngẫu nhiên
@@ -212,14 +292,37 @@ def test_cua_so_ngu_canh_LAY_DUNG_MODEL_CUA_TUNG_THAO_TAC():
             f"{ai.cua_so_ngu_canh(tt)} != {khai} cua {model!r}")
 
 
-def test_hai_thao_tac_KHONG_dung_chung_mot_cua_so_bang_ngau_nhien():
-    """Đối chứng cho phép kiểm trên: hai thao tác phải thật sự đi hai model.
+def test_DOI_CHUNG_hai_thao_tac_di_hai_model_thi_ra_HAI_cua_so(monkeypatch):
+    """Đối chứng cho phép kiểm trên: `cua_so_ngu_canh` phải đi **theo** model
+    của từng thao tác, chứ không đọc một model cố định.
 
-    Không có ca này thì phép kiểm trên vẫn xanh cả khi `model_cho` trả về **cùng
-    một model** cho mọi thao tác — lúc đó nó chỉ đang so một con số với chính nó.
+    Không có ca này thì phép kiểm trên vẫn xanh cả khi `cua_so_ngu_canh` bỏ
+    tham số `thao_tac` và luôn hỏi một model — lúc đó nó chỉ so một con số
+    với chính nó.
+
+    🔴 BẢN TRƯỚC ĐÒI HAI THAO TÁC **THẬT SỰ** TRỏ HAI MODEL, và đó là một
+       điều kiện nó không có quyền đòi. Phép chia ấy đến từ bộ lọc
+       `bool(vision) == can_thi_giac` — thứ §2 vừa bỏ vì nó tự vỡ ở Task 3.3.
+       Từ D09 cả hai thao tác đi model app **khai**, nên bản trước đỏ — và nó
+       đỏ vì **đề bài sai**, không vì mã sai.
+
+    ⭐ Nên đối chứng nay **tự dựng** hình dạng "hai model, hai cửa sổ" thay
+       vì chờ registry hôm nay tình cờ chia như thế. Hai con số dưới đây là
+       số **tiêm**, không phải số đo — đừng đọc chúng như cấu hình thật.
     """
-    assert ai.model_cho(ai.DOC_CANH) != ai.model_cho(ai.DICH_THUAT), (
-        "hai thao tac tro cung mot model => phep kiem cua so khong do duoc gi")
+    from platform_core.llm import canonical
+
+    khai = canonical.ALIAS_SANG_ID[canonical.model_noi_bo_cua(ai.SLUG)]
+    khac = next(m for m in canonical.ALIAS_SANG_ID.values() if m != khai)
+    _tiem_registry(monkeypatch, {
+        khai: {"context_window": 111_111},
+        khac: {"vision": True, "context_window": 222_222},
+    })
+
+    assert ai.model_cho(ai.DICH_THUAT) == khai
+    assert ai.model_cho(ai.DOC_CANH) == khac
+    assert ai.cua_so_ngu_canh(ai.DICH_THUAT) == 111_111
+    assert ai.cua_so_ngu_canh(ai.DOC_CANH) == 222_222
 
 
 # ══════════════════════════════════════════════════════════════════════════════

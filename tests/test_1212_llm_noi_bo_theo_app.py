@@ -417,6 +417,12 @@ NGUOI_GOI_NOI_BO = (
     "apps/taovideo/translate.py",
     "apps/autosubvideo/ai_workflows.py",
     "apps/prompt_ai_ommi/provider.py",
+    # 🔴 THÊM 12/09 (dual-model 3.3): người gọi nội bộ **thứ sáu**, và nó bị bỏ
+    #    sót đúng vì danh sách này viết tay. `apps/auto_scan_video/ai.py` không
+    #    đọc `MODEL_MAC_DINH` — nó chọn bằng một phép lọc `vision` còn tệ hơn:
+    #    "model nào KHÔNG đọc ảnh" là câu hỏi tự vỡ ngày `qwen38-api` nạp mmproj.
+    #    Nay nó hỏi `model_noi_bo_cua` như năm tệp trên, nên bánh cóc phủ được.
+    "apps/auto_scan_video/ai.py",
 )
 
 
