@@ -158,7 +158,7 @@
       "alembic_mot_head": "PASS (d9a1f6c2b3e5 tren CSDL production)",
       "di_tru_asr_that": "PASS theo chu cua spec (da chay, da ghi so): Xet 29 / Se doi 0 / Khong chac 29. Mot luot ASR THAT tren production tren ho so co clip (do=en/0.442 < nguong 0.90 -> tu choi doi, fail-closed dung y). 28 ho so con lai mat clip trong kho — TAT CA deu cua tai khoan THU `.local`, khong khach nao bi anh huong. SO GIONG DOI = 0.",
       "playwright_url_cong_khai": "PASS — chay that tren URL cong khai qua Chrome THAT noi bang CDP, tai khoan thu `thu.giongnoi@lttstudios.local`: D003 PASS, D002 PASS, 24/24 khung hinh PASS, 0 loi 4 lop. D004/T-08/D005 SKIP co ly do (phu thuoc seed chi co tren loopback).",
-      "public_api_live": "PASS (5 tool mo, co speech.ltt)"
+      "public_api_live": "PASS — 5 tool mo, co speech.ltt. THEM 12/09: hook kiem-truoc D007 da thu THAT tren production qua /api/v1/quotes bang mot khoa TAM (da thu hoi ngay): lech lan -> 400 invalid_request + reason=voice_language_mismatch + retry=never, chan TRUOC khi tien dong; ca doi chung (cung preset, van ban tieng Viet) -> 200, credit=1. Khong goi /jobs nen khong job nao chay va khong credit nao bi tieu."
     },
     "phan_quyet": "RELEASED — 7/7 o dat tren e2676aaa. LUU Y: khong nghia la da di tru du lieu (0 giong doi), khong nghia la ca 5 luong da chay tren production (2/5).",
     "bao_cao": "docs/LTT_VOICE/HOP_NHAT/TANG2_RC1.md",

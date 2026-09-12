@@ -213,9 +213,46 @@ KHU API /api/v1 — 5 tool dang mo:
 
 `speech.ltt` — cửa Public API của Voice — **đang mở và trả lời thật**.
 
-⚠️ Hook kiểm-trước D007 **chưa** được thử trên production: khoá canary chỉ có
-scope đọc, không tạo được quote/job. Nó đã được chốt bằng `test_524` và bằng
-lượt Tầng 1.
+### 5.1 Hook kiểm-trước D007 — đã thử trên production (12/09, 09:00)
+
+Lượt đầu không thử được vì khoá canary chỉ có scope đọc. Lượt này phát một khoá
+**tạm** (`tools:read` + `jobs:create`) cho chính tài khoản canary, chỉ gọi
+`/api/v1/quotes` — **không** gọi `/jobs`, nên không job nào chạy và không credit
+nào bị tiêu — rồi **thu hồi khoá ngay trong khối `finally`**.
+
+| Ca | Kết quả |
+|---|---|
+| **Lệch làn** — preset VI `Adam` + văn bản tiếng Anh chắc | **HTTP 400** |
+| **Đối chứng** — cùng preset VI + văn bản tiếng Việt | **HTTP 200**, `credit: 1`, `balance: 100` |
+
+Thân lỗi của ca lệch làn, nguyên văn từ production:
+
+```json
+{"type": "/errors/invalid_request", "title": "Invalid request", "status": 400,
+ "code": "invalid_request",
+ "detail": "Giọng này thuộc làn Tiếng Việt, nhưng văn bản là Tiếng Anh. …",
+ "instance": "/api/v1/quotes", "retry": "never",
+ "reason": "voice_language_mismatch"}
+```
+
+🔑 Ba thứ cùng lúc, và cả ba đều là hợp đồng chứ không phải trang trí:
+
+1. **Chặn tại `/quotes`** — tức **trước khi tiền động**. Đó chính là điều D007
+   sinh ra để làm: trước RC1, lượt gọi đã được báo giá, giữ credit và xếp job
+   rồi mới hỏng ở worker.
+2. **`reason: "voice_language_mismatch"`** — mã máy đọc được, đúng tên mà
+   `lan_ngon_ngu` dùng ở mọi cửa khác. Một `detail` tiếng Việt không thay thế
+   được nó.
+3. **Ca đối chứng vẫn ra giá** — rào chặn đúng thứ nó phải chặn, không chặn
+   thừa. Một rào chỉ được chứng minh bằng **hai** ca.
+
+⚠️ Cloudflare trả `1010 Access denied` cho `urllib`; công cụ của kho
+(`tools/api_prod_canary.py`) dùng `httpx` với `User-Agent` riêng và đi qua bình
+thường. Đó là chữ ký client, không phải lỗi ứng dụng — đừng đọc `1010` thành
+"API chặn".
+
+✅ Sau lượt đo: `developer_api_keys` không còn khoá nào mang tên
+`D007 tier-2 probe (tam)` với `revoked_at IS NULL`.
 
 ---
 
@@ -252,5 +289,5 @@ quả": một chữ PASS không mang theo phạm vi của chính nó.
 |---|---|
 | ~~Điều tra mất tệp kho Voice~~ → **ĐÃ TRUY RA**: kho không giữ object quá **~7 ngày**, cơ chế nằm **ngoài ứng dụng** (gần như chắc chắn là lifecycle rule của bucket). Toàn văn: `MAT_TEP_KHO_R2.md` | 🔴 việc còn lại là của **chủ dự án**: đọc luật thật trong dashboard Cloudflare R2, rồi chốt nới luật hay hạ hằng số trong mã (mã đang khai **30 ngày**) |
 | Lấy `LTT_SMOKE_USER`/`LTT_SMOKE_PASS` để chạy bộ Playwright đầy đủ trên URL công khai | trung bình |
-| Thử hook D007 trên production bằng một khoá có scope ghi | thấp |
+| ~~Thử hook D007 trên production~~ → **XONG** (§5.1): chặn 400 + `reason=voice_language_mismatch` tại `/quotes`, ca đối chứng vẫn ra giá | — |
 | `tools/restore_drill_schema.py` còn giữ tên ràng buộc của bảng đã xoá 24/08 (`uq_vps_port_map_cong`); `test_155` chỉ kiểm một chiều | thấp, thuộc hệ VPS |
