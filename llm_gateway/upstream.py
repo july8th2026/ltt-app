@@ -34,6 +34,20 @@ from typing import Any, Iterator, Optional, Protocol
 MA_HET_GIO = 598
 MA_KHONG_VOI_TOI = 599
 
+#: Lượt bị **hủy theo yêu cầu** (`POST /v1/huy` đã đóng cửa ra mạng của nó).
+#:
+#: 🔴 VÌ SAO MÃ THỨ BA, KHÔNG DÙNG LẠI `MA_KHONG_VOI_TOI`. `httpx` ném **cùng
+#:    một lớp ngoại lệ** cho "mạng chập" và cho "ta vừa tự đóng socket" — cả hai
+#:    là `httpx.HTTPError`. Trộn chúng thì một lượt khách chủ động hủy sẽ ra 502,
+#:    và máy A đọc 502 thành `CongVlmError` ⇒ `api_pool.danh_dau_loi()` ⇒ sau
+#:    **5** lần `key.status = APIKEY_ERROR`, thứ **không tự hồi**.
+#:
+#: ⛔ Tức nếu không tách mã này, năm lần khách bấm "dừng" là model nhà tắt và ở
+#:    lại tắt — đúng thảm hoạ D-005, chỉ vào bằng cửa **hủy**. Đây là lần thứ ba
+#:    cùng một lớp lỗi đi qua đúng chỗ này (429, rồi hết giờ, giờ là hủy), nên
+#:    luật viết cho gọn: **mọi kết cục KHÔNG PHẢI "máy B hỏng" phải có mã riêng.**
+MA_DA_HUY = 597
+
 
 class Upstream(Protocol):
     """Hình dạng mà `api.py` cần. Bản giả trong test cài đúng hai hàm này."""
@@ -51,17 +65,46 @@ class HttpxUpstream:
 
     def json(self, method: str, path: str, *, body: Any = None,
              timeout: float = 60.0) -> tuple[int, bytes]:
+        """Một lời gọi không stream — và nó **hủy được giữa chừng**.
+
+        🔴 VÌ SAO KHÔNG PHẢI `httpx.request` NỮA. Cùng lý do `dieu_phoi._goi_openai`
+           đã đổi ở máy A: `httpx.request` dựng một client bên trong rồi vứt đi,
+           nên **không ai cầm được tay nắm để đóng nó**. Cửa đồng bộ là cửa duy
+           nhất không tự dừng khi khách đi: thân endpoint chạy ở threadpool của
+           uvicorn và không nhận tin khách đã ngắt, nên nếu không đóng được socket
+           này thì `llama-server` sinh hết một lượt cho một người đã đi — và
+           llama.cpp chỉ nhả slot ≤1 s **sau khi client rời** (`server-context.cpp:39`).
+
+        ⛔ KHÔNG thêm tham số `dong=` vào chữ ký. Hình dạng hai hàm `json`/`stream`
+           **là hợp đồng với bộ test** (xem đầu tệp: bản giả cùng hình dạng là
+           điều kiện để test chạy trên máy A), và `FakeUpstream` của `test_250`
+           cài đúng hai chữ ký ấy. Tay nắm đi qua `so_luot` — cùng khuôn
+           `ContextVar` mà `platform_core/llm/ngat.py` dùng, và `so_luot` ghi rõ
+           vì sao không import được chính tệp ấy.
+        """
         import httpx
+
+        from . import so_luot
+        client = httpx.Client(timeout=timeout)
+        so_luot.ghi_nhan(client.close)
         try:
-            r = httpx.request(method, self.base_url + path, json=body, timeout=timeout)
+            r = client.request(method, self.base_url + path, json=body)
+            return r.status_code, r.content
         except httpx.TimeoutException as e:
             # ⛔ PHẢI BẮT TRƯỚC `HTTPError` — `TimeoutException` là **con** của nó.
             #    Đảo thứ tự thì nhánh này chết và không ai thấy.
             return MA_HET_GIO, str(e).encode("utf-8", "replace")
         except httpx.HTTPError as e:
+            # 🔴 CÙNG NGOẠI LỆ, HAI NGHĨA. `client.close()` giữa một request đang
+            #    đọc cũng ném `httpx.HTTPError` — y hệt một lần mạng chập. Hỏi
+            #    `so_luot.da_huy()` là cách duy nhất phân biệt, và phân biệt sai
+            #    ở đây có giá đã đo: xem `MA_DA_HUY` ở đầu tệp.
+            if so_luot.da_huy():
+                return MA_DA_HUY, b"huy theo yeu cau"
             # Trả 599 thay vì ném: `api.py` phân loại lỗi ở một chỗ duy nhất.
             return MA_KHONG_VOI_TOI, str(e).encode("utf-8", "replace")
-        return r.status_code, r.content
+        finally:
+            client.close()
 
     def stream(self, method: str, path: str, *, body: Any = None,
                timeout: float = 900.0) -> tuple[int, str, Iterator[bytes]]:
@@ -77,7 +120,13 @@ class HttpxUpstream:
            byte đầu tiên (cộng đồng đo prefill ~1.000 tok/s ở đầu vào 100k).
         """
         import httpx
+
+        from . import so_luot
         client = httpx.Client(timeout=timeout)
+        # ⚠️ Ghi tay nắm vào sổ NGAY, trước cả khi header về: `/v1/huy` có thể
+        #    đến trong lúc prefill — ở ngữ cảnh 200K đó là **hàng phút** — và
+        #    trước bản này thì cả khoảng ấy là một vùng không hủy được.
+        so_luot.ghi_nhan(client.close)
         try:
             ctx = client.stream(method, self.base_url + path, json=body)
             r = ctx.__enter__()
@@ -86,6 +135,9 @@ class HttpxUpstream:
             return MA_HET_GIO, "text/plain", iter([str(e).encode("utf-8", "replace")])
         except httpx.HTTPError as e:
             client.close()
+            if so_luot.da_huy():
+                # Hủy đến trước header. Cùng lý do tách mã như ở `json` ở trên.
+                return MA_DA_HUY, "text/plain", iter([b"huy theo yeu cau"])
             return MA_KHONG_VOI_TOI, "text/plain", iter([str(e).encode("utf-8", "replace")])
 
         content_type = r.headers.get("content-type", "text/event-stream")
@@ -108,6 +160,12 @@ class HttpxUpstream:
                 ctx.__exit__(None, None, None)
             finally:
                 client.close()
+
+        # ⭐ Cùng tay nắm ấy vào sổ lượt, để `POST /v1/huy` cắt được một luồng SSE
+        #    đang chảy. Luồng đã có đường hủy qua `nhip_tim`/`BackgroundTask` khi
+        #    **khách** ngắt; đường này là khi **máy A nói bằng lời** rằng thôi.
+        from . import so_luot
+        so_luot.ghi_nhan(dong)
 
         # 🔴 VÌ SAO PHẢI GIAO RA MỘT HÀM ĐÓNG, KHÔNG CHỈ MỘT GENERATOR.
         #

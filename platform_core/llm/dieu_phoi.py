@@ -38,8 +38,8 @@ import logging
 from typing import Any, Optional, Sequence
 
 from platform_core.llm.cong_vlm import (AmbiguousProviderError, BanError,
-                                        CongVlm, CongVlmError, KetQuaChat,
-                                        ProviderOomError, SuDung,
+                                        CongVlm, CongVlmError, HuyError,
+                                        KetQuaChat, ProviderOomError, SuDung,
                                         VuotNganSachError)
 
 log = logging.getLogger(__name__)
@@ -72,10 +72,51 @@ class KhongCoProviderNao(RuntimeError):
             item.rstrip().endswith(": ban") for item in self.chi_tiet)
 
 
-def _goi_openai(base_url: str, credential: str, than: dict, timeout_s: float) -> KetQuaChat:
+#: Trần thời gian cho lời gọi `POST /v1/huy` lên máy B. Ngắn có chủ ý — xem
+#: `_bao_may_b_huy`: nó chặn một luồng canh, và luồng ấy đang giữ việc hoàn tiền.
+HUY_TIMEOUT_S = 3.0
+
+
+def _bao_may_b_huy(base_url: str, credential: str, ma_luot: str) -> None:
+    """Bảo cổng máy B thôi sinh chữ cho lượt `ma_luot`. Best-effort, không ném.
+
+    🔴 VÌ SAO ĐÓNG SOCKET A→B LÀ CHƯA ĐỦ. Thân của một endpoint `def` ở cổng chạy
+       trong threadpool của uvicorn và **không** nhận tin khách đã đi — nó chỉ
+       biết khi `upstream.json` trả về. Nên nếu máy A chỉ đóng kết nối của mình,
+       lượt B→llama vẫn chạy tới hết cho một người đã đi: đúng cái GPU ta đang
+       cố trả lại. `POST /v1/huy` là cách nói **bằng lời** điều mà một socket
+       đóng không nói được.
+
+    ⭐ Và nó dừng đúng một lượt, không hơn: cổng tra `ma_luot` trong sổ lượt của
+       nó rồi đóng **cửa ra mạng của riêng lượt ấy**. llama.cpp nhả slot ≤1 s sau
+       khi client rời (`server-context.cpp:39`). Không `taskkill`, không `/unload`
+       của llama-swap (đường ấy không mang tên model nên nó nhả cả hai card,
+       L-17), không chạm slot của ai khác.
+
+    ⛔ NUỐT MỌI LỖI, VÀ TIMEOUT NGẮN. Hàm này chạy trên đường hủy, trong luồng
+       canh, ngay trước khi worker hoàn tiền và nhả lease. Một máy B không trả lời
+       **không được** làm việc hoàn tiền chậm lại hay hỏng — GPU chạy thừa vài
+       chục giây là một khoản lãng phí; một khoản credit treo là một sai lệch sổ.
+    """
+    if not (base_url and ma_luot):
+        return
+    try:
+        import httpx
+
+        headers = {"Authorization": f"Bearer {credential}"} if credential else {}
+        r = httpx.post(base_url.rstrip("/") + "/v1/huy",
+                       json={"request_id": ma_luot}, headers=headers,
+                       timeout=HUY_TIMEOUT_S)
+        log.info("bao may B huy luot %s: %s", ma_luot, r.status_code)
+    except Exception as e:  # noqa: BLE001 - duong huy khong duoc nem
+        log.warning("khong bao duoc may B huy luot %s: %r", ma_luot, e)
+
+
+def _goi_openai(base_url: str, credential: str, than: dict, timeout_s: float,
+                *, ma_luot: str = "") -> KetQuaChat:
     import httpx
 
-    from platform_core.llm import ngat
+    from platform_core.llm import huy_luot, ngat
 
     # 🔴 MỘT `Client` CÓ TÊN, KHÔNG PHẢI `httpx.request`. Hai lý do, và lý do thứ
     #    hai mới là lý do đổi:
@@ -85,14 +126,53 @@ def _goi_openai(base_url: str, credential: str, than: dict, timeout_s: float) ->
     #         bên trong rồi vứt đi, nên không ai cầm được cái tay nắm ấy, và lượt
     #         vẫn chạy hết trên GPU cho một người đã đi.
     client = httpx.Client(timeout=timeout_s)
-    ngat.ghi_nhan(client.close)
+
+    def _dong() -> None:
+        """Đường hủy **đầy đủ** của một lượt, và nó là MỘT hàm.
+
+        Ba việc, theo thứ tự có lý do:
+          1. bật cờ hủy — để nhánh `except httpx.HTTPError` dưới đây phân loại
+             được "ta tự đóng" (⇒ `HuyError`) chứ không "mạng chập"
+             (⇒ `AmbiguousProviderError`). Phải trước, vì bước 2 làm nó ném.
+          2. đóng socket A→B — máy A thôi chờ ngay.
+          3. bảo máy B thôi sinh chữ — vì bước 2 không nói được điều đó.
+
+        ⛔ MỘT hàm ghi vào **hai** sổ (`ngat` theo ngữ cảnh, `huy_luot` theo mã).
+           Hai hàm khác nhau cho hai sổ là cách chắc chắn để một đường hủy làm đủ
+           ba việc và đường kia làm một — xem `huy_luot` đầu tệp.
+        """
+        if ma_luot:
+            huy_luot.danh_dau(ma_luot)
+        try:
+            client.close()
+        finally:
+            if ma_luot:
+                _bao_may_b_huy(base_url, credential, ma_luot)
+
+    ngat.ghi_nhan(_dong)
+    if ma_luot:
+        huy_luot.ghi_nhan(ma_luot, _dong)
 
     def goi(method, path, *, json=None, timeout=None):
         headers = {"Authorization": f"Bearer {credential}"} if credential else {}
+        # ⛔ `X-LTT-Request-Id` VÀ KHÔNG GÌ KHÁC. Tuyệt đối **không**
+        #    `X-Conversation-Id`: cộng đồng cảnh báo rõ (bằng chứng §1) và cổng
+        #    máy B cũng không chuyển header nào lên llama-server. Mã lượt đi lên
+        #    chỉ để hai máy nối được log **và** để `/v1/huy` có cái tên để tra.
+        if ma_luot:
+            headers["X-LTT-Request-Id"] = ma_luot
         try:
             r = client.request(method, base_url.rstrip("/") + path, json=json,
                                headers=headers, timeout=timeout or timeout_s)
         except httpx.HTTPError as e:
+            # 🔴 CÙNG NGOẠI LỆ, HAI NGHĨA — và phân loại sai ở đây tốn thật.
+            #    `client.close()` giữa một request đang đọc ném đúng lớp ngoại lệ
+            #    mà một lần mạng chập ném. Cờ của `huy_luot` là chỗ duy nhất biết
+            #    ta có tự đóng hay không. Không hỏi nó thì mọi lượt hủy thành
+            #    `AmbiguousProviderError` — không đánh dấu lỗi khoá (may), nhưng
+            #    job sẽ bị `mark_ambiguous` và người đọc log đi tìm máy B.
+            if ma_luot and huy_luot.da_huy(ma_luot):
+                raise HuyError("luot bi huy theo yeu cau") from None
             raise AmbiguousProviderError(
                 f"mat ket noi sau khi bat dau gui: {type(e).__name__}") from None
         try:
@@ -113,7 +193,7 @@ def goi(db, *, messages: list, thu_tu_provider: Sequence[str],
         temperature: Optional[float] = None,
         reasoning_effort: Optional[str] = None,
         timeout_s: float = 120.0, on_dispatch=None,
-        on_rejected=None) -> KetQuaChat:
+        on_rejected=None, ma_luot: str = "") -> KetQuaChat:
     """Gọi model theo **thứ tự provider bên gọi khai**, bỏ qua provider đang bận.
 
     ⭐ `model_theo_provider` — vì **mỗi provider có id model riêng**. Gửi nhầm tên
@@ -142,8 +222,15 @@ def goi(db, *, messages: list, thu_tu_provider: Sequence[str],
 
        Thiếu khai cho provider nào thì rơi về `model` chung.
 
+    ⭐ `ma_luot` — MÃ CỦA LƯỢT NÀY, và nó làm hai việc không tách rời được:
+       nó đi lên máy B trong `X-LTT-Request-Id` (nối log hai máy), và nó là cái
+       **tên** để `huy_luot.huy(ma_luot)` cắt lượt này từ ngoài cây gọi. Rỗng thì
+       lượt vẫn chạy bình thường, chỉ là không hủy được theo tên — đường hủy theo
+       ngữ cảnh (`ngat`, khách ngắt cửa đồng bộ) vẫn nguyên.
+
     Ném `KhongCoProviderNao` khi cạn danh sách, `VuotNganSachError` ngay lập tức
-    khi yêu cầu quá to (không cascade — nó sẽ quá to ở mọi nơi).
+    khi yêu cầu quá to (không cascade — nó sẽ quá to ở mọi nơi), `HuyError` ngay
+    lập tức khi lượt bị hủy (cũng không cascade — xem dưới).
     """
     from platform_core import api_keys, api_pool, providers
     from platform_core.models import APIKEY_CAT_CHAT
@@ -209,7 +296,7 @@ def goi(db, *, messages: list, thu_tu_provider: Sequence[str],
                     on_dispatch(pid)
                 kq = _goi_openai(base, credential,
                                  {k: v for k, v in than.items() if v is not None},
-                                 timeout_s)
+                                 timeout_s, ma_luot=ma_luot)
             else:
                 ly_do.append(f"{pid}: chua biet giao thuc cua provider nay")
                 continue
@@ -222,6 +309,27 @@ def goi(db, *, messages: list, thu_tu_provider: Sequence[str],
             continue
         except VuotNganSachError:
             # ⛔ KHÔNG cascade. Quá to ở đây thì quá to ở mọi nơi.
+            raise
+        except HuyError:
+            # ⛔ KHÔNG cascade, KHÔNG `danh_dau_loi`, KHÔNG `on_rejected`.
+            #
+            # 🔴 BA CÁI "KHÔNG" ẤY LÀ BA KHUYẾT TẬT KHÁC NHAU, không phải một:
+            #
+            #    cascade      -> provider này "không phục vụ được" ⇒ thử nơi
+            #                    khác. Nhưng lượt đã bị **hủy**: thử lại là chạy
+            #                    một lượt không ai chờ, và trả tiền cho nó.
+            #                    Với model nội bộ còn tệ hơn — danh sách có MỘT
+            #                    phần tử, nên cascade = `KhongCoProviderNao`, một
+            #                    thông điệp che mất nguyên nhân thật.
+            #    danh_dau_loi -> năm lần là `APIKEY_ERROR`, **không tự hồi**.
+            #                    Khách bấm "dừng" năm lần = tắt vĩnh viễn model
+            #                    nhà (D-005, và đây là cửa thứ ba của nó).
+            #    on_rejected  -> `jobq.mark_provider_rejected` nói *"provider đã
+            #                    trả lời dứt khoát là không"*. Provider không hề
+            #                    từ chối; chính ta cắt nó. Ghi nhầm ở đây làm
+            #                    `_provider_failure_kind` đọc job thành
+            #                    `rejected` ⇒ `fail(retry=False)` — tức một job
+            #                    bị hủy sẽ mang trạng thái `error`.
             raise
         except (AmbiguousProviderError, ProviderOomError):
             # Không cascade: timeout sau POST có thể đã tạo side effect; OOM

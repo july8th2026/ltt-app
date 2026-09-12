@@ -38,8 +38,9 @@ from .config import Config
 from .don_dep import DonDepGpu
 from . import gpu_uuid as GPU
 from .gioi_han import GioiHan, boc_luong
+from . import so_luot as SL
 from .so_theo_model import SoTheoModel, token_dat_truoc
-from .upstream import MA_HET_GIO
+from .upstream import MA_DA_HUY, MA_HET_GIO
 from .nhip_tim import boc_nhip_tim
 from .dem import Dem, boc_do_ttft
 from .to_tien import ToTien
@@ -71,6 +72,13 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
 
     # So cong don theo nhom ket cuc. Chi cong don, khong giu noi dung.
     dem = Dem()
+
+    # ── Sổ lượt đang bay: hủy được, và mỗi lượt một dòng (Dual-model 4.3) ────
+    #
+    # ⭐ MỘT SỔ CHO MỖI `create_app()`, không phải một biến module. Bộ test dựng
+    #    nhiều app trong cùng tiến trình; một sổ dùng chung sẽ để lượt của app
+    #    này hủy được bằng mã của app kia — xanh vì lý do sai.
+    so_luot = SL.SoLuot()
 
     catalog: dict[str, ModelSpec] = nap_catalog(cfg.models_mo)
     la = ten_la(cfg.models_mo)
@@ -585,6 +593,24 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
         except (GPU.VaiKhongCo, OSError, ValueError):
             return None
 
+    def _uuid_cua_model(model: str) -> str:
+        """UUID của card chạy `model`, cho dòng sổ. `""` = không giải được.
+
+        ⭐ Đọc `gpu_may_b.json` (Task 4.1), **không** gọi `nvidia-smi`: đây là
+           đường nóng của mọi yêu cầu và câu hỏi là *"model này ở card nào"* —
+           một sự thật tĩnh, không phải một phép đo.
+
+        ⚠️ Dòng sổ mà thiếu UUID thì mọi phân tích "3.8 chậm hay 3.5 chậm" phải
+           suy từ tên hồ sơ, tức suy lại đúng thứ `gpu_may_b.json` đã khai. Vẫn
+           chấp nhận `""` chứ không ném: một tệp danh tính thiếu không được làm
+           sập một lượt đang tính tiền.
+        """
+        try:
+            vai = GPU.vai_cua_model(model)
+            return GPU.uuid_cua(vai) if vai else ""
+        except (GPU.VaiKhongCo, OSError, ValueError):
+            return ""
+
     def _dau_ra(do, request_id: str) -> dict:
         """Header phản hồi. `X-LTT-Request-Id` chỉ dội lại khi bên gọi có gửi.
 
@@ -627,10 +653,56 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
     def _chuyen_tiep(giao_thuc: str, body: dict[str, Any], *,
                      token_dat_khai: int = 0, la_whale: bool = False,
                      request_id: str = "") -> Response:
+        """Mở sổ cho lượt này, chạy nó, rồi ghi **đúng một dòng**.
+
+        🔴 MỘT DÒNG MỘT LƯỢT, VÀ MỌI ĐƯỜNG RA ĐI QUA ĐÂY. Ba đường ra: phản hồi
+           thường, `HTTPException` (429/413/404), và luồng SSE. Nếu chỗ ghi sổ
+           nằm cạnh chỗ trả phản hồi thì hai đường đầu sẽ có dòng và đường thứ ba
+           **âm thầm không có** — mà đường thứ ba chính là đường của mọi client
+           thật (Codex, Claude Code). Một sổ thiếu hẳn một cửa thì nó không phải
+           sổ; nên cửa duy nhất là hàm này.
+
+        ⚠️ Luồng SSE ghi **muộn**: lúc hàm này trả về, token còn chảy hàng chục
+           giây và chưa ai biết lượt sẽ kết thúc thế nào (hủy? hết? khách ngắt?).
+           Nên với `stream` thì dòng sổ và việc rút khỏi sổ lượt do
+           `BackgroundTask` của luồng làm — đúng chỗ `suat.tra()` đã làm, và đúng
+           lý do: nó chạy khi **phản hồi** kết thúc, kể cả khi thân chưa được đọc.
+        """
         # Moc de do TTFT NHU KHACH THAY: gom ca cho suat, don card va nap
         # model — ba khoan `llama-server` khong bao gio nhin thay.
         t0 = now()
         ten = str(body.get("model") or "").strip()
+        luot = SL.Luot(ma=request_id, model=ten, giao_thuc=giao_thuc, t0=t0,
+                       gpu=_uuid_cua_model(ten), bam_gio=now)
+        so_luot.dat(luot)
+        moc = SL.SO_LUOT.set(luot)
+        try:
+            return _kiem_va_chay(giao_thuc, body, luot,
+                                 token_dat_khai=token_dat_khai,
+                                 la_whale=la_whale, request_id=request_id)
+        except HTTPException as e:
+            luot.ma_http = int(e.status_code)
+            luot.ket_thuc = luot.ket_thuc or "tu_choi"
+            raise
+        except BaseException:
+            luot.ket_thuc = luot.ket_thuc or "loi"
+            raise
+        finally:
+            SL.SO_LUOT.reset(moc)
+            # ⛔ `luot.stream` là câu *"có ai khác sẽ ghi dòng này không"*, và nó
+            #    chỉ được đặt sau khi `StreamingResponse` đã cầm `BackgroundTask`
+            #    trong tay. Đặt sớm hơn (ví dụ ngay khi thấy `body["stream"]`)
+            #    thì một lượt stream bị 429 **trước** khi có luồng sẽ không ai
+            #    ghi dòng cho nó cả.
+            if not luot.stream:
+                so_luot.xoa(luot.ma)
+                SL.ghi_so(luot)
+
+    def _kiem_va_chay(giao_thuc: str, body: dict[str, Any], luot: "SL.Luot", *,
+                      token_dat_khai: int = 0, la_whale: bool = False,
+                      request_id: str = "") -> Response:
+        t0 = luot.t0
+        ten = luot.model
         try:
             spec = lay(catalog, ten)
         except KhongCoModel:
@@ -694,14 +766,15 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
                         "model": ten},
                 headers={"Retry-After": str(px_gh.thu_lai_sau_s)})
         try:
-            return _chay_that(giao_thuc, body, spec, do, suat, t0,
+            return _chay_that(giao_thuc, body, spec, do, suat, t0, luot,
                               request_id=request_id)
         except BaseException:
             suat.tra()         # ⛔ kể cả HTTPException, kể cả Ctrl-C. Idempotent.
             raise
 
     def _chay_that(giao_thuc: str, body: dict[str, Any], spec: ModelSpec,
-                   do, suat, t0: float, *, request_id: str = "") -> Response:
+                   do, suat, t0: float, luot: "SL.Luot", *,
+                   request_id: str = "") -> Response:
         """Phần tốn thời gian, đã cầm suất trong tay.
 
         ⚠️ Nó **không** tự trả suất khi thành công: với phản hồi thường, bên gọi
@@ -771,6 +844,15 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
             if ma >= 500:
                 than = b"".join(luong)
                 suat.tra()
+                # ⛔ Chưa đặt `luot.stream` ⇒ dòng sổ do `_chuyen_tiep` ghi. Ở
+                #    đây không có luồng nào để `BackgroundTask` bám vào.
+                luot.ma_http = _ma_cho_khach(ma)
+                # ⚠️ Hủy có thể đến **trước cả header** thượng nguồn. Nhánh này
+                #    phải có: `MA_DA_HUY` là 597, tức nó thoả `ma >= 500` và sẽ
+                #    rơi vào cửa 502 nếu không chặn — đúng cái mã mà máy A đọc
+                #    thành "khoá hỏng".
+                if ma == MA_DA_HUY:
+                    return _da_huy(luot)
                 return _loi_thuong_nguon(ma, than)
             # 🔴 SUẤT ĐƯỢC TRẢ KHI LUỒNG HẾT, KHÔNG PHẢI KHI HÀM NÀY VỀ.
             #    `StreamingResponse` trả về ngay lập tức; token còn chảy hàng chục
@@ -798,18 +880,33 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
             # `Suat.tra()` va `dong()` deu idempotent, nen lop nay CONG THEM chu
             # khong thay the `finally` — hai duong doc lap cho cung mot viec.
             dong_thuong_nguon = getattr(luong, "dong", None)
+            luot.stream = True
+            luot.ma_http = int(ma)
 
             def _don_dep() -> None:
                 try:
                     suat.tra()
                 finally:
-                    if dong_thuong_nguon is not None:
-                        dong_thuong_nguon()
+                    try:
+                        if dong_thuong_nguon is not None:
+                            dong_thuong_nguon()
+                    finally:
+                        # 🔴 DÒNG SỔ Ở ĐÂY, KHÔNG Ở `_chuyen_tiep`. Lúc
+                        #    `_chuyen_tiep` trả về, lượt này chưa kết thúc —
+                        #    `huy` còn có thể bật lên hàng chục giây sau. Ghi sớm
+                        #    là ghi `huy=false` cho một lượt sắp bị hủy, tức một
+                        #    dòng sổ **đúng cú pháp và sai sự thật**.
+                        #
+                        # ⚠️ Rút khỏi sổ lượt cũng ở đây: rút sớm thì `/v1/huy`
+                        #    không tìm thấy lượt đang chảy và trả 404, đúng lúc
+                        #    nó cần trả lời "đã cắt".
+                        so_luot.xoa(luot.ma)
+                        SL.ghi_so(luot)
 
             dem.cong("ok_stream")
             # ⛔ TTFT bọc TRONG nhip_tim: nhip tim phat byte trong luc prefill,
             #    boc ngoai thi moi luot dai deu ra ~15 giay. Xem `boc_do_ttft`.
-            luong = boc_do_ttft(luong, dem, t0, now)
+            luong = boc_do_ttft(luong, dem, t0, now, luot.ghi_ttft)
             luong = boc_nhip_tim(luong, moi_giay=cfg.nhip_tim_giay)
             return StreamingResponse(boc_luong(luong, suat), status_code=ma,
                                      media_type=ct,
@@ -821,11 +918,49 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
                                     timeout=cfg.upstream_timeout_s)
         finally:
             suat.tra()
+        luot.ma_http = _ma_cho_khach(ma)
+        # TTFT của cửa đồng bộ = cả lượt: khách không thấy byte nào trước đó.
+        luot.ghi_ttft(now() - t0)
+        if ma == MA_DA_HUY:
+            return _da_huy(luot)
         if ma >= 500:
             return _loi_thuong_nguon(ma, thu)
+        # ⛔ Bóc số TRƯỚC khi trả: `thu` là thân sẽ đi ra cho khách, và đây là
+        #    chỗ duy nhất còn thấy nó. Bóc chỉ đọc, không sửa một byte nào.
+        luot.doc_than(thu)
         dem.cong("ok")
         return Response(content=thu, status_code=ma, media_type="application/json",
                         headers=_dau_ra(do, request_id))
+
+    def _ma_cho_khach(ma: int) -> int:
+        """Mã nội bộ của lớp vận chuyển → mã HTTP khách thật sự nhận.
+
+        Dòng sổ phải mang mã **khách thấy**, không phải mã nội bộ: `597/598/599`
+        không tồn tại ở phía khách, và một sổ ghi chúng sẽ không khớp được với
+        log truy cập của Cloudflare hay của máy A — tức không nối được hai đầu
+        của cùng một sự cố.
+        """
+        return {MA_DA_HUY: 499, MA_HET_GIO: 504}.get(ma, 502 if ma >= 500 else int(ma))
+
+    def _da_huy(luot: "SL.Luot") -> JSONResponse:
+        """499 — lượt bị hủy theo yêu cầu.
+
+        ⛔ 499, KHÔNG 502 và KHÔNG 429. Máy A đọc 502 thành `CongVlmError` ⇒
+           `api_pool.danh_dau_loi()` ⇒ năm lần là `APIKEY_ERROR`, thứ **không tự
+           hồi**: khách bấm "dừng" năm lần thì model nhà tắt vĩnh viễn (D-005).
+           Và 429 thì máy A sẽ **đi tiếp provider khác** — với model nội bộ
+           `canonical.THU_TU_PROVIDER` chỉ có MỘT phần tử, nên "đi tiếp" là cạn
+           danh sách ⇒ `KhongCoProviderNao`, một thông điệp che mất nguyên nhân
+           thật. 499 ⇒ `cong_vlm.HuyError`, một lớp riêng không phải lỗi của ai.
+
+        ⚠️ 499 không phải mã của IANA — nó là quy ước của nginx cho *"client đã
+           đóng"*. Dùng nó ở đây vì đúng nghĩa và vì cả hai đầu là mã của ta.
+        """
+        dem.cong("huy")
+        luot.ket_thuc = luot.ket_thuc or "huy"
+        return JSONResponse(status_code=499,
+                            content={"ly_do": "huy theo yeu cau",
+                                     "ma": luot.ma or None})
 
     def _loi_thuong_nguon(ma: int, thu: bytes) -> JSONResponse:
         # ⛔ HẾT GIỜ ≠ HỎNG, VÀ SỰ KHÁC BIỆT ẤY TỐN TIỀN THẬT.
@@ -894,6 +1029,45 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
         """
         return "".join(c for c in (gt or "").strip()
                        if c.isalnum() or c in "-_.:")[:64]
+
+    @app.post("/v1/huy")
+    def huy(body: dict = Body(default=None), _: None = Depends(auth),
+            x_ltt_request_id: str = Header(default="")) -> Response:
+        """Hủy một lượt đang bay: đóng cửa ra mạng của nó, không giết gì cả.
+
+        ⛔ ĐÓNG KẾT NỐI **LÀ** CƠ CHẾ HỦY, và nó là cơ chế duy nhất được dùng.
+           llama.cpp nhả slot ≤1 s sau khi client rời (`server-context.cpp:39`,
+           `server-queue.cpp:607-617`), nên không có lý do nào để `taskkill`, để
+           gọi `/unload` của llama-swap, hay để chạm vào một slot khác. Cả ba
+           việc ấy đều đánh vào **lượt của người khác**, và `/unload` thậm chí
+           không mang tên model nên nó nhả cả hai card (L-17).
+
+        ⭐ Vì sao cần đường này chứ không chỉ để máy A đóng socket A→B. Thân của
+           một endpoint `def` chạy ở threadpool của uvicorn và **không** nhận tin
+           khách đã đi; nó chỉ biết khi `upstream.json` trả về. Máy A đóng socket
+           của nó thì lượt B→llama vẫn chạy tới hết cho một người đã đi. Lời gọi
+           này là cách máy A **nói bằng lời** điều mà socket không nói được.
+
+        404 khi không có lượt nào mang mã ấy. ⛔ Không 200: một bên hủy nhận 200
+        sẽ tin là đã cắt được, trong khi mã có thể sai hoặc lượt đã xong — và
+        "tưởng đã cắt" là đúng trạng thái làm người ta không kiểm lại.
+        """
+        ma = _id_sach(str((body or {}).get("request_id") or "")) or _id_sach(
+            x_ltt_request_id)
+        if not ma:
+            raise HTTPException(status_code=400,
+                                detail={"ly_do": "thieu request_id"})
+        n = so_luot.huy(ma)
+        if n is None:
+            raise HTTPException(
+                status_code=404,
+                detail={"ly_do": "khong co luot dang chay mang ma nay", "ma": ma})
+        log.warning("huy luot %s theo yeu cau — dong %s cua ra mang", ma, n)
+        # ⚠️ KHÔNG ghi một dòng sổ ở đây. Sổ là "một dòng mỗi LƯỢT MODEL", và
+        #    lượt bị hủy sẽ tự ghi dòng của nó (với `huy=true`) khi nó kết thúc.
+        #    Ghi thêm một dòng ở đây là hai dòng cho một lượt.
+        return JSONResponse(status_code=200,
+                            content={"huy": True, "ma": ma, "so_cua_dong": n})
 
     @app.post("/v1/chat/completions")
     def chat(body: dict = Body(...), _: None = Depends(auth),

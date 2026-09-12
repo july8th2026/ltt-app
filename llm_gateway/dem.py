@@ -60,6 +60,16 @@ NHOM = (
     "ban_vram",       # 429 - VRAM trong cua card duoi san (5060 Ti, D06)
     "qua_tran",       # 413 — vượt ngân sách token/ảnh
     "khong_co_model", # 404 — model không mở (fail-closed)
+    # 499 — HỦY theo yêu cầu (`POST /v1/huy`). **KHÔNG** phải hỏng, và cũng
+    # không phải "bận": cổng đã nhận, đã chạy, rồi được bảo là thôi.
+    #
+    # ⚠️ NÓ RƠI VÀO `tu_choi` CỦA `trang_thai()`, vì tổng ấy suy ra từ "không
+    #    phải `ok*`". Đã cân nhắc đặt tên `ok_huy` để nó vào `phuc_vu` và **bỏ**:
+    #    một lượt hủy không hề được phục vụ, nên đếm nó là phục vụ là nói sai về
+    #    phía dễ chịu. Cái giá của lựa chọn này là `ti_le_tu_choi` cao lên khi
+    #    khách hay bấm dừng — nên ai đọc tỉ lệ ấy phải xem `theo_nhom["huy"]`
+    #    ngay cạnh, và dòng này ở đây để họ biết mà xem.
+    "huy",
     "het_gio",        # 504 — thượng nguồn không trả lời kịp. **KHÔNG** phải hỏng.
     "loi_thuong_nguon",  # 502 — llama-swap/llama-server hỏng hoặc không với tới
 )
@@ -142,7 +152,7 @@ class Dem:
         }
 
 
-def boc_do_ttft(luong, dem: Dem, bat_dau: float, bam_gio):
+def boc_do_ttft(luong, dem: Dem, bat_dau: float, bam_gio, ghi_moc=None):
     """Bọc một luồng SSE để ghi TTFT khi **khối đầu tiên** đi qua.
 
     `bat_dau` là mốc **lúc yêu cầu vào cổng**, không phải lúc mở luồng thượng
@@ -173,13 +183,22 @@ def boc_do_ttft(luong, dem: Dem, bat_dau: float, bam_gio):
 
        Đó đúng hình dạng sự cố 31/08 (một đường dọn dẹp phụ thuộc vào việc ai đó
        lặp hết generator). `finally` dưới đây là cùng khuôn `nhip_tim._di` dùng.
+
+    ⭐ `ghi_moc` — CÙNG phép đo, hai người đọc. `dem` cộng dồn (trung bình, cao
+       nhất, cho `/health`); `ghi_moc` nhận con số của **lượt này** để nó vào
+       đúng dòng sổ của lượt ấy (`so_luot.Luot.ghi_ttft`). Đo hai lần ở hai chỗ
+       là cách chắc chắn nhất để hai con số lệch nhau; ở đây chỉ có một phép đo,
+       và nó được phát cho hai nơi.
     """
     dau_tien = True
     try:
         for khoi in luong:
             if dau_tien:
                 dau_tien = False
-                dem.ghi_ttft(bam_gio() - bat_dau)
+                giay = bam_gio() - bat_dau
+                dem.ghi_ttft(giay)
+                if ghi_moc is not None:
+                    ghi_moc(giay)
             yield khoi
     finally:
         dong = getattr(luong, "close", None)

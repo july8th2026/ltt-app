@@ -246,8 +246,12 @@ def kiem_tham_so(params: dict) -> dict:
 
 
 def chay(db, params: dict, *, timeout_s: float = 300.0,
-         on_dispatch=None, on_rejected=None) -> KetQua:
+         on_dispatch=None, on_rejected=None, ma_luot: str = "") -> KetQua:
     """Chạy một lượt. Ném `ThamSoSai`, `BanError`, `VuotNganSachError`, `CongVlmError`.
+
+    `ma_luot` — mã của lượt, chuyển thẳng xuống `dieu_phoi`. Nó là cái tên để
+    `huy_luot.huy()` cắt lượt này từ ngoài (cửa job dùng), và là `X-LTT-Request-Id`
+    nối log hai máy. Rỗng ⇒ hành vi cũ y nguyên.
 
     ⛔ KHÔNG tự trừ credit ở đây. Tiền do **cửa** lo:
          cửa job     — nền tảng giữ/quyết toán quanh `invocation.submit`
@@ -270,6 +274,7 @@ def chay(db, params: dict, *, timeout_s: float = 300.0,
         timeout_s=timeout_s,
         on_dispatch=on_dispatch,
         on_rejected=on_rejected,
+        ma_luot=ma_luot,
     )
     su = kq.su_dung
     return KetQua(
