@@ -388,22 +388,31 @@ def test_llm_gateway_KHONG_con_doc_GPU_theo_dong():
     assert _quet_goi("llm_gateway") == []
 
 
-@pytest.mark.xfail(strict=True, reason="cho Task 6.1 (render_gateway/busy.py theo UUID)")
 def test_render_gateway_KHONG_con_doc_GPU_theo_dong():
-    """⛔ `xfail(strict=True)` CHO TASK 6.1, KHÔNG PHẢI MỘT PHÉP KIỂM BỊ TẮT.
+    """⛔ Khong ham nao trong `render_gateway` duoc doc GPU theo **dong dau tien**.
 
-    Cùng khuôn mà `test_334` dùng cho Task 3.3: bất biến được **viết ra** ngay
-    hôm nay, còn tệp thì Task 6.1 mới sửa. `strict=True` nghĩa là ngày
-    `render_gateway` sạch thì phép kiểm này **XPASS ⇒ ĐỎ**, buộc người làm 6.1
-    gỡ dấu — nên nó vẫn cưỡng chế được điều nó sinh ra để cưỡng chế.
+    🔵 `xfail(strict=True, reason="cho Task 6.1")` DA GO ngay 12/09. Ba cho
+       tung vi pham, va chung khong bang nhau ve hau qua:
 
-    Tệp còn nợ, **đo lại lúc Task 6.1 đã landed** (`_quet_goi("render_gateway")`
-    ngày 12/09): `render_gateway/diagnostics/gpu_check.py::_hoi_smi` và
-    `render_gateway/deploy/chay_baseline.py::run`. `busy.py` đã sạch — 6.1 sửa
-    đúng tệp mà brief của nó nêu, nên hai tệp trên là **phần sót**, không phải
-    phần bị bỏ: chúng cùng đọc `dong[0]` trên đầu ra hai dòng, và
-    `chay_baseline.py` còn đem con số ấy vào một **mốc baseline** — tức một số đo
-    của card sai đội lốt một mốc so chiếu.
+         busy.py::_hoi_smi / _dem_python   → cua CAP SUAT. Sai card o day la cap
+                                             suat khi card that da day. (Task 6.1)
+         diagnostics/gpu_check.py::_hoi_smi → cong cu chan doan. (controller, 12/09)
+         deploy/chay_baseline.py::run       → di vao mot **MOC BASELINE**: mot moc
+                                             dong tren card khac lam MOI phep so
+                                             sanh ve sau lech theo, mot cach nhat
+                                             quan nen khong ai phat hien.
+
+    ⭐ Va mot cho da PHAI sua hai lan, dang ghi lai vi day la ranh gioi tinh te:
+       ban dau `gpu_check.py` giu mot nhanh du phong *"khong biet UUID thi van doc
+       `dong[0]`, kem co `loc_theo_card: False`"*. Bo do nay — mot luat AST tho —
+       van do, va no dung: mot con so VRAM **khong quy duoc ve mot card** thi khong
+       phai mot phep do, ke ca khi co mot co noi rang no khong biet. Nguoi doc bao
+       cao chan doan se trich CON SO, khong trich cai co.
+
+    ⚠️ Nen dung "noi long bo do cho mot cong cu chan doan". Hai muc do fail-closed
+       KHAC nhau van duoc phep (`gpu_check` tra `None` kem ly do va van in moi
+       truong khac; `chay_baseline` khong lay mau nao), nhung **khong cho nao doc
+       dong dau tien**.
     """
     assert _quet_goi("render_gateway") == []
 

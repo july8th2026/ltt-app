@@ -75,12 +75,25 @@ PHAM_VI = (
 CUA_SO_HOP_LE = set(ngan_sach.CUA_SO_THEO_MODEL.values())
 
 #: Hằng có tên → giá trị sống. Đọc từ mã, không gõ lại.
+#:
+#: 🔴 `CUA_SO_MODEL_VISION` ĐÃ BỊ GỠ BỎ (D02 / dual-model 2.3, hằng gỡ ở 2.6), và
+#:    dòng đó ở đây làm **cả tệp này chết ở bước COLLECT** — `AttributeError` tại
+#:    cấp module, tức 12 phép kiểm bên dưới không chạy một cái nào và gate chỉ
+#:    báo đúng một dòng lỗi thu thập. Một tệp chết ở collect là tệ hơn một
+#:    phép kiểm đỏ: nó **ẩn** mọi điều còn lại nó biết.
+#:
+#: ⛔ Và cách sửa KHÔNG phải chỉ xoá dòng đó. Bộ dò này đếm *"chú thích có gõ
+#:    lại giá trị của một hằng đang sống"*, nên bỏt một tên khỏi bảng là **thu
+#:    hệp** phạm vi nó canh. Hai tên thêm vào đây là hai **dẫn xuất mới** của
+#:    2.6 — đúng loại số một đoạn văn hay chép lại, và đúng loại số sẽ đổi
+#:    lần sau ai đó sửa `-c`.
 HANG_SONG = {
     "CUA_SO_MODEL": ngan_sach.CUA_SO_MODEL,
-    "CUA_SO_MODEL_VISION": ngan_sach.CUA_SO_MODEL_VISION,
+    "CUA_SO_HEP_NHAT": ngan_sach.CUA_SO_HEP_NHAT,
     "TOKEN_VAO_TRAN": ngan_sach.TOKEN_VAO_TRAN,
     "TOKEN_RA_TRAN": ngan_sach.TOKEN_RA_TRAN,
     "CONG_BO_CHO_CLIENT": ngan_sach.CONG_BO_CHO_CLIENT,
+    "NEN_CHO_CLIENT": ngan_sach.NEN_CHO_CLIENT,
 }
 
 #: Dấu miễn trừ: đoạn văn tự khai nó đang kể chuyện cũ.
@@ -91,6 +104,10 @@ DAU_LICH_SU = (
     "từng viết", "hết đúng", "đã thay", "bản cũ", "Bản cũ", "câu cũ",
     "đã trôi", "ĐÃ TRÔI", "trước 03/09", "Trước 03/09", "trước 01/09",
     "khi `qwen38-vision` còn", "bảng số cụ thể",
+    # Đã gỡ ở 2.6: cùng loại với "đã thay" — nói rõ đối tượng được nói tới
+    # **không còn tồn tại**, nên mọi con số đi kèm nó là số của một thứ đã chết.
+    # ⚠️ Thêm được vì nó **cụ thể**; đừng thêm "cũ" hay "trước đây" trần.
+    "đã gỡ", "ĐÃ GỠ",
 )
 
 #: Bao nhiêu dòng phía trước còn được tính là "cùng một đoạn". Một khối chú
