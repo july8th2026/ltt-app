@@ -452,3 +452,48 @@ job ảnh **vẫn** giết cả hai model, chỉ thêm việc hai model tự nh�
    mang tên model; nó "đúng" suốt một pha vì tình cờ chỉ có một model. Thêm model thứ
    hai không làm nó báo lỗi — nó vẫn thành công, chỉ là làm nhiều hơn thứ ai cũng
    tưởng. Cùng khuôn với `_resource_of` (multijob 2.3) và `model_cho` (2.3 còn sót).
+
+---
+
+## ✅ L-18 — Sàn VRAM trống của 5060 Ti = **700 MiB** (chủ dự án, 2026-09-12)
+
+Plan Task 4.2 ghi *"khởi đầu 512, chốt ở Task 3.2"*. Task 3.2 **đã chạy** và chủ dự án
+**đã chốt**, nên câu ấy không còn để ngỏ nữa. Nguyên văn 12/09:
+
+> *"cơ bản thì ngưỡng vram 1gb vẫn rất thoải mái bản chất ta chỉ chạy hệ thống ai là
+> chính nên bạn đặt ngưỡng trần vram 5060 600-700 là được"*
+
+**Chốt: `LTT_LLM_VRAM_TRONG_TOI_THIEU_MB__qwen35-api = 700`** — đầu **cao** của dải
+được cho phép.
+
+### Vì sao đầu cao, không phải đầu thấp
+
+Sàn này chỉ gây **một** hậu quả: `429 bận`, tức **không nhận lượt mới**. Nó không bao
+giờ giết một lượt đang chạy (D06, và luật xuyên suốt plan này). Nên hai chiều sai lệch
+không đối xứng:
+
+| đặt quá cao | đặt quá thấp |
+|---|---|
+| mất một phần thông lượng, khách thấy "bận" sớm hơn cần | **OOM giữa lượt** — llama.cpp cạn KV thì giết **mọi** slot, không chỉ lượt gây ra |
+
+⇒ Khi dải được phép là 600–700, chọn 700.
+
+### Con số này **không** tự nói ra lý do, nên lý do phải đi kèm
+
+§G3 đo 5060 Ti ở cấu hình chốt (`-c 262144 -np 3`, KV q8_0, mmproj trên GPU,
+`draft-mtp`): VRAM trống còn **~1.000 MiB**. Vậy sàn 700 để lại ~300 MiB dung sai
+thật trước khi cửa đóng — và máy B **không chạy gì khác ngoài hệ AI**, đó chính là
+lý do chủ dự án thoải mái giữ mức dự trữ ấy.
+
+⚠️ Đừng đọc "1 GB" trong câu của chủ dự án thành một con số cấu hình: đó là họ **mô
+   tả phép đo** (biên ~1.000 MiB) để nói "thoải mái", rồi mới ra quyết định về cái
+   nút (600–700). Hai đại lượng khác nhau — biên **đo được** và sàn **ta đặt** — và
+   gộp chúng lại là cách một quyết định biến thành một con số không ai giải thích nổi.
+
+### Consequences
+
+1. `llm_gateway/config.py` mặc định 700 cho `qwen35-api`; `tests/test_1221` chốt 700.
+2. `qwen38-api` **không** có sàn VRAM ở tầng này — 3090 do trọng tài residency
+   (D01 B, Pha 5) quản, và hai cơ chế cùng canh một card là hai chỗ khai một điều.
+3. Sàn nằm ở **env theo model**, nên đổi nó là một dòng cấu hình + restart cổng,
+   không phải một lần deploy mã.
