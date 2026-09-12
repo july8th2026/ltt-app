@@ -76,12 +76,21 @@ học: `LTT_HO_DUNG_CARD=llm=http://127.0.0.1:8280/unload` không mang tên mode
 một job ảnh xin 3090 sẽ nhả **cả LTT-3.5** trên card không ai tranh. Toàn văn +
 mức chắc chắn: `DECISION_LOG.md` L-17.
 
-Cùng lần deploy đó, hai việc phải làm **tay** (không script nào làm hộ):
+Cùng lần deploy đó, **ba** việc phải làm **tay** (không script nào làm hộ):
 
-1. `C:\ProgramData\LTTLlm\gateway.env`: **gỡ `qwen38-vision`** khỏi
-   `LTT_LLM_MODELS`. Sau khi yaml mới lên, đó là một model cổng còn quảng cáo mà
-   llama-swap **không còn hồ sơ nào khởi động được**; lớp chắn duy nhất là
-   `LTT_LLM_MODELS` fail-closed.
+1. `C:\ProgramData\LTTLlm\gateway.env`: đặt `LTT_LLM_MODELS` thành **đúng hai hồ
+   sơ đang sống** — tức **thêm `qwen35-api`** và **gỡ `qwen38-vision`**. Biến này
+   fail-closed nên hai nửa sai theo hai hướng khác nhau:
+
+   | | hậu quả |
+   |---|---|
+   | thiếu `qwen35-api` | **LTT-3.5 không mở được**: llama-swap chạy hai model, cổng chỉ bán một. Khách không thấy lỗi nào — họ chỉ không thấy model. |
+   | còn `qwen38-vision` | cổng quảng cáo một model mà llama-swap **không còn hồ sơ nào khởi động được** (yaml mới chỉ có hai). |
+
+   ⚠️ `LTT_LLM_MAX_DONG_THOI=1` cũ cũng còn trong tệp đó. Task 4.2 đã sửa
+      `deploy.ps1` để nó **không ép** giá trị 1 nữa và tự di trú — nhưng hãy
+      **đọc lại tệp sau khi chạy** thay vì tin rằng nó đã di trú: một tiến trình
+      đang chạy vẫn giữ giá trị cũ tới khi restart (xem §2.3).
 2. `C:\ProgramData\LTTRender\gateway.env`: gỡ `LTT_HO_DUNG_CARD` và
    `LTT_TRA_CARD_GIAY` (Task 5.4).
 3. 🔴 **`gpu_may_b.json` phải có mặt trong cài đặt RENDER** (Task 6.1). Bản gốc
