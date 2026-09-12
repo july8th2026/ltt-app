@@ -56,7 +56,7 @@ Quy trình đã chốt: `P0→P7 → Spec 2 → nghiệm thu tích hợp A–Q *
 | **C** | C1 LTT-3.5 text + ảnh | ✅ | đo ở P3 |
 | **D** | C3 LTT-3.8 | ⚠️ | ngưỡng `≥100 tok/s` viết cho **4 luồng**; L-14 hạ xuống **3** ⇒ **phải tính lại**, chưa chốt |
 | **E** | C4 LTT-3.5 | ⬜ | ngưỡng `2 × C1` chưa chốt số |
-| **F** | Hai model đồng thời ≥ 85 % | 🔴 **CHẶN** | L-01: qua máy A đo 2,1–8,1×; thẳng máy B 0,85–1,05× |
+| **F** | Hai model đồng thời ≥ 85 % | ✅ **ĐẠT 13/09** | 4 vòng: 0,99× · 1,08× · 1,15× · 1,10× (ngưỡng ≥ 85 % ⇔ ≤ 1,18×); `pg_locks` 0/369 |
 | **G** | Ngữ cảnh hỗn hợp, `requests_deferred=0` | ⬜ | |
 | **H** | 3.8 ngữ cảnh dài + cổng MTP | ⚠️ | đích **221.184 / `-np 3`** (L-14), không phải 262.144/`-np 4` |
 | **I** | Residency: ảnh ↔ LLM xen kẽ | ⬜ | |

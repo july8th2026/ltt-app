@@ -8,7 +8,7 @@
 
 | ma | trieu chung ĐO ĐƯỢC | loai | sua o | doi chung | trang thai |
 |---|---|---|---|---|---|
-| L-01 | qua may A: mot model bi nen lam model KIA cham **2,1-8,1x** | **CHAN** | `platform_core/api_pool.py` | hai luot song song: luot 2 cho **2,015s** o `chon_key` | **da khoanh** — xem duoi |
+| L-01 | qua may A: mot model bi nen lam model KIA cham **2,1-8,1x** | **CHAN** | `platform_core/api_pool.py` | 4 vong sau deploy: **0,99x · 1,08x · 1,15x · 1,10x**; `pg_locks` **0/369** mau | ✅ **DONG 13/09** |
 | L-02 | `ltt-3.5` voi `max_tokens <= 300` tra **RONG** va van bi tinh tien | DOC LAP | may B / ban khai | 300->rong, 600->"391" | cho |
 | L-03 | `ltt-3.8` khai *"Text only"* du engine DA nap `mmproj` | DOC LAP | ban khai (may A) | `catalog.HO_SO` co_vision=True ca hai | cho |
 | L-04 | bo cham `bia-01` cam chuoi tieng Viet, model tra loi tieng Anh -> **diem dung gia** | DOC LAP | bo do | — | cho |
@@ -141,9 +141,52 @@ Ca thu ba (`test_bo_dem_van_tang_that`) la **doi chung nguoc**: mot ban sua go
 khoa bang cach bo luon phep dem se lam hai ca kia xanh ngay, va lam
 `rpm_limit`/`tpm_limit` thanh do trang tri.
 
-🔴 **CHUA do tren duong that.** Ba con so 2,1-8,1x do qua may A, va may A **chua
-   deploy** ban sua nay. Cho toi khi do lai qua `https://app.lttstudios.com`,
-   L-01 chi moi duoc chung minh o TANG CO CHE, chua o tang trieu chung.
+### ✅ NGHIEM THU TREN DUONG THAT — 13/09/2026, sau deploy `edfcdd9f`
+
+Deploy may A: `nghiem_thu_deploy.py` bao **lech 0 / thieu 0 / thua 0** doi chieu
+`edfcdd9f8a99`; `/health/version` tra dung commit do (`commit_nguon="marker"`).
+Ban sua la tep `.py` **duy nhat** khac giua cay va production truoc luc deploy —
+bien so co lap.
+
+Do qua `https://app.lttstudios.com`, khoa that, tai khoan `canary.api`:
+
+| vong | nen 3.8 -> do 3.5 | nen 3.5 -> do 3.8 | te nhat |
+|---|---|---|---|
+| 1 | 0,95x | 0,99x | **0,99x** |
+| 2 | 0,94x | 1,08x | **1,08x** |
+| 3 | 1,15x | 1,15x | **1,15x** |
+| 4 | 1,05x | 1,10x | **1,10x** |
+
+**Truoc ban sua: 2,1x - 8,1x.** Dieu kien dung cua chu san pham (*hai vong lien
+tiep trung khop*) dat o vong 1-2, va vong 3-4 xac nhan lai.
+
+🔑 **Bang chung CO HOC, khong chi con so thoi gian.** Sample `pg_locks` +
+`pg_stat_activity` 75 giay **trong luc co tai** (369 mau, dinh 2 phien `active`):
+
+```
+khoa CHUA duoc cap (granted = false) : khong co mau nao
+phien dang CHO tren mot khoa         : khong co mau nao
+mau thay chan tren `api_keys`        : 0/369
+```
+
+### ⭐ He qua phu KHONG luong truoc: moi luot nhanh gan GAP DOI
+
+Khoa hang khong chi gay can thiep cheo — no lam cham **ca nhung luot don le**,
+vi vong tham `/health` cua worker (`job_runner.py:1239`) cung goi `chon_key` tren
+dung hang ay vai giay mot lan.
+
+| trung vi luc RANH | truoc (12/09) | sau (13/09) | thang may B |
+|---|---:|---:|---:|
+| `ltt-3.8` | 3,2 s | **1,85 s** | 1,47 s |
+| `ltt-3.5` | 7,2 s | **4,55 s** | 4,12 s |
+
+⇒ Overhead cua may A tut tu **+1,7s / +3,1s** xuong **+0,38s / +0,43s**. Qua may
+  A nay gan **bang** goi thang may B — tuc may A khong con them can thiep nao.
+
+### ⛔ Va day la doi chung cho vong 2 cua "kien truc DUNG"
+
+Do thang may B lai 13/09: **0,95x / 0,95x** (vong 1 ngay 12/09: 0,85x / 1,05x).
+Hai vong trung khop ⇒ ket luan "hai GPU doc lap" nay co **hai** phep do doc lap.
 
 ## Hai lan quy trinh nay SUA TOI
 
