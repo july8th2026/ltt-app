@@ -97,7 +97,8 @@ def _hoi_smi(doi_so: list[str]) -> Optional[str]:
 
     ⛔ `None` KHÁC 0 và khác chuỗi rỗng. Bên gọi phải phân biệt "card đang trống"
        với "không hỏi được card" — hai thứ đòi hai hành động khác nhau
-       (`nhuong_card.xin_card:204-207` **từ chối** khi không đọc được, đúng vậy).
+       (lệnh residency `/v1/nha_comfy` **từ chối báo thành công** khi không đọc
+       được, đúng vậy — `api.py`).
     """
     exe = shutil.which("nvidia-smi")
     if not exe:
@@ -271,10 +272,10 @@ def vram_dung_mb_qua_smi() -> Optional[int]:
        giá trị lớn nhất trên mọi card với lý lẽ *"máy A có hai card, trả lời theo
        card bận nhất"*. Lý lẽ ấy chết ngày máy B có hai card: LTT-3.5 thường trú
        trên 5060 Ti giữ ~10 GB, nên `max()` trả **số của 5060 Ti** cho mọi câu hỏi
-       về 3090 — và `nhuong_card.xin_card` đọc chính hàm này để quyết định "card có
-       rảnh chưa". Nó sẽ đuổi Qwen, chờ 45 s, thấy VRAM (của card khác) vẫn cao, rồi
-       trả 429 vĩnh viễn. Cùng lớp khuyết tật với thứ `llm_gateway/gpu_uuid.py` sinh
-       ra để chặn — chỉ là nó quay lại bằng cửa render.
+       về 3090 — và lệnh residency `/v1/nha_comfy` đọc chính hàm này để **xác minh
+       card đã sạch sau khi dừng ComfyUI**. Một phép đo gộp sẽ luôn nói "card vẫn
+       bẩn" và trọng tài sẽ kẹt ở `TRA_ANH` vĩnh viễn. Cùng lớp khuyết tật với thứ
+       `llm_gateway/gpu_uuid.py` sinh ra để chặn — chỉ là nó quay lại bằng cửa render.
     """
     o = _o_cua_card_3090("memory.used")
     if not o:
@@ -388,32 +389,28 @@ class BusyWatcher:
     #: VRAM tối thiểu phải còn dùng được. Bắt việc **đang giữ bộ nhớ** — kể cả khi
     #: nó không tính gì và không phải python (`llama-server.exe`, 22/08).
     vram_can_toi_thieu_mb: int = VRAM_CAN_TOI_THIEU_MB
-    #: Có hộ **bảo-được** nào giữ card không (ta gọi được endpoint nhả của nó).
+    #: Có hộ **bảo-được** nào giữ card không (ta gọi được đường nhả của nó).
     #:
-    #: 🔴 VÌ SAO CHỐT NÀY TỒN TẠI — MỘT KHOÁ CHẾT THEO THỨ TỰ, ĐO 04/09/2026.
+    #: ⛔ TỪ TASK 5.4: **KHÔNG AI TRUYỀN NÓ NỪA**, và mặc định `False` là câu trả
+    #:    lời đúng. Nó mở nhánh *"card đang bị giữ nhưng ta lấy lại được, nên đừng
+    #:    báo bận"*, và vế **"lấy lại được"** đã không còn thật: cổng render
+    #:    không còn trọng tài nào để đòi card về — quyền ấy về trọng tài residency
+    #:    ở máy A (D01 B, TD-D10), và ở đó job ảnh chỉ được gửi sang khi cửa sổ ảnh
+    #:    đã mở, tức 3090 đã sạch. Bật lại nhánh này là báo rảnh trong khi LTT-3.8
+    #:    còn nằm trên card — tức mời một lần OOM.
     #:
-    #:    Máy A hỏi `/health` TRƯỚC khi gửi lệnh vẽ, và hoãn job nếu `busy`
-    #:    (`apps/anhnoibo/jobs.py::_xep_lai_neu_may_ban`). Nhánh VRAM bên dưới bật
-    #:    `busy` mỗi khi **bất kỳ ai** giữ card — kể cả Qwen, kẻ ta **bảo nhả
-    #:    được**. Nên lệnh vẽ không bao giờ tới, và `xin_card` — thứ duy nhất biết
-    #:    đi bảo Qwen nhả — **không bao giờ chạy**.
-    #:
-    #:    Bằng chứng: `gateway.log` không có **một** `POST` nào, và `/unload` chỉ
-    #:    được gọi **6 lần** trong toàn bộ lịch sử log. Job ảnh nằm `queued` vô hạn
-    #:    với lý do "máy tạo ảnh đang bận" — trong khi ComfyUI sống, hàng đợi
-    #:    trống, và card chỉ đang bị một hộ bảo-được ôm.
-    #:
-    #: ⭐ VÀ ĐÂY LÀ ĐÚNG CON BUG `api.py` ĐÃ SỬA MỘT LẦN, SỐNG LẠI Ở TẦNG TRÊN.
-    #:    Chú thích ở `api.py:255` viết: *"chốt bận coi 'VRAM còn ít' là bận, nên
-    #:    khi Qwen giữ 19 GB thì cổng trả 429 ngay — không bao giờ đi bảo Qwen
-    #:    nhả"*. Nó được sửa **bên trong** cổng bằng cách đặt `xin_card` trước chốt
-    #:    bận. Máy A dựng lại đúng phép kiểm đó ở **ngoài**, nên bản sửa bên trong
-    #:    mất tác dụng.
+    #: ⭐ Giữ trường này (thay vì xóa) vì nó ghi lại một **khoá chết theo thứ tự** đã
+    #:    đo 04/09/2026: máy A hỏi `/health` TRƯỚC khi gửi lệnh vẽ và hoãn job nếu
+    #:    `busy` (`apps/anhnoibo/jobs.py::_xep_lai_neu_may_ban`); nhánh VRAM bên
+    #:    dưới bật `busy` mỗi khi **bất kỳ ai** giữ card. Bằng chứng: `gateway.log`
+    #:    không có **một** `POST` nào, job ảnh nằm `queued` vô hạn trong khi ComfyUI
+    #:    sống và hàng đợi trống. Kiểu khoá chết ấy không biến mất cùng trọng tài cũ —
+    #:    nó chỉ đổi chủ: nay trọng tài máy A phải lo, và ai đọc `_nhuong_duoc` cần
+    #:    biết vì sao đường tắt này từng tồn tại.
     #:
     #: ⛔ KHÔNG bỏ hẳn nhánh VRAM. Nó cứu một ca thật 22/08: `llama-server` ôm
     #:    15,9 GB, GPU 0 % tải, phép đếm python trả về 1 ⇒ cổng báo rảnh trong khi
-    #:    card chỉ còn 4,6 GB. Chốt này chỉ **thu hẹp** nhánh đó đúng một trường
-    #:    hợp: kẻ giữ là hộ bảo-được **và** không ai đang tính trên card.
+    #:    card chỉ còn 4,6 GB.
     co_ho_bao_duoc: Callable[[], bool] = lambda: False
 
     _bat_dau: dict[str, float] = field(default_factory=dict, init=False)
@@ -450,13 +447,14 @@ class BusyWatcher:
         Đúng khi có hộ bảo-được, **và** không ai đang tính trên card. Hai điều
         kiện, không phải một:
 
-          · có hộ bảo-được  → có đường lấy lại card (`xin_card` sẽ làm)
+          · có hộ bảo-được  → có đường lấy lại card
           · không ai đang tính → lấy lại **không cắt ngang việc của ai**
 
-        ⛔ Thiếu vế thứ hai là quay lại đúng thứ ta đang tránh: báo rảnh trong lúc
-           Qwen đang sinh chữ, để rồi `xin_card` gọi `/unload` và **giết một lượt
-           đang chạy** — llama-swap làm đúng như vậy, đo 03/09, và lượt bị giết
-           chỉ nhận `ConnectionReset` trông y hệt một lần OOM.
+        ⛔ Từ Task 5.4 vế thứ nhất không còn ai bật (`co_ho_bao_duoc` mặc định
+           `False`), nên hàm này luôn trả `False` ở bản cài thật. Xem chú thích
+           của trường ấy: đường đuổi cũ không drain và **giết một lượt đang
+           chạy** (đo 03/09: lượt bị giết chỉ nhận `ConnectionReset`, trông y hệt
+           một lần OOM), nên nó đã bị gỡ chứ không phải được thu hẹp.
         """
         try:
             if not self.co_ho_bao_duoc():
