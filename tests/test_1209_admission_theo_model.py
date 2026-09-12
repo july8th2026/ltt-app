@@ -549,3 +549,74 @@ def test_cua_dong_bo_tra_4xx_chu_khong_phai_500_khi_ban_khai_thieu_model(
         deps.set_principal_resolver(None)
         limits.reset()
         dbmod.reset_engine()
+
+
+# ── Bánh cóc: tool khai TĨNH với `slots = 0` vẫn phải giữ LỚP TÀI NGUYÊN ─────
+#
+# 🔴 MỘT HỒI QUY ĐÃ XẢY RA THẬT, ở HAI chỗ, và một ghi chú "đã đo" nói sai về nó.
+#
+#    `suc_chua_admission` trả `None` cho tool khai `admission_resource` mà
+#    `admission_slots == 0` — nhánh 2 của nó đòi `slots > 0`. Đó là câu trả lời
+#    ĐÚNG cho câu hỏi *"tool này giành mấy suất lease?"* (không suất nào).
+#
+#    Nhưng hai chỗ gọi lại dùng nó để trả lời một câu KHÁC: *"job này thuộc lớp
+#    tài nguyên nào?"* — và rơi về `"api"` khi nhận `None`:
+#
+#        platform_core/public_api/invocation.py   cột `Job.admission_resource`
+#        server/api/jobs.py::_resource_of         khoá tra `class_concurrency`
+#
+#    `image.upscale`/`video.upscale` đúng hình dạng ấy (`resource="gpu"`,
+#    `slots=0`): chúng **chụp sức chứa theo giai đoạn**. Nên
+#    `LTT_PUBLIC_API_CLASS_CONCURRENCY="gpu:1"` thôi gác — job GPU thứ hai vào
+#    được (201) thay vì bị chặn (429).
+#
+# ⭐ Hai ca dưới KHÔNG kiểm `suc_chua_admission` (nó vẫn đúng khi trả `None`);
+#    chúng kiểm rằng HAI CHỖ GỌI không đánh mất bản khai tĩnh. Một phép kiểm đặt
+#    ở `suc_chua_admission` sẽ ép sửa nhầm chỗ.
+
+def test_cot_admission_giu_LOP_TAI_NGUYEN_khi_tool_khai_tinh_voi_slots_0():
+    """`admission_luc_nop` phải ghi `"gpu"`, không phải mặc định `"api"`."""
+    from platform_core.registry import admission_luc_nop, suc_chua_admission
+
+    tool = _tool(admission_resource="gpu", admission_slots=0)
+    # Tiền đề: đúng là `None` — và đó KHÔNG phải lỗi, xem khối trên.
+    assert suc_chua_admission(tool, "") is None
+
+    tinh = str(getattr(tool, "admission_resource", "") or "api")
+    assert admission_luc_nop(tool, {}, mac_dinh=tinh) == ("gpu", 0)
+
+    # ⛔ Đối chứng: đúng bản đã gây hồi quy. Nếu ai đó đưa `"api"` trở lại làm
+    #    mặc định thì cột mang tên sai, và dòng dưới nói thẳng hậu quả.
+    assert admission_luc_nop(tool, {}, mac_dinh="api") == ("api", 0), (
+        "day chinh la hanh vi da lam `test_188` do: cot mang 'api' nen "
+        "`limits.active_job_count(resource='gpu')` dem 0")
+
+
+def test_mac_dinh_dan_tu_BAN_KHAI_chu_khong_phai_mot_hang_go_tay():
+    """Chốt TĨNH (AST): không chỗ nào truyền hằng `"api"` làm `mac_dinh`.
+
+    ⚠️ Đọc AST chứ không quét văn bản: chữ `"api"` xuất hiện hợp lệ hàng chục
+       lần trong hai tệp này (đường dẫn, nhãn, chú thích). Thứ phải cấm là nó
+       nằm ở **đối số `mac_dinh` của `admission_luc_nop`**, và chỉ AST phân biệt
+       được hai thứ đó.
+    """
+    import ast as _ast
+    import pathlib as _pl
+
+    goc = _pl.Path(__file__).resolve().parents[1]
+    xau = []
+    for duong in ("platform_core/public_api/invocation.py",):
+        cay = _ast.parse((goc / duong).read_text(encoding="utf-8"))
+        for nut in _ast.walk(cay):
+            if not isinstance(nut, _ast.Call):
+                continue
+            ten = getattr(nut.func, "id", "") or getattr(nut.func, "attr", "")
+            if ten != "admission_luc_nop":
+                continue
+            for kw in nut.keywords:
+                if kw.arg == "mac_dinh" and isinstance(kw.value, _ast.Constant):
+                    xau.append((duong, nut.lineno, kw.value.value))
+    assert not xau, (
+        "`mac_dinh` la mot HANG o: " + repr(xau) + ". No phai dan tu ban khai "
+        "cua tool (`admission_resource`), neu khong thi moi tool khai tinh voi "
+        "`slots=0` deu mat lop tai nguyen cua no.")

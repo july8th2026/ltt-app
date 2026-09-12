@@ -197,26 +197,38 @@ def register_job_routes(api, config, tag: str) -> None:
         suc = suc_chua_admission(tool, str((params or {}).get("model") or ""))
         if suc is not None and suc.resource:
             return str(suc.resource)
-        # Tool không khai pool admission nào (vd `auto_scan_video`,
-        # `upscalevideo` — chúng chụp sức chứa theo giai đoạn) ⇒ giữ nguyên
-        # `"api"` như trước.
+        # 🔴 RƠI VỀ BẢN KHAI TĨNH, KHÔNG PHẢI `"api"`.
         #
-        # ⚠️ PHÁT HIỆN, CỐ Ý KHÔNG SỬA Ở ĐÂY: chỗ nộp KIA của cùng một quyết
-        #    định (`runtime_noi_bo/job.py:95`) rơi về `resource_class(manifest)`
-        #    — tức `"gpu"` cho app GPU — chứ không phải `"api"`. Hai cửa trả hai
-        #    câu khác nhau cho cùng một câu hỏi, và hệ quả là
-        #    `LTT_PUBLIC_API_CLASS_CONCURRENCY="gpu:N"` không gác được job GPU
-        #    vào qua cửa công khai (`test_188::test_gpu_capacity_stops_a_second_
-        #    concurrent_job` đỏ vì đúng điều đó).
+        #    `suc_chua_admission` trả `None` cho tool khai `admission_resource`
+        #    mà `admission_slots == 0` — `image.upscale`/`video.upscale` đúng
+        #    hình dạng ấy (`resource="gpu"`, `slots=0`): chúng **chụp sức chứa
+        #    theo giai đoạn**, không giành suất lúc nộp. Trả `"api"` ở đó làm
+        #    `class_limit = class_concurrency.get("api", 0) = 0`, tức
+        #    `LTT_PUBLIC_API_CLASS_CONCURRENCY="gpu:N"` **thôi gác** job GPU vào
+        #    qua cửa công khai.
         #
-        #    Lỗ ấy CÓ TRƯỚC chương trình dual-model — nhánh này không chạm một
-        #    dòng nào của `server/api/jobs.py`, `public_api/limits.py`,
-        #    `capacity.py` hay `apps/upscalevideo/` (đo bằng `git diff` từ điểm
-        #    rẽ nhánh) — và sửa nó đổi hành vi hàng đợi của một chương trình
-        #    khác. Đổi `"api"` thành `resource_class(manifest)` ở đây cũng KHÔNG
-        #    làm phép kiểm ấy xanh: trần thật bị mất ở `policy.resolve`, nơi
-        #    `class_concurrency` của cấu hình không đi vào bộ giới hạn đã giải.
-        return "api"
+        # ⚠️ CHỖ NÀY TỪNG MANG MỘT GHI CHÚ NÓI NGƯỢC LẠI, và cả hai vế của nó
+        #    đều đã được đo là SAI (12/09):
+        #
+        #    (a) *"Lỗ ấy CÓ TRƯỚC chương trình dual-model."* — Không.
+        #        `test_188::test_gpu_capacity_stops_a_second_concurrent_job`
+        #        **XANH** ở điểm rẽ nhánh `9e73bf1f` (chạy trong một cây tạm),
+        #        **ĐỎ** sau `9686518b`. Ghi chú ấy đối chiếu bốn tệp và thiếu
+        #        đúng tệp đã đổi (`public_api/invocation.py`); ở lần đo lại,
+        #        `git diff` từ điểm rẽ nhánh cho thấy nhánh này **có** sửa cả
+        #        `server/api/jobs.py` (66 dòng) — chính hàm này.
+        #
+        #    (b) *"trần thật bị mất ở `policy.resolve`."* — Không. Đo bằng cách
+        #        bẫy `enforce_job_admission` trong chính ca test ấy:
+        #        `class_concurrency = {'gpu': 1}` **tới nơi đầy đủ**. Thứ sai là
+        #        `resource='api'` mà hàm này trả về, nên `classes.get(...)` tra
+        #        nhầm khoá.
+        #
+        # ⭐ Bài học đáng giữ hơn cả bản sửa: một ghi chú tự khai là *"đã đo"*
+        #    vẫn có thể sai, và nó **đắt hơn** không có ghi chú — nó làm người
+        #    sau (tôi) tin rằng câu hỏi đã được trả lời và đi tìm chỗ khác.
+        #    Phép đo rẻ nhất ở đây là một cây tạm ở điểm rẽ nhánh: 4 giây.
+        return str(getattr(tool, "admission_resource", "") or "api")
 
     def _class_slugs(tool, params=None) -> list:
         """Apps competing for the same scarce resource as this tool."""

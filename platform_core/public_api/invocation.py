@@ -498,7 +498,32 @@ def submit(db, *, principal, tool, params: dict, quote: dict,
     #    ở `registry.admission_luc_nop`.
     from platform_core.registry import admission_luc_nop
 
-    tai_nguyen, so_suat = admission_luc_nop(tool, job_params, mac_dinh="api")
+    # 🔴 MẶC ĐỊNH LÀ `tool.admission_resource`, KHÔNG PHẢI `"api"` — và đó là một
+    #    hồi quy đã đo, không phải một nước phòng xa.
+    #
+    #    `suc_chua_admission` trả `None` cho tool khai `admission_resource` mà
+    #    `admission_slots == 0` (nhánh 2 của nó đòi `slots > 0`). `image.upscale`
+    #    và `video.upscale` đúng là hình dạng ấy: `resource="gpu"`, `slots=0` —
+    #    chúng **chụp sức chứa theo giai đoạn** chứ không giành suất lúc nộp.
+    #
+    #    Trước 2.3 dòng này là `getattr(tool, "admission_resource", "") or "api"`
+    #    ⇒ cột ghi `"gpu"`. Sau 2.3, `mac_dinh="api"` ⇒ cột ghi `"api"`. Và
+    #    `limits.active_job_count(resource="gpu")` lọc **đúng cột đó**, nên nó
+    #    đếm 0 và `LTT_PUBLIC_API_CLASS_CONCURRENCY="gpu:1"` thôi gác: job GPU
+    #    thứ hai được nhận (201) thay vì bị chặn (429).
+    #
+    # ⭐ Đo được, không suy: `test_188::test_gpu_capacity_stops_a_second_concurrent_job`
+    #    XANH ở điểm rẽ nhánh `9e73bf1f`, ĐỎ ở `9686518b`. Một ghi chú cũ ở
+    #    `server/api/jobs.py` kết luận ngược lại vì nó đối chiếu bốn tệp và
+    #    **thiếu đúng tệp này**.
+    #
+    # ⚠️ `PublicTool.admission_resource` đã là `tool.admission_resource or
+    #    resource_class(manifest)` (`catalog.py:364`), nên mặc định này chính là
+    #    lớp tài nguyên của manifest — cùng câu trả lời mà đường nộp KIA
+    #    (`runtime_noi_bo/job.py:95`) vẫn luôn đưa. Hai cửa nay nói cùng một câu.
+    tai_nguyen, so_suat = admission_luc_nop(
+        tool, job_params,
+        mac_dinh=str(getattr(tool, "admission_resource", "") or "api"))
 
     if is_test(getattr(principal, "mode", "live")):
         # A test key never reaches the ledger. Not "spends little" — cannot
