@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
-import subprocess
+import pathlib
 import sys
 import time
 import urllib.error
@@ -68,14 +68,39 @@ def goi(duong: str, than=None, token: str = "", timeout: float = 600.0):
         return 0, {"loi": f"{type(e).__name__}: {e}"}, time.time() - t0
 
 
-def vram_mb():
+# !! DUONG VAO GOI `llm_gateway` KHI CHAY NHU MOT SCRIPT.
+#
+#    Tep nay chay bang duong dan tuyet doi tren may B
+#    (`...\gateway\llm_gateway\deploy\nghiem_thu.py`), nen `import llm_gateway`
+#    khong tu chay - goc goi khong nam tren sys.path. Hai cap len la goc goi.
+#
+#    ! Kiem tra TO TIENG neu bo cuc doi. Mot `sys.path` tinh sai se lam
+#      `import` that bai giua bai nghiem thu, va nguoi doc se di tim nham cho.
+_GOC_GOI = pathlib.Path(__file__).resolve().parents[1]          # .../llm_gateway
+if not (_GOC_GOI / "gpu_uuid.py").is_file():
+    raise SystemExit(f"khong thay {_GOC_GOI}/gpu_uuid.py - bo cuc goi da doi, "
+                     f"sua duong dan trong nghiem_thu.py")
+if str(_GOC_GOI.parent) not in sys.path:
+    sys.path.insert(0, str(_GOC_GOI.parent))
+from llm_gateway import gpu_uuid as GPU                        # noqa: E402
+
+#: Vai GPU ma bai nghiem thu nay noi ve. `--vai` doi duoc tren dong lenh.
+VAI = GPU.VAI_38
+
+
+def vram_mb(vai: str = ""):
+    """VRAM dang dung TREN DUNG MOT CARD, MiB. `-1` = khong hoi duoc.
+
+    !! BAN CU LAY `splitlines()[0]`. Tu 09/2026 may B co hai card, nen dong dau
+       la card nao thi do driver quyet - va con so nay di thang vao KET LUAN
+       nghiem thu ("ComfyUI CO giu VRAM sau khi ve"). Mot phep do lech card o day
+       khong lam bai kiem do, no lam bai kiem NOI SAI.
+    """
     try:
-        r = subprocess.run(["nvidia-smi", "--query-gpu=memory.used",
-                            "--format=csv,noheader,nounits"],
-                           capture_output=True, text=True, timeout=8)
-        return int(r.stdout.strip().splitlines()[0])
+        the = GPU.doc_the(GPU.uuid_cua(vai or VAI))
     except Exception:
         return -1
+    return -1 if the is None else the["vram_dung_mib"]
 
 
 def comfy_ve_mot_anh() -> bool:
@@ -120,8 +145,16 @@ def main() -> int:
     ap.add_argument("--token", default="")
     ap.add_argument("--model", default="qwen38-api")
     ap.add_argument("--bo-qua-don-dep", action="store_true")
+    # Card nao dang duoc nghiem thu. `qwen38-*` chay tren 3090 (`ltt38`),
+    # `qwen35-*` tren 5060 Ti (`ltt35`) - suy tu `--model` chu khong go tay.
+    ap.add_argument("--vai", default="")
     a = ap.parse_args()
     tk = a.token
+    # ! Suy vai tu `--model` (khong go tay o hai cho): `--vai` chi de ghi de khi
+    #   nghiem thu mot ho so chua co trong bang anh xa.
+    global VAI
+    VAI = a.vai or GPU.vai_cua_model(a.model) or GPU.VAI_38
+    print(f"  card nghiem thu: vai={VAI} uuid={GPU.uuid_cua(VAI)}")
 
     print("")
     print("=" * 62)

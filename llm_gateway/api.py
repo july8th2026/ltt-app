@@ -36,6 +36,7 @@ from . import ngan_sach as NS
 from .catalog import KhongCoModel, ModelSpec, lay, nap_catalog, ten_la
 from .config import Config
 from .don_dep import DonDepGpu
+from . import gpu_uuid as GPU
 from .gioi_han import GioiHan, boc_luong
 from .upstream import MA_HET_GIO
 from .nhip_tim import boc_nhip_tim
@@ -276,6 +277,31 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
         """
         return {"ok": True, "version": __version__}
 
+    @app.get("/health/ready")
+    def ready() -> Response:
+        """SẴN SÀNG nhận lượt chưa — **fail-closed**, không cần bearer.
+
+        🔴 KHÁC `/live` MỘT CHỮ VÀ CẢ CÔNG DỤNG. `/live` trả lời *"tiến trình còn
+           thở không"*; câu đó xanh suốt sự cố 23/08 (CUDA hỏng, model bò trên
+           CPU) và suốt cả ca một card rụng khỏi hệ thống. Từ 09/2026 cổng này
+           phục vụ **hai** model trên **hai** card, nên "sẵn sàng" có một điều
+           kiện cơ học mới: driver phải còn thấy **đủ** cả hai UUID.
+
+        ⛔ THIẾU MỘT CARD ⇒ 503, và "không hỏi được `nvidia-smi`" cũng ⇒ 503. Hai
+           thứ ấy trông giống nhau từ đây và đòi **cùng một** hành động: đừng đưa
+           lượt mới vào cho tới khi có người xem. Đây là chốt **sẵn sàng** của
+           dịch vụ, không phải chốt vào cửa của một yêu cầu — nó không làm lượt
+           nào đang bay bị từ chối, và nó **không** giết gì cả.
+
+        ⛔ KHÔNG thêm trường nào khác: cùng luật với `/live`, mỗi trường là một
+           thứ rò ra cho người chưa xác thực. Chi tiết từng card nằm ở `/health`,
+           sau khoá.
+        """
+        if not GPU.thay_du_hai_card():
+            return JSONResponse(status_code=503,
+                                content={"ok": False, "ly_do": "thieu_card"})
+        return JSONResponse(status_code=200, content={"ok": True})
+
     #: 🔴 HAI Ô NHỚ RIÊNG, VÀ ĐÓ LÀ MỘT BẢN VÁ CHO CHÍNH BẢN ĐẦU CỦA TÔI.
     #:
     #:    Bản đầu nhớ **cả cụm** trong một ô. Hai giá trị ấy có vòng đời
@@ -433,20 +459,70 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
             "duoi_dich_vu": to_tien.trang_thai(),
         }
 
+    def _vai_dang_nap() -> set:
+        """Vai GPU của hồ sơ đang nằm trong VRAM. Dùng `_ho_so_dang_nap` (có nhớ
+        2 giây) nên cả vòng này tốn **một** lời gọi `/running`.
+
+        🔴 PHẢI THEO TỪNG VAI, KHÔNG PHẢI "CÓ MODEL NÀO ĐANG NẠP". Với hai card,
+           `co_model_nap=True` cho **cả hai** làm chốt VRAM báo động về card đang
+           trống một cách hoàn toàn đúng luật — 5060 Ti chưa nạp gì thì VRAM của
+           nó thấp là **bình thường**, không phải "model bò trên CPU". Một cảnh
+           báo dương tính giả mỗi lượt thăm dò thì kênh cảnh báo chết (QT-2).
+        """
+        ra = set()
+        for ten in sorted(catalog):
+            vai = GPU.vai_cua_model(ten)
+            if vai and _ho_so_dang_nap(ten):
+                ra.add(vai)
+        return ra
+
     def _xem_gpu() -> dict:
-        """Model có thật sự nằm trên card không.
+        """Model có thật sự nằm trên card không — **theo từng card**.
 
         ⛔ Không dùng để từ chối yêu cầu — chốt **quan sát**, không phải chốt vào
            cửa. Model chạy CPU vẫn trả lời đúng, chỉ chậm; từ chối phục vụ sẽ
            biến một sự cố hiệu năng thành một sự cố ngừng dịch vụ.
-        """
-        from .don_dep import doc_vram_dung_mb
 
-        px = kiem_gpu(co_model_nap=_co_model_cua_ta_dang_chay(),
-                      doc_vram=doc_vram_dung_mb)
-        return {"tren_gpu": px.tren_gpu, "vram_dung_mb": px.vram_dung_mb,
-                "co_model_nap": px.co_model_nap, "dang_lo": px.dang_lo,
-                "ly_do": px.ly_do}
+        ⭐ KHỐI CŨ (`tren_gpu`/`vram_dung_mb`/`dang_lo` ở mức trên) ĐƯỢC GIỮ
+           NGUYÊN TÊN, vì `platform_core` đang đọc đúng các khoá ấy để báo động
+           (`ops_alerts` qua `test_277`/`test_378`) — đó là một hợp đồng đang
+           chạy thật, không phải mã cũ. Nó nay mang số của **3090** (card lịch sử
+           của cổng này), và `dang_lo` là **HOẶC** của hai card: một cảnh báo ở
+           card nào cũng phải nổi lên, còn *card nào* thì đọc `theo_vai`.
+        """
+        vai_nap = _vai_dang_nap()
+        theo_vai: dict = {}
+        for vai in (GPU.VAI_38, GPU.VAI_35):
+            try:
+                uu = GPU.uuid_cua(vai)
+            except (GPU.VaiKhongCo, OSError, ValueError) as e:
+                theo_vai[vai] = {"ly_do": f"khong doc duoc danh tinh: {e}"}
+                continue
+            the = GPU.doc_the(uu)
+            px = kiem_gpu(co_model_nap=(vai in vai_nap),
+                          doc_vram=lambda t=the: None if t is None else t["vram_dung_mib"])
+            theo_vai[vai] = {
+                "uuid": uu,
+                "tren_gpu": px.tren_gpu,
+                # ⭐ SỐ ĐO THẬT, KHÔNG PHẢI `px.vram_dung_mb`. `kiem()` cố ý trả
+                #    `None` khi **chưa model nào nạp** — đó là đúng cho *phán
+                #    xử* ("không kết luận gì"), nhưng sai cho *quan sát*: VRAM
+                #    của một card chưa nạp model là một con số có thật và là thứ
+                #    duy nhất nói được ai đang giữ card ấy.
+                "vram_dung_mb": None if the is None else the["vram_dung_mib"],
+                "vram_trong_mb": None if the is None else the["vram_trong_mib"],
+                "util_pt": None if the is None else the["util_pt"],
+                "co_model_nap": px.co_model_nap,
+                "dang_lo": px.dang_lo,
+                "ly_do": px.ly_do,
+            }
+        chinh = theo_vai.get(GPU.VAI_38) or {}
+        return {"tren_gpu": chinh.get("tren_gpu"),
+                "vram_dung_mb": chinh.get("vram_dung_mb"),
+                "co_model_nap": chinh.get("co_model_nap", False),
+                "dang_lo": any(bool(v.get("dang_lo")) for v in theo_vai.values()),
+                "ly_do": chinh.get("ly_do", ""),
+                "theo_vai": theo_vai}
 
     @app.get("/v1/models")
     def models(_: None = Depends(auth)) -> dict:

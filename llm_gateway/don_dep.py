@@ -32,42 +32,43 @@ don_dep.py — bảo đảm card SẠCH trước khi nạp model. (H38, P6)
 from __future__ import annotations
 
 import logging
-import shutil
-import subprocess
 import time
 from dataclasses import dataclass
 from typing import Callable, Optional
 
 log = logging.getLogger("llm_gateway.don_dep")
 
+#: Card mà việc dọn nói về: **3090**. ComfyUI và LTT-3.8 dùng chung nó, nên
+#: "card có sạch chưa" là một câu hỏi về đúng card ấy. 5060 Ti (`ltt35`) không
+#: chạy ComfyUI, nên việc dọn không có nghĩa ở đó.
+VAI_MAC_DINH = "ltt38"
+
 #: Cùng trần với `render_gateway/busy.py`. Không đặt số khác.
 NVIDIA_SMI_TIMEOUT_S = 8
 
 
-def doc_vram_dung_mb() -> Optional[int]:
-    """VRAM đang dùng, tính bằng MiB. `None` khi không hỏi được.
+def doc_vram_dung_mb(vai: str = VAI_MAC_DINH) -> Optional[int]:
+    """VRAM đang dùng **trên card của `vai`**, MiB. `None` khi không hỏi được.
 
     ⛔ `nvidia-smi`, không phải `torch`, không phải `/system_stats`: hai nguồn kia
        mù với tiến trình khác trên Windows/WDDM (D-013).
+
+    🔴 BẢN CŨ LẤY `dong[0]` VÀ ĐÓ LÀ MỘT PHÉP ĐO LỆCH CHIỀU TỪ 09/2026. Máy B có
+       hai card; dòng đầu là card nào thì do driver quyết. Việc dọn card là việc
+       của **3090** (ComfyUI và LTT-3.8 dùng chung nó), nên mặc định là `ltt38` —
+       nhưng con số phải đến từ đúng card ấy, không từ "dòng đầu". Xem
+       `gpu_uuid.py`.
+
+    ⚠️ Không đọc được danh tính (tệp json thiếu) ⇒ `None`, **không** rơi về
+       "dòng đầu". Rơi về đó là đổi một câu "không biết" lấy một câu sai.
     """
-    smi = shutil.which("nvidia-smi")
-    if not smi:
-        return None
+    from .gpu_uuid import VaiKhongCo, uuid_cua, vram_mib
     try:
-        r = subprocess.run(
-            [smi, "--query-gpu=memory.used", "--format=csv,noheader,nounits"],
-            capture_output=True, text=True, timeout=NVIDIA_SMI_TIMEOUT_S)
-    except (OSError, subprocess.SubprocessError):
+        uu = uuid_cua(vai)
+    except (VaiKhongCo, OSError, ValueError) as e:
+        log.warning("khong doc duoc danh tinh GPU vai=%s: %s", vai, e)
         return None
-    if r.returncode != 0:
-        return None
-    dong = (r.stdout or "").strip().splitlines()
-    if not dong:
-        return None
-    try:
-        return int(dong[0].strip())
-    except ValueError:
-        return None
+    return vram_mib(uu)
 
 
 def _bao_comfy_nha(comfy_url: str, timeout_s: float = 20.0) -> bool:

@@ -26,7 +26,6 @@ from __future__ import annotations
 import argparse
 import json
 import statistics
-import subprocess
 import sys
 import time
 import urllib.error
@@ -51,26 +50,45 @@ NHAC_DAI = ("Viet mot bai gioi thieu 400 tu ve lich su thanh pho Da Nang, "
 #:
 #: ⛔ Do dung la lop loi ma chuong trinh audit nay ton tai de chan: mot phep do
 #:    hong lang le doc len y het mot phep do sach.
-def _smi() -> dict:
+def _smi(vai: str = "") -> dict:
+    """Anh chup ngu canh cua **dung mot card**, chon theo vai (`ltt38`/`ltt35`).
+
+    BAN CU DOC `r.stdout.strip().split(",")` ROI LAY `v[0]`, va tu 09/2026 do la
+    mot con so SAI IM LANG HON CA `dong[0]`. Voi hai card, dau ra la hai dong;
+    chia theo dau phay tren ca khoi cho `['a','b','c<LF>d','e','f']`, nen
+    `int(v[0])` van chay, van ra mot so **doc duoc** - cua card dau tien, luon
+    luon, khong mot loi canh bao nao.
+
+    Va anh chup ngu canh la dung thu khong duoc sai: ca tep nay ton tai de moi
+    con so tok/s mang theo *"luc do card o tinh trang nao"*. Mot anh chup cua
+    **card khac** thi te hon khong co anh chup - no trong nhu bang chung.
+    """
     try:
-        r = subprocess.run(
-            ["nvidia-smi", "--query-gpu=memory.used,utilization.gpu,temperature.gpu",
-             "--format=csv,noheader,nounits"], capture_output=True, text=True, timeout=15)
-        v = [x.strip() for x in r.stdout.strip().split(",")]
-        return {"vram_mb": int(v[0]), "gpu_pct": int(v[1]), "nhiet": int(v[2])}
-    except (OSError, subprocess.SubprocessError, ValueError, IndexError) as e:
-        print(f"  [!] KHONG DOC DUOC nvidia-smi ({type(e).__name__}: {e}) — "
+        from llm_gateway import gpu_uuid as GPU
+        uu = GPU.uuid_cua(vai or GPU.VAI_38)
+        the = GPU.doc_the(uu)
+        if the is None:
+            raise OSError("nvidia-smi khong tra ve dong nao cho card " + uu)
+        return {"uuid": uu, "vram_mb": the["vram_dung_mib"],
+                "vram_trong_mb": the["vram_trong_mib"], "gpu_pct": the["util_pt"]}
+    except Exception as e:                                       # noqa: BLE001
+        print(f"  [!] KHONG DOC DUOC nvidia-smi ({type(e).__name__}: {e}) - "
               f"cac con so duoi day KHONG co anh chup ngu canh", flush=True)
         return {"loi": f"{type(e).__name__}: {e}"}
 
 
-def _dem_tien_trinh_gpu() -> int:
+def _dem_tien_trinh_gpu(vai: str = "") -> int:
+    # `--query-compute-apps` khong xin cot `gpu_uuid` thi no dem tien trinh tren
+    # MOI card. Tu 09/2026 dieu do co nghia: mot job anh tren 5060 Ti lam cot
+    # "so tien trinh tren card" cua ban do 3090 tang len - tuc anh chup ngu canh
+    # ghi mot thu khong xay ra tren card dang do.
     try:
-        r = subprocess.run(["nvidia-smi", "--query-compute-apps=pid",
-                            "--format=csv,noheader"], capture_output=True,
-                           text=True, timeout=15)
-        return len([d for d in r.stdout.splitlines() if d.strip()])
-    except (OSError, subprocess.SubprocessError) as e:
+        from llm_gateway import gpu_uuid as GPU
+        uu = GPU.uuid_cua(vai or GPU.VAI_38)
+        if GPU.doc_the(uu) is None:
+            return -1
+        return len(GPU.tien_trinh(uu))
+    except Exception as e:                                       # noqa: BLE001
         print(f"  [!] KHONG DEM DUOC tien trinh GPU ({type(e).__name__}: {e})",
               flush=True)
         return -1

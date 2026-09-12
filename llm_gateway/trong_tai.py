@@ -42,8 +42,6 @@ trong_tai.py — card có đang bị người khác chiếm không.
 from __future__ import annotations
 
 import logging
-import shutil
-import subprocess
 from dataclasses import dataclass
 from typing import Callable, Optional
 
@@ -51,6 +49,11 @@ log = logging.getLogger("llm_gateway.trong_tai")
 
 #: Cùng trần với `render_gateway/busy.py` và `platform_core/gpu.py`. Không đặt số khác.
 NVIDIA_SMI_TIMEOUT_S = 8
+
+#: Card mà trọng tài này nói về: **3090** (`ltt38`). Nó cân giữa ComfyUI và
+#: LTT-3.8, hai hộ dùng chung đúng card ấy. LTT-3.5 ở trên 5060 Ti và **không**
+#: tranh với ComfyUI, nên tải/tiến trình của card kia không được lọt vào đây.
+VAI_TRONG_TAI = "ltt38"
 
 #: Số tiến trình python trên card kể từ đó coi là BẬN. **2**, không phải 1:
 #: một python là ComfyUI thường trú, đó là trạng thái bình thường của máy B.
@@ -87,18 +90,17 @@ from render_gateway.busy import TAI_GPU_DANG_TINH  # noqa: E402,F401
 
 
 def _tai_gpu_mac_dinh() -> Optional[int]:
-    """Phần trăm tải GPU. `None` = không hỏi được."""
-    import subprocess
+    """Phần trăm tải **của card 3090**. `None` = không hỏi được.
+
+    🔴 BẢN CŨ LẤY `dong[0]`. Từ 09/2026 máy B có hai card, và trọng tài này nói
+       về **3090** (ComfyUI + LTT-3.8 tranh nhau nó). Tải của 5060 Ti là tải của
+       LTT-3.5 trên một card khác — đọc nó vào đây là chặn oan lượt 3.8 vì máy
+       đang bận ở chỗ không liên quan, và bỏ lọt đúng cái nó phải bắt.
+    """
+    from .gpu_uuid import VaiKhongCo, uuid_cua, util_pt
     try:
-        ra = subprocess.run(
-            ["nvidia-smi", "--query-gpu=utilization.gpu",
-             "--format=csv,noheader,nounits"],
-            capture_output=True, text=True, timeout=8)
-        if ra.returncode != 0:
-            return None
-        dong = (ra.stdout or "").strip().splitlines()
-        return int(dong[0].strip()) if dong else None
-    except Exception:                                           # noqa: BLE001
+        return util_pt(uuid_cua(VAI_TRONG_TAI))
+    except (VaiKhongCo, OSError, ValueError):
         return None
 
 
@@ -116,19 +118,24 @@ def _dem_python_gpu_mac_dinh() -> Optional[int]:
 
 
 def _dem_toi_thieu() -> Optional[int]:
-    """Đường lùi khi không có `render_gateway`. Cố ý thô."""
-    smi = shutil.which("nvidia-smi")
-    if not smi:
-        return None
+    """Đường lùi khi không có `render_gateway`. Cố ý thô, nhưng **đúng card**.
+
+    ⛔ `--query-compute-apps` không xin cột `gpu_uuid` thì nó đếm tiến trình trên
+       **mọi** card rồi ta kết luận về một card. Từ 09/2026 điều đó có nghĩa: một
+       job ảnh trên 5060 Ti làm cổng của 3090 tưởng card mình có người khác —
+       429 oan, trong khi 3090 hoàn toàn rảnh.
+    """
+    from .gpu_uuid import VaiKhongCo, doc_the, tien_trinh, uuid_cua
     try:
-        r = subprocess.run(
-            [smi, "--query-compute-apps=process_name", "--format=csv,noheader"],
-            capture_output=True, text=True, timeout=NVIDIA_SMI_TIMEOUT_S)
-    except (OSError, subprocess.SubprocessError):
+        uu = uuid_cua(VAI_TRONG_TAI)
+    except (VaiKhongCo, OSError, ValueError):
         return None
-    if r.returncode != 0:
+    # Hỏi thẻ trước để phân biệt "không có tiến trình nào" với "không hỏi được":
+    # `tien_trinh` trả danh sách rỗng cho **cả hai**, và hai thứ đó đòi hai phán
+    # xử khác nhau ở `phan_xu()` (rảnh vs bận).
+    if doc_the(uu) is None:
         return None
-    return sum(1 for d in r.stdout.splitlines() if "python" in d.lower())
+    return sum(1 for _pid, ten, _mib in tien_trinh(uu) if "python" in ten.lower())
 
 
 def _ram_trong_gb_mac_dinh() -> Optional[float]:
