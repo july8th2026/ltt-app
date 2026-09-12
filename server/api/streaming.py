@@ -856,8 +856,26 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
         raise service_unavailable("The model could not serve this request.") from None
 
     from platform_core.llm import admission
-    nen = (BackgroundTask(admission.release_by_id, cb.lease_id)
-           if cb.lease_id else None)
+
+    # 🔴 HAI VIEC PHAI CHAY KHI PHAN HOI KET THUC, KE CA KHI THAN CHUA
+    #    TUNG DUOC DOC: nha suat, va **quyet toan tien**.
+    #
+    #    Truoc 09/09 chi co ve suat. Ve tien nam trong `finally` cua
+    #    generator `_phat`, va mot `finally` chi ton tai SAU khi generator
+    #    chay dong dau tien. Khach ngat truoc byte dau => khoi `try` chua
+    #    tung duoc vao => khoan `hold` nam lai VINH VIEN, va cua nay khong
+    #    tao `Job` nen khong bo quet nao nhin thay no.
+    #
+    # ⭐ Day dung la bai hoc 31/08 cua may B (`llm_gateway/api.py`), chi la
+    #    hoi do no duoc hoc cho SUAT chu khong cho TIEN.
+    def _ket_thuc() -> None:
+        try:
+            cua_luong.dam_bao_quyet_toan(luot)
+        finally:
+            if cb.lease_id:
+                admission.release_by_id(cb.lease_id)
+
+    nen = BackgroundTask(_ket_thuc)
     return StreamingResponse(luot.luong, media_type=luot.content_type,
                              headers=_SSE, background=nen)
 

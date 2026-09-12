@@ -83,7 +83,12 @@ class ModelSpec:
     ten: str
     #: Hồ sơ này có nạp `mmproj` không. Quyết định request có ảnh có được nhận không.
     co_vision: bool
-    #: Trần ngữ cảnh của hồ sơ (`-c` của llama-server). CHỜ P5 xác nhận.
+    #: Trần ngữ cảnh của hồ sơ — phải bằng đúng `-c` mà `llama-swap.yaml` truyền
+    #: cho `llama-server`. Đây chỉ là chỗ **công bố**; tệp kia mới là chỗ **khởi
+    #: động tiến trình**, và `test_334_ngan_sach_ltt_llm.py` buộc hai bên khớp
+    #: (lệch thì `/v1/models` nói một đằng, model chạy một nẻo).
+    #:
+    #: ⛔ "CHỜ P5 xác nhận" là câu cũ ở đây; P5 đã đo xong 03/09 và số đã chốt.
     max_context: int
     #: Mô tả ngắn, trả trong `/v1/models` để người dùng chọn đúng hồ sơ.
     mo_ta: str

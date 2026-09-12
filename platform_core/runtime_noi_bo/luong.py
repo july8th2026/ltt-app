@@ -674,6 +674,53 @@ class LuotLuong:
     ket_qua: Any = None
     #: "xong" | "khach_ngat" | "loi" — điền khi luồng kết thúc.
     ket_thuc: str = ""
+    #: Đã quyết toán chưa. Cờ này làm việc quyết toán **idempotent** giữa hai
+    #: đường độc lập — xem `dam_bao_quyet_toan`.
+    da_quyet_toan: bool = False
+
+
+def dam_bao_quyet_toan(luot: "LuotLuong") -> None:
+    """Lưới an toàn: quyết toán nếu `finally` của `_phat` **chưa từng chạy**.
+
+    🔴 VÌ SAO CẦN — ĐO ĐƯỢC 09/09, VÀ NÓ LÀ TIỀN THẬT.
+
+       `_phat` quyết toán trong `finally`. Nhưng một `finally` **chỉ tồn tại sau
+       khi generator chạy dòng đầu tiên**. Khách ngắt kết nối *trước byte đầu*
+       thì Starlette không bao giờ lặp qua nó, khối `try` chưa từng được vào, và
+       khoản `hold` nằm lại, và **không đường nào kết sổ nó cho tới 24 giờ sau**:
+
+           g = _phat(mo, luot); g.close()
+             -> quyet_toan KHONG duoc goi          (do that, khong suy luan)
+           next(g); g.close()
+             -> quyet_toan DUOC goi
+
+    ⛔ VÀ KHÔNG AI QUÉT NÓ. Cửa này **không tạo `Job`**, nên `_hoan_credit` của
+       worker — thứ vẫn dọn cho hàng đợi job — không bao giờ nhìn thấy dòng hold
+       mồ côi. Đúng câu `test_292_tien_ket_trong_hold.py` đã viết cho cửa đồng
+       bộ; chỉ là ở đó nó kết luận *"cửa streaming không dính, vì nó quyết toán
+       trong `finally`"* — và **kết luận ấy sai đúng ở ca generator chưa khởi
+       động**.
+
+    ⭐ ĐÂY LÀ CÙNG MỘT KHUYẾT TẬT ĐÃ ĐƯỢC HỌC MỘT LẦN, Ở MỘT TẦNG KHÁC. Sự cố
+       31/08 trên máy B: `boc_luong` trả suất trong `finally`, generator không
+       khởi động, suất bị giữ vĩnh viễn, cổng trả 429 suốt sáu giờ. Bản vá ở đó
+       là `BackgroundTask` — *"chạy khi PHẢN HỒI kết thúc, kể cả khi thân chưa
+       từng được đọc"*. Máy A học bài đó cho **suất** (`admission.release_by_id`
+       đã đi qua `BackgroundTask`) nhưng **không** cho **tiền**.
+
+    ⇒ Hàm này là đường thứ hai, độc lập với việc generator có chạy hay không.
+      Nó **cộng thêm** chứ không thay thế `finally`: hai đường cho cùng một
+      việc, và `da_quyet_toan` bảo đảm chỉ một đường thật sự thu.
+    """
+    if luot.da_quyet_toan:
+        return
+    cb = luot.chuan_bi
+    luot.da_quyet_toan = True
+    if not luot.ket_thuc:
+        luot.ket_thuc = "khach_ngat_truoc_byte_dau"
+    log.warning("STREAM CHUA TUNG CHAY rid=%s - quyet toan bang luoi an toan",
+                cb.request_id[-8:])
+    luot.ket_qua = quyet_toan(cb.user_id, cb.request_id, luot.dem, cb.da_giu, None)
 
 
 def _nha_suat(lease_id: str) -> None:
@@ -771,6 +818,8 @@ def _phat(mo, luot: LuotLuong, *, trang_thai=None) -> Generator[bytes, None, Non
                 luot.ket_thuc.upper(), cb.request_id[-8:], dt,
                 (f"{t_byte_dau:.1f}s" if t_byte_dau is not None else "-"),
                 n_khoi, dem.token_ra)
+            # Duong THU NHAT. `dam_bao_quyet_toan` la duong thu hai, doc lap.
+            luot.da_quyet_toan = True
             luot.ket_qua = quyet_toan(cb.user_id, cb.request_id, dem, cb.da_giu,
                                       trang_thai, model=cb.model_alias)
             if vo is not None:

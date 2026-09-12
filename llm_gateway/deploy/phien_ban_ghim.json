@@ -1,0 +1,29 @@
+{
+  "_doc": "Ban THUONG NGUON duoc chuc phuc cho may B. Doc llm_gateway/deploy/PHIEN_BAN.md truoc khi doi mot dong nao o day.",
+  "_cap_nhat": "2026-09-09",
+  "llama_swap": {
+    "version": "250",
+    "goi_cai": "llama-swap_250_windows_amd64.zip",
+    "phat_hanh": "2026-08-14",
+    "nguon": "https://github.com/mostlygeek/llama-swap/releases/tag/v250",
+    "do_the_nao": "liet ke H:/LTT_LLM/bin qua Nexus file.list ngay 2026-09-09",
+    "duong_can_co": [
+      "/api/version",
+      "/metrics",
+      "/api/hardware",
+      "/api/metrics/activity",
+      "/running",
+      "/upstream/{model}/..."
+    ],
+    "da_doi_chieu": "git show v250:internal/server/server.go — ca sau duong tren deu CO o v250"
+  },
+  "llama_cpp": {
+    "build": null,
+    "cuda": "13.3",
+    "goi_cai_thay_o_may_B": "llama-b10580-bin-win-cuda-13.3-x64.zip",
+    "ban_sao_luu_tren_may_B": "llamacpp.b10580",
+    "build_da_do_khi_chay_bench": "10689",
+    "vi_sao_null": "KHONG chung minh duoc tu may A. Bon duong doc lap deu khong tra loi: /health cu khong co truong nao, kho khong ghi, Nexus command.run bi chan, Nexus file.read bi chan. `10689` la so ghi trong llm_gateway/catalog.py cho lo do 03/09 va `b10580` la BAN SAO LUU (tuc ban TRUOC) — hai manh do cho thay build dang chay MOI HON b10580, nhung khong manh nao CHUNG MINH duoc no la bao nhieu.",
+    "dien_vao_bang_cach": "chay llm_gateway/deploy/nghiem_thu.py tren may B; no doc /health -> thuong_nguon.phien_ban.engine.build_info va in ra so that."
+  }
+}

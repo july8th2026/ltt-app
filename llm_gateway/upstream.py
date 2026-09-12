@@ -13,6 +13,27 @@ from __future__ import annotations
 
 from typing import Any, Iterator, Optional, Protocol
 
+#: Mã nội bộ khi lớp vận chuyển hỏng. Không phải mã HTTP thật của thượng nguồn —
+#: `api.py` dịch chúng thành mã cho khách. Chọn ngoài dải HTTP để không bao giờ
+#: lẫn với một mã `llama-server` thật sự trả về.
+#:
+#: 🔴 VÌ SAO TÁCH HAI MÃ, KHÔNG DÙNG CHUNG MỘT. Trước 09/09 cả hai là `599`, và
+#:    `api.py` dịch mọi thứ `>= 500` thành **502**. Máy A đọc 502 thành
+#:    `CongVlmError` ⇒ `api_pool.danh_dau_loi()` ⇒ sau
+#:    `ERROR_TO_STATUS_THRESHOLD` (5) lần thì `key.status = APIKEY_ERROR`.
+#:
+#: ⛔ VÀ `APIKEY_ERROR` **KHÔNG TỰ HỒI**. `api_pool._ung_vien` bỏ mọi khoá
+#:    `status != ACTIVE`, và chỉ `APIKEY_COOLDOWN` mới tự về `ACTIVE` khi hết
+#:    hạn. Tức **năm lần hết giờ là model nhà tắt, và nó ở lại tắt** cho tới khi
+#:    có người vào sửa tay.
+#:
+#: ⭐ Đó đúng là thảm hoạ D-005 mà cả kho này đã cẩn thận bịt ở cửa **429** —
+#:    chỉ là nó vào bằng cửa **hết giờ**, cửa không ai bịt. Một yêu cầu 200K
+#:    prefill mất hàng phút là chuyện **bình thường** của hệ này, không phải
+#:    dấu hiệu máy B hỏng.
+MA_HET_GIO = 598
+MA_KHONG_VOI_TOI = 599
+
 
 class Upstream(Protocol):
     """Hình dạng mà `api.py` cần. Bản giả trong test cài đúng hai hàm này."""
@@ -33,9 +54,13 @@ class HttpxUpstream:
         import httpx
         try:
             r = httpx.request(method, self.base_url + path, json=body, timeout=timeout)
+        except httpx.TimeoutException as e:
+            # ⛔ PHẢI BẮT TRƯỚC `HTTPError` — `TimeoutException` là **con** của nó.
+            #    Đảo thứ tự thì nhánh này chết và không ai thấy.
+            return MA_HET_GIO, str(e).encode("utf-8", "replace")
         except httpx.HTTPError as e:
             # Trả 599 thay vì ném: `api.py` phân loại lỗi ở một chỗ duy nhất.
-            return 599, str(e).encode("utf-8", "replace")
+            return MA_KHONG_VOI_TOI, str(e).encode("utf-8", "replace")
         return r.status_code, r.content
 
     def stream(self, method: str, path: str, *, body: Any = None,
@@ -56,9 +81,12 @@ class HttpxUpstream:
         try:
             ctx = client.stream(method, self.base_url + path, json=body)
             r = ctx.__enter__()
+        except httpx.TimeoutException as e:            # phải đứng TRƯỚC HTTPError
+            client.close()
+            return MA_HET_GIO, "text/plain", iter([str(e).encode("utf-8", "replace")])
         except httpx.HTTPError as e:
             client.close()
-            return 599, "text/plain", iter([str(e).encode("utf-8", "replace")])
+            return MA_KHONG_VOI_TOI, "text/plain", iter([str(e).encode("utf-8", "replace")])
 
         content_type = r.headers.get("content-type", "text/event-stream")
 

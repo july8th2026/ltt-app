@@ -37,7 +37,9 @@ from .catalog import KhongCoModel, ModelSpec, lay, nap_catalog, ten_la
 from .config import Config
 from .don_dep import DonDepGpu
 from .gioi_han import GioiHan, boc_luong
+from .upstream import MA_HET_GIO
 from .nhip_tim import boc_nhip_tim
+from .dem import Dem, boc_do_ttft
 from .to_tien import ToTien
 from .tren_gpu import kiem as kiem_gpu
 from .trong_tai import TrongTai
@@ -63,6 +65,9 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
     # chet thi duong di len cay khong con nua -- do lai la muon. Xem bay #3
     # o `to_tien.py`.
     to_tien = ToTien()
+
+    # So cong don theo nhom ket cuc. Chi cong don, khong giu noi dung.
+    dem = Dem()
 
     catalog: dict[str, ModelSpec] = nap_catalog(cfg.models_mo)
     la = ten_la(cfg.models_mo)
@@ -271,6 +276,120 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
         """
         return {"ok": True, "version": __version__}
 
+    #: 🔴 HAI Ô NHỚ RIÊNG, VÀ ĐÓ LÀ MỘT BẢN VÁ CHO CHÍNH BẢN ĐẦU CỦA TÔI.
+    #:
+    #:    Bản đầu nhớ **cả cụm** trong một ô. Hai giá trị ấy có vòng đời
+    #:    khác hẳn nhau:
+    #:
+    #:      `swap`   bất biến khi tiến trình llama-swap còn sống
+    #:      `engine` **phụ thuộc hồ sơ nào đang nằm trong VRAM**
+    #:
+    #: ⛔ Nên gộp chúng làm hỏng đúng ca thường gặp nhất: lượt `/health` đầu
+    #:    tiên sau khi khởi động lại thì **chưa có model nào nạp** (đó là
+    #:    trạng thái mặc định sau restart, và cũng là lúc máy giám sát hỏi
+    #:    sớm nhất). `engine` = None được đóng băng cùng `swap`, và nó ở lại
+    #:    None tới **hết đời tiến trình** — kể cả sau khi model đã nạp và
+    #:    câu trả lời đã sẵn sàng.
+    #:
+    #: ⭐ Đúng lớp lỗi mà `to_tien.py` sinh ra để chống: một câu trả lời sai
+    #:    được ghi nhớ, rồi mọi lượt hỏi sau đều nhận lại nó. Chỉ khác là
+    #:    lần này tôi tự dựng lại nó trong lúc đi sửa nó.
+    _nho_swap: dict = {"gia_tri": None}
+    _nho_engine: dict = {"gia_tri": None}
+
+    def _phien_ban_thuong_nguon() -> dict:
+        """`llama-swap` đang chạy bản nào — và, nếu rẻ, engine build nào.
+
+        🔴 VÌ SAO CHỐT NÀY TỒN TẠI. Ngày 09/09 tôi thử **bốn** đường độc lập để
+           hỏi *"máy B đang chạy phần mềm phiên bản nào"*:
+
+             1. `GET /health` của chính cổng    -> không có trường nào nói
+             2. đọc tệp trong kho               -> không tệp nào ghi
+             3. Nexus `command.run` trên máy B  -> bị chặn (đúng chính sách)
+             4. Nexus `file.read` log máy B     -> bị chặn (đúng chính sách)
+
+           Bốn đường, không đường nào trả lời. Thứ duy nhất còn lại là **bản
+           thân cổng tự khai**, vì nó là tiến trình duy nhất nói chuyện được
+           với llama-swap qua loopback.
+
+        ⭐ `GET /api/version` **RẺ VÀ AN TOÀN**: nó đọc `BuildInfo` mà llama-swap
+           nhồi vào lúc dựng nhị phân, không chạm model, không đánh thức GPU. Đã
+           đối chiếu trên **đúng bản đang chạy** (v250, gói cài
+           `llama-swap_250_windows_amd64.zip`), không phải trên `main` thượng
+           nguồn — v250 trả `{"version","commit","build_date"}`.
+
+        ⛔ BUILD CỦA ENGINE THÌ **KHÔNG** RẺ. Nó nằm ở `build_info` trong `/props`
+           của `llama-server`, và đường tới đó là `/upstream/<model>/props` —
+           mà llama-swap **sẽ nạp model** để phục vụ một đường `/upstream/…`
+           nếu model chưa nằm trong VRAM. Tức một lượt `/health` vô hại sẽ đánh
+           thức GPU 2,5 phút và đá văng bất cứ hồ sơ nào đang chạy.
+
+           ⇒ Chỉ hỏi khi hồ sơ **đã nạp sẵn**, dùng đúng `_ho_so_dang_nap` mà
+             `_dem_token_that` đã dùng cho cùng lý do. Không nạp thì trả `None`.
+             Một chốt **quan sát** không bao giờ được trả giá bằng một sự cố
+             hiệu năng — cùng luật đã ghi ở `_xem_gpu`.
+
+        ⚠️ Thượng nguồn cũ không có `/api/version` (nó xuất hiện trước v250).
+           Thiếu ⇒ `null` + `ly_do`, **không** làm `/health` đỏ.
+        """
+        if (_nho_swap["gia_tri"] is not None
+                and _nho_engine["gia_tri"] is not None):
+            return {"swap": _nho_swap["gia_tri"],
+                    "engine": _nho_engine["gia_tri"], "ly_do": ""}
+
+        import json as _json
+        ra: dict = {"swap": None, "engine": None, "ly_do": ""}
+
+        # `swap` bat bien khi tien trinh llama-swap con song -> hoi mot lan.
+        if _nho_swap["gia_tri"] is not None:
+            ra["swap"] = _nho_swap["gia_tri"]
+        else:
+            ma, than = upstream.json("GET", "/api/version", timeout=5.0)
+            if ma != 200:
+                ra["ly_do"] = ("/api/version tra " + str(ma)
+                               + " (ban llama-swap cu?)")
+            else:
+                try:
+                    d = _json.loads(than or b"{}")
+                except (ValueError, TypeError):
+                    ra["ly_do"] = "/api/version tra than khong doc duoc"
+                else:
+                    ra["swap"] = {
+                        "version": str(d.get("version") or ""),
+                        "commit": str(d.get("commit") or ""),
+                        "build_date": str(d.get("build_date") or "")}
+
+        # Engine: chỉ khi có hồ sơ đã nạp. Không nạp thì im lặng bỏ qua —
+        # đây là đường bình thường, không phải khuyết tật.
+        #
+        # ⚠️ Và chỉ hỏi khi CHƯA nhớ được: build của engine cũng bất biến
+        #    theo nhị phân, nhưng ta không đọc được nó cho tới khi có hồ sơ
+        #    nạp — nên phải thử lại ở các lượt sau, chứ không đóng băng` None`.
+        for ten in ([] if _nho_engine["gia_tri"] else sorted(catalog)):
+            if not _ho_so_dang_nap(ten):
+                continue
+            ma2, than2 = upstream.json(
+                "GET", "/upstream/" + ten + "/props", timeout=10.0)
+            if ma2 != 200:
+                break
+            try:
+                d2 = _json.loads(than2 or b"{}")
+            except (ValueError, TypeError):
+                break
+            ra["engine"] = {"ho_so": ten, "build_info": str(d2.get("build_info") or "")}
+            break
+
+        # ⛔ Chỉ nhớ thứ ĐÃ đọc được. Hỏng lúc khởi động (llama-swap chưa kịp
+        #    lên, hoặc chưa hồ sơ nào nạp) mà nhớ luôn thì `/health` sẽ nói dối
+        #    tới hết đời tiến trình.
+        if ra["swap"] is not None:
+            _nho_swap["gia_tri"] = ra["swap"]
+        if ra["engine"] is not None:
+            _nho_engine["gia_tri"] = ra["engine"]
+        if ra["engine"] is None and _nho_engine["gia_tri"] is not None:
+            ra["engine"] = _nho_engine["gia_tri"]
+        return ra
+
     @app.get("/health")
     def health(_: None = Depends(auth)) -> dict:
         px = tt.phan_xu()
@@ -279,7 +398,12 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
             "version": __version__,
             "models_mo": sorted(catalog),
             "models_la": list(la),
-            "thuong_nguon": {"url": cfg.upstream_url, "ma": ma, "song": 200 <= ma < 300},
+            "thuong_nguon": {"url": cfg.upstream_url, "ma": ma,
+                             "song": 200 <= ma < 300,
+                             # 🔴 CHỐT DUY NHẤT NÓI ĐƯỢC "MÁY B ĐANG CHẠY BẢN
+                             #    NÀO". Xem `_phien_ban_thuong_nguon`: bốn đường
+                             #    khác đã thử và không đường nào trả lời.
+                             "phien_ban": _phien_ban_thuong_nguon()},
             "trong_tai": {
                 "bat": tt.bat,
                 "ban": px.ban,
@@ -293,6 +417,9 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
                 "images": cfg.max_images,
             },
             "gioi_han": gh.trang_thai(),
+            # So cong don theo nhom ket cuc — vet duy nhat cua nhung luot
+            # BI TU CHOI, thu ma `/metrics` cua engine khong bao gio thay.
+            "dem": dem.trang_thai(),
             "nhip_tim_giay": cfg.nhip_tim_giay,
             # 🔴 CHỐT DUY NHẤT NHÌN RA ĐƯỢC SỰ CỐ 23/08. Mọi trường khác ở trên
             #    vẫn XANH khi CUDA hỏng và model bò trên CPU. Xem `tren_gpu`.
@@ -337,10 +464,14 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
     # ── Đường ống chung của ba giao thức ─────────────────────────────────────
 
     def _chuyen_tiep(giao_thuc: str, body: dict[str, Any]) -> Response:
+        # Moc de do TTFT NHU KHACH THAY: gom ca cho suat, don card va nap
+        # model — ba khoan `llama-server` khong bao gio nhin thay.
+        t0 = now()
         ten = str(body.get("model") or "").strip()
         try:
             spec = lay(catalog, ten)
         except KhongCoModel:
+            dem.cong("khong_co_model")
             # 404, không phải 400: model không mở là "không có ở đây", và fail-closed
             # nghĩa là ta **không** tiết lộ model nào tồn tại mà chưa mở.
             raise HTTPException(status_code=404,
@@ -361,6 +492,7 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
                 dem_that=lambda van: _dem_token_that(ten, van),
             )
         except NS.VuotNganSach as e:
+            dem.cong("qua_tran")
             # 413 chứ không phải 400: đây là "to quá", không phải "sai cú pháp".
             raise HTTPException(status_code=413, detail=e.as_dict())
 
@@ -383,18 +515,19 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
         #    lần ra vì lúc đó GPU hoàn toàn rảnh.
         px_gh, suat = gh.cap_suat()
         if suat is None:
+            dem.cong("ban_day")
             raise HTTPException(
                 status_code=429,
                 detail={"ly_do": "cong dang day", "chi_tiet": px_gh.ly_do},
                 headers={"Retry-After": str(px_gh.thu_lai_sau_s)})
         try:
-            return _chay_that(giao_thuc, body, spec, do, suat)
+            return _chay_that(giao_thuc, body, spec, do, suat, t0)
         except BaseException:
             suat.tra()         # ⛔ kể cả HTTPException, kể cả Ctrl-C. Idempotent.
             raise
 
     def _chay_that(giao_thuc: str, body: dict[str, Any], spec: ModelSpec,
-                   do, suat) -> Response:
+                   do, suat, t0: float) -> Response:
         """Phần tốn thời gian, đã cầm suất trong tay.
 
         ⚠️ Nó **không** tự trả suất khi thành công: với phản hồi thường, bên gọi
@@ -409,6 +542,7 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
         #    gọi sẽ thử lại mãi một thứ không bao giờ chạy được.
         px = tt.phan_xu()
         if px.ban:
+            dem.cong("ban_trong_tai")
             raise HTTPException(
                 status_code=429,
                 detail={"ly_do": "may B dang ban", "chi_tiet": px.ly_do},
@@ -426,6 +560,7 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
         if don_dep is not None and not _co_model_cua_ta_dang_chay():
             kq = don_dep.bao_dam_sach()
             if not kq.sach:
+                dem.cong("ban_card")
                 raise HTTPException(
                     status_code=429,
                     detail={"ly_do": "card chua san sang de nap model",
@@ -477,6 +612,10 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
                     if dong_thuong_nguon is not None:
                         dong_thuong_nguon()
 
+            dem.cong("ok_stream")
+            # ⛔ TTFT bọc TRONG nhip_tim: nhip tim phat byte trong luc prefill,
+            #    boc ngoai thi moi luot dai deu ra ~15 giay. Xem `boc_do_ttft`.
+            luong = boc_do_ttft(luong, dem, t0, now)
             luong = boc_nhip_tim(luong, moi_giay=cfg.nhip_tim_giay)
             return StreamingResponse(boc_luong(luong, suat), status_code=ma,
                                      media_type=ct,
@@ -490,15 +629,36 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
             suat.tra()
         if ma >= 500:
             return _loi_thuong_nguon(ma, thu)
+        dem.cong("ok")
         return Response(content=thu, status_code=ma, media_type="application/json",
                         headers={"X-LTT-Token-Vao": str(do.token_vao)})
 
     def _loi_thuong_nguon(ma: int, thu: bytes) -> JSONResponse:
+        # ⛔ HẾT GIỜ ≠ HỎNG, VÀ SỰ KHÁC BIỆT ẤY TỐN TIỀN THẬT.
+        #
+        #    Trước 09/09 cả hai đi chung một cửa 502. Máy A đọc 502 thành
+        #    `CongVlmError` ⇒ `api_pool.danh_dau_loi()` ⇒ sau 5 lần
+        #    `key.status = APIKEY_ERROR` — và `APIKEY_ERROR` **KHÔNG TỰ HỒI**
+        #    (`api_pool._ung_vien` chỉ tự hồi `COOLDOWN`). Tức năm lần hết giờ
+        #    là model nhà tắt và **ở lại tắt** tới khi có người sửa tay.
+        #
+        # ⭐ Đó chính là D-005, đi vào bằng cửa **hết giờ**. Cửa 429 đã được bịt
+        #    rất kỹ; cửa này thì chưa ai bịt. Một prompt 200K prefill hàng phút
+        #    là hành vi **bình thường** của hệ này, không phải máy B hỏng.
+        if ma == MA_HET_GIO:
+            dem.cong("het_gio")
+            log.warning("thuong nguon HET GIO: %s", thu[:200])
+            return JSONResponse(
+                status_code=504,
+                content={"ly_do": "thuong nguon khong tra loi kip",
+                         "ma_thuong_nguon": ma,
+                         "chi_tiet": thu[:500].decode("utf-8", "replace")})
         """llama-swap/llama-server hỏng hoặc không với tới được.
 
         ⚠️ Trả **502**, và **không** trả 429. Đây là hỏng thật, máy A **nên** đánh
         dấu lỗi cho key ở đây — khác hẳn trường hợp bận ở trên.
         """
+        dem.cong("loi_thuong_nguon")
         log.error("thuong nguon loi ma=%s: %s", ma, thu[:300])
         return JSONResponse(status_code=502,
                             content={"ly_do": "thuong nguon khong phuc vu duoc",

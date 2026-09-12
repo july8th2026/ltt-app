@@ -230,6 +230,34 @@ class CongVlm:
             raise VuotNganSachError("yeu cau vuot tran cua cong", chi_tiet=ct)
         if ma == 404:
             raise CongVlmError(f"model '{model}' khong co hoac chua duoc mo")
+        if ma == 504:
+            # 🔴 HẾT GIỜ Ở THƯỢNG NGUỒN **KHÔNG PHẢI** LỖI CỦA KHOÁ.
+            #
+            #    Cổng trả 504 khi `llama-swap`/`llama-server` không trả lời kịp.
+            #    Trước 09/09 nó nằm chung cửa 502, và 502 rơi vào nhánh cuối
+            #    (`CongVlmError`) ⇒ `api_pool.danh_dau_loi()` ⇒ sau **5** lần
+            #    `key.status = APIKEY_ERROR`.
+            #
+            # ⛔ Và `APIKEY_ERROR` **KHÔNG TỰ HỒI**: `api_pool._ung_vien` bỏ mọi
+            #    khoá `status != ACTIVE`, còn tự hồi thì chỉ có `COOLDOWN`. Tức
+            #    năm lần hết giờ là model nhà tắt và **ở lại tắt** tới khi có
+            #    người vào sửa tay.
+            #
+            # ⭐ Đó đúng là D-005 — thảm hoạ mà luật 1 ở đầu tệp này đã bịt rất
+            #    kỹ ở cửa **429** — chỉ là nó vào bằng cửa **hết giờ**, cửa chưa
+            #    ai bịt. Một prompt 200K prefill hàng phút là hành vi **bình
+            #    thường** của hệ này, không phải dấu hiệu máy B hỏng.
+            #
+            # ⚠️ Dùng `AmbiguousProviderError` chứ **không** đẻ lớp mới, và đó là
+            #    lựa chọn có lý do: ngữ nghĩa của nó đã đúng y hệt — *"đã gửi đi
+            #    nhưng không biết kết quả"*. `dieu_phoi.goi()` sẵn có nhánh
+            #    `except (AmbiguousProviderError, ProviderOomError): raise` nên
+            #    lượt này **không cascade** (thượng nguồn có thể đã bắt đầu sinh
+            #    chữ, thử lại nơi khác là trả tiền hai lần) và **không**
+            #    `danh_dau_loi`. Thêm một lớp mới sẽ phải chép lại đúng hai hành
+            #    vi ấy, và bản chép sẽ lệch vào một ngày nào đó.
+            raise AmbiguousProviderError(
+                "thuong nguon khong tra loi kip (504) — khong danh dau loi cho khoa")
         noi_dung_loi = str(than or "").lower()
         if ma in (500, 502, 503, 507) and any(
                 marker in noi_dung_loi for marker in

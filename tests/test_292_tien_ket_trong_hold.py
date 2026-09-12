@@ -13,10 +13,35 @@
    của worker — thứ vẫn dọn cho hàng đợi job — không bao giờ nhìn thấy nó. Khách
    mất tiền lặng lẽ; không báo cáo nào chỉ ra điều đó.
 
-⭐ ĐỐI CHIẾU: cửa **streaming** không dính, vì nó quyết toán trong `finally`
-   (`_phat`). Chính cái `finally` đó là thứ cửa đồng bộ thiếu. Bài học không phải
-   "bắt thêm ngoại lệ" mà là: **đặt hold ở đâu thì mọi đường thoát khỏi chỗ đó
-   phải trả nó lại**.
+⭐ Bài học không phải "bắt thêm ngoại lệ" mà là: **đặt hold ở đâu thì mọi đường
+   thoát khỏi chỗ đó phải trả nó lại**.
+
+🔴 ĐÍNH CHÍNH 09/09 — CHỖ NÀY TỪNG VIẾT MỘT CÂU TRẤN AN, VÀ NÓ ĐÚNG MỘT NỬA:
+
+       "ĐỐI CHIẾU: cửa streaming không dính, vì nó quyết toán trong `finally`."
+
+   Đúng khi generator **đã chạy**. Sai khi nó **chưa từng chạy** — mà một
+   `finally` chỉ tồn tại sau khi generator chạy dòng đầu tiên. Đo thật 09/09:
+
+       g = _phat(mo, luot); g.close()   -> quyet_toan KHONG duoc goi
+       next(g); g.close()               -> quyet_toan DUOC goi
+
+   Khách ngắt **trước byte đầu** ⇒ hold không được kết sổ ngay.
+
+   ⚠️ NHƯNG KHÔNG PHẢI "VĨNH VIỄN" — bản đầu của đính chính này viết thế và nó
+      **nói quá**. `credit.tu_hoan_treo` (H41.3) CÓ quét khoản ấy: cửa stream
+      truyền `request_id` làm `job_id`, và không hàng `Job` nào "đang sống"
+      mang khoá đó, nên sau `TU_HOAN_SAU = 24 giờ` nó được hoàn.
+      ⇒ Hại thật là **tiền khách bị giữ tới một ngày cho một lượt không chạy**,
+        không phải mất tiền. Vẫn đáng sửa — nhưng phải nói đúng mức.
+
+   Bản vá: `runtime_noi_bo/luong.dam_bao_quyet_toan()` chạy từ `BackgroundTask`
+   của phản hồi, độc lập với việc generator có chạy hay không. Chốt ở
+   `tests/test_987_tien_ket_khi_luong_chua_chay.py`.
+
+   ⚠️ Câu cũ không sai vì người viết cẩu thả — nó là một **đối chiếu** không được
+      đo, đặt cạnh một phần đã được đo rất kỹ. Cạnh một sự thật, một lời trấn an
+      trông cũng giống một sự thật.
 
 ⚠️ Và phải là `BaseException`, không phải `Exception`: khách ngắt kết nối giữa
    chừng tới dưới dạng `CancelledError`, thứ **không** kế thừa `Exception` — đúng

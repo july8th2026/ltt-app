@@ -26,27 +26,58 @@ Bản khai của `ltt_llm` — model ngôn ngữ chạy trên máy nhà, bán ra
      bất đồng bộ (job)  né được trần 125 giây; nhưng khách phải học hình dạng
                         job của ta
 
-   🔴 SỬA 01/09 — BA CON SỐ Ở ĐOẠN NÀY ĐỀU ĐÃ TRÔI (P08 F-02/F-03).
+   🔴 ĐOẠN NÀY ĐÃ TRÔI **HAI LẦN**, VÀ LẦN THỨ HAI LÀ BÀI HỌC THẬT.
 
-   Bản cũ viết *"public API giữ trần input 65K theo Q116"*. Trần thật là
-   **96.256** (`TOKEN_VAO_TRAN`), và đã là 96.256 từ đợt dọn tham số 30/08.
-   Đừng đọc con số ở đây — đọc `ngan_sach.py`, hoặc hỏi máy B:
+   Lần một (01/09, P08 F-02/F-03): bản cũ viết *"public API giữ trần input 65K
+   theo Q116"* trong khi trần thật đã là số dẫn xuất từ lâu.
 
-       tran.input_tokens tu GET /health cua cong may B  ->  186368
+   Lần hai (09/09): **bản vá của lần một cũng trôi.** Nó thay 65K bằng một bảng
+   số cụ thể — `-c 131072`, trần vào 96.256, công bố 89K — và đợt nâng ngữ cảnh
+   03/09 làm **cả bảng** hết đúng.
 
-   Số đúng tại thời điểm viết (dual-model 2.6, đo `10_BENCHMARK_P3.md`):
+   Lần ba (12/09, dual-model 2.6): **lại một bảng số nữa được chèn vào đây**, lần
+   này cho hai model. Nó đúng lúc viết và sẽ sai đúng như hai lần trước — đây là
+   ghi chép của lần gỡ nó ra.
 
-     * engine `qwen38-api`     `-c 221184`, trần vào 186.368, **công bố 171K**
-     * engine `qwen35-api`     `-c 262144`, trần vào 227.328, **công bố 209K**
+   ⭐ VÌ SAO ĐÁNG GHI BA LẦN: bản vá lần một **chính nó là một thông báo đính
+      chính về số trôi**, và nó trôi y hệt cái nó đi sửa. Nó sửa **giá trị**;
+      khuyết tật là **hình dạng** — một tài liệu chép lại con số của nơi khác sẽ
+      trôi mỗi lần nơi kia đổi, và không ai có nghĩa vụ nhớ tới nó.
 
-   ⚠️ Máy B **chưa** chạy hai hồ sơ ấy: `llama-swap.yaml` còn `-c 204800` cho
-      tới Task 3.3, nên `/health` của nó hôm nay vẫn trả số cũ. Hai phép kiểm
-      đối chiếu yaml trong `test_334`/`test_1201` đang mang `xfail(strict=True,
-      reason="cho Task 3.3")` đúng vì cửa sổ thời gian này.
+      Chính tệp này đã đặt tên cho việc ấy ở `_cua_so_noi_voi_khach` bên dưới:
+      *"Sửa giá trị không phải sửa hình dạng."* Lần một đọc câu đó và vẫn làm
+      đúng điều nó cảnh báo. Lần ba cũng thế.
 
-   ⛔ Bài học còn nguyên giá trị sau khi hồ sơ vision bị gỡ (D02, 11/09): cửa sổ
-      *engine* KHÔNG phải thứ khách nhét vào được — phải chừa chỗ cho câu trả
-      lời. Nói con số engine với khách là đúng lỗi đã bị bắt ngày 01/09.
+   ⛔ NÊN Ở ĐÂY KHÔNG CÓ BẢNG SỐ NÀO. Muốn biết số hôm nay:
+
+        apps/ltt_llm/ngan_sach.py   — CUA_SO_THEO_MODEL · TOKEN_VAO_TRAN
+                                      CONG_BO_CHO_CLIENT (dẫn xuất theo model)
+        GET /api/v1/tools           — thứ khách thật sự đọc
+        GET /health cua cong may B  — tran.input_tokens
+
+      Ràng buộc duy nhất đáng phát biểu ở đây là **hình dạng**, và nó bất biến
+      với mọi lần đổi `-c`:
+
+        cửa sổ engine  >  trần vào  >  công bố cho client
+
+   ⛔ MỘT CÂU Ở ĐÂY ĐÃ HẾT ĐÚNG, và nó đáng ghi vì cùng một loại lỗi:
+      *"Vision luôn có cửa sổ hẹp hơn text, vì hồ sơ của nó phải nạp thêm
+      mmproj."* Câu ấy đúng khi vision là **hồ sơ thứ hai của cùng một model**
+      (`qwen38-vision`, đã gỡ ở D02/2.3). Từ dual-model, đọc ảnh là việc của
+      một **model khác trên một card khác**, và model ấy có cửa sổ **rộng hơn**.
+      Một bất biến giữa hai con số của hai máy khác nhau không phải bất biến —
+      nó là một sự trùng hợp đang chờ lật.
+
+   ⚠️ Máy B **chưa** chạy hai hồ sơ dual-model: `llama-swap.yaml` còn hồ sơ cũ
+      cho tới Task 3.3, nên `/health` của nó hôm nay vẫn trả số cũ. Hai phép
+      kiểm đối chiếu yaml trong `test_334`/`test_1201` mang `xfail(strict=True,
+      reason="cho Task 3.3")` đúng vì cửa sổ thời gian này — `strict` để chúng
+      **đỏ trở lại** ngay khi yaml lên, thay vì lặng lẽ xanh mãi.
+
+   ⛔ Bài học còn nguyên giá trị: cửa sổ *engine* KHÔNG phải thứ khách nhét vào
+      được — phải chừa chỗ cho câu trả lời. Nói con số engine với khách là đúng
+      lỗi đã bị bắt ngày 01/09, và khoảng cách giữa hai số không phải số lẻ làm
+      tròn được.
 
    Cửa job vẫn là đường lui cho tác vụ dài.
 
@@ -98,10 +129,13 @@ def _cua_so_noi_voi_khach(model_id: str) -> str:
 
     🔴 TRƯỚC 30/08 CHỖ NÀY GÕ TAY "131K", VÀ ĐÓ LÀ MỘT LỜI HỨA SAI.
 
-       131.072 là cửa sổ của **engine**. Trần đầu vào của Public API là
-       `TOKEN_VAO_TRAN` (96.256, vì phải chừa chỗ cho câu trả lời dài nhất và
-       cho sai số của phép ước), còn con số ta **công bố** cho client là
-       `CONG_BO_CHO_CLIENT` (88.555, chừa thêm 8 %).
+       "131K" là cửa sổ của **engine**. Trần đầu vào của Public API là
+       `TOKEN_VAO_TRAN` (chừa chỗ cho câu trả lời dài nhất và cho sai số của
+       phép ước), còn con số ta **công bố** cho client là `CONG_BO_CHO_CLIENT`
+       (chừa thêm 8 % lệch tokenizer).
+
+       ⛔ Ba con số ấy **cố ý không gõ ra ở đây** — xem đầu tệp: đúng chỗ này
+          từng chép chúng ra và cả ba đã trôi hai lần. Đọc `ngan_sach.py`.
 
        Khách đọc "131K", nhét 120K token vào, và ăn **413**. Không có gì trên
        trang nói cho họ biết vì sao — đúng lớp lỗi "hai nơi nói hai con số" mà

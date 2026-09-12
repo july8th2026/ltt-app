@@ -51,9 +51,24 @@ class Config:
     #: Tên model được phép phục vụ. **Rỗng = không mở gì cả** (Q92 fail-closed).
     models_mo: tuple[str, ...]
 
-    # ── Ngân sách — số CHÍNH THỨC điền sau khi P5 đo xong ─────────────────────
-    #: Trần token đầu vào public API. Engine có cửa sổ 131.072; public giữ 65.000
-    #: theo Q116 để còn biên prefill/Cloudflare sau biến thiên cold-load.
+    # ── Ngân sách ────────────────────────────────────────────────────────────
+    #: Trần token đầu vào public API.
+    #:
+    #: ⛔ ĐỪNG GÕ LẠI CON SỐ VÀO CHÚ THÍCH NÀY. Giá trị mặc định nằm ở
+    #:    `from_env()` bên dưới và nó là **bản sao dẫn xuất** của
+    #:    `apps/ltt_llm/ngan_sach.py::TOKEN_VAO_TRAN`; muốn biết số hôm nay thì
+    #:    đọc ở đó, hoặc hỏi máy B bằng `GET /health` → `tran.input_tokens`.
+    #:
+    #: 🔴 CHỖ NÀY TỪNG GHI *"Engine có cửa sổ 131.072; public giữ 65.000 theo
+    #:    Q116"*. Cả ba mệnh đề đều đã hết đúng: engine lên 204.800 ngày 03/09,
+    #:    trần public thành số **dẫn xuất** chứ không còn gõ tay, và Q116 đã bị
+    #:    Q120 thay (`tests/test_604_q120_tran_ngu_canh_mot_nguon.py`).
+    #:
+    #: ⭐ Nó sai **không phải vì người viết cẩu thả** — nó đúng vào ngày viết rồi
+    #:    hết đúng, y như chú thích `qwen38-ops` ở `catalog.py`. Một chú thích
+    #:    chép lại giá trị sẽ trôi mỗi lần giá trị đổi; một chú thích chỉ *tên
+    #:    nguồn* thì không bao giờ trôi. Đó là lý do đoạn trên nói tên chứ không
+    #:    nói số.
     max_input_tokens: int
     #: Trần token sinh ra mỗi yêu cầu.
     max_output_tokens: int
@@ -118,7 +133,19 @@ class Config:
             # 🔴 NGUỒN CHÂN LÝ là `apps/ltt_llm/ngan_sach.py::TOKEN_VAO_TRAN`
             #    (= CUA_SO_MODEL − TOKEN_RA_TRAN − LE = 221184 − 32768 − 2048).
             #    Kho này deploy sang máy B nên **không import được** từ đó; số ở
-            #    đây là bản sao, và `tests/test_312` đỏ ngay khi hai bên lệch.
+            #    đây là bản sao, và hai phép kiểm đỏ ngay khi hai bên lệch:
+            #    `tests/test_334_ngan_sach_ltt_llm.py` và
+            #    `tests/test_250_llm_gateway.py`.
+            #
+            # ⛔ CHÚ THÍCH NÀY TỪNG GHI `tests/test_312`, VÀ ĐÓ LÀ MỘT LỜI HỨA
+            #    TRỎ NHẦM CHỖ. `tests/test_312_vps_khoa_dich_vu.py` là khoá dịch
+            #    vụ VPS — hai phiên từng cấp trùng số hiệu ấy
+            #    (`docs/VLM_NOI_BO/RA_SOAT_THAM_SO_LTT_LLM.md` §559 đã ghi nhận,
+            #    nhưng bản vá lúc đó chỉ sửa tài liệu, bỏ quên chú thích này).
+            #
+            # ⭐ Nên từ nay **viện dẫn bằng TÊN TỆP, không bằng số hiệu**: số
+            #    hiệu test là thứ hai phiên có thể cùng cấp phát, tên tệp thì
+            #    không. `tests/test_980_vien_dan_phep_kiem.py` cưỡng chế điều này.
             #    ⛔ 65.000 cũ là con số gõ tay không dẫn xuất từ đâu, và nó đã
             #       khiến ta phí 25% cửa sổ model suốt nhiều ngày.
             max_input_tokens=_int("LTT_LLM_MAX_INPUT_TOKENS", 186_368),

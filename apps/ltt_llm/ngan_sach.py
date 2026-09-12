@@ -201,7 +201,10 @@ def nen_cua(model_id: str) -> int:
     """Ngưỡng nén hội thoại **công bố cho client** của một model.
 
     ⛔ TRẢ **0** KHI KHÔNG ĐỊNH NGHĨA ĐƯỢC, chứ không kẹp về một số trông hợp lệ.
-       Hai model hôm nay đều rộng nên cả hai trả số dương; nhánh 0 vẫn phải sống.
+       Hai model hôm nay đều rộng nên cả hai trả số dương; nhánh 0 vẫn phải sống,
+       và lý do là **hình dạng** chứ không phải danh sách model: hàm này là hàm
+       của một **hiệu số**, không của một cái tên. Xoá một nhánh vì "hiện không
+       ai chạm" là đổi một bất biến lấy một sự trùng hợp.
        Nó viết ra vì `qwen38-vision` (`-c 65536`, đã gỡ ở 2.6) có cửa sổ công bố
        28.262 — **hẹp hơn một lượt sinh dài nhất** — nên không ngưỡng nén nào giữ
        được lời hứa, kể cả ngưỡng bằng 1. Model nào hẹp như thế quay lại thì
