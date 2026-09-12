@@ -12,7 +12,7 @@
 | L-02 | `ltt-3.5` voi `max_tokens <= **200**` tra **RONG** va van bi tinh tien (`mcredit_du` **+4**) | DOC LAP | ban khai may A (cua vao) | 200->rong+4mc; 300->dung; san chan o cua vao | ✅ **DONG 13/09** |
 | L-03 | `ltt-3.8` khai *"Text only"* du engine DA nap `mmproj` | DOC LAP | ban khai (may A) | `catalog.HO_SO` co_vision=True ca hai | cho |
 | L-04 | bo cham `bia-01` do **su vang mat** -> cau bia dat VA cau lac de deu duoc cham dung | DOC LAP | `tools/do_tai_hai_model.py` | ban cu: 3/3 cau sai -> "dung"; ban moi: 1/3 | ✅ **DONG 13/09** |
-| L-05 | **108/131 job loi 14 ngay** deu la `AmbiguousProviderError: mat ket noi sau khi bat dau gui` | CAN DO | chua ro | chua co | **chua phai phat hien** |
+| L-05 | **108/131 job loi 14 ngay** deu la `AmbiguousProviderError: mat ket noi sau khi bat dau gui` | DOC LAP | he qua cua L-01 | 48/48 done, 0 loi (p=0,3%) | ✅ **DONG 13/09** |
 
 ## L-05 — mot MUC CAN DO, khong phai mot ket luan
 
@@ -413,3 +413,66 @@ trong phan hoi `GET /jobs/{id}` nen khong bao gio thay `done`.
 
 ⇒ Neu tin bo do, ket luan se la *"cua job treo"* — mot su co nghiem trong khong
   he ton tai. **Doc CSDL truoc khi tin mot bo do minh vua viet.**
+
+
+## L-05 — DONG 13/09/2026 o co mau du de bac bo
+
+### Vi sao 6 luot khong noi duoc gi, va con so chung minh dieu do
+
+Moc: 08/09 co **64 loi / 490 done = 11,6 %**. Neu lop loi ay VAN con nguyen ti
+le ay thi xac suat quan sat duoc 0 loi tren N luot la `0,884 ** N`:
+
+| N | xac suat thay 0 loi neu KHONG co gi thay doi |
+|---:|---:|
+| 6 | **47 %** |
+| 20 | 8,2 % |
+| 30 | 2,4 % |
+| 48 | **0,3 %** |
+
+⇒ "0 loi tren 6 luot" **hoan toan phu hop** voi gia thuyet *khong co gi thay
+  doi*. No khong phai bang chung yeu — no khong phai bang chung.
+
+### Ket qua o N = 48
+
+| | 08/09 (truoc sua L-01) | 13/09 (sau sua, N=48) |
+|---|---|---|
+| `ltt_llm.chat` | 490 done / **64 error** (11,6 %) | **48 done / 0 error** |
+| hai nguon doc lap | — | mat client **va** bang `jobs` deu cho 0 |
+| thoi gian moi job | — | chay 1,6–2,8 s; cho hang doi 1,3–12,8 s |
+
+8 dot x 6 job dong thoi, 156 s. Xac suat thay ket qua nay neu ti le cu con
+nguyen: **0,3 %** ⇒ bac bo o muc y nghia 5 %.
+
+⚠ **Pham vi cua ket luan.** No noi *lop loi ay khong con xuat hien o tai 6
+   luong dong thoi*. No **khong** noi he thong khong bao gio loi nua, va cung
+   khong chung minh L-01 la nguyen nhan DUY NHAT — chi rang sau khi sua L-01,
+   dieu kien tung sinh ra 64 loi/ngay khong con sinh ra loi nao.
+
+### Va lop bo do noi doi ve production — LAN THU BA
+
+| lan | bo do bao | su that |
+|---|---|---|
+| 1 | "6/6 het gio" | CSDL: ca 6 `done` trong vai giay |
+| 2 | "30/30 loi 400 Missing required field" | hinh dang `/quotes` toi tu doan sai |
+| 3 | "2/2 het gio" | CSDL: ca 2 `done` luc 04:08:07 |
+
+**GOC CHUNG, va lan nay tim ra no:** API cong khai va CSDL dung **hai bo tu vung
+khac nhau** cho cung mot trang thai.
+
+```
+API   GET /api/v1/jobs/<id>   ->  "queued" -> "succeeded"
+CSDL  bang `jobs`.status      ->  "queued" -> "done"
+```
+
+Bo do cho chu `done` **tren API**. Chu ay khong bao gio den.
+
+⛔ Ban sua khong phai "them `succeeded` vao danh sach". Liet ke tap **da xong**
+   la cach cu, va no im lang truot moi trang thai moi: mot `failed` chua tung
+   gap se bi doc thanh "van dang chay" cho toi khi het gio — dung cai bay tren.
+   Nay dinh nghia tap **CHUA XONG** (`queued`, `running`, …) va coi MOI thu
+   khac la ket cuc.
+
+⭐ Va bang `jobs` khai bang `app_slug` + `job_type`, **khong** co cot `tool`;
+   `job_type` mang gia tri day du `ltt_llm.chat`, khong phai `chat`. Toi doan ca
+   hai va truy van vo hai lan lien tiep. **Hoi luoc do truoc khi truy van** la
+   mot buoc, dung bo qua no.
