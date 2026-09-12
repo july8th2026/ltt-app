@@ -261,6 +261,52 @@ def kiem_tham_so(params: dict) -> dict:
     return sach
 
 
+def kiem_san_token_ra(sach: dict) -> None:
+    """Tu choi mot `max_tokens` thap den muc chac chan tra ve RONG. Nem `ThamSoSai`.
+
+    ## Vi sao la mot ham RIENG, khong nam trong `kiem_tham_so`
+
+    🔴 **413 dung truoc moi thu khac** (spec §6), va phep kiem nay khong phai
+       kiem HINH DANG — no la mot phan doan ve NGAN SACH. `kiem_tham_so` chay
+       truoc 413 o cua dong bo, nen de no o trong ay thi mot hoi thoai 65K token
+       xin `max_tokens` thap se nhan **400 thay vi 413** — va Codex/Claude Code
+       dua dung vao ma 413 de TU NEN hoi thoai. Chen mot loi khac len truoc no
+       la lay mat duong tu chua cua client, doi lay mot loi khuyen ("nang
+       max_tokens len") vo nghia voi mot yeu cau du sao cung qua dai.
+
+    ⛔ Nen ben goi phai goi ham nay SAU khoi 413 cua minh. `server/api/chat.py`
+       lam vay; `tests/test_1239` chot lai thu tu ay bang mot yeu cau vi pham
+       CA HAI dieu cung luc.
+
+    ## Vi sao tu choi thay vi cu chay
+
+    🔴 KHONG DOT GPU ROI TRA RONG. Cung khuon 413 cua input qua dai: mot yeu cau
+       khong the nao du cho thi se khong du KE CA khi may B ranh hoan toan, nen
+       dung de no di vao hang doi roi thu tien cho mot chuoi rong (do:
+       `mcredit_du` +4 cho mot luot khach khong nhan duoc gi).
+
+    ⭐ Thong diep phai NOI DUONG RA, khong chi noi "sai". Khach muon cau tra loi
+       ngan co hai duong, va duong dung la TAT SUY NGHI — khong phai bop tran.
+       Mot loi bao chi noi "max_tokens qua thap" se day ho di dung huong nguoc
+       lai.
+    """
+    from apps.ltt_llm.ngan_sach import san_token_ra
+
+    xin_ra = int(sach.get("max_tokens") or 0)
+    _san = san_token_ra(sach.get("model"), sach.get("reasoning_effort"))
+    if xin_ra >= _san:
+        return
+    _muc = sach.get("reasoning_effort") or "medium"
+    raise ThamSoSai(
+        f"`max_tokens` is {xin_ra}, below the {_san} this model needs at "
+        f"reasoning_effort={_muc!r}: thinking spends the same budget as the "
+        f"answer, so a low ceiling returns empty content with "
+        f"finish_reason='length'. Either raise max_tokens, or - for a short "
+        f"answer - set reasoning_effort='none' (floor "
+        f"{san_token_ra(sach.get('model'), 'none')}). Do not lower max_tokens "
+        f"to get a shorter reply; that is the other switch.")
+
+
 def chay(db, params: dict, *, timeout_s: float = 300.0,
          on_dispatch=None, on_rejected=None, ma_luot: str = "") -> KetQua:
     """Chạy một lượt. Ném `ThamSoSai`, `BanError`, `VuotNganSachError`, `CongVlmError`.

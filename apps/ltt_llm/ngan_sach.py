@@ -272,6 +272,92 @@ TOKEN_RA_MAC_DINH = {
     "job": 4_096,
 }
 
+# ══════════════════════════════════════════════════════════════════════════
+#  SÀN token ra theo MỨC SUY NGHĨ — L-02, 13/09/2026
+# ══════════════════════════════════════════════════════════════════════════
+#
+# 🔴 VÌ SAO CẦN SÀN, VÀ VÌ SAO NÓ THEO **MỨC SUY NGHĨ** CHỨ KHÔNG PHẢI MỘT SỐ.
+#
+#    Model nhà suy nghĩ trước khi trả lời. Suy nghĩ tiêu **chính** ngân sách
+#    `max_tokens` của lượt đó. Đặt trần thấp thì model tiêu hết trần vào suy
+#    nghĩ, bị cắt (`finish_reason=length`), và khách nhận `content` **rỗng** —
+#    nhưng GPU đã chạy thật nên **vẫn tính tiền** (đo: `mcredit_du` +4).
+#
+# 📏 Đo 13/09 trên đường thật, `ltt-3.5`, câu hỏi một dòng, 3-5 lượt mỗi ô:
+#
+#      effort    token ra (đủ chỗ)   max_tokens sạch 5/5
+#      none              4                   32
+#      low             206                  300
+#      medium          377                  600
+#      xhigh           421                  600+
+#
+#    ⇒ Ba mức tiêu **khác nhau rõ rệt**, nên một sàn chung sẽ hoặc quá chặt với
+#      `none` (từ chối oan) hoặc quá lỏng với `xhigh` (không chặn được gì).
+#
+# ⛔ SÀN NÀY KHÔNG PHẢI MỘT BẢO ĐẢM. Nó chặn *"trần thấp một cách hiển nhiên"*,
+#    không chặn được mọi lượt rỗng: một câu hỏi **khó** tiêu nhiều token suy nghĩ
+#    hơn hẳn câu một dòng dùng để đo. Nhà sản xuất khuyến nghị **32.768** token
+#    ra cho hầu hết truy vấn — sàn ở đây chỉ là mức tối thiểu để lượt gọi có cơ
+#    hội trả lời, không phải mức nên dùng.
+#
+# ⭐ Và luôn có **đường thoát**: `reasoning_effort="none"` hạ sàn xuống 64, vì
+#    khi tắt suy nghĩ thì model trả lời ngay (đo: 4 token). Khách cần câu trả
+#    lời ngắn đi đường đó — **không** phải bóp `max_tokens`.
+#: ⛔ SÀN THEO **MODEL × MỨC**, không phải một bảng chung — và lý do là một
+#: phép đo, không phải sự cẩn thận:
+#:
+#:      cùng một câu hỏi một dòng, `max_tokens` = 1500
+#:        ltt-3.5   none 4 · low 206 · medium 377 · xhigh 421
+#:        ltt-3.8   none 4 · low  63 · medium  63 · xhigh  55
+#:
+#:    Hai model tiêu khác nhau **6 lần**. Một bảng chung sẽ lấy số của model
+#:    tốn nhất và **phạt oan** model kia: `ltt-3.8` trả lời ĐÚNG ở
+#:    `max_tokens=100` với `low`, mà một sàn 512 sẽ từ chối lượt hợp lệ ấy.
+#:
+#: ⛔ HAI QUY TẮC ĐẶT SÀN, và chúng KHÁC nhau có chủ ý:
+#:
+#:    model ĐÃ THẤY hỏng  -> sàn = đo được x ~2 (câu đo là câu MỘT DÒNG; câu khó
+#:                           suy nghĩ nhiều hơn, nên biên là phần trả cho chênh
+#:                           lệch ấy)
+#:    model CHƯA thấy hỏng -> sàn = đúng số ĐO ĐƯỢC, làm tròn lên. KHÔNG nhân
+#:                           biên.
+#:
+#: 🔴 Vì sao không nhân biên cho model chưa hỏng: biên ở đây không miễn phí, nó
+#:    **từ chối lượt hợp lệ**. `ltt-3.8` sinh 63 token cho câu một dòng và trả
+#:    lời ĐÚNG ở `max_tokens=100`; một sàn 256 "cho chắc" biến lượt ấy thành
+#:    400. Đó đúng là hình dạng lỗi đã ghi: *một cái phanh đặt dưới nhu cầu
+#:    thật còn tệ hơn không có phanh*. Biên chỉ được trả bằng lượt hợp lệ khi
+#:    ta ĐÃ thấy thiệt hại nó ngăn.
+_SAN_NHE = {"none": 64, "low": 64, "medium": 64, "xhigh": 64}
+
+SAN_TOKEN_RA_THEO_NGHI = {
+    # Model ĐO ĐƯỢC là tiêu nhiều (13/09): sàn theo chính phép đo đó.
+    #   none 4 -> 64 | low max 350 -> 512 | medium max 517 -> 1024
+    "ltt-3.5": {"none": 64, "low": 512, "medium": 1024, "xhigh": 1024},
+    # Đo 13/09: 63 token ở MỌI mức, đúng ngay ở max_tokens=100 — chưa từng
+    # thấy trả rỗng, nên lấy sàn "đo được", không nhân biên.
+    "ltt-3.8": dict(_SAN_NHE),
+}
+
+#: Mức dùng khi khách không khai `reasoning_effort`. Phải khớp `default` ở
+#: `manifest.params_schema`.
+NGHI_MAC_DINH = "medium"
+
+
+def san_token_ra(model: str | None = None, muc_nghi: str | None = None) -> int:
+    """Sàn `max_tokens` cho (model, mức suy nghĩ).
+
+    ⛔ Không ném với model hay mức lạ: `features.kiem_tham_so` đã chặn cả hai
+       enum trước khi tới đây, nên một `KeyError` ở đây chỉ có thể là lỗi nội
+       bộ — và nó sẽ thành 500 cho một lượt lẽ ra chỉ cần 400.
+
+    ⭐ Model chưa có trong bảng lấy `_SAN_NHE`: một model mới thêm vào **không**
+       thừa hưởng hình phạt của model tốn nhất, cho tới khi ai đó đo nó.
+    """
+    bang = SAN_TOKEN_RA_THEO_NGHI.get(str(model or ""), _SAN_NHE)
+    return bang.get(str(muc_nghi or NGHI_MAC_DINH), bang[NGHI_MAC_DINH])
+
+
 CAC_CUA = tuple(TOKEN_RA_MAC_DINH)
 
 

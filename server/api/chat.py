@@ -209,6 +209,19 @@ def register_chat_routes(api, config, tag: str) -> None:
                     "conversation.",
                     limit_name="input_tokens", limit_value=_cap)
 
+        # ⛔ SAU 413, khong truoc. Mot tran ra thap den muc chac chan tra ve
+        #    RONG cung la mot yeu cau hong, nhung no la hong ve NGAN SACH — con
+        #    413 la hong ve DO DAI, va Codex/Claude Code dua vao dung ma 413 de
+        #    tu nen hoi thoai. Yeu cau vi pham ca hai phai nghe 413 truoc: loi
+        #    khuyen "nang max_tokens" vo nghia voi mot hoi thoai du sao cung
+        #    qua dai. `features.kiem_san_token_ra` giu ly do day du.
+        _san_ra = getattr(executor, "check_output_floor", None)
+        if _san_ra is not None:
+            try:
+                _san_ra(sach)
+            except executor.parameter_error as e:
+                raise invalid_request(str(e)) from None
+
         # ── Sức chứa admission CỦA ĐÚNG MODEL NÀY (multijob 2.2) ─────────────
         #
         # 🔴 Giải Ở ĐÂY, trước `idempotency.begin`, và đây là một phép ĐỌC

@@ -21,6 +21,62 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-09-13 — `max_tokens` quá thấp nay bị từ chối thay vì trả về rỗng
+
+**FIXED · không phá vỡ hợp đồng.** Hình dạng request không đổi một chữ
+(`contract_hash` giữ nguyên); thứ đổi là **một request vốn đã hỏng nay hỏng ra
+tiếng** thay vì hỏng im lặng.
+
+### Trước
+
+`ltt-3.5` với `max_tokens` thấp trả về `200 OK`, `content` **rỗng**,
+`finish_reason="length"` — và **vẫn tính tiền** cho token đã sinh (đo được:
+`+4 mcredit` cho một lượt khách không nhận được gì). Model không hỏng: phần
+**suy nghĩ** tiêu cùng một ngân sách với phần trả lời, nên một trần thấp bị
+tiêu hết vào suy nghĩ, không còn chữ nào cho câu trả lời.
+
+### Nay
+
+| model | `reasoning_effort` | `max_tokens` nhỏ nhất được nhận |
+|---|---|---:|
+| `ltt-3.5` | `none` | 64 |
+| `ltt-3.5` | `low` | 512 |
+| `ltt-3.5` | `medium` (mặc định) | 1024 |
+| `ltt-3.5` | `xhigh` | 1024 |
+| `ltt-3.8` | mọi mức | 64 |
+
+Dưới ngưỡng ⇒ `400 invalid_request`, **trước khi** chạm GPU và trước khi tính
+đồng nào.
+
+### Phải làm gì
+
+**Hầu hết tích hợp: không gì cả.** Mặc định của cả ba cửa (`sync` 1024,
+`job` 4096, `stream` 32768) đều ở trên ngưỡng, nên request không khai
+`max_tokens` không đổi hành vi.
+
+Nếu bạn đang hạ `max_tokens` để **lấy câu trả lời ngắn**, đó là nút sai và nó
+chưa bao giờ hoạt động — hãy đổi sang:
+
+```json
+{"model": "ltt-3.5", "reasoning_effort": "none", "max_tokens": 200}
+```
+
+`reasoning_effort: "none"` tắt suy nghĩ; trần thấp chỉ cắt cụt câu trả lời.
+
+### ⚠️ Ngưỡng này chặn cái gì, và KHÔNG chặn cái gì
+
+Nó chặn một trần **hiển nhiên quá thấp**. Nó **không** hứa rằng bạn sẽ không
+bao giờ nhận `content` rỗng nữa: ngưỡng đo bằng một câu hỏi một dòng, còn câu
+hỏi khó tiêu nhiều token suy nghĩ hơn. `finish_reason="length"` kèm `content`
+rỗng vẫn có nghĩa "hết trần trước khi kịp trả lời" — hãy tăng `max_tokens`
+hoặc hạ `reasoning_effort`.
+
+### Và `413` vẫn đứng trước
+
+Một hội thoại vượt cửa sổ ngữ cảnh **vẫn nhận `413`**, kể cả khi nó cũng vi
+phạm ngưỡng trên. Client tự nén hội thoại theo mã 413 (Codex, Claude Code)
+không bị ảnh hưởng.
+
 ## 2026-09-13 — `ltt-3.8` đọc được ảnh, và có nút tắt suy nghĩ
 
 **ADDED · không phá vỡ gì.** Hai thứ mới; client không hỏi tới thì không thấy.

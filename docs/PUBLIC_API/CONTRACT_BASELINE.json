@@ -397,7 +397,7 @@
     },
     "text.chat": {
       "aliases": [],
-      "contract_hash": "3e93aa71159dcab6",
+      "contract_hash": "5876e4bcdf4e09b8",
       "deprecated": "",
       "execution_mode": "ASYNC_JOB",
       "models": [

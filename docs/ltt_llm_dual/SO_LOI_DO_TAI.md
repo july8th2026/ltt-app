@@ -9,7 +9,7 @@
 | ma | trieu chung ĐO ĐƯỢC | loai | sua o | doi chung | trang thai |
 |---|---|---|---|---|---|
 | L-01 | qua may A: mot model bi nen lam model KIA cham **2,1-8,1x** | **CHAN** | `platform_core/api_pool.py` | 4 vong sau deploy: **0,99x · 1,08x · 1,15x · 1,10x**; `pg_locks` **0/369** mau | ✅ **DONG 13/09** |
-| L-02 | `ltt-3.5` voi `max_tokens <= **200**` tra **RONG** va van bi tinh tien (`mcredit_du` **+4**) | DOC LAP | ban khai may A (cua vao) | 200->rong+4mc; 300->dung | **da khoanh 13/09** |
+| L-02 | `ltt-3.5` voi `max_tokens <= **200**` tra **RONG** va van bi tinh tien (`mcredit_du` **+4**) | DOC LAP | ban khai may A (cua vao) | 200->rong+4mc; 300->dung; san chan o cua vao | ✅ **DONG 13/09** |
 | L-03 | `ltt-3.8` khai *"Text only"* du engine DA nap `mmproj` | DOC LAP | ban khai (may A) | `catalog.HO_SO` co_vision=True ca hai | cho |
 | L-04 | bo cham `bia-01` do **su vang mat** -> cau bia dat VA cau lac de deu duoc cham dung | DOC LAP | `tools/do_tai_hai_model.py` | ban cu: 3/3 cau sai -> "dung"; ban moi: 1/3 | ✅ **DONG 13/09** |
 | L-05 | **108/131 job loi 14 ngay** deu la `AmbiguousProviderError: mat ket noi sau khi bat dau gui` | CAN DO | chua ro | chua co | **chua phai phat hien** |
@@ -246,7 +246,48 @@ nao du, dot GPU, thu tien, roi tra rong.
   chu khong lay tu mot luot — `token_ra` cua 3.5 do duoc 294/298/345/284/288 o
   cac muc khac nhau, tuc no **ngau nhien**; mot nguong dat theo mot luot se sai.
 
-⬜ **CHUA LAM:** do nguong that (>= 5 luot moi muc, quanh 200-400), roi moi sua.
+### Nguong do that: 5 luot moi o, 0 luot rong
+
+| model | `none` | `low` | `medium` | `xhigh` |
+|---|---:|---:|---:|---:|
+| `ltt-3.5` token_ra max | 4 | 350 | 517 | 476 |
+| `ltt-3.5` SAN chot | 64 | 512 | 1024 | 1024 |
+| `ltt-3.8` token_ra max | 4 | 63 | 63 | 55 |
+| `ltt-3.8` SAN chot | 64 | 64 | 64 | 64 |
+
+🔴 **HAI MODEL TIEU KHAC NHAU 6 LAN** cho cung mot cau hoi mot dong. Nen san
+   phai theo **model x muc**, khong phai mot bang chung: mot bang chung lay so
+   cua model ton nhat va **phat oan** model kia -- `ltt-3.8` tra loi DUNG o
+   `max_tokens=100`, va hang chuc phep kiem khap kho gui dung con so ay.
+
+⛔ **Hai quy tac dat san, khac nhau co chu y.** Model DA THAY hong (`ltt-3.5`)
+   lay do-duoc x ~2, vi cau do la cau MOT DONG con cau kho suy nghi nhieu hon.
+   Model CHUA thay hong (`ltt-3.8`) lay dung so do duoc, KHONG nhan bien -- bien
+   o day khong mien phi, no **tu choi luot hop le**, va chi duoc tra bang luot
+   hop le khi ta DA thay thiet hai no ngan.
+
+### Va mot khuyet tat thu hai, lo ra tu chinh ban sua
+
+San dat dau tien trong `features.kiem_tham_so`, tuc trong `executor.validate` --
+ma `validate` chay **TRUOC** khoi 413 o `server/api/chat.py`. Hau qua: mot hoi
+thoai 65K token xin `max_tokens` thap bat dau nhan **400 thay vi 413**.
+
+🔴 Do la mot buoc lui THAT. Codex va Claude Code dua dung vao ma **413** de TU
+   NEN hoi thoai; doi no thanh 400 la lay mat duong tu chua cua client, doi lay
+   mot loi khuyen ("nang max_tokens len") vo nghia voi mot hoi thoai du sao cung
+   qua dai.
+
+✅ San nay tach thanh `features.kiem_san_token_ra`, goi tu `chat.py` **sau**
+   khoi 413. Chot o hai tang: `test_1239` (cau truc) va `test_259` (HTTP that,
+   mot yeu cau vi pham CA HAI dieu cung luc phai nghe 413).
+
+### ⚠️ Gioi han cua ban sua nay -- doc truoc khi tin no
+
+San chan mot tran **hien nhien qua thap**. No **KHONG** bao dam khong con luot
+rong: nguong do bang mot cau hoi MOT DONG, con cau kho tieu nhieu token suy nghi
+hon, nen `max_tokens` ngay tren san van co the rong. Thu duoc dong hoan toan la
+*"tran thap den muc chac chan hong"*; phan con lai (`finish_reason=length` +
+rong) van can mot cau tra loi ro o tang phan hoi.
 
 
 ## L-04 — DONG 13/09/2026, va loi SAU HON mot lan quen dich

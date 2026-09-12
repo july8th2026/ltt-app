@@ -526,6 +526,57 @@ def test_input_gan_65K_bi_TU_CHOI_truoc_GPU_du_xin_output_nho(api, monkeypatch):
     assert goi == [], "admission phải từ chối trước khi chạm model/GPU"
 
 
+def test_413_dung_TRUOC_san_max_tokens(api, monkeypatch):
+    """Yeu cau vi pham CA HAI dieu cung luc phai nghe **413**, khong phai 400.
+
+    🔴 L-02 (13/09) them mot san `max_tokens`: tran ra thap den muc chac chan
+       tra ve rong thi bi tu choi o cua vao. San ay ban dau nam trong
+       `executor.validate`, ma `validate` chay TRUOC khoi 413 — nen mot hoi
+       thoai 65K token xin `max_tokens` thap bat dau nhan 400.
+
+    ⛔ Do la mot buoc lui THAT, khong phai chuyen thu tu chu nghia: Codex va
+       Claude Code dua dung vao ma **413** de TU NEN hoi thoai. Doi no thanh
+       400 la lay mat duong tu chua, doi lay mot loi khuyen ("nang max_tokens
+       len") vo nghia — hoi thoai nay qua dai du xin bao nhieu token ra.
+
+    Cung mot su that duoc chot o tang cau truc trong `tests/test_1239`.
+    """
+    from apps.ltt_llm.executor import EXECUTOR
+    from apps.ltt_llm.ngan_sach import KY_TU_MOI_TOKEN
+
+    goi = _dat_model(monkeypatch)
+    _user_id, token = _account()
+    # DO DAI DAN XUAT TU TRAN, khong go tay: cua so tung duoc nang mot lan roi,
+    # va mot hang go tay se am tham thoi vuot tran vao ngay hom ay.
+    qua_dai = "x" * int((EXECUTOR.input_cap(MODEL) + 1_000) * KY_TU_MOI_TOKEN)
+    than = _than(messages=[{"role": "user", "content": qua_dai}],
+                 max_tokens=1, reasoning_effort="medium")
+
+    r = api.post(DUONG, json=than, headers=_h(token))
+
+    assert r.status_code == 413, r.text[:400]
+    assert "context limit" in r.text
+    assert goi == [], "admission phai tu choi truoc khi cham model/GPU"
+
+
+def test_san_max_tokens_van_bat_khi_dau_vao_vua(api, monkeypatch):
+    """Doi chung cua phep kiem tren: bo san di thi phep kia van xanh.
+
+    Khong co cai nay, `test_413_dung_TRUOC_san_max_tokens` van xanh trong mot
+    cay **khong co san nao ca** — no se khong con do duoc dieu no dat ten.
+    """
+    goi = _dat_model(monkeypatch)
+    _user_id, token = _account()
+    than = _than(messages=[{"role": "user", "content": "2+2?"}],
+                 max_tokens=1, reasoning_effort="medium")
+
+    r = api.post(DUONG, json=than, headers=_h(token))
+
+    assert r.status_code == 400, r.text
+    assert "reasoning_effort='none'" in r.text
+    assert goi == [], "khong duoc cham GPU roi moi tra rong"
+
+
 def test_schema_tools_lon_cung_phai_tinh_vao_prefill(api, monkeypatch):
     """Agent gửi schema tool trong mỗi request; bỏ nó là ước thiếu input thật."""
     goi = _dat_model(monkeypatch)

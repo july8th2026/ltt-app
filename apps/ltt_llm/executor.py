@@ -28,6 +28,14 @@ class _Executor:
     def validate(self, params):
         return features.kiem_tham_so(params)
 
+    def check_output_floor(self, params):
+        """Tu choi `max_tokens` thap den muc chac chan tra RONG.
+
+        ⛔ TACH KHOI `validate` co chu y: phep kiem nay phai chay SAU 413, va
+           `validate` chay TRUOC. Ly do day du o `features.kiem_san_token_ra`.
+        """
+        features.kiem_san_token_ra(params)
+
     def estimate_input(self, messages, tools=None):
         return (features.uoc_token_vao(messages) if tools is None
                 else features.uoc_token_vao(messages, tools))
