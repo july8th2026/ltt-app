@@ -948,10 +948,11 @@ dòng kết quả của nó phải trông khác.** Trước bản vá, cây-đ�
 một đoạn văn phía trên, còn dòng `RESULT` in y hệt — và dòng `RESULT` là thứ duy
 nhất được đọc khi người ta vội.
 
-**③ Cây riêng (`git worktree`) — tuỳ chọn, không mặc định.** Nó cho một cây
-không ai khác ghi vào, nhưng đòi nhánh riêng (`phien/<tên>`) và phải **gộp lại**.
-Mô hình lane-theo-tệp ở 10.2 đang chạy tốt, nên chỉ lấy cây riêng khi bạn thật sự
-cần một cửa sổ yên dài.
+**③ Cây riêng tạm (`git worktree`) — mặc định cho task ghi code sau CMC.** Mỗi
+task sinh từ `main`, ghi `BASE_SHA`, có một nhánh và một cây riêng. Phiên task
+dừng ở `HANDOFF_READY_FINAL`; không tự merge/rebase/push `main` và không tự gỡ
+cây. Canonical integrator review/integrate, chứng nhận rồi mới retire theo
+ledger được duyệt. Toàn văn và mẫu duy nhất: `docs/QUY_TRINH_WORKTREE.md` §5.
 
 🔴 **VÀ CƠ CHẾ NÀY TỰ SINH RA MỘT MỐI NGUY LỚN HƠN THỨ NÓ CHỮA.** Máy này **là**
 production, và `setup\2-cai-dat.ps1` chép **cả cây** sang `C:\LTTPlatform`.

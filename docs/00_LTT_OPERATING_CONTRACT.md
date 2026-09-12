@@ -227,6 +227,11 @@ hành nếu chưa bàn giao.
 - Không `reset`/`checkout`/đổi nhánh cây của phiên khác.
 - Không vứt thay đổi chưa commit mà bạn không tạo ra.
 
+Vòng đời và mẫu bàn giao canonical nằm duy nhất ở
+`docs/QUY_TRINH_WORKTREE.md` §5. Phiên task kết thúc ở
+`HANDOFF_READY_FINAL`; chỉ canonical integrator được đưa capability vào `main`
+và retire branch/worktree sau chứng nhận cùng ledger được duyệt.
+
 ⛔ **Một dòng `??` lạ trong `git status` là một phiên khác đang làm việc, không
 phải rác.** `ListAgents` chỉ thấy phiên **tồn tại lúc hỏi**.
 

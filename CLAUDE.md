@@ -66,6 +66,9 @@ mã nguồn**: `grep`/`Glob` trên `apps/`, `platform_core/`, `server/`.
 
 12. **Một dòng `??` lạ trong `git status` là một PHIÊN KHÁC đang làm việc**, không
     phải rác. Không `stash`, không `checkout --`, không `reset`.
+    Mỗi task ghi code dùng branch/worktree tạm sinh từ `main`, ghim `BASE_SHA`
+    và dừng tại `HANDOFF_READY_FINAL`; chỉ canonical integrator được tích hợp
+    vào `main` rồi retire. Mẫu duy nhất: `docs/QUY_TRINH_WORKTREE.md` §5.
 13. **`git add` tường minh từng tệp.** Không `-A`, không `.`.
 14. **Tệp dùng chung (`CLAUDE.md`, `AGENTS.md`, `tools/gate.py`, `messages.po`)
     chỉ sửa bằng `Edit`, không bao giờ `Write`** — `Write` đè im lặng cả tệp.

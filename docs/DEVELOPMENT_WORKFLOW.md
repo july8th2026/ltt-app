@@ -15,6 +15,7 @@ python tools/cay_rieng.py liet-ke      # ai đang có cây riêng nào
 python tools/cay_rieng.py tao <ten>    # cây + nhánh phien/<ten> cho riêng bạn
 cd D:\LTTSTUDIOSAPP-<ten>
 python tools/gate.py --doi             # mốc xuất phát, chỉ chạy phần liên quan
+git rev-parse main                     # ghi BASE_SHA vào hồ sơ task
 ```
 
 ⛔ **Không sửa code trên cây chính** khi có phiên khác đang chạy. Hai phiên cùng
@@ -125,7 +126,14 @@ git diff --cached                       # kiểm không dính tệp phiên khác
 git commit
 ```
 
-Rồi **nhắn cho phiên kia** biết bạn đã nhả những tệp nào.
+Sau commit, yêu cầu cây sạch và trả handoff theo mẫu canonical ở
+`docs/QUY_TRINH_WORKTREE.md` §5. Phiên task dừng tại `HANDOFF_READY_FINAL`:
+không tự merge/rebase/push vào `main`, không tự xóa branch/worktree và không mở
+feature mới. Canonical integrator nhận HEAD bất biến, review/integrate, chứng
+nhận trên `main`, rồi mới retire theo ledger được duyệt.
+
+Nếu `main` đã tiến sau `BASE_SHA`, ghi đúng divergence vào handoff; không tự
+merge moving `main` chỉ để làm trạng thái trông mới hơn.
 
 ⛔ **Không deploy từ cây riêng.** Máy này LÀ production và deploy chép **cả
 cây**. Chốt chặn nằm trong `setup/2-cai-dat.ps1`, được `test_362` giữ.

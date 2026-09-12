@@ -33,6 +33,16 @@ branch không tự chứng minh nó đang ở canonical head.
 git -C D:\LTTSTUDIOSAPP worktree add <đường-dẫn> -b <nhánh-mới> main
 ```
 
+Ngay trước khi tạo, ghi lại commit nền — **SHA**, không chỉ tên nhánh đang di
+chuyển:
+
+```powershell
+git -C D:\LTTSTUDIOSAPP rev-parse main
+```
+
+Đó là `BASE_SHA` của handoff. Một task ghi code có một branch và một worktree
+tạm riêng; worktree `D:\LTTSTUDIOSAPP` chỉ dành cho canonical integrator.
+
 Kiểm quan hệ với canonical ref trước khi tin:
 
 ```powershell
@@ -129,12 +139,10 @@ việc làm sau, một lần, khi mọi cây đã sạch.
 findstr /C:"loi_cho_bo_test" tools\gate.py
 ```
 
-Không thấy ⇒ **bản cũ**, nó sẽ tự chọn 14 worker. Gộp trunk vào trước khi chạy
-gate đầy đủ:
-
-```powershell
-git merge main
-```
+Không thấy ⇒ **bản cũ**, nó sẽ tự chọn 14 worker. Không tự merge một `main`
+đang di chuyển vào cây cũ chỉ để lấy công cụ mới: dừng, ghi `BASE_SHA`, HEAD và
+phần việc chưa bàn giao. Canonical integrator sẽ quyết định cách đưa capability
+vào `main` hiện hành theo caller/runtime/test, không theo cả-file ours/theirs.
 
 ### 3. Trước mọi lệnh nặng
 
@@ -157,10 +165,49 @@ locale/` lúc bắt đầu và đối chiếu lúc kết thúc. Một tệp đ�
 báo "CÂY ĐÃ ĐỔI" và **tự vứt bỏ phép đo của chính nó** — mất 5 phút không thu
 được gì.
 
-### 5. Xong việc thì gộp trunk lại ngay
+### 5. Xong việc thì bàn giao; task session không tự gộp `main`
 
-Nhánh sống lâu mà không gộp là cách sinh ra chính tình huống này. Sau mỗi hạng
-mục xong: `git merge main` rồi để nhánh của bạn được gộp về.
+Nhánh sống lâu mà không bàn giao là cách sinh ra chính tình huống này. Vòng đời
+chuẩn sau CMC là:
+
+```text
+main + BASE_SHA
+  -> task branch
+  -> temporary worktree
+  -> finish scope + focused verification
+  -> freeze feature + required gate
+  -> clean commit + HANDOFF_READY_FINAL
+  -> canonical integrator reviews/integrates into current main
+  -> canonical certification
+  -> retire worktree + delete task branch
+```
+
+Phiên task **không** checkout, merge, rebase hay push vào `main`; không tự xóa
+worktree/branch của mình. Nếu `main` đã tiến sau `BASE_SHA`, ghi rõ divergence
+trong handoff thay vì tự kéo moving target vào. Canonical integrator là người
+duy nhất giải semantic conflict trên cây chính.
+
+Trước commit và trước khi tuyên bố xong, làm đúng cấp kiểm tra ở
+`docs/00_LTT_OPERATING_CONTRACT.md`; tài liệu này không chép lại cadence đó.
+Handoff tối thiểu phải có:
+
+```text
+HANDOFF_READY_FINAL
+WORKTREE:
+BRANCH:
+FINAL_HEAD:
+BASE_SHA:
+MERGE_BASE:
+STATUS_CLEAN:
+FILES_CHANGED_VS_BASE:
+TEST_GATE_EVIDENCE:
+SEMANTIC_DUPLICATES_REMAINING:
+KNOWN_RISKS:
+```
+
+Thiếu một trường bắt buộc, cây còn dirty, hoặc gate không thuộc đúng HEAD thì
+chưa phải handoff. Chỉ sau khi canonical integrator chứng minh capability đã ở
+`main` và ledger xóa được duyệt mới được retire worktree/branch.
 
 ## Cơ chế ngân sách lõi — một hàm, một đơn vị
 

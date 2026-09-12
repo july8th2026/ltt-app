@@ -13,6 +13,29 @@
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
 
+## 2026-09-12 — Chuẩn bị authority bàn giao worktree hậu CMC
+
+Đã cập nhật nguồn quy trình hiện hành để mọi task ghi code ghim `BASE_SHA`, làm
+trên branch/worktree tạm, dừng ở `HANDOFF_READY_FINAL`, và chỉ canonical
+integrator được tích hợp vào `main` rồi retire theo ledger đã duyệt. Không tạo
+`docs/van_hanh_worktree.md`; giữ `docs/QUY_TRINH_WORKTREE.md` là authority duy
+nhất và để `AGENTS.md`/`CLAUDE.md`/Operating Contract/Development Workflow trỏ
+về đó. `tests/test_974_cmc_rule_authority.py` chốt hành vi tài liệu này.
+
+Bằng chứng đã chạy: `python tools/check_luat_van_hanh.py` PASS;
+`python -m pytest tests/test_974_cmc_rule_authority.py -q` → 6 passed;
+`python tools/gate.py --quick --cho 60` → PASS 29/29 tại báo cáo
+`test-results/gates/20260912T042700Z-26260.json`, nhưng đúng theo dòng RESULT
+đây **không phải bằng chứng đầy đủ**. Lượt `gate.py --doi --cho 60` tự hạ thành
+L3 rồi session điều khiển bị ngắt khi có tin nhắn mới; không có báo cáo kết quả
+mới nên lượt đó là **ABORTED/NOT_EVIDENCE**, không được gọi là PASS. L3 hợp nhất
+sẽ chạy sau khi nhánh LLM sạch được tích hợp, đúng checkpoint final plan.
+
+Không sửa/xóa worktree LLM trong changeset này.
+
+---
+
+
 
 
 

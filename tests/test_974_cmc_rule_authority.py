@@ -62,3 +62,20 @@ def test_tai_lieu_song_tro_ve_hop_dong_van_hanh():
     assert "sau mỗi lần sửa" not in deploy
     assert "docs/NHAT_KY.md" in claude
     assert "_luutru/PROJECT_MEMORY.md` | nhật ký" not in claude
+
+
+def test_vong_doi_worktree_co_mot_authority_va_handoff_ro_rang():
+    quy_trinh = (ROOT / "docs/QUY_TRINH_WORKTREE.md").read_text(
+        encoding="utf-8")
+    phat_trien = (ROOT / "docs/DEVELOPMENT_WORKFLOW.md").read_text(
+        encoding="utf-8")
+    claude = (ROOT / "CLAUDE.md").read_text(encoding="utf-8")
+    agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+
+    assert not (ROOT / "docs/van_hanh_worktree.md").exists()
+    assert "HANDOFF_READY_FINAL" in quy_trinh
+    assert "BASE_SHA" in quy_trinh
+    assert "canonical integrator" in quy_trinh
+    assert "không tự merge/rebase/push vào `main`" in phat_trien
+    assert "docs/QUY_TRINH_WORKTREE.md` §5" in claude
+    assert "docs/QUY_TRINH_WORKTREE.md` §5" in agents
