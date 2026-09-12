@@ -238,8 +238,24 @@ def kiem_tham_so(params: dict) -> dict:
 
     if p.get("reasoning_effort") is not None:
         re_ = str(p["reasoning_effort"])
-        if re_ not in ("low", "medium", "xhigh"):
-            raise ThamSoSai("`reasoning_effort` phai la low|medium|xhigh")
+        # 🔴 THEM `none` 13/09/2026 (L-02) — va day la mot NUT KHAC voi `max_tokens`.
+        #
+        #    Model card Qwen noi ro co HAI nut: `max_tokens` la tran DO DAI, con
+        #    `enable_thinking=False` / `/no_think` la nut TAT SUY NGHI. Ta truoc
+        #    nay chi mo nut thu nhat, nen mot khach muon cau tra loi NGAN khong
+        #    co duong nao ngoai ha `max_tokens` — va do chinh la duong dan toi
+        #    L-02: model tieu het tran vao suy nghi roi bi cat truoc khi tra loi
+        #    (do: 5/5 luot RONG o `max_tokens` 150-250).
+        #
+        # ⛔ Ha `max_tokens` KHONG phai cach tat suy nghi. Nha san xuat khuyen
+        #    `32.768` token ra cho hau het truy van; con duong cho cau tra loi
+        #    ngan la tat thinking, khong phai bop tran.
+        #
+        #    Template froggeric v22.5 nhan `none`/`off` va anh xa `minimal` ->
+        #    `low`. Ta mo dung `none` o be mat cong khai: mot ten cho mot y
+        #    nghia, va `off` la bi danh de trung.
+        if re_ not in ("none", "low", "medium", "xhigh"):
+            raise ThamSoSai("`reasoning_effort` phai la none|low|medium|xhigh")
         sach["reasoning_effort"] = re_
 
     return sach

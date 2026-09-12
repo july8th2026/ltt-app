@@ -282,8 +282,9 @@ MANIFEST = AppManifest(
             "temperature": {"type": "number", "min": 0.0, "max": 2.0},
             # `json[]`, khong phai `json`: OpenAI khai `tools` la mot MANG.
             "tools": {"type": "json[]"},
+            # `none` = TAT suy nghi (L-02, 13/09/2026). Xem `features.kiem_tham_so`.
             "reasoning_effort": {"type": "enum",
-                                 "values": ["low", "medium", "xhigh"],
+                                 "values": ["none", "low", "medium", "xhigh"],
                                  "default": "medium"},
         },
         returns={"content": "text", "tool_calls": "json[]", "usage": "json"},
@@ -367,7 +368,7 @@ MANIFEST = AppManifest(
             },
             "enums": {
                 "model": ["ltt-3.8", "ltt-3.5"],
-                "reasoning_effort": ["low", "medium", "xhigh"],
+                "reasoning_effort": ["none", "low", "medium", "xhigh"],
             },
             "params": {
                 "messages": {
@@ -398,8 +399,13 @@ MANIFEST = AppManifest(
                     "example": [],
                 },
                 "reasoning_effort": {
-                    "description": ("How much the model thinks before answering. "
-                                    "Deeper costs more output tokens."),
+                    "description": (
+                        "How much the model thinks before answering. Deeper "
+                        "costs more output tokens. Use `none` to turn thinking "
+                        "off entirely - that is the switch for short answers, "
+                        "not a small `max_tokens`: with thinking on the model "
+                        "can spend the whole budget reasoning and return empty "
+                        "content with finish_reason=length."),
                     "example": "medium",
                 },
             },

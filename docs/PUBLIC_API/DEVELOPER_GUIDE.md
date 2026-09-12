@@ -613,11 +613,11 @@ Input:
 - `max_tokens` — integer, min 1, max 32768, default 4096, Ceiling on generated tokens. Credit is held against this and refunded down to what was actually generated.
 - `temperature` — number, min 0.0, max 2.0, Sampling temperature.
 - `tools` — array, Function definitions, OpenAI format. The model may answer with `tool_calls`.
-- `reasoning_effort` — string, one of `low`, `medium`, `xhigh`, default medium, How much the model thinks before answering. Deeper costs more output tokens.
+- `reasoning_effort` — string, one of `none`, `low`, `medium`, `xhigh`, default medium, How much the model thinks before answering. Deeper costs more output tokens. Use `none` to turn thinking off entirely - that is the switch for short answers, not a small `max_tokens`: with thinking on the model can spend the whole budget reasoning and return empty content with finish_reason=length.
 
 Output: `content` (string), `tool_calls` (array), `usage` (object)
 
-Contract hash: `3e93aa71159dcab6`
+Contract hash: `5876e4bcdf4e09b8`
 
 ### `text.prompt_package`
 

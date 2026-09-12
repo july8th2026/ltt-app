@@ -341,9 +341,40 @@ models:
   # KV q8_0 (khong phai q4_0 nhu 3.8): card nay con bien 2,8 GiB truoc MTP, nen
   # khong phai doi chat luong KV lay cho. 3.8 thi BAT BUOC q4_0 o 221K.
   #
-  # KHONG `--chat-template-file`: dung khuon dung san trong GGUF. Ban va
-  # froggeric la ban va cho template cua Qwen3.8; ap no cho 3.5 la ap mot ban va
-  # cho mot loi CHUA duoc do o model nay.
+  # !! DOI 13/09/2026 - ho so nay NAY DUNG `--chat-template-file` (v22.5).
+  #
+  #    Chu thich cu o day viet: *"KHONG `--chat-template-file`: dung khuon dung
+  #    san trong GGUF. Ban va froggeric la ban va cho template cua Qwen3.8; ap no
+  #    cho 3.5 la ap mot ban va cho mot loi CHUA DUOC DO o model nay."*
+  #
+  #    Cau do **dung luc no duoc viet**. Dieu kien no dat ra - *"chua duoc do"* -
+  #    da thoa ngay 13/09. Do qua duong that, 5 luot moi muc:
+  #
+  #        max_tokens   150   200   250   300   350   400   450+
+  #        rong / luot  5/5   5/5   5/5   3/5   1/5   1/5   0/8
+  #        token_ra     = DUNG BANG max_tokens, finish_reason=length
+  #
+  #    Tuc model tieu HET tran vao suy nghi roi bi cat truoc khi tra loi (L-02).
+  #
+  # !! Va phep do PHAN BIET, thu chi ra dich danh template:
+  #
+  #        ltt-3.5  reasoning_effort = None / low / xhigh -> token_ra 250/250/250, RONG ca ba
+  #        ltt-3.8  cung ba gia tri                       -> token_ra  63/ 63/ 62, dung ca ba
+  #
+  #    Tham so cua khach KHONG doi duoc gi o 3.5 => co thu khac dang ghi de no.
+  #    Khac biet duy nhat giua hai ho so luc ay: 3.8 dung template froggeric,
+  #    3.5 dung template CHINH THUC trong GGUF.
+  #
+  # [nguon] `froggeric/Qwen-Fixed-Chat-Templates` mo ta dung loi nay, tung chu:
+  #    *"Official `xhigh` default burns token budgets with zero content
+  #    returned"* -> ban va mac dinh `medium`, them `none`/`off` de tat han.
+  #    Va README v22.5 khai ro: *"universal drop-in ... the single
+  #    `chat_template.jinja` file ... for all Qwen 3.5, 3.6, 3.8"*.
+  #
+  # !! MOT TEP RIENG, KHONG dung chung voi 3.8. 3.8 dang chay v22.3 va dang chay
+  #    TOT; gop chung mot tep la doi hai thu cung luc. Mot bien so moi lan.
+  #    sha256 v22.5: e57684bae4156211a55473c5a63be976a405a37ab5be5ae0e5abf1df5349c4b2
+  #    (doi chieu hai ben sau khi chep - khop tung byte).
   #
   # LTT-3.5 nhanh HON LTT-3.8 (76,21 so 63,01 tok/s) du card yeu hon, vi giai ma
   # bi chan boi bang thong bo nho: 7,3 GB trong so/token so voi 16,5 GB. (G3b)
@@ -357,6 +388,7 @@ models:
       ${BIN}/llama-server.exe
       -m ${GGUF35}
       --mmproj ${MODELS}/mmproj-9B-F16-unsloth.gguf
+      --chat-template-file ${MODELS}/chat_template_v22.5.jinja
       ${CHUNG}
       -c 262144
       -np 3
