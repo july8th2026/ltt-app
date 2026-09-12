@@ -45,6 +45,16 @@ public), nên không có rule để chuyển. LTT-CMC không deploy production.
 31 mục là `HOLD_NEED_RECONCILIATION`; Source A dirty 5 tệp chỉ được bỏ sau khi
 người dùng duyệt rõ việc mất WIP đã được Source B thay thế.
 
+Sau lệnh duyệt `triển khai`, đã đo lại đúng 9 worktree: HEAD/status không drift.
+Đã gỡ 9 worktree bằng Git (gồm Source A dirty 5 tệp theo explicit dirty loss),
+xóa 35 local branch và 21 remote branch cũ, xóa tag CMC local/remote, sáu
+inventory tạm và patch WIP. `fetch --prune` cho thấy remote chỉ còn `main`;
+local/worktree chỉ còn `main` sạch và VPS V4 dirty 31 mục. `worktree prune
+--dry-run` rỗng; không chạy `git gc`/`git prune`, không xóa Claude app data.
+
+H45 chưa đóng hoàn toàn: VPS V4 là WIP thật chưa đối soát nên vẫn HOLD đúng
+ledger. Xóa nó lúc này sẽ làm mất công việc ngoài phạm vi CMC.
+
 ---
 
 ## 2026-09-12 — Chuẩn bị authority bàn giao worktree hậu CMC

@@ -2,7 +2,7 @@
 
 ## Trạng thái
 
-`SOURCE_CERTIFIED · REMOTE_MAIN · CLEANUP_PENDING_APPROVAL`
+`SOURCE_CERTIFIED · REMOTE_MAIN · CLEANUP_EXECUTED · VPS_V4_HOLD`
 
 Nguồn chức năng Voice đã có trong tag `cmc-base-20260911`. Quét live ngày
 12/09/2026 phát hiện ba commit tài liệu Voice hậu-tag; chúng được port vào
@@ -33,9 +33,17 @@ Không có mã Voice cũ nào bị phát lại.
   điệp tính năng cần GitHub Pro hoặc repository public; không có rule khả dụng
   để chuyển. Repository vẫn giữ private.
 
+## Cleanup đã thực hiện
+
+- Xóa 9 worktree đã merge/thay thế, 35 local branch và 21 remote branch.
+- Xóa local/remote tag `cmc-base-20260911`, sáu inventory tạm và patch WIP.
+- Sau `fetch --prune`, remote chỉ còn `origin/main`; local chỉ còn `main` và
+  `codex/vps-v4-infrastructure-profiles`.
+- Source A dirty 5 tệp đã bị loại theo phê duyệt; không giữ branch/worktree/
+  patch sao chép.
+
 ## Việc chưa được phép gọi là hoàn thành
 
-- Chưa xóa bất kỳ worktree, branch, ref, archive ngoài patch WIP đã xác định.
 - Worktree `D:\LTTSTUDIOSAPP-vps-v4` là WIP chưa commit, phân loại
   `NEED_RECONCILIATION`; không phải mục có thể xóa.
 - Các mục vận hành L-01–L-04 và hai tài khoản thử trong

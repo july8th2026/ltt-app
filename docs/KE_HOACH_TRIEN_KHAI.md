@@ -3879,9 +3879,9 @@ Nguồn thiết kế:
 - [ ] **H45.6 — Final integration + cleanup:** 12/09/2026 đã port ba commit tài
       liệu Voice hậu-baseline và merge `cmc/llm-dual-reconcile` vào `main`;
       L3 PASS 33/33 tại `f14b3056`, remote default đã chuyển sang `main`.
-      Chưa xóa worktree/branch; đang dừng ở ledger chờ duyệt riêng. WIP VPS V4
-      được giữ nguyên và ghi
-      `NEED_RECONCILIATION`, không được coi là mục cleanup an toàn.
+      Sau duyệt ledger đã xóa 9 worktree, 35 local branch, 21 remote branch,
+      tag CMC và inventory/patch tạm. WIP VPS V4 được giữ nguyên ở
+      `NEED_RECONCILIATION`; vì còn worktree/branch này nên H45.6 chưa thể đóng.
 
 **Ngoài phạm vi:** deploy production. **Gate:** tuân đúng
 `docs/00_LTT_OPERATING_CONTRACT.md`; trước lệnh nặng phải đo cả tải máy và cửa

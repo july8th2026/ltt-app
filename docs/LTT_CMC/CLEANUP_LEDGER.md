@@ -1,9 +1,22 @@
 # LTT-CMC literal cleanup ledger
 
 Chụp ngày 12/09/2026 sau khi `main` PASS L3 và trở thành remote default.
-Ledger này **chưa cho phép xóa**. Mọi dòng `YES_AFTER_APPROVAL` chỉ là đề nghị;
-phải đo lại HEAD/status ngay trước thao tác. Không dùng xóa thư mục trực tiếp,
-không `git gc`, không `git prune`.
+Người dùng duyệt thực thi ngày 12/09/2026. Mỗi mục đã được đo lại HEAD/status
+trước khi xóa. Không dùng xóa thư mục Git trực tiếp, không `git gc`, không
+`git prune`.
+
+## Kết quả thực thi
+
+- Đã gỡ 9 worktree `YES_AFTER_APPROVAL` bằng `git worktree remove --force`.
+- Đã xóa 35 local branch cũ và 21 remote branch cũ; remote chỉ còn `main`.
+- Đã xóa tag CMC ở local và remote, sáu inventory tạm và patch WIP đã xác định.
+- `refs/cmc-rescue/*` = 0, stash = 0; `git worktree prune --dry-run` không báo
+  mục cần prune. Không prune object database.
+- Source A dirty 5 tệp đã bị loại theo phê duyệt explicit dirty loss; không còn
+  worktree/branch/patch backup cạnh tranh.
+- Còn đúng hai worktree/local branch: canonical `main` sạch và VPS V4 dirty 31
+  mục. VPS V4 được giữ nguyên đúng dòng HOLD, nên chiến dịch chưa thể tuyên bố
+  “một worktree duy nhất”.
 
 ## Chứng nhận cho phép đi tới checkpoint cleanup
 
@@ -136,4 +149,4 @@ V4: xóa nó sẽ làm mất 31 mục WIP chưa đối soát. Khi người dùng
 cleanup chỉ được xóa các dòng `YES_AFTER_APPROVAL`; dòng VPS V4 tiếp tục HOLD.
 Sau khi VPS V4 được bàn giao/đối soát, phải tạo ledger mới cho chính nó.
 
-**CHECKPOINT: STOP_BEFORE_DELETION.**
+**CHECKPOINT: CLEANUP_EXECUTED_VPS_V4_HOLD.**

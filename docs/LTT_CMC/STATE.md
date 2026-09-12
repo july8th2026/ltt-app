@@ -8,11 +8,11 @@
 | Canonical worktree | `D:\LTTSTUDIOSAPP` |
 | CMC base SHA | `09b219a371e1261f0f0eef0e316c1ca42754cb78` |
 | CMC base tag | `cmc-base-20260911` |
-| Phase | `CANONICAL_CERTIFIED_CLEANUP_PENDING_APPROVAL` |
+| Phase | `CLEANUP_EXECUTED_VPS_V4_HOLD` |
 
 `main` đã nhận ba commit tài liệu Voice hậu-baseline, merge
 `cmc/llm-dual-reconcile`, PASS L3 trên cây sạch và trở thành default branch ở
-remote. Chưa cleanup.
+remote. Cleanup các mục đã duyệt đã chạy; VPS V4 được giữ nguyên.
 
 `CANONICAL_CANDIDATE: main` đã được promote thành canonical authority; marker
 được giữ để topology test và lịch sử chiến dịch còn truy được trạng thái nguồn.
@@ -20,7 +20,7 @@ remote. Chưa cleanup.
 ```text
 CMC_BASE_BRANCH: main
 CMC_BASE_WORKTREE: D:\LTTSTUDIOSAPP
-STATUS: CANONICAL_CERTIFIED_CLEANUP_PENDING_APPROVAL
+STATUS: CLEANUP_EXECUTED_VPS_V4_HOLD
 ```
 
 Phần chức năng Voice đã nằm trong baseline. Quét live sau khi phiên Voice đóng
@@ -37,8 +37,8 @@ vận hành.
 
 - Thiết kế: `docs/superpowers/specs/2026-09-11-ltt-cmc-design.md`.
 - Master plan: `docs/superpowers/plans/2026-09-11-ltt-cmc.md`.
-- Task hiện tại: H45.6 đã tích hợp/chứng nhận/chuyển authority; dừng trước xóa
-  để người dùng duyệt literal cleanup ledger.
+- Task hiện tại: H45.6 đã tích hợp/chứng nhận/chuyển authority và xóa mọi mục
+  được duyệt; còn VPS V4 HOLD nên chưa đạt tiêu chí một worktree.
 - Reconciliation matrix: `docs/LTT_CMC/reconciliation.json` (36 branches,
   25 reflog-only commits, 0 `RECONCILE`, 0 rescue refs).
 - Normalization baseline: `docs/LTT_CMC/NORMALIZATION_BASELINE.md` (một Alembic
@@ -66,3 +66,10 @@ vận hành.
   theo đối soát từng tệp. Giữ nguyên đến ledger; không stash/reset/commit hộ.
 - Gate nhánh LLM ở `4bc3ea48` có 30 PASS/3 BOQUA và xảy ra trước ba commit bàn
   giao cuối, nên không được dùng làm chứng nhận HEAD hợp nhất.
+
+## Topology sau cleanup
+
+- Worktrees/local branches còn lại: `main` sạch tại `D:\LTTSTUDIOSAPP` và
+  `codex/vps-v4-infrastructure-profiles` dirty tại `D:\LTTSTUDIOSAPP-vps-v4`.
+- Remote branches: chỉ `origin/main`; remote HEAD/default: `main`.
+- Tag CMC, rescue refs, stash và temporary inventory: không còn.
