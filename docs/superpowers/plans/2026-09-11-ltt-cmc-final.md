@@ -4,7 +4,13 @@
 
 **Goal:** Integrate the certified Voice and LLM handoffs into `main`, certify the combined source, switch repository authority, and remove all retired Git/session state after a separate destructive approval.
 
-**Architecture:** Both handoffs must descend from the same immutable CMC baseline. Integrate Voice first and LLM second with semantic review, run one final full gate, then migrate default-branch controls before presenting a literal deletion ledger.
+**Architecture:** Voice is already present exactly once in the immutable CMC
+baseline, so its integration is a verified no-op. Accept the clean LLM handoff,
+integrate it as one atomic changeset with semantic review, normalize the active
+worktree/branch authorities, and certify the frozen source once. Move remote
+authority only after certification, then present a literal deletion ledger and
+stop. Cleanup and post-clean verification are a separate, explicitly approved
+continuation.
 
 **Tech Stack:** Git, GitHub CLI or authenticated repository UI, Python gate tooling, Alembic, pytest.
 
@@ -15,26 +21,75 @@
 - Do not begin until both handoff branches are clean, tested and based on the exact same `CMC_BASE_SHA`.
 - Never deploy production in this plan.
 - Before all heavy runs, use both load/lock commands and obey `BẬN`/`QUÁ TẢI`.
+- Test cadence is defined only by `docs/00_LTT_OPERATING_CONTRACT.md`; this plan
+  defines evidence checkpoints, not a competing cadence.
+- Do not run L3 after each cherry-pick. Freeze the complete integration
+  changeset, run affected verification, then one pre-clean L3. If an earlier
+  L1 fails closed to L3 because impact cannot be proved, accept that safeguard
+  and do not bypass it.
+- `docs/QUY_TRINH_WORKTREE.md` remains the one worktree authority. Do not create
+  a competing `docs/van_hanh_worktree.md`; startup documents link to the
+  canonical file instead of copying its full rules.
 - No branch/worktree/session/ref/archive deletion occurs before a fresh literal ledger and separate user approval.
 - Do not use force push, recursive filesystem deletion, `git gc` or `git prune`.
 
+## Pinned entry checkpoint (2026-09-12)
+
+- Canonical worktree: `D:\LTTSTUDIOSAPP`, branch `main`, clean HEAD
+  `072d6d970063bf9ee60f3c8b8bcac8911788dd23`.
+- Immutable baseline: `cmc-base-20260911` =
+  `09b219a371e1261f0f0eef0e316c1ca42754cb78`.
+- Voice branch and baseline already contain the same certified Voice behavior;
+  do not replay Voice commits.
+- Pre-handoff main evidence:
+  `test-results/gates/20260912T005150Z-17608.json`, PASS 33/33,
+  `cay_da_doi_giua_chung=false`.
+- Only the LLM workstream remains protected. Do not mutate either LLM source
+  worktree until it returns `HANDOFF_READY_FINAL`.
+
 ---
 
-### Task 1: Integrate the Voice handoff
+### Task 0: Accept and verify the final LLM handoff
 
 **Files:**
-- Modify through integration: the exact files recorded in `docs/LTT_VOICE/HOP_NHAT/CMC_SOURCE_STATE.md`
-- Modify: `docs/LTT_CMC/STATE.md`
+- Read: `docs/LTT_CMC/HANDOFF_LLM_DUAL.md`
+- Read: `docs/ltt_llm_dual/CMC_SOURCE_STATE.md` from the returned branch
 
 **Interfaces:**
-- Produces: `main` containing the certified Voice capability once.
-- Consumes: clean `cmc/voice-reconcile` with recorded tests.
+- Produces: an accepted immutable LLM source HEAD.
+- Consumes: the literal `HANDOFF_READY_FINAL` returned by the owning session.
 
-- [ ] Verify main worktree is clean, current branch is `main`, and Voice merge-base equals the recorded CMC baseline.
-- [ ] Review `git cherry -v main cmc/voice-reconcile` and the semantic matrix; skip patch-equivalent commits.
-- [ ] Cherry-pick the reviewed Voice commits in dependency order. Resolve shared files semantically; never accept an entire side.
-- [ ] Run Voice focused tests, migration one-head tests and `python tools\gate.py --doi` after load checks.
-- [ ] Record actual integrated source commits and main HEAD; secret-scan and commit any reconciliation fix.
+- [ ] Require branch `cmc/llm-dual-reconcile`, full final HEAD, source A/B
+      final HEADs, exact merge-base, clean status and exact test/gate reports.
+- [ ] Verify the branch exists locally and the reported HEAD equals the real
+      ref; verify its worktree is clean without refreshing or modifying another
+      session's index.
+- [ ] Require merge-base
+      `09b219a371e1261f0f0eef0e316c1ca42754cb78`; reject a branch based on a
+      moving `main` or an older migration lineage.
+- [ ] Verify one Alembic head, D04 proof, ModelProfile authority, machine-B
+      boundary, kept/skipped commit ledger and every `NOT_RUN`/`BLOCKED` item.
+- [ ] Stop on an unexplained dirty file, missing source commit, surviving
+      semantic duplicate or claimed PASS without a real report.
+
+### Task 1: Verify the Voice no-op
+
+**Files:**
+- Read: `docs/LTT_CMC/HANDOFF_VOICE.md`
+- Read: `docs/LTT_VOICE/HOP_NHAT/CMC_SOURCE_STATE.md` when present
+- Modify only if evidence drifted: `docs/LTT_CMC/STATE.md`
+
+**Interfaces:**
+- Produces: proof that `main` already contains certified Voice capability once.
+- Consumes: immutable CMC baseline and Voice handoff evidence.
+
+- [ ] Verify main is clean/current and `cmc-base-20260911` still resolves to the
+      recorded full SHA.
+- [ ] Verify the Voice branch HEAD is already an ancestor/equivalent of the
+      baseline and the recorded Voice tests belong to that source.
+- [ ] Record disposition `NO_OP_ALREADY_IN_BASELINE`; cherry-pick zero Voice
+      commits. Any contrary evidence reopens semantic review instead of
+      accepting an entire side.
 
 ### Task 2: Integrate the LLM handoff
 
@@ -48,45 +103,83 @@
 
 - [ ] Verify the LLM merge-base equals the same recorded CMC baseline.
 - [ ] Review patch equivalence against the post-Voice `main`; do not replay any duplicated WIP patch.
-- [ ] Cherry-pick reviewed LLM commits and resolve shared registry/migration/runtime files against the already integrated Voice state.
-- [ ] Run LLM focused tests, full registry tests, migration one-head tests and `python tools\gate.py --doi` after load checks.
-- [ ] Record actual integrated commits and main HEAD; secret-scan and commit reconciliation fixes.
+- [ ] Treat the reviewed LLM range as one atomic integration changeset.
+      Cherry-pick in dependency order and resolve shared
+      registry/migration/runtime files semantically against the already
+      integrated Voice state; never accept an entire side.
+- [ ] Search callers/imports/registries after replacement. Require no old live
+      implementation or orphan reference before removing a duplicate.
+- [ ] Run the affected LLM, registry and one-head verification required by the
+      Operating Contract after both load checks. Do not run a separate L3 after
+      each commit.
+- [ ] Record actual integrated commits and main HEAD; secret-scan and commit
+      reconciliation fixes before candidate freeze.
 
 ### Task 3: Certify the combined canonical source
 
 **Files:**
 - Modify: `docs/LTT_CMC/STATE.md`
 - Modify: `docs/KE_HOACH_TRIEN_KHAI.md`
-- Modify: `docs/NHAT_KY.md`
-- Create: `docs/LTT_CMC/FINAL_REPORT.md`
+- Prepare: `docs/LTT_CMC/FINAL_REPORT.md`
+- Modify: `.github/workflows/gate-quick.yml`
+- Modify: `docs/QUY_TRINH_WORKTREE.md`
+- Modify: `docs/16_CAP_NHAT_VA_DEPLOY.md`
+- Modify: `CLAUDE.md`
+- Modify only when needed to keep the startup hard gate consistent: `AGENTS.md`
+- Modify: `tests/test_974_cmc_rule_authority.py`
 
 **Interfaces:**
 - Produces: `CANONICAL_CERTIFIED` evidence on a clean, unchanged tree.
 - Consumes: combined main from Tasks 1–2.
 
 - [ ] Verify one Alembic head, unique registry identities, model-profile consistency and frontend source hash.
-- [ ] If frontend/test source changed, build release as the final file-generating action before L3.
+- [ ] Normalize the future lifecycle in the existing worktree authority:
+      `main -> task branch -> temporary worktree -> freeze -> handoff ->
+      canonical integration -> certification -> retire worktree/branch`.
+- [ ] Keep pre-commit checks distinct from end-of-session evidence: focused
+      verification and secret scan before a commit; the required gate and a
+      clean/full-HEAD handoff before a session claims completion.
+- [ ] Make `CLAUDE.md`/`AGENTS.md` point to the worktree and Operating Contract
+      authorities without copying a second cadence. Reduce active CI targets to
+      `[main]` only when this candidate is ready to become remote authority.
+- [ ] If frontend/test source changed, build release as the final file-generating action before candidate freeze.
+- [ ] Commit every tracked executable/configuration/rule change. Prepare the
+      static final report with status `PENDING_FINAL_L3`, then require a clean
+      tree; do not edit the candidate while L3 runs.
 - [ ] Run both load checks; wait for an acceptable window.
 - [ ] Run `python tools\scan_source_secrets.py` and exactly one `python tools\gate.py`; require zero findings and L3 PASS.
-- [ ] Write exact command/results, final full SHA, skipped environment checks and rollback boundary to `FINAL_REPORT.md` and journal; never call a skip a pass.
-- [ ] Mark integration/certification plan items complete, secret-scan and commit the evidence.
+- [ ] Treat the gated commit as `SOURCE_CERTIFIED_SHA`; preserve the exact
+      command/result/report path, skipped environment checks and rollback
+      boundary for the single closure commit in Task 4. Never call a skip a
+      pass and do not change tracked source/configuration after this point.
 
 ### Task 4: Move repository authority to `main`
 
 **Files:**
-- Modify: `.github/workflows/gate-quick.yml`
-- Modify only active references: `docs/QUY_TRINH_WORKTREE.md`, `docs/16_CAP_NHAT_VA_DEPLOY.md`, `CLAUDE.md`
 - Modify: `docs/LTT_CMC/FINAL_REPORT.md`
+- Modify: `docs/LTT_CMC/STATE.md`
+- Modify: `docs/KE_HOACH_TRIEN_KHAI.md`
+- Modify: `docs/NHAT_KY.md`
 
 **Interfaces:**
 - Produces: remote default/protected branch `main`; no new work targets old branches.
 - Consumes: `CANONICAL_CERTIFIED` main SHA.
 
-- [ ] Push `main` normally and verify remote SHA equals local SHA.
+- [ ] Push `SOURCE_CERTIFIED_SHA` on `main` normally and verify remote SHA
+      equals the local certified source SHA.
 - [ ] Change the private GitHub repository default branch to `main` using `gh repo edit giaitritruyenthongltt-spec/LTTSTUDIOSAPP --default-branch main`, or the authenticated repository UI if GitHub CLI is unavailable.
 - [ ] Move branch-protection/ruleset targets to `main`; verify PR base defaults to `main`.
-- [ ] Reduce CI PR targets from `[main, admin-mvp-v3, master]` to `[main]`; run the focused authority test and L1 after load checks.
-- [ ] Commit/push the transition and verify a fresh remote query reports default HEAD at the certified `main` SHA.
+- [ ] Confirm CI/startup authority files were already certified in Task 3; do
+      not create a post-certification executable/configuration diff here.
+- [ ] Write L3 and remote-authority evidence to the report/journal/state/plan
+      in one documentation-only closure commit. Prove
+      `SOURCE_CERTIFIED_SHA..HEAD` changes only those allowed documents;
+      secret-scan and run the documentation evidence level required by the
+      Operating Contract instead of paying for a second L3 when the
+      executable/configuration tree is byte-identical.
+- [ ] Push the documentation-only closure and verify a fresh remote query
+      reports default branch `main`; separately record `SOURCE_CERTIFIED_SHA`
+      and the closure HEAD so they are not falsely described as one commit.
 
 ### Task 5: Present and approve the destructive cleanup ledger
 
@@ -100,7 +193,11 @@
 - [ ] List every linked worktree with absolute resolved path, branch, HEAD, status and integration evidence.
 - [ ] List every local/remote branch, CMC rescue ref, temporary bundle/patch/archive and Claude session state with exact target and disposition.
 - [ ] Prove every deletion target lies within its intended Git common directory, repository workspace, configured temporary backup directory or identified Claude session directory.
-- [ ] Present the completed ledger and request separate explicit destructive approval. Stop here until approval; prior blanket permission is not substituted for this checkpoint.
+- [ ] Present the completed ledger and request separate explicit destructive approval.
+- [ ] **MANDATORY USER-REQUESTED STOP:** stop here even if earlier messages
+      granted full permission or approved cleanup in principle. Do not remove a
+      worktree/branch/ref/session until the owner has seen this fresh literal
+      ledger and explicitly continues.
 
 ### Task 6: Execute only the approved cleanup ledger
 
