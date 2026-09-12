@@ -380,3 +380,67 @@ LTT-3.5 ở cấu hình này: **76,21 tok/s** (dải 74,1–84,8).
 5. Đính chính một ghi chép sai của tôi: `--chat-template-kwargs '{"enable_thinking":false}'`
    trượt **không phải vì cờ hỏng** mà vì tôi dùng sai công cụ — llama.cpp có
    `-rea / --reasoning [on|off|auto]` đúng nghĩa, và nó nạp được (chính là phương án E).
+
+---
+
+## ✅ L-17 — `llama-swap.yaml` **không** deploy một mình: nó đi cùng Task 5.4 (2026-09-12)
+
+Task 3.3 Step 2 ghi *"deploy máy B ngay sau Step 1"*. Đọc lại sau khi hồ sơ đã viết
+xong: **deploy một mình thì mỗi job ảnh sẽ giết luôn LTT-3.5 trên card nó không hề
+tranh.** Đây là quyết định hoãn một bước deploy, kèm cơ chế cụ thể.
+
+### Cơ chế, không phải lo xa
+
+Hộ dùng chung card khai đường nhường ở `render_gateway/nhuong_card.py:302`:
+
+```
+LTT_HO_DUNG_CARD=llm=http://127.0.0.1:8280/unload;video=
+```
+
+`8280` là cổng của **llama-swap**, và đường ấy **không mang tên model**. Một lệnh
+không có tham số đối tượng thì không thể nhắm một trong hai model — nên nó nhả thứ
+đang chạy, và từ nay "thứ đang chạy" là **hai** tiến trình trên **hai** card.
+
+⚠️ Mức chắc chắn: *"`/unload` không mang tên model"* là **đo được** (chuỗi cấu hình
+   ở trên, và dòng log thật `GET http://127.0.0.1:8280/unload 200` trong
+   `00_CURRENT_BASELINE.md:85`). *"Nó nhả cả hai"* là **[INFERRED]** từ hình dạng
+   URL — hôm nay không phân biệt được vì chỉ có một model để nhả. ⇒ Lần deploy phải
+   **đo lại bằng `/running` sau một lượt `/unload`**, chứ không tin dòng này.
+
+Trước hôm nay điều đó vô hại: hồ sơ cũ chỉ có một model, và model ấy ở đúng trên
+3090 mà job ảnh đang xin. Từ hồ sơ hai model:
+
+| | trước | sau khi deploy yaml một mình |
+|---|---|---|
+| job ảnh xin 3090 | `/unload` → nhả LTT-3.8 (đúng thứ cần nhả) | `/unload` → nhả **cả** LTT-3.8 **và** LTT-3.5 |
+| LTT-3.5 (5060 Ti) | không liên quan | bị giết, dù card của nó không ai tranh |
+| lượt LLM kế tiếp | nạp lại 15,23 s | nạp lại 15,23 s **và** 10,12 s (§G5) |
+
+Lưu lượng thật 28 ngày: **1.075** job `anhnoibo.generate` (~38/ngày). Nên đây không
+phải một khả năng lý thuyết — nó là ~38 lần mỗi ngày một model bị giết vô cớ, và
+`unload` thủ công **không chờ** lượt đang chạy (`fifo.go:222-270`) nên lượt đang
+sinh chữ trên 3.5 cũng chết theo.
+
+### Vì sao KHÔNG sửa bằng cách hoãn `ttl: 0`/`preload`
+
+Đó là phản xạ đầu của tôi và nó sai: `ttl: 0` chỉ **tắt đồng hồ nhả theo nhàn rỗi**.
+Nó không phải thứ gây ra chuyện trên — `/unload` toàn cục mới là. Hạ `ttl` về 300 thì
+job ảnh **vẫn** giết cả hai model, chỉ thêm việc hai model tự nhả lẫn nhau lúc rảnh.
+
+### Chốt
+
+1. ⛔ **Không** chạy Task 3.3 Step 2 (scp yaml + `Restart-Service LTTLlamaSwap`) cho
+   tới khi **Task 5.4** thay `LTT_HO_DUNG_CARD` bằng lệnh residency **theo UUID/model**
+   và gỡ hai trọng tài cũ. Hai bước ấy deploy **trong một lần**.
+2. **R21 không bị vi phạm** — R21 nói *thứ tự trong một lần deploy* (yaml → gateway →
+   máy A), không nói "yaml phải lên ngay hôm nay". Hôm nay **chưa có gì** được deploy,
+   nên chưa có lệch nào giữa hai máy; khi deploy, thứ tự R21 vẫn giữ nguyên.
+3. Kèm theo, ở lần deploy đó: **gỡ `qwen38-vision` khỏi `LTT_LLM_MODELS` của máy B**
+   (báo cáo 3.3 §1). `catalog.py` còn khai `ModelSpec(ten="qwen38-vision")` cho tới
+   Task 4.2; sau khi yaml lên, đó là một model gateway quảng cáo mà llama-swap **không
+   còn khởi động được**, và lớp chắn duy nhất là `LTT_LLM_MODELS` fail-closed.
+4. ⭐ Bài học về hình dạng, đáng ghi vì nó tổng quát: **một lệnh không mang tên đối
+   tượng thì nó đúng chỉ khi trên hệ thống có đúng một đối tượng.** `/unload` không
+   mang tên model; nó "đúng" suốt một pha vì tình cờ chỉ có một model. Thêm model thứ
+   hai không làm nó báo lỗi — nó vẫn thành công, chỉ là làm nhiều hơn thứ ai cũng
+   tưởng. Cùng khuôn với `_resource_of` (multijob 2.3) và `model_cho` (2.3 còn sót).
