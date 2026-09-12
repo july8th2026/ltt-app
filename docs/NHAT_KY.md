@@ -16,6 +16,70 @@
 
 
 
+## 2026-09-12 — LTT-CMC Phase 1: `CMC_SYNC_BARRIER_READY`
+
+Đã dựng một lịch sử chuẩn trên `main`, kiểm kê/deduplicate lịch sử hoàn tất,
+chốt normalization baseline và ghim immutable tag
+`cmc-base-20260911 = 09b219a371e1261f0f0eef0e316c1ca42754cb78`.
+
+### Checkpoint đã commit
+
+- `3ea28898`: Q123/H45/STATE và topology contract.
+- `df36c1c2`, `edec550d`: inventory tool/test và snapshot 36 branch, 25
+  reflog-only, 13 worktree.
+- `3a6da723`: `main` + Operating Contract thành live authority.
+- `3d361567`: xóa hai bản merge tạm, ghi bốn nhóm duplicate còn giữ có lý do.
+- `a87c5dfd`: reconciliation matrix đầy đủ; 0 `RECONCILE`, 0 rescue ref.
+- `28f6a089`: normalization baseline — 20 AppManifest, 15 ToolSpec, 40 job type, 98
+  bảng, một Alembic head trước Voice và bốn frontend hash khớp.
+
+### Sự kiện Voice xảy ra ngoài thứ tự CMC
+
+Trong lúc CMC đang chứng nhận SHA `28f6a089`, phiên Voice tự hòa `main` vào RC,
+fast-forward RC vào `main`, deploy riêng và hoàn tất Tầng 2. CMC không sửa,
+stash/reset hay cherry-pick worktree Voice. Sau khi Voice kết thúc, branch
+`claude/ltt-voice-reconciliation-165a40`, `main` và CMC tag cùng trỏ
+`09b219a3`; vì vậy handoff Voice là **no-op**, không phát lại lịch sử.
+
+Ba lượt gate được phân biệt rõ:
+
+1. `test-results/gates/20260911T184948Z-26748.json`: **PASS 32/32** trên
+   `28f6a089`, 934,0 giây, cây không đổi; hợp lệ cho SHA đó nhưng không dùng làm
+   baseline cuối vì `main` đã tiến tới Voice.
+2. `test-results/gates/20260911T234218Z-20304.json`: các bước **33/33 xanh**
+   nhưng **KHÔNG dùng làm bằng chứng** vì `tests/browser/ltt_voice_rc1.js` đổi
+   giữa lượt.
+3. `test-results/gates/20260911T235957Z-25548.json`: **PASS 33/33** trên đúng
+   `09b219a371e1261f0f0eef0e316c1ca42754cb78`, 950,7 giây,
+   `cay_da_doi_giua_chung=false`. Backend 802,0 giây; bất biến đa tiến trình
+   141,1 giây; bốn frontend, Voice QA, migration PostgreSQL và M-1 đều PASS.
+
+Mỗi lượt nặng đều kiểm `tools/tai_may.py` và `cua_so_yen.py trang-thai`. Khi
+gate khác giữ khóa, CMC chờ; lượt cuối bắt đầu ở 0,8/20 lõi bận (`RANH`). Không
+dùng `--khong-khoa`; một lượt đã xếp hàng 2,1 phút với `--cho 60` thay vì chèn.
+
+### Bằng chứng khác
+
+- H45.3:
+  `python -m pytest tests/test_103_autosub_projects.py::test_platform_migrations_have_a_single_head tests/test_223_nexus_devices.py::test_khong_co_hai_migration_trung_revision_id tests/test_223_nexus_devices.py::test_do_thi_migration_chi_co_MOT_head tests/test_60_app_registry.py tests/test_148_frontend_bundle.py -q`
+  → **48 passed**, 1 warning deprecation, 3,28 giây.
+- Secret scan cuối trước L3: **3.281 tệp, 784.349 dòng, 0 finding, PASS**.
+- Frontend source không đổi so với `34b4626e`: `NOT_NEEDED`, không rebuild.
+- LTT-CMC không deploy production. Việc deploy Voice là hành động của phiên
+  Voice và được ghi riêng trong `docs/LTT_VOICE/HOP_NHAT/`.
+
+### Sync barrier và việc tiếp theo
+
+`docs/LTT_CMC/CMC_SYNC_BARRIER.md`, `HANDOFF_VOICE.md` và
+`HANDOFF_LLM_DUAL.md` chứa giá trị thật. LLM dual phải bắt đầu integration
+branch từ tag, không merge `main`, không apply patch archive đã lệch current
+WIP và phải giữ D04 (sync wait tối đa 60 giây sau idempotency commit).
+
+H45.6 còn mở. Chưa xóa branch/worktree/ref/archive, chưa đổi remote default
+branch và chưa tích hợp LLM.
+
+---
+
 ## 2026-09-12 — DEPLOY LTT Voice RC1: `e2676aaa` lên production (Tầng 2 **chưa** `RELEASED`)
 
 `EXITCODE=0` · nghiệm thu **0/0/0** trên **922 tệp** (trong đó **266 tệp không
