@@ -32,12 +32,17 @@ Bản khai của `ltt_llm` — model ngôn ngữ chạy trên máy nhà, bán ra
    **96.256** (`TOKEN_VAO_TRAN`), và đã là 96.256 từ đợt dọn tham số 30/08.
    Đừng đọc con số ở đây — đọc `ngan_sach.py`, hoặc hỏi máy B:
 
-       tran.input_tokens tu GET /health cua cong may B  ->  169984
+       tran.input_tokens tu GET /health cua cong may B  ->  186368
 
-   Số đúng tại thời điểm viết:
+   Số đúng tại thời điểm viết (dual-model 2.6, đo `10_BENCHMARK_P3.md`):
 
-     * engine `qwen38-api`     `-c 131072`, trần vào 96.256, **công bố 89K**
-     * engine `qwen35-api`     hồ sơ 5060 Ti — số ĐO do Task 2.6 chốt
+     * engine `qwen38-api`     `-c 221184`, trần vào 186.368, **công bố 171K**
+     * engine `qwen35-api`     `-c 262144`, trần vào 227.328, **công bố 209K**
+
+   ⚠️ Máy B **chưa** chạy hai hồ sơ ấy: `llama-swap.yaml` còn `-c 204800` cho
+      tới Task 3.3, nên `/health` của nó hôm nay vẫn trả số cũ. Hai phép kiểm
+      đối chiếu yaml trong `test_334`/`test_1201` đang mang `xfail(strict=True,
+      reason="cho Task 3.3")` đúng vì cửa sổ thời gian này.
 
    ⛔ Bài học còn nguyên giá trị sau khi hồ sơ vision bị gỡ (D02, 11/09): cửa sổ
       *engine* KHÔNG phải thứ khách nhét vào được — phải chừa chỗ cho câu trả

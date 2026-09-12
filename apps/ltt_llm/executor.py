@@ -35,9 +35,22 @@ class _Executor:
     def sync_output_cap(self, token_input, budget_seconds):
         return features.tran_token_ra_dong_bo(token_input, budget_seconds)
 
-    def context_output_cap(self, token_input):
+    def context_output_cap(self, token_input, alias=None):
+        """Trần token RA còn lại trong ngữ cảnh — **theo model** khi biết model.
+
+        ⛔ `alias=None` KHÔNG rơi về model mặc định: nó rơi về **cửa sổ hẹp
+           nhất** trong các model đang bán (`ngan_sach.CUA_SO_HEP_NHAT`). Bên gọi
+           không nêu model là bên gọi không biết mình ở model nào; kẹp rộng hơn
+           cửa sổ thật của model đang chạy là để model tự cắt ngữ cảnh — hỏng
+           không sạch, và đó đúng là lớp lỗi F-02.
+
+        ⭐ Nhận **bí danh công khai** (`ltt-3.8`), không phải id nội bộ: id nội bộ
+           không bao giờ được rời máy A (INV-015), nên bên gọi ở nền tảng chỉ
+           cầm bí danh. Bí danh lạ ⇒ `KeyError`, không đoán.
+        """
         from apps.ltt_llm.manifest import tran_theo_ngu_canh
-        return tran_theo_ngu_canh(token_input)
+        model_id = None if alias is None else features.ALIAS_SANG_ID[alias]
+        return tran_theo_ngu_canh(token_input, model_id)
 
     def input_cap(self, alias):
         """Trần token VÀO của một alias (theo model: vision nhỏ hơn text).
