@@ -1,0 +1,16 @@
+{"nhan":"ltt-3.8","giay_nap_am":16.28,"bai":"t_nap_llm"}
+{"nhan": "ltt-3.8", "bai": "token_moi_anh", "vao_khong_anh": 17, "vao_co_anh": 787, "token_moi_anh": 770, "giay_khong_anh": 0.689, "giay_co_anh": 1.55}
+{"nhan": "ltt-3.8", "bai": "prefill", "tu_muc_tieu": 400, "vram_dinh_mib": 24217, "shared_dinh_mib": 608.0, "power_w_tb": 341.6, "wall": 2.0, "token_vao": 782, "token_ra": 64, "prompt_tok_s": 976.5466463365141, "predicted_tok_s": 58.65534028942221}
+{"nhan": "ltt-3.8", "bai": "prefill", "tu_muc_tieu": 4000, "vram_dinh_mib": 24227, "shared_dinh_mib": 608.0, "power_w_tb": 359.4, "wall": 6.957, "token_vao": 6707, "token_ra": 64, "prompt_tok_s": 1239.0227699760787, "predicted_tok_s": 46.51526808299505}
+{"nhan": "ltt-3.8", "bai": "prefill", "tu_muc_tieu": 20000, "vram_dinh_mib": 24227, "shared_dinh_mib": 608.0, "power_w_tb": 359.0, "wall": 30.465, "token_vao": 32577, "token_ra": 64, "prompt_tok_s": 1132.025708176303, "predicted_tok_s": 46.734622269270055}
+{"nhan": "ltt-3.8", "bai": "prefill", "tu_muc_tieu": 60000, "vram_dinh_mib": 24240, "shared_dinh_mib": 608.0, "power_w_tb": 348.2, "wall": 119.108, "token_vao": 98077, "token_ra": 64, "prompt_tok_s": 842.0633322256875, "predicted_tok_s": 37.28737319333799}
+{"nhan": "ltt-3.8", "bai": "prefill", "tu_muc_tieu": 100000, "vram_dinh_mib": 24231, "shared_dinh_mib": 608.0, "power_w_tb": 313.4, "wall": 256.533, "token_vao": 163189, "token_ra": 64, "prompt_tok_s": 645.9850252715332, "predicted_tok_s": 32.83137804237437}
+{"nhan": "ltt-3.8", "bai": "dien_c1", "token_ra": 600, "tok_s": 55.996045314355634, "power_w_tb": 314.0, "vram_dinh_mib": 24231, "shared_dinh_mib": 608.0, "wall_s": 15.191}
+{"nhan":"ltt-3.5","giay_nap_am":12.12,"bai":"t_nap_llm"}
+{"nhan": "ltt-3.5", "bai": "token_moi_anh", "vao_khong_anh": 17, "vao_co_anh": 787, "token_moi_anh": 770, "giay_khong_anh": 0.426, "giay_co_anh": 1.327}
+{"nhan": "ltt-3.5", "bai": "prefill", "tu_muc_tieu": 400, "vram_dinh_mib": 15549, "shared_dinh_mib": 672.0, "power_w_tb": 126.5, "wall": 1.42, "token_vao": 786, "token_ra": 64, "prompt_tok_s": 1765.1378536732161, "predicted_tok_s": 69.10508909620417}
+{"nhan": "ltt-3.5", "bai": "prefill", "tu_muc_tieu": 4000, "vram_dinh_mib": 15553, "shared_dinh_mib": 672.0, "power_w_tb": 145.5, "wall": 3.961, "token_vao": 6656, "token_ra": 64, "prompt_tok_s": 2237.8314552494226, "predicted_tok_s": 70.44442605683412}
+{"nhan": "ltt-3.5", "bai": "prefill", "tu_muc_tieu": 20000, "vram_dinh_mib": 15553, "shared_dinh_mib": 672.0, "power_w_tb": 152.7, "wall": 17.183, "token_vao": 32704, "token_ra": 64, "prompt_tok_s": 2058.9454993273357, "predicted_tok_s": 57.95666865068596}
+{"nhan": "ltt-3.5", "bai": "prefill", "tu_muc_tieu": 60000, "vram_dinh_mib": 15553, "shared_dinh_mib": 672.0, "power_w_tb": 166.7, "wall": 62.66, "token_vao": 98003, "token_ra": 64, "prompt_tok_s": 1630.2556064395985, "predicted_tok_s": 36.33658055473846}
+{"nhan": "ltt-3.5", "bai": "prefill", "tu_muc_tieu": 100000, "vram_dinh_mib": 15553, "shared_dinh_mib": 672.0, "power_w_tb": 164.0, "wall": 124.577, "token_vao": 163140, "token_ra": 64, "prompt_tok_s": 1350.2448479580353, "predicted_tok_s": 33.52080151960967}
+{"nhan": "ltt-3.5", "bai": "dien_c1", "token_ra": 600, "tok_s": 58.11800322064941, "power_w_tb": 118.7, "vram_dinh_mib": 15553, "shared_dinh_mib": 672.0, "wall_s": 13.923}

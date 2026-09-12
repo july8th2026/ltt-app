@@ -3882,3 +3882,84 @@ Nguồn thiết kế:
 **Ngoài phạm vi:** deploy production. **Gate:** tuân đúng
 `docs/00_LTT_OPERATING_CONTRACT.md`; trước lệnh nặng phải đo cả tải máy và cửa
 sổ khóa theo `docs/QUY_TAC_CHAY_LENH_NANG.md`.
+## H45 — LTT LLM Dual-Model: hai model nhà trên hai card + trọng tài 3090 (2026-09-11 → )
+
+Nguồn yêu cầu: chương trình **RECOVERY + MERGE** — thu hồi chương trình Multi-Job
+còn dở rồi hợp nhất với kiến trúc hai model. Quyết định: **Q123** (và D01–D09,
+L-12…L-18 ở `docs/ltt_llm_dual/DECISION_LOG.md`). Hồ sơ canonical:
+`docs/ltt_llm_dual/`, plan ở `docs/superpowers/plans/2026-09-11-ltt-llm-dual-model.md`.
+
+⛔ **TRẠNG THÁI THẬT, đừng đọc số phần trăm thành "gần xong":** phần **mã** của
+H45 nay **xong hết** (đo lại 12/09: bốn ô từng để trống đều đã có mã + bánh cóc),
+**deploy bằng KHÔNG**. Chưa một phần nào của H45 chạy trên máy A hay máy B. Đó là
+**chủ ý** (R21 + L-17 + R27 buộc gom thành một lần deploy đúng thứ tự), không phải
+chậm trễ — nhưng nghĩa là mọi con số "đã xong" dưới đây là *đã viết và đã kiểm*,
+chưa phải *đang phục vụ khách*.
+
+⭐ **Chương trình Multi-Job không bị bỏ, nó bị hấp thụ.** 14 task của nó
+(`docs/multijob/08_IMPLEMENTATION_PLAN.md`) nay nằm trong H45: T1→Pha 0, T2–T8→Pha 1,
+T9→Task 1.5, T10→Task 4.1/4.2, **T11→Task 4.3**, **T12→Task 6.3**, T14→Task 7.1.
+Riêng **T13 bị thay có chủ ý**: nó chốt "một hồ sơ 4 slot"; đo lại (§G1b) thấy 4 slot
+ở ngữ cảnh đã chốt **tràn sang RAM chủ**, nên L-14 hạ còn 3 và D02 cắt hẳn hồ sơ
+vision. Kế hoạch của họ viết **trước** phép đo; ta giữ ý định, đổi con số.
+
+- [x] H45.0 An toàn máy B — ghim GPU theo **UUID** (không theo index), dọn VRAM nền
+      khỏi 3090 (nguyên nhân là phiên RDP dựng hình trên card đó — L-12), mốc hồi quy
+      b10883. Mốc C1 chính thức đo **sau** khi dọn.
+- [x] H45.1 Tích hợp Multi-Job lên trunk — đổi số test 950–956 → 1200–1206 (dải 950
+      đã bị Workflow V2 chiếm), migration nối vào **một head**, xanh lại di sản,
+      hoàn tất Task 9 theo D04 (1 vòng sửa sau review).
+- [x] H45.2 Hợp đồng hai model — `AdmissionModel` + `admission_cho(model)`; mọi cửa
+      đọc suất **theo model**; cắt ba tên cũ (D02); model nội bộ theo **bản khai của
+      app** (D09); **giá theo model** (D07); số đo vào `ngan_sach.py`.
+- [x] H45.3 Engine máy B — tải Qwen3.5-9B + mmproj; **cổng đo trước khi chốt cấu
+      hình** (G1–G5); `llama-swap.yaml` hai hồ sơ, hai card, `groups swap:false`,
+      `ttl: 0` + preload. ⛔ **Step 2 (deploy) HOÃN theo L-17** — yaml đi cùng H45.5.4.
+- [x] H45.4.1/4.2 Cổng theo model — đo theo UUID, sổ slot/token/whale **theo model**,
+      sàn VRAM 5060 Ti (L-18), `/health` theo card, `deploy.ps1` thôi ép
+      `MAX_DONG_THOI=1`.
+- [x] H45.4.3 Log từng lượt + **hủy cứng job** (= T10 nửa hủy + toàn bộ T11). Đo
+      trước khi làm: **không** có `/v1/huy`, **không** có `499`, **không** có
+      `HuyError` ở bất cứ đâu ⇒ hôm nay không gì hủy được một lượt LLM đang chạy.
+      **Xong**: `MA_HUY=499` + `HuyError` ở `llm/cong_vlm.py`, sổ lượt
+      `llm_gateway/so_luot.py`, `test_1222`.
+- [x] H45.5.1/5.2 Bảng `gpu_residency` + **máy trạng thái thuần** — bảy trạng thái,
+      bảng chuyển hợp lệ, và luật sống ở **những chuyển nó KHÔNG chứa** (bốn chuyển
+      bị cấm chính là bốn cách giết việc đang chạy).
+- [x] H45.5.3 Luật 0 `CHO_RESIDENCY` trong admission — đọc dòng residency **trong
+      advisory lock** của resource (đọc ngoài khoá là TOCTOU: trọng tài lật trạng
+      thái giữa lúc đọc và lúc cấp).
+- [x] H45.5.4 Lệnh residency ở máy B theo **tên model** + gỡ hai trọng tài cũ.
+      ⚠️ `/free` của ComfyUI **không** nhả ngữ cảnh CUDA (R22) ⇒ lệnh trả card phải
+      **dừng hẳn dịch vụ LTTComfyUI**. **Xong**: `llm_gateway/residency.py`
+      (`POST /api/models/unload/<model>`), `render_gateway` `/v1/nha_comfy`,
+      `test_1218`/`test_1231`; `LTT_HO_DUNG_CARD`/`LTT_TRA_CARD_GIAY` không còn
+      trong mã sống. ⛔ Bước **deploy** vẫn nằm ở H45.8.
+- [x] H45.5.5 Nối trọng tài + khai tài nguyên ảnh. ⛔ **R27: 5.3 và 5.5 là MỘT đơn
+      vị deploy** — manifest đã khai `residency_group`, luật 0 fail-closed, và
+      migration không gieo dòng nào. **Xong**: `job_runner` gọi `buoc_dinh_ky()`
+      ở đầu vòng bảo trì và xếp job residency vào lớp `NEN`; `test_1232` chốt
+      hai tầng (đếm hành vi + AST "gọi vô điều kiện ở cấp trên cùng").
+- [x] H45.6.1/6.2 `render_gateway` đo GPU theo UUID (sửa **bốn** khuyết tật, không
+      một); `test_637` canh `--load-mode none|dio` — cờ **thay thế** `--no-mmap` mà
+      llama.cpp đã gỡ ở b10875, nên bộ dò cũ đang canh một cánh cửa đã bị tháo.
+- [x] H45.6.3 Sổ lượt + metrics + báo động (= T12). ⚠️ "Shared Usage > 0" **không**
+      phải một báo động hợp lệ: sàn WDDM khác 0 kể cả ở cấu hình đang sống, và nó
+      **co giãn theo `-ub`**. **Xong**: `llm_gateway/dem.py` + `nhip_tim.py`,
+      hai khối mới ở `/ops/jobs-metrics`, `test_1227`/`test_1228`.
+- [ ] H45.7.1 Q mới + runbook + nhật ký. Q123 ✔; `RUNBOOK.md` ✔ (§2.2 nay **năm**
+      việc tay); L-19 ✔; nhật ký ✔; còn **gate đầy đủ**.
+- [x] H45.9 **Bề mặt công khai + ba công cụ cắm phục vụ CẢ HAI model** (L-19).
+      ⛔ Không phải việc dọn: `ltt-3.5` **không gọi được từ Claude Desktop ở bất kỳ
+      giá nào** (một tuyến tương thích duy nhất, giải về `ltt-3.8`), bộ cài độc lập
+      `sdk/` **in sai** `inferenceModels` (tên sản phẩm thay vì tên tuyến ⇒ picker
+      rỗng, nút gửi chết, không báo gì), và `them_key_ltt_llm.py` mặc định cấp khoá
+      cho **hai tên đã cắt**. Không phép kiểm nào đỏ, vì mỗi bề mặt tự nhất quán với
+      chính nó. Chốt lại bằng `tests/test_1233` (23 ca, bảy cơ chế, mỗi ca có đối
+      chứng — cả bảy **đỏ** trên bản HEAD).
+- [ ] H45.8 Deploy MỘT LẦN, đúng thứ tự: `llama-swap.yaml` → hai cổng máy B → máy A.
+      **Năm** việc phải làm **tay** (không script nào làm hộ) ghi ở `RUNBOOK.md` §2.2
+      — trong đó việc thứ hai là **sổ khoá production**: khoá `ltt_llm` đang khai
+      `['qwen38-api','qwen38-vision']`, thiếu `qwen35-api`, nên **mọi lượt LTT-3.5
+      sẽ hỏng trong im lặng** (`ThieuKeyError` bị đọc thành "provider không phục vụ
+      được"). Sổ khoá là dữ liệu vận hành — không test nào chạm tới được.

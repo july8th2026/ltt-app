@@ -17,6 +17,18 @@ import uuid
 
 import pytest
 
+#: 🔴 BÍ DANH CỦA TOOL THỬ PHẢI LÀ MỘT MODEL **CÓ GIÁ** (D07, dual-model 2.5).
+#:    Trước 2.5 chỗ này là chuỗi bịa `_ALIAS_THU` và nó chạy được **chỉ vì**
+#:    `gia_token` bỏ qua model. Từ D07 giá đi theo model, nên mọi tool đi qua
+#:    `runtime_noi_bo/luong.py` — tức qua `thanh_toan` — phải khai một model mà
+#:    bảng giá biết. Đây là ràng buộc thật của tầng đó, không phải phiền toái
+#:    của phép kiểm: một model không có giá mà vẫn giữ được tiền nghĩa là tiền
+#:    đang được tính bằng bảng giá của một model **khác**.
+#:
+#: ⛔ Lấy từ `gia_token`, đừng gõ thẳng `"ltt-3.8"`: ngày đổi model mặc định thì
+#:    một hằng số gõ tay sẽ làm sáu tệp này hỏng lại cùng lúc.
+from platform_core.llm.gia_token import MODEL_GIA_MAC_DINH as _ALIAS_THU
+
 NL = bytes([10])
 
 
@@ -110,14 +122,14 @@ def _tool_thu(monkeypatch, khoi=None, ban=False):
 
     tool = reg.ToolSpec(name="text.chat", job_type="t623.j", description="d",
                         params_schema={"messages": {"type": "json[]"},
-                                       "model": {"type": "enum", "values": ["thu_alias"],
-                                                 "default": "thu_alias"}},
+                                       "model": {"type": "enum", "values": [_ALIAS_THU],
+                                                 "default": _ALIAS_THU}},
                         returns={"content": "text"},
                         admission_resource="thu_gpu623", admission_slots=1,
                         sync_executor="tests.test_600_runtime_noi_bo_luong:EXECUTOR_GIA",
                         api_exposed=True,
                         api_contract={"description": "chat thu", "scopes": ("jobs:create",),
-                                      "models": {"thu_alias": {"id": "noi-bo-623"}}})
+                                      "models": {_ALIAS_THU: {"id": "noi-bo-623"}}})
     man = reg.AppManifest(slug="t623", display_name="t623", route_prefix="/t623",
                           job_types=("t623.j",), credit_cost=lambda p: 1,
                           surface="runtime", lifecycle="internal", tools=(tool,))
@@ -159,7 +171,7 @@ def _tool_thu(monkeypatch, khoi=None, ban=False):
     return da_goi
 
 
-def _tao(web, h, alias="thu_alias"):
+def _tao(web, h, alias=_ALIAS_THU):
     r = web.post("/chatltt/api/hoi-thoai", json={"model_alias": alias}, headers=h)
     assert r.status_code == 201, r.text
     return r.json()["id"]

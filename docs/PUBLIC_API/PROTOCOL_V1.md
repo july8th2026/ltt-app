@@ -126,6 +126,7 @@ Mỗi mã trả lời đúng một câu hỏi: **thử lại có ích không, v�
 | Code | HTTP | Retry | Reuse Idempotency-Key | What to do |
 |---|---|---|---|---|
 | `invalid_request` | 400 | `never` | no | Read `detail`; it names the field. Fix the request. |
+| `model_not_found` | 400 | `after_fix` | no | That `model` is not served here. Call GET /api/v1/models for the names in service and send one of those. |
 | `quote_expired` | 400 | `after_fix` | no | Quotes live 15 minutes. Request a new quote and submit that. |
 | `quote_invalid` | 400 | `never` | no | The quote does not belong to this account/tool/input. Request one for the exact call you are making. |
 | `unauthorized` | 401 | `never` | no | The key is missing, malformed, unknown, revoked or expired — the API will not say which. Check the key in the developer portal. |

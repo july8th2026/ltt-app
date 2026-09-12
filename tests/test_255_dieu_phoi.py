@@ -141,8 +141,13 @@ def _dat_hanh_vi(monkeypatch, gl, hanh_vi: dict):
     #    ham gia phai biet no dang dong vai AI. Tham so khong noi duoc dieu do
     #    (credential la chuoi chung, base_url giong nhau), nen `GiaLap._chon_key`
     #    ghi lai provider dang duoc thu — xem chu thich o do.
+    # ⚠️ `**_kw` CHỨ KHÔNG LIỆT KÊ THÊM MỘT THAM SỐ. `_goi_openai` nhận thêm
+    #    `ma_luot=` từ Dual-model 4.3 (hủy cứng), và sẽ còn nhận thêm nữa. Bản
+    #    giả ở đây đang đóng vai *"một lời gọi HTTP có xảy ra"*, không phải vai
+    #    *"chữ ký của `_goi_openai` hôm nay"* — ghim chữ ký ở đây là biến mọi lần
+    #    mở rộng thành một phép kiểm đỏ không nói gì về hành vi.
     monkeypatch.setattr(DP, "_goi_openai",
-                        lambda base, cred, than, t: gia(gl.pid_hien_tai)())
+                        lambda base, cred, than, t, **_kw: gia(gl.pid_hien_tai)())
 
 
 TIN = [{"role": "user", "content": "xin chao"}]
@@ -285,7 +290,7 @@ def test_model_theo_provider_gui_dung_ten_cho_tung_ben(monkeypatch):
     thay = {}
 
     monkeypatch.setattr(DP, "_goi_openai",
-                        lambda base, cred, than, t: (
+                        lambda base, cred, than, t, **_kw: (
                             thay.update(openai=than.get("model")),
                             KetQuaChat(noi_dung="x", su_dung=SuDung(dang_tin=True)))[1])
 
@@ -306,7 +311,7 @@ def test_thieu_khai_thi_roi_ve_model_chung(monkeypatch):
     gl = GiaLap().cai(monkeypatch)
     thay = {}
     monkeypatch.setattr(DP, "_goi_openai",
-                        lambda base, cred, than, t: (
+                        lambda base, cred, than, t, **_kw: (
                             thay.update(openai=than.get("model")),
                             KetQuaChat(noi_dung="y", su_dung=SuDung(dang_tin=True)))[1])
     DP.goi(None, messages=TIN, thu_tu_provider=["ltt_llm"], model="chung-chung")
@@ -325,7 +330,7 @@ def test_base_url_cua_khoa_thang_base_url_cua_registry(monkeypatch):
     gl = GiaLap(base_url_khoa="http://tu-khoa:8299").cai(monkeypatch)
     thay = {}
     monkeypatch.setattr(DP, "_goi_openai",
-                        lambda base, cred, than, t: (
+                        lambda base, cred, than, t, **_kw: (
                             thay.update(base=base),
                             KetQuaChat(noi_dung="x", su_dung=SuDung(dang_tin=True)))[1])
     DP.goi(None, messages=TIN, thu_tu_provider=["ltt_llm"])
@@ -337,7 +342,7 @@ def test_khoa_khong_co_base_url_thi_roi_ve_registry(monkeypatch):
     gl = GiaLap(base_url_khoa="").cai(monkeypatch)
     thay = {}
     monkeypatch.setattr(DP, "_goi_openai",
-                        lambda base, cred, than, t: (
+                        lambda base, cred, than, t, **_kw: (
                             thay.update(base=base),
                             KetQuaChat(noi_dung="x", su_dung=SuDung(dang_tin=True)))[1])
     DP.goi(None, messages=TIN, thu_tu_provider=["ltt_llm"])

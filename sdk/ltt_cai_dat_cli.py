@@ -32,9 +32,22 @@ import shutil
 import sys
 import urllib.error
 import urllib.request
+from typing import NamedTuple
 
 MAC_DINH_BASE = "https://app.lttstudios.com"
-MODEL = "ltt_llm"
+MODEL = "ltt-3.8"
+MODEL_35 = "ltt-3.5"
+
+#: Ten TUYEN cho Claude Desktop — khong phai ten san pham.
+#:
+#: 🔴 Claude Desktop loc danh sach model truoc khi ve picker: ten khong chua
+#:    `claude`/`anthropic` thi bi bo. Ban truoc cua tep nay in `ltt-3.8` vao o
+#:    `inferenceModels`, tuc day khach vao dung cai bay: picker rong, **nut gui
+#:    vo hieu, khong mot loi bao nao**. Khong log, khong toast, khong banner.
+#:
+#: ⭐ Bo loc chi doi ten **chua** `claude`; no khong doi mot model Anthropic co
+#:    that. Nen ta qua duoc cong ma khong muon ten san pham cua hang khac.
+MODEL_DESKTOP = "ltt-llm-claude-compat"
 BIEN_KHOA = "LTT_API_KEY"
 
 #: Cua so ngu canh CONG BO cho client.
@@ -51,7 +64,7 @@ BIEN_KHOA = "LTT_API_KEY"
 #:
 #:    Duong di cua con so: 65.000 -> 88.555 (02/09) -> 156.385 (03/09, khi cua
 #:    so engine len 204.800). Moi lan doi deu phai doi CA HAI bo cai.
-CUA_SO_NGU_CANH = 156385
+CUA_SO_NGU_CANH = 171458
 
 #: Tran token RA, khop `ngan_sach.TOKEN_RA_TRAN`.
 TOKEN_RA_TRAN = 32768
@@ -63,7 +76,7 @@ TOKEN_RA_TRAN = 32768
 #:    MOT luot sinh dai nhat (32.768) — client chi kiem nguong GIUA hai luot.
 #:    Voi 0,8 khoang do chi con 25.412, thieu, va production da an mot `413` o
 #:    101.938 token vao dung vi vay.
-NEN_HOI_THOAI = 123617
+NEN_HOI_THOAI = 138690
 
 #: Tran token cho MOT ket qua tool, do vao `truncation_policy` cua catalog.
 #:
@@ -112,11 +125,11 @@ TRAN_KET_QUA_TOOL = TOKEN_RA_TRAN // 2
 #:
 #: ⚠️ Bien nay co san **toi thieu 100.000**. Nguong vision cua ta (55.787) nam
 #:    duoi muc do va bien moi truong thi khong tach duoc theo model — nhung
-#:    `ANTHROPIC_MODEL` la `ltt_llm`, nen con so text moi la con so dung cho
+#:    `ANTHROPIC_MODEL` la `ltt-3.8`, nen con so cua 3.8 moi la con so dung cho
 #:    phien Claude Code.
 CUA_SO_NEN_CLAUDE = NEN_HOI_THOAI
 
-#: Cua so cong bo cua model VISION. `qwen38-vision` nap `-c 131072`.
+#: Cua so cong bo cua MODEL THU HAI (`ltt-3.5`). **Khong dung chung so.**
 #:
 #: ⛔ NO VAN LA MOT CON SO RIENG, du hien gio no tinh co bang con so text CU.
 #:    Ban truoc 01/09 khai 88.555 cho CA HAI model va do la mot loi hua sai
@@ -127,14 +140,59 @@ CUA_SO_NEN_CLAUDE = NEN_HOI_THOAI
 #: 📈 03/09: 28.262 -> 88.555, khi vision len `-c 131072` + KV q4_0. Do that:
 #:    89.868 token vao doc lai dung moc dau-cuoi, VRAM 21.099 MiB (+748 so voi
 #:    ho so 65K cu), va A/B doc anh tren cung mot anh: ca hai ho so tra dung moc.
-CUA_SO_NGU_CANH_VISION = 88555
-#: Nguong nen cua vision, khop `ngan_sach.nen_cua("qwen38-vision")`.
+#: 📈 12/09 (dual-model 2.6): hai con so nay TACH KHOI `ltt-3.8`, va su tach do
+#:    la ket qua cua phep do chu khong phai mot lua chon. Tu 11/09 toi 12/09
+#:    chung tinh co bang nhau vi ca hai model tam dung mot ngu canh engine; do
+#:    xong thi `ltt-3.8` phai ha xuong `-c 221184` (3090 khong du VRAM cho
+#:    262.144 + mmproj + 3 slot — L-14 §G1b) trong khi `ltt-3.5` giu tron
+#:    262.144 tren 5060 Ti (§G3). Ho so vision cu (`qwen38-vision`) da bi go.
+#: ⛔ Nguon chan ly la `apps/ltt_llm/ngan_sach.py`; tep nay CHEP theo, va
+#:    `test_334` buoc hai dau lai nen khong lech duoc trong im lang.
+CUA_SO_NGU_CANH_35 = 209141
+#: Nguong nen cua model thu hai, khop `ngan_sach.nen_cua("qwen35-api")`.
 #:
 #: ⭐ TRUOC 03/09 SO NAY LA **0**, va so 0 do la mot cau tra loi that: cua so
 #:    cong bo cua vision khi ay (28.262) HEP HON mot luot sinh dai nhat (32.768),
 #:    nen khong nguong nen nao giu duoc loi hua va bo cai phai bo han truong do.
 #:    Nang cua so len 131K la thu lam cho no dinh nghia duoc tro lai.
-NEN_HOI_THOAI_VISION = 55787
+NEN_HOI_THOAI_35 = 176373
+
+
+class HoSoModel(NamedTuple):
+    """MOT model, nhu bo cai nay can biet ve no.
+
+    ⚠️ Bon truong PHAI di cung nhau. Roi rac chung ra la cach `ltt-3.5` duoc
+       cam voi cua so cua `ltt-3.8` — mot `413` giua phien, im lang, chi vi mot
+       con so bi bo lai.
+    """
+
+    ten: str
+    tuyen_desktop: str
+    cua_so: int
+    nen: int
+
+
+#: 🔑 HAI MODEL DANG BAN, theo thu tu hien cho khach.
+#:
+#: ⛔ Nguon chan ly van la `apps/ltt_llm/ngan_sach.py`. Tep nay chay tren may
+#:    KHACH, khong co kho ma, nen no CHEP so — va `test_275` doi chieu hai chieu.
+HO_SO_MODEL = {
+    MODEL: HoSoModel(MODEL, MODEL_DESKTOP, CUA_SO_NGU_CANH, NEN_HOI_THOAI),
+    MODEL_35: HoSoModel(MODEL_35, MODEL_DESKTOP + "-35",
+                        CUA_SO_NGU_CANH_35, NEN_HOI_THOAI_35),
+}
+
+TEN_MODEL = tuple(HO_SO_MODEL)
+
+
+def hs_cua(ten) -> HoSoModel:
+    """Ten -> ho so. Ten la hoac rong ve mac dinh, va KHONG nem.
+
+    ⭐ Khong nem vi tep nay chay tren may KHACH: mot traceback o day bien "cam
+       khong duoc" thanh "cong cu hong", va khach khong co cach nao doc tiep.
+    """
+    return HO_SO_MODEL.get((ten or "").strip(), HO_SO_MODEL[MODEL])
+
 
 #: Khoa BAT BUOC trong `[model_providers.ltt]`, kem ly do.
 #:
@@ -195,9 +253,9 @@ def _catalog() -> str:
         return d
 
     return json.dumps(
-        {"models": [mot("ltt_llm", CUA_SO_NGU_CANH, NEN_HOI_THOAI),
-                    mot("ltt_llm_vision", CUA_SO_NGU_CANH_VISION,
-                        NEN_HOI_THOAI_VISION, doc_anh=True)]},
+        {"models": [mot("ltt-3.8", CUA_SO_NGU_CANH, NEN_HOI_THOAI),
+                    mot("ltt-3.5", CUA_SO_NGU_CANH_35,
+                        NEN_HOI_THOAI_35, doc_anh=True)]},
         indent=1)
 
 
@@ -217,13 +275,15 @@ def _sao_luu(p: pathlib.Path) -> None:
 
 # ── Codex ────────────────────────────────────────────────────────────────────
 
-def codex(base: str, goc_codex: pathlib.Path) -> list:
+def codex(base: str, goc_codex: pathlib.Path,
+          hs: HoSoModel | None = None) -> list:
     """Two files, and the split is not optional.
 
     Codex 0.145+ refuses `[profiles.X]` inside config.toml outright:
     "cannot be used while config.toml contains legacy `[profiles.ltt]` config".
     The provider block stays in config.toml; the profile moves to its own file.
     """
+    hs = hs or HO_SO_MODEL[MODEL]
     ra = []
     goc_codex.mkdir(parents=True, exist_ok=True)
 
@@ -262,13 +322,13 @@ def codex(base: str, goc_codex: pathlib.Path) -> list:
         ra.append(f"  = da co {pro}, giu nguyen")
     else:
         pro.write_text(
-            f'model = "{MODEL}"\n'
+            f'model = "{hs.ten}"\n'
             'model_provider = "ltt"\n'
             "# Left at its default the model spends most of max_tokens thinking\n"
             "# before it answers.\n"
             'model_reasoning_effort = "low"\n'
             'model_reasoning_summary = "none"\n'
-            f"model_context_window = {CUA_SO_NGU_CANH}\n"
+            f"model_context_window = {hs.cua_so}\n"
             f"model_catalog_json = '{cat}'\n", encoding="utf-8")
         ra.append(f"  + tao {pro}")
     return ra
@@ -276,7 +336,8 @@ def codex(base: str, goc_codex: pathlib.Path) -> list:
 
 # ── Claude Code CLI ──────────────────────────────────────────────────────────
 
-def claude_code(base: str, goc_claude: pathlib.Path) -> list:
+def claude_code(base: str, goc_claude: pathlib.Path,
+                hs: HoSoModel | None = None) -> list:
     """`~/.claude/settings.json`, merged rather than replaced.
 
     ANTHROPIC_DEFAULT_HAIKU_MODEL is the one everybody forgets: Claude Code uses
@@ -284,6 +345,7 @@ def claude_code(base: str, goc_claude: pathlib.Path) -> list:
     ask for a Claude model this API does not serve, and fail quietly while the
     main session looks fine.
     """
+    hs = hs or HO_SO_MODEL[MODEL]
     goc_claude.mkdir(parents=True, exist_ok=True)
     p = goc_claude / "settings.json"
     goc_json = {}
@@ -296,16 +358,16 @@ def claude_code(base: str, goc_claude: pathlib.Path) -> list:
     env = dict(goc_json.get("env") or {})
     env.update({
         "ANTHROPIC_BASE_URL": f"{_goc(base)}/api",     # KHONG /v1: client tu ghep
-        "ANTHROPIC_MODEL": MODEL,
-        "ANTHROPIC_DEFAULT_HAIKU_MODEL": MODEL,
+        "ANTHROPIC_MODEL": hs.ten,
+        "ANTHROPIC_DEFAULT_HAIKU_MODEL": hs.ten,
         # 🔴 HAI DONG DUOI KHONG PHAI TINH CHINH — THIEU CHUNG LA MOT LOI TIEN,
         #    va chung da thieu o day trong khi ban Windows (`tools/cam_cli.py`)
         #    thi co. Tuc khach macOS/Linux nhan mot ban cai **yeu hon**, va
         #    khong co gi trong tep nay noi ra dieu do.
         #
-        #    Claude Code khong biet `ltt_llm` nen no GIA DINH cua so 200.000 va
+        #    Claude Code khong biet `ltt-3.8` nen no GIA DINH cua so 200.000 va
         #    noi thang ra:
-        #        "ltt_llm" is not a model this version of Claude Code
+        #        "ltt-3.8" is not a model this version of Claude Code
         #        recognizes, so auto-compact will keep this session within
         #        200k tokens (the context window it assumes).
         #    Tran vao that cua ta nho hon nhieu, nen auto-compact khong bao gio
@@ -331,10 +393,11 @@ def claude_code(base: str, goc_claude: pathlib.Path) -> list:
 
 # ── Claude Desktop: khong tu dong duoc ──────────────────────────────────────
 
-def claude_desktop(base: str) -> list:
+def claude_desktop(base: str, hs: HoSoModel | None = None) -> list:
     """Claude Desktop does NOT read ANTHROPIC_BASE_URL. It has its own form, and
     there is no supported file to write, so this prints steps instead of lying
     about having configured it."""
+    hs = hs or HO_SO_MODEL[MODEL]
     return [
         "  i Claude Desktop phai lam bang tay (no khong doc bien moi truong):",
         "      Help -> Troubleshooting -> Enable Developer Mode",
@@ -343,17 +406,22 @@ def claude_desktop(base: str) -> list:
         f"      Gateway base URL    : {_goc(base)}/api",
         "      Gateway API key     : khoa cua ban",
         "      Gateway auth scheme : Bearer",
-        f"      inferenceModels     : {MODEL}",
+        # 🔴 TEN TUYEN, khong phai ten model. Ban truoc in `ltt-3.8` o day
+        #    va do la mot loi that: Desktop loc bo no khoi picker, roi nut
+        #    gui tat han **ma khong bao gi**. Xem `MODEL_DESKTOP`.
+        f"      inferenceModels     : {hs.tuyen_desktop}",
         "      -> Apply locally",
-        "    (inferenceModels BAT BUOC: bo chon model tu dong cua Desktop chi giu",
-        "     nhung id trong giong Claude, nen model nay khong tu hien ra.)",
+        "    (inferenceModels BAT BUOC, va phai la TEN TUYEN o tren chu khong",
+        f"     phai `{hs.ten}`: Desktop chi giu nhung id trong giong Claude,",
+        "     nen ten san pham bi loc bo va nut gui tat han ma khong bao gi.)",
     ]
 
 
 # ── Kiem tra that, khong tin cau hinh ───────────────────────────────────────
 
-def kiem_tra(base: str, key: str) -> int:
+def kiem_tra(base: str, key: str, hs: HoSoModel | None = None) -> int:
     """Ask the server, do not trust the files we just wrote."""
+    hs = hs or HO_SO_MODEL[MODEL]
     url = f"{_goc(base)}/api/v1/models"
     # 🔴 PHAI GUI User-Agent RIENG. Cloudflare chan User-Agent mac dinh cua
     #    urllib (`Python-urllib/3.x`) bang 403 truoc khi request toi may chu ta.
@@ -382,10 +450,10 @@ def kiem_tra(base: str, key: str) -> int:
         return 1
 
     ten = [m.get("name") for m in (goi.get("items") or [])]
-    if MODEL not in ten:
-        print(f"  ! may chu khong liet ke `{MODEL}` (thay: {ten or 'khong co gi'})")
+    if hs.ten not in ten:
+        print(f"  ! may chu khong liet ke `{hs.ten}` (thay: {ten or 'khong co gi'})")
         return 1
-    print(f"  OK may chu nhan khoa, va co `{MODEL}`")
+    print(f"  OK may chu nhan khoa, va co `{hs.ten}`")
     return 0
 
 
@@ -395,6 +463,9 @@ def main(argv=None) -> int:
     ap.add_argument("--key", default=os.environ.get(BIEN_KHOA, ""),
                     help=f"khoa ltt_sk_... (mac dinh: bien {BIEN_KHOA})")
     ap.add_argument("--base-url", default=MAC_DINH_BASE)
+    ap.add_argument("--model", default=MODEL, choices=TEN_MODEL,
+                    help=f"model can cam (mac dinh {MODEL}); hai model co "
+                         "hai cua so ngu canh va hai bang gia")
     ap.add_argument("--kiem-tra", "--check", action="store_true", dest="chi_kiem",
                     help="chi kiem tra, KHONG sua file nao")
     ap.add_argument("--home", default=str(pathlib.Path.home()),
@@ -407,27 +478,28 @@ def main(argv=None) -> int:
         return 2
 
     home = pathlib.Path(a.home)
+    hs = hs_cua(getattr(a, "model", ""))
     print(f"May chu : {_goc(a.base_url)}")
-    print(f"Model   : {MODEL}")
+    print(f"Model   : {hs.ten}  (cua so {hs.cua_so:,} token)")
     print("")
 
     if a.chi_kiem:
         print("Kiem tra (khong sua gi):")
-        return kiem_tra(a.base_url, a.key)
+        return kiem_tra(a.base_url, a.key, hs)
 
     print("Codex:")
-    for d in codex(a.base_url, home / ".codex"):
+    for d in codex(a.base_url, home / ".codex", hs):
         print(d)
     print("Claude Code (CLI):")
-    for d in claude_code(a.base_url, home / ".claude"):
+    for d in claude_code(a.base_url, home / ".claude", hs):
         print(d)
     print("Claude Desktop:")
-    for d in claude_desktop(a.base_url):
+    for d in claude_desktop(a.base_url, hs):
         print(d)
 
     print("")
     print("Kiem tra voi may chu:")
-    rc = kiem_tra(a.base_url, a.key)
+    rc = kiem_tra(a.base_url, a.key, hs)
 
     print("")
     print("CON MOT VIEC BAN PHAI TU LAM - dat khoa o CAP NGUOI DUNG:")

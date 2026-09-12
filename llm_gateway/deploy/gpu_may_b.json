@@ -1,0 +1,16 @@
+[
+  {
+    "vai": "ltt38",
+    "uuid": "GPU-26623278-4fa5-82db-4306-237651b03e78",
+    "pci_bus_id": "00000000:02:00.0",
+    "ten": "NVIDIA GeForce RTX 3090",
+    "vram_mib": 24576
+  },
+  {
+    "vai": "ltt35",
+    "uuid": "GPU-ebecd0a4-a8a7-14a5-dad1-21565f6dc1df",
+    "pci_bus_id": "00000000:81:00.0",
+    "ten": "NVIDIA GeForce RTX 5060 Ti",
+    "vram_mib": 16311
+  }
+]

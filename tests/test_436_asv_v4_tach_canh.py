@@ -185,13 +185,39 @@ def test_tim_NHANH_truoc_khi_mo_tep():
 
 
 def test_tran_khung_hop_ly_so_voi_cua_so_THI_GIAC():
-    """🔑 Tran o day phai co lien he voi cua so cua model thi giac, khong phai
-    mot con so tu do."""
+    """🔑 Trần ở đây phải có liên hệ với cửa sổ của model thị giác, không phải
+    một con số tự do.
+
+    🔴 DÒNG SO SÁNH HAI MODEL ĐÃ BỎ (12/09/2026, dual-model).
+
+       Bản trước kết bằng `cua_so_ngu_canh(DOC_CANH) < cua_so_ngu_canh(DICH_THUAT)`.
+       Nó canh một mối nguy có thật **của thời đó**: hai hồ sơ là hai bản của
+       **cùng một model** (`qwen38-api` 131.072 so với `qwen38-vision` 65.536).
+       Nay hai thao tác đi tới **hai model khác nhau trên hai card khác nhau**,
+       thị giác (262.144) **lớn hơn** văn bản (221.184) — quan hệ đã lật và mối
+       nguy cũ biến mất cùng nó.
+
+    ⛔ Đảo dấu cho xanh lại là ghim ngược một quan hệ **ngẫu nhiên** giữa hai con
+       số; nó sẽ lật lần nữa ngày ai đó đổi ngữ cảnh một model. Một phép đo lệch
+       chiều thì phải bỏ. Quan hệ giữa hai model nay do
+       `test_434::test_cua_so_ngu_canh_LAY_DUNG_MODEL_CUA_TUNG_THAO_TAC` canh,
+       bằng một câu hỏi bất biến với việc model nào lớn hơn.
+    """
     from apps.auto_scan_video import ai
 
-    assert c.KHUNG_TOI_DA <= 100, (
-        "cua so thi giac do duoc 65.536 token — mot tram khung da la nhieu")
-    assert ai.cua_so_ngu_canh(ai.DOC_CANH) < ai.cua_so_ngu_canh(ai.DICH_THUAT)
+    from apps.ltt_llm.ngan_sach import TOKEN_MOI_ANH
+
+    # ⭐ Ràng buộc THẬT, và nay đo được thay vì ước: một lô `KHUNG_TOI_DA` khung
+    #    hình tốn `KHUNG_TOI_DA × TOKEN_MOI_ANH` token vào, và nó phải lọt cửa
+    #    sổ của **chính model thị giác** — kèm chỗ cho lời nhắc và câu trả lời.
+    #    `TOKEN_MOI_ANH` = 770, đo ở cổng G4 (12/09) bằng HIỆU giữa cùng một câu
+    #    hỏi có ảnh và không ảnh, chứ không ước bằng công thức patch.
+    ton = c.KHUNG_TOI_DA * TOKEN_MOI_ANH
+    cua = ai.cua_so_ngu_canh(ai.DOC_CANH)
+    assert 0 < ton <= cua // 2, (
+        f"mot lo {c.KHUNG_TOI_DA} khung ton {ton} token, cua so thi giac {cua} "
+        f"— giu duoi mot nua de con cho cho loi nhac va cau tra loi")
+
 
 
 # ══════════════════════════════════════════════════════════════════════════════

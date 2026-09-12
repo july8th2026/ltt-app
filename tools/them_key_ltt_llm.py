@@ -33,14 +33,38 @@ if str(ROOT) not in sys.path:
 
 TEN_PROVIDER = "ltt_llm"
 
+from platform_core.llm import canonical  # noqa: E402 - phai sau khi chen ROOT
+
+#: Danh sach id NOI BO mac dinh cho `supported_models`, **suy tu bang bi danh**.
+#:
+#: 🔴 VI SAO DAN TU `canonical` CHU KHONG GO TAY. Truoc 12/09 cho nay go cung
+#:    `"ltt_llm,ltt_llm_vision"` — HAI TEN DA BI CAT o D02 (dual-model 2.3) va
+#:    ca hai deu la *bi danh cong khai*, khong phai id noi bo. Hau qua do duoc
+#:    tren so khoa production: khoa `ltt_llm` duy nhat khai
+#:
+#:        supported_models = ['qwen38-api', 'qwen38-vision']
+#:
+#:    tuc THIEU `qwen35-api`. `api_pool.chon_key(model="qwen35-api")` khong tim
+#:    thay khoa nao ⇒ `ThieuKeyError` ⇒ `dieu_phoi.goi()` doc do thanh *"provider
+#:    khong phuc vu duoc"* va **moi luot LTT-3.5 hong trong im lang**. Khong test
+#:    nao bat duoc: so khoa la DU LIEU VAN HANH, khong phai ma nguon.
+#:
+#: ⭐ Dan tu `ALIAS_SANG_ID` nghia la ngay them/bot mot model, cong cu nay dung
+#:    ngay — khong con mot ban chep thu hai de lech.
+#:
+#: ⚠️ Ve phai cua bang (id NOI BO: `qwen38-api`, `qwen35-api`), khong phai ve
+#:    trai (bi danh `ltt-3.8`, `ltt-3.5`). `api_pool` doi id that; dua bi danh
+#:    vao la dung lai chinh loi tren.
+MODELS_MAC_DINH = ",".join(canonical.ALIAS_SANG_ID.values())
+
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Ghi bearer token cong VLM may B vao so khoa.")
     ap.add_argument("--token", required=True, help="bearer token cua cong VLM")
     ap.add_argument("--base-url", default="http://192.168.2.66:8299",
                     help="dia chi cong VLM tren LAN")
-    ap.add_argument("--models", default="ltt_llm,ltt_llm_vision",
-                    help="danh sach model khoa nay phuc vu")
+    ap.add_argument("--models", default=MODELS_MAC_DINH,
+                    help=f"danh sach id NOI BO khoa nay phuc vu (mac dinh: {MODELS_MAC_DINH})")
     # Ưu tiên THẤP hơn số mặc định 100 nghĩa là được chọn TRƯỚC (xem `api_pool`).
     # Model nhà nên đi trước đám mây: nó rẻ hơn và dữ liệu không rời máy.
     ap.add_argument("--priority", type=int, default=50)

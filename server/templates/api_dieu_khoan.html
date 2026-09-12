@@ -6,7 +6,8 @@
   <p>{{ _("Trang này mô tả cách API tính tiền và phục vụ — bằng đúng những gì hệ thống đang làm.") }}</p>
   <p class="muted">
     {{ _("phiên bản") }} <code>{{ phien_ban }}</code>
-    · {{ _("phiên bản giá") }} <code>{{ bang.phien_ban_gia }}</code>
+    {# Nhan gia la CUA TUNG MODEL (D07) — in o bang "Cach tinh tien" ben duoi,
+       khong in mot nhan duy nhat o day nhu the ca he thong chung mot bang gia. #}
     · 1 credit = {{ dong_moi_credit }} {{ _("đồng") }}
   </p>
 </div>
@@ -28,15 +29,23 @@
   <table class="table">
     <thead><tr>
       <th>{{ _("Loại token") }}</th>
-      <th style="text-align:right;">{{ _("credit / 1 triệu token") }}</th>
+      {% for b in cac_bang %}
+      <th style="text-align:right;">{{ _("credit / 1 triệu token") }} <code>{{ b.model }}</code></th>
+      {% endfor %}
     </tr></thead>
     <tbody>
-      <tr><td>{{ _("Token vào") }}</td><td style="text-align:right;">{{ bang.token_vao }}</td></tr>
-      <tr><td>{{ _("Token vào lấy lại từ cache") }}</td><td style="text-align:right;">{{ bang.token_vao_cache }}</td></tr>
-      <tr><td>{{ _("Token ra") }}</td><td style="text-align:right;">{{ bang.token_ra }}</td></tr>
+      <tr><td>{{ _("Token vào") }}</td>
+        {% for b in cac_bang %}<td style="text-align:right;">{{ b.token_vao }}</td>{% endfor %}</tr>
+      <tr><td>{{ _("Token vào lấy lại từ cache") }}</td>
+        {% for b in cac_bang %}<td style="text-align:right;">{{ b.token_vao_cache }}</td>{% endfor %}</tr>
+      <tr><td>{{ _("Token ra") }}</td>
+        {% for b in cac_bang %}<td style="text-align:right;">{{ b.token_ra }}</td>{% endfor %}</tr>
     </tbody>
   </table>
-  <p class="muted">{{ bang.ghi_chu }}</p>
+  {% for b in cac_bang %}
+  <p class="muted"><code>{{ b.model }}</code> ({{ _("phiên bản giá") }}
+    <code>{{ b.phien_ban_gia }}</code>): {{ b.ghi_chu }}</p>
+  {% endfor %}
   <p><a href="/gia-api">{{ _("Xem bảng giá đầy đủ kèm ví dụ chi phí thật") }}</a></p>
 </div>
 

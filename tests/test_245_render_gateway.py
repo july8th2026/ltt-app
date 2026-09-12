@@ -944,16 +944,22 @@ def test_hai_chot_doc_lap_nhau(clock):
 
 def test_dem_python_gpu_that_doc_dung_process_name(monkeypatch):
     """Đo thật trên máy B: 26 PID compute, `used_memory` là `[N/A]` cho MỌI PID
-    (WDDM), nhưng `process_name` thì có. Đúng 1 dòng python = ComfyUI."""
-    ra = ("6736, python.exe\n"
-          "1234, dwm.exe\n"
-          "5678, chrome.exe\n")
+    (WDDM), nhưng `process_name` thì có. Đúng 1 dòng python = ComfyUI.
+
+    ⚠️ Hình dạng đầu ra đổi 12/09 (Task 6.1): truy vấn nay xin thêm cột `gpu_uuid`
+    và chỉ đếm tiến trình **trên card 3090**. Bài học của phép kiểm này không đổi
+    (đọc `process_name`, không đọc `used_memory`); các ca hai card ở
+    `tests/test_1230_busy_theo_uuid.py`."""
+    u38 = "GPU-26623278-4fa5-82db-4306-237651b03e78"
+    ra = (f"6736, python.exe, {u38}\n"
+          f"1234, dwm.exe, {u38}\n"
+          f"5678, chrome.exe, {u38}\n")
     monkeypatch.setattr(B.shutil, "which", lambda _: "nvidia-smi")
     monkeypatch.setattr(B.subprocess, "run",
                         lambda *a, **k: SimpleNamespace(returncode=0, stdout=ra, stderr=""))
     assert B.so_python_tinh_tren_gpu() == 1
 
-    ra2 = ra + "9012, python.exe\n"
+    ra2 = ra + f"9012, python.exe, {u38}\n"
     monkeypatch.setattr(B.subprocess, "run",
                         lambda *a, **k: SimpleNamespace(returncode=0, stdout=ra2, stderr=""))
     assert B.so_python_tinh_tren_gpu() == 2
@@ -980,15 +986,33 @@ def test_ham_doc_smi_that_khong_nem_khi_may_khong_co_nvidia_smi(monkeypatch):
     assert B.vram_dung_mb_qua_smi() is None
 
 
-def test_ham_doc_smi_lay_gia_tri_LON_NHAT_khi_nhieu_gpu(monkeypatch):
-    """Máy A có hai card. 'Còn chỗ không' phải trả lời theo card bận nhất."""
+def test_ham_doc_smi_lay_dong_cua_CARD_3090_khi_nhieu_gpu(monkeypatch):
+    """🔴 PHÉP KIỂM NÀY THAY MỘT PHÉP KIỂM ĐÃ BỊ **BỎ**, không phải sửa nó.
+
+    Bản cũ (`test_ham_doc_smi_lay_gia_tri_LON_NHAT_khi_nhieu_gpu`) chốt
+    `max()` trên mọi card với lý lẽ *"trả lời theo card bận nhất"*. Lý lẽ ấy chết
+    ngày 11/09: máy B có hai card, LTT-3.5 thường trú trên 5060 Ti giữ ~13 GB, và
+    cổng render **chỉ tranh 3090**. `max()` trả số của card khác cho mọi câu hỏi
+    về 3090 — một phép đo lệch chiều, phải bỏ chứ không phải nới.
+
+    Các ca đầy đủ (đối chứng từng chiều): `tests/test_1230_busy_theo_uuid.py`."""
+    u38 = "GPU-26623278-4fa5-82db-4306-237651b03e78"
+    u35 = "GPU-ebecd0a4-a8a7-14a5-dad1-21565f6dc1df"
+
     class R:
         returncode = 0
-        stdout = "512\n8192\n"
+        stdout = f"{u38}, 512\n{u35}, 8192\n"
 
     monkeypatch.setattr(B.shutil, "which", lambda _: "nvidia-smi")
     monkeypatch.setattr(B.subprocess, "run", lambda *a, **k: R())
-    assert B.vram_dung_mb_qua_smi() == 8192
+    assert B.vram_dung_mb_qua_smi() == 512
+
+    class RThieu:
+        returncode = 0
+        stdout = f"{u35}, 8192\n"          # 3090 bien mat khoi danh sach
+
+    monkeypatch.setattr(B.subprocess, "run", lambda *a, **k: RThieu())
+    assert B.vram_dung_mb_qua_smi() is None, "roi sang card khac = chay mu"
 
 
 def test_ham_doc_smi_co_tran_thoi_gian():

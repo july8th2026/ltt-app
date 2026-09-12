@@ -114,14 +114,26 @@ def test_moi_ten_ASV_dang_import_deu_nam_trong_be_mat_da_khai():
 #  Tien de cua tung ket luan SUFFICIENT
 # ══════════════════════════════════════════════════════════════════════════════
 
-def test_alias_vision_van_ton_tai():
-    """Pha 11 (SceneAnalysis) dua vao day. Mat alias = mat ca duong VLM."""
-    from apps.ltt_llm.features import ALIAS_SANG_ID
+def test_alias_doc_anh_van_ton_tai():
+    """Pha 11 (SceneAnalysis) dua vao day. Mat alias = mat ca duong VLM.
 
-    assert "ltt_llm_vision" in ALIAS_SANG_ID
-    assert "ltt_llm" in ALIAS_SANG_ID
+    🔴 DOI CAU HOI 11/09/2026 (D02, dual-model 2.3). Ban cu hoi
+       *"`ltt_llm_vision` con trong bang khong"* — mot cau hoi ve MOT CAI TEN,
+       va cai ten do vua bi cat. Thu Pha 11 that su can la **co mot model doc
+       duoc anh**, nen do dung dieu do: bang bi danh khong rong, va model mac
+       dinh doc duoc anh theo ban khai cong khai.
+    """
+    from apps.ltt_llm.features import ALIAS_SANG_ID
+    from apps.ltt_llm.manifest import MANIFEST
+
+    assert ALIAS_SANG_ID, "bang bi danh rong = mat ca duong VLM"
+    models = MANIFEST.tools[0].api_contract["models"]
+    doc_anh = [ten for ten, spec in models.items()
+               if (spec.get("constraints") or {}).get("reads_images")]
+    assert doc_anh, "khong bi danh nao khai doc duoc anh"
     # ⛔ Id vendor khong duoc ro ra be mat khach; day chi kiem lop dem con day du.
-    assert ALIAS_SANG_ID["ltt_llm_vision"] != "ltt_llm_vision"
+    for ten, noi_bo in ALIAS_SANG_ID.items():
+        assert ten != noi_bo
 
 
 def test_duong_goi_LLM_khong_ep_content_thanh_chuoi():

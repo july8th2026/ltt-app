@@ -7,6 +7,14 @@ api.py — hợp đồng HTTP của cổng render.
     GET  /v1/jobs/{job_id}          trạng thái + kết quả
     POST /v1/jobs/{job_id}/cancel   huỷ ĐÚNG job đó
     POST /v1/exclusive              chế độ độc chiếm cho lúc dự án video benchmark
+    POST /v1/nha_comfy              dừng / chạy lại LTTComfyUI (lệnh residency 3090)
+
+⭐ `/v1/nha_comfy` LÀ MỘT LỆNH, KHÔNG PHẢI MỘT QUYẾT ĐỊNH. Người quyết khi nào
+   3090 thuộc về LLM và khi nào thuộc về ảnh là **trọng tài residency ở máy A**
+   (Task 5.5, TD-D10) — nơi duy nhất thấy cùng lúc lease LLM, phòng chờ và hàng
+   job ảnh. Cổng này chỉ thi hành và **báo lại sự thật đo được**. Đừng thêm một
+   người quyết thứ hai ở đây: hai cơ chế cùng canh một card là hai chỗ khai cùng
+   một điều, và chúng sẽ lệch nhau.
 
 ⛔ BẬN THÌ TRẢ **429**, KHÔNG PHẢI LỖI. Máy A phân biệt hai thứ này: 429 là trạng
    thái bình thường của một máy chia GPU với việc video; nếu máy A hiểu nhầm thành
@@ -23,7 +31,6 @@ api.py — hợp đồng HTTP của cổng render.
 from __future__ import annotations
 
 import logging
-import os
 import threading
 import time
 from pathlib import Path
@@ -33,8 +40,8 @@ from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from . import __version__, nhuong_card, tren_gpu
-from . import busy as busy_mod
+from . import __version__, tren_gpu
+from . import dich_vu_comfy as DV
 from . import jobs as J
 from .busy import BusyWatcher
 from .catalog import ModelSpec, nap_catalog
@@ -67,135 +74,67 @@ class ExclusiveBody(BaseModel):
     ttl_s: float = 7200.0
 
 
+class NhaComfyBody(BaseModel):
+    """Thân của `/v1/nha_comfy`. Thiếu thân ⇒ `dung` (dọn card cho LLM)."""
+    #: `"dung"` = tắt ComfyUI để trả VRAM 3090; `"chay"` = bật lại trước cửa sổ ảnh.
+    hanh_dong: str = "dung"
+
+
 def create_app(cfg: Config, comfy: ComfyClient, *,
                workflow_dir: Optional[Path] = None,
                now=time.monotonic, sleep=time.sleep,
-               fetcher=None, doc_vram_mb=None, dem_python_gpu=None) -> FastAPI:
+               fetcher=None, doc_vram_mb=None, dem_python_gpu=None,
+               chay_dich_vu=None) -> FastAPI:
     app = FastAPI(title="LTT Render Gateway", version=__version__)
 
     store = J.JobStore(now=now)
     # Hai nguồn GPU tiêm được để test không đọc card của máy đang chạy test.
     # Cả hai mặc định hỏi `nvidia-smi` — KHÔNG phải `/system_stats`, vì nguồn đó
     # mù với tiến trình khác trên Windows/WDDM (đã đo, xem `busy.py`).
-    # ⚠️ `co_ho_bao_duoc` phải là một HÀM, không phải một giá trị: danh sách hộ
-    #    được đọc **bên dưới**, nên một giá trị tính ở đây sẽ luôn là `False`.
-    #    Tra cứu muộn cũng đúng hơn về nghĩa — nó hỏi "lúc này có ai bảo được
-    #    không", không phải "lúc khởi động có ai".
+    #
+    # ⭐ `co_ho_bao_duoc` KHÔNG còn được truyền, và đó là một quyết định: nó mở
+    #    nhánh "card đang bị giữ nhưng ta lấy lại được, nên đừng báo bận". Từ
+    #    Task 5.4 cổng render **không** còn cách nào lấy lại card — quyền ấy về
+    #    trọng tài residency ở máy A. Để nhánh đó mở là báo rảnh trong khi 3090
+    #    vẫn nằm dưới LTT-3.8, tức mời một lần OOM. Mặc định của `BusyWatcher` là
+    #    `False`, tức chốt VRAM giữ nguyên hiệu lực — đúng chiều an toàn.
     watcher = BusyWatcher(comfy=comfy,
                           ram_trong_toi_thieu_gb=cfg.ram_trong_toi_thieu_gb, now=now,
-                          co_ho_bao_duoc=lambda: any(h.bao_duoc for h in ho_dung_card),
                           **({"doc_vram_mb": doc_vram_mb} if doc_vram_mb else {}),
                           **({"dem_python_gpu": dem_python_gpu} if dem_python_gpu else {}))
     catalog: dict[str, ModelSpec] = nap_catalog(workflow_dir)
     slot = threading.BoundedSemaphore(max(1, cfg.max_concurrent))
+    #: Bộ chạy lệnh dịch vụ, tiêm được để test không đụng SCM thật.
+    chay_sc = chay_dich_vu or DV.chay_that
 
-    # ⭐ Hộ dùng chung card, khai bằng `LTT_HO_DUNG_CARD` — **một dòng cấu hình
-    #    cho mỗi hộ**, không phải một lần sửa mã. Chủ sản phẩm chốt 24/08 rằng dự
-    #    án video sau này đi theo đúng khuôn LLM/ảnh, nên hộ thứ tư là chuyện
-    #    *khi nào*, không phải *có hay không*. Xem `nhuong_card.py`.
-    ho_dung_card = nhuong_card.doc_ho_tu_env(dict(os.environ))
-    if ho_dung_card:
-        log.info("ho dung chung card: %s",
-                 ", ".join(f"{h.ten}{'' if h.bao_duoc else ' (chi cho duoc)'}"
-                           for h in ho_dung_card))
+    # ── LỆNH RESIDENCY: dọn VRAM 3090 cho LLM ─────────────────────
+    # Thân lệnh ở `dich_vu_comfy.py`; ở đây chỉ còn hai việc: nối nó vào HTTP và
+    # **xác minh bằng VRAM của đúng card 3090** rồi báo lại số đo thật.
+    def _vram() -> Optional[int]:
+        return watcher.doc_vram_mb()
 
-    def _ho_khac_dang_tinh() -> bool:
-        """Có hộ KHÁC đang tính trên card không — dùng để **không đuổi** họ.
+    #: Driver không trả VRAM lại **ngay** lúc tiến trình thoát — WDDM thu hồi sau
+    #: một nhịp. Đọc một lần rồi kết luận "không tụt" là biến một độ trễ vài giây
+    #: thành một báo lỗi sai, và trọng tài sẽ coi card là bẩn vĩnh viễn.
+    VRAM_CHO_HA_GIAY = 15.0
+    VRAM_NHIP_GIAY = 1.0
 
-        🔴 CÂU HỎI NÀY KHÁC "card có bận không". Ở đây ta đã quyết định muốn card;
-           thứ cần biết là **đuổi bây giờ có cắt ngang việc của ai không**.
+    def _cho_vram_ha(truoc: Optional[int]) -> Optional[int]:
+        """Đọc lại VRAM 3090 tới khi nó **thấp hơn `truoc`**, có hạn.
 
-        ⭐ Hai tín hiệu, đúng như `llm_gateway/trong_tai.py` đã đo cho chiều ngược:
-
-             python trên card >= 2      ⇒ có tiến trình khác đang tính
-             ComfyUI của TA đang vẽ     ⇒ tải cao là của ta, KHÔNG tính là hộ khác
-             còn lại, tải GPU cao       ⇒ `llama-server` đang trả lời ⇒ ĐANG TÍNH
-
-        ⛔ `llama-server.exe` **không phải python**, nên phép đếm python một mình
-           mù với nó — đúng lý do `trong_tai` phải ghép thêm mức tải. Không có vế
-           tải thì ta sẽ đuổi Qwen ngay giữa một câu trả lời đang chảy.
+        Trả về số đọc được cuối cùng (`None` = không đọc được lần nào). Hết hạn
+        mà chưa tụt thì trả đúng số cuối — người gọi chịu trách nhiệm gọi đó là
+        thất bại, chứ hàm này không tự nói dối theo chiều nào.
         """
-        so_py = watcher.dem_python_gpu()
-        if so_py is not None and so_py >= busy_mod.TRAN_PYTHON_GPU:
-            return True
-        # ComfyUI của ta đang vẽ ⇒ tải cao là của chính ta, không phải hộ khác.
-        if store.active_prompt_ids():
-            return False
-        tai = busy_mod.tai_gpu_phan_tram()
-        return tai is not None and tai >= busy_mod.TAI_GPU_DANG_TINH
-
-    def goi_nha(duong: str) -> bool:
-        """Gọi endpoint nhả của một hộ. Hỏng thì trả False, KHÔNG ném.
-
-        Bảo không được có thể chỉ là nó đã nhả sẵn — vòng chờ VRAM trong
-        `xin_card` mới là thứ quyết định.
-        """
-        try:
-            import httpx
-
-            r = httpx.get(duong, timeout=20.0)
-            return 200 <= r.status_code < 300
-        except Exception as exc:                                # noqa: BLE001
-            log.info("goi nha %s khong duoc: %s", duong, type(exc).__name__)
-            return False
-
-    goi_nha_ho = goi_nha
-
-    # Sổ đuổi: nhớ lần đuổi gần nhất để KHÔNG đuổi liên tục.
-    #
-    # 🔴 Không có nó thì hai loại việc xen kẽ sẽ làm **mỗi prompt của khách LLM
-    #    trả 18 giây nạp lại** — không phải chậm, mà là không dùng được. Xem
-    #    `CACH_NHAU_TOI_THIEU_GIAY` trong `nhuong_card.py`.
-    #
-    # ⚠️ Và nó KHÔNG làm chậm việc thường: một lô ảnh liên tiếp thấy VRAM vẫn
-    #    thấp nên đi qua ở nhánh đầu, không đuổi ai, không chạm sổ này.
-    so_duoi = nhuong_card.SoDuoi()
-
-    # ── TRẢ CARD (V3) ───────────────────────────────────────────────────────
-    # Nhả VRAM của ComfyUI sau khi RẢNH một lúc, để hộ khác nạp được mà không
-    # phải chờ ai. Không nhả thì ComfyUI ngồi im mà giữ ~16.600 MB (đo trên máy B
-    # lúc GPU 0–1 % tải), và LLM cần 19.237 MB sẽ nạp đè → card lên 23.860 MB và
-    # **cả hai** cùng chậm.
-    #
-    # ⛔ MẶC ĐỊNH TẮT (`LTT_TRA_CARD_GIAY` không đặt ⇒ 0 ⇒ không chạy).
-    #    Một vòng nền tự nhả bộ nhớ của người khác là thứ phải được BẬT có chủ ý,
-    #    không phải thứ bật sẵn rồi mới phát hiện. Và cài đặt dev không dùng chung
-    #    card với ai thì không có gì để trả.
-    try:
-        _tra_giay = float(os.environ.get("LTT_TRA_CARD_GIAY") or 0)
-    except ValueError:
-        _tra_giay = 0.0
-
-    if _tra_giay > 0:
-        def _free_comfy() -> bool:
-            try:
-                import httpx
-
-                r = httpx.post(f"{cfg.comfy_url.rstrip('/')}/free", timeout=30.0,
-                               json={"unload_models": True, "free_memory": True})
-                return 200 <= r.status_code < 300
-            except Exception as exc:                            # noqa: BLE001
-                log.info("goi ComfyUI /free khong duoc: %s", type(exc).__name__)
-                return False
-
-        tra = nhuong_card.TraCard(
-            ranh_bao_lau_giay=_tra_giay,
-            # ⚠️ Hỏi HÀNG ĐỢI THẬT, không hỏi một cờ nội bộ: một job có thể đang
-            #    chạy trong luồng riêng mà cờ đã bị xoá.
-            co_viec=lambda: bool(store.active_prompt_ids()),
-            goi_free=_free_comfy)
-
-        def _vong_tra_card():
-            while True:
-                time.sleep(min(10.0, max(1.0, _tra_giay / 6)))
-                try:
-                    tra.mot_luot()
-                except Exception:                               # noqa: BLE001
-                    log.exception("vong tra card loi — van chay tiep")
-
-        threading.Thread(target=_vong_tra_card, name="tra-card",
-                         daemon=True).start()
-        log.info("vong tra card: nha VRAM ComfyUI sau %.0fs ranh", _tra_giay)
+        t0 = now()
+        sau = _vram()
+        while True:
+            if sau is not None and (truoc is None or sau < truoc):
+                return sau
+            if now() - t0 >= VRAM_CHO_HA_GIAY:
+                return sau
+            sleep(VRAM_NHIP_GIAY)
+            sau = _vram()
 
     if fetcher is None:                       # pragma: no cover - đường sản xuất
         from .http import HttpxFetcher
@@ -277,65 +216,31 @@ def create_app(cfg: Config, comfy: ComfyClient, *,
                  **them},
                 status_code=429, headers=headers)
 
-        # ── THỨ TỰ BA CHỐT DƯỚI ĐÂY LÀ MỘT QUYẾT ĐỊNH, KHÔNG PHẢI TÌNH CỜ ──
+        # ── HAI CHỐT, THEO THỨ TỰ NÀY ──────────────────────────
         #
-        # ① giữ SUẤT trước — hai yêu cầu đồng thời không được cùng đi đuổi model;
-        # ② XIN CARD — đuổi hộ bảo-được rồi **xác minh** VRAM đã xuống;
-        # ③ mới hỏi BẬN.
+        # ① giữ SUẤT trước — hai yêu cầu đồng thời không được cùng vào vẽ;
+        # ② rồi mới hỏi BẬN.
         #
-        # 🔴 Bản đầu của tôi đặt ② SAU ③, và nó **sai một cách im lặng**: chốt bận
-        #    coi "VRAM còn ít" là bận, nên khi Qwen giữ 19 GB thì cổng trả 429
-        #    ngay — **không bao giờ đi bảo Qwen nhả**. Tức là trọng tài không bao
-        #    giờ chạy, và triệu chứng ("luôn 429") trông y hệt "máy đang bận thật".
+        # ⛔ CHỐT THỨ BA ĐÃ BỊ GỠ (Task 5.4): "xin card" — đuổi hộ đang giữ 3090
+        #    rồi chờ VRAM xuống. Nó đi vì một lý do cơ học chứ không phải vì gọn hơn:
+        #    đường đuổi của nó (`GET /unload` của llama-swap) **không mang tên model**
+        #    và **không drain**, nên từ khi máy B có hai model nó nhả cả LTT-3.5 trên
+        #    card không ai tranh, và giết một lượt đang sinh chữ (L-17, L-9).
         #
-        #    Test đầu tiên tôi viết cho nó **xanh vì lý do sai**: nó chạy 0,58 giây
-        #    trong khi hạn chờ là 45 giây — bằng chứng `xin_card` chưa hề được gọi.
-        if not slot.acquire(blocking=False):
-            return ban("het suat dong thoi", {})
-
-        # ── XIN CARD (V1–V2) ────────────────────────────────────────────
-        # Gọi nhả rồi nạp luôn là **giả định**; model mới sẽ âm thầm offload sang
-        # RAM chủ trong khi mọi chốt vẫn xanh (P6, D-051). Nên `xin_card` **chờ và
-        # đọc lại VRAM** trước khi cho qua.
+        # ⭐ Thay vào đó: **trọng tài residency ở máy A** mở cửa sổ ảnh trước, rồi mới
+        #    gửi job tới đây. Khi lệnh vẽ tới, 3090 đã là của ảnh. Cổng này chỉ còn
+        #    phải trả lời một câu — *bây giờ vẽ được không* — và 429 khi không.
         #
         # ⚠️ Mọi đường thoát từ đây trở xuống PHẢI `slot.release()`. Thiếu một chỗ
         #    thì mỗi lượt rò một suất, và sau `max_concurrent` lượt cổng **không
         #    nhận job nào nữa dù card rảnh** — hỏng lặng lẽ.
-        px = nhuong_card.xin_card(ho_khac=ho_dung_card,
-                                  doc_vram=watcher.doc_vram_mb,
-                                  goi_nha=goi_nha_ho,
-                                  dang_tinh=_ho_khac_dang_tinh,
-                                  so_duoi=so_duoi)
-        if not px.duoc:
-            slot.release()
-            log.warning("xin card khong duoc: %s", px.ly_do)
-            return ban(px.ly_do, {"xin_card": px.as_dict()}, 30)
-
-        # 🔴 GHI LẠI VIỆC ĐUỔI, KỂ CẢ KHI NÓ THÀNH CÔNG.
-        #
-        #    Bản đầu chỉ log lúc **thất bại**, nên hành động quan trọng nhất của
-        #    trọng tài — lấy card khỏi tay một hộ khác — **không để lại dấu vết
-        #    nào**. Thử thật 24/08: LLM bị đuổi đúng như thiết kế, và trong log
-        #    không có một dòng nào về việc đó.
-        #
-        #    Hệ quả: khi ai đó hỏi *"vì sao phiên LLM của tôi chậm lúc 13:50"* thì
-        #    không có gì chỉ ra được. Một hệ thống đuổi việc của người khác mà
-        #    không ghi lại là một hệ thống không giải thích được chính nó.
-        if px.da_bao_nha:
-            log.info("job %s: da bao %s nha card, cho %.1fs, VRAM con %s MB",
-                     body.job_id, ", ".join(px.da_bao_nha), px.giay_da_cho,
-                     px.vram_mb)
-        elif px.giay_da_cho >= 1.0:
-            # Không đuổi ai mà vẫn phải chờ ⇒ có hộ chỉ-chờ-được vừa nhả. Cũng
-            # đáng ghi: nó là bằng chứng cho việc tranh card mà ta không gây ra.
-            log.info("job %s: khong duoi ai nhung cho %.1fs cho card trong "
-                     "(VRAM con %s MB)", body.job_id, px.giay_da_cho, px.vram_mb)
+        if not slot.acquire(blocking=False):
+            return ban("het suat dong thoi", {})
 
         state = watcher.observe(store.active_prompt_ids())
         if state.busy:
             slot.release()
-            return ban(state.reason, {**state.as_dict(), "xin_card": px.as_dict()},
-                       state.eta_s)
+            return ban(state.reason, dict(state.as_dict()), state.eta_s)
 
         gia_tri = dict(spec.defaults)
         gia_tri.update(body.params)
@@ -389,6 +294,94 @@ def create_app(cfg: Config, comfy: ComfyClient, *,
     def exclusive(body: ExclusiveBody, _: None = Depends(auth)) -> dict:
         watcher.doc_chiem(bat=body.on, ly_do=body.reason, het_han_s=body.ttl_s)
         return {"exclusive": body.on, "reason": body.reason, "ttl_s": body.ttl_s}
+
+    # ── lệnh residency: dọn / trả lại card cho ComfyUI ───────────────────────
+    @app.post("/v1/nha_comfy")
+    def nha_comfy(body: Optional[NhaComfyBody] = None, _: None = Depends(auth)):
+        """Làm cho VRAM 3090 **sạch** cho LLM — hoặc bật ComfyUI trở lại.
+
+        🔴 TÊN LỆNH GIỮ THEO PLAN, NGHĨA THÌ KHÔNG. Bản plan viết *"gọi ComfyUI
+           `/free {unload_models, free_memory}`"*. Đo 12/09 (L-14 §3) nói `/free`
+           **không** nhả 223,5 MiB ngữ cảnh CUDA của một ComfyUI ấm, và biên của
+           LTT-3.8 ở `-c 221184` chỉ **445 MiB** — nên `/free` để lại **một nửa
+           biên** trong tay một tiến trình không làm gì. Chỉ **dừng dịch vụ** mới
+           trả nó về. Task 5.5 khớp **chuỗi** `free_comfy`, nên tên ở lại; việc
+           nó làm là dừng `LTTComfyUI`.
+
+        ⛔ VÀ NÓ KHÔNG GIẾT VIỆC CỦA AI. Chỉ thu hồi bộ nhớ **của chính ComfyUI**,
+           và chỉ được phát ở trạng thái `TRA_ANH` — sau khi cửa nhận job ảnh đã
+           đóng và không còn lượt vẽ nào chạy (L-9). Cổng này **không** tự quyết.
+
+        ⛔ THÀNH CÔNG IM LẶNG LÀ KẾT CỤC TỆ NHẤT, nên mọi đường ra đều có bằng
+           chứng: hoặc `da_dung=true` kèm VRAM 3090 **đo lại** và đã tụt, hoặc
+           **503** kèm lý do đọc được. Một bước residency tưởng đã dọn card mà
+           thật ra chưa dọn chính là hỏng mà D01 B sinh ra để chặn.
+        """
+        hd = ((body.hanh_dong if body else "") or "dung").strip().lower()
+        if hd not in ("dung", "chay"):
+            raise HTTPException(400, "hanh_dong phai la 'dung' hoac 'chay'")
+        ten = DV.ten_dich_vu()
+
+        def _loi(thong_diep: str, them: dict):
+            # ⚠️ 5xx ở ĐÂY là đúng, khác hẳn `/v1/images/generations`. Cạm bẫy
+            #    D-005 (5xx ⇒ `api_pool` disable key) nói về đường **khách** đi
+            #    qua `api_pool`. Lệnh này do trọng tài residency gọi thẳng, và nó
+            #    **cần** thấy thất bại: nuốt nó đi là để máy A tưởng card đã sạch.
+            log.error("nha_comfy(%s) that bai: %s", hd, thong_diep)
+            return JSONResponse(
+                {"error": {"code": "nha_comfy_that_bai", "message": thong_diep},
+                 "hanh_dong": hd, "dich_vu": ten, **them},
+                status_code=503)
+
+        if hd == "chay":
+            px = DV.chay_lai(ten, chay=chay_sc, now=now, ngu=sleep)
+            if not px.xong:
+                return _loi(px.ly_do, {"dich_vu_trang_thai": px.as_dict()})
+            return {"hanh_dong": "chay", "dich_vu": ten, "dang_chay": True,
+                    "vram_3090_mib": _vram(),
+                    "dich_vu_trang_thai": px.as_dict()}
+
+        truoc = _vram()
+        px = DV.dung(ten, chay=chay_sc, now=now, ngu=sleep)
+        if not px.xong:
+            return _loi(px.ly_do, {"dich_vu_trang_thai": px.as_dict(),
+                                   "vram_3090_mib": truoc})
+
+        # ── XÁC MINH BẰNG CARD, KHÔNG BẰNG LỜI CỦA SCM ──────────────────────
+        # `cai_dat_dich_vu.ps1` đã ghi đúng cạm bẫy này: python launcher của máy B
+        # là một **stub**, nên giết mỗi tiến trình cha thì SCM nói "Stopped" trong
+        # khi ComfyUI thật vẫn sống và vẫn ôm VRAM (đo 22/08: 3,8 MB → 2.265 MB).
+        # Lời dặn ở đó là *"KHONG TIN, HAY DO"* — đây là chỗ nó thành cơ chế.
+        #
+        # ⭐ Số đọc ra là VRAM của **đúng UUID 3090** (`busy._o_cua_card_3090` →
+        #    `danh_tinh_gpu.uuid_38`), không phải `max()` của cả máy: LTT-3.5
+        #    thường trú ~10 GB trên 5060 Ti, và một phép đo gộp sẽ luôn nói
+        #    "card vẫn bẩn".
+        if px.truoc == DV.DUNG:
+            # Vốn đã dừng từ trước ⇒ không có gì để tụt. Vẫn báo số đo.
+            return {"hanh_dong": "dung", "dich_vu": ten, "da_dung": True,
+                    "vram_3090_mib": _vram(), "vram_3090_mib_truoc": truoc,
+                    "dich_vu_trang_thai": px.as_dict()}
+
+        sau = _cho_vram_ha(truoc)
+        if sau is None:
+            return _loi(
+                f"da dung {ten} nhung KHONG doc duoc VRAM cua card 3090 — khong "
+                f"the xac minh card da sach. Kiem `nvidia-smi` va "
+                f"`gpu_may_b.json` tren may B.",
+                {"dich_vu_trang_thai": px.as_dict(), "vram_3090_mib": None})
+        if truoc is not None and sau >= truoc:
+            return _loi(
+                f"dich vu {ten} bao da dung nhung VRAM 3090 khong ha "
+                f"({truoc} -> {sau} MiB). Gan nhu chac chan tien trinh ComfyUI "
+                f"THAT van song (python launcher la stub — xem cai_dat_dich_vu.ps1).",
+                {"dich_vu_trang_thai": px.as_dict(), "vram_3090_mib": sau,
+                 "vram_3090_mib_truoc": truoc})
+
+        log.info("nha_comfy: da dung %s, VRAM 3090 %s -> %s MiB", ten, truoc, sau)
+        return {"hanh_dong": "dung", "dich_vu": ten, "da_dung": True,
+                "vram_3090_mib": sau, "vram_3090_mib_truoc": truoc,
+                "dich_vu_trang_thai": px.as_dict()}
 
     app.state.store = store
     app.state.watcher = watcher

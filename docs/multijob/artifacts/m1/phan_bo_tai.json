@@ -1,0 +1,112 @@
+{
+ "llamaswap_log": {
+  "byte": 16831527,
+  "tao": "2026-08-22T21:29"
+ },
+ "so_request": 3668,
+ "prefill_moi_token": {
+  "n": 3668,
+  "p50": 2031,
+  "p90": 12855,
+  "p99": 67926,
+  "max": 164840,
+  "tong": 22608648
+ },
+ "tong_ngu_canh_token": {
+  "n": 3668,
+  "p50": 16627,
+  "p90": 51921,
+  "p99": 113155,
+  "max": 164988,
+  "tong": 79431011
+ },
+ "cache_trung_token": {
+  "n": 3668,
+  "p50": 1054,
+  "p90": 41247,
+  "p99": 79941,
+  "max": 152464,
+  "tong": 42998478
+ },
+ "sinh_ra_token": {
+  "n": 3668,
+  "p50": 1910,
+  "p90": 13715,
+  "p99": 19880,
+  "max": 26842,
+  "tong": 13824216
+ },
+ "prefill_giay": {
+  "n": 3668,
+  "p50": 2.35,
+  "p90": 10.99,
+  "p99": 73.09,
+  "max": 740.84,
+  "tong": 25074.41
+ },
+ "tong_giay_moi_luot": {
+  "n": 3668,
+  "p50": 39.0,
+  "p90": 226.5,
+  "p99": 340.1,
+  "max": 746.1,
+  "tong": 254908.3
+ },
+ "so_luot_prefill_moi_vuot": {
+  "1000": 2066,
+  "4000": 1025,
+  "8000": 816,
+  "16000": 279,
+  "32000": 155,
+  "64000": 64,
+  "128000": 10
+ },
+ "so_luot_ngu_canh_vuot": {
+  "1000": 3203,
+  "4000": 2404,
+  "8000": 2234,
+  "16000": 1914,
+  "32000": 884,
+  "64000": 231,
+  "128000": 24
+ },
+ "ti_le_cache_trung_tren_ngu_canh": 0.541,
+ "truncated": 0,
+ "dem_dong": {
+  "n_slots": 186,
+  "nap_mmproj": 21,
+  "oom": 4
+ },
+ "gateway_v1_theo_duong_ma": {
+  "POST /v1/chat/completions 200": 2714,
+  "POST /v1/responses 200": 394,
+  "POST /v1/chat/completions 429": 372,
+  "POST /v1/messages 200": 120,
+  "POST /v1/responses 502": 100,
+  "POST /v1/responses 429": 78,
+  "POST /v1/responses 413": 59,
+  "POST /v1/messages 413": 51,
+  "GET /v1/models 401": 16,
+  "POST /v1/chat/completions 413": 14,
+  "GET /v1/models 200": 13,
+  "POST /v1/chat/completions 502": 9,
+  "POST /v1/responses 404": 7,
+  "POST /v1/chat/completions 401": 4,
+  "POST /v1/chat/completions 404": 3,
+  "POST /v1/messages 429": 3,
+  "POST /v1/responses 400": 3,
+  "GET /v1/models?client_version=0.145.0 200": 2,
+  "POST /v1/chat/completions 400": 1,
+  "POST /v1/messages/count_tokens 404": 1,
+  "POST /v1/messages 401": 1,
+  "POST /v1/chat/completions/input_tokens 404": 1,
+  "POST /v1/responses 401": 1,
+  "POST /v1/responses 422": 1,
+  "POST /v1/chat/completions 422": 1,
+  "GET /v1/health 404": 1
+ },
+ "gateway_log": {
+  "byte": 695748,
+  "tao": "2026-08-22T21:29"
+ }
+}

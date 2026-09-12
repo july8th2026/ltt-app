@@ -25,6 +25,20 @@ from __future__ import annotations
 
 from typing import FrozenSet, Optional
 
+# ── Nhãn cửa của ChatLTT trong sổ từng lượt ──────────────────────────────────
+#
+# Nằm ở app chứ không ở `platform_core`: nền tảng không được biết tên một app
+# nào (`test_60::test_no_app_slug_is_hardcoded_in_the_platform`). Bản trước
+# ghim thẳng "chatltt" trong `runtime_noi_bo/luong.py` — lọt vào cùng cổng
+# stream của Multi-Job (52a76dd1) và sống sót vì chưa ai chạy gate đầy đủ
+# trên cây hợp nhất.
+#
+# Không phải chuyện hình thức: nhãn này đi thẳng vào `llm_waiters.cua`, nên
+# một tên viết cứng làm mọi app gọi sau đều bị ghi nhầm là "chatltt" trong
+# sổ, và báo cáo nghẽn sẽ trỏ sai app.
+CUA = "chatltt"
+TIEN_TO = "cl"
+
 #: V1 — ba model nhà. Thứ tự là thứ tự hiển thị.
 CONG_CU_CHO_PHEP: tuple = ("text.chat", "image.ltt", "speech.ltt")
 

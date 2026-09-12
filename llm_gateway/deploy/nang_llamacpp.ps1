@@ -1,6 +1,7 @@
 # nang_llamacpp.ps1 - nang llama.cpp tren MAY B, co duong lui.
 #
-#   .\nang_llamacpp.ps1                 # nang len ban moi nhat
+#   .\nang_llamacpp.ps1                 # nang len ban GHIM (phien_ban_ghim.json)
+#   .\nang_llamacpp.ps1 -Ban latest     # lay ban MOI NHAT - phai go ra
 #   .\nang_llamacpp.ps1 -Ban b10689     # nang len dung mot ban
 #   .\nang_llamacpp.ps1 -HoanNguyen     # quay ve ban sao luu gan nhat
 #
@@ -104,8 +105,47 @@ if ($HoanNguyen) {
 $cu = PhienBanHienTai
 Write-Output "Phien ban dang chay: $cu"
 
+# ------------------------------------------------------------------ chon ban
+#
+# ! MAC DINH LA BAN DUOC GHIM, KHONG PHAI BAN MOI NHAT.
+#
+#   Ban dau cua script nay khong truyen -Ban thi di hoi GitHub va lay release
+#   dau tien co goi win-cuda-$Cuda. Tuc lenh NGAN NHAT, thu ma nguoi met moi luc
+#   1 gio sang se go, lai la lenh keo mot binary CHUA AI DO vao mot may dang
+#   phuc vu that. "Moi hon" khong dong nghia "tot hon": bo nho du an ghi mot ca
+#   cuBLAS INVALID_VALUE la dac thu cu130, va bai hoc o do la HA CUDA chu dung
+#   nang driver.
+#
+#   Gio: khong -Ban  => dung ban ghim trong phien_ban_ghim.json
+#        -Ban latest => phai GO RA, va no van chi tai ve chu khong tu quyet.
+#
 if (-not $Ban) {
+    $tepGhim = Join-Path $PSScriptRoot "phien_ban_ghim.json"
+    if (-not (Test-Path $tepGhim)) { throw "Khong thay $tepGhim - khong biet ban nao duoc chuc phuc." }
+    $ghim = Get-Content $tepGhim -Raw | ConvertFrom-Json
+    $Ban  = $ghim.llama_cpp.build
+    if (-not $Ban) {
+        Write-Output ""
+        Write-Output "DUNG LAI: phien_ban_ghim.json chua ghi build llama.cpp (dang null)."
+        Write-Output ""
+        Write-Output "  Khong ai biet may nay DANG chay build nao, nen khong the noi"
+        Write-Output "  nang len la nang TU dau. Chay truoc:"
+        Write-Output ""
+        Write-Output "      python llm_gateway\deploy\nghiem_thu.py"
+        Write-Output ""
+        Write-Output "  No doc /health -> thuong_nguon.phien_ban.engine.build_info va in"
+        Write-Output "  ra so that. Ghi so do vao phien_ban_ghim.json roi chay lai."
+        Write-Output ""
+        Write-Output "  Hoac go thang:  .\nang_llamacpp.ps1 -Ban b10689"
+        Write-Output "  Hoac lay moi nhat co y thuc:  .\nang_llamacpp.ps1 -Ban latest"
+        exit 2
+    }
+    Noi "dung ban GHIM tu phien_ban_ghim.json: $Ban"
+}
+
+if ($Ban -eq "latest") {
     Noi "hoi GitHub ban b#### moi nhat co goi win-cuda-$Cuda ..."
+    $Ban = ""
     $rs = Invoke-RestMethod -Uri "https://api.github.com/repos/ggml-org/llama.cpp/releases?per_page=15" `
                             -UseBasicParsing -TimeoutSec 60
     foreach ($r in $rs) {
@@ -113,6 +153,8 @@ if (-not $Ban) {
         if ($co) { $Ban = $r.tag_name; break }
     }
     if (-not $Ban) { throw "Khong thay ban nao co goi win-cuda-$Cuda-x64." }
+    Canh "dang lay ban MOI NHAT ($Ban) - no CHUA duoc do tren may nay."
+    Canh "Sau khi nang: cap nhat phien_ban_ghim.json, va do lai hieu nang truoc khi tin."
 }
 Noi "ban dich: $Ban"
 

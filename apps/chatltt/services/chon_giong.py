@@ -156,7 +156,8 @@ def _hoi_model(db, *, user_id: str, alias: str, trich: str) -> Optional[str]:
         for sk in L.mo_luong(db, user_id=user_id,
                              tool_name=chinh_sach.NANG_LUC_TEXT,
                              params={"model": alias, "max_tokens": 24,
-                                     "messages": _loi_nhac(db, user_id, trich)}):
+                                     "messages": _loi_nhac(db, user_id, trich)},
+                             cua=chinh_sach.CUA, tien_to=chinh_sach.TIEN_TO):
             if sk.get("type") == "response.delta":
                 chu.append(sk.get("text") or "")
             elif sk.get("type") == "response.failed":

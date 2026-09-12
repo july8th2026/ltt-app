@@ -77,9 +77,20 @@ def test_danh_muc_chieu_dung_tran_cong_bo_cua_ngan_sach():
     ds = danh_muc(None, user_id="u", cho_phep={"text.chat"})
     assert [n.ten for n in ds] == ["text.chat"]
     n = ds[0]
-    assert n.models["ltt_llm"]["constraints"]["context_window"] == ngan_sach.CONG_BO_CHO_CLIENT
-    assert n.models["ltt_llm"]["constraints"]["max_output_tokens"] == ngan_sach.TOKEN_RA_TRAN
-    # Không alias nào mang id nội bộ, và số vision nhỏ hơn số text (F-02).
+    # ⛔ Doc ten mac dinh tu BAN KHAI, khong go `"ltt_llm"`: D02 cat ten do
+    #    ngay 11/09/2026, va mot ten go tay o day do vi CHINH NO da cu.
+    from platform_core.llm.canonical import ALIAS_SANG_ID, MODEL_MAC_DINH
+    cw = n.models[MODEL_MAC_DINH]["constraints"]["context_window"]
+    assert cw == ngan_sach.cong_bo_cua(ALIAS_SANG_ID[MODEL_MAC_DINH])
+    assert cw == ngan_sach.CONG_BO_CHO_CLIENT
+    assert (n.models[MODEL_MAC_DINH]["constraints"]["max_output_tokens"]
+            == ngan_sach.TOKEN_RA_TRAN)
+    # Không alias nào mang id nội bộ.
     assert all("id" not in m for m in n.models.values())
-    assert (n.models["ltt_llm_vision"]["constraints"]["context_window"]
-            < n.models["ltt_llm"]["constraints"]["context_window"])
+    # ⛔ MỖI alias công bố cửa sổ CỦA CHÍNH NÓ (F-02). Bản cũ viết
+    #    `vision < text` — một **sự khác nhau**, không phải một **nguồn**; từ D02
+    #    hai model công khai dùng chung một ngữ cảnh engine nên dấu `<` đỏ vì
+    #    bản khai ĐÚNG.
+    for alias, noi_bo in ALIAS_SANG_ID.items():
+        assert (n.models[alias]["constraints"]["context_window"]
+                == ngan_sach.cong_bo_cua(noi_bo))

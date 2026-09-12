@@ -144,7 +144,7 @@ def main() -> int:
 
     print("== b24-01: cua /api/v1/messages co phat tool_use trong luong khong ==")
     r = _thu_lai_503("/api/v1/messages", tok, {
-        "model": "ltt_llm", "max_tokens": 300, "stream": True,
+        "model": "ltt-3.8", "max_tokens": 300, "stream": True,
         "tools": TOOLS, "messages": hoi})
     if r.get("ma") != 200:
         print(f"  KHONG DO DUOC: {r.get('ma')} {r.get('than', '')[:150]}")
@@ -171,7 +171,7 @@ def main() -> int:
                 {"type": "tool_result", "tool_use_id": tid,
                  "content": json.dumps({"ma_hang": "ABC-123", "ton": TON_KHO})}]}]
         r2 = _thu_lai_503("/api/v1/messages", tok, {
-            "model": "ltt_llm", "max_tokens": 300, "stream": True,
+            "model": "ltt-3.8", "max_tokens": 300, "stream": True,
             "tools": TOOLS, "messages": tiep})
         if r2.get("ma") != 200:
             print(f"  KHONG DO DUOC: {r2.get('ma')} {r2.get('than', '')[:150]}")

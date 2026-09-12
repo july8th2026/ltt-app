@@ -267,28 +267,38 @@ if (($co -join "") -match "CO") {
     $dong = [IO.File]::ReadAllLines($tamEnv)
     $daInput = $false
     $daOutput = $false
-    $daDongThoi = $false
+    # !! GO HAN `LTT_LLM_MAX_DONG_THOI` KHOI gateway.env (Dual-model 4.2).
+    #
+    #    Truoc 12/09 script nay ghim `=1`, va do la DUNG luc ay: llama-swap chay
+    #    `--parallel 1`, nen luot thu hai chi thanh mot ket noi treo trong mot
+    #    hang doi khong ai nhin thay. Task 3.3 doi yaml sang `-np 3` cho CA HAI
+    #    ho so, nen tu luc ay con `=1` bop may B xuong mot phan ba nang luc - im
+    #    lang, vi khong gi bao loi.
+    #
+    #    ! Va no GHI DE ca cau hinh dung: `config.py` mac dinh 3, khop
+    #      `ngan_sach.SO_SLOT_MAY_B` (test_1201 chot dieu do). Mot dong trong
+    #      gateway.env thang mot mac dinh dung la mot nguon chan ly thu hai, nen
+    #      cach sua khong phai doi `1` thanh `3` ma la XOA dong do: so nay chi
+    #      con MOT cho khai.
     $dong = @($dong | ForEach-Object {
         if ($_ -match '^LTT_LLM_MAX_INPUT_TOKENS=') {
             $daInput = $true
-            'LTT_LLM_MAX_INPUT_TOKENS=169984'
+            'LTT_LLM_MAX_INPUT_TOKENS=186368'
         } elseif ($_ -match '^LTT_LLM_MAX_OUTPUT_TOKENS=') {
             $daOutput = $true
             'LTT_LLM_MAX_OUTPUT_TOKENS=32768'
         } elseif ($_ -match '^LTT_LLM_MAX_DONG_THOI=') {
-            $daDongThoi = $true
-            'LTT_LLM_MAX_DONG_THOI=1'
+            # Bo dong nay: so slot doc tu `config.py` (nguon chan ly duy nhat).
         } else { $_ }
     })
-    if (-not $daInput) { $dong += 'LTT_LLM_MAX_INPUT_TOKENS=169984' }
+    if (-not $daInput) { $dong += 'LTT_LLM_MAX_INPUT_TOKENS=186368' }
     if (-not $daOutput) { $dong += 'LTT_LLM_MAX_OUTPUT_TOKENS=32768' }
-    if (-not $daDongThoi) { $dong += 'LTT_LLM_MAX_DONG_THOI=1' }
     [IO.File]::WriteAllText($tamEnv, ($dong -join "`n") + "`n", (New-Object Text.UTF8Encoding($false)))
     & scp.exe -i $Khoa -o BatchMode=yes -q $tamEnv "${User}@${MayB}:C:/ProgramData/LTTLlm/gateway.env"
     $rc = $LASTEXITCODE
     Remove-Item $tamEnv -Force -ErrorAction SilentlyContinue
     if ($rc -ne 0) { Loi "scp gateway.env da migrate that bai"; exit 1 }
-    Dat "gateway.env da migrate input 169984, output 32768, concurrency 1 (giu token/model)"
+    Dat "gateway.env da migrate input 186368, output 32768, GO MAX_DONG_THOI (giu token/model)"
 } else {
     # Token sinh mot lan, ngau nhien. No KHONG phai bi mat cua nen tang - no chi
     # bao ve cong VLM tren LAN. Nhung van khong duoc in ra log.
@@ -302,13 +312,14 @@ if (($co -join "") -match "CO") {
         "LTT_LLM_PORT=8299",
         "LTT_LLM_TOKEN=$token",
         "LTT_LLM_UPSTREAM_URL=http://127.0.0.1:8280",
-        "LTT_LLM_COMFY_URL=http://127.0.0.1:8188",
         "# Fail-closed (Q92): rong = KHONG mo model nao. Mo bang cach liet ke ten.",
         "LTT_LLM_MODELS=",
         "# Tran do duoc o P5 (SO_DO_P2_P6.md). Doi thi phai do lai.",
-        "LTT_LLM_MAX_INPUT_TOKENS=169984",
+        "LTT_LLM_MAX_INPUT_TOKENS=186368",
         "LTT_LLM_MAX_OUTPUT_TOKENS=32768",
-        "LTT_LLM_MAX_DONG_THOI=1",
+        "# So slot: KHONG khai o day. Nguon chan ly la `llm_gateway/config.py`",
+        "# (mac dinh 3, khop `ngan_sach.SO_SLOT_MAY_B` - test_1201 chot). Mot dong",
+        "# o day se thang mac dinh do va thanh nguon chan ly thu hai.",
         "LTT_LLM_MAX_IMAGES=4",
         "# Nen do duoc: desktop 1515-1612 MiB, ComfyUI thuong tru 6211-16620 MiB.",
         "LTT_LLM_VRAM_SACH_MB=2500",

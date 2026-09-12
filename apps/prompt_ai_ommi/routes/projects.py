@@ -218,7 +218,8 @@ def _chat_model(value: str) -> str:
     # Bí danh model NHÀ, không phải tên một hãng đã ngừng. Nhánh này chỉ chạy
     # khi `allowed` rỗng — tức lúc registry chưa nạp — nên nó ít khi nổ, và
     # một giá trị sai ở đây sống rất lâu mà không ai thấy.
-    return next(iter(allowed), _C.MODEL_MAC_DINH)
+    # D09: mac dinh la model NOI BO app khai, khong phai mac dinh cua khach.
+    return next(iter(allowed), _C.model_noi_bo_cua("prompt_ai_ommi"))
 
 
 @router.post("/api/projects/{project_id}/quote")

@@ -27,14 +27,20 @@ trong_tai.py — card có đang bị người khác chiếm không.
 
    `llama-server.exe` **không phải** python, nên phép đếm này không tự đếm chính ta.
 
-⭐ PHÂN CÔNG VỚI `don_dep.py` — hai câu hỏi khác nhau, đừng trộn:
+⛔ VÀ NÓ KHÔNG CÒN HỎI ComfyUI, BẰNG BẤT CỨ ĐƯỜNG NÀO (Dual-model 5.4b).
+   `don_dep.py` (gọi `/free` rồi tự đo lại) đã bị **xoá**, cùng nhánh "1 python +
+   tải cao" của tệp này. Cả hai là một **trọng tài thứ hai** cho card 3090, và
+   D01 B thay hai trọng tài bằng **một**: trọng tài residency ở máy A, nơi duy
+   nhất thấy cùng lúc lease LLM, phòng chờ và hàng job ảnh (TD-D10).
 
-     trong_tai:  co VIEC KHAC dang chay khong?      -> ban -> 429
-     don_dep  :  VRAM co dang bi GIU khong?         -> bao ComfyUI nha roi do lai
+   Việc dọn card không mất đi — nó đổi chủ và đổi cả cơ chế: máy A phát
+   `POST /v1/nha_comfy` để **dừng hẳn** dịch vụ LTTComfyUI (L-14 §3: `/free`
+   không nhả 223,5 MiB ngữ cảnh CUDA, mà biên của LTT-3.8 chỉ 445 MiB), rồi mới
+   phát `POST /v1/residency/nap`.
 
-   Một ComfyUI *nằm im nhưng vẫn ôm 6,2 GB* **không** làm ta bận — nó chỉ cần được
-   bảo nhả. Đó là việc của `don_dep`, và số đo P6 cho thấy bỏ qua nó thì tốc độ
-   còn một phần tư mà không có lỗi nào.
+   Thứ còn lại ở đây là hai cái phanh thuần cơ học — RAM chủ, và số tiến trình
+   python đang tính trên card — không cái nào đòi hỏi một câu chuyện về ai đang
+   vẽ gì.
 
 ⛔ BẬN KHÔNG PHẢI LỖI. Bên gọi phải dịch kết quả `ban=True` thành **HTTP 429**,
    không phải 5xx. Xem đầu `__init__.py`.
@@ -42,8 +48,6 @@ trong_tai.py — card có đang bị người khác chiếm không.
 from __future__ import annotations
 
 import logging
-import shutil
-import subprocess
 from dataclasses import dataclass
 from typing import Callable, Optional
 
@@ -52,54 +56,29 @@ log = logging.getLogger("llm_gateway.trong_tai")
 #: Cùng trần với `render_gateway/busy.py` và `platform_core/gpu.py`. Không đặt số khác.
 NVIDIA_SMI_TIMEOUT_S = 8
 
+#: Card mà trọng tài này nói về: **3090** (`ltt38`). Nó cân giữa ComfyUI và
+#: LTT-3.8, hai hộ dùng chung đúng card ấy. LTT-3.5 ở trên 5060 Ti và **không**
+#: tranh với ComfyUI, nên tải/tiến trình của card kia không được lọt vào đây.
+VAI_TRONG_TAI = "ltt38"
+
 #: Số tiến trình python trên card kể từ đó coi là BẬN. **2**, không phải 1:
 #: một python là ComfyUI thường trú, đó là trạng thái bình thường của máy B.
 #: Đặt 1 ở đây làm cổng trả 429 vĩnh viễn — xem chú thích đầu tệp.
 TRAN_PYTHON_GPU = 2
 
-#: Mức tải GPU coi là "có người đang TÍNH", không phải chỉ đang giữ bộ nhớ.
-#:
-#: 🔴 VÌ SAO ĐẾM TIẾN TRÌNH KHÔNG ĐỦ. Chốt dưới đây coi *"1 tiến trình python =
-#:    chỉ ComfyUI thường trú = RẢNH"*. Đó đúng khi ComfyUI ngồi im giữ model.
-#:    Nhưng ComfyUI **đang vẽ** cũng là **đúng 1 tiến trình python** — đếm không
-#:    phân biệt được hai chuyện đó.
-#:
-#:    Hệ quả đo thật 24/08: nạp Qwen trong lúc HiDream đang vẽ ⇒ card lên
-#:    **24.213 MB / 24.576 = 98,5 %**, và **cả hai** cùng chậm.
-#:
-#: ⭐ Thứ phân biệt được là **mức tải**: ComfyUI ngồi im ở 0–1 %, ComfyUI đang vẽ
-#:    ở ~100 %. Kết hợp hai tín hiệu cho đúng bốn trường hợp:
-#:
-#:      python có + tải cao  ⇒ BẬN   (ComfyUI đang vẽ, hoặc dự án video đang chạy)
-#:      python có + tải thấp ⇒ rảnh  (ComfyUI chỉ thường trú)
-#:      python không + tải cao ⇒ rảnh (chính `llama-server` đang trả lời — tải
-#:                                     của CHÍNH TA, và `gioi_han` đã chặn đồng thời)
-#:      python không + tải thấp ⇒ rảnh
-#:
-#: ⚠️ `llama-server.exe` **không phải** python — đó là lý do phép đếm bỏ sót nó
-#:    (D-037), và cũng là lý do phép kết hợp này không tự chặn chính mình.
-#: ⭐ ĐÃ CHUYỂN SANG `render_gateway.busy` (04/09) và dùng lại ở đây, đúng luật
-#:    "dùng lại, không chép lại" ở đầu tệp này. Từ 04/09 **cả hai cổng** cùng cần
-#:    con số này: cổng ảnh dùng nó để **không đuổi** một hộ đang tính, cổng LLM
-#:    dùng nó để **không nạp đè** lên một lượt vẽ. Hai câu hỏi ngược chiều, cùng
-#:    một ngưỡng — nên phải cùng một hằng số.
-from render_gateway.busy import TAI_GPU_DANG_TINH  # noqa: E402,F401
-
-
-def _tai_gpu_mac_dinh() -> Optional[int]:
-    """Phần trăm tải GPU. `None` = không hỏi được."""
-    import subprocess
-    try:
-        ra = subprocess.run(
-            ["nvidia-smi", "--query-gpu=utilization.gpu",
-             "--format=csv,noheader,nounits"],
-            capture_output=True, text=True, timeout=8)
-        if ra.returncode != 0:
-            return None
-        dong = (ra.stdout or "").strip().splitlines()
-        return int(dong[0].strip()) if dong else None
-    except Exception:                                           # noqa: BLE001
-        return None
+# 🔴 `TAI_GPU_DANG_TINH` VÀ `_tai_gpu_mac_dinh` ĐÃ ĐI (Dual-model 5.4b).
+#
+#    Chúng phục vụ **một** nhánh: *"1 python + tải cao ⇒ bận"*, tức phép suy
+#    "card nóng nên chắc ComfyUI đang vẽ". Phép suy ấy đã sai hai lần theo hai
+#    chiều — 31/08 nó đọc tải của **chính ta** thành tải người khác (70 % lượt bị
+#    chối oan), rồi 04/09 nó bỏ lọt ca hai model cùng làm việc — và cả hai lần
+#    bản vá là **thêm một nguồn tin**, chứ ngưỡng không cứu được.
+#
+# ⭐ Lời giải không phải một ngưỡng thứ ba mà là một **quyền**: từ D01 B, ai cầm
+#    3090 lúc nào do trọng tài residency ở máy A quyết, và trong cửa sổ LLM thì
+#    ComfyUI đã bị dừng hẳn (5.4a). Không còn cuộc tranh nào cho cổng này phân
+#    xử, nên không còn tín hiệu nào cho nó đọc. `render_gateway.busy` vẫn giữ
+#    hằng số ấy cho **phía ảnh** — đó là người dùng thật sự của nó.
 
 
 def _dem_python_gpu_mac_dinh() -> Optional[int]:
@@ -116,19 +95,24 @@ def _dem_python_gpu_mac_dinh() -> Optional[int]:
 
 
 def _dem_toi_thieu() -> Optional[int]:
-    """Đường lùi khi không có `render_gateway`. Cố ý thô."""
-    smi = shutil.which("nvidia-smi")
-    if not smi:
-        return None
+    """Đường lùi khi không có `render_gateway`. Cố ý thô, nhưng **đúng card**.
+
+    ⛔ `--query-compute-apps` không xin cột `gpu_uuid` thì nó đếm tiến trình trên
+       **mọi** card rồi ta kết luận về một card. Từ 09/2026 điều đó có nghĩa: một
+       job ảnh trên 5060 Ti làm cổng của 3090 tưởng card mình có người khác —
+       429 oan, trong khi 3090 hoàn toàn rảnh.
+    """
+    from .gpu_uuid import VaiKhongCo, doc_the, tien_trinh, uuid_cua
     try:
-        r = subprocess.run(
-            [smi, "--query-compute-apps=process_name", "--format=csv,noheader"],
-            capture_output=True, text=True, timeout=NVIDIA_SMI_TIMEOUT_S)
-    except (OSError, subprocess.SubprocessError):
+        uu = uuid_cua(VAI_TRONG_TAI)
+    except (VaiKhongCo, OSError, ValueError):
         return None
-    if r.returncode != 0:
+    # Hỏi thẻ trước để phân biệt "không có tiến trình nào" với "không hỏi được":
+    # `tien_trinh` trả danh sách rỗng cho **cả hai**, và hai thứ đó đòi hai phán
+    # xử khác nhau ở `phan_xu()` (rảnh vs bận).
+    if doc_the(uu) is None:
         return None
-    return sum(1 for d in r.stdout.splitlines() if "python" in d.lower())
+    return sum(1 for _pid, ten, _mib in tien_trinh(uu) if "python" in ten.lower())
 
 
 def _ram_trong_gb_mac_dinh() -> Optional[float]:
@@ -164,40 +148,12 @@ class TrongTai:
     def __init__(self, *, ram_trong_toi_thieu_gb: float, bat: bool = True,
                  tran_python_gpu: int = TRAN_PYTHON_GPU,
                  dem_python_gpu: Callable[[], Optional[int]] = _dem_python_gpu_mac_dinh,
-                 ram_trong_gb: Callable[[], Optional[float]] = _ram_trong_gb_mac_dinh,
-                 tai_gpu: Callable[[], Optional[int]] = _tai_gpu_mac_dinh,
-                 ho_kia_dang_ve: Optional[Callable[[], bool]] = None,
-                 tai_dang_tinh: int = TAI_GPU_DANG_TINH,
-                 model_cua_ta_dang_chay: Callable[[], bool] = lambda: False):
+                 ram_trong_gb: Callable[[], Optional[float]] = _ram_trong_gb_mac_dinh):
         self.ram_toi_thieu = ram_trong_toi_thieu_gb
         self.bat = bat
         self.tran_python_gpu = tran_python_gpu
         self._dem = dem_python_gpu
         self._ram = ram_trong_gb
-        self._tai = tai_gpu
-        #: ComfyUI CÓ VIỆC ĐANG CHẠY không. `None` ⇒ coi như không — giữ hành vi
-        #: cũ cho mọi lời gọi chưa tiêm, và cho test không phải dựng ComfyUI.
-        self._ve = ho_kia_dang_ve
-        self.tai_dang_tinh = tai_dang_tinh
-        #: Model CUA TA co dang nap va san sang khong. Mac dinh `False` de giu
-        #: nguyen hanh vi cu khi ben goi khong noi day — xem `phan_xu`.
-        self._model_cua_ta = model_cua_ta_dang_chay
-
-    def _ho_kia_dang_ve(self) -> bool:
-        """ComfyUI có việc đang chạy không. Hỏng/không tiêm ⇒ `False`.
-
-        ⛔ "Không biết" ở đây trả `False` (không bận) chứ không `True`, và đó là
-           **giữ nguyên hành vi cũ**: trước 04/09 nhánh này không hỏi gì cả. Một
-           nguồn tin mới hỏng không được phép làm cổng chặt hơn trước — đó là
-           cách một cải tiến biến thành một sự cố.
-        """
-        if self._ve is None:
-            return False
-        try:
-            return bool(self._ve())
-        except Exception:                                       # noqa: BLE001
-            log.info("khong hoi duoc hang doi ComfyUI — coi nhu khong ve")
-            return False
 
     def phan_xu(self) -> PhanXu:
         if not self.bat:
@@ -221,72 +177,21 @@ class TrongTai:
                           ly_do=(f"co {n} tien trinh python tren card "
                                  f"(>= {self.tran_python_gpu}) — co viec khac dang chay"))
 
-        # n == 1 co the la ComfyUI THUONG TRU (ranh) hoac ComfyUI DANG VE (ban).
-        # Dem khong phan biet duoc — muc tai thi co. Xem `TAI_GPU_DANG_TINH`.
-        if n >= 1:
-            tai = self._tai()
-            if tai is not None and tai >= self.tai_dang_tinh:
-                # 🔴 TẢI CAO CỦA CHÍNH TA KHÔNG PHẢI TẢI CỦA NGƯỜI KHÁC.
-                #
-                #    `llama-server.exe` **không phải python** nên nó không bị
-                #    đếm ở `n`. Nhưng khi nó đang sinh chữ, card lên 89–100 % —
-                #    và nhánh trên quy mức tải ấy cho **ComfyUI**, cái python duy
-                #    nhất được đếm. ComfyUI lúc đó đang ngồi im.
-                #
-                # ⛔ Đo 31/08, hai lượt độc lập: **14/20 = 70 %** yêu cầu bị từ
-                #    chối oan. Máy khoẻ, model sẵn sàng, ComfyUI im — và cổng vẫn
-                #    trả 429 vì nó thấy tải do **chính nó** tạo ra. Mọi lượt đều
-                #    thành công khi thử lại.
-                #
-                # 🔴 Với khách thật, triệu chứng là: một client tuần tự (Codex,
-                #    Claude Code — hỏi, đọc, hỏi tiếp) ngẫu nhiên nhận
-                #    `503 model is busy` vì GPU còn nóng từ **lượt trước của
-                #    chính họ**, và không có cách nào phân biệt với "máy B bận
-                #    thật".
-                #
-                # ⭐ Vì sao điều kiện là "model của ta đang chạy" chứ không phải
-                #    một ngưỡng tải khác: nhánh này sinh ra để tránh **NẠP** model
-                #    đè lên việc người khác — chính câu cuối của thông điệp nói
-                #    thế. Model đã nạp rồi thì **không có gì để nạp**, nên lý do
-                #    tồn tại của nhánh đã hết.
-                #
-                # ⚠️ Cái giá, nói thẳng: nếu model ta đã nạp **và** ComfyUI bắt
-                #    đầu vẽ thật, ta sẽ không còn từ chối. Chấp nhận được vì
-                #    `--reserve-vram 3` đã có và VRAM của ta ổn định ở 22,4 GB;
-                #    đổi lại là chấm dứt 70 % lượt từ chối oan.
-                if self._model_cua_ta() and not self._ho_kia_dang_ve():
-                    return PhanXu(ban=False, so_python_gpu=n, ram_trong_gb=ram,
-                                  ly_do=(f"tai GPU {tai}% nhung model cua ta dang "
-                                         f"chay — tai nay la CUA TA"))
-                if self._model_cua_ta():
-                    # 🔴 LỖ HỔNG CỦA CHÍNH NHÁNH TRÊN, ĐO 04/09/2026.
-                    #
-                    #    Nhánh "tải này là CỦA TA" giả định: model ta đã nạp thì
-                    #    tải cao chắc là của ta. Chú thích của nó đã nói thẳng cái
-                    #    giá: *"nếu model ta đã nạp VÀ ComfyUI bắt đầu vẽ thật, ta
-                    #    sẽ không còn từ chối"*.
-                    #
-                    #    Đo thật lúc 12:5x: `qwen38-api state=ready`, ComfyUI
-                    #    `queue_running=1`, card **24.178/24.576 MiB, tải 86 %** —
-                    #    hai model vừa cùng thường trú vừa cùng làm việc. Và tiền
-                    #    đề của đánh đổi đã hỏng: VRAM của ta lúc ấy chỉ **13,3 GB**
-                    #    chứ không phải 22,4 GB, tức nó đã tràn sang RAM chủ và
-                    #    đang chạy ở một phần tư tốc độ.
-                    #
-                    # ⭐ Thứ sửa được điều này không phải một ngưỡng tải khác, mà
-                    #    một NGUỒN TIN KHÁC: **hỏi thẳng ComfyUI có việc đang chạy
-                    #    không**. Mức tải là suy đoán; hàng đợi là sự thật. Và vì
-                    #    ta hỏi trực tiếp nên nhánh này KHÔNG làm sống lại 70 %
-                    #    lượt từ chối oan của 31/08 — những lượt đó bị chối vì tải
-                    #    do CHÍNH TA tạo ra, còn ở đây hàng đợi ComfyUI trống nên
-                    #    câu trả lời vẫn là "không bận".
-                    return PhanXu(ban=True, so_python_gpu=n, ram_trong_gb=ram,
-                                  ly_do=("model cua ta da nap NHUNG ComfyUI dang "
-                                         "ve that — chay ca hai lam ca hai cham"))
-                return PhanXu(ban=True, so_python_gpu=n, ram_trong_gb=ram,
-                              ly_do=(f"co tien trinh python tren card va tai GPU "
-                                     f"{tai}% (>= {self.tai_dang_tinh}%) — dang ve, "
-                                     f"nap model bay gio se de len nhau"))
+        # 🔴 NHÁNH "1 python + tải cao" ĐÃ ĐI (Dual-model 5.4b), và nó đi vì
+        #    quyền chứ không vì ngưỡng. Nó hỏi `utilization.gpu` rồi hỏi hàng đợi
+        #    ComfyUI để tự phân xử cuộc tranh 3090 — tức nó là **trọng tài thứ
+        #    hai**, đúng thứ D01 B thay bằng MỘT trọng tài residency ở máy A.
+        #
+        #    Hai nguồn tin của nó nay đều vô nghĩa ở đây: trong cửa sổ LLM,
+        #    ComfyUI **đã bị dừng hẳn** (5.4a) nên `/queue` không trả lời và mức
+        #    tải trên card chỉ còn là tải của **chính ta**; ngoài cửa sổ LLM, máy
+        #    A đã chặn ở admission (Task 5.3) nên lượt không tới được đây. Giữ
+        #    nhánh ấy chỉ còn sinh ra 429 oan — đúng 70 % lượt bị chối của 31/08
+        #    (`test_368` cũ), lần này không có ai đi sửa.
+        #
+        # ⛔ Và cổng này **không được** hỏi ComfyUI nữa, bằng bất cứ đường nào:
+        #    hai cơ chế cùng canh một card, không khoá chung, là hình dạng hỏng
+        #    mà cả Task 5.4 đi gỡ. Chốt tĩnh ở `tests/test_1218_gateway_residency.py`.
 
         # n == 0 (khong ai), hoac python co mat nhung tai thap (chi thuong tru).
         return PhanXu(ban=False, so_python_gpu=n, ram_trong_gb=ram)

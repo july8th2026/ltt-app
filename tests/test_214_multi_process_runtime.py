@@ -37,7 +37,23 @@ postgres_only = skip_without_postgres()
 
 PEPPER = "multiproc-pepper-" + "m" * 40
 WORKERS = 3
+#: Thoi luong chay cho ca KHONG cho theo dieu kien. Giu 6,0 nhu truoc 12/09 —
+#: nam ca ay do nhung thu xay ra TRONG khi worker chay (khong nhan doi, khong
+#: chet), khong doi hang phai rut can, nen chung khong can lau hon.
+#:
+#: ⛔ Ca nao KHANG DINH "xong het" thi KHONG duoc dung con so nay lam thoi luong:
+#:    truyen `xong=` va mot tran rong (`TRAN_CHO_S`). Do chinh la khuyet dat da
+#:    lam buoc gate nay do: dung worker bang dong ho roi khang dinh cong viec da
+#:    xong. Do bon lan lien tiep cung cau hinh: 2/9 -> 5/9 -> 9/9 -> 5/9.
 RUN_SECONDS = 6.0
+
+#: Tran cho ca CO dieu kien dung. Khong phai thoi luong: test thoat ngay khi
+#: `xong()` dung, nen so lon o day khong lam gate cham — no chi giu cho mot loi
+#: that khoi bien thanh mot lan treo vo han.
+#:
+#: 📈 Do 12/09: dat tran nay lam THOI LUONG cho ca bay ca dua buoc gate tu 145 s
+#:    len 622 s. Tran phai thuoc ve LOI GOI biet cho, khong thuoc ve moi nguoi.
+TRAN_CHO_S = 90.0
 
 #: Mỗi lần gửi webhook ghi một dòng vào đây. Dùng file chứ không dùng biến vì
 #: người đếm và người gửi là hai tiến trình khác nhau.
@@ -88,6 +104,26 @@ def _child(url: str, data_dir: str, send_log: str, seconds: float,
     import platform_core.public_api.outbox as outbox_mod
     outbox_mod.send_delivery = _dem       # nếu module đã import sẵn tên đó
 
+    # 🔴 BACK-OFF CỦA PRODUCTION LÀM PHÉP KIỂM NÀY MẤT NGHĨA, nên vá TRONG
+    #    tiến trình con — cùng idiom với hai bản vá ở trên, và cùng lý do: ở đây
+    #    không có fixture nào.
+    #
+    #    Từ dual-model 5.5, `thumbnail.generate` giành `anh_3090` với **một** suất
+    #    (D01 B: hai model ảnh cùng lúc trên 3090 là một lần OOM). Job bị từ chối
+    #    đi qua `_tra_ve_hang_doi` và nằm chờ `GPU_RETRY_DELAY_S` = **20 giây**.
+    #    Chín job × một suất × 20 giây ≈ 160 giây để rút cạn — trong khi cửa sổ
+    #    của phép kiểm là 6 giây. Đo 12/09: 6 giây chỉ đủ cho 2 job.
+    #
+    # ⭐ Thứ phép kiểm này đo là **"mỗi job chạy đúng một lần"** — tính chất của
+    #    `claim()` + `SKIP LOCKED`, không phải của back-off. Nên nó cần CHÍN job
+    #    cùng bị tranh, không cần chúng cách nhau 20 giây.
+    #
+    # ⛔ KHÔNG hạ `GPU_RETRY_DELAY_S` trong mã sản phẩm để phép kiểm này xanh:
+    #    20 giây được chọn cho job GPU dài hàng phút, và quay vòng dày hơn thì
+    #    đốt CPU với CSDL. Vá ở đây, chỉ trong tiến trình con của test.
+    import platform_core.job_runner as _jr
+    _jr.GPU_RETRY_DELAY_S = 1
+
     from platform_core.job_runner import run_forever
 
     han = time.monotonic() + float(seconds)
@@ -112,6 +148,13 @@ def scratch(tmp_path):
     Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
     dbmod.reset_engine()
+    # Job anh gianh `anh_3090` tu dual-model 5.5, va luat 0 fail-closed: khong co
+    # dong `gpu_residency` thi worker chi tra job ve hang doi. Cac job o day la
+    # `thumbnail.generate`. Ly do day du: `tests/conftest.py::mo_cu_tru_3090`.
+    from platform_core.llm import residency as _residency
+
+    from tests.conftest import mo_cu_tru_3090
+    mo_cu_tru_3090(_residency.ANH)
 
     send_log = pathlib.Path(tempfile.gettempdir()) / f"{uuid.uuid4().hex}-{SEND_LOG}"
     try:
@@ -207,8 +250,52 @@ def _seed_deliveries(user_id: str, count: int) -> list:
     return ids
 
 
-def _run_workers(scratch, seconds: float = RUN_SECONDS) -> None:
-    """N tiến trình worker thật, chạy đồng thời, rồi dừng êm."""
+def _con_lai(ids) -> int:
+    """Bao nhiêu job trong `ids` CHƯA xong. Dùng làm điều kiện dừng của worker.
+
+    ⚠️ Mở phiên riêng mỗi lần hỏi: phiên của test đã đọc xong ảnh chụp của nó,
+       còn worker đang ghi ở tiến trình khác — hỏi lại bằng phiên cũ là đọc lại
+       đúng ảnh chụp cũ và vòng chờ sẽ không bao giờ thấy việc xong.
+    """
+    from platform_core.models import JOB_DONE, Job
+
+    gen, db = _session()
+    try:
+        return int(db.execute(sa.select(sa.func.count(Job.id)).where(
+            Job.id.in_(list(ids)), Job.status != JOB_DONE)).scalar_one())
+    finally:
+        _close(gen)
+
+
+def _run_workers(scratch, seconds: float = RUN_SECONDS, *, xong=None) -> None:
+    """N tiến trình worker thật, chạy đồng thời, rồi dừng êm.
+
+    🔴 `xong` KHÔNG phải một tiện nghi — nó là thứ giữ phép kiểm khỏi flaky.
+
+       Bản đầu dừng worker bằng **đồng hồ treo tường** rồi khẳng định "cả chín
+       job đã xong". Hai mệnh đề ấy không có quan hệ nhân quả: một thay đổi
+       thông lượng bất kỳ là tỉ lệ xong đổi. Đo 12/09, cùng cấu hình, bốn lượt:
+       **2/9 → 5/9 → 9/9 → 5/9**.
+
+       Thứ làm thông lượng đổi là một quyết định **đúng**: dual-model 5.5 đưa job
+       ảnh về **một** suất (D01 B — hai model ảnh cùng lúc trên 3090 là một lần
+       OOM), nên chín job chạy **nối tiếp**. Cửa sổ 6 giây mã hoá mức song song
+       cũ, và nới nó chỉ dời quả bom sang lần đổi thông lượng kế tiếp.
+
+    ⭐ Tài liệu pytest nói thẳng điều phải làm ở đây: *"Make sure to eventually
+       **wait on** any spawned threads — for example at the end of a test, or
+       during the teardown of a fixture"*, và flaky thường nghĩa là *"the test
+       relies on some system state that is not being appropriately controlled"*.
+       Thực hành phổ biến cho cùng hình dạng: **poll theo điều kiện + timeout**
+       thay cho một hạn chót cố định.
+
+    ⇒ `xong()` trả `True` khi công việc đã xong ⇒ dừng ngay. `seconds` còn lại
+      là **trần an toàn**, không phải thời lượng chạy: máy khoẻ thì test nhanh
+      hơn, máy chậm thì vẫn đúng.
+
+    ⛔ Đừng quay lại kiểu "chạy đủ N giây rồi khẳng định": nó xanh đúng tới lần
+       ai đó đổi số suất, thêm một bước vào vòng bảo trì, hay chạy trên máy bận.
+    """
     ctx = multiprocessing.get_context("spawn")
     # `daemon=True` khong cuu duoc moi truong hop, nhung no cuu truong hop HAY
     # XAY RA NHAT: cha thoat binh thuong hoac thoat vi ngoai le. Luc do Python
@@ -221,6 +308,22 @@ def _run_workers(scratch, seconds: float = RUN_SECONDS) -> None:
              for i in range(WORKERS)]
     for p in procs:
         p.start()
+
+    if xong is not None:
+        # Chờ CÔNG VIỆC, không chờ đồng hồ. `seconds` là trần.
+        #
+        # ⚠️ Chỉ dừng sớm khi `xong()` đã True — lúc đó không còn việc đang chạy
+        #    nên `terminate()` không thể cắt ngang một job giữa chừng, và bất
+        #    biến "mỗi job chạy đúng một lần" không bị chính phép kiểm phá.
+        han = time.monotonic() + float(seconds)
+        while time.monotonic() < han:
+            try:
+                if xong():
+                    break
+            except Exception:                                  # noqa: BLE001
+                pass          # CSDL đang bận/đang khoá: hỏi lại nhịp sau
+            time.sleep(0.2)
+
     for p in procs:
         p.join(timeout=seconds + 60)
         if p.is_alive():
@@ -254,7 +357,7 @@ def test_moi_job_chay_dung_mot_lan(scratch):
 
     user_id = _seed_account()
     ids = _seed_jobs(user_id, 9)
-    _run_workers(scratch)
+    _run_workers(scratch, TRAN_CHO_S, xong=lambda: _con_lai(ids) == 0)
 
     gen, db = _session()
     try:
@@ -380,7 +483,7 @@ def test_don_du_lieu_chay_dong_thoi_khong_lam_hong_gi(scratch):
     user_id = _seed_account()
     ids = _seed_jobs(user_id, 6)
     _seed_deliveries(user_id, 3)
-    _run_workers(scratch)
+    _run_workers(scratch, TRAN_CHO_S, xong=lambda: _con_lai(ids) == 0)
 
     gen, db = _session()
     try:

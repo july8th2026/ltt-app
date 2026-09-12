@@ -56,6 +56,10 @@ log = logging.getLogger(__name__)
 #: Provider duy nhat. Xem `dich_thuat` dau tep: doi model la doi san pham.
 THU_TU_PROVIDER = ("ltt_llm",)
 
+#: Slug cua chinh app nay, de hoi `canonical.model_noi_bo_cua`. ⛔ Khong go lai
+#: chuoi nay o `model_cho`: hai ban sao cua mot ten se troi khoi nhau.
+SLUG = "auto_scan_video"
+
 #: 🔑 **Phien ban PROMPT + LU?C DO, di vao van tay.**
 #:
 #: ⛔ Thieu no thi doi mot cau prompt xong, cache van khop, va lan chay dung lai
@@ -159,31 +163,78 @@ THEO_MA = {t.ma: t for t in THAO_TAC}
 # ══════════════════════════════════════════════════════════════════════════════
 
 def model_cho(thao_tac: ThaoTac, *, provider: str = "") -> str:
-    """Id model that cho mot thao tac. Hoi registry, khong go tay.
+    """Id model that cho mot thao tac. Hoi BAN KHAI, doi chieu REGISTRY.
 
-    🔑 Ngu nghia la `can_thi_giac`; id la viec cua nen tang. Ngay may B doi tu
-       `qwen38-vision` sang mot ban khac, registry doi va ta di theo — khong tep
-       nao cua Auto Scan phai sua.
+    🔑 Ngu nghia la `can_thi_giac`; id la viec cua nen tang. Ngay may B doi
+       GGUF ben duoi, registry doi va ta di theo — khong tep nao cua Auto Scan
+       phai sua.
 
-    ⛔ Nem `AiError` neu khong tim thay, thay vi roi ve mot mac dinh. Roi ve
-       model van ban cho mot thao tac CAN thi giac se cho ra mot cau tra loi
-       trong nhu that ve mot buc anh model chua bao gio nhin thay.
+    🔴 D09 (dual-model 2.3 con sot, sua o 3.3) DOI CACH CHON, KHONG DOI
+       BAT BIEN. Ban truoc loc `bool(kn["vision"]) == thao_tac.can_thi_giac`,
+       tuc thao tac VAN BAN doi mot model **khong** co thi giac. Phep loc ay
+       hong o hai chieu, va ca hai deu that:
+
+       (a) **No tu vo o Task 3.3.** Khi `qwen38-api` nap mmproj va khai
+           `vision: True` thi CA HAI model cong khai deu co co ⇒ tap `hop`
+           rong cho moi thao tac van ban ⇒ `AiError`, va nam thao tac AI cua
+           ASV chet han. Day khong phai suy doan: `planner._model_nha` mang y
+           nguyen khuyet tat nay, da sua o 2.4, va docstring cua no **goi ten
+           tep nay** la cho con lai.
+
+       (b) **No khong tra loi dung cau hoi.** "Model nao khong doc anh" khong
+           phai cau ASV can hoi. Van ban chay tot tren mot model co thi giac —
+           mmproj chi ngoi khong. Cau dung la *"model nao app nay khai cho viec
+           LLM noi bo cua no"*, va tu D09 nen tang co dung mot cho tra loi:
+           `canonical.model_noi_bo_cua(slug)` doc `manifest.model_llm_noi_bo`.
+
+       ⛔ Nen ĐỪNG doc `MODEL_MAC_DINH` o day: do la mac dinh **cua khach**
+          goi `text.chat`, khong phai lua chon noi bo cua mot app.
+          `tests/test_1212` co banh coc AST cho dung dieu do — tep nay nay nam
+          trong danh sach nguoi goi noi bo cua no.
+
+    ⚠️ Thi giac thi VAN la rang buoc cung: mot thao tac `can_thi_giac` khong
+       bao gio duoc phuc vu boi model khong khai `vision`. Neu model app khai
+       khong doc duoc anh thi ta **di tim mot model khac** (va ghi mot dong
+       canh bao — bo dieu huong am tham di nguoc lai chinh ban khai la thu
+       nguoi van hanh can biet), chu khong lang le tra ve no.
+
+    ⛔ Nem `AiError` neu khong con ai phuc vu duoc, thay vi roi ve mot mac
+       dinh. Roi ve model khong thi giac cho mot thao tac CAN thi giac se cho ra
+       mot cau tra loi trong nhu that ve mot buc anh model chua bao gio nhin
+       thay.
     """
     from platform_core import providers
+    from platform_core.llm import canonical
 
     pid = provider or THU_TU_PROVIDER[0]
-    hop = []
-    for m in providers.models_for(pid):
-        kn = providers.model_capabilities(m.id) or {}
-        if bool(kn.get("vision")) == thao_tac.can_thi_giac:
-            hop.append(m.id)
-    if not hop:
-        raise AiError(
-            f"{pid} khong co model nao {'co' if thao_tac.can_thi_giac else 'khong'}"
-            f" thi giac cho thao tac {thao_tac.ma!r}")
+    kha_nang = {m.id: (providers.model_capabilities(m.id) or {})
+                for m in providers.models_for(pid)}
+
+    def phuc_vu_duoc(mid: str) -> bool:
+        if mid not in kha_nang:
+            return False
+        return bool(kha_nang[mid].get("vision")) or not thao_tac.can_thi_giac
+
+    khai = canonical.ALIAS_SANG_ID.get(canonical.model_noi_bo_cua(SLUG), "")
+    if phuc_vu_duoc(khai):
+        return khai
+
     # ⚠️ On dinh: sap xep de hai lan goi cung cho ra mot id, neu khong van tay
     #    se nhay va cache truot vo co.
-    return sorted(hop)[0]
+    hop = sorted(mid for mid in kha_nang if phuc_vu_duoc(mid))
+    if not hop:
+        raise AiError(
+            f"{pid} khong co model nao phuc vu duoc thao tac {thao_tac.ma!r}"
+            f" (can thi giac: {thao_tac.can_thi_giac}; khai: {khai!r};"
+            f" registry: {sorted(kha_nang)})")
+    if khai:
+        log.warning(
+            "app %r khai model noi bo %r nhung no %s cho thao tac %r; dung %r",
+            SLUG, khai,
+            "khong co trong registry" if khai not in kha_nang
+            else "khong khai thi giac",
+            thao_tac.ma, hop[0])
+    return hop[0]
 
 
 def ban_do_model(thao_tac: ThaoTac) -> dict:

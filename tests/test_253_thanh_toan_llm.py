@@ -18,6 +18,11 @@ import pytest
 
 from tests.conftest import bao_dam_user
 
+#: Model mà bảng giá của tệp này neo vào. D07 (dual-model 2.5) tách giá
+#: theo model; những con số dưới đây là của model mặc định. Giá của
+#: CẢ HAI model neo ở `test_1213_gia_theo_model.py`.
+from platform_core.llm.gia_token import MODEL_GIA_MAC_DINH as _M
+
 
 @pytest.fixture()
 def db(tmp_path, monkeypatch):
@@ -54,7 +59,7 @@ def test_giu_cho_theo_tran_uoc_cao(db):
     from platform_core.llm import thanh_toan as T
     u = _nap(db)
     so = T.giu_cho_luot(db, user_id=u, request_id="r1",
-                        token_vao_uoc=8_000, max_tokens=2_000)
+                        token_vao_uoc=8_000, max_tokens=2_000, model=_M)
     # 8.000 vao = 400 mcredit, 2.000 ra = 800 mcredit -> 1.200 -> ceil = 2 credit
     assert so == 2
     assert credit.so_du(db, u) == 998
@@ -66,7 +71,7 @@ def test_khong_du_credit_thi_khong_giu_va_khong_goi_model(db):
     u = _nap(db, so=1)
     with pytest.raises(credit.ThieuCreditError):
         T.giu_cho_luot(db, user_id=u, request_id="r1",
-                       token_vao_uoc=1_000_000, max_tokens=100_000)
+                       token_vao_uoc=1_000_000, max_tokens=100_000, model=_M)
     assert credit.so_du(db, u) == 1, "khong du tien thi khong duoc dot GPU"
 
 
@@ -75,7 +80,7 @@ def test_thieu_request_id_bi_chan(db):
     u = _nap(db)
     with pytest.raises(ValueError):
         T.giu_cho_luot(db, user_id=u, request_id="",
-                       token_vao_uoc=100, max_tokens=100)
+                       token_vao_uoc=100, max_tokens=100, model=_M)
 
 
 def test_giu_cho_luon_du_cho_moi_ket_cuc_that(db):
@@ -86,9 +91,9 @@ def test_giu_cho_luon_du_cho_moi_ket_cuc_that(db):
             [(0, 0), (500, 0), (1_999, 0), (2_000, 0), (2_000, 8_000)]):
         rid = f"r{i}"
         giu = T.giu_cho_luot(db, user_id=u, request_id=rid,
-                             token_vao_uoc=8_000, max_tokens=2_000)
+                             token_vao_uoc=8_000, max_tokens=2_000, model=_M)
         kq = T.quyet_toan_luot(db, user_id=u, request_id=rid,
-                               su_dung=_su_dung(vao=8_000, ra=ra_that, cache=cache))
+                               su_dung=_su_dung(vao=8_000, ra=ra_that, cache=cache), model=_M)
         assert kq.thu_credit <= giu
 
 
@@ -115,9 +120,9 @@ def test_MAC_DINH_la_C3_tich_luy_phan_le(db, monkeypatch):
     monkeypatch.delenv(T.CO_TICH_LUY, raising=False)
     u = _nap(db)
     T.giu_cho_luot(db, user_id=u, request_id="r1",
-                   token_vao_uoc=2_000, max_tokens=500)
+                   token_vao_uoc=2_000, max_tokens=500, model=_M)
     kq = T.quyet_toan_luot(db, user_id=u, request_id="r1",
-                           su_dung=_su_dung(vao=2_000, ra=500))
+                           su_dung=_su_dung(vao=2_000, ra=500), model=_M)
     assert kq.chi_phi_mcredit == 300, "bang gia KHONG doi — 50/10/400 credit/1M"
     assert kq.thu_credit == 0, "mac dinh la C3: 0,3 credit thi thu 0"
 
@@ -133,9 +138,9 @@ def test_BAT_C3_thi_thu_dung_phan_nguyen_cua_TONG(db, monkeypatch):
     tong = 0
     for i in range(7):
         T.giu_cho_luot(db, user_id=u, request_id=f"r{i}",
-                       token_vao_uoc=2_000, max_tokens=500)
+                       token_vao_uoc=2_000, max_tokens=500, model=_M)
         tong += T.quyet_toan_luot(db, user_id=u, request_id=f"r{i}",
-                                  su_dung=_su_dung(vao=2_000, ra=500)).thu_credit
+                                  su_dung=_su_dung(vao=2_000, ra=500), model=_M).thu_credit
     assert tong == 2, "7 x 300 mcredit = 2.100 => 2 credit, khong phai 7"
 
 
@@ -163,9 +168,9 @@ def test_dieu_khoan_cong_bo_KHOP_voi_cach_thu_that(db, monkeypatch):
         u = _nap(db, user_id=f"dk-{co}")
         rid = f"dk{co}"
         T.giu_cho_luot(db, user_id=u, request_id=rid,
-                       token_vao_uoc=2_000, max_tokens=500)
+                       token_vao_uoc=2_000, max_tokens=500, model=_M)
         thu = T.quyet_toan_luot(db, user_id=u, request_id=rid,
-                                su_dung=_su_dung(vao=2_000, ra=500)).thu_credit
+                                su_dung=_su_dung(vao=2_000, ra=500), model=_M).thu_credit
         assert thu == toi_thieu, f"dieu khoan noi {toi_thieu} ma thu {thu} (co={co})"
 
 
@@ -174,20 +179,20 @@ def test_luot_khong_dung_gi_thi_thu_0(db):
     from platform_core.llm import thanh_toan as T
     u = _nap(db)
     T.giu_cho_luot(db, user_id=u, request_id="r1",
-                   token_vao_uoc=100, max_tokens=100)
-    kq = T.quyet_toan_luot(db, user_id=u, request_id="r1", su_dung=_su_dung())
+                   token_vao_uoc=100, max_tokens=100, model=_M)
+    kq = T.quyet_toan_luot(db, user_id=u, request_id="r1", su_dung=_su_dung(), model=_M)
     assert kq.thu_credit == 0
 
 
 def test_cache_lam_giam_tien_that_su(db):
     from platform_core.llm import thanh_toan as T
     u = _nap(db, so=10_000)
-    T.giu_cho_luot(db, user_id=u, request_id="a", token_vao_uoc=100_000, max_tokens=5_000)
+    T.giu_cho_luot(db, user_id=u, request_id="a", token_vao_uoc=100_000, max_tokens=5_000, model=_M)
     khong = T.quyet_toan_luot(db, user_id=u, request_id="a",
-                              su_dung=_su_dung(vao=100_000, ra=5_000))
-    T.giu_cho_luot(db, user_id=u, request_id="b", token_vao_uoc=100_000, max_tokens=5_000)
+                              su_dung=_su_dung(vao=100_000, ra=5_000), model=_M)
+    T.giu_cho_luot(db, user_id=u, request_id="b", token_vao_uoc=100_000, max_tokens=5_000, model=_M)
     co = T.quyet_toan_luot(db, user_id=u, request_id="b",
-                           su_dung=_su_dung(vao=100_000, ra=5_000, cache=90_000))
+                           su_dung=_su_dung(vao=100_000, ra=5_000, cache=90_000), model=_M)
     assert co.thu_credit < khong.thu_credit
 
 
@@ -199,7 +204,7 @@ def test_ban_thi_hoan_du_so_du_ve_nhu_cu(db):
     u = _nap(db)
     truoc = credit.so_du(db, u)
     T.giu_cho_luot(db, user_id=u, request_id="r1",
-                   token_vao_uoc=8_000, max_tokens=2_000)
+                   token_vao_uoc=8_000, max_tokens=2_000, model=_M)
     assert credit.so_du(db, u) < truoc
     T.hoan_luot(db, user_id=u, request_id="r1")
     assert credit.so_du(db, u) == truoc, "ban khong phai loi cua ai — khong ai tra tien"
@@ -210,7 +215,7 @@ def test_hoan_hai_lan_khong_tao_tien(db):
     from platform_core.llm import thanh_toan as T
     u = _nap(db)
     truoc = credit.so_du(db, u)
-    T.giu_cho_luot(db, user_id=u, request_id="r1", token_vao_uoc=8_000, max_tokens=2_000)
+    T.giu_cho_luot(db, user_id=u, request_id="r1", token_vao_uoc=8_000, max_tokens=2_000, model=_M)
     T.hoan_luot(db, user_id=u, request_id="r1")
     T.hoan_luot(db, user_id=u, request_id="r1")
     assert credit.so_du(db, u) == truoc
@@ -220,12 +225,12 @@ def test_quyet_toan_hai_lan_khong_thu_hai_lan(db):
     from platform_core import credit
     from platform_core.llm import thanh_toan as T
     u = _nap(db)
-    T.giu_cho_luot(db, user_id=u, request_id="r1", token_vao_uoc=8_000, max_tokens=2_000)
+    T.giu_cho_luot(db, user_id=u, request_id="r1", token_vao_uoc=8_000, max_tokens=2_000, model=_M)
     a = T.quyet_toan_luot(db, user_id=u, request_id="r1",
-                          su_dung=_su_dung(vao=8_000, ra=2_000))
+                          su_dung=_su_dung(vao=8_000, ra=2_000), model=_M)
     sau_lan_1 = credit.so_du(db, u)
     b = T.quyet_toan_luot(db, user_id=u, request_id="r1",
-                          su_dung=_su_dung(vao=8_000, ra=2_000))
+                          su_dung=_su_dung(vao=8_000, ra=2_000), model=_M)
     assert credit.so_du(db, u) == sau_lan_1
     assert a.thu_credit == b.thu_credit
 
@@ -237,9 +242,9 @@ def test_khong_do_duoc_thi_hoan_du_va_khong_thu(db):
     from platform_core.llm import thanh_toan as T
     u = _nap(db)
     truoc = credit.so_du(db, u)
-    T.giu_cho_luot(db, user_id=u, request_id="r1", token_vao_uoc=8_000, max_tokens=2_000)
+    T.giu_cho_luot(db, user_id=u, request_id="r1", token_vao_uoc=8_000, max_tokens=2_000, model=_M)
     kq = T.quyet_toan_hoac_hoan(db, user_id=u, request_id="r1",
-                                su_dung=_su_dung(dang_tin=False))
+                                su_dung=_su_dung(dang_tin=False), model=_M)
     assert kq.da_do_duoc is False
     assert kq.thu_credit == 0
     assert credit.so_du(db, u) == truoc, \
@@ -250,10 +255,10 @@ def test_quyet_toan_luot_van_nem_loi_de_ben_goi_biet(db):
     """`quyet_toan_luot` KHÔNG được tự nuốt — chỉ `quyet_toan_hoac_hoan` mới xử."""
     from platform_core.llm import gia_token, thanh_toan as T
     u = _nap(db)
-    T.giu_cho_luot(db, user_id=u, request_id="r1", token_vao_uoc=100, max_tokens=100)
+    T.giu_cho_luot(db, user_id=u, request_id="r1", token_vao_uoc=100, max_tokens=100, model=_M)
     with pytest.raises(gia_token.KhongDoDuocError):
         T.quyet_toan_luot(db, user_id=u, request_id="r1",
-                          su_dung=_su_dung(dang_tin=False))
+                          su_dung=_su_dung(dang_tin=False), model=_M)
 
 
 # ── 5. Mang theo nhãn phiên bản giá ──────────────────────────────────────────
@@ -261,7 +266,7 @@ def test_quyet_toan_luot_van_nem_loi_de_ben_goi_biet(db):
 def test_ket_qua_thu_mang_nhan_phien_ban_gia(db):
     from platform_core.llm import gia_token, thanh_toan as T
     u = _nap(db)
-    T.giu_cho_luot(db, user_id=u, request_id="r1", token_vao_uoc=8_000, max_tokens=2_000)
+    T.giu_cho_luot(db, user_id=u, request_id="r1", token_vao_uoc=8_000, max_tokens=2_000, model=_M)
     kq = T.quyet_toan_luot(db, user_id=u, request_id="r1",
-                           su_dung=_su_dung(vao=8_000, ra=2_000))
+                           su_dung=_su_dung(vao=8_000, ra=2_000), model=_M)
     assert kq.phien_ban_gia == gia_token.PHIEN_BAN_GIA

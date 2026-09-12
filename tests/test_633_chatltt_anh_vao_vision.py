@@ -207,8 +207,22 @@ def test_anh_da_bi_don_khoi_kho_khong_lam_hong_ca_luot(moi_truong):
 def test_doc_anh_duoc_theo_HOP_DONG_chu_khong_theo_TEN(moi_truong):
     from apps.chatltt.services import luot as L
 
-    assert L.doc_anh_duoc(moi_truong, "ltt_llm_vision") is True
-    assert L.doc_anh_duoc(moi_truong, "ltt_llm") is False
+    # ⛔ Ten model doc tu BAN KHAI. Ca phep kiem nay noi "theo HOP DONG chu
+    #    khong theo TEN", nen go hai cai ten vao day la tu mau thuan — va D02
+    #    (11/09/2026) da cat dung hai ten do.
+    from apps.ltt_llm.manifest import MANIFEST
+
+    models = next(t for t in MANIFEST.tools
+                  if t.name == "text.chat").api_contract["models"]
+    co_anh = [a for a, s in models.items()
+              if (s.get("constraints") or {}).get("reads_images")]
+    khong_anh = [a for a in models if a not in co_anh]
+    assert co_anh and khong_anh, (
+        "ban khai khong con mot cap co/khong doc anh — phep kiem nay khong do gi")
+    for alias in co_anh:
+        assert L.doc_anh_duoc(moi_truong, alias) is True
+    for alias in khong_anh:
+        assert L.doc_anh_duoc(moi_truong, alias) is False
     assert L.doc_anh_duoc(moi_truong, "khong-ton-tai") is False
 
 

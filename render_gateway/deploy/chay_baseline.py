@@ -46,7 +46,31 @@ class LayMau(threading.Thread):
         self.mau: list[dict] = []
 
     def run(self) -> None:
-        truy_van = ("memory.used,temperature.gpu,power.draw,utilization.gpu,"
+        """Lay mau GPU theo chu ky, CHI tren card 3090.
+
+        🔴 BAN TRUOC DOC `dong[0]` — va o day hau qua nang hon mot cho khac,
+           vi con so nay di vao mot **MOC BASELINE**. May B co hai card tu
+           11/09; neu nvidia-smi liet ke 5060 Ti truoc thi moc duoc dong bang
+           tren card KHONG chay viec, va **moi** phep so sanh ve sau deu lech
+           theo no. Mot moc sai khong keu — no chi lam moi ket luan sau nay sai
+           mot cach nhat quan.
+
+        ⛔ Khong biet UUID 3090 (thieu `gpu_may_b.json`) thi **khong lay mau
+           nao**: mot lo do thieu day quan sat con doc duoc, con mot lo do day
+           so cua card khac thi khong ai phat hien. Day la cho fail-closed
+           dung — khac `gpu_check.py`, thu dang phuc vu nguoi truc xem tuc thi.
+        """
+        try:
+            from render_gateway.danh_tinh_gpu import uuid_38
+            uuid_3090 = uuid_38()
+        except Exception:                                         # noqa: BLE001
+            uuid_3090 = None
+        if not uuid_3090:
+            self.mau.append({"t": time.time(),
+                             "loi": "khong biet UUID 3090 — khong lay mau GPU"})
+            return
+
+        truy_van = ("uuid,memory.used,temperature.gpu,power.draw,utilization.gpu,"
                     "clocks_throttle_reasons.active")
         while not self.dung:
             try:
@@ -55,15 +79,18 @@ class LayMau(threading.Thread):
                      "--format=csv,noheader,nounits"],
                     capture_output=True, text=True, timeout=8,
                     encoding="utf-8", errors="replace")
-                dong = (r.stdout or "").strip().splitlines()
-                if dong:
-                    p = [x.strip() for x in dong[0].split(",")]
+                for d in (r.stdout or "").strip().splitlines():
+                    p = [x.strip() for x in d.split(",")]
+                    if not p or p[0] != uuid_3090:
+                        continue
                     self.mau.append({
-                        "t": time.time(), "vram_mb": int(float(p[0])),
-                        "nhiet_c": int(float(p[1])), "power_w": float(p[2]),
-                        "util_pct": int(float(p[3])),
-                        "throttle": p[4] if len(p) > 4 else "",
+                        "t": time.time(), "gpu_uuid": p[0],
+                        "vram_mb": int(float(p[1])),
+                        "nhiet_c": int(float(p[2])), "power_w": float(p[3]),
+                        "util_pct": int(float(p[4])),
+                        "throttle": p[5] if len(p) > 5 else "",
                     })
+                    break
             except Exception:                                     # noqa: BLE001
                 pass
             time.sleep(self.chu_ky)

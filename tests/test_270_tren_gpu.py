@@ -84,11 +84,15 @@ def test_health_bao_khoi_gpu():
 def test_chot_nay_KHONG_tu_choi_yeu_cau():
     """⛔ Chốt QUAN SÁT, không phải chốt vào cửa. Model chạy CPU vẫn trả lời đúng,
     chỉ chậm; từ chối phục vụ sẽ biến sự cố hiệu năng thành sự cố ngừng dịch vụ."""
+    import llm_gateway.gpu_uuid as GPU
     from tests.test_250_llm_gateway import FakeUpstream, _client
-    import llm_gateway.don_dep as dd
 
-    goc = dd.doc_vram_dung_mb
-    dd.doc_vram_dung_mb = lambda: 1153          # GPU trong nhu luc su co
+    goc = GPU.doc_the
+    # VRAM thap nhu luc su co 23/08 (model bo tren CPU). `don_dep` tung la cho
+    # doc so nay; tu 5.4b no doc thang `gpu_uuid.doc_the` — cung con so, cung cau
+    # hoi, khac nguon.
+    GPU.doc_the = lambda uu, **kw: {"vram_dung_mib": 1153,
+                                    "vram_trong_mib": 23_000, "util_pt": 0}
     try:
         c, up = _client(up=FakeUpstream())
         r = c.post("/v1/chat/completions", json={
@@ -97,7 +101,7 @@ def test_chot_nay_KHONG_tu_choi_yeu_cau():
         assert r.status_code == 200, r.text
         assert up.goi, "da tu choi phuc vu chi vi model dang o CPU"
     finally:
-        dd.doc_vram_dung_mb = goc
+        GPU.doc_the = goc
 
 
 # ── Cảnh báo phía máy A ─────────────────────────────────────────────────────

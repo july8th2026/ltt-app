@@ -1,0 +1,123 @@
+"""Một nguồn cho số slot máy B và pool KV (multijob Task 2).
+
+🔴 VÌ SAO: trước 11/09 có BỐN chỗ cùng khai "1 lượt đồng thời" — `DONG_THOI_MAY_B`,
+`manifest.py` (`admission_slots=1`), gateway `LTT_LLM_MAX_DONG_THOI` và `--parallel 1`
+trong yaml — và chỉ một cặp có phép kiểm đối chiếu. Đổi một chỗ mà quên chỗ kia thì
+hai trần không biết nhau: máy A nhận 4 lượt, máy B trả 429 cho 3.
+⭐ Nên phép kiểm này đọc CẢ BỐN và bắt chúng đồng ý với `ngan_sach.SO_SLOT_MAY_B`.
+"""
+from __future__ import annotations
+
+import pathlib
+import re
+
+import yaml
+
+from apps.ltt_llm import ngan_sach
+
+GOC = pathlib.Path(__file__).resolve().parents[1]
+
+
+def test_bi_danh_cu_la_cung_mot_so():
+    assert ngan_sach.DONG_THOI_MAY_B == ngan_sach.SO_SLOT_MAY_B
+    assert ngan_sach.POOL_KV_MAY_B == ngan_sach.CUA_SO_MODEL
+
+
+def test_manifest_doc_tu_nguon():
+    """🔴 HỎI BẰNG `admission_cho(model)`, KHÔNG BẰNG BỘ BA TĨNH (dual-model 2.3).
+
+    Từ 2.3 `text.chat` khai `admission_theo_model`, nên `tool.admission_slots`
+    là **0** và `tool.admission_token_pool` là **0** — bản cũ của phép kiểm này
+    sẽ đỏ, và đỏ vì một lý do sai: nó đang đọc một trường không còn mang câu trả
+    lời chứ không phải vì ai gõ số tay.
+
+    Điều nó ĐO vẫn nguyên: bản khai đọc từ `ngan_sach.py`, không gõ số.
+    """
+    from apps.ltt_llm.manifest import MANIFEST
+
+    tool = MANIFEST.tools[0]
+    for model, pool in (("ltt-3.8", ngan_sach.POOL_38),
+                        ("ltt-3.5", ngan_sach.POOL_35)):
+        suc = tool.admission_cho(model)
+        assert suc is not None, f"{model} khong co trong admission_theo_model"
+        assert suc.slots == ngan_sach.SO_SLOT
+        assert suc.token_pool == pool
+
+
+def test_manifest_khong_go_so_tay():
+    """`admission_slots=1` gõ tay là đúng cái chồng chéo phép kiểm này sinh ra để dẹp."""
+    van = (GOC / "apps" / "ltt_llm" / "manifest.py").read_text(encoding="utf-8")
+    assert not re.search(r"admission_slots\s*=\s*\d", van)
+    assert not re.search(r"admission_token_pool\s*=\s*\d", van)
+
+
+def test_yaml_so_slot_cua_TUNG_ho_so_khop_so_slot():
+    """🔵 `xfail(strict=True, reason="cho Task 3.3")` đã gỡ ngày 12/09.
+
+    Task 3.3 viết lại `llama-swap.yaml` với `-np 3` cho **cả hai** hồ sơ, khớp
+    `SO_SLOT_MAY_B = 3` (L-14, `10_BENCHMARK_P3.md` §G1b: 4 slot ở ngữ cảnh đã
+    chốt tràn ~400 MiB sang RAM chủ trên 3090).
+
+    ⚠️ VÀ HÌNH DẠNG CỦA PHÉP ĐO ĐỔI, nên phép kiểm phải đổi theo. Bản cũ đọc
+       `--parallel` trong **macro `CHUNG`** — một con số dùng chung cho mọi hồ sơ.
+       Từ 3.3 con số ấy **không còn dùng chung được**: hai model nằm trên hai card
+       kích thước khác nhau (24.576 so với 16.311 MiB), nên số slot là thuộc tính
+       của TỪNG hồ sơ. Đọc macro sau 3.3 sẽ ném `ValueError` — và đỏ vì một lý do
+       **sai**: nó đang tìm một chỗ không còn mang câu trả lời.
+
+    ⭐ Điều nó đo vẫn nguyên và nay **mạnh hơn**: mọi hồ sơ phải khai đúng số
+       slot của nguồn chân lý, chứ không chỉ một con số chung. Và macro **không
+       được** khai lại một số slot toàn cục: một con số ở đó sẽ âm thầm áp cho hồ
+       sơ tiếp theo ai đó thêm vào, kể cả khi card của nó không chịu nổi.
+    """
+    cfg = yaml.safe_load((GOC / "llm_gateway" / "deploy" / "llama-swap.yaml")
+                         .read_text(encoding="utf-8"))
+    macros = cfg.get("macros") or {}
+    for ten, mo_ta in macros.items():
+        tach = str(mo_ta).split()
+        assert "-np" not in tach and "--parallel" not in tach, (
+            f"macro {ten} khai lai so slot toan cuc: hai card khac kich thuoc "
+            "nen so nay phai nam o TUNG ho so")
+
+    ho_so = cfg.get("models") or {}
+    assert ho_so, "llama-swap.yaml khong co ho so nao"
+    for ten, m in ho_so.items():
+        cmd = str(m["cmd"])
+        for khoa, gt in macros.items():
+            cmd = cmd.replace("${%s}" % khoa, str(gt))
+        tach = cmd.split()
+        co = "-np" if "-np" in tach else "--parallel"
+        assert co in tach, f"{ten} khong khai so slot (`-np`)"
+        so = tach[tach.index(co) + 1]
+        assert int(so) == ngan_sach.SO_SLOT_MAY_B, (
+            f"llama-swap chay {ten} voi {co} {so} nhung ngan_sach khai "
+            f"{ngan_sach.SO_SLOT_MAY_B}")
+
+
+def test_gateway_mac_dinh_khop_so_slot():
+    """`llm_gateway` deploy sang máy B nên không import được `ngan_sach` — đọc mã nguồn."""
+    van = (GOC / "llm_gateway" / "config.py").read_text(encoding="utf-8")
+    m = re.search(r'_int\("LTT_LLM_MAX_DONG_THOI",\s*(\d+)\)', van)
+    assert m, "khong thay mac dinh LTT_LLM_MAX_DONG_THOI trong llm_gateway/config.py"
+    assert int(m.group(1)) == ngan_sach.SO_SLOT_MAY_B
+
+
+def test_chieu_catalog_mang_pool_nhung_khong_lo_ra_khach():
+    from apps.ltt_llm.manifest import MANIFEST
+    from platform_core.public_api.catalog import project_tool
+
+    projected = project_tool(MANIFEST, MANIFEST.tools[0])
+    assert projected.admission_cho("ltt-3.8").token_pool == ngan_sach.POOL_38
+    assert "admission_token_pool" not in projected.to_public_dict()
+    assert "admission_theo_model" not in projected.to_public_dict(), (
+        "ban chieu cong khai dang lo ten tai nguyen noi bo")
+
+
+def test_tool_khac_mac_dinh_khong_ap_ngan_sach_token():
+    """Mặc định 0 ⇒ mọi tool khác (ảnh, tiếng, video…) không đổi hành vi admission."""
+    import dataclasses
+
+    from platform_core.registry import ToolSpec
+
+    mac_dinh = {f.name: f.default for f in dataclasses.fields(ToolSpec)}
+    assert mac_dinh["admission_token_pool"] == 0

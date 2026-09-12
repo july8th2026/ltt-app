@@ -12,7 +12,7 @@ Bản khai của `ltt_llm` — model ngôn ngữ chạy trên máy nhà, bán ra
    Nên chat **phải** khai như một tool. Đổi lại ta được miễn phí:
 
      GET  /api/v1/tools              liệt kê `text.chat`
-     GET  /api/v1/models             liệt kê `ltt_llm`, `ltt_llm_vision`
+     GET  /api/v1/models             liệt kê `ltt-3.8`, `ltt-3.5`
      POST /api/v1/jobs               ĐƯỜNG BẤT ĐỒNG BỘ, chạy ngay, không viết gì thêm
      principal.may_use_tool(...)     phân quyền theo khoá khách
 
@@ -26,22 +26,58 @@ Bản khai của `ltt_llm` — model ngôn ngữ chạy trên máy nhà, bán ra
      bất đồng bộ (job)  né được trần 125 giây; nhưng khách phải học hình dạng
                         job của ta
 
-   🔴 SỬA 01/09 — BA CON SỐ Ở ĐOẠN NÀY ĐỀU ĐÃ TRÔI (P08 F-02/F-03).
+   🔴 ĐOẠN NÀY ĐÃ TRÔI **HAI LẦN**, VÀ LẦN THỨ HAI LÀ BÀI HỌC THẬT.
 
-   Bản cũ viết *"public API giữ trần input 65K theo Q116"*. Trần thật là
-   **96.256** (`TOKEN_VAO_TRAN`), và đã là 96.256 từ đợt dọn tham số 30/08.
-   Đừng đọc con số ở đây — đọc `ngan_sach.py`, hoặc hỏi máy B:
+   Lần một (01/09, P08 F-02/F-03): bản cũ viết *"public API giữ trần input 65K
+   theo Q116"* trong khi trần thật đã là số dẫn xuất từ lâu.
 
-       tran.input_tokens tu GET /health cua cong may B  ->  169984
+   Lần hai (09/09): **bản vá của lần một cũng trôi.** Nó thay 65K bằng một bảng
+   số cụ thể — `-c 131072`, trần vào 96.256, công bố 89K — và đợt nâng ngữ cảnh
+   03/09 làm **cả bảng** hết đúng.
 
-   Số đúng tại thời điểm viết:
+   Lần ba (12/09, dual-model 2.6): **lại một bảng số nữa được chèn vào đây**, lần
+   này cho hai model. Nó đúng lúc viết và sẽ sai đúng như hai lần trước — đây là
+   ghi chép của lần gỡ nó ra.
 
-     * engine `qwen38-api`     `-c 131072`, trần vào 96.256, **công bố 89K**
-     * engine `qwen38-vision`  `-c 65536`,  trần vào 30.720, **công bố 28K**
+   ⭐ VÌ SAO ĐÁNG GHI BA LẦN: bản vá lần một **chính nó là một thông báo đính
+      chính về số trôi**, và nó trôi y hệt cái nó đi sửa. Nó sửa **giá trị**;
+      khuyết tật là **hình dạng** — một tài liệu chép lại con số của nơi khác sẽ
+      trôi mỗi lần nơi kia đổi, và không ai có nghĩa vụ nhớ tới nó.
 
-   ⛔ Vision **không** "vẫn 64K" như bản cũ nói — 65.536 là cửa sổ *engine*, còn
-      thứ khách nhét vào được nhỏ hơn nhiều vì phải chừa chỗ cho câu trả lời.
-      Nói "64K" với khách là đúng lỗi đã bị bắt ngày 01/09.
+      Chính tệp này đã đặt tên cho việc ấy ở `_cua_so_noi_voi_khach` bên dưới:
+      *"Sửa giá trị không phải sửa hình dạng."* Lần một đọc câu đó và vẫn làm
+      đúng điều nó cảnh báo. Lần ba cũng thế.
+
+   ⛔ NÊN Ở ĐÂY KHÔNG CÓ BẢNG SỐ NÀO. Muốn biết số hôm nay:
+
+        apps/ltt_llm/ngan_sach.py   — CUA_SO_THEO_MODEL · TOKEN_VAO_TRAN
+                                      CONG_BO_CHO_CLIENT (dẫn xuất theo model)
+        GET /api/v1/tools           — thứ khách thật sự đọc
+        GET /health cua cong may B  — tran.input_tokens
+
+      Ràng buộc duy nhất đáng phát biểu ở đây là **hình dạng**, và nó bất biến
+      với mọi lần đổi `-c`:
+
+        cửa sổ engine  >  trần vào  >  công bố cho client
+
+   ⛔ MỘT CÂU Ở ĐÂY ĐÃ HẾT ĐÚNG, và nó đáng ghi vì cùng một loại lỗi:
+      *"Vision luôn có cửa sổ hẹp hơn text, vì hồ sơ của nó phải nạp thêm
+      mmproj."* Câu ấy đúng khi vision là **hồ sơ thứ hai của cùng một model**
+      (`qwen38-vision`, đã gỡ ở D02/2.3). Từ dual-model, đọc ảnh là việc của
+      một **model khác trên một card khác**, và model ấy có cửa sổ **rộng hơn**.
+      Một bất biến giữa hai con số của hai máy khác nhau không phải bất biến —
+      nó là một sự trùng hợp đang chờ lật.
+
+   ⚠️ Máy B **chưa** chạy hai hồ sơ dual-model: `llama-swap.yaml` còn hồ sơ cũ
+      cho tới Task 3.3, nên `/health` của nó hôm nay vẫn trả số cũ. Hai phép
+      kiểm đối chiếu yaml trong `test_334`/`test_1201` mang `xfail(strict=True,
+      reason="cho Task 3.3")` đúng vì cửa sổ thời gian này — `strict` để chúng
+      **đỏ trở lại** ngay khi yaml lên, thay vì lặng lẽ xanh mãi.
+
+   ⛔ Bài học còn nguyên giá trị: cửa sổ *engine* KHÔNG phải thứ khách nhét vào
+      được — phải chừa chỗ cho câu trả lời. Nói con số engine với khách là đúng
+      lỗi đã bị bắt ngày 01/09, và khoảng cách giữa hai số không phải số lẻ làm
+      tròn được.
 
    Cửa job vẫn là đường lui cho tác vụ dài.
 
@@ -54,7 +90,7 @@ Bản khai của `ltt_llm` — model ngôn ngữ chạy trên máy nhà, bán ra
 from __future__ import annotations
 
 from platform_core.i18n import N_
-from platform_core.registry import AppManifest, ToolSpec
+from platform_core.registry import AdmissionModel, AppManifest, ToolSpec
 
 from apps.ltt_llm import features as _features
 
@@ -66,6 +102,9 @@ from apps.ltt_llm import features as _features
 from apps.ltt_llm.ngan_sach import (CONG_BO_CHO_CLIENT,
                                     CUA_SO_MODEL as CUA_SO_NGU_CANH,
                                     LE as LE_NGU_CANH,
+                                    NHOM_CU_TRU_38,
+                                    POOL_35, POOL_38, SO_SLOT,
+                                    TAI_NGUYEN_35, TAI_NGUYEN_38,
                                     TOKEN_RA_TRAN as MAX_TOKENS_TRAN,
                                     cong_bo_cua, mac_dinh_cho,
                                     tran_theo_ngu_canh)
@@ -80,7 +119,7 @@ def _cua_so_noi_voi_khach(model_id: str) -> str:
     🔴 THAM SỐ `model_id` LÀ BẢN VÁ CHO MỘT LỜI HỨA SAI THỨ HAI (01/09, P08 F-02).
 
        Bản đầu của hàm này **không có tham số** — nó trả một con số cho **mọi**
-       alias. Nên `ltt_llm_vision` được quảng cáo *"same 89K usable input
+       alias. Nên alias đọc ảnh được quảng cáo *"same 89K usable input
        context"* trong khi máy B chặn nó ở 65.536, và đo thật cho `413`.
 
        ⭐ Điều đáng học: bản vá 30/08 dưới đây sửa **con số** (131K → 89K) và
@@ -90,10 +129,13 @@ def _cua_so_noi_voi_khach(model_id: str) -> str:
 
     🔴 TRƯỚC 30/08 CHỖ NÀY GÕ TAY "131K", VÀ ĐÓ LÀ MỘT LỜI HỨA SAI.
 
-       131.072 là cửa sổ của **engine**. Trần đầu vào của Public API là
-       `TOKEN_VAO_TRAN` (96.256, vì phải chừa chỗ cho câu trả lời dài nhất và
-       cho sai số của phép ước), còn con số ta **công bố** cho client là
-       `CONG_BO_CHO_CLIENT` (88.555, chừa thêm 8 %).
+       "131K" là cửa sổ của **engine**. Trần đầu vào của Public API là
+       `TOKEN_VAO_TRAN` (chừa chỗ cho câu trả lời dài nhất và cho sai số của
+       phép ước), còn con số ta **công bố** cho client là `CONG_BO_CHO_CLIENT`
+       (chừa thêm 8 % lệch tokenizer).
+
+       ⛔ Ba con số ấy **cố ý không gõ ra ở đây** — xem đầu tệp: đúng chỗ này
+          từng chép chúng ra và cả ba đã trôi hai lần. Đọc `ngan_sach.py`.
 
        Khách đọc "131K", nhét 120K token vào, và ăn **413**. Không có gì trên
        trang nói cho họ biết vì sao — đúng lớp lỗi "hai nơi nói hai con số" mà
@@ -116,8 +158,17 @@ def _cost(params: dict) -> int:
 
     ⛔ Không tự nghĩ ra công thức ở đây. Gọi `gia_token` — nó là chỗ duy nhất được
        phép đại diện cho giá, và cả cửa đồng bộ lẫn cửa job đều đọc nó.
+
+    🔴 GIÁ THEO MODEL KHÁCH XIN (D07, dual-model 2.5). Trần của cửa job phải
+       dùng **cùng** bảng giá mà quyết toán sẽ dùng; lấy giá 3.8 cho một job 3.5
+       là báo giá gấp 20 lần ở token ra và chặn khách ở cửa số dư.
+
+    ⚠️ `params["model"]` vắng ⇒ `MODEL_MAC_DINH` — **cùng** mặc định mà
+       `features.kiem_tham_so` áp cho chính yêu cầu này, đọc từ `canonical` chứ
+       không gõ lại tên. Tên lạ thì `kiem_tham_so`/`kiem_ten_model` đã chặn từ
+       trước; tới được đây mà vẫn lạ thì `gia_token` ném, không đoán.
     """
-    from platform_core.llm import gia_token
+    from platform_core.llm import canonical, gia_token
 
     from apps.ltt_llm.features import uoc_token_vao
 
@@ -127,7 +178,9 @@ def _cost(params: dict) -> int:
     xin_ra = int(xin_ra) if isinstance(xin_ra, (int, float)) else MAX_TOKENS_MAC_DINH
     xin_ra = max(1, min(xin_ra, MAX_TOKENS_TRAN))
 
-    tran = gia_token.uoc_tran(token_vao_uoc=token_vao_uoc, max_tokens=xin_ra)
+    model = str(params.get("model") or canonical.MODEL_MAC_DINH)
+    tran = gia_token.uoc_tran(token_vao_uoc=token_vao_uoc, max_tokens=xin_ra,
+                              model=model)
     return max(1, tran.tong_credit_lam_tron_len)
 
 
@@ -197,15 +250,33 @@ MANIFEST = AppManifest(
     tools=(ToolSpec(
         name="text.chat", job_type="ltt_llm.chat",
         description=N_('Sinh văn bản từ hội thoại: coding, chat, agent, tóm tắt.'),
-        # Cả job, sync và stream cùng tranh đúng một slot của model nhà. Đây là
-        # metadata vận hành, không phải alias công khai và không lộ model id.
-        admission_resource="llm_remote", admission_slots=1,
+        # ── Sức chứa admission THEO MODEL (dual-model 2.3) ───────────────────
+        #
+        # 🔴 BỘ BA TĨNH (`admission_resource`/`admission_slots`/
+        #    `admission_token_pool`) ĐÃ GỠ, KHÔNG PHẢI QUÊN. Tới 2.3 tool này
+        #    phục vụ **hai model trên hai card**, nên một tên tài nguyên duy
+        #    nhất (`llm_remote`) tả sai sức chứa: mọi lượt 3.5 sẽ xếp cùng hàng
+        #    với 3.8 và một suất giành được ở card này không bảo vệ card kia.
+        #
+        # ⛔ Hệ quả phải biết khi đọc mã khác: từ đây `tool.admission_resource`
+        #    là **rỗng**. Mọi chỗ hỏi "tool này giành tài nguyên nào" phải hỏi
+        #    `admission_cho(model)` — kể cả HAI CHỖ NỘP JOB
+        #    (`runtime_noi_bo/job.py`, `public_api/invocation.py`) ghi hai cột
+        #    `Job.admission_resource/slots`, vì `jobs.claim` và `job_scheduler`
+        #    gác hàng đợi bằng đúng hai cột đó (R20).
+        #
+        # Số lấy từ `ngan_sach.py` — đừng gõ số ở đây (test_1201).
+        admission_theo_model={
+            "ltt-3.8": AdmissionModel(TAI_NGUYEN_38, SO_SLOT, POOL_38,
+                                      NHOM_CU_TRU_38, "mac_dinh"),
+            "ltt-3.5": AdmissionModel(TAI_NGUYEN_35, SO_SLOT, POOL_35),
+        },
         sync_executor="apps.ltt_llm.executor:EXECUTOR",
         params_schema={
             "messages": {"type": "json[]", "required": True},
             "model": {"type": "enum",
-                      "values": ["ltt_llm", "ltt_llm_vision"],
-                      "default": "ltt_llm"},
+                      "values": ["ltt-3.8", "ltt-3.5"],
+                      "default": "ltt-3.8"},
             "max_tokens": {"type": "int", "min": 1, "max": MAX_TOKENS_TRAN,
                            "default": MAX_TOKENS_MAC_DINH},
             "temperature": {"type": "number", "min": 0.0, "max": 2.0},
@@ -226,9 +297,14 @@ MANIFEST = AppManifest(
                             "reading. OpenAI-compatible message format."),
             # ⭐ ALIAS ≠ ID NỘI BỘ, và khoảng cách đó chính là giá trị của alias:
             #    "Aliases exist so a vendor change is not a breaking change."
-            #    Khách ghim vào `ltt_llm`; ngày ta đổi GGUF bên dưới thì mã của họ
+            #    Khách ghim vào `ltt-3.8`; ngày ta đổi GGUF bên dưới thì mã của họ
             #    không phải sửa một dòng nào.
             #    ⚠️ Bản đầu tôi đặt alias trùng hệt id — `test_212` bắt được.
+            #    🔴 VÀ BẢN THỨ HAI ĐẶT ALIAS TRÙNG HỆT **SLUG APP** (`ltt_llm`),
+            #       thứ cũng xoá lớp đệm, chỉ theo chiều khác: khách ghim vào
+            #       `ltt_llm` thì ngày ta tách app hay đổi chủ tool, tên họ ghim
+            #       không còn nghĩa gì. Cắt 11/09/2026 (D02): đúng HAI tên,
+            #       `ltt-3.8` và `ltt-3.5`, không tên nào trùng slug hay id.
             # ⛔ `constraints.context_window` KHÔNG PHẢI TRANG TRÍ. Thiếu nó thì
             #    `server/api/tools.py:_dang_codex` rơi về hằng số lùi
             #    `CUA_SO_CONG_BO_MAC_DINH` (60.000) — và khách nhận **hai con số
@@ -236,35 +312,42 @@ MANIFEST = AppManifest(
             #    `context_window` nói 60000 (P08 F-03).
             #
             #    `test_334::TestBanSaoConLai` nay buộc **mọi** alias ở đây phải
-            #    tự khai, nên đường lùi không bao giờ áp cho `ltt_llm` nữa.
+            #    tự khai, nên đường lùi không bao giờ áp cho model nhà nữa.
             "models": {
-                "ltt_llm": {
+                # ⛔ `reads_images` CHỈ Ở `ltt-3.5` HÔM NAY, và đó là một sự thật
+                #    về **engine đang chạy**, không phải một thiếu sót. Hồ sơ
+                #    `qwen38-api` trên máy B chưa nạp `mmproj`; hứa đọc ảnh ở
+                #    đây là đúng lớp lỗi F-02 (bản khai nói một đằng, máy B làm
+                #    một nẻo) chỉ đổi chiều. **Task 3.3** nạp mmproj cho hồ sơ
+                #    3.8 rồi mới bật cờ này — cùng lượt, không sớm hơn.
+                "ltt-3.8": {
                     "id": "qwen38-api",
                     "description": (f"Text only, {_cua_so_noi_voi_khach('qwen38-api')} "
-                                    f"usable input context. Coding, chat, agentic "
-                                    f"tool use, summarisation."),
+                                    f"usable input context. Deepest model: coding, "
+                                    f"chat, agentic tool use, summarisation."),
                     "stability": "stable",
                     "constraints": {
                         "context_window": cong_bo_cua("qwen38-api"),
                         "max_output_tokens": MAX_TOKENS_TRAN,
                     },
                 },
-                "ltt_llm_vision": {
-                    "id": "qwen38-vision",
-                    "description": (f"Same model plus image reading, but a smaller "
-                                    f"{_cua_so_noi_voi_khach('qwen38-vision')} usable "
-                                    f"input context. Send images as OpenAI image_url "
-                                    f"parts."),
+                "ltt-3.5": {
+                    "id": "qwen35-api",
+                    "description": (f"Faster and much cheaper, "
+                                    f"{_cua_so_noi_voi_khach('qwen35-api')} usable "
+                                    f"input context. Same message format, and it "
+                                    f"reads images — send them as OpenAI "
+                                    f"image_url parts."),
                     "stability": "stable",
                     "constraints": {
-                        "context_window": cong_bo_cua("qwen38-vision"),
+                        "context_window": cong_bo_cua("qwen35-api"),
                         "max_output_tokens": MAX_TOKENS_TRAN,
                         "reads_images": True,
                     },
                 },
             },
             "enums": {
-                "model": ["ltt_llm", "ltt_llm_vision"],
+                "model": ["ltt-3.8", "ltt-3.5"],
                 "reasoning_effort": ["low", "medium", "xhigh"],
             },
             "params": {
@@ -275,13 +358,13 @@ MANIFEST = AppManifest(
                     "example": [{"role": "user", "content": "Explain HTTP 429."}],
                 },
                 "model": {
-                    "description": (f"`ltt_llm` for text "
+                    "description": (f"`ltt-3.8` is the deepest model, text only "
                                     f"({_cua_so_noi_voi_khach('qwen38-api')} usable "
-                                    f"input context). `ltt_llm_vision` also reads "
-                                    f"images, with a smaller "
-                                    f"{_cua_so_noi_voi_khach('qwen38-vision')} "
-                                    f"input context."),
-                    "example": "ltt_llm",
+                                    f"input context). `ltt-3.5` answers faster, "
+                                    f"costs much less and reads images, with "
+                                    f"{_cua_so_noi_voi_khach('qwen35-api')} "
+                                    f"usable input context."),
+                    "example": "ltt-3.8",
                 },
                 "max_tokens": {
                     "description": ("Ceiling on generated tokens. Credit is held "

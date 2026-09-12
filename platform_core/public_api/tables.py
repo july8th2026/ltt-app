@@ -196,6 +196,15 @@ def _aware(value: datetime) -> datetime:
 IDEMPOTENCY_IN_PROGRESS = "in_progress"
 IDEMPOTENCY_COMPLETED = "completed"
 
+#: Lượt đầu KHÔNG chạy được và không để lại tác dụng phụ nào (cửa đồng bộ hết
+#: trần chờ, khách ngắt). Khoá được **mở lại**: `begin` nhận lượt thử lại cùng
+#: khoá + cùng thân, thay vì trả 409 "đang xử lý" cho tới khi hết hạn 7 ngày.
+#:
+#: ⛔ Chỉ đặt khi đã chắc **không có gì để trả lại**: không giữ tiền, không gọi
+#:    model. Đặt nó sau một lượt đã chạy là mở đường cho một lần thu thứ hai —
+#:    đúng thứ bảng này sinh ra để chặn.
+IDEMPOTENCY_FAILED = "failed"
+
 
 class ApiIdempotencyRecord(Base):
     """One remembered chargeable operation, keyed by the caller's own key.

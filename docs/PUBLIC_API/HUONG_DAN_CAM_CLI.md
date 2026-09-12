@@ -25,7 +25,7 @@ bấm gửi — không có gì xảy ra, không log, không toast, không banner
 
 | Rào chắn | Phải làm gì | Chi tiết |
 |---|---|---|
-| Bộ lọc tên model | dùng `ltt-llm-claude-compat`, **không** phải `ltt_llm` | §2.5b |
+| Bộ lọc tên model | dùng tên tuyến `ltt-llm-claude-compat` / `ltt-llm-claude-compat-35`, **không** phải `ltt-3.8` / `ltt-3.5` | §2.5b |
 | Chỉ mở tab **Code** | đặt `chatTabEnabled = true` | §2.5c |
 
 ⚠️ Sửa xong cái thứ nhất mà vẫn im là chỗ rất dễ kết luận nhầm rằng bản sửa không
@@ -35,6 +35,30 @@ chủ. Công cụ `cam` đặt sẵn cả hai.
 ⛔ **"Cấu hình xong cho CLI" KHÔNG có nghĩa là tiện ích chạy được.** Hai tiện ích
 VS Code đi đường xác thực khác hẳn CLI. Đây là chỗ mất nhiều thời gian nhất khi
 thử thật, và nó không hiển nhiên từ tài liệu của nhà nào cả.
+
+---
+
+## 0b. HAI model, và bạn phải chọn **một**
+
+| | `ltt-3.8` | `ltt-3.5` |
+|---|---|---|
+| Cửa sổ ngữ cảnh công bố | **171.458** token | **209.141** token |
+| Ngưỡng client phải nén | 138.690 | 176.373 |
+| Trần token **ra** một lượt | 32.768 | 32.768 |
+| Trần đầu vào thật ở cổng | 186.368 | 227.328 |
+| Đọc ảnh | có | có |
+| Tên tuyến cho Claude Desktop | `ltt-llm-claude-compat` | `ltt-llm-claude-compat-35` |
+| Giá | bảng riêng | bảng riêng |
+
+🔴 **Hai cửa sổ này KHÔNG dùng chung được.** Khai số của model này cho model kia
+là nói dối client về chỗ nó phải nén, và client **tin**: nó nén muộn, rồi bạn ăn
+một `413` giữa phiên — im lặng, không manh mối nào chỉ về phía nguyên nhân.
+
+⭐ Công cụ `cam` hỏi bạn chọn model rồi ghi **đúng** cặp số của model đó vào từng
+tệp cấu hình. Dòng lệnh: `--model ltt-3.5`. Giao diện: ô **Model** ở đầu cửa sổ.
+
+⚠️ Mọi đoạn cấu hình dưới đây viết cho `ltt-3.8` (mặc định). Dùng `ltt-3.5` thì đổi
+**cả hai** thứ: tên model **và** con số cửa sổ ở cùng khối.
 
 ---
 
@@ -149,10 +173,10 @@ stream_idle_timeout_ms = 600000
 `~/.codex/ltt.config.toml` — **tệp riêng**, Codex 0.145+ từ chối `[profiles.ltt]`
 nằm trong `config.toml`:
 ```toml
-model = "ltt_llm"
+model = "ltt-3.8"
 model_provider = "ltt"
 model_reasoning_effort = "low"
-model_context_window = 156385
+model_context_window = 171458
 model_catalog_json = 'C:\Users\<ban>\.codex\ltt_model_catalog.json'
 ```
 
@@ -160,7 +184,7 @@ Chạy: `codex --profile ltt`
 
 🔴 **`model_catalog_json` không phải tuỳ chọn.**
 
-Thiếu nó, Codex cảnh báo *"Model metadata for `ltt_llm` not found"* rồi rơi vào
+Thiếu nó, Codex cảnh báo *"Model metadata for `ltt-3.8` not found"* rồi rơi vào
 đường `compact_model_fallback`: nó **mượn tên một model của OpenAI** cho các lượt
 phụ (đặt tên phiên, nén hội thoại). Cổng của chúng tôi từ chối tên lạ theo thiết
 kế fail-closed, nên bạn thấy hội thoại dài **im lặng** mà không có lỗi rõ ràng.
@@ -199,10 +223,10 @@ Error: legacy `profile = "ltt"` config is no longer supported;
 
 ⇒ Phải đặt ở **gốc** `config.toml`:
 ```toml
-model = "ltt_llm"
+model = "ltt-3.8"
 model_provider = "ltt"
 model_reasoning_effort = "low"
-model_context_window = 156385
+model_context_window = 171458
 model_catalog_json = 'C:\Users\<ban>\.codex\ltt_model_catalog.json'
 
 [model_providers.ltt]
@@ -221,10 +245,11 @@ hai — đó là giới hạn của Codex, không phải của chúng tôi.
 ```powershell
 setx ANTHROPIC_BASE_URL "https://app.lttstudios.com/api"    # /api, KHONG /api/v1
 setx ANTHROPIC_AUTH_TOKEN "<khoa ltt_sk_... cua ban>"
-setx ANTHROPIC_MODEL "ltt_llm"
-setx ANTHROPIC_DEFAULT_HAIKU_MODEL "ltt_llm"
-setx CLAUDE_CODE_MAX_CONTEXT_TOKENS "156385"
+setx ANTHROPIC_MODEL "ltt-3.8"
+setx ANTHROPIC_DEFAULT_HAIKU_MODEL "ltt-3.8"
+setx CLAUDE_CODE_MAX_CONTEXT_TOKENS "171458"
 setx CLAUDE_CODE_MAX_OUTPUT_TOKENS "32768"
+setx CLAUDE_CODE_AUTO_COMPACT_WINDOW "138690"
 ```
 
 ⛔ **Hai địa chỉ lệch nhau bốn ký tự.** Codex khai `…/api/v1`, Claude khai
@@ -232,16 +257,16 @@ setx CLAUDE_CODE_MAX_OUTPUT_TOKENS "32768"
 
 🔴 **Hai dòng cuối không phải tinh chỉnh — thiếu chúng là bạn mất tiền.**
 
-Claude Code không biết `ltt_llm`, nên nó **giả định cửa sổ 200.000 token** và
+Claude Code không biết `ltt-3.8`, nên nó **giả định cửa sổ 200.000 token** và
 nói thẳng ra điều đó:
 
 ```
-"ltt_llm" is not a model this version of Claude Code recognizes, so
+"ltt-3.8" is not a model this version of Claude Code recognizes, so
 auto-compact will keep this session within 200k tokens (the context
 window it assumes).
 ```
 
-Trần đầu vào thật là **169.984**. Với giả định 200k, auto-compact **không bao giờ
+Trần đầu vào thật là **186.368**. Với giả định 200k, auto-compact **không bao giờ
 nén kịp**: hội thoại vượt trần từ lâu mà client vẫn tưởng còn nửa đường, và bạn
 ăn **413** giữa chừng. A/B đo 30/08: đặt `CLAUDE_CODE_MAX_CONTEXT_TOKENS` thì
 cảnh báo trên biến mất.
@@ -262,10 +287,11 @@ Tiện ích **không đọc biến môi trường** như CLI (lỗi đã biết 
   "claudeCode.disableLoginPrompt": true,
   "claudeCode.environmentVariables": [
     {"name": "ANTHROPIC_BASE_URL", "value": "https://app.lttstudios.com/api"},
-    {"name": "ANTHROPIC_MODEL", "value": "ltt_llm"},
-    {"name": "ANTHROPIC_DEFAULT_HAIKU_MODEL", "value": "ltt_llm"},
-    {"name": "CLAUDE_CODE_MAX_CONTEXT_TOKENS", "value": "156385"},
-    {"name": "CLAUDE_CODE_MAX_OUTPUT_TOKENS", "value": "32768"}
+    {"name": "ANTHROPIC_MODEL", "value": "ltt-3.8"},
+    {"name": "ANTHROPIC_DEFAULT_HAIKU_MODEL", "value": "ltt-3.8"},
+    {"name": "CLAUDE_CODE_MAX_CONTEXT_TOKENS", "value": "171458"},
+    {"name": "CLAUDE_CODE_MAX_OUTPUT_TOKENS", "value": "32768"},
+    {"name": "CLAUDE_CODE_AUTO_COMPACT_WINDOW", "value": "138690"}
   ]
 }
 ```
@@ -311,7 +337,7 @@ Hoặc để EXE/ZIP + BAT làm; cả hai đã bao gồm bước này.
 
 ---
 
-### 2.5b 🔴 Vì sao ở đây tên model là `ltt-llm-claude-compat`, không phải `ltt_llm`
+### 2.5b 🔴 Vì sao ở đây tên model là `ltt-llm-claude-compat`, không phải `ltt-3.8`
 
 Đây là chỗ **im lặng nhất** trong cả tài liệu này, nên nói kỹ.
 
@@ -326,7 +352,12 @@ qe = ["claude", …tên dòng Claude…, "anthropic"]          // PHẢI chứa
 Ke(t) = !Be.test(t) && (Ne.test(t) || qe.some(s => t.includes(s)))
 ```
 
-`ltt_llm` không chứa chuỗi nào trong `qe` ⇒ bị **loại khỏi mảng** ⇒ picker rỗng.
+`ltt-3.8` không chứa chuỗi nào trong `qe` ⇒ bị **loại khỏi mảng** ⇒ picker rỗng.
+(`qwen` còn nằm trong danh sách **cấm**, nên cả tên trung thực nhất cũng bị chặn.)
+
+⚠️ **Mỗi model có tên tuyến riêng.** `ltt-3.8` → `ltt-llm-claude-compat`; `ltt-3.5` →
+`ltt-llm-claude-compat-35`. Chép nhầm tuyến là Claude Desktop trả lời bằng model **kia**,
+và triệu chứng duy nhất là một hoá đơn theo bảng giá kia — không phải một lỗi.
 
 ⛔ **Triệu chứng khi sai — và nó không chỉ về phía nguyên nhân chút nào:**
 
@@ -348,11 +379,11 @@ sự thật hơn".
 chỉ đòi tên **chứa** chuỗi `claude`; nó **không** đòi một model Anthropic có
 thật. Nên cái tên này qua cổng mà không mượn tên sản phẩm của hãng khác. Nó là
 **tên tuyến của một cổng tương thích**, không phải tên sản phẩm — thứ bạn mua vẫn
-là `ltt_llm`, catalog và bảng giá vẫn chỉ nói `ltt_llm`, và model đứng sau vẫn là
-model nhà.
+là `ltt-3.8` hoặc `ltt-3.5`, catalog và bảng giá vẫn chỉ nói hai tên đó, và model
+đứng sau vẫn là model nhà.
 
 Chốt bằng test: `tests/test_290_ten_tuyen_claude_desktop.py` chép nguyên luật lọc
-từ bản cài và bắt lỗi nếu ai đó "dọn cho gọn" tên tuyến về `ltt_llm`.
+từ bản cài và bắt lỗi nếu ai đó "dọn cho gọn" tên tuyến về tên sản phẩm.
 
 ---
 

@@ -34,12 +34,36 @@ App `anhnoibo` — bán model tạo ảnh **nội bộ** (H37, Q102).
 from __future__ import annotations
 
 from platform_core.i18n import N_
-from platform_core.registry import AppManifest, ToolSpec
+from platform_core.llm.residency import THEO_LO
+from platform_core.registry import AdmissionModel, AppManifest, ToolSpec
 
 #: ⛔ GIÁ KHÔNG Ở ĐÂY NỮA — nó ở `apps/anhnoibo/gia.py`, một chỗ duy nhất, có
 #:    phiên bản, và có `bang_gia()` để trang công khai đọc. Đừng khai lại con số
 #:    nào ở đây: hai bảng giá lệch nhau thì bảng nào cũng không đáng tin.
 from . import features as _features, gia
+
+# ── Cư trú RTX 3090 (dual-model D01 B, Task 5.5) ─────────────────────────────
+#
+# Ba app ảnh (`anhnoibo`, `taoanh`, `thumbnail`) bán CÙNG model trên CÙNG card,
+# nên cả ba khai cùng một tài nguyên và cùng một nhóm; `apps/ltt_llm` khai nhóm
+# ấy cho LTT-3.8 với vai `mac_dinh`. Trọng tài (`platform_core/llm/residency.py`)
+# chỉ **đọc** bản khai — nền tảng không được biết tên app (`test_147`) — nên tên
+# nhóm không thể sống trong `platform_core`; và ba app không import được nhau
+# (`.importlinter`), nên **ba bản khai giống nhau** là hình dạng đúng duy nhất.
+# `tests/test_1219_residency_noi.py` chốt cả ba trùng nhau VÀ trùng `NHOM_CU_TRU_38`
+# của `apps/ltt_llm/ngan_sach.py` — một chữ lệch là ĐỎ ở cổng, không phải một
+# cửa sổ ảnh không bao giờ mở.
+#
+# ⛔ `vai_tro` lấy từ HẰNG SỐ `residency.THEO_LO`, không gõ chuỗi: `mo_cho` NÉM
+#    với vai lạ và nay nó ném **từ trong cửa admission**, nên `"theolo"` gõ sai
+#    là lỗi 500 ở mọi lượt trên tài nguyên này — 3 giờ sáng, không phải ở gate.
+NHOM_CU_TRU_ANH = "rtx3090"
+TAI_NGUYEN_ANH = "anh_3090"
+#: Một lượt vẽ tại một thời điểm trên 3090 (D01 B: vẽ **theo lô** trong cửa sổ,
+#: không vẽ song song — hai lượt HiDream cùng lúc là OOM trước khi là chậm).
+SUAT_ANH = 1
+KHAI_CU_TRU_ANH = {"*": AdmissionModel(TAI_NGUYEN_ANH, SUAT_ANH, 0,
+                                       NHOM_CU_TRU_ANH, THEO_LO)}
 
 
 def _gia(params: dict) -> int:
@@ -95,6 +119,8 @@ MANIFEST = AppManifest(
         name="image.ltt",
         job_type="anhnoibo.generate",
         description=N_('Tạo ảnh bằng model nội bộ của LTT Studios.'),
+        # Xem khối "Cư trú RTX 3090" ở đầu tệp.
+        admission_theo_model=KHAI_CU_TRU_ANH,
         params_schema={
             "prompt": {"type": "string", "required": True, "max_length": 4000},
             "mode": {"type": "enum", "values": ["t2i", "edit", "subject"],

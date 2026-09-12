@@ -73,8 +73,13 @@ from dataclasses import dataclass, field
 #:
 #: ⛔ Hai trần không liên quan gì nhau mà cái nhỏ hơn luôn thắng, và thông điệp
 #:    lỗi khi ấy không nói nó là cái nào. Nay lỗi có `limit_name` (`server/api/
-#:    deps.py`), và `tests/test_312` so trần này với `ngan_sach.BODY_BYTES_TOI_THIEU`
-#:    nên lệch là đỏ chứ không phải là một buổi đi truy.
+#:    deps.py`), và `tests/test_334_ngan_sach_ltt_llm.py` so trần này với
+#:    `ngan_sach.BODY_BYTES_TOI_THIEU` nên lệch là đỏ chứ không phải là một buổi
+#:    đi truy.
+#:
+#: ⛔ Chỗ này từng ghi `tests/test_312` — trỏ nhầm sang khoá dịch vụ VPS, vì hai
+#:    phiên cấp trùng số hiệu. Viện dẫn phép kiểm bằng **tên tệp**, không bằng
+#:    số hiệu; `tests/test_980_vien_dan_phep_kiem.py` cưỡng chế.
 #:
 #: ⭐ Vẫn cách trần 100 MB của Cloudflare rất xa, nên đây không phải lời hứa suông.
 DEFAULT_MAX_BODY_BYTES = 1024 * 1024

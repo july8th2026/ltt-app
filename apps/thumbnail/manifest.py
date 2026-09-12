@@ -18,7 +18,25 @@ app **không giữ khoá nào**: máy B nhận vé presigned do nền tảng c�
 from __future__ import annotations
 
 from platform_core.i18n import N_
-from platform_core.registry import AppManifest, NavEntry, ToolSpec
+from platform_core.llm.residency import THEO_LO
+from platform_core.registry import (AdmissionModel, AppManifest, NavEntry,
+                                    ToolSpec)
+
+# ── Cư trú RTX 3090 (dual-model D01 B, Task 5.5) ─────────────────────────────
+#
+# Ba bản khai giống nhau ở ba app ảnh là **hình dạng đúng duy nhất**, không phải
+# một chỗ chép: nền tảng không được biết tên app (`test_147`) nên tên nhóm không
+# sống được ở `platform_core`, và ba app không import được nhau (`.importlinter`).
+# Lý do đầy đủ ở `apps/anhnoibo/manifest.py`; `tests/test_1219_residency_noi.py`
+# chốt cả ba trùng nhau và trùng `NHOM_CU_TRU_38` của `apps/ltt_llm/ngan_sach.py`.
+#
+# ⛔ `vai_tro` lấy từ hằng số `residency.THEO_LO`, không gõ chuỗi — `mo_cho` NÉM
+#    với vai lạ, và nay nó ném từ trong cửa admission.
+NHOM_CU_TRU_ANH = "rtx3090"
+TAI_NGUYEN_ANH = "anh_3090"
+SUAT_ANH = 1
+KHAI_CU_TRU_ANH = {"*": AdmissionModel(TAI_NGUYEN_ANH, SUAT_ANH, 0,
+                                       NHOM_CU_TRU_ANH, THEO_LO)}
 
 # ⛔ GIÁ THEO TỪNG MODEL, không phải một giá phẳng. Sửa 2026-08-23.
 #
@@ -88,6 +106,7 @@ MANIFEST = AppManifest(
     tools=(ToolSpec(
         name="image.thumbnail", job_type="thumbnail.generate",
         description=N_('Sinh ảnh nền thumbnail YouTube theo phong cách và bố cục.'),
+        admission_theo_model=KHAI_CU_TRU_ANH,      # cư trú 3090 — xem đầu tệp
         # 🔴 BỐN THAM SỐ ĐÃ GỠ Ở PHA 06.3: `title`, `subtitle`, `text_style`,
         #    `ngon_ngu`. Cả bốn chỉ phục vụ chữ vẽ trong ảnh — thứ model nhà
         #    không làm được (`capabilities["canh_bao"]` + D-048). Giữ chúng

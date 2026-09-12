@@ -93,8 +93,8 @@ export function dot4({ cho, doiDen, chuBaiCuoi, guiChu, xong, hoiThoaiMoi }) {
     await doiDen('catalog da ve', async () =>
       (await sel.locator('option').count()) > 0, 30);
     const co = await sel.locator('option').evaluateAll((o) => o.map((x) => x.value));
-    if (!co.includes('ltt_llm_vision')) return false;
-    await sel.selectOption('ltt_llm_vision');
+    if (!co.includes('ltt-3.5')) return false;
+    await sel.selectOption('ltt-3.5');
     await doiDen('o chon tep hien ra', async () =>
       (await p.locator('input[type=file]').count()) > 0, 15);
     return true;
@@ -232,7 +232,7 @@ export function dot4({ cho, doiDen, chuBaiCuoi, guiChu, xong, hoiThoaiMoi }) {
         await doiDen('anh da tai len', async () =>
           (await p.locator('.ltc-soan__anh-ten').count()) > 0, 25);
 
-        await p.locator('select[aria-label="Chọn model"]').selectOption('ltt_llm');
+        await p.locator('select[aria-label="Chọn model"]').selectOption('ltt-3.8');
         await cho(1200);
         const r = await p.evaluate(() => ({
           oTep: document.querySelectorAll('input[type=file]').length,
@@ -270,12 +270,12 @@ export function dot4({ cho, doiDen, chuBaiCuoi, guiChu, xong, hoiThoaiMoi }) {
           const csrf = goc?.getAttribute('data-csrf') || '';
           const hoi = await fetch('/chatltt/api/hoi-thoai', {
             method: 'POST', headers: { 'content-type': 'application/json', 'X-CSRF-Token': csrf },
-            body: JSON.stringify({ model_alias: 'ltt_llm' }),
+            body: JSON.stringify({ model_alias: 'ltt-3.8' }),
           }).then((x) => x.json()).catch(() => null);
           if (!hoi?.id) return { bo_qua: 'khong tao duoc hoi thoai de thu' };
           const r2 = await fetch(`/chatltt/api/hoi-thoai/${hoi.id}/luot`, {
             method: 'POST', headers: { 'content-type': 'application/json', 'X-CSRF-Token': csrf },
-            body: JSON.stringify({ text: 'anh nay la gi', model_alias: 'ltt_llm',
+            body: JSON.stringify({ text: 'anh nay la gi', model_alias: 'ltt-3.8',
                                    anh: ['chatltt/anh-vao/ai-do/khong-co-that.png'] }),
           });
           return { status: r2.status, than: (await r2.text()).slice(0, 200) };

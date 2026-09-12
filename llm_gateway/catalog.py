@@ -1,14 +1,23 @@
 """
 catalog.py — model nào được mở, và mỗi model chịu được gì.
 
-⭐ HAI HỒ SƠ, MỘT TRỌNG SỐ. Cùng một file GGUF, hai cách khởi động, vì trên card
-   24 GB **không thể vừa nạp `mmproj` vừa mở ngữ cảnh 200K**:
+⭐ HAI HỒ SƠ, HAI MODEL, HAI CARD (từ 12/09 — Dual-model). Mỗi hồ sơ nạp cả
+   `mmproj`, nên **không còn hồ sơ vision riêng**:
 
-     qwen38-api     200K ngữ cảnh, KV q4_0, KHÔNG vision  21,98 GB  ← MẶC ĐỊNH
-     qwen38-vision  131K ngữ cảnh, KV q4_0, CÓ  vision    21,10 GB
+     qwen38-api   Qwen3.8-27B  221K ngữ cảnh, KV q4_0, text+ảnh   RTX 3090
+     qwen35-api   Qwen3.5-9B   262K ngữ cảnh, KV q8_0, text+ảnh   RTX 5060 Ti
 
-   `llama-swap` đổi giữa hai hồ sơ theo tên model client gọi, **chỉ một cái nằm
-   trong VRAM tại một thời điểm**.
+   `llama-swap` định tuyến theo tên model client gọi. Hai hồ sơ này ở **hai card
+   khác nhau** nên chúng nằm trong VRAM **cùng lúc** — khác hẳn thời hai hồ sơ
+   tranh một card, và đó là lý do sổ suất phải tách theo model
+   (`so_theo_model.py`).
+
+🔴 TRƯỚC 12/09 CÓ MỘT HỒ SƠ VISION RIÊNG (`qwen38-vision`, 131K) VÌ TRÊN CARD
+   24 GB **không thể vừa nạp `mmproj` vừa mở ngữ cảnh 200K** — và việc đổi giữa
+   hai hồ sơ ấy **giết lượt đang chạy** (đo 03/09; khách chỉ nhận
+   `ConnectionReset`). §G1b đo lại ở `-np 3`: `-c 221184` + mmproj **cùng vừa**
+   card, biên 445 MiB. Nên hồ sơ vision không bị "dọn cho gọn" — nó hết lý do
+   tồn tại, và cùng lúc nguồn `ConnectionReset` ấy biến mất.
 
 🔴 TRƯỚC 03/09 CÓ **BA** HỒ SƠ, VÀ HỒ SƠ THỨ BA (`qwen38-ops`, 200K) BỊ GIỮ
    TRONG LAN VÌ MỘT LẬP LUẬN SAI. Chỗ này từng viết:
@@ -51,7 +60,9 @@ catalog.py — model nào được mở, và mỗi model chịu được gì.
 
    Chi tiết + hai cái bẫy đo đạc: `docs/VLM_NOI_BO/NGU_CANH_DAI_2026-09-03.md`.
 
-✅ `qwen38-vision` 131072 / KV q4_0 — đo thật 03/09, cùng ngày, trên một hồ sơ
+✅ (LỊCH SỬ — hồ sơ này đã gỡ 12/09; số đo giữ lại vì nó là bằng chứng KV q4_0
+   **không** làm mù mắt model, và câu hỏi đó sẽ quay lại ở mọi lần đổi KV.)
+   `qwen38-vision` 131072 / KV q4_0 — đo thật 03/09, cùng ngày, trên một hồ sơ
    thử riêng (`qwen38-vision-thu`, KHÔNG khai trong `LTT_LLM_MODELS` nên cổng
    fail-closed từ chối và không request nào của khách rơi vào nó):
 
@@ -83,25 +94,52 @@ class ModelSpec:
     ten: str
     #: Hồ sơ này có nạp `mmproj` không. Quyết định request có ảnh có được nhận không.
     co_vision: bool
-    #: Trần ngữ cảnh của hồ sơ (`-c` của llama-server). CHỜ P5 xác nhận.
+    #: Trần ngữ cảnh của hồ sơ — phải bằng đúng `-c` mà `llama-swap.yaml` truyền
+    #: cho `llama-server`. Đây chỉ là chỗ **công bố**; tệp kia mới là chỗ **khởi
+    #: động tiến trình**, và `test_334_ngan_sach_ltt_llm.py` buộc hai bên khớp
+    #: (lệch thì `/v1/models` nói một đằng, model chạy một nẻo).
+    #:
+    #: ⛔ "CHỜ P5 xác nhận" là câu cũ ở đây; P5 đã đo xong 03/09 và số đã chốt.
     max_context: int
     #: Mô tả ngắn, trả trong `/v1/models` để người dùng chọn đúng hồ sơ.
     mo_ta: str
 
 
 #: Bảng khai. Đây KHÔNG phải danh sách đang mở — xem `nap_catalog`.
+#:
+#: 🔵 12/09 (Dual-model 4.2): **đúng hai hồ sơ, cả hai `text + image`**.
+#:
+#:    `qwen38-vision` biến mất. Không phải dọn dẹp: `llama-swap.yaml` (Task 3.3,
+#:    commit faf5e864) chỉ còn mở `qwen38-api` và `qwen35-api`, nên từ lúc yaml
+#:    ấy deploy thì một dòng `qwen38-vision` ở đây **công bố một model llama-swap
+#:    không khởi động nổi** — khách gọi nó sẽ nhận lỗi thượng nguồn, không phải
+#:    một câu trả lời chậm. Thứ duy nhất đứng giữa là `LTT_LLM_MODELS`
+#:    fail-closed, và một cái van đóng không phải một lời khai đúng.
+#:
+#:    Cả hai hồ sơ nạp `mmproj` (L-14 hệ quả 4, §G1b/§G3b) ⇒ không còn hồ sơ nào
+#:    từ chối ảnh, nên `co_vision=False` không còn tồn tại trong bảng này. Đó là
+#:    chỗ nguồn `ConnectionReset` cũ biến mất: llama-swap không phải đổi hồ sơ
+#:    giữa chừng để nhìn một cái ảnh nữa.
 HO_SO: tuple[ModelSpec, ...] = (
     ModelSpec(
         ten="qwen38-api",
-        co_vision=False,
-        max_context=204_800,
-        mo_ta="Qwen3.8-27B - coding, chat, agent, tom tat. Ngu canh 200K.",
+        co_vision=True,
+        # 📈 12/09: 204.800 -> 221.184 (L-14, 10_BENCHMARK_P3 §G1b). Nguon
+        #    chan ly `apps/ltt_llm/ngan_sach.CUA_SO_THEO_MODEL`; kho nay deploy
+        #    sang may B nen khong import duoc, `test_334` buoc hai dau lai.
+        max_context=221_184,
+        mo_ta="Qwen3.8-27B - coding, chat, agent, tom tat, doc anh. Ngu canh 221K.",
     ),
     ModelSpec(
-        ten="qwen38-vision",
+        ten="qwen35-api",
         co_vision=True,
-        max_context=131_072,
-        mo_ta="Qwen3.8-27B - doc anh/anh chup man hinh, ngu canh 131K",
+        # 📈 12/09: ho so moi (D06/L-14). 262.144 x 3 slot VUA THOAI MAI tren
+        #    5060 Ti (§G3: VRAM 13.423, bien 2.888; §G3b voi MTP: 15.309, bien
+        #    1.002) — khac 3090, noi cung con so ay tran. Nguon chan ly
+        #    `apps/ltt_llm/ngan_sach.CUA_SO_THEO_MODEL`; kho nay deploy sang may B
+        #    nen khong import duoc, `test_334` buoc hai dau lai.
+        max_context=262_144,
+        mo_ta="Qwen3.5-9B Q6_K - nhanh, re, doc anh. Ngu canh 262K.",
     ),
 )
 

@@ -1,0 +1,182 @@
+# WIP Task 9 cua nhanh claude/ltt-llm-multijob-audit-43efd3 (chua commit), chup 2026-09-11 16:xx tu cay ltt-llm-api-http-guide-a3e123.
+# CHI DE DOC - khong ap. Base: b3b11dbc.
+diff --git a/platform_core/job_runner.py b/platform_core/job_runner.py
+index 691882ed..9c01e1ea 100644
+--- a/platform_core/job_runner.py
++++ b/platform_core/job_runner.py
+@@ -228,7 +228,8 @@ def _chay_mot_job(worker_id: str, *, capabilities=None) -> bool:
+     execution = (
+         admission.hold_persisted(
+             resource=admission_resource, slots=admission_slots,
+-            user_id=user_id, mode="job", holder_id=job_id, job_id=job_id)
++            user_id=user_id, mode="job", holder_id=job_id, job_id=job_id,
++            **_luat_cho_job(job_type, params))
+         if admission_resource and admission_slots > 0
+         else nullcontext(True)
+     )
+@@ -250,6 +251,49 @@ def _chay_mot_job(worker_id: str, *, capabilities=None) -> bool:
+             return _chay_handler(worker_id, job_id, job_type, params, ctx)
+ 
+ 
++def _luat_cho_job(job_type: str, params: dict) -> dict:
++    """Tham số đa lượt cho job NỀN (multijob D-03): lớp `nen` + phần đặt chỗ KV.
++
++    Tool không khai `admission_token_pool` ⇒ `{}` ⇒ đúng hành vi cũ.
++    ⛔ Ước hỏng ⇒ đặt chỗ CẢ POOL (job chỉ chạy khi không ai khác chạy) — hướng AN
++       TOÀN. Lùi về "đếm slot" thì lease vô hình với sổ ngân sách, và một job 150K
++       lọt vào cạnh ba phiên dài là tràn pool ⇒ llama.cpp giết MỌI slot.
++    """
++    from platform_core.llm import luat_nhan, tham_so_da_luot
++
++    tool = None
++    try:
++        from platform_core.registry import discover
++        for item in discover():
++            if item.error:
++                continue
++            for t in item.manifest.tools:
++                if t.job_type == job_type:
++                    tool = t
++                    break
++            if tool is not None:
++                break
++    except Exception:  # noqa: BLE001 - registry hỏng: không đoán được pool
++        log.exception("khong doc duoc tool cua %s de dat cho KV", job_type)
++        return {}
++    pool = int(getattr(tool, "admission_token_pool", 0) or 0) if tool else 0
++    if pool <= 0:
++        return {}
++    try:
++        from platform_core.public_api.executor import for_tool
++        ex = for_tool(tool)
++        tin = list((params or {}).get("messages") or [])
++        cong_cu = (params or {}).get("tools")
++        vao = int(ex.estimate_input(tin, cong_cu) if cong_cu else ex.estimate_input(tin))
++        ra = int((params or {}).get("max_tokens") or ex.mac_dinh_cho("job"))
++        ra = min(ra, int(ex.context_output_cap(vao)))
++        return tham_so_da_luot.luat_cho(pool, lop=luat_nhan.NEN, token_vao_uoc=vao,
++                                        xin_ra=ra)
++    except Exception:  # noqa: BLE001 - đặt chỗ cả pool là đường an toàn
++        log.exception("khong uoc duoc token cua job %s — dat cho CA POOL", job_type)
++        return dict(lop=luat_nhan.NEN, token_pool=pool, token_dat_truoc=pool)
++
++
+ def _vram_can(job_type: str) -> int:
+     """VRAM tối thiểu app khai cho loại job này. 0 = không cần GPU riêng."""
+     try:
+diff --git a/platform_core/llm/tham_so_da_luot.py b/platform_core/llm/tham_so_da_luot.py
+index 66af1ec8..ab721dd6 100644
+--- a/platform_core/llm/tham_so_da_luot.py
++++ b/platform_core/llm/tham_so_da_luot.py
+@@ -48,6 +48,27 @@ class ThamSoDaLuot:
+     lao_hoa_s: float
+ 
+ 
++def luat_cho(pool: int, *, lop: str, token_vao_uoc: int, xin_ra: int,
++             so_anh: int = 0, token_prefill_moi: int = 0,
++             la_whale: bool = False) -> dict:
++    """Tham số đa lượt cho `admission.acquire`/`xet_va_giu` — MỘT phép tính đặt chỗ.
++
++    `pool <= 0` ⇒ `{}` ⇒ đúng hành vi cũ (tool không khai ngân sách KV).
++
++    ⛔ Kẹp về `pool`: một lượt dùng trọn cửa sổ + đệm + ảnh vượt pool và sẽ KHÔNG
++       BAO GIỜ được nhận, trong khi engine vẫn phục vụ được nó khi chạy một mình.
++    ⭐ Năm chỗ gọi (stream, ChatLTT, đồng bộ ×2, job, planner) cùng đi qua đây —
++       năm bản sao của phép tính này là năm chỗ lệch nhau (memory "hai chỗ khai
++       cùng một điều").
++    """
++    if int(pool or 0) <= 0:
++        return {}
++    ts = doc()
++    dat = int(token_vao_uoc) + int(xin_ra) + ts.dem_dat_truoc + int(so_anh) * ts.token_moi_anh
++    return dict(lop=lop, token_pool=int(pool), token_dat_truoc=min(int(pool), dat),
++                token_prefill_moi=int(token_prefill_moi), la_whale=bool(la_whale))
++
++
+ def doc() -> ThamSoDaLuot:
+     return ThamSoDaLuot(
+         nguong_whale=int(_so("LTT_LLM_NGUONG_WHALE", 16_384)),
+diff --git a/platform_core/runtime_noi_bo/luong.py b/platform_core/runtime_noi_bo/luong.py
+index 9ab82ef6..84e53132 100644
+--- a/platform_core/runtime_noi_bo/luong.py
++++ b/platform_core/runtime_noi_bo/luong.py
+@@ -276,12 +276,9 @@ def tien_kiem(db, *, user_id: str, tool_name: str, than: dict, duong: str,
+     tai_nguyen = str(getattr(tool, "admission_resource", "") or "")
+     so_suat = int(getattr(tool, "admission_slots", 0) or 0)
+     pool = int(getattr(tool, "admission_token_pool", 0) or 0)
+-    dat = vao_uoc + xin_ra + ts.dem_dat_truoc + _dem_anh(than) * ts.token_moi_anh
+-    if pool > 0:
+-        # 🔴 Kẹp về pool: một lượt dùng TRỌN cửa sổ (vào + ra = CUA_SO − LE) cộng
+-        #    đệm + ảnh sẽ vượt pool và KHÔNG BAO GIỜ được nhận — chờ đủ 5 phút rồi
+-        #    hết hạn, trong khi engine vẫn phục vụ được nó khi chạy một mình.
+-        dat = min(dat, pool)
++    # Kẹp về pool nằm trong `luat_cho` — một phép tính cho mọi cửa.
++    dat = tham_so_da_luot.luat_cho(pool, lop="", token_vao_uoc=vao_uoc, xin_ra=xin_ra,
++                                   so_anh=_dem_anh(than)).get("token_dat_truoc", 0)
+     moi = uoc_moi.uoc_token_moi(user_id, tin, executor.estimate_input)
+ 
+     if not thanh_toan.du_so_du(db, user_id=user_id, token_vao_uoc=vao_uoc,
+@@ -475,13 +472,10 @@ def chuan_bi(db, *, user_id: str, tool_name: str, than: dict, duong: str,
+     so_suat = int(getattr(tool, "admission_slots", 0) or 0)
+     pool = int(getattr(tool, "admission_token_pool", 0) or 0)
+     if tai_nguyen and so_suat > 0:
+-        luat: dict = {}
+-        if pool > 0:
+-            from platform_core.llm import luat_nhan, tham_so_da_luot
+-            ts = tham_so_da_luot.doc()
+-            luat = dict(lop=luat_nhan.TUONG_TAC, token_pool=pool,
+-                        token_dat_truoc=min(pool, vao_uoc + xin_ra + ts.dem_dat_truoc
+-                                            + _dem_anh(than) * ts.token_moi_anh))
++        from platform_core.llm import luat_nhan, tham_so_da_luot
++        luat = tham_so_da_luot.luat_cho(pool, lop=luat_nhan.TUONG_TAC,
++                                        token_vao_uoc=vao_uoc, xin_ra=xin_ra,
++                                        so_anh=_dem_anh(than))
+         ticket = admission.acquire(
+             db, resource=tai_nguyen, slots=so_suat, user_id=user_id,
+             mode="stream", holder_id=holder_id or request_id, **luat)
+diff --git a/server/api/chat.py b/server/api/chat.py
+index 4baf21c0..42272811 100644
+--- a/server/api/chat.py
++++ b/server/api/chat.py
+@@ -185,9 +185,18 @@ def register_chat_routes(api, config, tag: str) -> None:
+         #    cua `credit_entries.job_id`. PostgreSQL ep, SQLite khong — nen loi
+         #    nay chay sach qua ca bo test roi no o luot goi that dau tien.
+         request_id = thanh_toan.ma_luot("ch")
++        # multijob TD-7 (điều chỉnh khi code): cửa này KHÔNG chờ — `idempotency.begin`
++        # giữ `pg_advisory_xact_lock` suốt giao dịch request (xem khối "CHỐT GIAO
++        # DỊCH" dưới), nên chờ ở đây là treo request trùng khoá. Nhưng lease PHẢI
++        # mang lớp + phần đặt chỗ, nếu không nó vô hình với sổ ngân sách KV.
++        from platform_core.llm import luat_nhan, tham_so_da_luot
+         ticket = admission.acquire(
+             db, resource=tool.admission_resource, slots=tool.admission_slots,
+-            user_id=principal.user_id, mode="sync", holder_id=record.id)
++            user_id=principal.user_id, mode="sync", holder_id=record.id,
++            **tham_so_da_luot.luat_cho(
++                int(getattr(tool, "admission_token_pool", 0) or 0),
++                lop=luat_nhan.TUONG_TAC, token_vao_uoc=int(token_vao_uoc),
++                xin_ra=int(sach["max_tokens"])))
+         if ticket is None:
+             db.rollback()
+             raise limits.execution_busy(tool.admission_resource)
+diff --git a/server/api/streaming.py b/server/api/streaming.py
+index ec479167..11da35da 100644
+--- a/server/api/streaming.py
++++ b/server/api/streaming.py
+@@ -212,9 +212,16 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
+     request_id = thanh_toan.ma_luot("ms")
+     ticket = None
+     if tool is not None and tool.admission_resource and tool.admission_slots > 0:
++        # multijob: cửa không-stream cũng là cửa đồng bộ (TD-7) — không chờ, nhưng
++        # lease mang lớp + phần đặt chỗ để sổ ngân sách KV thấy nó.
++        from platform_core.llm import luat_nhan, tham_so_da_luot
+         ticket = admission.acquire(
+             db, resource=tool.admission_resource, slots=tool.admission_slots,
+-            user_id=principal.user_id, mode="sync", holder_id=request_id)
++            user_id=principal.user_id, mode="sync", holder_id=request_id,
++            **tham_so_da_luot.luat_cho(
++                int(getattr(tool, "admission_token_pool", 0) or 0),
++                lop=luat_nhan.TUONG_TAC, token_vao_uoc=int(vao_uoc),
++                xin_ra=int(xin_ra)))
+     if tool is not None and tool.admission_resource and ticket is None:
+         db.rollback()
+         raise limits.execution_busy(tool.admission_resource)

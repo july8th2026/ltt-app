@@ -1,97 +1,284 @@
-# llama-swap.yaml - vong doi model VLM tren MAY B. (H38, phase P6)
+# llama-swap.yaml - vong doi model tren MAY B: HAI model, HAI card, CUNG LUC.
+# (H38/P6 -> LTT LLM Dual-Model pha 3, Task 3.3)
 #
-# Tep nay THUAN ASCII (quy tac 2 cua CLAUDE.md) - no duoc doc boi mot binary Go,
+# Tep nay THUAN ASCII (quy tac 16 cua CLAUDE.md) - no duoc doc boi mot binary Go,
 # nhung no nam canh cac .ps1 va bi chep di chep lai bang cung mot duong ong.
+#
+# !! Ban truoc cung TUYEN BO "THUAN ASCII" - va mang 6 byte em-dash UTF-8. Loi
+#    van khong cuong che duoc mot byte, nen tu nay
+#    `tests/test_1215_llama_swap_hai_model.py` do bang byte: khong byte > 0x7E,
+#    khong BOM.
 #
 # yaml-language-server: $schema=https://raw.githubusercontent.com/mostlygeek/llama-swap/refs/heads/main/config-schema.json
 #
 # ==========================================================================
-# HAI HO SO, MOT TRONG SO. Vi sao khong phai mot ho so duy nhat:
+# HAI HO SO, HAI CARD, THUONG TRU CUNG LUC.
 #
-#   mmproj ton 0,86 GiB thuong tru. O moc ngu canh 200K tren card 24 GB, 0,86 GiB
-#   do la HAI PHAN BA bien an toan con lai. Nen thay vi hy sinh mot trong hai,
-#   ta khai hai ho so va de llama-swap doi giua chung theo ten model client goi.
-#   Chi MOT cai nam trong VRAM tai mot thoi diem.
+# !! DINH CHINH ca khoi mo dau cua ban truoc. No viet:
 #
-#     qwen38-api      200K ngu canh, KV q4_0, KHONG vision  ~21,5 GB  <- MAC DINH
-#     qwen38-vision   131K ngu canh, KV q4_0, CO  vision    ~21,1 GB
+#      "HAI HO SO, MOT TRONG SO ... Chi MOT cai nam trong VRAM tai mot thoi diem"
+#
+#    voi hai ho so la `qwen38-api` (text 200K) va `qwen38-vision` (anh 131K) -
+#    CUNG mot trong so 27B, doi qua lai tren CUNG card 3090. Cau do het dung o
+#    ba diem, va ca ba deu co so do:
+#
+#    1. `qwen38-vision` KHONG con ton tai (D02; L-14 he qua 4). MOT ho so duy
+#       nhat mang ca text va anh - mmproj nam trong `qwen38-api`.
+#    2. Ly do tach ho so cu la "mmproj ton 0,86 GiB thuong tru, bang HAI PHAN BA
+#       bien an toan". Do lai 12/09 (G1 muc "Ba dieu bang nay noi" #1, G1b):
+#       mmproj tren GPU ton ~1.136 MiB. Va cach tra KHONG phai hy sinh vision:
+#       chu du an chot HA NGU CANH 262.144 -> 221.184 de mmproj o lai tren card
+#       (L-14). Doi ~40.000 token lay vision thuong tru.
+#    3. Hai model duoi day la HAI MODEL KHAC NHAU tren HAI CARD KHAC NHAU:
+#
+#         qwen38-api  LTT-3.8  Qwen3.8-27B  RTX 3090     -c 221184 -np 3 KV q4_0
+#         qwen35-api  LTT-3.5  Qwen3.5-9B   RTX 5060 Ti  -c 262144 -np 3 KV q8_0
+#
+#       Chung KHONG chia nhau mot card, nen chung KHONG phai doi cho nhau - xem
+#       khoi `groups` o duoi de biet CO NAO lam nen dieu do.
 #
 # ==========================================================================
-# CAC CON SO DUOI DAY DA DUOC DO, 03/09/2026, TREN DUNG CARD DANG PHUC VU.
+# CAC CON SO DUOI DAY DA DUOC DO, 12/09/2026, build b10883, tren dung hai card
+# dang phuc vu. Bang chung day du: `docs/ltt_llm_dual/10_BENCHMARK_P3.md`.
 #
-# !! Ban truoc cua muc nay ghi "MOI CON SO TREN LA MOC KHOI DIEM, CHUA PHAI SO
-#    TA DO" va lay tu mot sweep cong dong. Cau do dung khi viet va da HET DUNG.
-#    Nay thay bang so do that (build 10689, prompt ngau nhien moi luot nen khong
-#    tai dung prompt cache, dem token bang /tokenize cua chinh model dang nap):
+#   qwen38-api (3090, 24.576 MiB)  -c 221184 -np 3 -kvu, KV q4_0, mmproj tren GPU
+#     VRAM sau nap 24.131 MiB ; Shared 568 (trong dai san 526-568 => KHONG tran)
+#     bien 445 MiB. Day la moc CAO NHAT con sach o `-ub` mac dinh: 229.376 da
+#     vuot san ~140 MiB. (G1b)
+#     !! 262.144 x 3 slot + mmproj tren GPU can ~25,2 GB - KHONG vua card. Dung
+#        nang `-c` o day ma khong do lai: tran KV sang RAM chu khong bao mot loi
+#        nao, chi tut toc do khi thuc su cham vao phan da tran (xem muc 22/08).
 #
-#   -c 204800        nap duoc, VRAM sau nap 21.959 MiB / 24.576.
-#                    Chay that toi 179.902 token vao, doc lai dung moc dau VA
-#                    moc cuoi prompt. KHONG dat 262144 (cong dong: "262K
-#                    exceeded 24 GB at model load").
-#   --cache-type-* q4_0
-#                    BAT BUOC o 200K: q8_0 o 204800 khong vua card 24 GB.
-#                    VRAM dinh 21.979 MiB - THAP HON ho so 131K/q8_0 cu
-#                    (22.017 MiB), vi KV q4_0 o 204.800 nho hon KV q8_0 o
-#                    131.072. Chat luong: 36/36 bo danh_gia_llm va 10/10
-#                    kim-trong-dong-co o 130K (nam do sau) - hoa voi q8_0,
-#                    nhung hoa O KICH TRAN nen chi loai tru suy giam DU LON
-#                    DE DO THAY.
-#   --spec-draft-n-max 2
-#                    Card 24 GB dat dinh o n-max 2. Sau hon thi code nhanh len
-#                    nhung prose cham di, tong the giam. (Van la so cong dong.)
+#   qwen35-api (5060 Ti, 16.311 MiB)  -c 262144 -np 3 -kvu, KV q8_0, mmproj GPU
+#     VRAM sau nap 13.481 MiB ; Shared 354 ; tran 0 ; bien 2.830 MiB (G3).
+#     Sau khi bat draft-mtp (MTP an 1.828 MiB): bien con 1.002 MiB - tren nguong
+#     700 MiB chu du an chot 12/09 ("may B chi chay he thong AI"; 5060 Ti luc
+#     ranh giu 54 MiB). (G3b)
+#     !  Con no cua G3b: 54 MiB la luc KHONG co phien RDP nao dang ve. Bien
+#        1.002 co the tut vai tram MiB khi chu du an dieu khien may B qua RDP -
+#        phai DO, dung suy.
 #
-#   Prefill do duoc:  50K 999,9 tok/s | 100K 805,3 | 130K 726,5
-#                    150K 672,4 | 165K 639,1 | 180K 616,7
+#   -np 3 cho ca hai, va day la MOT lua chon chu khong phai mot gioi han:
+#     3090 khong con cho cho slot thu 4 (262.144 x 4 tran ~400 MiB, G1), con
+#     5060 Ti thi DU cho 4 slot (bien 2.888 MiB, G3). Chu du an chon 3 cho ca
+#     hai "cho nhat quan 2 card" (12/09). Muon nang 3.5 len 4 thi doi MOT con so
+#     o `apps/ltt_llm/ngan_sach.py` (`admission_theo_model` khai theo tung
+#     model), roi doi `-np` o day - `tests/test_1201` buoc hai ben bang nhau.
 #
-#   Bang chung day du: docs/VLM_NOI_BO/NGU_CANH_DAI_2026-09-03.md
+#   --spec-type draft-mtp --spec-draft-n-max 2 - CONG G2 DAT tren ca hai:
+#     201 luot, 3 luong dong thoi, moi luot mot dau rieng => 0 tra loi rong,
+#     0 lan slot, 0 loi, `spec_decode_num_accepted_tokens` 0 -> 48.514. Hai bao
+#     cao cong dong (#27572, #26750) KHONG tai hien tren build nay. (G2)
+#     n-max 3 cho hon 0,08 tok/s ma ton them 150 MiB => giu 2. (G3b)
+#
+#   Prefill do tren DUNG cau hinh nay (G4), tok/s:
+#              786 tok   6,7K    32,6K    98K     163K
+#     LTT-3.8    977    1.239   1.132     842     646
+#     LTT-3.5  1.765    2.238   2.059   1.630   1.350
+#
+#   Giai ma (trung vi 5 luot, muc L-16): LTT-3.8 63,01 tok/s ; LTT-3.5 76,21.
+#   !  Bien cua 3.8 mong: 2/5 luot rieng le roi xuong 57,8 va 58,7 trong khi
+#      nguong cong nghiem thu B la 60,0. Trung vi la thuoc cua R18 nen no DAT,
+#      nhung dung coi 5 % bien nay la an toan.
+#
+#   Con so 03/09 van dung va van dang gia giu: chay THAT toi 179.902 token vao
+#   va doc lai dung moc dau VA moc cuoi prompt, kim-trong-dong-co 10/10 o 130K.
+#   Do la bang chung rang ngu canh dai o day duoc DUNG THAT, khong chi CAP PHAT.
+#   (`docs/VLM_NOI_BO/NGU_CANH_DAI_2026-09-03.md`)
 #
 # ==========================================================================
 # GPU CHUA SACH LUC NAP - DO THAT NGAY 22/08/2026 (P6). DOC KY MUC NAY.
 #
-# !! DINH CHINH: ban truoc cua tep nay viet rang "llama.cpp BAO LOI TO khi GPU
-#    chua sach, khac vLLM". SAI. So do bac bo no:
+# !! DINH CHINH: mot ban con truoc nua cua tep nay viet rang "llama.cpp BAO LOI
+#    TO khi GPU chua sach, khac vLLM". SAI. So do bac bo no:
 #
 #      card BAN  (ComfyUI con giu 6.211 MiB)  ->  18,2 tok/s   VRAM 24.102/24.576
 #      card SACH (sau khi goi /free)          ->  63,3 tok/s   VRAM 20.236/24.576
 #
-#    Chenh 3,5 LAN. llama.cpp KHONG bao mot loi nao: no nhet vua roi TRAN trong so
-#    sang RAM chu qua PCIe. /health van xanh, /v1/models van dung, noi dung sinh ra
-#    van hop le. Chi co toc do lang le con mot phan tu.
+#    Chenh 3,5 LAN. llama.cpp KHONG bao mot loi nao: no nhet vua roi TRAN trong
+#    so sang RAM chu qua PCIe. /health van xanh, /v1/models van dung, noi dung
+#    sinh ra van hop le. Chi co toc do lang le con mot phan tu.
 #
 #    Dung luat 7 cua cong dong: "A shared desktop halves everything, silently -
 #    spilled 3.5 GB of weights to host RAM over PCIe while /health stayed green."
 #
 # !! VA: ComfyUI GIU MODEL THUONG TRU KE CA SAU KHI RENDER XONG. Sau mot luot ve
-#    no van om 6.211 MiB. Chi POST /free voi unload_models moi dua ve 1.515 MiB.
-#    Nen "doi ComfyUI ranh" la KHONG DU - phai bao no nha, roi TU DI DO LAI.
+#    no van om 6.211 MiB; POST /free voi unload_models dua ve 1.515 MiB nhung
+#    van GIU 223,5 MiB ngu canh CUDA - do lai 11/09, va `/free` KHONG nha cho do.
 #
-#   => Viec do thuoc tang tren: `llm_gateway/don_dep.py` goi /free cua ComfyUI roi
-#      cho `nvidia-smi` xac nhan VRAM <= 2.500 MiB, TRUOC khi de yeu cau di tiep.
-#      Chua sach thi cong tra 429, KHONG nap de.
-#      Khong lam bang wrapper .cmd o day - llama-swap quan ly tien trinh no sinh
-#      ra, boc them mot lop la moi mo coi tien trinh.
+#   => Voi bien 445 MiB cua ho so 221K, 223,5 MiB ay la MOT NUA bien. Nen tu
+#      L-14 (he qua 3) day la RANG BUOC CUNG cua P5, khong phai mot toi uu tuy
+#      chon: trong tai residency (Task 5.4) phai DUNG HAN dich vu LTTComfyUI
+#      trong cua so LLM, khong chi goi `/free`.
+#      Tang tren: tu Task 5.4b `llm_gateway/don_dep.py` DA BI XOA - cong LLM
+#      khong con tu don card nua. Trong tai residency o may A phat
+#      `POST /v1/nha_comfy` (dung han LTTComfyUI, 5.4a) roi
+#      `POST /v1/residency/nap`, va chinh lenh `nap` doi `nvidia-smi` xac nhan
+#      VRAM 3090 <= `LTT_LLM_VRAM_SACH_MB` truoc khi nap; chua sach thi 409 kem
+#      so do. Khong lam bang wrapper .cmd o day - llama-swap quan ly tien trinh
+#      no sinh ra, boc them mot lop la moi mo coi tien trinh.
+#
+#   !  Va tu nay chuyen nay CHI con dung cho card 3090. 5060 Ti khong nuoi
+#      ComfyUI (D-09a), nen `qwen35-api` khong co doi thu tren card cua no.
 # ==========================================================================
 
-healthCheckTimeout: 600      # nap GGUF 15,33 GiB: vai giay tu page cache, lau hon tu dia lanh
+healthCheckTimeout: 600      # nap GGUF 16,46 GiB: 15,2 s tu kho am, <= 16,9 s
+                             # uoc tu kho lanh (G5). Han dat theo TRUONG HOP
+                             # XAU NHAT, khong theo truong hop thuong.
 logLevel: info
 logToStdout: "both"
 
+# Hai model => llama-server o 8281 va 8282. `cai_dat_dich_vu.ps1` kiem dung ba
+# cong 8280/8281/8282 chi nghe loopback - them ho so thu ba thi phai sua ca do.
 startPort: 8281
 
 macros:
   BIN: "H:/LTT_LLM/bin/llamacpp"
   MODELS: "H:/LTT_LLM/models"
-  GGUF: "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf"
+  GGUF38: "H:/LTT_LLM/models/Qwen3.8-27B-UD-Q4_K_M.gguf"
+  # Chon o G3b, va ly do chon khong phai VRAM cung khong phai chat luong (hai
+  # ung vien hoa nhau: lech 108 MiB tren bien 2,8 GiB; 27/36 so 27/36). Ung vien
+  # `lmstudio-community` KHONG chay duoc `--spec-type draft-mtp` - tep cua no
+  # thieu tensor MTP, va thieu MTP la mat 38,5 % toc do giai ma (52,69 -> 73,00).
+  GGUF35: "H:/LTT_LLM/models/Qwen3.5-9B-Q6_K-unsloth.gguf"
+  #
+  # ------------------------------------------------------------------ macro CHUNG
+  # !! `CHUNG` KHONG con mang `-c`/`-np`/`--parallel 1`, va day la mot thay doi
+  #    co chu y cua Task 3.3: hai model nam tren hai card co kich thuoc khac
+  #    nhau, nen ngu canh va so slot la thuoc tinh cua TUNG ho so. Mot con so
+  #    dung chung o day la mot lan OOM cho card nho hon, hoac mot su lang phi
+  #    cho card lon hon.
+  #    `--parallel 1` cu (speculative decoding "toi uu MOT LUONG") da bi cong G2
+  #    bac bo: 3 slot + draft-mtp do duoc 0 loi va 48.514 token nhap duoc chap
+  #    nhan. Xem G2.
+  #
   # -fa 1        flash attention
   # -ngl 999     day het lop len GPU
+  # -kvu         KV unified: mot pool KV dung chung cho cac slot, thay vi chia
+  #              deu `-c` cho `-np`. Ca hai phep do G1b/G3 deu chay voi co nay.
   # --jinja      BAT BUOC. Thieu no thi model "khong co moc nao de biet luot cua
   #              ban ket thuc o dau" - lan man qua stop token, hoac tra loi cut.
-  # --parallel 1 speculative decoding la toi uu MOT LUONG. Loi the bien mat o
-  #              --parallel 4, va mot baseline --parallel 2 doc thap ~20%.
   #
-  # !! HAI CO DUOI DAY LA BAT BUOC CHO CODEX VA CLAUDE CODE, khong phai tuy chon.
+  # --reasoning-format deepseek
+  #   Tach khoi <think> ra truong `reasoning_content` rieng, de token suy nghi
+  #   KHONG chen vao giua mot tool call. BAT BUOC cho Codex va Claude Code.
+  #   ! Bay keo theo, da lam hong hai phep do: voi co nay, mot luot con dang
+  #      nghi tra `content` RONG va chu nam o `reasoning_content`. Cong cu nao
+  #      chi doc `content` (vd `tools/danh_gia_llm.py:217`) khong phan biet duoc
+  #      "hong" voi "dang nghi do".
   #
-  # --chat-template-file
+  # --metrics    MO CUA DOC /metrics cua llama-server (Prometheus).
+  #
+  #   !! CO NAY KHONG BAT VIEC DEM. Viec dem CHAY SAN, vo dieu kien, trong vong
+  #      lap suy luan - doi chieu ma nguon llama.cpp (tools/server):
+  #
+  #        server-context.cpp:4066   metrics.add_prompt(...)
+  #        server-context.cpp:4072   metrics.n_decode++
+  #        server-context.cpp:3412   metrics.add_prompt_cached(n_past)
+  #        server-context.cpp:4129   metrics_on_prediction(slot)
+  #
+  #      Con co nay chi gac CUA DOC:
+  #
+  #        server-context.cpp:4669   if (!params.endpoint_metrics) { ... }
+  #
+  #   => Truoc dong nay, may B DEM ROI VUT DI. Bat len ton 0 tren duong nong:
+  #      khong them mot phep tinh nao, chi them mot endpoint chi-doc tren
+  #      127.0.0.1 - noi chi llama-swap voi toi duoc.
+  #
+  #   Thu mo khoa duoc, ma khong cach nao khac lay duoc:
+  #     * token prompt/sinh ra, prefill & decode tok/s
+  #     * KV cache, slot dang ban, `requests_deferred`
+  #     * llamacpp:spec_decode_num_accepted_tokens_per_pos_total
+  #       <- TI LE CHAP NHAN SUY DOAN. Day la cach duy nhat biet `draft-mtp` con
+  #          dang giup gi hay da am tham tat (dung o G2 va G3b).
+  #
+  #   ! Cong 8299 KHONG phoi /metrics ra ngoai (`test_984`). Muon xem thi hoi
+  #     qua llama-swap tren loopback cua may B. Cong chi phoi so cua RIENG no
+  #     (`/health` -> `dem`), vi do la thu llama-server khong bao gio nhin thay:
+  #     moi luot bi TU CHOI deu khong cham toi engine.
+  #
+  # ------------------------------------------- BO CO L-16 (chong "nghi mai khong dut")
+  # Do 12/09, sau muoi luot tieng Viet moi cau hinh, `tools/danh_gia_llm.py`:
+  #
+  #   cau hinh                                  bo de    tieng Viet   3.8 tok/s
+  #   khong co gi                               45/60      0 %          63,60
+  #   chi --reasoning-budget 512                58/60     80 %          65,18
+  #   A: budget + tham so Qwen DU               59/60    100 %          56,61  <- truot cong B
+  #   B: budget + tham so Qwen BO presence      59/60    100 %          63,01  <- CHOT
+  #   E: --reasoning off                        48/60     10 %          rat nhanh
+  #
+  # !! KHONG THEM `--presence-penalty`. No la toan bo chi phi va no khong mua gi:
+  #    bo no la 56,61 -> 63,01 tok/s (+11 %) voi chat luong KHONG DOI, va 56,61
+  #    nam DUOI nguong 60,0 cua cong nghiem thu B. Co che hop ly: no la mot phanh
+  #    chay o MOI buoc giai ma, con temp/top-p/top-k/min-p gan nhu mien phi.
+  #    `test_1215` cuong che su vang mat nay tren CA HAI ho so.
+  #
+  # !! Va dung bo `--reasoning-budget 512` de "cho nhanh": khong co no thi LTT-3.5
+  #    tra `content` RONG 6/6 luot tieng Viet, moi luot dot dung `max_tokens`.
+  #    Nguyen nhan da truy: Qwen3.5 co loi *truncated thinking* do cong khai
+  #    (17,4 % dau ra khong phat `</think>`), va no LUON nghi bang tieng Anh nen
+  #    de tieng Viet bat no suy luan bac cau. (G3c)
+  #
+  # !! Va dung tat suy nghi (`--reasoning off`): do la HONG, khong phai danh doi.
+  #    Nhanh gap ~20 lan nhung tieng Viet con 10 %, sinh dai con 40 %.
+  #
+  # Tham so lay mau dat o SERVER, khong gui theo request: cache CUDA graph khoa
+  # theo bo tham so, va `--reasoning-budget` la co server-global, khong gui
+  # duoc per-request. Tuc no la thuoc tinh cua HO SO, moi khach chiu chung.
+  CHUNG: >-
+    --jinja
+    --reasoning-format deepseek
+    -fa 1 -ngl 999 -kvu
+    --reasoning-budget 512
+    --temp 0.6 --top-p 0.95 --top-k 20 --min-p 0
+    --metrics
+
+models:
+  # ============================================================ GHIM GPU (P0)
+  # !! MAY B CO HAI GPU TU 09/2026: `llama-server --list-devices` in
+  #      CUDA0: RTX 3090 (24.575 MiB)   CUDA1: RTX 5060 Ti (16.310 MiB)
+  #    Voi `-ngl 999` va KHONG ghim, llama.cpp mac dinh CHIA LOP qua MOI thiet bi
+  #    no thay => model 27B tu chia sang ca 5060 Ti (cham hon, va trai quyet dinh
+  #    cua chu du an: Qwen3.8 CHI chay 3090, 5060 Ti danh cho Qwen3.5 - D-09a,
+  #    `docs/multijob/DECISION_LOG.md`).
+  #
+  #    Tu khi co HAI model, ghim con lam mot viec thu hai va quan trong hon: no
+  #    la thu GIU HAI MODEL TREN HAI CARD KHAC NHAU. Khong ghim thi ca hai deu
+  #    thay ca hai card, va `groups: swap: false` o duoi se cho chung cung song
+  #    tren CUNG mot card - dung mot lan OOM ma chu thich cu canh bao.
+  #
+  #    Ghim bang UUID, KHONG bang chi so: thu tu liet ke CUDA doi duoc (lap them
+  #    card, doi khe) con UUID thi khong. Nguon danh tinh la
+  #    `llm_gateway/deploy/gpu_may_b.json` (vai -> UUID), dat O DAY chu khong o
+  #    env cua dich vu `LTTLlamaSwap`: `cai_dat_dich_vu.ps1` co nhanh go-cai-lai
+  #    dich vu, va env dich vu mat AM THAM o lan do.
+  #    `tests/test_1200` doi moi ho so ghim dung UUID theo vai.
+  # ==========================================================================
+
+  # ---------------------------------------------------- LTT-3.8 (RTX 3090)
+  # Ho so MAC DINH, phuc vu khach goi API qua Cloudflare.
+  #
+  # Engine 221.184. Tran vao public va so cong bo cho client la hai con so KHAC,
+  # va chung KHONG duoc gop lai: chung DAN XUAT tu con so nay (cua so - token ra
+  # toi da - le uoc). Nguon chan ly: `apps/ltt_llm/ngan_sach.py`; `test_334` doi
+  # chieu `-c` o day voi `CUA_SO_THEO_MODEL` va do khi hai ben lech.
+  #
+  # !! MUC NAY TUNG NOI "Public input cap 65K theo Q116" VA "131K chi danh cho
+  #    engine". Ca hai het dung tu 03/09: rang buoc Cloudflare duoc cuong che o
+  #    mot cho khac han - cua DONG BO tu tu choi theo NGAN SACH THOI GIAN
+  #    (`features.tran_token_ra_dong_bo`), nen no co lai dung ma khong can mot
+  #    tran token rieng o day.
+  #
+  # MOT HO SO CHO MOI LOAI VIEC (coding, chat, agent, tom tat, VA doc anh).
+  # Khong tach model theo tac vu: chung deu la "text/anh vao, text ra, co tool" -
+  # cung mot hinh dang. Khach dieu khien do sau bang `reasoning_effort`.
+  #
+  # --mmproj: tren GPU, ton ~1.136 MiB (G1b). `--no-mmproj-offload` lam vision
+  #   ton DUNG 0 MiB VRAM (do: ba cap dong trung khit tung MiB, G1) nhung day ma
+  #   hoa anh sang CPU - chu du an chot giu mmproj tren GPU (L-14) va tra gia
+  #   bang ngu canh, khong bang do tre anh. 1 anh 1024x768 = 770 token (G4).
+  #
+  # --chat-template-file: BAT BUOC cho Codex va Claude Code, khong phai tuy chon.
   #   Template CHINH THUC cua Qwen3.8 CO REGRESSION lam hong tool calling:
   #     - crash khi enable_thinking=false
   #     - "tool argument crashes on JSON strings from standard OpenAI API clients"
@@ -101,108 +288,188 @@ macros:
   #     - agentic stalling giua vong tool-call
   #   Ban va cong dong: froggeric/Qwen-Fixed-Chat-Templates (qwen3.8-froggeric-v22.3),
   #   mac dinh reasoning_effort = medium thay vi xhigh.
+  #   ! Danh doi phai biet: medium re hon xhigh nhung diem IFBench 78,3 cua cong
+  #      dong do o xhigh. Chua co phep do nao cua ta tach hai muc nay.
   #
-  # --reasoning-format deepseek
-  #   Tach khoi <think> ra truong `reasoning_content` rieng, de token suy nghi
-  #   KHONG chen vao giua mot tool call. Hang 3090 nhanh nhat trong sweep cong dong
-  #   (b10450, 63,5 tok/s) dung dung hai co nay.
-  #
-  # !! DANH DOI PHAI BIET: reasoning_effort medium re hon xhigh nhung diem IFBench
-  #    78,3 cua cong dong do o xhigh. P3 phai do CA HAI muc roi moi chot.
-  CHUNG: >-
-    --jinja
-    --chat-template-file H:/LTT_LLM/models/chat_template.jinja
-    --reasoning-format deepseek
-    -fa 1 -ngl 999 --parallel 1
-    --spec-type draft-mtp --spec-draft-n-max 2
-
-models:
-  # ============================================================ KHACH NGOAI
-  # Ho so MAC DINH, phuc vu khach goi API qua Cloudflare. Chot 2026-08-27.
-  #
-  # Engine 200K (`-c 204800`). Tran vao public 169.984, cong bo cho client
-  # 156.385 - ba con so cho ba viec, va chung KHONG duoc gop lai.
-  #   Nguon chan ly: `apps/ltt_llm/ngan_sach.py`. `test_334` doi chieu `-c` o
-  #   day voi `CUA_SO_MODEL` va do khi hai ben lech.
-  #
-  # !! MUC NAY TUNG NOI "Public input cap 65K theo Q116" VA "131K chi danh cho
-  #    engine". Ca hai da het dung tu 03/09. Tran vao khong con la mot con so
-  #    chon tay cho "bien an toan Cloudflare" - no la mot con so DAN XUAT
-  #    (cua so - token ra toi da - le uoc), va rang buoc Cloudflare duoc cuong
-  #    che o mot cho khac han: cua DONG BO tu tu choi theo NGAN SACH THOI GIAN
-  #    (`features.tran_token_ra_dong_bo`), nen no co lai dung ma khong can mot
-  #    tran token rieng.
-  #
-  # !! VA CAU "Chua ai chung minh 200K DUOC DO DAY tren card 24 GB" - nay DA CO.
-  #    Do 03/09 tren chinh card nay: chay that toi 179.902 token vao, doc lai
-  #    dung moc dau va moc cuoi prompt, VRAM dinh 21.979 MiB. Cot "ngu canh"
-  #    trong bang cong dong van la con so CAP PHAT (do voi prompt 400 token) -
-  #    canh bao do dung, va no khong con ap cho ta.
-  #
-  # MOT HO SO CHO MOI LOAI VIEC (coding, chat, agent, tom tat). Khong tach model
-  # theo tac vu: chung deu la "text vao, text ra, co tool" - cung mot hinh dang.
-  # Khach dieu khien do sau bang `reasoning_effort` trong tung request.
+  # `--spec-type` dat o TUNG ho so chu khong o macro `CHUNG`: kha nang chay MTP
+  # la thuoc tinh cua TEP GGUF (tep lmstudio khong co tensor MTP - G3b), khong
+  # phai cua may. De o macro thi ho so thu ba them vao sau se thua huong mot co
+  # ma tep cua no co the khong do noi.
   qwen38-api:
-    name: "Qwen3.8-27B (LTT Studios)"
-    description: "Coding, chat, agent, tom tat. Engine 200K; input public 170K."
-    capabilities:
-      in: ["text"]
-      out: ["text"]
-    cmd: |
-      ${BIN}/llama-server.exe
-      -m ${GGUF}
-      ${CHUNG}
-      -c 204800
-      --cache-type-k q4_0 --cache-type-v q4_0
-      --host 127.0.0.1 --port ${PORT}
-    proxy: "http://127.0.0.1:${PORT}"
-    # Dai hon `ops`: khach ngoai goi rai rac, nap lai giua cac lan la tra tien
-    # bang do tre cho nguoi dung cuoi.
-    ttl: 1800
-    unloadTimeout: 30
-
-  # ==========================================================================
-  # `qwen38-ops` DA GO NGAY 03/09, va viec go la MOT PHAN CUA BAN VA.
-  #
-  # No tung ton tai vi ta tin rang 200K "chi dung duoc khi KHONG qua
-  # Cloudflare". Do la mot suy luan, khong phai mot phep do, va no SAI cho cua
-  # ma Codex/Claude Code that su dung:
-  #
-  #   * lap luan cu: prefill ~1.000 tok/s => prompt 200K ton ~200s => CF cat o
-  #     125s => 524. Dung cho cua DONG BO.
-  #   * nhung `nhip_tim.py` chen chu thich SSE moi 15 giay TRONG LUC prefill,
-  #     nen dong ho im-lang cua CF khong bao gio cham o cua STREAM. Chu thich
-  #     cu duoc viet TRUOC khi `nhip_tim.py` ton tai, va khong ai doc lai no.
-  #
-  # !! VA CO MOT LY DO MANH HON DE CHI GIU MOT HO SO TEXT. Do that 03/09:
-  #    llama-swap **giet mot luot dang chay** de nap ho so khac. Luot bi giet
-  #    chi nhan `ConnectionReset`, khong loi nao noi vi sao - no trong y het
-  #    mot lan OOM, va no da lam hong hai lo do lien tiep cua chinh phien nay.
-  #
-  #    Hai ho so text cung mo ra cho khach = mot nguon `ConnectionReset` ngau
-  #    nhien khong giai thich duoc. Mot ho so text cong khai, mot tep `-c`, mot
-  #    su that. Nen `qwen38-api` GIO CHINH LA ho so 200K.
-  # ==========================================================================
-
-  # ------------------------------------------------------------------- vision
-  qwen38-vision:
-    name: "Qwen3.8-27B vision (131K, doc anh)"
-    description: "Doc anh chup man hinh, bieu do, giao dien. Ngu canh 131K."
+    name: "LTT-3.8"
+    description: "Qwen3.8-27B. Coding, chat, agent, tom tat, doc anh. Ngu canh 221K."
     capabilities:
       in: ["text", "image"]
       out: ["text"]
     cmd: |
       ${BIN}/llama-server.exe
-      -m ${GGUF}
+      -m ${GGUF38}
       --mmproj ${MODELS}/mmproj-F16.gguf
+      --chat-template-file H:/LTT_LLM/models/chat_template.jinja
       ${CHUNG}
-      -c 131072
+      -c 221184
+      -np 3
       --cache-type-k q4_0 --cache-type-v q4_0
+      --spec-type draft-mtp --spec-draft-n-max 2
       --host 127.0.0.1 --port ${PORT}
+    env:
+      - "CUDA_VISIBLE_DEVICES=GPU-26623278-4fa5-82db-4306-237651b03e78"
     proxy: "http://127.0.0.1:${PORT}"
-    ttl: 600
+    # ttl: 0 = TAT dong ho nha, khong phai "nha ngay". Xem khoi THUONG TRU duoi.
+    ttl: 0
+    concurrencyLimit: 8
     unloadTimeout: 30
 
-# KHONG khai `groups` cho hai ho so nay. Mac dinh cua llama-swap la chay MOT model
-# mot luc, va do chinh la dieu ta muon: hai ho so nay dung chung mot card 24 GB va
-# cong lai la 43 GB. Mot dong `groups` dat sai cho o day la mot lan OOM chac chan.
+  # ---------------------------------------------------- LTT-3.5 (RTX 5060 Ti)
+  # Model thu hai, ban tu dual-model pha 3. Card 16.311 MiB, nen no CO cho cho
+  # ca `-c 262144` VA draft-mtp (G3, G3b) - khong phai nho may man: model 9B
+  # chi ton ~7,3 GiB trong so so voi ~15,3 GiB cua 27B, nen du card nho hon 8 GB
+  # thi phan con lai cho KV van rong hon.
+  #
+  # KV q8_0 (khong phai q4_0 nhu 3.8): card nay con bien 2,8 GiB truoc MTP, nen
+  # khong phai doi chat luong KV lay cho. 3.8 thi BAT BUOC q4_0 o 221K.
+  #
+  # KHONG `--chat-template-file`: dung khuon dung san trong GGUF. Ban va
+  # froggeric la ban va cho template cua Qwen3.8; ap no cho 3.5 la ap mot ban va
+  # cho mot loi CHUA duoc do o model nay.
+  #
+  # LTT-3.5 nhanh HON LTT-3.8 (76,21 so 63,01 tok/s) du card yeu hon, vi giai ma
+  # bi chan boi bang thong bo nho: 7,3 GB trong so/token so voi 16,5 GB. (G3b)
+  qwen35-api:
+    name: "LTT-3.5"
+    description: "Qwen3.5-9B. Nhanh, re, doc anh. Ngu canh 262K."
+    capabilities:
+      in: ["text", "image"]
+      out: ["text"]
+    cmd: |
+      ${BIN}/llama-server.exe
+      -m ${GGUF35}
+      --mmproj ${MODELS}/mmproj-9B-F16-unsloth.gguf
+      ${CHUNG}
+      -c 262144
+      -np 3
+      --cache-type-k q8_0 --cache-type-v q8_0
+      --spec-type draft-mtp --spec-draft-n-max 2
+      --host 127.0.0.1 --port ${PORT}
+    env:
+      - "CUDA_VISIBLE_DEVICES=GPU-ebecd0a4-a8a7-14a5-dad1-21565f6dc1df"
+    proxy: "http://127.0.0.1:${PORT}"
+    ttl: 0
+    concurrencyLimit: 8
+    unloadTimeout: 30
+
+# ==========================================================================
+# `qwen38-ops` DA GO NGAY 03/09, va viec go la MOT PHAN CUA BAN VA.
+#
+# No tung ton tai vi ta tin rang 200K "chi dung duoc khi KHONG qua Cloudflare".
+# Do la mot suy luan, khong phai mot phep do, va no SAI cho cua ma Codex/Claude
+# Code that su dung:
+#
+#   * lap luan cu: prefill ~1.000 tok/s => prompt 200K ton ~200s => CF cat o
+#     125s => 524. Dung cho cua DONG BO.
+#   * nhung `nhip_tim.py` chen chu thich SSE moi 15 giay TRONG LUC prefill, nen
+#     dong ho im-lang cua CF khong bao gio cham o cua STREAM. Chu thich cu duoc
+#     viet TRUOC khi `nhip_tim.py` ton tai, va khong ai doc lai no.
+#
+# !! VA LY DO MANH HON DE CHI GIU MOT HO SO CHO MOI MODEL. Do that 03/09:
+#    llama-swap **giet mot luot dang chay** de nap ho so khac. Luot bi giet chi
+#    nhan `ConnectionReset`, khong loi nao noi vi sao - no trong y het mot lan
+#    OOM, va no da lam hong hai lo do lien tiep. (`tests/test_636` giu dieu nay)
+#
+#    Hai ho so CUNG MOT MODEL cung mo ra cho khach = mot nguon `ConnectionReset`
+#    ngau nhien khong giai thich duoc. Mot ho so cho mot model, mot tep `-c`,
+#    mot su that.
+#
+#    ! Va day chinh la ly do khoi `groups` duoi day PHAI co `swap: false`:
+#       hai ho so duoi la hai MODEL khac nhau tren hai CARD khac nhau, khong
+#       phai hai bien the cua mot model - de mac dinh (`swap: true`) thi moi lan
+#       khach doi model la mot luot cua khach khac bi giet.
+# ==========================================================================
+
+# ==========================================================================
+# GROUPS - CO NAO LAM NEN "CUNG LUC", va vi sao chinh no.
+#
+# Mac dinh cua llama-swap: model nao khong khai nhom nam trong nhom an
+# `(default)` voi `swap: true` - tuc nap model thu hai thi model thu nhat bi
+# TAT. Do la hanh vi DUNG cho ban truoc (hai ho so mot card 24 GB) va hanh vi
+# SAI o day.
+#
+#   * `swap: false`  => thanh vien trong nhom KHONG day nhau ra. Day la co DUY
+#     NHAT lam nen tinh "cung luc". Thieu no thi `ttl: 0` va `preload` deu vo
+#     nghia: preload nap `qwen38-api` roi nap `qwen35-api`, va buoc thu hai TAT
+#     buoc thu nhat - `/running` chi con mot model, khong mot loi nao.
+#   * `exclusive: true` => khi nhom nay hoat dong thi moi nhom KHAC bi nha. Hom
+#     nay khong co nhom nao khac nen tac dung la 0; giu lai vi no la HANG RAO cho
+#     ngay ai do them mot ho so tham do ngoai nhom (vd `qwen38-thu`): ho so do
+#     se bi nha, thay vi cong them ~16 GiB vao mot card chi con 445 MiB bien.
+#   * KHONG khai `persistent`: no la co de mot nhom song sot qua `exclusive` cua
+#     nhom KHAC, va chi co mot nhom thi no khong do duoc gi. Mot co khong ai do
+#     la mot bien khong ai giai thich duoc lan sau.
+#
+# !! AN TOAN CUA `swap: false` KHONG DEN TU DONG NAY. No den tu hai dong
+#    `CUDA_VISIBLE_DEVICES` o tren: hai model thuong tru la an toan CHI VI chung
+#    o hai card khac nhau. Go mot dong ghim UUID roi de nguyen khoi nay lai la
+#    dung mot lan OOM ma chu thich cu canh bao ("hai ho so cong lai 43 GB").
+#    `tests/test_637` va `tests/test_1215` do dung cap dieu kien do: trong mot
+#    nhom `swap: false`, khong hai thanh vien nao ghim CUNG mot UUID.
+#
+# !! DINH CHINH chu thich cuoi cua ban truoc: "KHONG khai `groups` cho hai ho so
+#    nay ... Mot dong `groups` dat sai cho o day la mot lan OOM chac chan", va
+#    `tests/test_637::test_khong_khai_groups` tung cuong che dung cau do. Cau do
+#    dung khi hai ho so la hai bien the 27B tren MOT card. No het dung khi model
+#    thu hai nam tren card KHAC: 13.481 MiB tren 16.311 MiB, bien 1.002 MiB sau
+#    MTP (G3, G3b). Phep kiem da duoc viet lai de do dieu no THUC SU muon
+#    (khong hai thanh vien cung mot UUID) chu khong phai bi xoa.
+# ==========================================================================
+
+groups:
+  may_b:
+    swap: false
+    exclusive: true
+    members: ["qwen38-api", "qwen35-api"]
+
+# ==========================================================================
+# THUONG TRU: `ttl: 0` + `preload` ca hai.
+#
+# `ttl: 0` trong llama-swap = TAT dong ho nha (khong phai "nha ngay"). Cong voi
+# `hooks.on_startup.preload`, hai model nap mot lan luc dich vu khoi dong roi
+# nam do.
+#
+# Vi sao: nap tu kho AM do duoc 15,23 s (3.8) va 10,12 s (3.5), phuong sai
+# +/-0,05 s; tu kho LANH uoc <= 16,9 / 10,9 s (chi dat hon 7-11 %, vi nut that
+# khong phai doc tep ma la day trong so len GPU). (G5)
+# => Mot khach phai cho 15 giay chi vi ho la nguoi dau tien goi sau mot khoang
+#    lang la mot lan hong TRANH DUOC, va `preload` tra cai gia do dung MOT lan.
+#
+# !! Va day la GIA DINH cua mot ket luan o tai lieu khac: G5 noi "truong hop
+#    lanh gan nhu khong xay ra" CHINH VI ho so nay dat `ttl: 0` + `preload`. Bo
+#    mot trong hai la lam sai mot con so o `10_BENCHMARK_P3.md` va o trong tai
+#    residency (Task 5.2/5.4) - doi thi phai doi ca do.
+#
+# `unloadTimeout: 30` van giu tren ca hai: nha PHAI co han. Mot tien trinh khong
+# chiu chet la card khong bao gio ve, va trong tai residency (Task 5.4) can thao
+# duoc `qwen38-api` khoi 3090 de nhuong cho ComfyUI.
+#
+# `concurrencyLimit: 8` - llama-swap dem o day so request no CHUYEN VAO cung
+# luc; `-np 3` la so slot cua engine. Rang buoc: >= 2 x so slot (`test_1215`).
+#   Vi sao khong de bang 3: request thu 4 se bi llama-swap giu lai, va may A
+#   khong bao gio thay hang doi cua engine. De gap doi tro len thi hang doi nam
+#   TRONG llama.cpp - noi `/metrics` dem duoc (`requests_deferred`), tuc noi ta
+#   nhin thay khi hai tang admission tinh lech nhau.
+#   `SO_SLOT_MAY_B` = 3 o `apps/ltt_llm/ngan_sach.py` la nguon chan ly.
+#
+# !! KHONG khai `--cache-ram`. Ke hoach Task 3.3 viet `--cache-ram <so chot o
+#    3.2>`, nhung cong 3.2 (G1..G5) KHONG chot con so nao - khong mot phep do
+#    nao cua no cham vao cache prompt tren RAM. Nen o day giu MAC DINH cua engine
+#    va noi thang ra rang no CHUA DUOC DO.
+#    Chap nhan duoc vi ba le: (1) mac dinh la con so cua chinh engine, khong phai
+#    con so ta bia; (2) no khong an VRAM - thu duy nhat chi con 445 MiB bien tren
+#    3090; (3) thu no doi la ti le tai dung prompt cache GIUA cac luot, va do
+#    duoc tu `/metrics` (`prompt_tokens_cached`) SAU khi deploy, tuc co duong do
+#    lai. Go mot con so bia vao day roi goi no la "chot" la dung cai bay ma tep
+#    nay da bi hai lan - xem hai khoi DINH CHINH o dau tep.
+# ==========================================================================
+
+hooks:
+  on_startup:
+    preload: ["qwen38-api", "qwen35-api"]

@@ -34,7 +34,28 @@ def _hoi_smi() -> dict:
     import subprocess
     if not shutil.which("nvidia-smi"):
         return {"vram_dung_mb": None, "ly_do": "khong co nvidia-smi tren may"}
-    truy_van = "memory.used,memory.total,temperature.gpu,power.draw,power.limit"
+    # 🔴 HOI THEO UUID, KHONG LAY DONG DAU TIEN (Task 6.1, sot lai).
+    #    May B co HAI card tu 11/09: 3090 (model anh + LTT-3.8) va 5060 Ti
+    #    (LTT-3.5). `dong[0]` la "card nao nvidia-smi liet ke truoc" - mot thu tu
+    #    KHONG ai hua, va doi duoc khi cam lai khe PCIe. Doc no roi goi la "VRAM
+    #    cua card ta" la mot phep do lech chieu.
+    #
+    # ⛔ KHONG BIET UUID => TRA `None`, KHONG roi ve `dong[0]`. Ban dau toi viet
+    #    mot nhanh du phong "van doc dong dau, kem co `loc_theo_card: False`" va
+    #    banh coc `test_1220` do — dung. Mot con so VRAM khong quy duoc ve mot
+    #    card cu the thi khong phai mot phep do, ke ca khi co mot co noi rang no
+    #    khong biet: nguoi doc bao cao chan doan se trich CON SO, khong trich cai
+    #    co. Cong cu nay van in moi thu khac (python, torch, compute capability);
+    #    no chi tu choi noi mot con so no khong quy duoc ve dau.
+    uuid_3090 = None
+    try:
+        from render_gateway.danh_tinh_gpu import uuid_38
+        uuid_3090 = uuid_38()
+    except Exception as e:                                        # noqa: BLE001
+        return {"vram_dung_mb": None, "ly_do": f"khong doc duoc danh tinh GPU: {e}"}
+
+    truy_van = ("uuid,memory.used,memory.total,temperature.gpu,power.draw,"
+                "power.limit")
     try:
         r = subprocess.run(
             ["nvidia-smi", f"--query-gpu={truy_van}", "--format=csv,noheader,nounits"],
@@ -47,14 +68,29 @@ def _hoi_smi() -> dict:
     dong = [d.strip() for d in (r.stdout or "").splitlines() if d.strip()]
     if not dong:
         return {"vram_dung_mb": None, "ly_do": "nvidia-smi khong tra dong nao"}
-    p = [x.strip() for x in dong[0].split(",")]
+
+    if not uuid_3090:
+        return {"vram_dung_mb": None,
+                "ly_do": "khong biet UUID card 3090 (thieu gpu_may_b.json; "
+                         "chi tay bang LTT_GPU_DANH_TINH)"}
+    chon = None
+    for d in dong:
+        o = [x.strip() for x in d.split(",")]
+        if o and o[0] == uuid_3090:
+            chon = o
+            break
+    if chon is None:
+        return {"vram_dung_mb": None,
+                "ly_do": f"nvidia-smi khong thay card 3090 ({uuid_3090})"}
+
     try:
         return {
-            "vram_dung_mb": int(float(p[0])),
-            "vram_tong_mb": int(float(p[1])),
-            "nhiet_c": int(float(p[2])),
-            "power_w": float(p[3]),
-            "power_limit_w": float(p[4]),
+            "gpu_uuid": chon[0],
+            "vram_dung_mb": int(float(chon[1])),
+            "vram_tong_mb": int(float(chon[2])),
+            "nhiet_c": int(float(chon[3])),
+            "power_w": float(chon[4]),
+            "power_limit_w": float(chon[5]),
         }
     except (ValueError, IndexError) as e:
         return {"vram_dung_mb": None, "ly_do": f"khong doc duoc: {e}"}

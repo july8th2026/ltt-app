@@ -456,13 +456,13 @@
           "model": {
             "type": "string",
             "enum": [
-              "ltt_llm",
-              "ltt_llm_vision"
+              "ltt-3.8",
+              "ltt-3.5"
             ],
-            "default": "ltt_llm",
-            "description": "`ltt_llm` for text (156K usable input context). `ltt_llm_vision` also reads images, with a smaller 89K input context.",
+            "default": "ltt-3.8",
+            "description": "`ltt-3.8` is the deepest model, text only (171K usable input context). `ltt-3.5` answers faster, costs much less and reads images, with 209K usable input context.",
             "examples": [
-              "ltt_llm"
+              "ltt-3.8"
             ]
           },
           "max_tokens": {
@@ -527,7 +527,7 @@
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "5699a45f6a44d8b6"
+      "contract_hash": "3e93aa71159dcab6"
     },
     {
       "name": "text.prompt_package",

@@ -41,6 +41,10 @@
       "retry": "after_fix",
       "status": 403
     },
+    "model_not_found": {
+      "retry": "after_fix",
+      "status": 400
+    },
     "not_found": {
       "retry": "never",
       "status": 404
@@ -393,12 +397,12 @@
     },
     "text.chat": {
       "aliases": [],
-      "contract_hash": "5699a45f6a44d8b6",
+      "contract_hash": "3e93aa71159dcab6",
       "deprecated": "",
       "execution_mode": "ASYNC_JOB",
       "models": [
-        "ltt_llm",
-        "ltt_llm_vision"
+        "ltt-3.5",
+        "ltt-3.8"
       ],
       "required_scopes": [
         "jobs:create"

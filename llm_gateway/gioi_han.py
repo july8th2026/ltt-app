@@ -99,17 +99,29 @@ class GioiHan:
     """
 
     def __init__(self, *, max_dong_thoi: int = 1, rpm: int = 120,
+                 token_pool: int = 0,
                  han_giu_s: float = HAN_GIU_MAC_DINH_S,
                  now: Callable[[], float] = time.monotonic):
         self.max_dong_thoi = max(1, int(max_dong_thoi))
         self.rpm = max(0, int(rpm))          # 0 = tắt chốt tần suất
+        #: Ngân sách KV **tính bằng token** của engine này. 0 = tắt.
+        #:
+        #: 🔴 VÌ SAO ĐẾM TOKEN CHỨ KHÔNG CHỈ ĐẾM SUẤT. `llama-server` chạy `-kvu`
+        #:    (KV hợp nhất): mọi slot chia **một** bể `-c` token. Ba lượt vừa số
+        #:    slot nhưng cộng lại vượt bể thì KV cạn — và khi KV cạn,
+        #:    `server-context.cpp:3688-3724` **huỷ MỌI slot**, không chỉ slot gây
+        #:    ra chuyện đó. Tức một khách xin prompt khổng lồ làm rơi lượt của hai
+        #:    khách khác. Đếm suất không nhìn thấy điều đó; đếm token thì thấy.
+        self.token_pool = max(0, int(token_pool))
         self.han_giu_s = float(han_giu_s)
         self._now = now
         self._khoa = threading.Lock()
-        #: mã suất → thời điểm cấp. **Không phải một bộ đếm.** Một con số chỉ
-        #: nói "đang giữ mấy suất"; cái map này còn nói *từ bao giờ*, và đó là
-        #: thứ duy nhất cho phép thu hồi suất treo. Xem `_thu_hoi_qua_han`.
-        self._dang_giu: dict[int, float] = {}
+        #: mã suất → `(thời điểm cấp, token đặt trước, có phải whale)`.
+        #: **Không phải một bộ đếm.** Một con số chỉ nói "đang giữ mấy suất";
+        #: map này còn nói *từ bao giờ* (⇒ thu hồi suất treo, xem
+        #: `_thu_hoi_qua_han`) và *chiếm bao nhiêu token* (⇒ trả lại phần đặt
+        #: chỗ đúng bằng lúc nhả, không phải bằng một phép trừ ở chỗ khác).
+        self._dang_giu: dict[int, tuple] = {}
         self._ma_ke = 0
         self._da_thu_hoi = 0
         self._moc: deque = deque()
@@ -119,11 +131,18 @@ class GioiHan:
         with self._khoa:
             t = self._now()
             self._cuon(t)
-            gia_nhat = max((t - t0 for t0 in self._dang_giu.values()), default=0.0)
+            gia_nhat = max((t - g[0] for g in self._dang_giu.values()), default=0.0)
             return {"dang_chay": len(self._dang_giu),
                     "max_dong_thoi": self.max_dong_thoi,
                     "trong_phut_qua": len(self._moc),
                     "rpm": self.rpm,
+                    # Token ĐANG đặt trước / bể KV của engine. Hai số này là thứ
+                    # duy nhất nói được "còn nhận nổi một prompt dài nữa không" —
+                    # `dang_chay` thì không, vì ba lượt ngắn và ba lượt 70K token
+                    # cho cùng một con số 3.
+                    "token_dat": sum(g[1] for g in self._dang_giu.values()),
+                    "token_pool": self.token_pool,
+                    "whale": any(g[2] for g in self._dang_giu.values()),
                     # 🔴 HAI SỐ NÀY LÀ CẢ LÝ DO SỰ CỐ 31/08 KÉO SÁU GIỜ.
                     #
                     #    Hôm đó `/health` trả `dang_chay: 1` — đúng, đầy đủ, và
@@ -150,7 +169,8 @@ class GioiHan:
             self._moc.popleft()
 
     # ── cổng vào ─────────────────────────────────────────────────────────────
-    def _xin_vao(self) -> PhanXuGioiHan:
+    def _xin_vao(self, token_dat_truoc: int = 0,
+                 la_whale: bool = False) -> PhanXuGioiHan:
         """Hỏi VÀ chiếm chỗ trong cùng một lần giữ khoá.
 
         ⛔ RIÊNG TƯ CÓ CHỦ Ý. Nó tăng bộ đếm nhưng không giao lại thứ gì để trả
@@ -158,6 +178,7 @@ class GioiHan:
            cổng trả 429 vĩnh viễn. `cap_suat()` là cửa duy nhất.
         """
         t = self._now()
+        token_dat_truoc = max(0, int(token_dat_truoc))
         with self._khoa:
             self._cuon(t)
             self._thu_hoi_qua_han(t)
@@ -176,8 +197,43 @@ class GioiHan:
                 return PhanXuGioiHan(
                     False, f"vuot {self.rpm} luot moi phut", thu_lai_sau_s=cho)
 
+            if self.token_pool > 0:
+                # 🔴 MỘT SUẤT KHÔNG KHAI TOKEN LÀ MỘT SUẤT **VÔ HÌNH** VỚI NGÂN
+                #    SÁCH. Nó chiếm KV thật nhưng cộng vào bể bằng 0, nên bể luôn
+                #    trông còn chỗ — và cái chốt này thôi chốt trong im lặng,
+                #    đúng lúc nó đang được tin nhất.
+                #
+                # ⛔ Nên THÀ TỪ CHỐI CÒN HƠN ĐOÁN. Đoán thấp thì KV cạn và
+                #    llama.cpp huỷ **mọi** slot; đoán cao thì 429 oan. Cả hai đều
+                #    là hậu quả của việc bên gọi không khai, nên nó phải khai —
+                #    `api.py` luôn khai (header của máy A, hoặc số của chính
+                #    `ngan_sach`), nên đường này chỉ nổ khi có người nối dây sai.
+                if token_dat_truoc <= 0:
+                    return PhanXuGioiHan(
+                        False,
+                        "luot khong khai token dat truoc (pool KV dang bat) — "
+                        "mot suat vo hinh voi ngan sach thi ngan sach thoi chot",
+                        thu_lai_sau_s=5)
+                da_dat = sum(g[1] for g in self._dang_giu.values())
+                if da_dat + token_dat_truoc > self.token_pool:
+                    return PhanXuGioiHan(
+                        False,
+                        f"vuot pool KV: dang dat {da_dat} + xin {token_dat_truoc} "
+                        f"> {self.token_pool} token",
+                        thu_lai_sau_s=15)
+
+            if la_whale and any(g[2] for g in self._dang_giu.values()):
+                # ⭐ MỘT WHALE MỘT LÚC. Một prompt cỡ whale chặn prefill hàng chục
+                #    giây (§G4: 163K token = 257 s trên 3.8); hai cái cùng lúc
+                #    biến mọi lượt ngắn còn lại thành hàng đợi vô hình sau chúng.
+                #    Đây là chốt **công bằng**, không phải chốt dung lượng — nên nó
+                #    đứng riêng khỏi bể token ở trên.
+                return PhanXuGioiHan(
+                    False, "da co mot luot ca voi (whale) dang chay",
+                    thu_lai_sau_s=30)
+
             self._ma_ke += 1
-            self._dang_giu[self._ma_ke] = t
+            self._dang_giu[self._ma_ke] = (t, token_dat_truoc, bool(la_whale))
             self._moc.append(t)
             return PhanXuGioiHan(True, ma=self._ma_ke)
 
@@ -206,9 +262,9 @@ class GioiHan:
         """
         if not self._dang_giu:
             return
-        chet = [ma for ma, t0 in self._dang_giu.items() if t - t0 > self.han_giu_s]
+        chet = [ma for ma, g in self._dang_giu.items() if t - g[0] > self.han_giu_s]
         for ma in chet:
-            tuoi = t - self._dang_giu.pop(ma)
+            tuoi = t - self._dang_giu.pop(ma)[0]
             self._da_thu_hoi += 1
             log.warning(
                 "THU HOI suat treo #%d: giu %.0f giay > han %.0f giay. "
@@ -216,14 +272,22 @@ class GioiHan:
                 "dang tu cuu. Tong so lan thu hoi: %d",
                 ma, tuoi, self.han_giu_s, self._da_thu_hoi)
 
-    def cap_suat(self) -> tuple[PhanXuGioiHan, Optional[Suat]]:
+    def cap_suat(self, token_dat_truoc: int = 0,
+                 la_whale: bool = False) -> tuple[PhanXuGioiHan, Optional[Suat]]:
         """Xin và cấp trong một nhịp. Được thì trả `(cho_qua, Suat)`.
+
+        `token_dat_truoc` = số token KV lượt này sẽ chiếm ở **đỉnh** (vào + ra
+        tối đa). `la_whale` = lượt đủ dài để chặn prefill của người khác quá
+        ngưỡng (máy A tính theo `ngan_sach.NGUONG_WHALE` của **từng** model và
+        khai qua header; cổng chỉ tôn trọng cờ, không tự tính lại — hai chỗ cùng
+        tính một điều thì chúng sẽ lệch).
 
         ⛔ Với phản hồi streaming, gọi `suat.tra()` khi **luồng kết thúc**, không
            phải khi hàm xử lý trả về — `StreamingResponse` về ngay lập tức trong
-           khi token còn chảy hàng chục giây sau đó.
+           khi token còn chảy hàng chục giây sau đó. Phần token đặt trước được
+           nhả **cùng lúc** với suất, vì nó nằm trong cùng một bản ghi.
         """
-        px = self._xin_vao()
+        px = self._xin_vao(token_dat_truoc, la_whale)
         return (px, Suat(self, px.ma) if px.cho_qua else None)
 
     def _nha(self, ma: int) -> None:

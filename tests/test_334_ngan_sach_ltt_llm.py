@@ -364,14 +364,19 @@ class TestBanSaoConLai:
         `catalog.py` chỉ **công bố**; `llama-swap.yaml` là thứ **khởi động
         tiến trình**. Hai tệp lệch nhau thì `/v1/models` nói một đằng và model
         chạy một nẻo — và bên sai là bên ta tin.
+
+        🔵 `xfail(strict=True, reason="cho Task 3.3")` đã được **gỡ** ngày
+           12/09: Task 3.3 viết lại `llama-swap.yaml` với `-c 221184` cho
+           `qwen38-api` và hồ sơ `qwen35-api` mới `-c 262144`, nên cửa sổ thời
+           gian "hai bên lệch có chủ ý" đóng lại. Phép kiểm nay **sống**, và nó
+           đo đúng điều nó sinh ra để đo.
         """
         import pathlib
         import re
         goc = pathlib.Path(__file__).resolve().parents[1]
         van = (goc / "llm_gateway" / "deploy" / "llama-swap.yaml").read_text(
             encoding="utf-8")
-        for ho_so, mong in (("qwen38-api", ngan_sach.CUA_SO_MODEL),
-                            ("qwen38-vision", ngan_sach.CUA_SO_MODEL_VISION)):
+        for ho_so, mong in ngan_sach.CUA_SO_THEO_MODEL.items():
             m = re.search(rf"^  {re.escape(ho_so)}:.*?^\s*-c (\d+)",
                           van, re.S | re.M)
             assert m, f"khong tim thay `-c` cua {ho_so} trong llama-swap.yaml"
@@ -389,24 +394,92 @@ class TestBanSaoConLai:
         assert m, "khong tim thay max_context cua qwen38-api"
         assert int(m.group(1).replace("_", "")) == ngan_sach.CUA_SO_MODEL
 
-    def test_cua_so_VISION_khop_catalog_may_B(self):
-        """🔴 BÁNH CÓC CHO P08 F-02 — lời hứa ngữ cảnh của **vision**.
+    def test_KHONG_con_ho_so_vision_rieng_trong_nguon_chan_ly(self):
+        """🔴 KẾ THỪA BÁNH CÓC P08 F-02 — nhưng đo **sự vắng mặt** cho đúng.
 
-        `qwen38-vision` nạp với `-c 65536`, nhỏ hơn `qwen38-api` một nửa. Trước
-        01/09 không có gì buộc hai đầu, nên `/api/v1/models` quảng cáo vision có
-        *"same 89K usable input context"* suốt nhiều ngày. Đo thật cho `413`
-        kèm `{"tran":65536}`.
+        Bản cũ của phép kiểm này buộc `CUA_SO_MODEL_VISION` khớp `max_context`
+        của hồ sơ `qwen38-vision` trong `catalog.py`. Dual-model 2.6 **gỡ hằng
+        ấy**: `qwen38-api` tự nạp mmproj nên không còn model vision riêng (L-14
+        hệ quả 4). Nếu chỉ xoá phép kiểm thì cái nó bảo vệ biến mất im lặng.
 
-        ⛔ Đổi `-c` của `qwen38-vision` bên máy B mà không đổi
-           `CUA_SO_MODEL_VISION` thì phép kiểm này phải đỏ.
+        ⭐ Nên nó đổi thành một **mệnh đề dương**: nguồn chân lý khai đúng hai
+           model nội bộ, và cả hai đều là model thật đang bán. Một hồ sơ vision
+           thứ ba lẻn lại vào ⇒ đỏ.
+        """
+        assert not hasattr(ngan_sach, "CUA_SO_MODEL_VISION"), (
+            "CUA_SO_MODEL_VISION quay lai — mot cua so thu hai cho CUNG mot "
+            "model la dung khuyet tat F-02")
+        assert set(ngan_sach.CUA_SO_THEO_MODEL) == {"qwen38-api", "qwen35-api"}, (
+            f"nguon chan ly dang khai {sorted(ngan_sach.CUA_SO_THEO_MODEL)}")
+
+    def test_ho_so_vision_da_bien_mat_khoi_llama_swap_yaml(self):
+        """Hồ sơ `qwen38-vision` phải biến mất khỏi **tệp khởi động tiến trình**.
+
+        🔵 `xfail(strict=True, reason="cho Task 3.3")` đã gỡ ngày 12/09 — Task
+           3.3 viết lại yaml với đúng hai hồ sơ.
+
+        ⚠️ VÀ PHÉP KIỂM ĐỔI TỪ QUÉT CHUỖI SANG ĐỌC HỒ SƠ. Bản cũ khẳng định
+           `"qwen38-vision" not in van` trên **văn bản thô** của cả hai tệp.
+           `llama-swap.yaml` nay có một khối *đính chính* giải thích hồ sơ vision
+           biến mất vì đâu (và nó là bằng chứng đo được, không phải lời kể), nên
+           một phép quét chuỗi sẽ **trừng phạt việc giải thích**: nó ép người sau
+           xoá lịch sử để làm cho phép kiểm xanh.
+
+        ⭐ Điều nó ĐO vẫn nguyên, chỉ đúng hơn: hỏi `yaml.safe_load` — tức hỏi
+           đúng thứ llama-swap đọc — xem có bao nhiêu hồ sơ và là những hồ sơ nào.
         """
         import pathlib
-        import re
+
+        import yaml as _yaml
+        goc = pathlib.Path(__file__).resolve().parents[1]
+        cfg = _yaml.safe_load(
+            (goc / "llm_gateway" / "deploy" / "llama-swap.yaml")
+            .read_text(encoding="utf-8"))
+        ho_so = set(cfg.get("models") or {})
+        assert ho_so == set(ngan_sach.CUA_SO_THEO_MODEL), (
+            f"llama-swap.yaml mo cac ho so {sorted(ho_so)}, nguon chan ly khai "
+            f"{sorted(ngan_sach.CUA_SO_THEO_MODEL)}")
+        assert not [t for t in ho_so if "vision" in t], (
+            "con mot ho so vision rieng trong llama-swap.yaml")
+
+    def test_ho_so_vision_da_bien_mat_khoi_catalog_cong_B(self):
+        """`llm_gateway/catalog.py` không còn `ModelSpec(ten="qwen38-vision")`.
+
+        🔵 `xfail(strict=True, reason="cho Task 4.2")` đã được **gỡ** ngày 12/09:
+           Task 4.2 khai lại `catalog.HO_SO` thành đúng hai hồ sơ (`qwen38-api`,
+           `qwen35-api`), **cả hai** `co_vision=True` (L-14 hệ quả 4), và sửa
+           hàng chục nhánh của `test_250` theo đúng cách — đổi điều chúng khẳng
+           định, không thu hẹp cho tới khi xanh. Nhánh "ảnh vào hồ sơ không
+           vision ⇒ 413" thành một **mệnh đề dương**:
+           `test_MOI_ho_so_dang_mo_deu_NHAN_duoc_anh`.
+
+        Dưới đây là lý do phép kiểm này từng được đánh dấu — giữ lại vì nó giải
+        thích vì sao dấu ấy là `xfail(strict=True)` chứ không phải một phép kiểm
+        bị xoá:
+
+        ⛔ `xfail(strict=True)` CHO TASK 4.2, KHÔNG PHẢI MỘT PHÉP KIỂM BỊ TẮT —
+           và **không phải** một phép kiểm bị thu hẹp cho tới khi nó xanh. Task
+           3.3 chỉ sở hữu `llama-swap.yaml`; `catalog.py` là bản **công bố** của
+           cổng máy B và nó còn phục vụ hồ sơ vision ở hàng chục nhánh của
+           `test_250`. Gỡ nó ở đây là làm một nửa việc của 4.2 trong một commit
+           không ai rà.
+
+        ⚠️ HỆ QUẢ ĐANG SỐNG, và nó phải được nói ra chứ không giấu trong một dấu
+           `xfail`: từ khi 3.3 deploy yaml, `catalog.py` công bố một model mà
+           llama-swap **không còn hồ sơ nào** khởi động nổi. Khách gọi
+           `qwen38-vision` sẽ bị llama-swap từ chối, không phải được phục vụ ở
+           131K. Hàng rào chặn thiệt hại là `LTT_LLM_MODELS` (fail-closed, Q92):
+           tên nào không nằm trong đó thì không mở. ⇒ Task 4.2 phải gỡ hồ sơ khỏi
+           `catalog.py` **và** `LTT_LLM_MODELS` của máy B trong cùng một lượt.
+
+        `strict=True` ⇒ ngày `catalog.py` sạch thì đây là XPASS ⇒ ĐỎ ⇒ người làm
+        4.2 buộc phải gỡ dấu.
+        """
+        import pathlib
         goc = pathlib.Path(__file__).resolve().parents[1]
         van = (goc / "llm_gateway" / "catalog.py").read_text(encoding="utf-8")
-        m = re.search(r'ten="qwen38-vision".*?max_context=([0-9_]+)', van, re.S)
-        assert m, "khong tim thay max_context cua qwen38-vision"
-        assert int(m.group(1).replace("_", "")) == ngan_sach.CUA_SO_MODEL_VISION
+        assert 'ten="qwen38-vision"' not in van, (
+            "catalog.py con khai ModelSpec cho qwen38-vision")
 
     def test_MOI_alias_tu_khai_context_window(self):
         """🔴 BÁNH CÓC CHO P08 F-03 — cấm rơi về hằng số lùi.
@@ -630,15 +703,26 @@ class TestCamCliKhopNganSach:
         return mod
 
     #: Bí danh công khai → id nội bộ, để đối chiếu **theo từng model**.
-    _THEO_ALIAS = {"ltt_llm": "qwen38-api", "ltt_llm_vision": "qwen38-vision"}
+    #:
+    #: ⛔ ĐỌC TỪ `canonical.ALIAS_SANG_ID`, KHÔNG GÕ LẠI (D02, dual-model 2.3).
+    #:    Bản cũ gõ tay `{"ltt_llm": ..., "ltt_llm_vision": ...}`, nên ngày tên
+    #:    công khai bị cắt thì phép kiểm đỏ vì **chính nó** đã cũ — chứ không vì
+    #:    bộ cài sai. Một bảng chép tay ở đây là bản chân lý thứ hai cho đúng
+    #:    câu hỏi mà `ALIAS_SANG_ID` sinh ra để trả lời.
+    @property
+    def _THEO_ALIAS(self):
+        from platform_core.llm.canonical import ALIAS_SANG_ID
+        return dict(ALIAS_SANG_ID)
 
     def test_cua_so_va_tran_ra_khop_nguon_chan_ly(self):
         cc = self._cam_cli()
         assert cc.CUA_SO_NGU_CANH == ngan_sach.CONG_BO_CHO_CLIENT
         assert cc.TOKEN_RA_TRAN == ngan_sach.TOKEN_RA_TRAN
         assert cc.NEN_HOI_THOAI == ngan_sach.NEN_CHO_CLIENT
-        assert cc.CUA_SO_NGU_CANH_VISION == ngan_sach.cong_bo_cua("qwen38-vision")
-        assert cc.NEN_HOI_THOAI_VISION == ngan_sach.nen_cua("qwen38-vision")
+        from platform_core.llm.canonical import ALIAS_SANG_ID
+        id_35 = ALIAS_SANG_ID["ltt-3.5"]
+        assert cc.CUA_SO_NGU_CANH_35 == ngan_sach.cong_bo_cua(id_35)
+        assert cc.NEN_HOI_THOAI_35 == ngan_sach.nen_cua(id_35)
 
     def test_ca_HAI_client_deu_duoc_noi_that_cua_so(self):
         """Codex qua `model_catalog_json`; Claude Code qua biến môi trường.
@@ -831,17 +915,44 @@ class TestCamCliKhopNganSach:
     def test_phep_kiem_nay_DO_DUOC_khi_bat_bien_bi_pha(self):
         """⭐ Một chốt chỉ hữu ích nếu chứng minh được nó **đỏ được**.
 
-        Dựng lại đúng cấu hình đã gây sự cố — ngưỡng nén `= 0,8 × cửa sổ` — rồi
-        đòi cùng một bất biến. Nó phải vỡ. Không có phép kiểm này thì ba phép
-        kiểm ở trên có thể xanh vì chúng không đo gì cả.
+        🔴 VÀ ĐỐI CHỨNG CŨ ĐÃ TỰ HỎNG Ở 2.6 — ghi lại vì nó dạy đúng điều
+           `ngan_sach` vẫn nói mà chưa ai đo. Bản cũ dựng lại công thức hỏng
+           bằng `0,8 × cửa sổ **hôm nay**` rồi đòi nó vỡ. Ở cửa sổ 156.385 nó vỡ
+           (còn 31.277 < 32.768). Ở cửa sổ 171.458 của hồ sơ 221K nó **không vỡ
+           nữa** (còn 34.292 ≥ 32.768) — nên đối chứng chuyển từ "chứng minh
+           phép kiểm đỏ được" sang "đỏ vì chính nó đã cũ".
+
+        ⭐ Đó chính là câu `ngan_sach.nen_cua` viết ra mà chưa ai chạy được:
+           *"0,8 không sai vì bịa, nó sai vì được chọn ở một cửa sổ rộng rồi
+           mang sang một cửa sổ hẹp"*. Nay có số: cùng tỉ lệ, cùng bất biến, chỉ
+           đổi cửa sổ — và kết quả lật.
+
+        ⇒ Đối chứng phải **bất biến với cửa sổ**. Hai phần dưới đây làm việc đó:
+          một cấu hình hỏng dựng từ chính cửa sổ hôm nay, và **số thật** của sự
+          cố 03/09 (không suy lại từ hôm nay, nên nó không lật theo).
         """
         cua_so = ngan_sach.CONG_BO_CHO_CLIENT
-        nen_cu = int(cua_so * 0.8)                     # công thức cũ, 70.844
-        assert cua_so - nen_cu < ngan_sach.TOKEN_RA_TRAN, (
-            "cong thuc CU dang thoa bat bien — nghia la bat bien nay khong con "
-            "phan biet duoc cau hinh hong voi cau hinh lanh")
-        nen_moi = ngan_sach.NEN_CHO_CLIENT
-        assert cua_so - nen_moi >= ngan_sach.TOKEN_RA_TRAN
+
+        # (1) Đối chứng bất biến với cửa sổ: chừa THIẾU đúng một token.
+        nen_hong = cua_so - (ngan_sach.TOKEN_RA_TRAN - 1)
+        assert cua_so - nen_hong < ngan_sach.TOKEN_RA_TRAN, (
+            "bat bien khong con phan biet duoc cau hinh hong voi cau hinh lanh")
+
+        # (2) Sự cố THẬT 03/09, bằng số của hôm ấy: `413` ở 101.938 token vào
+        #     trên trần 96.256, ngưỡng nén `0,8 ×` cửa sổ công bố khi đó.
+        cua_so_03_09 = 96_256
+        assert cua_so_03_09 - int(cua_so_03_09 * 0.8) < ngan_sach.TOKEN_RA_TRAN
+
+        # (3) Cấu hình THẬT hôm nay thoả.
+        assert cua_so - ngan_sach.NEN_CHO_CLIENT >= ngan_sach.TOKEN_RA_TRAN
+
+        # (4) Và ghi lại phát hiện: ở cửa sổ HÔM NAY, `0,8` lại thoả. Không phải
+        #     lời mời quay về nó — chỉ là bằng chứng cho câu "tỉ lệ không đo
+        #     được cái cần đo": nó đúng/sai tuỳ cửa sổ, còn công thức
+        #     `cửa sổ − TOKEN_RA_TRAN` đúng ở mọi cửa sổ.
+        assert cua_so - int(cua_so * 0.8) >= ngan_sach.TOKEN_RA_TRAN, (
+            "cua so da hep lai duoi muc `0,8` con thoa — doc lai muc (2), va "
+            "dung dung `0,8` o bat ky bo cai nao")
 
 
 # ── Số công bố cho KHÁCH phải khớp số máy chủ thực thi (30/08) ─────────────

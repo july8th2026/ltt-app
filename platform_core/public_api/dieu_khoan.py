@@ -63,10 +63,27 @@ DONG_MOI_CREDIT = 100
 
 
 def bang_gia() -> dict:
-    """Bảng giá **của chính hàm ra hoá đơn**, không phải bản chép."""
+    """Bảng giá **của chính hàm ra hoá đơn**, không phải bản chép.
+
+    ⚠️ Của **model mặc định**. Điều khoản công bố phải nói giá của mọi model
+       đang bán — dùng `bang_gia_moi_model()`; hàm này giữ lại cho bên gọi chỉ
+       cần một bảng (và cho `test_390` neo "một nguồn duy nhất").
+    """
     from platform_core.llm import gia_token
 
     return gia_token.bang_gia()
+
+
+def bang_gia_moi_model() -> dict[str, dict]:
+    """Bảng giá của **mọi** model đang bán (D07, dual-model 2.5).
+
+    🔴 Một trang điều khoản in một bảng giá trong khi ta bán hai model với giá
+       ra chênh nhau **20 lần** là một điều khoản SAI cho một nửa số khách —
+       tệ hơn một trang im lặng, vì nó đọc lên như một lời hứa.
+    """
+    from platform_core.llm import gia_token
+
+    return gia_token.bang_gia_moi_model()
 
 
 def _tu_ban_khai():

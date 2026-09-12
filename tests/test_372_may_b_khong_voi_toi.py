@@ -24,6 +24,7 @@ một chút"* với *"máy B đang sập"*. Và trong sự cố 31/08 thì phân
    khoá luôn cả hàng đợi, và đó chính là hình dạng của sự cố 31/08.
 """
 from __future__ import annotations
+import json
 
 import importlib
 
@@ -74,6 +75,28 @@ class TestKhachKhongTraTienChoMotLuotKhongChay:
         assert goi, "chua he goi may B => phep kiem hoan tien o tren la VO NGHIA"
 
 
+def _loi_sse(r):
+    """Bóc sự kiện lỗi ra khỏi một phản hồi SSE.
+
+    🔴 CỬA STREAM BÁO LỖI TRONG THÂN, KHÔNG BẰNG MÃ HTTP (Multi-Job T8 / D-06,
+       09/2026). Nó phát `200` + `text/event-stream` **trước** khi mở luồng lên
+       máy B, rồi mọi hỏng hóc đi ra như một sự kiện `error`.
+
+       Đó là một đánh đổi có chủ đích, không phải thiếu sót: byte đầu tiên tới
+       sớm là thứ giữ kết nối qua Cloudflare khỏi bị cắt ở 100 giây, mà một
+       prompt dài có thể prefill lâu hơn thế nhiều.
+
+    ⇒ Phép kiểm phải hỏi ở ĐÚNG TẦNG. Bản trước đòi `status_code == 503` và nó
+      đỏ — nhưng đỏ vì đo sai chỗ, không phải vì lỗi biến mất.
+    """
+    for dong in r.text.splitlines():
+        if dong.startswith("data:"):
+            goi = json.loads(dong[5:].strip())
+            if goi.get("type") == "error":
+                return goi["error"]
+    return None
+
+
 class TestKhachNhanLoiSach:
     def test_khong_phai_500(self, api, monkeypatch):
         """500 nói 'lỗi của chúng tôi và tôi không biết gì hơn'. Ta biết hơn thế."""
@@ -81,13 +104,23 @@ class TestKhachNhanLoiSach:
         _u, token = _account()
         r = api.post(MSG, json=_than(), headers=_h(token))
         assert r.status_code != 500, r.text
-        assert 400 <= r.status_code < 600
+
+        loi = _loi_sse(r)
+        assert loi is not None, f"cua stream khong phat su kien loi nao: {r.text[:200]!r}"
+        # Có KIỂU và có CÂU NÓI ĐƯỢC — không phải một mã trống rỗng.
+        assert loi.get("type"), loi
+        assert loi.get("message"), loi
 
     def test_ma_loi_PHAN_BIET_duoc_voi_ca_ban(self, api, monkeypatch):
-        """Cùng mã + cùng `Retry-After` thì người trực không biết có phải làm gì.
+        """Cùng mã thì người trực không biết có phải làm gì.
 
         Ca bận: chờ là xong. Ca này: có thứ đang hỏng. Hai hành động khác nhau
         ⇒ phải phân biệt được từ phía khách hoặc từ log.
+
+        ⚠️ So bằng KIỂU LỖI trong sự kiện SSE, không bằng `status_code` +
+           `Retry-After`: cửa stream trả 200 cho cả hai (xem `_loi_sse`), nên
+           hai trường ấy giống nhau **theo thiết kế** và không còn phân biệt
+           được gì. Thứ phân biệt nay nằm trong thân.
         """
         from platform_core.llm import luong_vlm
 
@@ -102,14 +135,13 @@ class TestKhachNhanLoiSach:
         monkeypatch.setattr(luong_vlm, "mo", ban)
         r_ban = api.post(MSG, json=_than(), headers=_h(token))
 
-        assert r_ban.status_code == 503
-        khac = (r_chet.status_code != r_ban.status_code
-                or r_chet.headers.get("Retry-After")
-                != r_ban.headers.get("Retry-After"))
-        assert khac, (
-            "ca CHET va ca BAN khong phan biet duoc tu phia khach "
-            f"(ca hai deu {r_chet.status_code}, "
-            f"Retry-After={r_chet.headers.get('Retry-After')})")
+        l_chet, l_ban = _loi_sse(r_chet), _loi_sse(r_ban)
+        assert l_chet and l_ban, (l_chet, l_ban)
+        assert l_chet["type"] != l_ban["type"], (
+            "ca CHET va ca BAN khong phan biet duoc tu phia khach: "
+            f"ca hai deu {l_chet['type']!r}")
+        # Và câu chữ cũng phải khác — một người trực đọc log đọc câu, không đọc mã.
+        assert l_chet["message"] != l_ban["message"], (l_chet, l_ban)
 
 
 class TestSuatDongThoiPhaiDuocNha:
