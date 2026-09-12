@@ -285,6 +285,39 @@ có tải:
 ⭐ Cột `requests_processing` = 3 là **đối chứng của chính phép đo**: không có nó,
 "deferred = 0" chỉ chứng minh tôi đã lấy mẫu lúc không có gì chạy.
 
+## 7d. Cổng K — kho ấm: **ĐẠT**, và nó đối chứng một hằng số trong mã
+
+| model | card | `t_lạnh` | `t_ấm` | **chi phí nạp** | lạnh/ấm |
+|---|---|---:|---:|---:|---:|
+| `qwen35-api` 9B | 5060 Ti | 12,93 s | 0,43 s | **12,50 s** | 29,9× |
+| `qwen38-api` 27B | 3090 | 18,29 s | 0,92 s | **17,37 s** | 19,9× |
+
+⛔ **`t_lạnh` một mình KHÔNG phải "thời gian nạp"** — nó gồm cả phần sinh chữ.
+Chỉ **hiệu** hai số mới là phần nạp. Bộ đo đầu của tôi ở cổng D lấy nhầm `t_lạnh`
+làm C1 và cho ra *"scaling 3,93×"* cho 3 slot — một con số bất khả.
+
+### Đối chứng: hằng số dự phòng nạp model trong mã
+
+`features.SYNC_DU_PHONG_NAP_MODEL_GIAY = 25` — cửa đồng bộ chừa 25 giây cho ca
+llama-swap phải nạp lại model. Đo được **17,37 s** cho model nặng nhất ⇒ hằng số
+ấy **đủ, còn biên 30 %**. Một con số gõ tay nay có phép đo đứng sau.
+
+### Và nhả THEO TÊN MODEL hoạt động đúng — L-17 được xác nhận trên đường thật
+
+`POST /api/models/unload/qwen35-api` làm `/running` mất **đúng một** mục;
+`qwen38-api` ở lại nguyên vẹn. Đó chính là điều L-17 sinh ra để bảo đảm: hai
+đường không tham số (`GET /unload`, `POST /api/models/unload`) nhả **hết**, và
+từ khi máy B có hai model, chúng giết luôn model trên card **không ai tranh**.
+
+⭐ Bộ đo tự dựng hai rào trước khi nhả, và cả hai đều cần thiết:
+
+1. **`requests_processing` phải bằng 0.** `unload` của llama-swap không drain
+   (`fifo.go:222-270`), nên một lệnh nhả phát ra lúc còn in-flight là cắt một
+   lượt của khách giữa chừng (L-9).
+2. **`/running` sau khi nhả phải hết tên model ấy.** Thành công im lặng là kết
+   cục tệ nhất: nếu lệnh nhả không có tác dụng thì `t_lạnh` đo được thực ra là
+   một `t_ấm` thứ hai, và nó sẽ nói dối về chi phí nạp — theo hướng đẹp lên.
+
 ## 8. Sổ lỗi L-* — trạng thái cuối lượt 13/09
 
 | mã | trạng thái | ghi chú |
