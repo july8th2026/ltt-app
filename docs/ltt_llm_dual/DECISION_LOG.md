@@ -407,6 +407,14 @@ không có tham số đối tượng thì không thể nhắm một trong hai mo
    URL — hôm nay không phân biệt được vì chỉ có một model để nhả. ⇒ Lần deploy phải
    **đo lại bằng `/running` sau một lượt `/unload`**, chứ không tin dòng này.
 
+⭐ **Một bằng chứng củng cố thêm, thấy sau khi viết entry này:** chính plan Task 5.4
+   định gọi `POST http://127.0.0.1:8280/api/models/unload/qwen38-api` — tức llama-swap
+   **có** đường nhả theo **tên model**, và `GET /unload` không phải đường đó. Hai
+   đường cùng tồn tại thì đường **không tham số** không thể là đường chọn một.
+   ⇒ Kết luận trên không đổi, chỉ chắc hơn; và phép đo ở lần deploy vẫn phải chạy,
+   vì nó trả lời câu *"nhả hết hay nhả một"* chứ không phải câu *"có chọn được
+   không"*.
+
 Trước hôm nay điều đó vô hại: hồ sơ cũ chỉ có một model, và model ấy ở đúng trên
 3090 mà job ảnh đang xin. Từ hồ sơ hai model:
 
