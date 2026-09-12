@@ -480,8 +480,14 @@ def test_migration_noi_chuoi_va_mot_head():
     from alembic.script import ScriptDirectory
 
     scripts = ScriptDirectory.from_config(Config(str(_GOC / "alembic.ini")))
-    assert list(scripts.get_heads()) == [REV], scripts.get_heads()
+    # Đo "MỘT head" và "REV nằm trên đường tới head", KHÔNG đo "REV LÀ head":
+    # bản đầu viết `get_heads() == [REV]` và nó đỏ ngay ở migration kế tiếp của
+    # cùng chương trình (`gpu_residency`, 5.1) — đỏ vì một lý do không dính dáng
+    # gì tới điều nó đo, là việc cắt tên model cũ có nối đúng chuỗi hay không.
+    assert len(scripts.get_heads()) == 1, scripts.get_heads()
     assert scripts.get_revision(REV).down_revision == REV_CHA
+    duong = {r.revision for r in scripts.walk_revisions("base", "heads")}
+    assert REV in duong, "revision cat ten model khong nam tren duong toi head"
 
 
 def _chen(conn, bang: str, **gia_tri) -> None:
