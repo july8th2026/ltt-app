@@ -1138,6 +1138,38 @@ _PHAT = {
 }
 
 
+#: Bao lau moi nhac lai ĐẦY ĐỦ mot loi cu tru lap di lap lai (giay).
+#:
+#: 🔴 VI SAO CAN: `buoc()` chay MOI NHIP BAO TRI (2 giay, tren MOI worker).
+#:    Khi may B khong cau hinh — may dev, CSDL test, hay may A truoc khi co khoa
+#:    cong — dieu kien loi dung O MOI NHIP, va mot `exc_info=True` moi lan la mot
+#:    traceback day du moi 2 giay tren moi tien trinh.
+#:
+#:    Do duoc 12/09: `check_multiproc` (3 worker) chay 9 job thumbnail chi xong 2
+#:    trong cua so thoi gian — khong lease nao bi giu, khong advisory lock nao,
+#:    moi ket noi idle. Vong lap worker khong bi KHOA, no bi LAM CHAM boi chinh
+#:    dong log cua ta.
+#:
+#: ⛔ Day KHONG phai "giam on cho de nhin". Mot dong log lap 30 lan/phut vua
+#:    lam cham vong lap vua chon moi dong khac — tuc no lam HONG ca hai viec ma
+#:    log sinh ra de lam.
+#:
+#: ⭐ Cung khuon `admission.NHAC_LOI_CU_TRU_S` dang dung cho cung hang loi.
+NHAC_TRACEBACK_S = 300.0
+
+#: {nhom: thoi diem monotonic da nhac day du lan cuoi}
+_da_nhac_tb: dict[str, float] = {}
+
+
+def _nhac_mot_lan(nhom: str, bay_gio: float) -> bool:
+    """Lan nay co duoc in traceback day du khong? (cua so `NHAC_TRACEBACK_S`)"""
+    cu = _da_nhac_tb.get(nhom)
+    if cu is not None and bay_gio - cu < NHAC_TRACEBACK_S:
+        return False
+    _da_nhac_tb[nhom] = bay_gio
+    return True
+
+
 def buoc(db: Any, *, nhom: str, may_b: MayBResidency | None = None,
          ts: ThamSoResidency | None = None,
          bay_gio: Callable[[], float] = time.time) -> TrangThai:
@@ -1182,9 +1214,15 @@ def buoc(db: Any, *, nhom: str, may_b: MayBResidency | None = None,
 
     try:
         tin = may_b.trang_thai()
-    except Exception:  # noqa: BLE001 - fail-closed: KHÔNG chuyển, và nói ra
-        log.warning("khong hoi duoc may B ve cu tru %r => giu nguyen %r, khong "
-                    "phat lenh nao (fail-closed)", nhom, tt.ten, exc_info=True)
+    except Exception as loi:  # noqa: BLE001 - fail-closed: KHÔNG chuyển, và nói ra
+        # ⚠️ Traceback ĐẦY ĐỦ một lần rồi rút gọn — xem `NHAC_TRACEBACK_S`. Hướng
+        #    xử lý không đổi: không chuyển trạng thái, không phát lệnh nào.
+        if _nhac_mot_lan(nhom, bay_gio()):
+            log.warning("khong hoi duoc may B ve cu tru %r => giu nguyen %r, khong "
+                        "phat lenh nao (fail-closed)", nhom, tt.ten, exc_info=True)
+        else:
+            log.warning("khong hoi duoc may B ve cu tru %r (%s) => giu nguyen %r",
+                        nhom, type(loi).__name__, tt.ten)
         return tt
 
     _khoa(db, nhom, tai_nguyen)

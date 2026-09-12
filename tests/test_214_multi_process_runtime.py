@@ -112,6 +112,13 @@ def scratch(tmp_path):
     Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
     dbmod.reset_engine()
+    # Job anh gianh `anh_3090` tu dual-model 5.5, va luat 0 fail-closed: khong co
+    # dong `gpu_residency` thi worker chi tra job ve hang doi. Cac job o day la
+    # `thumbnail.generate`. Ly do day du: `tests/conftest.py::mo_cu_tru_3090`.
+    from platform_core.llm import residency as _residency
+
+    from tests.conftest import mo_cu_tru_3090
+    mo_cu_tru_3090(_residency.ANH)
 
     send_log = pathlib.Path(tempfile.gettempdir()) / f"{uuid.uuid4().hex}-{SEND_LOG}"
     try:
