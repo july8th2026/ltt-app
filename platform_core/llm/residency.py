@@ -116,6 +116,101 @@ class TrangThai:
     lan_nap_loi: int = 0
 
 
+@dataclass(frozen=True)
+class ThamSoResidency:
+    """Tham số cấu hình. Mọi con số ở đây ĐO ĐƯỢC hoặc do chủ dự án chốt (D01).
+
+    Người gọi dựng một thể hiện từ cấu hình; máy không đọc `os.environ`.
+    """
+
+    #: Trần trên của một cửa sổ ảnh (D01, tham số khởi đầu của chủ dự án).
+    cua_so_anh_toi_da: int = 4
+    cua_so_anh_s: float = 480.0
+    #: ĐÃ ĐO 12/09 §G4: nạp LTT-3.8 (16,46 GB) từ kho ấm. §G5 cho cận trên 17 s
+    #: phủ luôn kho lạnh (+11 %) ⇒ một con số là đủ. Xem docstring module.
+    t_nap_llm_s: float = 16.3
+    #: Đầu XẤU của dải đo 92–110 s/ảnh: con số này quyết "vẽ thêm một ảnh nữa có
+    #: làm người chờ LLM chết không", và đoán thấp ở đó là để họ chết thật.
+    t_anh_uoc_s: float = 110.0
+    bien_s: float = 30.0
+    #: VRAM 3090 phải xuống dưới mức này mới nạp LTT-3.8 (fail-closed ở máy B nữa).
+    vram_sach_mib: int = 2500
+    lui_nap_loi_s: float = 30.0
+
+
+@dataclass(frozen=True)
+class QuanSat:
+    """Sự thật đọc được ở một thời điểm. **Không trường nào có mặc định** — trừ
+    `nap_ket_qua` — vì mỗi trường là một câu hỏi người gọi phải trả lời; một mặc
+    định ở đây là một câu trả lời bịa ra cho câu chưa hỏi.
+
+    `None` ở ba trường của máy B nghĩa là **không hỏi được**, và máy luôn xử
+    `None` theo hướng KHÔNG hành động (fail-closed) — không phải theo hướng 0.
+    """
+
+    #: Lease sống của thành viên `mac_dinh` (LTT-3.8 trên 3090).
+    lease_llm: int
+    #: Lease sống của thành viên `theo_lo` (model ảnh trên 3090).
+    lease_anh: int
+    #: Job `theo_lo` đang `queued`.
+    job_anh_cho: int
+    #: Job `theo_lo` đã được NHẬN kể từ `TrangThai.cua_so_bat_dau`. Đếm từ bảng
+    #: `jobs`, không phải một bộ đếm ghi tay (xem docstring `models.GpuResidency`).
+    anh_bat_dau_trong_cua_so: int
+    #: Người chờ LTT-3.8: waiter của cửa tương tác + job `mac_dinh` đang `queued`.
+    nguoi_cho_llm: int
+    #: Giây còn lại tới hạn chót SỚM NHẤT của người chờ LLM. `None` = không ai chờ
+    #: hoặc không ai có hạn chót.
+    han_chot_llm_s: float | None
+    #: Sổ slot của gateway máy B cho `qwen38-api`. `None` = không hỏi được máy B.
+    gateway_inflight_llm: int | None
+    #: llama-swap có đang giữ hồ sơ `qwen38-api` không. `None` = không hỏi được.
+    llm_da_nap: bool | None
+    #: VRAM đang dùng trên UUID 3090. `None` = không đọc được.
+    vram_3090_mib: int | None
+    #: Kết quả lượt nạp do lệnh `nap_llm` GẦN NHẤT khởi động: `""` (đang chạy hoặc
+    #: chưa có) | `"ok"` | `"loi"`.
+    #:
+    #: ⚠️ Máy B phải đặt lại `""` khi nhận một lệnh `nap_llm` mới. Giữ `"loi"` cũ
+    #: thì máy quay vòng `LOI_NAP → NAP_LLM → LOI_NAP` và thời gian lùi chạm trần
+    #: vì một con số cũ. Ghim ở
+    #: `test_1216::test_nap_ket_qua_cu_lam_phong_lui_dan_nen_may_b_phai_dat_lai`.
+    nap_ket_qua: str = ""
+
+
+# ── Ba vị từ: mỗi cái là một cái PHANH, nên mỗi cái là một hàm có tên ────────
+#
+# Tách ra khỏi thân `buoc_thuan` có hai lý do, cả hai đều thực dụng: người đọc
+# thấy được luật mà không phải giải mã một biểu thức `and/or` dài, và phép kiểm
+# ĐỐI CHỨNG có thứ để gỡ — `monkeypatch` một trong hai hàm dưới đây rồi chạy lại
+# phép quét vét cạn là cách chứng minh phép kiểm THẬT SỰ bắt được việc gỡ phanh.
+
+def da_drain_xong(qs: QuanSat) -> bool:
+    """Lượt LLM đã chạy hết chưa? Hỏi HAI sổ, và `None` là "chưa".
+
+    Sổ lease của máy A một mình không đủ: một lượt có thể đã nhả lease mà kết nối
+    tới llama-server còn sống (hoặc ngược lại — một lease mồ côi). Nhả model khi
+    gateway còn in-flight là **giết một lượt của khách đang chạy**, đúng thứ
+    `GET /unload` cũ đã làm và là lý do trọng tài cũ bị gỡ (D01, L-9).
+    """
+    return qs.lease_llm == 0 and qs.gateway_inflight_llm == 0
+
+
+def dang_ve_anh(qs: QuanSat) -> bool:
+    """Có lượt vẽ nào đang chạy không. Phanh của chiều NGƯỢC lại: nạp 16 GB lên
+    card đang vẽ, hay dọn VRAM của ComfyUI đang vẽ, giết lượt vẽ bằng OOM."""
+    return qs.lease_anh > 0
+
+
+def lui_nap_s(tt: TrangThai, ts: ThamSoResidency) -> float:
+    """Thời gian lùi trước lần nạp lại tiếp theo: gấp đôi, chặn trần ở ×16.
+
+    Trần có mặt để một máy B đang hỏng không bị gọi nạp mỗi 30 s mãi mãi, mà cũng
+    không bị lùi thành hàng giờ — 480 s là mức mà một lượt sửa tay kịp xen vào.
+    """
+    return ts.lui_nap_loi_s * min(2 ** max(tt.lan_nap_loi - 1, 0), 16)
+
+
 def _sang(tt: TrangThai, ten: str, bay_gio: float, **dat) -> TrangThai:
     """Cửa DUY NHẤT đổi trạng thái. Ném nếu cặp chuyển không có trong bảng.
 
@@ -127,3 +222,118 @@ def _sang(tt: TrangThai, ten: str, bay_gio: float, **dat) -> TrangThai:
     if ten not in CHUYEN_HOP_LE[tt.ten]:
         raise ValueError(f"chuyen bat hop le: {tt.ten!r} -> {ten!r}")
     return replace(tt, ten=ten, tu_luc=bay_gio, **dat)
+
+
+def _dong_cua_so(tt: TrangThai, qs: QuanSat, ts: ThamSoResidency,
+                 bay_gio: float) -> bool:
+    """Đã tới lúc đóng cửa sổ ảnh chưa (spec §12, D01 B)?
+
+    Bốn vế, theo đúng thứ tự này, và thứ tự là một phần của luật:
+
+    1. **Hết việc ảnh** ⇒ đóng ngay, kể cả khi không ai chờ LLM: giữ card cho một
+       hàng rỗng là giữ không.
+    2. **Không ai chờ LLM** ⇒ KHÔNG đóng, dù đã quá trần 4 ảnh / 480 s. Trần của
+       D01 là trần **trên**, không phải một hạn phải dừng; dừng xe khi không ai
+       đợi bến là bỏ không một card (work-conserving).
+    3. Có người chờ ⇒ hết trần số ảnh, hoặc hết trần thời gian.
+    4. Có người chờ ⇒ **vẽ thêm một ảnh nữa sẽ đẩy người chờ lâu nhất quá hạn
+       chót của cửa họ**: `hạn_chót − t_nap_llm − t_anh_uoc − biên ≤ 0`.
+
+    Vế 4 là chỗ spec giải xung đột giữa hai tham số: một ảnh mất 92–110 s nên trần
+    4 ảnh (≈6–7 phút) DÀI HƠN trần chờ stream 300 s của D-06. Không có vế này thì
+    cửa sổ vẫn "đúng luật D01" trong khi người chờ chết vì hết trần chờ.
+    """
+    if qs.job_anh_cho == 0 and not dang_ve_anh(qs):
+        return True
+    if qs.nguoi_cho_llm == 0:
+        return False
+    if qs.anh_bat_dau_trong_cua_so >= ts.cua_so_anh_toi_da:
+        return True
+    if bay_gio - tt.cua_so_bat_dau >= ts.cua_so_anh_s:
+        return True
+    if qs.han_chot_llm_s is not None and (
+            qs.han_chot_llm_s - ts.t_nap_llm_s - ts.t_anh_uoc_s - ts.bien_s) <= 0:
+        return True
+    return False
+
+
+def buoc_thuan(tt: TrangThai, qs: QuanSat, ts: ThamSoResidency,
+               bay_gio: float) -> tuple[TrangThai, tuple[str, ...]]:
+    """MỘT bước của máy: trạng thái + quan sát + giờ ⇒ trạng thái mới + lệnh.
+
+    Người gọi lặp nó (vòng bảo trì worker, ~2 s một lượt) và thực thi các lệnh trả
+    về. Mọi lệnh đều idempotent, vì "đã xong chưa" chỉ biết được ở lượt sau qua
+    quan sát — nên máy phát lại lệnh cho tới khi quan sát đổi.
+
+    Trả `(tt, ())` nghĩa là **chưa tới lúc**, và đó là câu trả lời đúng ở phần lớn
+    lượt bước. Trạng thái chỉ đổi qua `_sang`, nên không nhánh nào dưới đây có thể
+    nhảy một bước không có trong `CHUYEN_HOP_LE`.
+    """
+    t = tt.ten
+    if t == LLM:
+        # Chỉ một điều kiện rời `LLM`: có job ảnh đang xếp hàng. Không đọc VRAM,
+        # không đoán — hàng job là thứ nói có việc cho model ảnh hay không.
+        if qs.job_anh_cho > 0:
+            return _sang(tt, XA_LLM, bay_gio), ()
+        return tt, ()
+
+    if t == XA_LLM:
+        # Admission của LTT-3.8 đã đóng (luật 0, Task 5.3); lượt đang chạy chạy
+        # tới hết. Ở đây máy chỉ CHỜ — và chờ là toàn bộ nội dung của L-9.
+        if qs.job_anh_cho == 0 and not dang_ve_anh(qs):
+            return _sang(tt, LLM, bay_gio), ()      # job ảnh rút ⇒ huỷ việc đổi
+        if da_drain_xong(qs):
+            return _sang(tt, NHA_LLM, bay_gio), (NHA_LLM_LENH,)
+        return tt, ()
+
+    if t == NHA_LLM:
+        # Không tin lệnh đã gửi: chỉ đi tiếp khi máy B NÓI model không còn nạp.
+        # `None` (không hỏi được) ⇒ ở lại, vì mở cửa sổ ảnh khi LTT-3.8 vẫn nằm
+        # trên card là cách chắc chắn nhất để OOM cả hai bên.
+        if qs.llm_da_nap is False:
+            return _sang(tt, ANH, bay_gio, cua_so_bat_dau=bay_gio), ()
+        if da_drain_xong(qs):
+            return tt, (NHA_LLM_LENH,)              # lặp lệnh, nó idempotent
+        return tt, ()
+
+    if t == ANH:
+        if _dong_cua_so(tt, qs, ts, bay_gio):
+            return _sang(tt, TRA_ANH, bay_gio), ()
+        return tt, ()
+
+    if t == TRA_ANH:
+        # Admission của ảnh đã đóng; lượt vẽ đang chạy chạy tới hết (L-9 chiều
+        # ngược). Không phát lệnh nào trong lúc đó — kể cả `free_comfy`.
+        if dang_ve_anh(qs):
+            return tt, ()
+        if qs.vram_3090_mib is not None and qs.vram_3090_mib <= ts.vram_sach_mib:
+            return _sang(tt, NAP_LLM, bay_gio), (NAP_LLM_LENH,)
+        # VRAM còn bẩn, hoặc không đọc được ⇒ dọn rồi đo lại lượt sau. ⚠️ "dọn" ở
+        # đây là DỪNG dịch vụ LTTComfyUI, không phải `POST /free`: 223,5 MiB ngữ
+        # cảnh CUDA của ComfyUI không nhả theo `/free`, và biên của LTT-3.8 chỉ
+        # 445 MiB (L-14 §3).
+        return tt, (FREE_COMFY_LENH,)
+
+    if t == NAP_LLM:
+        if qs.nap_ket_qua == "ok" and qs.llm_da_nap:
+            return _sang(tt, LLM, bay_gio, lan_nap_loi=0), ()
+        if qs.nap_ket_qua == "loi":
+            return _sang(tt, LOI_NAP, bay_gio, lan_nap_loi=tt.lan_nap_loi + 1), ()
+        return tt, ()
+
+    if t == LOI_NAP:
+        # ⭐ Vế `dang_ve_anh` là một chỗ SIẾT so với bản phác trong plan. Lý do:
+        #    lệnh `nap_llm` phát từ đây không đi qua nhánh kiểm VRAM của `TRA_ANH`,
+        #    nên nếu một lượt vẽ mới đã kịp bắt đầu (lease ảnh sống) thì bản phác
+        #    sẽ nạp 16 GB lên một card đang vẽ. Máy B có chốt fail-closed cho ca
+        #    đó, nhưng quyền quyết nghiệp vụ ở máy A (TD-D10) — nên phanh phải có
+        #    ở đây, không phải chỉ ở bên kia dây.
+        #    Không siết thêm bằng VRAM: từ `LOI_NAP` không ai phát `free_comfy`,
+        #    nên một điều kiện VRAM ở đây sẽ thành ngõ cụt vĩnh viễn.
+        if dang_ve_anh(qs):
+            return tt, ()
+        if bay_gio - tt.tu_luc >= lui_nap_s(tt, ts):
+            return _sang(tt, NAP_LLM, bay_gio), (NAP_LLM_LENH,)
+        return tt, ()
+
+    raise ValueError(f"trang thai la: {t!r}")
