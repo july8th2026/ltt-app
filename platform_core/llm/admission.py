@@ -178,9 +178,18 @@ def _cua_cu_tru_mo(db: Session, *, nhom: str, vai_tro: str) -> bool:
     try:
         with db.begin_nested():
             dong = db.get(GpuResidency, nhom)
-    except Exception:  # noqa: BLE001 - fail-closed, và nói ra
+    except Exception as loi:  # noqa: BLE001 - fail-closed, và nói ra
         dong = None
-        _nhac("khong doc duoc bang gpu_residency", nhom)
+        # ⛔ NÓI RA CÁI GÌ HỎNG, không chỉ "không đọc được". Bảng chưa migrate,
+        #    mất kết nối, hay khoá — ba nguyên nhân, ba việc phải làm khác hẳn
+        #    nhau, và người trực đọc dòng này lúc 3 giờ sáng không đoán được.
+        #
+        # 🔴 Và việc **buộc** ngoại lệ vào một tên là thứ `check_silent_except`
+        #    đòi: nó nhận ra "có ghi log" bằng **tên hàm** (`warning`/`error`/…),
+        #    nên một hàm bọc như `_nhac` thì nó không thấy. ⛔ Đừng nới bộ dò ra
+        #    cho nó thấy `_nhac` — nó canh một **tập hợp** 131 chỗ trong mã sống, và
+        #    mỗi lần nới là một lần hạ chuẩn cho cả kho.
+        _nhac(f"khong doc duoc bang gpu_residency ({loi!r})", nhom)
     if dong is None:
         _nhac("khong co dong gpu_residency", nhom)
         return False

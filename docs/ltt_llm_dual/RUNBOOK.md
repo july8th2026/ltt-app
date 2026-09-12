@@ -92,7 +92,7 @@ học: `LTT_HO_DUNG_CARD=llm=http://127.0.0.1:8280/unload` không mang tên mode
 một job ảnh xin 3090 sẽ nhả **cả LTT-3.5** trên card không ai tranh. Toàn văn +
 mức chắc chắn: `DECISION_LOG.md` L-17.
 
-Cùng lần deploy đó, **ba** việc phải làm **tay** (không script nào làm hộ):
+Cùng lần deploy đó, **bốn** việc phải làm **tay** (không script nào làm hộ):
 
 1. `C:\ProgramData\LTTLlm\gateway.env`: đặt `LTT_LLM_MODELS` thành **đúng hai hồ
    sơ đang sống** — tức **thêm `qwen35-api`** và **gỡ `qwen38-vision`**. Biến này
@@ -109,7 +109,30 @@ Cùng lần deploy đó, **ba** việc phải làm **tay** (không script nào l
       đang chạy vẫn giữ giá trị cũ tới khi restart (xem §2.3).
 2. `C:\ProgramData\LTTRender\gateway.env`: gỡ `LTT_HO_DUNG_CARD` và
    `LTT_TRA_CARD_GIAY` (Task 5.4).
-3. 🔴 **`gpu_may_b.json` phải có mặt trong cài đặt RENDER** (Task 6.1). Bản gốc
+3. 🔴 **Gỡ `DependOnService` của `LTTRenderGateway`** — nếu không, lệnh trả card
+   **không bao giờ chạy được**:
+
+   ```powershell
+   ssh ... "nssm reset LTTRenderGateway DependOnService"
+   ```
+
+   `render_gateway/deploy/cai_dat_dich_vu.ps1` đặt `LTTRenderGateway` **phụ thuộc**
+   `LTTComfyUI`. Nhưng từ Task 5.4a, chính `LTTRenderGateway` là thứ **ra lệnh dừng**
+   `LTTComfyUI` — và SCM từ chối dừng một dịch vụ còn dịch vụ khác phụ thuộc vào
+   nó đang chạy (**1051 ERROR_DEPENDENT_SERVICES_RUNNING**). Tức cổng render tự
+   chặn lệnh của chính nó.
+
+   ⭐ Mã **có** bắt được ca này: nhận 1051, chạy `sc enumdepend` (chỉ đọc), gọi tên
+      kẻ chặn và in đúng câu lệnh trên, rồi trả **503**. Nó hỏng **to tiếng**, không
+      im lặng — nhưng một lệnh trả card luôn 503 thì trọng tài **treo ở `tra_anh`
+      vĩnh viễn**, và LLM không bao giờ lấy lại được 3090.
+
+   ⚠️ Chưa **đo** trên máy B: kết luận 1051 suy từ script cài + tài liệu Win32,
+      còn quyền thì suy từ việc nssm không đặt `ObjectName` (⇒ LocalSystem). Đo thật
+      ở lần deploy: gọi `POST /v1/nha_comfy {"hanh_dong":"dung"}` và xem nó trả 200
+      hay 503-kèm-tên-kẻ-chặn.
+
+4. 🔴 **`gpu_may_b.json` phải có mặt trong cài đặt RENDER** (Task 6.1). Bản gốc
    nằm ở `llm_gateway/deploy/`, nhưng cài đặt render trên máy B **không có** gói
    `llm_gateway` — `render_gateway/deploy/deploy.ps1` chỉ chép gói `render_gateway`.
    ⇒ Trước khi restart `LTTRenderGateway`, xác nhận trên máy B:
