@@ -124,6 +124,29 @@ if (-not $ChiKiem) {
     Dat "da chep $($TepCanDay.Count) tep"
     # Buoc 4 (so hash) la luoi bat moi tep bi nuot am tham nhu su co tren:
     # scp bao thanh cong khong co nghia la tep da toi noi.
+
+    # --- 3b. Danh tinh GPU (Task 6.1) --------------------------------------------
+    # !! `render_gateway/busy.py` do GPU theo UUID card 3090, va UUID do KHONG nam
+    #    trong ma nguon - no nam o llm_gateway/deploy/gpu_may_b.json (nguon duy
+    #    nhat, Task 0.2, tests/test_1200_ghim_gpu_may_b.py). Ban cai render tren
+    #    may B chi co goi render_gateway (buoc 3 o tren), KHONG co llm_gateway,
+    #    nen tep json phai duoc chep RIENG sang render_gateway\deploy\.
+    # !! Khong doc duoc tep nay thi busy.py TU CHOI (bao ban) - dung theo luat
+    #    "khong chay mu". Tuc la thieu buoc nay = cong render bao ban vinh vien.
+    # !! Trong KHO chi co MOT ban (o llm_gateway). Ban duoi day sinh ra luc deploy,
+    #    khong commit - hai cho khai cung mot UUID la co che "bang chep tay" da noi
+    #    sai nam lan o du an nay. tests/test_1230_busy_theo_uuid.py chot ca hai nua.
+    Buoc "3b. Chep danh tinh GPU (gpu_may_b.json)"
+    $TepDanhTinh = Join-Path $RepoGoc "llm_gateway\deploy\gpu_may_b.json"
+    if (-not (Test-Path -LiteralPath $TepDanhTinh)) {
+        Loi "khong thay $TepDanhTinh - busy.py se tu choi moi job"
+        exit 1
+    }
+    $dichDanhTinh = ("$Dich\gateway\render_gateway\deploy\gpu_may_b.json") -replace '\\', '/'
+    & scp -i $Key -o StrictHostKeyChecking=accept-new -q `
+        $TepDanhTinh "${User}@${MayB}:$dichDanhTinh"
+    if ($LASTEXITCODE -ne 0) { Loi "chep gpu_may_b.json that bai"; exit 1 }
+    Dat "gpu_may_b.json -> render_gateway\deploy\"
 }
 
 # --- 4. So hash hai ben ---------------------------------------------------------

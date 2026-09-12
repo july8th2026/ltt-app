@@ -14,6 +14,17 @@ busy.py — máy B có đang bận không, và nếu bận thì còn bao lâu.
    để khách chọn đám mây, còn hơn hứa 20 giây rồi bắt chờ 4 phút. Khi chưa có lịch
    sử, trả `None` (không biết) — bên gọi phải coi "không biết" là "lâu".
 
+🔴 MỌI PHÉP ĐO GPU Ở ĐÂY LỌC THEO **UUID CARD 3090** (Task 6.1, 12/09/2026). Máy B
+   có hai card từ 11/09 và **cả hai** chạy `llama-server`:
+
+       RTX 3090     GPU-26623278-…   LTT-3.8 + model ảnh   <- card TRANH CHẤP (D01 B)
+       RTX 5060 Ti  GPU-ebecd0a4-…   LTT-3.5               <- KHÔNG AI TRANH
+
+   Cổng render chỉ tranh 3090. Một tiến trình giữ VRAM hay đang tính trên 5060 Ti
+   **không** được làm render "bận" — L-7: hai GPU là hai pool độc lập, không gộp
+   24+16. UUID lấy từ `danh_tinh_gpu.py` (đọc `llm_gateway/deploy/gpu_may_b.json`,
+   nguồn duy nhất, Task 0.2); **không** hằng số UUID trong tệp này.
+
 ⛔ Ngưỡng RAM là **LƯỢNG TUYỆT ĐỐI (GB), không phải tỉ lệ.** Dự án video trên máy B
    đã học điều này bằng một chốt chặn oan: ngưỡng 40 % đặt trên máy 96 GB, sau khi
    nâng lên 192 GB thì cùng con số đó đòi 115 GB trống. Nâng RAM lần nữa là nó sai
@@ -30,8 +41,25 @@ from dataclasses import dataclass, field
 from typing import Callable, Optional
 
 from .comfy import ComfyClient, ComfyError
+from .danh_tinh_gpu import VAI_38, uuid_38, vram_tong_mib
 
 log = logging.getLogger("render_gateway.busy")
+
+#: Biên độ cho phép giữa VRAM `/system_stats` khai và VRAM danh nghĩa của 3090.
+#:
+#: 🔴 VÌ SAO PHẢI SO. `vram_ngoai_nhan_mb` trừ "ComfyUI tự dùng" (từ
+#:    `/system_stats`, `devices[0]`) khỏi "cả card dùng" (từ `nvidia-smi`, đã lọc
+#:    theo UUID 3090). Phép trừ ấy chỉ có nghĩa khi **cả hai số nói về cùng một
+#:    card**. ComfyUI được ghim vào 3090 bằng `CUDA_VISIBLE_DEVICES=GPU-2662…`
+#:    (`deploy/cai_dat_dich_vu.ps1`) — nhưng một cái ghim là thứ **hỏng được**
+#:    (env dịch vụ bị nssm nướng lúc cài, service cài lại tay…). Ghim rơi ⇒
+#:    `devices[0]` là 5060 Ti (16.311 MiB) ⇒ hiệu của hai card là một con số vô
+#:    nghĩa chảy thẳng vào quyết định bận/rảnh.
+#:
+#: ⭐ Dung sai, không phải bằng nhau: `/system_stats` khai theo byte thô của
+#:    driver (24.575 MiB cho một card ghi 24.576 MiB trên nhãn). 1 GiB đủ rộng
+#:    cho sai số ấy và vẫn hẹp hơn khoảng cách 3090 ↔ 5060 Ti (8.265 MiB).
+LECH_TONG_VRAM_CHO_PHEP_MB = 1024
 
 #: nvidia-smi treo duoc (driver loi, card ket). Vong do khong duoc dung cho vo han.
 #: Cung tran voi `platform_core/gpu.py` cua nen tang, khong dat so khac.
@@ -57,11 +85,74 @@ SO_MAU_GIU = 12
 TRAN_PYTHON_GPU = 2
 
 #: nhận một job rồi hết VRAM giữa chừng đắt hơn nhiều so với báo bận.
+#:
+#: ⛔ ÁP TRÊN **CARD 3090** (vai `ltt38` trong `gpu_may_b.json`), không trên một
+#:    tổng hai card và không trên "dòng đầu" của `nvidia-smi`. 5060 Ti có 16.311 MiB
+#:    — nhỏ hơn cả con số này — nên đem nó ra so là vừa sai card vừa sai thang.
 VRAM_CAN_TOI_THIEU_MB = 20_500
 
 
+def _hoi_smi(doi_so: list[str]) -> Optional[str]:
+    """Gọi `nvidia-smi`. `None` = **không biết** (không có smi, lỗi, hết giờ).
+
+    ⛔ `None` KHÁC 0 và khác chuỗi rỗng. Bên gọi phải phân biệt "card đang trống"
+       với "không hỏi được card" — hai thứ đòi hai hành động khác nhau
+       (`nhuong_card.xin_card:204-207` **từ chối** khi không đọc được, đúng vậy).
+    """
+    exe = shutil.which("nvidia-smi")
+    if not exe:
+        return None
+    try:
+        r = subprocess.run([exe, *doi_so], capture_output=True, text=True,
+                           timeout=NVIDIA_SMI_TIMEOUT_S,
+                           encoding="utf-8", errors="replace")
+    except (OSError, subprocess.SubprocessError) as e:
+        log.warning("khong hoi duoc nvidia-smi (%s): %s", " ".join(doi_so), e)
+        return None
+    if getattr(r, "returncode", 1) != 0:
+        return None
+    return r.stdout or ""
+
+
+def _o_cua_card_3090(truong: str) -> Optional[list[str]]:
+    """Các ô của **đúng card 3090**, lọc theo cột `uuid`. `None` = không biết.
+
+    🔴 ĐÂY LÀ CHỖ BẢN CŨ HỎNG, VÀ NÓ HỎNG THEO BA KIỂU CÙNG MỘT GỐC — đọc
+       `nvidia-smi` của **cả máy** rồi kết luận về **một** card:
+
+         `tai_gpu_phan_tram`   lấy `dong[0]`  → card nào là do driver xếp
+         `vram_dung_mb_qua_smi` lấy `max()`   → 5060 Ti bận thì 3090 "bận"
+         `so_python_tinh_tren_gpu` đếm hết    → python trên 5060 Ti làm render bận
+
+       Từ 11/09 máy B có hai card và **cả hai** chạy `llama-server` (Task 3.3), nên
+       cả ba trở thành phép đo **lệch chiều**: chúng trả về số của card khác.
+
+    ⭐ LỌC THEO CỘT `uuid`, KHÔNG TRUYỀN `-i <uuid>` — cùng lý do đã ghi ở
+       `llm_gateway/gpu_uuid.py`: `-i` là một bảo đảm đi mượn (driver không hiểu
+       dạng UUID thì trả mã khác 0, hoặc tệ hơn, trả toàn bộ card). Hỏi cả hai card
+       rồi tự lọc thì đúng trong cả hai trường hợp, và biến "dòng nào" thành một
+       câu hỏi không còn tồn tại.
+
+    ⛔ Không thấy dòng của UUID ấy ⇒ `None`, **không** rơi sang dòng khác. Card
+       rụng khỏi hệ thống là ca đã xảy ra thật (`test_329_chot_so_gpu`), và câu trả
+       lời đúng cho nó là "không biết" ⇒ bên gọi từ chối, không chạy mù.
+    """
+    uu = uuid_38()
+    if not uu:
+        return None
+    ra = _hoi_smi(["--query-gpu=uuid," + truong, "--format=csv,noheader,nounits"])
+    if ra is None:
+        return None
+    for dong in ra.splitlines():
+        o = [x.strip() for x in dong.split(",")]
+        if len(o) >= 2 and o[0] == uu:
+            return o[1:]
+    log.warning("nvidia-smi khong thay card 3090 (%s) — coi nhu KHONG BIET", uu)
+    return None
+
+
 def so_python_tinh_tren_gpu() -> Optional[int]:
-    """Số tiến trình **python** đang TÍNH TOÁN trên GPU. `None` nếu không hỏi được.
+    """Số tiến trình **python** đang TÍNH TOÁN **trên card 3090**. `None` = không biết.
 
     ⭐ Đây là chốt "có ai khác đang dùng card không", **thay cho ngưỡng VRAM**.
 
@@ -85,23 +176,37 @@ def so_python_tinh_tren_gpu() -> Optional[int]:
 
     Bắt được cả loại việc chạy NGOÀI ComfyUI (`E:\\AI\\tools\\vlm_worker.py` và các
     script torch tương tự của dự án video) — đúng thứ mà hàng đợi ComfyUI không thấy.
+
+    ⭐ TỪ 11/09: ĐẾM THEO UUID 3090, KHÔNG ĐẾM CẢ MÁY. `--query-compute-apps`
+       **không** lọc theo card nếu ta không xin cột `gpu_uuid`. Máy B có hai card và
+       LTT-3.5 sống trên 5060 Ti — card **không ai tranh**. Đếm cả máy thì một
+       tiến trình python trên 5060 Ti (hoặc màn hình Windows, hoặc một script của
+       dự án video đã chuyển sang card đó) làm cổng render báo bận cho một card nó
+       không hề chạm. Đó là 429 cho khách vì một phép đo nhìn sai chỗ.
+
+    ⛔ THIẾU CỘT `gpu_uuid` ⇒ `None`, không đếm tạm. Không lọc được thì con số duy
+       nhất ta có là "python trên **một** card nào đó" — dùng nó cho câu hỏi về
+       3090 là chạy mù.
     """
-    if not shutil.which("nvidia-smi"):
+    uu = uuid_38()
+    if not uu:
         return None
-    try:
-        r = subprocess.run(
-            ["nvidia-smi", "--query-compute-apps=pid,process_name",
-             "--format=csv,noheader"],
-            capture_output=True, text=True, timeout=NVIDIA_SMI_TIMEOUT_S,
-            encoding="utf-8", errors="replace")
-    except (OSError, subprocess.SubprocessError) as e:
-        log.warning("khong hoi duoc compute-apps: %s", e)
-        return None
-    if r.returncode != 0:
+    ra = _hoi_smi(["--query-compute-apps=pid,process_name,gpu_uuid",
+                   "--format=csv,noheader"])
+    if ra is None:
         return None
     dem = 0
-    for dong in (r.stdout or "").splitlines():
-        if "python" in dong.lower():
+    for dong in ra.splitlines():
+        if not dong.strip():
+            continue
+        o = [x.strip() for x in dong.split(",")]
+        if len(o) < 3:
+            # Driver trả thiếu cột ⇒ không lọc được theo card ⇒ KHÔNG BIẾT.
+            log.warning("compute-apps thieu cot gpu_uuid: %r", dong)
+            return None
+        if o[2] != uu:
+            continue
+        if "python" in o[1].lower():
             dem += 1
     return dem
 
@@ -127,19 +232,19 @@ def tai_gpu_phan_tram() -> Optional[int]:
 
     Cùng lý do dùng `nvidia-smi` như `vram_dung_mb_qua_smi` ngay dưới: trên
     Windows/WDDM mọi nguồn trong tiến trình đều chỉ thấy chính nó.
+
+    ⛔ Tải của **card 3090**, không phải `splitlines()[0]`. Dòng đầu là card nào thì
+       phụ thuộc thứ tự liệt kê của driver — một thứ ta không kiểm soát và nó đổi
+       khi đổi khe card. `api.py::_ho_khac_dang_tinh` dùng con số này để quyết định
+       **có đuổi Qwen hay không**; đọc tải của 5060 Ti ở đó là đuổi (hoặc không
+       đuổi) vì việc của một card khác.
     """
-    exe = shutil.which("nvidia-smi")
-    if not exe:
+    o = _o_cua_card_3090("utilization.gpu")
+    if not o:
         return None
     try:
-        ra = subprocess.run(
-            [exe, "--query-gpu=utilization.gpu", "--format=csv,noheader,nounits"],
-            capture_output=True, text=True, timeout=NVIDIA_SMI_TIMEOUT_S)
-        if ra.returncode != 0:
-            return None
-        dong = (ra.stdout or "").strip().splitlines()
-        return int(dong[0].strip()) if dong else None
-    except (OSError, ValueError, subprocess.SubprocessError):
+        return int(float(o[0]))
+    except ValueError:
         return None
 
 
@@ -161,33 +266,28 @@ def vram_dung_mb_qua_smi() -> Optional[int]:
 
     Nền tảng đã chọn đúng đường này từ trước: `platform_core/gpu.py` cũng hỏi
     `nvidia-smi` chứ không dùng thư viện. Nay có số đo giải thích vì sao.
+
+    🔴 TỪ 11/09: VRAM CỦA **CARD 3090**, KHÔNG PHẢI `max()` CỦA CẢ MÁY. Bản cũ lấy
+       giá trị lớn nhất trên mọi card với lý lẽ *"máy A có hai card, trả lời theo
+       card bận nhất"*. Lý lẽ ấy chết ngày máy B có hai card: LTT-3.5 thường trú
+       trên 5060 Ti giữ ~10 GB, nên `max()` trả **số của 5060 Ti** cho mọi câu hỏi
+       về 3090 — và `nhuong_card.xin_card` đọc chính hàm này để quyết định "card có
+       rảnh chưa". Nó sẽ đuổi Qwen, chờ 45 s, thấy VRAM (của card khác) vẫn cao, rồi
+       trả 429 vĩnh viễn. Cùng lớp khuyết tật với thứ `llm_gateway/gpu_uuid.py` sinh
+       ra để chặn — chỉ là nó quay lại bằng cửa render.
     """
-    if not shutil.which("nvidia-smi"):
+    o = _o_cua_card_3090("memory.used")
+    if not o:
         return None
     try:
-        r = subprocess.run(
-            ["nvidia-smi", "--query-gpu=memory.used", "--format=csv,noheader,nounits"],
-            capture_output=True, text=True, timeout=NVIDIA_SMI_TIMEOUT_S,
-            encoding="utf-8", errors="replace")
-    except (OSError, subprocess.SubprocessError) as e:
-        log.warning("khong hoi duoc nvidia-smi: %s", e)
+        return int(float(o[0]))
+    except ValueError:
         return None
-    if r.returncode != 0:
-        return None
-    dung = 0
-    for dong in (r.stdout or "").splitlines():
-        dong = dong.strip()
-        if not dong:
-            continue
-        try:
-            dung = max(dung, int(float(dong)))
-        except ValueError:
-            continue
-    return dung
 
 
 def vram_ngoai_nhan_mb(smi_dung_mb: Optional[int],
-                       stats: Optional[dict]) -> Optional[int]:
+                       stats: Optional[dict],
+                       *, tong_card_mb: Optional[int] = None) -> Optional[int]:
     """VRAM đang bị **tiến trình NGOÀI ComfyUI** giữ, tính bằng MB. `None` = không biết.
 
     ⭐ ĐÂY LÀ CON SỐ MÀ CẢ HAI CHỐT TRƯỚC ĐỀU KHÔNG CÓ, và nó đến từ chỗ không ngờ:
@@ -214,6 +314,12 @@ def vram_ngoai_nhan_mb(smi_dung_mb: Optional[int],
 
     ⇒ Giữ **cả hai**: phép đếm bắt việc **đang tính** dù chiếm ít bộ nhớ; công thức
       này bắt việc **đang giữ bộ nhớ** dù không tính và dù không phải python.
+
+    ⚠️ `tong_card_mb` — VRAM danh nghĩa của **card ta đang nói về** (3090). Truyền
+       vào thì hàm kiểm rằng `/system_stats` cũng đang nói về card ấy; lệch quá
+       `LECH_TONG_VRAM_CHO_PHEP_MB` ⇒ `None` (không biết), vì `smi_dung_mb` đã lọc
+       theo UUID 3090 mà `devices[0]` thì không — trừ hai card cho nhau là một con
+       số không có nghĩa. Không truyền ⇒ giữ hành vi cũ (cho bên gọi cũ).
     """
     if smi_dung_mb is None or not stats:
         return None
@@ -227,6 +333,12 @@ def vram_ngoai_nhan_mb(smi_dung_mb: Optional[int],
     except (TypeError, ValueError):
         return None
     if tong <= 0 or trong < 0 or trong > tong:
+        return None
+    if tong_card_mb and abs(tong - tong_card_mb) > LECH_TONG_VRAM_CHO_PHEP_MB:
+        # ComfyUI đang khai một card KHÁC card ta đo (ghim `CUDA_VISIBLE_DEVICES`
+        # rơi?). Hiệu của hai card không phải "người khác giữ bao nhiêu".
+        log.warning("system_stats khai card %d MB, card ta do %d MB — khong quy "
+                    "duoc VRAM ngoai nhan", tong, tong_card_mb)
         return None
     comfy_tu_dung = tong - trong
     # Kẹp về 0: đồng hồ hai nguồn đọc lệch nhau vài chục MB là chuyện thường, và một
@@ -397,8 +509,14 @@ class BusyWatcher:
         #    tiến trình **không phải python** giữ mà **không tính toán gì**. Đo thật
         #    22/08 22:27: `llama-server.exe` giữ 15,9 GB, GPU 0 % tải, phép đếm trả
         #    về 1 ⇒ cổng báo rảnh trong khi card chỉ còn 4,6 GB.
-        if ngoai_mb is not None:
-            kha_dung = self._vram_tong_mb() - ngoai_mb
+        #
+        #    ⭐ VÀ NÓ ÁP TRÊN **CARD 3090**, không phải trên một tổng hay một dòng
+        #    đầu: `ngoai_mb` suy từ `nvidia-smi` đã lọc UUID 3090, `_vram_tong_mb()`
+        #    lấy dung lượng 3090 từ `gpu_may_b.json`. Cùng một card ở cả hai vế —
+        #    nếu không, `VRAM_CAN_TOI_THIEU_MB` đang so với một đại lượng khác.
+        tong_mb = self._vram_tong_mb()
+        if ngoai_mb is not None and tong_mb > 0:
+            kha_dung = tong_mb - ngoai_mb
             if kha_dung < self.vram_can_toi_thieu_mb and not self._nhuong_duoc():
                 return BusyState(
                     True,
@@ -432,7 +550,18 @@ class BusyWatcher:
         return max(con_lai) if con_lai else None
 
     def _vram_tong_mb(self) -> int:
-        return self._tong_mb or 24_576
+        """VRAM danh nghĩa của **card 3090**, MiB. `0` = không biết.
+
+        ⭐ ƯU TIÊN TỆP DANH TÍNH (`gpu_may_b.json`), rồi mới tới `/system_stats`.
+           Trước 12/09 dòng này là `self._tong_mb or 24_576` — một hằng số gõ tay
+           cho một card cụ thể, tức đúng thứ Task 0.2 đã bỏ: đo lại card thì phải
+           sửa **một** tệp, không phải đi tìm các hằng số rải rác.
+
+        ⛔ Không còn số mặc định. Không biết dung lượng card ⇒ `0`, và
+           `observe()` **bỏ qua** nhánh VRAM thay vì tính `0 - ngoai` rồi kết luận
+           bận — một con số bịa đặt không được biến thành một phán quyết.
+        """
+        return vram_tong_mib(VAI_38) or self._tong_mb or 0
 
     def _tai_nguyen(self) -> tuple[int, float, Optional[int]]:
         """(VRAM đang dùng MB, RAM còn trống GB, VRAM do người khác giữ MB).
@@ -454,7 +583,8 @@ class BusyWatcher:
         vram_used = self.doc_vram_mb()
         # Gọi `/system_stats` ĐÚNG MỘT LẦN rồi dùng lại: mỗi lượt `observe()` chạy
         # theo nhịp hỏi trạng thái, gọi hai lần là gấp đôi tải lên ComfyUI cho không.
-        ngoai = vram_ngoai_nhan_mb(vram_used, st)
+        ngoai = vram_ngoai_nhan_mb(vram_used, st,
+                                   tong_card_mb=vram_tong_mib(VAI_38))
         thiet_bi = ((st or {}).get("devices") or [{}])[0] or {}
         try:
             self._tong_mb = int(thiet_bi.get("vram_total") or 0) // (1024 * 1024)
