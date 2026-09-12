@@ -19,7 +19,6 @@ import urllib.error
 import urllib.request
 
 CONG = "http://127.0.0.1:8299"
-COMFY = "http://127.0.0.1:8188"
 
 # !! Console cua may B la CP1252. Model tra loi tieng Viet, va `print` se nem
 #    UnicodeEncodeError giua bai nghiem thu - mot bai kiem TU LAM HONG CHINH NO.
@@ -103,48 +102,10 @@ def vram_mb(vai: str = ""):
     return -1 if the is None else the["vram_dung_mib"]
 
 
-def comfy_ve_mot_anh() -> bool:
-    """Chay mot anh 1024x1024 de LAM BAN card - cau hinh nam trong vung DA DO."""
-    wf = {
-        "1": {"class_type": "CheckpointLoaderSimple",
-              "inputs": {"ckpt_name": "hidream_o1_image_bf16.safetensors"}},
-        "2": {"class_type": "CLIPTextEncode", "inputs": {"clip": ["1", 1], "text": "a red apple"}},
-        "3": {"class_type": "CLIPTextEncode", "inputs": {"clip": ["1", 1], "text": ""}},
-        "4": {"class_type": "EmptyHiDreamO1LatentImage",
-              "inputs": {"width": 1024, "height": 1024, "batch_size": 1}},
-        "5": {"class_type": "KSampler",
-              "inputs": {"model": ["1", 0], "positive": ["2", 0], "negative": ["3", 0],
-                         "latent_image": ["4", 0], "seed": 99, "steps": 8, "cfg": 5.0,
-                         "sampler_name": "euler", "scheduler": "normal", "denoise": 1.0}},
-        "6": {"class_type": "VAEDecode", "inputs": {"samples": ["5", 0], "vae": ["1", 2]}},
-        "7": {"class_type": "SaveImage",
-              "inputs": {"images": ["6", 0], "filename_prefix": "nghiem_thu/apple"}},
-    }
-    req = urllib.request.Request(COMFY + "/prompt",
-                                 data=json.dumps({"prompt": wf}).encode("utf-8"),
-                                 headers={"Content-Type": "application/json"})
-    try:
-        with urllib.request.urlopen(req, timeout=60) as r:
-            pid = json.loads(r.read())["prompt_id"]
-    except Exception as e:
-        print(f"    (khong gui duoc job ComfyUI: {e})")
-        return False
-    for _ in range(120):
-        time.sleep(3)
-        try:
-            with urllib.request.urlopen(f"{COMFY}/history/{pid}", timeout=15) as r:
-                if pid in json.loads(r.read()):
-                    return True
-        except Exception:
-            pass
-    return False
-
-
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--token", default="")
     ap.add_argument("--model", default="qwen38-api")
-    ap.add_argument("--bo-qua-don-dep", action="store_true")
     # Card nao dang duoc nghiem thu. `qwen38-*` chay tren 3090 (`ltt38`),
     # `qwen35-*` tren 5060 Ti (`ltt35`) - suy tu `--model` chu khong go tay.
     ap.add_argument("--vai", default="")
@@ -254,7 +215,7 @@ def main() -> int:
         #
         #    Vi sao no dung NGAY SAU phep do toc do: neu model o CPU thi dong tren
         #    da bao "toc do < 50 tok/s" va nguoi doc se di tim nham cho - card ban,
-        #    don_dep hong, mang cham. Dong nay noi thang nguyen nhan.
+        #    mang cham. Dong nay noi thang nguyen nhan.
         ma_g, hg, _ = goi("/health", token=tk)
         g = (hg or {}).get("gpu") or {}
         bao("model nam TREN GPU (khong phai CPU)", g.get("tren_gpu") is True,
@@ -284,28 +245,17 @@ def main() -> int:
     pt = (r2.get("usage") or {}).get("prompt_tokens", 0)
     bao("goi lai y het -> cache_n > 0", cn > 0, f"cache_n={cn}/{pt}")
 
-    # --- 8. Don dep card -------------------------------------------------------
-    if not a.bo_qua_don_dep:
-        print("\n8. Don dep card (P6 - cai da hong lan dau)")
-        print("    Lam ban card bang mot anh ComfyUI...")
-        if comfy_ve_mot_anh():
-            vb = vram_mb()
-            print(f"    VRAM sau khi ComfyUI ve xong: {vb} MiB")
-            bao("ComfyUI CO giu VRAM sau khi ve", vb > 2500, f"{vb} MiB")
-            ma, r, gy = goi("/v1/chat/completions",
-                            {"model": a.model, "max_tokens": 300,
-                             "messages": [{"role": "user",
-                                           "content": "Write a Python function to reverse a string."}]},
-                            token=tk)
-            tg = (r.get("timings") or {}).get("predicted_per_second") or 0
-            bao("van tra 200 sau khi card ban", ma == 200, f"ma={ma} sau {gy:.1f}s")
-            # DAY la muc quan trong nhat cua ca bai nghiem thu.
-            bao("toc do KHONG tut (>= 50 tok/s)", tg >= 50,
-                f"{tg:.1f} tok/s - neu ~18 thi don_dep KHONG chay")
-        else:
-            print("    (ComfyUI khong ve duoc -> bo qua muc nay)")
-    else:
-        print("\n8. Don dep card - BO QUA")
+    # --- 8. Don dep card: DA GO (Dual-model 5.4b) ------------------------------
+    #
+    # Muc nay tung lam ban card bang mot anh ComfyUI roi doi cong TU DON va giu
+    # toc do >= 50 tok/s. Tu D01 B, cong KHONG con tu don: quyen quyet ai cam
+    # 3090 ve trong tai residency o may A, va no don bang cach DUNG HAN dich vu
+    # LTTComfyUI (`POST /v1/nha_comfy`, 5.4a) chu khong bang `/free` (L-14 muc 3:
+    # `/free` khong nha 223,5 MiB ngu canh CUDA).
+    #
+    # ⛔ Giu muc nay lai la nghiem thu MOT NANG LUC DA BI GO CO Y — no se do, va
+    #    nguoi doc se di "sua" dung thu Task 5.4 vua thao ra. Chu trinh residency
+    #    duoc nghiem thu o may A (Task 5.5), noi duy nhat thay ca hai dau day.
 
     print("")
     print("=" * 62)

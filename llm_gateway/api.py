@@ -7,6 +7,16 @@ api.py — hợp đồng HTTP của cổng VLM.
     POST /v1/responses            OpenAI Responses — CODEX CLI (bat buoc giao thuc nay)
     POST /v1/messages             Anthropic        — CLAUDE CODE (ANTHROPIC_BASE_URL)
 
+    GET  /v1/residency/trang_thai  su that do duoc cua 3090 (Dual-model 5.4b)
+    POST /v1/residency/nha         nha DUNG mot model khoi VRAM
+    POST /v1/residency/nap         nap lai model cu tru (chay o luong nen)
+
+⭐ BA ĐƯỜNG `residency/*` LÀ **LỆNH**, KHÔNG PHẢI **QUYẾT ĐỊNH** (D01 B, TD-D10).
+   Người quyết khi nào 3090 thuộc về LLM và khi nào thuộc về ảnh là **trọng tài
+   residency ở máy A**. Cổng này thi hành và báo lại số đo. Đừng thêm một người
+   quyết thứ hai ở đây — hai cơ chế cùng canh một card sẽ lệch nhau, và đó đúng
+   là cặp trọng tài cũ (`don_dep` + `nhuong_card`) mà Task 5.4 vừa gỡ bỏ.
+
 ⭐ BA GIAO THỨC, MỘT ĐƯỜNG ỐNG. Codex chỉ nói Responses (từ 02/2026 nó bỏ hẳn lựa
    chọn `chat`); Claude Code chỉ nói Anthropic Messages. `llama-server` **nói được
    cả ba**, nên cổng này không dịch gì cả — nó chỉ **kiểm rồi chuyển tiếp**.
@@ -24,8 +34,9 @@ api.py — hợp đồng HTTP của cổng VLM.
 from __future__ import annotations
 
 import logging
+import threading
 import time
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 from fastapi import Body, Depends, FastAPI, Header, HTTPException
 from fastapi.responses import JSONResponse, Response, StreamingResponse
@@ -35,8 +46,8 @@ from . import __version__
 from . import ngan_sach as NS
 from .catalog import KhongCoModel, ModelSpec, lay, nap_catalog, ten_la
 from .config import Config
-from .don_dep import DonDepGpu
 from . import gpu_uuid as GPU
+from . import residency as RES
 from .gioi_han import GioiHan, boc_luong
 from . import so_luot as SL
 from .so_theo_model import SoTheoModel, token_dat_truoc
@@ -59,9 +70,9 @@ DUONG = {
 
 
 def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
-               don_dep: Optional[DonDepGpu] = None,
                gioi_han: Optional[GioiHan] = None,
                so: Optional[SoTheoModel] = None,
+               chay_nen: Optional[Callable[[Callable[[], None]], None]] = None,
                now=time.monotonic) -> FastAPI:
     app = FastAPI(title="LTT LLM Gateway", version=__version__)
 
@@ -85,19 +96,14 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
     if la:
         log.warning("LTT_LLM_MODELS co ten khong khop ho so nao: %s", ", ".join(la))
 
-    # ⭐ `model_cua_ta_dang_chay` noi cho trong tai biet tai cao tren card la CUA
-    #    TA hay cua nguoi khac. `_co_model_cua_ta_dang_chay` dinh nghia ben duoi;
-    #    lambda giai ten luc GOI, nen thu tu dinh nghia khong thanh van de.
-    #
-    # ⛔ Va no duoc goi LUOI — chi khi nhanh tai thuc su can den, xem `phan_xu`.
-    #    Goi `/running` moi yeu cau la them mot vong loopback vao duong nong.
+    # ⛔ TRỌNG TÀI NÀY KHÔNG CÒN HỎI ComfyUI, VÀ KHÔNG CÒN ĐỌC MỨC TẢI (5.4b).
+    #    Cuộc tranh 3090 nay do **một** trọng tài residency ở máy A phân xử
+    #    (D01 B); trong cửa sổ LLM, ComfyUI đã bị **dừng hẳn** (5.4a) nên một
+    #    phép hỏi `/queue` hay một ngưỡng `utilization.gpu` ở đây chỉ còn sinh ra
+    #    429 oan. Thứ còn lại là hai cái phanh thuần cơ học: RAM chủ và số tiến
+    #    trình python đang tính trên card.
     tt = trong_tai if trong_tai is not None else TrongTai(
-        ram_trong_toi_thieu_gb=cfg.ram_trong_toi_thieu_gb, bat=cfg.trong_tai_bat,
-        model_cua_ta_dang_chay=lambda: _co_model_cua_ta_dang_chay(),
-        # ⭐ HOI THANG HANG DOI ComfyUI, dung suy tu muc tai. Muc tai la suy doan
-        #    ("card nong, chac ai do dang lam"); hang doi la su that ("co dung
-        #    n viec dang chay"). Xem nhanh `_model_cua_ta` trong `trong_tai.py`.
-        ho_kia_dang_ve=lambda: _comfy_dang_ve())
+        ram_trong_toi_thieu_gb=cfg.ram_trong_toi_thieu_gb, bat=cfg.trong_tai_bat)
 
     # ── Sổ suất: MỘT SỔ CHO MỖI MODEL (Dual-model 4.2) ──────────────────────
     #
@@ -129,59 +135,17 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
             doc_vram_trong=lambda m: _vram_trong_cua_model(m),
             now=now)
 
-    if don_dep is not None:
-        pass                                   # đã tiêm (test)
-    elif cfg.don_dep_bat:
-        don_dep = DonDepGpu(comfy_url=cfg.comfy_url,
-                            nguong_sach_mb=cfg.vram_sach_mb)
+    #: Sổ kết quả của lượt `POST /v1/residency/nap` gần nhất. Một sổ cho mỗi
+    #: `create_app()`, cùng lý do với `so_luot` ở trên.
+    so_nap = RES.SoNap()
 
-    def _comfy_dang_ve() -> bool:
-        """ComfyUI có việc ĐANG CHẠY không (không tính việc đang xếp hàng).
+    def _chay_nen_that(viec: Callable[[], None]) -> None:
+        threading.Thread(target=viec, name="residency-nap", daemon=True).start()
 
-        ⛔ Chỉ tính `queue_running`, không tính `queue_pending`: một việc đang
-           xếp hàng chưa chiếm card, và coi nó là bận sẽ chặn lượt LLM trong lúc
-           ComfyUI còn chưa bắt đầu gì.
-
-        ⚠️ Gọi LƯỜI — chỉ chạy khi nhánh tải thực sự cần, cùng lý do với
-           `_co_model_cua_ta_dang_chay`: thêm một vòng loopback vào đường nóng
-           của mọi yêu cầu là trả giá cho một câu hỏi hiếm khi cần hỏi.
-        """
-        try:
-            import httpx
-
-            r = httpx.get(f"{cfg.comfy_url.rstrip('/')}/queue", timeout=4.0)
-            r.raise_for_status()
-            return bool(r.json().get("queue_running"))
-        except Exception:                                       # noqa: BLE001
-            return False
-
-    def _co_model_cua_ta_dang_chay() -> bool:
-        """`llama-swap` có đang giữ **bất kỳ** model nào của ta không.
-
-        🔴 PHẢI LÀ "BẤT KỲ", KHÔNG PHẢI "ĐÚNG MODEL NÀY". Đây là một lỗi thật đã
-           xảy ra 22/08 và nó làm **hồ sơ vision gần như không bao giờ gọi được**:
-
-             `qwen38-api` đang chạy, giữ 19.973 MiB
-             khách xin `qwen38-vision`
-             -> bản cũ hỏi "đúng model này chưa?" -> chưa -> đi dọn
-             -> `don_dep` thấy VRAM cao, bảo COMFYUI nhả (nó chẳng giữ gì)
-             -> chờ 18 giây, VRAM không đổi vì nó LÀ CỦA TA -> 429
-
-           VRAM của chính ta thì **`llama-swap` tự đổi được** — nó dừng model cũ,
-           bật model mới. Việc của `don_dep` chỉ là dọn phần **người khác** giữ.
-
-        ⛔ Không biết thì trả `False` (⇒ đi dọn). Dọn thừa tốn vài giây; bỏ qua
-           việc dọn khi cần thì phục vụ ở một phần tư tốc độ, âm thầm.
-        """
-        ma, than = upstream.json("GET", "/running", timeout=5.0)
-        if ma != 200:
-            return False
-        try:
-            import json as _json
-            d = _json.loads(than or b"{}")
-        except (ValueError, TypeError):
-            return False
-        return any(isinstance(m, dict) and m.get("model") for m in (d.get("running") or []))
+    #: Tiêm được để phép kiểm chạy thân lượt nạp **đồng bộ** — một luồng nền
+    #: trong test là một cuộc đua, và một phép kiểm đua là một phép kiểm nói dối
+    #: theo cả hai chiều.
+    chay_nen = chay_nen or _chay_nen_that
 
     #: Nhớ tên hồ sơ đang nạp trong ít giây, để một phiên agent gửi liên tiếp
     #: không sinh một `/running` cho mỗi lượt.
@@ -191,44 +155,41 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
     #:    (từ chối oan một yêu cầu lẽ ra vừa) hoặc một `/tokenize` bị llama-swap
     #:    trả lời bằng hồ sơ khác — cả hai đều không chạm tiền và không sai
     #:    chiều nguy hiểm.
-    _nho_nap: dict = {"luc": None, "ten": ""}
+    _nho_nap: dict = {"luc": None, "san": frozenset()}
     _TTL_NHO_NAP_S = 2.0
+    _HET_GIO_HOI_NAP_S = 2.0
 
     def _ho_so_dang_nap(ten: str) -> bool:
         """Đúng **hồ sơ này** có đang nằm trong VRAM không.
 
-        ⛔ KHÁC `_co_model_cua_ta_dang_chay()` ở trên, và khác một cách có chủ ý.
-           Ở đó câu hỏi là *"llama-swap có đang giữ BẤT KỲ model nào của ta"* —
-           để trọng tài biết tải cao trên card là của ai. Ở đây câu hỏi là
-           *"đếm token bằng `/tokenize` có RẺ không"*, và nó chỉ rẻ khi **đúng
-           hồ sơ này** đã nạp: hỏi `/tokenize` cho một hồ sơ khác thì llama-swap
-           sẽ ĐỔI model để phục vụ nó — tức đánh thức GPU, mất 2,5 phút, và làm
-           đúng cái điều mà phép ước sinh ra để tránh.
+        Câu hỏi ở đây là *"đếm token bằng `/tokenize` có RẺ không"*, và nó chỉ rẻ
+        khi **đúng hồ sơ này** đã nạp: hỏi `/tokenize` cho một hồ sơ khác thì
+        llama-swap sẽ ĐỔI model để phục vụ nó — tức đánh thức GPU, mất 2,5 phút,
+        và làm đúng cái điều mà phép ước sinh ra để tránh.
 
-        ⚠️ `timeout=2.0`, KHÔNG phải 5. Lời gọi này nằm trên đường **từ chối**:
+        🔴 GIỮ CẢ **TẬP** HỒ SƠ SẴN SÀNG, KHÔNG PHẢI CÁI ĐẦU TIÊN. Bản cũ `break`
+           ở hồ sơ `ready` đầu tiên rồi so bằng. Với **một** model điều đó đúng;
+           từ Task 3.3 máy B giữ **hai** hồ sơ cùng lúc (`groups: swap:false`, đo
+           12/09 L-17), nên cái thứ hai luôn bị trả lời "chưa nạp" — và mọi lượt
+           của nó lặng lẽ lùi về phép ƯỚC dù `/tokenize` đang rẻ. Cùng khuôn lỗi
+           L-17 §4: một phép hỏi không mang tên đối tượng chỉ đúng khi hệ thống
+           có đúng một đối tượng.
+
+        ⚠️ `timeout` 2 giây, KHÔNG phải 5. Lời gọi này nằm trên đường **từ chối**:
            nếu llama-swap chết thì bản cũ trả `413` tức thì, còn bản này sẽ chờ
            hết timeout trước khi từ chối. Năm giây cho một yêu cầu chắc chắn bị
            từ chối là một hồi quy; hai giây là cái giá tối thiểu còn đọc được.
         """
         luc = _nho_nap["luc"]
         if luc is not None and (now() - luc) < _TTL_NHO_NAP_S:
-            return _nho_nap["ten"] == ten
-        ma, than = upstream.json("GET", "/running", timeout=2.0)
-        if ma != 200:
+            return ten in _nho_nap["san"]
+        bang = RES.models_dang_chay(upstream, timeout_s=_HET_GIO_HOI_NAP_S)
+        if bang is None:
             return False
-        try:
-            import json as _json
-            d = _json.loads(than or b"{}")
-        except (ValueError, TypeError):
-            return False
-        dang = ""
-        for m in (d.get("running") or []):
-            if isinstance(m, dict) and str(m.get("state") or "") == "ready":
-                dang = str(m.get("model") or "")
-                break
+        san = frozenset(m for m, tr in bang.items() if tr == RES.SAN_SANG)
         _nho_nap["luc"] = now()
-        _nho_nap["ten"] = dang
-        return dang == ten
+        _nho_nap["san"] = san
+        return ten in san
 
     def _dem_token_that(ten: str, van: list) -> "int | None":
         """Số token THẬT của các đoạn văn bản, qua `/tokenize` của llama-server.
@@ -539,8 +500,11 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
                 theo_vai[vai] = {"ly_do": f"khong doc duoc danh tinh: {e}"}
                 continue
             the = GPU.doc_the(uu)
-            px = kiem_gpu(co_model_nap=(vai in vai_nap),
-                          doc_vram=lambda t=the: None if t is None else t["vram_dung_mib"])
+
+            def _vram_the(t: Optional[dict] = the) -> Optional[int]:
+                return None if t is None else int(t["vram_dung_mib"])
+
+            px = kiem_gpu(co_model_nap=(vai in vai_nap), doc_vram=_vram_the)
             theo_vai[vai] = {
                 "uuid": uu,
                 "tren_gpu": px.tren_gpu,
@@ -576,6 +540,165 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
                 for m in sorted(catalog.values(), key=lambda x: x.ten)
             ],
         }
+
+    # ── LỆNH RESIDENCY 3090 (Dual-model 5.4b) ────────────────────────────────
+    #
+    # ⭐ Ba đường dưới đây là **tay chân** của trọng tài residency ở máy A, không
+    #    phải một trọng tài thứ hai (D01 B, TD-D10). Chúng chỉ làm ba việc: nói
+    #    sự thật đo được, nhả đúng một model, nạp lại đúng một model.
+    #
+    # ⛔ MỌI TỪ CHỐI PHẢI NÊU ĐIỀU KIỆN NÀO HỎNG VÀ VỚI CON SỐ NÀO — cùng kỷ luật
+    #    với `/v1/nha_comfy` của cổng render (5.4a). Một bước residency tin rằng
+    #    nó đã dọn xong card trong khi chưa là đúng hỏng hóc D01 B đi chặn.
+
+    def _vram_theo_uuid() -> dict:
+        """`{uuid: MiB đang dùng}` cho **từng** card, đọc theo UUID.
+
+        🔴 KHÔNG BAO GIỜ MỘT SỐ ĐO GỘP. Máy B có hai card và LTT-3.5 thường trú
+           ~13 GB trên 5060 Ti: một `max()` của cả máy sẽ luôn nói "3090 chưa
+           sạch", tức LTT-3.8 **không bao giờ** được nạp lại. Đó đúng là khuyết
+           tật Task 6.1 vừa gỡ khỏi `render_gateway/busy.py`; đừng dựng lại nó ở
+           đây. Máy A tra bảng này theo UUID của chính nó (`MayBResidency._vram`).
+
+        ⚠️ Card nào không đọc được thì **vắng mặt** khỏi bảng, không mang giá trị
+           0: 0 MiB là "card trống", và nói thế về một card không hỏi được là
+           mời một lần nạp đè.
+        """
+        ra: dict = {}
+        for vai in (GPU.VAI_38, GPU.VAI_35):
+            try:
+                uu = GPU.uuid_cua(vai)
+            except (GPU.VaiKhongCo, OSError, ValueError) as e:
+                log.warning("residency: khong doc duoc danh tinh vai %s: %s", vai, e)
+                continue
+            mib = GPU.vram_mib(uu)
+            if mib is not None:
+                ra[uu] = mib
+        return ra
+
+    def _model_hop_le(body: Optional[dict]) -> str:
+        """Tên hồ sơ trong thân lệnh, đã kiểm. Sai ⇒ 400, **không** đoán hộ.
+
+        ⛔ Không có mặc định "model cư trú": một lệnh nhả nhắm sai hồ sơ là một
+           lượt của khách bị cắt, và im lặng đoán hộ là cách nhanh nhất tới đó.
+        """
+        ten = str((body or {}).get("model") or "").strip()
+        if not ten:
+            raise HTTPException(400, detail={"ly_do": "thieu truong `model`"})
+        if ten not in so.models():
+            raise HTTPException(
+                400, detail={"ly_do": "khong biet ho so nay",
+                             "model": ten, "co": list(so.models())})
+        return ten
+
+    @app.get("/v1/residency/trang_thai")
+    def residency_trang_thai(_: None = Depends(auth)) -> dict:
+        """Sự thật đo được của máy B — bốn trường, không trường nào suy diễn.
+
+        ⚠️ `llm_da_nap = null` nghĩa là **không hỏi được llama-swap**, khác hẳn
+           `false`. Máy A xử `None` theo hướng KHÔNG hành động (fail-closed,
+           `QuanSat`); gộp hai thứ ấy thành `false` là bảo trọng tài rằng card
+           đang trống trong lúc ta thật ra đang mù.
+        """
+        bang = RES.models_dang_chay(upstream)
+        da_nap = None if bang is None else any(
+            GPU.vai_cua_model(m) == GPU.VAI_38 and tr == RES.SAN_SANG
+            for m, tr in bang.items())
+        return {
+            "llm_da_nap": da_nap,
+            # Sổ suất của CHÍNH cổng này — thứ `lease` của máy A không thấy: một
+            # lượt có thể đã nhả lease mà kết nối tới llama-server còn sống.
+            "inflight": {m: so.dang_chay(m) for m in so.models()},
+            "vram_mib": _vram_theo_uuid(),
+            "nap_ket_qua": so_nap.doc(),
+        }
+
+    @app.post("/v1/residency/nha")
+    def residency_nha(body: dict = Body(default=None), _: None = Depends(auth)):
+        """Nhả **đúng một** hồ sơ khỏi VRAM.
+
+        ⛔ CÒN SUẤT ĐANG BAY ⇒ **409**, VÀ KHÔNG MỘT LỜI GỌI NÀO XUỐNG
+           llama-swap. Không "chờ một tí rồi ép", không hạn chờ leo thang: lệnh
+           `unload` của llama-swap **không** drain (`fifo.go:222-270`), nên phát
+           nó lúc còn in-flight là cắt ngang một lượt của khách — đúng thứ
+           `GET /unload` cũ đã làm và là lý do trọng tài cũ bị gỡ (L-9, L-17).
+           Việc drain là của máy A: ngừng nhận ⇒ chờ về 0 ⇒ rồi mới gọi lại. Lệnh
+           này idempotent nên phát lại ở nhịp sau không tốn gì.
+        """
+        ten = _model_hop_le(body)
+        bay = so.dang_chay(ten)
+        if bay > 0:
+            raise HTTPException(
+                status_code=409,
+                detail={"ly_do": "con luot dang chay — KHONG nha",
+                        "model": ten, "inflight": bay,
+                        "can": "inflight == 0"})
+        kq = RES.nha(upstream, ten)
+        if not kq.xong:
+            log.error("residency/nha(%s) that bai: %s", ten, kq.ly_do)
+            return JSONResponse(
+                status_code=503,
+                content={"error": {"code": "nha_that_bai", "message": kq.ly_do},
+                         "model": ten, "ma_thuong_nguon": kq.ma,
+                         "con_lai": list(kq.con_lai or ())})
+        return {"da_nha": True, "model": ten, "inflight": 0,
+                "con_lai": list(kq.con_lai or ()),
+                "vram_mib": _vram_theo_uuid()}
+
+    @app.post("/v1/residency/nap")
+    def residency_nap(body: dict = Body(default=None), _: None = Depends(auth)):
+        """Nạp lại hồ sơ cư trú — **chạy ở luồng nền**, kết quả đọc ở `trang_thai`.
+
+        🔴 CHỐT VRAM ĐỨNG TRƯỚC, VÀ NÓ ĐỌC ĐÚNG CARD CỦA HỒ SƠ NÀY. Nạp 16 GB
+           lên một card còn ai đó giữ thì llama.cpp **không báo lỗi**: nó tràn
+           trọng số sang RAM chủ qua PCIe và chạy ở một phần tư tốc độ trong khi
+           `/health` vẫn xanh (đo 22/08). Ngưỡng lấy từ `Config.vram_sach_mb`,
+           cùng con số mà `ThamSoResidency.vram_sach_mib` của máy A dùng.
+
+        ⚠️ Không đọc được VRAM ⇒ **503**, không phải "cứ nạp": "không biết" và
+           "card trống" là hai thứ khác nhau, và chỉ một trong hai an toàn.
+        """
+        ten = _model_hop_le(body)
+        vai = GPU.vai_cua_model(ten)
+        try:
+            uu = GPU.uuid_cua(vai) if vai else ""
+        except (GPU.VaiKhongCo, OSError, ValueError) as e:
+            uu = ""
+            log.warning("residency/nap: khong doc duoc danh tinh %s: %s", vai, e)
+        vram = GPU.vram_mib(uu) if uu else None
+        if vram is None:
+            return JSONResponse(
+                status_code=503,
+                content={"error": {
+                    "code": "khong_doc_duoc_vram",
+                    "message": (f"khong doc duoc VRAM cua card chay {ten!r} "
+                                f"(vai {vai!r}, uuid {uu or 'khong ro'}) — "
+                                f"KHONG nap khi khong biet card co sach khong. "
+                                f"Kiem `nvidia-smi` va `gpu_may_b.json`.")},
+                    "model": ten})
+        if vram > cfg.vram_sach_mb:
+            raise HTTPException(
+                status_code=409,
+                detail={"ly_do": "card chua sach — KHONG nap",
+                        "model": ten, "uuid": uu,
+                        "vram_dung_mib": vram,
+                        "can": f"vram_dung_mib <= {cfg.vram_sach_mb}"})
+
+        # ⭐ `bat_dau()` ĐẶT LẠI `nap_ket_qua` VỀ `""` ngay tại đây — trước khi
+        #    luồng nền chạy dòng nào. Một `"loi"` cũ sống sót qua lệnh này làm máy
+        #    A quay vòng `LOI_NAP → NAP_LLM → LOI_NAP` với thời gian lùi phồng
+        #    tới trần vì một con số cũ (lo ngại số 1 của Task 5.1/5.2).
+        if not so_nap.bat_dau():
+            return JSONResponse(
+                status_code=200,
+                content={"da_bat_dau": False, "dang_chay": True, "model": ten,
+                         "nap_ket_qua": so_nap.doc(),
+                         "ly_do": "da co mot luot nap dang chay"})
+        chay_nen(lambda: RES.chay_nap(upstream, ten, so_nap))
+        return JSONResponse(
+            status_code=202,
+            content={"da_bat_dau": True, "dang_chay": True, "model": ten,
+                     "vram_dung_mib": vram, "nap_ket_qua": so_nap.doc()})
 
     # ── Đường ống chung của ba giao thức ─────────────────────────────────────
 
@@ -783,12 +906,10 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
         """
         ten = str(body.get("model") or "").strip()
 
-        # ── Hai chốt dưới đây CHỈ nói về card 3090 ──────────────────────────
+        # ── Chốt dưới đây CHỈ nói về card 3090 ──────────────────────────────
         #
-        # 🔴 VÀ ĐÓ LÀ MỘT SỬA LỖI, KHÔNG PHẢI MỘT TỐI ƯU. `trong_tai` cân cuộc
-        #    tranh giữa **ComfyUI và LTT-3.8** trên card 24 GB, còn `don_dep` bảo
-        #    **ComfyUI** nhả VRAM. ComfyUI ghim UUID 3090 (`test_1200`), nên cả
-        #    hai chốt đo và tác động lên đúng một card.
+        # 🔴 VÀ ĐÓ LÀ MỘT SỬA LỖI, KHÔNG PHẢI MỘT TỐI ƯU. `trong_tai` nói về cuộc
+        #    tranh trên card 24 GB, nơi ComfyUI ghim UUID 3090 (`test_1200`).
         #
         #    Từ Task 6.1, `render_gateway.busy` lọc mọi số đọc theo **UUID 3090**
         #    — đúng cho `qwen38-*` và **vô nghĩa cho `qwen35-*`**: LTT-3.5 nằm
@@ -814,26 +935,17 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
                 detail={"ly_do": "may B dang ban", "chi_tiet": px.ly_do},
                 headers={"Retry-After": "30"})
 
-        # 🔴 DỌN CARD TRƯỚC KHI NẠP — số đo 22/08 (P6):
-        #      card bẩn (ComfyUI giữ 6.211 MiB) -> 18,2 tok/s
-        #      card sạch (sau /free)            -> 63,3 tok/s
-        #    Chênh 3,5 lần, và llama.cpp **không báo lỗi** — nó tràn trọng số sang
-        #    RAM chủ qua PCIe, `/health` vẫn xanh. Xem `don_dep.py`.
+        # 🔴 VIỆC "DỌN CARD TRƯỚC KHI NẠP" ĐÃ RỜI KHỎI ĐÂY (5.4b) — và nó không
+        #    biến mất, nó **đổi chủ**. Số đo 22/08 vẫn đúng (card bẩn 18,2 tok/s
+        #    vs card sạch 63,3 tok/s, llama.cpp tràn sang RAM chủ mà `/health`
+        #    vẫn xanh), nhưng người dọn nay là **trọng tài residency ở máy A**:
+        #    nó phát `POST /v1/nha_comfy` **dừng hẳn** LTTComfyUI (5.4a — `/free`
+        #    không nhả 223,5 MiB ngữ cảnh CUDA, L-14 §3), đợi VRAM tụt, rồi mới
+        #    phát `POST /v1/residency/nap` xuống dưới đây.
         #
-        # ⛔ Chỉ dọn khi KHÔNG có model nào CỦA TA đang chạy. Nếu có, VRAM cao là
-        #    **của chính ta**, và `llama-swap` tự đổi hồ sơ được — gọi `/free` của
-        #    ComfyUI lúc đó vừa vô ích vừa chặn mất việc đổi model.
-        if (don_dep is not None and card_cua_comfy
-                and not _co_model_cua_ta_dang_chay()):
-            kq = don_dep.bao_dam_sach()
-            if not kq.sach:
-                dem.cong("ban_card")
-                raise HTTPException(
-                    status_code=429,
-                    detail={"ly_do": "card chua san sang de nap model",
-                            "chi_tiet": kq.ly_do,
-                            "vram_dung_mb": kq.vram_cuoi_mb},
-                    headers={"Retry-After": "60"})
+        # ⛔ Để lại một lối dọn thứ hai ở đường nóng là dựng lại đúng cặp trọng
+        #    tài mà D01 B vừa gỡ: hai chỗ cùng quyết về một card, không khoá
+        #    chung, và cái chạy sau sẽ phá việc của cái chạy trước.
 
         duong = DUONG[giao_thuc]
         log.info("%s model=%s token_vao~%d anh=%d", duong, ten, do.token_vao, do.so_anh)

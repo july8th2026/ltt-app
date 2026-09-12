@@ -93,18 +93,7 @@ def test_khong_doc_duoc_so_python_thi_giu_hanh_vi_cu():
     assert st.busy is True
 
 
-# ── Hằng số dùng chung: một nguồn, không phải hai ──────────────────────────
-
-def test_hai_cong_doc_CUNG_MOT_nguong_tai_gpu():
-    """⛔ Một hằng số ở hai nơi là một hằng số sẽ lệch.
-
-    Cổng ảnh dùng ngưỡng này để **không đuổi** một hộ đang tính; cổng LLM dùng nó
-    để **không nạp đè** lên một lượt vẽ. Hai câu hỏi ngược chiều, cùng một ngưỡng.
-    """
-    from llm_gateway import trong_tai
-
-    assert trong_tai.TAI_GPU_DANG_TINH is B.TAI_GPU_DANG_TINH
-
+# ── Hằng số dùng chung ──────────────────────────────────────────────────────
 
 @pytest.mark.parametrize("ten", ["TRAN_PYTHON_GPU", "TAI_GPU_DANG_TINH"])
 def test_hang_so_co_ten_chu_khong_go_thang(ten):
@@ -112,60 +101,20 @@ def test_hang_so_co_ten_chu_khong_go_thang(ten):
     assert isinstance(getattr(B, ten), int)
 
 
-# ── Chiều LLM: model ta đã nạp KHÔNG cho phép nạp đè lên một lượt vẽ ────────
-
-def _trong_tai(*, so_python, tai, model_cua_ta, comfy_ve):
-    from llm_gateway.trong_tai import TrongTai
-
-    return TrongTai(ram_trong_toi_thieu_gb=0.0,
-                    dem_python_gpu=lambda: so_python,
-                    tai_gpu=lambda: tai,
-                    ram_trong_gb=lambda: 100.0,
-                    model_cua_ta_dang_chay=lambda: model_cua_ta,
-                    ho_kia_dang_ve=lambda: comfy_ve)
-
-
-def test_tai_cao_cua_CHINH_TA_thi_khong_tu_choi():
-    """Giữ nguyên bản sửa 31/08: 70 % lượt từng bị từ chối oan vì tải của ta."""
-    px = _trong_tai(so_python=1, tai=95, model_cua_ta=True, comfy_ve=False).phan_xu()
-    assert px.ban is False, px.ly_do
-
-
-def test_model_ta_da_nap_MA_ComfyUI_DANG_VE_thi_van_ban():
-    """🔴 Lỗ hổng đo được 04/09, và chính chú thích nhánh kia đã báo trước.
-
-    `qwen38-api state=ready` + ComfyUI `queue_running=1` ⇒ card **24.178/24.576
-    MiB, tải 86 %**: hai model vừa cùng thường trú vừa cùng làm việc. Và tiền đề
-    của đánh đổi đã hỏng — VRAM của ta lúc ấy chỉ **13,3 GB** thay vì 22,4 GB,
-    tức đã tràn sang RAM chủ.
-
-    ⭐ Thứ sửa được không phải một ngưỡng tải khác mà một **nguồn tin khác**:
-       mức tải là suy đoán, hàng đợi là sự thật.
-    """
-    px = _trong_tai(so_python=1, tai=86, model_cua_ta=True, comfy_ve=True).phan_xu()
-    assert px.ban is True
-    assert "ComfyUI dang ve that" in px.ly_do
-
-
-def test_hoi_hang_doi_hong_thi_GIU_HANH_VI_CU():
-    """⛔ Một nguồn tin mới hỏng không được làm cổng CHẶT HƠN trước.
-
-    Đó là cách một cải tiến biến thành một sự cố: thêm một phép hỏi, phép hỏi
-    trục trặc, và cả cổng đóng lại vì một thứ trước đây nó không cần biết.
-    """
-    from llm_gateway.trong_tai import TrongTai
-
-    def no():
-        raise RuntimeError("ComfyUI im")
-
-    px = TrongTai(ram_trong_toi_thieu_gb=0.0, dem_python_gpu=lambda: 1,
-                  tai_gpu=lambda: 95, ram_trong_gb=lambda: 100.0,
-                  model_cua_ta_dang_chay=lambda: True,
-                  ho_kia_dang_ve=no).phan_xu()
-    assert px.ban is False, "hoi hang doi hong ma lai chan — chat hon truoc"
-
-
-def test_model_ta_CHUA_nap_thi_ComfyUI_ve_van_ban_nhu_cu():
-    px = _trong_tai(so_python=1, tai=95, model_cua_ta=False, comfy_ve=True).phan_xu()
-    assert px.ban is True
-    assert "nap model bay gio se de len nhau" in px.ly_do
+# ── Chiều LLM: ĐÃ GỠ CẢ NỬA NÀY (dual-model 5.4b, 12/09/2026) ───────────────
+#
+# 🔴 Bốn phép kiểm dưới đây đo nhánh *"1 python + tải cao"* của
+#    `llm_gateway/trong_tai.py`: nó hỏi `utilization.gpu` rồi hỏi hàng đợi ComfyUI
+#    để tự phân xử cuộc tranh 3090. Nhánh ấy là một **trọng tài thứ hai**, và
+#    D01 B thay hai trọng tài bằng một (ở máy A). Cùng lượt ấy, `TAI_GPU_DANG_TINH`
+#    không còn được `llm_gateway` nhập nữa — nên phép kiểm "hai cổng đọc CÙNG MỘT
+#    ngưỡng" cũng đi: chỉ còn **một** cổng đọc nó.
+#
+# ⭐ Không phép đo nào mất mà không có người thừa kế:
+#      · "tải cao của CHÍNH TA không được coi là bận" — nay đúng theo **cấu trúc**:
+#        không còn dòng nào đọc mức tải, nên không còn chỗ để đọc nhầm. Chốt tĩnh
+#        ở `tests/test_1218_gateway_residency.py`.
+#      · "không nạp đè lên một lượt vẽ" — nay là luật của máy A: `buoc_thuan` chỉ
+#        phát `nap_llm` khi `vram_3090_mib <= vram_sach_mib` và không có lease ảnh
+#        (`tests/test_1216_residency_thuan.py`), cộng chốt VRAM ở chính máy B
+#        (`POST /v1/residency/nap` ⇒ 409, `test_1218`).

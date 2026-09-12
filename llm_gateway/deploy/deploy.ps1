@@ -312,7 +312,6 @@ if (($co -join "") -match "CO") {
         "LTT_LLM_PORT=8299",
         "LTT_LLM_TOKEN=$token",
         "LTT_LLM_UPSTREAM_URL=http://127.0.0.1:8280",
-        "LTT_LLM_COMFY_URL=http://127.0.0.1:8188",
         "# Fail-closed (Q92): rong = KHONG mo model nao. Mo bang cach liet ke ten.",
         "LTT_LLM_MODELS=",
         "# Tran do duoc o P5 (SO_DO_P2_P6.md). Doi thi phai do lai.",

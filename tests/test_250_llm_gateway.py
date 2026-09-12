@@ -144,7 +144,7 @@ class FakeUpstream:
 
 def _cfg(**ghi_de) -> Config:
     mac_dinh = dict(
-        comfy_url="http://127.0.0.1:8188", vram_sach_mb=2500, don_dep_bat=False,
+        vram_sach_mb=2500,
         upstream_url="http://127.0.0.1:8280",
         host="127.0.0.1", port=8299, token="",
         # 12/09: hai ho so THAT cua may B (Dual-model 4.2). `qwen38-vision`
@@ -570,21 +570,14 @@ def test_health_bao_ban_khi_ban():
 def test_mot_python_la_ComfyUI_thuong_tru_KHONG_phai_ban():
     """🔴 Ban dau toi dat nguong > 0. Tren may B ComfyUI LUON chay, nen cong se
     tra 429 VINH VIEN va model nha khong bao gio phuc vu duoc luot nao."""
-    # ⛔ `tai_gpu` PHAI duoc tiem, va day la cho DUY NHAT trong tep can no.
-    #
-    #    Voi `dem_python_gpu = 1`, trong tai khong ket luan ngay — no hoi tiep
-    #    TAI GPU de phan biet "ComfyUI thuong tru (ranh)" voi "ComfyUI dang ve".
-    #    Cac phep kiem khac dung 0 / 2 / None nen re nhanh TRUOC buoc do.
-    #
-    # 🔴 Thieu no thi phep kiem doc `nvidia-smi` cua MAY THAT. Do 26/08: GPU 0
-    #    dang o **100 %**, ma `TAI_GPU_DANG_TINH = 50`, nen trong tai bao ban va
-    #    phep kiem do — khong phai vi logic sai ma vi may dang ban.
-    #
-    # ⭐ Cung lop loi voi `test_193` (han muc nhip phu thuoc toc do may): mot phep
-    #    kiem doc trang thai may KHONG do thu no noi la dang do. No do cai may.
+    # ⭐ KHONG con phai tiem `tai_gpu` (Dual-model 5.4b). Bản cũ phải tiêm vì với
+    #    `dem_python_gpu = 1` trọng tài hỏi tiếp TẢI GPU để đoán "ComfyUI thường
+    #    trú" hay "ComfyUI đang vẽ" — và thiếu mũi tiêm thì phép kiểm đọc
+    #    `nvidia-smi` của MÁY THẬT rồi đỏ vì máy đang bận, không vì logic sai.
+    #    Nhánh đoán ấy đã bị gỡ cùng cặp trọng tài cũ (D01 B), nên phép kiểm này
+    #    nay không còn chạm phần cứng nào.
     tt = TrongTai(ram_trong_toi_thieu_gb=48.0, bat=True,
-                  dem_python_gpu=lambda: 1, ram_trong_gb=lambda: 100.0,
-                  tai_gpu=lambda: 0)
+                  dem_python_gpu=lambda: 1, ram_trong_gb=lambda: 100.0)
     c, _ = _client(tt=tt)
     r = c.post("/v1/chat/completions", json={"model": "qwen38-api", "messages": []})
     assert r.status_code == 200, "1 python = ComfyUI thuong tru = van phuc vu duoc"

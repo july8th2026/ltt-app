@@ -503,24 +503,12 @@ def test_3090_ban_thi_35_VAN_phuc_vu():
         "3090 ban ma luot 3.5 tren 5060 Ti bi tu choi — hai card thanh mot")
 
 
-def test_don_card_KHONG_chay_cho_luot_35():
-    """`don_dep` bảo **ComfyUI** nhả VRAM, và ComfyUI ghim UUID 3090
-    (`test_1200`). Gọi nó để nạp một model **không dùng card của ComfyUI** vừa vô
-    ích vừa làm hàng xóm nạp lại model giữa chừng."""
-    from fastapi.testclient import TestClient
-
-    from llm_gateway.api import create_app
-    from tests.test_250_llm_gateway import FakeUpstream, _cfg, _tt_ranh
-    from tests.test_254_don_dep_gpu import _don
-
-    d, goi = _don([19_973, 19_973], so_lan_thu=1)
-    c = TestClient(create_app(_cfg(models_mo=(M38, M35)), FakeUpstream(),
-                              trong_tai=_tt_ranh(), don_dep=d))
-    r = c.post("/v1/chat/completions",
-               json={"model": M35, "messages": [{"role": "user", "content": "hi"}]})
-    assert r.status_code == 200, r.text
-    assert goi["doc"] == 0 and goi["nha"] == 0, (
-        "da di don card 3090 cho mot luot chay tren 5060 Ti")
+# ⛔ `test_don_card_KHONG_chay_cho_luot_35` ĐÃ ĐI CÙNG `don_dep.py` (5.4b).
+#    Nó chốt rằng việc "dọn card 3090" không chạy cho một lượt trên 5060 Ti. Từ
+#    D01 B **không còn** việc dọn nào ở cổng này cho bất kỳ lượt nào: quyền ấy về
+#    trọng tài residency ở máy A. Vế còn sống của cùng ý — lượt 3.5 không bị chốt
+#    của 3090 chặn — nằm ngay ở phép kiểm trên (`_tt_ban()` ⇒ 3.8 bị 429, 3.5 vẫn
+#    200), nên không có phép đo nào mất đi.
 
 
 # ── 8. `X-Conversation-Id` KHÔNG được lên thượng nguồn ──────────────────────

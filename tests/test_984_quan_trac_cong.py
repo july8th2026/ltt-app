@@ -55,7 +55,7 @@ def _cfg(**doi) -> Config:
         models_mo=("qwen38-api",), max_input_tokens=1000, max_output_tokens=100,
         max_images=1, max_image_bytes=1024, upstream_timeout_s=1.0,
         stream_timeout_s=1.0, ram_trong_toi_thieu_gb=1.0, trong_tai_bat=False,
-        comfy_url="http://127.0.0.1:8188", vram_sach_mb=1, don_dep_bat=False,
+        vram_sach_mb=1,
         max_dong_thoi=1, rpm=0, nhip_tim_giay=0.0)
     goc.update(doi)
     return Config(**goc)

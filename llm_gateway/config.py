@@ -93,16 +93,22 @@ class Config:
     #: Bật trọng tài. Tắt (0) chỉ dùng khi test trên máy không có GPU.
     trong_tai_bat: bool
 
-    # ── Dọn card trước khi nạp (P6 — đo thật 22/08) ──────────────────────────
-    #: ComfyUI giữ model thường trú **kể cả sau khi render xong**. Nạp model lên
-    #: một card còn 6,2 GB bị chiếm ⇒ trọng số tràn sang RAM chủ qua PCIe ⇒
-    #: **18,2 tok/s thay vì 63,3**, và KHÔNG có lỗi nào được báo.
-    comfy_url: str
+    # ── Ngưỡng "card đã sạch" cho lệnh residency (5.4b) ──────────────────────
+    #: VRAM đang dùng trên 3090 phải **xuống dưới** mức này thì `POST
+    #: /v1/residency/nap` mới nạp; trên nó ⇒ 409 kèm số đo.
+    #:
     #: Nền đo được: desktop 1.515–1.612 MiB · ComfyUI thường trú 6.211–16.620 MiB.
     #: 2.500 nằm gọn giữa hai vùng.
+    #:
+    #: ⛔ MỘT NGƯỠNG, HAI ĐẦU DÂY. Máy A khai cùng con số ở
+    #:    `platform_core/llm/residency.ThamSoResidency.vram_sach_mib`, và
+    #:    `tests/test_1218_gateway_residency.py` chốt hai bên bằng nhau: lệch
+    #:    nhau thì máy A phát lệnh nạp mà máy B từ chối, mãi mãi, im lặng.
+    #:
+    #: ⚠️ `comfy_url`/`don_dep_bat` ĐÃ ĐI CÙNG `don_dep.py` (5.4b): cổng LLM
+    #:    không còn đường nào chạm ComfyUI — việc ấy là của trọng tài residency ở
+    #:    máy A qua `POST /v1/nha_comfy` của cổng render (D01 B, TD-D10).
     vram_sach_mb: int
-    #: Bật việc dọn. Tắt (0) khi test hoặc khi máy không chạy ComfyUI.
-    don_dep_bat: bool
 
     # ── Hàng rào của riêng cổng (V9) ─────────────────────────────────────────
     #: Số lượt được chạy CÙNG LÚC. `llama-server` chạy `--parallel 1`, nên nhiều
@@ -181,10 +187,11 @@ class Config:
     #:    điều khiển máy B trực tiếp. Thấy `ban_vram` tăng mà card vẫn rảnh thì đó
     #:    là chỗ phải đo, không phải chỗ để tự hạ sàn.
     #:
-    #: ⛔ `qwen38-api` KHÔNG có sàn ở đây. Không phải bỏ quên: 3090 đã có
-    #:    `don_dep` (ngưỡng `vram_sach_mb`) và trọng tài ComfyUI lo đúng việc đó.
-    #:    Thêm một cái sàn thứ ba cho cùng một card là ba chốt nói ba thứ khác
-    #:    nhau về một trạng thái.
+    #: ⛔ `qwen38-api` KHÔNG có sàn ở đây. Không phải bỏ quên: cuộc tranh trên
+    #:    3090 do **trọng tài residency ở máy A** phân xử (D01 B), và chốt VRAM
+    #:    của nó là `vram_sach_mb` ở trên, áp một lần tại `POST
+    #:    /v1/residency/nap`. Thêm một cái sàn thứ hai cho cùng một card là hai
+    #:    chốt nói hai thứ khác nhau về một trạng thái.
     vram_trong_toi_thieu_mb: dict = field(default_factory=dict)
 
     @staticmethod
@@ -222,10 +229,7 @@ class Config:
             stream_timeout_s=_float("LTT_LLM_STREAM_TIMEOUT_S", 900.0),
             ram_trong_toi_thieu_gb=_float("LTT_LLM_RAM_TRONG_GB", 48.0),
             trong_tai_bat=(os.environ.get("LTT_LLM_TRONG_TAI") or "1").strip() != "0",
-            comfy_url=(os.environ.get("LTT_LLM_COMFY_URL")
-                       or "http://127.0.0.1:8188").rstrip("/"),
             vram_sach_mb=_int("LTT_LLM_VRAM_SACH_MB", 2500),
-            don_dep_bat=(os.environ.get("LTT_LLM_DON_DEP") or "1").strip() != "0",
             # 📈 12/09: 1 -> 3, khop `ngan_sach.SO_SLOT_MAY_B` (L-14 §G1b).
             #    ⛔ `deploy.ps1` VAN ghim 1 vao gateway.env cho toi Task 4.1, va
             #       do la co y: llama-swap con chay `--parallel 1` cho toi khi

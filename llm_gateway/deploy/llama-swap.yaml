@@ -110,11 +110,13 @@
 #      L-14 (he qua 3) day la RANG BUOC CUNG cua P5, khong phai mot toi uu tuy
 #      chon: trong tai residency (Task 5.4) phai DUNG HAN dich vu LTTComfyUI
 #      trong cua so LLM, khong chi goi `/free`.
-#      Tang tren van giu `llm_gateway/don_dep.py`: goi `/free` roi cho
-#      `nvidia-smi` xac nhan VRAM <= 2.500 MiB TRUOC khi de yeu cau di tiep;
-#      chua sach thi cong tra 429, KHONG nap de. Khong lam bang wrapper .cmd o
-#      day - llama-swap quan ly tien trinh no sinh ra, boc them mot lop la moi
-#      mo coi tien trinh.
+#      Tang tren: tu Task 5.4b `llm_gateway/don_dep.py` DA BI XOA - cong LLM
+#      khong con tu don card nua. Trong tai residency o may A phat
+#      `POST /v1/nha_comfy` (dung han LTTComfyUI, 5.4a) roi
+#      `POST /v1/residency/nap`, va chinh lenh `nap` doi `nvidia-smi` xac nhan
+#      VRAM 3090 <= `LTT_LLM_VRAM_SACH_MB` truoc khi nap; chua sach thi 409 kem
+#      so do. Khong lam bang wrapper .cmd o day - llama-swap quan ly tien trinh
+#      no sinh ra, boc them mot lop la moi mo coi tien trinh.
 #
 #   !  Va tu nay chuyen nay CHI con dung cho card 3090. 5060 Ti khong nuoi
 #      ComfyUI (D-09a), nen `qwen35-api` khong co doi thu tren card cua no.
