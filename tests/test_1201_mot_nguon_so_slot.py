@@ -11,7 +11,6 @@ from __future__ import annotations
 import pathlib
 import re
 
-import pytest
 import yaml
 
 from apps.ltt_llm import ngan_sach
@@ -52,28 +51,47 @@ def test_manifest_khong_go_so_tay():
     assert not re.search(r"admission_token_pool\s*=\s*\d", van)
 
 
-@pytest.mark.xfail(strict=True, reason="cho Task 3.3")
-def test_yaml_parallel_khop_so_slot():
-    """⛔ `xfail(strict=True)` CHO TASK 3.3 — không phải một phép kiểm bị tắt.
+def test_yaml_so_slot_cua_TUNG_ho_so_khop_so_slot():
+    """🔵 `xfail(strict=True, reason="cho Task 3.3")` đã gỡ ngày 12/09.
 
-    Dual-model 2.6 đưa `SO_SLOT_MAY_B` lên **3** (L-14 §G1b: 4 slot ở ngữ cảnh
-    đã chốt tràn ~400 MiB sang RAM chủ). `llama-swap.yaml` là **tệp của máy B**
-    và Task 3.3 mới viết lại nó, nên trong đúng cửa sổ thời gian này hai bên
-    lệch **có chủ ý**. `strict=True` ⇒ ngày yaml đúng thì XPASS ⇒ ĐỎ ⇒ người làm
-    3.3 buộc phải gỡ dấu.
+    Task 3.3 viết lại `llama-swap.yaml` với `-np 3` cho **cả hai** hồ sơ, khớp
+    `SO_SLOT_MAY_B = 3` (L-14, `10_BENCHMARK_P3.md` §G1b: 4 slot ở ngữ cảnh đã
+    chốt tràn ~400 MiB sang RAM chủ trên 3090).
 
-    ⚠️ HỆ QUẢ TRIỂN KHAI, và nó không nằm trong tệp này: máy A từ nay nhận **3**
-       lượt đồng thời cho mỗi model trong khi llama-server bên B còn
-       `--parallel 1`. Các commit Pha 2 **chưa deploy**; đừng deploy máy A trước
-       khi Task 3.3 deploy yaml.
+    ⚠️ VÀ HÌNH DẠNG CỦA PHÉP ĐO ĐỔI, nên phép kiểm phải đổi theo. Bản cũ đọc
+       `--parallel` trong **macro `CHUNG`** — một con số dùng chung cho mọi hồ sơ.
+       Từ 3.3 con số ấy **không còn dùng chung được**: hai model nằm trên hai card
+       kích thước khác nhau (24.576 so với 16.311 MiB), nên số slot là thuộc tính
+       của TỪNG hồ sơ. Đọc macro sau 3.3 sẽ ném `ValueError` — và đỏ vì một lý do
+       **sai**: nó đang tìm một chỗ không còn mang câu trả lời.
+
+    ⭐ Điều nó đo vẫn nguyên và nay **mạnh hơn**: mọi hồ sơ phải khai đúng số
+       slot của nguồn chân lý, chứ không chỉ một con số chung. Và macro **không
+       được** khai lại một số slot toàn cục: một con số ở đó sẽ âm thầm áp cho hồ
+       sơ tiếp theo ai đó thêm vào, kể cả khi card của nó không chịu nổi.
     """
     cfg = yaml.safe_load((GOC / "llm_gateway" / "deploy" / "llama-swap.yaml")
                          .read_text(encoding="utf-8"))
-    chung = str(cfg["macros"]["CHUNG"]).split()
-    i = chung.index("--parallel")
-    assert int(chung[i + 1]) == ngan_sach.SO_SLOT_MAY_B, (
-        f"llama-swap chay --parallel {chung[i + 1]} nhung ngan_sach khai "
-        f"{ngan_sach.SO_SLOT_MAY_B}")
+    macros = cfg.get("macros") or {}
+    for ten, mo_ta in macros.items():
+        tach = str(mo_ta).split()
+        assert "-np" not in tach and "--parallel" not in tach, (
+            f"macro {ten} khai lai so slot toan cuc: hai card khac kich thuoc "
+            "nen so nay phai nam o TUNG ho so")
+
+    ho_so = cfg.get("models") or {}
+    assert ho_so, "llama-swap.yaml khong co ho so nao"
+    for ten, m in ho_so.items():
+        cmd = str(m["cmd"])
+        for khoa, gt in macros.items():
+            cmd = cmd.replace("${%s}" % khoa, str(gt))
+        tach = cmd.split()
+        co = "-np" if "-np" in tach else "--parallel"
+        assert co in tach, f"{ten} khong khai so slot (`-np`)"
+        so = tach[tach.index(co) + 1]
+        assert int(so) == ngan_sach.SO_SLOT_MAY_B, (
+            f"llama-swap chay {ten} voi {co} {so} nhung ngan_sach khai "
+            f"{ngan_sach.SO_SLOT_MAY_B}")
 
 
 def test_gateway_mac_dinh_khop_so_slot():

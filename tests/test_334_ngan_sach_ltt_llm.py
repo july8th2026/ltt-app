@@ -358,7 +358,6 @@ class TestBanSaoConLai:
                 f"deploy.ps1 se ghi tran ra {gt} len may B, nhung nguon chan ly "
                 f"la {ngan_sach.TOKEN_RA_TRAN}")
 
-    @pytest.mark.xfail(strict=True, reason="cho Task 3.3")
     def test_llama_swap_yaml_khop_cua_so_cua_TUNG_ho_so(self):
         """Tệp thật sự quyết định `-c` của mỗi hồ sơ trên máy B.
 
@@ -366,13 +365,11 @@ class TestBanSaoConLai:
         tiến trình**. Hai tệp lệch nhau thì `/v1/models` nói một đằng và model
         chạy một nẻo — và bên sai là bên ta tin.
 
-        ⛔ `xfail(strict=True)` CHO TASK 3.3, KHÔNG PHẢI MỘT PHÉP KIỂM BỊ TẮT.
-           Dual-model 2.6 đặt số đo (`-c 221184` cho `qwen38-api`, hồ sơ
-           `qwen35-api` mới) vào nguồn chân lý; `llama-swap.yaml` là **tệp của
-           máy B** và Task 3.3 mới viết lại nó. `strict=True` nghĩa là ngày yaml
-           đúng thì phép kiểm này **XPASS ⇒ ĐỎ**, buộc người làm 3.3 gỡ dấu —
-           tức nó vẫn cưỡng chế được điều nó sinh ra để cưỡng chế, chỉ đổi chiều
-           trong đúng một cửa sổ thời gian.
+        🔵 `xfail(strict=True, reason="cho Task 3.3")` đã được **gỡ** ngày
+           12/09: Task 3.3 viết lại `llama-swap.yaml` với `-c 221184` cho
+           `qwen38-api` và hồ sơ `qwen35-api` mới `-c 262144`, nên cửa sổ thời
+           gian "hai bên lệch có chủ ý" đóng lại. Phép kiểm nay **sống**, và nó
+           đo đúng điều nó sinh ra để đo.
         """
         import pathlib
         import re
@@ -415,20 +412,63 @@ class TestBanSaoConLai:
         assert set(ngan_sach.CUA_SO_THEO_MODEL) == {"qwen38-api", "qwen35-api"}, (
             f"nguon chan ly dang khai {sorted(ngan_sach.CUA_SO_THEO_MODEL)}")
 
-    @pytest.mark.xfail(strict=True, reason="cho Task 3.3")
-    def test_ho_so_vision_da_bien_mat_khoi_may_B(self):
-        """Hồ sơ `qwen38-vision` phải biến mất khỏi **tệp của máy B** nữa.
+    def test_ho_so_vision_da_bien_mat_khoi_llama_swap_yaml(self):
+        """Hồ sơ `qwen38-vision` phải biến mất khỏi **tệp khởi động tiến trình**.
 
-        ⛔ `xfail(strict=True)` cho Task 3.3, cùng lý do với phép kiểm yaml ở
-           trên: `catalog.py`/`llama-swap.yaml` còn liệt kê hồ sơ cũ cho tới khi
-           3.3 viết lại chúng. Ngày nó biến mất ⇒ XPASS ⇒ đỏ ⇒ gỡ dấu.
+        🔵 `xfail(strict=True, reason="cho Task 3.3")` đã gỡ ngày 12/09 — Task
+           3.3 viết lại yaml với đúng hai hồ sơ.
+
+        ⚠️ VÀ PHÉP KIỂM ĐỔI TỪ QUÉT CHUỖI SANG ĐỌC HỒ SƠ. Bản cũ khẳng định
+           `"qwen38-vision" not in van` trên **văn bản thô** của cả hai tệp.
+           `llama-swap.yaml` nay có một khối *đính chính* giải thích hồ sơ vision
+           biến mất vì đâu (và nó là bằng chứng đo được, không phải lời kể), nên
+           một phép quét chuỗi sẽ **trừng phạt việc giải thích**: nó ép người sau
+           xoá lịch sử để làm cho phép kiểm xanh.
+
+        ⭐ Điều nó ĐO vẫn nguyên, chỉ đúng hơn: hỏi `yaml.safe_load` — tức hỏi
+           đúng thứ llama-swap đọc — xem có bao nhiêu hồ sơ và là những hồ sơ nào.
+        """
+        import pathlib
+
+        import yaml as _yaml
+        goc = pathlib.Path(__file__).resolve().parents[1]
+        cfg = _yaml.safe_load(
+            (goc / "llm_gateway" / "deploy" / "llama-swap.yaml")
+            .read_text(encoding="utf-8"))
+        ho_so = set(cfg.get("models") or {})
+        assert ho_so == set(ngan_sach.CUA_SO_THEO_MODEL), (
+            f"llama-swap.yaml mo cac ho so {sorted(ho_so)}, nguon chan ly khai "
+            f"{sorted(ngan_sach.CUA_SO_THEO_MODEL)}")
+        assert not [t for t in ho_so if "vision" in t], (
+            "con mot ho so vision rieng trong llama-swap.yaml")
+
+    @pytest.mark.xfail(strict=True, reason="cho Task 4.2 (catalog.py theo model)")
+    def test_ho_so_vision_da_bien_mat_khoi_catalog_cong_B(self):
+        """`llm_gateway/catalog.py` vẫn còn `ModelSpec(ten="qwen38-vision")`.
+
+        ⛔ `xfail(strict=True)` CHO TASK 4.2, KHÔNG PHẢI MỘT PHÉP KIỂM BỊ TẮT —
+           và **không phải** một phép kiểm bị thu hẹp cho tới khi nó xanh. Task
+           3.3 chỉ sở hữu `llama-swap.yaml`; `catalog.py` là bản **công bố** của
+           cổng máy B và nó còn phục vụ hồ sơ vision ở hàng chục nhánh của
+           `test_250`. Gỡ nó ở đây là làm một nửa việc của 4.2 trong một commit
+           không ai rà.
+
+        ⚠️ HỆ QUẢ ĐANG SỐNG, và nó phải được nói ra chứ không giấu trong một dấu
+           `xfail`: từ khi 3.3 deploy yaml, `catalog.py` công bố một model mà
+           llama-swap **không còn hồ sơ nào** khởi động nổi. Khách gọi
+           `qwen38-vision` sẽ bị llama-swap từ chối, không phải được phục vụ ở
+           131K. Hàng rào chặn thiệt hại là `LTT_LLM_MODELS` (fail-closed, Q92):
+           tên nào không nằm trong đó thì không mở. ⇒ Task 4.2 phải gỡ hồ sơ khỏi
+           `catalog.py` **và** `LTT_LLM_MODELS` của máy B trong cùng một lượt.
+
+        `strict=True` ⇒ ngày `catalog.py` sạch thì đây là XPASS ⇒ ĐỎ ⇒ người làm
+        4.2 buộc phải gỡ dấu.
         """
         import pathlib
         goc = pathlib.Path(__file__).resolve().parents[1]
-        for tep in ("llm_gateway/catalog.py",
-                    "llm_gateway/deploy/llama-swap.yaml"):
-            van = (goc / tep).read_text(encoding="utf-8")
-            assert "qwen38-vision" not in van, f"{tep} con ho so qwen38-vision"
+        van = (goc / "llm_gateway" / "catalog.py").read_text(encoding="utf-8")
+        assert 'ten="qwen38-vision"' not in van, (
+            "catalog.py con khai ModelSpec cho qwen38-vision")
 
     def test_MOI_alias_tu_khai_context_window(self):
         """🔴 BÁNH CÓC CHO P08 F-03 — cấm rơi về hằng số lùi.
