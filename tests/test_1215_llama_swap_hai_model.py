@@ -203,19 +203,79 @@ def test_preload_liet_ke_CA_HAI_ho_so(cfg):
         f"preload dang la {preload}; phai co ca hai ho so")
 
 
-def test_ttl_0_nghia_la_khong_tu_nha(cfg):
-    """`ttl: 0` = TẮT đồng hồ nhả (không phải "nhả ngay").
+#: Đồng hồ nhả, giây. Chủ sản phẩm chốt 13/09/2026: *"cơ chế nhả model sau 30p
+#: không hoạt động vẫn giữ, nó sẽ nhả lại về RAM"*.
+TTL_NHA_GIAY = 1800
 
-    ⚠️ Đây là **giả định** của một kết luận ở tệp khác: G5 nói *"trường hợp nạp
-       lạnh gần như không xảy ra"* chính vì hồ sơ đặt `ttl: 0` + preload. Đổi nó
-       thì phải đổi cả kết luận kia.
+
+def test_moi_ho_so_deu_TU_NHA_sau_30_phut(cfg):
+    """🔴 ĐỔI 13/09/2026: `ttl: 0` → `ttl: 1800`, và lý do là một SỰ CỐ THẬT.
+
+    Bản trước ghim `ttl == 0` (tắt đồng hồ nhả) với lập luận: *"một khách phải
+    chờ 15 giây chỉ vì họ là người đầu tiên gọi sau một khoảng lặng là một lần
+    hỏng TRÁNH ĐƯỢC"*. Lập luận ấy đúng — nhưng nó chỉ cân một phía.
+
+    Phía kia đo được ngày 13/09, khi `qwen35-api` **ngừng phục vụ hoàn toàn**:
+
+        VRAM trong 536 MiB < san 600 MiB cua card chay qwen35-api
+        => cong tu choi moi luot moi; `ltt-3.5` tra 503 ba lan lien tiep
+
+    5060 Ti nuôi cả desktop Windows (L-12 dồn đồ hoạ sang đó để 3090 chỉ chạy
+    AI), và biên 1.002 MiB sau MTP không đủ cho desktop + mmproj cùng lúc. Với
+    `ttl: 0` model **không bao giờ** nhả, nên card không có đường tự thoát.
+
+    ⇒ `ttl: 0` đổi *"không ai phải chờ 15 giây"* lấy *"card không bao giờ hồi
+      phục được"*. 15 giây là một lần chờ; card kẹt là **mất hẳn một model** cho
+      tới khi có người vào tay.
+
+    📏 Giá thật của mỗi lần nhả, đo 13/09 bằng đồng hồ (không lấy từ G5):
+
+        qwen35-api  nạp ấm 12,76 s - đã sẵn 2,23 s = ~10,5 s
+        qwen38-api  nạp ấm 20,35 s - đã sẵn 0,97 s = ~19,4 s
+
+    ⭐ `preload` **vẫn giữ** — hai cờ trả lời hai câu khác nhau: `preload` lo lúc
+       khởi động dịch vụ, `ttl` lo sau một khoảng rảnh. Xem
+       `test_preload_liet_ke_CA_HAI_ho_so`.
     """
     for ten in VAI_CUA_HO_SO:
-        assert cfg["models"][ten]["ttl"] == 0, (
-            f"{ten} co ttl={cfg['models'][ten]['ttl']}; thuong tru can ttl: 0")
+        ttl = cfg["models"][ten]["ttl"]
+        assert isinstance(ttl, int), (
+            f"{ten}: ttl={ttl!r} không phải số nguyên — nếu nó là chuỗi "
+            f"'${{...}}' thì macro đã KHÔNG được thay, và llama-swap sẽ đọc "
+            f"một giá trị vô nghĩa. Dùng YAML anchor (`&ttl_nha` / `*ttl_nha`), "
+            f"thứ YAML giải trước khi engine nhìn thấy.")
+        assert ttl == TTL_NHA_GIAY, (
+            f"{ten} có ttl={ttl}; chính sách là {TTL_NHA_GIAY}s (30 phút)")
         assert cfg["models"][ten]["unloadTimeout"] >= 1, (
             f"{ten} thieu unloadTimeout: nha PHAI co han, mot tien trinh khong "
             "chiu chet la card khong bao gio ve cho trong tai residency")
+
+
+def test_ttl_la_MOT_nguon_cho_moi_ho_so(cfg):
+    """⛔ ĐỐI CHỨNG: mọi hồ sơ phải mang **cùng một** giá trị, và nó phải tới từ
+    một chỗ.
+
+    Ngày 12/09 hai hồ sơ mang `ttl: 0` gõ tay ở hai dòng khác nhau. Một chính
+    sách gõ tay ở N chỗ là một chính sách sẽ lệch ở lần sửa thứ N+1 — và chiều
+    lệch nguy hiểm là chiều **quên**: hồ sơ bị quên giữ `ttl: 0`, tức đúng cái
+    hỏng vừa sửa quay lại ở một model duy nhất, lặng lẽ.
+
+    Phép kiểm này bất biến với **số lượng** hồ sơ: thêm model thứ ba, thứ tư thì
+    nó vẫn đúng mà không phải sửa một dòng nào.
+    """
+    ttl = {ten: ho["ttl"] for ten, ho in cfg["models"].items()}
+    assert len(set(ttl.values())) == 1, (
+        f"các hồ sơ khai ttl khác nhau: {ttl}. Dùng YAML anchor để một chỗ "
+        f"định nghĩa, các chỗ sau tham chiếu.")
+    assert set(ttl.values()) == {TTL_NHA_GIAY}, ttl
+
+    # Và anchor phải THẬT SỰ có trong văn bản — một phép kiểm chỉ đọc giá trị
+    # sau khi YAML giải thì không phân biệt được "một nguồn" với "hai chỗ gõ
+    # trùng nhau", mà chính cái thứ hai mới là thứ sẽ lệch.
+    van = YAML.read_text(encoding="utf-8")
+    assert "&ttl_nha" in van and "*ttl_nha" in van, (
+        "không thấy YAML anchor cho ttl: hai hồ sơ đang gõ tay cùng một số, và "
+        "lần sửa sau sẽ lệch")
 
 
 # ── Số suất: llama-swap không được giữ hàng đợi của engine ─────────────────

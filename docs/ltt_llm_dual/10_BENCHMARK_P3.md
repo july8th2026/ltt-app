@@ -616,6 +616,34 @@ con số này là của **máy B**, đừng mang đi nơi khác.
    chỉ tháo/nạp **LTT-3.8** trên 3090, và lần nạp lại luôn cách lần trước vài
    phút — thừa sức còn trong standby cache 24,8 GB.
 
+   > ⚠️ **ĐÍNH CHÍNH 13/09/2026 — vế `ttl: 0` của câu trên đã HẾT ĐÚNG.**
+   >
+   > Hồ sơ nay đặt **`ttl: 1800`** (30 phút), chủ sản phẩm chốt. Lý do không
+   > phải sở thích: `ttl: 0` đã làm `qwen35-api` **ngừng phục vụ hoàn toàn** —
+   > `VRAM trong 536 MiB < san 600 MiB`, cổng từ chối mọi lượt mới, `ltt-3.5`
+   > trả 503. 5060 Ti nuôi cả desktop Windows (L-12), và với `ttl: 0` model
+   > không bao giờ nhả nên card không có đường tự thoát.
+   >
+   > **Kết luận "lạnh gần như không xảy ra" vẫn đứng**, nhưng nay nhờ `preload`
+   > (lo lúc khởi động) chứ không nhờ `ttl: 0`. Cái đổi là: sau **30 phút rảnh**
+   > model *sẽ* nhả, nên lượt kế tiếp trả giá nạp — và đó là giá **ấm**, không
+   > phải lạnh, vì trang GGUF còn ở standby list.
+   >
+   > 📏 Đo lại 13/09 bằng đồng hồ thật (3 lượt/model, `/unload` rồi gọi):
+   >
+   > | model | nạp ấm (tổng) | đã sẵn | **giá nạp** |
+   > |---|---:|---:|---:|
+   > | `qwen35-api` | 12,76 s | 2,23 s | **~10,5 s** |
+   > | `qwen38-api` | 20,35 s | 0,97 s | **~19,4 s** |
+   >
+   > Khớp cỡ với G5 (10,12 / 15,23 s) ⇒ hai phép đo độc lập cùng nói một điều.
+   >
+   > ⛔ Và một khuyết tật của phép đo đầu tiên, giữ lại vì nó suýt lọt:
+   > `llama-swap /unload` nhả **TẤT CẢ** model, không chỉ một. Nên đối chứng
+   > "đã sẵn" chạy sau vòng của model kia thực ra đo một lượt **nạp lại** — nó
+   > ra 15,04 s, *lâu hơn* cả nạp ấm 12,76 s. Chính sự vô lý ấy tố cáo phép đo.
+   > Cách đúng: gọi cùng một model **nhiều lần liên tiếp**, bỏ lượt đầu.
+
 
 ## Phụ lục — Có cần nâng llama.cpp lên bản mới không? **Chưa cần**
 

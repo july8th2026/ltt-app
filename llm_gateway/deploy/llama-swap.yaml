@@ -315,8 +315,20 @@ models:
     env:
       - "CUDA_VISIBLE_DEVICES=GPU-26623278-4fa5-82db-4306-237651b03e78"
     proxy: "http://127.0.0.1:${PORT}"
-    # ttl: 0 = TAT dong ho nha, khong phai "nha ngay". Xem khoi THUONG TRU duoi.
-    ttl: 0
+    # ------------------------------------------------------- dong ho nha
+    # !! MOT nguon cho MOI model, cuong che bang cu phap YAML chu khong bang
+    #    tri nho. `&ttl_nha` dinh nghia o day, `*ttl_nha` dung lai o ho so duoi;
+    #    YAML giai chung TRUOC khi llama-swap nhin thay, nen engine chi thay mot
+    #    so nguyen - khong phu thuoc vao viec macro co duoc thay trong truong so
+    #    hay khong.
+    #
+    # !! KHONG go lai con so nay o ho so khac. Ngay 12/09 ca hai ho so mang
+    #    `ttl: 0` go tay; sua mot cho quen cho kia la mot card khong bao gio nha.
+    #    Model them sau nay chi viec viet `ttl: *ttl_nha`.
+    #
+    # 1800 = 30 phut (chu san pham chot 13/09/2026). Gia moi lan nha, do that
+    # 13/09: qwen35-api ~10,5 s ; qwen38-api ~19,4 s.
+    ttl: &ttl_nha 1800
     concurrencyLimit: 8
     unloadTimeout: 30
 
@@ -354,7 +366,7 @@ models:
     env:
       - "CUDA_VISIBLE_DEVICES=GPU-ebecd0a4-a8a7-14a5-dad1-21565f6dc1df"
     proxy: "http://127.0.0.1:${PORT}"
-    ttl: 0
+    ttl: *ttl_nha
     concurrencyLimit: 8
     unloadTimeout: 30
 
@@ -429,7 +441,45 @@ groups:
     members: ["qwen38-api", "qwen35-api"]
 
 # ==========================================================================
-# THUONG TRU: `ttl: 0` + `preload` ca hai.
+# !! DINH CHINH 13/09/2026 - `ttl: 0` DA GAY MOT SU CO THAT, va no bi THAY.
+#
+#    Chu san pham chot: *"co che nha model sau 30p khong hoat dong van giu, no
+#    se nha lai ve RAM"*. Ho so nay nay dat `ttl: ${TTL_NHA}` = 1800 giay.
+#
+#    Khoi van ban ben duoi giai thich vi sao `ttl: 0` **tung** dung. Giu nguyen
+#    de truy vet - nhung no thieu MOT su that, va su that do da den sau:
+#
+#    !! NGAY 13/09 `qwen35-api` NGUNG PHUC VU HOAN TOAN. Do duoc:
+#
+#        VRAM trong 536 MiB < san 600 MiB cua card chay qwen35-api
+#        => cong tu choi moi luot moi, `ltt-3.5` tra 503 ba lan lien tiep
+#
+#      Nguyen nhan khong phai mot loi ma: 5060 Ti giu ca desktop Windows (L-12
+#      don moi thu do sang day de 3090 chi chay AI), va bien 1.002 MiB sau MTP
+#      khong du cho desktop + mmproj cung luc. Voi `ttl: 0`, model **khong bao
+#      gio** nha, nen card khong co duong tu thoat khoi trang thai do.
+#
+#    => `ttl: 0` doi lay "khong ai phai cho 15 giay" bang "card khong bao gio
+#      hoi phuc duoc". Phep doi ay sai o phia dat: 15 giay la mot lan cho, con
+#      card ket la **mat han mot model** cho toi khi co nguoi vao tay.
+#
+#    [do] Gia THAT cua viec nha, do 13/09 (khong lay tu G5, do lai bang dong ho):
+#
+#        | model      | nap am (tong) | da san | gia NAP |
+#        |------------|---------------|--------|---------|
+#        | qwen35-api |     12,76 s   | 2,23 s | ~10,5 s |
+#        | qwen38-api |     20,35 s   | 0,97 s | ~19,4 s |
+#
+#      Khop co voi G5 (10,12 / 15,23 s) => hai phep do doc lap cung noi mot dieu.
+#
+#    * VA `preload` VAN GIU. Hai co nay khong loai tru nhau, chung tra loi hai
+#      cau khac nhau:
+#         `preload`      -> luc KHOI DONG dich vu, khong ai phai cho
+#         `ttl: 1800`    -> sau 30 phut RANH, tra card ve cho he thong
+#      Bo `preload` moi la thu lam song lai "khach dau tien cho 15 giay".
+#
+# ==========================================================================
+# THUONG TRU: khoi duoi day viet khi ho so con `ttl: 0`. Giu de truy vet.
 #
 # `ttl: 0` trong llama-swap = TAT dong ho nha (khong phai "nha ngay"). Cong voi
 # `hooks.on_startup.preload`, hai model nap mot lan luc dich vu khoi dong roi
