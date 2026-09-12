@@ -29,9 +29,12 @@ def _don(day_vram, nha=None, comfy_dang_chay=False, **kw):
     `comfy_dang_chay`: False = ComfyUI rảnh (mặc định) · True = đang render ·
     None = không hỏi được `/queue`."""
     day = list(day_vram)
-    goi = {"nha": 0}
+    # `doc` dem so lan DON DEP duoc hoi: mot phep kiem noi "khong bao ComfyUI nha"
+    # phai chung minh duoc rang no co di qua don_dep, khong phai don_dep bi bo qua.
+    goi = {"nha": 0, "doc": 0}
 
     def doc():
+        goi["doc"] += 1
         return day.pop(0) if len(day) > 1 else day[0]
 
     def _nha():
@@ -181,8 +184,16 @@ def test_doi_sang_ho_so_KHAC_cua_ta_KHONG_bi_chan():
             self.goi.append((method, path, body or {}))
             if path == "/running":
                 # Ho so KHAC dang chay, khong phai cai khach xin.
+                #
+                # !! 12/09: ho so dang chay la `qwen35-api` va ho so khach xin la
+                #    `qwen38-api` — DAO lai so voi ban truoc, co chu y. Tu Dual-model
+                #    4.2, viec don card chi duoc HOI cho ho so nam tren 3090 (card
+                #    ComfyUI dung chung). Neu de khach xin `qwen35-api` thi phep kiem
+                #    van xanh nhung xanh vi mot ly do KHAC (don_dep khong duoc goi
+                #    lan nao) — tuc mot cua gia: no thoi do "VRAM cua ta thi khong bao
+                #    ComfyUI nha" ma khong ai thay.
                 return 200, _json.dumps(
-                    {"running": [{"model": "qwen38-api", "state": "ready"}]}).encode()
+                    {"running": [{"model": "qwen35-api", "state": "ready"}]}).encode()
             return 200, b'{"ok":true}'
 
         def stream(self, *a, **k):                      # pragma: no cover
@@ -194,8 +205,20 @@ def test_doi_sang_ho_so_KHAC_cua_ta_KHONG_bi_chan():
     c = TestClient(create_app(_cfg(models_mo=("qwen38-api", "qwen35-api")),
                               up, trong_tai=_tt_ranh(), don_dep=d))
     r = c.post("/v1/chat/completions",
-               json={"model": "qwen35-api", "messages": []})
+               json={"model": "qwen38-api", "messages": []})
     assert r.status_code == 200, "llama-swap tu doi duoc — dung chan no bang 429"
+    # !! CHOT RANG HO SO KHACH XIN NAM TREN CARD CUA ComfyUI. Tu Dual-model 4.2,
+    #    viec don card chi duoc hoi cho ho so tren 3090. Neu ai doi ten model o
+    #    tren thanh mot ho so cua 5060 Ti thi phep kiem van xanh — nhung xanh vi
+    #    don_dep khong duoc goi lan nao, tuc no thoi do "VRAM cua ta thi khong bao
+    #    ComfyUI nha". Dong duoi bat dung ca do.
+    from llm_gateway import gpu_uuid as _GPU
+    assert _GPU.vai_cua_model("qwen38-api") == _GPU.VAI_38
+    # `goi["doc"] == 0` la KET QUA DUNG o day: co model cua ta dang chay nen
+    # `bao_dam_sach()` khong duoc goi. Doi chung cho no la phep kiem ngay duoi
+    # (`test_van_don_khi_KHONG_co_model_nao_cua_ta_chay`): `/running` rong thi
+    # don_dep PHAI duoc goi.
+    assert goi["doc"] == 0
     assert goi["nha"] == 0, "khong duoc bao ComfyUI nha VRAM cua chinh ta"
 
 

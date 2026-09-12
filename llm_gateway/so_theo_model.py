@@ -113,11 +113,13 @@ class SoTheoModel:
     def _kiem_san_vram(self, model: str) -> Optional[PhanXuGioiHan]:
         """Sàn VRAM của card chạy `model`. `None` = qua cửa.
 
-        🔴 VÌ SAO CHỈ 5060 Ti CÓ SÀN MẶC ĐỊNH (spec §22, D06). Đo §G3b: LTT-3.5
-           Q6_K + MTP giữ 15.309 MiB trên card 16.311 ⇒ **biên còn 1.002 MiB**.
-           Chủ dự án chốt ngưỡng cảnh báo **700 MiB** (12/09) vì máy B "chỉ chạy
-           hệ thống AI" và card rảnh chỉ giữ 54 MiB. 3090 thì biên 445 MiB nhưng
-           nó đã có `don_dep` + trọng tài riêng cho cuộc tranh với ComfyUI.
+        🔴 VÌ SAO CHỈ 5060 Ti CÓ SÀN MẶC ĐỊNH (spec §22, D06). Đo §G3: LTT-3.5
+           Q6_K + MTP, 3 slot ⇒ còn **~1.000 MiB** trống lúc phục vụ bình thường,
+           và sàn là **700** — chủ dự án quyết, `DECISION_LOG.md` **L-18**. 3090
+           biên hẹp hơn nhưng nó đã có `don_dep` + trọng tài riêng cho cuộc tranh
+           với ComfyUI, nên thêm sàn ở đó là ba chốt cho một card.
+
+           ⛔ Con số nằm ở `config.py` và lý lẽ nằm ở L-18. Đừng chép sang đây.
 
         ⚠️ KHÔNG ĐỌC ĐƯỢC VRAM ⇒ COI LÀ BẬN, và đó là hành vi **đã có** ở
            `trong_tai.phan_xu()` ("khong hoi duoc nvidia-smi" ⇒ bận). Giữ cùng

@@ -710,12 +710,31 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
         """
         ten = str(body.get("model") or "").strip()
 
+        # ── Hai chốt dưới đây CHỈ nói về card 3090 ──────────────────────────
+        #
+        # 🔴 VÀ ĐÓ LÀ MỘT SỬA LỖI, KHÔNG PHẢI MỘT TỐI ƯU. `trong_tai` cân cuộc
+        #    tranh giữa **ComfyUI và LTT-3.8** trên card 24 GB, còn `don_dep` bảo
+        #    **ComfyUI** nhả VRAM. ComfyUI ghim UUID 3090 (`test_1200`), nên cả
+        #    hai chốt đo và tác động lên đúng một card.
+        #
+        #    Từ Task 6.1, `render_gateway.busy` lọc mọi số đọc theo **UUID 3090**
+        #    — đúng cho `qwen38-*` và **vô nghĩa cho `qwen35-*`**: LTT-3.5 nằm
+        #    trên 5060 Ti. Áp chúng cho lượt 3.5 là từ chối một lượt vì một card
+        #    **khác** đang bận (429 oan, mà máy A đọc 429 là *bận* nên khách đi ra
+        #    đám mây), và bảo ComfyUI nhả VRAM để nạp một model **không dùng card
+        #    của ComfyUI**.
+        #
+        # ⭐ Cửa của 5060 Ti là **sàn VRAM theo model** ở `so_theo_model.py`, đọc
+        #    theo UUID của chính nó — đã chạy trước khi tới đây.
+        vai = GPU.vai_cua_model(ten)
+        card_cua_comfy = (vai == GPU.VAI_38)
+
         # ⛔ Trọng tài đứng SAU ngân sách có chủ ý: một yêu cầu vượt trần phải bị từ
         #    chối dứt khoát (413) kể cả khi card đang rảnh. Nếu đảo thứ tự, cùng một
         #    yêu cầu hỏng sẽ lúc trả 429 lúc trả 413 tuỳ card bận hay rảnh — và bên
         #    gọi sẽ thử lại mãi một thứ không bao giờ chạy được.
-        px = tt.phan_xu()
-        if px.ban:
+        px = tt.phan_xu() if card_cua_comfy else None
+        if px is not None and px.ban:
             dem.cong("ban_trong_tai")
             raise HTTPException(
                 status_code=429,
@@ -731,7 +750,8 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
         # ⛔ Chỉ dọn khi KHÔNG có model nào CỦA TA đang chạy. Nếu có, VRAM cao là
         #    **của chính ta**, và `llama-swap` tự đổi hồ sơ được — gọi `/free` của
         #    ComfyUI lúc đó vừa vô ích vừa chặn mất việc đổi model.
-        if don_dep is not None and not _co_model_cua_ta_dang_chay():
+        if (don_dep is not None and card_cua_comfy
+                and not _co_model_cua_ta_dang_chay()):
             kq = don_dep.bao_dam_sach()
             if not kq.sach:
                 dem.cong("ban_card")

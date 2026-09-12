@@ -175,8 +175,8 @@ def test_whale_nha_ra_thi_nhan_con_tiep_theo():
 # ── 4. Sàn VRAM của 5060 Ti (spec §22, D06) ─────────────────────────────────
 
 def test_duoi_san_vram_thi_35_ban_ma_38_KHONG_anh_huong():
-    doc = {M35: 300}                              # duoi san 512
-    s = _so(san_vram_mb={M35: 512}, doc_vram_trong=lambda m: doc.get(m))
+    doc = {M35: 300}                              # duoi san 700
+    s = _so(san_vram_mb={M35: 700}, doc_vram_trong=lambda m: doc.get(m))
     px, suat = s.cap_suat(M35, 1_000)
     assert suat is None and "VRAM trong" in px.ly_do, px.ly_do
     assert s.cap_suat(M38, 1_000)[1] is not None, "san cua card nay chan card kia"
@@ -187,7 +187,7 @@ def test_duoi_san_vram_thi_35_ban_ma_38_KHONG_anh_huong():
 
 
 def test_tren_san_thi_qua():
-    s = _so(san_vram_mb={M35: 512}, doc_vram_trong=lambda m: 1_002)
+    s = _so(san_vram_mb={M35: 700}, doc_vram_trong=lambda m: 1_002)
     assert s.cap_suat(M35, 1_000)[1] is not None
 
 
@@ -195,7 +195,7 @@ def test_khong_doc_duoc_VRAM_thi_coi_la_BAN():
     """Cùng chiều với `trong_tai.phan_xu()` ("khong hoi duoc nvidia-smi" ⇒ bận).
     Hai cửa cạnh nhau mà một lạc quan một bi quan thì người trực không đoán nổi
     cổng sẽ làm gì."""
-    s = _so(san_vram_mb={M35: 512}, doc_vram_trong=lambda m: None)
+    s = _so(san_vram_mb={M35: 700}, doc_vram_trong=lambda m: None)
     px, suat = s.cap_suat(M35, 1_000)
     assert suat is None and "khong doc duoc VRAM" in px.ly_do, px.ly_do
 
@@ -203,20 +203,23 @@ def test_khong_doc_duoc_VRAM_thi_coi_la_BAN():
 def test_san_KHONG_lam_ro_suat():
     """Sàn nổ **trước** khi chiếm suất. Đảo lại là rò một suất mỗi lần sàn nổ —
     và với `max_dong_thoi=3` thì ba lần là cổng 429 vĩnh viễn."""
-    s = _so(san_vram_mb={M35: 512}, doc_vram_trong=lambda m: 0)
+    s = _so(san_vram_mb={M35: 700}, doc_vram_trong=lambda m: 0)
     for _ in range(5):
         assert s.cap_suat(M35, 1_000)[1] is None
     assert s.dang_chay(M35) == 0
-    s = _so(san_vram_mb={M35: 512}, doc_vram_trong=lambda m: 9_999)
+    s = _so(san_vram_mb={M35: 700}, doc_vram_trong=lambda m: 9_999)
     assert s.cap_suat(M35, 1_000)[1] is not None
 
 
-def test_san_mac_dinh_512_cho_35_va_KHONG_co_cho_38(monkeypatch):
-    """⭐ 512 nằm **dưới** ngưỡng cảnh báo 700 MiB mà chủ dự án chốt (12/09), và
-    đó là có chủ ý: §G3b đo VRAM trống lúc phục vụ bình thường là **1.002 MiB**,
-    còn một phiên RDP đang vẽ từng chiếm ~193 MiB. Đặt sàn vào cửa **bằng** ngưỡng
-    cảnh báo thì chỉ cần 302 MiB dao động là cổng từ chối mọi lượt 3.5 — một cái
-    phanh ăn ở mức nhu cầu bình thường tệ hơn không có phanh.
+def test_san_mac_dinh_700_cho_35_va_KHONG_co_cho_38(monkeypatch):
+    """700 MiB — **chủ dự án quyết**, `DECISION_LOG.md` L-18 (dải cho phép 600–700).
+
+    ⭐ Vì sao lấy đầu **cao** của dải: cửa này chỉ gây **429 bận**, không bao giờ
+       giết một lượt đang chạy. Đặt cao thì mất một ít thông lượng; đặt thấp thì
+       trả bằng OOM. Hai chiều sai **không** cân nhau, nên chọn phía đắt-ít.
+
+    §G3 đo LTT-3.5 (Q6_K + MTP, 3 slot) để lại ~1.000 MiB trống ở trạng thái phục
+    vụ bình thường ⇒ sàn 700 còn ~300 MiB dư **thật** trước khi cổng ngừng nhận.
 
     3090 không có sàn ở đây vì nó đã có `don_dep` + trọng tài ComfyUI lo đúng
     việc ấy; ba chốt cho một card là ba câu trả lời khác nhau về một trạng thái.
@@ -225,8 +228,9 @@ def test_san_mac_dinh_512_cho_35_va_KHONG_co_cho_38(monkeypatch):
         if k.startswith("LTT_LLM_VRAM_TRONG_TOI_THIEU_MB__"):
             monkeypatch.delenv(k, raising=False)
     cfg = Config.from_env()
-    assert cfg.vram_trong_toi_thieu_mb == {M35: 512}
-    assert 512 < 700, "san vao cua phai NAM DUOI nguong canh bao"
+    assert cfg.vram_trong_toi_thieu_mb == {M35: 700}
+    assert 600 <= cfg.vram_trong_toi_thieu_mb[M35] <= 700, (
+        "ra ngoai dai chu du an cho phep (L-18)")
 
 
 def test_san_tat_duoc_bang_0(monkeypatch):
@@ -466,6 +470,54 @@ def test_dem_ghi_dung_nhom_khi_pool_day():
     assert r.status_code == 429, r.text
     d = c.get("/health").json()["dem"]["theo_nhom"]
     assert d["ban_pool"] == 1 and d["ban_day"] == 0
+
+
+# ── 7b. Trọng tài + dọn card CHỈ nói về 3090 ───────────────────────────────
+
+def test_3090_ban_thi_35_VAN_phuc_vu():
+    """🔴 SỬA LỖI, KHÔNG PHẢI TỐI ƯU. `trong_tai` cân cuộc tranh giữa **ComfyUI và
+    LTT-3.8** trên card 24 GB; từ Task 6.1 nó đọc số **đã lọc theo UUID 3090**.
+
+    Áp nó cho lượt `qwen35-api` là từ chối một lượt vì một card **khác** đang bận —
+    429 oan, mà máy A đọc 429 là *bận* nên khách đi ra đám mây trong khi 5060 Ti
+    hoàn toàn rảnh. Cửa của 5060 Ti là **sàn VRAM theo model**, đọc UUID của chính
+    nó.
+    """
+    from fastapi.testclient import TestClient
+
+    from llm_gateway.api import create_app
+    from tests.test_250_llm_gateway import FakeUpstream, _cfg, _tt_ban
+
+    c = TestClient(create_app(_cfg(models_mo=(M38, M35)), FakeUpstream(),
+                              trong_tai=_tt_ban()))
+    than = {"messages": [{"role": "user", "content": "hi"}]}
+    r38 = c.post("/v1/chat/completions", json={"model": M38, **than})
+    assert r38.status_code == 429, r38.text
+    assert "may B dang ban" in r38.json()["detail"]["ly_do"]
+
+    r35 = c.post("/v1/chat/completions", json={"model": M35, **than})
+    assert r35.status_code == 200, (
+        "3090 ban ma luot 3.5 tren 5060 Ti bi tu choi — hai card thanh mot")
+
+
+def test_don_card_KHONG_chay_cho_luot_35():
+    """`don_dep` bảo **ComfyUI** nhả VRAM, và ComfyUI ghim UUID 3090
+    (`test_1200`). Gọi nó để nạp một model **không dùng card của ComfyUI** vừa vô
+    ích vừa làm hàng xóm nạp lại model giữa chừng."""
+    from fastapi.testclient import TestClient
+
+    from llm_gateway.api import create_app
+    from tests.test_250_llm_gateway import FakeUpstream, _cfg, _tt_ranh
+    from tests.test_254_don_dep_gpu import _don
+
+    d, goi = _don([19_973, 19_973], so_lan_thu=1)
+    c = TestClient(create_app(_cfg(models_mo=(M38, M35)), FakeUpstream(),
+                              trong_tai=_tt_ranh(), don_dep=d))
+    r = c.post("/v1/chat/completions",
+               json={"model": M35, "messages": [{"role": "user", "content": "hi"}]})
+    assert r.status_code == 200, r.text
+    assert goi["doc"] == 0 and goi["nha"] == 0, (
+        "da di don card 3090 cho mot luot chay tren 5060 Ti")
 
 
 # ── 8. `X-Conversation-Id` KHÔNG được lên thượng nguồn ──────────────────────

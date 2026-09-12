@@ -152,20 +152,22 @@ class Config:
     #: Sàn VRAM trống theo model, MiB: `LTT_LLM_VRAM_TRONG_TOI_THIEU_MB__<model>`.
     #: Dưới sàn ⇒ **429 bận**, không nhận lượt mới (không giết lượt đang chạy).
     #:
-    #: ⭐ VÌ SAO MẶC ĐỊNH 512 CHO `qwen35-api` — VÀ VÌ SAO **KHÔNG** PHẢI 700.
-    #:    Số đo §G3b: LTT-3.5 Q6_K + MTP giữ 15.309 MiB trên card 16.311 ⇒ trống
-    #:    **1.002 MiB** ở trạng thái phục vụ bình thường. Chủ dự án chốt ngưỡng
-    #:    **cảnh báo** 700 MiB (12/09).
+    #: ⭐ MẶC ĐỊNH **700** CHO `qwen35-api` — CHỦ DỰ ÁN QUYẾT, xem
+    #:    `docs/ltt_llm_dual/DECISION_LOG.md` **L-18** (dải được phép 600–700).
+    #:    ⛔ Đừng chép lý lẽ của con số sang đây; đọc L-18. Ghi lại ở hai chỗ là
+    #:       đúng cơ chế đã nói sai năm lần trong dự án này.
     #:
-    #:    Sàn **vào cửa** phải nằm DƯỚI ngưỡng cảnh báo, không bằng nó. Đặt 700 ở
-    #:    đây thì chỉ cần 302 MiB dao động là cổng từ chối **mọi** lượt 3.5 — mà
-    #:    §G3b ghi rõ một phiên RDP đang vẽ từng chiếm ~193 MiB, tức dao động ấy
-    #:    là chuyện thường. Một cái phanh ăn ở mức nhu cầu bình thường thì tệ hơn
-    #:    không có phanh: nó biến một cảnh báo thành một sự cố ngừng dịch vụ.
+    #:    Điều cần biết tại chỗ: §G3 đo LTT-3.5 (Q6_K + MTP, 3 slot) để lại
+    #:    **~1.000 MiB** trống ở trạng thái phục vụ bình thường, nên sàn 700 còn
+    #:    **~300 MiB** dư thật trước khi cổng ngừng nhận. Máy B không chạy gì
+    #:    ngoài hệ AI, và đó chính là lý do chủ dự án yên tâm để dành nhiều thế.
     #:
-    #:    512 để lại ~490 MiB dư so với trạng thái đo được: đủ cho desktop/RDP
-    #:    cộng nhiễu, mà vẫn bắt được ca thật (một hộ lạ ăn > 490 MiB trên card
-    #:    ấy). Hai chốt, hai việc: 700 để **kêu**, 512 để **ngừng nhận**.
+    #: ⚠️ Cửa này chỉ gây **429 bận**, không bao giờ giết một lượt đang chạy —
+    #:    nên đặt cao thì mất một ít thông lượng, đặt thấp thì trả bằng OOM. Đó là
+    #:    lý do lấy đầu **cao** của dải. Điều còn phải theo dõi: §G3b ghi một phiên
+    #:    RDP đang vẽ từng chiếm ~193 MiB, tức dải dư 300 MiB hẹp lại khi chủ dự án
+    #:    điều khiển máy B trực tiếp. Thấy `ban_vram` tăng mà card vẫn rảnh thì đó
+    #:    là chỗ phải đo, không phải chỗ để tự hạ sàn.
     #:
     #: ⛔ `qwen38-api` KHÔNG có sàn ở đây. Không phải bỏ quên: 3090 đã có
     #:    `don_dep` (ngưỡng `vram_sach_mb`) và trọng tài ComfyUI lo đúng việc đó.
@@ -294,7 +296,8 @@ def _san_vram() -> dict:
        hợp lệ (máy không có `nvidia-smi`, hoặc đang chẩn đoán), nên nó phải nói
        được. `_theo_model` bỏ số 0, nên chỗ này đọc trực tiếp.
     """
-    ra = {"qwen35-api": 512}
+    # 700 = dau CAO cua dai chu du an cho phep (600-700), DECISION_LOG L-18.
+    ra = {"qwen35-api": 700}
     tien_to = "LTT_LLM_VRAM_TRONG_TOI_THIEU_MB__"
     for ten, gt in os.environ.items():
         model = _duoi_ten_model(ten, tien_to)
