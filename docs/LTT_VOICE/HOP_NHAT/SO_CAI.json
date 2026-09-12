@@ -161,7 +161,15 @@
       "public_api_live": "PASS (5 tool mo, co speech.ltt)"
     },
     "phan_quyet": "RELEASED — 7/7 o dat tren e2676aaa. LUU Y: khong nghia la da di tru du lieu (0 giong doi), khong nghia la ca 5 luong da chay tren production (2/5).",
-    "bao_cao": "docs/LTT_VOICE/HOP_NHAT/TANG2_RC1.md"
+    "bao_cao": "docs/LTT_VOICE/HOP_NHAT/TANG2_RC1.md",
+    "mat_tep_kho": {
+      "ket_luan": "Kho R2 `fb-video-storage` khong giu object qua ~7 ngay — co che NGOAI ung dung (gan nhu chac chan la lifecycle rule cua bucket). Da loai tru TUNG duong xoa trong ma bang do dac.",
+      "bang_chung": "46 khoa tong, 0 khoa cua thang 8, khoa cu nhat 05/09 — trong khi bang `jobs` co 1770 hang; 14 khoa `thumbnail/` bien mat giua hai luot liet ke cach nhau 4 gio",
+      "vi_sao_chua_chot": "khoa S3 cua ung dung bi AccessDenied o GetBucketLifecycleConfiguration, va secrets/app.env khong co Cloudflare API token",
+      "vat_moc": "chan_doan/moc-vong-doi-20260912T003354Z.txt (va ...-moi-nhat.txt)",
+      "mau_thuan_can_chot": "ma khai RETENTION_DAYS=30 va PROMOTED_RETENTION_DAYS=30; kho lam ~7 ngay",
+      "bao_cao": "docs/LTT_VOICE/HOP_NHAT/MAT_TEP_KHO_R2.md"
+    }
   },
   "ghi_chu_trunk": "Q123 (3a6da723, 11/09) chuyen nhanh song sang `main`; `admin-mvp-v3` la nhanh chet. Cong cu doi soat lay `trunk` TU DAY, nen de sai o day thi chinh 22 commit RC vua ff se bi dem la 'chua doi soat'."
 }

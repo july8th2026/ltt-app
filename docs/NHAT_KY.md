@@ -109,7 +109,53 @@ branch và chưa tích hợp LLM.
 
 ---
 
-## 2026-09-12 — DEPLOY LTT Voice RC1: `e2676aaa` lên production (Tầng 2 **chưa** `RELEASED`)
+## 2026-09-12 — 🔴 Kho R2 KHÔNG giữ tệp quá ~7 ngày, trong khi mã khai 30
+
+Bắt đầu từ một ô nghiệm thu của Voice, nhưng **kết luận không thuộc về Voice**.
+Toàn văn: `docs/LTT_VOICE/HOP_NHAT/MAT_TEP_KHO_R2.md`.
+
+```
+bucket fb-video-storage: TONG 46 khoa · 0 khoa cua thang 8 · cu nhat 05/09
+trong khi bang `jobs` co 1770 hang va 28 ngay do duoc 1075 luot anhnoibo.generate
+14 khoa `thumbnail/` bien mat giua hai luot liet ke cach nhau 4 gio
+```
+
+Đã **loại trừ từng đường xoá trong mã** bằng đo đạc, không bằng suy đoán:
+`expire_content` chỉ xoá khoá chứa `/{job_id}/`; `RETENTION_DAYS` **sinh ra đã
+là 30** và chưa từng đổi (`git log -L` trên chính dòng ấy); bảng
+`upload_sessions` **rỗng**; các đường xoá của Voice chỉ chạy ở trạng thái
+`revoked`/`loi`/`disabled` mà cả 28 hồ sơ đều `active`.
+
+⇒ Cơ chế nằm **ngoài ứng dụng** — gần như chắc chắn là một **lifecycle rule**
+của bucket. Chưa xác nhận trực tiếp được: khoá S3 của ứng dụng bị `AccessDenied`
+ở `GetBucketLifecycleConfiguration`, và `secrets/app.env` không có Cloudflare API
+token. **Chỉ chủ dự án đọc được**, qua dashboard R2 → Settings → Object lifecycle
+rules.
+
+### Vì sao `voice/mau/` sống sót — và nó xác nhận giả thuyết
+
+20 giọng mẫu còn nghe được không phải vì được miễn, mà vì bị **ghi lại liên
+tục** (`nghe_thu`/`bao_tri` dựng lại khi vân tay engine đổi): cùng bộ 20 tệp
+xuất hiện ngày 08/09 rồi lại 10–11/09. Một tiền tố được ghi lại mỗi vài ngày thì
+không bao giờ đủ già để bị xoá.
+
+### Điều nguy hiểm không phải 28 hồ sơ đã mất
+
+Chúng đều của **tài khoản thử** `.local` ⇒ không khách nào thiệt hại hôm nay.
+Cái nguy hiểm là **hai tầng nói hai điều khác nhau**: mã khai giữ 30 ngày
+(`RETENTION_DAYS`, `PROMOTED_RETENTION_DAYS`), kho xoá sau ~7 ngày — và **tầng
+thật thắng**. Mọi phép kiểm dựa trên con số 30 (hạn tải lại của khách, đối chiếu
+hoá đơn, badge "cần tạo lại" của Dự án Voice) đang đo một thế giới không tồn tại.
+
+### Đã đặt vật mốc để lượt sau đo được ngưỡng CHÍNH XÁC
+
+`chan_doan/moc-vong-doi-20260912T003354Z.txt` — tiền tố không app nào đọc. Khi
+nó biến mất, hiệu số tuổi **chính là ngưỡng** mà mọi hằng số retention phải khớp
+lại.
+
+---
+
+## 2026-09-12 — DEPLOY LTT Voice RC1: `e2676aaa` lên production (Tầng 2 → `RELEASED`)
 
 `EXITCODE=0` · nghiệm thu **0/0/0** trên **922 tệp** (trong đó **266 tệp không
 `.py`**) · `/health/version` = `e2676aaa194d` · `/health/ready` **200** ở cả

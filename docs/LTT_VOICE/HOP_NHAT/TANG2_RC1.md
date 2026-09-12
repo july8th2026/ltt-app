@@ -250,7 +250,7 @@ quả": một chữ PASS không mang theo phạm vi của chính nó.
 
 | Việc | Mức |
 |---|---|
-| **Điều tra mất tệp kho Voice**: 28 `voice_ref` + 28 `voice_repr` trỏ tới khoá R2 không tồn tại (dữ liệu 31/08–01/09) | 🟡 trung bình — **toàn bộ là dữ liệu của tài khoản THỬ**, không khách nào bị ảnh hưởng; nhưng cơ chế gây mất chưa biết |
+| ~~Điều tra mất tệp kho Voice~~ → **ĐÃ TRUY RA**: kho không giữ object quá **~7 ngày**, cơ chế nằm **ngoài ứng dụng** (gần như chắc chắn là lifecycle rule của bucket). Toàn văn: `MAT_TEP_KHO_R2.md` | 🔴 việc còn lại là của **chủ dự án**: đọc luật thật trong dashboard Cloudflare R2, rồi chốt nới luật hay hạ hằng số trong mã (mã đang khai **30 ngày**) |
 | Lấy `LTT_SMOKE_USER`/`LTT_SMOKE_PASS` để chạy bộ Playwright đầy đủ trên URL công khai | trung bình |
 | Thử hook D007 trên production bằng một khoá có scope ghi | thấp |
 | `tools/restore_drill_schema.py` còn giữ tên ràng buộc của bảng đã xoá 24/08 (`uq_vps_port_map_cong`); `test_155` chỉ kiểm một chiều | thấp, thuộc hệ VPS |
