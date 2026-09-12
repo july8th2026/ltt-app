@@ -161,15 +161,93 @@ số luồng: nó bị chặn bởi băng thông bộ nhớ, và phần chia ấ
    đúng thứ `nguong-dat-theo-mot-luot-do-tin-hieu-ngau-nhien` cảnh báo — và
    phiên này đã vấp nó một lần ở L-02 (300 → "đúng" ở 1 lượt, rỗng 3/5 khi đo 5).
 
+## 7b. Cổng D và E — đo lần 2 (13/09), **máy rảnh, 3 lốt, hai đường**
+
+Máy A: gate đã xong, deploy đã xong. Mỗi lốt đo **thẳng máy B** rồi **qua máy A**,
+sát nhau về thời gian. `-np 3` cho cả hai hồ sơ ⇒ C3 là đúng cấu hình.
+
+### Số đo (trung vị 3 lốt, tok/s)
+
+| | C1 | C3 | scaling | 2 × C1 | spec đòi |
+|---|---:|---:|---:|---:|---|
+| **D** `ltt-3.8` thẳng B | 55,5 | **95,0** | 1,71× | 110,9 | — |
+| **D** `ltt-3.8` qua A | 47,0 | **90,3** | 1,92× | 94,0 | ≥ 100 (viết cho C4) |
+| **E** `ltt-3.5` thẳng B | 64,6 | **120,2** | 1,86× | 129,2 | ≥ 2 × C1 |
+| **E** `ltt-3.5` qua A | 56,2 | **111,2** | 1,98× | 112,4 | ≥ 2 × C1 |
+
+Dải 3 lốt: D qua A 87,0–91,9 · E qua A 110,8–114,0. 0 lượt hỏng trong cả 12 lốt.
+
+### 🔴 Tiêu chí *"≥ 2 × C1 của chính nó"* là một tiêu chí HỎNG
+
+Nhìn hai dòng của `ltt-3.8`: qua máy A, scaling **cao hơn** (1,92×) so với đo
+thẳng máy B (1,71×). Máy A **chậm hơn** mà lại **ghi điểm tốt hơn**.
+
+Không phải nghịch lý — đó là số học. Phí nền tảng là một khoản **cố định mỗi
+request**, nên nó ăn vào C1 nặng hơn ăn vào C3 (nơi nó được chia cho 3 luồng):
+
+```
+ltt-3.8   C1  55,5 -> 47,0   giam 15,3 %
+          C3  95,0 -> 90,3   giam  4,9 %
+```
+
+Mẫu số co nhiều hơn tử số ⇒ **tỉ số tăng**.
+
+⛔ Tức một tiêu chí dạng tỉ số sẽ **thưởng cho việc làm nền tảng chậm đi**. Bất
+kỳ ngưỡng nào cho D/E phải đặt trên **thông lượng tuyệt đối**, không trên tỉ số.
+Tỉ số vẫn đáng ghi — nó chẩn đoán tốt — nhưng nó không được làm cửa.
+
+### Đề xuất ngưỡng cho C3 — đặt dưới lượt tệ nhất đo được
+
+Ngưỡng là **bộ dò hồi quy**, không phải lời chúc. Nó phải bắt được một suất bị
+mất hay một khoá bị đặt lại, mà không đỏ vì nhiễu ±3 % đo được.
+
+| cổng | đo qua | tệ nhất đo được | **ngưỡng đề xuất** | biên |
+|---|---|---:|---:|---:|
+| **D** `ltt-3.8` | máy A | 87,0 | **≥ 78** | 10 % |
+| **E** `ltt-3.5` | máy A | 110,8 | **≥ 99** | 10 % |
+| D bạn đồng hành | thẳng B | 94,8 | ≥ 85 | 10 % |
+| E bạn đồng hành | thẳng B | 114,2 | ≥ 103 | 10 % |
+
+⭐ **Vì sao cả hai đường.** Một mình số qua-A nói *khách chờ bao lâu* nhưng không
+nói **hỏng ở đâu**. Có cặp số thì một lần đỏ tự phân loại: cả hai cùng tụt ⇒
+engine/GPU; chỉ qua-A tụt ⇒ nền tảng máy A.
+
+### ⚠️ Một chênh lệch CHƯA giải thích được — đừng lấp nó
+
+| model | mốc C1 ghi 12/09 | C1 thẳng B đo 13/09 | lệch |
+|---|---:|---:|---:|
+| `ltt-3.8` | 63,01 | 54,8–57,9 | **−10 %** |
+| `ltt-3.5` | 76,21 | 63,4–65,5 | **−15 %** |
+
+Cả hai lệch **cùng chiều, cùng cỡ** — dấu hiệu của khác biệt **hệ thống**, không
+phải nhiễu. Ba khả năng, chưa loại trừ cái nào: (a) đề đo khác (độ dài ra khác
+⇒ tỉ lệ prefill/decode khác), (b) bộ đo 12/09 tính thời gian khác, (c) một hồi
+quy thật.
+
+⛔ **Chưa được dùng mốc 63,01 / 76,21 làm đối chứng cho tới khi biết đó là (a),
+(b) hay (c).** Đây đúng là cái bẫy mà chính tệp này cảnh báo ở §7: so hai con số
+sinh ra từ hai phép đo khác nhau rồi gọi hiệu số là một phát hiện.
+
+### Phí nền tảng — đại lượng đo được, và nó rẻ dần khi tải tăng
+
+| | C1 (B − A) | C3 (B − A) |
+|---|---:|---:|
+| `ltt-3.8` | 7,9–11,2 | 4,7–7,8 |
+| `ltt-3.5` | 8,4–9,7 | 3,0–10,1 |
+
+Đây là hai con số **được phép trừ vào nhau**: cùng một đại lượng, đo trong cùng
+một lốt, trên cùng một trạng thái máy.
+
+
 ## 8. Sổ lỗi L-* — trạng thái cuối lượt 13/09
 
 | mã | trạng thái | ghi chú |
 |---|---|---|
 | **L-01** | ✅ **đóng** | 4 vòng 0,99–1,15×; `pg_locks` 0/369; deploy + nghiệm thu 0/0/0 |
-| **L-02** | ⚠️ **một nửa** | `none` giải xong (token ra 200 → 4). `low`/`medium` — tức **mặc định** — vẫn rỗng ở `max_tokens` thấp |
+| **L-02** | ✅ **đóng** | sàn `max_tokens` theo model × mức, đặt **sau** 413; nghiệm thu 4/4 mệnh đề trên đường thật |
 | **L-03** | ✅ **đóng** | cả hai model khai `reads_images`; `DEVELOPER_GUIDE` + CHANGELOG đã sinh lại |
 | **L-04** | ✅ **đóng** | bộ chấm đổi sang mệnh đề dương; bản cũ chấm 3/3 câu sai thành "đúng" |
-| **L-05** | ⚠️ **dấu hiệu** | 6 job đồng thời → 6 done / 0 lỗi (đầu tiên từ 10/09). 6 là ít |
+| **L-05** | ✅ **đóng** | 48/48 done, 0 lỗi; p = 0,3 % nếu tỉ lệ 11,6 % còn nguyên |
 
-⚠️ **Hai mục "một nửa" không được đọc thành "xong".** Chúng là phần việc còn
-lại, và cách nhanh nhất để mất chúng là ghi ✅ cho tiện.
+⭐ Năm mục L-* đều đóng, và mỗi mục đóng bằng một **phép đo trên đường thật**,
+không bằng một bản vá đã commit. Việc còn lại nằm ở các cổng A–Q, không ở sổ lỗi.
