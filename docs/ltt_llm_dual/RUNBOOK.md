@@ -85,6 +85,71 @@ nên triệu chứng nhìn như *"3.8 bị bận mãi"* — một câu trỏ sai
    fail. Và trọng tài phải tạo được dòng đó **ngay cả khi máy B im lặng**, nếu
    không thì một lần máy B không trả lời biến thành một lần LLM ngừng bán.
 
+## 2.0 🔴 BIÊN BẢN DEPLOY 12/09/2026 — MÁY B XONG, MÁY A BỊ CHẶN
+
+Chủ sản phẩm cấp quyền deploy máy A + máy B (12/09, chiều), **đè** lệnh cấm
+deploy trong prompt chiến dịch LTT-CMC. Ghi lại để CMC đọc được đây là quyết
+định của chủ sản phẩm.
+
+### ✅ Máy B — đã xong, đã nghiệm thu
+
+Mã hai cổng + `llama-swap.yaml` từ commit `54cac32d`; **hash khớp 39 tệp**.
+Bốn việc tay ở §2.2 đều đã làm và đã đo lại:
+
+| | Trước | Sau |
+|---|---|---|
+| `LTT_LLM_MODELS` | `qwen38-api,qwen38-vision` | `qwen38-api,qwen35-api` |
+| `LTT_LLM_MAX_DONG_THOI=1` | còn | đã xoá |
+| `LTT_HO_DUNG_CARD` / `LTT_TRA_CARD_GIAY` | còn | đã gỡ |
+| `DependOnService: LTTComfyUI` | còn | rỗng |
+| `gpu_may_b.json` (bản cài render) | **THIẾU** | có |
+
+Nghiệm thu: `/v1/models` → `['qwen35-api','qwen38-api']`; `/health` → `models_la: []`,
+trọng tài `bat=true`. **Rollback:** `H:/LTT_LLM/releases/auto-20260912-184817`.
+
+Sổ khoá production: `ltt_llm.supported_models` `['qwen38-api','qwen38-vision']`
+→ `['qwen38-api','qwen35-api']` (mục 2 của §2.2 — **đã gỡ chặn**). Bản rollback
+ở `%TEMP%\claude\rollback_so_khoa.json`.
+
+### ⛔ Máy A — KHÔNG deploy được từ nhánh này
+
+    CSDL production : d9a1f6c2b3e5
+    alembic của ta  : a3f7c214e8b9
+    => CommandError: Can't locate revision identified by 'd9a1f6c2b3e5'
+
+Alembic chỉ là triệu chứng. `git rev-list --count 54cac32d..main` = **59 commit**,
+**191 tệp mã chạy** khác nhau, trong đó có **ba migration Voice RC1**.
+⇒ Deploy nhánh này lên máy A sẽ **gỡ Voice RC1 khỏi production**.
+
+⚠️ Đã thử và đã trả giá: production tắt ~4 phút (19:05–19:09). Bản hỏng giữ ở
+   `C:\LTTPlatform\app.that-bai-20260912-190903`; CSDL **không** bị chạm; lăn lại
+   bằng `app.previous`.
+
+⇒ Máy A chờ `cmc/llm-dual-reconcile`. Toàn văn: `CMC_SOURCE_STATE.md`.
+
+### ⚠️ Xoay `LTT_RENDER_TOKEN` (12/09)
+
+Token củ **bị in ra một transcript phiên** nên đã xoay. Giá trị mới sống ở
+`C:\ProgramData\LTTRender\gateway.env` và sổ khoá `ltt_image` — **không** ghi
+vào bất kỳ tệp nào trong kho.
+
+🔴 ĐỔI TỆP THÔI LÀ CHƯA ĐỦ. `nssm` nướng cả bộ env lúc **cài**, và
+   `render_gateway/nap_env` **cố ý không ghi đè** biến đã có (khác hẳn cổng LLM:
+   ở đó **tệp thắng**). Phải nướng lại rồi restart:
+
+```powershell
+$dong = Get-Content C:\ProgramData\LTTRender\gateway.env |
+        Where-Object { $_ -notmatch '^\s*#' -and $_ -match '^\s*[A-Za-z_]\w*=' }
+& E:\AI\ltt_render\scripts
+ssm.exe set LTTRenderGateway AppEnvironmentExtra `
+    (@('PYTHONPATH=E:\AI\ltt_render\gateway') + $dong)
+Restart-Service LTTRenderGateway -Force
+```
+
+Đo lại sau khi đổi: token cũ → **401**, token mới → **200**.
+
+---
+
 ### 2.2 ⛔ `llama-swap.yaml` KHÔNG đi một mình (L-17)
 
 Nó đi **cùng Task 5.4** (lệnh residency theo model + gỡ hai trọng tài cũ). Lý do cơ

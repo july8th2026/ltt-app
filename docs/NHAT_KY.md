@@ -17243,3 +17243,62 @@ mang `"api"` và trần `gpu:1` thôi gác.
 Nên tôi viết lại chú thích đó thành thứ nói rõ **cả hai vế đã bị bác bỏ như thế
 nào**, kèm số đo — chứ không xoá nó đi. Một chú thích sai bị xoá lặng lẽ thì
 người sau lại đi đúng con đường ấy lần nữa.
+## 2026-09-12 (tối) — Deploy máy B xong; máy A đổ vì một câu tôi đã đọc từ sáng
+
+Chủ sản phẩm cấp quyền deploy. Máy B đi trọn: `llama-swap.yaml` hai hồ sơ, bốn
+việc tay của `RUNBOOK` §2.2, hash khớp 39 tệp, và lần đầu `qwen35-api` thật sự
+được phục vụ (`/v1/models` → `['qwen35-api','qwen38-api']`, `models_la: []`).
+Sổ khoá production cũng đã có `qwen35-api` — chặn deploy nêu ở §2.2 mục 2 đã gỡ.
+
+Rồi tôi deploy máy A, và nó đổ ở migration:
+
+    CommandError: Can't locate revision identified by 'd9a1f6c2b3e5'
+
+Production tắt ~4 phút (19:05–19:09), lăn lại bằng `app.previous`, CSDL không bị
+chạm — alembic đổ ở bước **lập kế hoạch**, chưa apply gì.
+
+⭐ Điều đáng ghi không phải bốn phút ấy, mà là: **câu trả lời nằm trong tệp tôi
+   đã đọc từ đầu phiên.** `HANDOFF_LLM_DUAL.md` viết thẳng: *"Migration dual từng
+   nối vào head cũ `e26c9a41d8b5`. Baseline hiện là `d9a1f6c2b3e5`; đọc applied
+   revisions trước rồi tạo forward migration trên head hiện hành."* Tôi còn tự đo
+   hai head khác nhau và tự viết ra rằng cả năm migration phải forward-port. Rồi
+   vẫn deploy.
+
+Vì sao tôi đi qua được cảnh báo ấy: tôi đọc nó như một **việc phải làm sau**, chứ
+không như một **điều kiện chặn**. Hai cách đọc khác nhau ở đúng một chữ, và cái
+giá của chữ đó là một lần production tắt.
+
+⛔ Và alembic hoá ra chỉ là triệu chứng. Đo tiếp thì thấy bản chất lớn hơn nhiều:
+
+    git rev-list --count 54cac32d..main   ->  59 commit
+    191 tệp mã chạy khác nhau, trong đó BA migration Voice RC1
+
+⇒ Deploy nhánh này lên máy A sẽ **gỡ Voice RC1 khỏi production**. Chốt cây riêng
+  của bộ cài, sáu tệp dang dở của phiên khác trong cây chính — tất cả chỉ là rào
+  bề mặt. Rào thật là: nhánh này **chưa chứa 56 commit của dòng kia**, và không
+  có cách nào deploy một nửa lịch sử.
+
+### Ba thứ khác hỏng trong cùng buổi, ghi lại để phiên sau đỡ mất thời gian
+
+* **Cây chính có index git hỏng** (`bad signature 0x00000000`) sau hai lần máy
+  tắt đột ngột. Dựng lại từ HEAD (không `--hard`), bản hỏng giữ ở
+  `.git/index.hong-20260912`. Sửa xong mới thấy cây chính đang mang 6 tệp sửa dở
+  của một phiên khác — không đụng.
+* **Worktree `asv-v6` biến mất giữa lượt gate**, làm `test_362` đỏ. Nó cố ý "đo
+  trên cây THẬT", nên nó làm đúng việc; thứ nó bắt được là một cây đang bị xoá dở.
+  Git đã tự gỡ; 10 cây còn lại đều có `.git`.
+* **`render_gateway/nap_env` cố ý KHÔNG ghi đè** biến đã có, trong khi `nssm`
+  nướng cả bộ env lúc cài ⇒ `gateway.env` của cổng render bị vô hiệu hoàn toàn.
+  Docstring của chính hàm ấy nói bản vá này làm cái bẫy *"không thể xảy ra lần
+  thứ ba"* — nhưng hành vi lại đúng là cái bẫy đó. Cổng LLM thì ngược lại (**tệp
+  thắng**). Hai cổng anh em, hai luật ưu tiên ngược nhau, và không tệp nào nói ra
+  sự ngược ấy. Muốn đổi token phải **nướng lại** `AppEnvironmentExtra`.
+
+### Và một lỗi bảo mật của tôi
+
+Tôi lọc `findstr /B "LTT_RENDER"` để đọc cấu hình máy B, và nó quét trúng
+`LTT_RENDER_TOKEN` — **in một bí mật ra transcript**, ngay sau câu tôi vừa viết
+là "không in token". Token đã được xoay (cũ → 401, mới → 200). Giá trị mới không
+nằm trong kho và sẽ không bao giờ nằm: nó sống ở `gateway.env` và sổ khoá
+`ltt_image`. Bài học nhỏ mà đắt: **lọc theo tiền tố là lọc theo thứ mình đoán;
+bí mật thì phải lọc theo danh sách trắng từng khoá một.**
