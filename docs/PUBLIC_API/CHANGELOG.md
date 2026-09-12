@@ -37,8 +37,18 @@ riêng: một model bận **không** làm model kia bận.
 
 | | LTT-3.8 | LTT-3.5 |
 |---|---|---|
-| thế mạnh | suy luận sâu, ngữ cảnh dài nhất | nhanh hơn, rẻ hơn |
-| đầu vào | text + ảnh | text + ảnh |
+| thế mạnh | suy luận sâu | nhanh hơn, rẻ hơn |
+| **trần input công bố** | **171K token** (trước: 156K) | **209K token** |
+| đầu vào | text *(ảnh: xem ghi chú)* | text + ảnh |
+
+**Trần input của `ltt-3.8` tăng 156K → 171K.** Đây là thay đổi **nới rộng**:
+lời gọi đang chạy không hỏng, chỉ là gửi được dài hơn. Con số này **dẫn xuất**
+từ cửa sổ engine trừ trần output và lề ước — nó không phải một số chọn tay, nên
+đừng gõ cứng nó vào mã tích hợp; đọc `GET /api/v1/tools`.
+
+⏳ **`ltt-3.8` sẽ đọc được ảnh ở bản cập nhật kế tiếp.** Hôm nay hồ sơ của nó
+chưa nạp bộ chiếu đa phương tiện; cần ảnh thì dùng `ltt-3.5`. Khi 3.8 bật ảnh,
+`GET /api/v1/tools` sẽ tự phản ánh — lại một lý do để đọc nó thay vì gõ cứng.
 
 ### Phải làm gì
 
