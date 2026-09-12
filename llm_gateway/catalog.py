@@ -94,8 +94,11 @@ HO_SO: tuple[ModelSpec, ...] = (
     ModelSpec(
         ten="qwen38-api",
         co_vision=False,
-        max_context=204_800,
-        mo_ta="Qwen3.8-27B - coding, chat, agent, tom tat. Ngu canh 200K.",
+        # 📈 12/09: 204.800 -> 221.184 (L-14, 10_BENCHMARK_P3 §G1b). Nguon
+        #    chan ly `apps/ltt_llm/ngan_sach.CUA_SO_THEO_MODEL`; kho nay deploy
+        #    sang may B nen khong import duoc, `test_334` buoc hai dau lai.
+        max_context=221_184,
+        mo_ta="Qwen3.8-27B - coding, chat, agent, tom tat. Ngu canh 221K.",
     ),
     ModelSpec(
         ten="qwen38-vision",

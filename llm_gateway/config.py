@@ -116,12 +116,12 @@ class Config:
             token=(os.environ.get("LTT_LLM_TOKEN") or "").strip(),
             models_mo=_danh_sach("LTT_LLM_MODELS"),
             # 🔴 NGUỒN CHÂN LÝ là `apps/ltt_llm/ngan_sach.py::TOKEN_VAO_TRAN`
-            #    (= CUA_SO_MODEL − TOKEN_RA_TRAN − LE = 204800 − 32768 − 2048).
+            #    (= CUA_SO_MODEL − TOKEN_RA_TRAN − LE = 221184 − 32768 − 2048).
             #    Kho này deploy sang máy B nên **không import được** từ đó; số ở
             #    đây là bản sao, và `tests/test_312` đỏ ngay khi hai bên lệch.
             #    ⛔ 65.000 cũ là con số gõ tay không dẫn xuất từ đâu, và nó đã
             #       khiến ta phí 25% cửa sổ model suốt nhiều ngày.
-            max_input_tokens=_int("LTT_LLM_MAX_INPUT_TOKENS", 169_984),
+            max_input_tokens=_int("LTT_LLM_MAX_INPUT_TOKENS", 186_368),
             max_output_tokens=_int("LTT_LLM_MAX_OUTPUT_TOKENS", 32_768),
             max_images=_int("LTT_LLM_MAX_IMAGES", 4),
             max_image_bytes=_int("LTT_LLM_MAX_IMAGE_BYTES", 12 * 1024 * 1024),
@@ -133,7 +133,12 @@ class Config:
                        or "http://127.0.0.1:8188").rstrip("/"),
             vram_sach_mb=_int("LTT_LLM_VRAM_SACH_MB", 2500),
             don_dep_bat=(os.environ.get("LTT_LLM_DON_DEP") or "1").strip() != "0",
-            max_dong_thoi=_int("LTT_LLM_MAX_DONG_THOI", 1),
+            # 📈 12/09: 1 -> 3, khop `ngan_sach.SO_SLOT_MAY_B` (L-14 §G1b).
+            #    ⛔ `deploy.ps1` VAN ghim 1 vao gateway.env cho toi Task 4.1, va
+            #       do la co y: llama-swap con chay `--parallel 1` cho toi khi
+            #       Task 3.3 thay yaml. Mac dinh nay chi co hieu luc khi
+            #       gateway.env khong khai - `tests/test_1201` doi chieu no.
+            max_dong_thoi=_int("LTT_LLM_MAX_DONG_THOI", 3),
             rpm=_int("LTT_LLM_RPM", 120),
             nhip_tim_giay=_float("LTT_LLM_NHIP_TIM_S", 15.0),
         )
