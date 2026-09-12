@@ -361,7 +361,16 @@ def _luat_cho_job(job_type: str, params: dict, suc=None) -> dict:
         return {}
     pool = int(suc.token_pool) if suc is not None else 0
     if pool <= 0:
-        return {}
+        # 🔴 JOB ẢNH KHÔNG CÓ POOL KV, NHƯNG NÓ VẪN PHẢI MANG LỚP `nen`.
+        #    Nó xin suất trên `anh_3090` (residency, `token_pool = 0`), nên nhánh
+        #    này trả `{}` và lượt ấy đi tiếp với lớp mặc định `tuong_tac` — tức một
+        #    job **nền** cạnh tranh như một lượt **khách đang ngồi đợi**, và luật
+        #    "nền ≤ N−1 & nhường tương tác" thôi bảo vệ đúng thứ nó sinh ra để bảo vệ.
+        #    (Task 5.3 đo được và chuyển sang — nghĩa vụ 2 của 5.5.)
+        #
+        # ⚠️ Điều kiện là `residency_group`, không phải tên app: `platform_core`
+        #    không được biết app nào tồn tại (`test_147`). App **khai**, nền tảng đọc.
+        return dict(lop=luat_nhan.NEN) if getattr(suc, "residency_group", "") else {}
     try:
         from platform_core.public_api.executor import for_tool
         ex = for_tool(tool)
@@ -1605,6 +1614,25 @@ def _quet_so_gpu() -> int:
 
 def _mot_luot_bao_tri(moc: dict) -> None:
     """Chạy những việc nền đã đến hạn. `moc` giữ mốc thời gian giữa các lượt."""
+    # 🔴 TRỌNG TÀI CƯ TRÚ 3090 ĐI ĐẦU, VÀ NÓ KHÔNG CÓ ĐỒNG HỒ RIÊNG.
+    #
+    #    Đây là **mặt tiếp xúc duy nhất** của trọng tài với thế giới đang chạy
+    #    (D01 B). Thiếu dòng này thì: không ai tạo dòng `gpu_residency`, luật 0
+    #    `CHO_RESIDENCY` fail-closed ⇒ **mọi lượt `ltt-3.8` chờ hết ngân sách rồi
+    #    429**, và job ảnh cũng không bao giờ được mở cửa. Cả hai cánh cùng đóng,
+    #    và triệu chứng là *"3.8 bận mãi"* — một câu trỏ sai hướng hoàn toàn (R27).
+    #
+    # ⭐ Không đặt sau `moc[...]` nào: chu kỳ bảo trì đã là **2 giây**, và nhịp đó
+    #    chính là nhịp trọng tài cần. Thêm một đồng hồ thứ hai là thêm một con số
+    #    phải giữ đồng bộ với `t_nap_llm_s`/`cua_so_anh_s` mà không ai bắt khớp.
+    #
+    # ⛔ `buoc_dinh_ky` **không bao giờ ném** (nó tự khai thế và có phép kiểm ghim).
+    #    Đó là điều kiện để nó được đứng ở đây: một ngoại lệ tại chỗ này sẽ cắt
+    #    **phần còn lại** của lượt bảo trì (dọn dữ liệu, webhook, báo động).
+    from platform_core.llm import residency as _residency
+
+    _residency.buoc_dinh_ky()
+
     if time.monotonic() >= moc["event_purge"]:
         for db in _one_session():
             removed = job_events.purge_expired(db)
