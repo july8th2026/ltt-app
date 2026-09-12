@@ -3909,7 +3909,19 @@ vision. Kế hoạch của họ viết **trước** phép đo; ta giữ ý đị
 - [ ] H45.6.3 Sổ lượt + metrics + báo động (= T12). ⚠️ "Shared Usage > 0" **không**
       phải một báo động hợp lệ: sàn WDDM khác 0 kể cả ở cấu hình đang sống, và nó
       **co giãn theo `-ub`**.
-- [ ] H45.7.1 Q mới + runbook + nhật ký. Q123 ✔; `RUNBOOK.md` ✔ phần không phụ thuộc
-      5.4; còn nhật ký + mục này + **gate đầy đủ**.
+- [ ] H45.7.1 Q mới + runbook + nhật ký. Q123 ✔; `RUNBOOK.md` ✔ (§2.2 nay **năm**
+      việc tay); L-19 ✔; nhật ký ✔; còn **gate đầy đủ**.
+- [x] H45.9 **Bề mặt công khai + ba công cụ cắm phục vụ CẢ HAI model** (L-19).
+      ⛔ Không phải việc dọn: `ltt-3.5` **không gọi được từ Claude Desktop ở bất kỳ
+      giá nào** (một tuyến tương thích duy nhất, giải về `ltt-3.8`), bộ cài độc lập
+      `sdk/` **in sai** `inferenceModels` (tên sản phẩm thay vì tên tuyến ⇒ picker
+      rỗng, nút gửi chết, không báo gì), và `them_key_ltt_llm.py` mặc định cấp khoá
+      cho **hai tên đã cắt**. Không phép kiểm nào đỏ, vì mỗi bề mặt tự nhất quán với
+      chính nó. Chốt lại bằng `tests/test_1233` (23 ca, bảy cơ chế, mỗi ca có đối
+      chứng — cả bảy **đỏ** trên bản HEAD).
 - [ ] H45.8 Deploy MỘT LẦN, đúng thứ tự: `llama-swap.yaml` → hai cổng máy B → máy A.
-      Ba việc phải làm **tay** (không script nào làm hộ) ghi ở `RUNBOOK.md` §2.2.
+      **Năm** việc phải làm **tay** (không script nào làm hộ) ghi ở `RUNBOOK.md` §2.2
+      — trong đó việc thứ hai là **sổ khoá production**: khoá `ltt_llm` đang khai
+      `['qwen38-api','qwen38-vision']`, thiếu `qwen35-api`, nên **mọi lượt LTT-3.5
+      sẽ hỏng trong im lặng** (`ThieuKeyError` bị đọc thành "provider không phục vụ
+      được"). Sổ khoá là dữ liệu vận hành — không test nào chạm tới được.

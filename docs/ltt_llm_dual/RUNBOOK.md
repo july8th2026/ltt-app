@@ -92,7 +92,7 @@ học: `LTT_HO_DUNG_CARD=llm=http://127.0.0.1:8280/unload` không mang tên mode
 một job ảnh xin 3090 sẽ nhả **cả LTT-3.5** trên card không ai tranh. Toàn văn +
 mức chắc chắn: `DECISION_LOG.md` L-17.
 
-Cùng lần deploy đó, **bốn** việc phải làm **tay** (không script nào làm hộ):
+Cùng lần deploy đó, **năm** việc phải làm **tay** (không script nào làm hộ):
 
 1. `C:\ProgramData\LTTLlm\gateway.env`: đặt `LTT_LLM_MODELS` thành **đúng hai hồ
    sơ đang sống** — tức **thêm `qwen35-api`** và **gỡ `qwen38-vision`**. Biến này
@@ -107,9 +107,42 @@ Cùng lần deploy đó, **bốn** việc phải làm **tay** (không script nà
       `deploy.ps1` để nó **không ép** giá trị 1 nữa và tự di trú — nhưng hãy
       **đọc lại tệp sau khi chạy** thay vì tin rằng nó đã di trú: một tiến trình
       đang chạy vẫn giữ giá trị cũ tới khi restart (xem §2.3).
-2. `C:\ProgramData\LTTRender\gateway.env`: gỡ `LTT_HO_DUNG_CARD` và
+2. 🔴 **Sổ khoá: `supported_models` của khoá `ltt_llm` phải có `qwen35-api`.**
+
+   Đo trên CSDL production 12/09 (chỉ đọc) — khoá `ltt_llm` **duy nhất** khai:
+
+   ```
+   supported_models = ['qwen38-api', 'qwen38-vision']
+   ```
+
+   tức **thiếu `qwen35-api`** và **còn `qwen38-vision`** (hồ sơ đã gỡ). Hậu quả
+   không phải một lỗi nhìn thấy được: `api_pool.chon_key(model="qwen35-api")`
+   không tìm thấy khoá nào ⇒ `ThieuKeyError` ⇒ `dieu_phoi.goi()` đọc đó thành
+   *"provider không phục vụ được, đi tiếp"* ⇒ **mọi lượt LTT-3.5 hỏng trong im
+   lặng**, không log, không mã lỗi.
+
+   ⛔ **Không test nào bắt được**, và đó là cả vấn đề: sổ khoá là **dữ liệu vận
+      hành**, không phải mã nguồn. Thứ chốt được là *mặc định của công cụ ghi ra
+      nó* — nay dẫn từ `canonical.ALIAS_SANG_ID.values()` và có
+      `test_1233::test_cong_cu_tao_khoa_cap_cho_du_hai_id_noi_bo` canh.
+
+   Chạy **trên máy chủ**, sau khi đã ghi lại giá trị cũ để lăn lại được:
+
+   ```powershell
+   python tools\them_key_ltt_llm.py --token "<bearer cua cong VLM>"
+   ```
+
+   Không truyền `--models`: mặc định nay **đúng là** `qwen38-api,qwen35-api`.
+   Lệnh idempotent — đã có khoá thì nó **cập nhật** chứ không tạo bản thứ hai.
+
+   ⚠️ Nghiệm thu bằng một lượt gọi thật `model: "ltt-3.5"`, **không** bằng việc
+      lệnh trả 0. Lệnh trả 0 chỉ nói "đã ghi", còn thứ ta cần biết là "`chon_key`
+      tìm được khoá" — hai câu khác nhau, và chính khoảng cách giữa chúng đã giấu
+      lỗi này suốt từ 11/09.
+
+3. `C:\ProgramData\LTTRender\gateway.env`: gỡ `LTT_HO_DUNG_CARD` và
    `LTT_TRA_CARD_GIAY` (Task 5.4).
-3. 🔴 **Gỡ `DependOnService` của `LTTRenderGateway`** — nếu không, lệnh trả card
+4. 🔴 **Gỡ `DependOnService` của `LTTRenderGateway`** — nếu không, lệnh trả card
    **không bao giờ chạy được**:
 
    ```powershell
@@ -132,7 +165,7 @@ Cùng lần deploy đó, **bốn** việc phải làm **tay** (không script nà
       ở lần deploy: gọi `POST /v1/nha_comfy {"hanh_dong":"dung"}` và xem nó trả 200
       hay 503-kèm-tên-kẻ-chặn.
 
-4. 🔴 **`gpu_may_b.json` phải có mặt trong cài đặt RENDER** (Task 6.1). Bản gốc
+5. 🔴 **`gpu_may_b.json` phải có mặt trong cài đặt RENDER** (Task 6.1). Bản gốc
    nằm ở `llm_gateway/deploy/`, nhưng cài đặt render trên máy B **không có** gói
    `llm_gateway` — `render_gateway/deploy/deploy.ps1` chỉ chép gói `render_gateway`.
    ⇒ Trước khi restart `LTTRenderGateway`, xác nhận trên máy B:

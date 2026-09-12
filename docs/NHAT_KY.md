@@ -17154,3 +17154,49 @@ regression, vẫn chưa deploy production.
 
 Bỏ nhánh `phien/mobile-v1` là bỏ hết. Không migration Alembic nào, không chạm
 `data/`/`secrets/`. `phat_media.py` là thêm mới; mỗi app migrate độc lập.
+## 2026-09-12 — Một sản phẩm đang bán mà không có cửa vào
+
+Nền tảng bán hai model từ 11/09, với hai bảng giá. Hôm nay tôi đi rà toàn bộ bề
+mặt công khai và thấy `ltt-3.5` gần như không tồn tại ở ngoài: `examples.py` gõ
+tay một tên ở bốn chỗ, công cụ `cam` gõ cứng `MODEL`, tài liệu hướng dẫn còn tên
+đã cắt từ D02 và những con số cũ hơn sự thật 26%.
+
+Thứ tôi không lường được là **không phép kiểm nào đỏ**. Và lý do thì gọn đến khó
+chịu: mỗi bề mặt **tự nhất quán với chính nó**. `examples.py` nói `ltt-3.8` ở cả
+bốn chỗ — nhất quán. Công cụ `cam` ghi `ltt-3.8` vào mọi tệp — nhất quán. Tài liệu
+dạy `ltt_llm` với cửa sổ `156385` — nhất quán với chính nó. Cái sai không nằm
+trong một giá trị nào cả, nó nằm ở chỗ **danh sách thứ hai ngắn hơn danh sách
+thật**, và một phép kiểm so-sánh-giá-trị thì không nhìn thấy hình dạng đó.
+
+Ba thứ tìm được không phải "thiếu tiện nghi":
+
+* **`ltt-3.5` không gọi được từ Claude Desktop ở bất kỳ giá nào.** Desktop lọc
+  danh sách model trước khi vẽ picker, và tên duy nhất qua được bộ lọc giải về
+  `ltt-3.8`. Một model đang bán, không có cửa trên một client đang chạy.
+* **Bộ cài độc lập `sdk/` in `inferenceModels : ltt-3.8`** — tên sản phẩm, không
+  phải tên tuyến. Desktop lọc bỏ nó ⇒ picker rỗng ⇒ nút gửi chết, không một lời
+  báo nào. Đúng cái bẫy mà cả mục 2.5b của tài liệu được viết ra để đóng, và
+  `tools/cam_cli.py` thì ghi đúng. Một bài học **đã học rồi** sống ở một tệp và
+  chết ở tệp bên cạnh.
+* **Sổ khoá production khai `['qwen38-api','qwen38-vision']`** — thiếu
+  `qwen35-api`. `chon_key` ném `ThieuKeyError`, `dieu_phoi` đọc đó thành "provider
+  không phục vụ được, đi tiếp", và mọi lượt LTT-3.5 hỏng **trong im lặng**. Không
+  test nào bắt được, vì sổ khoá là **dữ liệu vận hành** chứ không phải mã nguồn.
+  Thứ chốt được là *mặc định của công cụ ghi ra nó* — và mặc định ấy cũng đang sai.
+
+Bản sửa không phải thêm một tên vào từng chỗ. Là bỏ các danh sách thứ hai: một
+nguồn (`canonical.ALIAS_SANG_ID`), bề mặt hoặc dẫn từ đó hoặc bị test buộc hai
+đầu. Và hồ sơ model thành **một bản ghi** thay vì bốn hằng số rời — vì bốn thứ ấy
+phải đi cùng nhau, và bỏ sót một cái nghĩa là khách cắm tên này với cửa sổ kia,
+rồi ăn một `413` giữa phiên, im lặng, lệch đúng một con số.
+
+⭐ Một chi tiết tôi suýt làm hỏng: bộ dò tên cũ. Bản đầu quét văn bản, và nó bắt
+   ngay 14 dòng trong `CHANGELOG.md` — nơi `ltt_llm` là một **sự thật lịch sử**.
+   Làm xanh một bộ dò như thế nghĩa là xoá lời kể. Nên nó đọc **AST** và chỉ phạt
+   **hằng chuỗi** (chỗ tên thật sự đi ra ngoài, vào tệp cấu hình của khách), còn
+   tài liệu thì chỉ soi hai tệp *hướng dẫn*, không soi tệp *ghi chép*.
+
+Và một đề xuất của tôi bị chính tôi đổi hướng: tôi đã định **xoá**
+`tools/danh_gia_vision.py`. Chủ sản phẩm vừa hoãn phần ảnh sang phiên sau — xoá bộ
+đo ảnh duy nhất ngay trước phiên dành riêng cho ảnh là đốt đúng thứ phiên ấy cần.
+Nó đã có `--model`; chỉ mặc định là cũ. Đổi mặc định, giữ tệp.

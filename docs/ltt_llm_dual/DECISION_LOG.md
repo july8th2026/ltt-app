@@ -539,3 +539,54 @@ lý do chủ dự án thoải mái giữ mức dự trữ ấy.
    (D01 B, Pha 5) quản, và hai cơ chế cùng canh một card là hai chỗ khai một điều.
 3. Sàn nằm ở **env theo model**, nên đổi nó là một dòng cấu hình + restart cổng,
    không phải một lần deploy mã.
+---
+
+## ✅ L-19 — Bề mặt công khai phải phục vụ **cả hai** tên, và **không có tên thứ ba** (chủ dự án, 2026-09-12)
+
+> *"phần `['qwen38-api','qwen38-vision']` bản chất ta không có hoặc bây giờ cũng
+> không còn dùng nữa. cần dọn dẹp sạch sẽ và chuẩn hóa với 2 model chat cũng như 2
+> cổng không thiết kế thêm là `ltt-3.8`, `ltt-3.5`."*
+
+### Vì sao đây là một chốt chứ không phải một việc dọn
+
+D02 đã chốt **tên**. L-19 chốt một điều khác và mạnh hơn: **mọi bề mặt khách chạm
+vào phải phục vụ đủ hai tên ấy, và không bề mặt nào được tự khai một danh sách
+riêng.** Không có câu đó thì D02 vẫn đúng trong khi sản phẩm vẫn bán được một nửa.
+
+Đo lại toàn bộ bề mặt công khai ngày 12/09 — `ltt-3.5` gần như không tồn tại ở
+ngoài, và **không phép kiểm nào đỏ**, vì mỗi bề mặt tự nhất quán với chính nó:
+
+| Bề mặt | Trước 12/09 |
+|---|---|
+| `platform_core/public_api/examples.py` | gõ tay MỘT tên, ở bốn chỗ |
+| Claude Desktop (`TUYEN_TUONG_THICH`) | **một** tuyến ⇒ `ltt-3.5` **không gọi được ở mọi giá** |
+| `tools/cam_cli.py` + GUI | `MODEL` gõ cứng, không có cách chọn |
+| `sdk/ltt_cai_dat_cli.py` | gõ cứng, **và in sai** `inferenceModels` |
+| `docs/PUBLIC_API/HUONG_DAN_CAM_CLI.md` | tên đã cắt + số đã cũ 26% |
+| `tools/them_key_ltt_llm.py` | mặc định là **hai tên đã cắt** |
+
+### Chốt
+
+1. **Một nguồn danh sách**: `canonical.ALIAS_SANG_ID`. Bề mặt hoặc **dẫn** từ đó,
+   hoặc **chép** nó và bị test buộc hai đầu. Không bề mặt nào tự khai.
+2. **Không tên thứ ba.** Tên tuyến Claude Desktop (`ltt-llm-claude-compat…`) là
+   **chi tiết giao thức của một client**, không phải tên sản phẩm: nó không vào
+   `ALIAS_SANG_ID`, không vào catalog, không vào bảng giá.
+3. **Mỗi model một tuyến Desktop.** Thiếu tuyến = model không gọi được từ client
+   đó ở bất kỳ giá nào.
+4. **Hồ sơ model là một bản ghi**, không phải bốn hằng số rời (tên, tuyến, cửa sổ,
+   ngưỡng nén). Bỏ sót một trường ⇒ khách cắm tên này với cửa sổ kia ⇒ một `413`
+   giữa phiên, im lặng.
+
+### Consequences
+
+1. `tests/test_1233_be_mat_hai_model.py` — 23 ca, bảy cơ chế, mỗi ca có đối chứng.
+   Cả bảy đều **đỏ** trên bản HEAD trước commit.
+2. Bộ dò tên cũ đọc **AST** và chỉ phạt **hằng chuỗi**, không phạt chú thích; tài
+   liệu chỉ soi hai tệp **hướng dẫn**, không soi `CHANGELOG`/`AUDIT_*`. Một bộ dò
+   quét cả lời kể sẽ **trừng phạt việc giải thích** và ép người sau xoá lý do để
+   làm xanh gate.
+3. `tools/danh_gia_vision.py` **giữ lại** (đổi mặc định sang `qwen38-api`), không
+   xoá như đề xuất ban đầu: chủ sản phẩm hoãn phần ảnh sang phiên sau, nên xoá bộ
+   đo ảnh duy nhất ngay trước phiên ấy là đốt đúng thứ phiên ấy cần.
+4. Một việc **tay** thêm vào lần deploy — sổ khoá production (`RUNBOOK` §2.2 mục 2).
