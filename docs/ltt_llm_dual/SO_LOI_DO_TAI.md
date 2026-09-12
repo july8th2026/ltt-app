@@ -13,6 +13,7 @@
 | L-03 | `ltt-3.8` khai *"Text only"* du engine DA nap `mmproj` | DOC LAP | ban khai (may A) | `catalog.HO_SO` co_vision=True ca hai | cho |
 | L-04 | bo cham `bia-01` do **su vang mat** -> cau bia dat VA cau lac de deu duoc cham dung | DOC LAP | `tools/do_tai_hai_model.py` | ban cu: 3/3 cau sai -> "dung"; ban moi: 1/3 | ✅ **DONG 13/09** |
 | L-05 | **108/131 job loi 14 ngay** deu la `AmbiguousProviderError: mat ket noi sau khi bat dau gui` | DOC LAP | he qua cua L-01 | 48/48 done, 0 loi (p=0,3%) | ✅ **DONG 13/09** |
+| L-06 | cua DONG BO khong huy duoc: khach cat ket noi ma slot van bi giu toi khi sinh XONG | DOC LAP | `chat.py` khong goi `huy_luot.phien` | tra slot 15,4 / 17,2 / 31,9 s theo `max_tokens` 900 / 1024 / 2000 | **MO 13/09** |
 
 ## L-05 — mot MUC CAN DO, khong phai mot ket luan
 
@@ -35,6 +36,52 @@ Tap trung 08/09 (**64**) va 09/09 (**34**) = 75% tong so. Tu 11/09 khong con job
    vong vi dung mot gia thuyet khop qua vua ("khoa advisory theo tai khoan").
    Phep do dung: sau khi deploy ban sua L-01, lop loi nay phai **bien mat** —
    khong phai giam. Neu no chi giam, nguyen nhan la thu khac.
+
+## L-06 — MO 13/09/2026: cua dong bo khong cat duoc viec khi khach bo di
+
+Cong M doi *"slot trong <= 2 s"*. Do duoc **15,4 s**.
+
+### Phep do PHAN BIET — vi mot con so don khong noi duoc no la loi gi
+
+Mot lan do ra 15 giay co the la ba thu khac han nhau: ro lease, mot han cho co
+dinh, hoac "chay het roi moi tra". Ba ket luan ay khac nhau ve muc nghiem trong,
+nen phai co phep do tach chung ra. Doi `max_tokens`:
+
+| `max_tokens` | slot duoc tra sau |
+|---:|---:|
+| 900 | 15,37 s |
+| 1024 | 17,17 s |
+| 2000 | **31,90 s** |
+
+`2000 / 1024 = 1,95x` · `31,90 / 17,17 = 1,86x`. Gan nhu ti le thuan.
+
+⇒ Khong phai ro lease (lease CO ve 0), khong phai mot han cho co dinh. Nen
+  tang **chay het** luot sinh tren may B roi moi tra slot.
+
+### Goc — tim ra bang cach doc ma SAU KHI phep do chi huong
+
+```
+apps/ltt_llm/jobs.py:81     with huy_luot.phien(ma_luot):     <- cua JOB co
+server/api/chat.py          (khong co dong nao)               <- cua SYNC khong
+```
+
+Cua job boc luot trong mot **phien huy**, nen `POST /jobs/<id>/cancel` cat duoc
+lenh goi len may B — do duoc **0,33 s** (dang xep hang) va **0,36 s** (dang
+chay). Cua dong bo sinh `request_id` cho so sach nhung khong ghi danh phien huy
+nao, nen khi client dut thi khong co gi de cat.
+
+### Hai hau qua, va cai thu hai la tien
+
+1. **Slot bi giu vo ich** toi 32 giay. Voi 3 slot, ba client dut lien tiep la
+   ca may B dung yen trong nua phut trong khi hang doi van xep.
+2. **Khach van bi tinh tien cho token ho khong nhan duoc.** Do duoc: sau mot
+   luot bi cat, `mcredit_du` toan he tang **+360**. Day khong phai thu hai lan
+   — so sach can — nhung no la thu tien cho mot thu chua tung roi may chu.
+
+⚠️ **Chua sua.** Ban sua cham vao vong doi cua cua dong bo (dang ky phien huy
+   + phat hien client dut), va do khong phai thu nen lam ke ben mot lo do. Ghi
+   day de no khong bi mat, va de ban sua co doi chung san: ba con so 15,4 /
+   17,2 / 31,9 la thu phai doi thanh <= 2 s.
 
 ## L-01 — nhung gi da LOAI TRU duoc
 

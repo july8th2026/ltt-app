@@ -318,6 +318,42 @@ từ khi máy B có hai model, chúng giết luôn model trên card **không ai 
    cục tệ nhất: nếu lệnh nhả không có tác dụng thì `t_lạnh` đo được thực ra là
    một `t_ấm` thứ hai, và nó sẽ nói dối về chi phí nạp — theo hướng đẹp lên.
 
+## 7e. Cổng M, O, P — hai đạt, một lộ ra lỗi mới (L-06)
+
+Bốn kịch bản, đo `execution_leases` **trước** mỗi kịch bản làm đối chứng — một
+số 0 sau kịch bản không chứng minh gì nếu trước đó cũng là 0.
+
+| kịch bản | kết cục | trả slot | tiền |
+|---|---|---:|---|
+| bình thường (sync) | 200 | — | `hold −1` + `settle +1` |
+| huỷ lúc **xếp hàng** | `cancelled` | **0,33 s** | `refund` đủ, không thu |
+| huỷ lúc **đang chạy** | `cancelled` | **0,36 s** | `refund` đủ, không thu |
+| **client cắt kết nối** | — | **15,4 s** 🔴 | vẫn bị tính |
+
+### Cổng P — ĐẠT
+
+`execution_leases` về **0** sau tất cả bốn kịch bản. Không rò.
+
+### Cổng O — ĐẠT
+
+4 `hold` (−4) · 2 `refund` (+2) · 2 `settle` (+2), khớp đôi. **0 khoản treo**,
+0 thu hai lần, job huỷ được hoàn.
+
+⛔ Và phép đếm khoản treo đầu tiên của tôi ra **62** — một dương tính giả: sổ
+ghi kép giữ *cả* dòng `hold` lẫn dòng `settle`, nên đếm `hold` trên job đã xong
+là đếm bút toán bình thường. Khoản treo thật là một `hold` **không có** bản đối
+ứng, và chỉ một phép `NOT EXISTS` mới nói được điều ấy.
+
+### Cổng M — huỷ job ĐẠT, cắt kết nối TRƯỢT ⇒ **L-06**
+
+Huỷ qua API đạt thừa (0,33 / 0,36 s so với ngưỡng 2 s). Nhưng client **cắt kết
+nối** giữa chừng thì slot bị giữ tới **15,4 s**, và thời gian ấy **tỉ lệ với
+`max_tokens`** (900 → 15,4 s · 1024 → 17,2 s · 2000 → 31,9 s).
+
+Gốc: `apps/ltt_llm/jobs.py:81` bọc lượt trong `huy_luot.phien(ma_luot)`;
+`server/api/chat.py` **không có** dòng tương đương. Chi tiết ở `SO_LOI_DO_TAI.md`
+mục L-06.
+
 ## 8. Sổ lỗi L-* — trạng thái cuối lượt 13/09
 
 | mã | trạng thái | ghi chú |
@@ -327,6 +363,8 @@ từ khi máy B có hai model, chúng giết luôn model trên card **không ai 
 | **L-03** | ✅ **đóng** | cả hai model khai `reads_images`; `DEVELOPER_GUIDE` + CHANGELOG đã sinh lại |
 | **L-04** | ✅ **đóng** | bộ chấm đổi sang mệnh đề dương; bản cũ chấm 3/3 câu sai thành "đúng" |
 | **L-05** | ✅ **đóng** | 48/48 done, 0 lỗi; p = 0,3 % nếu tỉ lệ 11,6 % còn nguyên |
+| **L-06** | 🔴 **mở** | cửa đồng bộ không cắt được việc khi khách bỏ đi: slot giữ 15,4–31,9 s |
 
-⭐ Năm mục L-* đều đóng, và mỗi mục đóng bằng một **phép đo trên đường thật**,
-không bằng một bản vá đã commit. Việc còn lại nằm ở các cổng A–Q, không ở sổ lỗi.
+⭐ Năm mục L-01…L-05 đều đóng, và mỗi mục đóng bằng một **phép đo trên đường
+thật**, không bằng một bản vá đã commit. L-06 là mục **mới**, do chính cổng M
+tìm ra — đó là điều một cổng nghiệm thu sinh ra để làm.
