@@ -21,6 +21,45 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-09-13 — `ltt-3.8` đọc được ảnh, và có nút tắt suy nghĩ
+
+**ADDED · không phá vỡ gì.** Hai thứ mới; client không hỏi tới thì không thấy.
+
+### 1. `ltt-3.8` nay đọc ảnh — lời hứa ⏳ ở mục 12/09 đã tới
+
+| | trước | nay |
+|---|---|---|
+| `ltt-3.8` `constraints.reads_images` | *(không khai)* | **`true`** |
+| mô tả | *"Text only, …"* | *"… It reads images too"* |
+
+Engine đã nạp bộ chiếu đa phương tiện cho **cả hai** hồ sơ từ trước; chỉ bản
+khai là chưa theo kịp. Nếu tích hợp của bạn đọc `reads_images` để bật nút đính
+ảnh, nó sẽ tự bật cho `ltt-3.8` — không phải sửa gì.
+
+### 2. `reasoning_effort: "none"` — tắt hẳn suy nghĩ
+
+| | |
+|---|---|
+| giá trị hợp lệ | `none` · `low` · `medium` *(mặc định)* · `xhigh` |
+
+**Phải làm gì:** nếu bạn muốn câu trả lời **ngắn**, dùng `reasoning_effort:
+"none"` — **đừng** hạ `max_tokens`.
+
+Đó là hai nút khác nhau, và nhầm chúng là một sẽ trả giá thật:
+
+```
+ltt-3.5, max_tokens=200, mac dinh (co suy nghi)  ->  token_ra 200, noi dung RONG
+ltt-3.5, max_tokens=200, reasoning_effort=none   ->  token_ra   4, tra loi dung
+```
+
+Với suy nghĩ bật, model có thể tiêu **trọn** ngân sách để suy luận rồi trả về
+`content` rỗng kèm `finish_reason: "length"` — và lượt đó **vẫn tính tiền**, vì
+GPU đã chạy thật.
+
+⚠️ **`ltt-3.5` với `low`/`medium` vẫn có thể trả rỗng khi `max_tokens` thấp.**
+Nhà sản xuất khuyến nghị **32.768** token ra cho hầu hết truy vấn. Cần câu trả
+lời ngắn thì tắt suy nghĩ, đừng bóp trần.
+
 ## 2026-09-12 — `text.chat` có HAI model, và tên cũ bị cắt
 
 **BREAKING · `model: "ltt_llm"` và `"ltt_llm_vision"` không còn được phục vụ.**
