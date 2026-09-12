@@ -33,7 +33,7 @@ from starlette.background import BackgroundTask
 from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy.orm import Session
 
-from platform_core.public_api import limits, metrics, policy, sandbox
+from platform_core.public_api import examples, limits, metrics, policy, sandbox
 from platform_core.public_api.catalog import build_catalog, require_tool
 from platform_core.public_api.executor import for_tool, for_tool_name
 from platform_core.public_api.errors import (insufficient_credit,
@@ -85,7 +85,21 @@ TOOL_CHAT = "text.chat"
 #:    là tên tuyến của giao thức, thứ Claude Desktop lọc theo chuỗi `claude`;
 #:    đổi nó là đóng cửa với một client đang chạy, và `test_290` ghim đúng ranh
 #:    giới ấy. Thứ bị cắt là *bí danh sản phẩm* ở vế phải.
-TUYEN_TUONG_THICH = {"ltt-llm-claude-compat": "ltt-3.8"}
+#:
+#: 🔑 12/09/2026 — BẢNG NÀY KHÔNG CÒN ĐỊNH NGHĨA Ở ĐÂY. Nguồn duy nhất là
+#:    `examples.TUYEN_DESKTOP`, và việc đó sửa một khuyết tật đang mở chứ không
+#:    phải dọn cho gọn: cùng một bảng từng được gõ hai lần — một bản ở đây để
+#:    **giải tên**, một bản ở `examples.py` để **in ra trang hướng dẫn**. Hai bản
+#:    ấy lệch nhau là khách chép đúng thứ trang dạy rồi nhận `model_not_found`,
+#:    và không phép kiểm nào thấy gì sai vì mỗi bên tự nhất quán.
+#:
+#: ⭐ Chiều import đúng là chiều này: `platform_core` không được biết gì về
+#:    `server`, còn `server` vốn đã đọc `platform_core.public_api`. Và tên tuyến
+#:    là **từ vựng khách nhìn thấy**, nên nó thuộc về mô-đun bề mặt công khai.
+#:
+#: 📈 Từ 12/09 bảng có HAI mục: `ltt-3.5` trước đó không có cửa nào trên Claude
+#:    Desktop — tên duy nhất qua được bộ lọc picker đều dẫn về `ltt-3.8`.
+TUYEN_TUONG_THICH = dict(examples.TUYEN_DESKTOP)
 
 
 def _giai_ten_model(ten: str) -> str:

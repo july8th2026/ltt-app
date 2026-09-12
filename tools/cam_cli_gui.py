@@ -87,6 +87,9 @@ class _Args:
         self.toan_cuc = kw.get("toan_cuc", False)
         self.vscode = kw.get("vscode", False)
         self.muc = kw.get("muc")
+        # ⚠️ Rong = "khach chua chon" chu khong phai mot ten sai. `lenh_cam`
+        #    doc bang `getattr(..., "") or MODEL`, nen rong ve mac dinh.
+        self.model = kw.get("model", "")
 
 
 class Cau:
@@ -115,6 +118,21 @@ class Cau:
     def xem(self) -> dict:
         kq = self._chay(self._loi.lenh_xem, _Args())
         kq["phien_ban"] = getattr(self._loi, "PHIEN_BAN", "?")
+        # 🔑 Danh sach model do LOI khai, khong do trang HTML go tay. Them mot
+        #    ho so o `cam_cli.HO_SO_MODEL` la o chon tren giao dien co no ngay,
+        #    va khong the hien ra mot ten ma loi khong cam duoc.
+        #
+        # ⚠️ `getattr` chu khong `self._loi.HO_SO_MODEL`, dung khuon dong tren.
+        #    `xem()` la ham VE MAN HINH: mot ngoai le o day khong hien ra thanh
+        #    thong bao nao, no chi lam cua so dung im — va `test_284` chot dung
+        #    dieu do. Vo GUI con co the duoc ghep voi mot loi cu hon chinh no
+        #    (ban `.exe` nap `cam_cli.py` canh no), nen "loi khong co bang ay"
+        #    la mot trang thai that chu khong phai mot gia dinh phong xa.
+        #    JS phia kia ve mot muc mac dinh khi thieu — xem `veModel`.
+        kq["models"] = [{"ten": h.ten, "cua_so": h.cua_so, "nen": h.nen,
+                         "tuyen_desktop": h.tuyen_desktop}
+                        for h in getattr(self._loi, "HO_SO_MODEL", {}).values()]
+        kq["model_mac_dinh"] = getattr(self._loi, "MODEL", "")
         try:
             kq["trang_thai"] = self._loi.trang_thai_thuc()
         except Exception as exc:                              # noqa: BLE001
@@ -140,7 +158,8 @@ class Cau:
                           _Args(khoa=(khoa or "").strip(),
                                 goc=self._loi.GOC_MAC_DINH,
                                 toan_cuc=bool(chon.get("toan_cuc", False)),
-                                vscode=(codex == "vscode"), muc=muc))
+                                vscode=(codex == "vscode"), muc=muc,
+                                model=str(chon.get("model") or "")))
 
     def go(self) -> dict:
         return self._chay(self._loi.lenh_go, _Args())

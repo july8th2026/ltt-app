@@ -93,6 +93,17 @@ a:hover{text-decoration:underline}
     <p class="lam">Khoá chỉ hiện <b>một lần</b> lúc tạo.
       <a href="#" id="mokhoa">Lấy khoá ở trang Khoá API ↗</a></p>
 
+    <!-- Ô chọn model. Các lựa chọn do LÕI khai (`cam_cli.HO_SO_MODEL`) và được
+         vẽ trong `lamMoi()`; ở đây chỉ có cái vỏ. Gõ tên model vào HTML là tạo
+         một danh sách thứ hai, và nó sẽ lệch với lõi đúng vào lần thêm model
+         sau — đúng cái đã xảy ra với `ltt-3.5` trước 12/09. -->
+    <div class="nhom">
+      <label class="lbl">Model</label>
+      <div class="radio" id="model"></div>
+      <p class="lam">Tên này được ghi <b>thật</b> vào cấu hình của từng công cụ,
+        kèm cửa sổ ngữ cảnh riêng của nó. Hai model có <b>hai bảng giá</b>.</p>
+    </div>
+
     <div class="nhom">
       <label class="lbl">Codex</label>
       <div class="radio">
@@ -143,7 +154,11 @@ a:hover{text-decoration:underline}
       Các giá trị dưới đây để đối chiếu; tên model riêng tránh lỗi nút Gửi bị vô hiệu mà không báo.</p>
     <div class="cp"><span class="k">Gateway base URL</span><code>https://app.lttstudios.com/api</code><button class="chep" data-chep="https://app.lttstudios.com/api">chép</button></div>
     <div class="cp"><span class="k">Auth scheme</span><code>Bearer</code><button class="chep" data-chep="Bearer">chép</button></div>
-    <div class="cp"><span class="k">inferenceModels</span><code>ltt-llm-claude-compat</code><button class="chep" data-chep="ltt-llm-claude-compat">chép</button></div>
+    <!-- ⛔ Giá trị này ĐI THEO ô chọn model ở trên (`dongBoTuyenDesktop`). Gõ
+         cứng một tên là cái bẫy mà cả thẻ này được dựng lên để đóng: khách chọn
+         `ltt-3.5` rồi chép đúng ô này sẽ cắm tuyến của `ltt-3.8`, và triệu
+         chứng là **một hoá đơn theo giá model kia**, không phải một lỗi. -->
+    <div class="cp"><span class="k">inferenceModels</span><code id="tuyen_desktop">ltt-llm-claude-compat</code><button class="chep" id="chep_tuyen" data-chep="ltt-llm-claude-compat">chép</button></div>
     <div class="cp"><span class="k">Gateway API key</span><code>khoá của bạn</code></div>
   </div>
 
@@ -177,11 +192,57 @@ function datTrangThai(tt) {
   }
 }
 
+// Vẽ ô chọn model từ danh sách LÕI trả về. Gọi một lần, ở `lamMoi()`.
+//
+// ⚠ Nếu lõi không trả `models` (bản .exe cũ ghép với trang mới), ô vẫn phải
+//   dùng được: vẽ một mục duy nhất là mặc định, thay vì để trống — một ô chọn
+//   trống trông y hệt một cửa sổ hỏng.
+function veModel(models, macDinh) {
+  const o = $("model");
+  if (!o || o.dataset.daVe === "1") return;
+  const ds = (Array.isArray(models) && models.length)
+    ? models : [{ten: macDinh || "ltt-3.8", cua_so: 0}];
+  o.innerHTML = "";
+  for (const m of ds) {
+    const l = document.createElement("label");
+    const r = document.createElement("input");
+    r.type = "radio"; r.name = "model"; r.value = m.ten;
+    r.checked = (m.ten === (macDinh || ds[0].ten));
+    r.dataset.tuyen = m.tuyen_desktop || "";
+    r.addEventListener("change", dongBoTuyenDesktop);
+    l.appendChild(r);
+    l.appendChild(document.createTextNode(" " + m.ten));
+    if (m.cua_so) {
+      const c = document.createElement("code");
+      c.textContent = m.cua_so.toLocaleString("vi-VN") + " token";
+      l.appendChild(document.createTextNode(" "));
+      l.appendChild(c);
+    }
+    o.appendChild(l);
+  }
+  o.dataset.daVe = "1";
+  dongBoTuyenDesktop();
+}
+
+// Thẻ "Đối chiếu Claude Desktop" phải nói tuyến của model ĐANG CHỌN.
+//
+// ⚠ Nút "chép" đọc `data-chep`, không đọc chữ hiển thị — nên phải đổi CẢ HAI.
+//   Đổi mỗi chữ là cái tệ hơn cả không đổi: màn hình nói một đằng, clipboard
+//   đưa một nẻo, và khách tin clipboard.
+function dongBoTuyenDesktop() {
+  const r = document.querySelector('input[name="model"]:checked');
+  const t = (r && r.dataset.tuyen) || "";
+  if (!t) return;
+  if ($("tuyen_desktop")) $("tuyen_desktop").textContent = t;
+  if ($("chep_tuyen")) $("chep_tuyen").dataset.chep = t;
+}
+
 async function lamMoi() {
   const a = api(); if (!a) return;
   try {
     const kq = await a.xem();
     if (kq && kq.phien_ban) $("pb").textContent = "v" + kq.phien_ban;
+    veModel(kq.models, kq.model_mac_dinh);
     ve(kq); datTrangThai(kq.trang_thai);
   } catch (e) {
     $("nhatky").textContent = "[LỖI] Không đọc được trạng thái: " + String(e);
@@ -242,7 +303,9 @@ $("bcam").onclick = () => {
   const k = $("khoa").value.trim();
   if (!k) { $("nhatky").textContent = "Chưa dán khoá."; return; }
   const codex = document.querySelector('input[name="codex"]:checked').value;
+  const oModel = document.querySelector('input[name="model"]:checked');
   const luaChon = {codex,
+    model: oModel ? oModel.value : "",
     claude_cli: $("claude_cli").checked,
     claude_vscode: $("claude_vscode").checked,
     claude_desktop: $("claude_desktop").checked,

@@ -155,7 +155,7 @@ curl -X POST "$LTT_BASE_URL/api/v1/chat/completions" \
   -H "Authorization: Bearer $LTT_API_KEY" \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: $(uuidgen)" \
-  -d '{"model":"ltt_llm",
+  -d '{"model":"ltt-3.8",
        "messages":[{"role":"user","content":"Viết một câu chào bằng tiếng Việt."}],
        "max_tokens":300}'
 ```
@@ -163,7 +163,7 @@ curl -X POST "$LTT_BASE_URL/api/v1/chat/completions" \
 ```json
 {
   "object": "chat.completion",
-  "model": "ltt_llm",
+  "model": "ltt-3.8",
   "choices": [{"index":0,"message":{"role":"assistant","content":"…"},"finish_reason":"stop"}],
   "usage": {"prompt_tokens":12,"completion_tokens":18,"total_tokens":30},
   "x_ltt": {
@@ -194,7 +194,7 @@ client = OpenAI(api_key=os.environ["LTT_API_KEY"],
                 base_url=os.environ["LTT_BASE_URL"].rstrip("/") + "/api/v1")
 
 answer = client.chat.completions.create(
-    model="ltt_llm",
+    model="ltt-3.8",
     messages=[{"role": "user", "content": "Viết một câu chào bằng tiếng Việt."}],
     max_tokens=300,
     extra_headers={"Idempotency-Key": uuid.uuid4().hex},   # ← bắt buộc

@@ -230,7 +230,7 @@ nhau trên cùng một màn hình, không có gì nói cái nào của ai:
 
 ```
 địa chỉ   /api/v1  ><  /api           lệch đúng bốn ký tự
-model     ltt_llm  ><  ...-compat     chỉ Claude Desktop
+model     ltt-3.8  ><  ...-compat     chỉ Claude Desktop
 ```
 
 Chép nhầm thì Codex nhận `404`, hoặc nút gửi của Claude Desktop **im lặng

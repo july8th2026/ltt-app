@@ -112,8 +112,15 @@ def main() -> None:
     if not cfg.models_mo:
         # Không phải lỗi — fail-closed của Q92 đang làm đúng việc. Nhưng phải nói
         # to, vì "GET /v1/models trả rỗng" rất dễ bị hiểu nhầm thành cổng hỏng.
+        # ⚠️ Vi du DAN TU `catalog.HO_SO`, khong go tay. Ban truoc go
+        #    `qwen38-api,qwen38-vision` va `qwen38-vision` da bi go o D02
+        #    (dual-model 2.3) — tuc dong log duy nhat ma nguoi van hanh doc
+        #    trong dung luc cong dang rong lai **day ho khai mot ho so khong ton
+        #    tai**, roi cong tu choi no va trieu chung khong doi.
+        from .catalog import HO_SO
         log.warning("LTT_LLM_MODELS rong -> KHONG mo model nao. "
-                    "Dat vi du: LTT_LLM_MODELS=qwen38-api,qwen38-vision")
+                    "Dat vi du: LTT_LLM_MODELS=%s",
+                    ",".join(h.ten for h in HO_SO))
     # 🔴 NGHE RA NGOÀI LOOPBACK MÀ KHÔNG CÓ TOKEN = KHÔNG KHỞI ĐỘNG.
     #
     #    `auth()` ở `api.py` trả về ngay khi `cfg.token` rỗng — đó là đường dev,

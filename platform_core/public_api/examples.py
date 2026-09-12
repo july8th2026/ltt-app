@@ -19,6 +19,8 @@ from __future__ import annotations
 
 import json
 
+from platform_core.llm import canonical
+
 ENV_API_KEY = "LTT_API_KEY"
 ENV_BASE_URL = "LTT_BASE_URL"
 ENV_PROJECT_ID = "LTT_PROJECT_ID"
@@ -270,7 +272,8 @@ NO_CODE_RECIPES = (
 # an example that does not run, and the reader concludes the API is broken
 # rather than that the example is wrong.
 
-CHAT_MODEL = "ltt-3.8"
+#: 🔑 DẪN TỪ `canonical`, KHÔNG GÕ TAY. Xem `CLI_MODELS` ngay dưới để biết vì sao.
+CHAT_MODEL = canonical.MODEL_MAC_DINH
 CHAT_PATH = "/chat/completions"
 
 #: Deliberately short. A long prompt pulls attention onto its content instead of
@@ -556,10 +559,27 @@ CHAT_DIFFERENCES = (
 # this module: they read the environment, and the tests refuse anything that
 # looks like a literal credential.
 
-#: The model alias a customer types. Deliberately the public alias, never the
-#: internal id — a customer who pins to the internal id is a customer we cannot
-#: move to a different model later without breaking them (test_212).
-CLI_MODEL = "ltt-3.8"
+#: Every public alias a customer may type, in the order the pages list them.
+#:
+#: 🔴 THIS TUPLE IS DERIVED, AND THE DERIVATION IS THE POINT. Until 2026-09-12
+#:    this module knew about exactly one model and said so in four hand-typed
+#:    places. The platform had shipped a second one (`ltt-3.5`) days earlier, so
+#:    every public page — connect guide, plug-in tool, developer portal — showed
+#:    a **one-model product** while the catalogue, the price table and the
+#:    billing ledger all knew about two. A customer could not discover the model
+#:    they were already being charged different rates for.
+#:
+#: ⭐ Reading it off `canonical.ALIAS_SANG_ID` means the pages cannot lag the
+#:    platform again: adding a third profile updates the guide in the same
+#:    commit that adds the model, because there is no second list to remember.
+#:
+#: ⚠️ Left-hand side only — public aliases, never the internal ids behind them.
+#:    A customer who pins to `qwen38-api` is a customer we cannot move to another
+#:    model without breaking them (test_212). That is what the alias layer buys.
+CLI_MODELS: tuple[str, ...] = tuple(canonical.MODEL_HOP_LE)
+
+#: The one a customer gets when they say nothing. Same source, same reason.
+CLI_MODEL = canonical.MODEL_MAC_DINH
 
 #: The route name Claude Desktop needs — and it is a **route name**, not a
 #: product name. Everything a customer buys is still `ltt-3.8` / `ltt-3.5`.
@@ -574,7 +594,47 @@ CLI_MODEL = "ltt-3.8"
 #: The filter only asks that the name *contain* `claude`; it does not ask for a
 #: real Anthropic model. So this name clears the gate without borrowing another
 #: company's product name.
+#:
+#: 🔑 ROUTE NAME → PUBLIC ALIAS. **The single source for both ends**:
+#:    `server.api.streaming.TUYEN_TUONG_THICH` is built from this dict rather
+#:    than repeating it, so the gateway that resolves the name and the page that
+#:    prints it cannot disagree.
+#:
+#: 🔴 WHY A SECOND ROUTE EXISTS FROM 2026-09-12. There was exactly one, so
+#:    Claude Desktop could reach exactly one of our two models — `ltt-3.5` was
+#:    **unreachable from that client at any price**, because the only name that
+#:    survives the picker filter resolved to `ltt-3.8`. Not a missing
+#:    convenience: a product we sell with no door on one of its surfaces.
+#:
+#: ⚠️ The suffix is the alias' own distinguishing part, so a reader can see
+#:    which model a route goes to without opening this file. Do not "tidy" the
+#:    names to `-a` / `-b`: the name is what a customer pastes into a registry
+#:    key, and it is the only place they will ever see which model they picked.
+#:
+#: ⛔ These are **route names of one client's protocol**, not product names. They
+#:    do not belong in `canonical.ALIAS_SANG_ID`, and nothing in the catalogue,
+#:    the price table or `/api/v1/tools` may print them as models for sale.
+TUYEN_DESKTOP: dict[str, str] = {
+    "ltt-llm-claude-compat": "ltt-3.8",
+    "ltt-llm-claude-compat-35": "ltt-3.5",
+}
+
+#: The route for the default model — what the Desktop surface shows by default.
 DESKTOP_MODEL = "ltt-llm-claude-compat"
+
+
+def tuyen_desktop_cho(alias: str) -> str:
+    """Public alias → the route name Claude Desktop must be given for it.
+
+    ⛔ Raises rather than falling back to the default route. A wrong-but-plausible
+       route name is the exact failure this whole mechanism exists to prevent:
+       Desktop would answer from a model the customer did not pick, and the only
+       symptom is a bill for the other price.
+    """
+    for tuyen, ten in TUYEN_DESKTOP.items():
+        if ten == alias:
+            return tuyen
+    raise KeyError(f"khong co tuyen Desktop cho {alias!r} (co: {CLI_MODELS})")
 
 #: Cửa sổ ngữ cảnh ta **công bố cho client**, và trần token ra.
 #:
