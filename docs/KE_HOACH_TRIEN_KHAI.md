@@ -3876,8 +3876,11 @@ Nguồn thiết kế:
       `cmc-base-20260911` = `09b219a371e1261f0f0eef0e316c1ca42754cb78`;
       Voice đã nằm trong baseline nên handoff no-op, LLM handoff điền hai
       worktree/HEAD/dirty hash thật; chưa dọn branch/worktree.
-- [ ] **H45.6 — Final integration + cleanup:** nhận Voice rồi LLM, chứng nhận hợp
-      nhất, chuyển default branch và xóa đúng ledger đã được duyệt riêng.
+- [ ] **H45.6 — Final integration + cleanup:** 12/09/2026 đã port ba commit tài
+      liệu Voice hậu-baseline và merge `cmc/llm-dual-reconcile` vào `main`;
+      đang chờ L3 trên HEAD hợp nhất. Chưa chuyển remote authority, chưa xóa
+      worktree/branch. WIP VPS V4 được giữ nguyên và ghi
+      `NEED_RECONCILIATION`, không được coi là mục cleanup an toàn.
 
 **Ngoài phạm vi:** deploy production. **Gate:** tuân đúng
 `docs/00_LTT_OPERATING_CONTRACT.md`; trước lệnh nặng phải đo cả tải máy và cửa
@@ -3889,12 +3892,10 @@ còn dở rồi hợp nhất với kiến trúc hai model. Quyết định: **Q1
 L-12…L-18 ở `docs/ltt_llm_dual/DECISION_LOG.md`). Hồ sơ canonical:
 `docs/ltt_llm_dual/`, plan ở `docs/superpowers/plans/2026-09-11-ltt-llm-dual-model.md`.
 
-⛔ **TRẠNG THÁI THẬT, đừng đọc số phần trăm thành "gần xong":** phần **mã** của
-H45 nay **xong hết** (đo lại 12/09: bốn ô từng để trống đều đã có mã + bánh cóc),
-**deploy bằng KHÔNG**. Chưa một phần nào của H45 chạy trên máy A hay máy B. Đó là
-**chủ ý** (R21 + L-17 + R27 buộc gom thành một lần deploy đúng thứ tự), không phải
-chậm trễ — nhưng nghĩa là mọi con số "đã xong" dưới đây là *đã viết và đã kiểm*,
-chưa phải *đang phục vụ khách*.
+⛔ **TRẠNG THÁI THẬT:** phần mã đã được phiên LLM triển khai lên máy B rồi máy A
+và ghi bằng chứng trong `BAN_GIAO_PHIEN.md`. LTT-CMC không deploy lại. Gate của
+nhánh nguồn không chứng nhận ba commit bàn giao cuối; vì vậy trạng thái source
+canonical vẫn là **chờ L3 trên `main`**, không được suy từ trạng thái production.
 
 ⭐ **Chương trình Multi-Job không bị bỏ, nó bị hấp thụ.** 14 task của nó
 (`docs/multijob/08_IMPLEMENTATION_PLAN.md`) nay nằm trong H45: T1→Pha 0, T2–T8→Pha 1,
@@ -3947,8 +3948,8 @@ vision. Kế hoạch của họ viết **trước** phép đo; ta giữ ý đị
       phải một báo động hợp lệ: sàn WDDM khác 0 kể cả ở cấu hình đang sống, và nó
       **co giãn theo `-ub`**. **Xong**: `llm_gateway/dem.py` + `nhip_tim.py`,
       hai khối mới ở `/ops/jobs-metrics`, `test_1227`/`test_1228`.
-- [ ] H45.7.1 Q mới + runbook + nhật ký. Q123 ✔; `RUNBOOK.md` ✔ (§2.2 nay **năm**
-      việc tay); L-19 ✔; nhật ký ✔; còn **gate đầy đủ**.
+- [ ] H45.7.1 Q mới + runbook + nhật ký. Q123 ✔; `RUNBOOK.md` ✔; L-19 ✔; nhật
+      ký ✔; còn **gate đầy đủ trên `main` hợp nhất**.
 - [x] H45.9 **Bề mặt công khai + ba công cụ cắm phục vụ CẢ HAI model** (L-19).
       ⛔ Không phải việc dọn: `ltt-3.5` **không gọi được từ Claude Desktop ở bất kỳ
       giá nào** (một tuyến tương thích duy nhất, giải về `ltt-3.8`), bộ cài độc lập
@@ -3957,7 +3958,7 @@ vision. Kế hoạch của họ viết **trước** phép đo; ta giữ ý đị
       cho **hai tên đã cắt**. Không phép kiểm nào đỏ, vì mỗi bề mặt tự nhất quán với
       chính nó. Chốt lại bằng `tests/test_1233` (23 ca, bảy cơ chế, mỗi ca có đối
       chứng — cả bảy **đỏ** trên bản HEAD).
-- [ ] H45.8 Deploy MỘT LẦN, đúng thứ tự: `llama-swap.yaml` → hai cổng máy B → máy A.
+- [x] H45.8 Deploy MỘT LẦN, đúng thứ tự: `llama-swap.yaml` → hai cổng máy B → máy A.
       **Năm** việc phải làm **tay** (không script nào làm hộ) ghi ở `RUNBOOK.md` §2.2
       — trong đó việc thứ hai là **sổ khoá production**: khoá `ltt_llm` đang khai
       `['qwen38-api','qwen38-vision']`, thiếu `qwen35-api`, nên **mọi lượt LTT-3.5

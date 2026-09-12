@@ -68,7 +68,8 @@ Không cherry-pick lại chuỗi T0–T8. Ba file dirty overlap
 patch-id khác nhau giữa hai source; phải so intent theo D04, không chọn cả file
 từ một bên.
 
-`docs/ltt_llm_dual/artifacts/wip_task9_multijob.patch` là `ARCHIVE_ONLY`:
+Patch WIP Task 9 từng là `ARCHIVE_ONLY`; sau đối soát cuối nó đã bị loại khỏi
+canonical để không còn một bản sao có thể được áp lại:
 SHA-256 `FADF6CC3FA8A31D0A1E985784A521E94D6FEFE4527961EE33A64DD50B29F3C7F`,
 Git blob `449fff00687216a9be2bd14404c6ac9d38eafd4e`; current live multijob diff có
 Git blob `f61c9978b0976d4bdb01bc15f277ce11dced368d`. Chúng **không bằng nhau**;

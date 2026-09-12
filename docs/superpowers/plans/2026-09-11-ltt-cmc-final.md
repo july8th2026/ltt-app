@@ -4,8 +4,9 @@
 
 **Goal:** Integrate the certified Voice and LLM handoffs into `main`, certify the combined source, switch repository authority, and remove all retired Git/session state after a separate destructive approval.
 
-**Architecture:** Voice is already present exactly once in the immutable CMC
-baseline, so its integration is a verified no-op. Accept the clean LLM handoff,
+**Architecture:** Voice functionality is already present exactly once in the
+immutable CMC baseline; any later documentation-only Voice commits are reviewed
+and ported without replaying implementation history. Accept the clean LLM handoff,
 integrate it as one atomic changeset with semantic review, normalize the active
 worktree/branch authorities, and certify the frozen source once. Move remote
 authority only after certification, then present a literal deletion ledger and
@@ -39,8 +40,8 @@ continuation.
   `072d6d970063bf9ee60f3c8b8bcac8911788dd23`.
 - Immutable baseline: `cmc-base-20260911` =
   `09b219a371e1261f0f0eef0e316c1ca42754cb78`.
-- Voice branch and baseline already contain the same certified Voice behavior;
-  do not replay Voice commits.
+- Voice branch and baseline contain the same certified Voice behavior; three
+  later documentation commits were discovered and require a narrow semantic port.
 - Pre-handoff main evidence:
   `test-results/gates/20260912T005150Z-17608.json`, PASS 33/33,
   `cay_da_doi_giua_chung=false`.
@@ -87,9 +88,9 @@ continuation.
       recorded full SHA.
 - [ ] Verify the Voice branch HEAD is already an ancestor/equivalent of the
       baseline and the recorded Voice tests belong to that source.
-- [ ] Record disposition `NO_OP_ALREADY_IN_BASELINE`; cherry-pick zero Voice
-      commits. Any contrary evidence reopens semantic review instead of
-      accepting an entire side.
+- [x] Record disposition `NO_OP_FUNCTIONAL_ALREADY_IN_BASELINE`; port only the
+      three post-baseline documentation commits discovered by live rescan. No
+      Voice implementation history is replayed.
 
 ### Task 2: Integrate the LLM handoff
 

@@ -48,10 +48,11 @@ def test_thieu_main_thi_do_phu_fail_closed(monkeypatch):
         do_phu_diff._nhanh_goc_mac_dinh()
 
 
-def test_ci_bao_ve_main_trong_giai_doan_chuyen_tiep():
+def test_ci_chi_bao_ve_authority_main():
     workflow = (ROOT / ".github/workflows/gate-quick.yml").read_text(
         encoding="utf-8")
-    assert "branches: [main, admin-mvp-v3, master]" in workflow
+    assert "branches: [main]" in workflow
+    assert "branches: [main," not in workflow
 
 
 def test_tai_lieu_song_tro_ve_hop_dong_van_hanh():

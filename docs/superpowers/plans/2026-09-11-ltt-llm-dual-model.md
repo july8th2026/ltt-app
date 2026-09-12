@@ -141,7 +141,7 @@ Lệnh một lần trên máy B trong các task dưới: `ssh … lengo@192.168.
 ### Task 1.5: Hoàn tất Task 9 Multi-Job theo D04  `[MACHINE A] [CONTROL PLANE]`
 
 **Files:**
-- Modify: `platform_core/llm/tham_so_da_luot.py` (thêm `luat_cho` — nguyên văn từ `docs/ltt_llm_dual/artifacts/wip_task9_multijob.patch`), `platform_core/runtime_noi_bo/luong.py` (hai chỗ dùng `luat_cho`, theo patch), `platform_core/job_runner.py` (`_luat_cho_job` theo patch, đặt vào `_chay_mot_job` bản trunk), `server/api/chat.py`, `server/api/streaming.py` (`_mot_cuc`), `platform_core/agent/planner.py`
+- Modify: `platform_core/llm/tham_so_da_luot.py` (thêm `luat_cho` từ WIP Task 9 đã được đối soát), `platform_core/runtime_noi_bo/luong.py` (hai chỗ dùng `luat_cho`), `platform_core/job_runner.py` (`_luat_cho_job` đặt vào `_chay_mot_job` bản trunk), `server/api/chat.py`, `server/api/streaming.py` (`_mot_cuc`), `platform_core/agent/planner.py`. Patch lưu trữ đã bị loại khỏi canonical sau khi hoàn tất đối soát.
 - Test: `tests/test_1208_cua_dong_bo_cho.py`
 
 **Interfaces:**

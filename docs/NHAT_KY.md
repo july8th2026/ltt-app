@@ -13,6 +13,24 @@
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
 
+## 2026-09-12 — LTT-CMC nhận xong Voice/LLM, chờ L3 trên `main`
+
+Quét live sau khi mọi phiên đóng cho thấy ảnh chụp barrier đã trôi ở hai chỗ:
+Voice có thêm ba commit tài liệu sau tag, và `D:\LTTSTUDIOSAPP-vps-v4` có WIP
+chưa commit. Đã port riêng ba commit Voice (`fad409d8`, `bf57a335`, `b55286b6`),
+sau đó merge nhánh sạch `cmc/llm-dual-reconcile` tại `dd26ec44` vào `main`
+bằng merge commit `c556c411`. Không sửa worktree VPS V4 hay Source A dirty.
+
+Đã loại patch WIP Multi-Job khỏi canonical vì `CMC_SOURCE_STATE.md` chứng minh
+Source B thay thế đủ từng tệp; đồng thời sửa liên kết tài liệu và hai lỗi định
+dạng hẹp. Alembic sau merge đo được đúng một head `a3f7c214e8b9`.
+
+Bằng chứng hiện tại là `PENDING_FINAL_L3`: gate nguồn LLM 30 PASS/3 BOQUA chạy
+ở `4bc3ea48`, trước ba commit cuối, nên không được dùng làm phán quyết cho HEAD
+hợp nhất. Chưa push/chuyển remote authority và chưa xóa worktree/branch.
+
+---
+
 ## 2026-09-12 — Chuẩn bị authority bàn giao worktree hậu CMC
 
 Đã cập nhật nguồn quy trình hiện hành để mọi task ghi code ghim `BASE_SHA`, làm

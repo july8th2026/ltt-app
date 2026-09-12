@@ -55,7 +55,9 @@
 
 ## 3. WIP chưa commit (Task 9)
 
-Nguyên văn diff được lưu (chỉ đọc, không áp) ở `artifacts/wip_task9_multijob.patch`.
+Diff WIP nguyên bản đã được đối soát theo từng tệp trong `CMC_SOURCE_STATE.md`.
+Bản patch lưu trữ không được đưa vào lịch sử canonical để tránh một nguồn sao
+chép có thể bị áp lại về sau.
 
 | Phần | Nhãn | |
 |---|---|---|

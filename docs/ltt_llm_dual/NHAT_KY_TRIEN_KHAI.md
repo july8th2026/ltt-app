@@ -176,7 +176,7 @@ desktop thì tới nút 3 mới được ghim sang. Con số 54 MiB là đúng, 
 Sau nút 3 (ghim app vào 5060 Ti) + đăng nhập phiên mới: `explorer` và `dwm` **đã rời** 3090.
 Còn lại trên 3090: TextInputHost 10,4 · Taskmgr 9,5 · SearchHost 9,3 · PhoneExperienceHost 9,2 ·
 ShellHost 9,2 · CrossDeviceResume 9,2 ≈ **47 MiB** (đều là app hệ thống kiểu UWP, không tôn trọng
-`UserGpuPreferences`). 
+`UserGpuPreferences`).
 
 **193 MiB → 47 MiB (−76 %).** Chủ dự án chốt dừng ở đây ("mặc kệ đi"). VRAM 3090: dùng 21.862 MiB,
 **trống 2.464 MiB** với model 204.800 đang nạp.

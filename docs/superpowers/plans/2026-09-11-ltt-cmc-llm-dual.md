@@ -13,7 +13,8 @@
 ## Global Constraints
 
 - Execute only after `CMC_SYNC_BARRIER_READY` and use both actual worktrees in `docs/LTT_CMC/HANDOFF_LLM_DUAL.md`.
-- Do not apply `docs/ltt_llm_dual/artifacts/wip_task9_multijob.patch`; it duplicates the live multijob dirty diff.
+- Do not recreate or apply the retired WIP Task 9 patch; it duplicated the live
+  Multi-Job dirty diff and was removed after final source reconciliation.
 - Do not restore `chataistudio`, old registries, old app lists or whole shared files from the 450-commit-old lineage.
 - D04 is authoritative: sync admission may wait at most 60 seconds after idempotency commit.
 - Machine A owns business admission; machine B only executes residency/drain fail-closed and binds GPUs by UUID/PCI.
