@@ -340,3 +340,35 @@ Toi doan ban va v22.5 se chua luon `low` tren 3.5. **Khong**. Voi `low`/`medium`
   * tra loi RO khi `finish_reason=length` + content rong, thay vi 200 im lang.
 
 ⚠️ Chua chon duong nao — can do them va doi chieu nguon truoc (hop dong §1b).
+
+## L-05 — do duoc lan dau tren cua job (13/09/2026)
+
+### Vi sao truoc do khong do duoc
+
+108/131 loi deu la dong trong bang `jobs`. Moi phep do cua phien nay di qua cua
+**sync** (`/chat/completions`) nen khong sinh mot dong `jobs` nao — bang van dung
+o 10/09, va *"khong co loi moi"* khong phai bang chung gi ca. Phai tao job THAT.
+
+⛔ Cua job co **ba** buoc, khong phai mot: `POST /quotes` -> `POST /jobs` (kem
+   truong **`quote`**, khong phai `quote_token`) -> `GET /jobs/{id}`.
+
+### Ket qua
+
+| | 08/09 (truoc sua L-01) | 13/09 (sau sua) |
+|---|---|---|
+| `ltt_llm.chat` | 490 done / **64 error** (11,6 %) | **6 done / 0 error**, `attempts=0` |
+
+6 luot dong thoi — dung dieu kien tai tung sinh ra lop loi ay — va no **khong
+xuat hien**.
+
+⚠️ **6 la it.** Day la mot dau hieu, chua phai mot ket luan. Muon chot thi can
+   mot lot lon hon, hoac cho luu luong that quay lai.
+
+### Va mot loi cua chinh BO DO, giu lai vi no suyt doc nham
+
+Bo do bao **"6/6 het gio"** sau 240 s, trong khi CSDL cho thay ca sau `done` luc
+03:03:48 — tuc chung xong trong vai giay. Bo do doc sai ten truong trang thai
+trong phan hoi `GET /jobs/{id}` nen khong bao gio thay `done`.
+
+⇒ Neu tin bo do, ket luan se la *"cua job treo"* — mot su co nghiem trong khong
+  he ton tai. **Doc CSDL truoc khi tin mot bo do minh vua viet.**
