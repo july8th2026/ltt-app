@@ -20,6 +20,17 @@ import pytest
 from apps.ltt_llm import features
 from apps.ltt_llm.manifest import CUA_SO_NGU_CANH, MANIFEST, MAX_TOKENS_TRAN
 
+#: Model mà bảng giá của tệp này neo vào. D07 (dual-model 2.5) tách giá
+#: theo model; những con số dưới đây là của model mặc định. Giá của
+#: CẢ HAI model neo ở `test_1213_gia_theo_model.py`.
+from platform_core.llm.gia_token import MODEL_GIA_MAC_DINH as _M
+
+#: 🔴 `KetQua.model` LÀ BÍ DANH CÔNG KHAI THẬT, không phải slug app. Trước 2.5
+#: chỗ này ghi `"ltt_llm"` — một tên đã bị cắt ở Task 2.3 — và nó vô hại **chỉ
+#: vì** `gia_token.tinh()` khi ấy bỏ qua model. Từ D07, giá đi theo model nên
+#: một tên không có bảng giá ném ngay: đúng chiều, và đúng chỗ.
+_MODEL = _M
+
 
 def test_cua_so_ngu_canh_khop_moc_da_do():
     """Mốc đã đo phải được gắn vào hợp đồng app, không chỉ ghi trong nhật ký.
@@ -168,7 +179,7 @@ def test_credit_cost_khong_bao_gio_THAP_hon_chi_phi_that():
     for vao_that in (100, 1_600, 3_200):
         for ra_that in (0, 500, 2_000):
             that = gia_token.tinh(SuDung(token_vao=vao_that, token_ra=ra_that,
-                                         dang_tin=True))
+                                         dang_tin=True), _M)
             assert that.tong_credit_lam_tron_len <= tran_credit
 
 
@@ -213,7 +224,7 @@ def test_ket_qua_bao_usage_cho_costing():
     """`public_api/costing.py`: *"A per-job token figure appears here only when a
     handler reports one in its result"*. Khong bao thi khong quy duoc token ve job."""
     kq = features.KetQua(noi_dung="x", suy_nghi="", tool_calls=(),
-                         finish_reason="stop", model="ltt_llm",
+                         finish_reason="stop", model=_MODEL,
                          token_vao=10, token_ra=5, token_vao_cache=3, do_duoc=True)
     u = kq.as_result()["usage"]
     assert u["prompt_tokens"] == 10 and u["completion_tokens"] == 5
@@ -224,7 +235,7 @@ def test_ket_qua_bao_usage_cho_costing():
 
 def _kq(vao=0, ra=0, cache=0, do_duoc=True):
     return features.KetQua(noi_dung="x", suy_nghi="", tool_calls=(),
-                           finish_reason="stop", model="ltt_llm",
+                           finish_reason="stop", model=_MODEL,
                            token_vao=vao, token_ra=ra, token_vao_cache=cache,
                            do_duoc=do_duoc)
 

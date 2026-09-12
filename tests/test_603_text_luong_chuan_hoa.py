@@ -17,6 +17,11 @@ import pytest
 
 from platform_core.runtime_noi_bo import luong as L
 
+#: Model mà bảng giá của tệp này neo vào. D07 (dual-model 2.5) tách giá
+#: theo model; những con số dưới đây là của model mặc định. Giá của
+#: CẢ HAI model neo ở `test_1213_gia_theo_model.py`.
+from platform_core.llm.gia_token import MODEL_GIA_MAC_DINH as _M
+
 NL = bytes([10])
 
 
@@ -77,16 +82,20 @@ def test_cache_lam_re_luot_stream():
     """Cùng 1.000 token vào: 800 cache phải rẻ hơn 0 cache — đúng bảng giá 50/10 per 1M."""
     from platform_core.llm import gia_token
     from platform_core.llm.cong_vlm import SuDung
-    khong = gia_token.tinh(SuDung(token_vao=1000, token_ra=10, token_vao_cache=0, dang_tin=True))
-    co = gia_token.tinh(SuDung(token_vao=1000, token_ra=10, token_vao_cache=800, dang_tin=True))
+    khong = gia_token.tinh(SuDung(token_vao=1000, token_ra=10, token_vao_cache=0, dang_tin=True), _M)
+    co = gia_token.tinh(SuDung(token_vao=1000, token_ra=10, token_vao_cache=800, dang_tin=True), _M)
     assert co.tong_mcredit < khong.tong_mcredit
 
 
 # ── 4 + 5. Thân gửi lên và trần token ra ─────────────────────────────────────
 
 class _Exec:
+    #: ⚠️ Bí danh phải là một model CÓ TRONG BẢNG GIÁ (D07, dual-model 2.5).
+    #:    Trước 2.5 chỗ này dùng `"a"` — một tên bịa — và nó chạy được **chỉ vì**
+    #:    tầng giá bỏ qua model. Nay `chuan_bi` giữ tiền theo bảng giá của model,
+    #:    nên một tool đi qua đường tiền LLM phải khai một model đường ấy biết giá.
     def aliases(self):
-        return {"a": "id-a"}
+        return {_M: "id-a"}
 
     def model_id(self, alias):
         return "id-a"
@@ -143,7 +152,7 @@ def test_chuan_bi_giu_nguyen_vision_tools_reasoning(monkeypatch, tmp_path):
         db.flush()
         credit.cap_tay(db, u.id, 500, by="test")
         db.commit()
-        than = {"model": "a", "temperature": 0.3, "reasoning_effort": "xhigh",
+        than = {"model": _M, "temperature": 0.3, "reasoning_effort": "xhigh",
                 "tools": [{"type": "function", "function": {"name": "f"}}],
                 "stream_options": {"include_usage": True, "khac": 1},
                 "messages": [{"role": "user", "content": [

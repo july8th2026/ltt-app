@@ -23,6 +23,11 @@ from platform_core import credit
 from platform_core.llm import gia_token, thanh_toan
 from platform_core.llm.cong_vlm import SuDung
 
+#: Model mà bảng giá của tệp này neo vào. D07 (dual-model 2.5) tách giá
+#: theo model; những con số dưới đây là của model mặc định. Giá của
+#: CẢ HAI model neo ở `test_1213_gia_theo_model.py`.
+from platform_core.llm.gia_token import MODEL_GIA_MAC_DINH as _M
+
 
 @pytest.fixture()
 def db(tmp_path, monkeypatch):
@@ -71,13 +76,13 @@ def _luot(vao=2000, ra=500, cache=0):
 def _thu(db, uid, rid, su_dung=None, giu=5):
     credit.giu_cho(db, uid, giu, rid)
     return thanh_toan.quyet_toan_luot(db, user_id=uid, request_id=rid,
-                                      su_dung=su_dung or _luot())
+                                      su_dung=su_dung or _luot(), model=_M)
 
 
 # ── 0. Neo: một lượt điển hình tốn bao nhiêu ───────────────────────────────
 
 def test_mot_luot_dien_hinh_ton_300_mcredit(db):
-    cp = gia_token.tinh(_luot())
+    cp = gia_token.tinh(_luot(), _M)
     assert cp.tong_mcredit == 300, "2.000 vao (50/1M) + 500 ra (400/1M)"
     assert cp.tong_credit_lam_tron_len == 1, "C1 lam tron len => 1 credit"
 
@@ -136,7 +141,7 @@ def test_PHAT_LAI_khong_cong_phan_le_lan_hai(db):
     _thu(db, uid, "r1")
     assert _du(db, uid) == 300
     lai = thanh_toan.quyet_toan_luot(db, user_id=uid, request_id="r1",
-                                     su_dung=_luot())
+                                     su_dung=_luot(), model=_M)
     assert _du(db, uid) == 300, "phat lai KHONG duoc cong them"
     assert lai.thu_credit == 0
 
@@ -146,7 +151,7 @@ def test_phat_lai_mot_luot_DA_THU_khong_doi_gi(db):
     for i in range(4):
         _thu(db, uid, f"r{i}")
     du_truoc = _du(db, uid)
-    thanh_toan.quyet_toan_luot(db, user_id=uid, request_id="r3", su_dung=_luot())
+    thanh_toan.quyet_toan_luot(db, user_id=uid, request_id="r3", su_dung=_luot(), model=_M)
     assert _du(db, uid) == du_truoc
 
 
@@ -158,7 +163,7 @@ def test_bi_CAP_o_muc_da_giu_thi_phan_chua_thu_O_LAI(db):
     # Giu 2 credit nhung chi phi that la 9 credit.
     credit.giu_cho(db, uid, 2, "r1")
     kq = thanh_toan.quyet_toan_luot(db, user_id=uid, request_id="r1",
-                                    su_dung=_luot(vao=100_000, ra=10_000))
+                                    su_dung=_luot(vao=100_000, ra=10_000), model=_M)
     assert kq.thu_credit == 2, "chi thu duoc bang muc da giu"
     assert _du(db, uid) == 9_000 - 2_000, "phan chua thu O LAI, khong boc hoi"
 
@@ -166,7 +171,7 @@ def test_bi_CAP_o_muc_da_giu_thi_phan_chua_thu_O_LAI(db):
 def test_phan_le_KHONG_bao_gio_am(db):
     uid = _user(db)
     credit.giu_cho(db, uid, 5, "r1")
-    thanh_toan.quyet_toan_luot(db, user_id=uid, request_id="r1", su_dung=_luot())
+    thanh_toan.quyet_toan_luot(db, user_id=uid, request_id="r1", su_dung=_luot(), model=_M)
     assert _du(db, uid) >= 0
 
 

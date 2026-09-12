@@ -20,6 +20,16 @@ import uuid
 
 import pytest
 
+#: 🔴 BÍ DANH CỦA TOOL THỬ PHẢI LÀ MỘT MODEL **CÓ GIÁ** (D07, dual-model 2.5).
+#:
+#:    Trước 2.5 chỗ này là chuỗi bịa `"thu_alias"` và nó chạy được **chỉ vì**
+#:    `gia_token` bỏ qua model. Từ D07 giá đi theo model, nên mọi tool đi qua
+#:    `runtime_noi_bo/luong.py` — tức qua `thanh_toan` — phải khai một model mà
+#:    bảng giá biết. Đó là ràng buộc THẬT của tầng này, không phải phiền toái
+#:    của phép kiểm: một model không có giá mà vẫn giữ được tiền nghĩa là tiền
+#:    đang được tính bằng bảng giá của một model khác.
+from platform_core.llm.gia_token import MODEL_GIA_MAC_DINH as _ALIAS_THU
+
 NL = bytes([10])
 TOOL_THU = "text.thu"
 JOB_THU = "appthu6.luong"
@@ -40,7 +50,7 @@ class _ExecutorGia:
         return {"sync": 1024, "stream": 4096, "job": 4096}[cua]
 
     def aliases(self):
-        return {"thu_alias": "noi-bo-model-1"}
+        return {_ALIAS_THU: "noi-bo-model-1"}
 
     def model_id(self, alias):
         return self.aliases()[alias]
@@ -87,8 +97,8 @@ def app_luong(monkeypatch, moi_truong):
         tools=(reg.ToolSpec(
             name=TOOL_THU, job_type=JOB_THU, description="tool thu",
             params_schema={"messages": {"type": "json[]", "required": True},
-                           "model": {"type": "enum", "values": ["thu_alias"],
-                                     "default": "thu_alias"}},
+                           "model": {"type": "enum", "values": [_ALIAS_THU],
+                                     "default": _ALIAS_THU}},
             returns={"content": "text"},
             admission_resource="thu_gpu", admission_slots=1,
             sync_executor="tests.test_600_runtime_noi_bo_luong:EXECUTOR_GIA",
@@ -192,7 +202,7 @@ def _dat_luong(monkeypatch, khoi=None, *, ban=False, nem=None):
 
 
 def _params(**g):
-    d = {"model": "thu_alias", "messages": [{"role": "user", "content": "xin chao ban"}]}
+    d = {"model": _ALIAS_THU, "messages": [{"role": "user", "content": "xin chao ban"}]}
     d.update(g)
     return d
 
@@ -240,7 +250,7 @@ def test_luong_chay_tron_va_sinh_su_kien_canonical(app_luong, monkeypatch):
     assert than["stream_options"] == {"include_usage": True}
     assert than["max_tokens"] == 4096            # mặc định CỬA STREAM của executor
     # `response.started` không lộ id nội bộ.
-    assert sk[0]["model"] == "thu_alias"
+    assert sk[0]["model"] == _ALIAS_THU
     assert "noi-bo-model-1" not in json.dumps(sk)
 
 
