@@ -10,8 +10,9 @@
 | CMC base tag | `cmc-base-20260911` |
 | Phase | `CMC_SYNC_BARRIER_READY` |
 
-`main` đã được source-certified tại CMC base SHA, nhưng chưa thay default branch
-ở remote. H45.6 vẫn phải chứng nhận LLM integration trước final cleanup.
+`CANONICAL_CANDIDATE` (`main`) đã được source-certified tại CMC base SHA, nhưng
+chưa thay default branch ở remote. H45.6 vẫn phải chứng nhận LLM integration
+trước final cleanup.
 
 ```text
 CMC_BASE_BRANCH: main

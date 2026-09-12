@@ -54,6 +54,12 @@ Ba lượt gate được phân biệt rõ:
    `cay_da_doi_giua_chung=false`. Backend 802,0 giây; bất biến đa tiến trình
    141,1 giây; bốn frontend, Voice QA, migration PostgreSQL và M-1 đều PASS.
 
+Sau commit tài liệu barrier `58b70d56`, `python tools\gate.py --doi` fail-closed
+thành full gate và **FAIL 1/33**: 10.207 test backend pass, 96 test tuần tự pass,
+nhưng `test_972_ltt_cmc_topology.py` bắt đúng việc STATE làm mất marker
+`CANONICAL_CANDIDATE`. Khôi phục marker thay vì nới test;
+`python -m pytest tests/test_972_ltt_cmc_topology.py -q` → **2 passed**.
+
 Mỗi lượt nặng đều kiểm `tools/tai_may.py` và `cua_so_yen.py trang-thai`. Khi
 gate khác giữ khóa, CMC chờ; lượt cuối bắt đầu ở 0,8/20 lõi bận (`RANH`). Không
 dùng `--khong-khoa`; một lượt đã xếp hàng 2,1 phút với `--cho 60` thay vì chèn.
