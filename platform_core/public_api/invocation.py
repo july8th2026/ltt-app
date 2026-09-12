@@ -517,13 +517,12 @@ def submit(db, *, principal, tool, params: dict, quote: dict,
     #    `server/api/jobs.py` kết luận ngược lại vì nó đối chiếu bốn tệp và
     #    **thiếu đúng tệp này**.
     #
-    # ⚠️ `PublicTool.admission_resource` đã là `tool.admission_resource or
-    #    resource_class(manifest)` (`catalog.py:364`), nên mặc định này chính là
-    #    lớp tài nguyên của manifest — cùng câu trả lời mà đường nộp KIA
-    #    (`runtime_noi_bo/job.py:95`) vẫn luôn đưa. Hai cửa nay nói cùng một câu.
-    tai_nguyen, so_suat = admission_luc_nop(
-        tool, job_params,
-        mac_dinh=str(getattr(tool, "admission_resource", "") or "api"))
+    # ⚠️ Bản vá nằm TRONG `admission_luc_nop`, không phải ở đây. Bản đầu của tôi
+    #    truyền `mac_dinh=getattr(tool, "admission_resource", …)` ngay tại dòng
+    #    này, và `test_1210::test_cho_nop_khong_con_doc_bo_ba_tinh` bắt đúng: hai
+    #    đường nộp **không được** đọc bộ ba tĩnh của tool. Bánh cóc ấy đúng, và
+    #    sửa ở `registry` còn chữa cho **cả hai** cửa thay vì một.
+    tai_nguyen, so_suat = admission_luc_nop(tool, job_params, mac_dinh="api")
 
     if is_test(getattr(principal, "mode", "live")):
         # A test key never reaches the ledger. Not "spends little" — cannot

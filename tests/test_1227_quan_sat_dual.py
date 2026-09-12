@@ -61,15 +61,22 @@ def db(tmp_path, monkeypatch):
 
 
 def _cho(db, *, model, lop="tuong_tac", tuoi_s=5.0, nhip_s=0.0,
-         cho_residency_s=0.0, trang_thai="cho", resource="r"):
-    """Một dòng `llm_waiters`. `nhip_s` = nhịp tim CŨ bao nhiêu giây so với T0."""
+         cho_residency_s=0.0, trang_thai="cho", resource="r", moc=None):
+    """Một dòng `llm_waiters`. `nhip_s` = nhịp tim CŨ bao nhiêu giây so với `moc`.
+
+    ⚠️ `moc` mặc định là `T0` — đúng cho mọi ca **tiêm đồng hồ**
+       (`llm_theo_model(db, now=T0, …)`). Ca nào gọi qua **route** thì route
+       không nhận `now`, nên nó đo bằng đồng hồ THẬT và phải truyền
+       `moc=datetime.now(timezone.utc)`. Xem `test_ops_jobs_metrics…`.
+    """
+    moc = moc or T0
     from platform_core.models import LlmWaiter
 
     w = LlmWaiter(resource=resource, model=model, cua="stream", lop=lop,
                   user_id="u", request_id=f"rq{id(model)}{tuoi_s}{nhip_s}{lop}",
                   token_dat_truoc=1000, token_prefill_moi=100,
-                  created_at=T0 - timedelta(seconds=tuoi_s),
-                  heartbeat_at=T0 - timedelta(seconds=nhip_s),
+                  created_at=moc - timedelta(seconds=tuoi_s),
+                  heartbeat_at=moc - timedelta(seconds=nhip_s),
                   cho_residency_s=cho_residency_s, trang_thai=trang_thai)
     db.add(w)
     db.flush()
@@ -358,8 +365,25 @@ def test_ops_jobs_metrics_chieu_ra_hai_khoi_moi(db, monkeypatch):
     from platform_core.llm import residency
     from server.routes import jobs as route_jobs
 
-    _cho(db, model=M35, tuoi_s=2.0)
-    _nhom(db, trang_thai=residency.NAP_LLM, tu_luc=T0)
+    # 🔴 GIEO THEO ĐỒNG HỒ THẬT, không theo `T0`.
+    #
+    #    Ca này gọi **route**, mà route không nhận `now` — `job_metrics.snapshot`
+    #    dùng `datetime.now(timezone.utc)`. Neo hạt giống vào hằng `T0` (09:00 UTC
+    #    ngày 12/09) biến phép kiểm thành một **quả bom hẹn giờ**: nhịp tim
+    #    của người chờ già dần theo giờ treo tường, và khi nó vượt
+    #    `HAN_NHIP_CHO_S` thì `job_metrics` xếp người chờ sang `mat_nhip`, nên
+    #    `sau_theo_model` rỗng.
+    #
+    # ⭐ Đo được 12/09: gate lúc 09:04 UTC **XANH** (mốc mới 4 phút), gate lúc
+    #    10:36 UTC **ĐỎ** (mốc đã 1,7 giờ) — cùng một commit, không một dòng mã
+    #    nào đổi. Một phép kiểm hết hạn lúc 09:00 UTC.
+    #
+    # ⚠️ 28 chỗ dùng `T0` khác trong tệp này **đúng như cũ**: chúng tiêm
+    #    `now=T0` vào `job_metrics`, nên mốc giả và đồng hồ giả khớp nhau.
+    #    Chỉ ca **đi qua route** là lệch, và chỉ ca đó được sửa.
+    bay_gio = datetime.now(timezone.utc)
+    _cho(db, model=M35, tuoi_s=2.0, moc=bay_gio)
+    _nhom(db, trang_thai=residency.NAP_LLM, tu_luc=bay_gio)
     db.commit()
 
     # Danh sách app rỗng: phép kiểm này hỏi *route có chiếu hai khối ra không*,

@@ -189,7 +189,31 @@ def admission_luc_nop(tool, params, *, mac_dinh: str = "") -> tuple[str, int]:
     """
     suc = suc_chua_admission(tool, str((params or {}).get("model") or ""))
     if suc is None:
-        return (mac_dinh, 0)
+        # 🔴 KHÔNG KHAI POOL **KHÔNG** NGHĨA LÀ KHÔNG CÓ LỚP TÀI NGUYÊN.
+        #
+        #    `suc_chua_admission` trả `None` cho tool khai `admission_resource`
+        #    mà `admission_slots == 0` — nhánh 2 của nó đòi `slots > 0`. Đó là
+        #    câu trả lời **đúng** cho câu hỏi *"tool này giành mấy suất lease?"*
+        #    (không suất nào). Nhưng hàm này trả lời một câu **khác**: *"job này
+        #    thuộc lớp tài nguyên nào?"* — và hai câu ấy khác nhau ở đúng những
+        #    app **chụp sức chứa theo giai đoạn** (`image.upscale`,
+        #    `video.upscale`: `resource="gpu"`, `slots=0`).
+        #
+        # ⛔ Trước 12/09 chỗ này rơi thẳng về `mac_dinh` (`"api"` ở cửa công
+        #    khai) ⇒ cột `Job.admission_resource` mang `"api"` thay vì `"gpu"` ⇒
+        #    `limits.active_job_count(resource="gpu")` đếm 0 ⇒
+        #    `LTT_PUBLIC_API_CLASS_CONCURRENCY="gpu:1"` **thôi gác**, job GPU thứ
+        #    hai được nhận (201) thay vì bị chặn (429). Đo được:
+        #    `test_188::test_gpu_capacity_stops_a_second_concurrent_job` XANH ở
+        #    điểm rẽ nhánh `9e73bf1f`, ĐỎ sau `9686518b`.
+        #
+        # ⭐ VÀ NÓ PHẢI NẰM Ở ĐÂY, KHÔNG PHẢI Ở CHỖ GỌI. Bản sửa đầu của tôi đặt
+        #    `getattr(tool, "admission_resource")` ngay trong `invocation.py` và
+        #    `test_1210::test_cho_nop_khong_con_doc_bo_ba_tinh` bắt đúng: hai
+        #    đường nộp **không được** đọc bộ ba tĩnh. Bánh cóc ấy đúng, và nó
+        #    chỉ đường về đây — nơi bộ ba tĩnh vốn đã được đọc một lần.
+        tinh = str(getattr(tool, "admission_resource", "") or "")
+        return (tinh or mac_dinh, 0)
     return (str(suc.resource or "") or mac_dinh, int(suc.slots or 0))
 
 

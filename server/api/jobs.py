@@ -228,7 +228,13 @@ def register_job_routes(api, config, tag: str) -> None:
         #    vẫn có thể sai, và nó **đắt hơn** không có ghi chú — nó làm người
         #    sau (tôi) tin rằng câu hỏi đã được trả lời và đi tìm chỗ khác.
         #    Phép đo rẻ nhất ở đây là một cây tạm ở điểm rẽ nhánh: 4 giây.
-        return str(getattr(tool, "admission_resource", "") or "api")
+        #
+        # ⛔ Đi qua `admission_luc_nop`, KHÔNG đọc `tool.admission_resource` ở
+        #    đây. Nó là **cùng một câu hỏi** với hai cột ghi lúc nộp, nên nó phải
+        #    có **cùng một câu trả lời**: chép lại phép rơi-về ở đây là dựng bản
+        #    chân lý thứ hai, và bản sao sẽ trôi.
+        from platform_core.registry import admission_luc_nop
+        return str(admission_luc_nop(tool, params or {}, mac_dinh="api")[0])
 
     def _class_slugs(tool, params=None) -> list:
         """Apps competing for the same scarce resource as this tool."""
