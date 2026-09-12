@@ -14,8 +14,8 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import (BigInteger, Boolean, DateTime, ForeignKey, Index, Integer,
-                        JSON, String, Text,
+from sqlalchemy import (BigInteger, Boolean, DateTime, Float, ForeignKey, Index,
+                        Integer, JSON, String, Text,
                         UniqueConstraint, text)
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -482,6 +482,22 @@ class LlmWaiter(Base):
     trang_thai: Mapped[str] = mapped_column(String(16), default="cho", nullable=False)
     #: Mã lý do của nhịp chờ CUỐI (`luat_nhan.CHO_*`).
     ly_do_cho: Mapped[str] = mapped_column(String(32), default="", nullable=False)
+    #: Trong tổng thời gian chờ, bao nhiêu giây là chờ vì **cư trú GPU**
+    #: (`luat_nhan.CHO_RESIDENCY`, luật 0 — dual-model 5.3, D01 B).
+    #:
+    #: ⭐ VÌ SAO MỘT CỘT RIÊNG chứ không suy ra từ `ly_do_cho`: `ly_do_cho` giữ
+    #:    lý do của nhịp **cuối**, tức nó trả lời "lúc bỏ cuộc thì đang vướng
+    #:    gì", không trả lời "đã vướng gì bao lâu". Một lượt chờ 40 s vì cửa sổ
+    #:    ảnh rồi 2 s vì hết slot sẽ mang `cho_slot` — và người đọc sổ sẽ đi mua
+    #:    thêm slot cho một chuyện do cửa sổ ảnh gây ra.
+    #:
+    #: `finished_at - created_at` trừ con số này = thời gian chờ vì **năng lực**
+    #: (slot, ngân sách KV, hàng). Hai đại lượng ấy dẫn tới hai việc sửa khác
+    #: nhau, nên chúng phải đo được rời nhau. `platform_core/llm/phong_cho.py`
+    #: cộng vào đây từng khoảng giữa hai nhịp; Task 6.3 công bố nó ở
+    #: `/ops/jobs-metrics`.
+    cho_residency_s: Mapped[float] = mapped_column(
+        Float, default=0.0, nullable=False, server_default=text("0"))
     so_nhip: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     #: Kết cục sau khi được nhận: `xong` | `khach_ngat` | `loi` | `thieu_credit` …
     ket_qua: Mapped[str] = mapped_column(String(32), default="", nullable=False)

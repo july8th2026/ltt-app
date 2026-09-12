@@ -163,10 +163,32 @@ def _dong(gen) -> None:
         pass
 
 
+def cong_cho_residency(w, giay: float) -> bool:
+    """Cộng `giay` vào `llm_waiters.cho_residency_s` của một dòng chờ.
+
+    ⭐ VÌ SAO TÁCH KHỎI TỔNG THỜI GIAN CHỜ. `finished_at - created_at` trả lời
+       *"khách đợi bao lâu"*; câu người vận hành phải trả lời ngay sau đó là
+       *"đợi vì ta thiếu slot, hay vì 3090 lúc ấy đang vẽ ảnh"* — và hai câu ấy
+       dẫn tới hai việc sửa khác nhau (mở thêm slot vs. siết cửa sổ ảnh). Một
+       tổng gộp không tách ra được, nên nó sẽ đẩy người đọc đi sửa số slot cho
+       một chuyện không liên quan gì tới slot.
+
+    ⛔ KHÔNG suy được từ `ly_do_cho`: cột ấy giữ lý do của nhịp **cuối**, tức
+       "lúc bỏ cuộc thì đang vướng gì", không phải "đã vướng gì bao lâu".
+
+    Cột do migration `d91f6c37ab24` thêm (5.3 — bên GHI đi trước bên đọc; Task
+    6.3 công bố nó ở `/ops/jobs-metrics`). Trả `False` khi không cộng gì.
+    """
+    if giay <= 0:
+        return False
+    w.cho_residency_s = float(getattr(w, "cho_residency_s", 0.0) or 0.0) + float(giay)
+    return True
+
+
 def _mot_nhip(yc: YeuCauCho, waiter_id: str, dong_ho: Callable[[], datetime],
               cho_whale_toi_da_s: float) -> tuple[str, str]:
     """Đập nhịp + hỏi luật nhận một lần, trong một transaction. Trả `(lease_id, lý do)`."""
-    from platform_core.llm import admission
+    from platform_core.llm import admission, luat_nhan
 
     gen, db = _phien()
     try:
@@ -174,6 +196,12 @@ def _mot_nhip(yc: YeuCauCho, waiter_id: str, dong_ho: Callable[[], datetime],
         if w is None or w.trang_thai != "cho":
             raise KhachDi(waiter_id)
         now = dong_ho()
+        # ⭐ Khoảng [nhịp trước → giờ] được quy về lý do ĐANG GHI ở dòng, không
+        #    về lý do sắp tính ra: đó là lý do thật sự đã có hiệu lực trong lúc
+        #    người này ngủ. Quy theo lý do MỚI sẽ dán nhãn một khoảng chờ vì
+        #    thiếu slot thành chờ vì cư trú chỉ vì cư trú vừa đóng ở cuối khoảng.
+        if (w.ly_do_cho or "") == luat_nhan.CHO_RESIDENCY:
+            cong_cho_residency(w, (now - _aware(w.heartbeat_at)).total_seconds())
         # Đập nhịp TRƯỚC khi xét: chính dòng này phải có mặt trong ảnh chụp.
         w.heartbeat_at = now
         w.so_nhip = int(w.so_nhip or 0) + 1

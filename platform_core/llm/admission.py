@@ -73,6 +73,122 @@ def _khoa_resource(db: Session, resource: str) -> None:
                {"k": f"llm-admission:{resource}"})
 
 
+# ── Luật 0 của `luat_nhan`: nhóm GPU đang cư trú cho ai (dual-model 5.3, D01 B) ─
+
+_BAN_DO_CU_TRU: dict[str, set] | None = None
+
+#: Bao lâu mới nhắc lại một lần cùng một câu "không đọc được dòng cư trú". Người
+#: chờ đập nhịp 2 lượt/giây; không có phanh này thì MỘT dòng thiếu ghi đầy log
+#: bằng một câu và đẩy mọi thứ khác ra khỏi tầm nhìn.
+NHAC_LOI_CU_TRU_S = 30.0
+_da_nhac: dict[str, float] = {}
+
+
+def quen_ban_do_cu_tru() -> None:
+    """Xoá bộ nhớ đệm bản đồ cư trú (phép kiểm tiêm bản khai giả gọi hàm này)."""
+    global _BAN_DO_CU_TRU
+    _BAN_DO_CU_TRU = None
+
+
+def _ban_do_cu_tru() -> dict[str, set]:
+    """`{tên tài nguyên: {(nhóm, vai trò)}}`, đọc từ BẢN KHAI của app.
+
+    ⛔ KHÔNG đọc `tool.admission_resource`: một tool khai `admission_theo_model`
+       để trường tĩnh ấy RỖNG (multijob 2.2, R20), nên phép đọc cũ sẽ bỏ qua
+       đúng cái tool nó đi tìm. Ở đây lấy thẳng các `AdmissionModel` đã khai, nên
+       tên tài nguyên và nhóm cư trú đi ra từ CÙNG MỘT đối tượng — không có cách
+       nào ghép tên của model này với nhóm của model kia.
+
+    Đệm cả tiến trình: bản khai của app là MÃ, nó không đổi lúc đang chạy. Chỉ
+    đệm khi đọc được — hỏng thì lượt sau thử lại.
+    """
+    global _BAN_DO_CU_TRU
+    if _BAN_DO_CU_TRU is not None:
+        return _BAN_DO_CU_TRU
+    from platform_core.registry import discover
+
+    ban_do: dict[str, set] = {}
+    try:
+        for app in discover():
+            for tool in getattr(app.manifest, "tools", ()) or ():
+                for am in (getattr(tool, "admission_theo_model", {}) or {}).values():
+                    nhom = str(getattr(am, "residency_group", "") or "").strip()
+                    ten = str(getattr(am, "resource", "") or "").strip()
+                    if nhom and ten:
+                        ban_do.setdefault(ten, set()).add(
+                            (nhom, str(getattr(am, "vai_tro", "") or "").strip()))
+    except Exception:  # noqa: BLE001 - nói ra, đừng đệm lại
+        log.warning("khong doc duoc ban khai nhom cu tru; coi nhu khong co",
+                    exc_info=True)
+        return {}
+    _BAN_DO_CU_TRU = ban_do
+    return ban_do
+
+
+def nhom_cu_tru(resource: str) -> tuple[str, str]:
+    """Nhóm cư trú + vai trò của một tài nguyên. `("", "")` = không có trọng tài.
+
+    ⭐ VÌ SAO TRA THEO TÊN TÀI NGUYÊN, chứ không nhận nhóm cư trú như một tham số
+       mới của `xet_va_giu`: `xet_va_giu` có **nhiều** chỗ gọi (stream, ChatLTT,
+       đồng bộ, job, planner, và ba app ảnh ở Task 5.5), và một tham số mới thì
+       mỗi chỗ gọi là một chỗ có thể quên. Quên ở đây **không làm đỏ** phép kiểm
+       nào — nó chỉ mở cửa 3090 cho cả hai model, tức đúng cái hỏng mà cả chương
+       trình này sinh ra để dẹp. Tra theo tên thì không chỗ gọi nào phải biết gì,
+       và một app mới khai `residency_group` là đã được gác ngay từ lượt đầu.
+
+    Hai bản khai khác nhau cho cùng một tên ⇒ **NÉM**, và chỉ ném cho đúng tài
+    nguyên ấy: đó là bản khai tự mâu thuẫn (cùng khuôn fail-closed của
+    `suc_chua_admission`), còn mọi tài nguyên không liên can vẫn chạy.
+    """
+    khai = _ban_do_cu_tru().get(str(resource).strip())
+    if not khai:
+        return "", ""
+    if len(khai) > 1:
+        raise ValueError(f"tai nguyen {resource!r} duoc khai hai nhom/vai tro "
+                         f"cu tru: {sorted(khai)}")
+    return next(iter(khai))
+
+
+def _nhac(cau: str, nhom: str) -> None:
+    import time as _time
+
+    bay_gio = _time.monotonic()
+    if bay_gio - _da_nhac.get(nhom, -1e9) < NHAC_LOI_CU_TRU_S:
+        return
+    _da_nhac[nhom] = bay_gio
+    log.warning("%s cho nhom %r => DONG cua admission (fail-closed)", cau, nhom)
+
+
+def _cua_cu_tru_mo(db: Session, *, nhom: str, vai_tro: str) -> bool:
+    """Nhóm GPU có đang mở cửa cho vai trò này? Bên gọi phải ĐANG GIỮ khoá resource.
+
+    ⛔ FAIL-CLOSED với cả ba kiểu không-biết: không có dòng, không đọc được bảng,
+       trạng thái lạ. "Không có dòng" nghĩa là **chưa ai biết 3090 đang là của
+       ai** — coi như mở ở đó là cấp lease LTT-3.8 lên một card có thể đang vẽ,
+       tức OOM cả hai bên. Trọng tài (Task 5.5) tạo dòng ở lượt bước đầu tiên
+       với trạng thái đọc từ máy B thật; migration cố ý KHÔNG gieo dòng nào.
+
+    ⚠️ Đọc trong một savepoint: bảng chưa migrate thì `OperationalError` chỉ cuộn
+       lại savepoint. Không có nó, giao dịch PostgreSQL bị abort và lượt gọi chết
+       ở `commit()` — một lỗi khác hẳn, ở một chỗ khác hẳn, sau khi đã tiêu tiền.
+    """
+    from platform_core.llm import residency
+    from platform_core.models import GpuResidency
+
+    try:
+        with db.begin_nested():
+            dong = db.get(GpuResidency, nhom)
+    except Exception:  # noqa: BLE001 - fail-closed, và nói ra
+        dong = None
+        _nhac("khong doc duoc bang gpu_residency", nhom)
+    if dong is None:
+        _nhac("khong co dong gpu_residency", nhom)
+        return False
+    # `mo_cho` NÉM với vai trò lạ (bản khai gõ sai) và trả False với trạng thái
+    # lạ — hai kiểu hỏng khác nhau, xem docstring của nó. Không nuốt cái nào.
+    return residency.mo_cho(str(dong.trang_thai or ""), vai_tro)
+
+
 def _lop_cua(lease: ExecutionLease) -> str:
     """Lease cũ (trước multijob) không có lớp: job là nền, còn lại là tương tác."""
     from platform_core.llm import luat_nhan
@@ -113,7 +229,28 @@ def xet_va_giu(
     resource = resource.strip()
     if not resource or slots <= 0:
         return None, luat_nhan.CHO_SLOT
-    if token_pool <= 0 and not lop:
+
+    # ── Luật 0: cư trú GPU (dual-model 5.3, D01 B) ───────────────────────────
+    #
+    # 🔴 ĐỌC TRONG KHOÁ, KHÔNG TRƯỚC KHOÁ VÀ KHÔNG Ở MỘT GIAO DỊCH KHÁC. Trọng
+    #    tài lật trạng thái nhóm trong đúng advisory lock này. Đọc ngoài khoá là
+    #    một TOCTOU có hậu quả vật lý: ta thấy `llm`, trọng tài lật sang `anh` và
+    #    ra lệnh nạp model ảnh, rồi ta cấp lease LTT-3.8 lên một card 24 GB đang
+    #    nhận 19 GB trọng số khác.
+    nhom, vai_tro = nhom_cu_tru(resource)
+    residency_mo = True
+    if nhom:
+        _khoa_resource(db, resource)
+        residency_mo = _cua_cu_tru_mo(db, nhom=nhom, vai_tro=vai_tro)
+
+    # ⭐ `not nhom` ở điều kiện dưới đây là chỗ luật 0 thành CƠ HỌC: một tài
+    #    nguyên có nhóm cư trú không được đi đường tắt "đếm slot" nữa, vì đường
+    #    tắt ấy không hỏi `luat_nhan.xet` và sẽ cấp lease bất chấp cư trú. Job
+    #    ảnh đi đúng vào đường tắt đó (`AdmissionModel("anh_3090", 1, 0, …)`:
+    #    pool 0, không khai lớp), nên thiếu vế này thì luật 0 không áp cho chính
+    #    bên mà cửa sổ ảnh sinh ra để phục vụ — và nó sẽ vẽ trong cửa sổ LLM.
+    #    Với tài nguyên KHÔNG có nhóm, đây vẫn là hành vi cũ, từng byte.
+    if token_pool <= 0 and not lop and not nhom:
         lease = _giu_slot_trong(db, resource=resource, slots=slots, user_id=user_id,
                                 mode=mode, holder_id=holder_id, job_id=job_id,
                                 timeout=timeout)
@@ -131,7 +268,8 @@ def xet_va_giu(
                         token_dat_truoc=int(token_dat_truoc), la_whale=bool(la_whale),
                         tuoi_s=float(tuoi_cho_s))
     px = luat_nhan.xet(yc, giu, cho, luat_nhan.ThamSo(
-        so_slot=slots, pool=int(token_pool), cho_whale_toi_da_s=cho_whale_toi_da_s))
+        so_slot=slots, pool=int(token_pool), cho_whale_toi_da_s=cho_whale_toi_da_s,
+        residency_mo=residency_mo))
     if not px.nhan:
         from platform_core.public_api import metrics
         metrics.increment(metrics.ADMISSION_REJECTED)

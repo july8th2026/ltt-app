@@ -44,13 +44,27 @@ def test_len_roi_xuong_mot_buoc_sach_va_khop_mo_hinh(tmp_path, monkeypatch):
 
     cot_lease = {c["name"] for c in insp.get_columns("execution_leases")}
     assert COT_LEASE_MOI <= cot_lease
-    # Mô hình và migration phải nói CÙNG một tập cột — lệch là `create_all` (test)
-    # và `alembic upgrade` (production) dựng hai lược đồ khác nhau.
-    assert {c.name for c in LlmWaiter.__table__.columns} == {
-        c["name"] for c in insp.get_columns("llm_waiters")}
-    assert {c.name for c in ExecutionLease.__table__.columns} == cot_lease
     uq = {u["name"] for u in insp.get_unique_constraints("llm_waiters")}
     assert "uq_llm_waiters_request" in uq
+
+    # ⭐ Mô hình và migration phải nói CÙNG một tập cột — lệch là `create_all`
+    #    (test) và `alembic upgrade` (production) dựng hai lược đồ khác nhau.
+    #
+    # 🔴 NHƯNG PHÉP SO ẤY PHẢI ĐO Ở `heads`, KHÔNG Ở `REV`. `platform_core.models`
+    #    luôn tả lược đồ MỚI NHẤT, nên so nó với lược đồ tại REV là so hai mốc
+    #    thời gian khác nhau: phép kiểm sẽ đỏ vì **người sau thêm một cột**, chứ
+    #    không vì migration của REV sai. Đã xảy ra thật — dual-model 5.3 thêm
+    #    `llm_waiters.cho_residency_s` (rev `d91f6c37ab24`) và ca này đỏ trong
+    #    khi cả mô hình lẫn cả hai migration đều đúng. Viết lại cho **bất biến
+    #    với việc tập cột rộng ra**: lên `heads` rồi mới so, rồi quay về REV để
+    #    phần kiểm lên/xuống một bước bên dưới vẫn đo đúng thứ nó muốn đo.
+    command.upgrade(cfg, "heads")
+    insp_head = inspect(create_engine(url))
+    assert {c.name for c in LlmWaiter.__table__.columns} == {
+        c["name"] for c in insp_head.get_columns("llm_waiters")}
+    assert {c.name for c in ExecutionLease.__table__.columns} == {
+        c["name"] for c in insp_head.get_columns("execution_leases")}
+    command.downgrade(cfg, REV)
 
     command.downgrade(cfg, "-1")
     insp = inspect(create_engine(url))

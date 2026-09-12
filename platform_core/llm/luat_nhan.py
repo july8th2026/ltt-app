@@ -8,6 +8,7 @@
 Luật (spec §5, theo thứ tự xét — lượt bị từ chối ở luật ĐẦU TIÊN nó vi phạm, và
 mã lý do đó đi vào sổ lượt để phân tích sau):
 
+  0. nhóm GPU đang mở cửa cho vai trò này        · CHO_RESIDENCY
   1. còn slot                                    · CHO_SLOT
   2. Σ đặt chỗ + lượt này ≤ pool KV (khi pool>0)  · CHO_NGAN_SACH
   3. nền/nội bộ: ≤ max(1, N−1) slot, và nhường mọi · CHO_SLOT / NEN_NHUONG
@@ -23,6 +24,23 @@ mã lý do đó đi vào sổ lượt để phân tích sau):
 
 ⛔ llama.cpp KHÔNG preempt được lượt đang chạy (b10689). Nên thứ tự hàng một mình
    không cứu người đang chờ màn hình; đòn bẩy thật là CHỪA SLOT (luật 3).
+
+⭐ VÌ SAO CƯ TRÚ LÀ LUẬT **0** CHỨ KHÔNG PHẢI LUẬT 7 (dual-model 5.3, D01 B).
+
+   Luật 1–6 chia **một tài nguyên đang tồn tại** cho những người tranh nhau nó.
+   Luật 0 trả lời câu đứng TRƯỚC đó: *tài nguyên ấy lúc này có phải của bạn
+   không* — RTX 3090 chỉ cư trú được MỘT model, nên trong cửa sổ ảnh thì
+   `ltt_38_3090` không có slot nào cả, chứ không phải "hết slot".
+
+   Thứ tự ấy là cơ học, không phải thẩm mỹ. Đặt nó sau luật 1–2 thì một lượt
+   đang chờ **cư trú** vẫn bị đem so với số slot và vẫn cộng vào Σ token đặt chỗ
+   trước khi bị từ chối — tức nó tranh một ngân sách mà nó còn chưa có quyền dự.
+   Hệ quả đọc được ở sổ lượt: mã lý do thành `cho_slot`/`cho_ngan_sach`, và người
+   phân tích sẽ đi sửa số slot cho một chuyện không liên quan gì tới slot.
+
+⛔ `CHO_RESIDENCY` nghĩa là *"chưa nhận thêm"*, KHÔNG BAO GIỜ là *"dừng thứ đang
+   chạy"* (L-9). Không lượt nào bị giết để đổi cư trú: `residency.buoc_thuan` chờ
+   drain, và cửa này chỉ ngừng rót thêm việc vào.
 """
 from __future__ import annotations
 
@@ -43,6 +61,8 @@ TRAN_TAI_KHOAN = "tran_tai_khoan"
 WHALE_NHUONG = "whale_nhuong"
 WHALE_CHAN = "whale_chan"
 XEP_SAU = "xep_sau"
+#: Nhóm GPU đang cư trú cho thành viên KHÁC (D01 B) — xem `llm/residency.py`.
+CHO_RESIDENCY = "cho_residency"
 
 
 @dataclass(frozen=True)
@@ -52,6 +72,15 @@ class ThamSo:
     pool: int = 0
     cho_whale_toi_da_s: float = 30.0
     lao_hoa_s: float = 300.0
+    #: Nhóm GPU của tài nguyên này có đang mở cửa cho vai trò của lượt không.
+    #:
+    #: 🔴 MẶC ĐỊNH `True`, và mặc định ấy là thứ giữ cho nền tảng chạy: mọi tài
+    #:    nguyên KHÔNG thuộc một nhóm cư trú (LTT-3.5 trên 5060 Ti, giọng nói,
+    #:    mọi tool cũ) không có trọng tài nào để hỏi — một mặc định `False` ở đây
+    #:    sẽ đóng cửa cả những cái đó, trong im lặng, và thứ dừng lại sẽ là cả
+    #:    nền tảng chứ không riêng 3090. `admission.xet_va_giu` chỉ hạ nó xuống
+    #:    khi bản khai của app nói tài nguyên này CÓ nhóm cư trú.
+    residency_mo: bool = True
 
 
 @dataclass(frozen=True)
@@ -121,6 +150,11 @@ def _whale_dang_nhuong(l: Luot, ts: ThamSo) -> bool:
 def xet(yc: Luot, dang_giu: Iterable[Luot], dang_cho: Iterable[Luot],
         ts: ThamSo) -> PhanXu:
     """Có nhận `yc` ngay bây giờ không. `dang_cho` có thể chứa chính `yc`."""
+    # 0. cư trú GPU — TRƯỚC cả phép chụp hai danh sách, vì lượt này còn chưa dự
+    #    tranh slot hay ngân sách: nhóm GPU lúc này đang là của model kia.
+    if not ts.residency_mo:
+        return PhanXu(False, CHO_RESIDENCY)
+
     giu = list(dang_giu)
     cho_tat_ca = list(dang_cho)
     cho_khac = [c for c in cho_tat_ca if c.id != yc.id]

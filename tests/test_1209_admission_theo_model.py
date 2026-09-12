@@ -18,6 +18,7 @@ import pytest
 from typing import Any
 
 from platform_core.registry import AdmissionModel, ToolSpec
+from tests.conftest import mo_cu_tru_3090
 
 
 def _tool(**overrides: Any) -> ToolSpec:
@@ -269,6 +270,10 @@ def db_job(tmp_path, monkeypatch):
     dbmod.reset_engine()
     import platform_core.models  # noqa: F401
     dbmod.Base.metadata.create_all(dbmod.get_engine())
+    # Luật 0 của admission (dual-model 5.3): một CSDL mới chưa nói card
+    # 3090 đang là của ai, và fail-closed nghĩa là cửa LTT-3.8 đóng. Cửa
+    # này là thứ tệp test đang kiểm, nên nó phải nói ra — như production.
+    mo_cu_tru_3090()
     gen = dbmod.get_session()
     s = next(gen)
     try:
@@ -461,6 +466,10 @@ def test_cua_dong_bo_tra_4xx_chu_khong_phai_500_khi_ban_khai_thieu_model(
     dbmod.reset_engine()
     import platform_core.models  # noqa: F401
     dbmod.Base.metadata.create_all(dbmod.get_engine())
+    # Luật 0 của admission (dual-model 5.3): một CSDL mới chưa nói card
+    # 3090 đang là của ai, và fail-closed nghĩa là cửa LTT-3.8 đóng. Cửa
+    # này là thứ tệp test đang kiểm, nên nó phải nói ra — như production.
+    mo_cu_tru_3090()
 
     from platform_core import credit
     from platform_core.users import tao_nguoi_dung

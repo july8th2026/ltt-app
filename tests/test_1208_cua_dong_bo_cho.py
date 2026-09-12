@@ -40,6 +40,8 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 import pytest
+
+from tests.conftest import mo_cu_tru_3090
 from fastapi.testclient import TestClient
 
 from platform_core.public_api import keys as devkeys, limits
@@ -73,6 +75,10 @@ def api(tmp_path, monkeypatch):
     from platform_core.db import Base, get_engine
 
     Base.metadata.create_all(get_engine())
+    # Luật 0 của admission (dual-model 5.3): một CSDL mới chưa nói card
+    # 3090 đang là của ai, và fail-closed nghĩa là cửa LTT-3.8 đóng. Cửa
+    # này là thứ tệp test đang kiểm, nên nó phải nói ra — như production.
+    mo_cu_tru_3090()
     from server.app import create_app
 
     app = create_app(env={
