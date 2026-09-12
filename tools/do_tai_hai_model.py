@@ -112,7 +112,8 @@ class Luot:
     def __init__(self, ma_de: str, model: str, nhom: str = ""):
         self.ma_de, self.model, self.nhom = ma_de, model, nhom
         self.ma_http = None
-        self.bat_dau = self.xong = None
+        self.bat_dau: float | None = None
+        self.xong: float | None = None
         self.noi_dung = ""
         self.token_vao = self.token_ra = 0
         self.mcredit = 0

@@ -26,6 +26,10 @@ phát lại lịch sử chức năng. LLM canonical đã được nhập bằng 
 `c556c411`; Source A Multi-Job vẫn được bảo toàn nguyên trạng để chờ cleanup
 ledger, không có hunk nào cần port thêm theo `CMC_SOURCE_STATE.md`.
 
+`SESSION_PROTECTED: NONE_ACTIVE`. Marker được giữ cho topology contract; các
+worktree chưa cleanup là nguồn đối soát/WIP được bảo toàn, không phải phiên đang
+vận hành.
+
 ## Bằng chứng hiện có
 
 - Thiết kế: `docs/superpowers/specs/2026-09-11-ltt-cmc-design.md`.

@@ -36,7 +36,7 @@ hợp nhất. Chưa push/chuyển remote authority và chưa xóa worktree/branc
 Đã cập nhật nguồn quy trình hiện hành để mọi task ghi code ghim `BASE_SHA`, làm
 trên branch/worktree tạm, dừng ở `HANDOFF_READY_FINAL`, và chỉ canonical
 integrator được tích hợp vào `main` rồi retire theo ledger đã duyệt. Không tạo
-`docs/van_hanh_worktree.md`; giữ `docs/QUY_TRINH_WORKTREE.md` là authority duy
+tệp `van_hanh_worktree.md` cạnh tranh; giữ `docs/QUY_TRINH_WORKTREE.md` là authority duy
 nhất và để `AGENTS.md`/`CLAUDE.md`/Operating Contract/Development Workflow trỏ
 về đó. `tests/test_974_cmc_rule_authority.py` chốt hành vi tài liệu này.
 
