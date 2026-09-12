@@ -14,6 +14,7 @@
 | L-04 | bo cham `bia-01` do **su vang mat** -> cau bia dat VA cau lac de deu duoc cham dung | DOC LAP | `tools/do_tai_hai_model.py` | ban cu: 3/3 cau sai -> "dung"; ban moi: 1/3 | ✅ **DONG 13/09** |
 | L-05 | **108/131 job loi 14 ngay** deu la `AmbiguousProviderError: mat ket noi sau khi bat dau gui` | DOC LAP | he qua cua L-01 | 48/48 done, 0 loi (p=0,3%) | ✅ **DONG 13/09** |
 | L-06 | cua DONG BO khong huy duoc: khach cat ket noi ma slot van bi giu toi khi sinh XONG | DOC LAP | `chat.py` khong goi `huy_luot.phien` | tra slot 15,4 / 17,2 / 31,9 s theo `max_tokens` 900 / 1024 / 2000 | **MO 13/09** |
+| L-07 | **MOT job anh la ha `ltt-3.8` VINH VIEN**: trong tai nha LLM roi ket o `nha_llm` | 🔴 **CHAN** | cong render may B thieu `/v1/nha_comfy` (404) | su co that 04:57-05:29, 32 phut | **MO 13/09** |
 
 ## L-05 — mot MUC CAN DO, khong phai mot ket luan
 
@@ -36,6 +37,84 @@ Tap trung 08/09 (**64**) va 09/09 (**34**) = 75% tong so. Tu 11/09 khong con job
    vong vi dung mot gia thuyet khop qua vua ("khoa advisory theo tai khoan").
    Phep do dung: sau khi deploy ban sua L-01, lop loi nay phai **bien mat** —
    khong phai giam. Neu no chi giam, nguyen nhan la thu khac.
+
+## L-07 — MO 13/09/2026, CHAN: mot job anh ha `ltt-3.8` vinh vien
+
+🔴 **Day la su co THAT, khong phai mot phep do.** `ltt-3.8` tra 429 cho MOI
+   yeu cau tu 04:57 toi 05:29 — **32 phut**. Toi la nguoi kich hoat no (nop mot
+   job anh de do cong I), nhung khuyet tat co san va bat ky job anh nao cung
+   kich hoat duoc.
+
+### Chuoi su kien, doc tu CSDL va log
+
+```
+04:57:29  job anh vao hang, admission_resource = anh_3090
+04:57:31  gpu_residency: llm -> xa_llm       (ngung nhan luot LLM moi)
+04:57:34  gpu_residency: xa_llm -> nha_llm   (da drain, phat lenh nha)
+04:57:37+ moi ~3 giay, lap lai vo tan:
+          "khong bat lai duoc ComfyUI => KHONG vao anh
+           (cu tru rtx3090 van o nha_llm); se thu lai luot sau"
+05:14:15  job anh van `queued`, progress 0, heartbeat van dap
+05:29:41  can thiep tay: dat lai trang_thai = llm
+05:30      ltt-3.8 tra 200 sau 17,7 s (nap lanh, khop cong K: 17,37 s)
+```
+
+### Goc: cong render may B chay BAN CU
+
+```
+POST http://192.168.2.66:8199/v1/nha_comfy   ->  404 {"detail":"Not Found"}
+```
+
+`residency.MayBResidency.chay_comfy()` goi dung duong ay va doi
+`{"dang_chay": true}`. Cay co dinh tuyen do (`render_gateway/api.py:299`, dang
+ky VO DIEU KIEN), ban dang chay tren may B thi khong:
+
+```
+duong may B 8199 dang co: /health · /live · /v1/exclusive
+                          /v1/images/generations · /v1/jobs/{id}
+                          /v1/jobs/{id}/cancel · /v1/models
+```
+
+### Vi sao mot 404 thanh mot su co toan phan
+
+`CHUYEN_HOP_LE[NHA_LLM] = {ANH}` — tu `nha_llm` co DUNG MOT duong ra, va lenh
+vao `ANH` chi phat khi `chay_comfy()` thanh cong. Khong co duong lui.
+
+So sanh: `CHUYEN_HOP_LE[XA_LLM] = {NHA_LLM, LLM}` — o `xa_llm` co duong huy
+("job anh rut khoi hang giua luc drain"). Duong ay **dung mot buoc truoc chO
+can no**.
+
+⇒ Ket cuc: LLM da roi card (3090 con 184 MiB), anh khong bao gio duoc ve, va
+  khong trang thai nao mo cua cho ai. Card 24 GB nam khong, hai ben cung doi.
+
+⛔ Va **huy job anh khong go duoc**: toi huy no luc 05:2x, trang thai van o
+   `nha_llm`. Duong huy chi ton tai o `xa_llm`.
+
+### Vi sao chua ai gap
+
+Luu luong 7 ngay: **1** job `anhnoibo`. Viec sinh anh qua duong nay gan nhu
+khong duoc dung, nen khuyet tat nam im. Mot ngay co khach dung anh la ngay
+`ltt-3.8` tat theo.
+
+### Ban sua — hai phan, va phan thu hai moi la phan quan trong
+
+1. **Deploy lai cong render may B** de co `/v1/nha_comfy`. Day la phan de.
+2. **May trang thai phai co duong lui tu `nha_llm`.** Sua (1) lam su co nay het,
+   nhung no khong lam `nha_llm` het la mot ngo cut: lan sau ComfyUI hong that
+   (o dia day, driver loi, dich vu khong bat duoc) thi ket qua VAN la 3090 nam
+   khong vo han. Mot trang thai co the vao ma khong the ra la mot khuyet tat
+   ve HINH DANG, khong phai ve cau hinh.
+
+⚠️ **Chua sua ca hai.** Deploy cong render may B la mot thay doi tren he con
+   khac, chua qua gate trong phien nay — phai hoi chu du an truoc.
+
+### Can thiep tay da lam gi (de hoan lai duoc)
+
+`UPDATE gpu_residency SET trang_thai='llm', tu_luc=now(), cua_so_bat_dau=NULL,
+phien_ban=phien_ban+1 WHERE nhom='rtx3090' AND phien_ban=2` — mot dong, co
+dieu kien khoa lac quan. Truoc khi ghi da kiem ba rao: trang thai DUNG la
+`nha_llm`, hang doi ComfyUI rong (`queue_remaining` = 0), VRAM 3090 sach
+(184 MiB). Thieu bat ky rao nao thi ban ghi la nap 16 GB len mot card dang ve.
 
 ## L-06 — MO 13/09/2026: cua dong bo khong cat duoc viec khi khach bo di
 

@@ -354,6 +354,46 @@ Gốc: `apps/ltt_llm/jobs.py:81` bọc lượt trong `huy_luot.phien(ma_luot)`;
 `server/api/chat.py` **không có** dòng tương đương. Chi tiết ở `SO_LOI_DO_TAI.md`
 mục L-06.
 
+## 7f. Cổng J — **ĐẠT 100 %**; cổng I — **TRƯỢT**, và nó tìm ra L-07
+
+### J: `ltt-3.5` chạy trong lúc 3090 vẽ
+
+| | tok/s |
+|---|---:|
+| C3 riêng, đo ở cổng E cùng ngày | 111,2 |
+| C3 **trong lúc 3090 đang xả LLM cho ảnh** | **111,5** |
+
+**100 %** (ngưỡng ≥ 90 %), 0 lỗi. Hai card thật sự độc lập: `ltt-3.5` trên
+5060 Ti không mất gì khi 3090 đổi cư trú.
+
+⭐ Mốc lấy từ phép đo **cùng ngày cùng máy**, không lấy mốc 12/09 — chính tệp này
+ghi một chênh 10–15 % giữa hai ngày mà chưa ai giải thích được, và mượn mốc ấy
+là mang theo cả phần chưa giải thích.
+
+### I: TRƯỢT — nhưng không vì lý do bộ đo nói
+
+Bộ đo báo *"3 lượt LLM chết giữa chừng"*. **Sai.** Ba lượt ấy nhận **HTTP 429
+`concurrency_limited`** — admission **từ chối đúng**, vì 3090 đã rời trạng thái
+`llm`. Một lượt bị từ chối ở cửa không phải một lượt chết giữa chừng. Đây là
+lần thứ tư trong phiên bộ đo chấm điểm một hành vi ĐÚNG thành một cổng trượt.
+
+Cái trượt thật nằm ở chỗ khác, và nó nặng hơn nhiều:
+
+| | |
+|---|---|
+| job ảnh | **không bao giờ được vẽ** — `queued`, `progress 0`, heartbeat đập suốt 17 phút |
+| `gpu_residency` | kẹt ở `nha_llm` **32 phút** |
+| `ltt-3.8` | **429 cho mọi yêu cầu** suốt 32 phút |
+| 3090 | 184 MiB / 24576 — nằm không, không ai dùng |
+
+Gốc: cổng render máy B chạy bản cũ, thiếu `/v1/nha_comfy` → `chay_comfy()` 404 →
+không vào được `ANH` → mà `nha_llm` **không có đường lui nào khác**. Toàn văn ở
+`SO_LOI_DO_TAI.md` mục **L-07**.
+
+🔴 **Đây là sự cố production thật**, không phải một con số trượt. Đã khôi phục
+bằng can thiệp tay lúc 05:29 (ba rào tự kiểm trước khi ghi). **Gốc chưa sửa** —
+job ảnh kế tiếp lặp lại y nguyên.
+
 ## 8. Sổ lỗi L-* — trạng thái cuối lượt 13/09
 
 | mã | trạng thái | ghi chú |
@@ -364,6 +404,7 @@ mục L-06.
 | **L-04** | ✅ **đóng** | bộ chấm đổi sang mệnh đề dương; bản cũ chấm 3/3 câu sai thành "đúng" |
 | **L-05** | ✅ **đóng** | 48/48 done, 0 lỗi; p = 0,3 % nếu tỉ lệ 11,6 % còn nguyên |
 | **L-06** | 🔴 **mở** | cửa đồng bộ không cắt được việc khi khách bỏ đi: slot giữ 15,4–31,9 s |
+| **L-07** | 🔴 **mở, CHẶN** | một job ảnh hạ `ltt-3.8` vĩnh viễn; sự cố thật 32 phút |
 
 ⭐ Năm mục L-01…L-05 đều đóng, và mỗi mục đóng bằng một **phép đo trên đường
 thật**, không bằng một bản vá đã commit. L-06 là mục **mới**, do chính cổng M
