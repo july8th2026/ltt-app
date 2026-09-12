@@ -1,0 +1,49 @@
+# thu_unload.yaml - HO SO THU NGHIEM, KHONG PHAI CAU HINH SAN XUAT.
+#
+# Muc dich DUY NHAT: tra loi mot cau da ghi [INFERRED] trong DECISION_LOG L-17 -
+# `GET /unload` cua llama-swap nha MOT model hay nha HET?
+#
+# Hom nay khong phan biet duoc vi ho so song chi co MOT model. Nen dung hai ho so
+# gia:
+#   thu_gpu  9B tren 5060 Ti (-ngl 999)  - card nay SAN XUAT KHONG DUNG
+#   thu_cpu  cung tep, CPU (-ngl 0)      - khong ton VRAM nao
+#
+# => Thi nghiem khong cham 3090, khong cham dich vu song o cong 8280.
+# `-c 512` de nap nhanh va ton it.
+
+healthCheckTimeout: 300
+logLevel: info
+startPort: 8391
+
+macros:
+  BIN: "H:/LTT_LLM/bin/llamacpp"
+  GGUF35: "H:/LTT_LLM/models/Qwen3.5-9B-Q6_K-unsloth.gguf"
+
+models:
+  thu_gpu:
+    cmd: |
+      ${BIN}/llama-server.exe -m ${GGUF35}
+      -c 512 -ngl 999 -fa 1
+      --host 127.0.0.1 --port ${PORT}
+    env:
+      - "CUDA_VISIBLE_DEVICES=GPU-ebecd0a4-a8a7-14a5-dad1-21565f6dc1df"
+    proxy: "http://127.0.0.1:${PORT}"
+    ttl: 0
+    unloadTimeout: 30
+
+  thu_cpu:
+    cmd: |
+      ${BIN}/llama-server.exe -m ${GGUF35}
+      -c 512 -ngl 0
+      --host 127.0.0.1 --port ${PORT}
+    env:
+      - "CUDA_VISIBLE_DEVICES="
+    proxy: "http://127.0.0.1:${PORT}"
+    ttl: 0
+    unloadTimeout: 30
+
+groups:
+  thu:
+    swap: false
+    exclusive: true
+    members: ["thu_gpu", "thu_cpu"]

@@ -407,6 +407,35 @@ không có tham số đối tượng thì không thể nhắm một trong hai mo
    URL — hôm nay không phân biệt được vì chỉ có một model để nhả. ⇒ Lần deploy phải
    **đo lại bằng `/running` sau một lượt `/unload`**, chứ không tin dòng này.
 
+🟢 **ĐÃ ĐO, 12/09/2026 11:40 trên chính máy B — câu [INFERRED] ở trên nay là SỰ
+   THẬT ĐO ĐƯỢC.** Thi nghiệm không chạm dịch vụ sống: một `llama-swap` thứ hai
+   ở cổng **8390** (sống: 8280), hai hồ sơ giả `-c 512` — một trên **5060 Ti** (card
+   sản xuất không dùng) và một **CPU thuần** (`-ngl 0`, tốn 0 VRAM) — nên **không
+   chạm 3090**. Kịch bản + log: `artifacts/unload/`.
+
+   | bước | lệnh | `/running` sau đó |
+   |---|---|---|
+   | 1 | nạp cả hai | `thu_cpu, thu_gpu` |
+   | 2 | `POST /api/models/unload/thu_cpu` | **`thu_gpu`** — nhả đúng một cái |
+   | 3 | nạp lại cả hai | `thu_cpu, thu_gpu` |
+   | 4 | **`GET /unload`** | **`[]`** — nhả **HẾT** |
+   | 5 | `POST /api/models/unload` (không tên) | `[]` — giống bước 4 |
+
+   ⇒ Đường production đang dùng (`GET /unload`) nhả **mọi** model đang chạy. Kết
+     luận của L-17 giữ nguyên, nay có số đứng sau.
+
+   ⭐ Hai thứ **không định đo mà đo được**, và cả hai đều đáng giữ:
+     · `groups: swap:false` **chạy đúng** trên chính binary của máy B — hai hồ sơ
+       cùng sống, đúng thứ Task 3.3 trông cậy (trước đó chỉ có schema nói thế).
+     · Nạp một 9B Q6_K từ kho ấm hết **~8 giây** cho cả hai hồ sơ cộng lại — khớp
+       dải G5 đã đo, nên kho ấm trên máy B vẫn đúng như mô tả.
+
+   ⚠️ Giới hạn của phép đo này, nói trước khi ai đó suy rộng: nó đo **ngữ nghĩa
+      của lệnh**, không đo *"nhả xong thì VRAM về bao nhiêu"* và không đo hành vi khi
+      một lượt đang sinh chữ (cả hai hồ sơ đều rảnh lúc gọi). Việc *"unload thủ công
+      không drain"* vẫn là bằng chứng cộng đồng (`fifo.go:222-270`), chưa phải phép đo
+      của ta.
+
 ⭐ **Một bằng chứng củng cố thêm, thấy sau khi viết entry này:** chính plan Task 5.4
    định gọi `POST http://127.0.0.1:8280/api/models/unload/qwen38-api` — tức llama-swap
    **có** đường nhả theo **tên model**, và `GET /unload` không phải đường đó. Hai
