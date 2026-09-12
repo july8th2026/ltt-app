@@ -29,7 +29,7 @@ def main() -> int:
     try:
         import llm_gateway
         import llm_gateway.api          # noqa: F401
-        import llm_gateway.don_dep      # noqa: F401
+        import llm_gateway.residency    # noqa: F401
         import llm_gateway.gia_token_khong_co_o_day  # noqa: F401
     except ImportError as e:
         # `gia_token` nam o platform_core tren MAY A, KHONG deploy sang may B:

@@ -375,6 +375,47 @@ def bao_dam_user(db, user_id: str):
     return user_id
 
 
+# ── Cư trú RTX 3090: một CSDL mới KHÔNG mở cửa LTT-3.8 (dual-model 5.3) ───────
+def mo_cu_tru_3090(trang_thai: str = "") -> None:
+    """Khai 3090 đang cư trú cho LTT-3.8, để cửa admission của nó mở.
+
+    🔴 VÌ SAO MỘT CSDL VỪA `create_all` LẠI KHÔNG MỞ CỬA. Từ Task 5.3, luật 0 của
+       `llm/luat_nhan.py` hỏi dòng `gpu_residency` của nhóm `rtx3090` trước mọi
+       luật khác, và **không có dòng thì đóng** (fail-closed): "không có dòng"
+       nghĩa là chưa ai biết card đang là của model nào, và coi như mở ở đó là
+       cấp lease LLM lên một card có thể đang vẽ ảnh. Trên máy chủ thật, dòng ấy
+       do trọng tài (`residency.buoc`, Task 5.5) tạo ở lượt bước đầu tiên, đọc
+       trạng thái từ máy B; `alembic` cố ý KHÔNG gieo nó.
+
+    ⇒ Một tệp test đi qua cửa LTT-3.8 (`ltt_38_3090`) phải nói ra card đang là
+      của ai, đúng như production phải nói. Gọi hàm này ngay sau `create_all`.
+
+    ⛔ KHÔNG `autouse`: ca "thiếu dòng ⇒ đóng cửa" là một phép kiểm thật
+      (`test_1217`), và một fixture autouse gieo dòng sẽ xoá luôn phép kiểm ấy —
+      cùng lý do `gpu_khong_claim_toan_may` bên dưới cũng không autouse.
+    """
+    from datetime import datetime, timezone
+
+    from apps.ltt_llm.ngan_sach import NHOM_CU_TRU_38
+    from platform_core.db import get_session
+    from platform_core.llm import residency
+    from platform_core.models import GpuResidency
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        if db.get(GpuResidency, NHOM_CU_TRU_38) is None:
+            db.add(GpuResidency(nhom=NHOM_CU_TRU_38,
+                                trang_thai=trang_thai or residency.LLM,
+                                tu_luc=datetime.now(timezone.utc)))
+            db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
 # ── Cắt test khỏi mặt phẳng claim GPU TOÀN MÁY ───────────────────────────────
 #
 # `platform_core/gpu_claims.py` đọc/ghi `C:\ProgramData\gpu_claims\claims\` —

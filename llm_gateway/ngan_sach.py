@@ -6,9 +6,16 @@ ngan_sach.py — chặn yêu cầu VƯỢT VÙNG ĐÃ ĐO **trước khi** nó c
    tự động không người canh. Ở đây rủi ro giống hệt, chỉ đổi đơn vị: **token thay
    cho điểm ảnh**.
 
-   Một yêu cầu 300K token gửi vào hồ sơ `-c 204800` sẽ không "chậm hơn một chút" —
+   Một yêu cầu **rộng hơn cửa sổ của hồ sơ nó đi vào** sẽ không "chậm hơn một chút" —
    nó làm llama-server cắt ngữ cảnh hoặc chết lúc cấp phát, và trong cả hai trường
    hợp người dùng nhận về thứ sai mà không biết là sai.
+
+   ⛔ Câu trên **từng ghi** một con số thật — `-c 204800`, **đã gỡ** — và đó là cửa sổ của
+      thời **một** hồ sơ — **đã gỡ** từ khi máy B chạy hai model với hai cửa sổ
+      khác nhau (L-14). Một ví dụ minh hoạ **không cần** con số thật: nó chỉ cần
+      bất đẳng thức. `tests/test_981` bắt chính dòng này **ngay lần đầu nó collect
+      được trở lại** — trước đó nó chết ở cấp module nên bộ dò nằm im suốt mấy
+      ngày, và hai chỗ trôi đã ẩn được đúng trong cửa sổ đó.
 
 ⛔ NGUYÊN TẮC: **chưa đo thì không chạy.** Trần ở đây đọc từ `Config`, và số trong
    `Config` chỉ được nâng sau khi P5 đo thật và ghi vào `DECISIONS.md`.

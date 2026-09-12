@@ -170,14 +170,77 @@ def _quote_secret(request: Request) -> str:
 def register_job_routes(api, config, tag: str) -> None:
     """Attach the chargeable routes directly onto the public sub-application."""
 
-    def _resource_of(tool) -> str:
-        return str(getattr(tool, "admission_resource", "") or "api")
+    def _resource_of(tool, params=None) -> str:
+        """Tên tài nguyên khan hiếm mà lượt gọi này tranh — **theo model nó xin**.
 
-    def _class_slugs(tool) -> list:
+        🔴 ĐỌC BẢN KHAI QUA `admission_cho`, KHÔNG đọc trường tĩnh
+           `tool.admission_resource` (multijob 2.3, cùng lớp lỗi với R20).
+
+           `text.chat` từ Task 2.3 khai `admission_theo_model`, nên trường tĩnh
+           ấy **rỗng** và hàm này từng rơi về `"api"`. Hậu quả im lặng: mọi trần
+           cấu hình theo tài nguyên (`LTT_PUBLIC_API_RESOURCE_QUEUE_LIMITS`, ví
+           dụ ngay trong `public_api/config.py` là `llm_remote:8,gpu:20`) thôi
+           áp cho lượt LLM — cửa đo một tài nguyên tên `"api"` mà không ai đặt
+           trần, và hai tài nguyên thật (`ltt_38_3090`, `ltt_35_5060`) không bao
+           giờ được nhắc tới.
+
+           Nó **không** làm chạy quá suất — lease vẫn là khoá thật ở tầng dưới —
+           nhưng nó gỡ mất lớp áp lực ngược *trước khi giữ tiền*, tức khách bị
+           nhận việc rồi mới xếp hàng thay vì bị từ chối sớm.
+
+        ⛔ Nuốt `KeyError` ở đây là sai: model đã qua validate theo `params_schema`
+           trước khi tới, nên một `KeyError` nghĩa là bản khai tự mâu thuẫn.
+           Rơi về `"api"` lúc đó là lặng lẽ bỏ gác đúng thứ cần gác.
+        """
+        from platform_core.registry import suc_chua_admission
+
+        suc = suc_chua_admission(tool, str((params or {}).get("model") or ""))
+        if suc is not None and suc.resource:
+            return str(suc.resource)
+        # 🔴 RƠI VỀ BẢN KHAI TĨNH, KHÔNG PHẢI `"api"`.
+        #
+        #    `suc_chua_admission` trả `None` cho tool khai `admission_resource`
+        #    mà `admission_slots == 0` — `image.upscale`/`video.upscale` đúng
+        #    hình dạng ấy (`resource="gpu"`, `slots=0`): chúng **chụp sức chứa
+        #    theo giai đoạn**, không giành suất lúc nộp. Trả `"api"` ở đó làm
+        #    `class_limit = class_concurrency.get("api", 0) = 0`, tức
+        #    `LTT_PUBLIC_API_CLASS_CONCURRENCY="gpu:N"` **thôi gác** job GPU vào
+        #    qua cửa công khai.
+        #
+        # ⚠️ CHỖ NÀY TỪNG MANG MỘT GHI CHÚ NÓI NGƯỢC LẠI, và cả hai vế của nó
+        #    đều đã được đo là SAI (12/09):
+        #
+        #    (a) *"Lỗ ấy CÓ TRƯỚC chương trình dual-model."* — Không.
+        #        `test_188::test_gpu_capacity_stops_a_second_concurrent_job`
+        #        **XANH** ở điểm rẽ nhánh `9e73bf1f` (chạy trong một cây tạm),
+        #        **ĐỎ** sau `9686518b`. Ghi chú ấy đối chiếu bốn tệp và thiếu
+        #        đúng tệp đã đổi (`public_api/invocation.py`); ở lần đo lại,
+        #        `git diff` từ điểm rẽ nhánh cho thấy nhánh này **có** sửa cả
+        #        `server/api/jobs.py` (66 dòng) — chính hàm này.
+        #
+        #    (b) *"trần thật bị mất ở `policy.resolve`."* — Không. Đo bằng cách
+        #        bẫy `enforce_job_admission` trong chính ca test ấy:
+        #        `class_concurrency = {'gpu': 1}` **tới nơi đầy đủ**. Thứ sai là
+        #        `resource='api'` mà hàm này trả về, nên `classes.get(...)` tra
+        #        nhầm khoá.
+        #
+        # ⭐ Bài học đáng giữ hơn cả bản sửa: một ghi chú tự khai là *"đã đo"*
+        #    vẫn có thể sai, và nó **đắt hơn** không có ghi chú — nó làm người
+        #    sau (tôi) tin rằng câu hỏi đã được trả lời và đi tìm chỗ khác.
+        #    Phép đo rẻ nhất ở đây là một cây tạm ở điểm rẽ nhánh: 4 giây.
+        #
+        # ⛔ Đi qua `admission_luc_nop`, KHÔNG đọc `tool.admission_resource` ở
+        #    đây. Nó là **cùng một câu hỏi** với hai cột ghi lúc nộp, nên nó phải
+        #    có **cùng một câu trả lời**: chép lại phép rơi-về ở đây là dựng bản
+        #    chân lý thứ hai, và bản sao sẽ trôi.
+        from platform_core.registry import admission_luc_nop
+        return str(admission_luc_nop(tool, params or {}, mac_dinh="api")[0])
+
+    def _class_slugs(tool, params=None) -> list:
         """Apps competing for the same scarce resource as this tool."""
         from platform_core.registry import discover
 
-        resource = _resource_of(tool)
+        resource = _resource_of(tool, params)
         return [item.manifest.slug for item in discover()
                 if not item.error and limits.resource_class(item.manifest) == resource]
 
@@ -357,7 +420,8 @@ def register_job_routes(api, config, tag: str) -> None:
                                    user_id=principal.user_id)
         limits.enforce_active_jobs(
             db, principal=principal, config=config, app_slug=tool.app_slug,
-            class_slugs=_class_slugs(tool), resource=_resource_of(tool),
+            class_slugs=_class_slugs(tool, clean),
+            resource=_resource_of(tool, clean),
             limits=resolved)
         # Spending limits apply to spending. A test call moves no credit, so a
         # daily ceiling or a budget would be metering something that cannot

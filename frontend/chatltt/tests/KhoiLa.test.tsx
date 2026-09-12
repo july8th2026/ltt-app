@@ -29,7 +29,7 @@ import type { Khoi, ThongDiep } from '../src/kieu'
 function tin(blocks: Khoi[]): ThongDiep {
   return {
     id: 'a1', parent_id: 'u1', role: 'assistant', blocks,
-    status: 'done', model_alias: 'ltt_llm', execution_id: null,
+    status: 'done', model_alias: 'ltt-3.8', execution_id: null,
     created_at: '2026-09-05T00:00:02.000000+00:00',
   }
 }

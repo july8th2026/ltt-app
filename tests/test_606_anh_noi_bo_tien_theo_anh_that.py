@@ -35,8 +35,30 @@ def moi_truong(tmp_path, monkeypatch):
     import platform_core.models  # noqa: F401
     from platform_core.db import Base, get_engine
     Base.metadata.create_all(get_engine())
+    _mo_cua_so_anh()
     yield
     dbmod.reset_engine()
+
+
+def _mo_cua_so_anh() -> None:
+    """Khai 3090 đang trong **cửa sổ ảnh** (dual-model 5.5, D01 B).
+
+    🔴 VÌ SAO MỘT CSDL VỪA `create_all` KHÔNG CHẠY ĐƯỢC JOB ẢNH NỮA. Từ 5.5
+       `image.ltt` khai `AdmissionModel("anh_3090", …, "rtx3090", "theo_lo")`,
+       và luật 0 của admission fail-closed: **không có dòng `gpu_residency` thì
+       không ai được nhận**. Worker sẽ trả job về hàng đợi thay vì chạy handler,
+       nên `dp.goi` rỗng và `job.result` là `None` — một kiểu đỏ trông như "điều
+       phối hỏng" trong khi thứ hỏng là "chưa ai nói card đang thuộc về ai".
+
+    Trên máy chủ thật, dòng ấy do trọng tài (`residency.buoc`) tạo, và job ảnh
+    chỉ chạy khi nó mở cửa sổ `ANH`. Tệp này chạy job ảnh nên phải nói ra điều
+    đó, đúng như production phải nói.
+    """
+    from platform_core.llm import residency
+
+    from tests.conftest import mo_cu_tru_3090
+
+    mo_cu_tru_3090(residency.ANH)
 
 
 def _session():

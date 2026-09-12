@@ -99,6 +99,125 @@ def tai_tham_chieu(reference: str):
 
 
 @dataclass(frozen=True)
+class AdmissionModel:
+    """Sức chứa admission của MỘT model trong một tool (multijob 2.1).
+
+    Vì sao tách khỏi `ToolSpec.admission_resource/slots/token_pool`: bộ ba đó
+    tả được đúng MỘT pool cho cả tool, còn `text.chat` sắp phục vụ hai model
+    (`ltt-3.8`, `ltt-3.5`) trên hai pool KV khác nhau của CÙNG một tool. Khoá
+    `"*"` trong `ToolSpec.admission_theo_model` nghĩa là "áp cho mọi model của
+    tool" — dùng cho tool không phân biệt theo model (vd Task 5.5, ảnh trên
+    3090: `{"*": AdmissionModel("anh_3090", 1, 0, "rtx3090", "theo_lo")}`).
+    """
+    #: Tên tài nguyên dùng chung phải giành trước khi chạm provider.
+    resource: str
+    #: Số lượt thực thi đồng thời tài nguyên trên cho phép.
+    slots: int
+    #: Ngân sách token KV dùng chung. 0 = không áp ngân sách.
+    token_pool: int = 0
+    #: Nhóm cư trú GPU để trọng tài residency (vd "rtx3090"). Rỗng = không
+    #: trọng tài — chưa có tool nào dùng tới field này ở 2.1, nhưng nó là một
+    #: phần của hợp đồng đã chốt (Task 5.5 sẽ dùng), không phải suy đoán.
+    residency_group: str = ""
+    #: "mac_dinh" | "theo_lo" | "" — vai trò của model trong nhóm cư trú.
+    vai_tro: str = ""
+
+
+def suc_chua_admission(tool, model: str = "") -> "AdmissionModel | None":
+    """Sức chứa admission của `tool` cho một model cụ thể (multijob 2.1).
+
+    Ba nhánh, fail-closed:
+
+    1. Có `admission_theo_model`: khớp đúng `model` thì trả nó; không thì rơi
+       về `"*"` nếu tool có khai; không có cả hai ⇒ `KeyError` — một model lạ
+       không được âm thầm chạy KHÔNG có admission (tức không giành lease,
+       không áp ngân sách token) trên một tool đã chủ động phân biệt theo model.
+    2. Không có `admission_theo_model` nhưng có `admission_resource` +
+       `admission_slots > 0`: tool cũ trước 2.1 — trả `AdmissionModel` tương
+       đương, không phân biệt `model`. Hành vi giữ NGUYÊN.
+    3. Không khai gì: tool không giành lease nào ⇒ `None`.
+
+    ⭐ **HÀM TỰ DO, KHÔNG PHẢI PHƯƠNG THỨC** — và đó là điểm chính (multijob
+       2.2). Hai lớp mang cùng bộ trường này: `ToolSpec` (bản khai của app, thứ
+       `job_runner`/`canonical` cầm) và `public_api.catalog.PublicTool` (bản
+       chiếu, thứ `server/api/chat.py` và `streaming.py` cầm). Cả hai đều phải
+       trả lời **cùng một câu** "model này giành tài nguyên nào"; chép luật vào
+       lớp thứ hai là dựng bản chân lý thứ hai, và bản sao sẽ trôi — đúng khuôn
+       hỏng đã gặp ở `ALIAS_SANG_ID`. Nên luật ở đây MỘT bản, hai lớp gọi vào.
+    """
+    m = tool.admission_theo_model
+    if m:
+        if model in m:
+            return m[model]
+        if "*" in m:
+            return m["*"]
+        raise KeyError(
+            f"{tool.name}: model {model!r} khong co trong admission_theo_model")
+    if tool.admission_resource and tool.admission_slots > 0:
+        return AdmissionModel(tool.admission_resource, tool.admission_slots,
+                              int(getattr(tool, "admission_token_pool", 0) or 0))
+    return None
+
+
+def admission_luc_nop(tool, params, *, mac_dinh: str = "") -> tuple[str, int]:
+    """Hai cột `Job.admission_resource` / `Job.admission_slots` ghi **lúc nộp**.
+
+    🔴 VÌ SAO MỘT HÀM CHỨ KHÔNG PHẢI HAI DÒNG CHÉP HAI CHỖ (multijob 2.3, R20).
+
+       `platform_core/jobs.py::claim` và `job_scheduler` gác hàng đợi bằng đúng
+       hai **cột CSDL** này (index `ix_jobs_admission_queue`, `ix_jobs_fairness`,
+       `ix_jobs_scheduler_queue`) — không bằng bản khai. Hai chỗ nộp
+       (`runtime_noi_bo/job.py`, `public_api/invocation.py`) từng đọc thẳng
+       `tool.admission_resource`, bộ ba **tĩnh**. Ngày `text.chat` chuyển sang
+       `admission_theo_model` (2.3) trường tĩnh ấy thành rỗng ⇒ hai cột mang
+       `slots=0` ⇒ `claim()` coi mọi job chat là "không dùng tài nguyên chia sẻ"
+       và nhặt tự do.
+
+       Lease vẫn là khoá thật nên **không** chạy quá suất; thứ hỏng là hàng đợi
+       nhặt-rồi-trả vô ích, **fairness**, **scheduler envelope**, và nhãn
+       `resource_wait` của `job_runner` (`defer_resource` dán tên tài nguyên
+       lấy từ chính cột này).
+
+    ⛔ `KeyError` KHÔNG bị nuốt. Cả hai bên gọi đã validate `model` theo
+       `params_schema` (enum) trước khi tới đây, nên một `KeyError` ở đây nghĩa
+       là **bản khai tự mâu thuẫn** — enum cho phép một model mà
+       `admission_theo_model` không biết. Rơi về `(mac_dinh, 0)` ở đó là ghi
+       một hàng job không được gác, tức đúng khuyết tật hàm này sinh ra để dẹp.
+
+    Trả `(mac_dinh, 0)` khi tool **không khai gì** — đó là hành vi cũ nguyên
+    vẹn cho mọi app chụp tài nguyên theo giai đoạn (vd `auto_scan_video`).
+    """
+    suc = suc_chua_admission(tool, str((params or {}).get("model") or ""))
+    if suc is None:
+        # 🔴 KHÔNG KHAI POOL **KHÔNG** NGHĨA LÀ KHÔNG CÓ LỚP TÀI NGUYÊN.
+        #
+        #    `suc_chua_admission` trả `None` cho tool khai `admission_resource`
+        #    mà `admission_slots == 0` — nhánh 2 của nó đòi `slots > 0`. Đó là
+        #    câu trả lời **đúng** cho câu hỏi *"tool này giành mấy suất lease?"*
+        #    (không suất nào). Nhưng hàm này trả lời một câu **khác**: *"job này
+        #    thuộc lớp tài nguyên nào?"* — và hai câu ấy khác nhau ở đúng những
+        #    app **chụp sức chứa theo giai đoạn** (`image.upscale`,
+        #    `video.upscale`: `resource="gpu"`, `slots=0`).
+        #
+        # ⛔ Trước 12/09 chỗ này rơi thẳng về `mac_dinh` (`"api"` ở cửa công
+        #    khai) ⇒ cột `Job.admission_resource` mang `"api"` thay vì `"gpu"` ⇒
+        #    `limits.active_job_count(resource="gpu")` đếm 0 ⇒
+        #    `LTT_PUBLIC_API_CLASS_CONCURRENCY="gpu:1"` **thôi gác**, job GPU thứ
+        #    hai được nhận (201) thay vì bị chặn (429). Đo được:
+        #    `test_188::test_gpu_capacity_stops_a_second_concurrent_job` XANH ở
+        #    điểm rẽ nhánh `9e73bf1f`, ĐỎ sau `9686518b`.
+        #
+        # ⭐ VÀ NÓ PHẢI NẰM Ở ĐÂY, KHÔNG PHẢI Ở CHỖ GỌI. Bản sửa đầu của tôi đặt
+        #    `getattr(tool, "admission_resource")` ngay trong `invocation.py` và
+        #    `test_1210::test_cho_nop_khong_con_doc_bo_ba_tinh` bắt đúng: hai
+        #    đường nộp **không được** đọc bộ ba tĩnh. Bánh cóc ấy đúng, và nó
+        #    chỉ đường về đây — nơi bộ ba tĩnh vốn đã được đọc một lần.
+        tinh = str(getattr(tool, "admission_resource", "") or "")
+        return (tinh or mac_dinh, 0)
+    return (str(suc.resource or "") or mac_dinh, int(suc.slots or 0))
+
+
+@dataclass(frozen=True)
 class ToolSpec:
     """Metadata tất định để Agent/Canvas gọi một job đã tồn tại.
 
@@ -152,6 +271,27 @@ class ToolSpec:
     # Số lượt thực thi đồng thời mà tài nguyên trên cho phép. 0 = admission
     # không cấp execution lease (giữ tương thích tool hiện có).
     admission_slots: int = 0
+    # Ngân sách token KV dùng chung của tài nguyên trên (llama.cpp `-kvu`).
+    # 0 = không áp ngân sách token — mọi tool khác giữ nguyên hành vi. >0 thì
+    # admission đặt chỗ `prompt + max_tokens + đệm` và chỉ nhận khi còn vừa
+    # (multijob, `platform_core/llm/luat_nhan.py`).
+    admission_token_pool: int = 0
+
+    # ── Admission THEO MODEL (multijob 2.1) ─────────────────────────────────
+    #
+    # `{model_id | "*": AdmissionModel(...)}`. Rỗng (mặc định) = tool dùng ba
+    # trường tĩnh ở trên — KHÔNG tool nào hiện có phải đổi để giữ hành vi cũ
+    # (`admission_cho()` tự rơi về nhánh tương thích, xem bên dưới).
+    #
+    # 🔴 VÌ SAO CẦN. `text.chat` sắp phục vụ `ltt-3.8` VÀ `ltt-3.5` — hai model
+    #    trên hai pool KV khác nhau của CÙNG một tool (`docs/.../ltt-llm-dual-
+    #    model`). `admission_resource/slots/token_pool` tĩnh chỉ tả được MỘT
+    #    pool; tool cần một ánh xạ theo model, không phải ba con số dùng chung.
+    #
+    # ⭐ Khoá `"*"` = áp cho MỌI model của tool (Task 5.5: ảnh trên 3090 khai
+    #    `{"*": AdmissionModel("anh_3090", 1, 0, "rtx3090", "theo_lo")}` — tool
+    #    đó không phân biệt sức chứa theo model).
+    admission_theo_model: dict = field(default_factory=dict)
 
     # Optional adapter for protocol routes that must execute synchronously.
     # This is a dotted reference owned by the app; the platform resolves it
@@ -306,6 +446,10 @@ class ToolSpec:
             spec = (self.params_schema or {}).get(self.job_type_by) or {}
             gia_tri = spec.get("default")
         return (self.job_type_lanes or {}).get(gia_tri, self.job_type)
+
+    def admission_cho(self, model: str = "") -> "AdmissionModel | None":
+        """Sức chứa admission cho một model cụ thể. Xem `suc_chua_admission`."""
+        return suc_chua_admission(self, model)
 
 
 @dataclass(frozen=True)
@@ -575,6 +719,35 @@ class AppManifest:
     #    và mọi cửa (web, API, client nội bộ) đọc **một** chỗ qua
     #    `so_lan_thu_for()`. Cùng hình dạng ba bảng ngay trên.
     so_lan_thu: dict = field(default_factory=dict)
+
+    #: Model nhà dùng cho việc LLM **NỘI BỘ** của app (D09, dual-model 2.4).
+    #:
+    #: 🔴 KHÔNG PHẢI model khách chọn. Khách chọn model ở `params_schema` của
+    #:    tool (`text.chat`); trường này nói app dùng model nào cho việc *của
+    #:    nó*: dịch prompt ảnh, dịch phụ đề, sinh JSON gợi ý — thứ khách không
+    #:    thấy tên và không trả tiền theo tên.
+    #:
+    #: 🔴 VÌ SAO NÓ PHẢI LÀ MỘT BẢN KHAI CHỨ KHÔNG PHẢI MỘT HẰNG SỐ NỀN TẢNG.
+    #:
+    #:    Tới 11/09/2026 mọi đường nội bộ đều gọi
+    #:    `canonical.tai_nguyen_nha(MODEL_MAC_DINH)`, tức **một** hằng số cho
+    #:    mọi app. Từ D01 B, `ltt-3.8` cư trú trên RTX 3090 và **rời card đó**
+    #:    trong cửa sổ sinh ảnh. Job ảnh (`anhnoibo`/`taoanh`/`thumbnail`) dịch
+    #:    prompt *từ bên trong* job — tức nó đang **giữ** 3090 và lại đi **chờ**
+    #:    một model chỉ nạp được sau khi 3090 rảnh. Đó là một vòng chờ: không
+    #:    lỗi, không log, chỉ một job treo tới hết trần thời gian.
+    #:
+    #: ⇒ Mặc định `ltt-3.5` (5060 Ti) cho MỌI app, và đó **không phải một sự hy
+    #:   sinh**: đo 11/09/2026 trên máy B, LTT-3.5 chạy 73 tok/s so với 66,7
+    #:   tok/s của LTT-3.8, cửa sổ 262.144 so với 221.184, cùng 3 slot. Việc nội
+    #:   bộ vừa hết kẹt residency vừa **nhanh hơn**. App nào cần 3.8 thì nâng
+    #:   bằng **một dòng khai** ở manifest của chính nó (D09 hệ quả 2).
+    #:
+    #: ⛔ Giá trị phải là một bí danh công khai hợp lệ (`canonical.MODEL_HOP_LE`).
+    #:    Một tên lạ ở đây KHÔNG được âm thầm rơi về mặc định lúc nạp — nó bị
+    #:    `_validate` từ chối, vì "app khai sai" và "app không khai" là hai
+    #:    trạng thái khác nhau và chỉ một trong hai là ý định.
+    model_llm_noi_bo: str = "ltt-3.5"
 
     def cho_tai_nguyen_for(self, job_type: str, *, default: int = 20) -> int:
         """Giãn cách thử lại khi tài nguyên bận, giây. Kẹp sàn 1 giây."""
@@ -1165,6 +1338,17 @@ def _validate(manifest: AppManifest, seen_slugs: set, seen_prefixes: set,
         raise RegistryError(
             _t("[{slug}] lifecycle không hợp lệ: {value!r}").format(
                 slug=manifest.slug, value=manifest.lifecycle))
+    # ⛔ Model cho việc LLM nội bộ (D09): tên lạ bị TỪ CHỐI lúc nạp, không rơi
+    #    về mặc định. Nếu rơi im lặng thì một lỗi gõ (`ltt-3.50`) chạy suốt đời
+    #    trên model *khác* model app tưởng — và hoá đơn/GPU đều đi theo model
+    #    kia. Import trễ: `canonical` import `AdmissionModel` từ chính tệp này.
+    from platform_core.llm.canonical import MODEL_HOP_LE as _MODEL_HOP_LE
+    if manifest.model_llm_noi_bo not in _MODEL_HOP_LE:
+        raise RegistryError(
+            _t("[{slug}] model_llm_noi_bo không hợp lệ: {value!r} — "
+               "hợp lệ: {ok}").format(
+                   slug=manifest.slug, value=manifest.model_llm_noi_bo,
+                   ok=list(_MODEL_HOP_LE)))
     if (not isinstance(manifest.capabilities, tuple) or
             any(not isinstance(value, str) or not value.strip()
                 for value in manifest.capabilities)):

@@ -1,0 +1,1128 @@
+{
+ "model": "x",
+ "url": "http://127.0.0.1:8291",
+ "lan": 5,
+ "luc": "2026-09-12 06:28:23",
+ "bai": [
+  {
+   "ma_bai": "vi-01",
+   "lan": 0,
+   "ma_http": 200,
+   "giay": 2.92,
+   "ra": "Hà Nội",
+   "su_dung": {
+    "completion_tokens": 227,
+    "prompt_tokens": 30,
+    "total_tokens": 257,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "vi-01",
+   "lan": 1,
+   "ma_http": 200,
+   "giay": 17.96,
+   "ra": "\"Hà Nội\"\n\n    (Wait, let's re-evaluate \"MOT tu\". \"Hà Nội\" is often treated as one proper noun entity, but technically two words. Is there a single word answer for Capital? No.\n    Is there a single word answer for Flag? \"Cờ\" (Flag). But that's generic. \"Quốc kỳ\" (National flag) is two words.\n    Let's look at the typo \"thu do\".\n    If user meant \"thủ đô\" (Capital): Answer \"Hà Nội\".\n    If user meant \"cờ đỏ\" (Red flag): Answer \"Cờ\". Or \"Sao\".\n    Given \"thu do\" is phonetically very close to \"thủ đô\" (th-u-d-o vs th-u-d-o), it's almost certainly \"thủ đô\".\n    Is \"Hà Nội\" considered one word? In Vietnamese context, it's a proper noun. But strictly, it's two words.\n    Is there any other interpretation? \"Thuộc về\"? No.\n    Maybe the user literally means \"Thu do\" as in \"Freedom\"? No.\n    Most likely typo for \"Thủ đô\".\n    However, if I must answer with ONE word, and the question is \"What is the capital?\", the answer \"Hà Nội\" might violate the strict \"one word\" rule if parsed as \"Hà\" + \"Nội\".\n    But often \"Hà Nội\" is accepted as one entity.\n    What if the question is \"Cờ đỏ của Việt Nam là gì?\" (What is the red flag of Vietnam?) -> \"Cờ đỏ sao vàng\".\n    What if the question is \"Cờ của Việt Nam là gì?\" -> \"Cờ\".\n    But the input is \"thu do\".\n    Let's search for common typos. \"thu do\" -> \"thủ đô\".\n    If I answer \"Hà Nội\", is it one word? It's a compound noun.\n    If I answer \"Cờ\", it answers \"What is the flag?\" but ignores the \"thu do\" (thủ đô) typo.\n    If the user actually meant \"Cờ đỏ\" (Red flag), they typed \"thu do\". 'cờ' vs 'thu'. Not close.\n    'Đô' vs 'do'. 'Thủ' vs 'thu'.\n    So \"Thủ đô\" is the intended word.\n    Answer: \"Hà Nội\".\n    Does \"Hà Nội\" count as one word? In many contexts, yes. But to be safe on \"MOT TU\" (ONE WORD), maybe there's a better fit?\n    Wait, could it be \"Đoàn kết\"? No.\n    Let's consider the constraint strictly. \"MOT TU\".\n    If the answer is \"Hà Nội\", it has a space.\n    Is there a single word for Hanoi? No.\n    Maybe the user meant \"Cờ\" (Flag) and typed \"thu do\" by mistake? Unlikely.\n    Maybe the user meant \"Quốc kỳ\" (National Flag)? No.\n    Okay, assume \"Thủ đô\". The standard answer is \"Hà Nội\".\n    Is there a single word synonym? \"Thủ đô\" itself? No, that's the question.\n    Maybe the answer is \"Hà Nội\" and I should ignore the space issue as it's a proper noun.\n    OR, maybe the user meant \"Cờ\" (Flag) and \"thu do\" is a severe typo for \"Cờ đỏ\"? No.\n    Let's assume the user made a typo for \"Thủ đô\".\n    Answer: \"Hà Nội\".\n    Wait, \"Hà Nội\" is two words.\n    Is there a single word answer? \"Hanoi\" (English)? No, Vietnamese.\n    Maybe the question is \"Thuộc về\"? No.\n    Let's consider the possibility that \"thu do\" means \"Cờ\" (Flag) in some dialect? No.\n    Okay, what if I answer \"Cờ\"? It fits \"MOT TU\". But it doesn't answer \"Thủ đô\".\n    What if I answer \"Sao\"? (Star).",
+   "su_dung": {
+    "completion_tokens": 1400,
+    "prompt_tokens": 30,
+    "total_tokens": 1430,
+    "prompt_tokens_details": {
+     "cached_tokens": 26
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "vi-01",
+   "lan": 2,
+   "ma_http": 200,
+   "giay": 3.47,
+   "ra": "Hà Nội",
+   "su_dung": {
+    "completion_tokens": 299,
+    "prompt_tokens": 30,
+    "total_tokens": 329,
+    "prompt_tokens_details": {
+     "cached_tokens": 26
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "vi-01",
+   "lan": 3,
+   "ma_http": 200,
+   "giay": 2.57,
+   "ra": "Hà Nội",
+   "su_dung": {
+    "completion_tokens": 225,
+    "prompt_tokens": 30,
+    "total_tokens": 255,
+    "prompt_tokens_details": {
+     "cached_tokens": 26
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "vi-01",
+   "lan": 4,
+   "ma_http": 200,
+   "giay": 2.6,
+   "ra": "Hà Nội",
+   "su_dung": {
+    "completion_tokens": 225,
+    "prompt_tokens": 30,
+    "total_tokens": 255,
+    "prompt_tokens_details": {
+     "cached_tokens": 26
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "vi-02",
+   "lan": 0,
+   "ma_http": 200,
+   "giay": 6.2,
+   "ra": "45.000",
+   "su_dung": {
+    "completion_tokens": 520,
+    "prompt_tokens": 58,
+    "total_tokens": 578,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "vi-02",
+   "lan": 1,
+   "ma_http": 200,
+   "giay": 6.27,
+   "ra": "45000",
+   "su_dung": {
+    "completion_tokens": 519,
+    "prompt_tokens": 58,
+    "total_tokens": 577,
+    "prompt_tokens_details": {
+     "cached_tokens": 54
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "vi-02",
+   "lan": 2,
+   "ma_http": 200,
+   "giay": 6.24,
+   "ra": "45.000",
+   "su_dung": {
+    "completion_tokens": 520,
+    "prompt_tokens": 58,
+    "total_tokens": 578,
+    "prompt_tokens_details": {
+     "cached_tokens": 54
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "vi-02",
+   "lan": 3,
+   "ma_http": 200,
+   "giay": 6.08,
+   "ra": "45.000",
+   "su_dung": {
+    "completion_tokens": 520,
+    "prompt_tokens": 58,
+    "total_tokens": 578,
+    "prompt_tokens_details": {
+     "cached_tokens": 54
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "vi-02",
+   "lan": 4,
+   "ma_http": 200,
+   "giay": 6.22,
+   "ra": "45.000",
+   "su_dung": {
+    "completion_tokens": 520,
+    "prompt_tokens": 58,
+    "total_tokens": 578,
+    "prompt_tokens_details": {
+     "cached_tokens": 54
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "en-01",
+   "lan": 0,
+   "ma_http": 200,
+   "giay": 2.17,
+   "ra": "Tokyo",
+   "su_dung": {
+    "completion_tokens": 178,
+    "prompt_tokens": 27,
+    "total_tokens": 205,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "en-01",
+   "lan": 1,
+   "ma_http": 200,
+   "giay": 1.97,
+   "ra": "Tokyo",
+   "su_dung": {
+    "completion_tokens": 171,
+    "prompt_tokens": 27,
+    "total_tokens": 198,
+    "prompt_tokens_details": {
+     "cached_tokens": 23
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "en-01",
+   "lan": 2,
+   "ma_http": 200,
+   "giay": 1.89,
+   "ra": "Tokyo",
+   "su_dung": {
+    "completion_tokens": 164,
+    "prompt_tokens": 27,
+    "total_tokens": 191,
+    "prompt_tokens_details": {
+     "cached_tokens": 23
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "en-01",
+   "lan": 3,
+   "ma_http": 200,
+   "giay": 1.64,
+   "ra": "Tokyo",
+   "su_dung": {
+    "completion_tokens": 133,
+    "prompt_tokens": 27,
+    "total_tokens": 160,
+    "prompt_tokens_details": {
+     "cached_tokens": 23
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "en-01",
+   "lan": 4,
+   "ma_http": 200,
+   "giay": 2.07,
+   "ra": "Tokyo",
+   "su_dung": {
+    "completion_tokens": 182,
+    "prompt_tokens": 27,
+    "total_tokens": 209,
+    "prompt_tokens_details": {
+     "cached_tokens": 23
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "code-01",
+   "lan": 0,
+   "ma_http": 200,
+   "giay": 7.24,
+   "ra": "```python\ndef la_so_nguyen_to(n):\n    if n <= 1:\n        return False\n    if n <= 3:\n        return True\n    if n % 2 == 0 or n % 3 == 0:\n        return False\n    i = 5\n    while i * i <= n:\n        if n % i == 0 or n % (i + 2) == 0:\n            return False\n        i += 6\n    return True\n```",
+   "su_dung": {
+    "completion_tokens": 625,
+    "prompt_tokens": 60,
+    "total_tokens": 685,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "code-01",
+   "lan": 1,
+   "ma_http": 200,
+   "giay": 6.67,
+   "ra": "```python\ndef la_so_nguyen_to(n):\n    if n <= 1:\n        return False\n    for i in range(2, int(n**0.5) + 1):\n        if n % i == 0:\n            return False\n    return True\n```",
+   "su_dung": {
+    "completion_tokens": 577,
+    "prompt_tokens": 60,
+    "total_tokens": 637,
+    "prompt_tokens_details": {
+     "cached_tokens": 56
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "code-01",
+   "lan": 2,
+   "ma_http": 200,
+   "giay": 7.18,
+   "ra": "```python\ndef la_so_nguyen_to(n):\n    if n <= 1:\n        return False\n    if n <= 3:\n        return True\n    if n % 2 == 0 or n % 3 == 0:\n        return False\n    i = 5\n    while i * i <= n:\n        if n % i == 0 or n % (i + 2) == 0:\n            return False\n        i += 6\n    return True\n```",
+   "su_dung": {
+    "completion_tokens": 625,
+    "prompt_tokens": 60,
+    "total_tokens": 685,
+    "prompt_tokens_details": {
+     "cached_tokens": 56
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "code-01",
+   "lan": 3,
+   "ma_http": 200,
+   "giay": 6.72,
+   "ra": "```python\ndef la_so_nguyen_to(n):\n    if n <= 1:\n        return False\n    if n == 2:\n        return True\n    if n % 2 == 0:\n        return False\n    for i in range(3, int(n**0.5) + 1, 2):\n        if n % i == 0:\n            return False\n    return True\n```",
+   "su_dung": {
+    "completion_tokens": 607,
+    "prompt_tokens": 60,
+    "total_tokens": 667,
+    "prompt_tokens_details": {
+     "cached_tokens": 56
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "code-01",
+   "lan": 4,
+   "ma_http": 200,
+   "giay": 7.13,
+   "ra": "```python\ndef la_so_nguyen_to(n):\n    if n <= 1:\n        return False\n    if n <= 3:\n        return True\n    if n % 2 == 0 or n % 3 == 0:\n        return False\n    i = 5\n    while i * i <= n:\n        if n % i == 0 or n % (i + 2) == 0:\n            return False\n        i += 6\n    return True\n```",
+   "su_dung": {
+    "completion_tokens": 625,
+    "prompt_tokens": 60,
+    "total_tokens": 685,
+    "prompt_tokens_details": {
+     "cached_tokens": 56
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "code-02",
+   "lan": 0,
+   "ma_http": 200,
+   "giay": 6.48,
+   "ra": "```python\ndef trung_binh(ds):\n    if len(ds) == 0:\n        return 0.0\n    return sum(ds) / len(ds)\n```",
+   "su_dung": {
+    "completion_tokens": 552,
+    "prompt_tokens": 82,
+    "total_tokens": 634,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "code-02",
+   "lan": 1,
+   "ma_http": 200,
+   "giay": 6.74,
+   "ra": "```python\ndef trung_binh(ds):\n    if len(ds) == 0:\n        return 0.0\n    return sum(ds) / len(ds)\n```",
+   "su_dung": {
+    "completion_tokens": 552,
+    "prompt_tokens": 82,
+    "total_tokens": 634,
+    "prompt_tokens_details": {
+     "cached_tokens": 78
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "code-02",
+   "lan": 2,
+   "ma_http": 200,
+   "giay": 6.27,
+   "ra": "```python\ndef trung_binh(ds):\n    if not ds:\n        return 0.0\n    return sum(ds) / len(ds)\n```",
+   "su_dung": {
+    "completion_tokens": 548,
+    "prompt_tokens": 82,
+    "total_tokens": 630,
+    "prompt_tokens_details": {
+     "cached_tokens": 78
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "code-02",
+   "lan": 3,
+   "ma_http": 200,
+   "giay": 6.3,
+   "ra": "```python\ndef trung_binh(ds):\n    if len(ds) == 0:\n        return 0.0\n    return sum(ds) / len(ds)\n```",
+   "su_dung": {
+    "completion_tokens": 552,
+    "prompt_tokens": 82,
+    "total_tokens": 634,
+    "prompt_tokens_details": {
+     "cached_tokens": 78
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "code-02",
+   "lan": 4,
+   "ma_http": 200,
+   "giay": 6.14,
+   "ra": "```python\ndef trung_binh(ds):\n    if not ds:\n        return 0.0\n    return sum(ds) / len(ds)\n```",
+   "su_dung": {
+    "completion_tokens": 548,
+    "prompt_tokens": 82,
+    "total_tokens": 630,
+    "prompt_tokens_details": {
+     "cached_tokens": 78
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "json-01",
+   "lan": 0,
+   "ma_http": 200,
+   "giay": 6.21,
+   "ra": "{\"ten\": \"Lan\", \"tuoi\": 28, \"ky_nang\": [\"Python\", \"Go\"]}",
+   "su_dung": {
+    "completion_tokens": 540,
+    "prompt_tokens": 87,
+    "total_tokens": 627,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "json-01",
+   "lan": 1,
+   "ma_http": 200,
+   "giay": 6.26,
+   "ra": "{\"ten\": \"Lan\", \"tuoi\": 28, \"ky_nang\": [\"Python\", \"Go\"]}",
+   "su_dung": {
+    "completion_tokens": 540,
+    "prompt_tokens": 87,
+    "total_tokens": 627,
+    "prompt_tokens_details": {
+     "cached_tokens": 83
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "json-01",
+   "lan": 2,
+   "ma_http": 200,
+   "giay": 5.02,
+   "ra": "{\"ten\": \"Lan\", \"tuoi\": 28, \"ky_nang\": [\"Python\", \"Go\"]}",
+   "su_dung": {
+    "completion_tokens": 436,
+    "prompt_tokens": 87,
+    "total_tokens": 523,
+    "prompt_tokens_details": {
+     "cached_tokens": 83
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "json-01",
+   "lan": 3,
+   "ma_http": 200,
+   "giay": 6.37,
+   "ra": "{\"ten\": \"Lan\", \"tuoi\": 28, \"ky_nang\": [\"Python\", \"Go\"]}",
+   "su_dung": {
+    "completion_tokens": 540,
+    "prompt_tokens": 87,
+    "total_tokens": 627,
+    "prompt_tokens_details": {
+     "cached_tokens": 83
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "json-01",
+   "lan": 4,
+   "ma_http": 200,
+   "giay": 11.3,
+   "ra": "\", I should output just the JSON string without markdown fences if the user explicitly said \"no other text\". However, standard practice in LLM interfaces often wraps code in markdown. Let's look closely: \"khong co van ban nao khac\" (no other text). This usually means no explanations like \"Here is the JSON:\". Markdown fences ```json ... ``` are technically formatting, not \"text\" in the conversational sense, but they might be considered \"extra\". Given the strictness (\"khong co khoi ma\" - no code blocks), I should output raw JSON.\n\n    Wait, \"khong co khoi ma\" means \"no code blocks\". So definitely no ```json.\n    So, just the raw JSON string.\n\n    Content check:\n    ten: \"Lan\"\n    tuoi: 28\n    ky_nang: [\"Python\", \"Go\"]\n\n    Final string: {\"ten\": \"Lan\", \"tuoi\": 28, \"ky_nang\": [\"Python\", \"Go\"]}\n\n    Wait, one more check on \"khong co khoi ma\". Does it mean no markdown code blocks? Yes. Does it mean no whitespace/newlines? Usually JSON allows whitespace. I will keep it compact.\n\n    Let's assemble.\n\n    {\"ten\": \"Lan\", \"tuoi\": 28, \"ky_nang\": [\"Python\", \"Go\"]}\n\n    Wait, I need to make sure I don't add any markdown ticks.\n\n    Plan: Output only the JSON string.\n\n    Wait, re-reading \"khong co khoi ma\". In Vietnamese context, \"khối mã\" usually refers to markdown code blocks (```). So I will not use them.\n\n    Final check on content:\n    - ten: Lan\n    - tuoi: 28\n    - ky_nang: Python, Go -> [\"Python\", \"Go\"]\n\n    Ready.cw\n</think>\n\n{\"ten\": \"Lan\", \"tuoi\": 28, \"ky_nang\": [\"Python\", \"Go\"]}",
+   "su_dung": {
+    "completion_tokens": 946,
+    "prompt_tokens": 87,
+    "total_tokens": 1033,
+    "prompt_tokens_details": {
+     "cached_tokens": 83
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "ctx-10",
+   "lan": 0,
+   "ma_http": 200,
+   "giay": 44.6,
+   "ra": "XYLOPHONE-4417",
+   "su_dung": {
+    "completion_tokens": 389,
+    "prompt_tokens": 67926,
+    "total_tokens": 68315,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "ctx-10",
+   "lan": 1,
+   "ma_http": 200,
+   "giay": 6.79,
+   "ra": "XYLOPHONE-4417",
+   "su_dung": {
+    "completion_tokens": 379,
+    "prompt_tokens": 67926,
+    "total_tokens": 68305,
+    "prompt_tokens_details": {
+     "cached_tokens": 67922
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "ctx-10",
+   "lan": 2,
+   "ma_http": 200,
+   "giay": 6.94,
+   "ra": "XYLOPHONE-4417",
+   "su_dung": {
+    "completion_tokens": 382,
+    "prompt_tokens": 67926,
+    "total_tokens": 68308,
+    "prompt_tokens_details": {
+     "cached_tokens": 67922
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "ctx-10",
+   "lan": 3,
+   "ma_http": 200,
+   "giay": 8.61,
+   "ra": "XYLOPHONE-4417",
+   "su_dung": {
+    "completion_tokens": 467,
+    "prompt_tokens": 67926,
+    "total_tokens": 68393,
+    "prompt_tokens_details": {
+     "cached_tokens": 67922
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "ctx-10",
+   "lan": 4,
+   "ma_http": 200,
+   "giay": 8.12,
+   "ra": "XYLOPHONE-4417",
+   "su_dung": {
+    "completion_tokens": 440,
+    "prompt_tokens": 67926,
+    "total_tokens": 68366,
+    "prompt_tokens_details": {
+     "cached_tokens": 67922
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "ctx-50",
+   "lan": 0,
+   "ma_http": 200,
+   "giay": 47.34,
+   "ra": "XYLOPHONE-4417",
+   "su_dung": {
+    "completion_tokens": 493,
+    "prompt_tokens": 67925,
+    "total_tokens": 68418,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "ctx-50",
+   "lan": 1,
+   "ma_http": 200,
+   "giay": 8.94,
+   "ra": "XYLOPHONE-4417",
+   "su_dung": {
+    "completion_tokens": 491,
+    "prompt_tokens": 67925,
+    "total_tokens": 68416,
+    "prompt_tokens_details": {
+     "cached_tokens": 67921
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "ctx-50",
+   "lan": 2,
+   "ma_http": 200,
+   "giay": 8.46,
+   "ra": "XYLOPHONE-4417",
+   "su_dung": {
+    "completion_tokens": 457,
+    "prompt_tokens": 67925,
+    "total_tokens": 68382,
+    "prompt_tokens_details": {
+     "cached_tokens": 67921
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "ctx-50",
+   "lan": 3,
+   "ma_http": 200,
+   "giay": 9.64,
+   "ra": "XYLOPHONE-4417",
+   "su_dung": {
+    "completion_tokens": 522,
+    "prompt_tokens": 67925,
+    "total_tokens": 68447,
+    "prompt_tokens_details": {
+     "cached_tokens": 67921
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "ctx-50",
+   "lan": 4,
+   "ma_http": 200,
+   "giay": 9.81,
+   "ra": "XYLOPHONE-4417",
+   "su_dung": {
+    "completion_tokens": 522,
+    "prompt_tokens": 67925,
+    "total_tokens": 68447,
+    "prompt_tokens_details": {
+     "cached_tokens": 67921
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "ctx-90",
+   "lan": 0,
+   "ma_http": 200,
+   "giay": 46.26,
+   "ra": "XYLOPHONE-4417",
+   "su_dung": {
+    "completion_tokens": 437,
+    "prompt_tokens": 67925,
+    "total_tokens": 68362,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "ctx-90",
+   "lan": 1,
+   "ma_http": 200,
+   "giay": 8.35,
+   "ra": "XYLOPHONE-4417",
+   "su_dung": {
+    "completion_tokens": 468,
+    "prompt_tokens": 67925,
+    "total_tokens": 68393,
+    "prompt_tokens_details": {
+     "cached_tokens": 67921
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "ctx-90",
+   "lan": 2,
+   "ma_http": 200,
+   "giay": 8.97,
+   "ra": "XYLOPHONE-4417",
+   "su_dung": {
+    "completion_tokens": 501,
+    "prompt_tokens": 67925,
+    "total_tokens": 68426,
+    "prompt_tokens_details": {
+     "cached_tokens": 67921
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "ctx-90",
+   "lan": 3,
+   "ma_http": 200,
+   "giay": 9.16,
+   "ra": "XYLOPHONE-4417",
+   "su_dung": {
+    "completion_tokens": 512,
+    "prompt_tokens": 67925,
+    "total_tokens": 68437,
+    "prompt_tokens_details": {
+     "cached_tokens": 67921
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "ctx-90",
+   "lan": 4,
+   "ma_http": 200,
+   "giay": 8.8,
+   "ra": "XYLOPHONE-4417",
+   "su_dung": {
+    "completion_tokens": 478,
+    "prompt_tokens": 67925,
+    "total_tokens": 68403,
+    "prompt_tokens_details": {
+     "cached_tokens": 67921
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "dai-01",
+   "lan": 0,
+   "ma_http": 200,
+   "giay": 9.88,
+   "ra": "1. muc 1\n2. muc 2\n3. muc 3\n4. muc 4\n5. muc 5\n6. muc 6\n7. muc 7\n8. muc 8\n9. muc 9\n10. muc 10\n11. muc 11\n12. muc 12\n13. muc 13\n14. muc 14\n15. muc 15\n16. muc 16\n17. muc 17\n18. muc 18\n19. muc 19\n20. muc 20\n21. muc 21\n22. muc 22\n23. muc 23\n24. muc 24\n25. muc 25\n26. muc 26\n27. muc 27\n28. muc 28\n29. muc 29\n30. muc 30\n31. muc 31\n32. muc 32\n33. muc 33\n34. muc 34\n35. muc 35\n36. muc 36\n37. muc 37\n38. muc 38\n39. muc 39\n40. muc 40",
+   "su_dung": {
+    "completion_tokens": 815,
+    "prompt_tokens": 49,
+    "total_tokens": 864,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "dai-01",
+   "lan": 1,
+   "ma_http": 200,
+   "giay": 8.8,
+   "ra": "1. muc 1\n2. muc 2\n3. muc 3\n4. muc 4\n5. muc 5\n6. muc 6\n7. muc 7\n8. muc 8\n9. muc 9\n10. muc 10\n11. muc 11\n12. muc 12\n13. muc 13\n14. muc 14\n15. muc 15\n16. muc 16\n17. muc 17\n18. muc 18\n19. muc 19\n20. muc 20\n21. muc 21\n22. muc 22\n23. muc 23\n24. muc 24\n25. muc 25\n26. muc 26\n27. muc 27\n28. muc 28\n29. muc 29\n30. muc 30\n31. muc 31\n32. muc 32\n33. muc 33\n34. muc 34\n35. muc 35\n36. muc 36\n37. muc 37\n38. muc 38\n39. muc 39\n40. muc 40",
+   "su_dung": {
+    "completion_tokens": 815,
+    "prompt_tokens": 49,
+    "total_tokens": 864,
+    "prompt_tokens_details": {
+     "cached_tokens": 45
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "dai-01",
+   "lan": 2,
+   "ma_http": 200,
+   "giay": 8.79,
+   "ra": "1. muc 1\n2. muc 2\n3. muc 3\n4. muc 4\n5. muc 5\n6. muc 6\n7. muc 7\n8. muc 8\n9. muc 9\n10. muc 10\n11. muc 11\n12. muc 12\n13. muc 13\n14. muc 14\n15. muc 15\n16. muc 16\n17. muc 17\n18. muc 18\n19. muc 19\n20. muc 20\n21. muc 21\n22. muc 22\n23. muc 23\n24. muc 24\n25. muc 25\n26. muc 26\n27. muc 27\n28. muc 28\n29. muc 29\n30. muc 30\n31. muc 31\n32. muc 32\n33. muc 33\n34. muc 34\n35. muc 35\n36. muc 36\n37. muc 37\n38. muc 38\n39. muc 39\n40. muc 40",
+   "su_dung": {
+    "completion_tokens": 815,
+    "prompt_tokens": 49,
+    "total_tokens": 864,
+    "prompt_tokens_details": {
+     "cached_tokens": 45
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "dai-01",
+   "lan": 3,
+   "ma_http": 200,
+   "giay": 9.2,
+   "ra": "1. muc 1\n2. muc 2\n3. muc 3\n4. muc 4\n5. muc 5\n6. muc 6\n7. muc 7\n8. muc 8\n9. muc 9\n10. muc 10\n11. muc 11\n12. muc 12\n13. muc 13\n14. muc 14\n15. muc 15\n16. muc 16\n17. muc 17\n18. muc 18\n19. muc 19\n20. muc 20\n21. muc 21\n22. muc 22\n23. muc 23\n24. muc 24\n25. muc 25\n26. muc 26\n27. muc 27\n28. muc 28\n29. muc 29\n30. muc 30\n31. muc 31\n32. muc 32\n33. muc 33\n34. muc 34\n35. muc 35\n36. muc 36\n37. muc 37\n38. muc 38\n39. muc 39\n40. muc 40",
+   "su_dung": {
+    "completion_tokens": 815,
+    "prompt_tokens": 49,
+    "total_tokens": 864,
+    "prompt_tokens_details": {
+     "cached_tokens": 45
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "dai-01",
+   "lan": 4,
+   "ma_http": 200,
+   "giay": 8.51,
+   "ra": "1. muc 1\n2. muc 2\n3. muc 3\n4. muc 4\n5. muc 5\n6. muc 6\n7. muc 7\n8. muc 8\n9. muc 9\n10. muc 10\n11. muc 11\n12. muc 12\n13. muc 13\n14. muc 14\n15. muc 15\n16. muc 16\n17. muc 17\n18. muc 18\n19. muc 19\n20. muc 20\n21. muc 21\n22. muc 22\n23. muc 23\n24. muc 24\n25. muc 25\n26. muc 26\n27. muc 27\n28. muc 28\n29. muc 29\n30. muc 30\n31. muc 31\n32. muc 32\n33. muc 33\n34. muc 34\n35. muc 35\n36. muc 36\n37. muc 37\n38. muc 38\n39. muc 39\n40. muc 40",
+   "su_dung": {
+    "completion_tokens": 815,
+    "prompt_tokens": 49,
+    "total_tokens": 864,
+    "prompt_tokens_details": {
+     "cached_tokens": 45
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "tool-01",
+   "lan": 0,
+   "ma_http": 200,
+   "giay": 1.57,
+   "tool_calls": [
+    {
+     "type": "function",
+     "function": {
+      "name": "tra_thoi_tiet",
+      "arguments": "{\"thanh_pho\":\"Da Nang\"}"
+     },
+     "id": "EUhE70LbySm1RW31oZsvim0eYzGGOoyW"
+    }
+   ],
+   "ra": "",
+   "su_dung": {
+    "completion_tokens": 106,
+    "prompt_tokens": 448,
+    "total_tokens": 554,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "tool-01",
+   "lan": 1,
+   "ma_http": 200,
+   "giay": 1.15,
+   "tool_calls": [
+    {
+     "type": "function",
+     "function": {
+      "name": "tra_thoi_tiet",
+      "arguments": "{\"thanh_pho\":\"Da Nang\"}"
+     },
+     "id": "HpMWYB4NycWnwt3exaUNC630RcKCgxde"
+    }
+   ],
+   "ra": "",
+   "su_dung": {
+    "completion_tokens": 93,
+    "prompt_tokens": 448,
+    "total_tokens": 541,
+    "prompt_tokens_details": {
+     "cached_tokens": 444
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "tool-01",
+   "lan": 2,
+   "ma_http": 200,
+   "giay": 1.31,
+   "tool_calls": [
+    {
+     "type": "function",
+     "function": {
+      "name": "tra_thoi_tiet",
+      "arguments": "{\"thanh_pho\":\"Da Nang\"}"
+     },
+     "id": "v77xnLPXDVqfyBEEkyUaXZfjM5Qw8G7m"
+    }
+   ],
+   "ra": "",
+   "su_dung": {
+    "completion_tokens": 110,
+    "prompt_tokens": 448,
+    "total_tokens": 558,
+    "prompt_tokens_details": {
+     "cached_tokens": 444
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "tool-01",
+   "lan": 3,
+   "ma_http": 200,
+   "giay": 1.24,
+   "tool_calls": [
+    {
+     "type": "function",
+     "function": {
+      "name": "tra_thoi_tiet",
+      "arguments": "{\"thanh_pho\":\"Da Nang\"}"
+     },
+     "id": "tY97qohppVbrWKkDwbexONoMaSEDUQeH"
+    }
+   ],
+   "ra": "",
+   "su_dung": {
+    "completion_tokens": 102,
+    "prompt_tokens": 448,
+    "total_tokens": 550,
+    "prompt_tokens_details": {
+     "cached_tokens": 444
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "tool-01",
+   "lan": 4,
+   "ma_http": 200,
+   "giay": 1.59,
+   "tool_calls": [
+    {
+     "type": "function",
+     "function": {
+      "name": "tra_thoi_tiet",
+      "arguments": "{\"thanh_pho\":\"Da Nang\"}"
+     },
+     "id": "heqTf9UFWccH0usABKigQenKK4yqFKaW"
+    }
+   ],
+   "ra": "",
+   "su_dung": {
+    "completion_tokens": 132,
+    "prompt_tokens": 448,
+    "total_tokens": 580,
+    "prompt_tokens_details": {
+     "cached_tokens": 444
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "tool-02",
+   "lan": 0,
+   "ma_http": 200,
+   "giay": 1.62,
+   "tool_calls": [
+    {
+     "type": "function",
+     "function": {
+      "name": "tinh_tien",
+      "arguments": "{\"so_luong\":3,\"don_gia\":12500}"
+     },
+     "id": "dJtDMQoo6YuZUNTdiAR9pPceKyCKkKx7"
+    }
+   ],
+   "ra": "",
+   "su_dung": {
+    "completion_tokens": 135,
+    "prompt_tokens": 460,
+    "total_tokens": 595,
+    "prompt_tokens_details": {
+     "cached_tokens": 426
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "tool-02",
+   "lan": 1,
+   "ma_http": 200,
+   "giay": 1.89,
+   "tool_calls": [
+    {
+     "type": "function",
+     "function": {
+      "name": "tinh_tien",
+      "arguments": "{\"so_luong\":3,\"don_gia\":12500}"
+     },
+     "id": "s1Yuy57aLNiraAs3OpF43bGM6XRIC5DR"
+    }
+   ],
+   "ra": "",
+   "su_dung": {
+    "completion_tokens": 166,
+    "prompt_tokens": 460,
+    "total_tokens": 626,
+    "prompt_tokens_details": {
+     "cached_tokens": 456
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "tool-02",
+   "lan": 2,
+   "ma_http": 200,
+   "giay": 1.86,
+   "tool_calls": [
+    {
+     "type": "function",
+     "function": {
+      "name": "tinh_tien",
+      "arguments": "{\"so_luong\":3,\"don_gia\":12500}"
+     },
+     "id": "qtPq7Kyag8E7ehYpFHUESFrsoGHvPyVg"
+    }
+   ],
+   "ra": "",
+   "su_dung": {
+    "completion_tokens": 168,
+    "prompt_tokens": 460,
+    "total_tokens": 628,
+    "prompt_tokens_details": {
+     "cached_tokens": 456
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "tool-02",
+   "lan": 3,
+   "ma_http": 200,
+   "giay": 1.64,
+   "tool_calls": [
+    {
+     "type": "function",
+     "function": {
+      "name": "tinh_tien",
+      "arguments": "{\"so_luong\":3,\"don_gia\":12500}"
+     },
+     "id": "Qrbzh6dan8ty2ThfUJIaIIRUab7wNxne"
+    }
+   ],
+   "ra": "",
+   "su_dung": {
+    "completion_tokens": 138,
+    "prompt_tokens": 460,
+    "total_tokens": 598,
+    "prompt_tokens_details": {
+     "cached_tokens": 456
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "tool-02",
+   "lan": 4,
+   "ma_http": 200,
+   "giay": 1.76,
+   "tool_calls": [
+    {
+     "type": "function",
+     "function": {
+      "name": "tinh_tien",
+      "arguments": "{\"so_luong\":3,\"don_gia\":12500}"
+     },
+     "id": "1gdZurpTLK9xbYa3nSgvUwmFoh6HZ9RM"
+    }
+   ],
+   "ra": "",
+   "su_dung": {
+    "completion_tokens": 156,
+    "prompt_tokens": 460,
+    "total_tokens": 616,
+    "prompt_tokens_details": {
+     "cached_tokens": 456
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  }
+ ]
+}

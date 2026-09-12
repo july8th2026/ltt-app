@@ -14,8 +14,8 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import (BigInteger, Boolean, DateTime, ForeignKey, Index, Integer,
-                        JSON, String, Text,
+from sqlalchemy import (BigInteger, Boolean, DateTime, Float, ForeignKey, Index,
+                        Integer, JSON, String, Text,
                         UniqueConstraint, text)
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -426,6 +426,148 @@ class ExecutionLease(Base):
         DateTime(timezone=True), default=_bay_gio, nullable=False)
     heartbeat_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_bay_gio, nullable=False, index=True)
+
+    # ── Sổ ngân sách KV (multijob, `platform_core/llm/luat_nhan.py`) ─────────
+    # Rỗng/0 ở mọi lease cũ và mọi tool không khai `admission_token_pool` —
+    # luật nhận khi đó giữ nguyên hành vi "đếm slot" như trước.
+    #: `tuong_tac` | `nen` | `noi_bo` — lớp ưu tiên (D-03).
+    lop: Mapped[str] = mapped_column(String(16), default="", nullable=False)
+    #: `prompt_ước + max_tokens + đệm` — TOÀN BỘ ngữ cảnh chiếm trong pool KV.
+    token_dat_truoc: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    #: Ước token phải prefill MỚI (sau phần cache trúng) — chỉ để xếp thứ tự.
+    token_prefill_moi: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    #: Lượt prefill dài (D-05). Tắt khi byte đầu tiên về (prefill đã xong).
+    la_whale: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+
+class LlmWaiter(Base):
+    """Phòng chờ của cửa TƯƠNG TÁC tới model nhà — và **sổ từng lượt** của nó.
+
+    Hai việc trong một bảng, có chủ ý (multijob, chủ dự án 11/09: "xây log lưu
+    để phân tích sau"): dòng sinh ra khi request vào hàng, được cập nhật khi nó
+    được nhận / rời / hết hạn / xong, rồi **ở lại 30 ngày**. Truy vấn bảng này
+    trả lời được: chờ bao lâu, vì sao chờ, ngân sách nào nghẽn, whale nào gây áp
+    lực — mà không phải dựng thêm một hệ log thứ hai.
+
+    ⛔ KHÔNG chứa prompt, payload, tool, token bí mật hay credential.
+    ⛔ Việc NỀN không có dòng ở đây — hàng bền của nó là bảng `jobs`.
+    """
+
+    __tablename__ = "llm_waiters"
+    __table_args__ = (
+        UniqueConstraint("request_id", name="uq_llm_waiters_request"),
+        Index("ix_llm_waiters_resource_state", "resource", "trang_thai", "created_at"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    resource: Mapped[str] = mapped_column(String(96), nullable=False)
+    #: Id model **nội bộ** của máy B (`qwen38-api`, `qwen35-api`), không phải bí
+    #: danh công khai — bí danh không bao giờ rời máy A (INV-015) và nó đổi được
+    #: mà không đổi engine, nên một sổ vận hành khoá theo bí danh sẽ nói về hai
+    #: thứ khác nhau trước và sau một lần đổi tên.
+    #:
+    #: ⭐ VÌ SAO KHÔNG SUY TỪ `resource`. Hôm nay đúng một tài nguyên cho một
+    #:    model (`ltt_38_3090` ↔ `qwen38-api`), nên phép suy ấy *chạy được* — và
+    #:    đó chính là cái bẫy: phép suy sống trong `platform_core`, nơi **không
+    #:    được biết tên của app** (`test_147` layering), nên nó phải nhập một
+    #:    bảng ánh xạ từ `apps/` để dịch. Cột này là app tự khai một lần lúc vào
+    #:    hàng, và `job_metrics` đọc thẳng. Rỗng = lượt của một cửa chưa khai
+    #:    model; nó vào ô `khong_khai` chứ không bị gộp vào một model nào.
+    model: Mapped[str] = mapped_column(
+        String(64), default="", nullable=False, server_default=text("''"))
+    #: `stream` | `sync` | `chatltt` — cửa vào.
+    cua: Mapped[str] = mapped_column(String(16), default="", nullable=False)
+    lop: Mapped[str] = mapped_column(String(16), default="", nullable=False)
+    user_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    request_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    token_dat_truoc: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    token_prefill_moi: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    la_whale: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+    heartbeat_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+    admitted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    finished_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    #: `cho` → `nhan` → `xong` | `roi` (khách đi khi đang chờ) | `het_han`
+    #: (quá trần chờ hoặc mất nhịp tim).
+    trang_thai: Mapped[str] = mapped_column(String(16), default="cho", nullable=False)
+    #: Mã lý do của nhịp chờ CUỐI (`luat_nhan.CHO_*`).
+    ly_do_cho: Mapped[str] = mapped_column(String(32), default="", nullable=False)
+    #: Trong tổng thời gian chờ, bao nhiêu giây là chờ vì **cư trú GPU**
+    #: (`luat_nhan.CHO_RESIDENCY`, luật 0 — dual-model 5.3, D01 B).
+    #:
+    #: ⭐ VÌ SAO MỘT CỘT RIÊNG chứ không suy ra từ `ly_do_cho`: `ly_do_cho` giữ
+    #:    lý do của nhịp **cuối**, tức nó trả lời "lúc bỏ cuộc thì đang vướng
+    #:    gì", không trả lời "đã vướng gì bao lâu". Một lượt chờ 40 s vì cửa sổ
+    #:    ảnh rồi 2 s vì hết slot sẽ mang `cho_slot` — và người đọc sổ sẽ đi mua
+    #:    thêm slot cho một chuyện do cửa sổ ảnh gây ra.
+    #:
+    #: `finished_at - created_at` trừ con số này = thời gian chờ vì **năng lực**
+    #: (slot, ngân sách KV, hàng). Hai đại lượng ấy dẫn tới hai việc sửa khác
+    #: nhau, nên chúng phải đo được rời nhau. `platform_core/llm/phong_cho.py`
+    #: cộng vào đây từng khoảng giữa hai nhịp; Task 6.3 công bố nó ở
+    #: `/ops/jobs-metrics`.
+    cho_residency_s: Mapped[float] = mapped_column(
+        Float, default=0.0, nullable=False, server_default=text("0"))
+    so_nhip: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    #: Kết cục sau khi được nhận: `xong` | `khach_ngat` | `loi` | `thieu_credit` …
+    ket_qua: Mapped[str] = mapped_column(String(32), default="", nullable=False)
+    lease_id: Mapped[str] = mapped_column(String(36), default="", nullable=False)
+
+
+class GpuResidency(Base):
+    """Model nào đang **cư trú** trên một nhóm GPU, và nhóm đang ở bước nào của
+    việc đổi cư trú. Một dòng cho mỗi nhóm — hôm nay đúng một: `rtx3090`. (D01 B)
+
+    Vì sao một dòng trong CSDL chứ không một biến trong tiến trình trọng tài: máy
+    A có **nhiều** tiến trình (web + worker, và worker có thể nhiều máy), nhưng
+    RTX 3090 chỉ có **một** cư trú. Cửa admission của LTT-3.8 và của job ảnh đọc
+    trạng thái này trong advisory lock của tài nguyên (Task 5.3), nên nó phải
+    nằm ở nơi mọi tiến trình cùng thấy. Một biến trong RAM cho hai tiến trình
+    hai câu trả lời khác nhau — và hai câu trả lời khác nhau ở đây nghĩa là hai
+    model cùng nạp lên một card 24 GB.
+
+    ⛔ Bảng này **không** lưu thứ suy ra được từ `trang_thai`:
+
+    * *thành viên nào đang được mở* — `llm.residency.mo_cho(trang_thai, vai_tro)`
+      trả lời, và một cột lưu lại câu đó là hai chỗ khai cùng một điều;
+    * *đã vẽ mấy ảnh trong cửa sổ* — đếm từ bảng `jobs` (job `theo_lo` được nhận
+      kể từ `cua_so_bat_dau`), là **sự thật**, còn một bộ đếm ghi tay sẽ lệch
+      đúng lúc một tiến trình chết giữa cửa sổ.
+
+    `phien_ban` là khoá lạc quan: trọng tài đọc dòng, quyết, rồi ghi kèm
+    ``WHERE nhom = … AND phien_ban = <đã đọc>``. Hai trọng tài chạy song song
+    (một lượt deploy chồng nhau) thì đúng một cái ghi được.
+    """
+
+    __tablename__ = "gpu_residency"
+    __table_args__ = (
+        # Cố ý TRÙNG với primary key. Drill khôi phục (`tools/restore_drill_schema.py`)
+        # đối chiếu ràng buộc **theo tên** trong danh sách sống còn của nó, và một
+        # PRIMARY KEY không có tên `uq_` nào để đối chiếu. Mất tính duy nhất của
+        # `nhom` sau khi khôi phục = hai dòng cư trú cho một card, tức hai câu trả
+        # lời cho câu "3090 đang là của ai". Giá của bản khai thứ hai: một index
+        # trên một bảng có một dòng mỗi nhóm.
+        UniqueConstraint("nhom", name="uq_gpu_residency_nhom"),
+    )
+
+    #: Tên nhóm GPU. `rtx3090` = {`ltt_38_3090` (mac_dinh), `anh_3090` (theo_lo)}.
+    nhom: Mapped[str] = mapped_column(String(32), primary_key=True)
+    #: Một trong `llm.residency.TRANG_THAI` (`llm`, `xa_llm`, `nha_llm`, `anh`,
+    #: `tra_anh`, `nap_llm`, `loi_nap`). Chuỗi chứ không Enum CSDL: máy trạng
+    #: thái là nguồn chân lý, và thêm một trạng thái không nên cần migration.
+    trang_thai: Mapped[str] = mapped_column(String(16), default="llm", nullable=False)
+    #: Vào `trang_thai` hiện tại từ lúc nào — mẫu số của lùi dần và của quan sát.
+    tu_luc: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+    #: Cửa sổ ảnh mở lúc nào. NULL khi nhóm không ở trong một cửa sổ ảnh.
+    cua_so_bat_dau: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    lan_nap_loi: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    phien_ban: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
 
 class JobEvent(Base):

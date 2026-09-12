@@ -49,7 +49,7 @@ def bao(ten: str, ok: bool, chi_tiet: str = "") -> None:
 def main() -> int:
     from platform_core import api_keys, api_pool, providers
     from platform_core.db import get_session
-    from platform_core.llm import dieu_phoi, gia_token
+    from platform_core.llm import canonical, dieu_phoi, gia_token
     from platform_core.models import APIKEY_CAT_CHAT
 
     print("\n" + "=" * 62)
@@ -111,7 +111,13 @@ def main() -> int:
 
         print("\n4. Tinh tien")
         try:
-            cp = gia_token.tinh(kq.su_dung)
+            # Gia theo model THAT SU da goi (D07): doi id noi bo vua dung nguoc
+            # ve bi danh cong khai, khong lay mac dinh cua cua.
+            _id_da_goi = ten_model[0] if ten_model else ""
+            bi_danh = next(
+                (a for a, i in canonical.ALIAS_SANG_ID.items() if i == _id_da_goi),
+                canonical.MODEL_MAC_DINH)
+            cp = gia_token.tinh(kq.su_dung, bi_danh)
             bao("tinh duoc chi phi", True,
                 f"{cp.tong_mcredit} mcredit = {cp.tong_credit_lam_tron_len} credit "
                 f"(C1 lam tron len) | {cp.phien_ban_gia}")

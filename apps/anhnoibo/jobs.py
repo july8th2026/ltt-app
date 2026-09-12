@@ -107,7 +107,10 @@ def _dieu_phoi():
     from .http_cong import goi_http
 
     def goi_llm(text, he_thong):
-        return _voi_db(lambda db: dich_llm.goi_llm(text, he_thong, db=db))
+        # D09: model cho viec noi bo lay tu ban khai CUA APP NAY. Job anh
+        # dang giu 3090 -> tro `ltt-3.8` la mot vong cho kin (xem `dich_llm`).
+        return _voi_db(lambda db: dich_llm.goi_llm(
+            text, he_thong, db=db, slug_app='anhnoibo'))
 
     return dieu_phoi.DieuPhoi(cong=cong_render.CongRender(goi=goi_http(base)),
                               storage=get_storage(), goi_llm=goi_llm)

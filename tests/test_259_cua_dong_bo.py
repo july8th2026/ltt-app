@@ -23,12 +23,19 @@ from __future__ import annotations
 import uuid
 
 import pytest
+
+from tests.conftest import mo_cu_tru_3090
 from fastapi.testclient import TestClient
 
 from platform_core.public_api import keys as devkeys, limits
 from platform_core.public_api.scopes import (SCOPE_JOBS_CREATE, SCOPE_JOBS_READ,
                                              SCOPE_TOOLS_READ)
 from server.api.inventory import API_V1_PREFIX
+
+#: Ten model cong khai, doc tu `canonical` chu KHONG go tay: D02 cat
+#: `ltt_llm`/`ltt_llm_vision` ngay 11/09/2026, va mot ten go tay o day se do
+#: vi CHINH NO da cu chu khong vi cua hong.
+from platform_core.llm.canonical import MODEL_MAC_DINH as MODEL
 
 PEPPER = "chat-test-pepper-" + "c" * 40
 DUONG = f"{API_V1_PREFIX}/chat/completions"
@@ -52,6 +59,10 @@ def api(tmp_path, monkeypatch):
     from platform_core.db import Base, get_engine
 
     Base.metadata.create_all(get_engine())
+    # Luật 0 của admission (dual-model 5.3): một CSDL mới chưa nói card
+    # 3090 đang là của ai, và fail-closed nghĩa là cửa LTT-3.8 đóng. Cửa
+    # này là thứ tệp test đang kiểm, nên nó phải nói ra — như production.
+    mo_cu_tru_3090()
     from server.app import create_app
 
     app = create_app(env={
@@ -112,7 +123,7 @@ def _h(token, idem=None):
 
 
 def _than(**ghi_de):
-    d = {"model": "ltt_llm", "messages": [{"role": "user", "content": "xin chao"}],
+    d = {"model": MODEL, "messages": [{"role": "user", "content": "xin chao"}],
          "max_tokens": 500}
     d.update(ghi_de)
     return d
@@ -156,15 +167,34 @@ def _dem_job() -> int:
 
 
 def _giu_execution_slot() -> str:
+    """Giữ hết suất của **model mặc định**, đọc tên tài nguyên từ BẢN KHAI.
+
+    ⛔ Trước 11/09/2026 chỗ này gõ `resource="llm_remote"`. Từ dual-model 2.3
+       `text.chat` khai sức chứa **theo model**, nên tên gõ tay ấy giành một
+       tài nguyên **không ai dùng** — phép kiểm vẫn chạy, cửa vẫn 200, và nó
+       thôi đo điều nó sinh ra để đo mà không ai thấy.
+    """
     from platform_core.llm import admission
+    from platform_core.llm.canonical import tai_nguyen_nha
+
+    suc = tai_nguyen_nha(MODEL)
     gen, db = _session()
     try:
-        lease = admission.acquire(
-            db, resource="llm_remote", slots=1, user_id="u-khac",
-            mode="job", holder_id="job-khac")
-        assert lease is not None
+        # 🔴 MỘT LẦN `acquire` GIỮ MỘT SUẤT; `slots=` là **sức chứa**, không phải
+        #    số suất người gọi lấy. Hai nghĩa ấy trùng nhau đúng chừng nào
+        #    `SO_SLOT` = 1. Dual-model 2.6 nâng lên 3 (L-14) và hàm này lập tức
+        #    chỉ giữ 1/3 — cửa còn thông, phép kiểm xanh rỗng, đúng lớp lỗi mà
+        #    chú thích ở trên vừa kể về `resource` gõ tay.
+        cuoi = None
+        for i in range(int(suc.slots)):
+            lease = admission.acquire(
+                db, resource=suc.resource, slots=suc.slots, user_id="u-khac",
+                mode="job", holder_id=f"job-khac-{i}")
+            assert lease is not None, f"khong giu duoc suat {i + 1}/{suc.slots}"
+            cuoi = lease
         db.commit()
-        return lease.id
+        assert cuoi is not None
+        return cuoi.id
     finally:
         _close(gen)
 
@@ -292,7 +322,7 @@ def test_lot_binh_thuong_va_thu_theo_TOKEN_DA_DO(api, monkeypatch):
     assert b["choices"][0]["message"]["content"] == "chao ban"
     assert b["usage"]["prompt_tokens"] == 10_000
     assert b["usage"]["completion_tokens"] == 1_250
-    assert goi and goi[0]["model"] == "ltt_llm"
+    assert goi and goi[0]["model"] == MODEL
 
     thu = b["x_ltt"]["credit_charged"]
     assert thu == truoc - _so_du(user_id), "hoa don khong khop so du"
@@ -302,6 +332,19 @@ def test_lot_binh_thuong_va_thu_theo_TOKEN_DA_DO(api, monkeypatch):
 
 
 def test_execution_slot_ban_tra_429_truoc_credit_va_model(api, monkeypatch):
+    """⚠️ HỢP ĐỒNG ĐỔI 11/09 (D04), BẤT BIẾN THÌ KHÔNG.
+
+    Trước: hết suất ⇒ 429 **ngay**. Nay cửa đồng bộ **chờ** trong phòng chờ tới
+    `min(60 s, ngân sách thời gian còn lại)` rồi mới 429 — vì một lượt bị từ
+    chối trong khi máy B sắp rảnh sau hai giây là doanh thu vứt đi.
+
+    ⇒ Ba lời hứa phép kiểm này canh **y nguyên**: 429 + `Retry-After`, **không**
+      gọi model, **không** chạm một đồng nào của khách. Thứ duy nhất đổi là trần
+      chờ — hạ xuống 0 ở đây để phép kiểm đo *hành vi*, không đo *60 giây*.
+      Đường chờ đầy đủ (nhịp, sổ lượt, đồng hồ tiêm) ở
+      `tests/test_1208_cua_dong_bo_cho.py`.
+    """
+    monkeypatch.setenv("LTT_LLM_CHO_DONG_BO_S", "0")
     lease_id = _giu_execution_slot()
     called = _dat_model(monkeypatch)
     user_id, token = _account()
@@ -559,6 +602,10 @@ def test_chua_mo_tool_thi_route_van_song_nhung_TU_CHOI(tmp_path, monkeypatch):
     import platform_core.models  # noqa: F401
     from platform_core.db import Base, get_engine
     Base.metadata.create_all(get_engine())
+    # Luật 0 của admission (dual-model 5.3): một CSDL mới chưa nói card
+    # 3090 đang là của ai, và fail-closed nghĩa là cửa LTT-3.8 đóng. Cửa
+    # này là thứ tệp test đang kiểm, nên nó phải nói ra — như production.
+    mo_cu_tru_3090()
     from server.app import create_app
 
     app = create_app(env={
@@ -718,7 +765,7 @@ def test_SDK_openai_goi_TRAN_thi_400_va_loi_DAY_CACH_SUA(sdk, api, monkeypatch):
     c = _client(sdk, api, token)
 
     with pytest.raises(sdk.BadRequestError) as e:
-        c.chat.completions.create(model="ltt_llm", max_tokens=100,
+        c.chat.completions.create(model=MODEL, max_tokens=100,
                                   messages=[{"role": "user", "content": "hi"}])
     loi = str(e.value)
     assert "Idempotency-Key" in loi
@@ -734,7 +781,7 @@ def test_SDK_openai_kem_extra_headers_thi_CHAY(sdk, api, monkeypatch):
     c = _client(sdk, api, token)
 
     r = c.chat.completions.create(
-        model="ltt_llm", max_tokens=300,
+        model=MODEL, max_tokens=300,
         messages=[{"role": "user", "content": "Viet mot cau chao"}],
         extra_headers={"Idempotency-Key": uuid.uuid4().hex})
 
@@ -757,7 +804,7 @@ def test_BAY_khoa_co_dinh_o_default_headers(sdk, api, monkeypatch):
 
     def hoi(noi_dung):
         return c.chat.completions.create(
-            model="ltt_llm", max_tokens=100,
+            model=MODEL, max_tokens=100,
             messages=[{"role": "user", "content": noi_dung}])
 
     hoi("thu do Viet Nam la gi")
@@ -830,7 +877,7 @@ def test_quickstart_day_cua_chat_khi_tool_DA_MO(api):
     page = api.get("/developers/quickstart").text
     for manh in ("/api/v1/chat/completions", "Idempotency-Key", "extra_headers",
                  "default_headers", "base_url", "x_ltt", "credit_charged",
-                 "ltt_llm", "503"):
+                 MODEL, "503"):
         assert manh in page, f"trang quickstart thieu {manh!r}"
 
 
@@ -846,6 +893,10 @@ def test_quickstart_KHONG_day_cua_chat_khi_tool_chua_mo(tmp_path, monkeypatch):
     import platform_core.models  # noqa: F401
     from platform_core.db import Base, get_engine
     Base.metadata.create_all(get_engine())
+    # Luật 0 của admission (dual-model 5.3): một CSDL mới chưa nói card
+    # 3090 đang là của ai, và fail-closed nghĩa là cửa LTT-3.8 đóng. Cửa
+    # này là thứ tệp test đang kiểm, nên nó phải nói ra — như production.
+    mo_cu_tru_3090()
     from server.app import create_app
 
     app = create_app(env={

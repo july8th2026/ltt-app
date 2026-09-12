@@ -24,6 +24,18 @@ from .upstream import HttpxUpstream
 TEP_ENV = Path(os.environ.get("LTT_LLM_ENV_FILE")
                or r"C:\ProgramData\LTTLlm\gateway.env")
 
+#: Những giá trị `host` **không** phơi cổng ra ngoài máy.
+#:
+#: ⛔ `0.0.0.0` và `::` KHÔNG nằm trong đây, và đó là toàn bộ ý nghĩa của tập
+#:    này: chúng bind **mọi** giao diện, nên chúng là dạng phơi ra rộng nhất —
+#:    dù chúng cũng bao gồm cả loopback. Đọc nhầm hai giá trị ấy thành "có
+#:    loopback nên an toàn" là đúng cách để vô hiệu hoá chốt bên dưới.
+#:
+#: ⚠️ Chuỗi rỗng cũng KHÔNG nằm trong đây: `Config.from_env()` đã đổi rỗng thành
+#:    `127.0.0.1` trước khi tới đây, nên một chuỗi rỗng lọt tới đây nghĩa là ai
+#:    đó dựng `Config` bằng tay — và uvicorn hiểu `""` là mọi giao diện.
+LOOPBACK = frozenset({"127.0.0.1", "::1", "localhost"})
+
 
 def nap_env(tep: Path = TEP_ENV) -> int:
     """Đọc `gateway.env` vào môi trường tiến trình. Trả về số biến đã nạp.
@@ -100,11 +112,58 @@ def main() -> None:
     if not cfg.models_mo:
         # Không phải lỗi — fail-closed của Q92 đang làm đúng việc. Nhưng phải nói
         # to, vì "GET /v1/models trả rỗng" rất dễ bị hiểu nhầm thành cổng hỏng.
+        # ⚠️ Vi du DAN TU `catalog.HO_SO`, khong go tay. Ban truoc go
+        #    `qwen38-api,qwen38-vision` va `qwen38-vision` da bi go o D02
+        #    (dual-model 2.3) — tuc dong log duy nhat ma nguoi van hanh doc
+        #    trong dung luc cong dang rong lai **day ho khai mot ho so khong ton
+        #    tai**, roi cong tu choi no va trieu chung khong doi.
+        from .catalog import HO_SO
         log.warning("LTT_LLM_MODELS rong -> KHONG mo model nao. "
-                    "Dat vi du: LTT_LLM_MODELS=qwen38-api,qwen38-vision")
+                    "Dat vi du: LTT_LLM_MODELS=%s",
+                    ",".join(h.ten for h in HO_SO))
+    # 🔴 NGHE RA NGOÀI LOOPBACK MÀ KHÔNG CÓ TOKEN = KHÔNG KHỞI ĐỘNG.
+    #
+    #    `auth()` ở `api.py` trả về ngay khi `cfg.token` rỗng — đó là đường dev,
+    #    và nó đúng **chừng nào cổng còn nghe 127.0.0.1**. Nhưng máy A phải gọi
+    #    được, nên ai đó **phải** sửa `gateway.env` thành `0.0.0.0` bằng tay.
+    #    Từ giây ấy, một dòng `LTT_LLM_TOKEN=` rỗng (hoặc bị xoá nhầm) phơi model
+    #    nhà ra cả LAN — và triệu chứng duy nhất là **một dòng cảnh báo trong
+    #    log**, thứ không ai đọc lúc mọi thứ đang chạy.
+    #
+    # ⭐ ĐO TRƯỚC KHI SỬA (09/09, từ máy A, chỉ đọc):
+    #
+    #        GET http://192.168.2.66:8299/live    -> 200  {"ok":true,...}
+    #        GET http://192.168.2.66:8299/health  -> 401  {"detail":"token khong dung"}
+    #
+    #    ⇒ Production **đang có token**. Chốt này KHÔNG sửa một lỗ hổng đang mở;
+    #      nó biến một thứ đang đúng nhờ **giao ước** thành một thứ đúng nhờ
+    #      **cơ chế**. `CLAUDE.md` của kho ghi đúng bài học ấy: *"ranh giới CƠ
+    #      HỌC thắng giao ước"* — vì giao ước không sống sót qua một lần sửa
+    #      `gateway.env` lúc 2 giờ sáng.
+    #
+    # ⛔ VÀ NÓ PHẢI CHẾT LÚC KHỞI ĐỘNG, KHÔNG PHẢI LÚC PHỤC VỤ. Bản thiết kế
+    #    khác — trả 401 cho mọi yêu cầu khi cấu hình sai — đã bị bỏ: dịch vụ vẫn
+    #    "chạy", `/live` vẫn xanh, và người vận hành nhìn thấy một cổng khoẻ
+    #    mạnh không phục vụ được ai. Hỏng lúc khởi động thì to tiếng và chỉ đúng
+    #    thủ phạm; hỏng lúc phục vụ thì câm.
+    #
+    # ⚠️ Đứng TRƯỚC chốt cổng-bị-giữ bên dưới có chủ ý: đây là phép kiểm cấu hình
+    #    thuần, không tốn I/O, còn chốt kia mất tới ~21 giây (connect + netstat).
+    #    Sai cấu hình thì phải biết ngay, đừng bắt người ta chờ hết một lượt dò.
+    if cfg.host not in LOOPBACK and not cfg.token:
+        log.error("TU CHOI KHOI DONG: LTT_LLM_HOST=%s nghe ra ngoai loopback "
+                  "nhung LTT_LLM_TOKEN rong.", cfg.host)
+        log.error("Nhu vay la mo model nha cho MOI may trong LAN, khong xac thuc.")
+        log.error("Xu ly: dat LTT_LLM_TOKEN trong %s roi chay "
+                  "setup/nap_lai_env.ps1 (sua tep roi Restart-Service la KHONG "
+                  "DU -- nssm nuong ENV luc CAI).", TEP_ENV)
+        log.error("Hoac, neu that su muon chay khong khoa: dat "
+                  "LTT_LLM_HOST=127.0.0.1.")
+        raise SystemExit(3)
+
     if not cfg.token:
         log.warning("LTT_LLM_TOKEN rong -> KHONG kiem tra bearer. "
-                    "Chi chap nhan duoc khi host van la 127.0.0.1")
+                    "Chap nhan duoc vi host la %s (loopback).", cfg.host)
 
     # 🔴 CỔNG ĐÃ CÓ NGƯỜI GIỮ = DỪNG NGAY, NÓI TO, ĐỪNG THỬ BIND.
     #

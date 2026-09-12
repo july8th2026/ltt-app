@@ -100,6 +100,16 @@ if (-not (Get-Service LTTComfyUI -ErrorAction SilentlyContinue)) {
 & $nssm set LTTComfyUI AppDirectory $ComfyGoc                                  | Out-Null
 & $nssm set LTTComfyUI AppParameters "main.py --port 8188 --disable-auto-launch --listen 127.0.0.1 --reserve-vram 3" | Out-Null
 
+# !! GHIM GPU BANG UUID (P0-GPU-PIN, Task 0.2 LTT LLM Dual-Model, 2026-09-11).
+#    May B co hai GPU tu 09/2026 (3090 + 5060 Ti). ComfyUI dung CHUNG card 24 GB
+#    voi qwen38-* (xem llm_gateway/deploy/llama-swap.yaml) - khong ghim thi
+#    ComfyUI tu do co the roi len 5060 Ti, ma 5060 Ti de danh cho model khac
+#    (D-09a). UUID lay tu llm_gateway/deploy/gpu_may_b.json, vai "ltt38". Doi
+#    card that thi doi trong gpu_may_b.json VA o day - hai cho khai cung mot
+#    dieu, tep .ps1 nay khong doc JSON duoc (thuan ASCII, khong Python inline).
+#    tests/test_1200_ghim_gpu_may_b.py doi chieu dong duoi day voi gpu_may_b.json.
+& $nssm set LTTComfyUI AppEnvironmentExtra "CUDA_VISIBLE_DEVICES=GPU-26623278-4fa5-82db-4306-237651b03e78" | Out-Null
+
 # !! GIET CA CAY TIEN TRINH khi dung dich vu.
 #    `E:\ai\venv\Scripts\python.exe` la STUB 274 KB, no sinh ra
 #    `C:\Users\lengo\...\Python312\python.exe` moi la ComfyUI THAT (giu model + VRAM).

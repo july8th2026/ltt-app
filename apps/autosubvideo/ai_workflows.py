@@ -163,11 +163,14 @@ def _dich_mot_lo(db, items: list[dict], target_language: str) -> list[dict]:
                 "\"text\". No markdown fence, no commentary.\nInput JSON:\n" +
                 json.dumps(items, ensure_ascii=False, separators=(",", ":")))
 
-    tai_nguyen, suat = _C.tai_nguyen_nha()
+    # D09: model cho việc nội bộ đọc từ **bản khai của app này**, không phải
+    # `MODEL_MAC_DINH` (tên đó trả lời câu "khách không nói model thì dùng gì").
+    model = _C.model_noi_bo_cua("autosubvideo")
+    suc = _C.tai_nguyen_nha(model)
     ve = None
     try:
         ve = admission.acquire(
-            db, resource=tai_nguyen, slots=suat, user_id="he-thong:autosubvideo",
+            db, resource=suc.resource, slots=suc.slots, user_id="he-thong:autosubvideo",
             mode="sync", holder_id="asv-dich:" + _uuid.uuid4().hex[:12])
         if ve is None:
             raise AuxiliaryAIError(_t("Model đang bận, thử lại sau ít phút."))
@@ -177,7 +180,7 @@ def _dich_mot_lo(db, items: list[dict], target_language: str) -> list[dict]:
                 messages=[{"role": "user", "content": loi_nhac}],
                 category=APIKEY_CAT_CHAT,
                 thu_tu_provider=_C.THU_TU_PROVIDER,
-                model_theo_provider=_C.ban_do_model(),
+                model_theo_provider=_C.ban_do_model(model),
                 temperature=0.1,
                 timeout_s=90.0,
             )

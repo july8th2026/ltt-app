@@ -61,6 +61,37 @@ class BanError(Exception):
         self.chi_tiet = chi_tiet or {}
 
 
+#: Cổng trả mã này khi lượt bị **hủy theo yêu cầu**. Quy ước của nginx cho
+#: *"client đã đóng"*; cả hai đầu là mã của ta nên dùng nó là đúng nghĩa.
+MA_HUY = 499
+
+
+class HuyError(Exception):
+    """Lượt bị HỦY theo yêu cầu. **KHÔNG PHẢI LỖI** — của ai cả.
+
+    🔴 VÌ SAO KHÔNG PHẢI `CongVlmError`, VÀ ĐÂY LÀ LUẬT THỨ NĂM CỦA TỆP NÀY.
+       `CongVlmError` là giấy phép cho bên gọi `api_pool.danh_dau_loi()`; năm lần
+       là `key.status = APIKEY_ERROR`, thứ **không tự hồi** (`_ung_vien` bỏ mọi
+       khoá `status != ACTIVE`, chỉ `COOLDOWN` tự về). Tức **năm lần khách bấm
+       "dừng" là model nhà tắt vĩnh viễn** — đúng thảm hoạ D-005 mà luật 1 đã bịt
+       ở cửa 429 và luật 504 đã bịt ở cửa hết giờ. Đây là cửa thứ ba.
+
+    🔴 VÀ VÌ SAO KHÔNG DÙNG LẠI `BanError` cho gọn. `dieu_phoi` đọc `BanError` là
+       *"đi tiếp provider sau"*. Với model nội bộ, `canonical.THU_TU_PROVIDER` có
+       **một** phần tử — nên "đi tiếp" là cạn danh sách ⇒ `KhongCoProviderNao`,
+       một thông điệp nói "không provider nào phục vụ được" cho một lượt mà chính
+       khách vừa hủy. Nguyên nhân thật bị che, và người đọc log sẽ đi tìm máy B.
+
+    ⇒ Một lớp riêng, không họ hàng với `CongVlmError`: **không** cascade, **không**
+      đánh dấu lỗi khoá, và bên gọi nhìn tên là biết chuyện gì.
+    """
+
+    def __init__(self, ly_do: str = "", chi_tiet: Optional[dict] = None):
+        super().__init__(ly_do or "luot bi huy theo yeu cau")
+        self.ly_do = ly_do
+        self.chi_tiet = chi_tiet or {}
+
+
 class VuotNganSachError(Exception):
     """Yêu cầu vượt trần của cổng (413). Thử lại y hệt sẽ hỏng y hệt.
 
@@ -225,11 +256,44 @@ class CongVlm:
             raise BanError(str((ct.get("detail") or {}).get("chi_tiet")
                                or ct.get("ly_do") or "may B dang ban"),
                            chi_tiet=ct)
+        if ma == MA_HUY:
+            # ⛔ ĐỨNG Ở ĐÂY, TRƯỚC nhánh `ma != 200` cuối hàm. Rơi xuống đó là
+            #    `CongVlmError`, tức giấy phép đánh dấu lỗi khoá — xem `HuyError`.
+            ct = than if isinstance(than, dict) else {}
+            raise HuyError(str(ct.get("ly_do") or "huy theo yeu cau"), chi_tiet=ct)
         if ma == 413:
             ct = than if isinstance(than, dict) else {}
             raise VuotNganSachError("yeu cau vuot tran cua cong", chi_tiet=ct)
         if ma == 404:
             raise CongVlmError(f"model '{model}' khong co hoac chua duoc mo")
+        if ma == 504:
+            # 🔴 HẾT GIỜ Ở THƯỢNG NGUỒN **KHÔNG PHẢI** LỖI CỦA KHOÁ.
+            #
+            #    Cổng trả 504 khi `llama-swap`/`llama-server` không trả lời kịp.
+            #    Trước 09/09 nó nằm chung cửa 502, và 502 rơi vào nhánh cuối
+            #    (`CongVlmError`) ⇒ `api_pool.danh_dau_loi()` ⇒ sau **5** lần
+            #    `key.status = APIKEY_ERROR`.
+            #
+            # ⛔ Và `APIKEY_ERROR` **KHÔNG TỰ HỒI**: `api_pool._ung_vien` bỏ mọi
+            #    khoá `status != ACTIVE`, còn tự hồi thì chỉ có `COOLDOWN`. Tức
+            #    năm lần hết giờ là model nhà tắt và **ở lại tắt** tới khi có
+            #    người vào sửa tay.
+            #
+            # ⭐ Đó đúng là D-005 — thảm hoạ mà luật 1 ở đầu tệp này đã bịt rất
+            #    kỹ ở cửa **429** — chỉ là nó vào bằng cửa **hết giờ**, cửa chưa
+            #    ai bịt. Một prompt 200K prefill hàng phút là hành vi **bình
+            #    thường** của hệ này, không phải dấu hiệu máy B hỏng.
+            #
+            # ⚠️ Dùng `AmbiguousProviderError` chứ **không** đẻ lớp mới, và đó là
+            #    lựa chọn có lý do: ngữ nghĩa của nó đã đúng y hệt — *"đã gửi đi
+            #    nhưng không biết kết quả"*. `dieu_phoi.goi()` sẵn có nhánh
+            #    `except (AmbiguousProviderError, ProviderOomError): raise` nên
+            #    lượt này **không cascade** (thượng nguồn có thể đã bắt đầu sinh
+            #    chữ, thử lại nơi khác là trả tiền hai lần) và **không**
+            #    `danh_dau_loi`. Thêm một lớp mới sẽ phải chép lại đúng hai hành
+            #    vi ấy, và bản chép sẽ lệch vào một ngày nào đó.
+            raise AmbiguousProviderError(
+                "thuong nguon khong tra loi kip (504) — khong danh dau loi cho khoa")
         noi_dung_loi = str(than or "").lower()
         if ma in (500, 502, 503, 507) and any(
                 marker in noi_dung_loi for marker in
@@ -244,7 +308,13 @@ class CongVlm:
     def _goi(self, method: str, path: str, *, json: Any = None) -> tuple:
         try:
             return self.goi(method, path, json=json, timeout=self.timeout_s)
-        except BanError:
+        except (BanError, HuyError):
+            # ⛔ `HuyError` PHẢI đi cùng `BanError` ở đây. Hàm `goi` tiêm vào có
+            #    thể tự nhận ra việc hủy trước ta (nó là bên cầm `httpx.Client`,
+            #    nên nó là bên duy nhất phân biệt được "ta tự đóng" với "mạng
+            #    chập" — xem `dieu_phoi._goi_openai`). Không có dòng này thì nhánh
+            #    `except Exception` dưới sẽ bọc nó thành `AmbiguousProviderError`,
+            #    và một lượt hủy lại trở thành một lượt "không rõ kết quả".
             raise
         except Exception as e:                       # pragma: no cover
             if str(method).upper() == "POST":

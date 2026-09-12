@@ -21,12 +21,19 @@ import json
 import uuid
 
 import pytest
+
+from tests.conftest import mo_cu_tru_3090
 from fastapi.testclient import TestClient
 
 from platform_core.public_api import keys as devkeys, limits
 from platform_core.public_api.scopes import (SCOPE_JOBS_CREATE, SCOPE_JOBS_READ,
                                              SCOPE_TOOLS_READ)
 from server.api.inventory import API_V1_PREFIX
+
+#: Ten model cong khai, doc tu `canonical` chu KHONG go tay: D02 cat
+#: `ltt_llm`/`ltt_llm_vision` ngay 11/09/2026, va mot ten go tay o day se do
+#: vi CHINH NO da cu chu khong vi cua hong.
+from platform_core.llm.canonical import MODEL_MAC_DINH as MODEL
 
 PEPPER = "stream-test-pepper-" + "s" * 40
 MSG = API_V1_PREFIX + "/messages"
@@ -47,6 +54,10 @@ def api(tmp_path, monkeypatch):
     import platform_core.models  # noqa: F401
     from platform_core.db import Base, get_engine
     Base.metadata.create_all(get_engine())
+    # Luật 0 của admission (dual-model 5.3): một CSDL mới chưa nói card
+    # 3090 đang là của ai, và fail-closed nghĩa là cửa LTT-3.8 đóng. Cửa
+    # này là thứ tệp test đang kiểm, nên nó phải nói ra — như production.
+    mo_cu_tru_3090()
     from server.app import create_app
 
     app = create_app(env={
@@ -111,7 +122,7 @@ def _so_du(user_id):
 
 
 def _than(**g):
-    d = {"model": "ltt_llm", "stream": True, "max_tokens": 500,
+    d = {"model": MODEL, "stream": True, "max_tokens": 500,
          "messages": [{"role": "user", "content": "xin chao"}]}
     d.update(g)
     return d
@@ -168,15 +179,32 @@ def _dat_luong(monkeypatch, khoi=None, *, nem=None, ban=False):
 
 
 def _giu_execution_slot() -> str:
+    """Giữ hết suất của **model mặc định**, đọc tên tài nguyên từ BẢN KHAI.
+
+    ⛔ Trước 11/09/2026 chỗ này gõ `resource="llm_remote"`. Từ dual-model 2.3
+       sức chứa khai **theo model**, nên một tên gõ tay giành tài nguyên không
+       ai dùng: cửa vẫn chạy thông, phép kiểm xanh, và nó thôi đo điều nó sinh
+       ra để đo.
+    """
     from platform_core.llm import admission
+    from platform_core.llm.canonical import tai_nguyen_nha
+
+    suc = tai_nguyen_nha(MODEL)
     gen, db = _session()
     try:
-        lease = admission.acquire(
-            db, resource="llm_remote", slots=1, user_id="u-khac",
-            mode="job", holder_id="job-khac")
-        assert lease is not None
+        # 🔴 MỘT LẦN `acquire` GIỮ MỘT SUẤT; `slots=` là **sức chứa**. Hai nghĩa
+        #    ấy trùng nhau đúng chừng nào `SO_SLOT` = 1 — dual-model 2.6 nâng
+        #    lên 3 (L-14) và hàm này chỉ còn giữ 1/3, tức cửa vẫn thông.
+        cuoi = None
+        for i in range(int(suc.slots)):
+            lease = admission.acquire(
+                db, resource=suc.resource, slots=suc.slots, user_id="u-khac",
+                mode="job", holder_id=f"job-khac-{i}")
+            assert lease is not None, f"khong giu duoc suat {i + 1}/{suc.slots}"
+            cuoi = lease
         db.commit()
-        return lease.id
+        assert cuoi is not None
+        return cuoi.id
     finally:
         _close(gen)
 
@@ -380,8 +408,101 @@ def test_so_REQUEST_ghi_dung_so_tien_o_nhanh_KHONG_STREAM(api, monkeypatch):
         f"so ghi {ghi[-1] if ghi else None} != so that {-thu_that}")
 
 
-def test_stream_execution_slot_ban_tra_429_truoc_credit_va_model(api, monkeypatch):
+def test_stream_het_slot_CHO_trong_SSE_roi_bao_overloaded_khong_giu_tien(api, monkeypatch):
+    """multijob D-06 (đổi hợp đồng CÓ CHỦ Ý, chủ dự án chốt 11/09).
+
+    Trước: hết slot ⇒ 429 ngay. Nay: 200 + SSE, chờ trong phòng chờ (nhịp tim),
+    hết trần chờ ⇒ MỘT khối lỗi đúng khuôn Anthropic (`overloaded_error`).
+    ⛔ Hai bất biến cũ GIỮ NGUYÊN: không gọi model, không đụng tiền (INV-MJ-1 —
+       tiền chỉ giữ SAU khi được nhận).
+    """
+    monkeypatch.setenv("LTT_LLM_CHO_STREAM_S", "1")
     lease_id = _giu_execution_slot()
+    called = _dat_luong(monkeypatch)
+    user_id, token = _account()
+    before = _so_du(user_id)
+    from platform_core.db import get_session
+    from platform_core.llm import admission
+    from platform_core.models import CreditEntry, LlmWaiter
+
+    def _so_but_toan():
+        g = get_session()
+        d = next(g)
+        try:
+            return d.query(CreditEntry).filter(CreditEntry.user_id == user_id).count()
+        finally:
+            d.close()
+
+    but_toan_truoc = _so_but_toan()
+
+    response = api.post(MSG, json=_than(), headers=_h(token))
+
+    assert response.status_code == 200, response.text
+    assert b"event: error" in response.content
+    assert b"overloaded_error" in response.content
+    assert called == []
+    assert _so_du(user_id) == before
+    # INV-MJ-1 theo nghĩa MẠNH: không phải "giữ rồi hoàn" (số dư cũng y nguyên) mà
+    # là KHÔNG CÓ bút toán nào — lượt chờ không bao giờ chạm sổ tiền.
+    assert _so_but_toan() == but_toan_truoc, "luot dang cho da cham so tien"
+    gen = get_session()
+    db = next(gen)
+    try:
+        # Sổ lượt ghi lại lượt chờ này và VÌ SAO nó không được nhận.
+        w = db.query(LlmWaiter).filter(LlmWaiter.user_id == user_id).one()
+        assert (w.trang_thai, w.ket_qua, w.ly_do_cho) == ("het_han", "het_cho", "cho_slot")
+    finally:
+        db.close()
+    admission.release_by_id(lease_id)
+
+
+def test_stream_qua_tran_vao_van_413_TRUOC_200(api, monkeypatch):
+    """multijob D-06: 200 nay gửi trước khi chạm máy B — nhưng 413 phải vẫn là MÃ HTTP.
+
+    Codex/Claude Code dựa vào HTTP 413 để tự nén hội thoại (`streaming.py`, nhánh
+    413). Nếu "quá dài" chỉ tới dưới dạng sự kiện sau 200, client ngừng tự nén.
+    """
+    called = _dat_luong(monkeypatch)
+    user_id, token = _account()
+    truoc = _so_du(user_id)
+    # ⛔ DẪN XUẤT TỪ TRẦN, KHÔNG GÕ TAY: `450_000` ký tự (≈180.001 token) vượt
+    #    trần 169.984 của hồ sơ 204.800 nhưng **lọt** trần 186.368 của hồ sơ
+    #    221.184 (dual-model 2.6) — phép kiểm sẽ thôi đo 413 mà vẫn trông như đo.
+    from apps.ltt_llm import ngan_sach
+    qua_tran = int((ngan_sach.TOKEN_VAO_TRAN + 5_000) * ngan_sach.KY_TU_MOI_TOKEN)
+    than = _than(messages=[{"role": "user", "content": "x" * qua_tran}])
+    r = api.post(MSG, json=than, headers=_h(token))
+    assert r.status_code == 413, r.text
+    assert called == []
+    assert _so_du(user_id) == truoc
+
+
+def test_stream_tron_ven_ghi_so_luot_xong_va_whale(api, monkeypatch):
+    """Sổ lượt (chủ dự án: 'log lưu để phân tích sau') ghi đủ một lượt trọn vẹn."""
+    monkeypatch.setenv("LTT_LLM_NGUONG_WHALE", "1")      # mọi lượt đều là whale
+    _dat_luong(monkeypatch)
+    user_id, token = _account()
+    r = api.post(MSG, json=_than(), headers=_h(token))
+    assert r.status_code == 200
+    r.read()
+    from platform_core.db import get_session
+    from platform_core.models import ExecutionLease, LlmWaiter
+    gen = get_session()
+    db = next(gen)
+    try:
+        w = db.query(LlmWaiter).filter(LlmWaiter.user_id == user_id).one()
+        assert (w.trang_thai, w.ket_qua, w.cua, w.lop) == ("xong", "xong", "stream", "tuong_tac")
+        assert w.la_whale is True and w.token_dat_truoc > 0
+        assert w.admitted_at is not None and w.finished_at is not None
+        # Lease đã nhả sau luồng — không slot nào rò.
+        assert db.query(ExecutionLease).filter(ExecutionLease.id == w.lease_id).count() == 0
+    finally:
+        db.close()
+
+
+def test_stream_phong_cho_day_thi_429_TRUOC_200(api, monkeypatch):
+    """Phòng chờ có trần — không hàng vô hạn. Chạm trần ⇒ 429 khi còn đổi được mã HTTP."""
+    monkeypatch.setenv("LTT_LLM_SO_NGUOI_CHO", "0")
     called = _dat_luong(monkeypatch)
     user_id, token = _account()
     before = _so_du(user_id)
@@ -393,8 +514,6 @@ def test_stream_execution_slot_ban_tra_429_truoc_credit_va_model(api, monkeypatc
     assert response.headers["Retry-After"]
     assert called == []
     assert _so_du(user_id) == before
-    from platform_core.llm import admission
-    admission.release_by_id(lease_id)
 
 
 def test_nonstream_execution_slot_cung_bi_chan_truoc_model(api, monkeypatch):
@@ -458,14 +577,19 @@ def test_khong_du_tien_thi_KHONG_goi_model(api, monkeypatch):
 
 # ── 4. Bận ≠ hỏng ───────────────────────────────────────────────────────────
 
-def test_ban_thi_503_va_HOAN_DU(api, monkeypatch):
-    """🔴 D-005. Khách không trả tiền cho một lượt không chạy."""
+def test_may_B_ban_sau_200_thi_su_kien_overloaded_va_HOAN_DU(api, monkeypatch):
+    """🔴 D-005. Khách không trả tiền cho một lượt không chạy.
+
+    multijob D-06: lượt đã được nhận (200 đã gửi, tiền đã giữ) rồi máy B mới báo
+    bận ⇒ không còn 503 được nữa; thay bằng khối `overloaded_error` và phần giữ
+    chỗ PHẢI được hoàn đủ — bất biến tiền không đổi.
+    """
     _dat_luong(monkeypatch, ban=True)
     user_id, token = _account()
     truoc = _so_du(user_id)
     r = api.post(MSG, json=_than(), headers=_h(token))
-    assert r.status_code == 503, r.text
-    assert int(r.headers.get("Retry-After", 0)) > 0
+    assert r.status_code == 200, r.text
+    assert b"overloaded_error" in r.content
     assert _so_du(user_id) == truoc, "ban ma van thu tien"
 
 
@@ -595,7 +719,7 @@ def test_trang_cli_day_du_ba_cong_cu(api):
     page = api.get("/developers/cli").text
     for manh in ("model_providers.ltt", "ltt.config.toml", "wire_api",
                  "ANTHROPIC_BASE_URL", "ANTHROPIC_DEFAULT_HAIKU_MODEL",
-                 "Third-Party Inference", "inferenceModels", "ltt_llm"):
+                 "Third-Party Inference", "inferenceModels", MODEL):
         assert manh in page, "trang /developers/cli thieu " + repr(manh)
 
 
@@ -619,7 +743,7 @@ def test_cau_hinh_codex_KHONG_dung_id_noi_bo():
     from platform_core.public_api import examples
     ma = examples.codex_profile()
     assert "qwen38" not in ma, "lo id noi bo -> tich hop se ghim vao no"
-    assert examples.CLI_MODEL == "ltt_llm"
+    assert examples.CLI_MODEL == MODEL
 
 
 # ── 9. Giám sát KHÁCH, không phải giám sát máy ──────────────────────────────

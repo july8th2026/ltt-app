@@ -40,6 +40,13 @@ def portal(tmp_path, monkeypatch):
     from platform_core.db import Base, get_engine
 
     Base.metadata.create_all(get_engine())
+    # Job anh gianh `anh_3090` tu dual-model 5.5, va luat 0 fail-closed: khong co
+    # dong `gpu_residency` thi worker chi tra job ve hang doi, khong chay handler.
+    # Ly do day du: `tests/conftest.py::mo_cu_tru_3090`.
+    from platform_core.llm import residency as _residency
+
+    from tests.conftest import mo_cu_tru_3090
+    mo_cu_tru_3090(_residency.ANH)
 
     import apps.thumbnail.jobs as thumbnail_jobs
     from tests.gia_dieu_phoi_anh import tiem as _tiem_dieu_phoi
@@ -443,6 +450,13 @@ def test_daily_buckets_by_day_and_fills_gaps():
     import platform_core.models  # noqa: F401
     from platform_core.db import Base, get_engine
     Base.metadata.create_all(get_engine())
+    # Job anh gianh `anh_3090` tu dual-model 5.5, va luat 0 fail-closed: khong co
+    # dong `gpu_residency` thi worker chi tra job ve hang doi, khong chay handler.
+    # Ly do day du: `tests/conftest.py::mo_cu_tru_3090`.
+    from platform_core.llm import residency as _residency
+
+    from tests.conftest import mo_cu_tru_3090
+    mo_cu_tru_3090(_residency.ANH)
 
     gen, db = _session()
     try:
@@ -486,6 +500,13 @@ def test_daily_is_empty_list_when_no_traffic():
     import platform_core.models  # noqa: F401
     from platform_core.db import Base, get_engine
     Base.metadata.create_all(get_engine())
+    # Job anh gianh `anh_3090` tu dual-model 5.5, va luat 0 fail-closed: khong co
+    # dong `gpu_residency` thi worker chi tra job ve hang doi, khong chay handler.
+    # Ly do day du: `tests/conftest.py::mo_cu_tru_3090`.
+    from platform_core.llm import residency as _residency
+
+    from tests.conftest import mo_cu_tru_3090
+    mo_cu_tru_3090(_residency.ANH)
 
     gen, db = _session()
     try:
@@ -511,6 +532,13 @@ def test_by_tool_aggregates_net_credit_over_the_whole_window():
     import platform_core.models  # noqa: F401
     from platform_core.db import Base, get_engine
     Base.metadata.create_all(get_engine())
+    # Job anh gianh `anh_3090` tu dual-model 5.5, va luat 0 fail-closed: khong co
+    # dong `gpu_residency` thi worker chi tra job ve hang doi, khong chay handler.
+    # Ly do day du: `tests/conftest.py::mo_cu_tru_3090`.
+    from platform_core.llm import residency as _residency
+
+    from tests.conftest import mo_cu_tru_3090
+    mo_cu_tru_3090(_residency.ANH)
 
     from platform_core.models import CREDIT_HOLD, CreditEntry, Job
     from platform_core.public_api import usage

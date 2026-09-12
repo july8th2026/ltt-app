@@ -301,7 +301,6 @@ VANG	Không tìm thấy phiên.
 VANG	Kéo dài
 VANG	LTT LLM (coding · chat · agent)
 VANG	LTT LLM — model ngôn ngữ của nhà
-VANG	LTT LLM — đọc ảnh
 VANG	LTT Studios — model ngôn ngữ tại nhà
 VANG	LTT Studios — máy nhà (RTX 3090)
 VANG	LTT nội bộ (HiDream-O1)
@@ -336,7 +335,6 @@ VANG	[{slug}] tool {tool!r} params[{param!r}].only_when[{k!r}] phải là danh s
 VANG	chữ tiếng Việt CÓ DẤU vẽ trong ảnh bị sai dấu
 VANG	model
 VANG	máy B dùng chung GPU với việc ảnh và video — bận thì trả 429, không phải lỗi
-VANG	nạp thêm bộ chiếu ảnh nên tốn hơn ~1,1 GB VRAM so với bản không ảnh
 VANG	prompt phải là tiếng Anh — nền tảng tự dịch
 VANG	Điều khiển máy tính của bạn từ xa — không mở cổng, không cần IP tĩnh. Cài ứng dụng, đăng nhập cùng tài khoản, máy hiện ra là bấm vào dùng.
 VANG	đang mở

@@ -15,6 +15,18 @@ import pytest
 from apps.chatltt.services import hoi_thoai as H
 from apps.chatltt.services import su_kien as S
 
+#: 🔴 BÍ DANH CỦA TOOL THỬ PHẢI LÀ MỘT MODEL **CÓ GIÁ** (D07, dual-model 2.5).
+#:    Trước 2.5 chỗ này là chuỗi bịa `_ALIAS_THU` và nó chạy được **chỉ vì**
+#:    `gia_token` bỏ qua model. Từ D07 giá đi theo model, nên mọi tool đi qua
+#:    `runtime_noi_bo/luong.py` — tức qua `thanh_toan` — phải khai một model mà
+#:    bảng giá biết. Đây là ràng buộc thật của tầng đó, không phải phiền toái
+#:    của phép kiểm: một model không có giá mà vẫn giữ được tiền nghĩa là tiền
+#:    đang được tính bằng bảng giá của một model **khác**.
+#:
+#: ⛔ Lấy từ `gia_token`, đừng gõ thẳng `"ltt-3.8"`: ngày đổi model mặc định thì
+#:    một hằng số gõ tay sẽ làm sáu tệp này hỏng lại cùng lúc.
+from platform_core.llm.gia_token import MODEL_GIA_MAC_DINH as _ALIAS_THU
+
 
 @pytest.fixture()
 def db(tmp_path, monkeypatch):
@@ -196,7 +208,7 @@ def test_su_kien_cua_facade_ap_nguyen_xi(db, monkeypatch):
 
     hoi, m, a, ex = _luot(db, u=u.id)
     for sk in L.mo_luong(db, user_id=u.id, tool_name="text.thu618",
-                         params={"model": "thu_alias",
+                         params={"model": _ALIAS_THU,
                                  "messages": [{"role": "user", "content": "hoi"}]}):
         if S.ap_dung(ex, sk, message=a):
             S.dong_bo_khoi_text(a, ex)

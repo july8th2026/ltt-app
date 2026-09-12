@@ -56,6 +56,242 @@ def reclaim_expired(
     return len(expired)
 
 
+def _khoa_resource(db: Session, resource: str) -> None:
+    """Tuần tự hoá luật nhận của MỘT tài nguyên trong transaction hiện tại.
+
+    Luật ngân sách cộng token của mọi lease sống rồi mới INSERT — hai tiến trình
+    cùng cộng rồi cùng INSERT là vượt pool dù `UNIQUE(resource, slot)` vẫn giữ
+    đúng số slot. Khoá advisory của transaction tự nhả ở commit/rollback, cùng
+    khuôn `public_api/limits.py:_lock_job_admission`. SQLite bỏ qua (test logic
+    đơn luồng); race kiểm bằng PostgreSQL thật.
+    """
+    if db.bind is None or db.bind.dialect.name != "postgresql":
+        return
+    from sqlalchemy import text
+
+    db.execute(text("SELECT pg_advisory_xact_lock(hashtext(:k))"),
+               {"k": f"llm-admission:{resource}"})
+
+
+# ── Luật 0 của `luat_nhan`: nhóm GPU đang cư trú cho ai (dual-model 5.3, D01 B) ─
+
+_BAN_DO_CU_TRU: dict[str, set] | None = None
+
+#: Bao lâu mới nhắc lại một lần cùng một câu "không đọc được dòng cư trú". Người
+#: chờ đập nhịp 2 lượt/giây; không có phanh này thì MỘT dòng thiếu ghi đầy log
+#: bằng một câu và đẩy mọi thứ khác ra khỏi tầm nhìn.
+NHAC_LOI_CU_TRU_S = 30.0
+_da_nhac: dict[str, float] = {}
+
+
+def quen_ban_do_cu_tru() -> None:
+    """Xoá bộ nhớ đệm bản đồ cư trú (phép kiểm tiêm bản khai giả gọi hàm này)."""
+    global _BAN_DO_CU_TRU
+    _BAN_DO_CU_TRU = None
+
+
+def _ban_do_cu_tru() -> dict[str, set]:
+    """`{tên tài nguyên: {(nhóm, vai trò)}}`, đọc từ BẢN KHAI của app.
+
+    ⛔ KHÔNG đọc `tool.admission_resource`: một tool khai `admission_theo_model`
+       để trường tĩnh ấy RỖNG (multijob 2.2, R20), nên phép đọc cũ sẽ bỏ qua
+       đúng cái tool nó đi tìm. Ở đây lấy thẳng các `AdmissionModel` đã khai, nên
+       tên tài nguyên và nhóm cư trú đi ra từ CÙNG MỘT đối tượng — không có cách
+       nào ghép tên của model này với nhóm của model kia.
+
+    Đệm cả tiến trình: bản khai của app là MÃ, nó không đổi lúc đang chạy. Chỉ
+    đệm khi đọc được — hỏng thì lượt sau thử lại.
+    """
+    global _BAN_DO_CU_TRU
+    if _BAN_DO_CU_TRU is not None:
+        return _BAN_DO_CU_TRU
+    from platform_core.registry import discover
+
+    ban_do: dict[str, set] = {}
+    try:
+        for app in discover():
+            for tool in getattr(app.manifest, "tools", ()) or ():
+                for am in (getattr(tool, "admission_theo_model", {}) or {}).values():
+                    nhom = str(getattr(am, "residency_group", "") or "").strip()
+                    ten = str(getattr(am, "resource", "") or "").strip()
+                    if nhom and ten:
+                        ban_do.setdefault(ten, set()).add(
+                            (nhom, str(getattr(am, "vai_tro", "") or "").strip()))
+    except Exception:  # noqa: BLE001 - nói ra, đừng đệm lại
+        log.warning("khong doc duoc ban khai nhom cu tru; coi nhu khong co",
+                    exc_info=True)
+        return {}
+    _BAN_DO_CU_TRU = ban_do
+    return ban_do
+
+
+def nhom_cu_tru(resource: str) -> tuple[str, str]:
+    """Nhóm cư trú + vai trò của một tài nguyên. `("", "")` = không có trọng tài.
+
+    ⭐ VÌ SAO TRA THEO TÊN TÀI NGUYÊN, chứ không nhận nhóm cư trú như một tham số
+       mới của `xet_va_giu`: `xet_va_giu` có **nhiều** chỗ gọi (stream, ChatLTT,
+       đồng bộ, job, planner, và ba app ảnh ở Task 5.5), và một tham số mới thì
+       mỗi chỗ gọi là một chỗ có thể quên. Quên ở đây **không làm đỏ** phép kiểm
+       nào — nó chỉ mở cửa 3090 cho cả hai model, tức đúng cái hỏng mà cả chương
+       trình này sinh ra để dẹp. Tra theo tên thì không chỗ gọi nào phải biết gì,
+       và một app mới khai `residency_group` là đã được gác ngay từ lượt đầu.
+
+    Hai bản khai khác nhau cho cùng một tên ⇒ **NÉM**, và chỉ ném cho đúng tài
+    nguyên ấy: đó là bản khai tự mâu thuẫn (cùng khuôn fail-closed của
+    `suc_chua_admission`), còn mọi tài nguyên không liên can vẫn chạy.
+    """
+    khai = _ban_do_cu_tru().get(str(resource).strip())
+    if not khai:
+        return "", ""
+    if len(khai) > 1:
+        raise ValueError(f"tai nguyen {resource!r} duoc khai hai nhom/vai tro "
+                         f"cu tru: {sorted(khai)}")
+    return next(iter(khai))
+
+
+def _nhac(cau: str, nhom: str) -> None:
+    import time as _time
+
+    bay_gio = _time.monotonic()
+    if bay_gio - _da_nhac.get(nhom, -1e9) < NHAC_LOI_CU_TRU_S:
+        return
+    _da_nhac[nhom] = bay_gio
+    log.warning("%s cho nhom %r => DONG cua admission (fail-closed)", cau, nhom)
+
+
+def _cua_cu_tru_mo(db: Session, *, nhom: str, vai_tro: str) -> bool:
+    """Nhóm GPU có đang mở cửa cho vai trò này? Bên gọi phải ĐANG GIỮ khoá resource.
+
+    ⛔ FAIL-CLOSED với cả ba kiểu không-biết: không có dòng, không đọc được bảng,
+       trạng thái lạ. "Không có dòng" nghĩa là **chưa ai biết 3090 đang là của
+       ai** — coi như mở ở đó là cấp lease LTT-3.8 lên một card có thể đang vẽ,
+       tức OOM cả hai bên. Trọng tài (Task 5.5) tạo dòng ở lượt bước đầu tiên
+       với trạng thái đọc từ máy B thật; migration cố ý KHÔNG gieo dòng nào.
+
+    ⚠️ Đọc trong một savepoint: bảng chưa migrate thì `OperationalError` chỉ cuộn
+       lại savepoint. Không có nó, giao dịch PostgreSQL bị abort và lượt gọi chết
+       ở `commit()` — một lỗi khác hẳn, ở một chỗ khác hẳn, sau khi đã tiêu tiền.
+    """
+    from platform_core.llm import residency
+    from platform_core.models import GpuResidency
+
+    try:
+        with db.begin_nested():
+            dong = db.get(GpuResidency, nhom)
+    except Exception as loi:  # noqa: BLE001 - fail-closed, và nói ra
+        dong = None
+        # ⛔ NÓI RA CÁI GÌ HỎNG, không chỉ "không đọc được". Bảng chưa migrate,
+        #    mất kết nối, hay khoá — ba nguyên nhân, ba việc phải làm khác hẳn
+        #    nhau, và người trực đọc dòng này lúc 3 giờ sáng không đoán được.
+        #
+        # 🔴 Và việc **buộc** ngoại lệ vào một tên là thứ `check_silent_except`
+        #    đòi: nó nhận ra "có ghi log" bằng **tên hàm** (`warning`/`error`/…),
+        #    nên một hàm bọc như `_nhac` thì nó không thấy. ⛔ Đừng nới bộ dò ra
+        #    cho nó thấy `_nhac` — nó canh một **tập hợp** 131 chỗ trong mã sống, và
+        #    mỗi lần nới là một lần hạ chuẩn cho cả kho.
+        _nhac(f"khong doc duoc bang gpu_residency ({loi!r})", nhom)
+    if dong is None:
+        _nhac("khong co dong gpu_residency", nhom)
+        return False
+    # `mo_cho` NÉM với vai trò lạ (bản khai gõ sai) và trả False với trạng thái
+    # lạ — hai kiểu hỏng khác nhau, xem docstring của nó. Không nuốt cái nào.
+    return residency.mo_cho(str(dong.trang_thai or ""), vai_tro)
+
+
+def _lop_cua(lease: ExecutionLease) -> str:
+    """Lease cũ (trước multijob) không có lớp: job là nền, còn lại là tương tác."""
+    from platform_core.llm import luat_nhan
+
+    if lease.lop:
+        return lease.lop
+    return luat_nhan.NEN if lease.mode == "job" else luat_nhan.TUONG_TAC
+
+
+def xet_va_giu(
+    db: Session,
+    *,
+    resource: str,
+    slots: int,
+    user_id: str,
+    mode: str,
+    holder_id: str,
+    job_id: str = "",
+    timeout: timedelta = ORPHAN_TIMEOUT,
+    lop: str = "",
+    token_dat_truoc: int = 0,
+    token_prefill_moi: int = 0,
+    la_whale: bool = False,
+    token_pool: int = 0,
+    waiter_id: str = "",
+    tuoi_cho_s: float = 0.0,
+    cho_whale_toi_da_s: float = 30.0,
+    now: datetime | None = None,
+) -> tuple[ExecutionLease | None, str]:
+    """Xét theo `luat_nhan` rồi giành một slot. Trả `(lease | None, mã lý do)`.
+
+    ⭐ Khi `token_pool <= 0` và không khai `lop`: ĐÚNG hành vi cũ "đếm slot" —
+       mọi tool không phải model nhà (ảnh, tiếng…) không đổi gì.
+    ⛔ Caller giữ quyền commit/rollback, như `acquire` luôn làm.
+    """
+    from platform_core.llm import luat_nhan, phong_cho
+
+    resource = resource.strip()
+    if not resource or slots <= 0:
+        return None, luat_nhan.CHO_SLOT
+
+    # ── Luật 0: cư trú GPU (dual-model 5.3, D01 B) ───────────────────────────
+    #
+    # 🔴 ĐỌC TRONG KHOÁ, KHÔNG TRƯỚC KHOÁ VÀ KHÔNG Ở MỘT GIAO DỊCH KHÁC. Trọng
+    #    tài lật trạng thái nhóm trong đúng advisory lock này. Đọc ngoài khoá là
+    #    một TOCTOU có hậu quả vật lý: ta thấy `llm`, trọng tài lật sang `anh` và
+    #    ra lệnh nạp model ảnh, rồi ta cấp lease LTT-3.8 lên một card 24 GB đang
+    #    nhận 19 GB trọng số khác.
+    nhom, vai_tro = nhom_cu_tru(resource)
+    residency_mo = True
+    if nhom:
+        _khoa_resource(db, resource)
+        residency_mo = _cua_cu_tru_mo(db, nhom=nhom, vai_tro=vai_tro)
+
+    # ⭐ `not nhom` ở điều kiện dưới đây là chỗ luật 0 thành CƠ HỌC: một tài
+    #    nguyên có nhóm cư trú không được đi đường tắt "đếm slot" nữa, vì đường
+    #    tắt ấy không hỏi `luat_nhan.xet` và sẽ cấp lease bất chấp cư trú. Job
+    #    ảnh đi đúng vào đường tắt đó (`AdmissionModel("anh_3090", 1, 0, …)`:
+    #    pool 0, không khai lớp), nên thiếu vế này thì luật 0 không áp cho chính
+    #    bên mà cửa sổ ảnh sinh ra để phục vụ — và nó sẽ vẽ trong cửa sổ LLM.
+    #    Với tài nguyên KHÔNG có nhóm, đây vẫn là hành vi cũ, từng byte.
+    if token_pool <= 0 and not lop and not nhom:
+        lease = _giu_slot_trong(db, resource=resource, slots=slots, user_id=user_id,
+                                mode=mode, holder_id=holder_id, job_id=job_id,
+                                timeout=timeout)
+        return lease, ("" if lease is not None else luat_nhan.CHO_SLOT)
+
+    _khoa_resource(db, resource)
+    reclaim_expired(db, resource=resource, timeout=timeout)
+    song = db.query(ExecutionLease).filter(ExecutionLease.resource == resource).all()
+    giu = [luat_nhan.Luot(id=l.id, user_id=l.user_id, lop=_lop_cua(l),
+                          token_dat_truoc=int(l.token_dat_truoc or 0),
+                          la_whale=bool(l.la_whale)) for l in song]
+    cho = phong_cho.chup_nguoi_cho(db, resource=resource, now=now)
+    yc = luat_nhan.Luot(id=waiter_id or holder_id, user_id=user_id,
+                        lop=lop or luat_nhan.TUONG_TAC,
+                        token_dat_truoc=int(token_dat_truoc), la_whale=bool(la_whale),
+                        tuoi_s=float(tuoi_cho_s))
+    px = luat_nhan.xet(yc, giu, cho, luat_nhan.ThamSo(
+        so_slot=slots, pool=int(token_pool), cho_whale_toi_da_s=cho_whale_toi_da_s,
+        residency_mo=residency_mo))
+    if not px.nhan:
+        from platform_core.public_api import metrics
+        metrics.increment(metrics.ADMISSION_REJECTED)
+        return None, px.ly_do
+    lease = _chen_lease(db, resource=resource, slots=slots,
+                        taken={l.slot for l in song}, user_id=user_id, mode=mode,
+                        holder_id=holder_id, job_id=job_id, lop=yc.lop,
+                        token_dat_truoc=int(token_dat_truoc),
+                        token_prefill_moi=int(token_prefill_moi),
+                        la_whale=bool(la_whale))
+    return lease, ("" if lease is not None else luat_nhan.CHO_SLOT)
+
+
 def acquire(
     db: Session,
     *,
@@ -66,12 +302,31 @@ def acquire(
     holder_id: str,
     job_id: str = "",
     timeout: timedelta = ORPHAN_TIMEOUT,
+    **luat,
 ) -> ExecutionLease | None:
-    """Giành một slot; ``None`` nghĩa là toàn bộ slot còn sống đang bận."""
-    resource = resource.strip()
-    if not resource or slots <= 0:
-        return None
+    """Giành một slot; ``None`` nghĩa là không nhận được (xem `xet_va_giu` để biết vì sao).
 
+    `**luat` là các tham số đa lượt của `xet_va_giu` (`lop`, `token_dat_truoc`,
+    `token_pool`…). Không truyền gì ⇒ đúng hành vi cũ.
+    """
+    lease, _ly_do = xet_va_giu(db, resource=resource, slots=slots, user_id=user_id,
+                               mode=mode, holder_id=holder_id, job_id=job_id,
+                               timeout=timeout, **luat)
+    return lease
+
+
+def _giu_slot_trong(
+    db: Session,
+    *,
+    resource: str,
+    slots: int,
+    user_id: str,
+    mode: str,
+    holder_id: str,
+    job_id: str = "",
+    timeout: timedelta = ORPHAN_TIMEOUT,
+) -> ExecutionLease | None:
+    """Hành vi CŨ: giành slot trống đầu tiên; ``None`` nghĩa là mọi slot còn sống đang bận."""
     reclaim_expired(db, resource=resource, timeout=timeout)
     taken = {
         row[0]
@@ -102,6 +357,61 @@ def acquire(
     from platform_core.public_api import metrics
     metrics.increment(metrics.ADMISSION_REJECTED)
     return None
+
+
+def _chen_lease(db: Session, *, resource: str, slots: int, taken: set,
+                user_id: str, mode: str, holder_id: str, job_id: str,
+                lop: str, token_dat_truoc: int, token_prefill_moi: int,
+                la_whale: bool) -> ExecutionLease | None:
+    """INSERT lease vào slot trống đầu tiên — cùng khuôn savepoint của đường cũ."""
+    from platform_core.public_api import metrics
+
+    for slot in range(slots):
+        if slot in taken:
+            continue
+        lease = ExecutionLease(
+            resource=resource, slot=slot, user_id=user_id, mode=mode,
+            holder_id=holder_id, job_id=job_id, lop=lop,
+            token_dat_truoc=token_dat_truoc, token_prefill_moi=token_prefill_moi,
+            la_whale=la_whale)
+        try:
+            with db.begin_nested():
+                db.add(lease)
+                db.flush()
+            metrics.increment(metrics.ADMISSION_ACQUIRED)
+            return lease
+        except IntegrityError:
+            # Một tiến trình khác thắng đúng slot giữa SELECT và INSERT (SQLite
+            # không có advisory lock; PostgreSQL thì không tới được đây).
+            continue
+    metrics.increment(metrics.ADMISSION_REJECTED)
+    return None
+
+
+def xoa_co_whale(lease_id: str) -> bool:
+    """Prefill của lượt này đã xong (byte đầu tiên về) ⇒ nó thôi là whale.
+
+    ⭐ Luật "≤1 whale" (D-05) nói về PREFILL — thứ làm đói người khác. Phần decode
+       sau đó rẻ (M-1: người mới chạy lại ~46 tok/s cạnh nó). Giữ cờ suốt lượt là
+       bắt whale kế tiếp chờ thêm vài phút vô cớ. Phiên mới, commit riêng; hỏng
+       thì chỉ ghi log — tệ nhất là whale kế chờ lâu hơn, không sai tiền.
+    """
+    if not lease_id:
+        return False
+
+    def _xoa(db: Session, lid: str) -> bool:
+        lease = db.get(ExecutionLease, lid)
+        if lease is None or not lease.la_whale:
+            return False
+        lease.la_whale = False
+        db.flush()
+        return True
+
+    try:
+        return _with_fresh_session(_xoa, lease_id)
+    except Exception:  # noqa: BLE001 - chỉ ảnh hưởng thứ tự, không ảnh hưởng tiền
+        log.exception("khong tat duoc co whale cua lease %s", lease_id)
+        return False
 
 
 def heartbeat(db: Session, lease_id: str) -> bool:
@@ -182,15 +492,20 @@ def hold_persisted(
     mode: str,
     holder_id: str,
     job_id: str = "",
+    **luat,
 ) -> Iterator[ExecutionLease | None]:
-    """Giữ lease đã commit trong suốt khối và luôn nhả khi rời khối."""
+    """Giữ lease đã commit trong suốt khối và luôn nhả khi rời khối.
+
+    `**luat` chuyển thẳng cho `xet_va_giu` (lớp, token đặt chỗ, pool…) — job nền
+    đi qua đây với `lop="nen"` (multijob Task 9).
+    """
     sessions = get_session()
     db = next(sessions)
     lease: ExecutionLease | None = None
     try:
         lease = acquire(
             db, resource=resource, slots=slots, user_id=user_id, mode=mode,
-            holder_id=holder_id, job_id=job_id)
+            holder_id=holder_id, job_id=job_id, **luat)
         db.commit()
         if lease is None:
             yield None

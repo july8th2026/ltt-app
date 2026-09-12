@@ -196,6 +196,7 @@ def _goi_model_mot_luot(db, *, user_id: str, model_alias: str, correlation_id: s
        **tiền vẫn đi đúng đường ấy**: mỗi lượt được `mo_luong` giữ rồi hoàn
        theo token thật, và đó là lý do `gia_nghien_cuu.credit_cost` là 0.
     """
+    from apps.chatltt.services import chinh_sach
     from platform_core.runtime_noi_bo import luong as L
 
     def goi_model(nhac: str) -> str:
@@ -204,7 +205,8 @@ def _goi_model_mot_luot(db, *, user_id: str, model_alias: str, correlation_id: s
         manh: list = []
         try:
             for sk in L.mo_luong(db, user_id=user_id, tool_name="text.chat",
-                                 params=than, correlation_id=correlation_id):
+                                 params=than, correlation_id=correlation_id,
+                                 cua=chinh_sach.CUA, tien_to=chinh_sach.TIEN_TO):
                 if sk.get("type") == "response.delta":
                     manh.append(str(sk.get("text") or ""))
                 elif sk.get("type") == "response.failed":

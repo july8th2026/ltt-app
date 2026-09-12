@@ -188,6 +188,13 @@ def api(tmp_path, monkeypatch):
     from platform_core.db import Base, get_engine
 
     Base.metadata.create_all(get_engine())
+    # Job anh gianh `anh_3090` tu dual-model 5.5, va luat 0 fail-closed: khong co
+    # dong `gpu_residency` thi worker chi tra job ve hang doi, khong chay handler.
+    # Ly do day du: `tests/conftest.py::mo_cu_tru_3090`.
+    from platform_core.llm import residency as _residency
+
+    from tests.conftest import mo_cu_tru_3090
+    mo_cu_tru_3090(_residency.ANH)
 
     # The render gateway is the only thing stubbed: the prompt building,
     # storage, credit reporting and result shape all run for real.

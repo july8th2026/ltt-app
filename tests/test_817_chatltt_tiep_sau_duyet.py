@@ -25,6 +25,18 @@ import uuid
 
 import pytest
 
+#: 🔴 BÍ DANH CỦA TOOL THỬ PHẢI LÀ MỘT MODEL **CÓ GIÁ** (D07, dual-model 2.5).
+#:    Trước 2.5 chỗ này là chuỗi bịa `_ALIAS_THU` và nó chạy được **chỉ vì**
+#:    `gia_token` bỏ qua model. Từ D07 giá đi theo model, nên mọi tool đi qua
+#:    `runtime_noi_bo/luong.py` — tức qua `thanh_toan` — phải khai một model mà
+#:    bảng giá biết. Đây là ràng buộc thật của tầng đó, không phải phiền toái
+#:    của phép kiểm: một model không có giá mà vẫn giữ được tiền nghĩa là tiền
+#:    đang được tính bằng bảng giá của một model **khác**.
+#:
+#: ⛔ Lấy từ `gia_token`, đừng gõ thẳng `"ltt-3.8"`: ngày đổi model mặc định thì
+#:    một hằng số gõ tay sẽ làm sáu tệp này hỏng lại cùng lúc.
+from platform_core.llm.gia_token import MODEL_GIA_MAC_DINH as _ALIAS_THU
+
 NL = bytes([10])
 
 
@@ -86,8 +98,8 @@ def may(monkeypatch):
     tool = reg.ToolSpec(name="text.chat", job_type="t817.j", description="d",
                         params_schema={"messages": {"type": "json[]"},
                                        "tools": {"type": "json[]"},
-                                       "model": {"type": "enum", "values": ["thu_alias"],
-                                                 "default": "thu_alias"}},
+                                       "model": {"type": "enum", "values": [_ALIAS_THU],
+                                                 "default": _ALIAS_THU}},
                         returns={"content": "text"},
                         admission_resource="thu_gpu817", admission_slots=1,
                         sync_executor="tests.test_600_runtime_noi_bo_luong:EXECUTOR_GIA")
@@ -204,7 +216,7 @@ def _dung_cho_duyet(web, may, chu="tinh 8123*4471"):
     may.dat(_goi_tool("noi_bo.tinh", '{"bieu_thuc": "8123*4471"}'))
     uid, email = _user()
     c, h = _phien(web.app, email)
-    cv = c.post("/chatltt/api/hoi-thoai", json={"model_alias": "thu_alias"},
+    cv = c.post("/chatltt/api/hoi-thoai", json={"model_alias": _ALIAS_THU},
                 headers=h).json()["id"]
     r = c.post(f"/chatltt/api/hoi-thoai/{cv}/luot", json={"text": chu}, headers=h)
     assert r.status_code == 202, r.text

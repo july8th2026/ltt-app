@@ -69,6 +69,7 @@ import sys
 import tomllib
 import urllib.error
 import urllib.request
+from typing import NamedTuple
 
 try:
     import winreg
@@ -92,13 +93,13 @@ GOC_MAC_DINH = "https://app.lttstudios.com"
 #:    ho tro.
 PHIEN_BAN = "1.6.0"
 
-MODEL = "ltt_llm"
+MODEL = "ltt-3.8"
 
 #: Ten tuyen RIENG cho Claude Desktop. Xem `server/api/streaming.py`
 #: (`TUYEN_TUONG_THICH`) de biet vi sao no phai chua chuoi "claude".
 #:
 #: 🔴 Claude Desktop LOC danh sach model truoc khi hien picker: ten khong chua
-#:    "claude"/"anthropic"/ten dong Claude thi bi bo. `ltt_llm` bi bo, va hau qua
+#:    "claude"/"anthropic"/ten dong Claude thi bi bo. `ltt-3.8` bi bo, va hau qua
 #:    la **nut gui vo hieu, khong mot loi bao loi**. Dung "sua" dong nay ve
 #:    `MODEL` cho gon - do la dung lai chinh cai bay da mat mot buoi de tim.
 MODEL_DESKTOP = "ltt-llm-claude-compat"
@@ -118,7 +119,7 @@ MUC_MAC_DINH = (MUC_CODEX_CLI, MUC_CLAUDE_CLI,
 #: Dau moc hai dau. Moi thu giua chung la cua ta; moi thu ngoai chung la cua
 #: khach va KHONG duoc dung toi.
 #: Cua so ngu canh cong bo cho client, khop `ngan_sach.CONG_BO_CHO_CLIENT`.
-CUA_SO_NGU_CANH = 156385
+CUA_SO_NGU_CANH = 171458
 #: Tran token RA, khop `ngan_sach.TOKEN_RA_TRAN`.
 TOKEN_RA_TRAN = 32768
 #: Nguong client PHAI nen hoi thoai, khop `ngan_sach.NEN_CHO_CLIENT`.
@@ -130,7 +131,7 @@ TOKEN_RA_TRAN = 32768
 #:    GIUA hai luot, nen luot ke tiep van duoc phep lon them tron mot luot nua.
 #:    Voi 0,8 thi khoang trong chi con 25.412 < 32.768 — thieu, va production
 #:    da an mot `413` o 101.938 token vao dung vi vay.
-NEN_HOI_THOAI = 123617
+NEN_HOI_THOAI = 138690
 
 #: Tran token cho MOT ket qua tool, do vao `truncation_policy` cua catalog.
 #:
@@ -179,14 +180,14 @@ TRAN_KET_QUA_TOOL = TOKEN_RA_TRAN // 2
 #:
 #: ⚠️ Bien nay co san **toi thieu 100.000**. Nguong vision cua ta (55.787) nam
 #:    duoi muc do va bien moi truong thi khong tach duoc theo model — nhung
-#:    `ANTHROPIC_MODEL` la `ltt_llm`, nen con so text moi la con so dung cho
+#:    `ANTHROPIC_MODEL` la `ltt-3.8`, nen con so cua 3.8 moi la con so dung cho
 #:    phien Claude Code.
 CUA_SO_NEN_CLAUDE = NEN_HOI_THOAI
 
-#: Cua so cong bo cua model VISION. **KHONG dung chung so voi model text.**
+#: Cua so cong bo cua model THU HAI (`ltt-3.5`). **KHONG dung chung so voi 3.8.**
 #:
 #: ⛔ DAY LA MOT LOI DA SONG NHIEU NGAY. Ban truoc cua tep nay khai **cung mot
-#:    con so cho ca hai model**, tuc noi voi Codex rang `ltt_llm_vision` co ngu
+#:    con so cho ca hai model**, tuc noi voi Codex rang model doc anh co ngu
 #:    canh **gap 3,1 lan** su that (88.555 trong khi that la 28.262, vi luc do
 #:    `qwen38-vision` nap `-c 65536`); hoi thoai anh dai vua phai la an 413 ma
 #:    khong hieu vi sao.
@@ -204,15 +205,91 @@ CUA_SO_NEN_CLAUDE = NEN_HOI_THOAI
 #: 📈 03/09: 28.262 -> 88.555. Do that tren mot ho so thu rieng: 89.868 token
 #:    vao doc lai dung moc dau-cuoi, VRAM 21.099 MiB (+748 so voi ho so 65K),
 #:    va A/B doc anh tren cung mot anh — ca hai ho so tra dung moc ngau nhien.
-CUA_SO_NGU_CANH_VISION = 88555
-#: Nguong nen cua vision, khop `ngan_sach.nen_cua("qwen38-vision")`.
+#: 📈 12/09 (dual-model 2.6): hai con so nay TACH KHOI `ltt-3.8`, va su tach do
+#:    la ket qua cua phep do chu khong phai mot lua chon. Tu 11/09 toi 12/09
+#:    chung tinh co bang nhau vi ca hai model tam dung mot ngu canh engine; do
+#:    xong thi `ltt-3.8` phai ha xuong `-c 221184` (3090 khong du VRAM cho
+#:    262.144 + mmproj + 3 slot — L-14 §G1b) trong khi `ltt-3.5` giu tron
+#:    262.144 tren 5060 Ti (§G3). Ho so vision cu (`qwen38-vision`) da bi go.
+#: ⛔ Nguon chan ly la `apps/ltt_llm/ngan_sach.py`; tep nay CHEP theo, va
+#:    `test_334` buoc hai dau lai nen khong lech duoc trong im lang.
+CUA_SO_NGU_CANH_35 = 209141
+#: Nguong nen cua model thu hai, khop `ngan_sach.nen_cua()` cua id noi bo cua no.
 #:
 #: ⭐ TRUOC 03/09 SO NAY LA **0**, va so 0 do la mot cau tra loi that chu khong
 #:    phai mot cho trong: cua so cong bo cua vision khi ay (28.262) HEP HON mot
 #:    luot sinh dai nhat (32.768), nen khong nguong nen nao giu duoc loi hua va
 #:    bo cai phai bo han truong do. Nang cua so len 131K la thu lam cho no
 #:    dinh nghia duoc tro lai.
-NEN_HOI_THOAI_VISION = 55787
+NEN_HOI_THOAI_35 = 176373
+
+#: Ten cong khai cua model thu hai. Cung ho voi `MODEL`, tach ra de bang duoi
+#: khong go lai chuoi nao.
+MODEL_35 = "ltt-3.5"
+
+
+class HoSoModel(NamedTuple):
+    """MOT model, nhu cong cu nay can biet ve no.
+
+    ⚠️ Bon truong nay la bon thu **phai di cung nhau**. Truoc 12/09 chung nam
+       roi rac: ten o mot hang so, tuyen Desktop o hang so thu hai, cua so va
+       nguong nen o hai hang so nua — va cac ham ghi cau hinh boc tung cai mot.
+       Nen "them model thu hai" khong phai them mot dong: no la sua muoi mot
+       cho, va bo sot mot cho nghia la khach duoc cam ten `ltt-3.5` voi **cua
+       so cua 3.8** — tuc mot loi 413 giua phien, im lang, doi mot con so.
+    """
+
+    ten: str
+    tuyen_desktop: str
+    cua_so: int
+    nen: int
+
+
+#: 🔑 HAI MODEL DANG BAN. Khoa la ten khach go; dung thu tu nay khi hoi ho chon.
+#:
+#: 🔴 VI SAO PHAI CO MUC THU HAI. Nen tang ban `ltt-3.5` tu 11/09 voi mot bang
+#:    gia rieng, con cong cu nay — be mat cam CHINH THUC, thu duoc dong goi
+#:    thanh `.exe` va gui cho khach — chi biet `ltt-3.8`. Khach dung cong cu
+#:    khong the chon model kia **o bat ky gia nao**.
+#:
+#: ⚠️ Hai hang so cua moi ho so KHONG dung chung duoc. `ltt-3.8` chay
+#:    `-c 221184` tren 3090, `ltt-3.5` chay `-c 262144` tren 5060 Ti (L-14
+#:    §G1b/§G3). Ghi so cua ho so nay cho ho so kia la noi doi voi client ve
+#:    cua so ngu canh, va client TIN — do dung la khuyet tat F-02 ma
+#:    `ngan_sach.cong_bo_cua()` sinh ra de giet.
+#:
+#: ⛔ Nguon chan ly van la `apps/ltt_llm/ngan_sach.py`; bang nay CHEP theo va
+#:    `test_334` buoc hai dau lai, dung nhu bon hang so o tren.
+HO_SO_MODEL: dict = {
+    MODEL: HoSoModel(MODEL, MODEL_DESKTOP, CUA_SO_NGU_CANH, NEN_HOI_THOAI),
+    MODEL_35: HoSoModel(MODEL_35, MODEL_DESKTOP + "-35",
+                        CUA_SO_NGU_CANH_35, NEN_HOI_THOAI_35),
+}
+
+#: Ten model hop le, dung thu tu hien cho khach.
+TEN_MODEL: tuple = tuple(HO_SO_MODEL)
+
+#: Moi ten tuyen Claude Desktop cua ta. `xem`/`go` nhan ra chinh sach cua ta
+#: bang tap nay, khong bang mot ten duy nhat — nguoi cam `ltt-3.5` cung phai
+#: duoc nhan ra la "dang cam", va truoc 12/09 thi ho **khong**.
+TUYEN_DESKTOP: tuple = tuple(h.tuyen_desktop for h in HO_SO_MODEL.values())
+
+
+def hs_cua(ten) -> HoSoModel:
+    """Ten model -> ho so. Ten la, rong, hay `None` deu ve mac dinh.
+
+    ⭐ KHONG nem. Ham nay duoc goi tu `xem`/`go` tren mot tep trang thai co the
+       do mot BAN CU cua cong cu ghi ra (ban do khong ghi khoa `model`), hoac
+       do khach sua tay. Mot `KeyError` o do bien "xem thu may dang cam gi"
+       thanh mot vet traceback — dung luc khach can cau tra loi nhat.
+    """
+    return HO_SO_MODEL.get((ten or "").strip(), HO_SO_MODEL[MODEL])
+
+
+def hs_trong(tt) -> HoSoModel:
+    """Ho so model dang cam, doc tu tep trang thai."""
+    return hs_cua((tt or {}).get("model"))
+
 
 MOC_MO = "# >>> LTT Studios - them boi cam_cli.py. Dung sua tay trong khoi nay. >>>"
 MOC_DONG = "# <<< LTT Studios <<<"
@@ -516,12 +593,12 @@ def _codex_config(goc: str) -> str:
 #:    `model="gpt-5.6-luna"` toi cong cua ta va an 400 (fail-closed tu choi dung).
 #:
 #: ⭐ `model_catalog_json` la duong CHINH THUC cua Codex de khai model. Dat no
-#:    thi canh bao *"Model metadata for `ltt_llm` not found"* bien mat, Codex
+#:    thi canh bao *"Model metadata for `ltt-3.8` not found"* bien mat, Codex
 #:    biet dung cua so ngu canh that va khong con lui ve model cua hang khac.
 #:
 #: ⛔ VI SAO KHONG DUNG "TUYEN TUONG THICH" NHU CLAUDE DESKTOP. Tuyen do dung mot
 #:    ten TA TU DAT (`ltt-llm-claude-compat`) chi de lot bo loc phia client.
-#:    Anh xa `gpt-5.6-luna` -> `ltt_llm` thi nguoc lai: nhan TEN SAN PHAM THAT
+#:    Anh xa `gpt-5.6-luna` -> `ltt-3.8` thi nguoc lai: nhan TEN SAN PHAM THAT
 #:    cua hang khac roi am tham tra model nha. Do la noi doi voi khach, khong
 #:    phai tuong thich.
 TEP_CATALOG = NHA / ".codex" / "ltt_model_catalog.json"
@@ -600,22 +677,23 @@ def _catalog_codex() -> str:
         return d
 
     return json.dumps(
-        {"models": [mot("ltt_llm", CUA_SO_NGU_CANH, NEN_HOI_THOAI),
-                    mot("ltt_llm_vision", CUA_SO_NGU_CANH_VISION,
-                        NEN_HOI_THOAI_VISION, doc_anh=True)]},
+        {"models": [mot("ltt-3.8", CUA_SO_NGU_CANH, NEN_HOI_THOAI),
+                    mot("ltt-3.5", CUA_SO_NGU_CANH_35,
+                        NEN_HOI_THOAI_35, doc_anh=True)]},
         indent=1)
 
 
-def _codex_profile() -> str:
-    return (f'model = "{MODEL}"\n'
+def _codex_profile(hs: HoSoModel | None = None) -> str:
+    hs = hs or HO_SO_MODEL[MODEL]
+    return (f'model = "{hs.ten}"\n'
             f'model_provider = "ltt"\n'
             f'model_reasoning_effort = "low"\n'
             f'model_reasoning_summary = "none"\n'
-            f'model_context_window = {CUA_SO_NGU_CANH}\n'
+            f'model_context_window = {hs.cua_so}\n'
             f"model_catalog_json = '{TEP_CATALOG}'\n")
 
 
-def _codex_config_goc(goc: str) -> str:
+def _codex_config_goc(goc: str, hs: HoSoModel | None = None) -> str:
     """Dang GOC — dat `model`/`model_provider` ngay trong `config.toml`.
 
     * VI SAO PHAI CO DANG THU HAI. Tien ich Codex cua VS Code KHONG co cach truyen
@@ -634,11 +712,12 @@ def _codex_config_goc(goc: str) -> str:
     #    dung dong nay, va do la mot ban sao THU BA cua cung mot con so — hai
     #    ban tren co test doi chieu, ban nay thi khong. Doi nguon chan ly ma
     #    quen dong nay thi dang goc va dang profile noi hai con so khac nhau.
-    return (f'model = "{MODEL}"\n'
+    hs = hs or HO_SO_MODEL[MODEL]
+    return (f'model = "{hs.ten}"\n'
             f'model_provider = "ltt"\n'
             f'model_reasoning_effort = "low"\n'
             f'model_reasoning_summary = "none"\n'
-            f'model_context_window = {CUA_SO_NGU_CANH}\n'
+            f'model_context_window = {hs.cua_so}\n'
             f'\n' + _codex_config(goc))
 
 
@@ -842,6 +921,9 @@ def _chen_khoi_dau(noi_dung: str, van: str, nl: str = "\n") -> str:
 
 
 def cam_codex(goc: str, tt: dict, cho_vscode: bool = False) -> list:
+    # ⭐ Ho so lay tu `tt`, khong tu mot bien toan cuc: `tt` la thu DUY NHAT di
+    #    cung nhau qua ca bon ham cam, va la thu song sot sang lan chay sau.
+    hs = hs_trong(tt)
     ra = []
     thu_muc = NHA / ".codex"
     thu_muc.mkdir(parents=True, exist_ok=True)
@@ -864,7 +946,7 @@ def cam_codex(goc: str, tt: dict, cho_vscode: bool = False) -> list:
         # (4) `model`/`model_provider` phải ở GỐC và đứng trước mọi bảng. Vô hiệu
         #     bản cũ của khách (đảo ngược được) rồi đặt khối của ta ở ĐẦU tệp.
         van = _vo_hieu_model_goc(van, crlf)
-        than = _codex_profile()
+        than = _codex_profile(hs)
         if bang_prov:
             than += "\n" + bang_prov
         moi = _chen_khoi_dau(than, van, crlf)
@@ -977,8 +1059,10 @@ def quet_con_sot(goc: str | None = None) -> list:
             continue
         if goc in van:
             ra.append(f"{tep}: con tro ve {goc}")
-        elif MODEL in van and any(k in van for k in khoa):
-            ra.append(f"{tep}: con nhac model {MODEL}")
+        else:
+            con = next((m for m in TEN_MODEL if m in van), "")
+            if con and any(k in van for k in khoa):
+                ra.append(f"{tep}: con nhac model {con}")
 
     for ten in CLAUDE_ENV + (ENV_KHOA_CLAUDE, ENV_KHOA_CODEX):
         if _doc_env_nguoi_dung(ten):
@@ -1079,7 +1163,7 @@ def go_codex(tt: dict) -> list:
                         ('model_provider = "ltt"',))
     ra += _tra_hoac_xoa(TEP_CATALOG,
                         tt.get("codex", {}).get("ta_tao_catalog"),
-                        ('"slug": "ltt_llm"', '(LTT Studios)'))
+                        ('"slug": "ltt-3.8"', '(LTT Studios)'))
     return ra
 
 
@@ -1239,7 +1323,7 @@ def cam_desktop(goc: str, khoa: str, tt: dict) -> list:
         "inferenceGatewayBaseUrl": goc + "/api",
         "inferenceGatewayApiKey": khoa,
         "inferenceGatewayAuthScheme": "bearer",
-        "inferenceModels": '[{"name": "' + MODEL_DESKTOP + '"}]',
+        "inferenceModels": '[{"name": "' + hs_trong(tt).tuyen_desktop + '"}]',
         # Tat tu do model: danh sach cua ta chi co mot ten, va mot lan do sai se
         # lam ung dung hien nhung model no khong goi duoc.
         "modelDiscoveryEnabled": "false",
@@ -1329,7 +1413,10 @@ def _go_desktop_khong_tri_nho(tt: dict) -> list:
            or GOC_MAC_DINH).rstrip("/")
     url = _reg_doc(REG_DESKTOP_HKCU, "inferenceGatewayBaseUrl") or ""
     models = _reg_doc(REG_DESKTOP_HKCU, "inferenceModels") or ""
-    if not (goc in url or MODEL_DESKTOP in models):
+    # ⚠️ CA TAP tuyen, khong mot ten. Truoc 12/09 dong nay hoi dung
+    #    `ltt-llm-claude-compat`, nen may cam `ltt-3.5` bi doc thanh "chinh sach
+    #    cua khach" va lenh `go` **de nguyen cau hinh cua ta tren may ho**.
+    if not (goc in url or any(t in models for t in TUYEN_DESKTOP)):
         if any(_reg_doc(REG_DESKTOP_HKCU, t) for t in _DESKTOP_KHOA):
             ra.append("  [--] Co chinh sach Claude Desktop nhung KHONG tro ve "
                       + goc + " - khong dung toi (do la cua ban).")
@@ -1398,12 +1485,13 @@ def cam_vscode(goc: str, tt: dict) -> list:
         ra.append("  [!!] " + str(tep) + " khong phai JSON hop le - KHONG dung toi")
         return ra
 
+    hs = hs_trong(tt)
     ghi_nho = tt.setdefault("vscode", {}).setdefault("khoa_da_them", {})
     moi = {
         "claudeCode.environmentVariables": [
             {"name": "ANTHROPIC_BASE_URL", "value": goc + "/api"},
-            {"name": "ANTHROPIC_MODEL", "value": MODEL},
-            {"name": "ANTHROPIC_DEFAULT_HAIKU_MODEL", "value": MODEL},
+            {"name": "ANTHROPIC_MODEL", "value": hs.ten},
+            {"name": "ANTHROPIC_DEFAULT_HAIKU_MODEL", "value": hs.ten},
             # 🔴 HAI DONG NAY TUNG THIEU O DAY, va chung la cung mot "loi tien"
             #    ma `cam_claude()` mo ta cach do ba tram dong: khong khai thi
             #    Claude Code GIA DINH cua so 200.000 va khong bao gio nen kip.
@@ -1414,7 +1502,7 @@ def cam_vscode(goc: str, tt: dict) -> list:
             #    thi khong co dong nao dat chung. Mot phu thuoc an giua hai muc
             #    la thu khong ai doc ra tu tep cau hinh.
             {"name": "CLAUDE_CODE_MAX_CONTEXT_TOKENS",
-             "value": str(CUA_SO_NGU_CANH)},
+             "value": str(hs.cua_so)},
             {"name": "CLAUDE_CODE_MAX_OUTPUT_TOKENS",
              "value": str(TOKEN_RA_TRAN)},
             # 🔴 VA HAI DONG NAY THEM 04/09 — cung mot ho loi, mot tang
@@ -1424,7 +1512,7 @@ def cam_vscode(goc: str, tt: dict) -> list:
             #    muc "Default auto-compact thresholds"), tuc 100% — chua lai
             #    13.599 tren tran cung, nho hon mot luot sinh 32.768.
             {"name": "CLAUDE_CODE_AUTO_COMPACT_WINDOW",
-             "value": str(CUA_SO_NEN_CLAUDE)},
+             "value": str(hs.nen)},
             {"name": "MAX_MCP_OUTPUT_TOKENS",
              "value": str(TRAN_KET_QUA_TOOL)},
         ],
@@ -1512,7 +1600,9 @@ def _go_vscode_khong_tri_nho(tep: pathlib.Path, tt: dict) -> list:
                   " cua ta o " + str(tep))
         return ra
 
-    cua_ta = {goc + "/api", MODEL}
+    # ⚠️ CA TAP ten model, khong mot ten. `go` phai don duoc thu `cam` da
+    #    ghi, va tu 12/09 `cam` ghi duoc mot trong hai ten.
+    cua_ta = {goc + "/api", *TEN_MODEL}
     con_lai = [x for x in bien
                if not (isinstance(x, dict) and x.get("value") in cua_ta)]
     if len(con_lai) == len(bien):
@@ -1551,10 +1641,10 @@ def cam_claude(goc: str, tt: dict, toan_cuc: bool) -> list:
     ra = []
     # 🔴 HAI DONG CUOI KHONG PHAI TINH CHINH — THIEU CHUNG LA MOT LOI TIEN.
     #
-    #    Claude Code khong biet `ltt_llm`, nen no GIA DINH cua so 200.000 token
+    #    Claude Code khong biet `ltt-3.8`, nen no GIA DINH cua so 200.000 token
     #    va bao thang ra:
     #
-    #        "ltt_llm" is not a model this version of Claude Code recognizes,
+    #        "ltt-3.8" is not a model this version of Claude Code recognizes,
     #        so auto-compact will keep this session within 200k tokens
     #        (the context window it assumes).
     #
@@ -1566,12 +1656,16 @@ def cam_claude(goc: str, tt: dict, toan_cuc: bool) -> list:
     # ⭐ Da A/B do 30/08: dat bien nay xong thi canh bao bien mat.
     #    Cung ho voi `model_catalog_json` cua Codex — hai client, hai ten khoa,
     #    cung mot viec: NOI THAT cua so cho client, dung de no doan.
+    hs = hs_trong(tt)
+    # ⚠️ `CLAUDE_CODE_AUTO_COMPACT_WINDOW` lay `hs.nen` chu KHONG phai
+    #    `CUA_SO_NEN_CLAUDE`. Hai ten tro ve cung mot so khi model la `ltt-3.8`,
+    #    va do la mot su trung hop — `ltt-3.5` co nguong nen rieng (176.373).
     gia_tri = {"ANTHROPIC_BASE_URL": f"{goc}/api",
-               "ANTHROPIC_MODEL": MODEL,
-               "ANTHROPIC_DEFAULT_HAIKU_MODEL": MODEL,
-               "CLAUDE_CODE_MAX_CONTEXT_TOKENS": str(CUA_SO_NGU_CANH),
+               "ANTHROPIC_MODEL": hs.ten,
+               "ANTHROPIC_DEFAULT_HAIKU_MODEL": hs.ten,
+               "CLAUDE_CODE_MAX_CONTEXT_TOKENS": str(hs.cua_so),
                "CLAUDE_CODE_MAX_OUTPUT_TOKENS": str(TOKEN_RA_TRAN),
-               "CLAUDE_CODE_AUTO_COMPACT_WINDOW": str(CUA_SO_NEN_CLAUDE),
+               "CLAUDE_CODE_AUTO_COMPACT_WINDOW": str(hs.nen),
                "MAX_MCP_OUTPUT_TOKENS": str(TRAN_KET_QUA_TOOL)}
     for ten, gt in gia_tri.items():
         ra.append(f"  [{'OK' if _setx(ten, gt) else '!!'}] bien moi truong {ten}")
@@ -1705,7 +1799,7 @@ def trang_thai_thuc(goc: str | None = None) -> dict:
     env_claude = _doc_env_nguoi_dung(ENV_KHOA_CLAUDE)
     claude_cli = (
         _doc_env_nguoi_dung("ANTHROPIC_BASE_URL") == goc + "/api"
-        and _doc_env_nguoi_dung("ANTHROPIC_MODEL") == MODEL
+        and _doc_env_nguoi_dung("ANTHROPIC_MODEL") in TEN_MODEL
         and bool(env_claude)
     )
 
@@ -1717,7 +1811,7 @@ def trang_thai_thuc(goc: str | None = None) -> dict:
         bool(env_claude)
         and vs.get("claudeCode.disableLoginPrompt") is True
         and bien_vs.get("ANTHROPIC_BASE_URL") == goc + "/api"
-        and bien_vs.get("ANTHROPIC_MODEL") == MODEL
+        and bien_vs.get("ANTHROPIC_MODEL") in TEN_MODEL
     )
 
     hk = REG_DESKTOP_HKCU
@@ -1726,7 +1820,8 @@ def trang_thai_thuc(goc: str | None = None) -> dict:
         and _reg_doc(hk, "inferenceProvider") == "gateway"
         and _reg_doc(hk, "inferenceGatewayBaseUrl") == goc + "/api"
         and bool(_reg_doc(hk, "inferenceGatewayApiKey"))
-        and MODEL_DESKTOP in (_reg_doc(hk, "inferenceModels") or "")
+        and any(t in (_reg_doc(hk, "inferenceModels") or "")
+                for t in TUYEN_DESKTOP)
         and _reg_doc(hk, "chatTabEnabled") == "true"
     )
     muc = {
@@ -1737,6 +1832,9 @@ def trang_thai_thuc(goc: str | None = None) -> dict:
         MUC_CLAUDE_DESKTOP: bool(desktop),
     }
     return {"goc": goc, "muc": muc, "dang_cam": any(muc.values()),
+            # Model DO DUOC tren may, khong phai model tep trang thai noi. Hai
+            # thu lech nhau khi khach cam lai bang tay hoac bang ban cu.
+            "model": _doc_env_nguoi_dung("ANTHROPIC_MODEL") or "",
             "codex_mode": ("vscode" if muc[MUC_CODEX_VSCODE]
                            else "profile" if muc[MUC_CODEX_CLI] else "-")}
 
@@ -1772,8 +1870,19 @@ def lenh_cam(a) -> int:
 
     tt = _doc_trang_thai()
     tt["goc"] = a.goc
+    # 🔑 PHAI dat TRUOC moi loi goi `cam_*`: ca bon ham doc ho so model tu
+    #    `tt`, va `tt` cung la thu `xem`/`go`/`kiem` doc lai o lan chay sau.
+    #
+    # ⚠️ `getattr` chu khong `a.model`, dung khuon `a.vscode`/`a.toan_cuc` o
+    #    duoi: ham nay duoc goi voi nhung doi tuong tham so dung tay (test, va
+    #    `cam_cli_gui`), va mot `AttributeError` o day lam hong ca lenh cam vi
+    #    mot truong moi them. `hs_cua` xu ly not truong hop chuoi rong.
+    tt["model"] = getattr(a, "model", "") or MODEL
     tt["muc_da_chon"] = list(muc)
+    hs = hs_trong(tt)
     print(f"Cam vao {a.goc}")
+    print(f"Model:     {hs.ten}  (cua so {hs.cua_so:,} token"
+          + (f", nen tu {hs.nen:,})" if hs.nen else ")"))
     print("Hang muc: " + ", ".join(muc) + "\n")
 
     if MUC_CODEX_CLI in muc or MUC_CODEX_VSCODE in muc:
@@ -1833,7 +1942,7 @@ def lenh_cam(a) -> int:
     print("   tien trinh da sinh ra no. Sau khi dang nhap lai thi ca hai tien ich")
     print("   deu chay (Codex tra loi 144, Claude Code tra loi 63).")
     print(f"\nCodex:       codex --profile ltt")
-    print(f"Claude Code: claude   (model {MODEL})")
+    print(f"Claude Code: claude   (model {hs.ten})")
     # ⚠️ Lời nhắc phải **đúng với cách khách đang chạy**. Bản đóng gói in ra
     #    "python tools\cam_cli.py kiem" là chỉ vào một tệp khách KHÔNG CÓ — họ
     #    cài `.exe`, không có mã nguồn. Một hướng dẫn sai thì tệ hơn không có,
@@ -1995,8 +2104,8 @@ def lenh_xem(a) -> int:
     print(f"    inferenceGatewayApiKey : {'(da dat, ' + str(len(_k)) + ' ky tu)' if _k else '-'}")
     _m = _reg_doc(REG_DESKTOP_HKCU, "inferenceModels") or "-"
     print(f"    inferenceModels        : {_m}")
-    if _m != "-" and MODEL_DESKTOP not in _m:
-        print(f"      !! ten model KHONG phai {MODEL_DESKTOP} - Claude Desktop se")
+    if _m != "-" and not any(t in _m for t in TUYEN_DESKTOP):
+        print(f"      !! ten model khong thuoc {TUYEN_DESKTOP} - Claude Desktop se")
         print( "         LOC BO no khoi picker, va nut gui tat han ma KHONG bao gi")
     _c = _reg_doc(REG_DESKTOP_HKCU, "chatTabEnabled") or "-"
     print(f"    chatTabEnabled         : {_c}")
@@ -2046,7 +2155,12 @@ def lenh_kiem(a) -> int:
     if not khoa:
         print(f"Khong tim thay khoa. Chay `cam` truoc, hoac dung --khoa.")
         return 1
-    goc = a.goc or _doc_trang_thai().get("goc") or GOC_MAC_DINH
+    _tt = _doc_trang_thai()
+    goc = a.goc or _tt.get("goc") or GOC_MAC_DINH
+    # ⚠️ Thu DUNG model dang cam, khong phai model mac dinh. Mot phep tu kiem
+    #    goi `ltt-3.8` tren may dang cam `ltt-3.5` bao XANH cho mot duong khach
+    #    khong di — dung ho loi ma doan duoi day duoc viet ra de dong.
+    hs = hs_trong(_tt)
 
     def goi(duong, than=None, phuong="GET"):
         du = json.dumps(than).encode() if than is not None else None
@@ -2077,11 +2191,11 @@ def lenh_kiem(a) -> int:
     du = (json.loads(b) or {}).get("balance") if m == 200 else "?"
     print(f"  GET  /credits/balance  -> {m}  so du {du}")
 
-    m, b = goi("/messages", {"model": MODEL, "max_tokens": 200, "stream": True,
+    m, b = goi("/messages", {"model": hs.ten, "max_tokens": 200, "stream": True,
                              "messages": [{"role": "user",
                                            "content": "Tra loi mot tu: OK"}]},
                phuong="POST")
-    print(f"  POST /messages         -> {m}  {len(b)} byte SSE")
+    print(f"  POST /messages ({hs.ten}) -> {m}  {len(b)} byte SSE")
     if m != 200:
         print(f"       {b[:300].decode('utf-8', 'replace')}")
         return 1
@@ -2095,14 +2209,14 @@ def lenh_kiem(a) -> int:
     #
     # ⭐ Mot phep tu kiem khong phu duoc be mat ma chinh no vua cau hinh la mot
     #    phep tu kiem dang tran an nham cho.
-    m, b = goi("/messages", {"model": MODEL_DESKTOP, "max_tokens": 32,
+    m, b = goi("/messages", {"model": hs.tuyen_desktop, "max_tokens": 32,
                              "messages": [{"role": "user",
                                            "content": "Tra loi mot tu: OK"}]},
                phuong="POST")
     print(f"  POST /messages (Desktop, khong stream) -> {m}")
     if m != 200:
         print(f"       {b[:300].decode('utf-8', 'replace')}")
-        print(f"       Ten tuyen `{MODEL_DESKTOP}` khong goi duoc -> Claude "
+        print(f"       Ten tuyen `{hs.tuyen_desktop}` khong goi duoc -> Claude "
               f"Desktop se im lang hoan toan.")
         return 1
 
@@ -2127,6 +2241,10 @@ def main(argv=None) -> int:
     c.add_argument("--toan-cuc", action="store_true", dest="toan_cuc",
                    help="ghi ca ~/.claude/settings.json (TOAN CUC cho moi phien "
                         "Claude Code tren may nay)")
+    c.add_argument("--model", default=MODEL, choices=TEN_MODEL,
+                   help=f"model can cam (mac dinh {MODEL}). Ten nay duoc ghi "
+                        "THAT vao cau hinh cua tung client, kem cua so ngu "
+                        "canh rieng cua no.")
     c.add_argument("--muc", action="append", choices=CAC_MUC,
                    help="hang muc can cam; lap lai co nay de chon nhieu. "
                         "Bo qua thi dung bo mac dinh tuong thich ban 1.0")
@@ -2157,7 +2275,9 @@ def main(argv=None) -> int:
     _ghi_nhat_ky(f"{a.lenh} bat dau"
                  + (" (co --khoa)" if co_khoa else "")
                  + (" --vscode" if getattr(a, "vscode", False) else "")
-                 + (" --toan-cuc" if getattr(a, "toan_cuc", False) else ""))
+                 + (" --toan-cuc" if getattr(a, "toan_cuc", False) else "")
+                 + (f" --model {getattr(a, 'model', '')}"
+                    if getattr(a, "model", "") else ""))
     try:
         ma = {"cam": lenh_cam, "go": lenh_go,
               "xem": lenh_xem, "kiem": lenh_kiem}[a.lenh](a)

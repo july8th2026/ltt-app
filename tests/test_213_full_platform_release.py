@@ -78,6 +78,13 @@ def platform(tmp_path, monkeypatch):
     storage_mod.set_storage(storage_mod.LocalStorage(str(tmp_path / "files")))
     import platform_core.models  # noqa: F401
     dbmod.Base.metadata.create_all(dbmod.get_engine())
+    # Job anh gianh `anh_3090` tu dual-model 5.5, va luat 0 fail-closed: khong co
+    # dong `gpu_residency` thi worker chi tra job ve hang doi, khong chay handler.
+    # Ly do day du: `tests/conftest.py::mo_cu_tru_3090`.
+    from platform_core.llm import residency as _residency
+
+    from tests.conftest import mo_cu_tru_3090
+    mo_cu_tru_3090(_residency.ANH)
 
     import apps.thumbnail.jobs as thumbnail_jobs
 

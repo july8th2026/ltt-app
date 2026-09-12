@@ -110,6 +110,11 @@ class PublicTool:
     #: workers use it to compete for one pool without exposing topology/model.
     admission_resource: str = ""
     admission_slots: int = 0
+    admission_token_pool: int = 0
+    #: `{model_id | "*": AdmissionModel}` (multijob 2.1). Cùng khuôn với
+    #: `admission_token_pool` ngay trên: vận hành nội bộ, deliberately absent
+    #: từ `to_public_dict` — ánh xạ theo model có thể phơi ra id model nội bộ.
+    admission_theo_model: dict = field(default_factory=dict)
     sync_executor: str = ""
     kiem_truoc: str = ""
 
@@ -143,6 +148,18 @@ class PublicTool:
         capability because it is called `image.generate`.
         """
         return self.name.split(".")[0]
+
+    def admission_cho(self, model: str = ""):
+        """Sức chứa admission cho một model — CÙNG luật với `ToolSpec`.
+
+        Một thân hàm ở `platform_core/registry.py`, hai lớp gọi vào: cửa HTTP
+        (`server/api/chat.py`, `streaming.py`) cầm `PublicTool` này, còn worker
+        và `canonical` cầm `ToolSpec`. Hai cửa của cùng một tool phải giành
+        **cùng** tài nguyên cho **cùng** một model; chép luật xuống đây là dựng
+        bản chân lý thứ hai.
+        """
+        from platform_core.registry import suc_chua_admission
+        return suc_chua_admission(self, model)
 
     def resolve_model(self, alias: str) -> str:
         """Public alias -> internal model id. Empty when the alias is unknown."""
@@ -347,8 +364,11 @@ def project_tool(manifest, tool) -> PublicTool:
         admission_resource=str(
             getattr(tool, "admission_resource", "") or resource_class(manifest)),
         admission_slots=max(0, int(getattr(tool, "admission_slots", 0) or 0)),
+        admission_token_pool=max(
+            0, int(getattr(tool, "admission_token_pool", 0) or 0)),
         sync_executor=str(getattr(tool, "sync_executor", "") or ""),
         kiem_truoc=str(getattr(tool, "kiem_truoc", "") or ""),
+        admission_theo_model=dict(getattr(tool, "admission_theo_model", {}) or {}),
     )
 
 

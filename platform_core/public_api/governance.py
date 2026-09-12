@@ -253,6 +253,13 @@ STORES: tuple = (
           N_("Quyền giữ slot thực thi tạm thời; chỉ giữ định danh vận hành để "
              "chẩn đoán và tự thu hồi tiến trình đã chết."),
           "admission.reclaim_expired (admission + worker)"),
+    # 30 ngày chứ không 1 như `execution_leases`: bảng này còn là SỔ TỪNG LƯỢT
+    # để phân tích sau khi mở vận hành (thời gian chờ, lý do nghẽn, whale) — chủ
+    # dự án yêu cầu 11/09. Không chứa prompt/payload.
+    Store("llm_waiters", OPERATIONAL, 30, N_("vận hành"),
+          N_("Phòng chờ của cửa tương tác tới model nhà và sổ từng lượt: chờ bao "
+             "lâu, vì sao, ngân sách token đặt chỗ. Không chứa nội dung hội thoại."),
+          "phong_cho.don_het_han (worker)"),
     Store("api_notifications", OPERATIONAL, 90, N_("chủ tài khoản"),
           N_("Cảnh báo đã đọc rồi thì hết giá trị."),
           "notifications.purge_expired (worker)"),
@@ -588,6 +595,15 @@ NOT_CUSTOMER_DATA = frozenset({
     # của khách ở đây — nội dung lượt chạy nằm ở `workflow_run`, và bảng đó ĐÃ
     # được xếp loại.
     "wakeup",
+    # Model nào đang cư trú trên một nhóm GPU của MÁY TA (D01 B). Cùng loại với
+    # `gpu_leases` ở trên: tên nhóm + trạng thái + mốc thời gian, không `user_id`
+    # và không nội dung nào của khách.
+    #
+    # Và không có hạn lưu trữ vì không có dòng nào để hết hạn: đúng **một** dòng
+    # mỗi nhóm, ghi đè tại chỗ. Xếp nó OPERATIONAL sẽ buộc khai một hàm dọn, và
+    # lời khai ấy sẽ trỏ vào một hàm không có việc gì làm — tức đúng thứ
+    # `test_211` sinh ra để chặn.
+    "gpu_residency",
 })
 
 

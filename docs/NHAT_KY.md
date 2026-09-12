@@ -139,6 +139,74 @@ Mọi ô của spec §10.2 (SHA khớp `/health/version`, `nghiem_thu_deploy` 0/
 `alembic upgrade head` trên production, di trú ASR thật, Playwright trên URL
 công khai, Public API live) **chưa chạy**. RC này **chưa** được gọi là
 `RELEASED`.
+## 2026-09-12 — H45 Dual-Model: 25/30 task, **deploy bằng KHÔNG**, và bốn lần một con số nói dối
+
+Chương trình **RECOVERY + MERGE**: thu hồi Multi-Job còn dở rồi hợp nhất với kiến
+trúc hai model. Quyết định: **Q123**. Hồ sơ: `docs/ltt_llm_dual/`. Kế hoạch + trạng
+thái từng bước: **H45** trong `KE_HOACH_TRIEN_KHAI.md`.
+
+⛔ **Chưa một phần nào của H45 chạy trên máy A hay máy B.** Đó là chủ ý — ba ràng
+buộc độc lập buộc gộp thành **một** lần deploy đúng thứ tự — nhưng phải nói thẳng
+ở đây để không ai đọc "25/30" thành "đang phục vụ khách":
+
+| | vì sao không được đi riêng |
+|---|---|
+| **R21** yaml → cổng máy B → máy A | trần input máy A khai **rộng hơn** `-c` đang chạy ở máy B; máy A đi trước là khách gửi được một prompt engine không chứa nổi |
+| **L-17** yaml đi cùng Task 5.4 | `LTT_HO_DUNG_CARD=…/unload` **không mang tên model**, nên một job ảnh xin 3090 sẽ nhả **cả LTT-3.5** trên card không ai tranh (~38 job ảnh/ngày) |
+| **R27** 5.3 đi cùng 5.5 | manifest đã khai `residency_group`, luật 0 fail-closed, migration không gieo dòng nào ⇒ thiếu 5.5 thì **mọi lượt `ltt-3.8` 429** |
+
+### ⭐ Phép đo đã lật mấy quyết định viết trước khi đo
+
+Cả năm của cổng đo (G1–G5) đều đổi một thứ tưởng đã biết:
+
+* **4 slot → 3.** Plan Multi-Job (T13) chốt 4 slot; ở ngỵ cảnh đã chốt thì 4 slot
+  **tràn sang RAM chủ**. 3 là trần thật của 3090; 3 ở 5060 Ti là **lựa chọn** cho nhất
+  quán hai card, không phải giới hạn.
+* **"Model nhà trả rỗng ~một nửa lượt tiếng Việt" không phải lỗi engine.** Nó là
+  *truncated thinking* của Qwen3.5 cộng sampling sai spec. Bộ cờ L-16 đưa bộ đề từ
+  27/36 lên **59/60, tiếng Việt 100 %** mà vẫn trên ngưỡng cổng.
+* **`presence-penalty` là toàn bộ chi phí và không mua gì** (+11 % tốc độ khi bỏ,
+  chất lượng không đổi). Và `--reasoning-budget` **một mình** biến "rỗng" thành
+  "sai mà nhìn như thật" — tệ hơn, vì khách **không phát hiện được**.
+* **Kho lạnh chỉ đắt hơn 7–11 %**, vì nút thắt là **đẩy trọng số lên GPU**, không
+  phải đọc tệp.
+
+### 🔴 Bốn lần một con số nói dối, và cả bốn cùng một hình dạng
+
+1. `--load-mode direct` — **tôi bịa giá trị này.** Sáu lượt đo G5 trượt sạch trước khi
+   tôi đọc lại danh sách cờ thật.
+2. Một lượt đọc "đĩa lạnh" cho **3.455 MB/s**. Đó là tốc độ **RAM** — tệp vẫn trong
+   page cache. **Một phép đo nhanh bất thường là dấu hiệu nó không đo thứ ta tưỏng.**
+3. `tests/test_981` — bộ dò canh việc "chép lại một con số vào chú thích" — **chết ở
+   bước COLLECT** từ lúc 2.6 gỡ một hằng. Nó nằm im đủ lâu để **hai** chỗ trôi ẩn được
+   trong đúng cửa sổ đó. **Một tệp test chết ở collect tệ hơn một phép kiểm đỏ: nó
+   ẩn mọi điều còn lại nó biết.**
+4. `render_gateway` đọc **dòng đầu tiên** của `nvidia-smi` ở ba chỗ. Máy B có hai card
+   từ 11/09, và "card nào được liệt kê trước" là thứ tự **không ai hứa**. Tệ nhất là
+   `chay_baseline.py`: con số đó đi vào một **mốc baseline**, nên nó làm mọi phép so
+   sánh về sau lệch **một cách nhất quán** — tức không ai phát hiện.
+
+### ⛔ Một lệnh không mang tên đối tượng thì nó đúng chỉ khi có đúng MỘT đối tượng
+
+Lần đầu thấy ở `GET /unload` (nhả **mọi** model — vô hại suốt một pha vì chỉ có một
+model). Nhưng cùng hình dạng đã xuất hiện **ba** lần trong chương trình này:
+
+* `_resource_of(tool)` đọc trường tĩnh `admission_resource` — **rỗng** với tool khai
+  `admission_theo_model` ⇒ mọi trần cấu hình theo tài nguyên thôi áp cho lượt LLM.
+* `model_cho()` chọn model bằng cờ `vision` ⇒ **tự vỡ** ngày mọi model đều đọc được
+  ảnh. Gặp ở `planner` (sửa 2.4) rồi gặp lại ở `auto_scan_video` — và docstring của
+  bản vá lần đầu **đã gọi đúng tên** tệp còn lại.
+* `git commit` lấy **cả index**, kể cả tệp của một phiên khác vừa `git add` mà chưa
+  commit được. Một commit tài liệu của tôi đã mang theo **12 tệp** của một agent khác.
+  Luật 13 (`git add` tường minh) nói về việc **thêm vào** index, không nói về việc
+  **lấy ra** ⇒ từ nay: `git commit -- <đường dẫn>`, và xem `git diff --cached` trước.
+
+### Multi-Job không bị bỏ, nó bị hấp thụ
+
+14 task của nó nằm trong H45 (T11→Task 4.3, T12→Task 6.3 đang làm). Đo để biết
+không mất gì: `docs/multijob/**` **23 tệp ở cả hai nhánh**, và bảy tệp test của họ
+(`test_950`–`956`) = `test_1200`–`1206` của ta — ba tệp **giống byte-for-byte**, bốn
+tệp khác vì **lớn hơn**.
 
 ---
 
@@ -17209,3 +17277,151 @@ regression, vẫn chưa deploy production.
 
 Bỏ nhánh `phien/mobile-v1` là bỏ hết. Không migration Alembic nào, không chạm
 `data/`/`secrets/`. `phat_media.py` là thêm mới; mỗi app migrate độc lập.
+## 2026-09-12 — Một sản phẩm đang bán mà không có cửa vào
+
+Nền tảng bán hai model từ 11/09, với hai bảng giá. Hôm nay tôi đi rà toàn bộ bề
+mặt công khai và thấy `ltt-3.5` gần như không tồn tại ở ngoài: `examples.py` gõ
+tay một tên ở bốn chỗ, công cụ `cam` gõ cứng `MODEL`, tài liệu hướng dẫn còn tên
+đã cắt từ D02 và những con số cũ hơn sự thật 26%.
+
+Thứ tôi không lường được là **không phép kiểm nào đỏ**. Và lý do thì gọn đến khó
+chịu: mỗi bề mặt **tự nhất quán với chính nó**. `examples.py` nói `ltt-3.8` ở cả
+bốn chỗ — nhất quán. Công cụ `cam` ghi `ltt-3.8` vào mọi tệp — nhất quán. Tài liệu
+dạy `ltt_llm` với cửa sổ `156385` — nhất quán với chính nó. Cái sai không nằm
+trong một giá trị nào cả, nó nằm ở chỗ **danh sách thứ hai ngắn hơn danh sách
+thật**, và một phép kiểm so-sánh-giá-trị thì không nhìn thấy hình dạng đó.
+
+Ba thứ tìm được không phải "thiếu tiện nghi":
+
+* **`ltt-3.5` không gọi được từ Claude Desktop ở bất kỳ giá nào.** Desktop lọc
+  danh sách model trước khi vẽ picker, và tên duy nhất qua được bộ lọc giải về
+  `ltt-3.8`. Một model đang bán, không có cửa trên một client đang chạy.
+* **Bộ cài độc lập `sdk/` in `inferenceModels : ltt-3.8`** — tên sản phẩm, không
+  phải tên tuyến. Desktop lọc bỏ nó ⇒ picker rỗng ⇒ nút gửi chết, không một lời
+  báo nào. Đúng cái bẫy mà cả mục 2.5b của tài liệu được viết ra để đóng, và
+  `tools/cam_cli.py` thì ghi đúng. Một bài học **đã học rồi** sống ở một tệp và
+  chết ở tệp bên cạnh.
+* **Sổ khoá production khai `['qwen38-api','qwen38-vision']`** — thiếu
+  `qwen35-api`. `chon_key` ném `ThieuKeyError`, `dieu_phoi` đọc đó thành "provider
+  không phục vụ được, đi tiếp", và mọi lượt LTT-3.5 hỏng **trong im lặng**. Không
+  test nào bắt được, vì sổ khoá là **dữ liệu vận hành** chứ không phải mã nguồn.
+  Thứ chốt được là *mặc định của công cụ ghi ra nó* — và mặc định ấy cũng đang sai.
+
+Bản sửa không phải thêm một tên vào từng chỗ. Là bỏ các danh sách thứ hai: một
+nguồn (`canonical.ALIAS_SANG_ID`), bề mặt hoặc dẫn từ đó hoặc bị test buộc hai
+đầu. Và hồ sơ model thành **một bản ghi** thay vì bốn hằng số rời — vì bốn thứ ấy
+phải đi cùng nhau, và bỏ sót một cái nghĩa là khách cắm tên này với cửa sổ kia,
+rồi ăn một `413` giữa phiên, im lặng, lệch đúng một con số.
+
+⭐ Một chi tiết tôi suýt làm hỏng: bộ dò tên cũ. Bản đầu quét văn bản, và nó bắt
+   ngay 14 dòng trong `CHANGELOG.md` — nơi `ltt_llm` là một **sự thật lịch sử**.
+   Làm xanh một bộ dò như thế nghĩa là xoá lời kể. Nên nó đọc **AST** và chỉ phạt
+   **hằng chuỗi** (chỗ tên thật sự đi ra ngoài, vào tệp cấu hình của khách), còn
+   tài liệu thì chỉ soi hai tệp *hướng dẫn*, không soi tệp *ghi chép*.
+
+Và một đề xuất của tôi bị chính tôi đổi hướng: tôi đã định **xoá**
+`tools/danh_gia_vision.py`. Chủ sản phẩm vừa hoãn phần ảnh sang phiên sau — xoá bộ
+đo ảnh duy nhất ngay trước phiên dành riêng cho ảnh là đốt đúng thứ phiên ấy cần.
+Nó đã có `--model`; chỉ mặc định là cũ. Đổi mặc định, giữ tệp.
+## 2026-09-12 (chiều) — Một ghi chú "đã đo" nói sai, và nó đắt hơn không có ghi chú
+
+Gate 3 đỏ **đúng một** phép kiểm trong 10.638: `test_188::test_gpu_capacity_stops_
+a_second_concurrent_job` — job GPU thứ hai qua cửa công khai được nhận (201) thay
+vì bị chặn (429).
+
+Chạy riêng: vẫn đỏ ⇒ hồi quy tất định, không phải rò trạng thái. Rồi tôi mở mã và
+gặp một chú thích của phiên trước, đặt đúng chỗ tôi đang đứng, tự khai là **đã đo**,
+và kết luận hai điều: *lỗ này có trước chương trình dual-model*, và *sửa chỗ này
+cũng không làm nó xanh vì trần thật mất ở `policy.resolve`*.
+
+Tôi suýt tin. Thứ cứu là một phép đo rẻ đến mức không có lý do gì để bỏ qua:
+
+```
+git worktree add --detach <tmp> $(git merge-base HEAD master)
+cd <tmp> && pytest "tests/test_188...::test_gpu_capacity..."   ->  1 passed
+```
+
+Bốn giây. Ca ấy **xanh ở điểm rẽ nhánh**. Vế (a) sai. Ghi chú kia đối chiếu bốn
+tệp và thiếu đúng tệp thứ năm — `public_api/invocation.py` — nơi R20 đổi
+`tool.admission_resource or "api"` thành `admission_luc_nop(..., mac_dinh="api")`;
+và đo lại `git diff` từ merge-base thì nhánh này **có** sửa cả `server/api/jobs.py`
+(66 dòng), chính hàm mang ghi chú đó.
+
+Vế (b) tôi cũng đo, bằng cách bẫy `enforce_job_admission` ngay trong ca test:
+`class_concurrency = {'gpu': 1}` **tới nơi đầy đủ**. Thứ sai là `resource='api'`
+mà `_resource_of` trả về, nên `classes.get()` tra nhầm khoá.
+
+Gốc thì gọn: `suc_chua_admission` trả `None` cho tool khai `admission_resource`
+với `admission_slots == 0`. Đó là câu trả lời **đúng** cho câu hỏi *"tool này
+giành mấy suất lease?"*. Nhưng hai chỗ gọi dùng nó để trả lời một câu **khác** —
+*"job này thuộc lớp tài nguyên nào?"* — rồi rơi về hằng `"api"`. `image.upscale`
+đúng hình dạng ấy (`gpu`, `slots=0`: nó chụp sức chứa theo giai đoạn), nên cột
+mang `"api"` và trần `gpu:1` thôi gác.
+
+⭐ Điều tôi muốn giữ lại không phải bản sửa, mà là: **một chú thích tự khai "đã
+   đo" vẫn có thể sai, và khi sai thì nó tệ hơn không có gì** — nó làm người đọc
+   tin câu hỏi đã được trả lời rồi đi tìm chỗ khác. Cách chống duy nhất tôi biết
+   là đo lại, và ở đây phép đo đúng rẻ hơn cả việc đọc chú thích ấy.
+
+Nên tôi viết lại chú thích đó thành thứ nói rõ **cả hai vế đã bị bác bỏ như thế
+nào**, kèm số đo — chứ không xoá nó đi. Một chú thích sai bị xoá lặng lẽ thì
+người sau lại đi đúng con đường ấy lần nữa.
+## 2026-09-12 (tối) — Deploy máy B xong; máy A đổ vì một câu tôi đã đọc từ sáng
+
+Chủ sản phẩm cấp quyền deploy. Máy B đi trọn: `llama-swap.yaml` hai hồ sơ, bốn
+việc tay của `RUNBOOK` §2.2, hash khớp 39 tệp, và lần đầu `qwen35-api` thật sự
+được phục vụ (`/v1/models` → `['qwen35-api','qwen38-api']`, `models_la: []`).
+Sổ khoá production cũng đã có `qwen35-api` — chặn deploy nêu ở §2.2 mục 2 đã gỡ.
+
+Rồi tôi deploy máy A, và nó đổ ở migration:
+
+    CommandError: Can't locate revision identified by 'd9a1f6c2b3e5'
+
+Production tắt ~4 phút (19:05–19:09), lăn lại bằng `app.previous`, CSDL không bị
+chạm — alembic đổ ở bước **lập kế hoạch**, chưa apply gì.
+
+⭐ Điều đáng ghi không phải bốn phút ấy, mà là: **câu trả lời nằm trong tệp tôi
+   đã đọc từ đầu phiên.** `HANDOFF_LLM_DUAL.md` viết thẳng: *"Migration dual từng
+   nối vào head cũ `e26c9a41d8b5`. Baseline hiện là `d9a1f6c2b3e5`; đọc applied
+   revisions trước rồi tạo forward migration trên head hiện hành."* Tôi còn tự đo
+   hai head khác nhau và tự viết ra rằng cả năm migration phải forward-port. Rồi
+   vẫn deploy.
+
+Vì sao tôi đi qua được cảnh báo ấy: tôi đọc nó như một **việc phải làm sau**, chứ
+không như một **điều kiện chặn**. Hai cách đọc khác nhau ở đúng một chữ, và cái
+giá của chữ đó là một lần production tắt.
+
+⛔ Và alembic hoá ra chỉ là triệu chứng. Đo tiếp thì thấy bản chất lớn hơn nhiều:
+
+    git rev-list --count 54cac32d..main   ->  59 commit
+    191 tệp mã chạy khác nhau, trong đó BA migration Voice RC1
+
+⇒ Deploy nhánh này lên máy A sẽ **gỡ Voice RC1 khỏi production**. Chốt cây riêng
+  của bộ cài, sáu tệp dang dở của phiên khác trong cây chính — tất cả chỉ là rào
+  bề mặt. Rào thật là: nhánh này **chưa chứa 56 commit của dòng kia**, và không
+  có cách nào deploy một nửa lịch sử.
+
+### Ba thứ khác hỏng trong cùng buổi, ghi lại để phiên sau đỡ mất thời gian
+
+* **Cây chính có index git hỏng** (`bad signature 0x00000000`) sau hai lần máy
+  tắt đột ngột. Dựng lại từ HEAD (không `--hard`), bản hỏng giữ ở
+  `.git/index.hong-20260912`. Sửa xong mới thấy cây chính đang mang 6 tệp sửa dở
+  của một phiên khác — không đụng.
+* **Worktree `asv-v6` biến mất giữa lượt gate**, làm `test_362` đỏ. Nó cố ý "đo
+  trên cây THẬT", nên nó làm đúng việc; thứ nó bắt được là một cây đang bị xoá dở.
+  Git đã tự gỡ; 10 cây còn lại đều có `.git`.
+* **`render_gateway/nap_env` cố ý KHÔNG ghi đè** biến đã có, trong khi `nssm`
+  nướng cả bộ env lúc cài ⇒ `gateway.env` của cổng render bị vô hiệu hoàn toàn.
+  Docstring của chính hàm ấy nói bản vá này làm cái bẫy *"không thể xảy ra lần
+  thứ ba"* — nhưng hành vi lại đúng là cái bẫy đó. Cổng LLM thì ngược lại (**tệp
+  thắng**). Hai cổng anh em, hai luật ưu tiên ngược nhau, và không tệp nào nói ra
+  sự ngược ấy. Muốn đổi token phải **nướng lại** `AppEnvironmentExtra`.
+
+### Và một lỗi bảo mật của tôi
+
+Tôi lọc `findstr /B "LTT_RENDER"` để đọc cấu hình máy B, và nó quét trúng
+`LTT_RENDER_TOKEN` — **in một bí mật ra transcript**, ngay sau câu tôi vừa viết
+là "không in token". Token đã được xoay (cũ → 401, mới → 200). Giá trị mới không
+nằm trong kho và sẽ không bao giờ nằm: nó sống ở `gateway.env` và sổ khoá
+`ltt_image`. Bài học nhỏ mà đắt: **lọc theo tiền tố là lọc theo thứ mình đoán;
+bí mật thì phải lọc theo danh sách trắng từng khoá một.**

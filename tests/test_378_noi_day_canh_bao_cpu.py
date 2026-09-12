@@ -19,9 +19,9 @@ dây, **hai đầu vẫn xanh**. Bộ dò vẫn dò đúng, ngưỡng vẫn còn
 vẫn pass — và triệu chứng khi có sự cố thật là **sự im lặng**, thứ trông y hệt
 "không có sự cố nào".
 
-⭐ Cùng hình dạng với bánh cóc ở `test_368`: ở đó `trong_tai.py` được sửa đúng
-   nhưng `api.py` có thể quên nối dây, và triệu chứng là 70 % từ chối oan **vẫn
-   nguyên, không dòng đỏ nào**.
+⭐ Cùng hình dạng với bánh cóc ở `test_368` (đã gỡ cùng nhánh nó đo, dual-model
+   5.4b): ở đó `trong_tai.py` được sửa đúng nhưng `api.py` có thể quên nối dây, và
+   triệu chứng là 70 % từ chối oan **vẫn nguyên, không dòng đỏ nào**.
 
 ## Vì sao đây là cách đúng để phủ F07
 

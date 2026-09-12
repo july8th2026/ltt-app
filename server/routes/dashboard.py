@@ -115,7 +115,11 @@ def gia_api(request: Request):
     """
     from platform_core.llm import gia_token
 
-    bang = gia_token.bang_gia()
+    # ⭐ HAI MODEL, HAI BẢNG (D07 hệ quả 3, dual-model 2.5). Khách không chọn
+    #    được model nếu trang bán hàng chỉ cho họ xem giá của một model — và
+    #    giá ra chênh nhau **20 lần**, nên đó không phải chi tiết nhỏ.
+    cac_bang = list(gia_token.bang_gia_moi_model().values())
+    bang = gia_token.bang_gia()          # model mặc định, cho phần văn xuôi
     # Ba ví dụ chi phí THẬT, tính bằng đúng hàm ra hoá đơn. Một con số trừu tượng
     # ("400 credit mỗi triệu token") không nói cho ai biết một lượt chat tốn bao
     # nhiêu; ba ví dụ thì có.
@@ -126,10 +130,17 @@ def gia_api(request: Request):
             (_t("Một câu hỏi ngắn"), 50, 150),
             (_t("Một lượt viết mã"), 2_000, 800),
             (_t("Một lượt agent có nhiều tool"), 22_000, 1_500)):
-        cp = gia_token.tinh(SuDung(token_vao=vao, token_ra=ra, dang_tin=True))
-        vi_du.append({"ten": ten, "vao": vao, "ra": ra,
-                      "credit": cp.tong_credit_lam_tron_len,
-                      "dong": cp.tong_credit_lam_tron_len * 100})
+        # Mỗi ví dụ tính cho **từng** model, bằng đúng hàm ra hoá đơn của model
+        # ấy. Một cột "credit" duy nhất lại là bảng giá thứ hai đội lốt ví dụ.
+        theo_model = []
+        for _m in gia_token.BANG_GIA:
+            cp = gia_token.tinh(SuDung(token_vao=vao, token_ra=ra, dang_tin=True), _m)
+            theo_model.append({"model": _m,
+                               "credit": cp.tong_credit_lam_tron_len,
+                               "dong": cp.tong_credit_lam_tron_len * 100})
+        vi_du.append({"ten": ten, "vao": vao, "ra": ra, "theo_model": theo_model,
+                      "credit": theo_model[0]["credit"],
+                      "dong": theo_model[0]["dong"]})
     # Ảnh model nhà (H37/L4). Trang này trước chỉ nói LLM, nên khách không có
     # cách nào biết giá ảnh trước khi đăng ký — cùng thứ tự ngược đã nói ở trên.
     # ⭐ ĐỌC QUA REGISTRY, không import app theo tên (2026-09-02).
@@ -161,7 +172,7 @@ def gia_api(request: Request):
     bang_tieng = bang_gia_app.get("ltt_voice") or {}
 
     return templates.TemplateResponse(request, "gia_api.html", {
-        "bang": bang, "vi_du": vi_du,
+        "bang": bang, "cac_bang": cac_bang, "vi_du": vi_du,
         "bang_anh": bang_anh, "vi_du_anh": vi_du_anh,
         "bang_tieng": bang_tieng,
         "user": _user_hien_tai(request),
@@ -195,6 +206,9 @@ def api_dieu_khoan(request: Request):
         "phien_ban": dk.PHIEN_BAN,
         "dong_moi_credit": dk.DONG_MOI_CREDIT,
         "bang": dk.bang_gia(),
+        # D07: hai model, hai bảng. Một điều khoản in giá của một model trong
+        # khi ta bán hai là một điều khoản sai cho một nửa số khách.
+        "cac_bang": list(dk.bang_gia_moi_model().values()),
         "tran": dk.gioi_han_model(),
         "dong_thoi": dk.dong_thoi(),
         "muc": dk.MUC_DA_DO,

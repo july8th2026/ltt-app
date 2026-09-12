@@ -25,6 +25,7 @@ streaming**, và mỗi CLI chỉ nói đúng một giao thức:
 from __future__ import annotations
 
 import logging
+import time
 from typing import Iterator, Optional
 
 from fastapi import Body, Depends, Request
@@ -32,17 +33,18 @@ from starlette.background import BackgroundTask
 from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy.orm import Session
 
-from platform_core.public_api import limits, metrics, policy, sandbox
+from platform_core.public_api import examples, limits, metrics, policy, sandbox
 from platform_core.public_api.catalog import build_catalog, require_tool
 from platform_core.public_api.executor import for_tool, for_tool_name
 from platform_core.public_api.errors import (insufficient_credit,
                                              invalid_request,
+                                             model_not_found,
                                              payload_too_large,
                                              service_unavailable)
 from platform_core.public_api.principal import Principal
 from platform_core.public_api.protocol import (STREAM, PublicOperationContract)
 from platform_core.public_api.scopes import SCOPE_JOBS_CREATE
-from server.api import tool_dich
+from server.api import su_kien_loi, tool_dich
 from server.api.auth import require_scope
 from server.deps import get_db
 from apps.ltt_llm import ngan_sach
@@ -79,7 +81,25 @@ TOOL_CHAT = "text.chat"
 #: ⚠️ ĐỪNG đưa tên này vào `features.ALIAS_SANG_ID`. Chỗ đó là **từ vựng sản phẩm**
 #:    của app; mục này là **chi tiết giao thức của một client**. Trộn hai thứ là
 #:    cách một hằng số tạm bợ trở thành thứ ta phải đỡ mãi mãi.
-TUYEN_TUONG_THICH = {"ltt-llm-claude-compat": "ltt_llm"}
+#: 🔴 ĐÍCH ĐỔI 11/09/2026 (D02): `ltt_llm` → `ltt-3.8`. **KHOÁ giữ nguyên** — nó
+#:    là tên tuyến của giao thức, thứ Claude Desktop lọc theo chuỗi `claude`;
+#:    đổi nó là đóng cửa với một client đang chạy, và `test_290` ghim đúng ranh
+#:    giới ấy. Thứ bị cắt là *bí danh sản phẩm* ở vế phải.
+#:
+#: 🔑 12/09/2026 — BẢNG NÀY KHÔNG CÒN ĐỊNH NGHĨA Ở ĐÂY. Nguồn duy nhất là
+#:    `examples.TUYEN_DESKTOP`, và việc đó sửa một khuyết tật đang mở chứ không
+#:    phải dọn cho gọn: cùng một bảng từng được gõ hai lần — một bản ở đây để
+#:    **giải tên**, một bản ở `examples.py` để **in ra trang hướng dẫn**. Hai bản
+#:    ấy lệch nhau là khách chép đúng thứ trang dạy rồi nhận `model_not_found`,
+#:    và không phép kiểm nào thấy gì sai vì mỗi bên tự nhất quán.
+#:
+#: ⭐ Chiều import đúng là chiều này: `platform_core` không được biết gì về
+#:    `server`, còn `server` vốn đã đọc `platform_core.public_api`. Và tên tuyến
+#:    là **từ vựng khách nhìn thấy**, nên nó thuộc về mô-đun bề mặt công khai.
+#:
+#: 📈 Từ 12/09 bảng có HAI mục: `ltt-3.5` trước đó không có cửa nào trên Claude
+#:    Desktop — tên duy nhất qua được bộ lọc picker đều dẫn về `ltt-3.8`.
+TUYEN_TUONG_THICH = dict(examples.TUYEN_DESKTOP)
 
 
 def _giai_ten_model(ten: str) -> str:
@@ -173,7 +193,7 @@ def register_streaming_routes(api, config, tag: str) -> None:
 
 def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
              principal: Principal, db: Session, config, tool=None,
-             trang_thai=None) -> JSONResponse:
+             trang_thai=None, request=None) -> JSONResponse:
     """Tra loi **mot cuc** cho `/messages` va `/responses`, dung hinh dang
     Anthropic Messages.
 
@@ -188,10 +208,12 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
        cung con so ma `/chat/completions` dung, va vi cung mot ly do.
     """
     from platform_core import credit
-    from platform_core.llm import admission, thanh_toan
+    from platform_core.llm import admission, ngat, phong_cho, thanh_toan
     from platform_core.llm.cong_vlm import (BanError, CongVlmError,
                                             SuDung, VuotNganSachError)
-    from server.api.chat import _tran_max_tokens
+    from platform_core.runtime_noi_bo import luong as cua_luong
+    from server.api.chat import (MA_KHACH_NGAT, _KHACH_NGAT, _con_lai_s,
+                                 _tran_max_tokens)
 
     executor = for_tool(tool) if tool is not None else for_tool_name(TOOL_CHAT)
 
@@ -209,26 +231,93 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
             f"leaving room for at most {tran} output tokens inside its "
             f"{_tran_giay()}s budget. Reduce the prompt or max_tokens, set "
             f"stream=true, or submit it to POST /api/v1/jobs.")
-    request_id = thanh_toan.ma_luot("ms")
-    ticket = None
-    if tool is not None and tool.admission_resource and tool.admission_slots > 0:
-        ticket = admission.acquire(
-            db, resource=tool.admission_resource, slots=tool.admission_slots,
-            user_id=principal.user_id, mode="sync", holder_id=request_id)
-    if tool is not None and tool.admission_resource and ticket is None:
-        db.rollback()
-        raise limits.execution_busy(tool.admission_resource)
+    # ── Sức chứa admission CỦA ĐÚNG MODEL NÀY (multijob 2.2) ────────────────
+    #
+    # 🔴 `ten` là bí danh khách xin, và từ 2.2 nó quyết định **pool nào**:
+    #    `text.chat` phục vụ hai model trên hai pool KV khác nhau, nên bộ ba
+    #    tĩnh của tool không còn tả nổi sức chứa. Phép đọc thuần, đặt trước mọi
+    #    thứ chạm tiền — thứ tự cửa không đổi.
+    try:
+        suc = tool.admission_cho(ten) if tool is not None else None
+    except KeyError as e:
+        # Cùng mã với tên đã cắt ở `_cua` — D02, Step 2c.
+        log.error("ban khai admission thieu model %r: %s", ten, e)
+        raise _bao_400(
+            f"`model` {ten!r} is not served here. Call GET /api/v1/models for "
+            f"the names in service.", than, dung=model_not_found) from None
+    tai_nguyen = str(suc.resource or "") if suc else ""
+    so_suat = int(suc.slots or 0) if suc else 0
+    pool = int(suc.token_pool or 0) if suc else 0
 
-    def _release_ticket() -> None:
-        if ticket is not None:
-            admission.release_by_id(ticket.id)
+    request_id = thanh_toan.ma_luot("ms")
+    # 🔴 ĐỒNG HỒ NGÂN SÁCH CỦA CỬA BẮT ĐẦU Ở ĐÂY, trước phòng chờ. Đặt mốc sau
+    #    khi chờ xong là để một lượt chờ 60 giây rồi chạy thêm 90 giây nữa —
+    #    150 giây, tức đúng cái 524 của Cloudflare mà trần này sinh ra để chặn.
+    t0 = time.monotonic()
+
+    # 🔴 402 TRƯỚC KHI XẾP HÀNG, và chỉ ĐỌC số dư. Cùng lý do với `/chat/
+    #    completions`: một lượt đang chờ **không được** có dòng giữ tiền nào
+    #    (INV-MJ-1), nên số dư phải kiểm được mà không giữ.
+    if not thanh_toan.du_so_du(db, user_id=principal.user_id,
+                               token_vao_uoc=vao_uoc, max_tokens=xin_ra,
+                               model=ten):
+        metrics.increment(metrics.CREDIT_EXHAUSTED)
+        raise insufficient_credit(
+            "Insufficient credit for the ceiling this request would hold.")
+
+    # 🔴 CHỐT GIAO DỊCH CỦA REQUEST TRƯỚC KHI CHỜ (D04). Phòng chờ ghi dòng của
+    #    nó ở một phiên MỚI; để giao dịch này còn mở là SQLite "database is
+    #    locked", và trên PostgreSQL là giữ khoá hàng suốt lúc chờ.
+    db.commit()
+
+    try:
+        suat = cua_luong.cho_suat_dong_bo(
+            tai_nguyen=tai_nguyen, so_suat=so_suat, token_pool=pool,
+            user_id=principal.user_id, request_id=request_id, cua="sync",
+            token_vao_uoc=int(vao_uoc), xin_ra=int(xin_ra),
+            so_anh=cua_luong.dem_anh(than),
+            han_s=cua_luong.han_cho_dong_bo(
+                ngan_sach_s=float(_tran_giay()),
+                da_tieu_s=time.monotonic() - t0),
+            # Id model **nội bộ** cho sổ lượt (dual-model 6.3). ⛔ Không ghi bí
+            # danh khách: bí danh đổi được mà engine không đổi.
+            model=cua_luong.id_model_noi_bo(executor, ten),
+            ngat_chua=ngat.do_ngat(request))
+    except phong_cho.HetCho as e:
+        # Hết trần chờ: 0 khoản giữ (INV-MJ-2), 0 bút toán mồ côi.
+        metrics.increment(metrics.CAPACITY_REFUSED)
+        log.warning("HET CHO mot-cuc user=%s ly_do=%s",
+                    principal.user_id[:8], e.ly_do)
+        raise limits.execution_busy(tai_nguyen, retry_after=10) from None
+    except phong_cho.KhachDi:
+        return JSONResponse(_KHACH_NGAT, status_code=MA_KHACH_NGAT,
+                            headers=_NO_STORE)
+
+    def _release_ticket(ket_qua: str = "loi") -> None:
+        """Nhả suất + ghi KẾT CỤC THẬT vào sổ lượt 30 ngày.
+
+        ⛔ Bản đầu ghi cứng `"xong"` ở mọi đường ra — kể cả bận, lỗi và khách
+           ngắt. Một cuốn sổ chỉ biết nói một chữ không phân tích được gì, mà
+           nó tồn tại chính để phân tích (chủ dự án 11/09).
+        """
+        if suat.lease_id:
+            admission.release_by_id(suat.lease_id)
+        if suat.waiter_id:
+            phong_cho.ghi_ket_thuc(suat.waiter_id, ket_qua)
+
+    # ── Được nhận ⇒ GIỮ TIỀN (và chỉ từ đây trở đi) ─────────────────────────
     try:
         da_giu = thanh_toan.giu_cho_luot(
             db, user_id=principal.user_id, request_id=request_id,
-            token_vao_uoc=vao_uoc, max_tokens=xin_ra)
+            token_vao_uoc=vao_uoc, max_tokens=xin_ra, model=ten)
     except credit.ThieuCreditError as e:
         db.rollback()
+        _release_ticket("thieu_credit")
         raise insufficient_credit(str(e)) from None
+    except BaseException:
+        db.rollback()
+        _release_ticket("loi")
+        raise
     db.commit()
 
     # 🔴 LƯỚI AN TOÀN CHO TIỀN — VÀ NÓ ĐÃ PHẢI TRẢ GIÁ MỘT LẦN.
@@ -272,18 +361,45 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         cong_cu = tool_dich.sang_openai_tools(than.get("tools"))
         if cong_cu:
             sach["tools"] = cong_cu
-        kq = executor.run(db, sach, timeout_s=float(_tran_giay()))
+        # ⭐ Spec §16: thăm `is_disconnected` ~1 s song song với lời gọi. Không
+        #    stream nghĩa là không byte nào chảy, nên đây là cách DUY NHẤT biết
+        #    khách đã đi trước khi GPU chạy trọn một lượt không ai đọc.
+        # ⛔ NGÂN SÁCH **CÒN LẠI**, không phải trần nguyên. `t0` chạy từ trước
+        #    phòng chờ, nên thời gian đã chờ bị trừ đi ở đây — hai chỗ (trần chờ
+        #    và trần gọi) phải cùng ăn MỘT ngân sách, nếu không chúng chia nhau
+        #    một ngân sách tưởng tượng và tổng vượt đồng hồ Cloudflare.
+        kq = ngat.chay_canh_ngat(
+            lambda: executor.run(db, sach,
+                                 timeout_s=_con_lai_s(t0, float(_tran_giay()))),
+            ngat_chua=ngat.do_ngat(request))
+    except ngat.KhachNgat as e:
+        # Quyết toán theo `usage` nếu lời gọi kịp về; không thì hoàn trọn.
+        if e.ket_qua is not None:
+            thanh_toan.quyet_toan_hoac_hoan(
+                db, user_id=principal.user_id, request_id=request_id,
+                su_dung=SuDung(token_vao=e.ket_qua.token_vao,
+                               token_ra=e.ket_qua.token_ra,
+                               token_vao_cache=e.ket_qua.token_vao_cache,
+                               dang_tin=e.ket_qua.do_duoc),
+                model=ten)
+        else:
+            thanh_toan.hoan_luot(db, user_id=principal.user_id,
+                                 request_id=request_id)
+        db.commit()
+        _release_ticket("khach_ngat")
+        return JSONResponse(_KHACH_NGAT, status_code=MA_KHACH_NGAT,
+                            headers=_NO_STORE)
     except executor.parameter_error as e:
         # Tham số sai là lỗi của **yêu cầu**, không phải của máy chủ: 400, không
         # phải 500. Hoàn tiền trước, vì hold đã đặt rồi.
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
-        _release_ticket()
+        _release_ticket("tham_so_sai")
         raise invalid_request(str(e)) from None
     except BanError as e:
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
-        _release_ticket()
+        _release_ticket("ban")
         # ⛔ BAN != HONG (D-005). 429/503 + Retry-After, va khach KHONG bi thu tien.
         # 🔴 ĐẾM VÀO `CAPACITY_REFUSED`, KHÔNG CHỈ ĐỂ NÓ RƠI VÀO 5xx.
         #
@@ -309,7 +425,7 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
     except (VuotNganSachError, CongVlmError) as e:
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
-        _release_ticket()
+        _release_ticket("loi")
         log.warning("mot cuc that bai user=%s: %s", principal.user_id[:8], e)
         raise service_unavailable("The model could not serve this request.") from None
     except BaseException:
@@ -327,7 +443,7 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         #    thừa `Exception`. Đó chính là ca hay xảy ra nhất ở một cửa đồng bộ.
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
-        _release_ticket()
+        _release_ticket("loi")
         raise
 
     # `quyet_toan_hoac_hoan` nhan chinh doi tuong `SuDung` do cong tra ve - dung
@@ -342,7 +458,8 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
             db, user_id=principal.user_id, request_id=request_id,
             su_dung=SuDung(token_vao=kq.token_vao, token_ra=kq.token_ra,
                            token_vao_cache=kq.token_vao_cache,
-                           dang_tin=kq.do_duoc))
+                           dang_tin=kq.do_duoc),
+            model=ten)
         # ⛔ P08 F-01, NHANH KHONG-STREAM. Ban va dau chi cham `_quyet_toan` cua
         #    generator, nen cua nay van ghi `+0` — va do that tren production
         #    ngay sau khi deploy bat duoc: cung mot route `/api/v1/messages`,
@@ -358,10 +475,10 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         db.rollback()
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
-        _release_ticket()
+        _release_ticket("loi")
         raise
     db.commit()
-    _release_ticket()
+    _release_ticket("xong")
     metrics.increment("chat:mot_cuc")
     return JSONResponse(_dang_anthropic(kq, ten, request_id),
                         status_code=200, headers=_NO_STORE)
@@ -459,10 +576,16 @@ def _thu_mot_cuc(ten: str) -> dict:
     }
 
 
-def _bao_400(detail: str, than: dict):
+def _bao_400(detail: str, than: dict, *, dung=invalid_request):
     """Ghi lại LÝ DO + HÌNH DẠNG request mỗi khi ta trả 400 — để soi vì sao Codex
     bị vứt lượt. (Tạm; gỡ khi đã chẩn xong.) KHÔNG log nội dung nhạy cảm, chỉ
-    khoá/kiểu."""
+    khoá/kiểu.
+
+    `dung` chọn **mã lỗi**, không đổi việc ghi log: 400 vì tên model đã cắt là
+    `model_not_found` (D02), 400 vì hình dạng vẫn là `invalid_request`. Một
+    hàm ghi log, hai mã — chép hàm này ra để đổi mỗi mã lỗi là dựng bản thứ hai
+    của đúng đoạn log ta đang cần để chẩn.
+    """
     tc = than.get("tool_choice")
     vao = than.get("input")
     log.warning(
@@ -472,7 +595,7 @@ def _bao_400(detail: str, than: dict):
         (tc.get("type") if isinstance(tc, dict) else tc),
         type(vao).__name__, (len(vao) if isinstance(vao, (list, str)) else "-"),
         len(than.get("tools") or []), sorted(than.keys()))
-    return invalid_request(detail)
+    return dung(detail)
 
 
 #: Tiền tố của tên model **do chính client bịa ra** khi nó không biết model của
@@ -539,12 +662,16 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
     ten = _giai_ten_model(str(than.get("model") or ""))
     aliases = executor.aliases()
     if ten not in aliases:
+        # 🔴 `model_not_found`, KHÔNG `invalid_request` (D02, Step 2c). Tên cũ
+        #    `ltt_llm` / `ltt_llm_vision` rơi vào đúng nhánh này từ 11/09/2026,
+        #    và khách phải nghe cùng một câu ở mọi cửa: *tên model ấy không còn*,
+        #    chứ không phải *yêu cầu của bạn sai hình dạng*.
         raise _bao_400(
             f"`model` must be one of {list(aliases)}"
             f"{' or ' + str(list(TUYEN_TUONG_THICH)) if TUYEN_TUONG_THICH else ''}. "
             f"Claude Code sends whatever ANTHROPIC_MODEL is set to, and Codex "
             f"sends `model` from its profile — set them to one of these."
-            + _goi_y_ten_la(ten), than)
+            + _goi_y_ten_la(ten), than, dung=model_not_found)
 
     tin = _tin_nhan(than)
     if not tin:
@@ -626,7 +753,8 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
 
     if not than.get("stream"):
         return _mot_cuc(duong, than, tin, ten, principal, db, config, tool,
-                        trang_thai=getattr(request, "state", None))
+                        trang_thai=getattr(request, "state", None),
+                        request=request)
 
     resolved = policy.resolve(db, config=config, principal=principal,
                               tool_name=TOOL_CHAT)
@@ -648,6 +776,41 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
     #    `platform_core/runtime_noi_bo/luong.py`, để client nội bộ (ChatLTT) và
     #    cửa này đi MỘT đường đếm token và quyết toán. Ở đây chỉ còn việc của
     #    HTTP: dịch bốn lỗi trước-byte-đầu sang mã trạng thái + `problem+json`.
+    # ── multijob D-06: tool khai ngân sách KV ⇒ tiền kiểm TRƯỚC 200, rồi chờ trong
+    #    SSE (nhịp tim), được nhận mới giữ tiền và mở luồng máy B. Bốn lỗi dưới
+    #    đây vẫn là MÃ HTTP vì chúng xảy ra trước 200 — đặc biệt 413: Codex và
+    #    Claude Code dựa vào nó để TỰ NÉN hội thoại (xem nhánh 413 bên dưới).
+    try:
+        tk = cua_luong.tien_kiem(
+            db, user_id=principal.user_id, tool_name=TOOL_CHAT,
+            than={**than, "model": ten}, duong=duong)
+    except cua_luong.ThamSoSai as e:
+        raise _bao_400(str(e), than) from None
+    except cua_luong.ThieuCredit as e:
+        raise insufficient_credit(str(e)) from None
+    except cua_luong.DangBan as e:
+        # Phòng chờ đã chạm trần (số người / token prefill) — không có hàng vô hạn.
+        raise limits.execution_busy(e.tai_nguyen) from None
+    except cua_luong.KhongMoDuoc:
+        raise payload_too_large(
+            "The input exceeds the model's context limit. Drop or summarise "
+            "older turns and retry with a shorter conversation.",
+            limit_name="input_tokens",
+            limit_value=_tran_vao_cua_model(ten)) from None
+    if tk.dung_phong_cho:
+        # 🔴 CHỐT GIAO DỊCH CỦA REQUEST TRƯỚC KHI STREAM — cùng bài học của
+        #    `chuan_bi` (đường cũ commit trước khi chạm model). Generator mở phiên
+        #    MỚI để ghi dòng chờ và giữ tiền; để giao dịch của request (rate-limit,
+        #    idempotency) còn mở là SQLite "database is locked" và PostgreSQL giữ
+        #    khoá hàng suốt lúc chờ.
+        db.commit()
+        return StreamingResponse(
+            cua_luong.luong_co_cho(tk, loi_sse=su_kien_loi.loi_sse,
+                                   trang_thai=getattr(request, "state", None),
+                                   timeout_s=MO_LUONG_GIAY),
+            media_type="text/event-stream", headers=_SSE)
+
+    # ── Tool KHÔNG khai ngân sách KV: đường cũ, nguyên vẹn ────────────────────
     try:
         cb = cua_luong.chuan_bi(
             db, user_id=principal.user_id, tool_name=TOOL_CHAT,
@@ -710,8 +873,26 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
         raise service_unavailable("The model could not serve this request.") from None
 
     from platform_core.llm import admission
-    nen = (BackgroundTask(admission.release_by_id, cb.lease_id)
-           if cb.lease_id else None)
+
+    # 🔴 HAI VIEC PHAI CHAY KHI PHAN HOI KET THUC, KE CA KHI THAN CHUA
+    #    TUNG DUOC DOC: nha suat, va **quyet toan tien**.
+    #
+    #    Truoc 09/09 chi co ve suat. Ve tien nam trong `finally` cua
+    #    generator `_phat`, va mot `finally` chi ton tai SAU khi generator
+    #    chay dong dau tien. Khach ngat truoc byte dau => khoi `try` chua
+    #    tung duoc vao => khoan `hold` nam lai VINH VIEN, va cua nay khong
+    #    tao `Job` nen khong bo quet nao nhin thay no.
+    #
+    # ⭐ Day dung la bai hoc 31/08 cua may B (`llm_gateway/api.py`), chi la
+    #    hoi do no duoc hoc cho SUAT chu khong cho TIEN.
+    def _ket_thuc() -> None:
+        try:
+            cua_luong.dam_bao_quyet_toan(luot)
+        finally:
+            if cb.lease_id:
+                admission.release_by_id(cb.lease_id)
+
+    nen = BackgroundTask(_ket_thuc)
     return StreamingResponse(luot.luong, media_type=luot.content_type,
                              headers=_SSE, background=nen)
 

@@ -313,19 +313,72 @@ def test_moi_generator_giao_cho_StreamingResponse_deu_co_luoi():
         bằng `BackgroundTask`, tiền treo được `credit.tu_hoan_treo` quét (H41.3)
 
     ⛔ Phép kiểm này chốt **hai cái lưới của máy A còn nguyên**. Mất một trong
-       hai thì `_phat` không khởi động = một khoản giữ chỗ treo mãi mãi, tức
-       tiền thật của khách bị kẹt.
+       hai thì `_phat` không khởi động = một khoản giữ chỗ treo, tức tiền thật
+       của khách bị giữ cho tới khi có ai đó hoàn.
+
+    ⚠️ ĐÍNH CHÍNH 09/09 — "treo mãi mãi" ở dòng trên là **nói quá**, và chính
+       docstring này là thứ bác nó: `credit.tu_hoan_treo` (H41.3) **có** quét
+       khoản ấy. Stream truyền `request_id` làm `job_id`, và không hàng `Job`
+       nào "đang sống" mang khoá đó, nên sau `TU_HOAN_SAU = 24 giờ` nó được
+       hoàn (trần 20 khoản mỗi lượt bảo trì).
+       ⇒ Hại thật là **tiền khách bị giữ tới một ngày cho một lượt không chạy**,
+         không phải mất tiền.
+
+    🔴 VIẾT LẠI 09/09 — VÀ BẢN VIẾT LẠI **KHÓ XANH HƠN**, KHÔNG DỄ HƠN.
+
+       Bản cũ khớp chuỗi `"BackgroundTask(admission.release_by_id"`. Ngày 09/09
+       `streaming.py` đổi sang `BackgroundTask(_ket_thuc)`, trong đó `_ket_thuc`
+       là `try: dam_bao_quyet_toan(luot)` / `finally: release_by_id(...)` — tức
+       **thêm** một lưới cho tiền, và vé vẫn nhả trong `finally`.
+
+    ⛔ Chuỗi biến mất trong khi hành vi mạnh lên. Đó chính là *"bánh cóc chỉ bảo
+       vệ thứ nó nhìn thấy"*: một phép khớp chuỗi không phân biệt được "gỡ mất
+       lưới" với "bọc lưới vào một hàm có tên".
+
+    ⭐ Nên bản mới đọc **AST** và đòi ba điều thay vì một chuỗi:
+         1. `StreamingResponse` vẫn nhận `background=BackgroundTask(...)`;
+         2. `release_by_id` gọi được từ thứ mà `BackgroundTask` bọc;
+         3. và nó nằm trong `finally`, để một ngoại lệ ở đường TIỀN không làm
+            kẹt VÉ — vế thứ ba bản cũ không hề đòi.
     """
+    import ast
     from pathlib import Path
 
     goc = Path(__file__).resolve().parent.parent
-    ma = (goc / "server" / "api" / "streaming.py").read_text(encoding="utf-8")
-    assert "BackgroundTask(admission.release_by_id" in ma, (
-        "ve admission khong con nha bang BackgroundTask -> ro ve khi khach ngat som")
+    van = (goc / "server" / "api" / "streaming.py").read_text(encoding="utf-8")
+    cay = ast.parse(van)
+
+    # (1) StreamingResponse phai co background=BackgroundTask(...)
+    boc = [n for n in ast.walk(cay)
+           if isinstance(n, ast.Call)
+           and getattr(n.func, "id", "") == "StreamingResponse"
+           and any(k.arg == "background" for k in n.keywords)]
+    assert boc, "StreamingResponse khong con nhan `background=` -> mat luoi"
+
+    # (2)+(3) `release_by_id` phai goi duoc, va phai nam trong `finally`.
+    trong_finally = False
+    for n in ast.walk(cay):
+        if not isinstance(n, ast.Try) or not n.finalbody:
+            continue
+        if "release_by_id" in ast.dump(ast.Module(body=n.finalbody,
+                                                  type_ignores=[])):
+            trong_finally = True
+            break
+    assert "release_by_id" in van, (
+        "ve admission khong con duoc nha -> ro ve khi khach ngat som")
+    assert trong_finally, (
+        "`release_by_id` khong nam trong `finally` -> mot ngoai le o duong TIEN "
+        "se lam ket VE, tuc de them dung su co 31/08")
+
     tt = (goc / "platform_core" / "credit.py").read_text(encoding="utf-8")
     assert "def tu_hoan_treo(" in tt, (
         "mat luoi tu hoan khoan giu cho treo -> `_phat` khong khoi dong nghia la "
-        "tien khach bi giu vinh vien")
+        "tien khach bi giu toi 24 gio truoc khi co ai hoan")
+
+    # ⭐ Va tu 09/09 co them mot luoi THU HAI, khong cho toi 24 gio:
+    #    `dam_bao_quyet_toan` quyet toan NGAY khi phan hoi ket thuc.
+    assert "dam_bao_quyet_toan" in van, (
+        "mat luoi quyet toan tuc thi -> lui ve chi con `tu_hoan_treo` (24 gio)")
 
 
 def test_LuongUpstream_van_la_mot_Iterator():

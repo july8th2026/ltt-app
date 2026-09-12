@@ -4,11 +4,15 @@
 <div class="card">
   <h1 style="margin-top:0;">{{ _("Giá API model ngôn ngữ") }}</h1>
   <p>{{ _("Tính theo token, trả theo lượng dùng thật. Không thuê bao, không phí tối thiểu hằng tháng.") }}</p>
-  <p class="muted">1 credit = 100đ · {{ _("phiên bản giá") }} <code>{{ bang.phien_ban_gia }}</code></p>
+  <p class="muted">1 credit = 100₫</p>
 </div>
 
+{# Mot BANG cho MOI model (D07). Gia ra chenh nhau 20 lan giua hai model, nen
+   mot bang duy nhat tren trang ban hang la mot con so sai cho mot trong hai. #}
+{% for b in cac_bang %}
 <div class="card">
-  <h2 style="margin-top:0;">{{ _("Bảng giá") }}</h2>
+  <h2 style="margin-top:0;">{{ _("Bảng giá") }} <code>{{ b.model }}</code></h2>
+  <p class="muted">{{ _("phiên bản giá") }} <code>{{ b.phien_ban_gia }}</code></p>
   <table class="table">
     <thead><tr>
       <th>{{ _("Loại token") }}</th>
@@ -18,21 +22,25 @@
     <tbody>
       <tr>
         <td>{{ _("Token vào") }} <span class="muted">({{ _("câu hỏi, ngữ cảnh, định nghĩa tool") }})</span></td>
-        <td style="text-align:right;"><strong>{{ bang.token_vao }}</strong></td>
-        <td style="text-align:right;" class="muted">{{ "{:,}".format(bang.token_vao * 100) }}{{ _("đ") }}</td>
+        <td style="text-align:right;"><strong>{{ b.token_vao }}</strong></td>
+        <td style="text-align:right;" class="muted">{{ "{:,}".format(b.token_vao * 100) }}{{ _("đ") }}</td>
       </tr>
       <tr>
         <td>{{ _("Token vào lấy lại từ cache") }}</td>
-        <td style="text-align:right;"><strong>{{ bang.token_vao_cache }}</strong></td>
-        <td style="text-align:right;" class="muted">{{ "{:,}".format(bang.token_vao_cache * 100) }}{{ _("đ") }}</td>
+        <td style="text-align:right;"><strong>{{ b.token_vao_cache }}</strong></td>
+        <td style="text-align:right;" class="muted">{{ "{:,}".format(b.token_vao_cache * 100) }}{{ _("đ") }}</td>
       </tr>
       <tr>
         <td>{{ _("Token ra") }} <span class="muted">({{ _("câu trả lời, kể cả phần suy nghĩ") }})</span></td>
-        <td style="text-align:right;"><strong>{{ bang.token_ra }}</strong></td>
-        <td style="text-align:right;" class="muted">{{ "{:,}".format(bang.token_ra * 100) }}{{ _("đ") }}</td>
+        <td style="text-align:right;"><strong>{{ b.token_ra }}</strong></td>
+        <td style="text-align:right;" class="muted">{{ "{:,}".format(b.token_ra * 100) }}{{ _("đ") }}</td>
       </tr>
     </tbody>
   </table>
+</div>
+{% endfor %}
+
+<div class="card">
   {# Cau nay la DIEU KHOAN CONG BO — phai theo chinh sach dang chay, khong
      duoc chep lai no. Xem `dieu_khoan._muc_lam_tron()`. #}
   {% if bang.toi_thieu_moi_luot_credit %}
@@ -50,8 +58,9 @@
       <th>{{ _("Lượt gọi") }}</th>
       <th style="text-align:right;">{{ _("token vào") }}</th>
       <th style="text-align:right;">{{ _("token ra") }}</th>
-      <th style="text-align:right;">{{ _("credit") }}</th>
-      <th style="text-align:right;">{{ _("tiền") }}</th>
+      {% for b in cac_bang %}
+      <th style="text-align:right;"><code>{{ b.model }}</code></th>
+      {% endfor %}
     </tr></thead>
     <tbody>
       {% for v in vi_du %}
@@ -59,8 +68,10 @@
           <td>{{ v.ten }}</td>
           <td style="text-align:right;" class="muted">{{ "{:,}".format(v.vao) }}</td>
           <td style="text-align:right;" class="muted">{{ "{:,}".format(v.ra) }}</td>
-          <td style="text-align:right;"><strong>{{ v.credit }}</strong></td>
-          <td style="text-align:right;">{{ "{:,}".format(v.dong) }}{{ _("đ") }}</td>
+          {% for g in v.theo_model %}
+          <td style="text-align:right;"><strong>{{ g.credit }}</strong>
+            <span class="muted">({{ "{:,}".format(g.dong) }}{{ _("đ") }})</span></td>
+          {% endfor %}
         </tr>
       {% endfor %}
     </tbody>
@@ -74,7 +85,7 @@
      trang **giá**, và tạo ảnh là một mục của nó. #}
   <h2 style="margin-top:0;font-size:20px;">{{ _("Giá API tạo ảnh") }}</h2>
   <p>{{ _("Model ảnh chạy trên máy của chúng tôi. Tính theo ảnh, và chỉ tính những ảnh thật sự sinh ra được.") }}</p>
-  <p class="muted">1 credit = 100đ · {{ _("phiên bản giá") }} <code>{{ bang_anh.phien_ban_gia }}</code></p>
+  <p class="muted">1 credit = 100₫ · {{ _("phiên bản giá") }} <code>{{ bang_anh.phien_ban_gia }}</code></p>
 
   <table class="table">
     <thead><tr>
@@ -124,7 +135,7 @@
      không con số nào gõ lại ở đây. #}
   <h2 style="margin-top:0;font-size:20px;">{{ _("Giá tạo giọng nói") }}</h2>
   <p>{{ _("Model giọng tiếng Việt chạy trên máy của chúng tôi. Tính theo giây tiếng nói thật sự sinh ra, không theo số ký tự bạn gửi lên.") }}</p>
-  <p class="muted">1 credit = 100đ · {{ _("phiên bản giá") }} <code>{{ bang_tieng.phien_ban }}</code></p>
+  <p class="muted">1 credit = 100₫ · {{ _("phiên bản giá") }} <code>{{ bang_tieng.phien_ban }}</code></p>
 
   <table class="table">
     <thead><tr>

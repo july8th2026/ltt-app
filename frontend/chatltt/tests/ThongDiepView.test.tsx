@@ -12,7 +12,7 @@ function tin(g: Partial<ThongDiep> = {}): ThongDiep {
   return {
     id: 'a1', parent_id: 'u1', role: 'assistant',
     blocks: [{ type: 'text', text: 'xin chao' }],
-    status: 'done', model_alias: 'ltt_llm', execution_id: null,
+    status: 'done', model_alias: 'ltt-3.8', execution_id: null,
     created_at: '2026-09-03T00:00:02.000000+00:00',
     ...g,
   }

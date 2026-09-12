@@ -1,13 +1,26 @@
-"""danh_gia_vision.py — bài đánh giá cho `qwen38-vision`. (Prompt 04, nợ D-vision)
+"""danh_gia_vision.py — bài đánh giá NĂNG LỰC ĐỌC ẢNH của model nội bộ. (Prompt 04, nợ D-vision)
 
     python tools/danh_gia_vision.py --thu-thap --ra vision.json    # tren MAY B
     python tools/danh_gia_vision.py --cham vision.json             # o dau cung
 
 ## Vì sao tệp này tồn tại
 
-`qwen38-vision` **đang bán** qua `/api/v1` và **chưa có một bài đánh giá nào**.
+Năng lực đọc ảnh **đang bán** qua `/api/v1` và **chưa có một bài đánh giá nào**.
 `tools/danh_gia_llm.py` phủ tám chiều cho model chữ; `grep vision` trong đó trả
 về **rỗng**. Tức ta đang thu tiền cho một năng lực chưa từng đo.
+
+🔴 **12/09/2026 — CÂU ẤY VẪN ĐÚNG, CHỈ ĐỔI ĐỐI TƯỢNG.** Bản đầu đo hồ sơ riêng
+   `qwen38-vision`; hồ sơ ấy đã gỡ (D02, dual-model 2.3). Từ L-14 hệ quả 4, **cả
+   hai** hồ sơ còn sống nạp `mmproj`, nên đọc ảnh không còn là một hồ sơ riêng mà
+   là một **năng lực của cả hai model** — và nó lại chưa từng được đo ở hình dạng
+   mới. Bộ đề dưới đây không phụ thuộc hồ sơ nào, nên nó chạy được ngay:
+
+       python tools/danh_gia_vision.py --thu-thap --model qwen38-api
+       python tools/danh_gia_vision.py --thu-thap --model qwen35-api
+
+⚠️ Chủ sản phẩm hoãn phần ảnh sang phiên sau (12/09). Tệp này **cố ý được giữ
+   lại** chứ không xoá cùng tên cũ: xoá bộ đo ảnh duy nhất ngay trước phiên dành
+   riêng cho ảnh là đốt đúng thứ phiên ấy cần.
 
 ## Nguyên tắc: ẢNH SINH BẰNG MÃ, ĐÁP ÁN LÀ SỰ THẬT CHÍNH XÁC
 
@@ -297,7 +310,8 @@ def cham(duong: Path) -> int:
 
 
 def main() -> int:
-    p = argparse.ArgumentParser(description="Danh gia qwen38-vision.")
+    p = argparse.ArgumentParser(
+        description="Danh gia nang luc doc anh cua model noi bo (qwen38-api | qwen35-api).")
     p.add_argument("--thu-thap", action="store_true")
     p.add_argument("--sinh-anh", type=Path,
                    help="ve bo anh ra JSON (chay o noi CO pillow)")
@@ -306,7 +320,15 @@ def main() -> int:
     p.add_argument("--cham", type=Path)
     p.add_argument("--url", default="http://127.0.0.1:8299")
     p.add_argument("--token", default="")
-    p.add_argument("--model", default="qwen38-vision")
+    # 🔴 12/09: mac dinh doi `qwen38-vision` -> `qwen38-api`. Ho so vision rieng
+    #    KHONG con ton tai (D02, dual-model 2.3); tu L-14 he qua 4 thi CA HAI ho
+    #    so song deu nap `mmproj`, nen bo de nay chay duoc tren ca hai. Doi model
+    #    thu hai bang `--model qwen35-api`.
+    #
+    # ⚠️ Day la id NOI BO, khong phai bi danh: `--url` tro thang vao cong may B,
+    #    va cong ay chi biet ten trong `llm_gateway/catalog.HO_SO`.
+    p.add_argument("--model", default="qwen38-api",
+                   help="id noi bo: qwen38-api | qwen35-api")
     p.add_argument("--timeout", type=float, default=300.0)
     p.add_argument("--ra", type=Path, default=Path("vision.json"))
     a = p.parse_args()

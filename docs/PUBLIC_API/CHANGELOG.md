@@ -21,6 +21,59 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-09-12 — `text.chat` có HAI model, và tên cũ bị cắt
+
+**BREAKING · `model: "ltt_llm"` và `"ltt_llm_vision"` không còn được phục vụ.**
+
+### Cái gì đổi
+
+| | trước | nay |
+|---|---|---|
+| giá trị hợp lệ của `model` | `ltt_llm` · `ltt_llm_vision` | **`ltt-3.8`** · **`ltt-3.5`** |
+| mã lỗi | *(không có)* | **`model_not_found`** (HTTP 400) |
+
+Hai model chạy trên **hai GPU khác nhau** của máy nội bộ, nên chúng có hàng đợi
+riêng: một model bận **không** làm model kia bận.
+
+| | LTT-3.8 | LTT-3.5 |
+|---|---|---|
+| thế mạnh | suy luận sâu | nhanh hơn, rẻ hơn |
+| **trần input công bố** | **171K token** (trước: 156K) | **209K token** |
+| đầu vào | text *(ảnh: xem ghi chú)* | text + ảnh |
+
+**Trần input của `ltt-3.8` tăng 156K → 171K.** Đây là thay đổi **nới rộng**:
+lời gọi đang chạy không hỏng, chỉ là gửi được dài hơn. Con số này **dẫn xuất**
+từ cửa sổ engine trừ trần output và lề ước — nó không phải một số chọn tay, nên
+đừng gõ cứng nó vào mã tích hợp; đọc `GET /api/v1/tools`.
+
+⏳ **`ltt-3.8` sẽ đọc được ảnh ở bản cập nhật kế tiếp.** Hôm nay hồ sơ của nó
+chưa nạp bộ chiếu đa phương tiện; cần ảnh thì dùng `ltt-3.5`. Khi 3.8 bật ảnh,
+`GET /api/v1/tools` sẽ tự phản ánh — lại một lý do để đọc nó thay vì gõ cứng.
+
+### Phải làm gì
+
+Đổi trường `model` trong lời gọi sang `ltt-3.8` (tương đương gần nhất với
+`ltt_llm` cũ) hoặc `ltt-3.5`. Gửi tên cũ ⇒ **400 `model_not_found`**, không phải
+500 và không bị tính credit.
+
+`GET /api/v1/models` luôn liệt kê đúng tập tên đang phục vụ — đọc nó thay vì
+gõ cứng tên trong mã tích hợp.
+
+### Vì sao cắt thẳng chứ không giữ bí danh
+
+Một bảng bí danh ẩn làm `model` trở thành một trường mà **câu trả lời không suy
+ra được từ câu hỏi**: cùng một chuỗi `ltt_llm` sẽ trỏ sang model khác nhau tuỳ
+lúc ai đó đổi bảng, và không có gì trong phản hồi nói cho tích hợp biết điều đó.
+Khi hai model có **giá khác nhau** thì đó là một khoản tiền không giải thích
+được trên hoá đơn. Nên tên cũ trả lỗi **nói rõ** thay vì im lặng đoán.
+
+### Việc đang chạy dở không bị ảnh hưởng
+
+Job đã nộp với `model: "ltt_llm"` được migration đổi sang `ltt-3.8` khi nâng cấp
+— không job nào hỏng giữa chừng. **Lịch sử usage và credit không bị viết lại.**
+
+---
+
 ## 2026-09-09 — `image.generate` và `image.thumbnail` đổi động cơ
 
 **BREAKING · Hai hợp đồng đổi. `image.thumbnail` mất bốn tham số;

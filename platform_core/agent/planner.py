@@ -41,9 +41,11 @@ from platform_core.llm.canonical import THU_TU_PROVIDER as PLANNER_PROVIDERS
 
 MAX_GOAL_CHARS = 8000
 
-#: Tai nguyen admission cua model nha. Doc tu ban khai cua app chu KHONG go tay,
-#: vi go tay o day la ban sao thu hai cua `admission_resource` trong manifest.
-_TAI_NGUYEN_MAC_DINH = ("llm_remote", 1)
+#: ⛔ `_TAI_NGUYEN_MAC_DINH` ĐÃ GỠ (multijob 2.2). Nó là một hằng số chết —
+#:    không dòng nào đọc — và là đúng "bản sao thứ hai của bản khai" mà chú
+#:    thích của chính nó cảnh báo. Mặc định thật sống MỘT bản ở
+#:    `platform_core/llm/canonical.py::_TAI_NGUYEN_MAC_DINH`, và từ 2.2 nó là
+#:    `AdmissionModel`, không còn là bộ đôi `(resource, slots)`.
 
 
 def _model_nha() -> str:
@@ -68,12 +70,38 @@ def _model_nha() -> str:
 
     ⛔ Dung go lai id o day. Doi GGUF ben duoi thi registry doi, va cho nay
        phai di theo -- do chinh la viec cua registry.
+
+    🔴 D09 (dual-model 2.4) DOI CACH CHON, KHONG DOI BAT BIEN.
+
+       Ban truoc chon "model text dau tien KHONG co co `vision`". Phep chon ay
+       hong o hai chieu, va ca hai deu that:
+
+       (a) **No khong tra loi dung cau hoi.** Tu 11/09 may B chay HAI model tren
+           HAI card. Lap ke hoach la viec **noi bo**, nen model cua no la thu
+           `MODEL_NOI_BO_MAC_DINH` khai (`ltt-3.5`, 5060 Ti) — khong phai "cai
+           dau tien khong doc anh". Truoc 2.4 phep chon ay tra ve `qwen38-api`
+           trong khi `_goi_model` giu suat cua... cung `MODEL_MAC_DINH`, nen hai
+           ve trung nhau **do trung hop**, khong do thiet ke.
+
+       (b) **No tu vo o Task 3.3.** Khi `qwen38-api` nap mmproj va khai
+           `vision: True`, ca hai model deu co co ⇒ vong lap khong tra ve gi ⇒
+           `PlannerError("registry khong khai model text nao")`, va planner
+           chet han. Cung lop loi ma `apps/auto_scan_video/ai.py::model_cho`
+           dang mang (bao cao 2.3 §1.2), o mot tep khac.
+
+    ⇒ Nay: hoi **ban khai** lay bi danh, doi bi danh sang id noi bo, roi **van
+      doi chieu voi registry** — id khong co trong registry thi tra `""`, giu
+      nguyen thong diep loi cu. Phan "hoi registry" khong mat; phan "doan bang
+      mot co" thi mat.
     """
     from platform_core import providers
-    for m in providers.models_for("ltt_llm", APIKEY_CAT_CHAT):
-        if not (getattr(m, "capabilities", None) or {}).get("vision"):
-            return m.id
-    return ""
+    from platform_core.llm import canonical
+
+    id_nha = canonical.ALIAS_SANG_ID.get(canonical.MODEL_NOI_BO_MAC_DINH, "")
+    if not id_nha:
+        return ""
+    co_that = {m.id for m in providers.models_for("ltt_llm", APIKEY_CAT_CHAT)}
+    return id_nha if id_nha in co_that else ""
 
 
 #: ⛔ BÍ DANH, không phải định nghĩa. Chuyển lên `platform_core/llm/canonical.py`
@@ -84,6 +112,60 @@ from platform_core.llm.canonical import tai_nguyen_nha as _tai_nguyen_nha
 
 class PlannerError(RuntimeError):
     pass
+
+
+def _luat_cho_planner(prompt: str) -> dict:
+    """Tham số đa lượt của một lượt LẬP KẾ HOẠCH: lớp `noi_bo` + đặt chỗ KV. (spec §6)
+
+    ⭐ Lớp `noi_bo` là nửa quan trọng hơn. Không khai lớp thì lease đi đường
+       `tuong_tac` — tức việc nội bộ của nền tảng tranh chỗ **ngang hàng** với
+       một khách đang trả tiền và đang nhìn màn hình. Luật 3 của `luat_nhan`
+       tồn tại để chặn đúng chuyện đó, và nó chỉ chặn được thứ nó **nhìn thấy**.
+
+    ⛔ Ước hỏng ⇒ đặt chỗ CẢ POOL — cùng hướng an toàn với job nền: một lease
+       không mang số token là một lease **vô hình** với sổ ngân sách KV, và hai
+       đường cộng lại vượt pool thì llama.cpp giết mọi slot.
+    """
+    import logging
+
+    from platform_core.llm import canonical, luat_nhan, tham_so_da_luot
+
+    try:
+        tool = canonical.tool_nha()
+    except Exception:                                          # noqa: BLE001
+        logging.getLogger(__name__).exception(
+            "khong doc duoc ban khai model nha de dat cho KV")
+        return {}
+    # ⛔ Ngân sách KV lấy từ `admission_cho(model)`, KHÔNG từ `admission_token_pool`
+    #    (multijob 2.2): một tool khai `admission_theo_model` có trường tĩnh ấy
+    #    RỖNG, nên đọc thẳng nó sẽ ra 0 ⇒ `{}` ⇒ lease **vô hình** với sổ ngân
+    #    sách KV, đúng cái hướng an toàn ở dưới sinh ra để tránh.
+    try:
+        # D09: việc lập kế hoạch là việc NỘI BỘ ⇒ ngân sách KV của model nội bộ
+        # (`ltt-3.5`), không phải của model mặc định bán cho khách (`ltt-3.8`).
+        suc = tool.admission_cho(canonical.MODEL_NOI_BO_MAC_DINH) if tool else None
+    except KeyError:
+        logging.getLogger(__name__).exception(
+            "model nha %r khong co trong ban khai admission cua tool",
+            canonical.MODEL_NOI_BO_MAC_DINH)
+        return {}
+    pool = int(suc.token_pool) if suc else 0
+    if pool <= 0:
+        return {}
+    try:
+        from platform_core.public_api.executor import for_tool
+
+        ex = for_tool(tool)
+        tin = [{"role": "user", "content": prompt}]
+        vao = int(ex.estimate_input(tin))
+        ra = int(ex.mac_dinh_cho("job"))
+        ra = min(ra, int(ex.context_output_cap(vao)))
+        return tham_so_da_luot.luat_cho(pool, lop=luat_nhan.NOI_BO,
+                                        token_vao_uoc=vao, xin_ra=ra)
+    except Exception:                                          # noqa: BLE001
+        logging.getLogger(__name__).exception(
+            "khong uoc duoc token cua luot lap ke hoach - dat cho CA POOL")
+        return dict(lop=luat_nhan.NOI_BO, token_pool=pool, token_dat_truoc=pool)
 
 
 def build_prompt(goal: str, *, budget_max_credit: int, input_types: dict | None = None) -> str:
@@ -150,18 +232,22 @@ def _goi_model(db: DbSession, prompt: str) -> str:
     """
     import uuid as _uuid
 
-    from platform_core.llm import admission, dieu_phoi
+    from platform_core.llm import admission, canonical, dieu_phoi
 
     thu_tu = list(PLANNER_PROVIDERS)
     ban_do: dict[str, str] = {}
     id_nha = _model_nha()
     ve = None
-    tai_nguyen, suat = _tai_nguyen_nha()
+    # D09: suất giành phải là suất của model SẮP GỌI (`_model_nha()` đọc cùng
+    # một hằng), nếu không thì lease nằm ở pool KV của card kia — và một suất
+    # giành sai pool không bảo vệ gì.
+    suc = _tai_nguyen_nha(canonical.MODEL_NOI_BO_MAC_DINH)
 
     if id_nha:
         ve = admission.acquire(
-            db, resource=tai_nguyen, slots=suat, user_id="he-thong:planner",
-            mode="job", holder_id="planner:" + _uuid.uuid4().hex[:12])
+            db, resource=suc.resource, slots=suc.slots, user_id="he-thong:planner",
+            mode="job", holder_id="planner:" + _uuid.uuid4().hex[:12],
+            **_luat_cho_planner(prompt))
         if ve is not None:
             ban_do["ltt_llm"] = id_nha
 

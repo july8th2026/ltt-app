@@ -82,18 +82,24 @@ def nop_job(db, *, user_id: str, bao_gia: BaoGia, correlation_id: str = "",
     `idempotency_key` rỗng ⇒ khoá dedupe suy từ `(lane, tham số)` như mọi route.
     """
     from platform_core.public_api.limits import resource_class
+    from platform_core.registry import admission_luc_nop
 
     manifest, tool = tim_tool(bao_gia.tool_name)
     params = dict(bao_gia.tham_so_sach)
     params["owner_id"] = user_id
     dedupe = idempotency_key or dedupe_key_for(bao_gia.lane, params)
+    # 🔴 THEO MODEL, không phải bộ ba tĩnh (multijob 2.3, R20). Xem
+    #    `registry.admission_luc_nop` để biết vì sao đọc `tool.admission_resource`
+    #    ở đây làm hỏng `jobs.claim` + fairness + scheduler envelope.
+    tai_nguyen, so_suat = admission_luc_nop(
+        tool, bao_gia.tham_so_sach, mac_dinh=resource_class(manifest))
     return submit_with_credit(
         db, user_id=user_id, app_slug=manifest.slug, job_type=bao_gia.lane,
         params=params, dedupe_key=dedupe,
         max_attempts=manifest.so_lan_thu_for(bao_gia.lane),
         correlation_id=correlation_id,
         quoted_credit=int(bao_gia.credit),
-        admission_resource=getattr(tool, "admission_resource", "") or resource_class(manifest),
-        admission_slots=int(getattr(tool, "admission_slots", 0) or 0),
+        admission_resource=tai_nguyen,
+        admission_slots=so_suat,
         origin="internal_runtime", priority_class="internal",
     )

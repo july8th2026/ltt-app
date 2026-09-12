@@ -29,6 +29,7 @@ from platform_core.public_api.errors import (idempotency_conflict,
                                              invalid_request)
 from platform_core.public_api.tables import (ApiIdempotencyRecord,
                                              IDEMPOTENCY_COMPLETED,
+                                             IDEMPOTENCY_FAILED,
                                              IDEMPOTENCY_IN_PROGRESS)
 
 MAX_KEY_LENGTH = 255
@@ -101,6 +102,15 @@ def begin(db, *, key_id: str, user_id: str, operation: str, key: str,
     _lock(db, key_id, operation, key)
     existing = find(db, key_id=key_id, operation=operation, key=key)
     if existing is not None:
+        if (existing.status == IDEMPOTENCY_FAILED
+                and existing.request_hash == request_hash):
+            # Lượt trước không chạy được và không để lại gì (xem
+            # `IDEMPOTENCY_FAILED`). Nhận lại chính bản ghi ấy: khách thử lại
+            # cùng khoá là chuyện ta VỪA BẢO họ làm bằng `Retry-After`.
+            existing.status = IDEMPOTENCY_IN_PROGRESS
+            existing.updated_at = _now()
+            db.flush()
+            return existing, False
         return _replay(existing, request_hash)
 
     record = ApiIdempotencyRecord(
@@ -144,6 +154,28 @@ def complete(db, record, *, response: dict, job_id: str = "") -> None:
     record.job_id = str(job_id or "")
     record.updated_at = _now()
     db.flush()
+
+
+def mo_lai(db, record, *, ly_do: str = "") -> None:
+    """Close an in-flight record as *retryable*: nothing ran, nothing was held.
+
+    The synchronous door calls this when it gives up waiting (429 + Retry-After)
+    or when the client disconnects. Leaving the record ``in_progress`` would
+    answer every later retry of the same key with 409 "still being processed"
+    until the record expires — telling the client to retry while making the
+    retry impossible.
+
+    ⛔ Only call it when no credit was held and the model was not called.
+    """
+    record.status = IDEMPOTENCY_FAILED
+    record.response = {}
+    record.updated_at = _now()
+    db.flush()
+    if ly_do:
+        import logging
+
+        logging.getLogger(__name__).info(
+            "mo lai khoa idempotency %s: %s", record.idempotency_key[:12], ly_do)
 
 
 #: The retry window a client could plausibly still be in. Past it, the record

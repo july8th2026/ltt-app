@@ -35,10 +35,21 @@ class KhongMoDuocLuong(Exception):
     """Không mở được luồng. Bên gọi dịch sang 502/503 tuỳ `ban`."""
 
     def __init__(self, ly_do: str, *, ban: bool = False,
-                 qua_dai: bool = False, thu_lai_sau_s: int = 30):
+                 qua_dai: bool = False, het_gio: bool = False,
+                 thu_lai_sau_s: int = 30):
         super().__init__(ly_do)
         self.ly_do = ly_do
         self.ban = ban
+        #: Máy B nhận yêu cầu nhưng không trả lời kịp (cổng trả 504).
+        #:
+        #: ⛔ KHÁC `ban`, và khác một cách quan trọng. `ban` nói *"thử lại sau
+        #:    30 giây thì được"*; `het_gio` **không** hứa điều đó — một yêu cầu
+        #:    hết giờ vì nó quá lớn sẽ hết giờ y hệt ở lần sau.
+        #:
+        #: ⛔ Và khác cả hai ở chỗ quan trọng nhất: **không** `danh_dau_loi`.
+        #:    Prefill 200K mất hàng phút là công việc hằng ngày của hệ này, chứ
+        #:    không phải dấu hiệu khoá hỏng.
+        self.het_gio = het_gio
         #: Đầu vào vượt trần token của máy B (413) — lỗi CLIENT (ngữ cảnh quá
         #: dài), KHÔNG phải hỏng tạm. Bên gọi phải trả 413 để client NÉN hội
         #: thoại, KHÔNG được dịch thành 503 (retry vô ích → bão).
@@ -179,6 +190,29 @@ def mo(db, *, duong: str, than: dict, timeout_s: float = 900.0,
             # → bão, và khách thấy "im lặng" ở phản hồi/hội thoại dài (đo 27/08).
             raise KhongMoDuocLuong(
                 f"may B tra 413: {than_loi[:200]}", qua_dai=True)
+        if r.status_code == 504:
+            # 🔴 HẾT GIỜ Ở MÁY B **KHÔNG PHẢI** LỖI CỦA KHOÁ — VÀ CỬA NÀY LÀ CỬA
+            #    NGUY HIỂM NHẤT ĐỂ QUÊN.
+            #
+            #    Cổng máy B trả 504 khi thượng nguồn không kịp trả lời (tách khỏi
+            #    502 ngày 09/09). Không có nhánh này thì 504 rơi xuống `>= 500`
+            #    ngay dưới ⇒ `api_pool.danh_dau_loi()` ⇒ sau 5 lần
+            #    `key.status = APIKEY_ERROR`, và `APIKEY_ERROR` **không tự hồi**
+            #    (`api_pool._ung_vien` chỉ tự hồi `COOLDOWN`).
+            #
+            # ⛔ VÀ ĐÂY LÀ CỬA **STREAMING** — cửa Codex và Claude Code thật sự
+            #    dùng, tức cửa của những prompt 100–200K, tức đúng chỗ hết giờ
+            #    dễ xảy ra nhất. Bản vá cho cửa đồng bộ (`cong_vlm`) mà bỏ quên
+            #    chỗ này là một bản vá **nhìn thì xong mà chưa chạm tới đường
+            #    hay hỏng nhất**.
+            #
+            # ⚠️ KHÔNG đặt `ban=True`. "Bận" nghĩa là *thử lại sau 30 giây thì
+            #    được*; nhưng một yêu cầu hết giờ vì nó **quá lớn** sẽ hết giờ
+            #    y hệt ở lần sau. Gắn `ban` vào đây là dựng một vòng thử lại vô
+            #    ích — đúng cái bẫy mà chú thích 413 ngay trên đã cảnh báo
+            #    ("retry vô ích → bão").
+            raise KhongMoDuocLuong(
+                f"may B khong tra loi kip (504): {than_loi[:300]}", het_gio=True)
         if r.status_code >= 500:
             if _loi_parser_tool_call(than_loi):
                 # 🔴 BUG THƯỢNG NGUỒN, KHÔNG PHẢI HỎNG MÁY — VÀ NÓ NGẪU NHIÊN.

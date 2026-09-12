@@ -19,6 +19,8 @@ from __future__ import annotations
 
 import json
 
+from platform_core.llm import canonical
+
 ENV_API_KEY = "LTT_API_KEY"
 ENV_BASE_URL = "LTT_BASE_URL"
 ENV_PROJECT_ID = "LTT_PROJECT_ID"
@@ -270,7 +272,8 @@ NO_CODE_RECIPES = (
 # an example that does not run, and the reader concludes the API is broken
 # rather than that the example is wrong.
 
-CHAT_MODEL = "ltt_llm"
+#: 🔑 DẪN TỪ `canonical`, KHÔNG GÕ TAY. Xem `CLI_MODELS` ngay dưới để biết vì sao.
+CHAT_MODEL = canonical.MODEL_MAC_DINH
 CHAT_PATH = "/chat/completions"
 
 #: Deliberately short. A long prompt pulls attention onto its content instead of
@@ -556,17 +559,34 @@ CHAT_DIFFERENCES = (
 # this module: they read the environment, and the tests refuse anything that
 # looks like a literal credential.
 
-#: The model alias a customer types. Deliberately the public alias, never the
-#: internal id — a customer who pins to the internal id is a customer we cannot
-#: move to a different model later without breaking them (test_212).
-CLI_MODEL = "ltt_llm"
+#: Every public alias a customer may type, in the order the pages list them.
+#:
+#: 🔴 THIS TUPLE IS DERIVED, AND THE DERIVATION IS THE POINT. Until 2026-09-12
+#:    this module knew about exactly one model and said so in four hand-typed
+#:    places. The platform had shipped a second one (`ltt-3.5`) days earlier, so
+#:    every public page — connect guide, plug-in tool, developer portal — showed
+#:    a **one-model product** while the catalogue, the price table and the
+#:    billing ledger all knew about two. A customer could not discover the model
+#:    they were already being charged different rates for.
+#:
+#: ⭐ Reading it off `canonical.ALIAS_SANG_ID` means the pages cannot lag the
+#:    platform again: adding a third profile updates the guide in the same
+#:    commit that adds the model, because there is no second list to remember.
+#:
+#: ⚠️ Left-hand side only — public aliases, never the internal ids behind them.
+#:    A customer who pins to `qwen38-api` is a customer we cannot move to another
+#:    model without breaking them (test_212). That is what the alias layer buys.
+CLI_MODELS: tuple[str, ...] = tuple(canonical.MODEL_HOP_LE)
+
+#: The one a customer gets when they say nothing. Same source, same reason.
+CLI_MODEL = canonical.MODEL_MAC_DINH
 
 #: The route name Claude Desktop needs — and it is a **route name**, not a
-#: product name. Everything a customer buys is still `ltt_llm`.
+#: product name. Everything a customer buys is still `ltt-3.8` / `ltt-3.5`.
 #:
 #: Claude Desktop in `gateway` mode filters the model list before drawing the
 #: picker: a name that does not contain `claude`, `anthropic`, or a Claude family
-#: word is dropped. `ltt_llm` is dropped, the picker ends up empty, and the send
+#: word is dropped. `ltt-3.8` is dropped, the picker ends up empty, and the send
 #: button then does nothing at all — no log line, no toast, no banner. Measured
 #: 2026-08-24 against the shipped build; see `server.api.streaming` for the rule
 #: as read out of the app's own bundle.
@@ -574,7 +594,47 @@ CLI_MODEL = "ltt_llm"
 #: The filter only asks that the name *contain* `claude`; it does not ask for a
 #: real Anthropic model. So this name clears the gate without borrowing another
 #: company's product name.
+#:
+#: 🔑 ROUTE NAME → PUBLIC ALIAS. **The single source for both ends**:
+#:    `server.api.streaming.TUYEN_TUONG_THICH` is built from this dict rather
+#:    than repeating it, so the gateway that resolves the name and the page that
+#:    prints it cannot disagree.
+#:
+#: 🔴 WHY A SECOND ROUTE EXISTS FROM 2026-09-12. There was exactly one, so
+#:    Claude Desktop could reach exactly one of our two models — `ltt-3.5` was
+#:    **unreachable from that client at any price**, because the only name that
+#:    survives the picker filter resolved to `ltt-3.8`. Not a missing
+#:    convenience: a product we sell with no door on one of its surfaces.
+#:
+#: ⚠️ The suffix is the alias' own distinguishing part, so a reader can see
+#:    which model a route goes to without opening this file. Do not "tidy" the
+#:    names to `-a` / `-b`: the name is what a customer pastes into a registry
+#:    key, and it is the only place they will ever see which model they picked.
+#:
+#: ⛔ These are **route names of one client's protocol**, not product names. They
+#:    do not belong in `canonical.ALIAS_SANG_ID`, and nothing in the catalogue,
+#:    the price table or `/api/v1/tools` may print them as models for sale.
+TUYEN_DESKTOP: dict[str, str] = {
+    "ltt-llm-claude-compat": "ltt-3.8",
+    "ltt-llm-claude-compat-35": "ltt-3.5",
+}
+
+#: The route for the default model — what the Desktop surface shows by default.
 DESKTOP_MODEL = "ltt-llm-claude-compat"
+
+
+def tuyen_desktop_cho(alias: str) -> str:
+    """Public alias → the route name Claude Desktop must be given for it.
+
+    ⛔ Raises rather than falling back to the default route. A wrong-but-plausible
+       route name is the exact failure this whole mechanism exists to prevent:
+       Desktop would answer from a model the customer did not pick, and the only
+       symptom is a bill for the other price.
+    """
+    for tuyen, ten in TUYEN_DESKTOP.items():
+        if ten == alias:
+            return tuyen
+    raise KeyError(f"khong co tuyen Desktop cho {alias!r} (co: {CLI_MODELS})")
 
 #: Cửa sổ ngữ cảnh ta **công bố cho client**, và trần token ra.
 #:
@@ -590,12 +650,12 @@ DESKTOP_MODEL = "ltt-llm-claude-compat"
 #:    sai và chúng mâu thuẫn nhau: `65000` bắt khách tự giới hạn thấp hơn thật
 #:    26 nghìn token, còn `131K` hứa nhiều hơn thật 42 nghìn rồi để họ ăn **413**
 #:    giữa hội thoại. Một con số gõ tay trong tài liệu bán hàng là một lời hứa.
-CUA_SO_CONG_BO = 156_385
+CUA_SO_CONG_BO = 171_458
 TOKEN_RA_TRAN = 32_768
 
 #: Ngưỡng client **phải nén** hội thoại. Bản sao của `ngan_sach.NEN_CHO_CLIENT`,
 #: cùng lý do và cùng cách đối chiếu như hai con số trên.
-NEN_CLIENT = 123_617
+NEN_CLIENT = 138_690
 
 #: Trần cho **một** kết quả công cụ, công bố vì nó đổi hành vi thấy được.
 #:
@@ -620,12 +680,12 @@ TRAN_KET_QUA_TOOL = 16_384
 #: ⛔ ĐỪNG GỘP LẠI THÀNH MỘT SỐ. Chúng đo năm thứ khác nhau, và mỗi lần dự án
 #:    này gộp hai trong số chúng lại thì kết quả là một lời hứa sai:
 #:    `65000` bắt khách tự bó hẹp; `131K` hứa quá rồi để họ ăn 413; một con số
-#:    dùng chung cho `ltt_llm` và `ltt_llm_vision` hứa cho vision gấp 3,1 lần.
+#:    dùng chung cho hai model có cửa sổ khác nhau hứa cho model nhỏ gấp 3,1 lần.
 NGU_CANH_NAM_SO = (
-    ("Engine context", "204,800",
+    ("Engine context", "221,184",
      "What the model is loaded with on our GPU. You never send this much: "
      "input and output share this window."),
-    ("Hard input limit", "169,984",
+    ("Hard input limit", "186,368",
      "The most input we accept. Above it you get 413 — never a silent "
      "truncation. It is the engine window minus the longest possible answer "
      "and a margin for token estimation."),
@@ -669,7 +729,7 @@ LOI_413 = (
      "window, because one turn can grow by a whole answer before your client "
      "gets to check again."),
     ("You are sending images to a text profile",
-     "`ltt_llm_vision` has a smaller window than `ltt_llm` — they are two "
+     "`ltt-3.5` has its own window, separate from `ltt-3.8` — they are two "
      "model profiles, not one. The 413 body carries the limit that actually "
      "applied, so read the number in the error rather than assuming."),
 )
@@ -706,7 +766,7 @@ BA_CUA = (
 
 #: Tệp catalog model cho Codex — đường dẫn công cụ `cam` ghi ra.
 #:
-#: ⭐ Thiếu nó thì Codex **không có metadata** cho `ltt_llm`, rơi vào đường
+#: ⭐ Thiếu nó thì Codex **không có metadata** cho model nhà, rơi vào đường
 #:    `compact_model_fallback` và mượn tên một model OpenAI cho lượt phụ; cổng
 #:    của ta từ chối (fail-closed) và khách thấy "im lặng" ở hội thoại dài.
 TEP_CATALOG_CODEX = r"%USERPROFILE%\.codex\ltt_model_catalog.json"
@@ -748,7 +808,7 @@ def codex_profile() -> str:
         'model_reasoning_summary = "none"\n'
         f"model_context_window = {CUA_SO_CONG_BO}\n"
         "# Declare the model so Codex stops guessing. Without this it warns\n"
-        "# `Model metadata for ltt_llm not found`, then substitutes an OpenAI\n"
+        f"# `Model metadata for {CLI_MODEL} not found`, then substitutes an OpenAI\n"
         "# model name on its own internal calls — which our gate rejects.\n"
         f"model_catalog_json = '{TEP_CATALOG_CODEX}'"
     )
@@ -957,7 +1017,7 @@ CLI_BAY = (
      "environment variable there does nothing at all."),
     ("Claude Desktop takes a different model name from every other client",
      f"It keeps only names containing claude, anthropic, or a Claude family "
-     f"word, and drops the rest before the picker is drawn — so ltt_llm is "
+     f"word, and drops the rest before the picker is drawn — so {CLI_MODEL} is "
      f"discarded, the picker ends up empty, and the send button silently stops "
      f"working. Give it {DESKTOP_MODEL}: the same model, under the one name "
      f"that clears its filter."),
@@ -980,7 +1040,7 @@ CLI_BAY = (
 #    tri nguy hiem nhat cua ca khu API deu KHAC NHAU giua cac be mat:
 #
 #        dia chi   /api/v1  (Codex)   ><   /api  (Claude Code, Desktop)
-#        model     ltt_llm            ><   ltt-llm-claude-compat (Desktop)
+#        model     ltt-3.8            ><   ltt-llm-claude-compat (Desktop)
 #
 #    Xep chong nghia la ca hai gia tri cung nam tren man hinh cung luc, khong
 #    co gi noi cai nao la cua ai. Do la mot cai bay do chinh trang huong dan
