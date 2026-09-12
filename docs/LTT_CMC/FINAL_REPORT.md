@@ -2,7 +2,7 @@
 
 ## Trạng thái
 
-`PENDING_FINAL_L3`
+`SOURCE_CERTIFIED · REMOTE_MAIN · CLEANUP_PENDING_APPROVAL`
 
 Nguồn chức năng Voice đã có trong tag `cmc-base-20260911`. Quét live ngày
 12/09/2026 phát hiện ba commit tài liệu Voice hậu-tag; chúng được port vào
@@ -20,10 +20,21 @@ Không có mã Voice cũ nào bị phát lại.
   `CMC_SOURCE_STATE.md` chứng minh Source B thay thế đủ từng hunk.
 - Alembic sau merge: một head `a3f7c214e8b9`.
 
+## Chứng nhận canonical
+
+- `SOURCE_CERTIFIED_SHA`:
+  `f14b3056f6dcc0a4f8c05c8dad755816cde9b44c`.
+- `python tools\gate.py` → **PASS 33/33**, 1.073,2 giây, cây không đổi;
+  report `test-results/gates/20260912T155432Z-20964.json`.
+- Secret scan trước gate: 3.428 tệp, 830.006 dòng, 0 finding.
+- `origin/main` đã push đúng `SOURCE_CERTIFIED_SHA`; GitHub default branch và
+  `origin/HEAD` đều trỏ `main`.
+- GitHub branch protection/rulesets: `NOT_AVAILABLE`. API trả 403 với thông
+  điệp tính năng cần GitHub Pro hoặc repository public; không có rule khả dụng
+  để chuyển. Repository vẫn giữ private.
+
 ## Việc chưa được phép gọi là hoàn thành
 
-- Chưa chạy secret scan và L3 trên commit hợp nhất.
-- Chưa push/chuyển default branch hoặc branch protection ở remote.
 - Chưa xóa bất kỳ worktree, branch, ref, archive ngoài patch WIP đã xác định.
 - Worktree `D:\LTTSTUDIOSAPP-vps-v4` là WIP chưa commit, phân loại
   `NEED_RECONCILIATION`; không phải mục có thể xóa.

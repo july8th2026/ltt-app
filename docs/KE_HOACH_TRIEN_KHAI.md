@@ -3878,8 +3878,9 @@ Nguồn thiết kế:
       worktree/HEAD/dirty hash thật; chưa dọn branch/worktree.
 - [ ] **H45.6 — Final integration + cleanup:** 12/09/2026 đã port ba commit tài
       liệu Voice hậu-baseline và merge `cmc/llm-dual-reconcile` vào `main`;
-      đang chờ L3 trên HEAD hợp nhất. Chưa chuyển remote authority, chưa xóa
-      worktree/branch. WIP VPS V4 được giữ nguyên và ghi
+      L3 PASS 33/33 tại `f14b3056`, remote default đã chuyển sang `main`.
+      Chưa xóa worktree/branch; đang dừng ở ledger chờ duyệt riêng. WIP VPS V4
+      được giữ nguyên và ghi
       `NEED_RECONCILIATION`, không được coi là mục cleanup an toàn.
 
 **Ngoài phạm vi:** deploy production. **Gate:** tuân đúng
@@ -3948,8 +3949,8 @@ vision. Kế hoạch của họ viết **trước** phép đo; ta giữ ý đị
       phải một báo động hợp lệ: sàn WDDM khác 0 kể cả ở cấu hình đang sống, và nó
       **co giãn theo `-ub`**. **Xong**: `llm_gateway/dem.py` + `nhip_tim.py`,
       hai khối mới ở `/ops/jobs-metrics`, `test_1227`/`test_1228`.
-- [ ] H45.7.1 Q mới + runbook + nhật ký. Q123 ✔; `RUNBOOK.md` ✔; L-19 ✔; nhật
-      ký ✔; còn **gate đầy đủ trên `main` hợp nhất**.
+- [x] H45.7.1 Q mới + runbook + nhật ký + gate đầy đủ trên `main` hợp nhất:
+      PASS 33/33 tại `f14b3056`, report `20260912T155432Z-20964.json`.
 - [x] H45.9 **Bề mặt công khai + ba công cụ cắm phục vụ CẢ HAI model** (L-19).
       ⛔ Không phải việc dọn: `ltt-3.5` **không gọi được từ Claude Desktop ở bất kỳ
       giá nào** (một tuyến tương thích duy nhất, giải về `ltt-3.8`), bộ cài độc lập

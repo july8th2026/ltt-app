@@ -8,16 +8,19 @@
 | Canonical worktree | `D:\LTTSTUDIOSAPP` |
 | CMC base SHA | `09b219a371e1261f0f0eef0e316c1ca42754cb78` |
 | CMC base tag | `cmc-base-20260911` |
-| Phase | `FINAL_INTEGRATED_PENDING_L3` |
+| Phase | `CANONICAL_CERTIFIED_CLEANUP_PENDING_APPROVAL` |
 
-`CANONICAL_CANDIDATE` (`main`) đã nhận ba commit tài liệu Voice hậu-baseline và
-merge `cmc/llm-dual-reconcile`. Chưa có L3 trên kết quả hợp nhất, chưa thay
-default branch ở remote và chưa cleanup.
+`main` đã nhận ba commit tài liệu Voice hậu-baseline, merge
+`cmc/llm-dual-reconcile`, PASS L3 trên cây sạch và trở thành default branch ở
+remote. Chưa cleanup.
+
+`CANONICAL_CANDIDATE: main` đã được promote thành canonical authority; marker
+được giữ để topology test và lịch sử chiến dịch còn truy được trạng thái nguồn.
 
 ```text
 CMC_BASE_BRANCH: main
 CMC_BASE_WORKTREE: D:\LTTSTUDIOSAPP
-STATUS: FINAL_INTEGRATED_PENDING_L3
+STATUS: CANONICAL_CERTIFIED_CLEANUP_PENDING_APPROVAL
 ```
 
 Phần chức năng Voice đã nằm trong baseline. Quét live sau khi phiên Voice đóng
@@ -34,7 +37,8 @@ vận hành.
 
 - Thiết kế: `docs/superpowers/specs/2026-09-11-ltt-cmc-design.md`.
 - Master plan: `docs/superpowers/plans/2026-09-11-ltt-cmc.md`.
-- Task hiện tại: H45.6 đã tích hợp nguồn; đang chuẩn bị một L3 trên `main`.
+- Task hiện tại: H45.6 đã tích hợp/chứng nhận/chuyển authority; dừng trước xóa
+  để người dùng duyệt literal cleanup ledger.
 - Reconciliation matrix: `docs/LTT_CMC/reconciliation.json` (36 branches,
   25 reflog-only commits, 0 `RECONCILE`, 0 rescue refs).
 - Normalization baseline: `docs/LTT_CMC/NORMALIZATION_BASELINE.md` (một Alembic
@@ -44,6 +48,12 @@ vận hành.
   được xử lý bằng ba commit tài liệu riêng trước merge LLM.
 - Source certification: **PASS 33/33**, 950,7 giây,
   `test-results/gates/20260911T235957Z-25548.json`, cây không đổi giữa lượt.
+- Final integration certification: **PASS 33/33** tại
+  `f14b3056f6dcc0a4f8c05c8dad755816cde9b44c`, 1.073,2 giây,
+  `test-results/gates/20260912T155432Z-20964.json`, cây không đổi giữa lượt.
+- Remote authority: `origin/main` và GitHub default branch đều trỏ
+  `f14b3056`; branch protection/rulesets không khả dụng trên gói private hiện
+  tại (GitHub API 403 yêu cầu Pro hoặc public).
 - Production deployment by LTT-CMC: `NONE`. Voice và LLM đã deploy trong các
   phiên sở hữu trước khi bàn giao; CMC không deploy lại hoặc thay đổi production.
 

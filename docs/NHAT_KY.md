@@ -25,9 +25,25 @@ bằng merge commit `c556c411`. Không sửa worktree VPS V4 hay Source A dirty.
 Source B thay thế đủ từng tệp; đồng thời sửa liên kết tài liệu và hai lỗi định
 dạng hẹp. Alembic sau merge đo được đúng một head `a3f7c214e8b9`.
 
-Bằng chứng hiện tại là `PENDING_FINAL_L3`: gate nguồn LLM 30 PASS/3 BOQUA chạy
-ở `4bc3ea48`, trước ba commit cuối, nên không được dùng làm phán quyết cho HEAD
-hợp nhất. Chưa push/chuyển remote authority và chưa xóa worktree/branch.
+Bằng chứng nguồn LLM 30 PASS/3 BOQUA ở `4bc3ea48` không được dùng làm phán
+quyết cho HEAD hợp nhất. L3 đầu trên `a60bd218` FAIL 2/33, bắt ba lỗi thuộc đúng
+changeset: hai assignment mypy trong bộ đo, một link tài liệu chết và marker
+topology thiếu. Đã sửa nguyên nhân, không nâng baseline. Lượt `--doi` tự
+fail-closed thành full và PASS 33/33 trên cây dirty ổn định để chẩn đoán.
+
+Sau commit sửa `f14b3056`, secret scan 3.428 tệp/830.006 dòng → 0 finding;
+CPU 5%/20 lõi, RAM trống 19,7 GiB, cửa sổ khóa RẢNH. Lệnh cuối đúng
+`python tools\gate.py` → **PASS 33/33**, 1.073,2 giây, cây không đổi, report
+`test-results/gates/20260912T155432Z-20964.json`.
+
+Đã push `main`; local/remote cùng `f14b3056`. GitHub default branch và
+`origin/HEAD` đã chuyển từ `master` sang `main`. Branch protection/rulesets
+không khả dụng cho repository private ở gói hiện tại (API 403 yêu cầu Pro hoặc
+public), nên không có rule để chuyển. LTT-CMC không deploy production.
+
+Đã lập `docs/LTT_CMC/CLEANUP_LEDGER.md` và dừng trước xóa. Worktree VPS V4 dirty
+31 mục là `HOLD_NEED_RECONCILIATION`; Source A dirty 5 tệp chỉ được bỏ sau khi
+người dùng duyệt rõ việc mất WIP đã được Source B thay thế.
 
 ---
 
