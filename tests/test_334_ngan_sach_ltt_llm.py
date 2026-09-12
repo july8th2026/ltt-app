@@ -358,20 +358,28 @@ class TestBanSaoConLai:
                 f"deploy.ps1 se ghi tran ra {gt} len may B, nhung nguon chan ly "
                 f"la {ngan_sach.TOKEN_RA_TRAN}")
 
+    @pytest.mark.xfail(strict=True, reason="cho Task 3.3")
     def test_llama_swap_yaml_khop_cua_so_cua_TUNG_ho_so(self):
         """Tệp thật sự quyết định `-c` của mỗi hồ sơ trên máy B.
 
         `catalog.py` chỉ **công bố**; `llama-swap.yaml` là thứ **khởi động
         tiến trình**. Hai tệp lệch nhau thì `/v1/models` nói một đằng và model
         chạy một nẻo — và bên sai là bên ta tin.
+
+        ⛔ `xfail(strict=True)` CHO TASK 3.3, KHÔNG PHẢI MỘT PHÉP KIỂM BỊ TẮT.
+           Dual-model 2.6 đặt số đo (`-c 221184` cho `qwen38-api`, hồ sơ
+           `qwen35-api` mới) vào nguồn chân lý; `llama-swap.yaml` là **tệp của
+           máy B** và Task 3.3 mới viết lại nó. `strict=True` nghĩa là ngày yaml
+           đúng thì phép kiểm này **XPASS ⇒ ĐỎ**, buộc người làm 3.3 gỡ dấu —
+           tức nó vẫn cưỡng chế được điều nó sinh ra để cưỡng chế, chỉ đổi chiều
+           trong đúng một cửa sổ thời gian.
         """
         import pathlib
         import re
         goc = pathlib.Path(__file__).resolve().parents[1]
         van = (goc / "llm_gateway" / "deploy" / "llama-swap.yaml").read_text(
             encoding="utf-8")
-        for ho_so, mong in (("qwen38-api", ngan_sach.CUA_SO_MODEL),
-                            ("qwen38-vision", ngan_sach.CUA_SO_MODEL_VISION)):
+        for ho_so, mong in ngan_sach.CUA_SO_THEO_MODEL.items():
             m = re.search(rf"^  {re.escape(ho_so)}:.*?^\s*-c (\d+)",
                           van, re.S | re.M)
             assert m, f"khong tim thay `-c` cua {ho_so} trong llama-swap.yaml"
@@ -389,24 +397,38 @@ class TestBanSaoConLai:
         assert m, "khong tim thay max_context cua qwen38-api"
         assert int(m.group(1).replace("_", "")) == ngan_sach.CUA_SO_MODEL
 
-    def test_cua_so_VISION_khop_catalog_may_B(self):
-        """🔴 BÁNH CÓC CHO P08 F-02 — lời hứa ngữ cảnh của **vision**.
+    def test_KHONG_con_ho_so_vision_rieng_trong_nguon_chan_ly(self):
+        """🔴 KẾ THỪA BÁNH CÓC P08 F-02 — nhưng đo **sự vắng mặt** cho đúng.
 
-        `qwen38-vision` nạp với `-c 65536`, nhỏ hơn `qwen38-api` một nửa. Trước
-        01/09 không có gì buộc hai đầu, nên `/api/v1/models` quảng cáo vision có
-        *"same 89K usable input context"* suốt nhiều ngày. Đo thật cho `413`
-        kèm `{"tran":65536}`.
+        Bản cũ của phép kiểm này buộc `CUA_SO_MODEL_VISION` khớp `max_context`
+        của hồ sơ `qwen38-vision` trong `catalog.py`. Dual-model 2.6 **gỡ hằng
+        ấy**: `qwen38-api` tự nạp mmproj nên không còn model vision riêng (L-14
+        hệ quả 4). Nếu chỉ xoá phép kiểm thì cái nó bảo vệ biến mất im lặng.
 
-        ⛔ Đổi `-c` của `qwen38-vision` bên máy B mà không đổi
-           `CUA_SO_MODEL_VISION` thì phép kiểm này phải đỏ.
+        ⭐ Nên nó đổi thành một **mệnh đề dương**: nguồn chân lý khai đúng hai
+           model nội bộ, và cả hai đều là model thật đang bán. Một hồ sơ vision
+           thứ ba lẻn lại vào ⇒ đỏ.
+        """
+        assert not hasattr(ngan_sach, "CUA_SO_MODEL_VISION"), (
+            "CUA_SO_MODEL_VISION quay lai — mot cua so thu hai cho CUNG mot "
+            "model la dung khuyet tat F-02")
+        assert set(ngan_sach.CUA_SO_THEO_MODEL) == {"qwen38-api", "qwen35-api"}, (
+            f"nguon chan ly dang khai {sorted(ngan_sach.CUA_SO_THEO_MODEL)}")
+
+    @pytest.mark.xfail(strict=True, reason="cho Task 3.3")
+    def test_ho_so_vision_da_bien_mat_khoi_may_B(self):
+        """Hồ sơ `qwen38-vision` phải biến mất khỏi **tệp của máy B** nữa.
+
+        ⛔ `xfail(strict=True)` cho Task 3.3, cùng lý do với phép kiểm yaml ở
+           trên: `catalog.py`/`llama-swap.yaml` còn liệt kê hồ sơ cũ cho tới khi
+           3.3 viết lại chúng. Ngày nó biến mất ⇒ XPASS ⇒ đỏ ⇒ gỡ dấu.
         """
         import pathlib
-        import re
         goc = pathlib.Path(__file__).resolve().parents[1]
-        van = (goc / "llm_gateway" / "catalog.py").read_text(encoding="utf-8")
-        m = re.search(r'ten="qwen38-vision".*?max_context=([0-9_]+)', van, re.S)
-        assert m, "khong tim thay max_context cua qwen38-vision"
-        assert int(m.group(1).replace("_", "")) == ngan_sach.CUA_SO_MODEL_VISION
+        for tep in ("llm_gateway/catalog.py",
+                    "llm_gateway/deploy/llama-swap.yaml"):
+            van = (goc / tep).read_text(encoding="utf-8")
+            assert "qwen38-vision" not in van, f"{tep} con ho so qwen38-vision"
 
     def test_MOI_alias_tu_khai_context_window(self):
         """🔴 BÁNH CÓC CHO P08 F-03 — cấm rơi về hằng số lùi.
@@ -842,17 +864,44 @@ class TestCamCliKhopNganSach:
     def test_phep_kiem_nay_DO_DUOC_khi_bat_bien_bi_pha(self):
         """⭐ Một chốt chỉ hữu ích nếu chứng minh được nó **đỏ được**.
 
-        Dựng lại đúng cấu hình đã gây sự cố — ngưỡng nén `= 0,8 × cửa sổ` — rồi
-        đòi cùng một bất biến. Nó phải vỡ. Không có phép kiểm này thì ba phép
-        kiểm ở trên có thể xanh vì chúng không đo gì cả.
+        🔴 VÀ ĐỐI CHỨNG CŨ ĐÃ TỰ HỎNG Ở 2.6 — ghi lại vì nó dạy đúng điều
+           `ngan_sach` vẫn nói mà chưa ai đo. Bản cũ dựng lại công thức hỏng
+           bằng `0,8 × cửa sổ **hôm nay**` rồi đòi nó vỡ. Ở cửa sổ 156.385 nó vỡ
+           (còn 31.277 < 32.768). Ở cửa sổ 171.458 của hồ sơ 221K nó **không vỡ
+           nữa** (còn 34.292 ≥ 32.768) — nên đối chứng chuyển từ "chứng minh
+           phép kiểm đỏ được" sang "đỏ vì chính nó đã cũ".
+
+        ⭐ Đó chính là câu `ngan_sach.nen_cua` viết ra mà chưa ai chạy được:
+           *"0,8 không sai vì bịa, nó sai vì được chọn ở một cửa sổ rộng rồi
+           mang sang một cửa sổ hẹp"*. Nay có số: cùng tỉ lệ, cùng bất biến, chỉ
+           đổi cửa sổ — và kết quả lật.
+
+        ⇒ Đối chứng phải **bất biến với cửa sổ**. Hai phần dưới đây làm việc đó:
+          một cấu hình hỏng dựng từ chính cửa sổ hôm nay, và **số thật** của sự
+          cố 03/09 (không suy lại từ hôm nay, nên nó không lật theo).
         """
         cua_so = ngan_sach.CONG_BO_CHO_CLIENT
-        nen_cu = int(cua_so * 0.8)                     # công thức cũ, 70.844
-        assert cua_so - nen_cu < ngan_sach.TOKEN_RA_TRAN, (
-            "cong thuc CU dang thoa bat bien — nghia la bat bien nay khong con "
-            "phan biet duoc cau hinh hong voi cau hinh lanh")
-        nen_moi = ngan_sach.NEN_CHO_CLIENT
-        assert cua_so - nen_moi >= ngan_sach.TOKEN_RA_TRAN
+
+        # (1) Đối chứng bất biến với cửa sổ: chừa THIẾU đúng một token.
+        nen_hong = cua_so - (ngan_sach.TOKEN_RA_TRAN - 1)
+        assert cua_so - nen_hong < ngan_sach.TOKEN_RA_TRAN, (
+            "bat bien khong con phan biet duoc cau hinh hong voi cau hinh lanh")
+
+        # (2) Sự cố THẬT 03/09, bằng số của hôm ấy: `413` ở 101.938 token vào
+        #     trên trần 96.256, ngưỡng nén `0,8 ×` cửa sổ công bố khi đó.
+        cua_so_03_09 = 96_256
+        assert cua_so_03_09 - int(cua_so_03_09 * 0.8) < ngan_sach.TOKEN_RA_TRAN
+
+        # (3) Cấu hình THẬT hôm nay thoả.
+        assert cua_so - ngan_sach.NEN_CHO_CLIENT >= ngan_sach.TOKEN_RA_TRAN
+
+        # (4) Và ghi lại phát hiện: ở cửa sổ HÔM NAY, `0,8` lại thoả. Không phải
+        #     lời mời quay về nó — chỉ là bằng chứng cho câu "tỉ lệ không đo
+        #     được cái cần đo": nó đúng/sai tuỳ cửa sổ, còn công thức
+        #     `cửa sổ − TOKEN_RA_TRAN` đúng ở mọi cửa sổ.
+        assert cua_so - int(cua_so * 0.8) >= ngan_sach.TOKEN_RA_TRAN, (
+            "cua so da hep lai duoi muc `0,8` con thoa — doc lai muc (2), va "
+            "dung dung `0,8` o bat ky bo cai nao")
 
 
 # ── Số công bố cho KHÁCH phải khớp số máy chủ thực thi (30/08) ─────────────
