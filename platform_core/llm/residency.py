@@ -53,10 +53,35 @@
    người thực thi lệnh này (Task 5.4/5.5) phải dừng hẳn dịch vụ LTTComfyUI trong
    cửa sổ LLM. Tên lệnh giữ theo plan để Task 5.4 khớp chuỗi; nghĩa của nó là
    *"làm cho VRAM 3090 sạch"*, không phải *"gọi đúng endpoint /free"*.
+
+━━━ HAI NỬA TRONG MỘT TỆP (Task 5.5) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Từ Task 5.5 tệp này có **hai phần, phân cách bằng một dải kẻ**, và câu "hàm
+thuần" ở trên vẫn đúng **từng chữ cho phần 1**:
+
+  · **PHẦN 1 (tới `buoc_thuan`)** — luật. Không CSDL, không HTTP, không đồng hồ.
+  · **PHẦN 2 (từ dải kẻ trở xuống)** — trọng tài: đọc lease/hàng job/máy B, ghi
+    dòng `gpu_residency`, phát lệnh. `buoc()` **không** chứa một luật nào; nó
+    dựng `QuanSat` rồi gọi `buoc_thuan` và thi hành thứ hàm ấy trả về.
+
+Vì sao **một tệp** chứ không hai: mọi trường của `QuanSat` là một câu hỏi phần 2
+phải trả lời, và hai tệp làm chúng trôi khỏi nhau trong im lặng — đúng loại hỏng
+mà `QuanSat` (không trường nào có mặc định) sinh ra để chặn. Dải kẻ là ranh giới,
+và phép kiểm `test_1219::test_phan_thuan_khong_cham_csdl_hay_mang` ghim nó.
 """
 from __future__ import annotations
 
+import json
+import logging
+import os
+import pathlib
+import threading
+import time
 from dataclasses import dataclass, replace
+from datetime import datetime, timezone
+from typing import Any, Callable
+
+log = logging.getLogger(__name__)
 
 # ── Trạng thái của nhóm GPU ───────────────────────────────────────────────────
 #
@@ -371,3 +396,888 @@ def buoc_thuan(tt: TrangThai, qs: QuanSat, ts: ThamSoResidency,
         return tt, ()
 
     raise ValueError(f"trang thai la: {t!r}")
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+#  PHẦN 2 — TRỌNG TÀI (Task 5.5). Từ đây mới có CSDL, HTTP và đồng hồ.
+# ═════════════════════════════════════════════════════════════════════════════
+#
+# ⛔ Không một LUẬT nào được viết dưới dải kẻ này. Thấy mình sắp viết `if` về
+#    trạng thái ở đây thì `if` ấy thuộc `buoc_thuan` — nơi 40 ca của `test_1216`
+#    nhìn thấy nó mà không cần CSDL, không cần máy B, không cần GPU.
+
+
+#: Trạng thái dòng `gpu_residency` được TẠO ra ở lượt bước đầu tiên của một nhóm.
+#:
+#: 🔴 VÌ SAO `LLM` VÀ KHÔNG PHẢI MỘT TRẠNG THÁI "AN TOÀN HƠN". Ba sự thật khoá
+#:    lựa chọn này lại, và chúng đến từ ba tầng khác nhau:
+#:
+#:    1. **Không có dòng ⇒ CẢ HAI cửa đóng** (luật 0 fail-closed, Task 5.3), và
+#:       migration cố ý không gieo dòng nào. Nên trạng thái khởi tạo không phải
+#:       một lựa chọn giữa "an toàn" và "liều": nó là lựa chọn giữa *bán hàng*
+#:       và *không bán gì cả*. Báo cáo 5.3 §6.1 gọi đúng tên hậu quả: một máy B
+#:       im lặng biến thành "LTT-3.8 ngừng bán", vì mọi lượt chờ hết ngân sách
+#:       rồi 429.
+#:    2. **`LLM` là cư trú mặc định của thiết kế** (D01 B: *"LTT-3.8 nóng mặc
+#:       định"*), và llama-swap giữ hồ sơ ấy thường trú (`ttl: 0` + `preload`).
+#:       Khai `LLM` ở lượt đầu là khai **hiện trạng**, không phải một mong muốn.
+#:    3. **Tạo dòng KHÔNG phát lệnh nào.** Thứ nguy hiểm trên một card là lệnh
+#:       `nap_llm`/`nha`/`free_comfy`, và cả ba chỉ phát từ các nhánh sau khi đã
+#:       drain. Cấp một lease LLM lên card mà LTT-3.8 **đang** nằm sẵn là đúng
+#:       hành vi của hôm qua, từng byte.
+#:
+#: ⚠️ Ứng viên còn lại — `XA_LLM` — mở cửa cho **không ai** và vẫn đi tiếp được
+#:    cả hai đường, nên nó "an toàn hơn" theo nghĩa hẹp. Nhưng nó chỉ rời khỏi
+#:    chỗ ấy qua `buoc_thuan`, và `buoc()` **không chuyển gì khi máy B câm** —
+#:    tức máy B chết = cửa LTT-3.8 đóng vô hạn, đúng thảm hoạ ở (1). Chọn một
+#:    trạng thái an toàn hơn ở đây là trả bằng chính thứ ta đang bảo vệ.
+TRANG_THAI_KHOI_TAO = LLM
+
+#: Trần số dòng `jobs` đọc về trong một lượt đếm. Mọi câu hỏi máy trạng thái đặt
+#: cho hàng job là "> 0 chưa" hoặc "đã tới 4 chưa", nên một trần không đổi phán
+#: quyết nào; nó chỉ chặn một lượt bước biến thành một phép quét toàn bảng khi
+#: hàng đợi dồn.
+TRAN_DEM_JOB = 200
+
+#: Đệm (base_url, credential) của cổng LLM máy B trong bấy nhiêu giây. Trọng tài
+#: chạy mỗi 2 s; hỏi `api_pool` mỗi lượt là ~43.000 lượt chọn khoá mỗi ngày cho
+#: một câu trả lời đổi vài tháng một lần.
+DEM_KHOA_S = 300.0
+
+#: Tệp DANH TÍNH GPU của máy B — cùng tệp `llm_gateway/gpu_uuid.py` đọc (Task
+#: 4.1). Đọc theo ĐƯỜNG DẪN, không `import llm_gateway`: gói ấy là của máy B và
+#: không có mặt trong mọi bản cài (Task 6.1 §2 đo điều này cho `render_gateway`).
+DUONG_DANH_TINH_GPU = (pathlib.Path(__file__).resolve().parents[2]
+                       / "llm_gateway" / "deploy" / "gpu_may_b.json")
+
+#: Vai của card mang nhóm cư trú trong tệp trên. Không phải tên app.
+VAI_CARD_3090 = "ltt38"
+
+#: Tên cửa ĐỒNG BỘ trong `llm_waiters.cua` — nhãn của nền tảng
+#: (`server/api/{chat,streaming}.py` ghi nó), không phải của một app. Đây là tên
+#: cửa DUY NHẤT trọng tài được phép biết; xem `_nguoi_cho_llm`.
+CUA_DONG_BO = "sync"
+
+
+class LoiMayB(Exception):
+    """Không hỏi được máy B. Người gọi phải xử theo hướng KHÔNG hành động."""
+
+
+# ── Cổng ra máy B ────────────────────────────────────────────────────────────
+
+@dataclass(frozen=True)
+class TinMayB:
+    """Bốn câu trả lời `QuanSat` cần từ máy B. `None` = **không đọc được**.
+
+    ⛔ `None` không phải 0. `buoc_thuan` xử `None` theo hướng không hành động, và
+       đó là toàn bộ giá trị của việc phân biệt hai thứ ở đây: một `0` bịa ra cho
+       `inflight` là một lệnh `nha` phát lên một model đang sinh chữ cho khách.
+    """
+
+    llm_da_nap: bool | None
+    inflight_llm: int | None
+    vram_3090_mib: int | None
+    nap_ket_qua: str = ""
+
+
+class MayBResidency:
+    """Các lệnh residency của máy B, theo hợp đồng Task 5.4 / 5.4a.
+
+        GET  /v1/residency/trang_thai   (cổng LLM)    -> TinMayB
+        POST /v1/residency/nha  {"model": …}          -> nhả model khỏi 3090
+        POST /v1/residency/nap  {"model": …}          -> nạp lại LTT-3.8
+        POST /v1/nha_comfy {"hanh_dong": "dung"}      -> dừng hẳn LTTComfyUI
+        POST /v1/nha_comfy {"hanh_dong": "chay"}      -> bật lại LTTComfyUI
+
+    ⭐ Lớp này là **cổng**, không phải chính sách: nó không biết trạng thái nào
+       được phát lệnh nào. Nhờ vậy phép kiểm tiêm một máy B giả có đúng năm
+       phương thức và chứng minh được cả chu trình mà không có máy B nào.
+
+    ⚠️ Hai chiều của `nha_comfy` là MỘT cặp: cái dừng và cái bật lại. Thêm cái
+       thứ nhất mà quên cái thứ hai là tắt vĩnh viễn phía ảnh.
+
+    ⚠️ `nha`/`nap` trả **409** khi máy B từ chối (còn lượt đang chạy / VRAM chưa
+       sạch) — đó là *"chưa tới lúc"*, **không** phải lỗi: cả ba lệnh idempotent
+       và `buoc_thuan` phát lại ở lượt sau. `trang_thai()` và **hai lệnh ComfyUI**
+       thì NÉM, vì cả ba trả lời câu "card có sạch/có sẵn sàng không" — một câu
+       trả lời sai ở đó là một lần OOM hoặc một app ảnh chết câm.
+    """
+
+    def __init__(self, *, model_llm: str = "", gpu_uuid: str = "",
+                 timeout_s: float = 10.0, timeout_comfy_s: float = 120.0,
+                 goi_llm: Callable[..., Any] | None = None,
+                 goi_render: Callable[..., Any] | None = None) -> None:
+        self.model_llm = model_llm or _model_llm_mac_dinh()
+        self.gpu_uuid = gpu_uuid or _uuid_card_3090()
+        self.timeout_s = float(timeout_s)
+        #: ⚠️ KHÔNG phải một hạn chờ thứ hai cạnh tranh với hạn của cổng render.
+        #:    Cổng ấy tự chờ dịch vụ (`HAN_DOI_GIAY = 60 s`) rồi chờ VRAM tụt
+        #:    (15 s) và **trả lời bằng số đo**; con số dưới đây chỉ là chốt chặn
+        #:    của tầng vận chuyển, cố ý đặt cao hơn hẳn tổng ấy để phán quyết
+        #:    luôn đến từ **thân trả lời**, không đến từ đồng hồ của máy A.
+        self.timeout_comfy_s = float(timeout_comfy_s)
+        self._goi_llm = goi_llm
+        self._goi_render = goi_render
+
+    # -- đọc ------------------------------------------------------------------
+    def trang_thai(self) -> TinMayB:
+        tin = self._llm("GET", "/v1/residency/trang_thai")
+        if not isinstance(tin, dict):
+            raise LoiMayB(f"trang_thai tra ve {type(tin).__name__}, khong phai dict")
+        nap = tin.get("llm_da_nap")
+        bay = tin.get("inflight")
+        return TinMayB(
+            llm_da_nap=bool(nap) if isinstance(nap, bool) else None,
+            inflight_llm=(int(bay.get(self.model_llm, 0))
+                          if isinstance(bay, dict) else None),
+            vram_3090_mib=self._vram(tin.get("vram_mib")),
+            nap_ket_qua=str(tin.get("nap_ket_qua") or ""),
+        )
+
+    # -- lệnh -----------------------------------------------------------------
+    def nha(self) -> None:
+        self._llm("POST", "/v1/residency/nha", {"model": self.model_llm},
+                  cho_phep_409=True)
+
+    def nap(self) -> None:
+        self._llm("POST", "/v1/residency/nap", {"model": self.model_llm},
+                  cho_phep_409=True)
+
+    def free_comfy(self) -> None:
+        """⚠️ Tên theo plan, NGHĨA theo L-14 §3 / R22: *làm cho VRAM 3090 sạch*.
+
+        ComfyUI ấm giữ 223,5 MiB ngữ cảnh CUDA và `POST /free` **không** nhả nó,
+        trong khi biên của LTT-3.8 ở `-c 221184` chỉ 445 MiB. Cổng render
+        (Task 5.4a) **dừng hẳn dịch vụ LTTComfyUI** sau tên này; máy A không
+        được tự đoán lại nghĩa ấy bằng một lệnh `/free` gọi thẳng.
+
+        ⛔ THÀNH CÔNG IM LẶNG LÀ KẾT CỤC TỆ NHẤT. Cổng trả **503** kèm lý do khi
+           nó không dừng được (nó phát hiện cả mã 1051 "còn dịch vụ phụ thuộc"),
+           và nó xác minh bằng **VRAM đo lại** chứ không bằng lời của SCM. Nên
+           non-200 — hoặc 200 mà `da_dung` không đúng — là "card CHƯA sạch", và
+           ném ở đây là cách duy nhất để lượt bước không tưởng mình đã dọn xong.
+           (Trạng thái vẫn ở `TRA_ANH`: `buoc_thuan` phát lệnh này **không kèm**
+           một chuyển nào, nên một lần dừng hỏng tự nó đã không đổi gì.)
+        """
+        tra = self._render("POST", "/v1/nha_comfy", {"hanh_dong": "dung"})
+        if not (isinstance(tra, dict) and tra.get("da_dung")):
+            raise LoiMayB(f"nha_comfy(dung) khong xac nhan da dung: {tra!r}")
+
+    def chay_comfy(self) -> None:
+        """Bật LTTComfyUI trở lại — nửa còn lại của `free_comfy`.
+
+        🔴 KHÔNG CÓ NỬA NÀY THÌ CHU TRÌNH LÀ MỘT CHIỀU: cửa sổ LLM mở ⇒ ComfyUI
+           bị dừng ⇒ **không ai bật lại** ⇒ `BusyWatcher` báo card bận mãi và
+           việc sinh ảnh không bao giờ trở lại. Tệ hơn hẳn bài toán D01 B sinh ra
+           để giải.
+
+        ⭐ Nó nằm ở chỗ máy trạng thái nói *"phía ảnh được cầm card từ đây"* —
+           tức lối vào `ANH` — chứ không ở cuối cửa sổ LLM như một việc dọn dẹp.
+           Khác biệt ấy quan trọng đúng lúc một lượt bước hỏng giữa chừng: đặt ở
+           lối vào thì "chưa bật được" đồng nghĩa với "chưa vào `ANH`", nên cửa
+           nhận job ảnh **chưa mở** — không có job nào được nhận vào một máy
+           không có ComfyUI. Đặt ở cuối cửa sổ LLM thì hai điều ấy rời nhau.
+
+        Idempotent: bật một dịch vụ đang chạy là một lượt xác nhận, không phải
+        một lần khởi động lại (`dich_vu_comfy.chay_lai`).
+        """
+        tra = self._render("POST", "/v1/nha_comfy", {"hanh_dong": "chay"})
+        if not (isinstance(tra, dict) and tra.get("dang_chay")):
+            raise LoiMayB(f"nha_comfy(chay) khong xac nhan dang chay: {tra!r}")
+
+    # -- đường dây ------------------------------------------------------------
+    def _llm(self, method: str, path: str, than: dict | None = None,
+             *, cho_phep_409: bool = False) -> Any:
+        if self._goi_llm is not None:
+            return self._goi_llm(method, path, than)
+        return _goi_cong_llm(method, path, than, timeout_s=self.timeout_s,
+                             cho_phep_409=cho_phep_409)
+
+    def _render(self, method: str, path: str, than: dict | None = None) -> Any:
+        if self._goi_render is not None:
+            return self._goi_render(method, path, than)
+        return _goi_cong_render(method, path, than, timeout_s=self.timeout_comfy_s)
+
+    def _vram(self, bang: Any) -> int | None:
+        """VRAM của **card mang nhóm cư trú**, tra theo UUID.
+
+        ⛔ Không `max()` cả bảng: máy B có hai card, và LTT-3.5 giữ ~13 GB trên
+           5060 Ti thường trực — lấy `max` là đọc VRAM của card không liên can
+           rồi kết luận 3090 chưa sạch, tức không bao giờ nạp lại LTT-3.8. Đó
+           đúng là khuyết tật Task 6.1 vừa gỡ khỏi `render_gateway/busy.py`.
+        """
+        if not isinstance(bang, dict) or not bang:
+            return None
+        if self.gpu_uuid and self.gpu_uuid in bang:
+            return int(bang[self.gpu_uuid])
+        if len(bang) == 1:
+            return int(next(iter(bang.values())))
+        log.error("khong biet UUID cua card 3090 (%d UUID trong bang, cau hinh "
+                  "%r) => coi nhu KHONG DOC DUOC VRAM. Dat LTT_RESIDENCY_GPU_UUID "
+                  "hoac de %s doc duoc.", len(bang), self.gpu_uuid,
+                  DUONG_DANH_TINH_GPU.name)
+        return None
+
+
+def _model_llm_mac_dinh() -> str:
+    """Id hồ sơ máy B của model cư trú 3090 — đọc, không gõ lại.
+
+    `canonical.ALIAS_SANG_ID` là nơi bảng bí danh → id nội bộ đã sống; gõ
+    `"qwen38-api"` ở đây là bản khai thứ hai của cùng một điều, và bản sao sẽ
+    trôi đúng ngày đổi GGUF.
+    """
+    from platform_core.llm import canonical
+
+    return canonical.ALIAS_SANG_ID[canonical.MODEL_MAC_DINH]
+
+
+_UUID_3090: str | None = None
+
+
+def _uuid_card_3090() -> str:
+    """UUID card 3090: biến môi trường trước, rồi tệp danh tính của máy B.
+
+    Rỗng nghĩa là *không biết* — và `_vram` xử "không biết" thành `None` chứ
+    không thành một con số đoán.
+    """
+    global _UUID_3090
+    if _UUID_3090 is not None:
+        return _UUID_3090
+    tu_env = (os.environ.get("LTT_RESIDENCY_GPU_UUID") or "").strip()
+    if tu_env:
+        _UUID_3090 = tu_env
+        return _UUID_3090
+    try:
+        khai = json.loads(DUONG_DANH_TINH_GPU.read_bytes().decode("utf-8"))
+        for card in khai:
+            if str(card.get("vai") or "") == VAI_CARD_3090:
+                _UUID_3090 = str(card.get("uuid") or "").strip()
+                return _UUID_3090
+    except Exception:  # noqa: BLE001 - thiếu tệp là chuyện bình thường ở máy A
+        log.info("khong doc duoc %s; UUID 3090 phai den tu LTT_RESIDENCY_GPU_UUID",
+                 DUONG_DANH_TINH_GPU, exc_info=True)
+    _UUID_3090 = ""
+    return _UUID_3090
+
+
+_KHOA_DEM = threading.Lock()
+_DEM_KHOA_LLM: tuple[float, str, str] | None = None
+
+
+def _dia_chi_cong_llm() -> tuple[str, str]:
+    """`(base_url, credential)` của cổng LLM máy B, đệm `DEM_KHOA_S` giây.
+
+    ⛔ Khoá lấy qua `api_pool` như mọi provider khác — máy A không đọc bí mật từ
+       biến môi trường (Q102). `base_url` của KHOÁ đi trước `base_url` của
+       registry, cùng lý do đã ghi ở `dieu_phoi.goi`: registry đọc env, và env
+       không có mặt trong một tiến trình chạy tay.
+    """
+    global _DEM_KHOA_LLM
+    with _KHOA_DEM:
+        dem = _DEM_KHOA_LLM
+        if dem is not None and time.monotonic() - dem[0] < DEM_KHOA_S:
+            return dem[1], dem[2]
+
+    from platform_core import api_keys, api_pool, providers
+    from platform_core.db import get_session
+    from platform_core.llm import canonical
+    from platform_core.models import APIKEY_CAT_CHAT
+
+    pid = canonical.THU_TU_PROVIDER[0]
+    gen = get_session()
+    db = next(gen)
+    try:
+        key = api_pool.chon_key(db, category=APIKEY_CAT_CHAT,
+                                model=_model_llm_mac_dinh(), thu_tu_provider=[pid])
+        cred = api_keys.lay_credential(db, key)
+        base = ((getattr(key, "base_url", "") or "").strip()
+                or (getattr(providers.get(pid), "base_url", "") or "").strip())
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+    with _KHOA_DEM:
+        _DEM_KHOA_LLM = (time.monotonic(), base, cred)
+    return base, cred
+
+
+def quen_dem_khoa() -> None:
+    """Xoá đệm địa chỉ/khoá (phép kiểm và một lượt xoay khoá gọi hàm này)."""
+    global _DEM_KHOA_LLM, _DEM_KHOA_RENDER, _UUID_3090
+    with _KHOA_DEM:
+        _DEM_KHOA_LLM = None
+        _DEM_KHOA_RENDER = None
+    _UUID_3090 = None
+
+
+def _goi_cong_llm(method: str, path: str, than: dict | None, *, timeout_s: float,
+                  cho_phep_409: bool) -> Any:
+    import httpx
+
+    base, cred = _dia_chi_cong_llm()
+    if not base:
+        raise LoiMayB("thieu base_url cong LLM may B (LTT_LLM_BASE_URL/khoa)")
+    try:
+        r = httpx.request(method, base.rstrip("/") + path,
+                          headers={"Authorization": f"Bearer {cred}"} if cred else {},
+                          json=than, timeout=timeout_s)
+    except Exception as e:  # noqa: BLE001 - mạng hỏng là "không hỏi được"
+        quen_dem_khoa()
+        raise LoiMayB(f"{method} {path}: {type(e).__name__}") from e
+    if r.status_code in (401, 403):
+        quen_dem_khoa()                      # khoá vừa xoay ⇒ lượt sau lấy lại
+    if cho_phep_409 and r.status_code == 409:
+        log.info("may B tu choi %s (409) — chua toi luc, se phat lai", path)
+        return {}
+    if r.status_code >= 400:
+        raise LoiMayB(f"{method} {path}: HTTP {r.status_code}")
+    try:
+        return r.json()
+    except Exception as e:  # noqa: BLE001
+        raise LoiMayB(f"{method} {path}: than khong phai JSON") from e
+
+
+_DEM_KHOA_RENDER: tuple[float, str, str] | None = None
+
+
+def _dia_chi_cong_render() -> tuple[str, str]:
+    global _DEM_KHOA_RENDER
+    with _KHOA_DEM:
+        dem = _DEM_KHOA_RENDER
+        if dem is not None and time.monotonic() - dem[0] < DEM_KHOA_S:
+            return dem[1], dem[2]
+
+    from platform_core import api_keys, api_pool, providers
+    from platform_core.db import get_session
+    from platform_core.image_gen.http_cong import PROVIDER
+    from platform_core.models import APIKEY_CAT_IMAGE
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        key = api_pool.chon_key(db, category=APIKEY_CAT_IMAGE,
+                                thu_tu_provider=[PROVIDER])
+        cred = api_keys.lay_credential(db, key)
+        base = ((getattr(key, "base_url", "") or "").strip()
+                or (getattr(providers.get(PROVIDER), "base_url", "") or "").strip())
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+    with _KHOA_DEM:
+        _DEM_KHOA_RENDER = (time.monotonic(), base, cred)
+    return base, cred
+
+
+def _goi_cong_render(method: str, path: str, than: dict | None, *,
+                     timeout_s: float) -> Any:
+    """Gọi một LỆNH RESIDENCY trên cổng render.
+
+    ⛔ CỐ Ý KHÔNG ĐI QUA `image_gen.http_cong.goi_http`, dù đó là đường của mọi
+       lượt vẽ. `goi_http` ghi telemetry `api_pool` cho từng lượt gọi, nên một
+       **503 của lệnh dừng dịch vụ** sẽ bị đọc thành "khoá `ltt_image` hỏng":
+       `danh_dau_loi` → cooldown → `disable` sau 5 lần, và model ảnh tự tắt vì
+       một dịch vụ Windows không chịu dừng. Đó đúng là họ hàng của cạm bẫy D-005
+       ghi thường trực ở `CLAUDE.md`, chỉ đổi chiều. Lệnh residency **không phải**
+       một lượt dùng khoá; nó chỉ mượn khoá để xác thực.
+    """
+    import httpx
+
+    base, cred = _dia_chi_cong_render()
+    if not base:
+        raise LoiMayB("thieu base_url cong render (LTT_RENDER_BASE_URL)")
+    try:
+        r = httpx.request(method, base.rstrip("/") + path,
+                          headers={"Authorization": f"Bearer {cred}"} if cred else {},
+                          json=than, timeout=timeout_s)
+    except Exception as e:  # noqa: BLE001
+        quen_dem_khoa()
+        raise LoiMayB(f"{method} {path}: {type(e).__name__}") from e
+    if r.status_code >= 400:
+        # 503 mang theo lý do đọc được (`error.message`) — giữ nó trong ngoại lệ
+        # để dòng log của trọng tài nói ra ai đang chặn, không chỉ nói "hỏng".
+        raise LoiMayB(f"{method} {path}: HTTP {r.status_code} {r.text[:300]}")
+    try:
+        return r.json()
+    except Exception as loi:  # noqa: BLE001
+        # ⛔ KHÔNG coi "200 mà thân không đọc được" là thành công. Cổng render
+        #    trả bằng chứng (`da_dung` + VRAM đo lại) ở mọi đường ra; mất thân
+        #    nghĩa là ta không có bằng chứng nào, và "tưởng đã dọn card" đúng là
+        #    hỏng mà D01 B sinh ra để chặn. Mang theo `loi` vì ba nguyên nhân
+        #    (proxy chèn HTML, thân rỗng, mã hoá lạ) cần ba việc sửa khác nhau.
+        raise LoiMayB(f"{method} {path}: HTTP 200 nhung than khong phai JSON "
+                      f"({loi!r}): {r.text[:200]!r}") from loi
+
+
+# ── Bản khai của app: nhóm nào có những thành viên nào ───────────────────────
+
+_BAN_DO_JOB: dict[str, dict[str, Any]] | None = None
+
+
+def quen_ban_do_job() -> None:
+    """Xoá đệm `{nhóm: {job_type: ToolSpec}}` (phép kiểm tiêm bản khai gọi nó)."""
+    global _BAN_DO_JOB
+    _BAN_DO_JOB = None
+
+
+def thanh_vien(nhom: str) -> dict[str, str]:
+    """`{vai_tro: tên tài nguyên}` của một nhóm GPU, đọc từ BẢN KHAI của app.
+
+    ⛔ Dùng lại `admission._ban_do_cu_tru()` chứ không viết một bộ đọc thứ hai:
+       cửa admission và trọng tài phải trả lời **cùng một câu** "tài nguyên nào
+       thuộc nhóm nào, với vai gì". Hai bộ đọc là hai bản khai, và bản thứ hai sẽ
+       trôi — đúng khuôn hỏng mà `nhom_cu_tru` đã ghi thành cảnh báo.
+       `test_1219::test_trong_tai_doc_cung_ban_do_voi_admission` ghim tên hàm ấy,
+       nên một lần đổi tên bên đó làm ĐỎ ở đây chứ không làm hỏng ở production.
+
+    Hai tài nguyên khai cùng (nhóm, vai) ⇒ **ném**: đó là bản khai tự mâu thuẫn,
+    và đoán bừa một trong hai là chọn nhầm card cho một nửa lưu lượng.
+    """
+    from platform_core.llm import admission
+
+    ra: dict[str, str] = {}
+    for ten, khai in admission._ban_do_cu_tru().items():
+        for g, vai in khai:
+            if g != nhom or not vai:
+                continue
+            cu = ra.setdefault(vai, ten)
+            if cu != ten:
+                raise ValueError(f"nhom {nhom!r} vai {vai!r} duoc khai cho hai "
+                                 f"tai nguyen: {sorted((cu, ten))}")
+    return ra
+
+
+def cac_nhom() -> tuple[str, ...]:
+    """Mọi nhóm cư trú app đang khai. Nền tảng **đọc**, không gõ tên nhóm.
+
+    Hôm nay đúng một (`rtx3090`), và tên ấy nằm ở `apps/ltt_llm/ngan_sach.py` +
+    ba manifest ảnh — không có một bản sao nào trong `platform_core`.
+    """
+    from platform_core.llm import admission
+
+    ra = {g for khai in admission._ban_do_cu_tru().values() for g, _ in khai if g}
+    return tuple(sorted(ra))
+
+
+def _ban_do_job(nhom: str) -> dict[str, Any]:
+    """`{job_type: ToolSpec}` của các tool có khai nhóm cư trú này.
+
+    Lọc thô theo `job_type` để phép đếm chỉ đọc về những dòng job CÓ THỂ thuộc
+    nhóm; vai trò thật của từng dòng vẫn giải theo `params["model"]` qua
+    `registry.suc_chua_admission` — đúng hàm `job_runner` dùng để đòi lease, nên
+    "cái ta đếm" và "cái sẽ xin lease" không thể lệch nhau.
+    """
+    global _BAN_DO_JOB
+    if _BAN_DO_JOB is not None:
+        return _BAN_DO_JOB.get(nhom, {})
+    from platform_core.registry import discover
+
+    ban_do: dict[str, dict[str, Any]] = {}
+    try:
+        for app in discover():
+            if getattr(app, "error", None):
+                continue
+            for tool in getattr(app.manifest, "tools", ()) or ():
+                jt = str(getattr(tool, "job_type", "") or "")
+                if not jt:
+                    continue
+                for am in (getattr(tool, "admission_theo_model", {}) or {}).values():
+                    g = str(getattr(am, "residency_group", "") or "").strip()
+                    if g:
+                        ban_do.setdefault(g, {})[jt] = tool
+    except Exception:  # noqa: BLE001 - nói ra, đừng đệm một bản khai hỏng
+        log.warning("khong doc duoc ban khai job cua nhom cu tru", exc_info=True)
+        return {}
+    _BAN_DO_JOB = ban_do
+    return ban_do.get(nhom, {})
+
+
+def _vai_cua_job(tool: Any, params: Any, nhom: str) -> str:
+    from platform_core.registry import suc_chua_admission
+
+    try:
+        am = suc_chua_admission(tool, str((params or {}).get("model") or ""))
+    except KeyError:
+        return ""                      # bản khai không biết model này ⇒ không đếm
+    if am is None or str(getattr(am, "residency_group", "") or "").strip() != nhom:
+        return ""
+    return str(getattr(am, "vai_tro", "") or "").strip()
+
+
+# ── Khoá ─────────────────────────────────────────────────────────────────────
+
+def _advisory(db: Any, khoa: str) -> None:
+    """Khoá advisory của TRANSACTION hiện tại. SQLite bỏ qua (như `admission`)."""
+    if db.bind is None or db.bind.dialect.name != "postgresql":
+        return
+    from sqlalchemy import text
+
+    db.execute(text("SELECT pg_advisory_xact_lock(hashtext(:k))"), {"k": khoa})
+
+
+def _khoa(db: Any, nhom: str, tai_nguyen: dict[str, str]) -> None:
+    """Giành `residency:<nhóm>` rồi hai khoá tài nguyên **theo thứ tự tên**.
+
+    🔴 THỨ TỰ LÀ TOÀN BỘ NỘI DUNG CỦA HÀM NÀY. Cửa admission giành đúng một khoá
+       (`llm-admission:<tài nguyên>`, `admission._khoa_resource`) rồi đọc dòng
+       `gpu_residency` bên trong nó; trọng tài giành **cả hai** rồi ghi dòng ấy.
+       Hai bên giành theo hai thứ tự khác nhau là một deadlock có thật giữa một
+       lượt xin và một lượt lật cư trú. Một thứ tự cố định — và `sorted()` là
+       cách duy nhất khiến nó không phụ thuộc vào thứ tự `dict` của bản khai.
+
+    ⛔ Gọi `admission._khoa_resource` chứ không tự dựng chuỗi khoá: khoá phải
+       TRÙNG từng ký tự với bên kia, và hai công thức là hai khoá khác nhau —
+       tức không khoá gì cả, trong im lặng.
+    """
+    from platform_core.llm import admission
+
+    _advisory(db, f"residency:{nhom}")
+    for ten in sorted(tai_nguyen.values()):
+        admission._khoa_resource(db, ten)
+
+
+# ── Dòng `gpu_residency` ─────────────────────────────────────────────────────
+
+def _aware(t: datetime | None) -> datetime | None:
+    if t is None:
+        return None
+    return t if t.tzinfo is not None else t.replace(tzinfo=timezone.utc)
+
+
+def _giay(t: datetime | None) -> float:
+    d = _aware(t)
+    return 0.0 if d is None else d.timestamp()
+
+
+def _luc(giay: float) -> datetime | None:
+    return None if not giay else datetime.fromtimestamp(giay, timezone.utc)
+
+
+def _tu_dong(dong: Any) -> TrangThai:
+    return TrangThai(ten=str(dong.trang_thai or ""), tu_luc=_giay(dong.tu_luc),
+                     cua_so_bat_dau=_giay(dong.cua_so_bat_dau),
+                     lan_nap_loi=int(dong.lan_nap_loi or 0))
+
+
+def _doc_dong(db: Any, nhom: str, bay_gio: float) -> tuple[TrangThai, int]:
+    """Đọc dòng, TẠO nếu chưa có. Trả `(trạng thái, phiên bản đã đọc)`.
+
+    Bên gọi phải đang giữ khoá của `_khoa`.
+    """
+    from platform_core.models import GpuResidency
+
+    dong = db.get(GpuResidency, nhom)
+    if dong is None:
+        dong = GpuResidency(nhom=nhom, trang_thai=TRANG_THAI_KHOI_TAO,
+                            tu_luc=_luc(bay_gio) or datetime.now(timezone.utc),
+                            cua_so_bat_dau=None, lan_nap_loi=0, phien_ban=0)
+        db.add(dong)
+        db.flush()
+        log.warning("tao dong gpu_residency %r = %r (lan buoc dau tien cua nhom "
+                    "nay). Truoc dong nay CA HAI cua admission dong.",
+                    nhom, TRANG_THAI_KHOI_TAO)
+    return _tu_dong(dong), int(dong.phien_ban or 0)
+
+
+def _ghi_dong(db: Any, nhom: str, moi: TrangThai, phien_ban: int) -> bool:
+    """Ghi kèm `phien_ban + 1`. `False` = một trọng tài khác đã ghi trước.
+
+    Khoá lạc quan chứ không "đọc rồi gán": hai tiến trình worker chồng nhau (một
+    lượt deploy) đọc cùng một dòng rồi cùng gán sẽ cùng thấy mình thắng, và
+    **cùng phát lệnh** — hai lệnh `nha` cho một lần đổi cư trú. Kẻ thua ở đây
+    không sửa gì và không phát gì; nó thử lại ở lượt sau với sự thật mới.
+    """
+    from sqlalchemy import update
+
+    from platform_core.models import GpuResidency
+
+    kq = db.execute(
+        update(GpuResidency)
+        .where(GpuResidency.nhom == nhom, GpuResidency.phien_ban == phien_ban)
+        .values(trang_thai=moi.ten, tu_luc=_luc(moi.tu_luc),
+                cua_so_bat_dau=_luc(moi.cua_so_bat_dau),
+                lan_nap_loi=int(moi.lan_nap_loi), phien_ban=phien_ban + 1))
+    return int(kq.rowcount or 0) == 1
+
+
+# ── Quan sát ─────────────────────────────────────────────────────────────────
+
+def _dem_lease(db: Any, resource: str) -> int:
+    from sqlalchemy import func, select
+
+    from platform_core.models import ExecutionLease
+
+    if not resource:
+        return 0
+    return int(db.execute(select(func.count()).select_from(ExecutionLease)
+                          .where(ExecutionLease.resource == resource)).scalar() or 0)
+
+
+def _dem_job(db: Any, *, nhom: str, vai: str, trang_thai: str = "",
+             tu_luc: datetime | None = None) -> int:
+    """Đếm job của một VAI trong nhóm — theo bản khai, không theo tên app.
+
+    ⛔ KHÔNG đếm theo cột `Job.admission_resource`. Cột ấy chỉ được ghi ở hai
+       đường nộp có `registry.admission_luc_nop` (Public API, runtime nội bộ);
+       ba app ảnh nộp job từ giao diện qua `job_submit.submit_with_credit` và để
+       cột ấy **rỗng**. Còn `job_runner` thì đòi lease theo **bản khai của tool**
+       chứ không theo cột. Đếm theo cột nghĩa là: job ảnh của giao diện bị cửa
+       admission từ chối (vì nhóm đang ở `LLM`) trong khi trọng tài không thấy ai
+       chờ nên không bao giờ mở cửa sổ ảnh — một bế tắc câm, và nó chỉ xảy ra với
+       đúng đường mà khách thật đang đi.
+    """
+    from platform_core.models import Job
+
+    ban_do = _ban_do_job(nhom)
+    if not ban_do:
+        return 0
+    q = db.query(Job).filter(Job.job_type.in_(sorted(ban_do)))
+    if trang_thai:
+        q = q.filter(Job.status == trang_thai)
+    if tu_luc is not None:
+        q = q.filter(Job.admitted_at.isnot(None))
+    n = 0
+    for job in q.limit(TRAN_DEM_JOB).all():
+        # So mốc thời gian TRONG PYTHON: SQLite trả naive, PostgreSQL trả aware,
+        # và một phép so lẫn hai loại ở tầng SQL sai im lặng (`_aware`).
+        if tu_luc is not None:
+            luc = _aware(job.admitted_at)
+            if luc is None or luc < tu_luc:
+                continue
+        if _vai_cua_job(ban_do[job.job_type], job.params, nhom) == vai:
+            n += 1
+    return n
+
+
+def _nguoi_cho_llm(db: Any, resource: str, now: datetime) -> tuple[int, float | None]:
+    """`(số người chờ còn sống, giây tới hạn chót SỚM NHẤT)` của cửa tương tác.
+
+    ⭐ "Còn sống" theo đúng định nghĩa của phòng chờ (`phong_cho.HAN_NHIP_CHO_S`):
+       một dòng mất nhịp là một tiến trình web đã chết, và đóng cửa sổ ảnh sớm vì
+       một xác chết là nhường card cho không ai.
+
+    Hạn chót = `created_at + trần chờ CỦA CỬA ẤY`. Hai trần, và chúng là **hai
+    mặc định duy nhất tồn tại** trong mã chờ (`runtime_noi_bo/luong.py`): cửa
+    đồng bộ 60 s (TD-7, `:426`), mọi cửa còn lại 300 s (D-06, `:537`, `:1042`).
+    Một con số chung sẽ sai cho một nửa số người chờ — và sai về phía *"còn nhiều
+    thời gian"* nghĩa là họ chết thật trong lúc ta vẽ thêm một ảnh.
+
+    ⛔ PHÂN NHÁNH THEO ĐÚNG MỘT TÊN CỬA, VÀ TÊN ẤY LÀ CỦA NỀN TẢNG. `"sync"` do
+       `server/api/{chat,streaming}.py` ghi; các cửa khác do **app** đặt tên
+       (`apps/chatltt/chinh_sach.CUA`), và liệt kê chúng ở đây là đưa tên app vào
+       `platform_core` — thứ `test_147` cấm và
+       `test_1219::test_residency_khong_nhac_ten_app_trong_ma` bắt được.
+       Rơi về trần stream cho cửa lạ không phải một phỏng đoán: đó là **mặc định
+       của chính đường chờ** mà mọi cửa không-đồng-bộ đi qua.
+
+    ⚠️ XẤP XỈ, và nói ra: bên gọi truyền được `han_s`/`tran_s` riêng, còn bảng
+       `llm_waiters` **không lưu hạn chót**. Một cửa app tự đặt trần NGẮN hơn sẽ
+       được ước là 300 s ⇒ cửa sổ ảnh đóng muộn hơn nó nên đóng. Cách sửa đúng
+       là một cột hạn chót ghi lúc vào hàng (Task 6.3 sở hữu bảng ấy), không
+       phải một bảng tên cửa ở đây.
+    """
+    from platform_core.llm import phong_cho, tham_so_da_luot
+    from platform_core.models import LlmWaiter
+
+    if not resource:
+        return 0, None
+    ts = tham_so_da_luot.doc()
+    so = 0
+    som_nhat: float | None = None
+    for w in (db.query(LlmWaiter)
+              .filter(LlmWaiter.resource == resource, LlmWaiter.trang_thai == "cho")
+              .limit(TRAN_DEM_JOB).all()):
+        nhip = _aware(w.heartbeat_at)
+        if nhip is None or (now - nhip).total_seconds() > phong_cho.HAN_NHIP_CHO_S:
+            continue
+        so += 1
+        tao = _aware(w.created_at) or now
+        tran = (ts.cho_dong_bo_toi_da_s if str(w.cua or "") == CUA_DONG_BO
+                else ts.cho_stream_toi_da_s)
+        con = (tao - now).total_seconds() + tran
+        som_nhat = con if som_nhat is None else min(som_nhat, con)
+    return so, som_nhat
+
+
+def _quan_sat(db: Any, *, nhom: str, tt: TrangThai, tai_nguyen: dict[str, str],
+              tin: TinMayB, bay_gio: float) -> QuanSat:
+    from platform_core.models import JOB_QUEUED
+
+    now = datetime.fromtimestamp(bay_gio, timezone.utc)
+    res_llm = tai_nguyen.get(MAC_DINH, "")
+    res_anh = tai_nguyen.get(THEO_LO, "")
+    cho, han = _nguoi_cho_llm(db, res_llm, now)
+    cua_so = _luc(tt.cua_so_bat_dau)
+    return QuanSat(
+        lease_llm=_dem_lease(db, res_llm),
+        lease_anh=_dem_lease(db, res_anh),
+        job_anh_cho=_dem_job(db, nhom=nhom, vai=THEO_LO, trang_thai=JOB_QUEUED),
+        anh_bat_dau_trong_cua_so=(
+            _dem_job(db, nhom=nhom, vai=THEO_LO, tu_luc=cua_so)
+            if cua_so is not None else 0),
+        nguoi_cho_llm=cho + _dem_job(db, nhom=nhom, vai=MAC_DINH,
+                                     trang_thai=JOB_QUEUED),
+        han_chot_llm_s=han,
+        gateway_inflight_llm=tin.inflight_llm,
+        llm_da_nap=tin.llm_da_nap,
+        vram_3090_mib=tin.vram_3090_mib,
+        nap_ket_qua=tin.nap_ket_qua,
+    )
+
+
+# ── Một bước của trọng tài ───────────────────────────────────────────────────
+
+_PHAT = {
+    NHA_LLM_LENH: lambda may_b: may_b.nha(),
+    NAP_LLM_LENH: lambda may_b: may_b.nap(),
+    FREE_COMFY_LENH: lambda may_b: may_b.free_comfy(),
+}
+
+
+def buoc(db: Any, *, nhom: str, may_b: MayBResidency | None = None,
+         ts: ThamSoResidency | None = None,
+         bay_gio: Callable[[], float] = time.time) -> TrangThai:
+    """MỘT lượt trọng tài cho một nhóm GPU. Trả về trạng thái SAU lượt này.
+
+    Ba giai đoạn, và thứ tự của chúng là ba quyết định riêng:
+
+    1. **Dòng phải tồn tại — kể cả khi máy B câm.** Không có dòng ⇒ luật 0 đóng
+       CẢ HAI cửa (Task 5.3), nên một trọng tài chỉ tạo dòng sau khi đọc được máy
+       B sẽ biến một máy B im lặng thành "LTT-3.8 ngừng bán". Xem
+       `TRANG_THAI_KHOI_TAO`.
+    2. **Hỏi máy B NGOÀI khoá.** Giữ khoá `llm-admission:*` trong lúc chờ một
+       lượt HTTP là bắt mọi lượt xin của khách xếp hàng sau máy B. Quan sát vì
+       thế cũ hơn quyết định vài chục mili giây — và điều đó AN TOÀN ở đây vì
+       mọi lệnh nguy hiểm chỉ phát từ trạng thái đã ĐÓNG cửa của bên kia:
+       `nha` chỉ phát từ `XA_LLM` (không lượt LLM mới nào vào được nữa, nên
+       `inflight` chỉ giảm), `nap`/`free_comfy` chỉ từ `TRA_ANH`/`LOI_NAP`
+       (không lượt vẽ mới nào vào được nữa). Một quan sát cũ ở đây chỉ sai về
+       phía *chờ thêm một lượt*.
+       ⛔ `trang_thai` ném ⇒ **không chuyển gì, không phát gì**, chỉ một dòng
+          cảnh báo. Một lần chuyển trên sự thật không biết là cách cả hai model
+          cùng tin mình sở hữu card.
+    3. **Quyết trong khoá, ghi bằng `phien_ban + 1`, rồi mới phát lệnh.** Kẻ
+       thua khoá lạc quan không phát lệnh nào — nhờ vậy "đúng một lệnh `nha` cho
+       một lần đổi cư trú" đúng cả khi hai worker cùng chạy vòng bảo trì.
+    4. **Một lệnh đi TRƯỚC lời khai: bật lại ComfyUI ở lối vào `ANH`.** Mọi lệnh
+       khác đi sau lời khai vì chúng chỉ *thi hành* một cư trú đã chốt; lệnh này
+       là **điều kiện** của cư trú mới, nên nó phải thành công trước khi cửa nhận
+       job ảnh mở. Xem `MayBResidency.chay_comfy`.
+
+    ⚠️ Hàm này **commit** `db`: khoá advisory của transaction chỉ nhả ở commit,
+       và giữ chúng qua một lượt HTTP phát lệnh là chặn cửa admission trong suốt
+       lượt ấy.
+    """
+    ts = ts or ThamSoResidency()
+    may_b = may_b if may_b is not None else MayBResidency()
+    tai_nguyen = thanh_vien(nhom)
+
+    _khoa(db, nhom, tai_nguyen)
+    tt, _ = _doc_dong(db, nhom, bay_gio())
+    db.commit()
+
+    try:
+        tin = may_b.trang_thai()
+    except Exception:  # noqa: BLE001 - fail-closed: KHÔNG chuyển, và nói ra
+        log.warning("khong hoi duoc may B ve cu tru %r => giu nguyen %r, khong "
+                    "phat lenh nao (fail-closed)", nhom, tt.ten, exc_info=True)
+        return tt
+
+    _khoa(db, nhom, tai_nguyen)
+    t = bay_gio()
+    tt, phien_ban = _doc_dong(db, nhom, t)
+    qs = _quan_sat(db, nhom=nhom, tt=tt, tai_nguyen=tai_nguyen, tin=tin, bay_gio=t)
+    moi, lenh = buoc_thuan(tt, qs, ts, t)
+
+    if moi.ten == ANH and tt.ten != ANH:
+        # 🔴 LỐI VÀO `ANH` = "phía ảnh được cầm card từ đây" ⇒ ComfyUI phải SỐNG
+        #    trước khi cửa nhận job ảnh mở. `free_comfy` đã **dừng hẳn** dịch vụ
+        #    (5.4a), nên không có bước này thì chu trình là một chiều: ComfyUI
+        #    tắt vĩnh viễn, `BusyWatcher` báo card bận mãi, việc sinh ảnh không
+        #    bao giờ trở lại.
+        #
+        # ⛔ Bật KHÔNG được ⇒ **không chuyển**. Ở lại `NHA_LLM` là trạng thái
+        #    không mở cửa cho ai, nên không job ảnh nào bị nhận vào một máy
+        #    không có ComfyUI; lượt sau thử lại (lệnh idempotent).
+        #
+        # ⚠️ Nhả khoá TRƯỚC lượt gọi: cổng render tự chờ dịch vụ tới 60 s, và giữ
+        #    `llm-admission:*` suốt ngần ấy là bắt mọi lượt xin của khách xếp
+        #    hàng sau một dịch vụ Windows. Sau khi bật xong, đọc lại dòng: trạng
+        #    thái đổi trong lúc ấy (một trọng tài khác) ⇒ bỏ lượt này, tính lại ở
+        #    lượt sau với sự thật mới.
+        db.rollback()
+        try:
+            may_b.chay_comfy()
+        except Exception:  # noqa: BLE001
+            log.error("khong bat lai duoc ComfyUI => KHONG vao %s (cu tru %s van "
+                      "o %s); se thu lai luot sau", ANH, nhom, tt.ten, exc_info=True)
+            return tt
+        _khoa(db, nhom, tai_nguyen)
+        lai, phien_ban = _doc_dong(db, nhom, bay_gio())
+        if lai != tt:
+            db.commit()
+            return lai
+
+    if moi != tt:
+        if not _ghi_dong(db, nhom, moi, phien_ban):
+            db.rollback()
+            log.info("mat luot ghi cu tru %r (phien ban %d da cu) — khong phat "
+                     "lenh, thu lai luot sau", nhom, phien_ban)
+            return tt
+        log.info("cu tru %s: %s -> %s%s", nhom, tt.ten, moi.ten,
+                 f" (lenh {'+'.join(lenh)})" if lenh else "")
+    db.commit()
+
+    for ten_lenh in lenh:
+        try:
+            _PHAT[ten_lenh](may_b)
+        except Exception:  # noqa: BLE001 - lệnh idempotent, lượt sau phát lại
+            log.warning("lenh %r toi may B that bai (cu tru %s = %s); se phat lai",
+                        ten_lenh, nhom, moi.ten, exc_info=True)
+    return moi
+
+
+def buoc_dinh_ky(may_b: MayBResidency | None = None) -> None:
+    """Một lượt trọng tài cho MỌI nhóm cư trú app đang khai. KHÔNG BAO GIỜ NÉM.
+
+    Đây là mặt tiếp xúc duy nhất của vòng bảo trì `job_runner` (chu kỳ 2 s), nên
+    nó phải chịu được mọi thứ hỏng: một ngoại lệ ở đây sẽ cắt phần còn lại của
+    lượt bảo trì (dọn dữ liệu, webhook, báo động) chứ không chỉ cắt trọng tài.
+
+    ⚠️ Một `MayBResidency` cho mọi nhóm chỉ đúng vì hôm nay có **đúng một** nhóm.
+       Ngày có nhóm thứ hai, id hồ sơ máy B phải đi theo nhóm — dòng cảnh báo
+       dưới đây là chỗ ngày ấy sẽ tự nói ra.
+    """
+    from platform_core.db import get_session
+
+    try:
+        nhom_ds = cac_nhom()
+    except Exception:  # noqa: BLE001
+        log.warning("khong doc duoc danh sach nhom cu tru", exc_info=True)
+        return
+    if len(nhom_ds) > 1:
+        log.warning("co %d nhom cu tru (%s) nhung chi mot cong may B duoc cau "
+                    "hinh — id ho so phai di theo nhom", len(nhom_ds), nhom_ds)
+    for nhom in nhom_ds:
+        gen = get_session()
+        db = next(gen)
+        try:
+            buoc(db, nhom=nhom, may_b=may_b)
+        except Exception:  # noqa: BLE001
+            log.exception("buoc trong tai cu tru %r that bai", nhom)
+            try:
+                db.rollback()
+            except Exception as loi:  # noqa: BLE001
+                # Ba nguyên nhân khác nhau (mất kết nối, phiên đã đóng, khoá) và
+                # ba việc sửa khác nhau — nên in ra cái nào, đừng chỉ nói "hỏng".
+                log.warning("khong rollback duoc sau khi buoc %r hong: %r",
+                            nhom, loi)
+        finally:
+            try:
+                next(gen)
+            except StopIteration:
+                pass
