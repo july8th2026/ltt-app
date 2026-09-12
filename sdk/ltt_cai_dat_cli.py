@@ -51,7 +51,7 @@ BIEN_KHOA = "LTT_API_KEY"
 #:
 #:    Duong di cua con so: 65.000 -> 88.555 (02/09) -> 156.385 (03/09, khi cua
 #:    so engine len 204.800). Moi lan doi deu phai doi CA HAI bo cai.
-CUA_SO_NGU_CANH = 156385
+CUA_SO_NGU_CANH = 171458
 
 #: Tran token RA, khop `ngan_sach.TOKEN_RA_TRAN`.
 TOKEN_RA_TRAN = 32768
@@ -63,7 +63,7 @@ TOKEN_RA_TRAN = 32768
 #:    MOT luot sinh dai nhat (32.768) — client chi kiem nguong GIUA hai luot.
 #:    Voi 0,8 khoang do chi con 25.412, thieu, va production da an mot `413` o
 #:    101.938 token vao dung vi vay.
-NEN_HOI_THOAI = 123617
+NEN_HOI_THOAI = 138690
 
 #: Tran token cho MOT ket qua tool, do vao `truncation_policy` cua catalog.
 #:
@@ -127,20 +127,22 @@ CUA_SO_NEN_CLAUDE = NEN_HOI_THOAI
 #: 📈 03/09: 28.262 -> 88.555, khi vision len `-c 131072` + KV q4_0. Do that:
 #:    89.868 token vao doc lai dung moc dau-cuoi, VRAM 21.099 MiB (+748 so voi
 #:    ho so 65K cu), va A/B doc anh tren cung mot anh: ca hai ho so tra dung moc.
-#: ⛔ HAI CON SO NAY NGANG BANG con so cua `ltt-3.8` KE TU 11/09/2026, va do la
-#:    mot su THAT chu khong phai cho trong: ca hai model chay cung mot ngu canh
-#:    engine (constraints.md). Ho so vision cu (`qwen38-vision`, 65.536 roi
-#:    131.072) da bi go — xem D02. **Task 2.6** do lai ho so 5060 Ti va thay so
-#:    o `apps/ltt_llm/ngan_sach.py`; tep nay chep theo, va `test_334` buoc hai
-#:    dau lai voi nhau nen khong lech duoc trong im lang.
-CUA_SO_NGU_CANH_35 = 156385
+#: 📈 12/09 (dual-model 2.6): hai con so nay TACH KHOI `ltt-3.8`, va su tach do
+#:    la ket qua cua phep do chu khong phai mot lua chon. Tu 11/09 toi 12/09
+#:    chung tinh co bang nhau vi ca hai model tam dung mot ngu canh engine; do
+#:    xong thi `ltt-3.8` phai ha xuong `-c 221184` (3090 khong du VRAM cho
+#:    262.144 + mmproj + 3 slot — L-14 §G1b) trong khi `ltt-3.5` giu tron
+#:    262.144 tren 5060 Ti (§G3). Ho so vision cu (`qwen38-vision`) da bi go.
+#: ⛔ Nguon chan ly la `apps/ltt_llm/ngan_sach.py`; tep nay CHEP theo, va
+#:    `test_334` buoc hai dau lai nen khong lech duoc trong im lang.
+CUA_SO_NGU_CANH_35 = 209141
 #: Nguong nen cua vision, khop `ngan_sach.nen_cua("qwen38-vision")`.
 #:
 #: ⭐ TRUOC 03/09 SO NAY LA **0**, va so 0 do la mot cau tra loi that: cua so
 #:    cong bo cua vision khi ay (28.262) HEP HON mot luot sinh dai nhat (32.768),
 #:    nen khong nguong nen nao giu duoc loi hua va bo cai phai bo han truong do.
 #:    Nang cua so len 131K la thu lam cho no dinh nghia duoc tro lai.
-NEN_HOI_THOAI_35 = 123617
+NEN_HOI_THOAI_35 = 176373
 
 #: Khoa BAT BUOC trong `[model_providers.ltt]`, kem ly do.
 #:

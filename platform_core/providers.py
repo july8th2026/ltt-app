@@ -279,7 +279,12 @@ REGISTRY: dict[str, Provider] = {
                 is_active=True,
                 capabilities={
                     # CHỈ khai thứ ĐÃ ĐO THẬT trên máy B (SO_DO_P2_P6.md).
-                    "context_window": 204_800,
+                    # 📈 12/09: 204.800 → 221.184 (L-14, 10_BENCHMARK_P3 §G1b —
+                    #    mốc cao nhất còn sạch ở `-np 3` + mmproj trên GPU).
+                    #    ⛔ Nguồn chân lý `apps/ltt_llm/ngan_sach.CUA_SO_THEO_MODEL`;
+                    #    `platform_core` không import `apps/` nên `test_334` là
+                    #    thứ buộc hai đầu lại.
+                    "context_window": 221_184,
                     "vision": False,
                     "tool_calling": True,
                     "license": "Apache-2.0",
@@ -307,11 +312,13 @@ REGISTRY: dict[str, Provider] = {
                 display_name=N_("LTT LLM 3.5 (nhanh · rẻ · đọc ảnh)"),
                 is_active=True,
                 capabilities={
-                    # ⛔ SỐ ĐO của hồ sơ 5060 Ti do **Task 2.6/3.2** chốt. Tới
-                    #    lúc ấy nó dùng chung con số với hồ sơ text — cùng con
-                    #    số `apps/ltt_llm/ngan_sach.py` đang khai, để hai nguồn
-                    #    không nói hai điều khác nhau về cùng một model.
-                    "context_window": 204_800,
+                    # ✅ SỐ ĐO của hồ sơ 5060 Ti, chốt ở dual-model 2.6:
+                    #    `10_BENCHMARK_P3.md` §G3 — `-c 262144 -kvu` KV q8_0 +
+                    #    mmproj, VRAM 13.423 MiB, biên 2.888 MiB, không tràn.
+                    #    ⛔ KHÁC `qwen38-api` (221.184) và đó là phép đo nói thế:
+                    #    model 9B chỉ tốn ~7,3 GiB trọng số nên dù card nhỏ hơn
+                    #    8 GB, phần còn lại cho KV vẫn rộng hơn 3090 + 27B.
+                    "context_window": 262_144,
                     "vision": True,
                     "tool_calling": True,
                     "license": "Apache-2.0",
