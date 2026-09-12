@@ -2503,3 +2503,23 @@ production  commit 3b22503cc590 · asset_ver 9b7ae80d · build 2026-09-10T10:18:
 
 ⚠️ **Tầng 2 (`RELEASED`) chưa chạy một ô nào** — xem spec §10.2. Đừng đọc
 `READY_FOR_DEPLOYMENT` thành "đã lên production".
+
+### Kết phiên 12/09/2026 — Tầng 2 `RELEASED`, và hai thứ đáng nhớ hơn kết quả
+
+Production chạy `e2676aaa194d`. Nhánh Voice `9240e9b8` và `main` `072d6d97` đã
+đẩy lên `origin` (trước đó **chưa nhánh nào** có trên GitHub). Báo cáo:
+`docs/LTT_VOICE/HOP_NHAT/{TANG1_RC1,TANG2_RC1,MAT_TEP_KHO_R2}.md`.
+
+**1. Hỏi máy chủ trước khi ff đã đổi cả đích ff.** Kế hoạch viết
+`admin-mvp-v3`; đo ra production đang chạy `main` và `admin-mvp-v3` **cũ hơn
+production 7 commit**. ff theo kế hoạch sẽ lùi 7 commit đang chạy thật.
+
+**2. Con số tổng không nói được "của ai".** Tôi báo cáo *"28 giọng riêng của
+khách không dùng được"*; một phép `group by owner` — hai giây — cho thấy cả 29
+hồ sơ thuộc **một tài khoản thử** `.local`. Đính chính đã ghi ở
+`TANG2_RC1.md` §3.
+
+⚠️ Việc còn lại **không thuộc về phiên nào ở đây**: kho R2 xoá object sau ~7
+ngày trong khi mã khai 30 (`RETENTION_DAYS`). Chỉ chủ dự án đọc được luật thật
+qua dashboard Cloudflare R2. Vật mốc đang chờ:
+`chan_doan/moc-vong-doi-20260912T003354Z.txt`.
