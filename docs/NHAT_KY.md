@@ -16,6 +16,77 @@
 
 
 
+## 2026-09-12 — H45 Dual-Model: 25/30 task, **deploy bằng KHÔNG**, và bốn lần một con số nói dối
+
+Chương trình **RECOVERY + MERGE**: thu hồi Multi-Job còn dở rồi hợp nhất với kiến
+trúc hai model. Quyết định: **Q123**. Hồ sơ: `docs/ltt_llm_dual/`. Kế hoạch + trạng
+thái từng bước: **H45** trong `KE_HOACH_TRIEN_KHAI.md`.
+
+⛔ **Chưa một phần nào của H45 chạy trên máy A hay máy B.** Đó là chủ ý — ba ràng
+buộc độc lập buộc gộp thành **một** lần deploy đúng thứ tự — nhưng phải nói thẳng
+ở đây để không ai đọc "25/30" thành "đang phục vụ khách":
+
+| | vì sao không được đi riêng |
+|---|---|
+| **R21** yaml → cổng máy B → máy A | trần input máy A khai **rộng hơn** `-c` đang chạy ở máy B; máy A đi trước là khách gửi được một prompt engine không chứa nổi |
+| **L-17** yaml đi cùng Task 5.4 | `LTT_HO_DUNG_CARD=…/unload` **không mang tên model**, nên một job ảnh xin 3090 sẽ nhả **cả LTT-3.5** trên card không ai tranh (~38 job ảnh/ngày) |
+| **R27** 5.3 đi cùng 5.5 | manifest đã khai `residency_group`, luật 0 fail-closed, migration không gieo dòng nào ⇒ thiếu 5.5 thì **mọi lượt `ltt-3.8` 429** |
+
+### ⭐ Phép đo đã lật mấy quyết định viết trước khi đo
+
+Cả năm của cổng đo (G1–G5) đều đổi một thứ tưởng đã biết:
+
+* **4 slot → 3.** Plan Multi-Job (T13) chốt 4 slot; ở ngỵ cảnh đã chốt thì 4 slot
+  **tràn sang RAM chủ**. 3 là trần thật của 3090; 3 ở 5060 Ti là **lựa chọn** cho nhất
+  quán hai card, không phải giới hạn.
+* **"Model nhà trả rỗng ~một nửa lượt tiếng Việt" không phải lỗi engine.** Nó là
+  *truncated thinking* của Qwen3.5 cộng sampling sai spec. Bộ cờ L-16 đưa bộ đề từ
+  27/36 lên **59/60, tiếng Việt 100 %** mà vẫn trên ngưỡng cổng.
+* **`presence-penalty` là toàn bộ chi phí và không mua gì** (+11 % tốc độ khi bỏ,
+  chất lượng không đổi). Và `--reasoning-budget` **một mình** biến "rỗng" thành
+  "sai mà nhìn như thật" — tệ hơn, vì khách **không phát hiện được**.
+* **Kho lạnh chỉ đắt hơn 7–11 %**, vì nút thắt là **đẩy trọng số lên GPU**, không
+  phải đọc tệp.
+
+### 🔴 Bốn lần một con số nói dối, và cả bốn cùng một hình dạng
+
+1. `--load-mode direct` — **tôi bịa giá trị này.** Sáu lượt đo G5 trượt sạch trước khi
+   tôi đọc lại danh sách cờ thật.
+2. Một lượt đọc "đĩa lạnh" cho **3.455 MB/s**. Đó là tốc độ **RAM** — tệp vẫn trong
+   page cache. **Một phép đo nhanh bất thường là dấu hiệu nó không đo thứ ta tưỏng.**
+3. `tests/test_981` — bộ dò canh việc "chép lại một con số vào chú thích" — **chết ở
+   bước COLLECT** từ lúc 2.6 gỡ một hằng. Nó nằm im đủ lâu để **hai** chỗ trôi ẩn được
+   trong đúng cửa sổ đó. **Một tệp test chết ở collect tệ hơn một phép kiểm đỏ: nó
+   ẩn mọi điều còn lại nó biết.**
+4. `render_gateway` đọc **dòng đầu tiên** của `nvidia-smi` ở ba chỗ. Máy B có hai card
+   từ 11/09, và "card nào được liệt kê trước" là thứ tự **không ai hứa**. Tệ nhất là
+   `chay_baseline.py`: con số đó đi vào một **mốc baseline**, nên nó làm mọi phép so
+   sánh về sau lệch **một cách nhất quán** — tức không ai phát hiện.
+
+### ⛔ Một lệnh không mang tên đối tượng thì nó đúng chỉ khi có đúng MỘT đối tượng
+
+Lần đầu thấy ở `GET /unload` (nhả **mọi** model — vô hại suốt một pha vì chỉ có một
+model). Nhưng cùng hình dạng đã xuất hiện **ba** lần trong chương trình này:
+
+* `_resource_of(tool)` đọc trường tĩnh `admission_resource` — **rỗng** với tool khai
+  `admission_theo_model` ⇒ mọi trần cấu hình theo tài nguyên thôi áp cho lượt LLM.
+* `model_cho()` chọn model bằng cờ `vision` ⇒ **tự vỡ** ngày mọi model đều đọc được
+  ảnh. Gặp ở `planner` (sửa 2.4) rồi gặp lại ở `auto_scan_video` — và docstring của
+  bản vá lần đầu **đã gọi đúng tên** tệp còn lại.
+* `git commit` lấy **cả index**, kể cả tệp của một phiên khác vừa `git add` mà chưa
+  commit được. Một commit tài liệu của tôi đã mang theo **12 tệp** của một agent khác.
+  Luật 13 (`git add` tường minh) nói về việc **thêm vào** index, không nói về việc
+  **lấy ra** ⇒ từ nay: `git commit -- <đường dẫn>`, và xem `git diff --cached` trước.
+
+### Multi-Job không bị bỏ, nó bị hấp thụ
+
+14 task của nó nằm trong H45 (T11→Task 4.3, T12→Task 6.3 đang làm). Đo để biết
+không mất gì: `docs/multijob/**` **23 tệp ở cả hai nhánh**, và bảy tệp test của họ
+(`test_950`–`956`) = `test_1200`–`1206` của ta — ba tệp **giống byte-for-byte**, bốn
+tệp khác vì **lớn hơn**.
+
+---
+
 ## 2026-09-11 — DEPLOY Q121 + audit cửa: `4a894036` lên production
 
 `EXITCODE=0` · nghiệm thu **0/0/0** trên 636 tệp `.py` · `/health/ready` **200**

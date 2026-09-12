@@ -1,0 +1,19 @@
+11:40:27  === THU /unload - hai ho so gia, cong 8390 (KHONG cham 8280) ===
+11:40:31  llama-swap thu da chay, pid 17380
+11:40:31  BUOC 1 - nap ca hai
+11:40:48    /running = [thu_cpu,thu_gpu]
+11:40:48  BUOC 2 - POST /api/models/unload/thu_cpu (duong THEO TEN MODEL)
+11:40:49    goi OK
+11:40:52    /running = [thu_gpu]     <= mong doi: chi con thu_gpu
+11:40:52  BUOC 3 - nap lai ca hai
+11:41:00    /running = [thu_cpu,thu_gpu]
+11:41:00  BUOC 4 - GET /unload (duong KHONG THAM SO, thu ma production dang dung)
+11:41:02    goi OK
+11:41:05    /running = []     <= CAU HOI: rong (nha het) hay con mot?
+11:41:05  BUOC 5 - POST /api/models/unload (khong ten) de doi chieu
+11:41:19    /running truoc = [thu_cpu,thu_gpu]
+11:41:21    goi OK
+11:41:24    /running = []
+11:41:24  === XONG, da dung ban thu ===
+
+[exited with code 0]
