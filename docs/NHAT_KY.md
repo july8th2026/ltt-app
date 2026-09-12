@@ -17425,3 +17425,53 @@ là "không in token". Token đã được xoay (cũ → 401, mới → 200). Gi
 nằm trong kho và sẽ không bao giờ nằm: nó sống ở `gateway.env` và sổ khoá
 `ltt_image`. Bài học nhỏ mà đắt: **lọc theo tiền tố là lọc theo thứ mình đoán;
 bí mật thì phải lọc theo danh sách trắng từng khoá một.**
+## 2026-09-12 (khuya) — Nhánh đối soát, và máy A lên được
+
+Sau lần deploy đổ lúc 19:05, tôi dựng `cmc/llm-dual-reconcile` từ đúng tag
+`cmc-base-20260911` rồi trộn `phien/ltt-llm-dual` lên trên.
+
+**Sáu xung đột, chỉ một là mã thật.** `catalog.py`: hai bên mỗi bên thêm *một
+trường khác nhau* vào cùng chỗ dựng (`kiem_truoc` của CMC, `admission_theo_model`
+của ta) — giữ cả hai. Ba tệp tài liệu: hai bên cùng nối thêm mục, giải ở mức
+**byte** để không lật kết dòng (`QUYET_DINH_NEN_TANG.md` trộn 566 CRLF + 37 LF).
+Hai tệp sinh ra: biên dịch lại `.mo` từ `.po`, dựng lại `check_mypy.moc`.
+
+⭐ Và `check_mypy.moc` là chỗ suýt lọt một khuyết tật: `--accept` ghi mốc bằng
+   phép đo **hiện tại**, nên nếu cây sau trộn nhiều lỗi hơn cả hai bên thì tôi
+   vừa lặng lẽ nới bánh cóc. Đo lại từng mã lỗi với **cả hai** bên cha:
+   không mã nào vượt cả hai (tổng 568, nằm giữa 567 của ta và 587 của CMC).
+
+**Ba tệp mà hồ sơ handoff lo nhất — `luong.py`, `chat.py`, `streaming.py` —
+trộn sạch, không xung đột.** Đó là xác nhận độc lập cho kết luận "Source B đã
+thay thế Source A" mà tôi rút ra bằng cách đọc mã hồi chiều.
+
+### Forward-port: một dòng, và nó là cả vấn đề
+
+`down_revision` của migration đầu chuỗi: `e26c9a41d8b5` → `d9a1f6c2b3e5`.
+
+`e26c9a41d8b5` là tổ tiên **chung**, nên chuỗi dual-model là một **nhánh anh em**
+của chuỗi Voice chứ không nằm trên nó — đó là lý do có hai head và alembic không
+vẽ được đường đi từ chỗ CSDL đang đứng. Đây là forward-port chứ không phải viết
+lại ancestry đã apply: năm migration của ta chưa từng được apply ở production.
+
+Và `test_1202` đỏ vì nó ghim `e26c9a41d8b5` — một **con số**, không phải bất
+biến. Nó sinh ra ở H45.1 để canh "nối vào head trunk, không đẻ head thứ hai";
+chủ ý ấy vẫn đúng, chỉ con số đã cũ. Viết lại thành ba mệnh đề mạnh hơn, bắt
+được cả `down_revision = None` lẫn vòng tự trỏ.
+
+### Nghiệm thu
+
+```
+gate (nâng quyền)  : PASS  30 PASS · 3 BOQUA · 0 FAIL · cay_da_doi_giua_chung=False
+migration production: d9a1f6c2b3e5 -> ... -> a3f7c214e8b9  (năm bước, sạch)
+băm ba chiều       : commit = bản xuất = production, 0 tệp lệch
+URL công khai      : /health/ready 200 · / 200 · /gia-api 200
+đường thật         : ltt-3.8 -> qwen38-api OK · ltt-3.5 -> qwen35-api OK
+```
+
+⭐ Điều đáng giữ của cả buổi: lần deploy đổ **không** phải vì thiếu quyền, thiếu
+   cờ, hay một chốt chặn phiền phức. Nó đổ vì nhánh của ta **thiếu 59 commit của
+   dòng kia**, và mọi rào tôi gặp trước đó — chốt cây riêng, sáu tệp dang dở của
+   phiên khác, `alembic` hai head — đều chỉ là **triệu chứng của đúng một sự
+   thật ấy**. Tôi đã đi vòng qua từng rào một thay vì hỏi vì sao chúng cùng xuất
+   hiện.
