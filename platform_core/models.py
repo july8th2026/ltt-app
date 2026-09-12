@@ -488,6 +488,58 @@ class LlmWaiter(Base):
     lease_id: Mapped[str] = mapped_column(String(36), default="", nullable=False)
 
 
+class GpuResidency(Base):
+    """Model nào đang **cư trú** trên một nhóm GPU, và nhóm đang ở bước nào của
+    việc đổi cư trú. Một dòng cho mỗi nhóm — hôm nay đúng một: `rtx3090`. (D01 B)
+
+    Vì sao một dòng trong CSDL chứ không một biến trong tiến trình trọng tài: máy
+    A có **nhiều** tiến trình (web + worker, và worker có thể nhiều máy), nhưng
+    RTX 3090 chỉ có **một** cư trú. Cửa admission của LTT-3.8 và của job ảnh đọc
+    trạng thái này trong advisory lock của tài nguyên (Task 5.3), nên nó phải
+    nằm ở nơi mọi tiến trình cùng thấy. Một biến trong RAM cho hai tiến trình
+    hai câu trả lời khác nhau — và hai câu trả lời khác nhau ở đây nghĩa là hai
+    model cùng nạp lên một card 24 GB.
+
+    ⛔ Bảng này **không** lưu thứ suy ra được từ `trang_thai`:
+
+    * *thành viên nào đang được mở* — `llm.residency.mo_cho(trang_thai, vai_tro)`
+      trả lời, và một cột lưu lại câu đó là hai chỗ khai cùng một điều;
+    * *đã vẽ mấy ảnh trong cửa sổ* — đếm từ bảng `jobs` (job `theo_lo` được nhận
+      kể từ `cua_so_bat_dau`), là **sự thật**, còn một bộ đếm ghi tay sẽ lệch
+      đúng lúc một tiến trình chết giữa cửa sổ.
+
+    `phien_ban` là khoá lạc quan: trọng tài đọc dòng, quyết, rồi ghi kèm
+    ``WHERE nhom = … AND phien_ban = <đã đọc>``. Hai trọng tài chạy song song
+    (một lượt deploy chồng nhau) thì đúng một cái ghi được.
+    """
+
+    __tablename__ = "gpu_residency"
+    __table_args__ = (
+        # Cố ý TRÙNG với primary key. Drill khôi phục (`tools/restore_drill_schema.py`)
+        # đối chiếu ràng buộc **theo tên** trong danh sách sống còn của nó, và một
+        # PRIMARY KEY không có tên `uq_` nào để đối chiếu. Mất tính duy nhất của
+        # `nhom` sau khi khôi phục = hai dòng cư trú cho một card, tức hai câu trả
+        # lời cho câu "3090 đang là của ai". Giá của bản khai thứ hai: một index
+        # trên một bảng có một dòng mỗi nhóm.
+        UniqueConstraint("nhom", name="uq_gpu_residency_nhom"),
+    )
+
+    #: Tên nhóm GPU. `rtx3090` = {`ltt_38_3090` (mac_dinh), `anh_3090` (theo_lo)}.
+    nhom: Mapped[str] = mapped_column(String(32), primary_key=True)
+    #: Một trong `llm.residency.TRANG_THAI` (`llm`, `xa_llm`, `nha_llm`, `anh`,
+    #: `tra_anh`, `nap_llm`, `loi_nap`). Chuỗi chứ không Enum CSDL: máy trạng
+    #: thái là nguồn chân lý, và thêm một trạng thái không nên cần migration.
+    trang_thai: Mapped[str] = mapped_column(String(16), default="llm", nullable=False)
+    #: Vào `trang_thai` hiện tại từ lúc nào — mẫu số của lùi dần và của quan sát.
+    tu_luc: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+    #: Cửa sổ ảnh mở lúc nào. NULL khi nhóm không ở trong một cửa sổ ảnh.
+    cua_so_bat_dau: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    lan_nap_loi: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    phien_ban: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+
 class JobEvent(Base):
     """Nhật ký append-only của một job, đã tách nội dung khách và nội bộ.
 

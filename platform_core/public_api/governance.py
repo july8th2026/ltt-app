@@ -583,6 +583,15 @@ NOT_CUSTOMER_DATA = frozenset({
     # của khách ở đây — nội dung lượt chạy nằm ở `workflow_run`, và bảng đó ĐÃ
     # được xếp loại.
     "wakeup",
+    # Model nào đang cư trú trên một nhóm GPU của MÁY TA (D01 B). Cùng loại với
+    # `gpu_leases` ở trên: tên nhóm + trạng thái + mốc thời gian, không `user_id`
+    # và không nội dung nào của khách.
+    #
+    # Và không có hạn lưu trữ vì không có dòng nào để hết hạn: đúng **một** dòng
+    # mỗi nhóm, ghi đè tại chỗ. Xếp nó OPERATIONAL sẽ buộc khai một hàm dọn, và
+    # lời khai ấy sẽ trỏ vào một hàm không có việc gì làm — tức đúng thứ
+    # `test_211` sinh ra để chặn.
+    "gpu_residency",
 })
 
 
