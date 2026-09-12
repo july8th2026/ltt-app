@@ -461,6 +461,20 @@ class LlmWaiter(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     resource: Mapped[str] = mapped_column(String(96), nullable=False)
+    #: Id model **nội bộ** của máy B (`qwen38-api`, `qwen35-api`), không phải bí
+    #: danh công khai — bí danh không bao giờ rời máy A (INV-015) và nó đổi được
+    #: mà không đổi engine, nên một sổ vận hành khoá theo bí danh sẽ nói về hai
+    #: thứ khác nhau trước và sau một lần đổi tên.
+    #:
+    #: ⭐ VÌ SAO KHÔNG SUY TỪ `resource`. Hôm nay đúng một tài nguyên cho một
+    #:    model (`ltt_38_3090` ↔ `qwen38-api`), nên phép suy ấy *chạy được* — và
+    #:    đó chính là cái bẫy: phép suy sống trong `platform_core`, nơi **không
+    #:    được biết tên của app** (`test_147` layering), nên nó phải nhập một
+    #:    bảng ánh xạ từ `apps/` để dịch. Cột này là app tự khai một lần lúc vào
+    #:    hàng, và `job_metrics` đọc thẳng. Rỗng = lượt của một cửa chưa khai
+    #:    model; nó vào ô `khong_khai` chứ không bị gộp vào một model nào.
+    model: Mapped[str] = mapped_column(
+        String(64), default="", nullable=False, server_default=text("''"))
     #: `stream` | `sync` | `chatltt` — cửa vào.
     cua: Mapped[str] = mapped_column(String(16), default="", nullable=False)
     lop: Mapped[str] = mapped_column(String(16), default="", nullable=False)

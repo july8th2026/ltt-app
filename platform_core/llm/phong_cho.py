@@ -65,6 +65,11 @@ class YeuCauCho:
     token_dat_truoc: int
     token_prefill_moi: int = 0
     la_whale: bool = False
+    #: Id model **nội bộ** của máy B. Vào cột `llm_waiters.model` (dual-model 6.3)
+    #: để `job_metrics` đọc độ sâu phòng chờ **theo model** mà không phải dịch
+    #: `resource` → model bằng một bảng ánh xạ nhập từ `apps/`.
+    #: Rỗng = cửa gọi chưa khai; sổ ghi ô `khong_khai`, không gộp vào model nào.
+    model: str = ""
 
 
 def _dong_ho_that() -> datetime:
@@ -139,7 +144,8 @@ def kiem_phong(db: Session, *, resource: str, token_prefill_moi: int,
 def vao(db: Session, yc: YeuCauCho, *, now: datetime | None = None) -> str:
     """Ghi dòng chờ; caller commit. Trả `waiter_id`."""
     now = now or _bay_gio()
-    w = LlmWaiter(resource=yc.resource, cua=yc.cua, lop=yc.lop, user_id=yc.user_id,
+    w = LlmWaiter(resource=yc.resource, model=str(yc.model or "")[:64],
+                  cua=yc.cua, lop=yc.lop, user_id=yc.user_id,
                   request_id=yc.request_id, token_dat_truoc=int(yc.token_dat_truoc),
                   token_prefill_moi=int(yc.token_prefill_moi),
                   la_whale=bool(yc.la_whale), created_at=now, heartbeat_at=now,

@@ -316,6 +316,9 @@ def register_chat_routes(api, config, tag: str) -> None:
                 han_s=cua_luong.han_cho_dong_bo(
                     ngan_sach_s=float(SYNC_BILLED_MAX_SECONDS),
                     da_tieu_s=time.monotonic() - t0),
+                # Id model **nội bộ** cho sổ lượt (dual-model 6.3). ⛔ Không ghi
+                # bí danh khách: bí danh đổi được mà engine không đổi.
+                model=cua_luong.id_model_noi_bo(executor, sach["model"]),
                 ngat_chua=ngat.do_ngat(request))
         except phong_cho.HetCho as e:
             # Hết trần chờ: 0 khoản giữ (INV-MJ-2), và **mở lại khoá** — bảo

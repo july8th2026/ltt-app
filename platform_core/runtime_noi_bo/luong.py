@@ -342,7 +342,12 @@ def vao_va_cho(tk: TienKiem, *, db_luong, han_s: float, dong_ho=None, ngu=None):
         user_id=tk.user_id, mode="stream", holder_id=tk.request_id,
         request_id=tk.request_id, cua=tk.cua, lop=luat_nhan.TUONG_TAC,
         token_dat_truoc=tk.token_dat_truoc, token_prefill_moi=tk.token_prefill_moi,
-        la_whale=tk.la_whale)
+        la_whale=tk.la_whale,
+        # `than_gui["model"]` là id model **nội bộ** — `tien_kiem` đã dịch bí danh
+        # sang nó (`gui["model"] = executor.model_id(ten)`). ⛔ KHÔNG dùng
+        # `tk.model_alias`: bí danh đổi được mà engine không đổi, nên một sổ khoá
+        # theo bí danh sẽ nói về hai thứ khác nhau trước và sau một lần đổi tên.
+        model=str(tk.than_gui.get("model") or ""))
     gen, db = _phien_moi()
     try:
         waiter_id = phong_cho.vao(db, yc)
@@ -423,6 +428,23 @@ def han_cho_dong_bo(*, ngan_sach_s: float, da_tieu_s: float = 0.0,
     return max(0.0, min(float(tran), float(ngan_sach_s) - float(da_tieu_s)))
 
 
+def id_model_noi_bo(executor, alias: str) -> str:
+    """Bí danh khách → id model **nội bộ**, cho sổ lượt. `""` = không dịch được.
+
+    ⛔ FAIL SOFT, CÓ CHỦ Ý. `executor.model_id` ném `KeyError` với một bí danh lạ,
+       và ở đây một `KeyError` thành **500** — tức ta trả lời "server hỏng" cho
+       một lượt hoàn toàn hợp lệ, chỉ vì một cột QUAN SÁT không dịch được tên.
+       Sổ thiếu một ô là một sổ kém hơn; một 500 là một lượt mất. `""` đi vào ô
+       `khong_khai` của `job_metrics`, nên cái thiếu ấy **nhìn thấy được** chứ
+       không bị gộp vào một model nào.
+    """
+    try:
+        ra = executor.model_id(alias)
+    except (AttributeError, KeyError, TypeError):
+        return ""
+    return str(ra or "")
+
+
 @dataclass(frozen=True)
 class SuatDongBo:
     """Kết quả của phòng chờ ở cửa đồng bộ. **Chưa** giữ đồng tiền nào."""
@@ -435,7 +457,7 @@ def cho_suat_dong_bo(*, tai_nguyen: str, so_suat: int, token_pool: int,
                      user_id: str, request_id: str, cua: str,
                      token_vao_uoc: int, xin_ra: int, so_anh: int = 0,
                      token_prefill_moi: int = 0, la_whale: bool = False,
-                     han_s: float, ngat_chua=None) -> SuatDongBo:
+                     han_s: float, ngat_chua=None, model: str = "") -> SuatDongBo:
     """Vào phòng chờ → chờ chặn ≤ `han_s` → trả suất. **Không** chạm sổ tiền.
 
     Ném `phong_cho.HetCho` (hết trần ⇒ cửa trả 429) hoặc `phong_cho.KhachDi`
@@ -481,7 +503,10 @@ def cho_suat_dong_bo(*, tai_nguyen: str, so_suat: int, token_pool: int,
         user_id=user_id, mode="sync", holder_id=request_id,
         request_id=request_id, cua=cua, lop=luat_nhan.TUONG_TAC,
         token_dat_truoc=int(luat["token_dat_truoc"]),
-        token_prefill_moi=int(token_prefill_moi), la_whale=bool(la_whale))
+        token_prefill_moi=int(token_prefill_moi), la_whale=bool(la_whale),
+        # Id model nội bộ, do cửa gọi khai. Rỗng ⇒ ô `khong_khai` trong sổ, chứ
+        # không bị gộp vào model của một tài nguyên nào.
+        model=str(model or ""))
 
     gen, db = _phien_moi()
     try:
