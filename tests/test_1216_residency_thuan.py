@@ -512,3 +512,58 @@ def test_doi_chung_go_phanh_luot_ve_dang_chay_lam_quet_do(monkeypatch):
     monkeypatch.setattr(R, "dang_ve_anh", lambda quan_sat: False)
     with pytest.raises(AssertionError):
         _quet_bat_bien()
+
+
+# ── B3. Câu hỏi mà admission đặt ra (luật 0 của `luat_nhan`, Task 5.3) ───────
+
+def test_mo_cho():
+    assert R.mo_cho(R.LLM, "mac_dinh") and not R.mo_cho(R.XA_LLM, "mac_dinh")
+    assert R.mo_cho(R.ANH, "theo_lo") and not R.mo_cho(R.TRA_ANH, "theo_lo")
+
+
+def test_bang_mo_cho_day_du_7x2_va_dung_hai_o_mo():
+    mo = {(ten, vai) for ten in R.TRANG_THAI for vai in R.VAI_TRO
+          if R.mo_cho(ten, vai)}
+    assert mo == {(R.LLM, R.MAC_DINH), (R.ANH, R.THEO_LO)}, mo
+    # Năm trạng thái còn lại đóng cả hai cửa — đó là ý nghĩa của "đang đổi cư trú".
+    dong = [ten for ten in R.TRANG_THAI
+            if not any(R.mo_cho(ten, v) for v in R.VAI_TRO)]
+    assert dong == [R.XA_LLM, R.NHA_LLM, R.TRA_ANH, R.NAP_LLM, R.LOI_NAP]
+
+
+def test_khong_trang_thai_nao_mo_ca_hai_vai_tro():
+    """Bất biến cốt tuỷ: hai model không bao giờ cùng được nhận lượt mới trên một
+    card 24 GB. Nếu một trạng thái mở cả hai thì admission cấp suất cho cả LTT-3.8
+    và model ảnh cùng lúc, và ca đó kết thúc bằng OOM ở giữa việc của khách."""
+    for ten in R.TRANG_THAI:
+        assert sum(R.mo_cho(ten, v) for v in R.VAI_TRO) <= 1, ten
+
+
+def test_khong_mot_buoc_nao_lat_duoc_cu_tru():
+    """Mọi chuyển hợp lệ phải đi qua ít nhất một trạng thái ĐÓNG cả hai cửa: không
+    cặp `a → b` nào vừa mở `mac_dinh` ở `a` vừa mở `theo_lo` ở `b` (và ngược lại).
+
+    Đây là chứng minh cơ học cho "drain trước, đổi sau" ở tầng ADMISSION — không
+    có nó, một bước có thể chuyển quyền nhận lượt từ bên này sang bên kia trong
+    khi lượt của bên này còn đang chạy.
+    """
+    for tu, dens in R.CHUYEN_HOP_LE.items():
+        for den in dens:
+            assert not (R.mo_cho(tu, R.MAC_DINH) and R.mo_cho(den, R.THEO_LO)), (tu, den)
+            assert not (R.mo_cho(tu, R.THEO_LO) and R.mo_cho(den, R.MAC_DINH)), (tu, den)
+
+
+def test_vai_tro_la_thi_nem_con_trang_thai_la_thi_dong():
+    """Hai kiểu "lạ", hai cách xử KHÁC nhau, và lý do nằm ở hậu quả:
+
+    · trạng thái lạ ⇒ **đóng** (fail-closed). Trọng tài sẽ ném ở `buoc_thuan` nên
+      cái lạ ấy vẫn có người báo động; admission chỉ cần đừng mở cửa.
+    · vai trò lạ ⇒ **ném**. Một `vai_tro` gõ sai trong manifest (`"theolo"`) mà
+      trả về False sẽ làm app đó không bao giờ được nhận — một app chết ÂM THẦM,
+      loại hỏng đắt nhất để truy.
+    """
+    assert not R.mo_cho("mot_trang_thai_khong_co", R.MAC_DINH)
+    assert not R.mo_cho("mot_trang_thai_khong_co", R.THEO_LO)
+    for vai in ("", "theolo", "mac dinh", "anh"):
+        with pytest.raises(ValueError):
+            R.mo_cho(R.LLM, vai)

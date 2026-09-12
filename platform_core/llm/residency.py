@@ -99,6 +99,40 @@ CHUYEN_HOP_LE: dict[str, frozenset[str]] = {
 }
 
 
+# ── Câu hỏi duy nhất admission đặt ra cho máy này ─────────────────────────────
+#
+# Nền tảng chỉ biết **vai trò**, không biết tên app (`test_147` layering): app khai
+# `AdmissionModel(..., residency_group="rtx3090", vai_tro=...)` qua `ToolSpec`.
+MAC_DINH, THEO_LO = "mac_dinh", "theo_lo"
+VAI_TRO: tuple[str, ...] = (MAC_DINH, THEO_LO)
+
+#: Vai trò → những trạng thái nhóm MỞ cửa admission cho nó. Một bảng chứ không
+#: một biểu thức `or`, vì đây là nơi duy nhất trả lời "ai được nhận lượt mới", và
+#: bất biến cốt tuỷ của D01 B đọc thẳng ra được từ nó: **không trạng thái nào có
+#: mặt ở cả hai dòng** ⇒ hai model không bao giờ cùng nhận lượt trên một card.
+TRANG_THAI_MO: dict[str, frozenset[str]] = {
+    MAC_DINH: frozenset({LLM}),
+    THEO_LO: frozenset({ANH}),
+}
+
+
+def mo_cho(ten: str, vai_tro: str) -> bool:
+    """Admission của thành viên có vai trò này đang mở không (luật 0 của `luat_nhan`)?
+
+    Hai kiểu đầu vào "lạ" được xử KHÁC nhau, và lý do nằm ở hậu quả:
+
+    · **trạng thái lạ ⇒ đóng.** Fail-closed, và cái lạ ấy vẫn có người báo động:
+      `buoc_thuan` ném khi gặp nó, nên trọng tài sẽ kêu. Admission chỉ cần đừng
+      mở cửa cho một cư trú mà không ai biết là cư trú gì.
+    · **vai trò lạ ⇒ NÉM.** Một `vai_tro` gõ sai trong manifest (`"theolo"`) mà
+      trả về False sẽ làm app đó không bao giờ được nhận lượt — một app chết âm
+      thầm, và loại hỏng đó đắt hơn nhiều một ngoại lệ ở cửa.
+    """
+    if vai_tro not in TRANG_THAI_MO:
+        raise ValueError(f"vai tro la: {vai_tro!r}")
+    return ten in TRANG_THAI_MO[vai_tro]
+
+
 @dataclass(frozen=True)
 class TrangThai:
     """Toàn bộ trạng thái BỀN của nhóm — đúng bốn trường, khớp bảng `gpu_residency`.
