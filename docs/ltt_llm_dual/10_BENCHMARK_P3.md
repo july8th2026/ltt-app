@@ -556,11 +556,66 @@ làm hỏng suy đoán MTP**. Giả thuyết đó chết.
 
 ---
 
-## G5
+## G5 — Kho ấm và kho lạnh: chênh nhau **ít hơn nhiều** so với lo ngại
 
-Chưa chạy.
+**Ngày đo:** 2026-09-12, 08:16. Ba lượt mỗi chế độ, lấy trung vị.
 
----
+### Nạp từ kho ấm (đo trực tiếp)
+
+| model | trung vị | ba lượt |
+|---|---:|---|
+| LTT-3.8 | **15,23 s** | 15,30 · 15,23 · 15,21 |
+| LTT-3.5 | **10,12 s** | 10,12 · 10,12 · 10,09 |
+
+Phương sai gần như bằng không (±0,05 s) — nạp model là thao tác rất ổn định.
+
+### 🔴 Kho lạnh KHÔNG đo trực tiếp được, và đây là lý do
+
+Máy B có **223,9 GB RAM**, đang trống **149,8 GB**, standby cache **24,8 GB**.
+Muốn đẩy tệp model ra khỏi cache thì phải đọc **~165 GB** dữ liệu khác qua đó —
+trên một máy đang phục vụ khách, và nó sẽ xoá cache của cả ComfyUI lẫn gateway.
+Cái giá đó không đáng cho một con số.
+
+⛔ Hai lần thử đầu của tôi đều sai và đáng ghi lại:
+
+1. `--load-mode direct` — **giá trị này không tồn tại**. Tôi bịa nó. Bản b10883
+   chỉ nhận `auto` · `none` · `mmap` · `mlock`. Sáu lượt đo trượt sạch.
+2. Đọc tệp ứng viên lmstudio (đã 7 giờ không dùng) tưởng là "gần lạnh" ⇒ đo
+   được **3.455 MB/s**. Đó là tốc độ RAM, không phải đĩa — tệp vẫn nằm trong
+   cache. Một phép đo nhanh bất thường là dấu hiệu nó **không đo thứ ta tưởng**.
+
+### ⭐ Cách đo được: đọc bỏ qua cache hệ điều hành
+
+`FILE_FLAG_NO_BUFFERING` (`FileOptions` `0x20000000`), đệm 4 MiB căn theo sector:
+
+```
+4,00 GB (KHÔNG qua cache) trong 1,6 s = 2.592 MB/s
+```
+
+Đó là tốc độ đĩa **thật** của `H:` — NVMe. Đối chiếu: cùng tệp đọc qua cache cho
+3.455 MB/s, tức đĩa chỉ chậm hơn RAM **1,33 lần** cho tải tuần tự.
+
+### Cận trên của kho lạnh, dẫn xuất từ hai phép đo thật
+
+| model | tệp | đọc từ đĩa | đọc từ RAM | chênh | **nạp lạnh ước** |
+|---|---:|---:|---:|---:|---:|
+| LTT-3.8 | 16,46 GB | 6,50 s | 4,88 s | +1,62 s | **≈ 16,9 s** (+11 %) |
+| LTT-3.5 | 7,68 GB | 3,03 s | 2,28 s | +0,76 s | **≈ 10,9 s** (+7 %) |
+
+⇒ **Kho lạnh chỉ đắt hơn 7–11 %.** Vì nút thắt của việc nạp **không phải** đọc
+tệp mà là đẩy trọng số lên GPU và cấp phát ngữ cảnh — hai thứ không đổi giữa ấm
+và lạnh. Trên một máy có đĩa chậm (SATA SSD ~500 MB/s) kết luận sẽ ngược lại;
+con số này là của **máy B**, đừng mang đi nơi khác.
+
+### Điều này nói gì cho trọng tài residency (Task 5.2)
+
+1. **`t_nap_llm_s = 16,3` (G4) đứng vững**, và nay có cận trên: **17 s** phủ cả
+   hai trường hợp. Không cần hai con số như tôi từng nghĩ.
+2. Và trong vận hành thật, trường hợp **lạnh gần như không xảy ra**: hồ sơ mới
+   (Task 3.3) đặt `ttl: 0` + `preload`, nên hai model nằm thường trú; trọng tài
+   chỉ tháo/nạp **LTT-3.8** trên 3090, và lần nạp lại luôn cách lần trước vài
+   phút — thừa sức còn trong standby cache 24,8 GB.
+
 
 ## Phụ lục — Có cần nâng llama.cpp lên bản mới không? **Chưa cần**
 
