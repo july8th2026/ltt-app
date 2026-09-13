@@ -473,7 +473,12 @@ def _finish_chat(*, db, sach: dict, principal, record, request_id: str,
             lambda: executor.run(
                 db, sach,
                 timeout_s=_con_lai_s(bat_dau_cua or bat_dau,
-                                     float(SYNC_BILLED_MAX_SECONDS))),
+                                     float(SYNC_BILLED_MAX_SECONDS)),
+                # 🔴 TRUYỀN MÃ LƯỢT (L-06). Không có nó, đường hủy chỉ đóng
+                #    socket — và `httpx.Client.close()` không cắt một request
+                #    đang bay ở luồng khác. Máy B sinh chữ tới hết, ta chờ tới
+                #    hết, slot bị giữ 15–32 s, khách vẫn bị tính tiền.
+                ma_luot=request_id),
             ngat_chua=ngat.do_ngat(request))
     except ngat.KhachNgat as e:
         # 🔴 HAI KẾT CỤC KHÁC HẲN NHAU, VÀ CHÚNG ĐỊNH ĐOẠT KHOÁ IDEMPOTENCY

@@ -13,7 +13,7 @@
 | L-03 | `ltt-3.8` khai *"Text only"* du engine DA nap `mmproj` | DOC LAP | ban khai (may A) | `catalog.HO_SO` co_vision=True ca hai | cho |
 | L-04 | bo cham `bia-01` do **su vang mat** -> cau bia dat VA cau lac de deu duoc cham dung | DOC LAP | `tools/do_tai_hai_model.py` | ban cu: 3/3 cau sai -> "dung"; ban moi: 1/3 | ✅ **DONG 13/09** |
 | L-05 | **108/131 job loi 14 ngay** deu la `AmbiguousProviderError: mat ket noi sau khi bat dau gui` | DOC LAP | he qua cua L-01 | 48/48 done, 0 loi (p=0,3%) | ✅ **DONG 13/09** |
-| L-06 | cua DONG BO khong huy duoc: khach cat ket noi ma slot van bi giu toi khi sinh XONG | DOC LAP | `chat.py` khong goi `huy_luot.phien` | tra slot 15,4 / 17,2 / 31,9 s theo `max_tokens` 900 / 1024 / 2000 | **MO 13/09** |
+| L-06 | cua DONG BO khong huy duoc: khach cat ket noi ma slot van bi giu toi khi sinh XONG | DOC LAP | `executor.run` khong nhan/truyen `ma_luot` | tra slot 15,4 / 17,2 / 31,9 s theo `max_tokens` 900 / 1024 / 2000 | **da sua, cho deploy** |
 | L-07 | **MOT job anh la ha `ltt-3.8` VINH VIEN**: trong tai nha LLM roi ket o `nha_llm` | 🔴 **CHAN** | cong render may B thieu `/v1/nha_comfy` (404) | su co that 04:57-05:29, 32 phut | **MO 13/09** |
 
 ## L-05 — mot MUC CAN DO, khong phai mot ket luan
@@ -37,6 +37,70 @@ Tap trung 08/09 (**64**) va 09/09 (**34**) = 75% tong so. Tu 11/09 khong con job
    vong vi dung mot gia thuyet khop qua vua ("khoa advisory theo tai khoan").
    Phep do dung: sau khi deploy ban sua L-01, lop loi nay phai **bien mat** —
    khong phai giam. Neu no chi giam, nguyen nhan la thu khac.
+
+## L-06 -- GOC THAT, sau khi HAI gia thuyet cua toi bi bac bo
+
+Ban ghi dau cua toi noi: *"`chat.py` khong goi `huy_luot.phien`"*. Dung mot nua,
+va nua ay khong phai nguyen nhan.
+
+### Ba gia thuyet, hai cai dau SAI
+
+| # | gia thuyet | phep do phan biet | ket |
+|---|---|---|---|
+| 1 | Cloudflare giu ket noi nguoc dong nen may A khong thay `http.disconnect` | do CA HAI duong: qua CF **18,67 s**, loopback **16,54 s** | **SAI** |
+| 2 | `Request.is_disconnected()` khong bao gio tra True o hinh dang cua ta | thi nghiem uvicorn toi gian, dung phien ban thu vien that, endpoint `def` nhu that | **SAI** -- thay o giay **2,02** |
+| 3 | Phat hien duoc, nhung **khong cat duoc** | doc `dieu_phoi._dong()` | DUNG |
+
+* Gia thuyet 1 chet vi mot phep do **mot dong lenh**: them mot duong loopback
+  vao chinh bo do da co. Neu bo qua buoc ay, toi da di sua mot thu khong hong
+  (cau hinh Cloudflare) va de nguyen thu dang hong.
+
+### Goc
+
+`dieu_phoi._dong()` -- duong huy **day du** -- lam ba viec, va HAI trong ba phu
+thuoc `ma_luot`:
+
+```
+1. huy_luot.danh_dau(ma_luot)      chi khi CO ma
+2. client.close()                   luon luon
+3. _bao_may_b_huy(..., ma_luot)     chi khi CO ma   <- "bao may B thoi sinh chu"
+```
+
+`apps/ltt_llm/executor.run()` **khong nhan** `ma_luot`, nen cua dong bo goi
+`features.chay` voi mac dinh rong => chi lam viec 2. Ma `httpx.Client.close()`
+**khong cat** mot request dang bay o luong khac: may B sinh chu toi het, luong
+goi cho toi het, `chay_canh_ngat` cho luong ay truoc khi nem `KhachNgat`.
+
+Va chinh docstring cua `_bao_may_b_huy` da noi truoc dieu nay:
+
+> *"neu may A chi dong ket noi cua minh, luot B->llama van chay toi het cho mot
+> nguoi da di: dung cai GPU ta dang co tra lai. `POST /v1/huy` la cach noi
+> **bang loi** dieu ma mot socket dong khong noi duoc."*
+
+Mot loi canh bao viet dung cho, va van bi vuot qua -- vi no canh bao ve mot
+tham so ma tang tren **quen truyen**, khong ve mot dong ma ai do se doc.
+
+### Ban sua
+
+`executor.run(..., ma_luot="")` truyen xuong; `chat.py` truyen `ma_luot=request_id`.
+
+Ky vong do duoc sau khi deploy: llama.cpp nha slot **<=1 s** sau khi client roi
+(`server-context.cpp:39`), cong mot nhip tham ~1 s => tong **~3 s**. Nguong cong
+M la 2 s -- neu con vuot, phan con lai la nhip tham, va do la mot con so chinh
+duoc.
+
+### Va mot he qua ve HINH DANG PHEP KIEM
+
+Ban sua lam **19 phep kiem do cung luc**, khong phai vi ma sai ma vi cac ban gia
+cua `run()` go tay dung ba tham so:
+
+```python
+def gia(db, params, *, timeout_s=300.0):        # ban cu
+def gia(db, params, *, timeout_s=300.0, **_):   # ban moi
+```
+
+Mot ban gia **chat hon** thu no thay the la mot cai phanh dat sai cho: no khong
+bao ve gi ca, no chi no khi hop dong that mo rong.
 
 ## L-07 — MO 13/09/2026, CHAN: mot job anh ha `ltt-3.8` vinh vien
 
@@ -105,8 +169,14 @@ khong duoc dung, nen khuyet tat nam im. Mot ngay co khach dung anh la ngay
    khong vo han. Mot trang thai co the vao ma khong the ra la mot khuyet tat
    ve HINH DANG, khong phai ve cau hinh.
 
-⚠️ **Chua sua ca hai.** Deploy cong render may B la mot thay doi tren he con
-   khac, chua qua gate trong phien nay — phai hoi chu du an truoc.
+**PHAN 1 DA LAM 13/09.** `render_gateway/deploy/deploy.ps1`: 33 tep, hash khop
+hai ben, kem `gpu_may_b.json` (RUNBOOK canh bao thieu tep nay la **dung han**
+viec sinh anh). Khoi dong lai `LTTRenderGateway`, va `/v1/nha_comfy` nay **da co
+mat** -- dung duong da 404.
+
+**PHAN 2 DA LAM 13/09.** `CHUYEN_HOP_LE[NHA_LLM]` nay la `{ANH, NAP_LLM}`, kem
+mot phanh o `LLM` de duong lui khong thanh vong lap. Chot o `test_1240` (15 phep
+kiem) va bang 7x15 = 105 o cua `test_1216`.
 
 ### Can thiep tay da lam gi (de hoan lai duoc)
 

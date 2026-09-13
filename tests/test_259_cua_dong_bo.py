@@ -143,7 +143,12 @@ def _dat_model(monkeypatch, *, token_vao=100, token_ra=50, do_duoc=True, nem=Non
     from apps.ltt_llm import features
     goi = []
 
-    def gia(db, params, *, timeout_s=300.0):
+    # ⭐ `**_`: ban gia PHAI bat bien voi viec chu ky that MOC THEM tham
+    #    so. Ban cu go tay dung ba tham so, nen ngay `executor.run` nhan
+    #    `ma_luot` (L-06) thi 19 phep kiem do cung mot luc — khong phai vi
+    #    ma sai ma vi ban gia khong theo kip. Mot ban gia chat hon thu no
+    #    thay the la mot phanh dat sai cho.
+    def gia(db, params, *, timeout_s=300.0, **_):
         goi.append(params)
         if nem is not None:
             raise nem
@@ -737,7 +742,12 @@ def test_giu_cho_da_CHOT_truoc_khi_goi_model(api, monkeypatch):
     truoc = _so_du(user_id)
     thay_giua_chung = {}
 
-    def gia(db, params, *, timeout_s=300.0):
+    # ⭐ `**_`: ban gia PHAI bat bien voi viec chu ky that MOC THEM tham
+    #    so. Ban cu go tay dung ba tham so, nen ngay `executor.run` nhan
+    #    `ma_luot` (L-06) thi 19 phep kiem do cung mot luc — khong phai vi
+    #    ma sai ma vi ban gia khong theo kip. Mot ban gia chat hon thu no
+    #    thay the la mot phanh dat sai cho.
+    def gia(db, params, *, timeout_s=300.0, **_):
         thay_giua_chung["so_du"] = _so_du(user_id)
         return features.KetQua(noi_dung="ok", suy_nghi="", tool_calls=(),
                                finish_reason="stop", model=params["model"],
@@ -762,7 +772,12 @@ def test_bang_chung_idempotency_ton_tai_ngay_giua_luc_model_chay(api, monkeypatc
     idem = uuid.uuid4().hex
     thay = {}
 
-    def gia(db, params, *, timeout_s=300.0):
+    # ⭐ `**_`: ban gia PHAI bat bien voi viec chu ky that MOC THEM tham
+    #    so. Ban cu go tay dung ba tham so, nen ngay `executor.run` nhan
+    #    `ma_luot` (L-06) thi 19 phep kiem do cung mot luc — khong phai vi
+    #    ma sai ma vi ban gia khong theo kip. Mot ban gia chat hon thu no
+    #    thay the la mot phanh dat sai cho.
+    def gia(db, params, *, timeout_s=300.0, **_):
         gen, db2 = _session()
         try:
             from platform_core.public_api.keys import DeveloperApiKey  # noqa: F401

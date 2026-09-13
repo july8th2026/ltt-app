@@ -273,7 +273,12 @@ def _dat_model(monkeypatch, *, token_vao=100, token_ra=50, do_duoc=True,
     from apps.ltt_llm import features
     goi = []
 
-    def gia(db, params, *, timeout_s=300.0):
+    # ⭐ `**_`: ban gia PHAI bat bien voi viec chu ky that MOC THEM tham
+    #    so. Ban cu go tay dung ba tham so, nen ngay `executor.run` nhan
+    #    `ma_luot` (L-06) thi 19 phep kiem do cung mot luc — khong phai vi
+    #    ma sai ma vi ban gia khong theo kip. Mot ban gia chat hon thu no
+    #    thay the la mot phanh dat sai cho.
+    def gia(db, params, *, timeout_s=300.0, **_):
         goi.append(params)
         if truoc_khi_chay is not None:
             truoc_khi_chay()
@@ -550,7 +555,12 @@ def test_loi_goi_model_nhan_ngan_sach_CON_LAI_khong_phai_tran_nguyen(api, monkey
 
     from apps.ltt_llm import features
 
-    def gia(db, params, *, timeout_s=300.0):
+    # ⭐ `**_`: ban gia PHAI bat bien voi viec chu ky that MOC THEM tham
+    #    so. Ban cu go tay dung ba tham so, nen ngay `executor.run` nhan
+    #    `ma_luot` (L-06) thi 19 phep kiem do cung mot luc — khong phai vi
+    #    ma sai ma vi ban gia khong theo kip. Mot ban gia chat hon thu no
+    #    thay the la mot phanh dat sai cho.
+    def gia(db, params, *, timeout_s=300.0, **_):
         nhan.append(timeout_s)
         return features.KetQua(
             noi_dung="chao", suy_nghi="", tool_calls=(), finish_reason="stop",
@@ -699,7 +709,12 @@ def test_khach_ngat_giua_luot_thi_DONG_HTTPX_nha_lease_va_khong_treo_tien(
     from apps.ltt_llm import features
     goi = []
 
-    def gia(db, params, *, timeout_s=300.0):
+    # ⭐ `**_`: ban gia PHAI bat bien voi viec chu ky that MOC THEM tham
+    #    so. Ban cu go tay dung ba tham so, nen ngay `executor.run` nhan
+    #    `ma_luot` (L-06) thi 19 phep kiem do cung mot luc — khong phai vi
+    #    ma sai ma vi ban gia khong theo kip. Mot ban gia chat hon thu no
+    #    thay the la mot phanh dat sai cho.
+    def gia(db, params, *, timeout_s=300.0, **_):
         """Máy B "đang chạy": ghi nhận cửa ra mạng rồi **chờ cửa ấy bị đóng**.
 
         ⚠️ Chờ bằng `Event` chứ không ngủ: lượt này phải còn sống ở đúng lúc cửa
@@ -795,7 +810,12 @@ def test_so_luot_ghi_KET_CUC_THAT_khong_phai_luon_luon_xong(api, monkeypatch):
 
     from apps.ltt_llm import features
 
-    def gia(db, params, *, timeout_s=300.0):
+    # ⭐ `**_`: ban gia PHAI bat bien voi viec chu ky that MOC THEM tham
+    #    so. Ban cu go tay dung ba tham so, nen ngay `executor.run` nhan
+    #    `ma_luot` (L-06) thi 19 phep kiem do cung mot luc — khong phai vi
+    #    ma sai ma vi ban gia khong theo kip. Mot ban gia chat hon thu no
+    #    thay the la mot phanh dat sai cho.
+    def gia(db, params, *, timeout_s=300.0, **_):
         raise BanError("3/3 suat dang dung")
 
     monkeypatch.setattr(features, "chay", gia)

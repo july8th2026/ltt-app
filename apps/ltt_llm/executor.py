@@ -70,12 +70,39 @@ class _Executor:
         from apps.ltt_llm.ngan_sach import tran_vao_cua
         return tran_vao_cua(features.ALIAS_SANG_ID[alias])
 
-    def run(self, db, params, *, timeout_s, on_dispatch=None, on_rejected=None):
+    def run(self, db, params, *, timeout_s, on_dispatch=None, on_rejected=None,
+            ma_luot: str = ""):
+        """Chạy một lượt. `ma_luot` là **tên để cắt lượt này từ ngoài**.
+
+        🔴 THIẾU `ma_luot` LÀ ĐƯỜNG HỦY CHỈ LÀM MỘT TRONG BA VIỆC (L-06, 13/09).
+
+           `dieu_phoi._dong()` — đường hủy đầy đủ của một lượt — làm ba việc:
+
+               1. `huy_luot.danh_dau(ma_luot)`      chỉ khi CÓ mã
+               2. `client.close()`                  luôn luôn
+               3. `_bao_may_b_huy(..., ma_luot)`    chỉ khi CÓ mã
+
+           Cửa job truyền mã nên đủ ba. Cửa đồng bộ **không** truyền, nên nó chỉ
+           làm việc 2 — mà `httpx.Client.close()` **không cắt** một request đang
+           bay ở luồng khác. Máy B cứ sinh chữ tới hết, luồng gọi cứ chờ, và
+           `chay_canh_ngat` chờ luồng ấy trước khi ném `KhachNgat`.
+
+           Đo được trên production: khách cắt kết nối rồi mà slot vẫn bị giữ
+           **15,4 s / 17,2 s / 31,9 s** với `max_tokens` 900 / 1024 / 2000 — gần
+           tỉ lệ thuận, tức đúng bằng thời gian sinh hết. Ngưỡng cổng M là 2 s.
+           Và khách **vẫn bị tính tiền** cho phần token họ không nhận được.
+
+        ⛔ Rỗng vẫn hợp lệ (bên gọi nội bộ không cần cắt), nhưng cửa nào phục vụ
+           **khách** thì phải truyền — không thì tính năng hủy chết lặng lẽ, và
+           nó chỉ lộ ra ở hoá đơn.
+        """
         kwargs = {"timeout_s": timeout_s}
         if on_dispatch is not None:
             kwargs["on_dispatch"] = on_dispatch
         if on_rejected is not None:
             kwargs["on_rejected"] = on_rejected
+        if ma_luot:
+            kwargs["ma_luot"] = ma_luot
         return features.chay(db, params, **kwargs)
 
     def model_id(self, alias):

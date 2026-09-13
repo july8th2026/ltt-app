@@ -38,12 +38,11 @@ import uuid
 
 import httpx
 from fastapi import FastAPI, Request, Response
-from fastapi.responses import StreamingResponse
 
 app = FastAPI()
 DICH = ""
 KHOA = ""
-_tre = []
+_tre: list[float] = []
 
 
 @app.get("/_cau/tre")
