@@ -38,15 +38,30 @@ giới ấy: *sáu người đầu chạy — còn người thứ bảy thì sao
 py tools\cua_so_yen.py trang-thai
 
 # 1. Nền phải sạch, và production phải RẢNH (xem §5)
-# 2. Chạy kịch bản — bench.py, TRÊN MÁY B, chỉ stdlib
+# 2a. Tầng DỊCH VỤ (qua máy A + Cloudflare) — GuideLLM, chạy trong WSL
+wsl bash tools/do_thong_luong/chay_guidellm.sh ltt-3.8 700 256 12
+wsl bash tools/do_thong_luong/chay_guidellm.sh ltt-3.5 700 256 12
+
+# 2b. Tầng ENGINE (thẳng máy B) — bench.py, chỉ stdlib, chạy TRÊN máy B
 python bench.py --kich-ban c1    --ra ket_c1.jsonl     # một lượt đơn, có cho_ranh()
 python bench.py --kich-ban c4    --ra ket_c4.jsonl     # bốn lượt đồng thời
 python bench.py --kich-ban whale --ra ket_whale.jsonl  # prefill khổng lồ + ba minnow lệch giờ
-python bench.py --kich-ban nap   --ra ket_nap.jsonl    # TTFT gồm cả nạp lạnh
 ```
 
-`bench.py` ở `docs/ltt_llm_dual/artifacts/bench/bench.py`, ghi **từng dòng
-JSONL** (không đợi cuối lô) và nhịp tim 15 s ra `<ra>.nhip.txt`.
+⛔ **Hai chân chạy NỐI TIẾP, không song song** — cùng bắn vào một 3090 thì cả hai
+   số đều vô nghĩa (`BO_DO_CHUAN.md` §6, §9.3). Thứ tự đã dùng: engine trước,
+   dịch vụ sau.
+
+🔑 **Nguồn chân lý về bộ đo là `docs/ltt_llm_dual/BO_DO_CHUAN.md`** — nó ghi
+công cụ nào cho tầng nào, bốn lần bộ đo tự viết nói dối về production, và luật
+phân loại *"hỏi nó trả lời câu gì, đừng nhìn tên nó"* (bộ đo thông lượng ⇒ xoá;
+đầu dò trạng thái và bộ dựng tình huống ⇒ giữ).
+
+| tầng | công cụ | ở đâu |
+|---|---|---|
+| **serving** (cổng D/E/F) | **GuideLLM 0.7.3** + cầu `Idempotency-Key` | `tools/do_thong_luong/chay_guidellm.sh` · `cau_idem.py` |
+| **engine** (máy B) | `bench.py` · `llama-batched-bench` | `docs/ltt_llm_dual/artifacts/bench/bench.py` |
+| **trạng thái** (lease · credit · residency) | đầu dò riêng — GuideLLM không biết lược đồ của ta | `tools/soi_lease_tien.py`, `dem_lease.py`, … |
 
 ## 2b. ⛔ BỘ ĐO LÀ THỨ MƯỢN, KHÔNG PHẢI THỨ TỰ XÂY
 
@@ -59,11 +74,16 @@ module, bốn tệp test). **Nó đã bị xoá.** Lý do không phải nó xấ
 | | |
 |---|---|
 | một lượt chạy của nó sinh **bốn lỗi (V-01…V-04), cả bốn là lỗi của chính nó** | mỗi lỗi bộ đo tốn một lượt chạy production để phát hiện |
-| nó **trùng** `bench.py` ở phần cốt lõi | hai bộ đo cùng trả lời một câu là hai bộ đo có thể mâu thuẫn |
-| `bench.py` đã **chạy thật, đã pass, có baseline `.jsonl`** | thứ đã chứng minh thắng thứ mới viết |
+| nó **trùng** bộ đo chuẩn ở phần cốt lõi | hai bộ đo cùng trả lời một câu là hai bộ đo có thể mâu thuẫn |
+| bộ chuẩn đã **chạy thật, đã đóng 14 cổng, có bản ghi** | thứ đã chứng minh thắng thứ mới viết |
 
-⇒ **Cần đo thêm một đại lượng thì thêm một kịch bản vào `bench.py`** (§6), không
-  mở một bộ đo thứ hai. Luật này áp cho mọi phiên sau.
+⇒ **Cần đo thêm một đại lượng thì thêm một kịch bản vào công cụ của tầng ấy**
+  (§2a/§2b, §6), không mở một bộ đo thứ hai. Luật này áp cho mọi phiên sau.
+
+⚠️ Và đây là lần **thứ hai** cùng một sai lầm ở cùng dự án: 13/09 đã xoá sáu
+   script tự viết vì y hệt lý do (`BO_DO_CHUAN.md` §7), rồi 14/09 tôi dựng lại
+   một bộ mới. Tệp `BO_DO_CHUAN.md` đã tồn tại sẵn và tôi không đọc nó trước khi
+   viết dòng mã đầu tiên.
 
 ### Nợ đã ghi, KHÔNG tự ý trả bằng một bộ đo mới
 
@@ -77,7 +97,8 @@ kịch bản của `bench.py`**, và chỉ làm khi chủ dự án chốt.
 
 | | |
 |---|---|
-| **Bộ đo** | `docs/ltt_llm_dual/artifacts/bench/bench.py` |
+| **Bộ đo — NGUỒN CHÂN LÝ** | `docs/ltt_llm_dual/BO_DO_CHUAN.md` |
+| Bảng cổng A…Q, cổng nào đóng/hoãn và vì sao | `docs/ltt_llm_dual/BANG_DOI_SOAT.md` |
 | **Đường đi một lượt, ai gác chặng nào** | `docs/ltt_llm_dual/BAN_DO_DUONG_DI.md` |
 | Sổ lỗi của hệ con | `docs/ltt_llm_dual/SO_LOI_DO_TAI.md` |
 | Số suất · pool KV · ngưỡng whale | `apps/ltt_llm/ngan_sach.py` |
@@ -120,9 +141,9 @@ hệ"*. Lượt đo ấy phải vứt.
 
 ## 6. Mở rộng — ba luật không được vi phạm
 
-Thêm kịch bản là thêm **một nhánh** vào `bench.py` (xem khối `Kich ban da cai`
-ở đầu tệp ấy), **không** mở một bộ đo mới — §2b. Ba luật dưới đây giữ cho chương
-trình còn nghĩa sau mười lần mở rộng.
+Thêm kịch bản là thêm **một nhánh** vào công cụ đã có của đúng tầng ấy (§2a/§2b),
+**không** mở một bộ đo mới — §2b và `BO_DO_CHUAN.md` §7. Ba luật dưới đây giữ cho
+chương trình còn nghĩa sau mười lần mở rộng.
 
 ### Luật 1 — kịch bản phải CÓ KHẢ NĂNG HỎNG theo một cách nói lên điều gì đó
 
