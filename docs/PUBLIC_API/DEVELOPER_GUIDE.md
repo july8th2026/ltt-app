@@ -616,16 +616,16 @@ Input:
 - `temperature` — number, min 0.0, max 2.0, Sampling temperature.
 - `tools` — array, Function definitions, OpenAI format. The model may answer with `tool_calls`.
 - `reasoning_effort` — string, one of `none`, `low`, `medium`, `xhigh`, default medium, How much the model thinks before answering. Deeper costs more output tokens. Use `none` to turn thinking off entirely - that is the switch for short answers, not a small `max_tokens`: with thinking on the model can spend the whole budget reasoning and return empty content with finish_reason=length.
-- `response_format` — object
-- `tool_choice` — object
-- `parallel_tool_calls` — boolean
-- `top_p` — number, min 0.0, max 1.0
-- `seed` — integer
-- `stop` — object
+- `response_format` — object, Constrain the answer's shape. `{"type":"json_object"}` returns bare JSON; `{"type":"json_schema","json_schema":{"name":...,"schema":{...}}} ` forces the answer to match that schema. The constraint is enforced by the decoder, not by prompting, so the output cannot drift out of shape.
+- `tool_choice` — object, Whether the model may, must, or must not call a tool: `none`, `auto`, `required`, or an object naming one function. Without it `tools` is only ever a suggestion.
+- `parallel_tool_calls` — boolean, Allow several tool calls in one turn. Support depends on the model's own template.
+- `top_p` — number, min 0.0, max 1.0, Nucleus sampling cutoff, in (0..1]. Lower keeps only the likeliest tokens.
+- `seed` — integer, Same seed plus same input gives the same answer back, which is what makes a test over this API repeatable.
+- `stop` — object, Up to four strings; generation ends as soon as one appears. Four is the ceiling the wire format itself sets, not one we invented.
 
 Output: `content` (string), `tool_calls` (array), `usage` (object)
 
-Contract hash: `0bf1b08549871453`
+Contract hash: `c2495ae16b7d023f`
 
 ### `text.prompt_package`
 

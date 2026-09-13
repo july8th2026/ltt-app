@@ -426,6 +426,47 @@ MANIFEST = AppManifest(
                         "content with finish_reason=length."),
                     "example": "medium",
                 },
+                "response_format": {
+                    "description": (
+                        "Constrain the answer's shape. `{\"type\":\"json_object\"}` "
+                        "returns bare JSON; `{\"type\":\"json_schema\","
+                        "\"json_schema\":{\"name\":...,\"schema\":{...}}} ` forces "
+                        "the answer to match that schema. The constraint is "
+                        "enforced by the decoder, not by prompting, so the "
+                        "output cannot drift out of shape."),
+                    "example": {"type": "json_object"},
+                },
+                "tool_choice": {
+                    "description": (
+                        "Whether the model may, must, or must not call a tool: "
+                        "`none`, `auto`, `required`, or an object naming one "
+                        "function. Without it `tools` is only ever a suggestion."),
+                    "example": "auto",
+                },
+                "parallel_tool_calls": {
+                    "description": ("Allow several tool calls in one turn. "
+                                    "Support depends on the model's own "
+                                    "template."),
+                    "example": True,
+                },
+                "top_p": {
+                    "description": ("Nucleus sampling cutoff, in (0..1]. Lower "
+                                    "keeps only the likeliest tokens."),
+                    "example": 0.9,
+                },
+                "seed": {
+                    "description": ("Same seed plus same input gives the same "
+                                    "answer back, which is what makes a test "
+                                    "over this API repeatable."),
+                    "example": 42,
+                },
+                "stop": {
+                    "description": ("Up to four strings; generation ends as soon "
+                                    "as one appears. Four is the ceiling the "
+                                    "wire format itself sets, not one we "
+                                    "invented."),
+                    "example": ["\n\n"],
+                },
             },
         },
     ),),

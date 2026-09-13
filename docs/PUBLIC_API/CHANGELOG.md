@@ -24,7 +24,7 @@ lần ghi lại đó hiện ra trong diff.
 ## 2026-09-14 — `text.chat` mở sáu tham số mà engine vốn đã làm được
 
 **ADDED · không phá vỡ hợp đồng.** `contract_hash` của `text.chat` đổi
-(`5876e4bcdf4e09b8` → `0bf1b08549871453`) vì `input_schema` có thêm sáu trường
+(`5876e4bcdf4e09b8` → `c2495ae16b7d023f`) vì `input_schema` có thêm sáu trường
 **tùy chọn**. Một caller không gửi chúng cư xử y hệt trước, nên **không tích hợp
 đang chạy nào phải sửa gì**.
 

@@ -529,24 +529,52 @@
             ]
           },
           "response_format": {
-            "type": "object"
+            "type": "object",
+            "description": "Constrain the answer's shape. `{\"type\":\"json_object\"}` returns bare JSON; `{\"type\":\"json_schema\",\"json_schema\":{\"name\":...,\"schema\":{...}}} ` forces the answer to match that schema. The constraint is enforced by the decoder, not by prompting, so the output cannot drift out of shape.",
+            "examples": [
+              {
+                "type": "json_object"
+              }
+            ]
           },
           "tool_choice": {
-            "type": "object"
+            "type": "object",
+            "description": "Whether the model may, must, or must not call a tool: `none`, `auto`, `required`, or an object naming one function. Without it `tools` is only ever a suggestion.",
+            "examples": [
+              "auto"
+            ]
           },
           "parallel_tool_calls": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Allow several tool calls in one turn. Support depends on the model's own template.",
+            "examples": [
+              true
+            ]
           },
           "top_p": {
             "type": "number",
             "minimum": 0.0,
-            "maximum": 1.0
+            "maximum": 1.0,
+            "description": "Nucleus sampling cutoff, in (0..1]. Lower keeps only the likeliest tokens.",
+            "examples": [
+              0.9
+            ]
           },
           "seed": {
-            "type": "integer"
+            "type": "integer",
+            "description": "Same seed plus same input gives the same answer back, which is what makes a test over this API repeatable.",
+            "examples": [
+              42
+            ]
           },
           "stop": {
-            "type": "object"
+            "type": "object",
+            "description": "Up to four strings; generation ends as soon as one appears. Four is the ceiling the wire format itself sets, not one we invented.",
+            "examples": [
+              [
+                "\n\n"
+              ]
+            ]
           }
         },
         "additionalProperties": false,
@@ -571,7 +599,7 @@
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "0bf1b08549871453"
+      "contract_hash": "c2495ae16b7d023f"
     },
     {
       "name": "text.prompt_package",
