@@ -902,7 +902,32 @@ def _steps(quick: bool, noi_tiep: bool = False) -> list[Step]:
         # ⭐ Nhung cung KHONG duoc lang le cho qua. Day dung la truong hop
         #    `Step.bo_qua` sinh ra de xu ly: chay xong, tra 0, va TU KHAI rang
         #    no khong lam duoc viec — nen no hien o dong RESULT.
-        if npm is not None and not (folder / "node_modules").is_dir():
+        # ⚠️ VA `node_modules` RONG KHONG PHAI LA `node_modules` (do 13/09/2026).
+        #
+        #    Cay chinh co ca ba thu muc `node_modules` — nhung RONG (0 goi), nen
+        #    `is_dir()` tra True, buoc khong tu khai bo qua, `npm test` chay va
+        #    chet voi `'vitest' is not recognized`. Mot dong FAIL kho hieu thay
+        #    cho mot cau noi duoc: *chay `npm ci`*.
+        #
+        # ⛔ Day dung la cai bay "doc THU DAI DIEN thay vi doc thu THAT": su ton
+        #    tai cua thu muc duoc doc nhu "da cai xong". Cung ngay, cung mot
+        #    nguoi doc, da mac lai dung no khi dung `Test-Path node_modules` de
+        #    ket luan toolchain con du.
+        #
+        # ⚖️ DANH DOI, noi ro vi no khong hien nhien: thu muc RONG gio di vao
+        #    nhanh TU KHAI BO QUA, khong con la FAIL. Duoc va mat:
+        #
+        #      duoc — nguoi doc nhan mot cau LAM DUOC NGAY (`npm ci`) thay cho
+        #             `'vitest' is not recognized`, va cay rieng van xanh duoc
+        #      mat  — chinh ba dong FAIL kho hieu ay la thu lam lo ra **104 phep
+        #             kiem frontend** (28+15+61) dang khong chay tren cay chinh
+        #
+        # ⇒ Chap nhan duoc CHI VI `bo_qua` khong im lang: no hien o dong RESULT.
+        #   Neu mot ngay nao do dong ay bi nen di, danh doi nay lat nguoc va phai
+        #   doi lai thanh FAIL.
+        _co_goi = ((folder / "node_modules").is_dir()
+                   and any((folder / "node_modules").iterdir()))
+        if npm is not None and not _co_goi:
             steps.append(Step(
                 f"frontend {name}",
                 [sys.executable, "-c",

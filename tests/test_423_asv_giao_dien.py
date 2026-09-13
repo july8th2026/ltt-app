@@ -134,12 +134,27 @@ def test_co_tat_thi_KHONG_303_ve_login(moi_truong, monkeypatch):
     la.close()
 
 
-def test_MANIFEST_van_chua_mo_cho_khach(moi_truong):
-    """Muc 8: vong doi khong cong khai toi luc nghiem thu."""
+def test_MANIFEST_van_chua_mo_cho_khach_AN_DANH(moi_truong):
+    """Muc 8: vong doi khong cong khai toi luc nghiem thu.
+
+    ⚠️ 13/09/2026 — chu san pham chot BAT app cho khach DA DANG NHAP kiem thu.
+       Ba menh de cu la `enabled is False` + `public is False` + `lifecycle ==
+       "development"`. Ve DAU khong con dung: `enabled=True`.
+
+    ⭐ Nhung ranh gioi that su dang duoc canh KHONG mat di, no chi HEP LAI: app
+       van phai kin voi khach AN DANH. Nen bo nay giu nguyen hai ve con lai thay
+       vi bi xoa — mot banh coc do "su vang mat" ma bi go han thi xoa cung xanh.
+
+    ⛔ Va doi luon TEN. Ten cu (`..._van_chua_mo_cho_khach`) gio phat bieu SAI ve
+       thu no kiem: app DA mo cho khach dang nhap. Mot phep kiem mang ten sai noi
+       doi voi nguoi doc tiep theo — nguy hiem hon mot phep kiem do.
+    """
     from apps.auto_scan_video.manifest import MANIFEST
-    assert MANIFEST.enabled is False
-    assert MANIFEST.public is False
-    assert MANIFEST.lifecycle == "development"
+    assert MANIFEST.enabled is True, (
+        "chu san pham da bat app cho khach dang nhap (13/09); tat lai la mot "
+        "thay doi CO Y va phai sua ca chu thich tren")
+    assert MANIFEST.public is False, "app lot vao catalog AN DANH"
+    assert MANIFEST.lifecycle == "development", "badge khong con trung thuc"
 
 
 # ══════════════════════════════════════════════════════════════════════════════

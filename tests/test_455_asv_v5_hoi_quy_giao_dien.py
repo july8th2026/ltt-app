@@ -322,13 +322,26 @@ def test_mot_nang_luc_da_MO_thi_phai_MO_HAN_o_bang_hop_dong():
         f"luc — ma thi dang chay, hop dong thi noi 'chua lam'")
 
 
-def test_app_van_CHUA_mo_cho_khach():
-    """V5 la mot chuong trinh GIAO DIEN. No khong duoc phat hanh app."""
+def test_app_van_CHUA_mo_cho_khach_AN_DANH():
+    """V5 la mot chuong trinh GIAO DIEN. No khong duoc PHAT HANH app.
+
+    ⚠️ 13/09/2026 — chu san pham chot bat app cho khach DA DANG NHAP kiem thu,
+       nen `enabled` da thanh `True`. Dieu do KHONG phai "phat hanh": phat hanh
+       la `public=True` + `lifecycle="released"`, va ca hai van chua xay ra.
+
+    ⇒ Menh de cua V5 giu nguyen, chi duoc phat bieu lai cho dung: V5 khong duoc
+      dua app ra KHACH AN DANH va khong duoc tu nhan la da nghiem thu.
+
+    (Xem ban song doi o `test_423_asv_giao_dien.py` — hai bo canh cung mot ranh
+     gioi tu hai phia, nen sua mot ma quen kia la de lai mot cua mo.)
+    """
     from apps.auto_scan_video.manifest import MANIFEST
 
-    assert MANIFEST.enabled is False
-    assert MANIFEST.public is False
-    assert MANIFEST.lifecycle == "development"
+    assert MANIFEST.enabled is True, (
+        "chu san pham da bat app cho khach dang nhap (13/09); tat lai la mot "
+        "thay doi CO Y va phai sua ca chu thich tren")
+    assert MANIFEST.public is False, "V5 da day app ra khach AN DANH"
+    assert MANIFEST.lifecycle == "development", "V5 tu nhan da nghiem thu"
 
 
 def test_routes_van_trong_tran_hop_dong_app():
