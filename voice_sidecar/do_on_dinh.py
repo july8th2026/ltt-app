@@ -128,12 +128,8 @@ F0_MIN, F0_MAX = 70.0, 400.0
 
 
 def _khung_rms(wav, sr: int):
-    n = max(1, int(sr * KHUNG_MS / 1000.0))
-    du = len(wav) % n
-    x = wav[:len(wav) - du] if du else wav
-    if not len(x):
-        return np.zeros(0, dtype=np.float64), n
-    return np.sqrt((x.reshape(-1, n).astype(np.float64) ** 2).mean(axis=1)), n
+    from ._dsp_chung import khung_rms
+    return khung_rms(wav, sr, KHUNG_MS)
 
 
 def _mat_na_co_tieng(wav, sr: int):

@@ -140,13 +140,10 @@ def _db(x: float) -> float:
 
 
 def _khung_rms(wav, sr: int, khung_ms: float = 20.0):
-    import numpy as np
-    n = max(1, int(sr * khung_ms / 1000.0))
-    du = len(wav) % n
-    x = wav[:len(wav) - du] if du else wav
-    if len(x) == 0:
-        return np.zeros(0, dtype=np.float32), n
-    return np.sqrt((x.reshape(-1, n).astype(np.float64) ** 2).mean(axis=1)), n
+    # Thân gộp về `_dsp_chung.khung_rms` (4 bản chép cũ giống hệt, khác đúng
+    # kích thước khung — nay là tham số). Wrapper giữ để call site không đổi.
+    from ._dsp_chung import khung_rms
+    return khung_rms(wav, sr, khung_ms)
 
 
 # ═══════════════════════════════════════════ A. hợp đồng kỹ thuật ════════════
@@ -443,11 +440,8 @@ def _embed(bo, wav, sr: int):
 
 
 def _cosine(a, b) -> float:
-    import numpy as np
-    na, nb = np.linalg.norm(a), np.linalg.norm(b)
-    if na == 0 or nb == 0:
-        return 0.0
-    return float(np.dot(a, b) / (na * nb))
+    from ._dsp_chung import cosine
+    return cosine(a, b)
 
 
 def do_giu_giong(wav, sr: int, duong_ref: str | None) -> dict:

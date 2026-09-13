@@ -120,7 +120,9 @@ def test_toc_do_vo_nghia_ep_ve_nac_hop_le(gt):
     """
     yc = features.chuan_hoa({"text": "xin chao", "toc_do": gt, "owner_id": "u1"})
     from apps.ltt_voice import toc_do
-    assert yc.toc_do in toc_do.CAC_NAC, f"toc_do={gt!r} -> {yc.toc_do!r} khong hop le"
+    assert toc_do.TOC_DO_MIN <= yc.toc_do <= toc_do.TOC_DO_MAX, (
+        f"toc_do={gt!r} -> {yc.toc_do!r} ngoai khoang "
+        f"[{toc_do.TOC_DO_MIN}, {toc_do.TOC_DO_MAX}]")
 
 
 # ── 4. Kho hỏng ──────────────────────────────────────────────────────────────

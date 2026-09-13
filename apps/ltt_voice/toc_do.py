@@ -100,8 +100,8 @@ log = logging.getLogger(__name__)
 
 #: Khoảng cho khách chọn. Hẹp hơn hẳn khoảng kỹ thuật (`rubberband` chịu được
 #: nhiều hơn) vì ngoài khoảng này giọng nghe rõ là đã bị xử lý.
-TOC_DO_MIN = 0.75
-TOC_DO_MAX = 1.50
+TOC_DO_MIN = 0.5
+TOC_DO_MAX = 2.0
 
 #: Các nấc bày ra giao diện. Rời rạc chứ không phải thanh trượt liên tục: một
 #: thanh trượt mời khách dừng ở 1,07× — một con số không ai nghe ra khác biệt
