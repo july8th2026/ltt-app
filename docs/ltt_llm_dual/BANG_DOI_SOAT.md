@@ -49,6 +49,22 @@ ghi tay"* — một bộ đếm ghi tay lệch được, đếm từ nguồn th�
 
 Quy trình đã chốt: `P0→P7 → Spec 2 → nghiệm thu tích hợp A–Q **một lần**` (D05).
 
+### ⚠️ Đợt đang chạy là **nghiệm thu Spec 1**, không phải đợt tích hợp của D05
+
+Chủ sản phẩm chốt **13/09/2026** (phương án B): đợt nghiệm thu này chạy **sau
+Spec 1**, trong khi D05 định chạy A–Q **một lần sau CẢ HAI** Spec.
+
+Hệ quả đúng một ô: **cổng L (đa tệp) thuộc Spec 2**, và Spec 2 chưa tồn tại —
+chưa brainstorming, chưa spec, chưa plan, chưa một dòng mã (đường tệp→chữ của
+ChatLTT, Docling cho PDF bố cục/bảng·XLSX·PPTX·OCR, đa tệp dưới/trên ngưỡng
+token, ghi nguồn từng đoạn). Nên L **không thiếu thời gian, nó thiếu thứ để đo**.
+
+⛔ Đừng "chạy thử" cổng L bằng một tính năng tự nghĩ ra. Một cổng xanh đo một
+   thứ chưa ai duyệt thì tệ hơn một ô trống có ghi lý do.
+
+⇒ L giữ nguyên trong bảng, trạng thái **⏸️ hoãn**, và sẽ chạy cùng đợt nghiệm
+  thu của chính Spec 2. Mười sáu cổng còn lại đóng trong đợt này.
+
 | | Nội dung | Trạng thái | Ghi chú |
 |---|---|---|---|
 | **A** | Tĩnh: hai ID, UUID, hash engine | ✅ | test 1200·1210·1220·1233 |
@@ -62,7 +78,7 @@ Quy trình đã chốt: `P0→P7 → Spec 2 → nghiệm thu tích hợp A–Q *
 | **I** | Residency: ảnh ↔ LLM xen kẽ | ✅ **ĐẠT 13/09** | chu trình đủ 182 s; huỷ giữa chừng lui 30 s. §7g |
 | **J** | 3.5 chạy khi 3090 vẽ ≥ 90 % | ✅ **ĐẠT 13/09** | 111,5 vs 111,2 tok/s = **100 %** |
 | **K** | Kho ấm: nạp lạnh vs ấm | ✅ **ĐẠT 13/09** | 9B: 12,93/0,43 s · 27B: 18,29/0,92 s; đối chứng hằng số 25 s trong mã |
-| **L** | Đa tệp | ⬜ | Spec 2 |
+| **L** | Đa tệp | ⏸️ **HOÃN** | thuộc **Spec 2** (chưa tồn tại) — chạy cùng nghiệm thu Spec 2. Lý do đầy đủ ở §3 |
 | **M** | Hủy 6 trạng thái, slot trống ≤ 2 s | ⚠️ **đạt ở tầng mã** | huỷ job 0,33/0,36 s · client cắt: **1,43 s** thẳng máy A, 16,8 s qua Cloudflare (biên) |
 | **N** | 7 lỗi hạ tầng | ⬜ | |
 | **O** | Tiền: 7 tình huống, 0 thu hai lần | ✅ **ĐẠT 13/09** | 4 hold / 2 refund / 2 settle khớp đôi; 0 khoản treo |

@@ -15,7 +15,7 @@
 | L-05 | **108/131 job loi 14 ngay** deu la `AmbiguousProviderError: mat ket noi sau khi bat dau gui` | DOC LAP | he qua cua L-01 | 48/48 done, 0 loi (p=0,3%) | ✅ **DONG 13/09** |
 | L-06 | cua DONG BO khong huy duoc: khach cat ket noi ma slot van bi giu toi khi sinh XONG | DOC LAP | HAI goc: thieu `ma_luot`, va `is_disconnected()` chet sau `BaseHTTPMiddleware` | loopback 16,54 -> **1,43 s**; qua Cloudflare van 16,8 s | **DONG o tang ma; con phan BIEN** |
 | L-07 | **MOT job anh la ha `ltt-3.8` VINH VIEN**: trong tai nha LLM roi ket o `nha_llm` | DOC LAP | cong render may B thieu `/v1/nha_comfy` (404) + `nha_llm` khong co duong lui | chu trinh di tron 182 s; huy giua chung lui trong 30 s | **DONG 13/09** |
-| L-08 | cua STREAM giu suat **>=643 s** sau khi khach cat: may B ranh ma suat van bi chiem | DOC LAP | luong la `Iterator` **DONG BO** ⇒ threadpool ⇒ cancel scope cua anyio khong cat duoc ⇒ `BackgroundTask` nha lease khong toi luot. **Cung ho voi L-06** | lease `mode=stream` song >=643 s, van dap nhip; may B `requests_processing=0` | **DA SUA o tang ma — cho nghiem thu tren may that** |
+| L-08 | cua STREAM giu suat **>=643 s** sau khi khach cat: may B ranh ma suat van bi chiem | DOC LAP | luong la `Iterator` **DONG BO** ⇒ threadpool ⇒ cancel scope cua anyio khong cat duoc ⇒ `BackgroundTask` nha lease khong toi luot. **Cung ho voi L-06** | lease `mode=stream` song >=643 s, van dap nhip; may B `requests_processing=0` | 🔴 **MO — ban sua 13/09 CHUNG MINH LA KHONG CHAY** |
 | L-09 | **nam anh hong la TAT MODEL NHA**: yeu cau sai cua khach bi dem la loi cua KHOA | 🔴 **CHAN** | `CongVlmError` khong mang ma; `dieu_phoi` khong truyen `http_status` | may B tra 400 dung chuan, may A tra 503 va phat khoa | **DONG 13/09** |
 | L-10 | **ban va L-07 tu sinh ngo cut moi**: 3 lan ComfyUI hong la phia anh khoa ngoai VINH VIEN | DOC LAP | bo dem chi xoa sau `chay_comfy()` thanh cong — thu nam sau chinh cai phanh dang chan | ComfyUI da LANH, ca 4 dich vu may B song: residency dung im o `llm` **120 s**, job `queued` | **DONG 13/09** |
 
@@ -1126,6 +1126,56 @@ mot han dinh nao cua may A.**
 ⇒ Ban sua phai lam chinh luong ay **tu biet khach da cat** va thoat vong lap —
   tuc dung lai may moc `platform_core/llm/ngat.py` cua L-06 — hoac nha lease
   ngay tai luc phat hien ngat thay vi doi `background`.
+
+## 🔴 BAN SUA 13/09 DA DUOC DEPLOY VA **KHONG CHAY**. Do tren may that.
+
+`ngat.dung_khi_khach_cat` da len production (`6f1606267eaf`). Do ngay sau deploy:
+
+| phep | ket qua |
+|---|---|
+| chay TRON luot, khong cat | **21,5 s** (849 manh) |
+| cat o manh thu 5, qua Cloudflare | lease nha sau **99,0 s** |
+| cat o manh thu 5, qua **loopback** | lease **CHUA nha sau 150 s** |
+| log `"khach cat giua luong"` | **KHONG CO DONG NAO** |
+
+Ve dau loai tru kha nang te nhat (luot tu xong o giay 99 — khong phai). Nhung ve
+cuoi moi la ve quyet dinh: **vi tu `ngat_chua()` chua bao gio tra `True`**.
+
+### Vi sao — va no bac chinh chu thich toi da viet
+
+`request` CO duoc truyen (`streaming.py:181/192`), nen `do_ngat` nhan Request
+that. Van de nam o cuoc dua:
+
+    cua DONG BO  — khong ai tranh `receive` => `_doc_mot_tin` doc duoc => CHAY
+                   (do L-06: 16,54 s -> 1,43 s)
+    cua STREAM   — Starlette DA DO SAN tren `receive` qua `listen_for_disconnect`
+                   tu luc phan hoi bat dau. `http.disconnect` chi toi tay MOT
+                   ben, va ben do la Starlette.
+
+⛔ Chu thich toi viet trong `dung_khi_khach_cat` noi cuoc dua nay *"an toan, ca
+   hai duong deu dan toi dung"*. **SAI.** Khi Starlette thang, thu no lam la huy
+   cancel scope — dung cai **khong cat duoc luong threadpool**. Ben thang cuoc
+   dua la ben khong lam gi duoc. Hai nua cua bai toan khop nhau thanh mot vong
+   kin, va toi da viet ra ca hai nua ma khong nhin thay chung dong lai.
+
+### ⚠️ Va no dang lam production CHAM DI
+
+Moi giay, generator chan toi `HAN_DOC_NGAT_S` = 0,05 s de hoi mot cau khong bao
+gio co cau tra loi ⇒ ~5 % do tre them cho **moi** luot stream, doi lay **khong
+gi ca**. Mot ban va khong chay ma van tinh phi.
+
+### Hai duong di that, khong con duong thu ba
+
+1. **Lam luong BAT DONG BO tu dau toi cuoi** (`luong_vlm._di` -> async, httpx
+   `AsyncClient`). Day la ban sua DUNG GOC: no go bo chinh cau noi dong bo ma
+   ca L-06 lan L-08 deu vap phai. Dat, nhung no ket thuc ca mot ho loi.
+2. **Gianh `receive` TRUOC Starlette**: boc `receive` o tang ASGI (middleware
+   hoac mot `Response` con) de ta thay `http.disconnect` roi CHUYEN TIEP no cho
+   Starlette. Re hon, nhung them mot tang ASGI tu viet — va `BaseHTTPMiddleware`
+   chinh la thu da gay ra L-06.
+
+⛔ Truoc khi lam mot trong hai: **go ban va hien tai**. No khong chay, va no dang
+   thu 5 % do tre cua moi khach dung stream.
 
 ## Ban sua: `ngat.dung_khi_khach_cat`, boc dung MOT cho
 

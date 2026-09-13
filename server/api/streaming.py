@@ -48,7 +48,6 @@ from server.api import su_kien_loi, tool_dich
 from server.api.auth import require_scope
 from server.deps import get_db
 from apps.ltt_llm import ngan_sach
-from platform_core.llm import ngat
 from platform_core.runtime_noi_bo import luong as cua_luong
 
 log = logging.getLogger("server.api.streaming")
@@ -894,17 +893,27 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
                 admission.release_by_id(cb.lease_id)
 
     nen = BackgroundTask(_ket_thuc)
-    # 🔴 L-08: `_ket_thuc` ở trên CHẠY ĐÚNG CHỖ rồi — Starlette gọi
-    #    `await self.background()` ở ngoài `async with`, kể cả khi khách cắt.
-    #    Nút thắt nằm TRƯỚC nó: `luot.luong` là iterator ĐỒNG BỘ nên Starlette
-    #    bọc bằng `iterate_in_threadpool`, và cancel scope của anyio không cắt
-    #    được một luồng đang chờ đọc socket. Task group không sập ⇒ background
-    #    không tới lượt ⇒ lease bị giữ (đo được **>=643 s**, tới lúc máy B buông).
+    # 🔴 L-08 VAN MO. Doc `docs/ltt_llm_dual/SO_LOI_DO_TAI.md` truoc khi dong vao
+    #    day, vi mot ban va "hien nhien" da duoc thu va DA HONG.
     #
-    # ⇒ Cho chính luồng ấy tự biết khách đã đi. Toàn bộ lý lẽ + cuộc đua với
-    #   `listen_for_disconnect` ghi ở `ngat.dung_khi_khach_cat`.
-    luong = ngat.dung_khi_khach_cat(luot.luong, ngat.do_ngat(request))
-    return StreamingResponse(luong, media_type=luot.content_type,
+    #    Ban 13/09 boc `luot.luong` bang `ngat.dung_khi_khach_cat(...)` — tham
+    #    `receive` theo nhip 1 s de tu thoat vong. No da deploy va do tren may
+    #    that: **KHONG MOT LAN NAO** vi tu tra `True`.
+    #
+    # ⛔ Vi sao, va day la cho de doc sai nhat: o cua DONG BO khong ai tranh
+    #    `receive` nen cach ay chay (L-06: 16,54 s -> 1,43 s). O cua STREAM thi
+    #    Starlette DA DO SAN tren `receive` qua `listen_for_disconnect` tu luc
+    #    phan hoi bat dau, nen `http.disconnect` toi tay NO chu khong toi tay ta.
+    #    Va thu Starlette lam khi nhan duoc la huy cancel scope — dung cai
+    #    KHONG cat duoc mot luong threadpool. Ben thang cuoc dua la ben khong
+    #    lam gi duoc.
+    #
+    # ⇒ Da GO ban va ay. Ban sua that go chinh cau noi DONG BO: bien luong thanh
+    #   BAT DONG BO ngay tai bien phan hoi, de huy cua Starlette lan duoc VAO
+    #   trong generator. Toan bo ly le + doi chieu cong dong o
+    #   `cua_luong.bat_dong_bo_hoa`.
+    return StreamingResponse(cua_luong.bat_dong_bo_hoa(luot.luong),
+                             media_type=luot.content_type,
                              headers=_SSE, background=nen)
 
 

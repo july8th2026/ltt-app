@@ -31,7 +31,7 @@ import logging
 import time
 from contextlib import nullcontext
 from dataclasses import dataclass, field
-from typing import Any, Callable, Generator, Iterator, Optional
+from typing import Any, AsyncIterator, Callable, Generator, Iterator, Optional
 
 from platform_core.llm.dem_token_luong import DemToken
 from platform_core.public_api.executor import for_tool
@@ -670,6 +670,110 @@ def chuan_bi(db, *, user_id: str, tool_name: str, than: dict, duong: str,
 
 
 # ── Bước 2: mở luồng tới máy B ───────────────────────────────────────────────
+
+async def bat_dong_bo_hoa(nguon: Iterator[bytes]) -> AsyncIterator[bytes]:
+    """Bọc luồng ĐỒNG BỘ thành BẤT ĐỒNG BỘ tại biên phản hồi HTTP — vá L-08.
+
+    ## Sự cố
+
+    Khách cắt giữa một lượt stream ⇒ lease `mode=stream` vẫn sống **≥643 s**
+    trong khi máy B đã rảnh (`requests_processing = 0`). Một suất GPU bị giữ cho
+    một người đã đóng cửa sổ.
+
+    ## Vì sao phải đổi CẤU TRÚC chứ không thêm một phép thăm
+
+    Đọc mã thư viện đang cài, từng mắt xích:
+
+        1. uvicorn khai ASGI `spec_version` "2.3" (< 2.4) ⇒ nhánh CÓ
+           `listen_for_disconnect` mới chạy. Ngắt **có** được nghe.
+        2. `await self.background()` nằm NGOÀI `async with` ⇒ `BackgroundTask`
+           nhả lease **có** chạy khi khách cắt.
+        3. Nhưng `LuotLuong.luong` là `Iterator` **đồng bộ**, nên Starlette bọc
+           bằng `iterate_in_threadpool` — và cancel scope của anyio **không cắt
+           được một luồng đang chờ đọc socket**.
+
+    ⇒ Huỷ được phát, rồi kẹt chờ luồng; task group không sập; `background()`
+      không tới lượt; lease không nhả. 643 s là lúc **máy B buông**.
+
+    ## ⛔ MỘT BẢN VÁ "HIỂN NHIÊN" ĐÃ ĐƯỢC THỬ VÀ ĐÃ HỎNG (13/09)
+
+    Bản trước thăm `request.receive()` theo nhịp 1 s để tự thoát vòng. Nó đã
+    deploy, và đo trên máy thật: **không một lần nào** vị từ trả `True`.
+
+    Vì ở cửa stream, Starlette **đã đỗ sẵn** trên `receive` qua
+    `listen_for_disconnect` từ lúc phản hồi bắt đầu, nên `http.disconnect` tới
+    tay NÓ chứ không tới tay ta. Và thứ nó làm khi nhận được là huỷ cancel scope
+    — đúng cái không cắt được threadpool. **Bên thắng cuộc đua là bên không làm
+    gì được.** Bản ấy còn thu ~5 % độ trễ của mọi lượt stream để hỏi một câu
+    không bao giờ có câu trả lời.
+
+    ## Vì sao bản NÀY khác về bản chất — không phải khác về tham số
+
+    Nó **không tranh `receive` với ai**:
+
+        generator ĐỒNG BỘ bị bỏ rơi  -> không ai ném gì vào  -> `finally` treo
+        generator BẤT ĐỒNG BỘ bị huỷ -> `CancelledError` được ném VÀO đúng điểm
+                                        `await` -> `finally` chạy NGAY
+
+    Khi khách cắt, Starlette huỷ task group; lượt đang `await` ở đây nhận huỷ,
+    `finally` đóng `nguon`, `GeneratorExit` xuống tới `_phat` rồi tới
+    `luong_vlm._di` ⇒ `client.close()` ⇒ máy B nhả slot ⇒ `BackgroundTask` nhả
+    lease.
+
+    🔴 `abandon_on_cancel=True` là BẢN LỀ, không phải một cờ tinh chỉnh. Mặc
+       định của anyio là `False`: lượt bị huỷ **vẫn đứng chờ luồng chạy xong** —
+       tức đúng cái ta đang sửa. Bỏ cờ này đi thì hàm này thành vô nghĩa.
+
+    ⚠️ Luồng bị bỏ rơi vẫn kẹt trong `next()` cho tới khi `nguon.close()` ở
+       `finally` làm `httpx` đóng socket và lệnh đọc ấy vỡ. Đó là lý do
+       `finally` phải đóng nguồn, không chỉ thoát vòng.
+
+    ⛔ CHỈ dùng ở biên phản hồi HTTP. Đường job vẫn tiêu thụ `luot.luong` đồng
+       bộ (xem chỗ `for khoi in luot.luong` phía dưới); đổi chính `luot.luong`
+       thành async là phá đường ấy.
+
+    ## Đối chiếu cộng đồng — hình dạng này KHÔNG phải tôi tự nghĩ ra
+
+    · `fastapi/fastapi#7572` — cách được khuyến nghị để dừng `StreamingResponse`
+      khi khách cắt là dùng **async generator**; bản thăm `is_disconnected()`
+      kèm theo thì ta KHÔNG dùng được (L-06: `BaseHTTPMiddleware` làm hàm ấy
+      trả `False` mãi mãi).
+    · `Kludex/starlette#2866` — maintainer xác nhận cơ chế ĐÚNG là để huỷ lan
+      vào async generator; giai đoạn "không nhận `CancelledError`" là một hồi
+      quy theo phiên bản (PR #2732 + `asgi_version` sai của uvicorn) và **đã
+      được sửa**; khuyến nghị là nâng Starlette + uvicorn.
+      Ta đang ở `starlette 1.3.1` + `uvicorn 0.52.0`, và uvicorn khai
+      `spec_version "2.3"` nên rơi đúng nhánh có `listen_for_disconnect`.
+
+    ⇒ Phần cộng đồng cho: *async generator để huỷ lan được*. Phần riêng của ta:
+      `abandon_on_cancel=True`, vì nguồn byte của ta là một lượt đọc CHẶN trong
+      luồng — không có cờ ấy thì huỷ vẫn đứng chờ luồng, và ta quay lại đúng
+      chỗ cũ.
+    """
+    import anyio.to_thread
+
+    het = object()
+
+    def _mot() -> Any:
+        try:
+            return next(nguon)
+        except StopIteration:
+            return het
+
+    try:
+        while True:
+            khoi = await anyio.to_thread.run_sync(_mot, abandon_on_cancel=True)
+            if khoi is het:
+                return
+            yield khoi
+    finally:
+        dong = getattr(nguon, "close", None)
+        if callable(dong):
+            try:
+                dong()
+            except Exception:  # noqa: BLE001 - duong huy khong duoc nem
+                log.warning("khong dong duoc luong nguon", exc_info=True)
+
 
 def _luong_rong() -> Generator[bytes, None, None]:
     """Generator rỗng làm mặc định cho `LuotLuong.luong`.
