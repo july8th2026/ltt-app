@@ -34,8 +34,11 @@ param(
 $ErrorActionPreference = 'Stop'
 if (-not $Repo) { $Repo = Split-Path -Parent $PSScriptRoot }
 
+# !! vieneu-venv, KHONG phai venv nen tang: DNSMOS can onnxruntime + soundfile
+#    chi co o vieneu-venv. Harness goi sidecar qua HTTP (requests, co san day)
+#    nen khong can platform_core/sqlalchemy.
 $envFile = Join-Path $Root 'secrets\app.env'
-$venvPy  = Join-Path $Root 'venv\Scripts\python.exe'
+$venvPy  = Join-Path $Root 'vieneu-venv\Scripts\python.exe'
 $tool    = Join-Path $Repo 'tools\do_chat_luong_toc_do.py'
 foreach ($p in @($envFile, $venvPy, $tool)) {
     if (-not (Test-Path $p)) { throw "Khong thay $p" }
