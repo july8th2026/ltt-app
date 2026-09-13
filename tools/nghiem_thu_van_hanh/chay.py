@@ -43,6 +43,9 @@ class KetQuaKichBan:
     sau: dict
     ly_do_nhiem: str = ""
     do_duoc: dict[str, Any] = field(default_factory=dict)
+    #: Kỳ vọng đã khai mà bộ đo **chưa đo được**. Còn dòng nào ở đây thì `dat`
+    #: không bao giờ là `True` — xem `_cham`.
+    ky_vong_chua_do: list[str] = field(default_factory=list)
 
 
 def co_nhiem(truoc: dict, sau: dict) -> tuple[bool, str]:
@@ -117,34 +120,49 @@ def chay_mot(kb: KichBan, *, db_url: str, goc: str,
     if nhiem:
         return KetQuaKichBan(kb.ma, None, True, mau, _tho(truoc), _tho(sau),
                              ly_do, do_duoc)
-    return KetQuaKichBan(kb.ma, _cham(kb, do_duoc), False, mau,
-                         _tho(truoc), _tho(sau), "", do_duoc)
+    ket, thieu = _cham(kb, do_duoc)
+    return KetQuaKichBan(kb.ma, ket, False, mau, _tho(truoc), _tho(sau), "",
+                         do_duoc, thieu)
 
 
-def _cham(kb: KichBan, do_duoc: dict) -> bool | None:
-    """So kỳ vọng với số đo được.
+def _cham(kb: KichBan, do_duoc: dict) -> tuple[bool | None, list[str]]:
+    """So kỳ vọng với số đo được. Trả `(kết_luận, danh_sách_kỳ_vọng_KHÔNG_đo_được)`.
 
-    ⚠️ Trả `None` khi **chưa đủ dữ kiện để chấm** — vẫn là "ta chưa biết", không
-       phải "hỏng". Chỉ trả `False` khi một kỳ vọng cụ thể bị bác.
+    🔴 **BẢN ĐẦU BỎ QUA ÂM THẦM MỌI KỲ VỌNG KHÔNG ĐO ĐƯỢC** — và rà lại 13/09
+       thấy **26/43 kỳ vọng (60%) chưa bao giờ được kiểm**. Nặng nhất: `J4` báo
+       *"đạt"* cho kịch bản bão hoà mà **chưa từng xác minh sáu suất có bị giữ
+       không**; nó chỉ so `chay_ngay` rồi bỏ qua `dinh_lease: 6`.
+
+    ⛔ Đó là **cửa giả** nằm ngay giữa bộ nghiệm thu: một bảng nói "đạt" cho
+       những thứ nó không kiểm còn tệ hơn không có bảng, vì nó mua sự yên tâm
+       bằng một lời không có cơ sở.
+
+    ⇒ Giờ: một kỳ vọng khai ra mà **không đo được** thì kết luận là `None`
+      (**chưa chấm được**) kèm tên khoá thiếu — không bao giờ là `True`.
     """
     if "loi" in do_duoc:
-        return None
-    co_cham = False
+        return None, []
+
+    thieu = [k for k in kb.mong_doi if k not in do_duoc]
     for khoa, mong in kb.mong_doi.items():
         if khoa not in do_duoc:
             continue
-        co_cham = True
         that = do_duoc[khoa]
         if isinstance(mong, bool):
             if bool(that) != mong:
-                return False
+                return False, thieu          # bác được rồi thì vẫn là TRƯỢT
         elif isinstance(mong, (int, float)):
             if khoa.endswith("_toi_da_s") or khoa.endswith("_toi_da"):
                 if that > mong:
-                    return False
+                    return False, thieu
             elif that != mong:
-                return False
-    return True if co_cham else None
+                return False, thieu
+
+    # ⚠️ Không bác được kỳ vọng nào, NHƯNG còn khoá chưa đo được ⇒ chưa kết
+    #    luận. "Không thấy sai" khác "đã kiểm và đúng".
+    if thieu:
+        return None, thieu
+    return True, []
 
 
 def _tho(chup: dict) -> dict:

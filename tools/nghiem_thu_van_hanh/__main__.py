@@ -13,7 +13,8 @@ import argparse
 import pathlib
 import sys
 
-from tools.nghiem_thu_van_hanh import bao_cao, chay, kich_ban, nop_tai, soi
+from tools.nghiem_thu_van_hanh import (bao_cao, chay, kich_ban, lay_mau,
+                                       nop_tai, soi)
 
 GOC_KHO = str(pathlib.Path(__file__).resolve().parents[2])
 
@@ -64,15 +65,29 @@ def main() -> int:
         khoa = KHOA_NHIEU_TAI_KHOAN if kb.can_tai_khoan_hai else None
 
         def _nop(k: kich_ban.KichBan, _khoa=khoa) -> dict:
-            return nop_tai.nop_that(k, goc_kho=GOC_KHO, khoa_theo_nhan=_khoa)
+            # ⛔ Lay mau chay SONG SONG voi tai. Nop xong roi moi do la do mot
+            #    he DA RANH — va do dung la ly do 26/43 ky vong chua bao gio
+            #    duoc kiem (ra soat 13/09).
+            bo = lay_mau.BoLayMau(a.db)
+            bo.start()
+            try:
+                ra = nop_tai.nop_that(k, goc_kho=GOC_KHO, khoa_theo_nhan=_khoa)
+            finally:
+                bo.dung()
+                bo.join(timeout=5)
+            ra.update(bo.dai_luong())
+            ra["mau"] = bo.mau
+            return ra
 
         kq = chay.chay_mot(kb, db_url=a.db, goc=a.goc, nop=_nop)
         ds.append(kq)
         trang = ("NHIEM" if kq.nhiem else
                  "dat" if kq.dat else "TRUOT" if kq.dat is False else "chua cham")
+        if kq.ky_vong_chua_do:
+            print(f"   ⚠️ ky vong CHUA DO DUOC: {kq.ky_vong_chua_do}")
         print(f"   -> {trang}"
               + (f"  ({kq.ly_do_nhiem})" if kq.nhiem else "")
-              + f"  {({k: v for k, v in kq.do_duoc.items() if k != 'luot'})}\n")
+              + f"  {({k: v for k, v in kq.do_duoc.items() if k not in ("luot", "mau")})}\n")
 
     ban = chay.ghi_ban_ghi(ds, a.ban_ghi)
     ban["commit_production"] = next(

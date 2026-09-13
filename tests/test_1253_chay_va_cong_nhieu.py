@@ -81,3 +81,42 @@ def test_bang_tong_ket_DEM_RIENG_luot_nhiem():
     assert t["nhiem"] == 1
     assert t["tong_ket_luan_duoc"] == 2, (
         "luot nhiem dang bi tinh vao mau so — ti le 'dat' se noi sai")
+
+
+# ── ky vong khai ra ma KHONG do duoc ──────────────────────────────────────
+def test_ky_vong_KHONG_DO_DUOC_thi_KHONG_BAO_GIO_la_dat():
+    """🔴 Ve nay sinh ra tu mot cuoc ra soat 13/09: **26/43 ky vong (60%) chua
+       bao gio duoc kiem**, va bo do van bao "dat".
+
+    Nang nhat: `J4` bao dat cho kich ban BAO HOA ma chua tung xac minh sau suat
+    co bi giu khong — no chi so `chay_ngay` roi bo qua `dinh_lease: 6`.
+
+    ⛔ Mot bang noi "dat" cho nhung thu no khong kiem con TE HON khong co bang:
+       no mua su yen tam bang mot loi khong co co so.
+    """
+    from tools.nghiem_thu_van_hanh.kich_ban import KichBan
+
+    kb = KichBan("TT", "thu", "stream", (("ltt-3.8", 1),),
+                 {"chay_ngay": 1, "dinh_lease": 6})
+    ket, thieu = chay._cham(kb, {"chay_ngay": 1})      # thieu `dinh_lease`
+    assert ket is None, "khong do duoc `dinh_lease` ma van bao dat"
+    assert thieu == ["dinh_lease"]
+
+
+def test_do_DU_ky_vong_thi_moi_duoc_bao_dat():
+    from tools.nghiem_thu_van_hanh.kich_ban import KichBan
+
+    kb = KichBan("TT", "thu", "stream", (("ltt-3.8", 1),),
+                 {"chay_ngay": 1, "dinh_lease": 6})
+    ket, thieu = chay._cham(kb, {"chay_ngay": 1, "dinh_lease": 6})
+    assert ket is True and thieu == []
+
+
+def test_bac_duoc_mot_ky_vong_thi_VAN_la_TRUOT_du_con_khoa_thieu():
+    """Thay sai roi thi khong can do not — "hong" la mot phat hien chac chan."""
+    from tools.nghiem_thu_van_hanh.kich_ban import KichBan
+
+    kb = KichBan("TT", "thu", "stream", (("ltt-3.8", 1),),
+                 {"chay_ngay": 1, "dinh_lease": 6})
+    ket, _ = chay._cham(kb, {"chay_ngay": 99})
+    assert ket is False
