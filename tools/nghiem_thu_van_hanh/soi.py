@@ -126,14 +126,24 @@ def so_jobs(db_url: str, *, nhan: str = "") -> MauSo:
 
 
 def so_credit(db_url: str) -> MauSo:
-    """Số bút toán `hold` chưa quyết toán — tiền khách đang bị giữ.
+    """Số khoản `hold` **CHƯA quyết toán** — tiền khách đang thực sự bị giữ.
 
     🔴 Đây là sổ mà một sự cố stream làm bẩn **âm thầm**: suất nhả rồi mà khoản
-       giữ còn nằm lại thì không bộ quét nào của hàng đợi job nhìn thấy.
+       giữ còn nằm lại thì không bộ quét nào của hàng đợi job nhìn thấy nó.
+
+    ⛔ BẢN ĐẦU ĐẾM SAI, và chạy Pha 0 trên máy thật mới lộ ra: nó đếm **mọi**
+       bút toán `hold` từng có — 4.328 dòng — thay vì những khoản còn treo. Một
+       con số như thế **luôn tăng**, nên nó không bao giờ báo được điều gì; nó
+       chỉ trông như một phép đo. Số đúng lúc ấy là **7**.
+
+    ⇒ Một `hold` coi là đã kết khi có `settle` **hoặc** `refund` cùng `job_id`.
     """
     try:
-        n = _hoi_db(db_url, "SELECT COUNT(*) FROM credit_entries "
-                            "WHERE kind = 'hold'")
+        n = _hoi_db(db_url, """
+            SELECT COUNT(*) FROM credit_entries h
+            WHERE h.kind = 'hold' AND NOT EXISTS (
+                SELECT 1 FROM credit_entries s
+                WHERE s.job_id = h.job_id AND s.kind IN ('settle', 'refund'))""")
         return MauSo("credit", int(n or 0), True)
     except Exception as e:  # noqa: BLE001
         return MauSo("credit", None, False, f"{type(e).__name__}: {e}"[:120])
