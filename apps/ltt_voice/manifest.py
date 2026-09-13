@@ -34,7 +34,7 @@ from __future__ import annotations
 from platform_core.i18n import N_
 from platform_core.registry import AppManifest, NavEntry, ToolSpec
 
-from . import gia, nghe_thu, sidecar_client, toc_do
+from . import gia, lan_ngon_ngu, nghe_thu, sidecar_client, toc_do
 from .tham_so_cong_khai import (SO_LAN_THU_JOB, TRAN_KY_TU_CONG_KHAI,
                                 TRAN_MOI_LUOT_SINH)
 
@@ -317,8 +317,11 @@ MANIFEST = AppManifest(
                           "maximum": toc_do.TOC_DO_MAX},
                 # D02 (2026-09-13): làn ngôn ngữ cho Public API.
                 # "auto" = máy đoán (mặc định). Platform reject ngoài enum.
+                # ⛔ SUY từ `lan_ngon_ngu.LAN_HOP_LE`, KHÔNG gõ lại ["vi","en"]:
+                #    INV-02 (test_522) chốt làn chỉ có MỘT bản khai, ở
+                #    `lan_ngon_ngu`. Thêm làn thứ ba ở đó thì enum này tự theo.
                 "language": {"type": "string", "required": False,
-                             "enum": ["auto", "vi", "en"]},
+                             "enum": ["auto", *lan_ngon_ngu.LAN_HOP_LE]},
             },
             returns={"audio_key": "audio", "text": "text"},
 
