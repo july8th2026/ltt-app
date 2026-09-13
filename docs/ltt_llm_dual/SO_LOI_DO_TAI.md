@@ -13,7 +13,7 @@
 | L-03 | `ltt-3.8` khai *"Text only"* du engine DA nap `mmproj` | DOC LAP | ban khai (may A) | `catalog.HO_SO` co_vision=True ca hai | cho |
 | L-04 | bo cham `bia-01` do **su vang mat** -> cau bia dat VA cau lac de deu duoc cham dung | DOC LAP | `tools/do_tai_hai_model.py` | ban cu: 3/3 cau sai -> "dung"; ban moi: 1/3 | ✅ **DONG 13/09** |
 | L-05 | **108/131 job loi 14 ngay** deu la `AmbiguousProviderError: mat ket noi sau khi bat dau gui` | DOC LAP | he qua cua L-01 | 48/48 done, 0 loi (p=0,3%) | ✅ **DONG 13/09** |
-| L-06 | cua DONG BO khong huy duoc: khach cat ket noi ma slot van bi giu toi khi sinh XONG | DOC LAP | `executor.run` khong nhan/truyen `ma_luot` | tra slot 15,4 / 17,2 / 31,9 s theo `max_tokens` 900 / 1024 / 2000 | **da sua, cho deploy** |
+| L-06 | cua DONG BO khong huy duoc: khach cat ket noi ma slot van bi giu toi khi sinh XONG | DOC LAP | HAI goc: thieu `ma_luot`, va `is_disconnected()` chet sau `BaseHTTPMiddleware` | loopback 16,54 -> **1,43 s**; qua Cloudflare van 16,8 s | **DONG o tang ma; con phan BIEN** |
 | L-07 | **MOT job anh la ha `ltt-3.8` VINH VIEN**: trong tai nha LLM roi ket o `nha_llm` | DOC LAP | cong render may B thieu `/v1/nha_comfy` (404) + `nha_llm` khong co duong lui | chu trinh di tron 182 s; huy giua chung lui trong 30 s | **DONG 13/09** |
 
 ## L-05 — mot MUC CAN DO, khong phai mot ket luan
@@ -37,6 +37,37 @@ Tap trung 08/09 (**64**) va 09/09 (**34**) = 75% tong so. Tu 11/09 khong con job
    vong vi dung mot gia thuyet khop qua vua ("khoa advisory theo tai khoan").
    Phep do dung: sau khi deploy ban sua L-01, lop loi nay phai **bien mat** —
    khong phai giam. Neu no chi giam, nguyen nhan la thu khac.
+
+### NGHIEM THU sau deploy -- va mot cho toi da ket luan SAI
+
+| duong | truoc | sau |
+|---|---:|---:|
+| **loopback** (thang may A) | 16,54 s | **1,43 s** -- DAT (nguong 2 s) |
+| **qua Cloudflare** | 18,67 s | 16,82 s -- van vuot |
+
+Ban sua o tang ung dung **chay dung**: 1,43 s tren duong truc tiep.
+
+⛔ **Va day la cho toi ket luan sai.** Truoc do toi do ca hai duong, thay ca hai
+   deu ~17 s, roi ket luan *"Cloudflare khong phai nguyen nhan"*. Sai: luc ay
+   **loi tang ung dung dang hong ca hai duong**, va no CHE MAT khac biet mang.
+
+   Mot phep do phan biet chi phan biet duoc khi cac nguyen nhan kia DA BI LOAI.
+   Dung no de **loai** mot nguyen nhan khi con nguyen nhan khac dang tron la
+   dung sai chieu — no chi chung minh "co mot loi khac", khong chung minh
+   "nguyen nhan nay vo can".
+
+### Phan con lai: bien Cloudflare, khong sua duoc o tang ma
+
+`cloudflared` dang chay **2026.7.3** (build 22/07/2026) -- moi, da qua TUN-6427
+tu lau, nen khong phai chuyen phien ban. Voi mot request KHONG stream, bien
+Cloudflare khong bao cho origin biet khach da di; origin chay toi het.
+
+⚠️ **Chua ket luan duoc cho cua STREAM.** Khach that (Codex, Claude Code) dung
+   `/api/v1/messages` va `/api/v1/responses`, va o do byte chay lien tuc nen mot
+   luot ghi hong LA tin hieu origin thay duoc. Toi da thu do nhung bo do cua toi
+   sai o vong dem thoi gian (bao "sau 120 s lease chua ve" trong khi doc lai
+   CSDL thay lease = 0 va so sach da quyet toan). **Chua co so** -- va mot con
+   so tu mot bo do da lo ra sai thi khong duoc ghi vao day.
 
 ## L-07 -- DONG 13/09/2026, chung minh tren duong that
 

@@ -63,7 +63,7 @@ Quy trình đã chốt: `P0→P7 → Spec 2 → nghiệm thu tích hợp A–Q *
 | **J** | 3.5 chạy khi 3090 vẽ ≥ 90 % | ✅ **ĐẠT 13/09** | 111,5 vs 111,2 tok/s = **100 %** |
 | **K** | Kho ấm: nạp lạnh vs ấm | ✅ **ĐẠT 13/09** | 9B: 12,93/0,43 s · 27B: 18,29/0,92 s; đối chứng hằng số 25 s trong mã |
 | **L** | Đa tệp | ⬜ | Spec 2 |
-| **M** | Hủy 6 trạng thái, slot trống ≤ 2 s | ⚠️ **một nửa** | huỷ job 0,33/0,36 s ✅; client cắt kết nối **chưa đo lại sau bản sửa thứ hai** |
+| **M** | Hủy 6 trạng thái, slot trống ≤ 2 s | ⚠️ **đạt ở tầng mã** | huỷ job 0,33/0,36 s · client cắt: **1,43 s** thẳng máy A, 16,8 s qua Cloudflare (biên) |
 | **N** | 7 lỗi hạ tầng | ⬜ | |
 | **O** | Tiền: 7 tình huống, 0 thu hai lần | ✅ **ĐẠT 13/09** | 4 hold / 2 refund / 2 settle khớp đôi; 0 khoản treo |
 | **P** | Rò lease generator, 5 điểm | ✅ **ĐẠT 13/09** | `execution_leases` về 0 sau cả 4 kịch bản |
@@ -436,7 +436,7 @@ Chuỗi **bỏ qua `anh` hoàn toàn** — đúng thiết kế: đường lui 1 
 | **L-03** | ✅ **đóng** | cả hai model khai `reads_images`; `DEVELOPER_GUIDE` + CHANGELOG đã sinh lại |
 | **L-04** | ✅ **đóng** | bộ chấm đổi sang mệnh đề dương; bản cũ chấm 3/3 câu sai thành "đúng" |
 | **L-05** | ✅ **đóng** | 48/48 done, 0 lỗi; p = 0,3 % nếu tỉ lệ 11,6 % còn nguyên |
-| **L-06** | ⚠️ **đã sửa, chưa nghiệm thu** | gốc THỨ HAI: `is_disconnected()` chết sau `BaseHTTPMiddleware`. Chờ deploy rồi đo lại |
+| **L-06** | ✅ **đóng ở tầng mã** | loopback 16,54 → **1,43 s**. Qua Cloudflare vẫn 16,8 s — biên không báo origin, không sửa được ở tầng mã |
 | **L-07** | ✅ **đóng** | deploy máy B + đường lui; nghiệm thu 2 phép trên đường thật |
 
 ⭐ Năm mục L-01…L-05 đều đóng, và mỗi mục đóng bằng một **phép đo trên đường
