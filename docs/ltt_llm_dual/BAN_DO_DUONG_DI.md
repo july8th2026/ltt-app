@@ -32,6 +32,17 @@ hàng**, không bị từ chối — trừ khi phòng chờ chạm trần thì m
 `apps/ltt_llm/manifest.py` (`admission_theo_model`) lấy từ
 `apps/ltt_llm/ngan_sach.py`. Hỏi bằng `tool.admission_cho(model)`.
 
+⚠️ **Tài liệu viết TRƯỚC 11/09/2026 khai `DONG_THOI_MAY_B = 1` / `--parallel 1`.**
+Con số ấy **đúng tại thời điểm đó** — máy B khi ấy thật sự một suất. Rà 13/09
+thấy ~40 tệp còn mang nó; phần lớn là **bản ghi có ngày** (báo cáo sự cố, audit,
+nhật ký benchmark) nên **cố ý giữ nguyên**: sửa một bản ghi là làm giả bằng
+chứng. Gặp chúng thì đọc như lịch sử, và hỏi `ngan_sach.py` cho con số hôm nay.
+
+⛔ Lý lẽ đi kèm con số ấy — *"speculative decoding chỉ tối ưu một luồng"* — đã
+   **đo lại và bị bác** (multijob M-1, 11/09; `llama-swap.yaml:151`). Nếu thấy
+   nó ở một tài liệu **đang sống** (không phải bản ghi có ngày), đó là tệp cần
+   sửa, không phải tệp cần tin.
+
 ## 2. Bốn cửa vào — và **chỉ một** cửa stream thật
 
 | cửa | tệp | dùng khi |

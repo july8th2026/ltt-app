@@ -255,11 +255,20 @@ Hoặc bền hơn, trong `~/.claude/settings.json`:
 | **Đồng thời** | Cổng chỉ cho **2 lượt cùng lúc** (`LTT_LLM_MAX_DONG_THOI`). Claude Code chạy subagent song song ⇒ ăn `429` | ⚠️ vừa — xem dưới |
 | `anthropic-beta` | Cổng chuyển tiếp **nguyên xi** vì nó không đọc thân request. Đúng thứ tài liệu đòi | không |
 
-**Về đồng thời.** Trần 2 là chốt bảo vệ GPU, không phải con số tuỳ tiện:
-`llama-server` chạy `--parallel 1`, nên yêu cầu thứ ba **không** chạy song song —
-nó chỉ thành một kết nối treo. Nới trần chỉ đổi "429 rõ ràng" lấy "chờ vô hình".
-Muốn chạy subagent song song thì phải nới `--parallel` ở llama-server **trước**,
-và đo lại VRAM — đó là hạng mục **V7**, chưa làm.
+**Về đồng thời.**
+
+⛔ **ĐOẠN NÀY ĐÃ LẠC HẬU — SỬA 13/09/2026.** Bản trước viết: *"`llama-server`
+chạy `--parallel 1`, nên yêu cầu thứ ba không chạy song song… đó là hạng mục
+**V7**, chưa làm."*
+
+**V7 đã làm.** `--parallel 1` đã bị gỡ (`llm_gateway/deploy/llama-swap.yaml:151`
+— cổng G2 bác lý lẽ *"speculative decoding tối ưu một luồng"*). Máy B nay phục
+vụ hai model trên hai card, mỗi model nhiều suất, có **hàng đợi thật** ở
+`platform_core/llm/phong_cho.py`: quá suất thì **xếp hàng và nhận nhịp báo chờ**,
+không còn là "một kết nối treo".
+
+🔑 Số suất hiện hành hỏi `apps/ltt_llm/ngan_sach.py`; đường đi một lượt đọc
+`docs/ltt_llm_dual/BAN_DO_DUONG_DI.md`. **Đừng gõ lại số vào đây.**
 
 ---
 

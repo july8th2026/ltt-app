@@ -91,9 +91,26 @@ nghiệm thu: `HET NGAN SACH HOAN sau 90s (tai nguyen ban)`.
 
 **Kết luận được gì**
 
-🔑 `apps/ltt_llm/ngan_sach.py` khai thẳng: **`DONG_THOI_MAY_B = 1`**. Máy B chạy
-`llama-server --parallel 1` — và đó **không phải dè dặt**, nó là con số đúng:
-speculative decoding chỉ tối ưu ở một luồng.
+⛔ **ĐOẠN NÀY ĐÃ LẠC HẬU — SỬA 13/09/2026.** Bản trước viết: *"`DONG_THOI_MAY_B
+= 1`… không phải dè dặt, speculative decoding chỉ tối ưu ở một luồng."*
+
+Cả con số lẫn lý lẽ đều **không còn đúng**:
+
+- `apps/ltt_llm/ngan_sach.py` nay khai `DONG_THOI_MAY_B = SO_SLOT_MAY_B`, và máy
+  B phục vụ **hai model trên hai card**, mỗi model nhiều suất.
+- Lý lẽ *"speculative decoding tối ưu một luồng"* đã **đo lại và bị bác**
+  (multijob M-1, 11/09): con số −20 % đo trên RTX 5090, còn trên 3090 thì
+  `-np 4 -kvu` giữ C1 60–63 tok/s. `llm_gateway/deploy/llama-swap.yaml:151` ghi
+  rõ `--parallel 1` cũ đã bị cổng G2 bác và gỡ.
+
+🔑 **Đừng gõ lại con số vào đây.** Hỏi một nguồn:
+
+| cần biết | hỏi ở đâu |
+|---|---|
+| số suất mỗi model · pool KV | `apps/ltt_llm/ngan_sach.py` → `manifest.py` |
+| một lượt đi qua đâu, ai gác | `docs/ltt_llm_dual/BAN_DO_DUONG_DI.md` |
+
+⚠️ Chính việc chép con số vào runbook này đã làm nó nói sai suốt hai ngày.
 
 ⇒ Bất cứ thứ gì khác đang dùng model nhà — một job của khách thật, một phiên
 khác đo đạc, một lượt `bench_llm_*` — **giữ trọn suất duy nhất đó**. Phần dôi ra
