@@ -79,7 +79,11 @@ def bang_chat_luong(ban_ghi: dict) -> str:
             kq = "❌ **TRƯỢT**"
         else:
             kq = "— chưa chấm được"
-        so = ", ".join(f"{a}={b}" for a, b in (k.get("do_duoc") or {}).items())
+        # ⛔ Bo `luot` khoi BANG: no la mang chi tiet tung luot, do vao mot
+        #    o bang lam bang khong doc noi. No van nam nguyen trong BAN GHI
+        #    JSON — cho dung de tra chi tiet, khong phai cho de liec.
+        so = ", ".join(f"{a}={b}" for a, b in (k.get("do_duoc") or {}).items()
+                       if a != "luot")
         d.append(f"| `{k['ma']}` | {kq} | {so or '—'} |")
     d.append("")
 
@@ -99,7 +103,8 @@ def bang_chat_luong(ban_ghi: dict) -> str:
         for k in ks:
             if k.get("dat") is False:
                 so = ", ".join(f"{a}={b}"
-                               for a, b in (k.get("do_duoc") or {}).items())
+                               for a, b in (k.get("do_duoc") or {}).items()
+                               if a != "luot")
                 d.append(f"- `{k['ma']}` — đo được: {so or 'khong co so'}")
         d.append("")
 
