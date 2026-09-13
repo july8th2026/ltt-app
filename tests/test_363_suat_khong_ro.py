@@ -356,14 +356,35 @@ def test_moi_generator_giao_cho_StreamingResponse_deu_co_luoi():
     assert boc, "StreamingResponse khong con nhan `background=` -> mat luoi"
 
     # (2)+(3) `release_by_id` phai goi duoc, va phai nam trong `finally`.
-    trong_finally = False
-    for n in ast.walk(cay):
-        if not isinstance(n, ast.Try) or not n.finalbody:
-            continue
-        if "release_by_id" in ast.dump(ast.Module(body=n.finalbody,
-                                                  type_ignores=[])):
-            trong_finally = True
-            break
+    #
+    # ⭐ VIET LAI 13/09 — VA LAI LA "CHUOI BIEN MAT TRONG KHI HANH VI MANH LEN",
+    #    dung khuon doan 09/09 o tren, lan thu HAI.
+    #
+    #    `streaming.py` gio nha ve qua MOT CHO NGHEN duy nhat `_nha_suat()`, dung
+    #    chung cho ca duong tuc thi (`khi_dut`, ~0,05 s) lan `BackgroundTask`.
+    #    Mot cho nghen la thiet ke TOT HON hai loi goi rai rac — nhung ban truoc
+    #    chi nhin thay `release_by_id` nam THANG trong `finally`, nen no doc
+    #    "tot hon" thanh "mat luoi".
+    #
+    # ⇒ Cho di MOT buoc gian tiep, va van doi dung ba dieu: ham cuc bo duoc goi
+    #   trong `finally` phai THAT SU nha ve. Doi mot buoc gian tiep ma khong kiem
+    #   than ham thi moi la noi long.
+    ten_ham = {n.name: n for n in ast.walk(cay)
+               if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))}
+
+    def _co_nha_ve(than: list) -> bool:
+        khoi = ast.Module(body=than, type_ignores=[])
+        if "release_by_id" in ast.dump(khoi):
+            return True
+        for g in ast.walk(khoi):
+            if isinstance(g, ast.Call):
+                ham = ten_ham.get(getattr(g.func, "id", ""))
+                if ham is not None and "release_by_id" in ast.dump(ham):
+                    return True
+        return False
+
+    trong_finally = any(_co_nha_ve(n.finalbody) for n in ast.walk(cay)
+                        if isinstance(n, ast.Try) and n.finalbody)
     assert "release_by_id" in van, (
         "ve admission khong con duoc nha -> ro ve khi khach ngat som")
     assert trong_finally, (

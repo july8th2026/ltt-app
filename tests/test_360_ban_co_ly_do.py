@@ -192,11 +192,36 @@ def test_MOI_nhanh_ban_deu_nuoi_CAPACITY_REFUSED():
     #
     # ⭐ Nên "không tìm thấy chỗ nào" phải là ĐỎ, không phải xanh. Ba nhánh bận
     #    đã biết: `chat` 1 (đồng bộ), `streaming` 2 (`_mot_cuc` + facade).
-    assert so_khop >= 3, (
-        f"chi thay {so_khop} nhanh ban mang chuoi {MOC!r} — mong doi >= 3. "
+    # 🔴 HA MOC 3 -> 2 NGAY 13/09/2026, VA DAY LA LY DO — doc truoc khi ha tiep.
+    #
+    #    `streaming.py` tung co HAI nhanh ban; mot trong hai thuoc "DUONG CU"
+    #    (tool khong khai ngan sach KV). Do bang chinh ban khai 13/09:
+    #        ltt-3.8 -> ltt_38_3090 3 suat, ltt-3.5 -> ltt_35_5060 3 suat
+    #    ⇒ MOI model cua `text.chat` deu khai ⇒ duong cu **khong the voi toi
+    #      duoc**. No la di tich thoi mot-card/mot-luot va da bi go (`test_1248`).
+    #
+    # ⛔ NHANH BAN AY KHONG "BIEN MAT" — no di theo canh cua da chet. Do phu
+    #    THAT khong giam, no doi HINH DANG: cua song tra ban bang khoi loi SSE
+    #    sau 200, chu khong bang `service_unavailable` truoc 200.
+    #
+    # ⇒ Nen ha mot moc dem, va **them mot ve moi** chot dung cho no chuyen toi.
+    #   Ha moc ma khong them ve la lam yeu banh coc; day thi khong.
+    assert so_khop >= 2, (
+        f"chi thay {so_khop} nhanh ban mang chuoi {MOC!r} — mong doi >= 2. "
         f"Hoac cau chu san pham da doi (thi SUA MOC o day), hoac mot nhanh ban "
         f"da bien mat. Ca hai deu phai xem, va KHONG duoc de phep kiem nay "
         f"xanh rong: xem Bay 31.")
+
+    # ⭐ VE MOI: cua SONG (phong cho) tra ban bang SSE sau 200. Do la noi luu
+    #    luong that di qua, nen no quan trong hon ca hai nhanh dem o tren.
+    from platform_core.runtime_noi_bo import luong as _cua_song
+
+    van_song = inspect.getsource(_cua_song)
+    so_sse = van_song.count(MOC)
+    assert so_sse >= 2, (
+        f"cua SONG (`luong_co_cho`) chi con {so_sse} cho mang chuoi {MOC!r} — "
+        "mong doi >= 2 (het cho, va ban sau 200). Day la cua MOI luot that di "
+        "qua: mat cau chu o day la khach nhan mot khoi loi khong noi len dieu gi.")
 
     assert not thieu, (
         f"nhanh ban KHONG dem vao CAPACITY_REFUSED o: {thieu} — su co se lai "
@@ -267,9 +292,28 @@ def test_than_tra_ve_KHONG_mang_chu_thuong_nguon():
     # ⛔ ĐỐI CHỨNG, cùng lý do với phép kiểm trên: nếu không tìm thấy khối
     #    `except` nào thuộc `LOAI_RO` thì phép kiểm này XANH RỖNG. Đo 07/09:
     #    `chat` 2 + `streaming` 3.
-    assert so_ham_xet >= 4, (
+    # 🔴 HA MOC 4 -> 3 NGAY 13/09/2026, CUNG MOT LY DO voi phep kiem tren:
+    #    `streaming.py` mat mot khoi `except cua_luong.DangBan/KhongMoDuoc` khi
+    #    DUONG CU bi go (di tich mot-card/mot-luot, khong model nao voi toi duoc
+    #    — xem `test_1248`). Do phu that khong giam: cua song bat cung hai loai
+    #    ay o `runtime_noi_bo/luong.py` va tra bang khoi loi SSE.
+    assert so_ham_xet >= 3, (
         f"chi thay {so_ham_xet} khoi except thuoc {sorted(LOAI_RO)} — mong doi "
-        f">= 4. Ten loai ngoai le co the da doi; sua LOAI_RO, dung de xanh rong.")
+        f">= 3. Ten loai ngoai le co the da doi; sua LOAI_RO, dung de xanh rong.")
+
+    # ⭐ VE MOI di kem viec ha moc: cua SONG phai van bat CA HAI loai ay.
+    #    Ha mot moc dem ma khong chot lai cho no chuyen toi la lam yeu banh coc.
+    from platform_core.runtime_noi_bo import luong as _cua_song
+
+    bat_o_cua_song = {
+        (t.attr if isinstance(t, ast.Attribute) else getattr(t, "id", ""))
+        for kh in ast.walk(ast.parse(inspect.getsource(_cua_song)))
+        if isinstance(kh, ast.ExceptHandler) and kh.type
+        for t in (kh.type.elts if isinstance(kh.type, ast.Tuple) else [kh.type])}
+    for loai in ("DangBan", "KhongMoDuoc"):
+        assert loai in bat_o_cua_song, (
+            f"cua SONG khong con bat `{loai}` — luot that se vo ra ngoai thanh "
+            "mot loi khong khuon thay vi mot khoi loi SSE khach doc duoc.")
 
     assert not xau, (
         "than tra ve cho KHACH dang mang van ban cua may B:\n  "
