@@ -42,8 +42,15 @@ def test_so_slot_doc_dung_ten_co_TIEN_TO(monkeypatch):
 
 
 def test_so_slot_KHONG_doc_duoc_thi_TU_KHAI_chu_khong_tra_so(monkeypatch):
-    """⛔ Khong duoc tra -1. Mot so am se bi doc thanh 'slot da nha'."""
+    """⛔ Khong duoc tra -1. Mot so am se bi doc thanh 'slot da nha'.
+
+    ⚠️ Ve nay ban dau chi gia lap `_curl_may_b` roi de `_may_b_voi_toi` goi SSH
+       THAT — nen no vua vi pham luat "phep kiem cua bo do khong duoc goi
+       production", vua doi ket qua theo trang thai may B luc chay. Gio khai ro
+       ca nao: **mat duong toi may B**.
+    """
     monkeypatch.setattr(soi, "_curl_may_b", lambda cong: "")
+    monkeypatch.setattr(soi, "_may_b_voi_toi", lambda: False)
     m = soi.so_slot(8282)
     assert m.doc_duoc is False
     assert m.ly_do, "khong doc duoc thi phai NOI vi sao"
@@ -107,3 +114,31 @@ def test_MauSo_bat_bien():
     m = soi.MauSo("lease", 3, True)
     with pytest.raises(dataclasses.FrozenInstanceError):
         m.gia_tri = 4        # type: ignore[misc]
+
+
+# ── phan biet "bo do mu" voi "model chua nap" ─────────────────────────────
+def test_SSH_SONG_ma_cong_trong_thi_la_0_CHU_KHONG_phai_mu(monkeypatch):
+    """🔴 Do 13/09: `llama-swap` go model khi lau khong ai goi.
+
+    Luc ay `/metrics` trong, nhung SSH van song. Ban dau `so_slot` doc ca hai
+    thanh "mu", va **Pha 0 tu choi chay vi mot cai card dang ngu** — mot trang
+    thai hoan toan binh thuong ma kich ban dau tien se tu giai quyet.
+
+    ⛔ Hai dieu nay doi hoi hai hanh dong nguoc nhau: mot cai phai DUNG luot do,
+       cai kia thi KHONG. Lan chung la bat ca chuong trinh dung vo co.
+    """
+    monkeypatch.setattr(soi, "_curl_may_b", lambda cong: "")
+    monkeypatch.setattr(soi, "_may_b_voi_toi", lambda: True)
+    m = soi.so_slot(8282)
+    assert m.doc_duoc is True, "SSH song ma van bao mu -> Pha 0 dung vo co"
+    assert m.gia_tri == 0
+    assert "chua nap" in m.ly_do
+
+
+def test_SSH_HONG_thi_van_la_MU(monkeypatch):
+    """Doi chung cho ve tren: mat duong toi may B VAN phai dung lai."""
+    monkeypatch.setattr(soi, "_curl_may_b", lambda cong: "")
+    monkeypatch.setattr(soi, "_may_b_voi_toi", lambda: False)
+    m = soi.so_slot(8282)
+    assert m.doc_duoc is False
+    assert "ssh" in m.ly_do.lower()

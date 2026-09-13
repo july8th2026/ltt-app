@@ -54,17 +54,32 @@ class MauSo:
 
 
 # ── đường ra ngoài (bản giả thay được ở phép kiểm) ────────────────────────
-def _curl_may_b(cong: int) -> str:
-    """Kéo `/metrics` của một `llama-server` qua SSH. Hỏng thì trả chuỗi rỗng."""
+def _ssh(lenh: str) -> tuple[bool, str]:
+    """Chạy một lệnh trên máy B. Trả `(ssh_sống, đầu_ra)`.
+
+    ⚠️ Máy B chạy Windows: `cmd` **không** hiểu `;` làm dấu phân cách. Truyền
+       một chuỗi nhiều lệnh vào đây thì nó `echo` cả chuỗi thay vì chạy.
+    """
     try:
         r = subprocess.run(
             ["ssh", "-i", str(pathlib.Path.home() / ".ssh" / "nexus_b"),
-             "-o", "BatchMode=yes", MAY_B,
-             f"curl.exe -s -m 10 http://127.0.0.1:{cong}/metrics"],
+             "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", MAY_B, lenh],
             capture_output=True, text=True, timeout=90)
-        return r.stdout or ""
+        return r.returncode == 0, (r.stdout or "")
     except Exception:  # noqa: BLE001 - sổ hỏng phải TỰ KHAI, không được ném lên
-        return ""
+        return False, ""
+
+
+def _curl_may_b(cong: int) -> str:
+    """Kéo `/metrics` của một `llama-server`. Rỗng = không có server ở cổng ấy."""
+    _ok, van = _ssh(f"curl.exe -s -m 10 http://127.0.0.1:{cong}/metrics")
+    return van
+
+
+def _may_b_voi_toi() -> bool:
+    """Máy B có với tới được không — tách khỏi câu *"model có đang nạp không"*."""
+    ok, van = _ssh("echo song")
+    return ok and "song" in van
 
 
 def _hoi_db(db_url: str, cau: str) -> Any:
@@ -90,7 +105,22 @@ def so_slot(cong: int) -> MauSo:
     """
     van = _curl_may_b(cong)
     if not van.strip():
-        return MauSo("slot", None, False, f"khong keo duoc /metrics cong {cong}")
+        # 🔴 PHÂN BIỆT HAI THỨ KHÁC HẲN NHAU — bản đầu lẫn chúng, và Pha 0 từ
+        #    chối chạy vì một trạng thái hoàn toàn bình thường:
+        #
+        #      · SSH không với tới máy B      -> BỘ ĐO MÙ, phải dừng lượt đo
+        #      · SSH sống nhưng cổng trống    -> `llama-swap` đã gỡ model vì lâu
+        #                                        không ai gọi. Không có lượt nào
+        #                                        đang xử lý, tức **0** — và kịch
+        #                                        bản đầu tiên sẽ tự nạp lại.
+        #
+        # ⛔ Lẫn hai điều này là bắt cả chương trình dừng vì một cái card đang
+        #    ngủ. Đo 13/09: `tasklist` trên máy B trả *"No tasks are running"*
+        #    cho `llama-server.exe` trong khi SSH vẫn `echo` được.
+        if _may_b_voi_toi():
+            return MauSo("slot", 0, True, f"model chua nap o cong {cong}")
+        return MauSo("slot", None, False,
+                     f"KHONG voi toi may B (ssh hong) — cong {cong}")
     for dong in van.splitlines():
         d = dong.strip()
         if d.startswith("#"):
