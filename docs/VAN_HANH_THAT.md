@@ -176,6 +176,39 @@ thứ một chương trình audit cần.
 | ngày | commit production | kết quả | lỗi tìm ra |
 |---|---|---|---|
 | 2026-09-13 | `3c827ce3` → `08362209` | 9/11 đúng · L-08 đóng (643 s → **0,7 s**) | **L-11**, **L-12** |
+| 2026-09-14 | `1235f876` | quét bão hoà 1/3/6/9 hai model, **8/8 mức 0 lỗi** · L-12 xác nhận vá | — (không lỗi mới) |
+
+### Lượt 14/09 — số đo, bằng GuideLLM 0.7.3 qua máy A + Cloudflare
+
+12 request mỗi mức · prompt 256 tok · `output_tokens=700` · `stream=false`.
+
+| streams | `ltt-3.8` tok ra/s | trễ mdn | | `ltt-3.5` tok ra/s | trễ mdn |
+|---:|---:|---:|---|---:|---:|
+| 1 | **63,4** | 11,0 s | | 63,9 | 4,6 s |
+| 3 | 104,3 | 14,4 s | | 119,0 | 6,1 s |
+| 6 | 114,9 | 38,7 s | | 125,9 | 14,5 s |
+| 9 | 106,5 | 39,4 s | | 136,9 | 22,3 s |
+
+⭐ **Đối chứng (Luật 3):** `ltt-3.8` C1 = **63,4** tok/s, so với **63,39** đo
+   13/09 bằng cùng công cụ (`BO_DO_CHUAN.md` §10). Trùng tới chữ số thứ ba ⇒
+   phép đo lặp lại được, và mọi con số khác trong bảng đứng trên nền ấy.
+
+✅ **Câu hỏi trung tâm đã có câu trả lời đo được.** Ở mức 6 và 9 — tức gấp đôi
+   và gấp ba số suất của một card — **không một lượt nào bị từ chối**: 0 lỗi,
+   0 × `429`. Thứ dâng lên là **độ trễ** (`ltt-3.8`: 14,4 → 38,7 s, ×2,7), còn
+   thông lượng **chững** (104 → 115 → 107). Đó đúng là hình dạng của một hàng
+   đợi hấp thụ tải, không phải của một cửa đuổi khách. **L-12 vá đúng.**
+
+⚠️ **Hai điều tệp này KHÔNG được đọc thành nhiều hơn nó đo:**
+
+1. **Đồng thời đo được ở mức 9 là 6,30 (3.8) / 5,55 (3.5), không phải 9.** Đó là
+   **hiện vật của đoạn lên-xuống**: 12 request với 9 luồng chỉ đủ ~1,3 đợt, nên
+   trung bình bị đoạn khởi động và đoạn cạn kéo xuống. Nó **không** nói "hệ giữ
+   đồng thời ở 6". Muốn con số ấy có nghĩa thì phải nâng số request — một lượt
+   đo khác.
+2. **Hai cột KHÔNG trừ được cho nhau.** `ltt-3.5` chạy với `reasoning_effort=none`
+   (bắt buộc: sàn `medium` của nó là **1024** > 700), còn `ltt-3.8` chạy ở mặc
+   định. Đề bài khác nhau ⇒ chỉ đọc theo **chiều dọc** trong từng model.
 
 ## 8. Ngoài phạm vi
 

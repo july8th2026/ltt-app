@@ -13,6 +13,65 @@
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
 
+## 2026-09-14 — VẬN HÀNH THẬT: xoá bộ đo tự xây (lần hai), và L-12 được xác nhận trên tải thật
+
+### 🔴 Sai lầm của phiên, ghi trước kết quả
+
+Chủ dự án chốt: *"bộ đo có sẵn trong hệ thống đã sử dụng và pass — xoá đo tự vẽ
+trùng lặp"*. Tôi đã dựng một bộ nghiệm thu riêng (`tools/nghiem_thu_van_hanh/`,
+9 module + 4 tệp test + spec + plan). **Đã xoá toàn bộ.**
+
+⛔ Đây là **lần thứ hai cùng một sai lầm ở cùng dự án**. Ngày 13/09 đã xoá **sáu**
+   script tự viết vì y hệt lý do, và kết luận ấy được ghi thành tệp
+   `docs/ltt_llm_dual/BO_DO_CHUAN.md`. Tệp đó **đã tồn tại sẵn** và tôi không đọc
+   nó trước khi viết dòng mã đầu tiên. Giá phải trả đo được: một lượt chạy của
+   bộ đo tự xây sinh **bốn lỗi, cả bốn là lỗi của chính nó**.
+
+⇒ Bộ đo chuẩn là `BO_DO_CHUAN.md`, chia ba tầng: **GuideLLM 0.7.3** cho serving ·
+  `bench.py` cho engine máy B · đầu dò riêng cho trạng thái (lease/credit/
+  residency — GuideLLM không biết lược đồ của ta).
+
+### Tra tài liệu thay vì tự suy
+
+Ba thứ tôi tự vẽ lại, `vllm-project/guidellm` đã có sẵn và có ngưỡng công bố:
+
+| tôi tự viết | công cụ đã có |
+|---|---|
+| ma trận 16 kịch bản | `--profile kind=concurrent` + `--override profile.streams` |
+| đo "hàng đợi đang lên" | `--constraint kind=over_saturation` — hồi quy tuyến tính trên (đồng thời, TTFT), có margin of error |
+| hàm tự chấm ĐẠT/TRƯỢT | phân vị sẵn trong bản ghi JSON |
+
+⚠️ Và **kiểm** chứ không tin tài liệu: `--metrics ...,slo=` có trong tài liệu
+   nhánh `main` nhưng **không có** trong 0.7.3 đang cài — nó trả
+   `Extra inputs are not permitted`. Tài liệu đi trước bản cài.
+
+### Kết quả — `tools/do_thong_luong/chay_bao_hoa.sh`, production `1235f876`
+
+Quét bão hoà 1/3/6/9 trên cả hai model, 12 request mỗi mức: **8/8 mức, 0 lỗi.**
+
+Ở mức 6 và 9 — gấp đôi và gấp ba số suất của một card — **không lượt nào bị từ
+chối**. Thứ dâng lên là độ trễ (`ltt-3.8`: 14,4 → 38,7 s), thông lượng thì chững
+(104 → 115 → 107 tok/s). Đó là hình dạng của hàng đợi hấp thụ tải. **L-12 vá
+đúng trên tải thật.**
+
+⭐ Đối chứng: `ltt-3.8` C1 = **63,4** tok/s, so với **63,39** đo 13/09 bằng cùng
+   công cụ. Trùng tới chữ số thứ ba.
+
+Số đầy đủ và hai điều **không được đọc rộng hơn thứ đã đo**:
+`docs/VAN_HANH_THAT.md` §7.
+
+### Ba cái bẫy của bộ đo, mỗi cái đã làm hỏng một lượt trước khi bị bắt
+
+1. **`stream=false` là bắt buộc.** Cửa đồng bộ từ chối `stream:true`. Thiếu cờ
+   ấy, bảng kết quả in **toàn số 0** mà vẫn kết bằng `✔ Benchmarking complete` —
+   một bảng trống trông y hệt một bảng đã đo.
+2. **`ltt-3.5` phải khai `reasoning_effort=none`.** Mặc định là `medium`, sàn
+   `max_tokens` **1024** > 700 của đề bài ⇒ 400 trước khi bắn được lượt nào.
+   Hệ quả: hai model **không so trực tiếp với nhau được** ở lượt này.
+3. **Khoá đi qua TỆP, không qua dòng lệnh** (`cau_idem.py --khoa-tep`) nên không
+   lọt vào `ps`, log hay transcript.
+
+
 ## 2026-09-13 — LTT LLM: đóng L-08, tìm L-11/L-12, và một khoản nợ của chính nhật ký này
 
 ### 🔴 Trước hết: khoản nợ nhật ký
