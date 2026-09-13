@@ -57,16 +57,16 @@ Quy trình đã chốt: `P0→P7 → Spec 2 → nghiệm thu tích hợp A–Q *
 | **D** | C3 LTT-3.8 | ⚠️ **đo lần 1** | 93,7 tok/s tổng, scaling 1,88×. Chưa chốt — §7 dưới nói vì sao |
 | **E** | C4 LTT-3.5 | ⬜ | ngưỡng `2 × C1` chưa chốt số |
 | **F** | Hai model đồng thời ≥ 85 % | ✅ **ĐẠT 13/09** | 4 vòng: 0,99× · 1,08× · 1,15× · 1,10× (ngưỡng ≥ 85 % ⇔ ≤ 1,18×); `pg_locks` 0/369 |
-| **G** | Ngữ cảnh hỗn hợp, `requests_deferred=0` | ⬜ | |
+| **G** | Ngữ cảnh hỗn hợp, `requests_deferred=0` | ✅ **ĐẠT 13/09** | 4 số 0; ngữ cảnh thật 56.967 tok |
 | **H** | 3.8 ngữ cảnh dài + cổng MTP | ⚠️ | đích **221.184 / `-np 3`** (L-14), không phải 262.144/`-np 4` |
-| **I** | Residency: ảnh ↔ LLM xen kẽ | ⬜ | |
-| **J** | 3.5 chạy khi 3090 vẽ ≥ 90 % | ⬜ | 3.5 không thuộc nhóm residency ⇒ kỳ vọng ~100 % |
-| **K** | Kho ấm: nạp lạnh vs ấm | ⚠️ **một nửa** | nạp ấm đo được (3.5 ~10,5 s · 3.8 ~19,4 s); nạp **lạnh** chưa đo (xả standby trên máy đang phục vụ là không đảo được) |
+| **I** | Residency: ảnh ↔ LLM xen kẽ | ✅ **ĐẠT 13/09** | chu trình đủ 182 s; huỷ giữa chừng lui 30 s. §7g |
+| **J** | 3.5 chạy khi 3090 vẽ ≥ 90 % | ✅ **ĐẠT 13/09** | 111,5 vs 111,2 tok/s = **100 %** |
+| **K** | Kho ấm: nạp lạnh vs ấm | ✅ **ĐẠT 13/09** | 9B: 12,93/0,43 s · 27B: 18,29/0,92 s; đối chứng hằng số 25 s trong mã |
 | **L** | Đa tệp | ⬜ | Spec 2 |
-| **M** | Hủy 6 trạng thái, slot trống ≤ 2 s | ⬜ | test 1222 phủ tầng mã, chưa phủ đường thật |
+| **M** | Hủy 6 trạng thái, slot trống ≤ 2 s | ⚠️ **một nửa** | huỷ job 0,33/0,36 s ✅; client cắt kết nối **chưa đo lại sau bản sửa thứ hai** |
 | **N** | 7 lỗi hạ tầng | ⬜ | |
-| **O** | Tiền: 7 tình huống, 0 thu hai lần | ⬜ | |
-| **P** | Rò lease generator, 5 điểm | ⬜ | |
+| **O** | Tiền: 7 tình huống, 0 thu hai lần | ✅ **ĐẠT 13/09** | 4 hold / 2 refund / 2 settle khớp đôi; 0 khoản treo |
+| **P** | Rò lease generator, 5 điểm | ✅ **ĐẠT 13/09** | `execution_leases` về 0 sau cả 4 kịch bản |
 | **Q** | Soak hỗn hợp | ⬜ | đòi A–P qua trước |
 
 ## 4. 🔴 Vì sao F là cổng CHẶN, không phải một lỗi lẻ
@@ -394,6 +394,39 @@ không vào được `ANH` → mà `nha_llm` **không có đường lui nào kh�
 bằng can thiệp tay lúc 05:29 (ba rào tự kiểm trước khi ghi). **Gốc chưa sửa** —
 job ảnh kế tiếp lặp lại y nguyên.
 
+## 7g. Cổng I — **ĐẠT**, và L-07 đóng bằng hai phép đo chứ không một
+
+### Phép 1 — chu trình bình thường
+
+```
+ 0,6s llm · 4,1s xa_llm · 7,0s nha_llm · 16,3s anh
+148,8s job ảnh succeeded
+151,7s tra_anh · 159,9s nap_llm · 182,1s llm   →  ltt-3.8 HTTP 200 trong 2,0 s
+```
+
+Bước từng gãy — `nha_llm → anh`, tức lượt `chay_comfy()` — nay đi qua trong
+**9,3 s**.
+
+### Phép 2 — HUỶ giữa chừng, đúng kịch bản đã hỏng
+
+```
+ 0,8s xa_llm · 3,5s nha_llm
+ 4,9s HUỶ job ảnh → HTTP 200
+11,4s nap_llm     ← ĐƯỜNG LUI, nó không tồn tại trước 13/09
+29,9s llm         →  ltt-3.8 HTTP 200 trong 1,7 s
+```
+
+Chuỗi **bỏ qua `anh` hoàn toàn** — đúng thiết kế: đường lui 1 nổ khi
+`job_anh_cho == 0`.
+
+⛔ **Vì sao phép 1 một mình là chưa đủ.** Nó đi qua `anh`, tức nó chỉ chứng minh
+   phần deploy máy B. Đường lui **không bao giờ được chạm tới** trong một lượt
+   chạy suôn sẻ. Dừng ở đó là báo "đã sửa" cho một nửa chưa ai thử — và nửa ấy
+   chính là nửa mà hôm 13/09 phải ghi tay vào CSDL mới gỡ được.
+
+⭐ Cùng hình dạng với bài học *"không đối chứng thì số không không phải phát
+   hiện"*: một cổng chỉ hỏi kết cục sẽ **ĐẠT cho đúng sự cố đã xảy ra**.
+
 ## 8. Sổ lỗi L-* — trạng thái cuối lượt 13/09
 
 | mã | trạng thái | ghi chú |
@@ -403,8 +436,8 @@ job ảnh kế tiếp lặp lại y nguyên.
 | **L-03** | ✅ **đóng** | cả hai model khai `reads_images`; `DEVELOPER_GUIDE` + CHANGELOG đã sinh lại |
 | **L-04** | ✅ **đóng** | bộ chấm đổi sang mệnh đề dương; bản cũ chấm 3/3 câu sai thành "đúng" |
 | **L-05** | ✅ **đóng** | 48/48 done, 0 lỗi; p = 0,3 % nếu tỉ lệ 11,6 % còn nguyên |
-| **L-06** | 🔴 **mở** | cửa đồng bộ không cắt được việc khi khách bỏ đi: slot giữ 15,4–31,9 s |
-| **L-07** | 🔴 **mở, CHẶN** | một job ảnh hạ `ltt-3.8` vĩnh viễn; sự cố thật 32 phút |
+| **L-06** | ⚠️ **đã sửa, chưa nghiệm thu** | gốc THỨ HAI: `is_disconnected()` chết sau `BaseHTTPMiddleware`. Chờ deploy rồi đo lại |
+| **L-07** | ✅ **đóng** | deploy máy B + đường lui; nghiệm thu 2 phép trên đường thật |
 
 ⭐ Năm mục L-01…L-05 đều đóng, và mỗi mục đóng bằng một **phép đo trên đường
 thật**, không bằng một bản vá đã commit. L-06 là mục **mới**, do chính cổng M
