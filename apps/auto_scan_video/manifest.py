@@ -6,9 +6,10 @@ catalog hay muc nav rieng. Ly do khong phai tham my: quyen nhat job duoc loc
 theo **APP** (`platform_core/jobs.py:158-164`), nen mot app khai du ca ba nang
 luc se chi chay duoc tren mot lan co du ca ba. Xem `pipeline.py` va ADR-001 D5.
 
-⛔ CHUA MO CHO KHACH. `enabled=False` + `lifecycle="development"` +
-   `public=False`. Prompt 05 cam ra mat cong khai, va `MVP_CONTRACT.md` van con
-   bay giai doan chua co engine that.
+⭐ BAT cho khach dang nhap kiem thu (13/09). `enabled=True` + `public=False` +
+   `lifecycle="development"`: khach DA DANG NHAP thay va mo app; con an danh thi
+   chua (public=False). Doi `public=True` + `lifecycle="released"` sau khi nghiem
+   thu tren URL cong khai xong. Chi tiet o khoi khai `enabled`/`public` ben duoi.
 """
 from __future__ import annotations
 
