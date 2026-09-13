@@ -108,6 +108,9 @@ def test_DOI_CHUNG_phep_kiem_nay_do_duoc():
     {"response_format": {"type": "json_schema"}},       # thieu json_schema
     {"tool_choice": "bat_buoc"},                        # ngoai none|auto|required
     {"tool_choice": 5},
+    # Dang DOI TUONG bi tu choi CO CHU Y: he kieu Public API khong co kieu HOP
+    # nen no khong cong bo duoc; nhan ma khong khai la mot cua giau.
+    {"tool_choice": {"type": "function", "function": {"name": "f"}}},
     {"parallel_tool_calls": "yes"},                     # phai la bool
     {"top_p": 0.0},                                     # (0..1], 0 khong hop le
     {"top_p": 1.5},

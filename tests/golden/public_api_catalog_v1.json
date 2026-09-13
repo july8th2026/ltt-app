@@ -538,8 +538,13 @@
             ]
           },
           "tool_choice": {
-            "type": "object",
-            "description": "Whether the model may, must, or must not call a tool: `none`, `auto`, `required`, or an object naming one function. Without it `tools` is only ever a suggestion.",
+            "type": "string",
+            "enum": [
+              "none",
+              "auto",
+              "required"
+            ],
+            "description": "Whether the model may, must, or must not call a tool: `none`, `auto` or `required`. Without it `tools` is only ever a suggestion.",
             "examples": [
               "auto"
             ]
@@ -568,7 +573,7 @@
             ]
           },
           "stop": {
-            "type": "object",
+            "type": "array",
             "description": "Up to four strings; generation ends as soon as one appears. Four is the ceiling the wire format itself sets, not one we invented.",
             "examples": [
               [
@@ -599,7 +604,7 @@
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "c2495ae16b7d023f"
+      "contract_hash": "4e6a8f955a420d49"
     },
     {
       "name": "text.prompt_package",

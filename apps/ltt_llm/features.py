@@ -302,12 +302,14 @@ def kiem_tham_so(params: dict) -> dict:
         sach["response_format"] = rf
 
     if p.get("tool_choice") is not None:
+        # ⛔ CHI nhan chuoi, du hop dong goc con co dang doi tuong (ep MOT ham
+        #    cu the). Ly do nam o `manifest.params_schema`: he kieu cua Public
+        #    API khong co kieu HOP, nen dang doi tuong khong CONG BO duoc. Nhan
+        #    no o day ma khong khai o kia la dung cai bay ta vua di sua —
+        #    mot nang luc chay that ma khong ai doc duoc trong hop dong.
         tc = p["tool_choice"]
-        if isinstance(tc, str):
-            if tc not in ("none", "auto", "required"):
-                raise ThamSoSai("`tool_choice` dang chuoi phai la none|auto|required")
-        elif not isinstance(tc, dict):
-            raise ThamSoSai("`tool_choice` phai la chuoi hoac doi tuong")
+        if not isinstance(tc, str) or tc not in ("none", "auto", "required"):
+            raise ThamSoSai("`tool_choice` phai la none|auto|required")
         sach["tool_choice"] = tc
 
     if p.get("parallel_tool_calls") is not None:

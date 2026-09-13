@@ -299,11 +299,31 @@ MANIFEST = AppManifest(
             #    `kiem_tham_so`. Do la thu ngan lop loi nay quay lai, chu khong
             #    phai loi van nay.
             "response_format": {"type": "json"},
-            "tool_choice": {"type": "json"},
+            # 🔴 CHUOI, KHONG phai doi tuong — va day la mot GIOI HAN CUA NEN
+            #    TANG duoc ghi ra chu khong phai mot lua chon san pham.
+            #
+            #    Hop dong that cua `tool_choice` la mot HOP: chuoi
+            #    (`none|auto|required`) HOAC doi tuong chi dich danh mot ham.
+            #    `platform_core/public_api/invocation._validate_value` chi co
+            #    sau kieu (integer/number/boolean/array/object/string) va
+            #    KHONG co kieu hop. Khai `json` thi `"auto"` bi tu choi
+            #    ("must be an object"); khai chuoi thi dang doi tuong khong
+            #    cong bo duoc.
+            #
+            # ⇒ Chon dang CHUOI (truong hop pho bien), va `kiem_tham_so` cung
+            #   chi nhan chuoi — hop dong va hanh vi khop nhau tuyet doi. Ep
+            #   MOT ham cu the la nang luc that con thieu; no doi nen tang co
+            #   kieu hop truoc, va do la viec cua tang nen tang chu khong phai
+            #   cua app nay. KHONG nhan am tham dang doi tuong roi khong khai:
+            #   mot nang luc khong ai cong bo la mot nang luc khong ai di tren.
+            "tool_choice": {"type": "enum",
+                            "values": ["none", "auto", "required"]},
             "parallel_tool_calls": {"type": "bool"},
             "top_p": {"type": "number", "min": 0.0, "max": 1.0},
             "seed": {"type": "int"},
-            "stop": {"type": "json"},
+            # `json[]` chu khong `json`: day la mot MANG chuoi. Cung ly do
+            # `tools` o tren khai `json[]`.
+            "stop": {"type": "json[]"},
         },
         returns={"content": "text", "tool_calls": "json[]", "usage": "json"},
 
@@ -439,8 +459,8 @@ MANIFEST = AppManifest(
                 "tool_choice": {
                     "description": (
                         "Whether the model may, must, or must not call a tool: "
-                        "`none`, `auto`, `required`, or an object naming one "
-                        "function. Without it `tools` is only ever a suggestion."),
+                        "`none`, `auto` or `required`. Without it `tools` is "
+                        "only ever a suggestion."),
                     "example": "auto",
                 },
                 "parallel_tool_calls": {

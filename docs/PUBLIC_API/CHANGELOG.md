@@ -24,7 +24,7 @@ lần ghi lại đó hiện ra trong diff.
 ## 2026-09-14 — `text.chat` mở sáu tham số mà engine vốn đã làm được
 
 **ADDED · không phá vỡ hợp đồng.** `contract_hash` của `text.chat` đổi
-(`5876e4bcdf4e09b8` → `c2495ae16b7d023f`) vì `input_schema` có thêm sáu trường
+(`5876e4bcdf4e09b8` → `4e6a8f955a420d49`) vì `input_schema` có thêm sáu trường
 **tùy chọn**. Một caller không gửi chúng cư xử y hệt trước, nên **không tích hợp
 đang chạy nào phải sửa gì**.
 
@@ -61,9 +61,18 @@ phải bằng lời nhắc — nên đầu ra không thể lệch khuôn.
 
 ### `tool_choice` · `parallel_tool_calls`
 
-`tool_choice`: `"none"` | `"auto"` | `"required"`, hoặc object chỉ đích danh một
-hàm. Trước đây `tools` đã mở nhưng **không ép được** model gọi — câu chuyện tool
-dở dang ở đúng chỗ đó. `parallel_tool_calls` (bool) bật/tắt gọi nhiều tool một
+`tool_choice`: `"none"` | `"auto"` | `"required"`. Trước đây `tools` đã mở nhưng
+**không ép được** model gọi — câu chuyện tool dở dang ở đúng chỗ đó.
+
+⚠️ **Dạng object (ép đích danh MỘT hàm) chưa mở, và lý do là giới hạn của nền
+tảng chứ không phải lựa chọn sản phẩm.** Hợp đồng thật của `tool_choice` là một
+**hợp**: chuỗi *hoặc* object. Hệ kiểu của Public API
+(`invocation._validate_value`) chỉ có sáu kiểu — integer, number, boolean,
+array, object, string — và **không có kiểu hợp**. Khai `object` thì `"auto"` bị
+từ chối; khai chuỗi thì dạng object không công bố được. Chọn dạng chuỗi, và bộ
+kiểm cũng **chỉ nhận chuỗi**, để hợp đồng và hành vi khớp nhau tuyệt đối —
+không nhận âm thầm một dạng không ai công bố. Mở nốt dạng object đòi nền tảng
+có kiểu hợp trước. `parallel_tool_calls` (bool) bật/tắt gọi nhiều tool một
 lượt; model nào hỗ trợ là do jinja template của nó quyết định.
 
 ### `top_p` · `seed` · `stop`
