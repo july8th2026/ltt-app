@@ -76,6 +76,8 @@ def main() -> int:
                 bo.dung()
                 bo.join(timeout=5)
             ra.update(bo.dai_luong())
+            if "t_cat_s" in ra:
+                ra.update(bo.do_nha_suat(ra["t_cat_s"]))
             ra["mau"] = bo.mau
             return ra
 

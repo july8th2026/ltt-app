@@ -47,6 +47,9 @@ class KichBan:
     tai: tuple[tuple[str, int], ...]
     mong_doi: dict[str, Any] = field(default_factory=dict)
     can_tai_khoan_hai: bool = False
+    #: >0 ⇒ MỘT lượt đọc đủ ngần ấy mảnh rồi **CẮT** — mô phỏng khách đóng tab.
+    #: Chỉ có nghĩa với kịch bản đo đường nhả suất (L-08).
+    cat_sau: int = 0
 
 
 MA_TRAN: tuple[KichBan, ...] = (
@@ -96,7 +99,7 @@ MA_TRAN: tuple[KichBan, ...] = (
     KichBan("J11", "khách CẮT giữa lúc bão hoà — L-08 dưới tải", "stream",
             (("ltt-3.8", 3),),
             {"dinh_lease": TRAN_MOI_MODEL, "nha_lease_toi_da_s": 30.0},
-            can_tai_khoan_hai=True),
+            can_tai_khoan_hai=True, cat_sau=5),
     KichBan("J12", "một tài khoản HAI KHOÁ — khoá KHÔNG cộng suất", "stream",
             (("ltt-3.8", 6),),
             {"dinh_lease": TRAN_MOI_MODEL, "queued": 3, "khoa_khong_cong_suat": True}),

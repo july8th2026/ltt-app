@@ -132,6 +132,11 @@ def nop_that(kb: KichBan, *, goc_kho: str,
             luot.append(MotLuot(nhan=f"L{i}", model=model,
                                 khoa=doc_khoa(ten_khoa, goc_kho=goc_kho)))
 
+    # ⛔ Cat chi ap cho MOT luot (luot cuoi). Cat het thi khong con ai giu suat
+    #    de do xem suat co duoc nha khong — ta se do mot he rong.
+    if kb.cat_sau and luot:
+        luot[-1].cat_sau = kb.cat_sau
+
     t0 = time.monotonic()
     ts = [threading.Thread(target=_mot_luot, args=(x, t0)) for x in luot]
     for t in ts:
@@ -140,12 +145,17 @@ def nop_that(kb: KichBan, *, goc_kho: str,
         t.join()
 
     chay_ngay = sum(1 for x in luot if x.ma == 200 and x.n_queued == 0)
+    # ⭐ Thoi gian cho LAU NHAT toi byte dau — dai luong ma J8 hoi. Chi tinh
+    #    luot that su nhan duoc byte; luot hong khong noi gi ve thoi gian cho.
+    cho = [round(x.t_byte_dau - x.t_gui, 2) for x in luot if x.t_byte_dau]
     return {
         "chay_ngay": chay_ngay,
         "queued": sum(1 for x in luot if x.n_queued > 0),
         "khong_429": all(x.ma != 429 for x in luot),
         "co_429_phong_day": any(x.ma == 429 for x in luot),
         "so_200": sum(1 for x in luot if x.ma == 200),
+        **({"t_cat_s": round(luot[-1].t_xong, 2)} if kb.cat_sau else {}),
+        **({"cho_toi_da_s": max(cho)} if cho else {}),
         "luot": [{"nhan": x.nhan, "model": x.model, "ma": x.ma,
                   "ttfb": round(x.t_byte_dau - x.t_gui, 2) if x.t_byte_dau else -1,
                   "dai": round(x.t_xong - x.t_gui, 2),
