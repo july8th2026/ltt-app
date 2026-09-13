@@ -40,6 +40,12 @@ Tốc độ phát, `1.0` là bình thường. Khoảng `0.5`–`2.0`. Đây là 
 theo thời lượng **gốc** (trước khi đổi tốc độ), nên chọn nhanh hơn không làm rẻ
 hơn. Ngoài khoảng ⇒ `400 invalid_request` (không silently clamp). Bỏ qua = `1.0`.
 
+⚠️ **Chất lượng ở biên trên**: đo bằng DNSMOS (2026-09-13, n=5) cho thấy `speed`
+càng gần `2.0` thì độ tự nhiên càng giảm — ~1 điểm MOS ở `2.0` so với `1.0`, tụt
+nhẹ dần từ `1.25`. Độ **dễ hiểu** (ASR) không đổi trên cả dải. Dải `[0.5, 2.0]`
+được **giữ nguyên** có chủ ý; nếu ưu tiên độ tự nhiên thì `1.5` là trần thực
+dụng. Chi tiết: `docs/LTT_VOICE/ACCEPTANCE_FINAL/QUALITY_TOC_DO.md`.
+
 ### `language` (string, tùy chọn)
 
 `auto` (mặc định) đoán ngôn ngữ từ văn bản; `vi`/`en` ghi đè. Nếu ngôn ngữ (đoán
