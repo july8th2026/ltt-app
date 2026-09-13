@@ -38,7 +38,11 @@ import threading
 import time
 import uuid
 
-sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+# `hasattr` la loi cua kho (xem tools/bench_llm_hieu_nang.py): goi thang
+# `sys.stdout.reconfigure` lam banh coc mypy TANG mot `union-attr`, va gate
+# do o buoc 8/33 vi dung mot dong nay.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 GOC_CAY = r"D:\LTTSTUDIOSAPP\.claude\worktrees\ltt-llm-dual-model-4dfcf4"
 sys.path.insert(0, GOC_CAY)
 
