@@ -671,7 +671,9 @@ def chuan_bi(db, *, user_id: str, tool_name: str, than: dict, duong: str,
 
 # ── Bước 2: mở luồng tới máy B ───────────────────────────────────────────────
 
-async def bat_dong_bo_hoa(nguon: Iterator[bytes]) -> AsyncIterator[bytes]:
+async def bat_dong_bo_hoa(
+        nguon: Iterator[bytes],
+        dong_nguon: Optional[Callable[[], None]] = None) -> AsyncIterator[bytes]:
     """Bọc luồng ĐỒNG BỘ thành BẤT ĐỒNG BỘ tại biên phản hồi HTTP — vá L-08.
 
     ## Sự cố
@@ -767,12 +769,32 @@ async def bat_dong_bo_hoa(nguon: Iterator[bytes]) -> AsyncIterator[bytes]:
                 return
             yield khoi
     finally:
+        # 🔴 ĐÓNG KẾT NỐI TRƯỚC, ĐÓNG GENERATOR SAU. Thứ tự này là bản vá, không
+        #    phải sở thích.
+        #
+        #    `abandon_on_cancel=True` buông lượt chờ, nhưng LUỒNG kia **vẫn đang
+        #    ở trong** `next(nguon)`. Đo bằng một bộ mô phỏng một biến số: gọi
+        #    `nguon.close()` lúc ấy ném `ValueError: generator already executing`,
+        #    `finally` của nguồn **không bao giờ chạy**, và `client.close()` của
+        #    httpx ở lại chưa gọi ⇒ lease nhả mà **máy B vẫn giữ slot**. Mới đi
+        #    được nửa đường, và là nửa khách không nhìn thấy.
+        #
+        # ⭐ `dong_nguon()` đóng thẳng `httpx.Client`. Lượt đọc đang chặn trong
+        #    luồng bỏ rơi vỡ ngay, `nguon` bung ra, `finally` của nó chạy TỰ
+        #    NHIÊN (và gọi lại `dong_nguon` — nên hàm ấy buộc phải idempotent).
+        if dong_nguon is not None:
+            try:
+                dong_nguon()
+            except Exception:  # noqa: BLE001 - duong huy khong duoc nem
+                log.warning("khong dong duoc cua ra mang toi may B", exc_info=True)
+        # Vét nốt: nguồn đã bung thì `close()` chỉ là xác nhận; còn đang chạy thì
+        # nó ném và ta bỏ qua — kết nối đã đóng ở trên mới là thứ có giá trị.
         dong = getattr(nguon, "close", None)
         if callable(dong):
             try:
                 dong()
-            except Exception:  # noqa: BLE001 - duong huy khong duoc nem
-                log.warning("khong dong duoc luong nguon", exc_info=True)
+            except Exception:  # noqa: BLE001
+                log.debug("nguon con dang chay, bo qua close()", exc_info=True)
 
 
 def _luong_rong() -> Generator[bytes, None, None]:
@@ -798,6 +820,14 @@ class LuotLuong:
     #: "has no attribute close" — đúng, và nó đúng về một điều thật: truyền vào
     #: đây một iterator thường sẽ vỡ ở lúc khách ngắt.
     luong: Generator[bytes, None, None] = field(default_factory=_luong_rong)
+    #: Đóng cửa ra mạng tới máy B — gọi được từ LUỒNG KHÁC, và idempotent.
+    #:
+    #: ⛔ KHÔNG thay được bằng `luong.close()`. Đường huỷ của cửa stream chạy ở
+    #:    vòng lặp sự kiện trong khi `luong` đang treo giữa một lượt đọc socket ở
+    #:    luồng threadpool đã bị bỏ rơi; đóng một generator đang thực thi ở luồng
+    #:    khác ném `ValueError: generator already executing`, `finally` không bao
+    #:    giờ chạy, và kết nối httpx ở lại mở. Xem L-08.
+    dong_nguon: Optional[Callable[[], None]] = None
     dem: DemToken = field(default_factory=DemToken)
     #: Điền sau khi quyết toán (trong `finally` của `luong`).
     ket_qua: Any = None
@@ -902,6 +932,9 @@ def mo_thuong_nguon(cb: ChuanBi, *, timeout_s: float = MO_LUONG_GIAY,
     metrics.increment("chat:stream")
     luot = LuotLuong(chuan_bi=cb, content_type=mo.content_type)
     luot.luong = _phat(mo, luot, trang_thai=trang_thai)
+    # Mang theo đường đóng THẲNG tới httpx. Đường huỷ cần nó vì `luong.close()`
+    # ném khi luồng đọc còn đang chạy — xem `dong_nguon` ở `LuotLuong`.
+    luot.dong_nguon = mo.dong_nguon
     return luot
 
 

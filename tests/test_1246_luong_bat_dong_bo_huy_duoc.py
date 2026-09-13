@@ -137,6 +137,51 @@ def test_huy_KHONG_dung_cho_mot_luot_doc_dang_chan():
         "`abandon_on_cancel=True` da bi go, va L-08 quay lai.")
 
 
+def test_huy_goi_DONG_NGUON_chu_khong_chi_close_generator():
+    """🔴 `close()` KHONG du, va day la cai bay da lam ban va dau tien nua voi.
+
+    `abandon_on_cancel=True` buong luot cho, nhung LUONG kia van dang o TRONG
+    `next(nguon)`. Do bang mot bo mo phong mot bien so:
+
+        close() mot generator dang thuc thi o luong khac
+        -> ValueError: generator already executing
+        -> `finally` cua nguon KHONG BAO GIO chay
+        -> `client.close()` cua httpx chua duoc goi
+
+    ⇒ Lease nha ma MAY B VAN GIU SLOT. Nua duong, va la nua khach khong nhin
+      thay. Ve nay chot rang `dong_nguon` — duong dong THANG toi httpx, goi duoc
+      tu luong khac — thuc su duoc goi tren duong huy.
+    """
+    da_vao = threading.Event()
+    cho_nha = threading.Event()
+    nk: list = []
+
+    def _nguon():
+        yield b"dau"
+        da_vao.set()
+        cho_nha.wait(10)
+        yield b"sau"
+
+    def _dong():
+        nk.append("da dong cua ra mang")
+        cho_nha.set()          # dung nhu `client.close()` lam luot doc kia vo
+
+    async def _chay():
+        with anyio.move_on_after(1.0):
+            async for _ in cua_luong.bat_dong_bo_hoa(_nguon(), _dong):
+                pass
+
+    try:
+        anyio.run(_chay)
+    finally:
+        cho_nha.set()
+
+    assert da_vao.is_set(), "chua toi luot doc bi chan — phep do khong cham dich"
+    assert nk == ["da dong cua ra mang"], (
+        f"`dong_nguon` KHONG duoc goi tren duong huy: {nk}. Lease se nha ma may "
+        "B van giu slot.")
+
+
 def test_nguon_khong_co_close_thi_khong_vo():
     async def _chay():
         return [k async for k in cua_luong.bat_dong_bo_hoa(iter([b"a", b"b"]))]

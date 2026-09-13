@@ -912,9 +912,9 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
     #   BAT DONG BO ngay tai bien phan hoi, de huy cua Starlette lan duoc VAO
     #   trong generator. Toan bo ly le + doi chieu cong dong o
     #   `cua_luong.bat_dong_bo_hoa`.
-    return StreamingResponse(cua_luong.bat_dong_bo_hoa(luot.luong),
-                             media_type=luot.content_type,
-                             headers=_SSE, background=nen)
+    return StreamingResponse(
+        cua_luong.bat_dong_bo_hoa(luot.luong, luot.dong_nguon),
+        media_type=luot.content_type, headers=_SSE, background=nen)
 
 
 # `_phat` / `_quyet_toan` / `_hoan` đã HẠ xuống

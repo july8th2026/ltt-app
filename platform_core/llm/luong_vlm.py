@@ -23,7 +23,7 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass
-from typing import Any, Iterator, Optional
+from typing import Any, Callable, Iterator, Optional
 
 log = logging.getLogger("platform_core.llm.luong_vlm")
 
@@ -62,6 +62,11 @@ class LuongMo:
     ma: int
     content_type: str
     luong: Iterator[bytes]
+    #: Đóng cửa ra mạng của lượt này — gọi được từ LUỒNG KHÁC, và idempotent.
+    #: Đường huỷ của cửa stream cần nó vì `luong.close()` ném
+    #: `ValueError: generator already executing` khi luồng đọc còn đang chạy.
+    #: Xem `_dong_thuong_nguon` và mục L-08 trong `SO_LOI_DO_TAI.md`.
+    dong_nguon: Optional[Callable[[], None]] = None
     #: Khoá đã dùng — bên gọi báo lại kết quả qua `xong()` / `hong()`.
     _db: Any = None
     _key: Any = None
@@ -261,14 +266,39 @@ def mo(db, *, duong: str, than: dict, timeout_s: float = 900.0,
             for khoi in r.iter_raw():
                 yield khoi
         finally:
-            try:
-                ctx.__exit__(None, None, None)
-            finally:
-                client.close()
+            _dong_thuong_nguon()
+
+    def _dong_thuong_nguon() -> None:
+        """Đóng cửa ra mạng của lượt này. **Gọi được từ luồng khác**, và idempotent.
+
+        🔴 VÌ SAO PHẢI TÁCH RA KHỎI `finally` CỦA `_di` (L-08, đo 13/09).
+
+           Đường huỷ của cửa stream chạy ở **vòng lặp sự kiện**, trong khi
+           `_di` đang bị treo giữa `r.iter_raw()` ở một **luồng threadpool đã bị
+           bỏ rơi**. Cách hiển nhiên — gọi `_di.close()` — KHÔNG chạy:
+
+               ValueError: generator already executing
+
+           Đo bằng một bộ mô phỏng một biến số: đóng một generator đang thực thi
+           ở luồng khác thì `close()` ném, `finally` **không bao giờ chạy**, và
+           kết nối httpx ở lại mở. Lease nhả mà **máy B vẫn giữ slot** — mới đi
+           được nửa đường.
+
+        ⭐ Đóng thẳng `client` thì khác: lượt đọc đang chặn trong luồng bỏ rơi vỡ
+           ngay, `_di` bung ra, và `finally` của nó chạy **tự nhiên** — gọi lại
+           hàm này một lần nữa, nên nó buộc phải idempotent.
+        """
+        if getattr(_dong_thuong_nguon, "_xong", False):
+            return
+        _dong_thuong_nguon._xong = True          # type: ignore[attr-defined]
+        try:
+            ctx.__exit__(None, None, None)
+        finally:
+            client.close()
 
     return LuongMo(ma=r.status_code,
                    content_type=r.headers.get("content-type", "text/event-stream"),
-                   luong=_di(), _db=db, _key=key)
+                   luong=_di(), _db=db, _key=key, dong_nguon=_dong_thuong_nguon)
 
 
 def _doc_het(r, ctx, client) -> str:
