@@ -60,12 +60,8 @@ def _encoder():
 
 
 def _cos(a, b) -> float:
-    a = np.asarray(a, dtype=np.float64).ravel()
-    b = np.asarray(b, dtype=np.float64).ravel()
-    na, nb = np.linalg.norm(a), np.linalg.norm(b)
-    if na == 0 or nb == 0:
-        return 0.0
-    return float(np.dot(a, b) / (na * nb))
+    from ._dsp_chung import cosine
+    return cosine(a, b)
 
 
 def main(argv=None) -> int:
