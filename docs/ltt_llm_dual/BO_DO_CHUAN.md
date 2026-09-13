@@ -179,3 +179,58 @@ khác với một câu hỏi khác. Ghi hai con số dưới hai cái tên khác
 
 Chân engine và chân dịch vụ cùng bắn vào một 3090. Chạy song song thì cả hai số
 đều vô nghĩa. Thứ tự đã dùng: engine trước, dịch vụ sau.
+
+## 10. Số đo bằng GuideLLM — và hai kết luận cũ bị bác bỏ
+
+`ltt-3.8` · prompt 256 tok · output 700 tok · 12 lượt · `stream=false` cả hai chân.
+
+| | C1 (tok ra/s) | C3 (tok ra/s) | scaling |
+|---|---:|---:|---:|
+| **engine** — thẳng máy B (qua đường hầm SSH) | **67,1** | **132,3** | **1,97×** |
+| **dịch vụ** — qua máy A + Cloudflare | **63,4** | **107,5** | **1,70×** |
+
+### 🔴 Bác bỏ 1: *"phí nền tảng RẺ DẦN khi tải tăng"*
+
+Tôi từng ghi (từ bộ tự viết): phí nền tảng ăn vào C1 nặng hơn ăn vào C3, nên
+tỉ số scaling qua máy A **cao hơn** đo thẳng máy B. Đo lại bằng công cụ chuẩn,
+cùng thiết lập, ngược hẳn:
+
+| | phí nền tảng |
+|---|---:|
+| ở C1 | 67,1 − 63,4 = **3,7** tok/s (5,5 %) |
+| ở C3 | 132,3 − 107,5 = **24,8** tok/s (18,7 %) |
+
+⇒ Nền tảng **đắt dần** theo đồng thời, không rẻ dần: nó nuốt khoảng **một phần
+tư** phần lợi mà engine có được khi chạy 3 luồng (1,97× → 1,70×).
+
+⛔ Kết luận cũ sai vì hai chân đo ở hai chế độ khác nhau mà tôi không nhận ra —
+   một chân có stream, một chân không. **Hai con số chỉ trừ được cho nhau khi
+   mọi thứ khác giống hệt**, và "mọi thứ khác" gồm cả những cờ mình không nhớ
+   là mình đã đặt.
+
+### ⭐ Phát hiện phụ: **streaming tốn ~24 % thông lượng**
+
+Cùng engine, cùng đề, chỉ khác một cờ:
+
+| | C3 (tok ra/s) |
+|---|---:|
+| `stream=true` | 100,5 |
+| `stream=false` | **132,3** |
+
+Đây là một con số sản phẩm, không chỉ là một con số đo: khách dùng streaming
+trả giá bằng thông lượng, và mức giá ấy nay đo được.
+
+### Cổng D — nửa TTFT
+
+Spec §23 đòi *"TTFT ngắn p95 ≤ 3 s khi còn chỗ"*. Đo ở chân engine có stream:
+
+| | TTFT trung vị | TTFT p95 |
+|---|---:|---:|
+| C1 | 590 ms | 868 ms |
+| C3 | 1151 ms | **1336 ms** |
+
+**ĐẠT**, còn biên hơn 2×.
+
+⚠️ Con số này đo ở **engine**. TTFT mà khách qua máy A thấy phải đo ở
+`/api/v1/responses` — cửa đồng bộ không nói stream nên không có TTFT để đo.
+Hai câu hỏi khác nhau, hai con số khác nhau, đừng gộp.

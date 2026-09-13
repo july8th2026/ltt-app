@@ -163,7 +163,8 @@ def qs(**k):
     """Quan sát "bình thường": LLM đang cư trú, rảnh, VRAM đầy của LLM."""
     base = dict(lease_llm=0, lease_anh=0, job_anh_cho=0, anh_bat_dau_trong_cua_so=0,
                 nguoi_cho_llm=0, han_chot_llm_s=None, gateway_inflight_llm=0,
-                llm_da_nap=True, vram_3090_mib=20000, nap_ket_qua="")
+                llm_da_nap=True, vram_3090_mib=20000, nap_ket_qua="",
+                lan_vao_anh_hong=0)
     base.update(k)
     return R.QuanSat(**base)
 
@@ -193,6 +194,14 @@ SU_KIEN = {
     "vram_sach": dict(llm_da_nap=False, vram_3090_mib=1500),
     "nap_xong": dict(nap_ket_qua="ok"),
     "nap_hong": dict(nap_ket_qua="loi"),
+    # ── L-07, 13/09: phia anh KHONG DUNG DUOC ─────────────────────────────
+    # Job anh van cho, may B im (khong hoi duoc) NHUNG ben goi da that bai
+    # `tran_vao_anh_hong` lan lien tiep khi bat lai ComfyUI.
+    "anh_hong_con_cho": dict(job_anh_cho=1, llm_da_nap=None,
+                             lan_vao_anh_hong=TS.tran_vao_anh_hong),
+    # Cung the, nhung mot luot ve dang chay ⇒ TUYET DOI khong duoc phat `nap_llm`.
+    "anh_hong_dang_ve": dict(job_anh_cho=1, lease_anh=1, llm_da_nap=None,
+                             lan_vao_anh_hong=TS.tran_vao_anh_hong),
 }
 
 _NHA = (R.NHA_LLM_LENH,)
@@ -200,7 +209,7 @@ _NAP = (R.NAP_LLM_LENH,)
 _FREE = (R.FREE_COMFY_LENH,)
 
 #: trạng thái → { sự kiện → (trạng thái sau, lệnh phát ra) } tại `BAY_GIO = 100`.
-#: 7 × 13 = 91 ô, viết hết tay: ô nào "ở lại" cũng là một lời khai, không phải
+#: 7 × 15 = 105 ô, viết hết tay: ô nào "ở lại" cũng là một lời khai, không phải
 #: một chỗ trống — đó là điểm khác giữa một bảng và một nhúm ví dụ.
 BANG = {
     R.LLM: {
@@ -218,6 +227,9 @@ BANG = {
         "vram_sach": (R.LLM, ()),
         "nap_xong": (R.LLM, ()),
         "nap_hong": (R.LLM, ()),
+        # L-07: phia anh khong dung duoc
+        "anh_hong_con_cho": (R.LLM, ()),
+        "anh_hong_dang_ve": (R.LLM, ()),
     },
     R.XA_LLM: {
         "rong": (R.LLM, ()),                       # job ảnh rút ⇒ huỷ việc đổi
@@ -233,9 +245,18 @@ BANG = {
         "vram_sach": (R.LLM, ()),
         "nap_xong": (R.LLM, ()),
         "nap_hong": (R.LLM, ()),
+        # L-07: phia anh khong dung duoc
+        "anh_hong_con_cho": (R.NHA_LLM, _NHA),
+        "anh_hong_dang_ve": (R.NHA_LLM, _NHA),
     },
     R.NHA_LLM: {
-        "rong": (R.NHA_LLM, _NHA),                 # lặp lệnh tới khi thấy đã nhả
+        # ⛔ BA Ô DƯỚI ĐỔI NGHĨA 13/09 (L-07), và đổi là ĐÚNG.
+        #
+        #    Cả ba đều có `job_anh_cho = 0` — tức **không còn việc ảnh nào**.
+        #    Bản cũ "lặp lệnh tới khi thấy đã nhả": nhả card cho một việc không
+        #    còn tồn tại, và ở lại đó mãi. Đó chính là ngõ cụt đã làm `ltt-3.8`
+        #    chết 32 phút. Nay: việc ảnh rút hết ⇒ lui về `NAP_LLM`, lấy lại card.
+        "rong": (R.NAP_LLM, _NAP),
         "anh_vao_hang": (R.NHA_LLM, _NHA),
         "llm_con_lease": (R.NHA_LLM, ()),
         "llm_con_inflight": (R.NHA_LLM, ()),
@@ -244,10 +265,18 @@ BANG = {
         "dang_ve": (R.ANH, ()),
         "cua_so_het_tran": (R.ANH, ()),
         "han_chot_gap": (R.ANH, ()),
-        "vram_con_ban": (R.ANH, ()),
-        "vram_sach": (R.ANH, ()),
-        "nap_xong": (R.NHA_LLM, _NHA),
-        "nap_hong": (R.NHA_LLM, _NHA),
+        # ⭐ Hai ô này cũng có `job_anh_cho = 0`, nên đường lui 1 thắng TRƯỚC
+        #    nhánh `llm_da_nap is False → ANH`. Thứ tự ấy là cố ý: vào `ANH` khi
+        #    không còn việc ảnh nào là bắt ComfyUI khởi động chỉ để đóng cửa sổ
+        #    ngay lượt sau — và "bắt ComfyUI khởi động" đúng là bước đã gãy 404
+        #    trong L-07. Không có việc thì đừng mở cửa.
+        "vram_con_ban": (R.NAP_LLM, _NAP),
+        "vram_sach": (R.NAP_LLM, _NAP),
+        "nap_xong": (R.NAP_LLM, _NAP),
+        "nap_hong": (R.NAP_LLM, _NAP),
+        # L-07: phia anh khong dung duoc
+        "anh_hong_con_cho": (R.NAP_LLM, _NAP),
+        "anh_hong_dang_ve": (R.NHA_LLM, _NHA),
     },
     R.ANH: {
         "rong": (R.TRA_ANH, ()),                   # hết việc ảnh ⇒ đóng cửa sổ
@@ -263,6 +292,9 @@ BANG = {
         "vram_sach": (R.TRA_ANH, ()),
         "nap_xong": (R.TRA_ANH, ()),
         "nap_hong": (R.TRA_ANH, ()),
+        # L-07: phia anh khong dung duoc
+        "anh_hong_con_cho": (R.ANH, ()),
+        "anh_hong_dang_ve": (R.ANH, ()),
     },
     R.TRA_ANH: {
         "rong": (R.TRA_ANH, _FREE),                # VRAM còn của ảnh ⇒ dọn
@@ -278,6 +310,9 @@ BANG = {
         "vram_sach": (R.NAP_LLM, _NAP),            # sạch ⇒ nạp lại LTT-3.8
         "nap_xong": (R.TRA_ANH, _FREE),
         "nap_hong": (R.TRA_ANH, _FREE),
+        # L-07: phia anh khong dung duoc
+        "anh_hong_con_cho": (R.TRA_ANH, _FREE),
+        "anh_hong_dang_ve": (R.TRA_ANH, ()),
     },
     R.NAP_LLM: {
         "rong": (R.NAP_LLM, ()),                   # đang nạp: chờ, không lệnh
@@ -293,6 +328,9 @@ BANG = {
         "vram_sach": (R.NAP_LLM, ()),
         "nap_xong": (R.LLM, ()),
         "nap_hong": (R.LOI_NAP, ()),
+        # L-07: phia anh khong dung duoc
+        "anh_hong_con_cho": (R.NAP_LLM, ()),
+        "anh_hong_dang_ve": (R.NAP_LLM, ()),
     },
     R.LOI_NAP: {
         "rong": (R.NAP_LLM, _NAP),                 # đã qua 30 s lùi ⇒ thử lại
@@ -308,6 +346,9 @@ BANG = {
         "vram_sach": (R.NAP_LLM, _NAP),
         "nap_xong": (R.NAP_LLM, _NAP),
         "nap_hong": (R.NAP_LLM, _NAP),
+        # L-07: phia anh khong dung duoc
+        "anh_hong_con_cho": (R.NAP_LLM, _NAP),
+        "anh_hong_dang_ve": (R.LOI_NAP, ()),
     },
 }
 
@@ -321,8 +362,8 @@ def test_bang_trang_thai_x_su_kien(ten):
 
 
 def test_bang_phu_het_91_o_va_moi_chuyen_hop_le_deu_song():
-    assert len(SU_KIEN) == 13 and len(BANG) == 7
-    assert sum(len(v) for v in BANG.values()) == 91
+    assert len(SU_KIEN) == 15 and len(BANG) == 7
+    assert sum(len(v) for v in BANG.values()) == 105
     # Mỗi chuyển trong `CHUYEN_HOP_LE` phải có ít nhất một ô của bảng đi qua nó —
     # một chuyển hợp lệ mà không quan sát nào sinh ra là mã chết.
     thay = {(tu, mong[0]) for tu, hang in BANG.items() for mong in hang.values()

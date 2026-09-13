@@ -116,7 +116,8 @@ CHUYEN_HOP_LE: dict[str, frozenset[str]] = {
     # Về `LLM` là đường HUỶ BỎ: job ảnh rút khỏi hàng giữa lúc drain thì không có
     # gì phải đổi nữa, và quay lại không tốn một lần nạp 16,3 s.
     XA_LLM: frozenset({NHA_LLM, LLM}),
-    NHA_LLM: frozenset({ANH}),
+    # 13/09: them `NAP_LLM` — duong LUI. Xem `tran_vao_anh_hong` va L-07.
+    NHA_LLM: frozenset({ANH, NAP_LLM}),
     ANH: frozenset({TRA_ANH}),
     TRA_ANH: frozenset({NAP_LLM}),
     NAP_LLM: frozenset({LLM, LOI_NAP}),
@@ -195,6 +196,18 @@ class ThamSoResidency:
     #: VRAM 3090 phải xuống dưới mức này mới nạp LTT-3.8 (fail-closed ở máy B nữa).
     vram_sach_mib: int = 2500
     lui_nap_loi_s: float = 30.0
+    #: Bao nhieu lan LIEN TIEP khong mo duoc cua so anh thi coi phia anh la
+    #: KHONG DUNG DUOC, tra card cho LLM va ngung thu cho toi khi mo duoc.
+    #:
+    #: 🔴 VI SAO CAN: `NHA_LLM` truoc 13/09 chi co MOT duong ra (`ANH`), va loi
+    #:    vao `ANH` doi `may_b.chay_comfy()` thanh cong. Ngay 13/09 cong render
+    #:    may B chay ban cu thieu `/v1/nha_comfy` => 404 => khong bao gio vao
+    #:    duoc `ANH`, ma cung khong co duong lui. Ket qua: LLM da roi card, anh
+    #:    khong bao gio duoc ve, 3090 nam khong — `ltt-3.8` tra 429 suot 32 phut
+    #:    (L-07). Mot trang thai vao duoc ma khong ra duoc la khuyet tat ve HINH
+    #:    DANG, khong phai ve cau hinh: sua cau hinh lam su co AY het, khong lam
+    #:    ngo cut ay het.
+    tran_vao_anh_hong: int = 3
 
 
 @dataclass(frozen=True)
@@ -235,6 +248,15 @@ class QuanSat:
     #: vì một con số cũ. Ghim ở
     #: `test_1216::test_nap_ket_qua_cu_lam_phong_lui_dan_nen_may_b_phai_dat_lai`.
     nap_ket_qua: str = ""
+    #: So lan LIEN TIEP ben goi khong mo duoc cua so anh (khong bat lai duoc
+    #: ComfyUI). Ben goi dem; may thuan chi DOC no nhu mot su that.
+    #:
+    #: ⭐ Vi sao no o `QuanSat` chu khong o `TrangThai`: no la thu doc lai duoc
+    #:    tu the gioi (lenh vua roi co chay khong), khong phai trang thai BEN
+    #:    cua nhom. Giu trang thai ben toi thieu la cach duy nhat de mot tien
+    #:    trinh chet giua cua so khong de lai mot bo dem sai — cung ly do
+    #:    `TrangThai` chi co bon truong.
+    lan_vao_anh_hong: int = 0
 
 
 # ── Ba vị từ: mỗi cái là một cái PHANH, nên mỗi cái là một hàm có tên ────────
@@ -332,7 +354,15 @@ def buoc_thuan(tt: TrangThai, qs: QuanSat, ts: ThamSoResidency,
     if t == LLM:
         # Chỉ một điều kiện rời `LLM`: có job ảnh đang xếp hàng. Không đọc VRAM,
         # không đoán — hàng job là thứ nói có việc cho model ảnh hay không.
-        if qs.job_anh_cho > 0:
+        #
+        # ⛔ VÀ MỘT PHANH: đừng nhả card khi phía ảnh đang KHÔNG DÙNG ĐƯỢC.
+        #
+        #    Không có vế này thì đường lui mới ở `NHA_LLM` biến thành một vòng
+        #    quay: nhả → không mở được cửa sổ ảnh → lui về `LLM` → job ảnh vẫn
+        #    xếp hàng → nhả lại → … Mỗi vòng tốn một lượt nạp 16,3 s và KHÔNG
+        #    ai được phục vụ. Một đường lui không kèm phanh vào là đổi một ngõ
+        #    cụt lấy một vòng lặp — hỏng theo kiểu khác, không phải hết hỏng.
+        if qs.job_anh_cho > 0 and qs.lan_vao_anh_hong < ts.tran_vao_anh_hong:
             return _sang(tt, XA_LLM, bay_gio), ()
         return tt, ()
 
@@ -346,6 +376,34 @@ def buoc_thuan(tt: TrangThai, qs: QuanSat, ts: ThamSoResidency,
         return tt, ()
 
     if t == NHA_LLM:
+        # 🔴 HAI ĐƯỜNG LUI, thêm 13/09 sau sự cố L-07. Trước đó `NHA_LLM` có
+        #    ĐÚNG MỘT đường ra (`ANH`), và lối vào `ANH` đòi `chay_comfy()`
+        #    thành công. Cổng render máy B chạy bản cũ ⇒ 404 ⇒ không bao giờ vào
+        #    được, và không có gì để lui: LLM đã rời card, ảnh không bao giờ
+        #    được vẽ, 3090 nằm không, `ltt-3.8` trả 429 suốt 32 phút.
+        #
+        # ⭐ Cả hai đều đi qua `NAP_LLM` chứ không nhảy thẳng về `LLM`: ở đây
+        #    model ĐÃ rời card (khác hẳn `XA_LLM`, nơi nó còn nằm đó), nên "trả
+        #    card cho LLM" bắt buộc là một lượt NẠP. Nhảy thẳng `LLM` là khai
+        #    "LLM đang cư trú" trong khi card trống — đúng thứ bảng chuyển cấm
+        #    ở `TRA_ANH → LLM`.
+
+        # Đường lui 1 — HUỶ: việc ảnh rút hết trong lúc ta đang nhả.
+        # Đối xứng với `XA_LLM`, nơi vế này đã có sẵn từ đầu. Thiếu nó ở đây là
+        # toàn bộ chỗ bất đối xứng đã sinh ra L-07: huỷ job ảnh lúc 05:2x KHÔNG
+        # gỡ được máy, vì đường huỷ chỉ tồn tại ở bước trước.
+        if qs.job_anh_cho == 0 and not dang_ve_anh(qs):
+            return _sang(tt, NAP_LLM, bay_gio), (NAP_LLM_LENH,)
+
+        # Đường lui 2 — PHÍA ẢNH KHÔNG DÙNG ĐƯỢC: đã thử đủ nhiều lần mà không
+        # mở nổi cửa sổ ảnh. Trả card cho LLM và để job ảnh xếp hàng chờ người
+        # sửa. Một bên chạy được tốt hơn hẳn hai bên cùng chết.
+        #
+        # ⛔ Vẫn siết `dang_ve_anh` — cùng lý do như `LOI_NAP`: lệnh `nap_llm`
+        #    phát từ đây không đi qua nhánh kiểm VRAM của `TRA_ANH`.
+        if qs.lan_vao_anh_hong >= ts.tran_vao_anh_hong and not dang_ve_anh(qs):
+            return _sang(tt, NAP_LLM, bay_gio), (NAP_LLM_LENH,)
+
         # Không tin lệnh đã gửi: chỉ đi tiếp khi máy B NÓI model không còn nạp.
         # `None` (không hỏi được) ⇒ ở lại, vì mở cửa sổ ảnh khi LTT-3.8 vẫn nằm
         # trên card là cách chắc chắn nhất để OOM cả hai bên.
@@ -1103,6 +1161,19 @@ def _nguoi_cho_llm(db: Any, resource: str, now: datetime) -> tuple[int, float | 
     return so, som_nhat
 
 
+#: Số lần LIÊN TIẾP `chay_comfy()` hỏng, theo nhóm. **Trong tiến trình**, cố ý.
+#:
+#: ⭐ Vì sao không phải một cột CSDL: nó là một sự thật về *lượt gọi vừa rồi*,
+#:    không phải trạng thái bền của nhóm. Một tiến trình chết rồi sống lại thì
+#:    bộ đếm về 0 — và đó là hành vi ĐÚNG: khởi động lại worker là một lượt thử
+#:    lại tự nhiên, đúng lúc người vận hành vừa đụng vào máy.
+#:
+#: ⚠️ Nhiều worker ⇒ mỗi worker một bộ đếm riêng, nên đường lui có thể tới muộn
+#:    hơn `tran_vao_anh_hong` lượt. Chậm hơn, không sai — và đổi lại là không
+#:    thêm một cột phải giữ đồng bộ giữa các tiến trình.
+_LAN_VAO_ANH_HONG: dict[str, int] = {}
+
+
 def _quan_sat(db: Any, *, nhom: str, tt: TrangThai, tai_nguyen: dict[str, str],
               tin: TinMayB, bay_gio: float) -> QuanSat:
     from platform_core.models import JOB_QUEUED
@@ -1229,6 +1300,7 @@ def buoc(db: Any, *, nhom: str, may_b: MayBResidency | None = None,
     t = bay_gio()
     tt, phien_ban = _doc_dong(db, nhom, t)
     qs = _quan_sat(db, nhom=nhom, tt=tt, tai_nguyen=tai_nguyen, tin=tin, bay_gio=t)
+    qs = replace(qs, lan_vao_anh_hong=_LAN_VAO_ANH_HONG.get(nhom, 0))
     moi, lenh = buoc_thuan(tt, qs, ts, t)
 
     if moi.ten == ANH and tt.ten != ANH:
@@ -1251,9 +1323,20 @@ def buoc(db: Any, *, nhom: str, may_b: MayBResidency | None = None,
         try:
             may_b.chay_comfy()
         except Exception:  # noqa: BLE001
-            log.error("khong bat lai duoc ComfyUI => KHONG vao %s (cu tru %s van "
-                      "o %s); se thu lai luot sau", ANH, nhom, tt.ten, exc_info=True)
+            # 🔴 ĐẾM. Không đếm thì `tran_vao_anh_hong` là một tham số không ai
+            #    đặt được, và `NHA_LLM` giữ nguyên ngõ cụt đã gây L-07: một cổng
+            #    render cũ làm 3090 nằm không vô hạn, im lặng với mọi người trừ
+            #    dòng log này.
+            n = _LAN_VAO_ANH_HONG.get(nhom, 0) + 1
+            _LAN_VAO_ANH_HONG[nhom] = n
+            log.error("khong bat lai duoc ComfyUI (lan %d lien tiep) => KHONG vao "
+                      "%s (cu tru %s van o %s); tu lan %d se TRA CARD cho LLM",
+                      n, ANH, nhom, tt.ten, ThamSoResidency().tran_vao_anh_hong,
+                      exc_info=(n == 1))
             return tt
+        # ⭐ Bật được ⇒ đặt lại về 0. Một bộ đếm chỉ tăng sẽ khoá phía ảnh vĩnh
+        #    viễn sau ba lần trục trặc thoáng qua trong cả đời tiến trình.
+        _LAN_VAO_ANH_HONG.pop(nhom, None)
         _khoa(db, nhom, tai_nguyen)
         lai, phien_ban = _doc_dong(db, nhom, bay_gio())
         if lai != tt:
