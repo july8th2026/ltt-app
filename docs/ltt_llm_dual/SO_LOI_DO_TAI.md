@@ -15,7 +15,7 @@
 | L-05 | **108/131 job loi 14 ngay** deu la `AmbiguousProviderError: mat ket noi sau khi bat dau gui` | DOC LAP | he qua cua L-01 | 48/48 done, 0 loi (p=0,3%) | ✅ **DONG 13/09** |
 | L-06 | cua DONG BO khong huy duoc: khach cat ket noi ma slot van bi giu toi khi sinh XONG | DOC LAP | HAI goc: thieu `ma_luot`, va `is_disconnected()` chet sau `BaseHTTPMiddleware` | loopback 16,54 -> **1,43 s**; qua Cloudflare van 16,8 s | **DONG o tang ma; con phan BIEN** |
 | L-07 | **MOT job anh la ha `ltt-3.8` VINH VIEN**: trong tai nha LLM roi ket o `nha_llm` | DOC LAP | cong render may B thieu `/v1/nha_comfy` (404) + `nha_llm` khong co duong lui | chu trinh di tron 182 s; huy giua chung lui trong 30 s | **DONG 13/09** |
-| L-08 | cua STREAM giu suat **>=643 s** sau khi khach cat: may B ranh ma suat van bi chiem | DOC LAP | luong la `Iterator` **DONG BO** ⇒ threadpool ⇒ cancel scope cua anyio khong cat duoc ⇒ `BackgroundTask` nha lease khong toi luot. **Cung ho voi L-06** | lease `mode=stream` song >=643 s, van dap nhip; may B `requests_processing=0` | 🔴 **MO — ban sua 13/09 CHUNG MINH LA KHONG CHAY** |
+| L-08 | cua STREAM giu suat **>=643 s** sau khi khach cat: may B ranh ma suat van bi chiem | DOC LAP | **KHONG phai mot khuyet tat — la BA lop don cung hong.** Starlette khong bao gio `aclose()` than phan hoi (`responses.py:250`); `BackgroundTask` khong duoc `shield` (`Kludex/starlette#1438`, ta co 4 tang `BaseHTTPMiddleware`); va nhip tim dap VO DIEU KIEN nen `reclaim_expired` khong bao gio khai hoa | truoc va >=643 s; sau ban va 1 van ~225 s; lease van dap nhip trong khi may B `requests_processing=0` | 🟡 **BA LOP DA DUNG 13/09 — cho nghiem thu may that** |
 | L-09 | **nam anh hong la TAT MODEL NHA**: yeu cau sai cua khach bi dem la loi cua KHOA | 🔴 **CHAN** | `CongVlmError` khong mang ma; `dieu_phoi` khong truyen `http_status` | may B tra 400 dung chuan, may A tra 503 va phat khoa | **DONG 13/09** |
 | L-10 | **ban va L-07 tu sinh ngo cut moi**: 3 lan ComfyUI hong la phia anh khoa ngoai VINH VIEN | DOC LAP | bo dem chi xoa sau `chay_comfy()` thanh cong — thu nam sau chinh cai phanh dang chan | ComfyUI da LANH, ca 4 dich vu may B song: residency dung im o `llm` **120 s**, job `queued` | **DONG 13/09** |
 
@@ -163,6 +163,56 @@ canh duoc **ben goi**. Them `test_255::test_ma_thuong_nguon_di_toi_danh_dau_loi`
    GOI no. Loi o day chua bao gio nam trong `danh_dau_loi`.
 
 ## L-08 -- MO 13/09/2026: cua STREAM giu suat >= 643 giay sau khi khach di
+
+> ### ⭐ CAP NHAT 13/09 — loi giai, va mot loi thu nhan
+>
+> **Ba ban va dau deu hong vi cung mot ly do**: ca ba treo viec nha mot suat GPU
+> vao mot cho ma Starlette **khong he bao dam**. Doc mot lan roi dung doc lai:
+>
+> | nguon (tra duoc) | no noi gi |
+> |---|---|
+> | `starlette/responses.py:250` (1.3.1) | than phan hoi chi `async for`, **khong bao gio `aclose()`** ⇒ `finally` cua async generator chay khi Python THU GOM. Do that: **~225 s** |
+> | `starlette/background.py` (1.3.1) | `BackgroundTask.__call__` **khong** `CancelScope(shield=True)` |
+> | `Kludex/starlette#1438` | background bi huy khi khach cat — tac gia chot: **chi khi co it nhat mot `BaseHTTPMiddleware`**. Ta co **bon** tang |
+> | `Kludex/starlette#3458` (dong 06/09/2026) | thoi diem chay background duoi middleware VAN lech hop dong tai lieu; **5 PR, khong PR nao duoc gop** |
+>
+> ⛔ **THU NHAN.** Ban truoc cua muc nay va cua docstring `bat_dong_bo_hoa` trich
+>    `fastapi/fastapi#7572` va `Kludex/starlette#2866` nhu "doi chieu cong dong".
+>    **Ca hai deu 404** (kiem 13/09/2026 bang API da xac thuc, trong khi
+>    `#3538`/`#3000` cung kho tra ve binh thuong). Chung duoc bia ra trong luc
+>    tin rang minh dang tuan thu dung luat doi chieu cong dong. Do moi la ly do
+>    that khien ba luot vap: **khong phai va sai cho, ma tuong minh da tra cuu
+>    trong khi khong.**
+>    (`ggml-org/llama.cpp#27572` o cac tep khac thi CO THAT — dung go nham.)
+>
+> ### Co che thay the — BA LOP, moi lop mot chan tren
+>
+> | lop | co che | chan tren | ma |
+> |---|---|---|---|
+> | **1 — chinh** | `khi_dut` trong `finally` cua `bat_dong_bo_hoa` nha suat THANG | **~0,05 s** | `runtime_noi_bo/luong.py`, `server/api/streaming.py:_nha_suat` |
+> | **2 — luoi** | nhip tim chi dap khi **co byte di qua**; im qua `TRAN_IM_LANG_S` thi luong nhip **tu nha** | tran im lang | `llm/admission.py:keep_alive(con_song=...)` |
+> | **3 — chan cuoi** | `reclaim_expired` | 20 phut | `llm/admission.py` |
+>
+> 🔑 **Lop 2 moi la loi giai that cho cau "vi sao BAT TU chu khong chi cham".**
+>    Nhip tim cu dap vo dieu kien — no chung minh **luong con song**, khong chung
+>    minh **cong viec con tien trien**. Mot generator treo cung trong khoe manh
+>    mai mai, nen lop 3 KHONG BAO GIO khai hoa.
+>
+> ⚠️ `TRAN_IM_LANG_S = 900` lay tu NGUON, khong phai so chon cho tron:
+>    `luong_vlm.mo(timeout_s=900.0)` dung `httpx.Client(timeout=900)`, va o httpx
+>    mot so vo huong dat **read timeout** — tuc khoang lang HOP LE dai nhat giua
+>    hai byte tu may B. Thap hon la tu giet mot luot prefill dai dang chay dung.
+>    `test_1247::test_tran_im_lang_lay_tu_NGUON` chot rang buoc nay.
+>
+> ### Bai hoc ve PHEP DO — bo test cu XANH trong khi production NGHEN
+>
+> Nguon gia cua `test_1246` **tu mo troi cho chinh no** (`_dong()` goi
+> `cho_nha.set()`). May B khong lam the. Ban gia khac vat that **dung o chieu
+> dang do** — lan thu NAM cua cung mot khuon trong mot phien.
+> Ban tai hien trung thuc (uvicorn that + 4 tang `BaseHTTPMiddleware` + nguon
+> khong the tu tinh day) cho: `dong_nguon` +0,05 s, `BackgroundTask` chay tron,
+> con `with keeper` thi **khong bao gio** thoat.
+>
 
 Tim ra khi di do cau hoi khac: *"cua stream co nha nhanh qua Cloudflare khong?"*.
 Cau tra loi hoa ra khong phai "nhanh" hay "cham" — la **khong bao gio**.

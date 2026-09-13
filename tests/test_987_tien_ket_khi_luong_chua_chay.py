@@ -182,7 +182,47 @@ def test_streaming_py_noi_luoi_vao_BackgroundTask():
     van = STREAMING.read_text(encoding="utf-8")
     assert "dam_bao_quyet_toan" in van, (
         "server/api/streaming.py khong goi dam_bao_quyet_toan -> luoi khong duoc noi")
-    assert "BackgroundTask(_ket_thuc)" in van
+    assert "BackgroundTask(_ket_thuc_che_chan)" in van, (
+        "luoi quyet toan khong con duoc noi vao BackgroundTask")
+
+    # 🔴 Va CHE CHAN phai la that. `starlette/background.py` (1.3.1) KHONG boc
+    #    `CancelScope(shield=True)`, nen khi cancel scope bao quanh da bi huy —
+    #    dung canh `Kludex/starlette#1438` mo ta, va ta co BON tang
+    #    `BaseHTTPMiddleware` — thi `await run_in_threadpool(...)` vo o checkpoint
+    #    dau, `_ket_thuc` khong chay MOT DONG: tien chua quyet toan, suat chua nha.
+    #
+    # ⛔ Khong chot dong nay thi mot ban "don dep" go `shield` di se XANH, va ta
+    #    mat luoi ma khong ai bao.
+    cay = ast.parse(van)
+    che = next((n for n in ast.walk(cay)
+                if isinstance(n, ast.AsyncFunctionDef)
+                and n.name == "_ket_thuc_che_chan"), None)
+    assert che is not None, "`_ket_thuc_che_chan` bien mat"
+
+    # ⛔ ĐỌC CẤU TRÚC, KHÔNG ĐỌC VĂN BẢN. Ban dau ve nay viet
+    #     assert "shield" in ast.dump(che)
+    #    va no XANH ngay ca khi da go `shield` khoi ma — vi `ast.dump` keo theo
+    #    ca DOCSTRING, ma docstring co chu "shield". Phep kiem khop voi LOI GIAI
+    #    THICH thay vi khop voi HANH VI. Doi chung bat duoc no, khong phai toi.
+    co_shield = any(
+        isinstance(muc.context_expr, ast.Call)
+        and getattr(muc.context_expr.func, "attr", "") == "CancelScope"
+        and any(kw.arg == "shield"
+                and isinstance(kw.value, ast.Constant) and kw.value.value is True
+                for kw in muc.context_expr.keywords)
+        for nut in ast.walk(che) if isinstance(nut, (ast.With, ast.AsyncWith))
+        for muc in nut.items)
+    assert co_shield, (
+        "`_ket_thuc_che_chan` khong con `anyio.CancelScope(shield=True)` — "
+        "BackgroundTask lai co the bi huy TRUOC khi chay, va suat khong duoc nha.")
+
+    # ⚠️ `_ket_thuc` duoc TRUYEN vao `run_in_threadpool`, khong duoc GOI thang —
+    #    nen tim no trong cac `Call.func` la tim sai cho (ban dau toi tim sai, va
+    #    ve nay do ngay ca khi ma dung). Tim mot tham chieu ten la du va dung.
+    ten = {n.id for n in ast.walk(che) if isinstance(n, ast.Name)}
+    assert "_ket_thuc" in ten, (
+        "ham che chan khong con nhac toi `_ket_thuc` — che chan mot thu khac thi "
+        "tien van chua quyet toan va suat van chua nha.")
 
 
 def test_luoi_chay_TRUOC_viec_nha_suat_va_nha_suat_luon_chay():

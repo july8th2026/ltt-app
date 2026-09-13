@@ -28,8 +28,10 @@ import logging
 import time
 from typing import Iterator, Optional
 
+import anyio
 from fastapi import Body, Depends, Request
 from starlette.background import BackgroundTask
+from starlette.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy.orm import Session
 
@@ -892,28 +894,60 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
             if cb.lease_id:
                 admission.release_by_id(cb.lease_id)
 
-    nen = BackgroundTask(_ket_thuc)
-    # 🔴 L-08 VAN MO. Doc `docs/ltt_llm_dual/SO_LOI_DO_TAI.md` truoc khi dong vao
-    #    day, vi mot ban va "hien nhien" da duoc thu va DA HONG.
+    def _nha_suat() -> None:
+        """LỚP 1: nhả suất theo tín hiệu đứt, không chờ đường nào tháo hộ.
+
+        `release_by_id` idempotent (`release` trả `False` nếu dòng đã biến mất),
+        nên gọi chồng với `_ket_thuc` và với `keep_alive.finally` đều vô hại.
+        """
+        if cb.lease_id:
+            admission.release_by_id(cb.lease_id)
+
+    async def _ket_thuc_che_chan() -> None:
+        """🔴 Che chắn `BackgroundTask` — bản vá cộng đồng, ta tự áp ở phía mình.
+
+        `starlette/background.py` bản 1.3.1 KHÔNG che chắn:
+
+            async def __call__(self):
+                ...
+                await run_in_threadpool(self.func, ...)
+
+        Nếu cancel scope bao quanh đã bị huỷ (đúng cảnh `Kludex/starlette#1438`
+        mô tả: *chỉ xảy ra khi có ít nhất một `BaseHTTPMiddleware` trong chuỗi*
+        — ta có bốn), lệnh `await` ấy vỡ ở checkpoint **trước khi luồng kịp khởi
+        động**, và `_ket_thuc` không chạy một dòng nào: tiền chưa quyết toán,
+        suất chưa nhả.
+
+        Bản vá `CancelScope(shield=True)` được đề xuất ở chính #1438 nhưng chưa
+        bao giờ được gộp (issue đóng qua PR #1715, sửa `BaseHTTPMiddleware`).
+        Ta sở hữu chỗ gọi, nên áp ở đây.
+        """
+        with anyio.CancelScope(shield=True):
+            await run_in_threadpool(_ket_thuc)
+
+    nen = BackgroundTask(_ket_thuc_che_chan)
+    # 🔴 L-08 — BA LOP NHA SUAT. Doc `docs/ltt_llm_dual/SO_LOI_DO_TAI.md` truoc
+    #    khi dong vao day: BA ban va "hien nhien" da duoc thu, va ca ba deu hong
+    #    vi cung mot ly do — chung treo viec nha mot suat GPU vao mot cho ma
+    #    Starlette KHONG HE BAO DAM.
     #
-    #    Ban 13/09 boc `luot.luong` bang `ngat.dung_khi_khach_cat(...)` — tham
-    #    `receive` theo nhip 1 s de tu thoat vong. No da deploy va do tren may
-    #    that: **KHONG MOT LAN NAO** vi tu tra `True`.
+    #    1. `_nha_suat` qua `khi_dut`   -> +0,05 s   (duong CHINH)
+    #    2. nhip tim chung minh TIEN TRIEN -> tran im lang (luoi)
+    #    3. `reclaim_expired`           -> 20 phut   (chan cuoi)
     #
-    # ⛔ Vi sao, va day la cho de doc sai nhat: o cua DONG BO khong ai tranh
-    #    `receive` nen cach ay chay (L-06: 16,54 s -> 1,43 s). O cua STREAM thi
-    #    Starlette DA DO SAN tren `receive` qua `listen_for_disconnect` tu luc
-    #    phan hoi bat dau, nen `http.disconnect` toi tay NO chu khong toi tay ta.
-    #    Va thu Starlette lam khi nhan duoc la huy cancel scope — dung cai
-    #    KHONG cat duoc mot luong threadpool. Ben thang cuoc dua la ben khong
-    #    lam gi duoc.
+    # ⛔ Vi sao khong tin mot lop nao trong so nay MOT MINH:
+    #    · `starlette/responses.py:250` chi `async for`, KHONG BAO GIO `aclose()`
+    #      ⇒ `finally` cua async generator chay khi Python thu gom, do duoc
+    #      **~225 s** tren may that.
+    #    · `starlette/background.py` KHONG che chan `BackgroundTask` ⇒ xem
+    #      `_ket_thuc_che_chan` ngay tren.
+    #    · Truoc ban nay, nhip tim dap VO DIEU KIEN nen lop 3 khong bao gio khai
+    #      hoa — do la ly do lease **bat tu** chu khong phai chi cham.
     #
-    # ⇒ Da GO ban va ay. Ban sua that go chinh cau noi DONG BO: bien luong thanh
-    #   BAT DONG BO ngay tai bien phan hoi, de huy cua Starlette lan duoc VAO
-    #   trong generator. Toan bo ly le + doi chieu cong dong o
-    #   `cua_luong.bat_dong_bo_hoa`.
+    # ⭐ Thu tu trong `bat_dong_bo_hoa.finally` la bat bien: DONG KET NOI truoc,
+    #    NHA SUAT sau. Nha truoc thi nguoi thu bay duoc vao trong khi GPU van ban.
     return StreamingResponse(
-        cua_luong.bat_dong_bo_hoa(luot.luong, luot.dong_nguon),
+        cua_luong.bat_dong_bo_hoa(luot.luong, luot.dong_nguon, _nha_suat),
         media_type=luot.content_type, headers=_SSE, background=nen)
 
 

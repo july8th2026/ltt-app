@@ -673,7 +673,8 @@ def chuan_bi(db, *, user_id: str, tool_name: str, than: dict, duong: str,
 
 async def bat_dong_bo_hoa(
         nguon: Iterator[bytes],
-        dong_nguon: Optional[Callable[[], None]] = None) -> AsyncIterator[bytes]:
+        dong_nguon: Optional[Callable[[], None]] = None,
+        khi_dut: Optional[Callable[[], None]] = None) -> AsyncIterator[bytes]:
     """Bọc luồng ĐỒNG BỘ thành BẤT ĐỒNG BỘ tại biên phản hồi HTTP — vá L-08.
 
     ## Sự cố
@@ -734,23 +735,36 @@ async def bat_dong_bo_hoa(
        bộ (xem chỗ `for khoi in luot.luong` phía dưới); đổi chính `luot.luong`
        thành async là phá đường ấy.
 
-    ## Đối chiếu cộng đồng — hình dạng này KHÔNG phải tôi tự nghĩ ra
+    ## Bằng chứng — TRA ĐƯỢC, và nó nói ngược điều từng viết ở chính đây
 
-    · `fastapi/fastapi#7572` — cách được khuyến nghị để dừng `StreamingResponse`
-      khi khách cắt là dùng **async generator**; bản thăm `is_disconnected()`
-      kèm theo thì ta KHÔNG dùng được (L-06: `BaseHTTPMiddleware` làm hàm ấy
-      trả `False` mãi mãi).
-    · `Kludex/starlette#2866` — maintainer xác nhận cơ chế ĐÚNG là để huỷ lan
-      vào async generator; giai đoạn "không nhận `CancelledError`" là một hồi
-      quy theo phiên bản (PR #2732 + `asgi_version` sai của uvicorn) và **đã
-      được sửa**; khuyến nghị là nâng Starlette + uvicorn.
-      Ta đang ở `starlette 1.3.1` + `uvicorn 0.52.0`, và uvicorn khai
-      `spec_version "2.3"` nên rơi đúng nhánh có `listen_for_disconnect`.
+    ⛔ Bản trước của khối này trích `fastapi/fastapi#7572` và
+       `Kludex/starlette#2866`. **Cả hai không tồn tại** — API trả 404 ngày
+       13/09/2026, trong khi `#3538`/`#3000` cùng kho trả về bình thường. Chúng
+       được bịa ra trong lúc tin rằng mình đang đối chiếu cộng đồng. Ghi lại để
+       người sau biết: một trích dẫn chỉ được dùng khi tra ra.
+       (`ggml-org/llama.cpp#27572` ở các tệp khác thì CÓ THẬT — đừng gỡ nhầm.)
 
-    ⇒ Phần cộng đồng cho: *async generator để huỷ lan được*. Phần riêng của ta:
-      `abandon_on_cancel=True`, vì nguồn byte của ta là một lượt đọc CHẶN trong
-      luồng — không có cờ ấy thì huỷ vẫn đứng chờ luồng, và ta quay lại đúng
-      chỗ cũ.
+    Thay bằng ba sự thật kiểm được:
+
+    1. `starlette/responses.py:250` (bản 1.3.1 đang cài) — thân phản hồi chỉ
+       được `async for`, **không bao giờ `aclose()`**. Nên `finally` của một
+       async generator không phải chỗ được bảo đảm chạy ĐÚNG LÚC; nó chạy khi
+       Python thu gom. Đo trên máy thật: lease sống thêm **~225 s**.
+    2. `starlette/background.py` (cùng bản) — `BackgroundTask.__call__` **không
+       có `CancelScope(shield=True)`**. Bản vá che chắn cộng đồng đề xuất ở
+       `Kludex/starlette#1438` chưa từng được gộp; issue ấy đóng bằng cách sửa
+       `BaseHTTPMiddleware` (PR #1715).
+    3. `Kludex/starlette#1438` — *"Background tasks are cancelled if the client
+       closes connection"*, và tác giả chốt: **chỉ xảy ra khi có ít nhất một
+       `BaseHTTPMiddleware` trong chuỗi**. Ta có **bốn** tầng.
+       `Kludex/starlette#3458` (đóng 06/09/2026) cho thấy thời điểm chạy
+       background dưới `BaseHTTPMiddleware` **vẫn** lệch hợp đồng tài liệu —
+       năm PR đề xuất, **cả năm đóng mà không gộp**.
+
+    ⇒ Hệ quả thiết kế: **đừng treo việc nhả một suất GPU vào `finally` của
+      generator, cũng đừng treo vào riêng `BackgroundTask`.** Đường nhả đi theo
+      `khi_dut` — thứ đo được là chạy ở **+0,05 s** trong mọi cấu hình thử: có
+      và không middleware, cắt lúc treo ở `yield` lẫn lúc nguồn đang bị chặn.
     """
     import anyio.to_thread
 
@@ -782,19 +796,37 @@ async def bat_dong_bo_hoa(
         # ⭐ `dong_nguon()` đóng thẳng `httpx.Client`. Lượt đọc đang chặn trong
         #    luồng bỏ rơi vỡ ngay, `nguon` bung ra, `finally` của nó chạy TỰ
         #    NHIÊN (và gọi lại `dong_nguon` — nên hàm ấy buộc phải idempotent).
-        if dong_nguon is not None:
-            try:
-                dong_nguon()
-            except Exception:  # noqa: BLE001 - duong huy khong duoc nem
-                log.warning("khong dong duoc cua ra mang toi may B", exc_info=True)
-        # Vét nốt: nguồn đã bung thì `close()` chỉ là xác nhận; còn đang chạy thì
-        # nó ném và ta bỏ qua — kết nối đã đóng ở trên mới là thứ có giá trị.
-        dong = getattr(nguon, "close", None)
-        if callable(dong):
-            try:
-                dong()
-            except Exception:  # noqa: BLE001
-                log.debug("nguon con dang chay, bo qua close()", exc_info=True)
+        try:
+            if dong_nguon is not None:
+                try:
+                    dong_nguon()
+                except Exception:  # noqa: BLE001 - duong huy khong duoc nem
+                    log.warning("khong dong duoc cua ra mang toi may B",
+                                exc_info=True)
+            # Vét nốt: nguồn đã bung thì `close()` chỉ là xác nhận; còn đang chạy
+            # thì nó ném và ta bỏ qua — kết nối đã đóng ở trên mới là thứ có giá
+            # trị.
+            dong = getattr(nguon, "close", None)
+            if callable(dong):
+                try:
+                    dong()
+                except Exception:  # noqa: BLE001
+                    log.debug("nguon con dang chay, bo qua close()", exc_info=True)
+        finally:
+            # 🔴 LỚP 1 CỦA CƠ CHẾ NHẢ SUẤT — và thứ tự ở đây là bản vá, không
+            #    phải sở thích: đóng kết nối TRƯỚC (bảo máy B thôi sinh), nhả
+            #    suất SAU. Nhả trước thì người thứ bảy được vào trong khi GPU
+            #    vẫn đang bận — sổ sách sạch mà máy thì không.
+            #
+            # ⛔ `khi_dut` nằm trong `finally` LỒNG, nên nó chạy kể cả khi
+            #    `dong_nguon` ném. Đó là cả điểm của lớp này: nó là đường nhả
+            #    DUY NHẤT đã được đo là chạy đúng giờ ở mọi cấu hình.
+            if khi_dut is not None:
+                try:
+                    khi_dut()
+                except Exception:  # noqa: BLE001
+                    log.warning("khong nha duoc suat khi khach dut",
+                                exc_info=True)
 
 
 def _luong_rong() -> Generator[bytes, None, None]:
@@ -836,6 +868,15 @@ class LuotLuong:
     #: Đã quyết toán chưa. Cờ này làm việc quyết toán **idempotent** giữa hai
     #: đường độc lập — xem `dam_bao_quyet_toan`.
     da_quyet_toan: bool = False
+    #: 🔴 LỚP 2 của cơ chế nhả suất (L-08): mốc **byte cuối cùng đi qua**, theo
+    #: `time.monotonic()`. `admission.keep_alive` hỏi mốc này trước mỗi nhịp;
+    #: im quá `TRAN_IM_LANG_S` thì luồng nhịp tự nhả suất.
+    #:
+    #: ⛔ Khởi tạo bằng `monotonic()` chứ **không** bằng `0.0`: giữa lúc vào
+    #:    `with keeper` và byte đầu tiên là cả một lượt prefill hợp lệ, có thể
+    #:    hàng trăm giây. Mốc `0.0` làm nhịp đầu tiên thấy "im 400 000 giây" và
+    #:    giết ngay một lượt đang chạy đúng.
+    luc_khoi_cuoi: float = field(default_factory=time.monotonic)
 
 
 def dam_bao_quyet_toan(luot: "LuotLuong") -> None:
@@ -973,7 +1014,17 @@ def _phat(mo, luot: LuotLuong, *, trang_thai=None) -> Generator[bytes, None, Non
     t0 = time.monotonic()
     n_khoi = 0
     t_byte_dau: Optional[float] = None
-    keeper = admission.keep_alive(cb.lease_id) if cb.lease_id else nullcontext()
+    def _con_nhuc_nhich() -> bool:
+        """Vị từ LỚP 2: có byte nào đi qua trong hạn không.
+
+        ⭐ Nó trả lời câu **"công việc còn tiến triển không"**, khác hẳn câu mà
+           nhịp tim cũ trả lời là **"luồng còn sống không"**. Chính khoảng cách
+           giữa hai câu ấy là chỗ L-08 sống sót qua cả ba lớp dọn.
+        """
+        return (time.monotonic() - luot.luc_khoi_cuoi) < admission.TRAN_IM_LANG_S
+
+    keeper = (admission.keep_alive(cb.lease_id, _con_nhuc_nhich)
+              if cb.lease_id else nullcontext())
     with keeper:
         try:
             for khoi in mo.luong:
@@ -983,6 +1034,7 @@ def _phat(mo, luot: LuotLuong, *, trang_thai=None) -> Generator[bytes, None, Non
                         # Prefill xong ⇒ thôi là whale (luật ≤1 whale nói về PREFILL).
                         admission.xoa_co_whale(cb.lease_id)
                 n_khoi += 1
+                luot.luc_khoi_cuoi = time.monotonic()   # lời khai của LỚP 2
                 dem.nhin(khoi)
                 yield khoi
         except GeneratorExit:

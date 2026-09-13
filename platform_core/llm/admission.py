@@ -10,7 +10,7 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 import logging
 import threading
-from typing import Iterator
+from typing import Callable, Iterator, Optional
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -21,6 +21,16 @@ from platform_core.models import ExecutionLease
 
 ORPHAN_TIMEOUT = timedelta(minutes=20)
 HEARTBEAT_SECONDS = 60.0
+
+#: Trần im lặng của `keep_alive(con_song=...)` — LỚP 2 của cơ chế nhả suất.
+#:
+#: 🔴 NGUỒN CỦA NGƯỠNG, không phải một con số chọn cho tròn:
+#:    `platform_core/llm/luong_vlm.py:mo(timeout_s=900.0)` dựng
+#:    `httpx.Client(timeout=900.0)`, và ở httpx một số vô hướng đặt **read
+#:    timeout**. Tức 900 s là khoảng lặng HỢP LỆ dài nhất có thể có giữa hai
+#:    byte đến từ máy B — im lâu hơn thì chính lượt đọc đã chết rồi. Đặt trần
+#:    thấp hơn là tự giết một lượt prefill dài đang chạy đúng.
+TRAN_IM_LANG_S = 900.0
 log = logging.getLogger(__name__)
 
 
@@ -458,12 +468,49 @@ def release_by_id(lease_id: str) -> bool:
 
 
 @contextmanager
-def keep_alive(lease_id: str) -> Iterator[None]:
-    """Đập nhịp một lease đã commit và nhả idempotent khi khối kết thúc."""
+def keep_alive(lease_id: str,
+               con_song: Optional[Callable[[], bool]] = None) -> Iterator[None]:
+    """Đập nhịp một lease đã commit và nhả idempotent khi khối kết thúc.
+
+    ## 🔴 `con_song` — vì sao tham số này tồn tại (sự cố L-08, 13/09/2026)
+
+    Bản trước đập nhịp **vô điều kiện**:
+
+        while not stop.wait(HEARTBEAT_SECONDS):
+            heartbeat_by_id(lease_id)
+
+    Nhịp ấy chứng minh **luồng còn sống**, chứ không chứng minh **công việc còn
+    tiến triển**. Hai điều đó tách nhau ra đúng lúc tệ nhất: khách cắt giữa một
+    lượt stream, generator đồng bộ bị bỏ rơi và treo vĩnh viễn tại `yield`
+    (Starlette không bao giờ `aclose()` thân phản hồi — `responses.py:250`),
+    nhưng luồng nhịp **vẫn đập đều**. Với `reclaim_expired` thì lease ấy trông
+    khoẻ mạnh mãi mãi, nên `ORPHAN_TIMEOUT` **không bao giờ khai hoả**.
+
+    ⇒ Đo được trên máy thật: một suất GPU bị giữ **≥ 643 s**, và lần đo sau bản
+      vá đầu vẫn **~225 s**. Không phải "chậm" — là **bất tử**, vì cả ba lớp dọn
+      đều bị cùng một lời nói dối bịt mắt.
+
+    Truyền `con_song` vào là biến nhịp tim thành lời khai có kiểm chứng: chỉ đập
+    khi vị từ nói công việc còn nhúc nhích. Im quá `TRAN_IM_LANG_S` thì chính
+    luồng nhịp **tự nhả** — không chờ ai tới dọn hộ.
+
+    ⚠️ Đây là **lưới**, không phải đường chính. Đường chính là `khi_dut` ở
+       `runtime_noi_bo/luong.py`, đo được là chạy ở +0,05 s. Lưới này tồn tại để
+       lớp cuối (`reclaim_expired`) **với tới được**, chứ không để nhanh.
+    """
     stop = threading.Event()
 
     def _pulse() -> None:
         while not stop.wait(HEARTBEAT_SECONDS):
+            if con_song is not None and not con_song():
+                log.warning(
+                    "execution lease %s im lang qua %.0fs - luong nhip TU NHA",
+                    lease_id, TRAN_IM_LANG_S)
+                try:
+                    release_by_id(lease_id)
+                except Exception:  # noqa: BLE001 - reclaim_expired van la chan cuoi
+                    log.exception("khong tu nha duoc execution lease %s", lease_id)
+                return
             try:
                 heartbeat_by_id(lease_id)
             except Exception:  # noqa: BLE001 - TTL remains the fallback

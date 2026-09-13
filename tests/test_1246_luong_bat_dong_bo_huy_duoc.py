@@ -1,46 +1,37 @@
-"""test_1246 — luong stream phai HUY DUOC khi khach cat. Su co L-08, 13/09/2026.
+"""test_1246 — luong stream phai NHA SUAT duoc khi khach cat. Su co L-08.
 
-## Su co that
+## ⛔ BO NAY TUNG XANH TRONG KHI PRODUCTION NGHEN — doc doan nay truoc
 
-Khach cat giua mot luot stream ⇒ lease `mode=stream` van song **>=643 s** trong
-khi may B da ranh (`requests_processing = 0`). Mot suat GPU bi giu cho mot nguoi
-da dong cua so.
+Ban truoc cua tep nay xanh tron ven, va bo do tren may that van cho thay lease
+song them ~225 s. Ly do nam o MOT dong cua ban gia:
 
-## ⛔ MOT BAN VA "HIEN NHIEN" DA DUOC DEPLOY VA DA HONG — bo nay thay the no
+    def _dong():
+        nk.append("da dong")
+        cho_nha.set()        # <- NGUON GIA TU MO TROI CHO CHINH NO
 
-Ban dau (sang 13/09) toi boc luong bang mot ham tham `request.receive()` theo
-nhip 1 s. No da len production, va do tren may that:
+May B khong lam the. Mot generator dong bo dang treo tai `yield` khong tinh day
+vi ai do dong socket. Ban gia khac vat that **dung o chieu dang do**, nen phep
+kiem tra loi cho cau hoi ma no khong he hoi.
 
-    chay TRON luot, khong cat        21,5 s (849 manh)
-    cat o manh 5, qua Cloudflare     lease nha sau 99,0 s
-    cat o manh 5, qua LOOPBACK       lease CHUA nha sau 150 s
-    log "khach cat giua luong"       KHONG MOT DONG NAO
+⇒ Luat rut ra, va no duoc cuong che o `test_khi_dut_*` duoi day: **nguon gia
+  khong duoc tu mo troi.** Muon chung minh duong huy chay thi phai chung minh
+  bang mot tin hieu DI RA (`khi_dut`), khong bang mot tin hieu ta tu bom vao.
 
-Vi tu chua bao gio tra `True`. Ly do: o cua DONG BO khong ai tranh `receive` nen
-cach ay chay (L-06: 16,54 -> 1,43 s); o cua STREAM thi Starlette DA DO SAN tren
-`receive` qua `listen_for_disconnect`, nen `http.disconnect` toi tay NO. Va thu
-no lam khi nhan duoc la huy cancel scope — dung cai KHONG cat duoc threadpool.
-**Ben thang cuoc dua la ben khong lam gi duoc.**
+## Bang chung — tra duoc, khong phai tu suy
 
-## Vi sao ban NAY khac ve BAN CHAT
+Ban truoc trich `fastapi/fastapi#7572` va `Kludex/starlette#2866`. **Ca hai deu
+404** (kiem 13/09/2026, trong khi `#3538`/`#3000` cung kho tra ve binh thuong).
+Hai trich dan ay la bia. Thay bang:
 
-    generator DONG BO bi bo roi   -> khong ai nem gi vao  -> `finally` treo
-    generator BAT DONG BO bi huy  -> `CancelledError` nem VAO diem `await`
-                                     -> `finally` chay NGAY
+| nguon | no noi gi |
+|---|---|
+| `starlette/responses.py:250` (1.3.1) | than phan hoi chi `async for`, **khong bao gio `aclose()`** |
+| `starlette/background.py` (1.3.1) | `BackgroundTask` **khong** `CancelScope(shield=True)` |
+| `Kludex/starlette#1438` | background bi huy khi khach cat — **chi khi co `BaseHTTPMiddleware`**; ta co bon tang |
+| `Kludex/starlette#3458` | thoi diem chay background duoi middleware VAN lech hop dong; 5 PR, khong PR nao duoc gop |
 
-Khong tranh `receive` voi ai. Doi chieu cong dong: `fastapi#7572` (async
-generator la cach duoc khuyen nghi) va `Kludex/starlette#2866` (maintainer xac
-nhan huy CO lan vao async generator; giai doan khong lan duoc la hoi quy theo
-phien ban, da sua — ta dang o starlette 1.3.1 + uvicorn 0.52.0).
-
-## Bon menh de
-
-| # | menh de | no chan dieu gi |
-|---|---|---|
-| 1 | khach doc het ⇒ khong mat manh nao | ban va khong duoc lam hong duong thuong |
-| 2 | huy ⇒ nguon duoc DONG | khong dong thi httpx van mo, may B van giu slot |
-| 3 | huy KHONG dung cho luong dang chan | ban le `abandon_on_cancel=True` |
-| 4 | nguon khong co `close` thi khong vo | iterator thuong van dung duoc |
+⇒ Khong duoc treo viec nha suat GPU vao `finally` cua generator, cung khong treo
+  vao rieng `BackgroundTask`. Duong chinh la `khi_dut`.
 """
 import threading
 import time
@@ -61,10 +52,7 @@ def test_doc_het_thi_khong_mat_manh_nao():
             nk.append("dong")
 
     async def _chay():
-        ra = []
-        async for khoi in cua_luong.bat_dong_bo_hoa(_nguon()):
-            ra.append(khoi)
-        return ra
+        return [k async for k in cua_luong.bat_dong_bo_hoa(_nguon())]
 
     ra = anyio.run(_chay)
     assert ra == [f"manh-{i}".encode() for i in range(5)]
@@ -72,12 +60,6 @@ def test_doc_het_thi_khong_mat_manh_nao():
 
 
 def test_huy_thi_nguon_duoc_DONG():
-    """Ve de quen nhat, va thieu no thi ban va gan nhu vo nghia.
-
-    Thoat vong ma khong dong nguon chi day cung mot loi xuong mot tang: generator
-    ben trong nam treo, `client.close()` cua `luong_vlm._di` chua chay, va may B
-    VAN giu slot — tuc lease nha ma suat khong nha.
-    """
     nk: list = []
 
     def _nguon():
@@ -94,7 +76,7 @@ def test_huy_thi_nguon_duoc_DONG():
             n += 1
             if n >= 3:
                 break
-        await g.aclose()          # dung nhu Starlette buong khi khach cat
+        await g.aclose()
 
     anyio.run(_chay)
     assert nk == ["dong"], f"nguon CHUA duoc dong: {nk}"
@@ -106,9 +88,6 @@ def test_huy_KHONG_dung_cho_mot_luot_doc_dang_chan():
     Mac dinh cua anyio la `False` — lenh bi huy VAN DUNG CHO luong chay xong.
     Voi ta, "luong chay xong" nghia la doi may B tra manh ke tiep, tuc dung lai
     chinh L-08 duoi mot cai ten khac.
-
-    Bo nay dung mot nguon CHAN 10 giay. Co co ⇒ huy ve trong ~1 s. Khong co co
-    ⇒ phai doi het 10 s.
     """
     da_vao = threading.Event()
     cho_nha = threading.Event()
@@ -116,7 +95,7 @@ def test_huy_KHONG_dung_cho_mot_luot_doc_dang_chan():
     def _nguon():
         yield b"dau"
         da_vao.set()
-        cho_nha.wait(10)          # mo phong mot luot doc socket dang chan
+        cho_nha.wait(10)
         yield b"sau"
 
     async def _chay():
@@ -129,7 +108,7 @@ def test_huy_KHONG_dung_cho_mot_luot_doc_dang_chan():
         anyio.run(_chay)
         troi = time.monotonic() - t0
     finally:
-        cho_nha.set()             # tha luong bi bo roi, khong de treo tien trinh
+        cho_nha.set()
 
     assert da_vao.is_set(), "chua vao toi luot doc bi chan — phep do khong cham dich"
     assert troi < 5.0, (
@@ -137,71 +116,137 @@ def test_huy_KHONG_dung_cho_mot_luot_doc_dang_chan():
         "`abandon_on_cancel=True` da bi go, va L-08 quay lai.")
 
 
-def test_huy_goi_DONG_NGUON_chu_khong_chi_close_generator():
-    """🔴 `close()` KHONG du, va day la cai bay da lam ban va dau tien nua voi.
+def test_khi_dut_chay_du_NGUON_KHONG_THE_tinh_day():
+    """🔴 LOP 1 cua co che nha suat — va la phep kiem thay cho ban xanh gia.
 
-    `abandon_on_cancel=True` buong luot cho, nhung LUONG kia van dang o TRONG
-    `next(nguon)`. Do bang mot bo mo phong mot bien so:
+    ⛔ Khac ban cu o DUNG MOT DIEU, va dieu ay la tat ca: `_dong()` **khong**
+       set `khong_bao_gio`. Nguon nam treo that, y het may B khi httpx dong ma
+       luot doc chua kip vo. Neu viec nha suat phu thuoc vao generator bung ra,
+       phep kiem nay DO — va do la dung cai da xay ra tren production.
 
-        close() mot generator dang thuc thi o luong khac
-        -> ValueError: generator already executing
-        -> `finally` cua nguon KHONG BAO GIO chay
-        -> `client.close()` cua httpx chua duoc goi
-
-    ⇒ Lease nha ma MAY B VAN GIU SLOT. Nua duong, va la nua khach khong nhin
-      thay. Ve nay chot rang `dong_nguon` — duong dong THANG toi httpx, goi duoc
-      tu luong khac — thuc su duoc goi tren duong huy.
+    Chung minh bang tin hieu DI RA: `khi_dut` co duoc goi khong.
     """
     da_vao = threading.Event()
-    cho_nha = threading.Event()
+    khong_bao_gio = threading.Event()
     nk: list = []
 
     def _nguon():
         yield b"dau"
         da_vao.set()
-        cho_nha.wait(10)
+        khong_bao_gio.wait(30)
         yield b"sau"
 
-    def _dong():
-        nk.append("da dong cua ra mang")
-        cho_nha.set()          # dung nhu `client.close()` lam luot doc kia vo
+    def _dong() -> None:
+        nk.append("dong_nguon")
+
+    def _dut() -> None:
+        nk.append("khi_dut")
 
     async def _chay():
         with anyio.move_on_after(1.0):
-            async for _ in cua_luong.bat_dong_bo_hoa(_nguon(), _dong):
+            async for _ in cua_luong.bat_dong_bo_hoa(_nguon(), _dong, _dut):
                 pass
 
     try:
         anyio.run(_chay)
     finally:
-        cho_nha.set()
+        khong_bao_gio.set()
 
     assert da_vao.is_set(), "chua toi luot doc bi chan — phep do khong cham dich"
-    assert nk == ["da dong cua ra mang"], (
-        f"`dong_nguon` KHONG duoc goi tren duong huy: {nk}. Lease se nha ma may "
-        "B van giu slot.")
+    assert nk == ["dong_nguon", "khi_dut"], (
+        f"sai duong hoac sai THU TU: {nk}. Bat bien: dong ket noi TRUOC (bao may "
+        "B thoi sinh), nha suat SAU — nha truoc thi nguoi thu bay vao trong khi "
+        "GPU van ban.")
 
 
-def test_VAT_THAT_phai_khai_dong_nguon():
-    """⚠️ Ve nay la CAI GIA cua `getattr` o `luong.py`.
+class _VoLon(BaseException):
+    """Khong ke thua `Exception` — nen `except Exception` KHONG bat duoc."""
+
+
+def test_khi_dut_van_chay_khi_dong_nguon_nem_BASE_EXCEPTION():
+    """🔴 Ve NAY moi that su cuong che `finally` LONG.
+
+    ⚠️ Ve `..._DONG_NGUON_NEM` ben duoi khai rang no chot cau truc `finally`
+       long. **No khong.** Thu cuu `khi_dut` o do la menh de `except Exception`
+       quanh `dong_nguon()`; go `finally` long di thi ve ay VAN XANH. Mot phep
+       kiem tuyen bo manh hon thu no do — dung cai khuon da can du an nay nhieu
+       lan, va lan nay no can chinh toi trong luc toi dang viet ve chong no.
+
+    Mot `BaseException` di xuyen `except Exception`. Luc ay chi con `finally`
+    long giu duoc duong nha suat. Go no ⇒ ve nay DO.
+    """
+    nk: list = []
+
+    def _nguon():
+        yield b"a"
+
+    def _dong() -> None:
+        raise _VoLon("cua ra mang vo kieu khong ai bat")
+
+    def _dut() -> None:
+        nk.append("khi_dut")
+
+    async def _chay():
+        async for _ in cua_luong.bat_dong_bo_hoa(_nguon(), _dong, _dut):
+            pass
+
+    try:
+        anyio.run(_chay)
+    except _VoLon:
+        pass                      # vo van phai lan ra — ta khong nuot no
+    assert nk == ["khi_dut"], (
+        "`khi_dut` bi bo qua khi `dong_nguon` nem mot `BaseException` — `finally` "
+        "long da bi go, va mot su co mat MOT suat GPU thanh mat CA HAI.")
+
+
+def test_khi_dut_van_chay_khi_DONG_NGUON_NEM():
+    """`dong_nguon` ném `Exception` thi `khi_dut` van phai chay.
+
+    ⚠️ Ve nay chot menh de `except Exception` quanh `dong_nguon()`, KHONG chot
+       `finally` long — xem ve tren de biet vi sao phan biet ay quan trong.
+    """
+    nk: list = []
+
+    def _nguon():
+        yield b"a"
+        yield b"b"
+
+    def _dong() -> None:
+        raise RuntimeError("cua ra mang hong")
+
+    def _dut() -> None:
+        nk.append("khi_dut")
+
+    async def _chay():
+        async for _ in cua_luong.bat_dong_bo_hoa(_nguon(), _dong, _dut):
+            pass
+
+    anyio.run(_chay)
+    assert nk == ["khi_dut"], (
+        "`dong_nguon` nem va da nuot mat `khi_dut` — hai viec dang nam chung mot "
+        "khoi `try`.")
+
+
+def test_VAT_THAT_phai_khai_dong_nguon_va_luc_khoi_cuoi():
+    """⚠️ Cai gia cua `getattr` o `luong.py`, va cua LOP 2.
 
     Ben tieu thu doc `getattr(mo, "dong_nguon", None)` de mot BAN GIA khong phai
-    khai lai chu ky day du — dung luat da rut ra sau 5 lan vap trong mot phien.
+    khai lai chu ky day du. Nhung neu VAT THAT mot ngay khong con truong ay,
+    `getattr` tra `None` lang le va L-08 quay lai ma khong phep kiem nao do.
 
-    ⛔ Nhung khoan dung co mot cai gia: neu VAT THAT (`LuongMo`) mot ngay nao do
-       khong con truong ay, `getattr` tra `None`, `bat_dong_bo_hoa` lang le bo
-       qua buoc dong ket noi, va **L-08 quay lai ma khong mot phep kiem nao do**.
-
-    ⇒ Ve nay chot chieu con lai: ban gia duoc phep thieu, vat THAT thi khong.
+    `luc_khoi_cuoi` cung the: thieu no thi vi tu `con_song` cua LOP 2 khong con
+    nguon su that, va nhip tim quay ve noi doi.
     """
     import dataclasses
 
     from platform_core.llm.luong_vlm import LuongMo
+    from platform_core.runtime_noi_bo.luong import LuotLuong
 
-    ten = {f.name for f in dataclasses.fields(LuongMo)}
-    assert "dong_nguon" in ten, (
+    assert "dong_nguon" in {f.name for f in dataclasses.fields(LuongMo)}, (
         "`LuongMo` khong con khai `dong_nguon` — `luong.py` doc bang `getattr` "
         "nen no se LANG LE tra None va L-08 quay lai. Sua o ca hai cho.")
+    assert "luc_khoi_cuoi" in {f.name for f in dataclasses.fields(LuotLuong)}, (
+        "`LuotLuong` khong con khai `luc_khoi_cuoi` — LOP 2 mat nguon su that.")
 
 
 def test_nguon_khong_co_close_thi_khong_vo():
