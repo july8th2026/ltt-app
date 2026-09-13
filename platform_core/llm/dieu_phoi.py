@@ -193,6 +193,7 @@ def goi(db, *, messages: list, thu_tu_provider: Sequence[str],
         tools: Optional[list] = None, max_tokens: Optional[int] = None,
         temperature: Optional[float] = None,
         reasoning_effort: Optional[str] = None,
+        them: Optional[dict] = None,
         timeout_s: float = 120.0, on_dispatch=None,
         on_rejected=None, ma_luot: str = "") -> KetQuaChat:
     """Gọi model theo **thứ tự provider bên gọi khai**, bỏ qua provider đang bận.
@@ -288,6 +289,19 @@ def goi(db, *, messages: list, thu_tu_provider: Sequence[str],
                 than = {"model": ten_model, "messages": messages, "tools": tools,
                         "max_tokens": max_tokens, "temperature": temperature,
                         "reasoning_effort": reasoning_effort}
+                # ⭐ `them` la duong cho nhung tham so KHAC ma cua cong khai da
+                #    kiem xong (`response_format`, `tool_choice`, `top_p`,
+                #    `seed`, `stop`, `parallel_tool_calls`). Mot tham so moi chi
+                #    can them o MOT cho — `features.kiem_tham_so` — thay vi moc
+                #    them mot doi so co ten qua bon tang.
+                #
+                # ⛔ Day KHONG phai mot truong tu do: moi khoa trong `them` da di
+                #    qua `kiem_tham_so`, va `tests/test_1255` chot CO HOC rang
+                #    moi khoa khai trong `params_schema` phai song sot qua do.
+                #    Bo `them` vao TRUOC buoc loc `None` ben duoi nen mot gia tri
+                #    `None` lot vao day cung khong bao gio ra khoi may.
+                if them:
+                    than.update(them)
                 if not base:
                     # Không có địa chỉ thì đừng gửi đi đâu cả và đừng đánh dấu lỗi
                     # cho khoá — đây là **thiếu cấu hình**, không phải provider hỏng.

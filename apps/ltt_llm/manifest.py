@@ -286,6 +286,24 @@ MANIFEST = AppManifest(
             "reasoning_effort": {"type": "enum",
                                  "values": ["none", "low", "medium", "xhigh"],
                                  "default": "medium"},
+            # ── Mo 14/09/2026: engine DA lam duoc, cua cua ta dang vut di ────
+            #
+            # ⛔ Sau khoa duoi day khong phai nang luc MOI. Do 14/09 tren
+            #    production: cung mot `response_format: json_schema`, may B tra
+            #    dung khuon con qua may A thi khuon bi bo qua va JSON bi boc
+            #    trong ```json — vi `features.kiem_tham_so` la danh sach trang
+            #    va nem chung di, roi van tra **200**.
+            #
+            # 🔑 Khai o day KHONG chi de sinh tai lieu: `tests/test_1255` chot
+            #    CO HOC rang moi khoa trong bang nay phai SONG SOT qua
+            #    `kiem_tham_so`. Do la thu ngan lop loi nay quay lai, chu khong
+            #    phai loi van nay.
+            "response_format": {"type": "json"},
+            "tool_choice": {"type": "json"},
+            "parallel_tool_calls": {"type": "bool"},
+            "top_p": {"type": "number", "min": 0.0, "max": 1.0},
+            "seed": {"type": "int"},
+            "stop": {"type": "json"},
         },
         returns={"content": "text", "tool_calls": "json[]", "usage": "json"},
 

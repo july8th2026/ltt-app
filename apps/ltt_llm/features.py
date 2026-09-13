@@ -195,6 +195,16 @@ class KetQua:
         }
 
 
+#: Tham so di THANG len may B, khong can nen tang dien giai gi them.
+#:
+#: ⛔ Chung da qua `kiem_tham_so`, nen day KHONG phai mot danh sach tu do — no
+#:    la ban khai "nhung thu nen tang chi chuyen tiep". `messages`/`model`/
+#:    `max_tokens`/`temperature`/`reasoning_effort`/`tools` KHONG nam o day vi
+#:    chung co doi so co ten rieng va co lop dich (alias -> id noi bo).
+THAM_SO_CHUYEN_THANG = ("response_format", "tool_choice", "parallel_tool_calls",
+                        "top_p", "seed", "stop")
+
+
 def kiem_tham_so(params: dict) -> dict:
     """Kiểm và chuẩn hoá tham số. Ném `ThamSoSai` — bên gọi dịch thành 400/422.
 
@@ -257,6 +267,80 @@ def kiem_tham_so(params: dict) -> dict:
         if re_ not in ("none", "low", "medium", "xhigh"):
             raise ThamSoSai("`reasoning_effort` phai la none|low|medium|xhigh")
         sach["reasoning_effort"] = re_
+
+    # ── 🔴 MO LAI NHUNG THU HAM NAY TUNG VUT IM LANG (14/09/2026) ────────────
+    #
+    # Ham nay la mot DANH SACH TRANG: thu gi khong duoc chep vao `sach` thi
+    # bien mat, va khach van nhan **200**. Do 14/09 tren chinh production, cung
+    # mot request `response_format: json_schema` bat buoc `ten/tuoi/thanh_pho`:
+    #
+    #   qua may A   ->  {"id":10,"name":...,"age":...,"city":...}  boc trong ```json
+    #   thang may B ->  {"ten":"...","tuoi":34,"thanh_pho":"Ha Noi"}    DUNG khuon
+    #
+    # Tuc engine LAM DUOC hoan hao; tang nen tang nem tham so di roi tra 200.
+    # Do la cua gia te nhat: khach dat `response_format`, tin no chay, va bo
+    # phan tich JSON cua ho vo **luc duoc luc khong**.
+    #
+    # ⛔ KHONG mo `grammar` tho (BNF) du engine co ho tro: no la mot truong TU DO
+    #    di thang toi bo giai ma va khong cong nao kiem duoc — dung ly le kho nay
+    #    da dung de hoan `refs` cua `video.generate`. `json_schema` kiem duoc
+    #    hinh dang, nen no mo.
+    #
+    # ⛔ KHONG mo `n`: no NHAN chi phi sinh len n lan trong khi bao gia va giu
+    #    cho deu tinh cho MOT chuoi. Mo no la ban duoi gia von.
+    if p.get("response_format") is not None:
+        rf = p["response_format"]
+        if not isinstance(rf, dict):
+            raise ThamSoSai("`response_format` phai la mot doi tuong")
+        kieu = str(rf.get("type") or "")
+        if kieu not in ("text", "json_object", "json_schema"):
+            raise ThamSoSai(
+                "`response_format.type` phai la text|json_object|json_schema")
+        if kieu == "json_schema" and not isinstance(rf.get("json_schema"), dict):
+            raise ThamSoSai("`response_format.json_schema` phai la mot doi tuong "
+                            "khi type=json_schema")
+        sach["response_format"] = rf
+
+    if p.get("tool_choice") is not None:
+        tc = p["tool_choice"]
+        if isinstance(tc, str):
+            if tc not in ("none", "auto", "required"):
+                raise ThamSoSai("`tool_choice` dang chuoi phai la none|auto|required")
+        elif not isinstance(tc, dict):
+            raise ThamSoSai("`tool_choice` phai la chuoi hoac doi tuong")
+        sach["tool_choice"] = tc
+
+    if p.get("parallel_tool_calls") is not None:
+        if not isinstance(p["parallel_tool_calls"], bool):
+            raise ThamSoSai("`parallel_tool_calls` phai la true/false")
+        sach["parallel_tool_calls"] = p["parallel_tool_calls"]
+
+    if p.get("top_p") is not None:
+        try:
+            tp = float(p["top_p"])
+        except (TypeError, ValueError):
+            raise ThamSoSai("`top_p` phai la so") from None
+        if not (0.0 < tp <= 1.0):
+            raise ThamSoSai("`top_p` phai trong khoang (0..1]")
+        sach["top_p"] = tp
+
+    if p.get("seed") is not None:
+        if isinstance(p["seed"], bool) or not isinstance(p["seed"], int):
+            raise ThamSoSai("`seed` phai la so nguyen")
+        sach["seed"] = int(p["seed"])
+
+    if p.get("stop") is not None:
+        st = p["stop"]
+        if isinstance(st, str):
+            st = [st]
+        if (not isinstance(st, list) or not st
+                or not all(isinstance(x, str) and x for x in st)):
+            raise ThamSoSai("`stop` phai la chuoi hoac danh sach chuoi khong rong")
+        # Tran 4 la cua chinh hop dong OpenAI ma ta dang bat chuoc, khong phai
+        # mot con so ta tu dat.
+        if len(st) > 4:
+            raise ThamSoSai("`stop` toi da 4 chuoi")
+        sach["stop"] = st
 
     return sach
 
@@ -333,6 +417,12 @@ def chay(db, params: dict, *, timeout_s: float = 300.0,
         max_tokens=sach["max_tokens"],
         temperature=sach.get("temperature"),
         reasoning_effort=sach.get("reasoning_effort"),
+        # ⭐ MOT cho duy nhat de mot tham so moi di het duong len may B. Truoc
+        #    14/09 moi tham so phai duoc moc tay o BON tang (kiem_tham_so ->
+        #    dieu_phoi.goi -> than -> may B), va chinh vi the `response_format`
+        #    dung o tang mot roi bien mat. `tests/test_1255` chot rang moi khoa
+        #    khai trong `params_schema` phai song sot.
+        them={k: sach[k] for k in THAM_SO_CHUYEN_THANG if k in sach},
         timeout_s=timeout_s,
         on_dispatch=on_dispatch,
         on_rejected=on_rejected,

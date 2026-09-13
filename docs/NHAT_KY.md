@@ -71,6 +71,45 @@ Số đầy đủ và hai điều **không được đọc rộng hơn thứ đ�
 3. **Khoá đi qua TỆP, không qua dòng lệnh** (`cau_idem.py --khoa-tep`) nên không
    lọt vào `ps`, log hay transcript.
 
+### 🔴 Một cửa giả đang sống trên API đã mở và đang thu tiền
+
+Đo trên production, cùng một request `response_format: json_schema` bắt buộc
+`ten/tuoi/thanh_pho`:
+
+| | kết quả |
+|---|---|
+| **thẳng máy B** | `{"ten":"…","tuoi":34,"thanh_pho":"Ha Noi"}` — **đúng khuôn** |
+| **qua máy A** | `{"id":10,"name":…,"age":…,"city":…}`, bọc trong ```` ```json ```` |
+
+Engine làm được hoàn hảo. `features.kiem_tham_so` là một **danh sách trắng**,
+nên `response_format` bị vứt **im lặng** và khách vẫn nhận **200**. Đó là lớp
+lỗi tệ nhất: không báo sai, mà **hỏng lặng** — khách đặt tham số, tin nó chạy,
+rồi bộ phân tích JSON của họ vỡ lúc được lúc không.
+
+**Mở sáu tham số đã kiểm**: `response_format` · `tool_choice` ·
+`parallel_tool_calls` · `top_p` · `seed` · `stop`.
+
+⛔ **Không** mở `grammar` thô — trường tự do đi thẳng tới bộ giải mã, không cổng
+   nào kiểm được (đúng lý lẽ đã hoãn `refs` của `video.generate`). **Không** mở
+   `n` — nó nhân chi phí sinh lên n lần trong khi báo giá tính cho một chuỗi.
+
+⭐ Bản vá thật là `tests/test_1255`, không phải sáu dòng mã: nó lấy danh sách từ
+   **chính `params_schema`** rồi đòi mỗi khoá phải sống sót qua `kiem_tham_so`
+   **và** nằm trong `THAM_SO_CHUYEN_THANG`. Tiêm đúng hình dạng lỗi thật (vẫn
+   kiểm, nhưng quên chép sang) thì nó **đỏ**.
+
+### ⚠️ Và một lần tôi suýt sửa thứ không hỏng
+
+Tôi kết luận `job_content.purge_expired` "không ai gọi" — dựa trên một lần
+`grep` trong `job_runner.py`. **Sai.** Nó được gọi qua `_don_noi_dung_job` từ
+`_don_du_lieu_het_han()`, `governance.STORES` khai `Store("jobs", CONTENT, 30…)`,
+và `test_211`/`test_218` đã chốt dây nối. Tôi đã viết một lời gọi trùng rồi gỡ đi.
+
+⇒ Lưu trữ job (**99 MB / 2.102 dòng**, `ltt_llm` chiếm **87 MB**, ~50 kB/job) đã
+  có hạn 30 ngày đúng chuẩn OpenAI và **đang chạy**. Chưa dọn được gì vì **96%
+  dữ liệu sinh trong hai tuần gần nhất**. Bốn bảng hội thoại thì gần như rỗng —
+  ta **không** lưu phiên chat, ta lưu nguyên văn request trong `jobs.params`.
+
 
 ## 2026-09-13 — LTT LLM: đóng L-08, tìm L-11/L-12, và một khoản nợ của chính nhật ký này
 
