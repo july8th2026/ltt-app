@@ -62,30 +62,44 @@ def _sha256(b: bytes) -> str:
 
 
 def _synth(text: str, preset: str):
-    """Một lượt tổng hợp qua sidecar. Trả `(wav_bytes, headers)`."""
-    from apps.ltt_voice import features
-    return features.goi_cong(text, preset=preset)
+    """Một lượt tổng hợp qua sidecar. Trả `(wav_bytes, headers)`.
+
+    ⛔ Gọi THẲNG `sidecar_client.noi` (chỉ cần `requests`), KHÔNG qua
+       `features.goi_cong` — cái sau kéo `platform_core.jobs` → `sqlalchemy`,
+       không có trong `vieneu-venv` (venv DUY NHẤT có onnxruntime + soundfile cho
+       DNSMOS). Harness này phải chạy trọn trong một venv, và vieneu-venv là venv
+       đó; nên đường tổng hợp phải nhẹ đúng bằng một lời gọi HTTP.
+    """
+    from apps.ltt_voice import sidecar_client
+    return sidecar_client.noi(text, preset=preset)
 
 
 def _dnsmos(wav_bytes: bytes) -> dict | None:
     from voice_sidecar import dnsmos
     if not dnsmos.co_san():
         return None
-    import io
-    import soundfile as sf
-    wav, sr = sf.read(io.BytesIO(wav_bytes), dtype="float32", always_2d=False)
-    if getattr(wav, "ndim", 1) > 1:
-        wav = wav.mean(axis=1)
-    return dnsmos.cham(wav, int(sr))
+    try:
+        import io
+        import soundfile as sf
+        wav, sr = sf.read(io.BytesIO(wav_bytes), dtype="float32", always_2d=False)
+        if getattr(wav, "ndim", 1) > 1:
+            wav = wav.mean(axis=1)
+        return dnsmos.cham(wav, int(sr))
+    except Exception as e:  # noqa: BLE001 - thieu onnxruntime/scipy -> degrade, khong crash
+        print(f"    (DNSMOS bo qua: {type(e).__name__}: {str(e)[:60]})")
+        return None
 
 
 def _asr(wav_bytes: bytes, text: str, lang: str) -> dict | None:
-    from voice_sidecar.do_chat_luong import do_de_hieu
     f = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
     try:
         f.write(wav_bytes)
         f.close()
+        from voice_sidecar.do_chat_luong import do_de_hieu
         return do_de_hieu(f.name, text, lang)
+    except Exception as e:  # noqa: BLE001 - ASR loi (thieu venv whisper...) -> degrade
+        print(f"    (ASR bo qua: {type(e).__name__}: {str(e)[:60]})")
+        return None
     finally:
         try:
             os.unlink(f.name)
