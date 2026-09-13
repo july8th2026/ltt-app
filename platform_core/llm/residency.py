@@ -208,6 +208,21 @@ class ThamSoResidency:
     #:    DANG, khong phai ve cau hinh: sua cau hinh lam su co AY het, khong lam
     #:    ngo cut ay het.
     tran_vao_anh_hong: int = 3
+    #: Sau khi cham `tran_vao_anh_hong`, bao lau moi cho THU LAI mot lan.
+    #:
+    #: 🔴 VI SAO CAN (L-10, do 13/09): chi co `tran_vao_anh_hong` thi bo dem la
+    #:    mot chieu. No duoc xoa o DUNG MOT cho — `chay_comfy()` thanh cong — ma
+    #:    `chay_comfy()` lai nam sau chinh cai phanh dang chan. Do duoc: ComfyUI
+    #:    hong 3 lan, roi BAT LAI BINH THUONG, nop job anh moi => trong tai dung
+    #:    im o `llm` suot 120 s, job o `queued`, khong mot dong log. Phia anh bi
+    #:    KHOA NGOAI cho toi khi ai do khoi dong lai worker. Ban va L-07 doi mot
+    #:    ngo cut lay mot ngo cut khac, o phia ben kia.
+    #:
+    #: ⚖️ Vi sao THOI GIAN chu khong phai mot lan thu lai duy nhat: moi lan thu
+    #:    ton mot chu trinh nha/nap do duoc **47 s** (46,7 s ngay 13/09), trong
+    #:    do LLM roi card. Nhip 300 s giu gia ay o ~16 %, va gap doi (tran ×8 =
+    #:    40 phut) de mot may B hong ca buoi khong bi tra gia ay mai.
+    lui_anh_hong_s: float = 300.0
 
 
 @dataclass(frozen=True)
@@ -257,6 +272,10 @@ class QuanSat:
     #:    trinh chet giua cua so khong de lai mot bo dem sai — cung ly do
     #:    `TrangThai` chi co bon truong.
     lan_vao_anh_hong: int = 0
+    #: Luc lan hong GAN NHAT (cung dong ho voi `bay_gio`). 0 = chua hong lan nao.
+    #: Di kem `lan_vao_anh_hong`: mot bo dem khong kem moc thoi gian thi khong
+    #: the tu nhat di, va mot bo dem khong tu nhat di chinh la L-10.
+    luc_anh_hong_cuoi: float = 0.0
 
 
 # ── Ba vị từ: mỗi cái là một cái PHANH, nên mỗi cái là một hàm có tên ────────
@@ -281,6 +300,45 @@ def dang_ve_anh(qs: QuanSat) -> bool:
     """Có lượt vẽ nào đang chạy không. Phanh của chiều NGƯỢC lại: nạp 16 GB lên
     card đang vẽ, hay dọn VRAM của ComfyUI đang vẽ, giết lượt vẽ bằng OOM."""
     return qs.lease_anh > 0
+
+
+def duoc_thu_anh(qs: QuanSat, ts: ThamSoResidency, bay_gio: float) -> bool:
+    """Có được phép THỬ mở cửa sổ ảnh lúc này không.
+
+    ⭐ MỘT vị từ, dùng ở HAI chỗ, và đó là toàn bộ nội dung của bản vá L-10:
+
+        `LLM`      → `XA_LLM`   khi `duoc_thu_anh`  (nhả card để thử)
+        `NHA_LLM`  → `NAP_LLM`  khi KHÔNG           (đường lui 2, trả card)
+
+    🔴 Vì sao không được nới riêng vế ở `LLM`: ở `NHA_LLM`, đường lui 2 được
+       kiểm **trước** nhánh vào `ANH`. Nới một mình vế `LLM` thì lượt thử lại sẽ
+       nhả card rồi nạp lại ngay mà **không hề gọi `chay_comfy()`** — tốn trọn
+       47 s để không hỏi được câu duy nhất cần hỏi. Hai chỗ phải đọc cùng một
+       sự thật, nếu không "thử lại" chỉ là một vòng quay đắt tiền.
+
+    Trả `True` khi chưa chạm trần, hoặc đã chạm trần nhưng đã lùi đủ lâu.
+
+    ⚖️ `luc_anh_hong_cuoi = 0` (đếm nói đã hỏng, mà không biết hỏng lúc nào) cho
+       ra `True` — CHỦ Ý. Hai trường ấy luôn được ghi cùng nhau ở `buoc()` nên
+       lệch nhau là chuyện không nên xảy ra; nhưng nếu có, hướng hỏng an toàn là
+       thử thừa một lượt 47 s (lần hỏng kế tiếp ghi lại mốc thật, tự sửa) chứ
+       không phải khoá phía ảnh vô hạn — đúng cái L-10 vừa dạy.
+    """
+    if qs.lan_vao_anh_hong < ts.tran_vao_anh_hong:
+        return True
+    return bay_gio - qs.luc_anh_hong_cuoi >= lui_anh_s(qs, ts)
+
+
+def lui_anh_s(qs: QuanSat, ts: ThamSoResidency) -> float:
+    """Thời gian lùi trước lần thử mở cửa sổ ảnh tiếp theo: gấp đôi, trần ×8.
+
+    Trần ×8 (40 phút) thấp hơn `lui_nap_s` có chủ ý: bên kia là LLM đã chết hẳn
+    nên lùi lâu không mất gì thêm, còn bên này LLM vẫn đang phục vụ bình thường
+    — cái đang chờ là hàng job ảnh, và một hàng job chờ quá 40 phút thì đằng nào
+    cũng cần người, không cần máy thử tiếp.
+    """
+    du = max(qs.lan_vao_anh_hong - ts.tran_vao_anh_hong, 0)
+    return ts.lui_anh_hong_s * min(2 ** du, 8)
 
 
 def lui_nap_s(tt: TrangThai, ts: ThamSoResidency) -> float:
@@ -362,7 +420,11 @@ def buoc_thuan(tt: TrangThai, qs: QuanSat, ts: ThamSoResidency,
         #    xếp hàng → nhả lại → … Mỗi vòng tốn một lượt nạp 16,3 s và KHÔNG
         #    ai được phục vụ. Một đường lui không kèm phanh vào là đổi một ngõ
         #    cụt lấy một vòng lặp — hỏng theo kiểu khác, không phải hết hỏng.
-        if qs.job_anh_cho > 0 and qs.lan_vao_anh_hong < ts.tran_vao_anh_hong:
+        #    ⚠️ Nhưng phanh ấy phải TỰ NHẢ (L-10). Bản 13/09 viết thẳng
+        #    `lan_vao_anh_hong < tran`, và vì bộ đếm chỉ được xoá sau một
+        #    `chay_comfy()` thành công — thứ nằm sau chính cái phanh này — phía
+        #    ảnh không bao giờ trở lại được, kể cả khi ComfyUI đã lành từ lâu.
+        if qs.job_anh_cho > 0 and duoc_thu_anh(qs, ts, bay_gio):
             return _sang(tt, XA_LLM, bay_gio), ()
         return tt, ()
 
@@ -401,7 +463,11 @@ def buoc_thuan(tt: TrangThai, qs: QuanSat, ts: ThamSoResidency,
         #
         # ⛔ Vẫn siết `dang_ve_anh` — cùng lý do như `LOI_NAP`: lệnh `nap_llm`
         #    phát từ đây không đi qua nhánh kiểm VRAM của `TRA_ANH`.
-        if qs.lan_vao_anh_hong >= ts.tran_vao_anh_hong and not dang_ve_anh(qs):
+        #
+        # ⭐ Đọc CÙNG vị từ với lối ra ở `LLM` (L-10): hết hạn lùi thì đây phải
+        #    nhường đường cho nhánh vào `ANH` bên dưới, nếu không lượt thử lại
+        #    quay đầu ngay tại đây và `chay_comfy()` không bao giờ được gọi.
+        if not duoc_thu_anh(qs, ts, bay_gio) and not dang_ve_anh(qs):
             return _sang(tt, NAP_LLM, bay_gio), (NAP_LLM_LENH,)
 
         # Không tin lệnh đã gửi: chỉ đi tiếp khi máy B NÓI model không còn nạp.
@@ -1171,7 +1237,9 @@ def _nguoi_cho_llm(db: Any, resource: str, now: datetime) -> tuple[int, float | 
 #: ⚠️ Nhiều worker ⇒ mỗi worker một bộ đếm riêng, nên đường lui có thể tới muộn
 #:    hơn `tran_vao_anh_hong` lượt. Chậm hơn, không sai — và đổi lại là không
 #:    thêm một cột phải giữ đồng bộ giữa các tiến trình.
-_LAN_VAO_ANH_HONG: dict[str, int] = {}
+#: Giá trị là CẶP `(so_lan, luc_hong_cuoi)` — mốc thời gian đi kèm vì thiếu nó
+#: thì bộ đếm chỉ tăng được mà không nhạt đi (L-10). Xem `duoc_thu_anh`.
+_LAN_VAO_ANH_HONG: dict[str, tuple[int, float]] = {}
 
 
 def _quan_sat(db: Any, *, nhom: str, tt: TrangThai, tai_nguyen: dict[str, str],
@@ -1300,7 +1368,8 @@ def buoc(db: Any, *, nhom: str, may_b: MayBResidency | None = None,
     t = bay_gio()
     tt, phien_ban = _doc_dong(db, nhom, t)
     qs = _quan_sat(db, nhom=nhom, tt=tt, tai_nguyen=tai_nguyen, tin=tin, bay_gio=t)
-    qs = replace(qs, lan_vao_anh_hong=_LAN_VAO_ANH_HONG.get(nhom, 0))
+    _so_lan, _luc_hong = _LAN_VAO_ANH_HONG.get(nhom, (0, 0.0))
+    qs = replace(qs, lan_vao_anh_hong=_so_lan, luc_anh_hong_cuoi=_luc_hong)
     moi, lenh = buoc_thuan(tt, qs, ts, t)
 
     if moi.ten == ANH and tt.ten != ANH:
@@ -1327,15 +1396,26 @@ def buoc(db: Any, *, nhom: str, may_b: MayBResidency | None = None,
             #    đặt được, và `NHA_LLM` giữ nguyên ngõ cụt đã gây L-07: một cổng
             #    render cũ làm 3090 nằm không vô hạn, im lặng với mọi người trừ
             #    dòng log này.
-            n = _LAN_VAO_ANH_HONG.get(nhom, 0) + 1
-            _LAN_VAO_ANH_HONG[nhom] = n
+            #
+            # ⏱️ Và GHI GIỜ cùng lúc: `duoc_thu_anh` đo từ mốc này. Đếm mà không
+            #    ghi giờ thì bộ đếm không nhạt đi được, và đó đúng là L-10.
+            n = _LAN_VAO_ANH_HONG.get(nhom, (0, 0.0))[0] + 1
+            _LAN_VAO_ANH_HONG[nhom] = (n, t)
             log.error("khong bat lai duoc ComfyUI (lan %d lien tiep) => KHONG vao "
-                      "%s (cu tru %s van o %s); tu lan %d se TRA CARD cho LLM",
+                      "%s (cu tru %s van o %s); tu lan %d se TRA CARD cho LLM, "
+                      "thu lai sau %.0fs",
                       n, ANH, nhom, tt.ten, ThamSoResidency().tran_vao_anh_hong,
+                      lui_anh_s(replace(qs, lan_vao_anh_hong=n),
+                                ThamSoResidency()),
                       exc_info=(n == 1))
             return tt
         # ⭐ Bật được ⇒ đặt lại về 0. Một bộ đếm chỉ tăng sẽ khoá phía ảnh vĩnh
         #    viễn sau ba lần trục trặc thoáng qua trong cả đời tiến trình.
+        #
+        # ⚠️ Đây KHÔNG còn là đường xoá duy nhất (L-10 đã chứng minh một đường
+        #    xoá duy nhất nằm sau chính cái phanh là không xoá được bao giờ);
+        #    `duoc_thu_anh` cho một lượt thử theo nhịp, và chính lượt ấy mới đưa
+        #    dòng chạy tới được đây. Hai cái đi cùng nhau, thiếu một là hỏng.
         _LAN_VAO_ANH_HONG.pop(nhom, None)
         _khoa(db, nhom, tai_nguyen)
         lai, phien_ban = _doc_dong(db, nhom, bay_gio())
