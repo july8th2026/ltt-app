@@ -136,6 +136,34 @@ def kiem_phong(db: Session, *, resource: str, token_prefill_moi: int,
             if (now - _aware(w.heartbeat_at)).total_seconds() <= HAN_NHIP_CHO_S]
     if len(song) >= so_nguoi_toi_da:
         raise PhongDay("phong_day_so_nguoi")
+
+    # 🔴 L-12 (13/09/2026): MỘT TRẦN TỔNG KHÔNG ĐƯỢC LOẠI TRỪ VĨNH VIỄN MỘT MÓN
+    #    ĐƠN LẺ VỐN HỢP LỆ.
+    #
+    #    Đo được ở kịch bản J10, cùng MỘT request prefill 67.989 token (dưới trần
+    #    vào 171.458 của `ltt-3.8`, nên `tien_kiem` đã cho qua):
+    #
+    #        phòng chờ TRỐNG      -> 200, chạy trọn, TTFB 71,3 s
+    #        phòng chờ CÓ NGƯỜI   -> 429 sau 0,48 s
+    #
+    #    Vì `sum(...) + token_prefill_moi` luôn vượt ngay khi món ấy **tự nó** lớn
+    #    hơn trần phòng. Chờ bao lâu cũng vô ích, và câu chữ trả về nói *"busy,
+    #    retry later"* — một lời khuyên **không bao giờ đúng** cho ca này.
+    #
+    # ⭐ Đây là cùng bài toán vLLM giải bằng **chunked prefill**: chẻ prefill ra
+    #    nhiều vòng để một prompt dài không phải vừa một ngân sách. Ta không chẻ
+    #    được ở tầng này, nên áp đúng nguyên lý ấy ở dạng nhận/không-nhận: món
+    #    lớn hơn cả trần vẫn được **xếp hàng**, nhưng tối đa MỘT món như thế cùng
+    #    lúc — nếu không, hàng chờ thành chỗ chứa prefill không giới hạn.
+    #
+    # ⚠️ Nó vẫn phải chờ theo luật whale ở `luat_nhan.xet`; đây chỉ là quyền VÀO
+    #    HÀNG, không phải quyền được phục vụ trước.
+    lon_hon_tran = int(token_prefill_moi) > token_prefill_toi_da
+    if lon_hon_tran:
+        if any(int(w.token_prefill_moi or 0) > token_prefill_toi_da for w in song):
+            raise PhongDay("phong_day_mot_mon_lon")
+        return
+
     if song and sum(int(w.token_prefill_moi or 0) for w in song) + int(
             token_prefill_moi) > token_prefill_toi_da:
         raise PhongDay("phong_day_token_prefill")

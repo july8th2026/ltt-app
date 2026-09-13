@@ -162,6 +162,112 @@ canh duoc **ben goi**. Them `test_255::test_ma_thuong_nguon_di_toi_danh_dau_loi`
 ⛔ Bai hoc: mot phep kiem cho `danh_dau_loi` khong the canh duoc loi cua NGUOI
    GOI no. Loi o day chua bao gio nam trong `danh_dau_loi`.
 
+## L-12 -- MO 13/09/2026: request PREFILL LON bi DUOI khi co nguoi khac cho
+
+Tim ra o kich ban J10 cua ma tran test job dai.
+
+### Do duoc — co DOI CHUNG
+
+Cung MOT request (prefill ~67.989 token, duoi tran vao 171.458 cua ltt-3.8):
+
+| phong cho | ket qua |
+|---|---|
+| co nguoi dang cho | **429** `concurrency_limited` sau 0,48 s |
+| **trong** | **200**, chay tron, TTFB 71,3 s |
+
+⇒ Request ay HOAN TOAN hop le voi model. No bi duoi **chi vi co nguoi khac
+  dang cho**. Day la BO DOI request lon, khong phai gioi han suc chua.
+
+### Co che
+
+`phong_cho.kiem_phong`:
+
+```python
+if song and sum(w.token_prefill_moi for w in song) + token_prefill_moi > token_prefill_toi_da:
+    raise PhongDay("phong_day_token_prefill")
+```
+
+Gia tri that dang chay:
+
+```
+nguong_whale             = 16.384
+token_prefill_cho_toi_da = 57.000     <- tran CUA CA PHONG
+tran vao ltt-3.8         = 171.458    <- thu nen tang QUANG CAO
+```
+
+🔴 **Mot request lon hon tran CUA CA PHONG thi khong bao gio vao duoc**, bat ke
+   cho bao lau — vi `sum(...) + token_prefill_moi` luon vuot ngay khi `song`
+   khong rong. Menh de `if song and` chi hoan lai toi luc co nguoi thu hai.
+
+⛔ Va cau chu tra ve noi sai ban chat: *"The requested execution resource is
+   busy. Retry later"*. Retry KHONG giup neu luon co nguoi cho. Khach doc "ban,
+   thu lai" roi thu mai, trong khi thu that su chan ho la MOT TRAN HO KHONG
+   DUOC BIET (57.000, trong khi tai lieu noi 171.458).
+
+### Vi sao dang ke voi san pham
+
+Codex / Claude Code gui hoi thoai dai; 57.000 token la muc RAT de cham. Nghia la
+dung luc he dong khach nhat (co nguoi cho) thi khach dung nhieu ngu canh nhat
+lai bi duoi dau tien — nguoc voi thu ta muon ban.
+
+### Huong sua — CHUA CHOT, can tra cong dong truoc
+
+Luat chung cua admission control: **mot tran TONG khong duoc phep loai tru vinh
+vien mot muc don le von hop le**; neu khong thi muc lon bi bo doi. Vai huong:
+
+1. Tran hieu luc = `max(token_prefill_cho_toi_da, token_prefill_moi)` — mot
+   nguoi cho lon van vao duoc, nhung chi MOT.
+2. Hang rieng cho whale, phuc vu xen ke theo tuoi cho.
+3. Giu nguyen tran nhung doi 429 thanh 413 + `limit_value` THAT, de khach biet
+   con so that ma nen ngu canh xuong.
+
+⚠️ Chua chon. Bay 13/09: ban va dau cua L-11 cung la do toi tu suy, va tra
+   Kubernetes Lease API xong moi thay huong khac tot hon.
+
+## L-11 -- MO 13/09/2026: deploy giet stream => MAT TOI 20 PHUT SUC CHUA
+
+Tim ra khi chay ma tran test job dai (kich ban J4, bao hoa 6 job). Mot deploy
+chay giua luc sau luot stream dang chay, va sau do:
+
+```
+tong lease: 6          <- TOAN BO suc chua (3 moi card)
+lay   20:20:20         nhip cuoi 20:20:20   im 516 s
+```
+
+### Co che
+
+Lease `mode=stream` duoc giu boi mot GENERATOR TRONG TIEN TRINH web, va nhip tim
+cua no la mot luong trong chinh tien trinh ay. Deploy dung dich vu => tien trinh
+chet => luong nhip chet theo => **dong lease nam lai**. `reclaim_expired` chi
+chay khi co ai do `acquire`, va chi don khi nhip da cu hon `ORPHAN_TIMEOUT = 20
+phut`.
+
+⇒ **Deploy giua luc co stream dang chay = mat toi 20 phut suc chua LLM.** Khach
+  that goi vao trong cua so ay bi xep hang sau nhung cai xac.
+
+⚠️ Khong lien quan L-08 va khong phai hoi quy cua no: L-08 la khach CAT, o day
+   la MAY CHU chet. Ban va ba lop cua L-08 khong cham toi ca nay, vi ca ba lop
+   deu chay TRONG tien trinh da chet.
+
+### Ban va — va vi sao no don gian den the
+
+Mot lease `mode=stream` **khong the song qua mot lan khoi dong lai tien trinh**,
+khong co ngoai le nao can xet. Nen:
+
+⇒ **Luc ung dung KHOI DONG, xoa sach moi lease `mode='stream'`.**
+
+Dieu kien da KIEM (khong phai gia dinh):
+
+| | |
+|---|---|
+| `setup/2-cai-dat.ps1:950` | `-m uvicorn server.run:app` — **khong** `--workers` |
+| `netstat` cong 8100 | **1** tien trinh LISTENING |
+| don lease luc khoi dong | **chua co** |
+
+⛔ Neu mot ngay nao do nen tang chay NHIEU tien trinh web, luat nay phai hep lai
+   theo `holder_id` — mot tien trinh khoi dong lai khong duoc xoa lease cua tien
+   trinh khac. Phep kiem cua ban va phai chot dieu kien nay, khong chi chot hanh vi.
+
 ## L-08 -- MO 13/09/2026: cua STREAM giu suat >= 643 giay sau khi khach di
 
 > ### ⭐ CAP NHAT 13/09 — loi giai, va mot loi thu nhan

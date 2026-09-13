@@ -22,6 +22,31 @@ from platform_core.models import ExecutionLease
 ORPHAN_TIMEOUT = timedelta(minutes=20)
 HEARTBEAT_SECONDS = 60.0
 
+#: Thời hạn mồ côi cho lease `mode='stream'` — NGẮN HƠN HẲN `ORPHAN_TIMEOUT`.
+#:
+#: 🔴 SỰ CỐ L-11 (13/09/2026). Một deploy chạy giữa lúc sáu lượt stream đang
+#:    chảy. Tiến trình web chết ⇒ luồng đập nhịp chết theo ⇒ sáu dòng lease nằm
+#:    lại giữ **TOÀN BỘ** sức chứa (3 mỗi card). Đo được: im 516 s và còn hạn
+#:    tới phút thứ 20. Tức **deploy giữa lúc có stream = mất tới 20 phút sức
+#:    chứa LLM**, khách thật xếp hàng sau những cái xác.
+#:
+#: ⭐ ĐỐI CHIẾU KUBERNETES Lease API (`coordination/v1/types.go`) — chuẩn cho
+#:    đúng bài "lease của một tiến trình đã chết". Họ KHÔNG xoá lease lúc khởi
+#:    động; họ dùng ba thứ ta ĐÃ CÓ: `holderIdentity` + `renewTime` +
+#:    `leaseDurationSeconds`, với thời hạn là **bội số nhỏ** của nhịp làm mới
+#:    (mặc định của họ: làm mới 10 s / thời hạn 15–40 s ⇒ **1,5–4×**).
+#:
+#: ⇒ Khuyết tật của ta không phải THIẾU CƠ CHẾ mà là **đặt sai dải**: nhịp 60 s
+#:   / thời hạn 1200 s = **20×**. Con số 20 phút hợp cho job nền chạy dài, và nó
+#:   bị dùng chung cho lease stream chỉ vì cả hai nằm chung một bảng.
+#:
+#: 180 s = **3×** nhịp — giữa dải Kubernetes, và chịu được hai nhịp lỡ liên tiếp
+#: trước khi một lease đang sống bị thu nhầm.
+#:
+#: ⛔ ĐỪNG hạ xuống dưới 2× (120 s): một lượt prefill dài có thể làm lỡ một nhịp,
+#:    và thu lease của một người đang được phục vụ thì tệ hơn giữ xác thêm 60 s.
+ORPHAN_TIMEOUT_STREAM = timedelta(seconds=180)
+
 #: Trần im lặng của `keep_alive(con_song=...)` — LỚP 2 của cơ chế nhả suất.
 #:
 #: 🔴 NGUỒN CỦA NGƯỠNG, không phải một con số chọn cho tròn:
@@ -52,11 +77,17 @@ def reclaim_expired(
 ) -> int:
     """Xoá lease mồ côi trong transaction hiện tại và trả số dòng đã xoá."""
     cutoff = _now() - timeout
+    # 🔴 L-11: lease `stream` có thời hạn RIÊNG, ngắn hơn nhiều. Xem
+    #    `ORPHAN_TIMEOUT_STREAM`. Dùng `min` chứ không thay thẳng: người gọi
+    #    truyền `timeout` ngắn hơn (ví dụ dọn tay) thì ý họ vẫn phải thắng.
+    cutoff_stream = _now() - min(timeout, ORPHAN_TIMEOUT_STREAM)
     query = db.query(ExecutionLease)
     if resource:
         query = query.filter(ExecutionLease.resource == resource)
     leases = query.all()
-    expired = [lease for lease in leases if _aware(lease.heartbeat_at) < cutoff]
+    expired = [lease for lease in leases
+               if _aware(lease.heartbeat_at) < (
+                   cutoff_stream if lease.mode == "stream" else cutoff)]
     for lease in expired:
         db.delete(lease)
     if expired:
