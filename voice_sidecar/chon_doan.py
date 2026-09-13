@@ -149,12 +149,8 @@ class KetQuaChon:
 
 
 def _khung_rms(wav, sr: int, khung_ms: float = KHUNG_MS):
-    n = max(1, int(sr * khung_ms / 1000.0))
-    du = len(wav) % n
-    x = wav[:len(wav) - du] if du else wav
-    if not len(x):
-        return np.zeros(0, dtype=np.float64), n
-    return np.sqrt((x.reshape(-1, n).astype(np.float64) ** 2).mean(axis=1)), n
+    from ._dsp_chung import khung_rms
+    return khung_rms(wav, sr, khung_ms)
 
 
 def ranh_gioi_im(wav, sr: int) -> list:
@@ -328,10 +324,8 @@ def _snr_db(wav, sr: int) -> float | None:
 
 
 def _cosine(a, b) -> float:
-    a = np.asarray(a, dtype=np.float64).ravel()
-    b = np.asarray(b, dtype=np.float64).ravel()
-    na, nb = np.linalg.norm(a), np.linalg.norm(b)
-    return 0.0 if na == 0 or nb == 0 else float(np.dot(a, b) / (na * nb))
+    from ._dsp_chung import cosine
+    return cosine(a, b)
 
 
 def chon(wav, sr: int, *, bo_ma_hoa=None) -> KetQuaChon:
