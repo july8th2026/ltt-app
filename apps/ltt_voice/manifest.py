@@ -34,7 +34,7 @@ from __future__ import annotations
 from platform_core.i18n import N_
 from platform_core.registry import AppManifest, NavEntry, ToolSpec
 
-from . import gia, nghe_thu, sidecar_client
+from . import gia, nghe_thu, sidecar_client, toc_do
 from .tham_so_cong_khai import (SO_LAN_THU_JOB, TRAN_KY_TU_CONG_KHAI,
                                 TRAN_MOI_LUOT_SINH)
 
@@ -310,6 +310,15 @@ MANIFEST = AppManifest(
                              "exclusive_with": ("preset",)},
                 "preset": {"type": "string", "required": False,
                            "max_length": 64},
+                # D01 (2026-09-13): tốc độ HẬU KỲ cho Public API.
+                # Continuous [0.5, 2.0]; platform reject ngoài khoảng.
+                "speed": {"type": "number", "required": False,
+                          "minimum": toc_do.TOC_DO_MIN,
+                          "maximum": toc_do.TOC_DO_MAX},
+                # D02 (2026-09-13): làn ngôn ngữ cho Public API.
+                # "auto" = máy đoán (mặc định). Platform reject ngoài enum.
+                "language": {"type": "string", "required": False,
+                             "enum": ["auto", "vi", "en"]},
             },
             returns={"audio_key": "audio", "text": "text"},
 
@@ -386,6 +395,27 @@ MANIFEST = AppManifest(
                             "A built-in voice name. Ignored when voice_id is "
                             "given; sending both is rejected."),
                         "example": "Adam",
+                    },
+                    "speed": {
+                        "description": (
+                            "Playback speed. 1.0 is normal. Range 0.5 (half "
+                            "speed) to 2.0 (double speed). Applied as a "
+                            "post-synthesis time-stretch — it does not change "
+                            "how the model speaks, only how fast the output "
+                            "plays. Billing is based on the original duration "
+                            "before speed change. Omit or send 1.0 for "
+                            "normal speed."),
+                        "example": 1.0,
+                    },
+                    "language": {
+                        "description": (
+                            "Language lane for quality enforcement. 'auto' "
+                            "(default) detects language from the text. 'vi' "
+                            "or 'en' overrides detection. If the detected or "
+                            "declared language does not match the voice's "
+                            "lane, the request is rejected with "
+                            "voice_language_mismatch."),
+                        "example": "auto",
                     },
                 },
             },
