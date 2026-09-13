@@ -2523,3 +2523,104 @@ hồ sơ thuộc **một tài khoản thử** `.local`. Đính chính đã ghi �
 ngày trong khi mã khai 30 (`RETENTION_DAYS`). Chỉ chủ dự án đọc được luật thật
 qua dashboard Cloudflare R2. Vật mốc đang chờ:
 `chan_doan/moc-vong-doi-20260912T003354Z.txt`.
+## 2026-09-11 — 4 BOT → 4 APP: parity đo được, và bốn lần tôi tự bác chính mình
+
+**Nhánh** `claude/ltt-4bot-workflow-app-550cab` · **35 commit** · **242 phép
+kiểm** (`test_1100`–`test_1113`) · gate L3 hai lượt liên tiếp cho **cùng** kết
+quả: `FAIL (1/32)`, **7 lỗi và cả bảy là `test_448`** — không lỗi nào của chương
+trình này.
+
+### Phase: 00–11 xong · 12 một phần · 13 xong · 14 xong · 15 một phần
+
+```
+TRANSCRIPT · AUDIO PAUSE · GEM · VIDEO ASSEMBLY :  NOT READY
+WORKFLOW CORE : READY FOR THESE APPS (qua executor Agent/M1, khong qua V2)
+AGENT         : NO CHANGE
+```
+
+Bốn `NOT READY` **cùng một chặn**: chưa có lượt E2E thật qua worker trên phần
+cứng thật. Chi tiết ở `docs/migration/workflow_apps/29_FINAL_CUTOVER.md`.
+
+### 🔴 Phát hiện đắt nhất: "trùng khớp từng byte" là mục tiêu BẤT KHẢ
+
+Đo parity `transcript` trên **1.932 cặp vào/ra thật**: bản chuyển **95,50 %**.
+Con số ấy **một mình nó vô nghĩa** cho tới khi chạy **chính engine gốc** trên
+cùng dữ liệu — nó đạt **95,76 %** so với đầu ra của **chính nó**, vì
+`make_timeline_v2` gọi `random.uniform` **có chủ đích**.
+
+⇒ Không có cột đối chứng, 95,50 % đọc thành *"thiếu 4,5 %"* và sẽ có người đi
+  sửa một thứ không hỏng. **Hỏi bản gốc có tất định không, trước khi gọi một
+  lệch là khiếm khuyết.**
+
+### 🔴 Hai chỗ khai cùng một điều mà không ai bắt chúng khớp
+
+Con bọ hình dạng này xuất hiện **hai lần** trong một phiên:
+
+| | Hai chỗ | Hậu quả |
+|---|---|---|
+| VRAM | `AppManifest.gpu_vram_mb` (runner **đọc**) vs `ToolSpec.resource["vram_min_mb"]` (**không ai đọc**) | 3 App GPU chạy **không lease nào**, đè lên `taoclipngan`/`upscalevideo` |
+| `prompt_canh` | schema `so_canh.max=500` vs trần thời gian `api` 1800 s | 151 lượt gọi trong 1800 s = 11,9 s/lượt — **lời hứa không phục vụ được**, và `runtime_noi_bo` **đã thu tiền từng lượt** |
+
+⭐ Cả hai **không phép kiểm nào bắt được**, vì **cả hai bản khai đều hợp lệ** —
+một cái rỗng, một cái đầy, và không có gì nói chúng phải khớp.
+`_validate_hop_dong_v2` kiểm *hình dạng* rất kỹ nhưng không hỏi: **ai đọc con số
+này?** Kiểm hình dạng và kiểm có-người-tiêu-thụ là **hai việc khác nhau**.
+
+Đối chiếu K8s: ở đó **không tồn tại** trạng thái "khai mà không ai đọc", và
+`scheduling-gpus` còn **cưỡng chế sự nhất quán** giữa `requests` và `limits`.
+
+### ⛔ BỐN lần tôi tự bác chính mình — tất cả cùng một họ
+
+1. Gọi thẳng `jobs.claim()` → kết luận *"cửa job không giành suất"* → **sai**,
+   `job_runner:226` có gọi `admission.hold_persisted`. Phép tái hiện đi **vòng
+   qua đường production**. Đã hoàn nguyên bản vá thừa.
+2. Đếm **dòng mã** thay vì **lượt gọi lúc chạy** khi đo mật độ mốc huỷ.
+3. Suy `lifecycle="development"` là một cổng ẩn/hiện — **sai**: 7 tool ở 6 App
+   **đang bán thật** cũng ở trạng thái đó.
+4. **Đọc stdout của gate** thay vì tệp lỗi đầy đủ → thấy 1 lỗi trong khi có
+   **12** → **báo sai cho hai phiên khác**.
+
+⚠️ Lần thứ tư lan ra ngoài: tôi báo sai → một phiên relay như một nguồn → chủ dự
+   án nhận câu sai. **Ba mắt xích, một lỗi.** Cách chặn cơ học: **kèm lệnh đo,
+   không chỉ kèm kết luận** — tin nhắn giữa các phiên trông như một nguồn nhưng
+   không mang theo phạm vi lẫn cách đo.
+
+⇒ Và: chỗ nào công cụ tự nói *"đầu ra ĐẦY ĐỦ ở tệp X"* thì đó là **lời mời đọc
+  tệp X**. Một bản tóm tắt thiết kế để **vừa màn hình** không phải một bản ghi.
+
+### Ba sai lệch CỐ Ý khỏi bản gốc — khai ra vì "chuyển nguyên vẹn" mà lặng lẽ đổi là nói dối
+
+1. `sequential_timeline` **sắp xếp đầu vào** — đầu ra bot phụ thuộc thứ tự thư
+   mục hệ tệp: **115/125 cảnh đổi clip** khi đổi thứ tự. Mã **đã có** cơ chế
+   `suffix` kèm chú thích nêu ý định, nhưng nó chết với tên có tiền tố (chính là
+   tên production dùng).
+2. `error_context.MOC_NGOAI` — 3 mốc trên 900 s ⇒ huỷ chờ ~5 phút **trong khi
+   giữ 8 GB VRAM**. Móc vào 14 `start_stage` ⇒ ~64 s. Kèm một `except Exception`
+   từng **đổi tên một lệnh huỷ thành một thất bại**.
+3. `gpu_vram_mb` khai thêm ở ba App — sửa một khai báo **sai chỗ** của chính tôi.
+
+### Việc đã làm cho hạ tầng dùng chung (đã lên trunk, đã theo deploy `3b22503c`)
+
+Bộ test **tự tháo khoá đồng thời của cả máy**: fixture `khoa_sach` gọi
+`nha(ep=True)` trên **mọi** khoá. Đo: khoá sống **119 s trên một lượt 756 s** —
+**84 %** thời lượng mỗi lượt gate chạy **không hàng rào**. Vá 4 tầng
+(`test_394` · `test_361` · chuỗi gợi ý của `cua_so_yen` · khối `.md`), mỗi tầng
+do **một người đọc tầng khác** tìm ra.
+
+⭐ Bài học: bề mặt cần liệt kê là danh sách **TẦNG**, không phải danh sách tệp —
+   lời gọi hàm · cờ CLI · chuỗi hướng dẫn runtime · tài liệu. **Không phép quét
+   nào tự nói ra rằng nó thiếu một tầng.**
+
+### Còn lại, xếp theo AI gỡ được
+
+| Chặn | Ai |
+|---|---|
+| E2E thật qua worker · `vram_min_mb` đo thật · URL công khai | cần phần cứng/dữ liệu |
+| 7 lỗi `test_448` | `phien/asv-v6` → trunk (bản xanh **thật**, `thay_the=0`) |
+| Tầng workflow **V2 không có bộ thi hành** — không tệp nào tạo một `Job` | **chủ dự án** |
+| Connector Drive/Sheets (Phase 12: **không** nhét vào 4 App) | **chủ dự án** |
+
+⛔ `audio_pause` — mệnh đề *"kết quả như bot đã giao"* **vĩnh viễn không kiểm
+   được** trừ khi lấy lại tệp từ Drive: `workdir_bot` rỗng, 1.398 lượt
+   `job_done` chỉ ghi `elapsed_s` + một liên kết.
+

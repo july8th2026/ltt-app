@@ -1023,8 +1023,9 @@ HO_SO: dict[str, dict] = {
         "xep_hang": True,
     },
     "doi": {
-        "mo_ta": "suy pham vi TU cay hien tai",
-        "chung_minh": "moi test cham toi phan da doi deu xanh",
+        "mo_ta": "suy pham vi TU cay hien tai (moc mac dinh HEAD; `--tu <ref>` "
+                 "doi moc sang mot baseline SHA)",
+        "chung_minh": "moi test cham toi phan da doi SO VOI MOC deu xanh",
         "khong_chung_minh": "KHONG phai bang chung phat hanh. Va no TU HA CAP "
                             "xuong day du khi khong chac (cham tep dung chung, "
                             "hoac mot duong dan khong thanh phan nao so huu).",
@@ -1588,17 +1589,31 @@ def _thu_hep(steps: list[Step], args, ho_so: str
             phan |= tieu_thu.get(t, set())
         nguon = f"chon tay: {', '.join(sorted(chon))}"
     else:
+        # 🔴 `--tu <ref>`: MOC SO SANH, khong phai mot che do moi.
+        #
+        #    Mac dinh `--doi` so voi `HEAD`. Dieu do dung cho mot vong lap
+        #    sua-roi-chay, nhung SAI ngay khi mot chien dich dai co commit
+        #    checkpoint giua chung: sau commit thu hai, `HEAD` da nuot phan
+        #    dau, va `--doi` bao "cay khong doi gi" trong khi chien dich do
+        #    dang mang 40 tep thay doi so voi luc no bat dau.
+        #
+        # ⛔ Do KHONG phai mot phep do hep — no la mot phep do bo sot, va no
+        #    bao xanh. `thanh_phan.duong_da_doi` von da nhan `goc_so`; cho nay
+        #    chi noi co cho no, chu khong them co che nao.
+        goc_so = getattr(args, "tu", "") or ""
         try:
-            duong = tp_mod.duong_da_doi(ROOT)
+            duong = tp_mod.duong_da_doi(ROOT, goc_so=goc_so)
         except tp_mod.KhongBiet as e:
             return None, f"  [doi] khong doc duoc cay ({e}) -> chay DAY DU"
         if not duong:
-            return None, "  [doi] cay khong doi gi -> chay DAY DU"
+            moc = goc_so or "HEAD"
+            return None, f"  [doi] cay khong doi gi so voi {moc} -> chay DAY DU"
         phan = tp_mod.bi_anh_huong(duong, ROOT)
         if phan is None:
             return None, ("  [doi] cham tep DUNG CHUNG hoac duong khong ai"
                           " so huu -> chay DAY DU")
-        nguon = f"{len(duong)} duong dan doi"
+        nguon = (f"{len(duong)} duong dan doi so voi {goc_so}" if goc_so
+                 else f"{len(duong)} duong dan doi")
 
     tep_test = tp_mod.test_can_chay(phan, ROOT)
     # ⭐ Tep test DA DOI di thang vao danh sach, khong qua do thi thanh phan.
@@ -1659,7 +1674,16 @@ def main() -> int:
                              "mot luot phan quyet phai chay het (xem NHOM_RE)")
     parser.add_argument("--doi", action="store_true",
                         help="suy pham vi tu cay hien tai")
+    parser.add_argument("--tu", default="",
+                        help="moc so sanh cho --doi (vd baseline SHA cua mot "
+                             "chien dich dai co commit checkpoint). Mac dinh "
+                             "so voi HEAD")
     args = parser.parse_args()
+
+    # `--tu` mot minh khong lam gi ca. Noi thang thay vi im lang bo qua: mot co
+    # bi nuot lang le la mot phep do HEP ma nguoi goi tuong la rong.
+    if args.tu and not args.doi:
+        parser.error("`--tu` la moc so sanh CUA `--doi`; hay dung kem `--doi`.")
 
     # ⛔ NOI RA thay vi im lang uu tien. `--noi-tiep` la mot HO_SO, va ho so thi
     #    loai tru nhau. Nhan ca hai roi lang le bo mot cai la dung cai bay ma

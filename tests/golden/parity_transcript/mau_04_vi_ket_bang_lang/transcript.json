@@ -1,0 +1,394 @@
+[
+  {
+    "start": 0.0,
+    "end": 4.08,
+    "text": "chiếc ghế quyền lực và sự huyển hoặc của chấp niệm,",
+    "type": "speech",
+    "scene_id": "S0001",
+    "index": 1
+  },
+  {
+    "start": 4.08,
+    "end": 9.66,
+    "text": "ngồi vắt vẻo trên tổ quả. Vị thiền sư bị quan lớn chế dũ là hiểm nghèo.",
+    "type": "speech",
+    "scene_id": "S0002",
+    "index": 2
+  },
+  {
+    "start": 9.66,
+    "end": 14.2,
+    "text": "Nhưng chỉ bằng một câu nói, ngài khiến vị quan toát mồ, hôi,",
+    "type": "speech",
+    "scene_id": "S0003",
+    "index": 3
+  },
+  {
+    "start": 14.2,
+    "end": 18.58,
+    "text": "hột khi nhận ra chiếc ghế ngọc ngà của mình mới thực sự là bờ vực",
+    "type": "speech",
+    "scene_id": "S0004",
+    "index": 4
+  },
+  {
+    "start": 18.58,
+    "end": 21.66,
+    "text": "thẳm. Lời đáp trả ấy là gì?",
+    "type": "speech",
+    "scene_id": "S0005",
+    "index": 5
+  },
+  {
+    "start": 21.66,
+    "end": 24.94,
+    "text": "Ô Sào là một cao tăng Trung Hoa vào đời đường.",
+    "type": "speech",
+    "scene_id": "S0006",
+    "index": 6
+  },
+  {
+    "start": 24.94,
+    "end": 30.0,
+    "text": "Khi bà mẹ hạ sinh sư, bà không ưng ý lắm nên đem bỏ con,",
+    "type": "speech",
+    "scene_id": "S0007",
+    "index": 7
+  },
+  {
+    "start": 30.0,
+    "end": 34.34,
+    "text": "và một chiếc tổ quả trên cổi đại thọ trước hiên chùa rồi lẫn mất.",
+    "type": "speech",
+    "scene_id": "S0008",
+    "index": 8
+  },
+  {
+    "start": 34.34,
+    "end": 39.04,
+    "text": "Sư xuất gia từ đó. Và người ta gọi sư là thầy ô xào ô quả",
+    "type": "speech",
+    "scene_id": "S0009",
+    "index": 9
+  },
+  {
+    "start": 39.04,
+    "end": 43.62,
+    "text": "xào tổ. Tuổi ấu thơ và tráng niên của sư trôi qua bình",
+    "type": "speech",
+    "scene_id": "S0010",
+    "index": 10
+  },
+  {
+    "start": 43.62,
+    "end": 47.16,
+    "text": "thẳng trong bóng mát của các tòng lâm cổ kính.",
+    "type": "speech",
+    "scene_id": "S0011",
+    "index": 11
+  },
+  {
+    "start": 47.16,
+    "end": 50.3,
+    "text": "Sư thường hành thiền trên quê hương của mình,",
+    "type": "speech",
+    "scene_id": "S0012",
+    "index": 12
+  },
+  {
+    "start": 50.3,
+    "end": 54.68,
+    "text": "tức là nơi chán ba có đặt tổ quả ngày xưa mà theo năm tháng.",
+    "type": "speech",
+    "scene_id": "S0013",
+    "index": 13
+  },
+  {
+    "start": 54.68,
+    "end": 59.04,
+    "text": "Cội cây đã to và rộng, đầy đủ cành nhánh có thể cho sư,",
+    "type": "speech",
+    "scene_id": "S0014",
+    "index": 14
+  },
+  {
+    "start": 59.04,
+    "end": 63.56,
+    "text": "Đặt một chiếc tọa cụ trên ấy Cho đến khi ngộ đạo và hành",
+    "type": "speech",
+    "scene_id": "S0015",
+    "index": 15
+  },
+  {
+    "start": 63.56,
+    "end": 67.98,
+    "text": "đạo Thiền sư vẫn không rời quê mẹ Một hôm quan Thị Lan",
+    "type": "speech",
+    "scene_id": "S0016",
+    "index": 16
+  },
+  {
+    "start": 67.98,
+    "end": 72.4,
+    "text": "Bạch cư dị Một thi hào lừng danh đương thời Đi dạo",
+    "type": "speech",
+    "scene_id": "S0017",
+    "index": 17
+  },
+  {
+    "start": 72.4,
+    "end": 76.66,
+    "text": "ngang cổng chùa trô Thấy nhà sư đang ngồi vắt vẻo trên tan cây",
+    "type": "speech",
+    "scene_id": "S0018",
+    "index": 18
+  },
+  {
+    "start": 76.66,
+    "end": 80.96,
+    "text": "Vốn không mưa hạn người lánh nở đời như thế Ông Cao mày hỏi",
+    "type": "speech",
+    "scene_id": "S0019",
+    "index": 19
+  },
+  {
+    "start": 80.96,
+    "end": 85.54,
+    "text": "Ở bộ hết chỗ ngồi rồi hay sao Mà thầy lựa chỗ hiểm nghèo",
+    "type": "speech",
+    "scene_id": "S0020",
+    "index": 20
+  },
+  {
+    "start": 85.54,
+    "end": 89.94,
+    "text": "như thế để ngồi Thiền sư Bình thẳng đáp Ở chỗ của tôi xem",
+    "type": "speech",
+    "scene_id": "S0021",
+    "index": 21
+  },
+  {
+    "start": 89.94,
+    "end": 94.34,
+    "text": "ra còn vững vàng hơn chỗ của quang lớn đang an tọa nhiều.",
+    "type": "speech",
+    "scene_id": "S0022",
+    "index": 22
+  },
+  {
+    "start": 94.34,
+    "end": 98.72,
+    "text": "Quang thị lan nhìn lại chiếc kiệu của mình đang ngồi, ngạc nhiên.",
+    "type": "speech",
+    "scene_id": "S0023",
+    "index": 23
+  },
+  {
+    "start": 98.72,
+    "end": 101.56,
+    "text": "Ở chỗ tôi đang ngồi có gì đáng ngại đâu.",
+    "type": "speech",
+    "scene_id": "S0024",
+    "index": 24
+  },
+  {
+    "start": 101.56,
+    "end": 105.84,
+    "text": "Ở thưa, chỗ của đại quang là dưới vua trên các quang và trăm",
+    "type": "speech",
+    "scene_id": "S0025",
+    "index": 25
+  },
+  {
+    "start": 105.84,
+    "end": 110.18,
+    "text": "họ. Vua thương thì quần thần ghét, được lòng dân thì mất lòng",
+    "type": "speech",
+    "scene_id": "S0026",
+    "index": 26
+  },
+  {
+    "start": 110.18,
+    "end": 114.7,
+    "text": "vua. Tính mạng của đại quang cùng thân quyến đều lệ thuộc vào",
+    "type": "speech",
+    "scene_id": "S0027",
+    "index": 27
+  },
+  {
+    "start": 114.7,
+    "end": 120.48,
+    "text": "lòng yêu ghét của vua. Sự tật đố tỉ hiểm của bạn bè Một chiếc ghế",
+    "type": "speech",
+    "scene_id": "S0028",
+    "index": 28
+  },
+  {
+    "start": 120.48,
+    "end": 124.32,
+    "text": "được kê trên đầu lưỡi của thiên hạ Thì làm sao",
+    "type": "speech",
+    "scene_id": "S0029",
+    "index": 29
+  },
+  {
+    "start": 124.32,
+    "end": 129.0,
+    "text": "bị được với sự vững chắc của cổi cây này được Có phải thế không?",
+    "type": "speech",
+    "scene_id": "S0030",
+    "index": 30
+  },
+  {
+    "start": 129.0,
+    "end": 133.38,
+    "text": "Bạch cư dị nghe nhà sư nói chỉ im lặng cuối đầu Dày lâu",
+    "type": "speech",
+    "scene_id": "S0031",
+    "index": 31
+  },
+  {
+    "start": 133.38,
+    "end": 137.96,
+    "text": "vị quan lão mới kết tiếng hỏi Ở thầy có thể cho tôi biết thế nào",
+    "type": "speech",
+    "scene_id": "S0032",
+    "index": 32
+  },
+  {
+    "start": 137.96,
+    "end": 140.42,
+    "text": "là đại ý của Phật Pháp chăng?",
+    "type": "speech",
+    "scene_id": "S0033",
+    "index": 33
+  },
+  {
+    "start": 140.42,
+    "end": 144.96,
+    "text": "Thiền sư đáp liền Ở không gì dễ bằng câu hỏi này đại",
+    "type": "speech",
+    "scene_id": "S0034",
+    "index": 34
+  },
+  {
+    "start": 144.96,
+    "end": 149.46,
+    "text": "quan hãy nghe tôi trả lời đây đó là chư ác mạc tác chúng thiện",
+    "type": "speech",
+    "scene_id": "S0035",
+    "index": 35
+  },
+  {
+    "start": 149.46,
+    "end": 153.68,
+    "text": "phụng hành tự tĩnh kỷ ý thị chư Phật giáo nghĩa",
+    "type": "speech",
+    "scene_id": "S0036",
+    "index": 36
+  },
+  {
+    "start": 153.68,
+    "end": 158.02,
+    "text": "là các điều ác chớ làm các điều lành vân giữ tự thanh lọc",
+    "type": "speech",
+    "scene_id": "S0037",
+    "index": 37
+  },
+  {
+    "start": 158.02,
+    "end": 162.44,
+    "text": "ý mình đó là lời Phật dạy bạch cư dị nghe xong bảo những bài",
+    "type": "speech",
+    "scene_id": "S0038",
+    "index": 38
+  },
+  {
+    "start": 162.44,
+    "end": 166.84,
+    "text": "thầy vừa đáp con nít lên ba cũng nói được thiền sư mỉm",
+    "type": "speech",
+    "scene_id": "S0039",
+    "index": 39
+  },
+  {
+    "start": 166.84,
+    "end": 171.22,
+    "text": "Ừ thưa đại quan con nít lên ba nói được nhưng ông lão",
+    "type": "speech",
+    "scene_id": "S0040",
+    "index": 40
+  },
+  {
+    "start": 171.22,
+    "end": 175.7,
+    "text": "60 chưa chắc làm xong ngày có thấy như thế không bạch",
+    "type": "speech",
+    "scene_id": "S0041",
+    "index": 41
+  },
+  {
+    "start": 175.7,
+    "end": 179.92,
+    "text": "cư dị lại im lặng cuối đầu ông bắt đầu học đạo với thiền",
+    "type": "speech",
+    "scene_id": "S0042",
+    "index": 42
+  },
+  {
+    "start": 179.92,
+    "end": 184.84,
+    "text": "sư ô xào từ đó người ta kể rằng dưới sự dẫn dắt của thiền",
+    "type": "speech",
+    "scene_id": "S0043",
+    "index": 43
+  },
+  {
+    "start": 184.84,
+    "end": 189.26,
+    "text": "sư tổ quả không bao lâu vị đại quan này hoác nhiên đại ngộ",
+    "type": "speech",
+    "scene_id": "S0044",
+    "index": 44
+  },
+  {
+    "start": 189.26,
+    "end": 194.4,
+    "text": "chuyện Hãy subscribe kênh Ghiền Mì Để không",
+    "type": "speech",
+    "scene_id": "S0045",
+    "index": 45
+  },
+  {
+    "start": 194.4,
+    "end": 200.1,
+    "text": "bỏ lỡ những video hấp dẫn",
+    "type": "speech",
+    "scene_id": "S0046",
+    "index": 46
+  },
+  {
+    "start": 200.1,
+    "end": 203.56,
+    "text": "[B-ROLL: ENVIRONMENT]",
+    "type": "silence",
+    "scene_id": "S0047",
+    "index": 47
+  },
+  {
+    "start": 203.56,
+    "end": 207.02,
+    "text": "[B-ROLL: ENVIRONMENT]",
+    "type": "silence",
+    "scene_id": "S0048",
+    "index": 48
+  },
+  {
+    "start": 207.02,
+    "end": 210.47,
+    "text": "[B-ROLL: ENVIRONMENT]",
+    "type": "silence",
+    "scene_id": "S0049",
+    "index": 49
+  }
+]

@@ -62,9 +62,31 @@ BO_QUA_THU_MUC = ("__pycache__", "node_modules", "/core/", "\\core\\",
 # ⚠️ Hệ quả phải biết: một chuỗi giao diện THẬT lỡ đặt vào hai tệp này sẽ không
 #    được đếm. Nên đừng đặt — thông điệp lỗi của LTT VOICE nằm ở
 #    `apps/ltt_voice/features.py` và `audio_input.py`, cả hai đều được đếm.
+#
+# 🔴 Ba mục cuối là ENGINE CHUYỂN NGUYÊN VẸN từ bot legacy, và lý do miễn khác
+#    hẳn hai loại trên: chuỗi trong đó là **nhật ký kiểu sự kiện** và **bảng dữ
+#    liệu tiếng Việt của chính engine** (từ nối, dấu câu, từ khoá cảm xúc,
+#    nhãn `[B-ROLL: …]`), không phải chuỗi giao diện.
+#
+#    Bọc `_()` quanh chúng làm hai việc, cả hai đều sai: đổi **đầu ra của
+#    engine** (nhãn `[B-ROLL / PAUSE]` đi thẳng vào tệp giao cho khách), và phá
+#    tính đồng nhất từng byte với bản đã chạy một năm — vốn là toàn bộ điểm của
+#    việc chuyển nguyên vẹn.
+#
+# ⚠️ Cùng danh sách với `ruff.toml`, `mypy.ini` và `check_silent_except.py`.
+#    Bốn công cụ nhìn cùng phạm vi thì một tệp được miễn ở chỗ này không bất
+#    ngờ bị bắt ở chỗ kia.
+#
+# ⛔ Và hệ quả phải biết, y như ghi chú ở trên: một chuỗi giao diện THẬT lỡ đặt
+#    vào ba thư mục ấy sẽ không được đếm. Nên đừng đặt — chúng là bản chuyển đã
+#    ĐÓNG BĂNG; mã mới thuộc `services/<domain>.py` và `routes.py` bên ngoài,
+#    nơi bộ đếm vẫn soi.
 BO_QUA_FILE = ("server/admin.py", "server/admin_api.py",
                "server/templates/admin", "server/routes/admin",
-               "apps/ltt_voice/text_pipeline.py", "apps/ltt_voice/tu_dien.py")
+               "apps/ltt_voice/text_pipeline.py", "apps/ltt_voice/tu_dien.py",
+               "apps/transcript/services/engine",
+               "apps/audio_pause/services/engine",
+               "apps/video_assembly/services/engine")
 
 if hasattr(sys.stdout, "buffer"):
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8",

@@ -1,0 +1,35 @@
+{
+  "nguon": "bot legacy DUNGVIDEO-FULL, thu muc _bot_downloads/<kenh>/row<n>_<drive_id>/",
+  "vi_sao_doi_ten": "ten goc mang Drive folder ID - CLAUDE.md cam chep di",
+  "vi_sao_chi_co_TEN_clip": "Tang khop clip (`sequential_timeline`) chi doc TEN tep, khong mo video. Chep ca .mp4 la 5,7 GB va khong them mot bit thong tin nao cho phep kiem.",
+  "cap": [
+    {
+      "ten": "mau_01_mot_doi_mot_nho",
+      "bam_id_nguon": "2ae6efc9db7ae9a380790037b2b08a1a6fabb5ab1c395946cb2cecb3bf9f01cf",
+      "so_doan": 21,
+      "so_canh": 21,
+      "so_clip": 21
+    },
+    {
+      "ten": "mau_02_khong_co_clip",
+      "bam_id_nguon": "7714b9487a2c6371f26e19082c1bf60a61b5172c8cf8bd7ad438db80971c536e",
+      "so_doan": 59,
+      "so_canh": 59,
+      "so_clip": 0
+    },
+    {
+      "ten": "mau_03_nhieu_clip_mot_canh",
+      "bam_id_nguon": "dc771e9758889dd60bc2f19cc5f0846387a60a69fcde2da76a730aa537d267e8",
+      "so_doan": 125,
+      "so_canh": 125,
+      "so_clip": 240
+    },
+    {
+      "ten": "mau_04_thieu_mot_canh",
+      "bam_id_nguon": "9600ec425ac66ddc48df44dab4d0f3faabcb8503cfe6e3fe889de38d23a4ba1b",
+      "so_doan": 177,
+      "so_canh": 177,
+      "so_clip": 177
+    }
+  ]
+}

@@ -90,6 +90,19 @@ DISPOSITION = {
     "autosubvideo": (EXPOSE_V1, ("video.subtitle",)),
     "taoclipngan": (MIGRATE, ()),
 
+    # Bon App migrate tu bot legacy (Phase 08-11). DEFER vi HINH DANG san pham,
+    # khong phai vi "chua lam xong":
+    #   - `prompt_canh` thu tien theo tung luot goi model qua `runtime_noi_bo`,
+    #     nen `credit_cost` o tang job la 0 CO CHU DICH. Hop dong quote/settle
+    #     mot-vao-mot-ra khong mo ta duoc gia cua no.
+    #   - `video_assembly` la mot chuoi nhieu giai doan (STT, khop clip, tach
+    #     nhac, tron tieng, chay phu de) chay tren GPU; `vram_min_mb` con CHUA
+    #     do that.
+    #   - Ca bon chua nghiem thu E2E qua worker va chua kiem tren URL cong khai.
+    "transcript": (DEFER, ()),
+    "audio_pause": (DEFER, ()),
+    "prompt_canh": (DEFER, ()),
+    "video_assembly": (DEFER, ()),
     # An orchestrator, not a tool: publishing it publishes a runtime.
     "agent": (DEFER, ()),
     # Device management, not a priced tool: no ToolSpec and no Job. Publishing

@@ -204,6 +204,38 @@ def test_tep_khoa_KHONG_nam_trong_cay_kho():
     assert GOC.resolve() not in that.parents, f"{that} nam trong cay kho"
 
 
+def test_cau_goi_y_khi_NHA_TRUOT_phai_NEU_TEN_tai_nguyen(capsys, monkeypatch):
+    """Đường thứ TƯ chạm khoá thật, và nó không hiện ra ở phép quét mã.
+
+    🔴 Ba đường kia (`nha(ep=True)`, `dang_giu()`, `_tep("<tên>")`) đọc được
+       bằng AST. Đường này đi qua **một chuỗi gợi ý** mà con người gõ tay theo.
+
+    Dòng ấy in ra **đúng lúc một phiên khác đang giữ khoá** — `that_bai` chính
+    là những khoá ta vừa KHÔNG nhả được vì không phải của ta. Bản cũ gợi ý
+    `nha --ep` trần, mà `--ep` không kèm `--tai-nguyen` thì gỡ **TẤT CẢ** khoá
+    trên máy. Ai làm theo nguyên văn là gỡ cả khoá của một lượt gate đang sống,
+    đúng ở chỗ người ta dễ tin nhất.
+
+    ⚠️ Phép kiểm này chốt **hình dạng lời khuyên**, không chốt hành vi của `nha`
+       — vì hành vi ấy đúng và có tài liệu; thứ sai là câu rủ người ta dùng nó
+       ở dạng rộng nhất.
+    """
+    cy.thu_giu("phien-khac", "gate day du")
+    ban_ghi = json.loads(cy.TEP_KHOA.read_text(encoding="utf-8"))
+    ban_ghi["pid"] = os.getpid() + 1          # giả vờ của phiên khác, còn sống
+    cy.TEP_KHOA.write_text(json.dumps(ban_ghi), encoding="utf-8")
+
+    monkeypatch.setattr(sys, "argv", ["cua_so_yen.py", "nha"])
+    ma = cy.main()
+    ra = capsys.readouterr().out
+
+    assert ma == 1, "nha truot khoa cua phien khac phai tra ma khac 0"
+    assert "--tai-nguyen" in ra, (
+        "cau goi y khong neu ten tai nguyen — ai lam theo se go CA khoa cua "
+        "mot luot gate dang chay")
+    assert cy.TEP_KHOA.exists(), "khong duoc go khoa cua phien khac"
+
+
 def test_moi_chuoi_IN_RA_deu_thuan_ASCII():
     """Console PowerShell 5.1 là CP1252.
 

@@ -53,3 +53,16 @@ faster-whisper>=1.0,<2.0     # chep loi (CTranslate2), GPU float16 / CPU int8
 scenedetect>=0.6.4,<0.7      # phat hien canh
 ultralytics>=8.1,<9.0        # YOLOv8 bam nguoi de reframe doc
 demucs>=4.0,<5.0             # tach nhac/loi (tier high_quality)
+
+# --- App `video_assembly` (migrate tu `bot_dungvideo`) ---
+#
+# `imagehash` : loc clip trung bang perceptual hash (nguong 5 tren production)
+# `open_clip_torch`: nhung CLIP `ViT-L-14 / laion2b_s32b_b82k` de khop clip
+#                voi loi. Goi tai TRONG SO LUC CHAY LAN DAU - mot may chu
+#                khong co duong ra Internet se hong o do, cung hang voi ghi
+#                chu `magika` o requirements.txt.
+#
+# [!] `torch`/`ultralytics`/`demucs`/`opencv` DA CO o tren - App nay khong
+#     them chung, no chi dung lai.
+imagehash>=4.3,<5.0
+open_clip_torch>=2.24,<3.0

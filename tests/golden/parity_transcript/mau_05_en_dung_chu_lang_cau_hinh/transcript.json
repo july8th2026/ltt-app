@@ -1,0 +1,722 @@
+[
+  {
+    "start": 0.0,
+    "end": 4.54,
+    "text": "What if the ultimate achievement is actually a suicide mission into a world",
+    "type": "speech",
+    "scene_id": "S0001",
+    "index": 1
+  },
+  {
+    "start": 4.54,
+    "end": 6.74,
+    "text": "that does not want you to exist?",
+    "type": "speech",
+    "scene_id": "S0002",
+    "index": 2
+  },
+  {
+    "start": 6.74,
+    "end": 12.6,
+    "text": "Can a builder's logic survive in a dimension designed to delete everything it touches?",
+    "type": "speech",
+    "scene_id": "S0003",
+    "index": 3
+  },
+  {
+    "start": 12.6,
+    "end": 14.68,
+    "text": "[B-ROLL: REACTION]",
+    "type": "silence",
+    "scene_id": "S0004",
+    "index": 4
+  },
+  {
+    "start": 14.68,
+    "end": 20.08,
+    "text": "The void is screaming, and the shadows of the end are beginning to hunt.",
+    "type": "speech",
+    "scene_id": "S0005",
+    "index": 5
+  },
+  {
+    "start": 20.08,
+    "end": 22.68,
+    "text": "The dimension shift is a rupture.",
+    "type": "speech",
+    "scene_id": "S0006",
+    "index": 6
+  },
+  {
+    "start": 22.68,
+    "end": 26.58,
+    "text": "Steve feels his data being torn down",
+    "type": "speech",
+    "scene_id": "S0007",
+    "index": 7
+  },
+  {
+    "start": 26.58,
+    "end": 29.18,
+    "text": "and recompiled at a lower resolution.",
+    "type": "speech",
+    "scene_id": "S0008",
+    "index": 8
+  },
+  {
+    "start": 29.18,
+    "end": 32.96,
+    "text": "The heat of the overworld is gone, replaced",
+    "type": "speech",
+    "scene_id": "S0009",
+    "index": 9
+  },
+  {
+    "start": 32.96,
+    "end": 36.74,
+    "text": "by a cold that is an absence of existence.",
+    "type": "speech",
+    "scene_id": "S0010",
+    "index": 10
+  },
+  {
+    "start": 36.74,
+    "end": 42.04,
+    "text": "When he opens his eyes, he is standing on a platform of smooth obsidian.",
+    "type": "speech",
+    "scene_id": "S0011",
+    "index": 11
+  },
+  {
+    "start": 42.04,
+    "end": 46.78,
+    "text": "The screen flickers with purple static.",
+    "type": "speech",
+    "scene_id": "S0012",
+    "index": 12
+  },
+  {
+    "start": 46.78,
+    "end": 50.7,
+    "text": "There is a place where the grid collapses into the null vector.",
+    "type": "speech",
+    "scene_id": "S0013",
+    "index": 13
+  },
+  {
+    "start": 50.7,
+    "end": 53.22,
+    "text": "Welcome to the end.",
+    "type": "speech",
+    "scene_id": "S0014",
+    "index": 14
+  },
+  {
+    "start": 53.22,
+    "end": 57.34,
+    "text": "[B-ROLL / PAUSE]",
+    "type": "silence",
+    "scene_id": "S0015",
+    "index": 15
+  },
+  {
+    "start": 57.34,
+    "end": 62.58,
+    "text": "This is the dimension of finality, the home of the unwritten",
+    "type": "speech",
+    "scene_id": "S0016",
+    "index": 16
+  },
+  {
+    "start": 62.58,
+    "end": 65.26,
+    "text": "[B-ROLL: PAUSE]",
+    "type": "silence",
+    "scene_id": "S0017",
+    "index": 17
+  },
+  {
+    "start": 65.26,
+    "end": 68.44,
+    "text": "the islands float in an infinite void.",
+    "type": "speech",
+    "scene_id": "S0018",
+    "index": 18
+  },
+  {
+    "start": 68.44,
+    "end": 71.04,
+    "text": "This is the Architect's true cage.",
+    "type": "speech",
+    "scene_id": "S0019",
+    "index": 19
+  },
+  {
+    "start": 71.04,
+    "end": 73.84,
+    "text": "[B-ROLL / PAUSE]",
+    "type": "silence",
+    "scene_id": "S0020",
+    "index": 20
+  },
+  {
+    "start": 73.84,
+    "end": 76.98,
+    "text": "Steve has crossed the threshold.",
+    "type": "speech",
+    "scene_id": "S0021",
+    "index": 21
+  },
+  {
+    "start": 76.98,
+    "end": 80.7,
+    "text": "He has entered the Dragon's Lair.",
+    "type": "speech",
+    "scene_id": "S0022",
+    "index": 22
+  },
+  {
+    "start": 80.7,
+    "end": 84.58,
+    "text": "and the dragon is already dreaming",
+    "type": "speech",
+    "scene_id": "S0023",
+    "index": 23
+  },
+  {
+    "start": 84.58,
+    "end": 88.92,
+    "text": "of his deletion. Steve steps onto the pale yellow",
+    "type": "speech",
+    "scene_id": "S0024",
+    "index": 24
+  },
+  {
+    "start": 88.92,
+    "end": 91.58,
+    "text": "end stone of the central island.",
+    "type": "speech",
+    "scene_id": "S0025",
+    "index": 25
+  },
+  {
+    "start": 91.58,
+    "end": 96.18,
+    "text": "Every footstep is a thud",
+    "type": "speech",
+    "scene_id": "S0026",
+    "index": 26
+  },
+  {
+    "start": 96.18,
+    "end": 98.76,
+    "text": "that echoes through the void.",
+    "type": "speech",
+    "scene_id": "S0027",
+    "index": 27
+  },
+  {
+    "start": 98.76,
+    "end": 102.62,
+    "text": "His diamond armor glows a high specular",
+    "type": "speech",
+    "scene_id": "S0028",
+    "index": 28
+  },
+  {
+    "start": 102.62,
+    "end": 106.48,
+    "text": "cyan, a foreign element in this perfect void.",
+    "type": "speech",
+    "scene_id": "S0029",
+    "index": 29
+  },
+  {
+    "start": 106.48,
+    "end": 111.14,
+    "text": "Alex teleports onto the island, in a burst of purple particles,",
+    "type": "speech",
+    "scene_id": "S0030",
+    "index": 30
+  },
+  {
+    "start": 111.14,
+    "end": 114.22,
+    "text": "her enchanted bow drawn.",
+    "type": "speech",
+    "scene_id": "S0031",
+    "index": 31
+  },
+  {
+    "start": 114.22,
+    "end": 118.1,
+    "text": "Barclay whimpers, his fur coated in void mist.",
+    "type": "speech",
+    "scene_id": "S0032",
+    "index": 32
+  },
+  {
+    "start": 118.1,
+    "end": 122.34,
+    "text": "Above them, towering obsidian pillars reach toward the sky,",
+    "type": "speech",
+    "scene_id": "S0033",
+    "index": 33
+  },
+  {
+    "start": 122.34,
+    "end": 125.82,
+    "text": "each topped with a spinning end crystal emitting a low,",
+    "type": "speech",
+    "scene_id": "S0034",
+    "index": 34
+  },
+  {
+    "start": 125.82,
+    "end": 131.2,
+    "text": "pulsing thrump. The grid is dead here, Steve. Alex whispers.",
+    "type": "speech",
+    "scene_id": "S0035",
+    "index": 35
+  },
+  {
+    "start": 131.2,
+    "end": 136.66,
+    "text": "There's no coordinate system. The map is blank.",
+    "type": "speech",
+    "scene_id": "S0036",
+    "index": 36
+  },
+  {
+    "start": 136.66,
+    "end": 139.06,
+    "text": "[B-ROLL: TRANSITION]",
+    "type": "silence",
+    "scene_id": "S0037",
+    "index": 37
+  },
+  {
+    "start": 139.06,
+    "end": 141.88,
+    "text": "Steve does not answer.",
+    "type": "speech",
+    "scene_id": "S0038",
+    "index": 38
+  },
+  {
+    "start": 141.88,
+    "end": 145.38,
+    "text": "He looks up. A massive,",
+    "type": "speech",
+    "scene_id": "S0039",
+    "index": 39
+  },
+  {
+    "start": 145.38,
+    "end": 149.16,
+    "text": "blocky shadow detaches itself from the bedrock.",
+    "type": "speech",
+    "scene_id": "S0040",
+    "index": 40
+  },
+  {
+    "start": 149.16,
+    "end": 151.88,
+    "text": "It is the Ender Dragon.",
+    "type": "speech",
+    "scene_id": "S0041",
+    "index": 41
+  },
+  {
+    "start": 151.88,
+    "end": 156.96,
+    "text": "Her obsidian scales reflect the light of the crystals.",
+    "type": "speech",
+    "scene_id": "S0042",
+    "index": 42
+  },
+  {
+    "start": 156.96,
+    "end": 160.18,
+    "text": "She opens her mouth, revealing a purple void,",
+    "type": "speech",
+    "scene_id": "S0043",
+    "index": 43
+  },
+  {
+    "start": 160.18,
+    "end": 163.62,
+    "text": "and lets out a roar of corrupted audio and static.",
+    "type": "speech",
+    "scene_id": "S0044",
+    "index": 44
+  },
+  {
+    "start": 163.62,
+    "end": 167.04,
+    "text": "[B-ROLL: TRANSITION]",
+    "type": "silence",
+    "scene_id": "S0045",
+    "index": 45
+  },
+  {
+    "start": 167.04,
+    "end": 169.42,
+    "text": "[B-ROLL: REACTION]",
+    "type": "silence",
+    "scene_id": "S0046",
+    "index": 46
+  },
+  {
+    "start": 169.42,
+    "end": 175.38,
+    "text": "The Sentinel of the Void is awake.",
+    "type": "speech",
+    "scene_id": "S0047",
+    "index": 47
+  },
+  {
+    "start": 175.38,
+    "end": 181.28,
+    "text": "Jean does not see Steve as a hero, she sees him as a virus,",
+    "type": "speech",
+    "scene_id": "S0048",
+    "index": 48
+  },
+  {
+    "start": 181.28,
+    "end": 185.42,
+    "text": "a data leak that must be patched.",
+    "type": "speech",
+    "scene_id": "S0049",
+    "index": 49
+  },
+  {
+    "start": 185.42,
+    "end": 188.0,
+    "text": "The dragon dives.",
+    "type": "speech",
+    "scene_id": "S0050",
+    "index": 50
+  },
+  {
+    "start": 188.0,
+    "end": 191.34,
+    "text": "She unleashes a torrent of dragon's breath,",
+    "type": "speech",
+    "scene_id": "S0051",
+    "index": 51
+  },
+  {
+    "start": 191.34,
+    "end": 196.38,
+    "text": "a purple acid that instantly pixelates the end stone it touches.",
+    "type": "speech",
+    "scene_id": "S0052",
+    "index": 52
+  },
+  {
+    "start": 196.38,
+    "end": 200.82,
+    "text": "Steve lunges, using his fragmented arm to pulse a cyan gravity wave,",
+    "type": "speech",
+    "scene_id": "S0053",
+    "index": 53
+  },
+  {
+    "start": 200.82,
+    "end": 203.54,
+    "text": "pushing himself and Alex away.",
+    "type": "speech",
+    "scene_id": "S0054",
+    "index": 54
+  },
+  {
+    "start": 203.54,
+    "end": 207.58,
+    "text": "The acid consumes the stone with a deafening hiss.",
+    "type": "speech",
+    "scene_id": "S0055",
+    "index": 55
+  },
+  {
+    "start": 207.58,
+    "end": 211.9,
+    "text": "[B-ROLL / PAUSE]",
+    "type": "silence",
+    "scene_id": "S0056",
+    "index": 56
+  },
+  {
+    "start": 211.9,
+    "end": 217.54,
+    "text": "A beam of purple light connects the dragon to the crystal.",
+    "type": "speech",
+    "scene_id": "S0057",
+    "index": 57
+  },
+  {
+    "start": 217.54,
+    "end": 221.0,
+    "text": "She is healing. Ein Tier der Dienste,",
+    "type": "speech",
+    "scene_id": "S0058",
+    "index": 58
+  },
+  {
+    "start": 221.0,
+    "end": 223.94,
+    "text": "ein der Leitungen der Einwahr, and Serie A B,",
+    "type": "speech",
+    "scene_id": "S0059",
+    "index": 59
+  },
+  {
+    "start": 223.94,
+    "end": 228.72,
+    "text": "eine Dierer der Auernahmen. Her source code is invulnerable.",
+    "type": "speech",
+    "scene_id": "S0060",
+    "index": 60
+  },
+  {
+    "start": 228.72,
+    "end": 234.18,
+    "text": "Steve points his diamond sword toward the pillar. Derl.",
+    "type": "speech",
+    "scene_id": "S0061",
+    "index": 61
+  },
+  {
+    "start": 234.18,
+    "end": 237.74,
+    "text": "The crystals, Alex. Tau.",
+    "type": "speech",
+    "scene_id": "S0062",
+    "index": 62
+  },
+  {
+    "start": 237.74,
+    "end": 240.22,
+    "text": "We have to destroy the link.",
+    "type": "speech",
+    "scene_id": "S0063",
+    "index": 63
+  },
+  {
+    "start": 240.22,
+    "end": 243.22,
+    "text": "The pillars are too high, Steve.",
+    "type": "speech",
+    "scene_id": "S0064",
+    "index": 64
+  },
+  {
+    "start": 243.22,
+    "end": 248.28,
+    "text": "We have to build a way up. This is the moment of realization.",
+    "type": "speech",
+    "scene_id": "S0065",
+    "index": 65
+  },
+  {
+    "start": 248.28,
+    "end": 253.78,
+    "text": "The battle for the end is not a battle of strength.",
+    "type": "speech",
+    "scene_id": "S0066",
+    "index": 66
+  },
+  {
+    "start": 253.78,
+    "end": 257.36,
+    "text": "It is a battle of construction in the heart of destruction.",
+    "type": "speech",
+    "scene_id": "S0067",
+    "index": 67
+  },
+  {
+    "start": 257.36,
+    "end": 260.16,
+    "text": "[B-ROLL / PAUSE]",
+    "type": "silence",
+    "scene_id": "S0068",
+    "index": 68
+  },
+  {
+    "start": 260.16,
+    "end": 263.96,
+    "text": "Steve looks at the end stone beneath his boots.",
+    "type": "speech",
+    "scene_id": "S0069",
+    "index": 69
+  },
+  {
+    "start": 263.96,
+    "end": 267.7,
+    "text": "The legend is not just a warrior.",
+    "type": "speech",
+    "scene_id": "S0070",
+    "index": 70
+  },
+  {
+    "start": 267.7,
+    "end": 270.58,
+    "text": "He is the sovereign builder.",
+    "type": "speech",
+    "scene_id": "S0071",
+    "index": 71
+  },
+  {
+    "start": 270.58,
+    "end": 273.0,
+    "text": "The gauntlet is thrown.",
+    "type": "speech",
+    "scene_id": "S0072",
+    "index": 72
+  },
+  {
+    "start": 273.0,
+    "end": 278.62,
+    "text": "Dot. Steve must build toward the gods to save his people below.",
+    "type": "speech",
+    "scene_id": "S0073",
+    "index": 73
+  },
+  {
+    "start": 278.62,
+    "end": 282.56,
+    "text": "He has the diamond armor,",
+    "type": "speech",
+    "scene_id": "S0074",
+    "index": 74
+  },
+  {
+    "start": 282.56,
+    "end": 285.42,
+    "text": "but Zhiyun has the immortality.",
+    "type": "speech",
+    "scene_id": "S0075",
+    "index": 75
+  },
+  {
+    "start": 285.42,
+    "end": 291.3,
+    "text": "In a world of a thousand chapters, the final battle has found its coordinate.",
+    "type": "speech",
+    "scene_id": "S0076",
+    "index": 76
+  },
+  {
+    "start": 291.3,
+    "end": 294.84,
+    "text": "The hunt for the end is over. over.",
+    "type": "speech",
+    "scene_id": "S0077",
+    "index": 77
+  },
+  {
+    "start": 294.84,
+    "end": 297.62,
+    "text": "The war for the end.",
+    "type": "speech",
+    "scene_id": "S0078",
+    "index": 78
+  },
+  {
+    "start": 297.62,
+    "end": 299.86,
+    "text": "The war has just begun.",
+    "type": "speech",
+    "scene_id": "S0079",
+    "index": 79
+  },
+  {
+    "start": 299.86,
+    "end": 302.6,
+    "text": "[B-ROLL: TRANSITION]",
+    "type": "silence",
+    "scene_id": "S0080",
+    "index": 80
+  },
+  {
+    "start": 302.6,
+    "end": 306.32,
+    "text": "We have learned that even in the most absolute void,",
+    "type": "speech",
+    "scene_id": "S0081",
+    "index": 81
+  },
+  {
+    "start": 306.32,
+    "end": 312.15,
+    "text": "our ability to build and create remains our most powerful weapon against entropy.",
+    "type": "speech",
+    "scene_id": "S0082",
+    "index": 82
+  },
+  {
+    "start": 312.15,
+    "end": 316.04,
+    "text": "We must realize that overcoming our greatest challenges requires",
+    "type": "speech",
+    "scene_id": "S0083",
+    "index": 83
+  },
+  {
+    "start": 316.04,
+    "end": 321.88,
+    "text": "us to dismantle the sources of our enemy's strength before we can ever hope to land a final blow.",
+    "type": "speech",
+    "scene_id": "S0084",
+    "index": 84
+  },
+  {
+    "start": 321.88,
+    "end": 324.0,
+    "text": "[B-ROLL: TRANSITION]",
+    "type": "silence",
+    "scene_id": "S0085",
+    "index": 85
+  },
+  {
+    "start": 324.0,
+    "end": 328.26,
+    "text": "True legends are formed when we stop looking for a way out and start building",
+    "type": "speech",
+    "scene_id": "S0086",
+    "index": 86
+  },
+  {
+    "start": 328.26,
+    "end": 333.76,
+    "text": "a way up, even when the floor beneath us is being erased.",
+    "type": "speech",
+    "scene_id": "S0087",
+    "index": 87
+  },
+  {
+    "start": 333.76,
+    "end": 339.34,
+    "text": "The pillars are high and the dragon is diving. Do you have the blocks to reach the top?",
+    "type": "speech",
+    "scene_id": "S0088",
+    "index": 88
+  },
+  {
+    "start": 339.34,
+    "end": 341.4,
+    "text": "[B-ROLL: REACTION]",
+    "type": "silence",
+    "scene_id": "S0089",
+    "index": 89
+  },
+  {
+    "start": 341.4,
+    "end": 344.55,
+    "text": "Stay grounded, stay legendary.",
+    "type": "speech",
+    "scene_id": "S0090",
+    "index": 90
+  }
+]

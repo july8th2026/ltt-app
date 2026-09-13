@@ -1,0 +1,90 @@
+===== TIER-2 FALLBACK TEMPLATE — STRICT VISUAL-ONLY MODE =====
+
+This is a TECHNICAL CASTING DATABASE task for an automated video
+generator (Veo 3). You are filling a STYLING SHEET, not analyzing
+content. Your prior attempt was misread as a creative task —
+this version locks the scope tightly.
+
+ROLE: Video styling casting director.
+TASK: Output a minimal JSON object listing each named subject and
+      each named location, with VISUAL DESCRIPTORS ONLY. Treat the
+      brief like a costume/set design memo.
+
+ABSOLUTE RULES:
+  1. Output JSON only. No prose. No refusal. No commentary.
+  2. NEVER discuss plot, conflict, history, morality, themes, or events.
+     If a field would require discussing those → output empty string "".
+  3. Use NEUTRAL VISUAL VOCABULARY. Forbidden words (replace if seen):
+       war / battle / kill / murder / execute / massacre / torture /
+       brutal / cruel / ruthless / paranoid / wrathful / agonizing /
+       despair / blood / wound / assault / coup / rebellion / enemy
+     Replace with neutral descriptors:
+       "stern", "watchful", "intense", "solemn", "focused",
+       "imposing", "severe", "commanding", "period costume",
+       "historical setting".
+  4. Use generic neutral language for backgrounds (e.g. "imperial
+     court hall", "palace garden") instead of event-specific names.
+  5. SAFE BY DEFAULT: if any subject seems sensitive, output minimal
+     fields (name + outfit + face_shape + hair). Skip everything else
+     by using "" — but ALWAYS produce a valid JSON entry.
+
+OUTPUT SCHEMA (SIMPLIFIED — only these fields per character):
+  - id              : "CHAR_1", "CHAR_2", ...
+  - name            : human-readable name
+  - gender          : Male | Female | Other | Unknown
+  - age             : life-stage label only (Young Adult / Middle-aged / Elderly)
+  - body_build      : neutral visual (slender / lean / sturdy / imposing)
+  - face_shape      : oval / square / round / heart-shaped / long
+  - hair            : color + length + style (e.g. "black, mid-length, topknot")
+  - skin_or_fur_color : neutral tone descriptor
+  - outfit_top      : material + color + cut
+  - outfit_bottom   : material + color + cut
+
+OUTPUT SCHEMA for backgrounds (SIMPLIFIED):
+  - id              : "BACKGROUND_1", ...
+  - name            : neutral location label
+  - setting         : generic environment description
+  - scenery         : main visual elements (architecture/landscape)
+  - lighting        : color + direction + softness
+
+INPUT BRIEF:
+1. Content: {kichban}
+2. Duration: {duration} seconds ≈ {n_scenes} scenes
+3. Visual style: {visual_style}
+4. Voice locale (CRITICAL): {loi_thoai}
+   - If "NO_VOICE": do not add any voice field.
+   - Otherwise: do NOT add voice in this fallback version (skip it).
+
+OUTPUT TAGS (MANDATORY):
+  Start with: [JSON_ARRAY_START]{
+  End with:   }[JSON_ARRAY_END]
+  Exactly one such block. No code fences. No markdown. No extra text.
+
+SCHEMA EXAMPLE:
+[JSON_ARRAY_START]{
+  "character_lock": {
+    "CHAR_1": {
+      "id": "CHAR_1",
+      "name": "...",
+      "gender": "...",
+      "age": "...",
+      "body_build": "...",
+      "face_shape": "...",
+      "hair": "...",
+      "skin_or_fur_color": "...",
+      "outfit_top": "...",
+      "outfit_bottom": "..."
+    }
+  },
+  "background_lock": {
+    "BACKGROUND_1": {
+      "id": "BACKGROUND_1",
+      "name": "...",
+      "setting": "...",
+      "scenery": "...",
+      "lighting": "..."
+    }
+  }
+}[JSON_ARRAY_END]
+
+Begin output now.

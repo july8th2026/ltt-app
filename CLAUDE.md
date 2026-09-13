@@ -32,7 +32,11 @@ mã nguồn**: `grep`/`Glob` trên `apps/`, `platform_core/`, `server/`.
 
 ### Định hướng
 
-1. **Trước việc thực chất: đọc `docs/00_LTT_OPERATING_CONTRACT.md`.**
+1. **Trước việc thực chất: đọc `docs/00_LTT_OPERATING_CONTRACT.md`**, rồi hỏi
+   cây bạn đang đứng: `python tools\ho_so_cay.py trang-thai` (một lệnh, không
+   chạy test). Nó nói cây này ở hồ sơ `NORMAL` hay `FAST_BUILD` (§4.10) và
+   **governance của nó có lệch trunk không** — lệch thì gộp trunk trước khi tin
+   một luật hay một lượt gate ở đây.
 2. **Đừng tự sáng tạo quy trình.** Thiếu luật thì ghi đề xuất, tiếp tục theo luật
    hiện có, **không** đẻ ra một luật cạnh tranh trong tệp kế hoạch của bạn.
 3. **Đừng đọc cả kho.** Thứ tự: KHÁM PHÁ → ĐẾM → LỌC → PHÂN LOẠI → NHẮM → ĐỌC.

@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 from platform_core.models import ForeachMuc, ForeachVong
 
@@ -73,14 +73,44 @@ def ghi_ket_qua(db, vong: ForeachVong, *, chi_so: int, ket_qua: Any) -> bool:
     ⭐ Luỹ đẳng **theo chỉ số**: một worker phát lại sẽ thử ghi lại, và bản ghi
        **đầu tiên thắng**. Ghi đè bản cũ là làm mất kết quả thật của một lượt đã
        tính tiền — và không ai phát hiện, vì hàng vẫn ở đó với một giá trị hợp lý.
+
+    🔴 **Điều kiện "chưa xong" phải nằm trong CÂU LỆNH, không nằm trong Python.**
+
+       Bản đầu (tới 2026-09-09) đọc hàng bằng `db.get()`, xem `row.xong` trong
+       tiến trình, rồi mới ghi. Ba câu ấy không nguyên tử: hai worker cùng đọc
+       `xong=False`, cả hai đi qua cửa, cả hai ghi — và **cả hai trả `True`**.
+       Câu "bản ghi đầu tiên thắng" ở trên khi đó là một lời hứa mà mã không
+       cưỡng chế được; thứ thực sự xảy ra là **bản ghi cuối cùng thắng**.
+
+       `parallelism` mặc định là 8, tức tình huống ấy là chế độ chạy bình thường
+       của ForEach chứ không phải một ca hiếm. Và hậu quả không dừng ở một giá
+       trị sai: `so_luot_chay()` đếm hàng `xong=True`, nên một phần tử chạy hai
+       lần vẫn hiện là **một** lượt — `M7` ("0 lượt lặp") sẽ báo đạt trong khi
+       tiền đã tiêu hai lần.
+
+    ⇒ Một `UPDATE … WHERE xong = false` để **cơ sở dữ liệu** phân xử, và
+      `rowcount` là câu trả lời. Đúng khuôn mà `jobs.claim()` đã dùng, và cùng
+      lý do: giành một tài nguyên bằng cách lật một cột trong bộ nhớ thì không
+      giành được gì (xem memory *bất biến canh trên trạng thái động*).
+
+    ⚠️ `synchronize_session=False` là bắt buộc ở đây: mặc định của SQLAlchemy sẽ
+       đi tìm các đối tượng đã nạp để đồng bộ, và ta **không** muốn phiên này
+       tin vào bản sao trong bộ nhớ của chính nó — đó chính là thứ vừa bị bỏ.
     """
-    row = db.get(ForeachMuc, (vong.id, int(chi_so)))
-    if row is None or row.xong:
-        return False
-    row.ket_qua = {"v": ket_qua} if not isinstance(ket_qua, dict) else ket_qua
-    row.xong = True
+    gia_tri = {"v": ket_qua} if not isinstance(ket_qua, dict) else ket_qua
+    kq = db.execute(
+        update(ForeachMuc)
+        .where(ForeachMuc.vong_id == vong.id,
+               ForeachMuc.chi_so == int(chi_so),
+               ForeachMuc.xong.is_(False))
+        .values(ket_qua=gia_tri, xong=True)
+        .execution_options(synchronize_session=False))
     db.flush()
-    return True
+    # ⛔ Hàng vừa đổi dưới CSDL mà bản sao trong bộ nhớ thì chưa biết. Không đuổi
+    #    nó đi thì `chi_so_chua_xong()` gọi ngay sau đây có thể đọc `xong=False`
+    #    từ cache của phiên — và trả về một chỉ số vừa được ghi xong.
+    db.expire_all()
+    return bool(kq.rowcount)
 
 
 def chi_so_chua_xong(db, vong: ForeachVong) -> list[int]:

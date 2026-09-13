@@ -22,6 +22,7 @@ Chỗ nào cần một giá trị, hợp đồng **trỏ** tới nơi giữ nó.
 | Ngân sách lõi, cửa sổ yên | `docs/QUY_TAC_CHAY_LENH_NANG.md` · `~/.claude/CLAUDE.md` |
 | Quy trình deploy | `docs/16_CAP_NHAT_VA_DEPLOY.md` |
 | Worktree | `docs/QUY_TRINH_WORKTREE.md` · `docs/DEVELOPMENT_WORKFLOW.md` |
+| Cây này đang ở hồ sơ nào, nợ kiểm bao nhiêu | `python tools/ho_so_cay.py trang-thai` · `no-kiem` (luật ở §4.10) |
 | Cạm bẫy của chính gate | `docs/BAY_TRONG_CONG_CHAT_LUONG.md` |
 | Quy ước kỹ thuật (Windows, bố cục app, memory) | `AGENTS.md` |
 | Cái gì đang sống trên production | `python tools/api_prod_canary.py trang-thai` |
@@ -272,6 +273,94 @@ trong `gate.THU_MUC_CHUP` — không phải vì tôi cẩn thận.
 
 ---
 
+## 4.10 Hai HỒ SƠ VẬN HÀNH — `NORMAL` và `FAST_BUILD`
+
+Thêm 2026-09-09. **Đây là chỗ duy nhất định nghĩa hai hồ sơ này.** Một tệp kế
+hoạch mô tả lại chúng là một bản sao sẽ trôi — §3 đã nói vì sao.
+
+Hồ sơ là trạng thái **của một cây**, không phải của kho. Hai cây cạnh nhau được
+phép ở hai hồ sơ khác nhau, và đó là điểm chính: một cây trunk đang phục vụ
+deploy không được nới cadence chỉ vì một cây tính năng nào đó đang xây nhanh.
+
+```powershell
+python tools\ho_so_cay.py trang-thai
+```
+
+### `NORMAL` — mặc định, và là hồ sơ duy nhất của cây chính
+
+Đúng §4.1: vòng lặp là L1 (`--doi`), lên cấp ở chốt, L3 trước khi báo xong.
+
+⛔ Cây chính, `master`, nhánh phát hành và mọi cây dùng để deploy **luôn** ở
+`NORMAL`. `ho_so_cay.py bat` từ chối bật ở những chỗ đó, và đó là một chốt cơ
+học chứ không phải một giao ước — memory *luật viết ra không miễn nhiễm cho
+người viết*.
+
+### `FAST_BUILD` — chỉ trong một cây tính năng riêng đã opt-in
+
+Dành cho một chiến dịch **dài, một chủ, một cây**, nơi phần lớn thay đổi còn
+chưa thành hình. Nó không nới chuẩn chất lượng; nó **dời** chi phí kiểm chứng
+từ *giữa* các thay đổi sang *cuối* một tập thay đổi đã đóng băng.
+
+```
+RESEARCH → BUILDING → FEATURE_COMPLETE → CERTIFYING → READY_TO_MERGE
+```
+
+| Trạng thái | Được làm gì |
+|---|---|
+| `RESEARCH` | đọc, đo, viết kế hoạch. Không sửa mã sản phẩm |
+| `BUILDING` | sửa mã. **Không** `gate.py` (mọi chế độ), **không** `test_nhanh.py`, **không** từ 3 tệp test trở lên, **không** model thật, **không** deploy |
+| `FEATURE_COMPLETE` | đóng băng tập tính năng. Từ đây không thêm tính năng, không refactor tiện tay |
+| `CERTIFYING` | chỉ chạy kiểm và sửa nguyên nhân gốc tối thiểu |
+| `READY_TO_MERGE` | hoà về trunk theo §7 |
+
+**Trong `BUILDING` vẫn được microcheck rẻ** khi cần: cú pháp/import/biên dịch,
+`json.loads`, khám phá manifest, render một template, một phép kiểm nhỏ tất
+định. Mục tiêu không phải là *không kiểm gì*, mà là không xây tiếp trên mã
+không parse được.
+
+🔑 **Vì sao điều này không mâu thuẫn §4.2.** §4.2 cấm chạy L3 **để chẩn đoán**.
+`FAST_BUILD` cấm nhiều hơn thế trong `BUILDING`, rồi trả lại đủ ở `CERTIFYING`.
+Cả hai nói cùng một câu: gate là công cụ ra **phán quyết**.
+
+### Chứng nhận đo từ `baseline_sha`, không từ `HEAD`
+
+Đây là vế cơ chế, không phải vế kỷ luật. `--doi` mặc định so với `HEAD`; một
+chiến dịch có commit checkpoint sẽ làm `HEAD` nuốt mất phần đầu, và `--doi` khi
+đó **báo xanh trên một phép đo bỏ sót**.
+
+```powershell
+python tools\ho_so_cay.py bat --pham-vi "<mo ta ngan>"   # ghi baseline = HEAD
+python tools\ho_so_cay.py no-kiem                        # nợ kiểm, đã dedupe
+python tools\gate.py --doi --tu <baseline_sha>           # phạm vi TỪ baseline
+```
+
+`--tu` không phải một chế độ mới: nó chỉ đổi **mốc so sánh** của `--doi`, và
+`thanh_phan.duong_da_doi` vốn đã nhận mốc đó.
+
+### Thứ tự ở `CERTIFYING` — rẻ trước
+
+```
+1. tĩnh/micro          2. gom targeted đã dedupe (--doi --tu <baseline>)
+3. tích hợp            4. đối chiếu legacy/parity
+5. E2E                 6. trình duyệt trên URL công khai, nếu giao diện đổi
+7. L3 một lần
+```
+
+Một lượt đỏ ⇒ sửa nguyên nhân gốc **tối thiểu** ⇒ chạy lại đúng phép kiểm đã đỏ
+⇒ đi tiếp. **Không** quay lại làm tính năng; nếu buộc phải, hạ trạng thái về
+`BUILDING` — công cụ cho phép, và nó ghi lại lần hạ đó.
+
+### Ngoại lệ lõi
+
+Bị chặn bởi một khiếm khuyết **chung** ở `jobs`/`credit`/auth/migration/đa tiến
+trình/workflow-core: **dừng** App, tách một changeset lõi **riêng**, chứng nhận
+riêng nó, xanh rồi mới quay lại. §4.5 và §7 vẫn áp cho changeset lõi đó — tức nó
+đi theo `NORMAL`, kể cả khi cây đang ở `FAST_BUILD`.
+
+⛔ Ngoại lệ này **không** phải cửa để quay về chạy gate sau mỗi lần sửa.
+
+---
+
 # 5. Worktree — ai sở hữu cái gì
 
 Mỗi chiến dịch có **một** cây và **một** chủ. Phiên khác không sửa cùng vùng thi
@@ -309,6 +398,11 @@ Commit khi một changeset nguyên tử hoàn tất và **đúng cấp test củ
 
 ⛔ **Không phải mọi commit đều đòi L3.** Một commit checkpoint giữa chiến dịch cần
 L1 xanh. L3 chỉ bắt buộc ở các checkpoint canonical:
+
+⚠️ **Ngoại lệ duy nhất của câu "commit checkpoint cần L1 xanh"**: một cây đang ở
+`FAST_BUILD`/`BUILDING` (§4.10) commit checkpoint **không** kèm L1 — đó chính là
+thứ hồ sơ ấy dời đi. Đổi lại, `CERTIFYING` phải đo từ `baseline_sha` chứ không
+từ `HEAD`, nếu không thì phần đã commit sẽ không có ai kiểm.
 
 ```
 TRƯỚC KHI MERGE một chiến dịch lớn

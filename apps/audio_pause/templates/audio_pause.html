@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}{{ _("Chèn khoảng lặng theo lời") }} — LTT AI Studio{% endblock %}
+{% block topbar_title %}<strong>{{ _("Chèn khoảng lặng theo lời") }}</strong>{% endblock %}
+
+{% block content %}
+<section class="ap-wrap" aria-labelledby="ap-title">
+  <header class="ap-head">
+    <h1 id="ap-title">{{ _("Chèn khoảng lặng theo lời") }}</h1>
+    <p>{{ _("Tải lên bản thu và danh sách mốc. Mỗi mốc là một câu trong bài; hệ thống tìm câu đó trong bản ghi lời, rồi chèn khoảng lặng tại chỗ im gần nhất — không cắt giữa từ.") }}</p>
+    <a class="btn ghost" href="/jobs">{{ _("Việc của tôi") }}</a>
+  </header>
+
+  {% if loi %}<p class="alert error" role="alert">{{ loi }}</p>{% endif %}
+
+  <form class="ap-form" method="post" action="/audio-pause/tao" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+    <label class="field">
+      <span>{{ _("Bản thu") }}</span>
+      <input type="file" name="audio" accept="audio/*" required>
+      <small>{{ _("WAV, MP3, M4A, AAC, FLAC, OGG, Opus, WebM — tối đa 95 MB.") }}</small>
+    </label>
+
+    <label class="field">
+      <span>{{ _("Danh sách mốc (JSON)") }}</span>
+      <textarea name="pause_plan" rows="8" required
+        placeholder='{{ _('[{"id": 1, "anchor_text": "Hà Nội. Những ngày", "pause_ms": 1800}]') }}'></textarea>
+      <small>{{ _("Mỗi mốc cần `id`, `anchor_text` và `pause_ms`.") }}</small>
+    </label>
+
+    <div class="ap-row">
+      <label class="field">
+        <span>{{ _("Ngôn ngữ") }}</span>
+        <select name="language">
+          <option value="vi">{{ _("Tiếng Việt") }}</option>
+          <option value="en">{{ _("Tiếng Anh") }}</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>{{ _("Ngưỡng khớp") }}</span>
+        <input type="number" name="nguong_khop" value="0.65" step="0.01" min="0.1" max="1">
+      </label>
+      <label class="field">
+        <span>{{ _("Giãn cách tối thiểu (giây)") }}</span>
+        <input type="number" name="min_gap_s" value="0.8" step="0.1" min="0" max="30">
+      </label>
+    </div>
+
+    <div class="ap-row">
+      <label class="field">
+        <span>{{ _("Lặng ngắn nhất (ms)") }}</span>
+        <input type="number" name="min_pause_ms" value="50" min="1" max="60000">
+      </label>
+      <label class="field">
+        <span>{{ _("Lặng dài nhất (ms)") }}</span>
+        <input type="number" name="max_pause_ms" value="15000" min="1" max="60000">
+      </label>
+    </div>
+
+    <button class="btn primary" type="submit">{{ _("Chèn khoảng lặng") }}</button>
+  </form>
+
+  <h2>{{ _("Lượt gần đây") }}</h2>
+  {% if jobs %}
+  <table class="ap-jobs">
+    <thead><tr>
+      <th>{{ _("Lúc") }}</th><th>{{ _("Trạng thái") }}</th><th>{{ _("Tiến độ") }}</th>
+      <th>{{ _("Mốc khớp") }}</th><th>{{ _("Mốc trượt") }}</th><th></th>
+    </tr></thead>
+    <tbody>
+      {% for j in jobs %}
+      <tr>
+        <td>{{ j.created_at }}</td>
+        <td>{{ j.status }}</td>
+        <td>{{ j.progress or 0 }}%</td>
+        <td>{{ (j.result or {}).get("matched", "—") }}</td>
+        <td>{{ (j.result or {}).get("failed", "—") }}</td>
+        <td><a href="/audio-pause/ket-qua/{{ j.id }}">{{ _("Xem") }}</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">{{ _("Chưa có lượt nào.") }}</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -37,6 +37,29 @@ BASELINE = ROOT / "tools" / "silent_except_baseline.json"
 SCAN = ("apps", "platform_core", "server", "tools")
 SKIP_PARTS = {"__pycache__", "vendor", "node_modules", ".venv", "venv", "dist", "build"}
 
+#: Engine CHUYEN NGUYEN VEN tu bot legacy — cung ly do voi `vendor` o tren, va
+#: cung danh sach voi `ruff.toml` + `mypy.ini` (ca ba cong cu nhin cung pham vi
+#: thi mot tep duoc mien o cho nay khong bat ngo bi bat o cho kia).
+#:
+#: 🔴 VI SAO MIEN, khi lo hong la that. 37 cho nuot loi trong ba thu muc nay
+#:    KHONG phai ma moi — chung la ban sao tung byte cua ma da chay mot nam.
+#:    Doi mot `except Exception: pass` thanh mot ban co log/nem la DOI HANH VI:
+#:    mot loi truoc day bi nuot se bat dau noi len, va no co the lam hong mot
+#:    job von chay xong. Diem cua viec chuyen nguyen ven la parity con do duoc;
+#:    "sua lint" o day la vut bo chinh dieu do.
+#:
+#: ⚠️ Va mien o day CO gia: no che ca nhung cho nuot loi MOI neu ai do them ma
+#:    vao ba thu muc nay. Chung la BAN CHUYEN DA DONG BANG — ma moi khong duoc
+#:    dat vao do; no thuoc `services/<domain>.py` ben ngoai, noi bo do van soi.
+#:
+#: ⇒ No ky: 37 cho nuot loi ke thua. Chi sua khi da co fixture parity chay
+#:   duoc, vi truoc do khong ai chung minh duoc mot ban sua khong doi dau ra.
+BO_QUA_DUONG = (
+    "apps/transcript/services/engine/",
+    "apps/audio_pause/services/engine/",
+    "apps/video_assembly/services/engine/",
+)
+
 
 def _co_dung_ngoai_le(node: ast.ExceptHandler) -> bool:
     """Handler co bien ngoai le thanh mot gia tri nhin thay duoc khong?"""
@@ -64,6 +87,8 @@ def quet() -> list[str]:
     for area in SCAN:
         for path in sorted((ROOT / area).rglob("*.py")):
             if SKIP_PARTS & set(path.parts):
+                continue
+            if path.relative_to(ROOT).as_posix().startswith(BO_QUA_DUONG):
                 continue
             try:
                 tree = ast.parse(path.read_text(encoding="utf-8", errors="ignore"))

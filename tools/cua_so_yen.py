@@ -1,7 +1,10 @@
 """cua_so_yen.py — mot khoa cap may cho cac luot do dat tien.
 
     python tools/cua_so_yen.py trang-thai     # ai dang giu, tu bao gio
-    python tools/cua_so_yen.py nha --ep       # go khoa treo (hiem khi can)
+    python tools/cua_so_yen.py nha --ep --tai-nguyen cpu_nhieu
+                                              # go MOT khoa treo
+    # ⛔ `nha --ep` khong kem `--tai-nguyen` go TAT CA khoa tren may,
+    #    ke ca cua mot luot gate dang chay.
 
 ## Vi sao no ton tai
 
@@ -393,8 +396,22 @@ def main() -> int:
     if not that_bai:
         print(f"Da nha: {', '.join(can_nha)}")
         return 0
+    # 🔴 Cau goi y phai NEU TEN tai nguyen, va day la cho no NGUY HIEM nhat.
+    #
+    #    Dong nay in ra **dung luc mot phien khac dang giu khoa** (`that_bai` la
+    #    nhung khoa ta vua KHONG nha duoc vi khong phai cua ta). Ban cu goi y
+    #    `nha --ep` tran — ma `--ep` khong kem `--tai-nguyen` thi go **TAT CA**
+    #    khoa tren may (xem `can_nha` o tren). Ai lam theo nguyen van la go ca
+    #    khoa cua mot luot gate dang song, dung o cho nguoi ta de tin nhat.
+    #
+    # ⚠️ Do la duong thu TU cham toi khoa that, va no **khong** hien ra o phep
+    #    quet ma: ba duong kia (`nha(ep=True)`, `dang_giu()`, `_tep("<ten>")`)
+    #    deu doc duoc bang AST, con duong nay di qua **mot chuoi goi y** ma con
+    #    nguoi go tay theo.
+    goi_y = " ".join(f"--tai-nguyen {tn}" for tn in that_bai[:1])
+    them = "  (lam TUNG cai, dung go tran)" if len(that_bai) > 1 else ""
     print(f"Phien khac dang giu: {', '.join(that_bai)}. "
-          "Dung `nha --ep` neu chac chung treo.")
+          f"Neu chac chung treo: `nha --ep {goi_y}`{them}")
     return 1
 
 

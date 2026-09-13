@@ -21,6 +21,13 @@ data/retry_*.json
 # Session ownership locks (runtime, machine/pid-specific)
 data/session_locks/
 
+# Ho so van hanh CUA MOT CAY (tools/ho_so_cay.py). Cho dung cua no la
+# `.git/worktrees/<ten>/ltt_ho_so.json` - tuc git khong bao gio thay no. Dong
+# nay chan ban sao dat NHAM cho: trang thai cua mot phien khong duoc di theo
+# `robocopy` cua deploy, va khong duoc commit vao mot nhanh ma cay khac cung
+# checkout. Chot: tests/test_1100_ho_so_cay.py
+ltt_ho_so.json
+
 # ─── Weight cua evaluator Quality Lab — CAP BANG TAC VU OPERATOR ────────────
 #
 # `apps/qualitylab/evaluator_assets.py` doi weight duoc cap SAN NGOAI RUNTIME

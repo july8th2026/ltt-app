@@ -334,8 +334,8 @@ def bang_gia(model: str = MODEL_GIA_MAC_DINH) -> dict:
         #    có dấu (để bộ dò nhìn thấy được nếu ai đó bỏ `_t()` sau này), chứ
         #    không phải chỉ thêm `_t()` rồi giữ nguyên chữ không dấu.
         "ghi_chu": (_t("Token reasoning tính như token ra.") + " "
-                    + _t("Token vào lấy lại từ cache tính {phan_tram}% giá "
-                         "token vào.").format(phan_tram=_phan_tram_cache(g))
+                    + _t("Token vào lấy lại từ cache tính {phan_tram}% trên "
+                         "giá token vào.").format(phan_tram=_phan_tram_cache(g))
                     + " " + _ghi_chu_lam_tron()),
     }
 

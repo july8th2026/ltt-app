@@ -1,0 +1,4627 @@
+{
+  "language": "en",
+  "language_probability": 0.99951171875,
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 6.36,
+      "text": "What if the ultimate achievement is actually a suicide mission into a world that does not want you to exist?",
+      "type": "speech",
+      "words": [
+        {
+          "word": "What",
+          "start": 0.0,
+          "end": 0.12,
+          "prob": 0.95654296875
+        },
+        {
+          "word": "if",
+          "start": 0.12,
+          "end": 0.26,
+          "prob": 0.9931640625
+        },
+        {
+          "word": "the",
+          "start": 0.26,
+          "end": 0.38,
+          "prob": 0.97998046875
+        },
+        {
+          "word": "ultimate",
+          "start": 0.38,
+          "end": 0.72,
+          "prob": 0.96484375
+        },
+        {
+          "word": "achievement",
+          "start": 0.72,
+          "end": 1.24,
+          "prob": 0.9873046875
+        },
+        {
+          "word": "is",
+          "start": 1.24,
+          "end": 1.78,
+          "prob": 0.986328125
+        },
+        {
+          "word": "actually",
+          "start": 1.78,
+          "end": 2.14,
+          "prob": 0.9775390625
+        },
+        {
+          "word": "a",
+          "start": 2.14,
+          "end": 2.34,
+          "prob": 0.99072265625
+        },
+        {
+          "word": "suicide",
+          "start": 2.34,
+          "end": 2.7,
+          "prob": 0.9677734375
+        },
+        {
+          "word": "mission",
+          "start": 2.7,
+          "end": 3.16,
+          "prob": 0.99560546875
+        },
+        {
+          "word": "into",
+          "start": 3.16,
+          "end": 3.88,
+          "prob": 0.93994140625
+        },
+        {
+          "word": "a",
+          "start": 3.88,
+          "end": 4.06,
+          "prob": 0.98681640625
+        },
+        {
+          "word": "world",
+          "start": 4.06,
+          "end": 4.54,
+          "prob": 0.99365234375
+        },
+        {
+          "word": "that",
+          "start": 4.54,
+          "end": 4.96,
+          "prob": 0.99169921875
+        },
+        {
+          "word": "does",
+          "start": 4.96,
+          "end": 5.12,
+          "prob": 0.95947265625
+        },
+        {
+          "word": "not",
+          "start": 5.12,
+          "end": 5.38,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "want",
+          "start": 5.38,
+          "end": 5.64,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "you",
+          "start": 5.64,
+          "end": 5.8,
+          "prob": 0.9892578125
+        },
+        {
+          "word": "to",
+          "start": 5.8,
+          "end": 5.94,
+          "prob": 0.9931640625
+        },
+        {
+          "word": "exist?",
+          "start": 5.94,
+          "end": 6.36,
+          "prob": 0.99462890625
+        }
+      ],
+      "index": 1,
+      "scene_id": "S0001",
+      "duration": 6.36
+    },
+    {
+      "start": 6.74,
+      "end": 12.6,
+      "text": "Can a builder's logic survive in a dimension designed to delete everything it touches?",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Can",
+          "start": 6.74,
+          "end": 7.32,
+          "prob": 0.98291015625
+        },
+        {
+          "word": "a",
+          "start": 7.32,
+          "end": 7.46,
+          "prob": 0.9892578125
+        },
+        {
+          "word": "builder's",
+          "start": 7.46,
+          "end": 7.98,
+          "prob": 0.90283203125
+        },
+        {
+          "word": "logic",
+          "start": 7.98,
+          "end": 8.38,
+          "prob": 0.99560546875
+        },
+        {
+          "word": "survive",
+          "start": 8.38,
+          "end": 9.16,
+          "prob": 0.98486328125
+        },
+        {
+          "word": "in",
+          "start": 9.16,
+          "end": 9.54,
+          "prob": 0.9951171875
+        },
+        {
+          "word": "a",
+          "start": 9.54,
+          "end": 9.64,
+          "prob": 0.9833984375
+        },
+        {
+          "word": "dimension",
+          "start": 9.64,
+          "end": 10.08,
+          "prob": 0.99365234375
+        },
+        {
+          "word": "designed",
+          "start": 10.08,
+          "end": 10.78,
+          "prob": 0.9892578125
+        },
+        {
+          "word": "to",
+          "start": 10.78,
+          "end": 11.14,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "delete",
+          "start": 11.14,
+          "end": 11.46,
+          "prob": 0.99658203125
+        },
+        {
+          "word": "everything",
+          "start": 11.46,
+          "end": 11.92,
+          "prob": 0.99658203125
+        },
+        {
+          "word": "it",
+          "start": 11.92,
+          "end": 12.24,
+          "prob": 0.9912109375
+        },
+        {
+          "word": "touches?",
+          "start": 12.24,
+          "end": 12.6,
+          "prob": 0.998046875
+        }
+      ],
+      "index": 2,
+      "scene_id": "S0002",
+      "duration": 5.86
+    },
+    {
+      "start": 14.680000000000001,
+      "end": 19.36,
+      "text": "The void is screaming, and the shadows of the end are beginning to hunt.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "The",
+          "start": 14.680000000000001,
+          "end": 15.4,
+          "prob": 0.9482421875
+        },
+        {
+          "word": "void",
+          "start": 15.4,
+          "end": 15.68,
+          "prob": 0.98291015625
+        },
+        {
+          "word": "is",
+          "start": 15.68,
+          "end": 16.04,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "screaming,",
+          "start": 16.04,
+          "end": 16.44,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "and",
+          "start": 16.66,
+          "end": 17.18,
+          "prob": 0.99609375
+        },
+        {
+          "word": "the",
+          "start": 17.18,
+          "end": 17.3,
+          "prob": 0.99169921875
+        },
+        {
+          "word": "shadows",
+          "start": 17.3,
+          "end": 17.72,
+          "prob": 0.99169921875
+        },
+        {
+          "word": "of",
+          "start": 17.72,
+          "end": 17.9,
+          "prob": 0.99365234375
+        },
+        {
+          "word": "the",
+          "start": 17.9,
+          "end": 17.98,
+          "prob": 0.99609375
+        },
+        {
+          "word": "end",
+          "start": 17.98,
+          "end": 18.32,
+          "prob": 0.96826171875
+        },
+        {
+          "word": "are",
+          "start": 18.32,
+          "end": 18.52,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "beginning",
+          "start": 18.52,
+          "end": 18.82,
+          "prob": 0.99462890625
+        },
+        {
+          "word": "to",
+          "start": 18.82,
+          "end": 19.08,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "hunt.",
+          "start": 19.08,
+          "end": 19.36,
+          "prob": 0.99560546875
+        }
+      ],
+      "index": 3,
+      "scene_id": "S0003",
+      "duration": 4.68
+    },
+    {
+      "start": 20.080000000000002,
+      "end": 22.68,
+      "text": "The dimension shift is a rupture.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "The",
+          "start": 20.080000000000002,
+          "end": 20.8,
+          "prob": 0.99267578125
+        },
+        {
+          "word": "dimension",
+          "start": 20.8,
+          "end": 21.12,
+          "prob": 0.95703125
+        },
+        {
+          "word": "shift",
+          "start": 21.12,
+          "end": 21.62,
+          "prob": 0.990234375
+        },
+        {
+          "word": "is",
+          "start": 21.62,
+          "end": 22.14,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "a",
+          "start": 22.14,
+          "end": 22.26,
+          "prob": 0.99462890625
+        },
+        {
+          "word": "rupture.",
+          "start": 22.26,
+          "end": 22.68,
+          "prob": 0.9951171875
+        }
+      ],
+      "index": 4,
+      "scene_id": "S0004",
+      "duration": 2.6
+    },
+    {
+      "start": 22.68,
+      "end": 28.72,
+      "text": "Steve feels his data being torn down and recompiled at a lower resolution.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Steve",
+          "start": 22.68,
+          "end": 24.06,
+          "prob": 0.3798828125
+        },
+        {
+          "word": "feels",
+          "start": 24.06,
+          "end": 24.66,
+          "prob": 0.97265625
+        },
+        {
+          "word": "his",
+          "start": 24.66,
+          "end": 24.82,
+          "prob": 0.98779296875
+        },
+        {
+          "word": "data",
+          "start": 24.82,
+          "end": 25.2,
+          "prob": 0.9921875
+        },
+        {
+          "word": "being",
+          "start": 25.2,
+          "end": 25.78,
+          "prob": 0.9775390625
+        },
+        {
+          "word": "torn",
+          "start": 25.78,
+          "end": 26.08,
+          "prob": 0.99169921875
+        },
+        {
+          "word": "down",
+          "start": 26.08,
+          "end": 26.58,
+          "prob": 0.998046875
+        },
+        {
+          "word": "and",
+          "start": 26.58,
+          "end": 27.02,
+          "prob": 0.9921875
+        },
+        {
+          "word": "recompiled",
+          "start": 27.02,
+          "end": 27.76,
+          "prob": 0.9931640625
+        },
+        {
+          "word": "at",
+          "start": 27.76,
+          "end": 27.96,
+          "prob": 0.99267578125
+        },
+        {
+          "word": "a",
+          "start": 27.96,
+          "end": 28.04,
+          "prob": 0.986328125
+        },
+        {
+          "word": "lower",
+          "start": 28.04,
+          "end": 28.3,
+          "prob": 0.994140625
+        },
+        {
+          "word": "resolution.",
+          "start": 28.3,
+          "end": 28.72,
+          "prob": 0.99658203125
+        }
+      ],
+      "index": 5,
+      "scene_id": "S0005",
+      "duration": 6.04
+    },
+    {
+      "start": 29.18,
+      "end": 35.18,
+      "text": "The heat of the overworld is gone, replaced by a cold that is an absence of existence.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "The",
+          "start": 29.18,
+          "end": 29.9,
+          "prob": 0.98828125
+        },
+        {
+          "word": "heat",
+          "start": 29.9,
+          "end": 30.2,
+          "prob": 0.99169921875
+        },
+        {
+          "word": "of",
+          "start": 30.2,
+          "end": 30.36,
+          "prob": 0.99609375
+        },
+        {
+          "word": "the",
+          "start": 30.36,
+          "end": 30.42,
+          "prob": 0.994140625
+        },
+        {
+          "word": "overworld",
+          "start": 30.42,
+          "end": 30.96,
+          "prob": 0.947265625
+        },
+        {
+          "word": "is",
+          "start": 30.96,
+          "end": 31.14,
+          "prob": 0.97998046875
+        },
+        {
+          "word": "gone,",
+          "start": 31.14,
+          "end": 31.44,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "replaced",
+          "start": 31.62,
+          "end": 32.3,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "by",
+          "start": 32.3,
+          "end": 32.68,
+          "prob": 0.998046875
+        },
+        {
+          "word": "a",
+          "start": 32.68,
+          "end": 32.78,
+          "prob": 0.9912109375
+        },
+        {
+          "word": "cold",
+          "start": 32.78,
+          "end": 33.16,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "that",
+          "start": 33.16,
+          "end": 33.68,
+          "prob": 0.99169921875
+        },
+        {
+          "word": "is",
+          "start": 33.68,
+          "end": 33.84,
+          "prob": 0.99072265625
+        },
+        {
+          "word": "an",
+          "start": 33.84,
+          "end": 33.96,
+          "prob": 0.91015625
+        },
+        {
+          "word": "absence",
+          "start": 33.96,
+          "end": 34.4,
+          "prob": 0.99462890625
+        },
+        {
+          "word": "of",
+          "start": 34.4,
+          "end": 34.74,
+          "prob": 0.99609375
+        },
+        {
+          "word": "existence.",
+          "start": 34.74,
+          "end": 35.18,
+          "prob": 0.98583984375
+        }
+      ],
+      "index": 6,
+      "scene_id": "S0006",
+      "duration": 6.0
+    },
+    {
+      "start": 36.74,
+      "end": 42.04,
+      "text": "When he opens his eyes, he is standing on a platform of smooth obsidian.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "When",
+          "start": 36.74,
+          "end": 37.46,
+          "prob": 0.9931640625
+        },
+        {
+          "word": "he",
+          "start": 37.46,
+          "end": 37.6,
+          "prob": 0.998046875
+        },
+        {
+          "word": "opens",
+          "start": 37.6,
+          "end": 37.88,
+          "prob": 0.99658203125
+        },
+        {
+          "word": "his",
+          "start": 37.88,
+          "end": 38.1,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "eyes,",
+          "start": 38.1,
+          "end": 38.5,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "he",
+          "start": 38.66,
+          "end": 39.0,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "is",
+          "start": 39.0,
+          "end": 39.16,
+          "prob": 0.99658203125
+        },
+        {
+          "word": "standing",
+          "start": 39.16,
+          "end": 39.44,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "on",
+          "start": 39.44,
+          "end": 39.74,
+          "prob": 0.998046875
+        },
+        {
+          "word": "a",
+          "start": 39.74,
+          "end": 39.9,
+          "prob": 0.99267578125
+        },
+        {
+          "word": "platform",
+          "start": 39.9,
+          "end": 40.34,
+          "prob": 0.98779296875
+        },
+        {
+          "word": "of",
+          "start": 40.34,
+          "end": 40.92,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "smooth",
+          "start": 40.92,
+          "end": 41.28,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "obsidian.",
+          "start": 41.28,
+          "end": 42.04,
+          "prob": 0.961669921875
+        }
+      ],
+      "index": 7,
+      "scene_id": "S0007",
+      "duration": 5.3
+    },
+    {
+      "start": 43.46,
+      "end": 46.24,
+      "text": "The screen flickers with purple static.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "The",
+          "start": 43.11999999999999,
+          "end": 43.48,
+          "prob": 0.9951171875
+        },
+        {
+          "word": "screen",
+          "start": 43.48,
+          "end": 43.82,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "flickers",
+          "start": 43.82,
+          "end": 44.98,
+          "prob": 0.985595703125
+        },
+        {
+          "word": "with",
+          "start": 44.98,
+          "end": 45.42,
+          "prob": 0.99267578125
+        },
+        {
+          "word": "purple",
+          "start": 45.42,
+          "end": 45.78,
+          "prob": 0.9921875
+        },
+        {
+          "word": "static.",
+          "start": 45.78,
+          "end": 46.24,
+          "prob": 0.99267578125
+        }
+      ],
+      "index": 8,
+      "scene_id": "S0008",
+      "duration": 2.78
+    },
+    {
+      "start": 46.78,
+      "end": 50.7,
+      "text": "There is a place where the grid collapses into the null vector.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "There",
+          "start": 46.78,
+          "end": 47.5,
+          "prob": 0.99658203125
+        },
+        {
+          "word": "is",
+          "start": 47.5,
+          "end": 47.62,
+          "prob": 0.99365234375
+        },
+        {
+          "word": "a",
+          "start": 47.62,
+          "end": 47.72,
+          "prob": 0.99609375
+        },
+        {
+          "word": "place",
+          "start": 47.72,
+          "end": 48.08,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "where",
+          "start": 48.08,
+          "end": 48.5,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "the",
+          "start": 48.5,
+          "end": 48.62,
+          "prob": 0.994140625
+        },
+        {
+          "word": "grid",
+          "start": 48.62,
+          "end": 48.92,
+          "prob": 0.994140625
+        },
+        {
+          "word": "collapses",
+          "start": 48.92,
+          "end": 49.42,
+          "prob": 0.998046875
+        },
+        {
+          "word": "into",
+          "start": 49.42,
+          "end": 49.86,
+          "prob": 0.99609375
+        },
+        {
+          "word": "the",
+          "start": 49.86,
+          "end": 50.06,
+          "prob": 0.98828125
+        },
+        {
+          "word": "null",
+          "start": 50.06,
+          "end": 50.3,
+          "prob": 0.96630859375
+        },
+        {
+          "word": "vector.",
+          "start": 50.3,
+          "end": 50.7,
+          "prob": 0.98583984375
+        }
+      ],
+      "index": 9,
+      "scene_id": "S0009",
+      "duration": 3.92
+    },
+    {
+      "start": 50.7,
+      "end": 53.22,
+      "text": "Welcome to the end.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Welcome",
+          "start": 50.7,
+          "end": 52.06,
+          "prob": 0.452392578125
+        },
+        {
+          "word": "to",
+          "start": 52.06,
+          "end": 52.76,
+          "prob": 0.8779296875
+        },
+        {
+          "word": "the",
+          "start": 52.76,
+          "end": 52.9,
+          "prob": 0.97216796875
+        },
+        {
+          "word": "end.",
+          "start": 52.9,
+          "end": 53.22,
+          "prob": 0.80224609375
+        }
+      ],
+      "index": 10,
+      "scene_id": "S0010",
+      "duration": 2.52
+    },
+    {
+      "start": 57.33999999999999,
+      "end": 63.26,
+      "text": "This is the dimension of finality, the home of the unwritten data.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "This",
+          "start": 57.33999999999999,
+          "end": 58.13999999999999,
+          "prob": 0.486328125
+        },
+        {
+          "word": "is",
+          "start": 58.13999999999999,
+          "end": 58.94,
+          "prob": 0.9931640625
+        },
+        {
+          "word": "the",
+          "start": 58.94,
+          "end": 59.1,
+          "prob": 0.98583984375
+        },
+        {
+          "word": "dimension",
+          "start": 59.1,
+          "end": 59.42,
+          "prob": 0.70849609375
+        },
+        {
+          "word": "of",
+          "start": 59.42,
+          "end": 59.92,
+          "prob": 0.998046875
+        },
+        {
+          "word": "finality,",
+          "start": 59.92,
+          "end": 60.5,
+          "prob": 0.918701171875
+        },
+        {
+          "word": "the",
+          "start": 60.64,
+          "end": 61.22,
+          "prob": 0.951171875
+        },
+        {
+          "word": "home",
+          "start": 61.22,
+          "end": 61.56,
+          "prob": 0.99072265625
+        },
+        {
+          "word": "of",
+          "start": 61.56,
+          "end": 61.88,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "the",
+          "start": 61.88,
+          "end": 62.0,
+          "prob": 0.99462890625
+        },
+        {
+          "word": "unwritten",
+          "start": 62.0,
+          "end": 62.58,
+          "prob": 0.982177734375
+        },
+        {
+          "word": "data.",
+          "start": 62.58,
+          "end": 63.26,
+          "prob": 0.5625
+        }
+      ],
+      "index": 11,
+      "scene_id": "S0011",
+      "duration": 5.92
+    },
+    {
+      "start": 63.74,
+      "end": 67.9,
+      "text": "Here, the islands float in an infinite void.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Here,",
+          "start": 63.74,
+          "end": 64.54,
+          "prob": 0.9072265625
+        },
+        {
+          "word": "the",
+          "start": 65.26,
+          "end": 65.6,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "islands",
+          "start": 65.6,
+          "end": 66.02,
+          "prob": 0.97607421875
+        },
+        {
+          "word": "float",
+          "start": 66.02,
+          "end": 66.36,
+          "prob": 0.998046875
+        },
+        {
+          "word": "in",
+          "start": 66.36,
+          "end": 66.98,
+          "prob": 0.99267578125
+        },
+        {
+          "word": "an",
+          "start": 66.98,
+          "end": 67.14,
+          "prob": 0.99560546875
+        },
+        {
+          "word": "infinite",
+          "start": 67.14,
+          "end": 67.58,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "void.",
+          "start": 67.58,
+          "end": 67.9,
+          "prob": 0.9990234375
+        }
+      ],
+      "index": 12,
+      "scene_id": "S0012",
+      "duration": 4.16
+    },
+    {
+      "start": 68.44,
+      "end": 71.04,
+      "text": "This is the Architect's true cage.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "This",
+          "start": 68.44,
+          "end": 69.24,
+          "prob": 0.99609375
+        },
+        {
+          "word": "is",
+          "start": 69.24,
+          "end": 69.64,
+          "prob": 0.99658203125
+        },
+        {
+          "word": "the",
+          "start": 69.64,
+          "end": 69.74,
+          "prob": 0.98193359375
+        },
+        {
+          "word": "Architect's",
+          "start": 69.74,
+          "end": 70.44,
+          "prob": 0.735595703125
+        },
+        {
+          "word": "true",
+          "start": 70.44,
+          "end": 70.66,
+          "prob": 0.921875
+        },
+        {
+          "word": "cage.",
+          "start": 70.66,
+          "end": 71.04,
+          "prob": 0.97607421875
+        }
+      ],
+      "index": 13,
+      "scene_id": "S0013",
+      "duration": 2.6
+    },
+    {
+      "start": 73.84,
+      "end": 76.1,
+      "text": "Steve has crossed the threshold.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Steve",
+          "start": 73.84,
+          "end": 74.64,
+          "prob": 0.9560546875
+        },
+        {
+          "word": "has",
+          "start": 74.64,
+          "end": 74.96,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "crossed",
+          "start": 74.96,
+          "end": 75.44,
+          "prob": 0.99658203125
+        },
+        {
+          "word": "the",
+          "start": 75.44,
+          "end": 75.68,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "threshold.",
+          "start": 75.68,
+          "end": 76.1,
+          "prob": 0.98779296875
+        }
+      ],
+      "index": 14,
+      "scene_id": "S0014",
+      "duration": 2.26
+    },
+    {
+      "start": 76.98,
+      "end": 86.0,
+      "text": "He has entered the Dragon's Lair. and the dragon is already dreaming of his deletion.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "He",
+          "start": 76.98,
+          "end": 77.78,
+          "prob": 0.9951171875
+        },
+        {
+          "word": "has",
+          "start": 77.78,
+          "end": 77.96,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "entered",
+          "start": 77.96,
+          "end": 78.36,
+          "prob": 0.998046875
+        },
+        {
+          "word": "the",
+          "start": 78.36,
+          "end": 78.84,
+          "prob": 0.9794921875
+        },
+        {
+          "word": "Dragon's",
+          "start": 78.84,
+          "end": 79.44,
+          "prob": 0.827392578125
+        },
+        {
+          "word": "Lair.",
+          "start": 79.44,
+          "end": 79.76,
+          "prob": 0.87109375
+        },
+        {
+          "word": "and",
+          "start": 80.7,
+          "end": 80.9,
+          "prob": 0.609375
+        },
+        {
+          "word": "the",
+          "start": 80.9,
+          "end": 80.98,
+          "prob": 0.95361328125
+        },
+        {
+          "word": "dragon",
+          "start": 80.98,
+          "end": 81.46,
+          "prob": 0.857421875
+        },
+        {
+          "word": "is",
+          "start": 81.46,
+          "end": 83.02,
+          "prob": 0.29150390625
+        },
+        {
+          "word": "already",
+          "start": 83.02,
+          "end": 84.0,
+          "prob": 0.96826171875
+        },
+        {
+          "word": "dreaming",
+          "start": 84.0,
+          "end": 84.58,
+          "prob": 0.994140625
+        },
+        {
+          "word": "of",
+          "start": 84.58,
+          "end": 85.22,
+          "prob": 0.9775390625
+        },
+        {
+          "word": "his",
+          "start": 85.22,
+          "end": 85.44,
+          "prob": 0.98828125
+        },
+        {
+          "word": "deletion.",
+          "start": 85.44,
+          "end": 86.0,
+          "prob": 0.9900716145833334
+        }
+      ],
+      "index": 15,
+      "scene_id": "S0015",
+      "duration": 9.02
+    },
+    {
+      "start": 86.4,
+      "end": 91.28,
+      "text": "Steve steps onto the pale yellow end stone of the central island.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Steve",
+          "start": 86.4,
+          "end": 87.12,
+          "prob": 0.9375
+        },
+        {
+          "word": "steps",
+          "start": 87.12,
+          "end": 87.42,
+          "prob": 0.98779296875
+        },
+        {
+          "word": "onto",
+          "start": 87.42,
+          "end": 87.98,
+          "prob": 0.94677734375
+        },
+        {
+          "word": "the",
+          "start": 87.98,
+          "end": 88.18,
+          "prob": 0.990234375
+        },
+        {
+          "word": "pale",
+          "start": 88.18,
+          "end": 88.52,
+          "prob": 0.97802734375
+        },
+        {
+          "word": "yellow",
+          "start": 88.52,
+          "end": 88.92,
+          "prob": 0.93310546875
+        },
+        {
+          "word": "end",
+          "start": 88.92,
+          "end": 89.32,
+          "prob": 0.892578125
+        },
+        {
+          "word": "stone",
+          "start": 89.32,
+          "end": 89.68,
+          "prob": 0.53369140625
+        },
+        {
+          "word": "of",
+          "start": 89.68,
+          "end": 90.28,
+          "prob": 0.9755859375
+        },
+        {
+          "word": "the",
+          "start": 90.28,
+          "end": 90.4,
+          "prob": 0.95263671875
+        },
+        {
+          "word": "central",
+          "start": 90.4,
+          "end": 90.76,
+          "prob": 0.91064453125
+        },
+        {
+          "word": "island.",
+          "start": 90.76,
+          "end": 91.28,
+          "prob": 0.99267578125
+        }
+      ],
+      "index": 16,
+      "scene_id": "S0016",
+      "duration": 4.88
+    },
+    {
+      "start": 91.58,
+      "end": 97.74,
+      "text": "Every footstep is a thud that echoes through the void.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Every",
+          "start": 91.58,
+          "end": 92.1,
+          "prob": 0.3544921875
+        },
+        {
+          "word": "footstep",
+          "start": 92.1,
+          "end": 95.44,
+          "prob": 0.951416015625
+        },
+        {
+          "word": "is",
+          "start": 95.44,
+          "end": 95.6,
+          "prob": 0.99658203125
+        },
+        {
+          "word": "a",
+          "start": 95.6,
+          "end": 95.7,
+          "prob": 0.9951171875
+        },
+        {
+          "word": "thud",
+          "start": 95.7,
+          "end": 96.18,
+          "prob": 0.9912109375
+        },
+        {
+          "word": "that",
+          "start": 96.18,
+          "end": 96.5,
+          "prob": 0.9931640625
+        },
+        {
+          "word": "echoes",
+          "start": 96.5,
+          "end": 96.94,
+          "prob": 0.97412109375
+        },
+        {
+          "word": "through",
+          "start": 96.94,
+          "end": 97.26,
+          "prob": 0.986328125
+        },
+        {
+          "word": "the",
+          "start": 97.26,
+          "end": 97.4,
+          "prob": 0.990234375
+        },
+        {
+          "word": "void.",
+          "start": 97.4,
+          "end": 97.74,
+          "prob": 0.98828125
+        }
+      ],
+      "index": 17,
+      "scene_id": "S0017",
+      "duration": 6.16
+    },
+    {
+      "start": 98.94,
+      "end": 104.56,
+      "text": "His diamond armor glows a high specular cyan, a foreign element in this perfect void.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "His",
+          "start": 98.76,
+          "end": 99.12,
+          "prob": 0.98681640625
+        },
+        {
+          "word": "diamond",
+          "start": 99.12,
+          "end": 99.46,
+          "prob": 0.9912109375
+        },
+        {
+          "word": "armor",
+          "start": 99.46,
+          "end": 99.84,
+          "prob": 0.9326171875
+        },
+        {
+          "word": "glows",
+          "start": 99.84,
+          "end": 100.34,
+          "prob": 0.992919921875
+        },
+        {
+          "word": "a",
+          "start": 100.34,
+          "end": 100.5,
+          "prob": 0.97265625
+        },
+        {
+          "word": "high",
+          "start": 100.5,
+          "end": 100.7,
+          "prob": 0.96923828125
+        },
+        {
+          "word": "specular",
+          "start": 100.7,
+          "end": 101.3,
+          "prob": 0.934326171875
+        },
+        {
+          "word": "cyan,",
+          "start": 101.3,
+          "end": 101.66,
+          "prob": 0.9638671875
+        },
+        {
+          "word": "a",
+          "start": 102.02,
+          "end": 102.52,
+          "prob": 0.99462890625
+        },
+        {
+          "word": "foreign",
+          "start": 102.52,
+          "end": 102.9,
+          "prob": 0.99560546875
+        },
+        {
+          "word": "element",
+          "start": 102.9,
+          "end": 103.36,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "in",
+          "start": 103.36,
+          "end": 103.64,
+          "prob": 0.97607421875
+        },
+        {
+          "word": "this",
+          "start": 103.64,
+          "end": 103.78,
+          "prob": 0.97705078125
+        },
+        {
+          "word": "perfect",
+          "start": 103.78,
+          "end": 104.12,
+          "prob": 0.9951171875
+        },
+        {
+          "word": "void.",
+          "start": 104.12,
+          "end": 104.56,
+          "prob": 0.99755859375
+        }
+      ],
+      "index": 18,
+      "scene_id": "S0018",
+      "duration": 5.62
+    },
+    {
+      "start": 106.47999999999999,
+      "end": 112.74,
+      "text": "Alex teleports onto the island, in a burst of purple particles, her enchanted bow drawn.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Alex",
+          "start": 106.47999999999999,
+          "end": 107.16,
+          "prob": 0.65234375
+        },
+        {
+          "word": "teleports",
+          "start": 107.16,
+          "end": 107.84,
+          "prob": 0.9912109375
+        },
+        {
+          "word": "onto",
+          "start": 107.84,
+          "end": 108.16,
+          "prob": 0.923828125
+        },
+        {
+          "word": "the",
+          "start": 108.16,
+          "end": 108.36,
+          "prob": 0.99658203125
+        },
+        {
+          "word": "island,",
+          "start": 108.36,
+          "end": 108.72,
+          "prob": 0.97998046875
+        },
+        {
+          "word": "in",
+          "start": 108.94,
+          "end": 109.32,
+          "prob": 0.9814453125
+        },
+        {
+          "word": "a",
+          "start": 109.32,
+          "end": 109.42,
+          "prob": 0.9951171875
+        },
+        {
+          "word": "burst",
+          "start": 109.42,
+          "end": 109.74,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "of",
+          "start": 109.74,
+          "end": 110.02,
+          "prob": 0.998046875
+        },
+        {
+          "word": "purple",
+          "start": 110.02,
+          "end": 110.32,
+          "prob": 0.994140625
+        },
+        {
+          "word": "particles,",
+          "start": 110.32,
+          "end": 110.84,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "her",
+          "start": 111.14,
+          "end": 111.54,
+          "prob": 0.99462890625
+        },
+        {
+          "word": "enchanted",
+          "start": 111.54,
+          "end": 112.12,
+          "prob": 0.994384765625
+        },
+        {
+          "word": "bow",
+          "start": 112.12,
+          "end": 112.36,
+          "prob": 0.99365234375
+        },
+        {
+          "word": "drawn.",
+          "start": 112.36,
+          "end": 112.74,
+          "prob": 0.9931640625
+        }
+      ],
+      "index": 19,
+      "scene_id": "S0019",
+      "duration": 6.26
+    },
+    {
+      "start": 114.22,
+      "end": 126.96,
+      "text": "Barclay whimpers, his fur coated in void mist. Above them, towering obsidian pillars reach toward the sky, each topped with a spinning end crystal emitting a low, pulsing thrump.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Barclay",
+          "start": 114.22,
+          "end": 114.9,
+          "prob": 0.7950846354166666
+        },
+        {
+          "word": "whimpers,",
+          "start": 114.9,
+          "end": 115.4,
+          "prob": 0.9938151041666666
+        },
+        {
+          "word": "his",
+          "start": 115.5,
+          "end": 115.84,
+          "prob": 0.998046875
+        },
+        {
+          "word": "fur",
+          "start": 115.84,
+          "end": 116.16,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "coated",
+          "start": 116.16,
+          "end": 116.66,
+          "prob": 0.98876953125
+        },
+        {
+          "word": "in",
+          "start": 116.66,
+          "end": 116.96,
+          "prob": 0.9951171875
+        },
+        {
+          "word": "void",
+          "start": 116.96,
+          "end": 117.22,
+          "prob": 0.91162109375
+        },
+        {
+          "word": "mist.",
+          "start": 117.22,
+          "end": 117.54,
+          "prob": 0.94091796875
+        },
+        {
+          "word": "Above",
+          "start": 118.1,
+          "end": 118.78,
+          "prob": 0.99462890625
+        },
+        {
+          "word": "them,",
+          "start": 118.78,
+          "end": 119.14,
+          "prob": 0.998046875
+        },
+        {
+          "word": "towering",
+          "start": 119.26,
+          "end": 120.06,
+          "prob": 0.999267578125
+        },
+        {
+          "word": "obsidian",
+          "start": 120.06,
+          "end": 120.46,
+          "prob": 0.966796875
+        },
+        {
+          "word": "pillars",
+          "start": 120.46,
+          "end": 120.84,
+          "prob": 0.998046875
+        },
+        {
+          "word": "reach",
+          "start": 120.84,
+          "end": 121.24,
+          "prob": 0.99169921875
+        },
+        {
+          "word": "toward",
+          "start": 121.24,
+          "end": 121.58,
+          "prob": 0.97216796875
+        },
+        {
+          "word": "the",
+          "start": 121.58,
+          "end": 121.74,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "sky,",
+          "start": 121.74,
+          "end": 122.04,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "each",
+          "start": 122.34,
+          "end": 122.94,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "topped",
+          "start": 122.94,
+          "end": 123.36,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "with",
+          "start": 123.36,
+          "end": 123.62,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "a",
+          "start": 123.62,
+          "end": 123.78,
+          "prob": 0.98046875
+        },
+        {
+          "word": "spinning",
+          "start": 123.78,
+          "end": 124.06,
+          "prob": 0.99462890625
+        },
+        {
+          "word": "end",
+          "start": 124.06,
+          "end": 124.36,
+          "prob": 0.72900390625
+        },
+        {
+          "word": "crystal",
+          "start": 124.36,
+          "end": 124.76,
+          "prob": 0.94287109375
+        },
+        {
+          "word": "emitting",
+          "start": 124.76,
+          "end": 125.3,
+          "prob": 0.997802734375
+        },
+        {
+          "word": "a",
+          "start": 125.3,
+          "end": 125.46,
+          "prob": 0.998046875
+        },
+        {
+          "word": "low,",
+          "start": 125.46,
+          "end": 125.72,
+          "prob": 0.998046875
+        },
+        {
+          "word": "pulsing",
+          "start": 125.82,
+          "end": 126.48,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "thrump.",
+          "start": 126.48,
+          "end": 126.96,
+          "prob": 0.7216796875
+        }
+      ],
+      "index": 20,
+      "scene_id": "S0020",
+      "duration": 12.74
+    },
+    {
+      "start": 126.96,
+      "end": 136.66,
+      "text": "The grid is dead here, Steve. Alex whispers. There's no coordinate system. The map is blank.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "The",
+          "start": 126.96,
+          "end": 127.78,
+          "prob": 0.9716796875
+        },
+        {
+          "word": "grid",
+          "start": 127.78,
+          "end": 128.02,
+          "prob": 0.99658203125
+        },
+        {
+          "word": "is",
+          "start": 128.02,
+          "end": 128.44,
+          "prob": 1.0
+        },
+        {
+          "word": "dead",
+          "start": 128.44,
+          "end": 128.74,
+          "prob": 1.0
+        },
+        {
+          "word": "here,",
+          "start": 128.74,
+          "end": 129.04,
+          "prob": 1.0
+        },
+        {
+          "word": "Steve.",
+          "start": 129.24,
+          "end": 129.48,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "Alex",
+          "start": 129.84,
+          "end": 130.64,
+          "prob": 0.99609375
+        },
+        {
+          "word": "whispers.",
+          "start": 130.64,
+          "end": 131.2,
+          "prob": 0.997802734375
+        },
+        {
+          "word": "There's",
+          "start": 131.92,
+          "end": 132.72,
+          "prob": 0.997802734375
+        },
+        {
+          "word": "no",
+          "start": 132.72,
+          "end": 132.92,
+          "prob": 1.0
+        },
+        {
+          "word": "coordinate",
+          "start": 132.92,
+          "end": 133.64,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "system.",
+          "start": 133.64,
+          "end": 134.06,
+          "prob": 1.0
+        },
+        {
+          "word": "The",
+          "start": 134.76,
+          "end": 135.56,
+          "prob": 1.0
+        },
+        {
+          "word": "map",
+          "start": 135.56,
+          "end": 135.9,
+          "prob": 1.0
+        },
+        {
+          "word": "is",
+          "start": 135.9,
+          "end": 136.34,
+          "prob": 1.0
+        },
+        {
+          "word": "blank.",
+          "start": 136.34,
+          "end": 136.66,
+          "prob": 1.0
+        }
+      ],
+      "index": 21,
+      "scene_id": "S0021",
+      "duration": 9.7
+    },
+    {
+      "start": 139.06,
+      "end": 148.48,
+      "text": "Steve does not answer. He looks up. A massive, blocky shadow detaches itself from the bedrock.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Steve",
+          "start": 139.06,
+          "end": 139.86,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "does",
+          "start": 139.86,
+          "end": 140.3,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "not",
+          "start": 140.3,
+          "end": 140.6,
+          "prob": 1.0
+        },
+        {
+          "word": "answer.",
+          "start": 140.6,
+          "end": 141.04,
+          "prob": 1.0
+        },
+        {
+          "word": "He",
+          "start": 141.88,
+          "end": 142.68,
+          "prob": 1.0
+        },
+        {
+          "word": "looks",
+          "start": 142.68,
+          "end": 142.88,
+          "prob": 1.0
+        },
+        {
+          "word": "up.",
+          "start": 142.88,
+          "end": 143.22,
+          "prob": 1.0
+        },
+        {
+          "word": "A",
+          "start": 143.94,
+          "end": 144.74,
+          "prob": 1.0
+        },
+        {
+          "word": "massive,",
+          "start": 144.74,
+          "end": 145.32,
+          "prob": 1.0
+        },
+        {
+          "word": "blocky",
+          "start": 145.38,
+          "end": 145.92,
+          "prob": 0.999755859375
+        },
+        {
+          "word": "shadow",
+          "start": 145.92,
+          "end": 146.24,
+          "prob": 1.0
+        },
+        {
+          "word": "detaches",
+          "start": 146.24,
+          "end": 147.22,
+          "prob": 0.999267578125
+        },
+        {
+          "word": "itself",
+          "start": 147.22,
+          "end": 147.5,
+          "prob": 1.0
+        },
+        {
+          "word": "from",
+          "start": 147.5,
+          "end": 147.9,
+          "prob": 1.0
+        },
+        {
+          "word": "the",
+          "start": 147.9,
+          "end": 148.06,
+          "prob": 1.0
+        },
+        {
+          "word": "bedrock.",
+          "start": 148.06,
+          "end": 148.48,
+          "prob": 1.0
+        }
+      ],
+      "index": 22,
+      "scene_id": "S0022",
+      "duration": 9.42
+    },
+    {
+      "start": 149.16,
+      "end": 155.78,
+      "text": "It is the Ender Dragon. Her obsidian scales reflect the light of the crystals.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "It",
+          "start": 149.16,
+          "end": 149.96,
+          "prob": 1.0
+        },
+        {
+          "word": "is",
+          "start": 149.96,
+          "end": 150.14,
+          "prob": 1.0
+        },
+        {
+          "word": "the",
+          "start": 150.14,
+          "end": 150.34,
+          "prob": 1.0
+        },
+        {
+          "word": "Ender",
+          "start": 150.34,
+          "end": 151.02,
+          "prob": 0.989501953125
+        },
+        {
+          "word": "Dragon.",
+          "start": 151.02,
+          "end": 151.48,
+          "prob": 0.9873046875
+        },
+        {
+          "word": "Her",
+          "start": 151.88,
+          "end": 152.68,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "obsidian",
+          "start": 152.68,
+          "end": 153.18,
+          "prob": 0.998779296875
+        },
+        {
+          "word": "scales",
+          "start": 153.18,
+          "end": 153.58,
+          "prob": 1.0
+        },
+        {
+          "word": "reflect",
+          "start": 153.58,
+          "end": 154.12,
+          "prob": 1.0
+        },
+        {
+          "word": "the",
+          "start": 154.12,
+          "end": 154.48,
+          "prob": 1.0
+        },
+        {
+          "word": "light",
+          "start": 154.48,
+          "end": 154.78,
+          "prob": 1.0
+        },
+        {
+          "word": "of",
+          "start": 154.78,
+          "end": 155.26,
+          "prob": 1.0
+        },
+        {
+          "word": "the",
+          "start": 155.26,
+          "end": 155.38,
+          "prob": 1.0
+        },
+        {
+          "word": "crystals.",
+          "start": 155.38,
+          "end": 155.78,
+          "prob": 1.0
+        }
+      ],
+      "index": 23,
+      "scene_id": "S0023",
+      "duration": 6.62
+    },
+    {
+      "start": 156.96,
+      "end": 163.62,
+      "text": "She opens her mouth, revealing a purple void, and lets out a roar of corrupted audio and static.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "She",
+          "start": 156.96,
+          "end": 157.48,
+          "prob": 0.7880859375
+        },
+        {
+          "word": "opens",
+          "start": 157.48,
+          "end": 157.8,
+          "prob": 0.99072265625
+        },
+        {
+          "word": "her",
+          "start": 157.8,
+          "end": 158.0,
+          "prob": 0.998046875
+        },
+        {
+          "word": "mouth,",
+          "start": 158.0,
+          "end": 158.3,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "revealing",
+          "start": 158.48,
+          "end": 158.98,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "a",
+          "start": 158.98,
+          "end": 159.32,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "purple",
+          "start": 159.32,
+          "end": 159.54,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "void,",
+          "start": 159.54,
+          "end": 160.0,
+          "prob": 0.978515625
+        },
+        {
+          "word": "and",
+          "start": 160.18,
+          "end": 160.54,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "lets",
+          "start": 160.54,
+          "end": 160.82,
+          "prob": 0.9892578125
+        },
+        {
+          "word": "out",
+          "start": 160.82,
+          "end": 161.06,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "a",
+          "start": 161.06,
+          "end": 161.16,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "roar",
+          "start": 161.16,
+          "end": 161.44,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "of",
+          "start": 161.44,
+          "end": 161.78,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "corrupted",
+          "start": 161.78,
+          "end": 162.2,
+          "prob": 0.99462890625
+        },
+        {
+          "word": "audio",
+          "start": 162.2,
+          "end": 162.9,
+          "prob": 0.9873046875
+        },
+        {
+          "word": "and",
+          "start": 162.9,
+          "end": 163.26,
+          "prob": 0.994140625
+        },
+        {
+          "word": "static.",
+          "start": 163.26,
+          "end": 163.62,
+          "prob": 0.9990234375
+        }
+      ],
+      "index": 24,
+      "scene_id": "S0024",
+      "duration": 6.66
+    },
+    {
+      "start": 165.92000000000002,
+      "end": 167.04,
+      "text": "The first sighting!",
+      "type": "speech",
+      "words": [
+        {
+          "word": "The",
+          "start": 165.68,
+          "end": 166.0,
+          "prob": 0.935546875
+        },
+        {
+          "word": "first",
+          "start": 166.0,
+          "end": 166.3,
+          "prob": 0.87158203125
+        },
+        {
+          "word": "sighting!",
+          "start": 166.3,
+          "end": 167.04,
+          "prob": 0.999755859375
+        }
+      ],
+      "index": 25,
+      "scene_id": "S0025",
+      "duration": 1.12
+    },
+    {
+      "start": 169.42000000000002,
+      "end": 175.38,
+      "text": "The Sentinel of the Void is awake.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "The",
+          "start": 169.42000000000002,
+          "end": 170.06,
+          "prob": 0.9501953125
+        },
+        {
+          "word": "Sentinel",
+          "start": 170.06,
+          "end": 170.7,
+          "prob": 0.8896484375
+        },
+        {
+          "word": "of",
+          "start": 170.7,
+          "end": 174.22,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "the",
+          "start": 174.22,
+          "end": 174.34,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "Void",
+          "start": 174.34,
+          "end": 174.82,
+          "prob": 0.984619140625
+        },
+        {
+          "word": "is",
+          "start": 174.82,
+          "end": 175.06,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "awake.",
+          "start": 175.06,
+          "end": 175.38,
+          "prob": 0.99755859375
+        }
+      ],
+      "index": 26,
+      "scene_id": "S0026",
+      "duration": 5.96
+    },
+    {
+      "start": 177.02,
+      "end": 184.04,
+      "text": "Jean does not see Steve as a hero, she sees him as a virus, a data leak that must be patched.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Jean",
+          "start": 176.82,
+          "end": 177.14,
+          "prob": 0.51171875
+        },
+        {
+          "word": "does",
+          "start": 177.14,
+          "end": 177.28,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "not",
+          "start": 177.28,
+          "end": 177.58,
+          "prob": 1.0
+        },
+        {
+          "word": "see",
+          "start": 177.58,
+          "end": 177.82,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "Steve",
+          "start": 177.82,
+          "end": 178.18,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "as",
+          "start": 178.18,
+          "end": 178.5,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "a",
+          "start": 178.5,
+          "end": 178.66,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "hero,",
+          "start": 178.66,
+          "end": 179.02,
+          "prob": 0.998046875
+        },
+        {
+          "word": "she",
+          "start": 179.18,
+          "end": 179.74,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "sees",
+          "start": 179.74,
+          "end": 180.04,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "him",
+          "start": 180.04,
+          "end": 180.28,
+          "prob": 1.0
+        },
+        {
+          "word": "as",
+          "start": 180.28,
+          "end": 180.52,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "a",
+          "start": 180.52,
+          "end": 180.68,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "virus,",
+          "start": 180.68,
+          "end": 181.04,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "a",
+          "start": 181.28,
+          "end": 181.92,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "data",
+          "start": 181.92,
+          "end": 182.28,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "leak",
+          "start": 182.28,
+          "end": 182.56,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "that",
+          "start": 182.56,
+          "end": 182.94,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "must",
+          "start": 182.94,
+          "end": 183.16,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "be",
+          "start": 183.16,
+          "end": 183.42,
+          "prob": 1.0
+        },
+        {
+          "word": "patched.",
+          "start": 183.42,
+          "end": 184.04,
+          "prob": 0.9990234375
+        }
+      ],
+      "index": 27,
+      "scene_id": "S0027",
+      "duration": 7.02
+    },
+    {
+      "start": 185.42,
+      "end": 187.68,
+      "text": "The dragon dives.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "The",
+          "start": 185.42,
+          "end": 186.14,
+          "prob": 0.62451171875
+        },
+        {
+          "word": "dragon",
+          "start": 186.14,
+          "end": 186.54,
+          "prob": 0.91748046875
+        },
+        {
+          "word": "dives.",
+          "start": 186.54,
+          "end": 187.68,
+          "prob": 0.92236328125
+        }
+      ],
+      "index": 28,
+      "scene_id": "S0028",
+      "duration": 2.26
+    },
+    {
+      "start": 188.0,
+      "end": 195.48,
+      "text": "She unleashes a torrent of dragon's breath, a purple acid that instantly pixelates the end stone it touches.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "She",
+          "start": 188.0,
+          "end": 188.72,
+          "prob": 0.99267578125
+        },
+        {
+          "word": "unleashes",
+          "start": 188.72,
+          "end": 189.22,
+          "prob": 0.996826171875
+        },
+        {
+          "word": "a",
+          "start": 189.22,
+          "end": 189.48,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "torrent",
+          "start": 189.48,
+          "end": 190.02,
+          "prob": 0.9697265625
+        },
+        {
+          "word": "of",
+          "start": 190.02,
+          "end": 190.26,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "dragon's",
+          "start": 190.26,
+          "end": 190.84,
+          "prob": 0.935791015625
+        },
+        {
+          "word": "breath,",
+          "start": 190.84,
+          "end": 191.08,
+          "prob": 0.998046875
+        },
+        {
+          "word": "a",
+          "start": 191.34,
+          "end": 191.82,
+          "prob": 0.99560546875
+        },
+        {
+          "word": "purple",
+          "start": 191.82,
+          "end": 192.14,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "acid",
+          "start": 192.14,
+          "end": 192.52,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "that",
+          "start": 192.52,
+          "end": 192.94,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "instantly",
+          "start": 192.94,
+          "end": 193.42,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "pixelates",
+          "start": 193.42,
+          "end": 194.26,
+          "prob": 0.992431640625
+        },
+        {
+          "word": "the",
+          "start": 194.26,
+          "end": 194.42,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "end",
+          "start": 194.42,
+          "end": 194.64,
+          "prob": 0.9951171875
+        },
+        {
+          "word": "stone",
+          "start": 194.64,
+          "end": 194.92,
+          "prob": 0.88818359375
+        },
+        {
+          "word": "it",
+          "start": 194.92,
+          "end": 195.12,
+          "prob": 0.998046875
+        },
+        {
+          "word": "touches.",
+          "start": 195.12,
+          "end": 195.48,
+          "prob": 0.99951171875
+        }
+      ],
+      "index": 29,
+      "scene_id": "S0029",
+      "duration": 7.48
+    },
+    {
+      "start": 196.6,
+      "end": 202.7,
+      "text": "Steve lunges, using his fragmented arm to pulse a cyan gravity wave, pushing himself and Alex away.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Steve",
+          "start": 196.38,
+          "end": 196.74,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "lunges,",
+          "start": 196.74,
+          "end": 197.32,
+          "prob": 0.999755859375
+        },
+        {
+          "word": "using",
+          "start": 197.36,
+          "end": 197.78,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "his",
+          "start": 197.78,
+          "end": 198.02,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "fragmented",
+          "start": 198.02,
+          "end": 198.48,
+          "prob": 0.999755859375
+        },
+        {
+          "word": "arm",
+          "start": 198.48,
+          "end": 198.82,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "to",
+          "start": 198.82,
+          "end": 199.1,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "pulse",
+          "start": 199.1,
+          "end": 199.36,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "a",
+          "start": 199.36,
+          "end": 199.54,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "cyan",
+          "start": 199.54,
+          "end": 199.86,
+          "prob": 0.9716796875
+        },
+        {
+          "word": "gravity",
+          "start": 199.86,
+          "end": 200.22,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "wave,",
+          "start": 200.22,
+          "end": 200.6,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "pushing",
+          "start": 200.82,
+          "end": 201.4,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "himself",
+          "start": 201.4,
+          "end": 201.74,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "and",
+          "start": 201.74,
+          "end": 202.1,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "Alex",
+          "start": 202.1,
+          "end": 202.4,
+          "prob": 0.91650390625
+        },
+        {
+          "word": "away.",
+          "start": 202.4,
+          "end": 202.7,
+          "prob": 0.998046875
+        }
+      ],
+      "index": 30,
+      "scene_id": "S0030",
+      "duration": 6.1
+    },
+    {
+      "start": 203.54,
+      "end": 207.58,
+      "text": "The acid consumes the stone with a deafening hiss.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "The",
+          "start": 203.54,
+          "end": 204.26,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "acid",
+          "start": 204.26,
+          "end": 204.68,
+          "prob": 1.0
+        },
+        {
+          "word": "consumes",
+          "start": 204.68,
+          "end": 205.26,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "the",
+          "start": 205.26,
+          "end": 205.66,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "stone",
+          "start": 205.66,
+          "end": 206.0,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "with",
+          "start": 206.0,
+          "end": 206.58,
+          "prob": 0.9951171875
+        },
+        {
+          "word": "a",
+          "start": 206.58,
+          "end": 206.72,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "deafening",
+          "start": 206.72,
+          "end": 207.22,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "hiss.",
+          "start": 207.22,
+          "end": 207.58,
+          "prob": 0.9990234375
+        }
+      ],
+      "index": 31,
+      "scene_id": "S0031",
+      "duration": 4.04
+    },
+    {
+      "start": 210.38,
+      "end": 211.9,
+      "text": "Steve looks at the end crystals.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Steve",
+          "start": 210.16000000000003,
+          "end": 210.52,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "looks",
+          "start": 210.52,
+          "end": 210.8,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "at",
+          "start": 210.8,
+          "end": 211.08,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "the",
+          "start": 211.08,
+          "end": 211.18,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "end",
+          "start": 211.18,
+          "end": 211.44,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "crystals.",
+          "start": 211.44,
+          "end": 211.9,
+          "prob": 0.9990234375
+        }
+      ],
+      "index": 32,
+      "scene_id": "S0032",
+      "duration": 1.52
+    },
+    {
+      "start": 211.9,
+      "end": 216.6,
+      "text": "A beam of purple light connects the dragon to the crystal.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "A",
+          "start": 211.9,
+          "end": 213.02,
+          "prob": 0.303955078125
+        },
+        {
+          "word": "beam",
+          "start": 213.02,
+          "end": 213.7,
+          "prob": 0.97509765625
+        },
+        {
+          "word": "of",
+          "start": 213.7,
+          "end": 213.92,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "purple",
+          "start": 213.92,
+          "end": 214.18,
+          "prob": 0.96875
+        },
+        {
+          "word": "light",
+          "start": 214.18,
+          "end": 214.6,
+          "prob": 0.98046875
+        },
+        {
+          "word": "connects",
+          "start": 214.6,
+          "end": 215.26,
+          "prob": 0.9775390625
+        },
+        {
+          "word": "the",
+          "start": 215.26,
+          "end": 215.5,
+          "prob": 0.98583984375
+        },
+        {
+          "word": "dragon",
+          "start": 215.5,
+          "end": 215.86,
+          "prob": 0.80224609375
+        },
+        {
+          "word": "to",
+          "start": 215.86,
+          "end": 216.14,
+          "prob": 0.99267578125
+        },
+        {
+          "word": "the",
+          "start": 216.14,
+          "end": 216.24,
+          "prob": 0.98779296875
+        },
+        {
+          "word": "crystal.",
+          "start": 216.24,
+          "end": 216.6,
+          "prob": 0.92578125
+        }
+      ],
+      "index": 33,
+      "scene_id": "S0033",
+      "duration": 4.7
+    },
+    {
+      "start": 217.54,
+      "end": 218.84,
+      "text": "She is healing.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "She",
+          "start": 217.54,
+          "end": 218.22,
+          "prob": 0.9580078125
+        },
+        {
+          "word": "is",
+          "start": 218.22,
+          "end": 218.44,
+          "prob": 0.9912109375
+        },
+        {
+          "word": "healing.",
+          "start": 218.44,
+          "end": 218.84,
+          "prob": 0.9951171875
+        }
+      ],
+      "index": 34,
+      "scene_id": "S0034",
+      "duration": 1.3
+    },
+    {
+      "start": 219.1,
+      "end": 225.78,
+      "text": "Ein Tier der Dienste, ein der Leitungen der Einwahr, and Serie A B, eine Dierer der Auernahmen.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Ein",
+          "start": 219.1,
+          "end": 219.56,
+          "prob": 0.0002486705780029297
+        },
+        {
+          "word": "Tier",
+          "start": 219.56,
+          "end": 219.94,
+          "prob": 0.089599609375
+        },
+        {
+          "word": "der",
+          "start": 219.94,
+          "end": 220.22,
+          "prob": 0.05419921875
+        },
+        {
+          "word": "Dienste,",
+          "start": 220.22,
+          "end": 220.88,
+          "prob": 0.3282063802083333
+        },
+        {
+          "word": "ein",
+          "start": 221.0,
+          "end": 221.24,
+          "prob": 0.67529296875
+        },
+        {
+          "word": "der",
+          "start": 221.24,
+          "end": 221.32,
+          "prob": 0.1759033203125
+        },
+        {
+          "word": "Leitungen",
+          "start": 221.32,
+          "end": 221.74,
+          "prob": 0.2093505859375
+        },
+        {
+          "word": "der",
+          "start": 221.74,
+          "end": 221.9,
+          "prob": 0.654296875
+        },
+        {
+          "word": "Einwahr,",
+          "start": 221.9,
+          "end": 222.14,
+          "prob": 0.294921875
+        },
+        {
+          "word": "and",
+          "start": 222.46,
+          "end": 222.98,
+          "prob": 0.10064697265625
+        },
+        {
+          "word": "Serie",
+          "start": 222.98,
+          "end": 223.32,
+          "prob": 0.31494140625
+        },
+        {
+          "word": "A",
+          "start": 223.32,
+          "end": 223.56,
+          "prob": 0.22021484375
+        },
+        {
+          "word": "B,",
+          "start": 223.56,
+          "end": 223.7,
+          "prob": 0.348876953125
+        },
+        {
+          "word": "eine",
+          "start": 223.94,
+          "end": 224.44,
+          "prob": 0.56591796875
+        },
+        {
+          "word": "Dierer",
+          "start": 224.44,
+          "end": 224.88,
+          "prob": 0.32373046875
+        },
+        {
+          "word": "der",
+          "start": 224.88,
+          "end": 225.22,
+          "prob": 0.400634765625
+        },
+        {
+          "word": "Auernahmen.",
+          "start": 225.22,
+          "end": 225.78,
+          "prob": 0.301513671875
+        }
+      ],
+      "index": 35,
+      "scene_id": "S0035",
+      "duration": 6.68
+    },
+    {
+      "start": 226.16,
+      "end": 228.72,
+      "text": "Her source code is invulnerable.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Her",
+          "start": 226.16,
+          "end": 226.84,
+          "prob": 0.99462890625
+        },
+        {
+          "word": "source",
+          "start": 226.84,
+          "end": 227.2,
+          "prob": 0.93798828125
+        },
+        {
+          "word": "code",
+          "start": 227.2,
+          "end": 227.48,
+          "prob": 0.998046875
+        },
+        {
+          "word": "is",
+          "start": 227.48,
+          "end": 227.86,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "invulnerable.",
+          "start": 227.86,
+          "end": 228.72,
+          "prob": 0.9769287109375
+        }
+      ],
+      "index": 36,
+      "scene_id": "S0036",
+      "duration": 2.56
+    },
+    {
+      "start": 230.34,
+      "end": 233.1,
+      "text": "Steve points his diamond sword toward the pillar.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Steve",
+          "start": 230.12,
+          "end": 230.46,
+          "prob": 0.95068359375
+        },
+        {
+          "word": "points",
+          "start": 230.46,
+          "end": 230.82,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "his",
+          "start": 230.82,
+          "end": 231.08,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "diamond",
+          "start": 231.08,
+          "end": 231.44,
+          "prob": 0.9921875
+        },
+        {
+          "word": "sword",
+          "start": 231.44,
+          "end": 231.8,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "toward",
+          "start": 231.8,
+          "end": 232.52,
+          "prob": 0.97607421875
+        },
+        {
+          "word": "the",
+          "start": 232.52,
+          "end": 232.76,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "pillar.",
+          "start": 232.76,
+          "end": 233.1,
+          "prob": 0.99609375
+        }
+      ],
+      "index": 37,
+      "scene_id": "S0037",
+      "duration": 2.76
+    },
+    {
+      "start": 233.34,
+      "end": 234.02,
+      "text": "Derl.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Derl.",
+          "start": 233.34,
+          "end": 234.02,
+          "prob": 0.282958984375
+        }
+      ],
+      "index": 38,
+      "scene_id": "S0038",
+      "duration": 0.68
+    },
+    {
+      "start": 234.18,
+      "end": 235.74,
+      "text": "The crystals, Alex.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "The",
+          "start": 234.18,
+          "end": 234.86,
+          "prob": 0.99609375
+        },
+        {
+          "word": "crystals,",
+          "start": 234.86,
+          "end": 235.4,
+          "prob": 0.75244140625
+        },
+        {
+          "word": "Alex.",
+          "start": 235.46,
+          "end": 235.74,
+          "prob": 0.9736328125
+        }
+      ],
+      "index": 39,
+      "scene_id": "S0039",
+      "duration": 1.56
+    },
+    {
+      "start": 236.1,
+      "end": 236.72,
+      "text": "Tau.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Tau.",
+          "start": 236.1,
+          "end": 236.72,
+          "prob": 0.646728515625
+        }
+      ],
+      "index": 40,
+      "scene_id": "S0040",
+      "duration": 0.62
+    },
+    {
+      "start": 238.04000000000002,
+      "end": 239.38,
+      "text": "We have to destroy the link.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "We",
+          "start": 237.74,
+          "end": 238.08,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "have",
+          "start": 238.08,
+          "end": 238.22,
+          "prob": 1.0
+        },
+        {
+          "word": "to",
+          "start": 238.22,
+          "end": 238.36,
+          "prob": 1.0
+        },
+        {
+          "word": "destroy",
+          "start": 238.36,
+          "end": 238.8,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "the",
+          "start": 238.8,
+          "end": 239.1,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "link.",
+          "start": 239.1,
+          "end": 239.38,
+          "prob": 0.98388671875
+        }
+      ],
+      "index": 41,
+      "scene_id": "S0041",
+      "duration": 1.34
+    },
+    {
+      "start": 240.22,
+      "end": 245.24,
+      "text": "The pillars are too high, Steve. We have to build a way up.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "The",
+          "start": 240.22,
+          "end": 240.82,
+          "prob": 0.324462890625
+        },
+        {
+          "word": "pillars",
+          "start": 240.82,
+          "end": 241.16,
+          "prob": 0.923828125
+        },
+        {
+          "word": "are",
+          "start": 241.16,
+          "end": 241.38,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "too",
+          "start": 241.38,
+          "end": 241.58,
+          "prob": 0.98974609375
+        },
+        {
+          "word": "high,",
+          "start": 241.58,
+          "end": 241.88,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "Steve.",
+          "start": 242.0,
+          "end": 242.24,
+          "prob": 0.98876953125
+        },
+        {
+          "word": "We",
+          "start": 243.22,
+          "end": 243.82,
+          "prob": 0.98486328125
+        },
+        {
+          "word": "have",
+          "start": 243.82,
+          "end": 244.0,
+          "prob": 0.99658203125
+        },
+        {
+          "word": "to",
+          "start": 244.0,
+          "end": 244.24,
+          "prob": 0.998046875
+        },
+        {
+          "word": "build",
+          "start": 244.24,
+          "end": 244.48,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "a",
+          "start": 244.48,
+          "end": 244.64,
+          "prob": 0.9921875
+        },
+        {
+          "word": "way",
+          "start": 244.64,
+          "end": 244.9,
+          "prob": 0.99560546875
+        },
+        {
+          "word": "up.",
+          "start": 244.9,
+          "end": 245.24,
+          "prob": 0.9990234375
+        }
+      ],
+      "index": 42,
+      "scene_id": "S0042",
+      "duration": 5.02
+    },
+    {
+      "start": 246.1,
+      "end": 252.7,
+      "text": "This is the moment of realization. The battle for the end is not a battle of strength.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "This",
+          "start": 246.1,
+          "end": 246.7,
+          "prob": 0.96923828125
+        },
+        {
+          "word": "is",
+          "start": 246.7,
+          "end": 247.06,
+          "prob": 0.990234375
+        },
+        {
+          "word": "the",
+          "start": 247.06,
+          "end": 247.42,
+          "prob": 0.994140625
+        },
+        {
+          "word": "moment",
+          "start": 247.42,
+          "end": 247.72,
+          "prob": 0.99365234375
+        },
+        {
+          "word": "of",
+          "start": 247.72,
+          "end": 247.88,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "realization.",
+          "start": 247.88,
+          "end": 248.28,
+          "prob": 0.9677734375
+        },
+        {
+          "word": "The",
+          "start": 249.42,
+          "end": 250.02,
+          "prob": 0.97705078125
+        },
+        {
+          "word": "battle",
+          "start": 250.02,
+          "end": 250.38,
+          "prob": 0.9638671875
+        },
+        {
+          "word": "for",
+          "start": 250.38,
+          "end": 250.64,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "the",
+          "start": 250.64,
+          "end": 250.76,
+          "prob": 0.99169921875
+        },
+        {
+          "word": "end",
+          "start": 250.76,
+          "end": 251.12,
+          "prob": 0.72265625
+        },
+        {
+          "word": "is",
+          "start": 251.12,
+          "end": 251.4,
+          "prob": 0.99658203125
+        },
+        {
+          "word": "not",
+          "start": 251.4,
+          "end": 251.7,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "a",
+          "start": 251.7,
+          "end": 251.86,
+          "prob": 0.998046875
+        },
+        {
+          "word": "battle",
+          "start": 251.86,
+          "end": 252.2,
+          "prob": 0.998046875
+        },
+        {
+          "word": "of",
+          "start": 252.2,
+          "end": 252.42,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "strength.",
+          "start": 252.42,
+          "end": 252.7,
+          "prob": 0.99853515625
+        }
+      ],
+      "index": 43,
+      "scene_id": "S0043",
+      "duration": 6.6
+    },
+    {
+      "start": 253.78,
+      "end": 257.36,
+      "text": "It is a battle of construction in the heart of destruction.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "It",
+          "start": 253.78,
+          "end": 254.38,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "is",
+          "start": 254.38,
+          "end": 254.54,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "a",
+          "start": 254.54,
+          "end": 254.64,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "battle",
+          "start": 254.64,
+          "end": 255.0,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "of",
+          "start": 255.0,
+          "end": 255.2,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "construction",
+          "start": 255.2,
+          "end": 255.62,
+          "prob": 0.99267578125
+        },
+        {
+          "word": "in",
+          "start": 255.62,
+          "end": 256.38,
+          "prob": 0.98876953125
+        },
+        {
+          "word": "the",
+          "start": 256.38,
+          "end": 256.46,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "heart",
+          "start": 256.46,
+          "end": 256.74,
+          "prob": 0.99072265625
+        },
+        {
+          "word": "of",
+          "start": 256.74,
+          "end": 256.94,
+          "prob": 1.0
+        },
+        {
+          "word": "destruction.",
+          "start": 256.94,
+          "end": 257.36,
+          "prob": 0.9931640625
+        }
+      ],
+      "index": 44,
+      "scene_id": "S0044",
+      "duration": 3.58
+    },
+    {
+      "start": 260.16,
+      "end": 272.3,
+      "text": "Steve looks at the end stone beneath his boots. The legend is not just a warrior. warrior. He is the sovereign builder. The gauntlet is thrown.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Steve",
+          "start": 260.16,
+          "end": 260.76,
+          "prob": 0.9833984375
+        },
+        {
+          "word": "looks",
+          "start": 260.76,
+          "end": 261.02,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "at",
+          "start": 261.02,
+          "end": 261.3,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "the",
+          "start": 261.3,
+          "end": 261.44,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "end",
+          "start": 261.44,
+          "end": 261.6,
+          "prob": 0.97314453125
+        },
+        {
+          "word": "stone",
+          "start": 261.6,
+          "end": 261.92,
+          "prob": 0.8125
+        },
+        {
+          "word": "beneath",
+          "start": 261.92,
+          "end": 262.3,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "his",
+          "start": 262.3,
+          "end": 262.54,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "boots.",
+          "start": 262.54,
+          "end": 262.88,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "The",
+          "start": 263.96,
+          "end": 264.56,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "legend",
+          "start": 264.56,
+          "end": 264.98,
+          "prob": 0.79931640625
+        },
+        {
+          "word": "is",
+          "start": 264.98,
+          "end": 265.48,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "not",
+          "start": 265.48,
+          "end": 265.76,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "just",
+          "start": 265.76,
+          "end": 266.18,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "a",
+          "start": 266.18,
+          "end": 266.48,
+          "prob": 0.998046875
+        },
+        {
+          "word": "warrior.",
+          "start": 266.48,
+          "end": 266.86,
+          "prob": 0.998046875
+        },
+        {
+          "word": "He",
+          "start": 267.7,
+          "end": 268.42,
+          "prob": 0.97802734375
+        },
+        {
+          "word": "is",
+          "start": 268.42,
+          "end": 268.6,
+          "prob": 0.99365234375
+        },
+        {
+          "word": "the",
+          "start": 268.6,
+          "end": 268.7,
+          "prob": 0.79541015625
+        },
+        {
+          "word": "sovereign",
+          "start": 268.7,
+          "end": 269.14,
+          "prob": 0.880859375
+        },
+        {
+          "word": "builder.",
+          "start": 269.14,
+          "end": 269.52,
+          "prob": 0.89892578125
+        },
+        {
+          "word": "The",
+          "start": 270.58,
+          "end": 271.3,
+          "prob": 0.9140625
+        },
+        {
+          "word": "gauntlet",
+          "start": 271.3,
+          "end": 271.82,
+          "prob": 0.8421223958333334
+        },
+        {
+          "word": "is",
+          "start": 271.82,
+          "end": 271.98,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "thrown.",
+          "start": 271.98,
+          "end": 272.3,
+          "prob": 0.953125
+        }
+      ],
+      "index": 45,
+      "scene_id": "S0045",
+      "duration": 12.14
+    },
+    {
+      "start": 273.0,
+      "end": 278.62,
+      "text": "Dot. Steve must build toward the gods to save his people below.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Dot.",
+          "start": 273.0,
+          "end": 273.72,
+          "prob": 0.2193603515625
+        },
+        {
+          "word": "Steve",
+          "start": 274.5,
+          "end": 275.22,
+          "prob": 0.970703125
+        },
+        {
+          "word": "must",
+          "start": 275.22,
+          "end": 275.54,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "build",
+          "start": 275.54,
+          "end": 275.88,
+          "prob": 0.99658203125
+        },
+        {
+          "word": "toward",
+          "start": 275.88,
+          "end": 276.16,
+          "prob": 0.9501953125
+        },
+        {
+          "word": "the",
+          "start": 276.16,
+          "end": 276.38,
+          "prob": 0.99462890625
+        },
+        {
+          "word": "gods",
+          "start": 276.38,
+          "end": 276.74,
+          "prob": 0.84375
+        },
+        {
+          "word": "to",
+          "start": 276.74,
+          "end": 277.34,
+          "prob": 0.89208984375
+        },
+        {
+          "word": "save",
+          "start": 277.34,
+          "end": 277.72,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "his",
+          "start": 277.72,
+          "end": 277.92,
+          "prob": 0.98583984375
+        },
+        {
+          "word": "people",
+          "start": 277.92,
+          "end": 278.24,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "below.",
+          "start": 278.24,
+          "end": 278.62,
+          "prob": 0.99560546875
+        }
+      ],
+      "index": 46,
+      "scene_id": "S0046",
+      "duration": 5.62
+    },
+    {
+      "start": 280.5,
+      "end": 294.1,
+      "text": "He has the diamond armor, but Zhiyun has the immortality. In a world of a thousand chapters, the final battle has found its coordinate. The hunt for the end is over. over.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "He",
+          "start": 280.5,
+          "end": 281.22,
+          "prob": 0.990234375
+        },
+        {
+          "word": "has",
+          "start": 281.22,
+          "end": 281.44,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "the",
+          "start": 281.44,
+          "end": 281.58,
+          "prob": 0.99072265625
+        },
+        {
+          "word": "diamond",
+          "start": 281.58,
+          "end": 281.94,
+          "prob": 0.9326171875
+        },
+        {
+          "word": "armor,",
+          "start": 281.94,
+          "end": 282.38,
+          "prob": 0.93017578125
+        },
+        {
+          "word": "but",
+          "start": 282.56,
+          "end": 283.02,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "Zhiyun",
+          "start": 283.02,
+          "end": 283.34,
+          "prob": 0.725341796875
+        },
+        {
+          "word": "has",
+          "start": 283.34,
+          "end": 283.76,
+          "prob": 0.994140625
+        },
+        {
+          "word": "the",
+          "start": 283.76,
+          "end": 284.16,
+          "prob": 0.962890625
+        },
+        {
+          "word": "immortality.",
+          "start": 284.16,
+          "end": 285.0,
+          "prob": 0.985595703125
+        },
+        {
+          "word": "In",
+          "start": 285.42,
+          "end": 286.14,
+          "prob": 0.99462890625
+        },
+        {
+          "word": "a",
+          "start": 286.14,
+          "end": 286.22,
+          "prob": 0.99169921875
+        },
+        {
+          "word": "world",
+          "start": 286.22,
+          "end": 286.5,
+          "prob": 0.98486328125
+        },
+        {
+          "word": "of",
+          "start": 286.5,
+          "end": 286.66,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "a",
+          "start": 286.66,
+          "end": 286.7,
+          "prob": 0.9140625
+        },
+        {
+          "word": "thousand",
+          "start": 286.7,
+          "end": 287.04,
+          "prob": 0.98291015625
+        },
+        {
+          "word": "chapters,",
+          "start": 287.04,
+          "end": 287.58,
+          "prob": 0.99267578125
+        },
+        {
+          "word": "the",
+          "start": 287.88,
+          "end": 288.16,
+          "prob": 0.99267578125
+        },
+        {
+          "word": "final",
+          "start": 288.16,
+          "end": 288.52,
+          "prob": 0.88134765625
+        },
+        {
+          "word": "battle",
+          "start": 288.52,
+          "end": 288.92,
+          "prob": 0.99609375
+        },
+        {
+          "word": "has",
+          "start": 288.92,
+          "end": 289.4,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "found",
+          "start": 289.4,
+          "end": 289.76,
+          "prob": 0.99658203125
+        },
+        {
+          "word": "its",
+          "start": 289.76,
+          "end": 290.04,
+          "prob": 0.97412109375
+        },
+        {
+          "word": "coordinate.",
+          "start": 290.04,
+          "end": 290.46,
+          "prob": 0.966796875
+        },
+        {
+          "word": "The",
+          "start": 291.3,
+          "end": 292.02,
+          "prob": 0.98095703125
+        },
+        {
+          "word": "hunt",
+          "start": 292.02,
+          "end": 292.28,
+          "prob": 0.984375
+        },
+        {
+          "word": "for",
+          "start": 292.28,
+          "end": 292.74,
+          "prob": 0.99609375
+        },
+        {
+          "word": "the",
+          "start": 292.74,
+          "end": 292.88,
+          "prob": 0.99267578125
+        },
+        {
+          "word": "end",
+          "start": 292.88,
+          "end": 293.28,
+          "prob": 0.80322265625
+        },
+        {
+          "word": "is",
+          "start": 293.28,
+          "end": 293.66,
+          "prob": 0.9951171875
+        },
+        {
+          "word": "over.",
+          "start": 293.66,
+          "end": 294.0,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "over.",
+          "start": 294.0,
+          "end": 294.1,
+          "prob": 0.1551513671875
+        }
+      ],
+      "index": 47,
+      "scene_id": "S0047",
+      "duration": 13.6
+    },
+    {
+      "start": 294.84,
+      "end": 296.7,
+      "text": "The war for the end.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "The",
+          "start": 294.84,
+          "end": 295.5,
+          "prob": 0.87158203125
+        },
+        {
+          "word": "war",
+          "start": 295.5,
+          "end": 295.82,
+          "prob": 0.8701171875
+        },
+        {
+          "word": "for",
+          "start": 295.82,
+          "end": 296.2,
+          "prob": 0.95556640625
+        },
+        {
+          "word": "the",
+          "start": 296.2,
+          "end": 296.3,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "end.",
+          "start": 296.3,
+          "end": 296.7,
+          "prob": 0.88037109375
+        }
+      ],
+      "index": 48,
+      "scene_id": "S0048",
+      "duration": 1.86
+    },
+    {
+      "start": 297.62,
+      "end": 299.86,
+      "text": "The war has just begun.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "The",
+          "start": 297.62,
+          "end": 298.28,
+          "prob": 0.97705078125
+        },
+        {
+          "word": "war",
+          "start": 298.28,
+          "end": 298.56,
+          "prob": 0.9833984375
+        },
+        {
+          "word": "has",
+          "start": 298.56,
+          "end": 299.02,
+          "prob": 0.99267578125
+        },
+        {
+          "word": "just",
+          "start": 299.02,
+          "end": 299.36,
+          "prob": 0.994140625
+        },
+        {
+          "word": "begun.",
+          "start": 299.36,
+          "end": 299.86,
+          "prob": 0.99072265625
+        }
+      ],
+      "index": 49,
+      "scene_id": "S0049",
+      "duration": 2.24
+    },
+    {
+      "start": 302.6,
+      "end": 311.46,
+      "text": "We have learned that even in the most absolute void, our ability to build and create remains our most powerful weapon against entropy.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "We",
+          "start": 302.6,
+          "end": 303.26,
+          "prob": 0.94970703125
+        },
+        {
+          "word": "have",
+          "start": 303.26,
+          "end": 303.4,
+          "prob": 0.98974609375
+        },
+        {
+          "word": "learned",
+          "start": 303.4,
+          "end": 303.74,
+          "prob": 0.98876953125
+        },
+        {
+          "word": "that",
+          "start": 303.74,
+          "end": 304.22,
+          "prob": 0.9775390625
+        },
+        {
+          "word": "even",
+          "start": 304.22,
+          "end": 304.54,
+          "prob": 0.98486328125
+        },
+        {
+          "word": "in",
+          "start": 304.54,
+          "end": 304.76,
+          "prob": 0.99609375
+        },
+        {
+          "word": "the",
+          "start": 304.76,
+          "end": 304.88,
+          "prob": 0.99267578125
+        },
+        {
+          "word": "most",
+          "start": 304.88,
+          "end": 305.06,
+          "prob": 0.98095703125
+        },
+        {
+          "word": "absolute",
+          "start": 305.06,
+          "end": 305.6,
+          "prob": 0.99365234375
+        },
+        {
+          "word": "void,",
+          "start": 305.6,
+          "end": 306.04,
+          "prob": 0.99365234375
+        },
+        {
+          "word": "our",
+          "start": 306.32,
+          "end": 306.6,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "ability",
+          "start": 306.6,
+          "end": 307.02,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "to",
+          "start": 307.02,
+          "end": 307.26,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "build",
+          "start": 307.26,
+          "end": 307.56,
+          "prob": 0.994140625
+        },
+        {
+          "word": "and",
+          "start": 307.56,
+          "end": 307.84,
+          "prob": 0.99462890625
+        },
+        {
+          "word": "create",
+          "start": 307.84,
+          "end": 308.24,
+          "prob": 0.99267578125
+        },
+        {
+          "word": "remains",
+          "start": 308.24,
+          "end": 308.86,
+          "prob": 0.9599609375
+        },
+        {
+          "word": "our",
+          "start": 308.86,
+          "end": 309.24,
+          "prob": 0.99609375
+        },
+        {
+          "word": "most",
+          "start": 309.24,
+          "end": 309.42,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "powerful",
+          "start": 309.42,
+          "end": 309.84,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "weapon",
+          "start": 309.84,
+          "end": 310.32,
+          "prob": 0.99609375
+        },
+        {
+          "word": "against",
+          "start": 310.32,
+          "end": 311.0,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "entropy.",
+          "start": 311.0,
+          "end": 311.46,
+          "prob": 0.8798828125
+        }
+      ],
+      "index": 50,
+      "scene_id": "S0050",
+      "duration": 8.86
+    },
+    {
+      "start": 312.46,
+      "end": 321.88,
+      "text": "We must realize that overcoming our greatest challenges requires us to dismantle the sources of our enemy's strength before we can ever hope to land a final blow.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "We",
+          "start": 312.15000000000003,
+          "end": 312.48,
+          "prob": 0.99169921875
+        },
+        {
+          "word": "must",
+          "start": 312.48,
+          "end": 312.64,
+          "prob": 0.998046875
+        },
+        {
+          "word": "realize",
+          "start": 312.64,
+          "end": 313.04,
+          "prob": 0.96484375
+        },
+        {
+          "word": "that",
+          "start": 313.04,
+          "end": 313.64,
+          "prob": 0.97900390625
+        },
+        {
+          "word": "overcoming",
+          "start": 313.64,
+          "end": 314.04,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "our",
+          "start": 314.04,
+          "end": 314.42,
+          "prob": 0.99658203125
+        },
+        {
+          "word": "greatest",
+          "start": 314.42,
+          "end": 314.72,
+          "prob": 0.998046875
+        },
+        {
+          "word": "challenges",
+          "start": 314.72,
+          "end": 315.28,
+          "prob": 0.99072265625
+        },
+        {
+          "word": "requires",
+          "start": 315.28,
+          "end": 316.04,
+          "prob": 0.97802734375
+        },
+        {
+          "word": "us",
+          "start": 316.04,
+          "end": 316.56,
+          "prob": 0.998046875
+        },
+        {
+          "word": "to",
+          "start": 316.56,
+          "end": 316.8,
+          "prob": 0.9951171875
+        },
+        {
+          "word": "dismantle",
+          "start": 316.8,
+          "end": 317.46,
+          "prob": 0.998291015625
+        },
+        {
+          "word": "the",
+          "start": 317.46,
+          "end": 317.56,
+          "prob": 0.99609375
+        },
+        {
+          "word": "sources",
+          "start": 317.56,
+          "end": 317.88,
+          "prob": 0.97021484375
+        },
+        {
+          "word": "of",
+          "start": 317.88,
+          "end": 318.12,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "our",
+          "start": 318.12,
+          "end": 318.22,
+          "prob": 0.99560546875
+        },
+        {
+          "word": "enemy's",
+          "start": 318.22,
+          "end": 318.68,
+          "prob": 0.77734375
+        },
+        {
+          "word": "strength",
+          "start": 318.68,
+          "end": 319.04,
+          "prob": 0.9853515625
+        },
+        {
+          "word": "before",
+          "start": 319.04,
+          "end": 319.72,
+          "prob": 0.95654296875
+        },
+        {
+          "word": "we",
+          "start": 319.72,
+          "end": 319.98,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "can",
+          "start": 319.98,
+          "end": 320.14,
+          "prob": 0.99267578125
+        },
+        {
+          "word": "ever",
+          "start": 320.14,
+          "end": 320.38,
+          "prob": 0.9931640625
+        },
+        {
+          "word": "hope",
+          "start": 320.38,
+          "end": 320.74,
+          "prob": 0.99951171875
+        },
+        {
+          "word": "to",
+          "start": 320.74,
+          "end": 320.9,
+          "prob": 0.998046875
+        },
+        {
+          "word": "land",
+          "start": 320.9,
+          "end": 321.12,
+          "prob": 0.998046875
+        },
+        {
+          "word": "a",
+          "start": 321.12,
+          "end": 321.28,
+          "prob": 0.9912109375
+        },
+        {
+          "word": "final",
+          "start": 321.28,
+          "end": 321.56,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "blow.",
+          "start": 321.56,
+          "end": 321.88,
+          "prob": 0.99951171875
+        }
+      ],
+      "index": 51,
+      "scene_id": "S0051",
+      "duration": 9.42
+    },
+    {
+      "start": 324.0,
+      "end": 331.84,
+      "text": "True legends are formed when we stop looking for a way out and start building a way up, even when the floor beneath us is being erased.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "True",
+          "start": 324.0,
+          "end": 324.26,
+          "prob": 0.89892578125
+        },
+        {
+          "word": "legends",
+          "start": 324.26,
+          "end": 324.72,
+          "prob": 0.90625
+        },
+        {
+          "word": "are",
+          "start": 324.72,
+          "end": 324.92,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "formed",
+          "start": 324.92,
+          "end": 325.32,
+          "prob": 0.998046875
+        },
+        {
+          "word": "when",
+          "start": 325.32,
+          "end": 325.74,
+          "prob": 0.7802734375
+        },
+        {
+          "word": "we",
+          "start": 325.74,
+          "end": 325.9,
+          "prob": 0.99658203125
+        },
+        {
+          "word": "stop",
+          "start": 325.9,
+          "end": 326.12,
+          "prob": 0.994140625
+        },
+        {
+          "word": "looking",
+          "start": 326.12,
+          "end": 326.48,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "for",
+          "start": 326.48,
+          "end": 326.78,
+          "prob": 0.99609375
+        },
+        {
+          "word": "a",
+          "start": 326.78,
+          "end": 326.88,
+          "prob": 0.99267578125
+        },
+        {
+          "word": "way",
+          "start": 326.88,
+          "end": 327.06,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "out",
+          "start": 327.06,
+          "end": 327.38,
+          "prob": 0.998046875
+        },
+        {
+          "word": "and",
+          "start": 327.38,
+          "end": 327.66,
+          "prob": 0.94921875
+        },
+        {
+          "word": "start",
+          "start": 327.66,
+          "end": 327.92,
+          "prob": 0.99560546875
+        },
+        {
+          "word": "building",
+          "start": 327.92,
+          "end": 328.26,
+          "prob": 0.99560546875
+        },
+        {
+          "word": "a",
+          "start": 328.26,
+          "end": 328.6,
+          "prob": 0.98046875
+        },
+        {
+          "word": "way",
+          "start": 328.6,
+          "end": 328.82,
+          "prob": 0.998046875
+        },
+        {
+          "word": "up,",
+          "start": 328.82,
+          "end": 329.2,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "even",
+          "start": 329.24,
+          "end": 329.78,
+          "prob": 0.99609375
+        },
+        {
+          "word": "when",
+          "start": 329.78,
+          "end": 330.0,
+          "prob": 0.99609375
+        },
+        {
+          "word": "the",
+          "start": 330.0,
+          "end": 330.14,
+          "prob": 0.99462890625
+        },
+        {
+          "word": "floor",
+          "start": 330.14,
+          "end": 330.44,
+          "prob": 0.99755859375
+        },
+        {
+          "word": "beneath",
+          "start": 330.44,
+          "end": 330.72,
+          "prob": 0.9931640625
+        },
+        {
+          "word": "us",
+          "start": 330.72,
+          "end": 331.08,
+          "prob": 0.98583984375
+        },
+        {
+          "word": "is",
+          "start": 331.08,
+          "end": 331.24,
+          "prob": 0.994140625
+        },
+        {
+          "word": "being",
+          "start": 331.24,
+          "end": 331.44,
+          "prob": 0.9921875
+        },
+        {
+          "word": "erased.",
+          "start": 331.44,
+          "end": 331.84,
+          "prob": 0.9951171875
+        }
+      ],
+      "index": 52,
+      "scene_id": "S0052",
+      "duration": 7.84
+    },
+    {
+      "start": 333.76,
+      "end": 339.34,
+      "text": "The pillars are high and the dragon is diving. Do you have the blocks to reach the top?",
+      "type": "speech",
+      "words": [
+        {
+          "word": "The",
+          "start": 333.76,
+          "end": 334.36,
+          "prob": 0.98095703125
+        },
+        {
+          "word": "pillars",
+          "start": 334.36,
+          "end": 334.7,
+          "prob": 0.97265625
+        },
+        {
+          "word": "are",
+          "start": 334.7,
+          "end": 334.96,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "high",
+          "start": 334.96,
+          "end": 335.28,
+          "prob": 0.9990234375
+        },
+        {
+          "word": "and",
+          "start": 335.28,
+          "end": 335.64,
+          "prob": 0.88134765625
+        },
+        {
+          "word": "the",
+          "start": 335.64,
+          "end": 335.78,
+          "prob": 0.9921875
+        },
+        {
+          "word": "dragon",
+          "start": 335.78,
+          "end": 336.1,
+          "prob": 0.9580078125
+        },
+        {
+          "word": "is",
+          "start": 336.1,
+          "end": 336.4,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "diving.",
+          "start": 336.4,
+          "end": 336.78,
+          "prob": 0.998046875
+        },
+        {
+          "word": "Do",
+          "start": 337.12,
+          "end": 337.72,
+          "prob": 0.9931640625
+        },
+        {
+          "word": "you",
+          "start": 337.72,
+          "end": 337.82,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "have",
+          "start": 337.82,
+          "end": 337.98,
+          "prob": 0.99853515625
+        },
+        {
+          "word": "the",
+          "start": 337.98,
+          "end": 338.12,
+          "prob": 0.9501953125
+        },
+        {
+          "word": "blocks",
+          "start": 338.12,
+          "end": 338.44,
+          "prob": 0.9970703125
+        },
+        {
+          "word": "to",
+          "start": 338.44,
+          "end": 338.68,
+          "prob": 0.998046875
+        },
+        {
+          "word": "reach",
+          "start": 338.68,
+          "end": 338.86,
+          "prob": 0.998046875
+        },
+        {
+          "word": "the",
+          "start": 338.86,
+          "end": 339.08,
+          "prob": 0.994140625
+        },
+        {
+          "word": "top?",
+          "start": 339.08,
+          "end": 339.34,
+          "prob": 0.9990234375
+        }
+      ],
+      "index": 53,
+      "scene_id": "S0053",
+      "duration": 5.58
+    },
+    {
+      "start": 341.4,
+      "end": 343.7,
+      "text": "Stay grounded, stay legendary.",
+      "type": "speech",
+      "words": [
+        {
+          "word": "Stay",
+          "start": 341.4,
+          "end": 342.0,
+          "prob": 0.98095703125
+        },
+        {
+          "word": "grounded,",
+          "start": 342.0,
+          "end": 342.52,
+          "prob": 0.9638671875
+        },
+        {
+          "word": "stay",
+          "start": 342.72,
+          "end": 343.2,
+          "prob": 0.96240234375
+        },
+        {
+          "word": "legendary.",
+          "start": 343.2,
+          "end": 343.7,
+          "prob": 0.95703125
+        }
+      ],
+      "index": 54,
+      "scene_id": "S0054",
+      "duration": 2.3
+    }
+  ],
+  "metadata": {
+    "model": "large-v3",
+    "device": "cuda",
+    "compute_type": "float16",
+    "word_timestamps": true,
+    "forced_language": null
+  }
+}

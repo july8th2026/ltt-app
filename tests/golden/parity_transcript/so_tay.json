@@ -1,0 +1,59 @@
+{
+  "nguon": "bot legacy Bot_Whisper_FULL, thu muc output/<drive_folder_id>/",
+  "vi_sao_doi_ten": "ten goc la Drive folder ID - CLAUDE.md cam chep di; giu SHA-256 de truy nguoc bang cach quet lai production",
+  "tham_so_sinh_ra_tep_vang": {
+    "target_min": 1.5,
+    "target_max": 6.0,
+    "silence_threshold": 2.0,
+    "silence_text": "[B-ROLL / PAUSE]",
+    "ghi_chu": "doc tu configs/bot_config_whisper.json DANG CHAY; mac dinh trong ma la target_min=3.0, KHAC"
+  },
+  "cap": [
+    {
+      "ten": "mau_01_en_ket_bang_noi",
+      "bam_id_nguon": "c0784b2946c5c2a5b485ab1f6659f004a78704e9b3f2bf08a93e11197e40567b",
+      "ngon_ngu": "en",
+      "so_doan_tho": 12,
+      "so_doan_vang": 14,
+      "loai_doan_cuoi": "speech",
+      "thoi_luong_s": 57.98
+    },
+    {
+      "ten": "mau_02_vi_ket_bang_noi",
+      "bam_id_nguon": "8b0aec89433b6ce08647e3a3136c50c2006de878aa887b82d0edf7ab6256f16f",
+      "ngon_ngu": "vi",
+      "so_doan_tho": 21,
+      "so_doan_vang": 21,
+      "loai_doan_cuoi": "speech",
+      "thoi_luong_s": 88.3
+    },
+    {
+      "ten": "mau_03_en_ket_bang_lang",
+      "bam_id_nguon": "b204a2812bc31f01a28fdd7e99d49e7a6abe7f7007254fc9643fcf9ee7d13218",
+      "ngon_ngu": "en",
+      "so_doan_tho": 45,
+      "so_doan_vang": 44,
+      "loai_doan_cuoi": "silence",
+      "thoi_luong_s": 179.96
+    },
+    {
+      "ten": "mau_04_vi_ket_bang_lang",
+      "bam_id_nguon": "b642f1a3d8d8be8f988448a866b3d436fa0cdb63f6e0d213e29c7125efbe9840",
+      "ngon_ngu": "vi",
+      "so_doan_tho": 39,
+      "so_doan_vang": 49,
+      "loai_doan_cuoi": "silence",
+      "thoi_luong_s": 210.47
+    },
+    {
+      "ten": "mau_05_en_dung_chu_lang_cau_hinh",
+      "bam_id_nguon": "f1c78cb8502c1980e968949ab8c8fc3d4a6bf1d22b4e837d93e636c8f93697cf",
+      "ngon_ngu": "en",
+      "so_doan_tho": 54,
+      "so_doan_vang": 90,
+      "loai_doan_cuoi": "speech",
+      "thoi_luong_s": 344.55,
+      "vi_sao_co_mau_nay": "Bon mau dau khong cham nhanh chot cua `smart_silence_tag`, nen tham so `silence_text` cua cau hinh khong he duoc ghim. Do tren toan kho: chu do chiem 13,00% tong so doan lang (2.417/18.595) o 846/1937 job — no KHONG he tro, chi la bon mau kia truot. Mau nay mang 4 doan dung no."
+    }
+  ]
+}
