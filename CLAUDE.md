@@ -216,6 +216,7 @@ trên cổng 8000. Nền tảng này dùng cổng **8100**.
 
 | Hệ con | Nguồn chân lý |
 |---|---|
+| **LLM nội bộ — ĐƯỜNG ĐI** | **`docs/ltt_llm_dual/BAN_DO_DUONG_DI.md`** — đọc TRƯỚC khi sửa đường LLM: một lượt đi qua đâu, cửa nào, ai gác. Thiếu tờ này, ba bản vá của L-08 đã gắn vào một cửa **không lượt nào đi qua** |
 | Sổ credit · thanh toán | `platform_core/credit.py`, `billing.py` |
 | Hàng đợi job · worker · lease | `platform_core/job_runner.py`, `leases.py` |
 | Public API `/api/v1` | `platform_core/public_api/`, `server/api/inventory.py` |
