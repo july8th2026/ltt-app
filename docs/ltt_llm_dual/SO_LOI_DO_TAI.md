@@ -14,7 +14,7 @@
 | L-04 | bo cham `bia-01` do **su vang mat** -> cau bia dat VA cau lac de deu duoc cham dung | DOC LAP | `tools/do_tai_hai_model.py` | ban cu: 3/3 cau sai -> "dung"; ban moi: 1/3 | ✅ **DONG 13/09** |
 | L-05 | **108/131 job loi 14 ngay** deu la `AmbiguousProviderError: mat ket noi sau khi bat dau gui` | DOC LAP | he qua cua L-01 | 48/48 done, 0 loi (p=0,3%) | ✅ **DONG 13/09** |
 | L-06 | cua DONG BO khong huy duoc: khach cat ket noi ma slot van bi giu toi khi sinh XONG | DOC LAP | `executor.run` khong nhan/truyen `ma_luot` | tra slot 15,4 / 17,2 / 31,9 s theo `max_tokens` 900 / 1024 / 2000 | **da sua, cho deploy** |
-| L-07 | **MOT job anh la ha `ltt-3.8` VINH VIEN**: trong tai nha LLM roi ket o `nha_llm` | 🔴 **CHAN** | cong render may B thieu `/v1/nha_comfy` (404) | su co that 04:57-05:29, 32 phut | **MO 13/09** |
+| L-07 | **MOT job anh la ha `ltt-3.8` VINH VIEN**: trong tai nha LLM roi ket o `nha_llm` | DOC LAP | cong render may B thieu `/v1/nha_comfy` (404) + `nha_llm` khong co duong lui | chu trinh di tron 182 s; huy giua chung lui trong 30 s | **DONG 13/09** |
 
 ## L-05 — mot MUC CAN DO, khong phai mot ket luan
 
@@ -37,6 +37,64 @@ Tap trung 08/09 (**64**) va 09/09 (**34**) = 75% tong so. Tu 11/09 khong con job
    vong vi dung mot gia thuyet khop qua vua ("khoa advisory theo tai khoan").
    Phep do dung: sau khi deploy ban sua L-01, lop loi nay phai **bien mat** —
    khong phai giam. Neu no chi giam, nguyen nhan la thu khac.
+
+## L-07 -- DONG 13/09/2026, chung minh tren duong that
+
+Ba phan, va ca ba deu co phep do dung sau.
+
+### Phan 1 -- goc: cong render may B chay ban 04/09
+
+`render_gateway/deploy/deploy.ps1`: 33 tep, hash khop hai ben, kem
+`gpu_may_b.json` (RUNBOOK: thieu tep nay la **dung han** viec sinh anh, khong
+phai giam chat luong). Khoi dong lai `LTTRenderGateway`.
+
+Do duoc sau do: buoc tung gay -- `nha_llm -> anh`, tuc luot `chay_comfy()` --
+nay mat **9,3 s** va di qua.
+
+### Phan 2 -- hinh dang: `nha_llm` gio co duong lui
+
+`CHUYEN_HOP_LE[NHA_LLM]` tu `{ANH}` thanh `{ANH, NAP_LLM}`, kem mot PHANH o
+`LLM` de duong lui khong thanh vong lap.
+
+### Phan 3 -- bit cho no lot qua
+
+L-07 khong phai "ComfyUI hong". No la **may B troi ban bon ngay ma khong ai
+biet**. Gate may A CO Y khong hoi may B, nen be mat that cua may B chua bao gio
+duoc doi chieu voi cay. `tools/soi_troi_may_b.py` hoi thang `/openapi.json` roi
+so voi tuyen cay khai (doc bang AST). Chay that: render 8/8, llm 11/11 khop.
+
+### Nghiem thu -- HAI phep, va phep thu hai moi la phep quan trong
+
+**Phep 1 -- chu trinh binh thuong:**
+
+```
+ 0,6s  llm
+ 4,1s  xa_llm
+ 7,0s  nha_llm
+16,3s  anh            <- buoc tung gay, nay di qua trong 9,3 s
+148,8s job anh -> succeeded
+151,7s tra_anh
+159,9s nap_llm
+182,1s llm            <- ltt-3.8 tra 200 trong 2,0 s
+```
+
+**Phep 2 -- HUY giua chung, dung kich ban da hong:**
+
+```
+ 0,8s  xa_llm
+ 3,5s  nha_llm
+ 4,9s  HUY job anh -> HTTP 200
+11,4s  nap_llm        <- DUONG LUI, no khong ton tai truoc 13/09
+29,9s  llm            <- ltt-3.8 tra 200 trong 1,7 s
+```
+
+Chuoi bo qua `anh` hoan toan, dung nhu thiet ke: duong lui 1 no khi
+`job_anh_cho == 0`.
+
+⛔ **Vi sao phep 1 mot minh la chua du.** No di qua `anh`, tuc no chi chung minh
+   PHAN 1. Duong lui khong bao gio duoc cham toi trong mot luot chay suon se.
+   Dung o do la bao "da sua" cho mot nua chua ai thu -- va nua ay chinh la nua
+   ma hom 13/09 phai ghi tay vao CSDL moi go duoc.
 
 ## L-06 -- GOC THAT, sau khi HAI gia thuyet cua toi bi bac bo
 
@@ -80,9 +138,63 @@ Va chinh docstring cua `_bao_may_b_huy` da noi truoc dieu nay:
 Mot loi canh bao viet dung cho, va van bi vuot qua -- vi no canh bao ve mot
 tham so ma tang tren **quen truyen**, khong ve mot dong ma ai do se doc.
 
-### Ban sua
+### Ban sua THU NHAT -- can, nhung KHONG DU
 
 `executor.run(..., ma_luot="")` truyen xuong; `chat.py` truyen `ma_luot=request_id`.
+
+Deploy roi do lai: **van 24-36 s**. Nen do tiep thay vi tin.
+
+### Goc THU HAI: `is_disconnected()` chet sau `BaseHTTPMiddleware`
+
+Phep do tach khong gian con lai -- trong luc lease bi giu, may B con sinh chu
+khong? Doc `llamacpp:requests_processing` moi giay:
+
+```
+giay  lease  mayB_sinh
+ 0.0      1          1
+...                        <- giu nguyen 1 suot 27,8 giay
+27.8      0          0     <- ca hai cung ve 0
+```
+
+May B **sinh toi het** => lenh huy khong bao gio duoc phat => `ngat_chua()`
+khong bao gio tra True.
+
+Thi nghiem MOT BIEN SO, cung phien ban thu vien, cung hinh dang endpoint `def`:
+
+| | thay khach ngat |
+|---|---|
+| khong middleware | giay **2,02** |
+| co `BaseHTTPMiddleware` | **khong bao gio** |
+
+`server/app.py` co `AccessControlMiddleware` va `PublicApiGuardMiddleware`, ca
+hai ke thua `BaseHTTPMiddleware`.
+
+**Co che, doc tu chinh ma Starlette:** `is_disconnected()` doc `receive` trong
+mot `CancelScope` **da huy san**. Khong middleware thi uvicorn tra ngay tu hang
+doi nen kip; con `receive_or_disconnect` cua middleware **mo mot task group** --
+tuc co diem kiem tra -- nen scope da huy cat truoc khi gia tri ve.
+
+=> Tinh nang huy-khi-khach-ngat da chet lang le **tu luc hai middleware ay duoc
+   them vao**, va no chi lo ra o hoa don.
+
+### Ban sua THU HAI
+
+Doc `receive` voi han gio 50 ms thay cho scope huy san. Do lai trong dung hinh
+dang production: **thay ngat o giay 2,02**.
+
+⛔ Kem mot RAO quan trong hon ca ban sua: than request chua doc xong thi **khong
+   duoc cham `receive`** -- doc mot tin la LAY no khoi hang doi, va o mot cua
+   stream do la nuot mat mot manh than. Rao kiem `hasattr(request, "_body")`,
+   thu Starlette dat sau khi `body()` chay xong.
+
+### Va mot loi cua chinh PHEP KIEM, giu lai vi no la mot bai hoc ve hinh dang
+
+Ban chot dau tien quet **van ban nguon** tim chuoi `_body`. Tiem dot bien -- go
+rao, quay ve `is_disconnected` -- **van xanh**, vi hai chuoi ay con nam trong
+DOCSTRING giai thich. Phep kiem khop vao loi giai thich chu khong vao ma.
+
+Viet lai theo HANH VI (mot `Request` gia, dem so lan `receive` bi cham, chay
+trong dung luong cong nhan anyio): nay bat duoc ca hai dot bien.
 
 Ky vong do duoc sau khi deploy: llama.cpp nha slot **<=1 s** sau khi client roi
 (`server-context.cpp:39`), cong mot nhip tham ~1 s => tong **~3 s**. Nguong cong

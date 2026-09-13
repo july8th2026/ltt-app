@@ -89,6 +89,12 @@ def dong_het(ds: Optional[list]) -> int:
     return n
 
 
+#: Han doc mot tin `receive` khi tham "khach ngat chua". Ngan co chu y: ham nay
+#: chay tren LUONG GOI cua endpoint, moi `NHIP_THAM_S` mot lan, va moi mili giay
+#: o day la mot mili giay luot goi khong duoc `join`.
+HAN_DOC_NGAT_S = 0.05
+
+
 def do_ngat(request) -> Callable[[], bool]:
     """Hàm hỏi *"khách ngắt chưa?"*, gọi được từ luồng threadpool của FastAPI.
 
@@ -101,11 +107,57 @@ def do_ngat(request) -> Callable[[], bool]:
     if request is None:
         return lambda: False
 
+    async def _doc_mot_tin() -> bool:
+        """Doc `receive` voi HAN GIO NGAN. Tra True neu do la `http.disconnect`.
+
+        🔴 VI SAO KHONG DUNG `Request.is_disconnected()` — do duoc 13/09 (L-06).
+
+           Ham ay doc `receive` trong mot `CancelScope` **da huy san**:
+
+               with anyio.CancelScope() as cs:
+                   cs.cancel()
+                   message = await self._receive()
+
+           Khong co middleware thi uvicorn tra ngay tu hang doi nen van kip. Co
+           `BaseHTTPMiddleware` thi `receive` ma route nhan duoc la
+           `receive_or_disconnect`, va ham ay **mo mot task group** — tuc co mot
+           diem kiem tra — nen scope da huy cat truoc khi gia tri ve.
+           `is_disconnected()` khi ay tra **False mai mai**.
+
+           Do bang mot thi nghiem mot bien so, cung phien ban thu vien, cung
+           hinh dang endpoint `def`:
+
+               khong middleware        -> thay ngat o giay 2,02
+               co BaseHTTPMiddleware   -> KHONG BAO GIO thay
+
+           `server/app.py` co `AccessControlMiddleware` va
+           `PublicApiGuardMiddleware`, ca hai ke thua `BaseHTTPMiddleware`. Nen
+           tinh nang huy-khi-khach-ngat da chet lang le tu luc chung duoc them
+           vao, va no chi lo ra o hoa don: slot bi giu 24-36 s cho mot nguoi da
+           di, va khach van bi tinh tien phan token khong nhan duoc.
+
+        ⛔ CHI AN TOAN KHI THAN DA DOC XONG. Doc mot tin la **lay** no khoi hang
+           doi; neu than chua doc het thi ta vua nuot mat mot manh than. Rao o
+           duoi kiem dung dieu do bang `_body` — thu Starlette dat sau khi
+           `body()` chay xong.
+        """
+        import anyio
+
+        tin: dict = {}
+        with anyio.move_on_after(HAN_DOC_NGAT_S):
+            tin = await request.receive()
+        return bool(tin) and tin.get("type") == "http.disconnect"
+
     def _hoi() -> bool:
         try:
             import anyio.from_thread
 
-            return bool(anyio.from_thread.run(request.is_disconnected))
+            # ⛔ Than CHUA doc xong ⇒ khong duoc cham `receive`. Ve duong cu, va
+            #    duong cu se tra False — dung, vi mot cua stream ma mat mot manh
+            #    than la mot loi nang hon nhieu so voi mot slot giu lau.
+            if not hasattr(request, "_body"):
+                return bool(anyio.from_thread.run(request.is_disconnected))
+            return bool(anyio.from_thread.run(_doc_mot_tin))
         except Exception as e:  # noqa: BLE001 - khong hoi duoc thi coi nhu con ket noi
             # ⚠️ Nuốt lỗi ở đây là CỐ Ý — hỏi không được thì coi như khách còn
             #    kết nối, tức nghiêng về "chạy tiếp" thay vì huỷ nhầm một lượt
