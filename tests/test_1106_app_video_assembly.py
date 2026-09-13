@@ -157,26 +157,22 @@ def test_mac_dinh_khi_khong_khai_gi() -> None:
     yc = dung_video.chuan_hoa({"clips": "thu_muc"})
     assert yc.che_do_khop == "sequential"
     assert yc.bat_demucs is True and yc.bat_phu_de is True
-    assert yc.bat_cham_diem is False
 
 
-# ── 4. Ba cờ giai đoạn LUÔN thắng `cau_hinh` ───────────────────────────────
+# ── 4. Hai cờ giai đoạn LUÔN thắng `cau_hinh` ───────────────────────────────
 
 def test_ba_co_giai_doan_thang_cau_hinh() -> None:
-    """🔴 `cau_hinh` chưa qua `chuan_hoa`. Để nó ghi đè ba cờ nghĩa là một khoá
-    gõ sai bật lại một giai đoạn người dùng vừa tắt — tiêu GPU cho một việc đã
-    bị từ chối."""
+    """🔴 `cau_hinh` chưa qua `chuan_hoa`. Để nó ghi đè hai cờ giai đoạn nghĩa là
+    một khoá gõ sai bật lại một giai đoạn người dùng vừa tắt — tiêu GPU cho một
+    việc đã bị từ chối."""
     yc = dung_video.chuan_hoa({
         "clips": "k", "bat_demucs": False, "bat_phu_de": False,
-        "bat_cham_diem": False,
         "cau_hinh": {"demucs": {"enable": True},
                      "subtitle": {"enable": True},
-                     "evaluation": {"enable": True},
                      "timeline": {"mode": "semantic"}}})
     cfg = dung_video.dung_cau_hinh(yc)
     assert cfg["demucs"]["enable"] is False
     assert cfg["subtitle"]["enable"] is False
-    assert cfg["evaluation"]["enable"] is False
     assert cfg["timeline"]["mode"] == "sequential"
 
 
@@ -237,39 +233,9 @@ def test_handler_nhan_params_va_ctx() -> None:
         ["params", "ctx"]
 
 
-def test_cong_tac_TU_CHAM_DIEM_bi_TU_CHOI_khi_chua_co_duong_lay_khoa() -> None:
-    """Một công tắc không có đường lấy khoá phải từ chối, không được chạy rồi hụt.
-
-    🔴 Bot legacy lấy khoá Gemini từ `configs/pipeline.yaml` — một trường **văn
-       bản thuần** trong tệp cấu hình. Nền tảng này không có trường ấy và cũng
-       không được có: bí mật đi qua `platform_core/api_pool`.
-
-    ⛔ Nhưng engine chuyển nguyên vẹn **không ném lỗi** khi thiếu khoá
-       (`engine/runner.py:677`): nó ghi `api_key="missing"` rồi vẫn gọi
-       `evaluate_video(gemini_api_key="")`, dựa vào biến môi trường — thứ không
-       được đặt ở đây.
-
-    ⇒ Không chặn thì khách bật công tắc, **trả credit cho cả lượt**, và nhận lại
-      một giai đoạn không thể chạy. Một no-op im lặng ở tầng tính tiền là thứ
-      đắt nhất trong ba lựa chọn.
-
-    ⚠️ Phép kiểm này chốt **ràng buộc hiện tại**, không chốt thiết kế cuối. Khi
-       `evaluation` được nối vào `api_pool`, bài này phải được viết lại — và lúc
-       ấy nó sẽ đỏ, đúng như một cái chốt nên làm.
-    """
-    goc = {"clips": "/tmp/clip", "music": "/tmp/nhac"}
-    # Tat thi khong sao.
-    dung_video.chuan_hoa({**goc, "bat_cham_diem": False})
-    # Bat ma khong co khoa thi TU CHOI.
-    with pytest.raises(dung_video.LoiDungVideo) as e:
-        dung_video.chuan_hoa({**goc, "bat_cham_diem": True})
-    assert "bat_cham_diem" in str(e.value)
-    # Co khoa (nguoi van hanh tu truyen) thi cho qua — de khong khoa cung mot
-    # duong ma chinh ta se dung khi noi `api_pool`.
-    yc = dung_video.chuan_hoa({
-        **goc, "bat_cham_diem": True,
-        "cau_hinh": {"evaluation": {"gemini_api_key": "x" * 8}}})
-    assert yc.bat_cham_diem is True
+# Self-scoring (Gemini) da duoc GO khoi video_assembly — xem nhat ky cuu-4app.
+# Ban dung tren nen tang loai bo goi model truc tiep; danh gia chat luong video
+# bang VLM noi bo (qua runtime_noi_bo) la mot tinh nang RIENG, chua dung o day.
 
 
 # ─────────────────────────────────────────────────────────────────────────────

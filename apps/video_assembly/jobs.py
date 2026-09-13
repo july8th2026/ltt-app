@@ -75,7 +75,7 @@ def handle(params: dict, ctx=None) -> dict:
                 dung_video.YeuCau(
                     thu_muc_clip=str(thu_muc_clip), thu_muc_nhac=thu_muc_nhac,
                     che_do_khop=yc.che_do_khop, bat_demucs=yc.bat_demucs,
-                    bat_phu_de=yc.bat_phu_de, bat_cham_diem=yc.bat_cham_diem,
+                    bat_phu_de=yc.bat_phu_de,
                     cau_hinh=yc.cau_hinh),
                 lam_viec, str(ra), tien_do=tien_do)
         except dung_video.LoiDungVideo as e:

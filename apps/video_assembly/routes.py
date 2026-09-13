@@ -77,7 +77,6 @@ async def queue(
     che_do_khop: str = Form("sequential"),
     bat_demucs: str = Form("1"),
     bat_phu_de: str = Form("1"),
-    bat_cham_diem: str = Form(""),
     cau_hinh: str = Form(""),
     user: str = Depends(require_login),
 ):
@@ -150,8 +149,7 @@ async def queue(
 
     tham_so = {"clips": khoa_clip, "music": khoa_nhac, "cau_hinh": cfg,
                "che_do_khop": che_do_khop, "bat_demucs": bool(bat_demucs),
-               "bat_phu_de": bool(bat_phu_de),
-               "bat_cham_diem": bool(bat_cham_diem), "owner_id": user}
+               "bat_phu_de": bool(bat_phu_de), "owner_id": user}
     # Chuẩn hoá bằng CHÍNH hàm mà worker dùng — một chỗ kiểm, một câu trả lời.
     try:
         dung_video.chuan_hoa({**tham_so, "clips": khoa_clip[0]})

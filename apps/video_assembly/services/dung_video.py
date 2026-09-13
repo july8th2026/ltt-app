@@ -66,7 +66,6 @@ class YeuCau:
     che_do_khop: str = CHE_DO_MAC_DINH
     bat_demucs: bool = True
     bat_phu_de: bool = True
-    bat_cham_diem: bool = False
     cau_hinh: dict = field(default_factory=dict)
 
 
@@ -109,38 +108,12 @@ def chuan_hoa(params: dict) -> YeuCau:
     if not isinstance(cau_hinh, dict):
         raise LoiDungVideo("`cau_hinh` phai la mot doi tuong")
 
-    # 🔴 Cong tac khong co duong lay khoa thi TU CHOI o day, dung de job chay.
-    #
-    #    Bot legacy lay khoa Gemini tu `configs/pipeline.yaml` — mot truong VAN
-    #    BAN THUAN trong tep cau hinh. Nen tang nay khong co truong ay, va cung
-    #    khong duoc co: bi mat di qua `platform_core/api_pool`.
-    #
-    # ⛔ Nhung engine chuyen nguyen ven **khong nem loi** khi thieu khoa. Doc
-    #    `engine/runner.py:677`: no ghi `api_key="missing (env GEMINI_API_KEY)"`
-    #    roi VAN goi `evaluate_video(gemini_api_key="")`, du vao bien moi truong.
-    #    Tren nen tang nay bien do khong duoc dat.
-    #
-    # ⇒ Neu khong chan, khach bat cong tac "tu cham diem", **tra credit cho ca
-    #   luot**, va nhan lai mot giai doan khong the chay. Mot no-op im lang o
-    #   tang tinh tien la thu dat nhat trong ba lua chon.
-    #
-    # ⚠️ Day KHONG phai ban sua cuoi cung. Ban sua that la noi `evaluation` vao
-    #    `api_pool` (provider `gemini` da co san). Cho toi luc do, rang buoc nay
-    #    NHIN THAY DUOC thay vi mot cong tac gia. Xem
-    #    `docs/migration/workflow_apps/31_...`.
-    if bool(p.get("bat_cham_diem", False)) and not str(
-            (cau_hinh.get("evaluation") or {}).get("gemini_api_key") or "").strip():
-        raise LoiDungVideo(
-            "`bat_cham_diem` chua dung duoc: giai doan tu cham diem can mot khoa "
-            "Gemini, ma nen tang chua noi no vao `api_pool`. Tat cong tac nay di.")
-
     return YeuCau(
         thu_muc_clip=clip,
         thu_muc_nhac=str(p.get("music") or p.get("thu_muc_nhac") or "").strip(),
         che_do_khop=che_do,
         bat_demucs=bool(p.get("bat_demucs", True)),
         bat_phu_de=bool(p.get("bat_phu_de", True)),
-        bat_cham_diem=bool(p.get("bat_cham_diem", False)),
         cau_hinh=dict(cau_hinh),
     )
 
@@ -159,8 +132,6 @@ def dung_cau_hinh(yc: YeuCau) -> dict:
     cfg["timeline"] = {**cfg.get("timeline", {}), "mode": yc.che_do_khop}
     cfg["demucs"] = {**cfg.get("demucs", {}), "enable": yc.bat_demucs}
     cfg["subtitle"] = {**cfg.get("subtitle", {}), "enable": yc.bat_phu_de}
-    cfg["evaluation"] = {**cfg.get("evaluation", {}),
-                         "enable": yc.bat_cham_diem}
     return cfg
 
 

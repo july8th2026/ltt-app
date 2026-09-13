@@ -442,8 +442,6 @@ def run_local_job(cfg: dict, input_dir: str, music_dir: str, out_path: str, work
         #
         # Demucs la buoc GPU NANG CUOI CUNG. Sau day la MUSIC / MIX / BURN SUB —
         # toan viec CPU/ffmpeg. Nha lease ngay tai day.
-        # Evaluation (con dung YOLO) se TU XIN lease rieng, ngan han, o STAGE 12.
-        _eval_cfg = cfg.get("evaluation", {}) if isinstance(cfg, dict) else {}
         if _demucs_ok:
             _signal_gpu_phase_done(workdir, reason="post_demucs_gpu_work_done")
         else:
@@ -662,122 +660,10 @@ def run_local_job(cfg: dict, input_dir: str, music_dir: str, out_path: str, work
         else:
             info("subtitle_disabled")
 
-        # ========================================
-        # STAGE 12: EVALUATION (optional)
-        # ========================================
-        eval_cfg = cfg.get("evaluation", {})
-        eval_output_path = os.path.join(job_dir, "evaluation.json")
-
-        if eval_cfg.get("enable", False):
-            tracker.start_stage("EVALUATION", "Evaluating video quality")
-
-            # Log config
-            eval_model = eval_cfg.get("gemini_model", "gemini-2.5-flash")
-            eval_topic = eval_cfg.get("topic", "auto")
-            has_api_key = bool(eval_cfg.get("gemini_api_key", ""))
-            info("evaluation_config",
-                 model=eval_model,
-                 topic=eval_topic,
-                 api_key="set" if has_api_key else "missing (env GEMINI_API_KEY)",
-                 skip_whisper=eval_cfg.get("skip_whisper", True),
-                 skip_yolo=eval_cfg.get("skip_yolo", False))
-
-            # [2026-08-26] Lease RIENG cho evaluation. Lease chinh cua job da
-            # duoc nha sau demucs; evaluation con chay YOLO nen phai xin lai —
-            # nhung chi ~1-2GB va vai chuc giay, thay vi giu 7GB suot ca job.
-            # Khong xin duoc thi VAN CHAY (evaluation nhe, co cong B do that
-            # bao ve) — khong de viec xep hang lam hong job da gan xong.
-            _eval_lease = None
-            try:
-                import sys as _sys
-                from pathlib import Path as _P
-                _fa = str(_P(__file__).resolve().parent.parent.parent)
-                if _fa not in _sys.path:
-                    _sys.path.insert(0, _fa)
-                from gpu_arbiter import GpuLease as _GL
-                _eval_lease = _GL("dungvideo", phase="EVALUATION",
-                                  needs_gb=2.0, max_wait=180)
-                _eval_lease.__enter__()
-                if not _eval_lease:
-                    info("evaluation_no_gpu_lease", note="chay khong lease, cong B van bao ve")
-                    _eval_lease = None
-            except Exception as _e:
-                info("evaluation_lease_skipped", reason=str(_e))
-                _eval_lease = None
-
-            try:
-                from .evaluation.pipeline import evaluate_video, format_evaluation_text
-
-                # Determine which video to evaluate (subbed or original)
-                video_to_eval = out_subbed_path if os.path.isfile(out_subbed_path) else out_path
-                info("evaluation_start",
-                     video=video_to_eval,
-                     transcript=transcript_output_path)
-
-                eval_result = evaluate_video(
-                    video_path=video_to_eval,
-                    transcript_path=transcript_output_path,
-                    gemini_api_key=eval_cfg.get("gemini_api_key", ""),
-                    gemini_model=eval_model,
-                    topic=eval_topic,
-                    skip_whisper=eval_cfg.get("skip_whisper", True),
-                    skip_yolo=eval_cfg.get("skip_yolo", False),
-                    cache_dir=os.path.join(job_dir, "_eval_cache"),
-                    channel_desc=eval_cfg.get("channel_desc", ""),
-                )
-
-                # Save full evaluation result
-                with open(eval_output_path, "w", encoding="utf-8") as f:
-                    json.dump(eval_result, f, ensure_ascii=False, indent=2, default=str)
-                info("evaluation_saved", path=eval_output_path)
-
-                # Log detailed scores
-                eval_text = format_evaluation_text(eval_result)
-                composite = eval_result.get("composite_score", 0)
-                tier = eval_result.get("quality_tier", "unknown")
-                decision = eval_result.get("decision", "unknown")
-
-                info("evaluation_result",
-                     score=f"{composite:.1f}/100",
-                     tier=tier,
-                     decision=decision)
-
-                # Log per-evaluator breakdown
-                for ev in eval_result.get("per_evaluator", []):
-                    ev_name = ev.get("evaluator_name", "?")
-                    ev_score = ev.get("score", 0)
-                    info(f"  eval_{ev_name}", score=f"{ev_score:.2f}")
-
-                # Log errors from evaluation if any
-                eval_errors = eval_result.get("errors", [])
-                if eval_errors:
-                    for ee in eval_errors[:3]:
-                        warn("evaluation_partial_error", detail=str(ee)[:120])
-
-                info("evaluation_summary", text=eval_text)
-
-                tracker.complete_stage("EVALUATION")
-
-            except Exception as e:
-                tracker.fail_stage("EVALUATION", str(e))
-                error("evaluation_failed",
-                      error=str(e),
-                      suggestion="Evaluation failed, video will still be uploaded without evaluation")
-            finally:
-                # Tra lease evaluation tren MOI duong thoat (xong / loi / ngoai le).
-                if _eval_lease is not None:
-                    try:
-                        _eval_lease.__exit__(None, None, None)
-                    except Exception:
-                        pass
-                    _eval_lease = None
-        else:
-            info("evaluation_disabled")
-
-        # [Phase A2] After STAGE 12 (Evaluation done or skipped) — defensive marker write.
-        # Idempotent: if marker was already written after STAGE 8 (eval was disabled),
-        # rewriting is a no-op for the parent (callback fires once per subprocess).
-        _signal_gpu_phase_done(workdir, reason="post_evaluation_final")
+        # [Phase A2] Sau buoc GPU cuoi (SUB xong/bo qua) — defensive marker write.
+        # Idempotent: neu marker da ghi sau STAGE 8 thi ghi lai la no-op cho cha
+        # (callback chi fire mot lan moi subprocess).
+        _signal_gpu_phase_done(workdir, reason="post_sub_final")
 
         # ========================================
         # SUCCESS

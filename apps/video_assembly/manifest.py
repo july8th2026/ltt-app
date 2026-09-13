@@ -73,7 +73,6 @@ MANIFEST = AppManifest(
                             "default": "sequential"},
             "bat_demucs": {"type": "bool", "default": True},
             "bat_phu_de": {"type": "bool", "default": True},
-            "bat_cham_diem": {"type": "bool", "default": False},
         },
         returns={"video": "video"},
 
