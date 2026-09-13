@@ -15,7 +15,9 @@
 | L-05 | **108/131 job loi 14 ngay** deu la `AmbiguousProviderError: mat ket noi sau khi bat dau gui` | DOC LAP | he qua cua L-01 | 48/48 done, 0 loi (p=0,3%) | ✅ **DONG 13/09** |
 | L-06 | cua DONG BO khong huy duoc: khach cat ket noi ma slot van bi giu toi khi sinh XONG | DOC LAP | HAI goc: thieu `ma_luot`, va `is_disconnected()` chet sau `BaseHTTPMiddleware` | loopback 16,54 -> **1,43 s**; qua Cloudflare van 16,8 s | **DONG o tang ma; con phan BIEN** |
 | L-07 | **MOT job anh la ha `ltt-3.8` VINH VIEN**: trong tai nha LLM roi ket o `nha_llm` | DOC LAP | cong render may B thieu `/v1/nha_comfy` (404) + `nha_llm` khong co duong lui | chu trinh di tron 182 s; huy giua chung lui trong 30 s | **DONG 13/09** |
-| L-08 | cua STREAM giu suat **>=643 s** sau khi khach cat: may B ranh ma suat van bi chiem | DOC LAP | `_ket_thuc` la `BackgroundTask` — chi chay khi phan hoi KET THUC | lease `mode=stream` song >=643 s, van dap nhip; may B `requests_processing=0` | **MO 13/09** |
+| L-08 | cua STREAM giu suat **>=643 s** sau khi khach cat: may B ranh ma suat van bi chiem | DOC LAP | luong la `Iterator` **DONG BO** ⇒ threadpool ⇒ cancel scope cua anyio khong cat duoc ⇒ `BackgroundTask` nha lease khong toi luot. **Cung ho voi L-06** | lease `mode=stream` song >=643 s, van dap nhip; may B `requests_processing=0` | **MO — goc da ro, chua sua** |
+| L-09 | **nam anh hong la TAT MODEL NHA**: yeu cau sai cua khach bi dem la loi cua KHOA | 🔴 **CHAN** | `CongVlmError` khong mang ma; `dieu_phoi` khong truyen `http_status` | may B tra 400 dung chuan, may A tra 503 va phat khoa | **DONG 13/09** |
+| L-10 | **ban va L-07 tu sinh ngo cut moi**: 3 lan ComfyUI hong la phia anh khoa ngoai VINH VIEN | DOC LAP | bo dem chi xoa sau `chay_comfy()` thanh cong — thu nam sau chinh cai phanh dang chan | ComfyUI da LANH, ca 4 dich vu may B song: residency dung im o `llm` **120 s**, job `queued` | **DONG 13/09** |
 
 ## L-05 — mot MUC CAN DO, khong phai mot ket luan
 
@@ -69,6 +71,96 @@ Cloudflare khong bao cho origin biet khach da di; origin chay toi het.
    sai o vong dem thoi gian (bao "sau 120 s lease chua ve" trong khi doc lai
    CSDL thay lease = 0 va so sach da quyet toan). **Chua co so** -- va mot con
    so tu mot bo do da lo ra sai thi khong duoc ghi vao day.
+
+## L-09 -- DONG 13/09/2026, CHAN: nam anh hong la tat model nha
+
+Tim ra khi chay cong N, tinh huong *"Tep anh hong"* (§22).
+
+### Do duoc
+
+Gui bon kieu anh hong qua `/api/v1/chat/completions`:
+
+| kieu hong | may A tra | spec §22 doi |
+|---|---:|---|
+| base64 rac | 503 | 4xx |
+| PNG cut dau | 503 | 4xx |
+| rong | 503 | 4xx |
+| base64 sai cu phap | 503 | 4xx |
+
+Ve THU HAI cua §22 -- *"khong lan sang slot khac"* -- **DAT**: 3/3 luot lanh
+manh chay song song van 200 kem noi dung.
+
+Va may B tra **dung chuan**:
+
+```
+400 {"error": {"code": 400, "type": "invalid_request_error",
+               "message": "Failed to load image or audio file"}}
+```
+
+### Goc, va no nang hon mot ma trang thai sai
+
+`cong_vlm.chat()` co bang phan loai rieng cho 429, 499, 413, 404, 504 — **400
+roi vao nhanh catch-all** `CongVlmError`. Va `CongVlmError` **khong mang ma**,
+nen `dieu_phoi` goi:
+
+```python
+api_pool.danh_dau_loi(db, key)      # khong co http_status
+```
+
+`danh_dau_loi` doc `http_status=None` thanh *"5xx hoac loi mang"*:
+
+```python
+else:
+    moi["error_count"] = int(key.error_count or 0) + 1
+    if moi["error_count"] >= ERROR_TO_STATUS_THRESHOLD:   # = 5
+        moi["status"] = APIKEY_ERROR
+```
+
+Va `APIKEY_ERROR` **khong tu hoi** (`_ung_vien` bo moi khoa `status != ACTIVE`;
+chi `COOLDOWN` tu ve).
+
+🔴 **Tuc mot khach gui nam anh hong la tat model nha cho toi khi co nguoi
+   sua tay.** Bat ky ai co khoa API deu lam duoc, ke ca vo tinh.
+
+⭐ Va chinh `danh_dau_loi` DA co nhanh dung: *"400 <= s < 500: Bad request CUA
+   TA — KHONG phat"*. Loi khong nam o luat. No nam o mot **tham so khong duoc
+   truyen** — va do la ly do no song sot qua moi lan doc ma.
+
+### Day la CUA THU BA cua cung mot tham hoa D-005
+
+```
+luat 1 (dau cong_vlm.py)   bit cua 429
+ban va 09/09               bit cua 504
+cua 400                    dung mo toi 13/09
+```
+
+### Ban sua
+
+- `CongVlmError` mang `ma` (ma HTTP thuong nguon).
+- Them `YeuCauSaiError(CongVlmError)` cho 400/422: **khong phat khoa**, va
+  **khong cascade** — gui lai y het mot yeu cau sai thi no sai y het (cung khuon
+  `ProviderOomError`).
+- `dieu_phoi` truyen `http_status=e.ma` xuong `danh_dau_loi`.
+- Cua dong bo tra **4xx** kem thong diep cua thuong nguon: *"Failed to load image
+  or audio file"* la thu khach sua duoc, con *"The model could not serve this
+  request"* thi khong noi cho ho biet gi ca.
+
+### Chot, va mot dot bien DA LOT o lan dau
+
+`test_1244` (8 phep) + hai phep moi trong `test_255`. Tiem ba dot bien:
+
+| dot bien | bat duoc? |
+|---|---|
+| bo nhanh 400/422 khoi `cong_vlm` | CO |
+| bo `YeuCauSaiError` khoi nhanh `raise` | CO |
+| **bo `http_status=` khoi `dieu_phoi`** | **ban dau KHONG** |
+
+Ban chot dau chi do `danh_dau_loi` truc tiep voi ma truyen tay, nen no khong
+canh duoc **ben goi**. Them `test_255::test_ma_thuong_nguon_di_toi_danh_dau_loi`
+— dung mot loi 404 that di qua `dieu_phoi.goi` — thi dot bien ay bi bat.
+
+⛔ Bai hoc: mot phep kiem cho `danh_dau_loi` khong the canh duoc loi cua NGUOI
+   GOI no. Loi o day chua bao gio nam trong `danh_dau_loi`.
 
 ## L-08 -- MO 13/09/2026: cua STREAM giu suat >= 643 giay sau khi khach di
 
@@ -889,3 +981,148 @@ Bo do cho chu `done` **tren API**. Chu ay khong bao gio den.
    `job_type` mang gia tri day du `ltt_llm.chat`, khong phai `chat`. Toi doan ca
    hai va truy van vo hai lan lien tiep. **Hoi luoc do truoc khi truy van** la
    mot buoc, dung bo qua no.
+
+---
+
+# L-10 — ban va cho L-07 tu dung mot ngo cut o phia ben kia
+
+Tim ra khi chay cong N, tinh huong *"ComfyUI hong"*.
+
+## Hinh dang
+
+L-07: `nha_llm` co DUNG MOT duong ra, va loi ra ay doi `chay_comfy()` thanh
+cong. Ban va 13/09 them duong lui (`tran_vao_anh_hong = 3`) va — dung — them
+mot PHANH o `LLM`, vi mot duong lui khong kem phanh vao se thanh vong quay.
+
+Nhung phanh ay viet thang la `lan_vao_anh_hong < tran`, con bo dem thi chi duoc
+xoa o **dung mot cho**: sau mot `chay_comfy()` thanh cong. Ma `chay_comfy()`
+nam sau chinh cai phanh do.
+
+    phanh chan  ->  khong vao `ANH`  ->  khong goi `chay_comfy()`
+                ->  khong xoa bo dem ->  phanh chan  ->  ...
+
+⇒ Doi mot ngo cut lay mot ngo cut khac. L-07 giet LLM; L-10 giet phia ANH.
+
+## Do duoc (13/09, ca bon dich vu may B Running)
+
+| vong | tiem | ket qua |
+|---|---|---|
+| 1 | `LTTComfyUI` -> Disabled | `llm -> nha_llm -> nap_llm -> llm` trong **46,7 s** — duong lui L-07 chay dung |
+| 2 | `LTTComfyUI` -> Automatic (**da lanh**) | job anh moi: residency **khong he roi `llm`** suot 120 s, job `queued` |
+
+Khong mot dong log, khong mot bao dong. Chi `Restart-Service LTTStudioWorker`
+moi go duoc — tuc mot trang thai **doi ban tay nguoi**, dung lop khuyet tat ma
+L-07 sinh ra de chan.
+
+## ⛔ Hai lan toi ket luan sai truoc khi ket luan dung
+
+1. **Lan dau toi bao "xac nhan" khi phep do dang nhiem.** Truoc do toi chay
+   `Stop-Service LTTLlamaSwap -Force`; lenh ay keo theo dich vu PHU THUOC
+   (`LTTLlmGateway`), va `Start-Service LTTLlamaSwap` **khong** bat lai chung.
+   Cong 8299 tat ⇒ trong tai khong hoi duoc may B ⇒ fail-closed giu `llm`.
+   Log noi thang: *"khong hoi duoc may B ve cu tru 'rtx3090' => giu nguyen
+   'llm', khong phat lenh nao (fail-closed)"* — khong lien quan bo dem.
+2. **Lan hai toi doc "van khoa" sau khi restart worker**, trong khi log cho thay
+   tien trinh moi chi len sau do 2 phut. Toi da do tien trinh CU.
+
+⭐ Bai hoc chung cua ca hai: mot phep do ve "he thong khong lam gi" rat de dung,
+   vi *khong lam gi* la ket qua cua RAT NHIEU nguyen nhan. No chi tro thanh bang
+   chung khi moi nguyen nhan khac da bi loai — o day la "ca bon dich vu Running"
+   va "dung tien trinh dang song". Cung bai hoc da ghi o L-06 voi Cloudflare.
+
+## Ban sua: mot vi tu, dung o HAI cho
+
+`duoc_thu_anh(qs, ts, bay_gio)` = chua cham tran, **hoac** da lui du lau.
+
+    `LLM`     -> `XA_LLM`   khi  duoc_thu_anh      (nha card de THU)
+    `NHA_LLM` -> `NAP_LLM`  khi  KHONG             (duong lui 2, tra card)
+
+🔴 Vi sao khong duoc noi rieng ve o `LLM` — cai bay that su cua ban va nay: o
+   `NHA_LLM`, duong lui 2 duoc kiem **truoc** nhanh vao `ANH`. Noi mot minh ve
+   `LLM` thi luot thu lai se nha card roi nap lai ngay ma **khong he goi
+   `chay_comfy()`** — ton tron 47 s de khong hoi duoc cau duy nhat can hoi, va
+   bo dem van khong bao gio duoc xoa. Hai cho phai doc cung mot su that.
+
+Nhip lui: `lui_anh_hong_s = 300 s`, gap doi, **tran ×8** (40 phut). Thap hon
+`lui_nap_s` (tran 480 s tren nen 30 s ⇒ cung 480 s) co chu dich: ben kia LLM da
+chet han nen lui lau khong mat them gi, ben nay LLM van dang phuc vu va thu dang
+cho la hang job anh. Gia moi lan thu la mot chu trinh nha/nap **do duoc 47 s**,
+nen nhip 300 s giu gia ay o ~16 %.
+
+## Phep kiem: `tests/test_1245_dem_anh_hong_tu_nhat.py`
+
+⚠️ `test_1240` van XANH nguyen ven voi ma hong. No dung `bay_gio` trong khoang
+   100–200 con nhip lui la 300 s, nen vi tu moi tra ve cung ket qua voi bieu
+   thuc cu — no xanh nho mot **gia tri dong ho tinh co**. Mot bo kiem xanh ca
+   truoc lan sau ban va thi khong bao ve ban va, va do la ly do bo 1245 ton tai
+   rieng thay vi them vai ve vao 1240.
+
+Doi chung da chay: tiem lai bieu thuc cu (`return qs.lan_vao_anh_hong <
+ts.tran_vao_anh_hong`) lam **6/11 ve do**, gom ca hai ve `monkeypatch` chung
+minh CA HAI cho deu doc vi tu.
+
+---
+
+# L-08 — cau hoi "cai gi ket thuc no quanh giay 700" da co loi dap
+
+## Loai tru: khong mot han dinh nao khop
+
+| han | gia tri | vi sao khong phai no |
+|---|---|---|
+| `admission.ORPHAN_TIMEOUT` | **20 phut** (1200 s) | khong bang 700 s |
+| va no khong bao gio toi | — | `keep_alive` chay luong nhip tim rieng, moi **60 s** goi `heartbeat_by_id`, nen `heartbeat_at` khong bao gio cu di de `reclaim_expired` nhin thay |
+| `jobs.ORPHAN_TIMEOUT` | 5 phut | khong phai duong nay |
+| `gpu_lease.ORPHAN_TIMEOUT` | 10 phut | khong phai duong nay |
+
+## ⛔ Gia thuyet dau cua toi — "GC thu don generator treo" — SAI
+
+Toi da viet muc nay mot lan voi ket luan ay, dua tren mot bo mo phong generator
+tu viet. Bo mo phong chay dung, nhung no mo phong **sai vat**: no gia dinh lease
+duoc nha trong `finally` cua generator. Doc lai ma thi lease KHONG nha o do —
+no nha trong `_ket_thuc()`, mot `BackgroundTask` (`server/api/streaming.py`).
+
+⚠️ Bai hoc: mot bo mo phong chi tra loi ve **cai no dung lai**, khong tra loi ve
+   he thong that. Toi da do mot khuon toi tu dung roi doc ket qua nhu mot su
+   that ve production — cung lop loi voi "Idempotency-Key" hom qua (do chinh
+   cong cu cua minh) va voi "Cloudflare khong phai nguyen nhan" (ket luan khi
+   nguyen nhan khac chua bi loai).
+
+## Co che THAT — doc ma thu vien DANG CAI, tung mat xich
+
+| # | cau hoi | tra loi | nguon |
+|---|---|---|---|
+| 1 | uvicorn khai ASGI `spec_version` nao? | **"2.3"** (< 2.4) | `uvicorn/protocols/http/h11_impl.py` |
+| 2 | ⇒ nhanh nao cua `StreamingResponse.__call__` chay? | nhanh **CO** `listen_for_disconnect` | starlette 1.3.1 |
+| 3 | `background` co chay khi khach cat khong? | **CO** — `await self.background()` o thut le **NGOAI** `async with`, chay o ca hai nhanh | nt |
+| 4 | vay tai sao lease van bi giu 643 s? | vi `luong: Iterator[bytes]` la **DONG BO** | `platform_core/llm/luong_vlm.py:64` |
+
+Starlette boc mot iterator dong bo bang `iterate_in_threadpool`. **Cancel scope
+cua anyio khong cat duoc mot LUONG dang cho doc socket.** Nen day chuyen la:
+
+    khach cat  -> `listen_for_disconnect` ve  -> task_group.cancel()  ✅
+               -> nhung `stream_response` dang ket trong threadpool   ⛔
+               -> task group KHONG sap duoc, phai cho luong ay xong
+               -> `await self.background()` chua toi luot
+               -> `_ket_thuc()` chua chay -> lease CHUA NHA
+
+Moi thu cho may B tu dong ket noi. **643 s la thoi diem may B buong, khong phai
+mot han dinh nao cua may A.**
+
+⭐ VA DAY LA CUNG MOT HO VOI L-06. L-06: `BaseHTTPMiddleware` doc `receive`
+   trong mot cancel scope da huy. L-08: generator dong bo trong threadpool. Hai
+   trieu chung khac han, mot nguyen nhan chung — **mot cau noi DONG BO vo hieu
+   hoa co che huy bat dong bo**. Su that ay dinh huong ban sua manh hon bat ky
+   phep do nao ve thoi gian.
+
+## Ba huong sua bi loai tru BOI chinh chuoi bang chung tren
+
+1. **Ha `ORPHAN_TIMEOUT`** — vo ich: `keep_alive` dap nhip moi 60 s nen han ay
+   khong bao gio toi, ha xuong 60 s cung khong doi gi.
+2. **`gc.collect()` dinh ky** — GC khong phai co che (muc tren), nen no chua mot
+   benh khong ton tai.
+3. **Doi `BackgroundTask` chay som hon** — no **da** chay dung cho roi; nut that
+   nam TRUOC no, o luong dong bo khong cat duoc.
+
+⇒ Ban sua phai lam chinh luong ay **tu biet khach da cat** va thoat vong lap —
+  tuc dung lai may moc `platform_core/llm/ngat.py` cua L-06 — hoac nha lease
+  ngay tai luc phat hien ngat thay vi doi `background`.
