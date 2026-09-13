@@ -252,7 +252,27 @@ def thay_du_hai_card(*, chay: Callable = subprocess.run,
     if ra is None:
         return False
     thay = {d.strip() for d in ra.splitlines() if d.strip()}
-    can = {str(x.get("uuid") or "") for x in doc_danh_tinh(duong)}
+    try:
+        can = {str(x.get("uuid") or "") for x in doc_danh_tinh(duong)}
+    except Exception:  # noqa: BLE001 - moi kieu doc hong deu cung mot huong xu
+        # 🔴 DOC KHONG DUOC DANH TINH **CUNG LA** FAIL-CLOSED (cong N, 13/09).
+        #
+        #    Truoc 13/09 ngoai le nay bay thang ra ngoai, va `/health/ready`
+        #    thanh **500** thay vi **503**. Spec §22 doi 503 cho ca "GPU khong
+        #    thay (UUID thieu)", va RUNBOOK canh bao dung tinh huong ay: mot ban
+        #    cai dat thieu `gpu_may_b.json` la **dung han** viec sinh anh.
+        #
+        # ⭐ Docstring cua chinh ham nay da noi ly do, chi la no viet cho mot ca
+        #    khac: *"khong hoi duoc `nvidia-smi` => False ... hai thu ay doi
+        #    CUNG MOT hanh dong: dung nhan luot moi cho toi khi co nguoi xem"*.
+        #    "Khong doc duoc danh tinh" la mot the thu ba cua cung cau hoi ay.
+        #
+        # ⛔ Va khac biet 500/503 khong phai chuyen chu nghia o mot chot SAN
+        #    SANG: 503 la "chua san sang, dung gui luot toi" — mot cau tra loi;
+        #    500 la "chinh chot nay dang hong" — mot cau hoi moi.
+        log.warning("khong doc duoc danh tinh GPU => coi nhu CHUA SAN SANG",
+                    exc_info=True)
+        return False
     thieu = can - thay
     if thieu:
         log.warning("driver KHONG thay card: %s (thay: %s)",

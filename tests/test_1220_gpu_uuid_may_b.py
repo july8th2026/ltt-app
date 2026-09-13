@@ -216,6 +216,52 @@ def test_thieu_card_hoac_khong_hoi_duoc_deu_la_KHONG_DU(smi):
     assert GU.thay_du_hai_card(chay=smi) is False
 
 
+def test_doc_danh_tinh_hong_CUNG_LA_fail_closed(tmp_path):
+    """🔴 Cổng N, 13/09: **đọc không được danh tính cũng phải là fail-closed**.
+
+    Trước 13/09 ngoại lệ đọc tệp bay thẳng ra ngoài, nên `/health/ready` thành
+    **500** thay vì **503**. Spec §22 đòi 503 cho ca *"GPU không thấy (UUID
+    thiếu)"*, và RUNBOOK cảnh báo đúng tình huống ấy: một bản cài đặt thiếu
+    `gpu_may_b.json` là **dừng hẳn** việc sinh ảnh.
+
+    ⛔ Và 500 vs 503 không phải chuyện chữ nghĩa ở một chốt SẴN SÀNG: 503 là
+       *"chưa sẵn sàng, đừng gửi lượt tới"* — một câu trả lời; 500 là *"chính
+       chốt này đang hỏng"* — một câu hỏi mới.
+
+    ⭐ Docstring của chính hàm ấy đã nói lý do, chỉ là nó viết cho một ca khác:
+       *"không hỏi được `nvidia-smi` ⇒ False … hai thứ ấy đòi CÙNG MỘT hành
+       động"*. "Không đọc được danh tính" là thể thứ ba của cùng câu hỏi.
+    """
+    du = SmiGia(f"{_uu('ltt35')}\n{_uu('ltt38')}\n")
+
+    # driver thay du card, nhung TEP DANH TINH khong doc duoc
+    assert GU.thay_du_hai_card(chay=du, duong=tmp_path / "khong-co.json") is False
+
+    hong = tmp_path / "hong.json"
+    hong.write_text("{khong phai json}", encoding="utf-8")
+    assert GU.thay_du_hai_card(chay=du, duong=hong) is False
+
+    rong = tmp_path / "rong.json"
+    rong.write_text("", encoding="utf-8")
+    assert GU.thay_du_hai_card(chay=du, duong=rong) is False
+
+
+def test_doi_chung_tep_DUNG_van_tra_True(tmp_path):
+    """Đối chứng: bản vá trên không được biến mọi thứ thành `False`.
+
+    Thiếu phép này thì `return False` vô điều kiện cũng xanh — và khi ấy
+    `/health/ready` **không bao giờ** báo sẵn sàng.
+    """
+    import json
+
+    tep = tmp_path / "gpu.json"
+    tep.write_text(json.dumps([{"vai": "ltt38", "uuid": _uu("ltt38")},
+                               {"vai": "ltt35", "uuid": _uu("ltt35")}]),
+                   encoding="utf-8")
+    du = SmiGia(f"{_uu('ltt35')}\n{_uu('ltt38')}\n")
+    assert GU.thay_du_hai_card(chay=du, duong=tep) is True
+
+
 def test_health_ready_503_khi_thieu_card(monkeypatch):
     from tests.test_250_llm_gateway import _client
 
