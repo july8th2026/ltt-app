@@ -34,7 +34,7 @@ from __future__ import annotations
 from platform_core.i18n import N_
 from platform_core.registry import AppManifest, NavEntry, ToolSpec
 
-from . import gia, nghe_thu, sidecar_client
+from . import gia, lan_ngon_ngu, nghe_thu, sidecar_client, toc_do
 from .tham_so_cong_khai import (SO_LAN_THU_JOB, TRAN_KY_TU_CONG_KHAI,
                                 TRAN_MOI_LUOT_SINH)
 
@@ -310,6 +310,27 @@ MANIFEST = AppManifest(
                              "exclusive_with": ("preset",)},
                 "preset": {"type": "string", "required": False,
                            "max_length": 64},
+                # D01 (2026-09-13): tốc độ HẬU KỲ cho Public API.
+                # ⛔ `min`/`max` (dạng NGẮN của nền tảng), KHÔNG `minimum`/`maximum`:
+                #    `catalog.project_tool` chỉ dịch `min`→`minimum`, `max`→`maximum`
+                #    vào `input_schema` công khai. Gõ dạng dài thì bị lược im lặng,
+                #    và `validate_public_input` KHÔNG reject giá trị ngoài khoảng —
+                #    D03 fail-closed ở biên công khai hỏng mà gate cũ không thấy.
+                "speed": {"type": "number", "required": False,
+                          "min": toc_do.TOC_DO_MIN,
+                          "max": toc_do.TOC_DO_MAX,
+                          "default": 1.0},
+                # D02 (2026-09-13): làn ngôn ngữ cho Public API.
+                # ⛔ `type:"enum"` + `values` (quy ước nền tảng, xem `image.ltt`
+                #    `mode`, `ltt_llm` `reasoning_effort`), KHÔNG `type:"string"`
+                #    + `enum`: `project_tool` chỉ phát `enum` công khai cho
+                #    `kind=="enum"`. String thường không có enum ⇒ không reject.
+                # ⛔ SUY từ `lan_ngon_ngu.LAN_HOP_LE`, KHÔNG gõ lại ["vi","en"]:
+                #    INV-02 (test_522) chốt làn chỉ có MỘT bản khai. Thêm làn thứ
+                #    ba ở `lan_ngon_ngu` thì enum này tự theo.
+                "language": {"type": "enum", "required": False,
+                             "values": ["auto", *lan_ngon_ngu.LAN_HOP_LE],
+                             "default": "auto"},
             },
             returns={"audio_key": "audio", "text": "text"},
 
@@ -386,6 +407,27 @@ MANIFEST = AppManifest(
                             "A built-in voice name. Ignored when voice_id is "
                             "given; sending both is rejected."),
                         "example": "Adam",
+                    },
+                    "speed": {
+                        "description": (
+                            "Playback speed. 1.0 is normal. Range 0.5 (half "
+                            "speed) to 2.0 (double speed). Applied as a "
+                            "post-synthesis time-stretch — it does not change "
+                            "how the model speaks, only how fast the output "
+                            "plays. Billing is based on the original duration "
+                            "before speed change. Omit or send 1.0 for "
+                            "normal speed."),
+                        "example": 1.0,
+                    },
+                    "language": {
+                        "description": (
+                            "Language lane for quality enforcement. 'auto' "
+                            "(default) detects language from the text. 'vi' "
+                            "or 'en' overrides detection. If the detected or "
+                            "declared language does not match the voice's "
+                            "lane, the request is rejected with "
+                            "voice_language_mismatch."),
+                        "example": "auto",
                     },
                 },
             },
