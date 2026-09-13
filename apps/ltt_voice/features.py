@@ -174,7 +174,7 @@ def chuan_hoa(params: dict) -> YeuCau:
 
     # Giá trị lạ -> `auto`. Một tham số hỏng không được làm hỏng job, và
     # `auto` là hành vi cũ nên nó là lối lui đúng.
-    ngon_ngu = str(p.get("ngon_ngu") or "auto").strip().lower()
+    ngon_ngu = str(p.get("ngon_ngu") or p.get("language") or "auto").strip().lower()
     if ngon_ngu not in ("auto", *lan_ngon_ngu.LAN_HOP_LE):
         ngon_ngu = "auto"
 
@@ -184,7 +184,7 @@ def chuan_hoa(params: dict) -> YeuCau:
                   doc_so_tran=bool(p.get("doc_so_tran")),
                   # `hop_le` ép về khoảng và biến giá trị vô nghĩa thành 1.0 —
                   # tức "không đổi". Một tham số hỏng không được làm hỏng job.
-                  toc_do=_toc_do.hop_le(p.get("toc_do", 1.0)))
+                  toc_do=_toc_do.hop_le(p.get("toc_do", p.get("speed", 1.0))))
 
 
 # ── kết quả ──────────────────────────────────────────────────────────────────
