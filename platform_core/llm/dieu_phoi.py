@@ -298,10 +298,23 @@ def goi(db, *, messages: list, thu_tu_provider: Sequence[str],
                 # ⛔ Day KHONG phai mot truong tu do: moi khoa trong `them` da di
                 #    qua `kiem_tham_so`, va `tests/test_1255` chot CO HOC rang
                 #    moi khoa khai trong `params_schema` phai song sot qua do.
-                #    Bo `them` vao TRUOC buoc loc `None` ben duoi nen mot gia tri
-                #    `None` lot vao day cung khong bao gio ra khoi may.
+                #
+                # 🔴 `than["them"] = ...`, KHONG PHAI `than.update(them)`.
+                #
+                #    `_goi_openai` o tren goi `CongVlm(...).chat(**than)` — no
+                #    RAI ca `than` thanh doi so co ten. Tron sau khoa moi thang
+                #    vao `than` nghia la goi `chat(seed=..., top_p=...)`, ma
+                #    `CongVlm.chat` khong co nhung doi so ay:
+                #
+                #      CongVlm.chat() got an unexpected keyword argument 'seed'
+                #
+                #    Do la mot loi THAT da len production 14/09 va **moi** tham
+                #    so moi deu 503; mot luot khong mang tham so nao van 200,
+                #    nen no khong lo ra o bat cu phep kiem nao chi thu duong
+                #    mac dinh. `CongVlm.chat` co san doi so `them` cho dung viec
+                #    nay (`than_gui.update(them)` ben trong no) — dung cua ay.
                 if them:
-                    than.update(them)
+                    than["them"] = dict(them)
                 if not base:
                     # Không có địa chỉ thì đừng gửi đi đâu cả và đừng đánh dấu lỗi
                     # cho khoá — đây là **thiếu cấu hình**, không phải provider hỏng.

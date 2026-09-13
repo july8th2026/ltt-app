@@ -195,3 +195,70 @@ def test_stop_dang_chuoi_don_duoc_chuan_hoa_thanh_danh_sach():
     ra = kiem_tham_so({"messages": MAU_THEO_KHOA["messages"],
                        "model": "ltt-3.8", "stop": "HET"})
     assert ra["stop"] == ["HET"]
+
+
+# ── Tang thu BA: `dieu_phoi` va `CongVlm.chat` phai KHOP CHU KY ──────────────
+
+def test_moi_khoa_dieu_phoi_dat_vao_THAN_phai_la_doi_so_CongVlm_chat_nhan():
+    """🔴 Loi nay DA LEN PRODUCTION 14/09/2026, va hai tang kiem tren khong thay.
+
+    `dieu_phoi._goi_openai` goi `CongVlm(...).chat(**than)` — no RAI ca `than`
+    thanh doi so co ten. Ban dau toi viet `than.update(them)`, nen sau tham so
+    moi thanh kwargs ma `CongVlm.chat` khong co:
+
+        CongVlm.chat() got an unexpected keyword argument 'seed'
+
+    Moi luot mang bat ky tham so moi nao deu **503**; mot luot khong mang gi van
+    **200**. Hai tang kiem tren deu xanh vi chung dung lai o `dieu_phoi.goi` —
+    chung chot rang tham so ROI KHOI app, khong chot rang no VAO DUOC may B.
+
+    ⛔ Bai hoc lap lai cua kho: mot phep kiem thay `dieu_phoi.goi` bang ban gia
+       khong bao gio cham toi chu ky that o tang duoi. Phep kiem nay soi CHU KY,
+       nen no khong can goi may B ma van bat duoc dung lop loi ay.
+    """
+    import inspect
+    import textwrap
+
+    from platform_core.llm.cong_vlm import CongVlm
+
+    nhan = set(inspect.signature(CongVlm.chat).parameters) - {"self"}
+
+    # ⛔ DOC BANG AST, KHONG QUET VAN BAN.
+    #
+    #    Ban dau phep kiem nay viet `assert 'than["them"]' in nguon` — va no
+    #    XANH voi ma DA HONG, vi khoi CHU THICH ngay tren doan ma cung chua
+    #    nguyen van chuoi ay. Mot bo do quet van ban khong phan biet duoc loi
+    #    giai thich voi dieu duoc lam; kho nay da ghi dung cai bay do.
+    import ast
+
+    from platform_core.llm import dieu_phoi
+
+    cay = ast.parse(textwrap.dedent(inspect.getsource(dieu_phoi.goi)))
+    gan_them, update_them = False, False
+    for nut in ast.walk(cay):
+        if isinstance(nut, ast.Assign):
+            for dich in nut.targets:
+                if (isinstance(dich, ast.Subscript)
+                        and isinstance(dich.value, ast.Name)
+                        and dich.value.id == "than"
+                        and isinstance(dich.slice, ast.Constant)
+                        and dich.slice.value == "them"):
+                    gan_them = True
+        if (isinstance(nut, ast.Call) and isinstance(nut.func, ast.Attribute)
+                and nut.func.attr == "update"
+                and isinstance(nut.func.value, ast.Name)
+                and nut.func.value.id == "than"):
+            update_them = True
+
+    assert not update_them, (
+        "`dieu_phoi` dang goi `than.update(...)` — no rai tham so phu thanh "
+        "kwargs cua `CongVlm.chat`, va moi luot mang tham so moi se 503")
+    assert gan_them, (
+        "`dieu_phoi` phai dat tham so phu vao `than[\"them\"]` de chung di "
+        "qua doi so `them` cua `CongVlm.chat`")
+
+    for khoa in ("model", "messages", "tools", "max_tokens", "temperature",
+                 "reasoning_effort", "them"):
+        assert khoa in nhan, (
+            f"`dieu_phoi` dat `{khoa}` vao `than`, nhung `CongVlm.chat` khong "
+            f"nhan doi so ay — `chat(**than)` se nem TypeError va cua tra 503")
