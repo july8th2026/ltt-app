@@ -67,6 +67,23 @@ CONG_CAU=18099
 
 K="$(cat .khoa)"
 
+# ── San `max_tokens` (L-02) khac nhau GIUA HAI MODEL ────────────────────────
+# `apps/ltt_llm/ngan_sach.py`:
+#   SAN_TOKEN_RA_THEO_NGHI["ltt-3.5"]["medium"] = 1024   <- mac dinh la `medium`
+#   SAN_TOKEN_RA_THEO_NGHI["ltt-3.8"]           = 64 o MOI muc
+#
+# ⇒ `ltt-3.5` voi `output_tokens=700` va khong khai `reasoning_effort` se bi
+#   TU CHOI 400 vi 700 < 1024. Khai `none` ha san ve 64 cho ca hai.
+#
+# ⚠️ Va vi the hai chan KHONG so truc tiep duoc voi nhau: chung chay o hai muc
+#    `reasoning_effort` khac nhau neu ta chi dat cho mot ben. Cau hoi cua phep
+#    do nay la TRONG TUNG MODEL (1->3 co nhan doi khong; 6/9 co XEP HANG thay
+#    vi hong khong), khong phai "3.8 so voi 3.5".
+THEM=""
+if [ "${MODEL}" = "ltt-3.5" ]; then
+  THEM=',extras={"body":{"reasoning_effort":"none"}}'
+fi
+
 # ── cau noi: chen `Idempotency-Key` MOI moi luot ─────────────────────────────
 # ⛔ Dung theo CONG, khong theo ten tien trinh: `pkill -f cau_idem.py` khop vao
 #    chinh dong lenh `bash -c` dang chay no va tu giet minh truoc khi kip khoi
@@ -90,7 +107,7 @@ done
 TOK="${TOK:-Qwen/Qwen3-8B}"
 
 .venv/bin/guidellm run \
-  --backend "kind=openai_http,target=http://127.0.0.1:${CONG_CAU},model=${MODEL},api_key=${K},validate_backend=false,max_tokens=${RA},stream=false" \
+  --backend "kind=openai_http,target=http://127.0.0.1:${CONG_CAU},model=${MODEL},api_key=${K},validate_backend=false,max_tokens=${RA},stream=false${THEM}" \
   --profile kind=concurrent,streams=1 \
   --override "profile.streams" "${MUC}" \
   --data "kind=synthetic_text,prompt_tokens=${VAO},output_tokens=${RA}" \
