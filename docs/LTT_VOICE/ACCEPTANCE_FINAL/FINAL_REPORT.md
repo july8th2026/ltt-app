@@ -10,12 +10,13 @@ Báo cáo này theo khung mục 35 của chiến dịch. Đối soát 36 mục �
 
 | Vai | SHA |
 |---|---|
-| source / gate / handoff | `4cf7e653aba321d87cf3c2749ea51198afdc0a05` |
-| base (main lúc bắt đầu) | `cc9eac95` (đã merge vào nhánh) |
-| deploy SHA | **chưa** — deploy là lane của integrator; main đã đi tiếp |
-| running SHA (production) | `6f160626` (bản CŨ, chưa có speed/language) |
+| source / gate / handoff | `4cf7e653` (D01-D03) → merge vào main |
+| main sau merge (Voice + dedupe + quality) | `08362209` |
+| **deploy SHA** | **`08362209`** (deploy 2026-09-13 20:21, EXITCODE=0) |
+| **running SHA (production)** | **`08362209`** (`/health/version`) |
+| đường lui (app.previous) | `3c827ce3` |
 
-⚠️ tested ≠ deployed ≠ running ⇒ **KHÔNG** dùng verdict `PRODUCTION_ACCEPTED` (mục 35-J).
+✅ **tested = deployed = running = `08362209`**, nghiệm thu ba chiều 0/0/0, `/health/ready` 200, live canary (Tier-2) PASS ⇒ đủ điều kiện `PRODUCTION_ACCEPTED` (mục 35-J).
 
 ## B. Bugs phát hiện trong nghiệm thu
 
@@ -83,7 +84,20 @@ toolkit. Phần đã đo đều có evidence; phần chưa đo ghi rõ BLOCKED/D
 
 ## J. Verdict
 
-**READY_FOR_RELEASE (Tier-1)** — code đúng hợp đồng, full gate PASS trên SHA giao,
-2 bug thật đã fix + regression. Chưa `PRODUCTION_ACCEPTED` vì tested≠deployed≠running
-và chưa có live canary. Bước kế: integrator merge + deploy một lần → Tier-2
-production acceptance + quality toolkit.
+**PRODUCTION_ACCEPTED** — deploy `08362209` LIVE, tested=deployed=running, nghiệm
+thu ba chiều 0/0/0, full gate PASS (gồm 4 frontend), live canary Tier-2 PASS.
+
+Tier-2 production (2026-09-13):
+- Studio E2E: job speed=2.0/language=vi qua queue+worker THẬT → done 10s, speed
+  áp 2.001×, credit theo thời lượng gốc (33→31 khớp), language vi OK.
+- API /api/v1 (§12-14): quote matrix 8/8 (D03 reject speed 2.5/0.1 + language fr
+  + empty + exclusive → 400 trên LIVE API); job E2E succeeded (dadb2399); key
+  tạm mint + revoke.
+- Quality (§21/§24): DNSMOS + ASR mọi speed; intelligibility an toàn toàn dải,
+  naturalness biên trên 2.0 tụt ~1 MOS (giữ dải + ghi cảnh báo, chốt chủ SP).
+- **§26 human golden listening: ĐẠT** (chủ sản phẩm nghe 6 WAV G:\...\Voice,
+  2026-09-13). §23 mở rộng corpus: chủ SP chốt KHÔNG cần.
+
+3 bug thật fix + regression: INV-02 (làn), D03-boundary (cưỡng chế biên công
+khai), đo-kẹp (harness thiếu D01). Phối hợp đa phiên với ltt-llm: deploy tách
+chuyến (rollback boundary), production window hai chiều.
