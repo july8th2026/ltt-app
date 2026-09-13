@@ -63,7 +63,29 @@ token, ghi nguồn từng đoạn). Nên L **không thiếu thời gian, nó thi
    thứ chưa ai duyệt thì tệ hơn một ô trống có ghi lý do.
 
 ⇒ L giữ nguyên trong bảng, trạng thái **⏸️ hoãn**, và sẽ chạy cùng đợt nghiệm
-  thu của chính Spec 2. Mười sáu cổng còn lại đóng trong đợt này.
+  thu của chính Spec 2.
+
+### 3b. Cổng Q — **BỎ QUA**, vì spec không định nghĩa nó
+
+Cả kho chỉ có đúng một dòng về Q: *"Soak hỗn hợp — đòi A–P qua trước"*. Không có
+tệp spec nào tả nó đo gì, trong bao lâu, ngưỡng nào là đạt.
+
+Tôi đã bắt đầu tự định nghĩa: năm bất biến đo ở cuối một soak 10 phút (lease về
+0, residency kết ở `llm`, hai model còn phục vụ, tỉ lệ hỏng ≤ 2 %, không thêm
+khoản credit treo). Chủ sản phẩm chốt **13/09: bỏ qua**.
+
+⛔ Và đó là quyết định đúng. Tự đặt tiêu chí cho một cổng rồi tự chấm mình đạt
+   thì con dấu ấy không chứng nhận gì — nó chỉ chứng nhận rằng tôi biết đặt một
+   tiêu chí mình vượt qua được. Luật 2 của kho gọi tên đúng việc này: *"đừng đẻ
+   ra một luật cạnh tranh trong tệp kế hoạch của bạn"*.
+
+⚠️ Ghi lại để phiên sau khỏi đào lại: kịch bản soak đã viết xong và chạy được
+   (`scratchpad/do_cong_q_soak.py`) — thiếu **tiêu chí được duyệt**, không thiếu
+   công cụ. Ngày nào Q có spec, bộ đo đã sẵn.
+
+⇒ Đợt này đóng **14 cổng** (A B C D E F G H I J K N O P). Còn **M** đạt ở tầng
+  mã với một phần dư ở biên Cloudflare, và **L · Q** hoãn — mỗi cái có lý do
+  ghi thành chữ, không có ô trống nào không giải thích được.
 
 | | Nội dung | Trạng thái | Ghi chú |
 |---|---|---|---|
@@ -83,7 +105,7 @@ token, ghi nguồn từng đoạn). Nên L **không thiếu thời gian, nó thi
 | **N** | 7 lỗi hạ tầng | ✅ **ĐẠT 13/09 — 7/7** | ảnh hỏng→L-09 · UUID thiếu→vá `gpu_uuid` · llama-swap restart · llama-server chết (không bán sai hàng) · ComfyUI bật không lên · nạp lại hỏng→**L-10** · mất mạng A↔B. §7i |
 | **O** | Tiền: 7 tình huống, 0 thu hai lần | ✅ **ĐẠT 13/09** | 4 hold / 2 refund / 2 settle khớp đôi; 0 khoản treo |
 | **P** | Rò lease generator, 5 điểm | ✅ **ĐẠT 13/09** | `execution_leases` về 0 sau cả 4 kịch bản |
-| **Q** | Soak hỗn hợp | ⬜ | đòi A–P qua trước |
+| **Q** | Soak hỗn hợp | ⏸️ **BỎ QUA** | spec **không định nghĩa** cổng này. Chủ sản phẩm chốt 13/09: không tự đặt tiêu chí. §3b |
 
 ## 4. 🔴 Vì sao F là cổng CHẶN, không phải một lỗi lẻ
 
