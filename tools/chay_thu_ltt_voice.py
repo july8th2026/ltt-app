@@ -63,6 +63,12 @@ def main(argv=None) -> int:
     ap.add_argument("--text", default=CAU_THU)
     ap.add_argument("--cho-giay", type=int, default=300)
     ap.add_argument("--tai-ve", default="", help="Ghi tep tieng ra duong nay.")
+    # D01/D02 (2026-09-13): cho phep nghiem thu speed/language end-to-end.
+    # Mac dinh None => KHONG gui tham so, giu y het hanh vi cu (luot thu tron).
+    ap.add_argument("--speed", type=float, default=None,
+                    help="Toc do hau ky [0.5, 2.0]. Bo qua = khong gui.")
+    ap.add_argument("--language", default=None, choices=["auto", "vi", "en"],
+                    help="Lan ngon ngu. Bo qua = khong gui.")
     a = ap.parse_args(argv)
 
     from platform_core import credit, users
@@ -90,6 +96,10 @@ def main(argv=None) -> int:
         _in(f"So du     : {truoc} credit")
         _in(f"Bao gia   : {gia_bao} credit (tran uoc cao — quyet toan theo giay that)")
         _in(f"Van ban   : {len(a.text)} ky tu")
+        if a.speed is not None:
+            _in(f"Speed     : {a.speed}")
+        if a.language is not None:
+            _in(f"Language  : {a.language}")
 
         if truoc < gia_bao:
             _in("")
@@ -98,11 +108,18 @@ def main(argv=None) -> int:
             _in("so tien, va so tien chi ghi them. Chu san pham nap qua duong da co.")
             return 3
 
+        params = {"text": a.text, "voice_id": "", "preset": "",
+                  "owner_id": u.id}
+        # Gui speed/language bang DUNG ten cong khai cua Public API (D01/D02),
+        # de luot thu nay di qua dung duong build_job_params -> chuan_hoa.
+        if a.speed is not None:
+            params["speed"] = a.speed
+        if a.language is not None:
+            params["language"] = a.language
         job = submit_with_credit(
             db, user_id=str(u.id), app_slug="ltt_voice",
             job_type="ltt_voice.synthesize",
-            params={"text": a.text, "voice_id": "", "preset": "",
-                    "owner_id": u.id},
+            params=params,
             admission_resource=tool.admission_resource,
             admission_slots=tool.admission_slots)
         db.commit()
@@ -171,6 +188,8 @@ def main(argv=None) -> int:
         return 1
 
     r = ket["result"] or {}
+    if not isinstance(r, dict):
+        r = {}
     _in(f"  audio_key   : {r.get('audio_key')}")
     _in(f"  duration_s  : {r.get('duration_s')}")
     _in(f"  credit_cost : {r.get('credit_cost')}   (bao gia {gia_bao})")
@@ -204,6 +223,35 @@ def main(argv=None) -> int:
         with open(a.tai_ve, "wb") as f:
             f.write(data)
         _in(f"\nDa tai ve: {a.tai_ve} ({len(data)} byte)")
+
+        # ── D01: doi chieu ti le keo gian ────────────────────────────────────
+        # `duration_s` handler bao ve la thoi luong GOC (do truoc khi keo gian —
+        # chot ① cua toc_do.py). Thoi luong tep thuc = goc / speed. Do bang
+        # ffprobe de chung minh speed da that su ap vao song am, khong chi di
+        # qua validation roi bi bo quen (dung cai bay 01/09 ma toc_do.py ghi).
+        if a.speed and abs(a.speed - 1.0) >= 0.01:
+            import subprocess
+            from platform_core.media import ffprobe_bin
+            try:
+                out = subprocess.run(
+                    [ffprobe_bin(), "-v", "error", "-show_entries",
+                     "format=duration", "-of",
+                     "default=noprint_wrappers=1:nokey=1", a.tai_ve],
+                    capture_output=True, text=True, timeout=30)
+                that = float((out.stdout or "0").strip() or 0)
+                goc = float(r.get("duration_s") or 0)
+                if goc > 0 and that > 0:
+                    ti_le = goc / that
+                    _in("")
+                    _in("DOI CHIEU TOC DO (D01):")
+                    _in(f"  thoi luong GOC (tinh tien) : {goc:.2f}s")
+                    _in(f"  thoi luong TEP that         : {that:.2f}s")
+                    _in(f"  ti le goc/that              : {ti_le:.3f} "
+                        f"(ky vong ~ speed {a.speed})")
+                    khop_speed = abs(ti_le - a.speed) <= 0.1
+                    _in(f"  {'KHOP' if khop_speed else 'LECH'} voi speed yeu cau")
+            except Exception as e:                         # noqa: BLE001
+                _in(f"  (khong do duoc thoi luong tep: {type(e).__name__}: {e})")
 
     print("\n__KET_QUA_JSON__" + json.dumps(
         {"job_id": job_id, **r, "da_tru": da_tru, "khop_so_tien": khop},

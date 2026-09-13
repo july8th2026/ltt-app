@@ -21,6 +21,32 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-09-13 — `speech.ltt` thêm `speed` và `language`
+
+**ADDED · không phá vỡ hợp đồng.** `contract_hash` của `speech.ltt` đổi
+(`e37638a1ec2e07be` → `70744552a508e43b`) vì `input_schema` có thêm hai trường,
+nhưng **không tích hợp đang chạy nào hỏng**: cả hai trường đều **tùy chọn** và
+có mặc định an toàn. Một caller không gửi chúng cư xử y hệt trước.
+
+⚠️ `tools/check_api_compat.py` gắn cờ mọi thay đổi `contract_hash` là BREAKING
+theo quy tắc thô (`BREAKING_TOOL_FIELDS`). Ở đây nhãn tự động ấy **quá chặt**:
+thêm trường *tùy chọn* là additive. Baseline đã `--accept`; không cần bump phiên
+bản vì không ai phải sửa gì.
+
+### `speed` (number, tùy chọn)
+
+Tốc độ phát, `1.0` là bình thường. Khoảng `0.5`–`2.0`. Đây là time-stretch
+**hậu kỳ** — không đổi cách model đọc, chỉ đổi tốc độ phát của tệp ra. Tính tiền
+theo thời lượng **gốc** (trước khi đổi tốc độ), nên chọn nhanh hơn không làm rẻ
+hơn. Ngoài khoảng ⇒ `400 invalid_request` (không silently clamp). Bỏ qua = `1.0`.
+
+### `language` (string, tùy chọn)
+
+`auto` (mặc định) đoán ngôn ngữ từ văn bản; `vi`/`en` ghi đè. Nếu ngôn ngữ (đoán
+hoặc khai) lệch làn của giọng ⇒ `400` với `voice_language_mismatch`. Đây là hợp
+đồng an toàn sản phẩm giữa làn văn bản và làn giọng, **không** phải tham số
+engine. Ngoài `{auto,vi,en}` ⇒ `400 invalid_request`. Bỏ qua = `auto`.
+
 ## 2026-09-13 — `max_tokens` quá thấp nay bị từ chối thay vì trả về rỗng
 
 **FIXED · không phá vỡ hợp đồng.** Hình dạng request không đổi một chữ

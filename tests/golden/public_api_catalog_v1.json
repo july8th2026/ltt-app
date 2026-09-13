@@ -328,6 +328,20 @@
             "examples": [
               "Adam"
             ]
+          },
+          "speed": {
+            "type": "number",
+            "description": "Playback speed. 1.0 is normal. Range 0.5 (half speed) to 2.0 (double speed). Applied as a post-synthesis time-stretch — it does not change how the model speaks, only how fast the output plays. Billing is based on the original duration before speed change. Omit or send 1.0 for normal speed.",
+            "examples": [
+              1.0
+            ]
+          },
+          "language": {
+            "type": "string",
+            "description": "Language lane for quality enforcement. 'auto' (default) detects language from the text. 'vi' or 'en' overrides detection. If the detected or declared language does not match the voice's lane, the request is rejected with voice_language_mismatch.",
+            "examples": [
+              "auto"
+            ]
           }
         },
         "additionalProperties": false,
@@ -350,7 +364,7 @@
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "e37638a1ec2e07be"
+      "contract_hash": "70744552a508e43b"
     },
     {
       "name": "story.storyboard",

@@ -573,10 +573,12 @@ Input:
 - `text` — string, **required**, max length 100000, What to say. Vietnamese, English, or both mixed. Up to 100,000 characters per call. You do NOT need to split long text yourself - it is segmented on sentence boundaries, spoken in several passes and joined back into one continuous audio file. For anything longer, use Projects, where each block is its own pass.
 - `voice_id` — string, max length 40, One of your own cloned voices, as returned when you created it. Stays valid across engine upgrades. Leave empty to use a built-in voice.
 - `preset` — string, max length 64, A built-in voice name. Ignored when voice_id is given; sending both is rejected.
+- `speed` — number, Playback speed. 1.0 is normal. Range 0.5 (half speed) to 2.0 (double speed). Applied as a post-synthesis time-stretch — it does not change how the model speaks, only how fast the output plays. Billing is based on the original duration before speed change. Omit or send 1.0 for normal speed.
+- `language` — string, Language lane for quality enforcement. 'auto' (default) detects language from the text. 'vi' or 'en' overrides detection. If the detected or declared language does not match the voice's lane, the request is rejected with voice_language_mismatch.
 
 Output: `audio_key` (artifact), `text` (string)
 
-Contract hash: `e37638a1ec2e07be`
+Contract hash: `70744552a508e43b`
 
 ### `story.storyboard`
 
