@@ -197,6 +197,7 @@ trên cổng 8000. Nền tảng này dùng cổng **8100**.
 | Tệp | Nội dung |
 |---|---|
 | **`docs/00_LTT_OPERATING_CONTRACT.md`** | **quy trình canonical — đọc trước** |
+| **`docs/VAN_HANH_THAT.md`** | **chương trình nghiệm thu thường trực.** Chủ dự án gọi bằng tên: *"check plan vận hành thật… và triển khai"*. Chạy lại sau mỗi lần nâng cấp và mỗi khi audit |
 | `AGENTS.md` | quy ước kỹ thuật: Windows, bố cục app, memory, hai phiên cùng cây |
 | `docs/DEVELOPMENT_WORKFLOW.md` | nhiều phiên song song, cây riêng, phạm vi |
 | `docs/16_CAP_NHAT_VA_DEPLOY.md` | đồng bộ → gate → ff → deploy → đẩy GitHub |
