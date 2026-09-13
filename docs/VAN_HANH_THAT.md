@@ -38,29 +38,46 @@ giới ấy: *sáu người đầu chạy — còn người thứ bảy thì sao
 py tools\cua_so_yen.py trang-thai
 
 # 1. Nền phải sạch, và production phải RẢNH (xem §5)
-# 2. Chạy kịch bản — bộ chạy tự chờ nền sạch trước mỗi cái
-py -m tools.nghiem_thu_van_hanh.chay_ma_tran --kich-ban J1,J2,J4,J5
-py -m tools.nghiem_thu_van_hanh.chay_ma_tran --kich-ban J7,J12        # công bằng
-py -m tools.nghiem_thu_van_hanh.chay_ma_tran --kich-ban J8,J9,J10,J11 # lệch giờ · whale · cắt
+# 2. Chạy kịch bản — bench.py, TRÊN MÁY B, chỉ stdlib
+python bench.py --kich-ban c1    --ra ket_c1.jsonl     # một lượt đơn, có cho_ranh()
+python bench.py --kich-ban c4    --ra ket_c4.jsonl     # bốn lượt đồng thời
+python bench.py --kich-ban whale --ra ket_whale.jsonl  # prefill khổng lồ + ba minnow lệch giờ
+python bench.py --kich-ban nap   --ra ket_nap.jsonl    # TTFT gồm cả nạp lạnh
 ```
 
-```bash
-# Do rieng do tre NHA SUAT khi khach cat (L-08), co doi chung san
-py -m tools.nghiem_thu_van_hanh.do_nha_suat --khoa <tep-khoa> --goc http://127.0.0.1:8100
-```
+`bench.py` ở `docs/ltt_llm_dual/artifacts/bench/bench.py`, ghi **từng dòng
+JSONL** (không đợi cuối lô) và nhịp tim 15 s ra `<ra>.nhip.txt`.
 
-Mỗi kịch bản ghi một `ket_J*.json` gồm từng job (mã, TTFB, thời lượng, số mảnh,
-số nhịp báo chờ) và **chuỗi lấy mẫu mỗi giây** (lease theo tài nguyên và theo
-tài khoản, số người đang chờ).
+## 2b. ⛔ BỘ ĐO LÀ THỨ MƯỢN, KHÔNG PHẢI THỨ TỰ XÂY
 
-⚠️ Bộ chạy **không tự chấm ĐẠT/TRƯỢT**. Nó chỉ sinh số. Đọc số là việc của người,
-theo bốn ngăn ở §4 — một bộ đo tự chấm điểm là một bộ đo sẽ tự bảo mình đúng.
+Chủ dự án chốt **14/09/2026**: *"bộ đo có sẵn trong hệ thống đã sử dụng và pass —
+xóa đo tự vẽ trùng lặp."*
+
+Ngày 13–14/09 tôi đã dựng một bộ đo riêng (`tools/nghiem_thu_van_hanh/`, sáu
+module, bốn tệp test). **Nó đã bị xoá.** Lý do không phải nó xấu mã — mà là:
+
+| | |
+|---|---|
+| một lượt chạy của nó sinh **bốn lỗi (V-01…V-04), cả bốn là lỗi của chính nó** | mỗi lỗi bộ đo tốn một lượt chạy production để phát hiện |
+| nó **trùng** `bench.py` ở phần cốt lõi | hai bộ đo cùng trả lời một câu là hai bộ đo có thể mâu thuẫn |
+| `bench.py` đã **chạy thật, đã pass, có baseline `.jsonl`** | thứ đã chứng minh thắng thứ mới viết |
+
+⇒ **Cần đo thêm một đại lượng thì thêm một kịch bản vào `bench.py`** (§6), không
+  mở một bộ đo thứ hai. Luật này áp cho mọi phiên sau.
+
+### Nợ đã ghi, KHÔNG tự ý trả bằng một bộ đo mới
+
+`bench.py` đo **engine máy B** qua llama-swap loopback (`:8280`). Nó **không** đi
+qua `API → admission → hàng đợi → credit` của máy A. Tầng ấy hiện đo bằng
+**test trong cây** (`tests/test_1240`…`test_1250`) cộng ba lượt nghiệm thu
+production đã ghi ở §7. Muốn đo tầng ấy bằng tải thật thì **đề xuất thành một
+kịch bản của `bench.py`**, và chỉ làm khi chủ dự án chốt.
 
 ## 3. Tài liệu con
 
 | | |
 |---|---|
-| **Ma trận kịch bản + tham số đo** | `docs/ltt_llm_dual/MA_TRAN_TEST_JOB_DAI.md` |
+| **Bộ đo** | `docs/ltt_llm_dual/artifacts/bench/bench.py` |
 | **Đường đi một lượt, ai gác chặng nào** | `docs/ltt_llm_dual/BAN_DO_DUONG_DI.md` |
 | Sổ lỗi của hệ con | `docs/ltt_llm_dual/SO_LOI_DO_TAI.md` |
 | Số suất · pool KV · ngưỡng whale | `apps/ltt_llm/ngan_sach.py` |
@@ -103,8 +120,9 @@ hệ"*. Lượt đo ấy phải vứt.
 
 ## 6. Mở rộng — ba luật không được vi phạm
 
-Thêm kịch bản là thêm **một dòng** vào `MA_TRAN` / `MA_TRAN_MO_RONG` trong bộ
-chạy. Ba luật dưới đây giữ cho chương trình còn nghĩa sau mười lần mở rộng.
+Thêm kịch bản là thêm **một nhánh** vào `bench.py` (xem khối `Kich ban da cai`
+ở đầu tệp ấy), **không** mở một bộ đo mới — §2b. Ba luật dưới đây giữ cho chương
+trình còn nghĩa sau mười lần mở rộng.
 
 ### Luật 1 — kịch bản phải CÓ KHẢ NĂNG HỎNG theo một cách nói lên điều gì đó
 

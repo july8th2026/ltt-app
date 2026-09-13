@@ -6,6 +6,12 @@
 > xuyên `API → job → admission → hàng đợi → runtime → GPU → stream → credit`.
 > Unit test **không** thay được nó: ngày 13/09/2026 ba bản vá L-08 qua sạch mọi
 > phép kiểm trong cây rồi hoá ra chưa từng chạm vào lượt thật.
+>
+> ⚠️ **14/09: bộ chạy riêng của ma trận này đã bị XOÁ** — chủ dự án chốt dùng
+> `bench.py` có sẵn thay vì một bộ đo tự xây trùng lặp (`VAN_HANH_THAT.md` §2b).
+> Tệp này ở lại vì nó là **bản ghi những gì đã đo được**: primitive 123,3 s và
+> hai lỗi L-11 · L-12 đều sinh ra từ đây. Muốn chạy lại ⇒ thêm kịch bản vào
+> `bench.py`, đừng dựng lại bộ chạy.
 
 ---
 
