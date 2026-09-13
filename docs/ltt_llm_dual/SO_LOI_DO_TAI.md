@@ -15,7 +15,7 @@
 | L-05 | **108/131 job loi 14 ngay** deu la `AmbiguousProviderError: mat ket noi sau khi bat dau gui` | DOC LAP | he qua cua L-01 | 48/48 done, 0 loi (p=0,3%) | ✅ **DONG 13/09** |
 | L-06 | cua DONG BO khong huy duoc: khach cat ket noi ma slot van bi giu toi khi sinh XONG | DOC LAP | HAI goc: thieu `ma_luot`, va `is_disconnected()` chet sau `BaseHTTPMiddleware` | loopback 16,54 -> **1,43 s**; qua Cloudflare van 16,8 s | **DONG o tang ma; con phan BIEN** |
 | L-07 | **MOT job anh la ha `ltt-3.8` VINH VIEN**: trong tai nha LLM roi ket o `nha_llm` | DOC LAP | cong render may B thieu `/v1/nha_comfy` (404) + `nha_llm` khong co duong lui | chu trinh di tron 182 s; huy giua chung lui trong 30 s | **DONG 13/09** |
-| L-08 | **cua STREAM ro lease VINH VIEN** khi khach cat giua chung: may B ranh ma suat van bi chiem | DOC LAP | `_ket_thuc` la `BackgroundTask` — chi chay khi phan hoi KET THUC | lease `mode=stream` song **643 s** va van dap nhip; may B `requests_processing=0` | **MO 13/09** |
+| L-08 | cua STREAM giu suat **>=643 s** sau khi khach cat: may B ranh ma suat van bi chiem | DOC LAP | `_ket_thuc` la `BackgroundTask` — chi chay khi phan hoi KET THUC | lease `mode=stream` song >=643 s, van dap nhip; may B `requests_processing=0` | **MO 13/09** |
 
 ## L-05 — mot MUC CAN DO, khong phai mot ket luan
 
@@ -70,7 +70,7 @@ Cloudflare khong bao cho origin biet khach da di; origin chay toi het.
    CSDL thay lease = 0 va so sach da quyet toan). **Chua co so** -- va mot con
    so tu mot bo do da lo ra sai thi khong duoc ghi vao day.
 
-## L-08 -- MO 13/09/2026: cua STREAM ro lease VINH VIEN
+## L-08 -- MO 13/09/2026: cua STREAM giu suat >= 643 giay sau khi khach di
 
 Tim ra khi di do cau hoi khac: *"cua stream co nha nhanh qua Cloudflare khong?"*.
 Cau tra loi hoa ra khong phai "nhanh" hay "cham" — la **khong bao gio**.
@@ -89,16 +89,24 @@ giay   lease  mayB_dang_sinh
 Theo doi tiep bang CSDL: lease `mode=stream`, `lop=tuong_tac` song toi **643
 giay** va van con do — voi `heartbeat_at` duoc cap nhat moi ~60 giay.
 
-### Vi sao bo thu don khong bat duoc
+### ⛔ MOT DINH CHINH CUA CHINH TOI, trong cung mot lan do
 
-`admission.py:49` thu hoi theo `heartbeat_at < cutoff`. Lease nay **VAN DAP
-NHIP**, nen no khong bao gio qua han. Ro nay la **vinh vien**, khong phai "cham
-nha".
+Toi da viet vao day chu **"VINH VIEN"**, dua tren hai su that DUNG: lease van dap
+nhip, va `admission.py:49` thu hoi theo `heartbeat_at < cutoff` — nen bo thu don
+**khong the** bat duoc no.
 
-⛔ Do la khac biet quan trong: mot lease qua han la mot lease se tu bien mat;
-   mot lease dang dap nhip la mot suat bi chiem cho toi khi ai do go tay. Ba
-   luot nhu the la `ltt_38_3090` het suat, va moi khach nhan 429 — dung hinh
-   dang L-07, chi la do mot nguyen nhan khac.
+Suy luan dung, ket luan SAI. Doc lai sau do: lease **da tu nha**, dau do giua
+643 s va ~700 s. Co mot co che khac ket thuc no (nhieu kha nang la han cua chinh
+luot stream), va toi khong biet no vi toi CHUA DO.
+
+⭐ Bai hoc ve hinh dang: *"bo thu don khong bat duoc"* chi chung minh **MOT**
+   duong ket thuc khong hoat dong. No khong chung minh **KHONG CON duong nao**.
+   Mot ket luan pho quat ("vinh vien") doi mot phep do pho quat, khong doi mot
+   suy luan tu mot co che.
+
+⇒ Loi khai dung: suat bi chiem **>= 643 giay** sau khi khach di. Nguong cong M
+  la **2 giay** — du de goi la mot loi ma khong can phong dai.
+
 
 ### Co che
 
@@ -131,8 +139,9 @@ chung"* — cung mot lop loi, mot buoc muon hon, va van con nguyen.
 ### Chua sua
 
 Ban sua cham vao vong doi cua `StreamingResponse` va cua bo sinh, tuc cham vao
-moi luot stream cua nen tang. Ghi day voi so do san: **643 s va con**, so voi
-nguong cong M la 2 s.
+moi luot stream cua nen tang. Ghi day voi so do san: **>= 643 s**, so voi nguong cong M la 2 s. Va mot cau
+hoi con no: **cai gi** ket thuc no o quanh giay 700 — biet duoc no la biet ban
+sua phai dat o dau.
 
 ## L-07 -- DONG 13/09/2026, chung minh tren duong that
 
