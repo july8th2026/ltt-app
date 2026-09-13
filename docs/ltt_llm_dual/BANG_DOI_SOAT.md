@@ -70,17 +70,17 @@ token, ghi nguồn từng đoạn). Nên L **không thiếu thời gian, nó thi
 | **A** | Tĩnh: hai ID, UUID, hash engine | ✅ | test 1200·1210·1220·1233 |
 | **B** | C1 LTT-3.8 ≥ 90 % mốc b10883 | ✅ | đo ở P3 |
 | **C** | C1 LTT-3.5 text + ảnh | ✅ | đo ở P3 |
-| **D** | C3 LTT-3.8 | ⚠️ **đo lần 1** | 93,7 tok/s tổng, scaling 1,88×. Chưa chốt — §7 dưới nói vì sao |
-| **E** | C4 LTT-3.5 | ⬜ | ngưỡng `2 × C1` chưa chốt số |
+| **D** | C3 LTT-3.8 | ✅ **ĐẠT 13/09** | 90,3 tok/s qua A · ngưỡng chốt **≥ 78** (§7b) |
+| **E** | C4 LTT-3.5 | ✅ **ĐẠT 13/09** | 111,2 tok/s qua A · ngưỡng chốt **≥ 99** (§7b) |
 | **F** | Hai model đồng thời ≥ 85 % | ✅ **ĐẠT 13/09** | 4 vòng: 0,99× · 1,08× · 1,15× · 1,10× (ngưỡng ≥ 85 % ⇔ ≤ 1,18×); `pg_locks` 0/369 |
 | **G** | Ngữ cảnh hỗn hợp, `requests_deferred=0` | ✅ **ĐẠT 13/09** | 4 số 0; ngữ cảnh thật 56.967 tok |
-| **H** | 3.8 ngữ cảnh dài + cổng MTP | ⚠️ | đích **221.184 / `-np 3`** (L-14), không phải 262.144/`-np 4` |
+| **H** | 3.8 ngữ cảnh dài + cổng MTP | ✅ **ĐẠT 13/09** | **166.707 token thật** phục vụ xong trong 245,5 s qua cửa job; 0 OOM, 0 cắt ngầm. §7h |
 | **I** | Residency: ảnh ↔ LLM xen kẽ | ✅ **ĐẠT 13/09** | chu trình đủ 182 s; huỷ giữa chừng lui 30 s. §7g |
 | **J** | 3.5 chạy khi 3090 vẽ ≥ 90 % | ✅ **ĐẠT 13/09** | 111,5 vs 111,2 tok/s = **100 %** |
 | **K** | Kho ấm: nạp lạnh vs ấm | ✅ **ĐẠT 13/09** | 9B: 12,93/0,43 s · 27B: 18,29/0,92 s; đối chứng hằng số 25 s trong mã |
 | **L** | Đa tệp | ⏸️ **HOÃN** | thuộc **Spec 2** (chưa tồn tại) — chạy cùng nghiệm thu Spec 2. Lý do đầy đủ ở §3 |
 | **M** | Hủy 6 trạng thái, slot trống ≤ 2 s | ⚠️ **đạt ở tầng mã** | huỷ job 0,33/0,36 s · client cắt: **1,43 s** thẳng máy A, 16,8 s qua Cloudflare (biên) |
-| **N** | 7 lỗi hạ tầng | ⬜ | |
+| **N** | 7 lỗi hạ tầng | ✅ **ĐẠT 13/09 — 7/7** | ảnh hỏng→L-09 · UUID thiếu→vá `gpu_uuid` · llama-swap restart · llama-server chết (không bán sai hàng) · ComfyUI bật không lên · nạp lại hỏng→**L-10** · mất mạng A↔B. §7i |
 | **O** | Tiền: 7 tình huống, 0 thu hai lần | ✅ **ĐẠT 13/09** | 4 hold / 2 refund / 2 settle khớp đôi; 0 khoản treo |
 | **P** | Rò lease generator, 5 điểm | ✅ **ĐẠT 13/09** | `execution_leases` về 0 sau cả 4 kịch bản |
 | **Q** | Soak hỗn hợp | ⬜ | đòi A–P qua trước |
@@ -227,6 +227,35 @@ mất hay một khoá bị đặt lại, mà không đỏ vì nhiễu ±3 % đo 
 ⭐ **Vì sao cả hai đường.** Một mình số qua-A nói *khách chờ bao lâu* nhưng không
 nói **hỏng ở đâu**. Có cặp số thì một lần đỏ tự phân loại: cả hai cùng tụt ⇒
 engine/GPU; chỉ qua-A tụt ⇒ nền tảng máy A.
+
+### ✅ NGƯỠNG ĐÃ CHỐT 13/09 — và vì sao chốt được dù §7b dưới vẫn còn ngỏ
+
+| cổng | đo qua | tệ nhất 13/09 | **ngưỡng CHỐT** |
+|---|---|---:|---:|
+| **D** `ltt-3.8` | máy A | 87,0 | **≥ 78** |
+| **E** `ltt-3.5` | máy A | 110,8 | **≥ 99** |
+| D bạn đồng hành | thẳng B | 94,8 | ≥ 85 |
+| E bạn đồng hành | thẳng B | 114,2 | ≥ 103 |
+
+Cái chặn duy nhất là: *nếu chênh lệch −10/−15 % so với 12/09 là một hồi quy
+THẬT, thì chốt ngưỡng ở "10 % dưới số hôm nay" chính là hợp thức hoá nó.*
+
+Đo lại C1 ngày 13/09 bằng **một bộ đo khác** (client đơn giản, không phải
+GuideLLM), 3 vòng mỗi model, qua máy A:
+
+| model | hôm nay | mốc 13/09 | lệch |
+|---|---:|---:|---:|
+| `ltt-3.8` | 54,2 | 47,0 | **+15,3 %** |
+| `ltt-3.5` | 57,4 | 56,2 | **+2,1 %** |
+
+⇒ **Không có hồi quy nào đang diễn ra** — hôm nay ≥ 13/09 ở cả hai model. Nên
+  ngưỡng đặt ở 10 % dưới mốc 13/09 **không thể** ghim một hồi quy thành "bình
+  thường": hiệu năng hiện tại nằm **trên** mốc ấy, không phải dưới.
+
+⚠️ Và đây là giới hạn của chính phép đo trên, nói ra để không ai đọc quá: nó so
+   **hai bộ đo khác nhau, hai đề khác nhau** — đúng cái bẫy mục ngay dưới đặt
+   tên. Nó KHÔNG giải được câu hỏi 12/09, chỉ loại trừ "đang tụt". Câu hỏi ấy
+   vẫn **mở**.
 
 ### ⚠️ Một chênh lệch CHƯA giải thích được — đừng lấp nó
 
@@ -458,3 +487,92 @@ Chuỗi **bỏ qua `anh` hoàn toàn** — đúng thiết kế: đường lui 1 
 ⭐ Năm mục L-01…L-05 đều đóng, và mỗi mục đóng bằng một **phép đo trên đường
 thật**, không bằng một bản vá đã commit. L-06 là mục **mới**, do chính cổng M
 tìm ra — đó là điều một cổng nghiệm thu sinh ra để làm.
+
+
+## 7h. Cổng H — ngữ cảnh dài: **ĐẠT**, và nửa còn thiếu là nửa *phục vụ*
+
+| | |
+|---|---|
+| ngữ cảnh **thật** | **166.707 token** (đọc từ `usage`, không ước lượng) |
+| kết cục | `succeeded` sau **245,5 s** qua cửa job |
+| OOM / "context exceeded" | **0** |
+| cắt ngầm | lệch 2 % so ước tính — chỉ là phần khuôn hội thoại |
+
+### ⛔ Vì sao KHÔNG dùng `llama-batched-bench` như kế hoạch cũ
+
+Nó **nạp một bản sao thứ hai** của model — một cấu hình không ai phục vụ khách
+bằng. Trong khi `/running` xác nhận máy chủ đang chạy **đúng** cấu hình triển
+khai (`-c 221184 -np 3`, KV q4_0, `--spec-type draft-mtp`). Đo thẳng đường thật
+thì đo đúng thứ khách đi qua, và **không cần cửa sổ bảo trì**.
+
+### ⭐ Bảng VRAM 15 dòng đo *lúc nạp*; mục này đo *lúc phục vụ*
+
+`10_BENCHMARK_P3.md` tự cảnh báo: *"lượt thăm dò chỉ dài vài trăm token nên phần
+KV bị đẩy sang RAM chủ **chưa bị đọc tới**"*. Đọc bảng ấy rồi tuyên bố H đạt là
+lặp lại sự cố 22/08 — card bẩn vẫn `/health` xanh. Mục này **đọc tới** phần đó.
+
+### Ba trần xếp chồng — và con số khách thật sự dùng được
+
+```
+1. thân yêu cầu API công khai   1 MiB
+2. trần khai cho khách          ltt-3.8: 171.458 · ltt-3.5: 209.141 token
+3. `-c` của engine              221.184
+```
+
+⚠️ Tôi đã suýt ghi "221K không với tới được" — **sai**. Nền tảng chưa bao giờ
+   quảng cáo 221K: nó khai **171.458** cho `ltt-3.8` (engine 221.184 trừ phần
+   dành cho đầu ra 32.768 cộng biên). Một prompt 195.696 token bị từ chối là hệ
+   thống làm **đúng**, không phải một khuyết tật.
+
+### 🔴 Khuyết tật thật tìm ra ở đây: cửa job nuốt mất lý do
+
+Cùng một lỗi "vượt trần", hai cửa nói hai kiểu:
+
+| cửa | khách nhận được |
+|---|---|
+| đồng bộ | `413` + `limit_name: body_bytes` + số đo — **hành động được** |
+| **job** | `{"message": "The job could not be completed."}` — **không biết vì sao** |
+
+Log máy A có đủ (`VuotNganSachError: yeu cau vuot tran cua cong`), nhưng nó
+không tới tay người trả tiền. **Chưa sửa** — ghi vào việc còn nợ.
+
+### ⚠️ Và một bài học về chính bộ đo
+
+Hiệu chuẩn lần đầu dùng `NEN * 200` — một **chuỗi lặp** — ra 5,713 ký tự/token
+và tôi kết luận "2,5 là ước lượng cao có chủ ý". **Sai**: BPE nén chuỗi lặp rất
+tốt. Đo lại trên văn bản **không lặp** (mỗi câu mang một bộ số khác nhau) ra
+**2,453 ký tự/token** — lệch −2 % so với `KY_TU_MOI_TOKEN = 2.5`. Tức hằng số
+ấy **chính xác**, không bảo thủ.
+
+⛔ Điều đáng nói: cảnh báo *"chuỗi lặp nén rất tốt ⇒ tỉ lệ sai lệch"* do chính
+   tôi viết trong docstring của bộ đo, rồi tôi vi phạm nó ở ngay dòng dưới.
+
+
+## 7i. Cổng N — bảy lỗi hạ tầng: **7/7 ĐẠT**
+
+| # | tình huống | kết quả |
+|---|---|---|
+| 1 | tệp ảnh hỏng | ⇒ tìm ra **L-09** (đã sửa) |
+| 2 | UUID GPU thiếu | ⇒ vá `gpu_uuid` fail-closed |
+| 3 | llama-swap khởi động lại | ĐẠT |
+| 4 | llama-server chết | ĐẠT — **không bán sai hàng** (D-010) |
+| 5 | ComfyUI bật không lên | ĐẠT — đường lui L-07 chạy thật, 42,2 s |
+| 6 | nạp lại hỏng | ⇒ tìm ra **L-10** (đã sửa, đã nghiệm thu máy thật) |
+| 7 | mất mạng A↔B | ĐẠT |
+
+### Tình huống 7 — mất mạng, đo 13/09
+
+Chặn inbound `192.168.2.17 → 8199,8299` trên máy B; **SSH cổng 22 giữ nguyên**
+làm đường hoàn nguyên độc lập với thứ đang bị chặn.
+
+| mệnh đề | kết quả |
+|---|---|
+| khách nhận mã lỗi có hạn | **503** trong 21,5 s (cả hai model) |
+| KHÔNG bán sai hàng (D-010) | ĐẠT — `model` trả về rỗng, không đổi sang model kia |
+| trọng tài fail-closed | giữ nguyên `llm`, **không phát lệnh nào**, 2 dòng log |
+| không rò lease | `execution_leases` rỗng suốt |
+| nối lại thì **tự** phục hồi | 1,5 s / 1,4 s, không cần tay người |
+
+⭐ Cổng N là cổng duy nhất **đi tìm lỗi** thay vì xác nhận số, và nó sinh ra
+   **ba** mục sổ lỗi (L-09, L-10, và vá `gpu_uuid`). Hai trong ba là khuyết tật
+   mà không một phép đo hiệu năng nào chạm tới được.
