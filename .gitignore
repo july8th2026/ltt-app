@@ -197,3 +197,7 @@ docs/CHATLTT_V3/harness/p01_sieu_du_lieu.json
 # axe-core tai ve (566 KB), ghim phien ban o tools/vendor_a11y/axe.version.
 # Tai lai: py tools/check_a11y.py --tai-axe
 tools/vendor_a11y/axe.min.js
+
+# Khoa API cua bo do VAN HANH THAT — song o C:\LTTPlatform\secrets\, khong bao gio trong kho
+tools/nghiem_thu_van_hanh/doi_khoa/
+tools/nghiem_thu_van_hanh/ket_*.json

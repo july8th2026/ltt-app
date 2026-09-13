@@ -27,7 +27,17 @@ sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 #: Goc kho — suy tu vi tri tep nay, KHONG ghim cung mot worktree.
 GOC_CAY = str(pathlib.Path(__file__).resolve().parents[2])
 THU_MUC = pathlib.Path(__file__).resolve().parent
-DOI_KHOA = THU_MUC / "doi_khoa"
+#: 🔴 KHOA API SONG — NAM NGOAI KHO, KHONG BAO GIO TRONG `tools/`.
+#:
+#: ⛔ Ngay 13/09/2026 toi da chep sau khoa live vao `tools/nghiem_thu_van_hanh/
+#:    doi_khoa/` cho tien. Chung chua bi commit, nhung mot lenh `git add` rong
+#:    tay la chung len GitHub. `CLAUDE.md` cam commit `secrets/` — va cach lach
+#:    cam ay khong phai la mot y do xau, chi la mot duong dan tien tay.
+#:
+#: ⭐ `C:\LTTPlatform\secrets\` la cho dung: da co ACL, va deploy loai tru no
+#:    (`/XD secrets`) nen no khong bao gio len production.
+DOI_KHOA = pathlib.Path("C:" + chr(92) + "LTTPlatform" + chr(92) + "secrets"
+                        + chr(92) + "van_hanh_khoa")
 GOC_API = "http://127.0.0.1:8100"
 
 #: Job DAI chuan — do 13/09: 123,3 s / 7.955 manh tren ltt-3.8 khi chay mot minh.
@@ -178,7 +188,19 @@ def J(nhan, khoa, model, **kw) -> dict:
 
 
 def doc_khoa(ten: str) -> str:
-    return (DOI_KHOA / f"{ten}.key").read_text(encoding="utf-8").strip()
+    tep = DOI_KHOA / f"{ten}.key"
+    # ⛔ CHAN CO HOC, khong phai mot loi nhac. Mot lenh cam bang van ban
+    #    khong ngan duoc ai chep khoa vao kho — mot ngoai le thi ngan duoc.
+    goc = pathlib.Path(GOC_CAY).resolve()
+    if goc == tep.resolve() or goc in tep.resolve().parents:
+        raise SystemExit(
+            f"TU CHOI: khoa API nam TRONG kho ({tep}). "
+            f"Chuyen sang {DOI_KHOA} roi chay lai.")
+    if not tep.is_file():
+        raise SystemExit(
+            f"khong thay khoa {tep}. Tao bang: "
+            "py tools/khoa_thu_api.py --email <...> --che-do live")
+    return tep.read_text(encoding="utf-8").strip()
 
 
 #: (ten kich ban) -> danh sach (nhan, ten_khoa, model)
