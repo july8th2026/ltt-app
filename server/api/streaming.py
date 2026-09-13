@@ -799,156 +799,83 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
             "older turns and retry with a shorter conversation.",
             limit_name="input_tokens",
             limit_value=_tran_vao_cua_model(ten)) from None
-    if tk.dung_phong_cho:
-        # 🔴 CHỐT GIAO DỊCH CỦA REQUEST TRƯỚC KHI STREAM — cùng bài học của
-        #    `chuan_bi` (đường cũ commit trước khi chạm model). Generator mở phiên
-        #    MỚI để ghi dòng chờ và giữ tiền; để giao dịch của request (rate-limit,
-        #    idempotency) còn mở là SQLite "database is locked" và PostgreSQL giữ
-        #    khoá hàng suốt lúc chờ.
-        db.commit()
-        return StreamingResponse(
-            cua_luong.luong_co_cho(tk, loi_sse=su_kien_loi.loi_sse,
-                                   trang_thai=getattr(request, "state", None),
-                                   timeout_s=MO_LUONG_GIAY),
-            media_type="text/event-stream", headers=_SSE)
+    # ⛔ MỌI model của `text.chat` ĐỀU khai ngân sách KV ⇒ mọi lượt đi phòng chờ.
+    #    Đo 13/09/2026 bằng chính bản khai:
+    #        ltt-3.8 -> ltt_38_3090, 3 suất, pool 221.184
+    #        ltt-3.5 -> ltt_35_5060, 3 suất, pool 262.144
+    #
+    # 🔴 TRƯỚC 13/09 Ở ĐÂY CÒN MỘT "ĐƯỜNG CŨ" cho tool không khai ngân sách —
+    #    di tích của thời một card, một lượt, chưa có hàng đợi. Nó **không thể
+    #    với tới được** từ cửa này, và ba bản vá liên tiếp của L-08 đều rơi đúng
+    #    vào nó: đúng về kỹ thuật, và chưa một lần chạm vào lượt thật.
+    #
+    # ⇒ Đã gỡ. Một cửa thật, nên mọi lớp bảo vệ gắn MỘT lần là áp cho mọi lượt.
+    #   `test_1248` chốt rằng chỉ còn một, và rằng nó đủ ba lớp.
+    if not tk.dung_phong_cho:
+        # Hỏng ỒN ÀO thay vì lặng lẽ rơi vào một đường không được bảo vệ.
+        raise service_unavailable(
+            "This model is not configured for admission control.")
 
-    # ── Tool KHÔNG khai ngân sách KV: đường cũ, nguyên vẹn ────────────────────
-    try:
-        cb = cua_luong.chuan_bi(
-            db, user_id=principal.user_id, tool_name=TOOL_CHAT,
-            than={**than, "model": ten}, duong=duong)
-        luot = cua_luong.mo_thuong_nguon(
-            cb, timeout_s=MO_LUONG_GIAY,
-            trang_thai=getattr(request, "state", None))
-    except cua_luong.ThamSoSai as e:
-        raise _bao_400(str(e), than) from None
-    except cua_luong.ThieuCredit as e:
-        raise insufficient_credit(str(e)) from None
-    except cua_luong.DangBan as e:
-        if e.nguon == "suat":
-            raise limits.execution_busy(e.tai_nguyen) from None
-        # ⛔ BẬN ≠ HỎNG. 503 + Retry-After, và khách KHÔNG bị thu tiền (facade
-        #    đã hoàn và đã đếm vào `CAPACITY_REFUSED`).
-        #
-        # 🔴 KHÔNG nhét `e.ly_do` vào thân trả về. Nó mang văn bản THÔ của máy B
-        #    (`_ly_do_ban` trả tới 300 ký tự thân 429) và, khi cổng bên đó khai
-        #    `vram_dung_mb`, nó ghép thẳng `"VRAM dang dung NNN MB"` vào câu.
-        #    Tức một khách API bị 503 đọc được **công suất còn lại của máy B**.
-        #
-        # ⭐ Và bỏ nó đi KHÔNG mất gì cho người trực: `runtime_noi_bo/luong.py`
-        #    đã `log.warning("BAN luong: ... ly_do=%s")` **trước** khi `raise`.
-        #    Câu phải hỏi ở mọi bản vá bịt rò là *"bịt rồi, người trực còn thấy
-        #    gì?"* — ở đây câu trả lời là "thấy đủ, ở nhật ký, đúng chỗ".
-        #
-        # ⛔ GIỮ NGUYÊN tiền tố "The model is busy right now":
-        #    `test_360::test_MOI_nhanh_ban_deu_nuoi_CAPACITY_REFUSED` neo vào
-        #    ĐÚNG chuỗi ấy để tìm mọi nhánh bận. Đổi nó thì vòng lặp của phép
-        #    kiểm không vào lần nào, danh sách rỗng, và nó XANH RỖNG — một bản
-        #    vá bảo mật tự tháo một bánh cóc. Xem **Bẫy 31**.
-        raise service_unavailable("The model is busy right now.",
-                                  retry_after=e.thu_lai_sau_s) from None
-    except cua_luong.KhongMoDuoc as e:
-        if e.qua_dai:
-            # 413 context_length_exceeded: ngữ cảnh vượt trần đầu-vào của máy B.
-            # KHÔNG phải hỏng tạm — client PHẢI nén/bỏ lượt cũ rồi thử lại; retry
-            # nguyên si chỉ tạo bão (đúng cái Codex đã dính: hội thoại/phản hồi
-            # dài → 413 bị dịch nhầm 503 → "im lặng"). Trả 413 để Codex/Claude
-            # tự tóm tắt hội thoại.
-            log.warning("ngu canh qua dai user=%s: %s",
-                        principal.user_id[:8], e.ly_do)
-            # 🔴 `e.ly_do` ở nhánh này là `f"may B tra 413: {than_loi[:200]}"`
-            #    — 200 ký tự thân thô của máy B. Đã ghi ở `log.warning` ngay
-            #    trên, nên gỡ khỏi thân trả về không mất chẩn đoán nào.
-            #
-            # ⭐ Thứ khách HÀNH ĐỘNG ĐƯỢC thì giữ nguyên: `limit_name` và
-            #    `limit_value` nói trần là bao nhiêu, câu chữ nói phải làm gì.
-            #    Một bản vá cắt luôn hai trường ấy sẽ "sạch" mà làm khách hết
-            #    đường xử lý — đó là bịt rò bằng cách bịt cả sự hữu ích.
-            raise payload_too_large(
-                "The input exceeds the model's context limit. Drop or summarise "
-                "older turns and retry with a shorter conversation.",
-                limit_name="input_tokens",
-                # ⛔ TRAN THEO MODEL, khong phai tran chung (P08 F-02).
-                #    `qwen38-vision` chay `-c 65536` nen tran vao that cua no
-                #    nho hon `TOKEN_VAO_TRAN` mot nua.
-                limit_value=_tran_vao_cua_model(ten)) from None
-        raise service_unavailable("The model could not serve this request.") from None
+    # 🔴 CHỐT GIAO DỊCH CỦA REQUEST TRƯỚC KHI STREAM. Generator mở phiên MỚI để
+    #    ghi dòng chờ và giữ tiền; để giao dịch của request (rate-limit,
+    #    idempotency) còn mở là SQLite "database is locked" và PostgreSQL giữ
+    #    khoá hàng suốt lúc chờ.
+    db.commit()
 
     from platform_core.llm import admission
 
-    # 🔴 HAI VIEC PHAI CHAY KHI PHAN HOI KET THUC, KE CA KHI THAN CHUA
-    #    TUNG DUOC DOC: nha suat, va **quyet toan tien**.
-    #
-    #    Truoc 09/09 chi co ve suat. Ve tien nam trong `finally` cua
-    #    generator `_phat`, va mot `finally` chi ton tai SAU khi generator
-    #    chay dong dau tien. Khach ngat truoc byte dau => khoi `try` chua
-    #    tung duoc vao => khoan `hold` nam lai VINH VIEN, va cua nay khong
-    #    tao `Job` nen khong bo quet nao nhin thay no.
-    #
-    # ⭐ Day dung la bai hoc 31/08 cua may B (`llm_gateway/api.py`), chi la
-    #    hoi do no duoc hoc cho SUAT chu khong cho TIEN.
-    def _ket_thuc() -> None:
-        try:
-            cua_luong.dam_bao_quyet_toan(luot)
-        finally:
-            if cb.lease_id:
-                admission.release_by_id(cb.lease_id)
+    # 🔴 Ô NHỚ: `lease_id` và `luot` chỉ SINH RA BÊN TRONG generator, sau khi
+    #    xếp hàng xong — mà `StreamingResponse` phải dựng TRƯỚC đó. Ba đường nhả
+    #    dưới đây đọc qua ô này chứ không chụp sẵn được.
+    so_tay: dict = {}
+
+    def _dong_nguon() -> None:
+        """Đóng cửa ra mạng tới máy B — bảo nó THÔI SINH, không chỉ thôi đọc."""
+        luot = so_tay.get("luot")
+        dong = getattr(luot, "dong_nguon", None) if luot is not None else None
+        if callable(dong):
+            dong()
 
     def _nha_suat() -> None:
-        """LỚP 1: nhả suất theo tín hiệu đứt, không chờ đường nào tháo hộ.
+        """LỚP 1: nhả suất theo tín hiệu đứt.
 
-        `release_by_id` idempotent (`release` trả `False` nếu dòng đã biến mất),
-        nên gọi chồng với `_ket_thuc` và với `keep_alive.finally` đều vô hại.
+        ⛔ Khách cắt lúc còn XẾP HÀNG ⇒ `so_tay` rỗng ⇒ KHÔNG nhả gì. Chưa giành
+           được suất nào thì nhả bừa là nhả **suất của người khác**.
         """
-        if cb.lease_id:
+        cb = so_tay.get("cb")
+        if cb is not None and cb.lease_id:
             admission.release_by_id(cb.lease_id)
 
+    def _ket_thuc() -> None:
+        """Hai việc phải chạy kể cả khi thân chưa từng được đọc: TIỀN và SUẤT."""
+        luot = so_tay.get("luot")
+        try:
+            if luot is not None:
+                cua_luong.dam_bao_quyet_toan(luot)
+        finally:
+            _nha_suat()
+
     async def _ket_thuc_che_chan() -> None:
-        """🔴 Che chắn `BackgroundTask` — bản vá cộng đồng, ta tự áp ở phía mình.
+        """Che chắn `BackgroundTask` — bản vá cộng đồng, ta tự áp ở phía mình.
 
-        `starlette/background.py` bản 1.3.1 KHÔNG che chắn:
-
-            async def __call__(self):
-                ...
-                await run_in_threadpool(self.func, ...)
-
-        Nếu cancel scope bao quanh đã bị huỷ (đúng cảnh `Kludex/starlette#1438`
-        mô tả: *chỉ xảy ra khi có ít nhất một `BaseHTTPMiddleware` trong chuỗi*
-        — ta có bốn), lệnh `await` ấy vỡ ở checkpoint **trước khi luồng kịp khởi
-        động**, và `_ket_thuc` không chạy một dòng nào: tiền chưa quyết toán,
-        suất chưa nhả.
-
-        Bản vá `CancelScope(shield=True)` được đề xuất ở chính #1438 nhưng chưa
-        bao giờ được gộp (issue đóng qua PR #1715, sửa `BaseHTTPMiddleware`).
-        Ta sở hữu chỗ gọi, nên áp ở đây.
+        `starlette/background.py` (1.3.1) KHÔNG bọc `CancelScope(shield=True)`.
+        Với `BaseHTTPMiddleware` trong chuỗi — ta có bốn tầng — cancel scope bao
+        quanh có thể đã bị huỷ, và `await run_in_threadpool(...)` vỡ ở checkpoint
+        ĐẦU, trước khi luồng kịp khởi động: tiền chưa quyết toán, suất chưa nhả.
+        Đúng cảnh `Kludex/starlette#1438` mô tả. Bản vá `shield` được đề xuất ở
+        chính issue ấy nhưng chưa bao giờ được gộp (đóng qua PR #1715).
         """
         with anyio.CancelScope(shield=True):
             await run_in_threadpool(_ket_thuc)
 
-    nen = BackgroundTask(_ket_thuc_che_chan)
-    # 🔴 L-08 — BA LOP NHA SUAT. Doc `docs/ltt_llm_dual/SO_LOI_DO_TAI.md` truoc
-    #    khi dong vao day: BA ban va "hien nhien" da duoc thu, va ca ba deu hong
-    #    vi cung mot ly do — chung treo viec nha mot suat GPU vao mot cho ma
-    #    Starlette KHONG HE BAO DAM.
-    #
-    #    1. `_nha_suat` qua `khi_dut`   -> +0,05 s   (duong CHINH)
-    #    2. nhip tim chung minh TIEN TRIEN -> tran im lang (luoi)
-    #    3. `reclaim_expired`           -> 20 phut   (chan cuoi)
-    #
-    # ⛔ Vi sao khong tin mot lop nao trong so nay MOT MINH:
-    #    · `starlette/responses.py:250` chi `async for`, KHONG BAO GIO `aclose()`
-    #      ⇒ `finally` cua async generator chay khi Python thu gom, do duoc
-    #      **~225 s** tren may that.
-    #    · `starlette/background.py` KHONG che chan `BackgroundTask` ⇒ xem
-    #      `_ket_thuc_che_chan` ngay tren.
-    #    · Truoc ban nay, nhip tim dap VO DIEU KIEN nen lop 3 khong bao gio khai
-    #      hoa — do la ly do lease **bat tu** chu khong phai chi cham.
-    #
-    # ⭐ Thu tu trong `bat_dong_bo_hoa.finally` la bat bien: DONG KET NOI truoc,
-    #    NHA SUAT sau. Nha truoc thi nguoi thu bay duoc vao trong khi GPU van ban.
     return StreamingResponse(
-        cua_luong.bat_dong_bo_hoa(luot.luong, luot.dong_nguon, _nha_suat),
-        media_type=luot.content_type, headers=_SSE, background=nen)
+        cua_luong.bat_dong_bo_hoa(
+            cua_luong.luong_co_cho(tk, loi_sse=su_kien_loi.loi_sse,
+                                   trang_thai=getattr(request, "state", None),
+                                   timeout_s=MO_LUONG_GIAY, so_tay=so_tay),
+            _dong_nguon, _nha_suat),
+        media_type="text/event-stream", headers=_SSE,
+        background=BackgroundTask(_ket_thuc_che_chan))
 
 
 # `_phat` / `_quyet_toan` / `_hoan` đã HẠ xuống

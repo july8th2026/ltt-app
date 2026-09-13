@@ -235,11 +235,20 @@ def test_luoi_chay_TRUOC_viec_nha_suat_va_nha_suat_luon_chay():
     ham = next((n for n in ast.walk(cay)
                 if isinstance(n, ast.FunctionDef) and n.name == "_ket_thuc"), None)
     assert ham is not None, "khong tim thay `_ket_thuc`"
-    thu = ham.body[0]
-    assert isinstance(thu, ast.Try), "`_ket_thuc` phai la try/finally"
+
+    # ⚠️ TIM `Try`, DUNG LAY `body[0]`. Ban truoc lay thang `ham.body[0]` va no
+    #    DO ngay khi ham co them mot docstring — tuc phep kiem chot VI TRI DONG
+    #    thay vi chot BAT BIEN no dat ten. Mot ve nhu the phat nguoi viet giai
+    #    thich ma khong bat duoc loi that nao.
+    thu = next((n for n in ham.body if isinstance(n, ast.Try)), None)
+    assert thu is not None, "`_ket_thuc` phai co mot khoi try/finally"
     assert "dam_bao_quyet_toan" in ast.dump(ast.Module(body=thu.body, type_ignores=[]))
-    assert "release_by_id" in ast.dump(
-        ast.Module(body=thu.finalbody, type_ignores=[])), (
+
+    # Nha suat co the la loi goi thang `release_by_id`, hoac qua `_nha_suat` —
+    # mot cho nghen duy nhat cho ca hai duong nha. Chap nhan ca hai cach VIET,
+    # nhung bat buoc no o trong `finally`.
+    cuoi = ast.dump(ast.Module(body=thu.finalbody, type_ignores=[]))
+    assert "release_by_id" in cuoi or "_nha_suat" in cuoi, (
         "nha suat phai nam trong `finally` — mot loi o duong tien khong duoc "
         "lam ket suat (do dung la su co 31/08)")
 

@@ -524,7 +524,8 @@ def cho_suat_dong_bo(*, tai_nguyen: str, so_suat: int, token_pool: int,
 def luong_co_cho(tk: TienKiem, *, loi_sse: Callable[[str, str, str], bytes],
                  trang_thai=None, timeout_s: float = MO_LUONG_GIAY,
                  han_s: Optional[float] = None, nhip_s: Optional[float] = None,
-                 dong_ho=None, ngu=None) -> Iterator[bytes]:
+                 dong_ho=None, ngu=None,
+                 so_tay: Optional[dict] = None) -> Iterator[bytes]:
     """Byte của cửa `/api/v1` stream: nhịp tim khi chờ → luồng máy B → quyết toán.
 
     Sau 200 thì không còn mã HTTP: mọi kết cục xấu là MỘT khối lỗi đúng khuôn
@@ -546,6 +547,19 @@ def luong_co_cho(tk: TienKiem, *, loi_sse: Callable[[str, str, str], bytes],
                     ly_do = next(cho)
                 except StopIteration as ket:
                     cb = ket.value
+                    # 🔴 CÔNG BỐ SUẤT NGAY KHI VỪA GIÀNH ĐƯỢC (L-08).
+                    #
+                    #    Bên gọi dựng `StreamingResponse` **trước** khi generator
+                    #    này chạy dòng đầu, nên lúc ấy chưa có `lease_id` để chụp
+                    #    vào đường nhả. Ô nhớ này là cách duy nhất để đường nhả
+                    #    (`khi_dut` + `BackgroundTask`) biết phải nhả cái gì.
+                    #
+                    # ⛔ GÁN Ở ĐÂY, KHÔNG SỚM HƠN. Khách cắt lúc còn XẾP HÀNG thì
+                    #    `so_tay` phải vẫn RỖNG — chưa giành được suất nào thì
+                    #    không có gì để nhả, và nhả bừa là nhả **suất của người
+                    #    khác**. `test_1248` chốt đúng ca này.
+                    if so_tay is not None:
+                        so_tay["cb"] = cb
                     break
                 if time.monotonic() - t_nhip >= moi_nhip:
                     t_nhip = time.monotonic()
@@ -568,6 +582,10 @@ def luong_co_cho(tk: TienKiem, *, loi_sse: Callable[[str, str, str], bytes],
 
         try:
             luot = mo_thuong_nguon(cb, timeout_s=timeout_s, trang_thai=trang_thai)
+            # Công bố luồng: `dong_nguon` (đóng cửa ra mạng tới máy B) và
+            # `dam_bao_quyet_toan` đều cần chính đối tượng này.
+            if so_tay is not None:
+                so_tay["luot"] = luot
         except DangBan:
             phong_cho.ghi_ket_thuc(cb.waiter_id, "ban")
             yield loi_sse(tk.duong, "overloaded",
