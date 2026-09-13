@@ -35,6 +35,9 @@ class GiaLap:
         self.cho_key = set(cho_key)
         self.base_url_khoa = base_url_khoa
         self.loi = []          # provider bi danh_dau_loi
+        #: kwargs cua tung lan `danh_dau_loi` — L-09 song o day:
+        #: thieu `http_status` thi `danh_dau_loi` doc thanh 5xx.
+        self.loi_kw = []
         self.thanh_cong = []   # provider bi danh_dau_thanh_cong
         self.da_thu = []       # provider da duoc goi that
         self.pid_hien_tai = ""  # provider dang duoc thu (xem `_chon_key`)
@@ -58,7 +61,8 @@ class GiaLap:
 
         api_pool = types.SimpleNamespace(
             chon_key=_chon_key,
-            danh_dau_loi=lambda db, key, **k: gl.loi.append(key.provider),
+            danh_dau_loi=lambda db, key, **k: (
+                gl.loi.append(key.provider), gl.loi_kw.append(k)),
             danh_dau_thanh_cong=lambda db, key, **k: gl.thanh_cong.append(key.provider),
         )
         api_keys = types.SimpleNamespace(lay_credential=lambda db, key: "cred")
@@ -359,3 +363,58 @@ def test_khong_co_base_url_o_dau_ca_thi_KHONG_danh_dau_loi(monkeypatch):
         DP.goi(None, messages=TIN, thu_tu_provider=["ltt_llm"])
     assert gl.loi == []
     assert any("base_url" in d for d in e.value.chi_tiet)
+
+
+# ── 6. L-09: mã HTTP thượng nguồn phải ĐI TỚI `danh_dau_loi` ─────────────────
+
+def test_ma_thuong_nguon_di_toi_danh_dau_loi(monkeypatch):
+    """🔴 Thiếu mã là `danh_dau_loi` đọc mọi lỗi thành **5xx**.
+
+    `api_pool.danh_dau_loi` phân loại theo `http_status`:
+
+        401/403            -> đếm auth, cooldown rồi disable
+        429                -> cooldown
+        400 <= s < 500     -> "bad request CỦA TA" — KHÔNG phạt
+        còn lại (kể cả None) -> `error_count += 1`; **5 lần là `APIKEY_ERROR`**
+
+    Và `APIKEY_ERROR` **không tự hồi**. Nên một lỗi 4xx bị đọc thành 5xx năm
+    lần là tắt model nhà cho tới khi có người sửa tay — đúng D-005, vào bằng
+    cửa thứ ba (429 và 504 đã bịt từ trước).
+
+    ⛔ Phép kiểm này canh **bên gọi**, không canh `danh_dau_loi`. Luật ở đó vẫn
+       luôn đúng; cái sai là một tham số không được truyền.
+    """
+    from platform_core.llm.cong_vlm import CongVlmError
+
+    gl = GiaLap().cai(monkeypatch)
+    _dat_hanh_vi(monkeypatch, gl,
+                 {PROVIDER_GIA: CongVlmError("model khong co", ma=404)})
+    # ⛔ Bat DUNG lop, khong `Exception` tran: mot `raises(Exception)` cung xanh
+    #    khi ham nem `TypeError` vi ban gia sai chu ky — va khi ay phep kiem
+    #    khong con do dieu no dat ten.
+    with pytest.raises(DP.KhongCoProviderNao):
+        DP.goi(None, messages=TIN, thu_tu_provider=[PROVIDER_GIA],
+               model_theo_provider={PROVIDER_GIA: "qwen38-api"})
+
+    assert gl.loi_kw, "khong co lan `danh_dau_loi` nao — phep kiem vo nghia"
+    assert gl.loi_kw[0].get("http_status") == 404, (
+        f"ma thuong nguon khong toi noi: {gl.loi_kw[0]!r}")
+
+
+def test_yeu_cau_sai_KHONG_cham_toi_danh_dau_loi(monkeypatch):
+    """⭐ Mệnh đề mạnh hơn cho 400/422: nó **không được đếm một lần nào**.
+
+    `YeuCauSaiError` bị bắt ở nhánh `raise` phía trên, nên nó không đi qua
+    `danh_dau_loi` — kể cả với một lần "không phạt". Một lượt không bao giờ
+    chạm vào sổ phạt thì không có cách nào phạt nhầm.
+    """
+    from platform_core.llm.cong_vlm import YeuCauSaiError
+
+    gl = GiaLap().cai(monkeypatch)
+    _dat_hanh_vi(monkeypatch, gl,
+                 {PROVIDER_GIA: YeuCauSaiError("anh hong", ma=400)})
+    with pytest.raises(YeuCauSaiError):
+        DP.goi(None, messages=TIN, thu_tu_provider=[PROVIDER_GIA],
+               model_theo_provider={PROVIDER_GIA: "qwen35-api"})
+
+    assert gl.loi == [], "yeu cau sai cua KHACH khong duoc cham vao so phat key"

@@ -460,7 +460,7 @@ def _finish_chat(*, db, sach: dict, principal, record, request_id: str,
     """
     from platform_core.llm import ngat, phong_cho, thanh_toan
     from platform_core.llm.cong_vlm import (BanError, CongVlmError, SuDung,
-                                            VuotNganSachError)
+                                            VuotNganSachError, YeuCauSaiError)
 
     bat_dau = time.monotonic()
     try:
@@ -548,6 +548,24 @@ def _finish_chat(*, db, sach: dict, principal, record, request_id: str,
         raise service_unavailable(
             "The model is busy right now.", retry_after=30) from None
     except VuotNganSachError as e:
+        thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
+        db.commit()
+        phong_cho.ghi_ket_thuc(waiter_id, "tham_so_sai")
+        raise invalid_request(str(e)) from None
+    except YeuCauSaiError as e:
+        # 🔴 LOI CUA KHACH, KHONG PHAI CUA MAY. Do duoc 13/09 (L-09): mot anh
+        #    hong lam may B tra dung chuan
+        #
+        #        400 invalid_request_error "Failed to load image or audio file"
+        #
+        #    nhung may A lam phang thanh 503. Hai cai sai, moi cai mot huong:
+        #    khach nhan `retry: after_delay` cho mot yeu cau KHONG BAO GIO thanh
+        #    cong, va `danh_dau_loi` phat key nhu mot loi 5xx — nam lan la tat
+        #    model nha.
+        #
+        # ⭐ Thong diep cua thuong nguon di THANG ra cho khach: "anh hong" la
+        #    thu ho sua duoc, con "The model could not serve this request" thi
+        #    khong noi cho ho biet gi ca.
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
         phong_cho.ghi_ket_thuc(waiter_id, "tham_so_sai")

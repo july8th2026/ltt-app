@@ -39,6 +39,7 @@ from typing import Any, Optional, Sequence
 
 from platform_core.llm.cong_vlm import (AmbiguousProviderError, BanError,
                                         CongVlm, CongVlmError, HuyError,
+                                        YeuCauSaiError,
                                         KetQuaChat, ProviderOomError, SuDung,
                                         VuotNganSachError)
 
@@ -331,14 +332,24 @@ def goi(db, *, messages: list, thu_tu_provider: Sequence[str],
             #                    `rejected` ⇒ `fail(retry=False)` — tức một job
             #                    bị hủy sẽ mang trạng thái `error`.
             raise
-        except (AmbiguousProviderError, ProviderOomError):
+        except (AmbiguousProviderError, ProviderOomError, YeuCauSaiError):
             # Không cascade: timeout sau POST có thể đã tạo side effect; OOM
             # nguyên request sẽ lặp lại y hệt ở sản phẩm không cho fallback.
+            #
+            # ⭐ `YeuCauSaiError` vào đây 13/09 (L-09) vì cùng một lý do, chỉ
+            #    hiển nhiên hơn: gửi lại y hệt một yêu cầu SAI thì nó sai y hệt.
+            #    Cascade ở đây chỉ tiêu thêm một provider và một lượt chờ.
             raise
         except CongVlmError as e:
             if on_rejected is not None:
                 on_rejected(pid)
-            api_pool.danh_dau_loi(db, key)
+            # 🔴 TRUYỀN MÃ. Thiếu nó thì `danh_dau_loi` đọc `http_status=None`
+            #    thành "5xx hoặc lỗi mạng" ⇒ `error_count += 1` ⇒ năm lần là
+            #    `APIKEY_ERROR`, thứ KHÔNG TỰ HỒI. Chính `danh_dau_loi` đã có
+            #    nhánh "400 ≤ s < 500: bad request CỦA TA, không phạt" — nhưng
+            #    nhánh ấy chỉ chạy khi có người truyền mã vào (L-09).
+            api_pool.danh_dau_loi(db, key, http_status=getattr(e, "ma", None),
+                                  message=str(e))
             ly_do.append(f"{pid}: loi ({e})")
             continue
         finally:

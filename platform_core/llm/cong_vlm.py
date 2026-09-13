@@ -39,7 +39,24 @@ ETA_KHONG_BIET = None
 
 
 class CongVlmError(Exception):
-    """Cổng VLM hỏng thật. Bên gọi ĐƯỢC quyền tính đây là lỗi provider."""
+    """Cổng VLM hỏng thật. Bên gọi ĐƯỢC quyền tính đây là lỗi provider.
+
+    ⭐ `ma` — **mã HTTP thượng nguồn**, thêm 13/09 (L-09). Không có nó thì
+       `dieu_phoi` gọi `api_pool.danh_dau_loi(db, key)` mà không nói được lỗi
+       thuộc loại nào, và `danh_dau_loi` đọc `http_status=None` thành *"5xx hoặc
+       lỗi mạng"* ⇒ `error_count += 1`. Năm lần là `APIKEY_ERROR`, thứ **không
+       tự hồi**.
+
+    🔴 Hậu quả đo được: một khách gửi **năm ảnh hỏng** là tắt model nhà cho tới
+       khi có người sửa tay. Chính `danh_dau_loi` đã có nhánh đúng —
+       *"400 ≤ s < 500: Bad request CỦA TA — KHÔNG phạt"* — nhưng nhánh ấy chỉ
+       chạy khi ai đó **truyền mã vào**.
+    """
+
+    def __init__(self, thong_diep: str = "", *, ma: Optional[int] = None):
+        super().__init__(thong_diep)
+        #: Mã HTTP thượng nguồn, `None` khi lỗi không đến từ một phản hồi HTTP.
+        self.ma = ma
 
 
 class AmbiguousProviderError(CongVlmError):
@@ -48,6 +65,33 @@ class AmbiguousProviderError(CongVlmError):
 
 class ProviderOomError(CongVlmError):
     """Provider xác định không đủ bộ nhớ; retry nguyên request sẽ hỏng lại."""
+
+
+class YeuCauSaiError(CongVlmError):
+    """Thượng nguồn nói **yêu cầu sai** (400/422) — lỗi của KHÁCH, không của ta.
+
+    🔴 VÌ SAO PHẢI CÓ LỚP RIÊNG, đo được 13/09 (L-09, cổng N §22):
+
+       Máy B trả đúng chuẩn cho một ảnh hỏng:
+
+           400 {"error": {"code": 400, "type": "invalid_request_error",
+                          "message": "Failed to load image or audio file"}}
+
+       Máy A làm phẳng nó thành `CongVlmError` ⇒ **503** cho khách, và
+       `danh_dau_loi` không có mã nên phạt key như một lỗi 5xx.
+
+       Hai cái sai, mỗi cái một hướng:
+         · khách nhận `503 retry_after` cho một yêu cầu **không bao giờ** thành
+           công dù thử lại bao nhiêu lần;
+         · và năm lượt như thế **tắt model nhà**.
+
+    ⛔ KHÔNG cascade sang provider khác — cùng lý do với `ProviderOomError`:
+       gửi lại y hệt một yêu cầu sai thì nó sai y hệt. Cascade ở đây chỉ tiêu
+       thêm một provider và một lượt chờ của khách.
+
+    ⭐ Đây là **cửa thứ ba** của cùng một thảm hoạ D-005. Luật 1 ở đầu tệp bịt
+       cửa **429**; bản vá 09/09 bịt cửa **504**; cửa **400** đứng mở tới hôm nay.
+    """
 
 
 class BanError(Exception):
@@ -299,8 +343,17 @@ class CongVlm:
                 marker in noi_dung_loi for marker in
                 ("out of memory", "cuda oom", "cuda_error_out_of_memory", "oom")):
             raise ProviderOomError("provider khong du bo nho cho request")
+        if ma in (400, 422):
+            # ⛔ ĐỨNG TRƯỚC nhánh cuối. Rơi xuống đó là `CongVlmError` trần, tức
+            #    giấy phép phạt key cho một lỗi của khách — xem `YeuCauSaiError`.
+            than_sai = than if isinstance(than, dict) else {}
+            _e = than_sai.get("error")
+            loi_sai = _e if isinstance(_e, dict) else {}
+            raise YeuCauSaiError(
+                str(loi_sai.get("message") or than_sai.get("detail")
+                    or f"thuong nguon tra {ma}"), ma=ma)
         if ma != 200:
-            raise CongVlmError(f"/v1/chat/completions tra {ma}")
+            raise CongVlmError(f"/v1/chat/completions tra {ma}", ma=ma)
 
         return _boc(than if isinstance(than, dict) else {})
 

@@ -446,8 +446,15 @@ def _do_tham_dieu_phoi(monkeypatch, ma_cong: int, than_cong):
         return _KeyGia()
 
     monkeypatch.setattr(api_pool, "chon_key", _chon_key)
+    # ⚠️ `**kw` CHỨ KHÔNG LIỆT KÊ THAM SỐ. Bản giả ở đây đóng vai *"có một lần
+    #    đánh dấu lỗi xảy ra"*, không phải vai *"chữ ký của `danh_dau_loi` hôm
+    #    nay". Bản cũ khai `lambda db, key` và nó ĐỎ ngay khi L-09 thêm
+    #    `http_status=` — không phải vì mã sai mà vì bản giả chặt hơn thứ nó
+    #    thay thế. Đây là lần THỨ HAI trong cùng một phiên (lần đầu:
+    #    `executor.run(..., ma_luot=)` làm đỏ 19 phép kiểm).
     monkeypatch.setattr(api_pool, "danh_dau_loi",
-                        lambda db, key: dem.__setitem__("loi", dem["loi"] + 1))
+                        lambda db, key, **kw: dem.__setitem__(
+                            "loi", dem["loi"] + 1))
     monkeypatch.setattr(api_pool, "danh_dau_thanh_cong",
                         lambda db, key, **kw: dem.__setitem__(
                             "thanh_cong", dem["thanh_cong"] + 1))
