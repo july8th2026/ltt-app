@@ -37,6 +37,10 @@ PROMPT_DAI = ("Count from 1 to 2000. One number per line. "
               "Do not stop early, do not summarise.")
 MAX_TOKENS = 8000
 
+#: Job NGAN cho kich ban do TRAN DEM. `max_tokens` van >= san L-02 (64).
+PROMPT_NGAN = "Reply with exactly: OK"
+MAX_TOKENS_NGAN = 64
+
 #: Sàn L-02 — dưới ngưỡng này cửa trả 400 kèm lời giải thích.
 SAN_MAX_TOKENS = 64
 
@@ -72,6 +76,7 @@ class MotLuot:
     khoa: str
     tre: float = 0.0
     cat_sau: int = 0
+    ngan: bool = False
     ma: int = 0
     t_gui: float = 0.0
     t_byte_dau: float = 0.0
@@ -86,8 +91,10 @@ def _mot_luot(l: MotLuot, t0: float) -> None:
 
     if l.tre:
         time.sleep(l.tre)
-    than = {"model": l.model, "stream": True, "max_tokens": MAX_TOKENS,
-            "messages": [{"role": "user", "content": PROMPT_DAI}]}
+    than = {"model": l.model, "stream": True,
+            "max_tokens": MAX_TOKENS_NGAN if l.ngan else MAX_TOKENS,
+            "messages": [{"role": "user",
+                          "content": PROMPT_NGAN if l.ngan else PROMPT_DAI}]}
     l.t_gui = time.monotonic() - t0
     try:
         with httpx.Client(timeout=900.0) as kh:
@@ -130,7 +137,8 @@ def nop_that(kb: KichBan, *, goc_kho: str,
             i += 1
             ten_khoa = (khoa_theo_nhan or {}).get(f"L{i}", "vh1-a")
             luot.append(MotLuot(nhan=f"L{i}", model=model,
-                                khoa=doc_khoa(ten_khoa, goc_kho=goc_kho)))
+                                khoa=doc_khoa(ten_khoa, goc_kho=goc_kho),
+                                ngan=kb.job_ngan))
 
     # ⛔ Cat chi ap cho MOT luot (luot cuoi). Cat het thi khong con ai giu suat
     #    de do xem suat co duoc nha khong — ta se do mot he rong.

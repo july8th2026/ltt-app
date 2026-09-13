@@ -50,6 +50,11 @@ class KichBan:
     #: >0 ⇒ MỘT lượt đọc đủ ngần ấy mảnh rồi **CẮT** — mô phỏng khách đóng tab.
     #: Chỉ có nghĩa với kịch bản đo đường nhả suất (L-08).
     cat_sau: int = 0
+    #: ⭐ Kịch bản đo TRẦN ĐẾM (bao nhiêu người vào được hàng) **không** cần job
+    #: dài: độ dài job không liên quan gì tới câu hỏi ấy. J16 nộp 40 lượt; với
+    #: job 150 s thì riêng nó tốn ~40 phút để nói một điều mà prompt ngắn nói
+    #: ngay. Dùng job dài CHỈ khi câu hỏi cần hàng đợi kịp hình thành.
+    job_ngan: bool = False
 
 
 MA_TRAN: tuple[KichBan, ...] = (
@@ -117,7 +122,7 @@ MA_TRAN: tuple[KichBan, ...] = (
             can_tai_khoan_hai=True),
     KichBan("J16", "phòng chờ chạm TRẦN — phải 429 `phong_day`, không treo",
             "stream", (("ltt-3.8", 40),),
-            {"queued": 32, "co_429_phong_day": True}),
+            {"queued": 32, "co_429_phong_day": True}, job_ngan=True),
 )
 
 
