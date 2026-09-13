@@ -55,7 +55,7 @@ def main(argv=None) -> int:
     gen = get_session()
     db = next(gen)
     key = None
-    ket = {"quote_scenarios": [], "job": None, "quality": None}
+    ket: dict = {"quote_scenarios": [], "job": None, "quality": None}
     try:
         u = users.tim_theo_email(db, a.email)
         if u is None:
