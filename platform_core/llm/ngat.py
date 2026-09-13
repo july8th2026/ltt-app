@@ -43,6 +43,90 @@ SO_DONG: contextvars.ContextVar[Optional[list]] = contextvars.ContextVar(
 NHIP_THAM_S = 1.0
 
 
+def dung_khi_khach_cat(nguon: Iterator[bytes],
+                       ngat_chua: Callable[[], bool]) -> Iterator[bytes]:
+    """Bọc luồng stream ĐỒNG BỘ để nó tự dừng khi khách cắt — bản vá L-08.
+
+    ## Vì sao cửa stream cần cái này dù Starlette đã nghe ngắt sẵn
+
+    Đo 13/09 (L-08): slot bị giữ **>=643 s** sau khi khách cắt, trong khi máy B
+    đã rảnh (`requests_processing = 0`). Ba mắt xích, đọc từ mã thư viện đang
+    cài chứ không từ trí nhớ:
+
+        1. uvicorn khai ASGI `spec_version` **"2.3"** (< 2.4) ⇒ nhánh CÓ
+           `listen_for_disconnect` mới là nhánh chạy — ngắt CÓ được nghe.
+        2. `await self.background()` nằm ở thụt lề **NGOÀI** `async with` ⇒
+           `BackgroundTask` nhả lease CÓ chạy khi khách cắt.
+        3. Nhưng `LuongMo.luong` là `Iterator[bytes]` **ĐỒNG BỘ**, nên Starlette
+           bọc nó bằng `iterate_in_threadpool` — và **cancel scope của anyio
+           không cắt được một LUỒNG đang chờ đọc socket**.
+
+    ⇒ Huỷ được phát, rồi kẹt chờ luồng; task group không sập; `background()`
+      không tới lượt; lease không nhả. 643 s là lúc **máy B buông**, không phải
+      một hạn định nào của máy A.
+
+    ⭐ CÙNG HỌ VỚI L-06: ở đó `BaseHTTPMiddleware` đọc `receive` trong một cancel
+       scope đã huỷ; ở đây là generator đồng bộ trong threadpool. Một cầu nối
+       ĐỒNG BỘ vô hiệu hoá cơ chế huỷ bất đồng bộ — nên bản sửa phải để chính
+       luồng ấy tự biết, không phải thêm một hạn định mới.
+
+    ## 🔴 `close()` trong `finally` là nửa KHÔNG ĐƯỢC QUÊN
+
+    Thoát khỏi vòng lặp mà không đóng `nguon` chỉ đẩy cùng một lỗi xuống một
+    tầng: generator bên trong nằm treo, `finally` của nó (`ctx.__exit__` +
+    `client.close()`) chưa chạy, và kết nối httpx tới máy B vẫn mở cho tới khi
+    GC dọn. `close()` ném `GeneratorExit` vào đúng chỗ ấy nên `finally` chạy
+    NGAY — đó là khác biệt giữa "nhả lease" và "nhả cả suất ở máy B".
+
+    ## ⚠️ CÓ MỘT CUỘC ĐUA Ở ĐÂY, VÀ NÓ AN TOÀN — nhưng phải nói ra
+
+    `ngat_chua` (qua `do_ngat`) đọc `request.receive()`, mà `listen_for_disconnect`
+    của Starlette **cũng** đọc cùng dòng ấy. Một thông điệp `http.disconnect` chỉ
+    tới tay MỘT bên:
+
+        Starlette đọc trước  -> task group huỷ; ta không thấy, chỉ tốn 0,05 s mỗi
+                                nhịp thăm cho tới khi `iter_raw()` trả mảnh kế
+        ta đọc trước         -> ta thoát vòng, đóng nguồn, luồng trả về ngay
+
+    Cả hai đường đều dẫn tới "dừng", nên cuộc đua này không đổi tính đúng. Nó chỉ
+    đổi **ai** dừng trước. Ghi ra vì một cuộc đua không được ghi sẽ thành bẫy cho
+    người đọc sau.
+
+    ⛔ Và vì sao thăm theo NHỊP chứ không thăm mỗi mảnh: mỗi lượt thăm tốn tới
+       `HAN_DOC_NGAT_S` (0,05 s). Một luồng phát vài trăm mảnh mỗi giây mà thăm
+       từng mảnh là tự thêm hàng chục giây độ trễ cho khách CÒN ĐANG ĐỌC — chữa
+       một lỗi bằng cách gây một lỗi tệ hơn cho người không mắc lỗi ấy.
+    """
+    import time
+
+    lan_tham = time.monotonic()
+    try:
+        for khoi in nguon:
+            yield khoi
+            bay_gio = time.monotonic()
+            if bay_gio - lan_tham < NHIP_THAM_S:
+                continue
+            lan_tham = bay_gio
+            try:
+                da_cat = bool(ngat_chua())
+            except Exception:  # noqa: BLE001
+                # Không hỏi được thì CHẠY TIẾP. Coi im lặng là "đã ngắt" sẽ cắt
+                # ngang lượt của một khách vẫn đang đọc — hỏng nặng hơn hẳn thứ
+                # đang sửa.
+                log.debug("khong tham duoc ngat giua luong", exc_info=True)
+                continue
+            if da_cat:
+                log.info("khach cat giua luong => dung phat va dong thuong nguon")
+                break
+    finally:
+        dong = getattr(nguon, "close", None)
+        if callable(dong):
+            try:
+                dong()
+            except Exception:  # noqa: BLE001
+                log.warning("khong dong duoc luong thuong nguon", exc_info=True)
+
+
 class KhachNgat(Exception):
     """Khách đã ngắt trong lúc lượt đang chạy.
 

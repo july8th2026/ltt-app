@@ -48,6 +48,7 @@ from server.api import su_kien_loi, tool_dich
 from server.api.auth import require_scope
 from server.deps import get_db
 from apps.ltt_llm import ngan_sach
+from platform_core.llm import ngat
 from platform_core.runtime_noi_bo import luong as cua_luong
 
 log = logging.getLogger("server.api.streaming")
@@ -893,7 +894,17 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
                 admission.release_by_id(cb.lease_id)
 
     nen = BackgroundTask(_ket_thuc)
-    return StreamingResponse(luot.luong, media_type=luot.content_type,
+    # 🔴 L-08: `_ket_thuc` ở trên CHẠY ĐÚNG CHỖ rồi — Starlette gọi
+    #    `await self.background()` ở ngoài `async with`, kể cả khi khách cắt.
+    #    Nút thắt nằm TRƯỚC nó: `luot.luong` là iterator ĐỒNG BỘ nên Starlette
+    #    bọc bằng `iterate_in_threadpool`, và cancel scope của anyio không cắt
+    #    được một luồng đang chờ đọc socket. Task group không sập ⇒ background
+    #    không tới lượt ⇒ lease bị giữ (đo được **>=643 s**, tới lúc máy B buông).
+    #
+    # ⇒ Cho chính luồng ấy tự biết khách đã đi. Toàn bộ lý lẽ + cuộc đua với
+    #   `listen_for_disconnect` ghi ở `ngat.dung_khi_khach_cat`.
+    luong = ngat.dung_khi_khach_cat(luot.luong, ngat.do_ngat(request))
+    return StreamingResponse(luong, media_type=luot.content_type,
                              headers=_SSE, background=nen)
 
 

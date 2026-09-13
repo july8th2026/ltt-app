@@ -15,7 +15,7 @@
 | L-05 | **108/131 job loi 14 ngay** deu la `AmbiguousProviderError: mat ket noi sau khi bat dau gui` | DOC LAP | he qua cua L-01 | 48/48 done, 0 loi (p=0,3%) | ✅ **DONG 13/09** |
 | L-06 | cua DONG BO khong huy duoc: khach cat ket noi ma slot van bi giu toi khi sinh XONG | DOC LAP | HAI goc: thieu `ma_luot`, va `is_disconnected()` chet sau `BaseHTTPMiddleware` | loopback 16,54 -> **1,43 s**; qua Cloudflare van 16,8 s | **DONG o tang ma; con phan BIEN** |
 | L-07 | **MOT job anh la ha `ltt-3.8` VINH VIEN**: trong tai nha LLM roi ket o `nha_llm` | DOC LAP | cong render may B thieu `/v1/nha_comfy` (404) + `nha_llm` khong co duong lui | chu trinh di tron 182 s; huy giua chung lui trong 30 s | **DONG 13/09** |
-| L-08 | cua STREAM giu suat **>=643 s** sau khi khach cat: may B ranh ma suat van bi chiem | DOC LAP | luong la `Iterator` **DONG BO** ⇒ threadpool ⇒ cancel scope cua anyio khong cat duoc ⇒ `BackgroundTask` nha lease khong toi luot. **Cung ho voi L-06** | lease `mode=stream` song >=643 s, van dap nhip; may B `requests_processing=0` | **MO — goc da ro, chua sua** |
+| L-08 | cua STREAM giu suat **>=643 s** sau khi khach cat: may B ranh ma suat van bi chiem | DOC LAP | luong la `Iterator` **DONG BO** ⇒ threadpool ⇒ cancel scope cua anyio khong cat duoc ⇒ `BackgroundTask` nha lease khong toi luot. **Cung ho voi L-06** | lease `mode=stream` song >=643 s, van dap nhip; may B `requests_processing=0` | **DA SUA o tang ma — cho nghiem thu tren may that** |
 | L-09 | **nam anh hong la TAT MODEL NHA**: yeu cau sai cua khach bi dem la loi cua KHOA | 🔴 **CHAN** | `CongVlmError` khong mang ma; `dieu_phoi` khong truyen `http_status` | may B tra 400 dung chuan, may A tra 503 va phat khoa | **DONG 13/09** |
 | L-10 | **ban va L-07 tu sinh ngo cut moi**: 3 lan ComfyUI hong la phia anh khoa ngoai VINH VIEN | DOC LAP | bo dem chi xoa sau `chay_comfy()` thanh cong — thu nam sau chinh cai phanh dang chan | ComfyUI da LANH, ca 4 dich vu may B song: residency dung im o `llm` **120 s**, job `queued` | **DONG 13/09** |
 
@@ -1126,3 +1126,37 @@ mot han dinh nao cua may A.**
 ⇒ Ban sua phai lam chinh luong ay **tu biet khach da cat** va thoat vong lap —
   tuc dung lai may moc `platform_core/llm/ngat.py` cua L-06 — hoac nha lease
   ngay tai luc phat hien ngat thay vi doi `background`.
+
+## Ban sua: `ngat.dung_khi_khach_cat`, boc dung MOT cho
+
+Mot ham boc dat o noi dung `StreamingResponse` (`server/api/streaming.py`), noi
+`request` da co san. No tham `ngat_chua()` theo NHIP `NHIP_THAM_S` (1 s) giua
+cac manh, va khi thay ngat thi thoat vong — luong tra ve ⇒ task group sap ⇒
+`background()` chay ⇒ lease nha.
+
+🔴 **Nua `close()` trong `finally` khong duoc quen.** Thoat vong ma khong dong
+   `nguon` chi day cung mot loi xuong MOT TANG: generator ben trong nam treo,
+   `finally` cua no (`ctx.__exit__` + `client.close()`) chua chay, ket noi httpx
+   toi may B van mo. `close()` nem `GeneratorExit` vao dung cho ay nen `finally`
+   chay NGAY — khac biet giua "nha lease" va "nha ca suat o may B".
+
+⚠️ **Co mot cuoc dua, va no an toan** — nhung phai noi ra: `do_ngat` doc
+   `request.receive()`, ma `listen_for_disconnect` cua Starlette **cung** doc.
+   Mot `http.disconnect` chi toi tay MOT ben. Starlette thang ⇒ task group huy,
+   ta khong thay; ta thang ⇒ ta thoat vong va dong nguon. Ca hai deu dan toi
+   "dung", nen cuoc dua khong doi tinh dung — no chi doi AI dung truoc.
+
+## ⛔ Va doi chung DAU TIEN cua toi TRUOT — bo kiem xanh ca khi da go ban va
+
+Go han nua `close()` ma **6/6 ve van xanh**. Vi sao: trong phep kiem, KHONG AI
+giu tham chieu toi generator nguon, nen khi ham boc ket thuc thi refcount ve 0
+va CPython dong no ngay — `finally` chay nho REFCOUNT chu khong nho ban va.
+
+San that khong nhu vay: generator nguon duoc `LuongMo.luong` giu, `LuongMo`
+duoc khoi dung phan hoi giu. No song, va chi mot `close()` TUONG MINH moi chay
+duoc `finally`.
+
+⭐ Sua bang cach cho phep kiem GIU tham chieu (`_GIU`) dung nhu san that. Chay
+   lai dot bien: **2/6 ve do**. Day la lan thu ba trong phien mot ban gia khac
+   san that dung o chieu dang do — cung ho voi "bo mo phong GC" o tren va voi
+   hai ban gia qua chat (`executor.run`, `danh_dau_loi`).
