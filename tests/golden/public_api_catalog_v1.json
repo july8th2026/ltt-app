@@ -527,6 +527,26 @@
             "examples": [
               "medium"
             ]
+          },
+          "response_format": {
+            "type": "object"
+          },
+          "tool_choice": {
+            "type": "object"
+          },
+          "parallel_tool_calls": {
+            "type": "boolean"
+          },
+          "top_p": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0
+          },
+          "seed": {
+            "type": "integer"
+          },
+          "stop": {
+            "type": "object"
           }
         },
         "additionalProperties": false,
@@ -551,7 +571,7 @@
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "5876e4bcdf4e09b8"
+      "contract_hash": "0bf1b08549871453"
     },
     {
       "name": "text.prompt_package",

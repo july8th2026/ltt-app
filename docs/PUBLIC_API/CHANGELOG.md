@@ -21,6 +21,61 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-09-14 — `text.chat` mở sáu tham số mà engine vốn đã làm được
+
+**ADDED · không phá vỡ hợp đồng.** `contract_hash` của `text.chat` đổi
+(`5876e4bcdf4e09b8` → `0bf1b08549871453`) vì `input_schema` có thêm sáu trường
+**tùy chọn**. Một caller không gửi chúng cư xử y hệt trước, nên **không tích hợp
+đang chạy nào phải sửa gì**.
+
+⚠️ Cùng một lưu ý như mục `speech.ltt` bên dưới: `check_api_compat.py` gắn cờ
+mọi thay đổi `contract_hash` là BREAKING theo quy tắc thô. Ở đây nhãn tự động
+ấy **quá chặt** — thêm trường tùy chọn là additive. Baseline đã `--accept`;
+không bump phiên bản.
+
+### 🔴 Vì sao mục này đáng đọc kỹ hơn một dòng "thêm tham số"
+
+Sáu tham số dưới đây **không phải năng lực mới**. Engine đã hỗ trợ chúng từ
+trước, và nền tảng **nhận rồi lặng lẽ vứt đi** trong khi vẫn trả **200**. Đo
+14/09/2026 trên chính production, cùng một request `response_format: json_schema`
+bắt buộc `ten/tuoi/thanh_pho`:
+
+| gọi qua | kết quả |
+|---|---|
+| thẳng máy B | `{"ten":"…","tuoi":34,"thanh_pho":"Ha Noi"}` — **đúng khuôn** |
+| qua máy A (cửa công khai) | `{"id":10,"name":…,"age":…,"city":…}`, bọc trong ```` ```json ```` |
+
+⇒ Nếu bạn từng đặt một trong sáu tham số này và thấy nó "không ăn thua", **bạn
+đã đúng** — và nay nó chạy thật.
+
+### `response_format` (object, tùy chọn)
+
+`{"type":"json_object"}` cho JSON trần, hoặc
+`{"type":"json_schema","json_schema":{"name":…,"schema":{…}}}` để buộc đầu ra
+theo lược đồ. Ràng buộc thi hành ở **bộ giải mã** (grammar-constrained), không
+phải bằng lời nhắc — nên đầu ra không thể lệch khuôn.
+
+⛔ `grammar` thô (BNF) **không** mở, dù engine hỗ trợ: nó là trường tự do đi
+   thẳng tới bộ giải mã và không cổng nào kiểm được — cùng lý lẽ đã dùng để
+   hoãn `refs` của `video.generate`.
+
+### `tool_choice` · `parallel_tool_calls`
+
+`tool_choice`: `"none"` | `"auto"` | `"required"`, hoặc object chỉ đích danh một
+hàm. Trước đây `tools` đã mở nhưng **không ép được** model gọi — câu chuyện tool
+dở dang ở đúng chỗ đó. `parallel_tool_calls` (bool) bật/tắt gọi nhiều tool một
+lượt; model nào hỗ trợ là do jinja template của nó quyết định.
+
+### `top_p` · `seed` · `stop`
+
+`top_p` trong `(0..1]`. `seed` là số nguyên — cùng `seed` và cùng đầu vào cho
+đầu ra lặp lại được, hữu ích khi viết test. `stop` nhận chuỗi hoặc mảng, **tối
+đa 4** — trần này là của chính hợp đồng OpenAI mà ta đang bắt chước, không phải
+số ta tự đặt.
+
+⛔ `n` (nhiều lựa chọn) **không** mở: nó nhân chi phí sinh lên n lần trong khi
+   báo giá và giữ chỗ đều tính cho **một** chuỗi.
+
 ## 2026-09-13 — `speech.ltt` thêm `speed` và `language`
 
 **ADDED · không phá vỡ hợp đồng.** `contract_hash` của `speech.ltt` đổi
