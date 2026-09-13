@@ -581,12 +581,13 @@ def test_muc_chua_co_route_khong_phai_mot_lien_ket_chet():
 
 
 def test_khach_AN_DANH_khong_thay_vo_dieu_khien(moi_truong, monkeypatch):
-    """Đưa một bảng điều khiển ra trước mặt người chưa mua là bắt họ đọc một
-    công cụ thay vì đọc một lời chào."""
+    """Q124: bề mặt owner-only không render gì trước khi xác thực."""
     monkeypatch.setenv("LTT_VPS", "1")
     client = _client_vps()
     try:
-        t = client.get("/vps").text
+        r = client.get("/vps")
+        assert r.status_code == 303
+        t = r.text
         assert "app-shell" not in t and "app-side" not in t, (
             "khach an danh dang thay menu bang dieu khien")
     finally:

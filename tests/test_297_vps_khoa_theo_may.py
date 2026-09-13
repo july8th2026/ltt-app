@@ -160,15 +160,34 @@ def test_khoa_dung_lease_cua_NEN_TANG_chu_khong_dung_bang_rieng():
 
 # ── 3. Đối chiếu định kỳ: phép soi phải TỰ chạy ─────────────────────────────
 
-def test_vong_bao_tri_CO_goi_doi_chieu():
+def _maintenance_probe(db, monkeypatch):
+    from apps.vps import bao_tri
+    from apps.vps.services import billing, console
+    calls = []
+    for name in ("_dong_bo_bang_thong_pinned", "_chup_anh_den_han", "_hoan_may_tao_hong"):
+        monkeypatch.setattr(bao_tri, name, lambda *args, **kwargs: 0)
+    monkeypatch.setattr(billing, "thu_phi_dinh_ky", lambda *args, **kwargs:
+                        {"da_thu": 0, "da_treo": 0})
+    monkeypatch.setattr(billing, "den_han_xoa", lambda *args, **kwargs: [])
+    monkeypatch.setattr(console, "don_ve_het_han", lambda *args, **kwargs: 0)
+    def cleanup(*args, **kwargs):
+        calls.append("cleanup")
+        return 0
+    def reconcile(*args, **kwargs):
+        calls.append("reconcile")
+        return 7
+    monkeypatch.setattr(bao_tri, "_don_thao_tac_qua_han", cleanup)
+    monkeypatch.setattr(bao_tri, "_doi_chieu_profiles", reconcile)
+    return bao_tri.mot_luot(db), calls
+
+
+def test_vong_bao_tri_CO_goi_doi_chieu(monkeypatch):
     """`vps_doctor` đối chiếu được từ 25/08, nhưng **không ai chạy nó định kỳ**.
     Một phép soi không ai chạy là một phép soi không tồn tại — và thứ nó tìm ra
     (Reserved IP mồ côi, $3/tháng) là loại hỏng không bao giờ tự kêu lên."""
-    import inspect
-
-    from apps.vps import bao_tri
-
-    assert "_doi_chieu_dinh_ky(db, client)" in inspect.getsource(bao_tri.mot_luot)
+    result, calls = _maintenance_probe(object(), monkeypatch)
+    assert result["mo_coi"] == 7
+    assert calls.count("reconcile") == 1
 
 
 def test_doi_chieu_chay_HANG_NGAY_chu_khong_hang_gio():

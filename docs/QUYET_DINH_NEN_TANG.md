@@ -27,7 +27,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 
 ---
 
-## 1. Quyết định đã chốt (đến Q123; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91, Q116→Q120 (phần con số) đã thay)
+## 1. Quyết định đã chốt (đến Q124; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91, Q116→Q120 (phần con số), Q103/Q104→Q124 (phần chọn hạ tầng) đã thay)
 
 | # | Vấn đề | Quyết định | Lý do / hệ quả |
 |---|---|---|---|
@@ -496,6 +496,42 @@ một nguồn chân lý, và một bảng chép tay ở đây đã nói sai **n�
 Toàn văn quyết định + mọi phép đo: `docs/ltt_llm_dual/DECISION_LOG.md` (D01–D09,
 L-12…L-18) và `docs/ltt_llm_dual/10_BENCHMARK_P3.md`. Vận hành, điểm lùi từng pha:
 `docs/ltt_llm_dual/RUNBOOK.md`.
+
+### Q124 — VPS V4: profile hạ tầng ghim theo máy, OVH active/default, Vultr standby (2026-09-12)
+
+**Q124 thay phần chọn đường vào/provider của Q103/Q104; phần VPS là app, compute
+Proxmox, billing, capacity và các ràng buộc an toàn không mâu thuẫn vẫn còn hiệu
+lực.** Lõi VPS không còn biết Vultr. Mỗi VPS mới được ghim một
+`infrastructure_profile_id` trước mutation ngoài đầu tiên. Ba hợp đồng độc lập
+là compute, public IP và gateway; implementation đầu là Proxmox, OVH static
+Additional-IP pool/Vultr Reserved IP, và nft gateway. Không dựng public API,
+ToolSpec, SDK hay đường API-key cho VPS.
+
+`OVH-SGP-PROD` là ACTIVE, nhận máy mới và default **chỉ sau fresh preflight
+đạt**; `VULTR-SGP` được giữ nguyên năng lực đã chứng minh nhưng là STANDBY và
+không nhận máy production mới mặc định. Khách chỉ chọn region/plan/OS, không
+chọn provider/profile/gateway. Đổi default không repin hoặc migrate máy đang có;
+`MIGRATE_NETWORK_PROFILE` là operation tương lai, không thuộc V4.
+
+OVH hiện hữu là gateway Singapore nhận Additional IP rồi ánh xạ 1:1 qua
+WireGuard/nftables tới Machine B. Vì vậy provisioning thường dùng pool IP đã sở
+hữu với trạng thái `FREE/RESERVED/BOUND/QUARANTINED`; order IP mới là operator
+change có billing/read-back riêng, không bị giả làm Vultr `reserve()`. D10 cho
+phép live acceptance dùng/tạo tối đa một IP và một VM mới; VM100–VM107 cùng IP,
+mapping, NIC và WG identity là protected, tuyệt đối không mutation trong chương
+trình này.
+
+Profile có trạng thái ACTIVE/DRAINING/STANDBY/DISABLED, default tối đa một và
+chỉ hợp lệ khi ACTIVE + accept-new + preflight đạt. Mutation journal ghi intent
+trước external call và observed sau read-back. Reconciliation/health/capacity
+đều theo profile; runtime Machine B phải đúng schema, cùng generation, collector
+success và còn fresh, nếu không fail closed. Backup V2/restore/dual-WAN được báo
+riêng và không được dùng điểm phần mềm để che blocker dữ liệu.
+
+MVP chỉ cho session đã đăng nhập và canonical user-ID allowlist; email test chỉ
+dùng lúc controlled lookup, không hardcode. Windows đầu tiên là blank VM + ISO
+chính thức, manual installer được chấp nhận. Chi tiết quyết định, bằng chứng và
+kế hoạch: `docs/VPS_V4/`.
 
 ## 2. Ràng buộc bất biến
 

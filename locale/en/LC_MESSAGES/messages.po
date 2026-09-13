@@ -16445,3 +16445,155 @@ msgstr "Leave blank to use the running configuration. The three checkboxes above
 #: apps/transcript/templates/transcript.html:27
 msgid "để trống = tự nhận"
 msgstr "blank = auto-detect"
+#: apps/vps/admin_routes.py apps/vps/manifest.py apps/vps/templates/admin_profiles.html
+msgid "Cổng hạ tầng"
+msgstr "Infrastructure gateways"
+
+#: apps/vps/admin_routes.py
+msgid "Profile đã ghim không đổi khi chuyển default. Preflight phải đạt trước khi nhận máy mới."
+msgstr "Pinned profiles do not change when the default changes. Preflight must pass before accepting new machines."
+
+#: apps/vps/admin_routes.py
+msgid "CSRF không hợp lệ"
+msgstr "Invalid CSRF token"
+
+#: apps/vps/admin_routes.py
+msgid "Profile chưa sẵn sàng hoặc phiên bản đã đổi. Chạy preflight và tải lại trang."
+msgstr "The profile is not ready or its version changed. Run preflight and reload the page."
+
+#: apps/vps/admin_routes.py
+msgid "Thao tác không hợp lệ"
+msgstr "Invalid action"
+
+#: apps/vps/admin_routes.py
+msgid "Không xác minh được preflight. Kiểm tra cấu hình canonical."
+msgstr "Preflight could not be verified. Check the canonical configuration."
+
+#: apps/vps/admin_routes.py
+msgid "Kiểm tra kết nối chưa đạt; profile đã ngừng nhận máy mới."
+msgstr "The connection check failed; the profile has stopped accepting new machines."
+
+#: apps/vps/admin_routes.py
+msgid "Preflight chưa đạt; không đổi activation/default. Profile đã ngừng nhận máy mới."
+msgstr "Preflight failed; activation and default were not changed. The profile has stopped accepting new machines."
+
+#: apps/vps/admin_routes.py
+#, python-brace-format
+msgid "<p>Đối chiếu read-only hoàn tất: {count} finding.</p>"
+msgstr "<p>Read-only reconciliation completed: {count} finding(s).</p>"
+
+#: apps/vps/admin_routes.py
+msgid "Quay lại"
+msgstr "Go back"
+
+#: apps/vps/admin_routes.py
+msgid "Kết quả đối chiếu hạ tầng"
+msgstr "Infrastructure reconciliation results"
+
+#: apps/vps/admin_routes.py
+msgid "Cấu hình đã đổi hoặc đang gắn tài nguyên. Tải lại trang."
+msgstr "The configuration changed or has attached resources. Reload the page."
+
+#: apps/vps/admin_routes.py
+msgid "Cấu hình không hợp lệ; chỉ nhập tên biến canonical, không nhập bí mật."
+msgstr "Invalid configuration; enter canonical variable names only, never secret values."
+
+#: apps/vps/templates/admin_profiles.html
+msgid "Tên profile"
+msgstr "Profile name"
+
+#: apps/vps/templates/admin_profiles.html
+msgid "Slug"
+msgstr "Slug"
+
+#: apps/vps/templates/admin_profiles.html
+msgid "Region"
+msgstr "Region"
+
+#: apps/vps/templates/admin_profiles.html
+msgid "Tên biến tham chiếu provider (không nhập giá trị)"
+msgstr "Provider reference variable name (do not enter its value)"
+
+#: apps/vps/templates/admin_profiles.html
+msgid "Tên biến tham chiếu compute"
+msgstr "Compute reference variable name"
+
+#: apps/vps/templates/admin_profiles.html
+msgid "Tên biến tham chiếu runtime Machine B"
+msgstr "Machine B runtime reference variable name"
+
+#: apps/vps/templates/admin_profiles.html
+msgid "Tên biến tham chiếu gateway"
+msgstr "Gateway reference variable name"
+
+#: apps/vps/templates/admin_profiles.html
+msgid "Tên biến tham chiếu router DHCP"
+msgstr "DHCP router reference variable name"
+
+#: apps/vps/templates/admin_profiles.html
+msgid "Lưu sẽ ngừng nhận máy mới và yêu cầu preflight lại. Không đổi backend/đích của profile đang ghim tài nguyên. Strategy OVH gwnat chưa có adapter mutation đã xác minh."
+msgstr "Saving stops new-machine admission and requires another preflight. Do not change the backend or target of a profile with pinned resources. The OVH gwnat strategy has no verified mutation adapter yet."
+
+#: apps/vps/templates/admin_profiles.html
+msgid "Lưu cấu hình"
+msgstr "Save configuration"
+
+#: apps/vps/templates/admin_profiles.html
+msgid "Thêm profile"
+msgstr "Add profile"
+
+#: apps/vps/templates/admin_profiles.html
+msgid "Thêm profile hạ tầng"
+msgstr "Add infrastructure profile"
+
+#: apps/vps/templates/admin_profiles.html
+msgid "Chưa có profile. Migration và inventory phải được xác minh trước activation."
+msgstr "No profiles exist. Migration and inventory must be verified before activation."
+
+#: apps/vps/templates/admin_profiles.html
+msgid "Nhận máy mới:"
+msgstr "Accepting new machines:"
+
+#: apps/vps/templates/admin_profiles.html
+msgid "Có"
+msgstr "Yes"
+
+#: apps/vps/templates/admin_profiles.html
+msgid "Không"
+msgstr "No"
+
+#: apps/vps/templates/admin_profiles.html
+msgid "Chưa đủ tham chiếu"
+msgstr "References incomplete"
+
+#: apps/vps/templates/admin_profiles.html
+msgid "Dùng Preflight để kiểm kết nối; Replace bằng form tham chiếu bên dưới."
+msgstr "Use Preflight to check connectivity; replace references using the form below."
+
+#: apps/vps/templates/admin_profiles.html
+msgid "Collector canonical chưa công bố source revision nhất quán; không dùng SHA của checkout dev thay thế."
+msgstr "The canonical collector has not published a consistent source revision; do not substitute a development checkout SHA."
+
+#: apps/vps/templates/admin_profiles.html
+msgid "Mapping mong đợi từ DB; bấm Run Reconciliation để đọc trạng thái gateway thật."
+msgstr "The expected mapping comes from the database; run reconciliation to read the actual gateway state."
+
+#: apps/vps/templates/admin_profiles.html
+msgid "Chưa có IPv4 đã kiểm kê. Không tự mua IP trong luồng tạo máy."
+msgstr "No inventoried IPv4 addresses exist. The machine-creation flow never buys an IP automatically."
+
+#: apps/vps/templates/admin_profiles.html
+msgid "Đặt default"
+msgstr "Set default"
+
+#: apps/vps/templates/admin_profiles.html
+msgid "Các nút chỉ đổi trạng thái profile; không chuyển IP, mapping hay xoá VM đã tồn tại."
+msgstr "These buttons only change profile state; they do not move IPs or mappings or delete existing VMs."
+
+#: apps/vps/templates/admin_profiles.html
+msgid "Sửa cấu hình tham chiếu"
+msgstr "Edit reference configuration"
+
+#: platform_core/public_api/governance.py
+msgid "Ý định, đối chiếu và bù trừ cho từng thay đổi tài nguyên hạ tầng của máy khách. Mất nhật ký này thì không thể phân biệt thao tác đã thành công, cần thử lại hay cần con người xử lý."
+msgstr "Intent, reconciliation, and compensation for each infrastructure resource change affecting a customer machine. Without this journal, operations cannot distinguish success, retryable work, or cases requiring human review."

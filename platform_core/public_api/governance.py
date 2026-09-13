@@ -127,8 +127,12 @@ STORES: tuple = (
           "được một yêu cầu về lạm dụng từ bên ngoài.")),
     Store("vps_event", EVIDENCE, None, N_("chủ tài khoản + vận hành"),
           N_("Nhật ký vòng đời một máy — thứ trả lời \"vì sao máy tôi bị tắt\". "
-          "Chính bảng này ghi rằng nó tồn tại vì log xoay vòng rồi mất, còn câu "
-          "hỏi của khách thì đến sau ba tháng.")),
+             "Chính bảng này ghi rằng nó tồn tại vì log xoay vòng rồi mất, còn câu "
+             "hỏi của khách thì đến sau ba tháng.")),
+    Store("vps_external_mutation", EVIDENCE, None, N_("vận hành"),
+          N_("Ý định, đối chiếu và bù trừ cho từng thay đổi tài nguyên hạ tầng "
+             "của máy khách. Mất nhật ký này thì không thể phân biệt thao tác đã "
+             "thành công, cần thử lại hay cần con người xử lý.")),
     # `vps_thao_tac` là **OPERATIONAL, có hạn xoá** — khác hẳn `vps_event` ngay
     # trên nó, và khác biệt ấy là cả lý do hai bảng tồn tại riêng.
     #
@@ -591,6 +595,10 @@ NOT_CUSTOMER_DATA = frozenset({
     # cổng. Không có `user_id` và không có gì của khách — máy của khách nằm ở
     # `vps_instance`, và bảng đó đã được xếp loại ở trên.
     "vps_gateway",
+    # Cấu hình và phép đo sức khoẻ hạ tầng của chính nền tảng. Chúng không chứa
+    # user_id hay nội dung khách; quan hệ với máy khách nằm ở vps_instance và
+    # nhật ký mutation đã được xếp EVIDENCE ở trên.
+    "vps_infrastructure_profile", "vps_profile_health",
     # Một lời hẹn giờ của scheduler: `run_id` + `kind` + `due_at`. Không có gì
     # của khách ở đây — nội dung lượt chạy nằm ở `workflow_run`, và bảng đó ĐÃ
     # được xếp loại.

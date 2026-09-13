@@ -205,17 +205,15 @@ def test_bao_tri_dong_thao_tac_qua_han(db, monkeypatch):
     assert tt.dang_ban(may) is False
 
 
-def test_don_thao_tac_chay_TRUOC_doi_chieu(db):
+def test_don_thao_tac_chay_TRUOC_doi_chieu(db, monkeypatch):
     """Thứ tự có nghĩa: thao tác còn mở thì vòng đối chiếu bỏ qua máy đó.
 
     Chạy dọn **sau** thì một máy kẹt 35 phút sẽ không được báo lệch suốt 35 phút
     ấy — đúng khoảng thời gian người vận hành cần biết nó kẹt.
     """
-    import inspect
-
-    from apps.vps import bao_tri
-    nguon = inspect.getsource(bao_tri.mot_luot)
-    assert nguon.index("_don_thao_tac_qua_han") < nguon.index("_doi_chieu_dinh_ky")
+    from tests.test_297_vps_khoa_theo_may import _maintenance_probe
+    _, calls = _maintenance_probe(db, monkeypatch)
+    assert calls == ["cleanup", "reconcile"]
 
 
 # ── 4. Sổ sách: đúng một lần, và không bao giờ lùi ──────────────────────────

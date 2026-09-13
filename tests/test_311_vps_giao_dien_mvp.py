@@ -295,8 +295,8 @@ def _vps_html() -> str:
 
 
 @pytest.fixture(scope="module")
-def trang_an_danh(tmp_path_factory) -> str:
-    """HTML **thật** của `/vps` cho khách ẩn danh.
+def trang_nguoi_dung(tmp_path_factory) -> str:
+    """HTML **thật** của `/vps` cho người dùng đã xác thực.
 
     Vài tính chất chỉ trả lời được bằng cái hiện ra, không bằng hình dạng của mã
     sinh ra nó — xem `test_khach_AN_DANH_chi_thay_MOT_bang_gia` để biết bản đọc
@@ -321,12 +321,29 @@ def trang_an_danh(tmp_path_factory) -> str:
     import apps.vps.tables        # noqa: F401
     dbmod.Base.metadata.create_all(dbmod.get_engine())
 
+    from platform_core.users import tao_nguoi_dung
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        tao_nguoi_dung(db, email="vps311@test.com",
+                       password="matkhau-tot-12", is_verified=True)
+        db.commit()
+    finally:
+        gen.close()
+
     from server.app import create_app
     client = TestClient(create_app(), base_url="https://testserver",
                         follow_redirects=False)
     try:
+        login = client.get("/login")
+        token = re.search(
+            r'name="csrf_token" value="([^"]+)"', login.text).group(1)
+        client.post("/login", data={
+            "username": "vps311@test.com", "password": "matkhau-tot-12",
+            "csrf_token": token,
+        })
         r = client.get("/vps")
-        assert r.status_code == 200, f"/vps an danh tra {r.status_code}"
+        assert r.status_code == 200, f"/vps da dang nhap tra {r.status_code}"
         return r.text
     finally:
         client.close()
@@ -360,7 +377,7 @@ def trang_an_danh(tmp_path_factory) -> str:
         importlib.reload(apps.vps.manifest)
 
 
-def test_khach_AN_DANH_chi_thay_MOT_bang_gia(trang_an_danh):
+def test_nguoi_dung_chi_thay_MOT_bang_gia(trang_nguoi_dung):
     """🔴 Hai bảng giá trên một trang là hai nguồn cho cùng một con số.
 
     Từ Đợt 2, nhánh ẩn danh có bảng giá riêng. Thẻ "Tạo máy mới / Bảng giá" cũ
@@ -378,10 +395,8 @@ def test_khach_AN_DANH_chi_thay_MOT_bang_gia(trang_an_danh):
     kiểm này chốt *không hiện hai lần*, còn *không có hai bản dữ liệu* thì
     `test_304::test_moi_goi_co_mo_ta_va_mot_loi_ra` đã canh.
     """
-    assert trang_an_danh.count('class="goi-luoi"') == 1, (
-        "khach an danh thay nhieu hon MOT luoi bang gia")
-    assert 'action="/vps/tao"' not in trang_an_danh, (
-        "khach an danh thay bieu mau — no se POST va an 401")
+    assert trang_nguoi_dung.count('class="goi-luoi"') == 1, (
+        "nguoi dung thay nhieu hon MOT luoi bang gia")
 
 
 def test_hinh_trang_tri_KHONG_day_gia_xuong_duoi_man_hinh_dau():
@@ -540,9 +555,8 @@ def test_DANH_SACH_may_khong_con_la_bang_bay_cot():
         "the may khong dung macro chung — hai trang se lech ngon ngu trang thai")
 
 
-def test_DOC_TRUOC_hien_MOT_lan_cho_moi_nguoi_xem(trang_an_danh):
-    """Khách ẩn danh: mở sẵn, ngay dưới bảng giá — họ đang **quyết định**.
-    Chủ máy: gấp lại ở cuối trang — họ đã đồng ý một lần rồi, lúc bấm "Tạo máy".
+def test_DOC_TRUOC_hien_MOT_lan_cho_nguoi_dung(trang_nguoi_dung):
+    """Người dùng đã xác thực thấy đúng một bản, gấp lại ở cuối trang.
 
     Một macro, một bản văn: `test_298` đối chiếu từng con số trong đó với hằng
     số thật, và hai bản sao thì lần sửa sau chỉ sửa một bản.
@@ -552,14 +566,11 @@ def test_DOC_TRUOC_hien_MOT_lan_cho_moi_nguoi_xem(trang_an_danh):
     assert t.count("{{ doc_truoc() }}") == 2, (
         "phai goi dung hai lan — mot cho khach an danh, mot cho chu may")
 
-    assert trang_an_danh.count('_("Đọc trước khi thuê")') == 0     # đã render
-    assert trang_an_danh.count("Đọc trước khi thuê") == 1, (
-        "khach an danh thay khoi canh bao nhieu hon mot lan")
-    assert "<details" not in trang_an_danh[
-        trang_an_danh.index("Đọc trước khi thuê") - 400:
-        trang_an_danh.index("Đọc trước khi thuê")], (
-        "khoi canh bao bi gap lai cho khach AN DANH — ho dang quyet dinh, "
-        "khong duoc giau sau mot cu bam")
+    assert trang_nguoi_dung.count('_("Đọc trước khi thuê")') == 0
+    assert trang_nguoi_dung.count("Đọc trước khi thuê") == 1
+    assert "<details" in trang_nguoi_dung[
+        trang_nguoi_dung.index("Đọc trước khi thuê") - 400:
+        trang_nguoi_dung.index("Đọc trước khi thuê")]
 
 
 # ── 8 · D-01 · Tên máy ────────────────────────────────────────────────────

@@ -1,0 +1,118 @@
+# VPS V4 — Final Report
+
+Status: **IN PROGRESS — OFFLINE CODE NEAR FREEZE; LOCAL ADMIN BROWSER PASS; LIVE BLOCKED**
+
+## Revisions
+
+- HEAD BEFORE: `3b5adcb7ffa43c8c553ac38d457e22e3cde60e30`
+- HEAD AFTER: pending
+- Machine B basis: `2d14480d170b3aa9f9dd24dc5956cadd64d0143e`
+- Worktrees: `D:\LTTSTUDIOSAPP-vps-v4`, `D:\LTT-VM-Promox-v4`
+
+## Decisions locked
+
+D01–D10 and derived technical decisions are in `02_DECISION_LOCK.md`. C01 was
+approved 2026-09-13 for the generic admin contract. Cleanup choice remains open.
+
+## Architecture before/after
+
+Before: gateway plus direct Proxmox/Vultr/nft orchestration; no instance profile
+pin. Target: profile selector, persisted pin, three backend contracts, durable
+mutation journal and per-profile health/reconciliation. See `03` and `04`.
+
+## Acceptance matrix
+
+- [x] InfrastructureProfile model
+- [x] one-default invariant
+- [x] instance profile pinning
+- [x] Vultr adapter preserved / STANDBY
+- [ ] OVH adapter / ACTIVE / DEFAULT
+- [ ] OVH credential health and public-IP pool
+- [x] race-safe allocation
+- [x] gateway contract (contract/factory; actual OVH `gwnat` mutation blocked B06)
+- [x] profile preflight/health/reconciliation
+- [x] Admin profile UI
+- [x] web-only policy
+- [x] owner-only MVP access
+- [ ] one OVH IPv4 live
+- [ ] one OVH VPS live with correct owner
+- [ ] Windows installer/disk visible and console
+- [ ] public/private/WG connectivity
+- [ ] stop/start/restart
+- [ ] cleanup or explicitly retained state
+- [x] default switch preserves existing pin
+- [ ] failure injection/security/secret scan/full gate
+
+## Live test VPS
+
+NOT CREATED. App instance ID, VMID, profile, canonical owner ID, private/public
+IP and current state are pending live gate. No production resource identifier
+is fabricated here.
+
+## Tests and evidence
+
+- Discovery/config check: completed as recorded in `00_DISCOVERY.md`.
+- Focused baseline: 640 passed/3 skipped plus phase-2 sentinel, PASS before V4.
+- Focused domain/backends/pinned guards/config/runtime: 48 passed/1 skipped +
+  sentinel, PASS; admin-nav/layering regression 64 + sentinel, PASS.
+- Admin auth/CSRF/audit/failure persistence: 14 passed/1 skipped + sentinel, PASS.
+- Real PostgreSQL schema, additive migration up/down, two-worker default
+  uniqueness and two-worker static IP allocation passed in opt-in focused
+  batches. UUID test DB/schema only; canonical migration-head gate still open.
+- Local browser: real desktop/mobile menu/access/preflight/disable flow PASS,
+  create/edit canonical references, component health/capacity counts and IP-pool
+  surface PASS; no unexpected JS/console/network/server errors. Fixture data
+  only; not live.
+  Screenshots in `evidence/admin-desktop.png` and `evidence/admin-mobile.png`.
+- Broad VPS diagnostic after replacing legacy AST checks with behavior probes:
+  **768 passed/3 skipped + sentinel PASS**. A preceding run exposed nine scoped
+  compatibility/test defects; all nine were fixed before this green rerun.
+- Ownership/mutation/admin/PostgreSQL batch: **29 passed/1 skipped + sentinel
+  PASS**. Deploy provenance/runtime/log-redaction batch after one timezone-shape
+  correction: **26 passed/1 skipped + sentinel PASS**.
+- Final independent broad VPS freeze candidate: **771 passed/3 skipped +
+  sentinel PASS**, 63 seconds. The immediately preceding 770/3/1 run overlapped
+  another gate only after the lock helper's 15-minute no-lock degradation and
+  is retained as diagnostic, not certification; it exposed and led to removal
+  of a legacy test requirement to copy raw provider URLs into application logs.
+- First `python tools\gate.py` attempt was **FAIL**, not certification: four
+  static deltas (ruff/mypy/i18n/server route-size) were found before the final
+  seven long steps completed. They were corrected without baseline increases;
+  ruff, mypy, i18n, route-size, compile and diff checks now pass. Local
+  Playwright and a post-fix broad VPS **771 passed/3 skipped + sentinel PASS**
+  also pass; the full-gate rerun is pending.
+- CPU whole-machine snapshot reached 45% during another session's gate; no
+  additional test was started then. Recovery snapshot 40%, RAM free 13.4 GiB;
+  respect its CPU/PostgreSQL locks and retain two-worker diagnostics.
+  Whole-machine samples, not VPS-only attribution.
+- Secret scan after documentation freeze: first **3,283 files/790,918 lines**,
+  repeat after annotation **3,283 files/790,922 lines**; both **0 finding,
+  PASS**.
+- Full gate and production E2E pending; partial diagnostics are not
+  certification. From the 2026-09-13 cadence decision, no further full gate is
+  run between implementation phases: targeted operational suites must all pass,
+  then one frozen-candidate gate runs immediately before deploy readiness.
+
+The OVH static-pool path now journals/read-backs VM create/config, DHCP plus
+bandwidth, mapping, boot and destroy; ambiguous cleanup retains associations in
+QUARANTINED. Remaining gaps are final-commit failure injection, durable recovery
+for dynamic Vultr paid-IP acquisition (Vultr remains STANDBY), and a
+protected-baseline-compatible actual OVH gateway adapter. Deploy provenance is
+operator-visible; Machine B SHA correctly remains `UNKNOWN` until the canonical
+collector publishes one coherent revision across all four artifacts.
+
+## Backup/restore/network resilience
+
+Backup V2 is CAPACITY_BLOCKED; restore and dual-WAN are NOT VERIFIED. Therefore
+the program cannot be called FULL PRODUCTION READY even after software work.
+
+## Scorecard
+
+Scores will be measured after implementation. No baseline number is invented.
+Dimensions remain separate: implementation quality, live evidence, production
+readiness. A P0 blocker is reported directly and never averaged away.
+
+## Git/CI/push
+
+Commits, CI result and push status: pending. Branch will not be auto-merged or
+force-pushed.

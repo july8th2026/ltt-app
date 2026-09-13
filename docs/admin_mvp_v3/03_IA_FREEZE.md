@@ -16,7 +16,8 @@ sống ngoài nav — `02` A-03).
 **L2.** Thanh bên khai **nơi chốn**, không khai **hành động**. Hành động sống
 trong ngữ cảnh của đối tượng nó tác động.
 
-**L3.** Trần thanh bên: **6 mục cha**. Trần mục con mỗi miền: **6**. Vượt trần là
+**L3.** Trần thanh bên: **7 mục cha** (sáu miền nền tảng và một miền app được
+duyệt ngày 2026-09-13 cho VPS V4). Trần mục con mỗi miền: **6**. Vượt trần là
 gate đỏ (test chốt, khuôn `test_303` của `/developers`).
 
 **L4.** Bảng thô SQLAdmin không đứng ngang hàng trang nghiệp vụ. Chúng sống ở
@@ -206,7 +207,7 @@ cấp** thay vì danh sách phẳng 25 mục.
 | Xây trang Sổ credit mới thay `credit-entry/list` | SQLAdmin đã thoả hợp đồng (chỉ đọc, có lọc). Viết lại là công không đổi lấy gì. Cross-link đặt ở Hồ sơ 360 + Đơn hàng — đúng chỗ operator cần |
 | Bỏ `/admin/khach-hang` mới, dùng `/admin/user/list` làm danh sách khách | SQLAdmin không dựng được rail chú ý, không đặt được "Mở hồ sơ 360" làm hành động chính, và trộn bảng thô vào workflow chính (A-05) |
 | Omnibox tìm mọi thứ như trong ảnh | Không có authority (§5a) |
-| Đưa Nexus / VPS / các app vào sidebar admin | Ngoài phạm vi MVP này. Chúng có khu riêng |
+| Đưa Nexus / VPS / các app vào sidebar admin | Ngoài phạm vi MVP ban đầu. **Phần VPS ĐÃ THAY ngày 2026-09-13**: chủ dự án duyệt hợp đồng admin chung cho `ADMIN > VPS > Cổng hạ tầng`; app khai metadata, nền tảng không biết slug cụ thể. |
 
 ---
 

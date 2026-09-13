@@ -25,13 +25,15 @@ from datetime import timedelta
 
 import logging
 import os
+from types import SimpleNamespace
 
 from apps.vps import nhan, os_images, trang_thai_may
 from apps.vps.cost import dia_tong_gb, lay_plan
 from apps.vps.services import dinh_danh, mang, provisioning, tac_vu
+from apps.vps.services import backend_factory, vm_ownership
 from apps.vps.services import router as bo_dinh_tuyen
-from apps.vps.services.proxmox import ProxmoxError, client_tu_moi_truong
-from apps.vps.tables import VpsGateway, VpsInstance
+from apps.vps.services.proxmox import ProxmoxError, client_tu_moi_truong  # noqa: F401
+from apps.vps.tables import VpsGateway, VpsInfrastructureProfile, VpsInstance
 
 log = logging.getLogger(__name__)
 
@@ -154,6 +156,15 @@ def _lay_may(db, instance_id: str) -> VpsInstance:
     return may
 
 
+def _profile_for_job(db, may: VpsInstance) -> VpsInfrastructureProfile:
+    """Load only the instance's durable pin; never consult today's default."""
+    from apps.vps.profiles import ProfileNotReady, pinned_profile
+    try:
+        return pinned_profile(db, may)
+    except ProfileNotReady as exc:
+        raise VpsJobError(str(exc)) from exc
+
+
 def _cho_tac_vu(client, upid: str, ctx=None, *, moc: int = 30,
                 thong_diep: str = "dang chuan bi may") -> None:
     """Chờ một tác vụ nền của Proxmox xong. Ném `VpsJobError` nếu hỏng/quá hạn.
@@ -207,6 +218,7 @@ def _dieu_khien_may(params: dict, ctx=None) -> dict:
     op = None
     try:
         may = _lay_may(db, params.get("instance_id"))
+        profile = _profile_for_job(db, may)
         op = db.get(VpsThaoTac, str(params.get("thao_tac_id") or ""))
         if op is None:
             raise VpsJobError("khong tim thay thao tac cua lenh nay")
@@ -222,7 +234,7 @@ def _dieu_khien_may(params: dict, ctx=None) -> dict:
             _bao(ctx, _TIEN_DO_BUOC.get(str(op.buoc or ""), 50), str(op.buoc or ""))
             db.commit()
 
-        client = client_tu_moi_truong()
+        client = backend_factory.compute_backend(profile).client
         dien = dieu_khien.thi_hanh(db, may, client, op, lenh=lenh, luu=_luu)
 
         thao_tac.xong(db, op, may, dien_sau=dien)
@@ -333,6 +345,7 @@ def _khoi_phuc_anh(params: dict, ctx=None) -> dict:
     op = None
     try:
         may = _lay_may(db, params.get("instance_id"))
+        profile = _profile_for_job(db, may)
         op = db.get(VpsThaoTac, str(params.get("thao_tac_id") or ""))
         if op is None:
             raise VpsJobError("khong tim thay thao tac khoi phuc")
@@ -347,7 +360,7 @@ def _khoi_phuc_anh(params: dict, ctx=None) -> dict:
                  str(op.buoc or ""))
             db.commit()
 
-        client = client_tu_moi_truong()
+        client = backend_factory.compute_backend(profile).client
         dien = sao_luu.thi_hanh_khoi_phuc(db, may, client, op, ten=ten_anh,
                                           luu=_luu)
         thao_tac.xong(db, op, may, dien_sau=dien)
@@ -378,6 +391,8 @@ def _tao_may(params: dict, ctx=None) -> dict:
     db, gen = _mo_db()
     try:
         may = _lay_may(db, params.get("instance_id"))
+        profile = _profile_for_job(db, may)
+        operation_id = str(params.get("operation_id") or f"provision:{may.id}")
         if may.trang_thai == "dang_chay" and may.vmid:
             # Job chạy lại sau khi đã xong. Không làm gì, không lỗi.
             return {"instance_id": may.id, "vmid": may.vmid, "da_co_san": True}
@@ -405,8 +420,11 @@ def _tao_may(params: dict, ctx=None) -> dict:
         gateway = db.get(VpsGateway, may.gateway_id)
         if gateway is None:
             raise VpsJobError("may nay khong gan voi cong vao nao")
+        if gateway.infrastructure_profile_id != profile.id:
+            raise VpsJobError("NEEDS_REVIEW: gateway khong thuoc profile da ghim")
 
-        client = client_tu_moi_truong()
+        compute = backend_factory.compute_backend(profile)
+        client = compute.client
         _bao(ctx, 5, "dang xin cho tren may chu")
 
         # 1) VMID — hỏi Proxmox lấy gợi ý, nhưng trọng tài là ràng buộc CSDL.
@@ -428,10 +446,10 @@ def _tao_may(params: dict, ctx=None) -> dict:
 
         # 2) Dựng máy — bước KHÔNG idempotent, nên hỏi thế giới thật trước.
         _bao(ctx, 15, "dang chuan bi may")
-        if not _vm_da_ton_tai(client, may.vmid):
-            upid = client.tao_may(
-                may.vmid, **_cau_hinh_may_trong(may, plan, img, iso))
-            _cho_tac_vu(client, upid, ctx, moc=35)
+        _profile_for_job(db, may)
+        _tao_vm_co_journal(
+            db, may, client, _cau_hinh_may_trong(may, plan, img, iso), ctx,
+            operation_id=operation_id)
 
         # 3) Địa chỉ trong mạng riêng — cấp TRƯỚC khi cấu hình, vì cloud-init
         #    tiêm nó vào máy ở bước sau. Nguyên tử qua ràng buộc duy nhất
@@ -470,7 +488,9 @@ def _tao_may(params: dict, ctx=None) -> dict:
         # một máy đã có, và `vps.rebuild` cũng đi qua đây. Nó từng bắt được lỗi
         # thật — máy thử 24/08 hiện ra hai card trong Windows.
         cau_hinh.update(_go_card_thua(client, may.vmid))
-        client.dat_cau_hinh(may.vmid, **cau_hinh)
+        _profile_for_job(db, may)
+        _cau_hinh_vm_co_journal(
+            db, may, client, cau_hinh, operation_id=operation_id)
 
         # 4b) Đặt chỗ DHCP trên VM router — TRƯỚC khi bật máy.
         #
@@ -481,12 +501,16 @@ def _tao_may(params: dict, ctx=None) -> dict:
         # bật được nhưng không có mạng là giao một cái vỏ, và họ sẽ mất buổi chiều
         # dò trong Windows một lỗi nằm ở router.
         _bao(ctx, 75, "dang dat cho dia chi")
-        rt = bo_dinh_tuyen.client_tu_moi_truong()
-        rt.dat_cho(dinh_danh.mac(may.id), ip_noi_bo, ten=f"vps-{may.id[:8]}")
-        # Bật đếm băng thông cùng lúc với lúc cấp địa chỉ, không phải "khi nào
-        # nhớ ra": máy không nằm trong hai set đếm thì gói của nó không khớp luật
-        # đếm nào, và nó dùng bao nhiêu cũng không ai biết — im lặng.
-        rt.theo_doi_bang_thong(ip_noi_bo)
+        _profile_for_job(db, may)
+        rt = backend_factory.router_backend(profile)
+        _dat_cho_co_journal(db, may, rt, operation_id=operation_id)
+
+        # Public IP and verified mapping precede boot. A mapping failure must
+        # not leave an already-running VM falsely handed off as provisioned.
+        _profile_for_job(db, may)
+        _bao(ctx, 80, "dang cap dia chi cong khai")
+        ip_cong_khai = _cap_ip_cong_khai(
+            db, may, gateway, ip_noi_bo, profile, operation_id=operation_id)
 
         # 5) Bật máy — và **chờ nó bật thật**.
         #
@@ -495,17 +519,9 @@ def _tao_may(params: dict, ctx=None) -> dict:
         # khách kèm chữ "Đang chạy", và họ mở console ra thấy một màn hình đen.
         # Đó là V-02 ở đúng chỗ đắt nhất: ngay sau khi đã thu tiền.
         _bao(ctx, 85, "dang khoi dong")
-        # `int(may.vmid)` chu khong `may.vmid`: toi day thi VMID chac chan da
-        # duoc cap (buoc 1), nhung kieu tinh cua no van la `int | None`. Ep kieu
-        # o day thay vi de mypy phai tin mot bat bien no khong doc duoc.
-        vmid = int(may.vmid)
-        dien = tac_vu.cho_va_xac_minh(
-            client, client.bat(vmid), vmid, trang_thai_may.CHAY,
-            han_tac_vu_s=tac_vu.han_theo_job(getattr(ctx, "job_type", "")))
-
-        # 6) IP công khai riêng. Mỗi máy một IP — xem `docs/VPS/GIAO_DIEN.md`.
-        _bao(ctx, 92, "dang cap dia chi cong khai")
-        ip_cong_khai = _cap_ip_cong_khai(db, may, gateway, ip_noi_bo)
+        _profile_for_job(db, may)
+        dien = _bat_vm_co_journal(
+            db, may, client, ctx, operation_id=operation_id)
 
         # `dien` là số ĐO ĐƯỢC ở bước 5, không phải một giả định: tới dòng này
         # thì máy đã thật sự chạy, đã được hỏi lại, và câu "Đang chạy" trên
@@ -546,9 +562,173 @@ def _vm_da_ton_tai(client, vmid: int | None) -> bool:
         return any(int(v.get("vmid", 0)) == int(vmid)
                    for v in client.danh_sach_vm())
     except ProxmoxError:
-        # Không hỏi được thì **coi như đã có**: bỏ sót một lần clone chỉ làm job
-        # lỗi và có người xem; clone hai lần thì để lại một máy mồ côi im lặng.
+        # Không đọc được inventory thì không có bằng chứng để bỏ qua create, và
+        # càng không có quyền cấu hình một VM chỉ vì VMID trùng. Để lỗi nổi lên.
+        raise
+
+
+def _tao_vm_co_journal(db, may: VpsInstance, client, config: dict, ctx=None, *,
+                       operation_id: str | None = None):
+    """Create once; retry may only adopt a VM with the exact durable identity."""
+    from apps.vps.services import mutation_coordinator
+
+    vmid = int(may.vmid)
+
+    def mutate():
+        upid = client.tao_may(vmid, **config)
+        _cho_tac_vu(client, upid, ctx, moc=35)
+
+    return mutation_coordinator.execute(
+        db,
+        operation_id=operation_id or f"provision:{may.id}",
+        instance=may,
+        step="VM_CREATE",
+        request={"vmid": vmid, "name": config.get("name"),
+                 "smbios_uuid": dinh_danh.uuid_smbios(may.id)},
+        mutate=mutate,
+        readback=lambda: vm_ownership.owned_vm_exists(client, may),
+    )
+
+
+def _dat_cho_co_journal(db, may: VpsInstance, router, *, operation_id: str | None = None):
+    """Persist and verify DHCP plus both bandwidth counters as one safe step."""
+    from apps.vps.services import mutation_coordinator
+    from apps.vps.services.backends.contracts import BackendConflict
+
+    mac = dinh_danh.mac(may.id).lower()
+    private_ip = str(may.ip_noi_bo or "")
+
+    def readback():
+        reservations = {str(key).lower(): str(value) for key, value in
+                        (router.danh_sach_dat_cho() or {}).items()}
+        current = reservations.get(mac)
+        owners = [owner for owner, address in reservations.items()
+                  if address == private_ip and owner != mac]
+        if owners or (current is not None and current != private_ip):
+            raise BackendConflict(
+                "DHCP reservation conflicts with another external identity")
+        counters = dict(router.doc_bang_thong() or {})
+        return current == private_ip and private_ip in counters
+
+    def mutate():
+        router.dat_cho(mac, private_ip, ten=f"vps-{may.id[:8]}")
+        # Missing these sets means usage is silently unbilled.
+        router.theo_doi_bang_thong(private_ip)
+
+    return mutation_coordinator.execute(
+        db,
+        operation_id=operation_id or f"provision:{may.id}",
+        instance=may,
+        step="DHCP_AND_BANDWIDTH",
+        request={"mac": mac, "private_ip": private_ip},
+        mutate=mutate,
+        readback=readback,
+    )
+
+
+def _qemu_parts(value) -> dict[str, str]:
+    result = {}
+    for index, part in enumerate(str(value or "").split(",")):
+        key, separator, raw = part.partition("=")
+        if separator:
+            result[key.strip().lower()] = raw.strip()
+        elif index == 0 and part:
+            result["model"] = part.strip()
+    return result
+
+
+def _cau_hinh_vm_co_journal(db, may: VpsInstance, client, desired: dict, *,
+                            operation_id: str | None = None):
+    """Apply VM config once and verify every owned field from Proxmox."""
+    from apps.vps.services import mutation_coordinator
+
+    vmid = int(may.vmid)
+
+    def readback():
+        actual = client._goi(
+            "GET", f"/nodes/{client.config.node}/qemu/{vmid}/config") or {}
+        for key, expected in desired.items():
+            if expected == "delete":
+                if key in actual:
+                    return False
+            elif key.startswith("net"):
+                expected_parts = _qemu_parts(expected)
+                actual_parts = _qemu_parts(actual.get(key))
+                if any(actual_parts.get(part) != value
+                       for part, value in expected_parts.items()):
+                    return False
+            elif key in ("cores", "memory"):
+                if int(actual.get(key) or 0) != int(expected):
+                    return False
+            elif str(actual.get(key) or "") != str(expected):
+                return False
         return True
+
+    return mutation_coordinator.execute(
+        db,
+        operation_id=operation_id or f"provision:{may.id}",
+        instance=may,
+        step="VM_CONFIG",
+        request={key: value for key, value in desired.items()},
+        mutate=lambda: client.dat_cau_hinh(vmid, **desired),
+        readback=readback,
+    )
+
+
+def _bat_vm_co_journal(db, may: VpsInstance, client, ctx=None, *,
+                       operation_id: str | None = None):
+    """Boot once; an ambiguous response is settled only by power readback."""
+    from apps.vps.services import mutation_coordinator
+
+    vmid = int(may.vmid)
+    observed = {"power": ""}
+
+    def readback():
+        observed["power"] = tac_vu.doc_dien(client, vmid)
+        return observed["power"] == trang_thai_may.CHAY
+
+    def mutate():
+        observed["power"] = tac_vu.cho_va_xac_minh(
+            client, client.bat(vmid), vmid, trang_thai_may.CHAY,
+            han_tac_vu_s=tac_vu.han_theo_job(getattr(ctx, "job_type", "")))
+
+    mutation_coordinator.execute(
+        db,
+        operation_id=operation_id or f"provision:{may.id}",
+        instance=may,
+        step="VM_BOOT",
+        request={"vmid": vmid, "expected_power": trang_thai_may.CHAY},
+        mutate=mutate,
+        readback=readback,
+    )
+    return observed["power"] or trang_thai_may.CHAY
+
+
+def _xoa_vm_co_journal(db, may: VpsInstance, client, ctx=None, *,
+                       operation_id: str):
+    """Destroy only an authoritatively owned VM; absence is the readback."""
+    from apps.vps.services import mutation_coordinator
+
+    vmid = int(may.vmid)
+
+    def readback():
+        return not vm_ownership.owned_vm_exists(client, may)
+
+    def mutate():
+        _tat_de_xoa(client, may, ctx, moc=40)
+        _bao(ctx, 50, "dang xoa dia")
+        upid = client.xoa(vmid)
+        _cho_tac_vu(client, upid, ctx, moc=70)
+
+    return mutation_coordinator.execute(
+        db,
+        operation_id=operation_id,
+        instance=may,
+        step="VM_DESTROY",
+        request={"vmid": vmid, "smbios_uuid": dinh_danh.uuid_smbios(may.id)},
+        mutate=mutate,
+        readback=readback,
+    )
 
 
 #: Các bus đĩa Proxmox dùng, theo thứ tự thường gặp khi tìm đĩa hệ điều hành.
@@ -571,8 +751,9 @@ def _dia_goc(client, vmid: int) -> str:
     raise VpsJobError(f"khong tim thay dia he dieu hanh cua VM {vmid}")
 
 
-def _cap_ip_cong_khai(db, may: VpsInstance, gateway, ip_noi_bo: str) -> str:
-    """Mua một IP công khai, gắn vào cổng vào, rồi mở đường 1:1 tới máy.
+def _cap_ip_cong_khai(db, may: VpsInstance, gateway, ip_noi_bo: str,
+                      profile=None, *, operation_id: str | None = None) -> str:
+    """Reserve one profile-owned public IP and map it 1:1 to the VM.
 
     **Thứ tự ở đây là thứ tự chống rò tiền, không phải thứ tự cho gọn.**
 
@@ -587,17 +768,27 @@ def _cap_ip_cong_khai(db, may: VpsInstance, gateway, ip_noi_bo: str) -> str:
     """
     from sqlalchemy import select
 
-    from apps.vps.services import gateway as cong_vao
-    from apps.vps.services import vultr as nha_cung_cap
+    from apps.vps.services import backend_factory
     from apps.vps.tables import VpsIp
 
     if not gateway.cho_phep_ip_rieng:
         return ""
 
+    # Compatibility is intentionally confined to this private helper so older
+    # rows can still be cleaned up during migration. New provisioning always
+    # passes the durable profile loaded by `_profile_for_job`.
+    if profile is None:
+        profile = SimpleNamespace(
+            id=getattr(may, "infrastructure_profile_id", None),
+            public_ip_backend_type="vultr_reserved_ip",
+            gateway_backend_type="nft",
+        )
+    dia_chi = backend_factory.public_ip_backend(db, profile)
+    reservation_key = f"provision:{may.id}:PUBLIC_IP"
     cu = db.execute(select(VpsIp).where(VpsIp.instance_id == may.id)).scalars().first()
     if cu is None:
-        khach = nha_cung_cap.client_tu_moi_truong()
-        ip = khach.tao_ip(may.id[:8])
+        resource = dia_chi.reserve(
+            reservation_key=reservation_key, label=may.id[:8])
         try:
             # Vultr **cấp lại chính địa chỉ vừa trả** (nó giữ 24 giờ rồi đưa lại
             # cho cùng tài khoản) — đã thấy thật 24/08. Nên phải hỏi xem địa chỉ
@@ -605,18 +796,35 @@ def _cap_ip_cong_khai(db, may: VpsInstance, gateway, ip_noi_bo: str) -> str:
             # duy nhất. Chết ở đây nghĩa là **tiền đã tiêu mà sổ sách không có**.
             trung = db.execute(select(VpsIp).where(
                 VpsIp.gateway_id == gateway.id,
-                VpsIp.dia_chi == ip["dia_chi"])).scalars().first()
+                VpsIp.dia_chi == resource.address)).scalars().first()
             if trung is not None and trung.instance_id:
                 raise VpsJobError(
-                    f"Vultr cap dia chi {ip['dia_chi']} nhung so sach ghi no dang "
+                    f"backend cap dia chi {resource.address} nhung so sach ghi no dang "
                     f"thuoc may {trung.instance_id} — dung lai, khong ghi de")
             if trung is not None:
-                trung.vultr_id, trung.nhan = ip["id"], ip["nhan"]
+                trung.backend_resource_id = resource.provider_id
+                if profile.public_ip_backend_type == "vultr_reserved_ip":
+                    trung.vultr_id = resource.provider_id
+                trung.nhan = str(resource.metadata.get("label") or "")
                 trung.instance_id = may.id
+                trung.infrastructure_profile_id = profile.id
+                trung.reservation_token = reservation_key
+                trung.state = "RESERVED"
                 cu = trung
             else:
-                cu = VpsIp(gateway_id=gateway.id, dia_chi=ip["dia_chi"],
-                           vultr_id=ip["id"], nhan=ip["nhan"], instance_id=may.id)
+                cu = VpsIp(
+                    id=resource.id if profile.public_ip_backend_type == "ovh_static_pool" else None,
+                    infrastructure_profile_id=profile.id,
+                    gateway_id=gateway.id,
+                    dia_chi=resource.address,
+                    vultr_id=(resource.provider_id
+                              if profile.public_ip_backend_type == "vultr_reserved_ip" else ""),
+                    backend_resource_id=resource.provider_id,
+                    nhan=str(resource.metadata.get("label") or ""),
+                    instance_id=may.id,
+                    reservation_token=reservation_key,
+                    state="RESERVED",
+                )
                 db.add(cu)
             db.commit()                 # ← ghi TRƯỚC khi gắn. Xem docstring.
         except Exception:
@@ -624,14 +832,26 @@ def _cap_ip_cong_khai(db, may: VpsInstance, gateway, ip_noi_bo: str) -> str:
             # để lại $3/tháng chảy mãi, và không ai biết nó của máy nào.
             db.rollback()
             try:
-                khach.xoa_ip(ip["id"])
+                dia_chi.release(resource.id, reservation_key=reservation_key)
                 log.warning("VPS: da tra lai IP %s vi khong ghi duoc so sach",
-                            ip["dia_chi"])
-            except nha_cung_cap.VultrError as loi_tra:
+                            resource.address)
+            except backend_factory.operation_error_types() as loi_tra:
                 log.error("VPS: RO TIEN — mua IP %s (%s) nhung khong ghi so va "
-                          "khong tra lai duoc: %s", ip["dia_chi"], ip["id"], loi_tra)
+                          "khong tra lai duoc: %s", resource.address,
+                          resource.provider_id, type(loi_tra).__name__)
             raise
-        khach.gan_ip(ip["id"], _id_cong_vao(gateway, khach))
+    if cu.infrastructure_profile_id != profile.id:
+        raise VpsJobError("public IP profile does not match pinned instance")
+    if cu.state not in ("RESERVED", "BOUND"):
+        raise VpsJobError(f"cannot provision public IP in state {cu.state}")
+    if cu.state == "RESERVED":
+        target = (may.id if profile.public_ip_backend_type == "ovh_static_pool"
+                  else _id_cong_vao(gateway, dia_chi.client))
+        resource_id = (cu.id if profile.public_ip_backend_type == "ovh_static_pool"
+                       else cu.backend_resource_id or cu.vultr_id)
+        dia_chi.bind(resource_id, target)
+        cu.state = "BOUND"
+        db.commit()
 
     # ⛔ Máy đang bị cách ly thì **không** mở lại đường, kể cả khi đang cài lại.
     #
@@ -644,7 +864,17 @@ def _cap_ip_cong_khai(db, may: VpsInstance, gateway, ip_noi_bo: str) -> str:
         log.warning("VPS: may %s dang bi cach ly — KHONG mo duong NAT", may.id)
         return str(cu.dia_chi)
 
-    cong_vao.client_tu_moi_truong().mo_duong(cu.dia_chi, ip_noi_bo)
+    cong_vao = backend_factory.gateway_backend(profile)
+    if may.profile_resolution_state == "PINNED" and profile.id:
+        from apps.vps.services import mutation_coordinator
+        mutation_coordinator.execute(
+            db, operation_id=operation_id or f"provision:{may.id}", instance=may,
+            step="PUBLIC_MAPPING", request={"public": cu.dia_chi, "private": ip_noi_bo},
+            mutate=lambda: cong_vao.ensure_mapping(cu.dia_chi, ip_noi_bo),
+            readback=lambda: cong_vao.verify_mapping(cu.dia_chi, ip_noi_bo))
+    else:
+        # Legacy cleanup/helpers are never a path for new provisioning.
+        cong_vao.ensure_mapping(cu.dia_chi, ip_noi_bo)
     return str(cu.dia_chi)
 
 
@@ -655,7 +885,7 @@ def _id_cong_vao(gateway, khach) -> str:
     return str(khach.instance_theo_nhan(gateway.ten)["id"])
 
 
-def _tra_ip_cong_khai(db, may: VpsInstance) -> None:
+def _tra_ip_cong_khai(db, may: VpsInstance, profile=None) -> None:
     """Đóng đường rồi trả IP về cho nhà cung cấp — tức **ngừng tính tiền**.
 
     Ngược thứ tự với lúc cấp: đóng đường trước (để không còn ai đi qua), rồi mới
@@ -664,38 +894,60 @@ def _tra_ip_cong_khai(db, may: VpsInstance) -> None:
     """
     from sqlalchemy import select
 
-    from apps.vps.services import gateway as cong_vao
-    from apps.vps.services import vultr as nha_cung_cap
+    from apps.vps.services import backend_factory
     from apps.vps.tables import VpsIp
+
+    if profile is None:
+        profile = SimpleNamespace(
+            id=getattr(may, "infrastructure_profile_id", None),
+            public_ip_backend_type="vultr_reserved_ip",
+            gateway_backend_type="nft",
+        )
+    dia_chi = backend_factory.public_ip_backend(db, profile)
+    cong_vao = backend_factory.gateway_backend(profile)
 
     for ip in db.execute(select(VpsIp).where(VpsIp.instance_id == may.id)).scalars():
         try:
             if may.ip_noi_bo:
-                cong_vao.client_tu_moi_truong().dong_duong(ip.dia_chi, may.ip_noi_bo)
-            khach = nha_cung_cap.client_tu_moi_truong()
-            if ip.vultr_id:
-                khach.go_ip(ip.vultr_id)
-                khach.xoa_ip(ip.vultr_id)
+                cong_vao.remove_mapping(ip.dia_chi, may.ip_noi_bo)
+            resource_id = (ip.id if profile.public_ip_backend_type == "ovh_static_pool"
+                           else ip.backend_resource_id or ip.vultr_id or ip.id)
+            target = (may.id if profile.public_ip_backend_type == "ovh_static_pool"
+                      else _id_cong_vao(gateway=db.get(VpsGateway, may.gateway_id),
+                                       khach=dia_chi.client))
+            dia_chi.unbind(resource_id, target)
+            dia_chi.release(
+                resource_id,
+                reservation_key=ip.reservation_token
+                or f"provision:{may.id}:PUBLIC_IP")
+            if profile.public_ip_backend_type == "ovh_static_pool":
+                ip.instance_id = None
+                ip.state = "FREE"
+                continue
             # XOÁ hẳn bản ghi, không chỉ gỡ liên kết: IP đã không còn ở nhà cung
             # cấp nữa, nên giữ dòng đó lại là nói dối rằng ta vẫn có nó. Và nó
             # gây hại thật — Vultr **cấp lại chính địa chỉ vừa trả** (đã thấy
             # 24/08), và bản ghi cũ làm INSERT mới chết vì ràng buộc duy nhất
             # `(gateway_id, dia_chi)`, tức máy TIẾP THEO của khách không tạo được.
             db.delete(ip)
-        except (nha_cung_cap.VultrError, cong_vao.GatewayError) as exc:
+        except backend_factory.operation_error_types() as provider_error:
             # Bắt HẸP, không `except Exception`: lỗi lập trình phải nổ lên trên.
             # Còn nhà cung cấp từ chối hay cổng vào không trả lời thì KHÔNG được
             # chặn việc xoá máy — nhưng phải ghi lại, vì một IP không trả về là
             # tiền chảy mãi.
-            log.warning("VPS: khong tra duoc IP %s cua may %s: %s",
-                        ip.dia_chi, may.id, exc)
-            # Giữ bản ghi lại (gỡ liên kết thôi) để con người còn dọn được —
-            # đây là trường hợp DUY NHẤT một dòng `vps_ip` được phép sống sót
-            # sau khi máy bị xoá.
-            ip.instance_id = None
+            log.warning("VPS: IP cleanup needs review for instance %s", may.id)
+            # Giữ nguyên liên kết và cả địa chỉ riêng. Mất association trong lúc
+            # mapping có thể còn sống sẽ cho phép cấp chúng cho khách khác.
+            ip.state = "QUARANTINED"
             provisioning.ghi_su_kien(
                 db, may.id, "ip_chua_tra_duoc", boi="he_thong",
-                dia_chi=ip.dia_chi, vultr_id=ip.vultr_id, loi=str(exc)[:200])
+                dia_chi=ip.dia_chi, ma_loi="EXTERNAL_OUTCOME_UNKNOWN")
+            # Commit before raising: the outer destroy job closes its session
+            # on error, which would otherwise erase the quarantine evidence.
+            db.commit()
+            from apps.vps.services.mutation_coordinator import MutationNeedsReview
+            raise MutationNeedsReview(
+                "public IP cleanup requires canonical readback") from provider_error
 
 
 def _cau_hinh_may_trong(may: VpsInstance, plan, img, iso: str) -> dict:
@@ -801,10 +1053,9 @@ def _danh_dau_loi(db, instance_id, exc: Exception) -> None:
        `VpsJobError: Proxmox tu choi lenh: …`, tức tên class Python cộng tên lớp
        hạ tầng mà `services/proxmox.py` nói khách "không bao giờ nhìn thấy".
 
-    ⭐ Chi tiết kỹ thuật **không bị vứt** — đó là điều kiện để bản vá này đúng.
-       Nó đi vào `log.warning` (người vận hành đọc) và, với mọi đường đã mở một
-       thao tác, vào `vps_thao_tac.chi_tiet_loi` giữ 180 ngày. Đổi một lỗi lộ
-       liễu lấy một lỗi **im lặng** thì tốn nhiều giờ hơn, không ít hơn.
+    Log ứng dụng giữ mã ổn định và lớp exception để người vận hành nối sự cố
+    với adapter/provider log. Nó không chép chuỗi exception thô vì chuỗi ấy có
+    thể chứa URL nội bộ, lệnh đã mở rộng hoặc credential.
     """
     try:
         db.rollback()
@@ -812,11 +1063,12 @@ def _danh_dau_loi(db, instance_id, exc: Exception) -> None:
         if may is None:
             return
         ma = _ma_loi_cua(exc)
-        # Ghi thô ra log TRƯỚC khi ghi CSDL: nếu `commit` hỏng, thứ ta cần để
-        # chẩn đoán vẫn phải còn ở đâu đó.
-        log.warning("vps: may %r hong (%s): %s: %s",
+        # Provider/SSH messages may contain expanded commands or credentials.
+        # The stable code + exception class locate canonical provider logs
+        # without copying an unsafe remote body into the application log.
+        log.warning("vps: may %r hong (%s): %s",
                     getattr(may, "id", instance_id), ma,
-                    type(exc).__name__, exc)
+                    type(exc).__name__)
         # Tác vụ về rỗng: việc đã kết thúc — thất bại vẫn là kết thúc. Để nguyên
         # `tac_vu` là để lại một cái khoá mềm khiến khách không bấm được gì nữa
         # trên một máy đang lỗi, tức lấy mất đúng nút "Cài lại" mà họ cần.
@@ -844,15 +1096,16 @@ def _dung_lai(params: dict, ctx=None) -> dict:
     db, gen = _mo_db()
     try:
         may = _lay_may(db, params.get("instance_id"))
+        profile = _profile_for_job(db, may)
+        operation_id = str(params.get("operation_id")
+                           or f"rebuild:{params.get('thao_tac_id') or may.id}")
         if not may.vmid:
             raise VpsJobError("may chua duoc tao, khong co gi de dung lai")
 
-        client = client_tu_moi_truong()
+        client = backend_factory.compute_backend(profile).client
         _bao(ctx, 10, "dang tat may cu")
-        if _vm_da_ton_tai(client, may.vmid):
-            _tat_de_xoa(client, may, ctx, moc=20)
-            upid = client.xoa(may.vmid)
-            _cho_tac_vu(client, upid, ctx, moc=30)
+        _xoa_vm_co_journal(
+            db, may, client, ctx, operation_id=operation_id)
 
         trang_thai_may.dat(may, vong_doi=trang_thai_may.DANG_TAO,
                            dien_mong_muon=trang_thai_may.CHAY,
@@ -871,7 +1124,10 @@ def _dung_lai(params: dict, ctx=None) -> dict:
         gen.close()
 
     # Dựng lại đúng bằng đường tạo mới — một đường code, một chỗ để sai.
-    return _tao_may({"instance_id": params.get("instance_id")}, ctx)
+    return _tao_may({
+        "instance_id": params.get("instance_id"),
+        "operation_id": operation_id,
+    }, ctx)
 
 
 # ── vps.destroy ─────────────────────────────────────────────────────────────
@@ -884,21 +1140,22 @@ def _xoa_may(params: dict, ctx=None) -> dict:
         if may.trang_thai == "da_xoa":
             return {"instance_id": may.id, "da_xoa_truoc_do": True}
 
-        client = client_tu_moi_truong()
-        if may.vmid and _vm_da_ton_tai(client, may.vmid):
+        profile = _profile_for_job(db, may)
+        operation_id = f"destroy:{params.get('thao_tac_id') or may.id}"
+        client = backend_factory.compute_backend(profile).client
+        if may.vmid:
             _bao(ctx, 20, "dang tat may")
-            _tat_de_xoa(client, may, ctx, moc=40)
-            _bao(ctx, 50, "dang xoa dia")
-            upid = client.xoa(may.vmid)
-            _cho_tac_vu(client, upid, ctx, moc=70)
+            _xoa_vm_co_journal(
+                db, may, client, ctx, operation_id=operation_id)
 
         _bao(ctx, 78, "dang go cho dia chi")
-        _go_cho_dhcp(may)
+        _profile_for_job(db, may)
+        _go_cho_dhcp(may, profile)
         # Cùng lý do như ở `_dung_lai`: ảnh chụp đi theo VM.
         may.sao_luu_luc = None
 
         _bao(ctx, 80, "dang tra dia chi cong khai")
-        _tra_ip_cong_khai(db, may)
+        _tra_ip_cong_khai(db, may, profile)
         _nha_tai_nguyen(db, may)
         # Máy đã đi rồi: quan sát là `tat` thật, không phải `khong_ro` — VM không
         # còn tồn tại thì không có gì để không rõ.
@@ -915,7 +1172,7 @@ def _xoa_may(params: dict, ctx=None) -> dict:
         gen.close()
 
 
-def _go_cho_dhcp(may: VpsInstance) -> None:
+def _go_cho_dhcp(may: VpsInstance, profile=None) -> None:
     """Gỡ đặt chỗ DHCP **và phép đo băng thông** của một máy sắp bị xoá.
 
     Router không trả lời thì **không chặn việc xoá máy** — máy đã đi rồi, giữ nó
@@ -925,7 +1182,8 @@ def _go_cho_dhcp(may: VpsInstance) -> None:
     chỉ**, nên máy tiếp theo nhận đúng địa chỉ này vẫn đăng ký được.
     """
     try:
-        rt = bo_dinh_tuyen.client_tu_moi_truong()
+        rt = (backend_factory.router_backend(profile) if profile is not None
+              else bo_dinh_tuyen.client_tu_moi_truong())
         rt.go_cho(dinh_danh.mac(may.id), may.ip_noi_bo or "")
         if may.ip_noi_bo:
             # Gỡ khỏi cả ba set. Địa chỉ này sẽ được cấp lại cho khách khác, và
@@ -934,7 +1192,12 @@ def _go_cho_dhcp(may: VpsInstance) -> None:
             rt.thoi_theo_doi(may.ip_noi_bo)
     except bo_dinh_tuyen.RouterError as exc:
         # Bắt HẸP: lỗi lập trình phải nổ lên trên.
-        log.warning("VPS: khong go duoc cho DHCP cua may %s: %s", may.id, exc)
+        log.warning("VPS: khong go duoc cho DHCP cua may %s (%s)",
+                    may.id, type(exc).__name__)
+        if profile is not None:
+            from apps.vps.services.mutation_coordinator import MutationNeedsReview
+            raise MutationNeedsReview(
+                "DHCP cleanup requires canonical router readback") from None
 
 
 def _nha_tai_nguyen(db, may: VpsInstance) -> None:
@@ -951,7 +1214,13 @@ def _nha_tai_nguyen(db, may: VpsInstance) -> None:
 
     from apps.vps.tables import VpsIp
 
+    rows = list(db.execute(
+        select(VpsIp).where(VpsIp.instance_id == may.id)).scalars())
+    if any(ip.state == "QUARANTINED" for ip in rows):
+        from apps.vps.services.mutation_coordinator import MutationNeedsReview
+        raise MutationNeedsReview(
+            "address association retained until cleanup readback")
     may.ip_noi_bo = None
-    for ip in db.execute(select(VpsIp).where(VpsIp.instance_id == may.id)).scalars():
+    for ip in rows:
         ip.instance_id = None
     db.flush()

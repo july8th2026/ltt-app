@@ -145,16 +145,19 @@ def test_thieu_credit_thi_TREO_chu_khong_bo_qua(monkeypatch):
 
 # ── 2. Treo phải TẮT MÁY, không chỉ đổi một cột ─────────────────────────────
 
-def test_treo_that_su_TAT_may(monkeypatch):
-    """Đây là lỗ hổng của bản đầu: `billing.treo` chỉ ghi sổ, máy vẫn chạy trên
-    Proxmox suốt 7 ngày ân hạn — khách hết tiền vẫn dùng bình thường, và RAM vẫn
-    bị giữ."""
+def test_may_legacy_khong_profile_KHONG_tat_qua_endpoint_global(monkeypatch):
+    """Row mơ hồ phải treo trong sổ nhưng không được đoán backend để mutation.
+
+    VM đã PINNED vẫn được tắt thật (chốt riêng ở test_1022). Dùng endpoint global
+    cho row NEEDS_REVIEW có thể tắt nhầm VM cùng số trên một profile khác.
+    """
     m = _May(vmid=207)
     _dung_billing(monkeypatch, den_han_thu=[m], thieu_tien=True)
     c = _ClientGia()
     monkeypatch.setattr(bao_tri, "_client_hoac_none", lambda: c)
     bao_tri.mot_luot(_DbGia(), now=NOW)
-    assert c.da_tat == [207], "treo ma khong tat may thi 'treo' chi la mot nhan"
+    assert m.trang_thai == "bi_treo"
+    assert c.da_tat == []
 
 
 def test_proxmox_hong_van_TREO_trong_so(monkeypatch):

@@ -54,6 +54,7 @@ def doc_cau_hinh(env: dict | None = None) -> DichDen:
         host=str(src.get("LTT_VPS_ROUTER_HOST", "")).strip(),
         user=user,
         khoa=str(src.get("LTT_VPS_ROUTER_SSH_KEY", "")).strip(),
+        known_hosts=str(src.get("LTT_VPS_ROUTER_KNOWN_HOSTS", "")).strip(),
         nhan="VM router",
         # KHÔNG chạy cả kịch bản bằng `sudo`. Tài khoản `ltt` ghi được
         # `dhcp-hosts` vì thư mục thuộc về nó (`cai-dat-router.sh` chown), nên

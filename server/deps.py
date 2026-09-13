@@ -106,6 +106,14 @@ def require_operator(request: Request) -> str:
     return identity
 
 
+def audit_operator_action(db, request: Request, action: str, target: str = "",
+                          detail: str = "") -> None:
+    """Approved app admin contract: platform identity + append-only audit, no commit."""
+    require_operator(request)
+    from server.admin import ghi_nhat_ky
+    ghi_nhat_ky(db, request, action, target, detail)
+
+
 @contextlib.contextmanager
 def mo_db_optional() -> Iterator[Optional[Session]]:
     """Mở phiên CSDL nếu có thể, ngược lại trả None — không ném lỗi.

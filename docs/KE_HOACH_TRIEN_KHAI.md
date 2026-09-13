@@ -3965,3 +3965,40 @@ vision. Kế hoạch của họ viết **trước** phép đo; ta giữ ý đị
       `['qwen38-api','qwen38-vision']`, thiếu `qwen35-api`, nên **mọi lượt LTT-3.5
       sẽ hỏng trong im lặng** (`ThieuKeyError` bị đọc thành "provider không phục vụ
       được"). Sổ khoá là dữ liệu vận hành — không test nào chạm tới được.
+
+## H46 — VPS V4: multi-infrastructure profile + OVH acceptance (2026-09-12)
+
+Nguồn yêu cầu: chương trình `LTT VPS V4 MULTI-GATEWAY / INFRASTRUCTURE PROFILE`.
+Quyết định: Q124. Hồ sơ canonical: `docs/VPS_V4/`. Nhánh riêng:
+`codex/vps-v4-infrastructure-profiles`; không auto-merge/deploy.
+
+- [x] **H46.0 — Discovery + decision lock + architecture + plan:** 12/09/2026
+  kiểm kê app/worktree/infra/provider, khóa D01–D10, phân lớp A/B/C, viết đủ
+  `docs/VPS_V4/00`–`10`. Bằng chứng live chưa chạy; H: không mount.
+- [ ] **H46.1 — Profile domain + additive migration:** state/default invariant,
+  instance pin, health/journal, evidence-based legacy backfill.
+- [ ] **H46.2 — Backend contracts:** bọc Proxmox/Vultr/nft tối thiểu; OVH static
+  IP pool; contract/concurrency/failure tests.
+- [x] **H46.3 — Preflight/health/capacity/runtime:** per-profile, strict Machine B
+  generation/freshness, provenance, fail closed.
+- [ ] **H46.4 — Provision/reconcile:** pinned profile, mutation journal,
+  compensation và machine-readable findings; protected VM guard.
+- [x] **H46.5 — Web/access/admin:** authenticated owner-only, WEB_ONLY, không
+  mass-assign profile; admin service/UI. Exact ADMIN navigation chờ C01 vì app
+  contract chưa có extension point. **13/09/2026:** C01 đã duyệt generic
+  extension; desktop/mobile Playwright local PASS, 0 lỗi console/network/5xx.
+- [ ] **H46.6 — Hoàn thiện code + kiểm thử vận hành offline:** failure/security/
+  PostgreSQL regression, Playwright và static/secret checks mục tiêu; không chạy
+  full gate giữa các phase.
+- [ ] **H46.7 — Final release gate:** đóng băng release candidate rồi chạy đúng
+  một `python tools\gate.py` cuối trên cây không đổi, ngay trước deploy. Sửa code
+  sau PASS làm mất hiệu lực candidate và bắt buộc gate lại.
+- [ ] **H46.8 — Deploy + live OVH acceptance:** fresh collector, CA, owner lookup,
+  tối đa một IP/một VM, Playwright từ Web UI, Windows installer/network/console/
+  lifecycle/default-switch và cleanup/retain gate.
+- [ ] **H46.9 — Red team + report + push:** không P0 software, ba score riêng,
+  report backup/restore/dual-WAN trung thực, logical commits và push branch.
+
+**Blocker hiện tại:** `docs/VPS_V4/09_BLOCKERS.md`. Backup/restore/dual-WAN là
+production-readiness gate riêng; không được tuyên bố FULL PRODUCTION READY khi
+chưa có live evidence.

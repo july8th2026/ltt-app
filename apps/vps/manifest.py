@@ -31,6 +31,10 @@ MANIFEST = AppManifest(
     accent="#0B7285",
 
     nav=(NavEntry("LTT VPS", "/vps", "🖥️", "vps"),),
+    admin_nav=(
+        NavEntry("VPS", "/vps/admin", nav_key="home"),
+        NavEntry(N_("Cổng hạ tầng"), "/vps/admin/cong-ha-tang", nav_key="profiles"),
+    ),
 
     # `vps.control` (VPS V2/ADR-03): bật, tắt, khởi động lại. Trước đây ba lệnh
     # này chạy THẲNG từ route — đúng chừng nào chúng chỉ *gửi* lệnh rồi nói dối
@@ -91,13 +95,9 @@ MANIFEST = AppManifest(
 
     # Fail-closed. Cờ tắt = không có trong catalog, không ai thấy.
     enabled=vps_app.enabled(),
-    # Hiện thẻ app cho cả khách CHƯA đăng nhập. `/vps` phục vụ hai thứ tuỳ
-    # người xem: ẩn danh thấy bảng giá, đã đăng nhập thấy máy của mình — nên
-    # thẻ này không dẫn tới ngõ cụt.
-    #
-    # Vẫn an toàn khi chưa mở bán: `enabled` đọc cờ `LTT_VPS`, và cờ tắt thì app
-    # KHÔNG xuất hiện trong catalog dù `public=True`.
-    public=True,
+    # V4 owner-only MVP: catalog và URL trực tiếp đều cần session. Rollout phía
+    # route còn lọc canonical user ID; manifest không phải hàng rào duy nhất.
+    public=False,
 
     notes="Proxmox chạy LỒNG trong VMware trên máy B. Trần công suất là ĐĨA và "
           "RAM — xem docs/VPS/PHAN_TICH_VPS_PROXMOX.md muc 2 truoc khi doi gia.",

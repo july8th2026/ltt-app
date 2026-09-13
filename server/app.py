@@ -349,6 +349,8 @@ def create_app(*, env: dict | None = None) -> FastAPI:
     # nó đọc apps/*/manifest.py. Thêm app = thêm folder, không sửa file này.
     from platform_core.registry import mount_all
     app.state.loaded_apps = mount_all(app)
+    from server.routes.admin._chung import AdminNavigationContextMiddleware
+    app.add_middleware(AdminNavigationContextMiddleware)
 
     # Public API `/api/v1` (Q92). Đây KHÔNG phải một app: một app không mount
     # được path ngoài `route_prefix` của nó và không được biết app khác, nên

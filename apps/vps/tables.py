@@ -37,8 +37,9 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import (BigInteger, Boolean, DateTime, Index, Integer, JSON,
-                        String, Text, UniqueConstraint)
+from sqlalchemy import (BigInteger, Boolean, CheckConstraint, DateTime,
+                        ForeignKey, Index, Integer, JSON, String, Text,
+                        UniqueConstraint, text)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from platform_core.db import Base
@@ -69,6 +70,91 @@ TRANG_THAI = ("dang_tao", "dang_chay", "da_tat", "bi_treo",
 VUNG = ("vn", "sgp", "port")
 
 
+class VpsInfrastructureProfile(Base):
+    """Một tổ hợp compute + public-IP + gateway có vòng đời độc lập.
+
+    Các JSON chỉ chứa cấu hình không bí mật, riêng cho từng backend. Trường dùng
+    để chọn/ràng buộc vẫn là cột quan hệ; credential chỉ là tên tham chiếu tới
+    canonical secret store.
+    """
+
+    __tablename__ = "vps_infrastructure_profile"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    slug: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    region: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    environment: Mapped[str] = mapped_column(
+        String(32), default="production", nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(16), default="STANDBY", nullable=False, index=True)
+    accept_new: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_default: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    compute_backend_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    public_ip_backend_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    gateway_backend_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    compute_config: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    network_config: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    provider_config: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    credential_ref: Mapped[str] = mapped_column(
+        String(128), default="", nullable=False)
+    config_version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+
+    last_health_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, onupdate=_now, nullable=False)
+
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('ACTIVE','DRAINING','STANDBY','DISABLED')",
+            name="ck_vps_profile_status"),
+        CheckConstraint(
+            "status = 'ACTIVE' OR accept_new IS FALSE",
+            name="ck_vps_profile_accept_only_active"),
+        CheckConstraint(
+            "is_default IS FALSE OR (status = 'ACTIVE' AND accept_new IS TRUE)",
+            name="ck_vps_profile_default_active"),
+        Index(
+            "uq_vps_profile_one_default", "is_default", unique=True,
+            sqlite_where=text("is_default = 1"),
+            postgresql_where=text("is_default IS TRUE")),
+        Index(
+            "ix_vps_profile_selector", "region", "status", "accept_new"),
+    )
+
+
+class VpsProfileHealth(Base):
+    """Một quan sát health của đúng một component trên đúng một profile."""
+
+    __tablename__ = "vps_profile_health"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    infrastructure_profile_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("vps_infrastructure_profile.id", ondelete="CASCADE"),
+        nullable=False, index=True)
+    component: Mapped[str] = mapped_column(String(24), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    summary: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    provenance: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    generated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    observed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False)
+
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('UNKNOWN','STALE','HEALTHY','DEGRADED','CRITICAL')",
+            name="ck_vps_profile_health_status"),
+        Index(
+            "ix_vps_profile_health_latest", "infrastructure_profile_id",
+            "component", "observed_at"),
+    )
+
+
 class VpsGateway(Base):
     """Một cổng vào: nơi khách gõ địa chỉ để tới máy của họ.
 
@@ -80,6 +166,9 @@ class VpsGateway(Base):
     __tablename__ = "vps_gateway"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    infrastructure_profile_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("vps_infrastructure_profile.id", ondelete="RESTRICT"),
+        nullable=True, index=True)
     ten: Mapped[str] = mapped_column(String(80), nullable=False)
     vung: Mapped[str] = mapped_column(String(16), nullable=False, index=True)
     #: IP công cộng của chính cổng — thứ khách nối tới khi mua gói chỉ-cổng.
@@ -142,12 +231,32 @@ class VpsIp(Base):
     __tablename__ = "vps_ip"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    infrastructure_profile_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("vps_infrastructure_profile.id", ondelete="RESTRICT"),
+        nullable=True, index=True)
     gateway_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     dia_chi: Mapped[str] = mapped_column(String(64), nullable=False)
     #: Id của IP bên nhà cung cấp (Vultr `reserved-ips`). Thiếu nó thì khi máy
     #: bị xoá ta **không biết phải trả IP nào về**, và mỗi máy chết để lại
     #: $3/tháng chảy mãi.
     vultr_id: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    #: Định danh generic bên backend. `vultr_id` được giữ trong migration V4 đầu
+    #: để rollback và để chứng minh legacy ownership, không còn là authority mới.
+    backend_resource_id: Mapped[str] = mapped_column(
+        String(128), default="", nullable=False)
+    state: Mapped[str] = mapped_column(
+        String(16), default="QUARANTINED", nullable=False, index=True)
+    reservation_token: Mapped[str | None] = mapped_column(
+        String(128), nullable=True)
+    reserved_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    bound_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    last_observed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    billing_mode: Mapped[str] = mapped_column(String(24), default="", nullable=False)
+    monthly_cost_minor: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    provider_metadata: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     #: Nhãn đặt bên nhà cung cấp — để đối chiếu khi cần dọn bằng tay.
     nhan: Mapped[str] = mapped_column(String(64), default="", nullable=False)
     instance_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
@@ -161,6 +270,10 @@ class VpsIp(Base):
         # Một IP chỉ gắn được vào MỘT máy. NULL không tính vào UNIQUE ở cả
         # PostgreSQL lẫn SQLite, nên nhiều IP trống cùng tồn tại là hợp lệ.
         UniqueConstraint("instance_id", name="uq_vps_ip_instance"),
+        UniqueConstraint("reservation_token", name="uq_vps_ip_reservation_token"),
+        CheckConstraint(
+            "state IN ('FREE','RESERVED','BOUND','QUARANTINED')",
+            name="ck_vps_ip_state"),
     )
 
 
@@ -198,6 +311,14 @@ class VpsInstance(Base):
     plan_id: Mapped[str] = mapped_column(String(32), nullable=False)
     dia_them_gb: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     os_id: Mapped[str] = mapped_column(String(32), nullable=False)
+
+    #: NULL chỉ hợp lệ cho legacy row chưa đủ evidence. Mọi create V4 phải gọi
+    #: `profiles.pin_instance()` trước khi enqueue/external mutation.
+    infrastructure_profile_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("vps_infrastructure_profile.id", ondelete="RESTRICT"),
+        nullable=True, index=True)
+    profile_resolution_state: Mapped[str] = mapped_column(
+        String(16), default="NEEDS_REVIEW", nullable=False, index=True)
 
     gateway_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     vmid: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -298,6 +419,50 @@ class VpsInstance(Base):
         Index("ix_vps_instance_user_trangthai", "user_id", "trang_thai"),
         # Vòng thu phí quét theo hạn thanh toán.
         Index("ix_vps_instance_paid_until", "paid_until"),
+        CheckConstraint(
+            "profile_resolution_state IN ('NEEDS_REVIEW','PINNED')",
+            name="ck_vps_instance_profile_resolution"),
+    )
+
+
+class VpsExternalMutation(Base):
+    """Intent/read-back bền cho một mutation ngoài có thể thành công một phần."""
+
+    __tablename__ = "vps_external_mutation"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    operation_id: Mapped[str] = mapped_column(String(96), nullable=False, index=True)
+    instance_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    profile_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("vps_infrastructure_profile.id", ondelete="RESTRICT"),
+        nullable=False, index=True)
+    step: Mapped[str] = mapped_column(String(32), nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(128), nullable=False)
+    state: Mapped[str] = mapped_column(
+        String(16), default="INTENT", nullable=False, index=True)
+    request_fingerprint: Mapped[str] = mapped_column(
+        String(64), default="", nullable=False)
+    external_ref: Mapped[str] = mapped_column(String(190), default="", nullable=False)
+    attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    last_error_code: Mapped[str] = mapped_column(
+        String(64), default="", nullable=False)
+    last_error_detail: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, onupdate=_now, nullable=False)
+    observed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    compensated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint("idempotency_key", name="uq_vps_external_mutation_idem"),
+        CheckConstraint(
+            "state IN ('INTENT','REQUESTED','OBSERVED','COMPENSATED','FAILED','NEEDS_REVIEW')",
+            name="ck_vps_external_mutation_state"),
+        Index(
+            "ix_vps_external_mutation_instance_step", "instance_id", "step"),
     )
 
 

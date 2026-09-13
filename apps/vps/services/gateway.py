@@ -50,6 +50,7 @@ class GatewayConfig:
     khoa: str = ""
     #: Tên bảng nftables trên cổng vào. Hai map `vao` / `ra` nằm trong bảng này.
     bang: str = "ltt"
+    known_hosts: str = ""
 
     def verify(self) -> "GatewayConfig":
         if not self.host:
@@ -58,6 +59,8 @@ class GatewayConfig:
             raise GatewayError("thieu LTT_VPS_GATEWAY_SSH_KEY trong secrets/app.env")
         if not os.path.exists(self.khoa):
             raise GatewayError(f"khong thay file khoa SSH: {self.khoa}")
+        if self.known_hosts and not os.path.isfile(self.known_hosts):
+            raise GatewayError("canonical SSH known_hosts file is unavailable")
         return self
 
 
@@ -68,6 +71,7 @@ def doc_cau_hinh(env: dict | None = None) -> GatewayConfig:
         user=str(src.get("LTT_VPS_GATEWAY_USER", "root")).strip() or "root",
         khoa=str(src.get("LTT_VPS_GATEWAY_SSH_KEY", "")).strip(),
         bang=str(src.get("LTT_VPS_GATEWAY_NFT_TABLE", "ltt")).strip() or "ltt",
+        known_hosts=str(src.get("LTT_VPS_GATEWAY_KNOWN_HOSTS", "")).strip(),
     ).verify()
 
 
@@ -84,9 +88,11 @@ class GatewayClient:
         # `BatchMode=yes`: thà hỏng ngay còn hơn treo chờ nhập mật khẩu trong một
         # worker không có ai ngồi trước màn hình.
         ssh = ["ssh", "-i", self.config.khoa, "-o", "BatchMode=yes",
-               "-o", "IdentitiesOnly=yes", "-o", "StrictHostKeyChecking=accept-new",
+               "-o", "IdentitiesOnly=yes", "-o", "StrictHostKeyChecking=yes",
                "-o", "ConnectTimeout=10",
                f"{self.config.user}@{self.config.host}", " ".join(lenh)]
+        if self.config.known_hosts:
+            ssh[1:1] = ["-o", f"UserKnownHostsFile={self.config.known_hosts}"]
         try:
             r = subprocess.run(ssh, capture_output=True, text=True,
                                timeout=TIMEOUT_GIAY)
@@ -95,9 +101,8 @@ class GatewayClient:
                 f"cong vao {self.config.host} khong tra loi trong {TIMEOUT_GIAY}s"
             ) from exc
         if r.returncode != 0:
-            raise GatewayError(
-                f"cong vao tra ma {r.returncode}: "
-                f"{(r.stderr or r.stdout).strip()[:300]}")
+            # Never propagate remote output: it can contain expanded secrets.
+            raise GatewayError(f"cong vao tra ma {r.returncode}")
         return r.stdout
 
     def _bash(self, kich_ban: str) -> str:

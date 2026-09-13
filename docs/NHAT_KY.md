@@ -12,6 +12,41 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-13 — VPS V4: gom full gate về đúng release candidate cuối
+
+- **Mục tiêu:** tối ưu thời gian triển khai nhưng không giảm độ phủ nghiệm thu.
+- **Quyết định nhịp chạy:** P1–P6 tiếp tục viết trọn code và chạy test hành vi
+  mục tiêu, PostgreSQL concurrency/migration, Playwright render thật, static và
+  secret scan theo đúng phạm vi. Không dùng `python tools\gate.py` để chẩn đoán
+  hoặc làm cổng chuyển phase.
+- **Gate cuối:** chỉ đóng băng release candidate khi mọi lỗi mục tiêu đã xanh;
+  sau đó chạy đúng một full gate ở H46.7 ngay trước deploy. Bất kỳ thay đổi code
+  nào sau PASS đều làm mất hiệu lực candidate và bắt buộc chạy lại trước deploy.
+- **Kỷ luật tài nguyên:** trước batch nặng vẫn đo CPU toàn máy và kiểm khóa
+  `cua_so_yen`; không chạy chồng với phiên khác.
+- **Trạng thái thật:** lượt full gate gần nhất trước quyết định cadence này là
+  **FAIL 2/33**. Đã sửa line-ending; 9 backend failures được phân loại và xử lý:
+  migration cũ dùng direct ALTER constraint nay dùng Alembic batch mode cho
+  SQLite/PostgreSQL; bổ sung disposition/data-governance/restore constraints;
+  chép đúng vendor/model gitignored theo quy trình worktree, không sửa cây nguồn.
+- **Kiểm thật sau sửa:** batch public API/governance/migration/restore pha 1
+  **94 PASS**, pha nối tiếp ban đầu đỏ 2 vì chuỗi governance EN mới; thêm bản
+  dịch tay, compile catalog, `check_dich_thieu` trở lại **342/342 PASS**. Batch
+  vendor+i18n tiếp theo **3 PASS/1 skip + 3 PASS pha nối tiếp**, RESULT PASS
+  (journal `20260913_233711`). Final-business-commit injection **1 PASS/1 skip
+  + sentinel 1 PASS**, RESULT PASS (journal `20260913_233929`): retry dùng lại
+  journal `OBSERVED`, không gọi provider lần hai.
+- Ruff **933/12 PASS**, mypy **585/14 PASS**, i18n shape **712 PASS** và
+  line-ending PASS. Không chạy lại full gate; ứng viên release chưa đóng băng.
+- Broad VPS sau toàn bộ sửa offline mới nhất: **767 PASS/8 skip**, pha nối tiếp
+  **1 PASS**, RESULT PASS trong 61 giây (journal `20260913_234407`). Tổng số
+  được chọn đổi vì đã hydrate vendor gitignored và thêm một test injection;
+  không có test đỏ.
+- Kiểm lại canonical read-only: `main` ở `631d1d6c`, đi trước branch V4 cũ 244
+  commit; worktree main còn bốn file tài liệu CMC dirty nên tuyệt đối không sửa/
+  stash/reset ở đó. `H:\PROXMOX` vẫn chưa mount. Bước code kế tiếp là checkpoint
+  branch riêng rồi rebase/port lên ref `main` đã commit, không chạm working tree
+  của phiên khác; migration V4 phải nối lại head canonical sau rebase.
 
 ## 2026-09-14 (tối) — Ba suất/card, một hợp đồng lỗi, và ba lần tôi chẩn đoán sai
 
@@ -382,6 +417,185 @@ Không sửa/xóa worktree LLM trong changeset này.
 
 
 
+
+
+## 2026-09-13 — VPS V4 WIP: profile guards, admin contract, browser và CPU
+
+Worktree riêng `D:\LTTSTUDIOSAPP-vps-v4`, branch
+`codex/vps-v4-infrastructure-profiles`, BASE/HEAD vẫn `3b5adcb7`.
+**Chưa hoàn tất, chưa commit/push/deploy, chưa tạo IP/VM production.**
+
+Chủ dự án duyệt C01 “Cho phép bổ sung hợp đồng admin chung”. Đã thêm
+`AppManifest.admin_nav`, context theo request/app với reset `finally`, cùng
+wrapper render/audit trong hợp đồng web sẵn có. Trang `/vps/admin/cong-ha-tang`
+do app sở hữu, dùng operator auth/CSRF/audit; trần IA mới bảy được ghi trước mã.
+Không hardcode import VPS trong server.
+
+Đã viết test đỏ rồi sửa: từ chối driver nft-map cũ cho actual OVH `gwnat`;
+chặn timestamp tương lai/quan sát mới của generation cũ; collector success với
+exit lỗi; retry IP RESERVED phải bind; cleanup OVH dùng pool-row ID, không phải
+provider ID; không mở QUARANTINED. Failure injection admin bắt rollback mất
+health CRITICAL/cờ đóng accept; đã sửa trả response 409 để commit evidence/audit.
+
+Lệnh đã chạy (các test dùng `python tools\nhat_ky_chay.py --` phía trước):
+
+- `python tools\test_nhanh.py -n 2 -k "ovh_gateway_cannot or future_health or fresh_observation_of_old or success_label_with_nonzero or bo_qua_hien_tai_dat_moc"`
+  → **FAIL kỳ vọng TDD**: 7 đỏ, sentinel pass.
+- `python tools\test_nhanh.py -n 2 -k "retry_after_ip_persist or ovh_cleanup_uses or quarantined_ip_cannot or bo_qua_hien_tai_dat_moc"`
+  → **FAIL kỳ vọng TDD**: 3 đỏ, sentinel pass.
+- `python tools\test_nhanh.py -n 2 -k "vps_pinned_provisioning or vps_backend_contracts or vps_profile_configuration or vps_infrastructure_profiles or vps_machine_b_runtime or xoa_ip_duoc_goi_khi_ghi_so_that_bai or bo_qua_hien_tai_dat_moc"`
+  → **PASS**: pha 1 48 passed/1 skipped; pha 2 1 passed.
+- `python tools\test_nhanh.py -n 2 -k "app_admin_navigation or admin_nav_contract or layering or bo_qua_hien_tai_dat_moc"`
+  → **PASS**: pha 1 64 passed/1 skipped; pha 2 1 passed.
+- `python tools\test_nhanh.py -n 2 -k "failed_activation_persists or bo_qua_hien_tai_dat_moc"`
+  → **FAIL kỳ vọng TDD**: cờ accept/default cũ còn bật.
+- `python tools\test_nhanh.py -n 2 -k "vps_admin_profiles or app_admin_navigation or bo_qua_hien_tai_dat_moc"`
+  → **PASS sau sửa**: pha 1 14 passed/1 skipped; pha 2 1 passed.
+- Với `LTT_VPS_PG_TEST=1`, `python tools\test_nhanh.py -n 2 -k "real_postgres_profile_schema or bo_qua_hien_tai_dat_moc"`
+  → **FAIL**: PostgreSQL thật từ chối constraint Boolean so `0/1`; sentinel đỏ
+  vì skip mới chưa khai. Đổi constraint sang `IS FALSE/IS TRUE`.
+- Với cùng flag, `python tools\test_nhanh.py -n 2 -k "real_postgres_profile_schema"`
+  → pha 1 **1 passed**, nhưng **RESULT FAIL** vì pha 2 không chọn test; không
+  gọi đây là lượt chứng nhận xanh. Chỉ DB test mới có tên UUID được tạo, không
+  đọc/đổi dữ liệu production; các bảng test được dọn, DB rỗng giữ lại.
+- `python tools\check_bo_qua.py` → **PASS 31/31** sau khai đúng một fixture
+  opt-in PostgreSQL; không hạ mốc khác hoặc bỏ test dữ liệu trong kho.
+- `python tools\scan_source_secrets.py` → **PASS**, 3.274 file/788.716 dòng,
+  **0 finding** tại checkpoint trước các cập nhật tài liệu tiếp theo.
+
+Browser thật: `python tests\browser\vps_v4_local_server.py` đầu tiên bind fail
+vì tiến trình khác chiếm `127.0.0.1:8100`; không dừng tiến trình đó. Fixture
+riêng bind `127.0.0.2:8100`, DB/data/secrets test riêng ngoài kho, xóa cấu hình
+LTT deployment khỏi environment trước import, không có provider credential.
+Session bootstrap chỉ nằm trong fixture, không có ở production app.
+
+`playwright-cli -s=vps-v4 run-code --filename=tests/browser/vps_v4_admin.js`
+→ **PASS** trên desktop 1440×1000/mobile 390×844: guest redirect; regular admin
+403; outsider VPS 404; test owner 200; không selector provider/profile; core
+admin → VPS → Cổng hạ tầng; default bị chặn 409; preflight NOT READY; Disable
+hiển thị DISABLED; không horizontal overflow. **0 page error, 0 unexpected
+console error, 0 failed request, 0 HTTP 5xx**. `console error` 0 message;
+`requests` chỉ liệt kê 403/404/409 cố ý. Hai PNG ở `docs/VPS_V4/evidence/`
+đã mở xem trực tiếp; không credential trong ảnh.
+
+CPU: trước mỗi lượt nặng đều chạy `tai_may.py` và `cua_so_yen.py trang-thai`;
+giữ `-n 2`, journal lấy mẫu ngoài cây kho. Lượt 48 test đỉnh đo **20,4%**,
+RAM trống thấp nhất **13,09 GiB**; lượt admin cuối đỉnh **17,7%**, thấp nhất
+**11,44 GiB**; sau browser CPU **7%**, RAM trống **12,0 GiB**. Đây là tải toàn
+máy, không quy hết cho VPS; có job LLM ngoài worktree cùng hoạt động.
+
+Checkpoint tiếp trong ngày: user yêu cầu gom full gate cuối các phase, giữ
+diagnostic nhỏ và kiểm CPU/khóa trước mỗi lượt nặng. Không sửa cây main của
+phiên CMC đang làm root-history rewrite.
+
+- `test_nhanh.py -n 2 -k "vps or app_admin_navigation or bo_qua_hien_tai_dat_moc"`
+  (qua journal) → **FAIL**: 737 passed/5 skipped/3 failed, sentinel 1 passed.
+  Hai test AST maintenance cũ được thay bằng test gọi hành vi thật; chưa chạy
+  lại toàn bộ sau sửa. Lượt này tự chờ khóa gate phiên khác 175 giây.
+- `test_nhanh.py -n 2 -k "tao_may_thanh_cong_thu_tien or real_postgres_concurrent or real_postgres_two_ip or vps_profile_maintenance or bo_qua_hien_tai_dat_moc"`
+  (journal, `LTT_VPS_PG_TEST=1`) → **PASS**: 5 passed/1 skipped, sentinel 1
+  passed. PostgreSQL thật dùng DB test UUID riêng: hai worker tranh default chỉ
+  một thắng, hai worker cấp hai FREE IP nhận hai resource khác nhau.
+- `test_nhanh.py -n 2 -k "vps_sellable_capacity or vps_machine_b_runtime or vps_profile_preflight or vps_mutation_coordinator or real_postgres or bo_qua_hien_tai_dat_moc"`
+  (journal, PG opt-in) → **PASS**: 36 passed/1 skipped, sentinel 1 passed.
+  Migration up/down PostgreSQL chạy trong schema test riêng, chưa thay thế gate
+  migration-chain trên canonical base mới.
+- Browser script chạy lại **PASS** với thêm/sửa profile tham chiếu, đóng accept
+  sau sửa, giữ DISABLED, mobile mở form không overflow; console error 0.
+
+Đã bổ sung sellable capacity, runtime nested-shape fail-closed, strict SSH host
+key và known-hosts reference, router theo profile, coordinator durable request
+và readback cho PUBLIC_MAPPING, per-instance maintenance theo pin. Mọi external
+mutation chưa được journal đầy đủ. CPU đã quan sát 45% khi gate phiên khác
+hoạt động, không khởi thêm test lúc đó; checkpoint khôi phục hiện 40%, RAM
+trống 13,4 GiB, khóa do PID 19288 giữ. Đây là tải toàn máy, không quy riêng VPS.
+**Full gate chưa chạy/PASS; chưa commit/push/deploy.**
+
+P4 TDD tiếp theo: lượt journal `20260913_160936` tự xếp hàng **374 giây** sau
+gate của phiên khác, rồi chạy 2 worker: **21 passed/1 skipped/4 failed**, phase-2
+sentinel **1 passed**, RESULT FAIL. Bốn lỗi được phân loại ngay: ba kỳ vọng test
+chưa dùng đúng semantics mới (nhiều operation hợp lệ, xung đột readback thành
+NEEDS_REVIEW, trạng thái Proxmox cần chuẩn hóa), một assertion `token` đụng tên
+field CSRF. Đã sửa đúng các điểm đó; lượt xanh lại còn chờ khóa gate mới của
+PID 16428, không tuyên bố pass trước kết quả thật.
+
+Đã thêm journal/readback cho VM create, cấu hình, DHCP+bộ đếm và boot; rebuild
+dùng operation ID riêng để không nhận nhầm journal create cũ. Existing VM chỉ
+được nhận khi canonical name **và** SMBIOS UUID suy từ instance ID cùng khớp;
+VMID/name riêng lẻ không phải ownership. Cleanup mơ hồ commit QUARANTINED trước
+khi ném, giữ cả liên kết IP công khai và địa chỉ riêng để không cấp cho khách
+khác. Reconciliation trên compute dùng chung không gọi VM của profile khác là
+orphan. Matrix nằm ở `docs/VPS_V4/11_FAILURE_COMPENSATION_MATRIX.md`.
+
+Admin thêm runtime/router reference, component health, provider, available IPv4,
+VM count, last check, kho IP read-only và action reconciliation read-only có
+CSRF/audit/safe output. Playwright fixture sạch chạy lại sau restart: **PASS**,
+0 page/console error, 0 failed request, 0 HTTP 5xx; desktop/mobile và form mới
+đều được xác minh. Không dùng credential hay tài nguyên production.
+
+Blocker live: H: chưa mount; CA PVE còn thiếu; live free-IP/owner-ID chưa đọc;
+actual OVH dùng `gwnat`/`anh-xa-ip.txt` khác driver legacy, factory fail-closed.
+Blocker bàn giao: main `73e35319` có migrations mới và canonical tree đang dirty
+chuẩn bị root-history rewrite. Không tự merge/rebase/push lineage cũ; integrator
+phải port capability và sửa migration chain trên base cuối. Journal chưa được
+wired cho mọi mutation; background reconcile mới là read-only findings, UI IP
+inventory/acquisition và lifecycle crash recovery đầy đủ còn WIP. Không được
+gọi MVP/production ready.
+
+Checkpoint đóng băng offline cuối ngày:
+
+- Batch mutation/ownership/admin: **29 passed/1 skipped**, sentinel phase 2
+  **1 passed**, RESULT PASS (journal `20260913_212629`).
+- Broad VPS sau chín sửa tương thích: **768 passed/3 skipped**, sentinel
+  **1 passed**, RESULT PASS (journal `20260913_213302`).
+- Provenance/log-redaction: lượt đầu đỏ đúng một lỗi timestamp SQLite không
+  timezone; sau chuẩn hóa: **26 passed/1 skipped**, sentinel **1 passed**,
+  RESULT PASS (journal `20260913_215529`).
+- Một broad VPS xếp hàng sau gate PID 6000 đã tự suy biến sang chạy không khóa
+  sau 15 phút. Nó tìm đúng xung đột hợp đồng cũ: test 559 bắt log nguyên URL
+  provider trong khi hardening cấm sao chép body thô. Kết quả **770 passed/3
+  skipped/1 failed** chỉ dùng chẩn đoán, không dùng chứng nhận.
+- Sau khi khóa thật sự RẢNH và CPU mẫu 6–12%, sửa test hành vi giữ mã+lớp lỗi
+  nhưng cấm URL/body thô. Hồi quy log **2 passed/1 skipped**, sentinel **1
+  passed**, RESULT PASS (journal `20260913_221557`). Broad VPS độc lập tiếp đó
+  **771 passed/3 skipped**, sentinel **1 passed**, RESULT PASS, 63 giây
+  (journal `20260913_221641`).
+- Playwright provenance lần đầu đỏ do script đọc nội dung trong `<details>`
+  đang đóng; mở đúng disclosure rồi chạy lại **PASS** desktop/mobile, 0 page/
+  console error, 0 failed request, 0 HTTP 5xx. Đây là sửa test browser, không
+  phải lỗi production UI.
+
+Ứng viên đóng băng: `compileall` và `git diff --check` PASS; secret scan đầu
+**3.283 file/790.918 dòng/0 finding**, quét lại sau annotation **3.283 file/
+790.922 dòng/0 finding**, cả hai RESULT PASS. Frontend build `NOT_NEEDED` vì
+không đổi `frontend/` source/test. Full gate duy nhất chờ gate PID 20128 của
+phiên khác nhả khóa; không chen khi CPU toàn máy 52–55%. Vẫn chưa commit/push/
+deploy; mọi blocker live/canonical lineage ở trên còn nguyên.
+
+Vòng gate đóng băng thứ nhất chạy đúng `python tools\gate.py` trên tải RẢNH,
+migration PostgreSQL/compile/import/skip/asset/frontend/app-contract/secret scan
+và M-1 xanh, nhưng **RESULT FAIL** ở bốn bước tĩnh: ruff, mypy, i18n và trần
+`server/admin.py`; tiến trình thoát mã 1 trước khi hoàn tất bảy bước dài còn lại,
+nên không dùng làm chứng nhận. Không sửa cây trong lúc gate chạy.
+
+Đã sửa tập trung, không nâng baseline: bỏ import/biến thừa, giữ seam test
+`client_tu_moi_truong` bằng ignore hẹp; `zip(strict=True)`; type narrowing/
+annotation cho runtime, static IP và profile; mock `vps_dung_mau` nhận chữ ký
+hai tham số có default; admin navigation không làm `server/admin.py` vượt 1.622
+dòng. Bọc i18n admin, thêm bản dịch EN riêng cho chuỗi VPS mới và biên dịch
+`.mo`; không giữ churn extraction 24 nghìn dòng/nợ dịch ngoài phạm vi.
+
+Kiểm tĩnh sau sửa: ruff **PASS** đúng mốc 933/12; mypy **PASS** 585/14 và giảm
+2 `assignment`; i18n **PASS** 712 không tăng; route-size **PASS** 1.622 dòng;
+compileall/diff-check PASS. Test status 409 sau một lỗi dấu ngoặc TDD:
+**3 passed/1 skipped**, sentinel **1 passed** (journal `20260913_225552`).
+Playwright desktop/mobile chạy lại **PASS**, 0 page/console/network/5xx ngoài
+403/404/409 cố ý. Translation+unpinned seam **3 passed/1 skipped**, sentinel
+**1 passed** (journal `20260913_230257`). Broad cuối sau mọi sửa:
+**771 passed/3 skipped**, sentinel **1 passed**, RESULT PASS, 61 giây
+(journal `20260913_230338`). H46.6 vẫn mở cho đến full gate lần hai.
+
+---
 
 ## 2026-09-12 — LTT-CMC Phase 1: `CMC_SYNC_BARRIER_READY`
 
