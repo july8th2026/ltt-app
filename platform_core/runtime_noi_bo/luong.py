@@ -934,7 +934,17 @@ def mo_thuong_nguon(cb: ChuanBi, *, timeout_s: float = MO_LUONG_GIAY,
     luot.luong = _phat(mo, luot, trang_thai=trang_thai)
     # Mang theo đường đóng THẲNG tới httpx. Đường huỷ cần nó vì `luong.close()`
     # ném khi luồng đọc còn đang chạy — xem `dong_nguon` ở `LuotLuong`.
-    luot.dong_nguon = mo.dong_nguon
+    #
+    # ⛔ `getattr` CHỨ KHÔNG `mo.dong_nguon`. Bản giả của `LuongMo` trong test
+    #    (`GiaLuong`) đóng vai *"một luồng đã mở"*, không đóng vai *"chữ ký đầy
+    #    đủ của `LuongMo` hôm nay"*. Viết thẳng làm **57 phép kiểm đỏ** ngay lần
+    #    gate kế — không phải vì mã sai mà vì bên tiêu thụ chặt hơn thứ nó nhận.
+    #
+    # ⚠️ Đây là lần THỨ NĂM trong một phiên cùng một mẫu (`executor.run`,
+    #    `danh_dau_loi`, bản giả không giữ tham chiếu, `Test-Path` trên thư mục
+    #    rỗng). Luật rút ra: **bên tiêu thụ phải khoan dung với bản giả**, y như
+    #    một hàm giả nhận `**kw` thay vì liệt kê tham số.
+    luot.dong_nguon = getattr(mo, "dong_nguon", None)
     return luot
 
 

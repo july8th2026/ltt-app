@@ -182,6 +182,28 @@ def test_huy_goi_DONG_NGUON_chu_khong_chi_close_generator():
         "B van giu slot.")
 
 
+def test_VAT_THAT_phai_khai_dong_nguon():
+    """⚠️ Ve nay la CAI GIA cua `getattr` o `luong.py`.
+
+    Ben tieu thu doc `getattr(mo, "dong_nguon", None)` de mot BAN GIA khong phai
+    khai lai chu ky day du — dung luat da rut ra sau 5 lan vap trong mot phien.
+
+    ⛔ Nhung khoan dung co mot cai gia: neu VAT THAT (`LuongMo`) mot ngay nao do
+       khong con truong ay, `getattr` tra `None`, `bat_dong_bo_hoa` lang le bo
+       qua buoc dong ket noi, va **L-08 quay lai ma khong mot phep kiem nao do**.
+
+    ⇒ Ve nay chot chieu con lai: ban gia duoc phep thieu, vat THAT thi khong.
+    """
+    import dataclasses
+
+    from platform_core.llm.luong_vlm import LuongMo
+
+    ten = {f.name for f in dataclasses.fields(LuongMo)}
+    assert "dong_nguon" in ten, (
+        "`LuongMo` khong con khai `dong_nguon` — `luong.py` doc bang `getattr` "
+        "nen no se LANG LE tra None va L-08 quay lai. Sua o ca hai cho.")
+
+
 def test_nguon_khong_co_close_thi_khong_vo():
     async def _chay():
         return [k async for k in cua_luong.bat_dong_bo_hoa(iter([b"a", b"b"]))]
