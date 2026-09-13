@@ -13,6 +13,93 @@
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
 
+## 2026-09-13 — LTT LLM: đóng L-08, tìm L-11/L-12, và một khoản nợ của chính nhật ký này
+
+### 🔴 Trước hết: khoản nợ nhật ký
+
+Thay đổi **quan trọng nhất** của hệ con LLM — mô hình đồng thời từ **1 suất lên
+3 suất mỗi card, hai card** — đã vào mã ngày 11–12/09 mà **không có một dòng nào
+trong tệp này**. `CLAUDE.md` đặt nghĩa vụ *"cập nhật cuối mỗi phiên có thay đổi
+code"*, và nghĩa vụ ấy đã trượt.
+
+⇒ Hậu quả đo được: **~40 tài liệu** khắp `docs/` còn khai `DONG_THOI_MAY_B = 1`
+hoặc `--parallel 1`. Phần lớn là bản ghi có ngày (đúng lúc ấy, **không sửa**),
+nhưng **hai tệp SỐNG** thì nói sai với người đọc hôm nay và đã được sửa:
+
+- `docs/auto_scan_video_v4/RUNBOOK.md` — còn nhắc lý lẽ *"speculative decoding
+  chỉ tối ưu một luồng"*, thứ cổng G2 đã bác (`llama-swap.yaml:151`).
+- `docs/VLM_NOI_BO/CAM_CLI.md` — còn nói hạng mục **V7 "chưa làm"**; V7 đã làm.
+
+⛔ Cả hai nay thay con số chép tay bằng **con trỏ** tới `apps/ltt_llm/ngan_sach.py`.
+   Chép số vào tài liệu chính là cơ chế đã làm bảng ở kho này nói sai năm lần.
+
+### Sự thật hiện hành (hỏi mã, đừng chép lại)
+
+| | nguồn |
+|---|---|
+| suất mỗi model · pool KV · ngưỡng whale | `apps/ltt_llm/ngan_sach.py` → `manifest.py` |
+| một lượt đi qua đâu, mỗi chặng ai gác | `docs/ltt_llm_dual/BAN_DO_DUONG_DI.md` ← **MỚI** |
+| kịch bản test vận hành trên production | `docs/ltt_llm_dual/MA_TRAN_TEST_JOB_DAI.md` ← **MỚI** |
+| sổ lỗi hệ con | `docs/ltt_llm_dual/SO_LOI_DO_TAI.md` |
+
+### L-08 — ĐÓNG
+
+Cửa stream giữ suất sau khi khách cắt: **≥643 s → 0,7 s**, đo trên production
+với đối chứng (một lượt chạy trọn không cắt mất 123,3 s, nên 0,7 s là do **cắt**
+chứ không do sinh xong).
+
+🔑 Gốc thật sau **ba** bản vá hỏng: `streaming.py` có **hai** cửa stream, và cả
+ba bản vá đều gắn vào cửa mà **không lượt nào đi qua** (đường cũ, di tích thời
+một-card/một-job). Đã gỡ 150 dòng ấy; nay chỉ còn một cửa thật, `test_1248` chốt
+điều đó.
+
+⛔ Và hai trích dẫn cộng đồng tôi đưa vào mã production (`fastapi#7572`,
+   `Kludex/starlette#2866`) là **bịa** — API trả 404. Đã gỡ, thay bằng
+   `Kludex/starlette#1438`, `#3458`, và `starlette/responses.py:250`.
+
+### L-11 · L-12 — MỞ, đã vá, chờ nghiệm thu máy thật
+
+Cả hai do **ma trận test job dài** tìm ra trên production; không unit test nào
+trong kho bắt được, vì cả hai chỉ hiện khi hệ **đang đầy**.
+
+- **L-11**: deploy giữa lúc có stream ⇒ 6/6 suất bị xác lease chiếm, im 516 s,
+  còn hạn tới phút 20. Vá: tách thời hạn mồ côi cho `mode='stream'` xuống 180 s
+  (3× nhịp — dải Kubernetes Lease API 1,5–4×, thay vì 20× hiện tại).
+- **L-12**: request prefill 67.989 token (dưới trần vào 171.458) bị **429** khi
+  phòng chờ có người, nhưng **200 chạy trọn** khi phòng trống. Vá theo nguyên lý
+  của chunked prefill: *một trần TỔNG không được loại trừ vĩnh viễn một món đơn
+  lẻ vốn hợp lệ*.
+
+### Ma trận vận hành — 11 kịch bản trên production
+
+Hệ đúng ở 9: 6 suất · 3/card · người thứ bảy **xếp hàng có nhịp báo** · khoá API
+**không** cộng suất · trần tài khoản bật **2/1** · khách đến cuối **không chờ
+trắng** · L-08 vững cả **dưới tải**. Số đo đầy đủ ở `MA_TRAN_TEST_JOB_DAI.md`.
+
+⭐ Một điều ngoài kế hoạch: card **5060 mở rộng tốt hơn 3090** (2,13× so với
+   1,90× ở ba luồng), và `ngan_sach.py` đã ghi rằng suất **thứ 4** của nó đo
+   được là vừa thoải mái. Hai bằng chứng độc lập cùng chỉ một hướng: muốn thêm
+   sức chứa thì chỗ rẻ nhất là nâng `ltt-3.5` lên 4, **không** đụng 3090.
+
+---
+
+## 2026-09-12 — Duyệt đóng GitHub bằng một root commit
+
+Người dùng xác nhận giữ snapshot canonical mới nhất nhưng xóa lịch sử commit
+cũ khỏi các ref GitHub. Trước thay đổi, local `main` và `origin/main` cùng trỏ
+`45aaef03c037607a1d83fef10ac34bd82ac31abe`, tree
+`92e2558cfb3416184eda8be72548a83f71e74251`; remote chỉ còn `main`.
+
+Phương án đã chốt ở Q124: tạo root trực tiếp từ index sau quét bí mật và kiểm
+governance/topology, so tree hash, rồi force-push có lease ghim chính SHA cũ.
+Không chạy `git gc`/`git prune`. Worktree VPS V4 tại `3b5adcb7` vẫn giữ nguyên
+vì chứa WIP local ngoài phạm vi GitHub. SHA root cuối không thể tự ghi trong
+chính commit tạo ra nó; giá trị authoritative là HEAD của `main` sau rewrite.
+
+---
+
+---
+
 ## 2026-09-12 — LTT-CMC nhận xong Voice/LLM, chờ L3 trên `main`
 
 Quét live sau khi mọi phiên đóng cho thấy ảnh chụp barrier đã trôi ở hai chỗ:
@@ -17658,73 +17745,3 @@ URL công khai      : /health/ready 200 · / 200 · /gia-api 200
    phiên khác, `alembic` hai head — đều chỉ là **triệu chứng của đúng một sự
    thật ấy**. Tôi đã đi vòng qua từng rào một thay vì hỏi vì sao chúng cùng xuất
    hiện.
-
----
-
-## 2026-09-13 — LTT LLM: đóng L-08, tìm L-11/L-12, và một khoản nợ của chính nhật ký này
-
-### 🔴 Trước hết: khoản nợ nhật ký
-
-Thay đổi **quan trọng nhất** của hệ con LLM — mô hình đồng thời từ **1 suất lên
-3 suất mỗi card, hai card** — đã vào mã ngày 11–12/09 mà **không có một dòng nào
-trong tệp này**. `CLAUDE.md` đặt nghĩa vụ *"cập nhật cuối mỗi phiên có thay đổi
-code"*, và nghĩa vụ ấy đã trượt.
-
-⇒ Hậu quả đo được: **~40 tài liệu** khắp `docs/` còn khai `DONG_THOI_MAY_B = 1`
-hoặc `--parallel 1`. Phần lớn là bản ghi có ngày (đúng lúc ấy, **không sửa**),
-nhưng **hai tệp SỐNG** thì nói sai với người đọc hôm nay và đã được sửa:
-
-- `docs/auto_scan_video_v4/RUNBOOK.md` — còn nhắc lý lẽ *"speculative decoding
-  chỉ tối ưu một luồng"*, thứ cổng G2 đã bác (`llama-swap.yaml:151`).
-- `docs/VLM_NOI_BO/CAM_CLI.md` — còn nói hạng mục **V7 "chưa làm"**; V7 đã làm.
-
-⛔ Cả hai nay thay con số chép tay bằng **con trỏ** tới `apps/ltt_llm/ngan_sach.py`.
-   Chép số vào tài liệu chính là cơ chế đã làm bảng ở kho này nói sai năm lần.
-
-### Sự thật hiện hành (hỏi mã, đừng chép lại)
-
-| | nguồn |
-|---|---|
-| suất mỗi model · pool KV · ngưỡng whale | `apps/ltt_llm/ngan_sach.py` → `manifest.py` |
-| một lượt đi qua đâu, mỗi chặng ai gác | `docs/ltt_llm_dual/BAN_DO_DUONG_DI.md` ← **MỚI** |
-| kịch bản test vận hành trên production | `docs/ltt_llm_dual/MA_TRAN_TEST_JOB_DAI.md` ← **MỚI** |
-| sổ lỗi hệ con | `docs/ltt_llm_dual/SO_LOI_DO_TAI.md` |
-
-### L-08 — ĐÓNG
-
-Cửa stream giữ suất sau khi khách cắt: **≥643 s → 0,7 s**, đo trên production
-với đối chứng (một lượt chạy trọn không cắt mất 123,3 s, nên 0,7 s là do **cắt**
-chứ không do sinh xong).
-
-🔑 Gốc thật sau **ba** bản vá hỏng: `streaming.py` có **hai** cửa stream, và cả
-ba bản vá đều gắn vào cửa mà **không lượt nào đi qua** (đường cũ, di tích thời
-một-card/một-job). Đã gỡ 150 dòng ấy; nay chỉ còn một cửa thật, `test_1248` chốt
-điều đó.
-
-⛔ Và hai trích dẫn cộng đồng tôi đưa vào mã production (`fastapi#7572`,
-   `Kludex/starlette#2866`) là **bịa** — API trả 404. Đã gỡ, thay bằng
-   `Kludex/starlette#1438`, `#3458`, và `starlette/responses.py:250`.
-
-### L-11 · L-12 — MỞ, đã vá, chờ nghiệm thu máy thật
-
-Cả hai do **ma trận test job dài** tìm ra trên production; không unit test nào
-trong kho bắt được, vì cả hai chỉ hiện khi hệ **đang đầy**.
-
-- **L-11**: deploy giữa lúc có stream ⇒ 6/6 suất bị xác lease chiếm, im 516 s,
-  còn hạn tới phút 20. Vá: tách thời hạn mồ côi cho `mode='stream'` xuống 180 s
-  (3× nhịp — dải Kubernetes Lease API 1,5–4×, thay vì 20× hiện tại).
-- **L-12**: request prefill 67.989 token (dưới trần vào 171.458) bị **429** khi
-  phòng chờ có người, nhưng **200 chạy trọn** khi phòng trống. Vá theo nguyên lý
-  của chunked prefill: *một trần TỔNG không được loại trừ vĩnh viễn một món đơn
-  lẻ vốn hợp lệ*.
-
-### Ma trận vận hành — 11 kịch bản trên production
-
-Hệ đúng ở 9: 6 suất · 3/card · người thứ bảy **xếp hàng có nhịp báo** · khoá API
-**không** cộng suất · trần tài khoản bật **2/1** · khách đến cuối **không chờ
-trắng** · L-08 vững cả **dưới tải**. Số đo đầy đủ ở `MA_TRAN_TEST_JOB_DAI.md`.
-
-⭐ Một điều ngoài kế hoạch: card **5060 mở rộng tốt hơn 3090** (2,13× so với
-   1,90× ở ba luồng), và `ngan_sach.py` đã ghi rằng suất **thứ 4** của nó đo
-   được là vừa thoải mái. Hai bằng chứng độc lập cùng chỉ một hướng: muốn thêm
-   sức chứa thì chỗ rẻ nhất là nâng `ltt-3.5` lên 4, **không** đụng 3090.
