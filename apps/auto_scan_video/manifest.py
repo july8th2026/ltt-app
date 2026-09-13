@@ -145,8 +145,14 @@ MANIFEST = AppManifest(
 
     table_prefix="asv",
 
-    # ── Chua mo ────────────────────────────────────────────────────────────
-    enabled=False,
+    # ── Bat cho khach da dang nhap kiem thu (13/09) ──────────────────────────
+    #: `enabled=True`: the "Mo app" o market grid hoat dong (home.html:44), khach
+    #: bam vao /auto-scan-video that. `visible_on_surface` cho khach DA DANG NHAP
+    #: thay app customer bat ke `public` — nen chu san pham dang nhap kiem thu
+    #: duoc ngay. `public=False` giu app KHOI catalog an danh cho toi khi nghiem
+    #: thu tren URL cong khai xong; `lifecycle=development` giu badge trung thuc
+    #: (chua chay E2E day du qua worker) — doi `released` sau khi kiem thu dat.
+    enabled=True,
     public=False,
 
     #: ⭐ `customer` tu pha 20 — app da co `routes.py` that.
@@ -165,5 +171,6 @@ MANIFEST = AppManifest(
     surface="customer",
     lifecycle="development",
     capabilities=("video",),
-    notes="Pha 05: mach doc GIA, chua co engine that. Khong mo cho khach.",
+    notes="V6: engine that (STT/khop clip/tach nhac/tron tieng/phu de). Bat "
+          "enabled cho khach dang nhap kiem thu; public/released sau nghiem thu.",
 )
