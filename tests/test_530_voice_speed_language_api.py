@@ -64,11 +64,13 @@ class TestD01D02_ParamsSchema:
     def test_speed_type_number(self):
         assert _tool().params_schema["speed"]["type"] == "number"
 
-    def test_speed_minimum(self):
-        assert _tool().params_schema["speed"]["minimum"] == 0.5
+    def test_speed_min(self):
+        # ⛔ `min`/`max` (quy uoc ngan cua nen tang), KHONG `minimum`/`maximum`:
+        #    project_tool chi dich `min`->`minimum` vao input_schema cong khai.
+        assert _tool().params_schema["speed"]["min"] == 0.5
 
-    def test_speed_maximum(self):
-        assert _tool().params_schema["speed"]["maximum"] == 2.0
+    def test_speed_max(self):
+        assert _tool().params_schema["speed"]["max"] == 2.0
 
     def test_speed_khong_bat_buoc(self):
         assert _tool().params_schema["speed"].get("required") is not True
@@ -76,11 +78,13 @@ class TestD01D02_ParamsSchema:
     def test_language_trong_schema(self):
         assert "language" in _tool().params_schema
 
-    def test_language_type_string(self):
-        assert _tool().params_schema["language"]["type"] == "string"
+    def test_language_type_enum(self):
+        # `type:"enum"` + `values`: chi kind=="enum" moi duoc project_tool phat
+        # `enum` cong khai (string thuong thi khong).
+        assert _tool().params_schema["language"]["type"] == "enum"
 
-    def test_language_enum(self):
-        assert set(_tool().params_schema["language"]["enum"]) == {"auto", "vi", "en"}
+    def test_language_values(self):
+        assert set(_tool().params_schema["language"]["values"]) == {"auto", "vi", "en"}
 
     def test_language_khong_bat_buoc(self):
         assert _tool().params_schema["language"].get("required") is not True
@@ -94,6 +98,80 @@ class TestD01D02_ParamsSchema:
         contract = _tool().api_contract
         assert "language" in contract["params"]
         assert "description" in contract["params"]["language"]
+
+
+# ── D03: FAIL-CLOSED o BIEN CONG KHAI (test that su chot D03) ─────────────────
+#
+# ⛔ Class nay ton tai vi cac test tren CHUA DU. Chung kiem `params_schema`
+#    (khai NOI BO); nhung `validate_public_input` chay tren `input_schema` da
+#    duoc `project_tool` CHIEU RA. Neu phep chieu lam roi rang buoc (nhu no
+#    tung lam khi params_schema dung sai quy uoc `minimum` thay vi `min`), thi
+#    khai bao dung ma bien CONG KHAI van chap nhan `speed=2.5`. Chi test qua
+#    chinh phep chieu moi bat duoc khoang trong "khai noi bo != cuong che bien".
+
+
+def _public_tool():
+    from platform_core.public_api.catalog import project_tool
+    from platform_core.registry import discover
+    mf = next(i.manifest for i in discover() if i.manifest.slug == "ltt_voice")
+    tool = next(t for t in mf.tools if t.name == "speech.ltt")
+    return project_tool(mf, tool)
+
+
+class TestD03_FailClosedBienCongKhai:
+
+    def _validate(self, payload):
+        from platform_core.public_api.invocation import validate_public_input
+        return validate_public_input(_public_tool(), payload)
+
+    @staticmethod
+    def _ApiError():
+        from platform_core.public_api.errors import ApiError
+        return ApiError
+
+    def test_input_schema_speed_co_minimum(self):
+        pt = _public_tool()
+        assert pt.input_schema["properties"]["speed"]["minimum"] == 0.5
+
+    def test_input_schema_speed_co_maximum(self):
+        pt = _public_tool()
+        assert pt.input_schema["properties"]["speed"]["maximum"] == 2.0
+
+    def test_input_schema_language_co_enum(self):
+        pt = _public_tool()
+        assert set(pt.input_schema["properties"]["language"]["enum"]) == {
+            "auto", "vi", "en"}
+
+    def test_speed_tren_tran_bi_reject(self):
+        import pytest
+        with pytest.raises(self._ApiError()):
+            self._validate({"text": "x", "speed": 2.5})
+
+    def test_speed_duoi_san_bi_reject(self):
+        import pytest
+        with pytest.raises(self._ApiError()):
+            self._validate({"text": "x", "speed": 0.1})
+
+    def test_speed_bien_tren_chap_nhan(self):
+        assert self._validate({"text": "x", "speed": 2.0})["speed"] == 2.0
+
+    def test_speed_bien_duoi_chap_nhan(self):
+        assert self._validate({"text": "x", "speed": 0.5})["speed"] == 0.5
+
+    def test_language_ngoai_enum_bi_reject(self):
+        import pytest
+        with pytest.raises(self._ApiError()):
+            self._validate({"text": "x", "language": "fr"})
+
+    def test_language_vi_chap_nhan(self):
+        assert self._validate({"text": "x", "language": "vi"})["language"] == "vi"
+
+    def test_language_auto_chap_nhan(self):
+        assert self._validate({"text": "x", "language": "auto"})["language"] == "auto"
+
+    def test_hop_le_ca_hai(self):
+        clean = self._validate({"text": "x", "speed": 1.25, "language": "en"})
+        assert clean["speed"] == 1.25 and clean["language"] == "en"
 
 
 # ── D03: chuan_hoa dual-name ─────────────────────────────────────────────────

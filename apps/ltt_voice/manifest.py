@@ -311,17 +311,26 @@ MANIFEST = AppManifest(
                 "preset": {"type": "string", "required": False,
                            "max_length": 64},
                 # D01 (2026-09-13): tốc độ HẬU KỲ cho Public API.
-                # Continuous [0.5, 2.0]; platform reject ngoài khoảng.
+                # ⛔ `min`/`max` (dạng NGẮN của nền tảng), KHÔNG `minimum`/`maximum`:
+                #    `catalog.project_tool` chỉ dịch `min`→`minimum`, `max`→`maximum`
+                #    vào `input_schema` công khai. Gõ dạng dài thì bị lược im lặng,
+                #    và `validate_public_input` KHÔNG reject giá trị ngoài khoảng —
+                #    D03 fail-closed ở biên công khai hỏng mà gate cũ không thấy.
                 "speed": {"type": "number", "required": False,
-                          "minimum": toc_do.TOC_DO_MIN,
-                          "maximum": toc_do.TOC_DO_MAX},
+                          "min": toc_do.TOC_DO_MIN,
+                          "max": toc_do.TOC_DO_MAX,
+                          "default": 1.0},
                 # D02 (2026-09-13): làn ngôn ngữ cho Public API.
-                # "auto" = máy đoán (mặc định). Platform reject ngoài enum.
+                # ⛔ `type:"enum"` + `values` (quy ước nền tảng, xem `image.ltt`
+                #    `mode`, `ltt_llm` `reasoning_effort`), KHÔNG `type:"string"`
+                #    + `enum`: `project_tool` chỉ phát `enum` công khai cho
+                #    `kind=="enum"`. String thường không có enum ⇒ không reject.
                 # ⛔ SUY từ `lan_ngon_ngu.LAN_HOP_LE`, KHÔNG gõ lại ["vi","en"]:
-                #    INV-02 (test_522) chốt làn chỉ có MỘT bản khai, ở
-                #    `lan_ngon_ngu`. Thêm làn thứ ba ở đó thì enum này tự theo.
-                "language": {"type": "string", "required": False,
-                             "enum": ["auto", *lan_ngon_ngu.LAN_HOP_LE]},
+                #    INV-02 (test_522) chốt làn chỉ có MỘT bản khai. Thêm làn thứ
+                #    ba ở `lan_ngon_ngu` thì enum này tự theo.
+                "language": {"type": "enum", "required": False,
+                             "values": ["auto", *lan_ngon_ngu.LAN_HOP_LE],
+                             "default": "auto"},
             },
             returns={"audio_key": "audio", "text": "text"},
 

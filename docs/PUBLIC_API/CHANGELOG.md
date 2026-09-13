@@ -24,7 +24,7 @@ lần ghi lại đó hiện ra trong diff.
 ## 2026-09-13 — `speech.ltt` thêm `speed` và `language`
 
 **ADDED · không phá vỡ hợp đồng.** `contract_hash` của `speech.ltt` đổi
-(`e37638a1ec2e07be` → `70744552a508e43b`) vì `input_schema` có thêm hai trường,
+(`e37638a1ec2e07be` → `ebedbcc38dfcd9d6`) vì `input_schema` có thêm hai trường,
 nhưng **không tích hợp đang chạy nào hỏng**: cả hai trường đều **tùy chọn** và
 có mặc định an toàn. Một caller không gửi chúng cư xử y hệt trước.
 
