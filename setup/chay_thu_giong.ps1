@@ -26,7 +26,9 @@ param(
     [string]$Email = '',
     [string]$Text  = '',
     [string]$TaiVe = '',
-    [int]$ChoGiay  = 300
+    [int]$ChoGiay  = 300,
+    [string]$Speed = '',
+    [string]$Language = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -59,9 +61,11 @@ foreach ($dong in (Get-Content $envFile -Encoding UTF8)) {
 Write-Host "  [OK] Nap $so bien tu app.env (khong in gia tri)" -ForegroundColor Green
 
 $doiSo = @('--cho-giay', "$ChoGiay")
-if ($Email) { $doiSo += @('--email', $Email) }
-if ($Text)  { $doiSo += @('--text',  $Text) }
-if ($TaiVe) { $doiSo += @('--tai-ve', $TaiVe) }
+if ($Email)    { $doiSo += @('--email', $Email) }
+if ($Text)     { $doiSo += @('--text',  $Text) }
+if ($TaiVe)    { $doiSo += @('--tai-ve', $TaiVe) }
+if ($Speed)    { $doiSo += @('--speed', $Speed) }
+if ($Language) { $doiSo += @('--language', $Language) }
 
 # !! BAY DA DINH BA LAN TRONG HAI NGAY - xem `Test-Py` trong
 #    `deploy\windows\install-vieneu-sidecar.ps1`.
