@@ -16445,6 +16445,7 @@ msgstr "Leave blank to use the running configuration. The three checkboxes above
 #: apps/transcript/templates/transcript.html:27
 msgid "để trống = tự nhận"
 msgstr "blank = auto-detect"
+
 #: apps/vps/admin_routes.py apps/vps/manifest.py apps/vps/templates/admin_profiles.html
 msgid "Cổng hạ tầng"
 msgstr "Infrastructure gateways"

@@ -107,6 +107,16 @@ is fabricated here.
 - Latest TLS/config harness: **105 passed + 201 passed**, RESULT PASS, journal
   `20260914_101533`. Ruff and mypy ratchets pass; latest secret scan covered
   **3,639 files / 891,767 lines**, zero findings. No baseline was accepted.
+- First canonical rebase onto `main` `22841303` was clean and Alembic reported
+  one head `f4a7c2d9e610`. The first post-rebase broad run found one PO entry
+  separator defect; focused correction passed. Broad VPS then passed
+  **789/8 skipped + sentinel** (`20260914_105241`). Isolated real PostgreSQL
+  migration/default/IP concurrency passed **5/1 skip + sentinel**
+  (`20260914_104756`). Canonical `main` moved again before freeze, so these are
+  checkpoint evidence rather than the final gate basis.
+- Post-rebase Playwright local desktop/mobile passed with no page errors,
+  unexpected console errors, failed requests or 5xx responses. Production
+  owner lookup returned exactly one canonical user ID without credential output.
 
 The OVH static-pool path now journals/read-backs VM create/config, DHCP plus
 bandwidth, mapping, boot and destroy; ambiguous cleanup retains associations in

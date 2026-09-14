@@ -25,7 +25,8 @@ Trạng thái: **READ-ONLY PREFLIGHT PARTIAL; NO RESOURCE CREATED/MUTATED**.
 - [x] Query OVH service and Additional IP inventory; all eight failover IPv4 are
   routed and already mapped, leaving zero intended FREE IP.
 - [x] Read back VM100–107 and their eight exact mappings unchanged/protected.
-- [ ] Resolve exactly one canonical user for the approved email; record only ID.
+- [x] Resolve exactly one canonical user for the approved email; count is one
+  and only its canonical ID was returned. No credential/email list was emitted.
 - [ ] Prove an intended FREE IP or prepare one D10 order. Current count is zero;
   checkout/payment remains a manual billing stop.
 

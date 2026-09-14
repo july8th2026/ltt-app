@@ -42,10 +42,20 @@
   mobile PASS, `pageErrors=[]`, console/network/5xx bất ngờ đều zero. Ruff
   **931/12 PASS**, mypy **559/14 PASS**; secret scan **3.639 tệp/891.767 dòng,
   0 finding PASS**. Không chạy full gate; H46.7 vẫn là đúng một gate cuối.
-- **Còn mở:** branch canonical đã tiến thêm 21 commit tới `22841303`, nên phải
-  checkpoint rồi rebase mà không chạm worktree main dirty; sau đó chạy broad VPS,
-  static/security, review diff, đóng băng candidate. Owner production chưa lookup;
-  gateway helper chưa cài; không có IP free nên chưa thể tạo VPS live.
+- **Sau checkpoint:** commit `aa9c14dc` được rebase sạch cùng commit nền V4 lên
+  `main` `22841303`; SHA mới là `e12b59ed` + `bdf39a17`. Alembic đúng một head
+  `f4a7c2d9e610`; không chạm worktree main dirty.
+- **Kiểm sau rebase:** broad đầu **FAIL 1/788** vì PO thiếu dòng trắng trước entry
+  `Cổng hạ tầng`; đây là định dạng block, không thiếu bản dịch. Test mục tiêu sau
+  sửa **1 + 2 PASS** (`20260914_104552`); broad cuối sau helper owner
+  **789 PASS/8 skip + sentinel PASS** (`20260914_105241`). PostgreSQL thật cô lập
+  **5 PASS/1 skip + sentinel PASS** (`20260914_104756`). Playwright local sau
+  rebase PASS desktop/mobile, mọi mảng page/console bất ngờ/network/5xx rỗng.
+  Static/i18n/line-ending PASS; secret scan sau rebase **3.637 tệp/891.109 dòng,
+  0 finding**. Owner production lookup read-only trả đúng một canonical ID.
+- **Còn mở:** `main` lại tiến thêm trước freeze; checkpoint thay đổi owner/evidence,
+  reconcile lần cuối rồi chạy affected tests. Gateway helper chưa cài và không có
+  IP free, nên live create vẫn dừng trước checkout/payment tay.
 
 ## 2026-09-13 — VPS V4: gom full gate về đúng release candidate cuối
 

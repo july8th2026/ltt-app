@@ -126,3 +126,14 @@ def test_ovh_client_signs_get_and_filters_non_additional_ipv4(monkeypatch):
     signed = [headers for _, url, headers in calls if not url.endswith("/auth/time")]
     assert signed and all(headers["X-Ovh-Signature"].startswith("$1$") for headers in signed)
     assert all("fixture-secret" not in str(headers) for headers in signed)
+
+
+def test_vps_owner_resolver_returns_only_canonical_id(db):
+    from apps.vps.ops.resolve_owner import resolve_owner
+    from platform_core.users import tao_nguoi_dung
+
+    owner = tao_nguoi_dung(
+        db, email="owner@example.test", password="fixture-password")
+    db.commit()
+    assert resolve_owner(db, "OWNER@example.test") == owner.id
+    assert resolve_owner(db, "missing@example.test") is None

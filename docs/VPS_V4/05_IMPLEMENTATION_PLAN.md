@@ -36,10 +36,9 @@ starts with a failing test.
 
 2026-09-13 checkpoint: model/selector/pin/backfill and additive migration coded.
 Isolated PostgreSQL up/down and concurrent default uniqueness PASS in focused
-diagnostics. The V4 commit was rebased once onto canonical `main`; that branch
-has since advanced another 21 commits, so a final rebase plus migration-head
-check remains before release freeze. Production-row inventory remains a deploy
-preflight.
+diagnostics. The V4 commits were rebased onto canonical `main` at `22841303`;
+the canonical ref moved again before freeze, so it must be reconciled once more.
+Production-row inventory remains a deploy preflight.
 
 Exit: migration up/down in isolated DB, one-default race test, no legacy break.
 
@@ -132,13 +131,13 @@ Exit: user A/B isolation, admin-only mutations, no secrets, GUI verified.
 ### P6 — Hoàn thiện code và kiểm thử vận hành offline
 
 - [x] Focused backend/domain/failure/security suites.
-- [ ] PostgreSQL concurrent tests and migration single-head checks.
+- [x] PostgreSQL concurrent tests and migration single-head checks.
 - [x] Frontend build last if frontend/tests changed. `NOT_NEEDED`: no
   `frontend/` source or frontend test changed.
 - [x] `python tools\scan_source_secrets.py` → first **3,283 files/790,918
   lines**, repeat after annotation **3,283 files/790,922 lines**; both
   **0 finding, PASS**.
-- [ ] Fix every known in-scope regression and complete the failure/compensation
+- [x] Fix every known in-scope regression and complete the failure/compensation
   matrix with focused behavioral tests.
 - [ ] Freeze one release candidate only after all targeted PostgreSQL, browser,
   security and static checks are green.
@@ -151,7 +150,13 @@ admin tests passed in earlier batches; the latest TLS/config batch passed
 invalid token returned **HTTP 401**, proving CA/name validation without using a
 production credential. Ruff baseline, mypy baseline and secret scan
 (**3,639 files / 891,767 lines / 0 findings**) pass without accepting a new
-baseline. Broad post-rebase VPS regression is still pending.
+baseline. After the first rebase, broad VPS exposed one malformed PO block
+separator; the focused regression passed after correction. Final broad on that
+base was **789 passed/8 skipped + sentinel PASS** (`20260914_105241`). Real
+isolated PostgreSQL migration/default/IP races passed **5/1 skip + sentinel**
+(`20260914_104756`). Playwright desktop/mobile passed with zero unexpected
+console, page, network or 5xx errors. Repeat only the affected checks after the
+last canonical reconciliation.
 
 2026-09-13 freeze candidate: independent broad VPS regression after the last
 log-contract correction is **771 passed/3 skipped**, phase-2 sentinel **1
