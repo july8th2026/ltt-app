@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 
 from sqlalchemy.orm import Session
 
@@ -23,7 +24,8 @@ def main() -> int:
     try:
         owner_id = resolve_owner(db, args.email)
     finally:
-        sessions.close()
+        with contextlib.suppress(StopIteration):
+            next(sessions)
     if owner_id is None:
         print("OWNER_LOOKUP_FAIL count=0")
         return 1
