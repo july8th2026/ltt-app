@@ -447,13 +447,19 @@ def kiem_san_token_ra(sach: dict) -> None:
         return
     from apps.ltt_llm.ngan_sach import NGHI_MAC_DINH
     _muc = sach.get("reasoning_effort") or NGHI_MAC_DINH
+    # 🔴 CÂU NÀY TỪNG MÁCH `reasoning_effort='none'` — một giá trị đã bị GỠ khỏi
+    #    hợp đồng ngày 14/09/2026. Tức lỗi chỉ khách sang một thứ cửa sẽ từ chối:
+    #    họ sửa đúng như lời ta bảo rồi nhận tiếp một 400 khác. Một lỗi chỉ sai
+    #    đường còn tệ hơn một lỗi không chỉ đường nào.
+    #
+    # ⭐ `low` là mức thấp nhất còn phục vụ, nên sàn của nó là con số đúng để nêu.
     raise ThamSoSai(
         f"`max_tokens` is {xin_ra}, below the {_san} this model needs at "
         f"reasoning_effort={_muc!r}: thinking spends the same budget as the "
         f"answer, so a low ceiling returns empty content with "
         f"finish_reason='length'. Either raise max_tokens, or - for a short "
-        f"answer - set reasoning_effort='none' (floor "
-        f"{san_token_ra(sach.get('model'), 'none')}). Do not lower max_tokens "
+        f"answer - set reasoning_effort='low' (floor "
+        f"{san_token_ra(sach.get('model'), 'low')}). Do not lower max_tokens "
         f"to get a shorter reply; that is the other switch.")
 
 

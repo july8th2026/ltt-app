@@ -578,7 +578,10 @@ def test_san_max_tokens_van_bat_khi_dau_vao_vua(api, monkeypatch):
     r = api.post(DUONG, json=than, headers=_h(token))
 
     assert r.status_code == 400, r.text
-    assert "reasoning_effort='none'" in r.text
+    # Muc nghi "none" da bi go khoi hop dong 14/09/2026, nen thong diep nay
+    # phai chi sang "low" — muc thap nhat con phuc vu. Chi sang mot gia tri ma
+    # cua se TU CHOI con te hon khong chi duong nao.
+    assert "reasoning_effort='low'" in r.text
     assert goi == [], "khong duoc cham GPU roi moi tra rong"
 
 

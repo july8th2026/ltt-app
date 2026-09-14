@@ -125,3 +125,32 @@ def test_cua_stream_chuyen_tiep_thu_lai_sau_s_va_nguon():
         kw = {k.arg for k in g.keywords}
         assert {"retry_after", "reason"} <= kw, (
             f"dong {g.lineno}: thieu {{'retry_after','reason'}} - {kw}")
+
+
+def test_loi_khong_duoc_mach_mot_gia_tri_DA_BI_GO():
+    """Lỗi chỉ đường sang `none` — thứ cửa sẽ từ chối — còn tệ hơn không chỉ.
+
+    Đo được trên production 14/09/2026, sau khi `none` đã bị gỡ:
+
+        400 "…Either raise max_tokens, or - for a short answer -
+             set reasoning_effort='none' (floor 64)…"
+
+    Khách sửa đúng như lời ta bảo rồi nhận tiếp một 400 khác. Ca này quét MỌI
+    thông điệp lỗi của `ltt_llm` tìm lời mách tới một giá trị ngoài hợp đồng.
+    """
+    import re
+
+    from apps.ltt_llm import features as F
+
+    hop_le = {"low", "medium", "xhigh"}
+    nguon = pathlib.Path(F.__file__).read_text(encoding="utf-8")
+    # chỉ soi dòng THÔNG ĐIỆP, không soi chú thích (chú thích được phép giải
+    # thích vì sao `none` bị gỡ — phạt việc giải thích là một cửa giả).
+    for dong in nguon.splitlines():
+        t = dong.strip()
+        if t.startswith("#") or "reasoning_effort=" not in t:
+            continue
+        for gt in re.findall(r"reasoning_effort='([a-z]+)'", t):
+            assert gt in hop_le, (
+                f"thong diep mach `reasoning_effort='{gt}'` — khong con trong "
+                f"hop dong: {t[:90]}")

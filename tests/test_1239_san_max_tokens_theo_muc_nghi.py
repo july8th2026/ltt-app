@@ -136,9 +136,12 @@ def test_cua_vao_tu_choi_tran_duoi_san():
     with pytest.raises(features.ThamSoSai) as e:
         _cua(_xin("ltt-3.5", _san - 1, "medium"))
     noi = str(e.value)
-    assert "reasoning_effort='none'" in noi, (
+    # ⛔ Ca nay TUNG doi chuoi `reasoning_effort='none'`. `none` bi go khoi hop
+    #    dong 14/09/2026, nen doi no la ep thong diep chi khach sang mot gia tri
+    #    cua se TU CHOI. `low` la muc thap nhat con phuc vu.
+    assert "reasoning_effort='low'" in noi, (
         "thong bao phai chi ra LOI RA: ha max_tokens la nut SAI, "
-        "tat suy nghi moi la nut dung")
+        "ha muc nghi moi la nut dung")
     assert str(_san) in noi
 
 
