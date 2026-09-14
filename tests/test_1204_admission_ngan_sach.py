@@ -206,3 +206,47 @@ def test_race_postgresql_khong_bao_gio_vuot_pool(monkeypatch):
         t.join()
     assert len(nhan) == 3, f"vuot pool: {len(nhan)} luot 60K tren pool {POOL}"
     dbmod.reset_engine()
+
+
+def test_lease_job_chet_duoc_thu_hoi_theo_NHIP_TIM_chu_khong_doi_20_phut(db):
+    """Sự cố 14/09/2026: deploy giết worker ⇒ suất GPU bị xác chiếm 20 phút.
+
+    Đường lỗi KHÔNG hỏng — `luong.py:_nha_suat` nhả suất đúng khi có handler
+    chạy. Thứ hỏng là **hạn đỡ** cho ca worker bị giết: `job` dùng
+    `ORPHAN_TIMEOUT` 1.200 s = **20 nhịp tim**, trong khi `stream` đã được hạ
+    xuống 180 s = 3 nhịp từ L-11 (13/09) vì đúng loại sự cố ấy.
+
+    Đo được lúc xảy ra: 3090 giữ **3 lease / 2 job thật**, và có **1 job đang
+    xếp hàng** — tức cái xác ăn đúng suất người ta đang chờ.
+
+    ⭐ Con số suy từ `HEARTBEAT_SECONDS`, không mượn của ai: `reclaim_expired` đo
+       `heartbeat_at` chứ không đo `acquired_at`, nên ta có bằng chứng TRỰC TIẾP
+       worker còn sống hay không. (Các hàng đợi chỉ-có-đồng-hồ như `river` để
+       mặc định 1 giờ đúng vì họ không có bằng chứng ấy — mượn số của họ là
+       mượn cả điều kiện họ đang chịu.)
+    """
+    from datetime import timedelta
+
+    from platform_core.llm import admission
+    from platform_core.models import ExecutionLease
+
+    assert admission.ORPHAN_TIMEOUT_JOB.total_seconds() == \
+        5 * admission.HEARTBEAT_SECONDS, "hạn phải suy từ nhịp tim"
+
+    cu = admission._now() - timedelta(seconds=400)   # 6+ nhịp lỡ
+    moi = admission._now() - timedelta(seconds=120)  # 2 nhịp lỡ — còn sống
+    for slot, (mode, nhip) in enumerate([("job", cu), ("job", moi),
+                                         ("sync", cu)]):
+        db.add(ExecutionLease(resource="r_thu", slot=slot, user_id=f"u{slot}",
+                              mode=mode, holder_id=f"h{slot}",
+                              heartbeat_at=nhip))
+    db.commit()
+
+    assert admission.reclaim_expired(db, resource="r_thu") == 1
+    db.commit()
+    con = {(x.mode, x.slot) for x in db.query(ExecutionLease)
+           .filter(ExecutionLease.resource == "r_thu").all()}
+    assert con == {("job", 1), ("sync", 2)}, (
+        f"phai xoa DUNG lease job chet: con {con}")
+    # đối chứng: `sync` 400 s vẫn sống, vì nó theo `ORPHAN_TIMEOUT` 20 phút —
+    # thiếu vế này thì một `reclaim_expired` xoá sạch mọi thứ cũng xanh.
