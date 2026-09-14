@@ -2,8 +2,9 @@
 
 > Cập nhật 2026-09-14. "Thời gian XD" = ước tính **giờ làm việc của agent** trên
 > máy này (không phải người). Cột % theo effort-share.
-> **Tổng tiến độ ≈ 31% · Còn lại ≈ 96 giờ XD** (chưa gồm logistics: cert EV, R2/CDN, khóa LIVE).
-> ⭐ 14/09: baseline Tauri **build (5m09s) + installer NSIS/MSI + app CHẠY** (title LTTCODE, WebView2 OK) đã chứng minh trên máy này.
+> **Tổng tiến độ ≈ 34% · Còn lại ≈ 90 giờ XD** (chưa gồm logistics: cert EV, R2/CDN, khóa LIVE).
+> ⭐ 14/09: baseline Tauri **build (5m09s) + installer NSIS/MSI + app CHẠY** (title LTTCODE, WebView2 OK).
+> ⭐⭐ 14/09: **DSH sidecar integration PROVEN** — `dsh web --profile lttcode` boot ~10s, nạp plugin `llm-ltt`, provider mặc định `ltt-official`, in ready-line handshake. Đóng gói = bundle node.exe thật (SEA/pkg không dùng được).
 > Nguồn: `MASTER_IMPLEMENTATION_PLAN.md`, `DECISION_LOCK.md`, `PROGRESS.md`.
 
 ## Tổng quan hạng mục
@@ -16,7 +17,7 @@
 | P03 | LTT Compatibility Harness | 55% | ~3 | 🟡 |
 | P04 | LTT Provider Adapter `llm-ltt` | 92% | ~4 | 🟢 |
 | P05 | LTT Auth & Bootstrap (MVP) | 15% | ~10 | 🟡 |
-| P06 | Desktop Runtime / Sidecar (Tauri) | 30% | ~11 | 🟡 build+run OK; còn sidecar |
+| P06 | Desktop Runtime / Sidecar (Tauri) | 50% | ~7 | 🟡 build+run+DSH-boot OK; còn bundle+Rust spawn |
 | P07 | Core Coding Agent UX | 0% | ~12 | ⬜ |
 | P08 | Session / Sandbox / Approval | 5% | ~9 | ⬜ |
 | P09 | Release Control Plane (server) | 5% | ~15 | ⬜ (chờ R2/CDN) |
