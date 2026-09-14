@@ -239,12 +239,31 @@ def main() -> int:
               f"{k.get('giay', '-')!s:>7}s  token_ra={k.get('token_ra')}")
 
     print("\n== BA MENH DE ==")
-    m1 = all(v == 3 for v in dinh_res.values()) and len(dinh_res) == 2
-    m2 = dinh >= 6 and song_song
+    # 🔴 KY VONG DA SUA 14/09/2026 — va day la NGAN THU TU: he DUNG, ky vong SAI.
+    #
+    #    Ban dau toi doi 3 suat/card va tong 6 cho mot lo job. Do duoc: dung 2
+    #    moi card, 4 tong, 5 job xep hang — on dinh suot luot.
+    #
+    #    Nguyen nhan la mot LUAT CO Y, `luat_nhan.py:170`:
+    #
+    #        if sum(1 for g in giu if g.lop != TUONG_TAC) >= tran_nen(so_slot)
+    #        tran_nen(3) = 3 - 1 = 2
+    #
+    #    Cua JOB gan `lop=NEN` (`job_runner.py:373`), cua sync/stream gan
+    #    `lop=TUONG_TAC` (`luong.py:368`). Luat chua DUNG MOT suat moi card cho
+    #    nguoi dang ngoi doi, de mot lo job nen khong bao gio lam nghet ca card.
+    #
+    # ⇒ Tran dung cua MOT LO JOB la 2/card = 4. Sau suat chi dat duoc khi co CA
+    #   HAI loai luu luong: 2 nen + 1 tuong tac moi card.
+    #
+    # ⛔ Doi 3/card o day la doi he PHA chinh luat no dang thi hanh — va neu toi
+    #    "sua" cho no dat thi toi da go mat lop bao ve nguoi dung tuong tac.
+    m1 = all(v == 2 for v in dinh_res.values()) and len(dinh_res) == 2
+    m2 = dinh >= 4 and song_song
     m3 = bool(cap)
     for ten, dat, chi in (
-            ("M1  moi card dung 3 suat", m1, f"dinh theo tai nguyen: {dinh_res}"),
-            ("M2  hai card song song, tong 6", m2,
+            ("M1  moi card dat tran NEN = 2 suat", m1, f"dinh theo tai nguyen: {dinh_res}"),
+            ("M2  hai card song song, tong 4 (lo job thuan)", m2,
              f"dinh tong={dinh} · thay ca hai cung luc={song_song}"),
             ("M3  hang cho vao dung khi mot suat nha", m3,
              f"{len(cap)} cap ban giao: {cap[:3]}")):

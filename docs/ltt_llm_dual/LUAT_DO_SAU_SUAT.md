@@ -11,9 +11,31 @@
 
 | # | Mệnh đề | Đỏ khi |
 |---|---|---|
-| **M1** | Mỗi card giữ **đúng 3** suất khi đủ tải | đỉnh một tài nguyên ≠ 3 |
-| **M2** | Hai card chạy **song song**, tổng **6** | đỉnh tổng < 6, hoặc chỉ một `resource` xuất hiện |
-| **M3** | Job thứ 7+ **chờ**, và khi một suất nhả thì nó **vào ngay** | có job `queued` trong khi tổng lease < 6 |
+| **M1** | Một lô **job thuần** đạt trần nền = **2** suất/card | đỉnh một tài nguyên ≠ 2 |
+| **M2** | Hai card chạy **song song**, tổng **4** | đỉnh tổng < 4, hoặc chỉ một `resource` xuất hiện |
+| **M3** | Job thứ N **chờ**, và khi một suất nhả thì nó **vào ngay** | có job `queued` trong khi còn chỗ dưới trần |
+
+### 🔴 M1/M2 ĐÃ SỬA 14/09 — hệ ĐÚNG, kỳ vọng SAI
+
+Bản đầu đòi **3 suất/card, tổng 6**. Đo được: **đúng 2 mỗi card, 4 tổng, 5 job
+xếp hàng**, ổn định suốt lượt, trên **cả hai** card.
+
+Nguyên nhân là một luật **cố ý** — `luat_nhan.py:170`:
+
+```
+if sum(1 for g in giu if g.lop != TUONG_TAC) >= tran_nen(so_slot)
+tran_nen(3) = 3 − 1 = 2
+```
+
+Cửa **job** gán `lop=NEN` (`job_runner.py:373`); cửa **sync/stream** gán
+`lop=TUONG_TAC` (`luong.py:368`). Luật **chừa một suất mỗi card** cho người
+đang ngồi đợi, để một lô job nền không bao giờ làm nghẹt cả card.
+
+⇒ Trần đúng của một lô job thuần là **2/card = 4**. **Sáu suất chỉ đạt được khi
+  có CẢ HAI loại lưu lượng**: 2 nền + 1 tương tác mỗi card.
+
+⛔ Đòi 3/card ở cửa job là đòi hệ **phá chính luật nó đang thi hành** — và
+   "sửa" cho nó đạt là gỡ mất lớp bảo vệ người dùng tương tác.
 
 ⛔ **M3 là mệnh đề khó nhất và dễ giả nhất.** "Có job chạy sau đó" **không**
 chứng minh gì — chúng có thể chạy vì lô trước đã xong sạch, chứ không phải vì
