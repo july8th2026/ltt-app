@@ -158,7 +158,7 @@ isolated PostgreSQL migration/default/IP races passed **5/1 skip + sentinel**
 console, page, network or 5xx errors. Repeat only the affected checks after the
 last canonical reconciliation.
 
-Second reconciliation onto canonical `main` `55691feb` is complete and the
+Final reconciliation onto canonical `main` `f0bd4c05` is complete and the
 branch is 0 behind. The new live LLM constraint test brought by `main` exposed
 two defects in its measuring path: protected `/health` was called without a
 bearer and the deployed schema says `tran.images`, not `max_images`. The test

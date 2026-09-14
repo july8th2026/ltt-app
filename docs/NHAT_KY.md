@@ -18221,7 +18221,7 @@ URL công khai      : /health/ready 200 · / 200 · /gia-api 200
 ## 2026-09-14 — VPS V4: reconcile lần hai và đóng kiểm thử offline
 
 Nhánh `codex/vps-v4-infrastructure-profiles` đã rebase sạch lần hai lên
-canonical `main` `55691feb`; tại checkpoint đo được `0 behind / 3 ahead` và
+canonical `main` `f0bd4c05`; sau rebase cuối đo được `0 behind / 5 ahead` và
 Alembic còn đúng một head `f4a7c2d9e610`. Không chạm các tài liệu CMC đang bẩn
 trong worktree chính.
 
@@ -18229,7 +18229,7 @@ Broad VPS sau reconcile chạy pha chính **789 passed / 8 skipped**. Sentinel s
 đó đỏ vì `main` mới thêm một `pytest.skip` trong phép đối chiếu trần ảnh với máy
 B. Đo thật cho thấy URL có trong `app.env` và reachable nhưng `/health` trả 401
 đúng thiết kế; test không mang bearer, đồng thời tìm `max_images` trong khi
-gateway đang chạy công bố `tran.images`. Sửa phép đo tại `b61d6652`: bearer chỉ
+gateway đang chạy công bố `tran.images`. Sửa phép đo tại `15f71050`: bearer chỉ
 nạp từ môi trường tiến trình, hiểu schema đang deploy, và không hỏi được thì
 FAIL thay vì skip. Không giá trị bí mật nào được in hoặc ghi vào kho.
 

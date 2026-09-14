@@ -10,7 +10,7 @@
 | B04 | Live free IP | **CONFIRMED 2026-09-14**: OVH has eight routed failover IPv4 and all eight are protected/mapped; free count is zero | One-IP/one-VM live acceptance | Prepare at most one Additional IP order, then stop for manual checkout/payment |
 | B05 | Owner canonical ID | **RESOLVED 2026-09-14**: read-only exact-email lookup returned exactly one canonical user ID | No longer blocks live create | Recheck owner active/allowlisted at create-time preflight |
 | B06 | OVH mapping driver | Read-only baseline proves actual `gwnat` chains + `/etc/wireguard/anh-xa-ip.txt`. Fail-closed app adapter and root-owned atomic helper are implemented/tested offline | Live gateway mutation/activation | After final app gate, install helper, verify health/list/protected-removal/conflict refusal before any new mapping |
-| B07 | Canonical reconciliation | **RESOLVED 2026-09-14**: second rebase onto `55691feb` is complete; branch was measured 0 behind/3 ahead before the scoped LLM-test correction. Broad VPS phase 1 remained 789 PASS/8 skip; authenticated live LLM comparison and skip sentinel are green without a baseline change | No longer blocks final gate | Recheck `main...HEAD` immediately before freezing; a new upstream commit reopens this gate |
+| B07 | Canonical reconciliation | **RESOLVED 2026-09-14**: final rebase onto `f0bd4c05` is complete; branch measured 0 behind/5 ahead and the upstream delta was documentation-only. Broad VPS phase 1 remained 789 PASS/8 skip; authenticated live LLM comparison and skip sentinel are green without a baseline change | No longer blocks final gate | Recheck `main...HEAD` immediately before freezing; a new upstream commit reopens this gate |
 
 ## Production-readiness gates, not blockers for multi-profile code
 

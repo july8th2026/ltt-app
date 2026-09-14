@@ -3996,7 +3996,7 @@ Quyết định: Q124. Hồ sơ canonical: `docs/VPS_V4/`. Nhánh riêng:
   full gate giữa các phase. **14/09/2026 checkpoint:** broad VPS **789 PASS/8
   skip + sentinel**, PostgreSQL thật **5 PASS/1 skip + sentinel**, Playwright
   desktop/mobile 0 lỗi bất ngờ, static/i18n/line-ending/secret scan PASS.
-  Reconcile lần hai lên `main` `55691feb` sạch; test live LLM mới của `main`
+  Reconcile cuối lên `main` `f0bd4c05` sạch; test live LLM mới của `main`
   được sửa fail-closed để mang bearer và hiểu schema `tran.images`, rồi xanh
   **4/4** với gateway máy B; sentinel skip PASS, không nới baseline.
 - [ ] **H46.7 — Final release gate:** đóng băng release candidate rồi chạy đúng
