@@ -4,16 +4,16 @@
 |---|---|---|---|---|
 | PostgreSQL + Alembic | LTTSTUDIOSAPP | profile/default/race safety/journal | Existing; one head `d9a1f6c2b3e5` at discovery | No provisioning |
 | Job queue | platform | long operations | Existing/proven | No synchronous fallback |
-| Proxmox API | Machine B | compute | Existing config; live freshness unavailable | Profile unhealthy |
-| PVE CA | protected production config | TLS trust | `LTT_VPS_PROXMOX_CA` missing | Fail closed; no `verify=False` |
-| Machine B artifacts | `H:\PROXMOX` collector | runtime/preflight/provenance | H: unavailable; repo snapshot stale | UNKNOWN/STALE; cannot activate |
-| OVH Additional IP inventory | OVH API/account | OVH pool/live test | Snapshot shows protected mapped set, no live free count | No allocation/order by guess |
-| OVH credentials | canonical secret store | inventory/order if required | Store only credential ref/status | Invalid → preflight fail |
-| Gateway SSH host key | canonical secret/config | nft mapping | Existing architecture | Mismatch fails closed |
-| WireGuard/private network | Machine B/gateway | customer path | Healthy only in stale snapshot | No live acceptance |
+| Proxmox API | Machine B | compute | PVE 9.2.2 read-only inventory reached; app TLS probe reached HTTP 401 using a deliberately invalid token | Profile unhealthy on transport/auth failure |
+| PVE CA | protected production config | TLS trust | Root CA exported outside Git; chain + exact certificate name `pve` verified against management IP | Fail closed; no `verify=False` |
+| Machine B artifacts | `H:\PROXMOX` collector | runtime/preflight/provenance | Canonical generation `2026-09-14T03:06:29Z` mirrored coherently; collector success/exit 2, machine health CRITICAL due data protection | UNKNOWN/STALE; cannot activate; repeat immediately before activation |
+| OVH Additional IP inventory | OVH API/account | OVH pool/live test | Fresh read-only inventory: eight protected failover IPv4, all routed/mapped; zero free additional IPv4 | No allocation/order by guess; manual billing gate |
+| OVH credentials | canonical secret store | inventory/order if required | Read-only signed API ownership/inventory passed; store only credential ref/status | Invalid → preflight fail |
+| Gateway SSH host key | canonical secret/config | nft mapping | Strict pinned-key read-only inventory passed | Mismatch fails closed |
+| WireGuard/private network | Machine B/gateway | customer path | Fresh read-only baseline: WG active/recent, 8 SNAT + 16 DNAT, exact VM100–107 map | No mutation until helper deployment/read-back |
 | Official Windows ISO | PVE storage/config | D08/D43 | Five ISO config variables reported present; exact live media not read back | No VM creation |
 | Canonical owner | production DB | D09 | Not queried yet | Zero/multiple → block |
-| App-admin extension | platform contract | exact ADMIN IA | Missing | C01; app-local work only |
+| App-admin extension | platform contract | exact ADMIN IA | C01 approved; local rendered desktop/mobile regression passed | Deploy/browser verification still required |
 | Playwright login | PO + test account env | browser E2E | Password must not be typed by agent | Pause at login/MFA/CAPTCHA |
 | Backup V2 capacity | Machine B change gate | full production readiness | CAPACITY_BLOCKED (~146 GB shortage at snapshot) | Report separately, no deletion shortcut |
 

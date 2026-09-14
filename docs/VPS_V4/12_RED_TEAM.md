@@ -14,7 +14,7 @@ fail-closed implementation exists on this branch; it is not live OVH evidence.
 | Can a customer force a `profile_id`? | PASS | Customer POST does not accept infrastructure profile/provider/gateway; server resolves and pins it (`test_1016`, browser regression). |
 | Can an API key create VPS? | PASS | VPS is explicitly `WEB_ONLY`; route/catalog/API-key tests in `test_1016`. |
 | Can Vultr still work after the abstraction? | PASS adapter / STANDBY rollout | Existing client operations are wrapped by contract tests in `test_1011`; dynamic acquisition is deliberately not enabled for new production until timeout recovery closes. |
-| Can OVH operate without a Vultr-specific assumption? | PASS contract; BLOCKED live gateway | Static pool source has no Vultr field/operation (`test_1011`). Actual `gwnat` adapter waits for B06 baseline and cannot use legacy nft map names. |
+| Can OVH operate without a Vultr-specific assumption? | PASS offline; BLOCKED live deployment | Static pool/inventory has no Vultr field/operation (`test_1011`, `test_1022`). Actual `gwnat` inventory is parsed strictly and the helper preserves the protected baseline; installer/live refusal checks remain B06. |
 | Can Machine B go stale while App thinks it is healthy? | PASS | Strict four-artifact generation/schema/freshness checks; future/mixed/stale/inconsistent revision cases fail closed (`test_1012`, `test_1014`). |
 | Can worker death leave a paid IP orphan? | BLOCKED for paid acquisition | OVH provisioning uses pre-owned rows and quarantine. Paid acquisition is not exposed; dynamic Vultr stays STANDBY until provider-label recovery is durable. |
 | Can destroy remove the wrong IP? | PASS offline | Pinned profile, VM ownership, pool-row/resource selection and reservation ownership are checked; ambiguous cleanup retains both addresses as `QUARANTINED` (`test_1013`, `test_1023`). |
@@ -26,6 +26,6 @@ fail-closed implementation exists on this branch; it is not live OVH evidence.
 No known P0 defect exists in the enabled OVH static-pool software path. The two
 paid-provider questions remain explicit rollout blockers, not waived findings:
 Vultr cannot accept new production instances and OVH acquisition cannot be
-implemented or invoked until the actual provider mechanism and fresh inventory
-are verified. B02–B07 in `09_BLOCKERS.md` continue to block live acceptance and
-canonical integration.
+invoked through automatic checkout. Fresh inventory proves there is no free IP,
+so the next live step stops at a manual billing gate. B02, B04–B07 in
+`09_BLOCKERS.md` continue to block activation/live acceptance/integration.

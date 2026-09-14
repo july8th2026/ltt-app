@@ -1,6 +1,6 @@
 # VPS V4 — Live Acceptance Runbook
 
-Trạng thái: **NOT RUN**. Snapshot 10/09 không thay thế lượt này.
+Trạng thái: **READ-ONLY PREFLIGHT PARTIAL; NO RESOURCE CREATED/MUTATED**.
 
 ## Hard guards
 
@@ -14,13 +14,20 @@ Trạng thái: **NOT RUN**. Snapshot 10/09 không thay thế lượt này.
 ## Read-only preflight
 
 - [ ] Record deployed app SHA/schema and Machine B SHA.
-- [ ] Mount/access `H:\PROXMOX`; run canonical collector from that tree.
-- [ ] Require supported schema, one generation, success and freshness.
-- [ ] Verify PVE CA/host identity, compute/storage/network/WG/gateway health.
-- [ ] Query OVH service and Additional IP inventory; read back routed target.
-- [ ] Prove all VM100–107/IP/mappings unchanged and mark protected.
+- [x] Access `H:\PROXMOX`; run canonical collector from that tree. One coherent
+  success generation was published at `2026-09-14T03:06:29Z`. A later manual
+  refresh hung in the PVE read step and was terminated without publication or
+  mutation; freshness must therefore be repeated at activation.
+- [x] Verify supported schema, one generation and completed collector semantics:
+  exit 0/1/2 are completed health verdicts; exit 3 is collector failure.
+- [x] Verify PVE CA/host identity and read compute/storage/network/WG/gateway.
+  TLS chain/name probe reached HTTP 401 with an intentionally invalid token.
+- [x] Query OVH service and Additional IP inventory; all eight failover IPv4 are
+  routed and already mapped, leaving zero intended FREE IP.
+- [x] Read back VM100–107 and their eight exact mappings unchanged/protected.
 - [ ] Resolve exactly one canonical user for the approved email; record only ID.
-- [ ] Prove an intended FREE IP or prepare one D10 order.
+- [ ] Prove an intended FREE IP or prepare one D10 order. Current count is zero;
+  checkout/payment remains a manual billing stop.
 
 ## Activation
 

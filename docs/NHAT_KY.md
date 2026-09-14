@@ -12,6 +12,41 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-14 — VPS V4: OVH inventory, gwnat, Machine B runtime và PVE TLS
+
+- **Phạm vi:** tiếp tục trên `D:\LTTSTUDIOSAPP-vps-v4`; không sửa/stash/reset
+  năm tài liệu CMC đang dirty trong worktree `D:\LTTSTUDIOSAPP`. Repo hạ tầng
+  riêng `D:\LTT-VM-Promox-v4` nhận hai commit nhỏ `4428223` và `c5c2453`.
+- **Read-only live:** PVE 9.2.2 có chín guest đang chạy; VM100–107 và tám ánh xạ
+  public/private giữ nguyên. Gateway có WG hoạt động, 8 SNAT + 16 DNAT; OVH có
+  tám failover IPv4 đều routed/mapped và **zero free Additional IP**. Vì vậy live
+  create dừng ở billing gate: tối đa chuẩn bị một order, checkout/payment tay.
+- **Runtime:** sửa callback TLS cho Windows PowerShell 5.1 rồi collector canonical
+  xuất generation đồng nhất `2026-09-14T03:06:29Z`, `result=success`, exit 2.
+  Exit 2 là phán quyết machine health CRITICAL vì data protection, không phải lỗi
+  collector. Mirror app-owned chấp nhận BOM PS5.1 và kiểm bốn artifact cùng thế
+  hệ. Một refresh thủ công sau đó treo ở bước đọc PVE hơn 10 phút; tiến trình
+  read-only do phiên tạo được dừng theo PID chính xác, không artifact/mutation
+  mới. Lượt treo **không** được tính evidence.
+- **TLS:** xuất PVE root CA vào kho bí mật/runtime ngoài Git; leaf cert mang tên
+  `pve` nhưng URL transport là management IP. App hỗ trợ
+  `LTT_VPS_PROXMOX_TLS_NAME`; probe token giả nhận HTTP 401, chứng minh CA chain
+  và hostname pass mà không dùng/in credential production.
+- **Code:** thêm signed OVH read-only client, inventory sync fail-closed,
+  `ovh_gwnat` client + root-owned atomic helper/installer, admin action sync,
+  Machine B sync/verifier và exact TLS-name verifier. Helper chưa deploy; tám
+  mapping protected chưa mutation.
+- **Kiểm thật:** OVH inventory batch **33 PASS**; runtime/preflight/admin batch
+  **56 PASS**; gwnat batch **26 + 122 PASS**; TLS/config batch qua harness
+  **105 + 201 PASS**, RESULT PASS (`20260914_101533`). Local Playwright desktop/
+  mobile PASS, `pageErrors=[]`, console/network/5xx bất ngờ đều zero. Ruff
+  **931/12 PASS**, mypy **559/14 PASS**; secret scan **3.639 tệp/891.767 dòng,
+  0 finding PASS**. Không chạy full gate; H46.7 vẫn là đúng một gate cuối.
+- **Còn mở:** branch canonical đã tiến thêm 21 commit tới `22841303`, nên phải
+  checkpoint rồi rebase mà không chạm worktree main dirty; sau đó chạy broad VPS,
+  static/security, review diff, đóng băng candidate. Owner production chưa lookup;
+  gateway helper chưa cài; không có IP free nên chưa thể tạo VPS live.
+
 ## 2026-09-13 — VPS V4: gom full gate về đúng release candidate cuối
 
 - **Mục tiêu:** tối ưu thời gian triển khai nhưng không giảm độ phủ nghiệm thu.

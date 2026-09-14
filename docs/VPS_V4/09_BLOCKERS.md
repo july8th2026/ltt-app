@@ -5,12 +5,12 @@
 | ID | Scope | Evidence | Blocks | Unblock action |
 |---|---|---|---|---|
 | B01 | Exact Admin IA | **RESOLVED 2026-09-13**: PO approved generic admin contract; local browser verified exact menu | No longer an authority blocker | Offline certification still required |
-| B02 | Live runtime | `H:\PROXMOX` not mounted on current machine | OVH activation/live acceptance | Restore canonical mount/access and run collector |
-| B03 | PVE TLS | Production config check reports `LTT_VPS_PROXMOX_CA` missing | Production preflight/compute mutation | Install canonical CA reference, verify hostname/fingerprint |
-| B04 | Live free IP | Latest evidence is stale and accounts for eight protected mappings | IP reserve/order decision | Fresh OVH + gateway inventory/readback |
+| B02 | Live runtime | **PARTIAL 2026-09-14**: Machine B access, coherent collector generation and app-owned mirror passed; machine health remains CRITICAL for data protection. A later manual refresh hung and was cleanly terminated | Activation requires a newly fresh generation, not the earlier success | Repeat canonical collector immediately before activation; exit 3/hang blocks |
+| B03 | PVE TLS | **RESOLVED IN CODE/EVIDENCE 2026-09-14**: private root CA exported outside Git; management-IP transport validates exact cert name `pve`; dummy-token probe reached 401 | Production still needs the two env references installed at deploy | Configure `LTT_VPS_PROXMOX_CA` and `LTT_VPS_PROXMOX_TLS_NAME`; never disable verify |
+| B04 | Live free IP | **CONFIRMED 2026-09-14**: OVH has eight routed failover IPv4 and all eight are protected/mapped; free count is zero | One-IP/one-VM live acceptance | Prepare at most one Additional IP order, then stop for manual checkout/payment |
 | B05 | Owner canonical ID | Production DB not queried yet | Live create | Read-only exact-email lookup; zero/multiple block |
-| B06 | OVH mapping driver | Machine B docs `04-CONG-OVH.md` / `10-VAO-VA-DUNG-GATEWAY.md`: actual `gwnat` chains + `/etc/wireguard/anh-xa-ip.txt`, not legacy `vao/ra` nft maps | OVH gateway mutation/activation | Fresh live baseline plus scoped persistence adapter preserving every protected mapping; current factory rejects `ovh_gwnat` before client construction |
-| B07 | Canonical reconciliation | VPS base `3b5adcb7`; main now `73e35319`, with later LLM migrations and an in-progress root-history rewrite in a dirty canonical tree | Handoff/integration/deploy/push | Canonical integrator ports capabilities onto the final current base and reconnects additive migration to head `a3f7c214e8b9`; never merge/push old lineage into rewritten main |
+| B06 | OVH mapping driver | Read-only baseline proves actual `gwnat` chains + `/etc/wireguard/anh-xa-ip.txt`. Fail-closed app adapter and root-owned atomic helper are implemented/tested offline | Live gateway mutation/activation | After final app gate, install helper, verify health/list/protected-removal/conflict refusal before any new mapping |
+| B07 | Canonical reconciliation | Branch checkpoint `2d1c26b8`; current `main` advanced 21 commits to `22841303` and its worktree has unrelated dirty CMC docs | Final gate/deploy/push | Commit current VPS checkpoint, then rebase/resolve on the committed `main` ref without touching its working tree; rerun targeted regression |
 
 ## Production-readiness gates, not blockers for multi-profile code
 

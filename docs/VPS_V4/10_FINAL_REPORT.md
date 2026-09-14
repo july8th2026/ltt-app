@@ -1,12 +1,12 @@
 # VPS V4 — Final Report
 
-Status: **IN PROGRESS — OFFLINE CODE NEAR FREEZE; LOCAL ADMIN BROWSER PASS; LIVE BLOCKED**
+Status: **IN PROGRESS — OFFLINE CODE NEAR FREEZE; READ-ONLY LIVE PREFLIGHT PARTIAL; RESOURCE CREATE BLOCKED**
 
 ## Revisions
 
 - HEAD BEFORE: `3b5adcb7ffa43c8c553ac38d457e22e3cde60e30`
 - HEAD AFTER: pending
-- Machine B basis: `2d14480d170b3aa9f9dd24dc5956cadd64d0143e`
+- Machine B source commits: `4428223` TLS callback fix; `c5c2453` read-only CA export
 - Worktrees: `D:\LTTSTUDIOSAPP-vps-v4`, `D:\LTT-VM-Promox-v4`
 
 ## Decisions locked
@@ -27,9 +27,9 @@ mutation journal and per-profile health/reconciliation. See `03` and `04`.
 - [x] instance profile pinning
 - [x] Vultr adapter preserved / STANDBY
 - [ ] OVH adapter / ACTIVE / DEFAULT
-- [ ] OVH credential health and public-IP pool
+- [x] OVH credential ownership/read-only inventory and public-IP pool sync
 - [x] race-safe allocation
-- [x] gateway contract (contract/factory; actual OVH `gwnat` mutation blocked B06)
+- [x] gateway contract + actual `gwnat` adapter/helper offline (live install blocked B06)
 - [x] profile preflight/health/reconciliation
 - [x] Admin profile UI
 - [x] web-only policy
@@ -41,7 +41,8 @@ mutation journal and per-profile health/reconciliation. See `03` and `04`.
 - [ ] stop/start/restart
 - [ ] cleanup or explicitly retained state
 - [x] default switch preserves existing pin
-- [ ] failure injection/security/secret scan/full gate
+- [x] scoped failure injection/security/secret scan
+- [ ] final full gate
 
 ## Live test VPS
 
@@ -92,14 +93,28 @@ is fabricated here.
   certification. From the 2026-09-13 cadence decision, no further full gate is
   run between implementation phases: targeted operational suites must all pass,
   then one frozen-candidate gate runs immediately before deploy readiness.
+- 2026-09-14 live read-only evidence: PVE 9.2.2 and nine running guests were
+  inventoried; VM100–107 plus all eight public/private mappings remained
+  protected; WireGuard/nft/storage/network were readable. OVH reported eight
+  routed failover IPv4 and zero free Additional IP. Canonical generation
+  `2026-09-14T03:06:29Z` mirrored coherently with collector `success`/exit 2;
+  bundle integrity was HEALTHY while machine health remained CRITICAL for data
+  protection. A subsequent manual refresh hung before publication and was
+  terminated cleanly, so it is recorded as failed diagnostic, not evidence.
+- The PVE private root CA is stored outside Git. Requests against the management
+  IP with exact certificate name `pve` reached HTTP 401 using a deliberately
+  invalid token: TLS trust/name passed without exposing a production token.
+- Latest TLS/config harness: **105 passed + 201 passed**, RESULT PASS, journal
+  `20260914_101533`. Ruff and mypy ratchets pass; latest secret scan covered
+  **3,639 files / 891,767 lines**, zero findings. No baseline was accepted.
 
 The OVH static-pool path now journals/read-backs VM create/config, DHCP plus
 bandwidth, mapping, boot and destroy; ambiguous cleanup retains associations in
-QUARANTINED. Remaining gaps are final-commit failure injection, durable recovery
-for dynamic Vultr paid-IP acquisition (Vultr remains STANDBY), and a
-protected-baseline-compatible actual OVH gateway adapter. Deploy provenance is
-operator-visible; Machine B SHA correctly remains `UNKNOWN` until the canonical
-collector publishes one coherent revision across all four artifacts.
+QUARANTINED. The actual OVH gateway helper is fail-closed and preserves the
+protected baseline but is not installed live before the final gate. Dynamic
+Vultr paid-IP acquisition remains disabled/STANDBY. Deploy provenance is
+operator-visible; Machine B source revision remains `UNKNOWN` in runtime
+artifacts rather than substituting a checkout SHA.
 
 ## Backup/restore/network resilience
 

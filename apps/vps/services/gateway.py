@@ -197,3 +197,67 @@ def _kiem_dia_chi(gt: str) -> None:
 
 def client_tu_moi_truong(env: dict | None = None, *, chay=None) -> GatewayClient:
     return GatewayClient(doc_cau_hinh(env), chay=chay)
+
+
+class GwnatGatewayClient(GatewayClient):
+    """Client cho gateway OVH đang dùng ``table ip gwnat``.
+
+    Máy gateway giữ toàn bộ quy tắc ghi/rollback trong một helper root-owned.
+    Ứng dụng chỉ truyền hai IPv4 đã kiểm tra và đọc inventory dạng ba cột
+    ``private public owner``. Tách như vậy tránh để worker tự dựng lại toàn bộ
+    firewall qua nhiều lớp quote SSH.
+    """
+
+    def __init__(self, config: GatewayConfig, *, helper: str, chay=None):
+        super().__init__(config, chay=chay)
+        if not helper.startswith("/") or not all(
+                c.isalnum() or c in "/_-." for c in helper):
+            raise GatewayError("duong dan helper gwnat khong hop le")
+        self.helper = helper
+
+    def _goi(self, action: str, *args: str) -> str:
+        if action not in {"health", "list", "ensure", "remove"}:
+            raise GatewayError("hanh dong gwnat khong hop le")
+        return self._chay([self.helper, action, *args])
+
+    def con_song(self) -> bool:
+        return self._goi("health").strip().endswith("ok")
+
+    def danh_sach_duong(self) -> dict[str, str]:
+        ket_qua: dict[str, str] = {}
+        noi_bo_da_co: set[str] = set()
+        for so_dong, dong in enumerate(self._goi("list").splitlines(), 1):
+            dong = dong.strip()
+            if not dong or dong.startswith("#"):
+                continue
+            cot = dong.split()
+            if len(cot) != 3:
+                raise GatewayError(f"inventory gwnat sai dinh dang tai dong {so_dong}")
+            noi_bo, cong_khai, _owner = cot
+            _kiem_dia_chi(noi_bo)
+            _kiem_dia_chi(cong_khai)
+            if cong_khai in ket_qua or noi_bo in noi_bo_da_co:
+                raise GatewayError("inventory gwnat co dia chi trung lap")
+            ket_qua[cong_khai] = noi_bo
+            noi_bo_da_co.add(noi_bo)
+        return ket_qua
+
+    def mo_duong(self, ip_cong_khai: str, ip_noi_bo: str) -> None:
+        _kiem_dia_chi(ip_cong_khai)
+        _kiem_dia_chi(ip_noi_bo)
+        self._goi("ensure", ip_cong_khai, ip_noi_bo)
+
+    def dong_duong(self, ip_cong_khai: str, ip_noi_bo: str) -> None:
+        _kiem_dia_chi(ip_cong_khai)
+        _kiem_dia_chi(ip_noi_bo)
+        self._goi("remove", ip_cong_khai, ip_noi_bo)
+
+
+def gwnat_client_tu_moi_truong(
+    env: dict | None = None, *, chay=None,
+) -> GwnatGatewayClient:
+    src = os.environ if env is None else env
+    helper = str(src.get(
+        "LTT_VPS_GATEWAY_GWNAT_HELPER", "/usr/local/sbin/ltt-gwnat"
+    )).strip()
+    return GwnatGatewayClient(doc_cau_hinh(env), helper=helper, chay=chay)

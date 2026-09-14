@@ -41,6 +41,8 @@ async page => {
   check((await card.innerText()).includes('Machine B SHA'), 'Machine B provenance must be visible');
   check((await card.innerText()).includes('Runtime generated_at'), 'runtime generation provenance must be visible');
   check((await card.innerText()).includes('Kho IPv4'), 'read-only IPv4 inventory must be visible');
+  check(await card.getByRole('button', {name: 'Nạp inventory OVH', exact: true}).isVisible(),
+        'OVH inventory sync action must be visible only to admin');
   await page.screenshot({path: 'docs/VPS_V4/evidence/admin-desktop.png', fullPage: true});
   const connection = page.waitForResponse(r => r.url().endsWith('/profiles/local-ovh-profile/action') && r.request().method() === 'POST');
   await card.getByRole('button', {name: 'Test Connection', exact: true}).click();

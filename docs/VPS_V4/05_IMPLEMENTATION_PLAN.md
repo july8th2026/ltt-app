@@ -36,8 +36,10 @@ starts with a failing test.
 
 2026-09-13 checkpoint: model/selector/pin/backfill and additive migration coded.
 Isolated PostgreSQL up/down and concurrent default uniqueness PASS in focused
-diagnostics. Canonical migration-head reconnection is pending external CMC
-integration; P1 exit is not yet certified.
+diagnostics. The V4 commit was rebased once onto canonical `main`; that branch
+has since advanced another 21 commits, so a final rebase plus migration-head
+check remains before release freeze. Production-row inventory remains a deploy
+preflight.
 
 Exit: migration up/down in isolated DB, one-default race test, no legacy break.
 
@@ -47,14 +49,16 @@ Exit: migration up/down in isolated DB, one-default race test, no legacy break.
 - [x] Add small compute/public-IP/gateway protocols and factory by profile.
 - [x] Wrap Proxmox, Vultr and current gateway minimally.
 - [x] Add `OvhStaticIpPoolBackend` for pre-owned inventory.
-- [ ] Add separate, non-default acquisition service with journal/readback and
-  hard D10 guard after the live OVH account capability is identified.
+- [ ] Keep paid acquisition outside normal provisioning. Fresh OVH inventory
+  found zero free IP; at most one order may be prepared under D10, but checkout
+  and payment are a manual operator gate.
 - [x] Concurrent IP allocation and timeout/response-lost tests.
 
 2026-09-13 checkpoint: protocols, guarded Proxmox/Vultr/legacy nft wrappers,
-static pool and two-worker PostgreSQL allocation implemented/tested. Actual
-OVH `gwnat` adapter and explicit acquisition service remain open; factory blocks
-the incompatible legacy driver rather than touching protected mappings.
+static pool and two-worker PostgreSQL allocation implemented/tested. OVH
+`gwnat` adapter, strict inventory parser and root-owned atomic helper are now
+implemented offline. The helper snapshots/protects the eight existing mappings
+and fails closed; live installation/refusal checks wait until after final gate.
 
 Exit: Vultr regression green; OVH has no Vultr fields/assumptions.
 
@@ -71,8 +75,11 @@ Exit: Vultr regression green; OVH has no Vultr fields/assumptions.
 2026-09-13 checkpoint: strict coherent runtime, nested malformed-shape/future
 timestamp checks, sellable compute/IP/gateway minimum and fresh activation
 health implemented; selected batch 36 passed/1 skipped + sentinel PASS. Final
-operator-visible app/Machine-B/schema/runtime provenance is implemented. Live
-Machine B SHA and live fail-closed exit evidence remain P7 gates.
+operator-visible app/Machine-B/schema/runtime provenance is implemented. A
+canonical collector success/exit 2 generation was mirrored and accepted as a
+completed CRITICAL health verdict; BOM input is covered. A later manual refresh
+hung in the PVE read step and was terminated without publication, so a newly
+fresh generation remains mandatory immediately before activation.
 
 Exit: stale/mixed/invalid TLS/host-key/credential states fail closed.
 
@@ -136,6 +143,16 @@ Exit: user A/B isolation, admin-only mutations, no secrets, GUI verified.
 - [ ] Freeze one release candidate only after all targeted PostgreSQL, browser,
   security and static checks are green.
 
+2026-09-14 continuation: signed read-only OVH inventory/ownership, static-pool
+sync/quarantine, `gwnat` contract/helper, Machine B mirror, PowerShell 5.1 BOM,
+and PVE exact-certificate-name support are implemented. Focused OVH/runtime/
+admin tests passed in earlier batches; the latest TLS/config batch passed
+**105 + 201** through the canonical harness. Live TLS probe with a deliberately
+invalid token returned **HTTP 401**, proving CA/name validation without using a
+production credential. Ruff baseline, mypy baseline and secret scan
+(**3,639 files / 891,767 lines / 0 findings**) pass without accepting a new
+baseline. Broad post-rebase VPS regression is still pending.
+
 2026-09-13 freeze candidate: independent broad VPS regression after the last
 log-contract correction is **771 passed/3 skipped**, phase-2 sentinel **1
 passed**, RESULT PASS. The earlier 770/3/1 run started only after the lock helper
@@ -166,10 +183,13 @@ Exit: full gate PASS on the exact commit/release candidate intended for deploy.
 
 - [ ] Deploy only after app gate and operator runbook/rollback review.
 - [ ] Resolve exactly one owner record; no credential output.
-- [ ] Mount/access `H:\PROXMOX`, run canonical collector, require fresh coherent
-  generation and PVE CA.
-- [ ] Inventory provider/IP/mappings; use free intended IP or order max one at
-  explicit billing gate if quote is unexpected.
+- [x] Access `H:\PROXMOX`, export the PVE CA outside Git, and prove one coherent
+  completed collector generation plus app mirror/TLS transport. Repeat the
+  collector for activation-time freshness; a hung attempt is not evidence.
+- [x] Inventory provider/IP/mappings read-only: all eight failover IPv4 are
+  routed/protected/mapped and free count is zero.
+- [ ] Prepare at most one Additional IP order and stop before manual checkout/
+  payment; no automatic purchase.
 - [ ] Preflight OVH, activate/default; Vultr STANDBY.
 - [ ] Playwright starts from real web UI; pause only for user login/MFA/CAPTCHA.
 - [ ] Create one clearly named VM outside VM100–107; verify ISO installer,

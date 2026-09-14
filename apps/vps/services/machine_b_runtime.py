@@ -58,7 +58,10 @@ def _load(root: Path, name: str) -> dict[str, Any]:
         raise ValueError(f"artifact escapes configured runtime directory: {name}")
     if resolved.stat().st_size > MAX_ARTIFACT_BYTES:
         raise ValueError(f"runtime artifact too large: {name}")
-    payload = json.loads(resolved.read_text(encoding="utf-8"))
+    # Machine B publishes from Windows PowerShell 5.1, whose UTF8 Set-Content
+    # includes a BOM. ``utf-8-sig`` accepts that canonical output while still
+    # accepting ordinary UTF-8 fixtures and Linux-produced mirrors.
+    payload = json.loads(resolved.read_text(encoding="utf-8-sig"))
     if not isinstance(payload, dict):
         raise ValueError(f"runtime artifact is not an object: {name}")
     return payload
@@ -133,8 +136,13 @@ def read_machine_b_runtime(
     if str(docs["collector"].get("result")) != "success":
         return _unknown("collector result is not success", provenance=provenance)
     exit_code = docs["collector"].get("exit_code")
-    if isinstance(exit_code, bool) or not isinstance(exit_code, int) or exit_code != 0:
-        return _unknown("collector exit code is not zero", provenance=provenance)
+    # Producer contract V2: 0=healthy, 1=degraded, 2=critical are all completed
+    # collections. Only 3 means collector/internal/trust failure. Health is
+    # carried separately by health.status/domains; conflating it with collector
+    # success made honest backup-critical evidence impossible to consume.
+    if (isinstance(exit_code, bool) or not isinstance(exit_code, int)
+            or exit_code not in (0, 1, 2)):
+        return _unknown("collector exit code is invalid", provenance=provenance)
 
     try:
         generations = {

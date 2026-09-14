@@ -3975,14 +3975,18 @@ Quyết định: Q124. Hồ sơ canonical: `docs/VPS_V4/`. Nhánh riêng:
 - [x] **H46.0 — Discovery + decision lock + architecture + plan:** 12/09/2026
   kiểm kê app/worktree/infra/provider, khóa D01–D10, phân lớp A/B/C, viết đủ
   `docs/VPS_V4/00`–`10`. Bằng chứng live chưa chạy; H: không mount.
-- [ ] **H46.1 — Profile domain + additive migration:** state/default invariant,
+- [x] **H46.1 — Profile domain + additive migration:** state/default invariant,
   instance pin, health/journal, evidence-based legacy backfill.
-- [ ] **H46.2 — Backend contracts:** bọc Proxmox/Vultr/nft tối thiểu; OVH static
+- [x] **H46.2 — Backend contracts:** bọc Proxmox/Vultr/nft tối thiểu; OVH static
   IP pool; contract/concurrency/failure tests.
 - [x] **H46.3 — Preflight/health/capacity/runtime:** per-profile, strict Machine B
   generation/freshness, provenance, fail closed.
-- [ ] **H46.4 — Provision/reconcile:** pinned profile, mutation journal,
+- [x] **H46.4 — Provision/reconcile:** pinned profile, mutation journal,
   compensation và machine-readable findings; protected VM guard.
+  **14/09/2026:** H46.1/.2/.4 đã có migration PostgreSQL/concurrency, contract,
+  failure/commit injection và protected-resource tests; broad VPS gần nhất trước
+  bổ sung TLS/OVH là **767 PASS/8 skip + sentinel PASS**. Batch OVH/gwnat/runtime/
+  TLS mới đều xanh; broad sau rebase thuộc H46.6 vẫn chưa chạy.
 - [x] **H46.5 — Web/access/admin:** authenticated owner-only, WEB_ONLY, không
   mass-assign profile; admin service/UI. Exact ADMIN navigation chờ C01 vì app
   contract chưa có extension point. **13/09/2026:** C01 đã duyệt generic

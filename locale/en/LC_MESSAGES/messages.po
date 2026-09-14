@@ -16594,6 +16594,10 @@ msgstr "These buttons only change profile state; they do not move IPs or mapping
 msgid "Sửa cấu hình tham chiếu"
 msgstr "Edit reference configuration"
 
+#: apps/vps/templates/admin_profiles.html
+msgid "Nạp inventory OVH"
+msgstr "Sync OVH inventory"
+
 #: platform_core/public_api/governance.py
 msgid "Ý định, đối chiếu và bù trừ cho từng thay đổi tài nguyên hạ tầng của máy khách. Mất nhật ký này thì không thể phân biệt thao tác đã thành công, cần thử lại hay cần con người xử lý."
 msgstr "Intent, reconciliation, and compensation for each infrastructure resource change affecting a customer machine. Without this journal, operations cannot distinguish success, retryable work, or cases requiring human review."

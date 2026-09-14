@@ -84,8 +84,6 @@ def _xa_metrics_web(dung) -> None:
     chặn nhịp — nên trước khi có hàm này, trang vận hành cộng lại được mọi thứ
     trừ chính thứ nó cần nhất.
     """
-    import time as _time
-
     from platform_core.db import get_session
     from platform_core.public_api import metrics
 

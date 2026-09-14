@@ -41,9 +41,17 @@ def _configured_preflight(db, row) -> bool:
 def test_connections(db, row) -> bool:
     """Probe three adapters independently; never copy remote error bodies."""
     from apps.vps.services import backend_factory
+    def ip_connection():
+        if row.public_ip_backend_type == "ovh_static_pool":
+            from apps.vps.services.backends.contracts import BackendHealth
+            if not backend_factory.ovh_inventory_client(row).health():
+                raise RuntimeError("OVH service ownership check failed")
+            return BackendHealth("HEALTHY", "OVH credentials and service accepted")
+        return backend_factory.public_ip_backend(db, row).health()
+
     probes = (
         ("compute", lambda: backend_factory.compute_backend(row).health()),
-        ("ip", lambda: backend_factory.public_ip_backend(db, row).health()),
+        ("ip", ip_connection),
         ("gateway", lambda: backend_factory.gateway_backend(row).health()),
     )
     now = datetime.now(timezone.utc)
@@ -250,6 +258,12 @@ def apply_action(db, profile_id: str, action: str, *, config_version: int):
         _configured_preflight(db, row)
     elif action == "test_connection":
         applied = test_connections(db, row)
+    elif action == "sync_ip_inventory":
+        from apps.vps.services import backend_factory, inventory_sync
+        inventory_sync.sync_ovh_static_pool(
+            db, row, provider=backend_factory.ovh_inventory_client(row),
+            gateway=backend_factory.gateway_backend(row))
+        increments_version = False
     elif action in ("activate", "default"):
         # Always perform a configured fresh probe before activation, including
         # the driver compatibility guard; stored green rows are not sufficient.

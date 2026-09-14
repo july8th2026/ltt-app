@@ -141,6 +141,10 @@ def run_configured_profile_preflight(
                      or os.environ.get("LTT_VPS_MACHINE_B_RUNTIME", ""))
     runtime = read_machine_b_runtime(directory) if directory else MachineBRuntimeEvidence(
         "UNKNOWN", "Machine B runtime directory is not configured")
+    if profile.public_ip_backend_type == "ovh_static_pool":
+        provider = backend_factory.ovh_inventory_client(profile)
+        if not provider.health():
+            raise RuntimeError("OVH service ownership check failed")
     return run_profile_preflight(
         db, profile,
         compute=backend_factory.compute_backend(profile),

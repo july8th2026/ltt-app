@@ -6,8 +6,9 @@ from dataclasses import replace
 import pytest
 
 from tests.test_252_vps_giao_dien import (
-    moi_truong, _client, _dang_nhap, _tao_khach,
-)  # noqa: F401
+    moi_truong,  # noqa: F401 -- imported pytest fixture
+    _client, _dang_nhap, _tao_khach,
+)
 
 
 @pytest.fixture()
@@ -228,6 +229,47 @@ def test_admin_ip_inventory_is_read_only_and_sanitized(admin_client, moi_truong)
     assert "provider_metadata" not in response.text
 
 
+def test_admin_syncs_ovh_inventory_as_quarantined_without_changing_version(
+    admin_client, moi_truong, monkeypatch,
+):
+    from apps.vps.services import backend_factory
+    from apps.vps.services.ovh import OvhIpObservation
+    from apps.vps.tables import VpsGateway, VpsInfrastructureProfile, VpsIp
+    from platform_core.models import NhatKyAdmin
+    from sqlalchemy import select
+    from types import SimpleNamespace
+    gen = moi_truong.get_session()
+    db = next(gen)
+    db.add(VpsGateway(
+        id="ovh-gateway", infrastructure_profile_id="profile-1", ten="OVH fixture",
+        vung="sgp", ip_cong_khai="192.0.2.1"))
+    db.commit()
+    gen.close()
+    provider = SimpleNamespace(
+        config=SimpleNamespace(service_name="service-1"),
+        list_additional_ipv4=lambda: [OvhIpObservation(
+            cidr="192.0.2.70/32", address="192.0.2.70", kind="failover",
+            country="sg", routed_to="service-1")])
+    monkeypatch.setattr(backend_factory, "ovh_inventory_client", lambda row: provider)
+    monkeypatch.setattr(backend_factory, "gateway_backend", lambda row:
+                        SimpleNamespace(list_mappings=lambda: {
+                            "192.0.2.70": "10.50.0.11"}))
+    page = admin_client.get("/vps/admin/cong-ha-tang")
+    token = re.search(r'name="csrf_token" value="([^"]+)"', page.text).group(1)
+    response = admin_client.post("/vps/admin/profiles/profile-1/action", data={
+        "action": "sync_ip_inventory", "csrf_token": token, "config_version": "1"})
+    assert response.status_code == 303
+    gen = moi_truong.get_session()
+    db = next(gen)
+    row = db.execute(select(VpsIp)).scalar_one()
+    profile = db.get(VpsInfrastructureProfile, "profile-1")
+    assert row.state == "QUARANTINED" and profile.config_version == 1
+    assert db.execute(select(NhatKyAdmin.hanh_dong).where(
+        NhatKyAdmin.doi_tuong == "profile-1")).scalars().all() == [
+            "vps_profile_sync_ip_inventory"]
+    gen.close()
+
+
 def test_admin_reconciliation_is_csrf_audited_and_renders_safe_codes(
     admin_client, moi_truong, monkeypatch,
 ):
@@ -263,6 +305,8 @@ def test_connection_probe_is_independent_safe_and_fail_closed(
     healthy = SimpleNamespace(health=lambda: SimpleNamespace(status="HEALTHY"))
     monkeypatch.setattr(backend_factory, "compute_backend", lambda row: healthy)
     monkeypatch.setattr(backend_factory, "public_ip_backend", lambda db, row: healthy)
+    monkeypatch.setattr(backend_factory, "ovh_inventory_client", lambda row:
+                        SimpleNamespace(health=lambda: True))
     def failed_gateway(row):
         raise RuntimeError("credential=unsafe-marker")
     monkeypatch.setattr(backend_factory, "gateway_backend", failed_gateway)

@@ -111,18 +111,46 @@ def test_missing_or_malformed_artifact_is_unknown_not_exception(tmp_path):
     from apps.vps.services.machine_b_runtime import read_machine_b_runtime
 
     assert read_machine_b_runtime(tmp_path).status == "UNKNOWN"
+
+
+def test_canonical_windows_powershell_utf8_bom_is_accepted(tmp_path):
+    from apps.vps.services.machine_b_runtime import read_machine_b_runtime
+
+    now = datetime.now(timezone.utc)
+    _write_bundle(tmp_path, generated_at=now.isoformat())
+    for path in tmp_path.glob("runtime-*.json"):
+        payload = path.read_bytes()
+        path.write_bytes(b"\xef\xbb\xbf" + payload)
+    assert read_machine_b_runtime(tmp_path, now=now).status == "HEALTHY"
     (tmp_path / "runtime-inventory.json").write_text("not json", encoding="utf-8")
     assert read_machine_b_runtime(tmp_path).status == "UNKNOWN"
 
 
-def test_success_label_with_nonzero_collector_exit_fails_closed(tmp_path):
+@pytest.mark.parametrize("exit_code", [1, 2])
+def test_successful_degraded_or_critical_collection_remains_consumable(
+    tmp_path, exit_code,
+):
     from apps.vps.services.machine_b_runtime import read_machine_b_runtime
 
     now = datetime.now(timezone.utc)
     _write_bundle(tmp_path, generated_at=now.isoformat())
     status_path = tmp_path / "runtime-collector-status.json"
     status = json.loads(status_path.read_text(encoding="utf-8"))
-    status["exit_code"] = 1
+    status["exit_code"] = exit_code
+    status_path.write_text(json.dumps(status), encoding="utf-8")
+    evidence = read_machine_b_runtime(tmp_path, now=now)
+    assert evidence.status == "HEALTHY"
+    assert evidence.machine_health == "HEALTHY"
+
+
+def test_collector_internal_exit_still_fails_closed(tmp_path):
+    from apps.vps.services.machine_b_runtime import read_machine_b_runtime
+
+    now = datetime.now(timezone.utc)
+    _write_bundle(tmp_path, generated_at=now.isoformat())
+    status_path = tmp_path / "runtime-collector-status.json"
+    status = json.loads(status_path.read_text(encoding="utf-8"))
+    status["exit_code"] = 3
     status_path.write_text(json.dumps(status), encoding="utf-8")
     evidence = read_machine_b_runtime(tmp_path, now=now)
     assert evidence.status == "UNKNOWN"
