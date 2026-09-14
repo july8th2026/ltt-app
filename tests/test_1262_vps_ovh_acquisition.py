@@ -388,7 +388,8 @@ def _ordering_driver():
     from apps.vps.services.ovh_ordering import OvhOrderingClient
 
     calls = []
-    state = {"price": "2.39", "quantity": 1, "destination": "fixture-service"}
+    state = {"price": "2.39", "quantity": 1, "destination": "fixture-service",
+             "contract_content": "fixture approved terms"}
     cart_id = "11111111-1111-4111-8111-111111111111"
 
     def transport(method, url, headers, body=None):
@@ -399,7 +400,9 @@ def _ordering_driver():
             return 2000000000
         if url.endswith("/checkout"):
             return {"prices": {"withTax": {"value": state["price"], "currencyCode": "USD"}},
-                    "contracts": [{"name": "Cloud Base"}]}
+                    "contracts": [{"name": "Cloud Base",
+                                   "content": state["contract_content"],
+                                   "url": "https://example.invalid/fixture-contract"}]}
         if url.endswith("/item/77"):
             return {"settings": {"quantity": state["quantity"],
                                  "planCode": "ip-failover-arin", "pricingMode": "default"},
@@ -423,6 +426,17 @@ def test_ordering_checkout_revalidates_quote_before_any_payment():
     driver, cart_id, state, calls = _ordering_driver()
     expected = driver.preview_cart(cart_id, 77)
     state["price"] = "2.40"
+    with pytest.raises(OvhError):
+        driver.checkout_cart(cart_id, expected=expected)
+    assert not any(method == "POST" for method, _, _ in calls)
+
+
+def test_ordering_checkout_refuses_changed_contract_content_with_same_name():
+    from apps.vps.services.ovh import OvhError
+
+    driver, cart_id, state, calls = _ordering_driver()
+    expected = driver.preview_cart(cart_id, 77)
+    state["contract_content"] = "fixture changed terms, unchanged contract name"
     with pytest.raises(OvhError):
         driver.checkout_cart(cart_id, expected=expected)
     assert not any(method == "POST" for method, _, _ in calls)

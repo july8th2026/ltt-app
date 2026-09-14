@@ -12,6 +12,17 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-14 — Q125: giữ fingerprint điều khoản trước checkout
+
+- Đọc schema chính thức `https://ca.api.ovh.com/1.0/order.json` bằng HTTPS GET:
+  `order.Contract` có content/name/url. Chỉ so tên hợp đồng không đủ để phát hiện
+  điều khoản thay đổi; driver nay so SHA-256 của đủ ba trường trước checkout,
+  journal chỉ giữ digest/currency/expiry, không giữ URL hay nội dung hợp đồng.
+- Test đổi content nhưng giữ name chặn POST checkout. Batch acquisition/capacity/
+  inventory **39 PASS, 4,62 giây**; Ruff ba tệp mục tiêu PASS, diff check PASS.
+  Không gate tổng hoặc mutation live. Checkpoint trước `a41803f8` có secret scan
+  **3.655 tệp/895.134 dòng, 0 finding PASS**.
+
 ## 2026-09-14 — Q125: nối worker reserve-first và browser local sau tích hợp
 
 - Worker `_cap_ip_cong_khai` gọi reserve-first coordinator; chỉ khi pool hết và

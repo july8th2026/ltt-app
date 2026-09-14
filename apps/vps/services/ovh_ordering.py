@@ -1,6 +1,8 @@
 """OVH Additional IP cart driver with explicit preview-before-checkout guards."""
 from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
+import hashlib
+import json
 from uuid import UUID
 from urllib.parse import urlencode
 
@@ -55,10 +57,18 @@ class OvhOrderingClient(OvhClient):
             contracts = tuple(contract["name"] for contract in preview["contracts"])
             if not contracts or any(not isinstance(name, str) for name in contracts):
                 raise OvhError("OVH contracts have invalid shape")
+            fingerprints = []
+            for contract in preview["contracts"]:
+                shape = {key: contract[key] for key in ("content", "name", "url")}
+                if any(not isinstance(value, str) or not value for value in shape.values()):
+                    raise OvhError("OVH contract contents are incomplete")
+                fingerprints.append(hashlib.sha256(json.dumps(
+                    shape, sort_keys=True, separators=(",", ":"),
+                    ensure_ascii=True).encode("ascii")).hexdigest())
             return OvhPreparedIpCart(
                 cart_id=self._cart_id(cart_id), item_id=item_id, quantity=1,
                 with_tax_minor=int(value), currency="USD", expires=cart["expire"],
-                contracts=contracts)
+                contracts=contracts, contract_fingerprints=tuple(fingerprints))
         except (KeyError, TypeError, ValueError, InvalidOperation):
             raise OvhError("OVH cart preview has invalid shape") from None
 

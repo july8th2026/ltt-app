@@ -120,6 +120,9 @@ def ensure_free_ip(db, profile, *, instance, gateway_row, provider, gateway,
             metadata = {**metadata, "cart_id": prepared.cart_id,
                         "item_id": prepared.item_id,
                         "with_tax_minor": prepared.with_tax_minor,
+                        "currency": prepared.currency,
+                        "expires": prepared.expires,
+                        "contract_fingerprints": list(prepared.contract_fingerprints),
                         "phase": "PREPARED"}
             row.provider_metadata = metadata
             db.commit()

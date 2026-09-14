@@ -53,6 +53,7 @@ class OvhPreparedIpCart:
     currency: str
     expires: str
     contracts: tuple[str, ...]
+    contract_fingerprints: tuple[str, ...] = ()
 
 
 Transport = Callable[..., Any]
