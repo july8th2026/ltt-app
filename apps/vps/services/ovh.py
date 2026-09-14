@@ -142,12 +142,13 @@ class OvhClient:
         return value
 
     def order_ipv4(self, order_id):
-        """Read exact delivered service domains; descriptions are not identity."""
+        """Resolve exact order domain via IP-service identity, not label parsing."""
         prefix = "/me/order/" + self._order_id(order_id) + "/details"
         ids = self.get(prefix)
         if not isinstance(ids, list) or len(ids) > 100:
             raise OvhError("OVH order details have invalid shape")
         addresses = set()
+        service_names = None
         for detail_id in ids:
             detail = self.get(prefix + "/" + self._order_id(detail_id))
             if not isinstance(detail, dict) or type(detail.get("cancelled")) is not bool:
@@ -160,7 +161,23 @@ class OvhClient:
             try:
                 interface = IPv4Interface(domain)
             except ValueError:
-                continue
+                # Real Additional-IP orders use an internal IP-service domain.
+                # Join exact API identities; never extract digits from a name
+                # or assume a newly appeared inventory address belongs to us.
+                if service_names is None:
+                    names = self.get("/ip/service")
+                    if (not isinstance(names, list) or len(names) > 1000
+                            or any(not isinstance(name, str) for name in names)
+                            or len(set(names)) != len(names)):
+                        raise OvhError("OVH IP service identities have invalid shape") from None
+                    service_names = set(names)
+                if domain not in service_names:
+                    continue
+                service = self.get("/ip/service/" + quote(domain, safe=""))
+                try:
+                    interface = IPv4Interface(service["ip"])
+                except (KeyError, TypeError, ValueError):
+                    raise OvhError("OVH IP service address has invalid shape") from None
             if interface.network.prefixlen == 32:
                 addresses.add(str(interface.ip))
         return sorted(addresses)

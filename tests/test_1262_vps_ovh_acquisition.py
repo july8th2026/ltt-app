@@ -370,6 +370,8 @@ def test_order_reader_uses_exact_domains_not_description_substrings():
             return "delivered"
         if url.endswith("/details"):
             return [11, 12, 13]
+        if url.endswith("/ip/service"):
+            return []
         if url.endswith("/11"):
             return {"domain": "192.0.2.11/32", "cancelled": False}
         if url.endswith("/12"):
@@ -381,6 +383,34 @@ def test_order_reader_uses_exact_domains_not_description_substrings():
         consumer_key="fixture-ck", service_name="fixture-service"), transport=transport)
     assert client.order_status(9001) == "delivered"
     assert client.order_ipv4(9001) == ["192.0.2.11"]
+
+
+def test_order_reader_resolves_exact_internal_ip_service_identity():
+    from apps.vps.services.ovh import OvhClient, OvhConfig
+
+    calls = []
+
+    def transport(method, url, headers):
+        calls.append(url)
+        if url.endswith("/auth/time"):
+            return 2000000000
+        if url.endswith("/details"):
+            return [11, 12]
+        if url.endswith("/11"):
+            return {"domain": "ip-fixture-service", "cancelled": False}
+        if url.endswith("/12"):
+            return {"domain": "ip-fixture-service-prefix", "cancelled": False}
+        if url.endswith("/ip/service"):
+            return ["ip-fixture-service"]
+        if url.endswith("/ip/service/ip-fixture-service"):
+            return {"ip": "192.0.2.11/32"}
+        pytest.fail("reader must not request a merely similar service identity")
+
+    client = OvhClient(OvhConfig(
+        application_key="fixture-ak", application_secret="fixture-as",
+        consumer_key="fixture-ck", service_name="fixture-service"), transport=transport)
+    assert client.order_ipv4(9001) == ["192.0.2.11"]
+    assert sum(url.endswith("/ip/service") for url in calls) == 1
 
 
 def _ordering_driver():
@@ -464,3 +494,59 @@ def test_ordering_checkout_pays_once_when_exact_preview_matches():
     assert len(posts) == 1
     assert json.loads(posts[0][1]) == {
         "autoPayWithPreferredPaymentMethod": True, "waiveRetractationPeriod": True}
+
+
+def test_adopting_prepared_cart_only_reads_without_creating_replacement():
+    driver, cart_id, state, calls = _ordering_driver()
+    prepared = driver.adopt_prepared_cart(cart_id)
+    assert prepared.cart_id == cart_id and prepared.with_tax_minor == 239
+    assert not any(method == "POST" for method, _, _ in calls)
+
+
+def test_coordinator_adopts_configured_cart_without_preparing_another(db):
+    from apps.vps.services.ovh_acquisition import ensure_free_ip
+
+    profile, gateway, instance = _domain(db)
+    cart_id = "11111111-1111-4111-8111-111111111111"
+    profile.provider_config = {**profile.provider_config, "adopt_ip_cart_id": cart_id}
+    db.commit()
+    provider = _Provider()
+    prepared = provider.prepare_additional_ipv4()
+    provider.calls.clear()
+    provider.adopt_prepared_cart = lambda actual: prepared if actual == cart_id else None
+    result = ensure_free_ip(db, profile, instance=instance, gateway_row=gateway,
+                            provider=provider, gateway=_Gateway(), operation_id="adopt",
+                            sleep=lambda _: None)
+    assert result.address == "192.0.2.11"
+    assert not any(call[0] == "prepare" for call in provider.calls)
+    assert [call[0] for call in provider.calls].count("checkout") == 1
+
+
+def test_same_adopted_cart_cannot_be_used_by_a_second_instance(db):
+    from apps.vps.services.backends.contracts import BackendConflict
+    from apps.vps.services.ovh_acquisition import ensure_free_ip
+    from apps.vps.tables import VpsInstance
+
+    profile, gateway, instance = _domain(db)
+    cart_id = "11111111-1111-4111-8111-111111111111"
+    profile.provider_config = {**profile.provider_config, "adopt_ip_cart_id": cart_id}
+    db.commit()
+    provider = _Provider()
+    prepared = provider.prepare_additional_ipv4()
+    provider.adopt_prepared_cart = lambda actual: prepared
+    ensure_free_ip(db, profile, instance=instance, gateway_row=gateway,
+                   provider=provider, gateway=_Gateway(), operation_id="first-instance",
+                   sleep=lambda _: None)
+    second = VpsInstance(
+        id="second-instance", user_id="owner", plan_id="vps-nho", os_id="win10",
+        gateway_id=gateway.id, infrastructure_profile_id=profile.id,
+        profile_resolution_state="PINNED", vmid=209,
+        paid_until=datetime(2099, 1, 1, tzinfo=timezone.utc))
+    db.add(second)
+    db.commit()
+    provider.calls.clear()
+    with pytest.raises(BackendConflict):
+        ensure_free_ip(db, profile, instance=second, gateway_row=gateway,
+                       provider=provider, gateway=_Gateway(), operation_id="second-instance",
+                       sleep=lambda _: None)
+    assert provider.calls == []

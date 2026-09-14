@@ -321,6 +321,9 @@ def test_real_postgres_migration_up_down_preserves_legacy_rows(profile_pg, monke
                   for table in ("vps_gateway", "vps_instance", "vps_ip")}
         monkeypatch.setattr(migration, "op", Operations(MigrationContext.configure(connection)))
         migration.upgrade()
+        journal_columns = {col["name"] for col in sa.inspect(connection).get_columns(
+            "vps_external_mutation")}
+        assert "provider_metadata" in journal_columns
         rows = connection.execute(sa.text(
             "SELECT id,infrastructure_profile_id,profile_resolution_state FROM vps_instance ORDER BY id")).all()
         assert rows == [("ambiguous", None, "NEEDS_REVIEW"),
@@ -414,3 +417,12 @@ def test_real_postgres_concurrent_intent_adopts_one_exact_row(profile_pg):
     with ThreadPoolExecutor(max_workers=2) as executor:
         results = list(executor.map(create, (1, 2)))
     assert len(set(results)) == 1
+    from apps.vps.tables import VpsExternalMutation
+    evidence = {"cart_id": "fixture-cart", "item_id": 77, "order_id": 9001,
+                "baseline": ["192.0.2.10/32"], "phase": "ORDERED"}
+    with Session(profile_pg) as session:
+        row = session.get(VpsExternalMutation, results[0])
+        row.provider_metadata = evidence
+        session.commit()
+    with Session(profile_pg) as session:
+        assert session.get(VpsExternalMutation, results[0]).provider_metadata == evidence

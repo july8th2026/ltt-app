@@ -6,6 +6,7 @@ order-to-IP attribution and gateway address installation pass their tests.
 from datetime import datetime, timezone
 from ipaddress import IPv4Address
 import time
+from uuid import UUID
 
 from sqlalchemy import select, update
 
@@ -60,6 +61,11 @@ def acquisition_policy(profile):
     ceiling = config.get("max_ip_with_tax_minor")
     if type(ceiling) is not int or not 0 < ceiling <= 500:
         raise UnexpectedBilling("OVH acquisition price ceiling is invalid")
+    if config.get("adopt_ip_cart_id"):
+        try:
+            expected["adopt_ip_cart_id"] = str(UUID(str(config["adopt_ip_cart_id"])))
+        except (ValueError, TypeError, AttributeError):
+            raise UnexpectedBilling("OVH predecessor cart identity is invalid") from None
     return expected, ceiling
 
 
@@ -88,6 +94,14 @@ def ensure_free_ip(db, profile, *, instance, gateway_row, provider, gateway,
             raise BackendConflict("acquisition requires a paid VPS subscription")
 
     guard()
+    if request.get("adopt_ip_cart_id"):
+        # One durable cart claim across ALL instance/operation IDs. The journal
+        # unique key plus exact-instance validation prevents a second worker
+        # assigning the same live cart to another customer or profile.
+        journal.intent(db, operation_id="ovh-cart:" + request["adopt_ip_cart_id"],
+                       instance=instance, step="OVH_CART_CLAIM",
+                       request={"cart_id": request["adopt_ip_cart_id"]})
+        db.commit()
     row = journal.intent(db, operation_id=operation_id, instance=instance,
                          step="OVH_IP_ACQUIRE", request=request)
     db.commit()
@@ -115,8 +129,11 @@ def ensure_free_ip(db, profile, *, instance, gateway_row, provider, gateway,
             row.provider_metadata = metadata
             db.commit()
             guard()
-            prepared = provider.prepare_additional_ipv4(
-                description=f"ltt-vps:{row.id}", quantity=1, **request)
+            if request.get("adopt_ip_cart_id"):
+                prepared = provider.adopt_prepared_cart(request["adopt_ip_cart_id"])
+            else:
+                prepared = provider.prepare_additional_ipv4(
+                    description=f"ltt-vps:{row.id}", quantity=1, **request)
             metadata = {**metadata, "cart_id": prepared.cart_id,
                         "item_id": prepared.item_id,
                         "with_tax_minor": prepared.with_tax_minor,

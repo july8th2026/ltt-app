@@ -149,6 +149,15 @@ artifacts rather than substituting a checkout SHA.
 
 ## Backup/restore/network resilience
 
+Q125 checkpoint: reserve-first worker, subscription guard, contract-content
+fingerprints, GET-only adoption and durable one-cart/one-instance claim are
+implemented. Focused acquisition/capacity/inventory: 43 PASS; isolated real
+PostgreSQL migration/concurrency/JSON persistence: 5 PASS. The actual app reader
+resolved eight IPs from a historical order through exact IP-service identities;
+the actual app cart driver validated the existing one-IP/USD 2.39 cart using a
+mutation-prohibited transport. No live checkout, new IP/VM, deploy or final full
+gate has occurred; automatic acquisition remains disabled pending rollout.
+
 Backup V2 is CAPACITY_BLOCKED; restore and dual-WAN are NOT VERIFIED. Therefore
 the program cannot be called FULL PRODUCTION READY even after software work.
 

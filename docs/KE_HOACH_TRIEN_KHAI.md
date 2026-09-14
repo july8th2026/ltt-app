@@ -4009,7 +4009,10 @@ Quyết định: Q124. Hồ sơ canonical: `docs/VPS_V4/`. Nhánh riêng:
   worker tự động với quote guard và journal phục hồi. Driver signed cart/checkout
   và coordinator/credit guard/reserve-first worker có test mục tiêu 38 PASS;
   helper regression 9 PASS, Playwright admin local desktop/mobile PASS. Còn
-  exact delivery attribution thật và gateway persistence read-back trên IP mới,
+  **Checkpoint tiếp:** reader order thật trả đúng tám IP lịch sử; driver preview
+  giỏ D10 thật PASS, checkout=false; adopt/claim một giỏ-một instance đã có test.
+  Batch mới **43 PASS**, PostgreSQL migration/evidence thật **5 PASS**. Còn
+  delivery attribution và gateway persistence read-back trên IP mới,
   normal-user create E2E trước khi bật. Chờ khóa gate của phiên khác
   nhả trước batch nặng/reconcile/deploy; không tạo giỏ live thứ hai.
 - [ ] **H46.8 — Red team + hoàn thiện báo cáo:** không P0 software, ba score

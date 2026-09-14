@@ -72,6 +72,15 @@ class OvhOrderingClient(OvhClient):
         except (KeyError, TypeError, ValueError, InvalidOperation):
             raise OvhError("OVH cart preview has invalid shape") from None
 
+    def adopt_prepared_cart(self, cart_id):
+        """Explicit operator-configured predecessor: GET only, no replacement."""
+        cart_id = self._cart_id(cart_id)
+        cart = self.get("/order/cart/" + cart_id)
+        if (not isinstance(cart, dict) or not isinstance(cart.get("items"), list)
+                or len(cart["items"]) != 1):
+            raise OvhError("predecessor cart must contain exactly one item")
+        return self.preview_cart(cart_id, cart["items"][0])
+
     def prepare_additional_ipv4(self, *, description, quantity, ip_plan_code,
                                ip_country, ip_datacenter, ip_duration, ip_currency):
         if (quantity != 1 or ip_plan_code != "ip-failover-arin"

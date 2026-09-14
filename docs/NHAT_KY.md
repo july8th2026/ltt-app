@@ -12,6 +12,43 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-14 — Q125: preview giỏ thật, claim một giỏ/một instance và PostgreSQL
+
+- Driver app chạy với transport GET ký bởi credential canonical máy B:
+  order parser đọc đơn lịch sử và trả đúng tám địa chỉ; cart preview giỏ D10
+  thành công: quantity 1, USD 239 minor gồm thuế, một fingerprint hợp đồng,
+  expiry cùng instant 2026-09-15T08:53:23Z, checkout_performed=false.
+  Probe transport cấm POST; không lấy kết quả preview làm chứng cứ delivery mới.
+- Thêm adopt_prepared_cart GET-only; coordinator dùng cấu hình adopt_ip_cart_id
+  để không tạo giỏ thứ hai. Durable OVH_CART_CLAIM khóa UUID giỏ qua tất cả
+  operation/instance/profile; instance thứ hai bị chặn trước provider call.
+- Batch acquisition/capacity/inventory **43 PASS, 4,58 giây**; Ruff năm tệp
+  mục tiêu PASS, diff check PASS. PostgreSQL thật với LTT_VPS_PG_TEST=1 và
+  `python -m pytest tests/test_1010_vps_infrastructure_profiles.py -k real_postgres -q`:
+  **5 PASS/12 deselected, 3,42 giây**, gồm migration có provider_metadata và JSON
+  evidence round-trip sau commit/reopen; database UUID test riêng, không data prod.
+- Còn mở: auto-acquire chưa bật, chưa checkout/mua IP/tạo VM/deploy. Canonical
+  tree còn năm tài liệu thuộc phiên khác; không tự merge/stash/rewrite chúng.
+  Chưa HANDOFF_READY_FINAL vì full gate được giữ đúng H46.9 cuối theo PO.
+
+## 2026-09-14 — Q125: xác minh domain-to-IP service qua đơn OVH lịch sử thật
+
+- Probe riêng ngoài Git trên máy B chỉ GET, đọc ba đơn/26 detail. Không detail
+  nào có domain dạng IPv4 trực tiếp; một đơn có 16 detail liên kết chính xác với
+  tám IP-service đang có. GET `/ip/service/{serviceName}` trả CIDR /32, đối chiếu
+  tám địa chỉ hiện tại; không route/checkout/mapping/VM nào bị mutation.
+- Reader app đã sửa theo quan hệ exact order.domain == IP service identity,
+  rồi đọc service.ip; vẫn giữ strict cancelled, /32 và inventory/routed/mapping
+  guard. Không dò substring/description hoặc lấy delta inventory làm ownership.
+- Batch acquisition/capacity/inventory **40 PASS, 3,12 giây**. Ruff đầu đỏ B904
+  ở raise trong except; đã thêm `from None`, phải chạy lại trước checkpoint.
+- CPU sau gate phiên khác nhả khóa: 11%. Rebase riêng sạch lên main `37839edf`,
+  không sửa năm tài liệu dirty trong cây chính. Commit Q125 trước rebase hiện
+  `dfac8166`, `81d9639d`, `5490b32a`; test sau rebase **39 PASS, 3,34 giây**.
+- Exact attribution có dữ liệu lịch sử thật; còn bật có kiểm soát acquisition,
+  adopt/revalidate giỏ chưa thanh toán, giới hạn một IP/một VM, deploy và
+  normal-user create E2E. Gate tổng vẫn chưa chạy và chỉ dành H46.9 cuối.
+
 ## 2026-09-14 — Q125: giữ fingerprint điều khoản trước checkout
 
 - Đọc schema chính thức `https://ca.api.ovh.com/1.0/order.json` bằng HTTPS GET:
