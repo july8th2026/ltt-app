@@ -21,6 +21,24 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-09-14 — cửa job: `max_tokens` mặc định `4096` → `32768`
+
+**CHANGED · không phá vỡ hợp đồng.** Ai đang gửi `max_tokens` tường minh thì
+không đổi gì. Ai không gửi sẽ được **chỗ để trả lời hết** thay vì bị cắt ở
+4.096.
+
+Nhà sản xuất khuyến nghị **32.768 token ra cho hầu hết truy vấn**, và cửa
+`stream` đã theo con số ấy từ trước. Cửa `job` giữ 4.096 vì một lý lẽ bảo vệ
+hiện trạng — *"cửa job chưa từng dính lỗi 30/08"* — nhưng **"chưa dính" không
+phải "không dính được"**: cơ chế gây ra sự cố ấy (trần ẩn nằm **dưới** trần đã
+công bố, model bị cắt giữa chừng, khách thấy *"chạy xong mà không có gì"*) có
+đủ ở cửa job y hệt. Và cửa job **không** có trần 100 giây của Cloudflare — thứ
+duy nhất biện minh được cho một mặc định thấp, và nó chỉ áp cho cửa đồng bộ.
+
+⭐ **Không đội giá.** Credit giữ trước rồi **hoàn** theo token thật sinh ra; giữ
+cho 32.768 token là **13,1 credit** ở giá 400 credit/1M — khoảng 1 % số dư một
+tài khoản thường.
+
 ## 2026-09-14 — `reasoning_effort` mặc định đổi `medium` → `xhigh`
 
 **ADDED/CHANGED · không phá vỡ hợp đồng.** Ai đang gửi `reasoning_effort` tường

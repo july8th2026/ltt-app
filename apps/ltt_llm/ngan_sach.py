@@ -263,13 +263,31 @@ TOKEN_RA_MAC_DINH = {
     #    sinh ra; và `tran_theo_ngu_canh()` vẫn tự siết theo ngữ cảnh còn lại.
     #    Bất kỳ số nào nhỏ hơn `TOKEN_RA_TRAN` đều chỉ là một chỗ để cụt lần sau.
     "stream": TOKEN_RA_TRAN,
-    # ⛔ 4.096 CHỨ KHÔNG PHẢI 8.192, và đây là một ràng buộc chứ không phải quên
-    #    đồng bộ: con số của cửa job là **giá trị `default` in trong hợp đồng công
-    #    khai** (`input_schema.properties.max_tokens.default`) mà khách đọc được
-    #    qua `/api/v1/tools`. Cửa job chưa từng dính lỗi 30/08 — lỗi đó chỉ ở cửa
-    #    stream — nên không có lý do gì đổi thứ khách đang thấy. Muốn đổi thì đó
-    #    là một thay đổi hợp đồng, phải cập nhật `tests/golden/` một cách có chủ ý.
-    "job": 4_096,
+    # 🔴 NÂNG 4.096 → `TOKEN_RA_TRAN` ngày 14/09/2026, chủ dự án chốt.
+    #
+    #    Chú thích cũ ở đây giữ 4.096 với lý do: *"cửa job chưa từng dính lỗi
+    #    30/08 — lỗi đó chỉ ở cửa stream — nên không có lý do gì đổi thứ khách
+    #    đang thấy."* Lý lẽ ấy **bảo vệ hiện trạng chứ không bảo vệ khách**:
+    #    "chưa dính" không phải "không dính được", và cơ chế gây ra lỗi 30/08
+    #    (một trần ẩn **dưới** trần đã công bố, model bị cắt giữa chừng, khách
+    #    thấy "chạy xong mà không có gì") **có đủ ở cửa job y hệt**.
+    #
+    #    Cái cửa job KHÔNG có là lý do để đặt thấp: nó chạy nền, không có đồng
+    #    hồ 100 giây của Cloudflare như cửa `sync`. Nên 4.096 ở đây là tàn dư,
+    #    không phải ràng buộc.
+    #
+    # ⭐ Nhà sản xuất khuyến nghị **32.768 token ra cho hầu hết truy vấn**
+    #    (model card, mục Best Practices) — đúng bằng `TOKEN_RA_TRAN`.
+    #
+    # ⛔ Và nâng KHÔNG đội giá: credit giữ trước rồi **hoàn** theo token thật
+    #    sinh ra. Giữ cho 32.768 token là **13,1 credit** (đo, ở giá 400
+    #    credit/1M) — 1 % số dư một tài khoản thường. Đây đúng là phép tính đã
+    #    bác bỏ nỗi lo "ví mỏng bị từ chối oan" khi sửa cửa stream.
+    #
+    # ⚠️ Đây LÀ một thay đổi hợp đồng (`input_schema...max_tokens.default` khách
+    #    đọc qua `/api/v1/tools`), nên nó đi kèm `tests/golden/` sinh lại và một
+    #    mục CHANGELOG — đúng như chú thích cũ đòi hỏi.
+    "job": TOKEN_RA_TRAN,
 }
 
 # ══════════════════════════════════════════════════════════════════════════

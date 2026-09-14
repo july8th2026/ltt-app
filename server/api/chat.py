@@ -120,9 +120,47 @@ def _tran_max_tokens(token_vao_uoc: int = 0, executor=None) -> int:
     return executor.sync_output_cap(token_vao_uoc, SYNC_BILLED_MAX_SECONDS)
 
 
+def _than_openapi(config) -> dict:
+    """Mô tả thân request cho OpenAPI, **lấy từ chính hợp đồng của tool**.
+
+    🔴 VÌ SAO CẦN. Đo 14/09/2026 trên `GET /api/v1/openapi.json`:
+
+           /chat/completions  requestBody -> {"type":"object",
+                                              "additionalProperties":true}
+
+       Tức spec **máy đọc** không nói một chữ nào về `model`, `messages`,
+       `max_tokens`, `reasoning_effort` hay sáu tham số mở hôm nay. Ai trỏ một
+       bộ sinh client vào đó sẽ nhận một client chỉ biết `dict` — trong khi
+       `DEVELOPER_GUIDE.md` (người đọc) thì đầy đủ. Hai bề mặt của **cùng một
+       hợp đồng**, một bên rỗng.
+
+       Và ta **quảng cáo** nó: guide ghi *"Spec máy đọc: GET /api/v1/openapi.json"*.
+
+    ⭐ Nguyên nhân là chữ ký `body: dict = Body(...)` — FastAPI không có gì để
+       suy ra. Nhưng catalog **đã dựng sẵn** `ToolSpec.input_schema` từ
+       `params_schema`, đủ cả enum, mặc định và mô tả. Nên đây chỉ là **nối một
+       nguồn đã có vào một bề mặt đang rỗng**, không phải khai lại lần hai.
+
+    ⛔ Trả `{}` khi không dựng được: một spec thiếu mô tả vẫn phải bật được
+       server. Đổi chữ ký handler sang model Pydantic thì hợp đồng sẽ bị khai ở
+       **hai** nơi và ngày chúng lệch nhau là ngày spec nói dối.
+    """
+    try:
+        from platform_core.public_api.catalog import build_catalog
+
+        for tool in build_catalog(config):
+            if tool.name == TOOL_CHAT:
+                return {"requestBody": {"required": True, "content": {
+                    "application/json": {"schema": dict(tool.input_schema)}}}}
+    except Exception:                       # noqa: BLE001
+        log.exception("khong dung duoc schema OpenAPI cho %s", TOOL_CHAT)
+    return {}
+
+
 def register_chat_routes(api, config, tag: str) -> None:
     @api.post("/chat/completions", tags=[tag],
               summary="Chat completion, answered in the request",
+              openapi_extra=_than_openapi(config),
               description=(
                   "OpenAI-compatible chat completion. Chargeable and answered "
                   "in the same request (execution mode SYNC_BILLED). Requires "

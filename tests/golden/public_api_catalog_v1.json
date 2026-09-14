@@ -492,7 +492,7 @@
             "type": "integer",
             "minimum": 1,
             "maximum": 32768,
-            "default": 4096,
+            "default": 32768,
             "description": "Ceiling on generated tokens. Credit is held against this and refunded down to what was actually generated.",
             "examples": [
               1024
@@ -522,7 +522,7 @@
               "xhigh"
             ],
             "default": "xhigh",
-            "description": "How much the model thinks before answering. Deeper costs more output tokens. Use `none` to turn thinking off entirely - that is the switch for short answers, not a small `max_tokens`: with thinking on the model can spend the whole budget reasoning and return empty content with finish_reason=length.",
+            "description": "How much the model thinks before answering. Deeper costs more output tokens but gives better answers, so the default is the deepest. Use `low` when you want the shortest answers - do NOT reach for a small `max_tokens` instead: thinking spends that same budget, so the model can reason until it is cut off and return empty content with finish_reason=length.",
             "examples": [
               "medium"
             ]
@@ -603,7 +603,7 @@
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "8fe5b95f1742f03a"
+      "contract_hash": "f6badbdc9de99372"
     },
     {
       "name": "text.prompt_package",

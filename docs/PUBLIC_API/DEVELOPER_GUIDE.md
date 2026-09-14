@@ -659,10 +659,10 @@ Input:
 
 - `messages` — array, **required**, Conversation so far, OpenAI format: a list of {role, content}. `content` may be a string, or a list of parts for images.
 - `model` — string, one of `ltt-3.8`, `ltt-3.5`, default ltt-3.8, `ltt-3.8` is the deepest model, text only (171K usable input context). `ltt-3.5` answers faster, costs much less and reads images, with 209K usable input context.
-- `max_tokens` — integer, min 1, max 32768, default 4096, Ceiling on generated tokens. Credit is held against this and refunded down to what was actually generated.
+- `max_tokens` — integer, min 1, max 32768, default 32768, Ceiling on generated tokens. Credit is held against this and refunded down to what was actually generated.
 - `temperature` — number, min 0.0, max 2.0, Sampling temperature.
 - `tools` — array, Function definitions, OpenAI format. The model may answer with `tool_calls`.
-- `reasoning_effort` — string, one of `low`, `medium`, `xhigh`, default xhigh, How much the model thinks before answering. Deeper costs more output tokens. Use `none` to turn thinking off entirely - that is the switch for short answers, not a small `max_tokens`: with thinking on the model can spend the whole budget reasoning and return empty content with finish_reason=length.
+- `reasoning_effort` — string, one of `low`, `medium`, `xhigh`, default xhigh, How much the model thinks before answering. Deeper costs more output tokens but gives better answers, so the default is the deepest. Use `low` when you want the shortest answers - do NOT reach for a small `max_tokens` instead: thinking spends that same budget, so the model can reason until it is cut off and return empty content with finish_reason=length.
 - `response_format` — object, Constrain the answer's shape. `{"type":"json_object"}` returns bare JSON; `{"type":"json_schema","json_schema":{"name":...,"schema":{...}}} ` forces the answer to match that schema. The constraint is enforced by the decoder, not by prompting, so the output cannot drift out of shape.
 - `tool_choice` — string, one of `none`, `auto`, `required`, Whether the model may, must, or must not call a tool: `none`, `auto` or `required`. Without it `tools` is only ever a suggestion.
 - `parallel_tool_calls` — boolean, Allow several tool calls in one turn. Support depends on the model's own template.
@@ -672,7 +672,7 @@ Input:
 
 Output: `content` (string), `tool_calls` (array), `usage` (object)
 
-Contract hash: `8fe5b95f1742f03a`
+Contract hash: `f6badbdc9de99372`
 
 ### `text.prompt_package`
 

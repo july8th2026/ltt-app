@@ -464,11 +464,12 @@ MANIFEST = AppManifest(
                 "reasoning_effort": {
                     "description": (
                         "How much the model thinks before answering. Deeper "
-                        "costs more output tokens. Use `none` to turn thinking "
-                        "off entirely - that is the switch for short answers, "
-                        "not a small `max_tokens`: with thinking on the model "
-                        "can spend the whole budget reasoning and return empty "
-                        "content with finish_reason=length."),
+                        "costs more output tokens but gives better answers, so "
+                        "the default is the deepest. Use `low` when you want "
+                        "the shortest answers - do NOT reach for a small "
+                        "`max_tokens` instead: thinking spends that same "
+                        "budget, so the model can reason until it is cut off "
+                        "and return empty content with finish_reason=length."),
                     "example": "medium",
                 },
                 "response_format": {
