@@ -106,6 +106,7 @@ from apps.ltt_llm.ngan_sach import (CONG_BO_CHO_CLIENT,
                                     POOL_35, POOL_38, SO_SLOT,
                                     TAI_NGUYEN_35, TAI_NGUYEN_38,
                                     TOKEN_RA_TRAN as MAX_TOKENS_TRAN,
+                                    ANH_BYTE_TOI_DA, SO_ANH_TOI_DA,
                                     cong_bo_cua, mac_dinh_cho,
                                     tran_theo_ngu_canh)
 
@@ -401,6 +402,11 @@ MANIFEST = AppManifest(
                         "context_window": cong_bo_cua("qwen38-api"),
                         "max_output_tokens": MAX_TOKENS_TRAN,
                         "reads_images": True,
+                        # 🔴 Cong bo 14/09/2026. Truoc do tran nay CO THAT va
+                        #    dang cuong che (do: 4 anh -> 200, 5 anh -> 400)
+                        #    nhung khong cho nao noi cho khach biet.
+                        "max_images": SO_ANH_TOI_DA,
+                        "max_image_bytes": ANH_BYTE_TOI_DA,
                     },
                 },
                 "ltt-3.5": {
@@ -415,6 +421,11 @@ MANIFEST = AppManifest(
                         "context_window": cong_bo_cua("qwen35-api"),
                         "max_output_tokens": MAX_TOKENS_TRAN,
                         "reads_images": True,
+                        # 🔴 Cong bo 14/09/2026. Truoc do tran nay CO THAT va
+                        #    dang cuong che (do: 4 anh -> 200, 5 anh -> 400)
+                        #    nhung khong cho nao noi cho khach biet.
+                        "max_images": SO_ANH_TOI_DA,
+                        "max_image_bytes": ANH_BYTE_TOI_DA,
                     },
                 },
             },

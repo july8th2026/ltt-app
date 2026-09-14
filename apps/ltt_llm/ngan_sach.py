@@ -499,6 +499,25 @@ DUONG_PREFILL_TOK_S = {
 #: băm ảnh một kiểu, và con số này **đi thẳng vào hoá đơn**.
 TOKEN_MOI_ANH = 770
 
+#: 🔴 TRẦN ẢNH — cưỡng chế ở **cổng máy B**, công bố ở đây. Thêm 14/09/2026.
+#:
+#:    Đo 14/09 trên production: gửi **4** ảnh → 200; gửi **5** → 400. Tức trần
+#:    có thật và đang chạy — nhưng **không chỗ nào công bố nó**. Khách chỉ biết
+#:    khi đã đâm vào, và trước bản vá P0-2 cùng ngày thì thông điệp còn là
+#:    *"yeu cau vuot tran cua cong"*, không nói trần nào hay bao nhiêu.
+#:
+#: ⛔ HAI SỐ NÀY LÀ **BẢN SAO** CỦA `llm_gateway/config.py` TRÊN MÁY B
+#:    (`LTT_LLM_MAX_IMAGES`, `LTT_LLM_MAX_IMAGE_BYTES`). Máy A **không** cưỡng
+#:    chế chúng — nó chỉ *đếm* ảnh để tính ngân sách KV (`luong.dem_anh`), còn
+#:    người từ chối vẫn là cổng máy B. Giữ đúng một người cưỡng chế là có chủ ý:
+#:    hai nơi cùng chặn là hai nơi sẽ lệch nhau.
+#:
+#: ⚠️ Nên bản sao này **phải có người canh**: `test_1259` đối chiếu nó với
+#:    `llama-swap`/cổng máy B. Một con số chép sang mà không ai đối chiếu chính
+#:    là cơ chế đã làm bảng ở kho này nói sai **năm lần**.
+SO_ANH_TOI_DA = 4
+ANH_BYTE_TOI_DA = 12 * 1024 * 1024
+
 #: Thời gian nạp model từ **kho ấm** (tệp vừa đọc ở lượt trước), giây.
 #: ⚠️ Máy trạng thái residency (Task 5.2) đang giả định 45,0 — gấp 2,8 lần thực
 #:    tế, tức trọng tài ngần ngại đổi cư trú và 3090 nằm sai chỗ lâu hơn cần.
