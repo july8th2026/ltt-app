@@ -521,7 +521,7 @@
               "medium",
               "xhigh"
             ],
-            "default": "medium",
+            "default": "xhigh",
             "description": "How much the model thinks before answering. Deeper costs more output tokens. Use `none` to turn thinking off entirely - that is the switch for short answers, not a small `max_tokens`: with thinking on the model can spend the whole budget reasoning and return empty content with finish_reason=length.",
             "examples": [
               "medium"
@@ -603,7 +603,7 @@
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "4faea5b757483c63"
+      "contract_hash": "8fe5b95f1742f03a"
     },
     {
       "name": "text.prompt_package",

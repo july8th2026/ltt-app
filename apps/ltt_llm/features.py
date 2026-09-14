@@ -445,7 +445,8 @@ def kiem_san_token_ra(sach: dict) -> None:
     _san = san_token_ra(sach.get("model"), sach.get("reasoning_effort"))
     if xin_ra >= _san:
         return
-    _muc = sach.get("reasoning_effort") or "medium"
+    from apps.ltt_llm.ngan_sach import NGHI_MAC_DINH
+    _muc = sach.get("reasoning_effort") or NGHI_MAC_DINH
     raise ThamSoSai(
         f"`max_tokens` is {xin_ra}, below the {_san} this model needs at "
         f"reasoning_effort={_muc!r}: thinking spends the same budget as the "

@@ -287,9 +287,19 @@ MANIFEST = AppManifest(
             #    Do duoc: `none` cho **2 token** thay vi ~1.180 tren cung prompt.
             #    Ba nguon doc lap (do 14/09, bang 12/09 trong llama-swap.yaml,
             #    model card Qwen ve tham so lay mau) noi cung mot dieu.
+            # 🔴 MAC DINH `xhigh` — chot 14/09/2026, muc tieu la CHAT LUONG.
+            #    Model card: "For benchmarking on highly complex problems ...
+            #    This provides the model with sufficient space to generate
+            #    detailed and comprehensive responses, thereby enhancing its
+            #    overall performance." Nghi nhieu hon la duong nha san xuat chi
+            #    de tra loi tot hon, va day la API ban CHAT LUONG chu khong ban
+            #    toc do.
+            #    Do 13/09: chenh lech token suy nghi giua medium va xhigh chi
+            #    +12 % tren 3.5 va nam trong nhieu tren 3.8 (63 vs 55) — tuc gia
+            #    phai tra cho muc cao nhat la nho.
             "reasoning_effort": {"type": "enum",
                                  "values": ["low", "medium", "xhigh"],
-                                 "default": "medium"},
+                                 "default": "xhigh"},
             # ── Mo 14/09/2026: engine DA lam duoc, cua cua ta dang vut di ────
             #
             # ⛔ Sau khoa duoi day khong phai nang luc MOI. Do 14/09 tren

@@ -21,6 +21,22 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-09-14 — `reasoning_effort` mặc định đổi `medium` → `xhigh`
+
+**ADDED/CHANGED · không phá vỡ hợp đồng.** Ai đang gửi `reasoning_effort` tường
+minh thì **không đổi gì**. Ai không gửi sẽ nhận câu trả lời model suy nghĩ sâu
+hơn — chậm hơn một chút, tốt hơn.
+
+Model card của nhà sản xuất nói thẳng về lý do: cho model **đủ chỗ** để suy nghĩ
+*"provides the model with sufficient space to generate detailed and
+comprehensive responses, thereby enhancing its overall performance."*
+
+Giá phải trả đo được (13/09, câu hỏi một dòng): `xhigh` tốn hơn `medium` **+12 %**
+token suy nghĩ trên `ltt-3.5`, và nằm **trong nhiễu** trên `ltt-3.8` (63 vs 55).
+Tức mức cao nhất gần như miễn phí ở đây.
+
+⭐ Đây là API bán **chất lượng**, không bán tốc độ. Khách cần nhanh vẫn có `low`.
+
 ## 2026-09-14 — `reasoning_effort: "none"` bị gỡ khỏi `text.chat`
 
 **BREAKING · phải sửa nếu bạn đang gửi `"none"`.** Đây là mục **phá vỡ tương

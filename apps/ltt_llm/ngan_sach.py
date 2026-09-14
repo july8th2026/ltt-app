@@ -341,7 +341,9 @@ SAN_TOKEN_RA_THEO_NGHI = {
 
 #: Mức dùng khi khách không khai `reasoning_effort`. Phải khớp `default` ở
 #: `manifest.params_schema`.
-NGHI_MAC_DINH = "medium"
+#: 🔴 Chot 14/09/2026: `xhigh`, vi muc tieu la CHAT LUONG chu khong
+#:    phai toc do. Xem `manifest.params_schema` cho ly do day du.
+NGHI_MAC_DINH = "xhigh"
 
 
 def san_token_ra(model: str | None = None, muc_nghi: str | None = None) -> int:
