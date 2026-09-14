@@ -21,8 +21,10 @@ Khóa ngày 2026-09-12, trước mọi sửa production code.
 - Domain model nằm trong `apps/vps`.
 - Ba contract độc lập: compute, public IP, gateway.
 - Existing Proxmox/Vultr/gateway clients được bọc lại, không viết lại vì style.
-- OVH provisioning dùng pre-owned static pool; order IP là operator change có
-  billing gate, không là method `reserve()` thông thường.
+- OVH provisioning ưu tiên pre-owned static pool. Theo Q125, khi pool hết IP,
+  web provisioning tự chạy acquisition có journal/price guard/provider
+  read-back; admin không duyệt từng order và acquisition vẫn tách khỏi thao tác
+  `reserve()` thuần CSDL.
 - Profile được persist trước mutation ngoài đầu tiên; mọi job/lifecycle/reconcile
   dùng profile đã pin.
 - Default có partial unique constraint và service transaction; activation/default
@@ -42,7 +44,7 @@ Khóa ngày 2026-09-12, trước mọi sửa production code.
   hướng, render vỏ và audit; domain/routes vẫn app-owned. Không cho phép hardcode
   tên VPS trong server hoặc bỏ gate quyền/CSRF.
 - C03: giữ hay destroy VM acceptance sau kiểm thử.
-- Mọi downtime/reboot/WAN-cut/restore boot và billing bất ngờ chỉ được thực hiện
+- Mọi downtime/reboot/WAN-cut/restore boot và billing **bất ngờ** chỉ được thực hiện
   tại gate tương ứng.
 
 Decision lock này đủ cho offline và admin extension đã được duyệt; C03 vẫn chỉ

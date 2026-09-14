@@ -27,7 +27,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 
 ---
 
-## 1. Quyết định đã chốt (đến Q124; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91, Q116→Q120 (phần con số), Q103/Q104→Q124 (phần chọn hạ tầng) đã thay)
+## 1. Quyết định đã chốt (đến Q125; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91, Q116→Q120 (phần con số), Q103/Q104→Q124 (phần chọn hạ tầng) đã thay)
 
 | # | Vấn đề | Quyết định | Lý do / hệ quả |
 |---|---|---|---|
@@ -516,7 +516,8 @@ chọn provider/profile/gateway. Đổi default không repin hoặc migrate máy
 OVH hiện hữu là gateway Singapore nhận Additional IP rồi ánh xạ 1:1 qua
 WireGuard/nftables tới Machine B. Vì vậy provisioning thường dùng pool IP đã sở
 hữu với trạng thái `FREE/RESERVED/BOUND/QUARANTINED`; order IP mới là operator
-change có billing/read-back riêng, không bị giả làm Vultr `reserve()`. D10 cho
+change có billing/read-back riêng, không bị giả làm Vultr `reserve()`. **Mệnh đề
+operator-change này ĐÃ THAY bởi Q125 ngày 2026-09-14.** D10 cho
 phép live acceptance dùng/tạo tối đa một IP và một VM mới; VM100–VM107 cùng IP,
 mapping, NIC và WG identity là protected, tuyệt đối không mutation trong chương
 trình này.
@@ -532,6 +533,31 @@ MVP chỉ cho session đã đăng nhập và canonical user-ID allowlist; email 
 dùng lúc controlled lookup, không hardcode. Windows đầu tiên là blank VM + ISO
 chính thức, manual installer được chấp nhận. Chi tiết quyết định, bằng chứng và
 kế hoạch: `docs/VPS_V4/`.
+
+### Q125 — OVH Additional IPv4 tự cấp trong luồng web, không duyệt admin từng đơn (2026-09-14)
+
+**Thay riêng mệnh đề “order IP mới là operator change” của Q124.** Khi người
+dùng hợp lệ tạo VPS trên web và pool OVH không còn IP `FREE`, worker được tự tạo
+giỏ, kiểm đúng plan/quantity/country/datacenter/destination/chu kỳ/tiền tệ/trần
+giá, checkout bằng phương thức thanh toán ưu tiên của tài khoản hạ tầng, theo
+dõi order tới `delivered`, đọc lại `/ip`, import đúng IPv4 vào pool rồi tiếp tục
+provisioning. Không có bước admin duyệt từng đơn.
+
+Việc mua phải xảy ra sau khi chu kỳ credit đầu của khách đã được ghi thành công,
+mỗi provisioning chỉ được xin tối đa một IPv4, và mọi cart/item/order/baseline
+inventory phải được ghi bền vững trước hoặc ngay sau mutation tương ứng. Nếu
+checkout mất response, worker chỉ được phục hồi bằng cart/item/order read-back;
+không được mua lần hai khi chưa chứng minh đơn trước không tồn tại. Currency,
+giá, số lượng, destination hoặc contract khác cấu hình là **unexpected billing**
+và fail closed; credential/MFA/payment failure trở thành trạng thái có thể đọc
+trên web/ops, không biến thành một nút admin duyệt thường lệ.
+
+Nguồn bằng chứng: schema chính thức account ASIA tại
+`https://ca.api.ovh.com/1.0/order.json`; Machine B
+`H:\PROXMOX\01-TAI-LIEU\11-API-OVH.md` xác nhận toàn bộ gateway trước đây được
+dựng qua API, checkout hỗ trợ `autoPayWithPreferredPaymentMethod`, trạng thái
+đơn đọc qua `/me/order/{id}/status`, và Additional IP giao ở `/ip` với
+`routedTo.serviceName`. D10 vẫn giới hạn live acceptance hiện tại ở đúng một IP.
 
 ## 2. Ràng buộc bất biến
 

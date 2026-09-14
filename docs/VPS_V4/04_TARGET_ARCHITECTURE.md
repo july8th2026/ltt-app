@@ -73,8 +73,10 @@ health is computed per profile; one profile cannot poison another.
 - `ComputeBackend`: create/configure/start/stop/restart/destroy/status/snapshot/
   restore/capacity. Proxmox wrapper delegates to current proven client.
 - `PublicIpBackend`: reserve/bind/unbind/release/get/list/health/capabilities.
-  OVH static pool has no dynamic purchase capability; a separate operator
-  acquisition service may order at most D10 and journals cart/checkout/readback.
+  OVH static pool remains the allocator. A separate automatic acquisition
+  service replenishes one address only when the pool is empty; it journals
+  cart/item/order/baseline, enforces profile billing guards, recovers ambiguous
+  checkout by read-back and imports provider-delivered `/ip` before reserve.
 - `GatewayBackend`: ensure/remove/get/list/verify mapping/health. nft commands
   stay inside current gateway client wrapper.
 
