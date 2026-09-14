@@ -38,11 +38,13 @@ from sqlalchemy.orm import Session
 from platform_core.public_api import examples, limits, metrics, policy, sandbox
 from platform_core.public_api.catalog import build_catalog, require_tool
 from platform_core.public_api.executor import for_tool, for_tool_name
-from platform_core.public_api.errors import (insufficient_credit,
+from platform_core.public_api.errors import (THIEU_CREDIT_LOI,
+                                             insufficient_credit,
                                              invalid_request,
                                              model_not_found,
                                              payload_too_large,
                                              service_unavailable,
+                                             thieu_credit_chi_tiet,
                                              tran_bi_vuot)
 from platform_core.public_api.principal import Principal
 from platform_core.public_api.protocol import (STREAM, PublicOperationContract)
@@ -266,7 +268,7 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
                                model=ten):
         metrics.increment(metrics.CREDIT_EXHAUSTED)
         raise insufficient_credit(
-            "Insufficient credit for the ceiling this request would hold.")
+            THIEU_CREDIT_LOI)
 
     # 🔴 CHỐT GIAO DỊCH CỦA REQUEST TRƯỚC KHI CHỜ (D04). Phòng chờ ghi dòng của
     #    nó ở một phiên MỚI; để giao dịch này còn mở là SQLite "database is
@@ -291,7 +293,10 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         metrics.increment(metrics.CAPACITY_REFUSED)
         log.warning("HET CHO mot-cuc user=%s ly_do=%s",
                     principal.user_id[:8], e.ly_do)
-        raise limits.execution_busy(tai_nguyen, retry_after=10) from None
+        # `het_cho` la mot nguon BAN khac han `suat`: hang cho cua TA day, chu
+        # khong phai GPU het suat. Cung ma HTTP, hai nguyen nhan.
+        raise limits.execution_busy(
+            tai_nguyen, retry_after=10, reason="het_cho") from None
     except phong_cho.KhachDi:
         return JSONResponse(_KHACH_NGAT, status_code=MA_KHACH_NGAT,
                             headers=_NO_STORE)
@@ -316,7 +321,8 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
     except credit.ThieuCreditError as e:
         db.rollback()
         _release_ticket("thieu_credit")
-        raise insufficient_credit(str(e)) from None
+        raise insufficient_credit(
+            THIEU_CREDIT_LOI, **thieu_credit_chi_tiet(e)) from None
     except BaseException:
         db.rollback()
         _release_ticket("loi")
@@ -811,10 +817,18 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
     except cua_luong.ThamSoSai as e:
         raise _bao_400(str(e), than) from None
     except cua_luong.ThieuCredit as e:
-        raise insufficient_credit(str(e)) from None
+        raise insufficient_credit(
+            THIEU_CREDIT_LOI, **thieu_credit_chi_tiet(e)) from None
     except cua_luong.DangBan as e:
         # Phòng chờ đã chạm trần (số người / token prefill) — không có hàng vô hạn.
-        raise limits.execution_busy(e.tai_nguyen) from None
+        #
+        # ⛔ `thu_lai_sau_s` và `nguon` đi KÈM lỗi; trước 14/09 cả hai bị vứt và
+        #    cửa này luôn nói `Retry-After: 15`. Một `Retry-After` bịa ra tệ hơn
+        #    không có — client lịch sự sẽ TIN nó, nên số sai đẩy cả đàn client
+        #    quay lại sai nhịp.
+        raise limits.execution_busy(
+            e.tai_nguyen, retry_after=e.thu_lai_sau_s,
+            reason=e.nguon) from None
     except cua_luong.KhongMoDuoc:
         raise payload_too_large(
             "The input exceeds the model's context limit. Drop or summarise "

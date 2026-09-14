@@ -39,11 +39,13 @@ from platform_core.public_api import (idempotency, limits, metrics, policy,
                                       sandbox)
 from platform_core.public_api.catalog import build_catalog, require_tool
 from platform_core.public_api.executor import for_tool, for_tool_name
-from platform_core.public_api.errors import (insufficient_credit,
+from platform_core.public_api.errors import (THIEU_CREDIT_LOI,
+                                             insufficient_credit,
                                              invalid_request,
                                              model_not_found,
                                              payload_too_large,
                                              service_unavailable,
+                                             thieu_credit_chi_tiet,
                                              tran_bi_vuot)
 from platform_core.public_api.principal import Principal
 from platform_core.public_api.protocol import SYNC_BILLED_MAX_SECONDS
@@ -303,7 +305,7 @@ def register_chat_routes(api, config, tag: str) -> None:
                 max_tokens=sach["max_tokens"], model=sach["model"]):
             metrics.increment(metrics.CREDIT_EXHAUSTED)
             raise insufficient_credit(
-                "Insufficient credit for the ceiling this request would hold.")
+                THIEU_CREDIT_LOI)
 
         request_hash = idempotency.canonical_hash({"tool": TOOL_CHAT, "input": sach})
         record, replay = idempotency.begin(
@@ -405,7 +407,8 @@ def register_chat_routes(api, config, tag: str) -> None:
                      principal.user_id[:8])
             db.rollback()
             _nha(suat, "thieu_credit")
-            raise insufficient_credit(str(e)) from None
+            raise insufficient_credit(
+                THIEU_CREDIT_LOI, **thieu_credit_chi_tiet(e)) from None
         except BaseException:
             db.rollback()
             _nha(suat, "loi")

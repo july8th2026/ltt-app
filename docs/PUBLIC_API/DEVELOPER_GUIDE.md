@@ -353,12 +353,37 @@ trừ: scope được kiểm ở biên, trước mọi thao tác tiền.
 Mọi lỗi là `application/problem+json` (RFC 9457):
 
 ```json
-{"type":"/errors/conflict","title":"Conflict","status":409,"code":"conflict",
- "detail":"Not enough credit for this call.","instance":"/api/v1/jobs",
- "request_id":"9f1c…","required_credit":10,"balance":3}
+{"type":"/errors/insufficient_credit","title":"Insufficient credit",
+ "status":409,"code":"insufficient_credit",
+ "detail":"Not enough credit for this call. The balance is checked against the maximum this request could consume, not its typical cost.",
+ "instance":"/api/v1/jobs","request_id":"9f1c…",
+ "retry":"after_fix","reuse_idempotency_key":true,
+ "required_credit":10,"balance":3}
 ```
 
+> ⚠️ **Sửa 14/09/2026:** ví dụ trên trước đây ghi `"code":"conflict"`. Sai — cửa
+> này gửi `insufficient_credit`, và ai nhánh theo `conflict` sẽ bắt nhầm cả lỗi
+> idempotency lẫn lỗi giá đổi.
+
 `code` là phần **ổn định** — hãy nhánh theo nó, đừng nhánh theo `detail`.
+
+**Hết credit — cùng một hợp đồng ở MỌI cửa** (`/jobs`, `/chat/completions`,
+`/messages`, `/responses`, `/workflows/runs`): mã `insufficient_credit`, 409, và
+khi biết số thì kèm `required_credit` + `balance`. Số dư được so với **trần** mà
+yêu cầu *có thể* tiêu, không phải chi phí điển hình của nó — nên một yêu cầu
+`max_tokens` lớn có thể bị từ chối dù số dư trông vẫn đủ; hạ `max_tokens` xuống
+là cách sửa.
+
+**Bận (429)** kèm `retry_after` (giây) và `reason`:
+
+| `reason` | nghĩa |
+|---|---|
+| `suat` | hết suất thực thi trên GPU |
+| `het_cho` | hàng chờ của cổng đã chạm trần |
+| `thuong_nguon` | máy chạy model trả 429 |
+
+Ba nguyên nhân đi chung một mã HTTP, nên client điều phối tải hãy nhánh theo
+`reason`, và hãy dùng `retry_after` **của phản hồi** thay vì một số cố định.
 
 | code | status | Nghĩa |
 |---|---|---|

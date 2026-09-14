@@ -22,7 +22,8 @@ from platform_core.public_api import (capacity, idempotency, invocation,
                                       limits, media, metrics, policy, pricing,
                                       quotes, sandbox)
 from platform_core.public_api.catalog import build_catalog, require_tool
-from platform_core.public_api.errors import (insufficient_credit,
+from platform_core.public_api.errors import (THIEU_CREDIT_LOI,
+                                             insufficient_credit,
                                              invalid_request, price_changed,
                                              service_unavailable)
 from server.api.inventory import API_V1_PREFIX
@@ -476,7 +477,7 @@ def register_job_routes(api, config, tag: str) -> None:
             # hold never happened, so there is nothing promoted to compensate.
             db.rollback()
             raise insufficient_credit(
-                "Not enough credit for this call.", required_credit=cost,
+                THIEU_CREDIT_LOI, required_credit=cost,
                 balance=credit.so_du(db, principal.user_id)) from exc
         except Exception:
             db.rollback()

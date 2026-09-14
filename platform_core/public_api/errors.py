@@ -204,6 +204,44 @@ def problem_for_status(status: int, detail: object = "", *, instance: str = "",
                       instance=instance, request_id=request_id)
 
 
+#: Câu DUY NHẤT mọi cửa nói khi hết credit. Một câu ⇒ không có hai bản trôi
+#: khỏi nhau, và nó là tiếng Anh vì `/api/v1` là bề mặt tiếng Anh.
+THIEU_CREDIT_LOI = (
+    "Not enough credit for this call. The balance is checked against the "
+    "maximum this request could consume, not its typical cost.")
+
+
+def thieu_credit_chi_tiet(e: object) -> dict:
+    """Dịch `can`/`con` của lỗi credit sang `required_credit`/`balance`.
+
+    🔴 VÌ SAO CÓ HÀM NÀY. Rà 14/09/2026: bốn cửa công khai cùng báo "hết credit"
+       bằng **hai hợp đồng khác nhau**.
+
+           jobs.py       -> "Not enough credit for this call."
+                            + required_credit + balance          ✅
+           chat.py       -> str(e) = "Khong du credit: can 1234, con 56."
+           streaming.py  -> str(e) = "so du khong du cho phan giu cho cua luot nay"
+           workflows.py  -> str(loi)
+
+       Ba cửa dưới trả cho khách một câu **tiếng Việt không dấu của nội bộ**, và
+       khách muốn biết phải nạp bao nhiêu thì chỉ còn cách phân tích chuỗi.
+
+    ⭐ Hai số ấy ĐÃ CÓ SẴN ở chỗ ném (`credit.py` khoá số dư rồi mới so). Hàm này
+       chỉ **dịch tên**, một lần, một chỗ — đúng lý lẽ của `tran_bi_vuot` ngay
+       dưới đây.
+
+    Trả `{}` khi không biết số, để bên gọi cứ `**` vào được: một lỗi thiếu chi
+    tiết vẫn phải là một lỗi hợp lệ, chứ không được thành một lỗi khác.
+    """
+    ra: dict = {}
+    can, con = getattr(e, "can", None), getattr(e, "con", None)
+    if isinstance(can, int) and not isinstance(can, bool):
+        ra["required_credit"] = can
+    if isinstance(con, int) and not isinstance(con, bool):
+        ra["balance"] = con
+    return ra
+
+
 def tran_bi_vuot(chi_tiet: object) -> dict:
     """Dich `{truong, tran, thay}` cua cong may B sang ten CONG KHAI.
 

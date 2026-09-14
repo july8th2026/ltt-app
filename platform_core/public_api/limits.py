@@ -135,13 +135,25 @@ def _too_many(detail: str, retry_after: int, code: str = CODE_RATE_LIMITED,
                                               **extra})
 
 
-def execution_busy(resource: str, *, retry_after: int = 15) -> ApiError:
-    """429 chung khi sync/stream không giành được slot thực thi."""
+def execution_busy(resource: str, *, retry_after: int = 15,
+                   reason: str = "") -> ApiError:
+    """429 chung khi sync/stream không giành được slot thực thi.
+
+    ⛔ `retry_after` KHÔNG được để mặc định khi bên ném đã biết số. `luong.DangBan`
+       mang sẵn `thu_lai_sau_s`, và trước 14/09/2026 cửa stream vứt nó rồi luôn
+       nói `15`. Một `Retry-After` bịa ra tệ hơn không có: client lịch sự sẽ
+       **tin** nó, nên số sai đẩy cả đàn client quay lại sai nhịp.
+
+    ⭐ `reason` mang `DangBan.nguon` ra ngoài: `suat` (hàng của TA đầy) khác hẳn
+       `thuong_nguon` (máy B trả 429) và `het_cho` (phòng chờ chạm trần). Cùng
+       một mã HTTP, ba nguyên nhân — và client điều phối tải cần phân biệt.
+    """
     _bump("concurrency_limited")
     return _too_many(
         "The requested execution resource is busy. Retry later or submit an "
         "asynchronous job.", retry_after, code=CODE_CONCURRENCY,
-        scope="execution", resource=str(resource))
+        scope="execution", resource=str(resource),
+        **({"reason": reason} if reason else {}))
 
 
 # ── Layer 1: authentication failures ──────────────────────────────────────────

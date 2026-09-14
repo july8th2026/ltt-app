@@ -77,7 +77,21 @@ class DangBan(LoiCuaLuong):
 
 
 class ThieuCredit(LoiCuaLuong):
-    """Không đủ số dư để giữ trần ước. Chốt TRƯỚC khi đốt GPU."""
+    """Không đủ số dư để giữ trần ước. Chốt TRƯỚC khi đốt GPU.
+
+    ⛔ Lớp này hay BỌC `credit.ThieuCreditError`. Bọc mà đánh rơi `can`/`con` thì
+       cửa stream trả một lỗi nghèo hơn cửa job cho **cùng một sự việc** — đúng
+       thứ đợt rà 14/09/2026 tìm ra. `tu_loi()` giữ chúng lại.
+    """
+
+    def __init__(self, *args, can: int | None = None, con: int | None = None):
+        super().__init__(*args)
+        self.can = can
+        self.con = con
+
+    @classmethod
+    def tu_loi(cls, e: Exception) -> "ThieuCredit":
+        return cls(str(e), can=getattr(e, "can", None), con=getattr(e, "con", None))
 
 
 class KhongMoDuoc(LoiCuaLuong):
@@ -402,7 +416,7 @@ def vao_va_cho(tk: TienKiem, *, db_luong, han_s: float, dong_ho=None, ngu=None):
         metrics.increment(metrics.CREDIT_EXHAUSTED)
         _nha_suat(lease_id)
         phong_cho.ghi_ket_thuc(waiter_id, "thieu_credit")
-        raise ThieuCredit(str(e)) from None
+        raise ThieuCredit.tu_loi(e) from None
     except BaseException:
         db.rollback()
         _nha_suat(lease_id)
@@ -726,7 +740,7 @@ def chuan_bi(db, *, user_id: str, tool_name: str, than: dict, duong: str,
         # suất mồ côi chỉ tự lành sau ORPHAN_TIMEOUT (20 phút GPU nằm không).
         # `release_by_id` idempotent: đã cuộn rồi thì nó chỉ trả False.
         _nha_suat(lease_id)
-        raise ThieuCredit(str(e)) from None
+        raise ThieuCredit.tu_loi(e) from None
 
     # 🔴 CHỐT GIAO DỊCH TRƯỚC KHI CHẠM MODEL (xem docstring module).
     db.commit()

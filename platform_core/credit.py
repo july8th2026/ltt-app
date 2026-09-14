@@ -45,7 +45,23 @@ class SettlementResult:
 
 
 class ThieuCreditError(Exception):
-    """Số dư không đủ để giữ chỗ. Job KHÔNG được tạo, API KHÔNG được gọi."""
+    """Số dư không đủ để giữ chỗ. Job KHÔNG được tạo, API KHÔNG được gọi.
+
+    🔴 HAI SỐ, KHÔNG PHẢI MỘT CHUỖI. Trước 14/09/2026 lớp này chỉ mang lời văn
+       `f"Khong du credit: can {amount}, con {con}."`, và ba trong bốn cửa công
+       khai trả thẳng `str(e)` cho khách. Hệ quả đo được: khách nhận một câu
+       **tiếng Việt không dấu** của nội bộ, và muốn biết cần nạp bao nhiêu thì
+       phải **phân tích chuỗi** — một hợp đồng không ai dám dựa vào.
+
+    ⭐ `can`/`con` để `public_api.errors.thieu_credit_chi_tiet` dịch sang
+       `required_credit`/`balance` ở MỘT chỗ. Mặc định `None` vì còn đường ném
+       cũ (`luong.ThieuCredit` bọc lại lỗi của tầng khác) chưa chắc biết số.
+    """
+
+    def __init__(self, *args, can: int | None = None, con: int | None = None):
+        super().__init__(*args)
+        self.can = can
+        self.con = con
 
 
 def _khoa_so_du_user(db: DbSession, user_id: str) -> None:
@@ -290,7 +306,7 @@ def giu_cho(db: DbSession, user_id: str, amount: int, job_id: str) -> None:
     con = so_du(db, user_id)
     if con < amount:
         raise ThieuCreditError(
-            f"Khong du credit: can {amount}, con {con}.")
+            f"Khong du credit: can {amount}, con {con}.", can=amount, con=con)
     _ghi(db, user_id=user_id, delta=-amount, kind=CREDIT_HOLD, job_id=job_id,
          note=f"giu cho job {job_id[:8]}")
     # Durable internal event: support can explain the hold without reading the

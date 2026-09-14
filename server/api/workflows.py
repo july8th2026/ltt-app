@@ -40,8 +40,10 @@ from platform_core import credit
 from platform_core.models import (Artifact, NodeRunSnapshot, Workflow,
                                   WorkflowRun, WorkflowVersion)
 from platform_core.public_api import idempotency, quotes
-from platform_core.public_api.errors import (conflict, insufficient_credit,
-                                             invalid_request, not_found)
+from platform_core.public_api.errors import (THIEU_CREDIT_LOI, conflict,
+                                             insufficient_credit,
+                                             invalid_request, not_found,
+                                             thieu_credit_chi_tiet)
 from platform_core.public_api.principal import Principal
 from platform_core.public_api.scopes import (SCOPE_WORKFLOWS_CANCEL,
                                              SCOPE_WORKFLOWS_READ,
@@ -240,7 +242,8 @@ def register_workflow_routes(api, config, tag: str) -> None:
         except credit.ThieuCreditError as loi:
             # Cùng transaction ⇒ run và khoản giữ cùng rollback. Không có lượt
             # chạy nào tồn tại mà không có tiền đứng sau nó.
-            raise insufficient_credit(str(loi)) from loi
+            raise insufficient_credit(
+                THIEU_CREDIT_LOI, **thieu_credit_chi_tiet(loi)) from loi
 
         return JSONResponse(_cong_khai_run(run), status_code=201,
                             headers=_NO_STORE)
