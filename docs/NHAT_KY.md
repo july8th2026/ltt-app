@@ -18258,3 +18258,38 @@ Kế hoạch đã đổi rõ thứ tự: P7 deploy/live acceptance, P8 red-team/
 P9 mới chạy đúng một full gate cuối trên toàn dự án rồi push/đóng phiên. Từ đây
 không gọi lại full gate cho tới P9; giữa các bước chỉ dùng test phạm vi nhỏ khi
 cần.
+
+## 2026-09-14 — VPS V4: helper gateway live và dừng đúng cổng thanh toán OVH
+
+Tiếp tục H46.7 nhưng không chạy full gate. Trên cây hạ tầng đã thêm công cụ D10
+chỉ cho phép chuẩn bị đúng một giỏ một IPv4, giới hạn báo giá USD 5 gồm thuế và
+không chứa lệnh checkout. Commit hạ tầng: `236d768`. Bản copy trên máy B có
+SHA-256 khớp bản nguồn.
+
+Đã chạy công cụ một lần và nhận giỏ
+`efae624e-6114-46b9-ace5-3063f9fc1580`: quantity 1,
+`ip-failover-arin`, SG/SGP, USD 2,39 gồm thuế, hết hạn
+`2026-09-15T08:53:23Z`, `checkout_performed=false`. Không tạo giỏ thứ hai và
+không gửi checkout; bước kế tiếp là chủ sản phẩm tự chạy quy trình thanh toán
+chuẩn rồi chờ OVH giao IP.
+
+Helper `ltt-gwnat` được stage qua máy B và cài trên gateway. Lần cài đầu phát
+hiện phép health dùng `grep -q` dưới `pipefail` có thể nhận SIGPIPE và báo sai;
+sửa bằng cách chụp output một lần rồi grep qua here-string, commit app
+`ba5a3af9`. Sau sửa: installer RC 0, health `ok`/RC 0, thử xoá mapping bảo vệ
+RC 5, thử ensure xung đột RC 4. SHA-256 trước/sau của cả tệp mapping và tệp
+protected giữ nguyên
+`5ebaf20b44b74fc7a3379e2d2a7dca2357f70b85f6b33f281fd75ad813241766`;
+không mapping/IP/VM production nào bị đổi.
+
+Kiểm tĩnh phạm vi sửa đã chạy: `bash -n`, 20 pytest mục tiêu và secret scan
+đều PASS trước commit helper. Sau đó đổi số test bảo trì sang `test_1261`, sửa
+typing của owner resolver; test mục tiêu 2 PASS, `check_so_test.py` PASS, mypy
+tệp mục tiêu PASS và secret scan 3.652 file / 894.036 dòng / 0 finding. Commit
+app: `e8094d86`.
+
+Canonical `main` tiếp tục tiến tới `b80f837c`; phép đo `main...HEAD` hiện là
+1 behind / 9 ahead. Worktree chính đang có năm tệp tài liệu bẩn của phiên khác,
+nên không rebase/merge/deploy đè lên. B07 được mở lại cho lần reconcile cuối sau
+khi phiên sở hữu cây chính kết thúc. Full gate vẫn dành duy nhất cho H46.9 sau
+deploy/live/red-team/report.

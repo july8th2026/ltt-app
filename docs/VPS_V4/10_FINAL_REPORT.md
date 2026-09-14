@@ -7,7 +7,8 @@ Status: **IN PROGRESS — OFFLINE CODE NEAR FREEZE; READ-ONLY LIVE PREFLIGHT PAR
 - HEAD BEFORE: `3b5adcb7ffa43c8c553ac38d457e22e3cde60e30`
 - HEAD AFTER: pending completion of deploy/live/red-team work; no release
   candidate is frozen before those phases.
-- Machine B source commits: `4428223` TLS callback fix; `c5c2453` read-only CA export
+- Machine B source commits: `4428223` TLS callback fix; `c5c2453` read-only CA
+  export; `236d768` safe unpaid-cart preparation
 - Worktrees: `D:\LTTSTUDIOSAPP-vps-v4`, `D:\LTT-VM-Promox-v4`
 
 ## Decisions locked
@@ -30,7 +31,7 @@ mutation journal and per-profile health/reconciliation. See `03` and `04`.
 - [ ] OVH adapter / ACTIVE / DEFAULT
 - [x] OVH credential ownership/read-only inventory and public-IP pool sync
 - [x] race-safe allocation
-- [x] gateway contract + actual `gwnat` adapter/helper offline (live install blocked B06)
+- [x] gateway contract + actual `gwnat` adapter/helper installed and refusal-tested live
 - [x] profile preflight/health/reconciliation
 - [x] Admin profile UI
 - [x] web-only policy
@@ -125,11 +126,22 @@ is fabricated here.
   and fails closed instead of adding an undeclared skip. Authenticated live
   comparison passed **4/4**, skip sentinel PASS, targeted ruff/compile/diff
   PASS, and secret scan **3,650 files / 893,571 lines / 0 findings**.
+- The gateway helper was then installed live without changing any mapping.
+  Health returned `ok`; protected removal returned RC 5 and a conflicting
+  ensure returned RC 4. The protected mapping/config SHA-256 remained
+  `5ebaf20b44b74fc7a3379e2d2a7dca2357f70b85f6b33f281fd75ad813241766`.
+- The D10 flow prepared exactly one unpaid OVH cart,
+  `efae624e-6114-46b9-ace5-3063f9fc1580`, for one SG/SGP Additional IPv4 at
+  USD 2.39 including tax. No checkout was submitted; manual payment/provider
+  delivery remains the blocker. The cart expires `2026-09-15T08:53:23Z`.
+- Canonical `main` advanced again to `b80f837c`; the VPS branch is currently
+  one commit behind/nine ahead. Its main worktree has unrelated uncommitted
+  changes, so no reconciliation or deploy was attempted over another session.
 
 The OVH static-pool path now journals/read-backs VM create/config, DHCP plus
 bandwidth, mapping, boot and destroy; ambiguous cleanup retains associations in
 QUARANTINED. The actual OVH gateway helper is fail-closed and preserves the
-protected baseline but is not installed live yet. Dynamic
+protected baseline and is now installed live. Dynamic
 Vultr paid-IP acquisition remains disabled/STANDBY. Deploy provenance is
 operator-visible; Machine B source revision remains `UNKNOWN` in runtime
 artifacts rather than substituting a checkout SHA.

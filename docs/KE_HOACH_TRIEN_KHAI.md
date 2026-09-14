@@ -4002,6 +4002,11 @@ Quyết định: Q124. Hồ sơ canonical: `docs/VPS_V4/`. Nhánh riêng:
 - [ ] **H46.7 — Deploy + live OVH acceptance:** fresh collector, CA, owner lookup,
   tối đa một IP/một VM, Playwright từ Web UI, Windows installer/network/console/
   lifecycle/default-switch và cleanup/retain gate.
+  **14/09/2026 checkpoint:** helper gateway đã cài và kiểm live fail-closed;
+  protected removal RC 5, conflict RC 4, health `ok`, hash hai tệp bảo vệ không
+  đổi. Đã chuẩn bị đúng một giỏ OVH chưa thanh toán cho một IPv4 SG/SGP,
+  USD 2,39 gồm thuế; không checkout tự động. Đang chờ PO thanh toán/giao IP và
+  chờ phiên sở hữu `main` kết thúc trước reconcile/deploy.
 - [ ] **H46.8 — Red team + hoàn thiện báo cáo:** không P0 software, ba score
   riêng, report backup/restore/dual-WAN trung thực và đóng băng cây cuối.
 - [ ] **H46.9 — Gate cuối + delivery:** chỉ sau H46.7–H46.8, chạy đúng một

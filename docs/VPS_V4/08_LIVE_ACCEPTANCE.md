@@ -1,6 +1,7 @@
 # VPS V4 — Live Acceptance Runbook
 
-Trạng thái: **READ-ONLY PREFLIGHT PARTIAL; NO RESOURCE CREATED/MUTATED**.
+Trạng thái: **PREFLIGHT PARTIAL; GATEWAY HELPER INSTALLED; ONE UNPAID OVH CART
+PREPARED; NO IP/VM OR MAPPING CREATED**.
 
 ## Hard guards
 
@@ -27,8 +28,17 @@ Trạng thái: **READ-ONLY PREFLIGHT PARTIAL; NO RESOURCE CREATED/MUTATED**.
 - [x] Read back VM100–107 and their eight exact mappings unchanged/protected.
 - [x] Resolve exactly one canonical user for the approved email; count is one
   and only its canonical ID was returned. No credential/email list was emitted.
-- [ ] Prove an intended FREE IP or prepare one D10 order. Current count is zero;
-  checkout/payment remains a manual billing stop.
+- [x] Prepare exactly one D10 order without checkout. Cart
+  `efae624e-6114-46b9-ace5-3063f9fc1580` contains quantity 1 of
+  `ip-failover-arin`, location SG/SGP, routed to the current gateway service;
+  provider quote was USD 2.39 including tax and the response confirmed
+  `checkout_performed=false`. The cart expires `2026-09-15T08:53:23Z`.
+- [ ] Manual checkout/payment and provider delivery. The agent must not create a
+  replacement cart or submit checkout automatically.
+- [x] Install the fail-closed `ltt-gwnat` helper on the live gateway. Health
+  returned `ok`; protected removal returned RC 5; a conflicting ensure returned
+  RC 4. Both protected mapping files retained SHA-256
+  `5ebaf20b44b74fc7a3379e2d2a7dca2357f70b85f6b33f281fd75ad813241766`.
 
 ## Activation
 
