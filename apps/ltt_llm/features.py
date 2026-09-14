@@ -205,32 +205,41 @@ THAM_SO_CHUYEN_THANG = ("response_format", "tool_choice", "parallel_tool_calls",
                         "top_p", "seed", "stop")
 
 
-def kiem_tham_so(params: dict) -> dict:
-    """Kiểm và chuẩn hoá tham số. Ném `ThamSoSai` — bên gọi dịch thành 400/422.
 
-    ⛔ Kiểm TRƯỚC khi tiền chuyển. `server/api/jobs.py` nói cùng một câu:
-       *"Validation first: a typo must never reach the ledger."*
+
+def kiem_tham_so_sinh(p: dict, sach: dict | None = None) -> dict:
+    """Kiem CHI cac tham so SINH, dung chung cho MOI cua. Nem `ThamSoSai`.
+
+    ## 🔴 Vi sao phai tach ra khoi `kiem_tham_so`
+
+    Do 14/09/2026 tren production, cung mot gia tri sai `top_p=5`:
+
+        POST /api/v1/chat/completions  (dong bo) -> 400 invalid_request
+        POST /api/v1/messages          (stream)  -> 200, chay binh thuong
+
+    Cua stream KHONG di qua `kiem_tham_so`: `runtime_noi_bo/luong.tien_kiem`
+    lam `gui = dict(than)` — chep CA than request roi chuyen thang len may B.
+    Nen mot hop dong cong bo, hai cua tra loi khac nhau.
+
+    ⭐ Khuon chuan cua cong dong: vLLM khai MOT `ChatCompletionRequest` trong do
+       `stream: bool | None = False` chi la **mot truong nhu moi truong khac**,
+       va moi `@model_validator` chay tren ca request TRUOC khi re nhanh stream
+       (`vllm/entrypoints/openai/chat_completion/protocol.py`). Kiem mot lan,
+       cho moi cua — khong cua nao duoc di vong.
+
+    ## ⛔ Nhung KHONG the goi thang `kiem_tham_so` o cua stream
+
+    Hai cua stream noi giao thuc KHAC: `/messages` (Anthropic) mang `system`,
+    `/responses` (OpenAI Responses) mang `input` co the la chuoi tran. Dua chung
+    qua `kiem_tham_so` la tai dien dung loi 500 ma docstring `_tin_that` da ghi:
+    *"moi phan tu cua messages phai co role"*.
+
+    ⇒ Ham nay kiem DUNG phan tham so sinh, va **bo qua moi khoa no khong biet**.
+       Bo qua chu khong tu choi la co chu y: client Anthropic gui `top_k`,
+       `stop_sequences`, `metadata` — tu choi chung la be Claude Code va Codex
+       dang chay that.
     """
-    p = dict(params or {})
-
-    messages = p.get("messages")
-    if not isinstance(messages, list) or not messages:
-        raise ThamSoSai("`messages` phai la mot danh sach khong rong")
-    for tin in messages:
-        if not isinstance(tin, dict) or "role" not in tin:
-            raise ThamSoSai("moi phan tu cua `messages` phai co `role`")
-
-    model = str(p.get("model") or MODEL_MAC_DINH)
-    if model not in MODEL_HOP_LE:
-        raise ThamSoSai(f"`model` phai la mot trong {list(MODEL_HOP_LE)}")
-
-    from apps.ltt_llm.manifest import MAX_TOKENS_MAC_DINH, MAX_TOKENS_TRAN
-    xin_ra = p.get("max_tokens")
-    xin_ra = int(xin_ra) if isinstance(xin_ra, (int, float)) else MAX_TOKENS_MAC_DINH
-    if xin_ra < 1 or xin_ra > MAX_TOKENS_TRAN:
-        raise ThamSoSai(f"`max_tokens` phai trong khoang 1..{MAX_TOKENS_TRAN}")
-
-    sach = {"messages": messages, "model": model, "max_tokens": xin_ra}
+    sach = dict(sach or {})
 
     if p.get("temperature") is not None:
         try:
@@ -240,33 +249,6 @@ def kiem_tham_so(params: dict) -> dict:
         if not (0.0 <= t <= 2.0):
             raise ThamSoSai("`temperature` phai trong khoang 0..2")
         sach["temperature"] = t
-
-    if p.get("tools") is not None:
-        if not isinstance(p["tools"], list):
-            raise ThamSoSai("`tools` phai la mot danh sach")
-        sach["tools"] = p["tools"]
-
-    if p.get("reasoning_effort") is not None:
-        re_ = str(p["reasoning_effort"])
-        # 🔴 THEM `none` 13/09/2026 (L-02) — va day la mot NUT KHAC voi `max_tokens`.
-        #
-        #    Model card Qwen noi ro co HAI nut: `max_tokens` la tran DO DAI, con
-        #    `enable_thinking=False` / `/no_think` la nut TAT SUY NGHI. Ta truoc
-        #    nay chi mo nut thu nhat, nen mot khach muon cau tra loi NGAN khong
-        #    co duong nao ngoai ha `max_tokens` — va do chinh la duong dan toi
-        #    L-02: model tieu het tran vao suy nghi roi bi cat truoc khi tra loi
-        #    (do: 5/5 luot RONG o `max_tokens` 150-250).
-        #
-        # ⛔ Ha `max_tokens` KHONG phai cach tat suy nghi. Nha san xuat khuyen
-        #    `32.768` token ra cho hau het truy van; con duong cho cau tra loi
-        #    ngan la tat thinking, khong phai bop tran.
-        #
-        #    Template froggeric v22.5 nhan `none`/`off` va anh xa `minimal` ->
-        #    `low`. Ta mo dung `none` o be mat cong khai: mot ten cho mot y
-        #    nghia, va `off` la bi danh de trung.
-        if re_ not in ("none", "low", "medium", "xhigh"):
-            raise ThamSoSai("`reasoning_effort` phai la none|low|medium|xhigh")
-        sach["reasoning_effort"] = re_
 
     # ── 🔴 MO LAI NHUNG THU HAM NAY TUNG VUT IM LANG (14/09/2026) ────────────
     #
@@ -343,6 +325,65 @@ def kiem_tham_so(params: dict) -> dict:
         if len(st) > 4:
             raise ThamSoSai("`stop` toi da 4 chuoi")
         sach["stop"] = st
+
+    return sach
+
+
+def kiem_tham_so(params: dict) -> dict:
+    """Kiểm và chuẩn hoá tham số. Ném `ThamSoSai` — bên gọi dịch thành 400/422.
+
+    ⛔ Kiểm TRƯỚC khi tiền chuyển. `server/api/jobs.py` nói cùng một câu:
+       *"Validation first: a typo must never reach the ledger."*
+    """
+    p = dict(params or {})
+
+    messages = p.get("messages")
+    if not isinstance(messages, list) or not messages:
+        raise ThamSoSai("`messages` phai la mot danh sach khong rong")
+    for tin in messages:
+        if not isinstance(tin, dict) or "role" not in tin:
+            raise ThamSoSai("moi phan tu cua `messages` phai co `role`")
+
+    model = str(p.get("model") or MODEL_MAC_DINH)
+    if model not in MODEL_HOP_LE:
+        raise ThamSoSai(f"`model` phai la mot trong {list(MODEL_HOP_LE)}")
+
+    from apps.ltt_llm.manifest import MAX_TOKENS_MAC_DINH, MAX_TOKENS_TRAN
+    xin_ra = p.get("max_tokens")
+    xin_ra = int(xin_ra) if isinstance(xin_ra, (int, float)) else MAX_TOKENS_MAC_DINH
+    if xin_ra < 1 or xin_ra > MAX_TOKENS_TRAN:
+        raise ThamSoSai(f"`max_tokens` phai trong khoang 1..{MAX_TOKENS_TRAN}")
+
+    sach = {"messages": messages, "model": model, "max_tokens": xin_ra}
+
+    if p.get("tools") is not None:
+        if not isinstance(p["tools"], list):
+            raise ThamSoSai("`tools` phai la mot danh sach")
+        sach["tools"] = p["tools"]
+
+    if p.get("reasoning_effort") is not None:
+        re_ = str(p["reasoning_effort"])
+        # 🔴 THEM `none` 13/09/2026 (L-02) — va day la mot NUT KHAC voi `max_tokens`.
+        #
+        #    Model card Qwen noi ro co HAI nut: `max_tokens` la tran DO DAI, con
+        #    `enable_thinking=False` / `/no_think` la nut TAT SUY NGHI. Ta truoc
+        #    nay chi mo nut thu nhat, nen mot khach muon cau tra loi NGAN khong
+        #    co duong nao ngoai ha `max_tokens` — va do chinh la duong dan toi
+        #    L-02: model tieu het tran vao suy nghi roi bi cat truoc khi tra loi
+        #    (do: 5/5 luot RONG o `max_tokens` 150-250).
+        #
+        # ⛔ Ha `max_tokens` KHONG phai cach tat suy nghi. Nha san xuat khuyen
+        #    `32.768` token ra cho hau het truy van; con duong cho cau tra loi
+        #    ngan la tat thinking, khong phai bop tran.
+        #
+        #    Template froggeric v22.5 nhan `none`/`off` va anh xa `minimal` ->
+        #    `low`. Ta mo dung `none` o be mat cong khai: mot ten cho mot y
+        #    nghia, va `off` la bi danh de trung.
+        if re_ not in ("none", "low", "medium", "xhigh"):
+            raise ThamSoSai("`reasoning_effort` phai la none|low|medium|xhigh")
+        sach["reasoning_effort"] = re_
+
+    sach = kiem_tham_so_sinh(p, sach)
 
     return sach
 

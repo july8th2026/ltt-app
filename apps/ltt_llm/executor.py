@@ -28,6 +28,31 @@ class _Executor:
     def validate(self, params):
         return features.kiem_tham_so(params)
 
+    def validate_generation(self, params):
+        """Kiem CHI tham so sinh — cho cua STREAM, noi `messages` co hinh khac.
+
+        🔴 Do 14/09/2026 tren production, cung mot gia tri sai `top_p=5`:
+
+               POST /api/v1/chat/completions (dong bo) -> 400 invalid_request
+               POST /api/v1/messages         (stream)  -> 200, chay binh thuong
+
+           Cua stream khong goi `validate`: `runtime_noi_bo/luong.tien_kiem` lam
+           `gui = dict(than)` — chep ca than request len may B. Mot hop dong
+           cong bo, hai cua tra loi khac nhau.
+
+        ⛔ Va no KHONG the goi `validate`: `/messages` mang `system`,
+           `/responses` mang `input` co the la chuoi tran; dua chung qua bo kiem
+           day du la tai dien loi 500 ma `_tin_that` da ghi ("moi phan tu cua
+           messages phai co role").
+
+        ⭐ Khuon cua cong dong: vLLM khai MOT `ChatCompletionRequest` trong do
+           `stream` chi la mot truong, va moi validator chay TRUOC khi re nhanh
+           stream. Day la cach ap khuon ay ma van giu duoc ranh gioi tang:
+           `platform_core` khong duoc import `apps/` (.importlinter), nen cua
+           stream hoi qua chinh executor cua app.
+        """
+        return features.kiem_tham_so_sinh(params)
+
     def check_output_floor(self, params):
         """Tu choi `max_tokens` thap den muc chac chan tra RONG.
 

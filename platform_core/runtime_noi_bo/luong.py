@@ -282,6 +282,31 @@ def tien_kiem(db, *, user_id: str, tool_name: str, than: dict, duong: str,
         raise ThamSoSai("yeu cau khong mang dau vao nao de tra loi")
 
     gui = dict(than)
+
+    # 🔴 KIEM THAM SO SINH O DAY, TRUOC KHI THAN DI LEN MAY B.
+    #
+    #    Dong `gui = dict(than)` ngay tren chep CA than request. Truoc 14/09 do
+    #    la toan bo "kiem" cua cua stream, nen do duoc tren production:
+    #
+    #        top_p=5  ->  /chat/completions (dong bo) : 400 invalid_request
+    #        top_p=5  ->  /messages         (stream)  : 200, chay binh thuong
+    #
+    #    Mot hop dong cong bo, hai cua tra loi khac nhau — va cua sai la cua
+    #    KHONG kiem, vi no de mot gia tri hop dong CAM di thang toi bo giai ma.
+    #
+    # ⭐ Khuon chuan (vLLM `entrypoints/openai/.../protocol.py`): `stream` chi la
+    #    MOT TRUONG nhu moi truong khac, va moi validator chay TRUOC khi re
+    #    nhanh stream. Kiem mot lan, cho moi cua.
+    #
+    # ⛔ Goi `validate_generation`, KHONG goi `validate`: `/messages` mang
+    #    `system`, `/responses` mang `input` co the la chuoi tran. Bo kiem day
+    #    du doi moi phan tu `messages` co `role` va se nem 500 — dung loi
+    #    `_tin_that` da ghi. Ham sinh chi kiem tham so sinh va **bo qua moi khoa
+    #    no khong biet**, nen `top_k`/`stop_sequences`/`metadata` cua client
+    #    Anthropic van di qua duoc.
+    _kiem_sinh = getattr(executor, "validate_generation", None)
+    if callable(_kiem_sinh):
+        gui.update(_kiem_sinh(than))
     gui["model"] = executor.model_id(ten)
     request_id = thanh_toan.ma_luot(tien_to)
     vao_uoc = int(executor.estimate_input(tin))
@@ -629,6 +654,31 @@ def chuan_bi(db, *, user_id: str, tool_name: str, than: dict, duong: str,
     # Dịch alias -> id nội bộ NGAY TRƯỚC KHI ra khỏi nền tảng. Khách không bao
     # giờ nhìn thấy id thật, và mã của khách không ghim vào nó (test_212).
     gui = dict(than)
+
+    # 🔴 KIEM THAM SO SINH O DAY, TRUOC KHI THAN DI LEN MAY B.
+    #
+    #    Dong `gui = dict(than)` ngay tren chep CA than request. Truoc 14/09 do
+    #    la toan bo "kiem" cua cua stream, nen do duoc tren production:
+    #
+    #        top_p=5  ->  /chat/completions (dong bo) : 400 invalid_request
+    #        top_p=5  ->  /messages         (stream)  : 200, chay binh thuong
+    #
+    #    Mot hop dong cong bo, hai cua tra loi khac nhau — va cua sai la cua
+    #    KHONG kiem, vi no de mot gia tri hop dong CAM di thang toi bo giai ma.
+    #
+    # ⭐ Khuon chuan (vLLM `entrypoints/openai/.../protocol.py`): `stream` chi la
+    #    MOT TRUONG nhu moi truong khac, va moi validator chay TRUOC khi re
+    #    nhanh stream. Kiem mot lan, cho moi cua.
+    #
+    # ⛔ Goi `validate_generation`, KHONG goi `validate`: `/messages` mang
+    #    `system`, `/responses` mang `input` co the la chuoi tran. Bo kiem day
+    #    du doi moi phan tu `messages` co `role` va se nem 500 — dung loi
+    #    `_tin_that` da ghi. Ham sinh chi kiem tham so sinh va **bo qua moi khoa
+    #    no khong biet**, nen `top_k`/`stop_sequences`/`metadata` cua client
+    #    Anthropic van di qua duoc.
+    _kiem_sinh = getattr(executor, "validate_generation", None)
+    if callable(_kiem_sinh):
+        gui.update(_kiem_sinh(than))
     gui["model"] = executor.model_id(ten)
 
     # ⛔ KHÔNG tự ghép chuỗi: `credit_entries.job_id` là VARCHAR(36).
