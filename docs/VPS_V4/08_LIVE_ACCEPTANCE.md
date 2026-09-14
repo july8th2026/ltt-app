@@ -33,8 +33,9 @@ PREPARED; NO IP/VM OR MAPPING CREATED**.
   `ip-failover-arin`, location SG/SGP, routed to the current gateway service;
   provider quote was USD 2.39 including tax and the response confirmed
   `checkout_performed=false`. The cart expires `2026-09-15T08:53:23Z`.
-- [ ] Manual checkout/payment and provider delivery. The agent must not create a
-  replacement cart or submit checkout automatically.
+- [ ] Q125 automatic guarded checkout/payment and exact provider delivery via
+  the paid web provisioning job. Finish integration before enabling; revalidate
+  the existing cart and enforce the one-IP live limit, never blind-retry checkout.
 - [x] Install the fail-closed `ltt-gwnat` helper on the live gateway. Health
   returned `ok`; protected removal returned RC 5; a conflicting ensure returned
   RC 4. Both protected mapping files retained SHA-256

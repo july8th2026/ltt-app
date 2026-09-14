@@ -1,0 +1,418 @@
+"""OVH Additional IPv4 acquisition is automatic, bounded and recoverable."""
+from types import SimpleNamespace
+from datetime import datetime, timezone
+
+import pytest
+from sqlalchemy import create_engine, select
+from sqlalchemy.orm import Session
+
+from platform_core.db import Base
+
+
+@pytest.fixture()
+def db():
+    import platform_core.models as _models  # noqa: F401
+    from apps.vps import tables as _tables  # noqa: F401
+
+    engine = create_engine("sqlite+pysqlite:///:memory:")
+    Base.metadata.create_all(engine)
+    with Session(engine) as session:
+        yield session
+
+
+def _domain(db):
+    from apps.vps.tables import VpsGateway, VpsInfrastructureProfile, VpsInstance
+
+    profile = VpsInfrastructureProfile(
+        id="profile-ovh", slug="ovh-sgp-prod", name="OVH", region="sgp",
+        status="ACTIVE", accept_new=True, is_default=True,
+        compute_backend_type="proxmox", public_ip_backend_type="ovh_static_pool",
+        gateway_backend_type="nft", credential_ref="LTT_OVH",
+        provider_config={
+            "auto_acquire": True,
+            "ip_plan_code": "ip-failover-arin",
+            "ip_country": "SG",
+            "ip_datacenter": "SGP",
+            "ip_duration": "P1M",
+            "ip_currency": "USD",
+            "max_ip_with_tax_minor": 500,
+        },
+    )
+    gateway = VpsGateway(
+        id="gateway-ovh", infrastructure_profile_id=profile.id,
+        ten="OVH gateway", vung="sgp", ip_cong_khai="192.0.2.1",
+    )
+    instance = VpsInstance(
+        id="instance-new", user_id="owner", plan_id="vps-nho", os_id="win10",
+        gateway_id=gateway.id, infrastructure_profile_id=profile.id,
+        profile_resolution_state="PINNED", vmid=208,
+        paid_until=datetime(2099, 1, 1, tzinfo=timezone.utc),
+    )
+    db.add_all((profile, gateway, instance))
+    db.commit()
+    return profile, gateway, instance
+
+
+class _Provider:
+    def __init__(self, *, quote_minor=239, checkout_error=False, recovered=None):
+        self.config = SimpleNamespace(service_name="vps-fixture")
+        self.quote_minor = quote_minor
+        self.checkout_error = checkout_error
+        self.recovered = recovered
+        self.calls = []
+        self.delivered = False
+
+    def list_additional_ipv4(self):
+        from apps.vps.services.ovh import OvhIpObservation
+        rows = [OvhIpObservation(
+            cidr="192.0.2.10/32", address="192.0.2.10", kind="failover",
+            country="sg", routed_to="vps-fixture")]
+        if self.delivered:
+            rows.append(OvhIpObservation(
+                cidr="192.0.2.11/32", address="192.0.2.11", kind="failover",
+                country="sg", routed_to="vps-fixture"))
+        return rows
+
+    def prepare_additional_ipv4(self, **request):
+        from apps.vps.services.ovh import OvhPreparedIpCart
+        self.calls.append(("prepare", request))
+        return OvhPreparedIpCart(
+            cart_id="11111111-1111-4111-8111-111111111111", item_id=77,
+            quantity=1, with_tax_minor=self.quote_minor, currency="USD",
+            expires="2099-01-01T00:00:00Z", contracts=("Cloud Base",),
+        )
+
+    def checkout_cart(self, cart_id, *, expected):
+        from apps.vps.services.ovh import OvhError
+        assert expected.cart_id == cart_id and expected.with_tax_minor == self.quote_minor
+        self.calls.append(("checkout", cart_id))
+        if self.checkout_error:
+            raise OvhError("fixture response lost")
+        self.delivered = True
+        return 9001
+
+    def recover_order(self, *, cart_id, item_id):
+        self.calls.append(("recover", cart_id, item_id))
+        if self.recovered:
+            self.delivered = True
+        return self.recovered
+
+    def order_status(self, order_id):
+        self.calls.append(("status", order_id))
+        return "delivered" if self.delivered else "delivering"
+
+    def order_ipv4(self, order_id):
+        return ["192.0.2.11"] if self.delivered else []
+
+
+class _Gateway:
+    def list_mappings(self):
+        return {"192.0.2.10": "10.50.0.11"}
+
+
+def test_web_acquisition_checks_out_one_ip_and_imports_provider_readback(db):
+    from apps.vps.services.ovh_acquisition import ensure_free_ip
+    from apps.vps.tables import VpsExternalMutation, VpsIp
+
+    profile, gateway, instance = _domain(db)
+    provider = _Provider()
+    result = ensure_free_ip(
+        db, profile, instance=instance, gateway_row=gateway,
+        provider=provider, gateway=_Gateway(), operation_id="provision:instance-new",
+        sleep=lambda _seconds: None,
+    )
+
+    assert result.address == "192.0.2.11"
+    assert [call[0] for call in provider.calls].count("checkout") == 1
+    row = db.execute(select(VpsExternalMutation)).scalar_one()
+    assert row.state == "OBSERVED"
+    assert row.provider_metadata["order_id"] == 9001
+    ip = db.execute(select(VpsIp).where(VpsIp.dia_chi == "192.0.2.11")).scalar_one()
+    assert ip.state == "FREE" and ip.monthly_cost_minor == 239
+
+
+def test_unexpected_quote_fails_before_checkout(db):
+    from apps.vps.services.ovh_acquisition import UnexpectedBilling, ensure_free_ip
+    from apps.vps.tables import VpsExternalMutation
+
+    profile, gateway, instance = _domain(db)
+    provider = _Provider(quote_minor=501)
+    with pytest.raises(UnexpectedBilling):
+        ensure_free_ip(
+            db, profile, instance=instance, gateway_row=gateway,
+            provider=provider, gateway=_Gateway(), operation_id="provision:instance-new",
+            sleep=lambda _seconds: None,
+        )
+    assert not any(call[0] == "checkout" for call in provider.calls)
+    row = db.execute(select(VpsExternalMutation)).scalar_one()
+    assert row.state == "FAILED" and row.last_error_code == "UNEXPECTED_BILLING"
+
+
+def test_lost_checkout_response_never_repeats_purchase_without_recovery(db):
+    from apps.vps.services.ovh_acquisition import AcquisitionNeedsReview, ensure_free_ip
+    from apps.vps.tables import VpsExternalMutation
+
+    profile, gateway, instance = _domain(db)
+    provider = _Provider(checkout_error=True, recovered=None)
+    with pytest.raises(AcquisitionNeedsReview):
+        ensure_free_ip(
+            db, profile, instance=instance, gateway_row=gateway,
+            provider=provider, gateway=_Gateway(), operation_id="provision:instance-new",
+            sleep=lambda _seconds: None,
+        )
+    with pytest.raises(AcquisitionNeedsReview):
+        ensure_free_ip(
+            db, profile, instance=instance, gateway_row=gateway,
+            provider=provider, gateway=_Gateway(), operation_id="provision:instance-new",
+            sleep=lambda _seconds: None,
+        )
+    assert [call[0] for call in provider.calls].count("checkout") == 1
+    assert db.execute(select(VpsExternalMutation.state)).scalar_one() == "NEEDS_REVIEW"
+
+
+def test_lost_checkout_response_adopts_exact_recovered_order(db):
+    from apps.vps.services.ovh_acquisition import ensure_free_ip
+
+    profile, gateway, instance = _domain(db)
+    provider = _Provider(checkout_error=True, recovered=9002)
+    result = ensure_free_ip(
+        db, profile, instance=instance, gateway_row=gateway,
+        provider=provider, gateway=_Gateway(), operation_id="provision:instance-new",
+        sleep=lambda _seconds: None,
+    )
+    assert result.address == "192.0.2.11"
+    assert [call[0] for call in provider.calls].count("checkout") == 1
+
+
+@pytest.mark.parametrize("blocked", ["protected", "disabled", "wrong_gateway",
+                                     "unpaid", "expired"])
+def test_acquisition_refuses_protected_or_invalid_scope_before_provider(db, blocked):
+    from apps.vps.services.ovh_acquisition import ensure_free_ip
+    from apps.vps.services.backends.contracts import BackendConflict
+
+    profile, gateway, instance = _domain(db)
+    if blocked == "protected":
+        instance.vmid = 100
+    elif blocked == "disabled":
+        profile.status = "DISABLED"
+        profile.accept_new = profile.is_default = False
+    elif blocked == "wrong_gateway":
+        gateway.infrastructure_profile_id = "other-profile"
+    elif blocked == "unpaid":
+        instance.paid_until = None
+    else:
+        instance.paid_until = datetime(2000, 1, 1, tzinfo=timezone.utc)
+    db.commit()
+    provider = _Provider()
+    with pytest.raises(BackendConflict):
+        ensure_free_ip(db, profile, instance=instance, gateway_row=gateway,
+                       provider=provider, gateway=_Gateway(), operation_id="scope-check",
+                       sleep=lambda _seconds: None)
+    assert provider.calls == []
+
+
+def test_subscription_revoked_during_cart_preparation_blocks_checkout(db):
+    from apps.vps.services.ovh_acquisition import AcquisitionNeedsReview, ensure_free_ip
+
+    profile, gateway, instance = _domain(db)
+    provider = _Provider()
+    prepare = provider.prepare_additional_ipv4
+
+    def revoke(**request):
+        prepared = prepare(**request)
+        instance.paid_until = None
+        db.commit()
+        return prepared
+
+    provider.prepare_additional_ipv4 = revoke
+    with pytest.raises(AcquisitionNeedsReview):
+        ensure_free_ip(db, profile, instance=instance, gateway_row=gateway,
+                       provider=provider, gateway=_Gateway(), operation_id="revoked",
+                       sleep=lambda _: None)
+    assert not any(call[0] == "checkout" for call in provider.calls)
+
+
+def test_completed_acquisition_retry_does_not_buy_a_second_address(db):
+    from apps.vps.services.ovh_acquisition import ensure_free_ip
+
+    profile, gateway, instance = _domain(db)
+    provider = _Provider()
+    arguments = dict(instance=instance, gateway_row=gateway, provider=provider,
+                     gateway=_Gateway(), operation_id="same-operation",
+                     sleep=lambda _seconds: None)
+    first = ensure_free_ip(db, profile, **arguments)
+    second = ensure_free_ip(db, profile, **arguments)
+    assert second.id == first.id
+    assert [call[0] for call in provider.calls].count("checkout") == 1
+
+
+def test_restart_after_checkout_recovers_without_any_new_purchase(db):
+    from apps.vps.services import mutation_journal as journal
+    from apps.vps.services.ovh_acquisition import acquisition_policy, ensure_free_ip
+
+    profile, gateway, instance = _domain(db)
+    request, _ = acquisition_policy(profile)
+    row = journal.intent(db, operation_id="crashed-operation", instance=instance,
+                         step="OVH_IP_ACQUIRE", request=request)
+    row.state = "REQUESTED"
+    row.provider_metadata = {
+        "phase": "CHECKOUT_REQUESTED", "cart_id": "fixture-cart", "item_id": 77,
+        "baseline": ["192.0.2.10/32"], "with_tax_minor": 239,
+    }
+    db.commit()
+    provider = _Provider(recovered=9001)
+    result = ensure_free_ip(db, profile, instance=instance, gateway_row=gateway,
+                            provider=provider, gateway=_Gateway(),
+                            operation_id="crashed-operation", sleep=lambda _: None)
+    assert result.address == "192.0.2.11"
+    assert not any(call[0] in ("prepare", "checkout") for call in provider.calls)
+    assert row.state == "OBSERVED" and row.provider_metadata["order_id"] == 9001
+
+
+def test_reserving_acquired_address_preserves_provider_order_evidence(db):
+    from apps.vps.services.backends.public_ip import OvhStaticIpPoolBackend
+    from apps.vps.tables import VpsIp
+
+    profile, gateway, _ = _domain(db)
+    ip = VpsIp(infrastructure_profile_id=profile.id, gateway_id=gateway.id,
+               dia_chi="192.0.2.11", state="FREE",
+               provider_metadata={"order_id": 9001})
+    db.add(ip)
+    db.commit()
+    resource = OvhStaticIpPoolBackend(db, profile).reserve(
+        reservation_key="provision:instance-new", label="new-vps")
+    db.refresh(ip)
+    assert resource.id == ip.id and ip.state == "RESERVED"
+    assert ip.provider_metadata == {"order_id": 9001, "allocation_label": "new-vps"}
+
+
+def test_signed_post_hashes_exact_transmitted_body_and_never_retries(monkeypatch):
+    import hashlib
+    from apps.vps.services.ovh import OvhClient, OvhConfig, OvhError
+
+    monkeypatch.setattr("apps.vps.services.ovh.time.time", lambda: 2000000000)
+    calls = []
+
+    def transport(method, url, headers, body=None):
+        if method == "GET":
+            return 2000000000
+        calls.append((method, url, headers, body))
+        raise OvhError("fixture connection lost")
+
+    client = OvhClient(OvhConfig(
+        application_key="fixture-ak", application_secret="fixture-as",
+        consumer_key="fixture-ck", service_name="fixture-service"), transport=transport)
+    with pytest.raises(OvhError):
+        client.post("/order/cart", {"description": "fixture"})
+    assert len(calls) == 1
+    method, url, headers, body = calls[0]
+    independent = "+".join(("fixture-as", "fixture-ck", method, url,
+                            body.decode("ascii"), "2000000000"))
+    assert headers["X-Ovh-Signature"] == (
+        "$1$" + hashlib.sha1(independent.encode("utf-8")).hexdigest())
+
+
+def test_inventory_delta_without_order_ownership_is_never_imported(db):
+    from apps.vps.services.ovh_acquisition import AcquisitionNeedsReview, ensure_free_ip
+    from apps.vps.tables import VpsIp
+
+    profile, gateway, instance = _domain(db)
+    provider = _Provider()
+    provider.order_ipv4 = lambda order_id: ["192.0.2.99"]
+    with pytest.raises(AcquisitionNeedsReview):
+        ensure_free_ip(db, profile, instance=instance, gateway_row=gateway,
+                       provider=provider, gateway=_Gateway(), operation_id="wrong-order",
+                       sleep=lambda _seconds: None)
+    assert db.execute(select(VpsIp)).scalars().all() == []
+
+
+def test_order_reader_uses_exact_domains_not_description_substrings():
+    from apps.vps.services.ovh import OvhClient, OvhConfig
+
+    def transport(method, url, headers):
+        if url.endswith("/auth/time"):
+            return 2000000000
+        if url.endswith("/status"):
+            return "delivered"
+        if url.endswith("/details"):
+            return [11, 12, 13]
+        if url.endswith("/11"):
+            return {"domain": "192.0.2.11/32", "cancelled": False}
+        if url.endswith("/12"):
+            return {"domain": "*001", "description": "IP 192.0.2.99", "cancelled": False}
+        return {"domain": "192.0.2.12/32", "cancelled": True}
+
+    client = OvhClient(OvhConfig(
+        application_key="fixture-ak", application_secret="fixture-as",
+        consumer_key="fixture-ck", service_name="fixture-service"), transport=transport)
+    assert client.order_status(9001) == "delivered"
+    assert client.order_ipv4(9001) == ["192.0.2.11"]
+
+
+def _ordering_driver():
+    from apps.vps.services.ovh import OvhConfig
+    from apps.vps.services.ovh_ordering import OvhOrderingClient
+
+    calls = []
+    state = {"price": "2.39", "quantity": 1, "destination": "fixture-service"}
+    cart_id = "11111111-1111-4111-8111-111111111111"
+
+    def transport(method, url, headers, body=None):
+        calls.append((method, url, body))
+        if method == "POST":
+            return {"orderId": 9001}
+        if url.endswith("/auth/time"):
+            return 2000000000
+        if url.endswith("/checkout"):
+            return {"prices": {"withTax": {"value": state["price"], "currencyCode": "USD"}},
+                    "contracts": [{"name": "Cloud Base"}]}
+        if url.endswith("/item/77"):
+            return {"settings": {"quantity": state["quantity"],
+                                 "planCode": "ip-failover-arin", "pricingMode": "default"},
+                    "duration": "P1M", "options": [], "configurations": [1, 2, 3]}
+        if "/configuration/" in url:
+            key = {"1": "country", "2": "datacenter", "3": "destination"}[url.rsplit("/", 1)[1]]
+            return {"label": key,
+                    "value": {"country": "SG", "datacenter": "SGP",
+                              "destination": state["destination"]}[key]}
+        return {"items": [77], "expire": "2099-01-01T00:00:00Z"}
+
+    driver = OvhOrderingClient(OvhConfig(
+        application_key="fixture-ak", application_secret="fixture-as",
+        consumer_key="fixture-ck", service_name="fixture-service"), transport=transport)
+    return driver, cart_id, state, calls
+
+
+def test_ordering_checkout_revalidates_quote_before_any_payment():
+    from apps.vps.services.ovh import OvhError
+
+    driver, cart_id, state, calls = _ordering_driver()
+    expected = driver.preview_cart(cart_id, 77)
+    state["price"] = "2.40"
+    with pytest.raises(OvhError):
+        driver.checkout_cart(cart_id, expected=expected)
+    assert not any(method == "POST" for method, _, _ in calls)
+
+
+@pytest.mark.parametrize("field,value", [("quantity", 2), ("destination", "wrong-service")])
+def test_ordering_checkout_refuses_cart_identity_changes(field, value):
+    from apps.vps.services.ovh import OvhError
+
+    driver, cart_id, state, calls = _ordering_driver()
+    expected = driver.preview_cart(cart_id, 77)
+    state[field] = value
+    with pytest.raises(OvhError):
+        driver.checkout_cart(cart_id, expected=expected)
+    assert not any(method == "POST" for method, _, _ in calls)
+
+
+def test_ordering_checkout_pays_once_when_exact_preview_matches():
+    import json
+
+    driver, cart_id, state, calls = _ordering_driver()
+    expected = driver.preview_cart(cart_id, 77)
+    assert driver.checkout_cart(cart_id, expected=expected) == 9001
+    posts = [(url, body) for method, url, body in calls if method == "POST"]
+    assert len(posts) == 1
+    assert json.loads(posts[0][1]) == {
+        "autoPayWithPreferredPaymentMethod": True, "waiveRetractationPeriod": True}

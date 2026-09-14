@@ -132,8 +132,9 @@ is fabricated here.
   `5ebaf20b44b74fc7a3379e2d2a7dca2357f70b85f6b33f281fd75ad813241766`.
 - The D10 flow prepared exactly one unpaid OVH cart,
   `efae624e-6114-46b9-ace5-3063f9fc1580`, for one SG/SGP Additional IPv4 at
-  USD 2.39 including tax. No checkout was submitted; manual payment/provider
-  delivery remains the blocker. The cart expires `2026-09-15T08:53:23Z`.
+  USD 2.39 including tax. No checkout was submitted. Q125 supersedes manual
+  per-order payment approval: automatic cart/checkout/delivery integration is
+  being implemented, not enabled yet. The cart expires `2026-09-15T08:53:23Z`.
 - Canonical `main` advanced again to `b80f837c`; the VPS branch is currently
   one commit behind/nine ahead. Its main worktree has unrelated uncommitted
   changes, so no reconciliation or deploy was attempted over another session.

@@ -12,6 +12,29 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-14 — Q125: signed cart driver và phục hồi checkout sau worker restart
+
+- Tiếp tục đúng worktree VPS, CPU toàn máy 59%; gate PID 16728 của phiên khác
+  giữ CPU/Postgres. Chỉ test SQLite memory nhỏ, không full gate, không mutation
+  OVH/PVE/gateway, không sửa cây chính.
+- Nối coordinator với chữ ký `checkout_cart(..., expected=prepared)` thực tế;
+  preview lần cuối phải khớp cart/item/product/location/destination/quote/contracts.
+  Worker restart ở CHECKOUT_REQUESTED chỉ read-back order, không checkout lần hai.
+  Allocator giữ metadata order khi reserve, không xoá dấu vết provider.
+- Đã chạy `python -m pytest tests/test_1262_vps_ovh_acquisition.py
+  tests/test_1020_vps_sellable_capacity.py tests/test_1022_vps_ovh_inventory.py -q`:
+  **36 PASS, 4,36 giây** sau credit guard. Ruff năm tệp mục tiêu PASS;
+  `git diff --check` PASS. Scan trước bổ sung credit guard: 3.655 tệp,
+  895.002 dòng, 0 finding PASS. Scan sau credit guard cũng PASS: 3.655 tệp,
+  895.039 dòng, 0 finding; quét lần cuối sau cập nhật tài liệu trước commit.
+  Lệnh trước đó dùng sai tên `test_1022_vps_v4_red_team.py`: exit 1, zero test;
+  đã định vị tên thật bằng rg và chạy lại như trên, không tính lượt sai là pass.
+- Cập nhật B04/H46.7 theo Q125: không còn chờ admin thanh toán mọi order.
+  Credit guard dùng `billing.con_han`/`paid_until` Q98 có sẵn, không dựng sổ tiền
+  thứ hai hay trừ khách lần nữa; unpaid/expired và revoke giữa prepare/checkout
+  đều bị chặn trong test. Auto-acquire vẫn tắt đến khi xong delivery attribution thật,
+  gateway persistence, worker và browser verification. Chưa mua IP/tạo VM/deploy.
+
 ## 2026-09-14 — VPS V4: OVH inventory, gwnat, Machine B runtime và PVE TLS
 
 - **Phạm vi:** tiếp tục trên `D:\LTTSTUDIOSAPP-vps-v4`; không sửa/stash/reset
@@ -18293,3 +18316,38 @@ Canonical `main` tiếp tục tiến tới `b80f837c`; phép đo `main...HEAD` h
 nên không rebase/merge/deploy đè lên. B07 được mở lại cho lần reconcile cuối sau
 khi phiên sở hữu cây chính kết thúc. Full gate vẫn dành duy nhất cho H46.9 sau
 deploy/live/red-team/report.
+
+### Review trước deploy
+
+Đã đọc toàn bộ danh sách thay đổi của nhánh so với `main`: 101 tệp trong 11
+commit tại checkpoint. `python -m alembic heads` trả đúng một head
+`f4a7c2d9e610`. Migration V4 chỉ thêm bảng/cột/index/constraint, giữ các trường
+legacy, có `downgrade()` tháo đúng phần V4; kế hoạch rollback profile đưa OVH về
+STANDBY không repin instance, còn production có đường `app.previous` qua
+`deploy/windows/rollback.ps1`. P7 review diff/migration/runbook/rollback hoàn
+tất; deploy vẫn chờ B04 và B07.
+
+## 2026-09-14 — Q125: tiếp tục tự cấp OVH IPv4, checkpoint chưa deploy
+
+Khôi phục phần dở sau Q125, chỉ làm trên worktree VPS riêng. CPU toàn máy
+28,4%; cửa sổ khóa ghi gate của phiên khác PID 16728. Không gọi full gate,
+không sửa cây chính hoặc tài nguyên OVH/PVE thật.
+
+Đã bổ sung coordinator acquisition với journal claim nguyên tử, baseline,
+cart/item/order metadata, giới hạn báo giá, bảo vệ VM100–107/profile/gateway,
+phục hồi order sau response checkout bị mất và retry hoàn tất không mua lần hai.
+Transport POST ký đúng byte JSON được gửi, không có retry ngầm. Capacity có
+hàm đếm một suất replenishment trừ queued promises; backend vẫn cố ý trả
+replenishable=0 cho tới khi driver/order attribution/gateway persistence hoàn
+tất. Không lấy test giả lập làm bằng chứng bán được capacity thật.
+
+Đã chạy: `python -m pytest tests/test_1262_vps_ovh_acquisition.py
+tests/test_1020_vps_sellable_capacity.py -q`: 18 PASS trước khi bổ sung phép kiểm
+signed POST; Ruff ba tệp mục tiêu PASS, `git diff --check` PASS. Test dùng SQLite
+memory và provider stub, không dùng Postgres/OVH thật.
+
+Nguồn tham khảo GitHub chính thức: https://github.com/ovh/order-cart-examples
+và tài liệu OVH trong https://github.com/ovh/docs. Còn triển khai signed driver
+prepare/recover/delivery attribution, gateway secondary-address persistence,
+credit guard và worker integration, GUI thật/regression. Auto-acquire chưa bật,
+chưa checkout và chưa mua thêm IPv4.

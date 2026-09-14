@@ -8,7 +8,11 @@ import os
 from apps.vps import profiles
 from apps.vps.cost import PLANS
 from apps.vps.services import backend_factory, provisioning
-from apps.vps.services.sellable_capacity import available_gateway_slots, sellable_slots
+from apps.vps.services.sellable_capacity import (
+    available_gateway_slots,
+    effective_ipv4_slots,
+    sellable_slots,
+)
 from apps.vps.services.machine_b_runtime import (
     MachineBRuntimeEvidence,
     read_machine_b_runtime,
@@ -76,8 +80,9 @@ def run_profile_preflight(
             gateway_limit = available_gateway_slots(db, profile.id)
         measured = provisioning.suc_chua_hien_tai(
             db, capacity_probe["node"], capacity_probe["storage"], capacity_probe["vms"])
+        ipv4_slots = effective_ipv4_slots(ip_details)
         sellable = {plan.id: sellable_slots(
-            measured, plan.id, free_ipv4=ip_details.get("free"),
+            measured, plan.id, free_ipv4=ipv4_slots,
             gateway_slots=gateway_limit).slots for plan in PLANS}
         if any(sellable.values()):
             capacity_status = "HEALTHY"

@@ -238,6 +238,8 @@ def upgrade() -> None:
         sa.Column("state", sa.String(16), nullable=False, server_default="INTENT"),
         sa.Column("request_fingerprint", sa.String(64), nullable=False, server_default=""),
         sa.Column("external_ref", sa.String(190), nullable=False, server_default=""),
+        sa.Column("provider_metadata", sa.JSON(), nullable=False,
+                  server_default=sa.text("'{}'")),
         sa.Column("attempts", sa.Integer(), nullable=False, server_default="0"),
         sa.Column("last_error_code", sa.String(64), nullable=False, server_default=""),
         sa.Column("last_error_detail", sa.Text(), nullable=False, server_default=""),

@@ -44,3 +44,15 @@ def test_storage_unknown_full_or_invalid_plan_fails_closed():
                            (replace(_capacity(), dia_gb_dang_dung=1000), "vps-nho"),
                            (_capacity(), "missing")]:
         assert sellable_slots(capacity, plan, free_ipv4=100, gateway_slots=100).slots == 0
+
+
+def test_auto_acquisition_adds_only_one_promised_ipv4_slot():
+    from apps.vps.services.sellable_capacity import effective_ipv4_slots
+
+    health = {"free": 0, "replenishable": 1}
+    assert effective_ipv4_slots(health, promised_without_ip=0) == 1
+    assert effective_ipv4_slots(health, promised_without_ip=1) == 0
+    assert effective_ipv4_slots({"free": 2, "replenishable": 1},
+                                promised_without_ip=1) == 2
+    assert effective_ipv4_slots({"free": 0, "replenishable": True},
+                                promised_without_ip=0) == 0

@@ -39,7 +39,7 @@ def compute_backend(profile):
 def public_ip_backend(db, profile):
     kind = str(getattr(profile, "public_ip_backend_type", "vultr_reserved_ip") or "")
     if kind == "ovh_static_pool":
-        return OvhStaticIpPoolBackend(db, profile.id)
+        return OvhStaticIpPoolBackend(db, profile)
     if kind == "vultr_reserved_ip":
         from apps.vps.services import vultr
         reference = str(getattr(profile, "credential_ref", "") or "LTT_VULTR")

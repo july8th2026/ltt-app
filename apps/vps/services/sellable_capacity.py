@@ -22,6 +22,16 @@ def _limit(value: object) -> int:
     return value if type(value) is int and value >= 0 else 0
 
 
+def effective_ipv4_slots(details: object, *, promised_without_ip: object = 0) -> int:
+    """Count owned FREE rows plus one strictly configured replenishment slot."""
+    if not isinstance(details, dict):
+        return 0
+    free = _limit(details.get("free"))
+    replenishable = _limit(details.get("replenishable"))
+    promised = _limit(promised_without_ip)
+    return max(0, free + min(1, replenishable) - promised)
+
+
 def sellable_slots(compute: capacity.SucChua, plan_id: str, *,
                    free_ipv4: object, gateway_slots: object,
                    extra_disk_gb: int = 0) -> SellableCapacity:

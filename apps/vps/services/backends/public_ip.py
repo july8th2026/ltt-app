@@ -89,13 +89,17 @@ class VultrReservedIpBackend:
 class OvhStaticIpPoolBackend:
     """Race-safe allocator for Additional IPs already routed to the OVH gateway.
 
-    It never orders or deletes provider resources. Acquisition is a separate,
-    audited operator operation because checkout has billing consequences.
+    Allocation stays transactional in the local pool. Q125 acquisition is a
+    separate journaled service because provider checkout has a different state
+    machine from reserving an already-owned row.
     """
 
-    def __init__(self, db: Session, profile_id: str):
+    def __init__(self, db: Session, profile):
         self.db = db
-        self.profile_id = profile_id
+        self.profile_id = str(getattr(profile, "id", profile))
+        # Do not sell speculative capacity until the full signed acquisition
+        # driver and persistent gateway-address path have operational evidence.
+        self.auto_acquire = False
 
     def reserve(self, *, reservation_key: str, label: str) -> PublicIpResource:
         if not reservation_key:
@@ -125,6 +129,11 @@ class OvhStaticIpPoolBackend:
         ).scalars().all()
         now = _now()
         for row_id in candidates:
+            candidate = self.db.get(VpsIp, row_id)
+            if candidate is None:
+                continue
+            metadata = {**dict(candidate.provider_metadata or {}),
+                        "allocation_label": str(label or "")[:80]}
             try:
                 with self.db.begin_nested():
                     result = self.db.execute(
@@ -133,7 +142,7 @@ class OvhStaticIpPoolBackend:
                         .values(
                             state="RESERVED", reservation_token=reservation_key,
                             reserved_at=now,
-                            provider_metadata={"allocation_label": str(label or "")[:80]},
+                            provider_metadata=metadata,
                         )
                     )
                     changed = getattr(result, "rowcount", 0)
@@ -214,11 +223,14 @@ class OvhStaticIpPoolBackend:
         rows = self.list()
         free = sum(row.state == "FREE" for row in rows)
         quarantined = sum(row.state == "QUARANTINED" for row in rows)
-        status = "HEALTHY" if free > 0 else "CRITICAL"
+        replenishable = 1 if self.auto_acquire else 0
+        status = "HEALTHY" if free > 0 or replenishable else "CRITICAL"
         return BackendHealth(
             status, f"{free} FREE public IP(s)",
-            {"free": free, "quarantined": quarantined, "total": len(rows)},
+            {"free": free, "replenishable": replenishable,
+             "quarantined": quarantined, "total": len(rows)},
         )
 
     def capabilities(self) -> BackendCapabilities:
-        return BackendCapabilities(dynamic_acquisition=False, provider_binding=False)
+        return BackendCapabilities(
+            dynamic_acquisition=self.auto_acquire, provider_binding=False)

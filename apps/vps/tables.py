@@ -443,6 +443,7 @@ class VpsExternalMutation(Base):
     request_fingerprint: Mapped[str] = mapped_column(
         String(64), default="", nullable=False)
     external_ref: Mapped[str] = mapped_column(String(190), default="", nullable=False)
+    provider_metadata: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     last_error_code: Mapped[str] = mapped_column(
         String(64), default="", nullable=False)

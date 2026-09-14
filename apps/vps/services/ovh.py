@@ -1,9 +1,10 @@
-"""Minimal read-only OVH API client for provider inventory and health."""
+"""Signed OVH API transport; mutations have no implicit network retry."""
 from __future__ import annotations
 
 from dataclasses import dataclass
 import hashlib
 import json
+from ipaddress import IPv4Interface
 import time
 from typing import Any, Callable
 from urllib.error import HTTPError, URLError
@@ -41,7 +42,20 @@ class OvhIpObservation:
     routed_to: str
 
 
-Transport = Callable[[str, str, dict[str, str]], Any]
+@dataclass(frozen=True)
+class OvhPreparedIpCart:
+    """Non-secret, validated cart evidence used by the acquisition journal."""
+
+    cart_id: str
+    item_id: int
+    quantity: int
+    with_tax_minor: int
+    currency: str
+    expires: str
+    contracts: tuple[str, ...]
+
+
+Transport = Callable[..., Any]
 
 
 class OvhClient:
@@ -51,9 +65,10 @@ class OvhClient:
         self._clock_offset: int | None = None
 
     @staticmethod
-    def _request(method: str, url: str, headers: dict[str, str]):
+    def _request(method: str, url: str, headers: dict[str, str], data=None):
         try:
-            with urlopen(Request(url, method=method, headers=headers), timeout=30) as response:
+            with urlopen(Request(url, data=data, method=method,
+                                 headers=headers), timeout=30) as response:
                 body = response.read(2_000_001)
         except (HTTPError, URLError, TimeoutError) as exc:
             raise OvhError(f"OVH request failed ({type(exc).__name__})") from None
@@ -87,9 +102,67 @@ class OvhClient:
             "X-Ovh-Signature": signature,
         })
 
+    def post(self, path: str, payload: dict | None = None):
+        """Sign exactly the bytes sent, and never repeat an ambiguous POST."""
+        if (not (path == "/order/cart" or path.startswith("/order/cart/"))
+                or ".." in path or "?" in path or "#" in path):
+            raise OvhError("unsupported OVH mutation path")
+        url = self.config.api_base + path
+        body = json.dumps(payload or {}, separators=(",", ":"),
+                          ensure_ascii=True).encode("ascii")
+        timestamp = str(self._server_time())
+        raw = "+".join((self.config.application_secret, self.config.consumer_key,
+                        "POST", url, body.decode("ascii"), timestamp))
+        headers = {
+            "Content-Type": "application/json",
+            "X-Ovh-Application": self.config.application_key,
+            "X-Ovh-Consumer": self.config.consumer_key,
+            "X-Ovh-Timestamp": timestamp,
+            "X-Ovh-Signature": "$1$" + hashlib.sha1(raw.encode("utf-8")).hexdigest(),
+        }
+        return self._transport("POST", url, headers, body)
+
     def health(self) -> bool:
         services = self.get("/vps")
         return isinstance(services, list) and self.config.service_name in services
+
+    @staticmethod
+    def _order_id(order_id):
+        if type(order_id) is not int or order_id <= 0:
+            raise OvhError("invalid OVH order identity")
+        return str(order_id)
+
+    def order_status(self, order_id):
+        value = self.get("/me/order/" + self._order_id(order_id) + "/status")
+        allowed = {"cancelled", "cancelling", "checking", "delivered",
+                   "delivering", "documentsRequested", "notPaid", "unknown"}
+        if not isinstance(value, str) or value not in allowed:
+            raise OvhError("OVH order status has invalid shape")
+        return value
+
+    def order_ipv4(self, order_id):
+        """Read exact delivered service domains; descriptions are not identity."""
+        prefix = "/me/order/" + self._order_id(order_id) + "/details"
+        ids = self.get(prefix)
+        if not isinstance(ids, list) or len(ids) > 100:
+            raise OvhError("OVH order details have invalid shape")
+        addresses = set()
+        for detail_id in ids:
+            detail = self.get(prefix + "/" + self._order_id(detail_id))
+            if not isinstance(detail, dict) or type(detail.get("cancelled")) is not bool:
+                raise OvhError("OVH order detail has invalid shape")
+            if detail["cancelled"]:
+                continue
+            domain = detail.get("domain")
+            if not isinstance(domain, str):
+                raise OvhError("OVH order domain has invalid shape")
+            try:
+                interface = IPv4Interface(domain)
+            except ValueError:
+                continue
+            if interface.network.prefixlen == 32:
+                addresses.add(str(interface.ip))
+        return sorted(addresses)
 
     def list_additional_ipv4(self) -> list[OvhIpObservation]:
         cidrs = self.get("/ip")

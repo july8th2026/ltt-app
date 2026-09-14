@@ -464,10 +464,14 @@ def tao_may(request: Request,
     suc_chua, loi_ha_tang = _suc_chua(db, profile)
     if suc_chua is None:
         return _ve_trang(_t("Hệ thống đang bận, chưa nhận máy mới. Thử lại sau."))
-    from apps.vps.services.sellable_capacity import sellable_slots, available_gateway_slots
+    from apps.vps.services.sellable_capacity import (
+        available_gateway_slots,
+        effective_ipv4_slots,
+        sellable_slots,
+    )
     from sqlalchemy import func
     try:
-        free = backend_factory.public_ip_backend(db, profile).health().details.get("free")
+        ip_details = backend_factory.public_ip_backend(db, profile).health().details
         # Queued promises already consume an eventual IP even before provision
         # reserves it. The selector's row lock serializes these admissions.
         waiting = db.execute(select(func.count()).select_from(VpsInstance).where(
@@ -475,7 +479,7 @@ def tao_may(request: Request,
             VpsInstance.trang_thai != "da_xoa",
             ~select(VpsIp.id).where(VpsIp.instance_id == VpsInstance.id).exists()
         )).scalar_one()
-        free = max(0, free - waiting) if type(free) is int else None
+        free = effective_ipv4_slots(ip_details, promised_without_ip=waiting)
         slots = sellable_slots(suc_chua, plan_id, extra_disk_gb=dia_them_gb,
                                free_ipv4=free, gateway_slots=available_gateway_slots(db, profile.id))
     except backend_factory.operation_error_types():
