@@ -10,7 +10,9 @@ import time
 from sqlalchemy import select, update
 
 from apps.vps.services import billing, mutation_journal as journal
-from apps.vps.services.backends.contracts import BackendConflict, PublicIpResource
+from apps.vps.services.backends.contracts import (
+    BackendConflict, CapacityExhausted, PublicIpResource,
+)
 from apps.vps.tables import VpsExternalMutation, VpsInfrastructureProfile, VpsIp
 
 
@@ -20,6 +22,28 @@ class UnexpectedBilling(BackendConflict):
 
 class AcquisitionNeedsReview(BackendConflict):
     pass
+
+
+def reserve_for_provision(db, profile, *, pool, instance, gateway_row,
+                          reservation_key, operation_id, provider_factory,
+                          gateway_factory):
+    """Prefer owned capacity; acquire at most once under the worker lease.
+
+    Factories are lazy: disabled automatic capacity must not even access billing
+    credentials. Gateway mapping remains in the existing PUBLIC_MAPPING journal.
+    """
+    arguments = {"reservation_key": reservation_key, "label": instance.id[:8]}
+    try:
+        return pool.reserve(**arguments)
+    except CapacityExhausted:
+        if (profile.public_ip_backend_type != "ovh_static_pool"
+                or not pool.capabilities().dynamic_acquisition):
+            raise
+    ensure_free_ip(db, profile, instance=instance, gateway_row=gateway_row,
+                   provider=provider_factory(), gateway=gateway_factory(),
+                   operation_id=operation_id)
+    # A second capacity race fails rather than buying another address.
+    return pool.reserve(**arguments)
 
 
 def acquisition_policy(profile):

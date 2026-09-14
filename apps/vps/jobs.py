@@ -787,8 +787,13 @@ def _cap_ip_cong_khai(db, may: VpsInstance, gateway, ip_noi_bo: str,
     reservation_key = f"provision:{may.id}:PUBLIC_IP"
     cu = db.execute(select(VpsIp).where(VpsIp.instance_id == may.id)).scalars().first()
     if cu is None:
-        resource = dia_chi.reserve(
-            reservation_key=reservation_key, label=may.id[:8])
+        from apps.vps.services.ovh_acquisition import reserve_for_provision
+        resource = reserve_for_provision(
+            db, profile, pool=dia_chi, instance=may, gateway_row=gateway,
+            reservation_key=reservation_key,
+            operation_id=operation_id or f"provision:{may.id}",
+            provider_factory=lambda: backend_factory.ovh_ordering_client(profile),
+            gateway_factory=lambda: backend_factory.gateway_backend(profile))
         try:
             # Vultr **cấp lại chính địa chỉ vừa trả** (nó giữ 24 giờ rồi đưa lại
             # cho cùng tài khoản) — đã thấy thật 24/08. Nên phải hỏi xem địa chỉ

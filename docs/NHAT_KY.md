@@ -12,6 +12,27 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-14 — Q125: nối worker reserve-first và browser local sau tích hợp
+
+- Worker `_cap_ip_cong_khai` gọi reserve-first coordinator; chỉ khi pool hết và
+  backend cho dynamic acquisition mới nạp provider/gateway qua factory lười.
+  Sau một lần acquire chỉ thử reserve lại, không mua tiếp nếu race capacity.
+  Production backend vẫn `auto_acquire=False`; bật cần live attribution và
+  giới hạn đúng một lần mua nghiệm thu, không lấy flag test làm cấu hình thật.
+- Batch acquisition/capacity/inventory **38 PASS, 4,67 giây**; hồi quy helper
+  trong test_1013/test_279/test_557 với `-k "cap_ip or public_ip or cach_ly"`
+  **9 PASS/43 deselected, 3,94 giây**. Ruff bốn tệp mục tiêu PASS.
+- Skill Playwright CLI dẫn quy trình kiểm GUI thật. Fixture riêng trên
+  127.0.0.2:8100 không nạp production credentials/DB; không đụng dịch vụ
+  127.0.0.1:8100 của phiên khác. `playwright-cli -s=vps-v4-q125 run-code
+  --filename=tests/browser/vps_v4_admin.js` **PASS** desktop/mobile;
+  page/console unexpected errors, failed requests và HTTP 5xx đều zero.
+  Console error lệnh riêng: 0; requests chỉ có 403/404/409 cố ý. Đã xem ảnh
+  mobile; ảnh có thanh điều hướng sticky giữa full-page capture, không kết luận
+  giao diện hoàn hảo từ test chức năng. Browser/fixture của phiên đã đóng.
+- CPU trước browser 61%, gate PID 16728 của phiên khác vẫn giữ khóa; không chạy
+  batch nặng hay full gate. H46.7 live create/checkout/deploy chưa chạy.
+
 ## 2026-09-14 — Q125: signed cart driver và phục hồi checkout sau worker restart
 
 - Tiếp tục đúng worktree VPS, CPU toàn máy 59%; gate PID 16728 của phiên khác

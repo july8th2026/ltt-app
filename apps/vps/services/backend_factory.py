@@ -64,6 +64,12 @@ def ovh_inventory_client(profile):
     return ovh.client_tu_moi_truong(env)
 
 
+def ovh_ordering_client(profile):
+    """Reuse the canonical scoped reference; never copy secret values into rows."""
+    from apps.vps.services.ovh_ordering import OvhOrderingClient
+    return OvhOrderingClient(ovh_inventory_client(profile).config)
+
+
 def gateway_backend(profile):
     kind = str(getattr(profile, "gateway_backend_type", "nft") or "")
     if kind == "nft":

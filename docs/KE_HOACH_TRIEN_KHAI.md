@@ -4007,8 +4007,10 @@ Quyết định: Q124. Hồ sơ canonical: `docs/VPS_V4/`. Nhánh riêng:
   đổi. Đã chuẩn bị đúng một giỏ OVH chưa thanh toán cho một IPv4 SG/SGP,
   USD 2,39 gồm thuế; chưa checkout. Q125 thay cơ chế PO thanh toán tay bằng
   worker tự động với quote guard và journal phục hồi. Driver signed cart/checkout
-  và coordinator có test mục tiêu; còn credit guard, gateway address persistence,
-  worker integration và GUI thật trước khi bật. Chờ khóa gate của phiên khác
+  và coordinator/credit guard/reserve-first worker có test mục tiêu 38 PASS;
+  helper regression 9 PASS, Playwright admin local desktop/mobile PASS. Còn
+  exact delivery attribution thật và gateway persistence read-back trên IP mới,
+  normal-user create E2E trước khi bật. Chờ khóa gate của phiên khác
   nhả trước batch nặng/reconcile/deploy; không tạo giỏ live thứ hai.
 - [ ] **H46.8 — Red team + hoàn thiện báo cáo:** không P0 software, ba score
   riêng, report backup/restore/dual-WAN trung thực và đóng băng cây cuối.

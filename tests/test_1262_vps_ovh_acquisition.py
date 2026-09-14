@@ -286,6 +286,40 @@ def test_reserving_acquired_address_preserves_provider_order_evidence(db):
     assert ip.provider_metadata == {"order_id": 9001, "allocation_label": "new-vps"}
 
 
+def test_worker_reservation_with_disabled_acquisition_never_loads_provider(db):
+    from apps.vps.services.backends.public_ip import OvhStaticIpPoolBackend
+    from apps.vps.services.backends.contracts import CapacityExhausted
+    from apps.vps.services.ovh_acquisition import reserve_for_provision
+
+    profile, gateway, instance = _domain(db)
+
+    def forbidden():
+        pytest.fail("disabled acquisition must not load billing credentials")
+
+    with pytest.raises(CapacityExhausted):
+        reserve_for_provision(db, profile, pool=OvhStaticIpPoolBackend(db, profile),
+                              instance=instance, gateway_row=gateway,
+                              reservation_key="disabled", operation_id="disabled",
+                              provider_factory=forbidden, gateway_factory=forbidden)
+
+
+def test_worker_reservation_buys_once_then_reserves_exact_imported_ip(db):
+    from apps.vps.services.backends.public_ip import OvhStaticIpPoolBackend
+    from apps.vps.services.ovh_acquisition import reserve_for_provision
+
+    profile, gateway, instance = _domain(db)
+    pool = OvhStaticIpPoolBackend(db, profile)
+    # Test-only injection; production backend intentionally remains disabled.
+    pool.auto_acquire = True
+    provider = _Provider()
+    result = reserve_for_provision(
+        db, profile, pool=pool, instance=instance, gateway_row=gateway,
+        reservation_key="worker-reserve", operation_id="worker-operation",
+        provider_factory=lambda: provider, gateway_factory=_Gateway)
+    assert result.address == "192.0.2.11" and result.state == "RESERVED"
+    assert [call[0] for call in provider.calls].count("checkout") == 1
+
+
 def test_signed_post_hashes_exact_transmitted_body_and_never_retries(monkeypatch):
     import hashlib
     from apps.vps.services.ovh import OvhClient, OvhConfig, OvhError
