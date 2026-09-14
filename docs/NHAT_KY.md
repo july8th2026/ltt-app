@@ -18217,3 +18217,32 @@ URL công khai      : /health/ready 200 · / 200 · /gia-api 200
    phiên khác, `alembic` hai head — đều chỉ là **triệu chứng của đúng một sự
    thật ấy**. Tôi đã đi vòng qua từng rào một thay vì hỏi vì sao chúng cùng xuất
    hiện.
+
+## 2026-09-14 — VPS V4: reconcile lần hai và đóng kiểm thử offline
+
+Nhánh `codex/vps-v4-infrastructure-profiles` đã rebase sạch lần hai lên
+canonical `main` `55691feb`; tại checkpoint đo được `0 behind / 3 ahead` và
+Alembic còn đúng một head `f4a7c2d9e610`. Không chạm các tài liệu CMC đang bẩn
+trong worktree chính.
+
+Broad VPS sau reconcile chạy pha chính **789 passed / 8 skipped**. Sentinel sau
+đó đỏ vì `main` mới thêm một `pytest.skip` trong phép đối chiếu trần ảnh với máy
+B. Đo thật cho thấy URL có trong `app.env` và reachable nhưng `/health` trả 401
+đúng thiết kế; test không mang bearer, đồng thời tìm `max_images` trong khi
+gateway đang chạy công bố `tran.images`. Sửa phép đo tại `b61d6652`: bearer chỉ
+nạp từ môi trường tiến trình, hiểu schema đang deploy, và không hỏi được thì
+FAIL thay vì skip. Không giá trị bí mật nào được in hoặc ghi vào kho.
+
+Đã chạy thật:
+
+- `python -m pytest tests/test_1259_tran_anh_cong_bo_dung.py -q` với URL máy A
+  và bearer nạp thẳng từ cấu hình bảo vệ máy B: **4 passed**.
+- `python tools/test_nhanh.py -n 2 -k "BAN_SAO_khop_may_B or bo_qua_hien_tai_dat_moc"`:
+  **RESULT PASS**, sentinel phase 2 **1 passed**, không `--accept` baseline.
+- Ruff mục tiêu, `py_compile`, `git diff --check`: PASS.
+- `python tools/scan_source_secrets.py`: **3.650 files / 893.571 lines / 0
+  findings, PASS**.
+
+CPU toàn máy được đo trước các batch (6,6–24,6%), `cua_so_yen` báo RẢNH và số
+worker giữ ở 2. H46.6 đóng; bước tiếp theo là recheck `main`, đóng băng ứng viên
+rồi chạy đúng một full gate cuối trước deploy.

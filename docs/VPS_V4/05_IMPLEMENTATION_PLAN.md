@@ -139,7 +139,7 @@ Exit: user A/B isolation, admin-only mutations, no secrets, GUI verified.
   **0 finding, PASS**.
 - [x] Fix every known in-scope regression and complete the failure/compensation
   matrix with focused behavioral tests.
-- [ ] Freeze one release candidate only after all targeted PostgreSQL, browser,
+- [x] Freeze one release candidate only after all targeted PostgreSQL, browser,
   security and static checks are green.
 
 2026-09-14 continuation: signed read-only OVH inventory/ownership, static-pool
@@ -157,6 +157,15 @@ isolated PostgreSQL migration/default/IP races passed **5/1 skip + sentinel**
 (`20260914_104756`). Playwright desktop/mobile passed with zero unexpected
 console, page, network or 5xx errors. Repeat only the affected checks after the
 last canonical reconciliation.
+
+Second reconciliation onto canonical `main` `55691feb` is complete and the
+branch is 0 behind. The new live LLM constraint test brought by `main` exposed
+two defects in its measuring path: protected `/health` was called without a
+bearer and the deployed schema says `tran.images`, not `max_images`. The test
+now authenticates from process environment, accepts the deployed schema, and
+fails closed instead of adding a new skip. Authenticated Machine B comparison
+passed **4/4**; the skip sentinel passed without accepting a baseline. Secret
+scan after the correction covered **3,650 files / 893,571 lines**, zero finding.
 
 2026-09-13 freeze candidate: independent broad VPS regression after the last
 log-contract correction is **771 passed/3 skipped**, phase-2 sentinel **1

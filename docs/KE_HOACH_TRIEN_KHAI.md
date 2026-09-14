@@ -3991,12 +3991,14 @@ Quyết định: Q124. Hồ sơ canonical: `docs/VPS_V4/`. Nhánh riêng:
   mass-assign profile; admin service/UI. Exact ADMIN navigation chờ C01 vì app
   contract chưa có extension point. **13/09/2026:** C01 đã duyệt generic
   extension; desktop/mobile Playwright local PASS, 0 lỗi console/network/5xx.
-- [ ] **H46.6 — Hoàn thiện code + kiểm thử vận hành offline:** failure/security/
+- [x] **H46.6 — Hoàn thiện code + kiểm thử vận hành offline:** failure/security/
   PostgreSQL regression, Playwright và static/secret checks mục tiêu; không chạy
   full gate giữa các phase. **14/09/2026 checkpoint:** broad VPS **789 PASS/8
   skip + sentinel**, PostgreSQL thật **5 PASS/1 skip + sentinel**, Playwright
-  desktop/mobile 0 lỗi bất ngờ, static/i18n/line-ending/secret scan PASS;
-  canonical `main` vừa tiến tiếp nên còn một lần reconcile + affected tests.
+  desktop/mobile 0 lỗi bất ngờ, static/i18n/line-ending/secret scan PASS.
+  Reconcile lần hai lên `main` `55691feb` sạch; test live LLM mới của `main`
+  được sửa fail-closed để mang bearer và hiểu schema `tran.images`, rồi xanh
+  **4/4** với gateway máy B; sentinel skip PASS, không nới baseline.
 - [ ] **H46.7 — Final release gate:** đóng băng release candidate rồi chạy đúng
   một `python tools\gate.py` cuối trên cây không đổi, ngay trước deploy. Sửa code
   sau PASS làm mất hiệu lực candidate và bắt buộc gate lại.

@@ -5,7 +5,9 @@ Status: **IN PROGRESS — OFFLINE CODE NEAR FREEZE; READ-ONLY LIVE PREFLIGHT PAR
 ## Revisions
 
 - HEAD BEFORE: `3b5adcb7ffa43c8c553ac38d457e22e3cde60e30`
-- HEAD AFTER: pending
+- Release candidate before final gate: branch tip containing VPS commits plus
+  `b61d6652` (authenticated, fail-closed live LLM constraint measurement);
+  final exact SHA is recorded by the final gate report.
 - Machine B source commits: `4428223` TLS callback fix; `c5c2453` read-only CA export
 - Worktrees: `D:\LTTSTUDIOSAPP-vps-v4`, `D:\LTT-VM-Promox-v4`
 
@@ -117,6 +119,12 @@ is fabricated here.
 - Post-rebase Playwright local desktop/mobile passed with no page errors,
   unexpected console errors, failed requests or 5xx responses. Production
   owner lookup returned exactly one canonical user ID without credential output.
+- Second reconciliation onto `main` `55691feb` was clean. The only affected
+  regression from the new upstream LLM test was repaired at `b61d6652`: it now
+  authenticates protected `/health`, reads the deployed `tran.images` schema,
+  and fails closed instead of adding an undeclared skip. Authenticated live
+  comparison passed **4/4**, skip sentinel PASS, targeted ruff/compile/diff
+  PASS, and secret scan **3,650 files / 893,571 lines / 0 findings**.
 
 The OVH static-pool path now journals/read-backs VM create/config, DHCP plus
 bandwidth, mapping, boot and destroy; ambiguous cleanup retains associations in
