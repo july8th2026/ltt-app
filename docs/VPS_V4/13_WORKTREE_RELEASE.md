@@ -2,6 +2,25 @@
 
 Trạng thái: IMPLEMENTATION CHECKPOINT, chưa deploy hay nghiệm thu live.
 
+## Bằng chứng release 2026-09-14
+
+- Commit release: `e2b118c6014492d6be53f1862ddd1aa407fa677f`; repository độc lập
+  `D:\LTTSTUDIOSAPP-runtime\release-e2b118c6-lf`, HEAD đúng và status sạch.
+- Clone đầu dùng autocrlf=true làm hash nguồn frontend khác; builder chặn
+  đúng trước deploy. Clone lại với core.autocrlf=false giữ hash package.json
+  đúng byte nguồn task; không đổi frontend hoặc core.autocrlf của cây khác.
+  Tham chiếu: https://git-scm.com/docs/git-config#Documentation/git-config.txt-coreautocrlf.
+- `python -m alembic heads`: đúng một head `f4a7c2d9e610`.
+- `python tools/build_release.py --output D:/LTTSTUDIOSAPP-runtime/packages-e2b118c6-lf`:
+  PASS, 4469 files, 146.4 MB, secret scan 0 finding. ZIP SHA-256
+  `def98577f79508afb6ac5c826dea27536f681308accf859c4c51d3e2040fe191`.
+- Acquisition + sellable-capacity batch: **49 PASS/2,74 giây**, không gate tổng.
+- Preflight DB production chỉ SELECT trong READ ONLY transaction: head hiện
+  `a3f7c214e8b9`, chưa bảng V4; thiếu CA/TLS-name/rollout references. Đọc lần
+  một có 3 running LTT LLM/1 queued; lần hai có 4 running, cả 4 heartbeat fresh.
+  Không restart worker/web/voice khi việc ngoài VPS đang chạy. Cần cửa sổ
+  drain phù hợp, không tự hủy job hoặc tắt admission của app khác.
+
 ## Authority và nguồn bất biến
 
 PO cập nhật 2026-09-14: canonical đã ngừng; phiên VPS tự tiếp tục trên

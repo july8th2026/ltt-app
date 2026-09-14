@@ -15,6 +15,11 @@
   release immutable và rollback đang được chuẩn bị trong `13_WORKTREE_RELEASE.md`.
 - Hiện gate PID 10984 của phiên khác giữ CPU/Postgres; chưa được chạy build,
   batch nặng hay deploy chồng lên. Đây là chờ tài nguyên, không phải gate của VPS.
+  **Sau đó khóa đã nhả:** release builder và batch hẹp 49 PASS đã chạy.
+- B08 — Cửa sổ deploy production: preflight read-only đo 3 rồi 4 LTT LLM job
+  running, lần cuối 4 heartbeat còn fresh và 1 queued. Không tự restart/hủy
+  việc của app khác. Release đã đóng gói; cần drain/cửa sổ vận hành trước
+  installer restart dịch vụ. Không nhầm việc này với phase-stop hay OVH admin approval.
 
 Bảng discovery dưới đây giữ bằng chứng thời điểm trước; cập nhật trên thay thế
 trạng thái triển khai B04/B07 cũ, không phải chứng cứ live đã hoàn thành.

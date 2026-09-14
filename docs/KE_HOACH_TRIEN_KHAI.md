@@ -4008,6 +4008,10 @@ Quyết định: Q124. Hồ sơ canonical: `docs/VPS_V4/`. Nhánh riêng:
   defer job không mua/thu credit lại. Bounded acquisition readiness đã có code;
   test acquisition mới 33 PASS và GUI pending owner/outsider desktop/mobile PASS.
   Chưa deploy/checkout/tạo IP hay VM; không tính các bước live này là hoàn thành.
+  Release snapshot e2b118c6 đã đóng gói PASS, 146,4 MB/secret scan 0 finding;
+  acquisition/capacity batch 49 PASS. Backup data/secrets riêng PASS, custom dump
+  header verified. B08: production có 4 LTT LLM job heartbeat fresh, cần cửa sổ
+  drain trước installer restart; không tự hủy việc ngoài VPS.
   **14/09/2026 checkpoint:** helper gateway đã cài và kiểm live fail-closed;
   protected removal RC 5, conflict RC 4, health `ok`, hash hai tệp bảo vệ không
   đổi. Đã chuẩn bị đúng một giỏ OVH chưa thanh toán cho một IPv4 SG/SGP,

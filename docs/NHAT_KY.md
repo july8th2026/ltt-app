@@ -12,6 +12,27 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-14 — Release bất biến và backup trước cửa sổ deploy VPS
+
+- Sau gate PID 10984 nhả CPU/Postgres, tạo repo release riêng đúng commit
+  e2b118c6. Clone đầu autocrlf=true làm hash byte frontend khác và builder chặn;
+  tra tài liệu Git, clone lại core.autocrlf=false, hash nguồn khớp và status sạch.
+  Không sửa frontend/cấu hình git/main của phiên khác, không xóa bản clone lỗi.
+- `python -m pytest tests/test_1262_vps_ovh_acquisition.py tests/test_1020_vps_sellable_capacity.py -q`:
+  **49 PASS, 2,74 giây**. Release builder PASS: 4469 files, 146,4 MB, secret
+  scan 0 finding; ZIP SHA-256 và đường dẫn ở 13_WORKTREE_RELEASE. Alembic heads
+  đúng một f4a7c2d9e610. Đây không phải full gate hoặc deployed evidence.
+- Preflight production chỉ READ ONLY: DB a3f7c214e8b9, chưa bảng V4; CA/TLS-name/
+  rollout references còn thiếu. Có 3 rồi 4 LTT LLM running job/1 queued, cả 4
+  heartbeat fresh; chưa restart/hủy job/tắt admission của app khác. B08 cửa sổ
+  drain cần giải quyết trước installer, không phải OVH per-order admin approval.
+- Chạy `powershell -NoProfile -ExecutionPolicy Bypass -File deploy/windows/backup.ps1
+  -Root C:/LTTPlatform -BackupDir D:/LTTBackups/vps-v4-e2b118c6
+  -SecretsDir D:/LTTBackups-secrets/vps-v4-e2b118c6 -IncludeSecrets`: PASS.
+  Data zip 20260914_172129 có 3 entries; secrets zip riêng có 1 entry.
+  Mở data ZIP độc lập xác minh đúng một dump, 54645221 bytes, header PGDMP.
+  Chưa restore drill, chưa deploy/activate/checkout/tạo IP/VM, không gate tổng.
+
 ## 2026-09-14 — Khóa delivery 60 phút, retain VM/IP và tiếp tục từ worktree
 
 - PO chọn giữ VM stopped/IP, delivery tối đa 60 phút; ban đầu bàn giao canonical,
