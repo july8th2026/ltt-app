@@ -307,7 +307,26 @@ class CongVlm:
             raise HuyError(str(ct.get("ly_do") or "huy theo yeu cau"), chi_tiet=ct)
         if ma == 413:
             ct = than if isinstance(than, dict) else {}
-            raise VuotNganSachError("yeu cau vuot tran cua cong", chi_tiet=ct)
+            # 🔴 CONG DA GUI DU THONG TIN, TA TUNG VUT NO DI.
+            #
+            #    `llm_gateway/ngan_sach.py` nem kem ba truong va `api.py:855`
+            #    tra chung trong `detail`:
+            #
+            #        {"ly_do": ..., "truong": "images", "tran": 4, "thay": 5}
+            #
+            #    Ban cu thay ca ba bang mot chuoi cung: "yeu cau vuot tran cua
+            #    cong". Do 14/09 tren production, khach gui 5 anh nhan dung cau
+            #    ay — tieng Viet khong dau, tren mot API tieng Anh, va **khong
+            #    noi tran nao, tran bao nhieu, truong nao**. Khach khong the
+            #    sua yeu cau cua ho tu mot thong diep nhu the.
+            #
+            # ⛔ Khong tu dat ten truong moi: giu nguyen ten cong da dung, va
+            #    de tang HTTP dich sang `field`/`limit`/`actual` mot lan o
+            #    `server/api`. Dich hai lan la hai ban dich se troi khoi nhau.
+            chi = ct.get("detail") if isinstance(ct.get("detail"), dict) else ct
+            ly_do = str((chi or {}).get("ly_do") or "").strip()
+            raise VuotNganSachError(ly_do or "yeu cau vuot tran cua cong",
+                                    chi_tiet=chi or ct)
         if ma == 404:
             raise CongVlmError(f"model '{model}' khong co hoac chua duoc mo")
         if ma == 504:

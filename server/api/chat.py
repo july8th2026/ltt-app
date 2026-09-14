@@ -43,7 +43,8 @@ from platform_core.public_api.errors import (insufficient_credit,
                                              invalid_request,
                                              model_not_found,
                                              payload_too_large,
-                                             service_unavailable)
+                                             service_unavailable,
+                                             tran_bi_vuot)
 from platform_core.public_api.principal import Principal
 from platform_core.public_api.protocol import SYNC_BILLED_MAX_SECONDS
 from platform_core.public_api.scopes import SCOPE_JOBS_CREATE
@@ -551,7 +552,16 @@ def _finish_chat(*, db, sach: dict, principal, record, request_id: str,
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
         phong_cho.ghi_ket_thuc(waiter_id, "tham_so_sai")
-        raise invalid_request(str(e)) from None
+        # 🔴 NOI RO TRAN NAO, BAO NHIEU, VA KHACH GUI BAO NHIEU.
+        #
+        #    Do 14/09 tren production: gui 5 anh -> 400 voi detail
+        #    "yeu cau vuot tran cua cong". Khach khong sua duoc yeu cau tu mot
+        #    cau nhu the — ho khong biet tran la 4, khong biet la tran ANH.
+        #
+        #    Cong may B da gui san `{truong, tran, thay}`; day la cho dich
+        #    chung sang ten cong khai MOT LAN.
+        raise invalid_request(str(e),
+                              **tran_bi_vuot(e.chi_tiet)) from None
     except YeuCauSaiError as e:
         # 🔴 LOI CUA KHACH, KHONG PHAI CUA MAY. Do duoc 13/09 (L-09): mot anh
         #    hong lam may B tra dung chuan

@@ -72,9 +72,26 @@ def test_413_nem_VuotNganSachError_khong_phai_loi_provider():
     c = CongVlm(goi=_goi_gia(413, {"detail": {"truong": "input_tokens", "tran": 65536}}))
     with pytest.raises(VuotNganSachError) as e:
         c.chat(model="qwen38-api", messages=[])
-    assert e.value.chi_tiet["detail"]["truong"] == "input_tokens"
+    # 🔴 HINH DANG DOI 14/09/2026, VA DOI CO CHU Y.
+    #
+    #    Truoc: `chi_tiet` la ca than tra ve, nen nguoi doc phai tu boc
+    #    `chi_tiet["detail"]["truong"]`. Khong ai boc ca — `server/api` vut
+    #    thang `chi_tiet` di va thay bang mot chuoi cung "yeu cau vuot tran cua
+    #    cong". Do 14/09 tren production: khach gui 5 anh nhan dung cau ay, va
+    #    khong biet tran la 4, cung khong biet do la tran ANH.
+    #
+    # ⇒ Nay `cong_vlm` BOC san mot lop, nen `{truong, tran, thay}` nam ngay tren
+    #   mat va `errors.tran_bi_vuot` doc thang duoc. Y dinh cua phep kiem khong
+    #   doi: 413 phai MANG CHI TIET di tiep, va khong duoc tinh la loi provider.
+    assert e.value.chi_tiet["truong"] == "input_tokens"
+    assert e.value.chi_tiet["tran"] == 65536
     assert not isinstance(e.value, CongVlmError), \
         "may B khong hong — khong duoc danh dau loi cho key vi mot yeu cau qua to"
+
+    # Va chi tiet ay phai di duoc toi ten CONG KHAI ma khach doc.
+    from platform_core.public_api.errors import tran_bi_vuot
+    assert tran_bi_vuot(e.value.chi_tiet) == {
+        "field": "input_tokens", "fields": ["input_tokens"], "limit": 65536}
 
 
 def test_404_model_chua_mo_thi_la_CongVlmError():

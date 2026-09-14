@@ -42,7 +42,8 @@ from platform_core.public_api.errors import (insufficient_credit,
                                              invalid_request,
                                              model_not_found,
                                              payload_too_large,
-                                             service_unavailable)
+                                             service_unavailable,
+                                             tran_bi_vuot)
 from platform_core.public_api.principal import Principal
 from platform_core.public_api.protocol import (STREAM, PublicOperationContract)
 from platform_core.public_api.scopes import SCOPE_JOBS_CREATE
@@ -424,7 +425,28 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         #    cảm không). `ly_do=%s` ở dòng trên đã giữ đủ cho người trực.
         raise service_unavailable("The model is busy right now.",
                                   retry_after=getattr(e, "thu_lai_sau_s", 30)) from None
-    except (VuotNganSachError, CongVlmError) as e:
+    except VuotNganSachError as e:
+        # 🔴 TACH KHOI `CongVlmError` — hai loi nay KHAC LOAI, va gop chung la
+        #    noi doi voi khach hai lan cung luc.
+        #
+        #    Ban cu tra **503 "The model could not serve this request."** cho
+        #    ca hai. Voi `VuotNganSachError` thi ca hai nua deu sai:
+        #
+        #      · 503 noi "may dang ban, thu lai sau" — nhung yeu cau nay QUA
+        #        LON, va thu lai mot nghin lan cung hong. Khach dot thoi gian
+        #        cua ho va GPU cua ta vao mot vong lap khong bao gio thanh cong.
+        #      · thong diep khong noi TRAN NAO bi vuot, tran BAO NHIEU, hay
+        #        truong NAO — trong khi cong may B da gui du ca ba.
+        #
+        # ⇒ Day la **400**, `retry: never`, kem `field`/`limit`/`actual`.
+        thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
+        db.commit()
+        _release_ticket("tham_so_sai")
+        log.info("mot cuc: yeu cau vuot tran user=%s: %s",
+                 principal.user_id[:8], e)
+        raise invalid_request(str(e),
+                              **tran_bi_vuot(getattr(e, "chi_tiet", None))) from None
+    except CongVlmError as e:
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
         _release_ticket("loi")

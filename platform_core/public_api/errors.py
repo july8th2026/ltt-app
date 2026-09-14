@@ -204,6 +204,54 @@ def problem_for_status(status: int, detail: object = "", *, instance: str = "",
                       instance=instance, request_id=request_id)
 
 
+def tran_bi_vuot(chi_tiet: object) -> dict:
+    """Dich `{truong, tran, thay}` cua cong may B sang ten CONG KHAI.
+
+    🔴 VI SAO CO HAM NAY. Do 14/09/2026 tren production: khach gui 5 anh nhan
+
+           400 invalid_request  detail="yeu cau vuot tran cua cong"
+
+       Khong noi tran NAO, tran BAO NHIEU, hay truong NAO. Khach khong the sua
+       yeu cau cua ho tu mot thong diep nhu vay — va do la dinh nghia cua mot
+       loi khong hanh dong duoc.
+
+    ⭐ Thong tin AY DA CO SAN. `llm_gateway/ngan_sach.py` nem kem ba truong va
+       `api.py` tra chung trong than 413:
+
+           {"ly_do": ..., "truong": "images", "tran": 4, "thay": 5}
+
+       Tang HTTP cu vut het roi thay bang mot chuoi cung. Ham nay chi lam mot
+       viec: **dich ten**, mot lan, o mot cho.
+
+    ⛔ Dich o MOT cho vi dich hai cho la hai ban dich se troi khoi nhau — cung
+       ly le `costing.py` goi la "parallel engines". `chat.py` va `streaming.py`
+       deu goi ham nay.
+
+    Tra `{}` khi khong co gi dang noi, de ben goi cu `**` vao duoc ma khong phai
+    kiem: mot loi khong co chi tiet van phai la mot loi hop le.
+    """
+    if not isinstance(chi_tiet, dict):
+        return {}
+    ra: dict = {}
+    truong = str(chi_tiet.get("truong") or "").strip()
+    if truong:
+        ra["field"] = truong
+        ra["fields"] = [truong]
+    try:
+        tran = int(chi_tiet.get("tran") or 0)
+    except (TypeError, ValueError):
+        tran = 0
+    if tran > 0:
+        ra["limit"] = tran
+    try:
+        thay = int(chi_tiet.get("thay") or 0)
+    except (TypeError, ValueError):
+        thay = 0
+    if thay > 0:
+        ra["actual"] = thay
+    return ra
+
+
 def invalid_request(detail: object = "", **extra) -> ApiError:
     return ApiError(400, CODE_INVALID_REQUEST, detail, extra=extra or None)
 
