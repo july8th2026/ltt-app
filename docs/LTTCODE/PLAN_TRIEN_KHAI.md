@@ -2,7 +2,8 @@
 
 > Cập nhật 2026-09-14. "Thời gian XD" = ước tính **giờ làm việc của agent** trên
 > máy này (không phải người). Cột % theo effort-share.
-> **Tổng tiến độ ≈ 29% · Còn lại ≈ 100 giờ XD** (chưa gồm logistics: cert EV, R2/CDN, khóa LIVE).
+> **Tổng tiến độ ≈ 31% · Còn lại ≈ 96 giờ XD** (chưa gồm logistics: cert EV, R2/CDN, khóa LIVE).
+> ⭐ 14/09: baseline Tauri **build (5m09s) + installer NSIS/MSI + app CHẠY** (title LTTCODE, WebView2 OK) đã chứng minh trên máy này.
 > Nguồn: `MASTER_IMPLEMENTATION_PLAN.md`, `DECISION_LOCK.md`, `PROGRESS.md`.
 
 ## Tổng quan hạng mục
@@ -11,11 +12,11 @@
 |---|---|---:|---:|---|
 | P00 | Research & Baseline | 100% | 0 | ✅ |
 | P01 | Decision Lock + Architecture | 100% | 0 | ✅ |
-| P02 | Harness Pin & Reproducible Baseline | 70% | ~1 | 🟡 |
+| P02 | Harness Pin & Reproducible Baseline | 90% | ~0.5 | 🟢 |
 | P03 | LTT Compatibility Harness | 55% | ~3 | 🟡 |
 | P04 | LTT Provider Adapter `llm-ltt` | 92% | ~4 | 🟢 |
 | P05 | LTT Auth & Bootstrap (MVP) | 15% | ~10 | 🟡 |
-| P06 | Desktop Runtime / Sidecar (Tauri) | 10% | ~14 | 🟡 đang build |
+| P06 | Desktop Runtime / Sidecar (Tauri) | 30% | ~11 | 🟡 build+run OK; còn sidecar |
 | P07 | Core Coding Agent UX | 0% | ~12 | ⬜ |
 | P08 | Session / Sandbox / Approval | 5% | ~9 | ⬜ |
 | P09 | Release Control Plane (server) | 5% | ~15 | ⬜ (chờ R2/CDN) |
