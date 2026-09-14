@@ -76,6 +76,65 @@ def _may_b(cong: int) -> dict:
         return {}
 
 
+class BoGpu(threading.Thread):
+    """Duty cycle THAT cua hai card, 500 ms/mau, qua MOT phien SSH thuong truc.
+
+    ⛔ Vi sao khong dung Task Manager cua Windows: no ve engine **3D**, con
+       llama.cpp chay tren engine **Compute_0/CUDA**. Card dang sinh token o
+       1787 MHz / 316 W van hien "0 %" o do — do la ly do bao cao "3090 chay
+       nho giot" ngay 14/09, va `nvidia-smi` bac bo no (do duoc: 76 % so mau
+       >= 50 %, mot mach 36 giay lien).
+    """
+
+    def __init__(self, nhip_ms: int = 500):
+        super().__init__(daemon=True)
+        self.nhip_ms = nhip_ms
+        self.mau: list[tuple] = []
+        self._p = None
+
+    def run(self) -> None:
+        import subprocess
+        khoa_ssh = pathlib.Path.home() / ".ssh" / "nexus_b"
+        try:
+            self._p = subprocess.Popen(
+                ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=8",
+                 "-i", str(khoa_ssh), f"lengo@{MAY_B}",
+                 "nvidia-smi --query-gpu=index,utilization.gpu,clocks.sm,"
+                 f"power.draw --format=csv,noheader,nounits --loop-ms={self.nhip_ms}"],
+                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        except Exception:                   # noqa: BLE001
+            return
+        t0 = time.monotonic()
+        for dong in self._p.stdout:         # type: ignore[union-attr]
+            try:
+                c = dong.decode("utf-8", "replace").strip().split(", ")
+                self.mau.append((round(time.monotonic() - t0, 2), int(c[0]),
+                                 int(c[1]), int(c[2]), float(c[3])))
+            except Exception:               # noqa: BLE001
+                pass
+
+    def dung(self) -> None:
+        if self._p is not None:
+            self._p.kill()
+
+    def duty(self, gpu: int) -> dict:
+        """Ti le mau card `gpu` that su dang tinh, va mach lien tuc dai nhat."""
+        v = [m for m in self.mau if m[1] == gpu]
+        if not v:
+            return {}
+        ban = [m[2] >= 50 for m in v]
+        dai = cur = 0
+        for b in ban:
+            cur = cur + 1 if b else 0
+            dai = max(dai, cur)
+        return {"mau": len(v), "ban_pc": round(100 * sum(ban) / len(v)),
+                "util_tb": round(sum(m[2] for m in v) / len(v)),
+                "w_tb": round(sum(m[4] for m in v) / len(v)),
+                "mach_dai_s": round(dai * self.nhip_ms / 1000, 1),
+                "chuoi": "".join("#" if m[2] >= 50 else ("+" if m[2] > 5 else ".")
+                                 for m in v)}
+
+
 class BoLayMau(threading.Thread):
     """Chụp CẢ HAI máy mỗi `nhip_s` giây."""
 
@@ -148,11 +207,21 @@ def _mot_job(i: int, model: str, ra_token: int, ket: list) -> None:
                 r = c.get(f"{GOC_API}/jobs/{jid}", headers=H)
                 d = r.json()
                 if d.get("status") in ("succeeded", "failed", "cancelled"):
-                    u = ((d.get("result") or {}).get("usage") or {})
+                    r = d.get("result") or {}
+                    u = r.get("usage") or {}
+                    # ⭐ GIU NGUYEN VAN, khong chi dem token: "check ket qua tra
+                    #    ve" la mot menh de rieng — mot lo job co the dung gio,
+                    #    dung suat, dung GPU va van tra ve rong (memory "model
+                    #    nha tra ve rong khoang mot nua luot").
+                    van = r.get("content") or r.get("text") or ""
+                    if not van and isinstance(r.get("choices"), list) and r["choices"]:
+                        van = (r["choices"][0].get("message") or {}).get("content") or ""
+                    giay = round(time.monotonic() - t0, 1)
+                    ra = u.get("output_tokens") or u.get("completion_tokens") or 0
                     ket.append({"i": i, "model": model, "pha": d["status"],
-                                "ma": 200, "giay": round(time.monotonic() - t0, 1),
-                                "token_ra": u.get("output_tokens")
-                                or u.get("completion_tokens")})
+                                "ma": 200, "giay": giay, "token_ra": ra,
+                                "ky_tu": len(van), "van": van,
+                                "toc": round(ra / max(giay, 0.1), 1)})
                     return
             ket.append({"i": i, "model": model, "pha": "HET GIO", "ma": 0})
     except Exception as e:                  # noqa: BLE001
@@ -190,6 +259,9 @@ def main() -> int:
     ap.add_argument("--so-job", type=int, default=9,
                     help="6 de lap day + phan du de tao hang cho")
     ap.add_argument("--ra", type=int, default=12000, help="max_tokens moi job")
+    ap.add_argument("--model", default="",
+                    help="chi mot model (vd ltt-3.8) — bai do RIENG mot card; "
+                         "bo trong = tron hai model nhu cu")
     ap.add_argument("--ban-ghi", default="ket_sau_suat.json")
     a = ap.parse_args()
 
@@ -207,10 +279,14 @@ def main() -> int:
 
     bo = BoLayMau(url)
     bo.start()
+    gpu = BoGpu()
+    gpu.start()
     ket: list = []
-    luong = [threading.Thread(target=_mot_job,
-                              args=(i, "ltt-3.8" if i % 2 == 0 else "ltt-3.5",
-                                    a.ra, ket))
+
+    def _model(i: int) -> str:
+        return a.model or ("ltt-3.8" if i % 2 == 0 else "ltt-3.5")
+
+    luong = [threading.Thread(target=_mot_job, args=(i, _model(i), a.ra, ket))
              for i in range(a.so_job)]
     print(f"== nop {a.so_job} job, max_tokens={a.ra} ==")
     for t in luong:
@@ -219,6 +295,7 @@ def main() -> int:
     for t in luong:
         t.join()
     bo.dung(); bo.join(timeout=8)
+    gpu.dung(); gpu.join(timeout=5)
 
     co = [m for m in bo.mau if "tong" in m]
     dinh = max((m["tong"] for m in co), default=0)
@@ -236,50 +313,88 @@ def main() -> int:
     print("\n== KET QUA ==")
     for k in sorted(ket, key=lambda x: x["i"]):
         print(f"   job {k['i']} {k['model']:9s} {k['pha']:10s} "
-              f"{k.get('giay', '-')!s:>7}s  token_ra={k.get('token_ra')}")
+              f"{k.get('giay', '-')!s:>7}s  token_ra={k.get('token_ra')}"
+              f"  ky_tu={k.get('ky_tu')}  {k.get('toc')} tok/s")
 
     print("\n== BA MENH DE ==")
-    # 🔴 KY VONG DA SUA 14/09/2026 — va day la NGAN THU TU: he DUNG, ky vong SAI.
+    # 🔴 KY VONG DOI LAI 3/CARD NGAY 14/09/2026 — sua HE, khong sua phep do.
     #
-    #    Ban dau toi doi 3 suat/card va tong 6 cho mot lo job. Do duoc: dung 2
-    #    moi card, 4 tong, 5 job xep hang — on dinh suot luot.
+    #    Luot dau truot: do duoc dung 2 suat moi card, on dinh, tren ca hai card.
+    #    Toi da tam xep no vao ngan "he dung, ky vong sai" va ha ky vong xuong 2.
+    #    Chu san pham bac bo 14/09: *"khong tro slot ve 2, vi ta da co hang cho
+    #    job roi"*. Nguyen nhan la mot hang so nam CHET trong `luat_nhan.tran_nen`
+    #    (`so_slot - 1`): no tru mot suat cho lop TUONG_TAC, trong khi ca lo job
+    #    deu mang `lop=NEN` (`job_runner.py:373`). Nay no la tham so
+    #    `ThamSo.chua_slot_tuong_tac`, mac dinh 0 ⇒ nen dung HET slot.
     #
-    #    Nguyen nhan la mot LUAT CO Y, `luat_nhan.py:170`:
-    #
-    #        if sum(1 for g in giu if g.lop != TUONG_TAC) >= tran_nen(so_slot)
-    #        tran_nen(3) = 3 - 1 = 2
-    #
-    #    Cua JOB gan `lop=NEN` (`job_runner.py:373`), cua sync/stream gan
-    #    `lop=TUONG_TAC` (`luong.py:368`). Luat chua DUNG MOT suat moi card cho
-    #    nguoi dang ngoi doi, de mot lo job nen khong bao gio lam nghet ca card.
-    #
-    # ⇒ Tran dung cua MOT LO JOB la 2/card = 4. Sau suat chi dat duoc khi co CA
-    #   HAI loai luu luong: 2 nen + 1 tuong tac moi card.
-    #
-    # ⛔ Doi 3/card o day la doi he PHA chinh luat no dang thi hanh — va neu toi
-    #    "sua" cho no dat thi toi da go mat lop bao ve nguoi dung tuong tac.
-    m1 = all(v == 2 for v in dinh_res.values()) and len(dinh_res) == 2
-    m2 = dinh >= 4 and song_song
+    # ⭐ Nguoi tuong tac KHONG mat bao ve: `NEN_NHUONG` van chan moi luot nen MOI
+    #    khi co nguoi tuong tac dang CHO, nen suat vua nha van ve tay ho truoc.
+    mot_card = bool(a.model)
+    so_slot_ky_vong = 3
+    if mot_card:
+        ten_res = "ltt_38_3090" if "3.8" in a.model else "ltt_35_5060"
+        m1 = dinh_res.get(ten_res, 0) == so_slot_ky_vong and len(dinh_res) == 1
+        chi1 = f"card {ten_res} phai dat {so_slot_ky_vong} · dinh do: {dinh_res}"
+    else:
+        m1 = all(v == so_slot_ky_vong for v in dinh_res.values()) and len(dinh_res) == 2
+        chi1 = f"dinh theo tai nguyen: {dinh_res}"
+    tong_ky_vong = so_slot_ky_vong * (1 if mot_card else 2)
+    m2 = dinh >= tong_ky_vong and (mot_card or song_song)
     m3 = bool(cap)
     for ten, dat, chi in (
-            ("M1  moi card dat tran NEN = 2 suat", m1, f"dinh theo tai nguyen: {dinh_res}"),
-            ("M2  hai card song song, tong 4 (lo job thuan)", m2,
+            (f"M1  moi card dat {so_slot_ky_vong} suat", m1, chi1),
+            (f"M2  tong dat {tong_ky_vong} suat", m2,
              f"dinh tong={dinh} · thay ca hai cung luc={song_song}"),
             ("M3  hang cho vao dung khi mot suat nha", m3,
              f"{len(cap)} cap ban giao: {cap[:3]}")):
         print(f"   [{'DAT ' if dat else 'TRUOT'}] {ten}  — {chi}")
+
+    # ── M4: KET QUA TRA VE, va no la mot menh de RIENG ───────────────────────
+    # ⛔ Ba menh de tren deu XANH duoc voi mot lo job tra ve RONG: chung chi do
+    #    suat, gio va hang doi. Model nha tung tra rong khoang mot nua luot, nen
+    #    "co ket qua" phai duoc doi rieng chu khong suy ra tu "job succeeded".
+    #
+    # ⭐ Nguong 20 tok/s KHONG phai so dep: do 14/09, mot lo 3 job tren card 2
+    #    suat cho 13,7 va 18,8 tok/s (vi job thu ba xep hang), con 3 job tren 3
+    #    suat cho 33-40. Nguong nam GIUA hai cum ay nen no phan biet duoc chung.
+    xong = [k for k in ket if k.get("pha") == "succeeded"]
+    rong = [k["i"] for k in xong if not k.get("ky_tu")]
+    cut = [k["i"] for k in xong if 0 < (k.get("ky_tu") or 0) < 200]
+    cham = [k["i"] for k in xong if (k.get("toc") or 0) < 20]
+    m4 = bool(xong) and not rong and not cut and not cham
+    print(f"   [{'DAT ' if m4 else 'TRUOT'}] M4  ket qua tra ve co that va day du"
+          f"  — rong={rong} cut={cut} cham(<20 tok/s)={cham}")
+
+    # ── M5: GPU LIEN MACH ────────────────────────────────────────────────────
+    # ⛔ Task Manager cua Windows ve bon engine **3D/Copy/Video Encode/Decode**,
+    #    KHONG ve **Compute_0 (CUDA)** — card dang sinh token o 343 W / 1665 MHz
+    #    / 76 °C van hien "Utilization 0 %" o do. Bao cao "3090 chay nho giot"
+    #    ngay 14/09 den tu o ay. `nvidia-smi` bac bo: mot job 11.000 token cho
+    #    MOT mach lien tuc 178,0 giay, 95 % so mau >= 50 %. Menh de nay ghim lai.
+    duty = {g: gpu.duty(g) for g in (0, 1)}
+    card_gpu = 0 if (not mot_card or "3.8" in a.model) else 1
+    d = duty.get(card_gpu) or {}
+    m5 = (d.get("ban_pc", 0) >= 60) if d else False
+    print(f"   [{'DAT ' if m5 else 'TRUOT'}] M5  GPU{card_gpu} lien mach (>=60% mau ban)"
+          f"  — ban={d.get('ban_pc')}% util_tb={d.get('util_tb')}%"
+          f" {d.get('w_tb')}W mach dai nhat={d.get('mach_dai_s')}s")
+    if d.get("chuoi"):
+        print("       " + d["chuoi"][:200])
 
     print("\n== DOI CHUNG ==")
     print(f"   may B hoan (deferred) : {hoan}   (phai la 0)")
     print(f"   dinh job xep hang     : {dinh_cho}")
     print(f"   job hong              : {len(hong)}  {hong[:2] if hong else ''}")
 
-    pass_het = m1 and m2 and m3 and hoan == 0 and not hong
+    pass_het = m1 and m2 and m3 and m4 and m5 and hoan == 0 and not hong
     print(f"\n== {'PASS' if pass_het else 'CHUA PASS'} ==")
     pathlib.Path(a.ban_ghi).write_text(
         json.dumps({"ket": ket, "mau": bo.mau, "dinh": dinh,
                     "dinh_res": dinh_res, "cap_ban_giao": cap,
-                    "deferred": hoan, "pass": pass_het},
+                    "deferred": hoan, "gpu_duty": duty, "gpu_mau": gpu.mau,
+                    "menh_de": {"m1": m1, "m2": m2, "m3": m3, "m4": m4,
+                                "m5": m5},
+                    "pass": pass_het},
                    ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"   [ban ghi] {a.ban_ghi}")
     return 0 if pass_het else 1

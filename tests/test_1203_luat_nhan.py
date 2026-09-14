@@ -51,12 +51,39 @@ def test_pool_0_la_hanh_vi_cu_chi_dem_slot():
 
 # ── 3. nền / nội bộ ──────────────────────────────────────────────────────────
 
-def test_nen_chi_duoc_toi_da_n_tru_1_slot():
+def test_nen_dung_HET_slot_khi_khong_chua_suat_nao():
+    """Chốt 14/09/2026: một lô job thuần phải lấp ĐẦY card, không dừng ở N−1.
+
+    ⛔ Ca này thay ca cũ `test_nen_chi_duoc_toi_da_n_tru_1_slot`, và nó thay vì
+       sửa vì hai ca ấy khẳng định hai điều NGƯỢC nhau — giữ cả hai là giữ một
+       phép kiểm luôn đỏ. Hành vi cũ không mất: nó còn nguyên ở ca
+       `test_chua_slot_tuong_tac_1_thi_nen_dung_o_n_tru_1` ngay dưới, nay là một
+       LỰA CHỌN khai ra chứ không phải hằng số nằm chết trong hàm.
+
+    Đo được trước khi sửa (job thơ 3.8, 14/09): ba job nộp cùng lúc trên card 3
+    slot chỉ chạy hai; lượt thứ ba chờ 30,6 giây trong khi GPU còn một suất
+    trống — 3090 tụt về 0 % đúng 1,5 giây ở nhịp bàn giao.
+    """
     giu = [luot(f"n{i}", user=f"u{i}", lop=L.NEN) for i in range(3)]
-    assert L.xet(luot("y", user="moi", lop=L.NEN), giu, [], TS4) == L.PhanXu(
+    assert L.xet(luot("y", user="moi", lop=L.NEN), giu, [], TS4).nhan
+    # ...và chỉ dừng khi HẾT slot thật.
+    giu4 = giu + [luot("n3", user="u3", lop=L.NEN)]
+    assert L.xet(luot("y", user="moi", lop=L.NEN), giu4, [], TS4) == L.PhanXu(
         False, L.CHO_SLOT)
-    # ...nhưng TƯƠNG TÁC vẫn vào được slot chừa.
-    assert L.xet(luot("y", user="moi"), giu, [], TS4).nhan
+
+
+def test_chua_slot_tuong_tac_1_thi_nen_dung_o_n_tru_1():
+    """Đối chứng: cùng dữ liệu, chỉ đổi MỘT tham số, kết quả phải đảo.
+
+    Thiếu ca này thì ca trên không chứng minh được gì — một `xet()` luôn trả
+    `nhan=True` cho lớp NEN cũng làm nó xanh (memory "số 0 cần đối chứng").
+    """
+    ts = L.ThamSo(so_slot=4, pool=POOL, chua_slot_tuong_tac=1)
+    giu = [luot(f"n{i}", user=f"u{i}", lop=L.NEN) for i in range(3)]
+    assert L.xet(luot("y", user="moi", lop=L.NEN), giu, [], ts) == L.PhanXu(
+        False, L.CHO_SLOT)
+    # ...và TƯƠNG TÁC vẫn vào được suất chừa.
+    assert L.xet(luot("y", user="moi"), giu, [], ts).nhan
 
 
 def test_nen_nhuong_nguoi_tuong_tac_dang_cho():
@@ -165,5 +192,7 @@ def test_doi_chung_luat_quen_ngan_sach_se_bi_bat(monkeypatch):
 def test_tran_tai_khoan_va_tran_nen_hop_ly_moi_n(n):
     assert 1 <= L.tran_tai_khoan(n) <= n
     assert 1 <= L.tran_nen(n) <= n
-    if n > 1:
-        assert L.tran_nen(n) == n - 1
+    #: mặc định KHÔNG chừa suất nào ⇒ nền chạm trần slot.
+    assert L.tran_nen(n) == n
+    #: chừa 1 ⇒ hành vi cũ, và sàn `max(1, …)` giữ cho N = 1 vẫn chạy được nền.
+    assert L.tran_nen(n, 1) == max(1, n - 1)

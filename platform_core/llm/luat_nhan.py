@@ -11,8 +11,9 @@ mã lý do đó đi vào sổ lượt để phân tích sau):
   0. nhóm GPU đang mở cửa cho vai trò này        · CHO_RESIDENCY
   1. còn slot                                    · CHO_SLOT
   2. Σ đặt chỗ + lượt này ≤ pool KV (khi pool>0)  · CHO_NGAN_SACH
-  3. nền/nội bộ: ≤ max(1, N−1) slot, và nhường mọi · CHO_SLOT / NEN_NHUONG
-     người tương tác đang chờ
+  3. nền/nội bộ: ≤ max(1, N−`chua`) slot, và nhường   · CHO_SLOT / NEN_NHUONG
+     mọi người tương tác đang chờ (`chua` = 0 mặc
+     định ⇒ nền dùng HẾT slot; xem `tran_nen`)
   4. trần tài khoản ceil(N/2) — CHỈ khi có người   · TRAN_TAI_KHOAN
      khác đang chờ (work-conserving)
   5. whale: ≤1 whale; whale nhường lượt tương tác   · WHALE_NHUONG / WHALE_CHAN
@@ -23,7 +24,9 @@ mã lý do đó đi vào sổ lượt để phân tích sau):
      đang nhường) — chống bỏ đói phiên dài
 
 ⛔ llama.cpp KHÔNG preempt được lượt đang chạy (b10689). Nên thứ tự hàng một mình
-   không cứu người đang chờ màn hình; đòn bẩy thật là CHỪA SLOT (luật 3).
+   không cứu người đang chờ màn hình. Đòn bẩy TỪNG là chừa slot; từ 14/09/2026
+   `chua_slot_tuong_tac` mặc định 0 và đòn bẩy còn lại là `NEN_NHUONG` — suất vừa
+   nhả về tay người tương tác đang chờ, nhưng họ phải đợi hết một lượt đang chạy.
 
 ⭐ VÌ SAO CƯ TRÚ LÀ LUẬT **0** CHỨ KHÔNG PHẢI LUẬT 7 (dual-model 5.3, D01 B).
 
@@ -72,6 +75,9 @@ class ThamSo:
     pool: int = 0
     cho_whale_toi_da_s: float = 30.0
     lao_hoa_s: float = 300.0
+    #: Số suất GIỮ LẠI cho lượt tương tác, không cho nền/nội bộ chạm tới.
+    #: 0 = nền dùng hết slot (mặc định từ 14/09/2026 — xem `tran_nen`).
+    chua_slot_tuong_tac: int = 0
     #: Nhóm GPU của tài nguyên này có đang mở cửa cho vai trò của lượt không.
     #:
     #: 🔴 MẶC ĐỊNH `True`, và mặc định ấy là thứ giữ cho nền tảng chạy: mọi tài
@@ -105,14 +111,25 @@ def tran_tai_khoan(so_slot: int) -> int:
     return max(1, math.ceil(so_slot / 2))
 
 
-def tran_nen(so_slot: int) -> int:
-    """Số slot tối đa cho nền/nội bộ: chừa 1 cho tương tác — khi CÓ gì để chừa.
+def tran_nen(so_slot: int, chua: int = 0) -> int:
+    """Số slot tối đa cho nền/nội bộ. `chua` = số suất GIỮ LẠI cho tương tác.
 
-    🔴 `max(1, …)` KHÔNG phải dè dặt: ở N = 1 (pha 1) "N−1" là 0, tức job nền không
-       bao giờ được chạy. Chừa slot chỉ có nghĩa khi có hơn một slot; ở N = 1 nền
-       vẫn chạy được, và vẫn nhường người tương tác đang CHỜ (luật 3, vế sau).
+    🔴 `chua` MẶC ĐỊNH 0 — nền được dùng HẾT slot (chốt chủ sản phẩm 14/09/2026:
+       *"không trở slot về 2, vì ta đã có hàng chờ job rồi"*). Trước đó hằng số 1
+       nằm chết trong hàm, và hệ quả đo được là một lô 3 job trên card 3 slot chỉ
+       bao giờ chạy 2: lượt thứ ba chờ 30 giây trong khi GPU còn một suất trống.
+
+    ⚠️ Người tương tác KHÔNG mất bảo vệ khi `chua = 0`: vế sau của luật 3
+       (`NEN_NHUONG`) vẫn chặn mọi lượt nền mới khi có người tương tác đang CHỜ,
+       nên suất vừa nhả ra luôn về tay người ngồi đợi màn hình trước hàng job.
+       Thứ mất đi là suất chờ SẴN — người tương tác nay đợi hết một lượt đang
+       chạy (đo 14/09: ~30 s ở `max_tokens=1500`) thay vì vào ngay.
+
+    🔴 `max(1, …)` KHÔNG phải dè dặt: ở N = 1 (pha 1) với `chua = 1` thì "N−1" là
+       0, tức job nền không bao giờ được chạy. Chừa slot chỉ có nghĩa khi có hơn
+       một slot.
     """
-    return max(1, so_slot - 1)
+    return max(1, so_slot - chua)
 
 
 def sap_xep_cho(dang_cho: Iterable[Luot], dang_giu: Iterable[Luot],
@@ -167,7 +184,8 @@ def xet(yc: Luot, dang_giu: Iterable[Luot], dang_cho: Iterable[Luot],
         return PhanXu(False, CHO_NGAN_SACH)
     # 3. nền / nội bộ: chừa ≥1 slot cho tương tác, và nhường người tương tác đang chờ
     if yc.lop != TUONG_TAC:
-        if sum(1 for g in giu if g.lop != TUONG_TAC) >= tran_nen(ts.so_slot):
+        if sum(1 for g in giu if g.lop != TUONG_TAC) >= tran_nen(
+                ts.so_slot, ts.chua_slot_tuong_tac):
             return PhanXu(False, CHO_SLOT)
         if any(c.lop == TUONG_TAC for c in cho_khac):
             return PhanXu(False, NEN_NHUONG)
