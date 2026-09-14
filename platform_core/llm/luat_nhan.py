@@ -128,6 +128,18 @@ def tran_nen(so_slot: int, chua: int = 0) -> int:
     🔴 `max(1, …)` KHÔNG phải dè dặt: ở N = 1 (pha 1) với `chua = 1` thì "N−1" là
        0, tức job nền không bao giờ được chạy. Chừa slot chỉ có nghĩa khi có hơn
        một slot.
+
+    ⛔ HỆ QUẢ PHẢI BIẾT: ở `chua = 0` (mặc định), vế đầu của luật 3 là **mã
+       không bao giờ chạy**. `tran_nen(N, 0) = N`, mà muốn `Σ lượt-không-tương-tác
+       ≥ N` thì tổng lượt đang giữ cũng phải `≥ N` — và luật 1 đã từ chối ở đó
+       rồi, từ chối mọi lớp như nhau. Tức **lớp của lượt ĐANG GIỮ không còn ảnh
+       hưởng gì tới quyết định** trừ khi ai đó đặt `chua ≥ 1`; thứ còn phân biệt
+       là lớp của lượt ĐANG XIN, qua `NEN_NHUONG` ở vế sau.
+
+       Ghi ra đây vì nó đã cắn một lần: `test_1204::test_lease_cu_mode_job_...`
+       chứng minh "lease cũ được đọc là nền" *bằng chính vế đầu ấy*, nên khi
+       `chua` về 0 nó đỏ — không phải vì ánh xạ hỏng, mà vì phép kiểm đo qua một
+       cánh cửa vừa bị khoá. Nó đã được viết lại quanh phép ánh xạ.
     """
     return max(1, so_slot - chua)
 

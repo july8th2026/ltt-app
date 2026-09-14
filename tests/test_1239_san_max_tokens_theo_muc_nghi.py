@@ -172,10 +172,27 @@ def test_san_khong_phat_luot_100_token_cua_model_chua_thay_hong():
         _cua(_xin("ltt-3.8", 100, muc))
 
 
-def test_none_la_loi_ra_that_su_di_duoc():
-    """Thong bao loi mach khach dung `none`. Loi ra ay phai that su di duoc o
-    mot tran ma `medium` tu choi -- neu khong, thong bao la mot loi hua suong."""
-    thap = san_token_ra("ltt-3.5", "none")
-    with pytest.raises(features.ThamSoSai):
-        _cua(_xin("ltt-3.5", thap, "medium"))
-    _cua(_xin("ltt-3.5", thap, "none"))
+def test_none_bi_TU_CHOI_va_loi_noi_ro_dung_cai_gi_thay_the():
+    """`none` DA BI BO 14/09/2026 — va ca nay la ban viet lai, khong phai ban xoa.
+
+    ⛔ Ban cu khang dinh dieu NGUOC LAI: *"loi ra `none` phai that su di duoc o
+       mot tran ma `medium` tu choi"*. No dung khi `none` con trong hop dong.
+       Chot 14/09 go `none` vi do duoc no lam sap chat luong dau ra: 2 token
+       thay vi ~1180 tren cung mot de bai sinh dai. Giu ca cu la giu mot phep
+       kiem luon do; xoa han la mat mot mat cua hop dong.
+
+    ⭐ Nen menh de doi chieu: `none` phai bi TU CHOI, va loi phai **chi duong**
+       — mot loi chi noi "sai" bat khach doan tiep la loi chua hanh dong duoc.
+    """
+    for m in ("ltt-3.5", "ltt-3.8"):
+        thap = san_token_ra(m, "low")
+        with pytest.raises(features.ThamSoSai) as e:
+            _cua(_xin(m, thap, "none"))
+        loi = str(e.value)
+        assert "none" in loi, loi
+        assert "low" in loi, f"loi khong chi duong sang muc thay the: {loi}"
+
+    # doi chung: ba muc con lai VAN di duoc, neu khong thi ca tren vo nghia
+    # (mot `kiem_tham_so` tu choi TAT CA cung lam no xanh).
+    for muc in ("low", "medium", "xhigh"):
+        _cua(_xin("ltt-3.5", san_token_ra("ltt-3.5", muc), muc))

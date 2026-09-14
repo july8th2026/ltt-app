@@ -107,15 +107,49 @@ def test_nguoi_cho_mat_nhip_khong_con_tranh_cho(db):
 
 
 def test_lease_cu_mode_job_duoc_hieu_la_nen(db):
-    """Lease tạo trước multijob (không `lop`) vẫn tính đúng vào trần nền."""
+    """Lease tạo trước multijob (không `lop`) vẫn được ĐỌC là nền.
+
+    ⛔ Cơ chế cũ của ca này CHẾT ngày 14/09/2026, và nó chết lặng lẽ. Bản cũ
+       chứng minh mệnh đề trên bằng cách đẩy 3 lease `mode="job"` lên tài nguyên
+       4 suất rồi đòi lượt nền thứ tư phải bị `CHO_SLOT` — tức dựa hoàn toàn vào
+       `tran_nen(4) = 3`. Từ khi `ThamSo.chua_slot_tuong_tac` mặc định 0 thì
+       `tran_nen(N, 0) = N`, nên **nhánh đầu của luật 3 không bao giờ chạy nữa**:
+       luật 1 (`len(giu) >= so_slot`) chặn trước nó, và luật 1 chặn mọi lớp như
+       nhau. Lớp của lease ĐANG GIỮ chỉ còn đi vào quyết định khi bật núm.
+
+    ⇒ Giữ nguyên bản cũ là giữ một phép kiểm luôn đỏ; xoá nó là mất mệnh đề.
+      Nên nó được viết lại quanh CHÍNH thứ nó đặt tên: phép ánh xạ.
+    """
+    from platform_core.llm import admission
     from platform_core.models import ExecutionLease
 
     for i in range(3):
         db.add(ExecutionLease(resource="llm_remote", slot=i, user_id=f"j{i}",
                               mode="job", holder_id=f"cu{i}"))
     db.commit()
-    lease, ly_do = _xet(db, user_id="job-moi", holder_id="jm", lop=L.NEN, mode="job")
-    assert lease is None and ly_do == L.CHO_SLOT
+    song = (db.query(ExecutionLease)
+            .filter(ExecutionLease.resource == "llm_remote")
+            .order_by(ExecutionLease.slot).all())
+
+    # 1. Ánh xạ: `mode="job"` mà KHÔNG có `lop` phải đọc thành nền...
+    assert [admission._lop_cua(x) for x in song] == [L.NEN, L.NEN, L.NEN]
+    # ...còn mọi mode khác thì không. Thiếu vế này, một `_lop_cua` trả NEN cho
+    # MỌI lease cũng làm vế trên xanh.
+    assert admission._lop_cua(
+        ExecutionLease(resource="llm_remote", slot=9, user_id="s",
+                       mode="stream", holder_id="st")) == L.TUONG_TAC
+
+    # 2. Và lớp ấy phải THẬT SỰ đi vào quyết định. Kiểm ở cấu hình duy nhất còn
+    #    phân biệt được — `chua_slot_tuong_tac=1`, tức hành vi trước 14/09.
+    giu = [L.Luot(id=x.holder_id, user_id=x.user_id, lop=admission._lop_cua(x))
+           for x in song]
+    ts = L.ThamSo(so_slot=4, chua_slot_tuong_tac=1)
+    nen_moi = L.Luot(id="jm", user_id="job-moi", lop=L.NEN)
+    assert L.xet(nen_moi, giu, [], ts) == L.PhanXu(False, L.CHO_SLOT)
+    # đối chứng: cùng ảnh chụp ấy, lượt TƯƠNG TÁC vào được suất chừa.
+    assert L.xet(L.Luot(id="tt", user_id="nguoi"), giu, [], ts).nhan
+
+    # 3. Và trên CSDL thật, với mặc định hiện hành, khách tương tác vẫn vào được.
     lease, ly_do = _xet(db, user_id="khach", holder_id="k")
     assert lease is not None, ly_do
 
