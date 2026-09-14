@@ -82,13 +82,15 @@ list)
     ;;
 health)
     validate_map "$MAP"
-    nft list table ip gwnat >/dev/null
+    addresses=$(ip -4 addr show dev "$WAN")
+    prerouting=$(nft list chain ip gwnat prerouting)
+    postrouting=$(nft list chain ip gwnat postrouting)
     while read -r private public owner; do
         [[ -n ${private:-} && $private != \#* ]] || continue
-        ip -4 addr show dev "$WAN" | grep -Fq " $public/32 " || fail "public IP missing"
-        nft list chain ip gwnat prerouting | grep -Fq "ip daddr $public tcp dport 3389 dnat to $private:3389" || fail "TCP DNAT missing"
-        nft list chain ip gwnat prerouting | grep -Fq "ip daddr $public udp dport 3389 dnat to $private:3389" || fail "UDP DNAT missing"
-        nft list chain ip gwnat postrouting | grep -Fq "ip saddr $private oifname \"$WAN\" snat to $public" || fail "SNAT missing"
+        grep -F " $public/32 " <<< "$addresses" >/dev/null || fail "public IP missing"
+        grep -F "ip daddr $public tcp dport 3389 dnat to $private:3389" <<< "$prerouting" >/dev/null || fail "TCP DNAT missing"
+        grep -F "ip daddr $public udp dport 3389 dnat to $private:3389" <<< "$prerouting" >/dev/null || fail "UDP DNAT missing"
+        grep -F "ip saddr $private oifname \"$WAN\" snat to $public" <<< "$postrouting" >/dev/null || fail "SNAT missing"
     done < "$MAP"
     echo ok
     ;;
