@@ -43,9 +43,17 @@ Khóa ngày 2026-09-12, trước mọi sửa production code.
   chung”. Cho phép extension generic trong registry/server cho metadata điều
   hướng, render vỏ và audit; domain/routes vẫn app-owned. Không cho phép hardcode
   tên VPS trong server hoặc bỏ gate quyền/CSRF.
-- C03: giữ hay destroy VM acceptance sau kiểm thử.
+- C03 **ĐÃ KHÓA 2026-09-14**: giữ đúng VM acceptance ở trạng thái tắt và giữ IP
+  để kiểm tra tiếp. Không destroy VM, không unbind/release IP do test hoàn tất.
+- C05 **ĐÃ KHÓA, CẬP NHẬT 2026-09-14**: ban đầu giao canonical tích hợp/deploy;
+  PO xác nhận phiên canonical đã ngừng và giao phiên VPS tự tiếp tục triển khai
+  từ worktree này. Main và năm tài liệu dirty của phiên khác phải giữ nguyên;
+  gộp main chỉ ở cuối phiên sau nghiệm thu, không merge giữa phase.
+- C06 **ĐÃ KHÓA 2026-09-14**: đơn OVH đã nhận/thanh toán được chờ tối đa
+  60 phút theo timestamp durable trước checkout. Worker defer/read-back, không
+  sleep giữ worker, không mua lại và không trừ credit khách lần nữa.
 - Mọi downtime/reboot/WAN-cut/restore boot và billing **bất ngờ** chỉ được thực hiện
   tại gate tương ứng.
 
-Decision lock này đủ cho offline và admin extension đã được duyệt; C03 vẫn chỉ
-được hỏi ở cleanup live. Không dùng phần chưa khóa để phá hủy live resource.
+Không dùng phần chưa khóa để phá hủy live resource. Gate tổng chỉ chạy H46.9
+nghiệm thu cuối theo chỉ đạo PO; không chạy full gate giữa phase hoặc pre-deploy.

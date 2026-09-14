@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import re
 
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
@@ -94,12 +95,35 @@ class OvhStaticIpPoolBackend:
     machine from reserving an already-owned row.
     """
 
-    def __init__(self, db: Session, profile):
+    def __init__(self, db: Session, profile, *, acquisition_probe=None):
         self.db = db
         self.profile_id = str(getattr(profile, "id", profile))
-        # Do not sell speculative capacity until the full signed acquisition
-        # driver and persistent gateway-address path have operational evidence.
+        self._acquisition_probe = acquisition_probe
+        self._acquisition_ceiling = 0
+        self._accepted_contracts = ()
+        # Controlled one-IP rollout uses ONLY the explicitly adopted cart. New
+        # cart creation remains unavailable through production capacity.
         self.auto_acquire = False
+        config = dict(getattr(profile, "provider_config", None) or {})
+        network = dict(getattr(profile, "network_config", None) or {})
+        contracts = config.get("accepted_contract_fingerprints")
+        contracts_valid = (isinstance(contracts, list) and 0 < len(contracts) <= 10
+                           and all(isinstance(value, str)
+                                   and re.fullmatch(r"[0-9a-f]{64}", value)
+                                   for value in contracts))
+        if (config.get("auto_acquire") is True and config.get("adopt_ip_cart_id")
+                and contracts_valid
+                and network.get("mapping_strategy") == "ovh_gwnat"
+                and getattr(profile, "status", "DISABLED") != "DISABLED"
+                and acquisition_probe is not None):
+            from apps.vps.services.ovh_acquisition import acquisition_policy
+            try:
+                _, self._acquisition_ceiling = acquisition_policy(profile)
+            except BackendConflict:
+                pass
+            else:
+                self.auto_acquire = True
+                self._accepted_contracts = tuple(contracts)
 
     def reserve(self, *, reservation_key: str, label: str) -> PublicIpResource:
         if not reservation_key:
@@ -223,7 +247,20 @@ class OvhStaticIpPoolBackend:
         rows = self.list()
         free = sum(row.state == "FREE" for row in rows)
         quarantined = sum(row.state == "QUARANTINED" for row in rows)
-        replenishable = 1 if self.auto_acquire else 0
+        replenishable = 0
+        if self.auto_acquire and self._acquisition_probe is not None:
+            try:
+                quote = self._acquisition_probe()
+                if (type(quote.quantity) is int and quote.quantity == 1
+                        and quote.currency == "USD"
+                        and type(quote.with_tax_minor) is int
+                        and 0 < quote.with_tax_minor <= self._acquisition_ceiling
+                        and quote.contract_fingerprints == self._accepted_contracts):
+                    replenishable = 1
+            except Exception:
+                # Health is a read-only boundary; provider replies can contain
+                # credential URLs/bodies and must never reach its summary.
+                pass
         status = "HEALTHY" if free > 0 or replenishable else "CRITICAL"
         return BackendHealth(
             status, f"{free} FREE public IP(s)",

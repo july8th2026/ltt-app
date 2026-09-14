@@ -12,6 +12,32 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-14 — Khóa delivery 60 phút, retain VM/IP và tiếp tục từ worktree
+
+- PO chọn giữ VM stopped/IP, delivery tối đa 60 phút; ban đầu bàn giao canonical,
+  sau đó xác nhận canonical đã ngừng và giao phiên VPS tự tiếp tục từ worktree.
+  Main/năm tài liệu dirty vẫn nguyên, không merge giữa phase. Ghi C03/C05/C06
+  và hồ sơ release `docs/VPS_V4/13_WORKTREE_RELEASE.md`; chưa deploy.
+- Pending order đọc một lần mỗi claim, lưu checkout_requested_at durable,
+  defer 20 giây trong tối đa 3600 giây, không sleep giữ worker/mua/thu credit lại.
+  `_tao_may` re-raise DangBan trước broad catch, không gán lỗi VPS do delivery.
+  Capacity chỉ quảng bá một slot khi exact adopted cart quote/digest còn hợp lệ;
+  constructor lazy không nạp credential, quote fail không lộ raw body/URL.
+- `python -m pytest tests/test_1262_vps_ovh_acquisition.py -q`: **39 PASS,
+  3,15 giây**. TDD pending/worker/bounded-readiness đã đỏ trước sửa; bổ sung sáu
+  quote-drift cases. Ruff năm tệp mục tiêu PASS, `git diff --check` PASS.
+- Playwright `vps-v4-delivery` local run-code `tests/browser/vps_v4_admin.js`
+  PASS desktop/mobile, normal owner pending detail và outsider 404; lỗi console,
+  failed requests/5xx bất ngờ đều 0. Fixture lần đầu dùng profile đã có instance
+  khiến admin-edit trả 409 đúng immutable guard; sửa fixture tách profile pending,
+  không nới guard sản phẩm. Server fixture của phiên đã dừng sau kiểm tra.
+- Máy CPU đo 83%, sau đó tai_may 66%; gate PID 10984 giữ CPU/Postgres 16 phút.
+  Không full gate/build/PG/deploy chồng lên. Probe cart máy B GET trả success,
+  quantity 1/USD 239 minor, expiry cùng instant, một digest hợp đồng;
+  checkout_performed=false. Không nội dung hợp đồng/credential vào Git.
+  Secret scan **3657 tệp/896155 dòng, 0 finding PASS**; chưa checkout/tạo IP/VM.
+  Gate tổng giữ H46.9.
+
 ## 2026-09-14 — Q125: preview giỏ thật, claim một giỏ/một instance và PostgreSQL
 
 - Driver app chạy với transport GET ký bởi credential canonical máy B:

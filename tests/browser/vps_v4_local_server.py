@@ -4,6 +4,7 @@ Run this explicitly, then tests/browser/vps_v4_admin.js via Playwright CLI.
 Session bootstrap endpoints exist only in this fixture, never in server/app.py.
 """
 from pathlib import Path
+from datetime import datetime, timezone
 import os
 import secrets
 import sys
@@ -28,7 +29,7 @@ def main():
     })
     from platform_core import db as dbmod, users
     from platform_core.models import User
-    from apps.vps.tables import VpsInfrastructureProfile
+    from apps.vps.tables import VpsGateway, VpsInfrastructureProfile, VpsInstance
     from server.app import create_app
     from fastapi import HTTPException, Request
     from fastapi.responses import RedirectResponse
@@ -54,6 +55,24 @@ def main():
         gateway_backend_type="nft", credential_ref="LTT_OVH",
         network_config={"gateway_credential_ref": "LTT_OVH_GATEWAY",
                         "mapping_strategy": "ovh_gwnat"}))
+    # Keep the pending-instance case separate from the empty-profile edit case:
+    # changing driver references on a resource-bearing profile must be refused.
+    db.add(VpsInfrastructureProfile(
+        id="local-pending-profile", slug="ovh-pending-test", region="sgp",
+        name="OVH PENDING — LOCAL TEST", status="STANDBY",
+        compute_backend_type="proxmox", public_ip_backend_type="ovh_static_pool",
+        gateway_backend_type="nft", credential_ref="LTT_OVH",
+        network_config={"mapping_strategy": "ovh_gwnat"}))
+    db.add(VpsGateway(
+        id="local-ovh-gateway", infrastructure_profile_id="local-pending-profile",
+        ten="LOCAL TEST gateway", vung="sgp", ip_cong_khai="192.0.2.1",
+        dang_nhan_may_moi=False))
+    db.add(VpsInstance(
+        id="local-pending-instance", user_id=identities["customer"],
+        ten="OVH DELIVERY — LOCAL TEST", plan_id="vps-nho", os_id="win10",
+        gateway_id="local-ovh-gateway", infrastructure_profile_id="local-pending-profile",
+        profile_resolution_state="PINNED", trang_thai="dang_tao",
+        paid_until=datetime(2099, 1, 1, tzinfo=timezone.utc)))
     db.commit()
     gen.close()
     os.environ["LTT_VPS_USER_IDS"] = identities["customer"]

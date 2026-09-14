@@ -36,6 +36,7 @@ def _domain(db):
             "ip_duration": "P1M",
             "ip_currency": "USD",
             "max_ip_with_tax_minor": 500,
+            "order_delivery_timeout_seconds": 3600,
         },
     )
     gateway = VpsGateway(
@@ -80,6 +81,7 @@ class _Provider:
             cart_id="11111111-1111-4111-8111-111111111111", item_id=77,
             quantity=1, with_tax_minor=self.quote_minor, currency="USD",
             expires="2099-01-01T00:00:00Z", contracts=("Cloud Base",),
+            contract_fingerprints=("a" * 64,),
         )
 
     def checkout_cart(self, cart_id, *, expected):
@@ -108,6 +110,91 @@ class _Provider:
 class _Gateway:
     def list_mappings(self):
         return {"192.0.2.10": "10.50.0.11"}
+
+
+def test_delivery_in_progress_defers_without_review_or_duplicate_checkout(db):
+    from apps.vps.services.ovh_acquisition import OrderDeliveryPending, ensure_free_ip
+    from apps.vps.tables import VpsExternalMutation
+    from platform_core.jobs import DangBan
+
+    profile, gateway, instance = _domain(db)
+    provider = _Provider()
+    provider.order_status = lambda _: "delivering"
+    arguments = dict(instance=instance, gateway_row=gateway, provider=provider,
+                     gateway=_Gateway(), operation_id="slow-delivery", max_polls=1,
+                     sleep=lambda _: pytest.fail("worker must not block on delivery"))
+    for _ in range(2):
+        with pytest.raises(OrderDeliveryPending) as caught:
+            ensure_free_ip(db, profile, **arguments)
+        assert isinstance(caught.value, DangBan)
+    row = db.execute(select(VpsExternalMutation)).scalar_one()
+    assert row.state == "REQUESTED" and row.provider_metadata["phase"] == "ORDERED"
+    assert [call[0] for call in provider.calls].count("checkout") == 1
+    provider.order_status = lambda _: "delivered"
+    assert ensure_free_ip(db, profile, **arguments).address == "192.0.2.11"
+
+
+def test_delivery_deadline_is_durable_and_does_not_restart_on_retry(db, monkeypatch):
+    from datetime import timedelta
+    from apps.vps.services import ovh_acquisition as acquisition
+    from apps.vps.tables import VpsExternalMutation
+
+    profile, gateway, instance = _domain(db)
+    provider = _Provider()
+    provider.order_status = lambda _: "delivering"
+    first = datetime(2026, 9, 14, tzinfo=timezone.utc)
+    monkeypatch.setattr(acquisition, "_now", lambda: first)
+    arguments = dict(instance=instance, gateway_row=gateway, provider=provider,
+                     gateway=_Gateway(), operation_id="deadline", max_polls=1,
+                     sleep=lambda _: None)
+    with pytest.raises(acquisition.OrderDeliveryPending):
+        acquisition.ensure_free_ip(db, profile, **arguments)
+    monkeypatch.setattr(acquisition, "_now", lambda: first + timedelta(seconds=3601))
+    with pytest.raises(acquisition.AcquisitionNeedsReview):
+        acquisition.ensure_free_ip(db, profile, **arguments)
+    assert db.execute(select(VpsExternalMutation.state)).scalar_one() == "NEEDS_REVIEW"
+    assert [call[0] for call in provider.calls].count("checkout") == 1
+
+
+def test_pending_delivery_is_not_marked_as_instance_error_by_worker(db, monkeypatch):
+    from apps.vps import jobs
+    from apps.vps.services.ovh_acquisition import OrderDeliveryPending
+
+    _, _, instance = _domain(db)
+    closed = []
+    monkeypatch.setattr(jobs, "_mo_db", lambda: (db, SimpleNamespace(close=lambda: closed.append(True))))
+    monkeypatch.setattr(jobs, "_lay_may", lambda _db, _id: instance)
+
+    def pending(_db, _instance):
+        raise OrderDeliveryPending()
+
+    monkeypatch.setattr(jobs, "_profile_for_job", pending)
+    monkeypatch.setattr(jobs, "_danh_dau_loi", lambda *_args: pytest.fail(
+        "a paid order still delivering must not mark the VPS as failed"))
+    with pytest.raises(OrderDeliveryPending):
+        jobs._tao_may({"instance_id": instance.id})
+    assert closed == [True]
+
+
+def test_pending_delivery_uses_core_queue_without_consuming_attempt_or_credit(db):
+    from apps.vps.services.ovh_acquisition import OrderDeliveryPending
+    from platform_core import job_runner, jobs
+    from platform_core.models import CreditEntry, Job
+
+    job = Job(id="pending-job", user_id="owner", app_slug="vps",
+              job_type="vps.provision", status="running", attempts=2,
+              worker_id="fixture-worker")
+    db.add(job)
+    db.commit()
+    before = db.execute(select(CreditEntry)).scalars().all()
+    kind, delay = job_runner._provider_failure_kind(
+        OrderDeliveryPending(), provider_state="")
+    assert kind == "resource_wait" and delay == 20
+    jobs.defer_resource(db, job, retry_after=delay)
+    db.commit()
+    db.refresh(job)
+    assert job.status == "queued" and job.attempts == 2 and job.worker_id == ""
+    assert db.execute(select(CreditEntry)).scalars().all() == before
 
 
 def test_web_acquisition_checks_out_one_ip_and_imports_provider_readback(db):
@@ -550,3 +637,89 @@ def test_same_adopted_cart_cannot_be_used_by_a_second_instance(db):
                        provider=provider, gateway=_Gateway(), operation_id="second-instance",
                        sleep=lambda _: None)
     assert provider.calls == []
+
+
+def test_configured_bounded_capacity_requires_real_readonly_quote(db, monkeypatch):
+    from apps.vps.services import backend_factory
+
+    profile, _, _ = _domain(db)
+    cart_id = "11111111-1111-4111-8111-111111111111"
+    profile.provider_config = {**profile.provider_config, "adopt_ip_cart_id": cart_id,
+                               "max_ip_with_tax_minor": 239,
+                               "accepted_contract_fingerprints": ["a" * 64]}
+    profile.network_config = {"mapping_strategy": "ovh_gwnat"}
+    db.commit()
+    provider = _Provider()
+    quote = provider.prepare_additional_ipv4()
+    reads = []
+
+    def adopt(actual):
+        reads.append(actual)
+        return quote
+
+    monkeypatch.setattr(backend_factory, "ovh_ordering_client", lambda _: SimpleNamespace(
+        adopt_prepared_cart=adopt))
+    pool = backend_factory.public_ip_backend(db, profile)
+    assert reads == [], "constructor must not load provider credentials"
+    assert pool.capabilities().dynamic_acquisition is True
+    health = pool.health()
+    assert health.status == "HEALTHY" and health.details["replenishable"] == 1
+    assert reads == [cart_id]
+
+
+def test_bounded_capacity_never_advertises_a_changed_or_unreadable_quote(db, monkeypatch):
+    from apps.vps.services import backend_factory
+    from apps.vps.services.ovh import OvhError
+
+    profile, _, _ = _domain(db)
+    profile.provider_config = {**profile.provider_config,
+                               "adopt_ip_cart_id": "11111111-1111-4111-8111-111111111111",
+                               "max_ip_with_tax_minor": 239,
+                               "accepted_contract_fingerprints": ["a" * 64]}
+    profile.network_config = {"mapping_strategy": "ovh_gwnat"}
+    db.commit()
+
+    reads = []
+
+    def failed(actual):
+        reads.append(actual)
+        raise OvhError("fixture URL/body must not reach health summary")
+
+    monkeypatch.setattr(backend_factory, "ovh_ordering_client", lambda _: SimpleNamespace(
+        adopt_prepared_cart=failed))
+    health = backend_factory.public_ip_backend(db, profile).health()
+    assert health.status == "CRITICAL" and health.details["replenishable"] == 0
+    assert "fixture URL/body" not in health.summary
+    assert reads == [profile.provider_config["adopt_ip_cart_id"]]
+
+
+@pytest.mark.parametrize("change", [
+    {"with_tax_minor": 240}, {"with_tax_minor": True},
+    {"quantity": 2}, {"quantity": True}, {"currency": "EUR"},
+    {"contract_fingerprints": ("b" * 64,)},
+])
+def test_bounded_capacity_rejects_quote_drift(db, monkeypatch, change):
+    from dataclasses import replace
+    from apps.vps.services import backend_factory
+
+    profile, _, _ = _domain(db)
+    profile.provider_config = {**profile.provider_config,
+        "adopt_ip_cart_id": "11111111-1111-4111-8111-111111111111",
+        "max_ip_with_tax_minor": 239,
+        "accepted_contract_fingerprints": ["a" * 64]}
+    profile.network_config = {"mapping_strategy": "ovh_gwnat"}
+    db.commit()
+    quote = replace(_Provider().prepare_additional_ipv4(), **change)
+    reads = []
+
+    def adopt(cart_id):
+        reads.append(cart_id)
+        return quote
+
+    monkeypatch.setattr(backend_factory, "ovh_ordering_client", lambda _: SimpleNamespace(
+        adopt_prepared_cart=adopt))
+    pool = backend_factory.public_ip_backend(db, profile)
+    assert pool.capabilities().dynamic_acquisition is True
+    health = pool.health()
+    assert health.details["replenishable"] == 0 and health.status == "CRITICAL"
+    assert len(reads) == 1

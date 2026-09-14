@@ -2,6 +2,23 @@
 
 ## Active blockers
 
+### Cập nhật 2026-09-14, sau lựa chọn PO mới nhất
+
+- B04: credit guard, exact delivery attribution, durable checkout/claim, worker
+  defer 60 phút và bounded read-only quote readiness đã triển khai. Acquisition
+  regression mới **39 PASS**; normal-user pending GUI owner/outsider PASS.
+  Còn cấu hình activation thực tế, checkout đúng một IP, gateway persistence
+  read-back trên IP mới và create E2E. Không mua giỏ thứ hai.
+- B07: baseline riêng đã reconcile `37839edf`; PO xác nhận canonical đã ngừng
+  và giao phiên VPS tự triển khai trên worktree này, gộp main cuối phiên. Không
+  sửa năm tài liệu dirty trong main. Không còn chờ canonical deploy; đường
+  release immutable và rollback đang được chuẩn bị trong `13_WORKTREE_RELEASE.md`.
+- Hiện gate PID 10984 của phiên khác giữ CPU/Postgres; chưa được chạy build,
+  batch nặng hay deploy chồng lên. Đây là chờ tài nguyên, không phải gate của VPS.
+
+Bảng discovery dưới đây giữ bằng chứng thời điểm trước; cập nhật trên thay thế
+trạng thái triển khai B04/B07 cũ, không phải chứng cứ live đã hoàn thành.
+
 | ID | Scope | Evidence | Blocks | Unblock action |
 |---|---|---|---|---|
 | B01 | Exact Admin IA | **RESOLVED 2026-09-13**: PO approved generic admin contract; local browser verified exact menu | No longer an authority blocker | Offline certification still required |

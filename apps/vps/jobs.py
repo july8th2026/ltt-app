@@ -34,6 +34,7 @@ from apps.vps.services import backend_factory, vm_ownership
 from apps.vps.services import router as bo_dinh_tuyen
 from apps.vps.services.proxmox import ProxmoxError, client_tu_moi_truong  # noqa: F401
 from apps.vps.tables import VpsGateway, VpsInfrastructureProfile, VpsInstance
+from platform_core.jobs import DangBan
 
 log = logging.getLogger(__name__)
 
@@ -547,6 +548,10 @@ def _tao_may(params: dict, ctx=None) -> dict:
             "dia_chi": ip_cong_khai,
             "he_dieu_hanh": img.ten,
         }
+    except DangBan:
+        # A paid OVH order still being delivered is not a failed VM. The core
+        # worker requeues this signal without another credit charge/attempt.
+        raise
     except Exception as exc:
         _danh_dau_loi(db, params.get("instance_id"), exc)
         raise

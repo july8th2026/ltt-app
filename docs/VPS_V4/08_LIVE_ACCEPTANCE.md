@@ -69,11 +69,10 @@ the password. After authenticated state is available, Playwright must:
 
 ## Cleanup gate
 
-Default proposal is retain the VM stopped until the PO completes/abandons manual
-Windows installation. If PO selects destroy, verify in order: exact ownership,
-VM absent, DHCP/private IP released, nft mapping absent, public IP FREE (not
-deleted unless explicitly authorized), DB state terminal and reconciliation
-clean. Never infer cleanup permission from test completion.
+LOCKED by PO 2026-09-14: retain exactly the acceptance VM stopped, retain its IP
+BOUND to that VM and preserve its mapping for continued inspection. Verify PVE
+stopped state, DB/UI state and exact IP ownership/read-back. Destruction,
+unbind/release or deletion is not authorized by test completion.
 
 ## Evidence artifact
 

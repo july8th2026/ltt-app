@@ -5,7 +5,6 @@ order-to-IP attribution and gateway address installation pass their tests.
 """
 from datetime import datetime, timezone
 from ipaddress import IPv4Address
-import time
 from uuid import UUID
 
 from sqlalchemy import select, update
@@ -15,6 +14,7 @@ from apps.vps.services.backends.contracts import (
     BackendConflict, CapacityExhausted, PublicIpResource,
 )
 from apps.vps.tables import VpsExternalMutation, VpsInfrastructureProfile, VpsIp
+from platform_core.jobs import DangBan
 
 
 class UnexpectedBilling(BackendConflict):
@@ -23,6 +23,17 @@ class UnexpectedBilling(BackendConflict):
 
 class AcquisitionNeedsReview(BackendConflict):
     pass
+
+
+class OrderDeliveryPending(DangBan):
+    """Paid order is processing; reuse platform deferred-job accounting."""
+
+    def __init__(self):
+        super().__init__("OVH order delivery is pending", retry_after_s=20)
+
+
+def _now():
+    return datetime.now(timezone.utc)
 
 
 def reserve_for_provision(db, profile, *, pool, instance, gateway_row,
@@ -61,6 +72,12 @@ def acquisition_policy(profile):
     ceiling = config.get("max_ip_with_tax_minor")
     if type(ceiling) is not int or not 0 < ceiling <= 500:
         raise UnexpectedBilling("OVH acquisition price ceiling is invalid")
+    timeout = config.get("order_delivery_timeout_seconds", 3600)
+    if type(timeout) is not int or timeout != 3600:
+        raise UnexpectedBilling("OVH delivery deadline must match the 60-minute policy")
+    expected["order_delivery_timeout_seconds"] = timeout
+    if "accepted_contract_fingerprints" in config:
+        expected["accepted_contract_fingerprints"] = config["accepted_contract_fingerprints"]
     if config.get("adopt_ip_cart_id"):
         try:
             expected["adopt_ip_cart_id"] = str(UUID(str(config["adopt_ip_cart_id"])))
@@ -70,13 +87,16 @@ def acquisition_policy(profile):
 
 
 def ensure_free_ip(db, profile, *, instance, gateway_row, provider, gateway,
-                   operation_id, sleep=time.sleep, max_polls=30):
+                   operation_id, sleep=None, max_polls=1):
     """Acquire one address; an ambiguous predecessor forbids another checkout.
 
     The caller must own the provisioning lease. The conditional journal claim
     additionally prevents two workers issuing the same checkout.
     """
     request, ceiling = acquisition_policy(profile)
+    # Kept as compatible arguments for existing test/caller injection. Provider
+    # delivery is now read once per job claim, never a blocking polling loop.
+    del sleep, max_polls
 
     def guard():
         db.refresh(instance)
@@ -94,13 +114,15 @@ def ensure_free_ip(db, profile, *, instance, gateway_row, provider, gateway,
             raise BackendConflict("acquisition requires a paid VPS subscription")
 
     guard()
+    cart_claim = None
     if request.get("adopt_ip_cart_id"):
         # One durable cart claim across ALL instance/operation IDs. The journal
         # unique key plus exact-instance validation prevents a second worker
         # assigning the same live cart to another customer or profile.
-        journal.intent(db, operation_id="ovh-cart:" + request["adopt_ip_cart_id"],
-                       instance=instance, step="OVH_CART_CLAIM",
-                       request={"cart_id": request["adopt_ip_cart_id"]})
+        cart_claim = journal.intent(
+            db, operation_id="ovh-cart:" + request["adopt_ip_cart_id"],
+            instance=instance, step="OVH_CART_CLAIM",
+            request={"cart_id": request["adopt_ip_cart_id"]})
         db.commit()
     row = journal.intent(db, operation_id=operation_id, instance=instance,
                          step="OVH_IP_ACQUIRE", request=request)
@@ -133,7 +155,10 @@ def ensure_free_ip(db, profile, *, instance, gateway_row, provider, gateway,
                 prepared = provider.adopt_prepared_cart(request["adopt_ip_cart_id"])
             else:
                 prepared = provider.prepare_additional_ipv4(
-                    description=f"ltt-vps:{row.id}", quantity=1, **request)
+                    description=f"ltt-vps:{row.id}", quantity=1,
+                    **{key: value for key, value in request.items()
+                       if key not in ("order_delivery_timeout_seconds",
+                                      "accepted_contract_fingerprints")})
             metadata = {**metadata, "cart_id": prepared.cart_id,
                         "item_id": prepared.item_id,
                         "with_tax_minor": prepared.with_tax_minor,
@@ -142,15 +167,21 @@ def ensure_free_ip(db, profile, *, instance, gateway_row, provider, gateway,
                         "contract_fingerprints": list(prepared.contract_fingerprints),
                         "phase": "PREPARED"}
             row.provider_metadata = metadata
+            if cart_claim is not None:
+                journal.observed(db, cart_claim, external_ref=prepared.cart_id)
             db.commit()
             if (prepared.quantity != 1 or prepared.currency != "USD"
                     or type(prepared.with_tax_minor) is not int
-                    or not 0 < prepared.with_tax_minor <= ceiling):
+                    or not 0 < prepared.with_tax_minor <= ceiling
+                    or ("accepted_contract_fingerprints" in profile.provider_config
+                        and list(prepared.contract_fingerprints) !=
+                        profile.provider_config["accepted_contract_fingerprints"])):
                 journal.failed(db, row, "UNEXPECTED_BILLING")
                 db.commit()
                 raise UnexpectedBilling("OVH quote does not match approved policy")
             guard()
-            metadata = {**metadata, "phase": "CHECKOUT_REQUESTED"}
+            metadata = {**metadata, "phase": "CHECKOUT_REQUESTED",
+                        "checkout_requested_at": _now().isoformat()}
             row.provider_metadata = metadata
             db.commit()
             try:
@@ -184,49 +215,56 @@ def ensure_free_ip(db, profile, *, instance, gateway_row, provider, gateway,
         db.commit()
 
     try:
-        for _ in range(max_polls):
-            guard()
-            if provider.order_status(metadata["order_id"]) != "delivered":
-                sleep(2)
-                continue
-            mappings = gateway.list_mappings()
-            ordered_addresses = provider.order_ipv4(metadata["order_id"])
-            if len(ordered_addresses) != 1:
+        guard()
+        status = provider.order_status(metadata["order_id"])
+        if status != "delivered":
+            if status not in ("checking", "delivering"):
                 review()
-            candidates = [item for item in provider.list_additional_ipv4()
-                          if item.cidr not in metadata["baseline"]
-                          and item.kind == "failover"
-                          and item.country.lower() == "sg"
-                          and item.routed_to == provider.config.service_name
-                          and item.address == ordered_addresses[0]
-                          and item.address not in mappings]
-            # Inventory delta AND exact order service identity are required.
-            if len(candidates) != 1:
+            try:
+                requested_at = datetime.fromisoformat(metadata["checkout_requested_at"])
+                age = (_now() - requested_at).total_seconds()
+            except (KeyError, TypeError, ValueError):
                 review()
-            item = candidates[0]
-            address = str(IPv4Address(item.address))
-            if item.cidr != address + "/32":
+            if not 0 <= age < request["order_delivery_timeout_seconds"]:
                 review()
-            ip = db.execute(select(VpsIp).where(
-                VpsIp.gateway_id == gateway_row.id,
-                VpsIp.dia_chi == address).with_for_update()).scalar_one_or_none()
-            if ip is None:
-                ip = VpsIp(infrastructure_profile_id=profile.id,
-                           gateway_id=gateway_row.id, dia_chi=address,
-                           backend_resource_id=item.cidr, state="FREE",
-                           billing_mode="monthly",
-                           monthly_cost_minor=metadata["with_tax_minor"],
-                           last_observed_at=datetime.now(timezone.utc),
-                           provider_metadata={"order_id": metadata["order_id"]})
-                db.add(ip)
-            elif ip.infrastructure_profile_id != profile.id or ip.state != "FREE":
-                review()
-            journal.observed(db, row, external_ref=str(metadata["order_id"]))
-            db.commit()
-            return PublicIpResource(id=ip.id, address=address,
-                                    provider_id=item.cidr, state="FREE")
-    except AcquisitionNeedsReview:
+            raise OrderDeliveryPending()
+        mappings = gateway.list_mappings()
+        ordered_addresses = provider.order_ipv4(metadata["order_id"])
+        if len(ordered_addresses) != 1:
+            review()
+        candidates = [item for item in provider.list_additional_ipv4()
+                      if item.cidr not in metadata["baseline"]
+                      and item.kind == "failover"
+                      and item.country.lower() == "sg"
+                      and item.routed_to == provider.config.service_name
+                      and item.address == ordered_addresses[0]
+                      and item.address not in mappings]
+        # Inventory delta AND exact order service identity are required.
+        if len(candidates) != 1:
+            review()
+        item = candidates[0]
+        address = str(IPv4Address(item.address))
+        if item.cidr != address + "/32":
+            review()
+        ip = db.execute(select(VpsIp).where(
+            VpsIp.gateway_id == gateway_row.id,
+            VpsIp.dia_chi == address).with_for_update()).scalar_one_or_none()
+        if ip is None:
+            ip = VpsIp(infrastructure_profile_id=profile.id,
+                       gateway_id=gateway_row.id, dia_chi=address,
+                       backend_resource_id=item.cidr, state="FREE",
+                       billing_mode="monthly",
+                       monthly_cost_minor=metadata["with_tax_minor"],
+                       last_observed_at=_now(),
+                       provider_metadata={"order_id": metadata["order_id"]})
+            db.add(ip)
+        elif ip.infrastructure_profile_id != profile.id or ip.state != "FREE":
+            review()
+        journal.observed(db, row, external_ref=str(metadata["order_id"]))
+        db.commit()
+        return PublicIpResource(id=ip.id, address=address,
+                                provider_id=item.cidr, state="FREE")
+    except (AcquisitionNeedsReview, OrderDeliveryPending):
         raise
     except Exception:
         review()
-    review()

@@ -4002,6 +4002,12 @@ Quyết định: Q124. Hồ sơ canonical: `docs/VPS_V4/`. Nhánh riêng:
 - [ ] **H46.7 — Deploy + live OVH acceptance:** fresh collector, CA, owner lookup,
   tối đa một IP/một VM, Playwright từ Web UI, Windows installer/network/console/
   lifecycle/default-switch và cleanup/retain gate.
+  **Cập nhật PO 14/09/2026:** canonical đã ngừng; phiên VPS tự triển khai từ
+  worktree nhánh riêng, không sửa main/dirty docs phiên khác. Chỉ gộp main cuối
+  phiên. Giữ VM acceptance tắt và IP BOUND; OVH delivery chờ tối đa 60 phút,
+  defer job không mua/thu credit lại. Bounded acquisition readiness đã có code;
+  test acquisition mới 33 PASS và GUI pending owner/outsider desktop/mobile PASS.
+  Chưa deploy/checkout/tạo IP hay VM; không tính các bước live này là hoàn thành.
   **14/09/2026 checkpoint:** helper gateway đã cài và kiểm live fail-closed;
   protected removal RC 5, conflict RC 4, health `ok`, hash hai tệp bảo vệ không
   đổi. Đã chuẩn bị đúng một giỏ OVH chưa thanh toán cho một IPv4 SG/SGP,

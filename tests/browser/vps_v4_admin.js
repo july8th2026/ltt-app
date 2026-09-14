@@ -25,6 +25,18 @@ async page => {
   check(response.status() === 200, 'allowlisted test owner must see VPS');
   check(await page.locator('select[name="profile_id"], select[name="provider"]').count() === 0,
         'customer must not select provider or infrastructure profile');
+  const pending = page.locator('.vps-may-the').filter({hasText: 'OVH DELIVERY — LOCAL TEST'});
+  check(await pending.count() === 1, 'owner must see the pending VPS fixture');
+  check((await pending.getAttribute('class')).includes('tt-warn'),
+        'pending provider delivery must keep provisioning status, not an instance error');
+  check(!(await pending.getAttribute('class')).includes('tt-err'),
+        'pending provider delivery must not show an instance failure');
+  response = await page.goto(base + '/vps/local-pending-instance');
+  check(response.status() === 200, 'owner must see pending VPS details');
+  check(await page.locator('.alert-warn').count() > 0, 'pending VPS must show its next-step message');
+  response = await page.goto(base + '/_vps_v4_test/session/outsider');
+  response = await page.goto(base + '/vps/local-pending-instance');
+  check(response.status() === 404, 'outsider must not read pending VPS details');
   await page.goto(base + '/_vps_v4_test/session/admin');
   await page.goto(base + '/admin/');
   await page.getByRole('link', {name: 'VPS', exact: true}).click();
