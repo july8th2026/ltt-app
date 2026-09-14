@@ -18244,5 +18244,17 @@ FAIL thay vì skip. Không giá trị bí mật nào được in hoặc ghi vào
   findings, PASS**.
 
 CPU toàn máy được đo trước các batch (6,6–24,6%), `cua_so_yen` báo RẢNH và số
-worker giữ ở 2. H46.6 đóng; bước tiếp theo là recheck `main`, đóng băng ứng viên
-rồi chạy đúng một full gate cuối trước deploy.
+worker giữ ở 2. H46.6 đóng.
+
+### Đính chính thứ tự gate theo chỉ đạo chủ dự án
+
+Phiên đã khởi động nhầm `python tools/gate.py --noi-tiep` khi P7–P8 chưa làm.
+Chủ dự án phát hiện và yêu cầu dừng; tiến trình được ngắt sau khoảng 4,7 phút,
+không deploy và không chạm tài nguyên production. Lượt dở này **không phải gate
+nghiệm thu**, không được dùng làm bằng chứng PASS/FAIL cuối. Nó chỉ kịp quan sát
+hai lỗi tĩnh trước khi bị ngắt.
+
+Kế hoạch đã đổi rõ thứ tự: P7 deploy/live acceptance, P8 red-team/report/freeze,
+P9 mới chạy đúng một full gate cuối trên toàn dự án rồi push/đóng phiên. Từ đây
+không gọi lại full gate cho tới P9; giữa các bước chỉ dùng test phạm vi nhỏ khi
+cần.

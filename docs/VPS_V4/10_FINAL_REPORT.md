@@ -5,9 +5,8 @@ Status: **IN PROGRESS — OFFLINE CODE NEAR FREEZE; READ-ONLY LIVE PREFLIGHT PAR
 ## Revisions
 
 - HEAD BEFORE: `3b5adcb7ffa43c8c553ac38d457e22e3cde60e30`
-- Release candidate before final gate: branch tip containing VPS commits plus
-  `15f71050` (authenticated, fail-closed live LLM constraint measurement);
-  final exact SHA is recorded by the final gate report.
+- HEAD AFTER: pending completion of deploy/live/red-team work; no release
+  candidate is frozen before those phases.
 - Machine B source commits: `4428223` TLS callback fix; `c5c2453` read-only CA export
 - Worktrees: `D:\LTTSTUDIOSAPP-vps-v4`, `D:\LTT-VM-Promox-v4`
 
@@ -94,7 +93,7 @@ is fabricated here.
 - Full gate and production E2E pending; partial diagnostics are not
   certification. From the 2026-09-13 cadence decision, no further full gate is
   run between implementation phases: targeted operational suites must all pass,
-  then one frozen-candidate gate runs immediately before deploy readiness.
+  then one frozen-candidate gate runs only after deploy/live/red-team work.
 - 2026-09-14 live read-only evidence: PVE 9.2.2 and nine running guests were
   inventoried; VM100–107 plus all eight public/private mappings remained
   protected; WireGuard/nft/storage/network were readable. OVH reported eight
@@ -130,7 +129,7 @@ is fabricated here.
 The OVH static-pool path now journals/read-backs VM create/config, DHCP plus
 bandwidth, mapping, boot and destroy; ambiguous cleanup retains associations in
 QUARANTINED. The actual OVH gateway helper is fail-closed and preserves the
-protected baseline but is not installed live before the final gate. Dynamic
+protected baseline but is not installed live yet. Dynamic
 Vultr paid-IP acquisition remains disabled/STANDBY. Deploy provenance is
 operator-visible; Machine B source revision remains `UNKNOWN` in runtime
 artifacts rather than substituting a checkout SHA.

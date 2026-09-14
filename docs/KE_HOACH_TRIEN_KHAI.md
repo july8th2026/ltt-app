@@ -3999,14 +3999,14 @@ Quyết định: Q124. Hồ sơ canonical: `docs/VPS_V4/`. Nhánh riêng:
   Reconcile cuối lên `main` `f0bd4c05` sạch; test live LLM mới của `main`
   được sửa fail-closed để mang bearer và hiểu schema `tran.images`, rồi xanh
   **4/4** với gateway máy B; sentinel skip PASS, không nới baseline.
-- [ ] **H46.7 — Final release gate:** đóng băng release candidate rồi chạy đúng
-  một `python tools\gate.py` cuối trên cây không đổi, ngay trước deploy. Sửa code
-  sau PASS làm mất hiệu lực candidate và bắt buộc gate lại.
-- [ ] **H46.8 — Deploy + live OVH acceptance:** fresh collector, CA, owner lookup,
+- [ ] **H46.7 — Deploy + live OVH acceptance:** fresh collector, CA, owner lookup,
   tối đa một IP/một VM, Playwright từ Web UI, Windows installer/network/console/
   lifecycle/default-switch và cleanup/retain gate.
-- [ ] **H46.9 — Red team + report + push:** không P0 software, ba score riêng,
-  report backup/restore/dual-WAN trung thực, logical commits và push branch.
+- [ ] **H46.8 — Red team + hoàn thiện báo cáo:** không P0 software, ba score
+  riêng, report backup/restore/dual-WAN trung thực và đóng băng cây cuối.
+- [ ] **H46.9 — Gate cuối + delivery:** chỉ sau H46.7–H46.8, chạy đúng một
+  `python tools\gate.py` cuối trên toàn dự án; sau PASS không sửa code/test,
+  commit/push branch và đóng phiên.
 
 **Blocker hiện tại:** `docs/VPS_V4/09_BLOCKERS.md`. Backup/restore/dual-WAN là
 production-readiness gate riêng; không được tuyên bố FULL PRODUCTION READY khi

@@ -57,7 +57,8 @@ Exit: migration up/down in isolated DB, one-default race test, no legacy break.
 static pool and two-worker PostgreSQL allocation implemented/tested. OVH
 `gwnat` adapter, strict inventory parser and root-owned atomic helper are now
 implemented offline. The helper snapshots/protects the eight existing mappings
-and fails closed; live installation/refusal checks wait until after final gate.
+and fails closed; live installation/refusal checks are part of P7, before the
+single project-closing gate.
 
 Exit: Vultr regression green; OVH has no Vultr fields/assumptions.
 
@@ -139,7 +140,8 @@ Exit: user A/B isolation, admin-only mutations, no secrets, GUI verified.
   **0 finding, PASS**.
 - [x] Fix every known in-scope regression and complete the failure/compensation
   matrix with focused behavioral tests.
-- [x] Freeze one release candidate only after all targeted PostgreSQL, browser,
+- [ ] Freeze one release candidate only after deployment, live acceptance,
+  red-team, and all targeted PostgreSQL, browser,
   security and static checks are green.
 
 2026-09-14 continuation: signed read-only OVH inventory/ownership, static-pool
@@ -179,23 +181,19 @@ not certification. All four now pass without raising baselines: ruff 933/12,
 mypy 585/14 (two fewer assignments), untranslated-shape guard 712 unchanged,
 and `server/admin.py` restored to 1,622 lines. Admin Playwright passed again;
 post-fix broad VPS is **771 passed/3 skipped + sentinel PASS**. The final gate
-is deliberately deferred until every code phase and targeted operational test
-is complete; it is not run between phases.
+is deliberately deferred until deployment, live acceptance, red-team and
+targeted operational work are complete; it is not run between phases.
 
-### P7 — Final release gate
+### P7 — Deployment and live acceptance
 
 - [ ] Review the complete diff, migration lineage, runbook and rollback.
-- [ ] Run required final build only if frontend inputs changed.
-- [ ] Run one final `python tools\gate.py` on the frozen, unchanged release
-  candidate; this is the only full gate in the remaining implementation flow.
-- [ ] If any code/test/runtime file changes after this PASS, invalidate the
-  candidate and rerun the final gate before deploy.
+- [ ] Deploy the app/runtime/helper using the targeted evidence already green.
+- [ ] Complete the one-IP/one-VM acceptance path and rendered browser checks.
 
-Exit: full gate PASS on the exact commit/release candidate intended for deploy.
+Exit: deployed behavior and live resource lifecycle have direct evidence.
 
-### P8 — Deployment, live acceptance, red team and delivery
+### P8 — Red team, report and final freeze
 
-- [ ] Deploy only after app gate and operator runbook/rollback review.
 - [ ] Resolve exactly one owner record; no credential output.
 - [x] Access `H:\PROXMOX`, export the PVE CA outside Git, and prove one coherent
   completed collector generation plus app mirror/TLS transport. Repeat the
@@ -214,21 +212,31 @@ Exit: full gate PASS on the exact commit/release candidate intended for deploy.
 - [ ] Separate implementation quality/live evidence/production readiness scores;
   never average away P0.
 - [ ] Update decision/plan/journal/final report.
-- [ ] Post-deploy smoke/live acceptance, logical commits and push branch; no
-  merge/force-push. Do not add a second full gate unless a post-gate code change
-  invalidated the certified candidate.
+- [ ] Post-deploy smoke/live acceptance and logical commits; no merge/force-push.
+- [ ] Freeze the complete project tree only after live evidence and reports.
+
+### P9 — One final project gate and delivery
+
+- [ ] Run required final build only if frontend inputs changed.
+- [ ] Run one final `python tools\gate.py` on the frozen, unchanged project.
+- [ ] If code/test changes after PASS, invalidate the candidate and replace the
+  result; never run a ceremonial gate between phases.
+- [ ] Push the branch and close the session only after this verdict.
+
+Exit: full gate PASS on the exact final project tree, then delivery.
 
 ## Test cadence from 2026-09-13
 
-- During P1–P6, run the smallest complete focused suite for the behavior being
+- During P1–P8, run the smallest complete focused suite for the behavior being
   changed, plus PostgreSQL concurrency/migration and rendered Playwright checks
   where applicable. Check whole-machine CPU and the repository lock before
   every heavy batch.
 - Do not run `python tools\gate.py` as a phase transition or diagnostic tool.
   Resolve known failures with focused tests first.
-- Freeze code, then run exactly one full final gate in P7 immediately before
-  deploy readiness. A later code change requires a new final candidate and
-  therefore a replacement gate result, never an extra ceremonial gate.
+- After deploy/live/red-team/report work is complete, freeze the project and
+  run exactly one full final gate in P9 immediately before delivery. A later
+  code/test change requires a replacement result, never an extra ceremonial
+  gate.
 
 ## Explicitly deferred
 
