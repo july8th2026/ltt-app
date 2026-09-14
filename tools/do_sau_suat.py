@@ -202,6 +202,7 @@ def _mot_job(i: int, model: str, ra_token: int, ket: list) -> None:
                             "ma": j.status_code, "chi": j.text[:120]})
                 return
             jid = j.json()["id"]
+            ket.append({"i": i, "jid": jid, "pha": "dang_chay"})
             while time.monotonic() - t0 < 1700:
                 time.sleep(5)
                 r = c.get(f"{GOC_API}/jobs/{jid}", headers=H)
@@ -218,15 +219,63 @@ def _mot_job(i: int, model: str, ra_token: int, ket: list) -> None:
                         van = (r["choices"][0].get("message") or {}).get("content") or ""
                     giay = round(time.monotonic() - t0, 1)
                     ra = u.get("output_tokens") or u.get("completion_tokens") or 0
+                    for cu_ in ket:
+                        if cu_.get("i") == i and cu_.get("pha") == "dang_chay":
+                            ket.remove(cu_)
+                            break
                     ket.append({"i": i, "model": model, "pha": d["status"],
                                 "ma": 200, "giay": giay, "token_ra": ra,
-                                "ky_tu": len(van), "van": van,
+                                "ky_tu": len(van), "van": van, "jid": jid,
                                 "toc": round(ra / max(giay, 0.1), 1)})
                     return
             ket.append({"i": i, "model": model, "pha": "HET GIO", "ma": 0})
     except Exception as e:                  # noqa: BLE001
         ket.append({"i": i, "model": model, "pha": "LOI",
                     "chi": f"{type(e).__name__}: {e}"[:120]})
+
+
+def _moc_job(url: str, ids: list[str]) -> dict:
+    """`admitted_at / started_at / finished_at` THAT cua tung job.
+
+    ⛔ Vi sao khong suy tu nhip lay mau: nhip 2 giay khong bat kip mot cai ban
+       giao xay ra trong vai tram mili-giay — do duoc 14/09, lo 5 job tren 3
+       suat co ban giao that nhung `_cap_ban_giao` thay 0 cap. Mot phep do khong
+       thay thi khong duoc phep ket luan "khong xay ra": CSDL da ghi san moc.
+    """
+    if not ids:
+        return {}
+    from sqlalchemy import create_engine, text
+
+    with create_engine(url).connect() as c:
+        hang = c.execute(text(
+            "SELECT id::text, admitted_at, started_at, finished_at "
+            "FROM jobs WHERE id::text = ANY(:ids)"), {"ids": ids}).all()
+    return {r[0]: {"nhan": r[1], "batdau": r[2], "xong": r[3]} for r in hang}
+
+
+def _ban_giao_that(moc: dict, trong_giay: float = 20.0) -> list[dict]:
+    """Cap (job A XONG, job B duoc NHAN) cach nhau <= `trong_giay`, B co XEP HANG.
+
+    ⭐ Dieu kien "B co xep hang" (`nhan - batdau > 5s`) la thu lam menh de nay
+       CO THE SAI: khong co no thi hai job chay song song tu dau cung tao ra mot
+       "cap", va M3 se xanh o moi lo — ke ca lo khong he co hang doi nao.
+    """
+    cap = []
+    for b, mb in moc.items():
+        if not (mb.get("nhan") and mb.get("batdau")):
+            continue
+        cho_s = (mb["nhan"] - mb["batdau"]).total_seconds()
+        if cho_s <= 5:
+            continue                    # B khong he xep hang
+        for a, ma in moc.items():
+            if a == b or not ma.get("xong"):
+                continue
+            tre = (mb["nhan"] - ma["xong"]).total_seconds()
+            if 0 <= tre <= trong_giay:
+                cap.append({"xong": a[:8], "vao": b[:8],
+                            "tre_s": round(tre, 1), "da_cho_s": round(cho_s, 1)})
+                break
+    return cap
 
 
 def _cap_ban_giao(mau: list[dict], trong_giay: float = 15.0) -> list[dict]:
@@ -307,14 +356,22 @@ def main() -> int:
     dinh_cho = max(((m.get("job") or {}).get("queued", 0) for m in co), default=0)
     hoan = max((sum((v or {}).get("deferred", 0) for v in (m.get("mayB") or {}).values())
                 for m in co if "mayB" in m), default=0)
-    cap = _cap_ban_giao(bo.mau)
+    moc = _moc_job(url, [k["jid"] for k in ket if k.get("jid")])
+    for k in ket:
+        m = moc.get(k.get("jid") or "") or {}
+        if m.get("nhan") and m.get("xong"):
+            k["sinh_s"] = round((m["xong"] - m["nhan"]).total_seconds(), 1)
+            k["cho_s"] = round((m["nhan"] - m["batdau"]).total_seconds(), 1)                 if m.get("batdau") else None
+            k["toc_sinh"] = round((k.get("token_ra") or 0) / max(k["sinh_s"], 0.1), 1)
+    cap = _ban_giao_that(moc) or _cap_ban_giao(bo.mau)
     hong = [k for k in ket if k.get("pha") not in ("succeeded",)]
 
     print("\n== KET QUA ==")
     for k in sorted(ket, key=lambda x: x["i"]):
-        print(f"   job {k['i']} {k['model']:9s} {k['pha']:10s} "
+        print(f"   job {k['i']} {k.get('model', '?'):9s} {k['pha']:10s} "
               f"{k.get('giay', '-')!s:>7}s  token_ra={k.get('token_ra')}"
-              f"  ky_tu={k.get('ky_tu')}  {k.get('toc')} tok/s")
+              f"  ky_tu={k.get('ky_tu')}  cho={k.get('cho_s')}s "
+              f"sinh={k.get('sinh_s')}s -> {k.get('toc_sinh')} tok/s")
 
     print("\n== BA MENH DE ==")
     # 🔴 KY VONG DOI LAI 3/CARD NGAY 14/09/2026 — sua HE, khong sua phep do.
@@ -360,7 +417,10 @@ def main() -> int:
     xong = [k for k in ket if k.get("pha") == "succeeded"]
     rong = [k["i"] for k in xong if not k.get("ky_tu")]
     cut = [k["i"] for k in xong if 0 < (k.get("ky_tu") or 0) < 200]
-    cham = [k["i"] for k in xong if (k.get("toc") or 0) < 20]
+    # ⛔ Chia cho `giay` (tu luc NOP) la do NHAM dai luong: job xep hang 170 giay
+    #    cho 17,0 tok/s trong khi no sinh token o 35. Phai chia cho khoang SINH
+    #    (`finished_at - admitted_at`), tach hang doi ra khoi toc do model.
+    cham = [k["i"] for k in xong if (k.get("toc_sinh") or 0) < 20]
     m4 = bool(xong) and not rong and not cut and not cham
     print(f"   [{'DAT ' if m4 else 'TRUOT'}] M4  ket qua tra ve co that va day du"
           f"  — rong={rong} cut={cut} cham(<20 tok/s)={cham}")
