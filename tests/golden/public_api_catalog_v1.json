@@ -517,7 +517,6 @@
           "reasoning_effort": {
             "type": "string",
             "enum": [
-              "none",
               "low",
               "medium",
               "xhigh"
@@ -604,7 +603,7 @@
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "4e6a8f955a420d49"
+      "contract_hash": "4faea5b757483c63"
     },
     {
       "name": "text.prompt_package",

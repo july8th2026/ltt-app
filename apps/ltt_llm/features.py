@@ -363,24 +363,46 @@ def kiem_tham_so(params: dict) -> dict:
 
     if p.get("reasoning_effort") is not None:
         re_ = str(p["reasoning_effort"])
-        # 🔴 THEM `none` 13/09/2026 (L-02) — va day la mot NUT KHAC voi `max_tokens`.
+        # 🔴 `none` DA BI BO 14/09/2026, VA DAY LA MOT DINH CHINH CUA L-02.
         #
-        #    Model card Qwen noi ro co HAI nut: `max_tokens` la tran DO DAI, con
-        #    `enable_thinking=False` / `/no_think` la nut TAT SUY NGHI. Ta truoc
-        #    nay chi mo nut thu nhat, nen mot khach muon cau tra loi NGAN khong
-        #    co duong nao ngoai ha `max_tokens` — va do chinh la duong dan toi
-        #    L-02: model tieu het tran vao suy nghi roi bi cat truoc khi tra loi
-        #    (do: 5/5 luot RONG o `max_tokens` 150-250).
+        #    L-02 (13/09) them `none` vao be mat cong khai lam "nut cho cau tra
+        #    loi ngan". Y do dung; nhung tren HE NAY no hong, va ba nguon doc
+        #    lap noi cung mot dieu:
         #
-        # ⛔ Ha `max_tokens` KHONG phai cach tat suy nghi. Nha san xuat khuyen
-        #    `32.768` token ra cho hau het truy van; con duong cho cau tra loi
-        #    ngan la tat thinking, khong phai bop tran.
+        #    1. Do 14/09 tren may B, cung prompt, `max_tokens=8000`:
+        #         reasoning_effort=medium/low/khong khai -> ~1.180 token ra
+        #         reasoning_effort=none                  ->      2 token ra
+        #       Model noi "1" roi dung. `finish_reason=stop`.
         #
-        #    Template froggeric v22.5 nhan `none`/`off` va anh xa `minimal` ->
-        #    `low`. Ta mo dung `none` o be mat cong khai: mot ten cho mot y
-        #    nghia, va `off` la bi danh de trung.
-        if re_ not in ("none", "low", "medium", "xhigh"):
-            raise ThamSoSai("`reasoning_effort` phai la none|low|medium|xhigh")
+        #    2. `llama-swap.yaml` da ghi tu 12/09, kem bang do 60 bo de:
+        #         "dung tat suy nghi: do la HONG, khong phai danh doi.
+        #          Nhanh gap ~20 lan nhung tieng Viet con 10 %, sinh dai con 40 %."
+        #
+        #    3. Model card Qwen khai HAI bo tham so lay mau khac nhau:
+        #         thinking      temp 0.6  top_p 0.95  top_k 20  min_p 0
+        #         non-thinking  temp 0.7  top_p 0.80  top_k 20  min_p 0
+        #       May B chay bo THINKING, va `llama-swap.yaml` ghi ro tham so lay
+        #       mau dat o SERVER chu khong gui theo request (cache CUDA graph
+        #       khoa theo bo tham so). Tuc `none` o day = chay non-thinking bang
+        #       tham so cua thinking — mot to hop nha san xuat khong khuyen, va
+        #       so do o tren cho thay hau qua.
+        #
+        # ⛔ Giu `none` trong hop dong la ban mot nut da do duoc la HONG. Va
+        #    KHONG anh xa ngam `none` -> `low`: khach xin mot dang, ta lam mot
+        #    dang khac, khong noi gi — dung lop "cua gia" ta di sua ca phien.
+        #
+        # ⭐ Loi bao phai NOI DUONG RA. Khach muon cau tra loi ngan van co duong:
+        #    `low` nghi it nhat trong ba muc con lai (do 13/09: 3.5 = 206 token,
+        #    3.8 = 63 token).
+        if re_ == "none":
+            raise ThamSoSai(
+                "`reasoning_effort=\"none\"` is no longer served: these models "
+                "run with thinking-mode sampling parameters, and disabling "
+                "thinking against them collapses output quality (measured: 2 "
+                "tokens instead of ~1180 on a long-generation prompt). Use "
+                "`low` for the shortest answers.")
+        if re_ not in ("low", "medium", "xhigh"):
+            raise ThamSoSai("`reasoning_effort` phai la low|medium|xhigh")
         sach["reasoning_effort"] = re_
 
     sach = kiem_tham_so_sinh(p, sach)

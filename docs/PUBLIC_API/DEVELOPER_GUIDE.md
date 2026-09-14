@@ -252,10 +252,57 @@ Xin quá trần thì bạn nhận **400 ngay lập tức**, kèm con số cụ t
 sang `POST /api/v1/jobs` — thay vì bị cắt giữa chừng bằng một cái `524` không
 phân biệt được "hỏng" với "xong rồi nhưng mất kết nối".
 
-### Chưa có streaming
+### Streaming — có, nhưng ở hai cửa khác
 
-`"stream": true` bị từ chối bằng **400**. Nhận rồi trả một lượt không-stream sẽ
-làm SDK vỡ ở chỗ khó lần ra hơn nhiều, nên máy chủ nói thẳng.
+`POST /api/v1/chat/completions` **không** stream: `"stream": true` ở đây bị từ
+chối bằng **400**. Nhận rồi trả một lượt không-stream sẽ làm SDK vỡ ở chỗ khó
+lần ra hơn nhiều, nên máy chủ nói thẳng.
+
+🔴 **Mục này trước đây mang tiêu đề *"Chưa có streaming"* và câu ấy SAI.** Sửa
+14/09/2026. Nền tảng có **hai cửa stream đang chạy**, và chúng là đường mà
+Codex CLI, Claude Code, các tiện ích VS Code và Claude Desktop đang dùng — chỉ
+là tài liệu này chưa bao giờ nhắc tới chúng. Một năng lực không ai đọc được
+trong tài liệu là một năng lực không ai dùng được.
+
+| cửa | giao thức | trường đầu vào | trường token ra |
+|---|---|---|---|
+| `POST /api/v1/messages` | Anthropic Messages | `messages`, `system` riêng | `max_tokens` |
+| `POST /api/v1/responses` | OpenAI Responses | `input` (chuỗi hoặc mảng) | `max_output_tokens` |
+
+Cả hai trả `text/event-stream`, và cả hai **bắt buộc `Idempotency-Key`** như mọi
+cửa có tính tiền.
+
+```bash
+curl -N -X POST "$LTT_BASE_URL/api/v1/messages" \
+  -H "Authorization: Bearer $LTT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -d '{"model":"ltt-3.8","max_tokens":300,"stream":true,
+       "system":"Trả lời ngắn gọn.",
+       "messages":[{"role":"user","content":"Chào"}]}'
+```
+
+```
+event: message_start
+data: {"type":"message_start","message":{"id":"chatcmpl-…","role":"assistant",…}}
+```
+
+```bash
+curl -N -X POST "$LTT_BASE_URL/api/v1/responses" \
+  -H "Authorization: Bearer $LTT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -d '{"model":"ltt-3.8","max_output_tokens":300,"stream":true,"input":"Chào"}'
+```
+
+```
+event: response.created
+data: {"type":"response.created","response":{"id":"resp_…","status":"in_progress",…}}
+```
+
+⭐ **Vì sao nên dùng stream cho việc dài.** Cửa đồng bộ có trần thời gian (mục
+trên); stream gửi byte đầu tiên sớm nên Cloudflare không cắt, và bạn thấy chữ
+chạy ngay thay vì chờ trọn câu trả lời.
 
 ### Bận là 503, không phải 429
 
@@ -615,7 +662,7 @@ Input:
 - `max_tokens` — integer, min 1, max 32768, default 4096, Ceiling on generated tokens. Credit is held against this and refunded down to what was actually generated.
 - `temperature` — number, min 0.0, max 2.0, Sampling temperature.
 - `tools` — array, Function definitions, OpenAI format. The model may answer with `tool_calls`.
-- `reasoning_effort` — string, one of `none`, `low`, `medium`, `xhigh`, default medium, How much the model thinks before answering. Deeper costs more output tokens. Use `none` to turn thinking off entirely - that is the switch for short answers, not a small `max_tokens`: with thinking on the model can spend the whole budget reasoning and return empty content with finish_reason=length.
+- `reasoning_effort` — string, one of `low`, `medium`, `xhigh`, default medium, How much the model thinks before answering. Deeper costs more output tokens. Use `none` to turn thinking off entirely - that is the switch for short answers, not a small `max_tokens`: with thinking on the model can spend the whole budget reasoning and return empty content with finish_reason=length.
 - `response_format` — object, Constrain the answer's shape. `{"type":"json_object"}` returns bare JSON; `{"type":"json_schema","json_schema":{"name":...,"schema":{...}}} ` forces the answer to match that schema. The constraint is enforced by the decoder, not by prompting, so the output cannot drift out of shape.
 - `tool_choice` — string, one of `none`, `auto`, `required`, Whether the model may, must, or must not call a tool: `none`, `auto` or `required`. Without it `tools` is only ever a suggestion.
 - `parallel_tool_calls` — boolean, Allow several tool calls in one turn. Support depends on the model's own template.
@@ -625,7 +672,7 @@ Input:
 
 Output: `content` (string), `tool_calls` (array), `usage` (object)
 
-Contract hash: `4e6a8f955a420d49`
+Contract hash: `4faea5b757483c63`
 
 ### `text.prompt_package`
 

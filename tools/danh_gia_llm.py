@@ -219,9 +219,20 @@ def _van_ban(kq: dict) -> str:
         return ""
 
 
-def thu_thap(url: str, tok: str, model: str, lan: int, timeout: float) -> dict:
+def thu_thap(url: str, tok: str, model: str, lan: int, timeout: float,
+             effort: str = "") -> dict:
+    """`effort` rong = KHONG gui `reasoning_effort` (giu hanh vi cu chinh xac).
+
+    🔴 Them 14/09/2026 de tra loi mot cau CHUA AI DO: medium hay xhigh cho
+       chat luong tot hon. Bang 12/09 trong `llama-swap.yaml` so **cau hinh
+       server**, con bang 13/09 trong `ngan_sach.py` do **luong token suy
+       nghi** — khong bang nao do CHAT LUONG theo muc effort.
+
+    ⛔ Va do chinh la ly do phai them co nay vao BO DO DA CO thay vi dung
+       mot bo moi: bang 12/09 sinh ra tu day, nen so moi so duoc voi so cu.
+    """
     goc = url.rstrip("/") + "/v1/chat/completions"
-    ra = {"model": model, "url": url, "lan": lan,
+    ra = {"model": model, "url": url, "lan": lan, "effort": effort or "(khong gui)",
           "luc": time.strftime("%Y-%m-%d %H:%M:%S"), "bai": []}
 
     for de in BO_DE:
@@ -233,6 +244,8 @@ def thu_thap(url: str, tok: str, model: str, lan: int, timeout: float) -> dict:
         for i in range(lan):
             than = {"model": model, "max_tokens": 1400,
                     "messages": [{"role": "user", "content": nhac}]}
+            if effort:
+                than["reasoning_effort"] = effort
             ma, kq, giay, so_429 = _goi_co_thu_lai(goc, tok, than, timeout)
             ra["bai"].append({"ma_bai": de["ma"], "lan": i, "ma_http": ma,
                               "giay": round(giay, 2), "ra": _van_ban(kq),
@@ -245,6 +258,8 @@ def thu_thap(url: str, tok: str, model: str, lan: int, timeout: float) -> dict:
         for i in range(lan):
             than = {"model": model, "max_tokens": 400, "tools": TOOLS,
                     "messages": [{"role": "user", "content": de["nhac"]}]}
+            if effort:
+                than["reasoning_effort"] = effort
             ma, kq, giay, so_429 = _goi_co_thu_lai(goc, tok, than, timeout)
             tc = []
             try:
@@ -410,6 +425,8 @@ def main() -> int:
     p.add_argument("--model", default="qwen38-api")
     p.add_argument("--lan", type=int, default=1)
     p.add_argument("--timeout", type=float, default=600.0)
+    p.add_argument("--reasoning-effort", dest="effort", default="",
+                   help="none|low|medium|xhigh; rong = khong gui")
     p.add_argument("--ra", type=Path, default=Path("tmp/thu_thap_llm.json"))
     a = p.parse_args()
 
@@ -430,7 +447,7 @@ def main() -> int:
         print("khong co token (dat --token hoac chay tren may B)")
         return 1
 
-    d = thu_thap(a.url, tok, a.model, a.lan, a.timeout)
+    d = thu_thap(a.url, tok, a.model, a.lan, a.timeout, a.effort)
     a.ra.parent.mkdir(parents=True, exist_ok=True)
     a.ra.write_text(json.dumps(d, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"\nDA LUU: {a.ra}")

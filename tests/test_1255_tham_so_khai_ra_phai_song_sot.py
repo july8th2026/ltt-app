@@ -43,7 +43,8 @@ MAU_THEO_KHOA = {
     "temperature": 0.7,
     "tools": [{"type": "function",
                "function": {"name": "f", "parameters": {"type": "object"}}}],
-    "reasoning_effort": "none",
+    # `none` da bi BO khoi hop dong 14/09 (do duoc: 2 token thay vi ~1.180).
+    "reasoning_effort": "low",
     "response_format": {"type": "json_schema",
                         "json_schema": {"name": "n",
                                         "schema": {"type": "object"}}},

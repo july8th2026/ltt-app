@@ -21,6 +21,47 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-09-14 — `reasoning_effort: "none"` bị gỡ khỏi `text.chat`
+
+**BREAKING · phải sửa nếu bạn đang gửi `"none"`.** Đây là mục **phá vỡ tương
+thích thật sự**, khác hai mục bên dưới cùng ngày (chúng chỉ thêm trường tuỳ
+chọn). Gửi `reasoning_effort: "none"` nay nhận **400** kèm lời chỉ sang `low`.
+
+**Phải làm gì:** đổi `"none"` → `"low"`. Nếu bạn không gửi `reasoning_effort`
+thì không phải làm gì — mặc định vẫn là `medium`.
+
+### Vì sao gỡ: ba nguồn độc lập nói cùng một điều
+
+**1. Đo trên chính hệ này (14/09/2026).** Cùng prompt sinh dài, `max_tokens=8000`:
+
+| `reasoning_effort` | token ra |
+|---|---:|
+| `medium` / `low` / không gửi | **~1.180** |
+| **`none`** | **2** |
+
+Model trả về `"1"` rồi dừng, `finish_reason=stop`. Không phải bị cắt — nó thôi
+trả lời.
+
+**2. Phép đo nội bộ 12/09** trên 60 bộ đề: tắt suy nghĩ cho **48/60**, tiếng
+Việt còn **10 %**, sinh dài còn **40 %**. Kết luận ghi trong cấu hình vận hành:
+*"đó là HỎNG, không phải đánh đổi."*
+
+**3. Model card của nhà sản xuất** khai **hai bộ tham số lấy mẫu khác nhau**:
+
+| chế độ | Temperature | TopP | TopK | MinP |
+|---|---|---|---|---|
+| thinking | 0,6 | 0,95 | 20 | 0 |
+| non-thinking | 0,7 | 0,80 | 20 | 0 |
+
+Hệ này chạy bộ **thinking**, và tham số lấy mẫu đặt ở **máy chủ** chứ không gửi
+theo từng request (cache CUDA graph khoá theo bộ tham số). Nên `none` ở đây =
+chạy non-thinking bằng tham số của thinking — một tổ hợp nhà sản xuất không
+khuyến nghị, và hai phép đo trên cho thấy hậu quả.
+
+⛔ **Không ánh xạ ngầm `none` → `low`.** Khách xin một đằng, máy chủ làm một nẻo,
+không nói gì — đó là đúng loại lỗi im lặng mà đợt rà soát này đi sửa. Từ chối
+to rõ, kèm đường ra.
+
 ## 2026-09-14 — `text.chat` mở sáu tham số mà engine vốn đã làm được
 
 **ADDED · không phá vỡ hợp đồng.** `contract_hash` của `text.chat` đổi

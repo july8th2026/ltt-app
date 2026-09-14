@@ -283,8 +283,12 @@ MANIFEST = AppManifest(
             # `json[]`, khong phai `json`: OpenAI khai `tools` la mot MANG.
             "tools": {"type": "json[]"},
             # `none` = TAT suy nghi (L-02, 13/09/2026). Xem `features.kiem_tham_so`.
+            # 🔴 `none` DA BO 14/09/2026 — xem `features.kiem_tham_so`.
+            #    Do duoc: `none` cho **2 token** thay vi ~1.180 tren cung prompt.
+            #    Ba nguon doc lap (do 14/09, bang 12/09 trong llama-swap.yaml,
+            #    model card Qwen ve tham so lay mau) noi cung mot dieu.
             "reasoning_effort": {"type": "enum",
-                                 "values": ["none", "low", "medium", "xhigh"],
+                                 "values": ["low", "medium", "xhigh"],
                                  "default": "medium"},
             # ── Mo 14/09/2026: engine DA lam duoc, cua cua ta dang vut di ────
             #
