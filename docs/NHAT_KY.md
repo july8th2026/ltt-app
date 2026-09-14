@@ -13,6 +13,121 @@
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
 
+## 2026-09-14 (tối) — Ba suất/card, một hợp đồng lỗi, và ba lần tôi chẩn đoán sai
+
+### Chuyện bắt đầu từ một câu của chủ dự án: *"3090 vẫn chạy nhỏ giọt"*
+
+Nó **không** chạy nhỏ giọt. Nhưng để biết điều đó phải mất cả buổi, và đường đi
+tới đó đáng ghi hơn kết luận.
+
+📐 Đo `nvidia-smi` 100 ms/mẫu, một job 11.000 token trên 3090:
+
+```
+khách chờ 198,5 s · engine tự khai sinh 192,0 s · GPU bận 178,0 s (95 % mẫu)
+MỘT mạch liên tục 178,0 giây · util_tb 77 % · 343 W trên card TDP 350 W
+```
+
+Ba nguồn độc lập khớp nhau ⇒ không còn chỗ cho một khoảng nghỉ ẩn nào.
+
+### Thứ HỎNG THẬT: card 3 suất chỉ bao giờ chạy 2
+
+`luat_nhan.tran_nen` chôn cứng `so_slot - 1`. Cửa job gán `lop=NEN`, cửa
+sync/stream gán `lop=TUONG_TAC`, nên luật trừ đúng một suất của **mọi** lô job.
+Đo được trước khi sửa (3 job thơ qua cửa job thật):
+
+| lượt | token | ký tự | giây |
+|---|---|---|---|
+| 1 | 1.220 | 2.139 | 39,9 |
+| 2 | 1.498 | 2.824 | 48,7 |
+| 0 | 1.017 | 1.499 | **70,5** ← chờ 30,6 s mới vào |
+
+Vết hụt 1,5 giây trên GPU ở giây 37 chính là nhịp bàn giao. Đó là thứ làm tải
+**trông** rời rạc.
+
+⛔ Tôi đã xếp nó vào ngăn *"hệ đúng, kỳ vọng sai"* và **hạ kỳ vọng xuống 2**.
+   Xếp sai ngăn. Một hằng số nằm chết trong hàm, không ai khai và không cửa nào
+   nói ra rằng mình đang mất một suất, **không phải một quyết định** — nó là một
+   mặc định chưa ai xét. Chủ dự án bác bỏ ngay: *"không trở slot về 2, vì ta đã
+   có hàng chờ job rồi."* Nay là `ThamSo.chua_slot_tuong_tac`, mặc định 0.
+
+⇒ Lượt đo PASS đầu tiên: **M1 3 suất · M2 · M3 bàn giao trễ 2,0 s · M4 5/5 job
+  31,3–36,3 tok/s · M5 GPU bận 92 %, mạch liền 169,5 s**.
+
+### Task Manager: tôi sai hai lần, và lần sau sửa lần trước
+
+1. Khuyên chủ dự án *"đổi dropdown sang Compute_0"* — **3090 không có node ấy**;
+   CUDA của llama.cpp nằm trong ô `3D`.
+2. Báo *"bộ đếm Windows không thấy `llama-server`"* từ **một** mẫu — mẫu ấy rơi
+   ra ngoài cửa sổ job. Đo lại hai nguồn cùng khoảnh khắc: `nvidia-smi` 67 % và
+   bộ đếm **96,1 %** cho cùng `pid_12480`.
+3. Báo *"desktop đang render trên 3090, card chỉ còn 341 MiB"* từ
+   `--query-compute-apps`. **Sai**: lệnh ấy liệt tiến trình *chạm* vào adapter,
+   không phải tiến trình *ăn VRAM*. `GPU Adapter Memory` mới là số thật, và nó
+   xếp `dwm.exe` sang một adapter thứ ba.
+
+⚠️ Vì (3) tôi **suýt** đổi `ttl` của `qwen38-api` trên máy B. Đã hoàn nguyên,
+   băm trùng bản gốc, `LTTLlamaSwap` **chưa khởi động lại lần nào**.
+
+Chạy song song 3 job mỗi model để trả lời dứt điểm: **cả hai card đều báo cáo**
+(3090 96,2 % / 5060 Ti 68,4 %, cùng một mẫu) ⇒ giả thuyết *"Task Manager chỉ in
+ở card xuất hình"* bị bác bỏ.
+
+### Hợp đồng lỗi: một sự việc, ba câu, bốn chỗ trả tiếng Việt nội bộ cho khách
+
+`ThieuCredit` có **ba** câu khác nhau trên **năm** cửa, và bốn cửa trả thẳng
+`str(e)` — *"Khong du credit: can 1234, con 56."* — cho khách. Nay một hằng số
+`THIEU_CREDIT_LOI` + `thieu_credit_chi_tiet()` → `required_credit`/`balance`.
+
+`DangBan`: cửa stream **vứt** `thu_lai_sau_s` và `nguon`, luôn nói
+`Retry-After: 15`. Một `Retry-After` bịa ra **tệ hơn** không có — và cộng đồng
+xác nhận nó tới tay client thật: `openai-python::_parse_retry_after_header` đọc
+header `retry-after-ms` → `retry-after`, **không** đọc thân JSON.
+
+`HuyError` **không được bắt** ở cả hai cửa (`grep server/` = 0 dòng) — máy B trả
+499 ⇒ khách nhận **500** cho việc mà docstring của chính lớp ấy gọi là *"KHÔNG
+PHẢI LỖI — của ai cả"*. Nay 499 `request_cancelled`, dùng đúng khuôn
+`_KHACH_NGAT` đã có ⇒ **không** cần mã công khai mới ⇒ **không** phải sinh lại
+`CONTRACT_BASELINE` (ước lượng ban đầu của tôi đắt hơn thực tế).
+
+Và chính lượt kiểm khói sau deploy lôi ra một lỗi cả chiến dịch bỏ sót: thông
+điệp 400 **mách khách dùng `reasoning_effort='none'`** — giá trị vừa bị gỡ.
+Khách sửa đúng như lời ta bảo rồi nhận tiếp một 400 khác.
+
+### Hạn mồ côi: deploy của chính tôi phơi bày nó
+
+Deploy giết worker giữa lúc 4 job chạy ⇒ không handler nào chạy ⇒ lease mồ côi.
+Đo: **3090 giữ 3 lease / 2 job thật, 1 job đang xếp hàng**.
+
+⛔ Tôi lại chẩn đoán sai: *"job `error` phải nhả suất ngay — khiếm khuyết"*. Đọc
+   mã thì `luong.py:742` nhả suất đúng. Đường lỗi lành; **hạn đỡ** mới hỏng:
+
+| lease | hạn | = mấy nhịp tim | lý lẽ trong mã |
+|---|---|---|---|
+| `stream` | 180 s | 3× | có (L-11, 13/09) |
+| `job` | 1.200 s | 20× | **không có** |
+
+[cộng đồng] `river` để `RescueStuckJobsAfter` mặc định **1 giờ**, nhiều nơi nâng
+24 giờ — *"it is purely time based — it has no idea whether a worker is still
+alive"*. **Và đúng vì thế không mượn được số của họ**: `reclaim_expired` của ta
+đo `heartbeat_at`. `ORPHAN_TIMEOUT_JOB = 300 s = 5 × HEARTBEAT_SECONDS`.
+
+Xác minh sống: xác bị thu, job chờ vào, còn **0 xác / 0 hàng chờ**.
+
+### Gate và máy
+
+Gate chạy 4 lượt. Lượt 4 đỏ với `[Errno 28] No space left on device` — **không
+phải hết đĩa** (C: còn 519 GB). Đo được: `demucs` của một dự án khác ăn **10,17
+lõi** trên máy 10 lõi, commit charge chạm trần 52,9 GB. Cả 5 ca đỏ đều thuộc
+nhóm bánh cóc ruff (nhóm phải sinh tiến trình con). `check_ruff.py` chạy riêng:
+*"đạt mốc"*; `test_306` riêng: **43 xanh**.
+
+⇒ Lượt 3 **PASS 33/33**. Ba commit sau đó chủ dự án chốt **bỏ gate** để tránh
+  limit; đã chạy cụm hẹp thay thế (119 + 93 xanh).
+
+**Repo** `22841303..294fa798` · **Production** `294fa798`, ba chiều 0/0/0.
+
+---
+
 ## 2026-09-14 — VẬN HÀNH THẬT: xoá bộ đo tự xây (lần hai), và L-12 được xác nhận trên tải thật
 
 ### 🔴 Sai lầm của phiên, ghi trước kết quả
