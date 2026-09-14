@@ -27,6 +27,7 @@ from __future__ import annotations
 import argparse
 import json
 import pathlib
+import subprocess
 import sys
 import threading
 import time
@@ -90,10 +91,12 @@ class BoGpu(threading.Thread):
         super().__init__(daemon=True)
         self.nhip_ms = nhip_ms
         self.mau: list[tuple] = []
-        self._p = None
+        #: ⛔ Chu thich kieu TUONG MINH. Thieu no, mypy suy `None` tu gia tri
+        #:    khoi tao roi bao bon loi o duoi — va mot `# type: ignore` dat cho
+        #:    chung la giau bug chu khong sua bug.
+        self._p: "subprocess.Popen[bytes] | None" = None
 
     def run(self) -> None:
-        import subprocess
         khoa_ssh = pathlib.Path.home() / ".ssh" / "nexus_b"
         try:
             self._p = subprocess.Popen(
@@ -104,8 +107,10 @@ class BoGpu(threading.Thread):
                 stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
         except Exception:                   # noqa: BLE001
             return
+        if self._p.stdout is None:
+            return
         t0 = time.monotonic()
-        for dong in self._p.stdout:         # type: ignore[union-attr]
+        for dong in self._p.stdout:
             try:
                 c = dong.decode("utf-8", "replace").strip().split(", ")
                 self.mau.append((round(time.monotonic() - t0, 2), int(c[0]),
@@ -208,15 +213,19 @@ def _mot_job(i: int, model: str, ra_token: int, ket: list) -> None:
                 r = c.get(f"{GOC_API}/jobs/{jid}", headers=H)
                 d = r.json()
                 if d.get("status") in ("succeeded", "failed", "cancelled"):
-                    r = d.get("result") or {}
-                    u = r.get("usage") or {}
+                    # ⛔ KHONG dung lai ten `r`: no dang giu mot `Response`.
+                    #    Gan de len no lam ca ham mat kieu, va mypy dem dung
+                    #    bon loi cho mot cai dat ten cau tha.
+                    kq = d.get("result") or {}
+                    u = kq.get("usage") or {}
                     # ⭐ GIU NGUYEN VAN, khong chi dem token: "check ket qua tra
                     #    ve" la mot menh de rieng — mot lo job co the dung gio,
                     #    dung suat, dung GPU va van tra ve rong (memory "model
                     #    nha tra ve rong khoang mot nua luot").
-                    van = r.get("content") or r.get("text") or ""
-                    if not van and isinstance(r.get("choices"), list) and r["choices"]:
-                        van = (r["choices"][0].get("message") or {}).get("content") or ""
+                    van = kq.get("content") or kq.get("text") or ""
+                    if not van and isinstance(kq.get("choices"), list)                             and kq["choices"]:
+                        van = (kq["choices"][0].get("message")
+                               or {}).get("content") or ""
                     giay = round(time.monotonic() - t0, 1)
                     ra = u.get("output_tokens") or u.get("completion_tokens") or 0
                     for cu_ in ket:

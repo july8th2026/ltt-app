@@ -83,30 +83,63 @@ Ba điều rút ra, và cả ba đều đã từng làm tôi kết luận sai tr
    cắm ở 5060 Ti, còn desktop **render** ở 3090. Hai câu hỏi khác nhau, và chỉ
    câu thứ hai mới liên quan tới VRAM.
 
-### 🔴 Phát hiện 14/09 chưa xử: desktop đang render trên 3090
+### 🔴 ĐÃ BÁC BỎ: "desktop đang render trên 3090" — kết luận sai của chính tôi
 
-📐 `GPU-26623278…` = RTX 3090 = `qwen38-api`, dùng **24.235/24.576 MiB — còn 341
-MiB**. Trên chính card ấy có dwm/explorer/Taskmgr.
+Chiều 14/09 tôi báo động: `nvidia-smi --query-compute-apps` liệt `dwm.exe`,
+`explorer.exe`, `Taskmgr.exe` **dưới UUID của 3090**, card chỉ còn 341 MiB — đúng
+cấu hình đã gây sự cố 13/09 trên card kia. Tôi suýt tách neo `&ttl_nha` để cho
+3090 `ttl: 0`, rồi hoàn nguyên vì lập luận dựa trên `display_active`.
 
-Hồ sơ máy B khai ý định ngược lại: *"5060 Ti giữ cả desktop Windows (L-12 dồn
-mọi thứ đó sang đây để 3090 chỉ chạy AI)"*. **Ý định ấy chưa thành.**
+**Cả hai lần tôi đều hỏi sai câu.** Số thật, đo bằng bộ đếm dung lượng:
 
-⛔ Đây đúng cấu hình đã gây sự cố 13/09 trên card kia: `VRAM trống 536 MiB < sàn
-600 MiB` ⇒ cổng từ chối mọi lượt, model trả 503. Nay 3090 còn **341 MiB**.
+```
+\GPU Adapter Memory(*)\Dedicated Usage      vs   nvidia-smi
+luid_0x0038cc5f -> 24.241 MiB                 GPU0 RTX 3090    24.235 MiB
+luid_0x0037fdf5 -> 15.425 MiB                 GPU1 RTX 5060 Ti 15.418 MiB
+luid_0x00015289 -> không xuất hiện (< 100 MB)      <- dwm.exe nằm ở đây
+```
 
-⇒ Thứ tự sửa, và thứ tự này quan trọng hơn từng bước:
+Hai luid của `llama-server` khớp **tuyệt đối** với hai card. `dwm.exe` ở một
+**adapter thứ ba gần như không có VRAM riêng** — máy B có hai tiến trình `dwm`
+(hai phiên hiển thị), cái đang chạy nằm trên adapter ảo ấy.
 
-| bước | việc | vì sao KHÔNG đảo ngược được |
-|---|---|---|
-| **1** | Đưa việc vẽ desktop khỏi 3090 (máy B, thiết lập Windows) | tới khi 3090 thật sự chỉ chạy AI, mọi tính toán biên VRAM đều sai |
-| **2** | *Chỉ khi bước 1 đã nghiệm thu*: `qwen38-api` chuyển `ttl: 0` | trọng tài residency mới thành chủ sở hữu DUY NHẤT của "3.8 có cư trú không" |
+⇒ Desktop **không** ở 3090. Biên 341 MiB là do ngân sách `-c 221184` của chính
+  ta, không ai tranh.
 
-⛔ **Đừng làm bước 2 trước.** Ngày 14/09 tôi đã suýt: định tách neo `&ttl_nha` để
-cho 3090 `ttl: 0`, lập luận "3090 không gánh màn hình nên lý do 13/09 không áp".
-Lập luận ấy dựa trên `display_active`, và `display_active` **không trả lời câu
-đó**. Đã hoàn nguyên, dịch vụ chưa khởi động lại lần nào.
+⛔ **Bài học, và nó tổng quát hơn cái sai:** `--query-compute-apps` trả lời *"ai
+   CHẠM vào card"*; `GPU Adapter Memory` / `GPU Process Memory` trả lời *"ai ĂN
+   VRAM của nó"*. Tôi dùng câu trả lời thứ nhất cho câu hỏi thứ hai, hai lần,
+   và lần nào cũng suýt đổi một tham số production vì nó.
 
-⭐ Và neo `&ttl_nha` **giữ nguyên** cho tới bước 2: nó cưỡng chế "một nguồn cho
+⚠️ `ttl` của `qwen38-api` **vẫn giữ `1800`**. Sự cố 13/09 (`VRAM trống 536 MiB <
+   sàn 600 MiB` ⇒ `ltt-3.5` trả 503) xảy ra trên **5060 Ti**, card thật sự cắm
+   màn hình — nên lý lẽ ấy không còn áp cho 3090. Nhưng muốn cho 3090 `ttl: 0`
+   thì phải chứng minh **trọng tài residency thật sự tháo `3.8`** khi model ảnh
+   cần card. Chưa đo ⇒ chưa đổi.
+
+### ✅ Task Manager hiện ĐÚNG cho CẢ HAI card — đo song song 14/09
+
+Ép 3 job `ltt-3.8` + 3 job `ltt-3.5` cùng lúc, đọc hai nguồn cùng khoảnh khắc:
+
+```
+mẫu 4   smi  GPU0 86 % 65 °C 348 W      GPU1 72 % 57 °C 124 W
+        đếm  96,2 %  pid_12480 luid_0x0038cc5f engtype_3d   (3.8 / 3090)
+             68,4 %  pid_20972 luid_0x0037fdf5 engtype_3d   (3.5 / 5060 Ti)
+              3,9 %  pid_20972 …               engtype_copy
+```
+
+⇒ Giả thuyết *"Task Manager chỉ in ở card xuất hình"*: **bác bỏ**. 3090 có
+  `display_active=Disabled` mà vẫn hiện 96,2 %, cùng lúc với card kia.
+
+Sáu job xong sạch: `3.8` ~187 s/job, `3.5` ~141 s/job, ~18.000 ký tự mỗi bài.
+
+⇒ Triệu chứng *"3090 chạy nhỏ giọt"* có **hai nguồn, chỉ một là bug**:
+
+| nguồn | trạng thái |
+|---|---|
+| `tran_nen` chôn cứng `so_slot − 1` ⇒ card 3 suất chạy 2 ⇒ mỗi lô vỡ làm hai đợt, giữa hai đợt GPU tụt về 0 | **đã sửa + deploy** |
+| ảnh chụp Task Manager lấy **sau** khi lô job vừa xong: `Utilization 0 %` là giá trị tức thời, 76–77 °C là card đang nguội | không phải lỗi |
+
   mọi model" bằng cú pháp YAML chứ không bằng trí nhớ.
 
 ⇒ **Nguồn chân lý về GPU là `nvidia-smi`**, và khi cần đối chứng thì lấy bộ đếm
