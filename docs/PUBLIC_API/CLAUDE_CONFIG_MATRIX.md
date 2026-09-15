@@ -165,7 +165,7 @@ request; Claude Desktop hiện không cần ép thêm trường đó.
 ## 6. Hàng chờ khi chạy nhiều phiên
 
 Claude Code tự retry lỗi server, overload, timeout và kết nối tạm thời theo
-exponential backoff; mặc định là 10 retry. Preset LTT đặt `3`. Mỗi retry có
+exponential backoff; mặc định là 10 retry. Preset LTT đặt `10`. Mỗi retry có
 timeout riêng, nên tăng retry lên 10 không tạo một hàng chờ tốt hơn mà có thể
 kéo dài và nhân tải khi hai hội thoại rất lớn cùng gọi một model.
 
