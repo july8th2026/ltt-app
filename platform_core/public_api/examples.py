@@ -812,6 +812,14 @@ CODEX_MODEL_REASONING = {
     "ltt-3.5": "medium",
 }
 
+# Values the Codex picker may offer. Codex requires this catalog field and
+# sends its enum on every Responses request. Qwen3.5 has only thinking on/off;
+# `medium` is the single transport label for thinking ON, not a native tier.
+CODEX_MODEL_REASONING_LEVELS = {
+    "ltt-3.8": ("low", "medium", "xhigh"),
+    "ltt-3.5": ("medium",),
+}
+
 #: Bộ biến CHUẨN cho một phiên Claude Code Local chạy qua LTT Gateway.
 #:
 #: 🔴 Vì sao phải gom thành dữ liệu thay vì một khối chữ trong template. Danh
@@ -890,9 +898,11 @@ def codex_catalog() -> str:
             "description": f"{CODEX_MODEL_LABELS[slug]} — LTT Studios",
             "default_reasoning_level": CODEX_MODEL_REASONING[slug],
             "supported_reasoning_levels": [
-                {"effort": "low", "description": "Fast"},
-                {"effort": "medium", "description": "Balanced"},
-                {"effort": "xhigh", "description": "Deepest"}],
+                {"effort": effort,
+                 "description": ("Thinking on" if slug == "ltt-3.5" else
+                                 {"low": "Fast", "medium": "Balanced",
+                                  "xhigh": "Deepest"}[effort])}
+                for effort in CODEX_MODEL_REASONING_LEVELS[slug]],
             "shell_type": "unified_exec", "visibility": "list",
             "supported_in_api": True, "priority": 1,
             "additional_speed_tiers": [], "service_tiers": [],

@@ -42,6 +42,7 @@ class Handler(BaseHTTPRequestHandler):
                 "path": self.path,
                 "model": body.get("model"),
                 "stream": body.get("stream"),
+                "reasoning_effort": body.get("reasoning_effort"),
                 "tools": len(body.get("tools") or []),
             }) + "\n")
         global FAILURES_REMAINING

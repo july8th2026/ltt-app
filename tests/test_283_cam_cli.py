@@ -143,6 +143,12 @@ def test_selected_profile_catalog_and_rollback(cc, model, vscode):
         assert root["model_catalog_json"] == str(cc.TEP_CATALOG)
     catalog = json.loads(cc.TEP_CATALOG.read_text())["models"]
     assert all(m["input_modalities"] == ["text", "image"] for m in catalog)
+    levels = {item["slug"]: item["supported_reasoning_levels"]
+              for item in catalog}
+    assert [item["effort"] for item in levels["ltt-3.8"]] == [
+        "low", "medium", "xhigh"]
+    assert levels["ltt-3.5"] == [
+        {"effort": "medium", "description": "Thinking on"}]
     cc.go_codex(tt)
     assert cfg.read_bytes() == original
     assert not cc.TEP_CATALOG.exists()
@@ -745,7 +751,7 @@ def test_nhat_ky_KHONG_lam_hong_lenh_khi_khong_ghi_duoc(cc, tmp_path, monkeypatc
     cc._ghi_nhat_ky("khong ghi duoc")      # khong duoc nem
 
 
-def test_kiem_PHAI_kiem_ca_be_mat_claude_desktop(cc):
+def test_kiem_PHAI_kiem_ca_be_mat_claude_desktop_va_codex(cc):
     """🔴 Ban truoc bao XANH trong khi Claude Desktop im lang hoan toan.
 
     Vi no chi thu `MODEL` + `stream: True`, con be mat do dung `MODEL_DESKTOP`
@@ -760,6 +766,49 @@ def test_kiem_PHAI_kiem_ca_be_mat_claude_desktop(cc):
     sau = ma.split("MODEL_DESKTOP", 1)[1]
     assert '"stream"' not in sau.split("phuong=", 1)[0], (
         "luot thu Claude Desktop phai la request KHONG stream")
+    assert 'goi("/responses"' in ma, (
+        "`kiem` khong thu Responses -> co the bao xanh trong khi Codex hong")
+    assert "for hs_codex in HO_SO_MODEL.values()" in ma, (
+        "catalog co hai model nen `kiem` phai thu ca hai model Codex")
+
+
+def test_kiem_GOI_THAT_responses_cho_ca_hai_model_codex(cc, monkeypatch):
+    """Behavior check: a green self-check must have traversed both Codex routes."""
+    calls = []
+
+    class Reply:
+        status = 200
+
+        def __init__(self, body):
+            self.body = body
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def read(self):
+            return self.body
+
+    def urlopen(request, timeout):
+        body = json.loads(request.data) if request.data else None
+        calls.append((request.full_url, body, timeout))
+        if request.full_url.endswith("/tools"):
+            return Reply(b'{"items":[{"name":"text.chat"}]}')
+        if request.full_url.endswith("/credits/balance"):
+            return Reply(b'{"balance":1000}')
+        return Reply(b'event: response.completed\ndata: {}\n\n')
+
+    monkeypatch.setattr(cc.urllib.request, "urlopen", urlopen)
+    monkeypatch.setattr(cc, "_doc_trang_thai", lambda: {"model": "ltt-3.5"})
+    args = type("Args", (), {"khoa": "mock", "goc": "https://test"})()
+    assert cc.lenh_kiem(args) == 0
+
+    responses = [body for url, body, _timeout in calls
+                 if url.endswith("/api/v1/responses")]
+    assert [body["model"] for body in responses] == ["ltt-3.8", "ltt-3.5"]
+    assert all(body["stream"] is True for body in responses)
 
 
 # ── Ban 1.1: chon be mat + trang thai that ─────────────────────────────────

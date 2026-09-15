@@ -12,6 +12,36 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-15 — H54: Tool 1.9.2 khớp reasoning và kiểm thật Codex
+
+- Tài liệu chính thức Codex xác nhận custom provider dùng Responses và catalog
+  cần metadata reasoning. Model card/template Qwen3.8 công bố ba mức
+  `low|medium|xhigh`, mặc định `xhigh`; Qwen3.5 chỉ có thinking bật/tắt. Phép
+  đo bằng Codex CLI 0.145.0 cho thấy bỏ `supported_reasoning_levels` làm catalog
+  không parse, còn danh sách rỗng vẫn gửi `reasoning.effort=medium`.
+- Catalog của Tool, SDK và trang API nay cho 3.8 ba lựa chọn trên; 3.5 chỉ một
+  lựa chọn `medium — Thinking on`. Đây là nhãn tương thích Codex, không phải
+  tier native. Harness vận hành dùng `xhigh` cho 3.8 và bỏ trường effort ở lượt
+  API Qwen3.5 để kiểm đúng mặc định thinking-on của server.
+- `cam_cli kiem` nay gọi thật `/api/v1/responses` cho cả `ltt-3.8` và
+  `ltt-3.5`, ngoài tuyến Claude Messages. Chạy `python -m pytest -n 7
+  tests\test_275_cai_dat_cli.py tests\test_283_cam_cli.py
+  tests\test_294_trang_cong_khai_api.py
+  tests\test_1262_cli_operational_harness.py -q`: **134 passed**, 7 cảnh báo
+  deprecation. Ba binary thật — CLI 0.145.0, Desktop app-server
+  0.146.0-alpha.3.1, extension 0.154.0-alpha.6.2 — đều parse strict và liệt kê
+  đủ hai model.
+- `python tools\dong_goi_exe.py phat-hanh --quet`: **PASS**; Tool 1.9.2 đủ
+  installer/GUI/console/ZIP, Defender sạch. Source nhúng trùng SHA-256; console
+  trả `cam_cli 1.9.2`. Installer SHA-256
+  `317627d1327334db2d704336635fe5982311476f80be1dca75a9c71678b4225a`, ZIP
+  `d900972c3647d1d330cabacb01d89d3848f9c4f38a75631242dfecf56c5e5136`.
+- Hai artifact đã chép vào `C:\LTTPlatform\data\api_dist`. Playwright production
+  `/huong-dan/cong-cu` hiện đúng 1.9.2 và hai hash, 0 console error/0 request
+  hỏng; hai URL tải công khai trả HTTP 200. Theo chỉ định của owner, đợt này
+  dùng gate riêng `-n 7`, không chạy gate tổng và không ghi gate phạm vi là
+  full gate PASS.
+
 ## 2026-09-15 — H53: chẩn đoán và gỡ vòng tự khóa Qwen 3.5
 
 - Nhật ký Máy B cho thấy một job Qwen 3.5 bị từ chối 429 khoảng mỗi 20 giây từ
@@ -32,8 +62,14 @@
   `auto-20260915-182957`, 39 tệp Python khớp hash. Chỉ restart
   `LTTLlmGateway`, không restart llama-swap. `/health` sau restart báo Qwen 3.5
   `san_vram_mb=0` trong khi đang giữ một job; canary nội bộ `/v1/messages` và
-  `/v1/responses` đều HTTP 200. Máy A chưa deploy tại checkpoint này. Owner đã
-  chỉ định bỏ gate tổng của đợt này; không ghi test phạm vi thành gate PASS.
+  `/v1/responses` đều HTTP 200.
+- Deploy Máy A từ clone sạch `core.autocrlf=false`: `EXITCODE=0`, production
+  chạy commit `0fcc44d7`, health 200; đối chiếu 1.055 tệp đạt 0 lệch, 0 thiếu,
+  0 thừa. Canary production riêng Qwen 3.5 qua Messages và Responses đều HTTP
+  200 ở lần đầu; khóa live ngắn hạn đã thu hồi. Bộ canary tổng ban đầu bị dừng
+  vì chờ capacity 3090 ngoài phạm vi, khóa còn mở được rà và thu hồi trước khi
+  chạy lại phép đo hẹp. Owner đã chỉ định bỏ gate tổng của đợt này; không ghi
+  test phạm vi thành gate PASS.
 
 ## 2026-09-15 — H52: Tool 1.9.1 đồng bộ cấu hình H51
 

@@ -24,7 +24,7 @@
 
 #define TenApp      "LTT Studios - Cam cong cu viet ma"
 #define TenNgan     "LTTStudios-CamCLI"
-#define PhienBan    "1.9.1"
+#define PhienBan    "1.9.2"
 #define NhaXB       "LTT Studios"
 #define Web         "https://app.lttstudios.com"
 #ifndef ThuMucNguon

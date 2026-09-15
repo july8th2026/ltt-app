@@ -33,8 +33,10 @@ const capacityDeadline = Date.now() + 12 * 60 * 1000;
 const suppliedKey = process.env.LTT_API_KEY || '';
 const models = [
   { route: 'ltt-llm-claude-compat', suffix: '38',
+    reasoningEffort: 'xhigh',
     question: 'Calculate 8 * 7. Reply with only the number.', expected: '56' },
   { route: 'ltt-llm-claude-compat-35', suffix: '35',
+    reasoningEffort: null,
     question: 'Calculate 12 * 12. Reply with only the number.', expected: '144' },
 ];
 const report = {
@@ -101,13 +103,17 @@ async function exerciseApi(key) {
   await apiCall(key, 'tools', '/api/v1/tools');
   await apiCall(key, 'credits', '/api/v1/credits/balance');
   for (const modelCase of models) {
-    const { route: model, question, expected } = modelCase;
+    const { route: model, question, expected, reasoningEffort } = modelCase;
+    // Qwen3.8 has native low/medium/xhigh. Qwen3.5 publishes thinking on/off,
+    // so omitting this optional API field tests its server-side thinking-on
+    // default instead of inventing a `low` tier that the model does not have.
+    const reasoning = reasoningEffort ? { reasoning_effort: reasoningEffort } : {};
     const message = await apiCall(key, `messages:${model}`, '/api/v1/messages', {
       method: 'POST',
       body: JSON.stringify({
         model,
         max_tokens: 1024,
-        reasoning_effort: 'low',
+        ...reasoning,
         stream: false,
         messages: [{ role: 'user', content: question }],
       }),
@@ -119,7 +125,7 @@ async function exerciseApi(key) {
     const streamed = await apiCall(key, `responses:${model}`, '/api/v1/responses', {
       method: 'POST',
       body: JSON.stringify({ model, stream: true, input: question,
-        max_output_tokens: 1024, reasoning_effort: 'low' }),
+        max_output_tokens: 1024, ...reasoning }),
     });
     if (!streamed.text.includes('response.created') || !streamed.text.includes('response.completed')) {
       throw new Error(`responses:${model} did not complete its SSE lifecycle`);
@@ -133,7 +139,7 @@ async function exerciseApi(key) {
       },
     }];
     const firstBody = {
-      model, max_tokens: 1024, reasoning_effort: 'low', stream: false, tools,
+      model, max_tokens: 1024, ...reasoning, stream: false, tools,
       messages: [{ role: 'user', content: 'Use report_marker with value 42.' }],
     };
     const first = await apiCall(key, `tool-call:${model}`, '/api/v1/messages', {
@@ -147,7 +153,7 @@ async function exerciseApi(key) {
     const second = await apiCall(key, `tool-result:${model}`, '/api/v1/messages', {
       method: 'POST',
       body: JSON.stringify({
-        model, max_tokens: 1024, reasoning_effort: 'low', stream: false, tools,
+        model, max_tokens: 1024, ...reasoning, stream: false, tools,
         messages: [
           firstBody.messages[0],
           { role: 'assistant', content: firstJson.content },

@@ -164,7 +164,7 @@ NEN_HOI_THOAI_35 = 176373
 class HoSoModel(NamedTuple):
     """MOT model, nhu bo cai nay can biet ve no.
 
-    ⚠️ Nam truong PHAI di cung nhau. Roi rac chung ra la cach `ltt-3.5` duoc
+    ⚠️ Sau truong PHAI di cung nhau. Roi rac chung ra la cach `ltt-3.5` duoc
        cam voi cua so cua `ltt-3.8` — mot `413` giua phien, im lang, chi vi mot
        con so bi bo lai.
     """
@@ -174,6 +174,7 @@ class HoSoModel(NamedTuple):
     cua_so: int
     nen: int
     reasoning: str
+    reasoning_levels: tuple[str, ...]
 
 
 #: 🔑 HAI MODEL DANG BAN, theo thu tu hien cho khach.
@@ -182,9 +183,10 @@ class HoSoModel(NamedTuple):
 #:    KHACH, khong co kho ma, nen no CHEP so — va `test_275` doi chieu hai chieu.
 HO_SO_MODEL = {
     MODEL: HoSoModel(MODEL, MODEL_DESKTOP, CUA_SO_NGU_CANH, NEN_HOI_THOAI,
-                     "xhigh"),
+                     "xhigh", ("low", "medium", "xhigh")),
     MODEL_35: HoSoModel(MODEL_35, MODEL_DESKTOP_35,
-                        CUA_SO_NGU_CANH_35, NEN_HOI_THOAI_35, "medium"),
+                        CUA_SO_NGU_CANH_35, NEN_HOI_THOAI_35, "medium",
+                        ("medium",)),
 }
 
 TEN_MODEL = tuple(HO_SO_MODEL)
@@ -230,9 +232,11 @@ def _catalog() -> str:
             "description": f"{slug} (LTT Studios)",
             "default_reasoning_level": HO_SO_MODEL[slug].reasoning,
             "supported_reasoning_levels": [
-                {"effort": "low", "description": "Fast"},
-                {"effort": "medium", "description": "Balanced"},
-                {"effort": "xhigh", "description": "Deepest"}],
+                {"effort": effort,
+                 "description": ("Thinking on" if slug == MODEL_35 else
+                                 {"low": "Fast", "medium": "Balanced",
+                                  "xhigh": "Deepest"}[effort])}
+                for effort in HO_SO_MODEL[slug].reasoning_levels],
             "shell_type": "unified_exec", "visibility": "list",
             "supported_in_api": True, "priority": 1,
             "additional_speed_tiers": [], "service_tiers": [],

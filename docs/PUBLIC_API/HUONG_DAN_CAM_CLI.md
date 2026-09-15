@@ -203,6 +203,12 @@ thành `medium`, `model_context_window`
 thành `209141`, `model_auto_compact_token_limit` thành `176373`.
 Chạy `codex --profile ltt-fast`. Không chỉ đổi tên model mà giữ cửa sổ của 3.8.
 
+`medium` trong profile 3.5 là **nhãn tương thích bắt buộc của Codex**, tương ứng
+với **Thinking on**. Nó không có nghĩa Qwen3.5 sở hữu các mức
+low/medium/high/xhigh. Catalog chỉ cho 3.5 đúng một lựa chọn này; 3.8 mới hiện
+ba lựa chọn `low`, `medium`, `xhigh`. Để trống danh sách không tắt effort:
+Codex 0.145.0 vẫn gửi `medium`, còn bỏ hẳn trường catalog làm Codex từ chối parse.
+
 **Thứ tự nhập tay trên Windows, Codex CLI 0.145.0:**
 
 1. Tạo khóa **live**, chọn `tools:read` và `jobs:create`, có credit và quyền model.
@@ -230,6 +236,11 @@ Không ghi khóa vào TOML/catalog hay lệnh `setx` có thể lưu vào lịch 
 phiên mới, `/status` kiểm model/provider; hỏi
 `Calculate 6 * 7. Reply with only the number.`, cần nhận `42`. Đối chiếu Logs/Usage
 để biết đúng model và credit; lặp lại bằng profile còn lại.
+
+Từ Tool 1.9.2, lệnh `kiem` gọi thật `/api/v1/responses` bằng **cả hai** slug
+`ltt-3.8` và `ltt-3.5`, ngoài các lượt Claude `/messages`. Vì vậy trạng thái
+"Cắm được" nay xác nhận đúng tuyến Codex; một cấu hình chỉ parse được nhưng
+endpoint Responses lỗi sẽ không còn bị báo xanh.
 
 [OpenAI Docs — custom providers và profiles](https://developers.openai.com/codex/config-advanced/)
 cho phép cấu hình provider Responses, `env_key` và profile. Đã đối chiếu CLI
@@ -400,7 +411,7 @@ người đồng bộ giữa máy hoặc commit vào kho dotfiles.
 Đối chiếu ngày **14/09/2026** với bản đang cài trên máy này, hai ảnh cấu hình của
 chủ sản phẩm, [gateway reference của Claude](https://claude.com/docs/third-party/claude-desktop/gateway)
 và [model configuration](https://claude.com/docs/third-party/claude-desktop/configuration#models).
-Tool 1.9.1 dùng cùng cấu hình chuẩn; cắm tay là một đường được hỗ trợ thêm, dùng cùng API và cùng
+Tool 1.9.2 dùng cùng cấu hình chuẩn; cắm tay là một đường được hỗ trợ thêm, dùng cùng API và cùng
 mã tuyến. **Không phải tải tool, thêm proxy hay sửa registry để đi theo đường này.**
 
 #### Chuẩn bị khóa LTT

@@ -91,7 +91,7 @@ GOC_MAC_DINH = "https://app.lttstudios.com"
 #:    KHONG BIET MINH LA BAN NAO. Khi khach bao "cam khong duoc", ta khong co
 #:    cach nao biet ho dang chay ban gi - va do la cau hoi DAU TIEN cua moi lan
 #:    ho tro.
-PHIEN_BAN = "1.9.1"
+PHIEN_BAN = "1.9.2"
 
 MODEL = "ltt-3.8"
 
@@ -234,7 +234,7 @@ MODEL_35 = "ltt-3.5"
 class HoSoModel(NamedTuple):
     """MOT model, nhu cong cu nay can biet ve no.
 
-    ⚠️ Nam truong nay **phai di cung nhau**. Truoc 12/09 chung nam
+    ⚠️ Sau truong nay **phai di cung nhau**. Truoc 12/09 chung nam
        roi rac: ten o mot hang so, tuyen Desktop o hang so thu hai, cua so va
        nguong nen o hai hang so nua — va cac ham ghi cau hinh boc tung cai mot.
        Nen "them model thu hai" khong phai them mot dong: no la sua muoi mot
@@ -247,6 +247,7 @@ class HoSoModel(NamedTuple):
     cua_so: int
     nen: int
     reasoning: str
+    reasoning_levels: tuple[str, ...]
 
 
 #: 🔑 HAI MODEL DANG BAN. Khoa la ten khach go; dung thu tu nay khi hoi ho chon.
@@ -266,9 +267,10 @@ class HoSoModel(NamedTuple):
 #:    `test_334` buoc hai dau lai, dung nhu bon hang so o tren.
 HO_SO_MODEL: dict = {
     MODEL: HoSoModel(MODEL, MODEL_DESKTOP, CUA_SO_NGU_CANH, NEN_HOI_THOAI,
-                     "xhigh"),
+                     "xhigh", ("low", "medium", "xhigh")),
     MODEL_35: HoSoModel(MODEL_35, MODEL_DESKTOP_35,
-                        CUA_SO_NGU_CANH_35, NEN_HOI_THOAI_35, "medium"),
+                        CUA_SO_NGU_CANH_35, NEN_HOI_THOAI_35, "medium",
+                        ("medium",)),
 }
 
 #: Ten model hop le, dung thu tu hien cho khach.
@@ -649,10 +651,16 @@ def _catalog_codex() -> str:
             "slug": slug, "display_name": slug,
             "description": f"{slug} (LTT Studios)",
             "default_reasoning_level": HO_SO_MODEL[slug].reasoning,
+            # Codex requires this field and always sends its selected enum on
+            # the Responses wire. Qwen3.5 exposes only thinking on/off, so its
+            # one honest Codex-compatible choice is `medium` = thinking ON.
+            # Do not advertise low/xhigh as native 3.5 capabilities.
             "supported_reasoning_levels": [
-                {"effort": "low", "description": "Fast"},
-                {"effort": "medium", "description": "Balanced"},
-                {"effort": "xhigh", "description": "Deepest"}],
+                {"effort": effort,
+                 "description": ("Thinking on" if slug == MODEL_35 else
+                                 {"low": "Fast", "medium": "Balanced",
+                                  "xhigh": "Deepest"}[effort])}
+                for effort in HO_SO_MODEL[slug].reasoning_levels],
             "shell_type": "unified_exec", "visibility": "list",
             "supported_in_api": True, "priority": 1,
             "additional_speed_tiers": [], "service_tiers": [],
@@ -2304,6 +2312,25 @@ def lenh_kiem(a) -> int:
     if m != 200:
         print(f"       {b[:300].decode('utf-8', 'replace')}")
         return 1
+
+    # Codex KHONG dung /messages. Ban 1.9.1 chi thu tuyen Claude roi bao
+    # "Cam duoc", nen mot loi rieng o Responses (dung loi 500 khach gap) van
+    # lot qua. Thu ca hai slug vi catalog ta ghi cho Codex chua DONG THOI ca
+    # hai model, bat ke profile nao dang la mac dinh.
+    for hs_codex in HO_SO_MODEL.values():
+        m, b = goi("/responses", {
+            "model": hs_codex.ten,
+            "max_output_tokens": 200,
+            "stream": True,
+            "input": "Tra loi mot tu: OK",
+        }, phuong="POST")
+        print(f"  POST /responses (Codex {hs_codex.ten}, stream) -> {m}  "
+              f"{len(b)} byte SSE")
+        if m != 200:
+            print(f"       {b[:300].decode('utf-8', 'replace')}")
+            print(f"       Tuyen Codex `{hs_codex.ten}` khong goi duoc -> "
+                  "cau hinh co the parse nhung chat se hong.")
+            return 1
 
     # 🔴 PHAI KIEM RIENG CA HAI TUYEN CLAUDE DESKTOP.
     #

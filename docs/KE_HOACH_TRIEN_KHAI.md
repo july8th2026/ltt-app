@@ -4123,6 +4123,23 @@ CRLF gốc, lượt cuối `python tools\gate.py` **PASS 33/33**, báo cáo
       opt-in qua env. Deploy gateway riêng, không restart llama-swap; `/health`
       xác nhận `san_vram_mb=0`, Messages và Responses thật cùng HTTP 200 khi
       card đang chạy job.
-- [ ] **H53.3 — Máy A và nghiệm thu:** ánh xạ chuỗi “mọi provider đều bận” về
-      503 + `Retry-After` và hoàn credit; test phạm vi `-n 7` hiện 112 PASS.
-      Còn hợp nhất, deploy Máy A, đối chiếu fingerprint/health và canary thật.
+- [x] **H53.3 — Máy A và nghiệm thu:** ánh xạ chuỗi “mọi provider đều bận” về
+      503 + `Retry-After` và hoàn credit; test phạm vi `-n 7` đạt 112 PASS.
+      Production chạy commit `0fcc44d7`, đối chiếu 1.055 tệp 0 lệch/thiếu/thừa,
+      health 200; canary Qwen 3.5 qua Messages và Responses đều HTTP 200 ngay
+      lần đầu, khóa thử đã thu hồi.
+
+## H54 — Tool 1.9.2: catalog reasoning thật và tự kiểm Codex (2026-09-15)
+
+- [x] **H54.1 — Khớp hợp đồng model:** catalog của Tool, SDK và trang API công
+      bố 3.8 `low|medium|xhigh`; 3.5 chỉ một lựa chọn
+      `medium — Thinking on`. Đo Codex CLI 0.145.0 xác nhận đây là nhãn wire
+      bắt buộc, không mô tả tier native của Qwen3.5.
+- [x] **H54.2 — Kiểm đúng bề mặt:** lệnh `kiem` gọi thật `/responses` của cả
+      hai slug Codex. Harness bỏ tier `low` giả trên 3.5, dùng `xhigh` cho 3.8;
+      test phạm vi `-n 7` đạt **134 passed**. Ba app-server CLI/Desktop/VS Code
+      đang cài đều parse strict và liệt kê đủ hai model.
+- [x] **H54.3 — Đóng gói và phát hành:** Tool 1.9.2 được dựng đủ
+      installer/GUI/console/ZIP, Defender sạch; source nhúng khớp SHA-256.
+      Hai artifact đã vào `data/api_dist`; trang production hiện đúng 1.9.2,
+      hash, 0 console error/0 request hỏng; hai URL tải đều HTTP 200.

@@ -62,6 +62,13 @@ def test_api_harness_runs_both_models_stream_and_two_turn_tools(tmp_path):
         ("tool-result:ltt-llm-claude-compat-35", 200),
     ]
     assert "ltt_sk_" not in report_path.read_text(encoding="utf-8")
+    wire = [json.loads(line) for line in
+            (tmp_path / "wire.jsonl").read_text(encoding="utf-8").splitlines()]
+    by_model = {}
+    for item in wire:
+        by_model.setdefault(item["model"], set()).add(item["reasoning_effort"])
+    assert by_model["ltt-llm-claude-compat"] == {"xhigh"}
+    assert by_model["ltt-llm-claude-compat-35"] == {None}
 
 
 def test_desktop_driver_is_ascii_and_harness_never_accepts_password():

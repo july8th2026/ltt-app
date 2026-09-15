@@ -26,7 +26,7 @@ Desktop không truyền `--profile`.
 | `request_max_retries` | `1` | Một retry trước stream, không khuếch đại tải |
 | `stream_max_retries` | `0` | Không phát lại stream đã mở |
 | `stream_idle_timeout_ms` | `600000` | Dành 10 phút cho lượt dài |
-| `model_reasoning_effort` | 3.8: `xhigh`; 3.5: `medium` | Theo năng lực từng model; 3.5 vẫn bật thinking |
+| `model_reasoning_effort` | 3.8: `xhigh`; 3.5: `medium` | 3.8 dùng mức native; với 3.5, `medium` chỉ là nhãn wire bắt buộc của Codex cho trạng thái Thinking on |
 | `model_reasoning_summary` | `none` | Cổng không công bố reasoning summary riêng |
 | `model_auto_compact_token_limit_scope` | `total` | Tính trên toàn context |
 | `tool_output_token_limit` | `16384` | Một tool result không ăn hết khoảng dự phòng |
@@ -45,11 +45,14 @@ Vì vậy cấu hình copy không ghi khóa đó: hành vi vẫn false và cùng
 | LTT 3.8 (Strong) | `ltt-3.8` | 171,458 | 138,690 | 32,768 | 16,384 |
 | LTT 3.5 (Fast) | `ltt-3.5` | 209,141 | 176,373 | 32,768 | 16,384 |
 
-LTT 3.8 công bố chính thức ba mức `low|medium|xhigh`, nên preset chất lượng dùng
-`xhigh`. Qwen3.5 chỉ công bố thinking bật/tắt; Codex lại bắt buộc một giá trị
-trong enum effort của nó, nên preset dùng `medium`, là mức trung tính của
-template tương thích v22.5, trong khi server giữ thinking bật. `high` không
-phải mức chính thức của Qwen3.8 và không được ghi trong cấu hình LTT.
+LTT 3.8 công bố ba mức `low|medium|xhigh`, nên preset chất lượng dùng `xhigh`.
+Qwen3.5 chỉ công bố thinking bật/tắt. Codex yêu cầu catalog có
+`supported_reasoning_levels` và vẫn gửi một giá trị enum trên wire, kể cả khi
+danh sách để rỗng; phép đo bằng Codex CLI 0.145.0 cho thấy giá trị gửi mặc định
+là `medium`. Vì vậy catalog LTT chỉ hiện **một** lựa chọn cho 3.5:
+`medium — Thinking on`. Đây là nhãn tương thích giao thức, không phải tuyên bố
+Qwen3.5 có mức suy luận medium. Server giữ thinking bật. `high` không phải mức
+công bố cho Qwen3.8 và không được ghi trong cấu hình LTT.
 
 Context và compact lấy từ `apps/ltt_llm/ngan_sach.py`. Catalog và hai cấu hình
 được sinh bởi `platform_core/public_api/examples.py`; test đối chiếu từng dòng
@@ -119,7 +122,8 @@ Nguồn chính thức:
    lần lượt với CLI ổn định, binary trong Codex Desktop và binary extension
    đang cài.
 3. `config/read` phải trả đúng `model` + `model_provider=ltt`; `model/list` phải
-   trả đúng hai slug, hai display name.
+   trả đúng hai slug, hai display name; catalog phải cho 3.8 đúng ba lựa chọn
+   `low|medium|xhigh` và 3.5 đúng một lựa chọn `medium — Thinking on`.
 4. Render `/huong-dan` Việt/Anh ở 1440 px và 390 px; đổi tab, parse catalog JSON,
    kiểm console error và failed request.
 5. Chỉ chạy gate đầy đủ sau cùng.
