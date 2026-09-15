@@ -26,12 +26,12 @@ Desktop không truyền `--profile`.
 | `request_max_retries` | `1` | Một retry trước stream, không khuếch đại tải |
 | `stream_max_retries` | `0` | Không phát lại stream đã mở |
 | `stream_idle_timeout_ms` | `600000` | Dành 10 phút cho lượt dài |
-| `model_reasoning_effort` | `low` | Mặc định đã đo: còn ngân sách cho câu trả lời |
+| `model_reasoning_effort` | 3.8: `xhigh`; 3.5: `medium` | Theo năng lực từng model; 3.5 vẫn bật thinking |
 | `model_reasoning_summary` | `none` | Cổng không công bố reasoning summary riêng |
 | `model_auto_compact_token_limit_scope` | `total` | Tính trên toàn context |
 | `tool_output_token_limit` | `16384` | Một tool result không ăn hết khoảng dự phòng |
 | `max_concurrent_threads_per_session` | `1` | Một subagent đồng thời theo lane đã chốt |
-| `default_subagent_reasoning_effort` | `low` | Cùng ngân sách đầu ra với lượt chính |
+| `default_subagent_reasoning_effort` | bằng lượt chính | Agent phụ không hạ chất lượng ngầm |
 
 `supports_standalone_web_search = false` có trong schema web mới và mặc định là
 false, nhưng Codex CLI 0.145 trên máy từ chối khóa này ở `--strict-config`.
@@ -44,6 +44,12 @@ Vì vậy cấu hình copy không ghi khóa đó: hành vi vẫn false và cùng
 |---|---:|---:|---:|---:|---:|
 | LTT 3.8 (Strong) | `ltt-3.8` | 171,458 | 138,690 | 32,768 | 16,384 |
 | LTT 3.5 (Fast) | `ltt-3.5` | 209,141 | 176,373 | 32,768 | 16,384 |
+
+LTT 3.8 công bố chính thức ba mức `low|medium|xhigh`, nên preset chất lượng dùng
+`xhigh`. Qwen3.5 chỉ công bố thinking bật/tắt; Codex lại bắt buộc một giá trị
+trong enum effort của nó, nên preset dùng `medium`, là mức trung tính của
+template tương thích v22.5, trong khi server giữ thinking bật. `high` không
+phải mức chính thức của Qwen3.8 và không được ghi trong cấu hình LTT.
 
 Context và compact lấy từ `apps/ltt_llm/ngan_sach.py`. Catalog và hai cấu hình
 được sinh bởi `platform_core/public_api/examples.py`; test đối chiếu từng dòng

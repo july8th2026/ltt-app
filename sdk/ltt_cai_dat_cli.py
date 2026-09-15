@@ -164,7 +164,7 @@ NEN_HOI_THOAI_35 = 176373
 class HoSoModel(NamedTuple):
     """MOT model, nhu bo cai nay can biet ve no.
 
-    ⚠️ Bon truong PHAI di cung nhau. Roi rac chung ra la cach `ltt-3.5` duoc
+    ⚠️ Nam truong PHAI di cung nhau. Roi rac chung ra la cach `ltt-3.5` duoc
        cam voi cua so cua `ltt-3.8` — mot `413` giua phien, im lang, chi vi mot
        con so bi bo lai.
     """
@@ -173,6 +173,7 @@ class HoSoModel(NamedTuple):
     tuyen_desktop: str
     cua_so: int
     nen: int
+    reasoning: str
 
 
 #: 🔑 HAI MODEL DANG BAN, theo thu tu hien cho khach.
@@ -180,9 +181,10 @@ class HoSoModel(NamedTuple):
 #: ⛔ Nguon chan ly van la `apps/ltt_llm/ngan_sach.py`. Tep nay chay tren may
 #:    KHACH, khong co kho ma, nen no CHEP so — va `test_275` doi chieu hai chieu.
 HO_SO_MODEL = {
-    MODEL: HoSoModel(MODEL, MODEL_DESKTOP, CUA_SO_NGU_CANH, NEN_HOI_THOAI),
+    MODEL: HoSoModel(MODEL, MODEL_DESKTOP, CUA_SO_NGU_CANH, NEN_HOI_THOAI,
+                     "xhigh"),
     MODEL_35: HoSoModel(MODEL_35, MODEL_DESKTOP_35,
-                        CUA_SO_NGU_CANH_35, NEN_HOI_THOAI_35),
+                        CUA_SO_NGU_CANH_35, NEN_HOI_THOAI_35, "medium"),
 }
 
 TEN_MODEL = tuple(HO_SO_MODEL)
@@ -226,7 +228,7 @@ def _catalog() -> str:
         d = {
             "slug": slug, "display_name": slug,
             "description": f"{slug} (LTT Studios)",
-            "default_reasoning_level": "medium",
+            "default_reasoning_level": HO_SO_MODEL[slug].reasoning,
             "supported_reasoning_levels": [
                 {"effort": "low", "description": "Fast"},
                 {"effort": "medium", "description": "Balanced"},
@@ -331,15 +333,15 @@ def codex(base: str, goc_codex: pathlib.Path,
         pro.write_text(
             f'model = "{hs.ten}"\n'
             'model_provider = "ltt"\n'
-            "# Left at its default the model spends most of max_tokens thinking\n"
-            "# before it answers.\n"
-            'model_reasoning_effort = "low"\n'
+            "# Model-specific quality default; server thinking remains enabled.\n"
+            f'model_reasoning_effort = "{hs.reasoning}"\n'
             'model_reasoning_summary = "none"\n'
             f"model_context_window = {hs.cua_so}\n"
             f"model_auto_compact_token_limit = {hs.nen}\n"
             f"model_catalog_json = '{cat}'\n"
             "\n[agents]\n"
             f'default_subagent_model = "{hs.ten}"\n'
+            f'default_subagent_reasoning_effort = "{hs.reasoning}"\n'
             "max_concurrent_threads_per_session = 1\n", encoding="utf-8")
         ra.append(f"  + tao {pro}")
     return ra

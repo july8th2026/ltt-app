@@ -198,6 +198,7 @@ def test_codex_manual_profiles_and_catalog_use_each_models_budget(khach):
     assert [item["slug"] for item in catalog] == ["ltt-3.8", "ltt-3.5"]
     assert [item["display_name"] for item in catalog] == [
         "LTT 3.8 (Strong)", "LTT 3.5 (Fast)"]
+    efforts = {"ltt-3.8": "xhigh", "ltt-3.5": "medium"}
     for item, internal in zip(catalog, ["qwen38-api", "qwen35-api"], strict=True):
         profile = tomllib.loads(examples.codex_profile(item["slug"]))
         desktop = tomllib.loads(examples.codex_desktop_config(
@@ -209,7 +210,9 @@ def test_codex_manual_profiles_and_catalog_use_each_models_budget(khach):
         assert profile["model_auto_compact_token_limit_scope"] == "total"
         assert profile["tool_output_token_limit"] == 16384
         assert profile["agents"]["default_subagent_model"] == item["slug"]
-        assert profile["agents"]["default_subagent_reasoning_effort"] == "low"
+        assert item["default_reasoning_level"] == efforts[item["slug"]]
+        assert profile["model_reasoning_effort"] == efforts[item["slug"]]
+        assert profile["agents"]["default_subagent_reasoning_effort"] == efforts[item["slug"]]
         assert profile["agents"]["max_concurrent_threads_per_session"] == 1
         assert desktop["model"] == item["slug"]
         assert desktop["model_provider"] == "ltt"

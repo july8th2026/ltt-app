@@ -140,6 +140,8 @@ def test_bo_cai_mot_tep_ghim_model_context_retry_va_subagent(tmp_path, model):
     assert f'model = "{model}"' in profile
     assert f"model_auto_compact_token_limit = {hs.nen}" in profile
     assert f'default_subagent_model = "{model}"' in profile
+    assert f'model_reasoning_effort = "{hs.reasoning}"' in profile
+    assert f'default_subagent_reasoning_effort = "{hs.reasoning}"' in profile
     assert "max_concurrent_threads_per_session = 1" in profile
 
     env = json.loads((claude_home / "settings.json").read_text(encoding="utf-8"))["env"]

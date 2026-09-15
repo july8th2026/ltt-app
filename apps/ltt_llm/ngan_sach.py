@@ -357,11 +357,18 @@ SAN_TOKEN_RA_THEO_NGHI = {
     "ltt-3.8": dict(_SAN_NHE),
 }
 
-#: Mức dùng khi khách không khai `reasoning_effort`. Phải khớp `default` ở
-#: `manifest.params_schema`.
-#: 🔴 Chot 14/09/2026: `xhigh`, vi muc tieu la CHAT LUONG chu khong
-#:    phai toc do. Xem `manifest.params_schema` cho ly do day du.
-NGHI_MAC_DINH = "xhigh"
+#: Mức thực tế khi khách không khai `reasoning_effort` (Q131). Đây là thuộc
+#: tính theo MODEL: 3.8 có enum chính thức và mặc định xhigh; 3.5 chỉ công bố
+#: thinking on/off, còn template tương thích v22.5 dùng medium khi thinking bật.
+NGHI_MAC_DINH_THEO_MODEL = {
+    "ltt-3.8": "xhigh",
+    "ltt-3.5": "medium",
+}
+
+
+def nghi_mac_dinh(model: str | None = None) -> str:
+    """Mức dùng để tính admission khi request không gửi effort."""
+    return NGHI_MAC_DINH_THEO_MODEL.get(str(model or ""), "xhigh")
 
 
 def san_token_ra(model: str | None = None, muc_nghi: str | None = None) -> int:
@@ -375,7 +382,8 @@ def san_token_ra(model: str | None = None, muc_nghi: str | None = None) -> int:
        thừa hưởng hình phạt của model tốn nhất, cho tới khi ai đó đo nó.
     """
     bang = SAN_TOKEN_RA_THEO_NGHI.get(str(model or ""), _SAN_NHE)
-    return bang.get(str(muc_nghi or NGHI_MAC_DINH), bang[NGHI_MAC_DINH])
+    mac_dinh = nghi_mac_dinh(model)
+    return bang.get(str(muc_nghi or mac_dinh), bang.get(mac_dinh, bang["xhigh"]))
 
 
 CAC_CUA = tuple(TOKEN_RA_MAC_DINH)

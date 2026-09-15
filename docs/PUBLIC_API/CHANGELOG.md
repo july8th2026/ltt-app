@@ -21,6 +21,22 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-09-15 — reasoning và sampling tách theo model (Q131)
+
+**FIXED · request cũ vẫn hợp lệ; metadata mặc định thay đổi.** Máy chủ không còn ép cả hai model dùng
+budget 512 và temperature 0,6. LTT 3.8 dùng `xhigh`, budget vận hành 4.096 và
+temperature 1,0; LTT 3.5 giữ thinking bật, budget vận hành 2.048 và temperature
+1,0. Cả hai giữ top-p 0,95, top-k 20, min-p 0 và template Froggeric v22.5 đã
+khóa checksum. Hai budget là lựa chọn vận hành của LTT, không phải số Qwen công
+bố.
+
+Mọi cửa bỏ `reasoning_effort`, gồm `text.chat`, sẽ nhận mặc định theo model:
+3.8 `xhigh`, 3.5 thinking bật (`medium` trong template tương thích). Cấu hình
+Codex do trang API sinh gửi đúng ma trận đó cho lượt chính và subagent. Schema
+`text.chat` bỏ default `xhigh` dùng chung nên contract hash thay đổi; request cũ
+không hỏng vì trường này vốn tùy chọn. Ai gửi effort tường minh vẫn giữ lựa
+chọn `low|medium|xhigh`.
+
 ## 2026-09-15 — hai phiên Claude chờ đúng capacity (Q128)
 
 **FIXED · không đổi wire API công khai.** Khi hai phiên dài cùng dùng LTT 3.8,
@@ -107,6 +123,9 @@ cho 32.768 token là **13,1 credit** ở giá 400 credit/1M — khoảng 1 % s�
 tài khoản thường.
 
 ## 2026-09-14 — `reasoning_effort` mặc định đổi `medium` → `xhigh`
+
+> Q131 ngày 15/09 thay default dùng chung này bằng default theo model trên mọi
+> cửa, như mục mới ở trên.
 
 **ADDED/CHANGED · không phá vỡ hợp đồng.** Ai đang gửi `reasoning_effort` tường
 minh thì **không đổi gì**. Ai không gửi sẽ nhận câu trả lời model suy nghĩ sâu

@@ -803,6 +803,15 @@ CODEX_MODEL_LABELS = {
     "ltt-3.5": "LTT 3.5 (Fast)",
 }
 
+# Codex requires one of its own effort enum values. Qwen3.8 exposes xhigh
+# officially; Qwen3.5 only exposes thinking on/off, so `medium` is the neutral
+# compatibility value understood by the pinned Froggeric template while the
+# server keeps thinking enabled. These are client defaults, not model limits.
+CODEX_MODEL_REASONING = {
+    "ltt-3.8": "xhigh",
+    "ltt-3.5": "medium",
+}
+
 #: Bộ biến CHUẨN cho một phiên Claude Code Local chạy qua LTT Gateway.
 #:
 #: 🔴 Vì sao phải gom thành dữ liệu thay vì một khối chữ trong template. Danh
@@ -879,7 +888,7 @@ def codex_catalog() -> str:
         models.append({
             "slug": slug, "display_name": CODEX_MODEL_LABELS[slug],
             "description": f"{CODEX_MODEL_LABELS[slug]} — LTT Studios",
-            "default_reasoning_level": "medium",
+            "default_reasoning_level": CODEX_MODEL_REASONING[slug],
             "supported_reasoning_levels": [
                 {"effort": "low", "description": "Fast"},
                 {"effort": "medium", "description": "Balanced"},
@@ -933,6 +942,7 @@ def codex_config(base_url: str) -> str:
 def _codex_model_root(model: str, *, desktop: bool = False) -> str:
     """Root keys shared by the CLI profile and Desktop user config."""
     context, compact = CODEX_MODEL_LIMITS[model]
+    reasoning = CODEX_MODEL_REASONING[model]
     header = (
         "# %USERPROFILE%/.codex/config.toml — Desktop / IDE use root settings.\n"
         "# Keep the provider id `ltt` stable: saved threads remember it.\n"
@@ -944,9 +954,9 @@ def _codex_model_root(model: str, *, desktop: bool = False) -> str:
         header +
         f'model = "{model}"\n'
         'model_provider = "ltt"\n'
-        '# Left at its default the model spends most of max_tokens thinking\n'
-        '# before it answers.\n'
-        'model_reasoning_effort = "low"\n'
+        '# Model-specific quality default: Qwen3.8 officially supports xhigh;\n'
+        '# Qwen3.5 stays in thinking mode through the compatible medium value.\n'
+        f'model_reasoning_effort = "{reasoning}"\n'
         'model_reasoning_summary = "none"\n'
         f"model_context_window = {context}\n"
         f"model_auto_compact_token_limit = {compact}\n"
@@ -958,7 +968,7 @@ def _codex_model_root(model: str, *, desktop: bool = False) -> str:
         f"model_catalog_json = '{TEP_CATALOG_CODEX}'\n"
         "\n[agents]\n"
         f'default_subagent_model = "{model}"\n'
-        'default_subagent_reasoning_effort = "low"\n'
+        f'default_subagent_reasoning_effort = "{reasoning}"\n'
         "max_concurrent_threads_per_session = 1"
     )
 

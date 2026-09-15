@@ -9,8 +9,9 @@ liệu đó. Không ghép thêm danh sách cũ.
 ## Kết luận kỹ thuật
 
 LTT không bị hạ chất lượng vì dùng API ngoài. Model vẫn chạy với cửa sổ engine
-221.184 token (LTT 3.8) hoặc 262.144 token (LTT 3.5), chế độ suy luận mặc định
-`xhigh`, output tối đa 32.768. Client phải nén sớm hơn trần engine để còn chỗ
+221.184 token (LTT 3.8) hoặc 262.144 token (LTT 3.5), output tối đa 32.768.
+LTT 3.8 mặc định `xhigh`; LTT 3.5 giữ thinking bật và template tương thích dùng
+`medium` khi client không gửi effort. Client phải nén sớm hơn trần engine để còn chỗ
 cho output và sai khác tokenizer. Đây là phần dự trữ chống lỗi 413, không phải
 cắt khả năng suy luận của model.
 
@@ -158,9 +159,12 @@ ANTHROPIC_AUTH_TOKEN=<đọc an toàn từ LTT_API_KEY>
 | `CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS` | Bỏ. Host Gateway đã suppress beta; đặt nó còn khóa Tool Search bất kể biến khác. |
 | `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB` | Tùy chọn bảo mật riêng; không thuộc preset tương thích vì có thể làm MCP cần credential ngừng chạy. |
 
-Không đặt biến reasoning/effort toàn cục giúp giữ chất lượng mặc định `xhigh`
-của LTT. Người dùng API trực tiếp có thể chọn `low|medium|xhigh` theo từng
-request; Claude Desktop hiện không cần ép thêm trường đó.
+Không đặt biến reasoning/effort toàn cục để server áp đúng hồ sơ từng model:
+3.8 `xhigh`, 3.5 thinking bật. Người dùng API trực tiếp vẫn có thể chọn
+`low|medium|xhigh` theo từng request nhờ template tương thích; đây là điều khiển
+tương thích ở 3.5, không phải enum do model card 3.5 công bố. Claude Desktop
+không cần ép thêm trường đó. Cửa Public API `text.chat` cũng dùng cùng mặc định
+theo model; schema không còn điền một `xhigh` chung cho cả hai.
 
 ## 6. Hàng chờ khi chạy nhiều phiên
 

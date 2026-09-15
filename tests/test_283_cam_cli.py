@@ -131,8 +131,10 @@ def test_selected_profile_catalog_and_rollback(cc, model, vscode):
     hs = cc.hs_cua(model)
     assert (profile["model"], profile["model_context_window"],
             profile["model_auto_compact_token_limit"]) == (model, hs.cua_so, hs.nen)
+    assert profile["model_reasoning_effort"] == hs.reasoning
     assert profile["agents"] == {
         "default_subagent_model": model,
+        "default_subagent_reasoning_effort": hs.reasoning,
         "max_concurrent_threads_per_session": 1,
     }
     if vscode:
@@ -898,6 +900,7 @@ def test_catalog_dung_khuon_Codex_chap_nhan(cc):
         assert "effective_context_window_percent" not in m
         # khong duoc con truong null nao
         assert not [k for k, v in m.items() if v is None]
+        assert m["default_reasoning_level"] == cc.hs_cua(m["slug"]).reasoning
 
     # ⛔ MOI MODEL KHAI CUA SO CUA NO. Ban truoc cua doan nay la
     #       assert m["context_window"] == cc.CUA_SO_NGU_CANH

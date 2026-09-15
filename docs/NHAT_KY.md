@@ -12,6 +12,26 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-15 — H51: tách reasoning/sampling theo model, trước deploy
+
+- Đối chiếu model card Qwen3.8/Qwen3.5, README llama.cpp và Froggeric v22.5.
+  Chốt Q131/L-20: 3.8 `xhigh`, budget 4.096, temp 1,0; 3.5 thinking bật,
+  budget 2.048, temp 1,0. Hai budget là trần vận hành LTT, không phải giá trị
+  nhà sản xuất công bố. Template v22.5 được vendor và khóa SHA-256.
+- Bỏ budget/temp khỏi macro chung; giữ nguyên context, ba slot, KV cache và MTP.
+  Public API `text.chat`, Codex Desktop/CLI, tool và SDK dùng default theo model;
+  schema `text.chat` bỏ `xhigh` dùng chung và snapshot/contract baseline được
+  cập nhật có chủ đích. Request gửi effort tường minh vẫn tương thích.
+- Xác minh binary production bằng SSH user `lengo`: llama.cpp build 10883,
+  commit 91f6a6cf3, có đủ reasoning mode/effort/budget. YAML/JSON parse PASS,
+  deploy.ps1 ASCII, template đúng checksum, secret scan 3.669 tệp/900.370 dòng,
+  0 finding. Test phạm vi `-n 7`: **263 PASS**; harness CLI riêng **40 PASS**.
+- `python tools\gate.py --doi` tự nâng lên đầy đủ và **FAIL 7/33**. Sau khi sửa
+  contract/snapshot của changeset, các nguyên nhân còn lại thuộc baseline VPS
+  hợp nhất: bốn silent-except mới trong `apps/vps/services`, một mypy arg-type
+  trong `apps/vps`, và trùng số test 1261/1262. Không nới baseline và không ghi
+  lượt này là PASS. Máy B vẫn chạy cấu hình cũ 512/0,6; chưa restart/deploy.
+
 ## 2026-09-15 — Hợp nhất VPS V4, deploy bản vá hai phiên Claude lên production
 
 - Máy B được deploy trước từ nhánh LTT LLM; snapshot rollback

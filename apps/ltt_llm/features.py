@@ -463,8 +463,8 @@ def kiem_san_token_ra(sach: dict) -> None:
     _san = san_token_ra(sach.get("model"), sach.get("reasoning_effort"))
     if xin_ra >= _san:
         return
-    from apps.ltt_llm.ngan_sach import NGHI_MAC_DINH
-    _muc = sach.get("reasoning_effort") or NGHI_MAC_DINH
+    from apps.ltt_llm.ngan_sach import nghi_mac_dinh
+    _muc = sach.get("reasoning_effort") or nghi_mac_dinh(sach.get("model"))
     # 🔴 CÂU NÀY TỪNG MÁCH `reasoning_effort='none'` — một giá trị đã bị GỠ khỏi
     #    hợp đồng ngày 14/09/2026. Tức lỗi chỉ khách sang một thứ cửa sẽ từ chối:
     #    họ sửa đúng như lời ta bảo rồi nhận tiếp một 400 khác. Một lỗi chỉ sai

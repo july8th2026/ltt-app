@@ -321,7 +321,7 @@ nặng nhất là `presence-penalty 0` (chính là phanh chống lặp).
 
 ---
 
-## ✅ L-16 — Sửa L-15: bỏ `presence-penalty`, giữ phần còn lại (đo 2026-09-12)
+## ~~L-16 — Sửa L-15: bỏ `presence-penalty`, giữ phần còn lại~~ — **ĐÃ THAY phần budget/temp bởi L-20 (2026-09-15)**
 
 **L-15 sai một nửa.** Bộ cờ nó chốt đưa bộ đề lên 36/36, nhưng đo xen kẽ 5 khối cho thấy
 nó lấy đi **11 % tốc độ giải mã** và đẩy **LTT-3.8 xuống dưới ngưỡng cổng nghiệm thu B**
@@ -590,3 +590,32 @@ ngoài, và **không phép kiểm nào đỏ**, vì mỗi bề mặt tự nhất
    xoá như đề xuất ban đầu: chủ sản phẩm hoãn phần ảnh sang phiên sau, nên xoá bộ
    đo ảnh duy nhất ngay trước phiên ấy là đốt đúng thứ phiên ấy cần.
 4. Một việc **tay** thêm vào lần deploy — sổ khoá production (`RUNBOOK` §2.2 mục 2).
+
+---
+
+## L-20 — Sampling và reasoning theo từng model (Q131, 2026-09-15)
+
+L-16 chứng minh budget 512 ngăn được lỗi trả rỗng và việc bỏ presence penalty
+khôi phục 11% tốc độ. Nó không chứng minh 512 là mức chất lượng tối ưu, và việc
+đặt budget/temp trong `CHUNG` ép hai kiến trúc khác nhau dùng cùng một hồ sơ.
+
+Đối chiếu nguồn ngày 15/09:
+
+- Qwen3.8 chính thức: thinking `temperature=1.0`, `top_p=0.95`, `top_k=20`,
+  `min_p=0`, `presence_penalty=0`; effort hợp lệ `low|medium|xhigh`, mặc định
+  `xhigh`. Không có mức `high` chính thức.
+- Qwen3.5 chính thức: thinking bật mặc định hoặc tắt bằng
+  `enable_thinking=false`; không công bố enum effort. General thinking dùng
+  `temperature=1.0`; precise coding dùng `0.6`.
+- llama.cpp: `--reasoning-budget` là số token thinking, `-1` không giới hạn;
+  đây là cơ chế runtime, không phải effort level của model.
+
+Chốt Q131: giữ sampling chung top-p/top-k/min-p; chuyển temp, budget và chế độ
+reasoning vào từng hồ sơ. Budget 4.096 cho 3.8 và 2.048 cho 3.5 là trần vận hành
+do chủ sản phẩm chọn, tăng tương ứng 8x/4x so với 512 để đổi độ trễ lấy chiều
+sâu. Hai số này phải được ghi đúng tên, không gắn nhãn “Qwen khuyến nghị”.
+
+Template không phải mã LTT tự suy: đó là Froggeric Qwen Fixed Chat Template.
+Hai hồ sơ chuẩn hóa về v22.5; tệp nằm trong gói deploy, có nguồn/giấy phép và
+SHA-256 được test cùng script deploy. `high` từ client tương thích được template
+đổi thành `xhigh`; API công khai vẫn dùng tên chuẩn `xhigh`.

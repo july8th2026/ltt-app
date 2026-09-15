@@ -234,7 +234,7 @@ MODEL_35 = "ltt-3.5"
 class HoSoModel(NamedTuple):
     """MOT model, nhu cong cu nay can biet ve no.
 
-    ⚠️ Bon truong nay la bon thu **phai di cung nhau**. Truoc 12/09 chung nam
+    ⚠️ Nam truong nay **phai di cung nhau**. Truoc 12/09 chung nam
        roi rac: ten o mot hang so, tuyen Desktop o hang so thu hai, cua so va
        nguong nen o hai hang so nua — va cac ham ghi cau hinh boc tung cai mot.
        Nen "them model thu hai" khong phai them mot dong: no la sua muoi mot
@@ -246,6 +246,7 @@ class HoSoModel(NamedTuple):
     tuyen_desktop: str
     cua_so: int
     nen: int
+    reasoning: str
 
 
 #: 🔑 HAI MODEL DANG BAN. Khoa la ten khach go; dung thu tu nay khi hoi ho chon.
@@ -264,9 +265,10 @@ class HoSoModel(NamedTuple):
 #: ⛔ Nguon chan ly van la `apps/ltt_llm/ngan_sach.py`; bang nay CHEP theo va
 #:    `test_334` buoc hai dau lai, dung nhu bon hang so o tren.
 HO_SO_MODEL: dict = {
-    MODEL: HoSoModel(MODEL, MODEL_DESKTOP, CUA_SO_NGU_CANH, NEN_HOI_THOAI),
+    MODEL: HoSoModel(MODEL, MODEL_DESKTOP, CUA_SO_NGU_CANH, NEN_HOI_THOAI,
+                     "xhigh"),
     MODEL_35: HoSoModel(MODEL_35, MODEL_DESKTOP_35,
-                        CUA_SO_NGU_CANH_35, NEN_HOI_THOAI_35),
+                        CUA_SO_NGU_CANH_35, NEN_HOI_THOAI_35, "medium"),
 }
 
 #: Ten model hop le, dung thu tu hien cho khach.
@@ -646,7 +648,7 @@ def _catalog_codex() -> str:
         d = {
             "slug": slug, "display_name": slug,
             "description": f"{slug} (LTT Studios)",
-            "default_reasoning_level": "medium",
+            "default_reasoning_level": HO_SO_MODEL[slug].reasoning,
             "supported_reasoning_levels": [
                 {"effort": "low", "description": "Fast"},
                 {"effort": "medium", "description": "Balanced"},
@@ -693,13 +695,14 @@ def _codex_profile(hs: HoSoModel | None = None) -> str:
     hs = hs or HO_SO_MODEL[MODEL]
     return (f'model = "{hs.ten}"\n'
             f'model_provider = "ltt"\n'
-            f'model_reasoning_effort = "low"\n'
+            f'model_reasoning_effort = "{hs.reasoning}"\n'
             f'model_reasoning_summary = "none"\n'
             f'model_context_window = {hs.cua_so}\n'
             f'model_auto_compact_token_limit = {hs.nen}\n'
             f"model_catalog_json = '{TEP_CATALOG}'\n"
             f'\n[agents]\n'
             f'default_subagent_model = "{hs.ten}"\n'
+            f'default_subagent_reasoning_effort = "{hs.reasoning}"\n'
             f'max_concurrent_threads_per_session = 1\n')
 
 
@@ -725,7 +728,7 @@ def _codex_config_goc(goc: str, hs: HoSoModel | None = None) -> str:
     hs = hs or HO_SO_MODEL[MODEL]
     return (f'model = "{hs.ten}"\n'
             f'model_provider = "ltt"\n'
-            f'model_reasoning_effort = "low"\n'
+            f'model_reasoning_effort = "{hs.reasoning}"\n'
             f'model_reasoning_summary = "none"\n'
             f'model_context_window = {hs.cua_so}\n'
             f'\n' + _codex_config(goc))

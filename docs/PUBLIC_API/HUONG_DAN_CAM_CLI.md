@@ -183,7 +183,7 @@ nằm trong `config.toml`:
 ```toml
 model = "ltt-3.8"
 model_provider = "ltt"
-model_reasoning_effort = "low"
+model_reasoning_effort = "xhigh"
 model_reasoning_summary = "none"
 model_context_window = 171458
 model_auto_compact_token_limit = 138690
@@ -191,13 +191,15 @@ model_catalog_json = 'C:\Users\<ban>\.codex\ltt_model_catalog.json'
 
 [agents]
 default_subagent_model = "ltt-3.8"
+default_subagent_reasoning_effort = "xhigh"
 max_concurrent_threads_per_session = 1
 ```
 
 Chạy: `codex --profile ltt`
 
 **Model thứ hai:** lưu thêm `~/.codex/ltt-fast.config.toml` với cùng mẫu, đổi
-`model` và `default_subagent_model` thành `ltt-3.5`, `model_context_window`
+`model` và `default_subagent_model` thành `ltt-3.5`, đổi cả hai trường effort
+thành `medium`, `model_context_window`
 thành `209141`, `model_auto_compact_token_limit` thành `176373`.
 Chạy `codex --profile ltt-fast`. Không chỉ đổi tên model mà giữ cửa sổ của 3.8.
 
@@ -278,7 +280,7 @@ Error: legacy `profile = "ltt"` config is no longer supported;
 ```toml
 model = "ltt-3.8"
 model_provider = "ltt"
-model_reasoning_effort = "low"
+model_reasoning_effort = "xhigh"
 model_context_window = 171458
 model_catalog_json = 'C:\Users\<ban>\.codex\ltt_model_catalog.json'
 

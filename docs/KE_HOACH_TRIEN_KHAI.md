@@ -4079,3 +4079,16 @@ CRLF gốc, lượt cuối `python tools\gate.py` **PASS 33/33**, báo cáo
       sau hợp nhất. Deploy lại máy A từ clone `core.autocrlf=false`; health
       `ready`, migration đúng head, ba service Running, đối chiếu commit 0 lệch,
       browser và API production PASS. Không ghi gate bị bỏ là PASS.
+
+## H51 — Reasoning/sampling theo từng model LTT (2026-09-15)
+
+- [x] **H51.1 — Nguồn và quyết định:** đối chiếu model card Qwen3.8/Qwen3.5,
+      README llama.cpp và Froggeric v22.5; ghi Q131/L-20. Phân biệt mức chính
+      thức với trần vận hành 4.096/2.048 do LTT chọn.
+- [x] **H51.2 — Code và gate phạm vi:** tách budget/temp khỏi macro chung; 3.8
+      xhigh, 3.5 thinking on; vendor template có checksum; đồng bộ default của
+      Public API, Codex Desktop/CLI, tool và SDK. Test phạm vi `-n 7`: 263 PASS;
+      gate tổng chẩn đoán đỏ 7/33 do nợ VPS ngoài changeset, xem nhật ký.
+- [ ] **H51.3 — Production và nghiệm thu:** triển khai máy B rồi máy A/trang
+      API, xác minh command line thật và canary cả hai model; đo chất lượng,
+      độ trễ/token, cập nhật nhật ký rồi chạy gate cuối theo hợp đồng.
