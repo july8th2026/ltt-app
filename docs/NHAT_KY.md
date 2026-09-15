@@ -41,6 +41,11 @@
   hỏng; hai URL tải công khai trả HTTP 200. Theo chỉ định của owner, đợt này
   dùng gate riêng `-n 7`, không chạy gate tổng và không ghi gate phạm vi là
   full gate PASS.
+- Deploy Máy A từ clone phát hành sạch ở commit `c9c3037b`: `EXITCODE=0`,
+  health ready 200, ba dịch vụ Running; `nghiem_thu_deploy.py` đối chiếu 1.055
+  tệp đạt 0 lệch/thiếu/thừa. Playwright mở JSON catalog thật trên
+  `/huong-dan`, xác nhận 3.8 có `low|medium|xhigh`, 3.5 chỉ có
+  `medium — Thinking on`; 0 console error và 0 request hỏng.
 
 ## 2026-09-15 — H53: chẩn đoán và gỡ vòng tự khóa Qwen 3.5
 
