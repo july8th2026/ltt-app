@@ -12,6 +12,36 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-15 — Hợp nhất VPS V4, deploy bản vá hai phiên Claude lên production
+
+- Máy B được deploy trước từ nhánh LTT LLM; snapshot rollback
+  `auto-20260915-132349`, hash 39 tệp khớp. Harness máy B chạy inference thật,
+  tool calling và prefix cache: 17 đạt, 0 hỏng. Cleanup của harness dừng tiến
+  trình; khôi phục đúng SSH `lengo@192.168.2.66` với khóa `nexus_b`, rồi xác
+  nhận `LTTLlamaSwap`/`LTTLlmGateway` Running, discovery đủ `qwen35-api` và
+  `qwen38-api`, hash `api.py` khớp repo.
+- Deploy máy A lần đầu từ commit `15c71d6f` dừng ở Alembic trước khi khởi động
+  bản mới: database đang tại `f4a7c2d9e610`, còn dòng phát hành thiếu migration
+  VPS V4. Đã rollback `app.previous`, khởi động lại Web/Worker/Voice và xác nhận
+  Running. Hợp nhất toàn bộ baseline VPS V4 thay vì chép riêng migration; đổi số
+  quyết định VPS trùng Q124/Q125 thành Q129/Q130. Commit hợp nhất `cf065560` có
+  đúng một Alembic head `f4a7c2d9e610`.
+- Deploy `cf065560` lần đầu EXITCODE=0 và health 200 nhưng
+  `nghiem_thu_deploy.py` bắt 798 tệp lệch byte do clone `core.autocrlf=true`.
+  Dựng lại checkout bất biến với `core.autocrlf=false`, deploy lại EXITCODE=0;
+  nghiệm thu cuối: 0 lệch, 0 thiếu, 0 thừa, ba service Running, `/health/ready`
+  trả `ready`, dấu vân tay production đúng `cf065560`.
+- API canary production bằng khóa ngắn hạn: tools, credits, Messages, Responses,
+  tool-call và tool-result trên cả LTT 3.8/LTT 3.5 đều HTTP 200 ngay lần đầu;
+  khóa đã thu hồi. Playwright production `/huong-dan` và `/en/huong-dan` tại
+  1440x1000 và 390x844: đủ mục Claude/Codex, không overflow, 0 console error,
+  0 failed request.
+- Bằng chứng test trước hợp nhất: gate phạm vi lỗi PASS 29/29 với worker `-n 7`;
+  bốn frontend build và secret scan PASS. Lượt gate tổng thứ hai đã dừng theo
+  yêu cầu; owner sau đó chỉ đạo rõ “hợp nhất commit rồi deploy, không chạy gate”,
+  nên không chạy gate sau hợp nhất và không ghi bất kỳ lượt bị dừng/bỏ nào là
+  PASS.
+
 ## 2026-09-14 — Release bất biến và backup trước cửa sổ deploy VPS
 
 - Sau gate PID 10984 nhả CPU/Postgres, tạo repo release riêng đúng commit

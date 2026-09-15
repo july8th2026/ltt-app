@@ -4030,9 +4030,12 @@ CRLF gốc, lượt cuối `python tools\gate.py` **PASS 33/33**, báo cáo
       `config/read` và `model/list` của CLI 0.145, app-server 0.146 trong Desktop
       26.721 và binary extension mới hơn; ghi rõ giới hạn picker/app-only thay
       vì suy diễn tính năng.
-- [ ] **H47.3 — Nghiệm thu cuối:** test tập trung, i18n, Playwright Việt/Anh ×
+- [x] **H47.3 — Nghiệm thu cuối:** test tập trung, i18n, Playwright Việt/Anh ×
       desktop/mobile, bốn frontend build, secret scan và đúng một L3 cuối.
-      Không deploy trong hạng mục này.
+      Test phạm vi trước hợp nhất PASS 29/29 với `-n 7`; browser local và
+      production PASS Việt/Anh × desktop/mobile, bốn build và secret scan PASS.
+      Lượt gate tổng thứ hai bị dừng và gate sau hợp nhất được bỏ theo chỉ đạo
+      trực tiếp của owner ngày 15/09/2026; không ghi hai lượt đó là PASS.
 
 ## H48 — Hai phiên Claude chờ đúng capacity LTT (2026-09-15)
 
@@ -4044,22 +4047,27 @@ CRLF gốc, lượt cuối `python tools\gate.py` **PASS 33/33**, báo cáo
       mức 2.048 với B và chuyển request/reservation/whale; máy B dùng số lớn hơn
       giữa tự đo với header. Preset Q128 dùng retry 10 theo mặc định chính thức
       của Claude và timeout 600.000 ms.
-- [ ] **H48.3 — Nghiệm thu:** test quan hệ A→B, header thấp, mô phỏng request
+- [x] **H48.3 — Nghiệm thu:** test quan hệ A→B, header thấp, mô phỏng request
       Claude có tool blocks; cập nhật trang Việt/Anh, Playwright và dùng chung
-      lượt gate cuối H47.3. Không deploy trong hạng mục này.
+      lượt kiểm H47.3. Production API Messages/Responses/tool-call/tool-result
+      của cả hai model đều HTTP 200 ở lần thử đầu; khóa canary đã thu hồi.
 
 ## H49 — Triển khai bản vá CLI/capacity lên production (2026-09-15)
 
-- [ ] **H49.1 — Gate và gói phát hành:** hoàn tất H47.3/H48.3, build frontend
+- [x] **H49.1 — Gói phát hành:** hoàn tất H47.3/H48.3, build frontend
       ngay trước đúng một gate đầy đủ, secret scan 0 finding và commit trạng
-      thái đã được nghiệm thu.
-- [ ] **H49.2 — Deploy theo thứ tự B → A:** cập nhật gateway máy B trước để
+      thái đã được nghiệm thu. Ngoại lệ một lần: owner bỏ gate tổng đợt này;
+      release vẫn được quét 0 finding và xuất từ commit bất biến.
+- [x] **H49.2 — Deploy theo thứ tự B → A:** cập nhật gateway máy B trước để
       nhận reservation fail-closed, sau đó cập nhật máy A và trang API. Chạy
-      đúng runbook, kiểm hash/revision/health; không đổi DNS.
-- [ ] **H49.3 — Nghiệm thu production:** kiểm hai model, request dài/hàng chờ,
+      đúng runbook, kiểm hash/revision/health; không đổi DNS. Máy B hash khớp,
+      hai service/model Running; máy A chạy commit `cf065560`, Alembic head
+      `f4a7c2d9e610`, đối chiếu release 0 lệch/thiếu/thừa.
+- [x] **H49.3 — Nghiệm thu production:** kiểm hai model, request dài/hàng chờ,
       trang hướng dẫn Việt/Anh bằng browser render thật, console và network;
       ghi kết quả thật vào nhật ký. Owner đã yêu cầu triển khai production ngày
-      15/09/2026.
+      15/09/2026. API canary 10/10 HTTP 200; Playwright desktop/mobile Việt/Anh
+      không overflow, 0 console error và 0 request hỏng.
 
 ## H50 — Hợp nhất baseline VPS V4 đang chạy (2026-09-15)
 
@@ -4067,7 +4075,7 @@ CRLF gốc, lượt cuối `python tools\gate.py` **PASS 33/33**, báo cáo
       `codex/vps-v4-infrastructure-profiles` vào release LTT LLM sau khi deploy
       máy A phát hiện database đã ở revision `f4a7c2d9e610`. Không chép riêng
       migration và không hạ cấp code VPS; hồ sơ chi tiết nằm ở `docs/VPS_V4/`.
-- [ ] **H50.2 — Nghiệm thu release hợp nhất:** chạy gate phạm vi giao nhau với
-      `-n 7`, deploy lại máy A và kiểm health/revision/browser. Gate tổng được
-      bỏ riêng đợt này theo chỉ đạo trực tiếp của owner ngày 15/09/2026; không
-      được ghi lượt gate tổng bị dừng là PASS.
+- [x] **H50.2 — Nghiệm thu release hợp nhất:** owner chỉ đạo không chạy gate
+      sau hợp nhất. Deploy lại máy A từ clone `core.autocrlf=false`; health
+      `ready`, migration đúng head, ba service Running, đối chiếu commit 0 lệch,
+      browser và API production PASS. Không ghi gate bị bỏ là PASS.
