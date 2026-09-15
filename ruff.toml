@@ -43,6 +43,11 @@ target-version = "py313"
 
 exclude = [
     "tmp", "dist", "build", "node_modules", ".playwright-cli", ".pytest_cache",
+    # Worktree cua Codex/phiên khác (.codex/worktrees/<task>/) là MỘT BẢN SAO
+    # TOÀN BỘ của repo. `ruff check .` từ gốc sẽ lún vào nó và đếm LẠI mọi
+    # .py → mọi số đếm TĂNG ĐÚNG GẤP 2 (F401 411->821) và bánh cóc ratchet
+    # (tools/check_ruff.py) đỏ oan. Loại nó như .playwright-cli/.pytest_cache.
+    ".codex",
     "alembic/versions",     # migration sinh ra, khong sua tay
     "core",                 # 15.668 dong FB/TikTok cu, dong bang — xem CLAUDE.md
     "cutclipshort",         # engine VENDOR tu D:/FULL AUTO VIDEO — khong bao tri o day
