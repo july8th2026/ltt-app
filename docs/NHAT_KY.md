@@ -12,7 +12,7 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
-## 2026-09-16 — H55 checkpoint: Tool 1.9.3 cài hai model Codex trong một lượt
+## 2026-09-16 — H55 hoàn tất: Tool 1.9.3 cài hai model Codex trong một lượt
 
 - Đổi contract Tool và SDK: một lần cắm Codex luôn tạo
   `ltt.config.toml` cho LTT 3.8, `ltt-fast.config.toml` cho LTT 3.5 và catalog
@@ -33,7 +33,20 @@
   installer `0099cf5b620bb05ebb82eb2b835a3fdf48399e4ca84fdd23756ada8c47e79968`,
   ZIP `76686f0220d87d01f5d8b2e5e8a9e474c634a7d15e6e7031ee10837b2b4776eb`.
   Máy owner đã cài 1.9.3 nhưng không chạy `cam` trên hồ sơ thật đang phục vụ
-  phiên Codex hiện tại. Chưa deploy trang API tại checkpoint này.
+  phiên Codex hiện tại.
+- Hai artifact đã chép vào `C:\LTTPlatform\data\api_dist`; tải công khai trả
+  HTTP 200, đúng kích thước và đúng hai SHA-256 ở trên. Deploy Máy A từ clone
+  LF sạch tại commit `d9a48535`: backup PostgreSQL/data, migration, restart và
+  readiness đều PASS; Web/Worker/Voice Running.
+- `update.ps1 -SourceZip` không sinh `dau_van_tay.json`, nên lượt đối chiếu đầu
+  tiên dừng đúng với trạng thái "không biết commit". Ghi marker không BOM từ
+  chính commit/gói vừa phát hành rồi chạy lại `tools/nghiem_thu_deploy.py`:
+  **1.055 tệp, 0 lệch, 0 thiếu, 0 thừa**; `/health/version` khai
+  `d9a485359946`. H56 ghi khoản nợ bỏ bước marker tay ở lần cập nhật ZIP sau.
+- Playwright production `/huong-dan/cong-cu` thấy 1.9.3, hai tệp profile và hai
+  hash; `/huong-dan` thấy cả `ltt-3.8` và `ltt-3.5`. Hai trang có 0 console
+  error, 0 request failed và 0 response HTTP >= 400. Theo chỉ định của owner,
+  H55 dùng test phạm vi `-n 7` (182 PASS) và **không chạy gate tổng**.
 
 ## 2026-09-15 — H54: Tool 1.9.2 khớp reasoning và kiểm thật Codex
 

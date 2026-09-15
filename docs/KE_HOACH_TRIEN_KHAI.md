@@ -4153,5 +4153,15 @@ CRLF gốc, lượt cuối `python tools\gate.py` **PASS 33/33**, báo cáo
       profile có đúng context/compact/reasoning/tool-output riêng. Strict
       app-server CLI 0.145.0, Desktop 0.146.0-alpha.3.1 và VS Code
       0.154.0-alpha.6.2 đều trả đủ hai model từ cấu hình Tool sinh ra.
-- [ ] **H55.3 — Phát hành:** dựng/quét/cài Tool 1.9.3, đưa hai artifact lên
-      trang API production và xác minh tải + giao diện thật.
+- [x] **H55.3 — Phát hành:** dựng/quét/cài Tool 1.9.3, đưa hai artifact lên
+      trang API production và xác minh tải + giao diện thật. Production chạy
+      commit `d9a48535`; đối chiếu 1.055 tệp đạt 0 lệch/thiếu/thừa, hai URL tải
+      HTTP 200 đúng hash và Playwright ghi nhận 0 console error/0 request hỏng.
+
+## H56 — Marker cho đường cập nhật bằng ZIP
+
+- [ ] **H56.1 — Loại bước tay:** `deploy/windows/update.ps1` hiện không tự tạo
+      `dau_van_tay.json` khi nhận `-SourceZip`; bổ sung hợp đồng mang commit
+      vào gói hoặc tham số cập nhật, test hành vi và tài liệu rollback. H55 đã
+      ghi marker không BOM từ commit/gói xác định rồi đối chiếu 0/0/0; khoản nợ
+      này dành cho lượt sửa hạ tầng riêng, không làm sai bản đang chạy.
