@@ -31,6 +31,11 @@
   semantic version mới nhất nên không cần restart dịch vụ. Không chạy lệnh
   `cam` trên hồ sơ thật của owner trong lúc nghiệm thu; tránh đổi registry và
   cấu hình Codex/Claude đang phục vụ các phiên hiện tại.
+- Nâng bộ cài trên máy owner từ 1.8.0 lên 1.9.1 bằng chế độ silent, exit 0;
+  registry uninstall và mã nhúng trong thư mục cài đều xác nhận 1.9.1/source
+  hiện hành. Playwright production `/huong-dan/cong-cu` hiển thị đúng hai gói,
+  phiên bản, kích thước và SHA-256; 0 console error, 0 request hỏng. Tải lại
+  hai URL công khai đều HTTP 200 và băm trùng artifact nguồn.
 
 ## 2026-09-15 — H51 production: reasoning theo model đã chạy thật
 
