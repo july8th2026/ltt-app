@@ -56,7 +56,7 @@ def _dinh_dang(n: int) -> str:
     return f"{n:,}".replace(",", ".")
 
 
-def _render(duong: str) -> str:
+def _render(duong: str, *, authenticated: bool = True) -> str:
     """HTML thật của một trang, render qua ứng dụng.
 
     Đọc trang **đã render** chứ không đọc template: một `{% block %}` đặt sai
@@ -71,10 +71,10 @@ def _render(duong: str) -> str:
     tmp = Path(tempfile.mkdtemp())
     cu = {k: os.environ.get(k) for k in
           ("LTT_DATABASE_URL", "LTT_ENV", "LTT_SESSION_SECRET", "LTT_VPS",
-           "TURNSTILE_SECRET_KEY")}
+           "TURNSTILE_SECRET_KEY", "LTT_VPS_ROLLOUT")}
     os.environ.update(LTT_DATABASE_URL=f"sqlite:///{(tmp / 'dk.db').as_posix()}",
                       LTT_ENV="development", LTT_SESSION_SECRET="test-dk",
-                      LTT_VPS="1")
+                      LTT_VPS="1", LTT_VPS_ROLLOUT="public")
     os.environ.pop("TURNSTILE_SECRET_KEY", None)
     try:
         import platform_core.db as dbmod
@@ -82,10 +82,19 @@ def _render(duong: str) -> str:
         import apps.vps.tables       # noqa: F401
         import platform_core.models  # noqa: F401
         dbmod.Base.metadata.create_all(dbmod.get_engine())
+        from tests.test_252_vps_giao_dien import _tao_khach, _dang_nhap
+        if authenticated:
+            _tao_khach(dbmod)
         from server.app import create_app
         with TestClient(create_app(), base_url="https://testserver",
                         follow_redirects=False) as c:
+            if authenticated:
+                _dang_nhap(c)
             r = c.get(duong)
+        if not authenticated:
+            assert r.status_code == 303
+            assert "/login" in r.headers["location"]
+            return r.text
         assert r.status_code == 200, f"{duong} tra {r.status_code}"
         return r.text
     finally:
@@ -122,16 +131,14 @@ def test_hai_ban_cung_so_muc(vi, en):
     assert len(re.findall(r"<h2>", vi)) == len(re.findall(r"<h2>", en))
 
 
-def test_doc_duoc_KHI_CHUA_dang_nhap(vi):
-    """Đây là điều kiện làm clickwrap có nghĩa. Một trang điều khoản đòi đăng
-    nhập là một trang khách **không đọc được trước khi quyết định**, tức họ đồng
-    ý với một thứ chưa từng thấy.
-
-    `_render` gọi không kèm phiên nào, nên 200 ở đây đã là bằng chứng. Chốt thêm
-    rằng nó không lặng lẽ trả về trang đăng nhập với mã 200.
-    """
+def test_doc_duoc_TRUOC_khi_mua_sau_dang_nhap(vi):
+    """D01: authenticated MVP; khách chưa mua vẫn đọc được clickwrap."""
     assert "Điều khoản LTT VPS" in vi
     assert 'name="password"' not in vi
+
+
+def test_dieu_khoan_an_danh_chuyen_ve_dang_nhap():
+    _render("/vps/dieu-khoan", authenticated=False)
 
 
 def test_KHONG_dung_vo_dieu_khien(vi, en):

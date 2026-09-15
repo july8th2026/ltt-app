@@ -155,15 +155,20 @@ def vung_dang_mo(db: DbSession) -> list[tuple[str, str]]:
     return [(x, NHAN_VUNG.get(x, x)) for x in ma]
 
 
-def chon_gateway(db: DbSession, vung: str) -> VpsGateway:
+def chon_gateway(db: DbSession, vung: str, *,
+                 infrastructure_profile_id: str | None = None) -> VpsGateway:
     """Cổng vào đang nhận máy mới ở một vùng. Không có → lỗi rõ ràng.
 
     Chọn cái **còn nhiều địa chỉ trống nhất** để các cổng đầy đều nhau, thay vì
     nhồi một cái tới cạn rồi mới sang cái sau.
     """
+    dieu_kien = [VpsGateway.vung == str(vung),
+                 VpsGateway.dang_nhan_may_moi.is_(True)]
+    if infrastructure_profile_id is not None:
+        dieu_kien.append(
+            VpsGateway.infrastructure_profile_id == infrastructure_profile_id)
     ung_vien = list(db.execute(
-        select(VpsGateway)
-        .where(VpsGateway.vung == str(vung), VpsGateway.dang_nhan_may_moi.is_(True))
+        select(VpsGateway).where(*dieu_kien)
     ).scalars())
     if not ung_vien:
         raise KhongCoGatewayError(f"khong co cong vao nao dang mo o vung {vung!r}")
@@ -211,7 +216,7 @@ def cap_vmid(db: DbSession, instance: VpsInstance, *, goi_y: int = 0,
     """
     dang_dung = {int(v) for v in db.execute(
         select(VpsInstance.vmid).where(VpsInstance.vmid.is_not(None))
-    ).scalars()}
+    ).scalars() if v is not None}
     dang_dung |= {int(v) for v in da_co_tren_may_chu}
 
     bat_dau = max(VMID_DAU, int(goi_y or 0))

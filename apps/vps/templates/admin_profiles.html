@@ -1,0 +1,87 @@
+<div class="adm-content">
+  {% macro config_form(profile=none) %}
+  <form method="post" action="/vps/admin/profiles/save" style="display:grid;gap:10px;max-width:640px">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="profile_id" value="{{ profile.id if profile else '' }}">
+    <input type="hidden" name="config_version" value="{{ profile.config_version if profile else 0 }}">
+    {% for field, label, value in [
+      ('name', _('Tên profile'), profile.name if profile else ''),
+      ('slug', _('Slug'), profile.slug if profile else ''),
+      ('region', _('Region'), profile.region if profile else 'sgp'),
+      ('credential_ref', _('Tên biến tham chiếu provider (không nhập giá trị)'), profile.credential_ref if profile else 'LTT_OVH'),
+      ('compute_ref', _('Tên biến tham chiếu compute'), profile.compute_ref if profile else 'LTT_VPS_PROXMOX'),
+      ('runtime_ref', _('Tên biến tham chiếu runtime Machine B'), profile.runtime_ref if profile else 'LTT_OVH_MACHINE_B_RUNTIME'),
+      ('gateway_ref', _('Tên biến tham chiếu gateway'), profile.gateway_ref if profile else 'LTT_OVH_GATEWAY'),
+      ('router_ref', _('Tên biến tham chiếu router DHCP'), profile.router_ref if profile else 'LTT_OVH_ROUTER')] %}
+    <label>{{ label }}<input name="{{ field }}" value="{{ value }}" required maxlength="120" style="display:block;width:100%;box-sizing:border-box"></label>
+    {% endfor %}
+    <label>Public IP backend
+      <select name="ip_backend" style="width:100%">
+        {% for backend in ['ovh_static_pool', 'vultr_reserved_ip'] %}
+        <option value="{{ backend }}" {{ 'selected' if profile and profile.ip_backend == backend else '' }}>{{ backend }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Mapping strategy
+      <select name="mapping_strategy" style="width:100%">
+        {% for strategy in ['ovh_gwnat', 'ltt_nft_maps'] %}
+        <option value="{{ strategy }}" {{ 'selected' if profile and profile.mapping_strategy == strategy else '' }}>{{ strategy }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <p class="muted">{{ _('Lưu sẽ ngừng nhận máy mới và yêu cầu preflight lại. Không đổi backend/đích của profile đang ghim tài nguyên. Strategy OVH gwnat chưa có adapter mutation đã xác minh.') }}</p>
+    <button class="btn btn-sm" type="submit">{{ _('Lưu cấu hình') if profile else _('Thêm profile') }}</button>
+  </form>
+  {% endmacro %}
+  <details class="card"><summary>{{ _('Thêm profile hạ tầng') }}</summary>{{ config_form() }}</details>
+  {% if not profiles %}
+  <p class="dev-empty">{{ _('Chưa có profile. Migration và inventory phải được xác minh trước activation.') }}</p>
+  {% endif %}
+  {% for profile in profiles %}
+  <section class="card" aria-labelledby="profile-{{ profile.id }}">
+    <h2 id="profile-{{ profile.id }}">{{ profile.name }}</h2>
+    <p>{{ profile.slug }} · {{ profile.region }} · <strong>{{ profile.status }}</strong>
+       {% if profile.is_default %} · DEFAULT{% endif %}
+       · {{ _('Nhận máy mới:') }} {{ _('Có') if profile.accept_new else _('Không') }}</p>
+    <p>Provider: {{ profile.provider }} · Compute: {{ profile.compute_backend }} · IP: {{ profile.ip_backend }} · Gateway: {{ profile.gateway_backend }}</p>
+    <p>Health: {{ 'HEALTHY' if profile.ready else 'NOT READY' }}
+       {% if profile.health_reason %} — {{ profile.health_reason }}{% endif %}</p>
+    <p>Compute health: {{ profile.health.compute }} · IP health: {{ profile.health.ip }} · Gateway health: {{ profile.health.gateway }}<br>
+       Available public IPs: {{ profile.available_ips }} · VM count: {{ profile.vm_count }} · Last check: {{ profile.health_at or '—' }}</p>
+    <p>Credentials: <strong>{{ 'Configured ✅' if profile.credentials_configured else _('Chưa đủ tham chiếu') }}</strong>
+       · {{ _('Dùng Preflight để kiểm kết nối; Replace bằng form tham chiếu bên dưới.') }}</p>
+    <details><summary>Deploy provenance</summary>
+      <dl>
+        <div><dt>LTTSTUDIOSAPP SHA</dt><dd>{{ profile.deployment.app_sha }}</dd></div>
+        <div><dt>Machine B SHA</dt><dd>{{ profile.deployment.machine_b_sha }}</dd></div>
+        <div><dt>Schema versions</dt><dd>{{ profile.deployment.schema_versions }}</dd></div>
+        <div><dt>Runtime generated_at</dt><dd>{{ profile.deployment.runtime_generated_at }}</dd></div>
+      </dl>
+      {% if profile.deployment.machine_b_sha == 'UNKNOWN' %}<p class="muted">{{ _('Collector canonical chưa công bố source revision nhất quán; không dùng SHA của checkout dev thay thế.') }}</p>{% endif %}
+    </details>
+    <details><summary>Kho IPv4 ({{ profile.ips|length }})</summary>
+      {% if profile.ips %}
+      <p class="muted">{{ _('Mapping mong đợi từ DB; bấm Run Reconciliation để đọc trạng thái gateway thật.') }}</p>
+      <div style="overflow-x:auto"><table><thead><tr><th>IPv4</th><th>Private</th><th>State</th><th>Instance</th></tr></thead><tbody>
+      {% for ip in profile.ips %}<tr><td>{{ ip.address }}</td><td>{{ ip.private_ip or '—' }}</td><td>{{ ip.state }}</td><td>{{ ip.instance_id or '—' }}</td></tr>{% endfor %}
+      </tbody></table></div>
+      {% else %}<p class="muted">{{ _('Chưa có IPv4 đã kiểm kê. Không tự mua IP trong luồng tạo máy.') }}</p>{% endif %}
+    </details>
+    <form method="post" action="/vps/admin/profiles/{{ profile.id }}/action">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="config_version" value="{{ profile.config_version }}">
+      <button class="btn btn-sm" name="action" value="test_connection">Test Connection</button>
+      <button class="btn btn-sm" name="action" value="preflight">Preflight</button>
+      <button class="btn btn-sm" name="action" value="activate">Activate</button>
+      <button class="btn btn-sm" name="action" value="default">{{ _('Đặt default') }}</button>
+      <button class="btn ghost btn-sm" name="action" value="drain">Drain</button>
+      <button class="btn ghost btn-sm" name="action" value="standby">Standby</button>
+      <button class="btn ghost btn-sm" name="action" value="reconcile">Run Reconciliation</button>
+      {% if profile.ip_backend == 'ovh_static_pool' %}<button class="btn ghost btn-sm" name="action" value="sync_ip_inventory">{{ _('Nạp inventory OVH') }}</button>{% endif %}
+      <button class="btn btn-sm btn-danger" name="action" value="disable">Disable</button>
+    </form>
+    <p class="muted">{{ _('Các nút chỉ đổi trạng thái profile; không chuyển IP, mapping hay xoá VM đã tồn tại.') }}</p>
+    <details><summary>{{ _('Sửa cấu hình tham chiếu') }}</summary>{{ config_form(profile) }}</details>
+  </section>
+  {% endfor %}
+</div>

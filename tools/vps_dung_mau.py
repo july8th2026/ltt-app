@@ -121,13 +121,13 @@ def _co_suc_chua(bat: bool) -> None:
     from apps.vps.services import capacity
 
     if not bat:
-        routes._suc_chua = lambda db: (None, "may phat trien: khong co Proxmox")
+        routes._suc_chua = lambda db, profile=None: (None, "may phat trien: khong co Proxmox")
         return
 
     gia = capacity.SucChua(ram_mb_tong=196_608, dia_gb_tong=900,
                            ram_mb_da_hua=24_576, dia_gb_da_hua=240,
                            dia_gb_dang_dung=96, cpu_tong=32, vcpu_da_hua=8)
-    routes._suc_chua = lambda db: (gia, "")
+    routes._suc_chua = lambda db, profile=None: (gia, "")
 
 
 def _co_cong_vao(dbmod) -> None:

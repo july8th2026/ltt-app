@@ -5,6 +5,28 @@ MODE: ARCHITECTURE DECISION ONLY.
 Mục tiêu: thêm hoặc chuyển một trang Admin phải là việc **domain-local**, không
 phải sửa nhiều danh sách trung tâm.
 
+## Bổ sung được duyệt 2026-09-13 — app-owned admin navigation
+
+Chủ dự án cho phép bổ sung hợp đồng admin chung cho VPS V4. Phần cấm plugin
+discovery ở §3 vẫn áp dụng: không có registry thứ hai và không scan mới.
+`AppManifest.admin_nav` dùng tuple `NavEntry` đã có; dòng đầu là miền cha, các
+dòng sau là nơi chốn con, tối đa sáu. Tất cả path phải nằm dưới
+`<route_prefix>/admin`; các route vẫn do app sở hữu và kiểm quyền operator/CSRF.
+Metadata điều hướng không cấp quyền.
+
+Nền tảng đọc đúng `app.state.loaded_apps` của request qua middleware ASGI và
+ContextVar có reset trong `finally`; không import tên app và không lưu cấu hình
+app vào biến toàn cục. Không metadata, app disabled hoặc app load lỗi thì giữ
+cây sáu miền cũ. Trần tổng mới là bảy theo `03_IA_FREEZE.md` L3; không âm thầm
+nâng trần nếu có thêm miền app. Các mục/core URL cũ không thay đổi.
+
+Ba câu §4c: rollout từng cây không phạt cây cũ (field mặc định rỗng); đường suy
+biến là không có app contribution, không có menu giả; quan hệ được dùng là
+request → app.state.loaded_apps, không phải nhãn tiến trình hay tên nhánh.
+
+Phần ghi trần sáu mục cha trong §§2/7 dưới đây là lịch sử MVP ban đầu; **đã thay
+bởi L3 ngày 2026-09-13**. Trần mục con sáu không đổi.
+
 ---
 
 ## 1. Quyết định nền: PORT, không thiết kế mới

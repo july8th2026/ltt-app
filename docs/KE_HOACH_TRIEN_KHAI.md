@@ -4060,3 +4060,14 @@ CRLF gốc, lượt cuối `python tools\gate.py` **PASS 33/33**, báo cáo
       trang hướng dẫn Việt/Anh bằng browser render thật, console và network;
       ghi kết quả thật vào nhật ký. Owner đã yêu cầu triển khai production ngày
       15/09/2026.
+
+## H50 — Hợp nhất baseline VPS V4 đang chạy (2026-09-15)
+
+- [x] **H50.1 — Giữ nguyên code/schema production:** hợp nhất nhánh
+      `codex/vps-v4-infrastructure-profiles` vào release LTT LLM sau khi deploy
+      máy A phát hiện database đã ở revision `f4a7c2d9e610`. Không chép riêng
+      migration và không hạ cấp code VPS; hồ sơ chi tiết nằm ở `docs/VPS_V4/`.
+- [ ] **H50.2 — Nghiệm thu release hợp nhất:** chạy gate phạm vi giao nhau với
+      `-n 7`, deploy lại máy A và kiểm health/revision/browser. Gate tổng được
+      bỏ riêng đợt này theo chỉ đạo trực tiếp của owner ngày 15/09/2026; không
+      được ghi lượt gate tổng bị dừng là PASS.

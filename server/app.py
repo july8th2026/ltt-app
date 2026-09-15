@@ -84,8 +84,6 @@ def _xa_metrics_web(dung) -> None:
     chặn nhịp — nên trước khi có hàm này, trang vận hành cộng lại được mọi thứ
     trừ chính thứ nó cần nhất.
     """
-    import time as _time
-
     from platform_core.db import get_session
     from platform_core.public_api import metrics
 
@@ -349,6 +347,8 @@ def create_app(*, env: dict | None = None) -> FastAPI:
     # nó đọc apps/*/manifest.py. Thêm app = thêm folder, không sửa file này.
     from platform_core.registry import mount_all
     app.state.loaded_apps = mount_all(app)
+    from server.routes.admin._chung import AdminNavigationContextMiddleware
+    app.add_middleware(AdminNavigationContextMiddleware)
 
     # Public API `/api/v1` (Q92). Đây KHÔNG phải một app: một app không mount
     # được path ngoài `route_prefix` của nó và không được biết app khác, nên

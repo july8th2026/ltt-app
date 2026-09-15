@@ -50,6 +50,7 @@ class GatewayConfig:
     khoa: str = ""
     #: Tên bảng nftables trên cổng vào. Hai map `vao` / `ra` nằm trong bảng này.
     bang: str = "ltt"
+    known_hosts: str = ""
 
     def verify(self) -> "GatewayConfig":
         if not self.host:
@@ -58,6 +59,8 @@ class GatewayConfig:
             raise GatewayError("thieu LTT_VPS_GATEWAY_SSH_KEY trong secrets/app.env")
         if not os.path.exists(self.khoa):
             raise GatewayError(f"khong thay file khoa SSH: {self.khoa}")
+        if self.known_hosts and not os.path.isfile(self.known_hosts):
+            raise GatewayError("canonical SSH known_hosts file is unavailable")
         return self
 
 
@@ -68,6 +71,7 @@ def doc_cau_hinh(env: dict | None = None) -> GatewayConfig:
         user=str(src.get("LTT_VPS_GATEWAY_USER", "root")).strip() or "root",
         khoa=str(src.get("LTT_VPS_GATEWAY_SSH_KEY", "")).strip(),
         bang=str(src.get("LTT_VPS_GATEWAY_NFT_TABLE", "ltt")).strip() or "ltt",
+        known_hosts=str(src.get("LTT_VPS_GATEWAY_KNOWN_HOSTS", "")).strip(),
     ).verify()
 
 
@@ -84,9 +88,11 @@ class GatewayClient:
         # `BatchMode=yes`: thà hỏng ngay còn hơn treo chờ nhập mật khẩu trong một
         # worker không có ai ngồi trước màn hình.
         ssh = ["ssh", "-i", self.config.khoa, "-o", "BatchMode=yes",
-               "-o", "IdentitiesOnly=yes", "-o", "StrictHostKeyChecking=accept-new",
+               "-o", "IdentitiesOnly=yes", "-o", "StrictHostKeyChecking=yes",
                "-o", "ConnectTimeout=10",
                f"{self.config.user}@{self.config.host}", " ".join(lenh)]
+        if self.config.known_hosts:
+            ssh[1:1] = ["-o", f"UserKnownHostsFile={self.config.known_hosts}"]
         try:
             r = subprocess.run(ssh, capture_output=True, text=True,
                                timeout=TIMEOUT_GIAY)
@@ -95,9 +101,8 @@ class GatewayClient:
                 f"cong vao {self.config.host} khong tra loi trong {TIMEOUT_GIAY}s"
             ) from exc
         if r.returncode != 0:
-            raise GatewayError(
-                f"cong vao tra ma {r.returncode}: "
-                f"{(r.stderr or r.stdout).strip()[:300]}")
+            # Never propagate remote output: it can contain expanded secrets.
+            raise GatewayError(f"cong vao tra ma {r.returncode}")
         return r.stdout
 
     def _bash(self, kich_ban: str) -> str:
@@ -192,3 +197,67 @@ def _kiem_dia_chi(gt: str) -> None:
 
 def client_tu_moi_truong(env: dict | None = None, *, chay=None) -> GatewayClient:
     return GatewayClient(doc_cau_hinh(env), chay=chay)
+
+
+class GwnatGatewayClient(GatewayClient):
+    """Client cho gateway OVH đang dùng ``table ip gwnat``.
+
+    Máy gateway giữ toàn bộ quy tắc ghi/rollback trong một helper root-owned.
+    Ứng dụng chỉ truyền hai IPv4 đã kiểm tra và đọc inventory dạng ba cột
+    ``private public owner``. Tách như vậy tránh để worker tự dựng lại toàn bộ
+    firewall qua nhiều lớp quote SSH.
+    """
+
+    def __init__(self, config: GatewayConfig, *, helper: str, chay=None):
+        super().__init__(config, chay=chay)
+        if not helper.startswith("/") or not all(
+                c.isalnum() or c in "/_-." for c in helper):
+            raise GatewayError("duong dan helper gwnat khong hop le")
+        self.helper = helper
+
+    def _goi(self, action: str, *args: str) -> str:
+        if action not in {"health", "list", "ensure", "remove"}:
+            raise GatewayError("hanh dong gwnat khong hop le")
+        return self._chay([self.helper, action, *args])
+
+    def con_song(self) -> bool:
+        return self._goi("health").strip().endswith("ok")
+
+    def danh_sach_duong(self) -> dict[str, str]:
+        ket_qua: dict[str, str] = {}
+        noi_bo_da_co: set[str] = set()
+        for so_dong, dong in enumerate(self._goi("list").splitlines(), 1):
+            dong = dong.strip()
+            if not dong or dong.startswith("#"):
+                continue
+            cot = dong.split()
+            if len(cot) != 3:
+                raise GatewayError(f"inventory gwnat sai dinh dang tai dong {so_dong}")
+            noi_bo, cong_khai, _owner = cot
+            _kiem_dia_chi(noi_bo)
+            _kiem_dia_chi(cong_khai)
+            if cong_khai in ket_qua or noi_bo in noi_bo_da_co:
+                raise GatewayError("inventory gwnat co dia chi trung lap")
+            ket_qua[cong_khai] = noi_bo
+            noi_bo_da_co.add(noi_bo)
+        return ket_qua
+
+    def mo_duong(self, ip_cong_khai: str, ip_noi_bo: str) -> None:
+        _kiem_dia_chi(ip_cong_khai)
+        _kiem_dia_chi(ip_noi_bo)
+        self._goi("ensure", ip_cong_khai, ip_noi_bo)
+
+    def dong_duong(self, ip_cong_khai: str, ip_noi_bo: str) -> None:
+        _kiem_dia_chi(ip_cong_khai)
+        _kiem_dia_chi(ip_noi_bo)
+        self._goi("remove", ip_cong_khai, ip_noi_bo)
+
+
+def gwnat_client_tu_moi_truong(
+    env: dict | None = None, *, chay=None,
+) -> GwnatGatewayClient:
+    src = os.environ if env is None else env
+    helper = str(src.get(
+        "LTT_VPS_GATEWAY_GWNAT_HELPER", "/usr/local/sbin/ltt-gwnat"
+    )).strip()
+    return GwnatGatewayClient(doc_cau_hinh(env), helper=helper, chay=chay)

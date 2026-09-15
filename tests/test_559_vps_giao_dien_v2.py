@@ -164,7 +164,7 @@ def test_trang_may_KHONG_hua_sao_luu_doc_lap():
 
 # ── 5. API công khai: một quyết định, không phải một khoảng trống ───────────
 
-def test_VPS_van_dong_o_api_v1_va_ly_do_duoc_ghi_lai():
+def test_VPS_WEB_ONLY_va_ly_do_duoc_ghi_lai():
     """Không mở `/api/v1` cho VPS là một **quyết định**, và nó phải đọc được.
 
     Hợp đồng của `/api/v1` là *quote → giữ chỗ → quyết toán* cho **một lượt
@@ -174,9 +174,9 @@ def test_VPS_van_dong_o_api_v1_va_ly_do_duoc_ghi_lai():
     Ép nó vào khuôn đó là dựng một hợp đồng nói sai về thứ nó bán — đắt hơn hẳn
     việc chưa có API. Xem `docs/vps_v2/ADR_INDEX.md` ADR-06.
     """
-    adr = (GOC / "docs" / "vps_v2" / "ADR_INDEX.md").read_text(encoding="utf-8")
-    assert "ADR-06" in adr
-    assert "api/v1" in adr or "API công khai" in adr
+    disposition = (GOC / "docs" / "PUBLIC_API" / "APP_DISPOSITION_V1.md").read_text(
+        encoding="utf-8")
+    assert "WEB_ONLY" in disposition and "WONT_BUILD_PUBLIC_API" in disposition
 
 
 def test_manifest_van_KHONG_khai_ToolSpec_nao():
@@ -268,7 +268,7 @@ def test_trang_chi_tiet_RENDER_duoc_khi_may_dang_ban(moi_truong):
 def test_trang_ban_hang_KHONG_ro_ten_bien_moi_truong_hay_ten_Proxmox(moi_truong):
     """🔴 Đo được trên PRODUCTION 09/09/2026, ngay sau lượt deploy VPS V2.
 
-    Trang `/vps` **công khai** — khách chưa đăng nhập cũng thấy — in nguyên văn:
+    Trang `/vps` cho người dùng đã xác thực từng in nguyên văn:
 
         Hiện chưa nhận máy mới. (chua cau hinh Proxmox: production ma khong co
         LTT_VPS_PROXMOX_CA: tu choi noi toi Proxmox khi khong xac minh duoc
@@ -288,10 +288,26 @@ def test_trang_ban_hang_KHONG_ro_ten_bien_moi_truong_hay_ten_Proxmox(moi_truong)
     """
     from fastapi.testclient import TestClient
 
+    from platform_core.users import tao_nguoi_dung
     from server.app import create_app
+
+    gen = moi_truong.get_session()
+    db = next(gen)
+    try:
+        tao_nguoi_dung(db, email="vps-ui2-leak@test.com",
+                       password="matkhau-tot-12", is_verified=True)
+        db.commit()
+    finally:
+        gen.close()
 
     client = TestClient(create_app())
     try:
+        login = client.get("/login")
+        token = re.search(r'name="csrf_token" value="([^"]+)"',
+                          login.text).group(1)
+        client.post("/login", data={"username": "vps-ui2-leak@test.com",
+                                    "password": "matkhau-tot-12",
+                                    "csrf_token": token})
         r = client.get("/vps")
         assert r.status_code == 200, r.status_code
         # Tiền đề: phải THẬT SỰ đang ở nhánh không đọc được sức chứa, nếu không
@@ -431,12 +447,12 @@ def test_trang_may_KHONG_ro_loi_tho_khi_mot_thao_tac_hong(moi_truong):
         client.close()
 
 
-def test_chi_tiet_ky_thuat_van_di_vao_LOG_va_giu_duoc_MA(moi_truong, caplog):
-    """Cạnh chiếu ngược: sửa rò rỉ bằng cách **xoá** thông tin.
+def test_LOG_giu_MA_va_LOP_loi_nhung_khong_chep_chuoi_tho(moi_truong, caplog):
+    """Log ứng dụng đủ để nối sự cố mà không thành bản sao dữ liệu provider.
 
-    Người vận hành cần chuỗi thô để chẩn đoán, và cần **mã** để nối dòng này
-    với `vps_thao_tac.ma_loi`. Mất một trong hai là đổi một lỗi lộ liễu lấy một
-    lỗi im lặng.
+    Mã ổn định nối dòng log với sự kiện/thao tác; lớp exception chỉ ra adapter
+    cần xem. Chuỗi thô có thể chứa URL, lệnh đã mở rộng hoặc credential nên chỉ
+    được giữ trong log chuẩn của provider, không được chép sang log ứng dụng.
     """
     import logging
 
@@ -465,8 +481,9 @@ def test_chi_tiet_ky_thuat_van_di_vao_LOG_va_giu_duoc_MA(moi_truong, caplog):
             jobs._danh_dau_loi(db, m.id, ProxmoxError(THO))
 
         ghi = " ".join(x.getMessage() for x in caplog.records)
-        assert THO in ghi, "chi tiet ky thuat bi vut mat"
         assert "proxmox_tu_choi" in ghi, "log khong mang MA de noi voi thao tac"
+        assert "ProxmoxError" in ghi, "log khong mang LOP de tim adapter"
+        assert THO not in ghi, "log ung dung chep nguyen du lieu tho cua provider"
 
         from sqlalchemy import select
         e = db.execute(select(VpsEvent).where(VpsEvent.instance_id == m.id)

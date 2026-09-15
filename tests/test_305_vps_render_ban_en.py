@@ -254,22 +254,12 @@ def test_moi_trang_VPS_ban_EN_khong_con_tieng_viet(moi_truong):
         client.close()
 
 
-#: Hai trang khu VPS mở cho khách **chưa đăng nhập**, và cả hai đều có lý do.
-#:
-#:  `/vps`              trang bán. Thẻ app trong catalog trỏ tới đây, nên đòi
-#:                      đăng nhập là ngõ cụt ngay bước đầu của phễu.
-#:  `/vps/dieu-khoan`   điều khoản. Clickwrap nói "bấm là bạn đồng ý"; một trang
-#:                      điều khoản đòi đăng nhập là một trang khách **không đọc
-#:                      được trước khi quyết định** — họ đồng ý với thứ chưa
-#:                      từng thấy.
-#:
-#: ⚠️ Danh sách này là một **quyết định**, không phải một phép đo. Thêm đường vào
-#:    đây nghĩa là mở thêm một bề mặt công khai — hãy nói được vì sao.
-CONG_KHAI_AN_DANH = ["/vps", "/vps/dieu-khoan"]
+# Q124/D01 + D09: owner-only MVP, không route VPS nào mở ẩn danh.
+CONG_KHAI_AN_DANH = []
 
 
 def test_trang_VPS_an_danh_cung_khong_con_tieng_viet(moi_truong):
-    """Khách ẩn danh vào được hai trang; các trang còn lại bắt đăng nhập.
+    """Mọi trang VPS đều bắt đăng nhập trong owner-only MVP.
 
     Phân loại bằng **đích đến cuối**, không bằng mã trạng thái: với
     `follow_redirects=True` một trang riêng tư trả **200** ở `/login?next=…`,

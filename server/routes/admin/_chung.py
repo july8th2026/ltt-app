@@ -21,10 +21,33 @@ Bố cục đã đóng băng: `docs/admin_mvp_v3/03_IA_FREEZE.md`.
 
 from __future__ import annotations
 
+from contextvars import ContextVar
+
+_REQUEST_APPS: ContextVar[tuple] = ContextVar("admin_navigation_apps", default=())
+
+
+class AdminNavigationContextMiddleware:
+    """Bind navigation to the serving app, including concurrent test apps."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] not in ("http", "websocket"):
+            await self.app(scope, receive, send)
+            return
+        serving_app = scope.get("app")
+        state = getattr(serving_app, "state", None)
+        token = _REQUEST_APPS.set(tuple(getattr(state, "loaded_apps", ()) or ()))
+        try:
+            await self.app(scope, receive, send)
+        finally:
+            _REQUEST_APPS.reset(token)
+
 # ── Trần chống phình ─────────────────────────────────────────────────────────
 # Đây là CHỐT, không phải lời khuyên: `test_317` đọc hai hằng này. Muốn vượt
 # trần thì phải sửa `03_IA_FREEZE.md` trước, không phải sửa số ở đây.
-TRAN_MUC_CHA = 6
+TRAN_MUC_CHA = 7
 TRAN_MUC_CON = 6
 
 
@@ -213,26 +236,52 @@ def _cha(khoa: str) -> str:
     return CHA_CUA.get(khoa, khoa)
 
 
-def dieu_huong(active: str) -> dict:
+def dieu_huong(active: str, *, apps=None) -> dict:
     """Dựng toàn bộ dữ liệu điều hướng cho một trang.
 
     `active` là khoá của trang đang mở. Trả về thanh bên, dải mục con, dải tab
     và mẩu bánh mì — bốn thứ dựng từ **một** cây, nên chúng không thể lệch nhau.
     """
-    cha = _cha(active)
+    from platform_core.registry import _validate_admin_nav
+
+    href = dict(_HREF)
+    labels = dict(_NHAN)
+    parents = dict(CHA_CUA)
+    children = dict(MUC_CON)
+    roots = [key for group in NHOM_NAV for key in group]
+    for item in (_REQUEST_APPS.get() if apps is None else apps):
+        manifest = item.manifest
+        if item.error or not manifest.enabled or not manifest.admin_nav:
+            continue
+        _validate_admin_nav(manifest)
+        keys = [f"app_{manifest.slug}_{entry.nav_key}" for entry in manifest.admin_nav]
+        root = keys[0]
+        roots.append(root)
+        for key, entry in zip(keys, manifest.admin_nav, strict=True):
+            if key in href:
+                raise ValueError("duplicate app admin navigation key")
+            href[key] = entry.path
+            labels[key] = entry.label
+            if key != root:
+                parents[key] = root
+        children[root] = tuple((key, entry.label) for key, entry in
+                               zip(keys[1:], manifest.admin_nav[1:], strict=True))
+    if len(roots) > TRAN_MUC_CHA:
+        raise ValueError("admin parent navigation exceeds approved capacity")
+    cha = parents.get(active, active)
 
     thanh_ben = [
-        {"khoa": k, "href": _HREF[k], "nhan": _NHAN[k], "active": k == cha}
-        for nhom in NHOM_NAV for k in nhom
+        {"khoa": k, "href": href[k], "nhan": labels[k], "active": k == cha}
+        for k in roots
     ]
 
     muc_con = [
-        {"href": _HREF[k], "nhan": nhan, "active": k == active or k == cha and k == active}
-        for k, nhan in MUC_CON.get(cha, ())
+        {"href": href[k], "nhan": nhan, "active": k == active}
+        for k, nhan in children.get(cha, ())
     ]
     # Mục con nào đang mở: khớp trực tiếp, hoặc là mục con chứa tab đang mở.
     if muc_con:
-        khoa_muc_con = [k for k, _ in MUC_CON[cha]]
+        khoa_muc_con = [k for k, _ in children[cha]]
         dang_mo = active if active in khoa_muc_con else None
         if dang_mo is None:
             for k in khoa_muc_con:
@@ -243,20 +292,20 @@ def dieu_huong(active: str) -> dict:
             muc_con[i]["active"] = (k == dang_mo)
 
     tab = [
-        {"href": _HREF[k], "nhan": nhan, "active": k == active}
+        {"href": href[k], "nhan": nhan, "active": k == active}
         for k, nhan in TAB_CUA.get(active, ())
     ]
 
     banh_mi = []
     if cha != active:
-        banh_mi = [{"href": _HREF[cha], "nhan": _NHAN[cha]}]
+        banh_mi = [{"href": href[cha], "nhan": labels[cha]}]
 
     return {
         "thanh_ben": thanh_ben,
         "muc_con": muc_con,
         "tab": tab,
         "banh_mi": banh_mi,
-        "nhan_trang": _NHAN.get(active, ""),
+        "nhan_trang": labels.get(active, ""),
         "co_tab_hoac_con": bool(muc_con or tab),
     }
 

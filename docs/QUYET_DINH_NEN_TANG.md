@@ -27,7 +27,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 
 ---
 
-## 1. Quyết định đã chốt (đến Q128; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91, Q116→Q120 (phần con số), Q125→Q126→Q128 đã thay)
+## 1. Quyết định đã chốt (đến Q130; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91, Q116→Q120 (phần con số), Q125→Q126→Q128 đã thay)
 
 | # | Vấn đề | Quyết định | Lý do / hệ quả |
 |---|---|---|---|
@@ -146,6 +146,8 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 | ~~Q126~~ | ~~Một cấu hình Claude Desktop/Code chuẩn, không bổ sung nhỏ giọt~~ | ~~Local env đúng 10 biến, `MAX_RETRIES=1`.~~ **ĐÃ THAY bởi Q128 (2026-09-15).** Các quyết định Gateway/model/context/subagent/Tool Search còn nguyên và được Q128 tiếp nhận. | Vận hành hai phiên dài cùng LTT 3.8 lộ ra rằng một retry quá ít làm lỗi capacity tạm thời hiện ra ngay, còn hàng chờ A ước thiếu `tool_use/tool_result` nên chưa bảo vệ được lượt thứ hai. Giữ Q126 để truy nguyên ma trận ban đầu; Q128 sửa đúng timeout/retry và quan hệ reservation A↔B. |
 | Q127 | Codex Desktop/VS Code dùng cấu hình gốc và catalog hai model | `%USERPROFILE%\.codex\config.toml` chứa provider `ltt`, catalog và đúng một model gốc đang chọn; Desktop và tiện ích VS Code cùng dùng cấu hình đó khi chung tài khoản Windows/CODEX_HOME. Project tin cậy chỉ được ghi đè `model`; provider và credential ở cấu hình người dùng. | Desktop/extension không truyền `--profile`. Cấu hình đã qua strict parser, app-server `config/read` và `model/list` của ba binary cài thật; không hứa picker custom provider tự đổi profile. |
 | Q128 | Hai phiên Claude phải chờ đúng tầng và retry có giới hạn | Preset Local có **đúng 11 biến**: tiếp nhận Q126, dùng `MAX_RETRIES=10` theo mặc định chính thức của Claude và khai rõ `API_TIMEOUT_MS=600000`. Stream LTT chờ tối đa 300 giây, heartbeat 15 giây. Máy A đếm bảo thủ mọi chuỗi trong `tool_use/tool_result`, giữ theo ảnh 2.048 token, truyền request ID/reservation/whale sang máy B; máy B lấy **max(phép đo của B, header A)**. | Log thật 15/09: 148.593 + 79.848 > pool 221.184 và chiều thử lại 79.848 + 150.633 > pool, tạo 529 dù còn slot. Gốc là A đếm thiếu dữ liệu công cụ và không truyền reservation, không phải thiếu timeout. Claude tự retry lỗi tạm với exponential backoff; giữ mặc định 10, không bật watchdog thử vô hạn. `max` ở B giữ fail-closed khi A cũ hoặc header sai. |
+| Q129 | VPS V4 chọn hạ tầng theo profile nào? | Mỗi VPS được ghim một `infrastructure_profile_id`; OVH Singapore là ACTIVE/default sau fresh preflight, Vultr Singapore là STANDBY. Compute, public IP và gateway là ba hợp đồng độc lập; máy đã ghim không tự đổi profile khi đổi default. | Đây là số quyết định hợp nhất chính thức thay cho mã Q124 được dùng trên nhánh VPS V4 song song. Hồ sơ và bằng chứng đầy đủ nằm trong `docs/VPS_V4/`. |
+| Q130 | Khi pool OVH hết IP thì cấp IP mới thế nào? | Worker được tự tạo và checkout đúng một Additional IPv4 sau khi khóa plan, quantity, vị trí, destination, chu kỳ, currency và trần giá; mọi cart/item/order phải ghi bền vững và read-back trước khi tiếp tục. Trạng thái không chắc chắn phải phục hồi theo order, không mua lần hai. | Đây là số quyết định hợp nhất chính thức thay cho mã Q125 trên nhánh VPS V4. Cơ chế vẫn fail closed với unexpected billing và không tạo nút admin duyệt từng đơn. |
 ---
 
 ### Q115 — Public input cap sau benchmark Q4 (2026-08-28)
@@ -542,6 +544,13 @@ timeout mỗi API call 600.000 ms. Hàng chờ stream 300 giây/heartbeat 15 gi�
 năng lực server, độc lập với retry client. Quan hệ reservation A↔B được chốt
 bằng test hành vi; máy B luôn lấy số lớn hơn để một phiên A cũ không thể hạ hàng
 rào KV.
+
+### Q129–Q130 — Hợp nhất quyết định VPS V4 (2026-09-15)
+
+Nhánh VPS V4 được triển khai trước khi nhập vào dòng phát hành LTT LLM và đã
+dùng tạm số Q124/Q125 trùng với chuỗi quyết định client. Khi hợp nhất, hai quyết
+định đó nhận số canonical Q129/Q130; nội dung kỹ thuật và bằng chứng giữ tại
+`docs/VPS_V4/`. Việc đổi số không thay đổi schema hay hành vi production.
 
 ## 2. Ràng buộc bất biến
 
