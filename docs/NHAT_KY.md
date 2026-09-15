@@ -12,6 +12,26 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-15 — H52: Tool 1.9.1 đồng bộ cấu hình H51
+
+- Audit file đóng gói 1.9.0 cho thấy nó được dựng trước thay đổi H51: profile
+  Codex còn `model_reasoning_effort = "low"` cho cả LTT 3.8 và LTT 3.5, đồng
+  thời chưa có `default_subagent_reasoning_effort`. Vì vậy chỉ source/repo mới
+  là đúng, còn bộ cài khách tải chưa mang đủ dữ liệu mới.
+- Tăng phiên bản Python và Inno Setup lên 1.9.1, cập nhật hướng dẫn API rồi chạy
+  `python -m pytest tests/test_283_cam_cli.py tests/test_1262_cli_operational_harness.py tests/test_294_trang_cong_khai_api.py -q -n 7`: **108 passed**.
+- `python tools\dong_goi_exe.py phat-hanh --quet`: **PASS**. Installer, GUI,
+  console và ZIP ở `E:\LTTSTUDIOSAPP-build\cam-cli-1.9.1`; Defender đều sạch.
+  Mã `cam_cli.py` nhúng trùng SHA-256 với source và console trả `cam_cli 1.9.1`.
+  Installer SHA-256 là
+  `96b5cea4ba24ba06726d195b42219a807ab36c87e220ae50d00530c734caae89`;
+  ZIP SHA-256 là
+  `d45b6eb0b9d89f857af1f029887a3f84d4bf8cffdccf6b0cdf1881fff813565e`.
+- Artifact 1.9.1 được chép vào `C:\LTTPlatform\data\api_dist`; route tải tự dò
+  semantic version mới nhất nên không cần restart dịch vụ. Không chạy lệnh
+  `cam` trên hồ sơ thật của owner trong lúc nghiệm thu; tránh đổi registry và
+  cấu hình Codex/Claude đang phục vụ các phiên hiện tại.
+
 ## 2026-09-15 — H51 production: reasoning theo model đã chạy thật
 
 - Máy B: deploy từ commit H51, snapshot rollback

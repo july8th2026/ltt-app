@@ -400,7 +400,7 @@ người đồng bộ giữa máy hoặc commit vào kho dotfiles.
 Đối chiếu ngày **14/09/2026** với bản đang cài trên máy này, hai ảnh cấu hình của
 chủ sản phẩm, [gateway reference của Claude](https://claude.com/docs/third-party/claude-desktop/gateway)
 và [model configuration](https://claude.com/docs/third-party/claude-desktop/configuration#models).
-Tool 1.9.0 dùng cùng cấu hình chuẩn; cắm tay là một đường được hỗ trợ thêm, dùng cùng API và cùng
+Tool 1.9.1 dùng cùng cấu hình chuẩn; cắm tay là một đường được hỗ trợ thêm, dùng cùng API và cùng
 mã tuyến. **Không phải tải tool, thêm proxy hay sửa registry để đi theo đường này.**
 
 #### Chuẩn bị khóa LTT

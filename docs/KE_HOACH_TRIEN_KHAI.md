@@ -4099,3 +4099,16 @@ CRLF gốc, lượt cuối `python tools\gate.py` **PASS 33/33**, báo cáo
       mẫu trên từng model và đối chiếu chất lượng/độ trễ/token với baseline cũ.
       Không dùng canary số học ngắn thay cho bằng chứng chất lượng; chạy khi GPU
       không còn phục vụ phiên công việc của owner.
+
+## H52 — Phát hành lại Tool cắm CLI sau H51 (2026-09-15)
+
+- [x] **H52.1 — Audit artifact:** đối chiếu mã nhúng trong Tool 1.9.0 với source
+      sau H51; phát hiện bản đóng gói cũ còn ép `low` cho cả hai model và thiếu
+      `default_subagent_reasoning_effort`, nên không còn khớp cấu hình vận hành.
+- [x] **H52.2 — Tool 1.9.1:** tăng phiên bản đồng bộ Python/Inno Setup/tài liệu,
+      dựng installer/GUI/console/ZIP mới và quét Defender. Mã `cam_cli.py` nhúng
+      trong gói trùng SHA-256 với source; console đóng gói trả `cam_cli 1.9.1`.
+- [x] **H52.3 — Kiểm phạm vi:** test tool, operational harness và trang API với
+      `-n 7` đạt **108 passed**; secret scan 0 finding. Phát hành installer và
+      ZIP vào `data/api_dist` để `/tai/cong-cu-cam*` tự chọn 1.9.1; không cần
+      restart dịch vụ vì artifact là dữ liệu vận hành ngoài release.
