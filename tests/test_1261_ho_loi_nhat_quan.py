@@ -114,17 +114,59 @@ def test_dang_ban_khong_co_nguon_thi_khong_them_truong_rong():
     assert "reason" not in loi.extra
 
 
-def test_cua_stream_chuyen_tiep_thu_lai_sau_s_va_nguon():
-    """Cơ học: lượt gọi `execution_busy` ở cửa stream phải truyền CẢ HAI."""
-    cay = ast.parse((GOC / "server/api/streaming.py").read_text(encoding="utf-8"))
+@pytest.mark.parametrize("tep", ["server/api/streaming.py", "server/api/chat.py"])
+def test_moi_cua_chuyen_tiep_thu_lai_sau_s_va_nguon(tep):
+    """Cơ học: MỌI lượt gọi `execution_busy` phải truyền CẢ HAI.
+
+    Bản đầu của ca này chỉ soi cửa stream, và đúng vì thế nó bỏ lọt cửa sync —
+    đo trên production 14/09: `/chat/completions` trả 429 không có `reason`.
+    """
+    cay = ast.parse((GOC / tep).read_text(encoding="utf-8"))
     goi = [n for n in ast.walk(cay)
            if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
            and n.func.attr == "execution_busy"]
-    assert goi, "khong con luot goi execution_busy nao — phep kiem da chet"
+    assert goi, f"{tep}: khong con luot goi execution_busy nao — phep kiem chet"
     for g in goi:
         kw = {k.arg for k in g.keywords}
         assert {"retry_after", "reason"} <= kw, (
-            f"dong {g.lineno}: thieu {{'retry_after','reason'}} - {kw}")
+            f"{tep} dong {g.lineno}: thieu {{'retry_after','reason'}} - {kw}")
+
+
+@pytest.mark.parametrize("tep", ["server/api/streaming.py", "server/api/chat.py"])
+def test_huy_khong_duoc_roi_vao_nhanh_bat_tat_ca(tep):
+    """`HuyError` phải được bắt, và bắt TRƯỚC mọi nhánh nuốt-tất-cả.
+
+    ⛔ Đo 14/09/2026: `grep HuyError server/` trả **0 dòng**. Cổng máy B trả 499
+       ⇒ ngoại lệ thoát ra ⇒ khách nhận **500 `internal_error`** cho một sự việc
+       mà docstring của chính lớp ấy gọi là *"KHÔNG PHẢI LỖI — của ai cả"*.
+
+    ⭐ Thứ tự mới là mệnh đề thật, không phải sự có mặt: `HuyError` cố ý KHÔNG
+       kế thừa `CongVlmError`, nên một `except HuyError` đặt SAU
+       `except Exception` là mã không bao giờ chạy — và ca này vẫn xanh nếu nó
+       chỉ đếm sự có mặt.
+    """
+    cay = ast.parse((GOC / tep).read_text(encoding="utf-8"))
+    def _ten(h):
+        t = h.type
+        if isinstance(t, ast.Name):
+            return {t.id}
+        if isinstance(t, ast.Tuple):
+            return {x.id for x in t.elts if isinstance(x, ast.Name)}
+        return set()
+
+    thay = False
+    for thu in ast.walk(cay):
+        if not isinstance(thu, ast.Try):
+            continue
+        ten = [_ten(h) for h in thu.handlers]
+        if not any("HuyError" in x for x in ten):
+            continue
+        thay = True
+        i = next(k for k, x in enumerate(ten) if "HuyError" in x)
+        for truoc in ten[:i]:
+            assert not ({"Exception", "BaseException", "CongVlmError"} & truoc), (
+                f"{tep}: `HuyError` dung SAU {truoc} — no khong bao gio chay")
+    assert thay, f"{tep}: khong bat `HuyError` — 499 cua may B se thanh 500"
 
 
 def test_loi_khong_duoc_mach_mot_gia_tri_DA_BI_GO():

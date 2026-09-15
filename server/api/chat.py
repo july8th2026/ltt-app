@@ -72,6 +72,24 @@ _THU_LAI_S = 10
 MA_KHACH_NGAT = 499
 _KHACH_NGAT = {"code": "client_disconnected",
                "detail": "The client disconnected before the answer was ready."}
+#: Lượt bị HUỶ theo yêu cầu (`/v1/huy`, hoặc cổng máy B trả 499).
+#:
+#: 🔴 VÌ SAO TỒN TẠI. `cong_vlm.HuyError` KHÔNG được bắt ở cửa đồng bộ lẫn cửa
+#:    stream — đo 14/09/2026: `grep HuyError server/` trả **0 dòng**. Nên một
+#:    lượt khách CHỦ ĐỘNG huỷ rơi vào nhánh bắt-tất-cả và khách nhận
+#:    **500 `internal_error`** cho một sự việc mà chính docstring của lớp ấy gọi
+#:    là *"KHÔNG PHẢI LỖI — của ai cả"*. Một 500 còn kéo theo cảnh báo trực và
+#:    những vòng thử lại không ai muốn.
+#:
+#: ⭐ Dùng lại đúng **499** và đúng hình dạng của `_KHACH_NGAT` ngay trên: hai
+#:    sự việc anh em (khách đi / khách huỷ) phải cùng một khuôn. Khác nhau đúng
+#:    một chữ — `code` — vì hai nguyên nhân ấy phân biệt được và nên phân biệt.
+#:
+#: ⚠️ Cả hai thân 499 này nằm NGOÀI `problem+json` của `/api/v1`. Đó là hiện
+#:    trạng có từ trước, không phải thứ bản vá này đẻ ra; đưa chúng vào khuôn
+#:    chung là một đổi hợp đồng riêng, cần chốt riêng.
+_DA_HUY = {"code": "request_cancelled",
+           "detail": "The request was cancelled before it finished."}
 
 
 def kiem_ten_model(tool, ten) -> None:
@@ -382,8 +400,12 @@ def register_chat_routes(api, config, tag: str) -> None:
             _mo_lai_khoa(record, "het_cho:" + str(e.ly_do))
             log.warning("HET CHO dong bo user=%s ly_do=%s",
                         principal.user_id[:8], e.ly_do)
+            # ⛔ `reason` — cung ly le voi cua stream: `het_cho` (hang cho cua
+            #    TA day) khac han `suat` (GPU het suat) va `thuong_nguon` (may B
+            #    tra 429). Cung mot ma HTTP, ba nguyen nhan, ba cach xu.
             raise limits.execution_busy((suc.resource if suc else ""),
-                                        retry_after=_THU_LAI_S) from None
+                                        retry_after=_THU_LAI_S,
+                                        reason="het_cho") from None
         except phong_cho.KhachDi:
             _mo_lai_khoa(record, "khach_di_luc_cho")
             return JSONResponse(_KHACH_NGAT, status_code=MA_KHACH_NGAT,
@@ -501,8 +523,9 @@ def _finish_chat(*, db, sach: dict, principal, record, request_id: str,
     "loi" của bên gọi là no-op khi ở đây đã chốt đúng.
     """
     from platform_core.llm import ngat, phong_cho, thanh_toan
-    from platform_core.llm.cong_vlm import (BanError, CongVlmError, SuDung,
-                                            VuotNganSachError, YeuCauSaiError)
+    from platform_core.llm.cong_vlm import (BanError, CongVlmError, HuyError,
+                                            SuDung, VuotNganSachError,
+                                            YeuCauSaiError)
 
     bat_dau = time.monotonic()
     try:
@@ -621,6 +644,15 @@ def _finish_chat(*, db, sach: dict, principal, record, request_id: str,
         db.commit()
         phong_cho.ghi_ket_thuc(waiter_id, "tham_so_sai")
         raise invalid_request(str(e)) from None
+    except HuyError:
+        # ⛔ PHAI dung TRUOC nhanh bat-tat-ca ben duoi. `HuyError` co chu y KHONG
+        #    ke thua `CongVlmError`, nen no roi thang vao `except Exception` va
+        #    thanh 500 — xem `_DA_HUY`.
+        thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
+        db.commit()
+        phong_cho.ghi_ket_thuc(waiter_id, "huy")
+        return JSONResponse(_DA_HUY, status_code=MA_KHACH_NGAT,
+                            headers=_NO_STORE)
     except (CongVlmError, Exception) as e:                  # noqa: BLE001
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()

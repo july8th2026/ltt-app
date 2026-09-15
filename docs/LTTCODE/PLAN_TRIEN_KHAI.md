@@ -1,10 +1,12 @@
 # LTTCODE — KẾ HOẠCH TRIỂN KHAI CHI TIẾT (living)
 
-> Cập nhật 2026-09-14. "Thời gian XD" = ước tính **giờ làm việc của agent** trên
+> Cập nhật 2026-09-15 (phiên tiếp quản). "Thời gian XD" = ước tính **giờ làm việc của agent** trên
 > máy này (không phải người). Cột % theo effort-share.
-> **Tổng tiến độ ≈ 34% · Còn lại ≈ 90 giờ XD** (chưa gồm logistics: cert EV, R2/CDN, khóa LIVE).
+> **Tổng tiến độ ≈ 37% · Còn lại ≈ 87 giờ XD** (chưa gồm logistics: cert EV, R2/CDN, khóa LIVE).
 > ⭐ 14/09: baseline Tauri **build (5m09s) + installer NSIS/MSI + app CHẠY** (title LTTCODE, WebView2 OK).
 > ⭐⭐ 14/09: **DSH sidecar integration PROVEN** — `dsh web --profile lttcode` boot ~10s, nạp plugin `llm-ltt`, provider mặc định `ltt-official`, in ready-line handshake. Đóng gói = bundle node.exe thật (SEA/pkg không dùng được).
+> ⚠️ 15/09: test key `ltt_tk_` **mất** (scratchpad dọn) — mint lại qua `setup/khoa_thu_api.ps1` (elevated); chỉ chặn ca model P03/P04.
+> ⭐ 15/09: **webview CHẠY DSH UI** (P06) — WebView2 bỏ cookie `Strict` qua redirect 303 → trang 401; sửa bằng patch DSH mint `SameSite=Lax` (`patch-dsh-cookies.mjs` qua `postinstall`).
 > Nguồn: `MASTER_IMPLEMENTATION_PLAN.md`, `DECISION_LOCK.md`, `PROGRESS.md`.
 
 ## Tổng quan hạng mục
@@ -13,25 +15,25 @@
 |---|---|---:|---:|---|
 | P00 | Research & Baseline | 100% | 0 | ✅ |
 | P01 | Decision Lock + Architecture | 100% | 0 | ✅ |
-| P02 | Harness Pin & Reproducible Baseline | 90% | ~0.5 | 🟢 |
-| P03 | LTT Compatibility Harness | 55% | ~3 | 🟡 |
+| P02 | Harness Pin & Reproducible Baseline | 95% | ~0.5 | 🟢 |
+| P03 | LTT Compatibility Harness | 55% | ~2 | 🟡 |
 | P04 | LTT Provider Adapter `llm-ltt` | 92% | ~4 | 🟢 |
 | P05 | LTT Auth & Bootstrap (MVP) | 15% | ~10 | 🟡 |
-| P06 | Desktop Runtime / Sidecar (Tauri) | 50% | ~7 | 🟡 build+run+DSH-boot OK; còn bundle+Rust spawn |
+| P06 | Desktop Runtime / Sidecar (Tauri) | 75% | ~3 | 🟡 build+run+DSH-boot+Rust spawn+**webview CHẠY UI** OK; còn bundle resources+Job Object |
 | P07 | Core Coding Agent UX | 0% | ~12 | ⬜ |
 | P08 | Session / Sandbox / Approval | 5% | ~9 | ⬜ |
 | P09 | Release Control Plane (server) | 5% | ~15 | ⬜ (chờ R2/CDN) |
 | P10 | Updater / Signing / Migration | 5% | ~13 | ⬜ (chờ cert EV) |
-| P11 | Security / Supply Chain | 10% | ~8 | 🟡 |
+| P11 | Security / Supply Chain | 10% | ~7 | 🟡 |
 | P12 | Beta Acceptance (§38 + §39) | 0% | ~9 | ⬜ |
 | P13 | Stable Release | 0% | ~2 | ⬜ |
-| | **TỔNG** | **~29%** | **~100** | |
+| | **TỔNG** | **~37%** | **~87** | |
 
 ---
 
 ## Chi tiết theo hạng mục
 
-### P02 — Harness Pin & Reproducible Baseline · 70% · còn ~1h
+### P02 — Harness Pin & Reproducible Baseline · 95% · còn ~0.5h
 | Mục triển khai | % | Giờ | Ghi chú |
 |---|---:|---:|---|
 | Tạo repo LTTCODEAPP + baseline | 100% | 0 | ✅ pushed |
@@ -40,7 +42,7 @@
 | Scaffold Tauri v2 host | 100% | 0 | ✅ (create-tauri-app) |
 | Build tái lập xác thực | 40% | 1 | 🟡 build baseline đang chạy |
 
-### P03 — LTT Compatibility Harness · 55% · còn ~3h
+### P03 — LTT Compatibility Harness · 55% · còn ~2h
 | Mục triển khai | % | Giờ | Ghi chú |
 |---|---:|---:|---|
 | Runner `collect()` + test-plan 15 ca | 100% | 0 | ✅ |
@@ -66,16 +68,17 @@
 | Đấu bootstrap vào app (min-version/flags/models) | 0% | 1 | ⬜ |
 | *(nợ) Device-flow OAuth backend* | 0% | ~16 | ⬜ sau MVP |
 
-### P06 — Desktop Runtime / Sidecar (Tauri) · 10% · còn ~14h
+### P06 — Desktop Runtime / Sidecar (Tauri) · 75% · còn ~3h
 | Mục triển khai | % | Giờ | Ghi chú |
 |---|---:|---:|---|
 | Scaffold + rename LTTCODE + config NSIS | 100% | 0 | ✅ |
-| Build baseline (xác thực toolchain) | 50% | 1 | 🟡 đang chạy nền |
-| Đóng gói DSH sidecar (@yao-pkg/pkg → exe) | 0% | 4 | ⬜ |
-| main.rs: spawn + port ngẫu nhiên + health-check | 0% | 3 | ⬜ |
-| Lifecycle: crash-recovery + shutdown sạch | 0% | 2 | ⬜ |
-| Webview trỏ sidecar + IPC/capabilities | 0% | 2 | ⬜ |
-| Logs tách user-data + multi-instance | 0% | 2 | ⬜ |
+| Build baseline (xác thực toolchain) | 100% | 0 | ✅ 5m09s, NSIS+MSI, app chạy (14/09) |
+| DSH sidecar boot PROVEN (recipe) | 100% | 0 | ✅ `0ba745c`; pkg/SEA loại bỏ — bundle node.exe thật |
+| Rust spawn + parse ready-line (sidecar.rs) | 100% | 0 | ✅ spawn `node.exe`, parse `dsh web:` line, không có `/health` (ready-line = handshake) |
+| Lifecycle: crash-recovery + shutdown sạch | 100% | 0 | ✅ backoff restart (max 5) + kill-on-exit; ⚠️ Job Object chưa (deviation, ghi ở PROGRESS) |
+| Webview trỏ authenticated URL + capability 127.0.0.1 | 100% | 0 | ✅ Lax-cookie patch (`patch-dsh-cookies.mjs`); webview CHẠY UI thật (DOM 50KB); csp null |
+| Vendor node.exe + stage cây sidecar vào resources | 0% | 2 | ⬜ offline installer; node.exe gitignored, provision ở staging |
+| Logs tách user-data + multi-instance | 0% | 1 | ⬜ |
 
 ### P07 — Core Coding Agent UX · 0% · còn ~12h
 | Mục triển khai | % | Giờ | Ghi chú |
@@ -107,7 +110,7 @@
 | Authenticode ký installer | 0% | 3 | ⬜ **cần cert EV** |
 | Migration backup→verify→migrate→mark | 0% | 4 | ⬜ |
 
-### P11 — Security / Supply Chain · 10% · còn ~8h
+### P11 — Security / Supply Chain · 10% · còn ~7h
 | Mục triển khai | % | Giờ | Ghi chú |
 |---|---:|---:|---|
 | Secret handling (.gitignore, không log key) | 60% | 1 | 🟡 |
@@ -144,6 +147,6 @@
 | **Backend device-flow OAuth** | P05 (nợ) | nâng auth sau MVP |
 
 ## Ước lượng lịch
-- **~100 giờ XD** còn lại. Chạy tự động liên tục trên máy này (có xen build nặng),
+- **~87 giờ XD** còn lại. Chạy tự động liên tục trên máy này (có xen build nặng),
   ước ~**2–3 tuần lịch** nếu logistics (R2, cert EV) sẵn sàng song song; phần
   MVP-chạy-cục-bộ (P06+P07+P08, ~35h) có thể xong trước, ~**1 tuần**.

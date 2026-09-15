@@ -47,6 +47,35 @@ HEARTBEAT_SECONDS = 60.0
 #:    và thu lease của một người đang được phục vụ thì tệ hơn giữ xác thêm 60 s.
 ORPHAN_TIMEOUT_STREAM = timedelta(seconds=180)
 
+#: Thời hạn mồ côi cho lease `mode='job'`. 300 s = **5 nhịp tim**.
+#:
+#: 🔴 SỰ CỐ 14/09/2026, cùng họ với L-11 nhưng ở cửa JOB. Một lượt deploy chạy
+#:    giữa lúc bốn job đang chạy; worker bị giết ⇒ không handler nào chạy ⇒
+#:    `luong.py:_nha_suat` không bao giờ được gọi. Đo được sau đó:
+#:
+#:        3090: 3 lease / 2 job THẬT   → một suất bị xác chiếm
+#:        job đang xếp hàng: 1         → và nó chờ đúng cái suất ấy
+#:
+#:    Đường lỗi KHÔNG hỏng — nó nhả suất đúng. Thứ hỏng là **hạn đỡ**: 1.200 s.
+#:
+#: 🔑 VÌ SAO 300 CHỨ KHÔNG PHẢI 1.200, và vì sao KHÔNG phải 60.
+#:
+#:    `reclaim_expired` đo `heartbeat_at`, **không** đo `acquired_at`. Đó là
+#:    khác biệt quyết định so với các hàng đợi chỉ-có-đồng-hồ: `river` để
+#:    `RescueStuckJobsAfter` mặc định **1 giờ** và nhiều bản triển khai còn nâng
+#:    lên 24 giờ, đúng vì *"it is purely time based — it has no idea whether a
+#:    worker is still alive and working"*. Ta thì biết: nhịp tim là bằng chứng
+#:    trực tiếp. Nên con số ở đây phải suy từ `HEARTBEAT_SECONDS`, không mượn
+#:    của họ.
+#:
+#:    5 nhịp = chịu được **bốn** nhịp lỡ liên tiếp. Rộng hơn hẳn cửa stream (3×,
+#:    đã chạy thật từ 13/09) vì job có thể prefill 221K token; nhưng nhịp tim là
+#:    một luồng RIÊNG, không nằm sau lời gọi model, nên nó không lỡ vì prefill.
+#:
+#: ⛔ ĐỪNG nâng lại lên 20 phút "cho chắc". Mỗi phút thừa ở đây là một suất GPU
+#:    nằm không trong khi có job đang xếp hàng — đo được hôm nay, không phải lo xa.
+ORPHAN_TIMEOUT_JOB = timedelta(seconds=300)
+
 #: Trần im lặng của `keep_alive(con_song=...)` — LỚP 2 của cơ chế nhả suất.
 #:
 #: 🔴 NGUỒN CỦA NGƯỠNG, không phải một con số chọn cho tròn:
@@ -81,13 +110,16 @@ def reclaim_expired(
     #    `ORPHAN_TIMEOUT_STREAM`. Dùng `min` chứ không thay thẳng: người gọi
     #    truyền `timeout` ngắn hơn (ví dụ dọn tay) thì ý họ vẫn phải thắng.
     cutoff_stream = _now() - min(timeout, ORPHAN_TIMEOUT_STREAM)
+    cutoff_job = _now() - min(timeout, ORPHAN_TIMEOUT_JOB)
     query = db.query(ExecutionLease)
     if resource:
         query = query.filter(ExecutionLease.resource == resource)
     leases = query.all()
+    #: `min(...)` ở cả hai vế trên, chứ không thay thẳng: người gọi truyền
+    #: `timeout` NGẮN hơn (dọn tay) thì ý họ vẫn phải thắng.
+    _han = {"stream": cutoff_stream, "job": cutoff_job}
     expired = [lease for lease in leases
-               if _aware(lease.heartbeat_at) < (
-                   cutoff_stream if lease.mode == "stream" else cutoff)]
+               if _aware(lease.heartbeat_at) < _han.get(lease.mode, cutoff)]
     for lease in expired:
         db.delete(lease)
     if expired:

@@ -214,10 +214,10 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
     """
     from platform_core import credit
     from platform_core.llm import admission, ngat, phong_cho, thanh_toan
-    from platform_core.llm.cong_vlm import (BanError, CongVlmError,
+    from platform_core.llm.cong_vlm import (BanError, CongVlmError, HuyError,
                                             SuDung, VuotNganSachError)
     from platform_core.runtime_noi_bo import luong as cua_luong
-    from server.api.chat import (MA_KHACH_NGAT, _KHACH_NGAT, _con_lai_s,
+    from server.api.chat import (MA_KHACH_NGAT, _DA_HUY, _KHACH_NGAT, _con_lai_s,
                                  _tran_max_tokens)
 
     executor = for_tool(tool) if tool is not None else for_tool_name(TOOL_CHAT)
@@ -452,6 +452,14 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
                  principal.user_id[:8], e)
         raise invalid_request(str(e),
                               **tran_bi_vuot(getattr(e, "chi_tiet", None))) from None
+    except HuyError:
+        # ⛔ TRUOC `CongVlmError`: `HuyError` khong ke thua no (co chu y), nen
+        #    truoc 14/09 no thoat ra thanh 500. Huy khong phai loi cua ai.
+        thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
+        db.commit()
+        _release_ticket("huy")
+        return JSONResponse(_DA_HUY, status_code=MA_KHACH_NGAT,
+                            headers=_NO_STORE)
     except CongVlmError as e:
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
