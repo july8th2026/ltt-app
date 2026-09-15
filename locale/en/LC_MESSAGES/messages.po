@@ -8318,6 +8318,146 @@ msgstr "🔧 Settings"
 msgid "🧪 Chạy thử một job"
 msgstr "🧪 Run a test job"
 
+#: server/templates/_cam_chon.html:1
+msgid "%USERPROFILE%/.codex/config.toml và ltt_model_catalog.json"
+msgstr "%USERPROFILE%/.codex/config.toml and ltt_model_catalog.json"
+
+#: server/templates/_cam_chon.html:1
+msgid "Bảng giá trị chuẩn cho hai model"
+msgstr "Canonical values for both models"
+
+#: server/templates/_cam_chon.html:1
+msgid "Bảng này được đối chiếu với schema cấu hình Codex hiện hành và app-server 0.146.0-alpha.3.1 nằm trong Codex Desktop 26.721.11231.0 đang cài trên máy. Codex Desktop không có form Gateway để nhập URL và khóa. Ứng dụng đọc cùng cấu hình cấp người dùng với Codex CLI."
+msgstr "This table was checked against the current Codex configuration schema and the app-server 0.146.0-alpha.3.1 bundled with Codex Desktop 26.721.11231.0 installed on this machine. Codex Desktop has no Gateway form for entering a URL and key. It reads the same user-level configuration as Codex CLI."
+
+#: server/templates/_cam_chon.html:1
+msgid "Bộ chọn model của Desktop hiện chưa hiểu đầy đủ model theo từng custom provider; chuyển hai model LTT bằng cấu hình gốc và chat mới như trên."
+msgstr "The Desktop model picker does not yet fully understand models per custom provider; switch between the two LTT models through root configuration and a new chat as described above."
+
+#: server/templates/_cam_chon.html:1
+msgid "CONFIG.TOML"
+msgstr "CONFIG.TOML"
+
+#: server/templates/_cam_chon.html:1
+msgid "Chat agent chính, shell, apply_patch và tool tĩnh đi qua Responses API của LTT."
+msgstr "Main agent chat, shell, apply_patch, and static tools go through the LTT Responses API."
+
+#: server/templates/_cam_chon.html:1
+msgid "Chỉ dùng MỘT trong hai khối config.toml. Nếu tệp đã có cấu hình riêng, giữ bản sao lưu rồi hợp nhất các khóa gốc trước bảng đầu tiên; chỉ được có một bảng [agents] và một bảng [model_providers.ltt]. TOML có khóa hoặc bảng trùng sẽ làm Codex từ chối khởi động."
+msgstr "Use only ONE of the two config.toml blocks. If the file already has custom settings, keep a backup and merge the root keys before the first table; there must be only one [agents] table and one [model_providers.ltt] table. Duplicate TOML keys or tables make Codex refuse to start."
+
+#: server/templates/_cam_chon.html:1
+msgid "Codex Desktop dùng cấu hình gốc thay vì profile CLI; mở mục Codex Desktop ở đầu trang để lấy đúng khối hoàn chỉnh. Không dán khóa LTT vào mục MCP/Connectors."
+msgstr "Codex Desktop uses root configuration instead of CLI profiles; open the Codex Desktop section at the top of this page for the complete block. Do not paste the LTT key into MCP/Connectors."
+
+#: server/templates/_cam_chon.html:1
+msgid "Codex Desktop đọc cấu hình cấp người dùng và catalog khi khởi động; không có bảng Gateway nhập tay như Claude Desktop."
+msgstr "Codex Desktop reads user-level configuration and the catalog at startup; it has no manual Gateway form like Claude Desktop."
+
+#: server/templates/_cam_chon.html:1
+msgid "Codex nối /responses"
+msgstr "Codex appends /responses"
+
+#: server/templates/_cam_chon.html:1
+msgid "Cấu hình hoàn chỉnh — LTT 3.5 (Nhanh)"
+msgstr "Complete configuration — LTT 3.5 (Fast)"
+
+#: server/templates/_cam_chon.html:1
+msgid "Cấu hình hoàn chỉnh — LTT 3.8 (Mạnh)"
+msgstr "Complete configuration — LTT 3.8 (Strong)"
+
+#: server/templates/_cam_chon.html:1
+msgid "Cắm LTT vào Codex Desktop trên Windows"
+msgstr "Connect LTT to Codex Desktop on Windows"
+
+#: server/templates/_cam_chon.html:1
+msgid "Giới hạn đã biết của custom provider trong Desktop"
+msgstr "Known custom-provider limitations in Desktop"
+
+#: server/templates/_cam_chon.html:1
+msgid "Hỏi Calculate 6 * 7. Reply with only the number. Cần nhận 42, rồi đối chiếu Logs/Usage của LTT để xác nhận đúng model và credit."
+msgstr "Ask: Calculate 6 * 7. Reply with only the number. You should receive 42; then check LTT Logs/Usage to confirm the model and credit."
+
+#: server/templates/_cam_chon.html:1
+msgid "LTT stream bằng SSE"
+msgstr "LTT streams over SSE"
+
+#: server/templates/_cam_chon.html:1
+msgid "Một số chức năng riêng của ứng dụng như preview selection Edit có thể gọi dịch vụ OpenAI trực tiếp; Browser/Computer Use và dynamic tool discovery chưa được cung cấp cho custom provider. Đây không phải lỗi xác thực của khóa LTT."
+msgstr "Some app-specific features such as preview selection Edit may call OpenAI services directly; Browser/Computer Use and dynamic tool discovery are not yet available to custom providers. This is not an LTT key authentication failure."
+
+#: server/templates/_cam_chon.html:1
+msgid "Mở Edit environment variables for your account của Windows. Trong User variables, tạo LTT_API_KEY với giá trị khóa vừa sao chép. Codex Desktop không có ô Environment riêng; biến phải tồn tại trước lúc mở ứng dụng."
+msgstr "Open Windows Edit environment variables for your account. Under User variables, create LTT_API_KEY with the key you just copied. Codex Desktop has no separate Environment field; the variable must exist before the app starts."
+
+#: server/templates/_cam_chon.html:1
+msgid "Mở lại Codex Desktop và tạo cuộc trò chuyện mới. Luồng cũ lưu model/provider lúc được tạo nên không phải phép kiểm cho cấu hình vừa đổi."
+msgstr "Reopen Codex Desktop and create a new conversation. Existing threads store their model/provider when created and do not test the configuration you just changed."
+
+#: server/templates/_cam_chon.html:1
+msgid "Mở trạng thái phiên để kiểm model là ltt-3.8 hoặc ltt-3.5 và provider là ltt. Picker có thể chỉ hiện Custom; đây là giới hạn giao diện hiện tại, không phải bằng chứng yêu cầu đi sai tuyến."
+msgstr "Open session status and verify that the model is ltt-3.8 or ltt-3.5 and the provider is ltt. The picker may show only Custom; this is a current UI limitation, not evidence that requests use the wrong route."
+
+#: server/templates/_cam_chon.html:1
+msgid "Profile ltt và ltt-fast chỉ dành cho CLI vì Desktop không truyền --profile. Cấu hình gốc cũng đổi model mặc định của lệnh codex dùng cùng CODEX_HOME."
+msgstr "The ltt and ltt-fast profiles are CLI-only because Desktop does not pass --profile. Root configuration also changes the default model for the codex command using the same CODEX_HOME."
+
+#: server/templates/_cam_chon.html:1
+msgid "Thoát hẳn Codex Desktop, kể cả biểu tượng còn nằm ở khay hệ thống. Sao lưu thư mục %USERPROFILE%/.codex trước khi sửa."
+msgstr "Quit Codex Desktop completely, including any icon left in the system tray. Back up %USERPROFILE%/.codex before editing."
+
+#: server/templates/_cam_chon.html:1
+msgid "Tạo khóa live còn hạn, có credit, scope tools:read và jobs:create. Nếu không chọn giới hạn công cụ, khóa được gọi mọi công cụ công khai nhưng không tự có thêm scope ghi. Không đặt khóa trong TOML, catalog, ảnh chụp hay lệnh có thể lưu vào lịch sử."
+msgstr "Create an unexpired live key with credit and the tools:read and jobs:create scopes. If no tool restriction is selected, the key may call all public tools but does not gain extra write scopes. Do not put the key in TOML, the catalog, screenshots, or commands that may be saved in history."
+
+#: server/templates/_cam_chon.html:1
+msgid "Tạo ltt_model_catalog.json trong %USERPROFILE%/.codex và chép nguyên JSON bên dưới. Trong cấu hình TOML, thay YOUR_WINDOWS_USER bằng đúng tên thư mục người dùng; Codex không tự mở rộng %USERPROFILE% trong giá trị đường dẫn."
+msgstr "Create ltt_model_catalog.json in %USERPROFILE%/.codex and copy the complete JSON below. In the TOML configuration, replace YOUR_WINDOWS_USER with the actual user directory name; Codex does not expand %USERPROFILE% inside a path value."
+
+#: server/templates/_cam_chon.html:1
+msgid "cho phép lượt model dài im lặng tối đa 10 phút"
+msgstr "allows up to 10 minutes of silence during a long model turn"
+
+#: server/templates/_cam_chon.html:1
+msgid "chặn một kết quả tool chiếm hết khoảng dành cho lượt kế tiếp"
+msgstr "prevents one tool result from consuming the space reserved for the next turn"
+
+#: server/templates/_cam_chon.html:1
+msgid "default_subagent_model là mặc định của agent phụ và giới hạn đồng thời là một. Codex vẫn cho một yêu cầu spawn chỉ định model rõ ràng; gateway LTT chặn tên ngoài hai model được cấp quyền. Không coi hai khóa client này là một allowlist tuyệt đối."
+msgstr "default_subagent_model is the subagent default and concurrency is limited to one. Codex still allows a spawn request to name a model explicitly; the LTT gateway rejects names outside the two authorized models. Do not treat these two client settings as an absolute allowlist."
+
+#: server/templates/_cam_chon.html:1
+msgid "dành tối đa một lane cho agent phụ"
+msgstr "reserves at most one lane for a subagent"
+
+#: server/templates/_cam_chon.html:1
+msgid "giao thức duy nhất Codex hỗ trợ cho custom provider"
+msgstr "the only wire protocol Codex supports for a custom provider"
+
+#: server/templates/_cam_chon.html:1
+msgid "gửi dưới dạng Authorization: Bearer; không ghi giá trị khóa vào TOML"
+msgstr "sent as Authorization: Bearer; never write the key value into TOML"
+
+#: server/templates/_cam_chon.html:1
+msgid "không phát lại stream đã mở và không khuếch đại tải"
+msgstr "does not replay an opened stream or amplify load"
+
+#: server/templates/_cam_chon.html:1
+msgid "không yêu cầu đăng nhập OpenAI cho provider LTT"
+msgstr "does not require OpenAI sign-in for the LTT provider"
+
+#: server/templates/_cam_chon.html:1
+msgid "ngưỡng tính trên toàn bộ ngữ cảnh"
+msgstr "counts the threshold across the entire context"
+
+#: server/templates/_cam_chon.html:1
+msgid "Để đổi model, thoát hẳn ứng dụng, thay bằng khối config.toml còn lại, mở lại và tạo chat mới. Giữ nguyên tên provider ltt: đổi hoặc xóa provider có thể làm lịch sử cũ không tiếp tục được. model_catalog_json thay danh mục model tích hợp trong lúc cấu hình LTT hoạt động; phục hồi bản sao config để quay về cấu hình trước."
+msgstr "To switch models, quit the app completely, replace the current config.toml block with the other one, reopen it, and create a new chat. Keep the provider name ltt stable: renaming or removing it can prevent old history from resuming. model_catalog_json replaces the built-in model catalog while the LTT configuration is active; restore the configuration backup to return to the previous setup."
+
+#: server/templates/_cam_chon.html:1
+msgid "Tên hiển thị"
+msgstr "Display name"
+
 #~ msgid "Lỗi:"
 #~ msgstr "Error:"
 
@@ -16580,8 +16720,8 @@ msgid "Không khả dụng với third-party provider; thiếu mục này không
 msgstr "Unavailable with third-party providers; its absence is not an LTT configuration error."
 
 #: server/templates/_cam_chon.html:242
-msgid "Không thêm CLAUDE_CODE_DISABLE_1M_CONTEXT, CLAUDE_AUTOCOMPACT_PCT_OVERRIDE, MAX_THINKING_TOKENS, CLAUDE_CODE_ALWAYS_ENABLE_EFFORT, CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY, API_TIMEOUT_MS hoặc CLAUDE_STREAM_IDLE_TIMEOUT_MS. Chúng hoặc dư với mã LTT không có [1m], ghi đè ngưỡng đã tính, có thể đổi chất lượng suy luận, hoặc trùng trường Stream idle timeout 600 giây trong Gateway."
-msgstr "Do not add CLAUDE_CODE_DISABLE_1M_CONTEXT, CLAUDE_AUTOCOMPACT_PCT_OVERRIDE, MAX_THINKING_TOKENS, CLAUDE_CODE_ALWAYS_ENABLE_EFFORT, CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY, API_TIMEOUT_MS, or CLAUDE_STREAM_IDLE_TIMEOUT_MS. They are redundant for LTT IDs without [1m], override calculated limits, may alter reasoning quality, or duplicate the Gateway's 600-second Stream idle timeout field."
+msgid "Không thêm CLAUDE_CODE_DISABLE_1M_CONTEXT, CLAUDE_AUTOCOMPACT_PCT_OVERRIDE, MAX_THINKING_TOKENS, CLAUDE_CODE_ALWAYS_ENABLE_EFFORT, CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY hoặc CLAUDE_STREAM_IDLE_TIMEOUT_MS. Chúng hoặc dư với mã LTT không có [1m], ghi đè ngưỡng đã tính, có thể đổi chất lượng suy luận, hoặc trùng trường Stream idle timeout 600 giây trong Gateway."
+msgstr "Do not add CLAUDE_CODE_DISABLE_1M_CONTEXT, CLAUDE_AUTOCOMPACT_PCT_OVERRIDE, MAX_THINKING_TOKENS, CLAUDE_CODE_ALWAYS_ENABLE_EFFORT, CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY, or CLAUDE_STREAM_IDLE_TIMEOUT_MS. They are redundant for LTT IDs without [1m], override calculated limits, may alter reasoning quality, or duplicate the Gateway's 600-second Stream idle timeout field."
 
 #: server/templates/_cam_chon.html:229
 msgid "Không thấy ô môi trường trong phiên đang chạy: bấm New ở thanh bên để mở màn hình tạo phiên. Nút Local nằm trong vùng soạn của màn hình này; mở danh sách, rê vào Local rồi bấm bánh răng. Lưu biến trước khi bắt đầu phiên mới; phiên cũ không tự nhận giới hạn mới."
@@ -16756,8 +16896,8 @@ msgid "Vì sao phải đặt các giá trị này"
 msgstr "Why these values are required"
 
 #: server/templates/_cam_chon.html:228
-msgid "Với Code chạy Local: ô chọn môi trường → Local → bánh răng, chép nguyên khối 10 dòng dưới đây rồi mở phiên Local mới. Đây là danh sách chuẩn đầy đủ cho Claude Desktop 1.52386.6 / Claude Code 2.1.270 với LTT Gateway; không ghép thêm các danh sách cũ. Cửa sổ/ngưỡng nén dùng theo LTT 3.8, là model hẹp hơn; khi chọn LTT 3.5 thì nén sớm hơn. Cấu hình này không tự đổi theo picker."
-msgstr "For Code running locally: environment dropdown → Local → gear, copy the complete 10-line block below, then start a new Local session. This is the complete canonical list for Claude Desktop 1.52386.6 / Claude Code 2.1.270 with LTT Gateway; do not merge older lists into it. The window and compaction threshold use the smaller LTT 3.8 window, so LTT 3.5 compacts earlier. These values do not automatically follow model picker changes."
+msgid "Với Code chạy Local: ô chọn môi trường → Local → bánh răng, chép nguyên khối 11 dòng dưới đây rồi mở phiên Local mới. Đây là danh sách chuẩn đầy đủ cho Claude Desktop 1.52386.6 / Claude Code 2.1.270 với LTT Gateway; không ghép thêm các danh sách cũ. Cửa sổ/ngưỡng nén dùng theo LTT 3.8, là model hẹp hơn; khi chọn LTT 3.5 thì nén sớm hơn. Cấu hình này không tự đổi theo picker."
+msgstr "For Code running locally: environment dropdown → Local → gear, copy the complete 11-line block below, then start a new Local session. This is the complete canonical list for Claude Desktop 1.52386.6 / Claude Code 2.1.270 with LTT Gateway; do not merge older lists into it. The window and compaction threshold use the smaller LTT 3.8 window, so LTT 3.5 compacts earlier. These values do not automatically follow model picker changes."
 
 #: server/templates/_cam_chon.html:248
 msgid "Với custom ANTHROPIC_BASE_URL, Claude mặc định tải toàn bộ schema MCP vì Tool Search cần tool_reference mà nhiều proxy không hỗ trợ. LTT chưa hỗ trợ tool_reference nên giữ ENABLE_TOOL_SEARCH=false. Tắt Connector/Plugin không dùng; nên giữ mục MCP tools dưới khoảng một phần mười cửa sổ nén (khoảng 13.9k ở preset 3.8). MAX_MCP_OUTPUT_TOKENS chỉ giới hạn kết quả của một tool, không làm nhỏ schema của 131 tool."
@@ -16814,3 +16954,11 @@ msgstr "LTT 3.8 (Strong)"
 #: platform_core/public_api/examples.py
 msgid "LTT 3.5 (Nhanh)"
 msgstr "LTT 3.5 (Fast)"
+
+#: server/templates/_cam_chon.html
+msgid "Tiện ích Codex trong VS Code tự dùng cấu hình này khi chạy cùng tài khoản Windows và cùng CODEX_HOME; không cần cắm Gateway hay MCP lần nữa. Đặt LTT_API_KEY ở biến môi trường người dùng, đóng toàn bộ cửa sổ VS Code rồi mở lại và tạo chat mới. Nếu dự án tin cậy có .codex/config.toml, model ở đó có thể ghi đè model gốc; model_provider và khóa provider vẫn phải nằm trong cấu hình người dùng."
+msgstr "The Codex extension in VS Code automatically uses this configuration when it runs under the same Windows account and CODEX_HOME; there is no need to configure the Gateway or MCP again. Set LTT_API_KEY as a user environment variable, close every VS Code window, reopen it, and start a new chat. If a trusted project has .codex/config.toml, its model can override the root model; model_provider and provider credentials must remain in the user configuration."
+
+#: server/templates/_cam_chon.html
+msgid "MAX_RETRIES=10 giữ đúng mặc định chính thức để Claude thử lại lỗi tạm thời với exponential backoff; API_TIMEOUT_MS=600000 đặt trần 10 phút cho mỗi API call. Không bật retry watchdog vì nó có thể thử lại lỗi 429/529 vô hạn. Phía LTT cho một lượt stream chờ suất tối đa 300 giây và gửi heartbeat mỗi 15 giây. Khi hai phiên dài cùng chọn LTT 3.8, phiên sau sẽ chờ nếu tổng reservation vượt pool; để chạy song song ngay, chọn LTT 3.8 cho một phiên và LTT 3.5 cho phiên còn lại."
+msgstr "MAX_RETRIES=10 keeps Claude's official default for retrying temporary failures with exponential backoff; API_TIMEOUT_MS=600000 sets a 10-minute limit for each API call. Do not enable the retry watchdog because it can retry 429/529 errors indefinitely. LTT lets a stream wait for capacity for up to 300 seconds and sends a heartbeat every 15 seconds. When two long sessions both use LTT 3.8, the later one waits if their combined reservations exceed the pool; to run both immediately, use LTT 3.8 for one session and LTT 3.5 for the other."

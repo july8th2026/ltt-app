@@ -27,7 +27,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 
 ---
 
-## 1. Quyết định đã chốt (đến Q126; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91, Q116→Q120 (phần con số), Q125→Q126 đã thay)
+## 1. Quyết định đã chốt (đến Q128; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91, Q116→Q120 (phần con số), Q125→Q126→Q128 đã thay)
 
 | # | Vấn đề | Quyết định | Lý do / hệ quả |
 |---|---|---|---|
@@ -143,7 +143,9 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 | Q123 | Model nhà: một model hay nhiều, và ai được ở trên card nào | **HAI model nhà bán ra, trên HAI card của máy B, thường trú cùng lúc: `ltt-3.8` (RTX 3090) và `ltt-3.5` (RTX 5060 Ti). Khách CHỌN model; giá đi THEO MODEL. Cắt hẳn ba tên cũ `ltt_llm`, `ltt_llm_vision`, `qwen38-vision` — chúng trả `model_not_found`, không âm thầm rơi về mặc định. Việc LLM **nội bộ** của nền tảng đi `ltt-3.5` theo bản khai của từng app (`manifest.model_llm_noi_bo`), không đi mặc định của khách. RTX 3090 do MỘT trọng tài chia giữa LLM và model ảnh: xả trước, không bao giờ giết việc đang chạy.** ⛔ **Không con số nào của quyết định này nằm trong tài liệu này** — mỗi con số có đúng một nguồn chân lý trong mã. Toàn văn, lý do từng nhánh và mọi phép đo: **`### Q123` bên dưới**, `docs/ltt_llm_dual/DECISION_LOG.md` (D01–D09, L-12…L-18), `docs/ltt_llm_dual/10_BENCHMARK_P3.md`; vận hành ở `docs/ltt_llm_dual/RUNBOOK.md`. | Ba lý do cơ học, chi tiết ở `### Q123`: (a) một model 27B **không vừa** card 16 GB nên "một model, hai card" là bất khả, còn "hai hồ sơ của cùng một model" đã thử và **đã gỡ**; (b) job ảnh **giữ** 3090 rồi **chờ** một model chỉ nạp được khi 3090 rảnh là một **vòng chờ kín** — không log, không mã lỗi, job treo tới hết trần thời gian; (c) `unload` thủ công của llama-swap **không** drain, nên trọng tài phải **xả trước**. **Đổi lại:** một bảng trạng thái (`gpu_residency`), một luật admission mới (`CHO_RESIDENCY`), và một **thứ tự deploy bắt buộc** (`llama-swap.yaml` → cổng máy B → máy A). |
 | Q124 | Hai model nhà xuất hiện thế nào trong Codex/Claude | **Cả `ltt-3.8` và `ltt-3.5` đều là lựa chọn vận hành được trên Codex CLI/VS Code, Claude Code/VS Code và Claude Desktop.** `ltt-3.8` là mặc định **Mạnh**; `ltt-3.5` là **Nhanh/tiết kiệm** cho hỏi code, sửa nhỏ và tác vụ phụ. Desktop hiển thị **LTT 3.8 (Mạnh)** và **LTT 3.5 (Nhanh)** bằng `labelOverride`; trường `name` giữ hai mã tuyến production `ltt-llm-claude-compat` / `ltt-llm-claude-compat-35` để qua bộ lọc client. Codex dùng catalog hai model. Claude Code chọn model qua connector; Opus/Sonnet/Haiku/subagent vẫn ghim vào model đã chọn và tối đa một subagent, không tự đi model ngoài LTT. | Qwen công bố Qwen3.5-9B có LiveCodeBench v6 65,6, BFCL-V4 66,1, ngữ cảnh gốc 262.144, parser `qwen3_coder` cho tool use và hướng dẫn riêng cho precise coding; vì vậy nó đủ tư cách làm lựa chọn code/agent. Nó vẫn là 9B Q6_K trên 5060 Ti, còn 3.8 là 27B trên 3090, nên không quảng bá hai model ngang nhau. `labelOverride` là trường picker thật của Desktop 1.52386.6, nên tên sản phẩm rõ ràng mà không cần thêm alias backend hay deploy chỉ để đổi nhãn. Quyết định cũng đóng lỗi UX đang có: registry chỉ phát một tuyến theo lần cắm, làm model kia biến mất khỏi picker dù backend bán cả hai. Nguồn ngoài: model card chính thức `Qwen/Qwen3.5-9B`; bằng chứng máy nhà: `docs/ltt_llm_dual/10_BENCHMARK_P3.md`. |
 | ~~Q125~~ | ~~Claude Code Local qua gateway xử lý phiên dài, MCP và permission mode thế nào~~ | ~~Preset 9 biến, gồm `CLAUDE_CODE_DISABLE_1M_CONTEXT=1`.~~ **ĐÃ THAY bởi Q126 (2026-09-15).** | Rà soát toàn bộ bảng biến chính thức của Claude Code 2.1.270 cho thấy biến 1M là dư với mã LTT không có `[1m]`, trong khi preset cũ thiếu chốt ép model cho mọi subagent và chốt cấm subagent lồng nhau. Giữ Q125 làm bằng chứng vì sao phiên 98.678 token từng rơi sang `stream:false`; Q126 thay danh sách cấu hình. |
-| Q126 | Một cấu hình Claude Desktop/Code chuẩn, không bổ sung nhỏ giọt | **Gateway:** Bearer, `/api`, stream idle 600, discovery/1M/cost/Tool Search tắt; hai tuyến cố định, LTT 3.8 gắn tier `opus`, LTT 3.5 gắn `haiku`, cả hai là default của tier. **Local env:** đúng 10 biến từ `examples.claude_local_env()`; preset đổi model chỉ thay `MAX_CONTEXT` và `AUTO_COMPACT`. Bỏ `DISABLE_1M_CONTEXT`; thêm `MAX_SUBAGENT_SPAWN_DEPTH=1` và `SUBAGENT_MODEL_FORCE=1` nhưng không đặt `SUBAGENT_MODEL` trong Desktop, để mọi agent phụ theo model chính đang chọn. **CLI/VS Code:** ghim thêm `default`/`fable`/haiku/sonnet/opus và `SUBAGENT_MODEL` về đúng profile LTT. | Tài liệu chính thức 15/09/2026: family tier là cơ chế gateway cho bare alias/background; `SUBAGENT_MODEL_FORCE` từ 2.1.257 ép cả Explore/Plan/workflow; depth 1 tắt nesting; mã custom không có `[1m]` nhận trực tiếp `MAX_CONTEXT`, nên biến tắt 1M không tham gia. LTT không nhận `tool_reference`, không khai capability effort của tên custom và đã đo `reasoning_effort=none` làm sụp chất lượng, nên không bật Tool Search, `ALWAYS_ENABLE_EFFORT` hay `MAX_THINKING_TOKENS`. |
+| ~~Q126~~ | ~~Một cấu hình Claude Desktop/Code chuẩn, không bổ sung nhỏ giọt~~ | ~~Local env đúng 10 biến, `MAX_RETRIES=1`.~~ **ĐÃ THAY bởi Q128 (2026-09-15).** Các quyết định Gateway/model/context/subagent/Tool Search còn nguyên và được Q128 tiếp nhận. | Vận hành hai phiên dài cùng LTT 3.8 lộ ra rằng một retry quá ít làm lỗi capacity tạm thời hiện ra ngay, còn hàng chờ A ước thiếu `tool_use/tool_result` nên chưa bảo vệ được lượt thứ hai. Giữ Q126 để truy nguyên ma trận ban đầu; Q128 sửa đúng timeout/retry và quan hệ reservation A↔B. |
+| Q127 | Codex Desktop/VS Code dùng cấu hình gốc và catalog hai model | `%USERPROFILE%\.codex\config.toml` chứa provider `ltt`, catalog và đúng một model gốc đang chọn; Desktop và tiện ích VS Code cùng dùng cấu hình đó khi chung tài khoản Windows/CODEX_HOME. Project tin cậy chỉ được ghi đè `model`; provider và credential ở cấu hình người dùng. | Desktop/extension không truyền `--profile`. Cấu hình đã qua strict parser, app-server `config/read` và `model/list` của ba binary cài thật; không hứa picker custom provider tự đổi profile. |
+| Q128 | Hai phiên Claude phải chờ đúng tầng và retry có giới hạn | Preset Local có **đúng 11 biến**: tiếp nhận Q126, dùng `MAX_RETRIES=10` theo mặc định chính thức của Claude và khai rõ `API_TIMEOUT_MS=600000`. Stream LTT chờ tối đa 300 giây, heartbeat 15 giây. Máy A đếm bảo thủ mọi chuỗi trong `tool_use/tool_result`, giữ theo ảnh 2.048 token, truyền request ID/reservation/whale sang máy B; máy B lấy **max(phép đo của B, header A)**. | Log thật 15/09: 148.593 + 79.848 > pool 221.184 và chiều thử lại 79.848 + 150.633 > pool, tạo 529 dù còn slot. Gốc là A đếm thiếu dữ liệu công cụ và không truyền reservation, không phải thiếu timeout. Claude tự retry lỗi tạm với exponential backoff; giữ mặc định 10, không bật watchdog thử vô hạn. `max` ở B giữ fail-closed khi A cũ hoặc header sai. |
 ---
 
 ### Q115 — Public input cap sau benchmark Q4 (2026-08-28)
@@ -513,7 +515,7 @@ hiển thị riêng; Codex dùng tên sản phẩm và catalog metadata.
 Đã thay bởi Q126 trong cùng ngày. Giữ mục này để truy nguyên phép đo lỗi
 non-streaming và context; không dùng lại danh sách 9 biến của nó.
 
-### Q126 — Ma trận cấu hình Claude duy nhất (2026-09-15)
+### Q126 — Ma trận cấu hình Claude duy nhất (2026-09-15) — **ĐÃ THAY bởi Q128**
 
 Danh sách máy đọc được nằm ở `platform_core/public_api/examples.py`:
 `claude_local_env()` cho Desktop Local và `claude_model_env()` cho CLI/VS Code.
@@ -521,6 +523,25 @@ Bảng giải thích, giá trị không được thêm và nguồn kiểm chứn
 `docs/PUBLIC_API/CLAUDE_CONFIG_MATRIX.md`; trang khách lấy trực tiếp dữ liệu đó
 qua `be_mat_cam()`. Tool Search chỉ được đổi sang bật sau khi cổng có phép thử
 `tool_reference` thật.
+
+### Q127 — Codex Desktop dùng cấu hình gốc và catalog hai model (2026-09-15)
+
+Codex Desktop không có form Gateway tương đương Claude Desktop và không truyền
+`--profile`. Bề mặt này dùng `%USERPROFILE%\.codex\config.toml` với provider ID
+ổn định `ltt`, catalog JSON cục bộ và đúng một model gốc tại một thời điểm. Đổi
+giữa LTT 3.8/LTT 3.5 bằng hai khối cấu hình đã sinh, restart ứng dụng và thread
+mới; không hứa picker custom-provider hiện tại chọn được hai model. Ma trận khóa,
+nguồn upstream/community và phép đo ba binary nằm ở
+`docs/PUBLIC_API/CODEX_DESKTOP_CONFIG.md`.
+
+### Q128 — Hàng chờ và retry cho hai phiên Claude (2026-09-15)
+
+Ma trận Claude hiệu lực nằm ở `docs/PUBLIC_API/CLAUDE_CONFIG_MATRIX.md` và dữ
+liệu máy đọc được ở `examples.claude_local_env()`: đúng 11 biến, retry 10,
+timeout mỗi API call 600.000 ms. Hàng chờ stream 300 giây/heartbeat 15 giây là
+năng lực server, độc lập với retry client. Quan hệ reservation A↔B được chốt
+bằng test hành vi; máy B luôn lấy số lớn hơn để một phiên A cũ không thể hạ hàng
+rào KV.
 
 ## 2. Ràng buộc bất biến
 

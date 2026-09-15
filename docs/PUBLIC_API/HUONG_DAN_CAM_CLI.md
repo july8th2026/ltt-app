@@ -312,7 +312,8 @@ setx MAX_MCP_OUTPUT_TOKENS "16384"
 setx CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS "1"
 setx CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH "1"
 setx CLAUDE_CODE_SUBAGENT_MODEL_FORCE "1"
-setx CLAUDE_CODE_MAX_RETRIES "1"
+setx CLAUDE_CODE_MAX_RETRIES "10"
+setx API_TIMEOUT_MS "600000"
 setx CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK "1"
 setx ENABLE_TOOL_SEARCH "false"
 ```
@@ -322,7 +323,7 @@ setx ENABLE_TOOL_SEARCH "false"
 
 🔴 Đây là **khối đầy đủ**, không phải danh sách gợi ý. Nếu dùng `ltt-3.5`, hãy
 đổi cả bảy dòng model sang `ltt-3.5`, context thành `209141` và compact thành
-`176373`; tám dòng vận hành còn lại giữ nguyên. Bảng giải thích và danh sách
+`176373`; chín dòng vận hành còn lại giữ nguyên. Bảng giải thích và danh sách
 biến không được thêm nằm trong [ma trận cấu hình chuẩn](CLAUDE_CONFIG_MATRIX.md).
 
 Claude Code không biết `ltt-3.8`, nên nó **giả định cửa sổ 200.000 token** và
@@ -369,7 +370,8 @@ Tiện ích **không đọc biến môi trường** như CLI (lỗi đã biết 
     {"name": "CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS", "value": "1"},
     {"name": "CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH", "value": "1"},
     {"name": "CLAUDE_CODE_SUBAGENT_MODEL_FORCE", "value": "1"},
-    {"name": "CLAUDE_CODE_MAX_RETRIES", "value": "1"},
+    {"name": "CLAUDE_CODE_MAX_RETRIES", "value": "10"},
+    {"name": "API_TIMEOUT_MS", "value": "600000"},
     {"name": "CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK", "value": "1"},
     {"name": "ENABLE_TOOL_SEARCH", "value": "false"}
   ]
@@ -460,7 +462,7 @@ bên trái, mở màn hình tạo phiên. UI Automation đã xác minh nút **Lo
 trong vùng soạn màn hình này; không hiện trong khung soạn phiên đang chạy ở ảnh 21.
 Mở danh sách môi trường, rê vào **Local** rồi bấm bánh răng.
 
-Trong **Code → Environment dropdown → Local → gear**, chép nguyên khối **10
+Trong **Code → Environment dropdown → Local → gear**, chép nguyên khối **11
 dòng** sau rồi mở **phiên Local mới**. Đây là danh sách chuẩn đầy đủ cho Claude
 Desktop 1.52386.6 / Claude Code 2.1.270 với LTT Gateway, không phải một nhóm gợi
 ý để ghép thêm vào danh sách cũ:
@@ -474,7 +476,8 @@ Desktop 1.52386.6 / Claude Code 2.1.270 với LTT Gateway, không phải một n
 | `CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS` | `1` |
 | `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` | `1` |
 | `CLAUDE_CODE_SUBAGENT_MODEL_FORCE` | `1` |
-| `CLAUDE_CODE_MAX_RETRIES` | `1` |
+| `CLAUDE_CODE_MAX_RETRIES` | `10` |
+| `API_TIMEOUT_MS` | `600000` |
 | `CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK` | `1` |
 | `ENABLE_TOOL_SEARCH` | `false` |
 
@@ -498,7 +501,7 @@ trường Desktop ép agent phụ kế thừa đúng model chính đang chọn t
 Không thêm `CLAUDE_CODE_DISABLE_1M_CONTEXT`,
 `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE`, `MAX_THINKING_TOKENS`,
 `CLAUDE_CODE_ALWAYS_ENABLE_EFFORT`, `CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY`,
-`API_TIMEOUT_MS` hoặc `CLAUDE_STREAM_IDLE_TIMEOUT_MS`. Chúng hoặc dư với hai mã
+hoặc `CLAUDE_STREAM_IDLE_TIMEOUT_MS`. Chúng hoặc dư với hai mã
 LTT không có hậu tố `[1m]`, ghi đè ngưỡng đã tính, có thể đổi chất lượng suy
 luận, hoặc trùng trường **Stream idle timeout = 600 seconds** trong Gateway.
 

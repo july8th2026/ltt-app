@@ -174,6 +174,8 @@ class ChuanBi:
     xin_ra: int
     model_alias: str
     executor: Any
+    #: Đỉnh KV mà lease máy A đang giữ; chuyển nguyên sang máy B để hai sổ khớp.
+    token_dat_truoc: int = 0
     correlation_id: str = ""
     #: Dòng phòng chờ/sổ lượt (multijob) — rỗng ở đường cũ không chờ.
     waiter_id: str = ""
@@ -429,6 +431,7 @@ def vao_va_cho(tk: TienKiem, *, db_luong, han_s: float, dong_ho=None, ngu=None):
                    duong=tk.duong, than_gui=tk.than_gui, request_id=tk.request_id,
                    lease_id=lease_id, da_giu=da_giu, token_vao_uoc=tk.token_vao_uoc,
                    xin_ra=tk.xin_ra, model_alias=tk.model_alias, executor=tk.executor,
+                   token_dat_truoc=tk.token_dat_truoc,
                    correlation_id=tk.correlation_id, waiter_id=waiter_id,
                    la_whale=tk.la_whale)
 
@@ -705,12 +708,14 @@ def chuan_bi(db, *, user_id: str, tool_name: str, than: dict, duong: str,
     xin_ra = tran_token_ra(than, vao_uoc, executor)
 
     lease_id = ""
+    token_dat_truoc = 0
     tai_nguyen, so_suat, pool = _suc_chua(tool, ten)
     if tai_nguyen and so_suat > 0:
         from platform_core.llm import luat_nhan, tham_so_da_luot
         luat = tham_so_da_luot.luat_cho(pool, lop=luat_nhan.TUONG_TAC,
                                         token_vao_uoc=vao_uoc, xin_ra=xin_ra,
                                         so_anh=dem_anh(than))
+        token_dat_truoc = int(luat.get("token_dat_truoc", 0))
         ticket = admission.acquire(
             db, resource=tai_nguyen, slots=so_suat, user_id=user_id,
             mode="stream", holder_id=holder_id or request_id, **luat)
@@ -748,6 +753,7 @@ def chuan_bi(db, *, user_id: str, tool_name: str, than: dict, duong: str,
                    than_gui=gui, request_id=request_id, lease_id=lease_id,
                    da_giu=da_giu, token_vao_uoc=vao_uoc, xin_ra=xin_ra,
                    model_alias=ten, executor=executor,
+                   token_dat_truoc=token_dat_truoc,
                    correlation_id=correlation_id)
 
 
@@ -1032,8 +1038,10 @@ def mo_thuong_nguon(cb: ChuanBi, *, timeout_s: float = MO_LUONG_GIAY,
     from platform_core.public_api import metrics
 
     try:
-        mo = luong_vlm.mo(cb.db, duong=cb.duong, than=cb.than_gui,
-                          timeout_s=timeout_s)
+        mo = luong_vlm.mo(
+            cb.db, duong=cb.duong, than=cb.than_gui, timeout_s=timeout_s,
+            request_id=cb.request_id, token_dat_truoc=cb.token_dat_truoc,
+            la_whale=cb.la_whale)
     except luong_vlm.KhongMoDuocLuong as e:
         hoan(cb.user_id, cb.request_id)
         _nha_suat(cb.lease_id)

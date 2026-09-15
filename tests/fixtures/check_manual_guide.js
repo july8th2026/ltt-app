@@ -38,7 +38,8 @@ async page => {
         'CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS=1',
         'CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH=1',
         'CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1',
-        'CLAUDE_CODE_MAX_RETRIES=1',
+        'CLAUDE_CODE_MAX_RETRIES=10',
+        'API_TIMEOUT_MS=600000',
         'CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK=1',
         'ENABLE_TOOL_SEARCH=false',
         'Tier alias', 'opus', 'haiku',
@@ -74,11 +75,48 @@ async page => {
       if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) {
         throw new Error(`Codex page overflow at ${width}`);
       }
+      await page.locator('#tab-codex-desktop').click();
+      const codexDesktop = page.locator('#khu-codex-desktop');
+      if (!await codexDesktop.isVisible()) throw new Error('Codex Desktop panel is hidden');
+      const codexDesktopText = (await codexDesktop.innerText()).replace(/\s+/g, ' ');
+      for (const expected of [
+        '26.721.11231.0', '0.146.0-alpha.3.1', 'LTT_API_KEY',
+        'ltt_model_catalog.json', 'ltt-3.8', 'ltt-3.5',
+        'LTT 3.8 (Strong)', 'LTT 3.5 (Fast)',
+        'model_context_window', 'model_auto_compact_token_limit',
+        'model_auto_compact_token_limit_scope', 'tool_output_token_limit',
+        'requires_openai_auth', 'supports_websockets',
+        'request_max_retries', 'stream_max_retries', 'stream_idle_timeout_ms',
+        'max_concurrent_threads_per_session', '[model_providers.ltt]',
+        'wire_api', 'responses', 'Calculate 6 * 7', '42', 'Custom',
+        'VS Code', 'CODEX_HOME', '.codex/config.toml',
+      ]) {
+        if (!codexDesktopText.includes(expected)) {
+          throw new Error(`Codex Desktop missing ${expected}`);
+        }
+      }
+      if (codexDesktopText.includes('codex --profile ltt')) {
+        throw new Error('CLI profile command leaked into Codex Desktop guide');
+      }
+      const desktopCatalog = codexDesktop.locator('details').first();
+      await desktopCatalog.locator('summary').click();
+      const desktopJson = JSON.parse(await desktopCatalog.locator('code').innerText());
+      if (desktopJson.models.map(model => model.display_name).join(',') !==
+          'LTT 3.8 (Strong),LTT 3.5 (Fast)') {
+        throw new Error('Codex Desktop catalog has wrong display names');
+      }
+      await desktopCatalog.locator('summary').click();
+      if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) {
+        throw new Error(`Codex Desktop page overflow at ${width}`);
+      }
+      const language = path.startsWith('/en/') ? 'en' : 'vi';
+      await codexDesktop.screenshot({
+        path: `tmp/kiem_cli_van_hanh/codex-desktop-guide-${language}-${width}.png`,
+      });
       await page.locator('#tab-desktop').click();
       if (await page.locator('.cam-khu:visible').count() !== 1) {
         throw new Error('More than one surface is shown');
       }
-      const language = path.startsWith('/en/') ? 'en' : 'vi';
       await panel.screenshot({path: `tmp/kiem_cli_van_hanh/manual-guide-${language}-${width}.png`});
       results.push({language, width, fields: true, switching: true, overflow: false});
     }

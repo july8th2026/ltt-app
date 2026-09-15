@@ -153,6 +153,41 @@ class TestKhongConChongCheo:
         assert features.KY_TU_MOI_TOKEN == ngan_sach.KY_TU_MOI_TOKEN
         assert features.SYNC_MAX_TOKENS_MAC_DINH == ngan_sach.mac_dinh_cho("sync")
 
+    def test_may_A_khong_uoc_thieu_tool_use_va_tool_result_so_voi_may_B(self):
+        """So với phép đo độc lập của gateway, không so A với chính A.
+
+        Hai khối công cụ là hình dạng thật của Claude Code. Trước bản vá, A chỉ
+        đọc ``text`` nên bỏ gần hết kết quả công cụ; B đếm đủ và trả 429 sau khi
+        A đã cho qua hàng chờ.
+        """
+        from apps.ltt_llm import features
+        from llm_gateway.ngan_sach import do_yeu_cau
+        from platform_core.runtime_noi_bo.luong import uoc_tin_nhan
+
+        body = {
+            "system": [{"type": "text", "text": "Bạn là coding agent."}],
+            "messages": [
+                {"role": "assistant", "content": [{
+                    "type": "tool_use", "id": "toolu_1", "name": "Read",
+                    "input": {"file_path": "src/app.py", "limit": 4000},
+                }]},
+                {"role": "user", "content": [{
+                    "type": "tool_result", "tool_use_id": "toolu_1",
+                    "content": [{"type": "text", "text": "x" * 40_000}],
+                }]},
+            ],
+            "tools": [{
+                "name": "Read", "description": "Đọc một tệp",
+                "input_schema": {"type": "object", "properties": {
+                    "file_path": {"type": "string"},
+                    "limit": {"type": "integer"},
+                }},
+            }],
+        }
+        a = features.uoc_token_vao(uoc_tin_nhan(body))
+        b = do_yeu_cau(body).token_van_ban
+        assert a >= b, f"máy A giữ {a} nhưng máy B cần ít nhất {b} token"
+
     def test_executor_KHONG_con_mac_dinh_chung_chung(self):
         """`default_max_tokens` là cái tên đã gây ra lỗi; nó phải biến mất."""
         from apps.ltt_llm.executor import EXECUTOR

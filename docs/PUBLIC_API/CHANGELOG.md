@@ -21,6 +21,21 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-09-15 — hai phiên Claude chờ đúng capacity (Q128)
+
+**FIXED · không đổi wire API công khai.** Khi hai phiên dài cùng dùng LTT 3.8,
+máy A từng bỏ sót nội dung lồng trong `tool_use`/`tool_result` và không chuyển
+số token đã giữ sang máy B. Vì vậy lượt thứ hai có thể qua cửa A rồi bị B trả
+529 do tổng KV vượt pool. Máy A nay đếm bảo thủ các khối công cụ, giữ 2.048
+token cho mỗi ảnh và chuyển request ID/reservation/whale; máy B lấy số lớn hơn
+giữa header với phép tự đo. Lượt thiếu capacity sẽ chờ tối đa 300 giây với
+heartbeat 15 giây.
+
+Khối Local chuẩn vẫn có 11 dòng nhưng `CLAUDE_CODE_MAX_RETRIES=10`, đúng mặc
+định chính thức của Claude, và `API_TIMEOUT_MS=600000`. Không bật retry watchdog.
+Để hai phiên dài chạy ngay thay vì chờ cùng pool, dùng LTT 3.8 cho một phiên và
+LTT 3.5 cho phiên còn lại.
+
 ## 2026-09-15 — một ma trận cấu hình Claude chuẩn duy nhất (Q126)
 
 **FIXED · không đổi wire API.** Bộ sinh cấu hình, CLI/SDK và trang hướng dẫn nay
@@ -31,8 +46,9 @@ bảy đường model. Claude Desktop ánh xạ `opus` tới LTT 3.8 và `haiku`
 giữ Tool Search và 1M tắt.
 
 Người dùng đang có ba dòng context/compact/output hãy thay bằng **toàn bộ khối
-10 dòng** trên trang hướng dẫn. Người dùng CLI/VS Code dùng thêm bảy pin model.
-Không cần vá backend, tăng GPU hay giảm chất lượng suy luận. Bảng chuẩn, lý do
+11 dòng** trên trang hướng dẫn. Người dùng CLI/VS Code dùng thêm bảy pin model.
+Q128 ở trên bổ sung bản vá admission backend; không tăng GPU hay giảm chất lượng
+suy luận. Bảng chuẩn, lý do
 từng giá trị, những biến không được thêm và nguồn chính thức/cộng đồng nằm ở
 `CLAUDE_CONFIG_MATRIX.md`.
 

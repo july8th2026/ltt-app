@@ -796,13 +796,20 @@ CODEX_MODEL_LIMITS = {
     "ltt-3.5": (209_141, 176_373),
 }
 
+# Labels are product names shown to people.  Slugs remain the stable wire names
+# stored in Codex thread history and sent to the gateway.
+CODEX_MODEL_LABELS = {
+    "ltt-3.8": "LTT 3.8 (Strong)",
+    "ltt-3.5": "LTT 3.5 (Fast)",
+}
+
 #: Bộ biến CHUẨN cho một phiên Claude Code Local chạy qua LTT Gateway.
 #:
 #: 🔴 Vì sao phải gom thành dữ liệu thay vì một khối chữ trong template. Danh
 #:    sách này đã tăng từng dòng trong lúc chẩn lỗi, khiến người dùng phải sửa
 #:    cấu hình nhiều lần và ba bề mặt (trang API, CLI, VS Code) bắt đầu lệch
 #:    nhau. Từ Q126, code sinh cấu hình, trang hướng dẫn và test đều đọc cùng
-#:    một bộ này; thêm hay bỏ một biến phải làm test "đúng 10 biến" đỏ.
+#:    một bộ này; thêm hay bỏ một biến phải làm test "đúng 11 biến" đỏ.
 #:
 #: `CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1` đứng một mình có chủ ý trên Desktop:
 #: Claude Code 2.1.257+ khi đó ép mọi subagent dùng model CHÍNH đang chọn. Không
@@ -814,16 +821,19 @@ CLAUDE_LOCAL_COMMON_ENV: tuple[tuple[str, str], ...] = (
     ("CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS", "1"),
     ("CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH", "1"),
     ("CLAUDE_CODE_SUBAGENT_MODEL_FORCE", "1"),
-    ("CLAUDE_CODE_MAX_RETRIES", "1"),
+    # Claude mặc định thử lại 10 lần. LTT dùng 3: đủ vượt một race/transient
+    # sau hàng chờ nhưng không khuếch đại hai phiên dài thành bão request.
+    ("CLAUDE_CODE_MAX_RETRIES", "10"),
+    ("API_TIMEOUT_MS", "600000"),
     ("CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK", "1"),
     ("ENABLE_TOOL_SEARCH", "false"),
 )
 
 
 def claude_local_env(model: str = CLI_MODEL) -> tuple[tuple[str, str], ...]:
-    """Mười dòng `.env` cho editor Local của Claude Desktop.
+    """Mười một dòng `.env` cho editor Local của Claude Desktop.
 
-    Hai dòng đầu đổi theo model; tám dòng sau là hợp đồng dùng chung. Tên lạ
+    Hai dòng đầu đổi theo model; chín dòng sau là hợp đồng dùng chung. Tên lạ
     ném `KeyError` thay vì rơi về 3.8, vì một preset mang ngân sách của model
     khác sẽ chỉ lộ ra bằng lỗi 413 giữa một phiên dài.
     """
@@ -867,8 +877,8 @@ def codex_catalog() -> str:
     for slug in CLI_MODELS:
         context, compact = CODEX_MODEL_LIMITS[slug]
         models.append({
-            "slug": slug, "display_name": slug,
-            "description": f"{slug} (LTT Studios)",
+            "slug": slug, "display_name": CODEX_MODEL_LABELS[slug],
+            "description": f"{CODEX_MODEL_LABELS[slug]} — LTT Studios",
             "default_reasoning_level": "medium",
             "supported_reasoning_levels": [
                 {"effort": "low", "description": "Fast"},
@@ -910,23 +920,28 @@ def codex_config(base_url: str) -> str:
         'name = "LTT Studios"\n'
         f'base_url = "{_goc(base_url)}/api/v1"   # with /v1 — Codex appends /responses\n'
         f'env_key = "{ENV_API_KEY}"\n'
+        'env_key_instructions = "Create an LTT API key, then set LTT_API_KEY in the user environment."\n'
         'wire_api = "responses"                  # the only value Codex supports\n'
+        'requires_openai_auth = false             # use LTT_API_KEY; skip OpenAI sign-in\n'
+        'supports_websockets = false              # LTT streams Responses over SSE\n'
         "request_max_retries = 1                 # one retry; avoids retry amplification\n"
         "stream_max_retries = 0                  # never replay an opened stream\n"
         "stream_idle_timeout_ms = 600000"
     )
 
 
-def codex_profile(model: str = CLI_MODEL) -> str:
-    """`~/.codex/ltt.config.toml` — a separate file, and that is not optional.
-
-    Codex 0.145 refuses `[profiles.X]` inside `config.toml` outright:
-    *"cannot be used while config.toml contains legacy `[profiles.ltt]` config"*.
-    """
+def _codex_model_root(model: str, *, desktop: bool = False) -> str:
+    """Root keys shared by the CLI profile and Desktop user config."""
     context, compact = CODEX_MODEL_LIMITS[model]
-    return (
+    header = (
+        "# %USERPROFILE%/.codex/config.toml — Desktop / IDE use root settings.\n"
+        "# Keep the provider id `ltt` stable: saved threads remember it.\n"
+        if desktop else
         "# ~/.codex/ltt.config.toml — a SEPARATE file.\n"
         "# Codex 0.145+ refuses [profiles.ltt] inside config.toml.\n"
+    )
+    return (
+        header +
         f'model = "{model}"\n'
         'model_provider = "ltt"\n'
         '# Left at its default the model spends most of max_tokens thinking\n'
@@ -935,14 +950,35 @@ def codex_profile(model: str = CLI_MODEL) -> str:
         'model_reasoning_summary = "none"\n'
         f"model_context_window = {context}\n"
         f"model_auto_compact_token_limit = {compact}\n"
+        'model_auto_compact_token_limit_scope = "total"\n'
+        f"tool_output_token_limit = {TRAN_KET_QUA_TOOL}\n"
         "# Declare the model so Codex stops guessing. Without this it warns\n"
         f"# `Model metadata for {model} not found`, then substitutes an OpenAI\n"
         "# model name on its own internal calls — which our gate rejects.\n"
         f"model_catalog_json = '{TEP_CATALOG_CODEX}'\n"
         "\n[agents]\n"
         f'default_subagent_model = "{model}"\n'
+        'default_subagent_reasoning_effort = "low"\n'
         "max_concurrent_threads_per_session = 1"
     )
+
+
+def codex_profile(model: str = CLI_MODEL) -> str:
+    """`~/.codex/ltt.config.toml` — a separate CLI profile file."""
+    return _codex_model_root(model)
+
+
+def codex_desktop_config(base_url: str, model: str = CLI_MODEL) -> str:
+    """Complete user-level config read by Codex Desktop and its app-server.
+
+    Desktop cannot pass ``--profile``.  It therefore needs the selected model
+    at the TOML root, while the provider stays under one stable ``ltt`` id.
+    The local catalog is startup-only, so switching this block takes effect in
+    a new Desktop process and a new thread.
+    """
+    if model not in CODEX_MODEL_LIMITS:
+        raise KeyError(f"khong co ho so Codex cho {model!r}")
+    return _codex_model_root(model, desktop=True) + "\n\n" + codex_config(base_url).split("\n", 3)[3]
 
 
 def claude_code_env(base_url: str) -> str:
@@ -1040,30 +1076,7 @@ def vscode_codex_config(base_url: str) -> str:
     **default** for ``codex`` on the command line too, whereas the profile form
     leaves the customer's default untouched.
     """
-    return (
-        f'# Root level - REPLACES your default model for `codex` too.\n'
-        f'# Use the profile form instead if you only want the CLI.\n'
-        f'model = "{CLI_MODEL}"\n'
-        f'model_provider = "ltt"\n'
-        f'model_reasoning_effort = "low"\n'
-        f'model_reasoning_summary = "none"\n'
-        f'model_context_window = {CUA_SO_CONG_BO}\n'
-        f'model_auto_compact_token_limit = {NEN_CLIENT}\n'
-        f"model_catalog_json = '{TEP_CATALOG_CODEX}'\n"
-        f'\n'
-        f'[agents]\n'
-        f'default_subagent_model = "{CLI_MODEL}"\n'
-        f'max_concurrent_threads_per_session = 1\n'
-        f'\n'
-        f'[model_providers.ltt]\n'
-        f'name = "LTT Studios"\n'
-        f'base_url = "{base_url}/api/v1"\n'
-        f'env_key = "{ENV_API_KEY}"\n'
-        f'wire_api = "responses"\n'
-        f'request_max_retries = 1\n'
-        f'stream_max_retries = 0\n'
-        f'stream_idle_timeout_ms = 600000\n'
-    )
+    return codex_desktop_config(base_url, CLI_MODEL)
 
 
 #: Cai bay lon nhat cua phan tien ich, viet ra de khach khoi tu phat hien.
@@ -1226,7 +1239,7 @@ CLI_BAY = (
 #    Them mot nguon thu hai cho cung mot dia chi la cach hai nguon lech nhau.
 
 #: Ma be mat → nhan hien thi. Tach rieng de test doi chieu duoc hai chieu.
-BE_MAT_MA = ("codex", "claude-code", "vscode", "desktop", "http")
+BE_MAT_MA = ("codex", "codex-desktop", "claude-code", "vscode", "desktop", "http")
 
 #: Ma buoc → doan ma. Tach khoi VAN XUOI co chu dich, xem `be_mat_cam`.
 BUOC_MA = ("codex-catalog", "codex-config", "codex-profile", "dat-khoa", "env", "settings",
@@ -1258,6 +1271,16 @@ def be_mat_cam(base_url: str) -> tuple:
                    "    '', (Read-Host 'LTT API key' -AsSecureString)).Password\n"
                    "# Run Codex in this same PowerShell window.")),
          "chay": "codex --profile ltt"},
+        {"ma": "codex-desktop", "ten": "Codex Desktop", "the": "CONFIG.TOML",
+         "dia_chi": f"{goc}/api/v1", "model": CLI_MODEL,
+         "models": tuple((slug, CODEX_MODEL_LABELS[slug]) for slug in CLI_MODELS),
+         "model_limits": tuple((slug, *CODEX_MODEL_LIMITS[slug]) for slug in CLI_MODELS),
+         "buoc": (("codex-catalog", "%USERPROFILE%/.codex/ltt_model_catalog.json", codex_catalog()),
+                  ("codex-desktop-strong", "%USERPROFILE%/.codex/config.toml",
+                   codex_desktop_config(goc, "ltt-3.8")),
+                  ("codex-desktop-fast", "%USERPROFILE%/.codex/config.toml",
+                   codex_desktop_config(goc, "ltt-3.5"))),
+         "chay": None},
         {"ma": "claude-code", "ten": "Claude Code (CLI)", "the": "ANTHROPIC MESSAGES",
          "dia_chi": f"{goc}/api", "model": CLI_MODEL,
          "buoc": (("env", None, claude_code_env(goc)),

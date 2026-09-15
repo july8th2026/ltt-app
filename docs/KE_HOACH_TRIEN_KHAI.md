@@ -4012,7 +4012,7 @@ RPM, queue hay GPU slot; chỉ sửa contract client/gateway/docs.
 
 Tiến độ H46: **100% — hoàn tất 2026-09-15.** Production API và Desktop hai
 model đã PASS ở lượt vận hành trước, khóa ngắn hạn đã thu hồi và dấu vết connector
-đã gỡ. Q126 chốt một ma trận duy nhất: Gateway Bearer, hai tier LTT, đúng 10 biến
+đã gỡ. Q126 khi đó chốt một ma trận duy nhất: Gateway Bearer, hai tier LTT, đúng 10 biến
 Local, một subagent và không lồng nhau; CLI/VS Code ghim đủ bảy đường chọn model.
 Tool 1.9.0 đã build đủ installer/GUI/console/ZIP, Defender sạch. Kiểm tập trung
 **393 passed, 3 skipped**; Playwright guide và key đều **PASS 4/4** Việt/Anh ×
@@ -4020,3 +4020,43 @@ Tool 1.9.0 đã build đủ installer/GUI/console/ZIP, Defender sạch. Kiểm t
 **32/33** chỉ đỏ vì `DEVELOPER_GUIDE.md` trộn kiểu xuống dòng; sau khi trả đúng
 CRLF gốc, lượt cuối `python tools\gate.py` **PASS 33/33**, báo cáo
 `test-results/gates/20260915T014235Z-22516.json`. Không deploy trong H46.
+
+## H47 — Chốt tài liệu Codex Desktop (2026-09-15)
+
+- [x] **H47.1 — Cấu hình và catalog chuẩn:** bề mặt Codex Desktop riêng trên
+      `/huong-dan`, hai khối root config cho LTT 3.8/3.5, catalog có tên sản
+      phẩm và toàn bộ khóa context/compact/tool/retry/SSE/subagent lấy từ SSOT.
+- [x] **H47.2 — Đối chứng client thật:** cùng cấu hình phải qua strict config,
+      `config/read` và `model/list` của CLI 0.145, app-server 0.146 trong Desktop
+      26.721 và binary extension mới hơn; ghi rõ giới hạn picker/app-only thay
+      vì suy diễn tính năng.
+- [ ] **H47.3 — Nghiệm thu cuối:** test tập trung, i18n, Playwright Việt/Anh ×
+      desktop/mobile, bốn frontend build, secret scan và đúng một L3 cuối.
+      Không deploy trong hạng mục này.
+
+## H48 — Hai phiên Claude chờ đúng capacity LTT (2026-09-15)
+
+- [x] **H48.1 — Chẩn đoán từ request/log thật:** lỗi 529 lúc 09:42:42 là hai
+      reservation LTT 3.8 vượt pool KV; hàng chờ 300 giây và heartbeat 15 giây
+      đã có nhưng máy A ước thiếu `tool_use/tool_result` rồi không chuyển số giữ
+      chỗ sang máy B.
+- [x] **H48.2 — Bản vá fail-closed:** máy A đếm nội dung tool lồng, giữ ảnh cùng
+      mức 2.048 với B và chuyển request/reservation/whale; máy B dùng số lớn hơn
+      giữa tự đo với header. Preset Q128 dùng retry 10 theo mặc định chính thức
+      của Claude và timeout 600.000 ms.
+- [ ] **H48.3 — Nghiệm thu:** test quan hệ A→B, header thấp, mô phỏng request
+      Claude có tool blocks; cập nhật trang Việt/Anh, Playwright và dùng chung
+      lượt gate cuối H47.3. Không deploy trong hạng mục này.
+
+## H49 — Triển khai bản vá CLI/capacity lên production (2026-09-15)
+
+- [ ] **H49.1 — Gate và gói phát hành:** hoàn tất H47.3/H48.3, build frontend
+      ngay trước đúng một gate đầy đủ, secret scan 0 finding và commit trạng
+      thái đã được nghiệm thu.
+- [ ] **H49.2 — Deploy theo thứ tự B → A:** cập nhật gateway máy B trước để
+      nhận reservation fail-closed, sau đó cập nhật máy A và trang API. Chạy
+      đúng runbook, kiểm hash/revision/health; không đổi DNS.
+- [ ] **H49.3 — Nghiệm thu production:** kiểm hai model, request dài/hàng chờ,
+      trang hướng dẫn Việt/Anh bằng browser render thật, console và network;
+      ghi kết quả thật vào nhật ký. Owner đã yêu cầu triển khai production ngày
+      15/09/2026.

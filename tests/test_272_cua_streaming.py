@@ -183,7 +183,7 @@ def _dat_luong(monkeypatch, khoi=None, *, nem=None, ban=False):
         def hong(self, exc):
             self.da_hong = True
 
-    def gia(db, *, duong, than, timeout_s=900.0):
+    def gia(db, *, duong, than, timeout_s=900.0, **_meta):
         da_goi.append({"duong": duong, "than": than})
         if ban:
             raise luong_vlm.KhongMoDuocLuong("may B dang ban", ban=True,

@@ -63,7 +63,7 @@ Gắn `haiku` vào LTT 3.5 đưa công việc nền về tuyến nhanh. Gắn `o
 FORCE ở mục 3, nên agent `sonnet`/`fable` trong định nghĩa riêng không thoát ra
 một model ngoài LTT.
 
-## 3. Local environment: đúng 10 dòng
+## 3. Local environment: đúng 11 dòng
 
 Preset dùng chung an toàn khi chuyển qua lại hai model:
 
@@ -75,7 +75,8 @@ MAX_MCP_OUTPUT_TOKENS=16384
 CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS=1
 CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH=1
 CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1
-CLAUDE_CODE_MAX_RETRIES=1
+CLAUDE_CODE_MAX_RETRIES=10
+API_TIMEOUT_MS=600000
 CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK=1
 ENABLE_TOOL_SEARCH=false
 ```
@@ -87,7 +88,7 @@ CLAUDE_CODE_MAX_CONTEXT_TOKENS=209141
 CLAUDE_CODE_AUTO_COMPACT_WINDOW=176373
 ```
 
-Tám dòng còn lại giữ nguyên. Không dùng preset 3.5 rồi đổi sang LTT 3.8 vì khi
+Chín dòng còn lại giữ nguyên. Không dùng preset 3.5 rồi đổi sang LTT 3.8 vì khi
 đó client tin một cửa sổ lớn hơn tuyến thật.
 
 | Biến | Vì sao có mặt |
@@ -99,7 +100,8 @@ Tám dòng còn lại giữ nguyên. Không dùng preset 3.5 rồi đổi sang L
 | `MAX_CONCURRENT_SUBAGENTS` | Chỉ một agent phụ chạy đồng thời; LTT có ba lane chia sẻ. |
 | `MAX_SUBAGENT_SPAWN_DEPTH` | Giá trị 1 tắt agent lồng nhau. |
 | `SUBAGENT_MODEL_FORCE` | Khi không đặt `SUBAGENT_MODEL` trong Desktop, mọi subagent dùng model chính đang chọn. |
-| `MAX_RETRIES` | Một retry; tránh nhân tải và nhân chi phí trên gateway công suất cố định. |
+| `MAX_RETRIES` | `10`, đúng mặc định chính thức của Claude Code; lỗi tạm thời được thử lại với exponential backoff. Không bật retry watchdog vì chế độ đó có thể thử lại 429/529 vô hạn và chỉ phù hợp phiên không người trông. |
+| `API_TIMEOUT_MS` | 600.000 ms cho mỗi API call, khớp trần chính thức mặc định và trường idle timeout 600 giây. |
 | `DISABLE_NONSTREAMING_FALLBACK` | Stream lỗi đi về retry streaming, không đổi sang request JSON dài bị cửa 90 giây từ chối. |
 | `ENABLE_TOOL_SEARCH=false` | LTT chưa nhận `tool_reference`; giữ schema thường để request không 400. |
 
@@ -115,7 +117,7 @@ fallback `stream:false` mang 98.678 input token vào cửa non-streaming nên nh
 
 ## 4. Claude Code CLI/VS Code: thêm các khóa chọn model
 
-CLI và extension không có picker host của Desktop. Ngoài 10 biến ở trên, mỗi
+CLI và extension không có picker host của Desktop. Ngoài 11 biến ở trên, mỗi
 profile phải ghim toàn bộ đường chọn model về cùng `ltt-3.8` hoặc `ltt-3.5`:
 
 ```dotenv
@@ -151,7 +153,6 @@ ANTHROPIC_AUTH_TOKEN=<đọc an toàn từ LTT_API_KEY>
 | `MAX_THINKING_TOKENS` | Bỏ. Có thể đổi/tắt thinking; LTT đã đo `none` làm output sụp từ khoảng 1.180 xuống 2 token. |
 | `CLAUDE_CODE_ALWAYS_ENABLE_EFFORT` | Bỏ. Tên custom chưa khai capability effort của Claude và LTT stream chuyển body xuống engine; ép trường lạ có thể 400. |
 | `CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY` | Bỏ. Nó giới hạn cả tool đọc local, không phải lane inference LTT. |
-| `API_TIMEOUT_MS` | Bỏ. Mặc định đã 600.000 ms; không giải quyết một stream im hoàn toàn. |
 | `CLAUDE_STREAM_IDLE_TIMEOUT_MS` | Bỏ trong Desktop. Form Gateway 600 giây có ưu tiên và đã cùng giá trị. |
 | `CLAUDE_CODE_DISABLE_UNKNOWN_MODEL_WINDOW_ENFORCEMENT` | Bỏ. Nó chờ API từ chối quá dài rồi mới phục hồi, trái với nén chủ động. |
 | `CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS` | Bỏ. Host Gateway đã suppress beta; đặt nó còn khóa Tool Search bất kể biến khác. |
@@ -161,7 +162,27 @@ Không đặt biến reasoning/effort toàn cục giúp giữ chất lượng m�
 của LTT. Người dùng API trực tiếp có thể chọn `low|medium|xhigh` theo từng
 request; Claude Desktop hiện không cần ép thêm trường đó.
 
-## 6. Tool Search và tải token MCP
+## 6. Hàng chờ khi chạy nhiều phiên
+
+Claude Code tự retry lỗi server, overload, timeout và kết nối tạm thời theo
+exponential backoff; mặc định là 10 retry. Preset LTT đặt `3`. Mỗi retry có
+timeout riêng, nên tăng retry lên 10 không tạo một hàng chờ tốt hơn mà có thể
+kéo dài và nhân tải khi hai hội thoại rất lớn cùng gọi một model.
+
+Hàng chờ chính nằm ở LTT: stream được chờ tối đa 300 giây, có heartbeat mỗi 15
+giây, trước khi model bắt đầu trả chữ. Pool KV mới là giới hạn thật: ba slot
+không có nghĩa ba phiên gần trần luôn cùng chạy được. Nếu tổng reservation của
+hai phiên LTT 3.8 vượt 221.184 token, phiên sau chờ; LTT 3.5 có pool/GPU riêng.
+Muốn hai phiên chạy đồng thời ngay, chọn LTT 3.8 cho một phiên và LTT 3.5 cho
+phiên kia. `MAX_CONCURRENT_SUBAGENTS=1` chỉ giới hạn agent phụ trong từng phiên,
+không giới hạn hai phiên chính độc lập.
+
+Sự cố 15/09/2026 xác nhận hai reservation 148.593 + 79.848 vượt pool LTT 3.8.
+Bản vá làm máy A đếm cả `tool_use`/`tool_result`, truyền reservation của lease
+sang máy B và buộc máy B lấy số lớn hơn giữa header với phép đo của chính nó.
+Nhờ đó yêu cầu thứ hai ở lại hàng chờ thay vì lọt qua rồi nhận 529.
+
+## 7. Tool Search và tải token MCP
 
 Claude Desktop 1.52386.6 bundle Claude Code 2.1.270 nên có cơ chế gateway-safe
 Tool Search. Tuy nhiên bật `toolSearchEnabled` làm request chứa beta tool-search,
@@ -176,7 +197,7 @@ Hệ quả: schema của connector/plugin đã bật được đưa vào context
 chỉ chặn **kết quả** của một tool, không làm nhỏ 65K schema. Cần tắt connector và
 plugin không dùng, giữ tổng MCP tools khoảng dưới 10% cửa sổ nén khi có thể.
 
-## 7. Đối chứng cộng đồng
+## 8. Đối chứng cộng đồng
 
 Các issue dưới đây là báo cáo người dùng, không phải đặc tả. Chúng được dùng để
 kiểm chế độ hỏng mà tài liệu chính thức mô tả:
@@ -187,7 +208,7 @@ kiểm chế độ hỏng mà tài liệu chính thức mô tả:
 - [claude-code #65966](https://github.com/anthropics/claude-code/issues/65966): các bản cũ từng áp context override sai cho provider ngoài; đặc tả hiện tại ghi hành vi từ 2.1.193.
 - [claude-ai-mcp #829](https://github.com/anthropics/claude-ai-mcp/issues/829): tải toàn bộ connector schema trong 3P có thể làm đầy context rất nhanh.
 
-## 8. Dấu hiệu nghiệm thu
+## 9. Dấu hiệu nghiệm thu
 
 1. `Test connection` xanh với Bearer.
 2. Picker chỉ hiện LTT 3.8 (Mạnh) và LTT 3.5 (Nhanh).

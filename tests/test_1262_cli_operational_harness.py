@@ -1,15 +1,22 @@
 """Behavior checks for the operational connector/Desktop acceptance harness."""
 from __future__ import annotations
 
+import argparse
 import json
 import importlib.util
 import os
 import pathlib
+import queue
 import subprocess
 import sys
+import threading
+import time
+import tempfile
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 SERVER = ROOT / "tests" / "fixtures" / "cli_compat_server.py"
 HARNESS = ROOT / "tools" / "kiem_cli_van_hanh.mjs"
 DESKTOP = ROOT / "tools" / "kiem_claude_desktop.ps1"
@@ -105,3 +112,111 @@ def test_production_orchestrator_revokes_and_cleans_after_api_failure(
     assert token not in report_text
     assert any(command[-1] == "go" for command in commands if command[0] == str(connector))
     assert any("-RestoreOnly" in command for command in commands)
+
+
+def check_generated_config_in_codex_app_server(
+        binary: str, tmp_path: pathlib.Path, model: str) -> None:
+    """Run one generated model config through a real Codex app-server.
+
+    This is an explicit operational probe rather than an environment-dependent
+    pytest test.  A missing binary is therefore a failed command, never a
+    silently skipped test in the repository gate.
+    """
+    executable = pathlib.Path(binary)
+    if not executable.is_file():
+        raise FileNotFoundError(f"Codex binary is absent: {executable}")
+
+    from platform_core.public_api import examples
+
+    home = tmp_path / "codex-home"
+    home.mkdir(parents=True)
+    catalog = home / "ltt_model_catalog.json"
+    catalog.write_text(examples.codex_catalog(), encoding="utf-8")
+    config = examples.codex_desktop_config("http://127.0.0.1:9", model)
+    config = config.replace(examples.TEP_CATALOG_CODEX, catalog.as_posix())
+    (home / "config.toml").write_text(config, encoding="utf-8")
+
+    process = subprocess.Popen(
+        [str(executable), "app-server", "--strict-config", "--stdio"],
+        cwd=ROOT,
+        env={**os.environ, "CODEX_HOME": str(home),
+             "LTT_API_KEY": "mock_key_for_local_config_parse_only"},
+        stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        text=True, encoding="utf-8",
+    )
+    assert process.stdin is not None and process.stdout is not None
+    messages: queue.Queue[dict] = queue.Queue()
+
+    def read_stdout():
+        for line in process.stdout:
+            try:
+                messages.put(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+
+    reader = threading.Thread(target=read_stdout, daemon=True)
+    reader.start()
+    requests = [
+        {"id": 1, "method": "initialize", "params": {
+            "clientInfo": {"name": "ltt-config-audit", "version": "1"},
+            "capabilities": {"experimentalApi": True}}},
+        {"method": "initialized", "params": {}},
+        {"id": 2, "method": "config/read", "params": {"cwd": str(ROOT)}},
+        {"id": 3, "method": "model/list", "params": {"includeHidden": True}},
+    ]
+    for request in requests:
+        process.stdin.write(json.dumps(request) + "\n")
+    process.stdin.flush()
+
+    responses = {}
+    deadline = time.monotonic() + 15
+    try:
+        while time.monotonic() < deadline and not {1, 2, 3} <= responses.keys():
+            try:
+                message = messages.get(timeout=0.25)
+            except queue.Empty:
+                if process.poll() is not None:
+                    break
+                continue
+            if message.get("id") in (1, 2, 3):
+                responses[message["id"]] = message
+    finally:
+        process.terminate()
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait(timeout=5)
+
+    stderr = process.stderr.read() if process.stderr else ""
+    assert {1, 2, 3} <= responses.keys(), stderr
+    assert all("error" not in responses[item] for item in (1, 2, 3)), responses
+    config_read = responses[2]["result"]["config"]
+    assert config_read["model"] == model
+    assert config_read["model_provider"] == "ltt"
+    listed = responses[3]["result"]["data"]
+    assert [item["model"] for item in listed] == ["ltt-3.8", "ltt-3.5"]
+    assert [item["displayName"] for item in listed] == [
+        "LTT 3.8 (Strong)", "LTT 3.5 (Fast)"]
+
+
+def _main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Check generated LTT config against a real Codex app-server")
+    parser.add_argument("--codex-binary", required=True)
+    args = parser.parse_args(argv)
+    with tempfile.TemporaryDirectory(prefix="ltt-codex-app-server-") as raw:
+        base = pathlib.Path(raw)
+        for model in ("ltt-3.8", "ltt-3.5"):
+            check_generated_config_in_codex_app_server(
+                args.codex_binary, base / model, model)
+    version = subprocess.run(
+        [args.codex_binary, "--version"], text=True, capture_output=True,
+        timeout=10, check=True).stdout.strip()
+    print(json.dumps({"passed": True, "binary": version,
+                      "models": ["ltt-3.8", "ltt-3.5"]}))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(_main())

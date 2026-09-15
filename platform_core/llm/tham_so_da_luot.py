@@ -78,7 +78,9 @@ def doc() -> ThamSoDaLuot:
         so_nguoi_cho_toi_da=int(_so("LTT_LLM_SO_NGUOI_CHO", 32)),
         token_prefill_cho_toi_da=int(_so("LTT_LLM_TOKEN_PREFILL_CHO", 57_000)),
         dem_dat_truoc=int(_so("LTT_LLM_DEM_DAT_TRUOC", 2_048)),
-        token_moi_anh=int(_so("LTT_LLM_TOKEN_MOI_ANH", 1_500)),
+        # Khớp phép giữ chỗ của máy B (`llm_gateway.ngan_sach.TOKEN_MOI_ANH`).
+        # Máy A thấp hơn máy B làm một lượt có ảnh qua hàng chờ rồi bị B từ chối.
+        token_moi_anh=int(_so("LTT_LLM_TOKEN_MOI_ANH", 2_048)),
         nhip_tim_cho_s=_so("LTT_LLM_NHIP_TIM_CHO_S", 15.0),
         lao_hoa_s=_so("LTT_LLM_LAO_HOA_S", 300.0),
     )

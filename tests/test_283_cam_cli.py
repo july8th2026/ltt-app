@@ -161,7 +161,8 @@ def test_claude_vscode_standalone_routes_and_context(cc, model):
     assert env["CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS"] == "1"
     assert env["CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH"] == "1"
     assert env["CLAUDE_CODE_SUBAGENT_MODEL_FORCE"] == "1"
-    assert env["CLAUDE_CODE_MAX_RETRIES"] == "1"
+    assert env["CLAUDE_CODE_MAX_RETRIES"] == "10"
+    assert env["API_TIMEOUT_MS"] == "600000"
     assert env["CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK"] == "1"
     assert env["ENABLE_TOOL_SEARCH"] == "false"
     assert int(env["CLAUDE_CODE_AUTO_COMPACT_WINDOW"]) == cc.hs_cua(model).nen
@@ -182,7 +183,8 @@ def test_claude_cli_pins_every_model_route_and_one_subagent(cc, model):
     assert cc._env_gia["CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS"] == "1"
     assert cc._env_gia["CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH"] == "1"
     assert cc._env_gia["CLAUDE_CODE_SUBAGENT_MODEL_FORCE"] == "1"
-    assert cc._env_gia["CLAUDE_CODE_MAX_RETRIES"] == "1"
+    assert cc._env_gia["CLAUDE_CODE_MAX_RETRIES"] == "10"
+    assert cc._env_gia["API_TIMEOUT_MS"] == "600000"
     assert cc._env_gia["CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK"] == "1"
     assert cc._env_gia["ENABLE_TOOL_SEARCH"] == "false"
 

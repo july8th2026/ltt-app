@@ -409,6 +409,26 @@ def test_header_token_dat_duoc_TON_TRONG():
     assert "pool KV" in r2.json()["detail"]["chi_tiet"]
 
 
+def test_header_token_dat_thap_khong_duoc_HA_phep_do_cua_may_B():
+    """Header lỗi/cũ không được biến nhánh suy biến thành nhận quá pool KV."""
+    from llm_gateway.api import create_app
+    from fastapi.testclient import TestClient
+    from tests.test_250_llm_gateway import FakeUpstream, _cfg, _tt_ranh
+
+    so = SoTheoModel((M38,), max_dong_thoi=3, token_pool=0, rpm=0,
+                     pool_rieng={M38: 1_000})
+    c = TestClient(create_app(_cfg(models_mo=(M38,)), FakeUpstream(),
+                              trong_tai=_tt_ranh(), so=so))
+    _px, giu = so.cap_suat(M38, 800)
+    assert giu is not None
+    r = c.post("/v1/chat/completions", json={
+        "model": M38, "max_tokens": 10,
+        "messages": [{"role": "user", "content": "x" * 1_000}],
+    }, headers={"X-LTT-Token-Dat": "1"})
+    assert r.status_code == 429, r.text
+    assert "pool KV" in r.json()["detail"]["chi_tiet"]
+
+
 def test_whale_qua_header():
     from llm_gateway.api import create_app
     from fastapi.testclient import TestClient

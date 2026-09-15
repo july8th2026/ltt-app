@@ -13,6 +13,81 @@
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
 
+## 2026-09-15 — H48: bắt đúng lỗi 529 của hai phiên Claude dài
+
+**Sự thật production.** Transcript Claude ghi 529 lúc 09:42:42; log máy A cùng
+thời điểm ghi hai reservation LTT 3.8 lần lượt 148.593 + 79.848 và 79.848 +
+150.633, đều vượt pool 221.184. Còn slot không có nghĩa còn KV. Hàng chờ 300
+giây và heartbeat 15 giây đã tồn tại; gốc là phép ước lượng A bỏ nội dung lồng
+`tool_use`/`tool_result` và không truyền reservation sang B.
+
+**Bản vá.** A đếm bảo thủ mọi chuỗi trong khối công cụ, bỏ base64 ảnh vì ảnh đã
+được giữ riêng, và đồng bộ mức ảnh 2.048 token với B. Lease A chuyển
+`X-LTT-Request-Id`, `X-LTT-Token-Dat`, `X-LTT-Whale`; B lấy `max(tự đo, header)`
+để một A cũ/header thấp không thể hạ phép đo an toàn. Ma trận Local Q128 dùng
+retry 10 theo mặc định chính thức Claude, timeout 600.000 ms và không bật
+watchdog thử 429/529 vô hạn.
+
+**Bằng chứng đã chạy trước gate cuối:**
+
+- Nhóm tập trung: pha chọn **311 passed, 3 skipped**; ba tệp tuần tự bắt buộc
+  **407 passed, 3 skipped**; `RESULT: PASS`, 342 giây.
+- Harness cấu hình thật chạy trực tiếp với Codex CLI 0.145.0, Desktop app-server
+  0.146.0-alpha.3.1 và VS Code extension 0.154.0-alpha.6.2: cả ba PASS, mỗi bản
+  đọc đúng hai model `ltt-3.8`/`ltt-3.5`.
+- `test_1262_cli_operational_harness.py`: **3 passed**. Public docs check PASS;
+  secret scan **0 finding**; dịch thiếu không tăng, fuzzy nghi sai 0.
+- Playwright `/huong-dan` Việt/Anh × 1440/390: **PASS 4/4**, 0 console error,
+  0 failed request, không tràn ngang; đã soi ảnh desktop và mobile.
+
+**Còn lại:** hợp nhất lên trunk sạch, build cuối, L3, triển khai B → A và nghiệm
+thu production theo H49. Kết quả sẽ được bổ sung bằng một mục mới, không sửa
+nhật ký này thành lời tiên đoán.
+
+
+## 2026-09-15 — H47: tài liệu Codex Desktop theo schema và binary thật
+
+**Kết luận sản phẩm.** Codex Desktop 26.721 không có form Gateway nhập tay như
+Claude Desktop. Nó dùng app-server, `%USERPROFILE%/.codex/config.toml` và catalog
+JSON cấp người dùng. Desktop không truyền `--profile`, nên trang khách nay có
+một bề mặt riêng với hai khối root config hoàn chỉnh cho LTT 3.8/LTT 3.5, cách
+đặt `LTT_API_KEY` ở Windows, restart/thread mới và bảng giải thích từng khóa.
+Provider ID giữ cố định là `ltt`; không hứa picker hiện tại chọn custom model.
+
+**Nguồn và điểm sửa sau phép đo.** Đối chiếu configuration reference/schema,
+tài liệu Windows/subagent của OpenAI và tám issue upstream/community, rồi sinh
+schema trực tiếp từ binary Desktop. Schema web mới có
+`supports_standalone_web_search`, nhưng CLI 0.145 thật từ chối khóa đó khi chạy
+`--strict-config`; vì mặc định đã false, khối copy bỏ khóa để chạy trên cả bộ
+đọc cũ và mới. Ma trận và nguồn nằm ở
+`docs/PUBLIC_API/CODEX_DESKTOP_CONFIG.md`; Q127 giữ quyết định.
+
+**Phép đo đã chạy:**
+
+- `LTT_CODEX_BINARY=<CLI 0.145> python -m pytest tests/test_1262_cli_operational_harness.py::test_generated_config_loads_in_installed_codex_app_server -q`
+  → **2 passed** (hai model).
+- Cùng test với app-server `0.146.0-alpha.3.1` của Desktop 26.721 →
+  **2 passed**; với binary extension `0.154.0-alpha.6.2` → **2 passed**.
+  Cả ba trả đúng `config/read` (`model_provider=ltt`) và `model/list` (hai slug,
+  hai display name).
+- Kiểm tập trung sáu tệp → **156 passed, 6 skipped**. Skip là phép thử binary
+  tùy chọn khi không truyền `LTT_CODEX_BINARY` và ba skip môi trường có sẵn.
+- `check_dich_thieu.py` → **PASS**; `check_fuzzy_dich.py` → không tăng lỗi;
+  test mọi chuỗi API có bản EN → **1 passed**.
+- Playwright `/huong-dan` Việt/Anh × 1440/390 px → **PASS 4/4**, đúng tab
+  Codex Desktop, parse được catalog, không tràn ngang, **0 console error, 0
+  request hỏng**. Ảnh render đã được soi trực tiếp.
+
+**Ba câu hạ tầng dùng chung.** Bản vá chỉ sinh cấu hình/tài liệu, không có cơ
+chế điều phối khiến worktree chưa nhận bản vá phạt worktree đã nhận. Nhánh suy
+biến là client cũ từ chối khóa mới; `--strict-config` trên ba binary là phép đo
+cho chính nhánh ấy. Phép kiểm khóa quan hệ model → provider → context/compact
+theo `ngan_sach.py`, không chỉ tìm nhãn trong tệp.
+
+**Còn lại:** bốn frontend build và đúng một `python tools\gate.py` cuối; kết quả
+được ghi bổ sung ngay sau lượt chạy.
+
+
 ## 2026-09-15 — H46 hoàn tất: Q126, Tool 1.9.0 và gate cuối 33/33
 
 Hoàn tất trên nhánh `codex/cli-compat-final-audit`; không deploy, không đổi DNS,

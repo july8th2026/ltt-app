@@ -23,11 +23,11 @@ API local không gọi model.
 
 ## Quyết định đã khóa
 
-1. **Retry theo công suất cố định:** Codex `request_max_retries=1`,
-   `stream_max_retries=0`; Claude `CLAUDE_CODE_MAX_RETRIES=1`. Không tăng RPM,
-   queue, timeout hay GPU slot. Owner tiếp tục quy trình với phương án khuyến nghị
-   ngày 14/09/2026. Repro thật: Codex không tự phát lại HTTP 429 của Responses;
-   Claude thử lại đúng một request nền rồi dừng khuếch đại.
+1. ~~**Retry theo công suất cố định:** Codex `request_max_retries=1`,
+   `stream_max_retries=0`; Claude `CLAUDE_CODE_MAX_RETRIES=1`.~~ **ĐÃ THAY bởi
+   Q128 ngày 15/09/2026** sau khi hai phiên dài lộ ra lỗi capacity tạm thời và
+   phép giữ chỗ lệch giữa hai máy. Codex vẫn giữ retry stream như cũ; Claude trở
+   về mặc định chính thức 10 lần với exponential backoff.
 2. **Ghim mọi đường model và chỉ một subagent:** model chính, Opus, Sonnet,
    Haiku và subagent đều dùng model LTT khách đã chọn; Codex và Claude mỗi phiên
    chỉ mở tối đa một subagent đồng thời. Owner chọn rõ
@@ -47,6 +47,11 @@ API local không gọi model.
    `ltt-llm-claude-compat-35`) vì bộ lọc client bắt tên chứa `claude`; đó là mã
    vận chuyển ẩn, không phải tên sản phẩm. Cách này không đòi thêm alias backend
    hay deploy chỉ để đổi chữ trong picker.
+5. **Hàng chờ và retry là hai tầng khác nhau (Q128):** máy A chờ suất tối đa
+   300 giây và phát heartbeat 15 giây; Claude dùng `API_TIMEOUT_MS=600000` và
+   `CLAUDE_CODE_MAX_RETRIES=10`. Không bật retry watchdog. Máy A truyền đúng
+   reservation sang máy B; máy B luôn lấy số lớn hơn giữa phép tự đo và header,
+   nên bản cũ hoặc header khai thấp không thể nhận quá pool KV.
 
 Nguồn năng lực Qwen3.5-9B: model card chính thức công bố LiveCodeBench v6 65,6,
 BFCL-V4 66,1, context gốc 262.144, tool parser `qwen3_coder`, và cấu hình lấy mẫu
