@@ -214,6 +214,14 @@ def test_gui_cho_chon_tung_be_mat_va_hien_loi_bridge():
     assert "Hoàn tất sau" in html
 
 
+def test_gui_noi_ro_codex_cai_ca_hai_model_mot_luot():
+    html = (GOC / "tools" / "gui" / "index.html").read_text(encoding="utf-8")
+    assert "Model mặc định cho Claude Code" in html
+    assert "Codex luôn" in html and "cả LTT 3.8 và LTT 3.5" in html
+    assert "ltt-fast" in html
+    assert "Cắm vào (cả hai model)" in html
+
+
 def test_cau_cam_chuyen_lua_chon_thanh_dung_hang_muc(monkeypatch):
     gui = _nap("cam_cli_gui")
 

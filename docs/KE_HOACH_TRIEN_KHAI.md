@@ -4143,3 +4143,15 @@ CRLF gốc, lượt cuối `python tools\gate.py` **PASS 33/33**, báo cáo
       installer/GUI/console/ZIP, Defender sạch; source nhúng khớp SHA-256.
       Hai artifact đã vào `data/api_dist`; trang production hiện đúng 1.9.2,
       hash, 0 console error/0 request hỏng; hai URL tải đều HTTP 200.
+
+## H55 — Tool 1.9.3: một lần cắm Codex có cả hai model (2026-09-16)
+
+- [x] **H55.1 — Contract và rollback:** `cam_codex` cùng SDK luôn tạo profile
+      3.8 + 3.5 và catalog hai model; `--model` chỉ còn chọn Claude. Hai profile
+      được sao lưu/gỡ độc lập; trạng thái chỉ xanh khi đủ cả hai và catalog.
+- [x] **H55.2 — Dữ liệu Codex thật:** catalog dùng hai nhãn Strong/Fast, mỗi
+      profile có đúng context/compact/reasoning/tool-output riêng. Strict
+      app-server CLI 0.145.0, Desktop 0.146.0-alpha.3.1 và VS Code
+      0.154.0-alpha.6.2 đều trả đủ hai model từ cấu hình Tool sinh ra.
+- [ ] **H55.3 — Phát hành:** dựng/quét/cài Tool 1.9.3, đưa hai artifact lên
+      trang API production và xác minh tải + giao diện thật.

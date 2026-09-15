@@ -12,6 +12,29 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-16 — H55 checkpoint: Tool 1.9.3 cài hai model Codex trong một lượt
+
+- Đổi contract Tool và SDK: một lần cắm Codex luôn tạo
+  `ltt.config.toml` cho LTT 3.8, `ltt-fast.config.toml` cho LTT 3.5 và catalog
+  chứa cả hai. Radio/`--model` chỉ còn chọn mặc định Claude Code. Mỗi profile
+  có trạng thái tạo/backup/rollback độc lập; trạng thái Codex chỉ xanh khi đủ
+  hai profile và catalog.
+- Hai profile mang context, compact, reasoning, `tool_output_token_limit` và
+  subagent riêng. Catalog hiển thị `LTT 3.8 (Strong)` và `LTT 3.5 (Fast)`.
+  Harness dùng chính output Tool, cố tình chọn model Claude đối nghịch, rồi
+  chạy strict app-server: CLI 0.145.0, Desktop 0.146.0-alpha.3.1 và VS Code
+  0.154.0-alpha.6.2 đều trả đủ hai model.
+- Chạy `python -m pytest ... -q -n 7` trên bảy tệp phạm vi: **182 passed**,
+  7 cảnh báo deprecation; Ruff mục tiêu và `git diff --check` PASS. Lệnh
+  `python tools/check_so_test.py` vẫn đỏ vì hai cặp số test trùng 1261/1262 từ
+  nhánh VPS song song, không do H55 và không dùng làm bằng chứng xanh.
+- `python tools/dong_goi_exe.py phat-hanh --quet`: PASS; installer/GUI/console/
+  ZIP 1.9.3 đều Defender sạch. Source và `cam_cli.py` nhúng cùng SHA-256;
+  installer `0099cf5b620bb05ebb82eb2b835a3fdf48399e4ca84fdd23756ada8c47e79968`,
+  ZIP `76686f0220d87d01f5d8b2e5e8a9e474c634a7d15e6e7031ee10837b2b4776eb`.
+  Máy owner đã cài 1.9.3 nhưng không chạy `cam` trên hồ sơ thật đang phục vụ
+  phiên Codex hiện tại. Chưa deploy trang API tại checkpoint này.
+
 ## 2026-09-15 — H54: Tool 1.9.2 khớp reasoning và kiểm thật Codex
 
 - Tài liệu chính thức Codex xác nhận custom provider dùng Responses và catalog

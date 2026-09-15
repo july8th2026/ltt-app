@@ -26,7 +26,6 @@ from __future__ import annotations
 import importlib.util
 import json
 import pathlib
-import sys
 import tomllib
 
 import pytest
@@ -127,21 +126,29 @@ def test_selected_profile_catalog_and_rollback(cc, model, vscode):
     cfg.write_bytes(original)
     tt = {"model": model}
     cc.cam_codex("https://example.test", tt, cho_vscode=vscode)
-    profile = tomllib.loads((cfg.parent / "ltt.config.toml").read_text())
-    hs = cc.hs_cua(model)
-    assert (profile["model"], profile["model_context_window"],
-            profile["model_auto_compact_token_limit"]) == (model, hs.cua_so, hs.nen)
-    assert profile["model_reasoning_effort"] == hs.reasoning
-    assert profile["agents"] == {
-        "default_subagent_model": model,
-        "default_subagent_reasoning_effort": hs.reasoning,
-        "max_concurrent_threads_per_session": 1,
-    }
+    for ten_tep, ten_model in (("ltt.config.toml", "ltt-3.8"),
+                               ("ltt-fast.config.toml", "ltt-3.5")):
+        profile = tomllib.loads((cfg.parent / ten_tep).read_text())
+        hs = cc.hs_cua(ten_model)
+        assert (profile["model"], profile["model_context_window"],
+                profile["model_auto_compact_token_limit"]) == (
+                    ten_model, hs.cua_so, hs.nen)
+        assert profile["model_reasoning_effort"] == hs.reasoning
+        assert profile["model_auto_compact_token_limit_scope"] == "total"
+        assert profile["tool_output_token_limit"] == cc.TRAN_KET_QUA_TOOL
+        assert profile["agents"] == {
+            "default_subagent_model": ten_model,
+            "default_subagent_reasoning_effort": hs.reasoning,
+            "max_concurrent_threads_per_session": 1,
+        }
     if vscode:
         root = tomllib.loads(cfg.read_text())
-        assert root["model"] == model
+        assert root["model"] == "ltt-3.8", (
+            "model chon cho Claude khong duoc lam Codex mat profile con lai")
         assert root["model_catalog_json"] == str(cc.TEP_CATALOG)
     catalog = json.loads(cc.TEP_CATALOG.read_text())["models"]
+    assert [item["display_name"] for item in catalog] == [
+        "LTT 3.8 (Strong)", "LTT 3.5 (Fast)"]
     assert all(m["input_modalities"] == ["text", "image"] for m in catalog)
     levels = {item["slug"]: item["supported_reasoning_levels"]
               for item in catalog}
@@ -153,6 +160,7 @@ def test_selected_profile_catalog_and_rollback(cc, model, vscode):
     assert cfg.read_bytes() == original
     assert not cc.TEP_CATALOG.exists()
     assert not (cfg.parent / "ltt.config.toml").exists()
+    assert not (cfg.parent / "ltt-fast.config.toml").exists()
 
 
 @pytest.mark.parametrize("model", ["ltt-3.8", "ltt-3.5"])
@@ -286,6 +294,21 @@ def test_go_CO_xoa_ltt_config_khi_chinh_ta_tao_no(cc, tmp_path):
     assert prof.exists() and tt["codex"]["ta_tao_ltt_config"] is True
     cc.go_codex(tt)
     assert not prof.exists()
+    assert not (tmp_path / ".codex" / "ltt-fast.config.toml").exists()
+
+
+def test_go_TRA_LAI_ltt_fast_config_cua_khach(cc, tmp_path):
+    prof = tmp_path / ".codex" / "ltt-fast.config.toml"
+    prof.parent.mkdir(parents=True)
+    goc = b'# profile fast cua khach\r\nmodel = "customer-fast"\r\n'
+    prof.write_bytes(goc)
+
+    tt = {}
+    cc.cam_codex("https://app.lttstudios.com", tt)
+    assert prof.read_bytes() != goc
+    assert tt["codex"]["ta_tao_ltt_fast_config"] is False
+    cc.go_codex(tt)
+    assert prof.read_bytes() == goc
 
 
 # ── settings.json: khôi phục giá trị cũ, không chỉ xoá ─────────────────────
@@ -528,11 +551,14 @@ def test_chay_cam_HAI_LAN_roi_go_van_xoa_sach(cc, tmp_path):
     cc.cam_codex("https://app.lttstudios.com", tt)
     cc.cam_codex("https://app.lttstudios.com", tt)      # lan hai
     prof = tmp_path / ".codex" / "ltt.config.toml"
-    assert prof.exists()
+    prof_fast = tmp_path / ".codex" / "ltt-fast.config.toml"
+    assert prof.exists() and prof_fast.exists()
     assert tt["codex"]["ta_tao_ltt_config"] is True, (
         "lan chay thu hai da ghi de ket luan cua lan dau")
+    assert tt["codex"]["ta_tao_ltt_fast_config"] is True
     cc.go_codex(tt)
     assert not prof.exists(), "go de lai rac sau khi cam hai lan"
+    assert not prof_fast.exists(), "go de lai profile fast sau khi cam hai lan"
 
 
 def test_ltt_config_CUA_KHACH_duoc_tra_ve_nguyen_van(cc, tmp_path):
