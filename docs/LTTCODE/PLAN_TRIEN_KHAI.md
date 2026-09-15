@@ -2,7 +2,7 @@
 
 > Cập nhật 2026-09-15 (phiên tiếp quản). "Thời gian XD" = ước tính **giờ làm việc của agent** trên
 > máy này (không phải người). Cột % theo effort-share.
-> **Tổng tiến độ ≈ 37% · Còn lại ≈ 82 giờ XD** (chưa gồm logistics: cert EV, R2/CDN, khóa LIVE).
+> **Tổng tiến độ ≈ 37% · Còn lại ≈ 87 giờ XD** (chưa gồm logistics: cert EV, R2/CDN, khóa LIVE).
 > ⭐ 14/09: baseline Tauri **build (5m09s) + installer NSIS/MSI + app CHẠY** (title LTTCODE, WebView2 OK).
 > ⭐⭐ 14/09: **DSH sidecar integration PROVEN** — `dsh web --profile lttcode` boot ~10s, nạp plugin `llm-ltt`, provider mặc định `ltt-official`, in ready-line handshake. Đóng gói = bundle node.exe thật (SEA/pkg không dùng được).
 > ⚠️ 15/09: test key `ltt_tk_` **mất** (scratchpad dọn) — mint lại qua `setup/khoa_thu_api.ps1` (elevated); chỉ chặn ca model P03/P04.
@@ -15,25 +15,25 @@
 |---|---|---:|---:|---|
 | P00 | Research & Baseline | 100% | 0 | ✅ |
 | P01 | Decision Lock + Architecture | 100% | 0 | ✅ |
-| P02 | Harness Pin & Reproducible Baseline | 90% | ~0.5 | 🟢 |
-| P03 | LTT Compatibility Harness | 55% | ~3 | 🟡 |
+| P02 | Harness Pin & Reproducible Baseline | 95% | ~0.5 | 🟢 |
+| P03 | LTT Compatibility Harness | 55% | ~2 | 🟡 |
 | P04 | LTT Provider Adapter `llm-ltt` | 92% | ~4 | 🟢 |
 | P05 | LTT Auth & Bootstrap (MVP) | 15% | ~10 | 🟡 |
-| P06 | Desktop Runtime / Sidecar (Tauri) | 75% | ~4 | 🟡 build+run+DSH-boot+Rust spawn+**webview CHẠY UI** OK; còn bundle resources+Job Object |
+| P06 | Desktop Runtime / Sidecar (Tauri) | 75% | ~3 | 🟡 build+run+DSH-boot+Rust spawn+**webview CHẠY UI** OK; còn bundle resources+Job Object |
 | P07 | Core Coding Agent UX | 0% | ~12 | ⬜ |
 | P08 | Session / Sandbox / Approval | 5% | ~9 | ⬜ |
 | P09 | Release Control Plane (server) | 5% | ~15 | ⬜ (chờ R2/CDN) |
 | P10 | Updater / Signing / Migration | 5% | ~13 | ⬜ (chờ cert EV) |
-| P11 | Security / Supply Chain | 10% | ~8 | 🟡 |
+| P11 | Security / Supply Chain | 10% | ~7 | 🟡 |
 | P12 | Beta Acceptance (§38 + §39) | 0% | ~9 | ⬜ |
 | P13 | Stable Release | 0% | ~2 | ⬜ |
-| | **TỔNG** | **~29%** | **~100** | |
+| | **TỔNG** | **~37%** | **~87** | |
 
 ---
 
 ## Chi tiết theo hạng mục
 
-### P02 — Harness Pin & Reproducible Baseline · 70% · còn ~1h
+### P02 — Harness Pin & Reproducible Baseline · 95% · còn ~0.5h
 | Mục triển khai | % | Giờ | Ghi chú |
 |---|---:|---:|---|
 | Tạo repo LTTCODEAPP + baseline | 100% | 0 | ✅ pushed |
@@ -42,7 +42,7 @@
 | Scaffold Tauri v2 host | 100% | 0 | ✅ (create-tauri-app) |
 | Build tái lập xác thực | 40% | 1 | 🟡 build baseline đang chạy |
 
-### P03 — LTT Compatibility Harness · 55% · còn ~3h
+### P03 — LTT Compatibility Harness · 55% · còn ~2h
 | Mục triển khai | % | Giờ | Ghi chú |
 |---|---:|---:|---|
 | Runner `collect()` + test-plan 15 ca | 100% | 0 | ✅ |
@@ -68,7 +68,7 @@
 | Đấu bootstrap vào app (min-version/flags/models) | 0% | 1 | ⬜ |
 | *(nợ) Device-flow OAuth backend* | 0% | ~16 | ⬜ sau MVP |
 
-### P06 — Desktop Runtime / Sidecar (Tauri) · 75% · còn ~4h
+### P06 — Desktop Runtime / Sidecar (Tauri) · 75% · còn ~3h
 | Mục triển khai | % | Giờ | Ghi chú |
 |---|---:|---:|---|
 | Scaffold + rename LTTCODE + config NSIS | 100% | 0 | ✅ |
@@ -110,7 +110,7 @@
 | Authenticode ký installer | 0% | 3 | ⬜ **cần cert EV** |
 | Migration backup→verify→migrate→mark | 0% | 4 | ⬜ |
 
-### P11 — Security / Supply Chain · 10% · còn ~8h
+### P11 — Security / Supply Chain · 10% · còn ~7h
 | Mục triển khai | % | Giờ | Ghi chú |
 |---|---:|---:|---|
 | Secret handling (.gitignore, không log key) | 60% | 1 | 🟡 |
@@ -147,6 +147,6 @@
 | **Backend device-flow OAuth** | P05 (nợ) | nâng auth sau MVP |
 
 ## Ước lượng lịch
-- **~100 giờ XD** còn lại. Chạy tự động liên tục trên máy này (có xen build nặng),
+- **~87 giờ XD** còn lại. Chạy tự động liên tục trên máy này (có xen build nặng),
   ước ~**2–3 tuần lịch** nếu logistics (R2, cert EV) sẵn sàng song song; phần
   MVP-chạy-cục-bộ (P06+P07+P08, ~35h) có thể xong trước, ~**1 tuần**.
