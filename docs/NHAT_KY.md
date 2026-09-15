@@ -13,6 +13,142 @@
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
 
+## 2026-09-15 — H46 hoàn tất: Q126, Tool 1.9.0 và gate cuối 33/33
+
+Hoàn tất trên nhánh `codex/cli-compat-final-audit`; không deploy, không đổi DNS,
+GPU, RPM hay cấu hình production. Q126 thay Q125 sau khi rà toàn bộ biến chính
+thức của Claude Code 2.1.270, cấu hình Gateway của Claude Desktop 1.52386.6 và
+các báo cáo cộng đồng. Ma trận chuẩn duy nhất nằm ở
+`docs/PUBLIC_API/CLAUDE_CONFIG_MATRIX.md`: Gateway Bearer; hai model/tier LTT;
+đúng 10 biến Local; một subagent, depth 1 và FORCE theo model chính; CLI/VS Code
+ghim bảy đường chọn model. Bỏ biến 1M dư, không ép thinking/effort và giữ Tool
+Search tắt cho tới khi LTT có `tool_reference`.
+
+Trang API Việt/Anh lấy giá trị từ `platform_core.public_api.examples`; hướng dẫn
+giải thích 401 x-api-key/Bearer, cửa sổ 171.458/209.141, ngưỡng nén
+138.690/176.373, MCP schema, permission mode và cách thử từng model. Ảnh owner
+xác nhận phiên Local 3.8 hiển thị 46,8K rồi 99,6K trên 138,7K, buffer khoảng 33K
+và nén ở 76%; lỗi 400 là fallback non-streaming 98.678 input token trong cửa
+90 giây, không phải model mất năng lực.
+
+**Bằng chứng đã chạy:**
+
+- Nhóm kiểm tập trung 13 tệp: **393 passed, 3 skipped**, 182,93s.
+- Playwright `check_manual_guide.js`: **PASS 4/4** Việt/Anh × 1440/390px, đủ 10
+  biến và hai tier, chuyển tab đúng, không tràn ngang, 0 console error/request
+  hỏng. `check_manual_keys.js`: **PASS 4/4**, tạo khóa test không chọn tool giữ
+  trạng thái mọi công cụ công khai, bí mật không hiện lại sau GET.
+- `build_public_api_docs.py --check`, `check_dich_thieu.py`, `check_i18n.py`,
+  `check_fuzzy_dich.py`, `git -c core.whitespace=cr-at-eol diff --check` và
+  `scan_source_secrets.py`: **PASS**; secret finding **0**.
+- `npm run build` tại bốn frontend agent-canvas, autosub-studio, chatltt và
+  prompt-ai-ommi: **PASS**.
+- `python tools\dong_goi_exe.py phat-hanh --quet`: **PASS**; Tool 1.9.0 ở
+  `E:\LTTSTUDIOSAPP-build\cam-cli-1.9.0`, installer/GUI/console/ZIP đều Defender
+  sạch. Installer SHA-256:
+  `502cb68fffdf31c484e2519b84bd62ee0283bb40d3e601a0f81a10cc732f0c9b`.
+  Console đóng gói trả `cam_cli 1.9.0`.
+- Gate đầu của trạng thái cuối: **32/33**, chỉ lỗi kiểu xuống dòng
+  `DEVELOPER_GUIDE.md` (HEAD CRLF, bản sửa trộn). Trả đúng CRLF gốc và
+  `python tools\check_xuong_dong.py`: PASS.
+- `python tools\gate.py` lượt cuối: **PASS 33/33**; backend regression 811,7s,
+  bất biến đa tiến trình 307,6s, bốn frontend/PostgreSQL/API/SDK/Postman/i18n/
+  secret scan đều PASS. Báo cáo:
+  `test-results/gates/20260915T014235Z-22516.json`.
+
+H46 đạt **100%**. Không có bước deploy trong phạm vi được giao.
+
+
+## 2026-09-15 — H46 mở rộng: manual Codex, Bearer 401, quyền công cụ và cửa sổ Claude
+
+Tiếp tục cùng worktree/nhánh `codex/cli-compat-final-audit`, không làm lại release
+hay lượt production đã PASS, không deploy. Owner thêm Codex manual và kiểm lỗi
+Claude nhập tay. Gate chỉ chạy ở cuối theo owner; tiến độ cập nhật **94%**.
+
+**Chẩn đoán thật:** ảnh 18 trả 401, form chọn x-api-key. Backend chỉ nhận Bearer.
+UI Automation đã đổi lựa chọn Bearer; owner xác nhận Test connection xanh cùng
+khóa. Không đọc giá trị API key. `allowed_tools` rỗng cho mọi công cụ công khai,
+không mở thêm scopes. UI bỏ trống all-tools và ẩn nhóm tools khi catalog rỗng:
+sửa template, thêm test tạo khóa/rỗng catalog, giữ nguyên rule quyền backend.
+
+**Máy owner:** EXE `go`, `python tools/cam_cli.py xem`, `python tools/cam_cli.py go`
+báo sạch dấu vết LTT trên năm bề mặt/registry/env. Giữ backup `.truoc-ltt` ban đầu;
+`powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/kiem_claude_desktop.ps1 -RestoreOnly`
+báo restored=true, thoát toàn bộ Claude và mở lại. Profile owner nhập sau cleanup
+được giữ. Phiên Code owner đang chạy không bị dừng để áp biến context mới.
+
+**Codex:** đọc OpenAI Docs trước khi triển khai, đối chiếu CLI 0.145.0 và Desktop
+26.721.11231.0. Thêm JSON catalog 2 model, profile ltt/ltt-fast theo budget, path
+tuyệt đối và nhập key che bằng Read-Host. Binary CLI thật chạy hai profile sinh
+từ examples qua server mock: SSE nhận được, model wire đúng, exit0 cả hai; báo
+cáo `tmp/kiem_cli_van_hanh/codex-manual.json`. Không gọi đó là inference thật.
+
+**Claude token:** đọc docs model-config/env-vars/Desktop/configuration và issue
+#68522/#16033. UIA vòng Usage đọc 48.1k/200k, sau đó 58.1k/200k; owner xác nhận thấy
+200K. Phát biểu ban đầu "ảnh báo 200K" sai nguồn: ảnh 16–20 không có số đó, đã
+sửa câu trả lời và docs. Ảnh 21 đang Code session nên không có Environment;
+UIA New đã thấy Local. Hướng dẫn thêm biến Local, dùng budget hẹp hơn cho hai
+model; không hứa tác dụng trên Chat/Cowork hay nghiệm thu long-context chưa chạy.
+Ảnh 22 xác nhận owner mở đúng Edit local environment và ba số đúng; đã hướng
+dẫn định dạng .env, thêm 4 biến chống bloat/concurrency/retry/1M, Save và phiên mới.
+
+**Lệnh/kết quả đã chạy:**
+
+- `python tools/gate.py` lượt đầu: **FAIL 1/33, 32/33 PASS**. Báo cáo `test-results/gates/20260914T171303Z-14460.json`; pha1 3 failed/11443 passed/72 skipped/1 xfailed; pha2 96 passed; Postgres/frontend/static đều PASS. Không phải gate xanh.
+- Chạy lại ba test cụ thể `test_62::test_tai_lieu_dang_hieu_luc_khong_tro_vao_file_da_chuyen_di`, `test_272::test_trang_cli_day_du_ba_cong_cu`, `test_604::test_q120_ton_tai_va_q116_da_thay` sau sửa: **3 passed** (3,33s).
+- `python -m pytest -q tests/test_191_developer_portal_sdk.py tests/test_294_trang_cong_khai_api.py tests/test_299_khu_api_da_dich.py tests/test_272_cua_streaming.py tests/test_334_ngan_sach_ltt_llm.py tests/test_283_cam_cli.py`: **229 passed, 4 skipped, 1 failed** (125,58s); prose EN còn nhãn Việt, đã dịch Strong/Fast.
+- `python -m pytest -q tests/test_299_khu_api_da_dich.py` sau sửa: **13 passed, 1 skipped** (4,01s), warning Starlette/httpx đã có.
+- `python tmp/kiem_cli_van_hanh/check_codex_manual.py`: **PASS 2/2**, installed CLI + mock, không production.
+- `playwright-cli -s=ltt-manual-guide run-code --filename=tests/fixtures/check_manual_guide.js`: **PASS 4/4**, catalog JSON 2 model đọc được, switch surface đúng, no overflow, 0 console errors/failed requests.
+- `playwright-cli -s=ltt-manual-guide run-code --filename=tests/fixtures/check_manual_keys.js`: **PASS 4/4 + create test key**, empty tools unrestricted, write scope giữ đúng, GET lại không hiện bí mật; 0 console errors/failed requests. Lượt đầu phép đo reload POST resubmit tạo key mới: sửa harness dùng GET, không đổ lỗi server.
+- `python tools/i18n.py bien-dich`: PASS; check_dich_thieu/check_i18n/check_fuzzy_dich: PASS, không tăng nợ mới. `git -c core.whitespace=cr-at-eol diff --check`: PASS.
+
+Checkpoint: guide/key UI đã kiểm; còn cập nhật cuối/kiểm tĩnh, build frontend
+ngay trước L3 cuối và commit sau L3 xanh. **L3 cuối chưa chạy ở checkpoint này.**
+Kiểm cuối sau thêm khối .env sao chép: test_294 + test_299 **43 passed, 1 skipped**
+(3,65s), ruff/mypy/docs/i18n PASS, source secrets **0 finding**. Browser guide/key
+chạy lại sau restart preview để nạp bản dịch mới: **PASS 4/4 + 4/4**, 0 lỗi.
+
+## 2026-09-14 — H46: connector 1.8.0, Desktop hai model và hướng dẫn nhập Gateway
+
+Nhánh riêng `codex/cli-compat-final-audit`; không deploy, không đổi DNS/GPU/RPM.
+Khôi phục từ checkpoint audit, giữ các hạng mục đã chạy; owner chọn ghim model,
+một subagent và gate chỉ chạy cuối. Hai nhãn Q124: LTT 3.8 (Mạnh), LTT 3.5 (Nhanh).
+
+**Đã làm:** đồng bộ connector/SDK/profile/alias/subagent/retry/context; sửa
+413/create-rate, metadata 429 và vòng đời Responses SSE. Build và cài tool
+1.8.0; bộ cài/GUI/console/ZIP nằm ngoài repo ở `E:\LTTSTUDIOSAPP-build\cam-cli-1.8.0`.
+Defender sạch. Installer SHA256:
+`de6d8cce71e0df159642634a49dde0cbc5c8d61cac255f30729954b6f655d6db`.
+
+**Vận hành thật đã PASS:** harness `tools/kiem_cli_van_hanh_prod.py` dùng
+tài khoản thử nghiệm, tạo key ngắn hạn trong bộ nhớ, gọi Messages/Responses
+streaming và tool call/result trên cả hai model, cắm EXE, thoát toàn bộ Claude,
+mở lại Desktop 1.52386.6, chọn từng model và gửi câu hỏi nhận 56/144. Báo cáo
+`tmp/kiem_cli_van_hanh/prod.json`: api/connector/desktop PASS; key tạo/thu hồi
+thành công, gỡ connector và phục hồi Desktop thành công. Không ghi giá trị key
+vào code/log/ảnh. Lượt chờ công suất có retry hữu hạn; request kiểm Qwen cần
+đủ output budget cho reasoning, đã sửa harness thay vì sửa hạn mức production.
+
+**Hướng dẫn nhập tay:** đọc hai ảnh, schema bản đang cài và tài liệu chính thức
+Claude/community. Trang công khai và cổng lập trình viên dùng chung template:
+Gateway `/api`, Static API key/Bearer, discovery Off, hai Model ID/Display name,
+Workspace, Apply Changes/relaunch, scope/credit, câu hỏi kiểm và xử lý lỗi.
+Bổ sung bản dịch Anh; chỉnh độ rộng bảng mobile sau khi nhìn ảnh thật.
+Tool/policy vẫn giữ. Test Desktop ở trên chạy qua tool; form nhập tay mới được
+đối chiếu schema, chưa tuyên bố nghiệm thu nhập tay end-to-end hay mọi Cowork/Code.
+
+**Lệnh/kết quả đã chạy:**
+
+- `python -m pytest -q tests/test_294_trang_cong_khai_api.py tests/test_299_khu_api_da_dich.py tests/test_303_cong_lap_trinh_vien_bo_cuc.py tests/test_290_ten_tuyen_claude_desktop.py tests/test_1233_be_mat_hai_model.py tests/test_1262_cli_operational_harness.py`: **93 passed, 1 skipped, 1 warning**, 17,26s.
+- `playwright-cli -s=ltt-manual-guide run-code --filename=tests/fixtures/check_manual_guide.js`: **PASS 4/4** Việt/Anh × 1440/390px, không tràn ngang, 0 console errors, 0 failed requests; ảnh ở `tmp/kiem_cli_van_hanh/manual-guide-*`.
+- `python tools/i18n.py bien-dich`: PASS; `check_dich_thieu.py`, `check_fuzzy_dich.py`, `check_i18n.py`: PASS, không tăng nợ dịch/i18n.
+- `python tools/build_public_api_docs.py --check`: PASS.
+- Lượt `python tools/gate.py --doi --tu ea17b6e` trước đó tự chuyển sang full vì phạm vi rộng, đã ngắt ở 11/33; **không phải bằng chứng gate xanh**.
+
+Checkpoint trước L3 cuối: H46 **98%**, phần code/GUI/vận hành đã kiểm; còn build
+frontend cuối, gate và commit. Kết quả L3 sẽ bổ sung sau khi chạy xong.
+
 ## 2026-09-14 — VẬN HÀNH THẬT: xoá bộ đo tự xây (lần hai), và L-12 được xác nhận trên tải thật
 
 ### 🔴 Sai lầm của phiên, ghi trước kết quả

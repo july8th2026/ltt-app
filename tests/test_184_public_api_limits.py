@@ -413,6 +413,8 @@ def test_the_window_slides_rather_than_resetting_on_a_boundary():
     with pytest.raises(ApiError) as raised:
         limits.enforce_request_rate(key_id=principal_key, config=config)
     assert raised.value.status == 429
+    assert raised.value.extra["scope"] == "key"
+    assert raised.value.extra["reason"] == "request_rate"
     assert raised.value.extra["retry_after"] >= 1
 
 

@@ -96,6 +96,9 @@
               {% if key.allowed_tools %}
                 <div class="dev-gioi-han"><span class="nhan">{{ _("công cụ:") }}</span>
                 {% for tool in key.allowed_tools %}<code>{{ tool }}</code>{% endfor %}</div>
+              {% else %}
+                <div class="dev-gioi-han"><span class="nhan">{{ _("công cụ:") }}</span>
+                <span>{{ _("Mọi công cụ công khai đang mở") }}</span></div>
               {% endif %}
               {% if key.allowed_ips %}
                 <div class="dev-gioi-han"><span class="nhan">{{ _("chỉ từ:") }}</span>
@@ -205,7 +208,6 @@
       <p class="ghi-chu">{{ _("Không chọn gì = phạm vi mặc định (%(scopes)s) — đủ để xem, không đủ để tiêu credit.")|format(scopes=default_scopes|join(', ')) }}</p>
     </fieldset>
 
-    {% if tools %}
       <fieldset class="dev-nhom">
         <legend>{{ _("Giới hạn theo công cụ (tùy chọn)") }}</legend>
         <div class="dev-chon">
@@ -217,8 +219,11 @@
           {% endfor %}
         </div>
         <p class="ghi-chu">{{ _("Không chọn gì = khóa dùng được mọi công cụ đang mở.") }}</p>
+        <p class="ghi-chu">{{ _("Giới hạn công cụ không cấp thêm scope. Claude/Codex cần jobs:create để gọi model; bỏ chọn mọi scope chỉ nhận quyền đọc mặc định.") }}</p>
+        {% if not tools %}
+        <p class="ghi-chu">{{ _("Hiện chưa có công cụ trong catalog công khai. Danh sách lựa chọn sẽ xuất hiện khi công cụ được mở; khóa vẫn chịu giới hạn scope và quyền tài khoản.") }}</p>
+        {% endif %}
       </fieldset>
-    {% endif %}
 
     <fieldset class="dev-nhom">
       <legend>{{ _("Thu hẹp thêm (tùy chọn)") }}</legend>

@@ -130,6 +130,11 @@ def test_cong_cu_cam_khai_dung_ten_tuyen(st):
         cam_cli = importlib.import_module("cam_cli")
     finally:
         sys.path.remove(str(goc / "tools"))
+    from platform_core.public_api import examples
     assert cam_cli.MODEL_DESKTOP in st.TUYEN_TUONG_THICH
     assert cam_cli.MODEL_DESKTOP != cam_cli.MODEL, (
         "Claude Desktop KHONG dung chung ten voi cac be mat khac - dung gop lai")
+    assert set(cam_cli.TUYEN_DESKTOP) == set(examples.DESKTOP_MODELS)
+    assert cam_cli.NHAN_DESKTOP == examples.NHAN_DESKTOP
+    assert "LTT 3.8" in cam_cli.NHAN_DESKTOP[cam_cli.MODEL_DESKTOP]
+    assert "LTT 3.5" in cam_cli.NHAN_DESKTOP[cam_cli.MODEL_DESKTOP_35]

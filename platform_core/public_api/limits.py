@@ -193,7 +193,8 @@ def enforce_request_rate(*, key_id: str, config, limits=None,
     allowed, retry = _hit(f"rpm:{key_id}", ceiling, 60.0)
     if not allowed:
         _bump("request_rate_limited")
-        raise _too_many("Too many requests for this API key.", retry)
+        raise _too_many("Too many requests for this API key.", retry,
+                        scope="key", reason="request_rate")
 
     if user_id:
         # The anti-bypass bucket. Same ceiling, wider subject: more keys buy
@@ -201,7 +202,8 @@ def enforce_request_rate(*, key_id: str, config, limits=None,
         allowed, retry = _hit(f"rpm:acct:{user_id}", ceiling, 60.0)
         if not allowed:
             _bump("request_rate_limited_account")
-            raise _too_many("Too many requests for this account.", retry)
+            raise _too_many("Too many requests for this account.", retry,
+                            scope="account", reason="request_rate")
 
 
 def enforce_create_rate(*, key_id: str, config, limits=None,
@@ -216,13 +218,15 @@ def enforce_create_rate(*, key_id: str, config, limits=None,
     allowed, retry = _hit(f"create:{key_id}", ceiling, 60.0)
     if not allowed:
         _bump("create_rate_limited")
-        raise _too_many("Too many job creations for this API key.", retry)
+        raise _too_many("Too many job creations for this API key.", retry,
+                        scope="key", reason="create_rate")
 
     if user_id:
         allowed, retry = _hit(f"create:acct:{user_id}", ceiling, 60.0)
         if not allowed:
             _bump("create_rate_limited_account")
-            raise _too_many("Too many job creations for this account.", retry)
+            raise _too_many("Too many job creations for this account.", retry,
+                            scope="account", reason="create_rate")
 
 
 # ── Layer 4: concurrency and capacity (database-backed) ───────────────────────

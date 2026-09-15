@@ -27,7 +27,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 
 ---
 
-## 1. Quyết định đã chốt (đến Q123; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91, Q116→Q120 (phần con số) đã thay)
+## 1. Quyết định đã chốt (đến Q126; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91, Q116→Q120 (phần con số), Q125→Q126 đã thay)
 
 | # | Vấn đề | Quyết định | Lý do / hệ quả |
 |---|---|---|---|
@@ -141,6 +141,9 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 | Q114 | Nhiều cửa API cùng tranh một model/GPU phải xếp hàng ở đâu? | **Một admission plane dùng chung, nhưng chỉ ASYNC_JOB có hàng đợi bền.** `/api/v1/jobs` tiếp tục dùng `jobs` làm nguồn chân lý duy nhất. SYNC_BILLED và STREAM giữ nguyên hợp đồng Q106/Q107 là không tạo job: chúng xin một lease thực thi từ cùng admission plane và trả `429 + Retry-After` trước khi giữ tiền nếu chưa có slot. Tài nguyên do tool khai bằng metadata, không suy từ slug. Gateway máy B vẫn giữ `max_dong_thoi=1` như hàng rào cuối, không làm queue. | Biến sync/stream thành job ngầm sẽ phá hình dạng SDK và tạo queue thứ hai; để chúng gọi thẳng lại cho phép bypass async. Lease thực thi giải đúng giao điểm: cả ba đường phải sở hữu cùng một slot trước provider, nhưng `jobs` vẫn là queue duy nhất có trạng thái/hủy/fairness. Với async, global/resource/account cap phải được kiểm dưới khóa transaction rồi insert job và hold credit trong chính transaction đó; `resource_wait` không tiêu attempt. Nếu worker chết sau khi provider đã nhận mà chưa có kết quả chắc chắn thì đánh dấu `ambiguous_provider`, không tự retry side effect mù. Hợp đồng chi tiết: `docs/VLM_NOI_BO/ADMISSION_QUEUE_LTT_LLM.md`. |
 | Q122 | Thứ tự phục vụ trong hàng đợi job thống nhất | **Ưu tiên tuyệt đối, không cắt ngang: `INTERNAL > EXTERNAL` chỉ giữa các job đang chờ và đủ điều kiện trên cùng tài nguyên; job đã admitted/running/provider-dispatched không bị dừng. Trong mỗi lớp vẫn fair-share theo account, aging rồi FIFO ổn định.** Chỉ có một hàng đợi bền PostgreSQL `jobs`, một ranking canonical dùng cho cả `claim()` lẫn queue snapshot/ETA. Lớp ưu tiên do ingress đáng tin cậy gắn; body/header công khai không có quyền nâng lớp. | Runtime nội bộ cần được phục vụ trước các lượt API đang chờ nhưng không được phá Q114 hay làm mất công việc đã bắt đầu. Hai lớp là đủ cho V1; không thêm broker/queue thứ hai. Job cũ hoặc metadata thiếu/lạ được hiểu là `EXTERNAL`; ETA thiếu bằng chứng trả `null`; external starvation được đo/cảnh báo chứ không tự vượt internal. |
 | Q123 | Model nhà: một model hay nhiều, và ai được ở trên card nào | **HAI model nhà bán ra, trên HAI card của máy B, thường trú cùng lúc: `ltt-3.8` (RTX 3090) và `ltt-3.5` (RTX 5060 Ti). Khách CHỌN model; giá đi THEO MODEL. Cắt hẳn ba tên cũ `ltt_llm`, `ltt_llm_vision`, `qwen38-vision` — chúng trả `model_not_found`, không âm thầm rơi về mặc định. Việc LLM **nội bộ** của nền tảng đi `ltt-3.5` theo bản khai của từng app (`manifest.model_llm_noi_bo`), không đi mặc định của khách. RTX 3090 do MỘT trọng tài chia giữa LLM và model ảnh: xả trước, không bao giờ giết việc đang chạy.** ⛔ **Không con số nào của quyết định này nằm trong tài liệu này** — mỗi con số có đúng một nguồn chân lý trong mã. Toàn văn, lý do từng nhánh và mọi phép đo: **`### Q123` bên dưới**, `docs/ltt_llm_dual/DECISION_LOG.md` (D01–D09, L-12…L-18), `docs/ltt_llm_dual/10_BENCHMARK_P3.md`; vận hành ở `docs/ltt_llm_dual/RUNBOOK.md`. | Ba lý do cơ học, chi tiết ở `### Q123`: (a) một model 27B **không vừa** card 16 GB nên "một model, hai card" là bất khả, còn "hai hồ sơ của cùng một model" đã thử và **đã gỡ**; (b) job ảnh **giữ** 3090 rồi **chờ** một model chỉ nạp được khi 3090 rảnh là một **vòng chờ kín** — không log, không mã lỗi, job treo tới hết trần thời gian; (c) `unload` thủ công của llama-swap **không** drain, nên trọng tài phải **xả trước**. **Đổi lại:** một bảng trạng thái (`gpu_residency`), một luật admission mới (`CHO_RESIDENCY`), và một **thứ tự deploy bắt buộc** (`llama-swap.yaml` → cổng máy B → máy A). |
+| Q124 | Hai model nhà xuất hiện thế nào trong Codex/Claude | **Cả `ltt-3.8` và `ltt-3.5` đều là lựa chọn vận hành được trên Codex CLI/VS Code, Claude Code/VS Code và Claude Desktop.** `ltt-3.8` là mặc định **Mạnh**; `ltt-3.5` là **Nhanh/tiết kiệm** cho hỏi code, sửa nhỏ và tác vụ phụ. Desktop hiển thị **LTT 3.8 (Mạnh)** và **LTT 3.5 (Nhanh)** bằng `labelOverride`; trường `name` giữ hai mã tuyến production `ltt-llm-claude-compat` / `ltt-llm-claude-compat-35` để qua bộ lọc client. Codex dùng catalog hai model. Claude Code chọn model qua connector; Opus/Sonnet/Haiku/subagent vẫn ghim vào model đã chọn và tối đa một subagent, không tự đi model ngoài LTT. | Qwen công bố Qwen3.5-9B có LiveCodeBench v6 65,6, BFCL-V4 66,1, ngữ cảnh gốc 262.144, parser `qwen3_coder` cho tool use và hướng dẫn riêng cho precise coding; vì vậy nó đủ tư cách làm lựa chọn code/agent. Nó vẫn là 9B Q6_K trên 5060 Ti, còn 3.8 là 27B trên 3090, nên không quảng bá hai model ngang nhau. `labelOverride` là trường picker thật của Desktop 1.52386.6, nên tên sản phẩm rõ ràng mà không cần thêm alias backend hay deploy chỉ để đổi nhãn. Quyết định cũng đóng lỗi UX đang có: registry chỉ phát một tuyến theo lần cắm, làm model kia biến mất khỏi picker dù backend bán cả hai. Nguồn ngoài: model card chính thức `Qwen/Qwen3.5-9B`; bằng chứng máy nhà: `docs/ltt_llm_dual/10_BENCHMARK_P3.md`. |
+| ~~Q125~~ | ~~Claude Code Local qua gateway xử lý phiên dài, MCP và permission mode thế nào~~ | ~~Preset 9 biến, gồm `CLAUDE_CODE_DISABLE_1M_CONTEXT=1`.~~ **ĐÃ THAY bởi Q126 (2026-09-15).** | Rà soát toàn bộ bảng biến chính thức của Claude Code 2.1.270 cho thấy biến 1M là dư với mã LTT không có `[1m]`, trong khi preset cũ thiếu chốt ép model cho mọi subagent và chốt cấm subagent lồng nhau. Giữ Q125 làm bằng chứng vì sao phiên 98.678 token từng rơi sang `stream:false`; Q126 thay danh sách cấu hình. |
+| Q126 | Một cấu hình Claude Desktop/Code chuẩn, không bổ sung nhỏ giọt | **Gateway:** Bearer, `/api`, stream idle 600, discovery/1M/cost/Tool Search tắt; hai tuyến cố định, LTT 3.8 gắn tier `opus`, LTT 3.5 gắn `haiku`, cả hai là default của tier. **Local env:** đúng 10 biến từ `examples.claude_local_env()`; preset đổi model chỉ thay `MAX_CONTEXT` và `AUTO_COMPACT`. Bỏ `DISABLE_1M_CONTEXT`; thêm `MAX_SUBAGENT_SPAWN_DEPTH=1` và `SUBAGENT_MODEL_FORCE=1` nhưng không đặt `SUBAGENT_MODEL` trong Desktop, để mọi agent phụ theo model chính đang chọn. **CLI/VS Code:** ghim thêm `default`/`fable`/haiku/sonnet/opus và `SUBAGENT_MODEL` về đúng profile LTT. | Tài liệu chính thức 15/09/2026: family tier là cơ chế gateway cho bare alias/background; `SUBAGENT_MODEL_FORCE` từ 2.1.257 ép cả Explore/Plan/workflow; depth 1 tắt nesting; mã custom không có `[1m]` nhận trực tiếp `MAX_CONTEXT`, nên biến tắt 1M không tham gia. LTT không nhận `tool_reference`, không khai capability effort của tên custom và đã đo `reasoning_effort=none` làm sụp chất lượng, nên không bật Tool Search, `ALWAYS_ENABLE_EFFORT` hay `MAX_THINKING_TOKENS`. |
 ---
 
 ### Q115 — Public input cap sau benchmark Q4 (2026-08-28)
@@ -496,6 +499,28 @@ một nguồn chân lý, và một bảng chép tay ở đây đã nói sai **n�
 Toàn văn quyết định + mọi phép đo: `docs/ltt_llm_dual/DECISION_LOG.md` (D01–D09,
 L-12…L-18) và `docs/ltt_llm_dual/10_BENCHMARK_P3.md`. Vận hành, điểm lùi từng pha:
 `docs/ltt_llm_dual/RUNBOOK.md`.
+
+### Q124 — Hai model LTT trên các client (2026-09-14)
+
+Quyết định có hiệu lực nằm ở dòng Q124 trong bảng mục 1. Bảng audit, cách ghim
+model/subagent và bằng chứng vận hành từng client nằm ở
+`docs/LTT_CLI_COMPAT_DECISIONS.md`; hướng dẫn khách ở
+`docs/PUBLIC_API/HUONG_DAN_CAM_CLI.md`. Claude Desktop dùng hai mã tuyến và nhãn
+hiển thị riêng; Codex dùng tên sản phẩm và catalog metadata.
+
+### Q125 — Claude Code Local qua gateway (2026-09-15)
+
+Đã thay bởi Q126 trong cùng ngày. Giữ mục này để truy nguyên phép đo lỗi
+non-streaming và context; không dùng lại danh sách 9 biến của nó.
+
+### Q126 — Ma trận cấu hình Claude duy nhất (2026-09-15)
+
+Danh sách máy đọc được nằm ở `platform_core/public_api/examples.py`:
+`claude_local_env()` cho Desktop Local và `claude_model_env()` cho CLI/VS Code.
+Bảng giải thích, giá trị không được thêm và nguồn kiểm chứng nằm ở
+`docs/PUBLIC_API/CLAUDE_CONFIG_MATRIX.md`; trang khách lấy trực tiếp dữ liệu đó
+qua `be_mat_cam()`. Tool Search chỉ được đổi sang bật sau khi cổng có phép thử
+`tool_reference` thật.
 
 ## 2. Ràng buộc bất biến
 

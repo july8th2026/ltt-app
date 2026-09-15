@@ -1711,7 +1711,6 @@ msgstr ""
 msgid "Dùng lại Idempotency-Key"
 msgstr "Reused Idempotency-Key"
 
-
 #: server/templates/dev_keys.html:24
 msgid "Dùng lần cuối"
 msgstr "Last used"
@@ -2086,7 +2085,6 @@ msgid "Giới hạn khóa theo IP/CIDR và đặt hạn dùng khi giao cho bên 
 msgstr ""
 "Restrict a key by IP/CIDR and give it an expiry when you hand it to "
 "a third party."
-
 
 #: server/templates/dev_keys.html:135
 msgid "Giới hạn theo công cụ (tùy chọn)"
@@ -2603,11 +2601,9 @@ msgstr "Optional"
 msgid "Không chọn = chỉ gửi cảnh báo ở 50%, 80% và 100%."
 msgstr "Leave unchecked = only send alerts at 50%, 80% and 100%."
 
-
 #: server/templates/dev_keys.html:142
 msgid "Không chọn gì = khóa dùng được mọi công cụ đang mở."
 msgstr "Select nothing = the key can use every tool that is open."
-
 
 #: server/templates/dev_keys.html:131
 #, python-format
@@ -3142,7 +3138,6 @@ msgstr ""
 msgid "Live"
 msgstr "Live"
 
-
 #: server/templates/dev_keys.html:105
 msgid "Live — gọi nhà cung cấp thật, trừ credit thật"
 msgstr "Live — calls the real provider, spends real credit"
@@ -3543,7 +3538,6 @@ msgstr "Support ID"
 #: server/templates/dev_keys.html:21
 msgid "Mã khóa"
 msgstr "Key id"
-
 
 #: server/templates/dev_keys.html:10
 msgid "Mã khóa công khai:"
@@ -4424,7 +4418,6 @@ msgstr ""
 msgid "Phạm vi"
 msgstr "Scopes"
 
-
 #: server/templates/dev_keys.html:123
 msgid "Phạm vi (scope)"
 msgstr "Scopes"
@@ -5005,7 +4998,6 @@ msgstr "Admin telemetry"
 msgid "Test"
 msgstr "Test"
 
-
 #: server/templates/dev_keys.html:109
 msgid "Test — kết quả mẫu, không gọi nhà cung cấp, không trừ credit"
 msgstr "Test — sample results, no provider call, no credit spent"
@@ -5146,7 +5138,6 @@ msgstr "Revoke"
 #: server/templates/dev_settings.html:8
 msgid "Thu hồi có hiệu lực ở request kế tiếp và không đảo ngược được."
 msgstr "Revocation takes effect on the next request and cannot be undone."
-
 
 #: server/templates/dev_keys.html:74
 msgid ""
@@ -5517,7 +5508,6 @@ msgstr ""
 "Unknown fields are rejected, not ignored: a misspelled parameter "
 "that gets silently dropped is how a customer pays for a job that did "
 "the wrong thing."
-
 
 #: apps/agent/templates/agent_run.html:10
 #: apps/qualitylab/templates/qualitylab.html:61 server/templates/dev_jobs.html:11
@@ -6849,7 +6839,6 @@ msgid ""
 "này."
 msgstr "read operations only; no tool spends credit this way."
 
-
 #: server/templates/dev_keys.html:47
 msgid "chỉ từ:"
 msgstr "only from:"
@@ -6993,7 +6982,6 @@ msgstr "paste a request_id from a response or a support ticket"
 #: server/templates/dev_log_detail.html:21
 msgid "dùng lại Idempotency-Key cũ"
 msgstr "reused an existing Idempotency-Key"
-
 
 #: server/templates/dev_keys.html:11
 msgid "dùng mã này khi cần hỗ trợ; đừng gửi chuỗi bí mật ở trên cho ai."
@@ -16445,3 +16433,384 @@ msgstr "Leave blank to use the running configuration. The three checkboxes above
 #: apps/transcript/templates/transcript.html:27
 msgid "để trống = tự nhận"
 msgstr "blank = auto-detect"
+
+
+#: server/templates/_cam_chon.html:264
+msgid "1M context và giá ước tính đều tắt"
+msgstr "1M context and estimated costs are off"
+
+#: server/templates/_cam_chon.html:232
+msgid "Bảng preset theo model"
+msgstr "Presets by model"
+
+#: server/templates/_cam_chon.html:216
+msgid "Bấm gửi im lặng"
+msgstr "Send does nothing"
+
+#: server/templates/_cam_chon.html:179
+msgid "Bấm tên cấu hình ở góc trên phải → New configuration, đặt tên"
+msgstr "Click the configuration name at the top right → New configuration, and name it"
+
+#: server/templates/_cam_chon.html:216
+msgid "Bật Allow Chat, chọn Chat và kiểm profile Gateway đang áp dụng."
+msgstr "Enable Allow Chat, select Chat and check the applied Gateway profile."
+
+#: server/templates/_cam_chon.html:263
+msgid "Catalog công khai dùng tên sản phẩm ltt-3.8 và ltt-3.5; Claude Desktop cần hai mã tuyến tương thích ở trên. Danh sách cố định ngăn client tự thay chúng và cho phép đặt nhãn dễ đọc."
+msgstr "The public catalog uses product IDs ltt-3.8 and ltt-3.5. Claude Desktop needs the two compatibility route IDs above. A fixed list keeps those IDs and allows readable display labels."
+
+#: server/templates/_cam_chon.html:162
+msgid "Catalog và profile ghim model cho subagent, giới hạn một subagent đồng thời, một retry và timeout stream 600 giây. Không dùng tên tuyến Claude Desktop trong Codex."
+msgstr "The catalog and profiles pin the subagent model, limit concurrent subagents to one, allow one request retry, and set a 600-second stream timeout. Use the Codex model IDs shown here."
+
+#: server/templates/_cam_chon.html:166
+msgid "Chưa xác minh một bảng Gateway nhập tay như Claude trong Codex Desktop 26.721.11231.0. Hướng dẫn này dành cho CLI và cấu hình tiện ích; không dán khóa LTT vào ô OpenAI API key hoặc mục MCP/Connectors của Desktop."
+msgstr "A manual Gateway form like Claude's has not been verified in Codex Desktop 26.721.11231.0. This guide covers CLI and extension configuration; do not paste the LTT key into Desktop's OpenAI API key field or MCP/Connectors settings."
+
+#: server/templates/_cam_chon.html:237
+msgid "Chỉ LTT 3.5"
+msgstr "LTT 3.5 only"
+
+#: server/templates/_cam_chon.html:212
+msgid "Chọn Gateway auth scheme = Bearer, không chọn x-api-key; kiểm khóa LTT còn hạn và đã áp dụng cấu hình."
+msgstr "Set Gateway auth scheme to Bearer, not x-api-key; check that the LTT key is unexpired and the configuration has been applied."
+
+#: server/templates/_cam_chon.html:154
+msgid "Chọn model và kiểm tra"
+msgstr "Select a model and verify"
+
+#: server/templates/_cam_chon.html:158
+msgid "Chọn một lệnh: ltt dùng LTT 3.8 (Mạnh), ltt-fast dùng LTT 3.5 (Nhanh). Trong phiên mới, dùng /status kiểm tra model/provider rồi hỏi Calculate 6 * 7. Reply with only the number. Cần nhận 42; kiểm thêm Logs/Usage để xác nhận model và lượt tính credit."
+msgstr "Choose one command: ltt uses LTT 3.8 (Strong), and ltt-fast uses LTT 3.5 (Fast). In a new session, use /status to check the model/provider, then ask Calculate 6 * 7. Reply with only the number. Expect 42; also check Logs/Usage to confirm the model and credit charge."
+
+#: server/templates/_cam_chon.html:245
+msgid "Claude gửi ngữ cảnh đã nạp: hướng dẫn hệ thống, lịch sử, tệp, kết quả/schema công cụ và ảnh; không gửi cố định 200K hay 1M mỗi lượt. Output/reasoning cũng chiếm chỗ. Nhiều kết quả công cụ có thể làm vượt trần trước lần nén kế tiếp; chia nhỏ tệp và giảm công cụ không dùng."
+msgstr "Claude sends loaded context: system instructions, history, files, tool results/schemas, and images. Each request does not contain a fixed 200K or 1M tokens. Output/reasoning also need space. Multiple tool results can exceed the limit before the next compaction check; split large files and remove unused tools."
+
+#: server/templates/_cam_chon.html:163
+msgid "Codex trong VS Code và ứng dụng Desktop"
+msgstr "Codex in VS Code and the Desktop app"
+
+#: server/templates/_cam_chon.html:200
+msgid "Câu hỏi"
+msgstr "Question"
+
+#: server/templates/_cam_chon.html:200
+msgid "Câu trả lời cần thấy"
+msgstr "Expected answer"
+
+#: server/templates/_cam_chon.html:46
+msgid "CẮM TAY TRONG APP"
+msgstr "MANUAL IN-APP SETUP"
+
+#: server/templates/_cam_chon.html:133
+msgid "Cắm tay bằng custom provider và tệp cấu hình; không cần tool LTT. Hướng dẫn đối chiếu với Codex CLI 0.145.0 đang cài trên máy."
+msgstr "Connect manually using a custom provider and configuration files. No LTT installer is required. This guide was checked against the installed Codex CLI 0.145.0."
+
+#: server/templates/_cam_chon.html:174
+msgid "Cắm tay trên Claude Desktop 1.52386.6"
+msgstr "Manual setup on Claude Desktop 1.52386.6"
+
+#: server/templates/_cam_chon.html:159
+msgid "Cửa sổ ngữ cảnh"
+msgstr "Context window"
+
+#: server/templates/_cam_chon.html:262
+msgid "Danh sách model cố định, không auto-discovery"
+msgstr "Fixed model list with discovery off"
+
+#: server/templates/_cam_chon.html:227
+msgid "Default to 1M context chỉ chọn biến thể mặc định; Offer 1M-context variant khai báo model hỗ trợ 1M. LTT không hỗ trợ 1M nên giữ cả hai tắt. Code có thể vẫn giả định 200K cho tên gateway; xem vòng Usage cạnh model hoặc /context để kiểm, không dựa vào Test connection."
+msgstr "Default to 1M context selects the default variant; Offer 1M-context variant asserts 1M support. LTT does not support 1M, so keep both off. Code may still assume 200K for a gateway name; check the Usage ring beside the model or /context. Test connection does not verify the window."
+
+#: server/templates/_cam_chon.html:234
+msgid "Dấu hiệu trong Context"
+msgstr "Expected Context display"
+
+#: server/templates/_cam_chon.html:189
+msgid "Gateway auth scheme phải chọn Bearer. LTT nhận Authorization: Bearer <API_KEY>; chọn x-api-key gửi khóa bằng header khác nên bị 401. Không cần tạo lại khóa chỉ để đổi lựa chọn này. Sau khi đổi, Test connection rồi Apply Changes và mở lại ứng dụng."
+msgstr "Set Gateway auth scheme to Bearer. LTT reads Authorization: Bearer <API_KEY>; selecting x-api-key sends the key in a different header and causes 401. Changing this setting does not require a new key. Test connection, then Apply Changes and relaunch the app."
+
+#: server/templates/_cam_chon.html:218
+msgid "Giảm nội dung hoặc mở cuộc trò chuyện mới; không bật 1M context."
+msgstr "Reduce the content or start a new conversation; do not enable 1M context."
+
+#: server/templates/dev_keys.html:222
+msgid "Giới hạn công cụ không cấp thêm scope. Claude/Codex cần jobs:create để gọi model; bỏ chọn mọi scope chỉ nhận quyền đọc mặc định."
+msgstr "Tool restrictions do not grant additional scopes. Claude/Codex need jobs:create to call a model; leaving every scope unselected grants only the default read scopes."
+
+#: server/templates/_cam_chon.html:266
+msgid "Giới hạn hỗ trợ"
+msgstr "Support limits"
+
+#: server/templates/_cam_chon.html:198
+msgid "Gọi thử từng model"
+msgstr "Test each model"
+
+#: server/templates/_cam_chon.html:241
+msgid "Hai chốt agent áp dụng cùng lúc: MAX_CONCURRENT_SUBAGENTS=1 chỉ cho một agent phụ chạy đồng thời; MAX_SUBAGENT_SPAWN_DEPTH=1 cấm agent phụ sinh thêm tầng. SUBAGENT_MODEL_FORCE=1 mà không đặt SUBAGENT_MODEL trong môi trường Desktop sẽ ép agent phụ kế thừa đúng model chính đang chọn trong picker."
+msgstr "The three agent controls work together: MAX_CONCURRENT_SUBAGENTS=1 permits one concurrent subagent; MAX_SUBAGENT_SPAWN_DEPTH=1 prevents nested subagents. SUBAGENT_MODEL_FORCE=1, without SUBAGENT_MODEL in the Desktop environment, forces subagents to inherit the main model selected in the picker."
+
+#: server/templates/_cam_chon.html:265
+msgid "Hai model LTT không công bố cửa sổ 1M. Claude cũng mặc định tính USD theo bảng giá Anthropic, trong khi LTT tính theo credit riêng; bật hai mục này sẽ làm giao diện hứa sai."
+msgstr "Neither LTT model advertises a 1M context window. Claude's default USD estimate uses Anthropic pricing, while LTT uses its own credit pricing. Enabling these options would show incorrect capabilities or costs."
+
+#: server/templates/dev_keys.html:224
+msgid "Hiện chưa có công cụ trong catalog công khai. Danh sách lựa chọn sẽ xuất hiện khi công cụ được mở; khóa vẫn chịu giới hạn scope và quyền tài khoản."
+msgstr "The public catalog currently has no tools. Tool choices appear when tools are exposed; keys remain subject to scopes and account permissions."
+
+#: server/templates/_cam_chon.html:251
+msgid "Hành vi với LTT Gateway"
+msgstr "Behavior with the LTT Gateway"
+
+#: server/templates/_cam_chon.html:253
+msgid "Hỏi trước khi sửa tệp hoặc chạy lệnh."
+msgstr "Prompts before editing files or running commands."
+
+#: server/templates/_cam_chon.html:213
+msgid "Khóa đã xác thực nhưng thiếu scope jobs:create, bị giới hạn công cụ hoặc tài khoản chưa có quyền model. Không chọn công cụ nghĩa là mọi công cụ công khai đang mở, không tự cấp mọi scope."
+msgstr "The key authenticated but lacks jobs:create, has a tool restriction, or the account lacks model access. Leaving tools unselected allows all currently exposed public tools; it does not grant every scope."
+
+#: server/templates/_cam_chon.html:256
+msgid "Không hỏi quyền. Bật Settings → Claude Code → Allow bypass permissions mode, rồi chọn Bypass trước câu đầu tiên của một phiên Local mới."
+msgstr "Runs without permission prompts. Enable Settings → Claude Code → Allow bypass permissions mode, then select Bypass before the first prompt in a new Local session."
+
+#: server/templates/_cam_chon.html:255
+msgid "Không khả dụng với third-party provider; thiếu mục này không phải lỗi cấu hình LTT."
+msgstr "Unavailable with third-party providers; its absence is not an LTT configuration error."
+
+#: server/templates/_cam_chon.html:242
+msgid "Không thêm CLAUDE_CODE_DISABLE_1M_CONTEXT, CLAUDE_AUTOCOMPACT_PCT_OVERRIDE, MAX_THINKING_TOKENS, CLAUDE_CODE_ALWAYS_ENABLE_EFFORT, CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY, API_TIMEOUT_MS hoặc CLAUDE_STREAM_IDLE_TIMEOUT_MS. Chúng hoặc dư với mã LTT không có [1m], ghi đè ngưỡng đã tính, có thể đổi chất lượng suy luận, hoặc trùng trường Stream idle timeout 600 giây trong Gateway."
+msgstr "Do not add CLAUDE_CODE_DISABLE_1M_CONTEXT, CLAUDE_AUTOCOMPACT_PCT_OVERRIDE, MAX_THINKING_TOKENS, CLAUDE_CODE_ALWAYS_ENABLE_EFFORT, CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY, API_TIMEOUT_MS, or CLAUDE_STREAM_IDLE_TIMEOUT_MS. They are redundant for LTT IDs without [1m], override calculated limits, may alter reasoning quality, or duplicate the Gateway's 600-second Stream idle timeout field."
+
+#: server/templates/_cam_chon.html:229
+msgid "Không thấy ô môi trường trong phiên đang chạy: bấm New ở thanh bên để mở màn hình tạo phiên. Nút Local nằm trong vùng soạn của màn hình này; mở danh sách, rê vào Local rồi bấm bánh răng. Lưu biến trước khi bắt đầu phiên mới; phiên cũ không tự nhận giới hạn mới."
+msgstr "If the environment dropdown is absent in a running session, click New in the sidebar to open the new-session screen. Its prompt area contains Local; open the dropdown, hover over Local, and click the gear. Save variables before starting the new session; existing sessions do not automatically inherit the new limit."
+
+#: server/templates/_cam_chon.html:211
+msgid "Kiểm Gateway base URL kết thúc ở /api; không thêm /v1."
+msgstr "Check that Gateway base URL ends in /api; do not add /v1."
+
+#: server/templates/_cam_chon.html:214
+msgid "Kiểm credit và hạn mức chi tiêu của khóa/tài khoản."
+msgstr "Check credit and the key/account spending limits."
+
+#: server/templates/_cam_chon.html:237
+msgid "LTT 3.8 hoặc đổi qua lại hai model"
+msgstr "LTT 3.8 or switching between both models"
+
+#: apps/ltt_llm/manifest.py:190
+msgid "LTT LLM — model ngôn ngữ của nhà"
+msgstr "LTT LLM — our in-house language model"
+
+#: server/templates/_cam_chon.html:260
+msgid "LTT đã có tiền kiểm theo model, admission theo suất và pool token, phòng chờ hữu hạn và SSE heartbeat. Ba suất chia sẻ pool KV, không phải ba request 170K cùng chạy. 413 là request quá dài; 429 là hạn mức hoặc công suất. Timeout 600 giây không cấp thêm bộ nhớ; không tăng retry hoặc concurrency để chữa lỗi token."
+msgstr "LTT already has per-model preflight checks, admission by slots and token pool, a bounded waiting room, and SSE heartbeats. Three slots share a KV pool; they do not mean three 170K requests can run together. 413 means excessive request size; 429 means a rate or capacity limit. A 600-second timeout adds no memory; increasing retries or concurrency does not fix token limits."
+
+#: server/templates/_cam_chon.html:267
+msgid "LTT đã kiểm thực tế Messages streaming, chọn hai model, tool call và tool result qua tool trên bản 1.52386.6. Hướng dẫn nhập form được đối chiếu với schema cùng bản. Prompt caching Anthropic và toàn bộ chức năng Cowork/Code chưa được nghiệm thu từ phép thử Chat này."
+msgstr "LTT tested Messages streaming, both model selections, tool calls and tool results using the tool on Desktop 1.52386.6. The manual fields match that version's schema. This Chat test does not certify Anthropic prompt caching or all Cowork/Code features."
+
+#: server/templates/_cam_chon.html:135
+msgid "Lưu catalog JSON bên dưới vào thư mục .codex của người dùng. Trong cả hai profile, thay YOUR_WINDOWS_USER bằng tên thư mục người dùng thật; model_catalog_json phải là đường dẫn tuyệt đối tới tệp này. TOML không tự thay %USERPROFILE%. Trên macOS/Linux, dùng đường dẫn tuyệt đối tương ứng."
+msgstr "Save the JSON catalog below in your user .codex directory. In both profiles, replace YOUR_WINDOWS_USER with your actual user directory name; model_catalog_json must be the absolute path to this file. TOML does not expand %USERPROFILE%. On macOS/Linux, use the corresponding absolute path."
+
+#: server/templates/_cam_chon.html:155
+msgid "Lệnh nhập khóa ở trên che ký tự và chỉ giữ khóa trong cửa sổ PowerShell hiện tại. Chạy Codex từ chính cửa sổ đó; không ghi khóa bằng setx trên dòng lệnh để tránh lưu vào lịch sử."
+msgstr "The key prompt above masks characters and keeps the key only in the current PowerShell window. Launch Codex from that same window; avoid putting the key in a setx command that could enter shell history."
+
+#: server/templates/_cam_chon.html:246
+msgid "MCP và lỗi non-streaming trong phiên dài"
+msgstr "MCP and non-streaming failures in long sessions"
+
+#: server/templates/_cam_chon.html:200
+msgid "Model chọn"
+msgstr "Selected model"
+
+#: apps/ltt_llm/manifest.py:192
+msgid "Model ngôn ngữ chạy trên máy nhà: coding, chat, agent, tóm tắt, đọc ảnh. Bán qua API cho khách lập trình."
+msgstr "An in-house language model for coding, chat, agents, summarization, and image understanding, available to developers through the API."
+
+#: server/templates/_cam_chon.html:221
+msgid "Muốn quay về Gateway khác: chọn profile cũ → Apply Changes rồi mở lại. Muốn dùng Claude.ai: tắt Disable Claude.ai sign-in và chọn đăng nhập Claude.ai. Thu hồi khóa LTT khi thôi dùng."
+msgstr "To return to another Gateway, select the old profile → Apply Changes and reopen. To use Claude.ai, turn Disable Claude.ai sign-in off and choose Claude.ai sign-in. Revoke the LTT key when you stop using it."
+
+#: server/templates/_cam_chon.html:234
+msgid "Môi trường Local"
+msgstr "Local environment"
+
+#: server/templates/dev_keys.html:101
+msgid "Mọi công cụ công khai đang mở"
+msgstr "All currently exposed public tools"
+
+#: server/templates/_cam_chon.html:142
+msgid "Mở JSON catalog để sao chép toàn bộ"
+msgstr "Expand the JSON catalog to copy the complete file"
+
+#: server/templates/_cam_chon.html:134 server/templates/_cam_chon.html:175
+msgid "Mở Khóa API"
+msgstr "Open API Keys"
+
+#: server/templates/_cam_chon.html:175
+msgid "Mở Khóa API, tạo khóa live còn hạn với tools:read và jobs:create; tài khoản cần có credit và quyền gọi model. Sao chép khóa khi nó hiện một lần."
+msgstr "Open API Keys and create an unexpired live key with tools:read and jobs:create. Your account needs credit and permission to use the model. Copy the key when it is shown once."
+
+#: server/templates/_cam_chon.html:192
+msgid "Mở Workspace: bật Allow Chat và bật Disable Claude.ai sign-in để cấu hình Gateway được chọn ổn định."
+msgstr "Open Workspace: enable Allow Chat and Disable Claude.ai sign-in so the Gateway configuration remains selected."
+
+#: server/templates/_cam_chon.html:207
+msgid "Mở cuộc trò chuyện mới cho mỗi phép thử, kiểm model ở picker trước khi gửi. Đối chiếu lượt gọi và credit trong Logs/Usage của cổng API LTT. Test connection xanh chưa thay cho kiểm câu trả lời thật."
+msgstr "Start a new conversation for each test and check the picker before sending. Check the request and credit in Logs/Usage in the LTT API portal. A passing Test connection does not replace checking an actual answer."
+
+#: server/templates/_cam_chon.html:178
+msgid "Mở menu ☰ → Help → Troubleshooting → Enable Developer Mode. Sau đó mở Developer → Configure Third-Party Inference."
+msgstr "Open menu ☰ → Help → Troubleshooting → Enable Developer Mode. Then open Developer → Configure Third-Party Inference."
+
+#: server/templates/_cam_chon.html:159
+msgid "Ngưỡng nén"
+msgstr "Compaction threshold"
+
+#: server/templates/_cam_chon.html:244
+msgid "Nếu Usage còn 200K thì giới hạn chưa có hiệu lực. Giữ auto-compaction bật; dùng /compact trước khi đọc tệp lớn. Biến Local theo tài liệu áp dụng cho Code local sessions; chưa nghiệm thu tác dụng trên Chat/Cowork, nên không coi phép thử Chat ngắn là bằng chứng bảo vệ phiên dài."
+msgstr "If Usage still shows 200K, the limit has not applied. Keep auto-compaction enabled; use /compact before reading large files. The documented Local variables apply to Code local sessions; their effect on Chat/Cowork has not been accepted, so a short Chat test does not prove long-session protection."
+
+#: server/templates/_cam_chon.html:208
+msgid "Nếu chưa gọi được"
+msgstr "Troubleshooting"
+
+#: server/templates/_cam_chon.html:176
+msgid "Nếu form hiện Organization-managed hoặc các ô bị khóa, policy đang quản lý ứng dụng. Dùng Gỡ ra trong tool nếu đó là cấu hình LTT do tool cắm; policy của tổ chức khác cần người quản lý thay đổi trước khi nhập tay."
+msgstr "If the form says Organization-managed or its fields are locked, a policy controls the app. Use Remove in the tool for an LTT policy installed by the tool. A policy from another organization must be changed by its administrator before manual setup."
+
+#: server/templates/_cam_chon.html:167
+msgid "Nếu thiếu model metadata: kiểm đường dẫn và JSON catalog. Nếu 401: kiểm biến LTT_API_KEY có trong tiến trình hiện tại. Nếu 403: kiểm jobs:create và giới hạn công cụ. Nếu 413: dùng đúng profile theo model hoặc mở phiên mới. Muốn gỡ: xóa khối provider ltt và hai tệp profile/catalog do mình thêm; phục hồi bản sao lưu nếu đã đổi cấu hình gốc."
+msgstr "Missing model metadata: check the catalog path and JSON. For 401, check that the current process has LTT_API_KEY. For 403, check jobs:create and tool restrictions. For 413, use the correct model profile or start a new session. To disconnect, remove the ltt provider block and the profiles/catalog you added; restore your backup if you changed root configuration."
+
+#: server/templates/_cam_chon.html:259
+msgid "Nếu đổi Bypass trong phiên đã chạy và thấy Permission mode couldn't be changed, tạo phiên Local mới. Nếu phiên mới vẫn không có Bypass, kiểm permissions.disableBypassPermissionsMode có giá trị disable ở user, project hoặc managed settings."
+msgstr "If changing to Bypass in an active session shows Permission mode couldn't be changed, start a new Local session. If Bypass is still absent there, check whether permissions.disableBypassPermissionsMode is set to disable in user, project, or managed settings."
+
+#: server/templates/_cam_chon.html:194
+msgid "Nếu ứng dụng chỉ thu nhỏ xuống khay hoặc model cũ còn hiện, thoát hẳn Claude rồi mở lại. Chọn lần lượt LTT 3.8 (Mạnh) và LTT 3.5 (Nhanh) trong picker để gọi thử."
+msgstr "If the app only minimizes to the tray or still shows the old model, fully quit Claude and reopen it. Select both LTT entries in the picker in turn to test them."
+
+#: server/templates/_cam_chon.html:249
+msgid "Permission mode trên Claude Desktop"
+msgstr "Permission modes in Claude Desktop"
+
+#: server/templates/_cam_chon.html:215
+msgid "Picker rỗng / model cũ"
+msgstr "Empty picker / old model"
+
+#: server/templates/_cam_chon.html:193
+msgid "Quay lại Connection, bấm Test connection. Khi báo đạt, bấm Apply Changes → Relaunch now."
+msgstr "Return to Connection and click Test connection. After it passes, click Apply Changes → Relaunch now."
+
+#: server/templates/_cam_chon.html:247
+msgid "Sau khi một stream lỗi, Claude Code có thể thử lại bằng stream=false. CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK=1 giữ lần thử lại ở đường streaming, đúng với gateway có SSE heartbeat. Ngày 15/09, một phiên 99.6k token bị 400 vì lần fallback non-streaming mang 98.678 token đầu vào vào cửa JSON 90 giây; biến này xử lý đúng cơ chế đó."
+msgstr "After a stream fails, Claude Code may retry with stream=false. CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK=1 keeps retries on the streaming path, which matches a gateway with SSE heartbeats. On 15 September, a 99.6k-token session received 400 because a non-streaming fallback carried 98,678 estimated input tokens into the 90-second JSON endpoint; this variable addresses that exact mechanism."
+
+#: server/templates/_cam_chon.html:197
+msgid "Save Changes chỉ lưu cấu hình; Apply Changes mới áp dụng và có thể hỏi Save & Restart. Chọn Chat trong ô soạn khi thử inference."
+msgstr "Save Changes only saves the configuration. Apply Changes activates it and may ask for Save & Restart. Select Chat in the composer when testing inference."
+
+#: apps/ltt_llm/manifest.py:253
+msgid "Sinh văn bản từ hội thoại: coding, chat, agent, tóm tắt."
+msgstr "Generate conversational text for coding, chat, agents, and summarization."
+
+#: server/templates/_cam_chon.html:136
+msgid "Thêm khối provider một lần ở cuối config.toml. Lưu mỗi profile thành tệp riêng đúng tên bên dưới, không chép chúng vào config.toml và không tạo [profiles.ltt]. Nếu đã có khối model_providers.ltt, cập nhật khối đó thay vì thêm trùng."
+msgstr "Add the provider block once at the end of config.toml. Save each profile as a separate file with the exact name below; do not paste profiles into config.toml or create [profiles.ltt]. If model_providers.ltt already exists, update that block instead of duplicating it."
+
+#: server/templates/_cam_chon.html:164
+msgid "Tiện ích Codex VS Code: biểu tượng bánh răng → Codex Settings → Open config.toml. Đây là cấu hình cấp người dùng. Tiện ích cần nhận được LTT_API_KEY trong môi trường khi VS Code khởi động; đóng toàn bộ VS Code rồi mở từ cửa sổ đã đặt khóa."
+msgstr "Codex VS Code extension: gear icon → Codex Settings → Open config.toml. This is user-level configuration. The extension must inherit LTT_API_KEY when VS Code starts; close all VS Code processes and launch it from the window where the key is set."
+
+#: server/templates/_cam_chon.html:191
+msgid "Trong Model list, bấm Add hai lần. Mở mũi tên của từng dòng để điền cả Model ID và Display name; giữ LTT 3.8 ở dòng đầu vì dòng đầu là mặc định."
+msgstr "In Model list, click Add twice. Expand each row to enter its Model ID and Display name. Keep LTT 3.8 first because the first entry is the default."
+
+#: server/templates/_cam_chon.html:268
+msgid "Tài liệu đối chiếu:"
+msgstr "Reference documentation:"
+
+#: server/templates/_cam_chon.html:134
+msgid "Tạo khóa live có tools:read và jobs:create, còn hạn và có credit. Sao lưu các tệp cấu hình trước khi sửa. Không đặt khóa trong TOML hoặc catalog."
+msgstr "Create an unexpired live key with tools:read and jobs:create, and an account with credit. Back up configuration files before editing. Keep the key out of TOML and the catalog."
+
+#: server/templates/_cam_chon.html:226
+msgid "Tắt 1M chưa đặt giới hạn 171K"
+msgstr "Disabling 1M does not set a 171K limit"
+
+#: server/templates/_cam_chon.html:215
+msgid "Tắt discovery, khai đúng hai Model ID, Apply Changes rồi thoát hẳn và mở lại."
+msgstr "Turn discovery off, enter both exact Model IDs, apply changes, fully quit and reopen."
+
+#: server/templates/_cam_chon.html:254
+msgid "Tự nhận sửa tệp và vài thao tác filesystem; vẫn hỏi các lệnh terminal khác."
+msgstr "Automatically accepts file edits and some filesystem operations, but still prompts for other terminal commands."
+
+#: server/templates/_cam_chon.html:225
+msgid "Vì sao phải đặt các giá trị này"
+msgstr "Why these values are required"
+
+#: server/templates/_cam_chon.html:228
+msgid "Với Code chạy Local: ô chọn môi trường → Local → bánh răng, chép nguyên khối 10 dòng dưới đây rồi mở phiên Local mới. Đây là danh sách chuẩn đầy đủ cho Claude Desktop 1.52386.6 / Claude Code 2.1.270 với LTT Gateway; không ghép thêm các danh sách cũ. Cửa sổ/ngưỡng nén dùng theo LTT 3.8, là model hẹp hơn; khi chọn LTT 3.5 thì nén sớm hơn. Cấu hình này không tự đổi theo picker."
+msgstr "For Code running locally: environment dropdown → Local → gear, copy the complete 10-line block below, then start a new Local session. This is the complete canonical list for Claude Desktop 1.52386.6 / Claude Code 2.1.270 with LTT Gateway; do not merge older lists into it. The window and compaction threshold use the smaller LTT 3.8 window, so LTT 3.5 compacts earlier. These values do not automatically follow model picker changes."
+
+#: server/templates/_cam_chon.html:248
+msgid "Với custom ANTHROPIC_BASE_URL, Claude mặc định tải toàn bộ schema MCP vì Tool Search cần tool_reference mà nhiều proxy không hỗ trợ. LTT chưa hỗ trợ tool_reference nên giữ ENABLE_TOOL_SEARCH=false. Tắt Connector/Plugin không dùng; nên giữ mục MCP tools dưới khoảng một phần mười cửa sổ nén (khoảng 13.9k ở preset 3.8). MAX_MCP_OUTPUT_TOKENS chỉ giới hạn kết quả của một tool, không làm nhỏ schema của 131 tool."
+msgstr "With a custom ANTHROPIC_BASE_URL, Claude loads all MCP schemas by default because Tool Search requires tool_reference blocks that many proxies do not support. LTT does not yet support tool_reference, so keep ENABLE_TOOL_SEARCH=false. Disable unused Connectors and Plugins; keep MCP tools below roughly one tenth of the compaction window when practical (about 13.9k with the 3.8 preset). MAX_MCP_OUTPUT_TOKENS limits one tool result; it does not shrink the schemas of 131 tools."
+
+#: server/templates/_cam_chon.html:165
+msgid "Xem cấu hình gốc cho tiện ích ở mục VS Code. Khi đặt model/provider ở gốc config.toml, mặc định lệnh codex cũng đổi. Không coi việc CLI đọc profile là bằng chứng tiện ích tự chọn được profile đó."
+msgstr "See the VS Code section for root configuration. Setting model/provider at the root of config.toml also changes the codex command's default. CLI profile support does not prove the extension automatically selects that profile."
+
+#: server/templates/_cam_chon.html:117
+msgid "dán vào ô Gateway API key; ô này được che"
+msgstr "paste into the masked Gateway API key field"
+
+#: server/templates/_cam_chon.html:39
+msgid "hồ sơ Third-Party Inference lưu bởi Claude Desktop"
+msgstr "Third-Party Inference profile saved by Claude Desktop"
+
+#: server/templates/_cam_chon.html:93
+msgid "model"
+msgstr "model"
+
+#: server/templates/_cam_chon.html:36
+msgid "~/.codex/config.toml và hai tệp profile; chạy --profile ltt hoặc --profile ltt-fast"
+msgstr "~/.codex/config.toml and two profile files; run --profile ltt or --profile ltt-fast"
+
+#: server/templates/_cam_chon.html:196
+msgid "Điền Tier alias đúng như bảng: LTT 3.8 = opus, LTT 3.5 = haiku, và bật Default for tier cho cả hai. Đây là ánh xạ nội bộ để tác vụ nền của Claude quay về tuyến LTT; nó không đổi Display name hay tuyên bố model LTT là model Anthropic. Custom inference headers và Artifact preview iframe origin vẫn để trống."
+msgstr "Enter the Tier aliases shown in the table: LTT 3.8 = opus and LTT 3.5 = haiku, and enable Default for tier on both. This internal mapping keeps Claude background work on an LTT route; it does not change the display name or claim an LTT model is an Anthropic model. Leave Custom inference headers and Artifact preview iframe origin blank."
+
+#: server/templates/_cam_chon.html:32
+msgid "Điền trực tiếp trong Claude Desktop; dùng danh sách model cố định để hai lựa chọn luôn đúng tuyến LTT."
+msgstr "Configure Claude Desktop directly; use a fixed model list so both choices always route to the correct LTT model."
+
+#: server/templates/_cam_chon.html:217
+msgid "Đợi theo Retry-After; không gửi lặp nhiều cửa sổ."
+msgstr "Wait according to Retry-After; avoid repeatedly sending from multiple windows."
+
+#: server/templates/_cam_chon.html:217
+msgid "đang bận"
+msgstr "busy"
+
+#: server/templates/_cam_chon.html:243
+msgid "Ảnh vận hành ngày 15/09/2026 xác nhận preset LTT 3.8: Context hiển thị 46.8k / 138.7k, sau đó 99.6k / 138.7k, Autocompact buffer khoảng 33k và tự nén ở 76%. 138.7k là cửa sổ dùng để tính nén; 32.768 token đầu ra được chừa trong tổng 171.458. Đây là kết quả phiên Local thật, không phải suy từ Test connection."
+msgstr "Operational screenshots from 15 September 2026 confirm the LTT 3.8 preset: Context first shows 46.8k / 138.7k, then 99.6k / 138.7k, with an approximately 33k Autocompact buffer and compaction at 76%. The 138.7k window is used for compaction calculations; 32,768 output tokens are reserved within the 171,458 total. This is evidence from a real Local session, not an inference from Test connection."
+
+#: server/templates/_cam_chon.html:180
+msgid "Ở mục Connection, điền đúng bảng dưới đây. Không thêm /v1 vào URL."
+msgstr "In Connection, enter the values below. Do not add /v1 to the URL."
+
+#: platform_core/public_api/examples.py
+msgid "LTT 3.8 (Mạnh)"
+msgstr "LTT 3.8 (Strong)"
+
+#: platform_core/public_api/examples.py
+msgid "LTT 3.5 (Nhanh)"
+msgstr "LTT 3.5 (Fast)"

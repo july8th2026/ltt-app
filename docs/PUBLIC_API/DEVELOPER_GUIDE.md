@@ -683,7 +683,7 @@ Scopes: `jobs:create`
 Input:
 
 - `messages` — array, **required**, Conversation so far, OpenAI format: a list of {role, content}. `content` may be a string, or a list of parts for images.
-- `model` — string, one of `ltt-3.8`, `ltt-3.5`, default ltt-3.8, `ltt-3.8` is the deepest model, text only (171K usable input context). `ltt-3.5` answers faster, costs much less and reads images, with 209K usable input context.
+- `model` — string, one of `ltt-3.8`, `ltt-3.5`, default ltt-3.8, `ltt-3.8` is the deepest model and reads images (171K usable input context). `ltt-3.5` answers faster, costs much less and reads images, with 209K usable input context.
 - `max_tokens` — integer, min 1, max 32768, default 32768, Ceiling on generated tokens. Credit is held against this and refunded down to what was actually generated.
 - `temperature` — number, min 0.0, max 2.0, Sampling temperature.
 - `tools` — array, Function definitions, OpenAI format. The model may answer with `tool_calls`.
@@ -697,7 +697,7 @@ Input:
 
 Output: `content` (string), `tool_calls` (array), `usage` (object)
 
-Contract hash: `f6badbdc9de99372`
+Contract hash: `99aac9fd24a292b2`
 
 ### `text.prompt_package`
 

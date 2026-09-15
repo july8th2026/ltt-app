@@ -21,6 +21,57 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-09-15 — một ma trận cấu hình Claude chuẩn duy nhất (Q126)
+
+**FIXED · không đổi wire API.** Bộ sinh cấu hình, CLI/SDK và trang hướng dẫn nay
+dùng cùng một nguồn cho mười biến vận hành Local. Bỏ
+`CLAUDE_CODE_DISABLE_1M_CONTEXT` vì hai ID LTT không có biến thể `[1m]`; thêm
+giới hạn độ sâu agent và ép agent theo model chính. Claude CLI/VS Code ghim đủ
+bảy đường model. Claude Desktop ánh xạ `opus` tới LTT 3.8 và `haiku` tới LTT 3.5,
+giữ Tool Search và 1M tắt.
+
+Người dùng đang có ba dòng context/compact/output hãy thay bằng **toàn bộ khối
+10 dòng** trên trang hướng dẫn. Người dùng CLI/VS Code dùng thêm bảy pin model.
+Không cần vá backend, tăng GPU hay giảm chất lượng suy luận. Bảng chuẩn, lý do
+từng giá trị, những biến không được thêm và nguồn chính thức/cộng đồng nằm ở
+`CLAUDE_CONFIG_MATRIX.md`.
+
+## 2026-09-15 — cắm tay Codex và làm rõ quyền khóa / giới hạn Claude
+
+**ADDED:** hướng dẫn Codex custom provider Responses, JSON catalog hai model,
+profile `ltt` / `ltt-fast`, đường dẫn tuyệt đối và nhập key có che. Hướng dẫn
+Claude Code Local mở môi trường từ màn hình New, context/compact/output và
+giới hạn tác vụ phụ; tắt 1M không tự đặt cửa sổ 171K. Bổ sung preset riêng cho
+hai model, cách đọc 138.7K/76%, cấu hình vô hiệu fallback non-streaming, giới
+hạn MCP và permission modes theo tài liệu Claude cùng phép đo phiên thật.
+
+**FIXED:** trang khóa luôn hiện trạng thái mọi công cụ khi không giới hạn,
+giữ mục tùy chọn visible khi catalog rỗng, phân biệt empty tools với empty scopes.
+Claude Gateway phải chọn Bearer; x-api-key không thuộc hợp đồng xác thực hiện tại.
+Không đổi API wire hoặc tự cấp quyền rộng hơn. Người dùng Claude Code Local qua
+gateway nên thêm `CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK=1`, giữ Tool Search
+tắt và giảm Connector/Plugin không dùng; request API tự viết không cần đổi.
+Chỉ cập nhật repo, chưa deploy lên trang live.
+
+## 2026-09-14 — hướng dẫn nhập Gateway trong Claude Desktop
+
+**ADDED · không phá vỡ tương thích.** Trang hướng dẫn API và cổng lập trình viên
+thêm quy trình nhập trực tiếp trong Claude Desktop 1.52386.6: Gateway base URL,
+Bearer, scope, hai Model ID và Display name, danh sách cố định, Apply Changes
+và thoát hẳn/mở lại. Có câu hỏi kiểm mỗi model, giới hạn hỗ trợ và xử lý lỗi.
+Tích hợp đang chạy không phải sửa; tool 1.8.0 và cách cắm bằng policy vẫn được
+giữ. Hướng dẫn chi tiết ở `HUONG_DAN_CAM_CLI.md` §2.5. Mục này ghi thay đổi trong
+repo, không khẳng định trang production đã được cập nhật.
+
+## 2026-09-14 — mô tả `ltt-3.8` nay công bố đúng khả năng đọc ảnh
+
+**FIXED · không phá vỡ hành vi request/response.** `/api/v1/models` và constraint
+của `text.chat` đã khai `reads_images: true`, nhưng mô tả tham số `model` vẫn gọi
+`ltt-3.8` là “text only”. Client không cần sửa gì; thay đổi chỉ làm mô tả, trang
+tài liệu sinh và catalog nói cùng một sự thật. `contract_hash` đổi
+`f6badbdc9de99372` → `99aac9fd24a292b2` vì phép kiểm tương thích cố ý băm cả mô
+tả; baseline được ghi lại dù thay đổi này không gỡ hay đổi trường nào.
+
 ## 2026-09-14 — cửa job: `max_tokens` mặc định `4096` → `32768`
 
 **CHANGED · không phá vỡ hợp đồng.** Ai đang gửi `max_tokens` tường minh thì

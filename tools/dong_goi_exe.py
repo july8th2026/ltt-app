@@ -29,6 +29,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import pathlib
 import shutil
 import subprocess
@@ -46,7 +47,8 @@ TOOLS = GOC / "tools"
 #: Dat duoi `build/` co chu y: ten do DA nam trong EXCLUDED_DIR_NAMES
 #: cua `scan_source_secrets.py` va da trong .gitignore. Them mot ngoai le
 #: moi cho bo quet la noi rong no; doi mot duong dan thi re hon nhieu.
-RA = GOC / "build" / "exe"
+RA = pathlib.Path(os.environ.get("LTT_CAM_CLI_BUILD_DIR") or
+                  GOC / "build" / "exe").resolve()
 TEN = "LTTStudios-CamCLI"
 TEN_CONSOLE = "LTTStudios-CamCLI-Console"
 
@@ -214,7 +216,10 @@ def dung_installer() -> pathlib.Path | None:
         print("   Chua co ban PyInstaller. Chay truoc:")
         print(r"     python tools\dong_goi_exe.py pyinstaller")
         return None
-    ma, giay = _chay([str(ISCC), str(TOOLS / "installer" / "cam_cli.iss")], cwd=GOC)
+    ma, giay = _chay([
+        str(ISCC), f"/DThuMucNguon={nguon}",
+        f"/DThuMucDich={RA / 'installer'}",
+        str(TOOLS / "installer" / "cam_cli.iss")], cwd=GOC)
     ra = sorted((RA / "installer").glob(f"{TEN}-Setup-*.exe")) if ma == 0 else []
     if ra:
         print(f"   ma={ma}  {giay}  {ra[-1].name}  "

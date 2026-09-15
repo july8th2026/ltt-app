@@ -441,7 +441,8 @@ MANIFEST = AppManifest(
                     "example": [{"role": "user", "content": "Explain HTTP 429."}],
                 },
                 "model": {
-                    "description": (f"`ltt-3.8` is the deepest model, text only "
+                    "description": (f"`ltt-3.8` is the deepest model and reads "
+                                    f"images "
                                     f"({_cua_so_noi_voi_khach('qwen38-api')} usable "
                                     f"input context). `ltt-3.5` answers faster, "
                                     f"costs much less and reads images, with "

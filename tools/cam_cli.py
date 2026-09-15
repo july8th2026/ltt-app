@@ -91,7 +91,7 @@ GOC_MAC_DINH = "https://app.lttstudios.com"
 #:    KHONG BIET MINH LA BAN NAO. Khi khach bao "cam khong duoc", ta khong co
 #:    cach nao biet ho dang chay ban gi - va do la cau hoi DAU TIEN cua moi lan
 #:    ho tro.
-PHIEN_BAN = "1.6.0"
+PHIEN_BAN = "1.9.0"
 
 MODEL = "ltt-3.8"
 
@@ -103,6 +103,12 @@ MODEL = "ltt-3.8"
 #:    la **nut gui vo hieu, khong mot loi bao loi**. Dung "sua" dong nay ve
 #:    `MODEL` cho gon - do la dung lai chinh cai bay da mat mot buoi de tim.
 MODEL_DESKTOP = "ltt-llm-claude-compat"
+MODEL_DESKTOP_35 = "ltt-llm-claude-compat-35"
+NHAN_DESKTOP = {
+    MODEL_DESKTOP: "LTT 3.8 (Mạnh)",
+    MODEL_DESKTOP_35: "LTT 3.5 (Nhanh)",
+}
+TANG_DESKTOP = {MODEL_DESKTOP: "opus", MODEL_DESKTOP_35: "haiku"}
 ENV_KHOA_CODEX = "LTT_API_KEY"
 ENV_KHOA_CLAUDE = "ANTHROPIC_AUTH_TOKEN"
 
@@ -149,7 +155,7 @@ NEN_HOI_THOAI = 138690
 #:    ket qua tool **95.901 token trong mot luot**.
 #:
 #: Suy ra, khong bia: khoang trong giua nguong nen va cua so cong bo dung bang
-#: `TOKEN_RA_TRAN` (156.385 - 123.617 = 32.768). Mot ket qua tool khong duoc
+#: `TOKEN_RA_TRAN` (171.458 - 138.690 = 32.768). Mot ket qua tool khong duoc
 #: chiem qua NUA khoang do, de sau no van con cho cho luot sinh ke tiep.
 #:
 #: ⚠️ Don vi o day la token **UOC CUA CODEX** (`len/4`), khong phai token that
@@ -169,19 +175,16 @@ TRAN_KET_QUA_TOOL = TOKEN_RA_TRAN // 2
 #:        "Sessions on a model ID Claude Code doesn't recognize, such as an LLM
 #:         gateway alias, compact at the context window Claude Code assumes"
 #:
-#: ⇒ Ta khai `CLAUDE_CODE_MAX_CONTEXT_TOKENS = 156.385` va khong dat cua so nen,
-#:   nen Claude nen o DUNG 156.385 — tuc 100% cua so, khong phai mot phan an
-#:   toan duoi no. Tran cung may chu la 169.984, nen khoang con lai chi
-#:   **13.599**, trong khi mot luot sinh dai nhat la **32.768**. Va Claude cung
-#:   chi kiem nguong GIUA hai luot.
+#: ⇒ Neu chi khai `CLAUDE_CODE_MAX_CONTEXT_TOKENS`, client co the doi toi sat
+#:   cua so moi nen. Ta phai khai ca `AUTO_COMPACT_WINDOW = 138.690`, de chua
+#:   tron mot luot sinh dai nhat 32.768 token va sai khac tokenizer.
 #:
 #: ⭐ Dung mot con so voi Codex (`NEN_HOI_THOAI`), va vi cung mot ly do: khoang
 #:    trong tu nguong nen len tran phai chua TRON mot luot nua.
 #:
-#: ⚠️ Bien nay co san **toi thieu 100.000**. Nguong vision cua ta (55.787) nam
-#:    duoi muc do va bien moi truong thi khong tach duoc theo model — nhung
-#:    `ANTHROPIC_MODEL` la `ltt-3.8`, nen con so cua 3.8 moi la con so dung cho
-#:    phien Claude Code.
+#: ⚠️ Bien nay chi nhan tu **100.000** den 1.000.000. Hai nguong LTT deu hop le.
+#:    Desktop dung preset 3.8 khi doi qua lai hai model; profile CLI tach rieng
+#:    se dung dung nguong cua tung model.
 CUA_SO_NEN_CLAUDE = NEN_HOI_THOAI
 
 #: Cua so cong bo cua model THU HAI (`ltt-3.5`). **KHONG dung chung so voi 3.8.**
@@ -262,7 +265,7 @@ class HoSoModel(NamedTuple):
 #:    `test_334` buoc hai dau lai, dung nhu bon hang so o tren.
 HO_SO_MODEL: dict = {
     MODEL: HoSoModel(MODEL, MODEL_DESKTOP, CUA_SO_NGU_CANH, NEN_HOI_THOAI),
-    MODEL_35: HoSoModel(MODEL_35, MODEL_DESKTOP + "-35",
+    MODEL_35: HoSoModel(MODEL_35, MODEL_DESKTOP_35,
                         CUA_SO_NGU_CANH_35, NEN_HOI_THOAI_35),
 }
 
@@ -273,6 +276,7 @@ TEN_MODEL: tuple = tuple(HO_SO_MODEL)
 #: bang tap nay, khong bang mot ten duy nhat — nguoi cam `ltt-3.5` cung phai
 #: duoc nhan ra la "dang cam", va truoc 12/09 thi ho **khong**.
 TUYEN_DESKTOP: tuple = tuple(h.tuyen_desktop for h in HO_SO_MODEL.values())
+TUYEN_DESKTOP_NHAN_DIEN: tuple = TUYEN_DESKTOP
 
 
 def hs_cua(ten) -> HoSoModel:
@@ -581,6 +585,8 @@ def _codex_config(goc: str) -> str:
             f'base_url = "{goc}/api/v1"\n'
             f'env_key = "{ENV_KHOA_CODEX}"\n'
             f'wire_api = "responses"\n'
+            f'request_max_retries = 1\n'
+            f'stream_max_retries = 0\n'
             f'stream_idle_timeout_ms = 600000\n')
 
 
@@ -677,7 +683,7 @@ def _catalog_codex() -> str:
         return d
 
     return json.dumps(
-        {"models": [mot("ltt-3.8", CUA_SO_NGU_CANH, NEN_HOI_THOAI),
+        {"models": [mot("ltt-3.8", CUA_SO_NGU_CANH, NEN_HOI_THOAI, doc_anh=True),
                     mot("ltt-3.5", CUA_SO_NGU_CANH_35,
                         NEN_HOI_THOAI_35, doc_anh=True)]},
         indent=1)
@@ -690,7 +696,11 @@ def _codex_profile(hs: HoSoModel | None = None) -> str:
             f'model_reasoning_effort = "low"\n'
             f'model_reasoning_summary = "none"\n'
             f'model_context_window = {hs.cua_so}\n'
-            f"model_catalog_json = '{TEP_CATALOG}'\n")
+            f'model_auto_compact_token_limit = {hs.nen}\n'
+            f"model_catalog_json = '{TEP_CATALOG}'\n"
+            f'\n[agents]\n'
+            f'default_subagent_model = "{hs.ten}"\n'
+            f'max_concurrent_threads_per_session = 1\n')
 
 
 def _codex_config_goc(goc: str, hs: HoSoModel | None = None) -> str:
@@ -743,10 +753,11 @@ TAG_TAT = "#<<cam_cli tam vo hieu, `go` se khoi phuc>> "
 
 _RE_BANG = re.compile(r"^\s*\[")
 _RE_PROVIDER_LTT = re.compile(r"^\s*\[model_providers\.ltt\]\s*$")
-#: Đúng năm khoá top-level mà khối vscode của ta đặt (xem `_codex_profile`). Nếu
+#: Đúng các khoá top-level mà khối vscode của ta đặt (xem `_codex_profile`). Nếu
 #: khách đã có bất kỳ khoá nào trong số này ở GỐC thì phải vô hiệu, nếu không
 #: TOML sẽ trùng khoá. Xếp dài-trước để bắt đúng khoá dài hơn.
-_KHOA_GOC_TA_DAT = ("model_reasoning_effort", "model_reasoning_summary",
+_KHOA_GOC_TA_DAT = ("model_auto_compact_token_limit", "model_catalog_json",
+                    "model_reasoning_effort", "model_reasoning_summary",
                     "model_context_window", "model_provider", "model")
 _RE_MODEL_GOC = re.compile(r"^\s*(" + "|".join(_KHOA_GOC_TA_DAT) + r")\s*=")
 
@@ -794,6 +805,8 @@ KHOA_PROVIDER_BAT_BUOC = {
     "stream_idle_timeout_ms": (
         "thieu thi Codex CAT luong o ~62 giay trong khi may van sinh — "
         "suat bi giu, luot sau an 429"),
+    "request_max_retries": "chi thu lai mot lan de khong nhan tai cua lane",
+    "stream_max_retries": "khong phat lai luong da co the sinh token",
 }
 
 
@@ -996,7 +1009,7 @@ def cam_codex(goc: str, tt: dict, cho_vscode: bool = False) -> list:
     #    Truoc day ta ghi de thang mot tep cua khach ma khong luu gi ca - `go`
     #    chi "khong xoa" chu khong tra lai duoc noi dung.
     _sao_luu(prof)
-    prof.write_text(_codex_profile(), encoding="utf-8", newline="\n")
+    prof.write_text(_codex_profile(hs), encoding="utf-8", newline="\n")
     ra.append(f"  [OK] {prof}")
 
     # ⛔ PHAI GHI CATALOG, khong chi khai duong dan toi no. Khai mot tep khong
@@ -1175,11 +1188,17 @@ def go_codex(tt: dict) -> list:
 REG_DESKTOP_HKCU = r"HKCU\SOFTWARE\Policies\Claude"
 REG_DESKTOP_HKLM = r"HKLM\SOFTWARE\Policies\Claude"
 
-#: Đúng tên khoá theo tài liệu chính thức của Anthropic. Mọi giá trị là `REG_SZ`,
-#: kể cả số và mảng — mảng phải là **chuỗi JSON**.
+#: Đúng tên khoá và đúng KIỂU theo schema của Claude Desktop 1.52386.6.
+#: Chuỗi/mảng JSON là `REG_SZ`; boolean và số là `REG_DWORD`. Ghi boolean thành
+#: chuỗi `"true"`/`"false"` làm registry trông có đủ nhưng app bỏ qua im lặng.
 _DESKTOP_KHOA = ("inferenceProvider", "inferenceGatewayBaseUrl",
                  "inferenceGatewayApiKey", "inferenceGatewayAuthScheme",
-                 "inferenceModels", "modelDiscoveryEnabled", "chatTabEnabled")
+                 "inferenceModels", "modelDiscoveryEnabled", "chatTabEnabled",
+                 "disableDeploymentModeChooser",
+                 "inferenceStreamIdleTimeoutSec")
+_DESKTOP_SO_CUA_TA = {"modelDiscoveryEnabled": 0, "chatTabEnabled": 1,
+                      "disableDeploymentModeChooser": 1,
+                      "inferenceStreamIdleTimeoutSec": 600}
 
 
 def _tach_khoa_registry(khoa: str):
@@ -1193,7 +1212,7 @@ def _tach_khoa_registry(khoa: str):
     return (goc, nhanh) if goc is not None else None
 
 
-def _reg_ghi_ly_do(khoa: str, ten: str, gt: str) -> tuple:
+def _reg_ghi_ly_do(khoa: str, ten: str, gt: object) -> tuple:
     r"""Ghi mot gia tri. Tra `(thanh_cong, ly_do)` — **ly do KHONG duoc mat**.
 
     🔴 BAN DAU HAM NAY CHI TRA `bool`, VA DIEU DO GIAU MAT MOT LOI CO THAT.
@@ -1212,23 +1231,30 @@ def _reg_ghi_ly_do(khoa: str, ten: str, gt: str) -> tuple:
     ⇒ Bat cu ai goi ham nay deu phai **hien ly do ra cho khach**.
     """
     tach = _tach_khoa_registry(khoa)
+    la_so = isinstance(gt, int)
+    loai_reg = "REG_DWORD" if la_so else "REG_SZ"
     if tach:
         try:
             with winreg.CreateKey(tach[0], tach[1]) as k:
-                winreg.SetValueEx(k, ten, 0, winreg.REG_SZ, gt)
+                if isinstance(gt, int):
+                    winreg.SetValueEx(k, ten, 0,
+                                      getattr(winreg, "REG_DWORD", 4), gt)
+                else:
+                    winreg.SetValueEx(k, ten, 0,
+                                      getattr(winreg, "REG_SZ", 1), str(gt))
             return True, ""
         except OSError as e:
             return False, f"WinError {getattr(e, 'winerror', '?')}: {e.strerror}"
     try:
-        r = subprocess.run(["reg", "add", khoa, "/v", ten, "/t", "REG_SZ",
-                            "/d", gt, "/f"],
+        r = subprocess.run(["reg", "add", khoa, "/v", ten, "/t", loai_reg,
+                            "/d", str(gt), "/f"],
                            capture_output=True, text=True, timeout=10)
         return r.returncode == 0, (r.stderr or r.stdout or "").strip()
     except (OSError, subprocess.SubprocessError) as e:
         return False, f"{type(e).__name__}: {e}"
 
 
-def _reg_ghi(khoa: str, ten: str, gt: str) -> bool:
+def _reg_ghi(khoa: str, ten: str, gt: object) -> bool:
     return _reg_ghi_ly_do(khoa, ten, gt)[0]
 
 
@@ -1269,12 +1295,12 @@ def _reg_xoa(khoa: str, ten: str) -> bool:
         return False
 
 
-def _reg_doc(khoa: str, ten: str) -> str | None:
+def _reg_doc(khoa: str, ten: str) -> object | None:
     tach = _tach_khoa_registry(khoa)
     if tach:
         try:
             with winreg.OpenKey(tach[0], tach[1]) as k:
-                return str(winreg.QueryValueEx(k, ten)[0])
+                return winreg.QueryValueEx(k, ten)[0]
         except (FileNotFoundError, OSError):
             return None
     try:
@@ -1283,8 +1309,16 @@ def _reg_doc(khoa: str, ten: str) -> str | None:
         if r.returncode != 0:
             return None
         for dong in r.stdout.splitlines():
-            if ten.lower() in dong.lower() and "REG_SZ" in dong:
-                return dong.split("REG_SZ", 1)[1].strip()
+            cot = dong.strip().split(None, 2)
+            if len(cot) != 3 or cot[0].lower() != ten.lower():
+                continue
+            if cot[1].upper() == "REG_DWORD":
+                try:
+                    return int(cot[2], 0)
+                except ValueError:
+                    return None
+            if cot[1].upper() in {"REG_SZ", "REG_EXPAND_SZ"}:
+                return cot[2]
     except (OSError, subprocess.SubprocessError):
         return None
     return None
@@ -1302,8 +1336,8 @@ def cam_desktop(goc: str, khoa: str, tt: dict) -> list:
     ⭐ NÊN Ô "Gateway API key" TRONG ỨNG DỤNG **KHÔNG PHẢI** LÀ ĐƯỜNG DUY NHẤT.
       Trước khi tìm ra điều này, phần Claude Desktop bị coi là "chỉ cấu hình tay".
 
-    ⚠️ HAI CHỐT CỦA TÀI LIỆU CHÍNH THỨC, ĐỪNG ĐOÁN LẠI:
-      · `inferenceGatewayBaseUrl` **bắt buộc HTTPS** (trừ loopback);
+    ⚠️ HAI CHỐT CỦA SCHEMA 1.52386.6, ĐỪNG ĐOÁN LẠI:
+      · `inferenceGatewayBaseUrl` **bắt buộc HTTPS**, kể cả loopback;
       · cấu hình chỉ đọc **một lần lúc khởi động** ⇒ phải **thoát hẳn** ứng dụng
         rồi mở lại, không phải chỉ đóng cửa sổ.
 
@@ -1312,6 +1346,11 @@ def cam_desktop(goc: str, khoa: str, tt: dict) -> list:
       sẽ **không có tác dụng gì** và cũng không báo lỗi. `xem` kiểm cả hai.
     """
     ra = []
+    if not goc.lower().startswith("https://"):
+        ra.append("  [!!] Claude Desktop 1.52386.6 bat buoc gateway HTTPS;")
+        ra.append("       HTTP va loopback deu bi ung dung tu choi.")
+        ra.append("  [--] Khong ghi gi ca - de may khong o trang thai nua voi.")
+        return ra
     if _reg_doc(REG_DESKTOP_HKLM, "inferenceProvider"):
         ra.append("  [!!] May DA CO chinh sach o HKLM - ung dung se BO QUA HKCU.")
         ra.append("       Phai nho quan tri vien sua o do; cam o day vo tac dung.")
@@ -1323,10 +1362,19 @@ def cam_desktop(goc: str, khoa: str, tt: dict) -> list:
         "inferenceGatewayBaseUrl": goc + "/api",
         "inferenceGatewayApiKey": khoa,
         "inferenceGatewayAuthScheme": "bearer",
-        "inferenceModels": '[{"name": "' + hs_trong(tt).tuyen_desktop + '"}]',
+        # Desktop has a real picker, so publish BOTH routes. The model selected
+        # in the connector remains the default for Codex/Claude Code, whose
+        # per-model context settings cannot safely switch inside one process.
+        "inferenceModels": json.dumps(
+            [{"name": h.tuyen_desktop,
+              "labelOverride": NHAN_DESKTOP[h.tuyen_desktop],
+              "anthropicFamilyTier": TANG_DESKTOP[h.tuyen_desktop],
+              "isFamilyDefault": True}
+             for h in HO_SO_MODEL.values()],
+            separators=(",", ": ")),
         # Tat tu do model: danh sach cua ta chi co mot ten, va mot lan do sai se
         # lam ung dung hien nhung model no khong goi duoc.
-        "modelDiscoveryEnabled": "false",
+        "modelDiscoveryEnabled": 0,
         # 🔴 THIEU DONG NAY LA CAM XONG MA VAN KHONG CHAT DUOC.
         #
         #    Mac dinh ban 3p chi mo tab **Code** (tab Cowork bi mo). Tab Code
@@ -1338,7 +1386,13 @@ def cam_desktop(goc: str, khoa: str, tt: dict) -> list:
         # ⛔ Do dung 25/08 tren VM sach: cau hinh da `healthy`, model da hien
         #    trong picker, nhung 0 request toi may chu. Bat co nay xong thi
         #    hien cong tac **Chat / Cowork** va lan gui dau tien di ngay.
-        "chatTabEnabled": "true",
+        "chatTabEnabled": 1,
+        # Neu nguoi dung tung chon Claude.ai, Desktop luu deploymentMode=1p.
+        # Chi co co nay moi lam cau hinh inference buoc app sang 3p sau restart.
+        "disableDeploymentModeChooser": 1,
+        # Dong bo voi timeout stream 10 phut cua connector. Schema Desktop chi
+        # nhan 300..1800 giay; 600 giay du cho model cong suat co dinh.
+        "inferenceStreamIdleTimeoutSec": 600,
     }
     # 🔴 HOI QUYEN TRUOC, DUNG GHI ROI DOAN. (do 30/08)
     #
@@ -1398,6 +1452,13 @@ def go_desktop(tt: dict) -> list:
         else:
             ra.append(f"  [{'OK' if _reg_ghi(REG_DESKTOP_HKCU, ten, cu) else '!!'}] "
                       f"tra {ten} ve gia tri cu")
+    # A newer release can add policy values that an older state file never
+    # recorded. Remove only exact scalar values generated by us; a different
+    # value may belong to the machine owner and must be preserved.
+    for ten, ours in _DESKTOP_SO_CUA_TA.items():
+        if ten in ghi_nho or _reg_doc(REG_DESKTOP_HKCU, ten) != ours:
+            continue
+        ra.append(f"  [{'OK' if _reg_xoa(REG_DESKTOP_HKCU, ten) else '!!'}] bo {ten}")
     return ra
 
 
@@ -1411,12 +1472,11 @@ def _go_desktop_khong_tri_nho(tt: dict) -> list:
     ra = []
     goc = (tt.get("goc") or _doc_trang_thai().get("goc")
            or GOC_MAC_DINH).rstrip("/")
-    url = _reg_doc(REG_DESKTOP_HKCU, "inferenceGatewayBaseUrl") or ""
-    models = _reg_doc(REG_DESKTOP_HKCU, "inferenceModels") or ""
-    # ⚠️ CA TAP tuyen, khong mot ten. Truoc 12/09 dong nay hoi dung
-    #    `ltt-llm-claude-compat`, nen may cam `ltt-3.5` bi doc thanh "chinh sach
-    #    cua khach" va lenh `go` **de nguyen cau hinh cua ta tren may ho**.
-    if not (goc in url or any(t in models for t in TUYEN_DESKTOP)):
+    url = str(_reg_doc(REG_DESKTOP_HKCU, "inferenceGatewayBaseUrl") or "")
+    models = str(_reg_doc(REG_DESKTOP_HKCU, "inferenceModels") or "")
+    # ⚠️ CA TAP tuyen, gom ca ten do ban cu phat ra. Neu mat tep trang thai ngay
+    #    sau nang cap, `go` van phai nhan ra va don duoc chinh sach cua ta.
+    if not (goc in url or any(t in models for t in TUYEN_DESKTOP_NHAN_DIEN)):
         if any(_reg_doc(REG_DESKTOP_HKCU, t) for t in _DESKTOP_KHOA):
             ra.append("  [--] Co chinh sach Claude Desktop nhung KHONG tro ve "
                       + goc + " - khong dung toi (do la cua ban).")
@@ -1491,7 +1551,18 @@ def cam_vscode(goc: str, tt: dict) -> list:
         "claudeCode.environmentVariables": [
             {"name": "ANTHROPIC_BASE_URL", "value": goc + "/api"},
             {"name": "ANTHROPIC_MODEL", "value": hs.ten},
+            {"name": "ANTHROPIC_DEFAULT_MODEL", "value": hs.ten},
             {"name": "ANTHROPIC_DEFAULT_HAIKU_MODEL", "value": hs.ten},
+            {"name": "ANTHROPIC_DEFAULT_OPUS_MODEL", "value": hs.ten},
+            {"name": "ANTHROPIC_DEFAULT_SONNET_MODEL", "value": hs.ten},
+            {"name": "ANTHROPIC_DEFAULT_FABLE_MODEL", "value": hs.ten},
+            {"name": "CLAUDE_CODE_SUBAGENT_MODEL", "value": hs.ten},
+            {"name": "CLAUDE_CODE_SUBAGENT_MODEL_FORCE", "value": "1"},
+            {"name": "CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS", "value": "1"},
+            {"name": "CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH", "value": "1"},
+            {"name": "CLAUDE_CODE_MAX_RETRIES", "value": "1"},
+            {"name": "CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK", "value": "1"},
+            {"name": "ENABLE_TOOL_SEARCH", "value": "false"},
             # 🔴 HAI DONG NAY TUNG THIEU O DAY, va chung la cung mot "loi tien"
             #    ma `cam_claude()` mo ta cach do ba tram dong: khong khai thi
             #    Claude Code GIA DINH cua so 200.000 va khong bao gio nen kip.
@@ -1629,8 +1700,14 @@ def _go_vscode_khong_tri_nho(tep: pathlib.Path, tt: dict) -> list:
 
 # ── Claude Code ─────────────────────────────────────────────────────────────
 
-CLAUDE_ENV = ("ANTHROPIC_BASE_URL", "ANTHROPIC_MODEL",
+CLAUDE_ENV = ("ANTHROPIC_BASE_URL", "ANTHROPIC_MODEL", "ANTHROPIC_DEFAULT_MODEL",
               "ANTHROPIC_DEFAULT_HAIKU_MODEL",
+              "ANTHROPIC_DEFAULT_OPUS_MODEL", "ANTHROPIC_DEFAULT_SONNET_MODEL",
+              "ANTHROPIC_DEFAULT_FABLE_MODEL", "CLAUDE_CODE_SUBAGENT_MODEL",
+              "CLAUDE_CODE_SUBAGENT_MODEL_FORCE",
+              "CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS",
+              "CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH", "CLAUDE_CODE_MAX_RETRIES",
+              "CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK", "ENABLE_TOOL_SEARCH",
               "CLAUDE_CODE_MAX_CONTEXT_TOKENS",
               "CLAUDE_CODE_MAX_OUTPUT_TOKENS",
               "CLAUDE_CODE_AUTO_COMPACT_WINDOW",
@@ -1662,7 +1739,18 @@ def cam_claude(goc: str, tt: dict, toan_cuc: bool) -> list:
     #    va do la mot su trung hop — `ltt-3.5` co nguong nen rieng (176.373).
     gia_tri = {"ANTHROPIC_BASE_URL": f"{goc}/api",
                "ANTHROPIC_MODEL": hs.ten,
+               "ANTHROPIC_DEFAULT_MODEL": hs.ten,
                "ANTHROPIC_DEFAULT_HAIKU_MODEL": hs.ten,
+               "ANTHROPIC_DEFAULT_OPUS_MODEL": hs.ten,
+               "ANTHROPIC_DEFAULT_SONNET_MODEL": hs.ten,
+               "ANTHROPIC_DEFAULT_FABLE_MODEL": hs.ten,
+               "CLAUDE_CODE_SUBAGENT_MODEL": hs.ten,
+               "CLAUDE_CODE_SUBAGENT_MODEL_FORCE": "1",
+               "CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS": "1",
+               "CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH": "1",
+               "CLAUDE_CODE_MAX_RETRIES": "1",
+               "CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK": "1",
+               "ENABLE_TOOL_SEARCH": "false",
                "CLAUDE_CODE_MAX_CONTEXT_TOKENS": str(hs.cua_so),
                "CLAUDE_CODE_MAX_OUTPUT_TOKENS": str(TOKEN_RA_TRAN),
                "CLAUDE_CODE_AUTO_COMPACT_WINDOW": str(hs.nen),
@@ -1820,9 +1908,12 @@ def trang_thai_thuc(goc: str | None = None) -> dict:
         and _reg_doc(hk, "inferenceProvider") == "gateway"
         and _reg_doc(hk, "inferenceGatewayBaseUrl") == goc + "/api"
         and bool(_reg_doc(hk, "inferenceGatewayApiKey"))
-        and any(t in (_reg_doc(hk, "inferenceModels") or "")
+        and all(t in str(_reg_doc(hk, "inferenceModels") or "")
                 for t in TUYEN_DESKTOP)
-        and _reg_doc(hk, "chatTabEnabled") == "true"
+        and _reg_doc(hk, "modelDiscoveryEnabled") == 0
+        and _reg_doc(hk, "chatTabEnabled") == 1
+        and _reg_doc(hk, "disableDeploymentModeChooser") == 1
+        and _reg_doc(hk, "inferenceStreamIdleTimeoutSec") == 600
     )
     muc = {
         MUC_CODEX_CLI: bool(codex_cli and env_codex),
@@ -2100,20 +2191,28 @@ def lenh_xem(a) -> int:
         print("    !! CO chinh sach o HKLM - ung dung BO QUA HKCU cua ta")
     print(f"    inferenceProvider     : {_reg_doc(REG_DESKTOP_HKCU, 'inferenceProvider') or '-'}")
     print(f"    inferenceGatewayBaseUrl: {_reg_doc(REG_DESKTOP_HKCU, 'inferenceGatewayBaseUrl') or '-'}")
-    _k = _reg_doc(REG_DESKTOP_HKCU, "inferenceGatewayApiKey")
+    _k = str(_reg_doc(REG_DESKTOP_HKCU, "inferenceGatewayApiKey") or "")
     print(f"    inferenceGatewayApiKey : {'(da dat, ' + str(len(_k)) + ' ky tu)' if _k else '-'}")
     _m = _reg_doc(REG_DESKTOP_HKCU, "inferenceModels") or "-"
     print(f"    inferenceModels        : {_m}")
-    if _m != "-" and not any(t in _m for t in TUYEN_DESKTOP):
-        print(f"      !! ten model khong thuoc {TUYEN_DESKTOP} - Claude Desktop se")
-        print( "         LOC BO no khoi picker, va nut gui tat han ma KHONG bao gi")
+    _thieu = [t for t in TUYEN_DESKTOP if t not in str(_m)]
+    if _m != "-" and _thieu:
+        print(f"      !! thieu tuyen {_thieu} - picker khong cho chon du hai model")
     _c = _reg_doc(REG_DESKTOP_HKCU, "chatTabEnabled") or "-"
     print(f"    chatTabEnabled         : {_c}")
+    _d = _reg_doc(REG_DESKTOP_HKCU, "disableDeploymentModeChooser")
+    print(f"    disableDeploymentModeChooser: {_d if _d is not None else '-'}")
+    _i = _reg_doc(REG_DESKTOP_HKCU, "inferenceStreamIdleTimeoutSec")
+    print(f"    inferenceStreamIdleTimeoutSec: {_i if _i is not None else '-'}")
     # Chi canh bao khi Desktop DA duoc cau hinh. May chua cam gi thi moi dong
     # deu la "-", va mot loi canh bao o do chi lam nhieu.
-    if _reg_doc(REG_DESKTOP_HKCU, "inferenceProvider") and _c != "true":
+    if _reg_doc(REG_DESKTOP_HKCU, "inferenceProvider") and _c != 1:
         print( "      !! chua bat -> ung dung chi mo tab Code, thu can runtime cuc")
         print( "         bo (claude/node). Khong co thi no KHONG GUI GI CA.")
+    if (_reg_doc(REG_DESKTOP_HKCU, "inferenceProvider")
+            and _d != 1):
+        print( "      !! chua ep che do gateway -> deploymentMode cu co the giu")
+        print( "         Desktop o Claude.ai va bo qua toan bo cau hinh LTT.")
 
     print("\n  Bien moi truong cap nguoi dung:")
     for ten in CLAUDE_ENV:
@@ -2200,7 +2299,7 @@ def lenh_kiem(a) -> int:
         print(f"       {b[:300].decode('utf-8', 'replace')}")
         return 1
 
-    # 🔴 PHAI KIEM RIENG BE MAT CLAUDE DESKTOP, va day la mot bai hoc dat gia.
+    # 🔴 PHAI KIEM RIENG CA HAI TUYEN CLAUDE DESKTOP.
     #
     #    Ban truoc cua `kiem` chi goi `/messages` voi `MODEL` va `stream: True`.
     #    Dem 24/08 no bao XANH trong khi Claude Desktop KHONG GUI NOI mot tin
@@ -2209,16 +2308,18 @@ def lenh_kiem(a) -> int:
     #
     # ⭐ Mot phep tu kiem khong phu duoc be mat ma chinh no vua cau hinh la mot
     #    phep tu kiem dang tran an nham cho.
-    m, b = goi("/messages", {"model": hs.tuyen_desktop, "max_tokens": 32,
-                             "messages": [{"role": "user",
-                                           "content": "Tra loi mot tu: OK"}]},
-               phuong="POST")
-    print(f"  POST /messages (Desktop, khong stream) -> {m}")
-    if m != 200:
-        print(f"       {b[:300].decode('utf-8', 'replace')}")
-        print(f"       Ten tuyen `{hs.tuyen_desktop}` khong goi duoc -> Claude "
-              f"Desktop se im lang hoan toan.")
-        return 1
+    for hs_desktop in HO_SO_MODEL.values():
+        m, b = goi("/messages", {"model": hs_desktop.tuyen_desktop,
+                                 "max_tokens": 32,
+                                 "messages": [{"role": "user",
+                                               "content": "Tra loi mot tu: OK"}]},
+                   phuong="POST")
+        print(f"  POST /messages (Desktop {hs_desktop.ten}, khong stream) -> {m}")
+        if m != 200:
+            print(f"       {b[:300].decode('utf-8', 'replace')}")
+            print(f"       Ten tuyen `{hs_desktop.tuyen_desktop}` khong goi duoc -> "
+                  "picker co ten nhung luot gui se hong.")
+            return 1
 
     print("\nCam duoc. Mo lai VS Code roi dung binh thuong.")
     print("Voi Claude Desktop: phai THOAT HAN roi mo lai.")

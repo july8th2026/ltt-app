@@ -128,6 +128,36 @@ def test_HAI_BO_CAI_khai_cung_mot_tap_khoa_cho_Claude_Code(tmp_path):
     assert not thieu, f"ban mot-tep thieu khoa ma ban Windows co: {sorted(thieu)}"
 
 
+@pytest.mark.parametrize("model", ["ltt-3.8", "ltt-3.5"])
+def test_bo_cai_mot_tep_ghim_model_context_retry_va_subagent(tmp_path, model):
+    hs = cd.HO_SO_MODEL[model]
+    codex_home = tmp_path / ".codex"
+    claude_home = tmp_path / ".claude"
+    cd.codex("https://x.test", codex_home, hs)
+    cd.claude_code("https://x.test", claude_home, hs)
+
+    profile = (codex_home / "ltt.config.toml").read_text(encoding="utf-8")
+    assert f'model = "{model}"' in profile
+    assert f"model_auto_compact_token_limit = {hs.nen}" in profile
+    assert f'default_subagent_model = "{model}"' in profile
+    assert "max_concurrent_threads_per_session = 1" in profile
+
+    env = json.loads((claude_home / "settings.json").read_text(encoding="utf-8"))["env"]
+    for key in ("ANTHROPIC_MODEL", "ANTHROPIC_DEFAULT_MODEL",
+                "ANTHROPIC_DEFAULT_OPUS_MODEL", "ANTHROPIC_DEFAULT_SONNET_MODEL",
+                "ANTHROPIC_DEFAULT_HAIKU_MODEL", "ANTHROPIC_DEFAULT_FABLE_MODEL",
+                "CLAUDE_CODE_SUBAGENT_MODEL"):
+        assert env[key] == model
+    assert env["CLAUDE_CODE_MAX_CONTEXT_TOKENS"] == str(hs.cua_so)
+    assert env["CLAUDE_CODE_AUTO_COMPACT_WINDOW"] == str(hs.nen)
+    assert env["CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS"] == "1"
+    assert env["CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH"] == "1"
+    assert env["CLAUDE_CODE_SUBAGENT_MODEL_FORCE"] == "1"
+    assert env["CLAUDE_CODE_MAX_RETRIES"] == "1"
+    assert env["CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK"] == "1"
+    assert env["ENABLE_TOOL_SEARCH"] == "false"
+
+
 def test_settings_json_hong_thi_KHONG_DAM_SUA(tmp_path):
     """⛔ Thà không làm gì còn hơn ghi đè một file ta không đọc được."""
     goc = tmp_path / ".claude"; goc.mkdir()
@@ -181,6 +211,7 @@ def test_desktop_KHONG_noi_doi_la_da_cau_hinh():
     ra = " ".join(cd.claude_desktop("https://x.test"))
     assert "Third-Party Inference" in ra
     assert "inferenceModels" in ra
+    assert cd.MODEL_DESKTOP in ra and cd.MODEL_DESKTOP_35 in ra
 
 
 # ── Cloudflare chặn User-Agent mặc định của urllib ──────────────────────────
@@ -293,7 +324,10 @@ def test_bang_san_co_THIEU_KHOA_thi_phai_NOI_RA(tmp_path):
     THIEU = ('[model_providers.ltt]\nname = "LTT Studios"\n'
              + 'base_url = \"https://vi.du/api/v1\"\nwire_api = \"responses\"\n'
              + 'env_key = \"LTT_API_KEY\"\n')
-    DU = THIEU + 'stream_idle_timeout_ms = 600000\n'
+    DU = (THIEU
+          + 'request_max_retries = 1\n'
+          + 'stream_max_retries = 0\n'
+          + 'stream_idle_timeout_ms = 600000\n')
     (cx / "config.toml").write_text(THIEU, encoding="utf-8")
     ra = chr(10).join(cd.codex("https://vi.du", cx))
     assert "stream_idle_timeout_ms" in ra and "!!" in ra, ra

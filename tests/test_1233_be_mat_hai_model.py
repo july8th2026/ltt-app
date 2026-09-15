@@ -99,12 +99,12 @@ def test_cli_models_dan_tu_canonical_chu_khong_go_tay():
 # ── 2. Claude Desktop: MỘT bảng, và nó phủ cả hai model ─────────────────────
 
 def test_moi_model_deu_co_mot_tuyen_desktop_rieng():
-    tuyen = examples.TUYEN_DESKTOP
+    tuyen = examples.TUYEN_DESKTOP_CHINH
     assert set(tuyen.values()) == set(canonical.MODEL_HOP_LE), (
         f"tuyen Desktop phu {sorted(set(tuyen.values()))} trong khi ban "
         f"{sorted(canonical.MODEL_HOP_LE)}. Model thieu tuyen la model KHONG "
         f"goi duoc tu Claude Desktop o bat ky gia nao.")
-    assert len(set(tuyen)) == len(tuyen), "hai model dung chung mot ten tuyen"
+    assert len(set(tuyen.values())) == len(tuyen), "hai model dung chung mot ten tuyen"
 
 
 @pytest.mark.parametrize("alias", canonical.MODEL_HOP_LE)
@@ -217,7 +217,7 @@ def test_cam_cli_ten_la_ve_MAC_DINH_chu_khong_nem(cam_cli):
 # ── 5. Bộ cài SDK in TÊN TUYẾN cho Claude Desktop, không phải tên model ─────
 
 @pytest.mark.parametrize("alias", canonical.MODEL_HOP_LE)
-def test_sdk_in_TEN_TUYEN_cho_desktop_khong_phai_ten_san_pham(sdk_cli, alias):
+def test_sdk_in_DU_HAI_TEN_TUYEN_cho_desktop(sdk_cli, alias):
     """🔴 ĐÂY LÀ MỘT LỖI THẬT ĐÃ ĐANG MỞ, không phải một khả năng.
 
     Trước 12/09 dòng hướng dẫn Claude Desktop của bộ cài độc lập in::
@@ -233,9 +233,12 @@ def test_sdk_in_TEN_TUYEN_cho_desktop_khong_phai_ten_san_pham(sdk_cli, alias):
     dong = [d for d in sdk_cli.claude_desktop("https://vi.du", hs)
             if "inferenceModels" in d and ":" in d]
     assert len(dong) == 1, f"cho doi dung mot dong gia tri, thay {dong}"
-    gia_tri = dong[0].split(":", 1)[1].strip()
-    assert gia_tri == hs.tuyen_desktop
-    assert gia_tri != alias, (
+    gia_tri = dong[0].split(":", 1)[1]
+    for ho_so in sdk_cli.HO_SO_MODEL.values():
+        assert ho_so.tuyen_desktop in gia_tri
+        assert sdk_cli.NHAN_DESKTOP[ho_so.tuyen_desktop] in gia_tri
+    assert hs.tuyen_desktop in gia_tri
+    assert f"[{alias}]" not in gia_tri, (
         "in ten san pham vao `inferenceModels` la day khach vao dung cai bay "
         "picker rong / nut gui chet ma ca muc 2.5b cua tai lieu duoc viet de dong")
 

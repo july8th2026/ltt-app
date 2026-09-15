@@ -154,11 +154,9 @@ a:hover{text-decoration:underline}
       Các giá trị dưới đây để đối chiếu; tên model riêng tránh lỗi nút Gửi bị vô hiệu mà không báo.</p>
     <div class="cp"><span class="k">Gateway base URL</span><code>https://app.lttstudios.com/api</code><button class="chep" data-chep="https://app.lttstudios.com/api">chép</button></div>
     <div class="cp"><span class="k">Auth scheme</span><code>Bearer</code><button class="chep" data-chep="Bearer">chép</button></div>
-    <!-- ⛔ Giá trị này ĐI THEO ô chọn model ở trên (`dongBoTuyenDesktop`). Gõ
-         cứng một tên là cái bẫy mà cả thẻ này được dựng lên để đóng: khách chọn
-         `ltt-3.5` rồi chép đúng ô này sẽ cắm tuyến của `ltt-3.8`, và triệu
-         chứng là **một hoá đơn theo giá model kia**, không phải một lỗi. -->
-    <div class="cp"><span class="k">inferenceModels</span><code id="tuyen_desktop">ltt-llm-claude-compat</code><button class="chep" id="chep_tuyen" data-chep="ltt-llm-claude-compat">chép</button></div>
+    <!-- Desktop có picker thật, nên giá trị này luôn gồm CẢ HAI tuyến. Ô chọn
+         model ở trên chỉ đặt mặc định cho Codex/Claude Code và các subagent. -->
+    <div class="cp"><span class="k">Model trong Claude Desktop</span><code id="tuyen_desktop">LTT 3.8 (Mạnh), LTT 3.5 (Nhanh)</code><button class="chep" id="chep_tuyen" data-chep="LTT 3.8 (Mạnh), LTT 3.5 (Nhanh)">chép</button></div>
     <div class="cp"><span class="k">Gateway API key</span><code>khoá của bạn</code></div>
   </div>
 
@@ -224,14 +222,14 @@ function veModel(models, macDinh) {
   dongBoTuyenDesktop();
 }
 
-// Thẻ "Đối chiếu Claude Desktop" phải nói tuyến của model ĐANG CHỌN.
+// Thẻ "Đối chiếu Claude Desktop" phải nói ĐỦ hai tuyến trong picker.
 //
 // ⚠ Nút "chép" đọc `data-chep`, không đọc chữ hiển thị — nên phải đổi CẢ HAI.
 //   Đổi mỗi chữ là cái tệ hơn cả không đổi: màn hình nói một đằng, clipboard
 //   đưa một nẻo, và khách tin clipboard.
 function dongBoTuyenDesktop() {
-  const r = document.querySelector('input[name="model"]:checked');
-  const t = (r && r.dataset.tuyen) || "";
+  const t = Array.from(document.querySelectorAll('input[name="model"]'))
+    .map((r) => r.dataset.tuyen || "").filter(Boolean).join(", ");
   if (!t) return;
   if ($("tuyen_desktop")) $("tuyen_desktop").textContent = t;
   if ($("chep_tuyen")) $("chep_tuyen").dataset.chep = t;

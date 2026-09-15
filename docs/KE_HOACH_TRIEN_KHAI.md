@@ -3965,3 +3965,58 @@ vision. Kế hoạch của họ viết **trước** phép đo; ta giữ ý đị
       `['qwen38-api','qwen38-vision']`, thiếu `qwen35-api`, nên **mọi lượt LTT-3.5
       sẽ hỏng trong im lặng** (`ThieuKeyError` bị đọc thành "provider không phục vụ
       được"). Sổ khoá là dữ liệu vận hành — không test nào chạm tới được.
+
+## H46 — Chốt tương thích Codex/Claude Connector (2026-09-14)
+
+Quyết định và bảng audit: `docs/LTT_CLI_COMPAT_DECISIONS.md`. Không đổi backend,
+RPM, queue hay GPU slot; chỉ sửa contract client/gateway/docs.
+
+- [x] **H46.1 — Connector + API + realistic smoke + EXE:** model được chọn đi
+      xuyên suốt profile/alias/subagent; mỗi phiên tối đa một subagent; retry
+      không khuếch đại; 413 không tiêu create-rate; Responses test stream đúng
+      vòng đời client; 429 có code/scope/reason; metadata vision và hướng dẫn
+      cùng SSOT. Hoàn tất khi Codex/Claude binary thật qua HOME tạm, EXE 1.9.0
+      qua `cam/kiem/go`, browser local sạch và L3 PASS.
+- [x] **H46.2 — Nghiệm thu tài khoản thử nghiệm + Claude Desktop 1.52386.6:**
+      bộ giả lập chốt request/stream/retry/tool-call mà không cần production;
+      tài khoản thường tạo một API key ngắn hạn, gọi thật Messages/Responses,
+      rồi cắm bằng EXE mới. Harness phải thoát **toàn bộ** tiến trình Claude,
+      mở lại, xác nhận chế độ gateway + đúng model trên UI thật, gửi câu hỏi và
+      thấy câu trả lời thật; sau đó thu hồi key, `go` và xác minh registry sạch.
+      Không ghi key/mật khẩu vào tham số, log, ảnh hay báo cáo. Chỉ khi toàn bộ
+      hạng mục trên PASS mới build release cuối và chạy đúng một L3 cuối.
+- [x] **H46.3 — Hướng dẫn cắm tay trong editor Gateway:** đối chiếu ảnh, tài liệu
+      upstream/community và schema Claude Desktop 1.52386.6; bảng Connection,
+      hai Model ID/Display name, quyền key, restart, câu hỏi kiểm và xử lý lỗi.
+      Giữ tool đã đạt. Trang Việt/Anh phải PASS Playwright desktop/mobile, không
+      lỗi console/request; phân biệt thử qua tool với đối chiếu form nhập tay.
+      Chỉ cập nhật repo, không deploy khi chưa được giao.
+
+- [x] **H46.4 — Codex cắm tay:** hai profile ltt/ltt-fast, provider Responses,
+      catalog metadata theo model, đường dẫn tuyệt đối và nhập key có che;
+      tài liệu CLI/tiện ích tách khỏi Desktop chưa xác minh Gateway UI. Kiểm
+      CLI 0.145.0 thật qua server mock và GUI hướng dẫn Việt/Anh desktop/mobile.
+- [x] **H46.5 — Chẩn đoán 401 và quyền công cụ:** Bearer/x-api-key có giải thích
+      rõ; giữ nguyên hợp đồng xác thực/quyền. Bảng khóa luôn nói công cụ không
+      giới hạn, mục tùy chọn không biến mất khi catalog rỗng; empty tools không
+      tự cấp write scope. Test tạo khóa và kiểm GUI render thật.
+- [x] **H46.6 — Hướng dẫn giới hạn Code Local:** đọc upstream/community và
+      schema bản đang cài; giải thích tắt 1M không tự đặt 171K, cách mở Local
+      ở màn hình New, env context/compact/output/MCP/subagent/retry. Phân biệt
+      Code Local với Chat/Cowork và hướng dẫn với nghiệm thu phiên dài.
+- [x] **H46.7 — Phiên dài, MCP và permission mode:** ảnh thật phải xác nhận
+      preset 3.8 thành 138.7K/autocompact 76%; xử lý fallback `stream:false`
+      bằng biến chính thức của Claude, không bật Tool Search trước khi LTT có
+      `tool_reference`; hướng dẫn giảm schema MCP và chọn Bypass từ phiên Local
+      mới. Trang Việt/Anh, mẫu cấu hình và test phải cùng Q126; L3 chạy sau cùng.
+
+Tiến độ H46: **100% — hoàn tất 2026-09-15.** Production API và Desktop hai
+model đã PASS ở lượt vận hành trước, khóa ngắn hạn đã thu hồi và dấu vết connector
+đã gỡ. Q126 chốt một ma trận duy nhất: Gateway Bearer, hai tier LTT, đúng 10 biến
+Local, một subagent và không lồng nhau; CLI/VS Code ghim đủ bảy đường chọn model.
+Tool 1.9.0 đã build đủ installer/GUI/console/ZIP, Defender sạch. Kiểm tập trung
+**393 passed, 3 skipped**; Playwright guide và key đều **PASS 4/4** Việt/Anh ×
+1440/390px, 0 console error/request hỏng. Bốn frontend build PASS. Lượt L3 đầu
+**32/33** chỉ đỏ vì `DEVELOPER_GUIDE.md` trộn kiểu xuống dòng; sau khi trả đúng
+CRLF gốc, lượt cuối `python tools\gate.py` **PASS 33/33**, báo cáo
+`test-results/gates/20260915T014235Z-22516.json`. Không deploy trong H46.

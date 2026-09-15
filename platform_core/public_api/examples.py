@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 
+from platform_core.i18n import N_
 from platform_core.llm import canonical
 
 ENV_API_KEY = "LTT_API_KEY"
@@ -532,10 +533,13 @@ CHAT_DIFFERENCES = (
      "trip, one JSON answer, priced after the fact. POST /api/v1/messages and "
      "POST /api/v1/responses — streaming, and these are the two a coding CLI "
      "plugs into. Same model, same key, same ledger behind all of them."),
-    ("Busy is 503, not 429",
-     "503 means the machine cannot serve right now — you are NOT charged, and "
-     "Retry-After says when to come back. 429 means something else entirely: "
-     "you are calling too fast, or you hit an account limit."),
+    ("Read the 429 code, scope and reason before retrying",
+     "`rate_limited` with reason `request_rate` or `create_rate` means the key "
+     "or account called too fast. `concurrency_limited` with scope `execution` "
+     "means the selected model lane is busy; its reason distinguishes a full "
+     "waiting room from an upstream 429. In every case reuse the same request, "
+     "honour Retry-After and do not increase concurrency. 503 means the model "
+     "is unavailable rather than rate limited. Rejected requests are not charged."),
 )
 
 
@@ -614,13 +618,27 @@ CLI_MODEL = canonical.MODEL_MAC_DINH
 #: ⛔ These are **route names of one client's protocol**, not product names. They
 #:    do not belong in `canonical.ALIAS_SANG_ID`, and nothing in the catalogue,
 #:    the price table or `/api/v1/tools` may print them as models for sale.
-TUYEN_DESKTOP: dict[str, str] = {
+TUYEN_DESKTOP_CHINH: dict[str, str] = {
     "ltt-llm-claude-compat": "ltt-3.8",
     "ltt-llm-claude-compat-35": "ltt-3.5",
 }
+TUYEN_DESKTOP: dict[str, str] = dict(TUYEN_DESKTOP_CHINH)
+NHAN_DESKTOP: dict[str, str] = {
+    "ltt-llm-claude-compat": N_("LTT 3.8 (Mạnh)"),
+    "ltt-llm-claude-compat-35": N_("LTT 3.5 (Nhanh)"),
+}
+#: Ánh xạ alias NỘI BỘ của Claude Desktop sang hai tuyến LTT. Đây không đổi
+#: nhãn sản phẩm và không tuyên bố model nhà là model Anthropic. Nó chỉ bảo host
+#: gửi việc nền `haiku` về tuyến nhanh và `opus` về tuyến mạnh, thay vì tự ghép
+#: một model ID ngoài catalog mà gateway sẽ từ chối.
+TANG_DESKTOP: dict[str, str] = {
+    "ltt-llm-claude-compat": "opus",
+    "ltt-llm-claude-compat-35": "haiku",
+}
 
 #: The route for the default model — what the Desktop surface shows by default.
-DESKTOP_MODEL = "ltt-llm-claude-compat"
+DESKTOP_MODELS = tuple(TUYEN_DESKTOP_CHINH)
+DESKTOP_MODEL = DESKTOP_MODELS[0]
 
 
 def tuyen_desktop_cho(alias: str) -> str:
@@ -721,17 +739,17 @@ LOI_413 = (
      "`CLAUDE_CODE_MAX_CONTEXT_TOKENS` corrects the window Claude Code "
      "assumes, but it does not set the compaction threshold. Without "
      "`CLAUDE_CODE_AUTO_COMPACT_WINDOW`, Claude Code compacts only when the "
-     "conversation reaches that window — 156,385 — which leaves less room "
-     "than one full answer (32,768) before our hard limit. Set both."),
+     "conversation reaches that window, which leaves less room than one full "
+     "answer before our hard input limit. Set both."),
     ("Your client compacts, but too late",
      "If you configured the window by hand, check the compaction threshold "
      f"too: it must sit at least {TOKEN_RA_TRAN:,} tokens below the advertised "
      "window, because one turn can grow by a whole answer before your client "
      "gets to check again."),
-    ("You are sending images to a text profile",
-     "`ltt-3.5` has its own window, separate from `ltt-3.8` — they are two "
-     "model profiles, not one. The 413 body carries the limit that actually "
-     "applied, so read the number in the error rather than assuming."),
+    ("Your client is using the other model's profile",
+     "Both models read images, but `ltt-3.5` has its own window and compact "
+     "threshold, separate from `ltt-3.8`. The 413 body carries the limit that "
+     "actually applied, so read the number in the error rather than assuming."),
 )
 
 #: Ba cửa của `text.chat`, và **cửa nào cho việc gì**.
@@ -769,7 +787,113 @@ BA_CUA = (
 #: ⭐ Thiếu nó thì Codex **không có metadata** cho model nhà, rơi vào đường
 #:    `compact_model_fallback` và mượn tên một model OpenAI cho lượt phụ; cổng
 #:    của ta từ chối (fail-closed) và khách thấy "im lặng" ở hội thoại dài.
-TEP_CATALOG_CODEX = r"%USERPROFILE%\.codex\ltt_model_catalog.json"
+TEP_CATALOG_CODEX = r"C:\Users\YOUR_WINDOWS_USER\.codex\ltt_model_catalog.json"
+
+# Mirrors app budgets without importing apps into platform_core. Tests compare
+# every generated profile/catalog entry against apps/ltt_llm/ngan_sach.py.
+CODEX_MODEL_LIMITS = {
+    "ltt-3.8": (CUA_SO_CONG_BO, NEN_CLIENT),
+    "ltt-3.5": (209_141, 176_373),
+}
+
+#: Bộ biến CHUẨN cho một phiên Claude Code Local chạy qua LTT Gateway.
+#:
+#: 🔴 Vì sao phải gom thành dữ liệu thay vì một khối chữ trong template. Danh
+#:    sách này đã tăng từng dòng trong lúc chẩn lỗi, khiến người dùng phải sửa
+#:    cấu hình nhiều lần và ba bề mặt (trang API, CLI, VS Code) bắt đầu lệch
+#:    nhau. Từ Q126, code sinh cấu hình, trang hướng dẫn và test đều đọc cùng
+#:    một bộ này; thêm hay bỏ một biến phải làm test "đúng 10 biến" đỏ.
+#:
+#: `CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1` đứng một mình có chủ ý trên Desktop:
+#: Claude Code 2.1.257+ khi đó ép mọi subagent dùng model CHÍNH đang chọn. Không
+#: ghim một tên model ở đây, vì picker Desktop phải tiếp tục đổi được giữa hai
+#: tuyến LTT. CLI riêng sẽ đặt thêm `CLAUDE_CODE_SUBAGENT_MODEL` theo profile.
+CLAUDE_LOCAL_COMMON_ENV: tuple[tuple[str, str], ...] = (
+    ("CLAUDE_CODE_MAX_OUTPUT_TOKENS", str(TOKEN_RA_TRAN)),
+    ("MAX_MCP_OUTPUT_TOKENS", str(TRAN_KET_QUA_TOOL)),
+    ("CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS", "1"),
+    ("CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH", "1"),
+    ("CLAUDE_CODE_SUBAGENT_MODEL_FORCE", "1"),
+    ("CLAUDE_CODE_MAX_RETRIES", "1"),
+    ("CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK", "1"),
+    ("ENABLE_TOOL_SEARCH", "false"),
+)
+
+
+def claude_local_env(model: str = CLI_MODEL) -> tuple[tuple[str, str], ...]:
+    """Mười dòng `.env` cho editor Local của Claude Desktop.
+
+    Hai dòng đầu đổi theo model; tám dòng sau là hợp đồng dùng chung. Tên lạ
+    ném `KeyError` thay vì rơi về 3.8, vì một preset mang ngân sách của model
+    khác sẽ chỉ lộ ra bằng lỗi 413 giữa một phiên dài.
+    """
+    context, compact = CODEX_MODEL_LIMITS[model]
+    return (
+        ("CLAUDE_CODE_MAX_CONTEXT_TOKENS", str(context)),
+        ("CLAUDE_CODE_AUTO_COMPACT_WINDOW", str(compact)),
+        *CLAUDE_LOCAL_COMMON_ENV,
+    )
+
+
+def claude_model_env(model: str = CLI_MODEL) -> tuple[tuple[str, str], ...]:
+    """Mọi đường chọn model mà Claude Code 2.1.270 có thể tự dùng.
+
+    `fable` và `default` là alias chính thức mới; thiếu chúng thì một thao tác
+    nền hoặc lần fallback có thể gửi tên Anthropic ra gateway dù lượt chính đã
+    ghim đúng LTT. Không có biến `ANTHROPIC_DEFAULT_MYTHOS_MODEL` trong bảng
+    biến chính thức hiện tại, nên không bịa thêm một khóa không được client đọc.
+    """
+    if model not in CODEX_MODEL_LIMITS:
+        raise KeyError(f"khong co ho so Claude cho {model!r}")
+    return (
+        ("ANTHROPIC_MODEL", model),
+        ("ANTHROPIC_DEFAULT_MODEL", model),
+        ("ANTHROPIC_DEFAULT_HAIKU_MODEL", model),
+        ("ANTHROPIC_DEFAULT_OPUS_MODEL", model),
+        ("ANTHROPIC_DEFAULT_SONNET_MODEL", model),
+        ("ANTHROPIC_DEFAULT_FABLE_MODEL", model),
+        ("CLAUDE_CODE_SUBAGENT_MODEL", model),
+    )
+
+
+def codex_catalog() -> str:
+    """Copyable local metadata in the format accepted by Codex 0.145.0.
+
+    This is not the OpenAI-shaped /v1/models listing. Omit the effective context
+    percentage: CLI and IDE have incompatible types for that optional field.
+    Unknown aliases fail rather than silently borrowing another model's budget.
+    """
+    models = []
+    for slug in CLI_MODELS:
+        context, compact = CODEX_MODEL_LIMITS[slug]
+        models.append({
+            "slug": slug, "display_name": slug,
+            "description": f"{slug} (LTT Studios)",
+            "default_reasoning_level": "medium",
+            "supported_reasoning_levels": [
+                {"effort": "low", "description": "Fast"},
+                {"effort": "medium", "description": "Balanced"},
+                {"effort": "xhigh", "description": "Deepest"}],
+            "shell_type": "unified_exec", "visibility": "list",
+            "supported_in_api": True, "priority": 1,
+            "additional_speed_tiers": [], "service_tiers": [],
+            "base_instructions": "",
+            "include_skills_usage_instructions": False,
+            "include_plugin_usage_instructions": False,
+            "include_apps_usage_instructions": False,
+            "supports_reasoning_summary_parameter": False,
+            "default_reasoning_summary": "none", "support_verbosity": False,
+            "apply_patch_tool_type": "freeform",
+            "truncation_policy": {"mode": "tokens", "limit": TRAN_KET_QUA_TOOL},
+            "supports_parallel_tool_calls": False,
+            "supports_image_detail_original": False,
+            "context_window": context, "max_context_window": context,
+            "auto_compact_token_limit": compact,
+            "experimental_supported_tools": [], "input_modalities": ["text", "image"],
+            "supports_search_tool": False, "use_responses_lite": False,
+            "node_repl_auto_review_required": False, "node_repl_disabled": False,
+        })
+    return json.dumps({"models": models}, indent=2)
 
 
 def _goc(base_url: str) -> str:
@@ -787,70 +911,77 @@ def codex_config(base_url: str) -> str:
         f'base_url = "{_goc(base_url)}/api/v1"   # with /v1 — Codex appends /responses\n'
         f'env_key = "{ENV_API_KEY}"\n'
         'wire_api = "responses"                  # the only value Codex supports\n'
+        "request_max_retries = 1                 # one retry; avoids retry amplification\n"
+        "stream_max_retries = 0                  # never replay an opened stream\n"
         "stream_idle_timeout_ms = 600000"
     )
 
 
-def codex_profile() -> str:
+def codex_profile(model: str = CLI_MODEL) -> str:
     """`~/.codex/ltt.config.toml` — a separate file, and that is not optional.
 
     Codex 0.145 refuses `[profiles.X]` inside `config.toml` outright:
     *"cannot be used while config.toml contains legacy `[profiles.ltt]` config"*.
     """
+    context, compact = CODEX_MODEL_LIMITS[model]
     return (
         "# ~/.codex/ltt.config.toml — a SEPARATE file.\n"
         "# Codex 0.145+ refuses [profiles.ltt] inside config.toml.\n"
-        f'model = "{CLI_MODEL}"\n'
+        f'model = "{model}"\n'
         'model_provider = "ltt"\n'
         '# Left at its default the model spends most of max_tokens thinking\n'
         '# before it answers.\n'
         'model_reasoning_effort = "low"\n'
         'model_reasoning_summary = "none"\n'
-        f"model_context_window = {CUA_SO_CONG_BO}\n"
+        f"model_context_window = {context}\n"
+        f"model_auto_compact_token_limit = {compact}\n"
         "# Declare the model so Codex stops guessing. Without this it warns\n"
-        f"# `Model metadata for {CLI_MODEL} not found`, then substitutes an OpenAI\n"
+        f"# `Model metadata for {model} not found`, then substitutes an OpenAI\n"
         "# model name on its own internal calls — which our gate rejects.\n"
-        f"model_catalog_json = '{TEP_CATALOG_CODEX}'"
+        f"model_catalog_json = '{TEP_CATALOG_CODEX}'\n"
+        "\n[agents]\n"
+        f'default_subagent_model = "{model}"\n'
+        "max_concurrent_threads_per_session = 1"
     )
 
 
 def claude_code_env(base_url: str) -> str:
     """Claude Code CLI reads plain environment variables."""
+    model_lines = "".join(
+        f'$env:{name} = "{value}"\n'
+        for name, value in claude_model_env(CLI_MODEL)
+    )
+    local_lines = "".join(
+        f'$env:{name} = "{value}"\n'
+        for name, value in claude_local_env(CLI_MODEL)
+    ).rstrip("\n")
     return (
         f'$env:ANTHROPIC_BASE_URL = "{_goc(base_url)}/api"   # NO /v1 — the client adds it\n'
         f'$env:ANTHROPIC_AUTH_TOKEN = $env:{ENV_API_KEY}\n'
-        f'$env:ANTHROPIC_MODEL = "{CLI_MODEL}"\n'
-        f'$env:ANTHROPIC_DEFAULT_HAIKU_MODEL = "{CLI_MODEL}"   # background work\n'
+        f'{model_lines}'
         f'# Claude Code does not know `{CLI_MODEL}`, so it ASSUMES a 200,000\n'
-        f'# token window and never compacts in time. All four lines matter:\n'
+        f'# token window and never compacts in time. This is the canonical\n'
+        f'# LTT Local preset; copy every line and do not add 1M overrides.\n'
         f'#   MAX_CONTEXT_TOKENS    corrects the window it assumes\n'
         f'#   AUTO_COMPACT_WINDOW   sets WHEN it compacts. Without it Claude\n'
         f'#                         compacts only AT the window above, leaving\n'
         f'#                         less room than one full answer.\n'
         f'#   MAX_MCP_OUTPUT_TOKENS caps one MCP result: its default, 25000,\n'
         f'#                         can outgrow that room in a single turn.\n'
-        f'$env:CLAUDE_CODE_MAX_CONTEXT_TOKENS = "{CUA_SO_CONG_BO}"\n'
-        f'$env:CLAUDE_CODE_AUTO_COMPACT_WINDOW = "{NEN_CLIENT}"\n'
-        f'$env:MAX_MCP_OUTPUT_TOKENS = "{TRAN_KET_QUA_TOOL}"\n'
-        f'$env:CLAUDE_CODE_MAX_OUTPUT_TOKENS = "{TOKEN_RA_TRAN}"'
+        f'{local_lines}'
     )
 
 
 def claude_code_settings(base_url: str) -> str:
     """`~/.claude/settings.json` — survives a new terminal."""
+    env = {
+        "ANTHROPIC_BASE_URL": f"{_goc(base_url)}/api",
+        "ANTHROPIC_AUTH_TOKEN": "<your ltt_sk_… key>",
+    }
+    env.update(claude_model_env(CLI_MODEL))
+    env.update(claude_local_env(CLI_MODEL))
     return _json({
-        "env": {
-            "ANTHROPIC_BASE_URL": f"{_goc(base_url)}/api",
-            "ANTHROPIC_AUTH_TOKEN": "<your ltt_sk_… key>",
-            "ANTHROPIC_MODEL": CLI_MODEL,
-            "ANTHROPIC_DEFAULT_HAIKU_MODEL": CLI_MODEL,
-            # Without these two Claude Code assumes a 200,000-token window,
-            # never compacts in time, and you hit 413 mid-conversation.
-            "CLAUDE_CODE_MAX_CONTEXT_TOKENS": str(CUA_SO_CONG_BO),
-            "CLAUDE_CODE_AUTO_COMPACT_WINDOW": str(NEN_CLIENT),
-            "MAX_MCP_OUTPUT_TOKENS": str(TRAN_KET_QUA_TOOL),
-            "CLAUDE_CODE_MAX_OUTPUT_TOKENS": str(TOKEN_RA_TRAN),
-        }
+        "env": env
     })
 
 
@@ -871,15 +1002,21 @@ def vscode_claude_settings(base_url: str) -> str:
     only takes effect in **User** settings. Put it in a workspace
     ``.vscode/settings.json`` and nothing happens, with no error.
     """
+    model_rows = "".join(
+        f'    {{"name": "{name}", "value": "{value}"}},\n'
+        for name, value in claude_model_env(CLI_MODEL)
+    )
+    local_rows = "".join(
+        f'    {{"name": "{name}", "value": "{value}"}},\n'
+        for name, value in claude_local_env(CLI_MODEL)
+    ).rstrip(",\n")
     return (
         "{\n"
         '  "claudeCode.disableLoginPrompt": true,\n'
         '  "claudeCode.environmentVariables": [\n'
         '    {"name": "ANTHROPIC_BASE_URL", "value": "' + base_url + '/api"},\n'
-        f'    {{"name": "ANTHROPIC_MODEL", "value": "{CLI_MODEL}"}},\n'
-        f'    {{"name": "ANTHROPIC_DEFAULT_HAIKU_MODEL", "value": "{CLI_MODEL}"}},\n'
-        f'    {{"name": "CLAUDE_CODE_MAX_CONTEXT_TOKENS", "value": "{CUA_SO_CONG_BO}"}},\n'
-        f'    {{"name": "CLAUDE_CODE_MAX_OUTPUT_TOKENS", "value": "{TOKEN_RA_TRAN}"}}\n'
+        f'{model_rows}'
+        f'{local_rows}\n'
         "  ]\n"
         "}"
     )
@@ -909,14 +1046,22 @@ def vscode_codex_config(base_url: str) -> str:
         f'model = "{CLI_MODEL}"\n'
         f'model_provider = "ltt"\n'
         f'model_reasoning_effort = "low"\n'
+        f'model_reasoning_summary = "none"\n'
         f'model_context_window = {CUA_SO_CONG_BO}\n'
+        f'model_auto_compact_token_limit = {NEN_CLIENT}\n'
         f"model_catalog_json = '{TEP_CATALOG_CODEX}'\n"
+        f'\n'
+        f'[agents]\n'
+        f'default_subagent_model = "{CLI_MODEL}"\n'
+        f'max_concurrent_threads_per_session = 1\n'
         f'\n'
         f'[model_providers.ltt]\n'
         f'name = "LTT Studios"\n'
         f'base_url = "{base_url}/api/v1"\n'
         f'env_key = "{ENV_API_KEY}"\n'
         f'wire_api = "responses"\n'
+        f'request_max_retries = 1\n'
+        f'stream_max_retries = 0\n'
         f'stream_idle_timeout_ms = 600000\n'
     )
 
@@ -936,27 +1081,27 @@ VSCODE_BAY = (
 def claude_desktop_registry(base_url: str) -> str:
     r"""Claude Desktop on Windows: an OS **policy**, not an app config file.
 
-    The app's runtime settings live in Electron's LevelDB and cannot be edited by
-    hand. But the **third-party inference** section is read from OS-managed
-    policy - a .mobileconfig on macOS, the **registry** on Windows. That is the
-    enterprise deployment path and it is stable.
-
-    Until we found this, the Claude Desktop section of our own guide said "manual
-    entry only", which was wrong.
+    Desktop also has an in-app editor; ``claude_desktop_steps`` supplies its
+    values.  This policy form remains useful for the connector and enterprise
+    deployment.  Do not edit Electron's LevelDB files to configure either path.
 
     Four rules from the official reference. Each of them fails **silently**:
 
     * `inferenceGatewayBaseUrl` is the **origin**; the app appends
       `/v1/messages` itself. Shipping `/v1` in the value yields
       `/v1/v1/messages` and a 404 with no other clue.
-    * HTTPS is **required** (loopback excepted).
+    * HTTPS is **required**, including for loopback, in Desktop 1.52386.6.
     * Config is read **once at launch**, so the app must be fully quit, not just
       closed to the tray.
     * A policy under `HKEY_LOCAL_MACHINE` makes the app ignore the
       `HKEY_CURRENT_USER` one **entirely**.
     """
     khoa = r"[HKEY_CURRENT_USER\SOFTWARE\Policies\Claude]"
-    mo = '[{\\"name\\": \\"' + DESKTOP_MODEL + '\\"}]'
+    mo = json.dumps([{"name": ten, "labelOverride": NHAN_DESKTOP[ten],
+                      "anthropicFamilyTier": TANG_DESKTOP[ten],
+                      "isFamilyDefault": True}
+                     for ten in DESKTOP_MODELS],
+                    separators=(",", ": ")).replace('"', '\\"')
     dong = [
         "Windows Registry Editor Version 5.00",
         "",
@@ -973,28 +1118,53 @@ def claude_desktop_registry(base_url: str) -> str:
         '"inferenceGatewayApiKey"="<your ltt_sk_… key>"',
         '"inferenceGatewayAuthScheme"="bearer"',
         '"inferenceModels"="' + mo + '"',
-        '"modelDiscoveryEnabled"="false"',
+        '"modelDiscoveryEnabled"=dword:00000000',
         # Without this the app opens only its Code tab, which starts a local
         # agent session instead of talking to the gateway — and with no local
         # runtime installed it sends nothing at all, silently.
-        '"chatTabEnabled"="true"',
+        '"chatTabEnabled"=dword:00000001',
+        # Force third-party mode even when the user previously persisted 1p.
+        '"disableDeploymentModeChooser"=dword:00000001',
+        # Ten minutes, aligned with the connector's fixed-capacity stream wait.
+        '"inferenceStreamIdleTimeoutSec"=dword:00000258',
     ]
     return "\n".join(dong) + "\n"
 
 
 def claude_desktop_steps(base_url: str) -> tuple:
-    """Claude Desktop does NOT read ANTHROPIC_BASE_URL. It has its own form."""
+    """Exact values for Claude Desktop's in-app 3P editor.
+
+    Verified against the schema bundled in Desktop 1.52386.6.  Keep this as
+    data because both the public guide and the signed-in developer guide render
+    it; prose duplicated in two templates is how the old instructions drifted.
+
+    Model discovery is deliberately off.  The public LTT catalog exposes the
+    product IDs (``ltt-3.8`` / ``ltt-3.5``), while Desktop must send the two
+    compatibility route IDs below.  An explicit list also lets us attach the
+    product labels without inventing another backend alias.
+    """
     return (
-        ("Open the window",
-         "Help → Troubleshooting → Enable Developer Mode, then "
-         "Developer → Configure Third-Party Inference…  (on Windows the app menu "
-         "is the ☰ button at the top left of the sign-in screen)"),
-        ("Inference provider", "Gateway"),
+        ("Connection", "Gateway"),
+        ("Credential kind", "Static API key"),
         ("Gateway base URL", f"{_goc(base_url)}/api"),
         ("Gateway API key", "your ltt_sk_… key"),
         ("Gateway auth scheme", "Bearer"),
-        ("inferenceModels", DESKTOP_MODEL),
-        ("Finish", "Apply locally, then let the app relaunch"),
+        ("Artifact preview iframe origin", "leave blank"),
+        ("Custom inference headers", "leave blank"),
+        ("Stream idle timeout", "600 seconds"),
+        ("Model discovery", "Off"),
+        ("Default to 1M context", "Off"),
+        ("Model 1 — Model ID", DESKTOP_MODELS[0]),
+        ("Model 1 — Display name", NHAN_DESKTOP[DESKTOP_MODELS[0]]),
+        ("Model 1 — Offer 1M-context variant", "Off"),
+        ("Model 1 — Tier alias", TANG_DESKTOP[DESKTOP_MODELS[0]]),
+        ("Model 1 — Default for tier", "On"),
+        ("Model 2 — Model ID", DESKTOP_MODELS[1]),
+        ("Model 2 — Display name", NHAN_DESKTOP[DESKTOP_MODELS[1]]),
+        ("Model 2 — Offer 1M-context variant", "Off"),
+        ("Model 2 — Tier alias", TANG_DESKTOP[DESKTOP_MODELS[1]]),
+        ("Model 2 — Default for tier", "On"),
+        ("Show estimated cost", "Off"),
     )
 
 
@@ -1019,8 +1189,8 @@ CLI_BAY = (
      f"It keeps only names containing claude, anthropic, or a Claude family "
      f"word, and drops the rest before the picker is drawn — so {CLI_MODEL} is "
      f"discarded, the picker ends up empty, and the send button silently stops "
-     f"working. Give it {DESKTOP_MODEL}: the same model, under the one name "
-     f"that clears its filter."),
+     f"working. Give it {', '.join(DESKTOP_MODELS)}: two explicit LTT routes "
+     f"that clear its filter and keep the model choice visible."),
     ("Only /responses requires streaming",
      'It is a streaming route: send "stream": true. POST /api/v1/messages '
      "serves both, and POST /api/v1/chat/completions is the plain "
@@ -1059,7 +1229,7 @@ CLI_BAY = (
 BE_MAT_MA = ("codex", "claude-code", "vscode", "desktop", "http")
 
 #: Ma buoc → doan ma. Tach khoi VAN XUOI co chu dich, xem `be_mat_cam`.
-BUOC_MA = ("codex-config", "codex-profile", "dat-khoa", "env", "settings",
+BUOC_MA = ("codex-catalog", "codex-config", "codex-profile", "dat-khoa", "env", "settings",
            "vscode-claude", "vscode-codex", "reg", "curl")
 
 
@@ -1078,9 +1248,15 @@ def be_mat_cam(base_url: str) -> tuple:
     return (
         {"ma": "codex", "ten": "Codex CLI", "the": "OPENAI RESPONSES",
          "dia_chi": f"{goc}/api/v1", "model": CLI_MODEL,
-         "buoc": (("codex-config", "~/.codex/config.toml", codex_config(goc)),
+         "model_limits": tuple((slug, *CODEX_MODEL_LIMITS[slug]) for slug in CLI_MODELS),
+         "buoc": (("codex-catalog", "~/.codex/ltt_model_catalog.json", codex_catalog()),
+                  ("codex-config", "~/.codex/config.toml", codex_config(goc)),
                   ("codex-profile", "~/.codex/ltt.config.toml", codex_profile()),
-                  ("dat-khoa", None, f'setx {ENV_API_KEY} "<...>"')),
+                  ("codex-profile", "~/.codex/ltt-fast.config.toml", codex_profile("ltt-3.5")),
+                  ("dat-khoa", None,
+                   f"$env:{ENV_API_KEY} = [System.Net.NetworkCredential]::new(\n"
+                   "    '', (Read-Host 'LTT API key' -AsSecureString)).Password\n"
+                   "# Run Codex in this same PowerShell window.")),
          "chay": "codex --profile ltt"},
         {"ma": "claude-code", "ten": "Claude Code (CLI)", "the": "ANTHROPIC MESSAGES",
          "dia_chi": f"{goc}/api", "model": CLI_MODEL,
@@ -1107,9 +1283,16 @@ def be_mat_cam(base_url: str) -> tuple:
          "buoc": (("vscode-claude", "settings.json", vscode_claude_settings(goc)),
                   ("vscode-codex", "~/.codex/config.toml", vscode_codex_config(goc))),
          "chay": None},
-        {"ma": "desktop", "ten": "Claude Desktop", "the": "REGISTRY",
+        {"ma": "desktop", "ten": "Claude Desktop", "the": "IN-APP GATEWAY",
          "dia_chi": f"{goc}/api", "model": DESKTOP_MODEL,
-         "buoc": (("reg", ".reg", claude_desktop_registry(goc)),),
+         "models": tuple((ten, NHAN_DESKTOP[ten]) for ten in DESKTOP_MODELS),
+         "local_env": claude_local_env(),
+         "local_presets": tuple(
+             (slug, *CODEX_MODEL_LIMITS[slug]) for slug in CLI_MODELS),
+         # The tool still uses ``claude_desktop_registry`` for repeatable fleet
+         # setup.  The customer-facing path is the editor that ships in current
+         # Desktop, so this surface has no copyable registry block.
+         "buoc": (),
          "chay": None},
         {"ma": "http", "ten": "cURL", "the": "HTTP",
          "dia_chi": f"{goc}/api/v1", "model": CLI_MODEL,
