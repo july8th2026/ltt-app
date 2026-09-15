@@ -120,6 +120,8 @@ class OvhStaticIpPoolBackend:
             try:
                 _, self._acquisition_ceiling = acquisition_policy(profile)
             except BackendConflict:
+                # Policy not resolvable (auto_acquire off or profile moved):
+                # leave auto-acquisition disabled rather than guess a ceiling.
                 pass
             else:
                 self.auto_acquire = True
