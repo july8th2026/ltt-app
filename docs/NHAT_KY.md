@@ -12,6 +12,34 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-15 — H51 production: reasoning theo model đã chạy thật
+
+- Máy B: deploy từ commit H51, snapshot rollback
+  `H:/LTT_LLM/releases/auto-20260915-154407`, restart `LTTLlamaSwap` kéo theo
+  `LTTLlmGateway`. `/running` xác nhận cả hai model `ready`: Qwen3.8 dùng
+  Froggeric v22.5, `xhigh`, budget 4.096, temp 1,0, context 221.184/KV q4_0;
+  Qwen3.5 dùng cùng template, thinking on, budget 2.048, temp 1,0, context
+  262.144/KV q8_0. Harness inference thật đạt 17, hỏng 0; chat 69,9 tok/s,
+  tool calling và prefix-cache đạt. Wrapper trả 255 vì cleanup tự taskkill cha
+  SSH sau khi in kết quả; hai Windows Service tự phục hồi và vẫn Running.
+- Máy A: hợp nhất `main` vào nhánh phát hành thành `5965d3ad`; không đụng sáu
+  tệp tài liệu đang dở trong cây chính. Lượt deploy đầu `EXITCODE=0`, canary
+  chức năng đạt nhưng phép băm bắt 798 tệp lệch do clone kế thừa
+  `core.autocrlf=true`. Đặt clone phát hành `core.autocrlf=false`, kiểm archive
+  khớp blob rồi deploy lại. Lượt cuối `deploy-20260915-160053`: `EXITCODE=0`,
+  `/health/ready` 200, fingerprint `5965d3ad1aa4`; nghiệm thu 1.055 tệp cho kết
+  quả **0 lệch, 0 thiếu, 0 thừa**, chín tài sản vendor ngoài commit đúng khai.
+- Canary production dùng khóa ngắn hạn: API đạt; Claude Desktop thấy đúng hai
+  route `ltt-llm-claude-compat` và `...-35`, chọn/gửi/trả lời đều đạt; khóa đã
+  thu hồi và cấu hình Desktop đã phục hồi. Playwright `/huong-dan` xác nhận
+  bảng Claude/Codex, effort/context/compact theo model, 0 tràn ngang, 0 console
+  error và năm request tĩnh đều 200.
+- Test trước deploy: phạm vi `-n 7` **263 PASS**, harness CLI **40 PASS**, secret
+  scan 0 finding. Gate tổng trước đó đỏ 7/33 do baseline VPS ngoài changeset;
+  owner chỉ định bỏ gate tổng đợt này, nên không chạy lại và không ghi PASS.
+  Benchmark coding/tool dài sau rollout còn H51.4; canary số học ngắn chỉ chứng
+  minh tương thích/vận hành, không chứng minh mức tăng chất lượng.
+
 ## 2026-09-15 — H51: tách reasoning/sampling theo model, trước deploy
 
 - Đối chiếu model card Qwen3.8/Qwen3.5, README llama.cpp và Froggeric v22.5.

@@ -4089,6 +4089,13 @@ CRLF gốc, lượt cuối `python tools\gate.py` **PASS 33/33**, báo cáo
       xhigh, 3.5 thinking on; vendor template có checksum; đồng bộ default của
       Public API, Codex Desktop/CLI, tool và SDK. Test phạm vi `-n 7`: 263 PASS;
       gate tổng chẩn đoán đỏ 7/33 do nợ VPS ngoài changeset, xem nhật ký.
-- [ ] **H51.3 — Production và nghiệm thu:** triển khai máy B rồi máy A/trang
-      API, xác minh command line thật và canary cả hai model; đo chất lượng,
-      độ trễ/token, cập nhật nhật ký rồi chạy gate cuối theo hợp đồng.
+- [x] **H51.3 — Production và nghiệm thu chức năng:** máy B chạy thật template
+      v22.5 với 3.8 `xhigh`/4.096 và 3.5 thinking on/2.048; nghiệm thu engine
+      17 đạt/0 hỏng. Máy A ở commit `5965d3ad`, đối chiếu 0 lệch/0 thiếu/0
+      thừa; HTTPS ready. Canary API + Claude Desktop đạt cả hai route, khóa tạm
+      đã thu hồi; Playwright trang API 0 console error/0 request lỗi. Owner chỉ
+      định bỏ gate tổng của đợt này; không ghi lượt gate đỏ/bị bỏ là PASS.
+- [ ] **H51.4 — Benchmark chất lượng sau rollout:** đo bộ coding/tool dài đủ
+      mẫu trên từng model và đối chiếu chất lượng/độ trễ/token với baseline cũ.
+      Không dùng canary số học ngắn thay cho bằng chứng chất lượng; chạy khi GPU
+      không còn phục vụ phiên công việc của owner.
