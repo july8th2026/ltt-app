@@ -2,7 +2,8 @@
 
 > Cập nhật 2026-09-15 (phiên tiếp quản). "Thời gian XD" = ước tính **giờ làm việc của agent** trên
 > máy này (không phải người). Cột % theo effort-share.
-> **Tổng tiến độ ≈ 37% · Còn lại ≈ 87 giờ XD** (chưa gồm logistics: cert EV, R2/CDN, khóa LIVE).
+> **Tổng tiến độ ≈ 39% · Còn lại ≈ 85 giờ XD** (chưa gồm logistics: cert EV, R2/CDN, khóa LIVE).
+> ⭐ 15/09: **offline installer** (P06) — `bundle.resources` gom node.exe + node_modules + profile-template + plugin `llm-ltt` vào `resources/sidecar/`; `stage:sidecar` build-time; materialize plugin (symlink→copy thật, Tauri không theo symlink). Verify NSIS gom đủ 4 anchor.
 > ⭐ 14/09: baseline Tauri **build (5m09s) + installer NSIS/MSI + app CHẠY** (title LTTCODE, WebView2 OK).
 > ⭐⭐ 14/09: **DSH sidecar integration PROVEN** — `dsh web --profile lttcode` boot ~10s, nạp plugin `llm-ltt`, provider mặc định `ltt-official`, in ready-line handshake. Đóng gói = bundle node.exe thật (SEA/pkg không dùng được).
 > ⚠️ 15/09: test key `ltt_tk_` **mất** (scratchpad dọn) — mint lại qua `setup/khoa_thu_api.ps1` (elevated); chỉ chặn ca model P03/P04.
@@ -19,7 +20,7 @@
 | P03 | LTT Compatibility Harness | 55% | ~2 | 🟡 |
 | P04 | LTT Provider Adapter `llm-ltt` | 92% | ~4 | 🟢 |
 | P05 | LTT Auth & Bootstrap (MVP) | 15% | ~10 | 🟡 |
-| P06 | Desktop Runtime / Sidecar (Tauri) | 75% | ~3 | 🟡 build+run+DSH-boot+Rust spawn+**webview CHẠY UI** OK; còn bundle resources+Job Object |
+| P06 | Desktop Runtime / Sidecar (Tauri) | 92% | ~1 | 🟢 build+run+DSH-boot+Rust spawn+**webview CHẠY UI**+**offline installer** OK; còn logs tách user-data+Job Object |
 | P07 | Core Coding Agent UX | 0% | ~12 | ⬜ |
 | P08 | Session / Sandbox / Approval | 5% | ~9 | ⬜ |
 | P09 | Release Control Plane (server) | 5% | ~15 | ⬜ (chờ R2/CDN) |
@@ -27,7 +28,7 @@
 | P11 | Security / Supply Chain | 10% | ~7 | 🟡 |
 | P12 | Beta Acceptance (§38 + §39) | 0% | ~9 | ⬜ |
 | P13 | Stable Release | 0% | ~2 | ⬜ |
-| | **TỔNG** | **~37%** | **~87** | |
+| | **TỔNG** | **~39%** | **~85** | |
 
 ---
 
@@ -68,7 +69,7 @@
 | Đấu bootstrap vào app (min-version/flags/models) | 0% | 1 | ⬜ |
 | *(nợ) Device-flow OAuth backend* | 0% | ~16 | ⬜ sau MVP |
 
-### P06 — Desktop Runtime / Sidecar (Tauri) · 75% · còn ~3h
+### P06 — Desktop Runtime / Sidecar (Tauri) · 92% · còn ~1h
 | Mục triển khai | % | Giờ | Ghi chú |
 |---|---:|---:|---|
 | Scaffold + rename LTTCODE + config NSIS | 100% | 0 | ✅ |
@@ -77,7 +78,7 @@
 | Rust spawn + parse ready-line (sidecar.rs) | 100% | 0 | ✅ spawn `node.exe`, parse `dsh web:` line, không có `/health` (ready-line = handshake) |
 | Lifecycle: crash-recovery + shutdown sạch | 100% | 0 | ✅ backoff restart (max 5) + kill-on-exit; ⚠️ Job Object chưa (deviation, ghi ở PROGRESS) |
 | Webview trỏ authenticated URL + capability 127.0.0.1 | 100% | 0 | ✅ Lax-cookie patch (`patch-dsh-cookies.mjs`); webview CHẠY UI thật (DOM 50KB); csp null |
-| Vendor node.exe + stage cây sidecar vào resources | 0% | 2 | ⬜ offline installer; node.exe gitignored, provision ở staging |
+| Vendor node.exe + stage cây sidecar vào resources | 100% | 0 | ✅ offline installer: `bundle.resources` (map) + `stage:sidecar`; materialize plugin (symlink→copy thật); verify NSIS gom đủ 4 anchor |
 | Logs tách user-data + multi-instance | 0% | 1 | ⬜ |
 
 ### P07 — Core Coding Agent UX · 0% · còn ~12h
@@ -147,6 +148,6 @@
 | **Backend device-flow OAuth** | P05 (nợ) | nâng auth sau MVP |
 
 ## Ước lượng lịch
-- **~87 giờ XD** còn lại. Chạy tự động liên tục trên máy này (có xen build nặng),
+- **~85 giờ XD** còn lại. Chạy tự động liên tục trên máy này (có xen build nặng),
   ước ~**2–3 tuần lịch** nếu logistics (R2, cert EV) sẵn sàng song song; phần
   MVP-chạy-cục-bộ (P06+P07+P08, ~35h) có thể xong trước, ~**1 tuần**.

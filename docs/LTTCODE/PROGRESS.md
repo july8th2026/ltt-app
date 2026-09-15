@@ -2,7 +2,18 @@
 
 > Cập nhật 2026-09-15 (phiên tiếp quản). % là ước lượng theo effort-share (cột "Trọng số").
 > Nguồn: `MASTER_IMPLEMENTATION_PLAN.md`, `DECISION_LOCK.md`.
-> **Tổng tiến độ ≈ 37%.**
+> **Tổng tiến độ ≈ 39%.**
+>
+> ⭐ 15/09: **offline installer** (P06, LTTCODEAPP `5e69a24`). `bundle.resources`
+> (map) gom `node.exe` + `node_modules` + `profile-template` vào
+> `resources/sidecar/`; `beforeBuildCommand` chạy `stage:sidecar` (build plugin
+> + `npm install` sidecar + materialize). Phát hiện + sửa bug thật: npm để
+> `@ltt/dsh-llm-ltt` là **symlink** (`file:` dep), Tauri bundler KHÔNG theo
+> symlink nên plugin bị **loại khỏi bundle** → DSH boot chết "Cannot find
+> package". `materialize-plugin.mjs` thay symlink bằng bản copy thật của files
+> runtime. Verify `tauri build` (exit 0): NSIS gom đủ 4 anchor
+> (node.exe, dsh/lib/bin.js, @ltt/dsh-llm-ltt 50 file, profile-template/lttcode).
+> `resource_dir()` trên Windows = thư mục exe ($INSTDIR) → khớp layout.
 >
 > ⭐ 14/09: **khóa thử `ltt_tk_` đã mint** (tool `khoa_thu_api.ps1`, mode test),
 > **đo wire thật** + **probe adapter end-to-end XANH** trên `/api/v1/messages`
@@ -33,7 +44,7 @@
 | **P03** LTT Compatibility Harness | 6 | 55% | 🟡 đang | ca protocol (text/stream/order/auth) **XANH thật** ở test mode 2 model; **còn:** ca model (tools/reasoning/vision/credit) cần khóa LIVE |
 | **P04** LTT Provider Adapter `llm-ltt` | 8 | 92% | 🟢 gần xong | **typecheck + probe end-to-end XANH** (dsh-llm@0.1.5-rc.2, API sống); **còn:** catalog enrich (D16), vision map, verify tool-call với khóa LIVE |
 | **P05** LTT Auth & Bootstrap (MVP) | 7 | 15% | 🟡 đang | credential-resolve đã code trong adapter; **còn:** UI dán key, `/client/bootstrap`, DPAPI |
-| **P06** Desktop Runtime / Sidecar (Tauri) | 12 | 75% | 🟡 đang | Scaffold + build + **sidecar boot PROVEN** (`0ba745c`) + **Rust spawn/parse ready-line** + **webview CHẠY DSH UI** (Lax-cookie patch, DOM probe 50KB body ≠ 401) + capability 127.0.0.1 (csp null); **còn:** bundle node.exe vào resources (offline installer), Job Object (no-orphan crash-case) |
+| **P06** Desktop Runtime / Sidecar (Tauri) | 12 | 92% | 🟢 gần xong | Scaffold + build + **sidecar boot PROVEN** (`0ba745c`) + **Rust spawn/parse ready-line** + **webview CHẠY DSH UI** (Lax-cookie patch, DOM probe 50KB body ≠ 401) + capability 127.0.0.1 (csp null) + **offline installer** (`5e69a24`: `bundle.resources` gom node.exe+node_modules+profile+plugin vào `resources/sidecar/`, `stage:sidecar`, materialize plugin symlink→copy thật, verify NSIS 4 anchor); **còn:** logs tách user-data + multi-instance, Job Object (no-orphan crash-case) |
 | **P07** Core Coding Agent UX | 12 | 0% | ⬜ chưa | — |
 | **P08** Session / Sandbox / Approval | 8 | 5% | ⬜ chưa | quyết định D19; chưa code |
 | **P09** Release Control Plane (server) | 8 | 5% | ⬜ chưa | thiết kế D14; cần R2/CDN |
