@@ -484,7 +484,7 @@ job ảnh **vẫn** giết cả hai model, chỉ thêm việc hai model tự nh�
 
 ---
 
-## ✅ L-18 — Sàn VRAM trống của 5060 Ti = **700 MiB** (chủ dự án, 2026-09-12)
+## ~~L-18 — Sàn VRAM trống của 5060 Ti~~ — **ĐÃ THAY bởi L-21 (2026-09-15)**
 
 Plan Task 4.2 ghi *"khởi đầu 512, chốt ở Task 3.2"*. Task 3.2 **đã chạy** và chủ dự án
 **đã chốt**, nên câu ấy không còn để ngỏ nữa. Nguyên văn 12/09:
@@ -619,3 +619,20 @@ Template không phải mã LTT tự suy: đó là Froggeric Qwen Fixed Chat Temp
 Hai hồ sơ chuẩn hóa về v22.5; tệp nằm trong gói deploy, có nguồn/giấy phép và
 SHA-256 được test cùng script deploy. `high` từ client tương thích được template
 đổi thành `xhigh`; API công khai vẫn dùng tên chuẩn `xhigh`.
+
+---
+
+## L-21 — Tắt sàn VRAM mặc định của LTT-3.5; giữ cơ chế opt-in (Q132, 2026-09-15)
+
+Log production từ 17:28 đến 18:10 ngày 15/09 bác giả định của L-18:
+
+- gateway ghi `ban_vram=112`, `ban_day=0`, không có OOM;
+- cùng job bị 429 khoảng mỗi 20 giây dù không hết slot;
+- VRAM trống đo tại thời điểm điều tra là 602 MiB, sát đúng sàn 600;
+- khi WDDM dao động dưới sàn, không lượt nào tới llama-swap; model chỉ hồi phục
+  sau khi TTL 1.800 giây unload rồi nạp lại.
+
+Chủ dự án xác nhận card 5060 chưa từng tràn VRAM. Vì vậy mặc định
+`LTT_LLM_VRAM_TRONG_TOI_THIEU_MB__qwen35-api=0`. Cơ chế sàn vẫn được giữ và có
+thể bật lại bằng env nếu sau này có bằng chứng OOM. Engine 3.5 giữ nguyên
+context, KV q8_0, sampling và reasoning; thay đổi này chỉ bỏ một cửa từ chối giả.

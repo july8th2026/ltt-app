@@ -12,6 +12,29 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-15 — H53: chẩn đoán và gỡ vòng tự khóa Qwen 3.5
+
+- Nhật ký Máy B cho thấy một job Qwen 3.5 bị từ chối 429 khoảng mỗi 20 giây từ
+  17:28 tới 18:10. `/health` trước bản vá ghi `ban_vram=112`, `ban_day=0`,
+  `ban_pool=3`; `/slots` vẫn còn suất. VRAM trống WDDM dao động sát 600 MiB,
+  đúng ngưỡng cũ, nhưng không có OOM và owner xác nhận card chưa từng tràn VRAM.
+  Các lượt bị chặn không chạm llama-swap, nên TTL 1.800 giây unload/reload model
+  và vô tình giải vòng khóa sau khoảng 42 phút.
+- Đổi mặc định `LTT_LLM_VRAM_TRONG_TOI_THIEU_MB__qwen35-api` từ 600 về 0; giữ
+  cơ chế dưới dạng opt-in. Đồng thời giữ kiểu `busy_only` từ bộ điều phối qua
+  `text.chat`, để cửa đồng bộ trả 503 + `Retry-After: 30` và hoàn credit thay vì
+  làm rơi `KhongCoProviderNao` thành HTTP 500.
+- Chạy `python -m pytest -n 7 tests\test_1221_gateway_so_theo_model.py
+  tests\test_256_app_ltt_llm.py tests\test_259_cua_dong_bo.py -q`: **112
+  passed**, 7 cảnh báo deprecation. Phép kiểm mới tái hiện toàn chuỗi lỗi HTTP,
+  không chỉ giả sẵn `BanError` ở cửa.
+- Deploy Máy B bằng `llm_gateway\deploy\deploy.ps1 -BoQuaVenv`: snapshot
+  `auto-20260915-182957`, 39 tệp Python khớp hash. Chỉ restart
+  `LTTLlmGateway`, không restart llama-swap. `/health` sau restart báo Qwen 3.5
+  `san_vram_mb=0` trong khi đang giữ một job; canary nội bộ `/v1/messages` và
+  `/v1/responses` đều HTTP 200. Máy A chưa deploy tại checkpoint này. Owner đã
+  chỉ định bỏ gate tổng của đợt này; không ghi test phạm vi thành gate PASS.
+
 ## 2026-09-15 — H52: Tool 1.9.1 đồng bộ cấu hình H51
 
 - Audit file đóng gói 1.9.0 cho thấy nó được dựng trước thay đổi H51: profile

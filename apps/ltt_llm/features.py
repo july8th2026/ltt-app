@@ -497,27 +497,37 @@ def chay(db, params: dict, *, timeout_s: float = 300.0,
     from platform_core.llm import dieu_phoi
 
     sach = kiem_tham_so(params)
-    kq = dieu_phoi.goi(
-        db,
-        messages=sach["messages"],
-        thu_tu_provider=THU_TU_PROVIDER,
-        # Dich alias -> id noi bo NGAY TRUOC KHI RA KHOI nen tang.
-        model_theo_provider={"ltt_llm": ALIAS_SANG_ID[sach["model"]]},
-        tools=sach.get("tools"),
-        max_tokens=sach["max_tokens"],
-        temperature=sach.get("temperature"),
-        reasoning_effort=sach.get("reasoning_effort"),
-        # ⭐ MOT cho duy nhat de mot tham so moi di het duong len may B. Truoc
-        #    14/09 moi tham so phai duoc moc tay o BON tang (kiem_tham_so ->
-        #    dieu_phoi.goi -> than -> may B), va chinh vi the `response_format`
-        #    dung o tang mot roi bien mat. `tests/test_1255` chot rang moi khoa
-        #    khai trong `params_schema` phai song sot.
-        them={k: sach[k] for k in THAM_SO_CHUYEN_THANG if k in sach},
-        timeout_s=timeout_s,
-        on_dispatch=on_dispatch,
-        on_rejected=on_rejected,
-        ma_luot=ma_luot,
-    )
+    try:
+        kq = dieu_phoi.goi(
+            db,
+            messages=sach["messages"],
+            thu_tu_provider=THU_TU_PROVIDER,
+            # Dich alias -> id noi bo NGAY TRUOC KHI RA KHOI nen tang.
+            model_theo_provider={"ltt_llm": ALIAS_SANG_ID[sach["model"]]},
+            tools=sach.get("tools"),
+            max_tokens=sach["max_tokens"],
+            temperature=sach.get("temperature"),
+            reasoning_effort=sach.get("reasoning_effort"),
+            # ⭐ MOT cho duy nhat de mot tham so moi di het duong len may B. Truoc
+            #    14/09 moi tham so phai duoc moc tay o BON tang (kiem_tham_so ->
+            #    dieu_phoi.goi -> than -> may B), va chinh vi the `response_format`
+            #    dung o tang mot roi bien mat. `tests/test_1255` chot rang moi khoa
+            #    khai trong `params_schema` phai song sot.
+            them={k: sach[k] for k in THAM_SO_CHUYEN_THANG if k in sach},
+            timeout_s=timeout_s,
+            on_dispatch=on_dispatch,
+            on_rejected=on_rejected,
+            ma_luot=ma_luot,
+        )
+    except dieu_phoi.KhongCoProviderNao as e:
+        # `dieu_phoi` cascade qua moi provider khi mot cong tra 429. App nay co
+        # dung MOT provider (D-010), nen ket cuc "het provider" van la cung tin
+        # hieu BAN, khong phai loi 500. Giu quan he co kieu `busy_only`; khong
+        # doc chu "ban" tu thong diep o cua HTTP.
+        if e.busy_only:
+            from platform_core.llm.cong_vlm import BanError
+            raise BanError("model dang ban", retry_after_s=30) from e
+        raise
     su = kq.su_dung
     return KetQua(
         noi_dung=kq.noi_dung, suy_nghi=kq.suy_nghi,

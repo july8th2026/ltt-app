@@ -191,6 +191,35 @@ def test_chi_dung_model_nha_KHONG_cascade():
     assert "gemini" not in features.THU_TU_PROVIDER
 
 
+def test_mot_provider_ban_van_nem_BanError_khong_thanh_500(monkeypatch):
+    """Cổng máy B 429 đi qua dispatcher một-provider vẫn là bận có thể retry."""
+    from platform_core.llm import dieu_phoi
+    from platform_core.llm.cong_vlm import BanError
+
+    def het_provider(*_args, **_kwargs):
+        raise dieu_phoi.KhongCoProviderNao(["ltt_llm: ban"])
+
+    monkeypatch.setattr(dieu_phoi, "goi", het_provider)
+    with pytest.raises(BanError) as e:
+        features.chay(None, {"model": "ltt-3.5",
+                             "messages": [{"role": "user", "content": "hi"}]})
+    assert e.value.retry_after_s == 30
+
+
+def test_het_provider_vi_loi_cau_hinh_khong_duoc_gia_lam_ban(monkeypatch):
+    """Chỉ `busy_only`; lỗi cấu hình phải nổi lên để người trực sửa."""
+    from platform_core.llm import dieu_phoi
+
+    def het_provider(*_args, **_kwargs):
+        raise dieu_phoi.KhongCoProviderNao(["ltt_llm: thieu base_url"])
+
+    monkeypatch.setattr(dieu_phoi, "goi", het_provider)
+    with pytest.raises(dieu_phoi.KhongCoProviderNao) as e:
+        features.chay(None, {"model": "ltt-3.5",
+                             "messages": [{"role": "user", "content": "hi"}]})
+    assert e.value.busy_only is False
+
+
 # ── 5. Kiểm tham số trước khi tiền chuyển ────────────────────────────────────
 
 @pytest.mark.parametrize("xau", [

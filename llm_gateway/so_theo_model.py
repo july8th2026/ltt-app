@@ -113,11 +113,10 @@ class SoTheoModel:
     def _kiem_san_vram(self, model: str) -> Optional[PhanXuGioiHan]:
         """Sàn VRAM của card chạy `model`. `None` = qua cửa.
 
-        🔴 VÌ SAO CHỈ 5060 Ti CÓ SÀN MẶC ĐỊNH (spec §22, D06). Đo §G3: LTT-3.5
-           Q6_K + MTP, 3 slot ⇒ còn **~1.000 MiB** trống lúc phục vụ bình thường,
-           và sàn là **700** — chủ dự án quyết, `DECISION_LOG.md` **L-18**. 3090
-           biên hẹp hơn nhưng nó đã có `don_dep` + trọng tài riêng cho cuộc tranh
-           với ComfyUI, nên thêm sàn ở đó là ba chốt cho một card.
+        🔴 SÀN VRAM LÀ OPT-IN (spec §22, D06). L-21 đã tắt mặc định cho 5060 Ti
+           sau khi số đo production chứng minh nó tự khóa Qwen 3.5 mà không có
+           OOM. 3090 cũng không có sàn: nó đã có `don_dep` + trọng tài riêng cho
+           cuộc tranh với ComfyUI, nên thêm sàn ở đó là ba chốt cho một card.
 
            ⛔ Con số nằm ở `config.py` và lý lẽ nằm ở L-18. Đừng chép sang đây.
 

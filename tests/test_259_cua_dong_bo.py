@@ -433,6 +433,29 @@ def test_may_B_ban_thi_503_co_Retry_After_va_HOAN_DU(api, monkeypatch):
     assert _so_du(user_id) == truoc, "ban ma van thu tien"
 
 
+def test_dieu_phoi_het_provider_vi_ban_van_la_503(api, monkeypatch):
+    """Chốt đúng chuỗi lỗi production: ``dieu_phoi`` bọc 429 thành hết provider.
+
+    Bản vá phải giữ ngữ nghĩa *bận* xuyên qua ``features.chay`` tới cửa HTTP;
+    nếu chỉ giả ``features.chay`` ném ``BanError`` thì không đo được chỗ từng
+    làm máy A trả 500.
+    """
+    from platform_core.llm import dieu_phoi
+
+    def het_provider(*_args, **_kwargs):
+        raise dieu_phoi.KhongCoProviderNao(["ltt_llm: ban"])
+
+    monkeypatch.setattr(dieu_phoi, "goi", het_provider)
+    user_id, token = _account()
+    truoc = _so_du(user_id)
+
+    r = api.post(DUONG, json=_than(), headers=_h(token))
+
+    assert r.status_code == 503, r.text
+    assert int(r.headers.get("Retry-After", 0)) == 30
+    assert _so_du(user_id) == truoc, "het provider vi ban ma van thu tien"
+
+
 def test_thuong_nguon_hong_thi_HOAN_DU(api, monkeypatch):
     from platform_core.llm.cong_vlm import CongVlmError
 

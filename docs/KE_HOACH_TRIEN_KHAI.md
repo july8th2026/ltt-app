@@ -4112,3 +4112,17 @@ CRLF gốc, lượt cuối `python tools\gate.py` **PASS 33/33**, báo cáo
       `-n 7` đạt **108 passed**; secret scan 0 finding. Phát hành installer và
       ZIP vào `data/api_dist` để `/tai/cong-cu-cam*` tự chọn 1.9.1; không cần
       restart dịch vụ vì artifact là dữ liệu vận hành ngoài release.
+
+## H53 — Gỡ vòng tự khóa Qwen 3.5 trên 5060 Ti (2026-09-15)
+
+- [x] **H53.1 — Chẩn đoán log production:** gateway ghi 112 lần `ban_vram`, 0
+      lần đầy slot; cùng job bị 429 khoảng mỗi 20 giây trong 42 phút, tới khi
+      TTL unload/reload model mới phục vụ lại. GPU vẫn tải và owner xác nhận
+      chưa từng OOM VRAM; lỗi không phải model chết hay tràn VRAM.
+- [x] **H53.2 — Bản vá Máy B:** sàn VRAM Qwen 3.5 mặc định về 0, cơ chế vẫn
+      opt-in qua env. Deploy gateway riêng, không restart llama-swap; `/health`
+      xác nhận `san_vram_mb=0`, Messages và Responses thật cùng HTTP 200 khi
+      card đang chạy job.
+- [ ] **H53.3 — Máy A và nghiệm thu:** ánh xạ chuỗi “mọi provider đều bận” về
+      503 + `Retry-After` và hoàn credit; test phạm vi `-n 7` hiện 112 PASS.
+      Còn hợp nhất, deploy Máy A, đối chiếu fingerprint/health và canary thật.

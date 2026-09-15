@@ -772,8 +772,9 @@ chạy — tức nó đọc **756**, không đọc 1.002. Sàn 700 chỉ cách �
 lát cắt nhỉnh hơn một chút là một **429 giả**, và khách không phân biệt được
 "bận thật" với "thước đo quá sát".
 
-⇒ Hạ về **600** — vẫn trong dải chủ dự án cho phép (600–700), để lại **156 MiB**.
-Xem `DECISION_LOG.md` **L-18** (đã đính chính).
+⇒ Kết luận này đã bị sự cố production 15/09 bác bỏ: sàn 600 tạo 112 lần từ
+chối giả và làm model mất phục vụ 42 phút dù không có OOM. Quyết định hiện hành
+là tắt mặc định, giữ opt-in; xem `DECISION_LOG.md` **L-21**.
 
 ⚠️ `Shared Usage` đỉnh **672–678 MiB** ở cấu hình này. Đó là **sàn WDDM**, không
    phải tràn: nó khác 0 ngay cả khi mọi thứ khoẻ, và nó co giãn theo `-ub`. Ai

@@ -211,29 +211,17 @@ def test_san_KHONG_lam_ro_suat():
     assert s.cap_suat(M35, 1_000)[1] is not None
 
 
-def test_san_mac_dinh_700_cho_35_va_KHONG_co_cho_38(monkeypatch):
-    """700 MiB — **chủ dự án quyết**, `DECISION_LOG.md` L-18 (dải cho phép 600–700).
+def test_san_mac_dinh_TAT_cho_ca_hai_model(monkeypatch):
+    """Sàn mặc định tắt — số đo sự cố production 15/09, L-21.
 
-    ⭐ Vì sao lấy đầu **cao** của dải: cửa này chỉ gây **429 bận**, không bao giờ
-       giết một lượt đang chạy. Đặt cao thì mất một ít thông lượng; đặt thấp thì
-       trả bằng OOM. Hai chiều sai **không** cân nhau, nên chọn phía đắt-ít.
-
-    🔴 SỐ ĐÚNG LÀ SỐ LÚC BẬN. §G6 (12/09, chính 5060 Ti, cấu hình đã chốt):
-    rảnh → trống **1.002 MiB**, nhưng đỉnh ảnh + C3 → trống **756 MiB**. Cửa này
-    chạy trước **mọi** lượt (kể cả lượt thứ ba khi hai lượt kia đang chạy) nên nó
-    đọc 756, không đọc 1.002 ⇒ một sàn 700 chỉ cách đỉnh **56 MiB** và sẽ đẻ ra
-    **429 giả**. 600 để lại 156 MiB — vẫn bắt được tiến trình lạ ăn card.
-
-    3090 không có sàn ở đây vì nó đã có `don_dep` + trọng tài ComfyUI lo đúng
-    việc ấy; ba chốt cho một card là ba câu trả lời khác nhau về một trạng thái.
+    Production ghi 112 lần từ chối vì sàn, không có OOM và model mất phục vụ
+    42 phút. Cơ chế vẫn bật lại được bằng env khi có bằng chứng mới.
     """
     for k in list(__import__("os").environ):
         if k.startswith("LTT_LLM_VRAM_TRONG_TOI_THIEU_MB__"):
             monkeypatch.delenv(k, raising=False)
     cfg = Config.from_env()
-    assert cfg.vram_trong_toi_thieu_mb == {M35: 600}
-    assert 600 <= cfg.vram_trong_toi_thieu_mb[M35] <= 700, (
-        "ra ngoai dai chu du an cho phep (L-18)")
+    assert cfg.vram_trong_toi_thieu_mb == {M35: 0}
 
 
 def test_san_tat_duoc_bang_0(monkeypatch):
