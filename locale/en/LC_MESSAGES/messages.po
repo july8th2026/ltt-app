@@ -18075,3 +18075,39 @@ msgstr "The installer is not code-signed yet, so Windows SmartScreen may warn yo
 
 msgid "Chưa có bản phát hành."
 msgstr "No release yet."
+
+msgid "Đăng nhập LTTCODE"
+msgstr "Sign in to LTTCODE"
+
+msgid "Cho phép LTTCODE dùng tài khoản của bạn?"
+msgstr "Allow LTTCODE to use your account?"
+
+msgid "Máy:"
+msgstr "Device:"
+
+msgid "Tài khoản:"
+msgstr "Account:"
+
+msgid "LTTCODE sẽ nhận một khoá API riêng cho máy này, dùng credit của tài khoản. Bạn có thể thu hồi khoá bất cứ lúc nào trong Developers › Keys."
+msgstr "LTTCODE will receive an API key for this device only, using your account credits. You can revoke the key at any time in Developers › Keys."
+
+msgid "Từ chối"
+msgstr "Deny"
+
+msgid "Cho phép"
+msgstr "Allow"
+
+msgid "Đã cho phép — đang quay lại LTTCODE"
+msgstr "Allowed — returning to LTTCODE"
+
+msgid "Đã từ chối"
+msgstr "Denied"
+
+msgid "Bấm vào đây nếu LTTCODE chưa nhận được"
+msgstr "Click here if LTTCODE did not receive it"
+
+msgid "Yêu cầu đăng nhập không hợp lệ"
+msgstr "Invalid sign-in request"
+
+msgid "Hãy quay lại LTTCODE và bấm Đăng nhập lần nữa."
+msgstr "Go back to LTTCODE and click Sign in again."

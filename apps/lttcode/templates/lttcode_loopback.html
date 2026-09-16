@@ -1,0 +1,14 @@
+{% extends "base_public.html" %}
+{% block title %}{{ _("Đăng nhập LTTCODE") }}{% endblock %}
+{% block content %}
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="refresh" content="0;url={{ url }}">
+<div style="max-width:480px;margin:24px auto;text-align:center">
+  {% if dong_y %}
+    <h1 style="font-size:22px">{{ _("Đã cho phép — đang quay lại LTTCODE") }}</h1>
+  {% else %}
+    <h1 style="font-size:22px">{{ _("Đã từ chối") }}</h1>
+  {% endif %}
+  <p><a href="{{ url }}">{{ _("Bấm vào đây nếu LTTCODE chưa nhận được") }}</a></p>
+</div>
+{% endblock %}

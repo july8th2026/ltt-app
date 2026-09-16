@@ -1,0 +1,34 @@
+{% extends "base_public.html" %}
+{% block title %}{{ _("Đăng nhập LTTCODE") }}{% endblock %}
+{% block content %}
+<meta name="referrer" content="no-referrer">
+<style>
+  .lc-auth{max-width:480px;margin:24px auto;padding:22px;border:1px solid var(--line,#40201c);
+    border-radius:14px;background:var(--panel,#151111)}
+  .lc-auth h1{margin:0 0 10px;font-size:22px}
+  .lc-auth p{font-size:14px;line-height:1.6}
+  .lc-auth .lc-may{font-weight:600}
+  .lc-row{display:flex;gap:10px;margin-top:18px}
+  .lc-row button{flex:1;padding:10px 14px;border-radius:9px;border:1px solid var(--line,#40201c);
+    font-weight:600;cursor:pointer;background:transparent;color:inherit}
+  .lc-row button.lc-ok{background:var(--brand-primary,#ef3731);border-color:transparent;color:#fff}
+  .lc-note{color:var(--fg-muted,#927f79);font-size:12.5px}
+</style>
+<div class="lc-auth">
+  <h1>{{ _("Cho phép LTTCODE dùng tài khoản của bạn?") }}</h1>
+  <p>{{ _("Máy:") }} <span class="lc-may">{{ device }}</span><br>{{ _("Tài khoản:") }} {{ email }}</p>
+  <p class="lc-note">{{ _("LTTCODE sẽ nhận một khoá API riêng cho máy này, dùng credit của tài khoản. Bạn có thể thu hồi khoá bất cứ lúc nào trong Developers › Keys.") }}</p>
+  <form method="post" action="/lttcode/authorize">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <input type="hidden" name="port" value="{{ port }}">
+    <input type="hidden" name="state" value="{{ state }}">
+    <input type="hidden" name="code_challenge" value="{{ code_challenge }}">
+    <input type="hidden" name="code_challenge_method" value="S256">
+    <input type="hidden" name="device" value="{{ device }}">
+    <div class="lc-row">
+      <button type="submit" name="action" value="deny">{{ _("Từ chối") }}</button>
+      <button type="submit" name="action" value="allow" class="lc-ok">{{ _("Cho phép") }}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

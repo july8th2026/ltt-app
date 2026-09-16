@@ -25,4 +25,6 @@ MANIFEST = AppManifest(
     surface="runtime",
     public=False,
     lifecycle="internal",
+    # Bảng `lttcode_auth_codes` (mã một lần của "Đăng nhập LTT Studios").
+    table_prefix="lttcode",
 )

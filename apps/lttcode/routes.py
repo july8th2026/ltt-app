@@ -10,7 +10,9 @@ API. Thứ được phục vụ đều công khai như trang tải `/tai-xuong` 
 phiên bản, ghi chú, chữ ký minisign (công khai theo bản chất) và bộ cài. Tính
 toàn vẹn của bộ cài do chữ ký kiểm ở phía app, không do đăng nhập.
 
-Không có POST, không ghi gì; `Cache-Control` giữ mặc định `no-store` của nền tảng.
+Các route của tệp này không có POST, không ghi gì; `Cache-Control` giữ mặc định
+`no-store` của nền tảng. Đăng nhập (có POST, có phiên web + CSRF ở `/authorize`)
+nằm riêng ở `routes_dang_nhap.py` và được gắn vào router này ở cuối tệp.
 """
 from __future__ import annotations
 
@@ -68,3 +70,8 @@ async def tai_file(filename: str):
     if root not in target.parents or not target.is_file():
         raise HTTPException(status_code=404)
     return FileResponse(target, media_type="application/vnd.microsoft.portable-executable", filename=filename)
+
+
+from apps.lttcode.routes_dang_nhap import router as _dang_nhap  # noqa: E402
+
+router.include_router(_dang_nhap)
