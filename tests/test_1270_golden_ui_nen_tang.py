@@ -523,3 +523,31 @@ def test_sqladmin_nut_luu_giu_gia_tri_giao_thuc_doi_chu_hien_thi():
         cho_hien = re.sub(r"\{#.*?#\}", "", ban, flags=re.S)
         for chu in (">\n              Cancel", "Go Back", "Please confirm", "Edit {{", "New {{"):
             assert chu not in cho_hien, (tep, chu)
+
+
+# ── 16. DL-005: MỘT bộ icon line SVG cho khung dùng chung ─────────────────
+
+_EMOJI = re.compile("[\U0001F300-\U0001FAFF\u2600-\u27BF]")
+
+
+@pytest.mark.parametrize("tep", ["_menu_tai_khoan.html", "_header.html", "home.html"])
+def test_khung_chung_khong_dung_emoji_lam_icon(tep):
+    src = (GOC / "server" / "templates" / tep).read_text(encoding="utf-8")
+    ma = re.sub(r"\{#.*?#\}", "", src, flags=re.S)
+    assert not _EMOJI.findall(ma), _EMOJI.findall(ma)
+    assert '{% import "_icon.html" as ic %}' in src
+
+
+def test_moi_icon_manifest_va_nav_deu_co_anh_xa():
+    """Emoji manifest không có trong `_APP` rơi về lưới chung — khác app mà cùng icon."""
+    from platform_core import registry
+    bang = (GOC / "server" / "templates" / "_icon.html").read_text(encoding="utf-8")
+    thieu = set()
+    for a in registry.discover():
+        m = getattr(a, "manifest", a)
+        for icon in [m.icon] + [e.icon for e in (getattr(m, "nav", ()) or ())]:
+            khoa = (icon or "").replace("\ufe0f", "")
+            if khoa and f"'{khoa}':" not in bang:
+                thieu.add(icon)
+    assert not thieu, thieu
+    assert ".ui-ic{" in CSS and "stroke:currentColor" in CSS

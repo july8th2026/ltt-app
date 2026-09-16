@@ -160,6 +160,10 @@ Decision: **A — phủ CSS Golden + dịch chuỗi** cho sqladmin qua template 
 Reason: giữ công cụ quản trị sẵn có, đưa về cùng hệ thị giác.
 Affected areas: `server/admin_templates/sqladmin/`, `ltt.css` (khối `.sqladmin-*`/`--tblr-*`).
 
+### DL-005 — Hệ icon (P2-04) · LOCKED 17/09
+
+Chủ sản phẩm chọn **A. Line SVG**: một bộ Lucide (ISC) trong `server/templates/_icon.html`, nét `currentColor` 1.8px (`.ui-ic`). Manifest app giữ emoji làm DỮ LIỆU; chỗ render ánh xạ qua `icon_app()`. Áp: menu tài khoản, header (nhóm app, burger, credit), workspace (rail, tìm, sắp xếp, credit, thẻ app), thanh sub-nav app (`base.html`), topbar Nexus. Còn: topbar `app.icon` trong `apps/*` và `vps*` — gộp sau khi 3 nhánh song song về.
+
 ## Route / Screen Inventory
 
 Nguồn: đọc mã tại BASE_SHA + quét render. `Auth` = cần đăng nhập.
@@ -342,7 +346,7 @@ Screenshot regression Playwright (`toHaveScreenshot`) cho critical screens; test
 | P2-01 ✅ | Thẻ gói nạp: khối trống 120px phía trên chỉ chứa icon kim cương nhỏ (gốc: gradient CSS không hợp lệ) |
 | P2-02 ✅ (`:where(a:not([class]))` gạch chân mảnh 1px/offset .2em, hover 2px; link có lớp — nút/tab/menu — tự quyết; độ ưu tiên 0) | Link inline dùng gạch chân đỏ đậm lẫn link không gạch chân — hai ngôn ngữ link |
 | P2-03 ✅ (taoanh 01·02·03 theo thẻ, nhóm con không đánh số; thumbnail cùng lỗi 01→02-05→06-07 sửa y hệt; nhãn bắt buộc `*` không còn rơi xuống dòng riêng) | Số bước đánh lệch trong Tạo ảnh (01, 02, 03 rồi 04 ở cột khác) |
-| P2-04 | Icon emoji lẫn icon SVG trong thẻ app và menu |
+| P2-04 ✅ phần khung (DL-005) | Icon emoji lẫn icon SVG trong thẻ app và menu |
 | P2-05 ✅ (quy ước: bộ sưu tập rỗng = viền NÉT ĐỨT `--border-strong`; thông điệp trạng thái = `.ui-state` viền liền + vạch trái; `tv-empty`, `nx-may-*` đưa về quy ước) | Trạng thái rỗng dùng 3 kiểu viền (nét đứt, liền, không viền) |
 | P2-07 ✅ | Upload hướng khách còn `<input type="file">` trần (nút native theo ngôn ngữ hệ điều hành: "Choose File / No file chosen") ở audio-pause, transcript, video-assembly ×2, Voice clip mẫu, thumbnail ×2 ⇒ đổi sang macro `o_chon_tep`. **Lỗi thật phát hiện kèm**: `chon_tep.js` gắn lại bằng `gan(e.target)` sau `htmx:afterSwap` — với `hx-swap=outerHTML` (`/taoanh/thumbnail`) đó là phần tử CŨ ⇒ chọn tệp xong vẫn "Chưa chọn tệp"; sửa quét cả tài liệu (idempotent `daGan`) |
 | P2-06 ✅ (9 khai báo `transition` số thô trong `ltt.css` → `--motion-fast/normal`; `prefers-reduced-motion` sẵn có) | Chuyển động hover/transition không thống nhất (`transition:.15s` vs `--motion-*`) |

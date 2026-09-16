@@ -1,3 +1,4 @@
+{% import "_icon.html" as ic %}
 <!DOCTYPE html>
 <html lang="{{ lang_hien_tai() }}">
 <head>
@@ -109,7 +110,7 @@
           nay bo sot ke tu khi no thay sub-nav sidebar o H6.6. Do 31/08/2026:
           ba nhan cua Voice DA CO ban dich san trong catalog va van ra tieng
           Viet — tuc ban dich nam do khong ai doc toi. -#}
-      <span>{{ entry.icon }}</span> {{ _(entry.label) }}
+      <span class="ic">{{ ic.icon_app(entry.icon) }}</span> {{ _(entry.label) }}
       {%- if not entry.built %}<span class="badge b-warn" style="margin-left:6px"><span class="dot"></span>{{ _("Đang xây") }}</span>{% endif %}</a>
   {% endfor %}
 </nav>

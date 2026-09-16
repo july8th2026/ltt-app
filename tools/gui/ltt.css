@@ -3986,3 +3986,14 @@ button.lv-the-song.nghe-loi,.lv-chon-nghe.nghe-loi{
 .adm-luoi-cot{grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr))}
 .adm-mt12{margin-top:12px}.adm-thong-bao{display:block;padding:10px}
 .adm-form-dong{display:flex;gap:6px;align-items:center}
+/* === DL-005 (17/09): MỘT bộ icon line SVG (`_icon.html`, Lucide ISC) === */
+.ui-ic{display:inline-block;width:1.15em;height:1.15em;flex:0 0 auto;vertical-align:-.2em;
+  fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.market-nav a>.ui-ic,.market-nav button>.ui-ic{width:20px;height:20px}
+.market-card-title i .ui-ic{width:15px;height:15px;vertical-align:0}
+.market-search>.ui-ic,.market-sort>.ui-ic{width:16px;height:16px;color:var(--text-muted)}
+.market-credit>.ui-ic{width:15px;height:15px;color:var(--brand-hover)}
+.market-menu .ui-ic,.hdr-burger summary .ui-ic{width:20px;height:20px;vertical-align:middle}
+.hdr .dropdown .ic .ui-ic,.market-account-menu .ic .ui-ic{width:16px;height:16px}
+.hdr .pill .ui-ic,.acc-credit .ui-ic{width:14px;height:14px;color:var(--brand-hover)}
+.hdr-nhom{padding:8px 11px 3px}

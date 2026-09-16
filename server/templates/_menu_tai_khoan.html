@@ -7,20 +7,21 @@
 
     Cần trong ngữ cảnh: `request`. Khung bao ngoài (details/summary, vị trí thả)
     vẫn là việc của từng khung. -#}
+{% import "_icon.html" as ic %}
 {%- set _acc = tai_khoan(request) -%}
 {%- set _bal = so_du_credit(request) -%}
 {%- set _la_admin = is_admin(request) -%}
 <div class="acc-head"><b>{{ _acc.name if _acc else 'LTT AI Studio' }}</b>
   {%- if _acc and _acc.email %}<small>{{ _acc.email }}</small>{% endif %}
   <span class="badge b-grey"><span class="dot" aria-hidden="true"></span>{{ _("Quản trị viên") if _la_admin else _("Thành viên") }}</span></div>
-<a href="{{ u('/jobs') }}"><span class="ic" aria-hidden="true">📋</span> {{ _("Việc của tôi") }}</a>
-<a href="{{ u('/developers') }}"><span class="ic" aria-hidden="true">🔌</span> {{ _("API cho lập trình viên") }}</a>
-{% if nexus_bat() %}<a href="{{ u('/may-cua-toi') }}"><span class="ic" aria-hidden="true">🖥️</span> {{ _("Máy của tôi") }}</a>{% endif %}
-{% if _la_admin %}<a href="/status"><span class="ic" aria-hidden="true">🩺</span> {{ _("Tình trạng hệ thống") }}</a>
-<a href="/admin/"><span class="ic" aria-hidden="true">🛡️</span> {{ _("Quản trị") }}</a>{% endif %}
-{% if _bal is not none %}<div class="acc-credit"><span><span aria-hidden="true">💎</span> {{ _bal | so }} credit</span> <a href="{{ u('/nap') }}">{{ _("Nạp thêm") }}</a></div>{% endif %}
+<a href="{{ u('/jobs') }}"><span class="ic">{{ ic.icon("clipboard-list") }}</span> {{ _("Việc của tôi") }}</a>
+<a href="{{ u('/developers') }}"><span class="ic">{{ ic.icon("code") }}</span> {{ _("API cho lập trình viên") }}</a>
+{% if nexus_bat() %}<a href="{{ u('/may-cua-toi') }}"><span class="ic">{{ ic.icon("monitor") }}</span> {{ _("Máy của tôi") }}</a>{% endif %}
+{% if _la_admin %}<a href="/status"><span class="ic">{{ ic.icon("activity") }}</span> {{ _("Tình trạng hệ thống") }}</a>
+<a href="/admin/"><span class="ic">{{ ic.icon("shield") }}</span> {{ _("Quản trị") }}</a>{% endif %}
+{% if _bal is not none %}<div class="acc-credit"><span>{{ ic.icon("gem") }} {{ _bal | so }} credit</span> <a href="{{ u('/nap') }}">{{ _("Nạp thêm") }}</a></div>{% endif %}
 <div class="sep" role="separator"></div>
 <form method="post" action="/logout" class="acc-logout">
   <input type="hidden" name="csrf_token" value="{{ phien_csrf(request) }}">
-  <button type="submit" class="logout-btn"><span class="ic" aria-hidden="true">⟵</span> {{ _("Đăng xuất") }}</button>
+  <button type="submit" class="logout-btn"><span class="ic">{{ ic.icon("log-out") }}</span> {{ _("Đăng xuất") }}</button>
 </form>
