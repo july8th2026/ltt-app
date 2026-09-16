@@ -22,7 +22,7 @@ không đẻ luật mới, chỉ sắp lại việc theo phụ thuộc và bằn
 | D10 | Trần IP live | Tối đa 1 |
 | C01 | Mở hợp đồng admin chung | Đồng ý (13/09) |
 | Q124 | Va chạm nhãn quyết định khi gộp | Xử theo nội dung, không ours/theirs cả tệp |
-| Q125 | Mua IP OVH | Web job tự mua, không duyệt từng đơn; báo giá bất thường thì dừng |
+| Q130 (Q125 trên nhánh VPS trước khi gộp) | Mua IP OVH | Web job tự mua, không duyệt từng đơn; báo giá bất thường thì dừng |
 | Cleanup | Sau nghiệm thu | Giữ VM stopped, IP BOUND, không xoá |
 
 ### Trong phiên 16/09
@@ -60,10 +60,12 @@ downgrade migration để lại dòng IP OVH; IP giao muộn sau timeout cần s
 
 ## 3. Hệ quả vận hành
 
-- **Giỏ `f99ebe5c` sẽ hết hạn 16/09 18:54 (giờ máy) trước khi bản sửa lên
-  production an toàn.** Không mua trên code đang có R2–R4 và không thể tạo máy
-  vì R1. Sau deploy, job tự chuẩn bị giỏ mới (chưa thanh toán, miễn phí) và
-  fingerprint được xác minh lại trước khi bật; không tái dùng giỏ hết hạn.
+- **Giỏ `f99ebe5c` hết hạn 16/09 18:54 (giờ máy).** Không mua trên code đang có
+  R2–R4, và không tạo được máy vì R1. Nếu bản sửa lên production kịp trước hạn
+  thì dùng chính giỏ đó. Nếu lỡ hạn: health `ip` tự CRITICAL (thiết kế chỉ mua
+  qua giỏ đã chấp nhận, `public_ip.py:104-127`), nên phải chuẩn bị một giỏ mới
+  chưa thanh toán rồi cập nhật `adopt_ip_cart_id` và fingerprint qua cấu hình
+  admin có audit. Không tái dùng giỏ hết hạn, không tự tạo giỏ trong job.
 - Production đang chạy `d9a48535` (nhánh `codex/cli-compat-final-audit`, chứa VPS
   tới `8b63fccc`). `main` chưa có cả hai nhánh. Bản release sửa lỗi phải dựng từ
   dòng mã production đang chạy, không từ `main`, để không lùi code cli-compat.
@@ -73,12 +75,12 @@ downgrade migration để lại dòng IP OVH; IP giao muộn sau timeout cần s
 | Phase | Việc | Kiểm | Trạng thái |
 |---|---|---|---|
 | F0 | Rà soát + plan này | — | XONG |
-| F1 | R1: tách nhịp làm mới health khỏi nhịp bảo trì nặng; ngưỡng tươi theo nhịp đo được (2× chu kỳ) cho health và cho generation Máy B; bảo trì tự làm mới preflight profile ACTIVE; Scheduled Task đồng bộ bản sao Máy B | test tập trung `-n ≤ 6` | ĐANG LÀM |
-| F2 | R2–R5, R7: khôi phục đơn qua `/me/order` theo đúng giỏ (tra GitHub/OVH trước), chặn checkout lần 2 theo claim giỏ, guard hoàn tiền, phân loại lỗi trước POST, rollback trước review | test tập trung | |
-| F3 | R6: `ensure` từ chối IP protected (RC 5) + khẳng định mọi dòng protected còn trong bảng mới; cài lại helper sau deploy, đo SHA trước/sau | test shell tĩnh + lệnh `health` live | |
-| F4 | R8–R10 | test tập trung | |
-| F5 | Hỏi phiên cli-compat/phiên khác; dựng release độc lập từ `d9a48535` + commit sửa; `alembic heads` một head; build + secret scan | build_release | |
-| F6 | Deploy theo `docs/16_CAP_NHAT_VA_DEPLOY.md` trong cửa sổ không có job LLM dài; `/health/version` đúng SHA | nghiệm thu 3 chiều | |
+| F1 | R1: ngưỡng tươi theo nhịp đo được; bảo trì làm mới health mỗi 10 phút, không hạ profile; script Scheduled Task đồng bộ Máy B (thử thật: bản sinh `09:06:29Z`, đo `09:08:53Z`) | 102 passed/5 skipped | **XONG** `030d51b5` |
+| F2 | R2–R5, R7. Tra `ovh/order-cart-examples`: `GET /order/cart/{id}/checkout` là **dry-run quotation**; OVH không có liên kết giỏ → đơn ⇒ mất phản hồi = NEEDS_REVIEW trung thực, một lần mua cho mỗi máy, chặn máy lỗi/đã hoàn, lỗi trước POST trả claim, rollback trước review | 102 passed | **XONG** `448c162f` |
+| F3 | R6: helper từ chối địa chỉ protected và mọi thay đổi làm rơi dòng protected. Test chạy helper thật dưới Git Bash; đối chứng bản cũ `e5b72562` trượt đúng 3 rào mới | 5 passed; đối chứng 3 failed | **XONG** `0e5adf0f`; cài lên gateway: **chờ chủ dự án** (auto mode chặn ghi máy từ xa) |
+| F4 | R8, R10 (R9 gộp vào F1) | 93 passed | **XONG** `3a468834` |
+| F5 | Release `codex/vps-v4-release-r1` = `d723c79d` (dòng production) + nhánh VPS; xung đột duy nhất ở `08_LIVE_ACCEPTANCE.md`, xử theo nội dung (Q130). VPS diện rộng trên cây gộp 819 passed/7 skipped; một Alembic head `f4a7c2d9e610`; repo release độc lập `release-b1593e3c-lf` sạch; build 4486 tệp/146,5 MB, SHA-256 `89aa2c41…b262`, secret scan 0 | build_release PASS | **XONG** `b1593e3c` |
+| F6 | Hỏi phiên khác (đã gửi LTTCODE + Voice); chủ dự án bấm UAC chạy `D:\LTTSTUDIOSAPP-runtime\deploy-b1593e3c-wrapper.ps1`; `tools/nghiem_thu_deploy.py` ba chiều; `/health/version` | nghiệm thu 3 chiều | **CHỜ UAC** |
 | F7 | E2E live qua `vps-v4-cdp.mjs`: chủ dự án đăng nhập Chrome thật; bước 1–2 (đã PASS 16/09 trên UI); **GO** trước "Tạo máy"; bước 3–9; cleanup giữ stopped | trình duyệt thật | |
 | F8 | Cập nhật `05`/`08`/`09`/`10`, `NHAT_KY.md`; chấm điểm 3 chiều | — | |
 | F9 | Đóng băng, **một** `python tools\gate.py`; gộp main theo `QUY_TRINH_WORKTREE.md` §5; retire worktree | L3 | |
