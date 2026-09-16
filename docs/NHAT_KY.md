@@ -74,7 +74,12 @@
 - ⚠️ Lượt `gate --doi` kẹt `-n 1`: số worker chốt MỘT lần lúc khởi động theo tải lúc đó
   (phiên khác đang giữ máy) và không tăng lại — thấy chậm bất thường thì kiểm dòng
   `test_nhanh.py -n N` trước khi chờ.
-- **Chưa kiểm trên production:** góc nhìn chủ 25 giọng (tài khoản `.local` cần đăng nhập).
+- **Tài khoản thử dùng chung** (chủ dự án cho phép 16/09): `khach{1,2,3}.thu@lttstudios.local`
+  5.000 credit mỗi tài khoản (bút toán `grant`); mật khẩu chỉ trong
+  `secrets\tai_khoan_thu.json`; đăng nhập bằng `tools/tai_khoan_thu.py --cookie <email>`
+  (cookie production mang `Secure` ⇒ công cụ tự mang cookie qua loopback). Hướng dẫn
+  `docs/TAI_KHOAN_THU.md`. E2E góc nhìn chủ 25 giọng + khách thứ hai trên production: PASS.
+- `dung_lai_giong_kho_chung --chay` nay bỏ qua giọng đã có job `done` cùng khoá dựng lại.
 
 ## 2026-09-16 — LTT VOICE: clip gốc 25 giọng kho chung KHÔNG mất — đã lưu bản bền
 

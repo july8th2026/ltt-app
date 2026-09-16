@@ -5,7 +5,7 @@ Biên bản kiểm trên **trình duyệt render thật**. Hai phần, hai mức
 | Phần | Máy chủ | Mức bằng chứng | Trạng thái |
 |---|---|---|---|
 | A. Dev | `tools/studio_dev.py --cong 8127` (SQLite tạm, không model, nhánh `phien/ltt-voice-gui-v2`) | code nhánh chạy thật trong trình duyệt; dữ liệu seed | **Đã làm** |
-| B. Production | `https://app.lttstudios.com` (qua Cloudflare) | code đã deploy `d5bd7b07`, dữ liệu thật, worker thật | **Đã làm** với tài khoản thường; góc nhìn chủ giọng chưa kiểm |
+| B. Production | `https://app.lttstudios.com` (qua Cloudflare) | code đã deploy `d5bd7b07`, dữ liệu thật, worker thật | **Đã làm** — 3 tài khoản: thường, chủ giọng, khách thứ hai |
 
 ⛔ Phần A **không** chứng minh được gì về Cloudflare (cache, CSP biên), worker, R2
 hay 25 giọng thật. Mọi dòng A ghi `PROVEN (dev)`, không phải `PROVEN`.
@@ -61,7 +61,12 @@ kiểm mở để đặt cookie — không phải route của app.
 | 6 | Nghe ngay khai `ngon_ngu=en` + giọng VI | **400** `voice_language_mismatch`, câu tiếng Việt đã dịch — chặn trước credit ✅ |
 | 7 | Console / network | 0 lỗi ngoài đúng phản hồi 400 cố ý ở #6; 0 request hỏng khác ✅ |
 
-**Chưa kiểm trên production:** góc nhìn **chủ 25 giọng** (`thu.giongnoi@lttstudios.local` — thấy "Giọng
-của tôi" + khối quản lý). Đăng nhập tài khoản đó cần mật khẩu; công cụ `tai_khoan_thu.py` chỉ đặt lại
-mật khẩu, không tạo phiên, và phiên kiểm không gõ mật khẩu. Hành vi này đã PROVEN trên dev (§A, Playwright)
-+ test_532. ⇒ `NOT TESTED (production)`, không đánh dấu PASS.
+**Hai tài khoản thử thêm (16/09 23:5x)** — cookie lấy bằng `tools/tai_khoan_thu.py --cookie` (không gõ mật khẩu),
+mỗi tài khoản một browser context riêng:
+
+| Tài khoản | Số đếm (Tất cả / Mẫu / Kho chung / Của tôi) | Chi tiết giọng đầu tiên | Console / network |
+|---|---|---|---|
+| **chủ 25 giọng** `thu.giongnoi@…local` | 49 / 20 / **0** / **29** (25 kho chung + 4 giọng thử cũ) | "Giọng của tôi"; khối quản lý HIỆN: **Tắt giọng này · Xoá vĩnh viễn** ✅ | 0 / 0 |
+| `khach2.thu@…local` | 45 / 20 / **25** / 0 | "Adrian" — "Kho chung"; khối quản lý ẩn; chỉ "Dùng giọng này" ✅ | 0 / 0 |
+
+⇒ D001/V06 PROVEN trên production từ cả hai phía.

@@ -43,9 +43,9 @@ Cache-bust `aa4194b6` · số đếm 45/20/25/0 · chi tiết kho chung không q
 
 | # | Việc | Ghi chú |
 |---|---|---|
-| 1 | E2E góc nhìn **chủ 25 giọng** trên production | cần chủ dự án đăng nhập tài khoản `.local` (đặt lại mật khẩu bằng `tai_khoan_thu.py --dat-lai-mat-khau`) — đã PROVEN trên dev |
+| 1 | ~~E2E góc nhìn chủ 25 giọng~~ | **XONG 23:5x** — chủ thấy 29 "Của tôi" + Tắt/Xoá; khách thứ hai thấy 25 kho chung, không quản lý |
 | 2 | Phiên VPS phải **hoà `main` `d5bd7b07`** trước khi đẩy/deploy nhánh của họ | đã nhắn; nếu không, deploy của họ lùi bản Voice |
-| 3 | `dung_lai_giong_kho_chung --chay` chạy lại sẽ nộp trùng giọng đã `done` | dedupe chỉ khớp job chưa kết thúc; thêm cờ lọc/kiểm repr trước khi nộp nếu cần chạy lại |
+| 3 | ~~Chạy lại `dung_lai_giong_kho_chung` nộp trùng~~ | **ĐÃ SỬA** — bỏ qua giọng đã có job `done` cùng khoá dựng lại (đối chứng production: bỏ qua 25/25) |
 | 4 | Worker khởi động tải `yolov8s.pt` từ GitHub | có sẵn trước V2, ngoài phạm vi Voice |
 | 5 | Cửa `/nghe-thu-van-ban` không có nút GUI nào gọi | ghi nhận |
 
@@ -55,6 +55,12 @@ Cache-bust `aa4194b6` · số đếm 45/20/25/0 · chi tiết kho chung không q
 |---|---|---|
 | Đúng nhu cầu ban đầu (2 P0) | 10/10 | cả hai hết trên production, đo bằng trình duyệt thật |
 | Tính đúng dữ liệu/sổ tiền | 8/10 | sổ khớp, nhưng lượt dựng lại nộp trùng 1 job (đã hoàn) |
-| Kiểm chứng | 8/10 | test nhắm + L3 + E2E công khai; thiếu góc nhìn chủ giọng trên production |
+| Kiểm chứng | 9/10 | test nhắm + L3 + E2E công khai 3 tài khoản (thường, chủ giọng, khách thứ hai) |
 | An toàn vận hành | 9/10 | 0 job/lease trước cài, sao lưu env, không xoá R2, không chạm LLM |
-| **Tổng** | **35/40** | |
+| **Tổng** | **36/40** | |
+
+## H. Tài khoản thử dùng chung (16/09, chủ dự án cho phép)
+
+`khach1/2/3.thu@lttstudios.local` (5.000 credit mỗi tài khoản, bút toán `grant`) + `thu.giongnoi@…local`.
+Mật khẩu chỉ ở `C:\LTTPlatform\secrets\tai_khoan_thu.json`; phiên nào cần đăng nhập gọi
+`tools/tai_khoan_thu.py --cookie <email>`. Hướng dẫn: `docs/TAI_KHOAN_THU.md`.
