@@ -16664,3 +16664,33 @@ msgstr "Show"
 
 msgid "%(so)s / trang"
 msgstr "%(so)s / page"
+
+msgid "Kiểm tra cấu hình và dịch vụ phụ thuộc của nền tảng."
+msgstr "Checks the platform's configuration and dependent services."
+
+msgid "Hệ thống có %(so)s lỗi chặn"
+msgstr "The system has %(so)s blocking issues"
+
+msgid "Cách sửa:"
+msgstr "How to fix:"
+
+msgid "Kiểm tra lại"
+msgstr "Check again"
+
+msgid "Kiểm tra cả Google Sheet (chậm hơn)"
+msgstr "Also check Google Sheet (slower)"
+
+msgid "Không đọc được số liệu:"
+msgstr "Couldn't read metrics:"
+
+msgid "máy đã ghép"
+msgstr "paired machines"
+
+msgid "phiên"
+msgstr "sessions"
+
+msgid "đã thu hồi"
+msgstr "revoked"
+
+msgid "credit/máy/tháng"
+msgstr "credit/machine/month"

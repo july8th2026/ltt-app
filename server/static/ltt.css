@@ -1086,7 +1086,7 @@ code.to-dam{font-weight:600;color:var(--text-primary)}
  *
  * ⛔ Tuyệt đối KHÔNG dùng `body{overflow-x:hidden}` để giấu chuyện này — nó
  *    không sửa gì, nó chỉ cắt mất phần khách cần đọc. */
-.dev-bang{overflow-x:auto;border:1px solid var(--border-subtle);
+.dev-bang{position:relative;overflow-x:auto;border:1px solid var(--border-subtle);
   border-radius:var(--radius-lg);background:var(--surface-base);
   overscroll-behavior-inline:contain}
 .dev-bang>table{margin:0;font-size:12.5px}
@@ -3868,3 +3868,16 @@ button.lv-the-song.nghe-loi,.lv-chon-nghe.nghe-loi{
  * TRÙNG `.dropdown` của Bootstrap/Tabler mà sqladmin dùng — luật không phạm vi
  * `.dropdown button{width:100%}` kéo nút "Actions" của `/admin/*/list` rộng hết
  * hàng và đè lên dòng đầu bảng (baseline DL-004). */
+
+/* ── Status vận hành (`/status`) — Golden UI: lớp thay inline style ────────── */
+.status-list{margin-bottom:0}
+.status-recheck{display:flex;flex-wrap:wrap;align-items:center;gap:10px;max-width:none;margin-top:var(--space-4)}
+.status-recheck input[type=checkbox]{width:auto}
+.status-nexus{margin:14px 0}
+.status-nexus h2{margin:0 0 8px;font-size:var(--fs-card)}
+.status-nexus>.dim{margin:0}
+.status-stats{display:flex;flex-wrap:wrap;gap:18px}
+.status-stats b{display:block;font-size:20px}
+.status-stats span{color:var(--text-muted);font-size:12px}
+.status-stats .is-warn b{color:var(--status-danger)}
+.status-24h{margin:10px 0 0;font-size:12.5px}
