@@ -96,6 +96,7 @@ def _quyet_toan(uid: str, ma_phien: str, so_byte_pcm: int, sr: int) -> None:
 @router.post("/phat-dan")
 def phat_dan(request: Request, text: str = Form(""), voice_id: str = Form(""),
              preset: str = Form(""), csrf_token: str = Form(""),
+             ngon_ngu: str = Form(""),
              user=Depends(user_hien_tai), _=Depends(require_login)):
     """Đọc và phát dần. Trả `audio/wav` chunked."""
     from platform_core import credit
@@ -112,10 +113,16 @@ def phat_dan(request: Request, text: str = Form(""), voice_id: str = Form(""),
 
     uid = _uid(user)
     try:
+        # W4' (16/09/2026): `ngon_ngu` khai ở Studio PHẢI tới được cổng làn
+        # (`lan_ngon_ngu.quyet_dinh` qua `giai_giong`). Trước đây cửa này bỏ nó,
+        # nên khách khai "Tiếng Anh" + giọng Việt vẫn được phát dần — cổng chỉ
+        # còn đoán từ văn bản. `ma_loi` đi kèm để JS phân loại lỗi như `/tao`.
         yc = features.chuan_hoa({"text": text, "voice_id": voice_id,
-                                 "preset": preset, "owner_id": uid})
+                                 "preset": preset, "owner_id": uid,
+                                 "ngon_ngu": ngon_ngu})
     except features.LoiGiongNoi as e:
-        return JSONResponse({"ok": False, "loi": str(e)}, status_code=400)
+        return JSONResponse({"ok": False, "loi": str(e),
+                             "ma_loi": getattr(e, "ma", "")}, status_code=400)
 
     # Đếm ký tự SAU chuẩn hoá — cùng thước với `manifest._gia()`. Đếm trước
     # chuẩn hoá là giữ thiếu ở đúng những câu chuẩn hoá làm nở ra.
@@ -136,7 +143,8 @@ def phat_dan(request: Request, text: str = Form(""), voice_id: str = Form(""),
         try:
             ref_b64, preset_that, canh_bao = features.giai_giong(db, yc)
         except features.LoiGiongNoi as e:
-            return JSONResponse({"ok": False, "loi": str(e)}, status_code=400)
+            return JSONResponse({"ok": False, "loi": str(e),
+                                 "ma_loi": getattr(e, "ma", "")}, status_code=400)
 
         giu = gia.uoc_tran(so_ky_tu=so_ky_tu, giong=(preset_that or ""))
         try:

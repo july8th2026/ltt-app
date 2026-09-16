@@ -377,7 +377,7 @@
     },
     "speech.ltt": {
       "aliases": [],
-      "contract_hash": "ebedbcc38dfcd9d6",
+      "contract_hash": "7d53c7d1f5098677",
       "deprecated": "",
       "execution_mode": "ASYNC_JOB",
       "models": [],

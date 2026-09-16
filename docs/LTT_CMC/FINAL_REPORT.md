@@ -2,7 +2,7 @@
 
 ## Trạng thái
 
-`SOURCE_CERTIFIED · REMOTE_MAIN · CLEANUP_EXECUTED · VPS_V4_HOLD`
+`SOURCE_CERTIFIED · REMOTE_MAIN · CLEANUP_EXECUTED · SINGLE_ROOT_APPROVED · VPS_V4_HOLD`
 
 Nguồn chức năng Voice đã có trong tag `cmc-base-20260911`. Quét live ngày
 12/09/2026 phát hiện ba commit tài liệu Voice hậu-tag; chúng được port vào
@@ -41,6 +41,15 @@ Không có mã Voice cũ nào bị phát lại.
   `codex/vps-v4-infrastructure-profiles`.
 - Source A dirty 5 tệp đã bị loại theo phê duyệt; không giữ branch/worktree/
   patch sao chép.
+
+## GitHub single-root closure
+
+Theo Q135 và xác nhận riêng của người dùng, snapshot canonical mới nhất được
+đóng thành một root commit không parent rồi cập nhật `origin/main` bằng
+force-with-lease ghim SHA remote cũ `45aaef03c037607a1d83fef10ac34bd82ac31abe`.
+Root SHA không thể tự ghi trong nội dung commit tạo ra nó; HEAD/remote sau
+rewrite là nguồn authoritative. Việc này không prune object local và không
+chạm worktree VPS V4 HOLD.
 
 ## Việc chưa được phép gọi là hoàn thành
 

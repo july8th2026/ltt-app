@@ -64,6 +64,8 @@ def _ngu_canh_giong(*, owner_id: str = "", **them) -> dict:
     # Xem chú thích ở `_p_tao.py`: `tham_chieu.tach_rieng_chung` là MỘT hàm
     # dùng ở cả ba màn (fix round 1/5), không phải ba bản `if g.dung_chung`.
     rieng, chung = tham_chieu.tach_rieng_chung(d.get("giong") or ())
+    # GUI-D001: cùng một hàm phân loại với Studio và màn Giọng.
+    d["loai_giong"] = tham_chieu.loai_theo_ma(d.get("giong") or (), owner_id)
     d["duong_nghe"] = nghe_thu.duong_cho_trang(
         duong_audio=f"{MANIFEST.route_prefix}/audio", owner_id=owner_id,
         ma_mau=[g.ma for g in giong_mau.DANH_SACH],
@@ -535,18 +537,22 @@ def doc_tat_ca(request: Request, public_id: str, csrf_token: str = Form(""),
         if not can:
             return JSONResponse({"ok": True, "so_nop": 0, "het": True})
 
-        da_nop, loi = 0, ""
+        da_nop, loi, ma_loi = 0, "", ""
         for k in can:
             try:
                 _nop_mot_khoi(db, user, d, k)
                 da_nop += 1
             except Exception as e:  # noqa: BLE001
                 loi = str(e)
+                # W4' (16/09/2026): `ma_loi` đi kèm như cửa một khối — không có nó
+                # JS chỉ có một câu để hiện, không phân loại được lệch làn/credit.
+                ma_loi = str(getattr(e, "ma", "") or "")
                 break
         d.trang_thai = "dang_lam"
         db.commit()
         return JSONResponse({"ok": True, "so_nop": da_nop,
-                             "con_lai": len(can) - da_nop, "loi": loi})
+                             "con_lai": len(can) - da_nop, "loi": loi,
+                             "ma_loi": ma_loi})
     finally:
         try:
             next(gen)

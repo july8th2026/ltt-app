@@ -27,7 +27,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 
 ---
 
-## 1. Quyết định đã chốt (đến Q130; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91, Q116→Q120 (phần con số), Q125→Q126→Q128 đã thay)
+## 1. Quyết định đã chốt (đến Q135; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91, Q116→Q120 (phần con số), Q125→Q126→Q128 đã thay)
 
 | # | Vấn đề | Quyết định | Lý do / hệ quả |
 |---|---|---|---|
@@ -151,6 +151,8 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 | Q131 | Hai model nhà dùng sampling và reasoning thế nào? | Bỏ `--reasoning-budget` và `--temp` khỏi macro chung. `qwen38-api`: thinking, `reasoning_effort=xhigh`, budget vận hành 4.096, temp 1.0. `qwen35-api`: thinking bật, budget vận hành 2.048, temp 1.0. Cả hai giữ top-p 0.95/top-k 20/min-p 0, không presence penalty, và dùng cùng Froggeric v22.5 đã vendor + khóa SHA-256. | Model card Qwen3.8 chính thức chỉ có `low|medium|xhigh`, mặc định xhigh và khuyến nghị temp 1.0 cho thinking. Model card Qwen3.5 không công bố effort level: thinking bật mặc định; temp 1.0 là preset general, còn precise coding là 0.6. Hai budget là giới hạn vận hành do chủ sản phẩm chọn để tăng chiều sâu 8x/4x so với mốc 512, không được ghi là giá trị chính thức của Qwen. Template cộng đồng giữ tương thích tool/agent; deploy phải mang đúng tệp, không dựa vào bản sửa tay trên máy B. |
 | Q132 | Sàn VRAM của LTT-3.5 có bật mặc định không? | **Không.** Mặc định `0`; giữ biến env để operator bật lại khi có bằng chứng OOM. Gateway vẫn giới hạn theo slot, token pool và RPM. | Production 15/09 ghi 112 lần `ban_vram`, 0 lần đầy slot và không OOM; sàn 600 kết hợp TTL 1.800 giây tạo vòng tự khóa khiến model mất phục vụ 42 phút. Chủ dự án xác nhận card 5060 chưa từng tràn VRAM. Bỏ sàn không đổi engine, KV, context, sampling hay reasoning. Chi tiết: L-21. |
 | Q133 | Codex biểu diễn reasoning của hai model LTT thế nào? | Catalog giữ hai model. `ltt-3.8` công bố đúng `low|medium|xhigh`, mặc định `xhigh`. `ltt-3.5` công bố đúng **một** lựa chọn `medium — Thinking on`; `medium` là nhãn tương thích wire mà Codex bắt buộc, không phải tier native của Qwen3.5. Tool chỉ báo cắm thành công sau khi `/responses` của cả hai model đều trả 200. | Model card/template chính thức Qwen3.8 khai ba mức và mặc định xhigh; Qwen3.5 chỉ có thinking bật/tắt. Đo bằng Codex CLI 0.145.0: catalog thiếu `supported_reasoning_levels` bị từ chối parse, danh sách rỗng vẫn khiến client gửi `reasoning.effort=medium`. Một lựa chọn có nhãn thật giữ cấu hình hợp lệ mà không bịa thêm năng lực. Ba app-server đang cài đã parse strict và liệt kê đủ hai model. |
+| Q134 | Một lần cắm Codex tạo bao nhiêu model/profile? | **Luôn cả hai.** Tool và SDK tạo `ltt.config.toml` cho LTT 3.8, `ltt-fast.config.toml` cho LTT 3.5 và một catalog chứa hai model. `--model`/radio chỉ chọn mặc định Claude Code; Codex Desktop/VS Code dùng 3.8 làm root ban đầu. Mỗi profile có backup/rollback độc lập. | Đơn vị cài đặt theo một model khiến người dùng phải cắm lại và radio Claude vô tình loại model còn lại khỏi Codex. Cấu hình Tool 1.9.3 đã qua strict parser và `model/list` của CLI 0.145.0, Desktop 0.146.0-alpha.3.1, VS Code 0.154.0-alpha.6.2; cả ba trả đúng hai slug và nhãn Strong/Fast. Picker custom-provider vẫn là hành vi client, không được Tool hứa thay cho dữ liệu `model/list`. |
+| Q135 | Lịch sử GitHub sau khi LTT-CMC hoàn tất | **Giữ nguyên snapshot canonical mới nhất nhưng thay lịch sử reachable của `main` bằng đúng một root commit không có parent; cập nhật `origin/main` bằng `--force-with-lease` ghim đúng SHA remote cũ.** Trước khi cập nhật ref phải quét bí mật, chạy kiểm tra governance/topology và chứng minh tree hash của root đúng bằng tree đã stage. Sau push phải chứng minh `rev-list --count main = 1`, root không có parent, remote/default vẫn là `main`. Không `git gc`/`git prune`; không sửa hoặc xóa worktree VPS V4 đang HOLD. | Người dùng duyệt rõ ngày 12/09/2026 sau khi CMC đã hợp nhất và dọn mọi nhánh remote cũ: mục tiêu là GitHub chỉ công bố một snapshot chuẩn, không giữ lịch sử/nhánh cạnh tranh gây nhầm lẫn. Force push bình thường bị cấm, nhưng đây là ngoại lệ phá hủy có phạm vi hẹp, có xác nhận riêng và lease chống ghi đè thay đổi remote ngoài dự kiến. GitHub có thể giữ object/cache nội bộ ngoài refs trong một thời gian; quyết định chỉ bảo đảm lịch sử không còn reachable qua refs của repository. Số hợp nhất: nhánh LTT-CMC ghi quyết định này là Q124, trùng Q124 (hai model LTT trên client) đã có trên dòng production. Nhánh VPS V4 local vẫn giữ lineage cũ để không làm mất WIP ngoài phạm vi GitHub. |
 ---
 
 ### Q115 — Public input cap sau benchmark Q4 (2026-08-28)
@@ -554,6 +556,28 @@ Nhánh VPS V4 được triển khai trước khi nhập vào dòng phát hành L
 dùng tạm số Q124/Q125 trùng với chuỗi quyết định client. Khi hợp nhất, hai quyết
 định đó nhận số canonical Q129/Q130; nội dung kỹ thuật và bằng chứng giữ tại
 `docs/VPS_V4/`. Việc đổi số không thay đổi schema hay hành vi production.
+
+### Q134 — Tool Codex cài hai model trong một lượt (2026-09-16)
+
+Tool 1.9.3 và SDK coi provider, catalog và hai profile là một đơn vị. Model
+được chọn trong Tool chỉ ghim Claude Code; Codex luôn nhận LTT 3.8 + LTT 3.5.
+Tên hiển thị trong catalog là `LTT 3.8 (Strong)` và `LTT 3.5 (Fast)`, còn slug
+wire giữ ổn định. Hướng dẫn và giới hạn picker nằm ở
+`docs/PUBLIC_API/CODEX_DESKTOP_CONFIG.md`.
+
+### Q135 — Một root commit canonical trên GitHub (2026-09-12)
+
+Sau khi `origin/main` là remote branch duy nhất và LTT-CMC đã được chứng nhận,
+người dùng duyệt thay lịch sử reachable của GitHub bằng đúng một snapshot mới
+nhất. Root commit được dựng trực tiếp từ index, không có parent; chỉ cập nhật
+remote nếu lease vẫn trỏ đúng SHA đã đối soát. Tree hash, số commit, parent của
+root và remote default phải được kiểm lại sau push.
+
+Đây không phải cách làm mặc định cho task mới. Quy trình branch/worktree và
+handoff vẫn theo `docs/QUY_TRINH_WORKTREE.md`; chỉ canonical integrator được
+nhập vào `main`. Q135 (ghi là Q124 trên nhánh LTT-CMC) là ngoại lệ một lần để đóng CMC. Không prune object local
+và không chạm `D:\LTTSTUDIOSAPP-vps-v4`: worktree đó chứa WIP chưa bàn giao và
+không nằm trên GitHub sau khi remote chỉ còn root `main`.
 
 ## 2. Ràng buộc bất biến
 

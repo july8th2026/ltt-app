@@ -646,11 +646,11 @@ Input:
 - `voice_id` — string, max length 40, One of your own cloned voices, as returned when you created it. Stays valid across engine upgrades. Leave empty to use a built-in voice.
 - `preset` — string, max length 64, A built-in voice name. Ignored when voice_id is given; sending both is rejected.
 - `speed` — number, min 0.5, max 2.0, default 1.0, Playback speed. 1.0 is normal. Range 0.5 (half speed) to 2.0 (double speed). Applied as a post-synthesis time-stretch — it does not change how the model speaks, only how fast the output plays. Billing is based on the original duration before speed change. Omit or send 1.0 for normal speed.
-- `language` — string, one of `auto`, `vi`, `en`, default auto, Language lane for quality enforcement. 'auto' (default) detects language from the text. 'vi' or 'en' overrides detection. If the detected or declared language does not match the voice's lane, the request is rejected with voice_language_mismatch.
+- `language` — string, one of `auto`, `vi`, `en`, default auto, Language lane for quality enforcement. 'auto' (default) detects language from the text. 'vi' or 'en' declares the script language; confident detection from the text still applies. If the declared or confidently detected language does not match the voice's lane, the request is rejected with voice_language_mismatch before any credit is held.
 
 Output: `audio_key` (artifact), `text` (string)
 
-Contract hash: `ebedbcc38dfcd9d6`
+Contract hash: `7d53c7d1f5098677`
 
 ### `story.storyboard`
 

@@ -3882,6 +3882,12 @@ Nguồn thiết kế:
       Sau duyệt ledger đã xóa 9 worktree, 35 local branch, 21 remote branch,
       tag CMC và inventory/patch tạm. WIP VPS V4 được giữ nguyên ở
       `NEED_RECONCILIATION`; vì còn worktree/branch này nên H45.6 chưa thể đóng.
+- [ ] **H45.7 — GitHub single-root closure (Q135):** người dùng đã duyệt giữ
+      snapshot canonical mới nhất và thay lịch sử reachable của `origin/main`
+      bằng một root commit. Phải quét secret, kiểm governance/topology, dùng
+      force-with-lease ghim `45aaef03c037607a1d83fef10ac34bd82ac31abe`, rồi
+      xác minh tree hash, root không parent, `rev-list --count = 1` và default
+      branch vẫn là `main`. Không prune object và không chạm VPS V4 HOLD.
 
 **Ngoài phạm vi:** deploy production. **Gate:** tuân đúng
 `docs/00_LTT_OPERATING_CONTRACT.md`; trước lệnh nặng phải đo cả tải máy và cửa
@@ -4143,3 +4149,25 @@ CRLF gốc, lượt cuối `python tools\gate.py` **PASS 33/33**, báo cáo
       installer/GUI/console/ZIP, Defender sạch; source nhúng khớp SHA-256.
       Hai artifact đã vào `data/api_dist`; trang production hiện đúng 1.9.2,
       hash, 0 console error/0 request hỏng; hai URL tải đều HTTP 200.
+
+## H55 — Tool 1.9.3: một lần cắm Codex có cả hai model (2026-09-16)
+
+- [x] **H55.1 — Contract và rollback:** `cam_codex` cùng SDK luôn tạo profile
+      3.8 + 3.5 và catalog hai model; `--model` chỉ còn chọn Claude. Hai profile
+      được sao lưu/gỡ độc lập; trạng thái chỉ xanh khi đủ cả hai và catalog.
+- [x] **H55.2 — Dữ liệu Codex thật:** catalog dùng hai nhãn Strong/Fast, mỗi
+      profile có đúng context/compact/reasoning/tool-output riêng. Strict
+      app-server CLI 0.145.0, Desktop 0.146.0-alpha.3.1 và VS Code
+      0.154.0-alpha.6.2 đều trả đủ hai model từ cấu hình Tool sinh ra.
+- [x] **H55.3 — Phát hành:** dựng/quét/cài Tool 1.9.3, đưa hai artifact lên
+      trang API production và xác minh tải + giao diện thật. Production chạy
+      commit `d9a48535`; đối chiếu 1.055 tệp đạt 0 lệch/thiếu/thừa, hai URL tải
+      HTTP 200 đúng hash và Playwright ghi nhận 0 console error/0 request hỏng.
+
+## H56 — Marker cho đường cập nhật bằng ZIP
+
+- [ ] **H56.1 — Loại bước tay:** `deploy/windows/update.ps1` hiện không tự tạo
+      `dau_van_tay.json` khi nhận `-SourceZip`; bổ sung hợp đồng mang commit
+      vào gói hoặc tham số cập nhật, test hành vi và tài liệu rollback. H55 đã
+      ghi marker không BOM từ commit/gói xác định rồi đối chiếu 0/0/0; khoản nợ
+      này dành cho lượt sửa hạ tầng riêng, không làm sai bản đang chạy.

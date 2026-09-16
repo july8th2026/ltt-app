@@ -467,18 +467,14 @@ def tao_may(request: Request,
     from apps.vps.services.sellable_capacity import (
         available_gateway_slots,
         effective_ipv4_slots,
+        promised_without_ip,
         sellable_slots,
     )
-    from sqlalchemy import func
     try:
         ip_details = backend_factory.public_ip_backend(db, profile).health().details
         # Queued promises already consume an eventual IP even before provision
         # reserves it. The selector's row lock serializes these admissions.
-        waiting = db.execute(select(func.count()).select_from(VpsInstance).where(
-            VpsInstance.infrastructure_profile_id == profile.id,
-            VpsInstance.trang_thai != "da_xoa",
-            ~select(VpsIp.id).where(VpsIp.instance_id == VpsInstance.id).exists()
-        )).scalar_one()
+        waiting = promised_without_ip(db, profile.id)
         free = effective_ipv4_slots(ip_details, promised_without_ip=waiting)
         slots = sellable_slots(suc_chua, plan_id, extra_disk_gb=dia_them_gb,
                                free_ipv4=free, gateway_slots=available_gateway_slots(db, profile.id))
@@ -577,6 +573,19 @@ def tat_may(instance_id: str, request: Request, csrf_token: str = Form(...),
             _g: None = Depends(_cong_co), _u: str = Depends(require_login),
             db=Depends(get_db)):
     return _xin_lenh(request, csrf_token, instance_id, db, "tat")
+
+
+@router.post("/{instance_id}/tat-cung")
+def tat_cung_may(instance_id: str, request: Request, csrf_token: str = Form(...),
+                 _g: None = Depends(_cong_co), _u: str = Depends(require_login),
+                 db=Depends(get_db)):
+    """Rút điện — khách tự quyết sau khi tắt mềm thất bại (`dieu_khien` docstring).
+
+    Nút này đã được hứa trong thiết kế nhưng chưa từng có route; đo 16/09 trên
+    production, tắt mềm VM chưa cài Windows quá hạn và khách không còn đường nào
+    để tắt máy (R21).
+    """
+    return _xin_lenh(request, csrf_token, instance_id, db, "tat_cung")
 
 
 @router.post("/{instance_id}/khoi-dong-lai")
@@ -839,9 +848,22 @@ def trang_chi_tiet(instance_id: str, request: Request,
             .where(VpsEvent.instance_id == may.id, VpsEvent.loai == "thu_phi")
             .order_by(VpsEvent.created_at.desc()).limit(24)).scalars()
     ]
+    # Gợi ý "Tắt cứng" CHỈ sau khi lượt tắt/khởi động lại gần nhất thất bại và
+    # máy vẫn đang chạy — không phải một nút rút điện thường trực.
+    su_kien_dien = db.execute(
+        select(VpsEvent.loai).where(
+            VpsEvent.instance_id == may.id,
+            VpsEvent.loai.in_(("xin_tat", "tat", "tat_that_bai", "xin_khoi_dong_lai",
+                               "khoi_dong_lai", "khoi_dong_lai_that_bai",
+                               "xin_tat_cung", "tat_cung", "tat_cung_that_bai",
+                               "xin_bat", "bat", "bat_that_bai")))
+        .order_by(VpsEvent.created_at.desc()).limit(1)).scalar_one_or_none()
+    goi_y_tat_cung = (may.trang_thai == "dang_chay" and su_kien_dien in
+                      ("tat_that_bai", "khoi_dong_lai_that_bai"))
     return templates.TemplateResponse(request, "vps_chi_tiet.html", {
         "nav": MANIFEST.slug, "app": MANIFEST,
         "may": may,
+        "goi_y_tat_cung": goi_y_tat_cung,
         "menu_trai": _menu("may", may=may),
         "trang_thai_nhan": nhan.trang_thai(may.trang_thai),
         "badge": nhan.badge(may.trang_thai),
@@ -950,7 +972,6 @@ async def cau_console(websocket: WebSocket, instance_id: str, ve: str = ""):
     bỏ quên. Tất cả kiểm tra nằm tường minh trong thân hàm.
     """
     import asyncio
-    import ssl as ssl_mod
 
     if not vps_app.enabled():
         await websocket.close(code=1008)
@@ -985,18 +1006,14 @@ async def cau_console(websocket: WebSocket, instance_id: str, ve: str = ""):
 
     import websockets
 
-    ctx = ssl_mod.create_default_context()
-    if not client.config.verify:
-        # Cụm dùng chứng chỉ tự ký. Đây là kết nối TỪ SERVER MÌNH tới Proxmox
-        # trong LAN, không phải kết nối của khách — cùng mức tin cậy với mọi lời
-        # gọi API khác trong `proxmox.py`.
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl_mod.CERT_NONE
+    # Cùng chính sách TLS với mọi lời gọi API trong `proxmox.py` (CA riêng + tên
+    # chứng chỉ chính xác), xem `console.tls_cho_cau_console` (R20).
+    ctx, ten_tls = console.tls_cho_cau_console(client.config)
 
     await websocket.accept(subprotocol="binary")
     try:
         async with websockets.connect(
-                dia_chi, ssl=ctx, subprotocols=["binary"],
+                dia_chi, ssl=ctx, server_hostname=ten_tls, subprotocols=["binary"],
                 additional_headers=client._headers(), open_timeout=20) as pve:
             # KHÔNG gửi dòng `user:ticket` nào ở đây. Đó là giao thức của
             # `termproxy` (xterm.js); `vncproxy` thì vé là **mật khẩu VNC** và

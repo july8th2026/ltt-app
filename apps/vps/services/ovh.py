@@ -16,6 +16,10 @@ class OvhError(RuntimeError):
     """OVH could not be read; response bodies are deliberately not exposed."""
 
 
+class CheckoutNotSent(OvhError):
+    """Checkout was refused locally before any payment POST was issued."""
+
+
 @dataclass(frozen=True)
 class OvhConfig:
     application_key: str

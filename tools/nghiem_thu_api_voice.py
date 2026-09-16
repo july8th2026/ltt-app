@@ -87,7 +87,8 @@ def main(argv=None) -> int:
             reason = ""
             try:
                 reason = r.json().get("code") or r.json().get("detail", "")[:50]
-            except Exception:  # noqa: BLE001
+            except (ValueError, AttributeError, TypeError):
+                # thân không phải JSON object ⇒ ghi 50 ký tự thô làm lý do.
                 reason = r.text[:50]
             ket["quote_scenarios"].append({"ten": ten, "got": r.status_code,
                                            "want": want, "ok": ok, "reason": reason})

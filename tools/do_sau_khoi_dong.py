@@ -54,6 +54,34 @@ def ps(lenh: str, timeout: int = 90) -> str:
     return (r.stdout or "").strip()
 
 
+def app_vo_hinh(chuoi_pools: str) -> list:
+    """App đang bật mà không làn nào trong `chuoi_pools` nhặt được (GUI-D006).
+
+    Dùng CHÍNH bộ đọc `job_worker._doi_hinh` và CHÍNH `registry.discover` mà
+    worker dùng — không chép luật lọc năng lực ra một bản thứ hai.
+    """
+    import os
+
+    goc = str(Path(__file__).resolve().parents[1])
+    if goc not in sys.path:
+        sys.path.insert(0, goc)
+    import job_worker
+    from platform_core.registry import discover
+
+    cu = os.environ.get("LTT_WORKER_POOLS")
+    os.environ["LTT_WORKER_POOLS"] = chuoi_pools
+    try:
+        doi_hinh = job_worker._doi_hinh()
+    finally:
+        if cu is None:
+            os.environ.pop("LTT_WORKER_POOLS", None)
+        else:
+            os.environ["LTT_WORKER_POOLS"] = cu
+    cac_app = [(it.slug, tuple(it.manifest.requires), bool(it.manifest.enabled))
+               for it in discover() if not it.error]
+    return job_worker.app_khong_lan_nao_nhat(doi_hinh, cac_app)
+
+
 def ghi(ra: dict, khoa: str, gt) -> None:
     ra[khoa] = gt
     print(f"  {khoa:<26} {gt if not isinstance(gt, (list, dict)) else json.dumps(gt, ensure_ascii=False)[:150]}")
@@ -265,6 +293,14 @@ def main() -> int:
     elif "KHONG DOC DUOC" in pools:
         print("   ⚠️ Chua ket luan duoc. Chay lai bang LocalSystem qua Nexus,")
         print("      hoac: powershell -File .\\setup\\4-nghiem-thu.ps1 (co chot nay).")
+    # GUI-D006 (16/09/2026): khong chi `voice` — MOI app dang bat ma khong lan
+    # nao nhat duoc. Do 16/09: thieu `ffmpeg` cung vo hinh y het `voice`.
+    if pools.startswith("LTT_WORKER_POOLS="):
+        vo_hinh = app_vo_hinh(pools.split("=", 1)[1])
+        ghi(ra, "app_khong_worker_nao_nhat", vo_hinh)
+        if vo_hinh:
+            print("   🔴 CAC APP TREN SE NAM `queued` VINH VIEN. Them lan vao")
+            print("      LTT_WORKER_POOLS (vd `ffmpeg:1`, `gpu+ffmpeg:1`).")
 
     print("\n== 8. May B co bi anh huong khong ==")
     b = ps("try { (Test-NetConnection 192.168.2.66 -Port 8299 "

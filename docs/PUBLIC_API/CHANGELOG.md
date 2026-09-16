@@ -21,6 +21,19 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-09-16 — `speech.ltt`: mô tả `language` nói đúng hành vi (FIXED)
+
+- **Cái gì đổi:** chỉ câu mô tả trường `language` — và vì thế `contract_hash` của
+  `speech.ltt` (`ebedbcc38dfcd9d6` → `7d53c7d1f5098677`). Bản cũ viết `'vi'`/`'en'`
+  *"overrides detection"* — sai từ D002 (11/09): khai `language` KHÔNG tắt việc
+  đoán; văn bản đoán CHẮC ra ngôn ngữ khác làn giọng vẫn bị từ chối
+  `voice_language_mismatch`, và việc từ chối xảy ra **trước khi giữ credit**.
+- **Phá vỡ tương thích:** `check_api_compat` xếp mọi đổi `contract_hash` là
+  BREAKING; **hành vi không đổi**, không trường, kiểu, giới hạn hay mã lỗi nào đổi.
+  Chủ dự án duyệt 16/09/2026.
+- **Phải làm gì:** không, trừ client ghim cứng `contract_hash` của `speech.ltt` —
+  cập nhật sang giá trị mới.
+
 ## 2026-09-15 — reasoning và sampling tách theo model (Q131)
 
 **FIXED · request cũ vẫn hợp lệ; metadata mặc định thay đổi.** Máy chủ không còn ép cả hai model dùng

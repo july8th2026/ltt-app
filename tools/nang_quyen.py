@@ -59,7 +59,8 @@ GIT_BIN = (r"C:\Program Files\Git\bin", r"C:\Program Files\Git\usr\bin")
 def dang_nang_quyen() -> bool:
     try:
         return bool(ctypes.windll.shell32.IsUserAnAdmin())
-    except Exception:                                           # noqa: BLE001
+    except (AttributeError, OSError):
+        # không phải Windows (`ctypes.windll` vắng) ⇒ coi như không nâng quyền.
         return False
 
 

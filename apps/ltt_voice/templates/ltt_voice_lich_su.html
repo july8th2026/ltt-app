@@ -188,6 +188,8 @@
                 {% else %}
                   {% if d.da_tai %}<span class="chip m">{{ _("Đã tải") }}</span>{% endif %}
                   {% with tt = d.trang_thai %}{% include "_voice_trangthai.html" %}{% endwith %}
+                  {# GUI-D015: cùng ngưỡng với Studio (`hang_doi.py`). #}
+                  {% if d.cho_lau %}<span class="badge b-err"><span class="dot"></span>{{ _("Chờ lâu bất thường") }}</span>{% endif %}
                 {% endif %}
               </div>
               {% if d.audio_url %}

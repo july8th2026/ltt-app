@@ -170,6 +170,32 @@ def _seed_giong(db, uid: str) -> None:
                      storage_key="voice/repr/dev.bin",
                      fingerprint="dev", trang_thai="dang_dung"))
 
+    # GUI V2 (16/09/2026): ba ô mà lượt kiểm 15/09 không thấy vì chỉ nhìn bằng
+    # tài khoản CHỦ — thiếu chúng thì các nút lọc Kho chung/khối quản lý/bộ lọc
+    # thiếu nhãn không có gì để soi.
+    from apps.ltt_voice.tables import VoiceRef
+    from platform_core.users import tao_nguoi_dung
+    khac = tao_nguoi_dung(db, email="studio-dev-chu-kho@test.local",
+                          password=MAT_KHAU, is_verified=True)
+    db.flush()
+    # ① giọng KHO CHUNG của người khác, đã duyệt license, KHÔNG nhãn giới
+    #    (hình dạng 29/29 hồ sơ production — `gioi` rỗng).
+    chung = VoiceProfile(public_id="vc_devkhochung0001", owner_id=str(khac.id),
+                         ten_hien_thi="Kho Chung - Thuyet Minh", ngon_ngu="vi",
+                         trang_thai="active", dung_chung=True,
+                         license_status="ok")
+    db.add(chung)
+    db.flush()
+    db.add(VoiceRef(profile_id=chung.id,
+                    storage_key=f"voice/{khac.id}/vc_devkhochung0001/source.wav",
+                    sha256="0" * 64, mime="audio/wav", so_byte=10, giay=1.0))
+    # ② giọng `dung_chung` CHƯA duyệt của chính tài khoản dev — hình dạng 25 giọng
+    #    production: chủ phải thấy "Giọng của tôi", không phải "Kho chung".
+    db.add(VoiceProfile(public_id="vc_devchuaduyet0001", owner_id=uid,
+                        ten_hien_thi="Chung Chua Duyet - EN", ngon_ngu="en",
+                        trang_thai="active", dung_chung=True,
+                        license_status="cho_soat"))
+
 
 def _seed_du_an(db, uid: str) -> None:
     """Hai du an, mot co khoi.
@@ -262,6 +288,14 @@ def _seed_lich_su(db, uid: str) -> None:
             started_at=_bd, finished_at=_bd + timedelta(seconds=giay * 0.18),
             created_at=_bd,
             progress=100))
+
+    # GUI V2 D015: một lượt `queued` đã 3 phút — hình dạng 2 job kẹt 13–16/09.
+    # Không seed thì badge "Chờ lâu bất thường" không có hàng nào để hiện.
+    db.add(Job(
+        id="devjobkett", user_id=uid, app_slug=MANIFEST.slug,
+        job_type="ltt_voice.synthesize", status="queued",
+        params={"text": "Lượt này đang chờ quá lâu.", "owner_id": uid},
+        created_at=_goc - timedelta(minutes=3), progress=0))
 
 
 def lay_cookie(cong: int) -> str:

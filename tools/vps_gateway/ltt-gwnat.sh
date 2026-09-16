@@ -73,6 +73,15 @@ render_nft_transaction() {
 mapping_for_public() { awk -v ip="$1" 'NF == 3 && $1 !~ /^#/ && $2 == ip {print $1; exit}' "$MAP"; }
 mapping_for_private() { awk -v ip="$1" 'NF == 3 && $1 !~ /^#/ && $1 == ip {print $2; exit}' "$MAP"; }
 is_protected() { awk -v a="$1" -v b="$2" 'NF == 3 && $1 == b && $2 == a {found=1} END {exit !found}' "$PROTECTED"; }
+# Any use of a protected address, in either column, not only the exact pair.
+touches_protected() { awk -v a="$1" -v b="$2" 'NF == 3 && $1 !~ /^#/ && ($2 == a || $1 == b) {found=1} END {exit !found}' "$PROTECTED"; }
+# The whole table is rebuilt from the candidate map, so a protected row that is
+# missing from it would silently lose its live NAT rules. Refuse instead.
+keeps_every_protected_row() {
+    awk 'FNR == NR { if (NF == 3 && $1 !~ /^#/) want[$1 " " $2] = 1; next }
+         NF == 3 && $1 !~ /^#/ { delete want[$1 " " $2] }
+         END { for (k in want) exit 1 }' "$PROTECTED" "$1"
+}
 
 action=${1:-}
 case "$action" in
@@ -106,7 +115,9 @@ ensure|remove)
     nft list table ip gwnat >/dev/null || fail "gwnat table is unavailable"
     current_private=$(mapping_for_public "$public")
     current_public=$(mapping_for_private "$private")
+    keeps_every_protected_row "$MAP" || fail "current map is missing a protected mapping" 5
     if [[ $action == ensure ]]; then
+        touches_protected "$public" "$private" && fail "protected address cannot be assigned" 5
         [[ -z $current_private || $current_private == "$private" ]] || fail "public IP belongs to another mapping" 4
         [[ -z $current_public || $current_public == "$public" ]] || fail "private IP belongs to another mapping" 4
         [[ $current_private == "$private" ]] && { echo ok; exit 0; }
@@ -128,6 +139,7 @@ ensure|remove)
         awk -v a="$public" -v b="$private" '!(NF == 3 && $1 == b && $2 == a)' "$MAP" > "$work/map"
     fi
     validate_map "$work/map"
+    keeps_every_protected_row "$work/map" || fail "change would drop a protected mapping" 5
     render_netplan "$work/map" "$work/netplan"
     render_nft_transaction "$work/map" "$work/nft-transaction"
     nft -c -f "$work/nft-transaction"

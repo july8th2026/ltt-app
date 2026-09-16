@@ -73,9 +73,14 @@
         <a class="btn sm primary lv-loc-tao" href="#lv-tao-giong">{{ _("+ Tạo giọng") }}</a>
 
         <div class="lv-loc-nhom" role="group" aria-label="{{ _('Loại giọng') }}">
-          <button type="button" class="lv-loc-nut on" aria-pressed="true" data-loc="loai" data-gt="">{{ _("Tất cả") }}</button>
-          <button type="button" class="lv-loc-nut" aria-pressed="false" data-loc="loai" data-gt="mau">{{ _("Giọng mẫu") }}</button>
-          <button type="button" class="lv-loc-nut" aria-pressed="false" data-loc="loai" data-gt="toi">{{ _("Giọng của tôi") }}</button>
+          {# V01 (16/09/2026): số đếm THẬT, cùng nguồn `loai_giong` với thẻ. #}
+          {%- set _dem_toi = loai_giong.values() | select("equalto", "toi") | list | length %}
+          {%- set _dem_chung = loai_giong.values() | select("equalto", "chung") | list | length %}
+          {%- set _dem_mau = giong_mau | length %}
+          <button type="button" class="lv-loc-nut on" aria-pressed="true" data-loc="loai" data-gt="">{{ _("Tất cả") }} <span class="lv-dem">{{ _dem_mau + _dem_chung + _dem_toi }}</span></button>
+          <button type="button" class="lv-loc-nut" aria-pressed="false" data-loc="loai" data-gt="mau">{{ _("Giọng mẫu") }} <span class="lv-dem">{{ _dem_mau }}</span></button>
+          <button type="button" class="lv-loc-nut" aria-pressed="false" data-loc="loai" data-gt="chung">{{ _("Kho chung") }} <span class="lv-dem">{{ _dem_chung }}</span></button>
+          <button type="button" class="lv-loc-nut" aria-pressed="false" data-loc="loai" data-gt="toi">{{ _("Giọng của tôi") }} <span class="lv-dem">{{ _dem_toi }}</span></button>
         </div>
 
         <div class="lv-loc-nhom" role="group" aria-label="{{ _('Giới tính') }}">
@@ -119,13 +124,15 @@
       </p>
 
       <div class="lv-luoi" id="lv-luoi">
+        {# GUI-D001: `loai` do route tính (`tham_chieu.loai_giong`) — template
+           không tự suy từ `dung_chung`. #}
         {% for g in giong %}
-          {% with la_mau = false, tk = thong_ke.get(g.public_id) %}
+          {% with loai = loai_giong[g.public_id], tk = thong_ke.get(g.public_id) %}
             {% include "_voice_the.html" %}
           {% endwith %}
         {% endfor %}
         {% for g in giong_mau %}
-          {% with la_mau = true %}{% include "_voice_the.html" %}{% endwith %}
+          {% with loai = 'mau' %}{% include "_voice_the.html" %}{% endwith %}
         {% endfor %}
       </div>
 
@@ -385,6 +392,7 @@
     duongNghe: {{ duong_nghe | tojson }},
     chu: {
       mau: {{ _("Giọng mẫu") | tojson }},
+      khoChung: {{ _("Kho chung") | tojson }},
       cuaToi: {{ _("Giọng của tôi") | tojson }},
       sanSang: {{ _("Sẵn sàng") | tojson }},
       dangGhiDanh: {{ _("Đang ghi danh…") | tojson }},
@@ -395,7 +403,10 @@
          lại nào cả hai. Nhãn RIÊNG để khách biết đúng việc phải làm. #}
       ghiDanhLoi: {{ _("Ghi danh lỗi, cần tạo giọng mới") | tojson }},
       chuaDung: {{ _("chưa dùng") | tojson }},
-      anViThieuNhan: {{ _("· ẩn {n} giọng của bạn: giọng nhân bản không có nhãn giới tính, vùng miền hay phong cách") | tojson }}
+      {# GUI-D004: cùng luật với bộ chọn Studio — thẻ thiếu nhãn được GIỮ, và câu
+         này nói ra điều đó. Khoá JS giữ tên `anViThieuNhan` để không đổi voice.js
+         thêm một chỗ. #}
+      anViThieuNhan: {{ _("· giữ {n} giọng chưa có nhãn giới tính, vùng miền hay phong cách — bộ lọc chỉ áp dụng cho giọng có nhãn") | tojson }}
     }
   });
 

@@ -12978,6 +12978,12 @@ msgstr "Disable this voice"
 msgid "Tắt máy"
 msgstr "Stop"
 
+msgid "Tắt cứng"
+msgstr "Force stop"
+
+msgid "Tắt cứng giống rút điện: dữ liệu chưa ghi xuống đĩa có thể mất. Tiếp tục?"
+msgstr "Force stop is like pulling the plug: data not yet written to disk may be lost. Continue?"
+
 msgid ""
 "Tắt máy dùng lệnh tắt mềm — hệ điều hành có thời gian dọn dẹp. Máy đã tắt vẫn tính phí vì nó vẫn "
 "giữ chỗ và giữ dữ liệu."
@@ -18024,3 +18030,27 @@ msgstr "🧪 Run a test job"
 #~ msgid "✦ Tất cả"
 #~ msgstr "✦ All"
 
+
+msgid "Về tốc độ gốc"
+msgstr "Back to original speed"
+
+msgid "Nghe ngay phát ở tốc độ gốc 1×. Tốc độ bạn chọn được áp vào tệp khi bấm Tạo tiếng nói."
+msgstr "Listen now plays at the original 1× speed. The speed you chose is applied to the file when you click Generate speech."
+
+msgid "· giữ {n} giọng chưa có nhãn giới tính, vùng miền hay phong cách — bộ lọc chỉ áp dụng cho giọng có nhãn"
+msgstr "· keeping {n} voices without a gender, region or style label — filters only apply to labelled voices"
+
+msgid "Đang chờ máy xử lý…"
+msgstr "Waiting for a machine to process…"
+
+msgid "Hàng đợi lâu hơn bình thường. Bạn có thể chờ tiếp, hoặc mở trang việc để huỷ và thử lại sau."
+msgstr "The queue is taking longer than usual. You can keep waiting, or open the job page to cancel and try again later."
+
+msgid "Chờ lâu bất thường"
+msgstr "Unusually long wait"
+
+msgid "profile LTT 3.8; tạo mới hoặc sao lưu trước khi ghi"
+msgstr "LTT 3.8 profile; created, or backed up before writing"
+
+msgid "profile LTT 3.5; được cài cùng lượt với LTT 3.8"
+msgstr "LTT 3.5 profile; installed in the same run as LTT 3.8"

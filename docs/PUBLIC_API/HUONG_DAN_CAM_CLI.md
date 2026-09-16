@@ -57,11 +57,13 @@ thử thật, và nó không hiển nhiên từ tài liệu của nhà nào cả
 là nói dối client về chỗ nó phải nén, và client **tin**: nó nén muộn, rồi bạn ăn
 một `413` giữa phiên — im lặng, không manh mối nào chỉ về phía nguyên nhân.
 
-⭐ Công cụ `cam` hỏi bạn chọn model mặc định rồi ghi **đúng** cặp số của model đó
-vào Codex/Claude Code. Dòng lệnh: `--model ltt-3.5`; giao diện: ô **Model**.
+⭐ Công cụ `cam` cài **cả hai profile và catalog Codex trong một lượt**; mỗi
+profile giữ đúng cặp số của model đó. Lựa chọn `--model ltt-3.5` hoặc ô
+**Model mặc định cho Claude Code** chỉ ghim Claude Code, alias và subagent.
 Claude Desktop nhận **cả hai** tuyến trong `inferenceModels`, nên đổi ngay ở
-picker mà không phải cắm lại. Codex cũng có cả hai trong catalog; Claude Code
-đổi qua connector để context, compact, alias và subagent cùng đổi một lượt.
+picker mà không phải cắm lại. Codex CLI đổi bằng `--profile ltt` hoặc
+`--profile ltt-fast`; Codex Desktop/VS Code đọc catalog hai model nhưng khả năng
+hiện custom model trong picker phụ thuộc phiên bản client.
 
 ⚠️ Mọi đoạn cấu hình dưới đây viết cho `ltt-3.8` (mặc định). Dùng `ltt-3.5` thì đổi
 **cả hai** thứ: tên model **và** con số cửa sổ ở cùng khối.
@@ -241,6 +243,11 @@ Từ Tool 1.9.2, lệnh `kiem` gọi thật `/api/v1/responses` bằng **cả ha
 `ltt-3.8` và `ltt-3.5`, ngoài các lượt Claude `/messages`. Vì vậy trạng thái
 "Cắm được" nay xác nhận đúng tuyến Codex; một cấu hình chỉ parse được nhưng
 endpoint Responses lỗi sẽ không còn bị báo xanh.
+
+Từ Tool 1.9.3, **một lần cắm Codex luôn ghi cả hai profile** ở trên và catalog
+hai model. Ô chọn model trong Tool chỉ chọn mặc định cho Claude Code; nó không
+loại model nào khỏi Codex. Chế độ Desktop/VS Code đặt LTT 3.8 làm mặc định ban
+đầu, còn catalog vẫn công bố cả LTT 3.8 và LTT 3.5 cho client.
 
 [OpenAI Docs — custom providers và profiles](https://developers.openai.com/codex/config-advanced/)
 cho phép cấu hình provider Responses, `env_key` và profile. Đã đối chiếu CLI
@@ -830,7 +837,7 @@ máy, đổi tài khoản Windows hay đồng bộ thư mục nhà.
 | # | Nơi | Xoá gì |
 |---|---|---|
 | 1 | `~/.codex/config.toml` | khối giữa `# >>> LTT Studios …` và `# <<< LTT Studios <<<`, **và** bảng `[model_providers.ltt]` nếu nó nằm ngoài khối đó |
-| 2 | `~/.codex/` | xoá tệp `ltt.config.toml` và `ltt_model_catalog.json` |
+| 2 | `~/.codex/` | xoá `ltt.config.toml`, `ltt-fast.config.toml` và `ltt_model_catalog.json` |
 | 3 | biến môi trường cấp người dùng | Toàn bộ biến trong khối §2.3: `ANTHROPIC_BASE_URL`, `ANTHROPIC_AUTH_TOKEN`, bảy pin model `ANTHROPIC_*`/`CLAUDE_CODE_SUBAGENT_MODEL`, mười biến vận hành `CLAUDE_CODE_*`/`MAX_MCP_OUTPUT_TOKENS`/`ENABLE_TOOL_SEARCH`, và `LTT_API_KEY` của Codex |
 | 4 | `~/.claude/settings.json` và `%APPDATA%\Code\User\settings.json` | các khoá `ANTHROPIC_*` và các mục `claudeCode.environmentVariables` trỏ về `app.lttstudios.com` |
 | 5 | `HKCU\SOFTWARE\Policies\Claude` | cả khoá — **cần quyền quản trị** |

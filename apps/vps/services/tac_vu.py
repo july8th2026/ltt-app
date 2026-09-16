@@ -214,7 +214,11 @@ def cho_xong(client, upid: str, *, han_s: float = HAN_MAC_DINH_S,
             ket_qua = str(tt.get("exitstatus") or "")
             # Proxmox trả `stopped` cho CẢ thành công lẫn thất bại. `exitstatus`
             # là chỗ duy nhất phân biệt, và chuỗi rỗng nghĩa là không có lỗi.
-            if ket_qua and ket_qua != "OK":
+            # `WARNINGS: n` là THÀNH CÔNG có cảnh báo: pve-common
+            # RESTEnvironment.pm ghi "TASK WARNINGS: $warnings" với exitcode 0.
+            # Coi nó là hỏng đã đẩy một qmstart thành công (e1000 bỏ qua mtu)
+            # sang NEEDS_REVIEW trên production 16/09 (R19).
+            if ket_qua and ket_qua != "OK" and not ket_qua.startswith("WARNINGS:"):
                 raise TacVuThatBai(f"Proxmox bao tac vu that bai: {ket_qua}")
             return dict(tt)
 
