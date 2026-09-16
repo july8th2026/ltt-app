@@ -3921,3 +3921,18 @@ button.lv-the-song.nghe-loi,.lv-chon-nghe.nghe-loi{
 /* Ô tìm kiếm + sắp xếp của workspace: khối CSS cũ đặt `outline:0` ⇒ đi bằng bàn
  * phím KHÔNG thấy mình đang ở đâu (đo 16/09). Trả vòng focus về đúng phần tử. */
 .market-search input:focus-visible,.market-sort select:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
+
+/* Menu tài khoản dùng chung (`_menu_tai_khoan.html`, DL-001): phần tử phụ trong
+ * khung workspace — khung top-nav đã có luật ở khối `.hdr .dropdown`. */
+.acc-logout{margin:0}
+.market-account-menu .sep{height:1px;margin:5px 0;background:var(--border-subtle)}
+.market-account-menu .ic{display:inline-block;width:18px;text-align:center}
+.market-account-menu .acc-head{padding:6px 9px 9px}
+.market-account-menu .acc-credit{padding:8px 9px}
+.market-account-menu .acc-credit a{display:inline;width:auto;padding:0;color:var(--brand-hover)}
+.market-account-menu .logout-btn{color:var(--status-danger)}
+.market-account-menu{width:min(240px,calc(100vw - 20px))}
+/* Thanh trên workspace dính (`sticky`) phải NỔI trên nội dung cuộn: cũ z-index 2 =
+ * đúng bằng `.market-badge` (z 2, đứng sau trong DOM) ⇒ nhãn "Đã phát hành" đè lên
+ * menu tài khoản đang mở (đo 16/09). 10 vẫn dưới lớp phủ điều hướng mobile (19-22). */
+.market-top{z-index:10}

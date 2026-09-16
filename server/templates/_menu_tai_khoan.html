@@ -1,0 +1,26 @@
+{#- _menu_tai_khoan.html — NỘI DUNG menu tài khoản, MỘT bản cho cả hai khung
+    (DL-001: top-nav `_header.html` và workspace `home.html`).
+
+    Trước Golden UI (16/09) hai khung có hai bản chép tay lệch nhau: workspace
+    thiếu "Máy của tôi" và dòng số dư, luôn ghi "Thành viên" kể cả admin; header
+    in thẳng enum vai trò (`user`/`admin`); link Quản trị trỏ hai nơi khác nhau.
+
+    Cần trong ngữ cảnh: `request`. Khung bao ngoài (details/summary, vị trí thả)
+    vẫn là việc của từng khung. -#}
+{%- set _acc = tai_khoan(request) -%}
+{%- set _bal = so_du_credit(request) -%}
+{%- set _la_admin = is_admin(request) -%}
+<div class="acc-head"><b>{{ _acc.name if _acc else 'LTT AI Studio' }}</b>
+  {%- if _acc and _acc.email %}<small>{{ _acc.email }}</small>{% endif %}
+  <span class="badge b-grey"><span class="dot" aria-hidden="true"></span>{{ _("Quản trị viên") if _la_admin else _("Thành viên") }}</span></div>
+<a href="{{ u('/jobs') }}"><span class="ic" aria-hidden="true">📋</span> {{ _("Việc của tôi") }}</a>
+<a href="{{ u('/developers') }}"><span class="ic" aria-hidden="true">🔌</span> {{ _("API cho lập trình viên") }}</a>
+{% if nexus_bat() %}<a href="{{ u('/may-cua-toi') }}"><span class="ic" aria-hidden="true">🖥️</span> {{ _("Máy của tôi") }}</a>{% endif %}
+{% if _la_admin %}<a href="/status"><span class="ic" aria-hidden="true">🩺</span> {{ _("Tình trạng hệ thống") }}</a>
+<a href="/admin/"><span class="ic" aria-hidden="true">🛡️</span> {{ _("Quản trị") }}</a>{% endif %}
+{% if _bal is not none %}<div class="acc-credit"><span><span aria-hidden="true">💎</span> {{ _bal | so }} credit</span> <a href="{{ u('/nap') }}">{{ _("Nạp thêm") }}</a></div>{% endif %}
+<div class="sep" role="separator"></div>
+<form method="post" action="/logout" class="acc-logout">
+  <input type="hidden" name="csrf_token" value="{{ phien_csrf(request) }}">
+  <button type="submit" class="logout-btn"><span class="ic" aria-hidden="true">⟵</span> {{ _("Đăng xuất") }}</button>
+</form>

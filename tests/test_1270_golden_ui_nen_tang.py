@@ -362,3 +362,24 @@ def test_nhan_app_khong_con_tieng_anh_cung(tep, cam):
     s = (GOC / tep).read_text(encoding="utf-8")
     for c in cam:
         assert c not in s, f"{tep}: {c}"
+
+
+# ── 11. DL-001: MỘT menu tài khoản cho hai khung ────────────────────────────
+
+def test_DL001_hai_khung_dung_chung_menu_tai_khoan():
+    hdr = (GOC / "server" / "templates" / "_header.html").read_text(encoding="utf-8")
+    home = (GOC / "server" / "templates" / "home.html").read_text(encoding="utf-8")
+    assert '{% include "_menu_tai_khoan.html" %}' in hdr
+    assert '{% include "_menu_tai_khoan.html" %}' in home
+    # Hai bản chép tay cũ không được sống lại ở từng khung.
+    for s in (hdr, home):
+        assert 'action="/logout"' not in s
+    menu = (GOC / "server" / "templates" / "_menu_tai_khoan.html").read_text(encoding="utf-8")
+    assert 'action="/logout"' in menu and "phien_csrf(request)" in menu
+    assert "_acc.role" not in menu, "không in thẳng enum vai trò"
+
+
+def test_thanh_tren_workspace_noi_tren_nhan_the():
+    z_top = max(int(z) for z in re.findall(r"\.market-top\{z-index:(\d+)\}", CSS))
+    z_badge = max(int(z) for z in re.findall(r"\.market-badge\{[^}]*z-index:(\d+)", CSS))
+    assert z_top > z_badge
