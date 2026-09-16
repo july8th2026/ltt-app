@@ -59,6 +59,8 @@
   .nx-row .nm{font-size:12.5px;color:var(--fg);line-height:1.25}
   .nx-row .id{font-family:var(--mono);font-size:10.5px;color:var(--dim)}
   .nx-row .badge{margin-left:auto;font-size:10.5px;padding:2px 8px}
+  /* May tat: chu phu, khong opacity (opacity .62 keo ma may xuong 3.05:1). */
+  .nx-row--tat .nm{color:var(--text-secondary)}
 
   /* ── Dải số liệu ──────────────────────────────────────────────────────── */
   /* SO COT CHIA HET SO MUC. `auto-fit` chon so cot theo cho trong, nen 4 muc
@@ -211,7 +213,7 @@
           <span><span class="nm">MAY-DUNG-PHIM</span><br><span class="id">224 404 082</span></span>
           <span class="badge b-ok"><span class="dot"></span>{{ _("đang bật") }}</span>
         </div>
-        <div class="nx-row" style="opacity:.62">
+        <div class="nx-row nx-row--tat">
           <span class="dot" style="background:var(--grey)"></span>
           <span><span class="nm">LAPTOP-O-NHA</span><br><span class="id">293 017 172</span></span>
           <span class="badge b-grey"><span class="dot"></span>{{ _("tắt") }}</span>

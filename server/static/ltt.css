@@ -848,7 +848,7 @@ html{background:var(--surface-canvas)}
 .app-side .nhom:first-child{margin-top:0}
 /* "Sắp có": hiện tên là thông tin — nó nói khu này đang đi đâu. Một liên kết
    404 thì không nói gì ngoài sự cẩu thả. */
-.app-side .sap-co{cursor:not-allowed;opacity:.45}
+.app-side .sap-co{cursor:not-allowed;color:var(--text-muted);border-left-style:dashed}
 .app-side .sap-co::after{content:"";}
 .app-main{min-width:0}
 
@@ -1401,12 +1401,14 @@ code.to-dam{font-weight:600;color:var(--text-primary)}
 /* Thẻ đang chọn: viền DÀY + nền, không chỉ chấm radio 13px (bẫy ③). */
 .goi-the:has(input:checked){border-width:2px;border-color:currentColor;
   padding:13px;background:rgba(128,128,128,.08)}
-.goi-the.goi-het{opacity:.62;cursor:not-allowed}
+/* Golden UI: KHONG lam mo bang opacity — no keo CHU xuong duoi AA (do 16/09:
+   gia "/ 30 ngay" 4.1:1, nhan "nen chon" 4.21:1). Het cho = vien dut + chu phu. */
+.goi-the.goi-het{cursor:not-allowed;border-style:dashed;color:var(--text-secondary)}
 .goi-ten{font-weight:600}
-.goi-so{font-size:.86em;opacity:.75;line-height:1.5}
-.goi-mota{font-size:.88em;opacity:.8;flex:1}
+.goi-so{font-size:.86em;color:var(--text-secondary);line-height:1.5}
+.goi-mota{font-size:.88em;color:var(--text-secondary);flex:1}
 .goi-gia{margin-top:4px;font-size:1.25rem;font-weight:600}
-.goi-trangthai{font-size:.85em;opacity:.85}
+.goi-trangthai{font-size:.85em;color:var(--text-secondary)}
 .goi-the input[type=radio]{margin:0 0 4px}
 
 /* ── Bảng tóm tắt đơn hàng ───────────────────────────────────────────────
@@ -3888,3 +3890,8 @@ button.lv-the-song.nghe-loi,.lv-chon-nghe.nghe-loi{
  * `<summary>` một dòng chữ nhỏ cao 18px (qualitylab). */
 :where(input[type=checkbox],input[type=radio]){width:18px;height:18px;margin:3px}
 :where(summary){min-height:24px}
+
+/* Link la phan tu DUY NHAT cua mot muc danh sach (danh sach lien ket) - vung
+ * cham >= 24px (WCAG 2.2 AA 2.5.8). `:where` = do dac hieu 0. Do 16/09:
+ * /developers/privacy ba link cao 19px. */
+:where(main) :where(ul,ol)>li>a:only-child{display:inline-flex;align-items:center;min-height:24px}
