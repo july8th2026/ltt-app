@@ -91,6 +91,30 @@ nào < 88 · critical UI xác minh ở mức render thật (E3).
 
 Critical flows baseline: Auth 84 · Billing 81 · Jobs 75 · Error 65 ⇒ **76**.
 
+### Điểm hiện tại — 17/09 (E3 `sau/v3`: 448 phép đo 112 route × 390/768/1440/1920)
+
+Máy đo toàn hệ: axe serious/critical **0** · tràn ngang **0** · console **0** · request hỏng **0** · `h1`/`main` lệch **0** ·
+`style=""` render @1440 **1.844 → 921**. Điểm cột là đánh giá E3 trên ảnh + số đo, chấm BẢO THỦ (không làm tròn lên).
+
+| Họ trang | Baseline | Hiện tại | Còn thiếu gì để ≥ 93 |
+|---|---|---|---|
+| Auth | 84 | **93** | — |
+| Billing | 81 | **92** | chưa đo trên URL công khai (cần deploy) |
+| Jobs | 75 | **91** | chi tiết job còn ít ngữ cảnh đầu vào |
+| Error | 65 | **92** | OOS-01 nuốt `detail` của route |
+| Public | 76 | **88** | tài liệu dev tiếng Anh trên `/huong-dan` (OOS-09) |
+| Workspace | 73 | **88** | P2-04 emoji lẫn SVG ở rail/thẻ |
+| Status | 71 | **88** | trang kỹ thuật dày chữ |
+| Developer portal | 80 | **87** | OOS-09 nội dung tiếng Anh; enum API giữ nguyên văn (cố ý) |
+| VPS | 77 | **88** | màn chi tiết/console/cài đặt KHÔNG soi được (seed không có máy VPS) — chưa có bằng chứng E3 |
+| Nexus | 70 | **89** | — |
+| Admin tự dựng | 73 | **85** | nhiều bảng dày, chữ admin chưa qua `_()` |
+| sqladmin | 49 | **86** | edit/create/details/modal xoá đã override 17/09 (nút `<button name=save value=…>` giữ giao thức, E2E lưu thật); còn nhãn trường thô + OOS-07 lỗi JS gói + OOS-12 |
+| Apps | 69 | **85** | mỗi SPA vẫn một ngôn ngữ thị giác riêng; preset font thiếu glyph Việt (OOS-11) |
+
+**Overall ≈ 88,6** (trung bình 13 họ) · **Critical ≈ 92** (Auth 93 · Billing 92 · Jobs 91 · Error 92) · họ thấp nhất **Admin tự dựng / Apps 85**.
+⇒ Chưa đạt Overall ≥ 93 / Critical ≥ 95 / không họ nào < 88.
+
 ## Golden UI Rules
 
 (Hợp đồng dự kiến — chốt sau Decision Locks; mọi quy tắc dưới áp cho mọi họ trang.)
@@ -337,6 +361,7 @@ Screenshot regression Playwright (`toHaveScreenshot`) cho critical screens; test
 | OOS-09 | Nội dung kỹ thuật tiếng Anh hiện trên trang tiếng Việt `/huong-dan`, `/developers/cli`, `/developers/quickstart`: `platform_core/public_api/examples.py` (`NGU_CANH_NAM_SO`, `LOI_413`, `ENV_VARS`, ghi chú CLI) — dữ liệu do `test_334` chốt nội dung | dịch nội dung = đổi dữ liệu `platform_core` + test ngân sách; cần chủ sản phẩm quyết tài liệu dev song ngữ hay tiếng Anh |
 | OOS-10 | `/tai-xuong` iOS: ghi chú `Can SideStore hoac Sideloadly de cai (...)` KHÔNG dấu — đến từ dữ liệu bản phát hành (`p.note`), không có trong mã nguồn cây | dữ liệu manifest phát hành |
 | OOS-11 | AutoSub: mẫu chữ đổi từ `THE QUICK BROWN FOX` sang `CHỮ MẪU TIẾNG VIỆT` (P1-07) làm LỘ preset thiếu glyph tiếng Việt trên trình duyệt: `Cinematic` vỡ `TIẾ NG`, `Meme Punch` chồng dấu (`chup/_autosubvideo-khach-1440.png`). Chưa đo bản render ffmpeg phía máy chủ dùng font nào | cấu hình font preset/tài sản font của app (không phải CSS shell) |
+| OOS-12 | 🔴 `/admin/user/details/{id}` (sqladmin) hiện NGUYÊN VĂN `password_hash` (pbkdf2) và `email_chuan`, `registration_ip` — `UserAdmin` thiếu `column_details_exclude_list`. Nhãn trường edit (`Display Name`, `Is Active`) cũng là tên cột thô | cấu hình `server/admin.py` (bánh cóc chỉ-được-co) + quyết định bảo mật dữ liệu admin |
 | OOS-05 | `/tai-xuong` công khai **không** sau cờ `LTT_NEXUS` trong khi mọi trang Nexus khác sau cờ | route gating |
 
 ## Completed Work
@@ -384,6 +409,8 @@ Screenshot regression Playwright (`toHaveScreenshot`) cho critical screens; test
 | EV-28 | E3 | `chon_tep_thu.mjs`: 5 trang upload × 1440/390 — `setInputFiles` ⇒ tên tệp hiện, `required` giữ, axe 0, không tràn; `/taoanh/thumbnail` TRƯỚC khi sửa `chon_tep.js`: "Chưa chọn tệp" sau khi chọn, SAU: `mau.wav` |
 | EV-29 | E2 | pytest nhắm 140 + 202 (taoanh/thumbnail/ommi/upscale/canvas build/autosub/dev portal/o_chon_tep/Nexus; transcript/audio-pause/video-assembly/Voice) xanh; `test_1270` 91/91 |
 | EV-30 | E3 | `golden_ui_anh_mau.py`: `home-khach@1440` lệch 0,243% ổn định — chia đôi CSS theo commit (`doi_css.mjs`) chỉ ra `.market-top{z-index:10}` (`771a3046`); z-index 3 cho CÙNG 1002 px ⇒ khác biệt raster khi thanh sticky thành lớp riêng, không phải bố cục. Cập nhật đúng MỘT ảnh mẫu; chạy lại PASS |
+| EV-31 | E3 | `sau/v3`: 448 phép đo 4 khung toàn hệ — axe serious/critical 0, tràn 0, console 0, request hỏng 0, h1/main lệch 0; `style` render @1440 1.844 → 921 |
+| EV-32 | E3+E2 | `sqa_luu.mjs`: sửa user bằng "Lưu và sửa tiếp" ⇒ POST `save=Save and continue editing` ⇒ ở lại `/edit/`, dữ liệu lưu thật; "Lưu" ⇒ `save=Save` ⇒ `/list`; create `Quyền app` render đủ 3 nút. `test_124` (chốt hex cũ `#ef3731` — đỏ từ DL-004 16/09, chưa chạy lại tới nay) sửa theo ý định; admin 149/149 |
 
 ## Current Blocker
 

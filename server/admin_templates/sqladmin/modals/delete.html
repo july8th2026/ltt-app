@@ -1,0 +1,33 @@
+{#- Golden UI DL-004 (17/09/2026): ban sao `sqladmin/modals/delete.html` cua goi sqladmin 0.20.1,
+    CHI doi chuoi hien thi (qua `_()`), vai tro nut va a11y. Nang cap sqladmin => doi chieu lai.
+    ⛔ Nut luu: `<input value="Save">` -> `<button name="save" value="Save">` — trinh duyet gui
+    CUNG `save=Save` (application.py so chuoi nay), chi chu hien thi doi. -#}
+<div class="modal modal-blur fade" id="modal-delete" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ _('Đóng') }}"></button>
+      <div class="modal-status bg-danger"></div>
+      <div class="modal-body text-center py-4">
+        <i class="text-danger fa-solid fa-triangle-exclamation fa-2x"></i>
+        <h3>{{ _("Xác nhận xoá") }}</h3>
+        <div id="modal-delete-text" class="text-muted"></div>
+      </div>
+      <div class="modal-footer">
+        <div class="w-100">
+          <div class="row">
+            <div class="col">
+              <a href="#" class="btn w-100" data-bs-dismiss="modal">
+                {{ _("Huỷ") }}
+              </a>
+            </div>
+            <div class="col">
+              <button id="modal-delete-button" data-url="" class="btn btn-danger w-100">
+                {{ _("Xoá") }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

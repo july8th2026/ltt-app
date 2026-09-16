@@ -325,8 +325,8 @@ def test_DL004_override_chi_dich_chuoi_hien_thi():
     assert 'id="search-reset"' in lst and 'aria-label="{{ _("Xoá tìm kiếm") }}"' in lst
     lay = (SQA / "layout.html").read_text(encoding="utf-8")
     assert '<ul class="navbar-nav">' in lay and "display_menu(" not in lay
-    # edit/create KHÔNG được override: `value` của <input name="save"> là giao thức.
-    assert not (SQA / "edit.html").exists() and not (SQA / "create.html").exists()
+    # edit/create ĐƯỢC override từ 17/09 — `value` của nút save là giao thức và được chốt
+    # bằng so khớp với tệp gói ở `test_sqladmin_nut_luu_giu_gia_tri_giao_thuc_doi_chu_hien_thi`.
 
 
 def test_DL004_bien_tabler_tro_ve_token():
@@ -504,3 +504,22 @@ def test_khu_vps_nexus_khong_lay_mau_manifest_qua_style():
         src = (GOC / "server" / "templates" / tep).read_text(encoding="utf-8")
         assert 'style="background:{{ app.accent }}' not in src, tep
     assert ".card-accent--khu{background:var(--vps-teal)}" in CSS
+
+
+def test_sqladmin_nut_luu_giu_gia_tri_giao_thuc_doi_chu_hien_thi():
+    """`sqladmin/application.py` so `form["save"] == "Save and continue editing"`…
+    `<button name=save value=…>` gửi CÙNG giá trị; chỉ chữ khách thấy đổi."""
+    import sqladmin
+    goc = Path(sqladmin.__file__).parent / "templates" / "sqladmin"
+    for tep in ("edit.html", "create.html"):
+        ban = (GOC / "server" / "admin_templates" / "sqladmin" / tep).read_text(encoding="utf-8")
+        goi = (goc / tep).read_text(encoding="utf-8")
+        gia_tri_goi = set(re.findall(r'name="save" value="([^"]+)"', goi))
+        gia_tri_ban = set(re.findall(r'<button type="submit" name="save" value="([^"]+)"', ban))
+        assert gia_tri_goi and gia_tri_goi == gia_tri_ban, tep
+        assert '<input type="submit"' not in ban
+    for tep in ("edit.html", "create.html", "details.html", "modals/delete.html"):
+        ban = (GOC / "server" / "admin_templates" / "sqladmin" / tep).read_text(encoding="utf-8")
+        cho_hien = re.sub(r"\{#.*?#\}", "", ban, flags=re.S)
+        for chu in (">\n              Cancel", "Go Back", "Please confirm", "Edit {{", "New {{"):
+            assert chu not in cho_hien, (tep, chu)

@@ -67,7 +67,9 @@ def test_sqladmin_uses_shared_carbon_red_tokens(admin_client):
     #    het TTL, trong khi trang tu viet da doi (CLAUDE.md quy tac 6). Loi nay
     #    da tung lam production hien chip thanh radio tho.
     assert 'href="/static/ltt.css?v=' in body
-    assert "--tblr-primary:#ef3731" in body
+    # Golden UI DL-004 (16/09): Tabler tro ve TOKEN, khong hex — `#ef3731` duoi chu
+    # trang chi 3,99:1 (duoi AA). Chot y dinh: mau chinh = token nen do cua he.
+    assert "--tblr-primary:var(--brand-fill)" in body and "#ef3731" not in body
     assert 'aria-label="Điều hướng quản trị nhanh"' in body
     assert 'id="sqladmin-content"' in body
     assert "#3b6ef2" not in body

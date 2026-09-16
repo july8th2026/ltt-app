@@ -18360,3 +18360,18 @@ msgstr "Administrator"
 
 msgid "Hiện chưa nhận máy mới. Khi mở lại, bạn chọn gói ở bảng giá và bấm “Tạo máy”."
 msgstr "We are not taking new machines right now. When we reopen, pick a plan from the price list and press “Create machine”."
+
+msgid "Lưu và sửa tiếp"
+msgstr "Save and continue editing"
+
+msgid "Lưu thành bản mới"
+msgstr "Save as new"
+
+msgid "Lưu và thêm bản khác"
+msgstr "Save and add another"
+
+msgid "Sửa %(ten)s"
+msgstr "Edit %(ten)s"
+
+msgid "Xác nhận xoá"
+msgstr "Confirm deletion"
