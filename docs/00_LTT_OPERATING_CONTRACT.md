@@ -266,10 +266,15 @@ bản sửa, và `--doi --tu <sha>` chạy đúng test chạm tới bản sửa 
 chưa commit. Nếu bản sửa chạm tệp dùng chung, nó **tự nâng lên L3**: khi đó L3
 lần hai là máy quyết định, không phải thói quen.
 
-⛔ `gate.py` **từ chối** một L3 gõ tay ngay sau một L3 đỏ trên cùng nhánh, và in
-lệnh khép. Lượt trước mang nhãn `CAY DA DOI` thì nó tự cho qua (lượt ấy không
-phải phán quyết). Lượt trước bị nhiễu cách khác (máy `QUA TAI`) thì thêm
-`--l3-lai` — lựa chọn ấy được ghi vào bản ghi.
+⛔ **MỘT L3 mỗi nhánh — máy thi hành.** Nhánh đã có một lượt L3 (**xanh hay đỏ**)
+trong 12 giờ thì `gate.py` **từ chối** mọi L3 gõ tay và in lệnh khép
+`--doi --tu <sha L3>`. Chặn cả sau lượt **xanh**: nếu không, *"pha 1 → L3 xanh,
+pha 2 → L3 xanh"* vẫn lọt — đúng nhịp L3-mỗi-pha bị cấm (chủ dự án chỉ ra
+16/09). Lượt mang nhãn `CAY DA DOI` không tính (không phải phán quyết). Lượt
+trước bị nhiễu cách khác (máy `QUA TAI`) thì thêm `--l3-lai` — được ghi vào bản ghi.
+
+⚠️ Hệ quả thực hành: **đừng bấm L3 khi còn pha chưa làm.** Bấm sớm là tiêu mất
+lượt L3 của nhánh; phần còn lại chỉ còn đường khép hẹp.
 
 ⚠️ Một lượt đỏ **không** tự động là lỗi của bạn. Trước khi đi sửa, loại trừ: máy
 đang quá tải · một phiên khác đổi cây giữa lượt chạy · baseline của phiên khác.

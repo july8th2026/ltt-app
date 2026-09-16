@@ -96,7 +96,7 @@ def _ghi(thu_muc: Path, ten: str, **kv) -> None:
 MOT_GIO_SAU = 1789549200.0
 
 
-def test_L3_do_gan_day_thi_TU_CHOI_va_in_lenh_khep(tmp_path):
+def test_L3_do_gan_day_thi_TU_CHOI_va_in_lenh_chay_lai_va_khep(tmp_path):
     _ghi(tmp_path, "a")
     ly_do = gate.l3_lai_bi_chan(tmp_path, "phien/x", bay_gio=MOT_GIO_SAU)
     assert "TU CHOI" in ly_do
@@ -106,8 +106,19 @@ def test_L3_do_gan_day_thi_TU_CHOI_va_in_lenh_khep(tmp_path):
     assert all(ord(c) < 128 for c in ly_do), "dong in ra phai ASCII (cp1252)"
 
 
+def test_L3_XANH_roi_van_TU_CHOI_L3_thu_hai(tmp_path):
+    """🔴 Lỗ hổng chủ dự án chỉ ra 16/09: chốt đầu tiên chỉ chặn sau L3 ĐỎ, nên
+    "pha 1 → L3 xanh, pha 2 → L3 xanh" vẫn lọt — đúng nhịp L3-mỗi-pha bị cấm.
+    MỘT L3 mỗi nhánh; thay đổi sau đó khép bằng `--doi --tu <sha>`."""
+    _ghi(tmp_path, "a", ket_qua="PASS")
+    ly_do = gate.l3_lai_bi_chan(tmp_path, "phien/x", bay_gio=MOT_GIO_SAU)
+    assert "TU CHOI" in ly_do
+    assert "--doi --tu abc123" in ly_do
+    assert "check_mypy" not in ly_do, "luot XANH khong co phep do nao de chay lai"
+    assert all(ord(c) < 128 for c in ly_do)
+
+
 @pytest.mark.parametrize("thay_doi, ly_do", [
-    ({"ket_qua": "PASS"}, "luot truoc XANH"),
     ({"cay_da_doi_giua_chung": True}, "luot truoc khong phai phan quyet"),
     ({"nhanh": "phien/khac"}, "nhanh khac"),
     ({"ho_so": "doi"}, "khong phai L3"),
@@ -118,14 +129,23 @@ def test_cac_truong_hop_DUOC_chay(tmp_path, thay_doi, ly_do):
     assert gate.l3_lai_bi_chan(tmp_path, "phien/x", bay_gio=MOT_GIO_SAU) == "", ly_do
 
 
-def test_chi_ban_ghi_MOI_NHAT_quyet_dinh(tmp_path):
-    """Đỏ rồi xanh ⇒ được chạy; xanh rồi đỏ ⇒ bị chặn. Một bộ đọc lấy bản ghi
-    ĐẦU TIÊN thay vì MỚI NHẤT sẽ đảo ngược cả hai."""
+def test_luot_CAY_DA_DOI_khong_che_mot_phan_quyet_cu_hon(tmp_path):
+    """Đỏ lúc 07:00, rồi một lượt cây-đổi lúc 08:00. Lượt sau không phải phán
+    quyết, nên phán quyết đang đứng vẫn là lượt đỏ ⇒ vẫn chặn. Một bộ đọc lấy
+    "bản ghi mới nhất" trần sẽ cho qua."""
     _ghi(tmp_path, "cu", luc="2026-09-16T07:00:00+00:00")
-    _ghi(tmp_path, "moi", luc="2026-09-16T08:00:00+00:00", ket_qua="PASS")
-    assert gate.l3_lai_bi_chan(tmp_path, "phien/x", bay_gio=MOT_GIO_SAU) == ""
-    _ghi(tmp_path, "moi_hon", luc="2026-09-16T08:30:00+00:00")
+    _ghi(tmp_path, "moi", luc="2026-09-16T08:00:00+00:00",
+         cay_da_doi_giua_chung=True)
     assert gate.l3_lai_bi_chan(tmp_path, "phien/x", bay_gio=MOT_GIO_SAU)
+
+
+def test_chi_ban_ghi_MOI_NHAT_quyet_dinh_noi_dung(tmp_path):
+    """Đỏ rồi xanh ⇒ thông điệp là của lượt XANH (không bảo chạy lại mypy đã
+    xanh). Một bộ đọc lấy bản ghi ĐẦU TIÊN sẽ in lệnh chạy lại sai."""
+    _ghi(tmp_path, "cu", luc="2026-09-16T07:00:00+00:00")
+    _ghi(tmp_path, "moi", luc="2026-09-16T08:00:00+00:00", ket_qua="PASS", sha="xanh1")
+    ly_do = gate.l3_lai_bi_chan(tmp_path, "phien/x", bay_gio=MOT_GIO_SAU)
+    assert "--tu xanh1" in ly_do and "check_mypy" not in ly_do
 
 
 def test_ban_ghi_hong_hoac_thu_muc_khong_co_thi_CHO_QUA(tmp_path):

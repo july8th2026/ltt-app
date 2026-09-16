@@ -59,7 +59,8 @@ mã nguồn**: `grep`/`Glob` trên `apps/`, `platform_core/`, `server/`.
    **CHẨN ĐOÁN**.
 8. **L3 — `python tools\gate.py` — MỘT lần, khi mọi pha đã xong.** L3 đỏ ⇒ sửa
    tại chỗ ⇒ chạy lại đúng phép đỏ ⇒ khép bằng `gate.py --doi --tu <sha>`.
-   ⛔ **Không** chạy L3 lần hai để xác nhận bản sửa. Toàn văn: hợp đồng §4.1–§4.6.
+   ⛔ **Một L3 mỗi nhánh** — `gate.py` từ chối L3 thứ hai (kể cả sau L3 xanh).
+   Đừng bấm L3 khi còn pha chưa làm. Toàn văn: hợp đồng §4.1–§4.6.
 9. ⛔ **Đừng gọi `pytest` trực tiếp cho toàn kho** — nó bỏ qua test frontend, nên
    "full regression xanh" sẽ là một câu nói sai.
 10. ⛔ **`test_nhanh.py` rồi `gate.py` là trả tiền HAI LẦN.** Bước `bo test` bên

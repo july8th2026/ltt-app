@@ -16,8 +16,9 @@
 1. **Vòng lặp không còn là `gate --doi`.** Trong phiên chỉ test nhắm
    (`thanh_phan.py --test <tp>` → `pytest <tệp>`).
 2. **L3 một lần cuối phiên**, không phải ở mỗi pha/đợt/hạng mục/lát cắt.
-3. **L3 đỏ thì khép hẹp**, không chạy lại L3. `gate.py` nay in sẵn lệnh chạy lại
-   và **từ chối** một L3 gõ tay ngay sau một L3 đỏ (`--l3-lai` để vượt, có ghi).
+3. **Một L3 mỗi nhánh.** L3 đỏ (hay có thay đổi sau L3 xanh) thì khép hẹp bằng
+   `--doi --tu <sha>`. `gate.py` in sẵn lệnh chạy lại và **từ chối** L3 thứ hai
+   trên cùng nhánh, kể cả sau L3 xanh (`--l3-lai` để vượt, có ghi).
 
 ## Vì sao — số đo
 

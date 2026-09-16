@@ -23,8 +23,11 @@
   `gate.py --doi --tu <sha>` · §7 hoà `main`/deploy). `CLAUDE.md`, `AGENTS.md`,
   `DEVELOPMENT_WORKFLOW.md`, `16_CAP_NHAT_VA_DEPLOY.md`, `QUY_TRINH_WORKTREE.md`,
   FAST_BUILD và 10 tệp kế hoạch nay chỉ trỏ về hợp đồng.
-- Cơ học hoá: `gate.py` in lệnh chạy lại đúng phép đỏ + lệnh khép, từ chối L3 gõ
-  tay ngay sau L3 đỏ cùng nhánh (`--l3-lai` để vượt), bản ghi có `ha_cap_tu` /
+- Cơ học hoá: `gate.py` in lệnh chạy lại đúng phép đỏ + lệnh khép, **một L3 mỗi
+  nhánh** — từ chối L3 gõ tay thứ hai kể cả sau L3 xanh (bản đầu chỉ chặn sau L3
+  đỏ; chủ dự án chỉ ra lỗ hổng "L3 xanh sau mỗi pha"; `--l3-lai` để vượt). Phiên
+  này cũng đã bấm L3 trước khi làm xong phase vá đó — đã dừng lượt ấy (không để
+  lại bản ghi) và chỉ bấm lại khi mọi phase xong. Bản ghi có `ha_cap_tu` /
   `lenh_chay_lai`. `check_luat_van_hanh.py` nay bắt mọi nhịp gate (kể cả
   `--doi`, "sau mỗi đợt/hạng mục/lát cắt") ngoài hợp đồng, và không còn chết vì
   cp1252 trên đường đỏ. `ho_so_cay.TRUNK` = `main` (trunk cũ `admin-mvp-v3` đã
