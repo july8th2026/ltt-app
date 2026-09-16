@@ -1,3 +1,4 @@
+import re
 """H15.S2.3 — ranh giới operator, và trang Tình trạng hệ thống.
 
 ## ⛔ VIẾT LẠI 2026-08-26 — tệp này từng kiểm một trang KHÔNG CÒN TỒN TẠI
@@ -42,9 +43,14 @@ def test_status_require_operator_not_only_login():
 
 
 def test_user_shell_hides_operator_links():
+    # Golden UI P1-01 (16/09): menu tài khoản của HAI khung là MỘT tệp
+    # `_menu_tai_khoan.html` — liên kết vận hành chốt ở đó, sau `_la_admin`.
     header = _read("server/templates/_header.html")
+    menu = _read("server/templates/_menu_tai_khoan.html")
     home = _read("server/templates/home.html")
-    assert '{% if is_admin(request) %}<a href="/status"' in header
+    assert '{% include "_menu_tai_khoan.html" %}' in header
+    assert "{%- set _la_admin = is_admin(request) -%}" in menu
+    assert re.search(r'\{% if _la_admin %\}<a href="/status"', menu)
     assert "is_admin(request)" in home and 'href="/status"' in home
 
 
