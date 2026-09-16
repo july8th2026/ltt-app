@@ -73,9 +73,21 @@ def url_loopback(port: int, **tham_so: str) -> str:
     return f"http://127.0.0.1:{port}/callback?{urlencode(tham_so)}"
 
 
+def don_ma_het_han(db, *, now: datetime | None = None) -> int:
+    """Xoá mã đã hết hạn quá một giờ. Trả số dòng đã xoá. Không commit.
+
+    Gọi ở hai chỗ: `tao_ma` (mỗi lượt đăng nhập) và `bao_tri.chay` (mỗi giờ) —
+    không có lượt đăng nhập nào thì chỉ còn đường thứ hai (governance.STORES).
+    """
+    now = now or _bay_gio()
+    kq = db.execute(delete(LttcodeAuthCode)
+                    .where(LttcodeAuthCode.expires_at < now - timedelta(hours=1)))
+    return int(getattr(kq, "rowcount", 0) or 0)
+
+
 def tao_ma(db, *, user_id: str, challenge: str, port: int, device: str) -> str:
     now = _bay_gio()
-    db.execute(delete(LttcodeAuthCode).where(LttcodeAuthCode.expires_at < now - timedelta(hours=1)))
+    don_ma_het_han(db, now=now)
     code = secrets.token_urlsafe(32)
     db.add(LttcodeAuthCode(
         id=str(uuid.uuid4()), code_digest=_digest(code), user_id=str(user_id),

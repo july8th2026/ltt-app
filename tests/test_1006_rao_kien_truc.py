@@ -99,6 +99,8 @@ MIEN_TRU_HTTP = {
     "apps/vps/services/ovh.py",
     # → máy thật chạy WanGP (LTT VIDEO) — nội bộ
     "apps/lttvideo/cong/may_that.py",
+    # → SearXNG tự host trên loopback CỦA CHÍNH TA (WSL, 127.0.0.1:8888) — tìm web cho LTTCODE
+    "apps/lttcode/tim_kiem.py",
 }
 
 

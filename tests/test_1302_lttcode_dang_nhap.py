@@ -249,3 +249,44 @@ def test_ma_luu_duoi_dang_digest(may):
     finally:
         with pytest.raises(StopIteration):
             next(gen)
+
+
+def test_bao_tri_xoa_ma_het_han_giu_ma_con_han(may, monkeypatch):
+    """governance.STORES khai `lttcode_auth_codes` được dọn bởi `bao_tri` của app."""
+    from apps.lttcode import bao_tri
+    from apps.lttcode.manifest import MANIFEST
+    from apps.lttcode.tables import LttcodeAuthCode
+
+    assert MANIFEST.bao_tri is bao_tri.chay
+    uid = _dang_ky(may)
+    gen = _db()
+    db = next(gen)
+    try:
+        dang_nhap.tao_ma(db, user_id=uid, challenge=CHALLENGE, port=PORT, device="CU")
+        db.commit()
+    finally:
+        with pytest.raises(StopIteration):
+            next(gen)
+    that = dang_nhap._bay_gio
+    monkeypatch.setattr(dang_nhap, "_bay_gio", lambda: that() + timedelta(hours=2))
+    gen = _db()
+    db = next(gen)
+    try:
+        dang_nhap.tao_ma(db, user_id=uid, challenge=CHALLENGE, port=PORT, device="MOI")
+        db.commit()
+        # tao_ma tu don ma cu; chen lai mot ma cu de kiem duong bao_tri doc lap
+        db.add(LttcodeAuthCode(id="cu-2", code_digest="d" * 64, user_id=uid, code_challenge=CHALLENGE,
+                               port=PORT, device="CU2", created_at=that() - timedelta(hours=3),
+                               expires_at=that() - timedelta(hours=3), used_at=None))
+        db.commit()
+    finally:
+        with pytest.raises(StopIteration):
+            next(gen)
+    bao_tri.chay()
+    gen = _db()
+    db = next(gen)
+    try:
+        assert [r.device for r in db.query(LttcodeAuthCode).all()] == ["MOI"]
+    finally:
+        with pytest.raises(StopIteration):
+            next(gen)

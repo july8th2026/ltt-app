@@ -13728,6 +13728,13 @@ msgstr ""
 "Tickets that open a VM console. The SHA-256 of the ticket is stored, never the ticket. It expires"
 " after 60 seconds and is deleted the moment it is used."
 
+msgid ""
+"Mã đăng nhập một lần của ứng dụng LTTCODE. Lưu SHA-256 của mã, không lưu mã. Hết hạn sau 120 "
+"giây và bị xoá sau một giờ."
+msgstr ""
+"One-time sign-in codes for the LTTCODE app. The SHA-256 of the code is stored, never the code. "
+"It expires after 120 seconds and is deleted after one hour."
+
 #: platform_core/nexus/sessions.py:124 platform_core/nexus/sessions.py:129
 #: platform_core/nexus/sessions.py:133
 msgid "Vé phiên không dùng được."

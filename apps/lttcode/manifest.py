@@ -11,6 +11,7 @@ LTTCODEAPP ghi hai thứ đó; không cần deploy lại nền tảng.
 """
 from __future__ import annotations
 
+from apps.lttcode import bao_tri
 from platform_core.i18n import N_
 from platform_core.registry import AppManifest
 
@@ -27,4 +28,7 @@ MANIFEST = AppManifest(
     lifecycle="internal",
     # Bảng `lttcode_auth_codes` (mã một lần của "Đăng nhập LTT Studios").
     table_prefix="lttcode",
+    # Dọn mã đăng nhập hết hạn (governance.STORES: `lttcode_auth_codes`).
+    bao_tri=bao_tri.chay,
+    bao_tri_moi_giay=3600,
 )
