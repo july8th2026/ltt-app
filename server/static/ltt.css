@@ -2502,7 +2502,7 @@ details.lv-tao-giong>summary{cursor:pointer;display:flex;align-items:baseline;ga
 details.lv-tao-giong>summary::-webkit-details-marker{display:none}
 details.lv-tao-giong>summary::before{content:'+';margin-right:2px;color:var(--accent);
   font-weight:700}
-details.lv-tao-giong[open]>summary::before{content:'2'}
+details.lv-tao-giong[open]>summary::before{content:'\2212'}
 details.lv-tao-giong>summary:focus-visible{outline:2px solid var(--focus-ring);
   outline-offset:3px;border-radius:4px}
 /* Huong dan ba buoc o rail phai — doc, gon, danh so. */
@@ -4032,3 +4032,27 @@ input[type=hidden]+.af-step{margin-top:0}
   .af-actions{margin:var(--space-2) calc(-1 * var(--space-3)) calc(-1 * var(--space-3));padding:var(--space-3)}
   .af-actions .btn{flex:1;justify-content:center}
 }
+/* Quality Lab — truoc la <style> trong template voi vach teal #0e7c86 (lech DL-002). */
+.ql-head{margin-bottom:var(--space-4)}
+.ql-grid{display:grid;grid-template-columns:minmax(320px,440px) minmax(0,1fr);gap:18px;max-width:1500px}
+.ql-note{border-left:3px solid var(--brand-primary);padding-left:12px;color:var(--text-muted)}
+.ql-registry{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+.ql-eval{border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:10px;background:var(--surface-overlay)}
+.ql-eval strong{display:block;margin-bottom:4px}.ql-table{overflow-x:auto}
+.ql-form details{margin:0 0 13px}.ql-form details>summary{padding:var(--space-2) 0;cursor:pointer}
+.ql-actions{display:flex;justify-content:flex-end;margin-top:var(--space-3)}.ql-actions .btn{min-height:44px;padding:0 var(--space-5)}
+@media(max-width:900px){.ql-grid{grid-template-columns:1fr}}
+@media(max-width:560px){.ql-actions .btn{flex:1;justify-content:center}}
+/* Upscale — h1 cua trang tung la chu o tha tep ("Keo & tha video vao day"); ten
+   trang nam o dai tieu de nhung chi la <strong>. So buoc 1..5 -> 01..05 nhu /taoanh. */
+.pagebar .app-bar-title{margin:0;font-size:var(--fs-card);line-height:var(--lh-tight);font-weight:700}
+.up-drop .up-drop-title{margin:16px 0 4px;font-size:19px}
+.up-step h2 b{width:24px;height:24px;background:var(--brand-strong);color:var(--text-primary);font-size:9px;letter-spacing:0}
+.up-start{text-transform:none;font-size:var(--fs-body)}
+/* Voice Studio — so buoc tu counter la o vuong xam "1"; nay cung kieu 01 tron do
+   nhu /taoanh, /upscalevideo, /taoclipngan (van counter, khong go so vao HTML). */
+.lv-studio .lv-st-trai>.lv-chon>.lv-chon-dau>.eyebrow::before,
+.lv-studio .lv-st-trai>.lv-st-o>.eyebrow::before,
+.lv-studio .lv-st-trai>.lv-st-o>.lv-st-o-dau>.eyebrow::before{
+  content:counter(lvb,decimal-leading-zero);width:22px;height:22px;border:0;border-radius:50%;
+  background:var(--brand-strong);color:var(--text-primary);font-size:9px;font-weight:700;vertical-align:-6px}

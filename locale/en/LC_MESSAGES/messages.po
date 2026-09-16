@@ -18384,3 +18384,21 @@ msgstr "By file name"
 
 msgid "Theo nội dung"
 msgstr "By content"
+
+msgid "Đánh giá mới"
+msgstr "New evaluation"
+
+msgid "Danh mục bộ đo"
+msgstr "Evaluator registry"
+
+msgid "Đánh giá gần đây"
+msgstr "Recent evaluations"
+
+msgid "Tạo job đánh giá"
+msgstr "Create evaluation job"
+
+msgid "Chưa có lượt đánh giá."
+msgstr "No evaluations yet."
+
+msgid "Báo cáo chất lượng"
+msgstr "Quality report"
