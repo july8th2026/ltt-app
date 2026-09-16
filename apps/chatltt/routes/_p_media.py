@@ -47,7 +47,9 @@ async def bao_gia(request: Request, _=Depends(require_login), db=Depends(get_db)
     except chinh_sach.KhongDuocPhep as e:
         return loi(403, "khong_duoc_phep", str(e))
     except TM.ThamSoSai as e:
-        return loi(400, "tham_so", str(e))
+        # Ma nghiep vu cua app (vd `voice_language_mismatch`) khi co, de client
+        # bat theo thu khong doi thay vi so chuoi.
+        return loi(400, e.ma or "tham_so", str(e))
 
 
 @router.post("/api/hoi-thoai/{conv_id}/tao")
@@ -69,7 +71,9 @@ async def tao(request: Request, conv_id: str, _=Depends(require_login), db=Depen
     except H.KhongTimThay:
         return loi(404, "khong_tim_thay")
     except TM.ThamSoSai as e:
-        return loi(400, "tham_so", str(e))
+        # Ma nghiep vu cua app (vd `voice_language_mismatch`) khi co, de client
+        # bat theo thu khong doi thay vi so chuoi.
+        return loi(400, e.ma or "tham_so", str(e))
     except credit.ThieuCreditError as e:
         db.rollback()
         return loi(402, "het_credit", str(e))

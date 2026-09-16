@@ -99,8 +99,11 @@ def tao(db, *, user_id: str, run_id: str, khoi_tools: list,
         except Exception as e:                                  # noqa: BLE001
             # Báo giá hỏng là **dữ liệu**, không phải sự cố giết run — cùng luật
             # `thi_hanh` mục 4. Nhưng không nuốt: kiểu ngoại lệ đi vào thông điệp.
+            # Mã nghiệp vụ của app (vd `voice_language_mismatch`) khi có: model
+            # đọc được lý do thật và nói lại đúng cách sửa cho người dùng.
             return thi_hanh.KetQua(
-                False, ma_loi="bao_gia_hong", lop=lop,
+                False, ma_loi=(str(getattr(e, "ma", "") or "") or "bao_gia_hong"),
+                lop=lop,
                 thong_diep=f"khong bao gia duoc {ten!r}: {type(e).__name__}: {e}"[:400])
 
         p = D.xin_duyet(db, user_id=user_id, run_id=run_id,
@@ -254,7 +257,8 @@ def _nop_job(db, *, user_id: str, p, b: DP.Buoc, ds: dict, tin_nhan, conv_id: st
         # Nộp job hỏng là **dữ liệu** — cùng luật `thi_hanh` mục 4. Không nuốt:
         # kiểu ngoại lệ đi vào thông điệp để model nói lại được cho người dùng.
         return thi_hanh.KetQua(
-            False, ma_loi="nop_job_hong", lop=p.policy_class,
+            False, ma_loi=(str(getattr(e, "ma", "") or "") or "nop_job_hong"),
+            lop=p.policy_class,
             thong_diep=f"khong nop duoc job {p.tool_name!r}: "
                        f"{type(e).__name__}: {e}"[:400])
     return DP.ChoJob(job_id=str(r["job_id"]), tool_name=p.tool_name, doi_so=ds)

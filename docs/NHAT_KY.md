@@ -76,6 +76,32 @@
   error, 0 request failed và 0 response HTTP >= 400. Theo chỉ định của owner,
   H55 dùng test phạm vi `-n 7` (182 PASS) và **không chạy gate tổng**.
 
+## 2026-09-16 — LTT Voice W4': ChatLTT `speech.ltt` chặn lệch làn TRƯỚC giữ tiền
+
+- Phát hiện (audit W4', `docs/LTT_VOICE/GUI_DOI_SOAT_VA_PLAN_V2.md` trên nhánh
+  `phien/ltt-voice-gui-v2`): `runtime_noi_bo/job.py` không gọi hook
+  `ToolSpec.kiem_truoc`. Đo bằng test đỏ trước khi sửa: ChatLTT báo giá giọng
+  `Adam` (VI) + văn bản EN ⇒ **200**, bấm tạo ⇒ **202 + job thật + giữ credit**;
+  worker mới từ chối `voice_language_mismatch`.
+- Sửa: `runtime_noi_bo.job.bao_gia` gọi đúng hook app đã khai (cùng hook
+  `public_api.invocation.kiem_truoc` gọi cho `/api/v1`), sau validate, trước
+  giá. `bao_gia` là cửa duy nhất dựng `BaoGia` mà `nop_job` nhận ⇒ chặn cả nút
+  bấm (V1) lẫn model tự gọi (V3). Luật làn vẫn một nguồn:
+  `lan_ngon_ngu.quyet_dinh`. `ThamSoSai` mang `ma`; route `_p_media` trả
+  `error.code = voice_language_mismatch`; V3 trả `ma_loi` nghiệp vụ cho model.
+- Hệ quả phụ có chủ ý: giọng của người khác cũng bị chặn ở báo giá nội bộ
+  (trước đây chỉ worker chặn). `test_609` cập nhật; test worker giữ lại như
+  tầng phòng thủ thứ hai (tắt cửa trước bằng monkeypatch).
+- `/api/v1/workflows/{id}/runs`: **không** chạy được `speech.ltt` hôm nay —
+  route tạo `WorkflowRun` + giữ trần credit, nhưng không mã nào trong kho biến
+  node thành job (`platform_core/workflow/` không gọi `submit_with_credit`,
+  `dieu_phoi.dequeue` không có người gọi). Nên chưa có lỗ tương tự; **khi dựng
+  bộ thi hành node, nó phải đi qua `runtime_noi_bo.job.bao_gia`** (hoặc gọi
+  `kiem_truoc`) trước khi nộp job. Riêng việc giữ trần credit cho một run không
+  có bộ thi hành là một điểm ngoài phạm vi, chưa sửa.
+- Test: `tests/test_1263_chatltt_tieng_kiem_truoc_truoc_giu_tien.py` (mới, đỏ
+  4/5 trước sửa → xanh 5/5); cụm nhắm 21 tệp `-n 6`.
+
 ## 2026-09-15 — H54: Tool 1.9.2 khớp reasoning và kiểm thật Codex
 
 - Tài liệu chính thức Codex xác nhận custom provider dùng Responses và catalog
@@ -249,7 +275,7 @@
   e2b118c6. Clone đầu autocrlf=true làm hash byte frontend khác và builder chặn;
   tra tài liệu Git, clone lại core.autocrlf=false, hash nguồn khớp và status sạch.
   Không sửa frontend/cấu hình git/main của phiên khác, không xóa bản clone lỗi.
-- `python -m pytest tests/test_1262_vps_ovh_acquisition.py tests/test_1020_vps_sellable_capacity.py -q`:
+- `python -m pytest tests/test_1030_vps_ovh_acquisition.py tests/test_1020_vps_sellable_capacity.py -q`:
   **49 PASS, 2,74 giây**. Release builder PASS: 4469 files, 146,4 MB, secret
   scan 0 finding; ZIP SHA-256 và đường dẫn ở 13_WORKTREE_RELEASE. Alembic heads
   đúng một f4a7c2d9e610. Đây không phải full gate hoặc deployed evidence.
@@ -275,7 +301,7 @@
   `_tao_may` re-raise DangBan trước broad catch, không gán lỗi VPS do delivery.
   Capacity chỉ quảng bá một slot khi exact adopted cart quote/digest còn hợp lệ;
   constructor lazy không nạp credential, quote fail không lộ raw body/URL.
-- `python -m pytest tests/test_1262_vps_ovh_acquisition.py -q`: **39 PASS,
+- `python -m pytest tests/test_1030_vps_ovh_acquisition.py -q`: **39 PASS,
   3,15 giây**. TDD pending/worker/bounded-readiness đã đỏ trước sửa; bổ sung sáu
   quote-drift cases. Ruff năm tệp mục tiêu PASS, `git diff --check` PASS.
 - Playwright `vps-v4-delivery` local run-code `tests/browser/vps_v4_admin.js`
@@ -368,7 +394,7 @@
   preview lần cuối phải khớp cart/item/product/location/destination/quote/contracts.
   Worker restart ở CHECKOUT_REQUESTED chỉ read-back order, không checkout lần hai.
   Allocator giữ metadata order khi reserve, không xoá dấu vết provider.
-- Đã chạy `python -m pytest tests/test_1262_vps_ovh_acquisition.py
+- Đã chạy `python -m pytest tests/test_1030_vps_ovh_acquisition.py
   tests/test_1020_vps_sellable_capacity.py tests/test_1022_vps_ovh_inventory.py -q`:
   **36 PASS, 4,36 giây** sau credit guard. Ruff năm tệp mục tiêu PASS;
   `git diff --check` PASS. Scan trước bổ sung credit guard: 3.655 tệp,
@@ -18897,7 +18923,7 @@ hàm đếm một suất replenishment trừ queued promises; backend vẫn cố
 replenishable=0 cho tới khi driver/order attribution/gateway persistence hoàn
 tất. Không lấy test giả lập làm bằng chứng bán được capacity thật.
 
-Đã chạy: `python -m pytest tests/test_1262_vps_ovh_acquisition.py
+Đã chạy: `python -m pytest tests/test_1030_vps_ovh_acquisition.py
 tests/test_1020_vps_sellable_capacity.py -q`: 18 PASS trước khi bổ sung phép kiểm
 signed POST; Ruff ba tệp mục tiêu PASS, `git diff --check` PASS. Test dùng SQLite
 memory và provider stub, không dùng Postgres/OVH thật.
