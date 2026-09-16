@@ -20,10 +20,6 @@ GIT_BASH = Path(os.environ.get("ProgramFiles", r"C:\Program Files")) / "Git" / "
 
 PROTECTED_ROWS = "10.50.0.11 203.0.113.11 VM101\n10.50.0.12 203.0.113.12 VM102\n"
 
-pytestmark = pytest.mark.skipif(
-    not GIT_BASH.exists(), reason="Git Bash is required to execute the helper")
-
-
 def _stub(bin_dir: Path, name: str, body: str) -> None:
     path = bin_dir / name
     path.write_bytes(("#!/bin/bash\n" + body + "\n").encode("ascii"))
@@ -62,6 +58,9 @@ def _setup(tmp_path: Path, map_rows: str):
 
 
 def _run(script: Path, bin_dir: Path, *args: str) -> subprocess.CompletedProcess:
+    # Not a skip: a guard that silently stops running protects nothing. The
+    # project runs on Windows with Git installed (bánh cóc bỏ qua, test_306).
+    assert GIT_BASH.exists(), f"Git Bash is required to execute the helper: {GIT_BASH}"
     env = dict(os.environ)
     env["PATH"] = bin_dir.as_posix() + os.pathsep + env.get("PATH", "")
     command = 'export PATH="{}:$PATH"; bash "{}" {}'.format(
