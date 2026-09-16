@@ -65,7 +65,7 @@ it('opens a real cue from a multi-track timeline and edits its content', async (
   fireEvent.change(editor,{target:{value:'Nội dung đã sửa'}})
   expect(editor).toHaveValue('Nội dung đã sửa')
   expect(screen.getByRole('combobox',{name:'Track phụ đề'})).toHaveValue('track-source')
-  fireEvent.click(screen.getByRole('button',{name:'STYLE'}))
+  fireEvent.click(screen.getByRole('button',{name:'KIỂU CHỮ'}))
   expect(screen.getByRole('slider',{name:'Cỡ chữ'})).toHaveValue('48')
   fireEvent.change(screen.getByRole('slider',{name:'Cỡ chữ'}),{target:{value:'64'}})
   expect(screen.getByRole('slider',{name:'Cỡ chữ'})).toHaveValue('64')

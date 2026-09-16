@@ -39,7 +39,7 @@ export const LIBRARY_COPY: Record<LibraryKind, Copy> = {
     bodyLabel: 'Nội dung chỉ dẫn',
   },
   snippet: {
-    title: 'Prompt Library',
+    title: 'Thư viện prompt',
     lead: 'Đoạn prompt dùng lại, có lịch sử sửa để quay về bản cũ.',
     newLabel: '＋ Đoạn prompt mới',
     emptyTitle: 'Thư viện còn trống',

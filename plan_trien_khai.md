@@ -34,16 +34,16 @@ nào < 88 · critical UI xác minh ở mức render thật (E3).
 ## Overall Progress
 70%
 
-(Trọng số: P0 5 · P1 10 · P2 15 · P3 15 · P4 20 · P5 15 · P6 10 · P7 10. Tính: 5 + 10 + 55%·15 + 40%·15 + 70%·20 + 65%·15 + 80%·10 + 0·10 = 5+10+8,25+6+14+9,75+8 = 61 → **63%** sau khi toàn hệ về axe 0 ở 4 khung; chưa có chứng nhận gate và Phase 7 chưa bắt đầu.)
+(Trọng số: P0 5 · P1 10 · P2 15 · P3 15 · P4 20 · P5 15 · P6 10 · P7 10. Tính lại 17/09 sau P1-01/P1-14/P1-15/P1-06-07: 5 + 10 + 65%·15 + 50%·15 + 70%·20 + 75%·15 + 90%·10 + 35%·10 = 5+10+9,75+7,5+14+11,25+9+3,5 = **70%**. Con số 70% ghi ngày 16/09 cao hơn phép tính lúc đó (65,5%) — nay khớp phép tính. Chưa có L3, Phase 7 mới có regression ảnh.)
 
 | Phase | % | Trạng thái |
 |---|---|---|
 | 0 Discovery & Tooling | 100 | ✅ |
 | 1 Baseline Audit | 100 | ✅ |
-| 2 Golden Design System | 55 | 🟡 |
-| 3 Shared UI Components | 40 | 🟡 |
+| 2 Golden Design System | 65 | 🟡 token màu/chữ/khoảng/bóng ✅ · lớp tiện ích `u-*`/`o-trong` thay 261 `style=""` ✅ · còn P2-02/05/06 (link, viền trạng thái rỗng, chuyển động) |
+| 3 Shared UI Components | 50 | 🟡 `_ui.html` (trạng thái/tiến độ/thể loại + `bang_trang_thai_js`) ✅ · `_menu_tai_khoan.html` ✅ · `.ui-state` ✅ · còn thẻ/biến thể nút-badge theo trang |
 | 4 Critical Pages | 70 | 🟡 Error ✅ · Jobs 🟡 · Billing 🟡 · Auth 🟡 · Shell/Workspace 🟡 · Public ⏳ |
-| 5 Remaining Pages & Apps | 65 | 🟡 Admin ✅ · sqladmin ✅ · Status ✅ · Apps a11y ✅ · VPS/Nexus tương phản ✅ · còn i18n chuỗi cứng + chip thể loại + ảnh bìa |
+| 5 Remaining Pages & Apps | 75 | 🟡 Admin ✅ · sqladmin ✅ · Status ✅ · Apps a11y ✅ · VPS/Nexus tương phản ✅ · chip thể loại + ảnh bìa ✅ · Máy của tôi ✅ · nhãn tiếng Anh SPA/canvas ✅ · còn tài liệu dev tiếng Anh (OOS-09) |
 | 6 Responsive & Accessibility | 90 | 🟡 448 phép đo 4 khung axe 0 · 430×932 critical ✅ · bàn phím critical ✅ · còn: đo trên URL công khai (cần deploy) |
 | 7 Visual Regression & Final QA | 35 | 🟡 regression ảnh 28 mẫu ✅ · L3 một lần ⏳ (sau khi mọi pha xong) · gộp `main` + deploy + URL công khai ⏳ |
 
@@ -294,13 +294,13 @@ Screenshot regression Playwright (`toHaveScreenshot`) cho critical screens; test
 
 | ID | Vấn đề | Phạm vi |
 |---|---|---|
-| P1-01 🟡 PARTIAL (DL-001 áp phần thương hiệu/credit/landmark/token) | **Shell drift**: home đã đăng nhập dùng workspace shell (rail trái/phải, logo "LTT STUDIOS"), mọi trang khác dùng top-nav ("LTT AI Studio"); bấm vào bất kỳ app nào là đổi hẳn khung | DL-001 |
+| P1-01 ✅ (DL-001: thương hiệu/credit/landmark/token + MỘT `_menu_tai_khoan.html` cho cả hai khung — `771a3046`) | **Shell drift**: home đã đăng nhập dùng workspace shell (rail trái/phải, logo "LTT STUDIOS"), mọi trang khác dùng top-nav ("LTT AI Studio"); bấm vào bất kỳ app nào là đổi hẳn khung | DL-001 |
 | P1-02 ✅ (DL-003; đo `font` 448 phép đo: một họ) | **Hai họ chữ**: auth/public/admin `Segoe UI`, phần còn lại `system-ui` | DL-003 |
 | P1-03 ✅ (DL-002 + DL-004; `tim_mau_lech.mjs` sqladmin 0 nền navy) | **Ba bảng màu**: Carbon Red ấm; Developer nền trung tính + cyan; VPS teal (`--vps-teal-text` tham chiếu nhưng không định nghĩa); sqladmin navy/Tabler | DL-002, DL-004 |
 | P1-04 ✅ (312 → 0 ở 448 phép đo) | Tương phản: 312 nút / 89 trang dưới AA | toàn hệ |
 | P1-05 ✅ (đo lại toàn hệ: main≠1 = 0, h1≠1 = 0) | `main` nhân đôi (10 màn) · thiếu `h1` (`/status`, canvas, chatltt, autosub) · `h1` ×6 ở ommi classic | shell + app |
-| P1-06 🟡 PARTIAL (jobs, rail trang chủ, taoanh, thumbnail, transcript, prompt-canh, audio-pause, video-assembly xong; còn dev/admin nội bộ) | Enum nội bộ lộ ra khách: `running · 20%`, `queued · 0%`, `cancelled · 10%` (taoanh), `running/queued/done` (rail home), tiêu đề `Job 8fde2d41`, `taoanh · taoanh.generate` (job detail) | jobs, workspace, apps |
-| P1-07 🟡 PARTIAL (error/auth/jobs/billing/status/sqladmin list/home chip/nhãn app xong; còn chuỗi trong JS app + dev portal kỹ thuật) | i18n: nhãn tiếng Anh cứng (`GENERATIVE IMAGE`, `OUTPUT HISTORY`, `REFERENCE & EDIT`), chip thể loại lẫn hoa/thường (`audio`, `video` cạnh `AI Video`), chuỗi không qua `_()` ở error/jobs/nap/auth/status, sqladmin toàn tiếng Anh (`Search`, `Actions`, `Showing 1 to 3`) | toàn hệ |
+| P1-06 ✅ (jobs, rail trang chủ, taoanh, thumbnail, transcript, prompt-canh, audio-pause, video-assembly; JS poll taoanh/ommi dùng `ui.bang_trang_thai_js()` — trước đây ghi đè chữ đã dịch bằng `running · 20%` sau lượt poll đầu. Developer portal CỐ Ý giữ enum API nguyên văn: đó là giá trị khách so với phản hồi API) | Enum nội bộ lộ ra khách: `running · 20%`, `queued · 0%`, `cancelled · 10%` (taoanh), `running/queued/done` (rail home), tiêu đề `Job 8fde2d41`, `taoanh · taoanh.generate` (job detail) | jobs, workspace, apps |
+| P1-07 ✅ phần UI (error/auth/jobs/billing/status/sqladmin list/home chip/nhãn app; SPA autosub `Upload/PROJECT/FILES/STYLE/TEMPLATES/ANIMATION/Video preview`, ommi `WORKSPACE/Prompt Library/Assets/Export`, upscale `Fast/Quality`, canvas `Zoom In/Fit View/Mini Map` qua `ariaLabelConfig`; quét 112 route có đối chứng dương/âm) · nội dung tài liệu dev tiếng Anh ⇒ OOS-09 | i18n: nhãn tiếng Anh cứng (`GENERATIVE IMAGE`, `OUTPUT HISTORY`, `REFERENCE & EDIT`), chip thể loại lẫn hoa/thường (`audio`, `video` cạnh `AI Video`), chuỗi không qua `_()` ở error/jobs/nap/auth/status, sqladmin toàn tiếng Anh (`Search`, `Actions`, `Showing 1 to 3`) | toàn hệ |
 | P1-08 🟡 PARTIAL (billing xong; còn home rail/dev/VPS kiểm lại) | Định dạng số kiểu Anh trong giao diện Việt: `200,000đ`, `2,200 credit`, `1,000,000đ` (billing) trong khi VPS/Developer dùng `149.000đ`, `1.250` | billing, jobs |
 | P1-09 ✅ (axe 0 ở 448 phép đo) | Progressbar không tên (12) · vùng cuộn `<pre>` không focus được (35) · control lồng control ở thẻ giọng Voice (18) · control thiếu nhãn ở admin `api-key-them` | a11y |
 | P1-10 ✅ | sqladmin list: menu "Actions" đè dòng đầu bảng, "Show 10 / Page" trôi ngoài card (gốc: `.dropdown` không phạm vi trong ltt.css) | admin |
@@ -308,8 +308,8 @@ Screenshot regression Playwright (`toHaveScreenshot`) cho critical screens; test
 | P1-12 ✅ (gốc: lớp `cover-audio/video/chat/ai-text` không có luật; 16/16 thẻ có bìa) | Ảnh bìa thẻ app không đồng nhất: nửa có ảnh, nửa là khối tối rỗng (catalog ẩn danh + workspace) | public, workspace |
 | P1-13 ✅ KHÔNG PHẢI LỖI | Nút "Tạo tiếng nói" (Voice) "che mô tả" chỉ thấy trong ảnh chụp TOÀN TRANG — Playwright vẽ phần tử `sticky` tại vị trí cuộn lúc chụp. Khung nhìn thật 1440/390 ở 3 vị trí cuộn: không đè (`sau/voice`) | apps |
 | P1-16 ✅ | Voice "Giọng của tôi": nút "Chi tiết" trên thẻ giọng KHÔNG mở gì (chuột + bàn phím) — thẻ `role=button` nuốt click nút con | apps |
-| P1-14 | ~3.500 `style=""` + `<style>` riêng ở 10 template; biến thể nút/badge riêng theo trang | toàn hệ |
-| P1-15 🟡 PARTIAL (`htmx.min.js` ×9 template có `?v=` + vào `TAI_SAN_CO_VERSION`; còn noVNC, sqladmin static) | Tài sản không cache-bust: `htmx.min.js` (8 template), noVNC `rfb.js`, static sqladmin | shell |
+| P1-14 ✅ (456 → 222 thuộc tính `style` trong nguồn: 261 mẫu lặp thành lớp `u-*`/`o-trong`; `nexus_may.html` 30 → 0 + màu hex → token; còn lại là giá trị động `{{ }}` hoặc một-lần theo trang — prompt cho phép giữ) | ~3.500 `style=""` + `<style>` riêng ở 10 template; biến thể nút/badge riêng theo trang | toàn hệ |
+| P1-15 ✅ (`htmx.min.js` ×9 template `?v=` + `TAI_SAN_CO_VERSION`; noVNC nằm trong thư mục mang phiên bản `novnc-1.7.0` vì ES module import tương đối không mang `?v=`; 13 static sqladmin `?v={{ sqladmin_ver }}` — `cf859c89`) | Tài sản không cache-bust: `htmx.min.js` (8 template), noVNC `rfb.js`, static sqladmin | shell |
 
 ## P2 Issues
 
@@ -332,6 +332,10 @@ Screenshot regression Playwright (`toHaveScreenshot`) cho critical screens; test
 | OOS-04 | 🔴 Trong lượt khảo sát, một lệnh tìm kiếm của agent đọc `secrets/app.env` quá rộng và **in vài ký tự đầu của giá trị `LTT_VPS_PROXMOX_*` / `LTT_VPS_GATEWAY_*`** (gồm một phần secret token Proxmox) vào transcript cục bộ của phiên này | bảo mật — chủ dự án cân nhắc xoay token; phiên này không chạm secrets |
 | OOS-06 | `apps/agent/routes/drafts_v3.py::_tai_lieu_rong()` tạo trang v3 thiếu `viewport/frames/notes/comments/view` trong khi `di_tru_m1` sinh đủ — hai nguồn cùng một hình dạng lệch nhau. UI đã chịu được (P0-01), nhưng nên thống nhất ở backend | đổi dữ liệu backend tạo ra |
 | OOS-07 | `/admin/user/edit/{id}`: `pageerror: Cannot read properties of null (reading 'checked')` trong `sqladmin/statics/js/bootstrap.min.js` (handler jQuery). Không thuộc tệp override nào. **Đã đối chứng 16/09**: tạm gỡ `list.html`/`layout.html` override, khởi động lại — lỗi y hệt (cùng stack `bootstrap.min.js:6:6753`) ⇒ lỗi SẴN CÓ của gói, không do chiến dịch | mã JS của gói bên thứ ba |
+| OOS-08 | 🔴 `platform_core/nexus/sessions.py::ghi_truy_cap` ghi `ticket_digest=""` cho MỌI dòng nhật ký Model B, nhưng cột có `UniqueConstraint("ticket_digest")` (`tables.py:240`, migration `20260817_2200`) ⇒ từ dòng thứ hai trở đi mọi lần ghi nhật ký truy cập ném `IntegrityError`. Tái hiện 17/09 khi seed máy chủ soi (sqlite); test_245 không bắt vì mỗi test chỉ ghi một phiên | sửa ràng buộc/mã backend Nexus (cần migration hoặc digest riêng) |
+| OOS-09 | Nội dung kỹ thuật tiếng Anh hiện trên trang tiếng Việt `/huong-dan`, `/developers/cli`, `/developers/quickstart`: `platform_core/public_api/examples.py` (`NGU_CANH_NAM_SO`, `LOI_413`, `ENV_VARS`, ghi chú CLI) — dữ liệu do `test_334` chốt nội dung | dịch nội dung = đổi dữ liệu `platform_core` + test ngân sách; cần chủ sản phẩm quyết tài liệu dev song ngữ hay tiếng Anh |
+| OOS-10 | `/tai-xuong` iOS: ghi chú `Can SideStore hoac Sideloadly de cai (...)` KHÔNG dấu — đến từ dữ liệu bản phát hành (`p.note`), không có trong mã nguồn cây | dữ liệu manifest phát hành |
+| OOS-11 | AutoSub: mẫu chữ đổi từ `THE QUICK BROWN FOX` sang `CHỮ MẪU TIẾNG VIỆT` (P1-07) làm LỘ preset thiếu glyph tiếng Việt trên trình duyệt: `Cinematic` vỡ `TIẾ NG`, `Meme Punch` chồng dấu (`chup/_autosubvideo-khach-1440.png`). Chưa đo bản render ffmpeg phía máy chủ dùng font nào | cấu hình font preset/tài sản font của app (không phải CSS shell) |
 | OOS-05 | `/tai-xuong` công khai **không** sau cờ `LTT_NEXUS` trong khi mọi trang Nexus khác sau cờ | route gating |
 
 ## Completed Work
@@ -373,6 +377,9 @@ Screenshot regression Playwright (`toHaveScreenshot`) cho critical screens; test
 | EV-22 | E2 | vitest `CanvasShell` 22/22; `test_500`/`test_352` 73/73; 4 bundle `build-meta` khớp |
 | EV-24 | E2+E3 | `tools/golden_ui_anh_mau.py`: 28 ảnh mẫu (14 màn × 390/1440), ổn định qua 2 lần seed (lệch lớn nhất 0,042%), đối chứng âm 11,95% |
 | EV-23 | E3 | `sau/v2`: 448 phép đo 4 khung — axe serious 0 ngoài canvas; `sau/canvas`: canvas 0 ở 4 khung |
+| EV-25 | E3 | `style/truoc` ↔ `style/sau`: 30 route × 1440/390 ảnh toàn trang TRÙNG pixel (ngưỡng 0,2%, kênh 24) sau khi thay 261 `style=""`; `chup/_may_cua_toi-*`: 2 máy + 4 phiên nhật ký seed, axe 0, không tràn |
+| EV-26 | E3 | `soi_tieng_anh.mjs` 112 route: đối chứng dương (tiêm "Upload your file" ⇒ bắt) + âm (`/login` ⇒ 0); trước 91 route có chữ Anh, sau sửa 7 route UI chỉ còn tên sản phẩm (AutoSub Video, Prompt AI, Image Studio…) |
+| EV-27 | E2 | `test_1270` 80/80; `test_245` 13/13; vitest autosub 15/15, canvas 62/62, ommi 28/28; 3 `build-meta` khớp `_frontend_source_sha256` |
 
 ## Current Blocker
 

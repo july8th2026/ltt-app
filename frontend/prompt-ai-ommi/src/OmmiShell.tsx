@@ -23,7 +23,7 @@ type Group = { title: string; items: Screen[] }
 
 const GROUPS: Group[] = [
   {
-    title: 'WORKSPACE',
+    title: 'KHÔNG GIAN',
     items: [
       { key: 'overview', label: 'Tổng quan', icon: '▦', built: true },
       { key: 'projects', label: 'Dự án', icon: '▤', built: true },
@@ -40,7 +40,7 @@ const GROUPS: Group[] = [
   {
     title: 'THƯ VIỆN',
     items: [
-      { key: 'snippet', label: 'Prompt Library', icon: '❐', built: true },
+      { key: 'snippet', label: 'Thư viện prompt', icon: '❐', built: true },
       { key: 'style', label: 'Phong cách', icon: '◐', built: true },
       { key: 'meta', label: 'Meta Director', icon: '✦', built: true },
     ],

@@ -429,3 +429,36 @@ def test_may_cua_toi_khong_con_style_inline_va_mau_hex():
     assert "style=" not in tpl
     assert not re.search(r"#[0-9a-fA-F]{6}", tpl), "chấm trạng thái dùng token (.nx-dot-bat/.nx-dot-tat)"
     assert "{{ so_du | so }}" in tpl
+
+
+# ── 14. P1-06/07: JS cập nhật tại chỗ không lộ enum, SPA không nhãn tiếng Anh ──
+
+def test_bang_trang_thai_js_dich_moi_trang_thai():
+    import json
+    from server.templating import templates
+    t = templates.env.from_string('{% import "_ui.html" as ui %}{{ ui.bang_trang_thai_js() }}')
+    bang = json.loads(t.render())
+    assert set(bang) == {"queued", "running", "done", "error", "cancelled"}
+    assert bang["running"] == "Đang chạy" and all(v not in bang for v in bang.values())
+
+
+@pytest.mark.parametrize("tep, cu", [
+    ("apps/taoanh/templates/image.html", "state.textContent=`${job.status} ·"),
+    ("apps/prompt_ai_ommi/templates/prompt_ai_ommi.html", "textContent=j.progress_msg||j.status;"),
+])
+def test_poll_job_khong_ghi_thang_enum(tep, cu):
+    src = (GOC / tep).read_text(encoding="utf-8")
+    assert cu not in src
+    assert "{{ ui.bang_trang_thai_js() }}" in src
+
+
+def test_spa_khong_con_nhan_tieng_anh_chung():
+    canvas = (GOC / "frontend/agent-canvas/src/CanvasShell.tsx").read_text(encoding="utf-8")
+    assert "ariaLabelConfig={NHAN_TRO_NANG_VI}" in canvas and "'controls.zoomIn.ariaLabel': 'Phóng to'" in canvas
+    autosub = (GOC / "frontend/autosub-studio/src/StudioShell.tsx").read_text(encoding="utf-8")
+    for cu in ("'Upload'", ">PROJECT<", "<h2>FILES</h2>", ">Video preview<"):
+        assert cu not in autosub, cu
+    insp = (GOC / "frontend/autosub-studio/src/StyleInspector.tsx").read_text(encoding="utf-8")
+    assert "item.toUpperCase()" not in insp and "BROWN FOX" not in insp
+    ommi = (GOC / "frontend/prompt-ai-ommi/src/OmmiShell.tsx").read_text(encoding="utf-8")
+    assert "'WORKSPACE'" not in ommi and "'Prompt Library'" not in ommi

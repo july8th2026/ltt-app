@@ -731,7 +731,7 @@ function Editor() {
           event.preventDefault();setQuickCreate(null);const screen={x:event.clientX,y:event.clientY}
           setContextMenu({kind:'pane',x:screen.x,y:screen.y,flow:reactFlow.screenToFlowPosition(screen)})}}
         onDrop={event => { const tool = byName.get(event.dataTransfer.getData('application/ltt-tool')); if (tool) addTool(tool, reactFlow.screenToFlowPosition({ x: event.clientX, y: event.clientY })) }}>
-        <ReactFlow key={page.id} nodes={displayNodes as CanvasNode[]} edges={displayEdges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
+        <ReactFlow key={page.id} nodes={displayNodes as CanvasNode[]} edges={displayEdges} nodeTypes={nodeTypes} edgeTypes={edgeTypes} ariaLabelConfig={NHAN_TRO_NANG_VI}
           onNodesChange={(changes: NodeChange[]) => { const persisted = changes.filter(change => ['position', 'add', 'remove', 'replace'].includes(change.type));
             if (persisted.length) dispatch({ type: persisted.every(change => change.type === 'position') ? 'sync' : 'graph', nodes: applyNodeChanges(persisted, page.nodes) as CanvasNode[], edges: page.edges }) }}
           onEdgesChange={(changes: EdgeChange[]) => { const persisted = changes.filter(change => ['add', 'remove', 'replace'].includes(change.type));
@@ -889,6 +889,22 @@ function ContextComposer({node,tool,readOnly,presentationMode,onChange,onAdvance
     })}</div>
     <footer><span>{cost===undefined?'Chi phí do server xác nhận':`Tối đa ${cost} credit`}</span><button className="composer-run" disabled={readOnly} onClick={onRun}>✦ Kiểm tra chi phí</button></footer>
   </section>
+}
+
+// Nhãn trợ năng của React Flow mặc định là tiếng Anh (`Zoom In`, `Fit View`, `Mini Map`…);
+// @xyflow/react ≥12.5 nhận `ariaLabelConfig` để thay (khoá: @xyflow/system constants).
+const NHAN_TRO_NANG_VI = {
+  'node.a11yDescription.default': 'Nhấn Enter hoặc Space để chọn khối. Nhấn Delete để xoá, Escape để huỷ.',
+  'node.a11yDescription.keyboardDisabled': 'Nhấn Enter hoặc Space để chọn khối, rồi dùng phím mũi tên để di chuyển. Nhấn Delete để xoá, Escape để huỷ.',
+  'node.a11yDescription.ariaLiveMessage': ({ x, y }: { direction: string; x: number; y: number }) => `Đã di chuyển khối. Vị trí mới x: ${x}, y: ${y}`,
+  'edge.a11yDescription.default': 'Nhấn Enter hoặc Space để chọn dây nối. Nhấn Delete để xoá, Escape để huỷ.',
+  'controls.ariaLabel': 'Điều khiển khung vẽ',
+  'controls.zoomIn.ariaLabel': 'Phóng to',
+  'controls.zoomOut.ariaLabel': 'Thu nhỏ',
+  'controls.fitView.ariaLabel': 'Vừa khung nhìn',
+  'controls.interactive.ariaLabel': 'Bật/tắt tương tác',
+  'minimap.ariaLabel': 'Bản đồ thu nhỏ',
+  'handle.ariaLabel': 'Điểm nối',
 }
 
 export function CanvasShell() { return <ReactFlowProvider><Editor /></ReactFlowProvider> }

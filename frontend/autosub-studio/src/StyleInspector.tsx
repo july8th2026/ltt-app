@@ -1,17 +1,19 @@
 import type { CSSProperties, ReactNode } from 'react'
 import { normalizeStyle, type StudioCue, type StudioStyle, type StylePreset } from './studioApi'
 
+const NHAN_TAB = {templates:'MẪU', style:'KIỂU CHỮ', animation:'HIỆU ỨNG'} as const
+
 export function StyleInspector({tab,setTab,style,presets,onStyle,onPreset}:{
   tab:'templates'|'style'|'animation';setTab:(tab:'templates'|'style'|'animation')=>void;
   style:StudioStyle;presets:StylePreset[];onStyle:(patch:Partial<StudioStyle>)=>void;
   onPreset:(preset:StylePreset)=>void}) {
   return <><nav>{(['templates','style','animation'] as const).map(item=><button key={item}
-    className={tab===item?'active':''} onClick={()=>setTab(item)}>{item.toUpperCase()}</button>)}</nav>
+    className={tab===item?'active':''} aria-pressed={tab===item} onClick={()=>setTab(item)}>{NHAN_TAB[item]}</button>)}</nav>
     {tab==='templates'&&<div className="template-grid">{presets.map(preset=><button key={preset.id}
       type="button" className={style.preset===preset.id?'selected':''} onClick={()=>onPreset(preset)}
       style={{fontFamily:preset.config.font_family,color:preset.config.font_color,
         backgroundColor:preset.config.bg_box?`${preset.config.bg_color}99`:undefined}}>
-      <strong>THE QUICK<br/>BROWN FOX</strong><small>{preset.label}</small></button>)}</div>}
+      <strong>CHỮ MẪU<br/>TIẾNG VIỆT</strong><small>{preset.label}</small></button>)}</div>}
     {tab==='style'&&<div className="style-controls">
       <Control label="Font"><select value={style.font_family} onChange={e=>onStyle({font_family:e.target.value})}>{['Arial','Montserrat','Oswald','Anton','Georgia','Impact','Comic Sans MS'].map(v=><option key={v}>{v}</option>)}</select></Control>
       <Control label="Cỡ chữ"><input aria-label="Cỡ chữ" type="range" min="12" max="120" value={style.font_size} onChange={e=>onStyle({font_size:Number(e.target.value)})}/><output>{style.font_size}</output></Control>

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "_ui.html" as ui %}
 {% block title %}Prompt AI — LTT Studios{% endblock %}
 {% block page_mode %}immersive{% endblock %}
 {% block body_class %}ommi-page{% endblock %}
@@ -7,10 +8,10 @@
   <aside class="ommi-rail" aria-label="{{ _('Điều hướng Prompt AI') }}">
     <div class="ommi-mark" title="Prompt AI">✦</div>
     <button class="rail-btn on" data-step="brief" title="Brief"><span>01</span><b>Brief</b></button>
-    <button class="rail-btn" data-step="resources" title="{{ _('Tài nguyên') }}"><span>02</span><b>Assets</b></button>
+    <button class="rail-btn" data-step="resources" title="{{ _('Tài nguyên') }}"><span>02</span><b>{{ _("Tài nguyên") }}</b></button>
     <button class="rail-btn" data-step="director" title="AI Director"><span>03</span><b>Director</b></button>
     <button class="rail-btn" data-step="storyboard" title="Storyboard"><span>04</span><b>Board</b></button>
-    <button class="rail-btn" data-step="export" title="{{ _('Xuất') }}"><span>05</span><b>Export</b></button>
+    <button class="rail-btn" data-step="export" title="{{ _('Xuất') }}"><span>05</span><b>{{ _("Xuất") }}</b></button>
     <div class="rail-spacer"></div>
     <button id="theme-toggle" class="rail-icon" title="{{ _('Đổi nền') }}" aria-label="{{ _('Đổi nền') }}">◐</button>
   </aside>
@@ -175,7 +176,8 @@
   $('#preview-btn').onclick=async()=>{syncForm();try{const p=await api(`/prompt-ai-ommi/api/projects/${current.id}/preview`,{method:'POST',body:{payload:current.payload}});$('#checklist').innerHTML=p.checklist.map(x=>`<div class="check-item ${x.passed?'ok':'bad'}">${esc(x.label)}</div>`).join('');$('#master-prompt').textContent=p.master_prompt;const badge=$('#preflight-status');badge.textContent=p.valid?'Sẵn sàng':'Cần bổ sung';badge.className=p.valid?'badge-good':'badge-bad';$('#generate-btn').disabled=!p.valid;toast(p.valid?'Preflight đạt.':'Brief chưa đạt preflight.',p.valid?'good':'bad')}catch(e){toast(e.message,'bad')}};
   $('#quote-btn').onclick=async()=>{syncForm();try{const q=await api(`/prompt-ai-ommi/api/projects/${current.id}/quote`,{method:'POST',body:{payload:current.payload,operation:$('#operation').value,model:$('#chat-model').value}});$('#quote-box').innerHTML=`<span>${esc(q.operation)} · ${q.scene_count} cảnh</span><strong>${q.credit} credit</strong>`;$('#generate-btn').dataset.quoted='1';toast('Báo giá đã khóa theo server.','good')}catch(e){toast(e.message,'bad')}};
   $('#generate-btn').onclick=async()=>{try{if(dirty){toast('Đang lưu project trước khi chạy.');await saveCurrent()}const q=await api(`/prompt-ai-ommi/api/projects/${current.id}/quote`,{method:'POST',body:{operation:$('#operation').value,model:$('#chat-model').value}});if(!confirm(`Chạy ${q.operation} với chi phí tối đa ${q.credit} credit?`))return;const job=await api(`/prompt-ai-ommi/api/projects/${current.id}/generate`,{method:'POST',body:{operation:$('#operation').value,model:$('#chat-model').value}});pollJob(job.id)}catch(e){toast(e.message,'bad')}};
-  async function pollJob(id){if(pollTimer&&pollTimer.dung)pollTimer.dung();$('#active-job').hidden=false;const tick=async()=>{try{const j=await api(`/prompt-ai-ommi/api/jobs/${id}`);$('#job-progress').textContent=`${j.progress}%`;$('#job-bar').style.width=`${j.progress}%`;$('#job-message').textContent=j.progress_msg||j.status;if(j.status==='done'){$('#job-label').textContent='Đang áp dụng kết quả';current=await api(`/prompt-ai-ommi/api/projects/${current.id}/apply/${id}`,{method:'POST',body:{revision:current.revision}});const i=projects.findIndex(p=>p.id===current.id);projects[i]=current;dirty=false;$('#active-job').hidden=true;fillForm();step('director');toast('Prompt package đã sẵn sàng.','good');return false}else if(j.status==='error'||j.status==='cancelled'){$('#active-job').hidden=true;toast(j.error||'Job không hoàn tất. Credit đã được xử lý theo sổ.','bad');return false}}catch(e){toast(e.message,'bad');return false}return true};
+  const TT={{ ui.bang_trang_thai_js() }};
+  async function pollJob(id){if(pollTimer&&pollTimer.dung)pollTimer.dung();$('#active-job').hidden=false;const tick=async()=>{try{const j=await api(`/prompt-ai-ommi/api/jobs/${id}`);$('#job-progress').textContent=`${j.progress}%`;$('#job-bar').style.width=`${j.progress}%`;$('#job-message').textContent=j.progress_msg||TT[j.status]||j.status;if(j.status==='done'){$('#job-label').textContent='Đang áp dụng kết quả';current=await api(`/prompt-ai-ommi/api/projects/${current.id}/apply/${id}`,{method:'POST',body:{revision:current.revision}});const i=projects.findIndex(p=>p.id===current.id);projects[i]=current;dirty=false;$('#active-job').hidden=true;fillForm();step('director');toast('Prompt package đã sẵn sàng.','good');return false}else if(j.status==='error'||j.status==='cancelled'){$('#active-job').hidden=true;toast(j.error||'Job không hoàn tất. Credit đã được xử lý theo sổ.','bad');return false}}catch(e){toast(e.message,'bad');return false}return true};
     /* `LTT.nhipJob`: tab an thi ngung hoi, tab hien lai thi hoa lai NGAY,
        loi mang thi lui theo cap so nhan. Ban cu la mot `setInterval` 1,6s
        chay deu ke ca khi dien thoai da khoa trong tui. */

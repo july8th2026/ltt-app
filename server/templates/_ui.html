@@ -43,6 +43,15 @@
 {%- endif -%}
 {%- endmacro -%}
 
+{#- Cùng bảng chữ cho JS đang cập nhật trạng thái tại chỗ (poll `/api/jobs/{id}`).
+    Trước đây JS ghi thẳng `job.status` ⇒ khách thấy `running · 20%` sau lượt poll
+    đầu tiên dù HTML render sẵn đã là "Đang chạy · 20%". -#}
+{%- macro bang_trang_thai_js(loai='job') -%}
+{%- set _k = ['pending', 'paid', 'expired', 'cancelled', 'failed'] if loai == 'don' else ['queued', 'running', 'done', 'error', 'cancelled'] -%}
+{%- set _d = {} -%}{%- for k in _k -%}{%- set _bo = _d.update({k: ten_trang_thai(k, loai) | string}) -%}{%- endfor -%}
+{{ _d | tojson }}
+{%- endmacro -%}
+
 {%- macro nhan_trang_thai(status, loai='job') -%}
 <span class="badge b-{{ _loai_mau(status, loai) }}" data-trang-thai="{{ status }}"><span class="dot" aria-hidden="true"></span>{{ ten_trang_thai(status, loai) }}</span>
 {%- endmacro -%}
