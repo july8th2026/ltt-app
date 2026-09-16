@@ -1679,6 +1679,7 @@
     /* Phat dan (U-07). Tu thoat khi template khong dung nut — tuc khi co
        `LTT_VOICE_STREAM` dang tat. */
     ganPhatDan(form, oText, duong);
+    ganNgheCau(form, oText, duong);
 
     form.addEventListener("submit", function (e) {
       e.preventDefault();
@@ -2432,6 +2433,64 @@
    *     hang so thu ba canh hai hang so da co, va no se lech vao ngay engine
    *     doi tan so — luc ay tieng phat ra sai cao do ma khong loi nao bao.
    */
+  /* U-13 — nghe thu VAN BAN CUA KHACH bang giong MAU (`/nghe-thu-van-ban`).
+
+     16/09/2026: cua nay co tu 08/09 ma khong nut nao goi. Chi giong mau
+     (`m:<ten>`), mien phi, cat toi `data-tran` ky tu — cat o ranh gioi cau gan
+     nhat de khong doc nua chu. Cau loi (lech lan, het luot, may ban) la cau
+     MAY CHU da dich, hien nguyen van. */
+  function ganNgheCau(form, oText, duong) {
+    var nut = document.getElementById("lv-nut-nghe-cau");
+    var bao = document.getElementById("lv-nghe-cau-bao");
+    var au = document.getElementById("lv-nghe-cau-au");
+    if (!nut || !bao || !au || !oText) return;
+    var tran = parseInt(nut.getAttribute("data-tran") || "160", 10);
+    var nhanGoc = nut.textContent;
+
+    function noi(cau) { bao.textContent = cau || ""; bao.hidden = !cau; }
+
+    function cauDau(tho) {
+      tho = (tho || "").trim();
+      if (tho.length <= tran) return tho;
+      var cat = tho.slice(0, tran);
+      var m = cat.match(/^[\s\S]*[.!?…](?=\s|$)/);
+      return (m && m[0].length >= 20 ? m[0] : cat).trim();
+    }
+
+    nut.addEventListener("click", function () {
+      var g = (form.querySelector('input[name="giong"]:checked') || {}).value || "";
+      if (g.indexOf("m:") !== 0) { noi(nut.getAttribute("data-nhan-chi-mau")); return; }
+      var tho = cauDau(oText.value);
+      if (!tho) { oText.focus(); return; }
+      var csrf = form.querySelector('input[name="csrf_token"]');
+      var fd = new FormData();
+      fd.append("csrf_token", csrf ? csrf.value : "");
+      fd.append("preset", g.slice(2));
+      fd.append("text", tho);
+      nut.disabled = true;
+      nut.textContent = nut.getAttribute("data-nhan-dang") || nhanGoc;
+      noi("");
+      var conLai = null;
+      fetch(duong + "/nghe-thu-van-ban", {method: "POST", body: fd})
+        .then(function (r) {
+          conLai = r.headers.get("X-Luot-Con-Lai");
+          return r.json();
+        })
+        .then(function (d) {
+          if (!d.ok) { noi(d.loi); return; }
+          au.src = "data:audio/wav;base64," + d.audio_b64;
+          au.hidden = false;
+          var p = au.play();
+          if (p && p.catch) p.catch(function () {});
+          if (conLai !== null) {
+            noi((nut.getAttribute("data-nhan-con") || "").replace("{n}", conLai));
+          }
+        })
+        .catch(function () { noi(nut.getAttribute("data-nhan-loi")); })
+        .then(function () { nut.disabled = false; nut.textContent = nhanGoc; });
+    });
+  }
+
   function ganPhatDan(form, oText, duong) {
     var nut = document.getElementById("lv-nut-phat");
     if (!nut) return;                  /* co tat -> template khong dung nut */

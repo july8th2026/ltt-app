@@ -51,7 +51,8 @@ from apps.auto_scan_video.giai_doan_media import ThieuNguon
 from apps.auto_scan_video.giai_doan_noi_dung import ThieuBanGhi
 from apps.auto_scan_video.giai_doan_thoi_gian import ThieuDauVao as ThieuDauVaoTG
 from apps.auto_scan_video.features import TinhHaiLan
-from apps.auto_scan_video.giong_noi import GiongError, GiongMoHo, MayBan
+from apps.auto_scan_video.giong_noi import (GiongError, GiongKhongHopLe,
+                                            GiongMoHo, MayBan)
 from apps.auto_scan_video.ket_xuat import KetXuatError
 from apps.auto_scan_video.nhap_media import MediaError
 from apps.auto_scan_video.thoi_gian import ThoiGianError
@@ -165,6 +166,9 @@ BANG = {
     BanDungError: loi.NGUOI_DUNG,
     KetXuatError: loi.TAM_THOI,
     GiongError: loi.TAM_THOI,
+    #: ⛔ `ltt_voice` tu choi giong (lech lan voi kich ban — W4', khong phai
+    #:    cua ban, da tat): chay lai cung giong + cung kich ban hong y het.
+    GiongKhongHopLe: loi.NGUOI_DUNG,
     DichError: loi.TAM_THOI,
     #: 🔴 `TinhHaiLan` la mot lech SO SACH, khong phai mot truot thoang qua.
     #:    Roi xuong nhanh mac dinh `TAM_THOI` nghia la nen tang **THU LAI** —

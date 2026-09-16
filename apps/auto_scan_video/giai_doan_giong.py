@@ -118,10 +118,22 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     #
     # ⇒ Khong co "voice preset" nao trong `settings` ca. Chi co MOT ma giong, va
     #   `giong_noi.tach_ma_giong` biet no thuoc o nao.
-    ref_b64, preset = giong_noi.giai_giong(
-        db, owner_id=run.owner_id, voice_id=ma_giong)
-
+    #
+    # 🔴 **W4': chot lan tren KICH BAN THAT, mot lan, TRUOC luot sinh dau tien.**
+    #
+    #    `giai_giong` dua van ban + `ngon_ngu_dich` KHAI trong ban long tieng cho
+    #    `ltt_voice`, noi `lan_ngon_ngu.quyet_dinh` phan xu. Lech lan ⇒
+    #    `GiongKhongHopLe(voice_language_mismatch)` truoc khi ton mot giay GPU.
+    #
+    # ⭐ Ca kich ban, khong tung doan: ban long tieng la MOT ngon ngu (no khai
+    #    vay), va mot doan le chen mot cau trich tieng Anh khong duoc lam hong ca
+    #    lan chay. Chot tung doan con doi N luot doc kho giong cho mot cau tra loi.
     muc = list(tai_lieu.get("muc") or [])
+    ref_b64, preset = giong_noi.giai_giong(
+        db, owner_id=run.owner_id, voice_id=ma_giong,
+        van_ban="\n".join(str(m.get("chu") or "") for m in muc),
+        ngon_ngu=str(tai_lieu.get("ngon_ngu_dich") or ""))
+
     phan: list[dict] = []
     ban_ke: list[dict] = []
     cac_nan: list[nan_cho_vua.KetQuaNan] = []

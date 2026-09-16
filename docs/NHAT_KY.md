@@ -31,6 +31,49 @@
   nhập mật khẩu) + kiểm sau khởi động lại máy (chủ dự án báo khi có dịp).
 - Test nhắm: `test_1302` (12) + `test_1303` (7); cả app `1300–1303` = 39 xanh.
 
+## 2026-09-17 — Sửa L1/L2: không chạy test hai lần, dùng ngân sách worker, không chen `postgres_test`, L1 thu hẹp được
+
+- Triệu chứng đêm 16→17/09 (3 phiên): CPU máy 11–20% trong khi các lượt gate xếp hàng
+  > 1 giờ; `check_multiproc` đỏ giả `relation "jobs" does not exist`; L1 của mọi lượt
+  deploy bị từ chối nên phải L2. Chi tiết + nguyên nhân gốc: `BAY_TRONG_CONG_CHAT_LUONG.md` Bẫy 38.
+- Sửa: `tools/test_nhanh.py` (`ke_hoach_pha`), `tools/gate.py` (`-n` cho L1/L2,
+  `khoa_can_giu`, L1 chỉ tài liệu chạy các bước tĩnh, test tra theo `test_nhac_toi`),
+  `tools/cua_so_yen.py` (`KHONG_DUOC_CHEN`), `tools/pg_ten_cay.py` + ba công cụ PostgreSQL
+  (CSDL test theo cây), `tools/thanh_phan.py` (`DUNG_CHUNG` còn `conftest.py` + `requirements*`,
+  `la_tai_lieu`, `test_nhac_toi` theo AST). `test_394` đổi phép ghim `tools/gate.py` có lý do.
+- Kiểm: `test_1500` 18/18 (13 đỏ trước khi sửa); 16 tệp test công cụ gate: 292 + 78 xanh (`-n 6`).
+- ⚠️ CSDL test PostgreSQL cũ tên cố định (`*_multiproc_test`, `*_wf_migration_test`,
+  `*_m1_dientap_test`) không còn được dùng; mỗi cây tạo một CSDL mới lần đầu chạy.
+
+## 2026-09-16 — VPS V4 nghiệm thu live: VPS thật đầu tiên, 21 lỗi rà được
+
+- **Rà code** hai lượt độc lập + tự đọc lại dòng: R1–R10 (tạo máy bị chặn vì
+  health ≤ 300 s không ai làm mới trong khi collector Máy B 30 phút/lần; mua IP
+  có đường checkout lần 2, mua cho máy đã hoàn tiền, `recover_order` gọi nhầm
+  dry-run quotation; helper gwnat có thể làm rơi dòng protected…). Sửa + test
+  tập trung; deploy **r1 `b1593e3c`** 16:29–16:31, nghiệm thu 3 chiều 0/0/0.
+- **Captcha**: phiên trước để Playwright tự khởi chạy Chrome (cờ automation ⇒
+  Cloudflare xoay vòng /login). Đúng: Chrome thật `--remote-debugging-port`,
+  chủ dự án đăng nhập, Playwright nối CDP (`D:\LTTSTUDIOSAPP-runtime\vps-v4-cdp.mjs`).
+- **Sau deploy đo được**: R11 task đồng bộ Máy B rc=1 (tính gốc repo cố định);
+  R12 worker `LocalSystem` SSH gateway OVH rc=255 — `ltt_ovh_gateway` owner là
+  người dùng, Win32-OpenSSH báo UNPROTECTED KEY; đổi owner về Administrators
+  (ACL giữ nguyên).
+- **ISO**: `local` chỉ còn Win10 LTSC; nới `local` bằng thin pool `pve/data`
+  rỗng (26→41 G), node tự tải Server 2022/2016 từ CDN Microsoft, khớp byte.
+- **VPS thật** `d96b66f3` (VM 204, chủ dự án giữ để dùng): đơn OVH `22703620`
+  USD 2,39 (một đơn). R18 trạng thái đơn đọc ngay sau checkout ⇒ NEEDS_REVIEW;
+  R19 `qmstart` "WARNINGS: 1" bị coi là hỏng. Cả hai khôi phục vận hành có kiểm
+  chứng (đọc lại OVH/PVE, không checkout/start lần hai) ⇒ `tao_xong` 17:38:48.
+  Đường hoàn tiền chạy thật với lượt lỗi đầu (hoàn 1.490, xoá). R14 máy lỗi
+  chiếm suất IP; R20 console đóng ngay (cầu WS dùng kho CA hệ thống); R21 tắt
+  mềm hỏng ⇒ UI "Đã tắt" khi VM chạy + thiếu nút tắt cứng. Sửa R14/R18–R21 có
+  test; r2 `7432c7de` = r1 + R11/R14/R18/R19/R20.
+- **Nợ**: R13 (đo gateway một lần), R15 (máy treo không gia hạn lại được, trái
+  Điều khoản), R16 (IP OVH tự gia hạn khi rỗi — cần chủ sản phẩm chốt), R17
+  (`inventory_sync` mất `order_id`); mypy `arg-type` +1 đã có sẵn ở `e5b72562`.
+  Chi tiết: `docs/VPS_V4/14_KE_HOACH_VAN_HANH_TOI_UU.md`.
+
 ## 2026-09-17 — Deploy giữa phiên sau L1/L2 xanh (sửa luật "L3 bắt buộc trước deploy")
 
 - Chủ dự án: *"Bản chất deploy còn phục vụ cho quy trình xây dựng nên không thể coi deploy cuối phiên sau
@@ -143,6 +186,13 @@
   (cookie production mang `Secure` ⇒ công cụ tự mang cookie qua loopback). Hướng dẫn
   `docs/TAI_KHOAN_THU.md`. E2E góc nhìn chủ 25 giọng + khách thứ hai trên production: PASS.
 - `dung_lai_giong_kho_chung --chay` nay bỏ qua giọng đã có job `done` cùng khoá dựng lại.
+- **17/09 — `yolov8s.pt`:** không phải "tải mỗi lần khởi động" (log `worker-out.log` không có giờ,
+  tạo từ 31/07). Thật: cwd worker = `C:\LTTPlatform\app` bị thay mỗi deploy; `yolov8n.pt` được
+  vận chuyển, `yolov8s.pt` thì không ⇒ job `taoclipngan` đầu sau MỖI deploy tải 21,5 MB từ GitHub.
+  Adapter nay trỏ `LTT_DATA_DIR\models\yolo\` (ultralytics 8.4.115 tải VÀO đường tuyệt đối).
+- **17/09 — U-13:** cửa `/nghe-thu-van-ban` (có từ 08/09) nay có nút "Nghe thử câu đầu (miễn phí)"
+  trong Studio. ⚠️ `gate.py --doi` giữa phiên bị TỪ CHỐI khi delta chạm tệp dùng chung (sau khi hoà
+  governance) — dùng L2 `--pham-vi` theo từng thành phần.
 
 ## 2026-09-16 — LTT VOICE: clip gốc 25 giọng kho chung KHÔNG mất — đã lưu bản bền
 
@@ -306,6 +356,23 @@
   / `test_1282_vps_ovh_acquisition` (41 passed); (3) mypy `arg-type` 107 → 108 ở
   `public_ip.py:131` — `tuple(contracts or ())`, không đổi hành vi. Lượt gate của
   phiên kia bị dừng theo yêu cầu chủ dự án để chạy chung một L3.
+
+## 2026-09-16 — ASV W4': chặn giọng lệch làn với kịch bản lồng tiếng
+
+- Đối soát 16/09 (W4'): `auto_scan_video/giong_noi.giai_giong` đưa `text="."`
+  cho `ltt_voice.features.giai_giong`, nên `lan_ngon_ngu.quyet_dinh` chạy trên
+  một dấu chấm (`doan_ngon_ngu` = `None` ⇒ nhận làn của giọng ⇒ luôn cho qua).
+  Tái hiện trên mã cũ: giọng EN đọc **3/3** đoạn lồng tiếng Việt.
+- Sửa: `giai_doan_giong` đưa **kịch bản thật** (nối các `muc[].chu`) cùng
+  `ngon_ngu_dich` KHAI trong bản lồng tiếng (vào nhánh `khai_bao`) — một lần,
+  trước lượt sinh đầu tiên. Không chép luật: vẫn đi qua `_chot_lan` → `quyet_dinh`.
+- `LoiGiongNoi` được bọc thành `GiongKhongHopLe(ma_loi=…)`, phân loại
+  `NGUOI_DUNG` (trước đó rơi xuống `TAM_THOI` ⇒ giai đoạn bị đánh dấu thử lại
+  được). `thi_hanh` ghi `outputs.ma_loi`; `quan_sat.LOI_CO_MA` đổi mã ⇒ câu cho
+  khách; màn tiến độ hiện câu đó và ẩn nút "Thử lại bước này".
+- Test: `test_409` §8 (8 bài), cập nhật `test_418` (BẢNG), `test_475` (stub).
+  Playwright trên template thật: câu hiện, 0 form thử lại, 0 lỗi console, không
+  cuộn ngang ở 375px.
 
 ## 2026-09-15 — H54: Tool 1.9.2 khớp reasoning và kiểm thật Codex
 
@@ -473,42 +540,13 @@
   yêu cầu; owner sau đó chỉ đạo rõ “hợp nhất commit rồi deploy, không chạy gate”,
   nên không chạy gate sau hợp nhất và không ghi bất kỳ lượt bị dừng/bỏ nào là
   PASS.
-## 2026-09-16 — VPS V4 nghiệm thu live: VPS thật đầu tiên, 21 lỗi rà được
-
-- **Rà code** hai lượt độc lập + tự đọc lại dòng: R1–R10 (tạo máy bị chặn vì
-  health ≤ 300 s không ai làm mới trong khi collector Máy B 30 phút/lần; mua IP
-  có đường checkout lần 2, mua cho máy đã hoàn tiền, `recover_order` gọi nhầm
-  dry-run quotation; helper gwnat có thể làm rơi dòng protected…). Sửa + test
-  tập trung; deploy **r1 `b1593e3c`** 16:29–16:31, nghiệm thu 3 chiều 0/0/0.
-- **Captcha**: phiên trước để Playwright tự khởi chạy Chrome (cờ automation ⇒
-  Cloudflare xoay vòng /login). Đúng: Chrome thật `--remote-debugging-port`,
-  chủ dự án đăng nhập, Playwright nối CDP (`D:\LTTSTUDIOSAPP-runtime\vps-v4-cdp.mjs`).
-- **Sau deploy đo được**: R11 task đồng bộ Máy B rc=1 (tính gốc repo cố định);
-  R12 worker `LocalSystem` SSH gateway OVH rc=255 — `ltt_ovh_gateway` owner là
-  người dùng, Win32-OpenSSH báo UNPROTECTED KEY; đổi owner về Administrators
-  (ACL giữ nguyên).
-- **ISO**: `local` chỉ còn Win10 LTSC; nới `local` bằng thin pool `pve/data`
-  rỗng (26→41 G), node tự tải Server 2022/2016 từ CDN Microsoft, khớp byte.
-- **VPS thật** `d96b66f3` (VM 204, chủ dự án giữ để dùng): đơn OVH `22703620`
-  USD 2,39 (một đơn). R18 trạng thái đơn đọc ngay sau checkout ⇒ NEEDS_REVIEW;
-  R19 `qmstart` "WARNINGS: 1" bị coi là hỏng. Cả hai khôi phục vận hành có kiểm
-  chứng (đọc lại OVH/PVE, không checkout/start lần hai) ⇒ `tao_xong` 17:38:48.
-  Đường hoàn tiền chạy thật với lượt lỗi đầu (hoàn 1.490, xoá). R14 máy lỗi
-  chiếm suất IP; R20 console đóng ngay (cầu WS dùng kho CA hệ thống); R21 tắt
-  mềm hỏng ⇒ UI "Đã tắt" khi VM chạy + thiếu nút tắt cứng. Sửa R14/R18–R21 có
-  test; r2 `7432c7de` = r1 + R11/R14/R18/R19/R20.
-- **Nợ**: R13 (đo gateway một lần), R15 (máy treo không gia hạn lại được, trái
-  Điều khoản), R16 (IP OVH tự gia hạn khi rỗi — cần chủ sản phẩm chốt), R17
-  (`inventory_sync` mất `order_id`); mypy `arg-type` +1 đã có sẵn ở `e5b72562`.
-  Chi tiết: `docs/VPS_V4/14_KE_HOACH_VAN_HANH_TOI_UU.md`.
-
 ## 2026-09-14 — Release bất biến và backup trước cửa sổ deploy VPS
 
 - Sau gate PID 10984 nhả CPU/Postgres, tạo repo release riêng đúng commit
   e2b118c6. Clone đầu autocrlf=true làm hash byte frontend khác và builder chặn;
   tra tài liệu Git, clone lại core.autocrlf=false, hash nguồn khớp và status sạch.
   Không sửa frontend/cấu hình git/main của phiên khác, không xóa bản clone lỗi.
-- `python -m pytest tests/test_1262_vps_ovh_acquisition.py tests/test_1020_vps_sellable_capacity.py -q`:
+- `python -m pytest tests/test_1030_vps_ovh_acquisition.py tests/test_1020_vps_sellable_capacity.py -q`:
   **49 PASS, 2,74 giây**. Release builder PASS: 4469 files, 146,4 MB, secret
   scan 0 finding; ZIP SHA-256 và đường dẫn ở 13_WORKTREE_RELEASE. Alembic heads
   đúng một f4a7c2d9e610. Đây không phải full gate hoặc deployed evidence.
@@ -534,7 +572,7 @@
   `_tao_may` re-raise DangBan trước broad catch, không gán lỗi VPS do delivery.
   Capacity chỉ quảng bá một slot khi exact adopted cart quote/digest còn hợp lệ;
   constructor lazy không nạp credential, quote fail không lộ raw body/URL.
-- `python -m pytest tests/test_1262_vps_ovh_acquisition.py -q`: **39 PASS,
+- `python -m pytest tests/test_1030_vps_ovh_acquisition.py -q`: **39 PASS,
   3,15 giây**. TDD pending/worker/bounded-readiness đã đỏ trước sửa; bổ sung sáu
   quote-drift cases. Ruff năm tệp mục tiêu PASS, `git diff --check` PASS.
 - Playwright `vps-v4-delivery` local run-code `tests/browser/vps_v4_admin.js`
@@ -627,7 +665,7 @@
   preview lần cuối phải khớp cart/item/product/location/destination/quote/contracts.
   Worker restart ở CHECKOUT_REQUESTED chỉ read-back order, không checkout lần hai.
   Allocator giữ metadata order khi reserve, không xoá dấu vết provider.
-- Đã chạy `python -m pytest tests/test_1262_vps_ovh_acquisition.py
+- Đã chạy `python -m pytest tests/test_1030_vps_ovh_acquisition.py
   tests/test_1020_vps_sellable_capacity.py tests/test_1022_vps_ovh_inventory.py -q`:
   **36 PASS, 4,36 giây** sau credit guard. Ruff năm tệp mục tiêu PASS;
   `git diff --check` PASS. Scan trước bổ sung credit guard: 3.655 tệp,
@@ -19156,7 +19194,7 @@ hàm đếm một suất replenishment trừ queued promises; backend vẫn cố
 replenishable=0 cho tới khi driver/order attribution/gateway persistence hoàn
 tất. Không lấy test giả lập làm bằng chứng bán được capacity thật.
 
-Đã chạy: `python -m pytest tests/test_1262_vps_ovh_acquisition.py
+Đã chạy: `python -m pytest tests/test_1030_vps_ovh_acquisition.py
 tests/test_1020_vps_sellable_capacity.py -q`: 18 PASS trước khi bổ sung phép kiểm
 signed POST; Ruff ba tệp mục tiêu PASS, `git diff --check` PASS. Test dùng SQLite
 memory và provider stub, không dùng Postgres/OVH thật.

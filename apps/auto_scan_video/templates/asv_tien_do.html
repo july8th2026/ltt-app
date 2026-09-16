@@ -72,9 +72,20 @@
           {{ _("Lần chạy dừng lại giữa chừng.") }}
         {% endif %}
       </h3>
+      {% if dong.loi_co_ma %}
+        {# ⭐ W4': loi MANG MA (vd giong lech lan voi loi long tieng). Thu lai
+           buoc nay hong y het, nen KHONG hien nut thu lai — mot nut chac chan
+           that bai la mot nut day khach bam vo ich. #}
+        <p class="asv-loi-co-ma">{{ _(dong.loi_co_ma) }}</p>
+        <div class="asv-hanh-dong">
+          <a class="btn primary" href="{{ app.route_prefix }}">
+            {{ _("Lồng tiếng video khác") }}</a>
+        </div>
+      {% else %}
       <p>{{ _("Một bước không hoàn tất nên chúng tôi dừng lại thay vì giao một bản chưa đạt.") }}</p>
       <p>{{ _("Bạn có thể thử lại bước đó. Những bước đã xong sẽ không phải chạy lại.") }}</p>
-      {% if loi_khach %}
+      {% endif %}
+      {% if loi_khach and not dong.loi_co_ma %}
         <div class="asv-hanh-dong">
           <form method="post" action="{{ app.route_prefix }}/run/{{ run.id }}/thu-lai">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">

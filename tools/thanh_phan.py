@@ -54,6 +54,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import re
 import subprocess
 import sys
 import tomllib
@@ -70,13 +71,27 @@ TEP_KHAI = Path(__file__).resolve().parent / "thanh_phan.toml"
 #:    loc yeu di dung mot chut.
 DUNG_CHUNG = (
     "tests/conftest.py",         # fixture goc cua ca bo test
-    "tools/gate.py",             # chinh cong chat luong
-    "tools/test_nhanh.py",       # bo chay test
-    "tools/thanh_phan.py",       # tep nay
-    "tools/thanh_phan.toml",     # so dang ky
     "requirements.txt",
     "requirements-server.txt",
 )
+
+#: 🔴 SU CO 17/09/2026 (tests/test_1500). Truoc day `gate.py`, `test_nhanh.py`,
+#:    `thanh_phan.py`, `thanh_phan.toml` nam trong DUNG_CHUNG ⇒ bat ky luot deploy
+#:    nao mang theo mot commit governance deu khong L1 duoc (tu nang len L3 ⇒ bi tu
+#:    choi giua phien) ⇒ nguoi dung phai L2 thu cong. Nhung chung khong anh huong
+#:    MOI test — chung la CONG CU, thuoc thanh phan `cong_cu`, va co test RIENG (tra
+#:    bang `test_nhac_toi`). Luot gate L1 do chay bang chinh ma moi nen tu kiem luon.
+#: ⛔ `conftest.py` va `requirements*` van o DUNG_CHUNG: chung doi hanh vi cua moi test.
+
+#: Tep KHONG phai ma — khong co ai so huu cung khong buoc chay ca kho. Test nao DOC
+#: no (tra bang chuoi) thi chay dung test do; cac buoc kiem tinh (i18n, luat van hanh,
+#: ky tu dieu khien...) van chay trong moi luot L1.
+TIEN_TO_TAI_LIEU = ("docs/", "locale/")
+DUOI_TAI_LIEU = (".md",)
+TEN_TAI_LIEU = (".gitignore", ".gitattributes", ".editorconfig")
+
+#: Ten tep qua chung de tra bang chuoi — tra ca duong day du thay vao.
+TEN_QUA_CHUNG = frozenset({"README.md", "__init__.py", "index.md", "NOTES.md"})
 
 
 class KhongBiet(Exception):
@@ -323,6 +338,94 @@ def _la_tep_test(duong: str) -> bool:
             and d.rpartition("/")[2].startswith("test_"))
 
 
+def la_tai_lieu(duong: str) -> bool:
+    """Tep khong phai ma: tai lieu, ban dich, cau hinh git (xem TIEN_TO_TAI_LIEU)."""
+    d = _chuan(duong)
+    ten = d.rpartition("/")[2]
+    return (d.startswith(TIEN_TO_TAI_LIEU) or d.endswith(DUOI_TAI_LIEU)
+            or ten in TEN_TAI_LIEU)
+
+
+def _mau_tra(duong: str) -> list["re.Pattern[str]"]:
+    """Mau de tra mot tep trong ma nguon test: duong day du, ten tep, ten module.
+
+    ⚠️ Ranh gioi TU: `import gate` khong duoc khop `import gateway` (do 17/09: ban
+       tra chuoi con keo them 14 tep test VPS/render_gateway khong lien quan).
+    """
+    d = _chuan(duong)
+    ten = d.rpartition("/")[2]
+    ra = [re.compile(r"(?<![\w/.-])" + re.escape(d) + r"(?![\w.-])")]
+    if ten not in TEN_QUA_CHUNG and len(ten) >= 6:
+        ra.append(re.compile(r"(?<![\w.-])" + re.escape(ten) + r"(?![\w.-])"))
+    if d.startswith("tools/") and d.endswith(".py") and d.count("/") == 1:
+        mod = re.escape(ten[:-3])
+        ra.append(re.compile(rf"\b(?:import|from)\s+(?:tools\.)?{mod}\b(?!\.)"))
+        ra.append(re.compile(rf"\btools\.{mod}\b(?!\.\w*\()"))
+    return ra
+
+
+def _van_ban_ma(tep: Path) -> str | None:
+    """Chuoi hang TRONG MA (bo docstring, bo chu thich) + cac cau import, noi dong.
+
+    Do 17/09: tra van ban tho khop ca nhung test chi NHAC `gate.py` trong chu thich
+    (`test_245`, `test_312`) — chay chung khong kiem them gi. Mot test DOC mot tep thi
+    ten tep nam trong mot chuoi hang cua ma, hoac trong mot `import`.
+    """
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            cay = ast.parse(tep.read_text(encoding="utf-8", errors="replace"), filename=str(tep))
+    except (SyntaxError, ValueError, OSError):
+        return None
+    docstring: set[int] = set()
+    for nut in ast.walk(cay):
+        if isinstance(nut, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            than = getattr(nut, "body", [])
+            if (than and isinstance(than[0], ast.Expr) and isinstance(than[0].value, ast.Constant)
+                    and isinstance(than[0].value.value, str)):
+                docstring.add(id(than[0].value))
+    phan: list[str] = []
+    for nut in ast.walk(cay):
+        if isinstance(nut, ast.Constant) and isinstance(nut.value, str) and id(nut) not in docstring:
+            phan.append(nut.value)
+        elif isinstance(nut, ast.Import):
+            phan += [f"import {a.name}" for a in nut.names]
+        elif isinstance(nut, ast.ImportFrom) and nut.module:
+            phan.append(f"from {nut.module} import x")
+    return "\n".join(phan).replace("\\", "/")
+
+
+def test_nhac_toi(duong: set[str], root: Path = ROOT) -> set[str]:
+    """Tep test NHAC TOI (doc, mo, import theo ten) mot tep da doi — tra bang CHUOI.
+
+    Danh cho thu ma do thi import khong thay: tai lieu ma test doc noi dung
+    (`CLAUDE.md`, `AGENTS.md`), ban dich, va cong cu trong `tools/` ma test nap bang
+    `sys.path` + `import test_nhanh`. Tep test da doi va ma san pham co chu thi da
+    co duong khac — bo qua o day.
+    """
+    can_tra: dict[str, list[re.Pattern[str]]] = {}
+    for d in duong:
+        d = _chuan(d)
+        if _la_tep_test(d) or d in DUNG_CHUNG:
+            continue
+        can_tra[d] = _mau_tra(d)
+    if not can_tra:
+        return set()
+    ra: set[str] = set()
+    thu_muc = root / "tests"
+    if not thu_muc.is_dir():
+        return ra
+    for tep in sorted(thu_muc.glob("test_*.py")):
+        noi_dung = _van_ban_ma(tep)
+        if noi_dung is None:
+            # Khong parse duoc thi khong doan: coi nhu no co the doc — chay no.
+            ra.add(tep.relative_to(root).as_posix())
+            continue
+        if any(m.search(noi_dung) for ds in can_tra.values() for m in ds):
+            ra.add(tep.relative_to(root).as_posix())
+    return ra
+
+
 def tep_test_da_doi(duong: set[str]) -> set[str]:
     """Cac tep test trong tap duong dan da doi — nop THANG vao danh sach chay.
 
@@ -371,6 +474,10 @@ def bi_anh_huong(duong: set[str], root: Path = ROOT, *,
             continue
         chu = thanh_phan_cua(d, tp)
         if chu is None:
+            # Tai lieu khong co chu: khong keo ca kho — test doc no di qua
+            # `test_nhac_toi` (gate.py::_thu_hep). Ma khong co chu: van fail-open.
+            if la_tai_lieu(d):
+                continue
             return None
         ra.add(chu)
     if mo_rong_tieu_thu:

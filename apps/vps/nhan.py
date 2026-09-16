@@ -136,6 +136,7 @@ SU_KIEN = {
     "khoi_phuc": N_("Khôi phục về ảnh chụp"),
     "sao_luu": N_("Đã chụp ảnh máy"),
     "bi_treo": N_("Máy bị tạm dừng"),
+    "go_treo": N_("Đã gia hạn, máy được mở lại"),
     "bi_cach_ly": N_("Máy bị cách ly mạng"),
     "go_cach_ly": N_("Đã gỡ cách ly mạng"),
     "treo_khong_tat_duoc": N_("Tạm dừng nhưng chưa tắt được máy"),

@@ -1,5 +1,10 @@
 # VPS V4 — Live Acceptance Runbook
 
+Cập nhật 2026-09-16 (tối): **VPS thật `d96b66f3` (VM 204) đã tạo với một IPv4 OVH
+(đơn 22703620)**; bước 1–4 đạt, bước 5/7 phát hiện R20/R21 (đã sửa, chờ deploy),
+bước 6/8/9 còn lại — theo dõi ở `14_KE_HOACH_VAN_HANH_TOI_UU.md` §6 G7. Mô tả
+dưới đây là trạng thái lúc kích hoạt.
+
 Trạng thái: **ACTIVATION COMMITTED 2026-09-15T17:29:03Z — OVH 0402 ACTIVE +
 DEFAULT (config v3, backend `ovh_static_pool`, mapping `ovh_gwnat`), Vultr 0401
 STANDBY (v2, accept_new off); 6×HEALTHY preflight persisted in one audited

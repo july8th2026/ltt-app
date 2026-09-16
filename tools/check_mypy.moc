@@ -4,7 +4,7 @@
 # la AttributeError luc chay -> tong khong doi).
 
 arg-type = 107
-assignment = 59
+assignment = 57
 attr-defined = 188
 call-overload = 10
 dict-item = 2

@@ -46,8 +46,8 @@ Cache-bust `aa4194b6` · số đếm 45/20/25/0 · chi tiết kho chung không q
 | 1 | ~~E2E góc nhìn chủ 25 giọng~~ | **XONG 23:5x** — chủ thấy 29 "Của tôi" + Tắt/Xoá; khách thứ hai thấy 25 kho chung, không quản lý |
 | 2 | Phiên VPS phải **hoà `main` `d5bd7b07`** trước khi đẩy/deploy nhánh của họ | đã nhắn; nếu không, deploy của họ lùi bản Voice |
 | 3 | ~~Chạy lại `dung_lai_giong_kho_chung` nộp trùng~~ | **ĐÃ SỬA** — bỏ qua giọng đã có job `done` cùng khoá dựng lại (đối chứng production: bỏ qua 25/25) |
-| 4 | Worker khởi động tải `yolov8s.pt` từ GitHub | có sẵn trước V2, ngoài phạm vi Voice |
-| 5 | Cửa `/nghe-thu-van-ban` không có nút GUI nào gọi | ghi nhận |
+| 4 | ~~`yolov8s.pt` tải lại từ GitHub~~ | **ĐÃ SỬA 17/09 (`dc555d41`)** — thật ra tải ở job `taoclipngan` đầu tiên sau MỖI deploy (cwd `app\` bị thay); trọng số nay ở `data\models\yolo\`, tải một lần |
+| 5 | ~~Cửa `/nghe-thu-van-ban` không có nút GUI~~ | **ĐÃ SỬA 17/09 (`bba7f7b1`)** — nút "Nghe thử câu đầu (miễn phí)" trong Studio, chỉ giọng mẫu, ≤160 ký tự; kiểm dev Playwright; production kiểm sau deploy |
 
 ## G. Điểm (§32, tự chấm có căn cứ)
 

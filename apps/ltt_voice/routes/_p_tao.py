@@ -145,6 +145,7 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
     #    cùng một tệp là đúng lớp bẫy đã từng ghi SAI một bút toán credit
     #    (`$So`/`$so` trong PowerShell, 31/08). Ở Python nó không nổ —
     #    nó chỉ chờ tới lần ai đó cần module trong hàm kia.
+    from .. import nghe_thu_cua_toi as _nghe_thu_cua_toi
     from .. import toc_do as _toc_do
 
     return templates.TemplateResponse(
@@ -178,6 +179,11 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
                     toc_do_max=_toc_do.TOC_DO_MAX,
                     toc_do_buoc=_toc_do.TOC_DO_BUOC,
                     toc_do_moc=_toc_do.MOC_THANH_KEO,
+                    # U-13 (16/09/2026): cửa `/nghe-thu-van-ban` có từ 08/09 nhưng
+                    # KHÔNG nút nào gọi. Trần lấy từ `nghe_thu_cua_toi` — chép số ra
+                    # template là hai chỗ khai một điều.
+                    nghe_thu_tran=_nghe_thu_cua_toi.TRAN_KY_TU,
+                    nghe_thu_moi_gio=_nghe_thu_cua_toi.MOI_GIO,
                     du_an_ds=du_an_ds,
                     duong_nghe=duong_nghe,
                     loai_giong=loai_giong,
