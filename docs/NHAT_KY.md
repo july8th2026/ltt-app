@@ -12,6 +12,21 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-17 — Deploy LTTCODE `8a96453e` (updater + đăng nhập + tìm web)
+
+- Gate: L1 `--doi --tu de2c1e9c` (bản đang chạy) **PASS** — `test-results/gates/20260916T231329Z-29080.json`.
+  Ba lượt L1 trước đỏ vì app mới thiếu nghĩa vụ nền tảng: `test_211` (governance
+  `lttcode_auth_codes` + `apps/lttcode/bao_tri.py`), `test_212`/`test_190` (disposition
+  `INTERNAL_ONLY` trong hai tài liệu PUBLIC_API), `test_1006` (miễn trừ HTTP SearXNG loopback).
+  `test_1259` cần `LTT_LLM_BASE_URL`/`LTT_LLM_TOKEN` máy B (token đọc qua SSH, không in).
+  Hai lần phải hoà lại `main` vì phiên Voice (`a3de7c97`) và VPS (`de2c1e9c`) deploy xen giữa.
+- Nghiệm thu: `nghiem_thu_deploy` 0/0/0; `/health/version` = `8a96453e1e31`; `/lttcode` 200
+  (trang tải chỉ đọc kênh `stable` — hiện "Chưa có bản phát hành" là đúng, 0.1.1 ở `dev`);
+  `/lttcode/update/dev/windows/x86_64/0.1.0` 200 → 0.1.1, `.../0.1.1` 204; `/lttcode/search`
+  không khoá 401, khoá thử 200 với 8 nguồn.
+- Còn lại: E2E trên ứng dụng desktop (cập nhật 0.1.0→0.1.1, đăng nhập qua trình duyệt, agent
+  `web_search`) — cần chủ dự án thao tác trên máy.
+
 ## 2026-09-17 — LTTCODE: "Đăng nhập LTT Studios" + tìm kiếm web qua SearXNG riêng
 
 - **Đăng nhập** (`apps/lttcode/dang_nhap.py`, `routes_dang_nhap.py`): PKCE S256 +
