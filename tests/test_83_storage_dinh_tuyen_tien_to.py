@@ -192,3 +192,39 @@ def test_get_storage_khai_tien_to_thi_dinh_tuyen(monkeypatch, tmp_path):
         assert str(s.cuc_bo.root).startswith(str(tmp_path / "data"))
     finally:
         storage.set_storage(None)
+
+
+def _mod_dung_lai():
+    import importlib.util
+    duong = (pathlib.Path(__file__).resolve().parents[1] / "tools"
+             / "dung_lai_giong_kho_chung.py")
+    spec = importlib.util.spec_from_file_location("dung_lai_giong", duong)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_dung_lai_giong_KHOP_sha_moi_nhan():
+    import hashlib
+    mod = _mod_dung_lai()
+    clip = b"RIFF-clip-that"
+    sha = hashlib.sha256(clip).hexdigest()
+    manifest = {"giong": [{"public_id": "vc_1", "tep": "vc_1.wav", "sha256": sha}]}
+    viec = mod.ke_hoach([("vc_1", "u1", 7, "voice/u1/vc_1/source.wav", sha)],
+                        manifest, lambda ten: clip)
+    assert viec == [("vc_1", "u1", 7, "voice/u1/vc_1/source.wav", clip)]
+
+
+@pytest.mark.parametrize("truong_hop", ["thieu_manifest", "tep_lech", "csdl_lech"])
+def test_dung_lai_giong_LECH_la_dung_ca_luot(truong_hop):
+    import hashlib
+    mod = _mod_dung_lai()
+    clip = b"RIFF-clip-that"
+    sha = hashlib.sha256(clip).hexdigest()
+    manifest = {"giong": [] if truong_hop == "thieu_manifest"
+                else [{"public_id": "vc_1", "tep": "vc_1.wav", "sha256": sha}]}
+    doc = (lambda ten: b"khac") if truong_hop == "tep_lech" else (lambda ten: clip)
+    sha_csdl = "0" * 64 if truong_hop == "csdl_lech" else sha
+    with pytest.raises(ValueError):
+        mod.ke_hoach([("vc_1", "u1", 7, "voice/u1/vc_1/source.wav", sha_csdl)],
+                     manifest, doc)
