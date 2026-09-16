@@ -10,7 +10,7 @@
 {% endmacro %}
 
 {% block content %}
-<script src="/static/htmx.min.js"></script>
+<script src="/static/htmx.min.js?v={{ asset_ver }}"></script>
 <div class="clip-studio">
   <header class="clip-heading">
     <div><span class="clip-kicker">AI SHORT-FORM WORKSPACE</span><h1>{{ _("Tạo Clip ngắn") }}</h1><p>{{ _("Chọn nguồn, cấu hình highlight, theo dõi transcript và so sánh output thật.") }}</p></div>

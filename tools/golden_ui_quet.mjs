@@ -65,7 +65,9 @@ for (const r of cauHinh.routes) {
       loi.push(t.slice(0, 300)); });
     page.on('pageerror', e => loi.push('pageerror: ' + e.message.slice(0, 300)));
     page.on('requestfailed', q => hong.push(q.url() + ' ' + (q.failure()?.errorText || '')));
-    page.on('response', s => { if (s.status() >= 400 && s.url() !== goc.origin + r.duong) hong.push(s.status() + ' ' + s.url()); });
+    page.on('response', s => {
+      if (s.request().isNavigationRequest() && s.frame() === page.mainFrame()) maTaiLieu = s.status();
+      if (s.status() >= 400 && s.url() !== goc.origin + r.duong) hong.push(s.status() + ' ' + s.url()); });
     const nhan = `${r.ten}@${k.w}`;
     const dong = { ten: r.ten, ho: r.ho, duong: r.duong, vai: r.vai || 'an_danh', khung: `${k.w}x${k.h}` };
     try {

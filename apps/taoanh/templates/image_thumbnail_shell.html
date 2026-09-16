@@ -3,7 +3,7 @@
 {% block title %}{{ _("Tạo ảnh AI") }} — LTT AI Studio{% endblock %}
 {% block topbar_title %}<strong>{{ _("Tạo ảnh AI") }}</strong>{% endblock %}
 {% block content %}
-<script src="/static/htmx.min.js"></script>
+<script src="/static/htmx.min.js?v={{ asset_ver }}"></script>
 <section class="image-unified-shell" aria-labelledby="image-shell-title">
   {% set image_mode = 'thumbnail' %}{% include "_image_mode_nav.html" %}
   <header class="image-shell-heading">

@@ -16559,3 +16559,15 @@ msgstr "Open a tool from the app catalog; every job you run appears here with it
 
 msgid "Mở kho ứng dụng"
 msgstr "Open app catalog"
+
+msgid "Tạo đơn %(gia)s"
+msgstr "Create order %(gia)s"
+
+msgid "Chưa có gói nạp"
+msgstr "No credit packages yet"
+
+msgid "Thao tác"
+msgstr "Actions"
+
+msgid "Đơn nạp #%(ma)s"
+msgstr "Top-up order #%(ma)s"

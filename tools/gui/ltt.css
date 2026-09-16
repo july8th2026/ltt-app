@@ -208,7 +208,7 @@ html{background:var(--surface-canvas)}
 .inp:focus-visible,.ui-input:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
 
 /* ── Table ── */
-.tablewrap{border:1px solid var(--line);border-radius:12px;overflow-x:auto;background:var(--panel)}
+.tablewrap{position:relative;border:1px solid var(--line);border-radius:12px;overflow-x:auto;background:var(--panel)}
 .ui-table{width:100%;border-collapse:collapse;font-size:13px}
 .ui-table thead th{text-align:left;color:var(--dim);font-weight:500;font-size:10.5px;letter-spacing:.06em;
   text-transform:uppercase;padding:11px 14px;background:var(--bg2);border-bottom:1px solid var(--line);white-space:nowrap}
@@ -3826,3 +3826,41 @@ button.lv-the-song.nghe-loi,.lv-chon-nghe.nghe-loi{
 .market-rail .ui-progress{height:4px;margin:6px 0}
 /* Mã định danh trong eyebrow giữ nguyên hoa/thường — `7bdca720` không phải `7BDCA720`. */
 .eyebrow .mono{text-transform:none;letter-spacing:.02em}
+
+/* ── Billing (Golden UI 16/09) — lớp thay ~30 inline style ở nap*.html ───────
+ * Trước đây thẻ gói dùng `background:linear-gradient(135deg,var(--accent)22,…)`
+ * — cú pháp KHÔNG hợp lệ (nối hex alpha vào `var()`), trình duyệt bỏ cả khai báo,
+ * để lại khối trống 120px chỉ có một icon 16px (P2-01). */
+.billing-alert{margin:var(--space-3) 0}
+.billing-alert-top{margin:0 0 14px}
+.billing-alert-flush{margin:0}
+.billing-alert-gap{margin-top:var(--space-5);text-align:left}
+.billing-block{margin-top:14px}
+.appcard .billing-cover{height:72px;background:linear-gradient(135deg,var(--brand-soft),transparent 70%)}
+.billing-cover-ico{font-size:26px;line-height:1}
+.billing-package h2{margin:0 0 2px}
+.billing-eyebrow{margin:8px 0 0}
+.billing-eyebrow-top{margin-top:0}
+.billing-price{margin:6px 0;color:var(--text-primary);font-size:22px;font-weight:700}
+.billing-credit{margin-bottom:12px;color:var(--text-secondary);font-size:var(--fs-label);line-height:1.6}
+.billing-bonus{color:var(--status-success)}
+.billing-bonus-soft{font-weight:400}
+.billing-total{color:var(--text-primary)}
+.billing-order{max-width:620px;margin-top:14px}
+.billing-cta-full{width:100%;justify-content:center}
+.billing-status-slot{margin-top:var(--space-4)}
+.billing-status{margin-top:18px}
+.billing-paid{padding:var(--space-4);border:1px solid var(--status-success-border);border-radius:var(--radius-lg);
+  background:var(--status-success-soft)}
+.billing-paid-head{display:flex;align-items:center;gap:10px}
+.billing-paid-icon{display:flex;flex:0 0 auto;align-items:center;justify-content:center;width:26px;height:26px;
+  border-radius:50%;background:var(--status-success);color:var(--surface-canvas);font-size:15px;font-weight:700}
+.billing-paid-title{color:var(--status-success);font-size:16px}
+.billing-line-first{margin-top:14px}
+.billing-ref{font-size:12px;overflow-wrap:anywhere}
+.billing-actions{margin-top:var(--space-4)}
+.billing-actions-sm{margin-top:var(--space-3)}
+.billing-hint{margin:8px 0 0;font-size:12px}
+/* `.tablewrap` PHẢI định vị (position:relative, ở khối gốc phía trên). Một
+ * `.sr-only` (absolute) trong ô tiêu đề của bảng cuộn ngang sẽ neo theo tổ tiên
+ * NGOÀI khung cuộn và kéo rộng cả trang — đo 16/09: `/nap` @390 rộng 604px. */

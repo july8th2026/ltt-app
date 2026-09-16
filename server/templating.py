@@ -91,7 +91,9 @@ ASV_STUDIO_JS = ("asv/nen.js", "asv/xem_truoc.js", "asv/giong.js",
 
 TAI_SAN_CO_VERSION = ("ltt.css", "sao_chep.js", "cam_chon.js", "chon_tep.js",
                       "voice.js", "dev_playground.js", "nhip_job.js",
-                      "lttvideo.js") + ASV_STUDIO_JS
+                      "lttvideo.js",
+                      # Golden UI 16/09: 9 template nap htmx tu nay mang `?v=`.
+                      "htmx.min.js") + ASV_STUDIO_JS
 
 
 def _tinh_asset_ver() -> str:

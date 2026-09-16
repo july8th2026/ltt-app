@@ -1,34 +1,29 @@
 {% extends "base.html" %}
-{% block title %}Không tìm thấy đơn nạp — LTT AI Studio{% endblock %}
+{% block title %}{{ _("Không tìm thấy đơn nạp này") }} — LTT AI Studio{% endblock %}
 {% block content %}
 
-  <div class="ui-card" style="max-width:560px;margin:32px auto;text-align:center">
-    <div aria-hidden="true"
-         style="width:56px;height:56px;margin:4px auto 16px;border-radius:50%;
-                display:flex;align-items:center;justify-content:center;
-                background:var(--warn-bg);border:1px solid var(--warn-line);
-                font-size:26px;line-height:1">🔎</div>
-
-    <h1 style="margin:0 0 8px;font-size:20px">{{ _("Không tìm thấy đơn nạp này") }}</h1>
-    <p class="dim" style="margin:0 0 4px">{{ _("Đường dẫn không khớp đơn nào trong tài khoản của bạn.") }}</p>
+  <section class="ui-state ui-state--warn" aria-labelledby="don-khong-thay">
+    <p class="ui-state-eyebrow">{{ _("Lỗi %(ma)s", ma=404) }}</p>
+    <h1 id="don-khong-thay" class="ui-state-title">{{ _("Không tìm thấy đơn nạp này") }}</h1>
+    <p class="ui-state-lead">{{ _("Đường dẫn không khớp đơn nào trong tài khoản của bạn.") }}</p>
 
     {% if ma_tra_ve %}
-      <p class="dim" style="margin:0 0 4px;font-size:13px">
+      <p class="ui-state-body">
         {{ _("Mã đơn cổng thanh toán gửi về:") }} <span class="mono">{{ ma_tra_ve }}</span>
       </p>
     {% endif %}
 
-    <div class="alert alert-warn" style="margin:18px 0 0;text-align:left">
+    <div class="alert alert-warn billing-alert-top billing-alert-gap">
       <strong>{{ _("Nếu bạn vừa chuyển tiền, tiền không mất.") }}</strong>
       {{ _("Credit được cộng khi ngân hàng báo về, không phụ thuộc trang này.") }}
       {{ _("Mở") }} <a href="{{ u('/nap') }}">{{ _("trang nạp credit") }}</a>
       {{ _("để xem lịch sử đơn và số dư mới nhất. Sau 5 phút vẫn chưa thấy cộng, gửi cho quản trị mã giao dịch ngân hàng.") }}
     </div>
 
-    <div class="actions" style="justify-content:center;margin-top:18px">
-      <a class="btn" href="/nap">{{ _("Về trang nạp credit") }}</a>
-      <a class="btn ghost" href="/">{{ _("Trang chủ") }}</a>
+    <div class="ui-state-actions">
+      <a class="btn" href="{{ u('/nap') }}">{{ _("Về trang nạp credit") }}</a>
+      <a class="btn ghost" href="{{ u('/') }}">{{ _("Trang chủ") }}</a>
     </div>
-  </div>
+  </section>
 
 {% endblock %}

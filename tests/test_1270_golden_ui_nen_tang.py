@@ -180,3 +180,31 @@ def test_man_viec_khong_in_slug_va_job_type_cho_khach():
     for ten in ("jobs.html", "_job_progress.html"):
         html = (GOC / "server" / "templates" / ten).read_text(encoding="utf-8")
         assert "ui.nhan_trang_thai(" in html, ten
+
+
+# ── 5. Billing: số kiểu Việt, hợp đồng thanh toán giữ nguyên ─────────────────
+
+BILLING = ("nap.html", "nap_don.html", "_nap_trangthai.html", "nap_khong_thay.html")
+
+
+@pytest.mark.parametrize("ten", BILLING)
+def test_billing_khong_dinh_dang_so_kieu_anh(ten):
+    html = (GOC / "server" / "templates" / ten).read_text(encoding="utf-8")
+    # `'{:,}'.format(x)` in `200,000đ` giữa giao diện tiếng Việt (P1-08).
+    assert "'{:,}'" not in html and '"{:,}"' not in html
+    assert 'style="' not in html, "inline style đã gom về lớp billing-*"
+
+
+def test_billing_giu_nguyen_form_va_hx_cua_thanh_toan():
+    nap = (GOC / "server" / "templates" / "nap.html").read_text(encoding="utf-8")
+    assert '<form method="post" action="/nap/tao">' in nap
+    assert 'name="csrf_token"' in nap and 'name="package_id" value="{{ g.id }}"' in nap
+    don = (GOC / "server" / "templates" / "nap_don.html").read_text(encoding="utf-8")
+    assert 'hx-get="/nap/don/{{ order.id }}/trangthai{% if vua_ve %}?ve=1{% endif %}"' in don
+    assert 'hx-trigger="load" hx-swap="outerHTML"' in don and 'rel="noopener"' in don
+    tt = (GOC / "server" / "templates" / "_nap_trangthai.html").read_text(encoding="utf-8")
+    assert tt.count('<div id="tt"') == 3 and 'hx-trigger="every 4s"' in tt
+
+
+def test_tablewrap_dinh_vi_de_sr_only_khong_keo_rong_trang():
+    assert re.search(r"\n\.tablewrap\{position:relative;", CSS)

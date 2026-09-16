@@ -32,9 +32,9 @@ nào < 88 · critical UI xác minh ở mức render thật (E3).
 | Bộ quét | `node tools/golden_ui_quet.mjs --cau-hinh routes.json --ra <dir> [--khung ...]` — HTTP, ảnh toàn trang, console, request hỏng, tràn ngang, axe WCAG 2.2 AA, h1/main/lang, ô chạm, ô nhập <16px |
 
 ## Overall Progress
-27%
+33%
 
-(Trọng số: P0 5 · P1 10 · P2 15 · P3 15 · P4 20 · P5 15 · P6 10 · P7 10. Tính: P0 100%·5 + P1 100%·10 + P2 45%·15 + P3 30%·15 + P4 25%·20 = 5+10+6,75+4,5+5 ≈ 31 → trừ 4 điểm vì chưa có chứng nhận gate nào ⇒ **27%**.)
+(Trọng số: P0 5 · P1 10 · P2 15 · P3 15 · P4 20 · P5 15 · P6 10 · P7 10. Tính: P0 100%·5 + P1 100%·10 + P2 45%·15 + P2 50%·15 + P3 35%·15 + P4 45%·20 = 5+10+7,5+5,25+9 ≈ 37 → trừ 4 điểm vì chưa có chứng nhận gate nào ⇒ **33%**.)
 
 ## Current Baseline
 
@@ -227,11 +227,12 @@ Kế hoạch: page header · button 4 biến thể · field (label/helper/error)
 Macro Jinja dùng chung ở `server/templates/_ui.html` — chỉ nếu ≥3 nơi dùng.
 
 ## Phase 4 — Critical Pages
-Progress: 10%
+Progress: 45%
 
 Completed:
 - Error (P0-02) — xem P0 Issues. Browser E3: 404/403 thật + 400/401/403/404/413/429/500/503 render state, 390 & 1440, axe 0 serious/critical.
 - Jobs (PARTIAL): `/jobs` tên app thay slug, bỏ cột `job_type`, nhãn trạng thái dùng chung, lọc app theo tên, trạng thái rỗng có CTA; `/jobs/{id}` h1 = tên app, mã việc ở eyebrow, progressbar có tên. E3: 18 phép đo (list/lọc/5 state/retry/admin) axe **0** (baseline 22). Còn: 430/768/1920, tương tác hủy/thử lại trên trình duyệt.
+- Billing (PARTIAL): `nap.html`, `nap_don.html`, `_nap_trangthai.html`, `nap_khong_thay.html` — số kiểu Việt qua `| so` / `| tien_vnd` (hết `200,000đ`), 0 inline style (gom về `billing-*`), gradient bìa thẻ gói KHÔNG hợp lệ (`var(--accent)22`) thay bằng token, khối trống 120px → 72px, lịch sử đơn dùng `ui.nhan_trang_thai(…, 'don')` phân biệt đủ 5 trạng thái, bảng lịch sử là vùng cuộn focus được, `nap_khong_thay` dùng `.ui-state`. Form `/nap/tao`, `hx-get`/`hx-trigger`/`id="tt"`/`role`/`aria-live` giữ nguyên (chốt test). E3: 20 phép đo (8 state đơn + không thấy) axe **0** (baseline 30); htmx fragment tải và thay đúng, 0 request hỏng. Hồi quy tự gây ra đã sửa: `span.sr-only` trong bảng cuộn kéo trang @390 lên 604px ⇒ `.tablewrap{position:relative}`.
 Thứ tự: Error → Auth → Billing → Jobs → Shell/Header/Workspace home.
 
 ## Phase 5 — Remaining Pages & Apps
@@ -264,20 +265,20 @@ Screenshot regression Playwright (`toHaveScreenshot`) cho critical screens; test
 | P1-05 | `main` nhân đôi (10 màn) · thiếu `h1` (`/status`, canvas, chatltt, autosub) · `h1` ×6 ở ommi classic | shell + app |
 | P1-06 🟡 PARTIAL (jobs, rail trang chủ, taoanh, thumbnail, transcript, prompt-canh, audio-pause, video-assembly xong; còn dev/admin nội bộ) | Enum nội bộ lộ ra khách: `running · 20%`, `queued · 0%`, `cancelled · 10%` (taoanh), `running/queued/done` (rail home), tiêu đề `Job 8fde2d41`, `taoanh · taoanh.generate` (job detail) | jobs, workspace, apps |
 | P1-07 | i18n: nhãn tiếng Anh cứng (`GENERATIVE IMAGE`, `OUTPUT HISTORY`, `REFERENCE & EDIT`), chip thể loại lẫn hoa/thường (`audio`, `video` cạnh `AI Video`), chuỗi không qua `_()` ở error/jobs/nap/auth/status, sqladmin toàn tiếng Anh (`Search`, `Actions`, `Showing 1 to 3`) | toàn hệ |
-| P1-08 | Định dạng số kiểu Anh trong giao diện Việt: `200,000đ`, `2,200 credit`, `1,000,000đ` (billing) trong khi VPS/Developer dùng `149.000đ`, `1.250` | billing, jobs |
+| P1-08 🟡 PARTIAL (billing xong; còn home rail/dev/VPS kiểm lại) | Định dạng số kiểu Anh trong giao diện Việt: `200,000đ`, `2,200 credit`, `1,000,000đ` (billing) trong khi VPS/Developer dùng `149.000đ`, `1.250` | billing, jobs |
 | P1-09 | Progressbar không tên (12) · vùng cuộn `<pre>` không focus được (35) · control lồng control ở thẻ giọng Voice (18) · control thiếu nhãn ở admin `api-key-them` | a11y |
 | P1-10 | sqladmin list: menu "Actions" đè dòng đầu bảng, "Show 10 / Page" trôi ngoài card | admin |
 | P1-11 | `/admin/khach-hang` tràn ngang ở 390 | admin |
 | P1-12 | Ảnh bìa thẻ app không đồng nhất: nửa có ảnh, nửa là khối tối rỗng (catalog ẩn danh + workspace) | public, workspace |
 | P1-13 | Nút "Tạo tiếng nói" (Voice) che mô tả phía dưới ở 1440 (thanh dính đè nội dung) | apps |
 | P1-14 | ~3.500 `style=""` + `<style>` riêng ở 10 template; biến thể nút/badge riêng theo trang | toàn hệ |
-| P1-15 | Tài sản không cache-bust: `htmx.min.js` (8 template), noVNC `rfb.js`, static sqladmin | shell |
+| P1-15 🟡 PARTIAL (`htmx.min.js` ×9 template có `?v=` + vào `TAI_SAN_CO_VERSION`; còn noVNC, sqladmin static) | Tài sản không cache-bust: `htmx.min.js` (8 template), noVNC `rfb.js`, static sqladmin | shell |
 
 ## P2 Issues
 
 | ID | Vấn đề |
 |---|---|
-| P2-01 | Thẻ gói nạp: khối trống 120px phía trên chỉ chứa icon kim cương nhỏ |
+| P2-01 ✅ | Thẻ gói nạp: khối trống 120px phía trên chỉ chứa icon kim cương nhỏ (gốc: gradient CSS không hợp lệ) |
 | P2-02 | Link inline dùng gạch chân đỏ đậm lẫn link không gạch chân — hai ngôn ngữ link |
 | P2-03 | Số bước đánh lệch trong Tạo ảnh (01, 02, 03 rồi 04 ở cột khác) |
 | P2-04 | Icon emoji lẫn icon SVG trong thẻ app và menu |
@@ -319,6 +320,8 @@ Screenshot regression Playwright (`toHaveScreenshot`) cho critical screens; test
 | EV-07 | E2 | axe `color-contrast` theo cặp màu: `#fff`/`#ef3731` = 3,99:1 là 144/312 lỗi baseline |
 | EV-08 | E3 | `after/p3-status`: 36 phép đo jobs/home/6 app — axe 0 trên jobs & home |
 | EV-09 | E2 | `test_1270` 36/36; `test_107`, `test_109` cập nhật để chốt dùng macro (6/6) |
+| EV-10 | E3 | `after/p4-billing`, `after/p4-nap`: 21 phép đo billing, axe 0, không tràn |
+| EV-11 | E2 | `test_1270` 42/42 + `test_106` (3/3, cập nhật chốt macro), `test_369` asset_ver đủ |
 
 ## Current Blocker
 
@@ -326,4 +329,4 @@ Không có.
 
 ## Next Action
 
-Phase 4 Billing: định dạng số VN (`| so`, `| tien_vnd`) thay `200,000đ` (P1-08), nhãn đơn nạp dùng chung, rồi Auth + shell DL-001.
+Phase 4 Auth (base_plain: inline style → lớp, i18n tiêu đề/phụ đề) rồi shell DL-001 (workspace home dùng token thay ~200 hex, header/footer chung).

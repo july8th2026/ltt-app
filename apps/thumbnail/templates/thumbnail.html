@@ -13,7 +13,7 @@
 {% endmacro %}
 
 {% block content %}
-<script src="/static/htmx.min.js"></script>
+<script src="/static/htmx.min.js?v={{ asset_ver }}"></script>
 <section class="th-studio" aria-labelledby="th-title">
   <nav class="image-product-tabs" aria-label="{{ _('Chế độ Tạo ảnh AI') }}"><a href="/taoanh">{{ _("Ảnh tổng quát") }}</a><a href="/taoanh/thumbnail" aria-current="page">{{ _("Thumbnail YouTube") }}</a></nav>
   <header class="th-heading"><div><span class="th-kicker">AI CREATIVE STUDIO · THUMBNAIL MODE</span><h1 id="th-title">{{ _("Tạo ảnh AI") }}</h1>

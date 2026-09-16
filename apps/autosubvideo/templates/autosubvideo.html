@@ -22,7 +22,7 @@
   {% for href in studio_css %}<link rel="stylesheet" href="{{ href }}">{% endfor %}
   {% for src in studio_js %}<script type="module" src="{{ src }}"></script>{% endfor %}
   {% else %}
-  <script src="/static/htmx.min.js"></script>
+  <script src="/static/htmx.min.js?v={{ asset_ver }}"></script>
   {% if error %}<div class="alert alert-err">{{ error }}</div>{% endif %}
 
   <div class="ui-card">
