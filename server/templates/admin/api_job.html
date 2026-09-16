@@ -43,7 +43,7 @@
         <td class="tnum">{{ it.held }}</td>
       </tr>
       {% else %}
-      <tr><td colspan="9" class="muted" style="padding:26px;text-align:center">Không có job API nào trong khoảng này.</td></tr>
+      <tr><td colspan="9" class="muted o-trong">Không có job API nào trong khoảng này.</td></tr>
       {% endfor %}
     </tbody>
   </table></div>
@@ -51,7 +51,7 @@
   {{ m.phan_trang(page, base) }}
 
   <section>
-    <h2 style="margin:22px 0 10px">Webhook hỏng</h2>
+    <h2 class="u-tieu-muc">Webhook hỏng</h2>
     {# Phan biet nay quan trong: `failed` se duoc thu lai, `dead` thi khong — va
        chi cai thu hai la mot khach dang LANG LE mat callback. #}
     <p class="muted">Dòng <b>dead</b> đứng trước: một delivery <i>failed</i> sẽ

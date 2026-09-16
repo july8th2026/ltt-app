@@ -7,7 +7,7 @@
 </div>
 
 <div class="card">
-  <h2 style="margin-top:0;">{{ _("Lấy dữ liệu của bạn") }}</h2>
+  <h2 class="u-mt0">{{ _("Lấy dữ liệu của bạn") }}</h2>
   <p>{{ _("Tải về dưới dạng JSON: tài khoản, project, khoá (chỉ nửa công khai), job, bút toán credit, ngân sách, webhook và nhật ký request gần đây.") }}</p>
   <p><a class="btn" href="/developers/privacy/export">{{ _("Tải dữ liệu (JSON)") }}</a></p>
   <p class="muted">{{ _("Chuỗi bí mật của khoá KHÔNG nằm trong file — máy chủ không lưu nó ở đâu cả, nên không có gì để xuất.") }}</p>
@@ -15,7 +15,7 @@
 
 {% for klass, stores in classes %}
   <div class="card">
-    <h2 style="margin-top:0;">
+    <h2 class="u-mt0">
       {% if klass == "evidence" %}{{ _("Bằng chứng — không bao giờ xoá") }}
       {% elif klass == "operational" %}{{ _("Vận hành — tự hết hạn") }}
       {% elif klass == "content" %}{{ _("Nội dung của bạn") }}
@@ -49,7 +49,7 @@
 {% endfor %}
 
 <div class="card">
-  <h2 style="margin-top:0;">{{ _("Điều khoản pháp lý") }}</h2>
+  <h2 class="u-mt0">{{ _("Điều khoản pháp lý") }}</h2>
   <p class="muted">{{ _("Trang này mô tả kỹ thuật. Cam kết pháp lý nằm ở các trang chính thức, và chúng tôi cố ý KHÔNG chép lại chúng ở đây — hai bản của một lời hứa thì sớm muộn sẽ khác nhau.") }}</p>
   <ul>
     <li><a href="{{ legal.privacy }}">{{ _("Chính sách riêng tư") }}</a></li>

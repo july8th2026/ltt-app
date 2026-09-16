@@ -33,7 +33,7 @@
 
   {% if found.user or found.project or found.key %}
   <section>
-    <h2 style="margin:22px 0 10px">Ai</h2>
+    <h2 class="u-tieu-muc">Ai</h2>
     <div class="tablewrap" tabindex="0"><table class="ui-table"><tbody>
       {% if found.user %}
       <tr><th>Tài khoản</th><td><a href="/admin/api-tai-khoan?user={{ found.user.id }}">{{ found.user.email }}</a></td></tr>
@@ -53,7 +53,7 @@
   {% set j = found.job %}
   {% if found.request or j or found.credit or found.webhooks %}
   <section>
-    <h2 style="margin:22px 0 10px">Dòng thời gian</h2>
+    <h2 class="u-tieu-muc">Dòng thời gian</h2>
     <div class="tablewrap" tabindex="0"><table class="ui-table">
       <thead><tr><th>Bước</th><th></th><th></th><th>Lúc</th></tr></thead>
       <tbody>
@@ -88,7 +88,7 @@
 
   {% if j %}
   <section>
-    <h2 style="margin:22px 0 10px">Sự kiện job (gồm cả nội bộ)</h2>
+    <h2 class="u-tieu-muc">Sự kiện job (gồm cả nội bộ)</h2>
     <p class="muted">Trang của khách chỉ hiện dòng <i>khách</i>. Chỗ này hiện cả
       hai — đó là toàn bộ lý do có một trang truy vết cho người vận hành.</p>
     <div class="tablewrap" tabindex="0"><table class="ui-table">
@@ -110,7 +110,7 @@
   </section>
   {% if j.error %}
   <section>
-    <h2 style="margin:22px 0 10px">Lỗi thô</h2>
+    <h2 class="u-tieu-muc">Lỗi thô</h2>
     <p class="muted">Khách được xem một bản đã làm sạch (Q76). Bản gốc ở đây.</p>
     <pre class="mono" style="white-space:pre-wrap">{{ j.error[:2000] }}</pre>
   </section>
@@ -119,7 +119,7 @@
 
   {% if found.requests %}
   <section>
-    <h2 style="margin:22px 0 10px">Lời gọi gần đây</h2>
+    <h2 class="u-tieu-muc">Lời gọi gần đây</h2>
     <div class="tablewrap" tabindex="0"><table class="ui-table">
       <thead><tr><th>Lúc</th><th>Route</th><th>HTTP</th><th>Mã</th><th>Correlation</th></tr></thead>
       <tbody>
@@ -139,7 +139,7 @@
 
   {% if found.security %}
   <section>
-    <h2 style="margin:22px 0 10px">Sự kiện bảo mật</h2>
+    <h2 class="u-tieu-muc">Sự kiện bảo mật</h2>
     <div class="tablewrap" tabindex="0"><table class="ui-table">
       <thead><tr><th>Lúc</th><th>Loại</th><th>IP</th><th>Khoá</th></tr></thead>
       <tbody>

@@ -2,7 +2,7 @@
 {% block content %}
 
 <div class="card">
-  <h1 style="margin-top:0;">{{ _("Điều khoản dịch vụ API") }}</h1>
+  <h1 class="u-mt0">{{ _("Điều khoản dịch vụ API") }}</h1>
   <p>{{ _("Trang này mô tả cách API tính tiền và phục vụ — bằng đúng những gì hệ thống đang làm.") }}</p>
   <p class="muted">
     {{ _("phiên bản") }} <code>{{ phien_ban }}</code>
@@ -14,7 +14,7 @@
 
 {% if not san_sang %}
 <div class="card" style="border-left:4px solid #d97706;">
-  <h2 style="margin-top:0;">⚠️ {{ _("Bản này CHƯA đầy đủ") }}</h2>
+  <h2 class="u-mt0">⚠️ {{ _("Bản này CHƯA đầy đủ") }}</h2>
   <p>
     {{ _("Những gì viết dưới đây là chính xác — mỗi mục đều mô tả hành vi đã đo trên hệ thống đang chạy. Nhưng bản điều khoản đầy đủ còn thiếu các phần về giới hạn trách nhiệm, cam kết mức độ sẵn sàng, hoàn tiền phần credit chưa dùng và chấm dứt tài khoản.") }}
   </p>
@@ -25,21 +25,21 @@
 {% endif %}
 
 <div class="card">
-  <h2 style="margin-top:0;">{{ _("Cách tính tiền") }}</h2>
+  <h2 class="u-mt0">{{ _("Cách tính tiền") }}</h2>
   <table class="table">
     <thead><tr>
       <th>{{ _("Loại token") }}</th>
       {% for b in cac_bang %}
-      <th style="text-align:right;">{{ _("credit / 1 triệu token") }} <code>{{ b.model }}</code></th>
+      <th class="u-phai">{{ _("credit / 1 triệu token") }} <code>{{ b.model }}</code></th>
       {% endfor %}
     </tr></thead>
     <tbody>
       <tr><td>{{ _("Token vào") }}</td>
-        {% for b in cac_bang %}<td style="text-align:right;">{{ b.token_vao }}</td>{% endfor %}</tr>
+        {% for b in cac_bang %}<td class="u-phai">{{ b.token_vao }}</td>{% endfor %}</tr>
       <tr><td>{{ _("Token vào lấy lại từ cache") }}</td>
-        {% for b in cac_bang %}<td style="text-align:right;">{{ b.token_vao_cache }}</td>{% endfor %}</tr>
+        {% for b in cac_bang %}<td class="u-phai">{{ b.token_vao_cache }}</td>{% endfor %}</tr>
       <tr><td>{{ _("Token ra") }}</td>
-        {% for b in cac_bang %}<td style="text-align:right;">{{ b.token_ra }}</td>{% endfor %}</tr>
+        {% for b in cac_bang %}<td class="u-phai">{{ b.token_ra }}</td>{% endfor %}</tr>
     </tbody>
   </table>
   {% for b in cac_bang %}
@@ -50,7 +50,7 @@
 </div>
 
 <div class="card">
-  <h2 style="margin-top:0;">{{ _("Chúng tôi cam kết những gì") }}</h2>
+  <h2 class="u-mt0">{{ _("Chúng tôi cam kết những gì") }}</h2>
   <p class="muted">{{ _("Mỗi mục dưới đây mô tả hành vi đã đo được, không phải ý định.") }}</p>
   {% for m in muc %}
   <h3 style="margin-bottom:.25rem;">{{ _(m.tieu_de) }}</h3>
@@ -59,19 +59,19 @@
 </div>
 
 <div class="card">
-  <h2 style="margin-top:0;">{{ _("Giới hạn kỹ thuật") }}</h2>
+  <h2 class="u-mt0">{{ _("Giới hạn kỹ thuật") }}</h2>
   <table class="table">
     <thead><tr>
       <th>{{ _("Model") }}</th>
-      <th style="text-align:right;">{{ _("ngữ cảnh công bố") }}</th>
-      <th style="text-align:right;">{{ _("trần đầu ra") }}</th>
+      <th class="u-phai">{{ _("ngữ cảnh công bố") }}</th>
+      <th class="u-phai">{{ _("trần đầu ra") }}</th>
     </tr></thead>
     <tbody>
       {% for ten, v in tran.items() %}
       <tr>
         <td><code>{{ ten }}</code></td>
-        <td style="text-align:right;">{{ "{:,}".format(v.cong_bo) }}</td>
-        <td style="text-align:right;">{{ "{:,}".format(v.tran_ra) }}</td>
+        <td class="u-phai">{{ "{:,}".format(v.cong_bo) }}</td>
+        <td class="u-phai">{{ "{:,}".format(v.tran_ra) }}</td>
       </tr>
       {% endfor %}
     </tbody>
@@ -84,7 +84,7 @@
 </div>
 
 <div class="card">
-  <h2 style="margin-top:0;">{{ _("Dữ liệu của bạn") }}</h2>
+  <h2 class="u-mt0">{{ _("Dữ liệu của bạn") }}</h2>
   <p>{{ _("Nền tảng ghi lại dữ liệu vận hành trong") }} <strong>{{ so_bang }}</strong>
      {{ _("nhóm dữ liệu, mỗi nhóm có một quy tắc lưu trữ riêng.") }}</p>
   <p><a href="/developers/du-lieu">{{ _("Xem chi tiết từng nhóm và thời hạn lưu") }}</a></p>

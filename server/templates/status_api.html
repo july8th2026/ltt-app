@@ -21,7 +21,7 @@
         {% for row in report.capabilities %}
           <tr>
             <td><b>{{ row.capability }}</b><br>
-              <span class="muted" style="font-size:11px;">
+              <span class="muted u-fs11">
                 {% for name in row.tools %}<code>{{ name }}</code> {% endfor %}</span></td>
             <td>{{ row.wording }}</td>
             <td class="muted">
@@ -36,7 +36,7 @@
     </table>
   </div>
 
-  <p class="muted" style="margin-top:18px;">
+  <p class="muted u-mt18">
     {{ _("Trang này nói theo NĂNG LỰC, không theo hạ tầng bên trong — cố ý như vậy. Muốn biết một lời gọi cụ thể của bạn hỏng ở đâu thì xem Nhật ký request trong khu API của bạn; correlation id trên phản hồi là thứ hỗ trợ cần.") }}
   </p>
 </div>

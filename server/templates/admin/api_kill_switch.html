@@ -44,13 +44,13 @@
                                "Bật lại", min_reason, them={"switch_id": r.id}) }}</td>
       </tr>
       {% else %}
-      <tr><td colspan="7" class="muted" style="padding:26px;text-align:center">Không có công tắc nào đang bật. Đó là trạng thái bình thường.</td></tr>
+      <tr><td colspan="7" class="muted o-trong">Không có công tắc nào đang bật. Đó là trạng thái bình thường.</td></tr>
       {% endfor %}
     </tbody>
   </table></div>
 
   <section>
-    <h2 style="margin:22px 0 10px">Bật một công tắc</h2>
+    <h2 class="u-tieu-muc">Bật một công tắc</h2>
     <form method="post" action="/admin/api-kill-switch-action">
       <input type="hidden" name="csrf_token" value="{{ token }}">
       <input type="hidden" name="op" value="engage">

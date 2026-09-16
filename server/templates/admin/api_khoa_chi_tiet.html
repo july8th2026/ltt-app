@@ -47,7 +47,7 @@
   </div>
 
   <section>
-    <h2 style="margin:22px 0 10px">Thông tin</h2>
+    <h2 class="u-tieu-muc">Thông tin</h2>
     <div class="tablewrap" tabindex="0"><table class="ui-table"><tbody>
       <tr><th>Phạm vi</th><td>{{ the(k.scopes) }}</td></tr>
       <tr><th>Giới hạn công cụ</th><td>{{ the(k.allowed_tools) }}</td></tr>
@@ -59,7 +59,7 @@
   </section>
 
   <section>
-    <h2 style="margin:22px 0 10px">Thao tác</h2>
+    <h2 class="u-tieu-muc">Thao tác</h2>
     {% if trang_thai == "revoked" %}
     <p class="muted">Khoá đã thu hồi. Không còn thao tác nào — thu hồi là một chiều.</p>
     {% elif trang_thai == "disabled" %}
@@ -70,7 +70,7 @@
   </section>
 
   <section>
-    <h2 style="margin:22px 0 10px">10 lời gọi gần nhất</h2>
+    <h2 class="u-tieu-muc">10 lời gọi gần nhất</h2>
     <div class="tablewrap" tabindex="0"><table class="ui-table">
       <thead><tr><th>Lúc</th><th>Route</th><th>HTTP</th><th>Mã</th></tr></thead>
       <tbody>

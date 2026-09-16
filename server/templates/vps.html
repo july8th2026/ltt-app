@@ -91,7 +91,7 @@
    ⚠️ **TOÀN VĂN LÀ RÀNG BUỘC.** `test_298` đối chiếu **từng con số** ở đây với
       hằng số thật trong mã. Đợt 2 chỉ đổi CÁCH BÀY (một dòng dọc → lưới hai
       cột), không đổi một chữ nào — và tuyệt đối không rút gọn để trang gọn hơn. #}
-<div class="alert alert-warn" style="margin:0 0 16px;">
+<div class="alert alert-warn u-mb16">
   <strong>{{ _("Đọc trước khi thuê") }}</strong>
   <ul class="vps-doc-truoc">
     <li><span class="ico" aria-hidden="true">•</span><span>{{ _("Dịch vụ chạy theo chế độ best effort — chúng tôi không cam kết thời gian hoạt động. Máy chủ có thể khởi động lại để bảo trì.") }}</span></li>
@@ -126,7 +126,7 @@
   <h1 class="sr-title" style="font-size:1.35rem;margin:0 0 14px;">
     {{ _("Máy chủ ảo Windows, trả bằng credit") }}</h1>
 
-  {% if loi %}<div class="alert alert-err" style="margin:0 0 12px;">{{ loi }}</div>{% endif %}
+  {% if loi %}<div class="alert alert-err u-mb12">{{ loi }}</div>{% endif %}
 
   {% if not da_dang_nhap %}
   {# ══ MÀN A · STOREFRONT CÔNG KHAI (Đợt 2) ═══════════════════════════════
@@ -151,7 +151,7 @@
     <div class="card-accent" style="background:{{ app.accent }};"></div>
     <div class="vps-hero">
       <div class="vps-hero-chu">
-        <h2 style="margin-top:0;">{{ _("Thuê một máy Windows trong khoảng 20 giây") }}</h2>
+        <h2 class="u-mt0">{{ _("Thuê một máy Windows trong khoảng 20 giây") }}</h2>
         <p>
           {{ _("Mỗi máy có một địa chỉ IP riêng ở Singapore, dùng được mọi cổng. Bạn vào máy bằng Remote Desktop như một máy Windows bình thường, hoặc bằng console ngay trong trình duyệt khi cần cứu hộ.") }}
         </p>
@@ -245,8 +245,8 @@
         nói thứ dịch vụ **không** hứa. Đừng trộn hai loại đó — trộn rồi thì một
         trong hai sẽ bị đọc lướt. #}
   <div class="vps-ban">
-    <div class="card" style="margin:0;">
-      <h2 style="margin-top:0;">{{ _("Bảng giá") }}</h2>
+    <div class="card u-m0">
+      <h2 class="u-mt0">{{ _("Bảng giá") }}</h2>
       <div class="goi-luoi">
         {% for g in goi %}
           {{ the_goi(g, goi | selectattr("con_cho") | selectattr("os")
@@ -299,7 +299,7 @@
   {# CTA cuối: người đọc hết sáu dòng hạn chế mà vẫn còn ở đây là người sẵn
      sàng nhất trên trang này — và trước Đợt 2 họ phải cuộn ngược lên đầu để
      tìm một cái nút. #}
-  <div class="vps-cta" style="margin:0 0 16px;">
+  <div class="vps-cta u-mb16">
     <div>
       <h2>{{ _("Sẵn sàng bắt đầu?") }}</h2>
       <p>{{ _("Tạo tài khoản, nạp credit, rồi tạo máy. Không hợp đồng, không phí khởi tạo.") }}</p>
@@ -317,7 +317,7 @@
      hiện ra tên biến môi trường nội bộ và cả chữ "Proxmox", thứ mà chính
      `services/proxmox.py` nói khách không bao giờ được thấy. Xem `_suc_chua`. #}
   {% if loi_ha_tang %}
-    <div class="alert alert-err" style="margin:0 0 16px;">{{ loi_ha_tang }}</div>
+    <div class="alert alert-err u-mb16">{{ loi_ha_tang }}</div>
   {% endif %}
 
 
@@ -391,16 +391,16 @@
                **không** đổi ngay khi bấm (ADR-03), nên nếu chỗ này im thì thẻ
                máy trông y hệt lúc chưa bấm. #}
             {% if m.viec %}
-            <p class="muted" style="margin:6px 0 0;font-size:12px;">
+            <p class="muted u-mt6 u-fs12">
               <b>{{ _(m.viec.loai) }}…</b>{% if m.viec.buoc %} {{ _(m.viec.buoc) }}{% endif %}
             </p>
             {% elif m.may.ly_do %}
-            <p class="muted" style="margin:6px 0 0;font-size:12px;">{{ m.may.ly_do }}</p>
+            <p class="muted u-mt6 u-fs12">{{ m.may.ly_do }}</p>
             {% elif m.buoc_tiep %}
             {# Nhãn trạng thái nói máy đang ở đâu; câu này nói khách phải làm gì
                tiếp. `bi_treo` là ví dụ rõ nhất — "Bị tạm dừng" không cho biết
                dữ liệu còn hay mất. Nguồn: `apps/vps/nhan.py:BUOC_TIEP`. #}
-            <p class="muted" style="margin:6px 0 0;font-size:12px;">{{ _(m.buoc_tiep) }}</p>
+            <p class="muted u-mt6 u-fs12">{{ _(m.buoc_tiep) }}</p>
             {% endif %}
           </div>
 
@@ -467,7 +467,7 @@
      về giá, dù nó chỉ tình cờ đứng dưới. Cả hai gọi cùng macro `the_goi`, nên
      con số vẫn là một nguồn. #}
   {% set ban_duoc = da_dang_nhap and goi_ban_duoc and suc_chua %}
-  <div class="card" style="margin:0;">
+  <div class="card u-m0">
     <div class="card-accent" style="background:{{ app.accent }};"></div>
     <h2>{{ _("Tạo máy mới") if ban_duoc else _("Bảng giá") }}</h2>
 
@@ -537,7 +537,7 @@
             {% endfor %}
           </div>
 
-          <div class="vps-chang" style="margin-top:18px;">
+          <div class="vps-chang u-mt18">
             <span class="so" aria-hidden="true">2</span>
             <h3>{{ _("Chọn hệ điều hành") }}</h3></div>
           <p class="vps-chang-mo-ta">{{ _("Đĩa cài được gắn sẵn; bạn tự chạy trình cài đặt. Cài lại được bất cứ lúc nào.") }}</p>
@@ -556,7 +556,7 @@
         </div>
 
         {# ── Chặng 3 · Tên máy + tóm tắt tiền ───────────────────────────── #}
-          <div class="vps-chang" style="margin-top:18px;">
+          <div class="vps-chang u-mt18">
             <span class="so" aria-hidden="true">3</span>
             <h3>{{ _("Đặt tên và xác nhận") }}</h3></div>
           <p class="vps-chang-mo-ta">{{ _("Tên chỉ để bạn nhận ra máy trong danh sách. Đổi được bất cứ lúc nào.") }}</p>
@@ -569,7 +569,7 @@
                 rỗng và nhánh thật đang chạy là `may.id[:8]` — tức để xoá máy,
                 khách phải chép tay một chuỗi hex 8 ký tự. Chép–dán không có
                 khoảnh khắc dừng lại mà rào chắn đó dựa vào. #}
-          <div class="field" style="margin:0 0 12px;">
+          <div class="field u-mb12">
             <label for="vps-ten">{{ _("Tên máy") }}</label>
             <input class="inp" id="vps-ten" name="ten" type="text"
                    maxlength="40" autocomplete="off"
@@ -580,8 +580,8 @@
             </p>
           </div>
 
-          <div class="card" style="margin:0;">
-            <h3 style="margin-top:0;">{{ _("Tóm tắt") }}</h3>
+          <div class="card u-m0">
+            <h3 class="u-mt0">{{ _("Tóm tắt") }}</h3>
             {# Các Ô có viền, không phải bảng hai cột chữ nhỏ đều nhau.
                Trước 25/08 `SẼ TRỪ 1.490 credit` trông ngang hàng với
                `BĂNG THÔNG 300 GB` — một cái là SỐ TIỀN, cái kia là thông số.
@@ -690,7 +690,7 @@
      trang của người đang muốn xem máy mình là bắt họ đọc lại mỗi ngày một thứ họ
      đã quyết. Nhưng KHÔNG bỏ hẳn: chúng vẫn là thứ trả lời "vì sao máy tôi chậm"
      và "ảnh chụp có phải sao lưu không". Gấp lại, ở cuối, mở được. #}
-  <details style="margin:0 0 16px;">
+  <details class="u-mb16">
     <summary class="muted" style="cursor:pointer;font-size:.9em;">{{ _("Điều cần biết về dịch vụ") }}</summary>
     <div style="margin-top:10px;">{{ doc_truoc() }}</div>
   </details>

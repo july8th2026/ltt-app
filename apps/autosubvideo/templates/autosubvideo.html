@@ -28,7 +28,7 @@
 
   <div class="ui-card">
     <h2 style="margin:0 0 4px;">{{ _("Khắc phụ đề vào video") }}</h2>
-    <p class="dim" style="margin:0 0 14px;">
+    <p class="dim u-mb14">
       Nạp <strong>video</strong> + <strong>transcript</strong> có sẵn (.srt / .json / .vtt / .ass),
       chọn kiểu chữ rồi khắc phụ đề đẹp thẳng vào video. Video lớn tải thẳng lên kho (né giới hạn
       100MB). Tính phí theo phút video. Job chạy nền — xem ở <a href="/jobs">{{ _("Việc của tôi") }}</a>.
@@ -81,9 +81,9 @@
   </div>
 
   <div class="ui-card">
-    <h2 style="margin:0 0 10px;">{{ _("Video của tôi") }}</h2>
+    <h2 class="u-mb10">{{ _("Video của tôi") }}</h2>
     {% if not jobs %}
-      <p class="dim" style="margin:0;">{{ _("Chưa có video nào. Tạo cái đầu tiên ở trên.") }}</p>
+      <p class="dim u-m0">{{ _("Chưa có video nào. Tạo cái đầu tiên ở trên.") }}</p>
     {% else %}
       <div class="result-grid">
         {% for j in jobs %}
@@ -96,7 +96,7 @@
               {% if j.duration_s %} · {{ j.duration_s }}s{% endif %}
             </div>
             {% if j.status == 'error' and j.error %}<p class="dim" style="font-size:12px;">{{ j.error }}</p>{% endif %}
-            {% if j.font_warning %}<p class="dim" style="font-size:11px;">⚠ {{ j.font_warning }}</p>{% endif %}
+            {% if j.font_warning %}<p class="dim u-fs11">⚠ {{ j.font_warning }}</p>{% endif %}
             {% if j.video_key %}
               <video controls playsinline preload="metadata" style="width:100%; border-radius:8px;"
                      src="{{ app.route_prefix }}/v/{{ j.video_key }}"></video>

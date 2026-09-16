@@ -53,7 +53,7 @@
              (`server/routes/jobs.py:258`): no kiem so huu VA **hoan credit**.
              Khong co nut thi nguoi dung phai vao trang job moi huy duoc — ba
              cu bam cho mot viec ho da doi y. #}
-          <form method="post" action="/jobs/{{ v.job_id }}/cancel" style="margin:0"
+          <form class="u-m0" method="post" action="/jobs/{{ v.job_id }}/cancel"
                 data-xac-nhan="{{ _('Huỷ video này? Credit sẽ được hoàn lại.') }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <button type="submit" class="ltt-btn">{{ _('Huỷ') }}</button>

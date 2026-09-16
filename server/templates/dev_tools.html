@@ -50,7 +50,7 @@
     {% endif %}
   </div>
 {% else %}
-  <p class="muted" style="margin:0 0 10px;">{{ catalog | length }}
+  <p class="muted u-mb10">{{ catalog | length }}
     {{ _("công cụ đang mở — bấm một thẻ để xem hợp đồng đầy đủ.") }}</p>
 
   {# Lưới thẻ 3 cột (ảnh demo). Mỗi thẻ vẫn là `<details>` — mở ra xem hợp đồng
@@ -78,7 +78,7 @@
       </summary>
 
       <div class="tool-than">
-        <p class="muted" style="margin-top:0;">{{ _("Phạm vi cần:") }}
+        <p class="muted u-mt0">{{ _("Phạm vi cần:") }}
           {% for scope in tool.scopes %}<code>{{ scope }}</code> {% endfor %}
           · <a href="/gia-api">{{ _("Xem giá") }} →</a>
           · <a href="/developers/playground?tool={{ tool.name }}">{{ _("Chạy thử công cụ này") }} →</a>
@@ -98,9 +98,9 @@
                 <tr>
                   <td><code>{{ p.name }}</code></td>
                   <td><code>{{ p.type }}</code>
-                      {%- if p.enum %}<br><span class="muted" style="font-size:11px;">
+                      {%- if p.enum %}<br><span class="muted u-fs11">
                         {% for v in p.enum %}<code>{{ v }}</code> {% endfor %}</span>{% endif %}
-                      {%- if p.bounds %}<br><span class="muted" style="font-size:11px;">{{ p.bounds }}</span>{% endif %}</td>
+                      {%- if p.bounds %}<br><span class="muted u-fs11">{{ p.bounds }}</span>{% endif %}</td>
                   <td>{% if p.required %}<strong>{{ _("có") }}</strong>
                       {%- else %}<span class="muted">{{ _("không") }}
                         {%- if p.default is not none %} · {{ _("mặc định") }}
@@ -121,14 +121,14 @@
         </div>
 
         <h4>{{ _("Ví dụ gửi đi") }}</h4>
-        <pre style="overflow-x:auto;"><code>{{ tool.example_request }}</code></pre>
+        <pre class="u-cuon-ngang"><code>{{ tool.example_request }}</code></pre>
 
         <h4>{{ _("Kết quả trả về") }}</h4>
         {# 🔴 Doan nay ton tai vi mot loi THAT ngay 25/08: khach doc bang "Ket
            qua" roi di tim `result.<ten truong>` — cho do KHONG CO GI. Artifact
            nam o `outputs[]`. Kich ban gia lap da dung lai dung o day, SAU khi
            job xong va tien da bi thu. #}
-        <pre style="overflow-x:auto;"><code>{{ tool.outputs }}</code></pre>
+        <pre class="u-cuon-ngang"><code>{{ tool.outputs }}</code></pre>
       </div>
     </details>
   {% endfor %}
@@ -137,7 +137,7 @@
 
 {% if models %}
   <div class="card" style="margin-top:16px;">
-    <h2 style="margin-top:0;">Model</h2>
+    <h2 class="u-mt0">Model</h2>
     <div class="dev-bang" tabindex="0">
       <table class="table">
         <thead><tr>

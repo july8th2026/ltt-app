@@ -26,7 +26,7 @@
      ④ "Snapshot tự động hàng ngày" — thật là **hằng tuần, giữ 1 bản**.
    Xem `docs/VPS/UI_MVP_V2/00_KE_HOACH_GIAO_DIEN.md` §2.1. #}
 
-  {% if loi %}<div class="alert alert-err" style="margin:0 0 12px;">{{ loi }}</div>{% endif %}
+  {% if loi %}<div class="alert alert-err u-mb12">{{ loi }}</div>{% endif %}
 
   {{ mac.dinh_may(may, trang_thai_nhan, badge, plan, os, dia_chi) }}
 
@@ -35,7 +35,7 @@
      trang này với một câu hỏi cụ thể, và câu trả lời phải là thứ họ thấy trước
      tiên chứ không phải thứ họ phải đi tìm. #}
   {% if may.ly_do %}
-  <div class="alert alert-err" style="margin:0 0 14px;">
+  <div class="alert alert-err u-mb14">
     <strong>{{ _("Lý do") }}:</strong> {{ may.ly_do }}
   </div>
   {% endif %}
@@ -45,7 +45,7 @@
      cắt. Khách vào bằng Console để dọn. Nói đúng cả ba điều đó, vì mỗi điều
      đều là một câu hỏi họ sắp gửi tới hỗ trợ. #}
   {% if bi_cach_ly %}
-  <div class="alert alert-err" style="margin:0 0 14px;">
+  <div class="alert alert-err u-mb14">
     <strong>{{ _("Máy đang bị cách ly mạng") }}</strong><br>
     {{ _("Đường ra Internet của máy đã bị cắt vì nghi lạm dụng. Dữ liệu và đĩa còn nguyên, và bạn vẫn vào được bằng Console. Liên hệ hỗ trợ để gỡ.") }}
     {% if may.cach_ly_ly_do %}<br><span class="ct">{{ may.cach_ly_ly_do }}</span>{% endif %}
@@ -60,12 +60,12 @@
      lượt. Một trạng thái không có tuổi là một trạng thái khách không đánh giá
      được — đó là lý do khối này tồn tại. #}
   {% if mat_lien_lac %}
-  <div class="alert alert-warn" style="margin:0 0 14px;">
+  <div class="alert alert-warn u-mb14">
     <strong>{{ _("Chưa hỏi được máy chủ") }}</strong><br>
     {{ _("Trạng thái bên dưới là lần đo gần nhất, không phải hiện tại. Chúng tôi đang thử lại.") }}
   </div>
   {% elif quan_sat_cu %}
-  <div class="alert" style="margin:0 0 14px;">
+  <div class="alert u-mb14">
     {{ _("Trạng thái bên dưới là lần đo gần nhất và có thể đã cũ.") }}
   </div>
   {% endif %}
@@ -82,7 +82,7 @@
        một thứ mà giao diện trả lời được.
        Console vẫn để: nó không đụng vào máy, và nó là đường khách nhìn thấy
        việc đang xảy ra. #}
-    <div class="alert alert-warn" style="margin:0 0 16px;">
+    <div class="alert alert-warn u-mb16">
       <strong>{{ _(viec.loai) }}…</strong>
       {% if viec.buoc %}<br>{{ _(viec.buoc) }}{% endif %}
       <br><span class="ct">{{ _("Tải lại trang sau ít phút để xem kết quả.") }}</span>
@@ -92,10 +92,10 @@
          href="{{ app.route_prefix }}/{{ may.id }}/console">{{ _("Console") }}</a>
     </div>
   {% elif may.trang_thai == "bi_treo" %}
-    <div class="alert alert-warn" style="margin:0 0 16px;">
+    <div class="alert alert-warn u-mb16">
       <strong>{{ _("Máy đang bị tạm dừng") }}</strong><br>
       {{ _(buoc_tiep) }}
-      <p style="margin:10px 0 0;">
+      <p class="u-mt10">
         <a class="btn btn-may" href="/nap">{{ _("Nạp credit") }}</a>
       </p>
     </div>
@@ -104,7 +104,7 @@
        từ chối — và một nút bị từ chối tệ hơn không có nút.
        ⚠️ KHÔNG hiện "% tiến độ" hay "dự kiến 2–5 phút": job trả **trạng thái**,
           không trả phần trăm hay ETA. Ảnh tham chiếu có, backend thì không. #}
-    <div class="alert alert-warn" style="margin:0 0 16px;">{{ _(buoc_tiep) }}</div>
+    <div class="alert alert-warn u-mb16">{{ _(buoc_tiep) }}</div>
   {% else %}
     <div class="vps-hd">
       {% if may.trang_thai == "da_tat" %}
@@ -155,10 +155,10 @@
       </ul>
       {# ⛔ KHÔNG có ô "1 Gbps Network" như trong ảnh: không nơi nào trong mã
          khai tốc độ cổng, nên đó là một con số chưa ai đo. #}
-      <p class="muted" style="margin:10px 0 0;font-size:12px;">
+      <p class="muted u-mt10 u-fs12">
         {{ _("Đĩa là hạn mức trên kho lưu trữ dùng chung, không phải ổ cứng cấp riêng.") }}
       </p>
-      {% else %}<p class="muted" style="margin:0;">{{ may.plan_id }}</p>{% endif %}
+      {% else %}<p class="muted u-m0">{{ may.plan_id }}</p>{% endif %}
     </div>
 
     <div class="vps-o">
@@ -174,7 +174,7 @@
       {# ⛔ KHÔNG có nút "Gia hạn ngay": không có route gia hạn. `bao_tri.chay`
          tự thu mỗi chu kỳ dưới lease. Cái khách thật sự cần khi sắp hết hạn là
          **đủ credit**, nên đường đi là `/nap`. #}
-      <p class="muted" style="margin:10px 0 0;font-size:12px;">
+      <p class="muted u-mt10 u-fs12">
         {{ _("Phí tự thu mỗi chu kỳ từ số dư credit. Hết credit thì máy bị tạm dừng, dữ liệu giữ trong %(n)s ngày.") % {"n": an_han_ngay} }}
         <a href="/nap">{{ _("Nạp thêm") }}</a>
       </p>
@@ -184,7 +184,7 @@
       <h3>{{ _("Băng thông chu kỳ này") }}</h3>
       {{ mac.do_bang_thong(bang_thong) }}
       {% if bang_thong.bi_giam_toc %}
-      <p class="muted" style="margin:10px 0 0;font-size:12px;">
+      <p class="muted u-mt10 u-fs12">
         {{ _("Máy đang bị giảm tốc vì đã vượt hạn mức. Không bị tính thêm tiền — tốc độ trở lại bình thường khi sang chu kỳ mới.") }}
       </p>
       {% endif %}
@@ -195,12 +195,12 @@
       {% if sao_luu_luc %}
         <p style="margin:0;font-size:15px;">{{ sao_luu_luc.strftime('%d/%m/%Y %H:%M') }}</p>
       {% else %}
-        <p class="muted" style="margin:0;">{{ _("chưa có — bản đầu tiên chụp trong vòng một tuần") }}</p>
+        <p class="muted u-m0">{{ _("chưa có — bản đầu tiên chụp trong vòng một tuần") }}</p>
       {% endif %}
       {# Nói ĐÚNG nhịp và ĐÚNG bản chất. Ảnh tham chiếu ghi "tự động hàng ngày";
          thật là **hằng tuần, giữ 1 bản**, và nó nằm trên **cùng kho** với đĩa
          gốc — pool hỏng là mất cả hai. Xem `services/sao_luu.py`. #}
-      <p class="muted" style="margin:10px 0 0;font-size:12px;">
+      <p class="muted u-mt10 u-fs12">
         {{ _("Ảnh chụp hằng tuần, giữ %(n)s bản, trên cùng kho lưu trữ với máy. Nó KHÔNG thay thế bản sao lưu của riêng bạn.") % {"n": so_anh_giu} }}
       </p>
     </div>
@@ -212,7 +212,7 @@
         tảng **không giữ mật khẩu nào** — khách tự cài Windows và tự đặt tài
         khoản. Vẽ ô đó ra là hứa một thứ không tồn tại, đúng lúc khách đang cần
         nó nhất, và cách duy nhất họ phát hiện ra là bấm vào rồi thấy trống. #}
-  <div class="vps-o vps-o-lon" style="margin:0 0 16px;">
+  <div class="vps-o vps-o-lon u-mb16">
     <h3>{{ _("Thông tin truy cập") }}</h3>
     {{ mac.o_sao_chep(_("Địa chỉ RDP"), (dia_chi ~ ":" ~ cong) if dia_chi else "") }}
     {# Lệnh chép được, không phải một nút "RDP" giả: trang web KHÔNG mở được
@@ -226,7 +226,7 @@
         {{ _("Là của bạn — chúng tôi không giữ bản nào và không đặt lại được.") }}
       </span>
     </div>
-    <p class="muted" style="margin:10px 0 0;font-size:12px;">
+    <p class="muted u-mt10 u-fs12">
       {{ _("Chưa vào được bằng RDP? Bật Remote Desktop trong máy theo") }}
       <a href="{{ app.route_prefix }}/{{ may.id }}/cai-dat">{{ _("hướng dẫn cài Windows") }}</a>,
       {{ _("hoặc dùng console khi đã đổi tường lửa và tự khoá mình ra ngoài.") }}
@@ -237,7 +237,7 @@
      KHÔNG đòi gõ xác nhận: đổi nhãn là việc đảo được, và đặt rào chắn ở việc
      đảo được thì rào chắn ở việc KHÔNG đảo được bị nhờn. #}
   {% if may.trang_thai != "da_xoa" %}
-  <div class="vps-o" style="margin:0 0 16px;">
+  <div class="vps-o u-mb16">
     <h3>{{ _("Tên máy") }}</h3>
     <form class="vps-doi-ten" method="post"
           action="{{ app.route_prefix }}/{{ may.id }}/doi-ten">
@@ -260,7 +260,7 @@
      Tách khỏi nhật ký chung: nhật ký trộn mọi loại sự kiện, còn đây là thứ
      khách cần khi đối chiếu chi tiêu. #}
   {% if sao_ke %}
-  <div class="vps-o vps-o-lon" style="margin:0 0 16px;">
+  <div class="vps-o vps-o-lon u-mb16">
     <h3>{{ _("Sao kê thanh toán") }}</h3>
     <div class="tablewrap" tabindex="0">
       <table class="tbl" style="width:100%;">
@@ -280,7 +280,7 @@
         </tbody>
       </table>
     </div>
-    <p class="muted" style="margin:10px 0 0;font-size:12px;">
+    <p class="muted u-mt10 u-fs12">
       {{ _("Tổng đã trả cho máy này: %(n)s credit.") % {"n": "{:,}".format(tong_da_tra).replace(",", ".")} }}
       {# Noi thang: day KHONG phai hoa don dien tu theo Nghi dinh 123/2020.
          Goi no la "hoa don" khi chua dang ky voi co quan thue la mot cau sai
@@ -297,7 +297,7 @@
 
      Nhãn từ `apps/vps/nhan.py:SU_KIEN` — một nguồn, không phải một bảng tra
      chép tay trong template. #}
-  <div class="vps-o vps-o-lon" style="margin:0 0 16px;">
+  <div class="vps-o vps-o-lon u-mb16">
     <h3>{{ _("Nhật ký") }}</h3>
     {% if su_kien %}
     <ul class="vps-nhat-ky">
@@ -312,7 +312,7 @@
       </li>
       {% endfor %}
     </ul>
-    {% else %}<p class="muted" style="margin:0;">{{ _("Chưa có gì.") }}</p>{% endif %}
+    {% else %}<p class="muted u-m0">{{ _("Chưa có gì.") }}</p>{% endif %}
   </div>
 
   {# ── Nguy hiểm ─────────────────────────────────────────────────────────

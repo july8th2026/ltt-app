@@ -11,7 +11,7 @@
 #}
 
 <div class="card">
-  <h1 style="margin-top:0;">{{ _("Cắm model của LTT Studios vào công cụ của bạn") }}</h1>
+  <h1 class="u-mt0">{{ _("Cắm model của LTT Studios vào công cụ của bạn") }}</h1>
   <p>{{ _("API tương thích Anthropic Messages và OpenAI Responses. Nếu công cụ của bạn nói được một trong hai giao thức đó thì chỉ cần đổi địa chỉ và khoá — không phải viết lại gì.") }}</p>
   <p class="muted">
     <a href="/gia-api">{{ _("Xem giá") }}</a> ·
@@ -30,7 +30,7 @@
    Bo cai 25,9 MB da nam tren may chu tu 25/08 va `/tai/cong-cu-cam` tra 200,
    nhung neu khong trang nao tro toi thi no coi nhu khong ton tai. #}
 <div class="card" id="cong-cu">
-  <h2 style="margin-top:0;">{{ _("Ba cách cắm API") }}</h2>
+  <h2 class="u-mt0">{{ _("Ba cách cắm API") }}</h2>
   <ol>
     <li><strong>{{ _("Tool EXE") }}</strong> — {{ _("có giao diện, chọn từng hạng mục và đọc lại trạng thái thật.") }}
       <a href="/tai/cong-cu-cam">{{ _("Tải EXE") }}{% if bo_cai %} ({{ bo_cai.kich_thuoc_mb }} MB){% endif %}</a></li>
@@ -39,8 +39,8 @@
     <li><strong>{{ _("Thủ công") }}</strong> — {{ _("không tải gì; chép đúng cấu hình ở phần bên dưới.") }}
       <a href="#cau-hinh-tay">{{ _("Xem hướng dẫn") }}</a></li>
   </ol>
-  {% if bo_cai %}<p class="muted">EXE {{ bo_cai.phien_ban }} · SHA-256 <code style="font-size:11px;">{{ bo_cai.sha256 }}</code></p>{% endif %}
-  {% if goi_bat %}<p class="muted">BAT {{ goi_bat.phien_ban }} · SHA-256 <code style="font-size:11px;">{{ goi_bat.sha256 }}</code></p>{% endif %}
+  {% if bo_cai %}<p class="muted">EXE {{ bo_cai.phien_ban }} · SHA-256 <code class="u-fs11">{{ bo_cai.sha256 }}</code></p>{% endif %}
+  {% if goi_bat %}<p class="muted">BAT {{ goi_bat.phien_ban }} · SHA-256 <code class="u-fs11">{{ goi_bat.sha256 }}</code></p>{% endif %}
   <p class="muted"><a href="/huong-dan/cong-cu">{{ _("Nó làm gì, chạm vào đâu") }}</a></p>
 </div>
 
@@ -48,9 +48,9 @@
 {% include "_cam_chon.html" %}
 
 <div class="card" id="goi-thu">
-  <h2 style="margin-top:0;">{{ _("Gọi thử bằng cURL") }}</h2>
+  <h2 class="u-mt0">{{ _("Gọi thử bằng cURL") }}</h2>
   <p class="muted">{{ _("Thay") }} <code>$LTT_API_KEY</code> {{ _("bằng khoá của bạn.") }}</p>
-  <pre style="overflow-x:auto;"><code>{{ curl_chat }}</code></pre>
+  <pre class="u-cuon-ngang"><code>{{ curl_chat }}</code></pre>
 </div>
 
 {# 🔴 MỤC NÀY CŨNG SINH RA VÌ MỘT SỐ ĐO, cùng lý do với mục "Tạo ảnh" bên dưới.
@@ -63,7 +63,7 @@
    ⚠️ Và tài liệu công khai khi đó còn nói **"No streaming yet"** — sai từ 24/08,
       trong khi chính máy chủ trả 400 chỉ sang hai cửa stream. #}
 <div class="card" id="ba-cua">
-  <h2 style="margin-top:0;">{{ _("Ba cửa — chọn theo thứ client của bạn nói") }}</h2>
+  <h2 class="u-mt0">{{ _("Ba cửa — chọn theo thứ client của bạn nói") }}</h2>
   <p>{{ _("Cùng một model, cùng một khoá, cùng một sổ tiền. Khác nhau ở hình dạng request và ở chỗ có stream hay không.") }}</p>
   <table class="table">
     <thead><tr>
@@ -90,7 +90,7 @@
    ⛔ Năm con số phải đứng RIÊNG. Gộp hai cái bất kỳ là dựng lại đúng lớp lỗi
       dự án này đã mắc bốn lần. #}
 <div class="card" id="ngu-canh">
-  <h2 style="margin-top:0;">{{ _("Hội thoại dài: sáu con số, và vì sao chúng khác nhau") }}</h2>
+  <h2 class="u-mt0">{{ _("Hội thoại dài: sáu con số, và vì sao chúng khác nhau") }}</h2>
   <p>{{ _("Codex và Claude Code tự nén hội thoại khi nó dài ra. Chúng chỉ nén ĐÚNG LÚC nếu bạn nói thật cho chúng biết cửa sổ của model này — công cụ cắm ở trên làm việc đó cho bạn.") }}</p>
   <table class="table">
     <thead><tr>
@@ -123,7 +123,7 @@
       playground là của tài khoản, còn "ta có bán tạo ảnh, và đây là ba bước
       gọi" trả lời câu **có đáng mua không**. #}
 <div class="card" id="tao-anh">
-  <h2 style="margin-top:0;">{{ _("Tạo ảnh bằng model của LTT Studios") }}</h2>
+  <h2 class="u-mt0">{{ _("Tạo ảnh bằng model của LTT Studios") }}</h2>
   <p>{{ _("Model chạy trên máy của chúng tôi, không qua nhà cung cấp nào. Đây là HTTP thuần — không cần thư viện của chúng tôi, gọi được từ Python, PHP, n8n, Make hay curl.") }}</p>
 
   <table class="table">
@@ -148,7 +148,7 @@
   </table>
 
   <h3>{{ _("Ba lời gọi") }}</h3>
-  <pre style="overflow-x:auto;"><code>{{ curl_anh }}</code></pre>
+  <pre class="u-cuon-ngang"><code>{{ curl_anh }}</code></pre>
 
   <p class="muted">⏱️ {{ _("Đo thật ngày 25/08 từ một máy ngoài, qua Internet: một ảnh mất") }}
      <strong>{{ _("138 giây") }}</strong>{{ _(". Vì vượt xa trần 100 giây của Cloudflare nên đường ảnh BẮT BUỘC là bất đồng bộ — gửi rồi hỏi lại, hoặc đăng ký webhook. Đặt timeout của bạn theo con số đó.") }}</p>
@@ -158,7 +158,7 @@
 </div>
 
 <div class="card">
-  <h2 style="margin-top:0;">{{ _("Thư viện một tệp, không phụ thuộc") }}</h2>
+  <h2 class="u-mt0">{{ _("Thư viện một tệp, không phụ thuộc") }}</h2>
   <p>{{ _("Không bắt buộc — API là HTTP thuần. Nhưng nếu muốn nhanh:") }}</p>
   <ul>
     {% for g in goi_tai %}
@@ -168,7 +168,7 @@
 </div>
 
 <div class="card">
-  <h2 style="margin-top:0;">{{ _("Chưa có tài khoản?") }}</h2>
+  <h2 class="u-mt0">{{ _("Chưa có tài khoản?") }}</h2>
   <p>{{ _("Đăng ký, nạp credit, tạo khoá — rồi quay lại trang này chép cấu hình.") }}</p>
   <p><a class="btn" href="/register">{{ _("Đăng ký") }}</a></p>
 </div>

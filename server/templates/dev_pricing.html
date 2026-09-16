@@ -42,7 +42,7 @@
         {# 1 credit = 100đ (Q31). Con so tham chieu, khong phai hoa don. #}
         <p class="dev-vnd tnum">≈ {{ (result.credit * 100) | so }} VND</p>
 
-        <dl class="dev-han-muc" style="margin-top:14px;">
+        <dl class="dev-han-muc u-mt14">
           <div><dt>{{ _("Phiên bản giá") }}</dt><dd><code>{{ result.pricing_version }}</code></dd></div>
           {% if result.bounded %}
           <div><dt>{{ _("Công thức app tính") }}</dt>
@@ -70,7 +70,7 @@
 
 </div>
 
-<p class="muted" style="margin-top:14px;">{{ _("Mô phỏng KHÔNG sinh báo giá và KHÔNG trừ credit, nên không dùng nó để gọi POST /jobs được — báo giá phải được ký, còn đây chỉ là câu trả lời.") }}</p>
+<p class="muted u-mt14">{{ _("Mô phỏng KHÔNG sinh báo giá và KHÔNG trừ credit, nên không dùng nó để gọi POST /jobs được — báo giá phải được ký, còn đây chỉ là câu trả lời.") }}</p>
 <p class="muted" style="margin-top:6px;">{{ _("Nếu con số ở đây khác con số khi gọi /api/v1/quotes thì đó là lỗi của chúng tôi, không phải khác biệt cố ý — cùng một hàm sinh cả hai.") }}</p>
 
 {% endblock %}

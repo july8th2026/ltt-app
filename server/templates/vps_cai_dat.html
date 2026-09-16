@@ -25,7 +25,7 @@
 
   <div class="card">
     <div class="card-accent" style="background:{{ app.accent }};"></div>
-    <p style="margin:0;">
+    <p class="u-m0">
       {{ _("Máy của bạn là một máy trống đã gắn sẵn đĩa cài Windows. Bạn tự chạy trình cài đặt và tự đặt tài khoản của mình — chúng tôi không biết mật khẩu của bạn và không đặt lại được nó.") }}
     </p>
     <p class="muted" style="margin:8px 0 0;">
@@ -110,7 +110,7 @@
         {# Đây là chỗ dễ mất công nhất, và nó không tự hiện ra — phải nói trước. #}
         <div class="vps-canh-to">
           <b>{{ _("Quan trọng") }}</b>
-          <p style="margin:0;">
+          <p class="u-m0">
             <strong>{{ _("Khi thấy dòng “Press any key to boot from CD or DVD…”, đừng bấm gì cả.") }}</strong>
           </p>
           <p style="margin:6px 0 0;" class="muted">
@@ -129,7 +129,7 @@
         <p>{{ _("Bật Remote Desktop để vào máy từ nhà. Mở PowerShell trong máy và dán:") }}</p>
         {# `sao_chep.js` bọc mọi `<pre>` thành khối có nút chép. Tăng cường dần:
            không có JS thì không có nút, và khối vẫn tô chép được như thường. #}
-        <pre style="white-space:pre-wrap;"><code>Set-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server' -Name fDenyTSConnections -Value 0
+        <pre class="u-pre-wrap"><code>Set-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server' -Name fDenyTSConnections -Value 0
 Enable-NetFirewallRule -DisplayGroup 'Remote Desktop'</code></pre>
         <p class="muted">{{ _("Remote Desktop mặc định TẮT trong Windows. Không bật thì bạn chỉ vào được bằng console.") }}</p>
       </section>
@@ -141,8 +141,7 @@ Enable-NetFirewallRule -DisplayGroup 'Remote Desktop'</code></pre>
         {# POST có CSRF, do KHÁCH bấm. KHÔNG tự gỡ theo một "bước đã xong" phía
            client — xem `dieu_khien.go_dia_cai` để biết vì sao đây là một nút
            chứ không phải một bước tự động. #}
-        <form method="post" action="{{ app.route_prefix }}/{{ may.id }}/go-dia-cai"
-              style="margin:10px 0 0;">
+        <form class="u-mt10" method="post" action="{{ app.route_prefix }}/{{ may.id }}/go-dia-cai">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
           <button class="btn btn-goi" type="submit">{{ _("Tôi đã cài xong — gỡ đĩa cài") }}</button>
         </form>
@@ -152,7 +151,7 @@ Enable-NetFirewallRule -DisplayGroup 'Remote Desktop'</code></pre>
         <h3><span class="so" aria-hidden="true">8</span>{{ _("Nối bằng Remote Desktop") }}</h3>
         {% if dia_chi %}
         <p>{{ _("Từ máy của bạn, mở Remote Desktop (mstsc) và nối tới") }} <code>{{ dia_chi }}</code>.</p>
-        <pre style="white-space:pre-wrap;"><code>mstsc /v:{{ dia_chi }}</code></pre>
+        <pre class="u-pre-wrap"><code>mstsc /v:{{ dia_chi }}</code></pre>
         {% else %}
         <p>{{ _("Từ máy của bạn, mở Remote Desktop (mstsc) và nối tới địa chỉ của máy.") }}</p>
         <p class="muted">{{ _("Địa chỉ đang được chuẩn bị — tải lại trang sau vài phút.") }}</p>

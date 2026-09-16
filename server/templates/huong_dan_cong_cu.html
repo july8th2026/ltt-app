@@ -3,7 +3,7 @@
 {% block content %}
 
 <div class="card">
-  <h1 style="margin-top:0;">{{ _("Ba cách cắm API — Windows") }}</h1>
+  <h1 class="u-mt0">{{ _("Ba cách cắm API — Windows") }}</h1>
   <p>{{ _("Chọn EXE có giao diện, ZIP + BAT không giao diện, hoặc làm hoàn toàn thủ công. Hai gói tự động dùng chung một lõi và cùng kiểm lại file + registry sau khi ghi.") }}</p>
   <p class="muted">{{ _("Mỗi gói phát hành đều công bố SHA-256 để bạn đối chiếu trước khi chạy.") }}</p>
   <p style="margin:18px 0 8px;">
@@ -11,39 +11,39 @@
   </p>
   {% if bo_cai %}
     <p class="muted">{{ _("Phiên bản") }} <code>{{ bo_cai.phien_ban }}</code> · <code>{{ bo_cai.ten }}</code></p>
-    <p class="muted" style="word-break:break-all;">SHA-256 <code>{{ bo_cai.sha256 }}</code></p>
+    <p class="muted u-ngat-tu">SHA-256 <code>{{ bo_cai.sha256 }}</code></p>
   {% else %}
     <p class="muted">{{ _("Chưa có bản phát hành nào. Bạn vẫn cấu hình tay được — xem hướng dẫn.") }}</p>
   {% endif %}
   <p style="margin:18px 0 8px;"><a class="btn btn-ghost" href="/tai/cong-cu-cam-bat">{{ _("Tải ZIP + BAT (Administrator, không GUI)") }}{% if goi_bat %} · {{ goi_bat.kich_thuoc_mb }} MB{% endif %}</a></p>
   {% if goi_bat %}
     <p class="muted">{{ _("Phiên bản") }} <code>{{ goi_bat.phien_ban }}</code> · <code>{{ goi_bat.ten }}</code></p>
-    <p class="muted" style="word-break:break-all;">SHA-256 <code>{{ goi_bat.sha256 }}</code></p>
+    <p class="muted u-ngat-tu">SHA-256 <code>{{ goi_bat.sha256 }}</code></p>
   {% endif %}
   <p class="muted"><a href="/huong-dan">← {{ _("Hướng dẫn cấu hình tay") }}</a></p>
 </div>
 
 {% if bo_cai %}
 <div class="card">
-  <h2 style="margin-top:0;">{{ _("Windows sẽ cảnh báo khi mở — điều đó đúng như dự kiến") }}</h2>
+  <h2 class="u-mt0">{{ _("Windows sẽ cảnh báo khi mở — điều đó đúng như dự kiến") }}</h2>
   <p>{{ _("Chúng tôi không mua chứng chỉ ký số, nên SmartScreen hiện cảnh báo cho mọi tệp chưa đủ lượt tải. Bấm") }}
      <em>{{ _("More info") }}</em> → <em>{{ _("Run anyway") }}</em>.</p>
   <p>{{ _("Trước khi mở, bạn nên tự kiểm băm — nó khớp thì tệp đúng là bản chúng tôi dựng:") }}</p>
-  <pre style="overflow-x:auto;"><code>Get-FileHash .\{{ bo_cai.ten }} -Algorithm SHA256</code></pre>
+  <pre class="u-cuon-ngang"><code>Get-FileHash .\{{ bo_cai.ten }} -Algorithm SHA256</code></pre>
   <p class="muted">⛔ {{ _("Chúng tôi KHÔNG bao giờ đề nghị bạn tắt phần mềm diệt virus. Nếu bạn không yên tâm thì cấu hình tay — hướng dẫn đầy đủ, không thiếu bước nào.") }}</p>
 </div>
 {% endif %}
 
 <div class="card">
-  <h2 style="margin-top:0;">{{ _("Cách chạy") }}</h2>
+  <h2 class="u-mt0">{{ _("Cách chạy") }}</h2>
   <p><strong>EXE:</strong> {{ _("mở từ Start Menu, chọn hạng mục rồi bấm Cắm vào. Đồng hồ chạy và mọi lỗi đều hiện trong nhật ký.") }}</p>
   <p><strong>ZIP + BAT:</strong> {{ _("giải nén toàn bộ, bấm") }} <code>cam_cli_admin.bat</code>. {{ _("Launcher tự xin Administrator, che khóa khi nhập, và cho chọn từng hạng mục.") }}</p>
-  <pre style="overflow-x:auto;"><code>LTTStudios-CamCLI-Console.exe xem
+  <pre class="u-cuon-ngang"><code>LTTStudios-CamCLI-Console.exe xem
 LTTStudios-CamCLI-Console.exe cam --muc codex-cli --muc claude-desktop
 LTTStudios-CamCLI-Console.exe kiem
 LTTStudios-CamCLI-Console.exe go</code></pre>
 
-  <table class="table" style="margin-top:14px;">
+  <table class="table u-mt14">
     <thead><tr><th>{{ _("Cờ") }}</th><th>{{ _("Khi nào dùng") }}</th><th>{{ _("Đánh đổi") }}</th></tr></thead>
     <tbody>
       <tr><td><code>--muc codex-cli</code></td><td>{{ _("Codex CLI qua profile ltt") }}</td><td>{{ _("không đổi mặc định Codex") }}</td></tr>
@@ -59,7 +59,7 @@ LTTStudios-CamCLI-Console.exe go</code></pre>
 </div>
 
 <div class="card">
-  <h2 style="margin-top:0;">{{ _("Nó chạm vào đúng những chỗ này") }}</h2>
+  <h2 class="u-mt0">{{ _("Nó chạm vào đúng những chỗ này") }}</h2>
   <table class="table">
     <thead><tr><th>{{ _("Nơi") }}</th><th>{{ _("Làm gì") }}</th></tr></thead>
     <tbody>
@@ -77,7 +77,7 @@ LTTStudios-CamCLI-Console.exe go</code></pre>
 </div>
 
 <div class="card">
-  <h2 style="margin-top:0;">{{ _("Riêng Claude Desktop cần hai thứ khác") }}</h2>
+  <h2 class="u-mt0">{{ _("Riêng Claude Desktop cần hai thứ khác") }}</h2>
   <p>{{ _("Công cụ đặt sẵn cả hai. Nếu cấu hình tay thì phải nhớ, vì thiếu một trong hai là ứng dụng im lặng hoàn toàn — bấm gửi, không có gì xảy ra, không một lời báo lỗi:") }}</p>
   <ul>
     <li>{{ _("tên model là") }} <code>{{ model_desktop }}</code> {{ _("chứ không phải") }} <code>{{ model }}</code></li>

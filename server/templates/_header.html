@@ -20,7 +20,7 @@
     <summary aria-label="{{ _('Mở danh sách ứng dụng') }}">☰</summary>
     <div class="dropdown">
       {% for group, apps in _groups.items() %}
-        <div class="acc-head" style="padding:8px 11px 3px"><small style="margin:0">{{ _(group) }}</small></div>
+        <div class="acc-head" style="padding:8px 11px 3px"><small class="u-m0">{{ _(group) }}</small></div>
         {% for a in apps %}<a href="{{ a.manifest.route_prefix }}"><span class="ic">{{ a.manifest.icon }}</span> {{ _(a.manifest.display_name) }}</a>{% endfor %}
       {% endfor %}
     </div>

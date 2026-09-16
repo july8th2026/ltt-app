@@ -29,7 +29,7 @@
 {# Trang này dài — bảy mục. Không có mục lục thì mục thứ tư trở đi coi như
    không tồn tại với người đang tìm một thứ cụ thể. #}
 <div class="card">
-  <h2 style="margin-top:0;">{{ _("Trong trang này") }}</h2>
+  <h2 class="u-mt0">{{ _("Trong trang này") }}</h2>
   <p class="muted" style="line-height:2;">
     <a href="#goi-the-nao">{{ _("Gọi thế nào") }}</a> ·
     <a href="#bien-vao">{{ _("Biến đầu vào") }}</a> ·
@@ -43,7 +43,7 @@
 </div>
 
 <div class="card" id="goi-the-nao">
-  <h2 style="margin-top:0;">{{ _("Gọi thế nào") }}</h2>
+  <h2 class="u-mt0">{{ _("Gọi thế nào") }}</h2>
   <ol>
     <li><code>POST /api/v1/quotes</code> — {{ _("nhận giá và một báo giá đã ký, sống 15 phút.") }}</li>
     <li><code>POST /api/v1/jobs</code> — {{ _("gửi kèm báo giá đó và một") }}
@@ -54,11 +54,11 @@
     {% endif %}
   </ol>
   <p class="muted">{{ _("Giá phụ thuộc toàn bộ input, nên báo giá là nơi duy nhất nói giá. Credit được giữ lúc tạo job và quyết toán đúng một lần khi job kết thúc.") }}</p>
-  <pre style="overflow-x:auto;"><code>{{ example_request }}</code></pre>
+  <pre class="u-cuon-ngang"><code>{{ example_request }}</code></pre>
 </div>
 
 <div class="card" id="bien-vao">
-  <h2 style="margin-top:0;">{{ _("Biến đầu vào") }}</h2>
+  <h2 class="u-mt0">{{ _("Biến đầu vào") }}</h2>
   <div class="dev-bang" tabindex="0">
     <table class="table">
       <thead><tr>
@@ -110,7 +110,7 @@
 </div>
 
 <div class="card" id="ket-qua">
-  <h2 style="margin-top:0;">{{ _("Kết quả") }}</h2>
+  <h2 class="u-mt0">{{ _("Kết quả") }}</h2>
   <div class="dev-bang" tabindex="0">
     <table class="table">
       <thead><tr><th scope="col">{{ _("Trường") }}</th><th scope="col">{{ _("Kiểu") }}</th></tr></thead>
@@ -142,7 +142,7 @@
 
 {% if models %}
   <div class="card" id="model">
-    <h2 style="margin-top:0;">Model</h2>
+    <h2 class="u-mt0">Model</h2>
     <ul>
       {% for model in models %}
         <li><code>{{ model.name }}</code> ({{ model.stability }})
@@ -153,7 +153,7 @@
 {% endif %}
 
 <div class="card" id="webhook">
-  <h2 style="margin-top:0;">{{ _("Sự kiện webhook") }}</h2>
+  <h2 class="u-mt0">{{ _("Sự kiện webhook") }}</h2>
   <ul>
     {% for event in events %}<li><code>{{ event }}</code></li>{% endfor %}
   </ul>
@@ -161,7 +161,7 @@
 </div>
 
 <div class="card" id="gioi-han">
-  <h2 style="margin-top:0;">{{ _("Giới hạn") }}</h2>
+  <h2 class="u-mt0">{{ _("Giới hạn") }}</h2>
   <ul>
     <li>{{ limits.request_rpm }} {{ _("request/phút") }},
         {{ limits.create_rpm }} {{ _("job/phút") }}</li>
@@ -174,7 +174,7 @@
 </div>
 
 <div class="card" id="loi">
-  <h2 style="margin-top:0;">{{ _("Lỗi và cách thử lại") }}</h2>
+  <h2 class="u-mt0">{{ _("Lỗi và cách thử lại") }}</h2>
   <div class="dev-bang" tabindex="0">
     <table class="table">
       <thead><tr>

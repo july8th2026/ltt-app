@@ -15,7 +15,7 @@
   {{ m.loi_sau_chuyen_huong(loi) }}
 
   <section>
-    <h2 style="margin:22px 0 10px">Mức nền đang áp dụng</h2>
+    <h2 class="u-tieu-muc">Mức nền đang áp dụng</h2>
     {# Muc nen khi KHONG co ai cu the: do la con so moi tai khoan nhan duoc, va
        la thu dau tien nguoi van hanh can thay. #}
     <div class="tablewrap" tabindex="0"><table class="ui-table">
@@ -33,7 +33,7 @@
   </section>
 
   <section>
-    <h2 style="margin:22px 0 10px">Chính sách</h2>
+    <h2 class="u-tieu-muc">Chính sách</h2>
     <div class="tablewrap" tabindex="0"><table class="ui-table">
       <thead><tr>
         <th>Tên</th><th>rpm read</th><th>rpm write</th><th>rpm create</th>
@@ -73,14 +73,14 @@
                                  them={"policy_id": p.id}) }}</td>
         </tr>
         {% else %}
-        <tr><td colspan="8" class="muted" style="padding:26px;text-align:center">Chưa có chính sách nào — mọi tài khoản dùng mức nền của deployment.</td></tr>
+        <tr><td colspan="8" class="muted o-trong">Chưa có chính sách nào — mọi tài khoản dùng mức nền của deployment.</td></tr>
         {% endfor %}
       </tbody>
     </table></div>
   </section>
 
   <section>
-    <h2 style="margin:22px 0 10px">Tạo chính sách</h2>
+    <h2 class="u-tieu-muc">Tạo chính sách</h2>
     <form method="post" action="/admin/api-chinh-sach-action">
       <input type="hidden" name="csrf_token" value="{{ token }}">
       <input type="hidden" name="op" value="create">
@@ -104,7 +104,7 @@
   </section>
 
   <section>
-    <h2 style="margin:22px 0 10px">Gán chính sách</h2>
+    <h2 class="u-tieu-muc">Gán chính sách</h2>
     <form method="post" action="/admin/api-chinh-sach-action">
       <input type="hidden" name="csrf_token" value="{{ token }}">
       <input type="hidden" name="op" value="assign">

@@ -36,7 +36,7 @@
 {% else %}
   <div class="card">
     <p class="muted" style="margin:0 0 6px;">{{ _("Khóa đang dùng được của bạn — dán chuỗi bí mật của một trong số này:") }}</p>
-    <ul style="margin:0;">
+    <ul class="u-m0">
       {% for k in khoa_dung_duoc %}
         <li><code>{{ k.key_id }}</code>
           {% if k.name %}— {{ k.name }}{% endif %}
@@ -100,7 +100,7 @@
 </div>
 
 <div class="card">
-  <h2 style="margin-top:0;">{{ _("Chế độ chạy khác") }}</h2>
+  <h2 class="u-mt0">{{ _("Chế độ chạy khác") }}</h2>
   <ul>
     <li><code>ASYNC_JOB</code> — {{ _("mọi công cụ đang mở đều chạy kiểu này: báo giá → job → theo dõi → artifact.") }}</li>
     <li><code>SYNC</code> — {{ _("chỉ dành cho thao tác đọc; không công cụ nào tiêu credit theo kiểu này.") }}</li>

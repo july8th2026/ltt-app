@@ -403,3 +403,29 @@ def test_tai_san_sqladmin_deu_mang_phien_ban_goi():
     assert goi and all(goi), "mọi tài sản admin:statics phải có ?v={{ sqladmin_ver }}"
     admin = (GOC / "server" / "admin.py").read_text(encoding="utf-8")
     assert 'sqladmin_ver=__import__("sqladmin").__version__' in admin
+
+
+# ── 13. P1-14: style="" lặp lại đã thành lớp tiện ích dùng chung ───────────
+
+_DA_CHUYEN = ("margin-top:0", "text-align:right", "margin:22px 0 10px", "overflow-x:auto",
+              "padding:26px;text-align:center", "margin:0 0 16px")
+
+
+def test_mau_style_inline_lap_lai_da_thanh_lop():
+    """Chốt theo GIÁ TRỊ, không theo số đếm: thêm lại `style="margin-top:0;"`
+    thì đỏ, còn style riêng một trang (động, `{{ }}`) vẫn được phép."""
+    lai = []
+    for p in list((GOC / "server" / "templates").rglob("*.html")) + list((GOC / "apps").rglob("templates/**/*.html")):
+        for m in re.finditer(r'style="([^"]*)"', p.read_text(encoding="utf-8")):
+            if m.group(1).rstrip(";") in _DA_CHUYEN:
+                lai.append(f"{p.relative_to(GOC)}: {m.group(0)}")
+    assert not lai, "dùng lớp u-*/o-trong trong ltt.css:\n" + "\n".join(lai)
+    for lop in ("u-mt0", "u-phai", "u-tieu-muc", "u-cuon-ngang", "o-trong", "u-mb16", "u-m0"):
+        assert re.search(r"\." + lop + r"\{[^}]*!important", CSS), lop
+
+
+def test_may_cua_toi_khong_con_style_inline_va_mau_hex():
+    tpl = (GOC / "server" / "templates" / "nexus_may.html").read_text(encoding="utf-8")
+    assert "style=" not in tpl
+    assert not re.search(r"#[0-9a-fA-F]{6}", tpl), "chấm trạng thái dùng token (.nx-dot-bat/.nx-dot-tat)"
+    assert "{{ so_du | so }}" in tpl

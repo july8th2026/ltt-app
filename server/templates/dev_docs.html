@@ -10,7 +10,7 @@
    ⭐ Luật từ nay: trang cho khách chỉ được trỏ tới **URL tải được**. #}
 
 <div class="card">
-  <h2 style="margin-top:0;">{{ _("Bắt đầu") }}</h2>
+  <h2 class="u-mt0">{{ _("Bắt đầu") }}</h2>
   <ul>
     <li><a href="/huong-dan">{{ _("Hướng dẫn cắm vào công cụ của bạn") }}</a>
         — {{ _("Codex, Claude Code, hai tiện ích VS Code, Claude Desktop. Công khai, chia sẻ được cho đồng nghiệp chưa có tài khoản.") }}</li>
@@ -22,7 +22,7 @@
 </div>
 
 <div class="card">
-  <h2 style="margin-top:0;">{{ _("Đặc tả và thư viện") }}</h2>
+  <h2 class="u-mt0">{{ _("Đặc tả và thư viện") }}</h2>
   <ul>
     <li><a href="/api/v1/openapi.json">{{ _("Đặc tả OpenAPI") }}</a>
         — {{ _("mô tả máy đọc được, kèm schema của từng công cụ.") }}</li>
@@ -39,14 +39,14 @@
 </div>
 
 <div class="card">
-  <h2 style="margin-top:0;">{{ _("Gọi thử") }}</h2>
-  <pre style="overflow-x:auto;"><code>curl -H "Authorization: Bearer $LTT_API_KEY" \
+  <h2 class="u-mt0">{{ _("Gọi thử") }}</h2>
+  <pre class="u-cuon-ngang"><code>curl -H "Authorization: Bearer $LTT_API_KEY" \
      {{ base_url }}/api/v1/me</code></pre>
   <p class="muted">{{ _("Mọi lời gọi tốn credit đều cần một báo giá đã ký và một Idempotency-Key.") }}</p>
 </div>
 
 <div class="card">
-  <h2 style="margin-top:0;">{{ _("Môi trường test") }}</h2>
+  <h2 class="u-mt0">{{ _("Môi trường test") }}</h2>
   <p>{{ _("Khóa test bắt đầu bằng ltt_tk. Nó đi qua đúng chuỗi mà khóa live đi qua — xác thực, phạm vi, kiểm tham số, báo giá, Idempotency-Key, job, webhook và chữ ký — chỉ khác đúng một mắt xích: không gọi nhà cung cấp, mà trả kết quả mẫu theo đúng output_schema đã công bố.") }}</p>
   <ul>
     <li>{{ _("Khóa test KHÔNG tiêu được credit. Không phải tiêu ít — là không chạm vào sổ credit, nên lộ ra cũng không mất tiền.") }}</li>

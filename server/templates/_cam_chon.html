@@ -60,7 +60,7 @@
 } %}
 
 <div class="card cam-chon" data-cam-chon>
-  <h2 style="margin-top:0;">{{ _("Bạn cắm vào công cụ nào?") }}</h2>
+  <h2 class="u-mt0">{{ _("Bạn cắm vào công cụ nào?") }}</h2>
   <div class="chon-hang" role="tablist" aria-label="{{ _('Công cụ') }}">
     {% for b in be_mat %}
       <button type="button" class="chon-o" role="tab" data-ma="{{ b.ma }}"
@@ -82,7 +82,7 @@
   <h2 class="cam-khu-ten">{{ ten_be_mat.get(b.ma, b.ten) }}</h2>
 
   <div class="card">
-    <h3 style="margin-top:0;">{{ _("Kết nối") }}</h3>
+    <h3 class="u-mt0">{{ _("Kết nối") }}</h3>
     <table class="table">
       <tbody>
         {# 🔴 KHU PHUC VU HAI CONG CU thi bang nay phai co HAI DONG.
@@ -92,13 +92,13 @@
            duoi se cam theo hai gia tri khong khop nhau. `test_303` chot no. #}
         {% if b.dia_chi_theo %}
           {% for ten_cc, dia_chi, model in b.dia_chi_theo %}
-            <tr><th scope="row" style="white-space:nowrap;">{{ ten_cc }}</th>
+            <tr><th class="u-nowrap" scope="row">{{ ten_cc }}</th>
                 <td><code class="to-dam">{{ dia_chi }}</code>
                     <span class="muted">· {{ _("model") }}</span>
                     <code class="to-dam">{{ model }}</code></td></tr>
           {% endfor %}
         {% else %}
-          <tr><th scope="row" style="white-space:nowrap;">{{ _("Địa chỉ") }}</th>
+          <tr><th class="u-nowrap" scope="row">{{ _("Địa chỉ") }}</th>
               <td><code class="to-dam">{{ b.dia_chi }}</code></td></tr>
           <tr><th scope="row">{{ _("Tên model") }}</th>
               <td>
@@ -132,7 +132,7 @@
 
   {% if b.ma not in ("desktop", "codex-desktop") %}
   <div class="card">
-    <h3 style="margin-top:0;">{{ _("Các bước") }}</h3>
+    <h3 class="u-mt0">{{ _("Các bước") }}</h3>
     {% if b.ma == "codex" %}
     <p>{{ _("Cắm tay bằng custom provider và tệp cấu hình; không cần tool LTT. Hướng dẫn đối chiếu với Codex CLI 0.145.0 đang cài trên máy.") }}</p>
     <p>{{ _("Tạo khóa live có tools:read và jobs:create, còn hạn và có credit. Sao lưu các tệp cấu hình trước khi sửa. Không đặt khóa trong TOML hoặc catalog.") }} <a href="/developers/keys">{{ _("Mở Khóa API") }}</a></p>
@@ -144,7 +144,7 @@
         {%- if tep %} <code>{{ tep }}</code>{% endif %}
         {%- if nhan_buoc.get(ma_buoc) %} <span class="muted" style="font-weight:400;">{{ nhan_buoc[ma_buoc] }}</span>{% endif %}</h4>
       {% if ma_buoc == "codex-catalog" %}<details><summary>{{ _("Mở JSON catalog để sao chép toàn bộ") }}</summary>{% endif %}
-      <pre style="overflow-x:auto;"><code>{{ doan }}</code></pre>
+      <pre class="u-cuon-ngang"><code>{{ doan }}</code></pre>
       {% if ma_buoc == "codex-catalog" %}</details>{% endif %}
     {% endfor %}
     {% if b.chay %}
@@ -155,7 +155,7 @@
 
   {% if b.ma == "codex-desktop" %}
   <div class="card">
-    <h3 style="margin-top:0;">{{ _("Cắm LTT vào Codex Desktop trên Windows") }}</h3>
+    <h3 class="u-mt0">{{ _("Cắm LTT vào Codex Desktop trên Windows") }}</h3>
     <p>{{ _("Bảng này được đối chiếu với schema cấu hình Codex hiện hành và app-server 0.146.0-alpha.3.1 nằm trong Codex Desktop 26.721.11231.0 đang cài trên máy. Codex Desktop không có form Gateway để nhập URL và khóa. Ứng dụng đọc cùng cấu hình cấp người dùng với Codex CLI.") }}</p>
     <p>{{ _("Tạo khóa live còn hạn, có credit, scope tools:read và jobs:create. Nếu không chọn giới hạn công cụ, khóa được gọi mọi công cụ công khai nhưng không tự có thêm scope ghi. Không đặt khóa trong TOML, catalog, ảnh chụp hay lệnh có thể lưu vào lịch sử.") }} <a href="/developers/keys">{{ _("Mở Khóa API") }}</a></p>
     <ol>
@@ -167,7 +167,7 @@
       <h4>{{ loop.index + 3 }}. <code>{{ tep }}</code>
         {% if nhan_buoc.get(ma_buoc) %}<span class="muted" style="font-weight:400;">{{ nhan_buoc[ma_buoc] }}</span>{% endif %}</h4>
       {% if ma_buoc == "codex-catalog" %}<details><summary>{{ _("Mở JSON catalog để sao chép toàn bộ") }}</summary>{% endif %}
-      <pre style="overflow-x:auto;"><code>{{ doan }}</code></pre>
+      <pre class="u-cuon-ngang"><code>{{ doan }}</code></pre>
       {% if ma_buoc == "codex-catalog" %}</details>{% endif %}
     {% endfor %}
     <p class="cam-luu-y">{{ _("Chỉ dùng MỘT trong hai khối config.toml. Nếu tệp đã có cấu hình riêng, giữ bản sao lưu rồi hợp nhất các khóa gốc trước bảng đầu tiên; chỉ được có một bảng [agents] và một bảng [model_providers.ltt]. TOML có khóa hoặc bảng trùng sẽ làm Codex từ chối khởi động.") }}</p>
@@ -179,7 +179,7 @@
   </div>
 
   <div class="card">
-    <h3 style="margin-top:0;">{{ _("Bảng giá trị chuẩn cho hai model") }}</h3>
+    <h3 class="u-mt0">{{ _("Bảng giá trị chuẩn cho hai model") }}</h3>
     <table class="table">
       <thead><tr><th>{{ _("Tên hiển thị") }}</th><th><code>model</code></th><th><code>model_context_window</code></th><th><code>model_auto_compact_token_limit</code></th></tr></thead>
       <tbody>
@@ -208,7 +208,7 @@
   </div>
 
   <div class="card">
-    <h3 style="margin-top:0;">{{ _("Giới hạn đã biết của custom provider trong Desktop") }}</h3>
+    <h3 class="u-mt0">{{ _("Giới hạn đã biết của custom provider trong Desktop") }}</h3>
     <ul>
       <li>{{ _("Chat agent chính, shell, apply_patch và tool tĩnh đi qua Responses API của LTT.") }}</li>
       <li>{{ _("Bộ chọn model của Desktop hiện chưa hiểu đầy đủ model theo từng custom provider; chuyển hai model LTT bằng cấu hình gốc và chat mới như trên.") }}</li>
@@ -225,7 +225,7 @@
 
   {% if b.ma == "codex" %}
   <div class="card">
-    <h3 style="margin-top:0;">{{ _("Chọn model và kiểm tra") }}</h3>
+    <h3 class="u-mt0">{{ _("Chọn model và kiểm tra") }}</h3>
     <p>{{ _("Lệnh nhập khóa ở trên che ký tự và chỉ giữ khóa trong cửa sổ PowerShell hiện tại. Chạy Codex từ chính cửa sổ đó; không ghi khóa bằng setx trên dòng lệnh để tránh lưu vào lịch sử.") }}</p>
     <pre><code>codex --profile ltt
 codex --profile ltt-fast</code></pre>
@@ -245,7 +245,7 @@ codex --profile ltt-fast</code></pre>
 
   {% if b.ma == "desktop" %}
   <div class="card">
-    <h3 style="margin-top:0;">{{ _("Cắm tay trên Claude Desktop 1.52386.6") }}</h3>
+    <h3 class="u-mt0">{{ _("Cắm tay trên Claude Desktop 1.52386.6") }}</h3>
     <p>{{ _("Mở Khóa API, tạo khóa live còn hạn với tools:read và jobs:create; tài khoản cần có credit và quyền gọi model. Sao chép khóa khi nó hiện một lần.") }} <a href="/developers/keys">{{ _("Mở Khóa API") }}</a></p>
     <p class="muted">{{ _("Nếu form hiện Organization-managed hoặc các ô bị khóa, policy đang quản lý ứng dụng. Dùng Gỡ ra trong tool nếu đó là cấu hình LTT do tool cắm; policy của tổ chức khác cần người quản lý thay đổi trước khi nhập tay.") }}</p>
     <ol>
@@ -296,12 +296,12 @@ codex --profile ltt-fast</code></pre>
   </div>
 
   <div class="card">
-    <h3 style="margin-top:0;">{{ _("Vì sao phải đặt các giá trị này") }}</h3>
+    <h3 class="u-mt0">{{ _("Vì sao phải đặt các giá trị này") }}</h3>
     <h4>{{ _("Tắt 1M chưa đặt giới hạn 171K") }}</h4>
     <p>{{ _("Default to 1M context chỉ chọn biến thể mặc định; Offer 1M-context variant khai báo model hỗ trợ 1M. LTT không hỗ trợ 1M nên giữ cả hai tắt. Code có thể vẫn giả định 200K cho tên gateway; xem vòng Usage cạnh model hoặc /context để kiểm, không dựa vào Test connection.") }}</p>
     <p>{{ _("Với Code chạy Local: ô chọn môi trường → Local → bánh răng, chép nguyên khối 11 dòng dưới đây rồi mở phiên Local mới. Đây là danh sách chuẩn đầy đủ cho Claude Desktop 1.52386.6 / Claude Code 2.1.270 với LTT Gateway; không ghép thêm các danh sách cũ. Cửa sổ/ngưỡng nén dùng theo LTT 3.8, là model hẹp hơn; khi chọn LTT 3.5 thì nén sớm hơn. Cấu hình này không tự đổi theo picker.") }}</p>
     <p>{{ _("Không thấy ô môi trường trong phiên đang chạy: bấm New ở thanh bên để mở màn hình tạo phiên. Nút Local nằm trong vùng soạn của màn hình này; mở danh sách, rê vào Local rồi bấm bánh răng. Lưu biến trước khi bắt đầu phiên mới; phiên cũ không tự nhận giới hạn mới.") }}</p>
-    <pre style="overflow-x:auto;"><code>{% for name, value in b.local_env %}{{ name }}={{ value }}{% if not loop.last %}
+    <pre class="u-cuon-ngang"><code>{% for name, value in b.local_env %}{{ name }}={{ value }}{% if not loop.last %}
 {% endif %}{% endfor %}</code></pre>
     <h4>{{ _("Bảng preset theo model") }}</h4>
     <table class="table">
@@ -349,7 +349,7 @@ codex --profile ltt-fast</code></pre>
 
   {% if b.ma == "vscode" %}
   <div class="card">
-    <h3 style="margin-top:0;">{{ _("Chỗ hay vấp của tiện ích") }}</h3>
+    <h3 class="u-mt0">{{ _("Chỗ hay vấp của tiện ích") }}</h3>
     <ul class="muted">{% for x in vscode_bay %}<li>{{ x }}</li>{% endfor %}</ul>
   </div>
   {% endif %}
@@ -359,7 +359,7 @@ codex --profile ltt-fast</code></pre>
 
 {# Dung chung cho MOI be mat, nen no o ngoai cac khu. #}
 <div class="card" id="hay-vap">
-  <h2 style="margin-top:0;">{{ _("Những chỗ hay vấp — chung cho mọi công cụ") }}</h2>
+  <h2 class="u-mt0">{{ _("Những chỗ hay vấp — chung cho mọi công cụ") }}</h2>
   {% for ten, vi_sao in bay %}
     <h3>{{ ten }}</h3>
     <p>{{ vi_sao }}</p>
