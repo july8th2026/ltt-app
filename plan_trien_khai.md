@@ -27,7 +27,7 @@ nào < 88 · critical UI xác minh ở mức render thật (E3).
 | Worktree | `D:\LTTSTUDIOSAPP-golden-ui` |
 | Nhánh | `phien/golden-ui` |
 | BASE_SHA | `efa9188cc9477f50a298892ae0fa01da511b113d` (`main` lúc 16/09/2026) |
-| Hồ sơ cây | `FAST_BUILD` / `BUILDING` từ 16/09 18:43 (baseline = BASE_SHA). Commit checkpoint không gate; chứng nhận ở `CERTIFYING` bằng `gate --doi --tu efa9188c` rồi L3 một lần (hợp đồng §4.10) |
+| Nhịp test/gate | Luật chuẩn hoá 16/09 (`docs/00_LTT_OPERATING_CONTRACT.md` §4, đã hoà vào nhánh ở `b090c061`): trong phiên **chỉ test nhắm** (`python -m pytest <tệp> -q`, ≥3 tệp ⇒ `cua_so_yen` + `tai_may`, `-n ≤ 6`); ⛔ **không `gate.py` ở bất kỳ chế độ nào**; **L3 một lần** khi mọi pha xong; L3 đỏ ⇒ sửa tại chỗ + khép `gate.py --doi --tu <sha L3>`; xong ⇒ tự gộp `main`, deploy, báo. ⚠️ Hai lượt `gate.py --quick` ngày 16/09 (trước khi luật mới vào cây) KHÔNG dùng làm bằng chứng. Hồ sơ cây vẫn `FAST_BUILD`/`CERTIFYING` (§4.10). |
 | Máy chủ soi | `python tools\golden_ui_dev.py --cong 8140` (sqlite dùng một lần ở `tmp/golden_ui/`, 3 tài khoản giả, đủ state đơn nạp/job; bật `LTT_VPS`/`LTT_NEXUS`/`LTT_AUTO_SCAN_VIDEO`; KHÔNG có `secrets/`) |
 | Bộ quét | `node tools/golden_ui_quet.mjs --cau-hinh routes.json --ra <dir> [--khung ...]` — HTTP, ảnh toàn trang, console, request hỏng, tràn ngang, axe WCAG 2.2 AA, h1/main/lang, ô chạm, ô nhập <16px |
 
@@ -45,7 +45,7 @@ nào < 88 · critical UI xác minh ở mức render thật (E3).
 | 4 Critical Pages | 70 | 🟡 Error ✅ · Jobs 🟡 · Billing 🟡 · Auth 🟡 · Shell/Workspace 🟡 · Public ⏳ |
 | 5 Remaining Pages & Apps | 65 | 🟡 Admin ✅ · sqladmin ✅ · Status ✅ · Apps a11y ✅ · VPS/Nexus tương phản ✅ · còn i18n chuỗi cứng + chip thể loại + ảnh bìa |
 | 6 Responsive & Accessibility | 90 | 🟡 448 phép đo 4 khung axe 0 · 430×932 critical ✅ · bàn phím critical ✅ · còn: đo trên URL công khai (cần deploy) |
-| 7 Visual Regression & Final QA | 35 | 🟡 regression ảnh 28 mẫu ✅ · CERTIFYING (gate) ⏳ · URL công khai ⏳ (cần deploy) |
+| 7 Visual Regression & Final QA | 35 | 🟡 regression ảnh 28 mẫu ✅ · L3 một lần ⏳ (sau khi mọi pha xong) · gộp `main` + deploy + URL công khai ⏳ |
 
 ## Current Baseline
 
@@ -380,4 +380,4 @@ Không có.
 
 ## Next Action
 
-i18n chuỗi cứng còn lại (taoanh `GENERATIVE IMAGE`/`OUTPUT HISTORY`/`REFERENCE & EDIT`, chip thể loại `audio`/`video`), rồi Phase 7: screenshot regression Playwright cho critical screens + chuyển FAST_BUILD sang CERTIFYING.
+Hoàn tất các P1 còn lại (P1-01 menu tài khoản, P1-14 inline style dev/VPS/Nexus/hướng dẫn, P1-06/07 chuỗi JS, P1-15 cache-bust noVNC/sqladmin) bằng test nhắm; đo lại toàn hệ; rồi L3 MỘT lần → gộp `main` → deploy → nghiệm thu trên `https://app.lttstudios.com`.
