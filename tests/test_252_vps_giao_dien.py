@@ -208,7 +208,7 @@ def _gia_lap_proxmox(monkeypatch, *, ram_gb=64, dia_gb=600, vms=None,
     """
     class _Client:
         def trang_thai_node(self):
-            return {"memory": {"total": ram_gb * 1024 ** 3}}
+            return {"memory": {"total": ram_gb * 1024 ** 3}, "cpuinfo": {"cpus": 20}}
 
         def kho_luu_tru(self):
             return [{"storage": "local-lvm", "content": "images,rootdir",
@@ -220,6 +220,31 @@ def _gia_lap_proxmox(monkeypatch, *, ram_gb=64, dia_gb=600, vms=None,
 
     import apps.vps.routes as routes
     monkeypatch.setattr(routes, "client_tu_moi_truong", lambda *a, **k: _Client())
+    from types import SimpleNamespace
+    monkeypatch.setattr(routes.backend_factory, "compute_backend", lambda profile:
+                        SimpleNamespace(client=_Client()))
+
+
+def _tao_profile_healthy(db):
+    from datetime import datetime, timezone
+    from apps.vps.profiles import OVH_PROFILE_ID, REQUIRED_HEALTH_COMPONENTS
+    from apps.vps.tables import VpsInfrastructureProfile, VpsProfileHealth
+
+    profile = VpsInfrastructureProfile(
+        id=OVH_PROFILE_ID, slug="ovh-sgp-prod", name="OVH-SGP-PROD",
+        region="port", environment="production", status="ACTIVE",
+        accept_new=True, is_default=True, compute_backend_type="proxmox",
+        public_ip_backend_type="ovh_static_pool", gateway_backend_type="nft",
+        credential_ref="LTT_OVH",
+    )
+    db.add(profile)
+    now = datetime.now(timezone.utc)
+    for component in REQUIRED_HEALTH_COMPONENTS:
+        db.add(VpsProfileHealth(
+            infrastructure_profile_id=profile.id, component=component,
+            status="HEALTHY", observed_at=now, generated_at=now))
+    db.flush()
+    return profile
 
 
 def test_node_da_day_vi_MAY_CUA_CHU_NHA_thi_khong_moi_khach_tao(moi_truong,
@@ -349,17 +374,23 @@ def test_tao_may_thanh_cong_thu_tien_va_NOP_JOB_chu_khong_cham_proxmox(
     _gia_lap_proxmox(monkeypatch)
     user_id = _tao_khach(moi_truong)
 
-    from apps.vps.tables import VpsGateway
+    from apps.vps.tables import VpsGateway, VpsIp
     gen = moi_truong.get_session()
     db = next(gen)
     try:
-        db.add(VpsGateway(ten="cong-chinh", vung="port",
+        profile = _tao_profile_healthy(db)
+        gateway = VpsGateway(ten="cong-chinh", vung="port",
+                          infrastructure_profile_id=profile.id,
                           ip_cong_khai="203.0.113.10",
                           ten_mien="vps.example.com",
                           bridge="vmbr1", subnet_cidr="10.51.0.0/24",
                           subnet_gw="10.51.0.1", dns="1.1.1.1", mtu=1420,
                           octet_dau=10, octet_cuoi=100,
-                          cho_phep_ip_rieng=True))
+                          cho_phep_ip_rieng=True)
+        db.add(gateway)
+        db.flush()
+        db.add(VpsIp(gateway_id=gateway.id, infrastructure_profile_id=profile.id,
+                     dia_chi="192.0.2.60", state="FREE"))
         db.commit()
     finally:
         try:
@@ -374,7 +405,10 @@ def test_tao_may_thanh_cong_thu_tien_va_NOP_JOB_chu_khong_cham_proxmox(
         token = re.search(r'name="csrf_token" value="([^"]+)"', page.text).group(1)
         r = client.post("/vps/tao", data={
             "csrf_token": token, "plan_id": "vps-vua",
-            "os_id": "winsrv2022-gui", "vung": "port", "dia_them_gb": 0})
+            "os_id": "winsrv2022-gui", "vung": "port", "dia_them_gb": 0,
+            # Extra form fields are attacker-controlled and must never override
+            # the server-side selector.
+            "profile_id": "attacker-profile", "provider": "vultr"})
         assert r.status_code == 303
         assert r.headers["location"] == "/vps"
     finally:
@@ -390,6 +424,8 @@ def test_tao_may_thanh_cong_thu_tien_va_NOP_JOB_chu_khong_cham_proxmox(
         assert may.trang_thai == "dang_tao"
         assert may.paid_until is not None
         assert may.vmid is None            # chưa chạm Proxmox trong request
+        assert may.infrastructure_profile_id == profile.id
+        assert may.profile_resolution_state == "PINNED"
         assert credit.so_du(db, user_id) == 10_000 - 1790
 
         job = db.query(Job).filter_by(job_type="vps.provision").one()
@@ -455,29 +491,18 @@ def test_moi_thuoc_tinh_plan_va_os_trong_template_deu_co_that():
 # ─────────────────────────────────────────────────────────────────────────────
 # Trang bán công khai (25/08)
 #
-# `/vps` phục vụ **hai thứ tuỳ người xem**. Đó là một quyết định, không phải một
-# tiện lợi: thẻ app trong catalog hiện cho cả khách chưa đăng nhập, nên nếu
-# `/vps` đòi đăng nhập thì người lạ bấm vào sẽ rơi thẳng vào trang đăng nhập —
-# một ngõ cụt ở đúng bước đầu tiên của phễu bán hàng.
-#
-# Ba chốt dưới đây giữ cả hai vế. Vế dễ quên là vế thứ hai: mở cho khách ẩn danh
-# KHÔNG được kéo theo việc để lộ máy của người khác hay dựng một biểu mẫu sẽ POST
-# rồi ăn 401.
+# Q124/D01 + D09 thay quyết định storefront cũ: VPS là web-only owner MVP,
+# authenticated-only. Catalog công khai không còn dẫn người lạ vào bề mặt này.
 # ─────────────────────────────────────────────────────────────────────────────
 
-def test_khach_AN_DANH_xem_duoc_bang_gia_khong_can_dang_nhap(moi_truong,
-                                                             monkeypatch):
+def test_khach_AN_DANH_bi_chuyen_toi_dang_nhap(moi_truong, monkeypatch):
     monkeypatch.setenv("LTT_VPS", "1")
     client = _client()
     try:
         r = client.get("/vps")          # KHÔNG đăng nhập
-        assert r.status_code == 200, "khach an danh bi chan khoi trang ban"
-        assert "149.000" in r.text, "khong thay bang gia"
-        # Kiem TINH CHAT, khong kiem nguyen van: khach an danh phai co CA HAI
-        # loi ra — tao tai khoan (phan lon nguoi doc trang nay chua co) va dang
-        # nhap (nguoi da co). Cau chu cua nut se con doi; hai duong nay thi khong.
-        assert 'href="/register"' in r.text, "khong co duong tao tai khoan"
-        assert "/login?next=" in r.text, "khong co duong dang nhap giu lai next"
+        assert r.status_code == 303
+        assert r.headers["location"].startswith("/login?next=")
+        assert "149.000" not in r.text
     finally:
         client.close()
 
@@ -494,10 +519,10 @@ def test_khach_AN_DANH_khong_thay_bieu_mau_va_khong_thay_may_cua_ai(
     client = _client()
     try:
         r = client.get("/vps")
-        assert 'action="/vps/tao"' not in r.text, "bieu mau se POST va an 401"
+        assert r.status_code == 303
+        assert 'action="/vps/tao"' not in r.text
         assert "Máy của tôi" not in r.text
-        # Cổng cờ vẫn đứng trước: công khai nghĩa là "không đòi đăng nhập",
-        # không phải "bỏ qua cờ".
+        # Cổng cờ vẫn đứng trước cổng đăng nhập.
         monkeypatch.delenv("LTT_VPS", raising=False)
         assert client.get("/vps").status_code == 404
     finally:

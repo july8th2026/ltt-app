@@ -385,6 +385,99 @@ class R2Storage(Storage):
         return None
 
 
+class RoutedStorage(Storage):
+    """Định tuyến theo TIỀN TỐ khoá: vài tiền tố ở đĩa máy chủ, còn lại ở backend chính.
+
+    🔴 VÌ SAO (đo 15–16/09/2026, `docs/LTT_VOICE/GUI_DOI_SOAT_VA_PLAN_V2.md` W-KHO):
+
+       · bucket R2 xoá object quá ~7 ngày (luật vòng đời ngoài ứng dụng) — nó đã
+         xoá 56/58 tệp sinh trắc của 29 hồ sơ giọng, thứ phải sống vĩnh viễn;
+       · toàn bucket lúc đo chỉ 37 object / 46 MB ⇒ R2 gần như không tốn tiền,
+         nhưng cũng không mang lợi ích nào cho những tiền tố chỉ máy A đọc/ghi và
+         chỉ phục vụ qua route của app (không `url_for`, không máy B).
+
+    ⭐ Nền tảng KHÔNG biết tên app: tiền tố đến từ cấu hình
+       (`LTT_STORAGE_LOCAL_PREFIXES`), không gõ cứng ở đây.
+
+    ⛔ Chỉ đặt vào đây tiền tố mà KHÔNG nơi nào cần `url_for`/`put_url` (máy B,
+       tải trực tiếp trình duyệt ↔ R2, ModelArk). Với khoá cục bộ hai hàm đó trả
+       `None` — đúng hợp đồng Local, và bên gọi đã có đường lùi, nhưng một tiền tố
+       sai sẽ âm thầm đẩy tệp lớn qua tunnel.
+    """
+
+    def __init__(self, *, chinh: Storage, cuc_bo: Storage, tien_to):
+        self.chinh = chinh
+        self.cuc_bo = cuc_bo
+        self.tien_to = tuple(tien_to)
+
+    def la_cuc_bo(self, key: str) -> bool:
+        k = (key or "").replace("\\", "/").lstrip("/")
+        return any(k.startswith(p) for p in self.tien_to)
+
+    def _chon(self, key: str) -> Storage:
+        return self.cuc_bo if self.la_cuc_bo(key) else self.chinh
+
+    def put(self, key: str, stream: BinaryIO,
+            content_type: str = "application/octet-stream") -> StoredFile:
+        return self._chon(key).put(key, stream, content_type=content_type)
+
+    def open(self, key: str) -> BinaryIO:
+        return self._chon(key).open(key)
+
+    def delete(self, key: str) -> None:
+        self._chon(key).delete(key)
+
+    def exists(self, key: str) -> bool:
+        return self._chon(key).exists(key)
+
+    def size(self, key: str) -> int:
+        return self._chon(key).size(key)
+
+    def promote(self, staging_key: str, final_key: str,
+                content_type: str = "application/octet-stream") -> StoredFile:
+        nguon, dich = self._chon(staging_key), self._chon(final_key)
+        if nguon is dich:
+            return nguon.promote(staging_key, final_key, content_type=content_type)
+        # Khác backend: không có rename/copy phía server — chép qua luồng.
+        return Storage.promote(self, staging_key, final_key, content_type=content_type)
+
+    def download_token(self, key: str, ttl_s: int = DEFAULT_TTL_S) -> str:
+        return self._chon(key).download_token(key, ttl_s=ttl_s)
+
+    def resolve_token(self, token: str) -> Optional[str]:
+        return self.cuc_bo.resolve_token(token) or self.chinh.resolve_token(token)
+
+    def url_for(self, key: str, ttl_s: int = DEFAULT_TTL_S) -> Optional[str]:
+        return self._chon(key).url_for(key, ttl_s=ttl_s)
+
+    def put_url(self, key: str, ttl_s: int = DEFAULT_TTL_S,
+                content_type: str = "application/octet-stream") -> Optional[UploadTarget]:
+        return self._chon(key).put_url(key, ttl_s=ttl_s, content_type=content_type)
+
+    def local_path(self, key: str) -> Optional[str]:
+        return self._chon(key).local_path(key)
+
+
+def tien_to_cuc_bo_tu_env() -> tuple:
+    """`LTT_STORAGE_LOCAL_PREFIXES="voice/, abc/"` → `("voice/", "abc/")`.
+
+    ⛔ Tiền tố PHẢI kết thúc bằng `/`. `voice` trần sẽ nuốt luôn `voiceover/…`
+       của một app khác — bỏ qua và ghi log thay vì đoán ý.
+    """
+    import logging
+    ra = []
+    for phan in (os.environ.get("LTT_STORAGE_LOCAL_PREFIXES") or "").split(","):
+        p = phan.strip().replace("\\", "/").lstrip("/")
+        if not p:
+            continue
+        if not p.endswith("/") or ".." in p:
+            logging.getLogger(__name__).error(
+                "LTT_STORAGE_LOCAL_PREFIXES: bo qua tien to %r (phai ket thuc bang '/')", p)
+            continue
+        ra.append(p)
+    return tuple(dict.fromkeys(ra))
+
+
 def _r2_from_env() -> "R2Storage":
     acc = os.environ.get("LTT_R2_ACCOUNT_ID", "").strip()
     endpoint = (os.environ.get("LTT_R2_ENDPOINT", "").strip()
@@ -417,6 +510,13 @@ def get_storage() -> Storage:
                 logging.getLogger(__name__).error(
                     "R2 chưa cấu hình được, dùng LocalStorage: %s", e)
                 _storage = _local()
+            else:
+                # W-KHO: vài tiền tố ở đĩa máy chủ, xem `RoutedStorage`. Không
+                # khai gì ⇒ giữ nguyên R2 cho mọi khoá như trước.
+                tien_to = tien_to_cuc_bo_tu_env()
+                if tien_to:
+                    _storage = RoutedStorage(chinh=_storage, cuc_bo=_local(),
+                                             tien_to=tien_to)
         else:
             _storage = _local()
     return _storage

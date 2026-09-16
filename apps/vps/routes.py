@@ -19,6 +19,7 @@ một thứ không mở.
 from __future__ import annotations
 
 import logging
+import uuid
 
 from fastapi import (APIRouter, Depends, Form, HTTPException, Request,
                      WebSocket, WebSocketDisconnect)
@@ -26,12 +27,12 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
 
 import apps.vps as vps_app
-from apps.vps import (bang_thong, dieu_khoan, nhan, os_images, ten_may,
-                      trang_thai_may)
+from apps.vps import (bang_thong, dieu_khoan, nhan, os_images, profiles,
+                      ten_may, trang_thai_may)
 from apps.vps.cost import CHU_KY_NGAY, PLANS, dia_tong_gb, lay_plan
 from apps.vps.manifest import MANIFEST
 from apps.vps.services import (billing, capacity, console, dieu_khien,
-                               provisioning, sao_luu, thao_tac)
+                               provisioning, sao_luu, thao_tac, backend_factory)
 from apps.vps.services.proxmox import (ChuaCauHinh, ProxmoxError,
                                        client_tu_moi_truong)
 from apps.vps.tables import VpsEvent, VpsInstance, VpsIp
@@ -46,6 +47,10 @@ log = logging.getLogger(__name__)
 
 router = APIRouter(tags=["vps"])
 
+# App-owned admin routes precede /{instance_id}; no platform slug import needed.
+from apps.vps.admin_routes import router as _admin_router
+router.include_router(_admin_router)
+
 
 def _cong_co() -> None:
     """Cờ tắt → 404. Đặt TRƯỚC `require_login` trong mọi chữ ký."""
@@ -58,10 +63,21 @@ def _chu(request: Request) -> str:
     uid = getattr(u, "id", None)
     if not uid:
         raise HTTPException(status_code=401)
+    if not vps_app.access_allowed(u):
+        # 404 does not disclose that a private MVP surface exists.
+        raise HTTPException(status_code=404)
     return str(uid)
 
 
-def _suc_chua(db) -> tuple[capacity.SucChua | None, str]:
+def _mvp_access(request: Request) -> None:
+    _chu(request)
+
+
+def _instance_client(db, may):
+    return backend_factory.compute_backend(profiles.pinned_profile(db, may)).client
+
+
+def _suc_chua(db, profile=None) -> tuple[capacity.SucChua | None, str]:
     """Sức chứa hiện tại, và **câu cho khách đọc** nếu không đọc được.
 
     Không đọc được Proxmox **không** phải lỗi trang: trang vẫn phải mở để khách
@@ -89,7 +105,8 @@ def _suc_chua(db) -> tuple[capacity.SucChua | None, str]:
     `log.warning` — nơi người vận hành đọc, và nơi nó thật sự có ích.
     """
     try:
-        client = client_tu_moi_truong()
+        client = (backend_factory.compute_backend(profile).client if profile is not None
+                  else client_tu_moi_truong())
         return provisioning.suc_chua_hien_tai(
             db, client.trang_thai_node(), client.kho_luu_tru(),
             client.danh_sach_vm()), ""
@@ -313,8 +330,10 @@ def _ai_do(request: Request) -> str:
 @router.get("", response_class=HTMLResponse)
 def trang_chinh(request: Request,
                 _g: None = Depends(_cong_co),
+                _u: str = Depends(require_login),
+                _a: None = Depends(_mvp_access),
                 db=Depends(get_db)):
-    """Trang ban. **Khong doi dang nhap** — xem `_ai_do`.
+    """Trang VPS authenticated-only trong owner MVP.
 
     Khach an danh thay bang gia va ly do nen mua; khach da dang nhap thay may cua
     ho va bieu mau tao may. Mot URL, chia se duoc, khong ngo cut.
@@ -326,7 +345,7 @@ def trang_chinh(request: Request,
     `_cong_co` van dung TRUOC: cong khai nghia la "khong doi dang nhap", khong
     phai "bo qua co `LTT_VPS`".
     """
-    user_id = _ai_do(request)
+    user_id = _chu(request)
     suc_chua, loi_ha_tang = _suc_chua(db)
 
     goi = []
@@ -341,7 +360,7 @@ def trang_chinh(request: Request,
                    if os_images.hop_le(p.id, o.id)[0]],
         })
 
-    may_cua_toi = _may_cua_toi(db, user_id) if user_id else []
+    may_cua_toi = _may_cua_toi(db, user_id)
     return templates.TemplateResponse(request, "vps.html", {
         "nav": MANIFEST.slug, "app": MANIFEST,
         "csrf_token": issue_csrf_token(request),
@@ -360,9 +379,9 @@ def trang_chinh(request: Request,
         # Tên gợi ý cho ô "Tên máy" — điền sẵn để khách bỏ trống cũng có một cái
         # tên gõ được, thay vì một chuỗi hex 8 ký tự ở ô xác nhận phá huỷ (D-01).
         "ten_goi_y": ten_may.tu_sinh(db, user_id) if user_id else "",
-        "da_dang_nhap": bool(user_id),
+        "da_dang_nhap": True,
         # Rỗng cho khách ẩn danh ⇒ `vps_base.html` không dựng vỏ điều khiển.
-        "menu_trai": _menu("tong_quan", ds=may_cua_toi) if user_id else [],
+        "menu_trai": _menu("tong_quan", ds=may_cua_toi),
         "suc_chua": suc_chua,
         "loi_ha_tang": loi_ha_tang,
         "loi": request.query_params.get("loi", ""),
@@ -370,8 +389,10 @@ def trang_chinh(request: Request,
 
 
 @router.get("/dieu-khoan", response_class=HTMLResponse)
-def trang_dieu_khoan(request: Request, _g: None = Depends(_cong_co)):
-    """Dieu khoan LTT VPS. **Khong doi dang nhap** — va do la ca van de.
+def trang_dieu_khoan(request: Request, _g: None = Depends(_cong_co),
+                     _u: str = Depends(require_login),
+                     _a: None = Depends(_mvp_access)):
+    """Điều khoản nằm sau login trong owner-only MVP.
 
     Clickwrap ngay duoi nut "Tao may" tro toi day. Mot trang dieu khoan doi dang
     nhap la mot trang khach KHONG doc duoc truoc khi quyet dinh, tuc ho dong y
@@ -433,17 +454,34 @@ def tao_may(request: Request,
     if not duoc:
         return _ve_trang(ly_do)
 
-    suc_chua, loi_ha_tang = _suc_chua(db)
+    try:
+        profile = profiles.select_profile(db, region=vung)
+        gateway = provisioning.chon_gateway(
+            db, vung, infrastructure_profile_id=profile.id)
+    except (profiles.ProfileNotReady, provisioning.KhongCoGatewayError):
+        return _ve_trang(_t("Vùng bạn chọn hiện không nhận máy mới."))
+
+    suc_chua, loi_ha_tang = _suc_chua(db, profile)
     if suc_chua is None:
         return _ve_trang(_t("Hệ thống đang bận, chưa nhận máy mới. Thử lại sau."))
-    kiem = capacity.cho_phep_ban(suc_chua, plan_id, dia_them_gb)
-    if not kiem.cho_phep:
-        return _ve_trang(_t("Đã hết chỗ cho cấu hình này. Vui lòng chọn gói nhỏ hơn."))
-
+    from apps.vps.services.sellable_capacity import (
+        available_gateway_slots,
+        effective_ipv4_slots,
+        promised_without_ip,
+        sellable_slots,
+    )
     try:
-        gateway = provisioning.chon_gateway(db, vung)
-    except provisioning.KhongCoGatewayError:
-        return _ve_trang(_t("Vùng bạn chọn hiện không nhận máy mới."))
+        ip_details = backend_factory.public_ip_backend(db, profile).health().details
+        # Queued promises already consume an eventual IP even before provision
+        # reserves it. The selector's row lock serializes these admissions.
+        waiting = promised_without_ip(db, profile.id)
+        free = effective_ipv4_slots(ip_details, promised_without_ip=waiting)
+        slots = sellable_slots(suc_chua, plan_id, extra_disk_gb=dia_them_gb,
+                               free_ipv4=free, gateway_slots=available_gateway_slots(db, profile.id))
+    except backend_factory.operation_error_types():
+        return _ve_trang(_t("Hệ thống đang bận, chưa nhận máy mới. Thử lại sau."))
+    if slots.slots < 1:
+        return _ve_trang(_t("Đã hết chỗ cho cấu hình này. Vui lòng chọn gói nhỏ hơn."))
 
     # Tên: bỏ trống thì tự sinh. Kiểm TRƯỚC khi ghi gì vào CSDL — một tên trùng
     # phát hiện sau khi đã trừ tiền là một lỗi phải hoàn tiền để sửa.
@@ -457,6 +495,7 @@ def tao_may(request: Request,
                       ten=ten_may_moi,
                       dia_them_gb=int(dia_them_gb or 0),
                       gateway_id=gateway.id, **trang_thai_may.moi())
+    profiles.pin_instance(may, profile)
     db.add(may)
     db.flush()
 
@@ -536,6 +575,19 @@ def tat_may(instance_id: str, request: Request, csrf_token: str = Form(...),
     return _xin_lenh(request, csrf_token, instance_id, db, "tat")
 
 
+@router.post("/{instance_id}/tat-cung")
+def tat_cung_may(instance_id: str, request: Request, csrf_token: str = Form(...),
+                 _g: None = Depends(_cong_co), _u: str = Depends(require_login),
+                 db=Depends(get_db)):
+    """Rút điện — khách tự quyết sau khi tắt mềm thất bại (`dieu_khien` docstring).
+
+    Nút này đã được hứa trong thiết kế nhưng chưa từng có route; đo 16/09 trên
+    production, tắt mềm VM chưa cài Windows quá hạn và khách không còn đường nào
+    để tắt máy (R21).
+    """
+    return _xin_lenh(request, csrf_token, instance_id, db, "tat_cung")
+
+
 @router.post("/{instance_id}/khoi-dong-lai")
 def khoi_dong_lai_may(instance_id: str, request: Request,
                       csrf_token: str = Form(...),
@@ -558,11 +610,11 @@ def go_dia_cai(instance_id: str, request: Request, csrf_token: str = Form(...),
         return _ve_trang(_t("Phiên đã hết hạn — tải lại trang rồi thử lại."))
     may = _may_cua_khach(db, request, instance_id)
     try:
-        dieu_khien.go_dia_cai(db, may, client_tu_moi_truong(),
+        dieu_khien.go_dia_cai(db, may, _instance_client(db, may),
                               boi=_chu(request))
     except dieu_khien.KhongDuocPhepError as exc:
         return _ve_trang(str(exc))
-    except (ChuaCauHinh, ProxmoxError) as exc:
+    except (ChuaCauHinh, ProxmoxError, profiles.ProfileNotReady) as exc:
         log.warning("VPS: go dia cai may %s that bai: %s", may.id, exc)
         return _ve_trang(_t("Máy chủ không nhận lệnh lúc này. Thử lại sau ít phút."))
     return RedirectResponse(f"{MANIFEST.route_prefix}/{may.id}", status_code=303)
@@ -662,7 +714,10 @@ def cai_lai_may(instance_id: str, request: Request, csrf_token: str = Form(...),
     from platform_core import jobs as job_queue
     job_queue.submit(db, user_id=_chu(request), app_slug=MANIFEST.slug,
                      job_type="vps.rebuild",
-                     params={"instance_id": may.id, "os_id": os_id or ""})
+                     params={"instance_id": may.id, "os_id": os_id or "",
+                             # Persisted in job params, so worker retry is stable
+                             # while a later rebuild receives a fresh journal scope.
+                             "operation_id": f"rebuild:{uuid.uuid4()}"})
     db.commit()
     return RedirectResponse(f"{MANIFEST.route_prefix}/{may.id}", status_code=303)
 
@@ -706,8 +761,8 @@ def khoi_phuc_may(instance_id: str, request: Request, csrf_token: str = Form(...
     # có ảnh nào. Worker vẫn **hỏi lại** trước khi rollback: giữa hai thời điểm
     # đó có một vòng bảo trì, và nó có thể đã dọn mất bản này.
     try:
-        ten_anh = sao_luu.anh_moi_nhat(client_tu_moi_truong(), may.vmid)
-    except (ChuaCauHinh, ProxmoxError) as exc:
+        ten_anh = sao_luu.anh_moi_nhat(_instance_client(db, may), may.vmid)
+    except (ChuaCauHinh, ProxmoxError, profiles.ProfileNotReady) as exc:
         log.warning("VPS: khong doc duoc anh chup cua may %s: %s", may.id, exc)
         return _ve_trang(_t("Máy chủ không nhận lệnh lúc này. Thử lại sau ít phút."))
     if not ten_anh:
@@ -793,9 +848,22 @@ def trang_chi_tiet(instance_id: str, request: Request,
             .where(VpsEvent.instance_id == may.id, VpsEvent.loai == "thu_phi")
             .order_by(VpsEvent.created_at.desc()).limit(24)).scalars()
     ]
+    # Gợi ý "Tắt cứng" CHỈ sau khi lượt tắt/khởi động lại gần nhất thất bại và
+    # máy vẫn đang chạy — không phải một nút rút điện thường trực.
+    su_kien_dien = db.execute(
+        select(VpsEvent.loai).where(
+            VpsEvent.instance_id == may.id,
+            VpsEvent.loai.in_(("xin_tat", "tat", "tat_that_bai", "xin_khoi_dong_lai",
+                               "khoi_dong_lai", "khoi_dong_lai_that_bai",
+                               "xin_tat_cung", "tat_cung", "tat_cung_that_bai",
+                               "xin_bat", "bat", "bat_that_bai")))
+        .order_by(VpsEvent.created_at.desc()).limit(1)).scalar_one_or_none()
+    goi_y_tat_cung = (may.trang_thai == "dang_chay" and su_kien_dien in
+                      ("tat_that_bai", "khoi_dong_lai_that_bai"))
     return templates.TemplateResponse(request, "vps_chi_tiet.html", {
         "nav": MANIFEST.slug, "app": MANIFEST,
         "may": may,
+        "goi_y_tat_cung": goi_y_tat_cung,
         "menu_trai": _menu("may", may=may),
         "trang_thai_nhan": nhan.trang_thai(may.trang_thai),
         "badge": nhan.badge(may.trang_thai),
@@ -862,8 +930,8 @@ def trang_console(instance_id: str, request: Request,
     # bắt tay RFB (trình duyệt dùng). Gọi hai lần là hai phiên khác nhau, và vé
     # của phiên B không mở được cổng của phiên A.
     try:
-        ve_pve = client_tu_moi_truong().ve_console(int(may.vmid))
-    except (ProxmoxError, ChuaCauHinh) as exc:
+        ve_pve = _instance_client(db, may).ve_console(int(may.vmid))
+    except (ProxmoxError, ChuaCauHinh, profiles.ProfileNotReady) as exc:
         log.warning("VPS console: khong mo duoc phien VNC cho %s: %s", may.id, exc)
         return _ve_trang(_t("Không mở được console lúc này. Thử lại sau ít phút."))
 
@@ -904,7 +972,6 @@ async def cau_console(websocket: WebSocket, instance_id: str, ve: str = ""):
     bỏ quên. Tất cả kiểm tra nằm tường minh trong thân hàm.
     """
     import asyncio
-    import ssl as ssl_mod
 
     if not vps_app.enabled():
         await websocket.close(code=1008)
@@ -917,7 +984,7 @@ async def cau_console(websocket: WebSocket, instance_id: str, ve: str = ""):
     # thực là cách chắc chắn để một trong hai bị bỏ quên.
     u = user_hien_tai(websocket)
     user_id = str(getattr(u, "id", "") or "")
-    if not user_id:
+    if not user_id or not vps_app.access_allowed(u):
         await websocket.close(code=1008)
         return
 
@@ -925,12 +992,12 @@ async def cau_console(websocket: WebSocket, instance_id: str, ve: str = ""):
     db = next(gen)
     try:
         may, cong, pve_ve = console.tieu_ve(db, ve, instance_id, user_id)
-        client = client_tu_moi_truong()
+        client = _instance_client(db, may)
         # Dùng lại ĐÚNG phiên VNC đã mở ở trang console. Gọi `ve_console` lần
         # nữa ở đây là mở một cổng mới, và vé của cổng B không mở được cổng A.
         dia_chi = console.dia_chi_websocket_proxmox(
             client.config, int(may.vmid), {"port": cong, "ticket": pve_ve})
-    except (console.VeKhongHopLeError, ProxmoxError, ChuaCauHinh) as exc:
+    except (console.VeKhongHopLeError, ProxmoxError, ChuaCauHinh, profiles.ProfileNotReady) as exc:
         log.warning("VPS console: tu choi mo cau: %s", exc)
         await websocket.close(code=1008)
         return
@@ -939,18 +1006,14 @@ async def cau_console(websocket: WebSocket, instance_id: str, ve: str = ""):
 
     import websockets
 
-    ctx = ssl_mod.create_default_context()
-    if not client.config.verify:
-        # Cụm dùng chứng chỉ tự ký. Đây là kết nối TỪ SERVER MÌNH tới Proxmox
-        # trong LAN, không phải kết nối của khách — cùng mức tin cậy với mọi lời
-        # gọi API khác trong `proxmox.py`.
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl_mod.CERT_NONE
+    # Cùng chính sách TLS với mọi lời gọi API trong `proxmox.py` (CA riêng + tên
+    # chứng chỉ chính xác), xem `console.tls_cho_cau_console` (R20).
+    ctx, ten_tls = console.tls_cho_cau_console(client.config)
 
     await websocket.accept(subprotocol="binary")
     try:
         async with websockets.connect(
-                dia_chi, ssl=ctx, subprotocols=["binary"],
+                dia_chi, ssl=ctx, server_hostname=ten_tls, subprotocols=["binary"],
                 additional_headers=client._headers(), open_timeout=20) as pve:
             # KHÔNG gửi dòng `user:ticket` nào ở đây. Đó là giao thức của
             # `termproxy` (xterm.js); `vncproxy` thì vé là **mật khẩu VNC** và

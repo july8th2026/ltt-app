@@ -65,18 +65,26 @@ def test_tai_lieu_song_tro_ve_hop_dong_van_hanh():
     assert "_luutru/PROJECT_MEMORY.md` | nhật ký" not in claude
 
 
-def test_vong_doi_worktree_co_mot_authority_va_handoff_ro_rang():
+def test_vong_doi_worktree_co_mot_authority_va_phien_tu_gop_main():
+    """Chu san pham chot 16/09/2026: CHINH PHIEN lam viec tu gop `main` sau L3
+    xanh — khong con vai "canonical integrator" rieng (ban Q123/CMC truoc do
+    ghim nguoc lai). Mot tep con day "cho integrator" la mot quy trinh canh
+    tranh voi hop dong §7."""
     quy_trinh = (ROOT / "docs/QUY_TRINH_WORKTREE.md").read_text(
         encoding="utf-8")
     phat_trien = (ROOT / "docs/DEVELOPMENT_WORKFLOW.md").read_text(
+        encoding="utf-8")
+    hop_dong = (ROOT / "docs/00_LTT_OPERATING_CONTRACT.md").read_text(
         encoding="utf-8")
     claude = (ROOT / "CLAUDE.md").read_text(encoding="utf-8")
     agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
 
     assert not (ROOT / "docs/van_hanh_worktree.md").exists()
-    assert "HANDOFF_READY_FINAL" in quy_trinh
     assert "BASE_SHA" in quy_trinh
-    assert "canonical integrator" in quy_trinh
-    assert "không tự merge/rebase/push vào `main`" in phat_trien
-    assert "docs/QUY_TRINH_WORKTREE.md` §5" in claude
-    assert "docs/QUY_TRINH_WORKTREE.md` §5" in agents
+    assert "merge --ff-only" in quy_trinh
+    assert "canonical integrator" not in quy_trinh
+    assert "canonical integrator" not in hop_dong
+    assert "Chính phiên làm việc tự gộp `main`" in hop_dong
+    assert "không tự merge/rebase/push vào `main`" not in phat_trien
+    assert "docs/QUY_TRINH_WORKTREE.md" in claude
+    assert "docs/QUY_TRINH_WORKTREE.md" in agents

@@ -68,7 +68,7 @@ def _cho_dung() -> int:
 def main() -> int:
     try:
         vao = json.loads(sys.stdin.read() or "{}")
-    except Exception:                                           # noqa: BLE001
+    except (ValueError, OSError):
         return _cho_dung()          # doc khong duoc thi KHONG chan
 
     # Cua 4: harness da bao luot nay bi chan roi.

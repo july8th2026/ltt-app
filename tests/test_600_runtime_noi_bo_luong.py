@@ -188,8 +188,8 @@ def _dat_luong(monkeypatch, khoi=None, *, ban=False, nem=None):
         def hong(self, exc):
             self.hong_voi = exc
 
-    def mo(db, *, duong, than, timeout_s=900.0):
-        da_goi.append({"duong": duong, "than": than})
+    def mo(db, *, duong, than, timeout_s=900.0, **meta):
+        da_goi.append({"duong": duong, "than": than, **meta})
         if ban:
             raise luong_vlm.KhongMoDuocLuong("may B dang ban", ban=True,
                                              thu_lai_sau_s=30)
@@ -252,6 +252,23 @@ def test_luong_chay_tron_va_sinh_su_kien_canonical(app_luong, monkeypatch):
     # `response.started` không lộ id nội bộ.
     assert sk[0]["model"] == _ALIAS_THU
     assert "noi-bo-model-1" not in json.dumps(sk)
+
+
+def test_lease_may_A_truyen_dung_reservation_sang_may_B(app_luong, monkeypatch):
+    """Đo quan hệ lease A → header B trên đường stream thật của sản phẩm."""
+    from platform_core.runtime_noi_bo import luong
+    monkeypatch.setenv("LTT_LLM_NGUONG_WHALE", "1")
+    monkeypatch.setattr(luong, "_suc_chua", lambda _tool, _model:
+                        ("thu_gpu", 1, 100_000))
+    da_goi = _dat_luong(monkeypatch)
+    u = _user(1000)
+    _chay(u, _params(), monkeypatch)
+
+    assert len(da_goi) == 1
+    goi = da_goi[0]
+    assert goi["request_id"]
+    assert goi["token_dat_truoc"] > 0
+    assert goi["la_whale"] is True
 
 
 def test_response_started_phat_TRUOC_khi_mo_luong(app_luong, monkeypatch):

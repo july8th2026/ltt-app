@@ -321,7 +321,7 @@ nặng nhất là `presence-penalty 0` (chính là phanh chống lặp).
 
 ---
 
-## ✅ L-16 — Sửa L-15: bỏ `presence-penalty`, giữ phần còn lại (đo 2026-09-12)
+## ~~L-16 — Sửa L-15: bỏ `presence-penalty`, giữ phần còn lại~~ — **ĐÃ THAY phần budget/temp bởi L-20 (2026-09-15)**
 
 **L-15 sai một nửa.** Bộ cờ nó chốt đưa bộ đề lên 36/36, nhưng đo xen kẽ 5 khối cho thấy
 nó lấy đi **11 % tốc độ giải mã** và đẩy **LTT-3.8 xuống dưới ngưỡng cổng nghiệm thu B**
@@ -484,7 +484,7 @@ job ảnh **vẫn** giết cả hai model, chỉ thêm việc hai model tự nh�
 
 ---
 
-## ✅ L-18 — Sàn VRAM trống của 5060 Ti = **700 MiB** (chủ dự án, 2026-09-12)
+## ~~L-18 — Sàn VRAM trống của 5060 Ti~~ — **ĐÃ THAY bởi L-21 (2026-09-15)**
 
 Plan Task 4.2 ghi *"khởi đầu 512, chốt ở Task 3.2"*. Task 3.2 **đã chạy** và chủ dự án
 **đã chốt**, nên câu ấy không còn để ngỏ nữa. Nguyên văn 12/09:
@@ -590,3 +590,49 @@ ngoài, và **không phép kiểm nào đỏ**, vì mỗi bề mặt tự nhất
    xoá như đề xuất ban đầu: chủ sản phẩm hoãn phần ảnh sang phiên sau, nên xoá bộ
    đo ảnh duy nhất ngay trước phiên ấy là đốt đúng thứ phiên ấy cần.
 4. Một việc **tay** thêm vào lần deploy — sổ khoá production (`RUNBOOK` §2.2 mục 2).
+
+---
+
+## L-20 — Sampling và reasoning theo từng model (Q131, 2026-09-15)
+
+L-16 chứng minh budget 512 ngăn được lỗi trả rỗng và việc bỏ presence penalty
+khôi phục 11% tốc độ. Nó không chứng minh 512 là mức chất lượng tối ưu, và việc
+đặt budget/temp trong `CHUNG` ép hai kiến trúc khác nhau dùng cùng một hồ sơ.
+
+Đối chiếu nguồn ngày 15/09:
+
+- Qwen3.8 chính thức: thinking `temperature=1.0`, `top_p=0.95`, `top_k=20`,
+  `min_p=0`, `presence_penalty=0`; effort hợp lệ `low|medium|xhigh`, mặc định
+  `xhigh`. Không có mức `high` chính thức.
+- Qwen3.5 chính thức: thinking bật mặc định hoặc tắt bằng
+  `enable_thinking=false`; không công bố enum effort. General thinking dùng
+  `temperature=1.0`; precise coding dùng `0.6`.
+- llama.cpp: `--reasoning-budget` là số token thinking, `-1` không giới hạn;
+  đây là cơ chế runtime, không phải effort level của model.
+
+Chốt Q131: giữ sampling chung top-p/top-k/min-p; chuyển temp, budget và chế độ
+reasoning vào từng hồ sơ. Budget 4.096 cho 3.8 và 2.048 cho 3.5 là trần vận hành
+do chủ sản phẩm chọn, tăng tương ứng 8x/4x so với 512 để đổi độ trễ lấy chiều
+sâu. Hai số này phải được ghi đúng tên, không gắn nhãn “Qwen khuyến nghị”.
+
+Template không phải mã LTT tự suy: đó là Froggeric Qwen Fixed Chat Template.
+Hai hồ sơ chuẩn hóa về v22.5; tệp nằm trong gói deploy, có nguồn/giấy phép và
+SHA-256 được test cùng script deploy. `high` từ client tương thích được template
+đổi thành `xhigh`; API công khai vẫn dùng tên chuẩn `xhigh`.
+
+---
+
+## L-21 — Tắt sàn VRAM mặc định của LTT-3.5; giữ cơ chế opt-in (Q132, 2026-09-15)
+
+Log production từ 17:28 đến 18:10 ngày 15/09 bác giả định của L-18:
+
+- gateway ghi `ban_vram=112`, `ban_day=0`, không có OOM;
+- cùng job bị 429 khoảng mỗi 20 giây dù không hết slot;
+- VRAM trống đo tại thời điểm điều tra là 602 MiB, sát đúng sàn 600;
+- khi WDDM dao động dưới sàn, không lượt nào tới llama-swap; model chỉ hồi phục
+  sau khi TTL 1.800 giây unload rồi nạp lại.
+
+Chủ dự án xác nhận card 5060 chưa từng tràn VRAM. Vì vậy mặc định
+`LTT_LLM_VRAM_TRONG_TOI_THIEU_MB__qwen35-api=0`. Cơ chế sàn vẫn được giữ và có
+thể bật lại bằng env nếu sau này có bằng chứng OOM. Engine 3.5 giữ nguyên
+context, KV q8_0, sampling và reasoning; thay đổi này chỉ bỏ một cửa từ chối giả.

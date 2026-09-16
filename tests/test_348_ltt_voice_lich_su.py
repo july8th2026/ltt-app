@@ -566,3 +566,34 @@ def test_man_lich_su_in_ten_giong_mac_dinh(khach):
     assert giong_mau.MAC_DINH in r.text, (
         "man Lich su khong noi ten giong mac dinh — luot khong chon giong se "
         "hien mot o trong, doc nhu thieu du lieu")
+
+
+# ── GUI-D015 (16/09/2026): job `queued` quá ngưỡng phải NÓI ra ở Lịch sử ────
+#
+# 🔴 13–16/09 job Voice nằm `queued` ba ngày (thiếu làn worker) mà dòng lịch sử
+#    mang đúng badge "Đang chờ" của một job vừa nộp. Cùng ngưỡng với Studio.
+
+class _JobGia:
+    def __init__(self, status, tuoi_s):
+        from datetime import datetime, timedelta, timezone
+        self.id = "j-d015"
+        self.status = status
+        self.created_at = datetime.now(timezone.utc) - timedelta(seconds=tuoi_s)
+        self.params = {"text": "xin chao"}
+        self.result = {}
+        self.content_expired_at = None
+
+
+@pytest.mark.parametrize("status, tuoi, lau", [
+    ("queued", 5, False), ("queued", 61, True), ("queued", 3 * 86400, True),
+    ("running", 3 * 86400, False), ("done", 3 * 86400, False)])
+def test_D015_dong_lich_su_gan_co_cho_lau(status, tuoi, lau):
+    from apps.ltt_voice import doc_man_lich_su
+    d = doc_man_lich_su.dong_cho_trang(_JobGia(status, tuoi), "/ltt-voice/audio")
+    assert d["cho_lau"] is lau
+
+
+def test_D015_cung_nguong_voi_studio():
+    from apps.ltt_voice import hang_doi
+    from apps.ltt_voice.routes import _p_tao
+    assert _p_tao.muc_cho is hang_doi.muc_cho

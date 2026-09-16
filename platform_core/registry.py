@@ -481,6 +481,11 @@ class AppManifest:
     # Sidebar. App đơn giản để trống, nền tảng tự tạo 1 dòng từ route_prefix.
     nav: tuple = ()
 
+    # Operator navigation only; metadata never grants permission. The first
+    # entry is the domain parent, followed by app-owned admin destinations.
+    # Paths stay below route_prefix/admin and handlers remain app-owned.
+    admin_nav: tuple = ()
+
     # Loại job app này sinh ra, ví dụ ("seedance.t2v", "seedance.i2v").
     # Worker khai báo mình làm được loại nào; hàng đợi khớp theo đây.
     job_types: tuple = ()
@@ -1362,6 +1367,7 @@ def _validate(manifest: AppManifest, seen_slugs: set, seen_prefixes: set,
         # FastAPI không báo gì cả — rất khó truy.
         raise RegistryError(
             f"[{manifest.slug}] route_prefix trùng: {manifest.route_prefix!r}")
+    _validate_admin_nav(manifest)
     if manifest.surface not in APP_SURFACES:
         raise RegistryError(
             _t("[{slug}] surface không hợp lệ: {value!r}").format(
@@ -1431,6 +1437,28 @@ def _validate(manifest: AppManifest, seen_slugs: set, seen_prefixes: set,
     for tool in manifest.tools:
         _validate_tool(manifest, tool, seen_tool_names | local_tool_names)
         local_tool_names.add(tool.name)
+
+
+def _validate_admin_nav(manifest: AppManifest) -> None:
+    entries = manifest.admin_nav
+    if not isinstance(entries, tuple) or len(entries) > 7:
+        raise RegistryError("admin_nav must be a tuple with at most six children")
+    keys = set()
+    root = manifest.route_prefix.rstrip("/") + "/admin"
+    for entry in entries:
+        if (not isinstance(entry, NavEntry) or not isinstance(entry.label, str)
+                or not entry.label.strip() or not entry.built
+                or not isinstance(entry.nav_key, str)
+                or not re.fullmatch(r"[a-z][a-z0-9_]*", entry.nav_key)
+                or entry.nav_key in keys):
+            raise RegistryError("admin_nav has invalid or duplicate entries")
+        path = entry.path
+        if (not isinstance(path, str)
+                or not (path == root or path.startswith(root + "/"))
+                or any(char in path for char in ("?", "#", "%", "\\"))
+                or "//" in path or any(part in (".", "..") for part in path.split("/"))):
+            raise RegistryError("admin_nav path must remain app-owned")
+        keys.add(entry.nav_key)
 
 
 def visible_on_surface(manifest: AppManifest, *, authenticated: bool,

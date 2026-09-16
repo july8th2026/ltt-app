@@ -194,6 +194,13 @@ def test_goi_zip_thuc_su_yeu_cau_administrator():
     assert "LTTStudios-CamCLI-Console.exe" in bat
 
 
+def test_dong_goi_co_the_dat_output_tren_o_con_trong(monkeypatch, tmp_path):
+    output = tmp_path / "cam-cli-release"
+    monkeypatch.setenv("LTT_CAM_CLI_BUILD_DIR", str(output))
+    dong_goi = _nap("dong_goi_exe")
+    assert dong_goi.RA == output.resolve()
+
+
 def test_gui_cho_chon_tung_be_mat_va_hien_loi_bridge():
     html = (GOC / "tools" / "gui" / "index.html").read_text(encoding="utf-8")
     for ten in ("codex", "claude_cli", "claude_vscode", "claude_desktop"):
@@ -205,6 +212,14 @@ def test_gui_cho_chon_tung_be_mat_va_hien_loi_bridge():
     assert "a.cam(k, luaChon)" in html
     assert "catch (e)" in html
     assert "Hoàn tất sau" in html
+
+
+def test_gui_noi_ro_codex_cai_ca_hai_model_mot_luot():
+    html = (GOC / "tools" / "gui" / "index.html").read_text(encoding="utf-8")
+    assert "Model mặc định cho Claude Code" in html
+    assert "Codex luôn" in html and "cả LTT 3.8 và LTT 3.5" in html
+    assert "ltt-fast" in html
+    assert "Cắm vào (cả hai model)" in html
 
 
 def test_cau_cam_chuyen_lua_chon_thanh_dung_hang_muc(monkeypatch):

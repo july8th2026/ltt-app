@@ -134,7 +134,7 @@ def may(monkeypatch):
         def hong(self, exc):
             pass
 
-    def mo(db, *, duong, than, timeout_s=900.0):
+    def mo(db, *, duong, than, timeout_s=900.0, **_meta):
         kho.than.append(than)
         return Gia(kho.luot.pop(0) if kho.luot else _chu("mac dinh"))
 

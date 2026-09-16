@@ -29,8 +29,10 @@ import pytest
 
 from apps.ltt_llm import features
 from apps.ltt_llm.manifest import MANIFEST
-from apps.ltt_llm.ngan_sach import (NGHI_MAC_DINH, SAN_TOKEN_RA_THEO_NGHI,
-                                    TOKEN_RA_MAC_DINH, san_token_ra)
+from apps.ltt_llm.ngan_sach import (NGHI_MAC_DINH_THEO_MODEL,
+                                    SAN_TOKEN_RA_THEO_NGHI,
+                                    TOKEN_RA_MAC_DINH, nghi_mac_dinh,
+                                    san_token_ra)
 from platform_core.llm.canonical import MODEL_HOP_LE
 
 
@@ -73,13 +75,14 @@ def test_moi_model_ban_ra_deu_tra_loi_duoc(model):
         assert isinstance(s, int) and s > 0
 
 
-def test_nghi_mac_dinh_khop_manifest():
-    """`NGHI_MAC_DINH` và `default` của manifest là HAI chỗ khai một điều.
-
-    Lệch nhau ⇒ sàn áp cho một mức, còn máy B chạy một mức khác.
-    """
-    assert NGHI_MAC_DINH == MANIFEST.tools[0].params_schema[
-        "reasoning_effort"]["default"]
+def test_nghi_mac_dinh_theo_model_va_schema_khong_ep_mot_muc_chung():
+    """Default theo model; schema không được lén điền một mức chung."""
+    assert "default" not in MANIFEST.tools[0].params_schema["reasoning_effort"]
+    assert NGHI_MAC_DINH_THEO_MODEL == {
+        "ltt-3.8": "xhigh", "ltt-3.5": "medium"}
+    for model, muc in NGHI_MAC_DINH_THEO_MODEL.items():
+        assert nghi_mac_dinh(model) == muc
+        assert san_token_ra(model) == SAN_TOKEN_RA_THEO_NGHI[model][muc]
 
 
 def test_model_la_le_tra_ve_san_nhe_chu_khong_nem():
@@ -88,7 +91,7 @@ def test_model_la_le_tra_ve_san_nhe_chu_khong_nem():
     assert san_token_ra("model-chua-ton-tai", "low") > 0
     assert san_token_ra(None, None) > 0
     assert san_token_ra("ltt-3.5", "muc-la") == san_token_ra(
-        "ltt-3.5", NGHI_MAC_DINH)
+        "ltt-3.5", nghi_mac_dinh("ltt-3.5"))
 
 
 # ── 2. Sàn không được cao hơn trần của bất kỳ cửa nào ───────────────────────

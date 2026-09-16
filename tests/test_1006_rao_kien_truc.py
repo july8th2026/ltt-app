@@ -95,6 +95,8 @@ MIEN_TRU_HTTP = {
     # → Proxmox / Vultr: hạ tầng BÁN VPS, không phải nhà cung cấp AI
     "apps/vps/services/proxmox.py",
     "apps/vps/services/vultr.py",
+    # → OVH: mua máy chủ cho bán VPS — cùng loại với Proxmox/Vultr
+    "apps/vps/services/ovh.py",
     # → máy thật chạy WanGP (LTT VIDEO) — nội bộ
     "apps/lttvideo/cong/may_that.py",
 }

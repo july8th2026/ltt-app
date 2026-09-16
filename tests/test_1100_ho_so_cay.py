@@ -184,7 +184,8 @@ def test_chuyen_ghi_lich_su(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 
 # ── 4. Chot CO HOC: FAST_BUILD khong bat duoc o cho khong duoc phep ─────────
 
-@pytest.mark.parametrize("nhanh", ["admin-mvp-v3", "master",
+# `main` thay `admin-mvp-v3` (16/09): trunk cu da bi xoa, `ho_so_cay.TRUNK` nay la `main`.
+@pytest.mark.parametrize("nhanh", ["main", "master",
                                    "h42-release-clean", "phien/phat-hanh-x"])
 def test_khong_bat_duoc_fast_build_tren_nhanh_trunk_hay_phat_hanh(
         nhanh: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

@@ -21,6 +21,102 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-09-16 — `speech.ltt`: mô tả `language` nói đúng hành vi (FIXED)
+
+- **Cái gì đổi:** chỉ câu mô tả trường `language` — và vì thế `contract_hash` của
+  `speech.ltt` (`ebedbcc38dfcd9d6` → `7d53c7d1f5098677`). Bản cũ viết `'vi'`/`'en'`
+  *"overrides detection"* — sai từ D002 (11/09): khai `language` KHÔNG tắt việc
+  đoán; văn bản đoán CHẮC ra ngôn ngữ khác làn giọng vẫn bị từ chối
+  `voice_language_mismatch`, và việc từ chối xảy ra **trước khi giữ credit**.
+- **Phá vỡ tương thích:** `check_api_compat` xếp mọi đổi `contract_hash` là
+  BREAKING; **hành vi không đổi**, không trường, kiểu, giới hạn hay mã lỗi nào đổi.
+  Chủ dự án duyệt 16/09/2026.
+- **Phải làm gì:** không, trừ client ghim cứng `contract_hash` của `speech.ltt` —
+  cập nhật sang giá trị mới.
+
+## 2026-09-15 — reasoning và sampling tách theo model (Q131)
+
+**FIXED · request cũ vẫn hợp lệ; metadata mặc định thay đổi.** Máy chủ không còn ép cả hai model dùng
+budget 512 và temperature 0,6. LTT 3.8 dùng `xhigh`, budget vận hành 4.096 và
+temperature 1,0; LTT 3.5 giữ thinking bật, budget vận hành 2.048 và temperature
+1,0. Cả hai giữ top-p 0,95, top-k 20, min-p 0 và template Froggeric v22.5 đã
+khóa checksum. Hai budget là lựa chọn vận hành của LTT, không phải số Qwen công
+bố.
+
+Mọi cửa bỏ `reasoning_effort`, gồm `text.chat`, sẽ nhận mặc định theo model:
+3.8 `xhigh`, 3.5 thinking bật (`medium` trong template tương thích). Cấu hình
+Codex do trang API sinh gửi đúng ma trận đó cho lượt chính và subagent. Schema
+`text.chat` bỏ default `xhigh` dùng chung nên contract hash thay đổi; request cũ
+không hỏng vì trường này vốn tùy chọn. Ai gửi effort tường minh vẫn giữ lựa
+chọn `low|medium|xhigh`.
+
+## 2026-09-15 — hai phiên Claude chờ đúng capacity (Q128)
+
+**FIXED · không đổi wire API công khai.** Khi hai phiên dài cùng dùng LTT 3.8,
+máy A từng bỏ sót nội dung lồng trong `tool_use`/`tool_result` và không chuyển
+số token đã giữ sang máy B. Vì vậy lượt thứ hai có thể qua cửa A rồi bị B trả
+529 do tổng KV vượt pool. Máy A nay đếm bảo thủ các khối công cụ, giữ 2.048
+token cho mỗi ảnh và chuyển request ID/reservation/whale; máy B lấy số lớn hơn
+giữa header với phép tự đo. Lượt thiếu capacity sẽ chờ tối đa 300 giây với
+heartbeat 15 giây.
+
+Khối Local chuẩn vẫn có 11 dòng nhưng `CLAUDE_CODE_MAX_RETRIES=10`, đúng mặc
+định chính thức của Claude, và `API_TIMEOUT_MS=600000`. Không bật retry watchdog.
+Để hai phiên dài chạy ngay thay vì chờ cùng pool, dùng LTT 3.8 cho một phiên và
+LTT 3.5 cho phiên còn lại.
+
+## 2026-09-15 — một ma trận cấu hình Claude chuẩn duy nhất (Q126)
+
+**FIXED · không đổi wire API.** Bộ sinh cấu hình, CLI/SDK và trang hướng dẫn nay
+dùng cùng một nguồn cho mười biến vận hành Local. Bỏ
+`CLAUDE_CODE_DISABLE_1M_CONTEXT` vì hai ID LTT không có biến thể `[1m]`; thêm
+giới hạn độ sâu agent và ép agent theo model chính. Claude CLI/VS Code ghim đủ
+bảy đường model. Claude Desktop ánh xạ `opus` tới LTT 3.8 và `haiku` tới LTT 3.5,
+giữ Tool Search và 1M tắt.
+
+Người dùng đang có ba dòng context/compact/output hãy thay bằng **toàn bộ khối
+11 dòng** trên trang hướng dẫn. Người dùng CLI/VS Code dùng thêm bảy pin model.
+Q128 ở trên bổ sung bản vá admission backend; không tăng GPU hay giảm chất lượng
+suy luận. Bảng chuẩn, lý do
+từng giá trị, những biến không được thêm và nguồn chính thức/cộng đồng nằm ở
+`CLAUDE_CONFIG_MATRIX.md`.
+
+## 2026-09-15 — cắm tay Codex và làm rõ quyền khóa / giới hạn Claude
+
+**ADDED:** hướng dẫn Codex custom provider Responses, JSON catalog hai model,
+profile `ltt` / `ltt-fast`, đường dẫn tuyệt đối và nhập key có che. Hướng dẫn
+Claude Code Local mở môi trường từ màn hình New, context/compact/output và
+giới hạn tác vụ phụ; tắt 1M không tự đặt cửa sổ 171K. Bổ sung preset riêng cho
+hai model, cách đọc 138.7K/76%, cấu hình vô hiệu fallback non-streaming, giới
+hạn MCP và permission modes theo tài liệu Claude cùng phép đo phiên thật.
+
+**FIXED:** trang khóa luôn hiện trạng thái mọi công cụ khi không giới hạn,
+giữ mục tùy chọn visible khi catalog rỗng, phân biệt empty tools với empty scopes.
+Claude Gateway phải chọn Bearer; x-api-key không thuộc hợp đồng xác thực hiện tại.
+Không đổi API wire hoặc tự cấp quyền rộng hơn. Người dùng Claude Code Local qua
+gateway nên thêm `CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK=1`, giữ Tool Search
+tắt và giảm Connector/Plugin không dùng; request API tự viết không cần đổi.
+Chỉ cập nhật repo, chưa deploy lên trang live.
+
+## 2026-09-14 — hướng dẫn nhập Gateway trong Claude Desktop
+
+**ADDED · không phá vỡ tương thích.** Trang hướng dẫn API và cổng lập trình viên
+thêm quy trình nhập trực tiếp trong Claude Desktop 1.52386.6: Gateway base URL,
+Bearer, scope, hai Model ID và Display name, danh sách cố định, Apply Changes
+và thoát hẳn/mở lại. Có câu hỏi kiểm mỗi model, giới hạn hỗ trợ và xử lý lỗi.
+Tích hợp đang chạy không phải sửa; tool 1.8.0 và cách cắm bằng policy vẫn được
+giữ. Hướng dẫn chi tiết ở `HUONG_DAN_CAM_CLI.md` §2.5. Mục này ghi thay đổi trong
+repo, không khẳng định trang production đã được cập nhật.
+
+## 2026-09-14 — mô tả `ltt-3.8` nay công bố đúng khả năng đọc ảnh
+
+**FIXED · không phá vỡ hành vi request/response.** `/api/v1/models` và constraint
+của `text.chat` đã khai `reads_images: true`, nhưng mô tả tham số `model` vẫn gọi
+`ltt-3.8` là “text only”. Client không cần sửa gì; thay đổi chỉ làm mô tả, trang
+tài liệu sinh và catalog nói cùng một sự thật. `contract_hash` đổi
+`f6badbdc9de99372` → `99aac9fd24a292b2` vì phép kiểm tương thích cố ý băm cả mô
+tả; baseline được ghi lại dù thay đổi này không gỡ hay đổi trường nào.
+
 ## 2026-09-14 — cửa job: `max_tokens` mặc định `4096` → `32768`
 
 **CHANGED · không phá vỡ hợp đồng.** Ai đang gửi `max_tokens` tường minh thì
@@ -40,6 +136,9 @@ cho 32.768 token là **13,1 credit** ở giá 400 credit/1M — khoảng 1 % s�
 tài khoản thường.
 
 ## 2026-09-14 — `reasoning_effort` mặc định đổi `medium` → `xhigh`
+
+> Q131 ngày 15/09 thay default dùng chung này bằng default theo model trên mọi
+> cửa, như mục mới ở trên.
 
 **ADDED/CHANGED · không phá vỡ hợp đồng.** Ai đang gửi `reasoning_effort` tường
 minh thì **không đổi gì**. Ai không gửi sẽ nhận câu trả lời model suy nghĩ sâu

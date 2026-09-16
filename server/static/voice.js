@@ -674,15 +674,21 @@
         // ⛔ Nhung "dung" khong co nghia la "khong can noi". Do tren production
         //    01/09: bam "Nam" -> 45 giong con 9, va ca 25 giong cua khach bien
         //    mat khong mot loi nao. Nen ta van an chung, VA dem chung.
+        /* 🔴 GUI-D004 (16/09/2026) — MOT luat loc cho ca hai man: the THIEU
+           nhan KHONG bi an (Option B), giong het bo chon Studio/Du an
+           (`locChon`). Truoc day man nay AN roi dem, con bo chon GIU — cung mot
+           giong, loc "Nam" thi mat o man nay ma con o man kia. Ca 29 VoiceProfile
+           production co `gioi` rong (do 15/09), nen luat cu an SACH giong nhan
+           ban moi khi bam mot nut gioi. */
         var thieuNhan =
           (dangLoc.gioi && !d.gioi) ||
           (dangLoc.vung && !d.vung) ||
           (dangLoc.phongcach && !d.phongcach);
         var hop =
           (!dangLoc.loai || d.loai === dangLoc.loai) &&
-          (!dangLoc.gioi || d.gioi === dangLoc.gioi) &&
-          (!dangLoc.vung || d.vung === dangLoc.vung) &&
-          (!dangLoc.phongcach || d.phongcach === dangLoc.phongcach) &&
+          (!dangLoc.gioi || !d.gioi || d.gioi === dangLoc.gioi) &&
+          (!dangLoc.vung || !d.vung || d.vung === dangLoc.vung) &&
+          (!dangLoc.phongcach || !d.phongcach || d.phongcach === dangLoc.phongcach) &&
           (!q || (d.ten || "").toLowerCase().indexOf(q) >= 0);
         // Danh dau bang `dataset` chu khong dat `hidden` ngay: `phanTrang` moi
         // la thu quyet dinh the nao HIEN. Hai cho cung ghi `hidden` la hai cho
@@ -691,13 +697,9 @@
         t.hidden = !hop;
         if (hop) {
           con++;
-        } else if (thieuNhan) {
-          // Chi dem khi cai DUY NHAT chan no la nhan bi thieu. Mot giong bi
-          // loai boi o tim hay boi "Giong mau" thi khong thuoc cau chuyen nay.
-          var hopNeuBoNhan =
-            (!dangLoc.loai || d.loai === dangLoc.loai) &&
-            (!q || (d.ten || "").toLowerCase().indexOf(q) >= 0);
-          if (hopNeuBoNhan) anViThieuNhan++;
+          // D004: dem the con hien CHI VI thieu nhan dang loc — noi ra de khach
+          // biet bo loc chi ap cho giong CO nhan, khong phai loc sai.
+          if (thieuNhan) anViThieuNhan++;
         }
       }
       if (oSo) oSo.textContent = String(con);
@@ -742,6 +744,11 @@
       if (!oCt) return;
       var d = t.dataset;
       var laMau = d.loai === "mau";
+      // GUI-D001: chi giong CUA CHINH nguoi xem moi co khoi quan ly (thong ke,
+      // clip goc, Tat, Xoa). Truoc 16/09 dieu kien la `!laMau`, nen giong kho
+      // chung cua nguoi khac cung hien nut Tat/Xoa (cua server tu choi 404) va
+      // mot trinh phat clip goc cua `/audio` chan.
+      var laToi = d.loai === "toi";
       var ct = chiTiet[d.ma] || {};
 
       // `aria-pressed` nam tren nut "Chi tiet" cua moi the (Golden UI 16/09) —
@@ -756,7 +763,8 @@
       if (xemT) xemT.setAttribute("aria-pressed", "true");
 
       dat("lv-ct-ten", d.ten);
-      dat("lv-ct-loai", laMau ? chu.mau : chu.cuaToi);
+      dat("lv-ct-loai", laMau ? chu.mau
+        : (laToi ? chu.cuaToi : (chu.khoChung || chu.cuaToi)));
       dat("lv-ct-ma", d.ma);
       // Dong tinh chat CHI cho giong mau ("Nam · Mien Bac · Tin tuc"). Giong
       // nhan ban khong co ba mat do, va thu the cua no hien la trang thai —
@@ -812,8 +820,8 @@
 
       var khoiToi = document.getElementById("lv-ct-cuatoi");
       if (khoiToi) {
-        khoiToi.hidden = laMau;
-        if (!laMau) {
+        khoiToi.hidden = !laToi;
+        if (laToi) {
           dat("lv-ct-luot", ct.so_luot || 0);
           dat("lv-ct-phut", ct.phut || 0);
           dat("lv-ct-cuoi", ct.lan_cuoi || chu.chuaDung || "-");
@@ -895,10 +903,10 @@
            *
            * ⭐ Chua: bo qua khi phan tu tuong tac ay KHAC cai the. */
           var trong = e.target.closest(BEN_TRONG);
-          // 🔴 DO 16/09: nut "Chi tiet" nam trong BEN_TRONG nen bi bo qua —
-          //    bam no (chuot lan Enter) KHONG mo gi ca. No la cua vao chinh
-          //    thuc cua panel, nen duoc mo; moi phan tu tuong tac khac van
-          //    giu viec cua rieng no.
+          // 🔴 16/09/2026: nut "Chi tiet" (`.lv-the-xem`) CUNG la mot <button>
+          //    ben trong, nen dong tren nuot luon no — nut ghi "Chi tiet" ma
+          //    bam khong mo gi, tu truoc GUI V2. Enter tren nut sinh `click`
+          //    goc nen ban phim di chung duong nay.
           if (trong && trong !== t && !trong.classList.contains("lv-the-xem")) return;
           moChiTiet(t);
         });
@@ -1543,6 +1551,21 @@
       nhan("b-ok", chu.xong);
       nutTao.disabled = false;
 
+      /* W5' 16/09/2026: do tren Chrome that o 996x943, khung ket qua nam o
+         scrollY~1010 va trang KHONG cuon toi - khach bam Tao, tieng da xong,
+         ma khong thay gi doi. Chi cuon khi khung dang NGOAI khung nhin (khach
+         dang nhin san thi khong giat trang), va ton trong giam chuyen dong. */
+      var oKq = document.getElementById("lv-kq");
+      if (oKq && oKq.scrollIntoView && oKq.getBoundingClientRect) {
+        var rKq = oKq.getBoundingClientRect();
+        var caoKn = window.innerHeight || document.documentElement.clientHeight;
+        if (rKq.top < 0 || rKq.top > caoKn - 80) {
+          var giamCd = window.matchMedia &&
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          oKq.scrollIntoView({behavior: giamCd ? "auto" : "smooth", block: "start"});
+        }
+      }
+
       /* Canh bao cua mot luot DA XONG: lech lan, hoac DA LUI GIONG.
        *
        * ⛔ `textContent`, KHONG `innerHTML`. Cau nay di qua bao nhieu tang thi
@@ -1615,10 +1638,28 @@
             baoLoi(d.loi || chu.loi); return;
           }
           hien("chay");
-          nhan("b-warn", d.trang_thai === "running" ? chu.dangTao : chu.dangCho);
+          /* GUI-D005: cau cho theo TUOI HANG DOI THAT do may chu tinh
+             (`muc_cho`: moi/cho_may/lau). Truoc 16/09 moi job queued deu la
+             "Dang xep hang…" mai mai - dung hinh dang khach da thay suot ba
+             ngay thieu lan worker (13-16/09). */
+          var laLau = d.trang_thai === "queued" && d.muc_cho === "lau";
+          var cauCho = chu.dangCho;
+          if (d.trang_thai === "queued" && d.muc_cho === "cho_may" && chu.choMay) {
+            cauCho = chu.choMay;
+          } else if (laLau && chu.choLau) {
+            cauCho = chu.choLau;
+          }
+          var cauHien = d.trang_thai === "running" ? chu.dangTao : cauCho;
+          nhan(laLau ? "b-err" : "b-warn",
+               d.trang_thai === "running" ? chu.dangTao
+                 : (laLau ? (chu.choMay || chu.dangCho) : cauCho));
           oThanh.style.width = (d.tien_do || 0) + "%";
           oThanh.setAttribute("aria-valuenow", String(d.tien_do || 0));
-          oBuoc.textContent = d.trang_thai === "running" ? chu.dangTao : chu.dangCho;
+          if (oBuoc.textContent !== cauHien) oBuoc.textContent = cauHien;
+          var oChoLau = document.getElementById("lv-kq-cho-lau");
+          var oChoTrang = document.getElementById("lv-kq-cho-trang");
+          if (oChoLau) oChoLau.hidden = !laLau;
+          if (oChoTrang && laLau) oChoTrang.href = "/jobs/" + encodeURIComponent(jobId);
           dongHo = setTimeout(function () {
             theoDoi(jobId, Math.min(cho * 1.4, 8000));
           }, cho);
@@ -1845,15 +1886,29 @@
        tep (`apps/ltt_voice/toc_do.py`). Day khong phai `playbackRate` cua
        trinh phat — tep tai ve cung phai doi theo, neu khong thi cai khach
        nghe va cai khach nhan la hai thu khac nhau. */
+    /* 16/09/2026: THANH KEO buoc 0,05 thay 6 nut roi. `input[type=range]` da
+       mang `name="toc_do"` nen form gui thang gia tri; o day chi hien so va
+       `aria-valuetext` (trinh doc man hinh doc "1,25×" thay vi "1.25"). */
     var oTocDo = document.getElementById("lv-toc-do");
-    var nutTocDo = document.querySelectorAll("[data-tocdo]");
-    for (var k = 0; k < nutTocDo.length; k++) {
-      (function (nut) {
-        nut.addEventListener("click", function () {
-          if (oTocDo) oTocDo.value = nut.dataset.tocdo || "1.0";
-          batNut(nut);
-        });
-      })(nutTocDo[k]);
+    var oTocDoSo = document.getElementById("lv-toc-do-so");
+    var nutTocDoGoc = document.getElementById("lv-toc-do-dat-lai");
+    function hienTocDo() {
+      if (!oTocDo) return;
+      var v = parseFloat(oTocDo.value);
+      if (!isFinite(v)) v = 1;
+      var chu = (Math.round(v * 100) / 100).toString() + "×";
+      if (oTocDoSo) oTocDoSo.textContent = chu;
+      oTocDo.setAttribute("aria-valuetext", chu);
+    }
+    if (oTocDo) {
+      oTocDo.addEventListener("input", hienTocDo);
+      hienTocDo();
+    }
+    if (nutTocDoGoc && oTocDo) {
+      nutTocDoGoc.addEventListener("click", function () {
+        oTocDo.value = "1";
+        hienTocDo();
+      });
     }
 
     /* ── Ngon ngu kich ban (Tu dong / VI / EN) — dieu khien bo loc lan (D002) ─
@@ -2422,6 +2477,17 @@
       fd.append("text", oText.value);
       if (g.indexOf("v:") === 0) fd.append("voice_id", g.slice(2));
       else if (g.indexOf("m:") === 0) fd.append("preset", g.slice(2));
+      /* W4' 16/09: gui NGON NGU da khai toi cong lan - truoc day cua nay bo no. */
+      var oNnPd = document.getElementById("lv-ngon-ngu");
+      if (oNnPd) fd.append("ngon_ngu", oNnPd.value || "auto");
+      /* Toc do la HAU KY tren tep (ffmpeg atempo, giu cao do). Luong phat dan
+         la PCM tung khoi qua Web Audio - doi `playbackRate` o day se doi CA CAO
+         DO, nen KHONG gia vo ap dung: noi ro cho khach biet. */
+      var oTdPd = document.getElementById("lv-toc-do");
+      if (oTdPd && Math.abs(parseFloat(oTdPd.value) - 1) > 0.001) {
+        var ctd = nut.getAttribute("data-nhan-toc-do");
+        if (ctd) baoTin(ctd);
+      }
 
       dangPhat = true;
       nut.textContent = nhanDung;

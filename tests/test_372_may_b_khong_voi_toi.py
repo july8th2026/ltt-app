@@ -46,7 +46,7 @@ def _may_b_chet(monkeypatch, thong_diep="khong noi duoc toi may B (ConnectError)
     from platform_core.llm import luong_vlm
     da_goi = []
 
-    def gia(db, *, duong, than, timeout_s=900.0):
+    def gia(db, *, duong, than, timeout_s=900.0, **_meta):
         da_goi.append(duong)
         raise luong_vlm.KhongMoDuocLuong(thong_diep, ban=False)
 
@@ -129,7 +129,7 @@ class TestKhachNhanLoiSach:
         r_chet = api.post(MSG, json=_than(), headers=_h(token))
 
         # Ca bận, cùng bộ máy, để so.
-        def ban(db, *, duong, than, timeout_s=900.0):
+        def ban(db, *, duong, than, timeout_s=900.0, **_meta):
             raise luong_vlm.KhongMoDuocLuong("may B dang ban", ban=True,
                                              thu_lai_sau_s=30)
         monkeypatch.setattr(luong_vlm, "mo", ban)

@@ -2740,6 +2740,10 @@ button.lv-the-song.dang-phat .lv-nghe-dau::before{width:4px;height:14px;
 .lv-studio .lv-st-trai{gap:10px}
 .lv-studio .lv-st-trai>.lv-st-o,.lv-studio .lv-st-trai>.lv-chon{padding:10px 12px}
 .lv-studio .lv-st-trai>.lv-st-o>.eyebrow{display:block;margin-bottom:7px}
+/* Thanh keo toc do buoc 0,05 (16/09/2026, thay 6 nut roi). */
+.lv-toc-do-hang{display:flex;align-items:center;gap:8px}
+.lv-toc-do-hang input[type=range]{flex:1;min-width:0;min-height:24px;accent-color:var(--accent)}
+.lv-toc-do-hang output{min-width:3.4em;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
 /* NUT CHINH GHIM DAY COT TRAI.
    §17 cua ban yeu cau: Generate la diem ket thi giac cua day 1..N. Nhung day
    ay dai hon man hinh — do 04/09 cot trai cao 823px trong khoang 791px con

@@ -796,13 +796,13 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
 
     resolved = policy.resolve(db, config=config, principal=principal,
                               tool_name=TOOL_CHAT)
-    limits.enforce_create_rate(key_id=principal.key_id, config=config,
-                               limits=resolved, user_id=principal.user_id)
 
     # ── Chế độ thử: không chạm GPU, không chạm sổ tiền ───────────────────────
     # ⛔ ĐỪNG BỎ NHÁNH NÀY. Một khoá thử ai đăng ký cũng có; để nó chiếm GPU thật
     #    là mở một cách miễn phí để giữ card của máy B.
     if sandbox.is_test(principal.mode):
+        limits.enforce_create_rate(key_id=principal.key_id, config=config,
+                                   limits=resolved, user_id=principal.user_id)
         return StreamingResponse(_luong_thu(duong), media_type="text/event-stream",
                                  headers=_SSE)
 
@@ -843,6 +843,9 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
             "older turns and retry with a shorter conversation.",
             limit_name="input_tokens",
             limit_value=_tran_vao_cua_model(ten)) from None
+    # Chỉ lượt qua tiền kiểm ngữ cảnh/credit/công suất mới tiêu hạn mức tạo.
+    limits.enforce_create_rate(key_id=principal.key_id, config=config,
+                               limits=resolved, user_id=principal.user_id)
     # ⛔ MỌI model của `text.chat` ĐỀU khai ngân sách KV ⇒ mọi lượt đi phòng chờ.
     #    Đo 13/09/2026 bằng chính bản khai:
     #        ltt-3.8 -> ltt_38_3090, 3 suất, pool 221.184
@@ -1028,15 +1031,39 @@ def _luong_thu(duong: str) -> Iterator[bytes]:
 
     chu = "[test mode] no model was called and no credit moved."
     if duong.endswith("/responses"):
+        item_id = "msg_test"
+        item = {"id": item_id, "type": "message", "status": "in_progress",
+                "role": "assistant", "content": []}
         yield sk("response.created", {"type": "response.created",
                                       "response": {"id": "resp_test",
-                                                   "status": "in_progress"}})
+                                                   "status": "in_progress",
+                                                   "output": []}})
+        yield sk("response.output_item.added", {"type": "response.output_item.added",
+                                                "output_index": 0, "item": item})
+        yield sk("response.content_part.added", {"type": "response.content_part.added",
+                                                 "item_id": item_id, "output_index": 0,
+                                                 "content_index": 0, "part": {
+                                                     "type": "output_text", "text": "",
+                                                     "annotations": []}})
         yield sk("response.output_text.delta",
-                 {"type": "response.output_text.delta", "delta": chu})
+                 {"type": "response.output_text.delta", "item_id": item_id,
+                  "output_index": 0, "content_index": 0, "delta": chu})
+        done_part = {"type": "output_text", "text": chu, "annotations": []}
+        yield sk("response.output_text.done", {"type": "response.output_text.done",
+                                               "item_id": item_id, "output_index": 0,
+                                               "content_index": 0, "text": chu})
+        yield sk("response.content_part.done", {"type": "response.content_part.done",
+                                                "item_id": item_id, "output_index": 0,
+                                                "content_index": 0, "part": done_part})
+        done_item = {**item, "status": "completed", "content": [done_part]}
+        yield sk("response.output_item.done", {"type": "response.output_item.done",
+                                               "output_index": 0, "item": done_item})
         yield sk("response.completed", {
             "type": "response.completed",
             "response": {"id": "resp_test", "status": "completed",
-                         "usage": {"input_tokens": 0, "output_tokens": 0}}})
+                         "output": [done_item],
+                         "usage": {"input_tokens": 0, "output_tokens": 0,
+                                   "total_tokens": 0}}})
         return
     yield sk("message_start", {"type": "message_start", "message": {
         "id": "msg_test", "type": "message", "role": "assistant", "content": [],

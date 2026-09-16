@@ -45,12 +45,14 @@ class TestD01_KhoangTocDo:
     def test_hop_le_inf_ve_1(self):
         assert toc_do.hop_le(float("inf")) == 1.0
 
-    def test_cac_nac_web_khong_doi(self):
-        assert toc_do.CAC_NAC == (0.75, 0.85, 1.0, 1.15, 1.25, 1.5)
+    def test_web_la_thanh_keo_buoc_0_05(self):
+        # Chủ dự án chốt 16/09/2026: thanh kéo bước 0,05 thay 6 nút rời.
+        assert toc_do.TOC_DO_BUOC == 0.05
+        assert not hasattr(toc_do, "CAC_NAC")
 
-    def test_cac_nac_nam_trong_khoang(self):
-        for nac in toc_do.CAC_NAC:
-            assert toc_do.TOC_DO_MIN <= nac <= toc_do.TOC_DO_MAX
+    def test_vach_moc_nam_trong_khoang(self):
+        for moc in toc_do.MOC_THANH_KEO:
+            assert toc_do.TOC_DO_MIN <= moc <= toc_do.TOC_DO_MAX
 
 
 # ── D01+D02: params_schema ───────────────────────────────────────────────────

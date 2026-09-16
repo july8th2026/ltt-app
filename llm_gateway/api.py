@@ -879,7 +879,10 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
         #    là phép đo cổng vừa làm ở bước ngân sách ngay trên.
         dat = token_dat_truoc(do.token_vao, _tran_ra_xin(body))
         if token_dat_khai > 0:
-            dat = token_dat_khai
+            # Máy A và máy B phải giữ cùng một đỉnh. Tuy vậy header là dữ liệu
+            # qua mạng: một bản A cũ/ước thiếu không được phép hạ phép đo an toàn
+            # mà B vừa tự tính. Lấy số lớn hơn giữ nhánh suy biến fail-closed.
+            dat = max(dat, token_dat_khai)
         px_gh, suat = so.cap_suat(ten, dat, la_whale)
         if suat is None:
             dem.cong(_nhom_tu_choi(px_gh.ly_do))

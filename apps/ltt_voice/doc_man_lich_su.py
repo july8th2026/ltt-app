@@ -11,6 +11,8 @@ from __future__ import annotations
 
 import logging
 
+from . import hang_doi as _hang_doi
+
 log = logging.getLogger(__name__)
 
 #: Số dòng đọc về trước khi lọc trong Python.
@@ -211,6 +213,12 @@ def dong_cho_trang(job, duong_audio: str, *, da_tai: bool = False,
         "id": str(job.id),
         "luc": job.created_at,
         "trang_thai": job.status,
+        # GUI-D015: job `queued` quá ngưỡng thì dòng lịch sử phải NÓI ra — cùng
+        # ngưỡng với Studio (`hang_doi.py`). 13–16/09 job ba ngày tuổi mang đúng
+        # badge "Đang chờ" của một job vừa nộp.
+        "cho_lau": (job.status == "queued"
+                    and _hang_doi.muc_cho(_hang_doi.tuoi_hang_doi_s(job.created_at))
+                    == "lau"),
         "het_han": het_han,
         "da_tai": bool(da_tai),
         "da_xoa": bool(da_xoa),

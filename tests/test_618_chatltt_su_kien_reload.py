@@ -200,7 +200,10 @@ def test_su_kien_cua_facade_ap_nguyen_xi(db, monkeypatch):
         def hong(self, exc):
             pass
 
-    monkeypatch.setattr(luong_vlm, "mo", lambda db, *, duong, than, timeout_s=0: Gia())
+    monkeypatch.setattr(
+        luong_vlm, "mo",
+        lambda db, *, duong, than, timeout_s=0, **_meta: Gia(),
+    )
     u = tao_nguoi_dung(db, email="e618@example.com", password="a-good-password-12")
     db.flush()
     credit.cap_tay(db, u.id, 100, by="test")

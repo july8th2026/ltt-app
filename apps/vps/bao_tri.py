@@ -49,7 +49,8 @@ from __future__ import annotations
 import logging
 import time
 
-from apps.vps.services import billing
+from apps.vps.services import billing, backend_factory
+from apps.vps import profiles
 from apps.vps.services.proxmox import ChuaCauHinh, ProxmoxError, client_tu_moi_truong
 
 log = logging.getLogger(__name__)
@@ -74,12 +75,19 @@ def _treo_va_tat(db, client):
     from apps.vps.services import dieu_khien
 
     def treo(may, ly_do: str) -> None:
-        if client is None:
+        selected = client
+        if getattr(may, "infrastructure_profile_id", None):
+            try:
+                selected = backend_factory.compute_backend(profiles.pinned_profile(db, may)).client
+            except (profiles.ProfileNotReady, ChuaCauHinh,
+                    *backend_factory.operation_error_types()):  # type: ignore[misc]
+                selected = None
+        if selected is None:
             billing.treo(db, may, ly_do)
             return
         # `dieu_khien.treo` tự nuốt lỗi Proxmox và VẪN ghi sổ — treo là quyết
         # định về tiền, Proxmox hỏng không được phép cứu một máy khỏi bị treo.
-        dieu_khien.treo(db, may, client, ly_do=ly_do)
+        dieu_khien.treo(db, may, selected, ly_do=ly_do)
 
     return treo
 
@@ -100,7 +108,7 @@ def _nop_job_xoa(db, may) -> bool:
     return truoc is not None
 
 
-def _dong_bo_bang_thong(db) -> int:
+def _dong_bo_bang_thong(db, profile=None) -> int:
     """Đọc bộ đếm trên router, cộng dồn vào từng máy, và hãm tốc máy vượt trần.
 
     Trả về số máy vừa **đổi** trạng thái hãm tốc — chỉ số đó đáng ghi log.
@@ -126,7 +134,8 @@ def _dong_bo_bang_thong(db) -> int:
     from apps.vps.tables import VpsInstance
 
     try:
-        rt = bo_dinh_tuyen.client_tu_moi_truong()
+        rt = (backend_factory.router_backend(profile) if profile is not None
+              else bo_dinh_tuyen.client_tu_moi_truong())
         so_lieu = rt.doc_bang_thong()
         dang_ham = rt.danh_sach_giam_toc()
     except bo_dinh_tuyen.SshLenhError as exc:
@@ -136,11 +145,18 @@ def _dong_bo_bang_thong(db) -> int:
         return 0
 
     doi = 0
-    for may in db.execute(
-        select(VpsInstance).where(
+    query = select(VpsInstance).where(
             VpsInstance.trang_thai.in_(("dang_chay", "da_tat", "bi_treo")),
             VpsInstance.ip_noi_bo.is_not(None))
-    ).scalars():
+    if profile is not None:
+        query = query.where(VpsInstance.infrastructure_profile_id == profile.id,
+                            VpsInstance.profile_resolution_state == "PINNED")
+    for may in db.execute(query).scalars():
+        if profile is not None:
+            try:
+                profiles.pinned_profile(db, may)
+            except profiles.ProfileNotReady:
+                continue
         ip = str(may.ip_noi_bo)
 
         if ip not in so_lieu:
@@ -182,6 +198,45 @@ def _dong_bo_bang_thong(db) -> int:
     return doi
 
 
+def _dong_bo_bang_thong_pinned(db):
+    from sqlalchemy import select
+    from apps.vps.tables import VpsInfrastructureProfile
+    changed = 0
+    for profile in db.execute(select(VpsInfrastructureProfile).where(
+            VpsInfrastructureProfile.status != "DISABLED")).scalars():
+        try:
+            changed += _dong_bo_bang_thong(db, profile)
+        except backend_factory.operation_error_types():
+            log.warning("VPS bandwidth unavailable for profile %s", profile.id)
+    return changed
+
+
+def _doi_chieu_profiles(db):
+    """Read each profile independently; no fallback to legacy provider drivers."""
+    global _moc_doi_chieu
+    if time.monotonic() < _moc_doi_chieu:
+        return 0
+    _moc_doi_chieu = time.monotonic() + DOI_CHIEU_MOI_GIAY
+    from sqlalchemy import select
+    from apps.vps.services.reconciliation import reconcile_profile
+    from apps.vps.tables import VpsInfrastructureProfile
+    findings = 0
+    for profile in db.execute(select(VpsInfrastructureProfile)).scalars():
+        try:
+            result = reconcile_profile(db, profile,
+                compute=backend_factory.compute_backend(profile),
+                public_ip=backend_factory.public_ip_backend(db, profile),
+                gateway=backend_factory.gateway_backend(profile))
+        except (ChuaCauHinh, ProxmoxError, *backend_factory.operation_error_types()):
+            log.warning("VPS reconciliation unavailable for profile %s", profile.id)
+            continue
+        findings += len(result.findings)
+        for finding in result.findings:
+            log.warning("VPS profile %s finding %s resource %s",
+                        profile.id, finding.code, finding.resource_id)
+    return findings
+
+
 def _chup_anh_den_han(db, client, *, now=None) -> int:
     """Chụp ảnh tuần cho máy tới kỳ. Trả số máy vừa chụp.
 
@@ -194,7 +249,7 @@ def _chup_anh_den_han(db, client, *, now=None) -> int:
     from apps.vps.services import sao_luu
     from apps.vps.tables import VpsInstance
 
-    if client is None:
+    if db is None or client is None:
         return 0
 
     da_chup = 0
@@ -205,8 +260,13 @@ def _chup_anh_den_han(db, client, *, now=None) -> int:
         if not sao_luu.den_han_chup(may, now=now):
             continue
         try:
-            ten = sao_luu.chup_va_don(client, may, now=now)
-        except (ProxmoxError, sao_luu.SaoLuuError) as exc:      # bắt HẸP
+            selected = client
+            if getattr(may, "infrastructure_profile_id", None):
+                selected = backend_factory.compute_backend(profiles.pinned_profile(db, may)).client
+            if selected is None:
+                continue
+            ten = sao_luu.chup_va_don(selected, may, now=now)
+        except (ProxmoxError, ChuaCauHinh, profiles.ProfileNotReady, sao_luu.SaoLuuError) as exc:
             # ⚠️ `SaoLuuError` là loại lỗi MỚI của VPS V2, và bắt nó là cả điểm
             #    của bản sửa: trước đây `chup_va_don` không chờ tác vụ nên nó
             #    **không bao giờ** ném vì tác vụ hỏng — dòng dưới vẫn chạy, và
@@ -382,16 +442,18 @@ def _don_thao_tac_qua_han(db, *, now=None) -> int:
 
 def mot_luot(db, *, now=None) -> dict:
     """Một lượt bảo trì. Tách khỏi `chay()` để test được mà không cần worker."""
-    da_doi_giam_toc = _dong_bo_bang_thong(db)
+    da_doi_giam_toc = _dong_bo_bang_thong_pinned(db)
 
-    client = _client_hoac_none()
+    # Never route pinned resources through the global/default compute endpoint.
+    # Legacy NEEDS_REVIEW rows get accounting but no external mutation here.
+    client = None
     ket_qua = billing.thu_phi_dinh_ky(db, now=now,
                                       khi_treo=_treo_va_tat(db, client))
     if ket_qua["da_thu"]:
         # Vừa có máy sang chu kỳ mới → bộ đếm chu kỳ về 0. Đồng bộ thêm một lượt
         # để bỏ hãm ngay, thay vì bắt khách vừa trả tiền chờ tới giờ sau mới hết
         # chậm — "tôi vừa gia hạn mà máy vẫn ì" là một lá thư hỗ trợ có thật.
-        da_doi_giam_toc += _dong_bo_bang_thong(db)
+        da_doi_giam_toc += _dong_bo_bang_thong_pinned(db)
     ket_qua["da_doi_giam_toc"] = da_doi_giam_toc
     # Chụp ảnh SAU khi thu tiền: máy vừa bị treo vì hết tiền vẫn được chụp (nó
     # còn 7 ngày ân hạn, và ngừng chụp trong 7 ngày đó là một hình phạt kèm mà
@@ -408,7 +470,7 @@ def mot_luot(db, *, now=None) -> dict:
     ket_qua["da_don_ve"] = da_don
     ket_qua["da_hoan"] = _hoan_may_tao_hong(db)
     ket_qua["thao_tac_qua_han"] = _don_thao_tac_qua_han(db, now=now)
-    ket_qua["mo_coi"] = _doi_chieu_dinh_ky(db, client)
+    ket_qua["mo_coi"] = _doi_chieu_profiles(db)
 
     da_nop_xoa = 0
     for may in billing.den_han_xoa(db, now=now):
@@ -425,13 +487,42 @@ def mot_luot(db, *, now=None) -> dict:
     return ket_qua
 
 
-def chay() -> None:
-    """Điểm vào cho `AppManifest.bao_tri`. Nền tảng gọi mỗi giờ, dưới lease."""
-    from platform_core.db import get_session
+#: Nhịp của phần nặng (thu tiền, chụp ảnh, đối chiếu). Manifest gọi `chay()`
+#: dày hơn (`profiles.HEALTH_REFRESH_SECONDS`) chỉ để làm mới health profile;
+#: phần nặng vẫn giữ nhịp một giờ như trước.
+NHIP_NANG_GIAY = 3600
+_luot_nang_cuoi: float | None = None
 
+
+def chay(*, dong_ho=None) -> None:
+    """Điểm vào cho `AppManifest.bao_tri`. Nền tảng gọi dưới lease.
+
+    Mỗi lượt: làm mới health mọi profile ACTIVE (nếu không, việc chọn profile
+    khi tạo máy luôn thấy health cũ và từ chối bán — đo 16/09). Phần nặng chỉ
+    chạy khi đã đủ `NHIP_NANG_GIAY` kể từ lượt nặng trước trong tiến trình này;
+    lease đổi chủ thì lượt nặng có thể tới sớm — cùng ngữ nghĩa với `moc` của
+    nền tảng, và mọi bước nặng đều idempotent theo hạn.
+    """
+    import time
+
+    from platform_core.db import get_session
+    from apps.vps.services import preflight
+
+    global _luot_nang_cuoi
+    bay_gio = (dong_ho or time.monotonic)()
     gen = get_session()
     db = next(gen)
     try:
+        try:
+            health = preflight.refresh_active_profiles(db)
+            if not all(health.values()):
+                log.warning("VPS bao tri: profile chua san sang ban %s", health)
+        except Exception:                       # health không được chặn thu tiền
+            db.rollback()
+            log.exception("VPS bao tri: lam moi health profile that bai")
+        if _luot_nang_cuoi is not None and bay_gio - _luot_nang_cuoi < NHIP_NANG_GIAY:
+            return
+        _luot_nang_cuoi = bay_gio
         kq = mot_luot(db)
         # Chỉ ghi log khi CÓ việc xảy ra: một dòng "đã thu 0" mỗi giờ là 24 dòng
         # rác mỗi ngày, và nó làm người đọc bỏ qua đúng dòng cần đọc.

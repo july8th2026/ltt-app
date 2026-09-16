@@ -146,6 +146,24 @@ def _khoi(vao=100, ra=50, co_usage=True):
     return ds
 
 
+def test_responses_test_stream_has_real_client_lifecycle():
+    """Codex rejects a text delta without an active item and total token count."""
+    from server.api.streaming import _luong_thu
+
+    events = []
+    for raw in _luong_thu("/v1/responses"):
+        data = next(line[6:] for line in raw.decode().splitlines()
+                    if line.startswith("data: "))
+        events.append(json.loads(data))
+    assert [event["type"] for event in events] == [
+        "response.created", "response.output_item.added",
+        "response.content_part.added", "response.output_text.delta",
+        "response.output_text.done", "response.content_part.done",
+        "response.output_item.done", "response.completed",
+    ]
+    assert events[-1]["response"]["usage"]["total_tokens"] == 0
+
+
 def _dat_luong(monkeypatch, khoi=None, *, nem=None, ban=False):
     """Thay `luong_vlm.mo` — KHÔNG chạm máy B trong test."""
     from platform_core.llm import luong_vlm
@@ -165,7 +183,7 @@ def _dat_luong(monkeypatch, khoi=None, *, nem=None, ban=False):
         def hong(self, exc):
             self.da_hong = True
 
-    def gia(db, *, duong, than, timeout_s=900.0):
+    def gia(db, *, duong, than, timeout_s=900.0, **_meta):
         da_goi.append({"duong": duong, "than": than})
         if ban:
             raise luong_vlm.KhongMoDuocLuong("may B dang ban", ban=True,
@@ -477,6 +495,46 @@ def test_stream_qua_tran_vao_van_413_TRUOC_200(api, monkeypatch):
     assert _so_du(user_id) == truoc
 
 
+@pytest.mark.parametrize("route", [MSG, RSP])
+def test_context_rejections_do_not_consume_create_rate(api, monkeypatch, route):
+    from server.api import streaming
+    called = _dat_luong(monkeypatch)
+    user_id, token = _account()
+    balance = _so_du(user_id)
+    real_enforce = streaming.limits.enforce_create_rate
+    creates = []
+
+    def limited(**kwargs):
+        creates.append(kwargs["key_id"])
+        # A real, independent ceiling of one accepted request per minute.
+        kwargs["limits"] = None
+        kwargs["config"] = type("Config", (), {"create_rpm": 1})()
+        real_enforce(**kwargs)
+
+    monkeypatch.setattr(streaming.limits, "enforce_create_rate", limited)
+    from apps.ltt_llm import ngan_sach
+    large = "x" * int((ngan_sach.TOKEN_VAO_TRAN + 5000) * ngan_sach.KY_TU_MOI_TOKEN)
+    body = (_than(messages=[{"role": "user", "content": large}]) if route == MSG
+            else {"model": MODEL, "stream": True, "input": large})
+    for _ in range(3):
+        response = api.post(route, json=body, headers=_h(token))
+        assert response.status_code == 413, response.text
+        assert response.json()["limit_name"] == "input_tokens"
+    assert creates == []
+    assert called == []
+    assert _so_du(user_id) == balance
+    small = _than() if route == MSG else {"model": MODEL, "stream": True, "input": "hello"}
+    response = api.post(route, json=small, headers=_h(token))
+    assert response.status_code == 200, response.text
+    assert len(creates) == 1
+    response = api.post(route, json=small, headers=_h(token))
+    assert response.status_code == 429, response.text
+    assert response.json()["code"] == "rate_limited"
+    assert response.json()["scope"] in {"key", "account"}
+    assert response.json()["reason"] == "create_rate"
+    assert int(response.headers["Retry-After"]) > 0
+
+
 def test_stream_tron_ven_ghi_so_luot_xong_va_whale(api, monkeypatch):
     """Sổ lượt (chủ dự án: 'log lưu để phân tích sau') ghi đủ một lượt trọn vẹn."""
     monkeypatch.setenv("LTT_LLM_NGUONG_WHALE", "1")      # mọi lượt đều là whale
@@ -719,7 +777,8 @@ def test_trang_cli_day_du_ba_cong_cu(api):
     page = api.get("/developers/cli").text
     for manh in ("model_providers.ltt", "ltt.config.toml", "wire_api",
                  "ANTHROPIC_BASE_URL", "ANTHROPIC_DEFAULT_HAIKU_MODEL",
-                 "Third-Party Inference", "inferenceModels", MODEL):
+                 "Third-Party Inference", "Model list", "Display name",
+                 "Apply Changes", MODEL):
         assert manh in page, "trang /developers/cli thieu " + repr(manh)
 
 

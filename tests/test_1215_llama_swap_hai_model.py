@@ -51,16 +51,29 @@ GPU_JSON = GOC / "llm_gateway" / "deploy" / "gpu_may_b.json"
 #: Không hard-code UUID ở đây: một lần đo lại card chỉ được sửa MỘT tệp (Task 0.2).
 VAI_CUA_HO_SO = {"qwen38-api": "ltt38", "qwen35-api": "ltt35"}
 
-#: Bộ cờ chốt ở **L-16 phương án B**. `--reasoning-budget` là cờ server-global
-#: (không gửi được per-request) nên nó là thuộc tính của hồ sơ; tham số lấy mẫu
-#: đặt ở server vì cache CUDA graph khoá theo bộ tham số.
-CO_L16 = (
-    ("--reasoning-budget", "512"),
-    ("--temp", "0.6"),
+#: Phan CHUNG cua bo lay mau thinking. Budget/temp/reasoning la thuoc tinh
+#: TUNG model (Q131), nen khong duoc quay lai macro CHUNG.
+CO_CHUNG_Q131 = (
     ("--top-p", "0.95"),
     ("--top-k", "20"),
     ("--min-p", "0"),
 )
+
+CO_RIENG_Q131 = {
+    "qwen38-api": {
+        "--reasoning-effort": "xhigh",
+        "--reasoning-budget": "4096",
+        "--temp": "1.0",
+    },
+    "qwen35-api": {
+        "--reasoning": "on",
+        "--reasoning-budget": "2048",
+        "--temp": "1.0",
+    },
+}
+
+TEMPLATE_Q131 = "${MODELS}/chat_template_v22.5.jinja"
+TEMPLATE_SHA256 = "e57684bae4156211a55473c5a63be976a405a37ab5be5ae0e5abf1df5349c4b2"
 
 #: ⛔ Cờ bị L-16 **gỡ bỏ** sau khi L-15 đã chốt nó. Xem docstring đầu tệp.
 CO_BI_CAM = "--presence-penalty"
@@ -304,18 +317,39 @@ def test_concurrencyLimit_it_nhat_HAI_LAN_so_slot(cfg):
 
 # ── Bộ cờ L-16 ─────────────────────────────────────────────────────────────
 
-def test_bo_co_L16_co_tren_CA_HAI_ho_so(cfg):
-    """Không có bộ cờ này thì LTT-3.5 trả `content` **rỗng 6/6** lượt tiếng Việt,
-    mỗi lượt đốt đúng `max_tokens` (G3c). Và chỉ `--reasoning-budget` một mình thì
-    2/10 lượt trả lời **sai** kèm khối nghĩ rò ra `content` — kiểu hỏng TỆ HƠN
-    rỗng, vì khách không phát hiện được (L-16 §2).
-    """
+def test_bo_co_Q131_tach_chung_va_rieng_theo_model(cfg):
+    """Sampling chung; budget/temp/muc nghi phai nam o tung ho so."""
+    chung = str((cfg.get("macros") or {}).get("CHUNG") or "").split()
+    for co in ("--reasoning-budget", "--temp", "--reasoning-effort", "--reasoning"):
+        assert co not in chung, f"{co} khong duoc nam trong CHUNG"
+
     for ten in VAI_CUA_HO_SO:
         dong_lenh = _khai_trien(cfg, ten)
-        for co, gt in CO_L16:
+        for co, gt in CO_CHUNG_Q131:
             thuc = _tham_so(dong_lenh, co)
             assert thuc == gt, (
-                f"{ten}: {co} = {thuc!r}, cho L-16 phuong an B phai la {gt!r}")
+                f"{ten}: {co} = {thuc!r}, Q131 phai la {gt!r}")
+        for co, gt in CO_RIENG_Q131[ten].items():
+            assert _tham_so(dong_lenh, co) == gt, (
+                f"{ten}: {co} phai la {gt!r}")
+
+
+def test_Q131_vendor_template_v225_va_hai_ho_so_dung_cung_ban(cfg):
+    """Deploy moi phai mang dung template da bam, khong tin tep sua tay tren B."""
+    import hashlib
+
+    tep = GOC / "llm_gateway" / "deploy" / "chat_template_v22.5.jinja"
+    assert tep.is_file(), "thieu template v22.5 trong goi deploy"
+    assert hashlib.sha256(tep.read_bytes()).hexdigest() == TEMPLATE_SHA256
+    for ten in VAI_CUA_HO_SO:
+        cmd = str(cfg["models"][ten]["cmd"])
+        assert f"--chat-template-file {TEMPLATE_Q131}" in cmd, ten
+
+    deploy = (GOC / "llm_gateway" / "deploy" / "deploy.ps1").read_text(
+        encoding="ascii")
+    assert "chat_template_v22.5.jinja" in deploy
+    assert TEMPLATE_SHA256 in deploy.lower()
+    assert "H:/LTT_LLM/models/chat_template_v22.5.jinja" in deploy
 
 
 def test_KHONG_ho_so_nao_dung_presence_penalty(cfg):

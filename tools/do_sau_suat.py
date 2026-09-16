@@ -73,7 +73,8 @@ def _may_b(cong: int) -> dict:
             elif d.startswith("llamacpp:requests_deferred "):
                 ra["deferred"] = int(float(d.rsplit(" ", 1)[1]))
         return ra
-    except Exception:                       # noqa: BLE001
+    except (OSError, subprocess.SubprocessError, ValueError, IndexError):
+        # ssh không chạy/hết giờ, hoặc dòng metric sai hình dạng ⇒ "không hỏi được".
         return {}
 
 
@@ -105,7 +106,8 @@ class BoGpu(threading.Thread):
                  "nvidia-smi --query-gpu=index,utilization.gpu,clocks.sm,"
                  f"power.draw --format=csv,noheader,nounits --loop-ms={self.nhip_ms}"],
                 stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-        except Exception:                   # noqa: BLE001
+        except OSError:
+            # không có `ssh` trên PATH ⇒ không đo GPU máy B, lượt đo vẫn chạy.
             return
         if self._p.stdout is None:
             return
@@ -115,8 +117,9 @@ class BoGpu(threading.Thread):
                 c = dong.decode("utf-8", "replace").strip().split(", ")
                 self.mau.append((round(time.monotonic() - t0, 2), int(c[0]),
                                  int(c[1]), int(c[2]), float(c[3])))
-            except Exception:               # noqa: BLE001
-                pass
+            except (ValueError, IndexError):
+                # dòng nvidia-smi không đủ 4 cột số (khởi động, "[N/A]") ⇒ bỏ mẫu đó.
+                continue
 
     def dung(self) -> None:
         if self._p is not None:

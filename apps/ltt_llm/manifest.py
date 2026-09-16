@@ -288,19 +288,13 @@ MANIFEST = AppManifest(
             #    Do duoc: `none` cho **2 token** thay vi ~1.180 tren cung prompt.
             #    Ba nguon doc lap (do 14/09, bang 12/09 trong llama-swap.yaml,
             #    model card Qwen ve tham so lay mau) noi cung mot dieu.
-            # 🔴 MAC DINH `xhigh` — chot 14/09/2026, muc tieu la CHAT LUONG.
-            #    Model card: "For benchmarking on highly complex problems ...
-            #    This provides the model with sufficient space to generate
-            #    detailed and comprehensive responses, thereby enhancing its
-            #    overall performance." Nghi nhieu hon la duong nha san xuat chi
-            #    de tra loi tot hon, va day la API ban CHAT LUONG chu khong ban
-            #    toc do.
-            #    Do 13/09: chenh lech token suy nghi giua medium va xhigh chi
-            #    +12 % tren 3.5 va nam trong nhieu tren 3.8 (63 vs 55) — tuc gia
-            #    phai tra cho muc cao nhat la nho.
+            # Q131: khong khai mot default CHUNG trong schema. Qwen3.8 chinh
+            # thuc co low|medium|xhigh va server mac dinh xhigh; Qwen3.5 chinh
+            # thuc chi co thinking on/off, server giu on va template v22.5 dung
+            # medium khi client khong gui effort. `ngan_sach.nghi_mac_dinh()`
+            # so huu default theo model de admission khop hanh vi may B.
             "reasoning_effort": {"type": "enum",
-                                 "values": ["low", "medium", "xhigh"],
-                                 "default": "xhigh"},
+                                 "values": ["low", "medium", "xhigh"]},
             # ── Mo 14/09/2026: engine DA lam duoc, cua cua ta dang vut di ────
             #
             # ⛔ Sau khoa duoi day khong phai nang luc MOI. Do 14/09 tren
@@ -441,7 +435,8 @@ MANIFEST = AppManifest(
                     "example": [{"role": "user", "content": "Explain HTTP 429."}],
                 },
                 "model": {
-                    "description": (f"`ltt-3.8` is the deepest model, text only "
+                    "description": (f"`ltt-3.8` is the deepest model and reads "
+                                    f"images "
                                     f"({_cua_so_noi_voi_khach('qwen38-api')} usable "
                                     f"input context). `ltt-3.5` answers faster, "
                                     f"costs much less and reads images, with "
@@ -464,8 +459,9 @@ MANIFEST = AppManifest(
                 "reasoning_effort": {
                     "description": (
                         "How much the model thinks before answering. Deeper "
-                        "costs more output tokens but gives better answers, so "
-                        "the default is the deepest. Use `low` when you want "
+                        "costs more output tokens but can improve hard answers. "
+                        "When omitted, LTT 3.8 uses `xhigh`; LTT 3.5 keeps "
+                        "thinking on with compatible `medium`. Use `low` when you want "
                         "the shortest answers - do NOT reach for a small "
                         "`max_tokens` instead: thinking spends that same "
                         "budget, so the model can reason until it is cut off "

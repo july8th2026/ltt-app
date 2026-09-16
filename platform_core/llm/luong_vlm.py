@@ -125,7 +125,8 @@ def _loi_parser_tool_call(than_loi: str) -> bool:
 
 
 def mo(db, *, duong: str, than: dict, timeout_s: float = 900.0,
-       _da_thu_lai: bool = False) -> LuongMo:
+       request_id: str = "", token_dat_truoc: int = 0,
+       la_whale: bool = False, _da_thu_lai: bool = False) -> LuongMo:
     """Mở luồng tới model nhà. `duong` là `/v1/messages` hoặc `/v1/responses`.
 
     ⚠️ **Chưa đọc byte nào khi hàm này trả về.** Nó chỉ chắc rằng thượng nguồn đã
@@ -157,10 +158,18 @@ def mo(db, *, duong: str, than: dict, timeout_s: float = 900.0,
 
     import httpx
 
+    headers = {"Authorization": f"Bearer {credential}"}
+    if request_id:
+        headers["X-LTT-Request-Id"] = str(request_id)
+    if int(token_dat_truoc or 0) > 0:
+        headers["X-LTT-Token-Dat"] = str(int(token_dat_truoc))
+    if la_whale:
+        headers["X-LTT-Whale"] = "1"
+
     client = httpx.Client(timeout=timeout_s)
     try:
         ctx = client.stream("POST", base.rstrip("/") + duong, json=than,
-                            headers={"Authorization": f"Bearer {credential}"})
+                            headers=headers)
         r = ctx.__enter__()
     except httpx.HTTPError as e:
         client.close()
@@ -241,8 +250,10 @@ def mo(db, *, duong: str, than: dict, timeout_s: float = 900.0,
                     log.warning(
                         "may B vo o parser tool-call, thu lai MOT lan: %s",
                         than_loi[:300])
-                    return mo(db, duong=duong, than=than, timeout_s=timeout_s,
-                              _da_thu_lai=True)
+                    return mo(
+                        db, duong=duong, than=than, timeout_s=timeout_s,
+                        request_id=request_id, token_dat_truoc=token_dat_truoc,
+                        la_whale=la_whale, _da_thu_lai=True)
                 log.warning("thu lai roi van vo o parser tool-call: %s",
                             than_loi[:300])
             api_pool.danh_dau_loi(db, key, message=f"HTTP {r.status_code}")

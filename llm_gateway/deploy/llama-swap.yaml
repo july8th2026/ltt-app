@@ -222,15 +222,17 @@ macros:
   # !! Va dung tat suy nghi (`--reasoning off`): do la HONG, khong phai danh doi.
   #    Nhanh gap ~20 lan nhung tieng Viet con 10 %, sinh dai con 40 %.
   #
-  # Tham so lay mau dat o SERVER, khong gui theo request: cache CUDA graph khoa
-  # theo bo tham so, va `--reasoning-budget` la co server-global, khong gui
-  # duoc per-request. Tuc no la thuoc tinh cua HO SO, moi khach chiu chung.
+  # L-16 do duoc rang budget 512 chan loi tra rong, nhung no khong chung minh
+  # 512 la muc chat luong tot. Q131 tach sampling + budget theo tung model:
+  # Qwen3.8 dung bo thinking chinh thuc temp 1.0 va effort xhigh; Qwen3.5 bat
+  # thinking, dung temp 1.0 cho ho so general. Budget 4096/2048 la tran van hanh
+  # cua LTT (khong phai so Qwen cong bo), tang 8x/4x so voi moc an toan 512.
+  # `--reasoning-budget` la co server-global, nen khong duoc dat trong CHUNG.
   CHUNG: >-
     --jinja
     --reasoning-format deepseek
     -fa 1 -ngl 999 -kvu
-    --reasoning-budget 512
-    --temp 0.6 --top-p 0.95 --top-k 20 --min-p 0
+    --top-p 0.95 --top-k 20 --min-p 0
     --metrics
 
 models:
@@ -286,10 +288,9 @@ models:
   #     - hardcode xhigh nen dot het ngan sach token vao reasoning
   #     - "empty think poisoning" chen <think></think> rong vao lich su
   #     - agentic stalling giua vong tool-call
-  #   Ban va cong dong: froggeric/Qwen-Fixed-Chat-Templates (qwen3.8-froggeric-v22.3),
-  #   mac dinh reasoning_effort = medium thay vi xhigh.
-  #   ! Danh doi phai biet: medium re hon xhigh nhung diem IFBench 78,3 cua cong
-  #      dong do o xhigh. Chua co phep do nao cua ta tach hai muc nay.
+  #   Ban va cong dong: froggeric/Qwen-Fixed-Chat-Templates v22.5. Tep duoc
+  #   vendor trong repo va deploy theo hash; khong con phu thuoc tep sua tay
+  #   tren may B. Q131 dat server default xhigh dung ba muc chinh thuc cua 3.8.
   #
   # `--spec-type` dat o TUNG ho so chu khong o macro `CHUNG`: kha nang chay MTP
   # la thuoc tinh cua TEP GGUF (tep lmstudio khong co tensor MTP - G3b), khong
@@ -305,8 +306,11 @@ models:
       ${BIN}/llama-server.exe
       -m ${GGUF38}
       --mmproj ${MODELS}/mmproj-F16.gguf
-      --chat-template-file H:/LTT_LLM/models/chat_template.jinja
+      --chat-template-file ${MODELS}/chat_template_v22.5.jinja
       ${CHUNG}
+      --reasoning-effort xhigh
+      --reasoning-budget 4096
+      --temp 1.0
       -c 221184
       -np 3
       --cache-type-k q4_0 --cache-type-v q4_0
@@ -371,10 +375,11 @@ models:
   #    Va README v22.5 khai ro: *"universal drop-in ... the single
   #    `chat_template.jinja` file ... for all Qwen 3.5, 3.6, 3.8"*.
   #
-  # !! MOT TEP RIENG, KHONG dung chung voi 3.8. 3.8 dang chay v22.3 va dang chay
-  #    TOT; gop chung mot tep la doi hai thu cung luc. Mot bien so moi lan.
-  #    sha256 v22.5: e57684bae4156211a55473c5a63be976a405a37ab5be5ae0e5abf1df5349c4b2
-  #    (doi chieu hai ben sau khi chep - khop tung byte).
+  # !! Q131: ca hai ho so dung cung ban va v22.5 DA co tren may B. Tep nay duoc
+  #    vendor + deploy tu repo, sha256:
+  #    e57684bae4156211a55473c5a63be976a405a37ab5be5ae0e5abf1df5349c4b2.
+  #    Qwen3.5 khong co enum effort chinh thuc; `--reasoning on` giu thinking
+  #    bat dung model card, con budget 2048 la tran van hanh cua LTT.
   #
   # LTT-3.5 nhanh HON LTT-3.8 (76,21 so 63,01 tok/s) du card yeu hon, vi giai ma
   # bi chan boi bang thong bo nho: 7,3 GB trong so/token so voi 16,5 GB. (G3b)
@@ -390,6 +395,9 @@ models:
       --mmproj ${MODELS}/mmproj-9B-F16-unsloth.gguf
       --chat-template-file ${MODELS}/chat_template_v22.5.jinja
       ${CHUNG}
+      --reasoning on
+      --reasoning-budget 2048
+      --temp 1.0
       -c 262144
       -np 3
       --cache-type-k q8_0 --cache-type-v q8_0

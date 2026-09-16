@@ -189,6 +189,22 @@ Dat "hash khop $($mongDoi.Count) tep - khong co tep nao bi sua tay tren may B"
 
 # --- 3. Cau hinh llama-swap ----------------------------------------------------
 Buoc "3. Cau hinh llama-swap"
+$tepTemplate = Join-Path $PSScriptRoot "chat_template_v22.5.jinja"
+$hashTemplate = "e57684bae4156211a55473c5a63be976a405a37ab5be5ae0e5abf1df5349c4b2"
+if (-not (Test-Path -LiteralPath $tepTemplate)) {
+    Loi "thieu chat_template_v22.5.jinja trong goi deploy"
+    exit 1
+}
+$hashTemplateThuc = (Get-FileHash -Algorithm SHA256 -LiteralPath $tepTemplate).Hash.ToLower()
+if ($hashTemplateThuc -ne $hashTemplate) {
+    Loi "chat_template_v22.5.jinja sai hash - khong deploy tep khong ro phien ban"
+    exit 1
+}
+& scp.exe -i $Khoa -o BatchMode=yes -q $tepTemplate `
+    "${User}@${MayB}:H:/LTT_LLM/models/chat_template_v22.5.jinja"
+if ($LASTEXITCODE -ne 0) { Loi "scp chat template that bai"; exit 1 }
+Dat "chat template v22.5 (hash da khoa)"
+
 & scp.exe -i $Khoa -o BatchMode=yes -q (Join-Path $PSScriptRoot "llama-swap.yaml") `
     "${User}@${MayB}:$Goc/gateway/llama-swap.yaml"
 if ($LASTEXITCODE -ne 0) { Loi "scp llama-swap.yaml that bai"; exit 1 }

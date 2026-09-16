@@ -347,7 +347,7 @@
               "en"
             ],
             "default": "auto",
-            "description": "Language lane for quality enforcement. 'auto' (default) detects language from the text. 'vi' or 'en' overrides detection. If the detected or declared language does not match the voice's lane, the request is rejected with voice_language_mismatch.",
+            "description": "Language lane for quality enforcement. 'auto' (default) detects language from the text. 'vi' or 'en' declares the script language; confident detection from the text still applies. If the declared or confidently detected language does not match the voice's lane, the request is rejected with voice_language_mismatch before any credit is held.",
             "examples": [
               "auto"
             ]
@@ -373,7 +373,7 @@
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "ebedbcc38dfcd9d6"
+      "contract_hash": "7d53c7d1f5098677"
     },
     {
       "name": "story.storyboard",
@@ -483,7 +483,7 @@
               "ltt-3.5"
             ],
             "default": "ltt-3.8",
-            "description": "`ltt-3.8` is the deepest model, text only (171K usable input context). `ltt-3.5` answers faster, costs much less and reads images, with 209K usable input context.",
+            "description": "`ltt-3.8` is the deepest model and reads images (171K usable input context). `ltt-3.5` answers faster, costs much less and reads images, with 209K usable input context.",
             "examples": [
               "ltt-3.8"
             ]
@@ -521,8 +521,7 @@
               "medium",
               "xhigh"
             ],
-            "default": "xhigh",
-            "description": "How much the model thinks before answering. Deeper costs more output tokens but gives better answers, so the default is the deepest. Use `low` when you want the shortest answers - do NOT reach for a small `max_tokens` instead: thinking spends that same budget, so the model can reason until it is cut off and return empty content with finish_reason=length.",
+            "description": "How much the model thinks before answering. Deeper costs more output tokens but can improve hard answers. When omitted, LTT 3.8 uses `xhigh`; LTT 3.5 keeps thinking on with compatible `medium`. Use `low` when you want the shortest answers - do NOT reach for a small `max_tokens` instead: thinking spends that same budget, so the model can reason until it is cut off and return empty content with finish_reason=length.",
             "examples": [
               "medium"
             ]
@@ -603,7 +602,7 @@
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "f6badbdc9de99372"
+      "contract_hash": "9d23c67b17de285f"
     },
     {
       "name": "text.prompt_package",

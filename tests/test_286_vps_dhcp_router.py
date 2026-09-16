@@ -173,17 +173,45 @@ def test_thieu_khoa_ssh_thi_bao_ro():
 
 # ── 5. Job phải dùng đúng MAC đã ghim vào máy ───────────────────────────────
 
-def test_job_dat_cho_bang_DUNG_MAC_da_ghim_vao_net0():
+def test_job_dat_cho_bang_DUNG_MAC_da_ghim_vao_net0(monkeypatch):
     """Hai nơi tính MAC khác nhau thì DHCP giữ chỗ cho một địa chỉ mà card của
     máy không bao giờ dùng tới — và máy im lặng không có mạng."""
-    import inspect
-
+    from types import SimpleNamespace
     from apps.vps import jobs
+    from apps.vps.services import dinh_danh, mutation_coordinator
 
-    nguon = inspect.getsource(jobs._tao_may)
-    assert "dat_cho(" in nguon
-    assert "dinh_danh.mac(may.id)" in nguon
-    assert "mac=dinh_danh.mac(may.id)" in nguon, "net0 phai ghim cung MAC do"
+    class _Router:
+        def __init__(self):
+            self.reservations = {}
+            self.counters = {}
+            self.calls = []
+
+        def dat_cho(self, mac, ip, *, ten):
+            self.calls.append((mac, ip, ten))
+            self.reservations[mac] = ip
+
+        def theo_doi_bang_thong(self, ip):
+            self.counters[ip] = (0, 0)
+
+        def danh_sach_dat_cho(self):
+            return self.reservations
+
+        def doc_bang_thong(self):
+            return self.counters
+
+    def execute(_db, **kwargs):
+        kwargs["mutate"]()
+        assert kwargs["readback"]() is True
+        return SimpleNamespace(state="OBSERVED")
+
+    monkeypatch.setattr(mutation_coordinator, "execute", execute)
+    may = SimpleNamespace(id="12345678-1234-5678-1234-567812345678",
+                          ip_noi_bo="10.51.0.50")
+    rt = _Router()
+    jobs._dat_cho_co_journal(object(), may, rt)
+
+    assert rt.calls == [(dinh_danh.mac(may.id).lower(), "10.51.0.50",
+                         "vps-12345678")]
 
 
 def test_go_cho_dung_cung_ham_mac():

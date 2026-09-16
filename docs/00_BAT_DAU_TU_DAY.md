@@ -7,50 +7,35 @@ Thư mục này vừa là **mã nguồn** vừa là **bộ cài**.
 
 ---
 
-## Đọc theo thứ tự này
+## Mở phiên ở đâu
 
-| # | File | Khi nào cần |
-|---|---|---|
-| 1 | **`QUYET_DINH_NEN_TANG.md`** | **Đọc trước tiên.** Nguồn chân lý: dự án là gì, 12 quyết định đã chốt, ràng buộc bất biến. Tài liệu nào mâu thuẫn với nó thì nó đúng. |
-| 2 | `KE_HOACH_TRIEN_KHAI.md` | Đang làm tới đâu, việc kế tiếp là gì |
-| 3 | `NHAT_KY.md` | Phiên gần nhất đã làm gì, còn vướng gì |
-| 4 | `KHAO_SAT_BOT_GEMINI.md` | Khi cần dựng một tool mới — tra module nguồn ở đâu, cần gì |
-| 5 | `01_COPY_LEN_SERVER.md` | Đưa code lên máy chủ, cập nhật, rollback |
-| 6 | `02_LENH_CHO_CLAUDE.md` | Câu lệnh mẫu để giao việc cho Claude |
-| 7 | `03_THEM_APP_MOI.md` | Thêm một app |
-| 8 | `04_CLOUDFLARE_TUNNEL.md` | Dựng Tunnel, xử lý sự cố mạng |
-| 9 | **`AGENT_LTT/00_AGENT_BAT_DAU.md`** | **AI Agent LTT** — mở phiên làm việc về agent thì đọc file đó trước, nó chỉ đường tiếp. Kèm giao thức **đo trạng thái code thật** trước khi tin tài liệu. |
-| 10 | `CONG_THUC_DI_TRU_APP.md` + `KE_HOACH_DI_TRU_MODULE.md` | Di trú module BOT GEMINI → app: công thức 8 bước + backlog theo đợt |
-| 11 | **`quy_tac_audit.md`** | Audit toàn diện app: điểm Q/M/E, gate phát hành, control, benchmark thế giới và roadmap |
-| 12 | `QUY_TRINH_THIET_KE_LAI_GIAO_DIEN_APP.md` | Thiết kế lại UI từ ảnh sau khi audit/logic đã khóa |
-| — | `_luutru/` | Tài liệu đã ngừng dùng. **Đừng làm theo.** Chỉ để tra lý do lịch sử. |
+Đừng đọc theo một danh sách ở tệp này. Thứ tự đọc khi mở phiên nằm ở **`CLAUDE.md`**
+(rồi `docs/00_LTT_OPERATING_CONTRACT.md` §1) — một nguồn duy nhất.
 
----
+**Cái gì đang sống trên production** thì hỏi máy chủ, đừng đọc bảng chép tay:
 
-## Trạng thái thật — cập nhật 2026-08-02
+```powershell
+python tools\api_prod_canary.py trang-thai
+```
 
-Bảng này phải đúng. Nếu bạn thấy nó sai, sửa ngay chứ đừng để đó — một bảng
-trạng thái sai còn tệ hơn không có bảng nào.
+*(Tệp này từng có bảng "Trạng thái thật" ghi tay ngày 02/08/2026; nó đã cũ và bị
+gỡ 16/09/2026 — lịch sử nằm trong git.)* Đã chốt gì: `QUYET_DINH_NEN_TANG.md`.
+Đang làm tới đâu: `KE_HOACH_TRIEN_KHAI.md` và `NHAT_KY.md`.
 
-### Đang chạy
+### Tra theo việc
 
-| Hạng mục | Trạng thái |
+| Việc | Tệp |
 |---|---|
-| Vỏ nền tảng nhiều app + hợp đồng app | ✅ xong, có test chốt |
-| PostgreSQL + di trú schema (Alembic) | ✅ xong (H1) |
-| Nhiều người dùng: đăng ký, xác thực email (Resend), phân quyền app | ✅ xong (H1) |
-| Hàng đợi job + worker tiến trình riêng | ✅ xong (H2) |
-| Sổ credit (giữ chỗ → quyết toán → hoàn) | ✅ xong (H3) |
-| Trang admin (sqladmin) | ✅ xong (H3-admin) |
-| Cloudflare Tunnel LIVE `app.lttstudios.com` + Turnstile | ✅ xong (H0.1) |
-| **Cốt lõi vận hành: catalog công khai + SSO + login return-to** | ✅ xong (H6) |
-| **LTT Agent AI + React Canvas + 7 tool ảnh/text/video/GPU** | ✅ xong, production public (H12 P0–P13) |
-| Tool thật đầu tiên — `thumbnail` (Gemini Image, tính credit) | ✅ xong (H5) |
-| App socialbot (Facebook + TikTok) | 🗑️ **ĐÃ GỠ HẲN 2026-08-25** (Q108 thay Q10) — cùng `core/`, `utils/`, `server/services/`, 43 route |
-| App demo (nghiệm thu hạ tầng) | 🗑️ **ĐÃ GỠ 2026-08-25** — bốn bộ test hạ tầng nay dùng app THỬ tổng hợp trong `tests/conftest.py`, không dựa vào một mặt hàng nữa |
-| Bộ cài 4 script + cập nhật + rollback + lịch backup | ✅ xong |
-| Kho mã nguồn trong git | ✅ từ 2026-07-31 |
-| Bộ test | ✅ 1.849 pass, 8 skip, 23 subtest |
+| Dựng tool mới — module nguồn ở BOT GEMINI | `KHAO_SAT_BOT_GEMINI.md` |
+| Đưa code lên máy chủ, cập nhật, rollback | `01_COPY_LEN_SERVER.md` |
+| Câu lệnh mẫu để giao việc cho Claude | `02_LENH_CHO_CLAUDE.md` |
+| Thêm một app | `03_THEM_APP_MOI.md` |
+| Dựng Tunnel, xử lý sự cố mạng | `04_CLOUDFLARE_TUNNEL.md` |
+| AI Agent LTT | `AGENT_LTT/00_AGENT_BAT_DAU.md` |
+| Di trú module BOT GEMINI → app | `CONG_THUC_DI_TRU_APP.md` + `KE_HOACH_DI_TRU_MODULE.md` |
+| Audit toàn diện app | `quy_tac_audit.md` |
+| Thiết kế lại UI từ ảnh sau audit | `QUY_TRINH_THIET_KE_LAI_GIAO_DIEN_APP.md` |
+| Tài liệu đã ngừng dùng — **đừng làm theo**, chỉ tra lịch sử | `_luutru/` |
 
 ### Mô hình vận hành (Q30 / H6)
 
@@ -58,18 +43,8 @@ trạng thái sai còn tệ hơn không có bảng nào.
 là **catalog công khai** — khách chưa đăng nhập xem được các tool (manifest
 `public=True`), bấm vào thì bị đưa về `/login?next=/<slug>` rồi quay lại đúng
 chỗ. **1 tài khoản dùng cho mọi app** (SSO tự nhiên: cùng host, 1 cookie phiên).
-App `public=False` (qualitylab) ẩn khỏi catalog khách, chỉ vào qua sidebar
-sau khi đăng nhập + phân quyền.
-
-### Chưa có — việc phía trước
-
-| Hạng mục | Trạng thái |
-|---|---|
-| Thanh toán / nạp credit (cổng chưa chốt) | ❌ chưa (H9) |
-| Lưu file lớn qua R2 (khi chạm trần Cloudflare) | ❌ chưa (H10) |
-| Thêm tool mới | ⏭️ mở (H11) |
-
-Chi tiết từng bước: `KE_HOACH_TRIEN_KHAI.md`.
+App `public=False` ẩn khỏi catalog khách, chỉ vào qua sidebar sau khi đăng nhập
++ phân quyền.
 
 ---
 
@@ -86,7 +61,7 @@ LTTSTUDIOSAPP/
 │
 ├── server/              vỏ web: đăng nhập, trang chủ, route dùng chung
 ├── tools/               doctor.py, gate.py, build_release.py, quét bí mật
-├── tests/               ~1.400 test
+├── tests/               bộ test (chạy theo hợp đồng §4)
 ├── deploy/windows/      install / update / rollback / backup
 ├── setup/               ★ BỘ CÀI — 4 script chạy theo thứ tự
 ├── cloudflare/          mẫu cấu hình Tunnel
@@ -128,7 +103,6 @@ là mất tiền thật.
 ```powershell
 cd d:\LTTSTUDIOSAPP
 python -m pip install -r requirements.txt -r requirements-server.txt
-python tools	est_nhanh.py             # ~4 phut, phai xanh het truoc khi lam gi tiep
 python -m uvicorn server.run:app --host 127.0.0.1 --port 8100
 ```
 

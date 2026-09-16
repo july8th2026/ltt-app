@@ -233,6 +233,10 @@ def main() -> int:
 #: ⭐ Nguon chan ly la `platform_core/public_api/examples.py` + cong cu chinh
 #:    thuc `cam_cli`. `test_393` buoc danh sach nay khop voi chung.
 KHOA_BAT_BUOC = {
+    "request_max_retries":
+        "thieu no thi Codex co the tu phat lai request va nhan tai cua lane",
+    "stream_max_retries":
+        "thieu no thi Codex co the phat lai luong da sinh token",
     "stream_idle_timeout_ms":
         "thieu no thi Codex CAT luong khi model im tieng -- do that 02/09: "
         "mot luot bi cat o dung 62,0 giay",

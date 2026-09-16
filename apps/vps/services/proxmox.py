@@ -101,6 +101,9 @@ class ProxmoxConfig:
     token_secret: str
     node: str = "pve"
     ca_bundle: str = ""
+    #: DNS identity on the certificate when the transport URL intentionally
+    #: uses a management IP that is not present in the certificate SAN.
+    tls_name: str = ""
     #: Đã khai tường minh là chấp nhận không xác minh TLS. **Chỉ ngoài production.**
     bo_qua_tls: bool = False
 
@@ -148,6 +151,20 @@ def doc_cau_hinh(env: dict | None = None) -> ProxmoxConfig:
     secret = str(src.get("LTT_VPS_PROXMOX_TOKEN_SECRET", "")).strip()
     node = str(src.get("LTT_VPS_PROXMOX_NODE", "pve")).strip() or "pve"
     ca = str(src.get("LTT_VPS_PROXMOX_CA", "")).strip()
+    tls_name = str(src.get("LTT_VPS_PROXMOX_TLS_NAME", "")).strip()
+    labels = tls_name.split(".")
+    if tls_name and (
+        len(tls_name) > 253
+        or not all(
+            part
+            and len(part) <= 63
+            and part[0].isalnum()
+            and part[-1].isalnum()
+            and part.replace("-", "").isalnum()
+            for part in labels
+        )
+    ):
+        raise ChuaCauHinh("LTT_VPS_PROXMOX_TLS_NAME khong hop le")
 
     thieu = [ten for ten, gt in (
         ("LTT_VPS_PROXMOX_URL", url),
@@ -173,7 +190,8 @@ def doc_cau_hinh(env: dict | None = None) -> ProxmoxConfig:
         raise ChuaCauHinh(thieu_tls)
 
     return ProxmoxConfig(base_url=url, token_id=token_id, token_secret=secret,
-                         node=node, ca_bundle=ca, bo_qua_tls=bo_qua)
+                         node=node, ca_bundle=ca, tls_name=tls_name,
+                         bo_qua_tls=bo_qua)
 
 
 def _ly_do_tls_khong_dat(url: str, ca: str, bo_qua: bool,
@@ -246,6 +264,17 @@ class ProxmoxClient:
         if session is None:
             import requests  # nhập lười: test tiêm session giả thì không cần
             session = requests.Session()
+            if config.tls_name:
+                from requests.adapters import HTTPAdapter
+
+                class _ExactTlsNameAdapter(HTTPAdapter):
+                    def init_poolmanager(self, connections, maxsize, block=False,
+                                         **pool_kwargs):
+                        pool_kwargs["assert_hostname"] = config.tls_name
+                        return super().init_poolmanager(
+                            connections, maxsize, block=block, **pool_kwargs)
+
+                session.mount("https://", _ExactTlsNameAdapter())
         self._session = session
 
     # ── tầng vận chuyển ──────────────────────────────────────────────────────

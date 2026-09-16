@@ -13,7 +13,8 @@
   P7 — tôi đã khuyến nghị, nên tôi đi luôn, đánh dấu đảo được).
 - Tham số chưa chốt (giá, chu kỳ…): xây **config-driven**, đặt mặc định hợp lý +
   TODO, **tắt mặc định** để không tự bật thứ chưa duyệt. Không chặn build.
-- Chạy test, gate, commit sau mỗi lát cắt xanh.
+- Mỗi lát cắt: test nhắm xanh rồi commit. Gate: `docs/00_LTT_OPERATING_CONTRACT.md` §4
+  (L3 một lần khi mọi phase xong).
 
 ## 2. Làm-tới-nơi rồi ĐÁNH DẤU (không chặn, làm song song việc khác)
 
@@ -56,5 +57,6 @@ rồi ghi vào "§4 Cần bạn", tiếp tục việc khác:
 | **5** | Thanh toán D13–D14 (config-driven, tắt mặc định) | ✅ cơ chế; số giá của người |
 | **6** | Vận hành & thương mại E15–E18 | ⚠️ prod + legal của người |
 
-Chạy tuần tự; trong mỗi Phase, mỗi lát cắt: viết → test → gate → commit. Không
+Chạy tuần tự; trong mỗi Phase, mỗi lát cắt: viết → test nhắm → commit (gate: hợp
+đồng vận hành §4, một lần cuối). Không
 dừng giữa các Phase; chỉ dừng ở §3 hoặc khi cạn việc tự-làm-được rồi báo §4.

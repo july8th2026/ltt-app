@@ -95,6 +95,29 @@ def tran_token_ra_dong_bo(token_vao_uoc: int, ngan_sach_giay: int) -> int:
     return max(0, min(MAX_TOKENS_TRAN, theo_thoi_gian))
 
 
+def _ky_tu_noi_dung(noi_dung) -> int:
+    """Đếm bảo thủ mọi chữ nằm trong một khối nội dung agent.
+
+    Anthropic đặt ``tool_use``/``tool_result`` thành dict lồng trong ``content``.
+    Chỉ đọc khóa ``text`` làm máy A ước thiếu đúng ở những phiên Claude Code dài,
+    trong khi máy B vẫn đếm các chuỗi lồng và từ chối vì pool KV. Ảnh được giữ
+    riêng theo ``token_moi_anh`` nên không đếm chuỗi base64 ở đây.
+    """
+    if isinstance(noi_dung, str):
+        return len(noi_dung)
+    if isinstance(noi_dung, list):
+        return sum(_ky_tu_noi_dung(phan) for phan in noi_dung)
+    if not isinstance(noi_dung, dict):
+        return 0
+
+    loai = str(noi_dung.get("type") or "")
+    if loai in ("image", "image_url", "input_image"):
+        return 0
+    if loai in ("text", "input_text", "output_text"):
+        return len(str(noi_dung.get("text") or ""))
+    return sum(_ky_tu_noi_dung(gt) for gt in noi_dung.values())
+
+
 def uoc_token_vao(messages, tools=None) -> int:
     """Ước số token đầu vào từ `messages` và schema `tools`. **Ước CAO có chủ ý.**
 
@@ -107,12 +130,7 @@ def uoc_token_vao(messages, tools=None) -> int:
     ky_tu = 0
     for tin in messages or []:
         noi = (tin or {}).get("content")
-        if isinstance(noi, str):
-            ky_tu += len(noi)
-        elif isinstance(noi, list):
-            for p in noi:
-                if isinstance(p, dict):
-                    ky_tu += len(str(p.get("text") or ""))
+        ky_tu += _ky_tu_noi_dung(noi)
     if isinstance(tools, list) and tools:
         # Tool schema được chèn vào prompt ở mỗi lượt. Codex/Claude agent thường
         # mang hàng chục schema; bỏ nó làm admission và phần giữ tiền cùng ước
@@ -445,8 +463,8 @@ def kiem_san_token_ra(sach: dict) -> None:
     _san = san_token_ra(sach.get("model"), sach.get("reasoning_effort"))
     if xin_ra >= _san:
         return
-    from apps.ltt_llm.ngan_sach import NGHI_MAC_DINH
-    _muc = sach.get("reasoning_effort") or NGHI_MAC_DINH
+    from apps.ltt_llm.ngan_sach import nghi_mac_dinh
+    _muc = sach.get("reasoning_effort") or nghi_mac_dinh(sach.get("model"))
     # 🔴 CÂU NÀY TỪNG MÁCH `reasoning_effort='none'` — một giá trị đã bị GỠ khỏi
     #    hợp đồng ngày 14/09/2026. Tức lỗi chỉ khách sang một thứ cửa sẽ từ chối:
     #    họ sửa đúng như lời ta bảo rồi nhận tiếp một 400 khác. Một lỗi chỉ sai
@@ -479,27 +497,37 @@ def chay(db, params: dict, *, timeout_s: float = 300.0,
     from platform_core.llm import dieu_phoi
 
     sach = kiem_tham_so(params)
-    kq = dieu_phoi.goi(
-        db,
-        messages=sach["messages"],
-        thu_tu_provider=THU_TU_PROVIDER,
-        # Dich alias -> id noi bo NGAY TRUOC KHI RA KHOI nen tang.
-        model_theo_provider={"ltt_llm": ALIAS_SANG_ID[sach["model"]]},
-        tools=sach.get("tools"),
-        max_tokens=sach["max_tokens"],
-        temperature=sach.get("temperature"),
-        reasoning_effort=sach.get("reasoning_effort"),
-        # ⭐ MOT cho duy nhat de mot tham so moi di het duong len may B. Truoc
-        #    14/09 moi tham so phai duoc moc tay o BON tang (kiem_tham_so ->
-        #    dieu_phoi.goi -> than -> may B), va chinh vi the `response_format`
-        #    dung o tang mot roi bien mat. `tests/test_1255` chot rang moi khoa
-        #    khai trong `params_schema` phai song sot.
-        them={k: sach[k] for k in THAM_SO_CHUYEN_THANG if k in sach},
-        timeout_s=timeout_s,
-        on_dispatch=on_dispatch,
-        on_rejected=on_rejected,
-        ma_luot=ma_luot,
-    )
+    try:
+        kq = dieu_phoi.goi(
+            db,
+            messages=sach["messages"],
+            thu_tu_provider=THU_TU_PROVIDER,
+            # Dich alias -> id noi bo NGAY TRUOC KHI RA KHOI nen tang.
+            model_theo_provider={"ltt_llm": ALIAS_SANG_ID[sach["model"]]},
+            tools=sach.get("tools"),
+            max_tokens=sach["max_tokens"],
+            temperature=sach.get("temperature"),
+            reasoning_effort=sach.get("reasoning_effort"),
+            # ⭐ MOT cho duy nhat de mot tham so moi di het duong len may B. Truoc
+            #    14/09 moi tham so phai duoc moc tay o BON tang (kiem_tham_so ->
+            #    dieu_phoi.goi -> than -> may B), va chinh vi the `response_format`
+            #    dung o tang mot roi bien mat. `tests/test_1255` chot rang moi khoa
+            #    khai trong `params_schema` phai song sot.
+            them={k: sach[k] for k in THAM_SO_CHUYEN_THANG if k in sach},
+            timeout_s=timeout_s,
+            on_dispatch=on_dispatch,
+            on_rejected=on_rejected,
+            ma_luot=ma_luot,
+        )
+    except dieu_phoi.KhongCoProviderNao as e:
+        # `dieu_phoi` cascade qua moi provider khi mot cong tra 429. App nay co
+        # dung MOT provider (D-010), nen ket cuc "het provider" van la cung tin
+        # hieu BAN, khong phai loi 500. Giu quan he co kieu `busy_only`; khong
+        # doc chu "ban" tu thong diep o cua HTTP.
+        if e.busy_only:
+            from platform_core.llm.cong_vlm import BanError
+            raise BanError("model dang ban", retry_after_s=30) from e
+        raise
     su = kq.su_dung
     return KetQua(
         noi_dung=kq.noi_dung, suy_nghi=kq.suy_nghi,

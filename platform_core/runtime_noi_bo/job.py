@@ -3,7 +3,8 @@ job.py — báo giá và nộp job **có giữ chỗ** cho một client nội b�
 
 ⛔ KHÔNG PHẢI ĐƯỜNG NỘP THỨ HAI. Cả hai hàm ở đây chỉ gói lại thứ đã có:
 
-    bao_gia()  = agent.tools.validate_tool_params + ToolSpec.lane_for + registry.credit_for
+    bao_gia()  = agent.tools.validate_tool_params + ToolSpec.kiem_truoc
+                 + ToolSpec.lane_for + registry.credit_for
     nop_job()  = job_submit.submit_with_credit (validate/giá/giữ chỗ/queue một giao dịch)
 
 Phần "quote ký HMAC có hạn" của `/api/v1` cố ý **không** ở đây: nó tồn tại vì
@@ -28,7 +29,15 @@ log = logging.getLogger("platform_core.runtime_noi_bo.job")
 
 
 class ThamSoSai(ValueError):
-    """Tham số không theo `ToolSpec` — lỗi của bên gọi, chưa chạm sổ tiền."""
+    """Tham số không theo `ToolSpec` — lỗi của bên gọi, chưa chạm sổ tiền.
+
+    `ma`: mã nghiệp vụ ổn định khi app khai (vd `voice_language_mismatch`),
+    rỗng khi chỉ là lỗi hình dạng tham số.
+    """
+
+    def __init__(self, thong_diep: str = "", ma: str = ""):
+        super().__init__(thong_diep)
+        self.ma = str(ma or "")
 
 
 @dataclass(frozen=True)
@@ -52,10 +61,35 @@ def bao_gia(tool_name: str, params: dict, *, db=None, user_id: str = "") -> BaoG
                                     db=db, user_id=user_id)
     except ToolParamsError as e:
         raise ThamSoSai(str(e)) from None
+    _kiem_truoc(tool, sach, db=db, user_id=user_id)
     lane = tool.lane_for(sach)
     so = int(credit_for(lane, sach))
     return BaoGia(tool_name=tool_name, lane=lane, credit=so,
                   phien_ban_gia=_phien_ban_gia(manifest), tham_so_sach=sach)
+
+
+def _kiem_truoc(tool, sach: dict, *, db, user_id: str) -> None:
+    """Pre-check nghiệp vụ app đã khai (`ToolSpec.kiem_truoc`, D007) — TRƯỚC giá.
+
+    🔴 Cùng hook `public_api.invocation.kiem_truoc` gọi cho `/api/v1`. Thiếu
+       bước này, ChatLTT `speech.ltt` giọng VI + văn bản EN **giữ credit và
+       xếp job** rồi mới bị worker từ chối `voice_language_mismatch` (W4',
+       `docs/LTT_VOICE/GUI_DOI_SOAT_VA_PLAN_V2.md`). `bao_gia` là cửa duy nhất
+       dựng ra `BaoGia` mà `nop_job` nhận, nên chặn ở đây là chặn cả hai.
+
+    ⛔ Không chép luật làn ngôn ngữ vào đây: hook của app gọi
+       `lan_ngon_ngu.quyet_dinh`, một nguồn.
+    """
+    ref = str(getattr(tool, "kiem_truoc", "") or "")
+    if not ref:
+        return
+    from platform_core.jobs import LoiNguoiGoi
+    from platform_core.registry import tai_tham_chieu
+
+    try:
+        tai_tham_chieu(ref)(db, str(user_id), dict(sach))
+    except LoiNguoiGoi as e:
+        raise ThamSoSai(str(e), ma=str(getattr(e, "ma", "") or "")) from None
 
 
 def _phien_ban_gia(manifest) -> str:

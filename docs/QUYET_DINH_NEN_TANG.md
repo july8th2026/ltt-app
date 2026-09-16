@@ -27,7 +27,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 
 ---
 
-## 1. Quyết định đã chốt (đến Q123; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91, Q116→Q120 (phần con số) đã thay)
+## 1. Quyết định đã chốt (đến Q135; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91, Q116→Q120 (phần con số), Q125→Q126→Q128 đã thay)
 
 | # | Vấn đề | Quyết định | Lý do / hệ quả |
 |---|---|---|---|
@@ -141,6 +141,18 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 | Q114 | Nhiều cửa API cùng tranh một model/GPU phải xếp hàng ở đâu? | **Một admission plane dùng chung, nhưng chỉ ASYNC_JOB có hàng đợi bền.** `/api/v1/jobs` tiếp tục dùng `jobs` làm nguồn chân lý duy nhất. SYNC_BILLED và STREAM giữ nguyên hợp đồng Q106/Q107 là không tạo job: chúng xin một lease thực thi từ cùng admission plane và trả `429 + Retry-After` trước khi giữ tiền nếu chưa có slot. Tài nguyên do tool khai bằng metadata, không suy từ slug. Gateway máy B vẫn giữ `max_dong_thoi=1` như hàng rào cuối, không làm queue. | Biến sync/stream thành job ngầm sẽ phá hình dạng SDK và tạo queue thứ hai; để chúng gọi thẳng lại cho phép bypass async. Lease thực thi giải đúng giao điểm: cả ba đường phải sở hữu cùng một slot trước provider, nhưng `jobs` vẫn là queue duy nhất có trạng thái/hủy/fairness. Với async, global/resource/account cap phải được kiểm dưới khóa transaction rồi insert job và hold credit trong chính transaction đó; `resource_wait` không tiêu attempt. Nếu worker chết sau khi provider đã nhận mà chưa có kết quả chắc chắn thì đánh dấu `ambiguous_provider`, không tự retry side effect mù. Hợp đồng chi tiết: `docs/VLM_NOI_BO/ADMISSION_QUEUE_LTT_LLM.md`. |
 | Q122 | Thứ tự phục vụ trong hàng đợi job thống nhất | **Ưu tiên tuyệt đối, không cắt ngang: `INTERNAL > EXTERNAL` chỉ giữa các job đang chờ và đủ điều kiện trên cùng tài nguyên; job đã admitted/running/provider-dispatched không bị dừng. Trong mỗi lớp vẫn fair-share theo account, aging rồi FIFO ổn định.** Chỉ có một hàng đợi bền PostgreSQL `jobs`, một ranking canonical dùng cho cả `claim()` lẫn queue snapshot/ETA. Lớp ưu tiên do ingress đáng tin cậy gắn; body/header công khai không có quyền nâng lớp. | Runtime nội bộ cần được phục vụ trước các lượt API đang chờ nhưng không được phá Q114 hay làm mất công việc đã bắt đầu. Hai lớp là đủ cho V1; không thêm broker/queue thứ hai. Job cũ hoặc metadata thiếu/lạ được hiểu là `EXTERNAL`; ETA thiếu bằng chứng trả `null`; external starvation được đo/cảnh báo chứ không tự vượt internal. |
 | Q123 | Model nhà: một model hay nhiều, và ai được ở trên card nào | **HAI model nhà bán ra, trên HAI card của máy B, thường trú cùng lúc: `ltt-3.8` (RTX 3090) và `ltt-3.5` (RTX 5060 Ti). Khách CHỌN model; giá đi THEO MODEL. Cắt hẳn ba tên cũ `ltt_llm`, `ltt_llm_vision`, `qwen38-vision` — chúng trả `model_not_found`, không âm thầm rơi về mặc định. Việc LLM **nội bộ** của nền tảng đi `ltt-3.5` theo bản khai của từng app (`manifest.model_llm_noi_bo`), không đi mặc định của khách. RTX 3090 do MỘT trọng tài chia giữa LLM và model ảnh: xả trước, không bao giờ giết việc đang chạy.** ⛔ **Không con số nào của quyết định này nằm trong tài liệu này** — mỗi con số có đúng một nguồn chân lý trong mã. Toàn văn, lý do từng nhánh và mọi phép đo: **`### Q123` bên dưới**, `docs/ltt_llm_dual/DECISION_LOG.md` (D01–D09, L-12…L-18), `docs/ltt_llm_dual/10_BENCHMARK_P3.md`; vận hành ở `docs/ltt_llm_dual/RUNBOOK.md`. | Ba lý do cơ học, chi tiết ở `### Q123`: (a) một model 27B **không vừa** card 16 GB nên "một model, hai card" là bất khả, còn "hai hồ sơ của cùng một model" đã thử và **đã gỡ**; (b) job ảnh **giữ** 3090 rồi **chờ** một model chỉ nạp được khi 3090 rảnh là một **vòng chờ kín** — không log, không mã lỗi, job treo tới hết trần thời gian; (c) `unload` thủ công của llama-swap **không** drain, nên trọng tài phải **xả trước**. **Đổi lại:** một bảng trạng thái (`gpu_residency`), một luật admission mới (`CHO_RESIDENCY`), và một **thứ tự deploy bắt buộc** (`llama-swap.yaml` → cổng máy B → máy A). |
+| Q124 | Hai model nhà xuất hiện thế nào trong Codex/Claude | **Cả `ltt-3.8` và `ltt-3.5` đều là lựa chọn vận hành được trên Codex CLI/VS Code, Claude Code/VS Code và Claude Desktop.** `ltt-3.8` là mặc định **Mạnh**; `ltt-3.5` là **Nhanh/tiết kiệm** cho hỏi code, sửa nhỏ và tác vụ phụ. Desktop hiển thị **LTT 3.8 (Mạnh)** và **LTT 3.5 (Nhanh)** bằng `labelOverride`; trường `name` giữ hai mã tuyến production `ltt-llm-claude-compat` / `ltt-llm-claude-compat-35` để qua bộ lọc client. Codex dùng catalog hai model. Claude Code chọn model qua connector; Opus/Sonnet/Haiku/subagent vẫn ghim vào model đã chọn và tối đa một subagent, không tự đi model ngoài LTT. | Qwen công bố Qwen3.5-9B có LiveCodeBench v6 65,6, BFCL-V4 66,1, ngữ cảnh gốc 262.144, parser `qwen3_coder` cho tool use và hướng dẫn riêng cho precise coding; vì vậy nó đủ tư cách làm lựa chọn code/agent. Nó vẫn là 9B Q6_K trên 5060 Ti, còn 3.8 là 27B trên 3090, nên không quảng bá hai model ngang nhau. `labelOverride` là trường picker thật của Desktop 1.52386.6, nên tên sản phẩm rõ ràng mà không cần thêm alias backend hay deploy chỉ để đổi nhãn. Quyết định cũng đóng lỗi UX đang có: registry chỉ phát một tuyến theo lần cắm, làm model kia biến mất khỏi picker dù backend bán cả hai. Nguồn ngoài: model card chính thức `Qwen/Qwen3.5-9B`; bằng chứng máy nhà: `docs/ltt_llm_dual/10_BENCHMARK_P3.md`. |
+| ~~Q125~~ | ~~Claude Code Local qua gateway xử lý phiên dài, MCP và permission mode thế nào~~ | ~~Preset 9 biến, gồm `CLAUDE_CODE_DISABLE_1M_CONTEXT=1`.~~ **ĐÃ THAY bởi Q126 (2026-09-15).** | Rà soát toàn bộ bảng biến chính thức của Claude Code 2.1.270 cho thấy biến 1M là dư với mã LTT không có `[1m]`, trong khi preset cũ thiếu chốt ép model cho mọi subagent và chốt cấm subagent lồng nhau. Giữ Q125 làm bằng chứng vì sao phiên 98.678 token từng rơi sang `stream:false`; Q126 thay danh sách cấu hình. |
+| ~~Q126~~ | ~~Một cấu hình Claude Desktop/Code chuẩn, không bổ sung nhỏ giọt~~ | ~~Local env đúng 10 biến, `MAX_RETRIES=1`.~~ **ĐÃ THAY bởi Q128 (2026-09-15).** Các quyết định Gateway/model/context/subagent/Tool Search còn nguyên và được Q128 tiếp nhận. | Vận hành hai phiên dài cùng LTT 3.8 lộ ra rằng một retry quá ít làm lỗi capacity tạm thời hiện ra ngay, còn hàng chờ A ước thiếu `tool_use/tool_result` nên chưa bảo vệ được lượt thứ hai. Giữ Q126 để truy nguyên ma trận ban đầu; Q128 sửa đúng timeout/retry và quan hệ reservation A↔B. |
+| Q127 | Codex Desktop/VS Code dùng cấu hình gốc và catalog hai model | `%USERPROFILE%\.codex\config.toml` chứa provider `ltt`, catalog và đúng một model gốc đang chọn; Desktop và tiện ích VS Code cùng dùng cấu hình đó khi chung tài khoản Windows/CODEX_HOME. Project tin cậy chỉ được ghi đè `model`; provider và credential ở cấu hình người dùng. | Desktop/extension không truyền `--profile`. Cấu hình đã qua strict parser, app-server `config/read` và `model/list` của ba binary cài thật; không hứa picker custom provider tự đổi profile. |
+| Q128 | Hai phiên Claude phải chờ đúng tầng và retry có giới hạn | Preset Local có **đúng 11 biến**: tiếp nhận Q126, dùng `MAX_RETRIES=10` theo mặc định chính thức của Claude và khai rõ `API_TIMEOUT_MS=600000`. Stream LTT chờ tối đa 300 giây, heartbeat 15 giây. Máy A đếm bảo thủ mọi chuỗi trong `tool_use/tool_result`, giữ theo ảnh 2.048 token, truyền request ID/reservation/whale sang máy B; máy B lấy **max(phép đo của B, header A)**. | Log thật 15/09: 148.593 + 79.848 > pool 221.184 và chiều thử lại 79.848 + 150.633 > pool, tạo 529 dù còn slot. Gốc là A đếm thiếu dữ liệu công cụ và không truyền reservation, không phải thiếu timeout. Claude tự retry lỗi tạm với exponential backoff; giữ mặc định 10, không bật watchdog thử vô hạn. `max` ở B giữ fail-closed khi A cũ hoặc header sai. |
+| Q129 | VPS V4 chọn hạ tầng theo profile nào? | Mỗi VPS được ghim một `infrastructure_profile_id`; OVH Singapore là ACTIVE/default sau fresh preflight, Vultr Singapore là STANDBY. Compute, public IP và gateway là ba hợp đồng độc lập; máy đã ghim không tự đổi profile khi đổi default. | Đây là số quyết định hợp nhất chính thức thay cho mã Q124 được dùng trên nhánh VPS V4 song song. Hồ sơ và bằng chứng đầy đủ nằm trong `docs/VPS_V4/`. |
+| Q130 | Khi pool OVH hết IP thì cấp IP mới thế nào? | Worker được tự tạo và checkout đúng một Additional IPv4 sau khi khóa plan, quantity, vị trí, destination, chu kỳ, currency và trần giá; mọi cart/item/order phải ghi bền vững và read-back trước khi tiếp tục. Trạng thái không chắc chắn phải phục hồi theo order, không mua lần hai. | Đây là số quyết định hợp nhất chính thức thay cho mã Q125 trên nhánh VPS V4. Cơ chế vẫn fail closed với unexpected billing và không tạo nút admin duyệt từng đơn. |
+| Q131 | Hai model nhà dùng sampling và reasoning thế nào? | Bỏ `--reasoning-budget` và `--temp` khỏi macro chung. `qwen38-api`: thinking, `reasoning_effort=xhigh`, budget vận hành 4.096, temp 1.0. `qwen35-api`: thinking bật, budget vận hành 2.048, temp 1.0. Cả hai giữ top-p 0.95/top-k 20/min-p 0, không presence penalty, và dùng cùng Froggeric v22.5 đã vendor + khóa SHA-256. | Model card Qwen3.8 chính thức chỉ có `low|medium|xhigh`, mặc định xhigh và khuyến nghị temp 1.0 cho thinking. Model card Qwen3.5 không công bố effort level: thinking bật mặc định; temp 1.0 là preset general, còn precise coding là 0.6. Hai budget là giới hạn vận hành do chủ sản phẩm chọn để tăng chiều sâu 8x/4x so với mốc 512, không được ghi là giá trị chính thức của Qwen. Template cộng đồng giữ tương thích tool/agent; deploy phải mang đúng tệp, không dựa vào bản sửa tay trên máy B. |
+| Q132 | Sàn VRAM của LTT-3.5 có bật mặc định không? | **Không.** Mặc định `0`; giữ biến env để operator bật lại khi có bằng chứng OOM. Gateway vẫn giới hạn theo slot, token pool và RPM. | Production 15/09 ghi 112 lần `ban_vram`, 0 lần đầy slot và không OOM; sàn 600 kết hợp TTL 1.800 giây tạo vòng tự khóa khiến model mất phục vụ 42 phút. Chủ dự án xác nhận card 5060 chưa từng tràn VRAM. Bỏ sàn không đổi engine, KV, context, sampling hay reasoning. Chi tiết: L-21. |
+| Q133 | Codex biểu diễn reasoning của hai model LTT thế nào? | Catalog giữ hai model. `ltt-3.8` công bố đúng `low|medium|xhigh`, mặc định `xhigh`. `ltt-3.5` công bố đúng **một** lựa chọn `medium — Thinking on`; `medium` là nhãn tương thích wire mà Codex bắt buộc, không phải tier native của Qwen3.5. Tool chỉ báo cắm thành công sau khi `/responses` của cả hai model đều trả 200. | Model card/template chính thức Qwen3.8 khai ba mức và mặc định xhigh; Qwen3.5 chỉ có thinking bật/tắt. Đo bằng Codex CLI 0.145.0: catalog thiếu `supported_reasoning_levels` bị từ chối parse, danh sách rỗng vẫn khiến client gửi `reasoning.effort=medium`. Một lựa chọn có nhãn thật giữ cấu hình hợp lệ mà không bịa thêm năng lực. Ba app-server đang cài đã parse strict và liệt kê đủ hai model. |
+| Q134 | Một lần cắm Codex tạo bao nhiêu model/profile? | **Luôn cả hai.** Tool và SDK tạo `ltt.config.toml` cho LTT 3.8, `ltt-fast.config.toml` cho LTT 3.5 và một catalog chứa hai model. `--model`/radio chỉ chọn mặc định Claude Code; Codex Desktop/VS Code dùng 3.8 làm root ban đầu. Mỗi profile có backup/rollback độc lập. | Đơn vị cài đặt theo một model khiến người dùng phải cắm lại và radio Claude vô tình loại model còn lại khỏi Codex. Cấu hình Tool 1.9.3 đã qua strict parser và `model/list` của CLI 0.145.0, Desktop 0.146.0-alpha.3.1, VS Code 0.154.0-alpha.6.2; cả ba trả đúng hai slug và nhãn Strong/Fast. Picker custom-provider vẫn là hành vi client, không được Tool hứa thay cho dữ liệu `model/list`. |
+| Q135 | Lịch sử GitHub sau khi LTT-CMC hoàn tất | **Giữ nguyên snapshot canonical mới nhất nhưng thay lịch sử reachable của `main` bằng đúng một root commit không có parent; cập nhật `origin/main` bằng `--force-with-lease` ghim đúng SHA remote cũ.** Trước khi cập nhật ref phải quét bí mật, chạy kiểm tra governance/topology và chứng minh tree hash của root đúng bằng tree đã stage. Sau push phải chứng minh `rev-list --count main = 1`, root không có parent, remote/default vẫn là `main`. Không `git gc`/`git prune`; không sửa hoặc xóa worktree VPS V4 đang HOLD. | Người dùng duyệt rõ ngày 12/09/2026 sau khi CMC đã hợp nhất và dọn mọi nhánh remote cũ: mục tiêu là GitHub chỉ công bố một snapshot chuẩn, không giữ lịch sử/nhánh cạnh tranh gây nhầm lẫn. Force push bình thường bị cấm, nhưng đây là ngoại lệ phá hủy có phạm vi hẹp, có xác nhận riêng và lease chống ghi đè thay đổi remote ngoài dự kiến. GitHub có thể giữ object/cache nội bộ ngoài refs trong một thời gian; quyết định chỉ bảo đảm lịch sử không còn reachable qua refs của repository. Số hợp nhất: nhánh LTT-CMC ghi quyết định này là Q124, trùng Q124 (hai model LTT trên client) đã có trên dòng production. Nhánh VPS V4 local vẫn giữ lineage cũ để không làm mất WIP ngoài phạm vi GitHub. |
 ---
 
 ### Q115 — Public input cap sau benchmark Q4 (2026-08-28)
@@ -496,6 +508,76 @@ một nguồn chân lý, và một bảng chép tay ở đây đã nói sai **n�
 Toàn văn quyết định + mọi phép đo: `docs/ltt_llm_dual/DECISION_LOG.md` (D01–D09,
 L-12…L-18) và `docs/ltt_llm_dual/10_BENCHMARK_P3.md`. Vận hành, điểm lùi từng pha:
 `docs/ltt_llm_dual/RUNBOOK.md`.
+
+### Q124 — Hai model LTT trên các client (2026-09-14)
+
+Quyết định có hiệu lực nằm ở dòng Q124 trong bảng mục 1. Bảng audit, cách ghim
+model/subagent và bằng chứng vận hành từng client nằm ở
+`docs/LTT_CLI_COMPAT_DECISIONS.md`; hướng dẫn khách ở
+`docs/PUBLIC_API/HUONG_DAN_CAM_CLI.md`. Claude Desktop dùng hai mã tuyến và nhãn
+hiển thị riêng; Codex dùng tên sản phẩm và catalog metadata.
+
+### Q125 — Claude Code Local qua gateway (2026-09-15)
+
+Đã thay bởi Q126 trong cùng ngày. Giữ mục này để truy nguyên phép đo lỗi
+non-streaming và context; không dùng lại danh sách 9 biến của nó.
+
+### Q126 — Ma trận cấu hình Claude duy nhất (2026-09-15) — **ĐÃ THAY bởi Q128**
+
+Danh sách máy đọc được nằm ở `platform_core/public_api/examples.py`:
+`claude_local_env()` cho Desktop Local và `claude_model_env()` cho CLI/VS Code.
+Bảng giải thích, giá trị không được thêm và nguồn kiểm chứng nằm ở
+`docs/PUBLIC_API/CLAUDE_CONFIG_MATRIX.md`; trang khách lấy trực tiếp dữ liệu đó
+qua `be_mat_cam()`. Tool Search chỉ được đổi sang bật sau khi cổng có phép thử
+`tool_reference` thật.
+
+### Q127 — Codex Desktop dùng cấu hình gốc và catalog hai model (2026-09-15)
+
+Codex Desktop không có form Gateway tương đương Claude Desktop và không truyền
+`--profile`. Bề mặt này dùng `%USERPROFILE%\.codex\config.toml` với provider ID
+ổn định `ltt`, catalog JSON cục bộ và đúng một model gốc tại một thời điểm. Đổi
+giữa LTT 3.8/LTT 3.5 bằng hai khối cấu hình đã sinh, restart ứng dụng và thread
+mới; không hứa picker custom-provider hiện tại chọn được hai model. Ma trận khóa,
+nguồn upstream/community và phép đo ba binary nằm ở
+`docs/PUBLIC_API/CODEX_DESKTOP_CONFIG.md`.
+
+### Q128 — Hàng chờ và retry cho hai phiên Claude (2026-09-15)
+
+Ma trận Claude hiệu lực nằm ở `docs/PUBLIC_API/CLAUDE_CONFIG_MATRIX.md` và dữ
+liệu máy đọc được ở `examples.claude_local_env()`: đúng 11 biến, retry 10,
+timeout mỗi API call 600.000 ms. Hàng chờ stream 300 giây/heartbeat 15 giây là
+năng lực server, độc lập với retry client. Quan hệ reservation A↔B được chốt
+bằng test hành vi; máy B luôn lấy số lớn hơn để một phiên A cũ không thể hạ hàng
+rào KV.
+
+### Q129–Q130 — Hợp nhất quyết định VPS V4 (2026-09-15)
+
+Nhánh VPS V4 được triển khai trước khi nhập vào dòng phát hành LTT LLM và đã
+dùng tạm số Q124/Q125 trùng với chuỗi quyết định client. Khi hợp nhất, hai quyết
+định đó nhận số canonical Q129/Q130; nội dung kỹ thuật và bằng chứng giữ tại
+`docs/VPS_V4/`. Việc đổi số không thay đổi schema hay hành vi production.
+
+### Q134 — Tool Codex cài hai model trong một lượt (2026-09-16)
+
+Tool 1.9.3 và SDK coi provider, catalog và hai profile là một đơn vị. Model
+được chọn trong Tool chỉ ghim Claude Code; Codex luôn nhận LTT 3.8 + LTT 3.5.
+Tên hiển thị trong catalog là `LTT 3.8 (Strong)` và `LTT 3.5 (Fast)`, còn slug
+wire giữ ổn định. Hướng dẫn và giới hạn picker nằm ở
+`docs/PUBLIC_API/CODEX_DESKTOP_CONFIG.md`.
+
+### Q135 — Một root commit canonical trên GitHub (2026-09-12)
+
+Sau khi `origin/main` là remote branch duy nhất và LTT-CMC đã được chứng nhận,
+người dùng duyệt thay lịch sử reachable của GitHub bằng đúng một snapshot mới
+nhất. Root commit được dựng trực tiếp từ index, không có parent; chỉ cập nhật
+remote nếu lease vẫn trỏ đúng SHA đã đối soát. Tree hash, số commit, parent của
+root và remote default phải được kiểm lại sau push.
+
+Đây không phải cách làm mặc định cho task mới. Quy trình branch/worktree và
+handoff vẫn theo `docs/QUY_TRINH_WORKTREE.md`; chỉ canonical integrator được
+nhập vào `main`. Q135 (ghi là Q124 trên nhánh LTT-CMC) là ngoại lệ một lần để đóng CMC. Không prune object local
+và không chạm `D:\LTTSTUDIOSAPP-vps-v4`: worktree đó chứa WIP chưa bàn giao và
+không nằm trên GitHub sau khi remote chỉ còn root `main`.
 
 ## 2. Ràng buộc bất biến
 

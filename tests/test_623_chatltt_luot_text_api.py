@@ -152,7 +152,7 @@ def _tool_thu(monkeypatch, khoi=None, ban=False):
         def hong(self, exc):
             pass
 
-    def mo(db, *, duong, than, timeout_s=0):
+    def mo(db, *, duong, than, timeout_s=0, **_meta):
         da_goi.append(than)
         if ban:
             raise luong_vlm.KhongMoDuocLuong("may B dang ban", ban=True, thu_lai_sau_s=20)

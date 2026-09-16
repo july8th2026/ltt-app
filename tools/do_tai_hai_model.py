@@ -208,7 +208,8 @@ class Khach:
             return None
         try:
             return int(json.loads(b).get("balance"))
-        except Exception:                                       # noqa: BLE001
+        except (ValueError, TypeError, AttributeError):
+            # thân không phải JSON object / thiếu `balance` ⇒ "không đọc được số dư".
             return None
 
 
@@ -242,7 +243,8 @@ def cham_mot(de: dict, van: str) -> str:
             return "sai"
         try:
             return "dung" if json.loads(m.group(0)) == de["dap_json"] else "sai"
-        except Exception:                                       # noqa: BLE001
+        except ValueError:
+            # khối `{...}` trong câu trả lời không phải JSON hợp lệ ⇒ chấm "sai".
             return "sai"
     return "sai"
 

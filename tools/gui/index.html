@@ -93,25 +93,28 @@ a:hover{text-decoration:underline}
     <p class="lam">Khoá chỉ hiện <b>một lần</b> lúc tạo.
       <a href="#" id="mokhoa">Lấy khoá ở trang Khoá API ↗</a></p>
 
-    <!-- Ô chọn model. Các lựa chọn do LÕI khai (`cam_cli.HO_SO_MODEL`) và được
+    <!-- Ô chọn model cho Claude. Các lựa chọn do LÕI khai (`cam_cli.HO_SO_MODEL`) và được
          vẽ trong `lamMoi()`; ở đây chỉ có cái vỏ. Gõ tên model vào HTML là tạo
          một danh sách thứ hai, và nó sẽ lệch với lõi đúng vào lần thêm model
          sau — đúng cái đã xảy ra với `ltt-3.5` trước 12/09. -->
     <div class="nhom">
-      <label class="lbl">Model</label>
+      <label class="lbl">Model mặc định cho Claude Code</label>
       <div class="radio" id="model"></div>
-      <p class="lam">Tên này được ghi <b>thật</b> vào cấu hình của từng công cụ,
-        kèm cửa sổ ngữ cảnh riêng của nó. Hai model có <b>hai bảng giá</b>.</p>
+      <p class="lam">Lựa chọn này chỉ ghim Claude Code và subagent. Codex luôn
+        được cài <b>cả LTT 3.8 và LTT 3.5</b>.</p>
     </div>
 
     <div class="nhom">
       <label class="lbl">Codex</label>
       <div class="radio">
-        <label><input type="radio" name="codex" value="profile" checked> CLI qua profile <code>ltt</code></label>
-        <label><input type="radio" name="codex" value="vscode"> Tiện ích VS Code + mặc định CLI</label>
+        <label><input type="radio" name="codex" value="profile" checked> CLI: cài hai profile <code>ltt</code> và <code>ltt-fast</code></label>
+        <label><input type="radio" name="codex" value="vscode"> Desktop/VS Code + hai model (3.8 mặc định)</label>
         <label><input type="radio" name="codex" value="none"> Không cắm</label>
       </div>
-      <p class="lam">Chế độ VS Code thay luôn model mặc định của lệnh <code>codex</code>.</p>
+      <p class="lam">Một lần cắm tạo catalog hai model. CLI dùng
+        <code>--profile ltt</code> hoặc <code>--profile ltt-fast</code>;
+        Desktop/VS Code nhận catalog hai model. Picker custom model còn phụ
+        thuộc phiên bản Codex đang cài.</p>
     </div>
 
     <div class="chon">
@@ -128,7 +131,7 @@ a:hover{text-decoration:underline}
     </label>
 
     <div class="hang">
-      <button class="btn" id="bcam">Cắm vào</button>
+      <button class="btn" id="bcam">Cắm vào (cả hai model)</button>
       <button class="btn ghost" id="bkiem">Kiểm thật</button>
       <button class="btn danger" id="bgo">Gỡ ra</button>
     </div>
@@ -154,11 +157,9 @@ a:hover{text-decoration:underline}
       Các giá trị dưới đây để đối chiếu; tên model riêng tránh lỗi nút Gửi bị vô hiệu mà không báo.</p>
     <div class="cp"><span class="k">Gateway base URL</span><code>https://app.lttstudios.com/api</code><button class="chep" data-chep="https://app.lttstudios.com/api">chép</button></div>
     <div class="cp"><span class="k">Auth scheme</span><code>Bearer</code><button class="chep" data-chep="Bearer">chép</button></div>
-    <!-- ⛔ Giá trị này ĐI THEO ô chọn model ở trên (`dongBoTuyenDesktop`). Gõ
-         cứng một tên là cái bẫy mà cả thẻ này được dựng lên để đóng: khách chọn
-         `ltt-3.5` rồi chép đúng ô này sẽ cắm tuyến của `ltt-3.8`, và triệu
-         chứng là **một hoá đơn theo giá model kia**, không phải một lỗi. -->
-    <div class="cp"><span class="k">inferenceModels</span><code id="tuyen_desktop">ltt-llm-claude-compat</code><button class="chep" id="chep_tuyen" data-chep="ltt-llm-claude-compat">chép</button></div>
+    <!-- Desktop có picker thật, nên giá trị này luôn gồm CẢ HAI tuyến. Ô chọn
+         model ở trên chỉ đặt mặc định cho Claude Code và các subagent. -->
+    <div class="cp"><span class="k">Model trong Claude Desktop</span><code id="tuyen_desktop">LTT 3.8 (Mạnh), LTT 3.5 (Nhanh)</code><button class="chep" id="chep_tuyen" data-chep="LTT 3.8 (Mạnh), LTT 3.5 (Nhanh)">chép</button></div>
     <div class="cp"><span class="k">Gateway API key</span><code>khoá của bạn</code></div>
   </div>
 
@@ -224,14 +225,14 @@ function veModel(models, macDinh) {
   dongBoTuyenDesktop();
 }
 
-// Thẻ "Đối chiếu Claude Desktop" phải nói tuyến của model ĐANG CHỌN.
+// Thẻ "Đối chiếu Claude Desktop" phải nói ĐỦ hai tuyến trong picker.
 //
 // ⚠ Nút "chép" đọc `data-chep`, không đọc chữ hiển thị — nên phải đổi CẢ HAI.
 //   Đổi mỗi chữ là cái tệ hơn cả không đổi: màn hình nói một đằng, clipboard
 //   đưa một nẻo, và khách tin clipboard.
 function dongBoTuyenDesktop() {
-  const r = document.querySelector('input[name="model"]:checked');
-  const t = (r && r.dataset.tuyen) || "";
+  const t = Array.from(document.querySelectorAll('input[name="model"]'))
+    .map((r) => r.dataset.tuyen || "").filter(Boolean).join(", ");
   if (!t) return;
   if ($("tuyen_desktop")) $("tuyen_desktop").textContent = t;
   if ($("chep_tuyen")) $("chep_tuyen").dataset.chep = t;

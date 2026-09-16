@@ -135,7 +135,7 @@ def may(monkeypatch):
             pass
 
     monkeypatch.setattr(luong_vlm, "mo",
-                        lambda db, *, duong, than, timeout_s=900.0:
+                        lambda db, *, duong, than, timeout_s=900.0, **_meta:
                         (kho.than.append(than),
                          Gia(kho.luot.pop(0) if kho.luot else _chu("mac dinh")))[1])
     return kho

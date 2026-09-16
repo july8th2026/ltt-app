@@ -79,6 +79,36 @@ foreach ($p in $patterns) {
     }
 }
 
+# ---- Du lieu giong noi (W-KHO, 16/09/2026) ----------------------------------
+# Hai thu muc CON cua data\ ma mau tren (chi cap dau) khong bat duoc:
+#   data\voice_goc\    - clip goc ben cua giong kho chung (+ manifest.json)
+#   data\files\voice\  - tep giong khi LTT_STORAGE_LOCAL_PREFIXES co 'voice/'
+#                        (clip nguon, bieu dien, ban nghe thu cua MOI giong)
+# Do la du lieu SINH TRAC khong dung lai duoc: bucket R2 da xoa 56/58 tep cua
+# 29 ho so (do 15/09) va khong co ban sao nao khac. Bo `voice\out\` (tep ket qua
+# cua job, co han luu 30 ngay, co the doc lai).
+$voiceNguon = @(
+    @{ Goc = (Join-Path $dataDir 'voice_goc');     Dich = 'voice_goc' },
+    @{ Goc = (Join-Path $dataDir 'files\voice');   Dich = 'files_voice' }
+)
+foreach ($v in $voiceNguon) {
+    if (-not (Test-Path $v.Goc)) { continue }
+    # Get-Item().FullName, KHONG Resolve-Path: Resolve-Path giu nguyen dang 8.3
+    # (THANGT~1) con FullName cua tep con la dang day du, nen Substring cat lech
+    # va loc `out\` truot (do bang chay thu 16/09).
+    $gocDay = (Get-Item -LiteralPath $v.Goc).FullName.TrimEnd('\')
+    $tepVoice = Get-ChildItem -Path $gocDay -Recurse -File -ErrorAction SilentlyContinue |
+        Where-Object { $_.FullName -notlike "$gocDay\out\*" }
+    foreach ($t in $tepVoice) {
+        $tuongDoi = $t.FullName.Substring($gocDay.Length + 1)
+        $dichTep = Join-Path (Join-Path $staging $v.Dich) $tuongDoi
+        New-Item -ItemType Directory -Path (Split-Path -Parent $dichTep) -Force | Out-Null
+        Copy-Item $t.FullName -Destination $dichTep -Force
+        $copied++
+    }
+    Write-Host "  [OK] voice: $($tepVoice.Count) tep tu $gocDay" -ForegroundColor Green
+}
+
 # -IncludeSecrets duoc xu ly O CUOI FILE, trong mot ban sao RIENG. Khong copy
 # app.env vao $staging: staging la thu muc dung de nen ra ltt_data_*.zip, va
 # ca hai thu do nam chung mot zip chinh la loi dang sua (H35.9).

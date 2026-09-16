@@ -207,6 +207,12 @@ def main() -> int:
                     # dan xen nhau: mot cai dang cho may TAT thi cai kia da bat
                     # len. Khong loi nao duoc ghi ra.
                     "uq_vps_thao_tac_idem",
+                    # VPS V4. Hai constraint này là trọng tài cho hai race thật:
+                    # một thao tác provider lặp lại sau response-lost, và hai
+                    # worker cùng giữ một IP đang FREE. Restore thiếu một trong
+                    # hai phải FAIL thay vì để lỗi xuất hiện ở hạ tầng thật.
+                    "uq_vps_external_mutation_idem",
+                    "uq_vps_ip_reservation_token",
                     # LTT VOICE (Q117). Mat mot trong hai la mot lop hong
                     # KHAC NHAU, nen ca hai deu phai o day:
                     #

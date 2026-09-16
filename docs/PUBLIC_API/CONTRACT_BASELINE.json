@@ -377,7 +377,7 @@
     },
     "speech.ltt": {
       "aliases": [],
-      "contract_hash": "ebedbcc38dfcd9d6",
+      "contract_hash": "7d53c7d1f5098677",
       "deprecated": "",
       "execution_mode": "ASYNC_JOB",
       "models": [],
@@ -397,7 +397,7 @@
     },
     "text.chat": {
       "aliases": [],
-      "contract_hash": "f6badbdc9de99372",
+      "contract_hash": "9d23c67b17de285f",
       "deprecated": "",
       "execution_mode": "ASYNC_JOB",
       "models": [

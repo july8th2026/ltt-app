@@ -566,3 +566,12 @@ templates.env.globals["nav_groups"] = _nav_groups
 templates.env.globals["tai_khoan"] = _tai_khoan
 templates.env.globals["app_tabs"] = _app_tabs
 templates.env.globals["da_dang_nhap"] = _da_dang_nhap
+
+
+def render_admin_shell(title: str, active: str, body: str, **context) -> str:
+    """Approved app admin contract: reuse the one operator shell, not its internals.
+
+    This is rendering only. The app must require_operator before invoking it.
+    """
+    from server.admin import _admin_shell
+    return _admin_shell(title, active, body, **context)

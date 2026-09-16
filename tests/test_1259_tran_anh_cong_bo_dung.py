@@ -29,8 +29,6 @@ import os
 import urllib.error
 import urllib.request
 
-import pytest
-
 from apps.ltt_llm.ngan_sach import ANH_BYTE_TOI_DA, SO_ANH_TOI_DA
 
 
@@ -65,14 +63,21 @@ def _hoi_may_b() -> dict | None:
     goc = (os.environ.get("LTT_LLM_BASE_URL") or "").strip()
     if not goc:
         return None
+    token = (os.environ.get("LTT_LLM_TOKEN") or "").strip()
     try:
-        r = urllib.request.Request(goc.rstrip("/") + "/health")
+        headers = {"Authorization": f"Bearer {token}"} if token else {}
+        r = urllib.request.Request(goc.rstrip("/") + "/health", headers=headers)
         with urllib.request.urlopen(r, timeout=8) as tra:
             d = json.loads(tra.read())
     except (urllib.error.URLError, OSError, ValueError, TimeoutError):
         return None
 
     ra: dict = {}
+    # Hop dong /health dang chay cong bo so anh duoi `tran.images`. Chap nhan
+    # ten cu nay khi doi chieu; `max_images` la ten o catalog cong khai.
+    tran = d.get("tran") if isinstance(d, dict) else None
+    if isinstance(tran, dict) and "images" in tran:
+        ra["max_images"] = tran["images"]
 
     def di(o):
         if isinstance(o, dict):
@@ -86,17 +91,36 @@ def _hoi_may_b() -> dict | None:
     return ra or None
 
 
-def test_BAN_SAO_khop_may_B_khi_hoi_duoc():
-    """⛔ Doi chieu that. `skip` khi khong goi duoc — KHONG xanh gia.
+def test_hoi_may_B_mang_bearer_vi_health_duoc_bao_ve(monkeypatch):
+    """`/health` production doi bearer; thieu header thi doi chieu luon skip."""
+    monkeypatch.setenv("LTT_LLM_BASE_URL", "http://may-b:8299")
+    monkeypatch.setenv("LTT_LLM_TOKEN", "token-thu")
 
-    Mot phep kiem lang le bo qua khi khong lien lac duoc se bao "dat" suot
-    nhung ngay may B doi cau hinh, va do dung la khoang thoi gian ta can no
-    len tieng nhat.
-    """
+    class Tra:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_):
+            return None
+
+        def read(self):
+            return json.dumps({"tran": {"images": SO_ANH_TOI_DA}}).encode()
+
+    def urlopen(req, timeout):
+        assert timeout == 8
+        assert req.get_header("Authorization") == "Bearer token-thu"
+        return Tra()
+
+    monkeypatch.setattr(urllib.request, "urlopen", urlopen)
+    assert _hoi_may_b() == {"max_images": SO_ANH_TOI_DA}
+
+
+def test_BAN_SAO_khop_may_B():
+    """⛔ Doi chieu that; khong hoi duoc la DO, khong bo qua va khong xanh gia."""
     that = _hoi_may_b()
-    if that is None:
-        pytest.skip("khong hoi duoc cong may B (thieu LTT_LLM_BASE_URL hoac "
-                    "khong lien lac duoc) — KHONG phai la dat")
+    assert that is not None, (
+        "khong doi chieu duoc cong may B: can LTT_LLM_BASE_URL, "
+        "LTT_LLM_TOKEN va ket noi toi /health")
 
     if "max_images" in that:
         assert int(that["max_images"]) == SO_ANH_TOI_DA, (

@@ -46,6 +46,7 @@ class DichDen:
     nhan: str = "may"
     #: Tiền tố chạy lệnh, vd `sudo -n `. Rỗng nếu đăng nhập thẳng bằng root.
     tien_to: str = ""
+    known_hosts: str = ""
 
     def verify(self, khoa_env: str = "") -> "DichDen":
         if not self.host:
@@ -55,23 +56,28 @@ class DichDen:
             raise SshLenhError(f"{self.nhan}: thieu duong dan khoa SSH")
         if not os.path.exists(self.khoa):
             raise SshLenhError(f"{self.nhan}: khong thay file khoa SSH: {self.khoa}")
+        if self.known_hosts and not os.path.isfile(self.known_hosts):
+            raise SshLenhError("canonical SSH known_hosts file is unavailable")
         return self
 
 
 def chay_ssh(dich: DichDen, lenh: list[str], *,
              timeout: int = TIMEOUT_GIAY) -> str:
     ssh = ["ssh", "-i", dich.khoa, "-o", "BatchMode=yes",
-           "-o", "IdentitiesOnly=yes", "-o", "StrictHostKeyChecking=accept-new",
+           "-o", "IdentitiesOnly=yes", "-o", "StrictHostKeyChecking=yes",
            "-o", "ConnectTimeout=10",
            f"{dich.user}@{dich.host}", " ".join(lenh)]
+    if dich.known_hosts:
+        ssh[1:1] = ["-o", f"UserKnownHostsFile={dich.known_hosts}"]
     try:
         r = subprocess.run(ssh, capture_output=True, text=True, timeout=timeout)
     except subprocess.TimeoutExpired as exc:
         raise SshLenhError(
             f"{dich.nhan} {dich.host} khong tra loi trong {timeout}s") from exc
     if r.returncode != 0:
-        raise SshLenhError(f"{dich.nhan} tra ma {r.returncode}: "
-                           f"{(r.stderr or r.stdout).strip()[:300]}")
+        # Remote stderr/stdout may include an expanded command, token or key
+        # path. The numeric status is sufficient and safe for operator logs.
+        raise SshLenhError(f"{dich.nhan} tra ma {r.returncode}")
     return r.stdout
 
 

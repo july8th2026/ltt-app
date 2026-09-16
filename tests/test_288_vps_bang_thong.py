@@ -302,13 +302,41 @@ def test_ham_toc_KHONG_phai_cat_han():
 
 # ── 7. Vòng đời: bật đo khi tạo, tắt khi xoá ────────────────────────────────
 
-def test_job_tao_may_BAT_do_bang_thong():
+def test_job_tao_may_BAT_do_bang_thong(monkeypatch):
     """Máy không nằm trong set đếm thì nó dùng bao nhiêu cũng không ai biết."""
-    import inspect
-
+    from types import SimpleNamespace
     from apps.vps import jobs
+    from apps.vps.services import mutation_coordinator
 
-    assert "theo_doi_bang_thong(ip_noi_bo)" in inspect.getsource(jobs._tao_may)
+    class _Router:
+        def __init__(self):
+            self.reservations = {}
+            self.followed = []
+
+        def dat_cho(self, mac, ip, *, ten):
+            self.reservations[mac] = ip
+
+        def theo_doi_bang_thong(self, ip):
+            self.followed.append(ip)
+
+        def danh_sach_dat_cho(self):
+            return self.reservations
+
+        def doc_bang_thong(self):
+            return {ip: (0, 0) for ip in self.followed}
+
+    def execute(_db, **kwargs):
+        kwargs["mutate"]()
+        assert kwargs["readback"]() is True
+        return SimpleNamespace(state="OBSERVED")
+
+    monkeypatch.setattr(mutation_coordinator, "execute", execute)
+    rt = _Router()
+    may = SimpleNamespace(id="12345678-1234-5678-1234-567812345678",
+                          ip_noi_bo="10.51.0.50")
+    jobs._dat_cho_co_journal(object(), may, rt)
+
+    assert rt.followed == ["10.51.0.50"]
 
 
 def test_job_xoa_may_TAT_do_va_bo_ham():

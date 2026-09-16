@@ -852,7 +852,7 @@ class SuaApiKeyView(_AnTrongMenuSqlAdmin, BaseView):
 
         if request.method == "POST":
             form = await request.form()
-            key_id = form.get("id", "")
+            key_id = form.get("id", "")  # type: ignore[assignment]  # Starlette FormData union
             if not verify_csrf_token(request, (form.get("csrf_token") or "")):
                 msg = '<p style="color:#b91c1c;">CSRF khong hop le - tai lai trang.</p>'
                 status = 400
@@ -1587,8 +1587,8 @@ def setup_admin(app, *, session_secret: str) -> bool:
     # nó nạp `ltt.css` KHÔNG kèm `?v=`, tức sau mỗi lần đổi CSS nó phục vụ bản
     # cũ tới hết TTL của Cloudflare (CLAUDE.md quy tắc 6).
     from server.routes.admin._chung import dieu_huong as _dh
-    admin.templates.env.globals.update(asset_ver=_asset_ver(), adm_nav=_dh("tong_quan")["thanh_ben"],
-                                       _=__import__("server.templating").templating.templates.env.globals["_"])
+    admin.templates.env.globals.update(asset_ver=_asset_ver(), _=__import__("server.templating").templating.templates.env.globals["_"],
+                                       adm_nav=_dh("tong_quan", apps=getattr(app.state, "loaded_apps", ()))["thanh_ben"])
     admin.add_view(UserAdmin)
     admin.add_view(CreditEntryAdmin)
     admin.add_view(GrantCreditView)
@@ -1614,8 +1614,8 @@ def setup_admin(app, *, session_secret: str) -> bool:
     # `server.routes.admin.VIEWS`. Thêm một trang KHÔNG phải sửa chỗ này.
     from server.routes.admin import VIEWS as _MIEN_VIEWS
 
-    for _view in _MIEN_VIEWS:
-        admin.add_view(_view)
+    for _domain_view in _MIEN_VIEWS:
+        admin.add_view(_domain_view)
     admin.add_view(RevenueView)
     admin.add_view(PackagesView)
     admin.add_view(OrdersView)

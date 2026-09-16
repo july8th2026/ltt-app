@@ -2,19 +2,19 @@
 test_609 — `speech.ltt`: GIỌNG DỰNG SẴN vs GIỌNG SỞ HỮU, và giọng của người khác.
 (H43 Phase 05)
 
-Sở hữu giọng kiểm ở MỘT chỗ: `features.giai_giong` (lúc thi hành). Cửa nội bộ
-`runtime_noi_bo.job.bao_gia` chỉ kiểm hình dạng tham số theo `ToolSpec` — nó
-**không** kiểm sở hữu và **không** giữ tiền. Đây là đúng vai (nền tảng không được
-biết giá trị nào "của ai"), nên tệp này chứng minh hành vi lúc THI HÀNH và ghi lại
-cách một client nội bộ nên hỏi sớm mà không import app (`tuy_chon_dong`).
+Sở hữu giọng là luật của app (`features.giai_giong_kiem`/`giai_giong`). Nền tảng
+không biết giá trị nào "của ai" — nhưng từ 16/09/2026 cửa nội bộ
+`runtime_noi_bo.job.bao_gia` gọi hook `ToolSpec.kiem_truoc` của app, CÙNG hook
+`/api/v1` gọi (D007, W4'), nên yêu cầu hỏng chắc chắn bị chặn TRƯỚC giá, trước
+giữ tiền, trước job. Worker vẫn kiểm lại (tầng phòng thủ thứ hai).
 
 Neo ở đây:
   1. Preset ⇒ `(None, preset, …)`; giọng của mình ⇒ `(ref_b64, None, …)`.
   2. Giọng NGƯỜI KHÁC và giọng KHÔNG TỒN TẠI ⇒ CÙNG MỘT THÔNG ĐIỆP (không dò được id).
-  3. `bao_gia` cho giọng người khác: không ném, không giữ tiền, không tạo job.
+  3. `bao_gia` cho giọng người khác: NÉM `ThamSoSai`, không giữ tiền, không tạo job.
      `tuy_chon_dong` chỉ liệt kê giọng `active` của CHÍNH người dùng.
-  4. Worker thật: job với giọng người khác ⇒ `error` sau ĐÚNG MỘT lượt (không
-     phải 5), hoàn đủ, cổng giọng không bị gọi.
+  4. Worker thật (bỏ cửa trước có chủ ý): job với giọng người khác ⇒ `error` sau
+     ĐÚNG MỘT lượt (không phải 5), hoàn đủ, cổng giọng không bị gọi.
   5. `so_lan_thu` chảy từ manifest: `so_lan_thu_for("ltt_voice.synthesize") == 5`
      và `nop_job` ghi đúng `max_attempts = 5`.
 """
@@ -177,9 +177,9 @@ def test_giong_dung_chung_cua_nen_tang_thi_ai_cung_doc_duoc(moi_truong, monkeypa
         _close(gen)
 
 
-# ── 3. Cửa nội bộ: bao_gia không kiểm sở hữu, không giữ tiền ────────────────
+# ── 3. Cửa nội bộ: bao_gia chạy pre-check của app, không giữ tiền ───────────
 
-def test_bao_gia_giong_nguoi_khac_khong_nem_khong_giu_tien_khong_tao_job(moi_truong):
+def test_bao_gia_giong_nguoi_khac_nem_truoc_gia_khong_giu_tien_khong_tao_job(moi_truong):
     from platform_core import credit
     from platform_core.models import Job
     from platform_core.runtime_noi_bo import job as rj
@@ -188,10 +188,10 @@ def test_bao_gia_giong_nguoi_khac_khong_nem_khong_giu_tien_khong_tao_job(moi_tru
     vid_khac = _tao_giong(khac, public_id="vc_khac_bg_609", ten="Khác")
     gen, db = _session()
     try:
-        bg = rj.bao_gia(TOOL, {"text": VAN_BAN, "voice_id": vid_khac}, db=db, user_id=toi)
-        assert bg.lane == LANE and bg.credit > 0
-        assert bg.tham_so_sach["voice_id"] == vid_khac
-        # Không một bút toán, không một job — báo giá là báo giá.
+        with pytest.raises(rj.ThamSoSai) as e:
+            rj.bao_gia(TOOL, {"text": VAN_BAN, "voice_id": vid_khac}, db=db, user_id=toi)
+        assert "không tìm thấy" in str(e.value).lower()
+        # Không một bút toán, không một job — bị chặn trước cả giá.
         assert credit.so_du(db, toi) == 100
         assert db.query(Job).count() == 0
     finally:
@@ -226,6 +226,9 @@ def test_worker_giong_nguoi_khac_hong_sau_mot_luot_hoan_du_khong_goi_cong(moi_tr
 
     toi, khac = _user(100), _user(100)
     vid_khac = _tao_giong(khac, public_id="vc_khac_w_609", ten="Khác")
+    # Bỏ CỬA TRƯỚC có chủ ý: test này đo tầng phòng thủ thứ hai (worker), cho
+    # một job đã lọt vào hàng đợi bằng đường nào đó không qua pre-check.
+    monkeypatch.setattr(rj, "_kiem_truoc", lambda *a, **k: None)
 
     gen, db = _session()
     try:

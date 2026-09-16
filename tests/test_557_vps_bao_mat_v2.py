@@ -288,20 +288,29 @@ def test_go_cach_ly_KHONG_xoa_dau_khi_chua_mo_duoc_duong(db, monkeypatch):
     assert cach_ly.dang_bi_cach_ly(may) is True
 
 
-def test_cai_lai_KHONG_tro_thanh_nut_go_cach_ly():
+def test_cai_lai_KHONG_tro_thanh_nut_go_cach_ly(db, monkeypatch):
     """"Cài lại" gọi `_cap_ip_cong_khai`, và hàm đó mở đường NAT.
 
     Không có phép kiểm ở đó thì khách tự gỡ được cách ly bằng một nút vô hại —
     im lặng, không ghi sổ, và người vận hành vẫn thấy `cach_ly_luc` khác NULL
     nên tưởng máy vẫn bị cắt.
     """
-    import inspect
+    from tests.test_1013_vps_pinned_provisioning import _ip_context
 
-    from apps.vps import jobs
-    nguon = inspect.getsource(jobs._cap_ip_cong_khai)
-    i = nguon.index("mo_duong")
-    assert "dang_bi_cach_ly" in nguon[:i], (
-        "phai kiem cach ly TRUOC khi mo duong NAT")
+    jobs, profile, may, gateway, ip, mappings = _ip_context(
+        db, monkeypatch, state="BOUND")
+    may.cach_ly_luc = NOW
+    db.commit()
+    assert jobs._cap_ip_cong_khai(
+        db, may, gateway, may.ip_noi_bo, profile) == ip.dia_chi
+    assert mappings == []
+    assert cach_ly.dang_bi_cach_ly(may)
+
+    # Inverse condition: the same path really opens NAT when isolation is off.
+    may.cach_ly_luc = None
+    db.commit()
+    jobs._cap_ip_cong_khai(db, may, gateway, may.ip_noi_bo, profile)
+    assert mappings == [("ensure", (ip.dia_chi, may.ip_noi_bo))]
 
 
 def test_khong_co_vong_lap_nao_TU_DONG_cach_ly():
