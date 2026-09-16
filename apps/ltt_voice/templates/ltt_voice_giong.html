@@ -75,6 +75,7 @@
         <div class="lv-loc-nhom" role="group" aria-label="{{ _('Loại giọng') }}">
           <button type="button" class="lv-loc-nut on" aria-pressed="true" data-loc="loai" data-gt="">{{ _("Tất cả") }}</button>
           <button type="button" class="lv-loc-nut" aria-pressed="false" data-loc="loai" data-gt="mau">{{ _("Giọng mẫu") }}</button>
+          <button type="button" class="lv-loc-nut" aria-pressed="false" data-loc="loai" data-gt="chung">{{ _("Kho chung") }}</button>
           <button type="button" class="lv-loc-nut" aria-pressed="false" data-loc="loai" data-gt="toi">{{ _("Giọng của tôi") }}</button>
         </div>
 
@@ -119,13 +120,15 @@
       </p>
 
       <div class="lv-luoi" id="lv-luoi">
+        {# GUI-D001: `loai` do route tính (`tham_chieu.loai_giong`) — template
+           không tự suy từ `dung_chung`. #}
         {% for g in giong %}
-          {% with la_mau = false, tk = thong_ke.get(g.public_id) %}
+          {% with loai = loai_giong[g.public_id], tk = thong_ke.get(g.public_id) %}
             {% include "_voice_the.html" %}
           {% endwith %}
         {% endfor %}
         {% for g in giong_mau %}
-          {% with la_mau = true %}{% include "_voice_the.html" %}{% endwith %}
+          {% with loai = 'mau' %}{% include "_voice_the.html" %}{% endwith %}
         {% endfor %}
       </div>
 
@@ -385,6 +388,7 @@
     duongNghe: {{ duong_nghe | tojson }},
     chu: {
       mau: {{ _("Giọng mẫu") | tojson }},
+      khoChung: {{ _("Kho chung") | tojson }},
       cuaToi: {{ _("Giọng của tôi") | tojson }},
       sanSang: {{ _("Sẵn sàng") | tojson }},
       dangGhiDanh: {{ _("Đang ghi danh…") | tojson }},

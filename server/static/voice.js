@@ -742,6 +742,11 @@
       if (!oCt) return;
       var d = t.dataset;
       var laMau = d.loai === "mau";
+      // GUI-D001: chi giong CUA CHINH nguoi xem moi co khoi quan ly (thong ke,
+      // clip goc, Tat, Xoa). Truoc 16/09 dieu kien la `!laMau`, nen giong kho
+      // chung cua nguoi khac cung hien nut Tat/Xoa (cua server tu choi 404) va
+      // mot trinh phat clip goc cua `/audio` chan.
+      var laToi = d.loai === "toi";
       var ct = chiTiet[d.ma] || {};
 
       for (var k = 0; k < the.length; k++) {
@@ -752,7 +757,8 @@
       t.setAttribute("aria-pressed", "true");
 
       dat("lv-ct-ten", d.ten);
-      dat("lv-ct-loai", laMau ? chu.mau : chu.cuaToi);
+      dat("lv-ct-loai", laMau ? chu.mau
+        : (laToi ? chu.cuaToi : (chu.khoChung || chu.cuaToi)));
       dat("lv-ct-ma", d.ma);
       // Dong tinh chat CHI cho giong mau ("Nam · Mien Bac · Tin tuc"). Giong
       // nhan ban khong co ba mat do, va thu the cua no hien la trang thai —
@@ -808,8 +814,8 @@
 
       var khoiToi = document.getElementById("lv-ct-cuatoi");
       if (khoiToi) {
-        khoiToi.hidden = laMau;
-        if (!laMau) {
+        khoiToi.hidden = !laToi;
+        if (laToi) {
           dat("lv-ct-luot", ct.so_luot || 0);
           dat("lv-ct-phut", ct.phut || 0);
           dat("lv-ct-cuoi", ct.lan_cuoi || chu.chuaDung || "-");

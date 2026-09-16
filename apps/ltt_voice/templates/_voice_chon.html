@@ -176,13 +176,16 @@
          sửa hay tắt, và không thấy, vì `_chi_chu_so_huu` từ chối đúng như nó
          phải từ chối.
 
-      ⭐ `data-loai` VÀ chip đều đi theo `g.dung_chung` — MỘT nguồn, không hai
-         bảng nhãn lệch nhau. `data-loai="chung"` khớp nút lọc `Kho chung` vừa
-         thêm ở trên.
+      ⭐ `data-loai` VÀ chip đều đi theo `loai_giong[public_id]` — do route tính
+         bằng `tham_chieu.loai_giong` (GUI-D001, 16/09/2026), CÙNG hàm với thẻ
+         màn Giọng. Bản trước đi theo `g.dung_chung` và bỏ qua license: chủ của
+         25 giọng `dung_chung` nhưng `cho_soat` thấy chúng mang nhãn "Kho chung"
+         trong khi không khách nào khác thấy chúng.
     #}
     {% for g in cua_toi %}
+      {% set loai = loai_giong[g.public_id] %}
       <label class="lv-chon-muc"
-             data-loai="{{ 'chung' if g.dung_chung else 'toi' }}"
+             data-loai="{{ loai }}"
              data-ten="{{ g.ten_hien_thi }}"
              data-lan="{{ g.ngon_ngu or '' }}" data-gioi="{{ g.gioi or '' }}">
         <input type="radio" name="giong" value="v:{{ g.public_id }}"
@@ -191,7 +194,7 @@
         <span class="lv-chon-noi">
           <b>{{ g.ten_hien_thi }}</b>
           <small>
-            {% if g.dung_chung %}
+            {% if loai == 'chung' %}
               <span class="chip">{{ _("Kho chung") }}</span>
             {% else %}
               <span class="chip v">{{ _("Giọng của tôi") }}</span>

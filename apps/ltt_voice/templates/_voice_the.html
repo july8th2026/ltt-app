@@ -14,14 +14,14 @@
 
   Tham số:
     g       — GiongMau, hoặc VoiceProfile
-    la_mau  — True nếu là giọng dựng sẵn
+    loai    — "mau" | "chung" | "toi" (GUI-D001; route tính bằng `tham_chieu.loai_giong`, giọng mẫu truyền "mau")
     chon    — True nếu đang được chọn
     tk      — dict thống kê (chỉ giọng nhân bản), có thể thiếu
 #}
 {% set ma = g.public_id %}
 <article class="lv-the{{ ' chon' if chon }}"
          data-ma="{{ ma }}"
-         data-loai="{{ 'mau' if la_mau else 'toi' }}"
+         data-loai="{{ loai }}"
          data-ten="{{ g.ten_hien_thi }}"
          data-trangthai="{{ g.trang_thai }}"
          {#
@@ -44,7 +44,7 @@
               "chay duoc" la dat mot du lieu SAI vao cho mot du lieu THIEU.
          #}
          data-gioi="{{ g.gioi or '' }}"
-         {%- if la_mau %}
+         {%- if loai == 'mau' %}
          data-vung="{{ g.vung }}" data-phongcach="{{ g.phong_cach }}"
          {%- endif %}
          tabindex="0" role="button"
@@ -92,8 +92,10 @@
     {%- endif %}
     <div class="lv-the-ten">
       <b>{{ g.ten_hien_thi }}</b>
-      {% if la_mau %}
+      {% if loai == 'mau' %}
         <span class="chip">{{ _("Giọng mẫu") }}</span>
+      {% elif loai == 'chung' %}
+        <span class="chip">{{ _("Kho chung") }}</span>
       {% else %}
         <span class="chip v">{{ _("Giọng của tôi") }}</span>
       {% endif %}
@@ -101,7 +103,7 @@
   </div>
 
   <p class="lv-the-tinh">
-    {% if la_mau %}
+    {% if loai == 'mau' %}
       {{ _(nhan_gioi[g.gioi]) }} · {{ _(nhan_vung[g.vung]) }} · {{ _(nhan_phong_cach[g.phong_cach]) }}
     {% else %}
       {% if g.trang_thai == 'active' %}
@@ -137,21 +139,19 @@
     CỬA KHAI LÀN (D004) — MỘT cửa cho cả XÁC NHẬN và ĐỔI, `POST
     {{ manifest.route_prefix }}/giong/{{ ma }}/ngon-ngu`.
 
-    🔴 Chỉ hiện cho giọng CỦA CHÍNH KHÁCH: `not la_mau` loại giọng mẫu (một
-       `GiongMau`, không có `dung_chung`/`ngon_ngu_nguon` — xem lỗi 21-biểu-mẫu
-       đã đo được ở `65e099af`, cùng lý do `not la_mau` đứng ĐẦU điều kiện bên
-       dưới); `not g.dung_chung` loại kho chung (làn của kho chung đổi bằng
-       công cụ vận hành, không bằng nút trên web của một khách — cùng lý do
-       `tat_giong`/`khai_ngon_ngu_giong` không mở `cho_dung_chung`). Giọng còn
-       lại trong `not la_mau` khi đã qua `not g.dung_chung` chắc chắn là của
-       CHÍNH khách đang xem trang này, vì `tham_chieu.danh_sach(gom_dung_chung=
-       True)` chỉ trộn thêm giọng kho chung, không trộn giọng của khách khác.
+    🔴 Chỉ hiện cho giọng CỦA CHÍNH KHÁCH: `loai == 'toi'` đứng ĐẦU điều kiện —
+       nó loại giọng mẫu (một `GiongMau`, không có `dung_chung`/`ngon_ngu_nguon`
+       — xem lỗi 21-biểu-mẫu đã đo được ở `65e099af`) VÀ giọng kho chung của
+       người khác, vì `loai` đi theo chủ sở hữu (`tham_chieu.loai_giong`).
+       `not g.dung_chung` loại thêm giọng kho chung mà chính khách là chủ (làn
+       của kho chung đổi bằng công cụ vận hành, không bằng nút trên web — cùng
+       lý do `tat_giong`/`khai_ngon_ngu_giong` không mở `cho_dung_chung`).
 
     ⛔ Không hiện cho giọng đã `revoked`: cửa `khai_ngon_ngu_giong` chặn thẳng
        (`voice_revoked`) — một biểu mẫu bấm được mà luôn nhận lỗi là thứ tệ hơn
        không có biểu mẫu.
   #}
-  {% if not la_mau and not g.dung_chung and g.trang_thai != 'revoked' %}
+  {% if loai == 'toi' and not g.dung_chung and g.trang_thai != 'revoked' %}
     {% if g.ngon_ngu_nguon == 'mac_dinh_cu' %}
       {#
         DÒNG CŨ (trước D003) — làn là một MẶC ĐỊNH CỘT, chưa ai khai. Đây là

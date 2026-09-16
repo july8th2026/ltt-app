@@ -99,7 +99,8 @@ def clip_nguon(db, profile_id: int) -> list:
         return []
 
 
-def chi_tiet_cho_trang(db, giong: list, thong_ke: dict, duong_audio: str) -> dict:
+def chi_tiet_cho_trang(db, giong: list, thong_ke: dict, duong_audio: str,
+                       owner_id: str | None = None) -> dict:
     """Gói mọi thứ màn Giọng cần thành JSON, để bấm một thẻ **không gọi mạng**.
 
     ⭐ Hai mươi giọng mẫu cộng vài giọng riêng là một tập nhỏ và đã nằm sẵn
@@ -108,6 +109,13 @@ def chi_tiet_cho_trang(db, giong: list, thong_ke: dict, duong_audio: str) -> dic
 
     ⚠️ Đổi lại: đừng bao giờ nhét thứ **nặng** hay thứ **bí mật** vào đây. Không
        `speaker_emb`, không khoá kho thô — chỉ đường dẫn phát đã kiểm quyền.
+
+    🔴 `owner_id` (GUI-D001, 16/09/2026): clip GỐC chỉ gửi cho CHỦ giọng. Trước
+       đây mọi giọng trong `giong` — kể cả giọng kho chung của người khác — mang
+       `clip[].url` = khoá kho thô `voice/<owner_uuid>/<public_id>/source.wav`
+       vào JSON của trang: lộ UUID chủ sở hữu, và dựng một trình phát mà cửa
+       `/audio` chắc chắn từ chối (chỉ mở `voice/{uid}/source.*`). `None` giữ
+       hành vi cũ cho nơi gọi chưa truyền.
     """
     from .giong_vong_doi import NGUON_MAC_DINH_CU as _NGUON_MAC_DINH_CU
 
@@ -137,7 +145,9 @@ def chi_tiet_cho_trang(db, giong: list, thong_ke: dict, duong_audio: str) -> dic
                     "giay": round(float(r.giay or 0.0), 1),
                     "url": f"{duong_audio}/{r.storage_key}",
                 }
-                for r in clip_nguon(db, g.id)
+                for r in (clip_nguon(db, g.id)
+                          if owner_id is None
+                          or str(g.owner_id) == str(owner_id) else ())
             ],
         }
     return ra

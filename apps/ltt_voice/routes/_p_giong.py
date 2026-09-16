@@ -72,7 +72,10 @@ def trang_giong(request: Request, user=Depends(user_hien_tai),
         hang_doi = vo.dem_dang_chay(db, uid)
         thong_ke = doc_man_giong.thong_ke_theo_giong(db, uid, MANIFEST.slug)
         chi_tiet = doc_man_giong.chi_tiet_cho_trang(
-            db, giong, thong_ke, f"{MANIFEST.route_prefix}/audio")
+            db, giong, thong_ke, f"{MANIFEST.route_prefix}/audio", owner_id=uid)
+        # GUI-D001: loại giọng tính MỘT chỗ (`tham_chieu.loai_giong`), template
+        # và `voice.js` chỉ đọc — không tự suy từ `dung_chung`.
+        loai_giong = tham_chieu.loai_theo_ma(giong, uid)
         # Đường nghe thử — MỘT thẩm quyền, dùng chung với màn Tạo tiếng nói.
         # Giọng nào chưa có tệp thì **vắng mặt** khỏi dict, không phải rỗng.
         # Xem chú thích ở `_p_tao.py`: `tham_chieu.tach_rieng_chung` là MỘT
@@ -102,7 +105,7 @@ def trang_giong(request: Request, user=Depends(user_hien_tai),
                     # ai đó mở đúng màn ấy.
                     nhan_lan=lan_ngon_ngu.NHAN_LAN,
                     thong_ke=thong_ke, chi_tiet=chi_tiet,
-                    duong_nghe=duong_nghe,
+                    duong_nghe=duong_nghe, loai_giong=loai_giong,
                     dieu_khoan=cac_dieu(), cam_ket=CAM_KET))
 
 

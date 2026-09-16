@@ -136,6 +136,43 @@ def tach_rieng_chung(ds) -> tuple:
     return rieng, chung
 
 
+#: Ba loại giọng trong catalog (GUI-D001). Chuỗi NGẮN có chủ ý: chúng là giá trị
+#: `data-loai` mà nút lọc `data-chon-loai`/`data-gt` và `voice.js` đã dùng từ
+#: trước — đổi sang `preset/shared/owned` là đổi ba tệp chỉ để đổi tên.
+LOAI_MAU = "mau"
+LOAI_CHUNG = "chung"
+LOAI_TOI = "toi"
+
+
+def loai_giong(ho_so, owner_id: str) -> str:
+    """`VoiceProfile` → `LOAI_TOI` | `LOAI_CHUNG`, **theo góc nhìn** của `owner_id`.
+
+    🔴 VÌ SAO THEO CHỦ SỞ HỮU, KHÔNG THEO CỜ `dung_chung` (đo 15–16/09/2026).
+
+       Trước bản này có BA luật: thẻ màn Giọng gắn "Giọng của tôi" cho MỌI hồ sơ;
+       bộ chọn Studio/Dự án gắn "Kho chung" theo `g.dung_chung`; cổng đọc kho
+       chung đòi `dung_chung` **và** `license_status == "ok"`. Hệ quả đo được:
+       tài khoản chủ của 25 giọng `dung_chung=True` nhưng `cho_soat` thấy chúng
+       mang nhãn "Kho chung" — trong khi KHÔNG khách nào khác thấy chúng.
+
+    ⭐ Nhãn phải trả lời câu người xem thật sự hỏi: *"tôi làm được gì với giọng
+       này"*. Quyền SỬA/TẮT/XOÁ đi theo chủ sở hữu (`tat_giong`, `xoa_giong` tìm
+       theo `owner_id`), nên nhãn cũng thế. Hồ sơ của người khác chỉ lọt vào
+       `danh_sach(gom_dung_chung=True)` qua đúng `_dieu_kien_kho_chung()` — tức
+       nó ĐÃ là kho chung; không cần hỏi lại cờ.
+
+    ⚠️ Hệ quả có chủ ý: chủ của một giọng kho chung thấy nó là "Giọng của tôi"
+       (vì chỉ họ quản lý được nó); mọi người khác thấy "Kho chung".
+    """
+    return LOAI_TOI if str(ho_so.owner_id) == str(owner_id) else LOAI_CHUNG
+
+
+def loai_theo_ma(ds, owner_id: str) -> dict:
+    """`{public_id: loai}` cho template — tính MỘT lần ở route, lúc phiên CSDL
+    còn mở, để Jinja không phải chạm ORM và không tự suy luật."""
+    return {g.public_id: loai_giong(g, owner_id) for g in ds}
+
+
 def tim_profile(db, public_id: str, *, owner_id: str, cho_dung_chung: bool = False):
     """Tìm theo `public_id` **và** chủ sở hữu, trong MỘT truy vấn.
 

@@ -118,6 +118,9 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
         #    g.dung_chung` tự viết — bản tự viết bỏ sót ô "dung_chung=True
         #    nhưng license CHƯA ok", xem docstring của chính hàm đó).
         rieng, chung = tham_chieu.tach_rieng_chung(cua_toi)
+        # GUI-D001: nhãn Kho chung / Giọng của tôi tính MỘT chỗ, xem
+        # `tham_chieu.loai_giong` cho vì sao theo chủ sở hữu chứ không theo cờ.
+        loai_giong = tham_chieu.loai_theo_ma(cua_toi, uid)
         duong_nghe = nghe_thu.duong_cho_trang(
             duong_audio=f"{MANIFEST.route_prefix}/audio", owner_id=uid,
             ma_mau=[g.ma for g in giong_mau.DANH_SACH],
@@ -169,6 +172,7 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
                     cac_nac_toc_do=_toc_do.CAC_NAC,
                     du_an_ds=du_an_ds,
                     duong_nghe=duong_nghe,
+                    loai_giong=loai_giong,
                     gan_day=gan_day,
                     phien_ban=phien_ban,
                     nhan_pb=nhan_pb))
