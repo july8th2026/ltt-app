@@ -3986,3 +3986,49 @@ button.lv-the-song.nghe-loi,.lv-chon-nghe.nghe-loi{
 .adm-luoi-cot{grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr))}
 .adm-mt12{margin-top:12px}.adm-thong-bao{display:block;padding:10px}
 .adm-form-dong{display:flex;gap:6px;align-items:center}
+/* === Golden UI song song: APPS === */
+/* Khung form app nho (transcript, audio-pause, video-assembly, prompt-canh).
+   Truoc: khong co luat nao cho .ts-/.ap-/.va-/.pc-* => form tran, nut "Viec cua
+   toi" dinh vao o tai tep, nut gui dinh vao tieu de "Luot gan day", dai tieu de
+   lap lai y nguyen h1. Nay cung ngon ngu voi /taoanh: dau trang kicker + h1 + nut
+   phu ben phai, the co so buoc 01/02, mot nut chinh trong thanh hanh dong, lich su
+   trong the voi trang thai rong vien dut. */
+.af-page{display:grid;gap:var(--space-4);min-width:0;color:var(--text-primary)}
+.af-head{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--space-4)}
+.af-head>div{min-width:0}
+.af-head h1{margin:3px 0 5px;font-size:var(--fs-page);line-height:var(--lh-tight)}
+.af-head p{margin:0;max-width:72ch;color:var(--text-secondary);line-height:var(--lh-body)}
+.af-head .btn{flex:0 0 auto;justify-content:center;min-height:44px}
+.af-kicker{color:var(--brand-hover);font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.af-card{display:grid;gap:var(--space-3);min-width:0;margin:0;padding:var(--space-4);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);background:var(--surface-raised)}
+.af-card .field{margin-bottom:0}
+.af-step{display:flex;align-items:center;gap:9px;margin-top:var(--space-2)}
+input[type=hidden]+.af-step{margin-top:0}
+.af-step>span{display:grid;flex:0 0 auto;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--brand-strong);color:var(--text-primary);font-size:10px;font-weight:700}
+.af-step h2{margin:0;font-size:var(--fs-card)}
+.ts-row,.ap-row,.va-row,.pc-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr));gap:var(--space-3)}
+.af-card .check{display:flex;align-items:center;gap:var(--space-2);min-height:44px;color:var(--text-secondary)}
+.af-card fieldset{min-width:0;margin:0;padding:0;border:0}
+.af-card fieldset legend{margin-bottom:var(--space-1);color:var(--text-secondary);font-size:var(--fs-label)}
+.af-card details{border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:var(--surface-base)}
+.af-card details>summary{display:list-item;padding:var(--space-3);cursor:pointer;color:var(--text-secondary)}
+.af-card .field small{color:var(--text-muted);font-size:var(--fs-helper)}
+.af-card details[open]>summary{border-bottom:1px solid var(--border-subtle)}
+.af-card details>:not(summary){margin:var(--space-3)}
+.af-card details textarea{width:100%;box-sizing:border-box}
+.af-actions{display:flex;justify-content:flex-end;gap:var(--space-2);margin:var(--space-2) calc(-1 * var(--space-4)) calc(-1 * var(--space-4));padding:var(--space-3) var(--space-4);border-top:1px solid var(--border-subtle)}
+.af-actions .btn{min-height:44px;padding:0 var(--space-5);font-size:var(--fs-body)}
+.af-history h2{margin:0;font-size:var(--fs-card)}
+.af-table-wrap{overflow-x:auto}
+.af-table{width:100%;border-collapse:collapse;font-size:13px}
+.af-table th{padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-subtle);color:var(--text-muted);font-size:var(--fs-caption);font-weight:600;text-align:left;text-transform:uppercase;letter-spacing:.04em}
+.af-table td{padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--border-subtle)}
+.af-table td a{display:inline-flex;align-items:center;min-height:24px}
+.af-empty{display:grid;min-height:120px;place-items:center;align-content:center;gap:6px;padding:var(--space-4);border:1px dashed var(--border-strong);border-radius:10px;color:var(--text-muted);text-align:center}
+.af-empty strong{color:var(--text-secondary)}
+@media (max-width:560px){
+  .af-head{flex-direction:column;align-items:stretch}
+  .af-card{padding:var(--space-3)}
+  .af-actions{margin:var(--space-2) calc(-1 * var(--space-3)) calc(-1 * var(--space-3));padding:var(--space-3)}
+  .af-actions .btn{flex:1;justify-content:center}
+}

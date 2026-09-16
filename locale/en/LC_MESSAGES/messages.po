@@ -18375,3 +18375,12 @@ msgstr "Edit %(ten)s"
 
 msgid "Xác nhận xoá"
 msgstr "Confirm deletion"
+
+msgid "Kết quả sẽ hiện ở đây sau lượt đầu tiên."
+msgstr "Results will appear here after your first run."
+
+msgid "Theo tên tệp"
+msgstr "By file name"
+
+msgid "Theo nội dung"
+msgstr "By content"
