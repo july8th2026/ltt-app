@@ -1,0 +1,34 @@
+{% extends "base_public.html" %}
+{% block title %}{{ _("Tải LTTCODE") }}{% endblock %}
+{% block content %}
+<style>
+  .lc-wrap{max-width:640px;margin:0 auto;padding:16px 4px 40px;text-align:center}
+  .lc-wrap h1{margin:0 0 8px;font-size:30px;letter-spacing:-.02em}
+  .lc-lead{margin:0 0 20px;color:var(--fg-muted,#927f79);font-size:15px}
+  .lc-card{border:1px solid var(--line,#40201c);border-radius:14px;padding:20px;
+    background:var(--panel,#151111);text-align:left}
+  .lc-ver{font-size:13px;color:var(--fg-muted,#927f79)}
+  .lc-btn{display:inline-flex;margin-top:12px;padding:10px 16px;border-radius:9px;
+    background:var(--brand-primary,#ef3731);color:#fff;text-decoration:none;font-weight:600}
+  .lc-btn:hover{background:var(--brand-hover,#ff514a)}
+  .lc-sha{font-family:ui-monospace,monospace;font-size:10.5px;color:var(--fg-muted,#927f79);
+    word-break:break-all;margin-top:10px}
+  .lc-notes{white-space:pre-wrap;font-size:13.5px;margin-top:12px}
+  .lc-warn{margin-top:14px;color:#e2ae55;font-size:12.5px}
+</style>
+<div class="lc-wrap">
+  <h1>LTTCODE</h1>
+  <p class="lc-lead">{{ _("Trợ lý lập trình AI chạy trên máy tính của bạn, dùng model của LTT Studios.") }}</p>
+  <div class="lc-card">
+    {% if ban %}
+      <div class="lc-ver">{{ _("Phiên bản") }} {{ ban.version }} · Windows x64</div>
+      <a class="lc-btn" href="/lttcode/dl/{{ ban.file }}">{{ _("Tải bản cho Windows") }}</a>
+      <div class="lc-sha">SHA-256: {{ ban.sha256 }}</div>
+      {% if ban.notes %}<div class="lc-notes">{{ ban.notes }}</div>{% endif %}
+      <p class="lc-warn">{{ _("Bộ cài chưa ký số nên Windows có thể cảnh báo SmartScreen: chọn Thông tin thêm rồi Vẫn chạy.") }}</p>
+    {% else %}
+      <p>{{ _("Chưa có bản phát hành.") }}</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

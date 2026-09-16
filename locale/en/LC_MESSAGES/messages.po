@@ -18054,3 +18054,24 @@ msgstr "LTT 3.8 profile; created, or backed up before writing"
 
 msgid "profile LTT 3.5; được cài cùng lượt với LTT 3.8"
 msgstr "LTT 3.5 profile; installed in the same run as LTT 3.8"
+
+msgid "LTTCODE — tải về và cập nhật"
+msgstr "LTTCODE — download and updates"
+
+msgid "Trang tải và kênh cập nhật của ứng dụng LTTCODE cho Windows."
+msgstr "Download page and update channel for the LTTCODE Windows app."
+
+msgid "Tải LTTCODE"
+msgstr "Download LTTCODE"
+
+msgid "Trợ lý lập trình AI chạy trên máy tính của bạn, dùng model của LTT Studios."
+msgstr "An AI coding assistant that runs on your computer, powered by LTT Studios models."
+
+msgid "Tải bản cho Windows"
+msgstr "Download for Windows"
+
+msgid "Bộ cài chưa ký số nên Windows có thể cảnh báo SmartScreen: chọn Thông tin thêm rồi Vẫn chạy."
+msgstr "The installer is not code-signed yet, so Windows SmartScreen may warn you: choose More info, then Run anyway."
+
+msgid "Chưa có bản phát hành."
+msgstr "No release yet."
