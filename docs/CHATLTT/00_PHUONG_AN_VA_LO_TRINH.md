@@ -55,7 +55,7 @@ Tài liệu này là **spec + lộ trình** của chương trình. Trạng thái
 | Ràng buộc từ phiên khác | giữ nguyên chữ ký `platform_core/llm/dieu_phoi.goi(...)` (asv gọi từ `dich_thuat.py`); khai `bang_gia` trong manifest thay vì import giá; `gate.py` đếm lõi, **không** chạy `pytest -n auto` tay; `git add` tường minh, không `-A` | tin nhắn 7d/dc |
 | Dải số test của cây này | **600–699** (số cao nhất trên mọi cây: 501 → thuật toán `cay_rieng._cap_dai_so_test`) | `tools/cay_rieng.py:133-170` |
 | LibreChat pin | `v0.8.7` @ `9e74cc0e57b395926122bd4062c1fcedc48ed465`, MIT | GitHub API 02/09 |
-| Gate | `python tools/gate.py --doi` trong vòng lặp; đầy đủ **một lần** cuối phase; ghi `test-results/gates/<id>.json` | `docs/DEVELOPMENT_WORKFLOW.md` |
+| Gate | nhịp theo hợp đồng vận hành §4 (không chép lại ở đây); bản ghi `test-results/gates/<id>.json` | `docs/00_LTT_OPERATING_CONTRACT.md` |
 | Frontend test trong cây riêng | **bỏ qua** vì thiếu `node_modules`; bundle mới phải `npm ci` trong cây này | `tools/gate.py:441-449` |
 | Cổng 8100 | thuộc production; kiểm trình duyệt dev phải bind cổng khác + CSDL vứt đi | `thanh_phan.toml [tai_nguyen.cong_8100]` |
 

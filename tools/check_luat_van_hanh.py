@@ -53,7 +53,10 @@ CHO_PHEP = (
     "CLAUDE.md",
     "AGENTS.md",
     "docs/00_LTT_OPERATING_CONTRACT.md",
-    "docs/DEVELOPMENT_WORKFLOW.md",
+    # 16/09/2026: DEVELOPMENT_WORKFLOW.md thanh trang chi muc (khong dinh nghia
+    # quy trinh nua) nen ra khoi danh sach; QUY_TRINH_WORKTREE.md la chu cua
+    # thao tac gop `main` (co lenh `gate.py --doi --tu`) nen vao.
+    "docs/QUY_TRINH_WORKTREE.md",
     "docs/QUY_TAC_CHAY_LENH_NANG.md",
     "docs/16_CAP_NHAT_VA_DEPLOY.md",
     "docs/BAY_TRONG_CONG_CHAT_LUONG.md",

@@ -70,5 +70,5 @@ Tách một changeset lõi riêng và chứng nhận riêng nó theo `NORMAL` (�
 *Ngoại lệ lõi*). Không dùng nó làm cớ quay về chạy gate sau mỗi lần sửa.
 
 **Bật được ở cây chính không?**
-Không. Công cụ từ chối ở cây chính, ở `master`, ở trunk và ở nhánh phát hành.
+Không. Công cụ từ chối ở cây chính, ở trunk (`main`) và ở nhánh phát hành.
 Đó là chốt cơ học, không phải lời khuyên.

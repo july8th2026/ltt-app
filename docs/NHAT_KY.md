@@ -12,6 +12,31 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-16 — Chuẩn hoá toàn bộ luật vận hành: mỗi chủ đề MỘT tệp chủ
+
+- Audit (3 agent đọc song song + phiên chính): `AGENTS.md` ~30% luật / ~45% chuyện
+  kể, ~⅓ luật trùng hợp đồng, ~10 luật cũ/mâu thuẫn; 8 tài liệu quy trình có 7 mâu
+  thuẫn nghiêm trọng (nặng nhất: ai gộp `main` — `QUY_TRINH_WORKTREE` nói chỉ
+  integrator, `16_CAP` hướng dẫn phiên tự merge/ff/push); 5 bộ kiểm khác nhau trước
+  lệnh nặng; số lõi chép tay lệch mã (`TRAN_WORKER_BO_TEST`, `LOI_DE_DANH_VAT_LY`);
+  173 memory với ~29 tệp là luật quy trình, 31 tệp mồ côi, 6 liên kết hỏng, và
+  **một mật khẩu admin dạng rõ** (đã gỡ — nên đổi mật khẩu).
+- Chủ sản phẩm chốt: (1) **chính phiên tự gộp `main` và deploy** sau L3 xanh, không
+  còn vai integrator; (2) trước lệnh nặng đúng hai lệnh `cua_so_yen` + `tai_may`;
+  (3) dọn mạnh nhưng **lưu trữ**, không xoá.
+- Kết quả: hợp đồng 564 → ~370 dòng, có bảng "mỗi chủ đề một chủ" ở đầu;
+  `CLAUDE.md` 234 → ~100 (bản đồ + 10 luật chết người); `AGENTS.md` 1.019 → 471
+  (chỉ kỹ thuật; chuyện kể chuyển nguyên văn vào phụ lục `BAY_TRONG`);
+  `QUY_TRINH_WORKTREE` (tạo → gộp `main` tự làm → gỡ), `QUY_TAC_CHAY_LENH_NANG`
+  (một bộ kiểm, không chép số), `16_CAP_NHAT_VA_DEPLOY` (deploy từ ghế phiên, bỏ
+  "chủ dự án bấm UAC", bỏ nợ D2 đã sửa, bỏ trạng thái máy B chép tay) viết lại;
+  `DEVELOPMENT_WORKFLOW` thành trang chỉ mục; 7 báo cáo 08/09 và bản trước của 5
+  tệp lõi chuyển `docs/_luutru/`. `test_974` cập nhật theo quyết định (1).
+  `check_luat_van_hanh` bỏ `DEVELOPMENT_WORKFLOW`, thêm `QUY_TRINH_WORKTREE` vào
+  danh sách chủ.
+- Lớp phủ cho cây chưa gộp `main`: `~/.claude/CLAUDE.md` (132 → 57 dòng, bỏ bảng
+  `-n 14`/`findstr`/mục ASV đã cũ) và `~/.codex/AGENTS.md` mang cùng sáu điều.
+
 ## 2026-09-16 — Một luật gate duy nhất: test nhắm trong phiên, L3 một lần cuối
 
 - Đo 133 bản ghi `test-results/gates/*.json` (04/09 → 15/09): 114 lượt L3, trung

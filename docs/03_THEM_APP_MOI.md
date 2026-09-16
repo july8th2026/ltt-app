@@ -8,16 +8,12 @@ hợp đồng, đừng đi vòng, vì đi vòng một lần là app sau lại ph
 
 ---
 
-## Ba file cần tạo
+## Các tệp cần tạo
 
-```
-apps/<slug>/
-├── __init__.py      (rỗng)
-├── manifest.py      ★ bản khai — nền tảng đọc file này
-├── routes.py        giao diện (bỏ qua nếu app chỉ chạy job nền)
-├── jobs.py          phần xử lý thật
-└── templates/       (tuỳ chọn) template RIÊNG của app — extends "base.html"
-```
+Bố cục trong một app (`manifest.py` · `routes.py` · `jobs.py` · `services/` hay
+`features.py` · `cost.py` · `tables.py`) — **nguồn chân lý là `AGENTS.md` §8.1**,
+kèm ngưỡng máy kiểm ở §8.2. Tệp này không chép lại danh sách đó; các mục 1–3 bên
+dưới chỉ hướng dẫn cách viết `manifest.py`, `jobs.py`, `routes.py`.
 
 **Template của app (bổ sung hợp đồng từ H5):** đặt `.html` trong
 `apps/<slug>/templates/`. Jinja tìm ở cả `server/templates/` LẪN
@@ -237,10 +233,16 @@ Mọi route hiển thị dữ liệu **phải có `Depends(require_login)`**.
 
 ## 4. Kiểm tra
 
+Trong phiên chỉ **test nhắm** của app (hợp đồng §4.1) — đừng chạy cả bộ:
+
 ```powershell
-python -m pytest tests/test_60_app_registry.py -q   # vong lap ngan
-python tools	est_nhanh.py                          # toan bo, ~4 phut
+python tools\thanh_phan.py --test app:<slug>     # tệp test của app
+python -m pytest tests\test_60_app_registry.py <các tệp vừa in ra> -q
 ```
+
+Từ 3 tệp test trở lên: `python tools\cua_so_yen.py trang-thai` trước (hợp đồng
+§4.8). L3 `python tools\gate.py` chạy **một lần** khi mọi pha xong — nhịp đầy đủ
+ở `docs/00_LTT_OPERATING_CONTRACT.md` §4.
 
 `test_60` tự bắt các lỗi hay gặp:
 

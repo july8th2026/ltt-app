@@ -7,13 +7,17 @@ Mở Claude Code **ngay tại thư mục chứa mã nguồn** — trên máy ph�
 `d:\LTTSTUDIOSAPP`, trên máy chủ là chỗ bạn vừa chép sang. Claude đọc
 `CLAUDE.md` ở gốc để biết đang ở máy nào và phải làm gì.
 
+⚠️ Các mẫu dưới đây **không định nghĩa quy trình** — nhịp test/gate, commit, gộp
+`main`, deploy nằm ở `docs/00_LTT_OPERATING_CONTRACT.md`. Mẫu nào nói khác hợp
+đồng thì hợp đồng đúng.
+
 ---
 
 ## Mở đầu phiên làm việc
 
 ```
-Đọc docs/QUYET_DINH_NEN_TANG.md, docs/KE_HOACH_TRIEN_KHAI.md và docs/NHAT_KY.md.
-Chạy python tools	est_nhanh.py để biết trạng thái hiện tại.
+Đọc CLAUDE.md, docs/QUYET_DINH_NEN_TANG.md, docs/KE_HOACH_TRIEN_KHAI.md và docs/NHAT_KY.md.
+Chạy python tools\ho_so_cay.py trang-thai để biết cây này đang ở đâu.
 Tóm tắt: đang ở đâu, còn gì dở, việc tiếp theo nên làm là gì.
 ```
 
@@ -32,7 +36,8 @@ Làm theo docs/03_THEM_APP_MOI.md. Không sửa file nào trong platform_core/
 hay server/ — nếu buộc phải sửa thì dừng lại và giải thích vì sao, vì đó là
 dấu hiệu hợp đồng app còn thiếu.
 
-Xong thì chạy pytest và cho tôi xem app mới đã hiện trên trang chủ.
+Trong phiên chỉ chạy test nhắm của app; L3 một lần khi mọi pha xong (hợp đồng §4).
+Xong thì cho tôi xem app mới đã hiện trên trang chủ.
 ```
 
 Câu **"không sửa platform_core/ hay server/"** là quan trọng nhất. Nó biến
@@ -40,17 +45,17 @@ hợp đồng app thành thứ được kiểm chứng thật, thay vì chỉ l�
 
 ---
 
-## Nghiệm thu hạ tầng sau khi sửa
+## Nghiệm thu hạ tầng
 
 ```
-Chạy nghiệm thu hạ tầng (⚠️ app `demo` đã gỡ 2026-08-25 — dùng một app thật và
-chấp nhận nó tiêu credit, hoặc chạy `pytest tests/test_67 tests/test_68` là bộ
-kiểm cùng chuỗi mà không tốn gì):
-1. python tools\gate.py  → phải xanh hết
+Nghiệm thu hạ tầng (app `demo` đã gỡ 2026-08-25 — dùng một app thật và chấp
+nhận nó tiêu credit, hoặc dùng test nhắm ở bước 1 là bộ kiểm cùng chuỗi mà
+không tốn gì):
+1. python -m pytest tests/test_67_hang_doi_job.py tests/test_68_credit.py -q  → phải xanh
 2. python tools/scan_source_secrets.py  → phải 0 finding
 3. chạy uvicorn cục bộ, mở /, xác nhận trang chủ liệt kê đủ app
 4. mở một app bất kỳ, chạy một job, xác nhận có kết quả và có số credit
-Báo lại từng bước kèm kết quả thật.
+Báo lại từng bước kèm kết quả thật. Gate L3 theo hợp đồng §4, không chạy thêm ở đây.
 ```
 
 ---
@@ -74,10 +79,10 @@ Báo lại kết quả từng bước.
 ## Cập nhật code lên máy chủ
 
 ```
-Cập nhật máy chủ theo docs/01_COPY_LEN_SERVER.md phần 2.
-Chạy lại setup/2-cai-dat.ps1 rồi setup/4-nghiem-thu.ps1.
-Sau đó mở https://app.lttstudios.com kiểm tra thật từng trang và báo lại
-nội dung đọc được. Không chỉ dựa vào health check.
+Deploy theo docs/16_CAP_NHAT_VA_DEPLOY.md (có L3 xanh trên đúng SHA deploy,
+báo phiên khác trước khi chép cây).
+Sau đó chạy setup/4-nghiem-thu.ps1, mở https://app.lttstudios.com kiểm tra thật
+từng trang và báo lại nội dung đọc được. Không chỉ dựa vào health check.
 ```
 
 ---
@@ -86,8 +91,9 @@ nội dung đọc được. Không chỉ dựa vào health check.
 
 ```
 https://app.lttstudios.com đang <mô tả triệu chứng>.
-Vào VPS xem log dịch vụ và log Caddy, tìm nguyên nhân thật.
-Nếu do bản cập nhật vừa rồi thì rollback trước, rồi mới tìm hiểu.
+Trên máy A (máy chủ), xem log dịch vụ ở C:\LTTPlatform\logs và trạng thái
+Cloudflare Tunnel (docs/04_CLOUDFLARE_TUNNEL.md mục "Khi có sự cố"), tìm nguyên
+nhân thật. Nếu do bản cập nhật vừa rồi thì rollback trước, rồi mới tìm hiểu.
 Đừng đoán — lấy bằng chứng từ log.
 ```
 
@@ -109,9 +115,8 @@ Báo cáo từng mục kèm file:dòng, và mức nghiêm trọng. Chưa sửa v
 ## Bàn giao cuối phiên
 
 ```
-Cập nhật docs/_luutru/PROJECT_MEMORY.md theo mẫu ở cuối file đó:
-đã làm gì, lệnh test nào chạy và kết quả thật, quyết định gì và vì sao,
-còn tồn đọng gì, việc tiếp theo.
+Cập nhật docs/NHAT_KY.md: đã làm gì, lệnh test nào chạy và kết quả thật,
+quyết định gì và vì sao, còn tồn đọng gì, việc tiếp theo.
 ```
 
 ---
@@ -119,9 +124,10 @@ còn tồn đọng gì, việc tiếp theo.
 ## Cách viết lệnh cho hiệu quả
 
 **Nên:**
-- Nói rõ **nghiệm thu bằng gì** ("chạy pytest", "mở trình duyệt xem thật")
+- Nói rõ **nghiệm thu bằng gì** ("test nhắm của app", "mở trình duyệt xem thật")
 - Nêu **ràng buộc** ("không sửa platform_core/")
-- Yêu cầu **dừng lại và hỏi** khi phải phá ràng buộc
+- Yêu cầu **dừng lại và giải thích** khi buộc phải sửa `platform_core/` hay
+  `server/` để thêm app — ngoài ca đó, Claude tự làm tiếp theo hợp đồng §10b
 
 **Không nên:**
 - "làm cho nó chạy" — không có tiêu chí nào để biết đã xong
@@ -132,5 +138,5 @@ còn tồn đọng gì, việc tiếp theo.
 
 ```
 Nếu phát hiện tôi hiểu sai điều gì, hoặc cách làm này có vấn đề, hãy nói
-thẳng trước khi làm.
+thẳng trong báo cáo và làm theo cách đúng — không dừng lại chờ tôi.
 ```
