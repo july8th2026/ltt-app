@@ -1,8 +1,8 @@
 {% extends "base_plain.html" %}
-{% block title %}Đăng nhập — LTT AI Studio{% endblock %}
+{% block title %}{{ _("Đăng nhập") }} — LTT AI Studio{% endblock %}
 {% block content %}
-  {% set auth_title = 'Đăng nhập LTT AI Studio' %}
-  {% set auth_subtitle = 'Một tài khoản cho toàn bộ công cụ AI và lịch sử công việc của bạn.' %}
+  {% set auth_title = _('Đăng nhập LTT AI Studio') %}
+  {% set auth_subtitle = _('Một tài khoản cho toàn bộ công cụ AI và lịch sử công việc của bạn.') %}
   {% include "_auth_brand.html" %}
   <div class="card">
     {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
@@ -22,8 +22,8 @@
       <button type="submit">{{ _("Đăng nhập") }}</button>
     </form>
     <p class="hint">
-      <a href="/register">{{ _("Tạo tài khoản") }}</a><span class="auth-sep">·</span>
-      <a href="/forgot-password">{{ _("Quên mật khẩu?") }}</a>
+      <a href="{{ u('/register') }}">{{ _("Tạo tài khoản") }}</a><span class="auth-sep">·</span>
+      <a href="{{ u('/forgot-password') }}">{{ _("Quên mật khẩu?") }}</a>
     </p>
   </div>
 {% endblock %}

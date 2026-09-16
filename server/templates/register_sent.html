@@ -1,13 +1,11 @@
 {% extends "base_plain.html" %}
-{% block title %}Kiểm tra email — LTT AI Studio{% endblock %}
+{% block title %}{{ _("Kiểm tra email") }} — LTT AI Studio{% endblock %}
 {% block content %}
-  {% set auth_title = 'Kiểm tra email của bạn' %}
-  {% set auth_subtitle = 'Hoàn tất xác thực để bảo vệ tài khoản trước khi đăng nhập.' %}
+  {% set auth_title = _('Kiểm tra email của bạn') %}
+  {% set auth_subtitle = _('Hoàn tất xác thực để bảo vệ tài khoản trước khi đăng nhập.') %}
   {% include "_auth_brand.html" %}
   <div class="card">
-    <p class="auth-state success" role="status">{{ _("Nếu") }} <strong>{{ email }}</strong> chưa được đăng ký, chúng tôi vừa gửi một
-       email xác thực tới đó. Mở email và bấm liên kết để kích hoạt tài khoản
-       (liên kết hết hạn sau 24 giờ).</p>
-    <p class="hint"><a href="/login">{{ _("Về trang đăng nhập") }}</a></p>
+    <p class="auth-state success" role="status">{{ _("Nếu %(email)s chưa được đăng ký, chúng tôi vừa gửi một email xác thực tới đó. Mở email và bấm liên kết để kích hoạt tài khoản (liên kết hết hạn sau 24 giờ).", email="<strong>"|safe ~ email ~ "</strong>"|safe) }}</p>
+    <p class="hint"><a href="{{ u('/login') }}">{{ _("Về trang đăng nhập") }}</a></p>
   </div>
 {% endblock %}

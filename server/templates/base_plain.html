@@ -11,7 +11,7 @@
     body {
       font-family:var(--font); margin:0; color:var(--fg); font-size:14px;
       min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
-      background:radial-gradient(720px 380px at 50% -12%, #4b1512, transparent 60%), var(--bg);
+      background:radial-gradient(720px 380px at 50% -12%, var(--brand-soft), transparent 60%), var(--bg);
     }
     .box { width:100%; max-width:420px; }
     .auth-home{display:grid;width:52px;height:52px;margin:0 auto 14px;place-items:center;
@@ -33,11 +33,14 @@
     input::placeholder{color:var(--dim)}
     input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--focus-shadow)}
     button {
-      min-height:44px;padding:10px;border-radius:var(--radius-sm);border:1px solid var(--brand-hover);
-      background:linear-gradient(180deg,var(--accent),var(--brand-strong));
+      min-height:44px;padding:10px;border-radius:var(--radius-sm);border:1px solid transparent;
+      /* Golden UI: nen phang `--brand-fill` (chu trang 4.84:1). Gradient cu tu
+         #ef3731 xuong: phan tren chi 3.99:1, va axe KHONG do duoc gradient nen
+         loi nay lot qua moi luot quet. */
+      background:var(--brand-fill);
       color:#fff;cursor:pointer;font-size:14px;font-weight:700;font-family:inherit;
     }
-    button:hover { filter:brightness(1.12); }
+    button:hover { background:var(--brand-fill-hover); }
     .error,.auth-state{padding:10px 12px;border:1px solid var(--err-line);border-radius:var(--radius-sm);
       background:var(--err-bg);color:var(--err);font-size:13px;line-height:1.5;margin:0 0 12px}
     .auth-state.success{border-color:var(--ok-line);background:var(--ok-bg);color:var(--ok)}

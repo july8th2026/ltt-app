@@ -208,3 +208,40 @@ def test_billing_giu_nguyen_form_va_hx_cua_thanh_toan():
 
 def test_tablewrap_dinh_vi_de_sr_only_khong_keo_rong_trang():
     assert re.search(r"\n\.tablewrap\{position:relative;", CSS)
+
+
+# ── 6. Auth: chuỗi qua _(), link giữ ngôn ngữ, nút đạt AA ────────────────────
+
+AUTH = ("login.html", "register.html", "register_sent.html", "forgot_password.html",
+        "reset_password.html", "verify_result.html")
+
+
+@pytest.mark.parametrize("ten", AUTH)
+def test_auth_tieu_de_va_link_theo_ngon_ngu(ten):
+    html = (GOC / "server" / "templates" / ten).read_text(encoding="utf-8")
+    # `{% set auth_title = 'Chuỗi' %}` không qua _() ⇒ /en/login hiện tiếng Việt.
+    assert not re.search(r"set auth_(title|subtitle) = '", html), ten
+    assert not re.search(r"\{% block title %\}[^{]", html), ten
+    # href="/login" viết thẳng ⇒ người dùng bản EN bị đưa về bản VI.
+    assert not re.search(r'href="/(login|register|forgot-password)"', html), ten
+
+
+def test_auth_nut_nen_phang_brand_fill():
+    plain = (GOC / "server" / "templates" / "base_plain.html").read_text(encoding="utf-8")
+    assert "background:var(--brand-fill);" in plain
+    assert "linear-gradient(180deg,var(--accent)" not in plain
+    assert "#4b1512" not in plain
+
+
+def test_register_sent_van_escape_email():
+    from starlette.requests import Request
+
+    from server.templating import templates
+
+    scope = {"type": "http", "method": "GET", "path": "/register", "raw_path": b"/register",
+             "query_string": b"", "headers": [], "scheme": "https",
+             "server": ("t", 443), "client": ("1", 1), "root_path": "", "session": {}}
+    html = templates.get_template("register_sent.html").render(
+        request=Request(scope), email="<script>x</script>@a.b")
+    assert "<script>x" not in html
+    assert "<strong>&lt;script&gt;x&lt;/script&gt;@a.b</strong>" in html

@@ -16571,3 +16571,48 @@ msgstr "Actions"
 
 msgid "Đơn nạp #%(ma)s"
 msgstr "Top-up order #%(ma)s"
+
+msgid "Đăng nhập LTT AI Studio"
+msgstr "Sign in to LTT AI Studio"
+
+msgid "Một tài khoản cho toàn bộ công cụ AI và lịch sử công việc của bạn."
+msgstr "One account for every AI tool and your whole job history."
+
+msgid "Bắt đầu bảo mật; chi phí luôn được báo trước mỗi tác vụ."
+msgstr "Start securely; the cost is always shown before each task."
+
+msgid "Kiểm tra email"
+msgstr "Check your email"
+
+msgid "Kiểm tra email của bạn"
+msgstr "Check your email"
+
+msgid "Hoàn tất xác thực để bảo vệ tài khoản trước khi đăng nhập."
+msgstr "Finish verification to protect your account before signing in."
+
+msgid "Nếu %(email)s chưa được đăng ký, chúng tôi vừa gửi một email xác thực tới đó. Mở email và bấm liên kết để kích hoạt tài khoản (liên kết hết hạn sau 24 giờ)."
+msgstr "If %(email)s isn't registered yet, we've just sent a verification email there. Open it and click the link to activate your account (the link expires in 24 hours)."
+
+msgid "Quên mật khẩu"
+msgstr "Forgot password"
+
+msgid "Nhập email đăng ký; chúng tôi sẽ gửi liên kết nếu tài khoản tồn tại."
+msgstr "Enter your account email; we'll send a link if the account exists."
+
+msgid "Nếu email đó có trong hệ thống, chúng tôi vừa gửi một liên kết đặt lại mật khẩu. Liên kết hết hạn sau 1 giờ."
+msgstr "If that email is in our system, we've just sent a password reset link. The link expires in 1 hour."
+
+msgid "Đặt lại mật khẩu"
+msgstr "Reset password"
+
+msgid "Liên kết chỉ dùng một lần và sẽ hết hạn để bảo vệ tài khoản."
+msgstr "The link works once and expires to protect your account."
+
+msgid "Liên kết đặt lại không hợp lệ hoặc đã hết hạn."
+msgstr "This reset link is invalid or has expired."
+
+msgid "Xác thực email"
+msgstr "Email verification"
+
+msgid "Trạng thái kích hoạt tài khoản LTT AI Studio."
+msgstr "Your LTT AI Studio account activation status."
