@@ -95,12 +95,12 @@ Nguồn luật: `docs/00_LTT_OPERATING_CONTRACT.md` §4, §7–§10b (bản `6a2
 | # | Nợ | Bị chặn bởi | Làm khi | Ghi chú |
 |---|---|---|---|---|
 | N1 | **Phán quyết gate** trên nhánh — nhịp theo `docs/00_LTT_OPERATING_CONTRACT.md` §4 | — | **ĐÃ GIẢI 16/09** | L3 `180bc8fc` đỏ 2/33 bước: luật vận hành + 5 test (394, 1006, 1259, 1260, 975). Sửa `71dee01c`; chạy lại ĐÚNG từng phép đỏ: `check_luat_van_hanh` PASS · test_1006 18 passed · test_394 PASS · test_975 2 passed · test_1260 13 passed · test_1259 4 passed (token máy B, chủ dự án cho phép). Lượt `--doi --tu` tự nâng lên đầy đủ (lần 1 kẹt `-n 1` vì máy bận lúc khởi động) — **chủ dự án chốt: các phép đỏ xanh là PASS, không chạy full lại** | lượt chờ trên `174d045f` đã huỷ trước khi chạy — KHÔNG tính là L3 |
-| N2 | **Gộp `main`** (`merge --ff-only` ở cây chính) | cây chính `D:\LTTSTUDIOSAPP` có sửa dở chưa commit: `docs/KE_HOACH_TRIEN_KHAI.md`, `docs/QUYET_DINH_NEN_TANG.md` (trùng tệp nhánh đổi), `docs/LTTCODE/PLAN_TRIEN_KHAI.md`, `docs/LTT_CMC/*`, `?? .codex/worktrees/` — đã nhắn phiên LTTCODE (tin chờ người dùng bên đó duyệt) | chủ các tệp commit/dời đi | ⛔ không stash/checkout/xoá |
-| N3 | **Deploy** + bật `LTT_STORAGE_LOCAL_PREFIXES=voice/` + pools `api:6, gpu+ffmpeg:1, voice:1` | N1, N2; báo phiên VPS (VM 204) | sau N2 | quy trình P8 |
-| N4 | **Dựng lại 25 giọng + duyệt license** (P9) | N3 (cần `voice/` trên đĩa ở production) | sau N3 | `dung_lai_giong_kho_chung --chay` rồi `soat_giong duyet` |
-| N5 | **E2E URL công khai** 2 tài khoản (P10) | N3–N4 | sau N4 | phần dev XONG 16/09 (`GUI_BROWSER_ACCEPTANCE.md` §A; bắt thêm lỗi nút Chi tiết có sẵn trên `main`, sửa `0821cd52`); còn §B |
+| N2 | **Gộp `main`** | — | **ĐÃ GIẢI 16/09** | chủ dự án cho phép không chờ phiên khác; `merge --ff-only` → `main` = `d5bd7b07`, đã đẩy GitHub; báo phiên VPS hoà `main` trước khi đẩy tiếp |
+| N3 | **Deploy** | — | **ĐÃ GIẢI 16/09 22:47** | 0 job/lease trước cài; chép 30 tệp `voice/` R2→đĩa (R2 không xoá); `app.env` += `LTT_STORAGE_LOCAL_PREFIXES=voice/`, pools `api:6, gpu+ffmpeg:1, voice:1` (bản sao `app.env.bak-voice-v2-20260916`); `nghiem_thu_deploy` 0 lệch/thiếu/thừa; `/health/ready` 200 loopback + công khai; worker `['api']x6, ['api','ffmpeg','gpu']x1, ['api','voice']x1`; `get_storage` = `RoutedStorage(voice/→Local, còn lại→R2)` |
+| N4 | **Dựng lại 25 giọng + duyệt license** | — | **ĐÃ GIẢI 16/09** | 25/25 khớp SHA → 25 job enroll `done`, 25/25 `active` + tệp repr trên đĩa; `soat_giong duyet` 25/25 → `license=ok`. Tài khoản chủ `.local` thiếu credit ⇒ `credit.cap_tay` +24 (bút toán `grant`, ghi lý do); lượt chạy lại nộp trùng 1 job (dedupe chỉ khớp job chưa kết thúc) ⇒ huỷ + `hoan` 2 credit; giọng cuối nộp riêng |
+| N5 | **E2E URL công khai** | đăng nhập tài khoản chủ `.local` cần mật khẩu | **PHẦN LỚN XONG** | tài khoản thường: 7/7 PASS (`GUI_BROWSER_ACCEPTANCE.md` §B); góc nhìn chủ giọng trên production **chưa kiểm** |
 | N6 | Release VPS nào gộp cuối (r3 đã gộp; r4 `f6d5a370` chưa được VPS xác nhận) | — | **ĐÃ GIẢI 16/09** | phiên VPS còn đang gộp G3 (chờ khoá) ⇒ r4 chưa phải bản cuối. Không chờ: nhánh hoà `origin/main` `40ac2848` trước L3; VPS lên `main` sau L3 thì hoà + `gate.py --doi --tu <sha L3>` (luật §5) |
-| N7 | `GUI_FINAL_REPORT.md` + điểm §32 (P11) | N5 | cuối | |
+| N7 | `GUI_FINAL_REPORT.md` | — | **ĐÃ GIẢI 16/09** | |
 
 ## F. PLAN V2
 

@@ -5,7 +5,7 @@ Biên bản kiểm trên **trình duyệt render thật**. Hai phần, hai mức
 | Phần | Máy chủ | Mức bằng chứng | Trạng thái |
 |---|---|---|---|
 | A. Dev | `tools/studio_dev.py --cong 8127` (SQLite tạm, không model, nhánh `phien/ltt-voice-gui-v2`) | code nhánh chạy thật trong trình duyệt; dữ liệu seed | **Đã làm** |
-| B. Production | `https://app.lttstudios.com` (qua Cloudflare), 2 tài khoản | code đã deploy, dữ liệu thật, worker thật | **NỢ N5** — chờ deploy (N3) |
+| B. Production | `https://app.lttstudios.com` (qua Cloudflare) | code đã deploy `d5bd7b07`, dữ liệu thật, worker thật | **Đã làm** với tài khoản thường; góc nhìn chủ giọng chưa kiểm |
 
 ⛔ Phần A **không** chứng minh được gì về Cloudflare (cache, CSP biên), worker, R2
 hay 25 giọng thật. Mọi dòng A ghi `PROVEN (dev)`, không phải `PROVEN`.
@@ -46,12 +46,22 @@ kiểm mở để đặt cookie — không phải route của app.
 - D005 giả lập đúng MỘT phản hồi (`/tao`) vì dev không có worker; đường worker thật đã
   PROVEN riêng ở G01 (Chrome thật, production, 16/09 16:37).
 
-## B. Production — NỢ N5
+## B. Production — 16/09/2026 23:2x (sau deploy `d5bd7b07`)
 
-Làm sau deploy (N3) và dựng lại 25 giọng (N4), trên `https://app.lttstudios.com`:
+**Công cụ:** `playwright-cli` phiên Chrome `voice` (hồ sơ riêng, chủ dự án tự đăng nhập từ lượt G01 — không gõ mật khẩu).
+**URL:** `https://app.lttstudios.com` (qua Cloudflare). **Tài khoản:** thường (không admin, ~6.767 credit).
 
-1. Tài khoản thường (không admin): Kho chung ≥ 25, khung chi tiết không Tắt/Xoá.
-2. Tài khoản admin/chủ 25 giọng: 25 giọng hiện "Của tôi", có khối quản lý.
-3. Studio: tạo một lượt giọng kho chung → done, WAV/MP3 tải được; thanh kéo 1,25 gửi đúng.
-4. Nghe ngay khai EN + giọng VI → chặn trước credit.
-5. Console + network sạch; cache-bust `?v=` đổi so với bản cũ.
+| # | Kiểm | Kết quả |
+|---|---|---|
+| 1 | Cache-bust | `ltt.css` + `voice.js` đều `?v=aa4194b6` (= `asset_ver` của `/health/version` mới) ✅ |
+| 2 | V01 số đếm màn Giọng | Tất cả **45** = Mẫu **20** + Kho chung **25** + Của tôi **0** ✅ (trước deploy: Kho chung 0) |
+| 3 | V06 chi tiết giọng kho chung ("Duy Khang") | nhãn "Kho chung"; khối quản lý ẩn (không Tắt/Xoá/clip); HTML không có `voice/<uuid>/` ✅ |
+| 4 | D004 lọc "Nam" | câu *"giữ 25 giọng chưa có nhãn giới tính, vùng miền hay phong cách…"*; 0 thẻ nữ ✅ |
+| 5 | Studio tạo thật bằng giọng kho chung, thanh kéo bàn phím 1,0 → **1,25** | request `/tao` gửi `toc_do=1.25` + `voice_id=vc_8dc2…`; kết quả sau **11 s**; WAV `200 audio/wav` 434.766 B; MP3 `200 audio/mpeg` 110.060 B; job `a4052648…` ✅ |
+| 6 | Nghe ngay khai `ngon_ngu=en` + giọng VI | **400** `voice_language_mismatch`, câu tiếng Việt đã dịch — chặn trước credit ✅ |
+| 7 | Console / network | 0 lỗi ngoài đúng phản hồi 400 cố ý ở #6; 0 request hỏng khác ✅ |
+
+**Chưa kiểm trên production:** góc nhìn **chủ 25 giọng** (`thu.giongnoi@lttstudios.local` — thấy "Giọng
+của tôi" + khối quản lý). Đăng nhập tài khoản đó cần mật khẩu; công cụ `tai_khoan_thu.py` chỉ đặt lại
+mật khẩu, không tạo phiên, và phiên kiểm không gõ mật khẩu. Hành vi này đã PROVEN trên dev (§A, Playwright)
++ test_532. ⇒ `NOT TESTED (production)`, không đánh dấu PASS.

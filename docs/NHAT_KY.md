@@ -65,8 +65,16 @@
   trên `main`**: nút "Chi tiết" trên thẻ giọng bấm chuột không mở gì (`<button>` bên
   trong thẻ bị `BEN_TRONG` nuốt) — sửa `0821cd52`. ⚠️ Phím Enter của Browser pane không
   kích hoạt `<button>` (giới hạn công cụ) — kiểm bàn phím bằng Playwright.
-- **Chưa làm (sau L3):** gộp `main`, deploy, bật `voice/` trên đĩa + pools
-  `gpu+ffmpeg:1`, dựng lại + duyệt license 25 giọng, E2E URL công khai.
+- **Đã lên production 22:47 (`d5bd7b07`):** gộp `main` + đẩy GitHub; `voice/` về đĩa
+  (chép 30 tệp R2, không xoá R2) + pools `gpu+ffmpeg:1`; dựng lại 25 giọng kho chung
+  (25 enroll `done`) + duyệt license 25/25; E2E tài khoản thường 7/7 PASS. Báo cáo:
+  `docs/LTT_VOICE/GUI_FINAL_REPORT.md`.
+- ⚠️ `dung_lai_giong_kho_chung --chay` chạy lại **nộp trùng** giọng đã `done` — dedupe
+  của `submit_with_credit` chỉ khớp job chưa kết thúc (đã huỷ + hoàn 1 job trùng).
+- ⚠️ Lượt `gate --doi` kẹt `-n 1`: số worker chốt MỘT lần lúc khởi động theo tải lúc đó
+  (phiên khác đang giữ máy) và không tăng lại — thấy chậm bất thường thì kiểm dòng
+  `test_nhanh.py -n N` trước khi chờ.
+- **Chưa kiểm trên production:** góc nhìn chủ 25 giọng (tài khoản `.local` cần đăng nhập).
 
 ## 2026-09-16 — LTT VOICE: clip gốc 25 giọng kho chung KHÔNG mất — đã lưu bản bền
 
