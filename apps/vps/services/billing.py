@@ -241,8 +241,9 @@ def mo_lai_may_treo(db: DbSession, *, now: datetime | None = None) -> int:
         trang_thai_may.dat(may, vong_doi=trang_thai_may.HOAT_DONG,
                            dien_mong_muon=trang_thai_may.TAT,
                            dien_quan_sat=trang_thai_may.KHONG_RO, ly_do="")
+        han_moi = may.paid_until        # vừa được `thu_mot_chu_ky` đặt
         ghi_su_kien(db, may.id, "go_treo", boi="he_thong",
-                    den=may.paid_until.isoformat())
+                    den=han_moi.isoformat() if han_moi is not None else "")
         db.commit()
         da_mo += 1
     return da_mo

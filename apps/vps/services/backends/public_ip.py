@@ -125,7 +125,9 @@ class OvhStaticIpPoolBackend:
                 pass
             else:
                 self.auto_acquire = True
-                self._accepted_contracts = tuple(contracts)
+                # `contracts_valid` already proved a non-empty list; `or ()` only
+                # tells the type checker what the guard above established.
+                self._accepted_contracts = tuple(contracts or ())
 
     def reserve(self, *, reservation_key: str, label: str) -> PublicIpResource:
         if not reservation_key:
