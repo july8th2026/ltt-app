@@ -211,7 +211,7 @@ def test_o_job_dem_dung_job_cua_API_va_dich_khop_con_so(api):
     # Fixture co dung MOT job API o trang thai error. Job cua giao dien web
     # khong duoc dem vao o nay.
     khoi = than[than.index("Job API hỏng"):][:400]
-    so = re.search(r'font-weight:700[^>]*>(\d+)<', khoi)
+    so = re.search(r'class="tnum adm-o-so"[^>]*>(\d+)<', khoi)
     assert so and so.group(1) == "1", khoi[:200]
 
     # Va dich phai ra dung mot dong.
