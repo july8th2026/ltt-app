@@ -24,19 +24,46 @@
   <link rel="icon" href="{{ admin.favicon_url }}">
   {% endif %}
   <style>
-    :root{--tblr-primary:#ef3731;--tblr-primary-rgb:239,55,49;--tblr-body-bg:#08090a;
-      --tblr-bg-surface:#151111;--tblr-border-color:#382422;--tblr-link-color:#ff746d}
-    body.theme-dark{--tblr-body-bg:#08090a;--tblr-bg-surface:#151111;
-      --tblr-bg-surface-secondary:#0d0a0a;background:var(--surface-canvas);color:var(--text-primary)}
+    /* Golden UI DL-004: bien Tabler tro ve token Golden (khong hex rieng). */
+    :root,body.theme-dark{--tblr-primary:var(--brand-fill);--tblr-primary-rgb:225,24,17;
+      --tblr-body-bg:var(--surface-canvas);--tblr-bg-surface:var(--surface-raised);
+      --tblr-bg-surface-secondary:var(--surface-base);--tblr-bg-surface-tertiary:var(--surface-overlay);
+      --tblr-border-color:var(--border-subtle);--tblr-link-color:var(--focus-ring);
+      --tblr-body-color:var(--text-primary);--tblr-secondary-color:var(--text-muted);--tblr-muted:var(--text-muted);
+      --tblr-font-sans-serif:var(--font);--tblr-body-font-family:var(--font);
+      --tblr-form-check-bg:var(--surface-overlay);--tblr-border-color-translucent:var(--border-strong)}
+    body.theme-dark{background:var(--surface-canvas);color:var(--text-primary);font-family:var(--font)}
     a{color:var(--brand-hover)}
-    .btn-primary{--tblr-btn-bg:#ef3731;--tblr-btn-border-color:#ef3731;
-      --tblr-btn-hover-bg:#ff514a;--tblr-btn-hover-border-color:#ff514a}
+    .btn-primary{--tblr-btn-bg:var(--brand-fill);--tblr-btn-border-color:var(--brand-fill);--tblr-btn-color:#fff;
+      --tblr-btn-hover-bg:var(--brand-fill-hover);--tblr-btn-hover-border-color:var(--brand-fill-hover);--tblr-btn-hover-color:#fff}
+    .text-muted,.page-pretitle{color:var(--text-muted)!important}
+    .navbar-vertical{background:var(--surface-base)!important;border-right:1px solid var(--border-subtle)}
+    .navbar-vertical .nav-link{color:var(--text-secondary)}
+    .navbar-vertical .nav-link.active,.navbar-vertical .nav-link:hover{color:var(--text-primary);background:var(--brand-soft)}
+    .page-item.disabled .page-link{color:var(--text-muted);background:transparent}
+    .page-item.active .page-link{background:var(--brand-fill);border-color:var(--brand-fill);color:#fff}
+    .btn-light,.btn-secondary{--tblr-btn-bg:var(--surface-overlay);--tblr-btn-color:var(--text-primary);
+      --tblr-btn-border-color:var(--border-strong);--tblr-btn-hover-bg:var(--surface-interactive);--tblr-btn-hover-color:var(--text-primary)}
+    .form-check-input{width:20px;height:20px}
+    .table .text-end a{display:inline-grid;place-items:center;min-width:28px;min-height:28px}
+    /* Tabler dat mau bang `[data-bs-theme=dark] .x` — cung tien to o day de thang ma khong can !important. */
+    [data-bs-theme=dark] .navbar-vertical .navbar,[data-bs-theme=dark] .navbar-vertical .navbar-collapse{background:transparent}
+    [data-bs-theme=dark] .navbar-vertical .nav-link-icon{color:var(--text-muted)}
+    [data-bs-theme=dark] .btn-light,[data-bs-theme=dark] .btn-secondary{background-color:var(--surface-overlay);
+      border-color:var(--border-strong);color:var(--text-primary)}
+    [data-bs-theme=dark] .btn-light:hover,[data-bs-theme=dark] .btn-secondary:hover{background-color:var(--surface-interactive);color:var(--text-primary)}
+    [data-bs-theme=dark] .form-control,[data-bs-theme=dark] .form-select,[data-bs-theme=dark] .form-check-input{
+      background-color:var(--surface-overlay);border-color:var(--border-strong);color:var(--text-primary)}
+    [data-bs-theme=dark] .form-check-input:not(:checked){background-color:var(--surface-overlay)!important;border-color:var(--border-strong)!important}
+    [data-bs-theme=dark] .form-check-input:checked{background-color:var(--brand-fill);border-color:var(--brand-fill)}
+    [data-bs-theme=dark] .text-success{color:var(--status-success)!important}
+    [data-bs-theme=dark] .text-danger{color:var(--status-danger)!important}
     .card,.dropdown-menu,.form-control,.form-select{border-color:var(--border-subtle);background-color:var(--surface-raised)}
     .table-responsive{border:1px solid var(--border-subtle);border-radius:var(--radius-md)}
     .table thead th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)}
     .table td,.table th{padding:.58rem .75rem;vertical-align:middle}
     .ltt-adminbar{position:sticky;top:0;z-index:1030;display:flex;gap:6px;align-items:center;
-      min-height:52px;padding:7px 16px;background:#151111f2;border-bottom:1px solid var(--border-subtle);
+      min-height:52px;padding:7px 16px;background:var(--surface-raised);border-bottom:1px solid var(--border-subtle);
       font-size:13px;backdrop-filter:blur(12px);overflow-x:auto}
     .ltt-adminbar a{display:inline-flex;align-items:center;min-height:36px;padding:7px 10px;border-radius:6px;
       color:var(--text-secondary);text-decoration:none;white-space:nowrap}

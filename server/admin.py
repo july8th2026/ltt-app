@@ -1587,8 +1587,8 @@ def setup_admin(app, *, session_secret: str) -> bool:
     # nó nạp `ltt.css` KHÔNG kèm `?v=`, tức sau mỗi lần đổi CSS nó phục vụ bản
     # cũ tới hết TTL của Cloudflare (CLAUDE.md quy tắc 6).
     from server.routes.admin._chung import dieu_huong as _dh
-    admin.templates.env.globals["asset_ver"] = _asset_ver()
-    admin.templates.env.globals["adm_nav"] = _dh("tong_quan")["thanh_ben"]
+    admin.templates.env.globals.update(asset_ver=_asset_ver(), adm_nav=_dh("tong_quan")["thanh_ben"],
+                                       _=__import__("server.templating").templating.templates.env.globals["_"])
     admin.add_view(UserAdmin)
     admin.add_view(CreditEntryAdmin)
     admin.add_view(GrantCreditView)

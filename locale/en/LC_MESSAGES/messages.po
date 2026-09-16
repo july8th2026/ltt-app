@@ -16625,3 +16625,42 @@ msgstr "%(so)s apps failed to load"
 
 msgid "Khám phá"
 msgstr "Explore"
+
+msgid "Xuất dữ liệu"
+msgstr "Export"
+
+msgid "Thêm %(ten)s"
+msgstr "New %(ten)s"
+
+msgid "Xoá các mục đã chọn"
+msgstr "Delete selected items"
+
+msgid "Tìm:"
+msgstr "Search:"
+
+msgid "Tìm kiếm"
+msgstr "Search"
+
+msgid "Tìm"
+msgstr "Search"
+
+msgid "Xoá tìm kiếm"
+msgstr "Clear search"
+
+msgid "Chọn tất cả"
+msgstr "Select all"
+
+msgid "Chọn mục"
+msgstr "Select item"
+
+msgid "Sửa"
+msgstr "Edit"
+
+msgid "Hiển thị %(tu)s–%(den)s trên %(tong)s mục"
+msgstr "Showing %(tu)s–%(den)s of %(tong)s items"
+
+msgid "Hiện"
+msgstr "Show"
+
+msgid "%(so)s / trang"
+msgstr "%(so)s / page"

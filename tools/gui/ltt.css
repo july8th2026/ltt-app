@@ -92,7 +92,7 @@ html{background:var(--surface-canvas)}
    *    liên kết văn bản trong dòng và ở chân trang — WCAG 2.2 SC 2.5.8 có ngoại
    *    lệ đúng cho chúng, và ép hết sẽ phá giãn dòng của văn bản. Chỉ nâng liên
    *    kết ĐÓNG VAI ĐIỀU KHIỂN. */
-  :where(.hdr-logo,.hdr-link,.pill,.dropdown a,.adm-nav a,a.btn){
+  :where(.hdr-logo,.hdr-link,.pill,.hdr .dropdown a,.adm-nav a,a.btn){
     min-height:44px;display:flex;align-items:center}
 
   /* Safari iOS tự phóng to trang khi focus vào ô nhập có computed font-size
@@ -383,9 +383,9 @@ html{background:var(--surface-canvas)}
 .menu>summary::marker{content:""}
 .menu>summary:hover,.menu[open]>summary{background:var(--panel2)}
 .menu .caret{color:var(--dim);font-size:10px}
-.dropdown{position:absolute;top:calc(100% + 6px);left:0;min-width:min(214px,calc(100vw - 20px));background:var(--panel);
+.hdr .dropdown{position:absolute;top:calc(100% + 6px);left:0;min-width:min(214px,calc(100vw - 20px));background:var(--panel);
   border:1px solid var(--line2);border-radius:10px;padding:6px;box-shadow:0 14px 40px #0008;z-index:50}
-.dropdown.right{right:0;left:auto;min-width:min(252px,calc(100vw - 20px))}
+.hdr .dropdown.right{right:0;left:auto;min-width:min(252px,calc(100vw - 20px))}
 /* 🔴 PHONG TO SAU: panel dropdown neo theo CHA nen no khong the vua khung nhin.
  *
  * Do 06/09 o khung 195px: `details.menu` nam o x=54, panel rong 175px ->
@@ -425,13 +425,13 @@ html{background:var(--surface-canvas)}
   .hdr{flex-wrap:wrap;row-gap:6px}
   .hdr-right{min-width:0;flex-wrap:wrap}
 
-  .dropdown,.dropdown.right{position:fixed;left:10px;right:10px;
+  .hdr .dropdown,.hdr .dropdown.right{position:fixed;left:10px;right:10px;
     min-width:0;width:auto;max-width:none}
 }
-.dropdown a,.dropdown button{display:flex;align-items:center;gap:9px;width:100%;padding:9px 11px;border-radius:7px;
+.hdr .dropdown a,.hdr .dropdown button{display:flex;align-items:center;gap:9px;width:100%;padding:9px 11px;border-radius:7px;
   color:var(--fg);text-decoration:none;font-size:13.5px;background:transparent;border:0;font:inherit;cursor:pointer;text-align:left}
-.dropdown a:hover,.dropdown button:hover{background:var(--panel2)}
-.dropdown .ic{width:18px;text-align:center}
+.hdr .dropdown a:hover,.hdr .dropdown button:hover{background:var(--panel2)}
+.hdr .dropdown .ic{width:18px;text-align:center}
 
 .avatar>summary{padding:4px 4px 4px 6px;gap:8px}
 .ava{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--brand-hover),var(--brand-strong));
@@ -440,7 +440,7 @@ html{background:var(--surface-canvas)}
 .acc-head small{color:var(--dim);font-size:11.5px;display:block;word-break:break-all;margin:2px 0 6px}
 .acc-credit{display:flex;justify-content:space-between;align-items:center;padding:10px 11px;margin-top:4px;
   border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
-.dropdown .sep{height:1px;background:var(--line);margin:5px 0}
+.hdr .dropdown .sep{height:1px;background:var(--line);margin:5px 0}
 .logout-btn{color:var(--err)}
 
 /* Nav NỘI BỘ của app (thay sub-nav sidebar) */
@@ -3864,3 +3864,7 @@ button.lv-the-song.nghe-loi,.lv-chon-nghe.nghe-loi{
 /* `.tablewrap` PHẢI định vị (position:relative, ở khối gốc phía trên). Một
  * `.sr-only` (absolute) trong ô tiêu đề của bảng cuộn ngang sẽ neo theo tổ tiên
  * NGOÀI khung cuộn và kéo rộng cả trang — đo 16/09: `/nap` @390 rộng 604px. */
+/* Golden UI 16/09: mọi luật `.dropdown` ở trên chỉ áp trong `.hdr`. Tên lớp này
+ * TRÙNG `.dropdown` của Bootstrap/Tabler mà sqladmin dùng — luật không phạm vi
+ * `.dropdown button{width:100%}` kéo nút "Actions" của `/admin/*/list` rộng hết
+ * hàng và đè lên dòng đầu bảng (baseline DL-004). */

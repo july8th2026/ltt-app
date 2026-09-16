@@ -32,9 +32,9 @@ nào < 88 · critical UI xác minh ở mức render thật (E3).
 | Bộ quét | `node tools/golden_ui_quet.mjs --cau-hinh routes.json --ra <dir> [--khung ...]` — HTTP, ảnh toàn trang, console, request hỏng, tràn ngang, axe WCAG 2.2 AA, h1/main/lang, ô chạm, ô nhập <16px |
 
 ## Overall Progress
-45%
+49%
 
-(Trọng số: P0 5 · P1 10 · P2 15 · P3 15 · P4 20 · P5 15 · P6 10 · P7 10. Tính: P0 100%·5 + P1 100%·10 + P2 45%·15 + P2 50%·15 + P3 35%·15 + P4 65%·20 + P5 15%·15 + P6 25%·10 = 5+10+7,5+5,25+13+2,25+2,5 ≈ 45,5 ⇒ **45%** (chưa có chứng nhận gate).)
+(Trọng số: P0 5 · P1 10 · P2 15 · P3 15 · P4 20 · P5 15 · P6 10 · P7 10. Tính: P0 100%·5 + P1 100%·10 + P2 45%·15 + P2 50%·15 + P3 35%·15 + P4 65%·20 + P5 30%·15 + P6 30%·10 = 5+10+7,5+5,25+13+4,5+3 ≈ 48,3 ⇒ **49%** (làm tròn; chưa có chứng nhận gate).)
 
 | Phase | % | Trạng thái |
 |---|---|---|
@@ -43,8 +43,8 @@ nào < 88 · critical UI xác minh ở mức render thật (E3).
 | 2 Golden Design System | 50 | 🟡 |
 | 3 Shared UI Components | 35 | 🟡 |
 | 4 Critical Pages | 65 | 🟡 Error ✅ · Jobs 🟡 · Billing 🟡 · Auth 🟡 · Shell/Workspace 🟡 · Public ⏳ |
-| 5 Remaining Pages & Apps | 15 | 🟡 Admin tự dựng axe 0 · sqladmin ⏳ · Developer/VPS/Nexus/Status/Apps ⏳ |
-| 6 Responsive & Accessibility | 25 | 🟡 khung cuộn + nhãn form + tương phản chéo họ |
+| 5 Remaining Pages & Apps | 30 | 🟡 Admin tự dựng ✅ axe 0 · sqladmin ✅ (DL-004) · Developer/VPS/Nexus/Status/Apps ⏳ |
+| 6 Responsive & Accessibility | 30 | 🟡 khung cuộn + nhãn form + tương phản chéo họ |
 | 7 Visual Regression & Final QA | 0 | ⏳ |
 
 ## Current Baseline
@@ -249,12 +249,14 @@ Completed:
 Thứ tự: Error → Auth → Billing → Jobs → Shell/Header/Workspace home.
 
 ## Phase 5 — Remaining Pages & Apps
-Progress: 15%
+Progress: 30%
 
 Completed:
 - Admin tự dựng (24 màn + 10 thân f-string ở `server/admin.py`): 19 nhãn form nối `for`/`id`, 5 màu chấm provider đổi sang sắc tối cùng họ để chữ trắng ≥4,5:1 (cũ 2,77–3,56:1), mọi `.tablewrap` focus được. E3: 52 phép đo, **axe 0** trên mọi trang admin tự dựng (còn lại chỉ `/admin/user/list` — sqladmin, DL-004). Bánh cóc `check_server_routes` (admin.py chỉ được nhỏ đi) PASS.
 
-Pending: sqladmin (DL-004), `/admin/khach-hang` tràn @390, Status (`/status` thiếu h1), Developer, VPS, Nexus, 21 màn app.
+- **sqladmin — DL-004 ✅**: RCA "Actions đè bảng" = luật `ltt.css` KHÔNG phạm vi `.dropdown a,.dropdown button{width:100%}` (menu header) trùng lớp `.dropdown` của Bootstrap ⇒ 8 luật `.dropdown` thu về `.hdr .dropdown` (đối chứng menu header 390/1440 với CSS HEAD qua Playwright route: kích thước trùng khít). Override `list.html` + `layout.html` (chép từ gói 0.20.1, chỉ chuỗi hiển thị qua `_()`: Thao tác/Xuất dữ liệu/Tìm/Hiển thị x–y trên n mục/Trước/Sau/…; `search-reset` có tên; `table-responsive` focus được; menu `<li>` bọc trong `<ul>`). `_` của nền tảng cấp cho Jinja env của gói trong `setup_admin` (2 dòng thay 2 dòng — bánh cóc admin.py PASS). `base.html`: `--tblr-*` → token Golden, sidebar/ô nhập/checkbox/nút phụ bỏ navy Tabler, font `--font`. ⛔ KHÔNG override `edit.html`/`create.html`: nhãn nút là `value` của `<input name="save">` mà sqladmin so khớp — dịch là đổi dữ liệu gửi lên. E3: 8 trang list + details + edit + EN, axe 0 trên mọi trang list (baseline user-list 14–22).
+
+Pending: `/admin/khach-hang` tràn @390, sqladmin `details` `.table-responsive` chưa focus được (details.html không override), Status (`/status` thiếu h1), Developer, VPS, Nexus, 21 màn app.
 Thứ tự: Status → Developer → VPS → Nexus → Admin tự dựng → sqladmin (DL-004) → Apps (taoanh, voice, taovideo, upscale, taoclipngan, thumbnail, chatltt, ommi, agent/canvas, autosub, form-app nhỏ).
 
 ## Phase 6 — Responsive & Accessibility
@@ -288,7 +290,7 @@ Screenshot regression Playwright (`toHaveScreenshot`) cho critical screens; test
 | P1-07 | i18n: nhãn tiếng Anh cứng (`GENERATIVE IMAGE`, `OUTPUT HISTORY`, `REFERENCE & EDIT`), chip thể loại lẫn hoa/thường (`audio`, `video` cạnh `AI Video`), chuỗi không qua `_()` ở error/jobs/nap/auth/status, sqladmin toàn tiếng Anh (`Search`, `Actions`, `Showing 1 to 3`) | toàn hệ |
 | P1-08 🟡 PARTIAL (billing xong; còn home rail/dev/VPS kiểm lại) | Định dạng số kiểu Anh trong giao diện Việt: `200,000đ`, `2,200 credit`, `1,000,000đ` (billing) trong khi VPS/Developer dùng `149.000đ`, `1.250` | billing, jobs |
 | P1-09 🟡 PARTIAL (progressbar jobs/home ✅, khung cuộn ✅, nhãn admin ✅; còn Voice nested-interactive, upscale `#vfile`) | Progressbar không tên (12) · vùng cuộn `<pre>` không focus được (35) · control lồng control ở thẻ giọng Voice (18) · control thiếu nhãn ở admin `api-key-them` | a11y |
-| P1-10 | sqladmin list: menu "Actions" đè dòng đầu bảng, "Show 10 / Page" trôi ngoài card | admin |
+| P1-10 ✅ | sqladmin list: menu "Actions" đè dòng đầu bảng, "Show 10 / Page" trôi ngoài card (gốc: `.dropdown` không phạm vi trong ltt.css) | admin |
 | P1-11 | `/admin/khach-hang` tràn ngang ở 390 | admin |
 | P1-12 | Ảnh bìa thẻ app không đồng nhất: nửa có ảnh, nửa là khối tối rỗng (catalog ẩn danh + workspace) | public, workspace |
 | P1-13 | Nút "Tạo tiếng nói" (Voice) che mô tả phía dưới ở 1440 (thanh dính đè nội dung) | apps |
@@ -315,6 +317,7 @@ Screenshot regression Playwright (`toHaveScreenshot`) cho critical screens; test
 | OOS-03 | Trả lời thuần văn bản `CSRF` 400 / `Khong thay key.` 404 ở admin và `Not found` ở `nexus_devices.py:24`, `nexus_sso.py:30` | đổi response của route |
 | OOS-04 | 🔴 Trong lượt khảo sát, một lệnh tìm kiếm của agent đọc `secrets/app.env` quá rộng và **in vài ký tự đầu của giá trị `LTT_VPS_PROXMOX_*` / `LTT_VPS_GATEWAY_*`** (gồm một phần secret token Proxmox) vào transcript cục bộ của phiên này | bảo mật — chủ dự án cân nhắc xoay token; phiên này không chạm secrets |
 | OOS-06 | `apps/agent/routes/drafts_v3.py::_tai_lieu_rong()` tạo trang v3 thiếu `viewport/frames/notes/comments/view` trong khi `di_tru_m1` sinh đủ — hai nguồn cùng một hình dạng lệch nhau. UI đã chịu được (P0-01), nhưng nên thống nhất ở backend | đổi dữ liệu backend tạo ra |
+| OOS-07 | `/admin/user/edit/{id}`: `pageerror: Cannot read properties of null (reading 'checked')` trong `sqladmin/statics/js/bootstrap.min.js` (handler jQuery). Không thuộc tệp override nào; CHƯA đối chứng với cây gốc — làm ở CERTIFYING | mã JS của gói bên thứ ba |
 | OOS-05 | `/tai-xuong` công khai **không** sau cờ `LTT_NEXUS` trong khi mọi trang Nexus khác sau cờ | route gating |
 
 ## Completed Work
@@ -349,6 +352,8 @@ Screenshot regression Playwright (`toHaveScreenshot`) cho critical screens; test
 | EV-15 | E3 | `after/p6-cuon`: 51 route @390 (Public/Status/Dev/Admin) — trước/sau theo luật axe |
 | EV-16 | E3 | `after/p5-admin`: 52 phép đo admin, axe 0 ngoài sqladmin |
 | EV-17 | E2 | `test_1270` 56/56; `test_294/306` (sao_chep), `test_317/322` (admin), `check_server_routes` PASS |
+| EV-18 | E3 | `after/p5-sqladmin*`: 11 trang sqladmin × 2 khung; `after/p5-hdr`: menu header mở 390/1440; `hdr_doi_chung.mjs` đối chứng CSS HEAD |
+| EV-19 | E2 | `test_1270` 59/59 |
 
 ## Current Blocker
 
@@ -356,4 +361,4 @@ Không có.
 
 ## Next Action
 
-DL-004 sqladmin: map `--tblr-*` sang token, sửa menu Actions đè bảng + phân trang trôi, dịch chuỗi hiển thị; rồi `/admin/khach-hang` @390 và `/status` h1.
+`/admin/khach-hang` @390, `/status` h1, rồi Developer portal (DL-002 đã áp token; soát inline style + trạng thái rỗng) → VPS → Nexus → Apps.

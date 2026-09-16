@@ -303,3 +303,34 @@ def test_admin_cham_provider_chu_trang_dat_AA():
     bang = admin.split("_PROVCOL = {", 1)[1].split("}", 1)[0]
     for h in re.findall(r"#[0-9a-fA-F]{6}", bang):
         assert _ti_le("#ffffff", h) >= 4.5, h
+
+
+# ── 9. DL-004: sqladmin phủ Golden, hành vi form giữ nguyên ──────────────────
+
+SQA = GOC / "server" / "admin_templates" / "sqladmin"
+
+
+def test_DL004_luat_dropdown_cua_header_co_pham_vi():
+    """`.dropdown button{width:100%}` không phạm vi kéo nút Actions của sqladmin rộng hết hàng."""
+    luat = re.sub(r"/\*.*?\*/", "", CSS, flags=re.S)
+    tran = re.findall(r"(?:^|[,{}\s])\.dropdown\b(?![-\w])", luat)
+    co_pham_vi = len(re.findall(r"\.hdr \.dropdown\b", luat))
+    assert len(tran) == co_pham_vi, "mọi `.dropdown` trong ltt.css phải nằm dưới `.hdr`"
+
+
+def test_DL004_override_chi_dich_chuoi_hien_thi():
+    lst = (SQA / "list.html").read_text(encoding="utf-8")
+    for cu in (">Search<", "Delete selected items<", "Showing <span>", "/ Page", "\n            Actions\n"):
+        assert cu not in lst, cu
+    assert 'id="search-reset"' in lst and 'aria-label="{{ _("Xoá tìm kiếm") }}"' in lst
+    lay = (SQA / "layout.html").read_text(encoding="utf-8")
+    assert '<ul class="navbar-nav">' in lay and "display_menu(" not in lay
+    # edit/create KHÔNG được override: `value` của <input name="save"> là giao thức.
+    assert not (SQA / "edit.html").exists() and not (SQA / "create.html").exists()
+
+
+def test_DL004_bien_tabler_tro_ve_token():
+    base = (SQA / "base.html").read_text(encoding="utf-8")
+    assert "--tblr-primary:var(--brand-fill)" in base
+    assert "--tblr-body-font-family:var(--font)" in base
+    assert "#ef3731" not in base and "#151111f2" not in base
