@@ -4,7 +4,7 @@
    được, vì chuỗi CÓ trong catalog và ĐÃ dịch. #}
 {% import "_vps_mac.html" as mac with context %}
 {% block title %}{{ may.ten or may.id[:8] }} — {{ _(app.display_name) }}{% endblock %}
-{% block topbar_title %}<strong><a href="/vps" style="color:inherit;text-decoration:none;opacity:.7;">{{ app.icon }} VPS</a> <span style="opacity:.45;">›</span> {{ may.ten or may.id[:8] }}</strong>{% endblock %}
+{% block topbar_title %}<strong><a class="vps-vet-goc" href="/vps">{{ app.icon }} VPS</a> <span class="vps-vet-ngan" aria-hidden="true">›</span> {{ may.ten or may.id[:8] }}</strong>{% endblock %}
 {# `vps-may` là MÓC PHẠM VI, không phải class kiểu — xem `ltt.css`. #}
 {% block body_class %}vps-may{% endblock %}
 {% block noi_dung %}
@@ -65,7 +65,7 @@
     {{ _("Trạng thái bên dưới là lần đo gần nhất, không phải hiện tại. Chúng tôi đang thử lại.") }}
   </div>
   {% elif quan_sat_cu %}
-  <div class="alert u-mb14">
+  <div class="alert alert-info u-mb14">
     {{ _("Trạng thái bên dưới là lần đo gần nhất và có thể đã cũ.") }}
   </div>
   {% endif %}
@@ -193,7 +193,7 @@
     <div class="vps-o">
       <h3>{{ _("Ảnh chụp gần nhất") }}</h3>
       {% if sao_luu_luc %}
-        <p style="margin:0;font-size:15px;">{{ sao_luu_luc.strftime('%d/%m/%Y %H:%M') }}</p>
+        <p class="vps-anh-luc">{{ sao_luu_luc.strftime('%d/%m/%Y %H:%M') }}</p>
       {% else %}
         <p class="muted u-m0">{{ _("chưa có — bản đầu tiên chụp trong vòng một tuần") }}</p>
       {% endif %}
@@ -247,7 +247,7 @@
              value="{{ may.ten }}" autocomplete="off">
       <button class="btn btn-ghost" type="submit">{{ _("Đổi tên") }}</button>
     </form>
-    <p class="muted" style="margin:8px 0 0;font-size:12px;">
+    <p class="muted vps-mt8 u-fs12">
       {{ _("Tên chỉ để bạn nhận ra máy trong danh sách. Đây cũng là tên bạn phải gõ để xác nhận các thao tác không hoàn tác được bên dưới.") }}
     </p>
   </div>
@@ -263,9 +263,9 @@
   <div class="vps-o vps-o-lon u-mb16">
     <h3>{{ _("Sao kê thanh toán") }}</h3>
     <div class="tablewrap" tabindex="0">
-      <table class="tbl" style="width:100%;">
+      <table class="tbl vps-bang-rong">
         <thead><tr>
-          <th scope="col" style="width:170px;">{{ _("Thời điểm") }}</th>
+          <th scope="col" class="vps-cot-luc">{{ _("Thời điểm") }}</th>
           <th scope="col">{{ _("Số tiền") }}</th>
           <th scope="col">{{ _("Trả cho tới") }}</th>
         </tr></thead>
@@ -345,7 +345,8 @@
         {% if sao_luu_luc %}
         <form method="post" action="{{ app.route_prefix }}/{{ may.id }}/khoi-phuc">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <input class="inp" name="xac_nhan" required
+          <input class="inp" name="xac_nhan" required autocomplete="off"
+                 aria-label="{{ _('Gõ: %(ten)s') % {'ten': may.ten or may.id[:8]} }}"
                  placeholder="{{ _('Gõ: %(ten)s') % {'ten': may.ten or may.id[:8]} }}">
           <button class="btn btn-danger" type="submit">{{ _("Khôi phục") }}</button>
         </form>
@@ -362,7 +363,8 @@
             <option value="">{{ _("Giữ nguyên hệ điều hành") }}</option>
             {% for o in os_ban_duoc %}<option value="{{ o.id }}">{{ _(o.ten) }}</option>{% endfor %}
           </select>
-          <input class="inp" name="xac_nhan" required
+          <input class="inp" name="xac_nhan" required autocomplete="off"
+                 aria-label="{{ _('Gõ: %(ten)s') % {'ten': may.ten or may.id[:8]} }}"
                  placeholder="{{ _('Gõ: %(ten)s') % {'ten': may.ten or may.id[:8]} }}">
           <button class="btn btn-danger" type="submit">{{ _("Cài lại") }}</button>
         </form>
@@ -373,10 +375,10 @@
         <p>{{ _("Xoá vĩnh viễn máy và trả địa chỉ IP về. KHÔNG hoàn tác được và không hoàn tiền chu kỳ đang dùng.") }}</p>
         <form method="post" action="{{ app.route_prefix }}/{{ may.id }}/xoa">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <input class="inp" name="xac_nhan" required
+          <input class="inp" name="xac_nhan" required autocomplete="off"
+                 aria-label="{{ _('Gõ: %(ten)s') % {'ten': may.ten or may.id[:8]} }}"
                  placeholder="{{ _('Gõ: %(ten)s') % {'ten': may.ten or may.id[:8]} }}">
-          <button class="btn" type="submit"
-                  style="background:var(--status-danger);">{{ _("Xoá vĩnh viễn") }}</button>
+          <button class="btn btn-nguy-dac" type="submit">{{ _("Xoá vĩnh viễn") }}</button>
         </form>
       </div>
     </div>

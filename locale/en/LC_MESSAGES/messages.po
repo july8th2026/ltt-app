@@ -18375,3 +18375,6 @@ msgstr "Edit %(ten)s"
 
 msgid "Xác nhận xoá"
 msgstr "Confirm deletion"
+
+msgid "Phiên console đã đóng. Kết nối lại để xin một vé mới."
+msgstr "The console session has closed. Reconnect to get a new ticket."

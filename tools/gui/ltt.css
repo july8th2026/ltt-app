@@ -1732,7 +1732,7 @@ code.vps-doi-gt{padding:2px 7px;border:1px solid var(--border-subtle);
   font-size:13px}
 .vps-nhat-ky li:last-child{border-bottom:0}
 .vps-nhat-ky .cham{width:8px;height:8px;border-radius:50%;margin-top:6px;
-  background:var(--vps-teal-hover)}
+  background:var(--text-muted)}
 .vps-nhat-ky li.xau .cham{background:var(--status-danger)}
 .vps-nhat-ky .luc{color:var(--text-muted);font-size:12px;white-space:nowrap;
   font-variant-numeric:tabular-nums}
@@ -1906,7 +1906,7 @@ code.vps-doi-gt{padding:2px 7px;border:1px solid var(--border-subtle);
  * ⚠️ `tabindex="0"` nằm trên chính khung (ở template): thiếu nó thì chuột chạy
  *    mà bàn phím không, và triệu chứng là "gõ không lên chữ" — rất khó đoán ra.
  */
-.vps-cs-khung{width:100%;height:min(74vh,760px);background:#000;
+.vps-cs-khung{width:100%;height:min(74vh,760px);background:var(--surface-canvas);
   border:1px solid var(--border-strong);border-radius:var(--radius-md);
   overflow:hidden;outline:none}
 .vps-cs-khung:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
@@ -3986,3 +3986,52 @@ button.lv-the-song.nghe-loi,.lv-chon-nghe.nghe-loi{
 .adm-luoi-cot{grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr))}
 .adm-mt12{margin-top:12px}.adm-thong-bao{display:block;padding:10px}
 .adm-form-dong{display:flex;gap:6px;align-items:center}
+/* === Golden UI song song: VPS-ADMIN === */
+/* VPS — vệt topbar (trước: style="" opacity trên chữ, hạ tương phản) */
+.vps-vet-goc{color:var(--text-secondary);text-decoration:none}
+.vps-vet-goc:hover{color:var(--text-primary)}
+.vps-vet-ngan{color:var(--text-muted)}
+/* Dải danh tính: tên máy là h1 của trang máy/cài đặt/console (trước: 0 h1) */
+.vps-dinh-h1{margin:0;font:inherit;letter-spacing:inherit;color:var(--text-primary)}
+/* Nhãn trên, giá trị + nút Chép cùng hàng (trước: nút kéo giãn full cột, lệch hàng nhãn) */
+.vps-dinh{align-items:flex-start}
+.vps-dinh-ten{align-self:center}
+.vps-dinh-o{display:grid;grid-template-columns:minmax(0,auto) auto;justify-content:start;
+  align-items:center;column-gap:var(--space-2);row-gap:2px}
+.vps-dinh-o .nhan{grid-column:1 / -1}
+.vps-dinh-o .nut-chep-o{margin-left:0}
+@media (max-width:560px){.vps-dinh{flex-direction:column;align-items:stretch}.vps-dinh-ten{align-self:stretch}}
+/* Alert thông tin trung tính — trước: `.alert` trần viền currentColor (trắng) */
+.alert-info{background:var(--status-info-soft);border-color:var(--status-info-border)}
+/* Nút phá huỷ cuối cùng: nền đặc AA (trước: --status-danger + chữ trắng 2,9:1) */
+.btn.btn-nguy-dac{background:var(--brand-fill);border-color:var(--brand-fill)}
+.btn.btn-nguy-dac:hover{background:var(--brand-fill-hover);filter:none}
+/* Menu trái "Sắp có": nói bằng chữ, không chỉ title hover */
+.app-side .sap-co{color:var(--text-muted);cursor:default}
+.sap-co-nhan{display:inline-block;margin-left:var(--space-1);padding:0 6px;border:1px solid var(--border-subtle);
+  border-radius:var(--radius-pill);font-size:10px;line-height:16px;vertical-align:1px}
+/* Bảng trong ô VPS có khung viền: chữ không dính mép */
+.vps-o .tablewrap th,.vps-o .tablewrap td{padding-left:var(--space-3)}
+.vps-bang-rong{width:100%}.vps-cot-luc{width:170px}
+.vps-anh-luc{margin:0;font-size:var(--fs-card)}
+/* Tiện ích khu VPS (thay style="" lặp) */
+.vps-h1{font-size:1.35rem;margin:0 0 14px}
+.vps-h2{margin:0 0 10px;font-size:1.05rem}
+.vps-mt4{margin:4px 0 0}.vps-mt6{margin-top:6px}.vps-mt8{margin:8px 0 0}.vps-mt10{margin-top:10px}
+.vps-mt12{margin:12px 0 0}.vps-mt16{margin:16px 0 0}.vps-mb8{margin:0 0 8px}.vps-ml8{margin-left:8px}
+.vps-chu-nho{font-size:.9em}.vps-chu-85{font-size:.85em}
+.vps-tom-tat{cursor:pointer;font-size:.9em}
+.vps-bang-so-sanh{width:100%;margin-top:10px}
+.vps-bang-so-sanh th[scope="row"]{font-weight:600;text-align:left}
+.vps-chi-so-ds{list-style:none;padding:0}
+.vps-nut-khoa{opacity:.45;cursor:not-allowed;text-align:center}
+.vps-form-rong{max-width:none}
+.vps-thieu{padding:6px 10px;border-radius:4px;margin:10px 0 0}
+/* Console: lớp phủ trạng thái trên khung đen khi lỗi/ngắt */
+.vps-cs-boc{position:relative}
+.vps-cs-bao{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:var(--space-2);padding:var(--space-6);text-align:center;
+  background:var(--surface-base);border:1px solid var(--status-danger-border);border-radius:var(--radius-md)}
+.vps-cs-bao[hidden]{display:none}
+.vps-cs-bao-chu{margin:0;font-size:var(--fs-section);font-weight:600;color:var(--text-primary)}
+.vps-cs-bao p{max-width:46ch}

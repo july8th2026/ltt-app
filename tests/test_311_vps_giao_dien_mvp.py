@@ -448,7 +448,7 @@ def test_CTA_cuoi_co_CA_HAI_loi_ra():
     nhưng người đã có thì không được rơi vào đường tạo tài khoản mới.
     """
     t = _vps_html()
-    i = t.index('class="vps-cta"')
+    i = t.index('class="vps-cta')  # co the kem lop tien ich (u-mb16)
     khoi = t[i:t.index("</div>", t.index('class="nut"', i))]
     assert 'href="/register"' in khoi, "CTA cuoi thieu duong tao tai khoan"
     assert "/login?next=" in khoi, "CTA cuoi thieu duong dang nhap"
