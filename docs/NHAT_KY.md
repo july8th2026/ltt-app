@@ -182,7 +182,9 @@
   gate nên mất tệp đầu ra lượt bị ngắt — chưa tìm ra tác nhân; (2) `scan_source_secrets`
   chạy từ cây chính báo FAIL vì `.codex/worktrees/` (chưa theo dõi, của phiên Codex)
   nằm trong cây chính; (3) chỉ đạo "L3 đỏ → chạy L3 lại" khác hợp đồng §4.6 (khép bằng
-  `--doi --tu`) — chờ chủ dự án chốt để thống nhất một luật.
+  `--doi --tu`) — **ĐÃ CHỐT 17/09**: chủ dự án chọn *"lượt đỏ khép bằng `--doi --tu`"*.
+  Hợp đồng §4.6, `CLAUDE.md` luật 1 và chốt `l3_lai_bi_chan` của `gate.py` vốn đã đúng
+  luật này — không đổi gì; `--l3-lai` chỉ dành cho lượt bị nhiễu thật (máy `QUA TAI`).
 
 ## 2026-09-16 — Chuẩn hoá toàn bộ luật vận hành: mỗi chủ đề MỘT tệp chủ
 
