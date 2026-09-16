@@ -36,11 +36,16 @@
   <div class="lv-chon-loc">
     <input type="search" class="lv-chon-tim" id="lv-chon-tim"
            placeholder="{{ _('Tìm giọng…') }}" aria-label="{{ _('Tìm giọng') }}">
+    {# V01 (16/09/2026): số đếm THẬT trên từng loại — tính từ dữ liệu route đã gửi
+       (`giong_mau`, `loai_giong`), không gõ cứng 20/25. #}
+    {%- set _dem_toi = loai_giong.values() | select("equalto", "toi") | list | length %}
+    {%- set _dem_chung = loai_giong.values() | select("equalto", "chung") | list | length %}
+    {%- set _dem_mau = giong_mau | length %}
     <div class="lv-loc-nhom" role="group" aria-label="{{ _('Loại giọng') }}">
-      <button type="button" class="lv-loc-nut on" aria-pressed="true" data-chon-loai="">{{ _("Tất cả") }}</button>
-      <button type="button" class="lv-loc-nut" aria-pressed="false" data-chon-loai="mau">{{ _("Giọng mẫu") }}</button>
-      <button type="button" class="lv-loc-nut" aria-pressed="false" data-chon-loai="chung">{{ _("Kho chung") }}</button>
-      <button type="button" class="lv-loc-nut" aria-pressed="false" data-chon-loai="toi">{{ _("Giọng của tôi") }}</button>
+      <button type="button" class="lv-loc-nut on" aria-pressed="true" data-chon-loai="">{{ _("Tất cả") }} <span class="lv-dem">{{ _dem_mau + _dem_chung + _dem_toi }}</span></button>
+      <button type="button" class="lv-loc-nut" aria-pressed="false" data-chon-loai="mau">{{ _("Giọng mẫu") }} <span class="lv-dem">{{ _dem_mau }}</span></button>
+      <button type="button" class="lv-loc-nut" aria-pressed="false" data-chon-loai="chung">{{ _("Kho chung") }} <span class="lv-dem">{{ _dem_chung }}</span></button>
+      <button type="button" class="lv-loc-nut" aria-pressed="false" data-chon-loai="toi">{{ _("Giọng của tôi") }} <span class="lv-dem">{{ _dem_toi }}</span></button>
     </div>
     {#
       🔴 BỘ LỌC LÀN ĐÃ GỠ (11/09/2026, Task 11 · D002 UI), VÀ ĐÓ LÀ MỘT BẢN SỬA

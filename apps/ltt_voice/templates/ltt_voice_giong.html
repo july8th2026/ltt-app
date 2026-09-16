@@ -73,10 +73,14 @@
         <a class="btn sm primary lv-loc-tao" href="#lv-tao-giong">{{ _("+ Tạo giọng") }}</a>
 
         <div class="lv-loc-nhom" role="group" aria-label="{{ _('Loại giọng') }}">
-          <button type="button" class="lv-loc-nut on" aria-pressed="true" data-loc="loai" data-gt="">{{ _("Tất cả") }}</button>
-          <button type="button" class="lv-loc-nut" aria-pressed="false" data-loc="loai" data-gt="mau">{{ _("Giọng mẫu") }}</button>
-          <button type="button" class="lv-loc-nut" aria-pressed="false" data-loc="loai" data-gt="chung">{{ _("Kho chung") }}</button>
-          <button type="button" class="lv-loc-nut" aria-pressed="false" data-loc="loai" data-gt="toi">{{ _("Giọng của tôi") }}</button>
+          {# V01 (16/09/2026): số đếm THẬT, cùng nguồn `loai_giong` với thẻ. #}
+          {%- set _dem_toi = loai_giong.values() | select("equalto", "toi") | list | length %}
+          {%- set _dem_chung = loai_giong.values() | select("equalto", "chung") | list | length %}
+          {%- set _dem_mau = giong_mau | length %}
+          <button type="button" class="lv-loc-nut on" aria-pressed="true" data-loc="loai" data-gt="">{{ _("Tất cả") }} <span class="lv-dem">{{ _dem_mau + _dem_chung + _dem_toi }}</span></button>
+          <button type="button" class="lv-loc-nut" aria-pressed="false" data-loc="loai" data-gt="mau">{{ _("Giọng mẫu") }} <span class="lv-dem">{{ _dem_mau }}</span></button>
+          <button type="button" class="lv-loc-nut" aria-pressed="false" data-loc="loai" data-gt="chung">{{ _("Kho chung") }} <span class="lv-dem">{{ _dem_chung }}</span></button>
+          <button type="button" class="lv-loc-nut" aria-pressed="false" data-loc="loai" data-gt="toi">{{ _("Giọng của tôi") }} <span class="lv-dem">{{ _dem_toi }}</span></button>
         </div>
 
         <div class="lv-loc-nhom" role="group" aria-label="{{ _('Giới tính') }}">

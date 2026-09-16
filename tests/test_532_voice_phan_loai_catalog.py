@@ -184,6 +184,26 @@ def test_STUDIO_bo_chon_dung_CUNG_luat_voi_man_giong(hai_tk):
     assert loai("chung_chua_duyet_cua_toi") == "toi"
 
 
+@pytest.mark.parametrize("duong, attr", [("/ltt-voice/giong", 'data-loc="loai" data-gt'),
+                                         ("/ltt-voice", "data-chon-loai")])
+def test_V01_so_dem_THAT_tren_tung_loai(hai_tk, duong, attr):
+    """V01: Tất cả = mẫu + chung + của tôi, số lấy từ dữ liệu — không gõ cứng."""
+    from apps.ltt_voice import giong_mau
+    client, _ma, _chu = hai_tk
+    html = client.get(duong).text
+
+    def dem(gt):
+        m = re.search(rf'{attr}="{gt}">[^<]*<span class="lv-dem">(\d+)</span>', html)
+        assert m, f"khong thay so dem cho `{gt}` o {duong}"
+        return int(m.group(1))
+
+    mau = len(giong_mau.DANH_SACH)
+    assert dem("mau") == mau
+    assert dem("chung") == 1                   # chỉ giọng kho chung đã duyệt của người khác
+    assert dem("toi") == 2                     # riêng + dung_chung chưa duyệt của chính mình
+    assert dem("") == mau + 1 + 2
+
+
 def test_template_khong_con_tu_suy_loai_tu_co():
     the = (MAU / "_voice_the.html").read_text(encoding="utf-8")
     chon = (MAU / "_voice_chon.html").read_text(encoding="utf-8")
