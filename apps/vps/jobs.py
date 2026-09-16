@@ -217,6 +217,7 @@ def _dieu_khien_may(params: dict, ctx=None) -> dict:
     lenh = str(params.get("lenh") or "")
     db, gen = _mo_db()
     op = None
+    client = None
     try:
         may = _lay_may(db, params.get("instance_id"))
         profile = _profile_for_job(db, may)
@@ -248,19 +249,27 @@ def _dieu_khien_may(params: dict, ctx=None) -> dict:
     except bo_cho.TacVuLoi as exc:
         # Hỏng **có phân loại**: `qua_han` khác `that_bai` khác `dien_khong_dat`,
         # và ba cái đó cần ba câu trả lời khác nhau cho khách (Pha 08/09).
-        _ghi_thao_tac_hong(db, op, params, lenh, exc.ma, str(exc))
+        _ghi_thao_tac_hong(db, op, params, lenh, exc.ma, str(exc), client=client)
         raise VpsJobError(str(exc)) from exc
     except ProxmoxError as exc:
-        _ghi_thao_tac_hong(db, op, params, lenh, "proxmox_tu_choi", str(exc))
+        _ghi_thao_tac_hong(db, op, params, lenh, "proxmox_tu_choi", str(exc),
+                           client=client)
         raise VpsJobError(f"Proxmox tu choi lenh: {exc}") from exc
     finally:
         gen.close()
 
 
 def _ghi_thao_tac_hong(db, op, params: dict, lenh: str, ma: str,
-                       chi_tiet: str) -> None:
-    """Đóng thao tác là **hỏng** và ghi nhật ký. Không được che lỗi gốc."""
-    from apps.vps.services import thao_tac
+                       chi_tiet: str, client=None) -> None:
+    """Đóng thao tác là **hỏng** và ghi nhật ký. Không được che lỗi gốc.
+
+    Có `client` thì đo lại điện thật một lần. Đo 16/09 trên production: tắt mềm
+    VM 204 quá hạn (máy chưa cài Windows bỏ qua ACPI) để lại `dien_mong_muon=tat`
+    + `dien_quan_sat=khong_ro`, `chieu()` nói theo ý định ⇒ trang báo "Đã tắt" và
+    chỉ còn nút "Bật" trong khi VM vẫn chạy (R21). Lệnh đã hỏng thì ý định cũ
+    không còn là sự thật: lấy điện đo được làm cả quan sát lẫn mong muốn.
+    """
+    from apps.vps.services import tac_vu, thao_tac
 
     try:
         db.rollback()
@@ -276,6 +285,14 @@ def _ghi_thao_tac_hong(db, op, params: dict, lenh: str, ma: str,
             # nói quá, và nó khoá mất những nút mà khách cần để tự gỡ.
             trang_thai_may.dat(may, dien_quan_sat=trang_thai_may.KHONG_RO,
                                suc_khoe=trang_thai_may.KHONG_RO)
+            if client is not None and may.vmid:
+                try:
+                    dien = tac_vu.doc_dien(client, may.vmid)
+                except Exception:        # noqa: BLE001 - đo lại là phụ, không che lỗi gốc
+                    dien = None
+                if dien in (trang_thai_may.CHAY, trang_thai_may.TAT):
+                    trang_thai_may.ghi_quan_sat(may, dien)
+                    trang_thai_may.dat(may, dien_mong_muon=dien)
             provisioning.ghi_su_kien(
                 db, may.id, f"{lenh}_that_bai",
                 boi=str(params.get("boi") or "he_thong"),

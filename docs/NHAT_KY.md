@@ -312,6 +312,34 @@
   yêu cầu; owner sau đó chỉ đạo rõ “hợp nhất commit rồi deploy, không chạy gate”,
   nên không chạy gate sau hợp nhất và không ghi bất kỳ lượt bị dừng/bỏ nào là
   PASS.
+## 2026-09-16 — VPS V4 nghiệm thu live: VPS thật đầu tiên, 21 lỗi rà được
+
+- **Rà code** hai lượt độc lập + tự đọc lại dòng: R1–R10 (tạo máy bị chặn vì
+  health ≤ 300 s không ai làm mới trong khi collector Máy B 30 phút/lần; mua IP
+  có đường checkout lần 2, mua cho máy đã hoàn tiền, `recover_order` gọi nhầm
+  dry-run quotation; helper gwnat có thể làm rơi dòng protected…). Sửa + test
+  tập trung; deploy **r1 `b1593e3c`** 16:29–16:31, nghiệm thu 3 chiều 0/0/0.
+- **Captcha**: phiên trước để Playwright tự khởi chạy Chrome (cờ automation ⇒
+  Cloudflare xoay vòng /login). Đúng: Chrome thật `--remote-debugging-port`,
+  chủ dự án đăng nhập, Playwright nối CDP (`D:\LTTSTUDIOSAPP-runtime\vps-v4-cdp.mjs`).
+- **Sau deploy đo được**: R11 task đồng bộ Máy B rc=1 (tính gốc repo cố định);
+  R12 worker `LocalSystem` SSH gateway OVH rc=255 — `ltt_ovh_gateway` owner là
+  người dùng, Win32-OpenSSH báo UNPROTECTED KEY; đổi owner về Administrators
+  (ACL giữ nguyên).
+- **ISO**: `local` chỉ còn Win10 LTSC; nới `local` bằng thin pool `pve/data`
+  rỗng (26→41 G), node tự tải Server 2022/2016 từ CDN Microsoft, khớp byte.
+- **VPS thật** `d96b66f3` (VM 204, chủ dự án giữ để dùng): đơn OVH `22703620`
+  USD 2,39 (một đơn). R18 trạng thái đơn đọc ngay sau checkout ⇒ NEEDS_REVIEW;
+  R19 `qmstart` "WARNINGS: 1" bị coi là hỏng. Cả hai khôi phục vận hành có kiểm
+  chứng (đọc lại OVH/PVE, không checkout/start lần hai) ⇒ `tao_xong` 17:38:48.
+  Đường hoàn tiền chạy thật với lượt lỗi đầu (hoàn 1.490, xoá). R14 máy lỗi
+  chiếm suất IP; R20 console đóng ngay (cầu WS dùng kho CA hệ thống); R21 tắt
+  mềm hỏng ⇒ UI "Đã tắt" khi VM chạy + thiếu nút tắt cứng. Sửa R14/R18–R21 có
+  test; r2 `7432c7de` = r1 + R11/R14/R18/R19/R20.
+- **Nợ**: R13 (đo gateway một lần), R15 (máy treo không gia hạn lại được, trái
+  Điều khoản), R16 (IP OVH tự gia hạn khi rỗi — cần chủ sản phẩm chốt), R17
+  (`inventory_sync` mất `order_id`); mypy `arg-type` +1 đã có sẵn ở `e5b72562`.
+  Chi tiết: `docs/VPS_V4/14_KE_HOACH_VAN_HANH_TOI_UU.md`.
 
 ## 2026-09-14 — Release bất biến và backup trước cửa sổ deploy VPS
 
