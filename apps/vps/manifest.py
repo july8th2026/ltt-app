@@ -71,7 +71,9 @@ MANIFEST = AppManifest(
     # cụm dù có bao nhiêu tiến trình worker. Xem `bao_tri.py` để biết vì sao đây
     # là hợp đồng chứ không phải vòng lặp tự dựng.
     bao_tri=bao_tri.chay,
-    bao_tri_moi_giay=3600,
+    # Dày hơn một giờ chỉ để làm mới health profile; phần nặng tự giữ nhịp giờ
+    # trong `bao_tri.chay` (NHIP_NANG_GIAY).
+    bao_tri_moi_giay=600,
 
     table_prefix="vps",
 
