@@ -1,7 +1,11 @@
 # VPS V4 — Live Acceptance Runbook
 
-Trạng thái: **PREFLIGHT PARTIAL; GATEWAY HELPER INSTALLED; ONE UNPAID OVH CART
-PREPARED; NO IP/VM OR MAPPING CREATED**.
+Trạng thái: **ACTIVATION COMMITTED 2026-09-15T17:29:03Z — OVH 0402 ACTIVE +
+DEFAULT (config v3, backend `ovh_static_pool`, mapping `ovh_gwnat`), Vultr 0401
+STANDBY (v2, accept_new off); 6×HEALTHY preflight persisted in one audited
+transaction; gateway helper installed. No IP/VM or mapping created yet.
+Browser E2E driver built and armed; awaiting the test-account credential file;
+live cart `f99ebe5c` expires 2026-09-16T11:54:01Z.**
 
 ## Hard guards
 
@@ -33,6 +37,11 @@ PREPARED; NO IP/VM OR MAPPING CREATED**.
   `ip-failover-arin`, location SG/SGP, routed to the current gateway service;
   provider quote was USD 2.39 including tax and the response confirmed
   `checkout_performed=false`. The cart expires `2026-09-15T08:53:23Z`.
+  **Superseded:** expired without checkout; the live Layer-2 cart is
+  `f99ebe5c-ce11-4af4-9ec3-383706ed8508` (item 91826398, qty 1, USD,
+  with_tax_minor 239, fingerprint `3d6ddf49…69`, expires
+  `2026-09-16T11:54:01Z`), recorded as `adopt_ip_cart_id` in the committed
+  OVH profile provider_config.
 - [ ] Q130 automatic guarded checkout/payment and exact provider delivery via
   the paid web provisioning job. Finish integration before enabling; revalidate
   the existing cart and enforce the one-IP live limit, never blind-retry checkout.
@@ -43,16 +52,30 @@ PREPARED; NO IP/VM OR MAPPING CREATED**.
 
 ## Activation
 
-- [ ] Import/register intended IP as FREE with provider read-back.
-- [ ] Run OVH profile preflight and persist component results.
-- [ ] Set OVH ACTIVE/default and Vultr STANDBY in one audited transaction.
+- [ ] Import/register intended IP as FREE with provider read-back. (Pending —
+  the IP is acquired live by `checkout_cart` during the E2E create, not before.)
+- [x] Run OVH profile preflight and persist component results. 6×HEALTHY rows
+  for profile 0402 committed at `2026-09-15T17:29:03Z`; re-verified read-only
+  at the same minute.
+- [x] Set OVH ACTIVE/default and Vultr STANDBY in one audited transaction.
+  Single commit at `2026-09-15T17:29:03Z`: 0402 ACTIVE, accept_new on, default,
+  config v3, backend `ovh_static_pool`, mapping `ovh_gwnat`; 0401 STANDBY v2,
+  accept_new off, not default.
 - [ ] Confirm owner-only/authenticated policy from a normal-user session.
+  (Covers E2E steps 1–3 as user `akakenly.design@gmail.com`.)
 
 ## Browser E2E
 
-The PO starts the canonical smoke command with `LTT_SMOKE_USER` and
-`LTT_SMOKE_PASS`; the agent reads the generated report. The agent does not type
-the password. After authenticated state is available, Playwright must:
+**Protocol override (owner, 2026-09-16, UTC+7):** the agent launches Chrome
+itself via Playwright, obtains the test account from the system and logs in
+itself. The driver
+(`D:/LTTSTUDIOSAPP-runtime/vps-v4-e2e-drive.mjs`) reads the credential from
+`C:/LTTPlatform/secrets/ltt_d09_pass.txt` (line 1 = email
+`akakenly.design@gmail.com`, line 2 = password, UTF-8 no BOM) or from
+`LTT_SMOKE_USER`/`LTT_SMOKE_PASS`, substitutes it only at fill time, and never
+writes it to any log, screenshot or report. The previous "PO starts the smoke
+command" procedure is superseded. After authenticated state is available, the
+run must:
 
 1. Open real `/vps`, select region/plan/OS, submit create.
 2. Assert no provider/profile/gateway control or request field.
