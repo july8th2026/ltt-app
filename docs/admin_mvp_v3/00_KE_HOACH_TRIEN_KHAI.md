@@ -207,8 +207,8 @@ lượng ở §4 điều đó **không khả thi**. Cơ chế bàn giao chính l
 
 ## 4. Kế hoạch thi hành
 
-Quy ước mọi bước: theo **`docs/00_LTT_OPERATING_CONTRACT.md` §4** — vòng lặp là
-`gate.py --doi`, đầy đủ trước khi báo xong một bước.
+Quy ước mọi bước: test/gate theo **`docs/00_LTT_OPERATING_CONTRACT.md` §4** —
+không chép lại nhịp ở đây.
 
 ### Pha A — Đọc & kiến trúc (prompt 00–05) · READ ONLY
 

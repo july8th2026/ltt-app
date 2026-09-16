@@ -12,6 +12,32 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-16 — Một luật gate duy nhất: test nhắm trong phiên, L3 một lần cuối
+
+- Đo 133 bản ghi `test-results/gates/*.json` (04/09 → 15/09): 114 lượt L3, trung
+  vị 14,4 phút, 64 đỏ; **100/114** nằm trong chuỗi chạy lại cách nhau < 45 phút,
+  chuỗi dài nhất 7 lượt = 170 phút; `--doi` (khi ấy là "vòng lặp mặc định") được
+  dùng **1** lần. Nhịp gate bị chép ở 6 tệp luật + 12 tệp kế hoạch + 7 memory.
+- Chủ dự án chốt: sửa lỗi tại chỗ; L3 chỉ chạy một lần khi mọi pha xong. Hợp
+  đồng §4 viết lại (§4.1 test nhắm · §4.2 một L3 · §4.6 khép bằng
+  `gate.py --doi --tu <sha>` · §7 hoà `main`/deploy). `CLAUDE.md`, `AGENTS.md`,
+  `DEVELOPMENT_WORKFLOW.md`, `16_CAP_NHAT_VA_DEPLOY.md`, `QUY_TRINH_WORKTREE.md`,
+  FAST_BUILD và 10 tệp kế hoạch nay chỉ trỏ về hợp đồng.
+- Cơ học hoá: `gate.py` in lệnh chạy lại đúng phép đỏ + lệnh khép, từ chối L3 gõ
+  tay ngay sau L3 đỏ cùng nhánh (`--l3-lai` để vượt), bản ghi có `ha_cap_tu` /
+  `lenh_chay_lai`. `check_luat_van_hanh.py` nay bắt mọi nhịp gate (kể cả
+  `--doi`, "sau mỗi đợt/hạng mục/lát cắt") ngoài hợp đồng, và không còn chết vì
+  cp1252 trên đường đỏ. `ho_so_cay.TRUNK` = `main` (trunk cũ `admin-mvp-v3` đã
+  xoá nên mọi cây từng báo "khop trunk"); kế hoạch `CERTIFYING` bỏ `--quick`/`--doi`
+  trước L3.
+- Cây chưa gộp `main`: luật tóm tắt đặt ở `~/.claude/CLAUDE.md` và
+  `~/.codex/AGENTS.md` (mọi phiên đọc), memory dùng chung đã sửa 7 tệp.
+- Test nhắm: `test_1280` (mới), `test_1100`, `test_1238`, `test_974`, `test_145`,
+  `test_365`, `test_61`. Một đỏ **có sẵn trên `origin/main`**, không thuộc thay
+  đổi này: `test_145::test_banh_coc_nuot_loi_khong_cho_tang_them` (66 > mốc 62;
+  sáu chỗ mới ở `apps/vps/services/*`, `server/admin.py`, `server/deps.py`,
+  `server/templating.py`).
+
 ## 2026-09-15 — H54: Tool 1.9.2 khớp reasoning và kiểm thật Codex
 
 - Tài liệu chính thức Codex xác nhận custom provider dùng Responses và catalog

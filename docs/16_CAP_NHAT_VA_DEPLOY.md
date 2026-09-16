@@ -48,12 +48,12 @@ cd frontend/<app> && npm run build
 ## 2. Cổng chất lượng — và ba cái bẫy của chính nó
 
 Nguồn duy nhất quy định cấp test và cadence là
-`docs/00_LTT_OPERATING_CONTRACT.md` §4. Vòng lặp mặc định dùng L1; L3 chỉ chạy
-ở checkpoint mà hợp đồng yêu cầu:
+`docs/00_LTT_OPERATING_CONTRACT.md` §4 (tệp này không chép lại). Với deploy, điều
+cần biết là **một phán quyết xanh trên đúng SHA được deploy** — hợp đồng §7:
 
 ```bash
-python tools/gate.py --doi         # L1: test chạm tới phần đã đổi
-python tools/gate.py               # L3: trước khi báo xong / deploy
+python tools/gate.py                       # L3 cuối phiên (đã chạy thì KHÔNG chạy lại)
+python tools/gate.py --doi --tu <sha L3>   # nối phán quyết tới SHA deploy nếu cây đã đi tiếp
 ```
 
 🔴 **`RESULT: PASS` chưa chắc là bằng chứng.** Đọc cả dòng ngoặc vuông:
@@ -388,7 +388,9 @@ Máy B (`render_gateway`, `llm_gateway`, ComfyUI, llama-swap) **không** nhận 
 1. `git fetch origin && git log --oneline origin/main..HEAD` — xem mình
    đang mang gì;
 2. `git log --oneline HEAD..origin/main` — xem phiên khác đã thêm gì;
-3. nếu có, **merge về trước**, chạy gate trên cây đã hợp, rồi mới ff.
+3. nếu có, **merge về trước**, rồi trên cây đã hợp chạy
+   `python tools/gate.py --doi --tu <sha lượt L3 của bạn>` (hợp đồng §7 — không
+   phải L3 lần hai), rồi mới ff.
 
 ⭐ Và **nói với phiên kia** trước khi deploy nếu trunk vừa nhận việc của họ —
    deploy chép cả cây, nên bạn đang đưa mã của họ lên production cùng mã mình.

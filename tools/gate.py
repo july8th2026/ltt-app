@@ -1,21 +1,26 @@
 """
 gate.py — MỘT lệnh chạy cổng chất lượng theo hồ sơ tường minh.
 
-    python tools/gate.py --doi       # VONG LAP L1 — pham vi tu diff
-    python tools/gate.py             # PHAN QUYET L3 — day du, ~11,4 phut
-    python tools/gate.py --quick     # bo hai buoc nang, ~3 phut
-    python tools/gate.py --vong-lap  # CHAN DOAN   — tinh + `--lf`, ~15 giay
-    python tools/gate.py --doi --dung-som   # nhu tren, nhung DO thi dung ngay
+    python tools/gate.py                    # PHAN QUYET L3 — MOT lan, cuoi phien
+    python tools/gate.py --doi --tu <sha>   # KHEP ban sua sau mot L3 do
+    python tools/gate.py --quick            # bo hai buoc nang, ~3 phut
+    python tools/gate.py --vong-lap         # tinh + `--lf`
 
-## Ba che do, va chon nham thi hong theo hai kieu khac nhau
+🔑 KHI NAO chay: `docs/00_LTT_OPERATING_CONTRACT.md` §4 — va CHI o do. Tom tat:
+   trong phien chi TEST NHAM (khong gate); L3 MOT lan khi moi pha xong; L3 do
+   thi sua tai cho, chay lai dung phep do, khep bang `--doi --tu <sha>`. Tep nay
+   CO HOC hoa hai phan cua luat ay — xem khoi "NHIP MOT L3" o cuoi tep.
 
-| | Chay gi | Do | Dung khi |
+## Cac che do
+
+| | Chay gi | Do | Dung khi (hop dong §4) |
 |---|---|---|---|
-| `--doi` | thanh phan cham toi diff | tuy diff | vong lap mac dinh |
-| day du | tat ca cac buoc | **~11,4 phut** | checkpoint / truoc khi bao xong |
-| `--quick` | bo `bo test` + da tien trinh | **~3 phut** | sua nhieu tep lien tiep |
-| `--vong-lap` | tinh + `test_nhanh --lf` | **~15 giay** | chan doan last-failed |
-| `--dung-som` | *(co ghep them)* dung o loi RE dau tien | tiet kiem ~575s | vong lap |
+| day du | tat ca cac buoc | **~15 phut** | MOT lan, cuoi phien |
+| `--doi --tu <sha>` | thanh phan cham toi diff tu `<sha>` | tuy diff | khep ban sua sau L3 do · hoa vao main |
+| `--pham-vi <tp>` | mot thanh phan + nguoi tieu thu | tuy tp | chung nhan rieng changeset loi |
+| `--quick` | bo `bo test` + da tien trinh | **~3 phut** | khong nam trong nhip chuan |
+| `--vong-lap` | tinh + `test_nhanh --lf` | **~15 giay** | khong nam trong nhip chuan |
+| `--dung-som` | *(co ghep them)* dung o loi RE dau tien | tiet kiem ~575s | luot khep |
 
 ⚠️ **"~40 giay" cua `--quick` la mot con so DA TROI** — sua 13/09/2026. Do that
    tren cay nay: rieng buoc `mypy` mat **124,0s**, va tong moi buoc khong phai
@@ -1025,7 +1030,7 @@ def _steps_pham_vi(tep_test: list[str]) -> list[Step]:
 #:   duoi day phai tra loi: no CHUNG MINH duoc gi, va no KHONG chung minh gi.
 HO_SO: dict[str, dict] = {
     "nhanh": {
-        "mo_ta": "bo hai buoc nang (~40s) — chinh la co `--quick`",
+        "mo_ta": "bo hai buoc nang (~3 phut) — chinh la co `--quick`",
         "chung_minh": "moi phep kiem TINH deu xanh",
         "khong_chung_minh": "KHONG phai bang chung. Moi loi THAT ngay 25/08 "
                             "deu nam o dung buoc `pytest` ma che do nay bo qua.",
@@ -1703,6 +1708,10 @@ def main() -> int:
                         help="moc so sanh cho --doi (vd baseline SHA cua mot "
                              "chien dich dai co commit checkpoint). Mac dinh "
                              "so voi HEAD")
+    parser.add_argument("--l3-lai", action="store_true",
+                        help="cho chay L3 ngay sau mot L3 DO (vd luot truoc bi "
+                             "nhieu vi may qua tai). Mac dinh bi tu choi: "
+                             "sua tai cho roi khep bang --doi --tu <sha>")
     args = parser.parse_args()
 
     # `--tu` mot minh khong lam gi ca. Noi thang thay vi im lang bo qua: mot co
@@ -1743,7 +1752,19 @@ def main() -> int:
     noi_tiep = ho_so == "noi-tiep"
     tuan_tu = args.tuan_tu or noi_tiep
 
+    # 🔴 MOT L3 MOI PHIEN (hop dong §4.2/§4.6). Chi chan L3 NGUOI GO — mot luot
+    #    `--doi` tu nang len day du la MAY quyet dinh, khong phai thoi quen, nen
+    #    kiem nay dung TRUOC `_thu_hep`.
+    if ho_so == "day-du" and not args.l3_lai:
+        chan = l3_lai_bi_chan(ROOT / "test-results" / "gates",
+                              _git_gon(["git", "rev-parse", "--abbrev-ref", "HEAD"]))
+        if chan:
+            print(chan)
+            return 2
+
     steps = _steps(ho_so in ("nhanh", "vong-lap"), noi_tiep=noi_tiep)
+    ha_cap_tu = ""
+    ly_do_ha_cap = ""
     if ho_so == "vong-lap":
         steps = _rut_gon_vong_lap(steps)
     elif ho_so in ("pham-vi", "doi"):
@@ -1751,10 +1772,18 @@ def main() -> int:
         if steps is None:
             # `_thu_hep` da giai thich vi sao khong thu hep duoc. Ha cap xuong
             # day du thay vi chay mot phep do hep ma khong biet no hep sai cho.
+            #
+            # ⭐ GHI LAI lan nang cap. Truoc 16/09 `ho_so` bi ghi de thanh
+            #    `day-du` va ly do bi vut: ban ghi khong phan biet duoc mot `--doi`
+            #    tu nang voi mot L3 go tay, nen khong ai do duoc `--doi` hong o dau.
+            ha_cap_tu = ho_so
+            ly_do_ha_cap = ghi_chu_pham_vi.strip()
+            print(ghi_chu_pham_vi)
             ho_so = "day-du"
             steps = _steps(False)
         else:
             print(ghi_chu_pham_vi)
+    sha_dau = _git_gon(["git", "rev-parse", "HEAD"])
     # 🔴 XEP HANG, DUNG CHAY TRANH. Pha `bo test` lay `-n auto` = MOI loi,
     #    nen hai luot cung luc chi chia doi cung mot chiec banh: tong thoi gian
     #    gan y het chay lan luot, nhung tra them gap doi bo nho, gap doi thu muc
@@ -1936,16 +1965,38 @@ def main() -> int:
         print(f"RESULT: {ket}  [--ho-so {ho_so}: bo test THU HEP theo pham vi]")
         if not failed:
             print(f"        {HO_SO[ho_so]['khong_chung_minh']}")
-            print("        Chay `python tools/gate.py` truoc khi bao xong.")
+            # ⛔ KHONG bao "chay gate day du" o day nua: luot `--doi --tu <sha>`
+            #    thuong la luot KHEP sau mot L3, va bao nguoi ta chay L3 lan hai
+            #    la de ra dung chuoi chay lai ma hop dong §4.6 cam.
+            print("        Da co L3 cua phien (luot nay khep/hoa no): xong.")
+            print("        Chua co L3 nao: chay `python tools/gate.py` MOT lan"
+                  " khi moi pha xong.")
     else:
         print("RESULT:", ket)
 
-    _ghi_ket_qua(ho_so, steps, ket, tong_s, khoa, cay_da_doi)
+    # 🔴 DO THI IN SAN DUONG DI TIEP — xem khoi "NHIP MOT L3" o cuoi tep.
+    #    Nguoi vua thay mot dong FAIL se lam thu de nhat trong tam tay; neu thu do
+    #    la "chay lai gate" thi ta tra them ~15 phut moi vong.
+    chay_lai = lenh_chay_lai(steps) if failed else []
+    if chay_lai:
+        print("\nCHAY LAI DUNG PHEP DO (KHONG chay lai ca gate):")
+        for lenh in chay_lai:
+            print(f"  {lenh}")
+        if ho_so in ("day-du", "noi-tiep", "phat-hanh") and not cay_da_doi:
+            print("Sua xong va cac phep tren xanh -> KHEP ban sua:")
+            print(f"  python tools/gate.py --doi --tu {sha_dau}")
+
+    _ghi_ket_qua(ho_so, steps, ket, tong_s, khoa, cay_da_doi,
+                 chay_lai=chay_lai, ha_cap_tu=ha_cap_tu,
+                 ly_do_ha_cap=ly_do_ha_cap, l3_lai=bool(args.l3_lai),
+                 sha=sha_dau)
     return 0 if not failed else 1
 
 
 def _ghi_ket_qua(ho_so: str, steps: list[Step], ket: str, tong_s: float,
-                 khoa, cay_da_doi: bool) -> None:
+                 khoa, cay_da_doi: bool, *, chay_lai: list[str] | None = None,
+                 ha_cap_tu: str = "", ly_do_ha_cap: str = "",
+                 l3_lai: bool = False, sha: str = "") -> None:
     """Ghi danh tinh cua luot chay nay vao `test-results/gates/<id>.json`.
 
     ## Vi sao can
@@ -1969,7 +2020,9 @@ def _ghi_ket_qua(ho_so: str, steps: list[Step], ket: str, tong_s: float,
         thu_muc = ROOT / "test-results" / "gates"
         thu_muc.mkdir(parents=True, exist_ok=True)
         luc = datetime.now(timezone.utc)
-        sha = _git_gon(["git", "rev-parse", "HEAD"])
+        # ⚠️ SHA LUC BAT DAU, khong phai luc ghi: lenh khep `--doi --tu <sha>`
+        #    phai do tu dung cay ma luot nay da phan quyet.
+        sha = sha or _git_gon(["git", "rev-parse", "HEAD"])
         ban_ghi = {
             "id": f"{luc.strftime('%Y%m%dT%H%M%SZ')}-{os.getpid()}",
             "luc": luc.isoformat(timespec="seconds"),
@@ -1984,6 +2037,12 @@ def _ghi_ket_qua(ho_so: str, steps: list[Step], ket: str, tong_s: float,
             "sha": sha,
             "nhanh": _git_gon(["git", "rev-parse", "--abbrev-ref", "HEAD"]),
             "cay_da_doi_giua_chung": cay_da_doi,
+            # `doi`/`pham-vi` neu luot nay la mot phep do hep da TU NANG len
+            # day du; rong neu nguoi goi xin day du ngay tu dau.
+            "ha_cap_tu": ha_cap_tu,
+            "ly_do_ha_cap": ly_do_ha_cap,
+            "l3_lai": l3_lai,
+            "lenh_chay_lai": list(chay_lai or []),
             # `CHUA` = `--dung-som` da cat truoc khi buoc nay chay. Bang chung
             # may sinh phai phan biet duoc no voi PASS — xem `NHOM_RE`.
             "buoc": [{"ten": s.name, "ket": ("CHUA" if s.ok is None else
@@ -2000,6 +2059,150 @@ def _ghi_ket_qua(ho_so: str, steps: list[Step], ket: str, tong_s: float,
         #    duoc phep lam do mot luot gate da chay xong — nhung im lang o day
         #    thi phien sau se tuong no da duoc ghi.
         print(f"        [ket qua] KHONG ghi duoc: {e}")
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# NHIP MOT L3 — hop dong van hanh §4.2 / §4.6
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# 🔴 VI SAO CO. Do 16/09/2026 tren 133 ban ghi `test-results/gates/*.json`:
+#
+#        L3 114 luot · 64 do · 100/114 nam trong CHUOI CHAY LAI (cung nhanh,
+#        cach < 45 phut) · chuoi dai nhat 7 luot = 170 phut.
+#
+#    Gan nhu moi luot L3 lap lai la dung gate de XAC NHAN mot ban sua — viec mot
+#    lenh `pytest` mot tep tra loi trong vai giay. Luat viet "chay lai dung phep
+#    do" da co tu 08/09 va khong ngan duoc: chu viet khong thang thoi quen. Nen
+#    hai thu duoi day la CO HOC:
+#
+#    1. khi do, gate IN SAN lenh chay lai dung phep do + lenh khep — nguoi doc
+#       khong phai nghi xem chay lai cai gi, nen khong con ly do chay lai ca gate;
+#    2. mot L3 go tay ngay sau mot L3 do tren cung nhanh bi TU CHOI.
+
+#: Trong bao lau sau mot L3 do thi mot L3 go tay bi tu choi.
+#:
+#: ⚠️ Khong phai do nham mot thoi luong phien. No chi can dai hon mot vong
+#:    "sua -> chay lai" (do: chuoi dai nhat 170 phut) va ngan hon mot ngay lam
+#:    viec, de L3 cua phien HOM SAU tren cung nhanh khong bi chan oan.
+CUA_SO_L3_LAI_GIO = 12.0
+
+def _tep_test_do(dau_ra: str) -> list[str]:
+    """Tep test do/loi trong dau ra pytest, da dedupe, giu thu tu xuat hien.
+
+    Doc dong `FAILED tests/test_x.py::test_y - ...` / `ERROR tests/test_x.py`.
+    """
+    import re
+
+    ra: list[str] = []
+    for m in re.finditer(r"^(?:FAILED|ERROR)\s+(tests[\\/][^\s:]+?\.py)",
+                         dau_ra, re.M):
+        tep = m.group(1).replace("\\", "/")
+        if tep not in ra:
+            ra.append(tep)
+    return ra
+
+
+def lenh_chay_lai(steps: list[Step]) -> list[str]:
+    """Lenh chay lai DUNG tung phep da do — khong phai ca gate.
+
+    ⭐ Buoc `bo test` doc TRON dau ra (`tep_loi`), khong chi 40 dong duoi: danh
+       sach FAILED cua mot luot dai de troi khoi `tail`.
+    ⚠️ Khong tach duoc tep nao (vd pytest chet truoc khi thu thap) thi tra lai
+       dung lenh cua buoc — van hep hon ca gate.
+    """
+    ra: list[str] = []
+    for s in steps:
+        if s.ok is not False:
+            continue
+        if s.name.startswith("bo test"):
+            dau_ra = s.tail
+            if s.tep_loi:
+                try:
+                    dau_ra = (ROOT / s.tep_loi).read_text(
+                        encoding="utf-8", errors="replace")
+                except OSError:
+                    pass
+            tep = _tep_test_do(dau_ra)
+            if tep:
+                n = " -n 6" if len(tep) >= 3 else ""
+                ra.append(f"python -m pytest{n} -q {' '.join(tep)}")
+                continue
+        argv = ["python" if a == sys.executable else a for a in s.argv]
+        lenh = " ".join(argv)
+        try:
+            tuong_doi = Path(s.cwd).resolve().relative_to(ROOT.resolve())
+        except ValueError:
+            tuong_doi = None
+        if tuong_doi is not None and str(tuong_doi) not in ("", "."):
+            lenh = f"cd {tuong_doi.as_posix()} && {lenh}"
+        ra.append(lenh)
+    return ra
+
+
+def l3_lai_bi_chan(thu_muc: Path, nhanh: str,
+                   bay_gio: float | None = None) -> str:
+    """Ly do tu choi mot L3 go tay, hoac `""` neu duoc chay.
+
+    Chan khi ban ghi L3 (`day-du`) MOI NHAT cua nhanh nay trong cay nay la mot
+    luot DO, KHONG mang nhan cay-doi, va con trong `CUA_SO_L3_LAI_GIO`.
+
+    ⭐ Luot mang nhan `CAY DA DOI` duoc cho qua: no khong phai mot phan quyet,
+       nen chay lai no khong phai "xac nhan ban sua".
+    ⛔ Khong doc duoc ban ghi thi CHO QUA. Mot cong tu choi vi chinh no hong la
+       mot cong nguoi ta se tat — va mat luon phan canh bao.
+    """
+    import json
+    from datetime import datetime
+
+    try:
+        tep_ghi = sorted(thu_muc.glob("*.json"))
+    except OSError:
+        return ""
+    moi_nhat: dict | None = None
+    for tep in tep_ghi:
+        try:
+            r = json.loads(tep.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if r.get("ho_so") != "day-du" or r.get("nhanh") != nhanh:
+            continue
+        if moi_nhat is None or str(r.get("luc", "")) > str(moi_nhat.get("luc", "")):
+            moi_nhat = r
+    if moi_nhat is None:
+        return ""
+    ket = str(moi_nhat.get("ket_qua", ""))
+    if ket.startswith("PASS") or moi_nhat.get("cay_da_doi_giua_chung"):
+        return ""
+    try:
+        luc = datetime.fromisoformat(str(moi_nhat["luc"])).timestamp()
+    except (KeyError, ValueError):
+        return ""
+    gio = ((bay_gio if bay_gio is not None else time.time()) - luc) / 3600
+    if gio > CUA_SO_L3_LAI_GIO:
+        return ""
+    do = [b.get("ten", "?") for b in moi_nhat.get("buoc", [])
+          if b.get("ket") == "FAIL"]
+    dong = [
+        "=" * 62,
+        "TU CHOI: L3 lan hai ngay sau mot L3 DO (hop dong van hanh muc 4.6).",
+        f"  luot truoc : {moi_nhat.get('id', '?')}  {ket[:40]}",
+        f"  cach day   : {gio:.1f} gio, nhanh {nhanh}",
+        f"  buoc do    : {', '.join(do) or '?'}",
+        "",
+        "Lam dung thu tu nay thay vi chay lai ca gate:",
+        "  1. sua tai cho",
+        "  2. chay lai DUNG cac phep da do:",
+    ]
+    for lenh in moi_nhat.get("lenh_chay_lai") or ["(xem bang buoc cua luot truoc)"]:
+        dong.append(f"       {lenh}")
+    dong += [
+        "  3. KHEP ban sua:",
+        f"       python tools/gate.py --doi --tu {moi_nhat.get('sha', '<sha>')}",
+        "",
+        "Luot truoc bi nhieu that (may QUA TAI...) thi chay lai voi `--l3-lai`.",
+        "=" * 62,
+    ]
+    return NL_GATE.join(dong)
 
 
 def _git_gon(argv: list[str]) -> str:

@@ -147,8 +147,9 @@ credential, kể cả khi mọi bước riêng lẻ trông đều hợp lý.
   Đó là nơi ghi logic nghiệp vụ nằm ở đâu, ngưỡng phình của `routes.py`, và
   những việc dùng chung phải gọi `platform_core` chứ không chép lại.
 - Không xoá test đang xanh, trừ khi có quyết định sản phẩm được ghi lại.
-- Trước khi báo xong, bắt buộc chạy **một lệnh duy nhất**: `python tools\gate.py`.
-  Xem **mục 4b** cho ba lệnh chạy test và lệnh nào dùng khi nào.
+- Nhịp test/gate (test nhắm trong phiên, `python tools\gate.py` **một lần** khi
+  mọi pha xong) ở **`docs/00_LTT_OPERATING_CONTRACT.md` §4** — không chép lại ở
+  đây. Mục 4b chỉ giữ sự thật kỹ thuật.
 - Ghi **đúng lệnh đã chạy và kết quả thật** vào nhật ký. Phân biệt rõ
   `đã chạy` / `chưa chạy` / `pass` / `fail`.
 - **Không bao giờ tuyên bố hoàn thành dựa trên kế hoạch hay số test thu thập
@@ -696,12 +697,9 @@ làm mẫu). `test_148` chặn cả lớp lỗi này.
 Kể cả trong chú thích và docstring. Đã vi phạm hai lần, cả hai đều do
 `test_no_app_slug_is_hardcoded_in_the_platform` bắt.
 
-### 8.5 Trước khi báo xong
+### 8.5 Gate kiểm gì
 
-```powershell
-python tools\gate.py
-```
-
+Khi nào chạy: `docs/00_LTT_OPERATING_CONTRACT.md` §4 (một lần, cuối phiên).
 Gate gồm: quét bí mật → lint hợp đồng app → **quét tên chưa định nghĩa** → test
 3 frontend → pytest. Bước "tên chưa định nghĩa" thêm 2026-08-06 sau khi phát
 hiện `POST /upscalevideo/queue` — đường nộp việc **chính** của app đó — gọi

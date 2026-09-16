@@ -51,13 +51,15 @@ mã nguồn**: `grep`/`Glob` trên `apps/`, `platform_core/`, `server/`.
 
 ### Test và cổng chất lượng — chi tiết ở hợp đồng §4
 
-6. **Mặc định của vòng lặp là `python tools\gate.py --doi`** (L1) — chỉ chạy test
-   chạm tới thứ bạn vừa sửa, và tự hạ cấp xuống đầy đủ khi không chắc.
-7. ⛔ **KHÔNG chạy gate đầy đủ sau mỗi lần sửa.** Gate là công cụ ra **PHÁN
-   QUYẾT**, không phải công cụ **CHẨN ĐOÁN**. Đo thật: L3 trung vị **11,4 phút**
-   trên 43 lượt — không phải "5 phút".
-8. **Trước khi báo xong: `python tools\gate.py`** đầy đủ. Mọi chế độ khác đều tự
-   khai ở dòng `RESULT` rằng chúng **không phải bằng chứng**.
+6. **Trong phiên: chỉ TEST NHẮM** đúng cụm vừa sửa
+   (`python tools\thanh_phan.py --test <tp>` → `python -m pytest <tệp> -q`).
+   Đỏ ⇒ sửa **tại chỗ** ⇒ chạy lại **đúng phép đã đỏ**.
+7. ⛔ **KHÔNG `gate.py` ở bất kỳ chế độ nào trong phiên** — kể cả `--doi`,
+   `--quick`, `--vong-lap`. Gate là công cụ ra **PHÁN QUYẾT**, không phải công cụ
+   **CHẨN ĐOÁN**.
+8. **L3 — `python tools\gate.py` — MỘT lần, khi mọi pha đã xong.** L3 đỏ ⇒ sửa
+   tại chỗ ⇒ chạy lại đúng phép đỏ ⇒ khép bằng `gate.py --doi --tu <sha>`.
+   ⛔ **Không** chạy L3 lần hai để xác nhận bản sửa. Toàn văn: hợp đồng §4.1–§4.6.
 9. ⛔ **Đừng gọi `pytest` trực tiếp cho toàn kho** — nó bỏ qua test frontend, nên
    "full regression xanh" sẽ là một câu nói sai.
 10. ⛔ **`test_nhanh.py` rồi `gate.py` là trả tiền HAI LẦN.** Bước `bo test` bên

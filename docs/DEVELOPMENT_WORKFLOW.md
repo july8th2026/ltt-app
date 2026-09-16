@@ -15,9 +15,14 @@ python tools/cay_rieng.py liet-ke      # ai đang có cây riêng nào
 python tools/cay_rieng.py tao <ten>    # cây + nhánh phien/<ten> cho riêng bạn
 cd D:\LTTSTUDIOSAPP-<ten>
 python tools/ho_so_cay.py trang-thai   # cây này ở hồ sơ nào, governance có cũ không
-python tools/gate.py --doi             # mốc xuất phát, chỉ chạy phần liên quan
 git rev-parse main                     # ghi BASE_SHA vào hồ sơ task
 ```
+
+⛔ **Không** chạy gate làm "mốc xuất phát". Cây sinh từ `main` đã mang phán quyết
+của lượt L3 cuối cùng trên `main`; một lượt nữa ở đầu phiên là trả ~15 phút cho
+một câu trả lời đã có. Nghi `main` hỏng thì chạy **test nhắm** của cụm bạn sắp
+sửa (`python tools/thanh_phan.py --test <tp>`) — đó là câu "ta làm hỏng hay vốn
+hỏng" rẻ nhất.
 
 🔑 Một chiến dịch **dài** trong cây riêng có thể opt-in hồ sơ `FAST_BUILD` —
 luật ở `docs/00_LTT_OPERATING_CONTRACT.md` §4.10, thao tác ở
@@ -33,17 +38,10 @@ nhánh từ một *commit*. Lệnh `tao` in ra số tệp đang dở chính vì 
 
 ## 2. Vòng làm việc
 
-```
-sửa  →  gate --doi  →  sửa  →  gate --doi  →  ...  →  gate (đầy đủ)  →  commit
-```
-
-🔑 **Bảng "cấp nào chứng minh gì" nay ở `docs/00_LTT_OPERATING_CONTRACT.md` §4** —
-một chỗ duy nhất, cạnh giá **đo được** của từng cấp.
-
-*(Tệp này từng giữ bảng đó, và bảng ấy **đúng** — nó là nguồn duy nhất đặt `--doi`
-làm vòng lặp mặc định, trong khi `CLAUDE.md` và `AGENTS.md` bảo `--vong-lap`. Hợp
-đồng canonical giữ lại lựa chọn của tệp này. Cái bỏ đi chỉ là **bản thứ hai** của
-cùng một luật — và con số "~7 phút", vốn đã trôi: đo trên 43 lượt thật là 11,4.)*
+🔑 **Nhịp test/gate ở `docs/00_LTT_OPERATING_CONTRACT.md` §4 — và chỉ ở đó.**
+Tệp này không chép lại, vì hai bản chép của cùng một luật là hai bản sẽ trôi khác
+nhau. *(Trước 2026-09-16 mục này vẽ một vòng `--doi` sau mỗi lần sửa; các phiên
+không dùng vòng ấy mà nhảy thẳng lên gate đầy đủ — hợp đồng §4.2 có số đo.)*
 
 ---
 
@@ -125,7 +123,7 @@ khoá còn hiệu lực. Toàn văn: `docs/QUY_TAC_CHAY_LENH_NANG.md`.
 ## 6. Kết thúc phiên
 
 ```powershell
-python tools/gate.py                    # đầy đủ, trên cây đứng yên
+python tools/gate.py                    # L3 MOT lan khi moi pha xong - hop dong §4.2
 git add <từng path của mình>            # KHÔNG `git add -A`
 git diff --cached                       # kiểm không dính tệp phiên khác
 git commit

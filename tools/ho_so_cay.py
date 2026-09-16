@@ -54,7 +54,12 @@ from pathlib import Path
 GOC = Path(__file__).resolve().parent.parent
 
 #: Nhanh trunk canonical. Ghi de bang `LTT_TRUNK` khi trunk doi ten.
-TRUNK = os.environ.get("LTT_TRUNK", "admin-mvp-v3")
+#:
+#: 🔴 Truoc 16/09 mac dinh la `admin-mvp-v3` — mot nhanh DA BI XOA sau CMC. Moi
+#:    phep so khi do tra `None`, `governance_lech()` bo qua tung tep, va
+#:    `trang-thai` in "GOVERNANCE : khop trunk" tren MOI cay, ke ca cay cu nhat.
+#:    Mot bo do lech khong co gi de so thi phai NOI RA — xem `trunk_ton_tai`.
+TRUNK = os.environ.get("LTT_TRUNK", "main")
 
 TEN_TEP = "ltt_ho_so.json"
 
@@ -161,6 +166,11 @@ def _lag() -> str:
     return ra if ra is not None else "?"
 
 
+def trunk_ton_tai() -> bool:
+    return _git_thu("rev-parse", "--verify", "--quiet",
+                    f"{TRUNK}^{{commit}}") is not None
+
+
 def governance_lech() -> tuple[list[str], list[str]]:
     """`(cu, di_truoc)` - tep governance da CU, va tep cay nay DI TRUOC trunk.
 
@@ -224,7 +234,10 @@ def _trang_thai() -> int:
         print(f"  baseline   : {tt.get('baseline_sha', '?')}")
         print(f"  pham vi    : {tt.get('pham_vi', '?')}")
         print(f"  bat luc    : {tt.get('bat_dau', '?')}")
-    if cu:
+    if not trunk_ton_tai():
+        print(f"GOVERNANCE : KHONG DO DUOC - trunk `{TRUNK}` khong ton tai. "
+              "Dat `LTT_TRUNK` cho dung nhanh trunk.")
+    elif cu:
         print(f"GOVERNANCE : CU o {len(cu)} tep (trunk da di tiep):")
         for t in cu:
             print(f"  - {t}")
@@ -322,7 +335,8 @@ def _no_kiem() -> int:
     tt = doc()
     if tt.get("ho_so") != "FAST_BUILD":
         raise SystemExit("`no-kiem` chi co nghia trong FAST_BUILD: no do TU "
-                         "baseline. O NORMAL, `gate.py --doi` da la cau tra loi.")
+                         "baseline. O NORMAL, `thanh_phan.py --doi` cho tap "
+                         "test nham.")
     baseline = str(tt.get("baseline_sha", ""))
     if not baseline:
         raise SystemExit("Trang thai thieu `baseline_sha`. `tat` roi `bat` lai.")
@@ -349,8 +363,8 @@ def _no_kiem() -> int:
     if phan is None:
         print("Thanh phan : KHONG suy duoc (cham tep dung chung, hoac mot "
               "duong khong thanh phan nao so huu).")
-        print("  -> buoc 2 duoi day TU HA CAP xuong gate DAY DU. Do la thiet "
-              "ke, khong phai loi.")
+        print("  -> khong co tap test nham; buoc 6 (L3) la phan quyet duy "
+              "nhat. Do la thiet ke, khong phai loi.")
         tep_test: set[str] = set()
     else:
         tep_test = tp.test_can_chay(phan, GOC)
@@ -365,20 +379,34 @@ def _no_kiem() -> int:
     if nhom["nghiem_trong"]:
         print(f"NGHIEM TRONG: {', '.join(nhom['nghiem_trong'])}")
 
+    # ⛔ KHONG co `gate.py --quick` hay `gate.py --doi` o day. Ca hai la tap con
+    #    cua L3 o buoc 6, nen chay chung truoc L3 la tra tien hai lan cho cung
+    #    mot cau tra loi (hop dong §4.2, do 16/09: 100/114 luot L3 nam trong
+    #    chuoi chay lai). Phan re truoc L3 la TEST NHAM, khong phai gate.
     print("\n--- KE HOACH CHUNG NHAN (thu tu theo gia, re truoc) ---")
-    print("1. tinh/micro      python tools/gate.py --quick")
-    print(f"2. gom targeted    python tools/gate.py --doi --tu {baseline[:12]}")
-    print("3. tich hop        test tich hop cua cac app o tren")
-    print("4. doi chieu legacy phep do parity da dong bang trong ban audit")
-    print("5. Workflow E2E    E2E cua node + workflow run")
-    if nhom["giao_dien"]:
-        print("6. trinh duyet     https://app.lttstudios.com (URL CONG KHAI)")
+    if tep_test:
+        n = " -n 6" if len(tep_test) >= 3 else ""
+        print(f"1. test nham       python -m pytest{n} -q "
+              f"{' '.join(sorted(tep_test))}")
+        if n:
+            print("                   (>= 3 tep: `python tools/cua_so_yen.py "
+                  "trang-thai` truoc)")
     else:
-        print("6. trinh duyet     KHONG CAN - khong tep giao dien nao doi")
-    print("7. L3 mot lan      python tools/gate.py")
+        print("1. test nham       (khong suy duoc - bo qua, L3 o buoc 6 phan quyet)")
+    print("2. tich hop        test tich hop cua cac app o tren")
+    print("3. doi chieu legacy phep do parity da dong bang trong ban audit")
+    print("4. Workflow E2E    E2E cua node + workflow run")
+    if nhom["giao_dien"]:
+        print("5. trinh duyet     https://app.lttstudios.com (URL CONG KHAI)")
+    else:
+        print("5. trinh duyet     KHONG CAN - khong tep giao dien nao doi")
+    print("6. L3 MOT lan      python tools/gate.py")
+    print("   L3 do  -> sua tai cho, chay lai dung phep do, roi KHEP:")
+    print("             python tools/gate.py --doi --tu <sha cua luot L3>")
     if nhom["nghiem_trong"]:
-        print("\n[!] Co duong NGHIEM TRONG trong dien thay doi: hop dong muc 7 "
-              "doi L3 o checkpoint, khong chi o cuoi.")
+        print("\n[!] Co duong NGHIEM TRONG trong dien thay doi: test nham o buoc "
+              "1 phai gom ca test tich hop/PostgreSQL cham toi no (hop dong "
+              "muc 4.5). Van chi MOT luot L3.")
     print("\nGia tri o buoc 3-5 khong suy duoc tu git; chung phu thuoc ban "
           "audit cua chinh chien dich nay.")
     return 0

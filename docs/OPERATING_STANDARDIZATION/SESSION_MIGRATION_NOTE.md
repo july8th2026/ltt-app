@@ -1,4 +1,39 @@
-# SESSION MIGRATION NOTE — 2026-09-08
+# SESSION MIGRATION NOTE
+
+# ⭐ 2026-09-16 — MỘT L3 MỖI PHIÊN (bản hiện hành)
+
+## Câu để đưa cho một phiên đang chạy
+
+> Nhịp test/gate đã đổi — đọc lại `docs/00_LTT_OPERATING_CONTRACT.md` §4. Từ giờ:
+> trong phiên **chỉ test nhắm** đúng cụm vừa sửa, **không chạy `gate.py` ở bất kỳ
+> chế độ nào**. Gặp lỗi thì sửa **tại chỗ** và chạy lại **đúng phép đã đỏ**.
+> `python tools\gate.py` (L3) chạy **một lần** khi mọi pha đã xong. L3 đỏ ⇒ sửa
+> tại chỗ ⇒ chạy lại đúng phép đỏ ⇒ khép bằng `gate.py --doi --tu <sha>` — **không**
+> chạy L3 lần hai. Tiếp tục công việc đang làm, không phân tích lại từ đầu.
+
+## Đổi cái gì — ba dòng
+
+1. **Vòng lặp không còn là `gate --doi`.** Trong phiên chỉ test nhắm
+   (`thanh_phan.py --test <tp>` → `pytest <tệp>`).
+2. **L3 một lần cuối phiên**, không phải ở mỗi pha/đợt/hạng mục/lát cắt.
+3. **L3 đỏ thì khép hẹp**, không chạy lại L3. `gate.py` nay in sẵn lệnh chạy lại
+   và **từ chối** một L3 gõ tay ngay sau một L3 đỏ (`--l3-lai` để vượt, có ghi).
+
+## Vì sao — số đo
+
+133 bản ghi gate 04/09 → 15/09: **114** lượt L3, **100** nằm trong chuỗi chạy lại
+cách nhau < 45 phút, chuỗi dài nhất **7 lượt = 170 phút**; `--doi` được dùng đúng
+**1** lần dù luật khi ấy gọi nó là vòng lặp mặc định. Toàn văn ở hợp đồng §4.2.
+
+## Cây cũ chưa gộp `main`
+
+Bản `CLAUDE.md`/`AGENTS.md` trong cây của bạn có thể còn luật cũ. Luật mới **đã
+nằm trong `~/.claude/CLAUDE.md`** (mọi phiên đều đọc), nên áp ngay; gộp `main`
+khi tiện để có cả chốt cơ học trong `tools/gate.py`.
+
+---
+
+# 2026-09-08 — lịch sử (đã bị bản 16/09 thay phần nhịp)
 
 ## Câu để đưa cho một phiên đang chạy
 

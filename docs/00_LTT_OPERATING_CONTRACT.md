@@ -37,11 +37,12 @@ BẮT ĐẦU
   ↓  git worktree list --porcelain · git status · git branch -vv · ListAgents
   ↓  xác định PHẠM VI, viết ra
   ↓  ĐỌC TRƯỚC KHI GHI
-  ↓  ┌─ định nghĩa một CHANGESET NGUYÊN TỬ
+  ↓  ┌─ PHA 1..N — định nghĩa một CHANGESET NGUYÊN TỬ
   │  ├─ thi hành
-  │  ├─ chạy đúng CẤP TEST (§4)
-  │  └─ lặp
-  ↓  chốt phase → cấp cao hơn
+  │  ├─ TEST NHẮM đúng cụm vừa sửa (§4.1) — KHÔNG gate
+  │  ├─ đỏ → sửa TẠI CHỖ → chạy lại ĐÚNG phép đã đỏ
+  │  └─ lặp / sang pha kế tiếp
+  ↓  mọi pha xong → L3 MỘT lần (§4.2) → đỏ thì khép theo §4.6
   ↓  commit / merge / deploy theo §7–§8
   ↓  nghiệm thu THẬT (§9)
 KẾT THÚC — cập nhật `docs/_luutru/PROJECT_MEMORY.md` + memory
@@ -126,55 +127,93 @@ hoạch tự khai cadence riêng chính là thứ đã buộc phải viết hợ
 
 ---
 
-# 4. 🔑 CHÍNH SÁCH TEST — bốn cấp
+# 4. 🔑 CHÍNH SÁCH TEST — một nhịp duy nhất
 
-**Bốn cấp này KHÔNG phải cờ mới.** Chúng là tên gọi cho bốn hồ sơ `gate.py` đã có.
-Không có "gate cũ" và "gate mới".
+**Đây là chỗ DUY NHẤT định nghĩa nhịp test/gate.** `CLAUDE.md`, `AGENTS.md`,
+tài liệu quy trình và mọi tệp kế hoạch chỉ được **trỏ** về đây. Một tệp chép lại
+nhịp là một bản sẽ trôi — `tools/check_luat_van_hanh.py` chặn điều đó.
 
-| Cấp | Lệnh | Chạy gì | Chứng minh gì | ⛔ KHÔNG chứng minh gì |
+Tóm tắt trong ba dòng:
+
+```
+TRONG PHIÊN  : test NHẮM đúng cụm vừa sửa. Đỏ → sửa TẠI CHỖ → chạy lại ĐÚNG phép đỏ.
+               ⛔ KHÔNG gate.py ở bất kỳ chế độ nào.
+CUỐI PHIÊN   : mọi pha xong → python tools\gate.py (L3) MỘT lần.
+L3 ĐỎ        : sửa tại chỗ → chạy lại đúng phép đỏ → khép bằng `gate.py --doi --tu <sha>`.
+               ⛔ KHÔNG chạy L3 lần hai để xác nhận bản sửa.
+```
+
+## Các cấp — tên gọi cho hồ sơ `gate.py`, không phải cờ mới
+
+| Cấp | Lệnh | Chạy gì | Dùng khi | ⛔ KHÔNG chứng minh gì |
 |---|---|---|---|---|
-| **L0** | `python tools\gate.py --quick` | 28/30 bước — bỏ 2 bước nặng | không có lỗi tĩnh | **không phải bằng chứng** — bỏ đúng bước `pytest` nơi lỗi thật hay nằm |
-| **L0+** | `python tools\gate.py --vong-lap` | tĩnh + `test_nhanh --lf` | test **vừa đỏ** đã xanh lại | **không phải bằng chứng** — test đang xanh mà thay đổi này làm hỏng thì nó không hề chạy |
-| **L1** | `python tools\gate.py --doi` | tĩnh + test của phần **đã đổi** | mọi test **chạm tới** phần đã đổi đều xanh | không nói gì về phần còn lại. **Tự hạ cấp** xuống đầy đủ khi không chắc |
-| **L2** | `python tools\gate.py --pham-vi <tp>` | như L1, phạm vi **chọn tay** | như trên | ⚠️ **tin người gọi** — L1 tự kiểm, cấp này thì không |
-| **L3** | `python tools\gate.py` | tất cả 30 bước | toàn bộ cổng chất lượng **trên cây này** | không nói gì về deploy hay production |
+| **T** | `python -m pytest <tệp…> -q` · `python tools\check_<x>.py` | **test nhắm**: đúng tệp test / bước kiểm của cụm vừa sửa | **mọi lúc trong phiên** (§4.1) | không nói gì ngoài cụm đó |
+| **L0** | `python tools\gate.py --quick` | các bước tĩnh, bỏ bước nặng | *không dùng trong nhịp chuẩn* | **không phải bằng chứng** — bỏ đúng bước `pytest` nơi lỗi thật hay nằm |
+| **L0+** | `python tools\gate.py --vong-lap` | tĩnh + `test_nhanh --lf` | *không dùng trong nhịp chuẩn* | **không phải bằng chứng** — test đang xanh mà bị làm hỏng thì không chạy |
+| **L1** | `python tools\gate.py --doi --tu <sha>` | tĩnh + test của phần **đã đổi so với `<sha>`** | **khép** một bản sửa sau L3 đỏ (§4.6); `CERTIFYING` của FAST_BUILD (§4.10) | không nói gì về phần còn lại. **Tự nâng lên L3** khi không chắc |
+| **L2** | `python tools\gate.py --pham-vi <tp>` | như L1, phạm vi **chọn tay** | chứng nhận riêng một changeset lõi (§4.10 *Ngoại lệ lõi*) | ⚠️ **tin người gọi** — L1 tự kiểm, cấp này thì không |
+| **L3** | `python tools\gate.py` | **mọi** bước (`tools/gate.py::_steps`) | **một lần, cuối phiên** (§4.2) | không nói gì về deploy hay production |
 
 Hai hồ sơ chuyên dụng: `--noi-tiep` (nghi kết quả bị nhiễu bởi song song/tải máy)
 và `--ho-so phat-hanh` (L3 + đường cài/rollback). `--tuan-tu` **không phải**
 `--noi-tiep` — xem `AGENTS.md` §4b.
 
-## 4.1 Cấp nào cho việc gì
-
-**Mặc định của vòng lặp là L1 (`--doi`), không phải L0+.**
+## 4.1 Trong phiên — chỉ TEST NHẮM
 
 ```
-sửa → L1 → sửa → L1 → … → (chốt phase) L2 → (trước khi báo xong) L3 → commit
+sửa → T → (đỏ: sửa tại chỗ → chạy lại đúng phép đỏ) → sửa → T → … → sang pha kế tiếp
 ```
 
-⭐ Vì sao L1 chứ không phải `--vong-lap`: `--lf` chỉ chạy lại test **đã đỏ**. Sau
-một lượt xanh nó không chứng minh gì cả, và khi cache `lastfailed` đầy id đã chết
-nó **chạy toàn bộ** — đo được **543,7 giây** cho một chế độ tên là "~15 giây".
-`--doi` chạy đúng những test **chạm tới thứ bạn vừa sửa**, và nó **tự hạ cấp**
-xuống đầy đủ khi không chắc.
+Tìm đúng tập test của cụm vừa sửa — **đừng đoán**:
 
-Dùng L0/L0+ khi: sửa nhiều tệp liên tiếp và muốn bắt lỗi tĩnh sớm; hoặc vừa có
-một lượt đỏ và đang xác nhận nó đã xanh lại.
+```powershell
+python tools\thanh_phan.py --doi              # cây hiện tại chạm tới thành phần nào
+python tools\thanh_phan.py --test <tp>        # tệp test của thành phần đó
+python -m pytest tests\test_A.py tests\test_B.py -q
+```
 
-## 4.2 ⛔ KHÔNG chạy L3 sau mỗi lần sửa
+- **≤ 2 tệp test**: chạy thẳng, không `-n`.
+- **≥ 3 tệp test**: `python tools\cua_so_yen.py trang-thai` trước, và `-n` tối đa 6 (§4.8).
+- Bước kiểm tĩnh lẻ (mypy, i18n, kiểu xuống dòng…): chạy **đúng công cụ đó**. Tên
+  lệnh của từng bước nằm ở `tools/gate.py::_steps`; khi gate đỏ nó in sẵn lệnh.
 
-**Chạy gate đầy đủ sau mỗi lần sửa là VI PHẠM hợp đồng này.**
+⛔ **Không `gate.py` ở bất kỳ chế độ nào trong phiên** — kể cả `--doi`, `--quick`,
+`--vong-lap`. Chủ sản phẩm chốt 16/09/2026: *"gate chỉ là tổng duyệt."*
+
+## 4.2 ⛔ L3 chạy MỘT lần — cuối phiên, khi mọi pha đã xong
 
 🔑 **Gate là công cụ ra PHÁN QUYẾT, không phải công cụ CHẨN ĐOÁN.**
 
-Ngày 27/08 gate đầy đủ bị chạy **sáu lần** chỉ để dò lỗi. Bốn trong sáu lượt đỏ
-vì một thứ mà một bước con lẻ trả lời trong nửa giây. Đo thật: L3 trung vị
-**682,8 giây ≈ 11,4 phút** trên 43 bản ghi — **không phải "5 phút"** như tài liệu
-cũ nói.
+L3 chạy **một lần** khi toàn bộ phạm vi của phiên đã làm xong — trước handoff,
+trước merge vào `main`, trước deploy. Không chạy L3 sau một pha, một hạng mục,
+một lát cắt hay một lần sửa.
+
+Số đo đã buộc phải viết lại mục này (bản ghi `test-results/gates/*.json`,
+04/09 → 15/09/2026, 3 cây còn giữ bản ghi):
+
+```
+L3            114 lượt · trung vị 14,4 phút · p90 19,7 phút · 28,1 giờ máy
+L3 đỏ          64 / 114
+L3 trong CHUỖI CHẠY LẠI (cùng nhánh, cách < 45 phút)   100 / 114
+chuỗi dài nhất 7 lượt liền = 170 phút
+L1 (`--doi`), cấp khi ấy được ghi là "mặc định vòng lặp"   1 lượt
+```
+
+⚠️ Bản ghi trước 16/09 không phân biệt được một lượt `--doi` đã **tự nâng** lên
+   L3 với một lượt L3 gõ tay; nay bản ghi có trường `ha_cap_tu`.
+
+⇒ Gần như mọi lượt L3 lặp lại là **dùng gate để xác nhận một bản sửa** — việc một
+lệnh `pytest` một tệp trả lời trong vài giây. Và luật cũ *"L1 là vòng lặp mặc
+định"* không được dùng: các phiên nhảy thẳng lên L3.
+
+Trước khi bấm L3: `npm run build` nếu frontend đổi (`AGENTS.md` §4b), cây đứng
+yên, và giao ước §4.9.
 
 ## 4.3 ⛔ Đừng gọi `pytest` trực tiếp, và đừng chạy nó HAI LẦN
 
-- `python -m pytest` cho toàn kho: **không** chạy test frontend ⇒ "full
-  regression xanh" là một câu nói sai. Và nó chạy một luồng.
+- `python -m pytest` cho **toàn kho**: **không** chạy test frontend ⇒ "full
+  regression xanh" là một câu nói sai. Và nó chạy một luồng. (`pytest` cho
+  **đúng các tệp** của cụm vừa sửa là test nhắm §4.1 — được khuyến khích.)
 - **`test_nhanh.py` rồi `gate.py` là trả tiền hai lần.** Bước `bo test` **bên
   trong** gate *chính là* `test_nhanh.py` (`tools/gate.py:844`). Gõ tay
   `test_nhanh.py` chỉ khi bạn **không** định chạy gate sau đó.
@@ -191,26 +230,46 @@ gỡ import cũ  +  nối phụ thuộc mới  +  chỉnh ánh xạ phản hồi
 đã biết trước không mang thông tin gì, và nó làm bẩn cache `lastfailed` khiến
 lượt `--lf` sau đó phình ra.
 
-## 4.5 Bán kính ảnh hưởng → cấp mặc định
+## 4.5 Bán kính ảnh hưởng → test nhắm rộng tới đâu
 
-| Bán kính | Ví dụ | Cấp |
+Bán kính quyết định **tập test nhắm** trong phiên. Nó **không** đổi số lượt L3:
+mọi bán kính vẫn đúng **một** L3 cuối phiên.
+
+| Bán kính | Ví dụ | Test nhắm trong phiên |
 |---|---|---|
-| **THẤP** | tài liệu, chú thích, template/CSS lẻ | L0 + kiểm trình duyệt nếu đụng giao diện |
-| **VỪA** | route của app, service của app, adapter | **L1** |
-| **CAO** | `runtime_noi_bo`, điều phối provider, storage dùng chung, tích hợp worker | **L1 + L2** |
-| **NGHIÊM TRỌNG** | `jobs`, `credit`, auth/bảo mật, quyền sở hữu, migration, khoá/đa tiến trình, đường phát hành | **L2**, và **L3 ở checkpoint** |
+| **THẤP** | tài liệu, chú thích, template/CSS lẻ | bước kiểm tĩnh liên quan + kiểm trình duyệt nếu đụng giao diện |
+| **VỪA** | route của app, service của app, adapter | `thanh_phan.py --test <tp>` của thành phần đó |
+| **CAO** | `runtime_noi_bo`, điều phối provider, storage dùng chung, tích hợp worker | như VỪA **+ người tiêu thụ** (`thanh_phan.py --do-thi <tp>`) |
+| **NGHIÊM TRỌNG** | `jobs`, `credit`, auth/bảo mật, quyền sở hữu, migration, khoá/đa tiến trình, đường phát hành | như CAO **+** test tích hợp/PostgreSQL chạm tới nó |
 
-⛔ Tệp nghiêm trọng **không** có nghĩa là chạy L3 sau **mỗi** lần sửa. Hoàn tất
-changeset nguyên tử trước, rồi mới lên cấp.
+## 4.6 Khi một lượt đỏ — sửa TẠI CHỖ, khép HẸP
 
-## 4.6 Khi một lượt đỏ
+**Trong phiên (test nhắm đỏ):**
 
 ```
-sửa → chạy lại ĐÚNG phép kiểm đã đỏ → L1 → (chỉ khi checkpoint đòi) L3
+sửa tại chỗ → chạy lại ĐÚNG tệp/bước đã đỏ → đi tiếp
 ```
 
-Đừng chạy lại L3 ngay. Chỉ chạy lại toàn bộ khi checkpoint yêu cầu, **hoặc** khi
-chính lỗi đó cho thấy bán kính rộng hơn bạn tưởng.
+**Cuối phiên (L3 đỏ):**
+
+```
+đọc bước/tệp đỏ (gate in sẵn lệnh chạy lại)
+  → sửa tại chỗ
+  → chạy lại ĐÚNG các phép đã đỏ           (vài giây – vài phút)
+  → KHÉP: python tools\gate.py --doi --tu <sha của lượt L3>
+  → xong
+```
+
+⭐ Vì sao khép bằng `--doi --tu <sha>` chứ không bằng L3 lần hai: lượt L3 vừa rồi
+**đã** phán quyết toàn bộ phần không đổi. Thứ duy nhất chưa được phán quyết là
+bản sửa, và `--doi --tu <sha>` chạy đúng test chạm tới bản sửa — tính cả phần
+chưa commit. Nếu bản sửa chạm tệp dùng chung, nó **tự nâng lên L3**: khi đó L3
+lần hai là máy quyết định, không phải thói quen.
+
+⛔ `gate.py` **từ chối** một L3 gõ tay ngay sau một L3 đỏ trên cùng nhánh, và in
+lệnh khép. Lượt trước mang nhãn `CAY DA DOI` thì nó tự cho qua (lượt ấy không
+phải phán quyết). Lượt trước bị nhiễu cách khác (máy `QUA TAI`) thì thêm
+`--l3-lai` — lựa chọn ấy được ghi vào bản ghi.
 
 ⚠️ Một lượt đỏ **không** tự động là lỗi của bạn. Trước khi đi sửa, loại trừ: máy
 đang quá tải · một phiên khác đổi cây giữa lượt chạy · baseline của phiên khác.
@@ -288,7 +347,7 @@ python tools\ho_so_cay.py trang-thai
 
 ### `NORMAL` — mặc định, và là hồ sơ duy nhất của cây chính
 
-Đúng §4.1: vòng lặp là L1 (`--doi`), lên cấp ở chốt, L3 trước khi báo xong.
+Đúng §4.1–§4.2: trong phiên chỉ test nhắm, L3 **một lần** khi mọi pha xong.
 
 ⛔ Cây chính, `master`, nhánh phát hành và mọi cây dùng để deploy **luôn** ở
 `NORMAL`. `ho_so_cay.py bat` từ chối bật ở những chỗ đó, và đó là một chốt cơ
@@ -318,33 +377,35 @@ RESEARCH → BUILDING → FEATURE_COMPLETE → CERTIFYING → READY_TO_MERGE
 định. Mục tiêu không phải là *không kiểm gì*, mà là không xây tiếp trên mã
 không parse được.
 
-🔑 **Vì sao điều này không mâu thuẫn §4.2.** §4.2 cấm chạy L3 **để chẩn đoán**.
-`FAST_BUILD` cấm nhiều hơn thế trong `BUILDING`, rồi trả lại đủ ở `CERTIFYING`.
-Cả hai nói cùng một câu: gate là công cụ ra **phán quyết**.
+🔑 **Khác `NORMAL` ở đâu.** Cả hai đều không chạy gate trong lúc làm. `FAST_BUILD`
+thêm ba thứ: commit checkpoint **không** cần test nhắm xanh, một `baseline_sha`
+để đo từ đó, và một máy trạng thái ghi lại lúc nào tập tính năng đã đóng băng.
 
-### Chứng nhận đo từ `baseline_sha`, không từ `HEAD`
+### Nợ kiểm đo từ `baseline_sha`, không từ `HEAD`
 
-Đây là vế cơ chế, không phải vế kỷ luật. `--doi` mặc định so với `HEAD`; một
-chiến dịch có commit checkpoint sẽ làm `HEAD` nuốt mất phần đầu, và `--doi` khi
-đó **báo xanh trên một phép đo bỏ sót**.
+Đây là vế cơ chế, không phải vế kỷ luật. So với `HEAD`, một chiến dịch có commit
+checkpoint sẽ làm `HEAD` nuốt mất phần đầu, và tập test nhắm khi đó **bỏ sót**.
 
 ```powershell
 python tools\ho_so_cay.py bat --pham-vi "<mo ta ngan>"   # ghi baseline = HEAD
-python tools\ho_so_cay.py no-kiem                        # nợ kiểm, đã dedupe
-python tools\gate.py --doi --tu <baseline_sha>           # phạm vi TỪ baseline
+python tools\ho_so_cay.py no-kiem                        # nợ kiểm + tệp test nhắm, đã dedupe
 ```
 
-`--tu` không phải một chế độ mới: nó chỉ đổi **mốc so sánh** của `--doi`, và
-`thanh_phan.duong_da_doi` vốn đã nhận mốc đó.
+`--tu <ref>` là **mốc so sánh** của `gate.py --doi` (và
+`thanh_phan.duong_da_doi`), không phải một chế độ mới — cùng cơ chế §4.6 dùng để
+khép một L3 đỏ.
 
-### Thứ tự ở `CERTIFYING` — rẻ trước
+### Thứ tự ở `CERTIFYING` — rẻ trước, gate ĐÚNG một lần
 
 ```
-1. tĩnh/micro          2. gom targeted đã dedupe (--doi --tu <baseline>)
-3. tích hợp            4. đối chiếu legacy/parity
-5. E2E                 6. trình duyệt trên URL công khai, nếu giao diện đổi
-7. L3 một lần
+1. test nhắm đã dedupe (no-kiem in sẵn lệnh)   2. tích hợp
+3. đối chiếu legacy/parity                     4. E2E
+5. trình duyệt trên URL công khai, nếu giao diện đổi
+6. L3 MỘT lần  (đỏ ⇒ khép theo §4.6)
 ```
+
+⛔ Không `gate.py --quick` hay `gate.py --doi --tu <baseline>` trước L3: cả hai là
+tập con của L3, chạy chúng trước là trả tiền hai lần.
 
 Một lượt đỏ ⇒ sửa nguyên nhân gốc **tối thiểu** ⇒ chạy lại đúng phép kiểm đã đỏ
 ⇒ đi tiếp. **Không** quay lại làm tính năng; nếu buộc phải, hạ trạng thái về
@@ -394,22 +455,28 @@ bao giờ `Write`** — `Write` đè im lặng cả tệp. Chi tiết: `AGENTS.m
 
 # 7. Chính sách commit
 
-Commit khi một changeset nguyên tử hoàn tất và **đúng cấp test của nó** đã xanh.
+Commit khi một changeset nguyên tử hoàn tất và **test nhắm của nó** đã xanh.
 
-⛔ **Không phải mọi commit đều đòi L3.** Một commit checkpoint giữa chiến dịch cần
-L1 xanh. L3 chỉ bắt buộc ở các checkpoint canonical:
+⛔ **Commit checkpoint trên nhánh phiên KHÔNG đòi gate.** (`FAST_BUILD`/`BUILDING`
+còn không đòi test nhắm — §4.10; đổi lại `CERTIFYING` phải đo từ `baseline_sha`.)
 
-⚠️ **Ngoại lệ duy nhất của câu "commit checkpoint cần L1 xanh"**: một cây đang ở
-`FAST_BUILD`/`BUILDING` (§4.10) commit checkpoint **không** kèm L1 — đó chính là
-thứ hồ sơ ấy dời đi. Đổi lại, `CERTIFYING` phải đo từ `baseline_sha` chứ không
-từ `HEAD`, nếu không thì phần đã commit sẽ không có ai kiểm.
+L3 xanh (hoặc L3 đỏ đã **khép** theo §4.6) là bắt buộc **trước**:
 
 ```
-TRƯỚC KHI MERGE một chiến dịch lớn
-NGHIỆM THU CUỐI một chiến dịch
-PHÁT HÀNH · TRƯỚC DEPLOY
-Thay đổi core: credit · jobs · auth/bảo mật · migration
+BÁO XONG phiên · HANDOFF_READY_FINAL
+MERGE vào main
+PHÁT HÀNH · DEPLOY
 ```
+
+— và đó là **cùng một** lượt L3 cuối phiên, không phải ba lượt.
+
+**Hoà vào `main` sau khi `main` đã đi tiếp** (phiên khác đã merge sau lượt L3 của
+bạn): trên cây đã hoà, chạy `python tools\gate.py --doi --tu <sha lượt L3>`. Phần
+của phiên kia đã có L3 riêng; lượt này chỉ phán quyết chỗ hai bên gặp nhau, và tự
+nâng lên L3 khi chạm tệp dùng chung.
+
+**Deploy**: phải có một phán quyết xanh trên **đúng SHA được deploy** — L3, hoặc
+L3 + lượt khép/hoà `--doi --tu` nối tới SHA đó. Chi tiết `docs/16_CAP_NHAT_VA_DEPLOY.md`.
 
 # 8. Deploy
 
@@ -469,7 +536,7 @@ thẳng máy B chạy được ngay giữa một lượt gate, vì việc thật
 
 | | Vì sao |
 |---|---|
-| **Gate đỏ** | dừng, sửa, chạy lại. Không đi tiếp trên một cây chưa xanh |
+| **Gate đỏ** | dừng, sửa tại chỗ, chạy lại **đúng phép đã đỏ**, khép theo §4.6 — **không** chạy lại L3. Không đi tiếp trên một cây chưa xanh |
 | **Thao tác không đảo được** trên dữ liệu thật (`DROP`, xoá, ghi đè backup) | §10 mục 3 — uỷ quyền không làm một lệnh `DROP` đảo lại được |
 | **Thay đổi chưa commit không rõ của ai** | §10 mục 1 |
 | **Rủi ro bảo mật / mất dữ liệu chưa giải quyết** | §10 mục 4 |

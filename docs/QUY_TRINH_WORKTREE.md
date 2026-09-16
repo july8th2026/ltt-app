@@ -174,8 +174,8 @@ chuẩn sau CMC là:
 main + BASE_SHA
   -> task branch
   -> temporary worktree
-  -> finish scope + focused verification
-  -> freeze feature + required gate
+  -> finish scope + focused verification (test nham, KHONG gate)
+  -> freeze feature + ONE L3 gate (hop dong §4.2; do thi khep §4.6)
   -> clean commit + HANDOFF_READY_FINAL
   -> canonical integrator reviews/integrates into current main
   -> canonical certification

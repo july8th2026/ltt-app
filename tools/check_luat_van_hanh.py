@@ -89,7 +89,12 @@ CADENCE = re.compile(
     r"sau\s+(moi|moi\s+mot|mot)\s+(lan|lo|cum|buoc)\s*(sua|thay\s*doi|edit)?"
     r"|sau\s+moi\s+thay\s*doi"
     r"|sau\s+moi\s+sua"
-    r"|after\s+(every|each)\s+(edit|change|commit)"
+    # Nhip theo DON VI VIEC — dang luat da sinh ra chuoi L3 chay lai (do 16/09:
+    # 100/114 luot L3 nam trong chuoi). Hop dong §4.2: L3 MOT lan cuoi phien.
+    # `[\s*_]+`: markdown nhan manh chen giua chu ("sau **moi** hang muc").
+    r"|(sau|cuoi)[\s*_]+(moi|tung)[\s*_]+(pha|phase|dot|hang\s*muc|lat\s*cat|item"
+    r"|task|prompt|slice|checkpoint)"
+    r"|after\s+(every|each)\s+(edit|change|commit|phase|slice|item|task|step)"
     r"|luon\s+chay"
     r"|always\s+run",
     re.I,
@@ -102,6 +107,12 @@ CADENCE = re.compile(
 #:    An toan vi bao dong doi CA BA mau khop - mot dong noi ve gate ma khong co
 #:    menh lenh cadence thi van im.
 LENH = re.compile(r"gate\.py|test_nhanh\.py|pytest|\bgate\b", re.I)
+
+#: Rieng `gate`: tu 16/09 KHONG co che do gate nao duoc chay trong phien (hop
+#: dong §4.1), nen cadence + gate la luat canh tranh DU no hep hay rong — ke ca
+#: "`gate.py --doi` sau moi lan sua". `pytest` mot tep sau moi lan sua thi van
+#: dung (test nham), nen voi `pytest` van doi them `TOAN_BO`.
+GATE = re.compile(r"gate\.py|\bgate\b", re.I)
 
 #: "Chay ca bo" - de phan biet mot luat TOAN CUC voi mot luat hep.
 TOAN_BO = re.compile(
@@ -144,6 +155,9 @@ CAM_HOAC_LICH_SU = re.compile(
     r"⛔|dung\s+chay|dung\s+goi|khong\s+(chay|goi|duoc|phai|con)"
     r"|do\s+not|don't|never\s+run|no\s+longer"
     r"|truoc\s+20\d\d-\d\d-\d\d|tu(ng)?\s+ghi|von\s+la|da\s+bo|thay\s+luat"
+    # "Khong gate day du" la cau CAM; "da/duoc chay" la BANG CHUNG. Ca hai bi bao
+    # nham luot dau 16/09 khi `GATE` bo dieu kien `TOAN_BO`.
+    r"|khong\s+(\*\*)?gate|da\s+chay|duoc\s+chay"
     r"|used\s+to|until\s+20\d\d",
     re.I,
 )
@@ -172,7 +186,8 @@ def quet_van_ban(text: str) -> list[tuple[int, str, str]]:
     dong = text.splitlines()
     for i, raw in enumerate(dong, 1):
         d = khong_dau(raw)
-        if (CADENCE.search(d) and LENH.search(d) and TOAN_BO.search(d)
+        if (CADENCE.search(d)
+                and (GATE.search(d) or (LENH.search(d) and TOAN_BO.search(d)))
                 and not la_bang_chung(d)):
             ra.append((i, "cadence toan cuc", raw.strip()))
             continue
@@ -204,11 +219,20 @@ MAU_XAU = [
     "Sau moi lan sua chay `python tools\\gate.py` day du.",
     "After every edit, run the full pytest suite.",
     "Luon chay gate day du truoc khi commit.",
+    # Ba dang that tim thay 16/09 ngoai hop dong — bo do cu lot ca ba.
+    "Vong lap: `python tools\\gate.py --doi` sau mỗi lần sửa.",
+    "Sau mỗi đợt: full gate.",
+    "`python tools/gate.py --vong-lap` sau **mỗi** hạng mục.",
 ]
 MAU_TOT = [
     "Da chay `python tools/gate.py` -> RESULT: PASS 23/23.",
     "Buoc nay chay `pytest tests/test_334.py` de chot ngan sach.",
-    "`gate.py --doi` la vong lap mac dinh; xem hop dong van hanh.",
+    "Sau moi lan sua chay `pytest tests/test_334.py -q` (test nham).",
+    "Nhip test/gate: xem hop dong van hanh muc 4.",
+    "L3 chay MOT lan khi moi pha xong.",
+    # Hai dong that bi bao nham luot dau 16/09.
+    "1. Sau mỗi item: **chỉ** targeted verification. Không gate đầy đủ.",
+    "`python tools\\gate.py` được chạy đúng một lần sau mọi thay đổi H26.12B",
     "Gate la cong cu ra phan quyet, khong phai cong cu chan doan.",
     # Bang BANG CHUNG - 11 dong kieu nay o `docs/NHAT_KY.md` da bi bao nham
     # o luot chay dau ngay 08/09.
@@ -272,6 +296,11 @@ def main() -> int:
     da_don = sorted(set(NO_CU) - da_thay)
 
     if moi:
+        # ⛔ Dong vi pham trich NGUYEN VAN tieng Viet. Duoi gate, stdout la ong
+        #    dan -> Python roi ve cp1252 tren Windows va `print` NEM loi: bo do
+        #    chet dung o duong DO, tuc dung luc no co dieu can noi (do 16/09).
+        if hasattr(sys.stdout, "reconfigure"):
+            sys.stdout.reconfigure(errors="backslashreplace")
         print(f"[luat van hanh] {len(moi)} luat quy trinh MOI nam NGOAI hop dong:")
         for d in moi:
             print(d)

@@ -201,8 +201,8 @@ không giữ gì bắt buộc.
 
 Mỗi phase: một báo cáo `docs/CHATLTT/reports/NN_<ten>.md` theo
 `templates/PHASE_REPORT_TEMPLATE.md` của gói, cập nhật `STATE.md` + `state.json`,
-`gate.py --doi` trong vòng lặp, **gate đầy đủ một lần** trước commit đóng phase,
-commit trên nhánh này với `git add` tường minh. Cỡ: S ≤ ½ ngày · M ≈ 1 ngày · L ≥ 2 ngày.
+test/gate theo `docs/00_LTT_OPERATING_CONTRACT.md` §4 (test nhắm trong phase, L3
+một lần khi mọi phase xong), commit trên nhánh này với `git add` tường minh. Cỡ: S ≤ ½ ngày · M ≈ 1 ngày · L ≥ 2 ngày.
 
 | H43.x | Phase gói | Cỡ | Giao nộp | Điều kiện PASS (bằng chứng, không phải "có mã") |
 |---|---|---|---|---|
