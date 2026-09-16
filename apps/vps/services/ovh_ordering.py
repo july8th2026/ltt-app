@@ -6,7 +6,8 @@ import json
 from uuid import UUID
 from urllib.parse import urlencode
 
-from apps.vps.services.ovh import OvhClient, OvhError, OvhPreparedIpCart
+from apps.vps.services.ovh import (CheckoutNotSent, OvhClient, OvhError,
+                                   OvhPreparedIpCart)
 
 
 class OvhOrderingClient(OvhClient):
@@ -115,9 +116,13 @@ class OvhOrderingClient(OvhClient):
 
     def checkout_cart(self, cart_id, *, expected):
         """Expected preview is mandatory; any quote/contract change blocks POST."""
-        current = self.preview_cart(cart_id, expected.item_id)
+        try:
+            current = self.preview_cart(cart_id, expected.item_id)
+        except OvhError as exc:
+            # Includes an expired cart: still before the payment POST.
+            raise CheckoutNotSent("OVH cart preview unavailable before checkout") from exc
         if current != expected:
-            raise OvhError("OVH cart preview changed before checkout")
+            raise CheckoutNotSent("OVH cart preview changed before checkout")
         result = self.post("/order/cart/" + current.cart_id + "/checkout", {
             "autoPayWithPreferredPaymentMethod": True,
             "waiveRetractationPeriod": True})
@@ -126,12 +131,13 @@ class OvhOrderingClient(OvhClient):
         return order_id
 
     def recover_order(self, *, cart_id, item_id):
-        """Never correlate orders by price, date, text or inventory delta."""
-        del item_id
-        try:
-            result = self.get("/order/cart/" + self._cart_id(cart_id) + "/checkout")
-            order_id = result.get("orderId")
-            self._order_id(order_id)
-            return order_id
-        except (OvhError, AttributeError):
-            return None
+        """Return the order created by a checkout whose response was lost, or None.
+
+        OVH exposes no cart -> order link. `GET /order/cart/{id}/checkout` is the
+        dry-run quotation (ovh/order-cart-examples, order-a-new-ip-address.py),
+        never an order lookup: its `orderId` is not ours. Correlating by price,
+        date, text or inventory delta is forbidden, so the honest answer is
+        "unknown" and the caller escalates to NEEDS_REVIEW with the cart kept.
+        """
+        del cart_id, item_id
+        return None

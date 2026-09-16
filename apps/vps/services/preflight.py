@@ -52,8 +52,14 @@ def run_profile_preflight(
     public_ip,
     gateway,
     runtime: MachineBRuntimeEvidence,
+    demote_on_failure: bool = True,
 ) -> PreflightResult:
-    """Measure all activation prerequisites and persist independent evidence."""
+    """Measure all activation prerequisites and persist independent evidence.
+
+    Operator preflight demotes a failing profile. The periodic refresh passes
+    `demote_on_failure=False`: its red health rows already close selection, and
+    demoting on one transient probe would need a human to re-activate sales.
+    """
     compute_health = _probe(compute.health)
     ip_health = _probe(public_ip.health)
     gateway_health = _probe(gateway.health)
@@ -126,7 +132,7 @@ def run_profile_preflight(
             observed_at=observed,
         ))
     ready = all(value == "HEALTHY" for value in components.values())
-    if not ready:
+    if not ready and demote_on_failure:
         profile.accept_new = False
         profile.is_default = False
     profile.last_health_at = observed
@@ -136,6 +142,7 @@ def run_profile_preflight(
 
 def run_configured_profile_preflight(
     db, profile: VpsInfrastructureProfile, *, runtime_dir: str | None = None,
+    demote_on_failure: bool = True,
 ) -> PreflightResult:
     """Construct configured adapters and consume Machine B artifacts read-only."""
     runtime_ref = str(profile.compute_config.get("runtime_ref") or "")
@@ -156,4 +163,37 @@ def run_configured_profile_preflight(
         public_ip=backend_factory.public_ip_backend(db, profile),
         gateway=backend_factory.gateway_backend(profile),
         runtime=runtime,
+        demote_on_failure=demote_on_failure,
     )
+
+
+def refresh_active_profiles(db, *, run=None) -> dict[str, bool]:
+    """Periodic health refresh for every ACTIVE profile; never demotes.
+
+    Each profile is isolated: a constructor/transport failure records CRITICAL
+    rows for that profile only (selection closes) and the loop continues.
+    """
+    from sqlalchemy import select
+
+    run = run or run_configured_profile_preflight
+    ids = db.execute(select(VpsInfrastructureProfile.id).where(
+        VpsInfrastructureProfile.status == "ACTIVE")).scalars().all()
+    ket_qua: dict[str, bool] = {}
+    for profile_id in ids:
+        row = db.get(VpsInfrastructureProfile, profile_id)
+        try:
+            ket_qua[profile_id] = run(db, row, demote_on_failure=False).ready
+            db.commit()
+        except Exception as exc:  # boundary: report class, never provider text
+            db.rollback()
+            row = db.get(VpsInfrastructureProfile, profile_id)
+            now = datetime.now(timezone.utc)
+            for component in profiles.REQUIRED_HEALTH_COMPONENTS:
+                db.add(VpsProfileHealth(
+                    infrastructure_profile_id=row.id, component=component,
+                    status="CRITICAL", observed_at=now, generated_at=now,
+                    summary=f"periodic preflight unavailable ({type(exc).__name__})"))
+            row.last_health_at = now
+            db.commit()
+            ket_qua[profile_id] = False
+    return ket_qua

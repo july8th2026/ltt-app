@@ -55,6 +55,7 @@ def test_codex_ho_so_o_FILE_RIENG(tmp_path):
     goc = tmp_path / ".codex"
     cd.codex("https://x.test", goc)
     assert (goc / "ltt.config.toml").exists()
+    assert (goc / "ltt-fast.config.toml").exists()
     assert "[profiles." not in (goc / "config.toml").read_text(encoding="utf-8")
 
 
@@ -136,13 +137,18 @@ def test_bo_cai_mot_tep_ghim_model_context_retry_va_subagent(tmp_path, model):
     cd.codex("https://x.test", codex_home, hs)
     cd.claude_code("https://x.test", claude_home, hs)
 
-    profile = (codex_home / "ltt.config.toml").read_text(encoding="utf-8")
-    assert f'model = "{model}"' in profile
-    assert f"model_auto_compact_token_limit = {hs.nen}" in profile
-    assert f'default_subagent_model = "{model}"' in profile
-    assert f'model_reasoning_effort = "{hs.reasoning}"' in profile
-    assert f'default_subagent_reasoning_effort = "{hs.reasoning}"' in profile
-    assert "max_concurrent_threads_per_session = 1" in profile
+    for ten_tep, ten_model in (("ltt.config.toml", "ltt-3.8"),
+                               ("ltt-fast.config.toml", "ltt-3.5")):
+        hs_codex = cd.HO_SO_MODEL[ten_model]
+        profile = (codex_home / ten_tep).read_text(encoding="utf-8")
+        assert f'model = "{ten_model}"' in profile
+        assert f"model_auto_compact_token_limit = {hs_codex.nen}" in profile
+        assert f'default_subagent_model = "{ten_model}"' in profile
+        assert f'model_reasoning_effort = "{hs_codex.reasoning}"' in profile
+        assert f'default_subagent_reasoning_effort = "{hs_codex.reasoning}"' in profile
+        assert 'model_auto_compact_token_limit_scope = "total"' in profile
+        assert f"tool_output_token_limit = {cd.TRAN_KET_QUA_TOOL}" in profile
+        assert "max_concurrent_threads_per_session = 1" in profile
 
     env = json.loads((claude_home / "settings.json").read_text(encoding="utf-8"))["env"]
     for key in ("ANTHROPIC_MODEL", "ANTHROPIC_DEFAULT_MODEL",
@@ -312,6 +318,10 @@ def test_tep_catalog_PHAI_ton_tai_truoc_khi_cau_hinh_tro_toi(tmp_path):
     assert len(duong) == 1, ho_so
     tro_toi = duong[0].split("=", 1)[1].strip().strip().strip(chr(39)).strip(chr(34))
     assert pathlib.Path(tro_toi).is_file(), tro_toi
+    fast = (tmp_path / ".codex" / "ltt-fast.config.toml").read_text(
+        encoding="utf-8")
+    assert "model = \"ltt-3.5\"" in fast
+    assert str(pathlib.Path(tro_toi)) in fast
 
 
 def test_bang_san_co_THIEU_KHOA_thi_phai_NOI_RA(tmp_path):

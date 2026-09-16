@@ -91,7 +91,7 @@ GOC_MAC_DINH = "https://app.lttstudios.com"
 #:    KHONG BIET MINH LA BAN NAO. Khi khach bao "cam khong duoc", ta khong co
 #:    cach nao biet ho dang chay ban gi - va do la cau hoi DAU TIEN cua moi lan
 #:    ho tro.
-PHIEN_BAN = "1.9.2"
+PHIEN_BAN = "1.9.3"
 
 MODEL = "ltt-3.8"
 
@@ -107,6 +107,10 @@ MODEL_DESKTOP_35 = "ltt-llm-claude-compat-35"
 NHAN_DESKTOP = {
     MODEL_DESKTOP: "LTT 3.8 (Mạnh)",
     MODEL_DESKTOP_35: "LTT 3.5 (Nhanh)",
+}
+NHAN_CODEX = {
+    "ltt-3.8": "LTT 3.8 (Strong)",
+    "ltt-3.5": "LTT 3.5 (Fast)",
 }
 TANG_DESKTOP = {MODEL_DESKTOP: "opus", MODEL_DESKTOP_35: "haiku"}
 ENV_KHOA_CODEX = "LTT_API_KEY"
@@ -648,7 +652,7 @@ def _catalog_codex() -> str:
 
     def mot(slug: str, cua_so: int, nen: int, doc_anh: bool = False) -> dict:
         d = {
-            "slug": slug, "display_name": slug,
+            "slug": slug, "display_name": NHAN_CODEX[slug],
             "description": f"{slug} (LTT Studios)",
             "default_reasoning_level": HO_SO_MODEL[slug].reasoning,
             # Codex requires this field and always sends its selected enum on
@@ -707,11 +711,27 @@ def _codex_profile(hs: HoSoModel | None = None) -> str:
             f'model_reasoning_summary = "none"\n'
             f'model_context_window = {hs.cua_so}\n'
             f'model_auto_compact_token_limit = {hs.nen}\n'
+            f'model_auto_compact_token_limit_scope = "total"\n'
+            f'tool_output_token_limit = {TRAN_KET_QUA_TOOL}\n'
             f"model_catalog_json = '{TEP_CATALOG}'\n"
             f'\n[agents]\n'
             f'default_subagent_model = "{hs.ten}"\n'
             f'default_subagent_reasoning_effort = "{hs.reasoning}"\n'
             f'max_concurrent_threads_per_session = 1\n')
+
+
+def _cac_profile_codex() -> tuple[tuple[str, HoSoModel, str], ...]:
+    """Hai profile la mot don vi cai dat Codex, khong phu thuoc model Claude.
+
+    `--model` van duoc giu de chon model cho Claude Code. Codex luon nhan ca hai
+    profile va catalog, de nguoi dung doi model ngay trong client hoac chay
+    `codex --profile ltt` / `codex --profile ltt-fast`.
+    """
+    return (
+        ("ltt.config.toml", HO_SO_MODEL[MODEL], "ta_tao_ltt_config"),
+        ("ltt-fast.config.toml", HO_SO_MODEL[MODEL_35],
+         "ta_tao_ltt_fast_config"),
+    )
 
 
 def _codex_config_goc(goc: str, hs: HoSoModel | None = None) -> str:
@@ -945,9 +965,6 @@ def _chen_khoi_dau(noi_dung: str, van: str, nl: str = "\n") -> str:
 
 
 def cam_codex(goc: str, tt: dict, cho_vscode: bool = False) -> list:
-    # ⭐ Ho so lay tu `tt`, khong tu mot bien toan cuc: `tt` la thu DUY NHAT di
-    #    cung nhau qua ca bon ham cam, va la thu song sot sang lan chay sau.
-    hs = hs_trong(tt)
     ra = []
     thu_muc = NHA / ".codex"
     thu_muc.mkdir(parents=True, exist_ok=True)
@@ -970,7 +987,9 @@ def cam_codex(goc: str, tt: dict, cho_vscode: bool = False) -> list:
         # (4) `model`/`model_provider` phải ở GỐC và đứng trước mọi bảng. Vô hiệu
         #     bản cũ của khách (đảo ngược được) rồi đặt khối của ta ở ĐẦU tệp.
         van = _vo_hieu_model_goc(van, crlf)
-        than = _codex_profile(hs)
+        # Desktop/VS Code khong truyen `--profile`: dat 3.8 lam mac dinh ban
+        # dau. Catalog va hai tep profile ben duoi van cho thay ca hai model.
+        than = _codex_profile(HO_SO_MODEL[MODEL])
         if bang_prov:
             than += "\n" + bang_prov
         moi = _chen_khoi_dau(than, van, crlf)
@@ -1004,24 +1023,16 @@ def cam_codex(goc: str, tt: dict, cho_vscode: bool = False) -> list:
                       "xoa bang `[model_providers.ltt]` trong "
                       f"{cfg} roi chay lai lenh nay.")
 
-    prof = thu_muc / "ltt.config.toml"
     ghi = tt.setdefault("codex", {})
-    # 🔴 GIU LAN XAC DINH DAU TIEN, dung tinh lai moi lan chay.
-    #
-    #    Ban dau dong nay la `ghi["ta_tao_ltt_config"] = not prof.exists()`, tinh
-    #    lai o MOI lan `cam`. Lan hai, tep DA TON TAI (do chinh ta tao lan mot),
-    #    nen no ghi False - va `go` khong xoa nua. Chay `cam` hai lan roi `go` la
-    #    de lai rac vinh vien, khong bao gi.
-    #
-    #    Cung luat voi `_sao_luu`: **ban dau tien moi la su that**.
-    if "ta_tao_ltt_config" not in ghi:
-        ghi["ta_tao_ltt_config"] = not prof.exists()
-    # ⛔ Va neu tep DA CO TU TRUOC thi phai sao luu, vi ta sap ghi de len no.
-    #    Truoc day ta ghi de thang mot tep cua khach ma khong luu gi ca - `go`
-    #    chi "khong xoa" chu khong tra lai duoc noi dung.
-    _sao_luu(prof)
-    prof.write_text(_codex_profile(hs), encoding="utf-8", newline="\n")
-    ra.append(f"  [OK] {prof}")
+    # Hai tep la MOT don vi cai dat. Co-tao-khong chi duoc ghi o lan dau, va moi
+    # tep co backup rieng de `go` tra dung tung byte neu khach da co san.
+    for ten_tep, hs_codex, khoa_tao in _cac_profile_codex():
+        prof = thu_muc / ten_tep
+        if khoa_tao not in ghi:
+            ghi[khoa_tao] = not prof.exists()
+        _sao_luu(prof)
+        prof.write_text(_codex_profile(hs_codex), encoding="utf-8", newline="\n")
+        ra.append(f"  [OK] {prof}  ({hs_codex.ten})")
 
     # ⛔ PHAI GHI CATALOG, khong chi khai duong dan toi no. Khai mot tep khong
     #    ton tai thi Codex bao `failed to parse model_catalog_json` va **tu choi
@@ -1069,7 +1080,8 @@ def quet_con_sot(goc: str | None = None) -> list:
         if TAG_TAT in van:
             ra.append(f"{cfg}: con dong bi cong cu vo hieu (tien to {TAG_TAT!r})")
 
-    for tep in (NHA / ".codex" / "ltt.config.toml", TEP_CATALOG):
+    for tep in (*(NHA / ".codex" / ten for ten, _hs, _khoa
+                  in _cac_profile_codex()), TEP_CATALOG):
         if tep.exists():
             ra.append(f"{tep}: tep do cong cu tao")
 
@@ -1182,9 +1194,11 @@ def go_codex(tt: dict) -> list:
         else:
             ra.append(f"  [--] {cfg} khong co khoi cua ta")
 
-    ra += _tra_hoac_xoa(NHA / ".codex" / "ltt.config.toml",
-                        tt.get("codex", {}).get("ta_tao_ltt_config"),
-                        ('model_provider = "ltt"',))
+    ghi = tt.get("codex", {})
+    for ten_tep, _hs, khoa_tao in _cac_profile_codex():
+        ra += _tra_hoac_xoa(NHA / ".codex" / ten_tep,
+                            ghi.get(khoa_tao),
+                            ('model_provider = "ltt"',))
     ra += _tra_hoac_xoa(TEP_CATALOG,
                         tt.get("codex", {}).get("ta_tao_catalog"),
                         ('"slug": "ltt-3.8"', '(LTT Studios)'))
@@ -1893,9 +1907,13 @@ def trang_thai_thuc(goc: str | None = None) -> dict:
     khoi = ""
     if co_khoi:
         khoi = van.split(MOC_MO, 1)[1].split(MOC_DONG, 1)[0]
-    codex_vscode = co_khoi and 'model_provider = "ltt"' in khoi
+    tai_san_codex = (all((NHA / ".codex" / ten).exists()
+                          for ten, _hs, _khoa in _cac_profile_codex())
+                       and TEP_CATALOG.exists())
+    codex_vscode = (co_khoi and 'model_provider = "ltt"' in khoi
+                     and tai_san_codex)
     codex_cli = (co_khoi and not codex_vscode
-                 and (NHA / ".codex" / "ltt.config.toml").exists())
+                 and tai_san_codex)
 
     env_codex = _doc_env_nguoi_dung(ENV_KHOA_CODEX)
     env_claude = _doc_env_nguoi_dung(ENV_KHOA_CLAUDE)
@@ -2046,7 +2064,7 @@ def lenh_cam(a) -> int:
     print("   explorer cung KHONG du - explorer moi ke thua moi truong CU tu")
     print("   tien trinh da sinh ra no. Sau khi dang nhap lai thi ca hai tien ich")
     print("   deu chay (Codex tra loi 144, Claude Code tra loi 63).")
-    print(f"\nCodex:       codex --profile ltt")
+    print("\nCodex:       codex --profile ltt  (hoac --profile ltt-fast)")
     print(f"Claude Code: claude   (model {hs.ten})")
     # ⚠️ Lời nhắc phải **đúng với cách khách đang chạy**. Bản đóng gói in ra
     #    "python tools\cam_cli.py kiem" là chỉ vào một tệp khách KHÔNG CÓ — họ
@@ -2164,6 +2182,8 @@ def lenh_xem(a) -> int:
     print(f"  codex config.toml     : {'co khoi cua ta' if co else 'khong'}")
     print(f"  codex ltt.config.toml : "
           f"{'co' if (NHA / '.codex' / 'ltt.config.toml').exists() else 'khong'}")
+    print(f"  codex ltt-fast.config : "
+          f"{'co' if (NHA / '.codex' / 'ltt-fast.config.toml').exists() else 'khong'}")
 
     sj = NHA / ".claude" / "settings.json"
     if sj.exists():
@@ -2266,7 +2286,7 @@ def lenh_kiem(a) -> int:
     khoa = (a.khoa or os.environ.get(ENV_KHOA_CODEX)
             or _doc_env_nguoi_dung(ENV_KHOA_CODEX) or "").strip()
     if not khoa:
-        print(f"Khong tim thay khoa. Chay `cam` truoc, hoac dung --khoa.")
+        print("Khong tim thay khoa. Chay `cam` truoc, hoac dung --khoa.")
         return 1
     _tt = _doc_trang_thai()
     goc = a.goc or _tt.get("goc") or GOC_MAC_DINH
@@ -2376,9 +2396,8 @@ def main(argv=None) -> int:
                    help="ghi ca ~/.claude/settings.json (TOAN CUC cho moi phien "
                         "Claude Code tren may nay)")
     c.add_argument("--model", default=MODEL, choices=TEN_MODEL,
-                   help=f"model can cam (mac dinh {MODEL}). Ten nay duoc ghi "
-                        "THAT vao cau hinh cua tung client, kem cua so ngu "
-                        "canh rieng cua no.")
+                   help=f"model mac dinh cho Claude (mac dinh {MODEL}); "
+                        "Codex luon cai ca hai model")
     c.add_argument("--muc", action="append", choices=CAC_MUC,
                    help="hang muc can cam; lap lai co nay de chon nhieu. "
                         "Bo qua thi dung bo mac dinh tuong thich ban 1.0")

@@ -487,13 +487,42 @@ def mot_luot(db, *, now=None) -> dict:
     return ket_qua
 
 
-def chay() -> None:
-    """Điểm vào cho `AppManifest.bao_tri`. Nền tảng gọi mỗi giờ, dưới lease."""
-    from platform_core.db import get_session
+#: Nhịp của phần nặng (thu tiền, chụp ảnh, đối chiếu). Manifest gọi `chay()`
+#: dày hơn (`profiles.HEALTH_REFRESH_SECONDS`) chỉ để làm mới health profile;
+#: phần nặng vẫn giữ nhịp một giờ như trước.
+NHIP_NANG_GIAY = 3600
+_luot_nang_cuoi: float | None = None
 
+
+def chay(*, dong_ho=None) -> None:
+    """Điểm vào cho `AppManifest.bao_tri`. Nền tảng gọi dưới lease.
+
+    Mỗi lượt: làm mới health mọi profile ACTIVE (nếu không, việc chọn profile
+    khi tạo máy luôn thấy health cũ và từ chối bán — đo 16/09). Phần nặng chỉ
+    chạy khi đã đủ `NHIP_NANG_GIAY` kể từ lượt nặng trước trong tiến trình này;
+    lease đổi chủ thì lượt nặng có thể tới sớm — cùng ngữ nghĩa với `moc` của
+    nền tảng, và mọi bước nặng đều idempotent theo hạn.
+    """
+    import time
+
+    from platform_core.db import get_session
+    from apps.vps.services import preflight
+
+    global _luot_nang_cuoi
+    bay_gio = (dong_ho or time.monotonic)()
     gen = get_session()
     db = next(gen)
     try:
+        try:
+            health = preflight.refresh_active_profiles(db)
+            if not all(health.values()):
+                log.warning("VPS bao tri: profile chua san sang ban %s", health)
+        except Exception:                       # health không được chặn thu tiền
+            db.rollback()
+            log.exception("VPS bao tri: lam moi health profile that bai")
+        if _luot_nang_cuoi is not None and bay_gio - _luot_nang_cuoi < NHIP_NANG_GIAY:
+            return
+        _luot_nang_cuoi = bay_gio
         kq = mot_luot(db)
         # Chỉ ghi log khi CÓ việc xảy ra: một dòng "đã thu 0" mỗi giờ là 24 dòng
         # rác mỗi ngày, và nó làm người đọc bỏ qua đúng dòng cần đọc.

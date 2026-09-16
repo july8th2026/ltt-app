@@ -19,6 +19,26 @@ REQUIRED_HEALTH_COMPONENTS = (
 VULTR_PROFILE_ID = "00000000-0000-4000-8000-000000000401"
 OVH_PROFILE_ID = "00000000-0000-4000-8000-000000000402"
 
+# Freshness windows are derived from the cadences that actually refresh each
+# timestamp, never from a wish. A window tighter than its producer's cadence
+# rejects every create between two refreshes (measured 16/09: the old 300 s
+# window against a 30-minute collector blocked sales structurally).
+#
+#   observed_at  — written by the app's own preflight, refreshed by the VPS
+#                  maintenance hook every HEALTH_REFRESH_SECONDS.
+#   generated_at — Machine B collector generation: Scheduled Task every 30 min
+#                  (LTT-VM-Promox-v4 06-HIEN-TRANG/CHANGE-JOURNAL.md 2026-09-10),
+#                  mirrored to this host every RUNTIME_SYNC_SECONDS.
+#
+# Two missed cycles plus one transport/sync lag is still stale; one late run is
+# not an outage. Operator activation keeps its own strict window.
+HEALTH_REFRESH_SECONDS = 600
+HEALTH_MAX_AGE_SECONDS = 2 * HEALTH_REFRESH_SECONDS + 300
+RUNTIME_COLLECTOR_SECONDS = 1800
+RUNTIME_SYNC_SECONDS = 600
+RUNTIME_MAX_AGE_SECONDS = 2 * RUNTIME_COLLECTOR_SECONDS + RUNTIME_SYNC_SECONDS
+ACTIVATION_MAX_AGE_SECONDS = 300
+
 
 class ProfileNotReady(RuntimeError):
     """Profile cannot safely accept a new external mutation."""
@@ -51,9 +71,14 @@ def health_prerequisites(
     profile_id: str,
     *,
     now: datetime | None = None,
-    max_age_seconds: int = 300,
+    max_age_seconds: int = HEALTH_MAX_AGE_SECONDS,
+    generated_max_age_seconds: int = RUNTIME_MAX_AGE_SECONDS,
 ) -> tuple[bool, str, datetime | None]:
-    """Check latest independent component observations; missing/stale fails closed."""
+    """Check latest independent component observations; missing/stale fails closed.
+
+    `max_age_seconds` bounds our own observation; `generated_max_age_seconds`
+    bounds the upstream Machine B generation it was derived from.
+    """
     current = _utc(now or datetime.now(timezone.utc))
     newest: datetime | None = None
     for component in REQUIRED_HEALTH_COMPONENTS:
@@ -71,14 +96,14 @@ def health_prerequisites(
         observed = _utc(row.observed_at)
         if newest is None or observed > newest:
             newest = observed
-        timestamps = [observed]
+        timestamps = [(observed, max_age_seconds)]
         if row.generated_at is not None:
-            timestamps.append(_utc(row.generated_at))
-        for timestamp in timestamps:
+            timestamps.append((_utc(row.generated_at), generated_max_age_seconds))
+        for timestamp, limit in timestamps:
             age = (current - timestamp).total_seconds()
             if age < -60:
                 return False, f"future health component: {component}", newest
-            if age > max_age_seconds:
+            if age > limit:
                 return False, f"stale health component: {component}", newest
         if row.status != "HEALTHY":
             return False, f"unhealthy component: {component}={row.status}", newest
@@ -90,7 +115,7 @@ def activate_profile(
     profile_id: str,
     *,
     make_default: bool = False,
-    max_age_seconds: int = 300,
+    max_age_seconds: int = ACTIVATION_MAX_AGE_SECONDS,
 ) -> VpsInfrastructureProfile:
     """Activate only after fresh health; serialize default changes in the DB."""
     profile = db.execute(
@@ -102,7 +127,8 @@ def activate_profile(
         raise ProfileNotReady("profile not found")
 
     ready, reason, observed = health_prerequisites(
-        db, profile.id, max_age_seconds=max_age_seconds)
+        db, profile.id, max_age_seconds=max_age_seconds,
+        generated_max_age_seconds=max_age_seconds)
     if not ready:
         raise ProfileNotReady(reason)
 
@@ -118,7 +144,9 @@ def activate_profile(
 
     profile.status = "ACTIVE"
     profile.accept_new = True
-    profile.is_default = bool(make_default)
+    # Re-activating the current default must not silently drop it; only an
+    # explicit default change (above) clears the previous holder.
+    profile.is_default = bool(make_default) or bool(profile.is_default)
     profile.last_health_at = observed
     db.flush()
     return profile

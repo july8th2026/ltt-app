@@ -123,7 +123,7 @@ def test_production_orchestrator_revokes_and_cleans_after_api_failure(
 
 def check_generated_config_in_codex_app_server(
         binary: str, tmp_path: pathlib.Path, model: str) -> None:
-    """Run one generated model config through a real Codex app-server.
+    """Run Tool-generated dual-model config through a real Codex app-server.
 
     This is an explicit operational probe rather than an environment-dependent
     pytest test.  A missing binary is therefore a failed command, never a
@@ -133,15 +133,29 @@ def check_generated_config_in_codex_app_server(
     if not executable.is_file():
         raise FileNotFoundError(f"Codex binary is absent: {executable}")
 
-    from platform_core.public_api import examples
-
-    home = tmp_path / "codex-home"
-    home.mkdir(parents=True)
-    catalog = home / "ltt_model_catalog.json"
-    catalog.write_text(examples.codex_catalog(), encoding="utf-8")
-    config = examples.codex_desktop_config("http://127.0.0.1:9", model)
-    config = config.replace(examples.TEP_CATALOG_CODEX, catalog.as_posix())
-    (home / "config.toml").write_text(config, encoding="utf-8")
+    spec = importlib.util.spec_from_file_location(
+        f"cam_cli_operational_{model}", ROOT / "tools" / "cam_cli.py")
+    module = importlib.util.module_from_spec(spec)
+    assert spec and spec.loader
+    spec.loader.exec_module(module)
+    module.NHA = tmp_path
+    home = tmp_path / ".codex"
+    module.TEP_CATALOG = home / "ltt_model_catalog.json"
+    # Pass the OTHER Claude model: Codex must still install both, with 3.8 at
+    # the Desktop/VS Code root. This catches the old one-radio/one-profile bug.
+    selected_for_claude = "ltt-3.5" if model == "ltt-3.8" else "ltt-3.8"
+    module.cam_codex("http://127.0.0.1:9",
+                     {"model": selected_for_claude}, cho_vscode=True)
+    strong = (home / "ltt.config.toml").read_text(encoding="utf-8")
+    fast = (home / "ltt-fast.config.toml").read_text(encoding="utf-8")
+    assert 'model = "ltt-3.8"' in strong
+    assert 'model = "ltt-3.5"' in fast
+    # Probe each selected root while keeping the exact provider/catalog written
+    # by the Tool. The picker data must remain dual-model in both cases.
+    config_path = home / "config.toml"
+    config = config_path.read_text(encoding="utf-8")
+    config = config.replace('model = "ltt-3.8"', f'model = "{model}"', 1)
+    config_path.write_text(config, encoding="utf-8")
 
     process = subprocess.Popen(
         [str(executable), "app-server", "--strict-config", "--stdio"],

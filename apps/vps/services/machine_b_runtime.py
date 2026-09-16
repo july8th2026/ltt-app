@@ -77,9 +77,12 @@ def read_machine_b_runtime(
     directory: str | Path,
     *,
     now: datetime | None = None,
-    max_age_seconds: int = 300,
+    max_age_seconds: int | None = None,
 ) -> MachineBRuntimeEvidence:
     """Read one coherent generation or return explicit UNKNOWN/STALE evidence."""
+    if max_age_seconds is None:
+        from apps.vps.profiles import RUNTIME_MAX_AGE_SECONDS
+        max_age_seconds = RUNTIME_MAX_AGE_SECONDS
     root = Path(directory)
     try:
         docs = {name: _load(root, name) for name in ARTIFACTS}

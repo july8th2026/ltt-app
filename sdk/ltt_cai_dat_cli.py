@@ -53,6 +53,10 @@ NHAN_DESKTOP = {
     MODEL_DESKTOP: "LTT 3.8 (Mạnh)",
     MODEL_DESKTOP_35: "LTT 3.5 (Nhanh)",
 }
+NHAN_CODEX = {
+    "ltt-3.8": "LTT 3.8 (Strong)",
+    "ltt-3.5": "LTT 3.5 (Fast)",
+}
 TANG_DESKTOP = {MODEL_DESKTOP: "opus", MODEL_DESKTOP_35: "haiku"}
 BIEN_KHOA = "LTT_API_KEY"
 
@@ -228,7 +232,7 @@ def _catalog() -> str:
     """
     def mot(slug: str, cua_so: int, nen: int, doc_anh: bool = False) -> dict:
         d = {
-            "slug": slug, "display_name": slug,
+            "slug": slug, "display_name": NHAN_CODEX[slug],
             "description": f"{slug} (LTT Studios)",
             "default_reasoning_level": HO_SO_MODEL[slug].reasoning,
             "supported_reasoning_levels": [
@@ -288,13 +292,16 @@ def _sao_luu(p: pathlib.Path) -> None:
 
 def codex(base: str, goc_codex: pathlib.Path,
           hs: HoSoModel | None = None) -> list:
-    """Two files, and the split is not optional.
+    """Provider, catalog and both LTT profiles; the split is not optional.
 
     Codex 0.145+ refuses `[profiles.X]` inside config.toml outright:
     "cannot be used while config.toml contains legacy `[profiles.ltt]` config".
     The provider block stays in config.toml; the profile moves to its own file.
     """
-    hs = hs or HO_SO_MODEL[MODEL]
+    # `hs` remains in the public signature for old callers that also pass it to
+    # `claude_code`. It must not narrow Codex to one model: one install always
+    # exposes both LTT products.
+    del hs
     ra = []
     goc_codex.mkdir(parents=True, exist_ok=True)
 
@@ -330,24 +337,28 @@ def codex(base: str, goc_codex: pathlib.Path,
         cat.write_text(_catalog(), encoding="utf-8")
         ra.append(f"  + tao {cat}")
 
-    pro = goc_codex / "ltt.config.toml"
-    if pro.exists():
-        ra.append(f"  = da co {pro}, giu nguyen")
-    else:
+    for ten_tep, hs_codex in (("ltt.config.toml", HO_SO_MODEL[MODEL]),
+                              ("ltt-fast.config.toml", HO_SO_MODEL[MODEL_35])):
+        pro = goc_codex / ten_tep
+        if pro.exists():
+            ra.append(f"  = da co {pro}, giu nguyen")
+            continue
         pro.write_text(
-            f'model = "{hs.ten}"\n'
+            f'model = "{hs_codex.ten}"\n'
             'model_provider = "ltt"\n'
             "# Model-specific quality default; server thinking remains enabled.\n"
-            f'model_reasoning_effort = "{hs.reasoning}"\n'
+            f'model_reasoning_effort = "{hs_codex.reasoning}"\n'
             'model_reasoning_summary = "none"\n'
-            f"model_context_window = {hs.cua_so}\n"
-            f"model_auto_compact_token_limit = {hs.nen}\n"
+            f"model_context_window = {hs_codex.cua_so}\n"
+            f"model_auto_compact_token_limit = {hs_codex.nen}\n"
+            'model_auto_compact_token_limit_scope = "total"\n'
+            f"tool_output_token_limit = {TRAN_KET_QUA_TOOL}\n"
             f"model_catalog_json = '{cat}'\n"
             "\n[agents]\n"
-            f'default_subagent_model = "{hs.ten}"\n'
-            f'default_subagent_reasoning_effort = "{hs.reasoning}"\n'
+            f'default_subagent_model = "{hs_codex.ten}"\n'
+            f'default_subagent_reasoning_effort = "{hs_codex.reasoning}"\n'
             "max_concurrent_threads_per_session = 1\n", encoding="utf-8")
-        ra.append(f"  + tao {pro}")
+        ra.append(f"  + tao {pro} ({hs_codex.ten})")
     return ra
 
 
