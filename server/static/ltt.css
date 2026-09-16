@@ -4067,3 +4067,7 @@ input[type=hidden]+.af-step{margin-top:0}
 .as-job-tai{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
 .ag-ngan-sach{max-width:260px;margin-top:var(--space-3)}
 .ct-chua-build{max-width:720px;margin:2rem auto}
+/* O cham < 24px con lai (do 17/09 bang Playwright): link "Xem tat ca" 16px o Voice,
+   thanh truot am nen 16px o Long tieng. Radio/checkbox 18px nam TRONG nhan lon hon => khong tinh. */
+.lv-gd-tatca{display:inline-flex;align-items:center;min-height:24px}
+#asv-am-nen{min-height:24px}
