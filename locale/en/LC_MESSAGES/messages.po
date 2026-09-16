@@ -18048,3 +18048,9 @@ msgstr "The queue is taking longer than usual. You can keep waiting, or open the
 
 msgid "Chờ lâu bất thường"
 msgstr "Unusually long wait"
+
+msgid "profile LTT 3.8; tạo mới hoặc sao lưu trước khi ghi"
+msgstr "LTT 3.8 profile; created, or backed up before writing"
+
+msgid "profile LTT 3.5; được cài cùng lượt với LTT 3.8"
+msgstr "LTT 3.5 profile; installed in the same run as LTT 3.8"
