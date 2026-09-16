@@ -133,6 +133,51 @@ Bối cảnh: Voice chạy GPU **máy A** (sidecar `LTTStudioVoice` :8120). LLM 
   `api` khởi động cùng năng lực như trước. PARTIAL.
 - **Cổng W1' chưa đóng hẳn:** runtime queued → running → done PROVEN, nhưng G01 (GUI
   trình duyệt: tạo → nghe → tải WAV/MP3) NOT TESTED.
+- Deploy VPS `b1593e3c` 16:30:58 (phiên VPS V4) khởi động lại worker; làn `voice` còn
+  nguyên (8 worker, worker-7 `['api','voice']`). PROVEN.
+
+**G01 — Chrome thật, `https://app.lttstudios.com`, tài khoản thường
+`akakenly.design@gmail.com` (chủ dự án tự đăng nhập; profile Playwright riêng), 16/09 16:37:**
+
+| Bước | Kết quả | Bằng chứng | Nhãn |
+|---|---|---|---|
+| Nhập văn bản VI (83 ký tự), chọn preset `Ngọc Huyền` (vi), ngôn ngữ `auto`, bấm "Tạo tiếng nói" | `POST /ltt-voice/tao` 200 | log mạng | PROVEN |
+| queued → running → done | job `4295e09c`: submitted 16:37:47.245 → claimed 48.128 (0,9 s) → admitted `vieneu_gpu` → completed 16:38:09.384; worker pid 20508 (`voice`) | `job_events` | PROVEN |
+| Poll GUI | `GET /ket-qua/4295e09c…` × 8 đều 200 | log mạng | PROVEN |
+| Chữ trạng thái queued/running trên GUI | không bắt được (bộ chọn đọc nhầm khu "Gần đây") | — | NOT TESTED |
+| Khung kết quả | "Hoàn tất", 5,2 s, 2 credit, WAV 48 kHz, đúng mã yêu cầu | ảnh `g01_khung_ket_qua.png` | PROVEN |
+| Phát | `currentTime` tăng (0,64 s / 5,2 s) | eval | PROVEN |
+| Tải WAV | 200 `audio/wav` 499 244 byte, `RIFF` | fetch trong trang | PROVEN |
+| Tải MP3 | 200 `audio/mpeg` 126 188 byte, `ID3`, `attachment; filename="tieng.mp3"` | fetch trong trang | PROVEN |
+| Console / request hỏng | 0 lỗi console; 0 request ≥ 400 trong luồng | `playwright-cli console`, `requests` | PROVEN |
+
+**⇒ Cổng W1' ĐẠT** (G01 với artifact thật). Phát hiện chuyển W5'/W8':
+- Khung kết quả ở `scrollY≈1010` với khung 996×943; sau khi bấm Tạo trang **không tự
+  cuộn** tới kết quả. LIKELY lỗi UX — đo lại ở 4 viewport desktop (W5').
+- Tràn ngang `scrollWidth 1066 > 996` do header **nền tảng** (`.hdr-right`), không phải
+  Voice — ghi nhận, không sửa trong chương trình này (W8').
+- Nút "Tạo tiếng nói" dính đáy che khối "Tốc độ đọc" ở 996×943 (W5').
+- Link "Tải WAV" không có `Content-Disposition: attachment` (MP3 có) — hành vi tải cần
+  kiểm theo thuộc tính `download` của thẻ (W5').
+
+## W2' — Đo lại 25 giọng (16/09/2026) — nguyên nhân PROVEN
+
+| Phép đo | Kết quả | Nhãn |
+|---|---|---|
+| CSDL `voice_profile` | `dung_chung=True`: 17 en + 8 vi = **25, cả 25 `license_status=cho_soat`**, `active`. `dung_chung=False`: 4 (3 vi + 1 en), `cho_soat` | PROVEN |
+| Cổng kho chung | `_dieu_kien_kho_chung` = `dung_chung AND license_status IN ("ok",)` ⇒ 0/25 qua | PROVEN (mã + dữ liệu) |
+| Trình duyệt, tài khoản thường | picker Studio: 1 "Giọng mặc định" + **20 `mau`**, **0 `chung`**, 0 `toi` | PROVEN |
+
+**Kết luận P0-2:** khách không phải chủ chỉ thấy 20 preset vì **25 giọng chưa được duyệt
+license** (nguyên nhân hiển thị). Độc lập với nó, **tệp của 25 giọng đã mất trên R2**
+(đo 15/09) ⇒ duyệt license thôi thì giọng sẽ HIỆN nhưng **không tạo được tiếng**.
+
+**Quyết định của chủ dự án trước W3'** (không phải của code):
+1. Có duyệt license 25 giọng không (`tools/soat_giong.py`)?
+2. Nguồn 25 clip gốc để ghi danh lại (không có clip ⇒ không thể dựng lại giọng).
+3. Trong lúc chưa có clip: giữ ẩn (hiện trạng) hay hiện kèm "chưa dùng được"?
+   Khuyến nghị: **giữ ẩn** — duyệt license khi tệp chưa có sẽ bày ra 25 giọng bấm vào là
+   lỗi.
 
 **Ngoài phạm vi, ghi nhận:** không làn nào có `ffmpeg` ⇒ app `requires` chứa
 `ffmpeg` (`autosubvideo`, `taoclipngan`, `qualitylab`, `asv_media`,
