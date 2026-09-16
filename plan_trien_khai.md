@@ -32,7 +32,7 @@ nào < 88 · critical UI xác minh ở mức render thật (E3).
 | Bộ quét | `node tools/golden_ui_quet.mjs --cau-hinh routes.json --ra <dir> [--khung ...]` — HTTP, ảnh toàn trang, console, request hỏng, tràn ngang, axe WCAG 2.2 AA, h1/main/lang, ô chạm, ô nhập <16px |
 
 ## Overall Progress
-63%
+67%
 
 (Trọng số: P0 5 · P1 10 · P2 15 · P3 15 · P4 20 · P5 15 · P6 10 · P7 10. Tính: 5 + 10 + 55%·15 + 40%·15 + 70%·20 + 65%·15 + 80%·10 + 0·10 = 5+10+8,25+6+14+9,75+8 = 61 → **63%** sau khi toàn hệ về axe 0 ở 4 khung; chưa có chứng nhận gate và Phase 7 chưa bắt đầu.)
 
@@ -45,7 +45,7 @@ nào < 88 · critical UI xác minh ở mức render thật (E3).
 | 4 Critical Pages | 70 | 🟡 Error ✅ · Jobs 🟡 · Billing 🟡 · Auth 🟡 · Shell/Workspace 🟡 · Public ⏳ |
 | 5 Remaining Pages & Apps | 65 | 🟡 Admin ✅ · sqladmin ✅ · Status ✅ · Apps a11y ✅ · VPS/Nexus tương phản ✅ · còn i18n chuỗi cứng + chip thể loại + ảnh bìa |
 | 6 Responsive & Accessibility | 80 | 🟡 448 phép đo 390/768/1440/1920: axe serious **0**, tràn 0, main/h1 lệch 0, console 0; chưa đo 430×932 + keyboard walkthrough |
-| 7 Visual Regression & Final QA | 0 | ⏳ |
+| 7 Visual Regression & Final QA | 35 | 🟡 regression ảnh 28 mẫu ✅ · CERTIFYING (gate) ⏳ · URL công khai ⏳ (cần deploy) |
 
 ## Current Baseline
 
@@ -275,7 +275,9 @@ Completed:
 Khung: 390×844 · 430×932 · 768×1024 · 1440×900 · 1920×1080 cho critical; axe 0 critical/serious trên critical flows.
 
 ## Phase 7 — Visual Regression & Final QA
-Progress: 0%
+Progress: 35%
+
+- Screenshot regression: `tools/golden_ui_anh_mau.py` + `tests/visual/golden_ui/` (28 ảnh). Không dùng `@playwright/test` (kho không có, không thêm dependency): Playwright Python chụp khung nhìn với `mask` vùng động (giờ, id, mã tra cứu, cột thời gian sqladmin) + Pillow so pixel, ngưỡng 0,2%. Hai vùng chưa che lộ ra ở lần đo đầu (sát ngưỡng 0,199%/0,186%) ⇒ che đúng chỗ thay vì nới ngưỡng.
 Screenshot regression Playwright (`toHaveScreenshot`) cho critical screens; test pin a11y; L3 một lần trước bàn giao.
 
 ## P0 Issues
@@ -295,13 +297,13 @@ Screenshot regression Playwright (`toHaveScreenshot`) cho critical screens; test
 | P1-04 ✅ (312 → 0 ở 448 phép đo) | Tương phản: 312 nút / 89 trang dưới AA | toàn hệ |
 | P1-05 ✅ (đo lại toàn hệ: main≠1 = 0, h1≠1 = 0) | `main` nhân đôi (10 màn) · thiếu `h1` (`/status`, canvas, chatltt, autosub) · `h1` ×6 ở ommi classic | shell + app |
 | P1-06 🟡 PARTIAL (jobs, rail trang chủ, taoanh, thumbnail, transcript, prompt-canh, audio-pause, video-assembly xong; còn dev/admin nội bộ) | Enum nội bộ lộ ra khách: `running · 20%`, `queued · 0%`, `cancelled · 10%` (taoanh), `running/queued/done` (rail home), tiêu đề `Job 8fde2d41`, `taoanh · taoanh.generate` (job detail) | jobs, workspace, apps |
-| P1-07 | i18n: nhãn tiếng Anh cứng (`GENERATIVE IMAGE`, `OUTPUT HISTORY`, `REFERENCE & EDIT`), chip thể loại lẫn hoa/thường (`audio`, `video` cạnh `AI Video`), chuỗi không qua `_()` ở error/jobs/nap/auth/status, sqladmin toàn tiếng Anh (`Search`, `Actions`, `Showing 1 to 3`) | toàn hệ |
+| P1-07 🟡 PARTIAL (error/auth/jobs/billing/status/sqladmin list/home chip/nhãn app xong; còn chuỗi trong JS app + dev portal kỹ thuật) | i18n: nhãn tiếng Anh cứng (`GENERATIVE IMAGE`, `OUTPUT HISTORY`, `REFERENCE & EDIT`), chip thể loại lẫn hoa/thường (`audio`, `video` cạnh `AI Video`), chuỗi không qua `_()` ở error/jobs/nap/auth/status, sqladmin toàn tiếng Anh (`Search`, `Actions`, `Showing 1 to 3`) | toàn hệ |
 | P1-08 🟡 PARTIAL (billing xong; còn home rail/dev/VPS kiểm lại) | Định dạng số kiểu Anh trong giao diện Việt: `200,000đ`, `2,200 credit`, `1,000,000đ` (billing) trong khi VPS/Developer dùng `149.000đ`, `1.250` | billing, jobs |
 | P1-09 🟡 PARTIAL (progressbar jobs/home ✅, khung cuộn ✅, nhãn admin ✅; còn Voice nested-interactive, upscale `#vfile`) | Progressbar không tên (12) · vùng cuộn `<pre>` không focus được (35) · control lồng control ở thẻ giọng Voice (18) · control thiếu nhãn ở admin `api-key-them` | a11y |
 | P1-10 ✅ | sqladmin list: menu "Actions" đè dòng đầu bảng, "Show 10 / Page" trôi ngoài card (gốc: `.dropdown` không phạm vi trong ltt.css) | admin |
 | P1-11 ✅ | `/admin/khach-hang` tràn ngang ở 390 (gốc: sr-only absolute trong khung cuộn không định vị) | admin |
-| P1-12 | Ảnh bìa thẻ app không đồng nhất: nửa có ảnh, nửa là khối tối rỗng (catalog ẩn danh + workspace) | public, workspace |
-| P1-13 | Nút "Tạo tiếng nói" (Voice) che mô tả phía dưới ở 1440 (thanh dính đè nội dung) | apps |
+| P1-12 ✅ (gốc: lớp `cover-audio/video/chat/ai-text` không có luật; 16/16 thẻ có bìa) | Ảnh bìa thẻ app không đồng nhất: nửa có ảnh, nửa là khối tối rỗng (catalog ẩn danh + workspace) | public, workspace |
+| P1-13 ✅ KHÔNG PHẢI LỖI | Nút "Tạo tiếng nói" (Voice) "che mô tả" chỉ thấy trong ảnh chụp TOÀN TRANG — Playwright vẽ phần tử `sticky` tại vị trí cuộn lúc chụp. Khung nhìn thật 1440/390 ở 3 vị trí cuộn: không đè (`sau/voice`) | apps |
 | P1-16 ✅ | Voice "Giọng của tôi": nút "Chi tiết" trên thẻ giọng KHÔNG mở gì (chuột + bàn phím) — thẻ `role=button` nuốt click nút con | apps |
 | P1-14 | ~3.500 `style=""` + `<style>` riêng ở 10 template; biến thể nút/badge riêng theo trang | toàn hệ |
 | P1-15 🟡 PARTIAL (`htmx.min.js` ×9 template có `?v=` + vào `TAI_SAN_CO_VERSION`; còn noVNC, sqladmin static) | Tài sản không cache-bust: `htmx.min.js` (8 template), noVNC `rfb.js`, static sqladmin | shell |
@@ -366,6 +368,7 @@ Screenshot regression Playwright (`toHaveScreenshot`) cho critical screens; test
 | EV-20 | E3 | `sau/v1`: **224 phép đo toàn hệ** (cùng 112 route × 390/1440 như baseline) — serious 436→34, tương phản 312→24, khung cuộn 35→0, nested 18→0, progressbar 12→0, label 12→0, listitem 8→0, main/h1 lệch 26→0, tràn 1→0, console 0 |
 | EV-21 | E3 | `voice_chitiet.mjs`: "Chi tiết" chuột/Enter + thân thẻ — trước: không mở; sau: mở cả 3 |
 | EV-22 | E2 | vitest `CanvasShell` 22/22; `test_500`/`test_352` 73/73; 4 bundle `build-meta` khớp |
+| EV-24 | E2+E3 | `tools/golden_ui_anh_mau.py`: 28 ảnh mẫu (14 màn × 390/1440), ổn định qua 2 lần seed (lệch lớn nhất 0,042%), đối chứng âm 11,95% |
 | EV-23 | E3 | `sau/v2`: 448 phép đo 4 khung — axe serious 0 ngoài canvas; `sau/canvas`: canvas 0 ở 4 khung |
 
 ## Current Blocker
