@@ -423,10 +423,12 @@ MANIFEST = AppManifest(
                         "description": (
                             "Language lane for quality enforcement. 'auto' "
                             "(default) detects language from the text. 'vi' "
-                            "or 'en' overrides detection. If the detected or "
-                            "declared language does not match the voice's "
-                            "lane, the request is rejected with "
-                            "voice_language_mismatch."),
+                            "or 'en' declares the script language; confident "
+                            "detection from the text still applies. If the "
+                            "declared or confidently detected language does "
+                            "not match the voice's lane, the request is "
+                            "rejected with voice_language_mismatch before any "
+                            "credit is held."),
                         "example": "auto",
                     },
                 },
