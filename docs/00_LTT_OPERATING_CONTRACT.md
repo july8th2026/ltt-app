@@ -108,8 +108,10 @@ L3 ĐỎ          : sửa tại chỗ → chạy lại đúng phép đỏ → kh
                  ⛔ KHÔNG chạy L3 lần hai. Một L3 mỗi nhánh.
 ```
 
-"Phiên" = một nhánh làm việc (một worktree). Nhiều phiên song song mỗi phiên một L3
-của nhánh mình; máy đếm theo nhánh (§4.6).
+**"Phiên" = cả phiên làm việc**, từ lúc mở tới lúc tổng kết — ⛔ **không** phải một
+nhánh con, một worktree phụ, một pha, một hạng mục hay một lần gộp `main`. Một phiên
+mở nhiều nhánh vẫn chỉ bấm L3 **một lần, ở tổng kết**, trên nhánh sẽ deploy. (Máy đếm
+L3 theo nhánh — §4.6 — đó là cơ chế chặn, không phải định nghĩa phiên.)
 
 ## Các cấp — tên gọi cho hồ sơ `gate.py`
 
@@ -307,12 +309,17 @@ rồi quay lại. Không phải cửa để chạy gate sau mỗi lần sửa.
 - Commit khi một changeset nguyên tử xong và **test nhắm** của nó xanh. Commit
   checkpoint trên nhánh phiên **không** đòi gate.
 - **Chính phiên làm việc tự gộp `main`** (chủ sản phẩm chốt 16/09/2026) — không chờ
-  người tích hợp. Điều kiện: L3 xanh, hoặc L3 đỏ đã khép (§4.6).
+  người tích hợp. Điều kiện (chốt lại 17/09):
+  - **Gộp giữa phiên** (chưa deploy): test nhắm của changeset xanh; thay đổi lan nhiều
+    thành phần ⇒ thêm **L1/L2** (§4.1). ⛔ **Không** chạy L3 để gộp.
+  - **Tổng kết phiên có deploy**: L3 của phiên (xanh, hoặc đỏ đã khép §4.6) trên đúng
+    SHA sẽ gộp và deploy (§4.2, §8).
 
 ```
 main CHƯA đi tiếp kể từ BASE_SHA  → fast-forward main tới nhánh của bạn
 main ĐÃ đi tiếp                   → merge main vào nhánh
-                                   → python tools\gate.py --doi --tu <sha lượt L3>  (chỉ chỗ hai bên gặp nhau)
+                                   → giữa phiên : test nhắm chỗ hai bên gặp nhau (L1 `--doi --tu <sha trước khi hoà>` nếu cần)
+                                     tổng kết   : python tools\gate.py --doi --tu <sha lượt L3>
                                    → fast-forward main
 ```
 
@@ -361,7 +368,8 @@ plan tự động."* Một pha xong **không** phải điểm xin phép.
 | ⛔ Đừng làm | ✅ Làm |
 |---|---|
 | "Pha 1 xong, tôi có nên tiếp?" | tiếp luôn, báo kết quả **sau** |
-| dừng xin duyệt deploy/gộp `main` | làm, rồi báo kèm phép đo trước/sau |
+| dừng xin duyệt deploy/gộp `main` | làm, rồi báo kèm phép đo trước/sau — deploy chỉ ở tổng kết phiên, sau L3 (§4.2) |
+| "pha xong nên deploy / chạy L3" | làm tiếp pha kế; L3 + deploy chỉ khi hết **mọi** pha |
 | kết báo cáo bằng câu hỏi | kết bằng **việc đã làm** + việc **đang làm tiếp** |
 | chờ trả lời rồi mới làm | làm, dùng thời gian chờ cho việc đọc/đo |
 

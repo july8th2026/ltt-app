@@ -34,7 +34,9 @@ docs/00_LTT_OPERATING_CONTRACT.md      ← đọc trước việc thực chất
                   cần gate -> CHỈ L1 (gate.py --doi) hoặc L2 (gate.py --pham-vi <tp>)
                   ⛔ KHÔNG L3 giữa các pha (không rải rác, không "chốt pha")
    GẶP LỖI        sửa TẠI CHỖ -> chạy lại ĐÚNG phép đã đỏ -> đi tiếp
-   TỔNG KẾT PHIÊN commit hết -> build frontend nếu đổi -> kiểm máy (luật 3)
+   GỘP main       giữa phiên: test nhắm xanh (+ L1/L2 khi lan nhiều thành phần) — ⛔ không L3 để gộp
+   TỔNG KẾT PHIÊN (hết MỌI pha của cả phiên — không phải hết một nhánh/pha/hạng mục)
+                  commit hết -> build frontend nếu đổi -> kiểm máy (luật 3)
                   -> python tools\gate.py (L3) MỘT lần, không ghi vào cây trong lúc chạy
    L3 ĐỎ          sửa tại chỗ -> chạy lại đúng phép đỏ (gate in sẵn) -> KHÉP gate.py --doi --tu <sha L3>
    DEPLOY         ⛔ chỉ sau L3 của phiên (xanh / đỏ đã khép) trên đúng SHA — không ngoại lệ
@@ -43,7 +45,8 @@ docs/00_LTT_OPERATING_CONTRACT.md      ← đọc trước việc thực chất
    ⛔ **Một L3 mỗi nhánh** — `gate.py` từ chối L3 thứ hai kể cả sau L3 xanh, và từ chối
    L1/L2 giữa phiên tự nâng lên đầy đủ. Còn việc chưa làm ⇒ **chưa bấm L3**. Lượt bị
    ngắt giữa chừng (không có bản ghi) chưa phải phán quyết ⇒ chạy lại được.
-2. **Không dừng giữa các pha** — xong pha thì làm tiếp, gộp `main` và deploy rồi báo.
+2. **Không dừng giữa các pha** — xong một pha thì làm tiếp pha kế, không xin phép; hết
+   **mọi** pha thì L3 → gộp `main` → deploy (nếu cần) → báo. ⛔ Không deploy theo từng pha.
    Chỉ dừng khi: gate đỏ · thao tác không đảo được · thay đổi không rõ của ai · rủi ro
    bảo mật (hợp đồng §10, §10b).
 3. **Kiểm CPU trước lệnh nặng** (gate mọi chế độ, `test_nhanh.py`, ≥ 3 tệp test):
