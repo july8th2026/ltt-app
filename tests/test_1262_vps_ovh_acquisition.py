@@ -299,7 +299,9 @@ def test_acquisition_refuses_protected_or_invalid_scope_before_provider(db, bloc
 
 
 def test_subscription_revoked_during_cart_preparation_blocks_checkout(db):
-    from apps.vps.services.ovh_acquisition import AcquisitionNeedsReview, ensure_free_ip
+    from apps.vps.services.backends.contracts import BackendConflict
+    from apps.vps.services.ovh_acquisition import ensure_free_ip
+    from apps.vps.tables import VpsExternalMutation
 
     profile, gateway, instance = _domain(db)
     provider = _Provider()
@@ -312,11 +314,100 @@ def test_subscription_revoked_during_cart_preparation_blocks_checkout(db):
         return prepared
 
     provider.prepare_additional_ipv4 = revoke
-    with pytest.raises(AcquisitionNeedsReview):
+    with pytest.raises(BackendConflict):
         ensure_free_ip(db, profile, instance=instance, gateway_row=gateway,
                        provider=provider, gateway=_Gateway(), operation_id="revoked",
                        sleep=lambda _: None)
     assert not any(call[0] == "checkout" for call in provider.calls)
+    # Nothing was paid, so this is a safe stop, not an ambiguous outcome (R5).
+    assert db.execute(select(VpsExternalMutation.state)).scalar_one() == "INTENT"
+
+
+@pytest.mark.parametrize("state", ["loi", "da_xoa", "refunded"])
+def test_acquisition_refuses_failed_deleted_or_refunded_vps(db, state):
+    """R4: a refund does not move paid_until back, so billing alone is not enough."""
+    from apps.vps.services.backends.contracts import BackendConflict
+    from apps.vps.services.ovh_acquisition import ensure_free_ip
+    from apps.vps.tables import VpsEvent
+
+    profile, gateway, instance = _domain(db)
+    if state == "refunded":
+        db.add(VpsEvent(instance_id=instance.id, loai="hoan_tien", chi_tiet={}))
+    else:
+        instance.trang_thai = state
+    db.commit()
+    provider = _Provider()
+    with pytest.raises(BackendConflict):
+        ensure_free_ip(db, profile, instance=instance, gateway_row=gateway,
+                       provider=provider, gateway=_Gateway(), operation_id="late-retry",
+                       sleep=lambda _: None)
+    assert provider.calls == []
+
+
+def test_rebuild_after_ambiguous_checkout_never_checks_out_again(db):
+    """R3: a rebuild's new operation_id must not reach a second checkout."""
+    from apps.vps.services.ovh_acquisition import AcquisitionNeedsReview, ensure_free_ip
+
+    profile, gateway, instance = _domain(db)
+    profile.provider_config = {**profile.provider_config,
+                               "adopt_ip_cart_id": "11111111-1111-4111-8111-111111111111"}
+    db.commit()
+    provider = _Provider(checkout_error=True, recovered=None)
+    provider.adopt_prepared_cart = lambda cart_id: provider.prepare_additional_ipv4()
+    with pytest.raises(AcquisitionNeedsReview):
+        ensure_free_ip(db, profile, instance=instance, gateway_row=gateway,
+                       provider=provider, gateway=_Gateway(),
+                       operation_id="provision:instance-new", sleep=lambda _: None)
+    with pytest.raises(AcquisitionNeedsReview):
+        ensure_free_ip(db, profile, instance=instance, gateway_row=gateway,
+                       provider=provider, gateway=_Gateway(),
+                       operation_id="rebuild:new-uuid", sleep=lambda _: None)
+    assert [call[0] for call in provider.calls].count("checkout") == 1
+
+
+def test_cart_changed_before_post_is_not_ambiguous_and_retry_is_allowed(db):
+    """R5: the driver proves no POST was sent, so the claim is released."""
+    from apps.vps.services.backends.contracts import BackendConflict
+    from apps.vps.services.ovh import CheckoutNotSent
+    from apps.vps.services.ovh_acquisition import ensure_free_ip
+    from apps.vps.tables import VpsExternalMutation
+
+    profile, gateway, instance = _domain(db)
+    provider = _Provider()
+    real_checkout = provider.checkout_cart
+
+    def expired_once(cart_id, *, expected):
+        provider.checkout_cart = real_checkout
+        raise CheckoutNotSent("fixture cart expired")
+
+    provider.checkout_cart = expired_once
+    arguments = dict(instance=instance, gateway_row=gateway, provider=provider,
+                     gateway=_Gateway(), operation_id="provision:instance-new",
+                     sleep=lambda _: None)
+    with pytest.raises(BackendConflict):
+        ensure_free_ip(db, profile, **arguments)
+    row = db.execute(select(VpsExternalMutation)).scalar_one()
+    assert row.state == "INTENT" and row.provider_metadata["phase"] == "PREPARED"
+    assert ensure_free_ip(db, profile, **arguments).address == "192.0.2.11"
+    assert [call[0] for call in provider.calls].count("checkout") == 1
+
+
+def test_driver_recovery_never_uses_the_dry_run_quotation():
+    """R2: GET /order/cart/{id}/checkout is a quotation, not an order lookup."""
+    driver, cart_id, state, calls = _ordering_driver()
+    assert driver.recover_order(cart_id=cart_id, item_id=77) is None
+    assert calls == []
+
+
+def test_driver_expired_cart_before_post_is_reported_as_not_sent():
+    from apps.vps.services.ovh import CheckoutNotSent
+
+    driver, cart_id, state, calls = _ordering_driver()
+    expected = driver.preview_cart(cart_id, 77)
+    state["price"] = "2.40"
+    with pytest.raises(CheckoutNotSent):
+        driver.checkout_cart(cart_id, expected=expected)
+    assert not any(method == "POST" for method, _, _ in calls)
 
 
 def test_completed_acquisition_retry_does_not_buy_a_second_address(db):

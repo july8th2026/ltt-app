@@ -5,6 +5,7 @@ order-to-IP attribution and gateway address installation pass their tests.
 """
 from datetime import datetime, timezone
 from ipaddress import IPv4Address
+import logging
 from uuid import UUID
 
 from sqlalchemy import select, update
@@ -13,8 +14,12 @@ from apps.vps.services import billing, mutation_journal as journal
 from apps.vps.services.backends.contracts import (
     BackendConflict, CapacityExhausted, PublicIpResource,
 )
-from apps.vps.tables import VpsExternalMutation, VpsInfrastructureProfile, VpsIp
+from apps.vps.services.ovh import CheckoutNotSent
+from apps.vps.tables import (VpsEvent, VpsExternalMutation,
+                             VpsInfrastructureProfile, VpsIp)
 from platform_core.jobs import DangBan
+
+log = logging.getLogger(__name__)
 
 
 class UnexpectedBilling(BackendConflict):
@@ -112,8 +117,30 @@ def ensure_free_ip(db, profile, *, instance, gateway_row, provider, gateway,
         # not create a second credit ledger or debit the customer twice.
         if not billing.con_han(instance):
             raise BackendConflict("acquisition requires a paid VPS subscription")
+        # A refund does not move `paid_until` back (bao_tri._hoan_may_tao_hong),
+        # so the subscription check alone would still buy for a refunded or
+        # failed/deleted machine (review R4, 16/09).
+        if instance.trang_thai in ("loi", "da_xoa"):
+            raise BackendConflict("acquisition refused for a failed or deleted VPS")
+        if db.execute(select(VpsEvent.id).where(
+                VpsEvent.instance_id == instance.id,
+                VpsEvent.loai == "hoan_tien").limit(1)).first() is not None:
+            raise BackendConflict("acquisition refused for a refunded VPS")
 
     guard()
+    # One purchase per instance across ALL operations. A rebuild gets a new
+    # operation_id; without this it would reuse the cart claim and could POST
+    # checkout for the same cart again (review R3, 16/09). Only a predecessor
+    # that provably never reached checkout (FAILED/COMPENSATED) is ignored.
+    for other in db.execute(select(VpsExternalMutation).where(
+            VpsExternalMutation.instance_id == instance.id,
+            VpsExternalMutation.step == "OVH_IP_ACQUIRE",
+            VpsExternalMutation.operation_id != operation_id)).scalars():
+        if other.state not in ("FAILED", "COMPENSATED") or (
+                (other.provider_metadata or {}).get("phase")
+                in ("CHECKOUT_REQUESTED", "ORDERED")):
+            raise AcquisitionNeedsReview(
+                "an earlier acquisition for this VPS may already have paid")
     cart_claim = None
     if request.get("adopt_ip_cart_id"):
         # One durable cart claim across ALL instance/operation IDs. The journal
@@ -128,10 +155,25 @@ def ensure_free_ip(db, profile, *, instance, gateway_row, provider, gateway,
                          step="OVH_IP_ACQUIRE", request=request)
     db.commit()
 
-    def review():
+    def review(keep_metadata=None):
+        # The session may be broken by the failure that brought us here; a
+        # review written on it would fail and replace the real error, losing a
+        # paid order_id (review R7). Roll back, then persist what we know.
+        db.rollback()
+        if keep_metadata is not None:
+            row.provider_metadata = keep_metadata
         journal.needs_review(db, row)
         db.commit()
         raise AcquisitionNeedsReview("OVH acquisition requires exact provider read-back")
+
+    def not_sent(metadata_before_checkout):
+        # Nothing was paid: release the claim so the job may retry safely,
+        # instead of a permanent NEEDS_REVIEW for a failure before POST (R5).
+        db.rollback()
+        row.state = "INTENT"
+        row.provider_metadata = metadata_before_checkout
+        row.last_error_code = "pre_checkout_failure"
+        db.commit()
 
     if row.state in ("FAILED", "COMPENSATED", "NEEDS_REVIEW"):
         raise AcquisitionNeedsReview("OVH acquisition predecessor requires recovery")
@@ -145,6 +187,7 @@ def ensure_free_ip(db, profile, *, instance, gateway_row, provider, gateway,
             db.rollback()
             raise AcquisitionNeedsReview("another worker owns acquisition")
         db.commit()
+        metadata = {}
         try:
             baseline = [item.cidr for item in provider.list_additional_ipv4()]
             metadata = {"baseline": baseline, "phase": "PREPARING"}
@@ -180,24 +223,40 @@ def ensure_free_ip(db, profile, *, instance, gateway_row, provider, gateway,
                 db.commit()
                 raise UnexpectedBilling("OVH quote does not match approved policy")
             guard()
-            metadata = {**metadata, "phase": "CHECKOUT_REQUESTED",
-                        "checkout_requested_at": _now().isoformat()}
-            row.provider_metadata = metadata
-            db.commit()
-            try:
-                order_id = provider.checkout_cart(prepared.cart_id, expected=prepared)
-            except Exception:
-                order_id = provider.recover_order(
-                    cart_id=prepared.cart_id, item_id=prepared.item_id)
-            if type(order_id) is not int or order_id <= 0:
-                review()
-            metadata = {**metadata, "order_id": order_id, "phase": "ORDERED"}
-            row.provider_metadata = metadata
-            db.commit()
         except (UnexpectedBilling, AcquisitionNeedsReview):
             raise
+        except Exception as exc:
+            # Everything above is read-only or an unpaid cart: never "ambiguous".
+            not_sent(metadata)
+            raise BackendConflict("OVH acquisition stopped before checkout") from exc
+
+        prepared_metadata = metadata
+        metadata = {**metadata, "phase": "CHECKOUT_REQUESTED",
+                    "checkout_requested_at": _now().isoformat()}
+        row.provider_metadata = metadata
+        db.commit()
+        try:
+            order_id = provider.checkout_cart(prepared.cart_id, expected=prepared)
+        except CheckoutNotSent as exc:
+            # The driver proves the POST was never issued (quote/expiry changed).
+            not_sent(prepared_metadata)
+            raise BackendConflict("OVH cart changed before checkout") from exc
         except Exception:
-            review()
+            try:
+                order_id = provider.recover_order(
+                    cart_id=prepared.cart_id, item_id=prepared.item_id)
+            except Exception:
+                order_id = None
+        if type(order_id) is not int or order_id <= 0:
+            review(keep_metadata=metadata)
+        metadata = {**metadata, "order_id": order_id, "phase": "ORDERED"}
+        row.provider_metadata = metadata
+        try:
+            db.commit()
+        except Exception:
+            log.error("OVH checkout order %s could not be journaled; cart %s",
+                      order_id, prepared.cart_id)
+            review(keep_metadata=metadata)
     elif not metadata.get("order_id"):
         # Crash after checkout may leave only the durable cart identity. Recover
         # using read-only attribution, never by issuing a second checkout.
