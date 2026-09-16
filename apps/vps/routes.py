@@ -467,18 +467,14 @@ def tao_may(request: Request,
     from apps.vps.services.sellable_capacity import (
         available_gateway_slots,
         effective_ipv4_slots,
+        promised_without_ip,
         sellable_slots,
     )
-    from sqlalchemy import func
     try:
         ip_details = backend_factory.public_ip_backend(db, profile).health().details
         # Queued promises already consume an eventual IP even before provision
         # reserves it. The selector's row lock serializes these admissions.
-        waiting = db.execute(select(func.count()).select_from(VpsInstance).where(
-            VpsInstance.infrastructure_profile_id == profile.id,
-            VpsInstance.trang_thai != "da_xoa",
-            ~select(VpsIp.id).where(VpsIp.instance_id == VpsInstance.id).exists()
-        )).scalar_one()
+        waiting = promised_without_ip(db, profile.id)
         free = effective_ipv4_slots(ip_details, promised_without_ip=waiting)
         slots = sellable_slots(suc_chua, plan_id, extra_disk_gb=dia_them_gb,
                                free_ipv4=free, gateway_slots=available_gateway_slots(db, profile.id))

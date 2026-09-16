@@ -27,6 +27,57 @@ def test_unknown_or_invalid_limits_never_mean_unlimited(bad):
                           gateway_slots=20).slots == 0
 
 
+@pytest.fixture()
+def db():
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import Session
+
+    import platform_core.models as _models  # noqa: F401
+    from apps.vps import tables as _tables  # noqa: F401
+    from platform_core.db import Base
+
+    engine = create_engine("sqlite+pysqlite:///:memory:")
+    Base.metadata.create_all(engine)
+    with Session(engine) as session:
+        yield session
+
+
+def _may(db, ma, trang_thai, *, acquire_state=None):
+    from apps.vps.tables import VpsExternalMutation, VpsInstance
+    db.add(VpsInstance(id=ma, user_id="u", plan_id="vps-nho", os_id="winsrv2022-core",
+                       gateway_id="g-ovh", infrastructure_profile_id="p-ovh",
+                       profile_resolution_state="PINNED", trang_thai=trang_thai))
+    if acquire_state:
+        db.add(VpsExternalMutation(
+            operation_id=f"provision:{ma}", instance_id=ma, profile_id="p-ovh",
+            step="OVH_IP_ACQUIRE", idempotency_key=f"provision:{ma}:OVH_IP_ACQUIRE",
+            state=acquire_state, request_fingerprint="f"))
+    db.commit()
+
+
+def test_failed_vps_without_open_acquisition_does_not_hold_an_ip_promise(db):
+    """R14 (16/09): one failed create (VM_CREATE error, no IP) blocked all sales."""
+    from apps.vps.services.sellable_capacity import (effective_ipv4_slots,
+                                                     promised_without_ip)
+    _may(db, "loi-truoc-mua-ip", "loi")
+    assert promised_without_ip(db, "p-ovh") == 0
+    assert effective_ipv4_slots({"free": 0, "replenishable": 1},
+                                promised_without_ip=promised_without_ip(db, "p-ovh")) == 1
+
+
+@pytest.mark.parametrize("trang_thai,acquire_state,expected", [
+    ("dang_tao", None, 1),            # queued create still promises an IP
+    ("loi", "REQUESTED", 1),          # paid order may still deliver
+    ("loi", "NEEDS_REVIEW", 1),       # ambiguous checkout keeps the promise
+    ("loi", "FAILED", 0),             # provably never paid
+    ("da_xoa", None, 0),
+])
+def test_ip_promises_follow_acquisition_evidence(db, trang_thai, acquire_state, expected):
+    from apps.vps.services.sellable_capacity import promised_without_ip
+    _may(db, "m1", trang_thai, acquire_state=acquire_state)
+    assert promised_without_ip(db, "p-ovh") == expected
+
+
 def test_compute_ram_and_cpu_are_counted_in_slots():
     from apps.vps.services.sellable_capacity import sellable_slots
     base = _capacity()
