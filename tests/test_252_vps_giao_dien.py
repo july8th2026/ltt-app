@@ -261,6 +261,11 @@ def test_node_da_day_vi_MAY_CUA_CHU_NHA_thi_khong_moi_khach_tao(moi_truong,
     day[0]["maxmem"] = 8 * 1024 ** 3
     _gia_lap_proxmox(monkeypatch, ram_gb=43, dia_gb=475, vms=day,
                      dia_dung_gb=174)
+    # Phep kiem nay chi ve RAM. Tu R24 (17/09) trang tinh con cho CA IPv4 va cong
+    # vao; o day cho hai gioi han ay du thua de RAM la rao duy nhat. Gioi han
+    # IP/cong co phep kiem rieng: tests/test_1031_vps_trang_het_ip.py.
+    import apps.vps.routes as routes
+    monkeypatch.setattr(routes, "_gioi_han_ban", lambda db: (50, 50))
     _tao_khach(moi_truong)
     client = _client()
     try:
