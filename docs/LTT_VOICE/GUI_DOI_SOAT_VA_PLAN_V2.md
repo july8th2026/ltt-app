@@ -62,6 +62,34 @@
 
 ---
 
+## F0. PLAN V3 — theo luật vận hành chuẩn hoá 16/09/2026 (thắng mọi nhịp gate bên dưới)
+
+Nguồn luật: `docs/00_LTT_OPERATING_CONTRACT.md` §4, §7–§10b (bản `6a2ff1cf`) +
+`~/.claude/CLAUDE.md`. Tóm tắt áp cho phiên này:
+
+- Trong phiên: **chỉ test nhắm** (`thanh_phan.py --test` → `pytest <tệp>`), bước
+  kiểm tĩnh lẻ chạy đúng công cụ của nó. **Không `gate.py`** mọi chế độ.
+- **L3 một lần** khi MỌI pha trước L3 xong. Đỏ ⇒ sửa tại chỗ ⇒ chạy lại đúng phép đỏ
+  ⇒ khép `gate.py --doi --tu <sha L3>`. Không L3 lần hai.
+- L3 xanh/khép ⇒ **chính phiên** gộp `main` + deploy, rồi báo. Không dừng giữa pha.
+  UAC im lặng qua `tools\nang_quyen.py`. Dừng chỉ khi: gate đỏ · thao tác không đảo
+  được · thay đổi chưa commit không rõ của ai · rủi ro bảo mật.
+- Deploy chép cả cây ⇒ báo phiên VPS (VM 204) trước, kiểm 0 job running / 0 lease.
+
+| Pha | Việc | Xong khi |
+|---|---|---|
+| **P1** | Chốt cây VPS cần gộp (r3 đã/đang deploy riêng, r4 `f6d5a370` có sẵn) + ai xử lý skip `test_1025` | phiên VPS trả lời; gộp release đó |
+| **P2** | Sửa THẬT 3 bánh cóc đỏ sẵn trên `main` (không nâng mốc): nuốt lỗi 66/62 · trùng số 1261/1262 · mypy arg-type 108/107 | 3 công cụ `check_silent_except` / `check_so_test` / `check_mypy` PASS |
+| **P3** | `check_bo_qua` PASS trên cây đã gộp (skip `test_1025` VPS R6 + `test_1259` phụ thuộc máy B) | công cụ PASS |
+| **P4** | Tài liệu bắt buộc trước L3: `GUI_AUDIT_MATRIX.md` (§31) · `docs/NHAT_KY.md` mục Voice GUI V2 | commit |
+| **P5** | Trước L3: cây sạch · `cua_so_yen` + `tai_may` · báo phiên khác không ghi cây | điều kiện đủ |
+| **P6** | **L3** `python tools\gate.py` MỘT lần | xanh, hoặc đỏ đã khép `--doi --tu` |
+| **P7** | Gộp `main` (main đi tiếp ⇒ hoà + `--doi --tu <sha L3>`) · đẩy GitHub theo `docs/16` | `main` chứa nhánh |
+| **P8** | Deploy: báo VPS · kiểm 0 job/lease · `chep_tien_to_r2_ve_dia --chep` · `app.env` += `LTT_STORAGE_LOCAL_PREFIXES=voice/` + `LTT_WORKER_POOLS=api:6, gpu+ffmpeg:1, voice:1` · cài đặt (nâng quyền im lặng) · `/health/version` = SHA · log worker đủ làn · `app_vo_hinh`=[] · chạy lại bước chép | production = SHA đã phán quyết |
+| **P9** | Dữ liệu: `dung_lai_giong_kho_chung --chay` → 25 job enroll `done` → `soat_giong duyet` 25 giọng | 25 giọng usable, hiện với tài khoản thường |
+| **P10** | W9' E2E Chrome thật trên URL công khai, 2 tài khoản: G01–G04, V01–V08, D005, thanh kéo, nghe thử chặn · console/network | `GUI_BROWSER_ACCEPTANCE.md` |
+| **P11** | `GUI_FINAL_REPORT.md` (§35 A–I, điểm §32) · NHAT_KY · memory | báo cáo |
+
 ## F. PLAN V2
 
 Quy tắc giữ nguyên prompt §15 (một wave một lúc, ≤ 8–10 tệp, 10 bước). Bổ sung:
