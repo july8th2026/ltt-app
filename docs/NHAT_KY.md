@@ -12,6 +12,25 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-16 — LTTCODE: kênh cập nhật `apps/lttcode/` + tài liệu LTTCODE thành con trỏ (R0.9)
+
+- Thêm app ẩn `apps/lttcode/` (`surface="runtime"`, không sửa `server/` hay
+  `platform_core/`): trang tải `/lttcode`, `GET /lttcode/update/{kênh}/{target}/{arch}/{phiên bản}`
+  (204 = không có bản; JSON định dạng Tauri), `GET/HEAD /lttcode/dl/{tệp}`. Công khai
+  có chủ ý: ứng dụng LTTCODE hỏi cập nhật không mang tài khoản hay khoá API; toàn
+  vẹn bộ cài do chữ ký minisign kiểm ở phía app.
+- Luật quyết định (hàm thuần `phat_hanh.quyet_dinh`): kill switch, bản thu hồi,
+  rollout % theo `sha256(install_id:version)`, dưới `min_version` ⇒ bắt buộc, và
+  **không phục vụ bản có `session_format` thấp hơn bản đang chạy** (DSH từ chối mở
+  session định dạng mới hơn ⇒ người dùng mất session).
+- Dữ liệu vận hành (không commit, cập nhật nền tảng không đụng):
+  `data/lttcode_releases.json`, `data/lttcode_dist/` — do `tools/release.ps1` của
+  LTTCODEAPP ghi. Khoá ký riêng ở `C:\ltt-keys` (ACL chủ dự án + SYSTEM), mật khẩu
+  trong Credential Manager (target `com.lttstudios.lttcode/updater-key-password`).
+- R0.9: `docs/LTTCODE/` còn một `README.md` trỏ sang LTTCODEAPP; ba tệp chưa có bản
+  giống hệt được lưu ở LTTCODEAPP `docs/LTTCODE/_superseded/lttstudiosapp-docs-2026-09-16/`.
+- Test nhắm: `test_1300` (13) + `test_1301` (7) xanh.
+
 ## 2026-09-16 — LTT Voice W4': ChatLTT `speech.ltt` chặn lệch làn TRƯỚC giữ tiền
 
 - Phát hiện (audit W4', `docs/LTT_VOICE/GUI_DOI_SOAT_VA_PLAN_V2.md` trên nhánh
