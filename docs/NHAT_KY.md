@@ -60,6 +60,11 @@
   governance (đổi test VPS 1281/1282, mypy); khai skip `test_1025`; dịch 2 chuỗi hướng
   dẫn cài model. Gộp release VPS r3 (`ee10c2ad`); xung đột `ovh_acquisition.py` giữ
   nguyên logic thanh toán r2/r4, chỉ thêm log tên loại lỗi.
+- **Kiểm trình duyệt bản dev** (`GUI_BROWSER_ACCEPTANCE.md` §A): seed thêm giọng kho
+  chung của người khác / giọng chung chưa duyệt / job queued lâu. Bắt được lỗi **có sẵn
+  trên `main`**: nút "Chi tiết" trên thẻ giọng bấm chuột không mở gì (`<button>` bên
+  trong thẻ bị `BEN_TRONG` nuốt) — sửa `0821cd52`. ⚠️ Phím Enter của Browser pane không
+  kích hoạt `<button>` (giới hạn công cụ) — kiểm bàn phím bằng Playwright.
 - **Chưa làm (sau L3):** gộp `main`, deploy, bật `voice/` trên đĩa + pools
   `gpu+ffmpeg:1`, dựng lại + duyệt license 25 giọng, E2E URL công khai.
 
