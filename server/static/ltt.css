@@ -4056,3 +4056,14 @@ input[type=hidden]+.af-step{margin-top:0}
 .lv-studio .lv-st-trai>.lv-st-o>.lv-st-o-dau>.eyebrow::before{
   content:counter(lvb,decimal-leading-zero);width:22px;height:22px;border:0;border-radius:50%;
   background:var(--brand-strong);color:var(--text-primary);font-size:9px;font-weight:700;vertical-align:-6px}
+/* Inline style="" tinh o app (autosub du phong, agent, chatltt, ommi workspace) -> lop. */
+.as-h2{margin-bottom:6px!important}
+.as-o-check{justify-content:flex-end}
+.as-check{display:inline-flex;gap:var(--space-2);align-items:center;min-height:44px;margin:0 0 var(--space-2)}
+.as-hanh-dong{display:flex;gap:var(--space-3);align-items:center;flex-wrap:wrap}
+.as-job{border:1px solid var(--border-subtle);border-radius:10px;padding:10px}
+.as-job-dau{font-size:11px;margin-bottom:6px}
+.as-job-video{width:100%;border-radius:var(--radius-md)}
+.as-job-tai{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.ag-ngan-sach{max-width:260px;margin-top:var(--space-3)}
+.ct-chua-build{max-width:720px;margin:2rem auto}
