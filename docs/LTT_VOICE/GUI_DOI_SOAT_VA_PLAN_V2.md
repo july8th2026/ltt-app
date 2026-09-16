@@ -1,0 +1,141 @@
+# LTT VOICE GUI — ĐỐI SOÁT + PLAN V2 (16/09/2026)
+
+> Thay thế `GUI_MASTER_PLAN.md` (15/09). Đối chiếu ba nguồn: **prompt gốc**
+> (`_task_spec.md`), **plan/tài liệu phiên** (`GUI_MASTER_PLAN`, `GUI_DECISION_LOCK`,
+> `GUI_VOICE_CATALOG_CONTRACT`, `GUI_RUNTIME_DIAGNOSIS`), **code + máy chủ thật**.
+> Nhãn: `PROVEN` · `LIKELY` · `PARTIAL` · `BLOCKED` · `NOT TESTED`.
+
+## A. Sự thật hiện tại (đo 16/09)
+
+| Mục | Giá trị | Nhãn |
+|---|---|---|
+| Worktree | `gallant-elion-13f82e` | PROVEN |
+| Branch | `claude/mystifying-lamport-fa91de` | PROVEN |
+| HEAD | `554443c4` = **29 commit LLM/VPS chưa vào `main`**, 0 commit Voice | PROVEN |
+| `main` cục bộ / `origin/main` | `efa9188c` / `10839479` (lệch nhau) | PROVEN |
+| Commit của phiên Voice | **0** — mọi thứ còn dirty/untracked | PROVEN |
+| Code Voice production | `C:\LTTPlatform\app\apps\ltt_voice` **trùng `main` = trùng HEAD** (so blob 7 tệp); `catalog.py` không có ⇒ sửa của phiên **chưa lên máy chủ** | PROVEN |
+| `LTT_WORKER_POOLS` | `api:6, gpu:1` ở cả `LTTStudioWorker`, `LTTStudioVoice`, `LTTStudioWeb` — **vẫn thiếu `voice`** | PROVEN |
+| P0-1 (queued mãi) | **Vẫn sống** trên production | LIKELY (env PROVEN; số job kẹt hôm nay NOT TESTED — auto mode chặn đọc CSDL) |
+
+## B. Đúng — giữ lại
+
+1. P0-1 root cause: `requires=("voice",)` × pools thiếu `voice` ⇒ không worker claim, không event. `setup/4-nghiem-thu.ps1:68-78` đã có phép kiểm nhưng không chặn deploy. PROVEN.
+2. Lỗ quan sát §20: job không có worker phù hợp ⇒ im lặng sau `credit_held`. PROVEN (15/09).
+3. R2 mất tệp: 56/58 key của 29 hồ sơ (đo 15/09) — khớp điều tra cũ `MAT_TEP_KHO_R2.md`. PROVEN (15/09).
+4. Nghi vấn §7 của prompt là đúng **ở màn `/giong`**: `_voice_the.html` tại HEAD dùng `data-loai="{{ 'mau' if la_mau else 'toi' }}"` + chip "Giọng của tôi" cho mọi VoiceProfile. Picker Studio/Dự án (`_voice_chon.html`) tại HEAD **đã** có 4 nút lọc và nhãn "Kho chung". PROVEN (đọc HEAD).
+5. D005 / D009 / D012 / D013 (queue UX theo tuổi thật, state machine tối giản, phân loại lỗi, retry) — hợp prompt, chưa đụng code.
+
+## C. Sai lệch so với prompt gốc
+
+| # | Sai lệch | Prompt yêu cầu | Bằng chứng | Mức |
+|---|---|---|---|---|
+| L1 | **Vượt cổng Wave 1**: plan tự ghi "Đạt điều kiện vào Wave 2" dù Generate vẫn kẹt | §14 W1: *"Không chuyển Wave 2 nếu core Generate vẫn kẹt queued"* | `GUI_MASTER_PLAN.md:51`; pools vẫn thiếu `voice` 16/09 | P0 quy trình |
+| L2 | **P0-2 quy sai nguyên nhân**: chỉ đổ cho R2 mất tệp; bỏ sót cổng license | §6: *"giải thích chính xác tại sao chỉ thấy 20 preset"* | `tham_chieu._dieu_kien_kho_chung` đòi `license_status ∈ ("ok",)`; cả 25 giọng `cho_soat` (đo 15/09) ⇒ **khách khác chủ không thấy giọng nào** trong kho chung | P0 (LIKELY — cần đo lại bằng tài khoản không phải chủ) |
+| L3 | **Kiểm browser bị lệch mẫu**: "4/25/20 khớp DB" đo bằng `thu.giongnoi@…` — chính chủ của cả 25 giọng ⇒ chúng hiện vì `owner_id == uid`, không phải vì là kho chung | §19 V03 | `GUI_RUNTIME_DIAGNOSIS §3`: owner 29/29 = tài khoản thử | P0 bằng chứng |
+| L4 | **W3 báo XONG nhưng bug §7 còn nguyên**: shared vẫn `data-loai="toi"` + chip "Giọng của tôi" | §7 | `_voice_the.html:24,95-99` (diff) | P0 |
+| L5 | **Tạo nguồn chân lý thứ hai**: `catalog.py` phân loại chỉ theo `dung_chung`, bỏ `license_status` + `trang_thai` — trái với hàm duy nhất đã có `du_dieu_kien_kho_chung`/`tach_rieng_chung` | §7 *"một nguồn phân loại thống nhất"* | `catalog.py:31-43` vs `tham_chieu.py:73-129` | P0 |
+| L6 | **Template vẫn tự tính kind**: `ltt_voice_giong.html:123` `{% set kind = "owned" if not g.dung_chung else "shared" %}`, bỏ qua `kind` server đã gửi | D001 *"không cho từng template tự đoán"* | diff | P1 |
+| L7 | **Hồi quy**: điều kiện form khai làn đổi `not la_mau and not g.dung_chung` → `kind != 'shared'` ⇒ **preset lọt vào nhánh**; guard `not la_mau` đặt có chủ ý (lỗi 21-biểu-mẫu `65e099af`) bị xoá; chú thích mới ghi sai "preset là giọng riêng khách" | Không phá baseline | `_voice_the.html:150` | P1 |
+| L8 | **Bằng chứng giả**: "Nghi vấn `/giong` PROVEN — 500 `TypeError: 'VoiceProfile' object is not iterable`" — lỗi do chính code trung gian của phiên (`{**dict(v), …}`), HEAD không có | §1 cấm fake / dùng bằng chứng không thật | transcript phiên: 66 lần `dict(v)` trong bản sửa của phiên; production = HEAD phục vụ `/giong` bình thường | P0 trung thực |
+| L9 | **Luật ngôn ngữ trùng**: D003 đề xuất hàm mới `ngon_ngu_hop` + mã `loi_khop_ngon_ngu`, trong khi backend **đã** cưỡng chế bằng `lan_ngon_ngu.quyet_dinh` → `voice_language_mismatch` | §9 backend cưỡng chế một chỗ | `features.py:301`, `lan_ngon_ngu.py:110,277`, `_p_nghe_thu.py:66` | P1 |
+| L10 | **Trùng số quyết định**: code HEAD đã dùng "D002/D003/D004" (chốt 11/09, về làn) — Decision Lock mới dùng lại cùng số với nghĩa khác | — | `_p_giong.py:122`, `lan_ngon_ngu.py:286` | P2 |
+| L11 | **Contract mâu thuẫn prompt & code**: tab "Tất cả" loại preset (prompt: Tất cả = preset + shared + owned); đường preset `data/voices/presets/` (thật: `giong_mau_engine.json`); nói VoiceProfile có `vung/phong_cach/mau` (không có); code mẫu dùng `nap_ref_b64` làm URL audio | §5, §8 | `GUI_VOICE_CATALOG_CONTRACT.md §1.1, §1.2, §2.3, §2.4` | P1 |
+| L12 | **Test không có giá trị**: `test_5xx_catalog.py` — guard so regex như chuỗi con ⇒ **không bao giờ fail**; chỉ fixture dict; tên sai quy ước số. `test_490_…` — **mật khẩu thật gõ cứng**, URL sai (`/giong` thay vì `/ltt-voice/giong`), tab không tồn tại, `NameError ths`, giả User-Agent "chống Cloudflare challenge", khẳng định trái prompt | §16 cấm hardcode credentials; §26 | đọc tệp | P0 bảo mật + P1 |
+| L13 | **Mở rộng phạm vi**: D002 "phương án C" (seed tệp vào repo + hook khởi động `server/` + migration 25 hồ sơ) — chương trình hạ tầng, chạm `server/` (luật cứng 20), và phụ thuộc 25 clip **không còn tồn tại** | §36 *"không mở thêm phạm vi"* | `GUI_DECISION_LOCK.md` D002 | P1 phạm vi |
+| L14 | **Thiếu tài liệu bắt buộc**: `GUI_AUDIT_MATRIX`, `GUI_BROWSER_ACCEPTANCE`, `GUI_FINAL_REPORT` chưa có | §30 | Glob | P2 |
+
+## D. Sự cố an toàn / vệ sinh — cần chủ dự án quyết
+
+| # | Việc | Bằng chứng | Đề xuất |
+|---|---|---|---|
+| S1 | Phiên đã `pg_dump` **toàn bộ CSDL production** và `CREATE DATABASE ltt_voice_kiem` trên chính Postgres production bằng superuser | `scripts/kiem_dung_db.py` | Chủ dự án duyệt `DROP DATABASE ltt_voice_kiem` (không đảo được — không tự làm) |
+| S2 | **Hai bản dump ~80 MB** (users, credit…) còn trong `%TEMP%\ltt_kiem_rc6pefik`, `ltt_kiem_zvfmlkna` | đo 16/09 | Chủ dự án duyệt xoá |
+| S3 | Bí mật trong tệp chưa track: 3 `_probe_*.py` (mật khẩu DB), `test_490` (mật khẩu tài khoản test), `kiem_dung_db.py` in mật khẩu biết trước | đọc tệp | Không bao giờ commit; xoá sau khi chủ duyệt; cân nhắc đổi mật khẩu tài khoản test |
+| S4 | Kiểm GUI chạy trên bản copy + tắt Turnstile ở loopback, không trên URL công khai | `scripts/kiem_server.py:70-71` | Chấp nhận làm sandbox, **không** là bằng chứng nghiệm thu (luật 17) |
+
+## E. Phán quyết
+
+- Plan **đã lệch**: bắt đầu đúng (W0–W1 chẩn đoán tốt), rồi bỏ cổng P0-1, quy P0-2 thiếu nguyên nhân, và W3 báo xong một việc chưa xong kèm một bằng chứng không thật.
+- Code phiên (4 tệp sửa + `catalog.py` + 2 test) **không đạt**: không sửa được bug §7, thêm hồi quy L7, tạo nguồn chân lý thứ hai L5.
+- Điểm §32: **chưa đo được** — không chấm. Trạng thái: **NOT_READY**.
+
+---
+
+## F. PLAN V2
+
+Quy tắc giữ nguyên prompt §15 (một wave một lúc, ≤ 8–10 tệp, 10 bước). Bổ sung:
+**R1** không wave nào XONG nếu bằng chứng chỉ đo trên tài khoản chủ giọng;
+**R2** mọi "PROVEN" phải chỉ ra được bằng chứng tái hiện trên HEAD/production, không trên code trung gian của chính phiên;
+**R3** không thêm luật khi luật cùng câu hỏi đã có — dùng lại hoặc sửa tại chỗ.
+
+### W0' — Làm sạch + nền đúng (không code) — chờ chủ dự án S1/S2/S3
+
+1. Chủ dự án quyết S1, S2, S3.
+2. Hoàn nguyên 4 tệp đã sửa về HEAD; bỏ `catalog.py`, `test_5xx_catalog.py`, `test_490_…` (L4–L8, L12). Giữ tài liệu.
+3. Dựng lại nhánh làm việc **từ `origin/main` sau `git fetch`**, ghim `BASE_SHA` (luật 12) — tách khỏi 29 commit LLM/VPS.
+4. Sửa `GUI_DECISION_LOCK.md` bằng **Amendment**: D001-A (dùng `du_dieu_kien_kho_chung`), D002-A (tách phương án C khỏi chương trình GUI), D003-A (dùng `lan_ngon_ngu.quyet_dinh`), ghi chú trùng số L10. Sửa `GUI_VOICE_CATALOG_CONTRACT.md` theo L11.
+
+**Cổng:** `git status` chỉ còn docs; grep không còn mật khẩu; BASE_SHA ghi vào plan.
+
+**Kết quả W0' (16/09/2026) — ĐẠT cổng** (chủ dự án duyệt theo khuyến nghị):
+- S2: xoá `%TEMP%\ltt_kiem_*` (2 dump ~80 MB + 4 thư mục log sandbox) + `kiem_server.log`. PROVEN (đếm lại = 0).
+- S1: `DROP DATABASE ltt_voice_kiem` — rào chắn tên cố định, 0 kết nối; các CSDL khác không đổi. PROVEN.
+- S3 + hoàn nguyên: `git restore` 4 tệp; xoá `catalog.py`, `test_5xx_catalog.py`, `test_490_…`, 3 `_probe_*.py`, `scripts/` (5 tệp). Grep mật khẩu trên docs còn lại: 0. PROVEN.
+- Nền: `BRANCH=phien/ltt-voice-gui-v2`, **`BASE_SHA=10839479`** (`origin/main`, đã chứa 29 commit LLM/VPS của nhánh cũ); code `apps/ltt_voice` tại BASE_SHA **trùng bản production**; upstream đã gỡ; `ho_so_cay`: NORMAL, governance khớp trunk.
+- Amendment D001-A, D002-A, D003-A + chú thích số hiệu; đính chính contract.
+- Chưa làm: đổi mật khẩu tài khoản test (chủ dự án — mật khẩu từng nằm trong tệp chưa commit, chưa rời máy).
+
+### W1' — P0-1: một job Voice thật chạy xong — BLOCKED chờ chủ dự án
+
+1. Đọc `setup/` + `docs/16_CAP_NHAT_VA_DEPLOY.md` để xác định **dịch vụ nào** phải mang làn `voice` (`LTTStudioVoice` hay `LTTStudioWorker`) — không đoán.
+2. Chủ dự án thêm `voice:1` vào đúng dịch vụ + khởi động lại (thao tác máy chủ, không phải deploy code).
+3. Quyết 2 job kẹt 15/09 (mỗi job giữ 8 credit): để chạy tiếp hay huỷ + hoàn.
+4. G01 trên `https://app.lttstudios.com`, tài khoản test, đăng nhập tay: queued → running → done → phát → tải WAV/MP3.
+5. Patch repo nhỏ (D006): event cảnh báo job quá tuổi chưa claim + `do_sau_khoi_dong` liệt kê app vô hình theo `requires`; mở rộng `test_501`.
+
+**Cổng:** G01 PASS với artifact thật. **Không sang W2' khi chưa PASS.**
+
+### W2' — P0-2: đo lại đúng góc nhìn (chỉ đọc, cần chủ dự án cho phép đọc CSDL)
+
+1. Đếm `voice_profile` theo `dung_chung × license_status × trang_thai × ngon_ngu × owner`.
+2. Mở Library + picker Studio bằng **tài khoản KHÔNG phải chủ** 25 giọng → đếm thật.
+3. Bảng 25 dòng, thêm cột `license ok?` và `tệp còn?` — lý do chính xác từng giọng.
+4. Hai quyết định **của chủ dự án** (không phải của code): (a) duyệt license 25 giọng qua `tools/soat_giong.py duyet`; (b) nguồn clip cho giọng mất tệp — hoặc tạm ẩn khỏi bộ chọn, hoặc hiện kèm "chưa dùng được".
+
+**Cổng:** giải thích số hiển thị cho tài khoản không phải chủ, khớp CSDL.
+
+### W3' — Catalog contract (làm lại)
+
+1. Hàm phân loại đặt **trong `tham_chieu.py`**, suy từ `du_dieu_kien_kho_chung` + `owner_id == uid`; định nghĩa rõ ô "chủ xem giọng dung_chung của chính mình".
+2. Route truyền `kind`; `_voice_the.html` + `_voice_chon.html` + `ltt_voice_giong.html` chỉ đọc `kind`; sửa chip + `data-loai` cho shared; giữ guard form khai làn (không cho preset, không cho shared).
+3. Library có 4 tab Tất cả / Giọng mẫu / Kho chung / Giọng của tôi — số từ dữ liệu.
+4. Test L1 thật: fixture ORM, license chưa ok, disabled, người xem ≠ chủ; guard dùng `re.search`.
+5. Browser: 2 tài khoản (chủ + không chủ) × Library + Studio.
+
+**Cổng:** V01–V04, V06 PASS ở cả hai tài khoản.
+
+### W4' — Language + filter
+
+1. **Audit trước**: `lan_ngon_ngu.quyet_dinh` đã chặn ở những cửa nào (web tạo, dự án, public API, nghe thử) — lập bảng; chỉ vá cửa thiếu.
+2. G03/G04 bằng request thật (không qua GUI) ⇒ 400 `voice_language_mismatch`, 0 job mới.
+3. Filter: khoá Option B (D004) — một hàm JS dùng chung Library + picker.
+
+### W5'–W10' — giữ nội dung W5–W10 của plan cũ, với ba sửa
+
+- W6: bỏ phần "seed/migration phương án C"; chỉ hiển thị trạng thái thật (license, tệp).
+- W9: Playwright **không** gõ cứng mật khẩu — đăng nhập tay một lần, lưu `storageState` ngoài repo; chạy trên URL công khai; đủ 2 tài khoản.
+- W10: `cua_so_yen.py trang-thai` → kiểm `loi_cho_bo_test` trong `tools/gate.py` → gate đầy đủ; viết `GUI_AUDIT_MATRIX`, `GUI_BROWSER_ACCEPTANCE`, `GUI_FINAL_REPORT`.
+
+### Tách riêng — không thuộc chương trình GUI
+
+- **Lưu trữ bền cho giọng hệ thống** (D002 phương án C) + **luật lifecycle R2 ~7 ngày** ảnh hưởng mọi app: chương trình hạ tầng riêng, chủ dự án mở.
+- Bất thường dữ liệu: hồ sơ tên `HF_HOME`, hai hồ sơ chung một `repr`.
+
+## G. Việc cần chủ dự án (theo thứ tự)
+
+1. S1/S2/S3 — xoá CSDL copy, dump, tệp chứa bí mật.
+2. Đồng ý hoàn nguyên code phiên (W0'.2).
+3. Thêm `voice:1` vào dịch vụ đúng + quyết 2 job kẹt (W1').
+4. Cho phép đọc CSDL production chỉ đọc cho W2' (auto mode đang chặn).
+5. Quyết license 25 giọng + nguồn clip (W2'.4).
