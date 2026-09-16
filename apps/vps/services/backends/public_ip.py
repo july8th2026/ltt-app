@@ -128,7 +128,9 @@ class OvhStaticIpPoolBackend:
                 pass
             else:
                 self.auto_acquire = True
-                self._accepted_contracts = tuple(contracts)
+                # `contracts_valid` da chung minh day la list khong rong; mypy
+                # khong thu hep kieu qua mot bien bool, nen `or ()` chi de noi ra.
+                self._accepted_contracts = tuple(contracts or ())
 
     def reserve(self, *, reservation_key: str, label: str) -> PublicIpResource:
         if not reservation_key:

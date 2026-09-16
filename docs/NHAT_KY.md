@@ -36,10 +36,14 @@
 - Cây chưa gộp `main`: luật tóm tắt đặt ở `~/.claude/CLAUDE.md` và
   `~/.codex/AGENTS.md` (mọi phiên đọc), memory dùng chung đã sửa 7 tệp.
 - Test nhắm: `test_1280` (mới), `test_1100`, `test_1238`, `test_974`, `test_145`,
-  `test_365`, `test_61`. Một đỏ **có sẵn trên `origin/main`**, không thuộc thay
-  đổi này: `test_145::test_banh_coc_nuot_loi_khong_cho_tang_them` (66 > mốc 62;
-  sáu chỗ mới ở `apps/vps/services/*`, `server/admin.py`, `server/deps.py`,
-  `server/templating.py`).
+  `test_365`, `test_61`.
+- Ba đỏ **có sẵn trên `origin/main`** gom vào cùng MỘT L3 thay vì mỗi phiên một
+  lượt: (1) nuốt lỗi 66 > mốc 62 — phiên `claude/upbeat-kepler-43adeb` sửa 7 chỗ ở
+  3 service VPS (`5d0d5149`, gộp vào đây; còn 59); (2) trùng số test `1261`/`1262`
+  (VPS 14/09 trùng CLI) — đổi hai tệp VPS thành `test_1281_vps_profile_maintenance`
+  / `test_1282_vps_ovh_acquisition` (41 passed); (3) mypy `arg-type` 107 → 108 ở
+  `public_ip.py:131` — `tuple(contracts or ())`, không đổi hành vi. Lượt gate của
+  phiên kia bị dừng theo yêu cầu chủ dự án để chạy chung một L3.
 
 ## 2026-09-15 — H54: Tool 1.9.2 khớp reasoning và kiểm thật Codex
 
