@@ -64,3 +64,16 @@ Cache-bust `aa4194b6` · số đếm 45/20/25/0 · chi tiết kho chung không q
 `khach1/2/3.thu@lttstudios.local` (5.000 credit mỗi tài khoản, bút toán `grant`) + `thu.giongnoi@…local`.
 Mật khẩu chỉ ở `C:\LTTPlatform\secrets\tai_khoan_thu.json`; phiên nào cần đăng nhập gọi
 `tools/tai_khoan_thu.py --cookie <email>`. Hướng dẫn: `docs/TAI_KHOAN_THU.md`.
+
+## I. Đợt 17/09 — hai hạng mục "ngoài phạm vi" + hai lỗi bắt được trên đường
+
+| # | Việc | Kết quả |
+|---|---|---|
+| 1 | `yolov8s.pt` tải lại từ GitHub | `dc555d41` — trọng số ở `data\models\yolo\`, tải một lần (tra mã ultralytics 8.4.115) |
+| 2 | Nút cho cửa `/nghe-thu-van-ban` (U-13) | `bba7f7b1` — Studio, chỉ giọng mẫu, ≤160 ký tự, báo lượt còn lại |
+| 3 | **Lỗi E2E production:** nút không phát — CSP `media-src 'self' blob:` chặn `data:` | `9e07fbf2` — phát qua `blob:`; đối chứng dưới CSP thật: `data:` MediaError 4, `blob:` 2,4 s |
+| 4 | **Lỗi công cụ:** `test_nhanh.py` pha 2 chạy LẠI cả danh sách tệp ⇒ L2 `--pham-vi` lâu hơn L3 | `935f9bba` + `test_537` |
+
+Cổng: L2 `engine:cutclipshort,app:ltt_voice,server:web,cong_cu` trên `935f9bba` — bộ test PASS (464 tệp);
+bước `check_multiproc` đỏ vì một gate khác chạy `--khong-khoa` cùng CSDL `postgres_test`, chạy lại
+có khoá: 7 passed. Deploy `935f9bba` 03:14 — `nghiem_thu_deploy` 0/0/0, `/health/ready` 200.
