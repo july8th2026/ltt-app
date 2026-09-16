@@ -12,6 +12,25 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-17 — VPS V4 lên production, E2E vòng đời đạt, tạm dừng bán VPS mới
+
+- **Gate + deploy**: L3 `d8b02cd7` đỏ 12 test + 2 bánh cóc ⇒ sửa tại chỗ, khép
+  `--doi --tu` PASS. Hoà `main` nhiều lượt (Voice V2, governance 17/09). Deploy giữa
+  phiên theo luật mới: `--doi --tu <prod>` bị gate từ chối (chạm tệp dùng chung) ⇒ L2
+  `app:vps`, `app:auto_scan_video`, `cong_cu` PASS ⇒ deploy `ee5a5ef9` 03:28, 0 lệch.
+- **E2E live** trên `d96b66f3` (Chrome thật qua CDP): console mở, thấy trình cài
+  Windows Server; khởi động lại/tắt mềm khi guest chưa nhận ACPI ⇒ UI giữ Đang chạy
+  khớp PVE và mời Tắt cứng (R21); tắt cứng ⇒ `qmstop` OK; bật lại `WARNINGS: 1` coi
+  là thành công (R19).
+- **R22**: tự mua IP OVH chỉ dùng giỏ adopt; giỏ đã checkout ⇒ `404 Cart expired`
+  mỗi lượt health ⇒ `ip`/`capacity` CRITICAL. **R23**: collector Máy B coi mapping
+  `LTTMANAGED` là thừa ⇒ `network` CRITICAL ngay sau máy bán đầu tiên. **R24**: trang
+  `/vps` báo còn chỗ trong khi lúc tạo hết IP (sửa `75e1e0a5` + `test_1031`).
+- **Chủ dự án chốt: tạm dừng bán VPS mới.** Profile OVH `auto_acquire=false`, bỏ giỏ
+  adopt (config v4; bản lùi `D:\LTTSTUDIOSAPP-runtime\ovh-profile-provider_config-before-pause-20260917.json`).
+  Mở bán lại cần R22 (quyết định mua IP tự động + probe catalog chỉ đọc) và R23.
+- Chi tiết: `docs/VPS_V4/14_KE_HOACH_VAN_HANH_TOI_UU.md` §6.
+
 ## 2026-09-16 — VPS V4 nghiệm thu live: VPS thật đầu tiên, 21 lỗi rà được
 
 - **Rà code** hai lượt độc lập + tự đọc lại dòng: R1–R10 (tạo máy bị chặn vì

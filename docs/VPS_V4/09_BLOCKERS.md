@@ -2,6 +2,14 @@
 
 ## Active blockers
 
+### Cập nhật 2026-09-17 — bán VPS mới TẠM DỪNG (chủ dự án chốt)
+
+- Deploy `ee5a5ef9` đạt; E2E console/vòng đời đạt trên `d96b66f3`.
+- **Chặn mở bán lại**: R22 (tự mua IP OVH chỉ dùng giỏ adopt đã hết hạn — cần quyết
+  định chi tiêu + probe catalog chỉ đọc), R23 (collector Máy B coi mapping
+  `LTTMANAGED` là thừa ⇒ `network` CRITICAL; sửa qua cổng thay đổi Máy B).
+- Profile OVH 0402: ACTIVE/default, `auto_acquire=false`, không còn `adopt_ip_cart_id`.
+
 ### Cập nhật 2026-09-16 (tối)
 
 - B04 **đóng**: mua một IP qua web job thật (đơn 22703620), nhập kho, mapping.
