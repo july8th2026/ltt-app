@@ -16742,3 +16742,6 @@ msgstr "AI Image"
 
 msgid "Văn bản AI"
 msgstr "AI Text"
+
+msgid "Canvas"
+msgstr "Canvas"
