@@ -56,6 +56,19 @@ def test_exitstatus_khac_OK_la_that_bai_du_status_la_stopped():
     assert "unable to start VM" in str(loi.value)
 
 
+def test_exitstatus_WARNINGS_la_thanh_cong_co_canh_bao():
+    """R19 (16/09): qmstart VM 204 trả `WARNINGS: 1` (e1000 bỏ qua mtu) và VM chạy.
+
+    pve-common `RESTEnvironment.pm` ghi "TASK WARNINGS: $warnings" với exitcode 0.
+    Coi nó là thất bại đã đẩy một lượt bật máy thành công sang NEEDS_REVIEW.
+    """
+    px = _px(dien="stopped", buoc=2)
+    upid = px._nhan_viec("bat", exitstatus="WARNINGS: 1",
+                         khi_xong=px._dat_dien("running"))
+    assert tac_vu.cho_xong(px, upid, nhip=nhip_gia())["exitstatus"] == "WARNINGS: 1"
+    assert px.dien == "running"
+
+
 def test_tac_vu_that_bai_thi_the_gioi_that_KHONG_doi():
     px = _px(dien="stopped", buoc=2)
     upid = px._nhan_viec("bat", exitstatus="loi",

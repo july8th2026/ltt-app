@@ -277,7 +277,13 @@ def ensure_free_ip(db, profile, *, instance, gateway_row, provider, gateway,
         guard()
         status = provider.order_status(metadata["order_id"])
         if status != "delivered":
-            if status not in ("checking", "delivering"):
+            # Right after an auto-paid checkout OVH still reports a pre-payment
+            # state: measured 16/09 order 22703620 was created 06:34:53, payment
+            # registered 06:35:13, then `checking` and `delivered` within 3 min.
+            # Treating that window as ambiguous wedged a paid order (R18). Only
+            # states that need a human stop the wait; the 60-minute deadline
+            # below still bounds every pending state.
+            if status in ("cancelled", "cancelling", "documentsRequested"):
                 review()
             try:
                 requested_at = datetime.fromisoformat(metadata["checkout_requested_at"])
