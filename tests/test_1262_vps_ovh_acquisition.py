@@ -134,6 +134,29 @@ def test_delivery_in_progress_defers_without_review_or_duplicate_checkout(db):
     assert ensure_free_ip(db, profile, **arguments).address == "192.0.2.11"
 
 
+@pytest.mark.parametrize("status,pending", [
+    ("notPaid", True), ("unknown", True), ("checking", True), ("delivering", True),
+    ("cancelled", False), ("cancelling", False), ("documentsRequested", False),
+])
+def test_post_checkout_prepayment_states_wait_instead_of_review(db, status, pending):
+    """R18: order 22703620 read a pre-payment state seconds after checkout."""
+    from apps.vps.services.ovh_acquisition import (AcquisitionNeedsReview,
+                                                   OrderDeliveryPending, ensure_free_ip)
+    from apps.vps.tables import VpsExternalMutation
+
+    profile, gateway, instance = _domain(db)
+    provider = _Provider()
+    provider.order_status = lambda _: status
+    arguments = dict(instance=instance, gateway_row=gateway, provider=provider,
+                     gateway=_Gateway(), operation_id="post-checkout", sleep=lambda _: None)
+    expected = OrderDeliveryPending if pending else AcquisitionNeedsReview
+    with pytest.raises(expected):
+        ensure_free_ip(db, profile, **arguments)
+    row = db.execute(select(VpsExternalMutation)).scalar_one()
+    assert row.state == ("REQUESTED" if pending else "NEEDS_REVIEW")
+    assert [call[0] for call in provider.calls].count("checkout") == 1
+
+
 def test_delivery_deadline_is_durable_and_does_not_restart_on_retry(db, monkeypatch):
     from datetime import timedelta
     from apps.vps.services import ovh_acquisition as acquisition
