@@ -241,11 +241,16 @@ def ensure_free_ip(db, profile, *, instance, gateway_row, provider, gateway,
             # The driver proves the POST was never issued (quote/expiry changed).
             not_sent(prepared_metadata)
             raise BackendConflict("OVH cart changed before checkout") from exc
-        except Exception:
+        except Exception as exc:
+            # Type name only: provider exceptions can carry credential-bearing bodies.
+            log.warning("OVH checkout failed (%s); recovering order by cart",
+                        type(exc).__name__)
             try:
                 order_id = provider.recover_order(
                     cart_id=prepared.cart_id, item_id=prepared.item_id)
-            except Exception:
+            except Exception as exc_recover:
+                log.warning("OVH order recovery failed (%s); order goes to review",
+                            type(exc_recover).__name__)
                 order_id = None
         if type(order_id) is not int or order_id <= 0:
             review(keep_metadata=metadata)
@@ -265,7 +270,8 @@ def ensure_free_ip(db, profile, *, instance, gateway_row, provider, gateway,
         try:
             order_id = provider.recover_order(
                 cart_id=metadata["cart_id"], item_id=metadata["item_id"])
-        except Exception:
+        except Exception as exc:
+            log.warning("OVH order recovery failed: %s", type(exc).__name__)
             review()
         if type(order_id) is not int or order_id <= 0:
             review()
@@ -331,5 +337,6 @@ def ensure_free_ip(db, profile, *, instance, gateway_row, provider, gateway,
                                 provider_id=item.cidr, state="FREE")
     except (AcquisitionNeedsReview, OrderDeliveryPending):
         raise
-    except Exception:
+    except Exception as exc:
+        log.warning("OVH IP attribution failed: %s", type(exc).__name__)
         review()

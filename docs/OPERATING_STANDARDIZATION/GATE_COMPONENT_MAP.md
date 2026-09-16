@@ -1,5 +1,8 @@
 # GATE COMPONENT MAP — từng bước, giá của nó, và nó thuộc cấp nào
 
+> ⚠️ **Ảnh chụp ngày 08/09/2026.** Danh sách bước và chi phí hiện hành: nguồn chân lý
+> là `tools/gate.py::_steps` (và bản ghi `test-results/gates/*.json`), không phải bảng dưới.
+
 > Số liệu **đo được**, không ước lượng: trung vị trên **59 bản ghi thật** trong
 > `test-results/gates/*.json` (43 lượt `day-du`, 16 lượt `vong-lap`).
 > Bước lấy bằng cách **gọi `_steps()`**, không bằng đọc tài liệu và cũng không bằng
@@ -175,5 +178,5 @@ chạy gate đầy đủ 11 phút.
 qua 70 phép kiểm một cách im lặng.
 
 ⇒ Cần một bản khai chủ sở hữu cho `docs/`, không phải một luật miễn trừ.
-**FOLLOW_UP P1** — xem `FINAL_REPORT.md`. Không làm trong chiến dịch này: rủi ro
+**FOLLOW_UP P1** — xem `docs/_luutru/OPERATING_STANDARDIZATION_2026-09-08/FINAL_REPORT.md`. Không làm trong chiến dịch này: rủi ro
 bỏ sót phép kiểm cao hơn hẳn lợi ích, và §18 của điều lệ nói rõ chọn 80/20.

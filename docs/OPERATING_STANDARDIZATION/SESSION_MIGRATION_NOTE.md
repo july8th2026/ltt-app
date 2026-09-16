@@ -1,4 +1,48 @@
-# SESSION MIGRATION NOTE — 2026-09-08
+# SESSION MIGRATION NOTE
+
+# ⭐ 2026-09-16 — MỘT L3 MỖI PHIÊN (bản hiện hành)
+
+## Câu để đưa cho một phiên đang chạy
+
+> Nhịp test/gate đã đổi — đọc lại `docs/00_LTT_OPERATING_CONTRACT.md` §4. Từ giờ:
+> trong phiên **chỉ test nhắm** đúng cụm vừa sửa, **không chạy `gate.py` ở bất kỳ
+> chế độ nào**. Gặp lỗi thì sửa **tại chỗ** và chạy lại **đúng phép đã đỏ**.
+> `python tools\gate.py` (L3) chạy **một lần** khi mọi pha đã xong. L3 đỏ ⇒ sửa
+> tại chỗ ⇒ chạy lại đúng phép đỏ ⇒ khép bằng `gate.py --doi --tu <sha>` — **không**
+> chạy L3 lần hai. Sau L3 xanh, **chính phiên bạn** gộp `main` và deploy
+> (`docs/QUY_TRINH_WORKTREE.md`, `docs/16_CAP_NHAT_VA_DEPLOY.md`) — không còn vai
+> "canonical integrator" riêng. Tiếp tục công việc đang làm, không phân tích lại từ đầu.
+
+## Đổi cái gì — bốn dòng
+
+1. **Vòng lặp không còn là `gate --doi`.** Trong phiên chỉ test nhắm
+   (`thanh_phan.py --test <tp>` → `pytest <tệp>`).
+2. **L3 một lần cuối phiên**, không phải ở mỗi pha/đợt/hạng mục/lát cắt.
+3. **Một L3 mỗi nhánh.** L3 đỏ (hay có thay đổi sau L3 xanh) thì khép hẹp bằng
+   `--doi --tu <sha>`. `gate.py` in sẵn lệnh chạy lại và **từ chối** L3 thứ hai
+   trên cùng nhánh, kể cả sau L3 xanh (`--l3-lai` để vượt, có ghi).
+4. **Phiên tự gộp `main` và tự deploy** sau L3 xanh, rồi báo. Không dừng ở
+   `HANDOFF_READY_FINAL` chờ một integrator. `main` đã đi tiếp thì trên cây đã
+   hoà chạy `gate.py --doi --tu <sha L3>`. Deploy chép cả cây ⇒ vẫn báo phiên
+   khác trước (không chờ trả lời). Thao tác: `docs/QUY_TRINH_WORKTREE.md`,
+   `docs/16_CAP_NHAT_VA_DEPLOY.md`.
+
+## Vì sao — số đo
+
+133 bản ghi gate 04/09 → 15/09: **114** lượt L3, **100** nằm trong chuỗi chạy lại
+cách nhau < 45 phút, chuỗi dài nhất **7 lượt = 170 phút**; `--doi` được dùng đúng
+**1** lần dù luật khi ấy gọi nó là vòng lặp mặc định. Toàn văn ở hợp đồng §4.2.
+
+## Cây cũ chưa gộp `main`
+
+Bản `CLAUDE.md`/`AGENTS.md`/hợp đồng trong cây của bạn có thể còn luật cũ, và
+`~/.claude/CLAUDE.md` **không** chứa nhịp mới — đừng trông vào nó. Kiểm bằng
+`python tools\ho_so_cay.py trang-thai`; governance lệch trunk ⇒ `git merge main`
+**trước**, để có cả luật mới lẫn chốt cơ học trong `tools/gate.py`.
+
+---
+
+# 2026-09-08 — lịch sử (đã bị bản 16/09 thay phần nhịp)
 
 ## Câu để đưa cho một phiên đang chạy
 

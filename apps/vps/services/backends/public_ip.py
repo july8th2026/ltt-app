@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import logging
 import re
 
 from sqlalchemy import select, update
@@ -16,6 +17,8 @@ from apps.vps.services.backends.contracts import (
     PublicIpResource,
 )
 from apps.vps.tables import VpsIp
+
+log = logging.getLogger(__name__)
 
 
 def _now() -> datetime:
@@ -125,7 +128,9 @@ class OvhStaticIpPoolBackend:
                 pass
             else:
                 self.auto_acquire = True
-                self._accepted_contracts = tuple(contracts)
+                # `contracts_valid` da chung minh day la list khong rong; mypy
+                # khong thu hep kieu qua mot bien bool, nen `or ()` chi de noi ra.
+                self._accepted_contracts = tuple(contracts or ())
 
     def reserve(self, *, reservation_key: str, label: str) -> PublicIpResource:
         if not reservation_key:
@@ -259,10 +264,11 @@ class OvhStaticIpPoolBackend:
                         and 0 < quote.with_tax_minor <= self._acquisition_ceiling
                         and quote.contract_fingerprints == self._accepted_contracts):
                     replenishable = 1
-            except Exception:
+            except Exception as exc:
                 # Health is a read-only boundary; provider replies can contain
                 # credential URLs/bodies and must never reach its summary.
-                pass
+                log.warning("public IP acquisition probe failed: %s",
+                            type(exc).__name__)
         status = "HEALTHY" if free > 0 or replenishable else "CRITICAL"
         return BackendHealth(
             status, f"{free} FREE public IP(s)",

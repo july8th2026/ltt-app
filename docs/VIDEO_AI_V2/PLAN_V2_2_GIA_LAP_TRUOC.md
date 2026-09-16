@@ -29,7 +29,7 @@ lực) · `scratchpad/wangp_src/docs_API.md` (hợp đồng API WanGP)
 | **G3** | Mọi bản ghi mang `nguon`: `"khuon"` (fixture) hoặc `"ghi_tu_may"` + `sha_wangp` | để không bao giờ nhầm dữ liệu tạm với dữ liệu thật |
 | **G4** | Dải test **738–759**. Không đụng 720–737 (đã dùng) | `docs/dai test cấp cho từng chương trình` |
 | **G5** | Ghi tệp bằng `write_bytes`, kết dòng **LF** | `pathlib.write_text` đổi `\n` → `\r\n` trên Windows |
-| **G6** | `python tools/gate.py --vong-lap` sau **mỗi** hạng mục; `tools/gate.py` đầy đủ trước khi báo xong | |
+| **G6** | Nhịp test/gate theo `docs/00_LTT_OPERATING_CONTRACT.md` §4 — không chép lại ở đây | |
 | **G7** | Kiểm CPU + `cua_so_yen trang-thai` **trước** mọi lệnh nặng; `-n 6` là trần cứng | |
 
 **Hoãn có chủ đích — không phải bỏ sót:**

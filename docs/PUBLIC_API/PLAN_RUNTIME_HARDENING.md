@@ -324,5 +324,6 @@ mới biết đội hình đặt đúng chưa. Chia pool trước rồi mới đ
 
 **Đợt 5 — bốn việc nâng 8→9 ở mục 5.** Đều nhỏ và không phụ thuộc nhau.
 
-Sau mỗi đợt: full gate. Sau đợt 2 và 3: chạy `test_214` trên **PostgreSQL**, vì
+Nhịp test/gate: `docs/00_LTT_OPERATING_CONTRACT.md` §4 (L3 một lần khi mọi đợt
+xong). Riêng đợt 2 và 3: test nhắm phải gồm `test_214` trên **PostgreSQL**, vì
 trên SQLite nó sẽ xanh vì lý do sai.

@@ -475,7 +475,8 @@ Nội dung: đổi hình dạng khoá kho sang `voice/out/{owner}/{job}/tieng.wa
    không có cách nào tự biết nó đã cũ — và một cadence chép tay còn tệ hơn một
    bảng chép tay, vì nó không chỉ mô tả sai mà còn **bảo người ta làm sai**.
 
-2. `python tools\gate.py` ở **checkpoint** — không phải sau mỗi lần sửa.
+2. `python tools\gate.py` **một lần** khi mọi pha xong (hợp đồng §4.2) — không phải
+   sau mỗi lần sửa hay mỗi pha.
    ⛔ Đừng dùng gate để dò lỗi: nó là công cụ ra **phán quyết**.
 3. **Kiểm bằng trình duyệt thật** (Playwright), theo quy tắc 5b: soi nhanh ở
    `127.0.0.1:8100`, **chốt ở `https://app.lttstudios.com`** — Cloudflare có

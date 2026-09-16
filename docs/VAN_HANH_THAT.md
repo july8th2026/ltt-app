@@ -132,11 +132,11 @@ phá phép đo của nhau.
 ⇒ cả sáu job chết cùng một khắc, và suýt bị đọc thành *"6 job đồng thời làm sập
 hệ"*. Lượt đo ấy phải vứt.
 
-⇒ **Trước khi vào cửa sổ đo: `ListAgents`, nhắn mọi phiên đang sống, chờ họ xác
-  nhận.** Báo cả lúc **xong**. Giao ước đi hai chiều — bên đo báo trước, bên
-  deploy cũng báo trước.
+⇒ **Trước khi vào cửa sổ đo: báo phiên khác (không chờ trả lời), và cây của bạn
+  không ghi trong lúc đo** — hợp đồng §4.9. Báo cả lúc **xong**. Giao ước đi hai
+  chiều — bên đo báo trước, bên deploy cũng báo trước.
 
-⚠️ Đề xuất đã ghi cho integrator: thêm tài nguyên khoá thứ ba `production_dang_dung`
+⚠️ Đề xuất còn mở: thêm tài nguyên khoá thứ ba `production_dang_dung`
    để deploy và đo **loại trừ nhau bằng cơ chế thay vì bằng lời hứa**. Chưa làm.
 
 ## 6. Mở rộng — ba luật không được vi phạm

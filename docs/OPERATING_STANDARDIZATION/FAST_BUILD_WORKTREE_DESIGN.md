@@ -5,6 +5,10 @@
 > sao nó có hình dạng như vậy* và *phép đo nào buộc phải chọn như vậy*.
 >
 > Viết 2026-09-09.
+>
+> ⚠️ **Từ 2026-09-16 `NORMAL` cũng không chạy gate trong phiên** (hợp đồng §4.1).
+> Câu *"vòng lặp mặc định là L1"* ở §1 dưới đây là bối cảnh lúc viết, không còn
+> là luật. Khác biệt còn lại của `FAST_BUILD`: xem hợp đồng §4.10.
 
 ## 1. Vấn đề thật, không phải vấn đề giả định
 

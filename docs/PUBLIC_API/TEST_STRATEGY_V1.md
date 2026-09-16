@@ -64,11 +64,11 @@ cho mỗi endpoint có object:
 - Redaction: assert Authorization header, key thô, presigned URL, local path
   **không** xuất hiện trong `job_events`, log JSONL, response lỗi.
 
-**T3 — quick gate (bắt buộc trước khi báo xong mỗi prompt).**
-`python tools/gate.py --quick`. Không được xấu đi so với baseline mục 1.
+**T3 — nhịp test/gate: `docs/00_LTT_OPERATING_CONTRACT.md` §4.** *(Trước
+2026-09-16 mục này đòi `gate.py --quick` ở cuối mỗi prompt — một nhịp riêng đã bỏ.)*
 
-**T4 — full gate (checkpoint sau prompt 6, 10, 14, 16, 17).**
-`python tools/gate.py` + chạy lại bộ PostgreSQL với `LTT_TEST_DATABASE_URL`.
+**T4 — lượt L3 (một lần, theo hợp đồng §4.2)** đi kèm bộ PostgreSQL chạy với
+`LTT_TEST_DATABASE_URL`. *(Bản cũ đặt L3 sau prompt 6, 10, 14, 16, 17 — đã bỏ.)*
 
 ## 4. Bất biến phải có test riêng, không được coi là hiển nhiên
 

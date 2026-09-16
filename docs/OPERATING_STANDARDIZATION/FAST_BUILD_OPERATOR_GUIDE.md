@@ -12,7 +12,7 @@ python tools\ho_so_cay.py trang-thai
 Không chạy test, không đụng cây. Trả lời: nhánh · HEAD · thiếu bao nhiêu commit
 của trunk · hồ sơ và trạng thái · tệp governance nào lệch trunk.
 
-Governance lệch ⇒ `git merge admin-mvp-v3` **trước**, rồi mới tin một luật hay
+Governance lệch ⇒ `git merge main` **trước**, rồi mới tin một luật hay
 một lượt gate ở cây này.
 
 ## Một chiến dịch dài, từ đầu đến cuối
@@ -36,10 +36,11 @@ python tools\ho_so_cay.py chuyen FEATURE_COMPLETE
 python tools\ho_so_cay.py chuyen CERTIFYING
 
 # 6. chạy theo đúng thứ tự kế hoạch in ra, rẻ trước
-python tools\gate.py --quick
-python tools\gate.py --doi --tu <baseline_sha>
+python -m pytest -q <tệp test nhắm mà kế hoạch in ra>
 #   … tích hợp / parity / E2E / trình duyệt …
-python tools\gate.py
+python tools\gate.py                              # L3 MỘT lần
+#   L3 đỏ -> sửa tại chỗ -> chạy lại đúng phép đỏ -> khép:
+python tools\gate.py --doi --tu <sha lượt L3>
 
 # 7. sẵn sàng hoà
 python tools\ho_so_cay.py chuyen READY_TO_MERGE
@@ -69,5 +70,5 @@ Tách một changeset lõi riêng và chứng nhận riêng nó theo `NORMAL` (�
 *Ngoại lệ lõi*). Không dùng nó làm cớ quay về chạy gate sau mỗi lần sửa.
 
 **Bật được ở cây chính không?**
-Không. Công cụ từ chối ở cây chính, ở `master`, ở trunk và ở nhánh phát hành.
+Không. Công cụ từ chối ở cây chính, ở trunk (`main`) và ở nhánh phát hành.
 Đó là chốt cơ học, không phải lời khuyên.

@@ -88,6 +88,63 @@
   hash; `/huong-dan` thấy cả `ltt-3.8` và `ltt-3.5`. Hai trang có 0 console
   error, 0 request failed và 0 response HTTP >= 400. Theo chỉ định của owner,
   H55 dùng test phạm vi `-n 7` (182 PASS) và **không chạy gate tổng**.
+## 2026-09-16 — Chuẩn hoá toàn bộ luật vận hành: mỗi chủ đề MỘT tệp chủ
+
+- Audit (3 agent đọc song song + phiên chính): `AGENTS.md` ~30% luật / ~45% chuyện
+  kể, ~⅓ luật trùng hợp đồng, ~10 luật cũ/mâu thuẫn; 8 tài liệu quy trình có 7 mâu
+  thuẫn nghiêm trọng (nặng nhất: ai gộp `main` — `QUY_TRINH_WORKTREE` nói chỉ
+  integrator, `16_CAP` hướng dẫn phiên tự merge/ff/push); 5 bộ kiểm khác nhau trước
+  lệnh nặng; số lõi chép tay lệch mã (`TRAN_WORKER_BO_TEST`, `LOI_DE_DANH_VAT_LY`);
+  173 memory với ~29 tệp là luật quy trình, 31 tệp mồ côi, 6 liên kết hỏng, và
+  **một mật khẩu admin dạng rõ** (đã gỡ — nên đổi mật khẩu).
+- Chủ sản phẩm chốt: (1) **chính phiên tự gộp `main` và deploy** sau L3 xanh, không
+  còn vai integrator; (2) trước lệnh nặng đúng hai lệnh `cua_so_yen` + `tai_may`;
+  (3) dọn mạnh nhưng **lưu trữ**, không xoá.
+- Kết quả: hợp đồng 564 → ~370 dòng, có bảng "mỗi chủ đề một chủ" ở đầu;
+  `CLAUDE.md` 234 → ~100 (bản đồ + 10 luật chết người); `AGENTS.md` 1.019 → 471
+  (chỉ kỹ thuật; chuyện kể chuyển nguyên văn vào phụ lục `BAY_TRONG`);
+  `QUY_TRINH_WORKTREE` (tạo → gộp `main` tự làm → gỡ), `QUY_TAC_CHAY_LENH_NANG`
+  (một bộ kiểm, không chép số), `16_CAP_NHAT_VA_DEPLOY` (deploy từ ghế phiên, bỏ
+  "chủ dự án bấm UAC", bỏ nợ D2 đã sửa, bỏ trạng thái máy B chép tay) viết lại;
+  `DEVELOPMENT_WORKFLOW` thành trang chỉ mục; 7 báo cáo 08/09 và bản trước của 5
+  tệp lõi chuyển `docs/_luutru/`. `test_974` cập nhật theo quyết định (1).
+  `check_luat_van_hanh` bỏ `DEVELOPMENT_WORKFLOW`, thêm `QUY_TRINH_WORKTREE` vào
+  danh sách chủ.
+- Lớp phủ cho cây chưa gộp `main`: `~/.claude/CLAUDE.md` (132 → 57 dòng, bỏ bảng
+  `-n 14`/`findstr`/mục ASV đã cũ) và `~/.codex/AGENTS.md` mang cùng sáu điều.
+
+## 2026-09-16 — Một luật gate duy nhất: test nhắm trong phiên, L3 một lần cuối
+
+- Đo 133 bản ghi `test-results/gates/*.json` (04/09 → 15/09): 114 lượt L3, trung
+  vị 14,4 phút, 64 đỏ; **100/114** nằm trong chuỗi chạy lại cách nhau < 45 phút,
+  chuỗi dài nhất 7 lượt = 170 phút; `--doi` (khi ấy là "vòng lặp mặc định") được
+  dùng **1** lần. Nhịp gate bị chép ở 6 tệp luật + 12 tệp kế hoạch + 7 memory.
+- Chủ dự án chốt: sửa lỗi tại chỗ; L3 chỉ chạy một lần khi mọi pha xong. Hợp
+  đồng §4 viết lại (§4.1 test nhắm · §4.2 một L3 · §4.6 khép bằng
+  `gate.py --doi --tu <sha>` · §7 hoà `main`/deploy). `CLAUDE.md`, `AGENTS.md`,
+  `DEVELOPMENT_WORKFLOW.md`, `16_CAP_NHAT_VA_DEPLOY.md`, `QUY_TRINH_WORKTREE.md`,
+  FAST_BUILD và 10 tệp kế hoạch nay chỉ trỏ về hợp đồng.
+- Cơ học hoá: `gate.py` in lệnh chạy lại đúng phép đỏ + lệnh khép, **một L3 mỗi
+  nhánh** — từ chối L3 gõ tay thứ hai kể cả sau L3 xanh (bản đầu chỉ chặn sau L3
+  đỏ; chủ dự án chỉ ra lỗ hổng "L3 xanh sau mỗi pha"; `--l3-lai` để vượt). Phiên
+  này cũng đã bấm L3 trước khi làm xong phase vá đó — đã dừng lượt ấy (không để
+  lại bản ghi) và chỉ bấm lại khi mọi phase xong. Bản ghi có `ha_cap_tu` /
+  `lenh_chay_lai`. `check_luat_van_hanh.py` nay bắt mọi nhịp gate (kể cả
+  `--doi`, "sau mỗi đợt/hạng mục/lát cắt") ngoài hợp đồng, và không còn chết vì
+  cp1252 trên đường đỏ. `ho_so_cay.TRUNK` = `main` (trunk cũ `admin-mvp-v3` đã
+  xoá nên mọi cây từng báo "khop trunk"); kế hoạch `CERTIFYING` bỏ `--quick`/`--doi`
+  trước L3.
+- Cây chưa gộp `main`: luật tóm tắt đặt ở `~/.claude/CLAUDE.md` và
+  `~/.codex/AGENTS.md` (mọi phiên đọc), memory dùng chung đã sửa 7 tệp.
+- Test nhắm: `test_1280` (mới), `test_1100`, `test_1238`, `test_974`, `test_145`,
+  `test_365`, `test_61`.
+- Ba đỏ **có sẵn trên `origin/main`** gom vào cùng MỘT L3 thay vì mỗi phiên một
+  lượt: (1) nuốt lỗi 66 > mốc 62 — phiên `claude/upbeat-kepler-43adeb` sửa 7 chỗ ở
+  3 service VPS (`5d0d5149`, gộp vào đây; còn 59); (2) trùng số test `1261`/`1262`
+  (VPS 14/09 trùng CLI) — đổi hai tệp VPS thành `test_1281_vps_profile_maintenance`
+  / `test_1282_vps_ovh_acquisition` (41 passed); (3) mypy `arg-type` 107 → 108 ở
+  `public_ip.py:131` — `tuple(contracts or ())`, không đổi hành vi. Lượt gate của
+  phiên kia bị dừng theo yêu cầu chủ dự án để chạy chung một L3.
 
 ## 2026-09-15 — H54: Tool 1.9.2 khớp reasoning và kiểm thật Codex
 
