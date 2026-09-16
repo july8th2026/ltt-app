@@ -16,7 +16,7 @@
 <script src="/static/htmx.min.js?v={{ asset_ver }}"></script>
 <section class="th-studio" aria-labelledby="th-title">
   <nav class="image-product-tabs" aria-label="{{ _('Chế độ Tạo ảnh AI') }}"><a href="/taoanh">{{ _("Ảnh tổng quát") }}</a><a href="/taoanh/thumbnail" aria-current="page">{{ _("Thumbnail YouTube") }}</a></nav>
-  <header class="th-heading"><div><span class="th-kicker">AI CREATIVE STUDIO · THUMBNAIL MODE</span><h1 id="th-title">{{ _("Tạo ảnh AI") }}</h1>
+  <header class="th-heading"><div><span class="th-kicker">{{ _("Studio sáng tạo AI · Thumbnail") }}</span><h1 id="th-title">{{ _("Tạo ảnh AI") }}</h1>
     <p>{{ _("Thiết kế nhiều biến thể từ prompt thật, theo dõi lịch sử và so sánh kết quả trước khi tải.") }}</p></div>
     <a class="btn ghost" href="/jobs">{{ _("Việc của tôi") }}</a></header>
   {% if error %}<div class="alert alert-err" role="alert">{{ error }}</div>{% endif %}
@@ -27,7 +27,7 @@
       <div class="th-panel-head"><span>01</span><div><h2>{{ _("Nội dung") }}</h2><small>Mỗi ảnh {{ app.credit_cost({'count': 1}) }} credit · báo giá theo số lượng</small></div></div>
       <label class="th-field">{{ _("Ý tưởng / chủ đề") }} <strong>*</strong><textarea name="topic" rows="3" required maxlength="2000" placeholder="{{ _('Ví dụ: Hướng dẫn đầu tư chứng khoán cho người mới') }}">{{ form_values.topic or '' }}</textarea></label>
       <p class="th-note">{{ _("Ảnh sinh ra KHÔNG có chữ — model nội bộ không vẽ được chữ đọc được. Thêm tiêu đề bằng công cụ chỉnh sửa của bạn.") }}</p>
-      <fieldset class="th-group th-feature"><legend><b>02</b> Reference & Brand Kit</legend>
+      <fieldset class="th-group th-feature"><legend><b>02</b> {{ _("Tham chiếu & bộ nhận diện") }}</legend>
         {% if form_values.reference_key %}<input type="hidden" name="saved_reference_key" value="{{ form_values.reference_key }}"><div class="th-saved-ref"><img src="{{ app.route_prefix }}/image/{{ form_values.reference_key }}" alt="{{ _('Output dùng làm tham chiếu') }}"><span>{{ _("Đang remix từ output đã chọn") }}</span></div>{% endif %}
         <label class="th-field">{{ _("Ảnh tham chiếu mới") }} <input type="file" name="reference_image" accept="image/png,image/jpeg,image/webp"><small>{{ _("PNG/JPEG/WebP · tối đa 8 MB · dùng làm ảnh nguồn để remix, không công khai") }}</small></label>
         <div class="th-two"><label class="th-field">{{ _("Tên thương hiệu") }}<input name="brand_name" maxlength="80" value="{{ brand.name }}" placeholder="LTT Studios"></label>
@@ -37,7 +37,7 @@
         <label class="th-save-brand"><input type="checkbox" name="save_brand" value="1"><span>{{ _("Lưu làm Brand Kit mặc định của tôi") }}</span></label>
       </fieldset>
       <fieldset class="th-group"><legend><b>03</b> {{ _("Phong cách ảnh") }}</legend>{{ chipgroup('phong_cach', catalog['phong_cach'], form_values.phong_cach or defaults['phong_cach']) }}</fieldset>
-      <fieldset class="th-group"><legend><b>04</b> Thumbnail trend</legend>{{ chipgroup('kieu_trend', catalog['kieu_trend'], form_values.kieu_trend or defaults['kieu_trend']) }}</fieldset>
+      <fieldset class="th-group"><legend><b>04</b> {{ _("Xu hướng thumbnail") }}</legend>{{ chipgroup('kieu_trend', catalog['kieu_trend'], form_values.kieu_trend or defaults['kieu_trend']) }}</fieldset>
       <fieldset class="th-group"><legend><b>05</b> Model AI</legend>{{ chipgroup('model', models, form_values.model or (models[0][0] if models else '')) }}</fieldset>
       <div class="th-three">
         <label class="th-field">{{ _("Tỉ lệ") }}<select name="aspect_ratio">{% for a in aspects %}<option value="{{ a }}" {% if a == (form_values.aspect_ratio or '16:9') %}selected{% endif %}>{{ a }}</option>{% endfor %}</select></label>
@@ -57,7 +57,7 @@
     </div>
   </div>
 
-  <section class="th-history" aria-labelledby="history-title"><header><div><span class="th-kicker">OUTPUT HISTORY</span><h2 id="history-title">{{ _("Ảnh của tôi") }}</h2></div><span>{{ jobs|length }} {{ _("job gần nhất") }}</span></header>
+  <section class="th-history" aria-labelledby="history-title"><header><div><span class="th-kicker">{{ _("Lịch sử kết quả") }}</span><h2 id="history-title">{{ _("Ảnh của tôi") }}</h2></div><span>{{ jobs|length }} {{ _("job gần nhất") }}</span></header>
     {% if not jobs %}<div class="th-history-empty"><strong>{{ _("Chưa có thumbnail") }}</strong><p>{{ _("Tạo lần đầu tiên; kết quả thật sẽ xuất hiện ở đây để mở và so sánh.") }}</p></div>
     {% else %}<div class="th-job-grid">{% for j in jobs %}
       <article class="th-job"><header><div><strong>{{ j.title or j.topic or 'Thumbnail không tiêu đề' }}</strong>

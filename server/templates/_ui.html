@@ -51,3 +51,17 @@
 {%- set p = [[(phan_tram or 0) | int, 0] | max, 100] | min -%}
 <div class="ui-progress" role="progressbar" aria-label="{{ nhan }}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ p }}" style="--p:{{ p }}%"><i></i></div>
 {%- endmacro -%}
+
+{#- Tên hiển thị của một nhóm năng lực (`manifest.capabilities`) trên kho ứng dụng.
+    Giá trị trong manifest là KHOÁ lọc (`data-category`) và giữ nguyên; macro chỉ
+    đổi CHỮ khách đọc — trước đây chip hiện lẫn `audio`, `video` cạnh `AI Video`. -#}
+{%- macro ten_the_loai(khoa) -%}
+{%- if khoa == 'audio' -%}{{ _("Âm thanh") }}
+{%- elif khoa == 'video' -%}{{ _("Video") }}
+{%- elif khoa == 'Utilities' -%}{{ _("Tiện ích") }}
+{%- elif khoa == 'Automation' -%}{{ _("Tự động hoá") }}
+{%- elif khoa == 'AI Video' -%}{{ _("Video AI") }}
+{%- elif khoa == 'AI Image' -%}{{ _("Ảnh AI") }}
+{%- elif khoa == 'AI Text' -%}{{ _("Văn bản AI") }}
+{%- else -%}{{ _(khoa) }}{%- endif -%}
+{%- endmacro -%}

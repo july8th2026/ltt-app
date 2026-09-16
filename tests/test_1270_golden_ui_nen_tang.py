@@ -334,3 +334,31 @@ def test_DL004_bien_tabler_tro_ve_token():
     assert "--tblr-primary:var(--brand-fill)" in base
     assert "--tblr-body-font-family:var(--font)" in base
     assert "#ef3731" not in base and "#151111f2" not in base
+
+
+# ── 10. i18n: nhãn hiển thị không để tiếng Anh cứng; khoá lọc giữ nguyên ─────
+
+@pytest.mark.parametrize("khoa,chu", [
+    ("audio", "Âm thanh"), ("video", "Video"), ("Utilities", "Tiện ích"),
+    ("Automation", "Tự động hoá"), ("AI Video", "Video AI"), ("Chat & Prompt", "Chat & Prompt"),
+])
+def test_ten_the_loai_hien_thi(khoa, chu):
+    assert _macro("ten_the_loai", khoa) == chu
+
+
+def test_trang_chu_loc_theo_khoa_goc_nhung_hien_ten_dich():
+    home = (GOC / "server" / "templates" / "home.html").read_text(encoding="utf-8")
+    assert "{{ _(category) }}" not in home and "ui.ten_the_loai(category)" in home
+    assert 'data-category="{{ category }}"' in home
+
+
+@pytest.mark.parametrize("tep,cam", [
+    ("apps/taoanh/templates/image.html", (">GENERATIVE IMAGE<", ">OUTPUT HISTORY<", "> Reference &amp; Edit<")),
+    ("apps/thumbnail/templates/thumbnail.html", (">OUTPUT HISTORY<", "THUMBNAIL MODE<", "> Thumbnail trend<")),
+    ("apps/taoclipngan/templates/taoclipngan.html", (">OUTPUT LIBRARY<", "SHORT-FORM WORKSPACE<")),
+    ("apps/prompt_ai_ommi/templates/prompt_ai_ommi.html", (">WORKSPACE<", ">INSPECTOR<")),
+])
+def test_nhan_app_khong_con_tieng_anh_cung(tep, cam):
+    s = (GOC / tep).read_text(encoding="utf-8")
+    for c in cam:
+        assert c not in s, f"{tep}: {c}"

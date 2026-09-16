@@ -13,7 +13,7 @@
 <script src="/static/htmx.min.js?v={{ asset_ver }}"></script>
 <div class="clip-studio">
   <header class="clip-heading">
-    <div><span class="clip-kicker">AI SHORT-FORM WORKSPACE</span><h1>{{ _("Tạo Clip ngắn") }}</h1><p>{{ _("Chọn nguồn, cấu hình highlight, theo dõi transcript và so sánh output thật.") }}</p></div>
+    <div><span class="clip-kicker">{{ _("Không gian clip ngắn AI") }}</span><h1>{{ _("Tạo Clip ngắn") }}</h1><p>{{ _("Chọn nguồn, cấu hình highlight, theo dõi transcript và so sánh output thật.") }}</p></div>
     <a class="btn ghost" href="/jobs">{{ _("Việc của tôi") }}</a>
   </header>
   {% if error %}<div class="alert alert-err" role="alert">{{ error }}</div>{% endif %}
@@ -69,7 +69,7 @@
       </section>
 
       <section class="clip-history" aria-labelledby="clip-history-title">
-        <header><div><span class="clip-kicker">OUTPUT LIBRARY</span><h2 id="clip-history-title">{{ _("Clip của tôi") }}</h2></div><span>{{ jobs|length }} {{ _("job gần đây") }}</span></header>
+        <header><div><span class="clip-kicker">{{ _("Thư viện kết quả") }}</span><h2 id="clip-history-title">{{ _("Clip của tôi") }}</h2></div><span>{{ jobs|length }} {{ _("job gần đây") }}</span></header>
         {% if not jobs %}<div class="clip-empty"><strong>{{ _("Chưa có clip") }}</strong><span>{{ _("Chọn video ở Studio để bắt đầu.") }}</span></div>{% else %}<div class="clip-job-list">
           {% for job in jobs %}<article class="clip-job" data-job-id="{{ job.id }}" data-project-id="{{ job.project.id if job.project else '' }}" data-revision="{{ job.project.revision if job.project else 0 }}">
             <header><div><strong>{{ job.source_name }}</strong><small>{{ job.id[:8] }} · {{ job.tier }} · {{ job.aspect_ratio }}</small></div><div class="clip-job-meta-actions"><span class="clip-status {{ job.status }}">{{ job.status_label }}</span><a href="/jobs/{{ job.id }}">{{ _("Nhật ký") }}</a></div></header>

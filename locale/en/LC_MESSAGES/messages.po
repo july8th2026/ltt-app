@@ -13318,7 +13318,7 @@ msgid "Video AI (máy nhà)"
 msgstr "Video AI (in-house)"
 
 msgid "Video AI"
-msgstr "Video AI"
+msgstr "AI Video"
 
 msgid "Tạo video từ mô tả bằng model chạy trên máy thuê của LTT Studios."
 msgstr "Generate video from a description using a model running on LTT Studios' rented machine."
@@ -16697,3 +16697,48 @@ msgstr "credit/machine/month"
 
 msgid "Chọn video để nâng cấp"
 msgstr "Choose a video to upscale"
+
+msgid "Tạo ảnh bằng AI"
+msgstr "AI image generation"
+
+msgid "Ảnh tham chiếu & chỉnh sửa"
+msgstr "Reference & edit"
+
+msgid "Lịch sử kết quả"
+msgstr "Output history"
+
+msgid "Studio sáng tạo AI · Thumbnail"
+msgstr "AI creative studio · Thumbnail"
+
+msgid "Tham chiếu & bộ nhận diện"
+msgstr "Reference & brand kit"
+
+msgid "Xu hướng thumbnail"
+msgstr "Thumbnail trends"
+
+msgid "Lịch sử thumbnail"
+msgstr "Thumbnail history"
+
+msgid "Không gian clip ngắn AI"
+msgstr "AI short-form workspace"
+
+msgid "Thư viện kết quả"
+msgstr "Output library"
+
+msgid "Không gian làm việc"
+msgstr "Workspace"
+
+msgid "Thuộc tính"
+msgstr "Inspector"
+
+msgid "Tiện ích"
+msgstr "Utilities"
+
+msgid "Tự động hoá"
+msgstr "Automation"
+
+msgid "Ảnh AI"
+msgstr "AI Image"
+
+msgid "Văn bản AI"
+msgstr "AI Text"
