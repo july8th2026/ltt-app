@@ -12,6 +12,31 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-16 — LTT VOICE GUI V2: đồng bộ catalog, hàng đợi, ngôn ngữ, kho giọng (nhánh `phien/ltt-voice-gui-v2`)
+
+- **Đối soát trước khi code:** plan 15/09 đã vượt cổng Wave 1, quy thiếu nguyên nhân
+  25 giọng kho chung (cổng license), báo W3 xong sai với một bằng chứng tự gây. Code
+  phiên 15/09 hoàn nguyên; bản sao CSDL production + dump trong `%TEMP%` đã xoá.
+  Chi tiết: `docs/LTT_VOICE/GUI_DOI_SOAT_VA_PLAN_V2.md`, ma trận `GUI_AUDIT_MATRIX.md`.
+- **Phân loại giọng (GUI-D001):** `tham_chieu.loai_giong` theo chủ sở hữu, dùng ở màn
+  Giọng + Studio + Dự án; khối quản lý chỉ giọng của người xem; không gửi clip/UUID
+  người khác. Bộ lọc nhãn một luật (D004). Số đếm thật (V01).
+- **Hàng đợi (D005/D015):** `/ket-qua` trả `tuoi_hang_doi_s`/`muc_cho`; Studio cảnh
+  báo >60 s kèm trang việc; Lịch sử gắn "Chờ lâu bất thường". Ngưỡng ở `hang_doi.py`.
+- **Ngôn ngữ:** `/phat-dan` nhận `ngon_ngu`; nghe thử văn bản CHẶN khi lệch (D003-B,
+  chủ dự án duyệt); Dự án đọc tất cả trả `ma_loi`; mô tả `language` API đúng hành vi
+  (golden + CHANGELOG + `check_api_compat --accept`).
+- **Tốc độ:** thanh kéo 0,5–2,0 bước 0,05 (hằng số chung API); Nghe ngay nói rõ 1×.
+- **Kho giọng (W-KHO):** `RoutedStorage` + `LTT_STORAGE_LOCAL_PREFIXES`; công cụ
+  `chep_tien_to_r2_ve_dia.py`, `dung_lai_giong_kho_chung.py`; `backup.ps1` gom dữ liệu giọng.
+- **Worker (D006):** `job_worker.app_khong_lan_nao_nhat` + `do_sau_khoi_dong`.
+- **Bánh cóc đỏ sẵn trên `main`:** thu hẹp 8 `except Exception` ở `tools/*`; gộp nhánh
+  governance (đổi test VPS 1281/1282, mypy); khai skip `test_1025`; dịch 2 chuỗi hướng
+  dẫn cài model. Gộp release VPS r3 (`ee10c2ad`); xung đột `ovh_acquisition.py` giữ
+  nguyên logic thanh toán r2/r4, chỉ thêm log tên loại lỗi.
+- **Chưa làm (sau L3):** gộp `main`, deploy, bật `voice/` trên đĩa + pools
+  `gpu+ffmpeg:1`, dựng lại + duyệt license 25 giọng, E2E URL công khai.
+
 ## 2026-09-16 — LTT VOICE: clip gốc 25 giọng kho chung KHÔNG mất — đã lưu bản bền
 
 - Báo cáo 15/09 viết "25 clip nguồn đã mất khỏi mọi nơi đo được" — **SAI**: phép đo
