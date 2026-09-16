@@ -946,7 +946,6 @@ async def cau_console(websocket: WebSocket, instance_id: str, ve: str = ""):
     bỏ quên. Tất cả kiểm tra nằm tường minh trong thân hàm.
     """
     import asyncio
-    import ssl as ssl_mod
 
     if not vps_app.enabled():
         await websocket.close(code=1008)
@@ -981,18 +980,14 @@ async def cau_console(websocket: WebSocket, instance_id: str, ve: str = ""):
 
     import websockets
 
-    ctx = ssl_mod.create_default_context()
-    if not client.config.verify:
-        # Cụm dùng chứng chỉ tự ký. Đây là kết nối TỪ SERVER MÌNH tới Proxmox
-        # trong LAN, không phải kết nối của khách — cùng mức tin cậy với mọi lời
-        # gọi API khác trong `proxmox.py`.
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl_mod.CERT_NONE
+    # Cùng chính sách TLS với mọi lời gọi API trong `proxmox.py` (CA riêng + tên
+    # chứng chỉ chính xác), xem `console.tls_cho_cau_console` (R20).
+    ctx, ten_tls = console.tls_cho_cau_console(client.config)
 
     await websocket.accept(subprotocol="binary")
     try:
         async with websockets.connect(
-                dia_chi, ssl=ctx, subprotocols=["binary"],
+                dia_chi, ssl=ctx, server_hostname=ten_tls, subprotocols=["binary"],
                 additional_headers=client._headers(), open_timeout=20) as pve:
             # KHÔNG gửi dòng `user:ticket` nào ở đây. Đó là giao thức của
             # `termproxy` (xterm.js); `vncproxy` thì vé là **mật khẩu VNC** và

@@ -114,6 +114,29 @@ def _don_ve_cu(db: DbSession, instance_id: str) -> None:
             db.delete(doi_tuong)
 
 
+def tls_cho_cau_console(config):
+    """SSL context + server_hostname cho cầu WebSocket tới Proxmox.
+
+    Phải trùng đúng chính sách TLS của `ProxmoxClient`: CA riêng
+    (`LTT_VPS_PROXMOX_CA`) và tên chứng chỉ chính xác (`LTT_VPS_PROXMOX_TLS_NAME`).
+    Đo 16/09 trên production: context mặc định báo "unable to get local issuer
+    certificate", CA riêng + hostname theo IP báo "IP address mismatch", chỉ CA
+    riêng + tên `pve` bắt tay được — nên console khách mất kết nối ngay (R20).
+    """
+    import ssl as ssl_mod
+
+    ca = str(getattr(config, "ca_bundle", "") or "")
+    if ca:
+        ctx = ssl_mod.create_default_context(cafile=ca)
+        return ctx, (str(getattr(config, "tls_name", "") or "") or None)
+    ctx = ssl_mod.create_default_context()
+    if not getattr(config, "verify", True):
+        # Chỉ môi trường dev đã cho phép bỏ qua ở `doc_cau_hinh`.
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl_mod.CERT_NONE
+    return ctx, None
+
+
 def dia_chi_websocket_proxmox(config, vmid: int, ve_proxmox: dict) -> str:
     """URL WebSocket của Proxmox cho một vé `vncproxy`.
 
