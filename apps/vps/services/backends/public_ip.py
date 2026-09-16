@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import logging
 import re
 
 from sqlalchemy import select, update
@@ -16,6 +17,8 @@ from apps.vps.services.backends.contracts import (
     PublicIpResource,
 )
 from apps.vps.tables import VpsIp
+
+log = logging.getLogger(__name__)
 
 
 def _now() -> datetime:
@@ -276,10 +279,10 @@ class OvhStaticIpPoolBackend:
                         and 0 < quote.with_tax_minor <= self._acquisition_ceiling
                         and quote.contract_fingerprints == self._accepted_contracts):
                     replenishable = 1
-            except Exception:
+            except Exception as exc:
                 # Health is a read-only boundary; provider replies can contain
                 # credential URLs/bodies and must never reach its summary.
-                pass
+                log.warning("OVH IP replenish probe failed: %s", type(exc).__name__)
         status = "HEALTHY" if free > 0 or replenishable else "CRITICAL"
         return BackendHealth(
             status, f"{free} FREE public IP(s)",

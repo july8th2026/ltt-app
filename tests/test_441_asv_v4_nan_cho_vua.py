@@ -316,9 +316,9 @@ def test_giong_lay_tu_BAN_LONG_TIENG_khong_tu_settings(
     bat = {}
     that = giong_noi.giai_giong
 
-    def theo_doi(db_, *, owner_id, voice_id="", preset=""):
+    def theo_doi(db_, *, owner_id, voice_id="", preset="", **kw):
         bat["voice_id"] = voice_id
-        return that(db_, owner_id=owner_id, voice_id=voice_id, preset=preset)
+        return that(db_, owner_id=owner_id, voice_id=voice_id, preset=preset, **kw)
 
     monkeypatch.setattr(giong_noi, "giai_giong", theo_doi)
     giai_doan_giong.chay(db, _kho(), run=db.get(AsvRun, run.id), ctx=None)

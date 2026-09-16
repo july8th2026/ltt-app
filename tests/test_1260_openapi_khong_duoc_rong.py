@@ -108,7 +108,10 @@ def test_enum_va_mac_dinh_di_theo_ra_spec():
     assert re_.get("enum"), "`reasoning_effort` khong mang enum ra spec"
     assert "none" not in re_["enum"], (
         "`none` da bi go 14/09 nhung spec van cong bo no")
-    assert re_.get("default"), "`reasoning_effort` khong mang mac dinh ra spec"
+    # Q131: mac dinh di THEO MODEL (`ngan_sach.nghi_mac_dinh`), nen spec khong
+    # duoc cong bo mot default CHUNG — mot default chung se noi sai cho LTT 3.5.
+    assert "default" not in re_, (
+        "`reasoning_effort` cong bo default chung, trai Q131 (default theo model)")
     assert props["model"].get("enum"), "`model` khong mang danh sach alias ra spec"
 
 

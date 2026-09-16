@@ -92,9 +92,10 @@ MIEN_TRU_HTTP = {
     "apps/taovideo/modelark.py",
     # → tác nhân theo dõi trên MÁY KHÁCH, gọi về nền tảng của ta
     "apps/upscalevideo/watch_agent.py",
-    # → Proxmox / Vultr: hạ tầng BÁN VPS, không phải nhà cung cấp AI
+    # → Proxmox / Vultr / OVH: hạ tầng BÁN VPS, không phải nhà cung cấp AI
     "apps/vps/services/proxmox.py",
     "apps/vps/services/vultr.py",
+    "apps/vps/services/ovh.py",
     # → máy thật chạy WanGP (LTT VIDEO) — nội bộ
     "apps/lttvideo/cong/may_that.py",
 }

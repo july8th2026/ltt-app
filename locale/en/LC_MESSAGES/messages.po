@@ -18033,20 +18033,16 @@ msgstr "Renewed, machine reopened"
 msgid "Tắt cứng giống rút điện: dữ liệu chưa ghi xuống đĩa có thể mất. Tiếp tục?"
 msgstr "Force stop is like pulling the plug: data not yet written to disk may be lost. Continue?"
 
-#: apps/vps/templates/admin_profiles.html
-msgid "Lưu sẽ ngừng nhận máy mới và yêu cầu preflight lại. Không đổi backend/đích của profile đang ghim tài nguyên. Strategy OVH gwnat chưa có adapter mutation đã xác minh."
-msgstr "Saving stops new-machine admission and requires another preflight. Do not change the backend or target of a profile with pinned resources. The OVH gwnat strategy has no verified mutation adapter yet."
-
-#: apps/vps/templates/admin_profiles.html
-msgid "Collector canonical chưa công bố source revision nhất quán; không dùng SHA của checkout dev thay thế."
-msgstr "The canonical collector has not published a consistent source revision; do not substitute a development checkout SHA."
-
-#: platform_core/public_api/governance.py
-msgid "Ý định, đối chiếu và bù trừ cho từng thay đổi tài nguyên hạ tầng của máy khách. Mất nhật ký này thì không thể phân biệt thao tác đã thành công, cần thử lại hay cần con người xử lý."
-msgstr "Intent, reconciliation, and compensation for each infrastructure resource change affecting a customer machine. Without this journal, operations cannot distinguish success, retryable work, or cases requiring human review."
-
 msgid "Giọng đã chọn không cùng ngôn ngữ với lời lồng tiếng, nên chúng tôi dừng lại trước khi đọc thay vì giao một bản đọc sai giọng. Hãy tạo lần chạy mới với một giọng cùng ngôn ngữ với lời lồng tiếng."
 msgstr "The selected voice is not in the same language as the dubbing script, so we stopped before reading instead of delivering a mismatched voice-over. Create a new run with a voice in the same language as the dubbing script."
 
 msgid "Giọng đã chọn chưa xác định được ngôn ngữ nên chưa dùng để đọc được. Hãy tạo lần chạy mới với một giọng đã ghi rõ Tiếng Việt hoặc Tiếng Anh."
 msgstr "The selected voice has no known language, so it cannot be used for reading yet. Create a new run with a voice marked as Vietnamese or English."
+
+#: server/templates/huong_dan_cong_cu.html
+msgid "profile LTT 3.8; tạo mới hoặc sao lưu trước khi ghi"
+msgstr "LTT 3.8 profile; created fresh or backed up before writing"
+
+#: server/templates/huong_dan_cong_cu.html
+msgid "profile LTT 3.5; được cài cùng lượt với LTT 3.8"
+msgstr "LTT 3.5 profile; installed in the same pass as LTT 3.8"

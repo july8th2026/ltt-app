@@ -288,7 +288,8 @@ def _ghi_thao_tac_hong(db, op, params: dict, lenh: str, ma: str,
             if client is not None and may.vmid:
                 try:
                     dien = tac_vu.doc_dien(client, may.vmid)
-                except Exception:        # noqa: BLE001 - đo lại là phụ, không che lỗi gốc
+                except Exception as loi_do:  # noqa: BLE001 - đo lại là phụ, không che lỗi gốc
+                    log.warning("VPS: do lai nguon may that bai: %s", type(loi_do).__name__)
                     dien = None
                 if dien in (trang_thai_may.CHAY, trang_thai_may.TAT):
                     trang_thai_may.ghi_quan_sat(may, dien)

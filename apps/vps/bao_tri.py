@@ -463,8 +463,8 @@ def _chinh_sach_ip_rong(db, *, now=None) -> int:
     except Exception as exc:  # noqa: BLE001 - biên của việc nền
         try:
             db.rollback()
-        except Exception:  # noqa: BLE001
-            pass
+        except Exception as loi_rb:  # noqa: BLE001
+            log.warning("VPS bao tri: rollback that bai: %s", type(loi_rb).__name__)
         log.warning("VPS bao tri: chinh sach IP rong that bai: %s", type(exc).__name__)
         return 0
 
