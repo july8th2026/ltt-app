@@ -96,6 +96,38 @@ Quy tắc giữ nguyên prompt §15 (một wave một lúc, ≤ 8–10 tệp, 10
 
 **Cổng:** G01 PASS với artifact thật. **Không sang W2' khi chưa PASS.**
 
+#### W1' — Phân tích an toàn cho LLM (16/09/2026)
+
+Bối cảnh: Voice chạy GPU **máy A** (sidecar `LTTStudioVoice` :8120). LLM chạy GPU
+**máy B**; máy A chỉ điều phối job LLM qua worker `api`. Một worker duy nhất
+(`LTTStudioWorker`) phục vụ cả hai.
+
+| Câu hỏi | Trả lời | Bằng chứng | Nhãn |
+|---|---|---|---|
+| Làn `voice` đặt ở đâu? | `LTT_WORKER_POOLS` của **worker** (`app.env` → `nap_lai_env.ps1`). `LTTStudioVoice` là sidecar, không nhặt job | `setup/cai_dich_vu_giong.ps1`, `job_worker.py:83-109` | PROVEN |
+| Pools 14/09 bỏ `voice` có chủ ý? | Không. Chú thích `app.env` chỉ nói `api:6` = trần admission LLM (3 suất × 2), `gpu:1` = số GPU máy A. Trước 14/09 pools không đặt ⇒ một worker đa năng chạy cả Voice | `app.env` dòng 104-110 | PROVEN |
+| Thêm `voice:1` có làm máy B vượt suất? | **Không.** Suất LLM khoá bằng `ExecutionLease UNIQUE(resource, slot)` + lọc `_con_cho_tai_nguyen` trước khi claim; hụt suất ⇒ `_tra_ve_hang_doi`. Số worker không đổi trần | `jobs.py:195-239, 326`; `job_runner.py:264-279` | PROVEN (đọc mã) |
+| Worker `voice` có nhặt job LLM? | **Có.** Mọi pool tự thêm `api` (`job_worker.py:103`) ⇒ `voice:1` = `{api, voice}`. Chỉ nhặt khi còn suất trống ⇒ không giành suất của LLM; nhưng khi nó đang chạy một job `api` dài thì **job Voice phải chờ** (rủi ro cho Voice, không cho LLM) | `job_worker.py:101-103` | PROVEN (mã) / độ trễ NOT TESTED |
+| Giảm `api` xuống 5 để "bù"? | **Không nên.** Hôm nay đã có 7 worker nhận `api` (6 + `gpu:1`). Hạ `api:5` làm worker `voice` thành worker LLM cần thiết lúc tải cao ⇒ Voice chờ nhiều hơn, LLM không lợi gì | suy từ trên | LIKELY |
+| GPU máy A: Voice đụng làn `gpu`? | Có trọng tài: `ltt_voice` khai `gpu_vram_mb=2000` ⇒ `_giu_gpu` (H23) + `admission_resource=vieneu_gpu, slots=1` | `manifest.py:183,340-341`; `job_runner.py:282-286` | PROVEN (mã) |
+| Làn `voice` mở khoá app khác? | `asv_voice` cũng `requires=("voice",)` nhưng `enabled=False`; job cũ (nếu có) có thể được nhặt | `apps/asv_voice/manifest.py:47,51` | LIKELY — đếm job queued trước restart |
+| Restart worker có hại LLM? | **CÓ — rủi ro thật duy nhất.** nssm dừng console sau **1.500 ms** rồi giết. Job LLM đã gửi máy B ⇒ `mark_ambiguous`; lease giữ suất máy B tới `ORPHAN_TIMEOUT_JOB` **300 s** — đúng sự cố deploy 14/09 | `nssm get … AppStopMethodConsole=1500`; `admission.py:51-77`; `jobs.py:590-606` | PROVEN |
+| Restart có kéo theo cấu hình khác? | **Không.** `app.env` khớp env đã nạp 94/94 khoá ở Worker/Web/Voice; worker khởi động 16/09 08:54, sau lần sửa `app.env` cuối (15/09 22:53) ⇒ chỉ dòng pools đổi | so băm khoá, `Win32_Process` | PROVEN |
+| Có cơ chế drain? | Không có | grep `job_worker.py`, `job_runner.py`, `setup/` | PROVEN |
+
+**Quy trình an toàn (chủ dự án chạy, quyền Admin):**
+1. Sửa `app.env`: `api:6, gpu:1` → `api:6, gpu:1, voice:1` (không BOM, giữ `.bak`).
+2. `setup\nap_lai_env.ps1 -KhongKhoiDongLai` (nạp env, **không** restart).
+3. Chạy script kiểm chỉ đọc; **chỉ restart khi in "AN TOAN"** (0 job running, 0 lease sống). Ưu tiên giờ thấp tải.
+4. `Restart-Service LTTStudioWorker` — chỉ worker; không Web/Voice/Codex.
+5. Sau restart: log `ltt-job-worker-*.jsonl` phải có một dòng `nang luc: ['api', 'voice']`; chạy lại script: job `ltt_voice` rời `queued`; một lượt chat LLM thử vẫn trả lời.
+6. Hoàn tác nếu có bất thường LLM: chép `.bak` về, lặp bước 2–4.
+
+**Ngoài phạm vi, ghi nhận:** không làn nào có `ffmpeg` ⇒ app `requires` chứa
+`ffmpeg` (`autosubvideo`, `taoclipngan`, `qualitylab`, `asv_media`,
+`video_assembly`, `upscalevideo`) cũng không worker nào nhặt được — cùng lớp lỗi
+với Voice. Chủ dự án quyết riêng.
+
 ### W2' — P0-2: đo lại đúng góc nhìn (chỉ đọc, cần chủ dự án cho phép đọc CSDL)
 
 1. Đếm `voice_profile` theo `dung_chung × license_status × trang_thai × ngon_ngu × owner`.
