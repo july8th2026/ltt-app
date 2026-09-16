@@ -18039,3 +18039,6 @@ msgstr "Waiting for a machine to process…"
 
 msgid "Hàng đợi lâu hơn bình thường. Bạn có thể chờ tiếp, hoặc mở trang việc để huỷ và thử lại sau."
 msgstr "The queue is taking longer than usual. You can keep waiting, or open the job page to cancel and try again later."
+
+msgid "Chờ lâu bất thường"
+msgstr "Unusually long wait"
