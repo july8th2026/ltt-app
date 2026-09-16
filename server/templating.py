@@ -339,6 +339,27 @@ templates.env.globals["nav_apps"] = _nav_apps
 templates.env.globals["app_version"] = _VER
 
 
+def _ten_app(slug: str) -> str:
+    """Tên hiển thị của một app theo slug — cho giao diện, KHÔNG cho quyết định.
+
+    Golden UI (16/09): `/jobs` và `/jobs/{id}` từng in thẳng `taoanh` /
+    `taoanh.generate` cho khách. Route không cần đổi: tên đã có trong manifest,
+    template chỉ cần tra. Không tìm thấy (app đã gỡ) thì trả lại slug — một
+    chuỗi kỹ thuật vẫn hơn một ô trống.
+    """
+    try:
+        from platform_core.registry import discover
+        for a in discover():
+            if a.manifest.slug == slug:
+                return _i18n._(a.manifest.display_name)
+    except Exception:
+        pass
+    return slug
+
+
+templates.env.globals["ten_app"] = _ten_app
+
+
 def _so_du_credit(request=None):
     """Số dư credit của người dùng CSDL đang đăng nhập, hoặc None (H6).
 

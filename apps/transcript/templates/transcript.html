@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "_ui.html" as ui %}
 {% block title %}{{ _("Phiên âm có dòng thời gian") }} — LTT AI Studio{% endblock %}
 {% block topbar_title %}<strong>{{ _("Phiên âm có dòng thời gian") }}</strong>{% endblock %}
 
@@ -54,8 +55,8 @@
     <tbody>
       {% for j in jobs %}
       <tr>
-        <td>{{ j.created_at }}</td>
-        <td>{{ j.status }}</td>
+        <td class="tnum">{{ j.created_at.strftime('%H:%M %d/%m/%Y') if j.created_at else '' }}</td>
+        <td>{{ ui.nhan_trang_thai(j.status) }}</td>
         <td>{{ j.progress or 0 }}%</td>
         <td>{{ (j.result or {}).get("transcript", []) | length }}</td>
         <td><a href="/transcript/ket-qua/{{ j.id }}">{{ _("Xem") }}</a></td>

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "_ui.html" as ui %}
 {% block title %}{{ _("Chèn khoảng lặng theo lời") }} — LTT AI Studio{% endblock %}
 {% block topbar_title %}<strong>{{ _("Chèn khoảng lặng theo lời") }}</strong>{% endblock %}
 
@@ -70,8 +71,8 @@
     <tbody>
       {% for j in jobs %}
       <tr>
-        <td>{{ j.created_at }}</td>
-        <td>{{ j.status }}</td>
+        <td class="tnum">{{ j.created_at.strftime('%H:%M %d/%m/%Y') if j.created_at else '' }}</td>
+        <td>{{ ui.nhan_trang_thai(j.status) }}</td>
         <td>{{ j.progress or 0 }}%</td>
         <td>{{ (j.result or {}).get("matched", "—") }}</td>
         <td>{{ (j.result or {}).get("failed", "—") }}</td>

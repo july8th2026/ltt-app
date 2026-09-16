@@ -32,9 +32,9 @@ nào < 88 · critical UI xác minh ở mức render thật (E3).
 | Bộ quét | `node tools/golden_ui_quet.mjs --cau-hinh routes.json --ra <dir> [--khung ...]` — HTTP, ảnh toàn trang, console, request hỏng, tràn ngang, axe WCAG 2.2 AA, h1/main/lang, ô chạm, ô nhập <16px |
 
 ## Overall Progress
-21%
+27%
 
-(Trọng số: P0 5 · P1 10 · P2 15 · P3 15 · P4 20 · P5 15 · P6 10 · P7 10. Tính: P0 100%·5 + P1 100%·10 + P2 45%·15 + P3 10%·15 + P4 10%·20 = 5+10+6,75+1,5+2 ≈ 25 → trừ 4 điểm vì chưa có chứng nhận gate nào ⇒ **21%**.)
+(Trọng số: P0 5 · P1 10 · P2 15 · P3 15 · P4 20 · P5 15 · P6 10 · P7 10. Tính: P0 100%·5 + P1 100%·10 + P2 45%·15 + P3 30%·15 + P4 25%·20 = 5+10+6,75+4,5+5 ≈ 31 → trừ 4 điểm vì chưa có chứng nhận gate nào ⇒ **27%**.)
 
 ## Current Baseline
 
@@ -213,10 +213,15 @@ Kế hoạch:
 - Nâng `--text-muted` và link đỏ lên AA (đo bằng axe, không bằng mắt).
 
 ## Phase 3 — Shared UI Components
-Progress: 10%
+Progress: 30%
 
 Completed:
-- `.ui-state` (+ `--warn/--err/--ok/--info/--inline`): eyebrow · title · lead · body · actions · meta · id. Dùng đầu tiên ở `error.html`.
+- `.ui-state` (+ `--warn/--err/--ok/--info/--inline`): eyebrow · title · lead · body · actions · meta · id. Dùng ở `error.html`, trạng thái rỗng `/jobs` (không lọc / có lọc).
+- `server/templates/_ui.html`: `nhan_trang_thai(status, loai)` (job + đơn nạp), `ten_trang_thai`, `thanh_tien_do(pct, nhan)` (progressbar có tên, kẹp 0–100, độ rộng qua `--p`). Bảng nhãn nằm trong macro (tránh Jinja cache `import` đóng băng ngôn ngữ).
+- `.ui-progress`, `.job-progress-head`.
+- Jinja global `ten_app(slug)` (`server/templating.py`) — tên hiển thị từ manifest, chỉ đọc.
+
+Pending: page header chuẩn, field/form, table cuộn focus được, alert, code block `tabindex`, tabs/chips, pagination; hợp nhất `.btn` giữa `_kieu_chung.html` và `ltt.css`.
 
 Kế hoạch: page header · button 4 biến thể · field (label/helper/error) · card · alert 4 mức · status badge (job/đơn/lifecycle, tiếng người đọc) · table (cuộn ngang focus được) · progress (có tên) · empty/loading/error/result/offline state · code block (`tabindex=0`) · pagination · tabs/filter chips.
 Macro Jinja dùng chung ở `server/templates/_ui.html` — chỉ nếu ≥3 nơi dùng.
@@ -226,6 +231,7 @@ Progress: 10%
 
 Completed:
 - Error (P0-02) — xem P0 Issues. Browser E3: 404/403 thật + 400/401/403/404/413/429/500/503 render state, 390 & 1440, axe 0 serious/critical.
+- Jobs (PARTIAL): `/jobs` tên app thay slug, bỏ cột `job_type`, nhãn trạng thái dùng chung, lọc app theo tên, trạng thái rỗng có CTA; `/jobs/{id}` h1 = tên app, mã việc ở eyebrow, progressbar có tên. E3: 18 phép đo (list/lọc/5 state/retry/admin) axe **0** (baseline 22). Còn: 430/768/1920, tương tác hủy/thử lại trên trình duyệt.
 Thứ tự: Error → Auth → Billing → Jobs → Shell/Header/Workspace home.
 
 ## Phase 5 — Remaining Pages & Apps
@@ -256,7 +262,7 @@ Screenshot regression Playwright (`toHaveScreenshot`) cho critical screens; test
 | P1-03 | **Ba bảng màu**: Carbon Red ấm; Developer nền trung tính + cyan; VPS teal (`--vps-teal-text` tham chiếu nhưng không định nghĩa); sqladmin navy/Tabler | DL-002, DL-004 |
 | P1-04 | Tương phản: 312 nút / 89 trang dưới AA | toàn hệ |
 | P1-05 | `main` nhân đôi (10 màn) · thiếu `h1` (`/status`, canvas, chatltt, autosub) · `h1` ×6 ở ommi classic | shell + app |
-| P1-06 | Enum nội bộ lộ ra khách: `running · 20%`, `queued · 0%`, `cancelled · 10%` (taoanh), `running/queued/done` (rail home), tiêu đề `Job 8fde2d41`, `taoanh · taoanh.generate` (job detail) | jobs, workspace, apps |
+| P1-06 🟡 PARTIAL (jobs, rail trang chủ, taoanh, thumbnail, transcript, prompt-canh, audio-pause, video-assembly xong; còn dev/admin nội bộ) | Enum nội bộ lộ ra khách: `running · 20%`, `queued · 0%`, `cancelled · 10%` (taoanh), `running/queued/done` (rail home), tiêu đề `Job 8fde2d41`, `taoanh · taoanh.generate` (job detail) | jobs, workspace, apps |
 | P1-07 | i18n: nhãn tiếng Anh cứng (`GENERATIVE IMAGE`, `OUTPUT HISTORY`, `REFERENCE & EDIT`), chip thể loại lẫn hoa/thường (`audio`, `video` cạnh `AI Video`), chuỗi không qua `_()` ở error/jobs/nap/auth/status, sqladmin toàn tiếng Anh (`Search`, `Actions`, `Showing 1 to 3`) | toàn hệ |
 | P1-08 | Định dạng số kiểu Anh trong giao diện Việt: `200,000đ`, `2,200 credit`, `1,000,000đ` (billing) trong khi VPS/Developer dùng `149.000đ`, `1.250` | billing, jobs |
 | P1-09 | Progressbar không tên (12) · vùng cuộn `<pre>` không focus được (35) · control lồng control ở thẻ giọng Voice (18) · control thiếu nhãn ở admin `api-key-them` | a11y |
@@ -311,6 +317,8 @@ Screenshot regression Playwright (`toHaveScreenshot`) cho critical screens; test
 | EV-05 | E3 | `after/p0-02*`: 14 phép đo trang lỗi, axe 0 serious/critical |
 | EV-06 | E2 | vitest agent-canvas 62/62 + typecheck; pytest `test_1270` 23/23 |
 | EV-07 | E2 | axe `color-contrast` theo cặp màu: `#fff`/`#ef3731` = 3,99:1 là 144/312 lỗi baseline |
+| EV-08 | E3 | `after/p3-status`: 36 phép đo jobs/home/6 app — axe 0 trên jobs & home |
+| EV-09 | E2 | `test_1270` 36/36; `test_107`, `test_109` cập nhật để chốt dùng macro (6/6) |
 
 ## Current Blocker
 
@@ -318,4 +326,4 @@ Không có.
 
 ## Next Action
 
-Phase 3: nhãn trạng thái job/đơn dùng chung (bỏ enum tiếng Anh lộ ra — P1-06), progressbar có tên (P1-09), rồi Phase 4 Auth → Billing → Jobs.
+Phase 4 Billing: định dạng số VN (`| so`, `| tien_vnd`) thay `200,000đ` (P1-08), nhãn đơn nạp dùng chung, rồi Auth + shell DL-001.

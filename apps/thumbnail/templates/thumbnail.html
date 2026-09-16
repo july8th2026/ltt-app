@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "_ui.html" as ui %}
 {% block page_mode %}wide{% endblock %}
 {% block title %}{{ _("Tạo ảnh AI") }} — LTT AI Studio{% endblock %}
 {% block topbar_title %}<strong>{{ _("Tạo ảnh AI") }}</strong>{% endblock %}
@@ -61,7 +62,7 @@
     {% else %}<div class="th-job-grid">{% for j in jobs %}
       <article class="th-job"><header><div><strong>{{ j.title or j.topic or 'Thumbnail không tiêu đề' }}</strong>
         <small>{{ j.id[:8] }} · {{ j.aspect_ratio }} · {{ j.requested_count }} ảnh · <time datetime="{{ j.created_at.isoformat() }}">{{ j.created_at.strftime('%d/%m %H:%M') }}</time></small></div>
-        {% if j.status == 'done' %}<span class="th-status done">{{ _("Hoàn tất") }}</span>{% elif j.status == 'error' %}<span class="th-status error">{{ _("Lỗi") }}</span>{% else %}<span class="th-status running">{{ j.status }} · {{ j.progress }}%</span>{% endif %}</header>
+        {% if j.status == 'done' %}<span class="th-status done">{{ _("Hoàn tất") }}</span>{% elif j.status == 'error' %}<span class="th-status error">{{ _("Lỗi") }}</span>{% else %}<span class="th-status running">{{ ui.ten_trang_thai(j.status) }} · {{ j.progress }}%</span>{% endif %}</header>
         {% if j.status not in ['done','error','cancelled'] %}<div class="th-progress" role="progressbar" aria-label="Tiến độ job {{ j.id[:8] }}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ j.progress }}"><i style="width:{{ j.progress }}%"></i></div>{% endif %}
         {% if j.progress_msg %}<p class="th-job-msg">{{ j.progress_msg }}</p>{% endif %}{% if j.status == 'error' and j.error %}<p class="th-job-error">{{ j.error }}</p>{% endif %}
         {% if j.image_keys %}<div class="th-results">{% for k in j.image_keys %}{% set image_url = app.route_prefix ~ '/image/' ~ k %}

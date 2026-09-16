@@ -33,8 +33,9 @@ def test_home_filter_va_progress_co_accessible_state():
     assert 'data-category="all" aria-pressed="true"' in home
     assert "setAttribute('aria-pressed',String(on))" in home
     assert 'id="market-count" aria-live="polite"' in home
-    assert 'role="progressbar"' in home
-    assert 'aria-valuemin="0" aria-valuemax="100"' in home
+    # Golden UI: role/aria-valuemin/max/label nam trong macro `ui.thanh_tien_do`
+    # (`_ui.html`, chot tai test_1270); home phai DUNG macro do.
+    assert "ui.thanh_tien_do(progress," in home
     assert "{% set progress = [[job.progress or 0, 0]|max, 100]|min %}" in home
     assert "Jobs đang chạy" not in home
 

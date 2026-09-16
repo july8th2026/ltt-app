@@ -1,4 +1,5 @@
 {% extends "base.html" if authed else "base_public.html" %}
+{% import "_ui.html" as ui %}
 {% block title %}LTT AI Studio{% endblock %}
 {% block content %}
 {% if not authed %}
@@ -46,8 +47,8 @@
     </main>
   </div>
   <aside class="market-rail" aria-label="{{ _('Hoạt động của bạn') }}">
-    <section><header><h2>{{ _("Hoạt động gần đây") }}</h2><a href="/jobs">{{ _("Xem tất cả") }}</a></header>{% if workspace.recent %}<ol class="activity-list">{% for job in workspace.recent %}<li><span aria-hidden="true">{{ job.app_icon }}</span><a href="/jobs/{{ job.id }}"><b>{{ job.app_name }}</b><small>{{ job.progress_msg or job.status }}</small></a></li>{% endfor %}</ol>{% else %}<p class="rail-empty">{{ _("Chưa có hoạt động. Mở một công cụ để bắt đầu.") }}</p>{% endif %}</section>
-    <section><header><h2>{{ _("Việc đang chạy") }}</h2><a href="/jobs">{{ _("Xem tất cả") }}</a></header>{% if workspace.running %}<ol class="running-list">{% for job in workspace.running %}{% set progress = [[job.progress or 0, 0]|max, 100]|min %}<li><div><span aria-hidden="true">{{ job.app_icon }}</span><b>{{ job.app_name }}</b><strong>{{ progress }}%</strong></div><div class="progress" role="progressbar" aria-label="Tiến độ {{ job.app_name }}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ progress }}"><i style="width:{{ progress }}%"></i></div><small>{{ job.progress_msg or job.status }}</small></li>{% endfor %}</ol>{% else %}<p class="rail-empty">{{ _("Không có việc nào đang chạy.") }}</p>{% endif %}</section>
+    <section><header><h2>{{ _("Hoạt động gần đây") }}</h2><a href="/jobs">{{ _("Xem tất cả") }}</a></header>{% if workspace.recent %}<ol class="activity-list">{% for job in workspace.recent %}<li><span aria-hidden="true">{{ job.app_icon }}</span><a href="/jobs/{{ job.id }}"><b>{{ job.app_name }}</b><small>{{ _(job.progress_msg) if job.progress_msg else ui.ten_trang_thai(job.status) }}</small></a></li>{% endfor %}</ol>{% else %}<p class="rail-empty">{{ _("Chưa có hoạt động. Mở một công cụ để bắt đầu.") }}</p>{% endif %}</section>
+    <section><header><h2>{{ _("Việc đang chạy") }}</h2><a href="/jobs">{{ _("Xem tất cả") }}</a></header>{% if workspace.running %}<ol class="running-list">{% for job in workspace.running %}{% set progress = [[job.progress or 0, 0]|max, 100]|min %}<li><div><span aria-hidden="true">{{ job.app_icon }}</span><b>{{ job.app_name }}</b><strong>{{ progress }}%</strong></div>{{ ui.thanh_tien_do(progress, _("Tiến độ") ~ " " ~ job.app_name) }}<small>{{ _(job.progress_msg) if job.progress_msg else ui.ten_trang_thai(job.status) }}</small></li>{% endfor %}</ol>{% else %}<p class="rail-empty">{{ _("Không có việc nào đang chạy.") }}</p>{% endif %}</section>
     <section class="rail-credit"><h2>{{ _("Credit của bạn") }}</h2><p>{{ _("Dùng credit minh bạch cho từng tác vụ; số dư luôn hiển thị trước khi chạy.") }}</p><a href="/nap">{{ _("Nạp credit") }}</a></section>
   </aside>
 </section>

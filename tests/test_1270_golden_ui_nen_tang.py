@@ -130,3 +130,53 @@ def test_trang_loi_co_tieu_de_va_duong_phuc_hoi_theo_ma(code, tieu_de, phai_co):
 def test_ma_la_van_co_trang_loi_mac_dinh():
     html = _render_loi(418)
     assert "Đã có lỗi xảy ra" in html and "Về trang chính" in html
+
+
+# ── 4. Macro trạng thái dùng chung (`_ui.html`) ─────────────────────────────
+
+def _macro(ten: str, *args):
+    from server.templating import templates
+    ui = templates.env.get_template("_ui.html").module
+    return str(getattr(ui, ten)(*args))
+
+
+@pytest.mark.parametrize("status,mau,chu", [
+    ("queued", "b-warn", "Đang chờ"), ("running", "b-warn", "Đang chạy"),
+    ("done", "b-ok", "Hoàn tất"), ("error", "b-err", "Lỗi"),
+    ("cancelled", "b-grey", "Đã hủy"),
+])
+def test_nhan_trang_thai_job_khong_lo_enum(status, mau, chu):
+    html = _macro("nhan_trang_thai", status)
+    assert f'class="badge {mau}"' in html and chu in html
+    assert f">{status}<" not in html
+
+
+@pytest.mark.parametrize("status,mau,chu", [
+    ("pending", "b-warn", "Đang chờ thanh toán"), ("paid", "b-ok", "Đã thanh toán"),
+    ("expired", "b-grey", "Hết hạn"), ("cancelled", "b-grey", "Đã hủy"),
+    ("failed", "b-err", "Thanh toán lỗi"),
+])
+def test_nhan_trang_thai_don_nap(status, mau, chu):
+    html = _macro("nhan_trang_thai", status, "don")
+    assert f'class="badge {mau}"' in html and chu in html
+
+
+def test_trang_thai_la_hien_ra_chu_khong_bi_giau():
+    assert "trang_thai_moi" in _macro("nhan_trang_thai", "trang_thai_moi")
+
+
+def test_thanh_tien_do_co_ten_va_kep_bien():
+    html = _macro("thanh_tien_do", 140, "Tiến độ việc")
+    assert 'role="progressbar"' in html and 'aria-label="Tiến độ việc"' in html
+    assert 'aria-valuenow="100"' in html
+    assert 'aria-valuenow="0"' in _macro("thanh_tien_do", None, "x")
+
+
+def test_man_viec_khong_in_slug_va_job_type_cho_khach():
+    for ten in ("jobs.html", "job_detail.html"):
+        html = (GOC / "server" / "templates" / ten).read_text(encoding="utf-8")
+        assert "j.job_type" not in html and "job.job_type" not in html, ten
+        assert "ten_app(" in html, ten
+    for ten in ("jobs.html", "_job_progress.html"):
+        html = (GOC / "server" / "templates" / ten).read_text(encoding="utf-8")
+        assert "ui.nhan_trang_thai(" in html, ten

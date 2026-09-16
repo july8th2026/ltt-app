@@ -35,7 +35,9 @@ def test_job_templates_have_filters_actions_progress_and_artifacts():
     assert 'name="status"' in jobs and 'name="app"' in jobs
     assert 'name="date_from"' in jobs and 'name="date_to"' in jobs
     assert "/cancel" in detail and "/retry" in detail and "/artifacts/" in detail
-    assert 'role="progressbar"' in progress and 'aria-live="polite"' in progress
+    # Golden UI: progressbar do macro dung chung sinh (role + aria-label bat buoc
+    # nam o `_ui.html`, chot tai test_1270). O day chi chot template DUNG macro.
+    assert "ui.thanh_tien_do(" in progress and 'aria-live="polite"' in progress
     assert "job-timeline" in progress and "job.correlation_id" in detail
     assert "X-LTT-Job-Terminal" in (ROOT / "server" / "routes" / "jobs.py").read_text(encoding="utf-8")
     assert "job-network-state" in detail

@@ -1,20 +1,15 @@
 {# Fragment progress. Job detail owns adaptive polling and replaces this node. #}
+{% import "_ui.html" as ui %}
 {% set running = job.status in ('queued','running') %}
 <div id="job-progress"
      role="status" aria-live="polite"
      data-running="{{ 'true' if running else 'false' }}"
      data-poll-url="/jobs/{{ job.id }}/progress">
-  <div class="row" style="align-items:center;gap:8px;">
-    {% if job.status == 'queued' %}<span class="badge b-warn"><span class="dot"></span>{{ _("Đang chờ") }}</span>
-    {% elif job.status == 'running' %}<span class="badge b-warn"><span class="dot"></span>{{ _("Đang chạy") }}</span>
-    {% elif job.status == 'done' %}<span class="badge b-ok"><span class="dot"></span>{{ _("Hoàn tất") }}</span>
-    {% elif job.status == 'cancelled' %}<span class="badge b-grey"><span class="dot"></span>{{ _("Đã hủy") }}</span>
-    {% else %}<span class="badge b-err"><span class="dot"></span>{{ _("Lỗi") }}</span>{% endif %}
+  <div class="job-progress-head">
+    {{ ui.nhan_trang_thai(job.status) }}
     <span class="muted">{{ job.progress }}%{% if job.progress_msg %} — {{ _(job.progress_msg) }}{% endif %}</span>
   </div>
-  <div style="height:8px;background:var(--panel2);border-radius:5px;margin:8px 0;overflow:hidden;">
-    <div style="height:100%;width:{{ job.progress }}%;background:var(--accent);" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ job.progress }}"></div>
-  </div>
+  {{ ui.thanh_tien_do(job.progress, _("Tiến độ việc")) }}
   {% if job.status == 'done' and job.result %}
     <div class="alert alert-ok"><strong>{{ _("Kết quả đã sẵn sàng.") }}</strong>
       {{ _("Mở phần “Tệp kết quả” bên dưới; tải lại trang nếu job vừa hoàn tất.") }}</div>

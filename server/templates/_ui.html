@@ -1,0 +1,53 @@
+{#- _ui.html — macro giao diện dùng chung (Golden UI, 16/09/2026).
+
+    {% import "_ui.html" as ui %}
+    {{ ui.nhan_trang_thai(job.status) }}               nhãn có màu (job)
+    {{ ui.nhan_trang_thai(order.status, 'don') }}      nhãn có màu (đơn nạp)
+    {{ ui.ten_trang_thai(job.status) }}                chỉ chữ (dòng phụ)
+    {{ ui.thanh_tien_do(job.progress, _("Tiến độ")) }} progressbar CÓ TÊN
+
+    ⭐ MỘT bảng nhãn cho mọi nơi hiển thị trạng thái. Trước đây có ba bảng chép
+       tay (jobs.html, _job_progress.html, dev_jobs.html) và nhiều chỗ in thẳng
+       enum (`running · 20%`, `queued`) cho khách đọc.
+
+    ⚠️ Bảng nằm TRONG macro, không ở cấp đầu tệp: Jinja cache template được
+       `import` không kèm context, nên một `set` cấp đầu chứa `_()` sẽ bị đóng
+       băng ở ngôn ngữ của lượt render đầu tiên.
+
+    ⛔ Macro chỉ ĐỌC trạng thái đã có. Giá trị lạ rơi về nhãn xám mang chính giá
+       trị đó — thấy được, không bị giấu. -#}
+
+{%- macro _loai_mau(status, loai='job') -%}
+{%- if loai == 'don' -%}
+{{- 'ok' if status == 'paid' else ('warn' if status == 'pending' else ('err' if status == 'failed' else 'grey')) -}}
+{%- else -%}
+{{- 'ok' if status == 'done' else ('warn' if status in ('queued', 'running') else ('err' if status == 'error' else 'grey')) -}}
+{%- endif -%}
+{%- endmacro -%}
+
+{%- macro ten_trang_thai(status, loai='job') -%}
+{%- if loai == 'don' -%}
+  {%- if status == 'pending' -%}{{ _("Đang chờ thanh toán") }}
+  {%- elif status == 'paid' -%}{{ _("Đã thanh toán") }}
+  {%- elif status == 'expired' -%}{{ _("Hết hạn") }}
+  {%- elif status == 'cancelled' -%}{{ _("Đã hủy") }}
+  {%- elif status == 'failed' -%}{{ _("Thanh toán lỗi") }}
+  {%- else -%}{{ status }}{%- endif -%}
+{%- else -%}
+  {%- if status == 'queued' -%}{{ _("Đang chờ") }}
+  {%- elif status == 'running' -%}{{ _("Đang chạy") }}
+  {%- elif status == 'done' -%}{{ _("Hoàn tất") }}
+  {%- elif status == 'error' -%}{{ _("Lỗi") }}
+  {%- elif status == 'cancelled' -%}{{ _("Đã hủy") }}
+  {%- else -%}{{ status }}{%- endif -%}
+{%- endif -%}
+{%- endmacro -%}
+
+{%- macro nhan_trang_thai(status, loai='job') -%}
+<span class="badge b-{{ _loai_mau(status, loai) }}" data-trang-thai="{{ status }}"><span class="dot" aria-hidden="true"></span>{{ ten_trang_thai(status, loai) }}</span>
+{%- endmacro -%}
+
+{%- macro thanh_tien_do(phan_tram, nhan) -%}
+{%- set p = [[(phan_tram or 0) | int, 0] | max, 100] | min -%}
+<div class="ui-progress" role="progressbar" aria-label="{{ nhan }}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ p }}" style="--p:{{ p }}%"><i></i></div>
+{%- endmacro -%}

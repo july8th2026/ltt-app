@@ -3813,3 +3813,16 @@ button.lv-the-song.nghe-loi,.lv-chon-nghe.nghe-loi{
   .ui-state-title{font-size:20px}
   .ui-state-actions .btn{flex:1 1 auto;justify-content:center;text-align:center}
 }
+
+/* ── Progress có TÊN (macro `ui.thanh_tien_do`) ──────────────────────────────
+ * Độ rộng truyền qua biến `--p` trên chính phần tử, nên một luật CSS phục vụ
+ * mọi nơi; `aria-label` bắt buộc (axe `aria-progressbar-name`, baseline 12 nút). */
+.ui-progress{height:6px;margin:var(--space-2) 0;overflow:hidden;border-radius:var(--radius-pill);
+  background:var(--surface-interactive)}
+.ui-progress>i{display:block;width:var(--p,0%);height:100%;border-radius:inherit;
+  background:linear-gradient(90deg,var(--brand-strong),var(--brand-hover));
+  transition:width var(--motion-normal)}
+.job-progress-head{display:flex;align-items:center;flex-wrap:wrap;gap:var(--space-2)}
+.market-rail .ui-progress{height:4px;margin:6px 0}
+/* Mã định danh trong eyebrow giữ nguyên hoa/thường — `7bdca720` không phải `7BDCA720`. */
+.eyebrow .mono{text-transform:none;letter-spacing:.02em}

@@ -16529,3 +16529,33 @@ msgstr "Contact support"
 
 msgid "Mã tra cứu:"
 msgstr "Reference code:"
+
+msgid "Đang chờ thanh toán"
+msgstr "Awaiting payment"
+
+msgid "Thanh toán lỗi"
+msgstr "Payment failed"
+
+msgid "Tiến độ việc"
+msgstr "Job progress"
+
+msgid "Mã việc"
+msgstr "Job ID"
+
+msgid "Tài khoản quản trị nội bộ không chạy job. Đăng nhập bằng tài khoản người dùng để tạo và xem việc."
+msgstr "The internal admin account doesn't run jobs. Sign in with a user account to create and view jobs."
+
+msgid "Không có việc khớp bộ lọc"
+msgstr "No jobs match these filters"
+
+msgid "Đổi trạng thái, ứng dụng hoặc khoảng ngày để xem thêm."
+msgstr "Change the status, app or date range to see more."
+
+msgid "Chưa có việc nào"
+msgstr "No jobs yet"
+
+msgid "Mở một công cụ trong kho ứng dụng; mọi việc bạn chạy sẽ hiện ở đây kèm tiến độ và kết quả."
+msgstr "Open a tool from the app catalog; every job you run appears here with its progress and results."
+
+msgid "Mở kho ứng dụng"
+msgstr "Open app catalog"
