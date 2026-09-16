@@ -654,6 +654,15 @@ def test_vmid_TRANH_may_da_co_tren_may_chu(db):
     assert vmid == 203
 
 
+def test_vmid_khong_bao_gio_ra_ngoai_dai_d07(db):
+    """D07 khoá dải 200–899: gợi ý của Proxmox ngoài dải bị kẹp lại, không theo."""
+    from apps.vps.services import provisioning
+    g = _gateway(db)
+    assert (provisioning.VMID_DAU, provisioning.VMID_CUOI) == (200, 899)
+    assert provisioning.cap_vmid(db, _may(db, g), goi_y=5000) == 899
+    assert provisioning.cap_vmid(db, _may(db, g), goi_y=5000) == 200
+
+
 def test_vmid_khong_trung_va_ton_trong_goi_y(db):
     from apps.vps.services import provisioning
     g = _gateway(db)

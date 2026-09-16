@@ -84,6 +84,11 @@ def test_sync_preserves_only_exact_observed_bound_ownership(db):
         "192.0.2.20": "10.50.0.99"})
     assert sync_ovh_static_pool(db, profile, provider=provider, gateway=wrong).quarantined == 1
     assert row.state == "QUARANTINED"
+    # R8: the mapping later disappears; an association-bearing quarantine is
+    # unresolved cleanup evidence and must never be sold again automatically.
+    gone = SimpleNamespace(list_mappings=lambda: {})
+    assert sync_ovh_static_pool(db, profile, provider=provider, gateway=gone).free == 0
+    assert (row.state, row.instance_id) == ("QUARANTINED", instance.id)
 
 
 @pytest.mark.parametrize("observations", [
