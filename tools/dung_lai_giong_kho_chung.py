@@ -129,8 +129,23 @@ def main(argv=None) -> int:
         from apps.ltt_voice.manifest import MANIFEST
         from apps.ltt_voice.tham_so_cong_khai import SO_LAN_THU_JOB
         from platform_core.job_submit import dedupe_key_for, submit_with_credit
+        from sqlalchemy import select as _select
+
+        from platform_core.models import Job
         so_job = 0
+        bo_qua = 0
         for pid, owner, ref_id, key, du_lieu in viec:
+            khoa_trung = dedupe_key_for("ltt_voice.enroll",
+                                        {"owner": str(owner), "voice_id": pid,
+                                         "dung_lai": manifest.get("tao_luc", "")})
+            # 🔴 16/09/2026: dedupe của `submit_with_credit` chỉ khớp job CHƯA kết
+            #    thúc. Chạy lại sau khi vài giọng đã `done` thì nộp trùng và giữ
+            #    credit lần nữa (đã xảy ra 1 job, huỷ + hoàn tay). Giọng đã dựng
+            #    xong trong CÙNG lượt dựng lại (cùng khoá) thì bỏ qua.
+            if db.execute(_select(Job.id).where(Job.dedupe_key == khoa_trung,
+                                                Job.status == "done")).first():
+                bo_qua += 1
+                continue
             st.put(key, io.BytesIO(du_lieu), content_type="audio/wav")
             params = {"owner_id": str(owner), "voice_id": pid, "source_key": key,
                       "ref_id": int(ref_id), "nguon": "dung_lai_kho_chung",
@@ -138,13 +153,12 @@ def main(argv=None) -> int:
             submit_with_credit(
                 db, user_id=str(owner), app_slug=MANIFEST.slug,
                 job_type="ltt_voice.enroll", params=params,
-                dedupe_key=dedupe_key_for("ltt_voice.enroll",
-                                          {"owner": str(owner), "voice_id": pid,
-                                           "dung_lai": manifest.get("tao_luc", "")}),
+                dedupe_key=khoa_trung,
                 max_attempts=SO_LAN_THU_JOB)
             db.commit()
             so_job += 1
-        print(f"XONG: ghi {so_job} clip + nop {so_job} job ghi danh.")
+        print(f"XONG: ghi {so_job} clip + nop {so_job} job ghi danh; "
+              f"bo qua {bo_qua} giong da dung lai xong.")
         return 0
     finally:
         try:
