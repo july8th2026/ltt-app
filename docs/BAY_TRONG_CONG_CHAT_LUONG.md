@@ -2932,6 +2932,44 @@ python tools/check_ruff.py > r.log 2>&1; echo "EXIT=$?"       # DUNG
 
 ---
 
+## Bẫy 38 — L1/L2 chạy test **hai lần** (lần hai nối tiếp 1 lõi), rồi người chờ **chen** vào CSDL test
+
+**Đêm 16→17/09, ba phiên.** Máy chỉ chạy 11–20% CPU trong khi ba lượt gate xếp
+hàng nhau hơn một giờ, và `check_multiproc` đỏ `relation "jobs" does not exist`.
+Bốn nguyên nhân gốc, **móc xích**:
+
+1. `test_nhanh.py` pha 2 chạy `chung + TEP_NOI_TIEP`, mà `chung` **đã chứa danh
+   sách tệp** L1/L2 truyền vào ⇒ chạy lại TOÀN BỘ danh sách, nối tiếp, 1 lõi (đo:
+   pytest 222 tệp, không `-n`). Hồi quy do ghép `777eaa11` (pha 2, lúc chỉ chạy cả
+   kho) với `65aef31d` (L2 truyền danh sách) — mỗi commit đúng một mình.
+2. `_steps_pham_vi` không truyền `-n` ⇒ `auto` (10) và `_ap_ngan_sach_thuc` (tìm
+   bước theo `-n`) bỏ qua bước đó.
+3. Chờ khoá quá `--cho` (15 phút) thì **chen** — kể cả `postgres_test`; `--khong-khoa`
+   cũng vậy. Lỗi 1 làm mỗi L2 giữ khoá > 30 phút ⇒ người chờ gần như chắc chắn chen.
+4. Ba công cụ PostgreSQL dùng **một** CSDL test cố định cho mọi cây ⇒ chen = hai
+   lượt cùng `drop_all` ⇒ **kết quả sai**, không chỉ chậm.
+
+Và **L1 gần như không bao giờ thu hẹp được**: `tools/gate.py` trong `DUNG_CHUNG`, mọi
+`.md`/`locale`/`.gitignore` "không ai sở hữu" ⇒ tự nâng lên L3 ⇒ bị từ chối giữa
+phiên ⇒ phải L2 thủ công (dính lỗi 1–2).
+
+**Đã sửa** (`tests/test_1500_gate_l1_l2_khong_lap_khong_chen.py`, 18 phép):
+`test_nhanh.ke_hoach_pha` (pha 2 chỉ tệp ghi-cây CÓ trong danh sách) · L1/L2 mang
+`-n` ngân sách · `cua_so_yen.KHONG_DUOC_CHEN` + `gate.khoa_can_giu` (không bao giờ
+chen/bỏ `postgres_test`; khoá treo vẫn tự đoạt) · `tools/pg_ten_cay.py` (CSDL test
+mang dấu vân tay cây) · `thanh_phan`: `DUNG_CHUNG` chỉ còn `conftest.py` +
+`requirements*`, tài liệu không chủ không kéo cả kho, `test_nhac_toi` tra **AST**
+(chuỗi hằng trong mã + `import`, bỏ docstring/chú thích — tra văn bản thô kéo thừa
+14 tệp chỉ nhắc `gate.py` trong chú thích). Mô phỏng diff deploy LTTCODE 53 tệp:
+trước "chạy tất cả → từ chối", sau 5 thành phần.
+
+> ⭐ **Luật rút ra:** hai tính năng đúng khi đứng riêng có thể sai khi ghép — một
+> hàm nhận "danh sách tệp" phải được kiểm **với** danh sách tệp, không chỉ với
+> đường gọi cũ. Và một khoá bảo vệ **tính đúng** (không chỉ tốc độ) không được có
+> đường chen.
+
+---
+
 ## Phụ lục — chuyện kể chuyển từ AGENTS.md (16/09/2026)
 
 `AGENTS.md` nay chỉ giữ quy ước kỹ thuật. Các đoạn dưới đây là **nguyên văn**

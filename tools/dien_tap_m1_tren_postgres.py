@@ -138,7 +138,10 @@ def main() -> int:
         return 0
 
     ten_dang_chay = live.rsplit("/", 1)[-1].split("?", 1)[0]
-    ten = f"{ten_dang_chay}{HAU_TO}"
+    # Moi cay mot CSDL test rieng (su co 17/09, tools/pg_ten_cay.py).
+    sys.path.insert(0, str(GOC / "tools"))
+    from pg_ten_cay import ten_csdl_test
+    ten = ten_csdl_test(ten_dang_chay, HAU_TO, GOC)
     _dung_url(ten, ten_dang_chay)
     url = _url_nhap(d2, ten)
     print(f"CSDL dang chay : {ten_dang_chay}   (KHONG cham toi)")

@@ -82,7 +82,7 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from cua_so_yen import MAC_DINH, CuaSoYen  # noqa: E402  (can sys.path o tren)
+from cua_so_yen import KHONG_DUOC_CHEN, MAC_DINH, CuaSoYen  # noqa: E402  (can sys.path o tren)
 
 ROOT = Path(__file__).resolve().parent.parent
 FRONTENDS = ("agent-canvas", "autosub-studio", "prompt-ai-ommi", "chatltt")
@@ -1015,10 +1015,29 @@ def _steps_pham_vi(tep_test: list[str]) -> list[Step]:
     """
     if not tep_test:
         return []
+    # 🔴 SU CO 17/09 (tests/test_1500): ban cu KHONG truyen `-n` ⇒ `test_nhanh.py`
+    #    roi ve `-n auto` (so nhan vat ly = 10), bo qua tran 7 va phep co theo tai.
+    #    Va `_ap_ngan_sach_thuc` tim buoc bang `-n` trong argv — khong co `-n` thi
+    #    no bo qua buoc nay luon. Cung mot nguon so voi `bo test (song song)`.
+    loi = loi_cho_bo_test()
     return [Step("bo test (pham vi)",
-                 [sys.executable, "tools/test_nhanh.py", *sorted(tep_test)],
+                 [sys.executable, "tools/test_nhanh.py", "-n", str(loi), *sorted(tep_test)],
                  ROOT, nhom="nang",
-                 tai_nguyen=("cpu_nhieu", "postgres_test"), giay_toi_thieu=3.0)]
+                 tai_nguyen=("cpu_nhieu", "postgres_test"), so_loi=loi,
+                 giay_toi_thieu=3.0)]
+
+
+#: Tai nguyen KHONG BAO GIO duoc bo qua bang `--khong-khoa` hay bang chen qua han.
+#: Cpu chi lam cham; mot CSDL test dung chung ma hai luot cung `drop_all` thi cho KET
+#: QUA SAI (`relation "jobs" does not exist` — su co 17/09). MOT nguon: `cua_so_yen`.
+KHOA_BAT_BUOC = KHONG_DUOC_CHEN
+
+
+def khoa_can_giu(can: set[str], *, khong_khoa: bool) -> tuple[str, ...]:
+    """Tai nguyen luot nay phai giu. `--khong-khoa` chi bo duoc khoa KHONG bat buoc."""
+    if khong_khoa:
+        return tuple(sorted(set(can) & KHOA_BAT_BUOC))
+    return tuple(sorted(can))
 
 
 #: HO SO — moi ho so mot HOP DONG viet ra thanh chu.
@@ -1656,6 +1675,15 @@ def _thu_hep(steps: list[Step], args, ho_so: str
     if ho_so == "doi":
         tep_test |= {t for t in tp_mod.tep_test_da_doi(duong)
                      if (ROOT / t).is_file()}
+        # ⭐ Tep khong phai ma (tai lieu, ban dich, cong cu gate) duoc tra theo CHUOI
+        #    trong cac tep test: test nao DOC no thi chay dung test do.
+        tep_test |= tp_mod.test_nhac_toi(duong, ROOT)
+        if not tep_test and not phan:
+            # Chi doi tai lieu khong test nao doc: moi buoc kiem tinh van chay,
+            # khong co bo test nao de chay — va noi thang ra, khong nang len L3.
+            ra = [s for s in steps if s.nhom not in ("nang", "frontend")]
+            return ra, (f"  [doi] {nguon}: chi tai lieu, KHONG test nao doc chung"
+                        " -> chi chay cac buoc kiem tinh\n")
     if not tep_test:
         return None, (f"  [pham vi] {len(phan)} thanh phan nhung KHONG test nao"
                       " cham toi chung -> chay DAY DU")
@@ -1837,10 +1865,13 @@ def main() -> int:
     can: set[str] = set()
     for s in steps:
         can |= set(s.tai_nguyen)
-    xep_hang = HO_SO[ho_so]["xep_hang"] and not args.khong_khoa and bool(can)
+    # ⭐ Ho so khong xep hang (nhanh, vong-lap) van PHAI giu `postgres_test` neu con
+    #    buoc cham no; `--khong-khoa` cung chi bo duoc cpu (xem `khoa_can_giu`).
+    giu = khoa_can_giu(can, khong_khoa=args.khong_khoa or not HO_SO[ho_so]["xep_hang"])
+    xep_hang = bool(giu)
     with CuaSoYen(phien, lenh, bat=xep_hang,
                   cho_toi_da_s=args.cho * 60,
-                  tai_nguyen=tuple(sorted(can)) or (MAC_DINH,)) as khoa:
+                  tai_nguyen=giu or (MAC_DINH,)) as khoa:
         # 🔴 TINH LAI NGAN SACH O DAY, khong o `_steps()`.
         #
         #    `_steps()` chay o dong ~1036, TRUOC `CuaSoYen.__enter__`. Luc do ta

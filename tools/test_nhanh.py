@@ -491,24 +491,62 @@ def main() -> int:
         return _chot(_than(args, con_lai))
 
 
-def _la_duong_test(x: str) -> bool:
-    """Doi so la mot DUONG test (tep/thu muc duoi tests/, co the kem ::ham)."""
-    if x.startswith("-"):
+def _la_duong_test(doi_so: str) -> bool:
+    """Doi so nay la mot TEP/NODE test (khong phai tuy chon pytest).
+
+    `-p no:cacheprovider` → `no:cacheprovider` khong phai duong; `tests/x.py`,
+    `tests/x.py::test_y` va moi thu ket thuc bang `.py` thi la duong.
+    """
+    if doi_so.startswith("-"):
         return False
-    goc = x.split("::", 1)[0].replace("\\", "/")
-    return goc.startswith("tests") and (GOC / goc).exists()
+    d = doi_so.replace("\\", "/")
+    return d.startswith("tests/") or d.split("::", 1)[0].endswith(".py")
 
 
-def _duong_test(con_lai: list[str]) -> set[str]:
-    """Tap duong tep test nguoi goi truyen vao (chuan hoa `/`, bo `::ham`)."""
-    return {x.split("::", 1)[0].replace("\\", "/") for x in con_lai if _la_duong_test(x)}
+def ke_hoach_pha(con_lai: list[str], n: str, *,
+                 them: tuple[str, ...] | list[str] = ()) -> tuple[list[str], list[str] | None]:
+    """`(argv pha 1, argv pha 2 | None)` — MOT cho duy nhat dung hai lenh pytest.
+
+    🔴 SU CO 17/09/2026 (tests/test_1500). Ban cu dung `chung = [..., *con_lai]`
+       roi pha 2 chay `chung + TEP_NOI_TIEP`. Khi gate L1/L2 truyen DANH SACH TEP
+       vao `con_lai`, pha 2 chay lai TOAN BO danh sach do — noi tiep, mot loi. Do
+       that: pytest 222 tep, khong `-n`, giu khoa `postgres_test` hon 30 phut, va
+       nguoi xep hang sau no qua `--cho` thi chen vao CSDL test dung chung.
+
+    ⭐ Luat bay gio:
+       - Chay CA KHO (khong co duong nao): pha 1 song song tru ba tep ghi cay;
+         pha 2 = dung ba tep do.
+       - Co DANH SACH: pha 1 = danh sach (ba tep ghi cay bi `--deselect`); pha 2 =
+         CHI nhung muc ghi cay CO TRONG danh sach. Khong co muc nao ⇒ khong pha 2.
+       - Tuy chon pytest (`-x`, `-p ...`) giu nguyen o CA HAI pha.
+    """
+    tuy_chon = [a for a in con_lai if not _la_duong_test(a)]
+    duong = [a.replace("\\", "/") for a in con_lai if _la_duong_test(a)]
+    goc = [sys.executable, "-m", "pytest", "-q", *BO_QUA, *tuy_chon, *them]
+
+    def ghi_cay(d: str) -> bool:
+        return d.split("::", 1)[0] in TEP_NOI_TIEP
+
+    if duong:
+        pha1_duong = [d for d in duong if not ("::" in d and ghi_cay(d))]
+        co = [d for d in duong if ghi_cay(d)]
+    else:
+        pha1_duong = []
+        co = [t for t in TEP_NOI_TIEP if (GOC / t).is_file()]
+    loai = [f"--deselect={t}" for t in TEP_NOI_TIEP]
+    pha1 = [*goc, *pha1_duong, "-n", str(n), "--dist", "loadfile", *loai]
+    return pha1, ([*goc, *co] if co else None)
 
 
 def _than(args, con_lai: list[str]) -> int:
     """Than that su cua luot chay. Tach ra de `main` boc duoc khoi `with`."""
+    # `chung` chi con dung cho `--noi-tiep` (mot tien trinh, dung thu tu goc).
+    # Hai pha song song/noi tiep dung `ke_hoach_pha` + `them` (su co 17/09).
     chung = [sys.executable, "-m", "pytest", "-q", *BO_QUA, *con_lai]
+    them: list[str] = []
     if args.lf:
         chung.append("--lf")
+        them.append("--lf")
         # 🔴 `--lf` MOT MINH KHONG LAM DIEU NGUOI TA TUONG.
         #
         #    Tai lieu pytest noi ro: no chay lai nhung test da do lan truoc,
@@ -523,8 +561,10 @@ def _than(args, con_lai: list[str]) -> int:
         #    "chay rong" va "chay het roi xanh" in ra gan giong nhau.
         if args.lf_rong_thi_khong_chay:
             chung.append("--lfnf=none")
+            them.append("--lfnf=none")
     if args.k:
         chung += ["-k", args.k]
+        them += ["-k", args.k]
 
     t_dau = time.monotonic()
 
@@ -566,13 +606,15 @@ def _than(args, con_lai: list[str]) -> int:
         return ma
 
     # ── Pha 1: song song, TRU cac tep lam ban cay ────────────────────────────
-    loai = [f"--deselect={t}" for t in TEP_NOI_TIEP]
-    ma1, t1 = _chay(chung + ["-n", args.n, "--dist", "loadfile", *loai],
+    pha1, pha2 = ke_hoach_pha(con_lai, args.n, them=them)
+    ma1, t1 = _chay(pha1,
                     f"PHA 1 - song song ({args.n} worker), tru {len(TEP_NOI_TIEP)} tep")
 
     # ── Pha 2: cac tep ghi vao cay kho, noi tiep ─────────────────────────────
     # ⛔ Chay ca khi pha 1 do: bo qua chung se lam bao cao cuoi noi doi ve do phu.
-    co = [t for t in TEP_NOI_TIEP if (GOC / t).is_file()]
+    # ⛔ CHI nhung muc `ke_hoach_pha` tra ve — KHONG BAO GIO `chung + ...` (su co 17/09).
+    co = [a for a in (pha2 or []) if _la_duong_test(a)]
+    goc_pha2 = [a for a in (pha2 or []) if not _la_duong_test(a)]
     if args.lf and args.lf_rong_thi_khong_chay:
         # 🔴 `--lf` KHONG loc duoc pha nay, va ly do rat de doc nham.
         #
@@ -599,19 +641,9 @@ def _than(args, con_lai: list[str]) -> int:
             ten = ", ".join(pathlib.PurePath(t).name for t in bo)
             print(f"\n[--lf] bo qua {len(bo)} tep pha 2 (khong tep nao do lan "
                   f"truoc): {ten}")
-    # 🔴 17/09/2026: `chung` mang CA danh sach tep nguoi goi truyen vao (`gate.py
-    #    --pham-vi` truyen 467 tep). Pha 2 `chung + co` vi the chay LAI toan bo
-    #    467 tep tren MOT tien trinh sau khi pha 1 da chay song song xong — L2
-    #    `server:web` keo dai hon mot lan L3. Co danh sach tep thi pha 2 chi chay
-    #    nhung tep noi tiep NAM TRONG danh sach, bang tuy chon goc khong kem duong.
-    duong = _duong_test(con_lai)
-    goc_pha2 = chung
-    if duong:
-        co = [t for t in co if t in duong]
-        goc_pha2 = [x for x in chung if x not in con_lai or not _la_duong_test(x)]
     ma2, t2 = (0, 0.0)
     if co:
-        ma2, t2 = _chay(goc_pha2 + co, f"PHA 2 - noi tiep ({len(co)} tep ghi vao cay kho)")
+        ma2, t2 = _chay([*goc_pha2, *co], f"PHA 2 - noi tiep ({len(co)} tep ghi vao cay kho)")
 
     tong = time.monotonic() - t_dau
     print(f"\n{'=' * 70}")
