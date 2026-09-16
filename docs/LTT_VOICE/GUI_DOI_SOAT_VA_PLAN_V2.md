@@ -90,6 +90,18 @@ Nguồn luật: `docs/00_LTT_OPERATING_CONTRACT.md` §4, §7–§10b (bản `6a2
 | **P10** | W9' E2E Chrome thật trên URL công khai, 2 tài khoản: G01–G04, V01–V08, D005, thanh kéo, nghe thử chặn · console/network | `GUI_BROWSER_ACCEPTANCE.md` |
 | **P11** | `GUI_FINAL_REPORT.md` (§35 A–I, điểm §32) · NHAT_KY · memory | báo cáo |
 
+### SỔ NỢ (chủ dự án 16/09/2026: "triển khai các phase khác trước, lưu công việc còn nợ, giải quyết sau")
+
+| # | Nợ | Bị chặn bởi | Làm khi | Ghi chú |
+|---|---|---|---|---|
+| N1 | **L3** trên nhánh (phiên bản cuối) | còn pha làm trước; khoá gate đang do cây khác giữ | sau mọi pha trong phiên | lượt chờ trên `174d045f` đã huỷ trước khi chạy — KHÔNG tính là L3 |
+| N2 | **Gộp `main`** (`merge --ff-only` ở cây chính) | cây chính `D:\LTTSTUDIOSAPP` có sửa dở chưa commit: `docs/KE_HOACH_TRIEN_KHAI.md`, `docs/QUYET_DINH_NEN_TANG.md` (trùng tệp nhánh đổi), `docs/LTTCODE/PLAN_TRIEN_KHAI.md`, `docs/LTT_CMC/*`, `?? .codex/worktrees/` — đã nhắn phiên LTTCODE (tin chờ người dùng bên đó duyệt) | chủ các tệp commit/dời đi | ⛔ không stash/checkout/xoá |
+| N3 | **Deploy** + bật `LTT_STORAGE_LOCAL_PREFIXES=voice/` + pools `api:6, gpu+ffmpeg:1, voice:1` | N1, N2; báo phiên VPS (VM 204) | sau N2 | quy trình P8 |
+| N4 | **Dựng lại 25 giọng + duyệt license** (P9) | N3 (cần `voice/` trên đĩa ở production) | sau N3 | `dung_lai_giong_kho_chung --chay` rồi `soat_giong duyet` |
+| N5 | **E2E URL công khai** 2 tài khoản (P10) | N3–N4 | sau N4 | bản dev đã làm trước — xem dưới |
+| N6 | Release VPS nào gộp cuối (r3 đã gộp; r4 `f6d5a370` chưa được VPS xác nhận) | phiên VPS trả lời | trước N1 | nếu gộp r4 phải trước L3 |
+| N7 | `GUI_FINAL_REPORT.md` + điểm §32 (P11) | N5 | cuối | |
+
 ## F. PLAN V2
 
 Quy tắc giữ nguyên prompt §15 (một wave một lúc, ≤ 8–10 tệp, 10 bước). Bổ sung:
