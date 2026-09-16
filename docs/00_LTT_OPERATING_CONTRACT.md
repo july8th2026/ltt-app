@@ -38,9 +38,10 @@ LÀM — PHA 1..N
   5. đọc trước khi ghi (§2) → một changeset nguyên tử (§4.4)
   6. TEST NHẮM cụm vừa sửa (§4.1) — cần gate thì CHỈ L1/L2, ⛔ không L3
   7. đỏ → sửa TẠI CHỖ → chạy lại ĐÚNG phép đỏ → pha kế tiếp, không dừng xin phép (§10b)
+     cần deploy để xây tiếp → L1/L2 xanh → gộp main (§7) → deploy (§8) → báo → làm tiếp
 TỔNG KẾT PHIÊN — khi MỌI pha xong
   8. L3 MỘT lần (§4.2) · đỏ → khép (§4.6)
-  9. commit → GỘP main (§7) → deploy nếu phạm vi cần (§8) — ⛔ không có L3 của phiên thì không deploy
+  9. commit → GỘP main (§7) → deploy nếu phạm vi cần (§8)
  10. nghiệm thu thật (§9)
  11. ghi docs/NHAT_KY.md (sự thật đã xảy ra) · memory chỉ khi có sự thật mới không suy ra được từ kho
 ```
@@ -103,7 +104,9 @@ TRONG PHIÊN    : test NHẮM đúng cụm vừa sửa. Đỏ → sửa TẠI CH
                  Cần gate (chạm nhiều thành phần, cần phán quyết hẹp) → CHỈ L1 hoặc L2.
                  ⛔ KHÔNG L3 giữa các pha — không rải rác, không "chốt pha".
 TỔNG KẾT PHIÊN : mọi pha xong → python tools\gate.py (L3) MỘT lần.
-                 ⛔ BẮT BUỘC trước MỌI deploy — không có L3 của phiên thì không deploy.
+DEPLOY         : bất cứ lúc nào việc xây dựng cần, khi có gate XANH trên đúng SHA deploy —
+                 giữa phiên L1/L2 · tổng kết phiên L3. ⛔ Không chạy L3 để deploy; test nhắm
+                 một mình không đủ để deploy.
 L3 ĐỎ          : sửa tại chỗ → chạy lại đúng phép đỏ → khép bằng `gate.py --doi --tu <sha>`.
                  ⛔ KHÔNG chạy L3 lần hai. Một L3 mỗi nhánh.
 ```
@@ -118,9 +121,9 @@ L3 theo nhánh — §4.6 — đó là cơ chế chặn, không phải định ng
 | Cấp | Lệnh | Dùng khi | ⛔ KHÔNG chứng minh gì |
 |---|---|---|---|
 | **T** | `python -m pytest <tệp…> -q` · `python tools\check_<x>.py` | **mọi lúc trong phiên** (§4.1) | không nói gì ngoài cụm đó |
-| **L1** | `python tools\gate.py --doi [--tu <sha>]` | **giữa phiên khi cần** · **khép** bản sửa sau L3 đỏ (§4.6) · hoà `main` (§7) | phần còn lại. Giữa phiên **không** tự nâng lên L3 — máy từ chối; sau L3 tổng kết thì tự nâng khi không chắc |
-| **L2** | `python tools\gate.py --pham-vi <tp>` | **giữa phiên khi cần** · chứng nhận riêng một changeset lõi (§4.10) | ⚠️ tin người gọi |
-| **L3** | `python tools\gate.py` | **một lần, tổng kết phiên, bắt buộc trước deploy** (§4.2) | production (nghiệm thu thật §9) |
+| **L1** | `python tools\gate.py --doi [--tu <sha>]` | **giữa phiên khi cần** · **deploy giữa phiên** (§8) · **khép** bản sửa sau L3 đỏ (§4.6) · hoà `main` (§7) | phần còn lại. Giữa phiên **không** tự nâng lên L3 — máy từ chối; sau L3 tổng kết thì tự nâng khi không chắc |
+| **L2** | `python tools\gate.py --pham-vi <tp>` | **giữa phiên khi cần** · **deploy giữa phiên** (§8) · chứng nhận riêng một changeset lõi (§4.10) | ⚠️ tin người gọi |
+| **L3** | `python tools\gate.py` | **một lần, tổng kết phiên** (§4.2) — phán quyết cho deploy ở tổng kết | production (nghiệm thu thật §9) |
 | — | `--quick` · `--vong-lap` | **không dùng** trong nhịp chuẩn | không phải bằng chứng |
 
 Hồ sơ chuyên dụng: `--noi-tiep` (nghi nhiễu do song song/tải máy) · `--ho-so
@@ -150,17 +153,17 @@ python -m pytest tests\test_A.py tests\test_B.py -q
 Chủ sản phẩm chốt 17/09/2026: *"L3 chỉ chạy ở tổng kết phiên, không chạy rải rác
 trong các pha; cần gate thì L1 hoặc L2."*
 
-## 4.2 ⛔ L3 chạy MỘT lần — tổng kết phiên, bắt buộc trước deploy
+## 4.2 ⛔ L3 chạy MỘT lần — tổng kết phiên
 
 🔑 **Gate là công cụ ra PHÁN QUYẾT, không phải công cụ CHẨN ĐOÁN.**
 
 L3 chạy **một lần** khi toàn bộ phạm vi đã làm xong — là phán quyết dùng chung cho
-báo xong, gộp `main` và deploy. Không chạy L3 sau một pha, đợt, hạng mục, lát cắt
+báo xong, gộp `main` và deploy **ở tổng kết phiên**. Không chạy L3 sau một pha, đợt, hạng mục, lát cắt
 hay lần sửa. **Còn việc nào chưa làm thì chưa bấm.**
 
-⛔ **Không deploy khi chưa có L3 của phiên** (xanh, hoặc đỏ đã khép §4.6) trên đúng
-SHA được deploy — trong **bất cứ trường hợp nào**, kể cả sửa gấp. L1/L2 không thay L3
-cho deploy.
+**Deploy không chờ L3.** Deploy phục vụ cả quá trình xây dựng (đo thật trên máy chủ,
+E2E giữa các pha), nên giữa phiên deploy sau **L1/L2 xanh** trên đúng SHA deploy (§8).
+⛔ Không bấm L3 để được deploy — L3 vẫn chỉ ở tổng kết phiên.
 
 Trước khi bấm: `npm run build` nếu frontend đổi (`AGENTS.md` §4b) · commit hết ·
 §4.8 · trong lúc chạy **không ghi vào cây của mình** (§4.9).
@@ -310,10 +313,10 @@ rồi quay lại. Không phải cửa để chạy gate sau mỗi lần sửa.
   checkpoint trên nhánh phiên **không** đòi gate.
 - **Chính phiên làm việc tự gộp `main`** (chủ sản phẩm chốt 16/09/2026) — không chờ
   người tích hợp. Điều kiện (chốt lại 17/09):
-  - **Gộp giữa phiên** (chưa deploy): test nhắm của changeset xanh; thay đổi lan nhiều
+  - **Gộp giữa phiên** (không deploy): test nhắm của changeset xanh; thay đổi lan nhiều
     thành phần ⇒ thêm **L1/L2** (§4.1). ⛔ **Không** chạy L3 để gộp.
-  - **Tổng kết phiên có deploy**: L3 của phiên (xanh, hoặc đỏ đã khép §4.6) trên đúng
-    SHA sẽ gộp và deploy (§4.2, §8).
+  - **Gộp giữa phiên để deploy**: **L1/L2 xanh** trên đúng SHA sẽ gộp và deploy (§8).
+  - **Tổng kết phiên**: L3 của phiên (xanh, hoặc đỏ đã khép §4.6) trên SHA sẽ gộp (§4.2).
 
 ```
 main CHƯA đi tiếp kể từ BASE_SHA  → fast-forward main tới nhánh của bạn
@@ -332,8 +335,11 @@ phiên khác để gộp — gặp thì dừng theo §10.
 Chính phiên đã gộp `main` deploy khi phạm vi cần, **rồi báo** — không xin duyệt
 (§10b). Quy trình và cổng riêng: `docs/16_CAP_NHAT_VA_DEPLOY.md`.
 
-- Cần **L3 của phiên** (xanh, hoặc đỏ đã khép) trên **đúng SHA được deploy** (§4.2, §7) —
-  ⛔ không ngoại lệ; L1/L2 không thay được.
+- Deploy **bất cứ lúc nào việc xây dựng cần**, kể cả giữa phiên, khi có **gate xanh trên
+  đúng SHA được deploy**: giữa phiên **L1** (`gate.py --doi --tu <sha bản đang chạy>` —
+  phủ mọi thay đổi kể từ bản production, xem `/health/version`) hoặc **L2**
+  (`--pham-vi <tp>` cho từng thành phần chạm); ở tổng kết phiên là **L3** (xanh/đỏ đã khép).
+  ⛔ Không chạy L3 để deploy. ⛔ Test nhắm một mình không đủ để deploy.
 - ⛔ **Deploy chép CẢ CÂY**, không tách được phần một phiên ⇒ trước khi deploy
   **báo** các phiên đang chạy (`ListAgents` → `SendMessage`) — báo, không chờ.
 - Nâng quyền: `python tools\nang_quyen.py <script.py> [-- <tham số>]` (im lặng, §10b).
@@ -368,8 +374,8 @@ plan tự động."* Một pha xong **không** phải điểm xin phép.
 | ⛔ Đừng làm | ✅ Làm |
 |---|---|
 | "Pha 1 xong, tôi có nên tiếp?" | tiếp luôn, báo kết quả **sau** |
-| dừng xin duyệt deploy/gộp `main` | làm, rồi báo kèm phép đo trước/sau — deploy chỉ ở tổng kết phiên, sau L3 (§4.2) |
-| "pha xong nên deploy / chạy L3" | làm tiếp pha kế; L3 + deploy chỉ khi hết **mọi** pha |
+| dừng xin duyệt deploy/gộp `main` | làm, rồi báo kèm phép đo trước/sau — deploy sau gate xanh: L1/L2 giữa phiên, L3 ở tổng kết (§8) |
+| "pha xong nên chạy L3" | làm tiếp pha kế; L3 chỉ khi hết **mọi** pha. Cần deploy để xây tiếp ⇒ L1/L2 xanh → deploy → làm tiếp |
 | kết báo cáo bằng câu hỏi | kết bằng **việc đã làm** + việc **đang làm tiếp** |
 | chờ trả lời rồi mới làm | làm, dùng thời gian chờ cho việc đọc/đo |
 

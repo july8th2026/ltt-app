@@ -12,7 +12,17 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
-## 2026-09-17 — Luật gate chốt lại: L1/L2 giữa phiên, L3 chỉ ở tổng kết phiên và bắt buộc trước deploy
+## 2026-09-17 — Deploy giữa phiên sau L1/L2 xanh (sửa luật "L3 bắt buộc trước deploy")
+
+- Chủ dự án: *"Bản chất deploy còn phục vụ cho quy trình xây dựng nên không thể coi deploy cuối phiên sau
+  L3… Deploy sau L1-L2 được vì đã qua gate nhỏ."* Luật mới: deploy bất cứ lúc nào việc xây dựng cần, khi có
+  gate xanh trên đúng SHA deploy — giữa phiên L1 (`--doi --tu <sha bản đang chạy>`) / L2 (`--pham-vi`), tổng
+  kết phiên L3. Không bấm L3 để deploy; test nhắm một mình không đủ. L3 vẫn một lần ở tổng kết.
+- Sửa: hợp đồng §1/§4/§4.2/§7/§8/§10b, `CLAUDE.md` luật 1–2, `AGENTS.md`, `docs/16_CAP_NHAT_VA_DEPLOY.md`,
+  `02_LENH_CHO_CLAUDE.md`, `03_THEM_APP_MOI.md`, `QUY_TRINH_WORKTREE.md`, `SESSION_MIGRATION_NOTE.md`,
+  docstring + lời từ chối của `tools/gate.py` (cơ học không đổi: vẫn chặn L3 thứ hai và L1/L2 tự nâng).
+
+## 2026-09-17 — Luật gate chốt lại: L1/L2 giữa phiên, L3 chỉ ở tổng kết phiên và bắt buộc trước deploy (phần deploy đã sửa ở mục trên)
 
 - Chủ dự án chốt: *"L3 chỉ chạy ở tổng kết phiên, không chạy rải rác trong các pha, [bắt buộc] trước deploy
   trong bất cứ trường hợp nào; cần chạy gate thì chạy L1 hoặc L2."* Nguyên nhân: nhiều phiên song song tự

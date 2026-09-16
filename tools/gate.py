@@ -1,15 +1,15 @@
 """
 gate.py — MỘT lệnh chạy cổng chất lượng theo hồ sơ tường minh.
 
-    python tools/gate.py                    # L3 — MOT lan, TONG KET PHIEN, bat buoc truoc deploy
-    python tools/gate.py --doi [--tu <sha>] # L1 — giua phien khi can · khep sau L3 do · hoa main
-    python tools/gate.py --pham-vi <tp>     # L2 — giua phien khi can, mot thanh phan
+    python tools/gate.py                    # L3 — MOT lan, TONG KET PHIEN
+    python tools/gate.py --doi [--tu <sha>] # L1 — giua phien khi can · deploy giua phien · khep sau L3 do · hoa main
+    python tools/gate.py --pham-vi <tp>     # L2 — giua phien khi can · deploy giua phien, mot thanh phan
     python tools/gate.py --quick            # bo hai buoc nang, ~3 phut (khong nam trong nhip)
     python tools/gate.py --vong-lap         # tinh + `--lf` (khong nam trong nhip)
 
 🔑 KHI NAO chay: `docs/00_LTT_OPERATING_CONTRACT.md` §4 — va CHI o do. Tom tat
-   (chu du an chot 17/09): trong phien TEST NHAM; can gate thi CHI L1/L2; L3 MOT lan
-   o tong ket phien va bat buoc truoc deploy; L3 do thi sua tai cho, chay lai dung
+   (chu du an chot 17/09): trong phien TEST NHAM; can gate thi CHI L1/L2; deploy giua
+   phien sau L1/L2 xanh; L3 MOT lan o tong ket phien; L3 do thi sua tai cho, chay lai dung
    phep do, khep bang `--doi --tu <sha>`. Tep nay CO HOC hoa: mot L3 moi nhanh, va
    L1/L2 giua phien KHONG tu nang len day du — xem khoi "NHIP MOT L3" o cuoi tep.
 
@@ -17,9 +17,9 @@ gate.py — MỘT lệnh chạy cổng chất lượng theo hồ sơ tường mi
 
 | | Chay gi | Do | Dung khi (hop dong §4) |
 |---|---|---|---|
-| day du (L3) | tat ca cac buoc | **~15 phut** | MOT lan, tong ket phien, truoc deploy |
-| `--doi [--tu <sha>]` (L1) | thanh phan cham toi diff | tuy diff | giua phien khi can · khep sau L3 do · hoa vao main |
-| `--pham-vi <tp>` (L2) | mot thanh phan + nguoi tieu thu | tuy tp | giua phien khi can · chung nhan rieng changeset loi |
+| day du (L3) | tat ca cac buoc | **~15 phut** | MOT lan, tong ket phien |
+| `--doi [--tu <sha>]` (L1) | thanh phan cham toi diff | tuy diff | giua phien khi can · deploy giua phien · khep sau L3 do · hoa vao main |
+| `--pham-vi <tp>` (L2) | mot thanh phan + nguoi tieu thu | tuy tp | giua phien khi can · deploy giua phien · chung nhan rieng changeset loi |
 | `--quick` | bo `bo test` + da tien trinh | **~3 phut** | khong nam trong nhip chuan |
 | `--vong-lap` | tinh + `test_nhanh --lf` | **~15 giay** | khong nam trong nhip chuan |
 | `--dung-som` | *(co ghep them)* dung o loi RE dau tien | tiet kiem ~575s | luot khep |
@@ -2192,8 +2192,8 @@ def nang_cap_giua_phien_bi_chan(thu_muc: Path, nhanh: str, ho_so: str,
                                 bay_gio: float | None = None) -> str:
     """Ly do tu choi khi mot luot L1/L2 GIUA PHIEN sap tu nang len day du, hoac `""`.
 
-    🔴 Luat chu du an chot 17/09: L3 CHI chay o TONG KET PHIEN (mot lan, bat buoc
-       truoc deploy). Giua phien, L1 (`--doi`) / L2 (`--pham-vi`) duoc dung khi can —
+    🔴 Luat chu du an chot 17/09: L3 CHI chay o TONG KET PHIEN (mot lan). Giua phien,
+       L1 (`--doi`) / L2 (`--pham-vi`) duoc dung khi can, ke ca de deploy —
        nhung mot luot hep TU NANG len day du chinh la mot L3 rai rac trong pha.
     ⭐ Phan biet bang ban ghi: nhanh da co L3 trong cua so = dang o tong ket phien
        (luot khep sau L3) ⇒ cho nang. Chua co ⇒ giua phien ⇒ tu choi, chi duong khac.
@@ -2209,6 +2209,7 @@ def nang_cap_giua_phien_bi_chan(thu_muc: Path, nhanh: str, ho_so: str,
         "Giua phien hay dung:",
         "  - test nham: python tools/thanh_phan.py --test <tp>  ->  python -m pytest <tep> -q",
         "  - hoac L2 cho dung mot thanh phan: python tools/gate.py --pham-vi <tp>",
+        "  - can deploy giua phien: L2 xanh cho tung thanh phan cham (hop dong muc 8)",
         "Het viec cua phien: python tools/gate.py  (L3, mot lan)",
         "=" * 62,
     ])

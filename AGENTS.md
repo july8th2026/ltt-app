@@ -76,7 +76,7 @@ Chrome thật (§9.1); Claude đọc `bao_cao.json` rồi phân tích.
 - Viết code mới thì đặt đúng chỗ ngay từ đầu — **mục 8 (Bố cục mã nguồn)**.
 - Không xoá test đang xanh, trừ khi có quyết định sản phẩm được ghi lại.
 - Nhịp test/gate (test nhắm trong phiên, cần gate thì L1/L2, `python tools\gate.py`
-  **một lần** ở tổng kết phiên và bắt buộc trước deploy) ở
+  **một lần** ở tổng kết phiên; deploy cần gate xanh — L1/L2 giữa phiên, L3 ở tổng kết) ở
   **`docs/00_LTT_OPERATING_CONTRACT.md` §4** — không chép lại ở đây. Mục 4b chỉ giữ
   sự thật kỹ thuật.
 - Ghi **đúng lệnh đã chạy và kết quả thật**; phân biệt `đã chạy` / `chưa chạy` /

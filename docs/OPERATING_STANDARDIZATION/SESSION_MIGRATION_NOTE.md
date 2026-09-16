@@ -1,6 +1,16 @@
 # SESSION MIGRATION NOTE
 
-# ⭐ 2026-09-17 — L1/L2 GIỮA PHIÊN, L3 CHỈ Ở TỔNG KẾT PHIÊN (bản hiện hành)
+# ⭐ 2026-09-17 (bổ sung) — DEPLOY GIỮA PHIÊN SAU L1/L2 XANH (bản hiện hành)
+
+> Luật deploy đổi (chủ dự án chốt 17/09): deploy phục vụ **cả quá trình xây dựng**, nên
+> được deploy **giữa phiên** khi có **L1/L2 xanh** trên đúng SHA deploy
+> (`gate.py --doi --tu <sha bản đang chạy>` hoặc `gate.py --pham-vi <tp>`) — không chờ L3,
+> ⛔ không bấm L3 để deploy, test nhắm một mình không đủ. L3 vẫn **một lần ở tổng kết
+> phiên**. Đọc lại `docs/00_LTT_OPERATING_CONTRACT.md` §4, §7, §8. Tiếp tục việc đang làm.
+
+Khác bản dưới đúng một điểm: bỏ câu *"L3 bắt buộc trước mọi deploy"*.
+
+# 2026-09-17 — L1/L2 GIỮA PHIÊN, L3 CHỈ Ở TỔNG KẾT PHIÊN (đã bị bổ sung ở trên thay phần deploy)
 
 ## Câu để đưa cho một phiên đang chạy
 

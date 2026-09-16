@@ -61,8 +61,8 @@ dọn — cây chưa dọn sẽ đỏ.
 ## 4. Kết thúc phiên — gộp `main`
 
 Điều kiện (hợp đồng §7): cây sạch · **giữa phiên** test nhắm xanh (+ L1/L2 khi thay
-đổi lan nhiều thành phần), ⛔ không L3 · **tổng kết phiên có deploy** L3 của phiên xanh
-hoặc đỏ đã khép. **Chính phiên làm việc gộp `main`** — không bàn giao cho ai.
+đổi lan nhiều thành phần), ⛔ không L3 · **gộp để deploy giữa phiên** L1/L2 xanh trên
+đúng SHA · **tổng kết phiên** L3 của phiên xanh hoặc đỏ đã khép. **Chính phiên làm việc gộp `main`** — không bàn giao cho ai.
 
 ```powershell
 # a) main đã đi tiếp kể từ BASE_SHA chưa?
