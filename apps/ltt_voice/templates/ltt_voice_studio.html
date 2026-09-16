@@ -504,7 +504,12 @@
         <div id="lv-kq-chay" hidden>
           <div class="lv-tiendo"><div id="lv-tiendo-thanh" role="progressbar"
                aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div></div>
-          <p class="dim" id="lv-kq-buoc">{{ _("Đang xếp hàng…") }}</p>
+          <p class="dim" id="lv-kq-buoc" aria-live="polite">{{ _("Đang xếp hàng…") }}</p>
+          {# GUI-D005: job nằm hàng đợi quá lâu thì KHÔNG quay vòng im lặng —
+             nói ra, và chỉ đường tới trang việc (có nút huỷ, hoàn credit). #}
+          <p class="dim" id="lv-kq-cho-lau" hidden>
+            <a id="lv-kq-cho-trang" href="#">{{ _("Mở trang việc") }}</a>
+          </p>
         </div>
 
         <div id="lv-kq-xong" hidden>
@@ -659,6 +664,8 @@ LttVoice.studio({
   creditMoiGiay: {{ credit_moi_giay | tojson }},
   chu: {
     dangCho:   {{ _("Đang xếp hàng…") | tojson }},
+    choMay:    {{ _("Đang chờ máy xử lý…") | tojson }},
+    choLau:    {{ _("Hàng đợi lâu hơn bình thường. Bạn có thể chờ tiếp, hoặc mở trang việc để huỷ và thử lại sau.") | tojson }},
     dangTao:   {{ _("Đang tạo tiếng…") | tojson }},
     xong:      {{ _("Hoàn tất") | tojson }},
     loi:       {{ _("Lỗi") | tojson }},

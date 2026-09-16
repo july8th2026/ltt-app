@@ -2,6 +2,8 @@
 theo dõi kết quả."""
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from ._chung import (MANIFEST, SO_LAN_THU_JOB, TRAN_KY_TU_CONG_KHAI, Depends, Form,
                      HTMLResponse, JSONResponse, Request, Response,
                      StreamingResponse, UploadFile, _db, _het_phien,
@@ -28,6 +30,33 @@ def _loi_400(e) -> JSONResponse:
     return JSONResponse({"ok": False, "loi": str(e),
                          "ma_loi": str(getattr(e, "ma", "") or "")},
                         status_code=400)
+
+
+#: GUI-D005 — ngưỡng tuổi hàng đợi (giây). Job Voice thật xong trong ~10–35 giây
+#: kể cả lúc chạy (đo 16/09: nhặt sau 0,9 s, xong sau 21 s), nên một job còn
+#: `queued` quá 60 s là BẤT THƯỜNG — đúng hình dạng lỗi thiếu làn worker 13–16/09,
+#: khi giao diện nói "Đang xếp hàng…" suốt ba ngày.
+NGUONG_CHO_MAY_S = 10
+NGUONG_CHO_LAU_S = 60
+
+
+def tuoi_hang_doi_s(tao_luc) -> int:
+    """Số giây từ lúc tạo job tới bây giờ (đồng hồ MÁY CHỦ). Cột thiếu múi giờ
+    (SQLite) coi là UTC — cùng quy ước lưu của nền tảng."""
+    if tao_luc is None:
+        return 0
+    if tao_luc.tzinfo is None:
+        tao_luc = tao_luc.replace(tzinfo=timezone.utc)
+    return max(0, int((datetime.now(timezone.utc) - tao_luc).total_seconds()))
+
+
+def muc_cho(tuoi_s: int) -> str:
+    """`moi` < 10 s ≤ `cho_may` ≤ 60 s < `lau`."""
+    if tuoi_s > NGUONG_CHO_LAU_S:
+        return "lau"
+    if tuoi_s >= NGUONG_CHO_MAY_S:
+        return "cho_may"
+    return "moi"
 
 
 # ── Tạo tiếng nói ────────────────────────────────────────────────────────────
@@ -346,6 +375,13 @@ def ket_qua(job_id: str, user=Depends(user_hien_tai), _=Depends(require_login)):
             "canh_bao": list(kq.get("canh_bao") or ()),
             "giong_that": kq.get("giong_that") or "",
         }
+        if job.status == "queued":
+            # GUI-D005: tuổi hàng đợi THẬT, tính MỘT chỗ ở máy chủ (đồng hồ
+            # trình duyệt lệch được). Không bịa trạng thái "đang tìm máy" — chỉ
+            # nói job đã nằm bao lâu, và từ ngưỡng nào thì đó là bất thường.
+            tuoi = tuoi_hang_doi_s(job.created_at)
+            ra["tuoi_hang_doi_s"] = tuoi
+            ra["muc_cho"] = muc_cho(tuoi)
         if job.status == "error":
             from platform_core import job_events
             cau = [e.public_message for e in job_events.timeline(db, job.id)

@@ -18033,3 +18033,9 @@ msgstr "Listen now plays at the original 1× speed. The speed you chose is appli
 
 msgid "· giữ {n} giọng chưa có nhãn giới tính, vùng miền hay phong cách — bộ lọc chỉ áp dụng cho giọng có nhãn"
 msgstr "· keeping {n} voices without a gender, region or style label — filters only apply to labelled voices"
+
+msgid "Đang chờ máy xử lý…"
+msgstr "Waiting for a machine to process…"
+
+msgid "Hàng đợi lâu hơn bình thường. Bạn có thể chờ tiếp, hoặc mở trang việc để huỷ và thử lại sau."
+msgstr "The queue is taking longer than usual. You can keep waiting, or open the job page to cancel and try again later."

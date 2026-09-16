@@ -1636,10 +1636,28 @@
             baoLoi(d.loi || chu.loi); return;
           }
           hien("chay");
-          nhan("b-warn", d.trang_thai === "running" ? chu.dangTao : chu.dangCho);
+          /* GUI-D005: cau cho theo TUOI HANG DOI THAT do may chu tinh
+             (`muc_cho`: moi/cho_may/lau). Truoc 16/09 moi job queued deu la
+             "Dang xep hang…" mai mai - dung hinh dang khach da thay suot ba
+             ngay thieu lan worker (13-16/09). */
+          var laLau = d.trang_thai === "queued" && d.muc_cho === "lau";
+          var cauCho = chu.dangCho;
+          if (d.trang_thai === "queued" && d.muc_cho === "cho_may" && chu.choMay) {
+            cauCho = chu.choMay;
+          } else if (laLau && chu.choLau) {
+            cauCho = chu.choLau;
+          }
+          var cauHien = d.trang_thai === "running" ? chu.dangTao : cauCho;
+          nhan(laLau ? "b-err" : "b-warn",
+               d.trang_thai === "running" ? chu.dangTao
+                 : (laLau ? (chu.choMay || chu.dangCho) : cauCho));
           oThanh.style.width = (d.tien_do || 0) + "%";
           oThanh.setAttribute("aria-valuenow", String(d.tien_do || 0));
-          oBuoc.textContent = d.trang_thai === "running" ? chu.dangTao : chu.dangCho;
+          if (oBuoc.textContent !== cauHien) oBuoc.textContent = cauHien;
+          var oChoLau = document.getElementById("lv-kq-cho-lau");
+          var oChoTrang = document.getElementById("lv-kq-cho-trang");
+          if (oChoLau) oChoLau.hidden = !laLau;
+          if (oChoTrang && laLau) oChoTrang.href = "/jobs/" + encodeURIComponent(jobId);
           dongHo = setTimeout(function () {
             theoDoi(jobId, Math.min(cho * 1.4, 8000));
           }, cho);
