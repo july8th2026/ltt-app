@@ -1,4 +1,5 @@
 {% extends "developers_base.html" %}
+{% import "_dev_tt.html" as dtt %}
 
 {% block dev_phu_de %}{{ _("Sự kiện nền tảng đẩy tới máy chủ của bạn khi job xong hoặc hỏng. Mỗi sự kiện được ký và có id riêng — giao trùng là an toàn nếu bên nhận khử trùng theo id đó.") }}{% endblock %}
 
@@ -137,7 +138,7 @@
                   <span class="muted"><code>{{ item.event_id[:12] }}</code></span></td>
               <td class="{% if not item.job_id %}dev-trong-o{% endif %}">{%- if item.job_id %}<code class="dev-id">{{ item.job_id[:12] }}</code>{% else %}—{% endif %}</td>
               <td>
-                <span class="dev-tt {{ {'delivered':'ok','pending':'canh','sending':'canh','failed':'canh','dead':'loi'}.get(item.status,'') }}">{{ item.status }}</span>
+                {{ dtt.tt(item.status, 'giao') }}
                 {% if item.last_error %}<span class="dev-ma-loi">{{ item.last_error[:80] }}</span>{% endif %}</td>
               <td class="tnum">{{ item.attempts }}</td>
               <td class="tnum {% if not item.last_status_code %}dev-trong-o{% endif %}">{{ item.last_status_code or "—" }}</td>

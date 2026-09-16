@@ -1,11 +1,13 @@
 {% extends "developers_base.html" %}
+{# Golden UI 17/09: mô tả của công cụ là PHỤ ĐỀ của trang (cùng chỗ mọi trang
+   khu API đặt câu dẫn), không phải đoạn đầu của thẻ thứ nhất. #}
+{% block dev_phu_de %}{{ tool.description }}{% endblock %}
 {% block section %}
 
-<p><a href="/developers/tools">← {{ _("Tất cả công cụ") }}</a></p>
+<p class="dev-quay-lai"><a href="/developers/tools">← {{ _("Tất cả công cụ") }}</a></p>
 
 <div class="card">
-  <p>{{ tool.description }}</p>
-  <ul>
+  <ul class="u-m0">
     <li>{{ _("Nhóm:") }} <strong>{{ tool.capability }}</strong></li>
     <li>{{ _("Chạy kiểu:") }} <code>{{ tool.execution_mode }}</code>
         — {{ mode_rule }}</li>
@@ -30,16 +32,18 @@
    không tồn tại với người đang tìm một thứ cụ thể. #}
 <div class="card">
   <h2 class="u-mt0">{{ _("Trong trang này") }}</h2>
-  <p class="muted" style="line-height:2;">
-    <a href="#goi-the-nao">{{ _("Gọi thế nào") }}</a> ·
-    <a href="#bien-vao">{{ _("Biến đầu vào") }}</a> ·
-    <a href="#ket-qua">{{ _("Kết quả") }}</a> ·
-    <a href="#model">Model</a> ·
-    <a href="#webhook">{{ _("Sự kiện webhook") }}</a> ·
-    <a href="#gioi-han">{{ _("Giới hạn") }}</a> ·
-    <a href="#loi">{{ _("Lỗi và cách thử lại") }}</a> ·
-    <a href="/gia-api">{{ _("Bảng giá") }} ↗</a>
-  </p>
+  <nav aria-label="{{ _('Trong trang này') }}">
+    <ul class="dev-muc-luc">
+      <li><a href="#goi-the-nao">{{ _("Gọi thế nào") }}</a></li>
+      <li><a href="#bien-vao">{{ _("Biến đầu vào") }}</a></li>
+      <li><a href="#ket-qua">{{ _("Kết quả") }}</a></li>
+      {% if models %}<li><a href="#model">Model</a></li>{% endif %}
+      <li><a href="#webhook">{{ _("Sự kiện webhook") }}</a></li>
+      <li><a href="#gioi-han">{{ _("Giới hạn") }}</a></li>
+      <li><a href="#loi">{{ _("Lỗi và cách thử lại") }}</a></li>
+      <li><a href="/gia-api">{{ _("Bảng giá") }} ↗</a></li>
+    </ul>
+  </nav>
 </div>
 
 <div class="card" id="goi-the-nao">
@@ -89,7 +93,7 @@
                  đọc câu chữ. #}
               {% if param.only_when %}
                 {% for khoa, gia_tri in param.only_when.items() %}
-                  <div class="badge badge-warn" style="margin-bottom:6px;">
+                  <div class="badge badge-warn dev-chi-khi">
                     {{ _("chỉ dùng khi") }} <code>{{ khoa }}</code> =
                     {% for v in gia_tri %}<code>{{ v }}</code>{% if not loop.last %}, {% endif %}{% endfor %}
                   </div>
@@ -185,7 +189,7 @@
         {% for row in errors %}
           <tr>
             <td><code>{{ row.code }}</code></td>
-            <td>{{ row.status }}</td>
+            <td class="tnum">{{ row.status }}</td>
             <td><code>{{ row.retry }}</code></td>
             <td>{% if row.reuse_idempotency_key %}{{ _("có") }}{% else %}—{% endif %}</td>
             <td>{{ row.action }}</td>

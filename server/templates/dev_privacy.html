@@ -1,9 +1,9 @@
 {% extends "developers_base.html" %}
+{% block dev_phu_de %}{{ _("Chỉ nói về khu API. Nội dung do từng app lưu (chat, storyboard, workflow…) có vòng đời riêng của app.") }}{% endblock %}
 {% block section %}
 
 <div class="card">
-  <p>{{ _("Bảng dưới đây sinh trực tiếp từ chính sách mà worker đang thi hành (platform_core/public_api/governance.py). Nó không thể lệch với thực tế: nếu một quy tắc lưu trữ không có ai chạy, bộ test sẽ đỏ trước khi trang này kịp nói dối bạn.") }}</p>
-  <p class="muted">{{ _("Chỉ nói về khu API. Nội dung do từng app lưu (chat, storyboard, workflow…) có vòng đời riêng của app.") }}</p>
+  <p class="u-m0">{{ _("Bảng dưới đây sinh trực tiếp từ chính sách mà worker đang thi hành (platform_core/public_api/governance.py). Nó không thể lệch với thực tế: nếu một quy tắc lưu trữ không có ai chạy, bộ test sẽ đỏ trước khi trang này kịp nói dối bạn.") }}</p>
 </div>
 
 <div class="card">

@@ -1,4 +1,5 @@
 {% extends "developers_base.html" %}
+{% block dev_phu_de %}{{ _("Từ project đầu tiên tới lời gọi đầu tiên — kèm ví dụ sinh từ chính hợp đồng của công cụ.") }}{% endblock %}
 {% block section %}
 
 <div class="card">
@@ -46,7 +47,7 @@
     </table>
   </div>
   {% for shell, snippet in shells %}
-    <p class="muted" style="margin-bottom:2px;">{{ shell }}</p>
+    <p class="muted dev-nhan-ma">{{ shell }}</p>
     <pre class="u-cuon-ngang"><code>{{ snippet }}</code></pre>
   {% endfor %}
   <p class="muted">{{ _("Đừng viết khóa thẳng vào mã nguồn: nó sẽ đi theo mã vào git, vào log và vào ảnh chụp màn hình.") }}</p>

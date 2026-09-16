@@ -1,4 +1,5 @@
 {% extends "developers_base.html" %}
+{% import "_dev_tt.html" as dtt %}
 
 {% block dev_phu_de %}{{ _("Mọi lời gọi tài khoản này thực hiện, kể cả những lời gọi chưa bao giờ chạy — 401, 403, 429 là thứ không có job nào giải thích hộ.") }}{% endblock %}
 
@@ -93,7 +94,7 @@
                  khong co gi de bat, phai doc tung dong.
 
                  ⚠️ Con so van la con so that; mau chi them vao. #}
-              <span class="dev-tt {% if row.status < 300 %}ok{% elif row.status < 500 %}canh{% else %}loi{% endif %}">{{ row.status }}</span>
+              {{ dtt.http(row.status) }}
               {% if row.code %}<code class="dev-ma-loi">{{ row.code }}</code>{% endif %}
             </td>
             <td class="{% if not row.tool %}dev-trong-o{% endif %}">{{ row.tool or "—" }}</td>
@@ -107,7 +108,7 @@
       </tbody>
     </table>
   </div>
-  <p class="muted" style="margin:12px 0 0;">{{ _("Nhật ký giữ %(days)s ngày. Không lưu nội dung request hay response — chỉ bộ xương của lời gọi.")|format(days=retention_days) }}</p>
+  <p class="muted dev-ghi-cuoi">{{ _("Nhật ký giữ %(days)s ngày. Không lưu nội dung request hay response — chỉ bộ xương của lời gọi.")|format(days=retention_days) }}</p>
 {% endif %}
 
 {% endblock %}

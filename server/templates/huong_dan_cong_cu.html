@@ -3,10 +3,10 @@
 {% block content %}
 
 <div class="card">
-  <h1 class="u-mt0">{{ _("Ba cách cắm API — Windows") }}</h1>
+  <h1 class="u-mt0 tl-h1">{{ _("Ba cách cắm API — Windows") }}</h1>
   <p>{{ _("Chọn EXE có giao diện, ZIP + BAT không giao diện, hoặc làm hoàn toàn thủ công. Hai gói tự động dùng chung một lõi và cùng kiểm lại file + registry sau khi ghi.") }}</p>
   <p class="muted">{{ _("Mỗi gói phát hành đều công bố SHA-256 để bạn đối chiếu trước khi chạy.") }}</p>
-  <p style="margin:18px 0 8px;">
+  <p class="tl-nut-tai">
     <a class="btn" href="/tai/cong-cu-cam">{{ _("Tải bộ cài") }}{% if bo_cai %} · {{ bo_cai.kich_thuoc_mb }} MB{% endif %}</a>
   </p>
   {% if bo_cai %}
@@ -15,7 +15,7 @@
   {% else %}
     <p class="muted">{{ _("Chưa có bản phát hành nào. Bạn vẫn cấu hình tay được — xem hướng dẫn.") }}</p>
   {% endif %}
-  <p style="margin:18px 0 8px;"><a class="btn btn-ghost" href="/tai/cong-cu-cam-bat">{{ _("Tải ZIP + BAT (Administrator, không GUI)") }}{% if goi_bat %} · {{ goi_bat.kich_thuoc_mb }} MB{% endif %}</a></p>
+  <p class="tl-nut-tai"><a class="btn btn-ghost" href="/tai/cong-cu-cam-bat">{{ _("Tải ZIP + BAT (Administrator, không GUI)") }}{% if goi_bat %} · {{ goi_bat.kich_thuoc_mb }} MB{% endif %}</a></p>
   {% if goi_bat %}
     <p class="muted">{{ _("Phiên bản") }} <code>{{ goi_bat.phien_ban }}</code> · <code>{{ goi_bat.ten }}</code></p>
     <p class="muted u-ngat-tu">SHA-256 <code>{{ goi_bat.sha256 }}</code></p>
@@ -72,7 +72,7 @@ LTTStudios-CamCLI-Console.exe go</code></pre>
       <tr><td>{{ _("biến môi trường cấp người dùng") }}</td><td><code>LTT_API_KEY</code>, <code>ANTHROPIC_AUTH_TOKEN</code>, <code>ANTHROPIC_BASE_URL</code>…</td></tr>
     </tbody>
   </table>
-  <p class="muted" style="margin-top:12px;">⭐ {{ _("Khoá KHÔNG bao giờ được ghi vào tệp cấu hình. Tệp cấu hình bị đồng bộ giữa máy, bị commit, bị chụp màn hình — khoá thì không nên nằm ở đó. Nó chỉ vào biến môi trường và chính sách registry.") }}</p>
+  <p class="muted u-mt14"><span aria-hidden="true">⭐</span> {{ _("Khoá KHÔNG bao giờ được ghi vào tệp cấu hình. Tệp cấu hình bị đồng bộ giữa máy, bị commit, bị chụp màn hình — khoá thì không nên nằm ở đó. Nó chỉ vào biến môi trường và chính sách registry.") }}</p>
   <p class="muted">{{ _("Lệnh") }} <code>go</code> {{ _("trả lại đúng giá trị cũ của từng khoá nó đã đổi, và chỉ xoá những khoá do chính nó thêm.") }}</p>
 </div>
 
