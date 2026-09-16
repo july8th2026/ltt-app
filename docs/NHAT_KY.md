@@ -12,6 +12,32 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-16 — LTT Voice W4': ChatLTT `speech.ltt` chặn lệch làn TRƯỚC giữ tiền
+
+- Phát hiện (audit W4', `docs/LTT_VOICE/GUI_DOI_SOAT_VA_PLAN_V2.md` trên nhánh
+  `phien/ltt-voice-gui-v2`): `runtime_noi_bo/job.py` không gọi hook
+  `ToolSpec.kiem_truoc`. Đo bằng test đỏ trước khi sửa: ChatLTT báo giá giọng
+  `Adam` (VI) + văn bản EN ⇒ **200**, bấm tạo ⇒ **202 + job thật + giữ credit**;
+  worker mới từ chối `voice_language_mismatch`.
+- Sửa: `runtime_noi_bo.job.bao_gia` gọi đúng hook app đã khai (cùng hook
+  `public_api.invocation.kiem_truoc` gọi cho `/api/v1`), sau validate, trước
+  giá. `bao_gia` là cửa duy nhất dựng `BaoGia` mà `nop_job` nhận ⇒ chặn cả nút
+  bấm (V1) lẫn model tự gọi (V3). Luật làn vẫn một nguồn:
+  `lan_ngon_ngu.quyet_dinh`. `ThamSoSai` mang `ma`; route `_p_media` trả
+  `error.code = voice_language_mismatch`; V3 trả `ma_loi` nghiệp vụ cho model.
+- Hệ quả phụ có chủ ý: giọng của người khác cũng bị chặn ở báo giá nội bộ
+  (trước đây chỉ worker chặn). `test_609` cập nhật; test worker giữ lại như
+  tầng phòng thủ thứ hai (tắt cửa trước bằng monkeypatch).
+- `/api/v1/workflows/{id}/runs`: **không** chạy được `speech.ltt` hôm nay —
+  route tạo `WorkflowRun` + giữ trần credit, nhưng không mã nào trong kho biến
+  node thành job (`platform_core/workflow/` không gọi `submit_with_credit`,
+  `dieu_phoi.dequeue` không có người gọi). Nên chưa có lỗ tương tự; **khi dựng
+  bộ thi hành node, nó phải đi qua `runtime_noi_bo.job.bao_gia`** (hoặc gọi
+  `kiem_truoc`) trước khi nộp job. Riêng việc giữ trần credit cho một run không
+  có bộ thi hành là một điểm ngoài phạm vi, chưa sửa.
+- Test: `tests/test_1263_chatltt_tieng_kiem_truoc_truoc_giu_tien.py` (mới, đỏ
+  4/5 trước sửa → xanh 5/5); cụm nhắm 21 tệp `-n 6`.
+
 ## 2026-09-15 — H54: Tool 1.9.2 khớp reasoning và kiểm thật Codex
 
 - Tài liệu chính thức Codex xác nhận custom provider dùng Responses và catalog
