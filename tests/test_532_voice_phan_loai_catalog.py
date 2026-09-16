@@ -234,3 +234,20 @@ def test_voice_js_khoi_quan_ly_chi_mo_cho_giong_cua_toi():
     assert "khoiToi.hidden = !laToi;" in js
     assert 'var laToi = d.loai === "toi";' in js
     assert "khoiToi.hidden = laMau;" not in js
+
+
+def test_nut_CHI_TIET_tren_the_mo_duoc_panel():
+    """16/09/2026, bắt bằng Chrome trên `studio_dev`: nút "Chi tiết"
+    (`.lv-the-xem`) là một `<button>` BÊN TRONG thẻ, nên handler click của thẻ
+    — vốn bỏ qua mọi phần tử tương tác bên trong (`BEN_TRONG`) — nuốt luôn nó:
+    bấm chuột không mở gì, và lỗi có sẵn trên `main` từ trước GUI V2.
+
+    ⚠️ Kiểm cả hai phía: template còn nút mang lớp ấy, và JS còn miễn trừ nó.
+       Chỉ ghim JS thì đổi tên lớp trong template là đỏ-mà-xanh."""
+    js = JS.read_text(encoding="utf-8")
+    the = (GOC / "apps" / "ltt_voice" / "templates" / "_voice_the.html"
+           ).read_text(encoding="utf-8")
+    assert 'class="btn sm ghost lv-the-xem"' in the
+    assert re.search(
+        r'if \(trong && trong !== t && !trong\.classList\.contains\("lv-the-xem"\)\) return;',
+        js), "handler click cua the lai nuot nut Chi tiet"

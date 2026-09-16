@@ -899,7 +899,11 @@
            *
            * ⭐ Chua: bo qua khi phan tu tuong tac ay KHAC cai the. */
           var trong = e.target.closest(BEN_TRONG);
-          if (trong && trong !== t) return;
+          // 🔴 16/09/2026: nut "Chi tiet" (`.lv-the-xem`) CUNG la mot <button>
+          //    ben trong, nen dong tren nuot luon no — nut ghi "Chi tiet" ma
+          //    bam khong mo gi, tu truoc GUI V2. Enter tren nut sinh `click`
+          //    goc nen ban phim di chung duong nay.
+          if (trong && trong !== t && !trong.classList.contains("lv-the-xem")) return;
           moChiTiet(t);
         });
         // The mang `role="button"` nen ban phim phai nhan ca Enter lan Space.
