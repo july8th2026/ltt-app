@@ -575,6 +575,19 @@ def tat_may(instance_id: str, request: Request, csrf_token: str = Form(...),
     return _xin_lenh(request, csrf_token, instance_id, db, "tat")
 
 
+@router.post("/{instance_id}/tat-cung")
+def tat_cung_may(instance_id: str, request: Request, csrf_token: str = Form(...),
+                 _g: None = Depends(_cong_co), _u: str = Depends(require_login),
+                 db=Depends(get_db)):
+    """Rút điện — khách tự quyết sau khi tắt mềm thất bại (`dieu_khien` docstring).
+
+    Nút này đã được hứa trong thiết kế nhưng chưa từng có route; đo 16/09 trên
+    production, tắt mềm VM chưa cài Windows quá hạn và khách không còn đường nào
+    để tắt máy (R21).
+    """
+    return _xin_lenh(request, csrf_token, instance_id, db, "tat_cung")
+
+
 @router.post("/{instance_id}/khoi-dong-lai")
 def khoi_dong_lai_may(instance_id: str, request: Request,
                       csrf_token: str = Form(...),
@@ -835,9 +848,22 @@ def trang_chi_tiet(instance_id: str, request: Request,
             .where(VpsEvent.instance_id == may.id, VpsEvent.loai == "thu_phi")
             .order_by(VpsEvent.created_at.desc()).limit(24)).scalars()
     ]
+    # Gợi ý "Tắt cứng" CHỈ sau khi lượt tắt/khởi động lại gần nhất thất bại và
+    # máy vẫn đang chạy — không phải một nút rút điện thường trực.
+    su_kien_dien = db.execute(
+        select(VpsEvent.loai).where(
+            VpsEvent.instance_id == may.id,
+            VpsEvent.loai.in_(("xin_tat", "tat", "tat_that_bai", "xin_khoi_dong_lai",
+                               "khoi_dong_lai", "khoi_dong_lai_that_bai",
+                               "xin_tat_cung", "tat_cung", "tat_cung_that_bai",
+                               "xin_bat", "bat", "bat_that_bai")))
+        .order_by(VpsEvent.created_at.desc()).limit(1)).scalar_one_or_none()
+    goi_y_tat_cung = (may.trang_thai == "dang_chay" and su_kien_dien in
+                      ("tat_that_bai", "khoi_dong_lai_that_bai"))
     return templates.TemplateResponse(request, "vps_chi_tiet.html", {
         "nav": MANIFEST.slug, "app": MANIFEST,
         "may": may,
+        "goi_y_tat_cung": goi_y_tat_cung,
         "menu_trai": _menu("may", may=may),
         "trang_thai_nhan": nhan.trang_thai(may.trang_thai),
         "badge": nhan.badge(may.trang_thai),

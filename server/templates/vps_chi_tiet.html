@@ -125,6 +125,15 @@
           <button class="btn btn-ghost" type="submit">{{ nhan_nut }}</button>
         </form>
         {% endfor %}
+        {% if goi_y_tat_cung %}
+        {# Chỉ hiện sau khi tắt mềm vừa thất bại (R21): rút điện là quyết định có
+           thể mất dữ liệu, nên khách tự bấm và xác nhận, không tự động. #}
+        <form method="post" action="{{ app.route_prefix }}/{{ may.id }}/tat-cung"
+              onsubmit="return confirm('{{ _("Tắt cứng giống rút điện: dữ liệu chưa ghi xuống đĩa có thể mất. Tiếp tục?") }}');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button class="btn btn-ghost" type="submit">{{ _("Tắt cứng") }}</button>
+        </form>
+        {% endif %}
       {% endif %}
       <a class="btn {{ 'btn-ghost' if may.trang_thai == 'da_tat' else 'btn-may' }}"
          href="{{ app.route_prefix }}/{{ may.id }}/console">{{ _("Console") }}</a>
