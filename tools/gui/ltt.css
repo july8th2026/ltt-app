@@ -3975,3 +3975,14 @@ button.lv-the-song.nghe-loi,.lv-chon-nghe.nghe-loi{
    (teal #0B7285) qua style="" — lệch bảng màu ấm. Token, không giá trị Jinja. */
 .card-accent--khu{background:var(--vps-teal)}
 .vps-tao-may{width:100%;margin-top:12px}
+/* Link mặc định cho khung KHÔNG khai `a{color}` (admin tự dựng): trước đây rơi về
+   màu link dark-scheme của Chromium (#9e9eff tím-xanh). Độ ưu tiên 0 ⇒ base.html,
+   base_plain.html và mọi luật thành phần vẫn thắng. */
+:where(a){color:var(--accent2)}
+/* Admin API (_macro_api.html) — trước là style="" trong macro. Ô chỉ số 150px:
+   cột "Vận hành" (~370px) được 2 ô/hàng thay vì 11 ô chồng dọc. */
+.adm-o-so{font-size:24px;font-weight:700}.adm-o-goi-y{font-size:11px}
+.adm-luoi-o{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.adm-luoi-cot{grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr))}
+.adm-mt12{margin-top:12px}.adm-thong-bao{display:block;padding:10px}
+.adm-form-dong{display:flex;gap:6px;align-items:center}

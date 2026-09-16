@@ -1162,8 +1162,8 @@ _ORDER_ST = {"pending": ("b-warn", "chờ trả"), "paid": ("b-ok", "đã trả"
              "failed": ("b-err", "lỗi")}
 
 
-def _vnd(n) -> str:
-    return f"{int(n):,}đ"
+def _vnd(n, don_vi: str = "đ") -> str:  # kiểu Việt: 200.000đ, 2.200 (don_vi="")
+    return f"{int(n):,}".replace(",", ".") + don_vi
 
 
 def _order_badge(status: str) -> str:
@@ -1202,7 +1202,7 @@ class RevenueView(_AnTrongMenuSqlAdmin, BaseView):
                         f'<td><a href="/admin/nguoi-dung?q={escape(o.user_id)}">'
                         f'{escape(_e)}</a></td>'
                         f'<td class="tnum">{_vnd(o.price_vnd)}</td>'
-                        f'<td class="tnum">{o.credits:,} credit</td>'
+                        f'<td class="tnum">{_vnd(o.credits, " credit")}</td>'
                         f'<td class="muted" style="font-size:12px">{cot_cuoi}</td></tr>')
 
             rows = "".join(_dong(o, f"{o.paid_at:%d/%m %H:%M}")
@@ -1221,13 +1221,13 @@ class RevenueView(_AnTrongMenuSqlAdmin, BaseView):
             try: next(gen)
             except StopIteration: pass
         cards = (
-            f'<div class="grid" style="grid-template-columns:repeat(3,1fr);gap:14px">'
+            f'<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px">'
             f'<div class="ui-card"><div class="dim">Tổng đã thu</div>'
             f'<div style="font-size:26px;font-weight:700">{_vnd(dt["vnd"])}</div></div>'
             f'<div class="ui-card"><div class="dim">Credit đã bán</div>'
-            f'<div style="font-size:26px;font-weight:700">{dt["credits"]:,}</div></div>'
+            f'<div style="font-size:26px;font-weight:700">{_vnd(dt["credits"], "")}</div></div>'
             f'<div class="ui-card"><div class="dim">Đơn đã trả</div>'
-            f'<div style="font-size:26px;font-weight:700">{dt["orders"]:,}</div></div></div>')
+            f'<div style="font-size:26px;font-weight:700">{_vnd(dt["orders"], "")}</div></div></div>')
         body = (f'<div class="adm-content"><div class="pagehead"><div>'
                 f'<h1>Tổng quan tài chính</h1>'
                 f'<p>Chỉ tính đơn đã trả (đi qua sổ credit H3). Tiền hiện bằng đ, '
@@ -1314,9 +1314,9 @@ class PackagesView(_AnTrongMenuSqlAdmin, BaseView):
                             f'<button class="btn ghost sm">{label}</button></form>')
                 rows += (f'<tr><td class="tnum">{p.sort_order}</td><td>{escape(p.name)}</td>'
                          f'<td class="tnum">{_vnd(p.price_vnd)}</td>'
-                         f'<td class="tnum">{p.credits_base:,}</td>'
+                         f'<td class="tnum">{_vnd(p.credits_base, "")}</td>'
                          f'<td class="tnum">+{p.bonus_percent}%</td>'
-                         f'<td class="tnum"><strong>{total:,}</strong></td><td>{on}</td>'
+                         f'<td class="tnum"><strong>{_vnd(total, "")}</strong></td><td>{on}</td>'
                          f'<td><div class="rowactions">'
                          f'{act("toggle", "Bật/Tắt")}{act("delete", "Xoá")}</div></td></tr>')
         finally:
@@ -1421,7 +1421,7 @@ class OrdersView(_AnTrongMenuSqlAdmin, BaseView):
                          f'<td><a href="/admin/nguoi-dung?q={escape(o.user_id)}">'
                          f'{escape(_email)}</a></td>'
                          f'<td class="tnum">{_vnd(o.price_vnd)}</td>'
-                         f'<td class="tnum">{o.credits:,}{(" +%d%%" % o.bonus_percent) if o.bonus_percent else ""}</td>'
+                         f'<td class="tnum">{_vnd(o.credits, "")}{(" +%d%%" % o.bonus_percent) if o.bonus_percent else ""}</td>'
                          f'<td>{_order_badge(o.status)}</td>'
                          f'<td class="muted" style="font-size:12px">{escape(o.gateway or "-")}</td>'
                          f'<td class="muted" style="font-size:12px">{o.created_at:%m-%d %H:%M}</td>'

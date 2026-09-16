@@ -108,7 +108,7 @@ Máy đo toàn hệ: axe serious/critical **0** · tràn ngang **0** · console 
 | Developer portal | 80 | **87** | OOS-09 nội dung tiếng Anh; enum API giữ nguyên văn (cố ý) |
 | VPS | 77 | **88** | màn chi tiết/console/cài đặt KHÔNG soi được (seed không có máy VPS) — chưa có bằng chứng E3 |
 | Nexus | 70 | **89** | — |
-| Admin tự dựng | 73 | **85** | nhiều bảng dày, chữ admin chưa qua `_()` |
+| Admin tự dựng | 73 | **87** | 17/09: link mặc định về token (trước: tím-xanh mặc định Chromium), số kiểu Việt ở tài chính/đơn/gói (P1-08 xong), tab API tiếng Việt, lưới chỉ số 2 cột; còn bảng dày, chữ admin chưa qua `_()` (admin chỉ tiếng Việt) |
 | sqladmin | 49 | **86** | edit/create/details/modal xoá đã override 17/09 (nút `<button name=save value=…>` giữ giao thức, E2E lưu thật); còn nhãn trường thô + OOS-07 lỗi JS gói + OOS-12 |
 | Apps | 69 | **85** | mỗi SPA vẫn một ngôn ngữ thị giác riêng; preset font thiếu glyph Việt (OOS-11) |
 
@@ -325,7 +325,7 @@ Screenshot regression Playwright (`toHaveScreenshot`) cho critical screens; test
 | P1-05 ✅ (đo lại toàn hệ: main≠1 = 0, h1≠1 = 0) | `main` nhân đôi (10 màn) · thiếu `h1` (`/status`, canvas, chatltt, autosub) · `h1` ×6 ở ommi classic | shell + app |
 | P1-06 ✅ (jobs, rail trang chủ, taoanh, thumbnail, transcript, prompt-canh, audio-pause, video-assembly; JS poll taoanh/ommi dùng `ui.bang_trang_thai_js()` — trước đây ghi đè chữ đã dịch bằng `running · 20%` sau lượt poll đầu. Developer portal CỐ Ý giữ enum API nguyên văn: đó là giá trị khách so với phản hồi API) | Enum nội bộ lộ ra khách: `running · 20%`, `queued · 0%`, `cancelled · 10%` (taoanh), `running/queued/done` (rail home), tiêu đề `Job 8fde2d41`, `taoanh · taoanh.generate` (job detail) | jobs, workspace, apps |
 | P1-07 ✅ phần UI (error/auth/jobs/billing/status/sqladmin list/home chip/nhãn app; SPA autosub `Upload/PROJECT/FILES/STYLE/TEMPLATES/ANIMATION/Video preview`, ommi `WORKSPACE/Prompt Library/Assets/Export`, upscale `Fast/Quality`, canvas `Zoom In/Fit View/Mini Map` qua `ariaLabelConfig`; quét 112 route có đối chứng dương/âm) · nội dung tài liệu dev tiếng Anh ⇒ OOS-09 | i18n: nhãn tiếng Anh cứng (`GENERATIVE IMAGE`, `OUTPUT HISTORY`, `REFERENCE & EDIT`), chip thể loại lẫn hoa/thường (`audio`, `video` cạnh `AI Video`), chuỗi không qua `_()` ở error/jobs/nap/auth/status, sqladmin toàn tiếng Anh (`Search`, `Actions`, `Showing 1 to 3`) | toàn hệ |
-| P1-08 🟡 PARTIAL (billing xong; còn home rail/dev/VPS kiểm lại) | Định dạng số kiểu Anh trong giao diện Việt: `200,000đ`, `2,200 credit`, `1,000,000đ` (billing) trong khi VPS/Developer dùng `149.000đ`, `1.250` | billing, jobs |
+| P1-08 ✅ (billing; admin tài chính/đơn/gói qua `_vnd(n, don_vi)` kiểu Việt `200.000đ`/`2.200` — 17/09) | Định dạng số kiểu Anh trong giao diện Việt: `200,000đ`, `2,200 credit`, `1,000,000đ` (billing) trong khi VPS/Developer dùng `149.000đ`, `1.250` | billing, jobs |
 | P1-09 ✅ (axe 0 ở 448 phép đo) | Progressbar không tên (12) · vùng cuộn `<pre>` không focus được (35) · control lồng control ở thẻ giọng Voice (18) · control thiếu nhãn ở admin `api-key-them` | a11y |
 | P1-10 ✅ | sqladmin list: menu "Actions" đè dòng đầu bảng, "Show 10 / Page" trôi ngoài card (gốc: `.dropdown` không phạm vi trong ltt.css) | admin |
 | P1-11 ✅ | `/admin/khach-hang` tràn ngang ở 390 (gốc: sr-only absolute trong khung cuộn không định vị) | admin |
