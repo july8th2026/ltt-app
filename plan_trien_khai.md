@@ -32,9 +32,9 @@ nào < 88 · critical UI xác minh ở mức render thật (E3).
 | Bộ quét | `node tools/golden_ui_quet.mjs --cau-hinh routes.json --ra <dir> [--khung ...]` — HTTP, ảnh toàn trang, console, request hỏng, tràn ngang, axe WCAG 2.2 AA, h1/main/lang, ô chạm, ô nhập <16px |
 
 ## Overall Progress
-38%
+41%
 
-(Trọng số: P0 5 · P1 10 · P2 15 · P3 15 · P4 20 · P5 15 · P6 10 · P7 10. Tính: P0 100%·5 + P1 100%·10 + P2 45%·15 + P2 50%·15 + P3 35%·15 + P4 55%·20 + P5 5%·15 = 5+10+7,5+5,25+11+0,75 ≈ 39,5 → trừ ~2 điểm vì chưa có chứng nhận gate nào ⇒ **38%**.)
+(Trọng số: P0 5 · P1 10 · P2 15 · P3 15 · P4 20 · P5 15 · P6 10 · P7 10. Tính: P0 100%·5 + P1 100%·10 + P2 45%·15 + P2 50%·15 + P3 35%·15 + P4 65%·20 + P5 5%·15 = 5+10+7,5+5,25+13+0,75 ≈ 41,5 ⇒ **41%** (chưa có chứng nhận gate).)
 
 | Phase | % | Trạng thái |
 |---|---|---|
@@ -42,7 +42,7 @@ nào < 88 · critical UI xác minh ở mức render thật (E3).
 | 1 Baseline Audit | 100 | ✅ |
 | 2 Golden Design System | 50 | 🟡 |
 | 3 Shared UI Components | 35 | 🟡 |
-| 4 Critical Pages | 55 | 🟡 Error ✅ · Jobs 🟡 · Billing 🟡 · Auth 🟡 · Shell/Workspace ⏳ · Public ⏳ |
+| 4 Critical Pages | 65 | 🟡 Error ✅ · Jobs 🟡 · Billing 🟡 · Auth 🟡 · Shell/Workspace 🟡 · Public ⏳ |
 | 5 Remaining Pages & Apps | 5 | ⏳ |
 | 6 Responsive & Accessibility | 0 | ⏳ |
 | 7 Visual Regression & Final QA | 0 | ⏳ |
@@ -238,13 +238,14 @@ Kế hoạch: page header · button 4 biến thể · field (label/helper/error)
 Macro Jinja dùng chung ở `server/templates/_ui.html` — chỉ nếu ≥3 nơi dùng.
 
 ## Phase 4 — Critical Pages
-Progress: 55%
+Progress: 65%
 
 Completed:
 - Error (P0-02) — xem P0 Issues. Browser E3: 404/403 thật + 400/401/403/404/413/429/500/503 render state, 390 & 1440, axe 0 serious/critical.
 - Jobs (PARTIAL): `/jobs` tên app thay slug, bỏ cột `job_type`, nhãn trạng thái dùng chung, lọc app theo tên, trạng thái rỗng có CTA; `/jobs/{id}` h1 = tên app, mã việc ở eyebrow, progressbar có tên. E3: 18 phép đo (list/lọc/5 state/retry/admin) axe **0** (baseline 22). Còn: 430/768/1920, tương tác hủy/thử lại trên trình duyệt.
 - Billing (PARTIAL): `nap.html`, `nap_don.html`, `_nap_trangthai.html`, `nap_khong_thay.html` — số kiểu Việt qua `| so` / `| tien_vnd` (hết `200,000đ`), 0 inline style (gom về `billing-*`), gradient bìa thẻ gói KHÔNG hợp lệ (`var(--accent)22`) thay bằng token, khối trống 120px → 72px, lịch sử đơn dùng `ui.nhan_trang_thai(…, 'don')` phân biệt đủ 5 trạng thái, bảng lịch sử là vùng cuộn focus được, `nap_khong_thay` dùng `.ui-state`. Form `/nap/tao`, `hx-get`/`hx-trigger`/`id="tt"`/`role`/`aria-live` giữ nguyên (chốt test). E3: 20 phép đo (8 state đơn + không thấy) axe **0** (baseline 30); htmx fragment tải và thay đúng, 0 request hỏng. Hồi quy tự gây ra đã sửa: `span.sr-only` trong bảng cuộn kéo trang @390 lên 604px ⇒ `.tablewrap{position:relative}`.
-- Auth (PARTIAL): 8 template — `auth_title`/`auth_subtitle`/`title`/đoạn thông báo qua `_()` (trước đây `/en/login` hiện tiêu đề tiếng Việt), mọi link qua `u()` (trước đây bấm "Tạo tài khoản" ở bản EN rơi về VI), nút nền `--brand-fill` thay gradient `#ef3731→` (axe không đo được gradient nên lỗi 3,99:1 lọt mọi lượt quét), bỏ hex `#4b1512`. Email trong `register_sent` vẫn escape (thử `<script>`). E3: 20 phép đo VI+EN axe 0. Còn: xác nhận EN sau khởi động lại (catalog nạp lúc khởi động).
+- Auth (PARTIAL): 8 template — `auth_title`/`auth_subtitle`/`title`/đoạn thông báo qua `_()` (trước đây `/en/login` hiện tiêu đề tiếng Việt), mọi link qua `u()` (trước đây bấm "Tạo tài khoản" ở bản EN rơi về VI), nút nền `--brand-fill` thay gradient `#ef3731→` (axe không đo được gradient nên lỗi 3,99:1 lọt mọi lượt quét), bỏ hex `#4b1512`. Email trong `register_sent` vẫn escape (thử `<script>`). E3: 20 phép đo VI+EN axe 0. EN đã xác nhận sau khởi động lại (`Sign in to LTT AI Studio`, `Forgot password`).
+- Shell / Workspace — DL-001 (PARTIAL): `home.html` bỏ `<main>` lồng (1 landmark), dấu thương hiệu dùng `.mark` như `_header.html` (bỏ "LTT STUDIOS"), credit `| so` (1.250 như header), `aria-label` dịch được, `select#market-sort` có tên (axe critical @768), chuỗi "Khám phá"/"công cụ sẵn sàng"/"app nạp lỗi" qua `_()`. Khối CSS workspace cũ (dòng `.home-page{min-height…}`) 76 hex 6 chữ số → token theo màu gần nhất đúng vai (chữ/nền). E3: 9 phép đo 390/768/1440, axe 0, `main`=1; trang chủ ẩn danh 11 → 0. Còn: chip thể loại lẫn hoa/thường (`audio`, `video`) — nhãn đến từ manifest, cần bảng tên hiển thị; ảnh bìa thẻ trống ở 5 app (P1-12); menu avatar hai khung khác cấu trúc.
 Thứ tự: Error → Auth → Billing → Jobs → Shell/Header/Workspace home.
 
 ## Phase 5 — Remaining Pages & Apps
@@ -270,11 +271,11 @@ Screenshot regression Playwright (`toHaveScreenshot`) cho critical screens; test
 
 | ID | Vấn đề | Phạm vi |
 |---|---|---|
-| P1-01 | **Shell drift**: home đã đăng nhập dùng workspace shell (rail trái/phải, logo "LTT STUDIOS"), mọi trang khác dùng top-nav ("LTT AI Studio"); bấm vào bất kỳ app nào là đổi hẳn khung | DL-001 |
+| P1-01 🟡 PARTIAL (DL-001 áp phần thương hiệu/credit/landmark/token) | **Shell drift**: home đã đăng nhập dùng workspace shell (rail trái/phải, logo "LTT STUDIOS"), mọi trang khác dùng top-nav ("LTT AI Studio"); bấm vào bất kỳ app nào là đổi hẳn khung | DL-001 |
 | P1-02 | **Hai họ chữ**: auth/public/admin `Segoe UI`, phần còn lại `system-ui` | DL-003 |
 | P1-03 | **Ba bảng màu**: Carbon Red ấm; Developer nền trung tính + cyan; VPS teal (`--vps-teal-text` tham chiếu nhưng không định nghĩa); sqladmin navy/Tabler | DL-002, DL-004 |
 | P1-04 | Tương phản: 312 nút / 89 trang dưới AA | toàn hệ |
-| P1-05 | `main` nhân đôi (10 màn) · thiếu `h1` (`/status`, canvas, chatltt, autosub) · `h1` ×6 ở ommi classic | shell + app |
+| P1-05 🟡 PARTIAL (trang chủ ✅; còn autosub, chatltt, ommi, taovideo, lttvideo + thiếu h1) | `main` nhân đôi (10 màn) · thiếu `h1` (`/status`, canvas, chatltt, autosub) · `h1` ×6 ở ommi classic | shell + app |
 | P1-06 🟡 PARTIAL (jobs, rail trang chủ, taoanh, thumbnail, transcript, prompt-canh, audio-pause, video-assembly xong; còn dev/admin nội bộ) | Enum nội bộ lộ ra khách: `running · 20%`, `queued · 0%`, `cancelled · 10%` (taoanh), `running/queued/done` (rail home), tiêu đề `Job 8fde2d41`, `taoanh · taoanh.generate` (job detail) | jobs, workspace, apps |
 | P1-07 | i18n: nhãn tiếng Anh cứng (`GENERATIVE IMAGE`, `OUTPUT HISTORY`, `REFERENCE & EDIT`), chip thể loại lẫn hoa/thường (`audio`, `video` cạnh `AI Video`), chuỗi không qua `_()` ở error/jobs/nap/auth/status, sqladmin toàn tiếng Anh (`Search`, `Actions`, `Showing 1 to 3`) | toàn hệ |
 | P1-08 🟡 PARTIAL (billing xong; còn home rail/dev/VPS kiểm lại) | Định dạng số kiểu Anh trong giao diện Việt: `200,000đ`, `2,200 credit`, `1,000,000đ` (billing) trong khi VPS/Developer dùng `149.000đ`, `1.250` | billing, jobs |
@@ -334,6 +335,9 @@ Screenshot regression Playwright (`toHaveScreenshot`) cho critical screens; test
 | EV-09 | E2 | `test_1270` 36/36; `test_107`, `test_109` cập nhật để chốt dùng macro (6/6) |
 | EV-10 | E3 | `after/p4-billing`, `after/p4-nap`: 21 phép đo billing, axe 0, không tràn |
 | EV-11 | E2 | `test_1270` 42/42 + `test_106` (3/3, cập nhật chốt macro), `test_369` asset_ver đủ |
+| EV-12 | E3 | `after/p4-auth`, `after/p4-auth-en`: 23 phép đo auth VI+EN, axe 0 |
+| EV-13 | E3 | `after/p4-home`, `after/p4-home768`: 10 phép đo trang chủ 3 khung, axe 0, main=1 |
+| EV-14 | E2 | `test_1270` 52/52; `test_105/109/110` xanh |
 
 ## Current Blocker
 
@@ -341,4 +345,4 @@ Không có.
 
 ## Next Action
 
-Phase 4 Auth (base_plain: inline style → lớp, i18n tiêu đề/phụ đề) rồi shell DL-001 (workspace home dùng token thay ~200 hex, header/footer chung).
+Phase 4 Public: `huong_dan*`, `gia_api`, `api_dieu_khoan` (inline style ~150, 35 vùng `<pre>` cuộn không focus được), rồi Phase 5 theo thứ tự plan.

@@ -16616,3 +16616,12 @@ msgstr "Email verification"
 
 msgid "Trạng thái kích hoạt tài khoản LTT AI Studio."
 msgstr "Your LTT AI Studio account activation status."
+
+msgid "Nạp credit; số dư %(so)s credit"
+msgstr "Top up credit; balance %(so)s credit"
+
+msgid "%(so)s app nạp lỗi"
+msgstr "%(so)s apps failed to load"
+
+msgid "Khám phá"
+msgstr "Explore"

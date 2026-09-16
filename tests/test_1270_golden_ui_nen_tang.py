@@ -245,3 +245,24 @@ def test_register_sent_van_escape_email():
         request=Request(scope), email="<script>x</script>@a.b")
     assert "<script>x" not in html
     assert "<strong>&lt;script&gt;x&lt;/script&gt;@a.b</strong>" in html
+
+
+# ── 7. DL-001: workspace trang chủ dùng chung phần khung với top-nav ─────────
+
+def test_DL001_trang_chu_mot_landmark_main_va_dau_thuong_hieu_chung():
+    home = (GOC / "server" / "templates" / "home.html").read_text(encoding="utf-8")
+    home = re.sub(r"\{#.*?#\}", "", home, flags=re.S)  # chú thích được phép KỂ về <main>
+    base = (GOC / "server" / "templates" / "base.html").read_text(encoding="utf-8")
+    assert "<main" in base
+    # base.html đã mở <main>; một <main> nữa trong home là hai landmark (baseline axe).
+    assert "<main" not in home
+    # Cùng dấu `.mark` với `_header.html`, không còn "LTT STUDIOS" riêng.
+    assert '<span class="mark" aria-hidden="true">LTT</span>' in home
+    assert "STUDIOS" not in home
+    assert "| so }}</b>" in home, "credit ở workspace định dạng như header (1.250)"
+    assert 'id="market-sort" aria-label=' in home
+
+
+def test_DL001_khoi_css_workspace_cu_khong_con_hex_6_chu_so():
+    dong = next(d for d in CSS.split("\n") if d.startswith(".home-page{min-height:100vh"))
+    assert not re.findall(r"#[0-9a-fA-F]{6}(?![0-9a-fA-F])", dong)
