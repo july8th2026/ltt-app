@@ -4,7 +4,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 import hashlib
 import json
-from ipaddress import IPv4Interface
+from ipaddress import IPv4Address, IPv4Interface
+import re
 import time
 from typing import Any, Callable
 from urllib.error import HTTPError, URLError
@@ -126,6 +127,62 @@ class OvhClient:
             "X-Ovh-Signature": "$1$" + hashlib.sha1(raw.encode("utf-8")).hexdigest(),
         }
         return self._transport("POST", url, headers, body)
+
+    @staticmethod
+    def ip_service_name(address: str) -> str:
+        """OVH service identity of one Additional IPv4 (`ip-<address>` for /32).
+
+        Same derivation the OVH Manager uses (`ovh/manager` ip-ip.service.js:
+        `ip-${block === '32' ? ip : ipBlock}`).
+        """
+        return "ip-" + str(IPv4Address(address))
+
+    def ip_renewal(self, address: str) -> dict:
+        """Read `renew` + `expiration` of one IP service (read-only)."""
+        info = self.get("/ip/service/" + quote(self.ip_service_name(address), safe="")
+                        + "/serviceInfos")
+        renew = (info or {}).get("renew") if isinstance(info, dict) else None
+        if not isinstance(renew, dict) or type(renew.get("deleteAtExpiration")) is not bool:
+            raise OvhError("OVH IP serviceInfos has invalid shape")
+        return {"renew": dict(renew), "expiration": str(info.get("expiration") or "")}
+
+    def set_ip_delete_at_expiration(self, address: str, value: bool) -> dict:
+        """Stop (or restore) automatic renewal of one IP service; read back.
+
+        `PUT .../serviceInfos` with `renew.deleteAtExpiration` is the documented
+        non-renewal switch (community-verified live: imbue-ai/mngr client.py).
+        The service keeps working until `expiration`; nothing is deleted now.
+        """
+        current = self.ip_renewal(address)
+        if current["renew"]["deleteAtExpiration"] is value:
+            return current
+        path = ("/ip/service/" + quote(self.ip_service_name(address), safe="")
+                + "/serviceInfos")
+        self._signed("PUT", path, {"renew": {**current["renew"],
+                                             "deleteAtExpiration": bool(value)}})
+        after = self.ip_renewal(address)
+        if after["renew"]["deleteAtExpiration"] is not value:
+            raise OvhError("OVH IP renewal read-back did not match")
+        return after
+
+    def _signed(self, method: str, path: str, payload: dict):
+        """Signed non-GET call limited to exact IP-service renewal paths."""
+        if (method != "PUT" or not re.fullmatch(
+                r"/ip/service/ip-\d{1,3}(?:\.\d{1,3}){3}/serviceInfos", path)):
+            raise OvhError("unsupported OVH mutation path")
+        url = self.config.api_base + path
+        body = json.dumps(payload, separators=(",", ":"), ensure_ascii=True).encode("ascii")
+        timestamp = str(self._server_time())
+        raw = "+".join((self.config.application_secret, self.config.consumer_key,
+                        method, url, body.decode("ascii"), timestamp))
+        headers = {
+            "Content-Type": "application/json",
+            "X-Ovh-Application": self.config.application_key,
+            "X-Ovh-Consumer": self.config.consumer_key,
+            "X-Ovh-Timestamp": timestamp,
+            "X-Ovh-Signature": "$1$" + hashlib.sha1(raw.encode("utf-8")).hexdigest(),
+        }
+        return self._transport(method, url, headers, body)
 
     def health(self) -> bool:
         services = self.get("/vps")

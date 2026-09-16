@@ -440,6 +440,35 @@ def _don_thao_tac_qua_han(db, *, now=None) -> int:
     return len(da_dong)
 
 
+def _chinh_sach_ip_rong(db, *, now=None) -> int:
+    """R16: giữ tối đa một IP OVH rỗi; phần dư đặt không gia hạn. Trả số IP đã huỷ.
+
+    Mọi lỗi dừng ở đây: một lần OVH không trả lời không được chặn thu tiền.
+    """
+    try:
+        from sqlalchemy import select
+
+        from apps.vps.services import backend_factory, ip_rong
+        from apps.vps.tables import VpsInfrastructureProfile
+
+        da_huy = 0
+        for profile in list(db.execute(select(VpsInfrastructureProfile).where(
+                VpsInfrastructureProfile.status == "ACTIVE",
+                VpsInfrastructureProfile.public_ip_backend_type == "ovh_static_pool",
+        )).scalars()):
+            client = backend_factory.ovh_inventory_client(profile)
+            da_huy += ip_rong.ap_dung(db, profile, client, now=now)["da_huy_gia_han"]
+            db.commit()
+        return da_huy
+    except Exception as exc:  # noqa: BLE001 - biên của việc nền
+        try:
+            db.rollback()
+        except Exception as loi_rb:  # noqa: BLE001
+            log.warning("VPS bao tri: rollback that bai: %s", type(loi_rb).__name__)
+        log.warning("VPS bao tri: chinh sach IP rong that bai: %s", type(exc).__name__)
+        return 0
+
+
 def mot_luot(db, *, now=None) -> dict:
     """Một lượt bảo trì. Tách khỏi `chay()` để test được mà không cần worker."""
     da_doi_giam_toc = _dong_bo_bang_thong_pinned(db)
@@ -471,6 +500,7 @@ def mot_luot(db, *, now=None) -> dict:
     ket_qua["da_hoan"] = _hoan_may_tao_hong(db)
     ket_qua["thao_tac_qua_han"] = _don_thao_tac_qua_han(db, now=now)
     ket_qua["mo_coi"] = _doi_chieu_profiles(db)
+    ket_qua["ip_rong_huy_gia_han"] = _chinh_sach_ip_rong(db, now=now)
 
     da_nop_xoa = 0
     for may in billing.den_han_xoa(db, now=now):
@@ -529,9 +559,10 @@ def chay(*, dong_ho=None) -> None:
         if any(kq.values()):
             log.info("VPS bao tri: thu %s, treo %s, nop xoa %s, doi giam toc %s, "
                      "chup anh %s, don ve %s, hoan %s, thao tac qua han %s, "
-                     "mo coi %s",
+                     "mo coi %s, ip rong huy gia han %s",
                      kq["da_thu"], kq["da_treo"], kq["da_nop_xoa"],
                      kq["da_doi_giam_toc"], kq["da_chup"], kq["da_don_ve"],
-                     kq["da_hoan"], kq["thao_tac_qua_han"], kq["mo_coi"])
+                     kq["da_hoan"], kq["thao_tac_qua_han"], kq["mo_coi"],
+                     kq.get("ip_rong_huy_gia_han", 0))
     finally:
         gen.close()

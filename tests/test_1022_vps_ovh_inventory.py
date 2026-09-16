@@ -91,6 +91,26 @@ def test_sync_preserves_only_exact_observed_bound_ownership(db):
     assert (row.state, row.instance_id) == ("QUARANTINED", instance.id)
 
 
+def test_sync_keeps_order_evidence_of_a_purchased_address(db):
+    """R17: a monthly address bought by the web job keeps its OVH order id."""
+    from apps.vps.services.inventory_sync import sync_ovh_static_pool
+    from apps.vps.tables import VpsIp
+    profile, gateway_row = _profile_and_gateway(db)
+    row = VpsIp(infrastructure_profile_id=profile.id, gateway_id=gateway_row.id,
+                dia_chi="192.0.2.40", state="FREE", billing_mode="monthly",
+                monthly_cost_minor=239, provider_metadata={"order_id": 22703620})
+    db.add(row)
+    db.commit()
+    provider = SimpleNamespace(
+        config=SimpleNamespace(service_name="service-1"),
+        list_additional_ipv4=lambda: [_observation("192.0.2.40")])
+    sync_ovh_static_pool(db, profile, provider=provider,
+                         gateway=SimpleNamespace(list_mappings=lambda: {}))
+    assert row.billing_mode == "monthly"
+    assert row.provider_metadata["order_id"] == 22703620
+    assert row.provider_metadata["routed_to_expected_service"] is True
+
+
 @pytest.mark.parametrize("observations", [
     [_observation("192.0.2.30"), _observation("192.0.2.30")],
     [SimpleNamespace(cidr="192.0.2.31/24", address="192.0.2.31",

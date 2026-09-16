@@ -4,9 +4,19 @@ from __future__ import annotations
 from apps.vps.services.backends.contracts import BackendConflict, BackendHealth
 
 
+#: Health probe attempts before CRITICAL. Measured 16/09: one transient failure
+#: at 17:14 closed sales for a whole 10-minute refresh cycle, while 5/5 probes
+#: under the same account succeeded in 1.4–2.1 s right after (R13). A retry is
+#: read-only (`health`, `list`), so it can never repeat a mutation.
+HEALTH_ATTEMPTS = 3
+HEALTH_RETRY_DELAY_S = 2.0
+
+
 class NftGatewayBackend:
-    def __init__(self, client):
+    def __init__(self, client, *, sleep=None):
         self.client = client
+        import time
+        self._sleep = sleep or time.sleep
 
     def ensure_mapping(self, public_ip: str, private_ip: str) -> None:
         current = self.get_mapping(public_ip)
@@ -37,7 +47,18 @@ class NftGatewayBackend:
         return self.get_mapping(public_ip) == private_ip
 
     def health(self) -> BackendHealth:
-        if not self.client.con_song():
-            return BackendHealth("CRITICAL", "gateway did not answer health probe")
-        self.list_mappings()
-        return BackendHealth("HEALTHY", "gateway and mapping inventory readable")
+        last_exc: Exception | None = None
+        for attempt in range(HEALTH_ATTEMPTS):
+            if attempt:
+                self._sleep(HEALTH_RETRY_DELAY_S)
+            try:
+                if not self.client.con_song():
+                    last_exc = None
+                    continue
+                self.list_mappings()
+                return BackendHealth("HEALTHY", "gateway and mapping inventory readable")
+            except Exception as exc:  # probe boundary; re-raised after retries
+                last_exc = exc
+        if last_exc is not None:
+            raise last_exc
+        return BackendHealth("CRITICAL", "gateway did not answer health probe")
