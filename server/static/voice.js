@@ -1547,6 +1547,21 @@
       nhan("b-ok", chu.xong);
       nutTao.disabled = false;
 
+      /* W5' 16/09/2026: do tren Chrome that o 996x943, khung ket qua nam o
+         scrollY~1010 va trang KHONG cuon toi - khach bam Tao, tieng da xong,
+         ma khong thay gi doi. Chi cuon khi khung dang NGOAI khung nhin (khach
+         dang nhin san thi khong giat trang), va ton trong giam chuyen dong. */
+      var oKq = document.getElementById("lv-kq");
+      if (oKq && oKq.scrollIntoView && oKq.getBoundingClientRect) {
+        var rKq = oKq.getBoundingClientRect();
+        var caoKn = window.innerHeight || document.documentElement.clientHeight;
+        if (rKq.top < 0 || rKq.top > caoKn - 80) {
+          var giamCd = window.matchMedia &&
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          oKq.scrollIntoView({behavior: giamCd ? "auto" : "smooth", block: "start"});
+        }
+      }
+
       /* Canh bao cua mot luot DA XONG: lech lan, hoac DA LUI GIONG.
        *
        * ⛔ `textContent`, KHONG `innerHTML`. Cau nay di qua bao nhieu tang thi
