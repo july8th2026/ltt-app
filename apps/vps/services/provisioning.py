@@ -42,9 +42,10 @@ log = logging.getLogger(__name__)
 #: sau 7 ngày), nên chỗ đó chưa bán lại được.
 KHONG_CHIEM_CHO = ("da_xoa",)
 
-#: VMID Proxmox dành cho máy khách. Dưới 200 để cho template và máy nội bộ.
+#: VMID Proxmox dành cho máy khách. Dưới 200 để cho template và máy nội bộ;
+#: trên 899 không thuộc phạm vi V4 (quyết định D07: guard VMID 200–899).
 VMID_DAU = 200
-VMID_CUOI = 9999
+VMID_CUOI = 899
 
 #: Cổng trong máy khách. RDP là mặc định vì catalog toàn Windows (V9).
 CONG_SSH = 22

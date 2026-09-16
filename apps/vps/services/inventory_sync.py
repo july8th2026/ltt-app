@@ -75,7 +75,11 @@ def sync_ovh_static_pool(db, profile, *, provider, gateway) -> InventorySyncResu
         if (row.state == "BOUND" and instance is not None
                 and instance.ip_noi_bo and actual_private == instance.ip_noi_bo):
             continue
-        if actual_private is None and row.state not in ("RESERVED", "BOUND"):
+        # A quarantine that still names an instance is evidence of an unresolved
+        # cleanup (jobs.py keeps the association on purpose); a missing mapping
+        # must not launder it back into sale (review R8, 16/09).
+        held = row.state == "QUARANTINED" and row.instance_id
+        if actual_private is None and row.state not in ("RESERVED", "BOUND") and not held:
             row.state = "FREE"
             row.instance_id = None
             row.reservation_token = None
