@@ -266,3 +266,40 @@ def test_DL001_trang_chu_mot_landmark_main_va_dau_thuong_hieu_chung():
 def test_DL001_khoi_css_workspace_cu_khong_con_hex_6_chu_so():
     dong = next(d for d in CSS.split("\n") if d.startswith(".home-page{min-height:100vh"))
     assert not re.findall(r"#[0-9a-fA-F]{6}(?![0-9a-fA-F])", dong)
+
+
+# ── 8. Khung cuộn tới được bằng bàn phím; nhãn form admin nối với ô nhập ─────
+
+def _moi_template():
+    for p in list((GOC / "server" / "templates").rglob("*.html")) + list(GOC.glob("apps/*/templates/*.html")):
+        yield p, p.read_text(encoding="utf-8")
+    yield GOC / "server" / "admin.py", (GOC / "server" / "admin.py").read_text(encoding="utf-8")
+
+
+def test_moi_khung_cuon_ngang_deu_focus_duoc():
+    thieu = []
+    for p, s in _moi_template():
+        for m in re.finditer(r'<(?:div|section|table)\s[^>]*\bclass="(?:[^"]*\s)?(?:tablewrap|dev-bang)(?:\s[^"]*)?"[^>]*>', s):
+            if "tabindex" not in m.group(0):
+                thieu.append(f"{p.name}: {m.group(0)[:60]}")
+    assert not thieu, thieu
+    js = (GOC / "server" / "static" / "sao_chep.js").read_text(encoding="utf-8")
+    assert "pre.tabIndex = 0" in js
+
+
+def test_nut_sao_chep_theo_ngon_ngu_trang():
+    js = (GOC / "server" / "static" / "sao_chep.js").read_text(encoding="utf-8")
+    assert "document.documentElement.lang" in js and '"Copy"' in js
+
+
+def test_admin_form_nhan_deu_noi_voi_o_nhap():
+    admin = (GOC / "server" / "admin.py").read_text(encoding="utf-8")
+    tran = re.findall(r'<label>[^<]*</label>\s*<(?:input|select)\s[^>]*\bname=', admin)
+    assert not tran, tran[:3]
+
+
+def test_admin_cham_provider_chu_trang_dat_AA():
+    admin = (GOC / "server" / "admin.py").read_text(encoding="utf-8")
+    bang = admin.split("_PROVCOL = {", 1)[1].split("}", 1)[0]
+    for h in re.findall(r"#[0-9a-fA-F]{6}", bang):
+        assert _ti_le("#ffffff", h) >= 4.5, h

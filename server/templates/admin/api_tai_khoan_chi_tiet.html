@@ -31,7 +31,7 @@
 
   <section>
     <h2 style="margin:22px 0 10px">Project</h2>
-    <div class="tablewrap"><table class="ui-table">
+    <div class="tablewrap" tabindex="0"><table class="ui-table">
       <thead><tr><th>Tên</th><th>Slug</th><th>Trạng thái</th><th>Tạo lúc</th></tr></thead>
       <tbody>
         {% for p in data.projects %}
@@ -50,7 +50,7 @@
 
   <section>
     <h2 style="margin:22px 0 10px">Khoá</h2>
-    <div class="tablewrap"><table class="ui-table">
+    <div class="tablewrap" tabindex="0"><table class="ui-table">
       <thead><tr><th>Mã khoá</th><th>Tên</th><th>Môi trường</th><th>Trạng thái</th><th>Dùng lần cuối</th></tr></thead>
       <tbody>
         {% for k in data["keys"] %}
@@ -70,7 +70,7 @@
 
   <section>
     <h2 style="margin:22px 0 10px">Ngân sách khách tự đặt</h2>
-    <div class="tablewrap"><table class="ui-table">
+    <div class="tablewrap" tabindex="0"><table class="ui-table">
       <thead><tr><th>Phạm vi</th><th>Mức</th><th>Chu kỳ</th><th>Kiểu</th></tr></thead>
       <tbody>
         {% for b in data.budgets %}
@@ -89,7 +89,7 @@
 
   <section>
     <h2 style="margin:22px 0 10px">Webhook</h2>
-    <div class="tablewrap"><table class="ui-table">
+    <div class="tablewrap" tabindex="0"><table class="ui-table">
       <thead><tr><th>URL</th><th>Trạng thái</th><th>Tạo lúc</th></tr></thead>
       <tbody>
         {% for s in data.subscriptions %}
@@ -107,7 +107,7 @@
 
   <section>
     <h2 style="margin:22px 0 10px">20 lời gọi gần nhất được ghi</h2>
-    <div class="tablewrap"><table class="ui-table">
+    <div class="tablewrap" tabindex="0"><table class="ui-table">
       <thead><tr><th>Lúc</th><th>Route</th><th>HTTP</th><th>Mã</th><th>Correlation ID</th></tr></thead>
       <tbody>
         {% for r in data.recent_requests %}

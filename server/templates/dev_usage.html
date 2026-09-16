@@ -126,7 +126,7 @@
   <p class="muted">{{ _("Ngân sách quan sát chi tiêu qua API và không bao giờ đổi sổ credit. Ngân sách mềm chỉ cảnh báo; ngân sách cứng từ chối lời gọi kế tiếp. Nếu máy chủ đã đặt trần thấp hơn thì trần đó vẫn thắng — luôn lấy cái chặt hơn.") }}</p>
 
   {% if budgets %}
-    <div class="dev-bang">
+    <div class="dev-bang" tabindex="0">
       <table class="table">
         <thead><tr>
           <th scope="col">{{ _("Phạm vi") }}</th><th scope="col">{{ _("Kỳ") }}</th>
@@ -238,7 +238,7 @@
       <p>{{ _("Mỗi lời gọi có tính tiền sẽ thành một dòng ở đây, kèm khóa nào gọi và đã tính bao nhiêu.") }}</p>
     </div>
   {% else %}
-    <div class="dev-bang">
+    <div class="dev-bang" tabindex="0">
       <table class="table">
         <thead><tr>
           <th scope="col">{{ _("Lúc") }}</th><th scope="col">{{ _("Công cụ") }}</th><th scope="col">{{ _("Khóa") }}</th>

@@ -121,9 +121,9 @@ class AdminAuth(AuthenticationBackend):
 #    nào. Nay mọi chỗ gọi khai thẳng khoá của `SECTIONS`, nên cây cầu không còn
 #    ai đi và một khoá lạ trở thành lỗi nhìn thấy được thay vì im lặng đi qua.
 
-_PROVCOL = {"gemini": ("#4285F4", "G"), "apiai": ("#16a34a", "AI"),
-            "cheapkeyai": ("#0ea5e9", "CK"), "byteplus": ("#7c3aed", "BP"),
-            "plenx": ("#db2777", "PX")}
+_PROVCOL = {"gemini": ("#1a73e8", "G"), "apiai": ("#15803d", "AI"),
+            "cheapkeyai": ("#0369a1", "CK"), "byteplus": ("#7c3aed", "BP"),
+            "plenx": ("#be185d", "PX")}
 _CAT_ICON = {"model_control": ("🧭", "m"), "chat": ("💬", ""),
              "image": ("🖼️", "i"), "video": ("🎬", "v")}
 _STATUS = {"active": ("b-ok", "hoạt động"), "cooldown": ("b-warn", "nghỉ (cooldown)"),
@@ -378,7 +378,7 @@ class ApiKeysConsole(_AnTrongMenuSqlAdmin, BaseView):
             f'<div class="actions"><a class="btn ghost" href="/admin/api-models">🧩 Models</a>'
             f'<a class="btn" href="/admin/api-key-them">＋ Thêm key</a></div></div>'
             f'<div class="tabs">{tabs}</div>'
-            f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+            f'<div class="tablewrap" tabindex="0"><table class="ui-table"><thead><tr>'
             f'<th>Provider</th><th>Tên</th><th>Preview</th><th>Loại</th><th>Trạng thái</th>'
             f'<th>Health</th><th>Ưu tiên</th><th>Tải</th><th style="text-align:right">Thao tác</th>'
             f'</tr></thead><tbody>{rows}</tbody></table></div></div>')
@@ -641,10 +641,10 @@ class GrantCreditView(_AnTrongMenuSqlAdmin, BaseView):
       placeholder="nhanvien1@congty.com&#10;nhanvien2@congty.com">{escape(user_id)}</textarea>
     <small>Dán được cả danh sách. Ngăn bằng xuống dòng, dấu phẩy hoặc chấm phẩy.
     <b>Một email sai thì không ai được cấp</b> — để bạn không phải đối soát tay.</small></div>
-  <div class="field"><label>Số credit (dương = cộng, âm = trừ)</label>
-    <input class="inp tnum" name="amount" type="number" required placeholder="100"></div>
-  <div class="field"><label>Ghi chú</label>
-    <input class="inp" name="note" placeholder="khuyến mãi / bồi thường"></div>
+  <div class="field"><label for="f-amount">Số credit (dương = cộng, âm = trừ)</label>
+    <input id="f-amount" class="inp tnum" name="amount" type="number" required placeholder="100"></div>
+  <div class="field"><label for="f-note">Ghi chú</label>
+    <input id="f-note" class="inp" name="note" placeholder="khuyến mãi / bồi thường"></div>
   <button class="btn" type="submit">Cấp credit</button>
 </form></div></div>"""
         return HTMLResponse(_admin_shell("Cấp credit", "cap_credit", body), status_code=status)
@@ -772,17 +772,17 @@ class AddApiKeyView(_AnTrongMenuSqlAdmin, BaseView):
 {msg}
 <div class="ui-card"><form method="post">
   <input type="hidden" name="csrf_token" value="{escape(token)}">
-  <div class="field"><label>Provider</label><select class="inp" name="provider" id="prov" required>{opts}</select></div>
-  <div class="field"><label>Tên gợi nhớ</label><input class="inp" name="name" placeholder="ltt-image-chinh"></div>
-  <div class="field"><label>Credential (khoá THÔ — sẽ mã hoá)</label>
-    <input class="inp" name="credential" type="password" required autocomplete="off" placeholder="AIza••••••"></div>
+  <div class="field"><label for="prov">Provider</label><select class="inp" name="provider" id="prov" required>{opts}</select></div>
+  <div class="field"><label for="f-name">Tên gợi nhớ</label><input id="f-name" class="inp" name="name" placeholder="ltt-image-chinh"></div>
+  <div class="field"><label for="f-credential">Credential (khoá THÔ — sẽ mã hoá)</label>
+    <input id="f-credential" class="inp" name="credential" type="password" required autocomplete="off" placeholder="AIza••••••"></div>
   <div class="field"><label>Loại (năng lực)</label>
     <div class="catpick">{cat_boxes}</div></div>
-  <div class="field"><label>base_url (để trống = mặc định provider)</label><input class="inp" name="base_url"></div>
-  <div class="field"><label>supported_models (phẩy phân cách, trống = mọi model)</label>
-    <input class="inp mono" name="supported_models" placeholder="hidream-o1, ..."></div>
-  <div class="field"><label>default_model</label><input class="inp mono" name="default_model"></div>
-  <div class="field"><label>priority (cao = ưu tiên)</label><input class="inp tnum" name="priority" type="number" value="100"></div>
+  <div class="field"><label for="f-base-url">base_url (để trống = mặc định provider)</label><input id="f-base-url" class="inp" name="base_url"></div>
+  <div class="field"><label for="f-supported-models">supported_models (phẩy phân cách, trống = mọi model)</label>
+    <input id="f-supported-models" class="inp mono" name="supported_models" placeholder="hidream-o1, ..."></div>
+  <div class="field"><label for="f-default-model">default_model</label><input id="f-default-model" class="inp mono" name="default_model"></div>
+  <div class="field"><label for="f-priority">priority (cao = ưu tiên)</label><input id="f-priority" class="inp tnum" name="priority" type="number" value="100"></div>
   <button class="btn" type="submit">Lưu API key</button>
 </form></div></div>
 <style>.catpick{{display:flex;gap:8px;flex-wrap:wrap}}.catpick label{{display:flex;gap:6px;align-items:center;
@@ -946,16 +946,16 @@ def _sua_key_html(key, boxes: str, goi_y: str, token: str, msg: str) -> str:
   <input type="hidden" name="csrf_token" value="{token}">
   <input type="hidden" name="id" value="{kid}">
   <div class="field"><label>Provider</label><input class="inp" value="{prov}" disabled></div>
-  <div class="field"><label>Ten goi nho</label><input class="inp" name="name" value="{ten}"></div>
-  <div class="field"><label>Credential moi (<b>de trong = giu nguyen</b>, dang ...{pv})</label>
-    <input class="inp" name="credential" type="password" autocomplete="off"
+  <div class="field"><label for="f-name">Ten goi nho</label><input id="f-name" class="inp" name="name" value="{ten}"></div>
+  <div class="field"><label for="f-credential">Credential moi (<b>de trong = giu nguyen</b>, dang ...{pv})</label>
+    <input id="f-credential" class="inp" name="credential" type="password" autocomplete="off"
            placeholder="de trong neu khong xoay"></div>
   <div class="field"><label>Loai (nang luc)</label><div class="catpick">{boxes}</div>{goi_y}</div>
-  <div class="field"><label>base_url</label><input class="inp" name="base_url" value="{base}"></div>
-  <div class="field"><label>supported_models (phay phan cach)</label>
-    <input class="inp mono" name="supported_models" value="{sup}"></div>
-  <div class="field"><label>default_model</label><input class="inp mono" name="default_model" value="{dm}"></div>
-  <div class="field"><label>priority</label><input class="inp tnum" name="priority" type="number" value="{pri}"></div>
+  <div class="field"><label for="f-base-url">base_url</label><input id="f-base-url" class="inp" name="base_url" value="{base}"></div>
+  <div class="field"><label for="f-supported-models">supported_models (phay phan cach)</label>
+    <input id="f-supported-models" class="inp mono" name="supported_models" value="{sup}"></div>
+  <div class="field"><label for="f-default-model">default_model</label><input id="f-default-model" class="inp mono" name="default_model" value="{dm}"></div>
+  <div class="field"><label for="f-priority">priority</label><input id="f-priority" class="inp tnum" name="priority" type="number" value="{pri}"></div>
   <button class="btn" type="submit">Luu</button>
 </form></div></div>
 <style>.catpick{{display:flex;gap:8px;flex-wrap:wrap}}.catpick label{{display:flex;gap:6px;
@@ -1089,7 +1089,7 @@ class ModelsView(_AnTrongMenuSqlAdmin, BaseView):
 “Làm mới” gọi endpoint sống của provider (dùng key ưu tiên nhất) để lấy model thật.</p></div>
 <div class="actions"><a class="btn ghost" href="/admin/apikeys">&larr; APIKEYS</a>
 <a class="btn" href="/admin/api-key-them">＋ Thêm key</a></div></div>
-<div class="tablewrap"><table class="ui-table"><thead><tr>
+<div class="tablewrap" tabindex="0"><table class="ui-table"><thead><tr>
 <th>Provider</th><th>Auth</th><th>Category</th><th>Models (registry)</th><th>Kiểu</th><th>Sống</th></tr></thead>
 <tbody>{rows}</tbody></table></div></div>"""
         return HTMLResponse(_admin_shell("Models", "models", body))
@@ -1239,17 +1239,17 @@ class RevenueView(_AnTrongMenuSqlAdmin, BaseView):
                 f'<p class="adm-dan">Đơn đang chờ cổng thanh toán xác nhận. Xác '
                 f'nhận tay là đường dự phòng khi webhook không tới — thao tác đó '
                 f'ở <a href="/admin/don?st=pending">trang Đơn hàng</a>.</p>'
-                f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+                f'<div class="tablewrap" tabindex="0"><table class="ui-table"><thead><tr>'
                 f'<th>Mã đơn</th><th>Khách</th><th>Tiền</th><th>Credit</th><th>Tạo lúc</th>'
                 f'</tr></thead><tbody>{rows_cho or "<tr><td colspan=5 class=muted style=padding:20px;text-align:center>Không có đơn nào đang chờ.</td></tr>"}'
                 f'</tbody></table></div>'
                 f'<h2 style="margin:22px 0 10px">Đơn đã trả gần đây</h2>'
-                f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+                f'<div class="tablewrap" tabindex="0"><table class="ui-table"><thead><tr>'
                 f'<th>Mã đơn</th><th>Khách</th><th>Tiền</th><th>Credit</th><th>Trả lúc</th>'
                 f'</tr></thead><tbody>{rows or "<tr><td colspan=5 class=muted style=padding:20px;text-align:center>Chưa có đơn nào.</td></tr>"}'
                 f'</tbody></table></div>'
                 f'<h2 style="margin:22px 0 10px">Hành động tiền của admin gần đây</h2>'
-                f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+                f'<div class="tablewrap" tabindex="0"><table class="ui-table"><thead><tr>'
                 f'<th>Lúc</th><th>Hành động</th><th>Đối tượng</th><th>Ai làm</th>'
                 f'</tr></thead><tbody>{rows_tien or "<tr><td colspan=4 class=muted style=padding:20px;text-align:center>Chưa có thao tác tiền nào của admin.</td></tr>"}'
                 f'</tbody></table></div></div>')
@@ -1325,17 +1325,17 @@ class PackagesView(_AnTrongMenuSqlAdmin, BaseView):
         form_html = (
             f'<div class="ui-card" style="max-width:640px;margin-bottom:18px"><form method="post">'
             f'<input type="hidden" name="csrf_token" value="{escape(token)}">'
-            f'<div class="field"><label>Tên gói</label><input class="inp" name="name" placeholder="Gói 100k"></div>'
-            f'<div class="field"><label>Giá (VNĐ)</label><input class="inp tnum" name="price_vnd" type="number" required placeholder="100000"></div>'
-            f'<div class="field"><label>Bonus (%)</label><input class="inp tnum" name="bonus_percent" type="number" value="0"></div>'
-            f'<div class="field"><label>Thứ tự hiện</label><input class="inp tnum" name="sort_order" type="number" value="100"></div>'
+            f'<div class="field"><label for="f-name">Tên gói</label><input id="f-name" class="inp" name="name" placeholder="Gói 100k"></div>'
+            f'<div class="field"><label for="f-price-vnd">Giá (VNĐ)</label><input id="f-price-vnd" class="inp tnum" name="price_vnd" type="number" required placeholder="100000"></div>'
+            f'<div class="field"><label for="f-bonus-percent">Bonus (%)</label><input id="f-bonus-percent" class="inp tnum" name="bonus_percent" type="number" value="0"></div>'
+            f'<div class="field"><label for="f-sort-order">Thứ tự hiện</label><input id="f-sort-order" class="inp tnum" name="sort_order" type="number" value="100"></div>'
             f'<p class="dim" style="font-size:12px;margin:0 0 10px">Tỉ giá 1 credit = 100đ → credit gốc = giá // 100. Tổng = gốc + bonus%.</p>'
             f'<button class="btn">＋ Thêm gói</button></form></div>')
         body = (f'<div class="adm-content"><div class="pagehead"><div><h1>Gói nạp</h1>'
                 f'<p>Khách thấy gói bật ở trang <code>/nap</code>. Đổi giá không ảnh hưởng đơn cũ.</p></div>'
                 f'<div class="actions"><a class="btn ghost" href="/admin/doanh-thu">📈 Doanh thu</a>'
                 f'<a class="btn ghost" href="/admin/don">🧾 Đơn hàng</a></div></div>{msg}{form_html}'
-                f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+                f'<div class="tablewrap" tabindex="0"><table class="ui-table"><thead><tr>'
                 f'<th>#</th><th>Tên</th><th>Giá</th><th>Gốc</th><th>Bonus</th><th>Tổng</th>'
                 f'<th>Trạng thái</th><th style="text-align:right">Thao tác</th></tr></thead>'
                 f'<tbody>{rows or "<tr><td colspan=8 class=muted style=padding:22px;text-align:center>Chưa có gói. Thêm ở trên.</td></tr>"}'
@@ -1443,7 +1443,7 @@ class OrdersView(_AnTrongMenuSqlAdmin, BaseView):
                 f'<div class="actions"><a class="btn ghost" href="/admin/doanh-thu">📈 Doanh thu</a>'
                 f'<a class="btn ghost" href="/admin/goi">💠 Gói nạp</a></div></div>'
                 f'<div class="tabs">{tabs}</div>'
-                f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+                f'<div class="tablewrap" tabindex="0"><table class="ui-table"><thead><tr>'
                 f'<th>Mã đơn</th><th>User</th><th>Tiền</th><th>Credit</th><th>Trạng thái</th>'
                 f'<th>Cổng</th><th>Tạo lúc</th><th style="text-align:right">Thao tác</th></tr></thead>'
                 f'<tbody>{rows or "<tr><td colspan=8 class=muted style=padding:22px;text-align:center>Chưa có đơn.</td></tr>"}'

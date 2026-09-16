@@ -38,7 +38,7 @@
       <p class="muted">Một khoá bị lộ vẫn gọi đúng scope và đúng nhịp, nên nó
         không chạm vào bất kỳ hàng rào nào — cho tới khi hết tiền. Ba câu hỏi này
         nhìn vào <b>thói quen</b> thay vì vào luật.</p>
-      <div class="tablewrap"><table class="ui-table">
+      <div class="tablewrap" tabindex="0"><table class="ui-table">
         <thead><tr><th>Dấu hiệu</th><th>Đối tượng</th><th>Số</th><th>Nghĩa là gì</th></tr></thead>
         <tbody>
           {% for r in bat_thuong.khoa_thu_hoi %}
@@ -82,7 +82,7 @@
          canh o "Lan bi tu choi" chu khong thay the no. #}
       <p class="muted">Một IP hỏng 400 lần là một con bot; 400 IP hỏng mỗi cái một
         lần là một bản phát hành lỗi. Cùng một tổng số, hai việc khác nhau.</p>
-      <div class="tablewrap"><table class="ui-table">
+      <div class="tablewrap" tabindex="0"><table class="ui-table">
         <thead><tr><th>IP</th><th>Số lần</th></tr></thead>
         <tbody>
           {% for ip, so in data.top_ips %}
@@ -96,7 +96,7 @@
 
     <section>
       <h2 style="margin:22px 0 10px">Theo loại</h2>
-      <div class="tablewrap"><table class="ui-table">
+      <div class="tablewrap" tabindex="0"><table class="ui-table">
         <thead><tr><th>Loại</th><th>Số lần</th></tr></thead>
         <tbody>
           {% for k, v in data.by_kind|dictsort %}
@@ -117,7 +117,7 @@
     <button class="btn ghost sm">Lọc</button>
   </form>
 
-  <div class="tablewrap"><table class="ui-table">
+  <div class="tablewrap" tabindex="0"><table class="ui-table">
     <thead><tr>
       <th>Lúc</th><th>Loại</th><th>IP</th><th>Khoá đã thử</th>
       <th>Route</th><th>Correlation</th>

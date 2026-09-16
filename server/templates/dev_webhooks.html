@@ -68,7 +68,7 @@
       <a class="btn btn-ghost" href="/developers/docs">{{ _("Xem tài liệu webhook") }}</a>
     </div>
   {% else %}
-    <div class="dev-bang">
+    <div class="dev-bang" tabindex="0">
       <table class="table">
         <thead><tr>
           <th scope="col">URL</th><th scope="col">{{ _("Sự kiện") }}</th><th scope="col">{{ _("Trạng thái") }}</th>
@@ -122,7 +122,7 @@
       <p>{{ _("Lịch sử giao xuất hiện sau job đầu tiên kết thúc, hoặc ngay bây giờ nếu bạn bấm Gửi thử ở khối trên.") }}</p>
     </div>
   {% else %}
-    <div class="dev-bang">
+    <div class="dev-bang" tabindex="0">
       <table class="table">
         <thead><tr>
           <th scope="col">{{ _("Lúc") }}</th><th scope="col">{{ _("Sự kiện") }}</th><th scope="col">Job</th>
@@ -160,7 +160,7 @@
 
 <div class="card">
   <h2 style="margin-top:0;">{{ _("Danh mục sự kiện") }}</h2>
-  <div class="dev-bang">
+  <div class="dev-bang" tabindex="0">
     <table class="table">
       <thead><tr><th scope="col">{{ _("Loại") }}</th><th scope="col">{{ _("Khi nào") }}</th></tr></thead>
       <tbody>

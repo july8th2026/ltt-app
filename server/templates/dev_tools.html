@@ -87,7 +87,7 @@
         <h4>{{ _("Tham số") }}</h4>
         {# ⛔ Bang nay SINH tu `input_schema` (xem `_tham_so`). Go tay la tao ban
            sao thu hai cua hop dong, va ban sao do lech AM THAM. #}
-        <div class="dev-bang">
+        <div class="dev-bang" tabindex="0">
           <table class="table">
             <thead><tr>
               <th scope="col">{{ _("Tên") }}</th><th scope="col">{{ _("Kiểu") }}</th>
@@ -138,7 +138,7 @@
 {% if models %}
   <div class="card" style="margin-top:16px;">
     <h2 style="margin-top:0;">Model</h2>
-    <div class="dev-bang">
+    <div class="dev-bang" tabindex="0">
       <table class="table">
         <thead><tr>
           <th scope="col">Alias</th><th scope="col">{{ _("Nhóm") }}</th><th scope="col">{{ _("Độ ổn định") }}</th>

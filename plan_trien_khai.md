@@ -32,9 +32,9 @@ nào < 88 · critical UI xác minh ở mức render thật (E3).
 | Bộ quét | `node tools/golden_ui_quet.mjs --cau-hinh routes.json --ra <dir> [--khung ...]` — HTTP, ảnh toàn trang, console, request hỏng, tràn ngang, axe WCAG 2.2 AA, h1/main/lang, ô chạm, ô nhập <16px |
 
 ## Overall Progress
-41%
+45%
 
-(Trọng số: P0 5 · P1 10 · P2 15 · P3 15 · P4 20 · P5 15 · P6 10 · P7 10. Tính: P0 100%·5 + P1 100%·10 + P2 45%·15 + P2 50%·15 + P3 35%·15 + P4 65%·20 + P5 5%·15 = 5+10+7,5+5,25+13+0,75 ≈ 41,5 ⇒ **41%** (chưa có chứng nhận gate).)
+(Trọng số: P0 5 · P1 10 · P2 15 · P3 15 · P4 20 · P5 15 · P6 10 · P7 10. Tính: P0 100%·5 + P1 100%·10 + P2 45%·15 + P2 50%·15 + P3 35%·15 + P4 65%·20 + P5 15%·15 + P6 25%·10 = 5+10+7,5+5,25+13+2,25+2,5 ≈ 45,5 ⇒ **45%** (chưa có chứng nhận gate).)
 
 | Phase | % | Trạng thái |
 |---|---|---|
@@ -43,8 +43,8 @@ nào < 88 · critical UI xác minh ở mức render thật (E3).
 | 2 Golden Design System | 50 | 🟡 |
 | 3 Shared UI Components | 35 | 🟡 |
 | 4 Critical Pages | 65 | 🟡 Error ✅ · Jobs 🟡 · Billing 🟡 · Auth 🟡 · Shell/Workspace 🟡 · Public ⏳ |
-| 5 Remaining Pages & Apps | 5 | ⏳ |
-| 6 Responsive & Accessibility | 0 | ⏳ |
+| 5 Remaining Pages & Apps | 15 | 🟡 Admin tự dựng axe 0 · sqladmin ⏳ · Developer/VPS/Nexus/Status/Apps ⏳ |
+| 6 Responsive & Accessibility | 25 | 🟡 khung cuộn + nhãn form + tương phản chéo họ |
 | 7 Visual Regression & Final QA | 0 | ⏳ |
 
 ## Current Baseline
@@ -249,11 +249,19 @@ Completed:
 Thứ tự: Error → Auth → Billing → Jobs → Shell/Header/Workspace home.
 
 ## Phase 5 — Remaining Pages & Apps
-Progress: 0%
+Progress: 15%
+
+Completed:
+- Admin tự dựng (24 màn + 10 thân f-string ở `server/admin.py`): 19 nhãn form nối `for`/`id`, 5 màu chấm provider đổi sang sắc tối cùng họ để chữ trắng ≥4,5:1 (cũ 2,77–3,56:1), mọi `.tablewrap` focus được. E3: 52 phép đo, **axe 0** trên mọi trang admin tự dựng (còn lại chỉ `/admin/user/list` — sqladmin, DL-004). Bánh cóc `check_server_routes` (admin.py chỉ được nhỏ đi) PASS.
+
+Pending: sqladmin (DL-004), `/admin/khach-hang` tràn @390, Status (`/status` thiếu h1), Developer, VPS, Nexus, 21 màn app.
 Thứ tự: Status → Developer → VPS → Nexus → Admin tự dựng → sqladmin (DL-004) → Apps (taoanh, voice, taovideo, upscale, taoclipngan, thumbnail, chatltt, ommi, agent/canvas, autosub, form-app nhỏ).
 
 ## Phase 6 — Responsive & Accessibility
-Progress: 0%
+Progress: 25%
+
+Completed:
+- `scrollable-region-focusable`: 67 khung cuộn `.tablewrap`/`.dev-bang` trên 33 template + `admin.py` có `tabindex="0"`; `pre` do `sao_chep.js` bọc focus được. Nút "Sao chép" theo `<html lang>` (bản EN trước đây vẫn tiếng Việt). Đo ở 390 cho Public/Status/Developer/Admin: khung cuộn **35 → 2** (2 còn lại là `admin.py` chưa nạp lại, đã hết sau khởi động lại), tương phản **87 → 6**.
 Khung: 390×844 · 430×932 · 768×1024 · 1440×900 · 1920×1080 cho critical; axe 0 critical/serious trên critical flows.
 
 ## Phase 7 — Visual Regression & Final QA
@@ -279,7 +287,7 @@ Screenshot regression Playwright (`toHaveScreenshot`) cho critical screens; test
 | P1-06 🟡 PARTIAL (jobs, rail trang chủ, taoanh, thumbnail, transcript, prompt-canh, audio-pause, video-assembly xong; còn dev/admin nội bộ) | Enum nội bộ lộ ra khách: `running · 20%`, `queued · 0%`, `cancelled · 10%` (taoanh), `running/queued/done` (rail home), tiêu đề `Job 8fde2d41`, `taoanh · taoanh.generate` (job detail) | jobs, workspace, apps |
 | P1-07 | i18n: nhãn tiếng Anh cứng (`GENERATIVE IMAGE`, `OUTPUT HISTORY`, `REFERENCE & EDIT`), chip thể loại lẫn hoa/thường (`audio`, `video` cạnh `AI Video`), chuỗi không qua `_()` ở error/jobs/nap/auth/status, sqladmin toàn tiếng Anh (`Search`, `Actions`, `Showing 1 to 3`) | toàn hệ |
 | P1-08 🟡 PARTIAL (billing xong; còn home rail/dev/VPS kiểm lại) | Định dạng số kiểu Anh trong giao diện Việt: `200,000đ`, `2,200 credit`, `1,000,000đ` (billing) trong khi VPS/Developer dùng `149.000đ`, `1.250` | billing, jobs |
-| P1-09 | Progressbar không tên (12) · vùng cuộn `<pre>` không focus được (35) · control lồng control ở thẻ giọng Voice (18) · control thiếu nhãn ở admin `api-key-them` | a11y |
+| P1-09 🟡 PARTIAL (progressbar jobs/home ✅, khung cuộn ✅, nhãn admin ✅; còn Voice nested-interactive, upscale `#vfile`) | Progressbar không tên (12) · vùng cuộn `<pre>` không focus được (35) · control lồng control ở thẻ giọng Voice (18) · control thiếu nhãn ở admin `api-key-them` | a11y |
 | P1-10 | sqladmin list: menu "Actions" đè dòng đầu bảng, "Show 10 / Page" trôi ngoài card | admin |
 | P1-11 | `/admin/khach-hang` tràn ngang ở 390 | admin |
 | P1-12 | Ảnh bìa thẻ app không đồng nhất: nửa có ảnh, nửa là khối tối rỗng (catalog ẩn danh + workspace) | public, workspace |
@@ -338,6 +346,9 @@ Screenshot regression Playwright (`toHaveScreenshot`) cho critical screens; test
 | EV-12 | E3 | `after/p4-auth`, `after/p4-auth-en`: 23 phép đo auth VI+EN, axe 0 |
 | EV-13 | E3 | `after/p4-home`, `after/p4-home768`: 10 phép đo trang chủ 3 khung, axe 0, main=1 |
 | EV-14 | E2 | `test_1270` 52/52; `test_105/109/110` xanh |
+| EV-15 | E3 | `after/p6-cuon`: 51 route @390 (Public/Status/Dev/Admin) — trước/sau theo luật axe |
+| EV-16 | E3 | `after/p5-admin`: 52 phép đo admin, axe 0 ngoài sqladmin |
+| EV-17 | E2 | `test_1270` 56/56; `test_294/306` (sao_chep), `test_317/322` (admin), `check_server_routes` PASS |
 
 ## Current Blocker
 
@@ -345,4 +356,4 @@ Không có.
 
 ## Next Action
 
-Phase 4 Public: `huong_dan*`, `gia_api`, `api_dieu_khoan` (inline style ~150, 35 vùng `<pre>` cuộn không focus được), rồi Phase 5 theo thứ tự plan.
+DL-004 sqladmin: map `--tblr-*` sang token, sửa menu Actions đè bảng + phân trang trôi, dịch chuỗi hiển thị; rồi `/admin/khach-hang` @390 và `/status` h1.

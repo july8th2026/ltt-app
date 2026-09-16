@@ -65,7 +65,7 @@
         <a href="/admin/credit-entry/list">Sổ đầy đủ →</a>
       </header>
       {% if ho_so.but_toan %}
-      <div class="dev-bang">
+      <div class="dev-bang" tabindex="0">
         <table class="table">
           <thead><tr><th>Lúc</th><th>Loại</th><th class="tnum">Δ</th><th>Ghi chú</th></tr></thead>
           <tbody>
@@ -92,7 +92,7 @@
         <a href="/admin/don">Tất cả đơn →</a>
       </header>
       {% if ho_so.don %}
-      <div class="dev-bang">
+      <div class="dev-bang" tabindex="0">
         <table class="table">
           <thead><tr><th>Mã đơn</th><th class="tnum">Tiền</th><th class="tnum">Credit</th><th>Trạng thái</th><th>Tạo lúc</th></tr></thead>
           <tbody>
@@ -128,7 +128,7 @@
         {% if ho_so.viec_hong %}
         <p><span class="dev-tt loi">{{ ho_so.viec_hong }}</span> việc hỏng trong {{ ho_so.viec|length }} việc gần nhất.</p>
         {% endif %}
-        <div class="dev-bang">
+        <div class="dev-bang" tabindex="0">
           <table class="table">
             <thead><tr><th>Lúc</th><th>App</th><th>Loại</th><th>Trạng thái</th></tr></thead>
             <tbody>
@@ -195,7 +195,7 @@
         <a href="/admin/session/list">Bảng thô →</a>
       </header>
       {% if ho_so.phien %}
-      <div class="dev-bang">
+      <div class="dev-bang" tabindex="0">
         <table class="table">
           {# ⛔ KHONG hien `DbSession.id`: no CHINH LA token cookie phien (dung
              lam khoa chinh). Render no ra day la ai xem/chup man hinh trang nay

@@ -62,7 +62,7 @@
 
   <section>
     <h2 style="margin:22px 0 10px">Đang áp dụng</h2>
-    <div class="tablewrap"><table class="ui-table">{{ dau_bang() }}<tbody>
+    <div class="tablewrap" tabindex="0"><table class="ui-table">{{ dau_bang() }}<tbody>
       {% if line is none %}
       <tr><td colspan="7" class="muted">Chưa có công cụ nào được mở.</td></tr>
       {% elif line.current %}
@@ -82,7 +82,7 @@
 
   <section>
     <h2 style="margin:22px 0 10px">Sắp tới</h2>
-    <div class="tablewrap"><table class="ui-table">{{ dau_bang() }}<tbody>
+    <div class="tablewrap" tabindex="0"><table class="ui-table">{{ dau_bang() }}<tbody>
       {% for v in (line.upcoming if line else []) %}{{ dong(v, True) }}
       {% else %}<tr><td colspan="7" class="muted">Không có gì đang chờ.</td></tr>{% endfor %}
     </tbody></table></div>
@@ -90,7 +90,7 @@
 
   <section>
     <h2 style="margin:22px 0 10px">Lịch sử</h2>
-    <div class="tablewrap"><table class="ui-table">{{ dau_bang() }}<tbody>
+    <div class="tablewrap" tabindex="0"><table class="ui-table">{{ dau_bang() }}<tbody>
       {% for v in (line.history if line else []) %}{{ dong(v, False) }}
       {% else %}<tr><td colspan="7" class="muted">Chưa có lịch sử.</td></tr>{% endfor %}
     </tbody></table></div>

@@ -92,7 +92,7 @@
 
     <section>
       <h2 style="margin:22px 0 10px">Mã lỗi hay gặp</h2>
-      <div class="tablewrap"><table class="ui-table">
+      <div class="tablewrap" tabindex="0"><table class="ui-table">
         <thead><tr><th>Mã</th><th>Số lần</th></tr></thead>
         <tbody>
           {% for ma, so in data.failures_by_code %}
@@ -114,7 +114,7 @@
          `params._api.tool` — hai định danh khác nhau, nên `?tool=<job_type>` sẽ
          luôn ra danh sách rỗng. Đích đúng là bảng job của nền tảng, nơi
          `job_type` là cột tìm được. #}
-      <div class="tablewrap"><table class="ui-table">
+      <div class="tablewrap" tabindex="0"><table class="ui-table">
         <thead><tr><th>Loại job</th><th>Tổng</th><th>Hỏng</th></tr></thead>
         <tbody>
           {% for r in by_tool %}
