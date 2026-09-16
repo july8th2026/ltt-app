@@ -218,6 +218,57 @@ def test_ket_qua_khi_dang_chay_khong_tra_tep(khach):
     assert d["audio_url"] == ""
 
 
+def _lui_tao_luc(jid: str, giay: int) -> None:
+    import datetime as _dt
+
+    import platform_core.db as dbmod
+    from platform_core.models import Job
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        job = db.get(Job, jid)
+        job.created_at = (_dt.datetime.now(_dt.timezone.utc)
+                          - _dt.timedelta(seconds=giay))
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+@pytest.mark.parametrize("tuoi, muc", [(0, "moi"), (9, "moi"), (10, "cho_may"),
+                                       (60, "cho_may"), (61, "lau"), (86400, "lau")])
+def test_D005_muc_cho_theo_nguong(tuoi, muc):
+    from apps.ltt_voice.routes import _p_tao
+    assert _p_tao.muc_cho(tuoi) == muc
+
+
+def test_D005_ket_qua_queued_tra_TUOI_va_MUC_cho_that(khach):
+    """🔴 13–16/09/2026 job Voice nằm `queued` ba ngày (thiếu làn worker) và
+    Studio chỉ nói "Đang xếp hàng…". Cửa kết quả phải trả tuổi hàng đợi do MÁY
+    CHỦ tính, để giao diện nói được "lâu hơn bình thường" thay vì quay vòng."""
+    client, uid = khach
+    moi = _tao_job(uid, status="queued")
+    d = client.get(f"/ltt-voice/ket-qua/{moi}").json()
+    assert d["muc_cho"] == "moi" and d["tuoi_hang_doi_s"] < 10
+
+    cu = _tao_job(uid, status="queued")
+    _lui_tao_luc(cu, 90)
+    d = client.get(f"/ltt-voice/ket-qua/{cu}").json()
+    assert d["muc_cho"] == "lau" and d["tuoi_hang_doi_s"] >= 90
+
+    chay = _tao_job(uid, status="running")
+    assert "muc_cho" not in client.get(f"/ltt-voice/ket-qua/{chay}").json()
+
+
+def test_D005_studio_co_cau_cho_lau_va_duong_toi_trang_viec(khach):
+    client, _uid = khach
+    html = client.get("/ltt-voice").text
+    assert 'id="lv-kq-cho-lau"' in html and 'id="lv-kq-cho-trang"' in html
+    assert "choLau:" in html and "choMay:" in html
+
+
 def test_ket_qua_KHONG_TRA_error_tho(khach):
     """🔴 Phép kiểm quan trọng nhất tệp này.
 
@@ -314,6 +365,26 @@ def test_studio_KHONG_ve_dieu_khien_bi_cam(khach):
     assert 'name="toc_do"' in html, (
         "toc do PHAI co tren giao dien — no la hau ky, khong thuoc nam tham so "
         "lay mau ma Q119 khoa. Doc docstring phep kiem nay truoc khi go no.")
+
+
+def test_studio_toc_do_la_THANH_KEO_theo_hang_so_chung_voi_API(khach):
+    """16/09/2026 (chủ dự án): thanh kéo bước 0,05 thay 6 nút rời.
+
+    ⛔ min/max PHẢI là `toc_do.TOC_DO_MIN/MAX` — cùng số ToolSpec API khai cho
+       `speed`. Một khoảng gõ tay trong template là hai nguồn lệch nhau."""
+    import re
+
+    from apps.ltt_voice import toc_do
+    client, _uid = khach
+    html = client.get("/ltt-voice").text
+    m = re.search(r'<input type="range" name="toc_do" id="lv-toc-do"\s+'
+                  r'min="([^"]+)" max="([^"]+)"\s+step="([^"]+)"', html)
+    assert m, "khong thay thanh keo toc do"
+    assert (float(m.group(1)), float(m.group(2)), float(m.group(3))) == (
+        toc_do.TOC_DO_MIN, toc_do.TOC_DO_MAX, toc_do.TOC_DO_BUOC)
+    assert "data-tocdo=" not in html, "nut toc do roi cu phai go"
+    for moc in toc_do.MOC_THANH_KEO:
+        assert f'<option value="{moc}"' in html
 
 
 # ── CSRF: bánh cóc cho một lỗ đã sống từ ngày phát hành ──────────────────────

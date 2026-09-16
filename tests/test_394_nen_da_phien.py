@@ -563,7 +563,12 @@ def test_kho_ket_qua_ghi_du_danh_tinh(tmp_path, monkeypatch):
 def test_kho_ket_qua_KHONG_ghi_bien_moi_truong():
     """⚠️ Bien moi truong chua bi mat. Mot kho ket qua khong duoc cham vao do."""
     ma = (GOC / "tools" / "gate.py").read_text(encoding="utf-8")
-    khuc = ma[ma.index("def _ghi_ket_qua"):ma.index("def _git_gon")]
+    # Chi THAN `_ghi_ket_qua` (toi `def` cap dau ke tiep). 16/09/2026: cat toi
+    # `def _git_gon` om luon `lenh_chay_lai` (doc `s.tail` de IN lenh chay lai,
+    # khong ghi vao kho) ma governance dat vao giua — do oan.
+    dau = ma.index("def _ghi_ket_qua")
+    khuc = ma[dau:ma.index("\ndef ", dau + 1)]
+    assert "json" in khuc, "khuc cat khong con la ham ghi ban ghi"
     assert "environ" not in khuc, "kho ket qua dang ghi bien moi truong"
     assert ".tail" not in khuc, "kho ket qua dang ghi dau ra cua buoc"
 

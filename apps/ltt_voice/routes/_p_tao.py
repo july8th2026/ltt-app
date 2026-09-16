@@ -30,6 +30,11 @@ def _loi_400(e) -> JSONResponse:
                         status_code=400)
 
 
+#: GUI-D005: ngưỡng + phép tính tuổi hàng đợi ở `hang_doi.py` (dùng chung với
+#: màn Lịch sử — D015). Tái xuất ở đây cho nơi đã gọi `_p_tao.muc_cho`.
+from ..hang_doi import muc_cho, tuoi_hang_doi_s  # noqa: E402,F401
+
+
 # ── Tạo tiếng nói ────────────────────────────────────────────────────────────
 
 @router.get("", response_class=HTMLResponse)
@@ -118,6 +123,9 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
         #    g.dung_chung` tự viết — bản tự viết bỏ sót ô "dung_chung=True
         #    nhưng license CHƯA ok", xem docstring của chính hàm đó).
         rieng, chung = tham_chieu.tach_rieng_chung(cua_toi)
+        # GUI-D001: nhãn Kho chung / Giọng của tôi tính MỘT chỗ, xem
+        # `tham_chieu.loai_giong` cho vì sao theo chủ sở hữu chứ không theo cờ.
+        loai_giong = tham_chieu.loai_theo_ma(cua_toi, uid)
         duong_nghe = nghe_thu.duong_cho_trang(
             duong_audio=f"{MANIFEST.route_prefix}/audio", owner_id=uid,
             ma_mau=[g.ma for g in giong_mau.DANH_SACH],
@@ -162,13 +170,17 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
                     # không có nút — `manifest.py` gọi đó là "một lời hứa thành
                     # một lỗi".
                     phat_dan_bat=_p_phat_dan.bat_phat_dan(),
-                    # Các nấc tốc độ lấy từ `toc_do.CAC_NAC` chứ không gõ lại
-                    # trong template: một danh sách chép ra hai chỗ sẽ lệch, và
-                    # chỗ lệch là chỗ giao diện mời một giá trị mà `hop_le` ép
-                    # về giá trị khác — im lặng.
-                    cac_nac_toc_do=_toc_do.CAC_NAC,
+                    # Khoảng/bước/vạch của thanh kéo tốc độ lấy từ `toc_do` chứ
+                    # (`speed` min/max): hai bản chép ra hai chỗ sẽ lệch, và chỗ
+                    # lệch là chỗ giao diện mời một giá trị mà `hop_le` ép về giá
+                    # trị khác — im lặng.
+                    toc_do_min=_toc_do.TOC_DO_MIN,
+                    toc_do_max=_toc_do.TOC_DO_MAX,
+                    toc_do_buoc=_toc_do.TOC_DO_BUOC,
+                    toc_do_moc=_toc_do.MOC_THANH_KEO,
                     du_an_ds=du_an_ds,
                     duong_nghe=duong_nghe,
+                    loai_giong=loai_giong,
                     gan_day=gan_day,
                     phien_ban=phien_ban,
                     nhan_pb=nhan_pb))
@@ -339,6 +351,13 @@ def ket_qua(job_id: str, user=Depends(user_hien_tai), _=Depends(require_login)):
             "canh_bao": list(kq.get("canh_bao") or ()),
             "giong_that": kq.get("giong_that") or "",
         }
+        if job.status == "queued":
+            # GUI-D005: tuổi hàng đợi THẬT, tính MỘT chỗ ở máy chủ (đồng hồ
+            # trình duyệt lệch được). Không bịa trạng thái "đang tìm máy" — chỉ
+            # nói job đã nằm bao lâu, và từ ngưỡng nào thì đó là bất thường.
+            tuoi = tuoi_hang_doi_s(job.created_at)
+            ra["tuoi_hang_doi_s"] = tuoi
+            ra["muc_cho"] = muc_cho(tuoi)
         if job.status == "error":
             from platform_core import job_events
             cau = [e.public_message for e in job_events.timeline(db, job.id)

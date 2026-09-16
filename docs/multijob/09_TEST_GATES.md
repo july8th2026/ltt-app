@@ -23,8 +23,8 @@
 | A13 một nguồn | `test_334` mở rộng: `--parallel`/`-kvu`/`--mmproj`/UUID trong yaml khớp `ngan_sach.py` | đổi một bên ⇒ đỏ |
 | A14 hồi quy | `test_313`, `test_363`, `test_389`, `test_250`, `test_252`, `test_68`, `test_272` xanh | — |
 
-Vòng lặp: `python tools\gate.py --doi` sau mỗi lần sửa (hợp đồng vận hành canonical); **trước khi báo
-xong**: `python tools\gate.py` đầy đủ (kiểm `loi_cho_bo_test` có trong gate của cây).
+Nhịp test/gate: `docs/00_LTT_OPERATING_CONTRACT.md` §4 — không chép lại ở đây.
+Trước lượt L3: kiểm `loi_cho_bo_test` có trong `tools\gate.py` của cây.
 
 ## B. Có GPU — máy B, qua ĐƯỜNG PRODUCTION (pha 2, D-10 A)
 

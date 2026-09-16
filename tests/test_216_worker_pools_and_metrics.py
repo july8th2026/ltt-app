@@ -243,3 +243,45 @@ def test_mau_metrics_khong_mang_gi_cua_khach(db):
 
     row = db.execute(sa.select(ApiMetricSample)).scalars().first()
     assert row.name in metrics.snapshot()["counters"] or row.name == "requests"
+
+
+# ── GUI-D006 (16/09/2026): app nào KHÔNG làn nào nhặt được ──────────────────
+#
+# 🔴 13–16/09 `LTT_WORKER_POOLS=api:6, gpu:1` thiếu làn `voice` ⇒ job LTT VOICE
+#    nằm `queued` ba ngày, không log, không event. Hàm dưới trả lời đúng câu
+#    không ai hỏi: "có app đang bật nào mà không worker nào nhặt được không".
+
+_APP = [("ltt_llm", ("api",), True), ("ltt_voice", ("voice",), True),
+        ("taoclipngan", ("gpu", "ffmpeg"), True), ("asv_voice", ("voice",), False)]
+
+
+def _doi_hinh_tu(monkeypatch, chuoi):
+    import job_worker
+    monkeypatch.setenv("LTT_WORKER_POOLS", chuoi)
+    return job_worker._doi_hinh()
+
+
+def test_D006_cau_hinh_14_09_de_lo_ltt_voice_vo_hinh(monkeypatch):
+    import job_worker
+    vo_hinh = job_worker.app_khong_lan_nao_nhat(
+        _doi_hinh_tu(monkeypatch, "api:6, gpu:1"), _APP)
+    assert vo_hinh == ["ltt_voice", "taoclipngan"]
+
+
+def test_D006_them_lan_voice_thi_voice_het_vo_hinh(monkeypatch):
+    import job_worker
+    vo_hinh = job_worker.app_khong_lan_nao_nhat(
+        _doi_hinh_tu(monkeypatch, "api:6, gpu:1, voice:1"), _APP)
+    assert vo_hinh == ["taoclipngan"]
+    vo_hinh = job_worker.app_khong_lan_nao_nhat(
+        _doi_hinh_tu(monkeypatch, "api:6, gpu+ffmpeg:1, voice:1"), _APP)
+    assert vo_hinh == []
+
+
+def test_D006_worker_da_nang_va_app_tat_khong_bi_bao(monkeypatch):
+    import job_worker
+    monkeypatch.delenv("LTT_WORKER_POOLS", raising=False)
+    assert job_worker.app_khong_lan_nao_nhat(job_worker._doi_hinh(), _APP) == []
+    # `asv_voice` tắt ⇒ không báo dù không làn nào có `voice`.
+    assert "asv_voice" not in job_worker.app_khong_lan_nao_nhat(
+        _doi_hinh_tu(monkeypatch, "api:1"), _APP)

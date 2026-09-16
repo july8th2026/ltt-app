@@ -1,5 +1,9 @@
 # RULE INVENTORY — mọi nguồn luật vận hành trong HEAD
 
+> ⚠️ **Ảnh chụp lịch sử.** Nhịp hiện hành (16/09: test nhắm trong phiên, L3 một
+> lần cuối phiên) ở `docs/00_LTT_OPERATING_CONTRACT.md` §4 và
+> `SESSION_MIGRATION_NOTE.md`. Cột *"khớp canonical"* dưới đây so với luật 08/09.
+>
 > Chụp **2026-09-08**. Phạm vi quét: **822 tệp `.md` được git theo dõi**
 > (`git ls-files '*.md'`, trừ `docs/_luutru/`), cộng `tools/gate.py`,
 > `tools/test_nhanh.py`, `tools/thanh_phan.py`, `pytest.ini`, `tests/conftest.py`.

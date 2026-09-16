@@ -242,13 +242,15 @@ def ensure_free_ip(db, profile, *, instance, gateway_row, provider, gateway,
             not_sent(prepared_metadata)
             raise BackendConflict("OVH cart changed before checkout") from exc
         except Exception as exc:
-            log.warning("OVH checkout outcome unknown, recovering order: %s",
+            # Type name only: provider exceptions can carry credential-bearing bodies.
+            log.warning("OVH checkout failed (%s); recovering order by cart",
                         type(exc).__name__)
             try:
                 order_id = provider.recover_order(
                     cart_id=prepared.cart_id, item_id=prepared.item_id)
-            except Exception as loi_tim:
-                log.warning("OVH order recovery failed: %s", type(loi_tim).__name__)
+            except Exception as exc_recover:
+                log.warning("OVH order recovery failed (%s); order goes to review",
+                            type(exc_recover).__name__)
                 order_id = None
         if type(order_id) is not int or order_id <= 0:
             review(keep_metadata=metadata)
@@ -336,5 +338,5 @@ def ensure_free_ip(db, profile, *, instance, gateway_row, provider, gateway,
     except (AcquisitionNeedsReview, OrderDeliveryPending):
         raise
     except Exception as exc:
-        log.warning("OVH IP delivery import failed: %s", type(exc).__name__)
+        log.warning("OVH IP attribution failed: %s", type(exc).__name__)
         review()

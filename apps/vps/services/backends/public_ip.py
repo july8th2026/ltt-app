@@ -133,8 +133,8 @@ class OvhStaticIpPoolBackend:
                 pass
             else:
                 self.auto_acquire = True
-                # `contracts_valid` already proved a non-empty list; `or ()` only
-                # tells the type checker what the guard above established.
+                # `contracts_valid` da chung minh day la list khong rong; mypy
+                # khong thu hep kieu qua mot bien bool, nen `or ()` chi de noi ra.
                 self._accepted_contracts = tuple(contracts or ())
 
     def reserve(self, *, reservation_key: str, label: str) -> PublicIpResource:
@@ -282,7 +282,8 @@ class OvhStaticIpPoolBackend:
             except Exception as exc:
                 # Health is a read-only boundary; provider replies can contain
                 # credential URLs/bodies and must never reach its summary.
-                log.warning("OVH IP replenish probe failed: %s", type(exc).__name__)
+                log.warning("public IP acquisition probe failed: %s",
+                            type(exc).__name__)
         status = "HEALTHY" if free > 0 or replenishable else "CRITICAL"
         return BackendHealth(
             status, f"{free} FREE public IP(s)",

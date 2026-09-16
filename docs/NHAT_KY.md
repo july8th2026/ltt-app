@@ -40,6 +40,112 @@
   Điều khoản), R16 (IP OVH tự gia hạn khi rỗi — cần chủ sản phẩm chốt), R17
   (`inventory_sync` mất `order_id`); mypy `arg-type` +1 đã có sẵn ở `e5b72562`.
   Chi tiết: `docs/VPS_V4/14_KE_HOACH_VAN_HANH_TOI_UU.md`.
+
+## 2026-09-16 — LTT Voice W4': ChatLTT `speech.ltt` chặn lệch làn TRƯỚC giữ tiền
+
+- Phát hiện (audit W4', `docs/LTT_VOICE/GUI_DOI_SOAT_VA_PLAN_V2.md` trên nhánh
+  `phien/ltt-voice-gui-v2`): `runtime_noi_bo/job.py` không gọi hook
+  `ToolSpec.kiem_truoc`. Đo bằng test đỏ trước khi sửa: ChatLTT báo giá giọng
+  `Adam` (VI) + văn bản EN ⇒ **200**, bấm tạo ⇒ **202 + job thật + giữ credit**;
+  worker mới từ chối `voice_language_mismatch`.
+- Sửa: `runtime_noi_bo.job.bao_gia` gọi đúng hook app đã khai (cùng hook
+  `public_api.invocation.kiem_truoc` gọi cho `/api/v1`), sau validate, trước
+  giá. `bao_gia` là cửa duy nhất dựng `BaoGia` mà `nop_job` nhận ⇒ chặn cả nút
+  bấm (V1) lẫn model tự gọi (V3). Luật làn vẫn một nguồn:
+  `lan_ngon_ngu.quyet_dinh`. `ThamSoSai` mang `ma`; route `_p_media` trả
+  `error.code = voice_language_mismatch`; V3 trả `ma_loi` nghiệp vụ cho model.
+- Hệ quả phụ có chủ ý: giọng của người khác cũng bị chặn ở báo giá nội bộ
+  (trước đây chỉ worker chặn). `test_609` cập nhật; test worker giữ lại như
+  tầng phòng thủ thứ hai (tắt cửa trước bằng monkeypatch).
+- `/api/v1/workflows/{id}/runs`: **không** chạy được `speech.ltt` hôm nay —
+  route tạo `WorkflowRun` + giữ trần credit, nhưng không mã nào trong kho biến
+  node thành job (`platform_core/workflow/` không gọi `submit_with_credit`,
+  `dieu_phoi.dequeue` không có người gọi). Nên chưa có lỗ tương tự; **khi dựng
+  bộ thi hành node, nó phải đi qua `runtime_noi_bo.job.bao_gia`** (hoặc gọi
+  `kiem_truoc`) trước khi nộp job. Riêng việc giữ trần credit cho một run không
+  có bộ thi hành là một điểm ngoài phạm vi, chưa sửa.
+- Test: `tests/test_1263_chatltt_tieng_kiem_truoc_truoc_giu_tien.py` (mới, đỏ
+  4/5 trước sửa → xanh 5/5); cụm nhắm 21 tệp `-n 6`.
+
+## 2026-09-16 — LTT VOICE GUI V2: đồng bộ catalog, hàng đợi, ngôn ngữ, kho giọng (nhánh `phien/ltt-voice-gui-v2`)
+
+- **Đối soát trước khi code:** plan 15/09 đã vượt cổng Wave 1, quy thiếu nguyên nhân
+  25 giọng kho chung (cổng license), báo W3 xong sai với một bằng chứng tự gây. Code
+  phiên 15/09 hoàn nguyên; bản sao CSDL production + dump trong `%TEMP%` đã xoá.
+  Chi tiết: `docs/LTT_VOICE/GUI_DOI_SOAT_VA_PLAN_V2.md`, ma trận `GUI_AUDIT_MATRIX.md`.
+- **Phân loại giọng (GUI-D001):** `tham_chieu.loai_giong` theo chủ sở hữu, dùng ở màn
+  Giọng + Studio + Dự án; khối quản lý chỉ giọng của người xem; không gửi clip/UUID
+  người khác. Bộ lọc nhãn một luật (D004). Số đếm thật (V01).
+- **Hàng đợi (D005/D015):** `/ket-qua` trả `tuoi_hang_doi_s`/`muc_cho`; Studio cảnh
+  báo >60 s kèm trang việc; Lịch sử gắn "Chờ lâu bất thường". Ngưỡng ở `hang_doi.py`.
+- **Ngôn ngữ:** `/phat-dan` nhận `ngon_ngu`; nghe thử văn bản CHẶN khi lệch (D003-B,
+  chủ dự án duyệt); Dự án đọc tất cả trả `ma_loi`; mô tả `language` API đúng hành vi
+  (golden + CHANGELOG + `check_api_compat --accept`).
+- **Tốc độ:** thanh kéo 0,5–2,0 bước 0,05 (hằng số chung API); Nghe ngay nói rõ 1×.
+- **Kho giọng (W-KHO):** `RoutedStorage` + `LTT_STORAGE_LOCAL_PREFIXES`; công cụ
+  `chep_tien_to_r2_ve_dia.py`, `dung_lai_giong_kho_chung.py`; `backup.ps1` gom dữ liệu giọng.
+- **Worker (D006):** `job_worker.app_khong_lan_nao_nhat` + `do_sau_khoi_dong`.
+- **Bánh cóc đỏ sẵn trên `main`:** thu hẹp 8 `except Exception` ở `tools/*`; gộp nhánh
+  governance (đổi test VPS 1281/1282, mypy); khai skip `test_1025`; dịch 2 chuỗi hướng
+  dẫn cài model. Gộp release VPS r3 (`ee10c2ad`); xung đột `ovh_acquisition.py` giữ
+  nguyên logic thanh toán r2/r4, chỉ thêm log tên loại lỗi.
+- **Kiểm trình duyệt bản dev** (`GUI_BROWSER_ACCEPTANCE.md` §A): seed thêm giọng kho
+  chung của người khác / giọng chung chưa duyệt / job queued lâu. Bắt được lỗi **có sẵn
+  trên `main`**: nút "Chi tiết" trên thẻ giọng bấm chuột không mở gì (`<button>` bên
+  trong thẻ bị `BEN_TRONG` nuốt) — sửa `0821cd52`. ⚠️ Phím Enter của Browser pane không
+  kích hoạt `<button>` (giới hạn công cụ) — kiểm bàn phím bằng Playwright.
+- **Đã lên production 22:47 (`d5bd7b07`):** gộp `main` + đẩy GitHub; `voice/` về đĩa
+  (chép 30 tệp R2, không xoá R2) + pools `gpu+ffmpeg:1`; dựng lại 25 giọng kho chung
+  (25 enroll `done`) + duyệt license 25/25; E2E tài khoản thường 7/7 PASS. Báo cáo:
+  `docs/LTT_VOICE/GUI_FINAL_REPORT.md`.
+- ⚠️ `dung_lai_giong_kho_chung --chay` chạy lại **nộp trùng** giọng đã `done` — dedupe
+  của `submit_with_credit` chỉ khớp job chưa kết thúc (đã huỷ + hoàn 1 job trùng).
+- ⚠️ Lượt `gate --doi` kẹt `-n 1`: số worker chốt MỘT lần lúc khởi động theo tải lúc đó
+  (phiên khác đang giữ máy) và không tăng lại — thấy chậm bất thường thì kiểm dòng
+  `test_nhanh.py -n N` trước khi chờ.
+- **Chưa kiểm trên production:** góc nhìn chủ 25 giọng (tài khoản `.local` cần đăng nhập).
+
+## 2026-09-16 — LTT VOICE: clip gốc 25 giọng kho chung KHÔNG mất — đã lưu bản bền
+
+- Báo cáo 15/09 viết "25 clip nguồn đã mất khỏi mọi nơi đo được" — **SAI**: phép đo
+  chỉ nhìn R2, đĩa `C:\LTTPlatform` và tệp *đã track* trong git. Bị bỏ sót: thư mục
+  gitignored `D:\LTTSTUDIOSAPP\tmp\giong_cu\` (25 WAV, 24,3 MB — bản nối mà
+  `tools/nhap_kho_giong_cu.py` đã tải lên ngày 01/09) và kho hệ cũ `D:\Voiceclone_TTS`.
+- Đối chiếu SHA-256: **25/25** giọng `dung_chung` khớp từng byte với `voice_ref.sha256`.
+- Chủ dự án yêu cầu lưu bền: chép (không chuyển) sang
+  `C:\LTTPlatform\data\voice_goc\kho_chung\<public_id>.wav` + `manifest.json`
+  (public_id, tên, làn, tên tệp cũ, sha256, byte). Băm lại sau chép: 0 lệch.
+  Ngoài `app\` ⇒ sống qua deploy. Bản trên D: giữ nguyên ⇒ 2 bản / 2 ổ vật lý.
+- ⚠️ `deploy/windows/backup.ps1` chỉ gom tệp cấp đầu của `data\` theo mẫu
+  (`config.json`, `*.enc`, `*.db`…) ⇒ **thư mục con này KHÔNG vào bản sao lưu hằng
+  ngày**. Chưa sửa (việc riêng, cần chủ dự án duyệt).
+- Clip nằm trên R2 vẫn mất; nguyên nhân LIKELY là luật vòng đời ~7 ngày của bucket
+  (`docs/LTT_VOICE/HOP_NHAT/MAT_TEP_KHO_R2.md`), chưa đọc được luật thật. Giọng vẫn
+  chưa dùng được cho tới khi ghi danh lại/nạp lại biểu diễn và duyệt license.
+
+## 2026-09-16 — LTT VOICE: thêm làn `voice:1` vào worker production (hết kẹt "Xếp hàng")
+
+- **Nguyên nhân (PROVEN):** `LTT_WORKER_POOLS` chốt 14/09 = `api:6, gpu:1` cho LLM,
+  quên làn `voice`; `ltt_voice` khai `requires=("voice",)` ⇒ không worker nào nhặt
+  job Voice; job cuối xong 13/09 21:01; 2 job 15/09 kẹt `queued`, không event.
+- **Phân tích an toàn LLM trước khi đổi** (`docs/LTT_VOICE/GUI_DOI_SOAT_VA_PLAN_V2.md`
+  W1'): trần suất máy B do `ExecutionLease UNIQUE(resource, slot)` + lọc claim, không
+  do số worker; rủi ro thật duy nhất là restart giết job LLM đang chạy (nssm 1,5 s,
+  lease mồ côi 300 s — sự cố 14/09). `app.env` khớp env đã nạp 94/94 khoá trước khi đổi.
+- **Làm (chủ dự án duyệt):** `app.env` → `api:6, gpu:1, voice:1` (không BOM, sao lưu
+  `app.env.bak-voice-lane-20260916`); `nap_lai_env.ps1 -KhongKhoiDongLai`; kiểm chỉ
+  đọc ngay trước = 0 job running, 0 lease sống; `Restart-Service LTTStudioWorker`
+  16:22:41 (chỉ worker; Web/Voice không restart). Phiên VPS V4 xác nhận không có job.
+- **Kết quả:** 8 worker = 6 `['api']` + `['api','gpu']` + `['api','voice']`. Hai job kẹt
+  `8c4b9945` (2,56 s, 1 credit) và `1d4fe4b1` (34,12 s, 7 credit) → `done` trên worker
+  `voice`, GPU máy A, tệp WAV thật trong R2 (`RIFF…WAVE`), credit tất toán. Hàng đợi
+  rỗng sau đó.
+- **Chưa chứng minh:** luồng LLM sau restart — 0 job `ltt_llm` trong 3 giờ quanh mốc
+  nên không có lượt thật để đối chứng (cấu hình worker `api` không đổi). G01 qua GUI
+  trình duyệt: NOT TESTED.
+- **Còn mở:** không làn nào có `ffmpeg` ⇒ app `requires` chứa `ffmpeg` cũng không
+  worker nào nhặt được — chủ dự án quyết riêng. Worker `voice` cũng nhặt job `api`
+  (mọi pool tự thêm `api`) ⇒ Voice có thể chờ một job `api` dài.
 ## 2026-09-16 — H55 hoàn tất: Tool 1.9.3 cài hai model Codex trong một lượt
 
 - Đổi contract Tool và SDK: một lần cắm Codex luôn tạo
@@ -75,32 +181,63 @@
   hash; `/huong-dan` thấy cả `ltt-3.8` và `ltt-3.5`. Hai trang có 0 console
   error, 0 request failed và 0 response HTTP >= 400. Theo chỉ định của owner,
   H55 dùng test phạm vi `-n 7` (182 PASS) và **không chạy gate tổng**.
+## 2026-09-16 — Chuẩn hoá toàn bộ luật vận hành: mỗi chủ đề MỘT tệp chủ
 
-## 2026-09-16 — LTT Voice W4': ChatLTT `speech.ltt` chặn lệch làn TRƯỚC giữ tiền
+- Audit (3 agent đọc song song + phiên chính): `AGENTS.md` ~30% luật / ~45% chuyện
+  kể, ~⅓ luật trùng hợp đồng, ~10 luật cũ/mâu thuẫn; 8 tài liệu quy trình có 7 mâu
+  thuẫn nghiêm trọng (nặng nhất: ai gộp `main` — `QUY_TRINH_WORKTREE` nói chỉ
+  integrator, `16_CAP` hướng dẫn phiên tự merge/ff/push); 5 bộ kiểm khác nhau trước
+  lệnh nặng; số lõi chép tay lệch mã (`TRAN_WORKER_BO_TEST`, `LOI_DE_DANH_VAT_LY`);
+  173 memory với ~29 tệp là luật quy trình, 31 tệp mồ côi, 6 liên kết hỏng, và
+  **một mật khẩu admin dạng rõ** (đã gỡ — nên đổi mật khẩu).
+- Chủ sản phẩm chốt: (1) **chính phiên tự gộp `main` và deploy** sau L3 xanh, không
+  còn vai integrator; (2) trước lệnh nặng đúng hai lệnh `cua_so_yen` + `tai_may`;
+  (3) dọn mạnh nhưng **lưu trữ**, không xoá.
+- Kết quả: hợp đồng 564 → ~370 dòng, có bảng "mỗi chủ đề một chủ" ở đầu;
+  `CLAUDE.md` 234 → ~100 (bản đồ + 10 luật chết người); `AGENTS.md` 1.019 → 471
+  (chỉ kỹ thuật; chuyện kể chuyển nguyên văn vào phụ lục `BAY_TRONG`);
+  `QUY_TRINH_WORKTREE` (tạo → gộp `main` tự làm → gỡ), `QUY_TAC_CHAY_LENH_NANG`
+  (một bộ kiểm, không chép số), `16_CAP_NHAT_VA_DEPLOY` (deploy từ ghế phiên, bỏ
+  "chủ dự án bấm UAC", bỏ nợ D2 đã sửa, bỏ trạng thái máy B chép tay) viết lại;
+  `DEVELOPMENT_WORKFLOW` thành trang chỉ mục; 7 báo cáo 08/09 và bản trước của 5
+  tệp lõi chuyển `docs/_luutru/`. `test_974` cập nhật theo quyết định (1).
+  `check_luat_van_hanh` bỏ `DEVELOPMENT_WORKFLOW`, thêm `QUY_TRINH_WORKTREE` vào
+  danh sách chủ.
+- Lớp phủ cho cây chưa gộp `main`: `~/.claude/CLAUDE.md` (132 → 57 dòng, bỏ bảng
+  `-n 14`/`findstr`/mục ASV đã cũ) và `~/.codex/AGENTS.md` mang cùng sáu điều.
 
-- Phát hiện (audit W4', `docs/LTT_VOICE/GUI_DOI_SOAT_VA_PLAN_V2.md` trên nhánh
-  `phien/ltt-voice-gui-v2`): `runtime_noi_bo/job.py` không gọi hook
-  `ToolSpec.kiem_truoc`. Đo bằng test đỏ trước khi sửa: ChatLTT báo giá giọng
-  `Adam` (VI) + văn bản EN ⇒ **200**, bấm tạo ⇒ **202 + job thật + giữ credit**;
-  worker mới từ chối `voice_language_mismatch`.
-- Sửa: `runtime_noi_bo.job.bao_gia` gọi đúng hook app đã khai (cùng hook
-  `public_api.invocation.kiem_truoc` gọi cho `/api/v1`), sau validate, trước
-  giá. `bao_gia` là cửa duy nhất dựng `BaoGia` mà `nop_job` nhận ⇒ chặn cả nút
-  bấm (V1) lẫn model tự gọi (V3). Luật làn vẫn một nguồn:
-  `lan_ngon_ngu.quyet_dinh`. `ThamSoSai` mang `ma`; route `_p_media` trả
-  `error.code = voice_language_mismatch`; V3 trả `ma_loi` nghiệp vụ cho model.
-- Hệ quả phụ có chủ ý: giọng của người khác cũng bị chặn ở báo giá nội bộ
-  (trước đây chỉ worker chặn). `test_609` cập nhật; test worker giữ lại như
-  tầng phòng thủ thứ hai (tắt cửa trước bằng monkeypatch).
-- `/api/v1/workflows/{id}/runs`: **không** chạy được `speech.ltt` hôm nay —
-  route tạo `WorkflowRun` + giữ trần credit, nhưng không mã nào trong kho biến
-  node thành job (`platform_core/workflow/` không gọi `submit_with_credit`,
-  `dieu_phoi.dequeue` không có người gọi). Nên chưa có lỗ tương tự; **khi dựng
-  bộ thi hành node, nó phải đi qua `runtime_noi_bo.job.bao_gia`** (hoặc gọi
-  `kiem_truoc`) trước khi nộp job. Riêng việc giữ trần credit cho một run không
-  có bộ thi hành là một điểm ngoài phạm vi, chưa sửa.
-- Test: `tests/test_1263_chatltt_tieng_kiem_truoc_truoc_giu_tien.py` (mới, đỏ
-  4/5 trước sửa → xanh 5/5); cụm nhắm 21 tệp `-n 6`.
+## 2026-09-16 — Một luật gate duy nhất: test nhắm trong phiên, L3 một lần cuối
+
+- Đo 133 bản ghi `test-results/gates/*.json` (04/09 → 15/09): 114 lượt L3, trung
+  vị 14,4 phút, 64 đỏ; **100/114** nằm trong chuỗi chạy lại cách nhau < 45 phút,
+  chuỗi dài nhất 7 lượt = 170 phút; `--doi` (khi ấy là "vòng lặp mặc định") được
+  dùng **1** lần. Nhịp gate bị chép ở 6 tệp luật + 12 tệp kế hoạch + 7 memory.
+- Chủ dự án chốt: sửa lỗi tại chỗ; L3 chỉ chạy một lần khi mọi pha xong. Hợp
+  đồng §4 viết lại (§4.1 test nhắm · §4.2 một L3 · §4.6 khép bằng
+  `gate.py --doi --tu <sha>` · §7 hoà `main`/deploy). `CLAUDE.md`, `AGENTS.md`,
+  `DEVELOPMENT_WORKFLOW.md`, `16_CAP_NHAT_VA_DEPLOY.md`, `QUY_TRINH_WORKTREE.md`,
+  FAST_BUILD và 10 tệp kế hoạch nay chỉ trỏ về hợp đồng.
+- Cơ học hoá: `gate.py` in lệnh chạy lại đúng phép đỏ + lệnh khép, **một L3 mỗi
+  nhánh** — từ chối L3 gõ tay thứ hai kể cả sau L3 xanh (bản đầu chỉ chặn sau L3
+  đỏ; chủ dự án chỉ ra lỗ hổng "L3 xanh sau mỗi pha"; `--l3-lai` để vượt). Phiên
+  này cũng đã bấm L3 trước khi làm xong phase vá đó — đã dừng lượt ấy (không để
+  lại bản ghi) và chỉ bấm lại khi mọi phase xong. Bản ghi có `ha_cap_tu` /
+  `lenh_chay_lai`. `check_luat_van_hanh.py` nay bắt mọi nhịp gate (kể cả
+  `--doi`, "sau mỗi đợt/hạng mục/lát cắt") ngoài hợp đồng, và không còn chết vì
+  cp1252 trên đường đỏ. `ho_so_cay.TRUNK` = `main` (trunk cũ `admin-mvp-v3` đã
+  xoá nên mọi cây từng báo "khop trunk"); kế hoạch `CERTIFYING` bỏ `--quick`/`--doi`
+  trước L3.
+- Cây chưa gộp `main`: luật tóm tắt đặt ở `~/.claude/CLAUDE.md` và
+  `~/.codex/AGENTS.md` (mọi phiên đọc), memory dùng chung đã sửa 7 tệp.
+- Test nhắm: `test_1280` (mới), `test_1100`, `test_1238`, `test_974`, `test_145`,
+  `test_365`, `test_61`.
+- Ba đỏ **có sẵn trên `origin/main`** gom vào cùng MỘT L3 thay vì mỗi phiên một
+  lượt: (1) nuốt lỗi 66 > mốc 62 — phiên `claude/upbeat-kepler-43adeb` sửa 7 chỗ ở
+  3 service VPS (`5d0d5149`, gộp vào đây; còn 59); (2) trùng số test `1261`/`1262`
+  (VPS 14/09 trùng CLI) — đổi hai tệp VPS thành `test_1281_vps_profile_maintenance`
+  / `test_1282_vps_ovh_acquisition` (41 passed); (3) mypy `arg-type` 107 → 108 ở
+  `public_ip.py:131` — `tuple(contracts or ())`, không đổi hành vi. Lượt gate của
+  phiên kia bị dừng theo yêu cầu chủ dự án để chạy chung một L3.
 
 ## 2026-09-16 — ASV W4': chặn giọng lệch làn với kịch bản lồng tiếng
 
@@ -285,7 +422,6 @@
   yêu cầu; owner sau đó chỉ đạo rõ “hợp nhất commit rồi deploy, không chạy gate”,
   nên không chạy gate sau hợp nhất và không ghi bất kỳ lượt bị dừng/bỏ nào là
   PASS.
-
 ## 2026-09-14 — Release bất biến và backup trước cửa sổ deploy VPS
 
 - Sau gate PID 10984 nhả CPU/Postgres, tạo repo release riêng đúng commit

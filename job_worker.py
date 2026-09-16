@@ -56,6 +56,30 @@ def _so_tien_trinh() -> int:
         return 1
 
 
+def app_khong_lan_nao_nhat(doi_hinh, cac_app) -> list:
+    """Slug các app mà KHÔNG làn nào trong `doi_hinh` nhặt được job (GUI-D006).
+
+    `cac_app` = [(slug, requires, enabled)]. Làn `None` là worker đa năng — nhặt
+    mọi thứ, nên có nó thì không app nào vô hình.
+
+    🔴 VÌ SAO (đo 13–16/09/2026): `LTT_WORKER_POOLS=api:6, gpu:1` thiếu làn
+       `voice` ⇒ mọi job LTT VOICE nằm `queued` ba ngày, không log, không event;
+       cùng lúc không làn nào có `ffmpeg`. `jobs.claim()` lọc đúng — chỉ là không
+       ai hỏi "có app nào không worker nào nhặt được không".
+    """
+    tap = [nl for nl, _so in doi_hinh]
+    if any(nl is None for nl in tap):
+        return []
+    ra = []
+    for slug, requires, bat in cac_app:
+        if not bat:
+            continue
+        can = set(requires or ())
+        if not any(can.issubset(nl) for nl in tap):
+            ra.append(slug)
+    return sorted(ra)
+
+
 def _doi_hinh() -> list:
     """Đội hình worker: mỗi phần tử là (tập năng lực, số tiến trình).
 

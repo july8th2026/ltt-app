@@ -13,7 +13,6 @@ from sqlalchemy import update
 from apps.vps.services import mutation_journal as journal
 from apps.vps.tables import VpsInfrastructureProfile, VpsExternalMutation
 
-
 log = logging.getLogger(__name__)
 
 
@@ -55,7 +54,8 @@ def execute(db, *, operation_id, instance, step, request, mutate, readback):
     try:
         matches = readback() is True
     except Exception as exc:
-        log.warning("VPS mutation readback failed: %s", type(exc).__name__)
+        # Type name only: provider exceptions can carry credential-bearing bodies.
+        log.warning("mutation %s readback failed: %s", step, type(exc).__name__)
         review()
     if matches:
         guard()
@@ -82,7 +82,7 @@ def execute(db, *, operation_id, instance, step, request, mutate, readback):
     except MutationNeedsReview:
         raise
     except Exception as exc:
-        log.warning("VPS mutation failed, sent to review: %s", type(exc).__name__)
+        log.warning("mutation %s request failed: %s", step, type(exc).__name__)
         review()
     journal.observed(db, row)
     db.commit()
