@@ -127,6 +127,9 @@ DISPOSITION = {
     "lttvideo": (INTERNAL_ONLY, ()),
 
     "qualitylab": (INTERNAL_ONLY, ()),
+    # Release channel + sign-in + web search for the LTTCODE desktop app. No
+    # ToolSpec and no Job: LTTCODE calls /api/v1 with the user's own ltt_sk_ key.
+    "lttcode": (INTERNAL_ONLY, ()),
 
     # ── Auto Scan Video (pha 00-14) ──────────────────────────────────────────
     #
