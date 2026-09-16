@@ -111,8 +111,9 @@ CADENCE = re.compile(
 #:    menh lenh cadence thi van im.
 LENH = re.compile(r"gate\.py|test_nhanh\.py|pytest|\bgate\b", re.I)
 
-#: Rieng `gate`: tu 16/09 KHONG co che do gate nao duoc chay trong phien (hop
-#: dong §4.1), nen cadence + gate la luat canh tranh DU no hep hay rong — ke ca
+#: Rieng `gate`: tu 17/09 gate trong phien CHI la L1/L2 KHI CAN, L3 mot lan o tong
+#: ket phien (hop dong §4.1-4.2) — khong co nhip gate nao theo lan sua/pha, nen
+#: cadence + gate la luat canh tranh DU no hep hay rong — ke ca
 #: "`gate.py --doi` sau moi lan sua". `pytest` mot tep sau moi lan sua thi van
 #: dung (test nham), nen voi `pytest` van doi them `TOAN_BO`.
 GATE = re.compile(r"gate\.py|\bgate\b", re.I)
