@@ -124,7 +124,7 @@ def test_tim_kiem_tra_nguon_va_khong_log_truy_van(may, caplog):
     assert len(body["sources"]) == 3 and body["sources"][0]["url"].startswith("https://docs.python.org")
     assert "no-store" in r.headers["cache-control"]
     q = dict(seen[0].url.params)
-    assert q["q"] == "bí mật khách hàng" and q["format"] == "json"
+    assert q["q"] == "bí mật khách hàng" and q["format"] == "json" and q["categories"] == "general,it"
     assert str(seen[0].url).startswith(tim_kiem.SEARXNG_URL_MAC_DINH)
     assert "bí mật khách hàng" not in caplog.text
     assert "duckduckgo" in caplog.text   # engine hỏng được ghi để vận hành biết

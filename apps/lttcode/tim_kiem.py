@@ -28,6 +28,7 @@ TIMEOUT_S = 15.0
 TOI_DA_NGUON = 8
 DO_DAI_SNIPPET = 500
 DO_DAI_TRUY_VAN = 400
+CATEGORIES = "general,it"
 
 _transport: httpx.AsyncBaseTransport | None = None
 
@@ -97,7 +98,9 @@ async def goi_searxng(truy_van: str) -> dict | None:
     try:
         async with httpx.AsyncClient(timeout=TIMEOUT_S, transport=_transport) as client:
             r = await client.get(f"{goc}/search", params={
-                "q": truy_van, "format": "json", "categories": "general", "safesearch": "0"})
+                # `it` bật GitHub/StackOverflow/MDN/PyPI/npm/crates (đo 17/09: 68 kết quả,
+                # 7 engine, ~1,2 s; chỉ `general` chỉ còn brave+duckduckgo).
+                "q": truy_van, "format": "json", "categories": CATEGORIES, "safesearch": "0"})
     except httpx.HTTPError as e:
         log.warning("lttcode search: SearXNG unreachable: %s", type(e).__name__)
         return None
