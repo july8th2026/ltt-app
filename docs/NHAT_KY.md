@@ -193,6 +193,14 @@
 - **17/09 — U-13:** cửa `/nghe-thu-van-ban` (có từ 08/09) nay có nút "Nghe thử câu đầu (miễn phí)"
   trong Studio. ⚠️ `gate.py --doi` giữa phiên bị TỪ CHỐI khi delta chạm tệp dùng chung (sau khi hoà
   governance) — dùng L2 `--pham-vi` theo từng thành phần.
+- **17/09 — hai lỗi bắt được trên đường deploy:**
+  - `tools/test_nhanh.py` pha 2 chạy `chung + co` với `chung` mang CẢ danh sách tệp ⇒ dưới
+    `gate.py --pham-vi` (464 tệp) pha 2 chạy LẠI toàn bộ trên MỘT tiến trình. Sửa `935f9bba`, `test_537`.
+  - Nút nghe thử phát `data:audio/wav` — CSP production `media-src 'self' blob:` chặn (dev không
+    đặt CSP nên không lộ). Phát qua `blob:` (`9e07fbf2`). ⇒ Kiểm GUI phát media/ảnh `data:` phải
+    kiểm trên production hoặc dev có CSP.
+  - ⚠️ Gate chạy `--khong-khoa` (vd `lttcode-updater`) đụng CSDL `postgres_test` của gate khác ⇒
+    `test_214`/`check_multiproc` đỏ oan. Chạy lại đúng phép ấy dưới khoá `postgres_test`: 7 passed.
 
 ## 2026-09-16 — LTT VOICE: clip gốc 25 giọng kho chung KHÔNG mất — đã lưu bản bền
 

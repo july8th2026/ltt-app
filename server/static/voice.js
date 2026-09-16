@@ -2478,7 +2478,14 @@
         })
         .then(function (d) {
           if (!d.ok) { noi(d.loi); return; }
-          au.src = "data:audio/wav;base64," + d.audio_b64;
+          /* 🔴 17/09/2026, E2E production: CSP `media-src 'self' blob:` CHAN
+             `data:` — dev khong dat CSP nen khong lo. Giai base64 thanh Blob va
+             phat qua `blob:`; thu hoi URL cu de khong ro bo nho moi lan bam. */
+          var nhi = atob(d.audio_b64), mang = new Uint8Array(nhi.length);
+          for (var i = 0; i < nhi.length; i++) mang[i] = nhi.charCodeAt(i);
+          if (au.dataset.blob) URL.revokeObjectURL(au.dataset.blob);
+          au.dataset.blob = URL.createObjectURL(new Blob([mang], {type: "audio/wav"}));
+          au.src = au.dataset.blob;
           au.hidden = false;
           var p = au.play();
           if (p && p.catch) p.catch(function () {});

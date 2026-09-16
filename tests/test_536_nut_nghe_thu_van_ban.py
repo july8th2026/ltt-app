@@ -85,3 +85,13 @@ def test_voice_js_goi_dung_cua_voi_preset_va_csrf():
     assert 'g.indexOf("m:") !== 0' in khoi and "voice_id" not in khoi
     # hiện câu lỗi đã dịch của máy chủ, không tự viết câu
     assert "noi(d.loi)" in khoi
+    # CSP production `media-src 'self' blob:` chan `data:` (E2E 17/09): phai phat qua blob:
+    assert "URL.createObjectURL(new Blob(" in khoi
+    assert '"data:audio' not in khoi
+
+
+def test_csp_that_khong_cho_data_media():
+    """Doi chung: neu mot ngay CSP cho `data:` thi test tren van dung, nhung ly do da doi."""
+    src = (GOC / "server" / "app.py").read_text(encoding="utf-8")
+    dong = [l for l in src.splitlines() if "media-src" in l and "blob:" in l]
+    assert dong and "data:" not in dong[0]
