@@ -1,7 +1,8 @@
 {% extends "base.html" %}
+{% import "_icon.html" as ic %}
 {% block page_mode %}immersive{% endblock %}
 {% block title %}{{ app.display_name }} — LTT AI Studio{% endblock %}
-{% block topbar_title %}<strong>{{ app.icon }} {{ app.display_name }}</strong>{% endblock %}
+{% block topbar_title %}<strong>{{ ic.icon_app(app.icon) }} {{ _(app.display_name) }}</strong>{% endblock %}
 
 {% macro chipgroup(name, items, default) %}
   <div class="chips">
@@ -70,7 +71,7 @@
       </div>
 
       <div class="as-hanh-dong">
-        <button type="submit" class="btn" id="submitbtn">{{ _("💬 Khắc phụ đề") }}</button>
+        <button type="submit" class="btn" id="submitbtn">{{ ic.icon("message-square") }} {{ _("Khắc phụ đề") }}</button>
         <span class="dim">{{ _("Chi phí:") }} <span id="est">…</span></span>
         <span class="dim" id="upstatus"></span>
       </div>

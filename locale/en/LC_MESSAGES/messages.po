@@ -18435,3 +18435,6 @@ msgstr "Remixing from the selected output"
 
 msgid "Chọn tối đa hai kết quả thật trong lịch sử"
 msgstr "Pick up to two real outputs from your history"
+
+msgid "Khắc phụ đề"
+msgstr "Burn subtitles"

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "_icon.html" as ic %}
 {% import "_ui.html" as ui %}
 {% block title %}{{ _("Nạp credit") }} — LTT AI Studio{% endblock %}
 {% block content %}
@@ -9,7 +10,7 @@
       <p class="page-sub">{{ _("Xem trước đầy đủ số tiền và credit nhận; hệ thống chỉ cộng credit sau khi xác nhận thanh toán.") }}</p>
     </div>
     {% if so_du is not none %}
-      <div class="actions"><span class="pill"><span aria-hidden="true">💎</span> {{ so_du | so }} credit</span></div>
+      <div class="actions"><span class="pill">{{ ic.icon("gem") }} {{ so_du | so }} credit</span></div>
     {% endif %}
   </div>
 
@@ -24,7 +25,7 @@
       {% set total = g.credits_base + bonus %}
       <article class="appcard billing-package">
         <div class="cover billing-cover">
-          <span class="billing-cover-ico" aria-hidden="true">💎</span>
+          <span class="billing-cover-ico">{{ ic.icon("gem") }}</span>
           {% if g.bonus_percent %}<span class="cbadge badge b-ok"><span class="dot" aria-hidden="true"></span>+{{ g.bonus_percent }}%</span>{% endif %}
         </div>
         <div class="in">

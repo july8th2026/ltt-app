@@ -4082,3 +4082,5 @@ input[type=hidden]+.af-step{margin-top:0}
    thanh truot am nen 16px o Long tieng. Radio/checkbox 18px nam TRONG nhan lon hon => khong tinh. */
 .lv-gd-tatca{display:inline-flex;align-items:center;min-height:24px}
 #asv-am-nen{min-height:24px}
+.billing-cover-ico .ui-ic,.lv-rong-hinh .ui-ic{width:1em;height:1em;stroke-width:1.5}
+.pill>.ui-ic{width:14px;height:14px;color:var(--brand-hover)}
