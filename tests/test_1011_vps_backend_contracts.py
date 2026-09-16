@@ -182,6 +182,44 @@ def test_gateway_backend_reads_back_and_never_removes_wrong_mapping():
     assert client.removed == []
 
 
+def test_gateway_health_survives_one_transient_probe_failure():
+    """R13 (16/09): one failed SSH probe closed sales for 10 minutes."""
+    from apps.vps.services.backends.gateway import HEALTH_ATTEMPTS, NftGatewayBackend
+    from apps.vps.services.gateway import GatewayError
+
+    client = _GatewayFake()
+    calls = {"n": 0}
+
+    def flaky():
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise GatewayError("cong vao tra ma 255")
+        return True
+
+    client.con_song = flaky
+    slept = []
+    health = NftGatewayBackend(client, sleep=slept.append).health()
+    assert health.status == "HEALTHY" and calls["n"] == 2 and len(slept) == 1
+    assert client.removed == [] and HEALTH_ATTEMPTS >= 2
+
+
+def test_gateway_health_still_fails_closed_when_the_gateway_is_down():
+    from apps.vps.services.backends.gateway import HEALTH_ATTEMPTS, NftGatewayBackend
+    from apps.vps.services.gateway import GatewayError
+
+    client = _GatewayFake()
+    calls = {"n": 0}
+
+    def down():
+        calls["n"] += 1
+        raise GatewayError("cong vao tra ma 255")
+
+    client.con_song = down
+    with pytest.raises(GatewayError):
+        NftGatewayBackend(client, sleep=lambda _s: None).health()
+    assert calls["n"] == HEALTH_ATTEMPTS
+
+
 def test_gateway_ensure_refuses_to_overwrite_another_private_mapping():
     from apps.vps.services.backends.contracts import BackendConflict
     from apps.vps.services.backends.gateway import NftGatewayBackend

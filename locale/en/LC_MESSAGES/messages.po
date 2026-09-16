@@ -18030,6 +18030,22 @@ msgstr "🧪 Run a test job"
 #~ msgid "✦ Tất cả"
 #~ msgstr "✦ All"
 
+msgid "Đã gia hạn, máy được mở lại"
+msgstr "Renewed, machine reopened"
+
+msgid "Giọng đã chọn không cùng ngôn ngữ với lời lồng tiếng, nên chúng tôi dừng lại trước khi đọc thay vì giao một bản đọc sai giọng. Hãy tạo lần chạy mới với một giọng cùng ngôn ngữ với lời lồng tiếng."
+msgstr "The selected voice is not in the same language as the dubbing script, so we stopped before reading instead of delivering a mismatched voice-over. Create a new run with a voice in the same language as the dubbing script."
+
+msgid "Giọng đã chọn chưa xác định được ngôn ngữ nên chưa dùng để đọc được. Hãy tạo lần chạy mới với một giọng đã ghi rõ Tiếng Việt hoặc Tiếng Anh."
+msgstr "The selected voice has no known language, so it cannot be used for reading yet. Create a new run with a voice marked as Vietnamese or English."
+
+#: server/templates/huong_dan_cong_cu.html
+msgid "profile LTT 3.8; tạo mới hoặc sao lưu trước khi ghi"
+msgstr "LTT 3.8 profile; created fresh or backed up before writing"
+
+#: server/templates/huong_dan_cong_cu.html
+msgid "profile LTT 3.5; được cài cùng lượt với LTT 3.8"
+msgstr "LTT 3.5 profile; installed in the same pass as LTT 3.8"
 
 msgid "Về tốc độ gốc"
 msgstr "Back to original speed"
@@ -18049,8 +18065,22 @@ msgstr "The queue is taking longer than usual. You can keep waiting, or open the
 msgid "Chờ lâu bất thường"
 msgstr "Unusually long wait"
 
-msgid "profile LTT 3.8; tạo mới hoặc sao lưu trước khi ghi"
-msgstr "LTT 3.8 profile; created, or backed up before writing"
+msgstr "Unusually long wait"
 
-msgid "profile LTT 3.5; được cài cùng lượt với LTT 3.8"
-msgstr "LTT 3.5 profile; installed in the same run as LTT 3.8"
+msgid "Nghe thử câu đầu (miễn phí)"
+msgstr "Preview first sentence (free)"
+
+msgid "Nghe thử miễn phí chỉ dùng cho giọng mẫu."
+msgstr "Free preview works with built-in voices only."
+
+msgid "Còn {n} lượt nghe thử miễn phí trong giờ này."
+msgstr "{n} free previews left this hour."
+
+msgid "Đang tạo…"
+msgstr "Generating…"
+
+msgid "Đọc tối đa {n} ký tự đầu bằng giọng mẫu đang chọn — miễn phí, {m} lượt mỗi giờ."
+msgstr "Reads up to the first {n} characters with the selected built-in voice — free, {m} times per hour."
+
+msgid "Không gửi được yêu cầu. Kiểm tra kết nối rồi thử lại."
+msgstr "Could not send the request. Check your connection and try again."

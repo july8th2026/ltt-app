@@ -586,3 +586,181 @@ class TestChuanHoaVanBan:
                                           tu_dien_rieng={"Khoa": "Khua"})
         assert voi != goc, "tu dien rieng khong toi duoc phep chuan hoa"
         assert "Khua" in voi
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §8 Lan ngon ngu — kich ban THAT phai qua `lan_ngon_ngu.quyet_dinh`
+# ══════════════════════════════════════════════════════════════════════════════
+
+class TestLanNgonNguCuaKichBan:
+    """🔴 W4' (doi soat 16/09/2026, `docs/LTT_VOICE/GUI_DOI_SOAT_VA_PLAN_V2.md`).
+
+    Truoc ban sua, `giong_noi.giai_giong` goi `ltt_voice` voi `text="."`.
+    `doan_ngon_ngu(".")` tra `None` ⇒ `quyet_dinh` nhan lan CUA GIONG ⇒ luon cho
+    qua. Tuc cua chan lan co chay, nhung chay tren mot dau cham — kich ban long
+    tieng that khong bao gio duoc doi chieu, va mot giong nguon tieng Anh doc
+    tron mot ban long tieng Viet.
+
+    ⭐ Stub o tang KHO GIONG (`tham_chieu`), khong o `features.giai_giong`: phep
+       chan phai di qua `_chot_lan` → `quyet_dinh` THAT. Stub cao hon la kiem
+       mot hop dong ma ta tu viet ra.
+    """
+
+    @staticmethod
+    def _giong_ho_so(monkeypatch, *, lan: str):
+        from types import SimpleNamespace
+
+        from apps.ltt_voice import tham_chieu
+
+        ho_so = SimpleNamespace(id=7, public_id="vc_en", trang_thai="active",
+                                ngon_ngu=lan, gioi="nu")
+        monkeypatch.setattr(tham_chieu, "tim_profile",
+                            lambda db, pid, **kw: ho_so)
+        monkeypatch.setattr(tham_chieu, "tim_repr_active",
+                            lambda db, pid: object())
+        monkeypatch.setattr(tham_chieu, "nap_ref_b64", lambda bd: "REF")
+
+    @staticmethod
+    def _preset_vi() -> str:
+        from apps.ltt_voice import giong_mau
+        return next(g.ma for g in giong_mau.DANH_SACH if g.ngon_ngu == "vi")
+
+    def test_kich_ban_VIET_giong_EN_bi_CHAN(self, monkeypatch):
+        from apps.auto_scan_video import giong_noi
+        from apps.ltt_voice.lan_ngon_ngu import MA_LOI_LECH_LAN
+
+        self._giong_ho_so(monkeypatch, lan="en")
+        with pytest.raises(giong_noi.GiongKhongHopLe) as bat:
+            giong_noi.giai_giong(None, owner_id="uA", voice_id="vc_en",
+                                 van_ban="Xin chào, hôm nay trời đẹp quá.")
+        assert bat.value.ma_loi == MA_LOI_LECH_LAN
+
+    def test_kich_ban_ANH_giong_VIET_bi_CHAN(self):
+        from apps.auto_scan_video import giong_noi
+        from apps.ltt_voice.lan_ngon_ngu import MA_LOI_LECH_LAN
+
+        with pytest.raises(giong_noi.GiongKhongHopLe) as bat:
+            giong_noi.giai_giong(
+                None, owner_id="uA", voice_id=self._preset_vi(),
+                van_ban="This is the voice that we would like to hear.")
+        assert bat.value.ma_loi == MA_LOI_LECH_LAN
+
+    def test_NGON_NGU_KHAI_cua_ban_long_tieng_chan_ca_van_ban_khong_dau(
+            self, monkeypatch):
+        """Tieng Viet KHONG DAU khong doan duoc ⇒ `quyet_dinh` nhan lan cua
+        giong. Nhung ban long tieng KHAI `ngon_ngu_dich`, va loi khai do la
+        bang chung manh nhat (`nguon=khai_bao`)."""
+        from apps.auto_scan_video import giong_noi
+
+        self._giong_ho_so(monkeypatch, lan="en")
+        with pytest.raises(giong_noi.GiongKhongHopLe):
+            giong_noi.giai_giong(None, owner_id="uA", voice_id="vc_en",
+                                 van_ban="Ban co the mua ve o day",
+                                 ngon_ngu="vi")
+
+    def test_cung_lan_thi_CHO_QUA(self):
+        from apps.auto_scan_video import giong_noi
+
+        ref, preset = giong_noi.giai_giong(
+            None, owner_id="uA", voice_id=self._preset_vi(),
+            van_ban="Xin chào, hôm nay trời đẹp quá.", ngon_ngu="vi")
+        assert ref is None and preset == self._preset_vi()
+
+    def test_lech_lan_la_that_bai_CUOI_CUNG_khong_thu_lai(self):
+        """Chay lai cung giong + cung kich ban se bi chan y het."""
+        from apps.auto_scan_video import giong_noi, loi
+
+        exc = giong_noi.GiongKhongHopLe("x", ma_loi="voice_language_mismatch")
+        assert loi.phan_loai(exc) == loi.NGUOI_DUNG
+
+    def test_giai_doan_CHAN_TRUOC_khi_goi_may_sinh_tieng(self, tmp_path,
+                                                         monkeypatch):
+        """🔑 Tai hien W4': ban long tieng tieng Viet + giong EN.
+
+        Truoc ban sua: ca ba doan duoc sinh (tra tien GPU cho mot ban doc hong).
+        Sau: giai doan tu choi truoc luot sinh dau tien.
+        """
+        from apps.auto_scan_video import giai_doan_giong, giong_noi
+        from apps.ltt_voice.lan_ngon_ngu import MA_LOI_LECH_LAN
+
+        db, kho, run = TestPhucHoiTungDoan()._dung_moi_truong(
+            tmp_path, monkeypatch, so_doan=3)
+        self._giong_ho_so(monkeypatch, lan="en")
+        monkeypatch.setattr(giong_noi, "tach_ma_giong", lambda ma: (ma, ""))
+        monkeypatch.setattr(giong_noi, "san_sang", lambda: True)
+        dem: list = []
+
+        def doc(chu, **_):
+            dem.append(chu)
+            return _wav(tmp_path / f"g{len(dem)}.wav", giay=0.4), {}
+
+        monkeypatch.setattr(giong_noi, "doc_mot_doan", doc)
+        try:
+            with pytest.raises(giong_noi.GiongKhongHopLe) as bat:
+                giai_doan_giong.chay(db, kho, run=run)
+            assert bat.value.ma_loi == MA_LOI_LECH_LAN
+            assert dem == [], f"da sinh {len(dem)} doan lech lan truoc khi chan"
+        finally:
+            db.close()
+
+    def test_ma_loi_CUA_ASV_khop_ma_cong_khai_cua_ltt_voice(self):
+        """`quan_sat.LOI_CO_MA` bat loi THEO MA. Doi ma o `ltt_voice` thi do o
+        day, khong phai im lang roi ve ban loi chung kem nut thu lai vo ich."""
+        from apps.auto_scan_video import quan_sat
+        from apps.ltt_voice import lan_ngon_ngu
+
+        assert set(quan_sat.LOI_CO_MA) == {lan_ngon_ngu.MA_LOI_LECH_LAN,
+                                           lan_ngon_ngu.MA_LOI_LAN_KHONG_RO}
+
+    def test_man_tien_do_NOI_RO_lech_lan_va_KHONG_moi_thu_lai(self, tmp_path,
+                                                              monkeypatch):
+        """🔑 Duong that tu than thi hanh toi HTML khach doc.
+
+        `thi_hanh` ghi `outputs.ma_loi` ⇒ `quan_sat` doi ra cau ⇒ template hien
+        cau do va AN nut "Thu lai buoc nay" (thu lai hong y het).
+        """
+        from apps.auto_scan_video import (features, giong_noi, pipeline,
+                                          quan_sat, thi_hanh)
+        from apps.auto_scan_video.manifest import MANIFEST
+        from apps.auto_scan_video.routes import NHAN_GIAI_DOAN
+        from platform_core import jobs as jobq
+        from server.templating import templates
+
+        db, _kho, run = TestPhucHoiTungDoan()._dung_moi_truong(
+            tmp_path, monkeypatch, so_doan=2)
+        self._giong_ho_so(monkeypatch, lan="en")
+        monkeypatch.setattr(giong_noi, "tach_ma_giong", lambda ma: (ma, ""))
+        monkeypatch.setattr(giong_noi, "san_sang", lambda: True)
+        monkeypatch.setattr(giong_noi, "doc_mot_doan",
+                            lambda *a, **k: pytest.fail("da goi may sinh tieng"))
+        s = features.giai_doan_theo_ten(db, run.id, pipeline.VOICE_SYNTHESIS)
+        s.status = "queued"
+        db.commit()
+        db.close()
+
+        with pytest.raises(jobq.LoiNguoiGoi):
+            thi_hanh.chay_giai_doan(pipeline.VOICE_SYNTHESIS,
+                                    {"run_id": run.id, "owner_id": "uA"})
+
+        import platform_core.db as dbmod
+        db = next(dbmod.get_session())
+        try:
+            run = features.lay_run(db, run.id, "uA")
+            s = features.giai_doan_theo_ten(db, run.id, pipeline.VOICE_SYNTHESIS)
+            assert s.status == "failed_terminal", "lech lan khong duoc thu lai"
+            assert s.outputs.get("ma_loi") == "voice_language_mismatch"
+
+            cau = quan_sat.loi_co_ma_cho_khach(db, run)
+            assert cau == quan_sat.LOI_CO_MA["voice_language_mismatch"]
+
+            run.status = "error"
+            html = templates.env.get_template("asv_tien_do.html").render(
+                run=run, app=MANIFEST, csrf_token="t",
+                nhan_giai_doan=NHAN_GIAI_DOAN,
+                dong=quan_sat.dong_thoi_gian(db, run),
+                loi_khach=quan_sat.tom_tat_loi_cho_khach(db, run),
+                co_ket_qua=False)
+            assert cau in html
+            assert "/thu-lai" not in html, "moi khach thu lai mot viec chac chan hong"
+        finally:
+            db.close()

@@ -48,9 +48,10 @@ Exit: migration up/down in isolated DB, one-default race test, no legacy break.
 - [x] Add small compute/public-IP/gateway protocols and factory by profile.
 - [x] Wrap Proxmox, Vultr and current gateway minimally.
 - [x] Add `OvhStaticIpPoolBackend` for pre-owned inventory.
-- [ ] Keep paid acquisition outside normal provisioning. Fresh OVH inventory
+- [x] Keep paid acquisition outside normal provisioning. Fresh OVH inventory
   found zero free IP. Q130 replaces the manual gate: implement one-at-a-time
   automatic cart/checkout/order-delivery/import under strict billing guards.
+  (16/09: live order 22703620, one IP, R2–R5/R7/R18 hardened; R16 idle policy.)
 - [x] Concurrent IP allocation and timeout/response-lost tests.
 
 2026-09-13 checkpoint: protocols, guarded Proxmox/Vultr/legacy nft wrappers,
@@ -191,8 +192,11 @@ targeted operational work are complete; it is not run between phases.
   Alembic reported the single head `f4a7c2d9e610`, the V4 migration remained
   additive with an explicit downgrade, and both profile rollback and
   `app.previous` production rollback paths were present.
-- [ ] Deploy the app/runtime/helper using the targeted evidence already green.
+- [x] Deploy the app/runtime/helper using the targeted evidence already green.
+  (16/09 r1 `b1593e3c`, three-way acceptance 0/0/0; gwnat helper live, RC 5.)
 - [ ] Complete the one-IP/one-VM acceptance path and rendered browser checks.
+  (16/09: VPS `d96b66f3` created with one OVH IP; console, lifecycle, default
+  switch and in-guest network remain — plan 14 §6 G7.)
 
 Exit: deployed behavior and live resource lifecycle have direct evidence.
 
@@ -204,15 +208,20 @@ Exit: deployed behavior and live resource lifecycle have direct evidence.
   collector for activation-time freshness; a hung attempt is not evidence.
 - [x] Inventory provider/IP/mappings read-only: all eight failover IPv4 are
   routed/protected/mapped and free count is zero.
-- [ ] Exercise automatic one-IP acquisition from the real web provisioning job;
+- [x] Exercise automatic one-IP acquisition from the real web provisioning job;
   journal cart/item/order, recover ambiguous checkout, await `/ip` delivery and
-  import before reserve. No per-order admin approval.
-- [ ] Preflight OVH, activate/default; Vultr STANDBY.
-- [ ] Playwright starts from real web UI; pause only for user login/MFA/CAPTCHA.
+  import before reserve. No per-order admin approval. (16/09, order 22703620.)
+- [x] Preflight OVH, activate/default; Vultr STANDBY. (15/09 17:29Z; health
+  refresh every 10 min after R1.)
+- [x] Playwright starts from real web UI; pause only for user login/MFA/CAPTCHA.
+  (16/09: owner's real Chrome over CDP; owner logged in.)
 - [ ] Create one clearly named VM outside VM100–107; verify ISO installer,
-  network, console, owner, profile, lifecycle and readbacks.
+  network, console, owner, profile, lifecycle and readbacks. (VM 204 created,
+  owner/profile/IP/mapping read back; console R20 + lifecycle R21 fixed, live
+  re-check after deploy — plan 14 §6 G7.)
 - [ ] Test default switch without resource purchase, restore OVH default.
-- [ ] At cleanup gate, retain stopped or destroy exactly as PO decides.
+- [x] At cleanup gate, retain stopped or destroy exactly as PO decides. (16/09:
+  owner keeps acceptance VPS `d96b66f3` for real use; no destroy.)
 - [x] Answer all §68 questions with linked evidence. Live-only verdicts remain
   explicitly blocked/partial rather than being promoted from offline tests.
 - [ ] Separate implementation quality/live evidence/production readiness scores;

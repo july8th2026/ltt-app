@@ -92,6 +92,46 @@ downgrade migration để lại dòng IP OVH; IP giao muộn sau timeout cần s
 Gate đầy đủ chỉ chạy ở F9. Giữa các phase chỉ chạy test tập trung của phần vừa
 sửa, sau `python tools\cua_so_yen.py trang-thai`.
 
+## 6. Kế hoạch lại theo luật vận hành 17/09 (thay thứ tự F-phase ở §4)
+
+Luật (`docs/00_LTT_OPERATING_CONTRACT.md` §4, tóm tắt ở `~/.claude/CLAUDE.md`):
+
+```
+TRONG PHIÊN   test nhắm cụm vừa sửa; cần gate thì CHỈ L1 (gate.py --doi) / L2 (--pham-vi <tp>)
+L3            python tools\gate.py MỘT lần ở tổng kết phiên; một L3 mỗi nhánh
+L3 ĐỎ         sửa tại chỗ -> chạy lại đúng phép đỏ -> khép gate.py --doi --tu <sha L3>
+DEPLOY        bất cứ lúc nào việc xây dựng cần, khi có gate XANH trên đúng SHA deploy:
+              giữa phiên L1 (gate.py --doi --tu <sha bản production đang chạy>) / L2;
+              không bấm L3 để deploy; test nhắm một mình không đủ
+GỘP main      main đi tiếp thì hoà + test nhắm (+ L1/L2); chính phiên gộp, deploy, báo
+```
+
+Deploy xuất `HEAD` của cây chính `D:\LTTSTUDIOSAPP` (`setup\deploy_nang_quyen.ps1`
+qua `tools
+ang_quyen.py`, gọi từ **PowerShell** — Git Bash lấy nhầm GNU tar);
+bản production đang chạy phải là tổ tiên của SHA deploy.
+
+### Đã xong (17/09)
+
+| # | Việc | Bằng chứng |
+|---|---|---|
+| R1–R21 | sửa + test nhắm (R16 theo chốt giữ tối đa 1 IP rỗi) | test tập trung + đối chứng |
+| G1–G2 | R16, tài liệu 05/08/09/10, NHAT_KY, memory | commit nhánh |
+| G3 | hoà `main` 1df18b17, origin/main 40ac2848, ASV a0532a6c, prod 80319d0a, main 228f91cf (Voice V2, prod d5bd7b07), main 17759a7b; Q124 GitHub đổi số Q135; test VPS 1029/1030 | tổ tiên đã kiểm |
+| G4 | L3 `d8b02cd7` ĐỎ (12 test + 2 bánh cóc) ⇒ sửa tại chỗ `5abe2ace`; khép `--doi --tu d8b02cd7` trên `de331f8a` **PASS** (test_1259 cần token Máy B trong env) | `test-results/gates/`, `D:\LTTSTUDIOSAPP-runtime\l3-vps-v4-doi2.log` |
+
+### Còn lại, theo phụ thuộc
+
+| # | Việc | Kiểm | Chặn bởi |
+|---|---|---|---|
+| G5 | L1 `gate.py --doi --tu d5bd7b07` (bản production) trên SHA deploy; ff cây chính + `origin/main` lên SHA đó | L1 xanh | các phiên không commit `main` (Voice đã hứa giữ) |
+| G6 | Deploy từ cây chính: báo phiên đang chạy, 0 job running / 0 lease, `deploy.lock` vắng; giữ env Voice (`LTT_WORKER_POOLS`, `LTT_STORAGE_LOCAL_PREFIXES`); `nghiem_thu_deploy.py` 3 chiều + `/health/ready` công khai; đăng ký task đồng bộ Máy B | nghiệm thu deploy | G5 |
+| G7 | E2E live (không sửa code): console qua cầu R20; khởi động lại / tắt mềm / **tắt cứng** (R21); đổi default OVH→Vultr→OVH không tạo máy; console + request lỗi trình duyệt; mạng trong máy sau khi chủ dự án cài Windows. Lỗi mới ⇒ sửa + test nhắm + L1 `--doi --tu <sha production>` + deploy lại | trình duyệt thật + đọc lại PVE/OVH/DB | G6 |
+| G8 | Dọn: nhánh `codex/vps-v4-release-r1..r4`, worktree `wt-vps-release`, clone release cũ; retire worktree `D:\LTTSTUDIOSAPP-vps-v4`; báo phiên Voice/ChatLTT SHA `main` mới | — | G7 |
+
+Tiến độ phần mềm ≈ 88% (G1–G4 xong; G5–G8 còn). Sẵn sàng production đầy đủ vẫn
+chặn bởi Backup V2 CAPACITY_BLOCKED, restore drill và dual-WAN chưa kiểm.
+
 ## 5. Bằng chứng E2E đã có (16/09)
 
 - Chrome thật `C:\LTTBrowserProfiles\VPSV4Cdp`, cổng 9222; chủ dự án qua xác minh
