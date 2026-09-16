@@ -196,6 +196,19 @@ def test_template_khong_con_tu_suy_loai_tu_co():
     assert "loai_giong[g.public_id]" in ma_nguon[2]
 
 
+def test_D004_MOT_luat_loc_nhan_cho_ca_man_Giong_va_bo_chon():
+    """GUI-D004: thẻ THIẾU nhãn giới/vùng/phong cách KHÔNG bị ẩn ở CẢ HAI màn.
+
+    🔴 Trước 16/09 màn Giọng ẩn (rồi đếm), bộ chọn Studio giữ — cùng một giọng,
+       lọc "Nam" thì mất ở màn này mà còn ở màn kia. 29/29 VoiceProfile production
+       có `gioi` rỗng (đo 15/09), nên luật cũ ẩn sạch giọng nhân bản."""
+    js = JS.read_text(encoding="utf-8")
+    for truc in ("gioi", "vung", "phongcach"):
+        assert f"(!dangLoc.{truc} || !d.{truc} || d.{truc} === dangLoc.{truc})" in js, (
+            f"man Giong van AN the thieu nhan `{truc}` — lech bo chon Studio")
+    assert "!locGioi || !d.gioi || d.gioi === locGioi" in js
+
+
 def test_voice_js_khoi_quan_ly_chi_mo_cho_giong_cua_toi():
     js = JS.read_text(encoding="utf-8")
     assert "khoiToi.hidden = !laToi;" in js

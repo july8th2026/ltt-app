@@ -18030,3 +18030,6 @@ msgstr "Back to original speed"
 
 msgid "Nghe ngay phát ở tốc độ gốc 1×. Tốc độ bạn chọn được áp vào tệp khi bấm Tạo tiếng nói."
 msgstr "Listen now plays at the original 1× speed. The speed you chose is applied to the file when you click Generate speech."
+
+msgid "· giữ {n} giọng chưa có nhãn giới tính, vùng miền hay phong cách — bộ lọc chỉ áp dụng cho giọng có nhãn"
+msgstr "· keeping {n} voices without a gender, region or style label — filters only apply to labelled voices"

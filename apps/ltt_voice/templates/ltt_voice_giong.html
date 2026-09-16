@@ -399,7 +399,10 @@
          lại nào cả hai. Nhãn RIÊNG để khách biết đúng việc phải làm. #}
       ghiDanhLoi: {{ _("Ghi danh lỗi, cần tạo giọng mới") | tojson }},
       chuaDung: {{ _("chưa dùng") | tojson }},
-      anViThieuNhan: {{ _("· ẩn {n} giọng của bạn: giọng nhân bản không có nhãn giới tính, vùng miền hay phong cách") | tojson }}
+      {# GUI-D004: cùng luật với bộ chọn Studio — thẻ thiếu nhãn được GIỮ, và câu
+         này nói ra điều đó. Khoá JS giữ tên `anViThieuNhan` để không đổi voice.js
+         thêm một chỗ. #}
+      anViThieuNhan: {{ _("· giữ {n} giọng chưa có nhãn giới tính, vùng miền hay phong cách — bộ lọc chỉ áp dụng cho giọng có nhãn") | tojson }}
     }
   });
 

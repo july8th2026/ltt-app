@@ -674,15 +674,21 @@
         // ⛔ Nhung "dung" khong co nghia la "khong can noi". Do tren production
         //    01/09: bam "Nam" -> 45 giong con 9, va ca 25 giong cua khach bien
         //    mat khong mot loi nao. Nen ta van an chung, VA dem chung.
+        /* 🔴 GUI-D004 (16/09/2026) — MOT luat loc cho ca hai man: the THIEU
+           nhan KHONG bi an (Option B), giong het bo chon Studio/Du an
+           (`locChon`). Truoc day man nay AN roi dem, con bo chon GIU — cung mot
+           giong, loc "Nam" thi mat o man nay ma con o man kia. Ca 29 VoiceProfile
+           production co `gioi` rong (do 15/09), nen luat cu an SACH giong nhan
+           ban moi khi bam mot nut gioi. */
         var thieuNhan =
           (dangLoc.gioi && !d.gioi) ||
           (dangLoc.vung && !d.vung) ||
           (dangLoc.phongcach && !d.phongcach);
         var hop =
           (!dangLoc.loai || d.loai === dangLoc.loai) &&
-          (!dangLoc.gioi || d.gioi === dangLoc.gioi) &&
-          (!dangLoc.vung || d.vung === dangLoc.vung) &&
-          (!dangLoc.phongcach || d.phongcach === dangLoc.phongcach) &&
+          (!dangLoc.gioi || !d.gioi || d.gioi === dangLoc.gioi) &&
+          (!dangLoc.vung || !d.vung || d.vung === dangLoc.vung) &&
+          (!dangLoc.phongcach || !d.phongcach || d.phongcach === dangLoc.phongcach) &&
           (!q || (d.ten || "").toLowerCase().indexOf(q) >= 0);
         // Danh dau bang `dataset` chu khong dat `hidden` ngay: `phanTrang` moi
         // la thu quyet dinh the nao HIEN. Hai cho cung ghi `hidden` la hai cho
@@ -691,13 +697,9 @@
         t.hidden = !hop;
         if (hop) {
           con++;
-        } else if (thieuNhan) {
-          // Chi dem khi cai DUY NHAT chan no la nhan bi thieu. Mot giong bi
-          // loai boi o tim hay boi "Giong mau" thi khong thuoc cau chuyen nay.
-          var hopNeuBoNhan =
-            (!dangLoc.loai || d.loai === dangLoc.loai) &&
-            (!q || (d.ten || "").toLowerCase().indexOf(q) >= 0);
-          if (hopNeuBoNhan) anViThieuNhan++;
+          // D004: dem the con hien CHI VI thieu nhan dang loc — noi ra de khach
+          // biet bo loc chi ap cho giong CO nhan, khong phai loc sai.
+          if (thieuNhan) anViThieuNhan++;
         }
       }
       if (oSo) oSo.textContent = String(con);
