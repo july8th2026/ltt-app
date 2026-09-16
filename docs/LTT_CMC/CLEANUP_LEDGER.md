@@ -150,3 +150,11 @@ cleanup chỉ được xóa các dòng `YES_AFTER_APPROVAL`; dòng VPS V4 tiếp
 Sau khi VPS V4 được bàn giao/đối soát, phải tạo ledger mới cho chính nó.
 
 **CHECKPOINT: CLEANUP_EXECUTED_VPS_V4_HOLD.**
+
+## Phụ lục Q124 — đóng lịch sử reachable trên GitHub
+
+Sau checkpoint trên, người dùng duyệt ngoại lệ một lần: giữ snapshot mới nhất
+nhưng thay `origin/main` tại `45aaef03c037607a1d83fef10ac34bd82ac31abe`
+bằng một root commit không parent, dùng force-with-lease ghim đúng SHA đó.
+Phải hậu kiểm tree hash, số commit bằng 1 và remote/default vẫn là `main`.
+Không `git gc`/`git prune`; nhánh/worktree VPS V4 local tiếp tục HOLD.

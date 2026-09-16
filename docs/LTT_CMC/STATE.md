@@ -8,7 +8,7 @@
 | Canonical worktree | `D:\LTTSTUDIOSAPP` |
 | CMC base SHA | `09b219a371e1261f0f0eef0e316c1ca42754cb78` |
 | CMC base tag | `cmc-base-20260911` |
-| Phase | `CLEANUP_EXECUTED_VPS_V4_HOLD` |
+| Phase | `GITHUB_SINGLE_ROOT_APPROVED_VPS_V4_HOLD` |
 
 `main` đã nhận ba commit tài liệu Voice hậu-baseline, merge
 `cmc/llm-dual-reconcile`, PASS L3 trên cây sạch và trở thành default branch ở
@@ -20,7 +20,7 @@ remote. Cleanup các mục đã duyệt đã chạy; VPS V4 được giữ nguy�
 ```text
 CMC_BASE_BRANCH: main
 CMC_BASE_WORKTREE: D:\LTTSTUDIOSAPP
-STATUS: CLEANUP_EXECUTED_VPS_V4_HOLD
+STATUS: GITHUB_SINGLE_ROOT_APPROVED_VPS_V4_HOLD
 ```
 
 Phần chức năng Voice đã nằm trong baseline. Quét live sau khi phiên Voice đóng
@@ -73,3 +73,12 @@ vận hành.
   `codex/vps-v4-infrastructure-profiles` dirty tại `D:\LTTSTUDIOSAPP-vps-v4`.
 - Remote branches: chỉ `origin/main`; remote HEAD/default: `main`.
 - Tag CMC, rescue refs, stash và temporary inventory: không còn.
+
+## Đóng lịch sử GitHub theo Q124
+
+Người dùng đã duyệt thay `origin/main` tại
+`45aaef03c037607a1d83fef10ac34bd82ac31abe` bằng một root commit chứa snapshot
+canonical mới nhất. Root SHA authoritative là HEAD sau rewrite, không thể tự
+nhúng vào chính nội dung commit. Điều kiện hậu kiểm: tree đúng tree đã stage,
+root không parent, `rev-list --count main = 1`, remote/default vẫn là `main`.
+Không prune object local; VPS V4 HOLD không bị sửa hoặc xóa.

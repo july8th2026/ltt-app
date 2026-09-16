@@ -3882,6 +3882,12 @@ Nguồn thiết kế:
       Sau duyệt ledger đã xóa 9 worktree, 35 local branch, 21 remote branch,
       tag CMC và inventory/patch tạm. WIP VPS V4 được giữ nguyên ở
       `NEED_RECONCILIATION`; vì còn worktree/branch này nên H45.6 chưa thể đóng.
+- [ ] **H45.7 — GitHub single-root closure (Q124):** người dùng đã duyệt giữ
+      snapshot canonical mới nhất và thay lịch sử reachable của `origin/main`
+      bằng một root commit. Phải quét secret, kiểm governance/topology, dùng
+      force-with-lease ghim `45aaef03c037607a1d83fef10ac34bd82ac31abe`, rồi
+      xác minh tree hash, root không parent, `rev-list --count = 1` và default
+      branch vẫn là `main`. Không prune object và không chạm VPS V4 HOLD.
 
 **Ngoài phạm vi:** deploy production. **Gate:** tuân đúng
 `docs/00_LTT_OPERATING_CONTRACT.md`; trước lệnh nặng phải đo cả tải máy và cửa

@@ -27,7 +27,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 
 ---
 
-## 1. Quyết định đã chốt (đến Q123; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91, Q116→Q120 (phần con số) đã thay)
+## 1. Quyết định đã chốt (đến Q124; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91, Q116→Q120 (phần con số) đã thay)
 
 | # | Vấn đề | Quyết định | Lý do / hệ quả |
 |---|---|---|---|
@@ -141,6 +141,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 | Q114 | Nhiều cửa API cùng tranh một model/GPU phải xếp hàng ở đâu? | **Một admission plane dùng chung, nhưng chỉ ASYNC_JOB có hàng đợi bền.** `/api/v1/jobs` tiếp tục dùng `jobs` làm nguồn chân lý duy nhất. SYNC_BILLED và STREAM giữ nguyên hợp đồng Q106/Q107 là không tạo job: chúng xin một lease thực thi từ cùng admission plane và trả `429 + Retry-After` trước khi giữ tiền nếu chưa có slot. Tài nguyên do tool khai bằng metadata, không suy từ slug. Gateway máy B vẫn giữ `max_dong_thoi=1` như hàng rào cuối, không làm queue. | Biến sync/stream thành job ngầm sẽ phá hình dạng SDK và tạo queue thứ hai; để chúng gọi thẳng lại cho phép bypass async. Lease thực thi giải đúng giao điểm: cả ba đường phải sở hữu cùng một slot trước provider, nhưng `jobs` vẫn là queue duy nhất có trạng thái/hủy/fairness. Với async, global/resource/account cap phải được kiểm dưới khóa transaction rồi insert job và hold credit trong chính transaction đó; `resource_wait` không tiêu attempt. Nếu worker chết sau khi provider đã nhận mà chưa có kết quả chắc chắn thì đánh dấu `ambiguous_provider`, không tự retry side effect mù. Hợp đồng chi tiết: `docs/VLM_NOI_BO/ADMISSION_QUEUE_LTT_LLM.md`. |
 | Q122 | Thứ tự phục vụ trong hàng đợi job thống nhất | **Ưu tiên tuyệt đối, không cắt ngang: `INTERNAL > EXTERNAL` chỉ giữa các job đang chờ và đủ điều kiện trên cùng tài nguyên; job đã admitted/running/provider-dispatched không bị dừng. Trong mỗi lớp vẫn fair-share theo account, aging rồi FIFO ổn định.** Chỉ có một hàng đợi bền PostgreSQL `jobs`, một ranking canonical dùng cho cả `claim()` lẫn queue snapshot/ETA. Lớp ưu tiên do ingress đáng tin cậy gắn; body/header công khai không có quyền nâng lớp. | Runtime nội bộ cần được phục vụ trước các lượt API đang chờ nhưng không được phá Q114 hay làm mất công việc đã bắt đầu. Hai lớp là đủ cho V1; không thêm broker/queue thứ hai. Job cũ hoặc metadata thiếu/lạ được hiểu là `EXTERNAL`; ETA thiếu bằng chứng trả `null`; external starvation được đo/cảnh báo chứ không tự vượt internal. |
 | Q123 | Model nhà: một model hay nhiều, và ai được ở trên card nào | **HAI model nhà bán ra, trên HAI card của máy B, thường trú cùng lúc: `ltt-3.8` (RTX 3090) và `ltt-3.5` (RTX 5060 Ti). Khách CHỌN model; giá đi THEO MODEL. Cắt hẳn ba tên cũ `ltt_llm`, `ltt_llm_vision`, `qwen38-vision` — chúng trả `model_not_found`, không âm thầm rơi về mặc định. Việc LLM **nội bộ** của nền tảng đi `ltt-3.5` theo bản khai của từng app (`manifest.model_llm_noi_bo`), không đi mặc định của khách. RTX 3090 do MỘT trọng tài chia giữa LLM và model ảnh: xả trước, không bao giờ giết việc đang chạy.** ⛔ **Không con số nào của quyết định này nằm trong tài liệu này** — mỗi con số có đúng một nguồn chân lý trong mã. Toàn văn, lý do từng nhánh và mọi phép đo: **`### Q123` bên dưới**, `docs/ltt_llm_dual/DECISION_LOG.md` (D01–D09, L-12…L-18), `docs/ltt_llm_dual/10_BENCHMARK_P3.md`; vận hành ở `docs/ltt_llm_dual/RUNBOOK.md`. | Ba lý do cơ học, chi tiết ở `### Q123`: (a) một model 27B **không vừa** card 16 GB nên "một model, hai card" là bất khả, còn "hai hồ sơ của cùng một model" đã thử và **đã gỡ**; (b) job ảnh **giữ** 3090 rồi **chờ** một model chỉ nạp được khi 3090 rảnh là một **vòng chờ kín** — không log, không mã lỗi, job treo tới hết trần thời gian; (c) `unload` thủ công của llama-swap **không** drain, nên trọng tài phải **xả trước**. **Đổi lại:** một bảng trạng thái (`gpu_residency`), một luật admission mới (`CHO_RESIDENCY`), và một **thứ tự deploy bắt buộc** (`llama-swap.yaml` → cổng máy B → máy A). |
+| Q124 | Lịch sử GitHub sau khi LTT-CMC hoàn tất | **Giữ nguyên snapshot canonical mới nhất nhưng thay lịch sử reachable của `main` bằng đúng một root commit không có parent; cập nhật `origin/main` bằng `--force-with-lease` ghim đúng SHA remote cũ.** Trước khi cập nhật ref phải quét bí mật, chạy kiểm tra governance/topology và chứng minh tree hash của root đúng bằng tree đã stage. Sau push phải chứng minh `rev-list --count main = 1`, root không có parent, remote/default vẫn là `main`. Không `git gc`/`git prune`; không sửa hoặc xóa worktree VPS V4 đang HOLD. | Người dùng duyệt rõ ngày 12/09/2026 sau khi CMC đã hợp nhất và dọn mọi nhánh remote cũ: mục tiêu là GitHub chỉ công bố một snapshot chuẩn, không giữ lịch sử/nhánh cạnh tranh gây nhầm lẫn. Force push bình thường bị cấm, nhưng đây là ngoại lệ phá hủy có phạm vi hẹp, có xác nhận riêng và lease chống ghi đè thay đổi remote ngoài dự kiến. GitHub có thể giữ object/cache nội bộ ngoài refs trong một thời gian; quyết định chỉ bảo đảm lịch sử không còn reachable qua refs của repository. Nhánh VPS V4 local vẫn giữ lineage cũ để không làm mất WIP ngoài phạm vi GitHub. |
 ---
 
 ### Q115 — Public input cap sau benchmark Q4 (2026-08-28)
@@ -496,6 +497,20 @@ một nguồn chân lý, và một bảng chép tay ở đây đã nói sai **n�
 Toàn văn quyết định + mọi phép đo: `docs/ltt_llm_dual/DECISION_LOG.md` (D01–D09,
 L-12…L-18) và `docs/ltt_llm_dual/10_BENCHMARK_P3.md`. Vận hành, điểm lùi từng pha:
 `docs/ltt_llm_dual/RUNBOOK.md`.
+
+### Q124 — Một root commit canonical trên GitHub (2026-09-12)
+
+Sau khi `origin/main` là remote branch duy nhất và LTT-CMC đã được chứng nhận,
+người dùng duyệt thay lịch sử reachable của GitHub bằng đúng một snapshot mới
+nhất. Root commit được dựng trực tiếp từ index, không có parent; chỉ cập nhật
+remote nếu lease vẫn trỏ đúng SHA đã đối soát. Tree hash, số commit, parent của
+root và remote default phải được kiểm lại sau push.
+
+Đây không phải cách làm mặc định cho task mới. Quy trình branch/worktree và
+handoff vẫn theo `docs/QUY_TRINH_WORKTREE.md`; chỉ canonical integrator được
+nhập vào `main`. Q124 là ngoại lệ một lần để đóng CMC. Không prune object local
+và không chạm `D:\LTTSTUDIOSAPP-vps-v4`: worktree đó chứa WIP chưa bàn giao và
+không nằm trên GitHub sau khi remote chỉ còn root `main`.
 
 ## 2. Ràng buộc bất biến
 
