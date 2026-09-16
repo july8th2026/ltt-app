@@ -129,8 +129,8 @@ TONG: co=2  khong=56  tong=58   (~0.1 MB còn lại)
 Chỉ MỘT hồ sơ còn đủ hai tệp:
 
 ```
-voice/a5d15080-21ba-4187-abe1-4ed97feed589/vc_d60a3c21474e4f46ad92cccc7c58e301/
-  repr-a55339a6b0a6784357c88f47a36ea9e6.npz   0.001 MB
+voice/a5d15080-…/vc_d60a3c21…/
+  repr-a55339a6….npz   0.001 MB
   source.wav                                  0.102 MB
 ```
 
@@ -294,7 +294,7 @@ khi clip được cung cấp lại + seed (phương án C, §2.4).
 ### 3.3 Bất thường dữ liệu (chạy sang GUI_AUDIT_MATRIX)
 
 1. **Dedupe lỗi:** 2 hồ sơ (`vc_f5d83434` + `vc_3312d5e8`) trỏ cùng key
-   `repr-f42de3bf4e430cbde744fcdcb07fadf6.npz` — hai hồ sơ, một tệp biểu diễn.
+   `repr-f42de3bf….npz` — hai hồ sơ, một tệp biểu diễn.
 2. **Tên `HF_HOME`** — biến môi trường bị ghi thành tên hồ sơ.
 3. **Cột `gioi` rỗng 29/29** — bộ lọc "giới" không có dữ liệu thật để lọc
    (liên quan D004: bộ lọc phải khai đúng điều này).
