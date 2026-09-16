@@ -99,7 +99,7 @@ Nguồn luật: `docs/00_LTT_OPERATING_CONTRACT.md` §4, §7–§10b (bản `6a2
 | N3 | **Deploy** + bật `LTT_STORAGE_LOCAL_PREFIXES=voice/` + pools `api:6, gpu+ffmpeg:1, voice:1` | N1, N2; báo phiên VPS (VM 204) | sau N2 | quy trình P8 |
 | N4 | **Dựng lại 25 giọng + duyệt license** (P9) | N3 (cần `voice/` trên đĩa ở production) | sau N3 | `dung_lai_giong_kho_chung --chay` rồi `soat_giong duyet` |
 | N5 | **E2E URL công khai** 2 tài khoản (P10) | N3–N4 | sau N4 | phần dev XONG 16/09 (`GUI_BROWSER_ACCEPTANCE.md` §A; bắt thêm lỗi nút Chi tiết có sẵn trên `main`, sửa `0821cd52`); còn §B |
-| N6 | Release VPS nào gộp cuối (r3 đã gộp; r4 `f6d5a370` chưa được VPS xác nhận) | phiên VPS trả lời | trước N1 | nếu gộp r4 phải trước L3 |
+| N6 | Release VPS nào gộp cuối (r3 đã gộp; r4 `f6d5a370` chưa được VPS xác nhận) | — | **ĐÃ GIẢI 16/09** | phiên VPS còn đang gộp G3 (chờ khoá) ⇒ r4 chưa phải bản cuối. Không chờ: nhánh hoà `origin/main` `40ac2848` trước L3; VPS lên `main` sau L3 thì hoà + `gate.py --doi --tu <sha L3>` (luật §5) |
 | N7 | `GUI_FINAL_REPORT.md` + điểm §32 (P11) | N5 | cuối | |
 
 ## F. PLAN V2

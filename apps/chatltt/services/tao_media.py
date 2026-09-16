@@ -41,7 +41,11 @@ KHOI_THEO_PHUONG_THUC = {"image": "image", "audio": "audio"}
 
 
 class ThamSoSai(ValueError):
-    pass
+    """`ma`: ma nghiep vu cua app (vd `voice_language_mismatch`), rong neu khong co."""
+
+    def __init__(self, thong_diep: str = "", ma: str = ""):
+        super().__init__(thong_diep)
+        self.ma = str(ma or "")
 
 
 def bao_gia(ten: str, params: dict, *, db=None, user_id: str = "",
@@ -72,7 +76,7 @@ def bao_gia(ten: str, params: dict, *, db=None, user_id: str = "",
     try:
         bg = J.bao_gia(ten, params, db=db, user_id=user_id)
     except J.ThamSoSai as e:
-        raise ThamSoSai(str(e)) from None
+        raise ThamSoSai(str(e), ma=e.ma) from None
     ra = {"nang_luc": ten, "credit": bg.credit, "phien_ban_gia": bg.phien_ban_gia,
           "tham_so": bg.tham_so_sach}
     if giong:
@@ -128,7 +132,7 @@ def tao(db, *, user_id: str, conv_id: str, ten: str, params: dict,
     try:
         bg = J.bao_gia(ten, params, db=db, user_id=user_id)
     except J.ThamSoSai as e:
-        raise ThamSoSai(str(e)) from None
+        raise ThamSoSai(str(e), ma=e.ma) from None
     if credit_da_bao is not None and int(credit_da_bao) != bg.credit:
         raise ThamSoSai(
             f"gia da doi: bao {credit_da_bao}, tinh lai {bg.credit}")
