@@ -73,5 +73,7 @@ async def tai_file(filename: str):
 
 
 from apps.lttcode.routes_dang_nhap import router as _dang_nhap  # noqa: E402
+from apps.lttcode.routes_tim_kiem import router as _tim_kiem  # noqa: E402
 
 router.include_router(_dang_nhap)
+router.include_router(_tim_kiem)
