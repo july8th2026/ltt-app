@@ -27,16 +27,34 @@ docs/00_LTT_OPERATING_CONTRACT.md      ← đọc trước việc thực chất
 
 # Luật chết người
 
-1. **Test/gate** — hợp đồng §4:
-   trong phiên chỉ **test nhắm** (`thanh_phan.py --test <tp>` → `python -m pytest <tệp> -q`),
-   ⛔ **không `tools\gate.py` ở bất kỳ chế độ nào**; lỗi → sửa tại chỗ, chạy lại đúng
-   phép đỏ; **L3 một lần** khi mọi pha xong; một L3 mỗi nhánh; L3 đỏ → khép
-   `gate.py --doi --tu <sha>`.
-2. **Không dừng giữa các pha** — xong pha thì làm tiếp, gộp `main` và deploy rồi báo.
+1. **Test/gate** — hợp đồng §4. Đúng một nhịp:
+
+   ```
+   TRONG PHIÊN    test NHẮM cụm vừa sửa: thanh_phan.py --test <tp> -> python -m pytest <tệp> -q
+                  cần gate -> CHỈ L1 (gate.py --doi) hoặc L2 (gate.py --pham-vi <tp>)
+                  ⛔ KHÔNG L3 giữa các pha (không rải rác, không "chốt pha")
+   GẶP LỖI        sửa TẠI CHỖ -> chạy lại ĐÚNG phép đã đỏ -> đi tiếp
+   GỘP main       giữa phiên: test nhắm xanh (+ L1/L2 khi lan nhiều thành phần) — ⛔ không L3 để gộp
+   TỔNG KẾT PHIÊN (hết MỌI pha của cả phiên — không phải hết một nhánh/pha/hạng mục)
+                  commit hết -> build frontend nếu đổi -> kiểm máy (luật 3)
+                  -> python tools\gate.py (L3) MỘT lần, không ghi vào cây trong lúc chạy
+   L3 ĐỎ          sửa tại chỗ -> chạy lại đúng phép đỏ (gate in sẵn) -> KHÉP gate.py --doi --tu <sha L3>
+   DEPLOY         được deploy BẤT CỨ LÚC NÀO việc xây dựng cần — kể cả giữa phiên — khi đã có
+                  gate xanh trên đúng SHA deploy: giữa phiên L1/L2 · tổng kết phiên L3 (xanh/đỏ đã khép)
+                  ⛔ không chạy L3 để deploy · test nhắm một mình không đủ để deploy
+   ```
+
+   ⛔ **Một L3 mỗi nhánh** — `gate.py` từ chối L3 thứ hai kể cả sau L3 xanh, và từ chối
+   L1/L2 giữa phiên tự nâng lên đầy đủ. Còn việc chưa làm ⇒ **chưa bấm L3**. Lượt bị
+   ngắt giữa chừng (không có bản ghi) chưa phải phán quyết ⇒ chạy lại được.
+2. **Không dừng giữa các pha** — xong một pha thì làm tiếp pha kế, không xin phép; hết
+   **mọi** pha thì L3 → gộp `main` → deploy (nếu cần) → báo. Pha nào cần deploy để xây
+   tiếp (đo thật, E2E) thì L1/L2 xanh → gộp `main` → deploy → báo, rồi làm tiếp — không dừng.
    Chỉ dừng khi: gate đỏ · thao tác không đảo được · thay đổi không rõ của ai · rủi ro
    bảo mật (hợp đồng §10, §10b).
-3. **Trước lệnh nặng** (gate, ≥ 3 tệp test): `python tools\cua_so_yen.py trang-thai`
-   + tải máy — hợp đồng §4.8.
+3. **Kiểm CPU trước lệnh nặng** (gate mọi chế độ, `test_nhanh.py`, ≥ 3 tệp test):
+   `python tools\cua_so_yen.py trang-thai` (có người giữ khoá → chờ) +
+   `python tools\tai_may.py` (`QUÁ TẢI` → chờ). pytest gõ tay `-n` tối đa 6. Hợp đồng §4.8.
 4. **Dòng `??` lạ trong `git status` là một PHIÊN KHÁC**, không phải rác. Không
    `stash`, `reset`, `checkout --`. `git add` tường minh từng tệp.
 5. **Deploy chép CẢ CÂY nguồn** ⇒ báo các phiên đang chạy trước (`ListAgents`).
@@ -54,8 +72,9 @@ docs/00_LTT_OPERATING_CONTRACT.md      ← đọc trước việc thực chất
    phản hồi 100 giây.
 9. **Thêm app = thêm MỘT thư mục `apps/`.** Buộc sửa `platform_core/`/`server/` ⇒
    dừng và nói rõ vì sao (`docs/03_THEM_APP_MOI.md`, `AGENTS.md` §8).
-10. **Tra nguồn trước khi tự suy** (model card, README engine, issue cộng đồng) —
-    hợp đồng §1b.
+10. **Gặp vấn đề: tra nguồn TRƯỚC khi tự suy** — model card, tài liệu engine, và
+    cộng đồng GitHub qua **plugin GitHub MCP** (`search_issues` trong repo thư viện,
+    `search_code`, `get_file_contents`); trích số issue/PR làm nguồn. Hợp đồng §1b.
 
 ## Chưa có khách ở lớp Agent/Canvas/Workflow
 

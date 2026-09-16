@@ -1,8 +1,35 @@
 # SESSION MIGRATION NOTE
 
-# ⭐ 2026-09-16 — MỘT L3 MỖI PHIÊN (bản hiện hành)
+# ⭐ 2026-09-17 (bổ sung) — DEPLOY GIỮA PHIÊN SAU L1/L2 XANH (bản hiện hành)
+
+> Luật deploy đổi (chủ dự án chốt 17/09): deploy phục vụ **cả quá trình xây dựng**, nên
+> được deploy **giữa phiên** khi có **L1/L2 xanh** trên đúng SHA deploy
+> (`gate.py --doi --tu <sha bản đang chạy>` hoặc `gate.py --pham-vi <tp>`) — không chờ L3,
+> ⛔ không bấm L3 để deploy, test nhắm một mình không đủ. L3 vẫn **một lần ở tổng kết
+> phiên**. Đọc lại `docs/00_LTT_OPERATING_CONTRACT.md` §4, §7, §8. Tiếp tục việc đang làm.
+
+Khác bản dưới đúng một điểm: bỏ câu *"L3 bắt buộc trước mọi deploy"*.
+
+# 2026-09-17 — L1/L2 GIỮA PHIÊN, L3 CHỈ Ở TỔNG KẾT PHIÊN (đã bị bổ sung ở trên thay phần deploy)
 
 ## Câu để đưa cho một phiên đang chạy
+
+> Nhịp gate đổi (chủ dự án chốt 17/09) — đọc lại `docs/00_LTT_OPERATING_CONTRACT.md` §4.
+> Trong phiên: **test nhắm**; cần gate thì **chỉ L1** (`gate.py --doi`) hoặc **L2**
+> (`gate.py --pham-vi <tp>`) — **không L3** giữa các pha. L3 (`python tools\gate.py`)
+> chạy **một lần ở tổng kết phiên** và **bắt buộc trước mọi deploy** — không có L3 của
+> phiên thì không deploy. "Phiên" là **cả** phiên làm việc — hết một nhánh con, một pha
+> hay một lần gộp `main` **không** phải tổng kết. Gộp `main` giữa phiên: test nhắm xanh
+> (+ L1/L2 khi cần), không L3. L3 đỏ ⇒ sửa tại chỗ ⇒ chạy lại đúng phép đỏ ⇒ khép
+> `gate.py --doi --tu <sha>`. Máy thi hành: `gate.py` từ chối L3 thứ hai trên nhánh và
+> từ chối một L1/L2 giữa phiên tự nâng lên đầy đủ. Tiếp tục công việc đang làm.
+
+Khác bản 16/09 đúng một điểm: 16/09 cấm **mọi** chế độ gate trong phiên; 17/09 cho
+**L1/L2 khi cần**, giữ nguyên "L3 một lần, cuối phiên" và thêm "bắt buộc trước deploy".
+
+# 2026-09-16 — MỘT L3 MỖI PHIÊN (LỊCH SỬ — đã bị bản 17/09 ở trên thay; ⛔ đừng đưa câu dưới cho phiên nào)
+
+## Câu từng đưa cho phiên đang chạy (lịch sử)
 
 > Nhịp test/gate đã đổi — đọc lại `docs/00_LTT_OPERATING_CONTRACT.md` §4. Từ giờ:
 > trong phiên **chỉ test nhắm** đúng cụm vừa sửa, **không chạy `gate.py` ở bất kỳ

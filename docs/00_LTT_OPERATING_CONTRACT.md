@@ -36,9 +36,10 @@ MỞ PHIÊN
   4. viết ra PHẠM VI
 LÀM — PHA 1..N
   5. đọc trước khi ghi (§2) → một changeset nguyên tử (§4.4)
-  6. TEST NHẮM cụm vừa sửa (§4.1) — KHÔNG gate
+  6. TEST NHẮM cụm vừa sửa (§4.1) — cần gate thì CHỈ L1/L2, ⛔ không L3
   7. đỏ → sửa TẠI CHỖ → chạy lại ĐÚNG phép đỏ → pha kế tiếp, không dừng xin phép (§10b)
-KẾT THÚC — khi MỌI pha xong
+     cần deploy để xây tiếp → L1/L2 xanh → gộp main (§7) → deploy (§8) → báo → làm tiếp
+TỔNG KẾT PHIÊN — khi MỌI pha xong
   8. L3 MỘT lần (§4.2) · đỏ → khép (§4.6)
   9. commit → GỘP main (§7) → deploy nếu phạm vi cần (§8)
  10. nghiệm thu thật (§9)
@@ -53,14 +54,18 @@ KẾT THÚC — khi MỌI pha xong
 cách làm — thay vì tự suy."* Gặp hành vi lạ của model/engine/thư viện ngoài: **tra
 nguồn trước**, rồi đo để **kiểm chứng** nguồn — không đo để **thay** nguồn.
 
-| Thứ tự | Nguồn | Ví dụ đường |
+| Thứ tự | Nguồn | Công cụ |
 |---|---|---|
-| 1 | model card của nhà sản xuất | `huggingface.co/<org>/<model>/raw/main/README.md` |
-| 2 | README của chính engine | `raw.githubusercontent.com/ggml-org/llama.cpp/master/tools/server/README.md` |
-| 3 | bản vá / issue cộng đồng cho **đúng** model ấy | `huggingface.co/api/models/<repo>/tree/main` |
+| 1 | model card của nhà sản xuất | `curl` `huggingface.co/<org>/<model>/raw/main/README.md` |
+| 2 | README / tài liệu của chính engine, thư viện | **GitHub MCP** `get_file_contents` (vd `ggml-org/llama.cpp` · `tools/server/README.md`) |
+| 3 | issue / PR / mã cộng đồng cho **đúng** model/thư viện ấy | **GitHub MCP** `search_issues` (theo repo) · `search_code` (theo ký hiệu) · `search_repositories` |
 | 4 | **rồi mới** đo trên máy ta | |
 
-⚠️ `WebFetch`/`WebSearch` **hỏng trên máy này** — dùng
+⭐ **GitHub đi qua plugin GitHub MCP** (`mcp__plugin_github_github__*`, đã cấp token) —
+không cào HTML. Gặp một lỗi/hành vi lạ: `search_issues` trong repo của thư viện đó
+**trước** khi đặt giả thuyết; trích số issue/PR vào nhật ký làm nguồn.
+
+⚠️ `WebFetch`/`WebSearch` **hỏng trên máy này** — nguồn ngoài GitHub dùng
 `curl -sL --max-time 60 -A "Mozilla/5.0" <url>`.
 
 ⭐ **Phép đo phân biệt rẻ hơn mọi suy luận.** Nghi một tham số không được tôn trọng?
@@ -95,27 +100,36 @@ tệp kế hoạch.
 # 4. 🔑 CHÍNH SÁCH TEST — một nhịp duy nhất
 
 ```
-TRONG PHIÊN  : test NHẮM đúng cụm vừa sửa. Đỏ → sửa TẠI CHỖ → chạy lại ĐÚNG phép đỏ.
-               ⛔ KHÔNG gate.py ở bất kỳ chế độ nào.
-CUỐI PHIÊN   : mọi pha xong → python tools\gate.py (L3) MỘT lần.
-L3 ĐỎ        : sửa tại chỗ → chạy lại đúng phép đỏ → khép bằng `gate.py --doi --tu <sha>`.
-               ⛔ KHÔNG chạy L3 lần hai. Một L3 mỗi nhánh.
+TRONG PHIÊN    : test NHẮM đúng cụm vừa sửa. Đỏ → sửa TẠI CHỖ → chạy lại ĐÚNG phép đỏ.
+                 Cần gate (chạm nhiều thành phần, cần phán quyết hẹp) → CHỈ L1 hoặc L2.
+                 ⛔ KHÔNG L3 giữa các pha — không rải rác, không "chốt pha".
+TỔNG KẾT PHIÊN : mọi pha xong → python tools\gate.py (L3) MỘT lần.
+DEPLOY         : bất cứ lúc nào việc xây dựng cần, khi có gate XANH trên đúng SHA deploy —
+                 giữa phiên L1/L2 · tổng kết phiên L3. ⛔ Không chạy L3 để deploy; test nhắm
+                 một mình không đủ để deploy.
+L3 ĐỎ          : sửa tại chỗ → chạy lại đúng phép đỏ → khép bằng `gate.py --doi --tu <sha>`.
+                 ⛔ KHÔNG chạy L3 lần hai. Một L3 mỗi nhánh.
 ```
+
+**"Phiên" = cả phiên làm việc**, từ lúc mở tới lúc tổng kết — ⛔ **không** phải một
+nhánh con, một worktree phụ, một pha, một hạng mục hay một lần gộp `main`. Một phiên
+mở nhiều nhánh vẫn chỉ bấm L3 **một lần, ở tổng kết**, trên nhánh sẽ deploy. (Máy đếm
+L3 theo nhánh — §4.6 — đó là cơ chế chặn, không phải định nghĩa phiên.)
 
 ## Các cấp — tên gọi cho hồ sơ `gate.py`
 
 | Cấp | Lệnh | Dùng khi | ⛔ KHÔNG chứng minh gì |
 |---|---|---|---|
 | **T** | `python -m pytest <tệp…> -q` · `python tools\check_<x>.py` | **mọi lúc trong phiên** (§4.1) | không nói gì ngoài cụm đó |
-| **L1** | `python tools\gate.py --doi --tu <sha>` | **khép** bản sửa sau L3 đỏ (§4.6) · hoà `main` (§7) | phần còn lại. **Tự nâng lên L3** khi không chắc |
-| **L2** | `python tools\gate.py --pham-vi <tp>` | chứng nhận riêng một changeset lõi (§4.10) | ⚠️ tin người gọi |
-| **L3** | `python tools\gate.py` | **một lần, khi mọi pha xong** (§4.2) | deploy hay production |
+| **L1** | `python tools\gate.py --doi [--tu <sha>]` | **giữa phiên khi cần** · **deploy giữa phiên** (§8) · **khép** bản sửa sau L3 đỏ (§4.6) · hoà `main` (§7) | phần còn lại. Giữa phiên **không** tự nâng lên L3 — máy từ chối; sau L3 tổng kết thì tự nâng khi không chắc |
+| **L2** | `python tools\gate.py --pham-vi <tp>` | **giữa phiên khi cần** · **deploy giữa phiên** (§8) · chứng nhận riêng một changeset lõi (§4.10) | ⚠️ tin người gọi |
+| **L3** | `python tools\gate.py` | **một lần, tổng kết phiên** (§4.2) — phán quyết cho deploy ở tổng kết | production (nghiệm thu thật §9) |
 | — | `--quick` · `--vong-lap` | **không dùng** trong nhịp chuẩn | không phải bằng chứng |
 
 Hồ sơ chuyên dụng: `--noi-tiep` (nghi nhiễu do song song/tải máy) · `--ho-so
 phat-hanh` (L3 + cài/rollback). `--tuan-tu` ≠ `--noi-tiep` — `AGENTS.md` §4b.
 
-## 4.1 Trong phiên — chỉ TEST NHẮM
+## 4.1 Trong phiên — TEST NHẮM, cần gate thì L1/L2
 
 ```powershell
 python tools\thanh_phan.py --doi              # cây hiện tại chạm tới thành phần nào
@@ -128,16 +142,28 @@ python -m pytest tests\test_A.py tests\test_B.py -q
 - Bước kiểm tĩnh lẻ (mypy, i18n, kiểu xuống dòng…): chạy **đúng công cụ đó**; tên
   lệnh ở `tools/gate.py::_steps`, và gate in sẵn khi đỏ.
 
-⛔ **Không `gate.py` ở bất kỳ chế độ nào trong phiên** — kể cả `--doi`, `--quick`,
-`--vong-lap`. Chủ sản phẩm chốt 16/09/2026: *"gate chỉ là tổng duyệt."*
+- **Cần gate giữa phiên** (thay đổi lan nhiều thành phần, cần một phán quyết hẹp
+  trước khi đi tiếp): **chỉ** `gate.py --doi` (L1) hoặc `gate.py --pham-vi <tp>` (L2),
+  kiểm máy §4.8 trước. Gate là phán quyết, không phải công cụ dò lỗi — đừng chạy lại
+  liên tục để tìm lỗi.
+- ⛔ **Không L3 trong phiên.** Một `--doi`/`--pham-vi` không thu hẹp được sẽ bị máy
+  **từ chối** thay vì tự nâng lên đầy đủ (`gate.py::nang_cap_giua_phien_bi_chan`).
+- ⛔ `--quick`, `--vong-lap`: không nằm trong nhịp.
 
-## 4.2 ⛔ L3 chạy MỘT lần — khi mọi pha đã xong
+Chủ sản phẩm chốt 17/09/2026: *"L3 chỉ chạy ở tổng kết phiên, không chạy rải rác
+trong các pha; cần gate thì L1 hoặc L2."*
+
+## 4.2 ⛔ L3 chạy MỘT lần — tổng kết phiên
 
 🔑 **Gate là công cụ ra PHÁN QUYẾT, không phải công cụ CHẨN ĐOÁN.**
 
 L3 chạy **một lần** khi toàn bộ phạm vi đã làm xong — là phán quyết dùng chung cho
-báo xong, gộp `main` và deploy. Không chạy L3 sau một pha, đợt, hạng mục, lát cắt
+báo xong, gộp `main` và deploy **ở tổng kết phiên**. Không chạy L3 sau một pha, đợt, hạng mục, lát cắt
 hay lần sửa. **Còn việc nào chưa làm thì chưa bấm.**
+
+**Deploy không chờ L3.** Deploy phục vụ cả quá trình xây dựng (đo thật trên máy chủ,
+E2E giữa các pha), nên giữa phiên deploy sau **L1/L2 xanh** trên đúng SHA deploy (§8).
+⛔ Không bấm L3 để được deploy — L3 vẫn chỉ ở tổng kết phiên.
 
 Trước khi bấm: `npm run build` nếu frontend đổi (`AGENTS.md` §4b) · commit hết ·
 §4.8 · trong lúc chạy **không ghi vào cây của mình** (§4.9).
@@ -183,8 +209,10 @@ Vì sao khép chứ không L3 lần hai: lượt L3 **đã** phán quyết phầ
 lên L3** khi bản sửa chạm tệp dùng chung — lúc đó là máy quyết, không phải thói quen.
 
 ⛔ **MỘT L3 mỗi nhánh — máy thi hành.** Nhánh đã có một lượt L3 (xanh hay đỏ) trong
-12 giờ thì `gate.py` **từ chối** L3 gõ tay và in lệnh khép. Lượt mang nhãn
-`CAY DA DOI` không tính. Lượt trước bị nhiễu thật (máy `QUA TAI`) → `--l3-lai`, có ghi.
+12 giờ thì `gate.py` **từ chối** L3 gõ tay và in lệnh khép. Không tính: lượt mang
+nhãn `CAY DA DOI`, và lượt **bị ngắt giữa chừng** (phiên đóng, bị dừng) — lượt đó
+không ghi bản ghi `test-results/gates/*.json`, tức **chưa có phán quyết**, nên được
+chạy lại. Lượt trước bị nhiễu thật (máy `QUA TAI`) → `--l3-lai`, có ghi.
 
 ⚠️ Đỏ **không** tự động là lỗi của bạn: loại trừ máy quá tải và thay đổi có sẵn trên
 `main` trước khi sửa. Sửa tại chỗ vẫn là sửa — kể cả khi lỗi có sẵn, gom vào cùng
@@ -224,7 +252,7 @@ Hồ sơ là trạng thái **của một cây**. `python tools\ho_so_cay.py tran
 
 ### `NORMAL` — mặc định
 
-§4.1–§4.2: trong phiên chỉ test nhắm, L3 **một lần** khi mọi pha xong. ⛔ Cây chính,
+§4.1–§4.2: trong phiên test nhắm (cần gate thì L1/L2), L3 **một lần** ở tổng kết phiên. ⛔ Cây chính,
 `main`, nhánh phát hành và mọi cây dùng để deploy **luôn** ở `NORMAL`
 (`ho_so_cay.py bat` từ chối — chốt cơ học).
 
@@ -284,12 +312,17 @@ rồi quay lại. Không phải cửa để chạy gate sau mỗi lần sửa.
 - Commit khi một changeset nguyên tử xong và **test nhắm** của nó xanh. Commit
   checkpoint trên nhánh phiên **không** đòi gate.
 - **Chính phiên làm việc tự gộp `main`** (chủ sản phẩm chốt 16/09/2026) — không chờ
-  người tích hợp. Điều kiện: L3 xanh, hoặc L3 đỏ đã khép (§4.6).
+  người tích hợp. Điều kiện (chốt lại 17/09):
+  - **Gộp giữa phiên** (không deploy): test nhắm của changeset xanh; thay đổi lan nhiều
+    thành phần ⇒ thêm **L1/L2** (§4.1). ⛔ **Không** chạy L3 để gộp.
+  - **Gộp giữa phiên để deploy**: **L1/L2 xanh** trên đúng SHA sẽ gộp và deploy (§8).
+  - **Tổng kết phiên**: L3 của phiên (xanh, hoặc đỏ đã khép §4.6) trên SHA sẽ gộp (§4.2).
 
 ```
 main CHƯA đi tiếp kể từ BASE_SHA  → fast-forward main tới nhánh của bạn
 main ĐÃ đi tiếp                   → merge main vào nhánh
-                                   → python tools\gate.py --doi --tu <sha lượt L3>  (chỉ chỗ hai bên gặp nhau)
+                                   → giữa phiên : test nhắm chỗ hai bên gặp nhau (L1 `--doi --tu <sha trước khi hoà>` nếu cần)
+                                     tổng kết   : python tools\gate.py --doi --tu <sha lượt L3>
                                    → fast-forward main
 ```
 
@@ -302,7 +335,11 @@ phiên khác để gộp — gặp thì dừng theo §10.
 Chính phiên đã gộp `main` deploy khi phạm vi cần, **rồi báo** — không xin duyệt
 (§10b). Quy trình và cổng riêng: `docs/16_CAP_NHAT_VA_DEPLOY.md`.
 
-- Cần phán quyết xanh trên **đúng SHA được deploy** (§7).
+- Deploy **bất cứ lúc nào việc xây dựng cần**, kể cả giữa phiên, khi có **gate xanh trên
+  đúng SHA được deploy**: giữa phiên **L1** (`gate.py --doi --tu <sha bản đang chạy>` —
+  phủ mọi thay đổi kể từ bản production, xem `/health/version`) hoặc **L2**
+  (`--pham-vi <tp>` cho từng thành phần chạm); ở tổng kết phiên là **L3** (xanh/đỏ đã khép).
+  ⛔ Không chạy L3 để deploy. ⛔ Test nhắm một mình không đủ để deploy.
 - ⛔ **Deploy chép CẢ CÂY**, không tách được phần một phiên ⇒ trước khi deploy
   **báo** các phiên đang chạy (`ListAgents` → `SendMessage`) — báo, không chờ.
 - Nâng quyền: `python tools\nang_quyen.py <script.py> [-- <tham số>]` (im lặng, §10b).
@@ -337,7 +374,8 @@ plan tự động."* Một pha xong **không** phải điểm xin phép.
 | ⛔ Đừng làm | ✅ Làm |
 |---|---|
 | "Pha 1 xong, tôi có nên tiếp?" | tiếp luôn, báo kết quả **sau** |
-| dừng xin duyệt deploy/gộp `main` | làm, rồi báo kèm phép đo trước/sau |
+| dừng xin duyệt deploy/gộp `main` | làm, rồi báo kèm phép đo trước/sau — deploy sau gate xanh: L1/L2 giữa phiên, L3 ở tổng kết (§8) |
+| "pha xong nên chạy L3" | làm tiếp pha kế; L3 chỉ khi hết **mọi** pha. Cần deploy để xây tiếp ⇒ L1/L2 xanh → deploy → làm tiếp |
 | kết báo cáo bằng câu hỏi | kết bằng **việc đã làm** + việc **đang làm tiếp** |
 | chờ trả lời rồi mới làm | làm, dùng thời gian chờ cho việc đọc/đo |
 
