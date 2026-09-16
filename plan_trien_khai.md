@@ -331,7 +331,7 @@ Screenshot regression Playwright (`toHaveScreenshot`) cho critical screens; test
 | OOS-03 | Trả lời thuần văn bản `CSRF` 400 / `Khong thay key.` 404 ở admin và `Not found` ở `nexus_devices.py:24`, `nexus_sso.py:30` | đổi response của route |
 | OOS-04 | 🔴 Trong lượt khảo sát, một lệnh tìm kiếm của agent đọc `secrets/app.env` quá rộng và **in vài ký tự đầu của giá trị `LTT_VPS_PROXMOX_*` / `LTT_VPS_GATEWAY_*`** (gồm một phần secret token Proxmox) vào transcript cục bộ của phiên này | bảo mật — chủ dự án cân nhắc xoay token; phiên này không chạm secrets |
 | OOS-06 | `apps/agent/routes/drafts_v3.py::_tai_lieu_rong()` tạo trang v3 thiếu `viewport/frames/notes/comments/view` trong khi `di_tru_m1` sinh đủ — hai nguồn cùng một hình dạng lệch nhau. UI đã chịu được (P0-01), nhưng nên thống nhất ở backend | đổi dữ liệu backend tạo ra |
-| OOS-07 | `/admin/user/edit/{id}`: `pageerror: Cannot read properties of null (reading 'checked')` trong `sqladmin/statics/js/bootstrap.min.js` (handler jQuery). Không thuộc tệp override nào; CHƯA đối chứng với cây gốc — làm ở CERTIFYING | mã JS của gói bên thứ ba |
+| OOS-07 | `/admin/user/edit/{id}`: `pageerror: Cannot read properties of null (reading 'checked')` trong `sqladmin/statics/js/bootstrap.min.js` (handler jQuery). Không thuộc tệp override nào. **Đã đối chứng 16/09**: tạm gỡ `list.html`/`layout.html` override, khởi động lại — lỗi y hệt (cùng stack `bootstrap.min.js:6:6753`) ⇒ lỗi SẴN CÓ của gói, không do chiến dịch | mã JS của gói bên thứ ba |
 | OOS-05 | `/tai-xuong` công khai **không** sau cờ `LTT_NEXUS` trong khi mọi trang Nexus khác sau cờ | route gating |
 
 ## Completed Work
