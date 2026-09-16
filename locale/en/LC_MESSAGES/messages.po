@@ -9883,6 +9883,9 @@ msgstr "Stop"
 msgid "Tắt cứng"
 msgstr "Force stop"
 
+msgid "Đã gia hạn, máy được mở lại"
+msgstr "Renewed, machine reopened"
+
 msgid "Tắt cứng giống rút điện: dữ liệu chưa ghi xuống đĩa có thể mất. Tiếp tục?"
 msgstr "Force stop is like pulling the plug: data not yet written to disk may be lost. Continue?"
 
