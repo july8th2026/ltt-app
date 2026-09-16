@@ -198,7 +198,43 @@ với Voice. Chủ dự án quyết riêng.
 
 **Cổng:** giải thích số hiển thị cho tài khoản không phải chủ, khớp CSDL.
 
+### ⭐ Quy tắc chủ dự án chốt 16/09/2026 (thắng R-quy tắc cũ về gate)
+
+- **Gate chỉ chạy MỘT lần ở cuối** (tổng duyệt, ~20 phút). Trong vòng lặp: chỉ
+  `pytest` các tệp test chạm phần vừa sửa (`-n 6`) + đối chứng test mới trên HEAD.
+  Commit checkpoint lên nhánh không cần gate.
+- **Làm toàn bộ các hạng mục**; mọi việc CẦN bản code mới chạy trên máy chủ dồn
+  sau mốc *gate tổng + deploy* (xem "Sau deploy" bên dưới).
+
+### W-KHO — Dữ liệu Voice ở đĩa máy A (duyệt 16/09/2026)
+
+Bối cảnh đo 16/09: toàn bucket R2 = 37 object / 46 MB (chi phí lưu trữ ≈ 0);
+bucket xoá object quá ~7 ngày; Voice không dùng `url_for`/máy B — mọi tệp phục vụ
+qua route của app. ⇒ Voice không được gì từ R2, còn mất dữ liệu vì nó.
+
+| Việc | Trạng thái |
+|---|---|
+| `platform_core/storage.py::RoutedStorage` + `LTT_STORAGE_LOCAL_PREFIXES` (trống ⇒ hành vi cũ) | XONG `d1f92afa`, test_83 13/13 |
+| `tools/chep_tien_to_r2_ve_dia.py` (mặc định liệt kê, không xoá R2, idempotent) | XONG; chạy thử production: 30 tệp / 19,1 MB cần chép |
+| `deploy/windows/backup.ps1` gom `data\voice_goc` + `data\files\voice` (trừ `out\`) | XONG; chạy thử trên thư mục tạm bắt được lỗi đường dẫn 8.3 — đã sửa |
+| Cụm test chạm `storage`/`backup.ps1` | 1288 passed, 10 skipped |
+
+### Sau deploy (thứ tự BẮT BUỘC)
+
+1. `chep_tien_to_r2_ve_dia.py --tien-to voice/ --chep` (trước khi bật).
+2. `app.env`: `LTT_STORAGE_LOCAL_PREFIXES=voice/` → nạp env → restart Web + Worker
+   **khi 0 job running + 0 lease `mode='job'`** (script kiểm có sẵn).
+3. Chạy lại bước 1 (nhặt tệp ghi vào R2 trong khoảng chuyển giao).
+4. Ghi danh lại 25 giọng kho chung từ `data\voice_goc\kho_chung` (giữ `public_id`).
+5. **Duyệt license** 25 giọng (`tools/soat_giong.py duyet … --ly-do`).
+6. W9' E2E trình duyệt thật: tài khoản chủ + tài khoản thường.
+
 ### W3' — Catalog contract (làm lại)
+
+**Kết quả (16/09):** `476f9539` — `tham_chieu.loai_giong` (theo chủ sở hữu) dùng ở
+màn Giọng + Studio + Dự án; nút lọc "Kho chung"; khối quản lý + clip gốc chỉ cho
+giọng của người xem; không gửi khoá kho/UUID chủ của người khác. test_532 7/7, đối
+chứng HEAD 5 đỏ đúng lý do; cụm 36 tệp Voice 668 passed. Browser: sau deploy (W9').
 
 1. Hàm phân loại đặt **trong `tham_chieu.py`**, suy từ `du_dieu_kien_kho_chung` + `owner_id == uid`; định nghĩa rõ ô "chủ xem giọng dung_chung của chính mình".
 2. Route truyền `kind`; `_voice_the.html` + `_voice_chon.html` + `ltt_voice_giong.html` chỉ đọc `kind`; sửa chip + `data-loai` cho shared; giữ guard form khai làn (không cho preset, không cho shared).
@@ -216,6 +252,12 @@ với Voice. Chủ dự án quyết riêng.
 
 ### W5'–W10' — giữ nội dung W5–W10 của plan cũ, với ba sửa
 
+- W5' **bổ sung 16/09 (chủ dự án duyệt):**
+  - Tốc độ: thay 6 nút bằng **thanh kéo 0,5–2,0, bước 0,05**, vạch mốc 0,75/1/1,25/1,5;
+    một nguồn hằng số `apps/ltt_voice/toc_do.py` dùng chung với API (`speed` min/max).
+  - "Nghe ngay" và đọc từng khối Dự án đang **bỏ qua tốc độ** — nối vào.
+  - Kết quả tự cuộn vào khung nhìn sau khi xong; nút Tạo dính đáy không che "Tốc độ".
+  - "Tải WAV" khai `download`/`Content-Disposition` như MP3.
 - W6: bỏ phần "seed/migration phương án C"; chỉ hiển thị trạng thái thật (license, tệp).
 - W9: Playwright **không** gõ cứng mật khẩu — đăng nhập tay một lần, lưu `storageState` ngoài repo; chạy trên URL công khai; đủ 2 tài khoản.
 - W10: `cua_so_yen.py trang-thai` → kiểm `loi_cho_bo_test` trong `tools/gate.py` → gate đầy đủ; viết `GUI_AUDIT_MATRIX`, `GUI_BROWSER_ACCEPTANCE`, `GUI_FINAL_REPORT`.
