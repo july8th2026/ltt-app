@@ -226,6 +226,8 @@ def dong_thoi_gian(db, run, *, cho_van_hanh: bool = False,
         #    phep tinh khong phep kiem nao voi toi duoc, va ba so nay tra loi
         #    cau hoi khach hoi nhieu nhat ("con bao lau nua").
         **_tien_do_khach(giai_doan, run),
+        # W4': khuon cau cho giai doan hong MANG MA (vd lech lan) — `LOI_CO_MA`.
+        "loi_co_ma": loi_co_ma_cho_khach(db, run),
     }
     if cho_van_hanh:
         ra["chu_so_huu"] = run.owner_id
@@ -358,6 +360,41 @@ def tom_tat_loi_cho_khach(db, run) -> str:
         return ""
     ten = hong[0].stage
     return f"{ten}: {LOI_CHUNG}"
+
+
+#: Ma loi ON DINH (`thi_hanh` ghi vao `outputs.ma_loi` cua giai doan hong) ⇒ cau
+#: cho khach. Chi nhung ma ma "Thu lai buoc nay" **chac chan** hong y het.
+#:
+#: ⛔ Khoa la ma cong khai cua `ltt_voice.lan_ngon_ngu` — go lai o day vi bang
+#:    nay la MOT NGUOI BAT LOI THEO MA, dung vai ma hang so do sinh ra cho
+#:    (*"khach bat loi theo ma, khong theo cau chu"*). `test_409` §8 chot hai
+#:    ben bang nhau, nen doi ma o `ltt_voice` thi bang nay do ngay.
+LOI_CO_MA = {
+    # W4': kich ban long tieng va giong khac lan. Giong da DONG BANG vao ban
+    # long tieng, nen thu lai buoc doc van gap dung giong do.
+    "voice_language_mismatch": N_(
+        "Giọng đã chọn không cùng ngôn ngữ với lời lồng tiếng, nên chúng tôi "
+        "dừng lại trước khi đọc thay vì giao một bản đọc sai giọng. Hãy tạo "
+        "lần chạy mới với một giọng cùng ngôn ngữ với lời lồng tiếng."),
+    "voice_language_unknown": N_(
+        "Giọng đã chọn chưa xác định được ngôn ngữ nên chưa dùng để đọc được. "
+        "Hãy tạo lần chạy mới với một giọng đã ghi rõ Tiếng Việt hoặc Tiếng Anh."),
+}
+
+
+def loi_co_ma_cho_khach(db, run) -> str:
+    """Khuon cau `N_()` (chua dich) cho giai doan hong MANG MA da biet; rong neu
+    khong co. Rong ⇒ man hinh giu ban loi chung kem nut thu lai.
+
+    ⭐ Doc `outputs.ma_loi` — truong co cau truc — chu khong doc `error`: chu tu
+       do cua van hanh doi theo ngon ngu tien trinh va theo moi lan ai do viet
+       lai cho de doc.
+    """
+    for s in features.cac_giai_doan(db, run):
+        if s.status == "failed_terminal":
+            ma = str((s.outputs or {}).get("ma_loi") or "")
+            return LOI_CO_MA.get(ma, "")
+    return ""
 
 
 # ══════════════════════════════════════════════════════════════════════════════

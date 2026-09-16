@@ -424,6 +424,12 @@ def phan_loai(exc: BaseException) -> str:
         return NGUOI_DUNG
 
     # ── Con lai: truot thoang qua ───────────────────────────────────────────
+    # ⛔ `ltt_voice` tu choi giong (khong phai cua ban, da tat, lech lan voi
+    #    kich ban — W4'). Chay lai cung giong + cung kich ban hong y het.
+    from .giong_noi import GiongKhongHopLe
+    if isinstance(exc, GiongKhongHopLe):
+        return NGUOI_DUNG
+
     if isinstance(exc, (GiongError, DichError)):
         return TAM_THOI
     return TAM_THOI

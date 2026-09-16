@@ -67,10 +67,10 @@ def test_giong_khong_thuoc_tai_khoan_bi_TU_CHOI_bang_CAU_CUA_LTT_VOICE(monkeypat
     """⚠️ Chuyen NGUYEN cau cua LTT Voice, khong viet lai: ho co y dung cung mot
        cau cho "khong co" va "khong phai cua ban".
     """
-    from apps.ltt_voice import features as vf
-
-    def _tu_choi(db, *, owner_id, voice_id="", preset=""):
-        raise vf.LoiGiongNoi(CAU_KHONG_THAY)
+    # `giong_noi.giai_giong` THAT boc `ltt_voice.LoiGiongNoi` thanh
+    # `GiongKhongHopLe` (giu nguyen cau) — stub nem dung thu ham that nem.
+    def _tu_choi(db, *, owner_id, voice_id="", preset="", **_):
+        raise giong_noi.GiongKhongHopLe(CAU_KHONG_THAY)
 
     monkeypatch.setattr(giong_noi, "giai_giong", _tu_choi)
     with pytest.raises(rang_giong.RangGiongError) as e:

@@ -409,6 +409,14 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
                 features.danh_dau_hong(
                     db, stage_hong, str(exc)[:2000],
                     cuoi_cung=not (tam_thoi and features.con_luot_thu(stage_hong)))
+                # ⭐ Ma loi ON DINH (vd `voice_language_mismatch`, W4') di vao
+                #    cot co cau truc, khong nhet vao `error`: man khach doc MA
+                #    de noi dung cau, con `error` la chu tu do cho van hanh.
+                #    `_dat_lai_giai_doan` xoa `outputs` khi chay lai.
+                ma_loi = str(getattr(exc, "ma_loi", "") or "")
+                if ma_loi:
+                    stage_hong.outputs = {**(stage_hong.outputs or {}),
+                                          "ma_loi": ma_loi}
                 db.commit()
         except Exception:                   # noqa: BLE001
             # ⚠️ Ghi trang thai la viec PHU. No hong thi loi goc van phai noi

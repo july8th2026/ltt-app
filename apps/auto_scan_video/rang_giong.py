@@ -244,11 +244,12 @@ def kiem_o_cua(db, *, owner_id: str, che_do: str, giong_id: str) -> None:
     if not str(giong_id or "").strip():
         raise RangGiongError(_t('Hãy chọn một giọng đọc.'))
 
-    from apps.ltt_voice import features as _vf
+    from .giong_noi import GiongKhongHopLe
 
     try:
         _rang_khach_chon(db, owner_id=owner_id, giong_id=str(giong_id).strip())
-    except _vf.LoiGiongNoi as exc:
+    except GiongKhongHopLe as exc:
+        # (`giong_noi.giai_giong` boc `ltt_voice.LoiGiongNoi` thanh lop nay.)
         # ⭐ Chi bat dung lop loi CUA KHACH. Mot loi CSDL hay mang di thang len
         #    tren: bien no thanh "giong khong hop le" la bao khach sua mot thu
         #    ho khong he lam sai.

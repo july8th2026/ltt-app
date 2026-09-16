@@ -102,6 +102,23 @@
 - Test: `tests/test_1263_chatltt_tieng_kiem_truoc_truoc_giu_tien.py` (mới, đỏ
   4/5 trước sửa → xanh 5/5); cụm nhắm 21 tệp `-n 6`.
 
+## 2026-09-16 — ASV W4': chặn giọng lệch làn với kịch bản lồng tiếng
+
+- Đối soát 16/09 (W4'): `auto_scan_video/giong_noi.giai_giong` đưa `text="."`
+  cho `ltt_voice.features.giai_giong`, nên `lan_ngon_ngu.quyet_dinh` chạy trên
+  một dấu chấm (`doan_ngon_ngu` = `None` ⇒ nhận làn của giọng ⇒ luôn cho qua).
+  Tái hiện trên mã cũ: giọng EN đọc **3/3** đoạn lồng tiếng Việt.
+- Sửa: `giai_doan_giong` đưa **kịch bản thật** (nối các `muc[].chu`) cùng
+  `ngon_ngu_dich` KHAI trong bản lồng tiếng (vào nhánh `khai_bao`) — một lần,
+  trước lượt sinh đầu tiên. Không chép luật: vẫn đi qua `_chot_lan` → `quyet_dinh`.
+- `LoiGiongNoi` được bọc thành `GiongKhongHopLe(ma_loi=…)`, phân loại
+  `NGUOI_DUNG` (trước đó rơi xuống `TAM_THOI` ⇒ giai đoạn bị đánh dấu thử lại
+  được). `thi_hanh` ghi `outputs.ma_loi`; `quan_sat.LOI_CO_MA` đổi mã ⇒ câu cho
+  khách; màn tiến độ hiện câu đó và ẩn nút "Thử lại bước này".
+- Test: `test_409` §8 (8 bài), cập nhật `test_418` (BẢNG), `test_475` (stub).
+  Playwright trên template thật: câu hiện, 0 form thử lại, 0 lỗi console, không
+  cuộn ngang ở 375px.
+
 ## 2026-09-15 — H54: Tool 1.9.2 khớp reasoning và kiểm thật Codex
 
 - Tài liệu chính thức Codex xác nhận custom provider dùng Responses và catalog
