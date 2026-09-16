@@ -75,9 +75,16 @@ def test_duong_khong_ai_so_huu_thi_KHONG_doan():
 
 
 def test_cham_tep_dung_chung_thi_chay_TAT_CA():
-    """⛔ Fail-open. `conftest.py` cham moi thu, nen no khong duoc thu hep."""
+    """⛔ Fail-open. `conftest.py` cham moi thu, nen no khong duoc thu hep.
+
+    🔴 Doi 17/09/2026 (su co L1/L2, tests/test_1500): `tools/gate.py` KHONG con o
+       DUNG_CHUNG. Ghim cu lam moi luot deploy mang mot commit governance khong L1
+       duoc. Cong cu gate thuoc `cong_cu` va chay dung test cua no (`test_nhac_toi`).
+    """
     assert tp.bi_anh_huong({"tests/conftest.py"}, GOC) is None
-    assert tp.bi_anh_huong({"tools/gate.py"}, GOC) is None
+    phan = tp.bi_anh_huong({"tools/gate.py"}, GOC)
+    assert phan is not None and "cong_cu" in phan
+    assert "tests/test_1280_nhip_mot_l3.py" in tp.test_nhac_toi({"tools/gate.py"}, GOC)
 
 
 def test_anh_xa_test_suy_tu_IMPORT_chu_khong_tu_TEN_TEP():

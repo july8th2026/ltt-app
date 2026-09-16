@@ -12,6 +12,20 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-17 — Sửa L1/L2: không chạy test hai lần, dùng ngân sách worker, không chen `postgres_test`, L1 thu hẹp được
+
+- Triệu chứng đêm 16→17/09 (3 phiên): CPU máy 11–20% trong khi các lượt gate xếp hàng
+  > 1 giờ; `check_multiproc` đỏ giả `relation "jobs" does not exist`; L1 của mọi lượt
+  deploy bị từ chối nên phải L2. Chi tiết + nguyên nhân gốc: `BAY_TRONG_CONG_CHAT_LUONG.md` Bẫy 38.
+- Sửa: `tools/test_nhanh.py` (`ke_hoach_pha`), `tools/gate.py` (`-n` cho L1/L2,
+  `khoa_can_giu`, L1 chỉ tài liệu chạy các bước tĩnh, test tra theo `test_nhac_toi`),
+  `tools/cua_so_yen.py` (`KHONG_DUOC_CHEN`), `tools/pg_ten_cay.py` + ba công cụ PostgreSQL
+  (CSDL test theo cây), `tools/thanh_phan.py` (`DUNG_CHUNG` còn `conftest.py` + `requirements*`,
+  `la_tai_lieu`, `test_nhac_toi` theo AST). `test_394` đổi phép ghim `tools/gate.py` có lý do.
+- Kiểm: `test_1500` 18/18 (13 đỏ trước khi sửa); 16 tệp test công cụ gate: 292 + 78 xanh (`-n 6`).
+- ⚠️ CSDL test PostgreSQL cũ tên cố định (`*_multiproc_test`, `*_wf_migration_test`,
+  `*_m1_dientap_test`) không còn được dùng; mỗi cây tạo một CSDL mới lần đầu chạy.
+
 ## 2026-09-17 — Deploy giữa phiên sau L1/L2 xanh (sửa luật "L3 bắt buộc trước deploy")
 
 - Chủ dự án: *"Bản chất deploy còn phục vụ cho quy trình xây dựng nên không thể coi deploy cuối phiên sau

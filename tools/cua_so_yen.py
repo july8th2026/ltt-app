@@ -53,6 +53,10 @@ TEP_KHOA = Path(tempfile.gettempdir()) / "ltt_cua_so_yen.json"
 #: mo mot cua so trong do hai ban cung tuong minh dang doc quyen.
 MAC_DINH = "cpu_nhieu"
 
+#: Tai nguyen ma chen qua han se cho KET QUA SAI (khong chi cham): mot CSDL test dung
+#: chung. Qua `cho_toi_da_s` thi CHO TIEP thay vi chen — khoa treo van tu doat.
+KHONG_DUOC_CHEN = frozenset({"postgres_test"})
+
 
 def _tep(tai_nguyen: str) -> Path:
     """Moi tai nguyen MOT tep khoa rieng.
@@ -328,6 +332,8 @@ class CuaSoYen:
             return self
         bat_dau = time.time()
         in_lan_cuoi = 0.0
+        khong_chen = sorted(set(self.tai_nguyen) & KHONG_DUOC_CHEN)
+        da_bao_khong_chen = False
         while True:
             if self._thu_giu_het():
                 self.da_cho_s = time.time() - bat_dau
@@ -336,7 +342,17 @@ class CuaSoYen:
                           f"{self.da_cho_s / 60:.1f} phut\n")
                 return self
             doi = time.time() - bat_dau
-            if doi > self.cho_toi_da_s:
+            if doi > self.cho_toi_da_s and khong_chen:
+                # 🔴 SU CO 17/09 (tests/test_1500): chen vao `postgres_test` khi luot
+                #    kia dang `drop_all` tren CUNG CSDL test ⇒ `relation "jobs" does not
+                #    exist` — mot ket qua SAI, khong chi cham. Khoa treo (tien trinh
+                #    chet / qua gia) van bi doat trong `thu_giu`, nen cho tiep khong ket.
+                if not da_bao_khong_chen:
+                    print(f"  [cua so yen] cho qua {self.cho_toi_da_s / 60:.0f} phut "
+                          f"nhung KHONG chen {', '.join(khong_chen)} (ket qua se sai) "
+                          f"- cho tiep: {self._ai_giu()}")
+                    da_bao_khong_chen = True
+            elif doi > self.cho_toi_da_s:
                 print(f"  [cua so yen] cho qua {self.cho_toi_da_s / 60:.0f} "
                       f"phut ma khoa van bi giu: {self._ai_giu()}")
                 print("  [cua so yen] CHAY MA KHONG CO KHOA - ket qua co the "

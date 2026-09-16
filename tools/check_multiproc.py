@@ -81,7 +81,10 @@ def _tim_url() -> tuple[str, str]:
 
     base, _, ten = live.rpartition("/")
     ten = ten.split("?", 1)[0]
-    scratch_ten = f"{ten}{HAU_TO}"
+    # Moi cay mot CSDL test rieng (su co 17/09, tools/pg_ten_cay.py).
+    sys.path.insert(0, str(ROOT / "tools"))
+    from pg_ten_cay import ten_csdl_test
+    scratch_ten = ten_csdl_test(ten, HAU_TO, ROOT)
     scratch = f"{base}/{scratch_ten}"
 
     try:
