@@ -6,9 +6,9 @@
 >
 > Viết 2026-09-09.
 >
-> ⚠️ **Từ 2026-09-16 `NORMAL` cũng không chạy gate trong phiên** (hợp đồng §4.1).
-> Câu *"vòng lặp mặc định là L1"* ở §1 dưới đây là bối cảnh lúc viết, không còn
-> là luật. Khác biệt còn lại của `FAST_BUILD`: xem hợp đồng §4.10.
+> ⚠️ **Luật hiện hành (chốt 17/09): trong phiên test nhắm, cần gate thì chỉ L1/L2 khi
+> cần; L3 một lần ở tổng kết phiên, bắt buộc trước deploy** (hợp đồng §4). Câu *"vòng
+> lặp mặc định là L1"* ở §1 dưới đây là bối cảnh lúc viết, không còn là luật. Khác biệt còn lại của `FAST_BUILD`: xem hợp đồng §4.10.
 
 ## 1. Vấn đề thật, không phải vấn đề giả định
 

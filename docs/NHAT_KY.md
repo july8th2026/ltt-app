@@ -12,6 +12,32 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-17 — Deploy giữa phiên sau L1/L2 xanh (sửa luật "L3 bắt buộc trước deploy")
+
+- Chủ dự án: *"Bản chất deploy còn phục vụ cho quy trình xây dựng nên không thể coi deploy cuối phiên sau
+  L3… Deploy sau L1-L2 được vì đã qua gate nhỏ."* Luật mới: deploy bất cứ lúc nào việc xây dựng cần, khi có
+  gate xanh trên đúng SHA deploy — giữa phiên L1 (`--doi --tu <sha bản đang chạy>`) / L2 (`--pham-vi`), tổng
+  kết phiên L3. Không bấm L3 để deploy; test nhắm một mình không đủ. L3 vẫn một lần ở tổng kết.
+- Sửa: hợp đồng §1/§4/§4.2/§7/§8/§10b, `CLAUDE.md` luật 1–2, `AGENTS.md`, `docs/16_CAP_NHAT_VA_DEPLOY.md`,
+  `02_LENH_CHO_CLAUDE.md`, `03_THEM_APP_MOI.md`, `QUY_TRINH_WORKTREE.md`, `SESSION_MIGRATION_NOTE.md`,
+  docstring + lời từ chối của `tools/gate.py` (cơ học không đổi: vẫn chặn L3 thứ hai và L1/L2 tự nâng).
+
+## 2026-09-17 — Luật gate chốt lại: L1/L2 giữa phiên, L3 chỉ ở tổng kết phiên và bắt buộc trước deploy (phần deploy đã sửa ở mục trên)
+
+- Chủ dự án chốt: *"L3 chỉ chạy ở tổng kết phiên, không chạy rải rác trong các pha, [bắt buộc] trước deploy
+  trong bất cứ trường hợp nào; cần chạy gate thì chạy L1 hoặc L2."* Nguyên nhân: nhiều phiên song song tự
+  đặt nhịp gate riêng (một plan Serving V2 ghi "mỗi pha một L3" và đã bấm L3 sau pha 2 — lượt bị dừng giữa
+  chừng, không bản ghi, không tính).
+- Khác bản 16/09 đúng một điểm: 16/09 cấm mọi chế độ gate trong phiên; nay cho **L1/L2 khi cần**. Giữ
+  "một L3 mỗi nhánh", thêm "không có L3 của phiên thì không deploy — không ngoại lệ".
+- Sửa tệp chủ `docs/00_LTT_OPERATING_CONTRACT.md` §1, §4, §4.1, §4.2, §4.10, §8; tóm tắt ở `CLAUDE.md` luật 1,
+  `AGENTS.md`; trỏ ở `docs/16_CAP_NHAT_VA_DEPLOY.md`, `docs/02_LENH_CHO_CLAUDE.md`, `docs/03_THEM_APP_MOI.md`,
+  `docs/OPERATING_STANDARDIZATION/SESSION_MIGRATION_NOTE.md` (câu đưa cho phiên đang chạy);
+  `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`, memory `gate-chi-chay-cuoi-cung`.
+- Cơ học: `tools/gate.py::nang_cap_giua_phien_bi_chan` — `--doi`/`--pham-vi` không thu hẹp được mà nhánh chưa
+  có L3 thì **từ chối** thay vì tự nâng lên đầy đủ (đó là L3 rải rác); `test_1280` +5 phép kiểm.
+- Tài liệu lịch sử (audit, evidence, báo cáo cũ) không viết lại — chúng ghi chuyện đã xảy ra, không định nghĩa luật.
+
 ## 2026-09-16 — LTT Voice W4': ChatLTT `speech.ltt` chặn lệch làn TRƯỚC giữ tiền
 
 - Phát hiện (audit W4', `docs/LTT_VOICE/GUI_DOI_SOAT_VA_PLAN_V2.md` trên nhánh
@@ -157,6 +183,35 @@
   hash; `/huong-dan` thấy cả `ltt-3.8` và `ltt-3.5`. Hai trang có 0 console
   error, 0 request failed và 0 response HTTP >= 400. Theo chỉ định của owner,
   H55 dùng test phạm vi `-n 7` (182 PASS) và **không chạy gate tổng**.
+## 2026-09-17 — Kết phiên chuẩn hoá luật: L3 xanh, gộp `main`
+
+- Luật bổ sung (`fb57383c`): tra cộng đồng GitHub qua plugin **GitHub MCP**
+  (hợp đồng §1b, `CLAUDE.md` luật 10); nhịp gate ghi đủ trong `CLAUDE.md` luật 1;
+  kiểm CPU hai lệnh ở luật 3; L3 bị ngắt giữa chừng (không bản ghi) chưa phải phán quyết.
+- Hoà `main` `17759a7b` (68 commit; `main` đã chứa `cae713d6` qua phiên LTT Voice) →
+  `8a7961f9`, không xung đột.
+- **L3 lượt 1** (`8a7961f9`): FAIL 1/33 — `bo test`: 11.795 passed, 1 failed
+  `test_1259::test_BAN_SAO_khop_may_B`. Gốc: lượt chạy thiếu `LTT_LLM_BASE_URL` +
+  `LTT_LLM_TOKEN` (test cố ý đỏ khi không đối chiếu được cổng máy B). Kèm 4 bước
+  frontend TỰ BỎ QUA vì worktree thiếu `node_modules`.
+- Khắc phục, chạy lại đúng phép đỏ: URL từ `app.env` + token đọc qua SSH từ
+  `C:\ProgramData\LTTLlm\gateway.env` máy B (không in, không ghi đĩa), qua
+  `tools\nang_quyen.py` → `test_1259` **4 passed**; `npm ci` 4 frontend →
+  `npm test -- --run` **290 passed** (61+15+28+186).
+- **L3 lượt 2** theo chỉ đạo chủ dự án ("đỏ thì dừng, khắc phục, chạy L3 lại"),
+  `--l3-lai`, cùng môi trường máy B: **PASS 33/33**, 0 bước bỏ qua, cây không đổi
+  giữa chừng — `test-results/gates/20260916T170642Z-23604.json`. Trước mỗi lượt:
+  `cua_so_yen` RẢNH, `tai_may` RẢNH, lượt 1 chờ hết pytest gõ tay của phiên golden UI.
+- `main` ff → `8a7961f9`, đẩy `origin`. Không deploy: production `d5bd7b07` đã chứa
+  mọi thay đổi mã của nhánh (`5d0d5149`, `b75abb06`, `cae713d6`); phần còn lại là tài liệu.
+- ⚠️ Chưa giải: (1) thư mục `test-results/` của worktree từng biến mất giữa hai lượt
+  gate nên mất tệp đầu ra lượt bị ngắt — chưa tìm ra tác nhân; (2) `scan_source_secrets`
+  chạy từ cây chính báo FAIL vì `.codex/worktrees/` (chưa theo dõi, của phiên Codex)
+  nằm trong cây chính; (3) chỉ đạo "L3 đỏ → chạy L3 lại" khác hợp đồng §4.6 (khép bằng
+  `--doi --tu`) — **ĐÃ CHỐT 17/09**: chủ dự án chọn *"lượt đỏ khép bằng `--doi --tu`"*.
+  Hợp đồng §4.6, `CLAUDE.md` luật 1 và chốt `l3_lai_bi_chan` của `gate.py` vốn đã đúng
+  luật này — không đổi gì; `--l3-lai` chỉ dành cho lượt bị nhiễu thật (máy `QUA TAI`).
+
 ## 2026-09-16 — Chuẩn hoá toàn bộ luật vận hành: mỗi chủ đề MỘT tệp chủ
 
 - Audit (3 agent đọc song song + phiên chính): `AGENTS.md` ~30% luật / ~45% chuyện
