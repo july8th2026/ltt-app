@@ -491,6 +491,19 @@ def main() -> int:
         return _chot(_than(args, con_lai))
 
 
+def _la_duong_test(x: str) -> bool:
+    """Doi so la mot DUONG test (tep/thu muc duoi tests/, co the kem ::ham)."""
+    if x.startswith("-"):
+        return False
+    goc = x.split("::", 1)[0].replace("\\", "/")
+    return goc.startswith("tests") and (GOC / goc).exists()
+
+
+def _duong_test(con_lai: list[str]) -> set[str]:
+    """Tap duong tep test nguoi goi truyen vao (chuan hoa `/`, bo `::ham`)."""
+    return {x.split("::", 1)[0].replace("\\", "/") for x in con_lai if _la_duong_test(x)}
+
+
 def _than(args, con_lai: list[str]) -> int:
     """Than that su cua luot chay. Tach ra de `main` boc duoc khoi `with`."""
     chung = [sys.executable, "-m", "pytest", "-q", *BO_QUA, *con_lai]
@@ -586,9 +599,19 @@ def _than(args, con_lai: list[str]) -> int:
             ten = ", ".join(pathlib.PurePath(t).name for t in bo)
             print(f"\n[--lf] bo qua {len(bo)} tep pha 2 (khong tep nao do lan "
                   f"truoc): {ten}")
+    # 🔴 17/09/2026: `chung` mang CA danh sach tep nguoi goi truyen vao (`gate.py
+    #    --pham-vi` truyen 467 tep). Pha 2 `chung + co` vi the chay LAI toan bo
+    #    467 tep tren MOT tien trinh sau khi pha 1 da chay song song xong — L2
+    #    `server:web` keo dai hon mot lan L3. Co danh sach tep thi pha 2 chi chay
+    #    nhung tep noi tiep NAM TRONG danh sach, bang tuy chon goc khong kem duong.
+    duong = _duong_test(con_lai)
+    goc_pha2 = chung
+    if duong:
+        co = [t for t in co if t in duong]
+        goc_pha2 = [x for x in chung if x not in con_lai or not _la_duong_test(x)]
     ma2, t2 = (0, 0.0)
     if co:
-        ma2, t2 = _chay(chung + co, f"PHA 2 - noi tiep ({len(co)} tep ghi vao cay kho)")
+        ma2, t2 = _chay(goc_pha2 + co, f"PHA 2 - noi tiep ({len(co)} tep ghi vao cay kho)")
 
     tong = time.monotonic() - t_dau
     print(f"\n{'=' * 70}")
