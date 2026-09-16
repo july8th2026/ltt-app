@@ -32,7 +32,7 @@ nào < 88 · critical UI xác minh ở mức render thật (E3).
 | Bộ quét | `node tools/golden_ui_quet.mjs --cau-hinh routes.json --ra <dir> [--khung ...]` — HTTP, ảnh toàn trang, console, request hỏng, tràn ngang, axe WCAG 2.2 AA, h1/main/lang, ô chạm, ô nhập <16px |
 
 ## Overall Progress
-67%
+70%
 
 (Trọng số: P0 5 · P1 10 · P2 15 · P3 15 · P4 20 · P5 15 · P6 10 · P7 10. Tính: 5 + 10 + 55%·15 + 40%·15 + 70%·20 + 65%·15 + 80%·10 + 0·10 = 5+10+8,25+6+14+9,75+8 = 61 → **63%** sau khi toàn hệ về axe 0 ở 4 khung; chưa có chứng nhận gate và Phase 7 chưa bắt đầu.)
 
@@ -44,7 +44,7 @@ nào < 88 · critical UI xác minh ở mức render thật (E3).
 | 3 Shared UI Components | 40 | 🟡 |
 | 4 Critical Pages | 70 | 🟡 Error ✅ · Jobs 🟡 · Billing 🟡 · Auth 🟡 · Shell/Workspace 🟡 · Public ⏳ |
 | 5 Remaining Pages & Apps | 65 | 🟡 Admin ✅ · sqladmin ✅ · Status ✅ · Apps a11y ✅ · VPS/Nexus tương phản ✅ · còn i18n chuỗi cứng + chip thể loại + ảnh bìa |
-| 6 Responsive & Accessibility | 80 | 🟡 448 phép đo 390/768/1440/1920: axe serious **0**, tràn 0, main/h1 lệch 0, console 0; chưa đo 430×932 + keyboard walkthrough |
+| 6 Responsive & Accessibility | 90 | 🟡 448 phép đo 4 khung axe 0 · 430×932 critical ✅ · bàn phím critical ✅ · còn: đo trên URL công khai (cần deploy) |
 | 7 Visual Regression & Final QA | 35 | 🟡 regression ảnh 28 mẫu ✅ · CERTIFYING (gate) ⏳ · URL công khai ⏳ (cần deploy) |
 
 ## Current Baseline
@@ -265,8 +265,10 @@ Pending: sqladmin `details` `.table-responsive` chưa focus được (details.ht
 Thứ tự: Status → Developer → VPS → Nexus → Admin tự dựng → sqladmin (DL-004) → Apps (taoanh, voice, taovideo, upscale, taoclipngan, thumbnail, chatltt, ommi, agent/canvas, autosub, form-app nhỏ).
 
 ## Phase 6 — Responsive & Accessibility
-Progress: 80%
+Progress: 90%
 
+- **Khung 430×932**: 38 màn critical (auth/billing/jobs/error/workspace/public) — tràn 0, axe 0 (`sau/430`).
+- **Đi bằng bàn phím** (`ban_phim.mjs`, Tab tới 40 điểm dừng, mỗi điểm phải có vòng focus nhìn thấy + nằm trong khung nhìn): login, register, 404, nạp, đơn đang chờ, việc, việc lỗi, trang chủ — 0 lỗi sau khi trả vòng focus cho ô tìm kiếm/sắp xếp workspace (`outline:0` cũ).
 - **Đo toàn hệ `sau/v2` (448 phép đo, 112 route × 390/768/1440/1920)**: axe serious/critical **0** (trừ 3 nút canvas, đã sửa và đo lại 0 ở cả 4 khung), tràn ngang 0, `main`≠1 0, `h1`≠1 0, lỗi console 0, lỗi quét 0.
 - Gốc chung của nhóm lỗi cuối: **làm mờ bằng `opacity`** (thẻ gói VPS hết chỗ .62, "Sắp có" .45, mô tả .75–.85, dòng máy Nexus tắt .62) kéo CHỮ xuống 2,9–4,46:1 ⇒ thay bằng màu token + viền đứt; `.check input{width:auto}` trả checkbox 13px ⇒ 18px; link-duy-nhất-trong-`li` sàn 24px (`:where`); nút tải Nexus `--brand-fill`; canvas: minimap đè cụm nút (luật `bottom` thua CSS thư viện) + nhãn React Flow đè nút cuối ⇒ sửa hai toạ độ.
 
@@ -293,14 +295,14 @@ Screenshot regression Playwright (`toHaveScreenshot`) cho critical screens; test
 | ID | Vấn đề | Phạm vi |
 |---|---|---|
 | P1-01 🟡 PARTIAL (DL-001 áp phần thương hiệu/credit/landmark/token) | **Shell drift**: home đã đăng nhập dùng workspace shell (rail trái/phải, logo "LTT STUDIOS"), mọi trang khác dùng top-nav ("LTT AI Studio"); bấm vào bất kỳ app nào là đổi hẳn khung | DL-001 |
-| P1-02 | **Hai họ chữ**: auth/public/admin `Segoe UI`, phần còn lại `system-ui` | DL-003 |
-| P1-03 | **Ba bảng màu**: Carbon Red ấm; Developer nền trung tính + cyan; VPS teal (`--vps-teal-text` tham chiếu nhưng không định nghĩa); sqladmin navy/Tabler | DL-002, DL-004 |
+| P1-02 ✅ (DL-003; đo `font` 448 phép đo: một họ) | **Hai họ chữ**: auth/public/admin `Segoe UI`, phần còn lại `system-ui` | DL-003 |
+| P1-03 ✅ (DL-002 + DL-004; `tim_mau_lech.mjs` sqladmin 0 nền navy) | **Ba bảng màu**: Carbon Red ấm; Developer nền trung tính + cyan; VPS teal (`--vps-teal-text` tham chiếu nhưng không định nghĩa); sqladmin navy/Tabler | DL-002, DL-004 |
 | P1-04 ✅ (312 → 0 ở 448 phép đo) | Tương phản: 312 nút / 89 trang dưới AA | toàn hệ |
 | P1-05 ✅ (đo lại toàn hệ: main≠1 = 0, h1≠1 = 0) | `main` nhân đôi (10 màn) · thiếu `h1` (`/status`, canvas, chatltt, autosub) · `h1` ×6 ở ommi classic | shell + app |
 | P1-06 🟡 PARTIAL (jobs, rail trang chủ, taoanh, thumbnail, transcript, prompt-canh, audio-pause, video-assembly xong; còn dev/admin nội bộ) | Enum nội bộ lộ ra khách: `running · 20%`, `queued · 0%`, `cancelled · 10%` (taoanh), `running/queued/done` (rail home), tiêu đề `Job 8fde2d41`, `taoanh · taoanh.generate` (job detail) | jobs, workspace, apps |
 | P1-07 🟡 PARTIAL (error/auth/jobs/billing/status/sqladmin list/home chip/nhãn app xong; còn chuỗi trong JS app + dev portal kỹ thuật) | i18n: nhãn tiếng Anh cứng (`GENERATIVE IMAGE`, `OUTPUT HISTORY`, `REFERENCE & EDIT`), chip thể loại lẫn hoa/thường (`audio`, `video` cạnh `AI Video`), chuỗi không qua `_()` ở error/jobs/nap/auth/status, sqladmin toàn tiếng Anh (`Search`, `Actions`, `Showing 1 to 3`) | toàn hệ |
 | P1-08 🟡 PARTIAL (billing xong; còn home rail/dev/VPS kiểm lại) | Định dạng số kiểu Anh trong giao diện Việt: `200,000đ`, `2,200 credit`, `1,000,000đ` (billing) trong khi VPS/Developer dùng `149.000đ`, `1.250` | billing, jobs |
-| P1-09 🟡 PARTIAL (progressbar jobs/home ✅, khung cuộn ✅, nhãn admin ✅; còn Voice nested-interactive, upscale `#vfile`) | Progressbar không tên (12) · vùng cuộn `<pre>` không focus được (35) · control lồng control ở thẻ giọng Voice (18) · control thiếu nhãn ở admin `api-key-them` | a11y |
+| P1-09 ✅ (axe 0 ở 448 phép đo) | Progressbar không tên (12) · vùng cuộn `<pre>` không focus được (35) · control lồng control ở thẻ giọng Voice (18) · control thiếu nhãn ở admin `api-key-them` | a11y |
 | P1-10 ✅ | sqladmin list: menu "Actions" đè dòng đầu bảng, "Show 10 / Page" trôi ngoài card (gốc: `.dropdown` không phạm vi trong ltt.css) | admin |
 | P1-11 ✅ | `/admin/khach-hang` tràn ngang ở 390 (gốc: sr-only absolute trong khung cuộn không định vị) | admin |
 | P1-12 ✅ (gốc: lớp `cover-audio/video/chat/ai-text` không có luật; 16/16 thẻ có bìa) | Ảnh bìa thẻ app không đồng nhất: nửa có ảnh, nửa là khối tối rỗng (catalog ẩn danh + workspace) | public, workspace |

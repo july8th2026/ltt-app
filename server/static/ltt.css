@@ -3914,3 +3914,6 @@ button.lv-the-song.nghe-loi,.lv-chon-nghe.nghe-loi{
 /* ⚠️ Phạm vi #market-grid/#catalog-grid là BẮT BUỘC: `.appcard .cover` còn là bìa
  * thẻ gói nạp (`nap.html`). Bản đầu không phạm vi đã đổi `/nap` 2,8% — bộ
  * regression ảnh bắt được (tools/golden_ui_anh_mau.py). */
+/* Ô tìm kiếm + sắp xếp của workspace: khối CSS cũ đặt `outline:0` ⇒ đi bằng bàn
+ * phím KHÔNG thấy mình đang ở đâu (đo 16/09). Trả vòng focus về đúng phần tử. */
+.market-search input:focus-visible,.market-sort select:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
