@@ -92,6 +92,34 @@ downgrade migration để lại dòng IP OVH; IP giao muộn sau timeout cần s
 Gate đầy đủ chỉ chạy ở F9. Giữa các phase chỉ chạy test tập trung của phần vừa
 sửa, sau `python tools\cua_so_yen.py trang-thai`.
 
+## 6. Kế hoạch lại theo luật vận hành 16/09 (thay thứ tự F-phase ở §4)
+
+Luật (`~/.claude/CLAUDE.md` §D:\LTTSTUDIOSAPP, thắng quy trình cũ trong cây này):
+trong phiên chỉ test nhắm cụm vừa sửa, **không** `gate.py` ở bất kỳ chế độ nào;
+xử lý sạch toàn bộ plan rồi **một** L3 cuối phiên; L3 đỏ ⇒ sửa tại chỗ, chạy lại
+đúng phép đỏ, khép bằng `gate.py --doi --tu <sha L3>`; xong thì chính phiên gộp
+`main`, deploy, báo. Các bản release trung gian r2–r4 **không deploy**; deploy
+chỉ đi từ `main` sau L3.
+
+### Đã xong (không làm lại)
+
+R1–R21 (trừ R16) sửa + test nhắm xanh; r1 đang chạy production; VPS thật
+`d96b66f3` sống; ISO Server 2016/2022 trên `local` khớp byte; bánh cóc mypy/ruff
+sạch và hạ moc (`c9022b2e`).
+
+### Còn lại, theo phụ thuộc
+
+| # | Việc | Kiểm | Chặn bởi |
+|---|---|---|---|
+| G1 | **R16** (chủ dự án chốt 16/09: giữ tối đa **1** IP rỗi): lượt bảo trì liệt kê IP `monthly` FREE rỗi > 7 ngày; dư trên 1 ⇒ đặt **không gia hạn** ở OVH qua API (tra endpoint chính thức/GitHub trước), có journal, không xoá ngay; admin thấy danh sách + tiền/tháng | test nhắm | — |
+| G2 | Tài liệu: tick `05`, cập nhật `08`/`09`/`10` (chấm điểm 3 chiều: chất lượng · bằng chứng live · sẵn sàng production, Backup V2/restore/dual-WAN vẫn chưa kiểm), `NHAT_KY`, memory (CDP captcha, owner khoá dưới SYSTEM, PVE `WARNINGS`, trạng thái đơn OVH sau checkout) | — | G1 |
+| G3 | **Hoà dòng mã**: gộp `codex/cli-compat-final-audit` (production đang chạy nó, chưa có ở `main`) và `main` hiện tại vào nhánh VPS; xử xung đột theo nội dung (`messages.po` lấy việc gỡ khối Nexus của dòng production + msgid VPS, `.mo` biên dịch lại; `NHAT_KY` giữ cả hai); test nhắm các cụm xung đột | test nhắm | G2 |
+| G4 | **L3 một lần** `python tools\gate.py` trên HEAD sau G3 — trước đó `cua_so_yen` + `tai_may`, nhắn các phiên đang chạy "không ghi tệp"; đỏ ⇒ sửa tại chỗ → chạy lại phép đỏ → `gate.py --doi --tu <sha L3>` | L3 | G3, máy rảnh |
+| G5 | **Gộp `main`**: `main` đi tiếp thì hoà + `gate.py --doi --tu <sha L3>`; đưa `main` lên HEAD nhánh | — | cây chính `D:\LTTSTUDIOSAPP` phải sạch ở tệp bị gộp (hiện LTTCODE còn 6 docs chưa commit) — nhắn phiên đó |
+| G6 | **Deploy từ `main`** (repo release độc lập đúng sha, build + secret scan): hỏi các phiên, kiểm 0 job running / 0 lease `job`; nghiệm thu 3 chiều; task đồng bộ Máy B | nghiệm thu deploy | G5 |
+| G7 | **E2E live còn lại** (không sửa code): console qua cầu R20; khởi động lại / tắt mềm / **tắt cứng** (R21); bước 8 đổi default OVH→Vultr→OVH không tạo máy; bước 9 console + request lỗi; bước 6 mạng trong máy sau khi chủ dự án cài Windows qua console. Lỗi mới ⇒ sửa + test nhắm + `gate.py --doi --tu <sha L3>` + deploy lại | trình duyệt thật + đọc lại PVE/OVH/DB | G6 |
+| G8 | Dọn: xoá nhánh `codex/vps-v4-release-r1..r4`, worktree `wt-vps-release`, clone release cũ; retire worktree `D:\LTTSTUDIOSAPP-vps-v4`; báo phiên Voice gộp `main` | — | G7 |
+
 ## 5. Bằng chứng E2E đã có (16/09)
 
 - Chrome thật `C:\LTTBrowserProfiles\VPSV4Cdp`, cổng 9222; chủ dự án qua xác minh
