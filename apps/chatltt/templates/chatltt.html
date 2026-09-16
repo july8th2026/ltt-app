@@ -3,6 +3,8 @@
 {% block page_mode %}immersive{% endblock %}
 {% block content %}
 {% for href in chatltt_css %}<link rel="stylesheet" href="{{ href }}">{% endfor %}
+{# Golden UI: h1 cho trinh doc man hinh — giao dien React khong co tieu de trang. #}
+<h1 class="sr-only">ChatLTT</h1>
 <div id="chatltt-root"
      data-csrf="{{ csrf_token }}"
      data-api="/chatltt/api"

@@ -16,6 +16,7 @@
 
 {% block content %}
   {% if studio_enabled %}
+  <h1 class="sr-only">{{ ten_app("autosubvideo") }}</h1>
   <div id="autosub-studio-root" aria-busy="true" data-csrf-token="{{ csrf_token }}">
     <p class="dim">{{ _("Đang tải Auto Sub Studio…") }}</p>
   </div>

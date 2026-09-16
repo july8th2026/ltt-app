@@ -47,9 +47,12 @@
          {%- if la_mau %}
          data-vung="{{ g.vung }}" data-phongcach="{{ g.phong_cach }}"
          {%- endif %}
-         tabindex="0" role="button"
-         aria-pressed="{{ 'true' if chon else 'false' }}"
-         aria-label="{{ _('Xem giọng') }} {{ g.ten_hien_thi }}">
+         {#- Golden UI 16/09: the KHONG con `role=button`/`tabindex`. The dong vai
+             nut ma CHUA nut (nghe thu, Dung, Chi tiet) la loi axe
+             `nested-interactive`, va chinh no nuot click cua "Chi tiet" (do
+             16/09: bam "Chi tiet" khong mo gi ca). Ban phim di qua nut
+             "Chi tiet" ben duoi; chuot van bam duoc vao than the. -#}
+         aria-label="{{ g.ten_hien_thi }}">
 
   <div class="lv-the-dau">
     {# Hình sóng chỉ là NGÔN NGỮ THỊ GIÁC, không phải dữ liệu. Nó là SVG dựng
@@ -130,7 +133,9 @@
       <button class="btn sm ghost" type="button" disabled
               title="{{ _('Giọng chưa sẵn sàng.') }}">{{ _("Dùng") }}</button>
     {% endif %}
-    <button class="btn sm ghost lv-the-xem" type="button">{{ _("Chi tiết") }}</button>
+    <button class="btn sm ghost lv-the-xem" type="button"
+            aria-pressed="{{ 'true' if chon else 'false' }}"
+            aria-label="{{ _('Chi tiết giọng') }} {{ g.ten_hien_thi }}">{{ _("Chi tiết") }}</button>
   </div>
 
   {#

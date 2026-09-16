@@ -726,7 +726,7 @@ function Editor() {
         {tools?.map(tool => <button key={tool.name} draggable={!readOnly} disabled={readOnly}
           onDragStart={event => event.dataTransfer.setData('application/ltt-tool', tool.name)} onClick={() => addTool(tool)}
           aria-label={`Thêm ${customerToolLabel(tool)}`}><strong>{customerToolLabel(tool)}</strong><small>{tool.description}</small></button>)}</section>)}</aside>
-      <main className="canvas-stage" data-testid="canvas-stage" data-edge-count={page.edges.length} data-display-edge-count={displayEdges.length} onDragOver={event => event.preventDefault()}
+      <section className="canvas-stage" data-testid="canvas-stage" data-edge-count={page.edges.length} data-display-edge-count={displayEdges.length} onDragOver={event => event.preventDefault()}
         onContextMenu={event=>{if((event.target as HTMLElement).closest('.react-flow__node,.canvas-context-menu'))return
           event.preventDefault();setQuickCreate(null);const screen={x:event.clientX,y:event.clientY}
           setContextMenu({kind:'pane',x:screen.x,y:screen.y,flow:reactFlow.screenToFlowPosition(screen)})}}
@@ -760,7 +760,7 @@ function Editor() {
           defaultViewport={page.viewport} minZoom={0.1} maxZoom={2}
           fitView={!page.nodes.length} deleteKeyCode={null}>
           <FlowStatus />
-          {showGrid&&<Background color={theme==='light'?'#d8dde5':'#242a31'} gap={20} />}{showMinimap&&<MiniMap pannable zoomable />}<Controls showInteractive={!readOnly} />
+          {showGrid&&<Background color={theme==='light'?'#d8dde5':'#242a31'} gap={20} />}{showMinimap&&<MiniMap pannable zoomable />}<Controls orientation="horizontal" showInteractive={!readOnly} />
         </ReactFlow>
         {!page.nodes.length && <section className="canvas-empty first-run" aria-label="Bắt đầu workflow"><small>3 BƯỚC ĐẦU TIÊN</small><h2>Tạo kết quả đầu tiên</h2><ol><li>Chọn một mẫu</li><li>Nhập hoặc tải nội dung</li><li>Kiểm tra chi phí trước khi chạy</li></ol><div className="starter-flows">
           <button onClick={()=>applyStarterFlow('text-image')}><strong>Prompt thành hình ảnh</strong><span>Viết một lần, tạo ảnh từ nội dung đó</span></button>
@@ -775,9 +775,9 @@ function Editor() {
             {page.nodes.map(node=><li key={node.id}><button onClick={()=>dispatch({type:'select',id:node.id})}><span>KHỐI</span>{uniqueNodeLabel(node,page.nodes,byName)}</button></li>)}
             {page.notes.map(note=><li key={note.id}><span>NOTE</span>{note.text}</li>)}
             {page.comments.map(comment=><li key={comment.id}><span>COMMENT</span>{comment.text}</li>)}</ul></aside>}
-      </main>
-      <nav className="page-dock" aria-label="Chuyển page">{state.document.pages.map(item=><button
-        key={item.id} aria-pressed={item.id===page.id} onClick={()=>dispatch({type:'pageSelect',id:item.id})}>{item.name}</button>)}</nav>
+      </section>
+      <nav className="page-dock" aria-label="Chuyển page">{state.document.pages.map((item,index)=><button
+        key={item.id} aria-pressed={item.id===page.id} onClick={()=>dispatch({type:'pageSelect',id:item.id})}>{item.name||`Page ${index+1}`}</button>)}</nav>
       {quickConnect&&<aside className="quick-connect-picker" aria-label="Chọn bước tiếp theo"><header><div><small>BƯỚC TIẾP THEO TỪ</small><strong>{(()=>{const source=page.nodes.find(node=>node.id===quickConnect.sourceId);const sourceTool=byName.get(String(source?.data.tool));return outputLabel(quickConnect.sourceHandle,String(sourceTool?.returns[quickConnect.sourceHandle]??''))})()}</strong></div><button aria-label="Đóng chọn bước tiếp theo" onClick={()=>setQuickConnect(null)}>×</button></header>
         {!!quickOptions.length&&<section><small>NỐI VỚI BLOCK ĐÃ CÓ</small>{quickOptions.map(option=><button key={`${option.targetId}-${option.targetHandle}`} onClick={()=>{onConnect({source:quickConnect.sourceId,sourceHandle:quickConnect.sourceHandle,target:option.targetId,targetHandle:option.targetHandle});setQuickConnect(null)}}>{option.label}</button>)}</section>}
         {!!quickNewOptions.length&&<section><small>TẠO BLOCK MỚI</small>{quickNewOptions.map(tool=>{const source=page.nodes.find(node=>node.id===quickConnect.sourceId);const sourceTool=byName.get(String(source?.data.tool));return <button key={tool.name} onClick={()=>{addConnectedTool(tool,quickConnect.sourceId,quickConnect.sourceHandle,{x:(source?.position.x??0)+420,y:source?.position.y??0});setQuickConnect(null)}}><strong>{destinationLabel(sourceTool,quickConnect.sourceHandle,tool)}</strong><span>{categoryLabels[tool.category??'advanced']}</span></button>})}</section>}

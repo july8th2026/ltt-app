@@ -16694,3 +16694,6 @@ msgstr "revoked"
 
 msgid "credit/máy/tháng"
 msgstr "credit/machine/month"
+
+msgid "Chọn video để nâng cấp"
+msgstr "Choose a video to upscale"

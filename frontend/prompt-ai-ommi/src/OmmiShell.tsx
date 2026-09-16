@@ -154,7 +154,7 @@ export function OmmiShell({ csrfToken }: { csrfToken: string }) {
         ))}
       </nav>
 
-      <main className="ommi-main">
+      <section className="ommi-main">
         {screen === 'overview' ? <OverviewScreen onGo={setScreen} /> : null}
         {screen === 'projects' || screen === 'brief' ? (
           <ProjectScreen key={screen} mode={screen} />
@@ -166,7 +166,7 @@ export function OmmiShell({ csrfToken }: { csrfToken: string }) {
         {screen === 'snippet' || screen === 'style' || screen === 'meta' ? (
           <LibraryScreen key={screen} kind={screen} />
         ) : null}
-      </main>
+      </section>
     </div>
   )
 }

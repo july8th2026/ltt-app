@@ -179,7 +179,7 @@ export function StudioShell({ csrfToken }: { csrfToken: string }) {
   const mergeNext=()=>{if(!selectedTrack||!selectedCue)return;const index=selectedTrack.cues.findIndex(c=>c.id===selectedCue.id);const next=selectedTrack.cues[index+1];if(!next)return;mutate(d=>{const track=d.payload.tracks.find(t=>t.id===selectedTrack.id);const cue=track?.cues.find(c=>c.id===selectedCue.id);if(!track||!cue)return;cue.end=next.end;cue.text=`${cue.text} ${next.text}`.trim();cue.words=[];track.cues=track.cues.filter(c=>c.id!==next.id)})}
   const seek=(time:number)=>{setCurrentTime(time);if(videoRef.current)videoRef.current.currentTime=time}
 
-  return <main className="studio-shell" data-save-state={state}>
+  return <section className="studio-shell" data-save-state={state}>
     <header className="studio-topbar"><div className="studio-brand"><span className="studio-mark">LTT</span><strong>AUTO SUB VIDEO</strong></div>
       <ol className="studio-steps">{steps.map(([id,n,label])=><li key={id} className={project.payload.active_step===id?'active':''}><button type="button" aria-current={project.payload.active_step===id?'step':undefined} onClick={()=>mutate(d=>{d.payload.active_step=id})}><span>{n}</span>{label}</button></li>)}</ol>
       <div className="history-tools"><button aria-label="Hoàn tác" disabled={!history.canUndo} onClick={()=>history.undo(projectRef.current)}>↶</button><button aria-label="Làm lại" disabled={!history.canRedo} onClick={()=>history.redo(projectRef.current)}>↷</button><span className={`studio-save ${state}`} role="status" aria-live="polite">{message}</span></div></header>
@@ -219,7 +219,7 @@ export function StudioShell({ csrfToken }: { csrfToken: string }) {
         onPreset={preset=>mutate(d=>{d.payload.style=normalizeStyle({preset:preset.id,...preset.config,highlight_mode:preset.highlight_mode,highlight_color:preset.highlight_color});d.payload.active_step='style'})}
         onStyle={patch=>mutate(d=>{d.payload.style=normalizeStyle({...d.payload.style,...patch,preset:'custom'});d.payload.active_step='style'})}/>}</aside>
     </section>
-  </main>
+  </section>
 }
 
 function findCue(project:StudioProject,trackId:string,cueId:string){return project.payload.tracks.find(track=>track.id===trackId)?.cues.find(cue=>cue.id===cueId)}

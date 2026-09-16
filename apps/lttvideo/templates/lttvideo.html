@@ -243,7 +243,8 @@
   </section>
 
   {# ───────────────────────── THƯ VIỆN ───────────────────────── #}
-  <main class="tv-library">
+  {# Golden UI: <section>, khong <main> — base.html da mo <main>; hai landmark main la loi a11y. #}
+  <section class="tv-library">
     <header>
       <div>
         {# ⭐ Muon `sdv-strip-info` cua bot van hanh: giai thich man lam gi ma
@@ -295,7 +296,7 @@
     </form>
 
     {% include "_tv_luoi.html" %}
-  </main>
+  </section>
 </div>
 
 {# Nâng nét: báo giá TRƯỚC khi xác nhận — mượn đúng khuôn của Seedance. Một

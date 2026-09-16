@@ -32,19 +32,19 @@ nào < 88 · critical UI xác minh ở mức render thật (E3).
 | Bộ quét | `node tools/golden_ui_quet.mjs --cau-hinh routes.json --ra <dir> [--khung ...]` — HTTP, ảnh toàn trang, console, request hỏng, tràn ngang, axe WCAG 2.2 AA, h1/main/lang, ô chạm, ô nhập <16px |
 
 ## Overall Progress
-51%
+58%
 
-(Trọng số: P0 5 · P1 10 · P2 15 · P3 15 · P4 20 · P5 15 · P6 10 · P7 10. Tính: P0 100%·5 + P1 100%·10 + P2 45%·15 + P2 50%·15 + P3 35%·15 + P4 65%·20 + P5 38%·15 + P6 32%·10 = 5+10+7,5+5,25+13+5,7+3,2 ≈ 49,7 → Status/khách-hàng xong ⇒ **51%** (chưa có chứng nhận gate).)
+(Trọng số: P0 5 · P1 10 · P2 15 · P3 15 · P4 20 · P5 15 · P6 10 · P7 10. Tính: P0 100%·5 + P1 100%·10 + P2 45%·15 + P2 50%·15 + P3 35%·15 + P4 65%·20 + P2 55%·15 + P3 40%·15 + P4 70%·20 + P5 55%·15 + P6 55%·10 = 5+10+8,25+6+14+8,25+5,5 ≈ 57 ⇒ **58%** (làm tròn lên vì đo toàn hệ đã có; chưa có chứng nhận gate).)
 
 | Phase | % | Trạng thái |
 |---|---|---|
 | 0 Discovery & Tooling | 100 | ✅ |
 | 1 Baseline Audit | 100 | ✅ |
-| 2 Golden Design System | 50 | 🟡 |
-| 3 Shared UI Components | 35 | 🟡 |
-| 4 Critical Pages | 65 | 🟡 Error ✅ · Jobs 🟡 · Billing 🟡 · Auth 🟡 · Shell/Workspace 🟡 · Public ⏳ |
-| 5 Remaining Pages & Apps | 38 | 🟡 Admin tự dựng ✅ · sqladmin ✅ · Status ✅ · Developer/VPS/Nexus/Apps ⏳ |
-| 6 Responsive & Accessibility | 30 | 🟡 khung cuộn + nhãn form + tương phản chéo họ |
+| 2 Golden Design System | 55 | 🟡 |
+| 3 Shared UI Components | 40 | 🟡 |
+| 4 Critical Pages | 70 | 🟡 Error ✅ · Jobs 🟡 · Billing 🟡 · Auth 🟡 · Shell/Workspace 🟡 · Public ⏳ |
+| 5 Remaining Pages & Apps | 55 | 🟡 Admin ✅ · sqladmin ✅ · Status ✅ · Apps (landmark/h1/a11y) ✅ · VPS/Nexus/Developer còn tương phản + i18n |
+| 6 Responsive & Accessibility | 55 | 🟡 axe serious toàn hệ 436 → 34; chưa đo 430/768/1920 cho mọi critical |
 | 7 Visual Regression & Final QA | 0 | ⏳ |
 
 ## Current Baseline
@@ -203,7 +203,7 @@ Completed: 224 phép đo E3; điểm theo họ trang; P0/P1/P2 bên dưới.
 Evidence: `scratchpad/baseline/p1`, `p2` (ảnh + `ket_qua.json`) — ảnh mốc sẽ chép vào `tests/visual/` khi dựng regression ở Phase 7.
 
 ## Phase 2 — Golden Design System
-Progress: 45%
+Progress: 55%
 
 Completed:
 - `:root` thêm `--brand-fill`/`--brand-fill-hover` (chữ trắng 4,84:1 / 5,7:1), `--status-info*`, `--radius-pill`, thang `--space-1..8`, thang chữ `--fs-*`/`--lh-*`, `--shadow-*`.
@@ -224,7 +224,7 @@ Kế hoạch:
 - Nâng `--text-muted` và link đỏ lên AA (đo bằng axe, không bằng mắt).
 
 ## Phase 3 — Shared UI Components
-Progress: 30%
+Progress: 40%
 
 Completed:
 - `.ui-state` (+ `--warn/--err/--ok/--info/--inline`): eyebrow · title · lead · body · actions · meta · id. Dùng ở `error.html`, trạng thái rỗng `/jobs` (không lọc / có lọc).
@@ -238,7 +238,7 @@ Kế hoạch: page header · button 4 biến thể · field (label/helper/error)
 Macro Jinja dùng chung ở `server/templates/_ui.html` — chỉ nếu ≥3 nơi dùng.
 
 ## Phase 4 — Critical Pages
-Progress: 65%
+Progress: 70%
 
 Completed:
 - Error (P0-02) — xem P0 Issues. Browser E3: 404/403 thật + 400/401/403/404/413/429/500/503 render state, 390 & 1440, axe 0 serious/critical.
@@ -249,7 +249,7 @@ Completed:
 Thứ tự: Error → Auth → Billing → Jobs → Shell/Header/Workspace home.
 
 ## Phase 5 — Remaining Pages & Apps
-Progress: 38%
+Progress: 55%
 
 Completed:
 - Admin tự dựng (24 màn + 10 thân f-string ở `server/admin.py`): 19 nhãn form nối `for`/`id`, 5 màu chấm provider đổi sang sắc tối cùng họ để chữ trắng ≥4,5:1 (cũ 2,77–3,56:1), mọi `.tablewrap` focus được. E3: 52 phép đo, **axe 0** trên mọi trang admin tự dựng (còn lại chỉ `/admin/user/list` — sqladmin, DL-004). Bánh cóc `check_server_routes` (admin.py chỉ được nhỏ đi) PASS.
@@ -259,11 +259,13 @@ Completed:
 - **Status ✅**: `/status` có `h1` thật (trước chỉ `strong` trong `pagebar`), mọi chuỗi qua `_()` — khối Nexus từng in không dấu ("may da ghep", "Khong doc duoc so lieu"), 0 inline style (lớp `status-*`, màu cảnh báo qua token thay `#c2453f`), `pre` chi tiết focus được. `/status/api` axe 0. E3 390/1440.
 - `/admin/khach-hang` @390 hết tràn: `<caption class="sr-only">` trong `.dev-bang` — cùng cơ chế `/nap` ⇒ `.dev-bang{position:relative}`.
 
+- **Apps (landmark/h1/a11y)**: `<main>` lồng bỏ ở lttvideo, taovideo, prompt-ai-ommi (template) + chatltt, autosub-studio, prompt-ai-ommi, agent-canvas (SPA — build lại 4 bundle, `build-meta` khớp nguồn theo `tools/build_release._frontend_source_sha256`); `h1` sr-only cho chatltt/autosub/canvas; ommi classic 6 `h1` → 1 `h1` + 5 `h2`. Canvas: tab trang tên rỗng → "Page n" (hiển thị, không đổi tài liệu), `<Controls orientation="horizontal">` hết bị minimap che. **Voice — BUG THẬT**: nút "Chi tiết" trên thẻ giọng không làm gì (chuột lẫn Enter) vì thẻ `role=button` bỏ qua mọi nút con; thẻ thôi là nút (hết 18 `nested-interactive`), "Chi tiết" mở panel + mang `aria-pressed`; tái hiện Playwright trước/sau (3 đường đều mở). Studio Tạo video/Upscale: 40 dòng CSS hex xám lạnh → token (DL-002, tương phản). ChatLTT nút chính `--brand-fill`. Upscale ô file có tên. Sàn ô chạm checkbox/radio/summary (`:where`, độ đặc hiệu 0).
+
 Pending: sqladmin `details` `.table-responsive` chưa focus được (details.html không override), Status (`/status` thiếu h1), Developer, VPS, Nexus, 21 màn app.
 Thứ tự: Status → Developer → VPS → Nexus → Admin tự dựng → sqladmin (DL-004) → Apps (taoanh, voice, taovideo, upscale, taoclipngan, thumbnail, chatltt, ommi, agent/canvas, autosub, form-app nhỏ).
 
 ## Phase 6 — Responsive & Accessibility
-Progress: 25%
+Progress: 55%
 
 Completed:
 - `scrollable-region-focusable`: 67 khung cuộn `.tablewrap`/`.dev-bang` trên 33 template + `admin.py` có `tabindex="0"`; `pre` do `sao_chep.js` bọc focus được. Nút "Sao chép" theo `<html lang>` (bản EN trước đây vẫn tiếng Việt). Đo ở 390 cho Public/Status/Developer/Admin: khung cuộn **35 → 2** (2 còn lại là `admin.py` chưa nạp lại, đã hết sau khởi động lại), tương phản **87 → 6**.
@@ -287,8 +289,8 @@ Screenshot regression Playwright (`toHaveScreenshot`) cho critical screens; test
 | P1-01 🟡 PARTIAL (DL-001 áp phần thương hiệu/credit/landmark/token) | **Shell drift**: home đã đăng nhập dùng workspace shell (rail trái/phải, logo "LTT STUDIOS"), mọi trang khác dùng top-nav ("LTT AI Studio"); bấm vào bất kỳ app nào là đổi hẳn khung | DL-001 |
 | P1-02 | **Hai họ chữ**: auth/public/admin `Segoe UI`, phần còn lại `system-ui` | DL-003 |
 | P1-03 | **Ba bảng màu**: Carbon Red ấm; Developer nền trung tính + cyan; VPS teal (`--vps-teal-text` tham chiếu nhưng không định nghĩa); sqladmin navy/Tabler | DL-002, DL-004 |
-| P1-04 | Tương phản: 312 nút / 89 trang dưới AA | toàn hệ |
-| P1-05 🟡 PARTIAL (trang chủ ✅; còn autosub, chatltt, ommi, taovideo, lttvideo + thiếu h1) | `main` nhân đôi (10 màn) · thiếu `h1` (`/status`, canvas, chatltt, autosub) · `h1` ×6 ở ommi classic | shell + app |
+| P1-04 🟡 (312 → 24; còn VPS 14, Nexus 10) | Tương phản: 312 nút / 89 trang dưới AA | toàn hệ |
+| P1-05 ✅ (đo lại toàn hệ: main≠1 = 0, h1≠1 = 0) | `main` nhân đôi (10 màn) · thiếu `h1` (`/status`, canvas, chatltt, autosub) · `h1` ×6 ở ommi classic | shell + app |
 | P1-06 🟡 PARTIAL (jobs, rail trang chủ, taoanh, thumbnail, transcript, prompt-canh, audio-pause, video-assembly xong; còn dev/admin nội bộ) | Enum nội bộ lộ ra khách: `running · 20%`, `queued · 0%`, `cancelled · 10%` (taoanh), `running/queued/done` (rail home), tiêu đề `Job 8fde2d41`, `taoanh · taoanh.generate` (job detail) | jobs, workspace, apps |
 | P1-07 | i18n: nhãn tiếng Anh cứng (`GENERATIVE IMAGE`, `OUTPUT HISTORY`, `REFERENCE & EDIT`), chip thể loại lẫn hoa/thường (`audio`, `video` cạnh `AI Video`), chuỗi không qua `_()` ở error/jobs/nap/auth/status, sqladmin toàn tiếng Anh (`Search`, `Actions`, `Showing 1 to 3`) | toàn hệ |
 | P1-08 🟡 PARTIAL (billing xong; còn home rail/dev/VPS kiểm lại) | Định dạng số kiểu Anh trong giao diện Việt: `200,000đ`, `2,200 credit`, `1,000,000đ` (billing) trong khi VPS/Developer dùng `149.000đ`, `1.250` | billing, jobs |
@@ -297,6 +299,7 @@ Screenshot regression Playwright (`toHaveScreenshot`) cho critical screens; test
 | P1-11 ✅ | `/admin/khach-hang` tràn ngang ở 390 (gốc: sr-only absolute trong khung cuộn không định vị) | admin |
 | P1-12 | Ảnh bìa thẻ app không đồng nhất: nửa có ảnh, nửa là khối tối rỗng (catalog ẩn danh + workspace) | public, workspace |
 | P1-13 | Nút "Tạo tiếng nói" (Voice) che mô tả phía dưới ở 1440 (thanh dính đè nội dung) | apps |
+| P1-16 ✅ | Voice "Giọng của tôi": nút "Chi tiết" trên thẻ giọng KHÔNG mở gì (chuột + bàn phím) — thẻ `role=button` nuốt click nút con | apps |
 | P1-14 | ~3.500 `style=""` + `<style>` riêng ở 10 template; biến thể nút/badge riêng theo trang | toàn hệ |
 | P1-15 🟡 PARTIAL (`htmx.min.js` ×9 template có `?v=` + vào `TAI_SAN_CO_VERSION`; còn noVNC, sqladmin static) | Tài sản không cache-bust: `htmx.min.js` (8 template), noVNC `rfb.js`, static sqladmin | shell |
 
@@ -357,6 +360,9 @@ Screenshot regression Playwright (`toHaveScreenshot`) cho critical screens; test
 | EV-17 | E2 | `test_1270` 56/56; `test_294/306` (sao_chep), `test_317/322` (admin), `check_server_routes` PASS |
 | EV-18 | E3 | `after/p5-sqladmin*`: 11 trang sqladmin × 2 khung; `after/p5-hdr`: menu header mở 390/1440; `hdr_doi_chung.mjs` đối chứng CSS HEAD |
 | EV-19 | E2 | `test_1270` 59/59 |
+| EV-20 | E3 | `sau/v1`: **224 phép đo toàn hệ** (cùng 112 route × 390/1440 như baseline) — serious 436→34, tương phản 312→24, khung cuộn 35→0, nested 18→0, progressbar 12→0, label 12→0, listitem 8→0, main/h1 lệch 26→0, tràn 1→0, console 0 |
+| EV-21 | E3 | `voice_chitiet.mjs`: "Chi tiết" chuột/Enter + thân thẻ — trước: không mở; sau: mở cả 3 |
+| EV-22 | E2 | vitest `CanvasShell` 22/22; `test_500`/`test_352` 73/73; 4 bundle `build-meta` khớp |
 
 ## Current Blocker
 
@@ -364,4 +370,4 @@ Không có.
 
 ## Next Action
 
-Developer portal (DL-002 đã áp token; soát inline style + trạng thái rỗng) → VPS → Nexus → Apps.
+VPS (14 nút tương phản) + Nexus (10) + `dev-privacy` target-size + checkbox transcript/video-assembly bị `_kieu_chung` đè; rồi i18n chuỗi cứng còn lại (taoanh `GENERATIVE IMAGE`…).

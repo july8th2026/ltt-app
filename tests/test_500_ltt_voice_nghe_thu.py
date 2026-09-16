@@ -513,9 +513,20 @@ def test_the_giong_khong_duoc_NUOT_phim_cua_nut_ben_trong():
     js = (_p.Path(__file__).resolve().parents[1]
           / "server/static/voice.js").read_text(encoding="utf-8")
 
-    assert "if (e.target !== t) return;" in js, (
-        "handler keydown cua the giong khong con bo qua phim go TRONG mot nut "
-        "ben trong — Enter tren nut nghe thu se lai bi nuot")
+    # Golden UI 16/09: the giong KHONG con `role=button`/`tabindex` (axe
+    # nested-interactive), nen the khong nhan phim nua — lop loi "the nuot
+    # Enter cua nut ben trong" khong con cho xay ra. Chot DIEU KIEN do thay vi
+    # chot ban va cu: neu ai tra `role=button` lai cho the, handler keydown
+    # phai co guard `e.target !== t`.
+    the = (_p.Path(__file__).resolve().parents[1]
+           / "apps/ltt_voice/templates/_voice_the.html").read_text(encoding="utf-8")
+    the_mo = the.split("<article", 1)[1].split(">", 1)[0] if "<article" in the else ""
+    if 'role="button"' in the_mo:
+        assert "if (e.target !== t) return;" in js, (
+            "the giong la role=button ma handler keydown khong bo qua phim go "
+            "TRONG mot nut ben trong — Enter tren nut nghe thu se lai bi nuot")
+    # Nut "Chi tiet" phai MO duoc panel (do 16/09: truoc ban sua no bi bo qua).
+    assert 'contains("lv-the-xem")' in js
 
     khop = re.search(r'var\s+BEN_TRONG\s*=\s*"([^"]+)"', js)
     assert khop, "khong tim thay khai bao `var BEN_TRONG = \"...\";` trong voice.js"
