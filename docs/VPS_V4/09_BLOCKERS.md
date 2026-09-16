@@ -2,6 +2,16 @@
 
 ## Active blockers
 
+### Cập nhật 2026-09-16 (tối)
+
+- B04 **đóng**: mua một IP qua web job thật (đơn 22703620), nhập kho, mapping.
+- B08 **đóng cho r1**: deploy 16:29–16:31 sau khi kiểm 0 job/0 lease.
+- Còn chặn phát hành cuối: L3 phiên (một lần) → gộp `main` (cây chính còn 6
+  docs chưa commit của phiên LTTCODE) → deploy từ `main`. Production đang chạy
+  dòng `codex/cli-compat-final-audit` chưa có ở `main`, nên nhánh VPS phải hoà
+  cả dòng đó trước L3 để deploy từ `main` không lùi mã.
+- Gate sản xuất không phải blocker phần mềm: Backup V2 / restore / dual-WAN.
+
 ### Cập nhật 2026-09-14, sau lựa chọn PO mới nhất
 
 - B04: credit guard, exact delivery attribution, durable checkout/claim, worker
