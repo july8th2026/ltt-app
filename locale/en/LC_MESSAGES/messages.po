@@ -18064,3 +18064,23 @@ msgstr "The queue is taking longer than usual. You can keep waiting, or open the
 
 msgid "Chờ lâu bất thường"
 msgstr "Unusually long wait"
+
+msgstr "Unusually long wait"
+
+msgid "Nghe thử câu đầu (miễn phí)"
+msgstr "Preview first sentence (free)"
+
+msgid "Nghe thử miễn phí chỉ dùng cho giọng mẫu."
+msgstr "Free preview works with built-in voices only."
+
+msgid "Còn {n} lượt nghe thử miễn phí trong giờ này."
+msgstr "{n} free previews left this hour."
+
+msgid "Đang tạo…"
+msgstr "Generating…"
+
+msgid "Đọc tối đa {n} ký tự đầu bằng giọng mẫu đang chọn — miễn phí, {m} lượt mỗi giờ."
+msgstr "Reads up to the first {n} characters with the selected built-in voice — free, {m} times per hour."
+
+msgid "Không gửi được yêu cầu. Kiểm tra kết nối rồi thử lại."
+msgstr "Could not send the request. Check your connection and try again."

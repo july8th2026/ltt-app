@@ -135,6 +135,13 @@
   (cookie production mang `Secure` ⇒ công cụ tự mang cookie qua loopback). Hướng dẫn
   `docs/TAI_KHOAN_THU.md`. E2E góc nhìn chủ 25 giọng + khách thứ hai trên production: PASS.
 - `dung_lai_giong_kho_chung --chay` nay bỏ qua giọng đã có job `done` cùng khoá dựng lại.
+- **17/09 — `yolov8s.pt`:** không phải "tải mỗi lần khởi động" (log `worker-out.log` không có giờ,
+  tạo từ 31/07). Thật: cwd worker = `C:\LTTPlatform\app` bị thay mỗi deploy; `yolov8n.pt` được
+  vận chuyển, `yolov8s.pt` thì không ⇒ job `taoclipngan` đầu sau MỖI deploy tải 21,5 MB từ GitHub.
+  Adapter nay trỏ `LTT_DATA_DIR\models\yolo\` (ultralytics 8.4.115 tải VÀO đường tuyệt đối).
+- **17/09 — U-13:** cửa `/nghe-thu-van-ban` (có từ 08/09) nay có nút "Nghe thử câu đầu (miễn phí)"
+  trong Studio. ⚠️ `gate.py --doi` giữa phiên bị TỪ CHỐI khi delta chạm tệp dùng chung (sau khi hoà
+  governance) — dùng L2 `--pham-vi` theo từng thành phần.
 
 ## 2026-09-16 — LTT VOICE: clip gốc 25 giọng kho chung KHÔNG mất — đã lưu bản bền
 
