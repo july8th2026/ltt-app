@@ -12,6 +12,24 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-16 — LTT VOICE: clip gốc 25 giọng kho chung KHÔNG mất — đã lưu bản bền
+
+- Báo cáo 15/09 viết "25 clip nguồn đã mất khỏi mọi nơi đo được" — **SAI**: phép đo
+  chỉ nhìn R2, đĩa `C:\LTTPlatform` và tệp *đã track* trong git. Bị bỏ sót: thư mục
+  gitignored `D:\LTTSTUDIOSAPP\tmp\giong_cu\` (25 WAV, 24,3 MB — bản nối mà
+  `tools/nhap_kho_giong_cu.py` đã tải lên ngày 01/09) và kho hệ cũ `D:\Voiceclone_TTS`.
+- Đối chiếu SHA-256: **25/25** giọng `dung_chung` khớp từng byte với `voice_ref.sha256`.
+- Chủ dự án yêu cầu lưu bền: chép (không chuyển) sang
+  `C:\LTTPlatform\data\voice_goc\kho_chung\<public_id>.wav` + `manifest.json`
+  (public_id, tên, làn, tên tệp cũ, sha256, byte). Băm lại sau chép: 0 lệch.
+  Ngoài `app\` ⇒ sống qua deploy. Bản trên D: giữ nguyên ⇒ 2 bản / 2 ổ vật lý.
+- ⚠️ `deploy/windows/backup.ps1` chỉ gom tệp cấp đầu của `data\` theo mẫu
+  (`config.json`, `*.enc`, `*.db`…) ⇒ **thư mục con này KHÔNG vào bản sao lưu hằng
+  ngày**. Chưa sửa (việc riêng, cần chủ dự án duyệt).
+- Clip nằm trên R2 vẫn mất; nguyên nhân LIKELY là luật vòng đời ~7 ngày của bucket
+  (`docs/LTT_VOICE/HOP_NHAT/MAT_TEP_KHO_R2.md`), chưa đọc được luật thật. Giọng vẫn
+  chưa dùng được cho tới khi ghi danh lại/nạp lại biểu diễn và duyệt license.
+
 ## 2026-09-16 — LTT VOICE: thêm làn `voice:1` vào worker production (hết kẹt "Xếp hàng")
 
 - **Nguyên nhân (PROVEN):** `LTT_WORKER_POOLS` chốt 14/09 = `api:6, gpu:1` cho LLM,

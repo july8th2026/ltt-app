@@ -168,6 +168,11 @@ Bối cảnh: Voice chạy GPU **máy A** (sidecar `LTTStudioVoice` :8120). LLM 
 | Cổng kho chung | `_dieu_kien_kho_chung` = `dung_chung AND license_status IN ("ok",)` ⇒ 0/25 qua | PROVEN (mã + dữ liệu) |
 | Trình duyệt, tài khoản thường | picker Studio: 1 "Giọng mặc định" + **20 `mau`**, **0 `chung`**, 0 `toi` | PROVEN |
 
+**Đính chính 16/09 — clip gốc CÒN:** 25/25 khớp SHA-256 ở `D:\LTTSTUDIOSAPP\tmp\giong_cu\`
+(+ kho hệ cũ `D:\Voiceclone_TTS`). Đã chép bản bền `C:\LTTPlatform\data\voice_goc\kho_chung\`
++ `manifest.json` theo yêu cầu chủ dự án (chưa nằm trong `backup.ps1`). Mục "BLOCKED — cần
+25 clip" của `GUI_RUNTIME_DIAGNOSIS §2.5` hết hiệu lực. PROVEN.
+
 **Kết luận P0-2:** khách không phải chủ chỉ thấy 20 preset vì **25 giọng chưa được duyệt
 license** (nguyên nhân hiển thị). Độc lập với nó, **tệp của 25 giọng đã mất trên R2**
 (đo 15/09) ⇒ duyệt license thôi thì giọng sẽ HIỆN nhưng **không tạo được tiếng**.
