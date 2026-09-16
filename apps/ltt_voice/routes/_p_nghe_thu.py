@@ -33,14 +33,13 @@ def nghe_thu_van_ban(request: Request, text: str = Form(""),
        ngắn, miễn phí, và không nằm trong lịch sử của khách. Cất nó vào kho là
        dựng một thư mục nở ra mãi mà không ai đọc lần thứ hai.
 
-    🔴 D006 (2026-09-11): VĂN BẢN của khách có thể LỆCH LÀN với giọng mẫu đã
-       chọn (vd một câu tiếng Anh, đọc bằng một giọng mẫu làn `vi`). Quyết định
-       chốt là **VẪN PHÁT**, chỉ **NÓI RA**: `lan_ngon_ngu.quyet_dinh` chạy để
-       dựng `phan_quyet`, nhưng KHÔNG chặn lượt sinh — khác hẳn cửa `/tao`
-       (`features.giai_giong`), nơi cùng một sự lệch làn CHẶN THẲNG trước khi
-       tốn credit. Ở đây không có credit nào để bảo vệ; nghe thử là **để khách
-       tự nghe thấy** giọng đọc lệch làn ra sao, một bài học trực quan hơn hẳn
-       một câu lỗi 400.
+    🔴 LỆCH LÀN THÌ CHẶN (chủ dự án chốt 16/09/2026, thay D006 ngày 11/09).
+
+       D006 cũ chốt "vẫn phát, chỉ nói ra" vì cửa này không giữ credit. Prompt
+       GUI (§9) chốt một luật cho MỌI cửa: VI+EN và EN+VI là BLOCK ở backend —
+       giọng nguồn Anh đọc tiếng Việt méo, và một bản nghe thử méo là thứ khách
+       nghe rồi đánh giá cả sản phẩm. Nay chặn TRƯỚC khi trừ lượt nghe thử và
+       TRƯỚC khi chạm GPU, trả `ma_loi` + câu đã dịch — cùng hình dạng `/tao`.
     """
     from .. import nghe_thu_cua_toi as NT
 
@@ -60,11 +59,16 @@ def nghe_thu_van_ban(request: Request, text: str = Form(""),
         return JSONResponse({"ok": False, "loi": _t("Giọng không hợp lệ.")},
                             status_code=400)
 
-    # D006 — HỎI `quyet_dinh` để HIỆN, KHÔNG để CHẶN (xem docstring ở trên).
-    # SAU hai cổng kiểm ở trên (văn bản trống, trần ký tự, preset hợp lệ),
-    # TRƯỚC khi xin lượt/sinh — `pq` phải sẵn sàng dù nhánh nào phía dưới chạy.
+    # 16/09/2026 — lệch làn thì CHẶN (xem docstring). SAU các cổng kiểm đầu vào,
+    # TRƯỚC khi xin lượt: một lượt bị từ chối vì lệch làn không được trừ vào
+    # ngân sách nghe thử của khách, và không chạm GPU.
     pq = lan_ngon_ngu.quyet_dinh(giong_mau.lan_cua(preset), tho)
     cau_pq = lan_ngon_ngu.cau_cho_khach(pq) if not pq.cho_phep else ""
+    if not pq.cho_phep:
+        return JSONResponse({
+            "ok": False, "loi": cau_pq, "ma_loi": pq.ma_loi,
+            "phan_quyet": {"cho_phep": False, "ma_loi": pq.ma_loi, "cau": cau_pq},
+        }, status_code=400)
 
     # 🔴 XIN LƯỢT TRƯỚC KHI CHẠM GPU, và xin bằng MỘT phép nguyên tử.
     if not NT.xin_luot(uid):

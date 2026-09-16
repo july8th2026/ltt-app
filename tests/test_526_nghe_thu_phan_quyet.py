@@ -1,17 +1,15 @@
-r"""D006 — NGHE THỬ VĂN BẢN CỦA KHÁCH: VẪN PHÁT khi lệch làn, chỉ NÓI RA.
+r"""NGHE THỬ VĂN BẢN CỦA KHÁCH: lệch làn thì CHẶN (chủ dự án chốt 16/09/2026).
 
-## Vì sao cửa này KHÔNG chặn, trong khi `/tao` (cửa trả credit) thì chặn
+## Lịch sử quyết định
 
-`lan_ngon_ngu.quyet_dinh` là MỘT thẩm quyền cho cả hai cửa (Task 3). Cái khác
-nhau là NGƯỜI GỌI dùng phán quyết đó để làm gì:
+D006 (11/09) chốt "vẫn phát, chỉ nói ra" vì cửa này không giữ credit. Prompt GUI
+§9 (16/09) chốt MỘT luật cho mọi cửa: VI+EN / EN+VI là BLOCK ở backend — giọng
+nguồn Anh đọc tiếng Việt méo, và bản nghe thử méo là thứ khách nghe rồi đánh giá
+cả sản phẩm. `lan_ngon_ngu.quyet_dinh` vẫn là MỘT thẩm quyền:
 
-    /tao              (features.giai_giong)   ném LoiGiongNoi -> 0 job, 0 credit
-    /nghe-thu-van-ban (route này)              vẫn sinh, chỉ kèm `phan_quyet`
-
-Nghe thử không giữ credit — không có gì để bảo vệ bằng cách chặn. Và chặn ở
-đây còn phản tác dụng: cửa này TỒN TẠI để khách tự NGHE thấy giọng đọc lệch
-làn ra sao trước khi trả tiền một lượt thật ở `/tao`. Chặn nó là xoá đúng
-lượt thử mà D006 muốn giữ.
+    /tao              (features.giai_giong)   400 voice_language_mismatch, 0 credit
+    /nghe-thu-van-ban (route này)              400 voice_language_mismatch,
+                                               0 lượt nghe thử bị trừ, 0 GPU
 """
 from __future__ import annotations
 
@@ -79,28 +77,29 @@ def _csrf(client) -> str:
     return m.group(1)
 
 
-def test_nghe_thu_lech_lan_VAN_PHAT_va_NOI_RA(khach, monkeypatch):
+def test_nghe_thu_lech_lan_BI_CHAN_truoc_luot_va_GPU(khach, monkeypatch):
     """🔴 MỆNH ĐỀ TRUNG TÂM. Preset `Adam` là giọng mẫu làn `vi`; văn bản là
-    một câu tiếng Anh chắc chắn — `doan_ngon_ngu` đọc ra `"en"`. `quyet_dinh`
-    phải CHẶN (`cho_phep=False`) NHƯNG lượt sinh vẫn chạy (status 200, kèm
-    `phan_quyet` với một câu đã dịch sẵn cho khách)."""
+    một câu tiếng Anh chắc chắn — `doan_ngon_ngu` đọc ra `"en"`. Cửa phải trả
+    400 `voice_language_mismatch` kèm câu đã dịch, KHÔNG gọi hàm sinh và KHÔNG
+    trừ lượt nghe thử."""
     client, uid = khach
     from apps.ltt_voice import nghe_thu_cua_toi
-    # Đọc tên hàm sinh THẬT trước khi mock — `nghe_thu_cua_toi.sinh`, ranh
-    # giới mỏng quanh `features.goi_cong` (xem docstring của chính nó).
+    goi = []
     monkeypatch.setattr(nghe_thu_cua_toi, "sinh",
-                        lambda *a, **k: b"RIFF....WAVE")
+                        lambda *a, **k: goi.append(1) or b"RIFF....WAVE")
+    truoc = nghe_thu_cua_toi.con_lai(uid)
     r = client.post("/ltt-voice/nghe-thu-van-ban",
                     data={"text": "The quick brown fox jumps over the lazy "
                                  "dog that we know.",
                           "preset": "Adam", "csrf_token": _csrf(client)})
-    assert r.status_code == 200, r.text
+    assert r.status_code == 400, r.text
     js = r.json()
-    assert js["ok"] is True, "sinh van phai chay du lech lan (D006)"
-    pq = js["phan_quyet"]
-    assert pq["cho_phep"] is False
-    assert pq["ma_loi"] == "voice_language_mismatch"
-    assert pq["cau"], "phai co cau da dich san cho khach khi cho_phep=False"
+    assert js["ok"] is False
+    assert js["ma_loi"] == "voice_language_mismatch"
+    assert js["loi"], "phai co cau da dich san cho khach"
+    assert js["phan_quyet"]["cho_phep"] is False
+    assert goi == [], "khong duoc cham GPU khi lech lan"
+    assert nghe_thu_cua_toi.con_lai(uid) == truoc, "khong duoc tru luot nghe thu"
 
 
 def test_nghe_thu_dung_lan_thi_KHONG_co_canh_bao(khach, monkeypatch):

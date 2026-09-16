@@ -525,6 +525,15 @@ lẫn với số cũ.
   chương trình hạ tầng riêng. GUI chỉ hiển thị trạng thái thật.
 - **Impact:** W2', W6' của plan V2; bỏ mọi tệp `server/`/migration khỏi phạm vi GUI.
 
+## D003-B (Amendment, 16/09/2026) — Nghe thử lệch làn thì CHẶN
+- **Trigger:** audit W4' — `/nghe-thu-van-ban` vẫn gọi sidecar khi
+  `quyet_dinh` trả `cho_phep=False` (quyết định D006 cũ ngày 11/09, `test_526`
+  ghim). Prompt GUI §9 chốt một luật BLOCK cho mọi cửa; chủ dự án duyệt 16/09.
+- **Sửa:** chặn trước `xin_luot` và trước GPU; 400 `voice_language_mismatch` +
+  câu đã dịch + `phan_quyet`. D006 cũ hết hiệu lực.
+- **Impact:** `_p_nghe_thu.py`, `test_526` (đảo mệnh đề, thêm "không trừ lượt,
+  không chạm GPU").
+
 ## D003-A (Amendment, 16/09/2026)
 - **Trigger:** backend đã cưỡng chế làn: `lan_ngon_ngu.quyet_dinh`
   (`lan_ngon_ngu.py:277`) → `voice_language_mismatch` (`lan_ngon_ngu.py:110`),
