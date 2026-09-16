@@ -123,6 +123,17 @@ Bối cảnh: Voice chạy GPU **máy A** (sidecar `LTTStudioVoice` :8120). LLM 
 5. Sau restart: log `ltt-job-worker-*.jsonl` phải có một dòng `nang luc: ['api', 'voice']`; chạy lại script: job `ltt_voice` rời `queued`; một lượt chat LLM thử vẫn trả lời.
 6. Hoàn tác nếu có bất thường LLM: chép `.bak` về, lặp bước 2–4.
 
+**Kết quả thực thi W1' (16/09/2026, chủ dự án cấp quyền chạy):**
+- Trước: 0 job running, 0 lease sống, đúng 2 job `ltt_voice` queued, 0 `asv_voice`;
+  GPU máy A đang chạy upscale của `D:\BOT GEMINI` (VRAM 4,2/16 GB) — chấp nhận chạy chung.
+- Làm đúng 6 bước trên; restart 16:22:41. Log: 8 worker, worker-7 `['api', 'voice']`. PROVEN.
+- Hai job kẹt 15/09 → `done` (claimed → admitted `vieneu_gpu` → completed →
+  credit_settled); WAV thật trong R2: 212 148 byte / 2,56 s và 3 275 564 byte / 34,12 s. PROVEN.
+- LLM sau restart: 0 job `ltt_llm` trong 3 giờ ⇒ **chưa có lượt thật đối chứng**; worker
+  `api` khởi động cùng năng lực như trước. PARTIAL.
+- **Cổng W1' chưa đóng hẳn:** runtime queued → running → done PROVEN, nhưng G01 (GUI
+  trình duyệt: tạo → nghe → tải WAV/MP3) NOT TESTED.
+
 **Ngoài phạm vi, ghi nhận:** không làn nào có `ffmpeg` ⇒ app `requires` chứa
 `ffmpeg` (`autosubvideo`, `taoclipngan`, `qualitylab`, `asv_media`,
 `video_assembly`, `upscalevideo`) cũng không worker nào nhặt được — cùng lớp lỗi

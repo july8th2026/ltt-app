@@ -12,6 +12,30 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-16 — LTT VOICE: thêm làn `voice:1` vào worker production (hết kẹt "Xếp hàng")
+
+- **Nguyên nhân (PROVEN):** `LTT_WORKER_POOLS` chốt 14/09 = `api:6, gpu:1` cho LLM,
+  quên làn `voice`; `ltt_voice` khai `requires=("voice",)` ⇒ không worker nào nhặt
+  job Voice; job cuối xong 13/09 21:01; 2 job 15/09 kẹt `queued`, không event.
+- **Phân tích an toàn LLM trước khi đổi** (`docs/LTT_VOICE/GUI_DOI_SOAT_VA_PLAN_V2.md`
+  W1'): trần suất máy B do `ExecutionLease UNIQUE(resource, slot)` + lọc claim, không
+  do số worker; rủi ro thật duy nhất là restart giết job LLM đang chạy (nssm 1,5 s,
+  lease mồ côi 300 s — sự cố 14/09). `app.env` khớp env đã nạp 94/94 khoá trước khi đổi.
+- **Làm (chủ dự án duyệt):** `app.env` → `api:6, gpu:1, voice:1` (không BOM, sao lưu
+  `app.env.bak-voice-lane-20260916`); `nap_lai_env.ps1 -KhongKhoiDongLai`; kiểm chỉ
+  đọc ngay trước = 0 job running, 0 lease sống; `Restart-Service LTTStudioWorker`
+  16:22:41 (chỉ worker; Web/Voice không restart). Phiên VPS V4 xác nhận không có job.
+- **Kết quả:** 8 worker = 6 `['api']` + `['api','gpu']` + `['api','voice']`. Hai job kẹt
+  `8c4b9945` (2,56 s, 1 credit) và `1d4fe4b1` (34,12 s, 7 credit) → `done` trên worker
+  `voice`, GPU máy A, tệp WAV thật trong R2 (`RIFF…WAVE`), credit tất toán. Hàng đợi
+  rỗng sau đó.
+- **Chưa chứng minh:** luồng LLM sau restart — 0 job `ltt_llm` trong 3 giờ quanh mốc
+  nên không có lượt thật để đối chứng (cấu hình worker `api` không đổi). G01 qua GUI
+  trình duyệt: NOT TESTED.
+- **Còn mở:** không làn nào có `ffmpeg` ⇒ app `requires` chứa `ffmpeg` cũng không
+  worker nào nhặt được — chủ dự án quyết riêng. Worker `voice` cũng nhặt job `api`
+  (mọi pool tự thêm `api`) ⇒ Voice có thể chờ một job `api` dài.
+
 ## 2026-09-15 — H54: Tool 1.9.2 khớp reasoning và kiểm thật Codex
 
 - Tài liệu chính thức Codex xác nhận custom provider dùng Responses và catalog
