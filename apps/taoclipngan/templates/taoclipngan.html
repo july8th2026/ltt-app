@@ -13,7 +13,7 @@
 <script src="/static/htmx.min.js?v={{ asset_ver }}"></script>
 <div class="clip-studio">
   <header class="clip-heading">
-    <div><span class="clip-kicker">{{ _("Không gian clip ngắn AI") }}</span><h1>{{ _("Tạo Clip ngắn") }}</h1><p>{{ _("Chọn nguồn, cấu hình highlight, theo dõi transcript và so sánh output thật.") }}</p></div>
+    <div><span class="clip-kicker">{{ _("Không gian clip ngắn AI") }}</span><h1>{{ _("Tạo Clip ngắn") }}</h1><p>{{ _("Chọn nguồn, cấu hình đoạn nổi bật, theo dõi bản ghi lời và so sánh kết quả thật.") }}</p></div>
     <a class="btn ghost" href="/jobs">{{ _("Việc của tôi") }}</a>
   </header>
   {% if error %}<div class="alert alert-err" role="alert">{{ error }}</div>{% endif %}
@@ -24,21 +24,21 @@
       <input type="hidden" name="video_key" id="video_key" value="">
       <input type="hidden" name="duration_s" id="duration_s" value="0">
       <input type="hidden" name="source_filename" id="source_filename" value="">
-      <div class="clip-panel-head"><span>01</span><div><h2>{{ _("Nguồn video") }}</h2><small>{{ _("Upload mới hoặc dùng lại asset của bạn") }}</small></div></div>
-      <label class="clip-drop" for="vfile"><strong>{{ _("Chọn video từ máy") }}</strong><span>{{ _("MP4, MOV, MKV… · video lớn upload thẳng Storage") }}</span><input class="ltt-input-tep-an" type="file" id="vfile" name="video" accept="video/*"></label>
+      <div class="clip-panel-head"><span>01</span><div><h2>{{ _("Nguồn video") }}</h2><small>{{ _("Tải lên mới hoặc dùng lại tệp nguồn của bạn") }}</small></div></div>
+      <label class="clip-drop" for="vfile"><strong>{{ _("Chọn video từ máy") }}</strong><span>{{ _("MP4, MOV, MKV… · video lớn tải thẳng lên kho lưu trữ") }}</span><input class="ltt-input-tep-an" type="file" id="vfile" name="video" accept="video/*"></label>
       <section id="clip-source-summary" class="clip-source-summary" aria-live="polite" hidden>
         <video id="clip-source-preview" controls playsinline preload="metadata" hidden></video>
         <div><strong id="clip-source-label"></strong><small id="clip-source-meta"></small></div>
         <button id="clip-source-clear" type="button" class="btn ghost">{{ _("Đổi nguồn") }}</button>
       </section>
       <section class="clip-library" aria-labelledby="clip-library-title">
-        <header><h3 id="clip-library-title">{{ _("Thư viện nguồn gần đây") }}</h3><span>{{ library|length }} {{ _("asset") }}</span></header>
+        <header><h3 id="clip-library-title">{{ _("Thư viện nguồn gần đây") }}</h3><span>{{ library|length }} {{ _("tệp nguồn") }}</span></header>
         {% if library %}<div class="clip-source-list">
           {% for item in library %}<button type="button" class="clip-source" data-key="{{ item.key }}" data-duration="{{ item.duration_s }}" data-name="{{ item.name }}" aria-pressed="false"><span>▶</span><span><strong>{{ item.name }}</strong><small>{% if item.duration_s %}{{ (item.duration_s / 60)|round(1) }} {{ _("phút") }}{% else %}{{ _("Chưa rõ thời lượng") }}{% endif %}</small></span></button>{% endfor %}
         </div>{% else %}<p class="clip-empty-small">{{ _("Chưa có nguồn đã dùng. Asset hợp lệ sẽ xuất hiện sau job đầu tiên.") }}</p>{% endif %}
       </section>
 
-      <div class="clip-panel-head"><span>02</span><div><h2>{{ _("Cấu hình tuyển chọn") }}</h2><small>{{ _("Chi phí theo phút nguồn + số output") }}</small></div></div>
+      <div class="clip-panel-head"><span>02</span><div><h2>{{ _("Cấu hình tuyển chọn") }}</h2><small>{{ _("Chi phí theo phút nguồn + số clip ra") }}</small></div></div>
       <div class="clip-primary-options">
         <fieldset class="clip-group"><legend>{{ _("Tỉ lệ khung") }}</legend>{{ chipgroup('aspect_ratio', aspects, '9:16') }}</fieldset>
         <label>{{ _("Số clip mong muốn") }}<select name="target_clip_count" id="clip-count">{% for n in [1,2,3,5,8,10] %}<option value="{{ n }}" {% if n==3 %}selected{% endif %}>{{ n }}</option>{% endfor %}</select></label>
@@ -63,7 +63,7 @@
 
     <div class="clip-workspace">
       <section id="clip-compare" class="clip-compare" aria-labelledby="clip-compare-title" hidden>
-        <div class="clip-panel-head"><span>03</span><div><h2 id="clip-compare-title">{{ _("So sánh output") }}</h2><small>{{ _("Chọn tối đa hai clip đã render") }}</small></div></div>
+        <div class="clip-panel-head"><span>03</span><div><h2 id="clip-compare-title">{{ _("So sánh kết quả") }}</h2><small>{{ _("Chọn tối đa hai clip đã render") }}</small></div></div>
         <div class="clip-compare-grid"><div data-slot="0">{{ _("Chọn clip thứ nhất") }}</div><div data-slot="1">{{ _("Chọn clip thứ hai") }}</div></div>
         <button type="button" class="btn ghost" id="clip-clear">{{ _("Bỏ chọn") }}</button>
       </section>

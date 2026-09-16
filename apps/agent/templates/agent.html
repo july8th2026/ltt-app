@@ -12,10 +12,10 @@
       placeholder="{{ _('Ví dụ: Viết kịch bản 60 giây, tạo ảnh minh họa và dựng video dọc…') }}"></textarea>
     <span class="hint">{{ _("Tối đa 8.000 ký tự. Không nhập token, mật khẩu hoặc dữ liệu riêng tư.") }}</span>
   </div>
-  <div class="field" style="max-width:260px;margin-top:12px">
+  <div class="field ag-ngan-sach">
     <label for="budget_max">{{ _("Ngân sách tối đa (credit)") }}</label>
     <input id="budget_max" name="budget_max" type="number" inputmode="numeric" min="5" max="100000" value="100" required>
   </div>
-  <button type="submit" style="margin-top:14px">{{ _("Lập kế hoạch và xem giá") }}</button>
+  <button type="submit" class="btn u-mt14">{{ _("Lập kế hoạch và xem giá") }}</button>
 </form>
 {% endblock %}

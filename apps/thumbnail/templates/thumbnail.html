@@ -3,7 +3,7 @@
 {% import "_ui.html" as ui %}
 {% block page_mode %}wide{% endblock %}
 {% block title %}{{ _("Tạo ảnh AI") }} — LTT AI Studio{% endblock %}
-{% block topbar_title %}<strong>{{ _("Tạo ảnh AI") }}</strong>{% endblock %}
+{% block topbar_title %}<strong>Image Studio</strong>{% endblock %}
 
 {% macro chipgroup(name, items, default) %}
   <div class="th-chips">
@@ -30,7 +30,7 @@
       <label class="th-field"><span>{{ _("Ý tưởng / chủ đề") }} <strong aria-hidden="true">*</strong></span><textarea name="topic" rows="3" required maxlength="2000" placeholder="{{ _('Ví dụ: Hướng dẫn đầu tư chứng khoán cho người mới') }}">{{ form_values.topic or '' }}</textarea></label>
       <p class="th-note">{{ _("Ảnh sinh ra KHÔNG có chữ — model nội bộ không vẽ được chữ đọc được. Thêm tiêu đề bằng công cụ chỉnh sửa của bạn.") }}</p>
       <fieldset class="th-group th-feature"><legend>{{ _("Tham chiếu & bộ nhận diện") }}</legend>
-        {% if form_values.reference_key %}<input type="hidden" name="saved_reference_key" value="{{ form_values.reference_key }}"><div class="th-saved-ref"><img src="{{ app.route_prefix }}/image/{{ form_values.reference_key }}" alt="{{ _('Output dùng làm tham chiếu') }}"><span>{{ _("Đang remix từ output đã chọn") }}</span></div>{% endif %}
+        {% if form_values.reference_key %}<input type="hidden" name="saved_reference_key" value="{{ form_values.reference_key }}"><div class="th-saved-ref"><img src="{{ app.route_prefix }}/image/{{ form_values.reference_key }}" alt="{{ _('Kết quả dùng làm tham chiếu') }}"><span>{{ _("Đang phối lại từ kết quả đã chọn") }}</span></div>{% endif %}
         <div class="th-field">{{ o_chon_tep('th-ref', 'reference_image', _("Ảnh tham chiếu mới"), goi_y=_("PNG/JPEG/WebP · tối đa 8 MB · dùng làm ảnh nguồn để remix, không công khai"), accept='image/png,image/jpeg,image/webp') }}</div>
         <div class="th-two"><label class="th-field">{{ _("Tên thương hiệu") }}<input name="brand_name" maxlength="80" value="{{ brand.name }}" placeholder="LTT Studios"></label>
           <label class="th-field">{{ _("Font thương hiệu") }}<input name="brand_font" maxlength="80" value="{{ brand.font }}" placeholder="Barlow Condensed"></label></div>
@@ -53,7 +53,7 @@
     <div class="th-workspace">
       <section class="th-preview" aria-labelledby="preview-title"><div class="th-panel-head"><span>02</span><div><h2 id="preview-title">{{ _("Cấu hình gửi đi") }}</h2><small>{{ _("Không hiển thị prompt nội bộ của nền tảng") }}</small></div></div>
         <div id="prompt-preview" aria-live="polite"><p class="th-empty-copy">{{ _("Nhập nội dung và chọn “Xem cấu hình” để kiểm tra trước khi tạo.") }}</p></div></section>
-      <section id="th-compare" class="th-compare" aria-labelledby="compare-title" hidden><div class="th-panel-head"><span>03</span><div><h2 id="compare-title">{{ _("So sánh kết quả") }}</h2><small>{{ _("Chọn tối đa hai output thật trong lịch sử") }}</small></div></div>
+      <section id="th-compare" class="th-compare" aria-labelledby="compare-title" hidden><div class="th-panel-head"><span>03</span><div><h2 id="compare-title">{{ _("So sánh kết quả") }}</h2><small>{{ _("Chọn tối đa hai kết quả thật trong lịch sử") }}</small></div></div>
         <div class="th-compare-grid"><div data-slot="0"><span>{{ _("Chọn ảnh thứ nhất") }}</span></div><div data-slot="1"><span>{{ _("Chọn ảnh thứ hai") }}</span></div></div>
         <button id="th-clear-compare" class="btn ghost" type="button">{{ _("Bỏ chọn") }}</button></section>
     </div>

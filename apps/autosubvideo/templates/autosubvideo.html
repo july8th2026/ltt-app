@@ -27,12 +27,12 @@
   {% if error %}<div class="alert alert-err">{{ error }}</div>{% endif %}
 
   <div class="ui-card">
-    <h2 style="margin:0 0 4px;">{{ _("Khắc phụ đề vào video") }}</h2>
+    <h2 class="u-m0 as-h2">{{ _("Khắc phụ đề vào video") }}</h2>
     <p class="dim u-mb14">
       Nạp <strong>video</strong> + <strong>transcript</strong> có sẵn (.srt / .json / .vtt / .ass),
       chọn kiểu chữ rồi khắc phụ đề đẹp thẳng vào video. Video lớn tải thẳng lên kho (né giới hạn
       100MB). Tính phí theo phút video. Job chạy nền — xem ở <a href="/jobs">{{ _("Việc của tôi") }}</a>.
-      <br><span class="dim" style="font-size:12px;">Chưa có transcript? App này không tự nghe-chép —
+      <br><span class="dim u-fs12">Chưa có transcript? App này không tự nghe-chép —
       hãy tạo transcript trước (tính năng tự tạo phụ đề sẽ bổ sung sau).</span>
     </p>
 
@@ -63,20 +63,20 @@
           <select name="output_format">
             {% for f in formats %}<option value="{{ f }}">{{ f|upper }}</option>{% endfor %}
           </select></div>
-        <div class="field" style="display:flex; align-items:flex-end;">
-          <label style="display:inline-flex; gap:8px; align-items:center; margin:0 0 8px;">
+        <div class="field as-o-check">
+          <label class="as-check">
             <input type="checkbox" name="export_srt" value="1" checked>
             <span class="dim">{{ _("Xuất kèm .srt") }}</span></label></div>
       </div>
 
-      <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+      <div class="as-hanh-dong">
         <button type="submit" class="btn" id="submitbtn">{{ _("💬 Khắc phụ đề") }}</button>
         <span class="dim">{{ _("Chi phí:") }} <span id="est">…</span></span>
         <span class="dim" id="upstatus"></span>
       </div>
       <div id="est-wrap" hx-post="{{ app.route_prefix }}/estimate"
            hx-include="#duration_s,input[name=quality]:checked"
-           hx-target="#est" hx-trigger="load, change from:#asform" style="display:none"></div>
+           hx-target="#est" hx-trigger="load, change from:#asform" hidden></div>
     </form>
   </div>
 
@@ -87,20 +87,20 @@
     {% else %}
       <div class="result-grid">
         {% for j in jobs %}
-          <div style="border:1px solid var(--line); border-radius:10px; padding:10px;">
-            <div class="dim mono" style="font-size:11px; margin-bottom:6px;">
+          <div class="as-job">
+            <div class="dim mono as-job-dau">
               {{ j.id[:8] }} ·
-              {% if j.status == 'done' %}<span class="badge b-ok"><span class="dot"></span>xong</span>
-              {% elif j.status == 'error' %}<span class="badge b-err"><span class="dot"></span>{{ _("lỗi") }}</span>
+              {% if j.status == 'done' %}<span class="badge b-ok"><span class="dot"></span>{{ _("Hoàn tất") }}</span>
+              {% elif j.status == 'error' %}<span class="badge b-err"><span class="dot"></span>{{ _("Lỗi") }}</span>
               {% else %}<span class="badge b-warn"><span class="dot"></span>{{ j.progress_msg or j.status }} {{ j.progress }}%</span>{% endif %}
               {% if j.duration_s %} · {{ j.duration_s }}s{% endif %}
             </div>
-            {% if j.status == 'error' and j.error %}<p class="dim" style="font-size:12px;">{{ j.error }}</p>{% endif %}
+            {% if j.status == 'error' and j.error %}<p class="dim u-fs12">{{ j.error }}</p>{% endif %}
             {% if j.font_warning %}<p class="dim u-fs11">⚠ {{ j.font_warning }}</p>{% endif %}
             {% if j.video_key %}
-              <video controls playsinline preload="metadata" style="width:100%; border-radius:8px;"
+              <video controls playsinline preload="metadata" class="as-job-video"
                      src="{{ app.route_prefix }}/v/{{ j.video_key }}"></video>
-              <div style="margin-top:6px; display:flex; gap:6px; flex-wrap:wrap;">
+              <div class="as-job-tai">
                 <a class="btn ghost sm" href="{{ app.route_prefix }}/v/{{ j.video_key }}" download>⬇ Video</a>
                 {% if j.srt_key %}<a class="btn ghost sm" href="{{ app.route_prefix }}/f/{{ j.srt_key }}">⬇ .srt</a>{% endif %}
                 {% if j.ass_key %}<a class="btn ghost sm" href="{{ app.route_prefix }}/f/{{ j.ass_key }}">⬇ .ass</a>{% endif %}

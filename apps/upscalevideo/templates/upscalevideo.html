@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block page_mode %}immersive{% endblock %}
 {% block title %}Upscale Video — LTT Studios{% endblock %}
-{% block topbar_title %}<strong>Upscale Video</strong>{% endblock %}
+{% block topbar_title %}<h1 class="app-bar-title">Upscale Video</h1>{% endblock %}
 {% block content %}
 <div class="up-studio">
   <button class="up-settings-toggle" id="up-settings-toggle" type="button" aria-controls="upform" aria-expanded="false">{{ _("Thiết lập nâng cấp") }} <span aria-hidden="true">⌄</span></button>
@@ -11,7 +11,7 @@
     <input type="hidden" name="duration_s" id="duration_s" value="0">
 
     <section class="up-step">
-      <h2><b>1</b> {{ _("Chế độ nâng cấp") }}</h2>
+      <h2><b>01</b> {{ _("Chế độ nâng cấp") }}</h2>
       <label class="up-mode"><input type="radio" name="preset" value="fast" checked>
         <span><strong>⚡ {{ _("Nhanh") }}</strong><small>{{ _("Xử lý nhanh, phù hợp video thường.") }}</small></span></label>
       <label class="up-mode"><input type="radio" name="preset" value="quality">
@@ -19,21 +19,21 @@
     </section>
 
     <section class="up-step">
-      <h2><b>2</b> {{ _("Độ phân giải đầu ra") }}</h2>
+      <h2><b>02</b> {{ _("Độ phân giải đầu ra") }}</h2>
       <div class="up-options">
         {% for id,label in heights %}<label><input type="radio" name="target_height" value="{{id}}" {% if id==1080 %}checked{% endif %}><span>{{label}}</span></label>{% endfor %}
       </div>
     </section>
 
     <section class="up-step">
-      <h2><b>3</b> {{ _("Định dạng &amp; codec") }}</h2>
+      <h2><b>03</b> {{ _("Định dạng &amp; codec") }}</h2>
       <select name="codec" aria-label="{{ _('Codec đầu ra') }}">
         {% for id,label in codecs %}<option value="{{id}}">{{label}}</option>{% endfor %}
       </select>
     </section>
 
     <section class="up-step">
-      <h2><b>4</b> {{ _("Tùy chọn nâng cao") }}</h2>
+      <h2><b>04</b> {{ _("Tùy chọn nâng cao") }}</h2>
       <label class="up-switch"><span><strong>{{ _("Giữ nguyên FPS gốc") }}</strong><small>{{ _("Tắt để chuẩn hóa 30 FPS.") }}</small></span><input id="preserve_fps" type="checkbox" checked></label>
       <label class="up-switch"><span><strong>{{ _("Giữ nguyên âm thanh") }}</strong><small>{{ _("Tắt để xuất video không audio.") }}</small></span><input id="preserve_audio" type="checkbox" checked></label>
       <label class="up-switch"><span><strong>{{ _("Xem thử 8 giây") }}</strong><small>{{ _("Kiểm chất lượng với chi phí thấp.") }}</small></span><input id="preview" name="preview" type="checkbox"></label>
@@ -44,7 +44,7 @@
 
     {% if is_admin(request) %}
     <section class="up-step up-watch">
-      <h2><b>5</b> Watch Folder</h2>
+      <h2><b>05</b> Watch Folder</h2>
       <p>{{ _("Agent chạy trên máy chứa folder; web không nhận đường dẫn local.") }}</p>
       <div class="up-watch-actions"><button type="button" id="watch-connect">{{ _("Tạo token kết nối") }}</button><button type="button" id="watch-revoke">{{ _("Thu hồi") }}</button></div>
       <code id="watch-token" hidden></code><small id="watch-note">{{ _("Token chỉ có quyền Watch Upscale và chỉ hiển thị một lần.") }}</small>
@@ -63,7 +63,7 @@
       <div class="up-drop" id="up-drop">
         <input class="ltt-input-tep-an" type="file" id="vfile" name="video" aria-label="{{ _("Chọn video để nâng cấp") }}" accept="video/mp4,video/quicktime,video/x-matroska,video/webm,video/*">
         <div class="up-upload-icon">⇧</div>
-        <h1>{{ _("Kéo &amp; thả video vào đây") }}</h1>
+        <h2 class="up-drop-title">{{ _("Kéo &amp; thả video vào đây") }}</h2>
         <p>MP4, MOV, MKV, AVI</p>
         <button type="button" id="choosebtn">{{ _("Chọn tệp từ máy") }}</button>
         <small id="filemeta">{{ _("Chưa chọn video") }}</small>

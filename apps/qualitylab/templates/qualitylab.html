@@ -1,54 +1,49 @@
 {% extends "base.html" %}
+{% import "_ui.html" as ui %}
+{% from "_o_chon_tep.html" import o_chon_tep %}
 {% block title %}Quality Lab — LTT Studios{% endblock %}
 {% block page_mode %}wide{% endblock %}
-{% block topbar_title %}<strong>Quality Lab</strong>{% endblock %}
 {% block content %}
-<style>
-  .ql-grid{display:grid;grid-template-columns:minmax(320px,440px) minmax(0,1fr);gap:18px;max-width:1500px}
-  .ql-note{border-left:3px solid #0e7c86;padding-left:12px;color:var(--muted)}
-  .ql-registry{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
-  .ql-eval{border:1px solid var(--line);border-radius:8px;padding:10px;background:var(--panel2)}
-  .ql-eval strong{display:block;margin-bottom:4px}.ql-table{overflow-x:auto}
-  @media(max-width:900px){.ql-grid{grid-template-columns:1fr}}
-</style>
+<header class="af-head ql-head"><div><span class="af-kicker">Quality Lab</span>
 <h1>{{ _("Bộ đo chất lượng đầu ra") }}</h1>
-<p class="page-sub">{{ _("Đo theo vector bằng chứng. Foundation chưa calibrated và không được dùng làm release gate.") }}</p>
+<p>{{ _("Đo theo vector bằng chứng. Foundation chưa calibrated và không được dùng làm release gate.") }}</p></div>
+<a class="btn ghost" href="/jobs?app=qualitylab">{{ _("Việc của tôi") }}</a></header>
 {% if error %}<div class="alert alert-err" role="alert">{{ error }}</div>{% endif %}
 <div class="ql-grid">
   <section class="card">
-    <h2>{{ _("Evaluation mới") }}</h2>
+    <h2>{{ _("Đánh giá mới") }}</h2>
     <p class="ql-note">{{ _("Nạp file vào Lab hoặc dùng storage key. File nạp trực tiếp sẽ bị xóa ngay sau job.") }}</p>
-    <form method="post" action="/qualitylab/evaluate" enctype="multipart/form-data">
+    <form class="ql-form" method="post" action="/qualitylab/evaluate" enctype="multipart/form-data">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <div class="field"><label for="ql-pack">{{ _("Bộ đo") }}</label>
         <select id="ql-pack" name="pack" required>
           {% for key, pack in packs.items() %}<option value="{{ key }}">{{ pack.label }}</option>{% endfor %}
         </select><span class="hint">{{ _("Upscale/AutoSub foundation trước; model cảm nhận mở ở phase sau.") }}</span>
       </div>
-      <div class="field"><label for="ql-file">{{ _("File cần đo") }}</label><input id="ql-file" name="source_file" type="file"></div>
+      <div class="field">{{ o_chon_tep("ql-file", "source_file", _("File cần đo")) }}</div>
       <div class="field"><label for="ql-key">{{ _("Hoặc storage key") }}</label><input id="ql-key" name="source_key" type="text" placeholder="jobs/.../output.mp4"></div>
       <div class="field"><label for="ql-name">{{ _("Tên file nếu key không có đuôi") }}</label><input id="ql-name" name="source_name" type="text" placeholder="output.mp4"></div>
       <details><summary>{{ _("Đối chiếu Upscale paired") }}</summary>
         <p class="hint">{{ _("Dùng cho Upscale paired ảnh/video. Candidate ở ô File cần đo phía trên.") }}</p>
-        <div class="field"><label for="ql-reference">{{ _("HR reference (ảnh/video)") }}</label><input id="ql-reference" name="reference_file" type="file" accept="image/*,video/*"></div>
+        <div class="field">{{ o_chon_tep("ql-reference", "reference_file", _("HR reference (ảnh/video)"), accept="image/*,video/*") }}</div>
         <div class="field"><label for="ql-reference-key">{{ _("Hoặc HR storage key") }}</label><input id="ql-reference-key" name="reference_key" type="text" placeholder="quality-datasets/.../hr.png"></div>
-        <div class="field"><label for="ql-low">{{ _("LR đầu vào để dựng bicubic baseline") }}</label><input id="ql-low" name="low_input_file" type="file" accept="image/*,video/*"></div>
+        <div class="field">{{ o_chon_tep("ql-low", "low_input_file", _("LR đầu vào để dựng bicubic baseline"), accept="image/*,video/*") }}</div>
         <div class="field"><label for="ql-low-key">{{ _("Hoặc LR storage key") }}</label><input id="ql-low-key" name="low_input_key" type="text" placeholder="quality-datasets/.../lr.png"></div>
         <div class="field"><label for="ql-source-job">{{ _("Job Upscale nguồn (tùy chọn)") }}</label><input id="ql-source-job" name="source_job_id" type="text" placeholder="UUID job đã hoàn tất"><span class="hint">{{ _("Dùng snapshot thật để tính processing time/throughput; peak VRAM chưa có sẽ là UNKNOWN.") }}</span></div>
       </details>
       <details><summary>{{ _("Kỳ vọng kỹ thuật") }}</summary>
-        <div class="row"><div class="field"><label>{{ _("Rộng (px)") }}</label><input name="expected_width" type="number" inputmode="numeric" min="0" value="0"></div>
-        <div class="field"><label>{{ _("Cao (px)") }}</label><input name="expected_height" type="number" inputmode="numeric" min="0" value="0"></div></div>
-        <div class="row"><div class="field"><label>{{ _("Thời lượng (s)") }}</label><input name="expected_duration" type="number" inputmode="decimal" min="0" step="0.001" value="0"></div>
-        <div class="field"><label>{{ _("FPS") }}</label><input name="expected_fps" type="number" inputmode="decimal" min="0" step="0.001" value="0"></div></div>
-        <div class="field"><label>{{ _("Audio") }}</label><select name="expected_audio"><option value="">{{ _("Không đặt") }}</option><option value="yes">{{ _("Phải có") }}</option><option value="no">{{ _("Không được có") }}</option></select></div>
+        <div class="row"><label class="field"><span>{{ _("Rộng (px)") }}</span><input name="expected_width" type="number" inputmode="numeric" min="0" value="0"></label>
+        <label class="field"><span>{{ _("Cao (px)") }}</span><input name="expected_height" type="number" inputmode="numeric" min="0" value="0"></label></div>
+        <div class="row"><label class="field"><span>{{ _("Thời lượng (s)") }}</span><input name="expected_duration" type="number" inputmode="decimal" min="0" step="0.001" value="0"></label>
+        <label class="field"><span>{{ _("FPS") }}</span><input name="expected_fps" type="number" inputmode="decimal" min="0" step="0.001" value="0"></label></div>
+        <label class="field"><span>{{ _("Audio") }}</span><select name="expected_audio"><option value="">{{ _("Không đặt") }}</option><option value="yes">{{ _("Phải có") }}</option><option value="no">{{ _("Không được có") }}</option></select></label>
       </details>
       <div class="field"><label for="ql-truth">{{ _("Transcript chuẩn (AutoSub, tùy chọn)") }}</label><textarea id="ql-truth" name="expected_text" placeholder="{{ _('Không nhập thì WER = UNKNOWN') }}"></textarea></div>
-      <button type="submit">{{ _("Tạo evaluation job") }}</button>
+      <div class="ql-actions"><button class="btn" type="submit">{{ _("Tạo job đánh giá") }}</button></div>
     </form>
   </section>
   <section>
-    <div class="card"><h2>Evaluator registry</h2><div class="ql-registry">
+    <div class="card"><h2>{{ _("Danh mục bộ đo") }}</h2><div class="ql-registry">
       {% for key, evaluator in registry.evaluators.items() %}
       <div class="ql-eval"><strong>{{ key }}</strong>
         <span class="badge {{ 'badge-ok' if evaluator.enabled else 'badge-err' if evaluator.status == 'blocked' else 'badge-warn' }}">{{ _("BẬT") if evaluator.enabled else _("BỊ CHẶN") if evaluator.status == 'blocked' else _("ỨNG VIÊN") if evaluator.status == 'candidate' else _("CHƯA DUYỆT") }}</span>
@@ -57,13 +52,14 @@
         {% if key in asset_status %}<div class="dim">{{ _("Assets: đã verify") if asset_status[key].ready else _("Assets: chưa sẵn sàng") }} · {{ asset_status[key].reason }}</div>{% endif %}
       </div>{% endfor %}
     </div></div>
-    <div class="card ql-table"><h2>{{ _("Evaluation gần đây") }}</h2>
-      <table><thead><tr><th>Job</th><th>Pack</th><th>{{ _("Trạng thái") }}</th><th>{{ _("Kết quả") }}</th></tr></thead><tbody>
+    <div class="card ql-table"><h2>{{ _("Đánh giá gần đây") }}</h2>
+      <table><thead><tr><th>Job</th><th>{{ _("Bộ đo") }}</th><th>{{ _("Trạng thái") }}</th><th>{{ _("Kết quả") }}</th></tr></thead><tbody>
       {% for job in recent_jobs %}<tr><td class="mono">{{ job.id[:8] }}</td><td>{{ (job.params or {}).get('pack','—') }}</td>
-        <td>{{ job.status }}</td><td>{% if job.status == 'done' %}<a href="/qualitylab/reports/{{ job.id }}">{{ _("Mở report") }}</a>{% else %}<a href="/jobs/{{ job.id }}">{{ _("Theo dõi") }}</a>{% endif %}</td></tr>
-      {% else %}<tr><td colspan="4" class="muted">{{ _("Chưa có evaluation.") }}</td></tr>{% endfor %}
+        <td>{{ ui.nhan_trang_thai(job.status) }}</td><td>{% if job.status == 'done' %}<a href="/qualitylab/reports/{{ job.id }}">{{ _("Mở report") }}</a>{% else %}<a href="/jobs/{{ job.id }}">{{ _("Theo dõi") }}</a>{% endif %}</td></tr>
+      {% else %}<tr><td colspan="4" class="muted">{{ _("Chưa có lượt đánh giá.") }}</td></tr>{% endfor %}
       </tbody></table>
     </div>
   </section>
 </div>
+<script src="/static/chon_tep.js?v={{ asset_ver }}" defer></script>
 {% endblock %}
