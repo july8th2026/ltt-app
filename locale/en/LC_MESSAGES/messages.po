@@ -18357,3 +18357,6 @@ msgstr "Canvas"
 
 msgid "Quản trị viên"
 msgstr "Administrator"
+
+msgid "Hiện chưa nhận máy mới. Khi mở lại, bạn chọn gói ở bảng giá và bấm “Tạo máy”."
+msgstr "We are not taking new machines right now. When we reopen, pick a plan from the price list and press “Create machine”."

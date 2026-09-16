@@ -148,7 +148,7 @@
   {% set re_nhat = goi | map(attribute="plan") | map(attribute="gia_thang_vnd") | min %}
 
   <div class="card">
-    <div class="card-accent" style="background:{{ app.accent }};"></div>
+    <div class="card-accent card-accent--khu" aria-hidden="true"></div>
     <div class="vps-hero">
       <div class="vps-hero-chu">
         <h2 class="u-mt0">{{ _("Thuê một máy Windows trong khoảng 20 giây") }}</h2>
@@ -364,7 +364,12 @@
          tài khoản xong mà thấy "Chưa có gì" thì không biết bước tiếp là gì. #}
       <div class="vps-rong">
         <h3>{{ _("Bạn chưa có máy nào") }}</h3>
+        {% if goi_ban_duoc and suc_chua %}
         <p>{{ _("Chọn một gói ở bên và bấm “Tạo máy”. Máy sẵn sàng trong khoảng 20 giây, rồi bạn tự cài Windows qua console.") }}</p>
+        {% else %}
+        {# Đang không nhận máy mới: đừng mời bấm một nút không có trên trang. #}
+        <p>{{ _("Hiện chưa nhận máy mới. Khi mở lại, bạn chọn gói ở bảng giá và bấm “Tạo máy”.") }}</p>
+        {% endif %}
       </div>
       {% else %}
 
@@ -468,7 +473,7 @@
      con số vẫn là một nguồn. #}
   {% set ban_duoc = da_dang_nhap and goi_ban_duoc and suc_chua %}
   <div class="card u-m0">
-    <div class="card-accent" style="background:{{ app.accent }};"></div>
+    <div class="card-accent card-accent--khu" aria-hidden="true"></div>
     <h2>{{ _("Tạo máy mới") if ban_duoc else _("Bảng giá") }}</h2>
 
     {% if not ban_duoc %}
@@ -614,8 +619,7 @@
               {{ _("Không đủ credit.") }} <a href="/nap">{{ _("Nạp thêm") }}</a>
             </p>
 
-            <button type="submit" id="tt-nut" style="background:{{ app.accent }};
-                    width:100%;margin-top:12px;">{{ _("Tạo máy") }}</button>
+            <button type="submit" id="tt-nut" class="btn-goi vps-tao-may">{{ _("Tạo máy") }}</button>
             {# Clickwrap: bam la dong y. Dat NGAY duoi nut, khong o chan trang —
                mot lien ket dieu khoan o cuoi trang la mot lien ket khong ai bam. #}
             <p class="muted" style="margin:8px 0 0;font-size:.85em;">

@@ -495,3 +495,12 @@ def test_so_buoc_lien_mach(tep):
 
 def test_chuyen_dong_dung_token():
     assert not re.findall(r"transition:[^;}]*(?<![\w.-])\.(?:12|15|18|2)s", CSS)
+
+
+def test_khu_vps_nexus_khong_lay_mau_manifest_qua_style():
+    """DL-002: `app.accent` của VPS là teal #0B7285 — vạch thẻ và nút "Tạo máy" dùng token."""
+    for tep in ("vps.html", "vps_cai_dat.html", "nexus_dieu_khien.html", "nexus_nhat_ky.html",
+                "nexus_tai.html", "nexus_trang_chinh.html"):
+        src = (GOC / "server" / "templates" / tep).read_text(encoding="utf-8")
+        assert 'style="background:{{ app.accent }}' not in src, tep
+    assert ".card-accent--khu{background:var(--vps-teal)}" in CSS

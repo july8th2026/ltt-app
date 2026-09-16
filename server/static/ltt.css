@@ -3971,3 +3971,7 @@ button.lv-the-song.nghe-loi,.lv-chon-nghe.nghe-loi{
    :where() để mọi luật thành phần vẫn thắng. */
 :where(a:not([class])){text-decoration-line:underline;text-decoration-thickness:1px;text-underline-offset:.2em}
 :where(a:not([class])):hover{text-decoration-thickness:2px}
+/* DL-002: vạch màu đầu thẻ khu VPS/Nexus trước đây lấy `app.accent` của manifest
+   (teal #0B7285) qua style="" — lệch bảng màu ấm. Token, không giá trị Jinja. */
+.card-accent--khu{background:var(--vps-teal)}
+.vps-tao-may{width:100%;margin-top:12px}
