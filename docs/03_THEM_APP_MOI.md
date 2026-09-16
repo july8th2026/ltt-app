@@ -241,8 +241,9 @@ python -m pytest tests\test_60_app_registry.py <các tệp vừa in ra> -q
 ```
 
 Từ 3 tệp test trở lên: `python tools\cua_so_yen.py trang-thai` trước (hợp đồng
-§4.8). L3 `python tools\gate.py` chạy **một lần** khi mọi pha xong — nhịp đầy đủ
-ở `docs/00_LTT_OPERATING_CONTRACT.md` §4.
+§4.8). Cần gate giữa phiên thì chỉ L1/L2; L3 `python tools\gate.py` chạy **một lần**
+ở tổng kết phiên, bắt buộc trước deploy — nhịp đầy đủ ở
+`docs/00_LTT_OPERATING_CONTRACT.md` §4.
 
 `test_60` tự bắt các lỗi hay gặp:
 

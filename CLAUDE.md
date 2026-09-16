@@ -30,17 +30,19 @@ docs/00_LTT_OPERATING_CONTRACT.md      ← đọc trước việc thực chất
 1. **Test/gate** — hợp đồng §4. Đúng một nhịp:
 
    ```
-   TRONG PHIÊN  test NHẮM cụm vừa sửa: thanh_phan.py --test <tp> -> python -m pytest <tệp> -q
-                ⛔ KHÔNG tools\gate.py ở bất kỳ chế độ nào (--doi, --quick, --vong-lap, đầy đủ)
-   GẶP LỖI      sửa TẠI CHỖ -> chạy lại ĐÚNG phép đã đỏ -> đi tiếp
-   MỌI PHA XONG commit hết -> build frontend nếu đổi -> kiểm máy (luật 3)
-                -> python tools\gate.py (L3) MỘT lần, không ghi vào cây trong lúc chạy
-   L3 ĐỎ        sửa tại chỗ -> chạy lại đúng phép đỏ (gate in sẵn) -> KHÉP gate.py --doi --tu <sha L3>
+   TRONG PHIÊN    test NHẮM cụm vừa sửa: thanh_phan.py --test <tp> -> python -m pytest <tệp> -q
+                  cần gate -> CHỈ L1 (gate.py --doi) hoặc L2 (gate.py --pham-vi <tp>)
+                  ⛔ KHÔNG L3 giữa các pha (không rải rác, không "chốt pha")
+   GẶP LỖI        sửa TẠI CHỖ -> chạy lại ĐÚNG phép đã đỏ -> đi tiếp
+   TỔNG KẾT PHIÊN commit hết -> build frontend nếu đổi -> kiểm máy (luật 3)
+                  -> python tools\gate.py (L3) MỘT lần, không ghi vào cây trong lúc chạy
+   L3 ĐỎ          sửa tại chỗ -> chạy lại đúng phép đỏ (gate in sẵn) -> KHÉP gate.py --doi --tu <sha L3>
+   DEPLOY         ⛔ chỉ sau L3 của phiên (xanh / đỏ đã khép) trên đúng SHA — không ngoại lệ
    ```
 
-   ⛔ **Một L3 mỗi nhánh** — `gate.py` từ chối L3 thứ hai kể cả sau L3 xanh. Còn việc
-   chưa làm ⇒ **chưa bấm**. Lượt bị ngắt giữa chừng (không có bản ghi) chưa phải phán
-   quyết ⇒ chạy lại được.
+   ⛔ **Một L3 mỗi nhánh** — `gate.py` từ chối L3 thứ hai kể cả sau L3 xanh, và từ chối
+   L1/L2 giữa phiên tự nâng lên đầy đủ. Còn việc chưa làm ⇒ **chưa bấm L3**. Lượt bị
+   ngắt giữa chừng (không có bản ghi) chưa phải phán quyết ⇒ chạy lại được.
 2. **Không dừng giữa các pha** — xong pha thì làm tiếp, gộp `main` và deploy rồi báo.
    Chỉ dừng khi: gate đỏ · thao tác không đảo được · thay đổi không rõ của ai · rủi ro
    bảo mật (hợp đồng §10, §10b).

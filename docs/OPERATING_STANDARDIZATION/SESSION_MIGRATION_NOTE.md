@@ -1,6 +1,21 @@
 # SESSION MIGRATION NOTE
 
-# ⭐ 2026-09-16 — MỘT L3 MỖI PHIÊN (bản hiện hành)
+# ⭐ 2026-09-17 — L1/L2 GIỮA PHIÊN, L3 CHỈ Ở TỔNG KẾT PHIÊN (bản hiện hành)
+
+## Câu để đưa cho một phiên đang chạy
+
+> Nhịp gate đổi (chủ dự án chốt 17/09) — đọc lại `docs/00_LTT_OPERATING_CONTRACT.md` §4.
+> Trong phiên: **test nhắm**; cần gate thì **chỉ L1** (`gate.py --doi`) hoặc **L2**
+> (`gate.py --pham-vi <tp>`) — **không L3** giữa các pha. L3 (`python tools\gate.py`)
+> chạy **một lần ở tổng kết phiên** và **bắt buộc trước mọi deploy** — không có L3 của
+> phiên thì không deploy. L3 đỏ ⇒ sửa tại chỗ ⇒ chạy lại đúng phép đỏ ⇒ khép
+> `gate.py --doi --tu <sha>`. Máy thi hành: `gate.py` từ chối L3 thứ hai trên nhánh và
+> từ chối một L1/L2 giữa phiên tự nâng lên đầy đủ. Tiếp tục công việc đang làm.
+
+Khác bản 16/09 đúng một điểm: 16/09 cấm **mọi** chế độ gate trong phiên; 17/09 cho
+**L1/L2 khi cần**, giữ nguyên "L3 một lần, cuối phiên" và thêm "bắt buộc trước deploy".
+
+# 2026-09-16 — MỘT L3 MỖI PHIÊN (đã được bản 17/09 ở trên thay một điểm)
 
 ## Câu để đưa cho một phiên đang chạy
 

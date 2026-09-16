@@ -36,11 +36,11 @@ MỞ PHIÊN
   4. viết ra PHẠM VI
 LÀM — PHA 1..N
   5. đọc trước khi ghi (§2) → một changeset nguyên tử (§4.4)
-  6. TEST NHẮM cụm vừa sửa (§4.1) — KHÔNG gate
+  6. TEST NHẮM cụm vừa sửa (§4.1) — cần gate thì CHỈ L1/L2, ⛔ không L3
   7. đỏ → sửa TẠI CHỖ → chạy lại ĐÚNG phép đỏ → pha kế tiếp, không dừng xin phép (§10b)
-KẾT THÚC — khi MỌI pha xong
+TỔNG KẾT PHIÊN — khi MỌI pha xong
   8. L3 MỘT lần (§4.2) · đỏ → khép (§4.6)
-  9. commit → GỘP main (§7) → deploy nếu phạm vi cần (§8)
+  9. commit → GỘP main (§7) → deploy nếu phạm vi cần (§8) — ⛔ không có L3 của phiên thì không deploy
  10. nghiệm thu thật (§9)
  11. ghi docs/NHAT_KY.md (sự thật đã xảy ra) · memory chỉ khi có sự thật mới không suy ra được từ kho
 ```
@@ -99,27 +99,32 @@ tệp kế hoạch.
 # 4. 🔑 CHÍNH SÁCH TEST — một nhịp duy nhất
 
 ```
-TRONG PHIÊN  : test NHẮM đúng cụm vừa sửa. Đỏ → sửa TẠI CHỖ → chạy lại ĐÚNG phép đỏ.
-               ⛔ KHÔNG gate.py ở bất kỳ chế độ nào.
-CUỐI PHIÊN   : mọi pha xong → python tools\gate.py (L3) MỘT lần.
-L3 ĐỎ        : sửa tại chỗ → chạy lại đúng phép đỏ → khép bằng `gate.py --doi --tu <sha>`.
-               ⛔ KHÔNG chạy L3 lần hai. Một L3 mỗi nhánh.
+TRONG PHIÊN    : test NHẮM đúng cụm vừa sửa. Đỏ → sửa TẠI CHỖ → chạy lại ĐÚNG phép đỏ.
+                 Cần gate (chạm nhiều thành phần, cần phán quyết hẹp) → CHỈ L1 hoặc L2.
+                 ⛔ KHÔNG L3 giữa các pha — không rải rác, không "chốt pha".
+TỔNG KẾT PHIÊN : mọi pha xong → python tools\gate.py (L3) MỘT lần.
+                 ⛔ BẮT BUỘC trước MỌI deploy — không có L3 của phiên thì không deploy.
+L3 ĐỎ          : sửa tại chỗ → chạy lại đúng phép đỏ → khép bằng `gate.py --doi --tu <sha>`.
+                 ⛔ KHÔNG chạy L3 lần hai. Một L3 mỗi nhánh.
 ```
+
+"Phiên" = một nhánh làm việc (một worktree). Nhiều phiên song song mỗi phiên một L3
+của nhánh mình; máy đếm theo nhánh (§4.6).
 
 ## Các cấp — tên gọi cho hồ sơ `gate.py`
 
 | Cấp | Lệnh | Dùng khi | ⛔ KHÔNG chứng minh gì |
 |---|---|---|---|
 | **T** | `python -m pytest <tệp…> -q` · `python tools\check_<x>.py` | **mọi lúc trong phiên** (§4.1) | không nói gì ngoài cụm đó |
-| **L1** | `python tools\gate.py --doi --tu <sha>` | **khép** bản sửa sau L3 đỏ (§4.6) · hoà `main` (§7) | phần còn lại. **Tự nâng lên L3** khi không chắc |
-| **L2** | `python tools\gate.py --pham-vi <tp>` | chứng nhận riêng một changeset lõi (§4.10) | ⚠️ tin người gọi |
-| **L3** | `python tools\gate.py` | **một lần, khi mọi pha xong** (§4.2) | deploy hay production |
+| **L1** | `python tools\gate.py --doi [--tu <sha>]` | **giữa phiên khi cần** · **khép** bản sửa sau L3 đỏ (§4.6) · hoà `main` (§7) | phần còn lại. Giữa phiên **không** tự nâng lên L3 — máy từ chối; sau L3 tổng kết thì tự nâng khi không chắc |
+| **L2** | `python tools\gate.py --pham-vi <tp>` | **giữa phiên khi cần** · chứng nhận riêng một changeset lõi (§4.10) | ⚠️ tin người gọi |
+| **L3** | `python tools\gate.py` | **một lần, tổng kết phiên, bắt buộc trước deploy** (§4.2) | production (nghiệm thu thật §9) |
 | — | `--quick` · `--vong-lap` | **không dùng** trong nhịp chuẩn | không phải bằng chứng |
 
 Hồ sơ chuyên dụng: `--noi-tiep` (nghi nhiễu do song song/tải máy) · `--ho-so
 phat-hanh` (L3 + cài/rollback). `--tuan-tu` ≠ `--noi-tiep` — `AGENTS.md` §4b.
 
-## 4.1 Trong phiên — chỉ TEST NHẮM
+## 4.1 Trong phiên — TEST NHẮM, cần gate thì L1/L2
 
 ```powershell
 python tools\thanh_phan.py --doi              # cây hiện tại chạm tới thành phần nào
@@ -132,16 +137,28 @@ python -m pytest tests\test_A.py tests\test_B.py -q
 - Bước kiểm tĩnh lẻ (mypy, i18n, kiểu xuống dòng…): chạy **đúng công cụ đó**; tên
   lệnh ở `tools/gate.py::_steps`, và gate in sẵn khi đỏ.
 
-⛔ **Không `gate.py` ở bất kỳ chế độ nào trong phiên** — kể cả `--doi`, `--quick`,
-`--vong-lap`. Chủ sản phẩm chốt 16/09/2026: *"gate chỉ là tổng duyệt."*
+- **Cần gate giữa phiên** (thay đổi lan nhiều thành phần, cần một phán quyết hẹp
+  trước khi đi tiếp): **chỉ** `gate.py --doi` (L1) hoặc `gate.py --pham-vi <tp>` (L2),
+  kiểm máy §4.8 trước. Gate là phán quyết, không phải công cụ dò lỗi — đừng chạy lại
+  liên tục để tìm lỗi.
+- ⛔ **Không L3 trong phiên.** Một `--doi`/`--pham-vi` không thu hẹp được sẽ bị máy
+  **từ chối** thay vì tự nâng lên đầy đủ (`gate.py::nang_cap_giua_phien_bi_chan`).
+- ⛔ `--quick`, `--vong-lap`: không nằm trong nhịp.
 
-## 4.2 ⛔ L3 chạy MỘT lần — khi mọi pha đã xong
+Chủ sản phẩm chốt 17/09/2026: *"L3 chỉ chạy ở tổng kết phiên, không chạy rải rác
+trong các pha; cần gate thì L1 hoặc L2."*
+
+## 4.2 ⛔ L3 chạy MỘT lần — tổng kết phiên, bắt buộc trước deploy
 
 🔑 **Gate là công cụ ra PHÁN QUYẾT, không phải công cụ CHẨN ĐOÁN.**
 
 L3 chạy **một lần** khi toàn bộ phạm vi đã làm xong — là phán quyết dùng chung cho
 báo xong, gộp `main` và deploy. Không chạy L3 sau một pha, đợt, hạng mục, lát cắt
 hay lần sửa. **Còn việc nào chưa làm thì chưa bấm.**
+
+⛔ **Không deploy khi chưa có L3 của phiên** (xanh, hoặc đỏ đã khép §4.6) trên đúng
+SHA được deploy — trong **bất cứ trường hợp nào**, kể cả sửa gấp. L1/L2 không thay L3
+cho deploy.
 
 Trước khi bấm: `npm run build` nếu frontend đổi (`AGENTS.md` §4b) · commit hết ·
 §4.8 · trong lúc chạy **không ghi vào cây của mình** (§4.9).
@@ -230,7 +247,7 @@ Hồ sơ là trạng thái **của một cây**. `python tools\ho_so_cay.py tran
 
 ### `NORMAL` — mặc định
 
-§4.1–§4.2: trong phiên chỉ test nhắm, L3 **một lần** khi mọi pha xong. ⛔ Cây chính,
+§4.1–§4.2: trong phiên test nhắm (cần gate thì L1/L2), L3 **một lần** ở tổng kết phiên. ⛔ Cây chính,
 `main`, nhánh phát hành và mọi cây dùng để deploy **luôn** ở `NORMAL`
 (`ho_so_cay.py bat` từ chối — chốt cơ học).
 
@@ -308,7 +325,8 @@ phiên khác để gộp — gặp thì dừng theo §10.
 Chính phiên đã gộp `main` deploy khi phạm vi cần, **rồi báo** — không xin duyệt
 (§10b). Quy trình và cổng riêng: `docs/16_CAP_NHAT_VA_DEPLOY.md`.
 
-- Cần phán quyết xanh trên **đúng SHA được deploy** (§7).
+- Cần **L3 của phiên** (xanh, hoặc đỏ đã khép) trên **đúng SHA được deploy** (§4.2, §7) —
+  ⛔ không ngoại lệ; L1/L2 không thay được.
 - ⛔ **Deploy chép CẢ CÂY**, không tách được phần một phiên ⇒ trước khi deploy
   **báo** các phiên đang chạy (`ListAgents` → `SendMessage`) — báo, không chờ.
 - Nâng quyền: `python tools\nang_quyen.py <script.py> [-- <tham số>]` (im lặng, §10b).

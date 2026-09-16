@@ -1,7 +1,8 @@
 # Deploy, nghiệm thu và đẩy mã
 
 > **Chủ của**: thao tác deploy máy A, nghiệm thu sau deploy, đẩy GitHub. *Điều kiện*
-> (L3 xanh trên đúng SHA, ai deploy, không xin duyệt) thuộc
+> (L3 của phiên — xanh hoặc đỏ đã khép — trên đúng SHA, không ngoại lệ; ai deploy;
+> không xin duyệt) thuộc
 > `docs/00_LTT_OPERATING_CONTRACT.md` §7–§8, §10b — tệp này không chép lại nhịp.
 > Gộp `main` trước khi deploy: `docs/QUY_TRINH_WORKTREE.md` §4.
 > Chuyện kể các lần vấp (07/09 dòng `??`, pre-commit 3/29 bước):
@@ -32,7 +33,8 @@ git -C D:\LTTSTUDIOSAPP status --porcelain    # phải RỖNG
   không `stash`. `ListAgents` chỉ thấy phiên tồn tại **lúc hỏi**.
 - **Báo** các phiên đang chạy rằng bạn sắp deploy (deploy chép cả cây, mang cả mã của
   họ đã vào `main`) — báo, không chờ.
-- Có phán quyết xanh trên **đúng SHA** của `main` sắp deploy (hợp đồng §7).
+- Có **L3 của phiên** (xanh, hoặc đỏ đã khép) trên **đúng SHA** của `main` sắp deploy
+  (hợp đồng §4.2, §7). ⛔ L1/L2 không thay L3 cho deploy — không ngoại lệ.
 - Migration: `main` mới có head alembic khác bản đang chạy? Đọc trước khi chép.
 - Production có tệp mà `main` không có? Deploy chép cả cây nên tệp ấy bị **xoá lặng lẽ**
   — đối chiếu `C:\LTTPlatform\app` với cây trước khi chép.

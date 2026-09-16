@@ -12,6 +12,22 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-17 — Luật gate chốt lại: L1/L2 giữa phiên, L3 chỉ ở tổng kết phiên và bắt buộc trước deploy
+
+- Chủ dự án chốt: *"L3 chỉ chạy ở tổng kết phiên, không chạy rải rác trong các pha, [bắt buộc] trước deploy
+  trong bất cứ trường hợp nào; cần chạy gate thì chạy L1 hoặc L2."* Nguyên nhân: nhiều phiên song song tự
+  đặt nhịp gate riêng (một plan Serving V2 ghi "mỗi pha một L3" và đã bấm L3 sau pha 2 — lượt bị dừng giữa
+  chừng, không bản ghi, không tính).
+- Khác bản 16/09 đúng một điểm: 16/09 cấm mọi chế độ gate trong phiên; nay cho **L1/L2 khi cần**. Giữ
+  "một L3 mỗi nhánh", thêm "không có L3 của phiên thì không deploy — không ngoại lệ".
+- Sửa tệp chủ `docs/00_LTT_OPERATING_CONTRACT.md` §1, §4, §4.1, §4.2, §4.10, §8; tóm tắt ở `CLAUDE.md` luật 1,
+  `AGENTS.md`; trỏ ở `docs/16_CAP_NHAT_VA_DEPLOY.md`, `docs/02_LENH_CHO_CLAUDE.md`, `docs/03_THEM_APP_MOI.md`,
+  `docs/OPERATING_STANDARDIZATION/SESSION_MIGRATION_NOTE.md` (câu đưa cho phiên đang chạy);
+  `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`, memory `gate-chi-chay-cuoi-cung`.
+- Cơ học: `tools/gate.py::nang_cap_giua_phien_bi_chan` — `--doi`/`--pham-vi` không thu hẹp được mà nhánh chưa
+  có L3 thì **từ chối** thay vì tự nâng lên đầy đủ (đó là L3 rải rác); `test_1280` +5 phép kiểm.
+- Tài liệu lịch sử (audit, evidence, báo cáo cũ) không viết lại — chúng ghi chuyện đã xảy ra, không định nghĩa luật.
+
 ## 2026-09-16 — LTT Voice W4': ChatLTT `speech.ltt` chặn lệch làn TRƯỚC giữ tiền
 
 - Phát hiện (audit W4', `docs/LTT_VOICE/GUI_DOI_SOAT_VA_PLAN_V2.md` trên nhánh
