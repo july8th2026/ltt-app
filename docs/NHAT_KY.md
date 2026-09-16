@@ -157,6 +157,35 @@
   hash; `/huong-dan` thấy cả `ltt-3.8` và `ltt-3.5`. Hai trang có 0 console
   error, 0 request failed và 0 response HTTP >= 400. Theo chỉ định của owner,
   H55 dùng test phạm vi `-n 7` (182 PASS) và **không chạy gate tổng**.
+## 2026-09-17 — Kết phiên chuẩn hoá luật: L3 xanh, gộp `main`
+
+- Luật bổ sung (`fb57383c`): tra cộng đồng GitHub qua plugin **GitHub MCP**
+  (hợp đồng §1b, `CLAUDE.md` luật 10); nhịp gate ghi đủ trong `CLAUDE.md` luật 1;
+  kiểm CPU hai lệnh ở luật 3; L3 bị ngắt giữa chừng (không bản ghi) chưa phải phán quyết.
+- Hoà `main` `17759a7b` (68 commit; `main` đã chứa `cae713d6` qua phiên LTT Voice) →
+  `8a7961f9`, không xung đột.
+- **L3 lượt 1** (`8a7961f9`): FAIL 1/33 — `bo test`: 11.795 passed, 1 failed
+  `test_1259::test_BAN_SAO_khop_may_B`. Gốc: lượt chạy thiếu `LTT_LLM_BASE_URL` +
+  `LTT_LLM_TOKEN` (test cố ý đỏ khi không đối chiếu được cổng máy B). Kèm 4 bước
+  frontend TỰ BỎ QUA vì worktree thiếu `node_modules`.
+- Khắc phục, chạy lại đúng phép đỏ: URL từ `app.env` + token đọc qua SSH từ
+  `C:\ProgramData\LTTLlm\gateway.env` máy B (không in, không ghi đĩa), qua
+  `tools\nang_quyen.py` → `test_1259` **4 passed**; `npm ci` 4 frontend →
+  `npm test -- --run` **290 passed** (61+15+28+186).
+- **L3 lượt 2** theo chỉ đạo chủ dự án ("đỏ thì dừng, khắc phục, chạy L3 lại"),
+  `--l3-lai`, cùng môi trường máy B: **PASS 33/33**, 0 bước bỏ qua, cây không đổi
+  giữa chừng — `test-results/gates/20260916T170642Z-23604.json`. Trước mỗi lượt:
+  `cua_so_yen` RẢNH, `tai_may` RẢNH, lượt 1 chờ hết pytest gõ tay của phiên golden UI.
+- `main` ff → `8a7961f9`, đẩy `origin`. Không deploy: production `d5bd7b07` đã chứa
+  mọi thay đổi mã của nhánh (`5d0d5149`, `b75abb06`, `cae713d6`); phần còn lại là tài liệu.
+- ⚠️ Chưa giải: (1) thư mục `test-results/` của worktree từng biến mất giữa hai lượt
+  gate nên mất tệp đầu ra lượt bị ngắt — chưa tìm ra tác nhân; (2) `scan_source_secrets`
+  chạy từ cây chính báo FAIL vì `.codex/worktrees/` (chưa theo dõi, của phiên Codex)
+  nằm trong cây chính; (3) chỉ đạo "L3 đỏ → chạy L3 lại" khác hợp đồng §4.6 (khép bằng
+  `--doi --tu`) — **ĐÃ CHỐT 17/09**: chủ dự án chọn *"lượt đỏ khép bằng `--doi --tu`"*.
+  Hợp đồng §4.6, `CLAUDE.md` luật 1 và chốt `l3_lai_bi_chan` của `gate.py` vốn đã đúng
+  luật này — không đổi gì; `--l3-lai` chỉ dành cho lượt bị nhiễu thật (máy `QUA TAI`).
+
 ## 2026-09-16 — Chuẩn hoá toàn bộ luật vận hành: mỗi chủ đề MỘT tệp chủ
 
 - Audit (3 agent đọc song song + phiên chính): `AGENTS.md` ~30% luật / ~45% chuyện

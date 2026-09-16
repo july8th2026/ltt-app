@@ -27,16 +27,26 @@ docs/00_LTT_OPERATING_CONTRACT.md      ← đọc trước việc thực chất
 
 # Luật chết người
 
-1. **Test/gate** — hợp đồng §4:
-   trong phiên chỉ **test nhắm** (`thanh_phan.py --test <tp>` → `python -m pytest <tệp> -q`),
-   ⛔ **không `tools\gate.py` ở bất kỳ chế độ nào**; lỗi → sửa tại chỗ, chạy lại đúng
-   phép đỏ; **L3 một lần** khi mọi pha xong; một L3 mỗi nhánh; L3 đỏ → khép
-   `gate.py --doi --tu <sha>`.
+1. **Test/gate** — hợp đồng §4. Đúng một nhịp:
+
+   ```
+   TRONG PHIÊN  test NHẮM cụm vừa sửa: thanh_phan.py --test <tp> -> python -m pytest <tệp> -q
+                ⛔ KHÔNG tools\gate.py ở bất kỳ chế độ nào (--doi, --quick, --vong-lap, đầy đủ)
+   GẶP LỖI      sửa TẠI CHỖ -> chạy lại ĐÚNG phép đã đỏ -> đi tiếp
+   MỌI PHA XONG commit hết -> build frontend nếu đổi -> kiểm máy (luật 3)
+                -> python tools\gate.py (L3) MỘT lần, không ghi vào cây trong lúc chạy
+   L3 ĐỎ        sửa tại chỗ -> chạy lại đúng phép đỏ (gate in sẵn) -> KHÉP gate.py --doi --tu <sha L3>
+   ```
+
+   ⛔ **Một L3 mỗi nhánh** — `gate.py` từ chối L3 thứ hai kể cả sau L3 xanh. Còn việc
+   chưa làm ⇒ **chưa bấm**. Lượt bị ngắt giữa chừng (không có bản ghi) chưa phải phán
+   quyết ⇒ chạy lại được.
 2. **Không dừng giữa các pha** — xong pha thì làm tiếp, gộp `main` và deploy rồi báo.
    Chỉ dừng khi: gate đỏ · thao tác không đảo được · thay đổi không rõ của ai · rủi ro
    bảo mật (hợp đồng §10, §10b).
-3. **Trước lệnh nặng** (gate, ≥ 3 tệp test): `python tools\cua_so_yen.py trang-thai`
-   + tải máy — hợp đồng §4.8.
+3. **Kiểm CPU trước lệnh nặng** (gate mọi chế độ, `test_nhanh.py`, ≥ 3 tệp test):
+   `python tools\cua_so_yen.py trang-thai` (có người giữ khoá → chờ) +
+   `python tools\tai_may.py` (`QUÁ TẢI` → chờ). pytest gõ tay `-n` tối đa 6. Hợp đồng §4.8.
 4. **Dòng `??` lạ trong `git status` là một PHIÊN KHÁC**, không phải rác. Không
    `stash`, `reset`, `checkout --`. `git add` tường minh từng tệp.
 5. **Deploy chép CẢ CÂY nguồn** ⇒ báo các phiên đang chạy trước (`ListAgents`).
@@ -54,8 +64,9 @@ docs/00_LTT_OPERATING_CONTRACT.md      ← đọc trước việc thực chất
    phản hồi 100 giây.
 9. **Thêm app = thêm MỘT thư mục `apps/`.** Buộc sửa `platform_core/`/`server/` ⇒
    dừng và nói rõ vì sao (`docs/03_THEM_APP_MOI.md`, `AGENTS.md` §8).
-10. **Tra nguồn trước khi tự suy** (model card, README engine, issue cộng đồng) —
-    hợp đồng §1b.
+10. **Gặp vấn đề: tra nguồn TRƯỚC khi tự suy** — model card, tài liệu engine, và
+    cộng đồng GitHub qua **plugin GitHub MCP** (`search_issues` trong repo thư viện,
+    `search_code`, `get_file_contents`); trích số issue/PR làm nguồn. Hợp đồng §1b.
 
 ## Chưa có khách ở lớp Agent/Canvas/Workflow
 

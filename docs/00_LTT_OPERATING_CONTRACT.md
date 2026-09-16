@@ -53,14 +53,18 @@ KẾT THÚC — khi MỌI pha xong
 cách làm — thay vì tự suy."* Gặp hành vi lạ của model/engine/thư viện ngoài: **tra
 nguồn trước**, rồi đo để **kiểm chứng** nguồn — không đo để **thay** nguồn.
 
-| Thứ tự | Nguồn | Ví dụ đường |
+| Thứ tự | Nguồn | Công cụ |
 |---|---|---|
-| 1 | model card của nhà sản xuất | `huggingface.co/<org>/<model>/raw/main/README.md` |
-| 2 | README của chính engine | `raw.githubusercontent.com/ggml-org/llama.cpp/master/tools/server/README.md` |
-| 3 | bản vá / issue cộng đồng cho **đúng** model ấy | `huggingface.co/api/models/<repo>/tree/main` |
+| 1 | model card của nhà sản xuất | `curl` `huggingface.co/<org>/<model>/raw/main/README.md` |
+| 2 | README / tài liệu của chính engine, thư viện | **GitHub MCP** `get_file_contents` (vd `ggml-org/llama.cpp` · `tools/server/README.md`) |
+| 3 | issue / PR / mã cộng đồng cho **đúng** model/thư viện ấy | **GitHub MCP** `search_issues` (theo repo) · `search_code` (theo ký hiệu) · `search_repositories` |
 | 4 | **rồi mới** đo trên máy ta | |
 
-⚠️ `WebFetch`/`WebSearch` **hỏng trên máy này** — dùng
+⭐ **GitHub đi qua plugin GitHub MCP** (`mcp__plugin_github_github__*`, đã cấp token) —
+không cào HTML. Gặp một lỗi/hành vi lạ: `search_issues` trong repo của thư viện đó
+**trước** khi đặt giả thuyết; trích số issue/PR vào nhật ký làm nguồn.
+
+⚠️ `WebFetch`/`WebSearch` **hỏng trên máy này** — nguồn ngoài GitHub dùng
 `curl -sL --max-time 60 -A "Mozilla/5.0" <url>`.
 
 ⭐ **Phép đo phân biệt rẻ hơn mọi suy luận.** Nghi một tham số không được tôn trọng?
@@ -183,8 +187,10 @@ Vì sao khép chứ không L3 lần hai: lượt L3 **đã** phán quyết phầ
 lên L3** khi bản sửa chạm tệp dùng chung — lúc đó là máy quyết, không phải thói quen.
 
 ⛔ **MỘT L3 mỗi nhánh — máy thi hành.** Nhánh đã có một lượt L3 (xanh hay đỏ) trong
-12 giờ thì `gate.py` **từ chối** L3 gõ tay và in lệnh khép. Lượt mang nhãn
-`CAY DA DOI` không tính. Lượt trước bị nhiễu thật (máy `QUA TAI`) → `--l3-lai`, có ghi.
+12 giờ thì `gate.py` **từ chối** L3 gõ tay và in lệnh khép. Không tính: lượt mang
+nhãn `CAY DA DOI`, và lượt **bị ngắt giữa chừng** (phiên đóng, bị dừng) — lượt đó
+không ghi bản ghi `test-results/gates/*.json`, tức **chưa có phán quyết**, nên được
+chạy lại. Lượt trước bị nhiễu thật (máy `QUA TAI`) → `--l3-lai`, có ghi.
 
 ⚠️ Đỏ **không** tự động là lỗi của bạn: loại trừ máy quá tải và thay đổi có sẵn trên
 `main` trước khi sửa. Sửa tại chỗ vẫn là sửa — kể cả khi lỗi có sẵn, gom vào cùng
