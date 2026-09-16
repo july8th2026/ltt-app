@@ -9,12 +9,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/tabler.min.css') }}">
-  <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/tabler-icons.min.css') }}">
-  <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/fontawesome.min.css') }}">
-  <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/select2.min.css') }}">
-  <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/flatpickr.min.css') }}">
-  <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/main.css') }}">
+  {#- Golden UI P1-15: tai san cua goi sqladmin mang PHIEN BAN GOI (`sqladmin_ver`, bom o
+      setup_admin) — chung chi doi khi nang goi, nen khong dung hash CSS nen tang. -#}
+  <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/tabler.min.css') }}?v={{ sqladmin_ver }}">
+  <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/tabler-icons.min.css') }}?v={{ sqladmin_ver }}">
+  <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/fontawesome.min.css') }}?v={{ sqladmin_ver }}">
+  <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/select2.min.css') }}?v={{ sqladmin_ver }}">
+  <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/flatpickr.min.css') }}?v={{ sqladmin_ver }}">
+  <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/main.css') }}?v={{ sqladmin_ver }}">
   {# Cache-bust BAT BUOC. Truoc day dong nay khong co `?v=`, nen sau moi
      lan doi `ltt.css` cac trang SQLAdmin phuc vu ban CSS CU tu Cloudflare
      toi het TTL — trong khi trang tu viet da doi (CLAUDE.md quy tac 6).
@@ -95,13 +97,13 @@
     {% endblock %}
   {% endblock %}
   </main>
-  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/jquery.min.js') }}"></script>
-  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/tabler.min.js') }}"></script>
-  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/popper.min.js') }}"></script>
-  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/bootstrap.min.js') }}"></script>
-  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/select2.full.min.js') }}"></script>
-  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/flatpickr.min.js') }}"></script>
-  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/main.js') }}"></script>
+  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/jquery.min.js') }}?v={{ sqladmin_ver }}"></script>
+  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/tabler.min.js') }}?v={{ sqladmin_ver }}"></script>
+  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/popper.min.js') }}?v={{ sqladmin_ver }}"></script>
+  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/bootstrap.min.js') }}?v={{ sqladmin_ver }}"></script>
+  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/select2.full.min.js') }}?v={{ sqladmin_ver }}"></script>
+  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/flatpickr.min.js') }}?v={{ sqladmin_ver }}"></script>
+  <script type="text/javascript" src="{{ url_for('admin:statics', path='js/main.js') }}?v={{ sqladmin_ver }}"></script>
   {% block tail %}
   {% endblock %}
 </body>

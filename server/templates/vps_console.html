@@ -81,7 +81,11 @@
      JS chứ không nằm trên thanh địa chỉ: URL đi vào lịch sử trình duyệt, vào
      ảnh chụp màn hình, và vào log của mọi proxy trên đường. #}
   <script type="module">
-    import RFB from "{{ url_for('static', path='vps/novnc/core/rfb.js') }}";
+    {#- Golden UI P1-15: thu muc MANG PHIEN BAN thay `?v=` — rfb.js la ES module
+        tu `import` module con bang duong TUONG DOI; `?v=` chi o tep goc khong
+        truyen xuong con, nen co the tron ban cu/moi tu Cloudflare. Nang noVNC =
+        doi ten thu muc. -#}
+    import RFB from "{{ url_for('static', path='vps/novnc-1.7.0/core/rfb.js') }}";
 
     const khung = document.getElementById("khung");
     const tt = document.getElementById("tt");

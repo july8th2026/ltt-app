@@ -383,3 +383,23 @@ def test_thanh_tren_workspace_noi_tren_nhan_the():
     z_top = max(int(z) for z in re.findall(r"\.market-top\{z-index:(\d+)\}", CSS))
     z_badge = max(int(z) for z in re.findall(r"\.market-badge\{[^}]*z-index:(\d+)", CSS))
     assert z_top > z_badge
+
+
+# ── 12. P1-15: cache-bust cho tài sản ngoài `TAI_SAN_CO_VERSION` ────────────
+
+def test_novnc_nap_tu_thu_muc_mang_phien_ban():
+    """ES module con `import` tương đối ⇒ `?v=` ở tệp gốc không truyền xuống.
+    Phiên bản phải nằm trong ĐƯỜNG DẪN thư mục."""
+    tpl = (GOC / "server" / "templates" / "vps_console.html").read_text(encoding="utf-8")
+    m = re.search(r"path='vps/(novnc-[0-9.]+)/core/rfb\.js'", tpl)
+    assert m, "vps_console.html phải nạp rfb.js từ thư mục noVNC có phiên bản"
+    assert (GOC / "server" / "static" / "vps" / m.group(1) / "core" / "rfb.js").is_file()
+    assert not (GOC / "server" / "static" / "vps" / "novnc").exists()
+
+
+def test_tai_san_sqladmin_deu_mang_phien_ban_goi():
+    base = (GOC / "server" / "admin_templates" / "sqladmin" / "base.html").read_text(encoding="utf-8")
+    goi = re.findall(r"\{\{ url_for\('admin:statics', path='[^']+'\) \}\}(\?v=\{\{ sqladmin_ver \}\})?", base)
+    assert goi and all(goi), "mọi tài sản admin:statics phải có ?v={{ sqladmin_ver }}"
+    admin = (GOC / "server" / "admin.py").read_text(encoding="utf-8")
+    assert 'sqladmin_ver=__import__("sqladmin").__version__' in admin

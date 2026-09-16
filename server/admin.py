@@ -1588,7 +1588,7 @@ def setup_admin(app, *, session_secret: str) -> bool:
     # cũ tới hết TTL của Cloudflare (CLAUDE.md quy tắc 6).
     from server.routes.admin._chung import dieu_huong as _dh
     admin.templates.env.globals.update(asset_ver=_asset_ver(), _=__import__("server.templating").templating.templates.env.globals["_"],
-                                       adm_nav=_dh("tong_quan", apps=getattr(app.state, "loaded_apps", ()))["thanh_ben"])
+                                       adm_nav=_dh("tong_quan", apps=getattr(app.state, "loaded_apps", ()))["thanh_ben"], sqladmin_ver=__import__("sqladmin").__version__)
     admin.add_view(UserAdmin)
     admin.add_view(CreditEntryAdmin)
     admin.add_view(GrantCreditView)
