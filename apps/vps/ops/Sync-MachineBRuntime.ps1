@@ -25,8 +25,20 @@ if ($MachineBHost -notmatch '^[A-Za-z0-9.-]{1,253}$' -or
 }
 
 $destinationPath = [IO.Path]::GetFullPath($Destination)
-$repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\..'))
-if ($destinationPath.StartsWith($repoRoot, [StringComparison]::OrdinalIgnoreCase)) {
+# The script also runs from a copy outside any repository (Scheduled Task under
+# C:\LTTPlatform\tools\vps). A fixed '..\..\..' then resolves to the drive root
+# and rejects every destination (measured 16/09), so find a real Git root.
+$repoRoot = $null
+$probe = $PSScriptRoot
+while ($probe) {
+    if (Test-Path -LiteralPath (Join-Path $probe '.git')) { $repoRoot = $probe; break }
+    $parentDir = Split-Path $probe -Parent
+    if ($parentDir -eq $probe) { break }
+    $probe = $parentDir
+}
+if ($repoRoot -and $destinationPath.StartsWith(
+        ([IO.Path]::GetFullPath($repoRoot).TrimEnd('\') + '\'),
+        [StringComparison]::OrdinalIgnoreCase)) {
     throw 'Machine B runtime must live outside the source repository'
 }
 $parent = Split-Path $destinationPath -Parent
