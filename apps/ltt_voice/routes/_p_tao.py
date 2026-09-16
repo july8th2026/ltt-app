@@ -165,11 +165,14 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
                     # không có nút — `manifest.py` gọi đó là "một lời hứa thành
                     # một lỗi".
                     phat_dan_bat=_p_phat_dan.bat_phat_dan(),
-                    # Các nấc tốc độ lấy từ `toc_do.CAC_NAC` chứ không gõ lại
-                    # trong template: một danh sách chép ra hai chỗ sẽ lệch, và
-                    # chỗ lệch là chỗ giao diện mời một giá trị mà `hop_le` ép
-                    # về giá trị khác — im lặng.
-                    cac_nac_toc_do=_toc_do.CAC_NAC,
+                    # Khoảng/bước/vạch của thanh kéo tốc độ lấy từ `toc_do` chứ
+                    # (`speed` min/max): hai bản chép ra hai chỗ sẽ lệch, và chỗ
+                    # lệch là chỗ giao diện mời một giá trị mà `hop_le` ép về giá
+                    # trị khác — im lặng.
+                    toc_do_min=_toc_do.TOC_DO_MIN,
+                    toc_do_max=_toc_do.TOC_DO_MAX,
+                    toc_do_buoc=_toc_do.TOC_DO_BUOC,
+                    toc_do_moc=_toc_do.MOC_THANH_KEO,
                     du_an_ds=du_an_ds,
                     duong_nghe=duong_nghe,
                     loai_giong=loai_giong,

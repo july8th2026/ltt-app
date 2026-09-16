@@ -45,10 +45,17 @@ def test_hong_thi_TRA_NGUYEN_BAN_chu_khong_nem():
     assert toc_do.ap_dung(rac, 1.5) == rac
 
 
-def test_cac_nac_deu_nam_trong_khoang():
-    for n in toc_do.CAC_NAC:
-        assert toc_do.hop_le(n) == n, f"nac {n} bi `hop_le` ep sang gia tri khac"
-    assert 1.0 in toc_do.CAC_NAC, "phai co nac 'khong doi'"
+def test_moi_buoc_thanh_keo_deu_nam_trong_khoang_va_KHONG_bi_ep():
+    """16/09/2026: web là thanh kéo bước 0,05 (thay 6 nút rời). Mọi giá trị
+    thanh kéo sinh ra phải đi qua `hop_le` NGUYÊN VẸN — nếu không, giao diện
+    hiện 1,05× mà job chạy một tốc độ khác, im lặng."""
+    n = round((toc_do.TOC_DO_MAX - toc_do.TOC_DO_MIN) / toc_do.TOC_DO_BUOC)
+    for i in range(n + 1):
+        v = round(toc_do.TOC_DO_MIN + i * toc_do.TOC_DO_BUOC, 2)
+        assert toc_do.hop_le(v) == v, f"buoc {v} bi `hop_le` ep sang gia tri khac"
+    assert 1.0 in toc_do.MOC_THANH_KEO, "phai co vach 'khong doi'"
+    for m in toc_do.MOC_THANH_KEO:
+        assert toc_do.TOC_DO_MIN <= m <= toc_do.TOC_DO_MAX
 
 
 def test_yeu_cau_doc_toc_do_va_KHONG_tin_dau_vao():

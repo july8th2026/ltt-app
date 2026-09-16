@@ -316,6 +316,26 @@ def test_studio_KHONG_ve_dieu_khien_bi_cam(khach):
         "lay mau ma Q119 khoa. Doc docstring phep kiem nay truoc khi go no.")
 
 
+def test_studio_toc_do_la_THANH_KEO_theo_hang_so_chung_voi_API(khach):
+    """16/09/2026 (chủ dự án): thanh kéo bước 0,05 thay 6 nút rời.
+
+    ⛔ min/max PHẢI là `toc_do.TOC_DO_MIN/MAX` — cùng số ToolSpec API khai cho
+       `speed`. Một khoảng gõ tay trong template là hai nguồn lệch nhau."""
+    import re
+
+    from apps.ltt_voice import toc_do
+    client, _uid = khach
+    html = client.get("/ltt-voice").text
+    m = re.search(r'<input type="range" name="toc_do" id="lv-toc-do"\s+'
+                  r'min="([^"]+)" max="([^"]+)"\s+step="([^"]+)"', html)
+    assert m, "khong thay thanh keo toc do"
+    assert (float(m.group(1)), float(m.group(2)), float(m.group(3))) == (
+        toc_do.TOC_DO_MIN, toc_do.TOC_DO_MAX, toc_do.TOC_DO_BUOC)
+    assert "data-tocdo=" not in html, "nut toc do roi cu phai go"
+    for moc in toc_do.MOC_THANH_KEO:
+        assert f'<option value="{moc}"' in html
+
+
 # ── CSRF: bánh cóc cho một lỗ đã sống từ ngày phát hành ──────────────────────
 
 #: MỌI cửa POST của app, kèm dữ liệu tối thiểu để nó đi tới bước kiểm CSRF.

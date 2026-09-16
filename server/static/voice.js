@@ -1849,15 +1849,29 @@
        tep (`apps/ltt_voice/toc_do.py`). Day khong phai `playbackRate` cua
        trinh phat — tep tai ve cung phai doi theo, neu khong thi cai khach
        nghe va cai khach nhan la hai thu khac nhau. */
+    /* 16/09/2026: THANH KEO buoc 0,05 thay 6 nut roi. `input[type=range]` da
+       mang `name="toc_do"` nen form gui thang gia tri; o day chi hien so va
+       `aria-valuetext` (trinh doc man hinh doc "1,25×" thay vi "1.25"). */
     var oTocDo = document.getElementById("lv-toc-do");
-    var nutTocDo = document.querySelectorAll("[data-tocdo]");
-    for (var k = 0; k < nutTocDo.length; k++) {
-      (function (nut) {
-        nut.addEventListener("click", function () {
-          if (oTocDo) oTocDo.value = nut.dataset.tocdo || "1.0";
-          batNut(nut);
-        });
-      })(nutTocDo[k]);
+    var oTocDoSo = document.getElementById("lv-toc-do-so");
+    var nutTocDoGoc = document.getElementById("lv-toc-do-dat-lai");
+    function hienTocDo() {
+      if (!oTocDo) return;
+      var v = parseFloat(oTocDo.value);
+      if (!isFinite(v)) v = 1;
+      var chu = (Math.round(v * 100) / 100).toString() + "×";
+      if (oTocDoSo) oTocDoSo.textContent = chu;
+      oTocDo.setAttribute("aria-valuetext", chu);
+    }
+    if (oTocDo) {
+      oTocDo.addEventListener("input", hienTocDo);
+      hienTocDo();
+    }
+    if (nutTocDoGoc && oTocDo) {
+      nutTocDoGoc.addEventListener("click", function () {
+        oTocDo.value = "1";
+        hienTocDo();
+      });
     }
 
     /* ── Ngon ngu kich ban (Tu dong / VI / EN) — dieu khien bo loc lan (D002) ─

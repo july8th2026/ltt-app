@@ -139,19 +139,25 @@
            SAI: Q119 nêu đích danh `temperature`/`top_k`/`top_p`/
            `repetition_penalty`/`repetition_window`, không có tốc độ.
 
-        Các nấc RỜI RẠC, không thanh trượt: một thanh trượt mời khách dừng ở
-        1,07× — chênh lệch không ai nghe ra nhưng vẫn tốn một lượt ffmpeg.
+        THANH KÉO bước 0,05 (chủ dự án chốt 16/09/2026, thay 6 nút rời). Khoảng,
+        bước và vạch mốc đến từ `toc_do.py` — cùng TOC_DO_MIN/MAX mà API khai.
+        Vẫn là `name="toc_do"` / `id="lv-toc-do"`: `voice.js` gửi `oTd.value`
+        và `test_392` ghim tên trường.
       #}
-      <div class="lv-st-o">
-        <span class="eyebrow">{{ _("Tốc độ đọc") }}</span>
-        <div class="lv-loc-nhom" role="group" aria-label="{{ _('Tốc độ đọc') }}">
-          {% for n in cac_nac_toc_do %}
-            <button type="button" class="lv-loc-nut{{ ' on' if n == 1.0 }}"
-                    aria-pressed="{{ 'true' if n == 1.0 else 'false' }}"
-                    data-tocdo="{{ n }}">{{ "%g"|format(n) }}×</button>
-          {% endfor %}
+      <div class="lv-st-o lv-toc-do">
+        <label class="eyebrow" for="lv-toc-do">{{ _("Tốc độ đọc") }}</label>
+        <div class="lv-toc-do-hang">
+          <input type="range" name="toc_do" id="lv-toc-do"
+                 min="{{ toc_do_min }}" max="{{ toc_do_max }}"
+                 step="{{ toc_do_buoc }}" value="1.0" list="lv-toc-do-moc"
+                 aria-valuetext="1×">
+          <output id="lv-toc-do-so" for="lv-toc-do">1×</output>
+          <button type="button" class="btn sm ghost" id="lv-toc-do-dat-lai"
+                  title="{{ _('Về tốc độ gốc') }}">1×</button>
         </div>
-        <input type="hidden" name="toc_do" id="lv-toc-do" value="1.0">
+        <datalist id="lv-toc-do-moc">
+          {% for m in toc_do_moc %}<option value="{{ m }}" label="{{ '%g'|format(m) }}×"></option>{% endfor %}
+        </datalist>
         <small class="dim">{{ _("Đổi sau khi tạo xong, giữ nguyên cao độ. Tiền tính theo bản gốc, không theo bản đã tăng tốc.") }}</small>
       </div>
 

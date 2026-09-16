@@ -103,10 +103,18 @@ log = logging.getLogger(__name__)
 TOC_DO_MIN = 0.5
 TOC_DO_MAX = 2.0
 
-#: Các nấc bày ra giao diện. Rời rạc chứ không phải thanh trượt liên tục: một
-#: thanh trượt mời khách dừng ở 1,07× — một con số không ai nghe ra khác biệt
-#: nhưng vẫn tốn một lượt ffmpeg.
-CAC_NAC = (0.75, 0.85, 1.0, 1.15, 1.25, 1.5)
+#: Bước của THANH KÉO trên web (chủ dự án chốt 16/09/2026, thay 6 nút rời
+#: 0,75/0,85/1/1,15/1,25/1,5). 0,05 chứ không liên tục: lý do cũ của nút rời —
+#: "một thanh trượt mời khách dừng ở 1,07×, chênh không ai nghe ra" — vẫn đúng,
+#: và bước 0,05 giữ nó đúng mà vẫn cho chọn mịn hơn sáu nấc.
+#:
+#: ⭐ Chỉ là bước của GIAO DIỆN. API (`speed`) nhận mọi số trong
+#:    [TOC_DO_MIN, TOC_DO_MAX] và `hop_le` không làm tròn — cùng một đường hậu
+#:    kỳ, nên chất lượng chủ dự án đã nghe qua API là chất lượng của web.
+TOC_DO_BUOC = 0.05
+
+#: Vạch mốc trên thanh kéo (`<datalist>`) — gợi ý, KHÔNG giới hạn giá trị.
+MOC_THANH_KEO = (0.75, 1.0, 1.25, 1.5)
 
 #: Dưới ngưỡng này coi như không đổi và BỎ QUA hẳn — không gọi ffmpeg, không
 #: chép tệp. Một lượt kéo giãn "1,00×" vẫn giải mã và mã hoá lại toàn bộ sóng âm.
