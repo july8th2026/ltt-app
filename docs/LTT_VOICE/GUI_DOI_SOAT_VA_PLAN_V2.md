@@ -219,6 +219,32 @@ qua route của app. ⇒ Voice không được gì từ R2, còn mất dữ li�
 | `deploy/windows/backup.ps1` gom `data\voice_goc` + `data\files\voice` (trừ `out\`) | XONG; chạy thử trên thư mục tạm bắt được lỗi đường dẫn 8.3 — đã sửa |
 | Cụm test chạm `storage`/`backup.ps1` | 1288 passed, 10 skipped |
 
+### Tiến độ code trước gate tổng (16/09/2026)
+
+| Wave | Việc | Commit | Bằng chứng |
+|---|---|---|---|
+| W3' | một luật phân loại `tham_chieu.loai_giong`; khối quản lý chỉ cho giọng của tôi | `476f9539` | test_532; đối chứng HEAD 5 đỏ |
+| W-KHO | `RoutedStorage` + công cụ chép + backup | `d1f92afa` | test_83; chạy thử production liệt kê 30 tệp |
+| W5' | thanh kéo tốc độ 0,5–2,0 bước 0,05 | `0fccc341` | test_347/392/530; Chrome thật: bàn phím 1→1,25→1→2 |
+| W4'/W5' | `/phat-dan` nhận `ngon_ngu` + `ma_loi`; nói rõ Nghe ngay phát 1× | `8c510816` | test_533; đối chứng HEAD trả 402 |
+| W5' | cuộn tới khung kết quả khi xong | `741757e6` | node --check; cụm studio |
+| W4' | Dự án "đọc tất cả" trả `ma_loi` | `5fdbbd43` | test_350/357 |
+| W4' (D004) | màn Giọng giữ giọng thiếu nhãn — cùng luật bộ chọn | `12334f61` | test_532 D004 |
+| W5' (D005) | `/ket-qua` trả `tuoi_hang_doi_s`/`muc_cho`; câu chờ + cảnh báo >60 s | `292d6ffb` | test_347 D005 |
+| D006 | `job_worker.app_khong_lan_nao_nhat` + `do_sau_khoi_dong` | `07e72360` | test_216; registry thật: cấu hình 14/09 lộ `ltt_voice` |
+| W6' (V01) | số đếm thật trên từng loại (2 màn) | `0ea493fd` | test_532 V01 |
+| W7' (D015) | Lịch sử gắn "Chờ lâu bất thường"; ngưỡng chung `hang_doi.py` | `f4c527c1` | test_348 D015 |
+| W8' | 6 kích thước × Studio/Giọng trên `studio_dev` (Chrome thật): 0 tràn ngang, CTA trong khung nhìn lúc tải ở cả 6, 0 console error, 0 request hỏng, 0 điều khiển thiếu nhãn | — | `scratchpad/w8_*.png` |
+
+**Không làm / chờ chủ dự án:**
+- **Nghe thử (`/nghe-thu-van-ban`) vẫn PHÁT khi lệch làn** (quyết định D006 cũ, `test_526` ghim) — prompt §9 nói BLOCK. Cần chủ dự án chọn.
+- **Mô tả `language` của API** nói "overrides detection" (sai từ D002). Sửa câu = đổi
+  `contract_hash` của `speech.ltt` ⇒ `check_api_compat` coi là BREAKING. Đã hoàn nguyên; chờ duyệt.
+- **Dự án không có ô tốc độ** — tính năng chưa có, không phải lỗi "bỏ qua".
+- **Nút Tạo dính đáy che khối Tốc độ** — thiết kế có chủ ý (§12: CTA luôn thấy); W8' đo CTA trong khung nhìn ở cả 6 kích thước.
+- **Ngoài phạm vi Voice (đã tách task chip):** ChatLTT giữ credit trước khi kiểm làn; ASV kiểm làn bằng `"."`.
+- **5 app bật mà không làn worker nào nhặt** (`autosubvideo`, `qualitylab`, `taoclipngan`, `upscalevideo`, `video_assembly` — cần `ffmpeg`) — cùng lớp lỗi với Voice 14/09; chủ dự án quyết thêm làn.
+
 ### Sau deploy (thứ tự BẮT BUỘC)
 
 1. `chep_tien_to_r2_ve_dia.py --tien-to voice/ --chep` (trước khi bật).
