@@ -3903,11 +3903,14 @@ button.lv-the-song.nghe-loi,.lv-chon-nghe.nghe-loi{
  * ⚠️ Nền dự phòng dùng `background-color` + bộ chọn `:not(...)`, KHÔNG đặt
  *    `background-image` cho mọi bìa — một luật như vậy đứng sau `.cover-ai-image`
  *    cùng độ đặc hiệu sẽ đè mất ảnh thật. */
-.market-cover:not(.cover-ai-image,.cover-ai-video,.cover-chat-and-prompt,.cover-automation,.cover-utilities,.cover-video,.cover-chat,.cover-ai-text),
-.appcard .cover:not(.cover-ai-image,.cover-ai-video,.cover-chat-and-prompt,.cover-automation,.cover-utilities,.cover-video,.cover-chat,.cover-ai-text){
+#market-grid .market-cover:not(.cover-ai-image,.cover-ai-video,.cover-chat-and-prompt,.cover-automation,.cover-utilities,.cover-video,.cover-chat,.cover-ai-text),
+#catalog-grid .appcard .cover:not(.cover-ai-image,.cover-ai-video,.cover-chat-and-prompt,.cover-automation,.cover-utilities,.cover-video,.cover-chat,.cover-ai-text){
   background-color:var(--surface-interactive);
   background-image:radial-gradient(60% 50% at 50% 55%,var(--brand-soft),transparent 70%),
     repeating-linear-gradient(90deg,transparent 0 10px,var(--border-subtle) 10px 12px)}
 .cover-video{background-image:url('/static/home-covers/video.png')}
 .cover-chat,.cover-ai-text{background-image:url('/static/home-covers/chat.png')}
-.appcard .cover{background-size:cover;background-position:center}
+#catalog-grid .appcard .cover{background-size:cover;background-position:center}
+/* ⚠️ Phạm vi #market-grid/#catalog-grid là BẮT BUỘC: `.appcard .cover` còn là bìa
+ * thẻ gói nạp (`nap.html`). Bản đầu không phạm vi đã đổi `/nap` 2,8% — bộ
+ * regression ảnh bắt được (tools/golden_ui_anh_mau.py). */

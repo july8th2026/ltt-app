@@ -278,6 +278,7 @@ Khung: 390×844 · 430×932 · 768×1024 · 1440×900 · 1920×1080 cho critical
 Progress: 35%
 
 - Screenshot regression: `tools/golden_ui_anh_mau.py` + `tests/visual/golden_ui/` (28 ảnh). Không dùng `@playwright/test` (kho không có, không thêm dependency): Playwright Python chụp khung nhìn với `mask` vùng động (giờ, id, mã tra cứu, cột thời gian sqladmin) + Pillow so pixel, ngưỡng 0,2%. Hai vùng chưa che lộ ra ở lần đo đầu (sát ngưỡng 0,199%/0,186%) ⇒ che đúng chỗ thay vì nới ngưỡng.
+- Công cụ đã **bắt một hồi quy thật** của chính chiến dịch: nền dự phòng ảnh bìa (P1-12) viết `.appcard .cover` không phạm vi ⇒ áp luôn vào bìa thẻ gói nạp, `/nap` lệch 2,8%/1,1%. Sửa: phạm vi `#market-grid`/`#catalog-grid`; chạy lại 28/28 PASS. (Commit `f594092c` mang lỗi, sửa ở commit kế — không amend.)
 Screenshot regression Playwright (`toHaveScreenshot`) cho critical screens; test pin a11y; L3 một lần trước bàn giao.
 
 ## P0 Issues
