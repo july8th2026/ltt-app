@@ -245,11 +245,28 @@ qua route của app. ⇒ Voice không được gì từ R2, còn mất dữ li�
 - **Ngoài phạm vi Voice (đã tách task chip):** ChatLTT giữ credit trước khi kiểm làn; ASV kiểm làn bằng `"."`.
 - **5 app bật mà không làn worker nào nhặt** (`autosubvideo`, `qualitylab`, `taoclipngan`, `upscalevideo`, `video_assembly` — cần `ffmpeg`) — cùng lớp lỗi với Voice 14/09; chủ dự án quyết thêm làn.
 
+### Ba quyết định chủ dự án duyệt 16/09/2026 (sau "Không làm / chờ")
+
+| Mục | Làm | Commit / thời điểm |
+|---|---|---|
+| Mô tả `language` API | câu đúng hành vi; golden + DEVELOPER_GUIDE sinh lại; CHANGELOG; `check_api_compat --accept` | `6203f9ae` |
+| Nghe thử lệch làn | CHẶN 400 trước lượt + GPU (D003-B) | `6699b23f`, test_526 đối chứng HEAD 200 |
+| Làn `ffmpeg` cho 5 app vô hình | `LTT_WORKER_POOLS=api:6, gpu+ffmpeg:1, voice:1` — đổi `gpu:1` thành `gpu+ffmpeg:1`, KHÔNG thêm worker (số worker có GPU giữ 1, không tăng tải 10 lõi; giống worker đa năng trước 14/09). `app_vo_hinh` ⇒ `[]`. Đo: 0 job kẹt, lượt dùng cuối tháng 8 ⇒ lỗi tiềm ẩn | gộp vào lượt restart của deploy (bước 2 dưới) — VM 204 VPS đang dựng, phải hỏi phiên VPS |
+
+### Trước gate tổng
+
+- Gộp `codex/vps-v4-release-r1` (`b1593e3c`, đang chạy production): XONG `30f1acbb`.
+- **Chờ `codex/vps-v4-release-r2`** (r1 + R14/R18/R19) — phiên VPS nhắn SHA; gộp r2
+  rồi MỚI chạy gate, để gate phán trên đúng cây deploy.
+
 ### Sau deploy (thứ tự BẮT BUỘC)
 
+0. Hỏi phiên VPS (VM 204 / job VPS đang chạy) trước mọi restart worker.
 1. `chep_tien_to_r2_ve_dia.py --tien-to voice/ --chep` (trước khi bật).
-2. `app.env`: `LTT_STORAGE_LOCAL_PREFIXES=voice/` → nạp env → restart Web + Worker
-   **khi 0 job running + 0 lease `mode='job'`** (script kiểm có sẵn).
+2. `app.env`: `LTT_STORAGE_LOCAL_PREFIXES=voice/` **và** `LTT_WORKER_POOLS=api:6, gpu+ffmpeg:1, voice:1`
+   → nạp env → restart Web + Worker **khi 0 job running + 0 lease `mode='job'`**
+   (script kiểm có sẵn). Sau restart: log worker có `['api','gpu','ffmpeg']` và
+   `['api','voice']`; `do_sau_khoi_dong.app_vo_hinh` ⇒ `[]`.
 3. Chạy lại bước 1 (nhặt tệp ghi vào R2 trong khoảng chuyển giao).
 4. Ghi danh lại 25 giọng kho chung từ `data\voice_goc\kho_chung` (giữ `public_id`).
 5. **Duyệt license** 25 giọng (`tools/soat_giong.py duyet … --ly-do`).
