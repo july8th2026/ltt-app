@@ -2440,6 +2440,17 @@
       fd.append("text", oText.value);
       if (g.indexOf("v:") === 0) fd.append("voice_id", g.slice(2));
       else if (g.indexOf("m:") === 0) fd.append("preset", g.slice(2));
+      /* W4' 16/09: gui NGON NGU da khai toi cong lan - truoc day cua nay bo no. */
+      var oNnPd = document.getElementById("lv-ngon-ngu");
+      if (oNnPd) fd.append("ngon_ngu", oNnPd.value || "auto");
+      /* Toc do la HAU KY tren tep (ffmpeg atempo, giu cao do). Luong phat dan
+         la PCM tung khoi qua Web Audio - doi `playbackRate` o day se doi CA CAO
+         DO, nen KHONG gia vo ap dung: noi ro cho khach biet. */
+      var oTdPd = document.getElementById("lv-toc-do");
+      if (oTdPd && Math.abs(parseFloat(oTdPd.value) - 1) > 0.001) {
+        var ctd = nut.getAttribute("data-nhan-toc-do");
+        if (ctd) baoTin(ctd);
+      }
 
       dangPhat = true;
       nut.textContent = nhanDung;

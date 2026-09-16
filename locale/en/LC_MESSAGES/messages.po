@@ -18024,3 +18024,9 @@ msgstr "🧪 Run a test job"
 #~ msgid "✦ Tất cả"
 #~ msgstr "✦ All"
 
+
+msgid "Về tốc độ gốc"
+msgstr "Back to original speed"
+
+msgid "Nghe ngay phát ở tốc độ gốc 1×. Tốc độ bạn chọn được áp vào tệp khi bấm Tạo tiếng nói."
+msgstr "Listen now plays at the original 1× speed. The speed you chose is applied to the file when you click Generate speech."
