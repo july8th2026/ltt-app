@@ -32,9 +32,9 @@ nào < 88 · critical UI xác minh ở mức render thật (E3).
 | Bộ quét | `node tools/golden_ui_quet.mjs --cau-hinh routes.json --ra <dir> [--khung ...]` — HTTP, ảnh toàn trang, console, request hỏng, tràn ngang, axe WCAG 2.2 AA, h1/main/lang, ô chạm, ô nhập <16px |
 
 ## Overall Progress
-73%
+77%
 
-(Trọng số: P0 5 · P1 10 · P2 15 · P3 15 · P4 20 · P5 15 · P6 10 · P7 10. Tính lại 17/09 sau P1-01/P1-14/P1-15/P1-06-07: 5 + 10 + 75%·15 + 60%·15 + 70%·20 + 75%·15 + 90%·10 + 35%·10 = 5+10+11,25+9+14+11,25+9+3,5 = **73%** (sau P2). Con số 70% ghi ngày 16/09 cao hơn phép tính lúc đó (65,5%) — nay khớp phép tính. Chưa có L3, Phase 7 mới có regression ảnh.)
+(Trọng số: P0 5 · P1 10 · P2 15 · P3 15 · P4 20 · P5 15 · P6 10 · P7 10. Tính lại 17/09 sau P1-01/P1-14/P1-15/P1-06-07: 5 + 10 + 75%·15 + 60%·15 + 75%·20 + 80%·15 + 90%·10 + 60%·10 = 5+10+11,25+9+15+12+9+6 = **77%** (sau đo lại toàn hệ + Final Report, trước L3). Con số 70% ghi ngày 16/09 cao hơn phép tính lúc đó (65,5%) — nay khớp phép tính. Chưa có L3, Phase 7 mới có regression ảnh.)
 
 | Phase | % | Trạng thái |
 |---|---|---|
@@ -42,10 +42,10 @@ nào < 88 · critical UI xác minh ở mức render thật (E3).
 | 1 Baseline Audit | 100 | ✅ |
 | 2 Golden Design System | 75 | 🟡 token màu/chữ/khoảng/bóng ✅ · lớp tiện ích `u-*`/`o-trong` thay 261 `style=""` ✅ · P2-02/05/06 ✅ · còn P2-04 (emoji lẫn SVG) |
 | 3 Shared UI Components | 60 | 🟡 `_ui.html` (trạng thái/tiến độ/thể loại + `bang_trang_thai_js`) ✅ · `_menu_tai_khoan.html` ✅ · `.ui-state` ✅ · `o_chon_tep` phủ mọi upload hướng khách còn trần ✅ · còn thẻ/biến thể nút-badge theo trang |
-| 4 Critical Pages | 70 | 🟡 Error ✅ · Jobs 🟡 · Billing 🟡 · Auth 🟡 · Shell/Workspace 🟡 · Public ⏳ |
-| 5 Remaining Pages & Apps | 75 | 🟡 Admin ✅ · sqladmin ✅ · Status ✅ · Apps a11y ✅ · VPS/Nexus tương phản ✅ · chip thể loại + ảnh bìa ✅ · Máy của tôi ✅ · nhãn tiếng Anh SPA/canvas ✅ · còn tài liệu dev tiếng Anh (OOS-09) |
+| 4 Critical Pages | 75 | 🟡 Error ✅ · Jobs 🟡 · Billing 🟡 · Auth 🟡 · Shell/Workspace 🟡 · Public ⏳ |
+| 5 Remaining Pages & Apps | 80 | 🟡 Admin ✅ · sqladmin ✅ · Status ✅ · Apps a11y ✅ · VPS/Nexus tương phản ✅ · chip thể loại + ảnh bìa ✅ · Máy của tôi ✅ · nhãn tiếng Anh SPA/canvas ✅ · còn tài liệu dev tiếng Anh (OOS-09) |
 | 6 Responsive & Accessibility | 90 | 🟡 448 phép đo 4 khung axe 0 · 430×932 critical ✅ · bàn phím critical ✅ · còn: đo trên URL công khai (cần deploy) |
-| 7 Visual Regression & Final QA | 35 | 🟡 regression ảnh 28 mẫu ✅ · L3 một lần ⏳ (sau khi mọi pha xong) · gộp `main` + deploy + URL công khai ⏳ |
+| 7 Visual Regression & Final QA | 60 | 🟡 regression ảnh 28 mẫu ✅ · đo lại toàn hệ 448 ✅ · Final Report ✅ · L3 ⏳ · gộp `main` + deploy + URL công khai ⏳ |
 
 ## Current Baseline
 
@@ -418,4 +418,85 @@ Không có.
 
 ## Next Action
 
-Hoàn tất các P1 còn lại (P1-01 menu tài khoản, P1-14 inline style dev/VPS/Nexus/hướng dẫn, P1-06/07 chuỗi JS, P1-15 cache-bust noVNC/sqladmin) bằng test nhắm; đo lại toàn hệ; rồi L3 MỘT lần → gộp `main` → deploy → nghiệm thu trên `https://app.lttstudios.com`.
+L3 MỘT lần trên HEAD sau khi hoà `main` (`5d843ac8`) → đỏ thì sửa tại chỗ + `gate.py --doi --tu <sha L3>` → gộp `main` → báo phiên khác → deploy → nghiệm thu trên `https://app.lttstudios.com` → điền 2 dòng ⏳ của Final Report. Nợ UI còn lại (bảng dưới) là vòng sau, không chặn phát hành phần đã làm.
+
+---
+
+# FINAL REPORT — 17/09/2026
+
+## Release status: **NOT READY** (theo Final Release Gate của đề bài)
+
+| Điều kiện | Trạng thái | Bằng chứng / còn thiếu |
+|---|---|---|
+| P0 = 0 | ✅ | P0-01 canvas màn đen, P0-02 trang lỗi theo mã (E3) |
+| Critical P1 = 0 | ✅ | P1-01..16 đóng; P1-07 phần NỘI DUNG tài liệu dev tiếng Anh chuyển OOS-09 |
+| Critical browser tests pass | ✅ | EV-31: 448 phép đo 4 khung; regression ảnh 28/28 PASS (EV-30) |
+| Responsive critical pass | ✅ | 390/430/768/1440/1920 — tràn ngang 0 |
+| Accessibility critical resolved | ✅ | axe serious/critical **436 → 0** (112 route × 4 khung) |
+| i18n major inconsistencies | 🟡 | UI xong (EV-26); nội dung dev tiếng Anh (OOS-09), nhãn trường sqladmin thô (OOS-12) |
+| No critical console errors | ✅ | 0 trên 448 phép đo; OOS-07 lỗi sẵn có của gói sqladmin ở trang edit |
+| Visual regressions reviewed | ✅ | 2 hồi quy thật bắt được và xử lý (`/nap` 2,8%; `home-khach` 0,243% chia đôi tới `z-index`) |
+| Business behavior preserved | ✅ | form/hx/route/`value` giữ nguyên — chốt test (billing, sqladmin `save`, upload `name/accept/required`) |
+| Gate L3 trên HEAD | ⏳ | chạy sau khi ghi báo cáo này |
+| Xác minh trên URL công khai | ⏳ | sau deploy |
+| Overall ≥ 93 · critical ≥ 95 · không họ < 88 | ❌ | **≈ 88,6 · ≈ 92 · 4 họ < 88** (Dev 87, Admin 87, sqladmin 86, Apps 85) |
+
+## Baseline score → Final score
+
+**Overall 72 → ≈ 88,6** · **Critical 76 → ≈ 92** — bảng từng họ ở mục *Điểm hiện tại — 17/09* (Current Baseline). Chấm bảo thủ: A11y/Responsive theo số đo máy (E3), còn lại theo ảnh chụp; không làm tròn lên để chạm mục tiêu.
+
+## What changed (`phien/golden-ui`, BASE `efa9188c`)
+
+- **Token & hệ thiết kế**: `--brand-fill` 4,84:1, `--text-muted` AA, `--status-info`, thang space/chữ/shadow/motion; DL-002 một bảng màu ấm (kể cả vạch/nút khu VPS/Nexus trước lấy teal manifest); DL-003 một font; lớp tiện ích `u-*`/`o-trong`; quy ước link (P2-02), trạng thái rỗng (P2-05), chuyển động (P2-06).
+- **Component**: `_ui.html` (trạng thái/tiến độ/thể loại + `bang_trang_thai_js`), `_menu_tai_khoan.html` (một menu cho hai khung), `.ui-state`, `o_chon_tep` phủ mọi upload hướng khách.
+- **Màn**: error, auth ×6, billing ×4, jobs ×3, workspace, status, developer, VPS, Nexus (Máy của tôi dựng lại bằng lớp), admin (link, số kiểu Việt, tab), sqladmin list/layout/edit/create/details/xoá, 16 app template, 4 SPA (build lại, `build-meta` khớp).
+
+## Critical improvements
+
+1. Agent Canvas không còn màn đen cho người dùng mới (P0-01).
+2. Trang lỗi có đường phục hồi đúng mã (P0-02).
+3. Voice "Chi tiết" trước KHÔNG làm gì — nay mở bằng chuột và bàn phím.
+4. `/taoanh/thumbnail`: chọn tệp xong vẫn báo "Chưa chọn tệp" (`chon_tep.js` gắn lại vào phần tử đã bị htmx thay) — sửa.
+5. taoanh/ommi: poll job ghi đè chữ đã dịch bằng `running · 20%` — sửa.
+6. axe serious/critical 436 → 0 toàn hệ, 4 khung; `style=""` render 1.844 → 921.
+
+## Thay đổi hành vi UI có chủ đích (không phải nghiệp vụ)
+
+- Canvas `fromV3` điền mảng rỗng `frames/notes/comments` khi tài liệu máy chủ thiếu.
+- Voice: thẻ giọng không còn nhận focus; điều khiển bàn phím là nút "Chi tiết".
+- Lịch sử đơn nạp phân biệt 5 trạng thái.
+- sqladmin: nút lưu là `<button>` (cùng `name/value`) — chữ tiếng Việt, "Huỷ" thành nút phụ.
+- Upload ở audio-pause/transcript/video-assembly/Voice/thumbnail hiện hộp chọn tệp chung thay nút native.
+
+## Tests performed
+
+- `tests/test_1270_golden_ui_nen_tang.py` (~95 test) + cập nhật chốt theo ý định: `test_106/107/109/124/311/323/500`, vitest autosub `StudioShell`.
+- Test nhắm theo cụm (EV-27/29/32): taoanh, thumbnail, ommi, upscale, canvas build, autosub, developer portal, `o_chon_tep`, Nexus, transcript, audio-pause, video-assembly, Voice, VPS, admin — xanh.
+- vitest: canvas 62/62, autosub 15/15, ommi 28/28.
+- ⚠️ Bài học ghi lại: `test_124` đỏ từ commit DL-004 (16/09) mà không test nhắm nào chạm tới cho tới 17/09 — L3 là lưới cuối.
+
+## Browser evidence
+
+`baseline/p1,p2` (224) → `sau/v1` (224) → `sau/v2` (448) → **`sau/v3` (448)**; `style/truoc↔sau` (60 ảnh trùng pixel); `chon_tep_thu.mjs`; `sqa_luu.mjs`; `soi_tieng_anh.mjs` (đối chứng dương/âm); `doi_css.mjs` (chia đôi CSS theo commit); `tests/visual/golden_ui/` (28 ảnh mẫu).
+
+## Remaining UI debt (vòng sau)
+
+| Hạng mục | Họ | Ghi chú |
+|---|---|---|
+| P2-04 emoji lẫn SVG trong thẻ app/menu | Workspace, Apps | cần chọn MỘT bộ icon — đáng một Decision Lock |
+| Mỗi SPA một ngôn ngữ thị giác | Apps | gom về token/component chung |
+| Bảng admin dày, admin chưa qua `_()` | Admin | admin chỉ tiếng Việt — ưu tiên thấp |
+| Màn máy VPS (chi tiết/cài đặt/console) chưa soi | VPS | seed máy chủ soi chưa có máy VPS |
+| Nhãn trường sqladmin thô | sqladmin | `server/admin.py` (OOS-12) |
+
+## Out-of-scope issues (chi tiết ở mục Out-of-Scope Findings)
+
+🔴 **OOS-04** lộ một phần token Proxmox vào transcript cục bộ — cân nhắc xoay. 🔴 **OOS-08** Nexus `ticket_digest` UNIQUE làm hỏng nhật ký truy cập từ dòng thứ hai. 🔴 **OOS-12** sqladmin hiện `password_hash`. Còn: OOS-01/02/03/05/06/07/09/10/11.
+
+## Rollback notes
+
+Mọi thay đổi là template/CSS/JS trình bày + bundle SPA; revert theo commit trên `phien/golden-ui` là đủ. `server/static/vps/novnc` đổi tên thành `novnc-1.7.0` — revert commit `cf859c89` đưa đường cũ về cùng lúc với template. Không migration, không đổi dữ liệu.
+
+## Recommended next step
+
+Chủ sản phẩm quyết OOS-12 (ẩn `password_hash`) và OOS-08 (ràng buộc Nexus) trước — đó là rủi ro thật, không phải giao diện. Sau đó vòng Golden UI 2: Decision Lock bộ icon (P2-04) + gom 4 SPA về component chung để kéo Apps/Dev/Admin lên ≥ 88.
