@@ -12,6 +12,25 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-09-17 — LTTCODE: "Đăng nhập LTT Studios" + tìm kiếm web qua SearXNG riêng
+
+- **Đăng nhập** (`apps/lttcode/dang_nhap.py`, `routes_dang_nhap.py`): PKCE S256 +
+  loopback `127.0.0.1`. `/lttcode/authorize` tự chuyển `/login?next=` **giữ query**
+  (`require_login` làm rơi query); form Cho phép trả một TRANG dẫn về loopback thay vì
+  302 vì CSP `form-action 'self'` chặn redirect của form ra origin khác. Mã một lần 120 s,
+  bảng mới `lttcode_auth_codes` (migration `7c2e5a91d4b3`), tiêu mã bằng UPDATE có điều
+  kiện trước khi so verifier. Khoá cấp qua `devkeys.issue`: "LTTCODE – <máy>",
+  `tools:read, jobs:create, jobs:read`, 365 ngày. `/lttcode/revoke` = Bearer tự thu hồi.
+- **Tìm kiếm** (`tim_kiem.py`, `POST /lttcode/search`): Bearer khoá thiết bị, **miễn phí**
+  (chủ dự án 17/09), 20 lượt/phút + 300 lượt/ngày mỗi khoá, SearXNG `127.0.0.1:8888`
+  (`LTT_LTTCODE_SEARXNG_URL`), `categories=general,it`, không log truy vấn.
+- **SearXNG** trong WSL2 Ubuntu 26.04 (không chạy thẳng trên Windows — searxng#4485):
+  `tools/lttcode_searxng/` (cài/cập nhật idempotent, uWSGI, chỉ nghe loopback). Đã cài
+  `461f174`; đo: 68 kết quả / 7 engine / ~1,2 s; Wikipedia "access denied", DuckDuckGo
+  lúc được lúc CAPTCHA. **Chưa**: đăng ký task khởi động (`dang_ky_task.ps1`, chủ dự án
+  nhập mật khẩu) + kiểm sau khởi động lại máy (chủ dự án báo khi có dịp).
+- Test nhắm: `test_1302` (12) + `test_1303` (7); cả app `1300–1303` = 39 xanh.
+
 ## 2026-09-16 — LTTCODE: kênh cập nhật `apps/lttcode/` + tài liệu LTTCODE thành con trỏ (R0.9)
 
 - Thêm app ẩn `apps/lttcode/` (`surface="runtime"`, không sửa `server/` hay
