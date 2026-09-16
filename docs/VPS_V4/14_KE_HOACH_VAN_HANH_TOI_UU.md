@@ -137,8 +137,8 @@ bản production đang chạy phải là tổ tiên của SHA deploy.
 | # | Việc | Chặn bởi |
 |---|---|---|
 | G7b | Deploy R24 sau L2 `app:vps` trên SHA đã hoà `main`; kiểm `/vps` báo hết chỗ trên URL công khai | phiên Voice deploy xong |
-| G7c | Mạng trong máy (RDP công khai, egress IP OVH) sau khi chủ dự án cài Windows qua console | chủ dự án |
-| G8 | Dọn nhánh `codex/vps-v4-release-r1..r4`, worktree `wt-vps-release`, clone release cũ; retire worktree `D:\LTTSTUDIOSAPP-vps-v4` | G7b |
+| G7c | **NỢ — chủ dự án nhận 17/09, phiên này bỏ qua**: mạng trong máy (RDP `51.79.202.1:3389` từ Internet, egress đúng IP OVH, đường `10.50.0.x`) sau khi chủ dự án cài Windows qua console tài khoản sở hữu | chủ dự án |
+| G8 | **Xong 17/09**: gỡ worktree `wt-vps-release`, xoá nhánh `codex/vps-v4-release-r1..r4`, xoá 6 clone/gói release của phiên. Worktree `D:\LTTSTUDIOSAPP-vps-v4` giữ tới khi R24 lên production | G7b |
 
 Tiến độ phần mềm ≈ 95%. Mở bán lại cần R22 + R23. Sẵn sàng production đầy đủ vẫn
 chặn bởi Backup V2 CAPACITY_BLOCKED, restore drill và dual-WAN chưa kiểm.

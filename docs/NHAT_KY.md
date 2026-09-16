@@ -29,6 +29,7 @@
 - **Chủ dự án chốt: tạm dừng bán VPS mới.** Profile OVH `auto_acquire=false`, bỏ giỏ
   adopt (config v4; bản lùi `D:\LTTSTUDIOSAPP-runtime\ovh-profile-provider_config-before-pause-20260917.json`).
   Mở bán lại cần R22 (quyết định mua IP tự động + probe catalog chỉ đọc) và R23.
+- Nợ chủ dự án nhận: kiểm mạng trong máy sau khi cài Windows. Dọn nhánh/clone release r1–r4.
 - Chi tiết: `docs/VPS_V4/14_KE_HOACH_VAN_HANH_TOI_UU.md` §6.
 
 ## 2026-09-17 — Sửa L1/L2: không chạy test hai lần, dùng ngân sách worker, không chen `postgres_test`, L1 thu hẹp được
