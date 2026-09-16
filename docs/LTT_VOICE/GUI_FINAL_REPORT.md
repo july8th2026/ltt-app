@@ -77,3 +77,7 @@ Mật khẩu chỉ ở `C:\LTTPlatform\secrets\tai_khoan_thu.json`; phiên nào 
 Cổng: L2 `engine:cutclipshort,app:ltt_voice,server:web,cong_cu` trên `935f9bba` — bộ test PASS (464 tệp);
 bước `check_multiproc` đỏ vì một gate khác chạy `--khong-khoa` cùng CSDL `postgres_test`, chạy lại
 có khoá: 7 passed. Deploy `935f9bba` 03:14 — `nghiem_thu_deploy` 0/0/0, `/health/ready` 200.
+
+Deploy cuối **`a3de7c97`** 04:33 (sau L1 `--doi --tu 8c84d83f` PASS): `nghiem_thu_deploy` 0/0/0, `/health/ready` 200;
+E2E production nút nghe thử: 200, âm thanh `blob:` 4,3 s, 0 lỗi console/network (`GUI_BROWSER_ACCEPTANCE.md` §C).
+**Toàn bộ plan Voice GUI V2 + hai hạng mục 17/09 đã xong trên production.**

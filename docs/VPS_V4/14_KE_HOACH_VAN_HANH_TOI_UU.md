@@ -119,17 +119,28 @@ bản production đang chạy phải là tổ tiên của SHA deploy.
 | G1–G2 | R16, tài liệu 05/08/09/10, NHAT_KY, memory | commit nhánh |
 | G3 | hoà `main` 1df18b17, origin/main 40ac2848, ASV a0532a6c, prod 80319d0a, main 228f91cf (Voice V2, prod d5bd7b07), main 17759a7b; Q124 GitHub đổi số Q135; test VPS 1029/1030 | tổ tiên đã kiểm |
 | G4 | L3 `d8b02cd7` ĐỎ (12 test + 2 bánh cóc) ⇒ sửa tại chỗ `5abe2ace`; khép `--doi --tu d8b02cd7` trên `de331f8a` **PASS** (test_1259 cần token Máy B trong env) | `test-results/gates/`, `D:\LTTSTUDIOSAPP-runtime\l3-vps-v4-doi2.log` |
+| G5 | L2 xanh trên SHA deploy (`--doi --tu` bị gate từ chối vì delta chạm tệp dùng chung): `app:vps`, `app:auto_scan_video`, `cong_cu` PASS trên `ee5a5ef9`; ff `main` + `origin/main` | `test-results/gates/`, `l2-vps-v4-*.log` |
+| G6 | Deploy `ee5a5ef9` 17/09 03:28 (0 job/0 lease, EXITCODE 0, 83 s); `nghiem_thu_deploy` 0 lệch/0 thiếu/0 thừa; `/health/ready` 200 loopback + công khai; env Voice giữ nguyên; task đồng bộ Máy B đăng ký lại, chạy rc 0 | `C:\LTTPlatform\logs\deploy-20260917-032810.ket.txt` |
+| G7 | E2E live trên `d96b66f3` (Chrome thật qua CDP, chủ dự án đăng nhập): console **ĐẠT** (WS mở ≥30 s, thấy trình cài Windows Server, 0 lỗi console/request); bật trên VM đang chạy đồng bộ lại UI; khởi động lại + tắt mềm khi guest không nhận ACPI ⇒ PVE timeout, UI giữ **Đang chạy** khớp PVE, hiện nút Tắt cứng (R21 **ĐẠT**); tắt cứng có xác nhận ⇒ `qmstop` OK, UI Đã tắt; bật lại `WARNINGS: 1` coi là thành công (R19 **ĐẠT**) | `D:\LTTSTUDIOSAPP-runtime\e2e-shots\g7-*` |
 
-### Còn lại, theo phụ thuộc
+### Phát hiện G7 và quyết định (17/09)
 
-| # | Việc | Kiểm | Chặn bởi |
-|---|---|---|---|
-| G5 | L1 `gate.py --doi --tu d5bd7b07` (bản production) trên SHA deploy; ff cây chính + `origin/main` lên SHA đó | L1 xanh | các phiên không commit `main` (Voice đã hứa giữ) |
-| G6 | Deploy từ cây chính: báo phiên đang chạy, 0 job running / 0 lease, `deploy.lock` vắng; giữ env Voice (`LTT_WORKER_POOLS`, `LTT_STORAGE_LOCAL_PREFIXES`); `nghiem_thu_deploy.py` 3 chiều + `/health/ready` công khai; đăng ký task đồng bộ Máy B | nghiệm thu deploy | G5 |
-| G7 | E2E live (không sửa code): console qua cầu R20; khởi động lại / tắt mềm / **tắt cứng** (R21); đổi default OVH→Vultr→OVH không tạo máy; console + request lỗi trình duyệt; mạng trong máy sau khi chủ dự án cài Windows. Lỗi mới ⇒ sửa + test nhắm + L1 `--doi --tu <sha production>` + deploy lại | trình duyệt thật + đọc lại PVE/OVH/DB | G6 |
-| G8 | Dọn: nhánh `codex/vps-v4-release-r1..r4`, worktree `wt-vps-release`, clone release cũ; retire worktree `D:\LTTSTUDIOSAPP-vps-v4`; báo phiên Voice/ChatLTT SHA `main` mới | — | G7 |
+| # | Phát hiện | Xử lý |
+|---|---|---|
+| R22 | Tự mua IP chỉ bật khi có `adopt_ip_cart_id`; giỏ đã checkout ⇒ `404 Cart expired` ⇒ probe `OvhError` mỗi lượt, `ip`/`capacity` CRITICAL | **Chủ dự án chốt: tạm dừng bán VPS mới.** `provider_config.auto_acquire=false`, bỏ `adopt_ip_cart_id` (config v4, bản lùi ở runtime). Mở bán lại cần quyết định mua IP tự động + probe catalog `GET /order/catalog/formatted/ip` (chỉ đọc) |
+| R23 | Collector Máy B coi mapping `LTTMANAGED` là thừa, đòi IP gateway = 8+1 ⇒ `network` CRITICAL sau máy bán đầu tiên | Chặn mở bán lại; bản chạy ở `H:\PROXMOX` không phải git — sửa theo cổng thay đổi Máy B |
+| R24 | Trang `/vps` "còn chỗ" chỉ theo RAM/đĩa, lúc tạo mới kiểm IPv4/cổng | Sửa `75e1e0a5` + `test_1031` (đối chứng mã cũ 7 đỏ); chờ L2 + deploy |
+| — | Đổi default OVH→Vultr→OVH | Không chạy live: tài khoản thử là khách (403 admin) và Vultr 0401 chưa từng có health; đã có test tự động giữ ghim profile |
 
-Tiến độ phần mềm ≈ 88% (G1–G4 xong; G5–G8 còn). Sẵn sàng production đầy đủ vẫn
+### Còn lại
+
+| # | Việc | Chặn bởi |
+|---|---|---|
+| G7b | **Xong 17/09 05:33**: deploy `de2c1e9c` sau L1 `--doi --tu a3de7c97` PASS (lượt đầu đỏ `test_252` — test RAM chưa cho giới hạn IP/cổng; sửa test, chạy lại xanh); `nghiem_thu_deploy` 0/0/0; `/vps` công khai: 3 gói Hết chỗ, không còn form tạo, 0 lỗi console/request. Worktree `D:\LTTSTUDIOSAPP-vps-v4` đã gỡ | — |
+| G7c | **NỢ — chủ dự án nhận 17/09, phiên này bỏ qua**: mạng trong máy (RDP `51.79.202.1:3389` từ Internet, egress đúng IP OVH, đường `10.50.0.x`) sau khi chủ dự án cài Windows qua console tài khoản sở hữu | chủ dự án |
+| G8 | **Xong 17/09**: gỡ worktree `wt-vps-release`, xoá nhánh `codex/vps-v4-release-r1..r4`, xoá 6 clone/gói release của phiên. Worktree `D:\LTTSTUDIOSAPP-vps-v4` giữ tới khi R24 lên production | G7b |
+
+Tiến độ phần mềm ≈ 98% (còn nợ G7c của chủ dự án). Mở bán lại cần R22 + R23. Sẵn sàng production đầy đủ vẫn
 chặn bởi Backup V2 CAPACITY_BLOCKED, restore drill và dual-WAN chưa kiểm.
 
 ## 5. Bằng chứng E2E đã có (16/09)
