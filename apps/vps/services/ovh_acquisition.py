@@ -3,6 +3,7 @@
 This coordinator is not enabled in production until the signed provider driver,
 order-to-IP attribution and gateway address installation pass their tests.
 """
+import logging
 from datetime import datetime, timezone
 from ipaddress import IPv4Address
 from uuid import UUID
@@ -15,6 +16,8 @@ from apps.vps.services.backends.contracts import (
 )
 from apps.vps.tables import VpsExternalMutation, VpsInfrastructureProfile, VpsIp
 from platform_core.jobs import DangBan
+
+log = logging.getLogger(__name__)
 
 
 class UnexpectedBilling(BackendConflict):
@@ -186,7 +189,10 @@ def ensure_free_ip(db, profile, *, instance, gateway_row, provider, gateway,
             db.commit()
             try:
                 order_id = provider.checkout_cart(prepared.cart_id, expected=prepared)
-            except Exception:
+            except Exception as exc:
+                # Type name only: provider exceptions can carry credential-bearing bodies.
+                log.warning("OVH checkout failed (%s); recovering order by cart",
+                            type(exc).__name__)
                 order_id = provider.recover_order(
                     cart_id=prepared.cart_id, item_id=prepared.item_id)
             if type(order_id) is not int or order_id <= 0:
@@ -196,7 +202,8 @@ def ensure_free_ip(db, profile, *, instance, gateway_row, provider, gateway,
             db.commit()
         except (UnexpectedBilling, AcquisitionNeedsReview):
             raise
-        except Exception:
+        except Exception as exc:
+            log.warning("OVH order placement failed: %s", type(exc).__name__)
             review()
     elif not metadata.get("order_id"):
         # Crash after checkout may leave only the durable cart identity. Recover
@@ -206,7 +213,8 @@ def ensure_free_ip(db, profile, *, instance, gateway_row, provider, gateway,
         try:
             order_id = provider.recover_order(
                 cart_id=metadata["cart_id"], item_id=metadata["item_id"])
-        except Exception:
+        except Exception as exc:
+            log.warning("OVH order recovery failed: %s", type(exc).__name__)
             review()
         if type(order_id) is not int or order_id <= 0:
             review()
@@ -266,5 +274,6 @@ def ensure_free_ip(db, profile, *, instance, gateway_row, provider, gateway,
                                 provider_id=item.cidr, state="FREE")
     except (AcquisitionNeedsReview, OrderDeliveryPending):
         raise
-    except Exception:
+    except Exception as exc:
+        log.warning("OVH IP attribution failed: %s", type(exc).__name__)
         review()

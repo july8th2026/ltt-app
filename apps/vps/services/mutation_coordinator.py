@@ -6,10 +6,14 @@ This module owns its transaction boundary and is called only by worker jobs.
 """
 from __future__ import annotations
 
+import logging
+
 from sqlalchemy import update
 
 from apps.vps.services import mutation_journal as journal
 from apps.vps.tables import VpsInfrastructureProfile, VpsExternalMutation
+
+log = logging.getLogger(__name__)
 
 
 class MutationNeedsReview(RuntimeError):
@@ -49,7 +53,9 @@ def execute(db, *, operation_id, instance, step, request, mutate, readback):
         raise MutationNeedsReview("mutation requires explicit operator recovery")
     try:
         matches = readback() is True
-    except Exception:
+    except Exception as exc:
+        # Type name only: provider exceptions can carry credential-bearing bodies.
+        log.warning("mutation %s readback failed: %s", step, type(exc).__name__)
         review()
     if matches:
         guard()
@@ -75,7 +81,8 @@ def execute(db, *, operation_id, instance, step, request, mutate, readback):
         raise
     except MutationNeedsReview:
         raise
-    except Exception:
+    except Exception as exc:
+        log.warning("mutation %s request failed: %s", step, type(exc).__name__)
         review()
     journal.observed(db, row)
     db.commit()
