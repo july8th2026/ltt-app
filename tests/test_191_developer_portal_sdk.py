@@ -128,6 +128,33 @@ def test_a_key_is_created_and_revealed_exactly_once(portal):
     assert sorted(me.json()["scopes"]) == ["jobs:create", "tools:read"]
 
 
+def test_unrestricted_tools_are_visible_without_granting_write_scopes(portal):
+    _register(portal, "unrestricted@example.com")
+    page = portal.get("/developers/keys")
+    created = portal.post("/developers/keys", data={
+        "name": "read-only", "csrf_token": _csrf(page.text)})
+    token = re.search(r"<code>(ltt_sk_[^<]+)</code>", created.text).group(1)
+    listed = portal.get("/developers/keys")
+    assert "Mọi công cụ công khai đang mở" in listed.text
+    assert "Giới hạn công cụ không cấp thêm scope" in listed.text
+    me = portal.get(f"{API_V1_PREFIX}/me",
+                    headers={"Authorization": f"Bearer {token}"})
+    assert me.status_code == 200
+    assert sorted(me.json()["scopes"]) == ["jobs:read", "tools:read"]
+    assert me.json()["allowed_tools"] == []
+
+
+def test_tool_restriction_section_remains_visible_with_empty_catalog(portal, monkeypatch):
+    from server.routes.developer import _chung
+    monkeypatch.setattr(_chung, "build_catalog", lambda _config: [])
+    _register(portal, "empty-catalog@example.com")
+    page = portal.get("/developers/keys")
+    assert page.status_code == 200
+    assert "Giới hạn theo công cụ (tùy chọn)" in page.text
+    assert "Hiện chưa có công cụ trong catalog công khai" in page.text
+    assert 'name="allowed_tools"' not in page.text
+
+
 def test_a_post_without_a_csrf_token_changes_nothing(portal):
     _register(portal, "csrf@example.com")
     before = portal.get("/developers").text

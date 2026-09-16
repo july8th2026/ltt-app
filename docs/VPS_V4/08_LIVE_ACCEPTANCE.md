@@ -47,7 +47,7 @@ live cart `f99ebe5c` expires 2026-09-16T11:54:01Z.**
   with_tax_minor 239, fingerprint `3d6ddf49…69`, expires
   `2026-09-16T11:54:01Z`), recorded as `adopt_ip_cart_id` in the committed
   OVH profile provider_config.
-- [ ] Q125 automatic guarded checkout/payment and exact provider delivery via
+- [ ] Q130 automatic guarded checkout/payment and exact provider delivery via
   the paid web provisioning job. Finish integration before enabling; revalidate
   the existing cart and enforce the one-IP live limit, never blind-retry checkout.
 - [x] Install the fail-closed `ltt-gwnat` helper on the live gateway. Health

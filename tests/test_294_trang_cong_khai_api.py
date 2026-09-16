@@ -59,15 +59,214 @@ def test_trang_huong_dan_noi_du_ca_NAM_be_mat(khach):
         assert be_mat in noi, f"trang huong dan khong nhac toi {be_mat}"
 
 
-def test_trang_huong_dan_canh_bao_HAI_rao_chan_cua_claude_desktop(khach):
+def test_trang_huong_dan_canh_bao_rao_chan_cua_claude_desktop(khach):
     """Hai rào chắn cho **cùng** một triệu chứng: bấm gửi, không có gì xảy ra.
 
     Thiếu lời cảnh báo này thì khách sẽ kết luận là API của ta hỏng.
     """
     from platform_core.public_api import examples
     noi = khach.get("/huong-dan").text
-    assert examples.DESKTOP_MODEL in noi, "khong noi ten tuyen cua Claude Desktop"
-    assert "chatTabEnabled" in noi, "khong noi ve chatTabEnabled"
+    for ten in examples.DESKTOP_MODELS:
+        assert ten in noi, f"khong noi ten tuyen Claude Desktop {ten}"
+    assert "Allow Chat" in noi
+    assert "Disable Claude.ai sign-in" in noi
+
+
+def test_desktop_manual_guide_uses_current_form_and_exact_routes(khach):
+    import re
+    from platform_core.public_api import examples
+    from server.api.streaming import TUYEN_TUONG_THICH
+
+    noi = khach.get("https://testserver/huong-dan").text
+    khu = re.search(r'<section[^>]+id="khu-desktop".*?</section>', noi, re.S)
+    assert khu is not None
+    guide = khu.group(0)
+    assert "1.52386.6" in guide
+    assert "New configuration" in guide
+    assert "Display name" in guide
+    assert "Apply Changes" in guide and "Relaunch now" in guide
+    assert "Organization-managed" in guide
+    assert "Registry Editor" not in guide
+    assert "HKCU" not in guide
+    assert "đặt ở biến môi trường" not in guide
+    values = dict(examples.claude_desktop_steps("https://testserver"))
+    assert values["Gateway base URL"] == "https://testserver/api"
+    assert values["Gateway auth scheme"] == "Bearer"
+    assert values["Model discovery"] == "Off"
+    assert values["Default to 1M context"] == "Off"
+    assert values["Show estimated cost"] == "Off"
+    assert values["Stream idle timeout"] == "600 seconds"
+    assert values["Model 1 — Tier alias"] == "opus"
+    assert values["Model 1 — Default for tier"] == "On"
+    assert values["Model 2 — Tier alias"] == "haiku"
+    assert values["Model 2 — Default for tier"] == "On"
+    assert TUYEN_TUONG_THICH[values["Model 1 — Model ID"]] == "ltt-3.8"
+    assert TUYEN_TUONG_THICH[values["Model 2 — Model ID"]] == "ltt-3.5"
+    for field, value in values.items():
+        assert field in guide and value in guide, (field, value)
+    assert "Calculate 8 * 7" in guide and "Calculate 12 * 12" in guide
+    assert "không chọn x-api-key" in guide
+    assert "không tự cấp mọi scope" in guide
+    from apps.ltt_llm import ngan_sach
+    windows = [ngan_sach.cong_bo_cua(model) for model in ngan_sach.CUA_SO_THEO_MODEL]
+    compacts = [ngan_sach.nen_cua(model) for model in ngan_sach.CUA_SO_THEO_MODEL]
+    assert f"CLAUDE_CODE_MAX_CONTEXT_TOKENS={min(windows)}" in guide
+    assert f"CLAUDE_CODE_AUTO_COMPACT_WINDOW={min(compacts)}" in guide
+    assert f"CLAUDE_CODE_MAX_OUTPUT_TOKENS={ngan_sach.TOKEN_RA_TRAN}" in guide
+    assert "MAX_MCP_OUTPUT_TOKENS=16384" in guide
+    assert "CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS=1" in guide
+    assert "CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH=1" in guide
+    assert "CLAUDE_CODE_SUBAGENT_MODEL_FORCE=1" in guide
+    assert "CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK=1" in guide
+    assert "ENABLE_TOOL_SEARCH=false" in guide
+    assert "CLAUDE_CODE_DISABLE_1M_CONTEXT=1" not in guide
+    assert "… / 138.7k" in guide and "… / 176.4k" in guide
+    assert "Permission mode couldn't be changed" in guide
+    assert "permissions.disableBypassPermissionsMode" in guide
+    assert "131 tool" in guide and "98.678 token" in guide
+
+
+def test_desktop_local_env_la_danh_sach_chuan_du_10_bien():
+    """Q126: trang/tool không được tiếp tục bổ sung từng biến rời rạc.
+
+    Soi cả tập chính xác thay vì chỉ hỏi vài dòng có mặt. Nếu Claude thêm một
+    chốt mới trong tương lai, phép kiểm phải đỏ để buộc rà lại ma trận, tài liệu
+    và test cùng một lần.
+    """
+    from platform_core.public_api import examples
+
+    env = dict(examples.claude_local_env("ltt-3.8"))
+    assert len(env) == 11
+    assert set(env) == {
+        "CLAUDE_CODE_MAX_CONTEXT_TOKENS",
+        "CLAUDE_CODE_AUTO_COMPACT_WINDOW",
+        "CLAUDE_CODE_MAX_OUTPUT_TOKENS",
+        "MAX_MCP_OUTPUT_TOKENS",
+        "CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS",
+        "CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH",
+        "CLAUDE_CODE_SUBAGENT_MODEL_FORCE",
+        "CLAUDE_CODE_MAX_RETRIES",
+        "API_TIMEOUT_MS",
+        "CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK",
+        "ENABLE_TOOL_SEARCH",
+    }
+    assert "CLAUDE_CODE_SUBAGENT_MODEL" not in env
+    assert "CLAUDE_CODE_DISABLE_1M_CONTEXT" not in env
+    assert env["CLAUDE_CODE_SUBAGENT_MODEL_FORCE"] == "1"
+    assert dict(examples.claude_local_env("ltt-3.5")) == {
+        **env,
+        "CLAUDE_CODE_MAX_CONTEXT_TOKENS": "209141",
+        "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "176373",
+    }
+
+
+def test_claude_cli_ghim_du_moi_duong_chon_model():
+    from platform_core.public_api import examples
+
+    pins = dict(examples.claude_model_env("ltt-3.8"))
+    assert set(pins) == {
+        "ANTHROPIC_MODEL",
+        "ANTHROPIC_DEFAULT_MODEL",
+        "ANTHROPIC_DEFAULT_HAIKU_MODEL",
+        "ANTHROPIC_DEFAULT_OPUS_MODEL",
+        "ANTHROPIC_DEFAULT_SONNET_MODEL",
+        "ANTHROPIC_DEFAULT_FABLE_MODEL",
+        "CLAUDE_CODE_SUBAGENT_MODEL",
+    }
+    assert set(pins.values()) == {"ltt-3.8"}
+    settings = examples.claude_code_settings("https://testserver")
+    assert '"CLAUDE_CODE_SUBAGENT_MODEL_FORCE": "1"' in settings
+    assert '"CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH": "1"' in settings
+
+
+def test_codex_manual_profiles_and_catalog_use_each_models_budget(khach):
+    import json
+    import tomllib
+    from platform_core.public_api import examples
+    from apps.ltt_llm import ngan_sach
+
+    provider = tomllib.loads(examples.codex_config("https://testserver"))["model_providers"]["ltt"]
+    assert provider["base_url"] == "https://testserver/api/v1"
+    assert provider["wire_api"] == "responses"
+    assert provider["env_key"] == "LTT_API_KEY"
+    assert provider["requires_openai_auth"] is False
+    assert provider["supports_websockets"] is False
+    assert provider["request_max_retries"] == 1
+    assert provider["stream_max_retries"] == 0
+    assert provider["stream_idle_timeout_ms"] == 600000
+    catalog = json.loads(examples.codex_catalog())["models"]
+    assert [item["slug"] for item in catalog] == ["ltt-3.8", "ltt-3.5"]
+    assert [item["display_name"] for item in catalog] == [
+        "LTT 3.8 (Strong)", "LTT 3.5 (Fast)"]
+    assert [[level["effort"] for level in item["supported_reasoning_levels"]]
+            for item in catalog] == [["low", "medium", "xhigh"], ["medium"]]
+    assert catalog[1]["supported_reasoning_levels"] == [
+        {"effort": "medium", "description": "Thinking on"}]
+    efforts = {"ltt-3.8": "xhigh", "ltt-3.5": "medium"}
+    for item, internal in zip(catalog, ["qwen38-api", "qwen35-api"], strict=True):
+        profile = tomllib.loads(examples.codex_profile(item["slug"]))
+        desktop = tomllib.loads(examples.codex_desktop_config(
+            "https://testserver", item["slug"]))
+        context = ngan_sach.cong_bo_cua(internal)
+        compact = ngan_sach.nen_cua(internal)
+        assert profile["model_context_window"] == item["context_window"] == context
+        assert profile["model_auto_compact_token_limit"] == item["auto_compact_token_limit"] == compact
+        assert profile["model_auto_compact_token_limit_scope"] == "total"
+        assert profile["tool_output_token_limit"] == 16384
+        assert profile["agents"]["default_subagent_model"] == item["slug"]
+        assert item["default_reasoning_level"] == efforts[item["slug"]]
+        assert profile["model_reasoning_effort"] == efforts[item["slug"]]
+        assert profile["agents"]["default_subagent_reasoning_effort"] == efforts[item["slug"]]
+        assert profile["agents"]["max_concurrent_threads_per_session"] == 1
+        assert desktop["model"] == item["slug"]
+        assert desktop["model_provider"] == "ltt"
+        assert desktop["model_context_window"] == context
+        assert desktop["model_auto_compact_token_limit"] == compact
+        assert desktop["model_auto_compact_token_limit_scope"] == "total"
+        assert desktop["tool_output_token_limit"] == 16384
+        assert desktop["model_providers"]["ltt"] == provider
+        assert item["truncation_policy"] == {"mode": "tokens", "limit": 16384}
+        assert item["supports_parallel_tool_calls"] is False
+        assert "%USERPROFILE%" not in profile["model_catalog_json"]
+    noi = khach.get("/huong-dan").text
+    for value in ["ltt-fast.config.toml", "codex --profile ltt-fast", "YOUR_WINDOWS_USER",
+                  "0.145.0", "0.146.0-alpha.3.1", "Calculate 6 * 7",
+                  "26.721.11231.0", "model_auto_compact_token_limit_scope",
+                  "tool_output_token_limit", "supports_websockets",
+                  "max_concurrent_threads_per_session"]:
+        assert value in noi
+
+
+def test_codex_desktop_la_be_mat_rieng_va_chi_dan_dung_config_toml(khach):
+    """Desktop uses root config; it must not inherit CLI profile instructions."""
+    import tomllib
+
+    from platform_core.public_api import examples
+
+    surfaces = {item["ma"]: item for item in
+                examples.be_mat_cam("https://app.lttstudios.com")}
+    assert tuple(surfaces) == examples.BE_MAT_MA
+    desktop = surfaces["codex-desktop"]
+    assert desktop["dia_chi"] == "https://app.lttstudios.com/api/v1"
+    assert desktop["models"] == (
+        ("ltt-3.8", "LTT 3.8 (Strong)"),
+        ("ltt-3.5", "LTT 3.5 (Fast)"),
+    )
+    assert [step[0] for step in desktop["buoc"]] == [
+        "codex-catalog", "codex-desktop-strong", "codex-desktop-fast"]
+    assert examples.vscode_codex_config(
+        "https://app.lttstudios.com") == examples.codex_desktop_config(
+            "https://app.lttstudios.com", "ltt-3.8")
+    configs = [step[2] for step in desktop["buoc"][1:]]
+    assert all("[profiles." not in value for value in configs)
+    assert all("--profile" not in value for value in configs)
+    assert all("[model_providers.ltt]" in value for value in configs)
+    assert {tomllib.loads(value)["model"] for value in configs} == {
+        "ltt-3.8", "ltt-3.5"}
+    page = khach.get("/huong-dan").text
+    assert "cùng CODEX_HOME" in page
+    assert "không cần cắm Gateway hay MCP lần nữa" in page
+    assert ".codex/config.toml" in page
 
 
 def test_KHONG_con_duong_dan_kho_ma_trong_trang_cho_khach():

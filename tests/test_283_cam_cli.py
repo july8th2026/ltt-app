@@ -26,7 +26,6 @@ from __future__ import annotations
 import importlib.util
 import json
 import pathlib
-import sys
 import tomllib
 
 import pytest
@@ -114,6 +113,96 @@ def cc(tmp_path, monkeypatch):
     mod._registry_gia = ghi          # test doc duoc da ghi gi
     mod._env_gia = env
     return mod
+
+
+@pytest.mark.parametrize("model", ["ltt-3.8", "ltt-3.5"])
+@pytest.mark.parametrize("vscode", [False, True])
+def test_selected_profile_catalog_and_rollback(cc, model, vscode):
+    cfg = cc.NHA / ".codex" / "config.toml"
+    cfg.parent.mkdir(parents=True)
+    original = (b'# customer config\r\nmodel = "customer"\r\n'
+                b'model_catalog_json = "customer.json"\r\n'
+                b'model_auto_compact_token_limit = 999\r\n')
+    cfg.write_bytes(original)
+    tt = {"model": model}
+    cc.cam_codex("https://example.test", tt, cho_vscode=vscode)
+    for ten_tep, ten_model in (("ltt.config.toml", "ltt-3.8"),
+                               ("ltt-fast.config.toml", "ltt-3.5")):
+        profile = tomllib.loads((cfg.parent / ten_tep).read_text())
+        hs = cc.hs_cua(ten_model)
+        assert (profile["model"], profile["model_context_window"],
+                profile["model_auto_compact_token_limit"]) == (
+                    ten_model, hs.cua_so, hs.nen)
+        assert profile["model_reasoning_effort"] == hs.reasoning
+        assert profile["model_auto_compact_token_limit_scope"] == "total"
+        assert profile["tool_output_token_limit"] == cc.TRAN_KET_QUA_TOOL
+        assert profile["agents"] == {
+            "default_subagent_model": ten_model,
+            "default_subagent_reasoning_effort": hs.reasoning,
+            "max_concurrent_threads_per_session": 1,
+        }
+    if vscode:
+        root = tomllib.loads(cfg.read_text())
+        assert root["model"] == "ltt-3.8", (
+            "model chon cho Claude khong duoc lam Codex mat profile con lai")
+        assert root["model_catalog_json"] == str(cc.TEP_CATALOG)
+    catalog = json.loads(cc.TEP_CATALOG.read_text())["models"]
+    assert [item["display_name"] for item in catalog] == [
+        "LTT 3.8 (Strong)", "LTT 3.5 (Fast)"]
+    assert all(m["input_modalities"] == ["text", "image"] for m in catalog)
+    levels = {item["slug"]: item["supported_reasoning_levels"]
+              for item in catalog}
+    assert [item["effort"] for item in levels["ltt-3.8"]] == [
+        "low", "medium", "xhigh"]
+    assert levels["ltt-3.5"] == [
+        {"effort": "medium", "description": "Thinking on"}]
+    cc.go_codex(tt)
+    assert cfg.read_bytes() == original
+    assert not cc.TEP_CATALOG.exists()
+    assert not (cfg.parent / "ltt.config.toml").exists()
+    assert not (cfg.parent / "ltt-fast.config.toml").exists()
+
+
+@pytest.mark.parametrize("model", ["ltt-3.8", "ltt-3.5"])
+def test_claude_vscode_standalone_routes_and_context(cc, model):
+    tt = {"model": model}
+    cc.cam_vscode("https://example.test", tt)
+    settings = json.loads(cc._vscode_settings().read_text())
+    env = {v["name"]: v["value"] for v in settings["claudeCode.environmentVariables"]}
+    for key in ("ANTHROPIC_MODEL", "ANTHROPIC_DEFAULT_MODEL",
+                "ANTHROPIC_DEFAULT_OPUS_MODEL", "ANTHROPIC_DEFAULT_SONNET_MODEL",
+                "ANTHROPIC_DEFAULT_HAIKU_MODEL", "ANTHROPIC_DEFAULT_FABLE_MODEL",
+                "CLAUDE_CODE_SUBAGENT_MODEL"):
+        assert env[key] == model
+    assert env["CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS"] == "1"
+    assert env["CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH"] == "1"
+    assert env["CLAUDE_CODE_SUBAGENT_MODEL_FORCE"] == "1"
+    assert env["CLAUDE_CODE_MAX_RETRIES"] == "10"
+    assert env["API_TIMEOUT_MS"] == "600000"
+    assert env["CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK"] == "1"
+    assert env["ENABLE_TOOL_SEARCH"] == "false"
+    assert int(env["CLAUDE_CODE_AUTO_COMPACT_WINDOW"]) == cc.hs_cua(model).nen
+    assert int(env["MAX_MCP_OUTPUT_TOKENS"]) <= cc.TOKEN_RA_TRAN // 2
+    assert cc._env_gia == {}  # Selecting VS Code needs no CLI install.
+    cc.go_vscode(tt)
+    assert "claudeCode.environmentVariables" not in json.loads(cc._vscode_settings().read_text())
+
+
+@pytest.mark.parametrize("model", ["ltt-3.8", "ltt-3.5"])
+def test_claude_cli_pins_every_model_route_and_one_subagent(cc, model):
+    cc.cam_claude("https://example.test", {"model": model}, toan_cuc=False)
+    for key in ("ANTHROPIC_MODEL", "ANTHROPIC_DEFAULT_MODEL",
+                "ANTHROPIC_DEFAULT_OPUS_MODEL", "ANTHROPIC_DEFAULT_SONNET_MODEL",
+                "ANTHROPIC_DEFAULT_HAIKU_MODEL", "ANTHROPIC_DEFAULT_FABLE_MODEL",
+                "CLAUDE_CODE_SUBAGENT_MODEL"):
+        assert cc._env_gia[key] == model
+    assert cc._env_gia["CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS"] == "1"
+    assert cc._env_gia["CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH"] == "1"
+    assert cc._env_gia["CLAUDE_CODE_SUBAGENT_MODEL_FORCE"] == "1"
+    assert cc._env_gia["CLAUDE_CODE_MAX_RETRIES"] == "10"
+    assert cc._env_gia["API_TIMEOUT_MS"] == "600000"
+    assert cc._env_gia["CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK"] == "1"
+    assert cc._env_gia["ENABLE_TOOL_SEARCH"] == "false"
 
 
 # ── Trung tâm: cắm rồi gỡ phải bằng từng byte ───────────────────────────────
@@ -205,6 +294,21 @@ def test_go_CO_xoa_ltt_config_khi_chinh_ta_tao_no(cc, tmp_path):
     assert prof.exists() and tt["codex"]["ta_tao_ltt_config"] is True
     cc.go_codex(tt)
     assert not prof.exists()
+    assert not (tmp_path / ".codex" / "ltt-fast.config.toml").exists()
+
+
+def test_go_TRA_LAI_ltt_fast_config_cua_khach(cc, tmp_path):
+    prof = tmp_path / ".codex" / "ltt-fast.config.toml"
+    prof.parent.mkdir(parents=True)
+    goc = b'# profile fast cua khach\r\nmodel = "customer-fast"\r\n'
+    prof.write_bytes(goc)
+
+    tt = {}
+    cc.cam_codex("https://app.lttstudios.com", tt)
+    assert prof.read_bytes() != goc
+    assert tt["codex"]["ta_tao_ltt_fast_config"] is False
+    cc.go_codex(tt)
+    assert prof.read_bytes() == goc
 
 
 # ── settings.json: khôi phục giá trị cũ, không chỉ xoá ─────────────────────
@@ -447,11 +551,14 @@ def test_chay_cam_HAI_LAN_roi_go_van_xoa_sach(cc, tmp_path):
     cc.cam_codex("https://app.lttstudios.com", tt)
     cc.cam_codex("https://app.lttstudios.com", tt)      # lan hai
     prof = tmp_path / ".codex" / "ltt.config.toml"
-    assert prof.exists()
+    prof_fast = tmp_path / ".codex" / "ltt-fast.config.toml"
+    assert prof.exists() and prof_fast.exists()
     assert tt["codex"]["ta_tao_ltt_config"] is True, (
         "lan chay thu hai da ghi de ket luan cua lan dau")
+    assert tt["codex"]["ta_tao_ltt_fast_config"] is True
     cc.go_codex(tt)
     assert not prof.exists(), "go de lai rac sau khi cam hai lan"
+    assert not prof_fast.exists(), "go de lai profile fast sau khi cam hai lan"
 
 
 def test_ltt_config_CUA_KHACH_duoc_tra_ve_nguyen_van(cc, tmp_path):
@@ -518,9 +625,17 @@ def test_desktop_ghi_dung_sau_khoa_chinh_sach(cc):
     #    picker; ten khong chua "claude"/"anthropic"/ten dong Claude thi bi bo,
     #    picker rong, va **nut gui vo hieu ma khong bao gi**. Luat day du +
     #    ly do chon dung ten nay: `tests/test_290_ten_tuyen_claude_desktop.py`.
-    assert g[(k, "inferenceModels")] == '[{"name": "' + cc.MODEL_DESKTOP + '"}]'
+    assert json.loads(g[(k, "inferenceModels")]) == [
+        {"name": h.tuyen_desktop,
+         "labelOverride": cc.NHAN_DESKTOP[h.tuyen_desktop],
+         "anthropicFamilyTier": cc.TANG_DESKTOP[h.tuyen_desktop],
+         "isFamilyDefault": True}
+        for h in cc.HO_SO_MODEL.values()]
     assert cc.MODEL_DESKTOP != cc.MODEL
-    assert g[(k, "modelDiscoveryEnabled")] == "false"
+    assert g[(k, "modelDiscoveryEnabled")] == 0
+    assert g[(k, "chatTabEnabled")] == 1
+    assert g[(k, "disableDeploymentModeChooser")] == 1
+    assert g[(k, "inferenceStreamIdleTimeoutSec")] == 600
 
 
 def test_desktop_base_url_KHONG_kem_v1_va_phai_https(cc):
@@ -528,7 +643,7 @@ def test_desktop_base_url_KHONG_kem_v1_va_phai_https(cc):
 
     ⛔ `inferenceGatewayBaseUrl` là **gốc**, ứng dụng tự ghép `/v1/messages`.
        Kèm sẵn `/v1` là thành `/v1/v1/messages` ⇒ 404 không manh mối.
-    ⛔ Và nó **bắt buộc HTTPS** (trừ loopback).
+    ⛔ Và bản 1.52386.6 **bắt buộc HTTPS**, kể cả loopback.
     """
     tt = {}
     cc.cam_desktop("https://app.lttstudios.com", "ltt_sk_x", tt)
@@ -537,6 +652,12 @@ def test_desktop_base_url_KHONG_kem_v1_va_phai_https(cc):
     assert u.startswith("https://"), "tai lieu bat buoc HTTPS"
     assert not u.rstrip("/").endswith("/v1"), (
         "base_url KHONG duoc kem /v1 - ung dung tu ghep /v1/messages")
+
+
+def test_desktop_HTTP_ke_ca_loopback_bi_tu_choi_TRUOC_khi_ghi(cc):
+    ra = cc.cam_desktop("http://127.0.0.1:9999", "ltt_sk_x", {})
+    assert not cc._registry_gia, "endpoint bi tu choi ma van ghi nua voi registry"
+    assert any("HTTPS" in d for d in ra)
 
 
 def test_desktop_go_ra_tra_ve_gia_tri_cu(cc):
@@ -551,6 +672,41 @@ def test_desktop_go_ra_tra_ve_gia_tri_cu(cc):
         "khach co chinh sach rieng tu truoc; go phai tra ve, khong phai xoa")
     assert (k, "inferenceProvider") not in cc._registry_gia, (
         "khoa von KHONG co thi go phai xoa han")
+
+
+def test_desktop_go_ra_tra_dung_REG_DWORD_cua_khach(cc):
+    k = cc.REG_DESKTOP_HKCU
+    cc._registry_gia[(k, "inferenceStreamIdleTimeoutSec")] = 900
+    tt = {}
+    cc.cam_desktop("https://app.lttstudios.com", "ltt_sk_x", tt)
+    assert cc._registry_gia[(k, "inferenceStreamIdleTimeoutSec")] == 600
+    cc.go_desktop(tt)
+    assert cc._registry_gia[(k, "inferenceStreamIdleTimeoutSec")] == 900
+
+
+def test_desktop_go_ban_moi_don_DWORD_ma_trang_thai_ban_cu_khong_biet(cc):
+    """An upgrade must not strand policy values introduced by release 1.8."""
+    k = cc.REG_DESKTOP_HKCU
+    cc._registry_gia[(k, "disableDeploymentModeChooser")] = 1
+    old_state = {"desktop": {"khoa_da_them": {
+        "inferenceProvider": None,
+    }}}
+
+    cc.go_desktop(old_state)
+
+    assert (k, "disableDeploymentModeChooser") not in cc._registry_gia
+
+
+def test_desktop_go_ban_moi_khong_xoa_DWORD_khac_cua_khach(cc):
+    k = cc.REG_DESKTOP_HKCU
+    cc._registry_gia[(k, "inferenceStreamIdleTimeoutSec")] = 900
+    old_state = {"desktop": {"khoa_da_them": {
+        "inferenceProvider": None,
+    }}}
+
+    cc.go_desktop(old_state)
+
+    assert cc._registry_gia[(k, "inferenceStreamIdleTimeoutSec")] == 900
 
 
 def test_desktop_DUNG_LAI_khi_may_da_co_chinh_sach_HKLM(cc):
@@ -621,7 +777,7 @@ def test_nhat_ky_KHONG_lam_hong_lenh_khi_khong_ghi_duoc(cc, tmp_path, monkeypatc
     cc._ghi_nhat_ky("khong ghi duoc")      # khong duoc nem
 
 
-def test_kiem_PHAI_kiem_ca_be_mat_claude_desktop(cc):
+def test_kiem_PHAI_kiem_ca_be_mat_claude_desktop_va_codex(cc):
     """🔴 Ban truoc bao XANH trong khi Claude Desktop im lang hoan toan.
 
     Vi no chi thu `MODEL` + `stream: True`, con be mat do dung `MODEL_DESKTOP`
@@ -636,6 +792,49 @@ def test_kiem_PHAI_kiem_ca_be_mat_claude_desktop(cc):
     sau = ma.split("MODEL_DESKTOP", 1)[1]
     assert '"stream"' not in sau.split("phuong=", 1)[0], (
         "luot thu Claude Desktop phai la request KHONG stream")
+    assert 'goi("/responses"' in ma, (
+        "`kiem` khong thu Responses -> co the bao xanh trong khi Codex hong")
+    assert "for hs_codex in HO_SO_MODEL.values()" in ma, (
+        "catalog co hai model nen `kiem` phai thu ca hai model Codex")
+
+
+def test_kiem_GOI_THAT_responses_cho_ca_hai_model_codex(cc, monkeypatch):
+    """Behavior check: a green self-check must have traversed both Codex routes."""
+    calls = []
+
+    class Reply:
+        status = 200
+
+        def __init__(self, body):
+            self.body = body
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def read(self):
+            return self.body
+
+    def urlopen(request, timeout):
+        body = json.loads(request.data) if request.data else None
+        calls.append((request.full_url, body, timeout))
+        if request.full_url.endswith("/tools"):
+            return Reply(b'{"items":[{"name":"text.chat"}]}')
+        if request.full_url.endswith("/credits/balance"):
+            return Reply(b'{"balance":1000}')
+        return Reply(b'event: response.completed\ndata: {}\n\n')
+
+    monkeypatch.setattr(cc.urllib.request, "urlopen", urlopen)
+    monkeypatch.setattr(cc, "_doc_trang_thai", lambda: {"model": "ltt-3.5"})
+    args = type("Args", (), {"khoa": "mock", "goc": "https://test"})()
+    assert cc.lenh_kiem(args) == 0
+
+    responses = [body for url, body, _timeout in calls
+                 if url.endswith("/api/v1/responses")]
+    assert [body["model"] for body in responses] == ["ltt-3.8", "ltt-3.5"]
+    assert all(body["stream"] is True for body in responses)
 
 
 # ── Ban 1.1: chon be mat + trang thai that ─────────────────────────────────
@@ -776,6 +975,7 @@ def test_catalog_dung_khuon_Codex_chap_nhan(cc):
         assert "effective_context_window_percent" not in m
         # khong duoc con truong null nao
         assert not [k for k, v in m.items() if v is None]
+        assert m["default_reasoning_level"] == cc.hs_cua(m["slug"]).reasoning
 
     # ⛔ MOI MODEL KHAI CUA SO CUA NO. Ban truoc cua doan nay la
     #       assert m["context_window"] == cc.CUA_SO_NGU_CANH
@@ -884,6 +1084,24 @@ class TestBaLoi3008:
         assert ok is False
         assert "denied" in vi_sao.lower(), (
             f"ly do bi nuot mat o nhanh reg.exe: {vi_sao!r}")
+
+    def test_reg_fallback_ghi_so_bang_REG_DWORD(self, tmp_path, monkeypatch):
+        cc = _nap(tmp_path)
+        monkeypatch.setattr(cc, "_tach_khoa_registry", lambda khoa: None)
+        cac_lenh = []
+
+        class _KetQua:
+            returncode = 0
+            stdout = ""
+            stderr = ""
+
+        monkeypatch.setattr(
+            cc.subprocess, "run",
+            lambda cmd, **kw: (cac_lenh.append(cmd), _KetQua())[1])
+        assert cc._reg_ghi_ly_do("KHOA_LA", "chatTabEnabled", 1)[0]
+        assert "REG_DWORD" in cac_lenh[-1]
+        assert cc._reg_ghi_ly_do("KHOA_LA", "inferenceProvider", "gateway")[0]
+        assert "REG_SZ" in cac_lenh[-1]
 
     def test_cam_desktop_HOI_QUYEN_TRUOC_va_KHONG_ghi_nua_voi(self, cc, monkeypatch):
         """Thiếu quyền thì **không ghi gì**, và nói đúng cách sửa.
@@ -1056,13 +1274,28 @@ class TestGoKhongCanKhoaVaKhongCanTriNho:
         for ten, gt in (("inferenceProvider", "gateway"),
                         ("inferenceGatewayBaseUrl",
                          "https://app.lttstudios.com/api"),
-                        ("inferenceModels",
-                         '[{"name": "' + cc.MODEL_DESKTOP + '"}]')):
+                        ("inferenceModels", json.dumps([
+                            {"name": h.tuyen_desktop,
+                             "labelOverride": cc.NHAN_DESKTOP[h.tuyen_desktop]}
+                            for h in cc.HO_SO_MODEL.values()],
+                            separators=(",", ": ")))):
             cc._reg_ghi(cc.REG_DESKTOP_HKCU, ten, gt)
 
         ra = cc.go_desktop({})                               # KHONG tri nho
         assert ra, "im lang = khoa chinh sach nam lai vinh vien"
         assert cc._reg_doc(cc.REG_DESKTOP_HKCU, "inferenceProvider") is None
+
+    def test_go_desktop_nhan_ra_tuyen_CU_sau_khi_nang_cap_va_mat_tri_nho(self, cc):
+        """1.7 -> 1.8 must not strand the old policy and its dead API key."""
+        cc._reg_ghi(cc.REG_DESKTOP_HKCU, "inferenceProvider", "gateway")
+        cc._reg_ghi(cc.REG_DESKTOP_HKCU, "inferenceModels", json.dumps([
+            {"name": "ltt-llm-claude-compat"}]))
+
+        ra = cc.go_desktop({})
+
+        assert ra
+        assert cc._reg_doc(cc.REG_DESKTOP_HKCU, "inferenceProvider") is None
+        assert cc._reg_doc(cc.REG_DESKTOP_HKCU, "inferenceModels") is None
 
     def test_go_desktop_KHONG_dung_chinh_sach_tro_di_CHO_KHAC(self, cc):
         cc._reg_ghi(cc.REG_DESKTOP_HKCU, "inferenceProvider", "gateway")

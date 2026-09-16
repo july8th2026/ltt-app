@@ -49,7 +49,7 @@ Exit: migration up/down in isolated DB, one-default race test, no legacy break.
 - [x] Wrap Proxmox, Vultr and current gateway minimally.
 - [x] Add `OvhStaticIpPoolBackend` for pre-owned inventory.
 - [x] Keep paid acquisition outside normal provisioning. Fresh OVH inventory
-  found zero free IP. Q125 replaces the manual gate: implement one-at-a-time
+  found zero free IP. Q130 replaces the manual gate: implement one-at-a-time
   automatic cart/checkout/order-delivery/import under strict billing guards.
   (16/09: live order 22703620, one IP, R2–R5/R7/R18 hardened; R16 idle policy.)
 - [x] Concurrent IP allocation and timeout/response-lost tests.

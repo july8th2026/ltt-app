@@ -33,7 +33,7 @@ Web route (region/plan/OS)
 | VULTR ADAPTER | `services/vultr.py` | Bọc tối thiểu trong `VultrReservedIpBackend` |
 | LEGACY DATA | row có `vultr_id`, instance chưa profile | Evidence-based backfill hoặc NEEDS_REVIEW |
 | TEST | VPS test mock trực tiếp client/provider | Giữ regression và thêm contract/failure/concurrency |
-| DOC | Q103–Q105, `docs/vps_v2` | Q124 mở rộng/thay phần provider selection; không xóa lịch sử |
+| DOC | Q103–Q105, `docs/vps_v2` | Q129 mở rộng/thay phần provider selection; không xóa lịch sử |
 | DEAD CODE | Chỉ kết luận sau coverage/call-site search | Không xóa theo suy đoán |
 
 ## Bề mặt và quyền

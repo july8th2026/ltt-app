@@ -158,10 +158,12 @@ def test_khoa_bat_buoc_KHOP_cau_hinh_chinh_thuc():
         f"— mot trong hai ben da troi")
 
 
-@pytest.mark.parametrize("khoa", ["stream_idle_timeout_ms", "model_catalog_json"])
-def test_doi_dung_hai_khoa_da_gay_su_co(khoa):
-    """Hai khoá này có mặt vì đã có sự cố thật, không phải vì cho đủ bộ.
+@pytest.mark.parametrize("khoa", ["request_max_retries", "stream_max_retries",
+                                  "stream_idle_timeout_ms", "model_catalog_json"])
+def test_doi_dung_khoa_anh_huong_truc_tiep_den_duong_goi(khoa):
+    """Các khoá này có mặt vì ảnh hưởng hành vi, không phải vì cho đủ bộ.
 
+    - hai khoá retry: thiếu ⇒ client dùng mặc định upstream và khuếch đại tải
     - `stream_idle_timeout_ms`: thiếu ⇒ luồng bị cắt ở ~62 giây (đo 02/09)
     - `model_catalog_json`: thiếu ⇒ Codex mượn tên một model OpenAI cho lượt
       phụ, cổng ta từ chối, khách thấy "im lặng"
@@ -253,4 +255,3 @@ def test_cong_cu_chinh_thuc_biet_lam_rieng_cho_VS_Code():
            / "tools" / "cam_cli.py").read_text(encoding="utf-8")
     assert "MUC_CODEX_VSCODE" in van
     assert "--vscode" in van
-

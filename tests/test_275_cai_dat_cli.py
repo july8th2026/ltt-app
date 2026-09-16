@@ -55,6 +55,7 @@ def test_codex_ho_so_o_FILE_RIENG(tmp_path):
     goc = tmp_path / ".codex"
     cd.codex("https://x.test", goc)
     assert (goc / "ltt.config.toml").exists()
+    assert (goc / "ltt-fast.config.toml").exists()
     assert "[profiles." not in (goc / "config.toml").read_text(encoding="utf-8")
 
 
@@ -128,6 +129,44 @@ def test_HAI_BO_CAI_khai_cung_mot_tap_khoa_cho_Claude_Code(tmp_path):
     assert not thieu, f"ban mot-tep thieu khoa ma ban Windows co: {sorted(thieu)}"
 
 
+@pytest.mark.parametrize("model", ["ltt-3.8", "ltt-3.5"])
+def test_bo_cai_mot_tep_ghim_model_context_retry_va_subagent(tmp_path, model):
+    hs = cd.HO_SO_MODEL[model]
+    codex_home = tmp_path / ".codex"
+    claude_home = tmp_path / ".claude"
+    cd.codex("https://x.test", codex_home, hs)
+    cd.claude_code("https://x.test", claude_home, hs)
+
+    for ten_tep, ten_model in (("ltt.config.toml", "ltt-3.8"),
+                               ("ltt-fast.config.toml", "ltt-3.5")):
+        hs_codex = cd.HO_SO_MODEL[ten_model]
+        profile = (codex_home / ten_tep).read_text(encoding="utf-8")
+        assert f'model = "{ten_model}"' in profile
+        assert f"model_auto_compact_token_limit = {hs_codex.nen}" in profile
+        assert f'default_subagent_model = "{ten_model}"' in profile
+        assert f'model_reasoning_effort = "{hs_codex.reasoning}"' in profile
+        assert f'default_subagent_reasoning_effort = "{hs_codex.reasoning}"' in profile
+        assert 'model_auto_compact_token_limit_scope = "total"' in profile
+        assert f"tool_output_token_limit = {cd.TRAN_KET_QUA_TOOL}" in profile
+        assert "max_concurrent_threads_per_session = 1" in profile
+
+    env = json.loads((claude_home / "settings.json").read_text(encoding="utf-8"))["env"]
+    for key in ("ANTHROPIC_MODEL", "ANTHROPIC_DEFAULT_MODEL",
+                "ANTHROPIC_DEFAULT_OPUS_MODEL", "ANTHROPIC_DEFAULT_SONNET_MODEL",
+                "ANTHROPIC_DEFAULT_HAIKU_MODEL", "ANTHROPIC_DEFAULT_FABLE_MODEL",
+                "CLAUDE_CODE_SUBAGENT_MODEL"):
+        assert env[key] == model
+    assert env["CLAUDE_CODE_MAX_CONTEXT_TOKENS"] == str(hs.cua_so)
+    assert env["CLAUDE_CODE_AUTO_COMPACT_WINDOW"] == str(hs.nen)
+    assert env["CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS"] == "1"
+    assert env["CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH"] == "1"
+    assert env["CLAUDE_CODE_SUBAGENT_MODEL_FORCE"] == "1"
+    assert env["CLAUDE_CODE_MAX_RETRIES"] == "10"
+    assert env["API_TIMEOUT_MS"] == "600000"
+    assert env["CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK"] == "1"
+    assert env["ENABLE_TOOL_SEARCH"] == "false"
+
+
 def test_settings_json_hong_thi_KHONG_DAM_SUA(tmp_path):
     """⛔ Thà không làm gì còn hơn ghi đè một file ta không đọc được."""
     goc = tmp_path / ".claude"; goc.mkdir()
@@ -181,6 +220,7 @@ def test_desktop_KHONG_noi_doi_la_da_cau_hinh():
     ra = " ".join(cd.claude_desktop("https://x.test"))
     assert "Third-Party Inference" in ra
     assert "inferenceModels" in ra
+    assert cd.MODEL_DESKTOP in ra and cd.MODEL_DESKTOP_35 in ra
 
 
 # ── Cloudflare chặn User-Agent mặc định của urllib ──────────────────────────
@@ -278,6 +318,10 @@ def test_tep_catalog_PHAI_ton_tai_truoc_khi_cau_hinh_tro_toi(tmp_path):
     assert len(duong) == 1, ho_so
     tro_toi = duong[0].split("=", 1)[1].strip().strip().strip(chr(39)).strip(chr(34))
     assert pathlib.Path(tro_toi).is_file(), tro_toi
+    fast = (tmp_path / ".codex" / "ltt-fast.config.toml").read_text(
+        encoding="utf-8")
+    assert "model = \"ltt-3.5\"" in fast
+    assert str(pathlib.Path(tro_toi)) in fast
 
 
 def test_bang_san_co_THIEU_KHOA_thi_phai_NOI_RA(tmp_path):
@@ -293,7 +337,10 @@ def test_bang_san_co_THIEU_KHOA_thi_phai_NOI_RA(tmp_path):
     THIEU = ('[model_providers.ltt]\nname = "LTT Studios"\n'
              + 'base_url = \"https://vi.du/api/v1\"\nwire_api = \"responses\"\n'
              + 'env_key = \"LTT_API_KEY\"\n')
-    DU = THIEU + 'stream_idle_timeout_ms = 600000\n'
+    DU = (THIEU
+          + 'request_max_retries = 1\n'
+          + 'stream_max_retries = 0\n'
+          + 'stream_idle_timeout_ms = 600000\n')
     (cx / "config.toml").write_text(THIEU, encoding="utf-8")
     ra = chr(10).join(cd.codex("https://vi.du", cx))
     assert "stream_idle_timeout_ms" in ra and "!!" in ra, ra

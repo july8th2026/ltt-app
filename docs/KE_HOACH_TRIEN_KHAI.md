@@ -3966,71 +3966,202 @@ vision. Kế hoạch của họ viết **trước** phép đo; ta giữ ý đị
       sẽ hỏng trong im lặng** (`ThieuKeyError` bị đọc thành "provider không phục vụ
       được"). Sổ khoá là dữ liệu vận hành — không test nào chạm tới được.
 
-## H46 — VPS V4: multi-infrastructure profile + OVH acceptance (2026-09-12)
+## H46 — Chốt tương thích Codex/Claude Connector (2026-09-14)
 
-Nguồn yêu cầu: chương trình `LTT VPS V4 MULTI-GATEWAY / INFRASTRUCTURE PROFILE`.
-Quyết định: Q124. Hồ sơ canonical: `docs/VPS_V4/`. Nhánh riêng:
-`codex/vps-v4-infrastructure-profiles`; không auto-merge/deploy.
+Quyết định và bảng audit: `docs/LTT_CLI_COMPAT_DECISIONS.md`. Không đổi backend,
+RPM, queue hay GPU slot; chỉ sửa contract client/gateway/docs.
 
-- [x] **H46.0 — Discovery + decision lock + architecture + plan:** 12/09/2026
-  kiểm kê app/worktree/infra/provider, khóa D01–D10, phân lớp A/B/C, viết đủ
-  `docs/VPS_V4/00`–`10`. Bằng chứng live chưa chạy; H: không mount.
-- [x] **H46.1 — Profile domain + additive migration:** state/default invariant,
-  instance pin, health/journal, evidence-based legacy backfill.
-- [x] **H46.2 — Backend contracts:** bọc Proxmox/Vultr/nft tối thiểu; OVH static
-  IP pool; contract/concurrency/failure tests.
-- [x] **H46.3 — Preflight/health/capacity/runtime:** per-profile, strict Machine B
-  generation/freshness, provenance, fail closed.
-- [x] **H46.4 — Provision/reconcile:** pinned profile, mutation journal,
-  compensation và machine-readable findings; protected VM guard.
-  **14/09/2026:** H46.1/.2/.4 đã có migration PostgreSQL/concurrency, contract,
-  failure/commit injection và protected-resource tests; broad VPS gần nhất trước
-  bổ sung TLS/OVH là **767 PASS/8 skip + sentinel PASS**. Batch OVH/gwnat/runtime/
-  TLS mới đều xanh; broad sau rebase thuộc H46.6 vẫn chưa chạy.
-- [x] **H46.5 — Web/access/admin:** authenticated owner-only, WEB_ONLY, không
-  mass-assign profile; admin service/UI. Exact ADMIN navigation chờ C01 vì app
-  contract chưa có extension point. **13/09/2026:** C01 đã duyệt generic
-  extension; desktop/mobile Playwright local PASS, 0 lỗi console/network/5xx.
-- [x] **H46.6 — Hoàn thiện code + kiểm thử vận hành offline:** failure/security/
-  PostgreSQL regression, Playwright và static/secret checks mục tiêu; không chạy
-  full gate giữa các phase. **14/09/2026 checkpoint:** broad VPS **789 PASS/8
-  skip + sentinel**, PostgreSQL thật **5 PASS/1 skip + sentinel**, Playwright
-  desktop/mobile 0 lỗi bất ngờ, static/i18n/line-ending/secret scan PASS.
-  Reconcile cuối lên `main` `f0bd4c05` sạch; test live LLM mới của `main`
-  được sửa fail-closed để mang bearer và hiểu schema `tran.images`, rồi xanh
-  **4/4** với gateway máy B; sentinel skip PASS, không nới baseline.
-- [ ] **H46.7 — Deploy + live OVH acceptance:** fresh collector, CA, owner lookup,
-  tối đa một IP/một VM, Playwright từ Web UI, Windows installer/network/console/
-  lifecycle/default-switch và cleanup/retain gate.
-  **Cập nhật PO 14/09/2026:** canonical đã ngừng; phiên VPS tự triển khai từ
-  worktree nhánh riêng, không sửa main/dirty docs phiên khác. Chỉ gộp main cuối
-  phiên. Giữ VM acceptance tắt và IP BOUND; OVH delivery chờ tối đa 60 phút,
-  defer job không mua/thu credit lại. Bounded acquisition readiness đã có code;
-  test acquisition mới 33 PASS và GUI pending owner/outsider desktop/mobile PASS.
-  Chưa deploy/checkout/tạo IP hay VM; không tính các bước live này là hoàn thành.
-  Release snapshot e2b118c6 đã đóng gói PASS, 146,4 MB/secret scan 0 finding;
-  acquisition/capacity batch 49 PASS. Backup data/secrets riêng PASS, custom dump
-  header verified. B08: production có 4 LTT LLM job heartbeat fresh, cần cửa sổ
-  drain trước installer restart; không tự hủy việc ngoài VPS.
-  **14/09/2026 checkpoint:** helper gateway đã cài và kiểm live fail-closed;
-  protected removal RC 5, conflict RC 4, health `ok`, hash hai tệp bảo vệ không
-  đổi. Đã chuẩn bị đúng một giỏ OVH chưa thanh toán cho một IPv4 SG/SGP,
-  USD 2,39 gồm thuế; chưa checkout. Q125 thay cơ chế PO thanh toán tay bằng
-  worker tự động với quote guard và journal phục hồi. Driver signed cart/checkout
-  và coordinator/credit guard/reserve-first worker có test mục tiêu 38 PASS;
-  helper regression 9 PASS, Playwright admin local desktop/mobile PASS. Còn
-  **Checkpoint tiếp:** reader order thật trả đúng tám IP lịch sử; driver preview
-  giỏ D10 thật PASS, checkout=false; adopt/claim một giỏ-một instance đã có test.
-  Batch mới **43 PASS**, PostgreSQL migration/evidence thật **5 PASS**. Còn
-  delivery attribution và gateway persistence read-back trên IP mới,
-  normal-user create E2E trước khi bật. Chờ khóa gate của phiên khác
-  nhả trước batch nặng/reconcile/deploy; không tạo giỏ live thứ hai.
-- [ ] **H46.8 — Red team + hoàn thiện báo cáo:** không P0 software, ba score
-  riêng, report backup/restore/dual-WAN trung thực và đóng băng cây cuối.
-- [ ] **H46.9 — Gate cuối + delivery:** chỉ sau H46.7–H46.8, chạy đúng một
-  `python tools\gate.py` cuối trên toàn dự án; sau PASS không sửa code/test,
-  commit/push branch và đóng phiên.
+- [x] **H46.1 — Connector + API + realistic smoke + EXE:** model được chọn đi
+      xuyên suốt profile/alias/subagent; mỗi phiên tối đa một subagent; retry
+      không khuếch đại; 413 không tiêu create-rate; Responses test stream đúng
+      vòng đời client; 429 có code/scope/reason; metadata vision và hướng dẫn
+      cùng SSOT. Hoàn tất khi Codex/Claude binary thật qua HOME tạm, EXE 1.9.0
+      qua `cam/kiem/go`, browser local sạch và L3 PASS.
+- [x] **H46.2 — Nghiệm thu tài khoản thử nghiệm + Claude Desktop 1.52386.6:**
+      bộ giả lập chốt request/stream/retry/tool-call mà không cần production;
+      tài khoản thường tạo một API key ngắn hạn, gọi thật Messages/Responses,
+      rồi cắm bằng EXE mới. Harness phải thoát **toàn bộ** tiến trình Claude,
+      mở lại, xác nhận chế độ gateway + đúng model trên UI thật, gửi câu hỏi và
+      thấy câu trả lời thật; sau đó thu hồi key, `go` và xác minh registry sạch.
+      Không ghi key/mật khẩu vào tham số, log, ảnh hay báo cáo. Chỉ khi toàn bộ
+      hạng mục trên PASS mới build release cuối và chạy đúng một L3 cuối.
+- [x] **H46.3 — Hướng dẫn cắm tay trong editor Gateway:** đối chiếu ảnh, tài liệu
+      upstream/community và schema Claude Desktop 1.52386.6; bảng Connection,
+      hai Model ID/Display name, quyền key, restart, câu hỏi kiểm và xử lý lỗi.
+      Giữ tool đã đạt. Trang Việt/Anh phải PASS Playwright desktop/mobile, không
+      lỗi console/request; phân biệt thử qua tool với đối chiếu form nhập tay.
+      Chỉ cập nhật repo, không deploy khi chưa được giao.
 
-**Blocker hiện tại:** `docs/VPS_V4/09_BLOCKERS.md`. Backup/restore/dual-WAN là
-production-readiness gate riêng; không được tuyên bố FULL PRODUCTION READY khi
-chưa có live evidence.
+- [x] **H46.4 — Codex cắm tay:** hai profile ltt/ltt-fast, provider Responses,
+      catalog metadata theo model, đường dẫn tuyệt đối và nhập key có che;
+      tài liệu CLI/tiện ích tách khỏi Desktop chưa xác minh Gateway UI. Kiểm
+      CLI 0.145.0 thật qua server mock và GUI hướng dẫn Việt/Anh desktop/mobile.
+- [x] **H46.5 — Chẩn đoán 401 và quyền công cụ:** Bearer/x-api-key có giải thích
+      rõ; giữ nguyên hợp đồng xác thực/quyền. Bảng khóa luôn nói công cụ không
+      giới hạn, mục tùy chọn không biến mất khi catalog rỗng; empty tools không
+      tự cấp write scope. Test tạo khóa và kiểm GUI render thật.
+- [x] **H46.6 — Hướng dẫn giới hạn Code Local:** đọc upstream/community và
+      schema bản đang cài; giải thích tắt 1M không tự đặt 171K, cách mở Local
+      ở màn hình New, env context/compact/output/MCP/subagent/retry. Phân biệt
+      Code Local với Chat/Cowork và hướng dẫn với nghiệm thu phiên dài.
+- [x] **H46.7 — Phiên dài, MCP và permission mode:** ảnh thật phải xác nhận
+      preset 3.8 thành 138.7K/autocompact 76%; xử lý fallback `stream:false`
+      bằng biến chính thức của Claude, không bật Tool Search trước khi LTT có
+      `tool_reference`; hướng dẫn giảm schema MCP và chọn Bypass từ phiên Local
+      mới. Trang Việt/Anh, mẫu cấu hình và test phải cùng Q126; L3 chạy sau cùng.
+
+Tiến độ H46: **100% — hoàn tất 2026-09-15.** Production API và Desktop hai
+model đã PASS ở lượt vận hành trước, khóa ngắn hạn đã thu hồi và dấu vết connector
+đã gỡ. Q126 khi đó chốt một ma trận duy nhất: Gateway Bearer, hai tier LTT, đúng 10 biến
+Local, một subagent và không lồng nhau; CLI/VS Code ghim đủ bảy đường chọn model.
+Tool 1.9.0 đã build đủ installer/GUI/console/ZIP, Defender sạch. Kiểm tập trung
+**393 passed, 3 skipped**; Playwright guide và key đều **PASS 4/4** Việt/Anh ×
+1440/390px, 0 console error/request hỏng. Bốn frontend build PASS. Lượt L3 đầu
+**32/33** chỉ đỏ vì `DEVELOPER_GUIDE.md` trộn kiểu xuống dòng; sau khi trả đúng
+CRLF gốc, lượt cuối `python tools\gate.py` **PASS 33/33**, báo cáo
+`test-results/gates/20260915T014235Z-22516.json`. Không deploy trong H46.
+
+## H47 — Chốt tài liệu Codex Desktop (2026-09-15)
+
+- [x] **H47.1 — Cấu hình và catalog chuẩn:** bề mặt Codex Desktop riêng trên
+      `/huong-dan`, hai khối root config cho LTT 3.8/3.5, catalog có tên sản
+      phẩm và toàn bộ khóa context/compact/tool/retry/SSE/subagent lấy từ SSOT.
+- [x] **H47.2 — Đối chứng client thật:** cùng cấu hình phải qua strict config,
+      `config/read` và `model/list` của CLI 0.145, app-server 0.146 trong Desktop
+      26.721 và binary extension mới hơn; ghi rõ giới hạn picker/app-only thay
+      vì suy diễn tính năng.
+- [x] **H47.3 — Nghiệm thu cuối:** test tập trung, i18n, Playwright Việt/Anh ×
+      desktop/mobile, bốn frontend build, secret scan và đúng một L3 cuối.
+      Test phạm vi trước hợp nhất PASS 29/29 với `-n 7`; browser local và
+      production PASS Việt/Anh × desktop/mobile, bốn build và secret scan PASS.
+      Lượt gate tổng thứ hai bị dừng và gate sau hợp nhất được bỏ theo chỉ đạo
+      trực tiếp của owner ngày 15/09/2026; không ghi hai lượt đó là PASS.
+
+## H48 — Hai phiên Claude chờ đúng capacity LTT (2026-09-15)
+
+- [x] **H48.1 — Chẩn đoán từ request/log thật:** lỗi 529 lúc 09:42:42 là hai
+      reservation LTT 3.8 vượt pool KV; hàng chờ 300 giây và heartbeat 15 giây
+      đã có nhưng máy A ước thiếu `tool_use/tool_result` rồi không chuyển số giữ
+      chỗ sang máy B.
+- [x] **H48.2 — Bản vá fail-closed:** máy A đếm nội dung tool lồng, giữ ảnh cùng
+      mức 2.048 với B và chuyển request/reservation/whale; máy B dùng số lớn hơn
+      giữa tự đo với header. Preset Q128 dùng retry 10 theo mặc định chính thức
+      của Claude và timeout 600.000 ms.
+- [x] **H48.3 — Nghiệm thu:** test quan hệ A→B, header thấp, mô phỏng request
+      Claude có tool blocks; cập nhật trang Việt/Anh, Playwright và dùng chung
+      lượt kiểm H47.3. Production API Messages/Responses/tool-call/tool-result
+      của cả hai model đều HTTP 200 ở lần thử đầu; khóa canary đã thu hồi.
+
+## H49 — Triển khai bản vá CLI/capacity lên production (2026-09-15)
+
+- [x] **H49.1 — Gói phát hành:** hoàn tất H47.3/H48.3, build frontend
+      ngay trước đúng một gate đầy đủ, secret scan 0 finding và commit trạng
+      thái đã được nghiệm thu. Ngoại lệ một lần: owner bỏ gate tổng đợt này;
+      release vẫn được quét 0 finding và xuất từ commit bất biến.
+- [x] **H49.2 — Deploy theo thứ tự B → A:** cập nhật gateway máy B trước để
+      nhận reservation fail-closed, sau đó cập nhật máy A và trang API. Chạy
+      đúng runbook, kiểm hash/revision/health; không đổi DNS. Máy B hash khớp,
+      hai service/model Running; máy A chạy commit `cf065560`, Alembic head
+      `f4a7c2d9e610`, đối chiếu release 0 lệch/thiếu/thừa.
+- [x] **H49.3 — Nghiệm thu production:** kiểm hai model, request dài/hàng chờ,
+      trang hướng dẫn Việt/Anh bằng browser render thật, console và network;
+      ghi kết quả thật vào nhật ký. Owner đã yêu cầu triển khai production ngày
+      15/09/2026. API canary 10/10 HTTP 200; Playwright desktop/mobile Việt/Anh
+      không overflow, 0 console error và 0 request hỏng.
+
+## H50 — Hợp nhất baseline VPS V4 đang chạy (2026-09-15)
+
+- [x] **H50.1 — Giữ nguyên code/schema production:** hợp nhất nhánh
+      `codex/vps-v4-infrastructure-profiles` vào release LTT LLM sau khi deploy
+      máy A phát hiện database đã ở revision `f4a7c2d9e610`. Không chép riêng
+      migration và không hạ cấp code VPS; hồ sơ chi tiết nằm ở `docs/VPS_V4/`.
+- [x] **H50.2 — Nghiệm thu release hợp nhất:** owner chỉ đạo không chạy gate
+      sau hợp nhất. Deploy lại máy A từ clone `core.autocrlf=false`; health
+      `ready`, migration đúng head, ba service Running, đối chiếu commit 0 lệch,
+      browser và API production PASS. Không ghi gate bị bỏ là PASS.
+
+## H51 — Reasoning/sampling theo từng model LTT (2026-09-15)
+
+- [x] **H51.1 — Nguồn và quyết định:** đối chiếu model card Qwen3.8/Qwen3.5,
+      README llama.cpp và Froggeric v22.5; ghi Q131/L-20. Phân biệt mức chính
+      thức với trần vận hành 4.096/2.048 do LTT chọn.
+- [x] **H51.2 — Code và gate phạm vi:** tách budget/temp khỏi macro chung; 3.8
+      xhigh, 3.5 thinking on; vendor template có checksum; đồng bộ default của
+      Public API, Codex Desktop/CLI, tool và SDK. Test phạm vi `-n 7`: 263 PASS;
+      gate tổng chẩn đoán đỏ 7/33 do nợ VPS ngoài changeset, xem nhật ký.
+- [x] **H51.3 — Production và nghiệm thu chức năng:** máy B chạy thật template
+      v22.5 với 3.8 `xhigh`/4.096 và 3.5 thinking on/2.048; nghiệm thu engine
+      17 đạt/0 hỏng. Máy A ở commit `5965d3ad`, đối chiếu 0 lệch/0 thiếu/0
+      thừa; HTTPS ready. Canary API + Claude Desktop đạt cả hai route, khóa tạm
+      đã thu hồi; Playwright trang API 0 console error/0 request lỗi. Owner chỉ
+      định bỏ gate tổng của đợt này; không ghi lượt gate đỏ/bị bỏ là PASS.
+- [ ] **H51.4 — Benchmark chất lượng sau rollout:** đo bộ coding/tool dài đủ
+      mẫu trên từng model và đối chiếu chất lượng/độ trễ/token với baseline cũ.
+      Không dùng canary số học ngắn thay cho bằng chứng chất lượng; chạy khi GPU
+      không còn phục vụ phiên công việc của owner.
+
+## H52 — Phát hành lại Tool cắm CLI sau H51 (2026-09-15)
+
+- [x] **H52.1 — Audit artifact:** đối chiếu mã nhúng trong Tool 1.9.0 với source
+      sau H51; phát hiện bản đóng gói cũ còn ép `low` cho cả hai model và thiếu
+      `default_subagent_reasoning_effort`, nên không còn khớp cấu hình vận hành.
+- [x] **H52.2 — Tool 1.9.1:** tăng phiên bản đồng bộ Python/Inno Setup/tài liệu,
+      dựng installer/GUI/console/ZIP mới và quét Defender. Mã `cam_cli.py` nhúng
+      trong gói trùng SHA-256 với source; console đóng gói trả `cam_cli 1.9.1`.
+- [x] **H52.3 — Kiểm phạm vi:** test tool, operational harness và trang API với
+      `-n 7` đạt **108 passed**; secret scan 0 finding. Phát hành installer và
+      ZIP vào `data/api_dist` để `/tai/cong-cu-cam*` tự chọn 1.9.1; không cần
+      restart dịch vụ vì artifact là dữ liệu vận hành ngoài release.
+
+## H53 — Gỡ vòng tự khóa Qwen 3.5 trên 5060 Ti (2026-09-15)
+
+- [x] **H53.1 — Chẩn đoán log production:** gateway ghi 112 lần `ban_vram`, 0
+      lần đầy slot; cùng job bị 429 khoảng mỗi 20 giây trong 42 phút, tới khi
+      TTL unload/reload model mới phục vụ lại. GPU vẫn tải và owner xác nhận
+      chưa từng OOM VRAM; lỗi không phải model chết hay tràn VRAM.
+- [x] **H53.2 — Bản vá Máy B:** sàn VRAM Qwen 3.5 mặc định về 0, cơ chế vẫn
+      opt-in qua env. Deploy gateway riêng, không restart llama-swap; `/health`
+      xác nhận `san_vram_mb=0`, Messages và Responses thật cùng HTTP 200 khi
+      card đang chạy job.
+- [x] **H53.3 — Máy A và nghiệm thu:** ánh xạ chuỗi “mọi provider đều bận” về
+      503 + `Retry-After` và hoàn credit; test phạm vi `-n 7` đạt 112 PASS.
+      Production chạy commit `0fcc44d7`, đối chiếu 1.055 tệp 0 lệch/thiếu/thừa,
+      health 200; canary Qwen 3.5 qua Messages và Responses đều HTTP 200 ngay
+      lần đầu, khóa thử đã thu hồi.
+
+## H54 — Tool 1.9.2: catalog reasoning thật và tự kiểm Codex (2026-09-15)
+
+- [x] **H54.1 — Khớp hợp đồng model:** catalog của Tool, SDK và trang API công
+      bố 3.8 `low|medium|xhigh`; 3.5 chỉ một lựa chọn
+      `medium — Thinking on`. Đo Codex CLI 0.145.0 xác nhận đây là nhãn wire
+      bắt buộc, không mô tả tier native của Qwen3.5.
+- [x] **H54.2 — Kiểm đúng bề mặt:** lệnh `kiem` gọi thật `/responses` của cả
+      hai slug Codex. Harness bỏ tier `low` giả trên 3.5, dùng `xhigh` cho 3.8;
+      test phạm vi `-n 7` đạt **134 passed**. Ba app-server CLI/Desktop/VS Code
+      đang cài đều parse strict và liệt kê đủ hai model.
+- [x] **H54.3 — Đóng gói và phát hành:** Tool 1.9.2 được dựng đủ
+      installer/GUI/console/ZIP, Defender sạch; source nhúng khớp SHA-256.
+      Hai artifact đã vào `data/api_dist`; trang production hiện đúng 1.9.2,
+      hash, 0 console error/0 request hỏng; hai URL tải đều HTTP 200.
+
+## H55 — Tool 1.9.3: một lần cắm Codex có cả hai model (2026-09-16)
+
+- [x] **H55.1 — Contract và rollback:** `cam_codex` cùng SDK luôn tạo profile
+      3.8 + 3.5 và catalog hai model; `--model` chỉ còn chọn Claude. Hai profile
+      được sao lưu/gỡ độc lập; trạng thái chỉ xanh khi đủ cả hai và catalog.
+- [x] **H55.2 — Dữ liệu Codex thật:** catalog dùng hai nhãn Strong/Fast, mỗi
+      profile có đúng context/compact/reasoning/tool-output riêng. Strict
+      app-server CLI 0.145.0, Desktop 0.146.0-alpha.3.1 và VS Code
+      0.154.0-alpha.6.2 đều trả đủ hai model từ cấu hình Tool sinh ra.
+- [x] **H55.3 — Phát hành:** dựng/quét/cài Tool 1.9.3, đưa hai artifact lên
+      trang API production và xác minh tải + giao diện thật. Production chạy
+      commit `d9a48535`; đối chiếu 1.055 tệp đạt 0 lệch/thiếu/thừa, hai URL tải
+      HTTP 200 đúng hash và Playwright ghi nhận 0 console error/0 request hỏng.
+
+## H56 — Marker cho đường cập nhật bằng ZIP
+
+- [ ] **H56.1 — Loại bước tay:** `deploy/windows/update.ps1` hiện không tự tạo
+      `dau_van_tay.json` khi nhận `-SourceZip`; bổ sung hợp đồng mang commit
+      vào gói hoặc tham số cập nhật, test hành vi và tài liệu rollback. H55 đã
+      ghi marker không BOM từ commit/gói xác định rồi đối chiếu 0/0/0; khoản nợ
+      này dành cho lượt sửa hạ tầng riêng, không làm sai bản đang chạy.

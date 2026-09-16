@@ -21,7 +21,7 @@ Khóa ngày 2026-09-12, trước mọi sửa production code.
 - Domain model nằm trong `apps/vps`.
 - Ba contract độc lập: compute, public IP, gateway.
 - Existing Proxmox/Vultr/gateway clients được bọc lại, không viết lại vì style.
-- OVH provisioning ưu tiên pre-owned static pool. Theo Q125, khi pool hết IP,
+- OVH provisioning ưu tiên pre-owned static pool. Theo Q130, khi pool hết IP,
   web provisioning tự chạy acquisition có journal/price guard/provider
   read-back; admin không duyệt từng order và acquisition vẫn tách khỏi thao tác
   `reserve()` thuần CSDL.

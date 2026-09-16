@@ -210,7 +210,7 @@ def _dat_luong(monkeypatch, khoi):
         def hong(self, exc):
             pass
 
-    def mo(db, *, duong, than, timeout_s=900.0):
+    def mo(db, *, duong, than, timeout_s=900.0, **_meta):
         da_goi.append({"duong": duong, "than": than})
         return Gia(khoi)
 

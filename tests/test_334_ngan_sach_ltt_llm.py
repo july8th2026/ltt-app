@@ -153,6 +153,41 @@ class TestKhongConChongCheo:
         assert features.KY_TU_MOI_TOKEN == ngan_sach.KY_TU_MOI_TOKEN
         assert features.SYNC_MAX_TOKENS_MAC_DINH == ngan_sach.mac_dinh_cho("sync")
 
+    def test_may_A_khong_uoc_thieu_tool_use_va_tool_result_so_voi_may_B(self):
+        """So với phép đo độc lập của gateway, không so A với chính A.
+
+        Hai khối công cụ là hình dạng thật của Claude Code. Trước bản vá, A chỉ
+        đọc ``text`` nên bỏ gần hết kết quả công cụ; B đếm đủ và trả 429 sau khi
+        A đã cho qua hàng chờ.
+        """
+        from apps.ltt_llm import features
+        from llm_gateway.ngan_sach import do_yeu_cau
+        from platform_core.runtime_noi_bo.luong import uoc_tin_nhan
+
+        body = {
+            "system": [{"type": "text", "text": "Bạn là coding agent."}],
+            "messages": [
+                {"role": "assistant", "content": [{
+                    "type": "tool_use", "id": "toolu_1", "name": "Read",
+                    "input": {"file_path": "src/app.py", "limit": 4000},
+                }]},
+                {"role": "user", "content": [{
+                    "type": "tool_result", "tool_use_id": "toolu_1",
+                    "content": [{"type": "text", "text": "x" * 40_000}],
+                }]},
+            ],
+            "tools": [{
+                "name": "Read", "description": "Đọc một tệp",
+                "input_schema": {"type": "object", "properties": {
+                    "file_path": {"type": "string"},
+                    "limit": {"type": "integer"},
+                }},
+            }],
+        }
+        a = features.uoc_token_vao(uoc_tin_nhan(body))
+        b = do_yeu_cau(body).token_van_ban
+        assert a >= b, f"máy A giữ {a} nhưng máy B cần ít nhất {b} token"
+
     def test_executor_KHONG_con_mac_dinh_chung_chung(self):
         """`default_max_tokens` là cái tên đã gây ra lỗi; nó phải biến mất."""
         from apps.ltt_llm.executor import EXECUTOR
@@ -1028,11 +1063,25 @@ class TestExamplesKhopNganSach:
 
         goc = "https://app.lttstudios.com"
         assert "model_catalog_json" in examples.codex_profile()
-        assert "model_catalog_json" in examples.vscode_codex_config(goc)
+        codex = examples.codex_profile()
+        assert "model_auto_compact_token_limit" in codex
+        assert "max_concurrent_threads_per_session = 1" in codex
+        vscode_codex = examples.vscode_codex_config(goc)
+        assert "model_catalog_json" in vscode_codex
+        assert "model_auto_compact_token_limit" in vscode_codex
+        assert "request_max_retries = 1" in vscode_codex
+        assert "stream_max_retries = 0" in vscode_codex
+        assert "max_concurrent_threads_per_session = 1" in vscode_codex
         for lam in (examples.claude_code_env, examples.claude_code_settings,
                     examples.vscode_claude_settings):
             van = lam(goc)
             assert "CLAUDE_CODE_MAX_CONTEXT_TOKENS" in van, lam.__name__
+            assert "CLAUDE_CODE_AUTO_COMPACT_WINDOW" in van, lam.__name__
+            assert "MAX_MCP_OUTPUT_TOKENS" in van, lam.__name__
+            assert "CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS" in van, lam.__name__
+            assert "CLAUDE_CODE_MAX_RETRIES" in van, lam.__name__
+            assert "CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK" in van, lam.__name__
+            assert "ENABLE_TOOL_SEARCH" in van, lam.__name__
             assert str(ngan_sach.CONG_BO_CHO_CLIENT) in van, lam.__name__
 
     def test_mo_ta_model_cong_khai_KHONG_hua_qua_thuc_te(self):
@@ -1051,6 +1100,8 @@ class TestExamplesKhopNganSach:
         tool = next(t for t in manifest.MANIFEST.tools if t.name == "text.chat")
         for alias, spec in tool.api_contract["models"].items():
             mo_ta = spec["description"]
+            if spec["constraints"].get("reads_images"):
+                assert "images" in mo_ta, f"{alias}: metadata says vision but docs do not"
             assert "131K" not in mo_ta and "64K" not in mo_ta, (
                 f"{alias}: van hua cua so cua ENGINE chu khong phai cua so "
                 f"khach dung duoc")

@@ -483,7 +483,7 @@
               "ltt-3.5"
             ],
             "default": "ltt-3.8",
-            "description": "`ltt-3.8` is the deepest model, text only (171K usable input context). `ltt-3.5` answers faster, costs much less and reads images, with 209K usable input context.",
+            "description": "`ltt-3.8` is the deepest model and reads images (171K usable input context). `ltt-3.5` answers faster, costs much less and reads images, with 209K usable input context.",
             "examples": [
               "ltt-3.8"
             ]
@@ -521,8 +521,7 @@
               "medium",
               "xhigh"
             ],
-            "default": "xhigh",
-            "description": "How much the model thinks before answering. Deeper costs more output tokens but gives better answers, so the default is the deepest. Use `low` when you want the shortest answers - do NOT reach for a small `max_tokens` instead: thinking spends that same budget, so the model can reason until it is cut off and return empty content with finish_reason=length.",
+            "description": "How much the model thinks before answering. Deeper costs more output tokens but can improve hard answers. When omitted, LTT 3.8 uses `xhigh`; LTT 3.5 keeps thinking on with compatible `medium`. Use `low` when you want the shortest answers - do NOT reach for a small `max_tokens` instead: thinking spends that same budget, so the model can reason until it is cut off and return empty content with finish_reason=length.",
             "examples": [
               "medium"
             ]
@@ -603,7 +602,7 @@
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "f6badbdc9de99372"
+      "contract_hash": "9d23c67b17de285f"
     },
     {
       "name": "text.prompt_package",

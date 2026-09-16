@@ -40,6 +40,208 @@
   Điều khoản), R16 (IP OVH tự gia hạn khi rỗi — cần chủ sản phẩm chốt), R17
   (`inventory_sync` mất `order_id`); mypy `arg-type` +1 đã có sẵn ở `e5b72562`.
   Chi tiết: `docs/VPS_V4/14_KE_HOACH_VAN_HANH_TOI_UU.md`.
+## 2026-09-16 — H55 hoàn tất: Tool 1.9.3 cài hai model Codex trong một lượt
+
+- Đổi contract Tool và SDK: một lần cắm Codex luôn tạo
+  `ltt.config.toml` cho LTT 3.8, `ltt-fast.config.toml` cho LTT 3.5 và catalog
+  chứa cả hai. Radio/`--model` chỉ còn chọn mặc định Claude Code. Mỗi profile
+  có trạng thái tạo/backup/rollback độc lập; trạng thái Codex chỉ xanh khi đủ
+  hai profile và catalog.
+- Hai profile mang context, compact, reasoning, `tool_output_token_limit` và
+  subagent riêng. Catalog hiển thị `LTT 3.8 (Strong)` và `LTT 3.5 (Fast)`.
+  Harness dùng chính output Tool, cố tình chọn model Claude đối nghịch, rồi
+  chạy strict app-server: CLI 0.145.0, Desktop 0.146.0-alpha.3.1 và VS Code
+  0.154.0-alpha.6.2 đều trả đủ hai model.
+- Chạy `python -m pytest ... -q -n 7` trên bảy tệp phạm vi: **182 passed**,
+  7 cảnh báo deprecation; Ruff mục tiêu và `git diff --check` PASS. Lệnh
+  `python tools/check_so_test.py` vẫn đỏ vì hai cặp số test trùng 1261/1262 từ
+  nhánh VPS song song, không do H55 và không dùng làm bằng chứng xanh.
+- `python tools/dong_goi_exe.py phat-hanh --quet`: PASS; installer/GUI/console/
+  ZIP 1.9.3 đều Defender sạch. Source và `cam_cli.py` nhúng cùng SHA-256;
+  installer `0099cf5b620bb05ebb82eb2b835a3fdf48399e4ca84fdd23756ada8c47e79968`,
+  ZIP `76686f0220d87d01f5d8b2e5e8a9e474c634a7d15e6e7031ee10837b2b4776eb`.
+  Máy owner đã cài 1.9.3 nhưng không chạy `cam` trên hồ sơ thật đang phục vụ
+  phiên Codex hiện tại.
+- Hai artifact đã chép vào `C:\LTTPlatform\data\api_dist`; tải công khai trả
+  HTTP 200, đúng kích thước và đúng hai SHA-256 ở trên. Deploy Máy A từ clone
+  LF sạch tại commit `d9a48535`: backup PostgreSQL/data, migration, restart và
+  readiness đều PASS; Web/Worker/Voice Running.
+- `update.ps1 -SourceZip` không sinh `dau_van_tay.json`, nên lượt đối chiếu đầu
+  tiên dừng đúng với trạng thái "không biết commit". Ghi marker không BOM từ
+  chính commit/gói vừa phát hành rồi chạy lại `tools/nghiem_thu_deploy.py`:
+  **1.055 tệp, 0 lệch, 0 thiếu, 0 thừa**; `/health/version` khai
+  `d9a485359946`. H56 ghi khoản nợ bỏ bước marker tay ở lần cập nhật ZIP sau.
+- Playwright production `/huong-dan/cong-cu` thấy 1.9.3, hai tệp profile và hai
+  hash; `/huong-dan` thấy cả `ltt-3.8` và `ltt-3.5`. Hai trang có 0 console
+  error, 0 request failed và 0 response HTTP >= 400. Theo chỉ định của owner,
+  H55 dùng test phạm vi `-n 7` (182 PASS) và **không chạy gate tổng**.
+
+## 2026-09-15 — H54: Tool 1.9.2 khớp reasoning và kiểm thật Codex
+
+- Tài liệu chính thức Codex xác nhận custom provider dùng Responses và catalog
+  cần metadata reasoning. Model card/template Qwen3.8 công bố ba mức
+  `low|medium|xhigh`, mặc định `xhigh`; Qwen3.5 chỉ có thinking bật/tắt. Phép
+  đo bằng Codex CLI 0.145.0 cho thấy bỏ `supported_reasoning_levels` làm catalog
+  không parse, còn danh sách rỗng vẫn gửi `reasoning.effort=medium`.
+- Catalog của Tool, SDK và trang API nay cho 3.8 ba lựa chọn trên; 3.5 chỉ một
+  lựa chọn `medium — Thinking on`. Đây là nhãn tương thích Codex, không phải
+  tier native. Harness vận hành dùng `xhigh` cho 3.8 và bỏ trường effort ở lượt
+  API Qwen3.5 để kiểm đúng mặc định thinking-on của server.
+- `cam_cli kiem` nay gọi thật `/api/v1/responses` cho cả `ltt-3.8` và
+  `ltt-3.5`, ngoài tuyến Claude Messages. Chạy `python -m pytest -n 7
+  tests\test_275_cai_dat_cli.py tests\test_283_cam_cli.py
+  tests\test_294_trang_cong_khai_api.py
+  tests\test_1262_cli_operational_harness.py -q`: **134 passed**, 7 cảnh báo
+  deprecation. Ba binary thật — CLI 0.145.0, Desktop app-server
+  0.146.0-alpha.3.1, extension 0.154.0-alpha.6.2 — đều parse strict và liệt kê
+  đủ hai model.
+- `python tools\dong_goi_exe.py phat-hanh --quet`: **PASS**; Tool 1.9.2 đủ
+  installer/GUI/console/ZIP, Defender sạch. Source nhúng trùng SHA-256; console
+  trả `cam_cli 1.9.2`. Installer SHA-256
+  `317627d1327334db2d704336635fe5982311476f80be1dca75a9c71678b4225a`, ZIP
+  `d900972c3647d1d330cabacb01d89d3848f9c4f38a75631242dfecf56c5e5136`.
+- Hai artifact đã chép vào `C:\LTTPlatform\data\api_dist`. Playwright production
+  `/huong-dan/cong-cu` hiện đúng 1.9.2 và hai hash, 0 console error/0 request
+  hỏng; hai URL tải công khai trả HTTP 200. Theo chỉ định của owner, đợt này
+  dùng gate riêng `-n 7`, không chạy gate tổng và không ghi gate phạm vi là
+  full gate PASS.
+- Deploy Máy A từ clone phát hành sạch ở commit `c9c3037b`: `EXITCODE=0`,
+  health ready 200, ba dịch vụ Running; `nghiem_thu_deploy.py` đối chiếu 1.055
+  tệp đạt 0 lệch/thiếu/thừa. Playwright mở JSON catalog thật trên
+  `/huong-dan`, xác nhận 3.8 có `low|medium|xhigh`, 3.5 chỉ có
+  `medium — Thinking on`; 0 console error và 0 request hỏng.
+
+## 2026-09-15 — H53: chẩn đoán và gỡ vòng tự khóa Qwen 3.5
+
+- Nhật ký Máy B cho thấy một job Qwen 3.5 bị từ chối 429 khoảng mỗi 20 giây từ
+  17:28 tới 18:10. `/health` trước bản vá ghi `ban_vram=112`, `ban_day=0`,
+  `ban_pool=3`; `/slots` vẫn còn suất. VRAM trống WDDM dao động sát 600 MiB,
+  đúng ngưỡng cũ, nhưng không có OOM và owner xác nhận card chưa từng tràn VRAM.
+  Các lượt bị chặn không chạm llama-swap, nên TTL 1.800 giây unload/reload model
+  và vô tình giải vòng khóa sau khoảng 42 phút.
+- Đổi mặc định `LTT_LLM_VRAM_TRONG_TOI_THIEU_MB__qwen35-api` từ 600 về 0; giữ
+  cơ chế dưới dạng opt-in. Đồng thời giữ kiểu `busy_only` từ bộ điều phối qua
+  `text.chat`, để cửa đồng bộ trả 503 + `Retry-After: 30` và hoàn credit thay vì
+  làm rơi `KhongCoProviderNao` thành HTTP 500.
+- Chạy `python -m pytest -n 7 tests\test_1221_gateway_so_theo_model.py
+  tests\test_256_app_ltt_llm.py tests\test_259_cua_dong_bo.py -q`: **112
+  passed**, 7 cảnh báo deprecation. Phép kiểm mới tái hiện toàn chuỗi lỗi HTTP,
+  không chỉ giả sẵn `BanError` ở cửa.
+- Deploy Máy B bằng `llm_gateway\deploy\deploy.ps1 -BoQuaVenv`: snapshot
+  `auto-20260915-182957`, 39 tệp Python khớp hash. Chỉ restart
+  `LTTLlmGateway`, không restart llama-swap. `/health` sau restart báo Qwen 3.5
+  `san_vram_mb=0` trong khi đang giữ một job; canary nội bộ `/v1/messages` và
+  `/v1/responses` đều HTTP 200.
+- Deploy Máy A từ clone sạch `core.autocrlf=false`: `EXITCODE=0`, production
+  chạy commit `0fcc44d7`, health 200; đối chiếu 1.055 tệp đạt 0 lệch, 0 thiếu,
+  0 thừa. Canary production riêng Qwen 3.5 qua Messages và Responses đều HTTP
+  200 ở lần đầu; khóa live ngắn hạn đã thu hồi. Bộ canary tổng ban đầu bị dừng
+  vì chờ capacity 3090 ngoài phạm vi, khóa còn mở được rà và thu hồi trước khi
+  chạy lại phép đo hẹp. Owner đã chỉ định bỏ gate tổng của đợt này; không ghi
+  test phạm vi thành gate PASS.
+
+## 2026-09-15 — H52: Tool 1.9.1 đồng bộ cấu hình H51
+
+- Audit file đóng gói 1.9.0 cho thấy nó được dựng trước thay đổi H51: profile
+  Codex còn `model_reasoning_effort = "low"` cho cả LTT 3.8 và LTT 3.5, đồng
+  thời chưa có `default_subagent_reasoning_effort`. Vì vậy chỉ source/repo mới
+  là đúng, còn bộ cài khách tải chưa mang đủ dữ liệu mới.
+- Tăng phiên bản Python và Inno Setup lên 1.9.1, cập nhật hướng dẫn API rồi chạy
+  `python -m pytest tests/test_283_cam_cli.py tests/test_1262_cli_operational_harness.py tests/test_294_trang_cong_khai_api.py -q -n 7`: **108 passed**.
+- `python tools\dong_goi_exe.py phat-hanh --quet`: **PASS**. Installer, GUI,
+  console và ZIP ở `E:\LTTSTUDIOSAPP-build\cam-cli-1.9.1`; Defender đều sạch.
+  Mã `cam_cli.py` nhúng trùng SHA-256 với source và console trả `cam_cli 1.9.1`.
+  Installer SHA-256 là
+  `96b5cea4ba24ba06726d195b42219a807ab36c87e220ae50d00530c734caae89`;
+  ZIP SHA-256 là
+  `d45b6eb0b9d89f857af1f029887a3f84d4bf8cffdccf6b0cdf1881fff813565e`.
+- Artifact 1.9.1 được chép vào `C:\LTTPlatform\data\api_dist`; route tải tự dò
+  semantic version mới nhất nên không cần restart dịch vụ. Không chạy lệnh
+  `cam` trên hồ sơ thật của owner trong lúc nghiệm thu; tránh đổi registry và
+  cấu hình Codex/Claude đang phục vụ các phiên hiện tại.
+- Nâng bộ cài trên máy owner từ 1.8.0 lên 1.9.1 bằng chế độ silent, exit 0;
+  registry uninstall và mã nhúng trong thư mục cài đều xác nhận 1.9.1/source
+  hiện hành. Playwright production `/huong-dan/cong-cu` hiển thị đúng hai gói,
+  phiên bản, kích thước và SHA-256; 0 console error, 0 request hỏng. Tải lại
+  hai URL công khai đều HTTP 200 và băm trùng artifact nguồn.
+
+## 2026-09-15 — H51 production: reasoning theo model đã chạy thật
+
+- Máy B: deploy từ commit H51, snapshot rollback
+  `H:/LTT_LLM/releases/auto-20260915-154407`, restart `LTTLlamaSwap` kéo theo
+  `LTTLlmGateway`. `/running` xác nhận cả hai model `ready`: Qwen3.8 dùng
+  Froggeric v22.5, `xhigh`, budget 4.096, temp 1,0, context 221.184/KV q4_0;
+  Qwen3.5 dùng cùng template, thinking on, budget 2.048, temp 1,0, context
+  262.144/KV q8_0. Harness inference thật đạt 17, hỏng 0; chat 69,9 tok/s,
+  tool calling và prefix-cache đạt. Wrapper trả 255 vì cleanup tự taskkill cha
+  SSH sau khi in kết quả; hai Windows Service tự phục hồi và vẫn Running.
+- Máy A: hợp nhất `main` vào nhánh phát hành thành `5965d3ad`; không đụng sáu
+  tệp tài liệu đang dở trong cây chính. Lượt deploy đầu `EXITCODE=0`, canary
+  chức năng đạt nhưng phép băm bắt 798 tệp lệch do clone kế thừa
+  `core.autocrlf=true`. Đặt clone phát hành `core.autocrlf=false`, kiểm archive
+  khớp blob rồi deploy lại. Lượt cuối `deploy-20260915-160053`: `EXITCODE=0`,
+  `/health/ready` 200, fingerprint `5965d3ad1aa4`; nghiệm thu 1.055 tệp cho kết
+  quả **0 lệch, 0 thiếu, 0 thừa**, chín tài sản vendor ngoài commit đúng khai.
+- Canary production dùng khóa ngắn hạn: API đạt; Claude Desktop thấy đúng hai
+  route `ltt-llm-claude-compat` và `...-35`, chọn/gửi/trả lời đều đạt; khóa đã
+  thu hồi và cấu hình Desktop đã phục hồi. Playwright `/huong-dan` xác nhận
+  bảng Claude/Codex, effort/context/compact theo model, 0 tràn ngang, 0 console
+  error và năm request tĩnh đều 200.
+- Test trước deploy: phạm vi `-n 7` **263 PASS**, harness CLI **40 PASS**, secret
+  scan 0 finding. Gate tổng trước đó đỏ 7/33 do baseline VPS ngoài changeset;
+  owner chỉ định bỏ gate tổng đợt này, nên không chạy lại và không ghi PASS.
+  Benchmark coding/tool dài sau rollout còn H51.4; canary số học ngắn chỉ chứng
+  minh tương thích/vận hành, không chứng minh mức tăng chất lượng.
+
+## 2026-09-15 — H51: tách reasoning/sampling theo model, trước deploy
+
+- Đối chiếu model card Qwen3.8/Qwen3.5, README llama.cpp và Froggeric v22.5.
+  Chốt Q131/L-20: 3.8 `xhigh`, budget 4.096, temp 1,0; 3.5 thinking bật,
+  budget 2.048, temp 1,0. Hai budget là trần vận hành LTT, không phải giá trị
+  nhà sản xuất công bố. Template v22.5 được vendor và khóa SHA-256.
+- Bỏ budget/temp khỏi macro chung; giữ nguyên context, ba slot, KV cache và MTP.
+  Public API `text.chat`, Codex Desktop/CLI, tool và SDK dùng default theo model;
+  schema `text.chat` bỏ `xhigh` dùng chung và snapshot/contract baseline được
+  cập nhật có chủ đích. Request gửi effort tường minh vẫn tương thích.
+- Xác minh binary production bằng SSH user `lengo`: llama.cpp build 10883,
+  commit 91f6a6cf3, có đủ reasoning mode/effort/budget. YAML/JSON parse PASS,
+  deploy.ps1 ASCII, template đúng checksum, secret scan 3.669 tệp/900.370 dòng,
+  0 finding. Test phạm vi `-n 7`: **263 PASS**; harness CLI riêng **40 PASS**.
+- `python tools\gate.py --doi` tự nâng lên đầy đủ và **FAIL 7/33**. Sau khi sửa
+  contract/snapshot của changeset, các nguyên nhân còn lại thuộc baseline VPS
+  hợp nhất: bốn silent-except mới trong `apps/vps/services`, một mypy arg-type
+  trong `apps/vps`, và trùng số test 1261/1262. Không nới baseline và không ghi
+  lượt này là PASS. Máy B vẫn chạy cấu hình cũ 512/0,6; chưa restart/deploy.
+
+## 2026-09-15 — Hợp nhất VPS V4, deploy bản vá hai phiên Claude lên production
+
+- Máy B được deploy trước từ nhánh LTT LLM; snapshot rollback
+  `auto-20260915-132349`, hash 39 tệp khớp. Harness máy B chạy inference thật,
+  tool calling và prefix cache: 17 đạt, 0 hỏng. Cleanup của harness dừng tiến
+  trình; khôi phục đúng SSH `lengo@192.168.2.66` với khóa `nexus_b`, rồi xác
+  nhận `LTTLlamaSwap`/`LTTLlmGateway` Running, discovery đủ `qwen35-api` và
+  `qwen38-api`, hash `api.py` khớp repo.
+- Deploy máy A lần đầu từ commit `15c71d6f` dừng ở Alembic trước khi khởi động
+  bản mới: database đang tại `f4a7c2d9e610`, còn dòng phát hành thiếu migration
+  VPS V4. Đã rollback `app.previous`, khởi động lại Web/Worker/Voice và xác nhận
+  Running. Hợp nhất toàn bộ baseline VPS V4 thay vì chép riêng migration; đổi số
+  quyết định VPS trùng Q124/Q125 thành Q129/Q130. Commit hợp nhất `cf065560` có
+  đúng một Alembic head `f4a7c2d9e610`.
+- Deploy `cf065560` lần đầu EXITCODE=0 và health 200 nhưng
+  `nghiem_thu_deploy.py` bắt 798 tệp lệch byte do clone `core.autocrlf=true`.
+  Dựng lại checkout bất biến với `core.autocrlf=false`, deploy lại EXITCODE=0;
+  nghiệm thu cuối: 0 lệch, 0 thiếu, 0 thừa, ba service Running, `/health/ready`
+  trả `ready`, dấu vân tay production đúng `cf065560`.
+- API canary production bằng khóa ngắn hạn: tools, credits, Messages, Responses,
+  tool-call và tool-result trên cả LTT 3.8/LTT 3.5 đều HTTP 200 ngay lần đầu;
+  khóa đã thu hồi. Playwright production `/huong-dan` và `/en/huong-dan` tại
+  1440x1000 và 390x844: đủ mục Claude/Codex, không overflow, 0 console error,
+  0 failed request.
+- Bằng chứng test trước hợp nhất: gate phạm vi lỗi PASS 29/29 với worker `-n 7`;
+  bốn frontend build và secret scan PASS. Lượt gate tổng thứ hai đã dừng theo
+  yêu cầu; owner sau đó chỉ đạo rõ “hợp nhất commit rồi deploy, không chạy gate”,
+  nên không chạy gate sau hợp nhất và không ghi bất kỳ lượt bị dừng/bỏ nào là
+  PASS.
 
 ## 2026-09-14 — Release bất biến và backup trước cửa sổ deploy VPS
 
@@ -261,6 +463,216 @@
   branch riêng rồi rebase/port lên ref `main` đã commit, không chạm working tree
   của phiên khác; migration V4 phải nối lại head canonical sau rebase.
 
+## 2026-09-15 — H48: bắt đúng lỗi 529 của hai phiên Claude dài
+
+**Sự thật production.** Transcript Claude ghi 529 lúc 09:42:42; log máy A cùng
+thời điểm ghi hai reservation LTT 3.8 lần lượt 148.593 + 79.848 và 79.848 +
+150.633, đều vượt pool 221.184. Còn slot không có nghĩa còn KV. Hàng chờ 300
+giây và heartbeat 15 giây đã tồn tại; gốc là phép ước lượng A bỏ nội dung lồng
+`tool_use`/`tool_result` và không truyền reservation sang B.
+
+**Bản vá.** A đếm bảo thủ mọi chuỗi trong khối công cụ, bỏ base64 ảnh vì ảnh đã
+được giữ riêng, và đồng bộ mức ảnh 2.048 token với B. Lease A chuyển
+`X-LTT-Request-Id`, `X-LTT-Token-Dat`, `X-LTT-Whale`; B lấy `max(tự đo, header)`
+để một A cũ/header thấp không thể hạ phép đo an toàn. Ma trận Local Q128 dùng
+retry 10 theo mặc định chính thức Claude, timeout 600.000 ms và không bật
+watchdog thử 429/529 vô hạn.
+
+**Bằng chứng đã chạy trước gate cuối:**
+
+- Nhóm tập trung: pha chọn **311 passed, 3 skipped**; ba tệp tuần tự bắt buộc
+  **407 passed, 3 skipped**; `RESULT: PASS`, 342 giây.
+- Harness cấu hình thật chạy trực tiếp với Codex CLI 0.145.0, Desktop app-server
+  0.146.0-alpha.3.1 và VS Code extension 0.154.0-alpha.6.2: cả ba PASS, mỗi bản
+  đọc đúng hai model `ltt-3.8`/`ltt-3.5`.
+- `test_1262_cli_operational_harness.py`: **3 passed**. Public docs check PASS;
+  secret scan **0 finding**; dịch thiếu không tăng, fuzzy nghi sai 0.
+- Playwright `/huong-dan` Việt/Anh × 1440/390: **PASS 4/4**, 0 console error,
+  0 failed request, không tràn ngang; đã soi ảnh desktop và mobile.
+
+**Còn lại:** hợp nhất lên trunk sạch, build cuối, L3, triển khai B → A và nghiệm
+thu production theo H49. Kết quả sẽ được bổ sung bằng một mục mới, không sửa
+nhật ký này thành lời tiên đoán.
+
+
+## 2026-09-15 — H47: tài liệu Codex Desktop theo schema và binary thật
+
+**Kết luận sản phẩm.** Codex Desktop 26.721 không có form Gateway nhập tay như
+Claude Desktop. Nó dùng app-server, `%USERPROFILE%/.codex/config.toml` và catalog
+JSON cấp người dùng. Desktop không truyền `--profile`, nên trang khách nay có
+một bề mặt riêng với hai khối root config hoàn chỉnh cho LTT 3.8/LTT 3.5, cách
+đặt `LTT_API_KEY` ở Windows, restart/thread mới và bảng giải thích từng khóa.
+Provider ID giữ cố định là `ltt`; không hứa picker hiện tại chọn custom model.
+
+**Nguồn và điểm sửa sau phép đo.** Đối chiếu configuration reference/schema,
+tài liệu Windows/subagent của OpenAI và tám issue upstream/community, rồi sinh
+schema trực tiếp từ binary Desktop. Schema web mới có
+`supports_standalone_web_search`, nhưng CLI 0.145 thật từ chối khóa đó khi chạy
+`--strict-config`; vì mặc định đã false, khối copy bỏ khóa để chạy trên cả bộ
+đọc cũ và mới. Ma trận và nguồn nằm ở
+`docs/PUBLIC_API/CODEX_DESKTOP_CONFIG.md`; Q127 giữ quyết định.
+
+**Phép đo đã chạy:**
+
+- `LTT_CODEX_BINARY=<CLI 0.145> python -m pytest tests/test_1262_cli_operational_harness.py::test_generated_config_loads_in_installed_codex_app_server -q`
+  → **2 passed** (hai model).
+- Cùng test với app-server `0.146.0-alpha.3.1` của Desktop 26.721 →
+  **2 passed**; với binary extension `0.154.0-alpha.6.2` → **2 passed**.
+  Cả ba trả đúng `config/read` (`model_provider=ltt`) và `model/list` (hai slug,
+  hai display name).
+- Kiểm tập trung sáu tệp → **156 passed, 6 skipped**. Skip là phép thử binary
+  tùy chọn khi không truyền `LTT_CODEX_BINARY` và ba skip môi trường có sẵn.
+- `check_dich_thieu.py` → **PASS**; `check_fuzzy_dich.py` → không tăng lỗi;
+  test mọi chuỗi API có bản EN → **1 passed**.
+- Playwright `/huong-dan` Việt/Anh × 1440/390 px → **PASS 4/4**, đúng tab
+  Codex Desktop, parse được catalog, không tràn ngang, **0 console error, 0
+  request hỏng**. Ảnh render đã được soi trực tiếp.
+
+**Ba câu hạ tầng dùng chung.** Bản vá chỉ sinh cấu hình/tài liệu, không có cơ
+chế điều phối khiến worktree chưa nhận bản vá phạt worktree đã nhận. Nhánh suy
+biến là client cũ từ chối khóa mới; `--strict-config` trên ba binary là phép đo
+cho chính nhánh ấy. Phép kiểm khóa quan hệ model → provider → context/compact
+theo `ngan_sach.py`, không chỉ tìm nhãn trong tệp.
+
+**Còn lại:** bốn frontend build và đúng một `python tools\gate.py` cuối; kết quả
+được ghi bổ sung ngay sau lượt chạy.
+
+
+## 2026-09-15 — H46 hoàn tất: Q126, Tool 1.9.0 và gate cuối 33/33
+
+Hoàn tất trên nhánh `codex/cli-compat-final-audit`; không deploy, không đổi DNS,
+GPU, RPM hay cấu hình production. Q126 thay Q125 sau khi rà toàn bộ biến chính
+thức của Claude Code 2.1.270, cấu hình Gateway của Claude Desktop 1.52386.6 và
+các báo cáo cộng đồng. Ma trận chuẩn duy nhất nằm ở
+`docs/PUBLIC_API/CLAUDE_CONFIG_MATRIX.md`: Gateway Bearer; hai model/tier LTT;
+đúng 10 biến Local; một subagent, depth 1 và FORCE theo model chính; CLI/VS Code
+ghim bảy đường chọn model. Bỏ biến 1M dư, không ép thinking/effort và giữ Tool
+Search tắt cho tới khi LTT có `tool_reference`.
+
+Trang API Việt/Anh lấy giá trị từ `platform_core.public_api.examples`; hướng dẫn
+giải thích 401 x-api-key/Bearer, cửa sổ 171.458/209.141, ngưỡng nén
+138.690/176.373, MCP schema, permission mode và cách thử từng model. Ảnh owner
+xác nhận phiên Local 3.8 hiển thị 46,8K rồi 99,6K trên 138,7K, buffer khoảng 33K
+và nén ở 76%; lỗi 400 là fallback non-streaming 98.678 input token trong cửa
+90 giây, không phải model mất năng lực.
+
+**Bằng chứng đã chạy:**
+
+- Nhóm kiểm tập trung 13 tệp: **393 passed, 3 skipped**, 182,93s.
+- Playwright `check_manual_guide.js`: **PASS 4/4** Việt/Anh × 1440/390px, đủ 10
+  biến và hai tier, chuyển tab đúng, không tràn ngang, 0 console error/request
+  hỏng. `check_manual_keys.js`: **PASS 4/4**, tạo khóa test không chọn tool giữ
+  trạng thái mọi công cụ công khai, bí mật không hiện lại sau GET.
+- `build_public_api_docs.py --check`, `check_dich_thieu.py`, `check_i18n.py`,
+  `check_fuzzy_dich.py`, `git -c core.whitespace=cr-at-eol diff --check` và
+  `scan_source_secrets.py`: **PASS**; secret finding **0**.
+- `npm run build` tại bốn frontend agent-canvas, autosub-studio, chatltt và
+  prompt-ai-ommi: **PASS**.
+- `python tools\dong_goi_exe.py phat-hanh --quet`: **PASS**; Tool 1.9.0 ở
+  `E:\LTTSTUDIOSAPP-build\cam-cli-1.9.0`, installer/GUI/console/ZIP đều Defender
+  sạch. Installer SHA-256:
+  `502cb68fffdf31c484e2519b84bd62ee0283bb40d3e601a0f81a10cc732f0c9b`.
+  Console đóng gói trả `cam_cli 1.9.0`.
+- Gate đầu của trạng thái cuối: **32/33**, chỉ lỗi kiểu xuống dòng
+  `DEVELOPER_GUIDE.md` (HEAD CRLF, bản sửa trộn). Trả đúng CRLF gốc và
+  `python tools\check_xuong_dong.py`: PASS.
+- `python tools\gate.py` lượt cuối: **PASS 33/33**; backend regression 811,7s,
+  bất biến đa tiến trình 307,6s, bốn frontend/PostgreSQL/API/SDK/Postman/i18n/
+  secret scan đều PASS. Báo cáo:
+  `test-results/gates/20260915T014235Z-22516.json`.
+
+H46 đạt **100%**. Không có bước deploy trong phạm vi được giao.
+
+
+## 2026-09-15 — H46 mở rộng: manual Codex, Bearer 401, quyền công cụ và cửa sổ Claude
+
+Tiếp tục cùng worktree/nhánh `codex/cli-compat-final-audit`, không làm lại release
+hay lượt production đã PASS, không deploy. Owner thêm Codex manual và kiểm lỗi
+Claude nhập tay. Gate chỉ chạy ở cuối theo owner; tiến độ cập nhật **94%**.
+
+**Chẩn đoán thật:** ảnh 18 trả 401, form chọn x-api-key. Backend chỉ nhận Bearer.
+UI Automation đã đổi lựa chọn Bearer; owner xác nhận Test connection xanh cùng
+khóa. Không đọc giá trị API key. `allowed_tools` rỗng cho mọi công cụ công khai,
+không mở thêm scopes. UI bỏ trống all-tools và ẩn nhóm tools khi catalog rỗng:
+sửa template, thêm test tạo khóa/rỗng catalog, giữ nguyên rule quyền backend.
+
+**Máy owner:** EXE `go`, `python tools/cam_cli.py xem`, `python tools/cam_cli.py go`
+báo sạch dấu vết LTT trên năm bề mặt/registry/env. Giữ backup `.truoc-ltt` ban đầu;
+`powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/kiem_claude_desktop.ps1 -RestoreOnly`
+báo restored=true, thoát toàn bộ Claude và mở lại. Profile owner nhập sau cleanup
+được giữ. Phiên Code owner đang chạy không bị dừng để áp biến context mới.
+
+**Codex:** đọc OpenAI Docs trước khi triển khai, đối chiếu CLI 0.145.0 và Desktop
+26.721.11231.0. Thêm JSON catalog 2 model, profile ltt/ltt-fast theo budget, path
+tuyệt đối và nhập key che bằng Read-Host. Binary CLI thật chạy hai profile sinh
+từ examples qua server mock: SSE nhận được, model wire đúng, exit0 cả hai; báo
+cáo `tmp/kiem_cli_van_hanh/codex-manual.json`. Không gọi đó là inference thật.
+
+**Claude token:** đọc docs model-config/env-vars/Desktop/configuration và issue
+#68522/#16033. UIA vòng Usage đọc 48.1k/200k, sau đó 58.1k/200k; owner xác nhận thấy
+200K. Phát biểu ban đầu "ảnh báo 200K" sai nguồn: ảnh 16–20 không có số đó, đã
+sửa câu trả lời và docs. Ảnh 21 đang Code session nên không có Environment;
+UIA New đã thấy Local. Hướng dẫn thêm biến Local, dùng budget hẹp hơn cho hai
+model; không hứa tác dụng trên Chat/Cowork hay nghiệm thu long-context chưa chạy.
+Ảnh 22 xác nhận owner mở đúng Edit local environment và ba số đúng; đã hướng
+dẫn định dạng .env, thêm 4 biến chống bloat/concurrency/retry/1M, Save và phiên mới.
+
+**Lệnh/kết quả đã chạy:**
+
+- `python tools/gate.py` lượt đầu: **FAIL 1/33, 32/33 PASS**. Báo cáo `test-results/gates/20260914T171303Z-14460.json`; pha1 3 failed/11443 passed/72 skipped/1 xfailed; pha2 96 passed; Postgres/frontend/static đều PASS. Không phải gate xanh.
+- Chạy lại ba test cụ thể `test_62::test_tai_lieu_dang_hieu_luc_khong_tro_vao_file_da_chuyen_di`, `test_272::test_trang_cli_day_du_ba_cong_cu`, `test_604::test_q120_ton_tai_va_q116_da_thay` sau sửa: **3 passed** (3,33s).
+- `python -m pytest -q tests/test_191_developer_portal_sdk.py tests/test_294_trang_cong_khai_api.py tests/test_299_khu_api_da_dich.py tests/test_272_cua_streaming.py tests/test_334_ngan_sach_ltt_llm.py tests/test_283_cam_cli.py`: **229 passed, 4 skipped, 1 failed** (125,58s); prose EN còn nhãn Việt, đã dịch Strong/Fast.
+- `python -m pytest -q tests/test_299_khu_api_da_dich.py` sau sửa: **13 passed, 1 skipped** (4,01s), warning Starlette/httpx đã có.
+- `python tmp/kiem_cli_van_hanh/check_codex_manual.py`: **PASS 2/2**, installed CLI + mock, không production.
+- `playwright-cli -s=ltt-manual-guide run-code --filename=tests/fixtures/check_manual_guide.js`: **PASS 4/4**, catalog JSON 2 model đọc được, switch surface đúng, no overflow, 0 console errors/failed requests.
+- `playwright-cli -s=ltt-manual-guide run-code --filename=tests/fixtures/check_manual_keys.js`: **PASS 4/4 + create test key**, empty tools unrestricted, write scope giữ đúng, GET lại không hiện bí mật; 0 console errors/failed requests. Lượt đầu phép đo reload POST resubmit tạo key mới: sửa harness dùng GET, không đổ lỗi server.
+- `python tools/i18n.py bien-dich`: PASS; check_dich_thieu/check_i18n/check_fuzzy_dich: PASS, không tăng nợ mới. `git -c core.whitespace=cr-at-eol diff --check`: PASS.
+
+Checkpoint: guide/key UI đã kiểm; còn cập nhật cuối/kiểm tĩnh, build frontend
+ngay trước L3 cuối và commit sau L3 xanh. **L3 cuối chưa chạy ở checkpoint này.**
+Kiểm cuối sau thêm khối .env sao chép: test_294 + test_299 **43 passed, 1 skipped**
+(3,65s), ruff/mypy/docs/i18n PASS, source secrets **0 finding**. Browser guide/key
+chạy lại sau restart preview để nạp bản dịch mới: **PASS 4/4 + 4/4**, 0 lỗi.
+
+## 2026-09-14 — H46: connector 1.8.0, Desktop hai model và hướng dẫn nhập Gateway
+
+Nhánh riêng `codex/cli-compat-final-audit`; không deploy, không đổi DNS/GPU/RPM.
+Khôi phục từ checkpoint audit, giữ các hạng mục đã chạy; owner chọn ghim model,
+một subagent và gate chỉ chạy cuối. Hai nhãn Q124: LTT 3.8 (Mạnh), LTT 3.5 (Nhanh).
+
+**Đã làm:** đồng bộ connector/SDK/profile/alias/subagent/retry/context; sửa
+413/create-rate, metadata 429 và vòng đời Responses SSE. Build và cài tool
+1.8.0; bộ cài/GUI/console/ZIP nằm ngoài repo ở `E:\LTTSTUDIOSAPP-build\cam-cli-1.8.0`.
+Defender sạch. Installer SHA256:
+`de6d8cce71e0df159642634a49dde0cbc5c8d61cac255f30729954b6f655d6db`.
+
+**Vận hành thật đã PASS:** harness `tools/kiem_cli_van_hanh_prod.py` dùng
+tài khoản thử nghiệm, tạo key ngắn hạn trong bộ nhớ, gọi Messages/Responses
+streaming và tool call/result trên cả hai model, cắm EXE, thoát toàn bộ Claude,
+mở lại Desktop 1.52386.6, chọn từng model và gửi câu hỏi nhận 56/144. Báo cáo
+`tmp/kiem_cli_van_hanh/prod.json`: api/connector/desktop PASS; key tạo/thu hồi
+thành công, gỡ connector và phục hồi Desktop thành công. Không ghi giá trị key
+vào code/log/ảnh. Lượt chờ công suất có retry hữu hạn; request kiểm Qwen cần
+đủ output budget cho reasoning, đã sửa harness thay vì sửa hạn mức production.
+
+**Hướng dẫn nhập tay:** đọc hai ảnh, schema bản đang cài và tài liệu chính thức
+Claude/community. Trang công khai và cổng lập trình viên dùng chung template:
+Gateway `/api`, Static API key/Bearer, discovery Off, hai Model ID/Display name,
+Workspace, Apply Changes/relaunch, scope/credit, câu hỏi kiểm và xử lý lỗi.
+Bổ sung bản dịch Anh; chỉnh độ rộng bảng mobile sau khi nhìn ảnh thật.
+Tool/policy vẫn giữ. Test Desktop ở trên chạy qua tool; form nhập tay mới được
+đối chiếu schema, chưa tuyên bố nghiệm thu nhập tay end-to-end hay mọi Cowork/Code.
+
+**Lệnh/kết quả đã chạy:**
+
+- `python -m pytest -q tests/test_294_trang_cong_khai_api.py tests/test_299_khu_api_da_dich.py tests/test_303_cong_lap_trinh_vien_bo_cuc.py tests/test_290_ten_tuyen_claude_desktop.py tests/test_1233_be_mat_hai_model.py tests/test_1262_cli_operational_harness.py`: **93 passed, 1 skipped, 1 warning**, 17,26s.
+- `playwright-cli -s=ltt-manual-guide run-code --filename=tests/fixtures/check_manual_guide.js`: **PASS 4/4** Việt/Anh × 1440/390px, không tràn ngang, 0 console errors, 0 failed requests; ảnh ở `tmp/kiem_cli_van_hanh/manual-guide-*`.
+- `python tools/i18n.py bien-dich`: PASS; `check_dich_thieu.py`, `check_fuzzy_dich.py`, `check_i18n.py`: PASS, không tăng nợ dịch/i18n.
+- `python tools/build_public_api_docs.py --check`: PASS.
+- Lượt `python tools/gate.py --doi --tu ea17b6e` trước đó tự chuyển sang full vì phạm vi rộng, đã ngắt ở 11/33; **không phải bằng chứng gate xanh**.
+
+Checkpoint trước L3 cuối: H46 **98%**, phần code/GUI/vận hành đã kiểm; còn build
+frontend cuối, gate và commit. Kết quả L3 sẽ bổ sung sau khi chạy xong.
 ## 2026-09-14 (tối) — Ba suất/card, một hợp đồng lỗi, và ba lần tôi chẩn đoán sai
 
 ### Chuyện bắt đầu từ một câu của chủ dự án: *"3090 vẫn chạy nhỏ giọt"*
@@ -375,7 +787,6 @@ nhóm bánh cóc ruff (nhóm phải sinh tiến trình con). `check_ruff.py` ch�
 **Repo** `22841303..294fa798` · **Production** `294fa798`, ba chiều 0/0/0.
 
 ---
-
 ## 2026-09-14 — VẬN HÀNH THẬT: xoá bộ đo tự xây (lần hai), và L-12 được xác nhận trên tải thật
 
 ### 🔴 Sai lầm của phiên, ghi trước kết quả

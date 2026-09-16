@@ -27,23 +27,25 @@
     do se hien ra MAT DAU tren trang. Da mac dung loi nay 25/08 va sua tai cho. -#}
 {% set luu_y = {
   "codex": _("Có /api/v1 — Codex tự ghép /responses vào sau."),
+  "codex-desktop": _("Codex Desktop đọc cấu hình cấp người dùng và catalog khi khởi động; không có bảng Gateway nhập tay như Claude Desktop."),
   "claude-code": _("KHÔNG có /v1 — Claude Code tự ghép /v1/messages vào sau."),
   "vscode": _("Cắm xong cho CLI là CHƯA đủ: tiện ích không đọc biến môi trường của hệ điều hành như CLI."),
-  "desktop": _("Bề mặt DUY NHẤT dùng tên model khác — và dùng sai tên thì nút gửi im lặng không làm gì cả."),
+  "desktop": _("Điền trực tiếp trong Claude Desktop; dùng danh sách model cố định để hai lựa chọn luôn đúng tuyến LTT."),
   "http": _("Không cần thư viện của chúng tôi — đây là HTTP thuần."),
 } %}
 {% set doc_gi = {
-  "codex": _("~/.codex/config.toml, chạy với --profile ltt"),
+  "codex": _("~/.codex/config.toml và hai tệp profile; chạy --profile ltt hoặc --profile ltt-fast"),
+  "codex-desktop": _("%USERPROFILE%/.codex/config.toml và ltt_model_catalog.json"),
   "claude-code": _("biến môi trường, hoặc ~/.claude/settings.json"),
   "vscode": _("settings.json cấp NGƯỜI DÙNG — đặt ở workspace thì không có tác dụng"),
-  "desktop": _("chính sách registry của Windows"),
+  "desktop": _("hồ sơ Third-Party Inference lưu bởi Claude Desktop"),
   "http": _("không đọc tệp nào cả"),
 } %}
 {% set ten_be_mat = {
   "vscode": _("Tiện ích VS Code"), "http": _("cURL / tự viết mã"),
 } %}
 {% set the_be_mat = {
-  "vscode": _("CẤU HÌNH RIÊNG"), "desktop": _("CHÍNH SÁCH REGISTRY"), "http": _("HTTP THUẦN"),
+  "codex-desktop": _("CONFIG.TOML"), "vscode": _("CẤU HÌNH RIÊNG"), "desktop": _("CẮM TAY TRONG APP"), "http": _("HTTP THUẦN"),
 } %}
 {% set nhan_buoc = {
   "dat-khoa": _("Đặt khoá rồi mở lại cửa sổ lệnh"),
@@ -51,6 +53,8 @@
   "settings": _("Bền hơn, ghi vào tệp"),
   "vscode-claude": _("Claude Code — settings.json cấp NGƯỜI DÙNG"),
   "vscode-codex": _("Codex — đặt ở GỐC tệp, không trong [profiles]"),
+  "codex-desktop-strong": _("Cấu hình hoàn chỉnh — LTT 3.8 (Mạnh)"),
+  "codex-desktop-fast": _("Cấu hình hoàn chỉnh — LTT 3.5 (Nhanh)"),
   "reg": _("Lưu thành một tệp .reg rồi bấm đúp"),
   "curl": _("Gọi thử"),
 } %}
@@ -97,11 +101,28 @@
           <tr><th scope="row" style="white-space:nowrap;">{{ _("Địa chỉ") }}</th>
               <td><code class="to-dam">{{ b.dia_chi }}</code></td></tr>
           <tr><th scope="row">{{ _("Tên model") }}</th>
-              <td><code class="to-dam">{{ b.model }}</code></td></tr>
+              <td>
+                {% if b.ma == "codex" %}
+                  <code class="to-dam">ltt-3.8</code> · <code>--profile ltt</code><br>
+                  <code class="to-dam">ltt-3.5</code> · <code>--profile ltt-fast</code>
+                {% elif b.ma in ("codex-desktop", "desktop") %}
+                  {% for route, label in b.models %}
+                    <code class="to-dam">{{ route }}</code>
+                    <span class="muted">· <code>{{ label }}</code></span>{% if not loop.last %}<br>{% endif %}
+                  {% endfor %}
+                {% else %}
+                  <code class="to-dam">{{ b.model }}</code>
+                {% endif %}
+              </td></tr>
         {% endif %}
         <tr><th scope="row">{{ _("Khoá") }}</th>
-            <td><code>ltt_sk_…</code> <span class="muted">— {{ _("đặt ở biến môi trường") }}
-                <code>{{ env_key }}</code></span></td></tr>
+            <td><code>ltt_sk_…</code>
+              {% if b.ma == "desktop" %}
+                <span class="muted">— {{ _("dán vào ô Gateway API key; ô này được che") }}</span>
+              {% else %}
+                <span class="muted">— {{ _("đặt ở biến môi trường") }} <code>{{ env_key }}</code></span>
+              {% endif %}
+            </td></tr>
         <tr><th scope="row">{{ _("Đọc cấu hình ở") }}</th>
             <td class="muted">{{ doc_gi.get(b.ma, "") }}</td></tr>
       </tbody>
@@ -109,41 +130,220 @@
     <p class="cam-luu-y">⚠️ {{ luu_y.get(b.ma, "") }}</p>
   </div>
 
+  {% if b.ma not in ("desktop", "codex-desktop") %}
   <div class="card">
     <h3 style="margin-top:0;">{{ _("Các bước") }}</h3>
+    {% if b.ma == "codex" %}
+    <p>{{ _("Cắm tay bằng custom provider và tệp cấu hình; không cần tool LTT. Hướng dẫn đối chiếu với Codex CLI 0.145.0 đang cài trên máy.") }}</p>
+    <p>{{ _("Tạo khóa live có tools:read và jobs:create, còn hạn và có credit. Sao lưu các tệp cấu hình trước khi sửa. Không đặt khóa trong TOML hoặc catalog.") }} <a href="/developers/keys">{{ _("Mở Khóa API") }}</a></p>
+    <p>{{ _("Lưu catalog JSON bên dưới vào thư mục .codex của người dùng. Trong cả hai profile, thay YOUR_WINDOWS_USER bằng tên thư mục người dùng thật; model_catalog_json phải là đường dẫn tuyệt đối tới tệp này. TOML không tự thay %USERPROFILE%. Trên macOS/Linux, dùng đường dẫn tuyệt đối tương ứng.") }}</p>
+    <p>{{ _("Thêm khối provider một lần ở cuối config.toml. Lưu mỗi profile thành tệp riêng đúng tên bên dưới, không chép chúng vào config.toml và không tạo [profiles.ltt]. Nếu đã có khối model_providers.ltt, cập nhật khối đó thay vì thêm trùng.") }}</p>
+    {% endif %}
     {% for ma_buoc, tep, doan in b.buoc %}
       <h4>{{ loop.index }}.
         {%- if tep %} <code>{{ tep }}</code>{% endif %}
         {%- if nhan_buoc.get(ma_buoc) %} <span class="muted" style="font-weight:400;">{{ nhan_buoc[ma_buoc] }}</span>{% endif %}</h4>
+      {% if ma_buoc == "codex-catalog" %}<details><summary>{{ _("Mở JSON catalog để sao chép toàn bộ") }}</summary>{% endif %}
       <pre style="overflow-x:auto;"><code>{{ doan }}</code></pre>
+      {% if ma_buoc == "codex-catalog" %}</details>{% endif %}
     {% endfor %}
     {% if b.chay %}
       <p class="muted">{{ _("Rồi chạy") }} <code>{{ b.chay }}</code>.</p>
     {% endif %}
   </div>
+  {% endif %}
 
-  {% if b.ma == "desktop" %}
-  {# Chi be mat nay moi co hai rao chan im lang. Dat TRONG khu cua no chu khong
-     phai o cuoi trang: khach cam Codex khong bao gio can doc no. #}
+  {% if b.ma == "codex-desktop" %}
   <div class="card">
-    <h3 style="margin-top:0;">⚠️ {{ _("Hai rào chắn im lặng") }}</h3>
-    <p>{{ _("Cả hai cho CÙNG một triệu chứng: bấm gửi, không có gì xảy ra. Không log, không thông báo, không banner.") }}</p>
-    <h4>1. {{ _("Tên model phải là") }} <code>{{ model_desktop }}</code></h4>
-    <p>{{ _("Claude Desktop lọc danh sách model trước khi vẽ ô chọn: tên không chứa claude, anthropic hay tên một dòng Claude thì bị bỏ. Tên") }}
-       <code>{{ model }}</code> {{ _("bị bỏ, ô chọn rỗng, và khi ô chọn rỗng thì nút gửi bị vô hiệu.") }}</p>
-    <p class="muted">{{ _("Đây là TÊN TUYẾN của một cổng tương thích, không phải tên sản phẩm. Thứ bạn mua vẫn là") }}
-       <code>{{ model }}</code>{{ _(", và model đứng sau vẫn là model của LTT Studios.") }}</p>
-    <h4>2. <code>chatTabEnabled</code> {{ _("phải bằng") }} <code>true</code></h4>
-    <p>{{ _("Mặc định ứng dụng chỉ mở tab Code. Tab đó không nói thẳng với API — nó mở một phiên tác tử chạy trên máy bạn, và phiên đó cần sẵn công cụ dòng lệnh trên máy. Không có thì ứng dụng không gửi request nào cả.") }}</p>
-    <p class="muted">{{ _("Cách phân biệt nhanh với lỗi khoá: gọi thẳng API bằng đúng khoá đó. Trả 200 mà ứng dụng vẫn im thì không phải lỗi khoá.") }}</p>
-    <h4>3. {{ _("Hoặc điền tay trong ứng dụng") }}</h4>
+    <h3 style="margin-top:0;">{{ _("Cắm LTT vào Codex Desktop trên Windows") }}</h3>
+    <p>{{ _("Bảng này được đối chiếu với schema cấu hình Codex hiện hành và app-server 0.146.0-alpha.3.1 nằm trong Codex Desktop 26.721.11231.0 đang cài trên máy. Codex Desktop không có form Gateway để nhập URL và khóa. Ứng dụng đọc cùng cấu hình cấp người dùng với Codex CLI.") }}</p>
+    <p>{{ _("Tạo khóa live còn hạn, có credit, scope tools:read và jobs:create. Nếu không chọn giới hạn công cụ, khóa được gọi mọi công cụ công khai nhưng không tự có thêm scope ghi. Không đặt khóa trong TOML, catalog, ảnh chụp hay lệnh có thể lưu vào lịch sử.") }} <a href="/developers/keys">{{ _("Mở Khóa API") }}</a></p>
+    <ol>
+      <li>{{ _("Thoát hẳn Codex Desktop, kể cả biểu tượng còn nằm ở khay hệ thống. Sao lưu thư mục %USERPROFILE%/.codex trước khi sửa.") }}</li>
+      <li>{{ _("Mở Edit environment variables for your account của Windows. Trong User variables, tạo LTT_API_KEY với giá trị khóa vừa sao chép. Codex Desktop không có ô Environment riêng; biến phải tồn tại trước lúc mở ứng dụng.") }}</li>
+      <li>{{ _("Tạo ltt_model_catalog.json trong %USERPROFILE%/.codex và chép nguyên JSON bên dưới. Trong cấu hình TOML, thay YOUR_WINDOWS_USER bằng đúng tên thư mục người dùng; Codex không tự mở rộng %USERPROFILE% trong giá trị đường dẫn.") }}</li>
+    </ol>
+    {% for ma_buoc, tep, doan in b.buoc %}
+      <h4>{{ loop.index + 3 }}. <code>{{ tep }}</code>
+        {% if nhan_buoc.get(ma_buoc) %}<span class="muted" style="font-weight:400;">{{ nhan_buoc[ma_buoc] }}</span>{% endif %}</h4>
+      {% if ma_buoc == "codex-catalog" %}<details><summary>{{ _("Mở JSON catalog để sao chép toàn bộ") }}</summary>{% endif %}
+      <pre style="overflow-x:auto;"><code>{{ doan }}</code></pre>
+      {% if ma_buoc == "codex-catalog" %}</details>{% endif %}
+    {% endfor %}
+    <p class="cam-luu-y">{{ _("Chỉ dùng MỘT trong hai khối config.toml. Nếu tệp đã có cấu hình riêng, giữ bản sao lưu rồi hợp nhất các khóa gốc trước bảng đầu tiên; chỉ được có một bảng [agents] và một bảng [model_providers.ltt]. TOML có khóa hoặc bảng trùng sẽ làm Codex từ chối khởi động.") }}</p>
+    <ol start="7">
+      <li>{{ _("Mở lại Codex Desktop và tạo cuộc trò chuyện mới. Luồng cũ lưu model/provider lúc được tạo nên không phải phép kiểm cho cấu hình vừa đổi.") }}</li>
+      <li>{{ _("Mở trạng thái phiên để kiểm model là ltt-3.8 hoặc ltt-3.5 và provider là ltt. Picker có thể chỉ hiện Custom; đây là giới hạn giao diện hiện tại, không phải bằng chứng yêu cầu đi sai tuyến.") }}</li>
+      <li>{{ _("Hỏi Calculate 6 * 7. Reply with only the number. Cần nhận 42, rồi đối chiếu Logs/Usage của LTT để xác nhận đúng model và credit.") }}</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0;">{{ _("Bảng giá trị chuẩn cho hai model") }}</h3>
     <table class="table">
+      <thead><tr><th>{{ _("Tên hiển thị") }}</th><th><code>model</code></th><th><code>model_context_window</code></th><th><code>model_auto_compact_token_limit</code></th></tr></thead>
       <tbody>
-        {% for ten, gt in desktop %}
-          <tr><th scope="row" style="white-space:nowrap;">{{ ten }}</th><td><code>{{ gt }}</code></td></tr>
+        {% for slug, context, compact in b.model_limits %}
+        <tr><td>{{ b.models[loop.index0][1] }}</td><td><code>{{ slug }}</code></td><td><code>{{ context }}</code></td><td><code>{{ compact }}</code></td></tr>
         {% endfor %}
       </tbody>
     </table>
+    <table class="table">
+      <tbody>
+        <tr><th><code>base_url</code></th><td><code>{{ b.dia_chi }}</code> — {{ _("Codex nối /responses") }}</td></tr>
+        <tr><th><code>env_key</code></th><td><code>LTT_API_KEY</code> — {{ _("gửi dưới dạng Authorization: Bearer; không ghi giá trị khóa vào TOML") }}</td></tr>
+        <tr><th><code>wire_api</code></th><td><code>responses</code> — {{ _("giao thức duy nhất Codex hỗ trợ cho custom provider") }}</td></tr>
+        <tr><th><code>model_auto_compact_token_limit_scope</code></th><td><code>total</code> — {{ _("ngưỡng tính trên toàn bộ ngữ cảnh") }}</td></tr>
+        <tr><th><code>tool_output_token_limit</code></th><td><code>16384</code> — {{ _("chặn một kết quả tool chiếm hết khoảng dành cho lượt kế tiếp") }}</td></tr>
+        <tr><th><code>requires_openai_auth</code></th><td><code>false</code> — {{ _("không yêu cầu đăng nhập OpenAI cho provider LTT") }}</td></tr>
+        <tr><th><code>supports_websockets</code></th><td><code>false</code> — {{ _("LTT stream bằng SSE") }}</td></tr>
+        <tr><th><code>request_max_retries</code> / <code>stream_max_retries</code></th><td><code>1 / 0</code> — {{ _("không phát lại stream đã mở và không khuếch đại tải") }}</td></tr>
+        <tr><th><code>stream_idle_timeout_ms</code></th><td><code>600000</code> — {{ _("cho phép lượt model dài im lặng tối đa 10 phút") }}</td></tr>
+        <tr><th><code>max_concurrent_threads_per_session</code></th><td><code>1</code> — {{ _("dành tối đa một lane cho agent phụ") }}</td></tr>
+      </tbody>
+    </table>
+    <p>{{ _("Để đổi model, thoát hẳn ứng dụng, thay bằng khối config.toml còn lại, mở lại và tạo chat mới. Giữ nguyên tên provider ltt: đổi hoặc xóa provider có thể làm lịch sử cũ không tiếp tục được. model_catalog_json thay danh mục model tích hợp trong lúc cấu hình LTT hoạt động; phục hồi bản sao config để quay về cấu hình trước.") }}</p>
+    <p>{{ _("default_subagent_model là mặc định của agent phụ và giới hạn đồng thời là một. Codex vẫn cho một yêu cầu spawn chỉ định model rõ ràng; gateway LTT chặn tên ngoài hai model được cấp quyền. Không coi hai khóa client này là một allowlist tuyệt đối.") }}</p>
+    <p>{{ _("Tiện ích Codex trong VS Code tự dùng cấu hình này khi chạy cùng tài khoản Windows và cùng CODEX_HOME; không cần cắm Gateway hay MCP lần nữa. Đặt LTT_API_KEY ở biến môi trường người dùng, đóng toàn bộ cửa sổ VS Code rồi mở lại và tạo chat mới. Nếu dự án tin cậy có .codex/config.toml, model ở đó có thể ghi đè model gốc; model_provider và khóa provider vẫn phải nằm trong cấu hình người dùng.") }}</p>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0;">{{ _("Giới hạn đã biết của custom provider trong Desktop") }}</h3>
+    <ul>
+      <li>{{ _("Chat agent chính, shell, apply_patch và tool tĩnh đi qua Responses API của LTT.") }}</li>
+      <li>{{ _("Bộ chọn model của Desktop hiện chưa hiểu đầy đủ model theo từng custom provider; chuyển hai model LTT bằng cấu hình gốc và chat mới như trên.") }}</li>
+      <li>{{ _("Một số chức năng riêng của ứng dụng như preview selection Edit có thể gọi dịch vụ OpenAI trực tiếp; Browser/Computer Use và dynamic tool discovery chưa được cung cấp cho custom provider. Đây không phải lỗi xác thực của khóa LTT.") }}</li>
+      <li>{{ _("Profile ltt và ltt-fast chỉ dành cho CLI vì Desktop không truyền --profile. Cấu hình gốc cũng đổi model mặc định của lệnh codex dùng cùng CODEX_HOME.") }}</li>
+    </ul>
+    <p class="muted">{{ _("Tài liệu đối chiếu:") }}
+      <a href="https://learn.chatgpt.com/docs/config-file/config-reference" target="_blank" rel="noopener">Codex configuration reference</a>
+      · <a href="https://learn.chatgpt.com/docs/config-file/config-basic" target="_blank" rel="noopener">config precedence</a>
+      · <a href="https://learn.chatgpt.com/docs/windows/windows-app" target="_blank" rel="noopener">Codex on Windows</a>.
+    </p>
+  </div>
+  {% endif %}
+
+  {% if b.ma == "codex" %}
+  <div class="card">
+    <h3 style="margin-top:0;">{{ _("Chọn model và kiểm tra") }}</h3>
+    <p>{{ _("Lệnh nhập khóa ở trên che ký tự và chỉ giữ khóa trong cửa sổ PowerShell hiện tại. Chạy Codex từ chính cửa sổ đó; không ghi khóa bằng setx trên dòng lệnh để tránh lưu vào lịch sử.") }}</p>
+    <pre><code>codex --profile ltt
+codex --profile ltt-fast</code></pre>
+    <p>{{ _("Chọn một lệnh: ltt dùng LTT 3.8 (Mạnh), ltt-fast dùng LTT 3.5 (Nhanh). Trong phiên mới, dùng /status kiểm tra model/provider rồi hỏi Calculate 6 * 7. Reply with only the number. Cần nhận 42; kiểm thêm Logs/Usage để xác nhận model và lượt tính credit.") }}</p>
+    <table class="table"><thead><tr><th>Model</th><th>{{ _("Cửa sổ ngữ cảnh") }}</th><th>{{ _("Ngưỡng nén") }}</th></tr></thead><tbody>
+      {% for slug, context, compact in b.model_limits %}<tr><td><code>{{ slug }}</code></td><td>{{ context }}</td><td>{{ compact }}</td></tr>{% endfor %}
+    </tbody></table>
+    <p>{{ _("Catalog và profile ghim model cho subagent, giới hạn một subagent đồng thời, một retry và timeout stream 600 giây. Không dùng tên tuyến Claude Desktop trong Codex.") }}</p>
+    <h4>{{ _("Codex trong VS Code và ứng dụng Desktop") }}</h4>
+    <p>{{ _("Tiện ích Codex VS Code: biểu tượng bánh răng → Codex Settings → Open config.toml. Đây là cấu hình cấp người dùng. Tiện ích cần nhận được LTT_API_KEY trong môi trường khi VS Code khởi động; đóng toàn bộ VS Code rồi mở từ cửa sổ đã đặt khóa.") }}</p>
+    <p>{{ _("Xem cấu hình gốc cho tiện ích ở mục VS Code. Khi đặt model/provider ở gốc config.toml, mặc định lệnh codex cũng đổi. Không coi việc CLI đọc profile là bằng chứng tiện ích tự chọn được profile đó.") }}</p>
+    <p>{{ _("Codex Desktop dùng cấu hình gốc thay vì profile CLI; mở mục Codex Desktop ở đầu trang để lấy đúng khối hoàn chỉnh. Không dán khóa LTT vào mục MCP/Connectors.") }}</p>
+    <p>{{ _("Nếu thiếu model metadata: kiểm đường dẫn và JSON catalog. Nếu 401: kiểm biến LTT_API_KEY có trong tiến trình hiện tại. Nếu 403: kiểm jobs:create và giới hạn công cụ. Nếu 413: dùng đúng profile theo model hoặc mở phiên mới. Muốn gỡ: xóa khối provider ltt và hai tệp profile/catalog do mình thêm; phục hồi bản sao lưu nếu đã đổi cấu hình gốc.") }}</p>
+    <p class="muted"><a href="https://developers.openai.com/codex/config-advanced/" target="_blank" rel="noopener">Codex custom providers / profiles</a></p>
+  </div>
+  {% endif %}
+
+  {% if b.ma == "desktop" %}
+  <div class="card">
+    <h3 style="margin-top:0;">{{ _("Cắm tay trên Claude Desktop 1.52386.6") }}</h3>
+    <p>{{ _("Mở Khóa API, tạo khóa live còn hạn với tools:read và jobs:create; tài khoản cần có credit và quyền gọi model. Sao chép khóa khi nó hiện một lần.") }} <a href="/developers/keys">{{ _("Mở Khóa API") }}</a></p>
+    <p class="muted">{{ _("Nếu form hiện Organization-managed hoặc các ô bị khóa, policy đang quản lý ứng dụng. Dùng Gỡ ra trong tool nếu đó là cấu hình LTT do tool cắm; policy của tổ chức khác cần người quản lý thay đổi trước khi nhập tay.") }}</p>
+    <ol>
+      <li>{{ _("Mở menu ☰ → Help → Troubleshooting → Enable Developer Mode. Sau đó mở Developer → Configure Third-Party Inference.") }}</li>
+      <li>{{ _("Bấm tên cấu hình ở góc trên phải → New configuration, đặt tên") }} <strong>LTT Studios</strong>.</li>
+      <li>{{ _("Ở mục Connection, điền đúng bảng dưới đây. Không thêm /v1 vào URL.") }}</li>
+    </ol>
+    <table class="table">
+      <tbody>
+        {% for ten, gt in desktop %}
+          <tr><th scope="row" style="width:45%;white-space:normal;">{{ ten }}</th><td><code>{{ gt }}</code></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p class="cam-luu-y">{{ _("Gateway auth scheme phải chọn Bearer. LTT nhận Authorization: Bearer <API_KEY>; chọn x-api-key gửi khóa bằng header khác nên bị 401. Không cần tạo lại khóa chỉ để đổi lựa chọn này. Sau khi đổi, Test connection rồi Apply Changes và mở lại ứng dụng.") }}</p>
+    <ol start="4">
+      <li>{{ _("Trong Model list, bấm Add hai lần. Mở mũi tên của từng dòng để điền cả Model ID và Display name; giữ LTT 3.8 ở dòng đầu vì dòng đầu là mặc định.") }}</li>
+      <li>{{ _("Mở Workspace: bật Allow Chat và bật Disable Claude.ai sign-in để cấu hình Gateway được chọn ổn định.") }}</li>
+      <li>{{ _("Quay lại Connection, bấm Test connection. Khi báo đạt, bấm Apply Changes → Relaunch now.") }}</li>
+      <li>{{ _("Nếu ứng dụng chỉ thu nhỏ xuống khay hoặc model cũ còn hiện, thoát hẳn Claude rồi mở lại. Chọn lần lượt LTT 3.8 (Mạnh) và LTT 3.5 (Nhanh) trong picker để gọi thử.") }}</li>
+    </ol>
+    <p class="muted">{{ _("Điền Tier alias đúng như bảng: LTT 3.8 = opus, LTT 3.5 = haiku, và bật Default for tier cho cả hai. Đây là ánh xạ nội bộ để tác vụ nền của Claude quay về tuyến LTT; nó không đổi Display name hay tuyên bố model LTT là model Anthropic. Custom inference headers và Artifact preview iframe origin vẫn để trống.") }}</p>
+    <p class="muted">{{ _("Save Changes chỉ lưu cấu hình; Apply Changes mới áp dụng và có thể hỏi Save & Restart. Chọn Chat trong ô soạn khi thử inference.") }}</p>
+    <h4>{{ _("Gọi thử từng model") }}</h4>
+    <table class="table">
+      <thead><tr><th>{{ _("Model chọn") }}</th><th>{{ _("Câu hỏi") }}</th><th>{{ _("Câu trả lời cần thấy") }}</th></tr></thead>
+      <tbody>
+        {% for route, label in b.models %}
+        <tr><td><code>{{ label }}</code></td><td><code>{{ 'Calculate 8 * 7. Reply with only the number.' if loop.first else 'Calculate 12 * 12. Reply with only the number.' }}</code></td><td><code>{{ '56' if loop.first else '144' }}</code></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p>{{ _("Mở cuộc trò chuyện mới cho mỗi phép thử, kiểm model ở picker trước khi gửi. Đối chiếu lượt gọi và credit trong Logs/Usage của cổng API LTT. Test connection xanh chưa thay cho kiểm câu trả lời thật.") }}</p>
+    <h4>{{ _("Nếu chưa gọi được") }}</h4>
+    <table class="table">
+      <tbody>
+        <tr><th>404</th><td>{{ _("Kiểm Gateway base URL kết thúc ở /api; không thêm /v1.") }}</td></tr>
+        <tr><th>401</th><td>{{ _("Chọn Gateway auth scheme = Bearer, không chọn x-api-key; kiểm khóa LTT còn hạn và đã áp dụng cấu hình.") }}</td></tr>
+        <tr><th>403</th><td>{{ _("Khóa đã xác thực nhưng thiếu scope jobs:create, bị giới hạn công cụ hoặc tài khoản chưa có quyền model. Không chọn công cụ nghĩa là mọi công cụ công khai đang mở, không tự cấp mọi scope.") }}</td></tr>
+        <tr><th>402</th><td>{{ _("Kiểm credit và hạn mức chi tiêu của khóa/tài khoản.") }}</td></tr>
+        <tr><th>{{ _("Picker rỗng / model cũ") }}</th><td>{{ _("Tắt discovery, khai đúng hai Model ID, Apply Changes rồi thoát hẳn và mở lại.") }}</td></tr>
+        <tr><th>{{ _("Bấm gửi im lặng") }}</th><td>{{ _("Bật Allow Chat, chọn Chat và kiểm profile Gateway đang áp dụng.") }}</td></tr>
+        <tr><th>429 / {{ _("đang bận") }}</th><td>{{ _("Đợi theo Retry-After; không gửi lặp nhiều cửa sổ.") }}</td></tr>
+        <tr><th>413</th><td>{{ _("Giảm nội dung hoặc mở cuộc trò chuyện mới; không bật 1M context.") }}</td></tr>
+      </tbody>
+    </table>
+    <p class="muted">{{ _("Muốn quay về Gateway khác: chọn profile cũ → Apply Changes rồi mở lại. Muốn dùng Claude.ai: tắt Disable Claude.ai sign-in và chọn đăng nhập Claude.ai. Thu hồi khóa LTT khi thôi dùng.") }}</p>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0;">{{ _("Vì sao phải đặt các giá trị này") }}</h3>
+    <h4>{{ _("Tắt 1M chưa đặt giới hạn 171K") }}</h4>
+    <p>{{ _("Default to 1M context chỉ chọn biến thể mặc định; Offer 1M-context variant khai báo model hỗ trợ 1M. LTT không hỗ trợ 1M nên giữ cả hai tắt. Code có thể vẫn giả định 200K cho tên gateway; xem vòng Usage cạnh model hoặc /context để kiểm, không dựa vào Test connection.") }}</p>
+    <p>{{ _("Với Code chạy Local: ô chọn môi trường → Local → bánh răng, chép nguyên khối 11 dòng dưới đây rồi mở phiên Local mới. Đây là danh sách chuẩn đầy đủ cho Claude Desktop 1.52386.6 / Claude Code 2.1.270 với LTT Gateway; không ghép thêm các danh sách cũ. Cửa sổ/ngưỡng nén dùng theo LTT 3.8, là model hẹp hơn; khi chọn LTT 3.5 thì nén sớm hơn. Cấu hình này không tự đổi theo picker.") }}</p>
+    <p>{{ _("Không thấy ô môi trường trong phiên đang chạy: bấm New ở thanh bên để mở màn hình tạo phiên. Nút Local nằm trong vùng soạn của màn hình này; mở danh sách, rê vào Local rồi bấm bánh răng. Lưu biến trước khi bắt đầu phiên mới; phiên cũ không tự nhận giới hạn mới.") }}</p>
+    <pre style="overflow-x:auto;"><code>{% for name, value in b.local_env %}{{ name }}={{ value }}{% if not loop.last %}
+{% endif %}{% endfor %}</code></pre>
+    <h4>{{ _("Bảng preset theo model") }}</h4>
+    <table class="table">
+      <thead><tr><th>{{ _("Môi trường Local") }}</th><th><code>MAX_CONTEXT</code></th><th><code>AUTO_COMPACT</code></th><th>{{ _("Dấu hiệu trong Context") }}</th></tr></thead>
+      <tbody>
+        {% for slug, context, compact in b.local_presets %}
+        <tr><td>{{ _("LTT 3.8 hoặc đổi qua lại hai model") if loop.first else _("Chỉ LTT 3.5") }}</td><td><code>{{ context }}</code></td><td><code>{{ compact }}</code></td><td><code>{{ "… / 138.7k" if loop.first else "… / 176.4k" }}</code> · {{ "~76%" if loop.first else "~81%" }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p>{{ _("Hai chốt agent áp dụng cùng lúc: MAX_CONCURRENT_SUBAGENTS=1 chỉ cho một agent phụ chạy đồng thời; MAX_SUBAGENT_SPAWN_DEPTH=1 cấm agent phụ sinh thêm tầng. SUBAGENT_MODEL_FORCE=1 mà không đặt SUBAGENT_MODEL trong môi trường Desktop sẽ ép agent phụ kế thừa đúng model chính đang chọn trong picker.") }}</p>
+    <p>{{ _("MAX_RETRIES=10 giữ đúng mặc định chính thức để Claude thử lại lỗi tạm thời với exponential backoff; API_TIMEOUT_MS=600000 đặt trần 10 phút cho mỗi API call. Không bật retry watchdog vì nó có thể thử lại lỗi 429/529 vô hạn. Phía LTT cho một lượt stream chờ suất tối đa 300 giây và gửi heartbeat mỗi 15 giây. Khi hai phiên dài cùng chọn LTT 3.8, phiên sau sẽ chờ nếu tổng reservation vượt pool; để chạy song song ngay, chọn LTT 3.8 cho một phiên và LTT 3.5 cho phiên còn lại.") }}</p>
+    <p class="muted">{{ _("Không thêm CLAUDE_CODE_DISABLE_1M_CONTEXT, CLAUDE_AUTOCOMPACT_PCT_OVERRIDE, MAX_THINKING_TOKENS, CLAUDE_CODE_ALWAYS_ENABLE_EFFORT, CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY hoặc CLAUDE_STREAM_IDLE_TIMEOUT_MS. Chúng hoặc dư với mã LTT không có [1m], ghi đè ngưỡng đã tính, có thể đổi chất lượng suy luận, hoặc trùng trường Stream idle timeout 600 giây trong Gateway.") }}</p>
+    <p>{{ _("Ảnh vận hành ngày 15/09/2026 xác nhận preset LTT 3.8: Context hiển thị 46.8k / 138.7k, sau đó 99.6k / 138.7k, Autocompact buffer khoảng 33k và tự nén ở 76%. 138.7k là cửa sổ dùng để tính nén; 32.768 token đầu ra được chừa trong tổng 171.458. Đây là kết quả phiên Local thật, không phải suy từ Test connection.") }}</p>
+    <p>{{ _("Nếu Usage còn 200K thì giới hạn chưa có hiệu lực. Giữ auto-compaction bật; dùng /compact trước khi đọc tệp lớn. Biến Local theo tài liệu áp dụng cho Code local sessions; chưa nghiệm thu tác dụng trên Chat/Cowork, nên không coi phép thử Chat ngắn là bằng chứng bảo vệ phiên dài.") }}</p>
+    <p>{{ _("Claude gửi ngữ cảnh đã nạp: hướng dẫn hệ thống, lịch sử, tệp, kết quả/schema công cụ và ảnh; không gửi cố định 200K hay 1M mỗi lượt. Output/reasoning cũng chiếm chỗ. Nhiều kết quả công cụ có thể làm vượt trần trước lần nén kế tiếp; chia nhỏ tệp và giảm công cụ không dùng.") }}</p>
+    <h4>{{ _("MCP và lỗi non-streaming trong phiên dài") }}</h4>
+    <p>{{ _("Sau khi một stream lỗi, Claude Code có thể thử lại bằng stream=false. CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK=1 giữ lần thử lại ở đường streaming, đúng với gateway có SSE heartbeat. Ngày 15/09, một phiên 99.6k token bị 400 vì lần fallback non-streaming mang 98.678 token đầu vào vào cửa JSON 90 giây; biến này xử lý đúng cơ chế đó.") }}</p>
+    <p>{{ _("Với custom ANTHROPIC_BASE_URL, Claude mặc định tải toàn bộ schema MCP vì Tool Search cần tool_reference mà nhiều proxy không hỗ trợ. LTT chưa hỗ trợ tool_reference nên giữ ENABLE_TOOL_SEARCH=false. Tắt Connector/Plugin không dùng; nên giữ mục MCP tools dưới khoảng một phần mười cửa sổ nén (khoảng 13.9k ở preset 3.8). MAX_MCP_OUTPUT_TOKENS chỉ giới hạn kết quả của một tool, không làm nhỏ schema của 131 tool.") }}</p>
+    <h4>{{ _("Permission mode trên Claude Desktop") }}</h4>
+    <table class="table">
+      <thead><tr><th>Mode</th><th>{{ _("Hành vi với LTT Gateway") }}</th></tr></thead>
+      <tbody>
+        <tr><td>Ask permissions</td><td>{{ _("Hỏi trước khi sửa tệp hoặc chạy lệnh.") }}</td></tr>
+        <tr><td>Accept edits</td><td>{{ _("Tự nhận sửa tệp và vài thao tác filesystem; vẫn hỏi các lệnh terminal khác.") }}</td></tr>
+        <tr><td>Auto</td><td>{{ _("Không khả dụng với third-party provider; thiếu mục này không phải lỗi cấu hình LTT.") }}</td></tr>
+        <tr><td>Bypass permissions</td><td>{{ _("Không hỏi quyền. Bật Settings → Claude Code → Allow bypass permissions mode, rồi chọn Bypass trước câu đầu tiên của một phiên Local mới.") }}</td></tr>
+      </tbody>
+    </table>
+    <p>{{ _("Nếu đổi Bypass trong phiên đã chạy và thấy Permission mode couldn't be changed, tạo phiên Local mới. Nếu phiên mới vẫn không có Bypass, kiểm permissions.disableBypassPermissionsMode có giá trị disable ở user, project hoặc managed settings.") }}</p>
+    <p>{{ _("LTT đã có tiền kiểm theo model, admission theo suất và pool token, phòng chờ hữu hạn và SSE heartbeat. Ba suất chia sẻ pool KV, không phải ba request 170K cùng chạy. 413 là request quá dài; 429 là hạn mức hoặc công suất. Timeout 600 giây không cấp thêm bộ nhớ; không tăng retry hoặc concurrency để chữa lỗi token.") }}</p>
+    <p class="muted"><a href="https://code.claude.com/docs/en/model-config#correct-the-window-for-a-gateway-or-custom-model-id" target="_blank" rel="noopener">Claude Code context window</a> · <a href="https://code.claude.com/docs/en/env-vars" target="_blank" rel="noopener">Environment variables / streaming fallback</a> · <a href="https://code.claude.com/docs/en/mcp#scale-with-mcp-tool-search" target="_blank" rel="noopener">MCP Tool Search</a> · <a href="https://code.claude.com/docs/en/desktop#choose-a-permission-mode" target="_blank" rel="noopener">Desktop permission modes</a> · <a href="https://github.com/anthropics/claude-code/issues/88110" target="_blank" rel="noopener">community #88110</a></p>
+    <h4>{{ _("Danh sách model cố định, không auto-discovery") }}</h4>
+    <p>{{ _("Catalog công khai dùng tên sản phẩm ltt-3.8 và ltt-3.5; Claude Desktop cần hai mã tuyến tương thích ở trên. Danh sách cố định ngăn client tự thay chúng và cho phép đặt nhãn dễ đọc.") }}</p>
+    <h4>{{ _("1M context và giá ước tính đều tắt") }}</h4>
+    <p>{{ _("Hai model LTT không công bố cửa sổ 1M. Claude cũng mặc định tính USD theo bảng giá Anthropic, trong khi LTT tính theo credit riêng; bật hai mục này sẽ làm giao diện hứa sai.") }}</p>
+    <h4>{{ _("Giới hạn hỗ trợ") }}</h4>
+    <p>{{ _("LTT đã kiểm thực tế Messages streaming, chọn hai model, tool call và tool result qua tool trên bản 1.52386.6. Hướng dẫn nhập form được đối chiếu với schema cùng bản. Prompt caching Anthropic và toàn bộ chức năng Cowork/Code chưa được nghiệm thu từ phép thử Chat này.") }}</p>
+    <p class="muted">{{ _("Tài liệu đối chiếu:") }}
+      <a href="https://claude.com/docs/third-party/claude-desktop/gateway" target="_blank" rel="noopener">Claude Desktop gateway</a>
+      · <a href="https://claude.com/docs/third-party/claude-desktop/configuration#models" target="_blank" rel="noopener">model configuration</a>.
+    </p>
   </div>
   {% endif %}
 

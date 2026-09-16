@@ -48,6 +48,16 @@ MODEL_35 = "ltt-3.5"
 #: ⭐ Bo loc chi doi ten **chua** `claude`; no khong doi mot model Anthropic co
 #:    that. Nen ta qua duoc cong ma khong muon ten san pham cua hang khac.
 MODEL_DESKTOP = "ltt-llm-claude-compat"
+MODEL_DESKTOP_35 = "ltt-llm-claude-compat-35"
+NHAN_DESKTOP = {
+    MODEL_DESKTOP: "LTT 3.8 (Mạnh)",
+    MODEL_DESKTOP_35: "LTT 3.5 (Nhanh)",
+}
+NHAN_CODEX = {
+    "ltt-3.8": "LTT 3.8 (Strong)",
+    "ltt-3.5": "LTT 3.5 (Fast)",
+}
+TANG_DESKTOP = {MODEL_DESKTOP: "opus", MODEL_DESKTOP_35: "haiku"}
 BIEN_KHOA = "LTT_API_KEY"
 
 #: Cua so ngu canh CONG BO cho client.
@@ -94,7 +104,7 @@ NEN_HOI_THOAI = 138690
 #:    ket qua tool **95.901 token trong mot luot**.
 #:
 #: Suy ra, khong bia: khoang trong giua nguong nen va cua so cong bo dung bang
-#: `TOKEN_RA_TRAN` (156.385 - 123.617 = 32.768). Mot ket qua tool khong duoc
+#: `TOKEN_RA_TRAN` (171.458 - 138.690 = 32.768). Mot ket qua tool khong duoc
 #: chiem qua NUA khoang do, de sau no van con cho cho luot sinh ke tiep.
 #:
 #: ⚠️ Don vi o day la token **UOC CUA CODEX** (`len/4`), khong phai token that
@@ -114,19 +124,16 @@ TRAN_KET_QUA_TOOL = TOKEN_RA_TRAN // 2
 #:        "Sessions on a model ID Claude Code doesn't recognize, such as an LLM
 #:         gateway alias, compact at the context window Claude Code assumes"
 #:
-#: ⇒ Ta khai `CLAUDE_CODE_MAX_CONTEXT_TOKENS = 156.385` va khong dat cua so nen,
-#:   nen Claude nen o DUNG 156.385 — tuc 100% cua so, khong phai mot phan an
-#:   toan duoi no. Tran cung may chu la 169.984, nen khoang con lai chi
-#:   **13.599**, trong khi mot luot sinh dai nhat la **32.768**. Va Claude cung
-#:   chi kiem nguong GIUA hai luot.
+#: ⇒ Neu chi khai `CLAUDE_CODE_MAX_CONTEXT_TOKENS`, client co the doi toi sat
+#:   cua so moi nen. Ta phai khai ca `AUTO_COMPACT_WINDOW = 138.690`, de chua
+#:   tron mot luot sinh dai nhat 32.768 token va sai khac tokenizer.
 #:
 #: ⭐ Dung mot con so voi Codex (`NEN_HOI_THOAI`), va vi cung mot ly do: khoang
 #:    trong tu nguong nen len tran phai chua TRON mot luot nua.
 #:
-#: ⚠️ Bien nay co san **toi thieu 100.000**. Nguong vision cua ta (55.787) nam
-#:    duoi muc do va bien moi truong thi khong tach duoc theo model — nhung
-#:    `ANTHROPIC_MODEL` la `ltt-3.8`, nen con so cua 3.8 moi la con so dung cho
-#:    phien Claude Code.
+#: ⚠️ Bien nay chi nhan tu **100.000** den 1.000.000. Hai nguong LTT deu hop le.
+#:    Desktop dung preset 3.8 khi doi qua lai hai model; profile CLI tach rieng
+#:    se dung dung nguong cua tung model.
 CUA_SO_NEN_CLAUDE = NEN_HOI_THOAI
 
 #: Cua so cong bo cua MODEL THU HAI (`ltt-3.5`). **Khong dung chung so.**
@@ -161,7 +168,7 @@ NEN_HOI_THOAI_35 = 176373
 class HoSoModel(NamedTuple):
     """MOT model, nhu bo cai nay can biet ve no.
 
-    ⚠️ Bon truong PHAI di cung nhau. Roi rac chung ra la cach `ltt-3.5` duoc
+    ⚠️ Sau truong PHAI di cung nhau. Roi rac chung ra la cach `ltt-3.5` duoc
        cam voi cua so cua `ltt-3.8` — mot `413` giua phien, im lang, chi vi mot
        con so bi bo lai.
     """
@@ -170,6 +177,8 @@ class HoSoModel(NamedTuple):
     tuyen_desktop: str
     cua_so: int
     nen: int
+    reasoning: str
+    reasoning_levels: tuple[str, ...]
 
 
 #: 🔑 HAI MODEL DANG BAN, theo thu tu hien cho khach.
@@ -177,9 +186,11 @@ class HoSoModel(NamedTuple):
 #: ⛔ Nguon chan ly van la `apps/ltt_llm/ngan_sach.py`. Tep nay chay tren may
 #:    KHACH, khong co kho ma, nen no CHEP so — va `test_275` doi chieu hai chieu.
 HO_SO_MODEL = {
-    MODEL: HoSoModel(MODEL, MODEL_DESKTOP, CUA_SO_NGU_CANH, NEN_HOI_THOAI),
-    MODEL_35: HoSoModel(MODEL_35, MODEL_DESKTOP + "-35",
-                        CUA_SO_NGU_CANH_35, NEN_HOI_THOAI_35),
+    MODEL: HoSoModel(MODEL, MODEL_DESKTOP, CUA_SO_NGU_CANH, NEN_HOI_THOAI,
+                     "xhigh", ("low", "medium", "xhigh")),
+    MODEL_35: HoSoModel(MODEL_35, MODEL_DESKTOP_35,
+                        CUA_SO_NGU_CANH_35, NEN_HOI_THOAI_35, "medium",
+                        ("medium",)),
 }
 
 TEN_MODEL = tuple(HO_SO_MODEL)
@@ -203,6 +214,8 @@ KHOA_PROVIDER_BAT_BUOC = {
     "base_url": "khong co thi Codex goi nham dich",
     "env_key": "khong co thi Codex khong biet doc khoa o bien nao",
     "wire_api": "phai la `responses`",
+    "request_max_retries": "chi thu lai mot lan de khong nhan tai cua lane",
+    "stream_max_retries": "khong phat lai luong da co the sinh token",
     "stream_idle_timeout_ms":
         "thieu thi Codex CAT luong o ~62 giay trong khi may van sinh",
 }
@@ -219,13 +232,15 @@ def _catalog() -> str:
     """
     def mot(slug: str, cua_so: int, nen: int, doc_anh: bool = False) -> dict:
         d = {
-            "slug": slug, "display_name": slug,
+            "slug": slug, "display_name": NHAN_CODEX[slug],
             "description": f"{slug} (LTT Studios)",
-            "default_reasoning_level": "medium",
+            "default_reasoning_level": HO_SO_MODEL[slug].reasoning,
             "supported_reasoning_levels": [
-                {"effort": "low", "description": "Fast"},
-                {"effort": "medium", "description": "Balanced"},
-                {"effort": "xhigh", "description": "Deepest"}],
+                {"effort": effort,
+                 "description": ("Thinking on" if slug == MODEL_35 else
+                                 {"low": "Fast", "medium": "Balanced",
+                                  "xhigh": "Deepest"}[effort])}
+                for effort in HO_SO_MODEL[slug].reasoning_levels],
             "shell_type": "unified_exec", "visibility": "list",
             "supported_in_api": True, "priority": 1,
             "additional_speed_tiers": [], "service_tiers": [],
@@ -253,7 +268,7 @@ def _catalog() -> str:
         return d
 
     return json.dumps(
-        {"models": [mot("ltt-3.8", CUA_SO_NGU_CANH, NEN_HOI_THOAI),
+        {"models": [mot("ltt-3.8", CUA_SO_NGU_CANH, NEN_HOI_THOAI, doc_anh=True),
                     mot("ltt-3.5", CUA_SO_NGU_CANH_35,
                         NEN_HOI_THOAI_35, doc_anh=True)]},
         indent=1)
@@ -277,13 +292,16 @@ def _sao_luu(p: pathlib.Path) -> None:
 
 def codex(base: str, goc_codex: pathlib.Path,
           hs: HoSoModel | None = None) -> list:
-    """Two files, and the split is not optional.
+    """Provider, catalog and both LTT profiles; the split is not optional.
 
     Codex 0.145+ refuses `[profiles.X]` inside config.toml outright:
     "cannot be used while config.toml contains legacy `[profiles.ltt]` config".
     The provider block stays in config.toml; the profile moves to its own file.
     """
-    hs = hs or HO_SO_MODEL[MODEL]
+    # `hs` remains in the public signature for old callers that also pass it to
+    # `claude_code`. It must not narrow Codex to one model: one install always
+    # exposes both LTT products.
+    del hs
     ra = []
     goc_codex.mkdir(parents=True, exist_ok=True)
 
@@ -305,6 +323,8 @@ def codex(base: str, goc_codex: pathlib.Path,
             f'base_url = "{_goc(base)}/api/v1"   # co /v1: Codex ghep them /responses\n'
             f'env_key = "{BIEN_KHOA}"\n'
             'wire_api = "responses"\n'
+            "request_max_retries = 1\n"
+            "stream_max_retries = 0\n"
             "stream_idle_timeout_ms = 600000\n")
         cfg.write_text(cu.rstrip("\n") + "\n" + khoi if cu else khoi.lstrip("\n"),
                        encoding="utf-8")
@@ -317,20 +337,28 @@ def codex(base: str, goc_codex: pathlib.Path,
         cat.write_text(_catalog(), encoding="utf-8")
         ra.append(f"  + tao {cat}")
 
-    pro = goc_codex / "ltt.config.toml"
-    if pro.exists():
-        ra.append(f"  = da co {pro}, giu nguyen")
-    else:
+    for ten_tep, hs_codex in (("ltt.config.toml", HO_SO_MODEL[MODEL]),
+                              ("ltt-fast.config.toml", HO_SO_MODEL[MODEL_35])):
+        pro = goc_codex / ten_tep
+        if pro.exists():
+            ra.append(f"  = da co {pro}, giu nguyen")
+            continue
         pro.write_text(
-            f'model = "{hs.ten}"\n'
+            f'model = "{hs_codex.ten}"\n'
             'model_provider = "ltt"\n'
-            "# Left at its default the model spends most of max_tokens thinking\n"
-            "# before it answers.\n"
-            'model_reasoning_effort = "low"\n'
+            "# Model-specific quality default; server thinking remains enabled.\n"
+            f'model_reasoning_effort = "{hs_codex.reasoning}"\n'
             'model_reasoning_summary = "none"\n'
-            f"model_context_window = {hs.cua_so}\n"
-            f"model_catalog_json = '{cat}'\n", encoding="utf-8")
-        ra.append(f"  + tao {pro}")
+            f"model_context_window = {hs_codex.cua_so}\n"
+            f"model_auto_compact_token_limit = {hs_codex.nen}\n"
+            'model_auto_compact_token_limit_scope = "total"\n'
+            f"tool_output_token_limit = {TRAN_KET_QUA_TOOL}\n"
+            f"model_catalog_json = '{cat}'\n"
+            "\n[agents]\n"
+            f'default_subagent_model = "{hs_codex.ten}"\n'
+            f'default_subagent_reasoning_effort = "{hs_codex.reasoning}"\n'
+            "max_concurrent_threads_per_session = 1\n", encoding="utf-8")
+        ra.append(f"  + tao {pro} ({hs_codex.ten})")
     return ra
 
 
@@ -359,7 +387,19 @@ def claude_code(base: str, goc_claude: pathlib.Path,
     env.update({
         "ANTHROPIC_BASE_URL": f"{_goc(base)}/api",     # KHONG /v1: client tu ghep
         "ANTHROPIC_MODEL": hs.ten,
+        "ANTHROPIC_DEFAULT_MODEL": hs.ten,
         "ANTHROPIC_DEFAULT_HAIKU_MODEL": hs.ten,
+        "ANTHROPIC_DEFAULT_OPUS_MODEL": hs.ten,
+        "ANTHROPIC_DEFAULT_SONNET_MODEL": hs.ten,
+        "ANTHROPIC_DEFAULT_FABLE_MODEL": hs.ten,
+        "CLAUDE_CODE_SUBAGENT_MODEL": hs.ten,
+        "CLAUDE_CODE_SUBAGENT_MODEL_FORCE": "1",
+        "CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS": "1",
+        "CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH": "1",
+        "CLAUDE_CODE_MAX_RETRIES": "10",
+        "API_TIMEOUT_MS": "600000",
+        "CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK": "1",
+        "ENABLE_TOOL_SEARCH": "false",
         # 🔴 HAI DONG DUOI KHONG PHAI TINH CHINH — THIEU CHUNG LA MOT LOI TIEN,
         #    va chung da thieu o day trong khi ban Windows (`tools/cam_cli.py`)
         #    thi co. Tuc khach macOS/Linux nhan mot ban cai **yeu hon**, va
@@ -372,15 +412,14 @@ def claude_code(base: str, goc_claude: pathlib.Path,
         #        200k tokens (the context window it assumes).
         #    Tran vao that cua ta nho hon nhieu, nen auto-compact khong bao gio
         #    kip nen va khach an 413 giua phien.
-        "CLAUDE_CODE_MAX_CONTEXT_TOKENS": str(CUA_SO_NGU_CANH),
+        "CLAUDE_CODE_MAX_CONTEXT_TOKENS": str(hs.cua_so),
         "CLAUDE_CODE_MAX_OUTPUT_TOKENS": str(TOKEN_RA_TRAN),
         # 🔴 HAI DONG NAY THEM 04/09, va thieu chung cung la mot loi tien.
         #    `CLAUDE_CODE_MAX_CONTEXT_TOKENS` chi sua con so Claude GIA DINH;
         #    no KHONG dat nguong nen. Tai lieu chinh thuc noi ro: khong dat
-        #    cua so nen thi Claude nen khi hoi thoai **cham dung** cua so ay,
-        #    tuc 100%. Voi ta la 156.385 tren tran cung 169.984 — chi con
-        #    13.599, nho hon mot luot sinh dai nhat (32.768).
-        "CLAUDE_CODE_AUTO_COMPACT_WINDOW": str(CUA_SO_NEN_CLAUDE),
+        #    cua so nen thi Claude co the doi toi sat cua so da khai. Voi ta,
+        #    171.458 - 138.690 = 32.768: chua tron mot luot sinh dai nhat.
+        "CLAUDE_CODE_AUTO_COMPACT_WINDOW": str(hs.nen),
         "MAX_MCP_OUTPUT_TOKENS": str(TRAN_KET_QUA_TOOL),
     })
     # Khoa KHONG vao day. `settings.json` bi chia se va commit thuong xuyen.
@@ -409,11 +448,14 @@ def claude_desktop(base: str, hs: HoSoModel | None = None) -> list:
         # 🔴 TEN TUYEN, khong phai ten model. Ban truoc in `ltt-3.8` o day
         #    va do la mot loi that: Desktop loc bo no khoi picker, roi nut
         #    gui tat han **ma khong bao gi**. Xem `MODEL_DESKTOP`.
-        f"      inferenceModels     : {hs.tuyen_desktop}",
+        "      inferenceModels     : " + ", ".join(
+            NHAN_DESKTOP[h.tuyen_desktop] + " [" + h.tuyen_desktop + "; tier="
+            + TANG_DESKTOP[h.tuyen_desktop] + "; default]"
+            for h in HO_SO_MODEL.values()),
         "      -> Apply locally",
-        "    (inferenceModels BAT BUOC, va phai la TEN TUYEN o tren chu khong",
-        f"     phai `{hs.ten}`: Desktop chi giu nhung id trong giong Claude,",
-        "     nen ten san pham bi loc bo va nut gui tat han ma khong bao gi.)",
+        "    (inferenceModels BAT BUOC. Dung dung hai TEN TUYEN o tren;",
+        "     Desktop loc model theo id, va hai ten nay cho phep chon ro",
+        "     LTT-3.8 hoac LTT-3.5 trong picker.)",
     ]
 
 

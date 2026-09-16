@@ -7,7 +7,7 @@ fail-closed implementation exists on this branch; it is not live OVH evidence.
 |---|---|---|
 | Can changing default move an existing VPS accidentally? | PASS | Existing instances retain `infrastructure_profile_id`; selector/default tests in `test_1010` and pinned-job tests in `test_1013`. |
 | Can two jobs receive the same IPv4? | PASS offline | Conditional locked allocation plus unique reservation token; SQLite behavior and opt-in two-worker PostgreSQL tests in `test_1011`/`test_1010`. |
-| Can an OVH IP be paid for but forgotten by DB? | PASS coordinator offline / INTEGRATION OPEN | Q125 coordinator durably saves cart/item/baseline before checkout and order identity before import; restart/lost-response tests in `test_1262` prohibit duplicate checkout. Worker integration and real order attribution remain unverified; auto-acquisition is not enabled. |
+| Can an OVH IP be paid for but forgotten by DB? | PASS coordinator offline / INTEGRATION OPEN | Q130 coordinator durably saves cart/item/baseline before checkout and order identity before import; restart/lost-response tests in `test_1262` prohibit duplicate checkout. Worker integration and real order attribution remain unverified; auto-acquisition is not enabled. |
 | Can a provider timeout create a duplicate resource? | PASS for OVH static path; BLOCKED for dynamic Vultr | OVH has no provider-create call and external mutations use durable intent/read-back. Dynamic Vultr purchase lacks exact label recovery, therefore Vultr remains STANDBY/not accepting new production. |
 | Can gateway mapping point at the wrong VM? | PASS offline | `PUBLIC_MAPPING` journals exact public/private pair and requires canonical gateway read-back; ambiguous result becomes `NEEDS_REVIEW`. |
 | Can a disabled profile still receive new VPS? | PASS | Selector excludes it and mutation coordinator rechecks profile status immediately around external mutations (`test_1021`). |
@@ -27,7 +27,7 @@ No known P0 defect exists in the enabled OVH static-pool software path. The two
 paid-provider questions remain explicit rollout blockers, not waived findings:
 Vultr cannot accept new production instances and OVH acquisition cannot be
 invoked through automatic checkout. Fresh inventory proves there is no free IP;
-one unpaid cart exists. Q125 removes routine manual approval; the next step is
+one unpaid cart exists. Q130 removes routine manual approval; the next step is
 finishing guarded acquisition/worker integration before live checkout and exact
 delivery verification. B06 is resolved. B02, B04 and B07 continue to block activation/live
 acceptance/integration.

@@ -68,6 +68,6 @@ Stop-Service. Đây là triển khai nhánh explicit-authorized, không phải g
   read-back. Cuối test giữ VM stopped, IP BOUND và mapping; không destroy.
 - Full gate chỉ H46.9 cuối theo PO, không giữa phase hoặc pre-deploy. Chưa gate
   xanh không ghi HANDOFF_READY_FINAL hoặc FULL PRODUCTION READY.
-- Khi gộp cuối: xử lý va chạm nhãn quyết định Q124 (canonical root GitHub so với
+- Khi gộp cuối: xử lý va chạm nhãn quyết định Q129 (canonical root GitHub so với
   VPS infrastructure) theo nội dung/lý do, không dùng cả-file ours/theirs.
   Backup CAPACITY_BLOCKED, restore và dual-WAN chưa verified phải báo riêng.

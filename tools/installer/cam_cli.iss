@@ -24,10 +24,15 @@
 
 #define TenApp      "LTT Studios - Cam cong cu viet ma"
 #define TenNgan     "LTTStudios-CamCLI"
-#define PhienBan    "1.6.0"
+#define PhienBan    "1.9.3"
 #define NhaXB       "LTT Studios"
 #define Web         "https://app.lttstudios.com"
-#define ThuMucNguon "..\..\build\exe\pyinstaller\LTTStudios-CamCLI"
+#ifndef ThuMucNguon
+  #define ThuMucNguon "..\..\build\exe\pyinstaller\LTTStudios-CamCLI"
+#endif
+#ifndef ThuMucDich
+  #define ThuMucDich "..\..\build\exe\installer"
+#endif
 
 [Setup]
 AppId={{8F3A1C42-5D7E-4B29-9A16-C0E2D4F86B31}
@@ -38,7 +43,7 @@ AppPublisherURL={#Web}
 AppSupportURL={#Web}/developers
 DefaultDirName={autopf}\{#TenNgan}
 DefaultGroupName={#NhaXB}
-OutputDir=..\..\build\exe\installer
+OutputDir={#ThuMucDich}
 OutputBaseFilename={#TenNgan}-Setup-{#PhienBan}
 Compression=lzma2/max
 SolidCompression=yes
