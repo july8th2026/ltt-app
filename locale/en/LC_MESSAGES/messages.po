@@ -18402,3 +18402,36 @@ msgstr "No evaluations yet."
 
 msgid "Báo cáo chất lượng"
 msgstr "Quality report"
+
+msgid "Biến mô tả thành tối đa bốn ảnh, theo dõi tiến độ và so sánh kết quả thật."
+msgstr "Turn a prompt into up to four images, follow the progress and compare the real outputs."
+
+msgid "Đã nạp kết quả làm ảnh nguồn"
+msgstr "Loaded the output as the source image"
+
+msgid "Kết quả thật sẽ xuất hiện ở đây sau lượt đầu tiên."
+msgstr "Real outputs will appear here after your first job."
+
+msgid "Chọn nguồn, cấu hình đoạn nổi bật, theo dõi bản ghi lời và so sánh kết quả thật."
+msgstr "Choose a source, configure highlights, follow the transcript and compare the real outputs."
+
+msgid "Tải lên mới hoặc dùng lại tệp nguồn của bạn"
+msgstr "Upload new files or reuse your assets"
+
+msgid "MP4, MOV, MKV… · video lớn tải thẳng lên kho lưu trữ"
+msgstr "MP4, MOV, MKV… · large videos upload straight to Storage"
+
+msgid "tệp nguồn"
+msgstr "source files"
+
+msgid "Chi phí theo phút nguồn + số clip ra"
+msgstr "Cost by source minute plus number of outputs"
+
+msgid "Kết quả dùng làm tham chiếu"
+msgstr "Outputs used as references"
+
+msgid "Đang phối lại từ kết quả đã chọn"
+msgstr "Remixing from the selected output"
+
+msgid "Chọn tối đa hai kết quả thật trong lịch sử"
+msgstr "Pick up to two real outputs from your history"
