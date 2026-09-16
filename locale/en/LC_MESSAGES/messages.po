@@ -16445,3 +16445,87 @@ msgstr "Leave blank to use the running configuration. The three checkboxes above
 #: apps/transcript/templates/transcript.html:27
 msgid "để trống = tự nhận"
 msgstr "blank = auto-detect"
+
+msgid "Yêu cầu chưa đúng"
+msgstr "Something is wrong with this request"
+
+msgid "Dữ liệu gửi lên thiếu hoặc không hợp lệ. Quay lại trang trước, kiểm tra thông tin rồi thử lại."
+msgstr "The submitted data is missing or invalid. Go back, check the details and try again."
+
+msgid "Cần đăng nhập"
+msgstr "Sign in required"
+
+msgid "Phiên đăng nhập đã hết hoặc bạn chưa đăng nhập. Đăng nhập để tiếp tục đúng trang này."
+msgstr "Your session has expired or you are not signed in. Sign in to continue to this page."
+
+msgid "Chưa có quyền truy cập"
+msgstr "You don't have access"
+
+msgid "Tài khoản hiện tại không được mở trang này. Nếu bạn nghĩ đây là nhầm lẫn, gửi mã tra cứu bên dưới cho bộ phận hỗ trợ."
+msgstr "This account can't open this page. If you think this is a mistake, send the reference code below to support."
+
+msgid "Không tìm thấy trang"
+msgstr "Page not found"
+
+msgid "Đường dẫn có thể đã đổi, đã bị xoá, hoặc bạn không có quyền xem nội dung này."
+msgstr "The link may have changed or been removed, or you may not have permission to view it."
+
+msgid "Thao tác không được hỗ trợ"
+msgstr "Action not supported"
+
+msgid "Trang này không nhận kiểu yêu cầu vừa gửi. Mở lại trang từ menu rồi thử lại."
+msgstr "This page doesn't accept that kind of request. Open the page again from the menu and retry."
+
+msgid "Tệp quá lớn"
+msgstr "File too large"
+
+msgid "Tệp hoặc dữ liệu gửi lên vượt giới hạn cho phép. Thử lại với tệp nhỏ hơn."
+msgstr "The file or data exceeds the allowed limit. Try again with a smaller file."
+
+msgid "Thao tác quá nhanh"
+msgstr "Too many requests"
+
+msgid "Hệ thống tạm giới hạn để bảo vệ tài khoản. Chờ khoảng một phút rồi thử lại."
+msgstr "We've paused requests briefly to protect your account. Wait about a minute and try again."
+
+msgid "Máy chủ gặp sự cố"
+msgstr "Something went wrong on our side"
+
+msgid "Lỗi nằm ở phía chúng tôi, không phải do bạn. Thử lại sau ít phút; nếu vẫn lỗi, gửi mã tra cứu cho bộ phận hỗ trợ."
+msgstr "This error is on our side, not yours. Try again in a few minutes; if it persists, send the reference code to support."
+
+msgid "Dịch vụ tạm gián đoạn"
+msgstr "Service temporarily unavailable"
+
+msgid "Một dịch vụ phía sau chưa phản hồi. Thử lại sau ít phút."
+msgstr "An upstream service didn't respond. Try again in a few minutes."
+
+msgid "Dịch vụ đang bảo trì hoặc quá tải"
+msgstr "Service under maintenance or overloaded"
+
+msgid "Tính năng này tạm chưa sẵn sàng. Thử lại sau ít phút."
+msgstr "This feature isn't available right now. Try again in a few minutes."
+
+msgid "Phản hồi quá lâu"
+msgstr "The server took too long"
+
+msgid "Máy chủ không phản hồi kịp. Thử lại sau ít phút."
+msgstr "The server didn't respond in time. Try again in a few minutes."
+
+msgid "Đã có lỗi xảy ra"
+msgstr "Something went wrong"
+
+msgid "Thử lại hoặc quay về trang chính."
+msgstr "Try again or go back to the home page."
+
+msgid "Lỗi %(ma)s"
+msgstr "Error %(ma)s"
+
+msgid "Về trang chính"
+msgstr "Back to home"
+
+msgid "Liên hệ hỗ trợ"
+msgstr "Contact support"
+
+msgid "Mã tra cứu:"
+msgstr "Reference code:"

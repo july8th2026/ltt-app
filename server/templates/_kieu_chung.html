@@ -99,13 +99,16 @@
           o lop `.dev-*`, dung ep ca nen tang. */
     button, .btn {
       padding:9px 14px; border-radius:6px; border:1px solid transparent;
-      background:var(--accent); color:#fff; cursor:pointer; font-size:13px;
+      background:var(--brand-fill); color:#fff; cursor:pointer; font-size:13px;
       font-family:inherit; text-decoration:none; display:inline-block;
     }
-    button:hover, .btn:hover { filter:brightness(1.12); }
+    /* Golden UI: hover TOI HON (`--brand-fill-hover`), khong `brightness` — sang
+       hon lam chu trang tren nen do tut duoi AA. */
+    button:hover { filter:brightness(1.12); }
+    button:not([class]):hover, .btn:hover { filter:none; background:var(--brand-fill-hover); }
     button:disabled, .btn[disabled], .btn.disabled { opacity:.55; cursor:not-allowed; filter:none; }
     .btn-ghost { background:var(--panel2); border-color:var(--line2); color:var(--fg); }
-    .btn-ghost:hover { background:var(--panel3); filter:none; }
+    .btn-ghost:hover, .btn.ghost:hover { background:var(--panel3); filter:none; }
     /* Nguy hiem = VIEN, khong phai nen dac. Mot bang co sau hang thi sau nut
        do dac la sau lan mat nhin thay canh bao — den luc can canh bao that thi
        no khong con noi len duoc gi. Nen chi to len khi ro chuot. */

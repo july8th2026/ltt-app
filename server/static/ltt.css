@@ -8,15 +8,33 @@
   --surface-canvas:#08090a; --surface-base:#0d0a0a; --surface-raised:#151111;
   --surface-overlay:#1b1413; --surface-interactive:#211715;
   --border-subtle:#382422; --border-strong:#63332e;
-  --text-primary:#f4f4f5; --text-secondary:#c9bbb7; --text-muted:#927f79;
+  /* Golden UI (16/09): --text-muted #927f79 -> #9d8c87. Ban cu duoi AA (4.1-4.2:1)
+     tren moi nen "soft" (thanh cong/canh bao/brand). Ban moi >= 4.85:1 tren ca
+     bay nen be mat + soft. Do bang axe, khong bang mat. */
+  --text-primary:#f4f4f5; --text-secondary:#c9bbb7; --text-muted:#9d8c87;
   --brand-primary:#ef3731; --brand-hover:#ff514a; --brand-strong:#b92520;
   --brand-soft:#421511; --brand-border:#8f2c24;
+  /* NEN DO co chu trang (nut chinh, logo, chip dang chon). `#ef3731` chi dat
+     3.99:1 voi chu trang — mot cap mau nay la ~144/312 loi tuong phan cua baseline.
+     `--brand-primary` giu cho vien/thanh tien do/diem nhan khong chua chu.
+     Hover TOI HON chu khong sang hon: sang hon lam tuong phan te di. */
+  --brand-fill:#e11811; --brand-fill-hover:#c7150f;
   --status-success:#62d889; --status-success-soft:#10261a; --status-success-border:#1d6037;
   --status-warning:#efb84f; --status-warning-soft:#2a2213; --status-warning-border:#745517;
   --status-danger:#ff6b63; --status-danger-soft:#2d1414; --status-danger-border:#8b2926;
+  --status-info:#79b8d8; --status-info-soft:#14202a; --status-info-border:#2b5670;
   --focus-ring:#ff746d; --focus-shadow:#ef37313d;
-  --radius-lg:12px; --radius-md:8px; --radius-sm:6px;
+  --radius-lg:12px; --radius-md:8px; --radius-sm:6px; --radius-pill:999px;
   --motion-fast:120ms; --motion-normal:180ms;
+
+  /* Thang khoang cach 4px. */
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px;
+  --space-5:20px; --space-6:24px; --space-7:32px; --space-8:40px;
+  /* Thang chu co ten. Mat do giao dien day: than 14px, nhan 12.5px. */
+  --fs-caption:11.5px; --fs-helper:12px; --fs-label:12.5px; --fs-body:14px;
+  --fs-card:15px; --fs-section:18px; --fs-page:24px; --fs-display:32px;
+  --lh-tight:1.25; --lh-body:1.55;
+  --shadow-sm:0 1px 2px #0006; --shadow-md:0 8px 24px #0008; --shadow-pop:0 18px 50px #000b;
 
   /* Compatibility aliases: migrate legacy selectors one phase at a time. */
   --bg:var(--surface-canvas); --bg2:var(--surface-base);
@@ -29,7 +47,8 @@
   --err:var(--status-danger); --err-bg:var(--status-danger-soft); --err-line:var(--status-danger-border);
   --grey:#9b8f8b; --grey-bg:#1c1716;
   --radius:var(--radius-lg);
-  --font:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",sans-serif;
+  /* DL-003 LOCKED: mot ho chu cho moi shell. */
+  --font:"Segoe UI",-apple-system,BlinkMacSystemFont,system-ui,Roboto,"Helvetica Neue",Arial,sans-serif;
   --mono:ui-monospace,"Cascadia Code","Consolas",monospace;
 }
 *,*::before,*::after{box-sizing:border-box}
@@ -135,9 +154,10 @@ html{background:var(--surface-canvas)}
 
 /* ── Button ── */
 .btn{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:var(--radius-sm);
-  border:1px solid transparent;background:var(--accent);color:#fff;font:inherit;font-size:13px;cursor:pointer;
-  transition:.15s;text-decoration:none;white-space:nowrap}
-.btn:hover{filter:brightness(1.1)}
+  border:1px solid transparent;background:var(--brand-fill);color:#fff;font:inherit;font-size:13px;cursor:pointer;
+  transition:background-color var(--motion-fast),border-color var(--motion-fast),color var(--motion-fast);
+  text-decoration:none;white-space:nowrap}
+.btn:hover{background:var(--brand-fill-hover)}
 .btn.ghost{background:var(--panel2);border-color:var(--line2);color:var(--fg)}
 .btn.ghost:hover{background:var(--panel3)}
 .btn.sm{padding:5px 10px;font-size:12px;border-radius:6px}
@@ -208,7 +228,7 @@ html{background:var(--surface-canvas)}
 .adm-brand{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;gap:11px;align-items:center}
 .adm-brand b{font-size:14.5px} .adm-brand small{display:block;color:var(--dim);font-size:10.5px}
 .skip-link{position:fixed;top:8px;left:8px;z-index:1000;padding:9px 12px;border-radius:var(--radius-sm);
-  color:#fff;background:var(--brand-primary);transform:translateY(-160%);transition:transform var(--motion-fast)}
+  color:#fff;background:var(--brand-fill);transform:translateY(-160%);transition:transform var(--motion-fast)}
 .skip-link:focus{transform:translateY(0)}
 .adm-nav{flex:1;overflow:auto;padding:8px 0}
 .adm-nav .grp{padding:12px 18px 5px;color:var(--dim);font-size:10px;letter-spacing:.09em;text-transform:uppercase}
@@ -457,7 +477,7 @@ html{background:var(--surface-canvas)}
 .catfilters{display:flex;gap:4px;flex-wrap:wrap}
 .catfilters button{border:1px solid var(--line2);background:var(--panel2);color:var(--muted);font:inherit;
   font-size:12.5px;padding:6px 12px;border-radius:20px;cursor:pointer}
-.catfilters button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.catfilters button.on{background:var(--brand-fill);border-color:var(--accent);color:#fff}
 .catsection{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin:20px 0 10px;font-weight:600}
 
 /* Billing: quote, order and history share money-safe states. */
@@ -610,7 +630,7 @@ html{background:var(--surface-canvas)}
 .chip-opt span{display:inline-block;border:1px solid var(--line2);background:var(--panel2);
   color:var(--muted);font-size:12.5px;padding:6px 12px;border-radius:20px;transition:.12s}
 .chip-opt:hover span{border-color:var(--accent)}
-.chip-opt input:checked+span{background:var(--accent);border-color:var(--accent);color:#fff}
+.chip-opt input:checked+span{background:var(--brand-fill);border-color:var(--accent);color:#fff}
 .chip-opt input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
 .prompt-preview{white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,monospace;
   font-size:12.5px;line-height:1.6;background:var(--panel2);border:1px solid var(--line);
@@ -1355,11 +1375,15 @@ code.to-dam{font-weight:600;color:var(--text-primary)}
  *    được "màu mới" với "refactor làm hỏng một luật". Việc chỉnh sắc độ cho hợp
  *    nền carbon là việc của Đợt 2, và nó phải đi kèm số đo tương phản.
  */
+/* DL-002 LOCKED (16/09): mot bang mau Carbon Red cho moi khu. Ten `--vps-teal*`
+   giu lai de khong cham ~20 luat va `vps.html`, nhung GIA TRI tro ve token brand.
+   `--vps-teal-text` truoc day bi tham chieu ma KHONG dinh nghia o dau ca. */
 :root{
-  --vps-teal:#0B7285;
-  --vps-teal-hover:#0e8fa3;
-  --vps-teal-soft:rgba(11,114,133,.14);
-  --vps-teal-line:#146d7e;
+  --vps-teal:var(--brand-fill);
+  --vps-teal-hover:var(--brand-fill-hover);
+  --vps-teal-soft:var(--brand-soft);
+  --vps-teal-line:var(--brand-border);
+  --vps-teal-text:var(--brand-hover);
 }
 
 /* ── Lưới thẻ gói ────────────────────────────────────────────────────────
@@ -1926,20 +1950,12 @@ code.vps-doi-gt{padding:2px 7px;border:1px solid var(--border-subtle);
 
 /* Họ accent vận hành — tên MỚI, không đụng ai. Đặt ở phạm vi khu để cả topbar
    (ngoài .app-shell) lẫn nội dung đều với tới được qua `.khu-dev`/`.dev-topbar`. */
+/* DL-002 LOCKED (16/09): khu API dung CHUNG nen am Carbon Red — override nen
+   trung tinh da go. `--dev-cyan*` giu ten, gia tri tro ve token brand; mau thu
+   hai duy nhat duoc phep la token ngu nghia `--status-info` (chuoi du lieu bieu do). */
 .khu-dev,.dev-topbar{
-  --dev-cyan:#2bb8c9; --dev-cyan-hover:#49d3e3;
-  --dev-cyan-soft:rgba(43,184,201,.13); --dev-cyan-line:#1d6f7a;
-}
-
-/* Override token ngữ nghĩa — CHỈ trong khu API. Trung tính hoá sắc ấm để nền
-   carbon khớp ảnh; giữ nguyên độ sáng nên mật độ/độ tương phản không đổi. */
-.khu-dev{
-  --surface-base:#0d0d0f;
-  --surface-raised:#141416;
-  --surface-overlay:#1b1b1f;
-  --surface-interactive:#232329;
-  --border-subtle:#26262c;
-  --border-strong:#3a3a44;
+  --dev-cyan:var(--brand-hover); --dev-cyan-hover:var(--focus-ring);
+  --dev-cyan-soft:var(--brand-soft); --dev-cyan-line:var(--brand-border);
 }
 
 /* ── Khối thương hiệu đầu thanh bên (ảnh) ────────────────────────────────
@@ -1948,7 +1964,7 @@ code.vps-doi-gt{padding:2px 7px;border:1px solid var(--border-subtle);
 .khu-dev .app-side .dev-thuong-hieu{display:flex;align-items:center;gap:10px;
   padding:0 10px 14px;margin-bottom:6px;border-bottom:1px solid var(--border-subtle)}
 .khu-dev .app-side .dev-thuong-hieu .logo{display:grid;place-items:center;
-  width:30px;height:30px;border-radius:8px;background:var(--brand-primary);
+  width:30px;height:30px;border-radius:8px;background:var(--brand-fill);
   color:#fff;font-size:11px;font-weight:800;letter-spacing:.02em}
 .khu-dev .app-side .dev-thuong-hieu .ten{display:flex;flex-direction:column;line-height:1.25}
 .khu-dev .app-side .dev-thuong-hieu .ten strong{font-size:13px;color:var(--text-primary)}
@@ -1979,7 +1995,7 @@ code.vps-doi-gt{padding:2px 7px;border:1px solid var(--border-subtle);
   background:currentColor}
 .dev-topbar .dev-chuong{position:relative;display:inline-flex;color:var(--text-secondary)}
 .dev-topbar .dev-chuong .so{position:absolute;top:-6px;right:-7px;min-width:15px;
-  height:15px;padding:0 4px;border-radius:99px;background:var(--brand-primary);
+  height:15px;padding:0 4px;border-radius:99px;background:var(--brand-fill);
   color:#fff;font-size:9.5px;line-height:15px;text-align:center;font-weight:700}
 
 /* ── Lưới nội dung 2 cột (ảnh: biểu đồ|checklist, cấu hình|chọn, soạn|kết quả)
@@ -2058,7 +2074,7 @@ code.vps-doi-gt{padding:2px 7px;border:1px solid var(--border-subtle);
   background:var(--dev-cyan-soft);color:var(--dev-cyan)}
 .khu-dev .dev-bac>li.xong .lbl{color:var(--text-primary)}
 .khu-dev .dev-bac>li.dang .num{border-color:var(--brand-primary);
-  background:var(--brand-primary);color:#fff}
+  background:var(--brand-fill);color:#fff}
 .khu-dev .dev-bac>li.dang .lbl{color:var(--text-primary);font-weight:600}
 
 /* ── Danh sách gọn (thông báo, request gần đây trong panel) ─────────────── */
@@ -2146,26 +2162,26 @@ code.vps-doi-gt{padding:2px 7px;border:1px solid var(--border-subtle);
   font-size:14px;list-style:none;display:flex;align-items:center;gap:8px}
 .khu-dev .dev-tao>summary::-webkit-details-marker{display:none}
 .khu-dev .dev-tao>summary::before{content:"+";display:grid;place-items:center;
-  width:22px;height:22px;border-radius:6px;background:var(--brand-primary);color:#fff}
+  width:22px;height:22px;border-radius:6px;background:var(--brand-fill);color:#fff}
 .khu-dev .dev-tao[open]>summary::before{content:"\2212"}
 .khu-dev .dev-tao-than{padding:0 16px 16px;border-top:1px solid var(--border-subtle)}
 
 /* ── Biểu đồ SVG sinh phía máy chủ (Đợt 3) — không thư viện, không JS ───── */
 .khu-dev .dev-bieu-do{width:100%;height:auto;display:block}
 .khu-dev .dev-bieu-do .luoi{stroke:var(--border-subtle);stroke-width:1}
-.khu-dev .dev-bieu-do .duong-req{fill:none;stroke:var(--dev-cyan);stroke-width:2;
+.khu-dev .dev-bieu-do .duong-req{fill:none;stroke:var(--status-info);stroke-width:2;
   vector-effect:non-scaling-stroke;stroke-linejoin:round}
 .khu-dev .dev-bieu-do .duong-credit{fill:none;stroke:var(--brand-primary);stroke-width:2;
   vector-effect:non-scaling-stroke;stroke-linejoin:round}
 .khu-dev .dev-bieu-do .nhan{fill:var(--text-muted);font-size:10px}
 /* Vùng tô mờ dưới mỗi đường (ảnh demo) — nhạt để không nuốt lưới. */
-.khu-dev .dev-bieu-do .vung-req{fill:var(--dev-cyan);opacity:.10;stroke:none}
+.khu-dev .dev-bieu-do .vung-req{fill:var(--status-info);opacity:.10;stroke:none}
 .khu-dev .dev-bieu-do .vung-credit{fill:var(--brand-primary);opacity:.09;stroke:none}
 .khu-dev .dev-chu-thich{display:inline-flex;gap:14px;font-size:11.5px;
   color:var(--text-secondary)}
 .khu-dev .dev-chu-thich>span{display:inline-flex;align-items:center;gap:5px}
 .khu-dev .dev-chu-thich .o{width:10px;height:2px;display:inline-block}
-.khu-dev .dev-chu-thich .o-req{background:var(--dev-cyan)}
+.khu-dev .dev-chu-thich .o-req{background:var(--status-info)}
 .khu-dev .dev-chu-thich .o-credit{background:var(--brand-primary)}
 
 /* ── Vòng phân bổ theo công cụ (ảnh demo: donut + chú thích %) ──────────── */
@@ -3144,9 +3160,9 @@ button.lv-the-song.nghe-loi,.lv-chon-nghe.nghe-loi{
   color:var(--accent2);font-size:12px;line-height:1;cursor:pointer;
   display:grid;place-items:center;padding:0;
   transition:background var(--motion-fast),color var(--motion-fast)}
-.lv-phat-nut:hover{background:var(--accent);color:#fff}
+.lv-phat-nut:hover{background:var(--brand-fill);color:#fff}
 .lv-phat-nut:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
-.lv-phat.dang-phat .lv-phat-nut{background:var(--accent);color:#fff}
+.lv-phat.dang-phat .lv-phat-nut{background:var(--brand-fill);color:#fff}
 
 /* `min-width:0` la bat buoc: mot flex item mac dinh khong co xuong duoi kich
    thuoc noi dung, nen canvas se day ca hang rong ra khoi khung cha. */
@@ -3754,3 +3770,46 @@ button.lv-the-song.nghe-loi,.lv-chon-nghe.nghe-loi{
  */
 .asv-trang [hidden],
 .asv-trang[hidden]{display:none!important}
+
+/* ============================================================================
+   GOLDEN UI — component dùng chung (chiến dịch 16/09/2026, plan_trien_khai.md)
+   ----------------------------------------------------------------------------
+   Chỉ dùng token của `:root`. Không hex thô. Tên `ui-*` để không đụng lớp cũ.
+   ============================================================================ */
+
+/* ── State: lỗi / rỗng / kết quả / đang tải ─────────────────────────────────
+ * Một khối cho mọi trạng thái cần người dùng hiểu chuyện gì xảy ra và làm gì
+ * tiếp: eyebrow (mã/loại) · tiêu đề · giải thích · hành động · mã tra cứu.
+ * Biến thể màu CHỈ đổi viền trái + eyebrow; nền giữ `--surface-raised` để chữ
+ * luôn đạt AA như mọi thẻ khác. */
+.ui-state{max-width:640px;margin:var(--space-7) auto;padding:var(--space-7) var(--space-6);
+  border:1px solid var(--border-subtle);border-left:4px solid var(--border-strong);
+  border-radius:var(--radius-lg);background:var(--surface-raised);color:var(--text-primary)}
+.ui-state--warn{border-left-color:var(--status-warning)}
+.ui-state--err{border-left-color:var(--status-danger)}
+.ui-state--ok{border-left-color:var(--status-success)}
+.ui-state--info{border-left-color:var(--status-info)}
+.ui-state-eyebrow{margin:0 0 var(--space-2);color:var(--text-muted);font-size:var(--fs-caption);
+  font-weight:600;letter-spacing:.12em;text-transform:uppercase}
+.ui-state--warn .ui-state-eyebrow{color:var(--status-warning)}
+.ui-state--err .ui-state-eyebrow{color:var(--status-danger)}
+.ui-state--ok .ui-state-eyebrow{color:var(--status-success)}
+.ui-state--info .ui-state-eyebrow{color:var(--status-info)}
+.ui-state-title{margin:0 0 var(--space-3);font-size:var(--fs-page);line-height:var(--lh-tight);font-weight:700}
+.ui-state-lead{margin:0 0 var(--space-2);color:var(--text-primary);font-size:15px;line-height:var(--lh-body)}
+.ui-state-body{margin:0;color:var(--text-secondary);font-size:var(--fs-body);line-height:var(--lh-body)}
+.ui-state-actions{display:flex;flex-wrap:wrap;gap:var(--space-2);margin-top:var(--space-5)}
+.ui-state-actions .btn{min-height:40px;padding:9px 16px;font-size:var(--fs-body)}
+.ui-state-meta{margin:var(--space-5) 0 0;padding-top:var(--space-3);border-top:1px solid var(--border-subtle);
+  color:var(--text-muted);font-size:var(--fs-helper)}
+.ui-state-id{font-family:var(--mono);color:var(--text-secondary);overflow-wrap:anywhere;user-select:all}
+/* Biến thể nhúng trong trang (danh sách rỗng, chưa có kết quả): nhỏ, viền đứt. */
+.ui-state--inline{max-width:none;margin:0;padding:var(--space-6);border-style:dashed;
+  border-left-width:1px;text-align:center}
+.ui-state--inline .ui-state-title{font-size:var(--fs-card)}
+.ui-state--inline .ui-state-actions{justify-content:center}
+@media(max-width:640px){
+  .ui-state{margin:var(--space-4) 0;padding:var(--space-5) var(--space-4)}
+  .ui-state-title{font-size:20px}
+  .ui-state-actions .btn{flex:1 1 auto;justify-content:center;text-align:center}
+}
