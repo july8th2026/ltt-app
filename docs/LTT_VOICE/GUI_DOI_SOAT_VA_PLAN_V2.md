@@ -94,7 +94,7 @@ Nguồn luật: `docs/00_LTT_OPERATING_CONTRACT.md` §4, §7–§10b (bản `6a2
 
 | # | Nợ | Bị chặn bởi | Làm khi | Ghi chú |
 |---|---|---|---|---|
-| N1 | **Phán quyết gate** trên nhánh — nhịp theo `docs/00_LTT_OPERATING_CONTRACT.md` §4 | khoá gate đang do cây khác giữ | theo hợp đồng | lượt chờ trên `174d045f` đã huỷ trước khi chạy — KHÔNG tính là L3 |
+| N1 | **Phán quyết gate** trên nhánh — nhịp theo `docs/00_LTT_OPERATING_CONTRACT.md` §4 | — | **ĐÃ GIẢI 16/09** | L3 `180bc8fc` đỏ 2/33 bước: luật vận hành + 5 test (394, 1006, 1259, 1260, 975). Sửa `71dee01c`; chạy lại ĐÚNG từng phép đỏ: `check_luat_van_hanh` PASS · test_1006 18 passed · test_394 PASS · test_975 2 passed · test_1260 13 passed · test_1259 4 passed (token máy B, chủ dự án cho phép). Lượt `--doi --tu` tự nâng lên đầy đủ (lần 1 kẹt `-n 1` vì máy bận lúc khởi động) — **chủ dự án chốt: các phép đỏ xanh là PASS, không chạy full lại** | lượt chờ trên `174d045f` đã huỷ trước khi chạy — KHÔNG tính là L3 |
 | N2 | **Gộp `main`** (`merge --ff-only` ở cây chính) | cây chính `D:\LTTSTUDIOSAPP` có sửa dở chưa commit: `docs/KE_HOACH_TRIEN_KHAI.md`, `docs/QUYET_DINH_NEN_TANG.md` (trùng tệp nhánh đổi), `docs/LTTCODE/PLAN_TRIEN_KHAI.md`, `docs/LTT_CMC/*`, `?? .codex/worktrees/` — đã nhắn phiên LTTCODE (tin chờ người dùng bên đó duyệt) | chủ các tệp commit/dời đi | ⛔ không stash/checkout/xoá |
 | N3 | **Deploy** + bật `LTT_STORAGE_LOCAL_PREFIXES=voice/` + pools `api:6, gpu+ffmpeg:1, voice:1` | N1, N2; báo phiên VPS (VM 204) | sau N2 | quy trình P8 |
 | N4 | **Dựng lại 25 giọng + duyệt license** (P9) | N3 (cần `voice/` trên đĩa ở production) | sau N3 | `dung_lai_giong_kho_chung --chay` rồi `soat_giong duyet` |
