@@ -537,18 +537,22 @@ def doc_tat_ca(request: Request, public_id: str, csrf_token: str = Form(""),
         if not can:
             return JSONResponse({"ok": True, "so_nop": 0, "het": True})
 
-        da_nop, loi = 0, ""
+        da_nop, loi, ma_loi = 0, "", ""
         for k in can:
             try:
                 _nop_mot_khoi(db, user, d, k)
                 da_nop += 1
             except Exception as e:  # noqa: BLE001
                 loi = str(e)
+                # W4' (16/09/2026): `ma_loi` đi kèm như cửa một khối — không có nó
+                # JS chỉ có một câu để hiện, không phân loại được lệch làn/credit.
+                ma_loi = str(getattr(e, "ma", "") or "")
                 break
         d.trang_thai = "dang_lam"
         db.commit()
         return JSONResponse({"ok": True, "so_nop": da_nop,
-                             "con_lai": len(can) - da_nop, "loi": loi})
+                             "con_lai": len(can) - da_nop, "loi": loi,
+                             "ma_loi": ma_loi})
     finally:
         try:
             next(gen)
