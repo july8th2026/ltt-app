@@ -462,3 +462,36 @@ def test_spa_khong_con_nhan_tieng_anh_chung():
     assert "item.toUpperCase()" not in insp and "BROWN FOX" not in insp
     ommi = (GOC / "frontend/prompt-ai-ommi/src/OmmiShell.tsx").read_text(encoding="utf-8")
     assert "'WORKSPACE'" not in ommi and "'Prompt Library'" not in ommi
+
+
+# ── 15. P2-03/P2-05/P2-06 + ô chọn tệp dùng chung ──────────────────────────
+
+@pytest.mark.parametrize("tep", [
+    "apps/audio_pause/templates/audio_pause.html", "apps/transcript/templates/transcript.html",
+    "apps/video_assembly/templates/video_assembly.html", "apps/ltt_voice/templates/ltt_voice_giong.html",
+    "apps/thumbnail/templates/thumbnail.html", "apps/thumbnail/templates/thumbnail_fragment.html",
+])
+def test_upload_huong_khach_dung_o_chon_tep_chung(tep):
+    src = (GOC / tep).read_text(encoding="utf-8")
+    assert 'type="file"' not in src, "dùng macro o_chon_tep, không input file trần (nút native hiện tiếng của hệ điều hành)"
+    assert "o_chon_tep(" in src
+
+
+def test_chon_tep_gan_lai_ca_tai_lieu_sau_htmx_outerhtml():
+    """`/taoanh/thumbnail` nạp form bằng hx-swap=outerHTML: e.target là phần tử CŨ đã rời DOM."""
+    js = (GOC / "server/static/chon_tep.js").read_text(encoding="utf-8")
+    assert not re.search(r"^\s*gan\(e\.target\);", js, flags=re.M)
+    shell = (GOC / "apps/taoanh/templates/image_thumbnail_shell.html").read_text(encoding="utf-8")
+    assert "chon_tep.js?v={{ asset_ver }}" in shell
+
+
+@pytest.mark.parametrize("tep", ["apps/taoanh/templates/image.html", "apps/thumbnail/templates/thumbnail.html",
+                                 "apps/thumbnail/templates/thumbnail_fragment.html"])
+def test_so_buoc_lien_mach(tep):
+    src = (GOC / tep).read_text(encoding="utf-8")
+    so = [int(x) for x in re.findall(r"<(?:span|b)>0(\d)</(?:span|b)>", src)]
+    assert so == list(range(1, len(so) + 1)), so
+
+
+def test_chuyen_dong_dung_token():
+    assert not re.findall(r"transition:[^;}]*(?<![\w.-])\.(?:12|15|18|2)s", CSS)

@@ -4,10 +4,11 @@
 {% block topbar_title %}<strong>{{ _("Tạo ảnh AI") }}</strong>{% endblock %}
 {% block content %}
 <script src="/static/htmx.min.js?v={{ asset_ver }}"></script>
+<script src="/static/chon_tep.js?v={{ asset_ver }}" defer></script>
 <section class="image-unified-shell" aria-labelledby="image-shell-title">
   {% set image_mode = 'thumbnail' %}{% include "_image_mode_nav.html" %}
   <header class="image-shell-heading">
-    <div><span class="image-shell-kicker">AI CREATIVE STUDIO · THUMBNAIL</span>
+    <div><span class="image-shell-kicker">{{ _("Tạo ảnh bằng AI") }} · Thumbnail</span>
       <h1 id="image-shell-title">{{ _("Tạo ảnh AI") }}</h1>
       <p>{{ _("Tạo ảnh tổng quát hoặc Thumbnail trong cùng một không gian làm việc.") }}</p></div>
     <a class="btn ghost" href="/jobs">{{ _("Việc của tôi") }}</a>

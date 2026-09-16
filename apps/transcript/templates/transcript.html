@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_o_chon_tep.html" import o_chon_tep %}
 {% import "_ui.html" as ui %}
 {% block title %}{{ _("Phiên âm có dòng thời gian") }} — LTT AI Studio{% endblock %}
 {% block topbar_title %}<strong>{{ _("Phiên âm có dòng thời gian") }}</strong>{% endblock %}
@@ -16,11 +17,9 @@
   <form class="ts-form" method="post" action="/transcript/tao" enctype="multipart/form-data">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
-    <label class="field">
-      <span>{{ _("Tệp âm thanh") }}</span>
-      <input type="file" name="audio" accept="audio/*" required>
-      <small>{{ _("WAV, MP3, M4A, AAC, FLAC, OGG, Opus, WebM — tối đa 95 MB.") }}</small>
-    </label>
+    <div class="field">
+      {{ o_chon_tep('tr-audio', 'audio', _("Tệp âm thanh"), goi_y=_("WAV, MP3, M4A, AAC, FLAC, OGG, Opus, WebM — tối đa 95 MB."), accept='audio/*', bat_buoc=true, icon='♫') }}
+    </div>
 
     <div class="ts-row">
       <label class="field">
@@ -68,4 +67,5 @@
   <p class="muted">{{ _("Chưa có lượt nào.") }}</p>
   {% endif %}
 </section>
+<script src="/static/chon_tep.js?v={{ asset_ver }}" defer></script>
 {% endblock %}

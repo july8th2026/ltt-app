@@ -32,16 +32,16 @@ nào < 88 · critical UI xác minh ở mức render thật (E3).
 | Bộ quét | `node tools/golden_ui_quet.mjs --cau-hinh routes.json --ra <dir> [--khung ...]` — HTTP, ảnh toàn trang, console, request hỏng, tràn ngang, axe WCAG 2.2 AA, h1/main/lang, ô chạm, ô nhập <16px |
 
 ## Overall Progress
-70%
+73%
 
-(Trọng số: P0 5 · P1 10 · P2 15 · P3 15 · P4 20 · P5 15 · P6 10 · P7 10. Tính lại 17/09 sau P1-01/P1-14/P1-15/P1-06-07: 5 + 10 + 65%·15 + 50%·15 + 70%·20 + 75%·15 + 90%·10 + 35%·10 = 5+10+9,75+7,5+14+11,25+9+3,5 = **70%**. Con số 70% ghi ngày 16/09 cao hơn phép tính lúc đó (65,5%) — nay khớp phép tính. Chưa có L3, Phase 7 mới có regression ảnh.)
+(Trọng số: P0 5 · P1 10 · P2 15 · P3 15 · P4 20 · P5 15 · P6 10 · P7 10. Tính lại 17/09 sau P1-01/P1-14/P1-15/P1-06-07: 5 + 10 + 75%·15 + 60%·15 + 70%·20 + 75%·15 + 90%·10 + 35%·10 = 5+10+11,25+9+14+11,25+9+3,5 = **73%** (sau P2). Con số 70% ghi ngày 16/09 cao hơn phép tính lúc đó (65,5%) — nay khớp phép tính. Chưa có L3, Phase 7 mới có regression ảnh.)
 
 | Phase | % | Trạng thái |
 |---|---|---|
 | 0 Discovery & Tooling | 100 | ✅ |
 | 1 Baseline Audit | 100 | ✅ |
-| 2 Golden Design System | 65 | 🟡 token màu/chữ/khoảng/bóng ✅ · lớp tiện ích `u-*`/`o-trong` thay 261 `style=""` ✅ · còn P2-02/05/06 (link, viền trạng thái rỗng, chuyển động) |
-| 3 Shared UI Components | 50 | 🟡 `_ui.html` (trạng thái/tiến độ/thể loại + `bang_trang_thai_js`) ✅ · `_menu_tai_khoan.html` ✅ · `.ui-state` ✅ · còn thẻ/biến thể nút-badge theo trang |
+| 2 Golden Design System | 75 | 🟡 token màu/chữ/khoảng/bóng ✅ · lớp tiện ích `u-*`/`o-trong` thay 261 `style=""` ✅ · P2-02/05/06 ✅ · còn P2-04 (emoji lẫn SVG) |
+| 3 Shared UI Components | 60 | 🟡 `_ui.html` (trạng thái/tiến độ/thể loại + `bang_trang_thai_js`) ✅ · `_menu_tai_khoan.html` ✅ · `.ui-state` ✅ · `o_chon_tep` phủ mọi upload hướng khách còn trần ✅ · còn thẻ/biến thể nút-badge theo trang |
 | 4 Critical Pages | 70 | 🟡 Error ✅ · Jobs 🟡 · Billing 🟡 · Auth 🟡 · Shell/Workspace 🟡 · Public ⏳ |
 | 5 Remaining Pages & Apps | 75 | 🟡 Admin ✅ · sqladmin ✅ · Status ✅ · Apps a11y ✅ · VPS/Nexus tương phản ✅ · chip thể loại + ảnh bìa ✅ · Máy của tôi ✅ · nhãn tiếng Anh SPA/canvas ✅ · còn tài liệu dev tiếng Anh (OOS-09) |
 | 6 Responsive & Accessibility | 90 | 🟡 448 phép đo 4 khung axe 0 · 430×932 critical ✅ · bàn phím critical ✅ · còn: đo trên URL công khai (cần deploy) |
@@ -316,11 +316,12 @@ Screenshot regression Playwright (`toHaveScreenshot`) cho critical screens; test
 | ID | Vấn đề |
 |---|---|
 | P2-01 ✅ | Thẻ gói nạp: khối trống 120px phía trên chỉ chứa icon kim cương nhỏ (gốc: gradient CSS không hợp lệ) |
-| P2-02 | Link inline dùng gạch chân đỏ đậm lẫn link không gạch chân — hai ngôn ngữ link |
-| P2-03 | Số bước đánh lệch trong Tạo ảnh (01, 02, 03 rồi 04 ở cột khác) |
+| P2-02 ✅ (`:where(a:not([class]))` gạch chân mảnh 1px/offset .2em, hover 2px; link có lớp — nút/tab/menu — tự quyết; độ ưu tiên 0) | Link inline dùng gạch chân đỏ đậm lẫn link không gạch chân — hai ngôn ngữ link |
+| P2-03 ✅ (taoanh 01·02·03 theo thẻ, nhóm con không đánh số; thumbnail cùng lỗi 01→02-05→06-07 sửa y hệt; nhãn bắt buộc `*` không còn rơi xuống dòng riêng) | Số bước đánh lệch trong Tạo ảnh (01, 02, 03 rồi 04 ở cột khác) |
 | P2-04 | Icon emoji lẫn icon SVG trong thẻ app và menu |
-| P2-05 | Trạng thái rỗng dùng 3 kiểu viền (nét đứt, liền, không viền) |
-| P2-06 | Chuyển động hover/transition không thống nhất (`transition:.15s` vs `--motion-*`) |
+| P2-05 ✅ (quy ước: bộ sưu tập rỗng = viền NÉT ĐỨT `--border-strong`; thông điệp trạng thái = `.ui-state` viền liền + vạch trái; `tv-empty`, `nx-may-*` đưa về quy ước) | Trạng thái rỗng dùng 3 kiểu viền (nét đứt, liền, không viền) |
+| P2-07 ✅ | Upload hướng khách còn `<input type="file">` trần (nút native theo ngôn ngữ hệ điều hành: "Choose File / No file chosen") ở audio-pause, transcript, video-assembly ×2, Voice clip mẫu, thumbnail ×2 ⇒ đổi sang macro `o_chon_tep`. **Lỗi thật phát hiện kèm**: `chon_tep.js` gắn lại bằng `gan(e.target)` sau `htmx:afterSwap` — với `hx-swap=outerHTML` (`/taoanh/thumbnail`) đó là phần tử CŨ ⇒ chọn tệp xong vẫn "Chưa chọn tệp"; sửa quét cả tài liệu (idempotent `daGan`) |
+| P2-06 ✅ (9 khai báo `transition` số thô trong `ltt.css` → `--motion-fast/normal`; `prefers-reduced-motion` sẵn có) | Chuyển động hover/transition không thống nhất (`transition:.15s` vs `--motion-*`) |
 
 ## Out-of-Scope Findings
 
@@ -380,6 +381,9 @@ Screenshot regression Playwright (`toHaveScreenshot`) cho critical screens; test
 | EV-25 | E3 | `style/truoc` ↔ `style/sau`: 30 route × 1440/390 ảnh toàn trang TRÙNG pixel (ngưỡng 0,2%, kênh 24) sau khi thay 261 `style=""`; `chup/_may_cua_toi-*`: 2 máy + 4 phiên nhật ký seed, axe 0, không tràn |
 | EV-26 | E3 | `soi_tieng_anh.mjs` 112 route: đối chứng dương (tiêm "Upload your file" ⇒ bắt) + âm (`/login` ⇒ 0); trước 91 route có chữ Anh, sau sửa 7 route UI chỉ còn tên sản phẩm (AutoSub Video, Prompt AI, Image Studio…) |
 | EV-27 | E2 | `test_1270` 80/80; `test_245` 13/13; vitest autosub 15/15, canvas 62/62, ommi 28/28; 3 `build-meta` khớp `_frontend_source_sha256` |
+| EV-28 | E3 | `chon_tep_thu.mjs`: 5 trang upload × 1440/390 — `setInputFiles` ⇒ tên tệp hiện, `required` giữ, axe 0, không tràn; `/taoanh/thumbnail` TRƯỚC khi sửa `chon_tep.js`: "Chưa chọn tệp" sau khi chọn, SAU: `mau.wav` |
+| EV-29 | E2 | pytest nhắm 140 + 202 (taoanh/thumbnail/ommi/upscale/canvas build/autosub/dev portal/o_chon_tep/Nexus; transcript/audio-pause/video-assembly/Voice) xanh; `test_1270` 91/91 |
+| EV-30 | E3 | `golden_ui_anh_mau.py`: `home-khach@1440` lệch 0,243% ổn định — chia đôi CSS theo commit (`doi_css.mjs`) chỉ ra `.market-top{z-index:10}` (`771a3046`); z-index 3 cho CÙNG 1002 px ⇒ khác biệt raster khi thanh sticky thành lớp riêng, không phải bố cục. Cập nhật đúng MỘT ảnh mẫu; chạy lại PASS |
 
 ## Current Blocker
 

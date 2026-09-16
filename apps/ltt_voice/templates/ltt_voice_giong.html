@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_o_chon_tep.html" import o_chon_tep %}
 {% block title %}{{ _("Giọng nói") }} — {{ _("Giọng nói LTT") }}{% endblock %}
 
 {# Cung che do trang rong voi Studio, va cung mot ly do: do 04/09 o 1672x941
@@ -306,9 +307,7 @@
       <label class="lv-field"><span class="lv-nhan">{{ _("Tên giọng") }} <strong>*</strong></span>
         <input type="text" name="ten" maxlength="120" required
                placeholder="{{ _('Ví dụ: Giọng dẫn của tôi') }}"></label>
-      <label class="lv-field"><span class="lv-nhan">{{ _("Clip mẫu") }} <strong>*</strong></span>
-        <input type="file" name="tep" accept="audio/*" required>
-        <small>{{ _("Từ 3 đến 30 giây, nói rõ, không nhạc nền.") }}</small></label>
+      <div class="lv-field">{{ o_chon_tep('lv-clip-mau', 'tep', _("Clip mẫu"), goi_y=_("Từ 3 đến 30 giây, nói rõ, không nhạc nền."), accept='audio/*', bat_buoc=true, icon='♫') }}</div>
 
       {#
         HAI O KHAI BAO — va ca hai deu KHONG BAT BUOC, co chu y.
@@ -376,6 +375,7 @@
 {% block scripts %}
 {# `?v=` bat buoc: static di qua Cloudflare co TTL (CLAUDE.md quy tac 6). #}
 {% include "_voice_nhan.html" %}
+<script src="/static/chon_tep.js?v={{ asset_ver }}" defer></script>
 <script src="/static/voice.js?v={{ asset_ver }}"></script>
 <script>
 (function () {

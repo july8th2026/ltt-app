@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_o_chon_tep.html" import o_chon_tep %}
 {% import "_ui.html" as ui %}
 {% block page_mode %}wide{% endblock %}
 {% block title %}{{ _("Dựng video từ clip") }} — LTT AI Studio{% endblock %}
@@ -17,17 +18,13 @@
   <form class="va-form" method="post" action="/video-assembly/tao" enctype="multipart/form-data">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
-    <label class="field">
-      <span>{{ _("Clip thô") }}</span>
-      <input type="file" name="clips" accept="video/*" multiple required>
-      <small>{{ _("MP4, MOV, MKV, WebM, AVI. Tổng tất cả tệp trong một lượt tối đa 95 MB.") }}</small>
-    </label>
+    <div class="field">
+      {{ o_chon_tep('va-clips', 'clips', _("Clip thô"), goi_y=_("MP4, MOV, MKV, WebM, AVI. Tổng tất cả tệp trong một lượt tối đa 95 MB."), accept='video/*', nhieu=true, bat_buoc=true, icon='▶') }}
+    </div>
 
-    <label class="field">
-      <span>{{ _("Nhạc nền") }}</span>
-      <input type="file" name="music" accept="audio/*">
-      <small>{{ _("Không bắt buộc.") }}</small>
-    </label>
+    <div class="field">
+      {{ o_chon_tep('va-music', 'music', _("Nhạc nền"), goi_y=_("Không bắt buộc."), accept='audio/*', icon='♫') }}
+    </div>
 
     <div class="va-row">
       <label class="field">
@@ -82,4 +79,5 @@
   <p class="muted">{{ _("Chưa có lượt nào.") }}</p>
   {% endif %}
 </section>
+<script src="/static/chon_tep.js?v={{ asset_ver }}" defer></script>
 {% endblock %}

@@ -1,4 +1,5 @@
 {% import "_ui.html" as ui %}
+{% from "_o_chon_tep.html" import o_chon_tep %}
 {% macro chipgroup(name, items, default) %}
   <div class="th-chips">{% for id, label in items %}<label class="th-chip"><input type="radio" name="{{ name }}" value="{{ id }}" {% if id == default %}checked{% endif %}><span>{{ label }}</span></label>{% endfor %}</div>
 {% endmacro %}
@@ -11,25 +12,25 @@
           data-credit-per-image="{{ app.credit_cost({'count': 1}) }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <div class="th-panel-head"><span>01</span><div><h2>{{ _("Nội dung") }}</h2><small>{{ _("Báo giá theo số ảnh trước khi tạo") }}</small></div></div>
-      <label class="th-field">{{ _("Ý tưởng / chủ đề") }} <strong>*</strong><textarea name="topic" rows="3" required maxlength="2000" placeholder="{{ _('Ví dụ: Hướng dẫn đầu tư chứng khoán cho người mới') }}">{{ form_values.topic or '' }}</textarea></label>
+      <label class="th-field"><span>{{ _("Ý tưởng / chủ đề") }} <strong aria-hidden="true">*</strong></span><textarea name="topic" rows="3" required maxlength="2000" placeholder="{{ _('Ví dụ: Hướng dẫn đầu tư chứng khoán cho người mới') }}">{{ form_values.topic or '' }}</textarea></label>
       <p class="th-note">{{ _("Ảnh sinh ra KHÔNG có chữ — model nội bộ không vẽ được chữ đọc được. Thêm tiêu đề bằng công cụ chỉnh sửa của bạn.") }}</p>
-      <fieldset class="th-group th-feature"><legend><b>02</b> {{ _("Tham chiếu & bộ nhận diện") }}</legend>
+      <fieldset class="th-group th-feature"><legend>{{ _("Tham chiếu & bộ nhận diện") }}</legend>
         {% if form_values.reference_key %}<input type="hidden" name="saved_reference_key" value="{{ form_values.reference_key }}"><div class="th-saved-ref"><img src="{{ app.route_prefix }}/image/{{ form_values.reference_key }}" alt="{{ _('Output dùng làm tham chiếu') }}"><span>{{ _("Đang remix từ output đã chọn") }}</span></div>{% endif %}
-        <label class="th-field">{{ _("Ảnh tham chiếu mới") }} <input type="file" name="reference_image" accept="image/png,image/jpeg,image/webp"><small>{{ _("PNG/JPEG/WebP · tối đa 8 MB · dùng làm ảnh nguồn để remix, không công khai") }}</small></label>
+        <div class="th-field">{{ o_chon_tep('th-ref', 'reference_image', _("Ảnh tham chiếu mới"), goi_y=_("PNG/JPEG/WebP · tối đa 8 MB · dùng làm ảnh nguồn để remix, không công khai"), accept='image/png,image/jpeg,image/webp') }}</div>
         <div class="th-two"><label class="th-field">{{ _("Tên thương hiệu") }}<input name="brand_name" maxlength="80" value="{{ brand.name }}" placeholder="LTT Studios"></label><label class="th-field">{{ _("Font thương hiệu") }}<input name="brand_font" maxlength="80" value="{{ brand.font }}" placeholder="Barlow Condensed"></label></div>
         <div class="th-brand-colors"><label>{{ _("Màu chính") }} <input type="color" name="brand_primary" value="{{ brand.primary_color or '#E53935' }}"></label><label>{{ _("Màu phụ") }} <input type="color" name="brand_secondary" value="{{ brand.secondary_color or '#111111' }}"></label></div>
         <label class="th-field">{{ _("Giọng thương hiệu") }}<input name="brand_tone" maxlength="160" value="{{ brand.tone }}" placeholder="{{ _('Mạnh mẽ, công nghệ, rõ ràng') }}"></label>
         <label class="th-save-brand"><input type="checkbox" name="save_brand" value="1"><span>{{ _("Lưu làm Brand Kit mặc định của tôi") }}</span></label>
       </fieldset>
-      <fieldset class="th-group"><legend><b>03</b> {{ _("Phong cách ảnh") }}</legend>{{ chipgroup('phong_cach', catalog['phong_cach'], form_values.phong_cach or defaults['phong_cach']) }}</fieldset>
-      <fieldset class="th-group"><legend><b>04</b> {{ _("Xu hướng thumbnail") }}</legend>{{ chipgroup('kieu_trend', catalog['kieu_trend'], form_values.kieu_trend or defaults['kieu_trend']) }}</fieldset>
-      <fieldset class="th-group"><legend><b>05</b> Model AI</legend>{{ chipgroup('model', models, form_values.model or (models[0][0] if models else '')) }}</fieldset>
+      <fieldset class="th-group"><legend>{{ _("Phong cách ảnh") }}</legend>{{ chipgroup('phong_cach', catalog['phong_cach'], form_values.phong_cach or defaults['phong_cach']) }}</fieldset>
+      <fieldset class="th-group"><legend>{{ _("Xu hướng thumbnail") }}</legend>{{ chipgroup('kieu_trend', catalog['kieu_trend'], form_values.kieu_trend or defaults['kieu_trend']) }}</fieldset>
+      <fieldset class="th-group"><legend>Model AI</legend>{{ chipgroup('model', models, form_values.model or (models[0][0] if models else '')) }}</fieldset>
       <div class="th-three"><label class="th-field">{{ _("Tỉ lệ") }}<select name="aspect_ratio">{% for a in aspects %}<option value="{{ a }}" {% if a == (form_values.aspect_ratio or '16:9') %}selected{% endif %}>{{ a }}</option>{% endfor %}</select></label><label class="th-field">{{ _("Số ảnh") }}<input id="th-count" type="number" inputmode="numeric" name="count" value="{{ form_values.count or 1 }}" min="1" max="4"></label></div>
       <div class="th-actions"><button type="button" class="btn ghost" hx-post="{{ app.route_prefix }}/preview" hx-include="closest form" hx-target="#prompt-preview">{{ _("Xem cấu hình") }}</button><button type="submit" class="btn">{{ _("Tạo ảnh ·") }} <span id="th-cost">{{ app.credit_cost({'count': 1}) }}</span> credit</button></div>
     </form>
     <div class="th-workspace">
-      <section class="th-preview" aria-labelledby="preview-title"><div class="th-panel-head"><span>06</span><div><h2 id="preview-title">{{ _("Cấu hình gửi đi") }}</h2><small>{{ _("Không hiển thị prompt nội bộ của nền tảng") }}</small></div></div><div id="prompt-preview" aria-live="polite"><p class="th-empty-copy">{{ _("Nhập nội dung và chọn “Xem cấu hình” để kiểm tra trước khi tạo.") }}</p></div></section>
-      <section id="th-compare" class="th-compare" aria-labelledby="compare-title" hidden><div class="th-panel-head"><span>07</span><div><h2 id="compare-title">{{ _("So sánh kết quả") }}</h2><small>{{ _("Chọn tối đa hai output thật trong lịch sử") }}</small></div></div><div class="th-compare-grid"><div data-slot="0"><span>{{ _("Chọn ảnh thứ nhất") }}</span></div><div data-slot="1"><span>{{ _("Chọn ảnh thứ hai") }}</span></div></div><button id="th-clear-compare" class="btn ghost" type="button">{{ _("Bỏ chọn") }}</button></section>
+      <section class="th-preview" aria-labelledby="preview-title"><div class="th-panel-head"><span>02</span><div><h2 id="preview-title">{{ _("Cấu hình gửi đi") }}</h2><small>{{ _("Không hiển thị prompt nội bộ của nền tảng") }}</small></div></div><div id="prompt-preview" aria-live="polite"><p class="th-empty-copy">{{ _("Nhập nội dung và chọn “Xem cấu hình” để kiểm tra trước khi tạo.") }}</p></div></section>
+      <section id="th-compare" class="th-compare" aria-labelledby="compare-title" hidden><div class="th-panel-head"><span>03</span><div><h2 id="compare-title">{{ _("So sánh kết quả") }}</h2><small>{{ _("Chọn tối đa hai output thật trong lịch sử") }}</small></div></div><div class="th-compare-grid"><div data-slot="0"><span>{{ _("Chọn ảnh thứ nhất") }}</span></div><div data-slot="1"><span>{{ _("Chọn ảnh thứ hai") }}</span></div></div><button id="th-clear-compare" class="btn ghost" type="button">{{ _("Bỏ chọn") }}</button></section>
     </div>
   </div>
   <section class="th-history" aria-labelledby="history-title"><header><div><span class="th-kicker">{{ _("Lịch sử thumbnail") }}</span><h2 id="history-title">{{ _("Ảnh Thumbnail của tôi") }}</h2></div><span>{{ jobs|length }} {{ _("job gần nhất") }}</span></header>
