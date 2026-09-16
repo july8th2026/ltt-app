@@ -73,7 +73,7 @@
                                  them={"policy_id": p.id}) }}</td>
         </tr>
         {% else %}
-        <tr><td colspan="8" class="muted o-trong">Chưa có chính sách nào — mọi tài khoản dùng mức nền của deployment.</td></tr>
+        <tr><td colspan="8" class="muted o-trong"><span class="o-trong-chu">Chưa có chính sách nào — mọi tài khoản dùng mức nền của deployment.</span></td></tr>
         {% endfor %}
       </tbody>
     </table></div>
@@ -91,8 +91,8 @@
       </p>
       <p>
         {%- for f in truong %}
-        <label style="display:inline-block;margin:0 12px 8px 0">{{ f }}<br>
-          <input name="{{ f }}" inputmode="numeric" placeholder="kế thừa" style="width:130px"></label>
+        <label class="adm-truong">{{ f }}
+          <input name="{{ f }}" inputmode="numeric" placeholder="kế thừa" class="adm-w130"></label>
         {%- endfor %}
       </p>
       <p>

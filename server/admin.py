@@ -190,7 +190,7 @@ def _health_bar(h: int) -> str:
     col = "var(--ok)" if h >= 80 else "var(--warn)" if h >= 50 else "var(--err)"
     w = max(0, min(100, int(h)))
     return (f'<span class="health"><span style="width:{w}%;background:{col}"></span></span> '
-            f'<span class="tnum muted" style="font-size:11px">{h}</span>')
+            f'<span class="tnum muted u-fs11">{h}</span>')
 
 
 class ChiTietNguoiDungView(_AnTrongMenuSqlAdmin, BaseView):
@@ -319,7 +319,7 @@ class ApiKeysConsole(_AnTrongMenuSqlAdmin, BaseView):
                 + tab("video", "🎬 Video"))
 
         def act_form(k, op, label):
-            return (f'<form method="post" action="/admin/api-key-action" style="display:inline">'
+            return (f'<form method="post" action="/admin/api-key-action" class="adm-form-inline">'
                     f'<input type="hidden" name="csrf_token" value="{escape(token)}">'
                     f'<input type="hidden" name="id" value="{escape(k.id)}">'
                     f'<input type="hidden" name="op" value="{op}">'
@@ -344,21 +344,21 @@ class ApiKeysConsole(_AnTrongMenuSqlAdmin, BaseView):
                 #    Đích là danh sách lời gọi hỏng, vì đó là nơi thấy được lỗi
                 #    của provider đã tới tay khách như thế nào.
                 + (f'<td>{_status_badge(k)}<br>'
-                   f'<a class="muted" style="font-size:11px" '
+                   f'<a class="muted u-fs11" '
                    f'href="/admin/api-request?status=failed">lời gọi hỏng →</a>'
                    f'</td>'
                    if (k.status in ("error", "exhausted") or not k.enabled)
                    else f'<td>{_status_badge(k)}</td>')
                 + f'<td>{_health_bar(k.health_score)}</td>'
                 f'<td class="tnum">{k.priority}</td>'
-                f'<td class="tnum muted" style="font-size:12px">{_rpm}{cap}/min<br>{k.total_tokens} tok</td>'
+                f'<td class="tnum muted u-fs12">{_rpm}{cap}/min<br>{k.total_tokens} tok</td>'
                 f'<td><div class="rowactions">'
                 f'<a class="btn ghost sm" href="/admin/api-key-test?id={escape(k.id)}">Test</a>'
                 f'<a class="btn ghost sm" href="/admin/api-key-sua?id={escape(k.id)}">Sửa</a>'
                 f'{refresh}{toggle}{act_form(k, "reset", "Reset")}</div></td></tr>')
         if not shown:
-            rows = ('<tr><td colspan="9" class="muted" style="padding:26px;text-align:center">'
-                    'Chưa có key nào ở mục này. Bấm “＋ Thêm key”.</td></tr>')
+            rows = ('<tr><td colspan="9" class="muted o-trong"><span class="o-trong-chu">'
+                    'Chưa có key nào ở mục này. Bấm “＋ Thêm key”.</span></td></tr>')
 
         active_cnt = sum(1 for k in keys if k.enabled and k.status == "active")
         body = (
@@ -380,7 +380,7 @@ class ApiKeysConsole(_AnTrongMenuSqlAdmin, BaseView):
             f'<div class="tabs">{tabs}</div>'
             f'<div class="tablewrap" tabindex="0"><table class="ui-table"><thead><tr>'
             f'<th>Provider</th><th>Tên</th><th>Preview</th><th>Loại</th><th>Trạng thái</th>'
-            f'<th>Health</th><th>Ưu tiên</th><th>Tải</th><th style="text-align:right">Thao tác</th>'
+            f'<th>Health</th><th>Ưu tiên</th><th>Tải</th><th class="u-phai">Thao tác</th>'
             f'</tr></thead><tbody>{rows}</tbody></table></div></div>')
         return HTMLResponse(_admin_shell("Provider Credentials", "van_hanh", body))
 
@@ -565,7 +565,7 @@ class GrantCreditView(_AnTrongMenuSqlAdmin, BaseView):
             # SameSite=Lax; thêm synchronizer token cho đồng nhất với route nền
             # tảng (W1.3) — chống bị lừa POST cấp credit.
             if not verify_csrf_token(request, (form.get("csrf_token") or "")):
-                msg_html = ('<p style="color:#b91c1c;">Phiên hết hạn hoặc CSRF '
+                msg_html = ('<p class="alert alert-err">Phiên hết hạn hoặc CSRF '
                             'không hợp lệ — tải lại trang rồi thử lại.</p>')
                 status = 400
             else:
@@ -594,7 +594,7 @@ class GrantCreditView(_AnTrongMenuSqlAdmin, BaseView):
                             db.rollback()
                             ds_sai = ", ".join(escape(x) for x in kq.khong_thay)
                             msg_html = (
-                                f'<p style="color:#b91c1c;">Không tìm thấy tài khoản: '
+                                f'<p class="alert alert-err">Không tìm thấy tài khoản: '
                                 f'<b>{ds_sai}</b>.<br>'
                                 f'<b>Chưa cấp cho ai cả</b> — sửa lại rồi gửi lần nữa.</p>')
                             status = 400
@@ -606,7 +606,7 @@ class GrantCreditView(_AnTrongMenuSqlAdmin, BaseView):
                                 for e, uid in kq.da_cap)
                             canh = ""
                             if kq.trung:
-                                canh = (f'<p style="color:#92400e;">Bỏ qua '
+                                canh = (f'<p class="alert alert-warn">Bỏ qua '
                                         f'{len(kq.trung)} email lặp — mỗi người chỉ '
                                         f'cấp một lần.</p>')
                             ghi_nhat_ky(
@@ -616,7 +616,7 @@ class GrantCreditView(_AnTrongMenuSqlAdmin, BaseView):
                                          f"tai khoan; ghi chu: {note}")
                             db.commit()
                             msg_html = (
-                                f'<p style="color:#1a7f37;">Đã cấp <b>{amount:+d}</b> '
+                                f'<p class="alert alert-ok">Đã cấp <b>{amount:+d}</b> '
                                 f'credit cho <b>{len(kq.da_cap)}</b> tài khoản.</p>'
                                 f'{canh}<ul>{dong}</ul>')
                             user_id = ""
@@ -626,11 +626,11 @@ class GrantCreditView(_AnTrongMenuSqlAdmin, BaseView):
                         except StopIteration:
                             pass
                 except Exception as e:
-                    msg_html = f'<p style="color:#b91c1c;">Lỗi: {escape(str(e))}</p>'
+                    msg_html = f'<p class="alert alert-err">Lỗi: {escape(str(e))}</p>'
                     status = 400
 
         csrf_token = issue_csrf_token(request)
-        body = f"""<div class="adm-content" style="max-width:600px">
+        body = f"""<div class="adm-content adm-hep-600">
 <div class="pagehead"><div><h1>Cấp / điều chỉnh credit</h1>
 <p>Ghi một bút toán <code>grant</code> cho mỗi người (số âm để trừ). Sổ credit append-only. Cấp được cho nhiều người một lượt.</p></div></div>
 {msg_html}
@@ -724,7 +724,7 @@ class AddApiKeyView(_AnTrongMenuSqlAdmin, BaseView):
         if request.method == "POST":
             form = await request.form()
             if not verify_csrf_token(request, (form.get("csrf_token") or "")):
-                msg = '<p style="color:#b91c1c;">CSRF không hợp lệ — tải lại trang.</p>'
+                msg = '<p class="alert alert-err">CSRF không hợp lệ — tải lại trang.</p>'
                 status = 400
             else:
                 cats = [c for c in form.getlist("categories")]
@@ -744,10 +744,10 @@ class AddApiKeyView(_AnTrongMenuSqlAdmin, BaseView):
                                 (form.get("provider") or ""),
                                 f"ten={(form.get('name') or '')[:60]}")
                     db.commit()
-                    msg = '<p style="color:#1a7f37;">Đã thêm API key.</p>'
+                    msg = '<p class="alert alert-ok">Đã thêm API key.</p>'
                 except Exception as e:
                     db.rollback()
-                    msg = f'<p style="color:#b91c1c;">Lỗi: {escape(str(e))}</p>'
+                    msg = f'<p class="alert alert-err">Lỗi: {escape(str(e))}</p>'
                     status = 400
                 finally:
                     try: next(gen)
@@ -764,7 +764,7 @@ class AddApiKeyView(_AnTrongMenuSqlAdmin, BaseView):
         cat_boxes = "".join(
             f'<label><input type="checkbox" name="categories" value="{c}"> {_catlbl[c]}</label>'
             for c in (APIKEY_CAT_MODEL, APIKEY_CAT_CHAT, APIKEY_CAT_IMAGE, APIKEY_CAT_VIDEO))
-        body = f"""<div class="adm-content" style="max-width:640px">
+        body = f"""<div class="adm-content adm-hep-640">
 <div class="pagehead"><div><h1>Thêm API key</h1>
 <p>Credential nhập vào sẽ được <b>mã hoá</b> trước khi lưu; chỉ 4 số cuối hiện lại.</p></div>
 <div class="actions"><a class="btn ghost" href="/admin/apikeys">&larr; APIKEYS</a>
@@ -854,7 +854,7 @@ class SuaApiKeyView(_AnTrongMenuSqlAdmin, BaseView):
             form = await request.form()
             key_id = form.get("id", "")  # type: ignore[assignment]  # Starlette FormData union
             if not verify_csrf_token(request, (form.get("csrf_token") or "")):
-                msg = '<p style="color:#b91c1c;">CSRF khong hop le - tai lai trang.</p>'
+                msg = '<p class="alert alert-err">CSRF khong hop le - tai lai trang.</p>'
                 status = 400
             else:
                 gen = get_session()
@@ -883,11 +883,11 @@ class SuaApiKeyView(_AnTrongMenuSqlAdmin, BaseView):
                                 + (" | credential DA XOAY" if xoay else ""))
                     db.commit()
                     them = " - credential DA XOAY." if xoay else "."
-                    msg = ('<p style="color:#1a7f37;">Da luu. Id va lich su giu '
+                    msg = ('<p class="alert alert-ok">Da luu. Id va lich su giu '
                            'nguyen' + them + '</p>')
                 except Exception as e:                        # noqa: BLE001
                     db.rollback()
-                    msg = f'<p style="color:#b91c1c;">Loi: {escape(str(e))}</p>'
+                    msg = f'<p class="alert alert-err">Loi: {escape(str(e))}</p>'
                     status = 400
                 finally:
                     try:
@@ -937,7 +937,7 @@ def _sua_key_html(key, boxes: str, goi_y: str, token: str, msg: str) -> str:
     """Thân trang sửa key. Tách ra để hàm view không thành một khối chuỗi dài."""
     lich_su = "{}/{} luot thanh cong, health {}".format(
         key.total_success, key.total_requests, key.health_score)
-    return """<div class="adm-content" style="max-width:640px">
+    return """<div class="adm-content adm-hep-640">
 <div class="pagehead"><div><h1>Sua API key</h1>
 <p>Id va lich su <b>giu nguyen</b>: {lich_su}.</p></div>
 <div class="actions"><a class="btn ghost" href="/admin/apikeys">&larr; APIKEYS</a></div></div>
@@ -997,12 +997,12 @@ class ApiKeyActionView(_AnTrongMenuSqlAdmin, BaseView):
         ok = code == 200
         badge = (f'<span class="badge {"b-ok" if ok else "b-err"}"><span class="dot"></span>'
                  f'HTTP {code}</span>')
-        body = f"""<div class="adm-content" style="max-width:640px">
+        body = f"""<div class="adm-content adm-hep-640">
 <div class="pagehead"><div><h1>Test key</h1>
 <p>{_prov_dot(key.provider)} {escape(key.provider)} · <span class="mono">{escape(key.key_preview)}</span></p></div>
 <div class="actions"><a class="btn ghost" href="/admin/apikeys">&larr; APIKEYS</a></div></div>
-<div class="ui-card"><p style="margin:0 0 8px">{badge}</p>
-<p class="muted mono" style="margin:0;font-size:12.5px;word-break:break-word">{escape(str(detail))}</p></div></div>"""
+<div class="ui-card"><p class="adm-mb8">{badge}</p>
+<p class="muted mono adm-chi-tiet-loi">{escape(str(detail))}</p></div></div>"""
         return HTMLResponse(_admin_shell("Test key", "provider_test", body))
 
     @expose("/api-key-action", methods=["POST"])
@@ -1072,17 +1072,17 @@ class ModelsView(_AnTrongMenuSqlAdmin, BaseView):
         rows = ""
         for p in providers.list_all():
             ms = " ".join(
-                f'<span class="chip {"" if m.is_active else "m"}">{escape(m.id)}'
+                f'<span class="chip {"adm-chip-model" if m.is_active else "m"}">{escape(m.id)}'
                 f'{"" if m.is_active else " · Soon"}</span>' for m in p.models
-            ) or '<span class="muted" style="font-size:12px">chưa khai model — key nhận mọi model</span>'
+            ) or '<span class="muted u-fs12">chưa khai model — key nhận mọi model</span>'
             kind = ('<span class="badge b-grey"><span class="dot"></span>async</span>'
                     if p.async_poll else '<span class="badge b-ok"><span class="dot"></span>sync</span>')
             refresh = (f'<a class="btn ghost sm" href="/admin/api-models-refresh?provider={escape(p.id)}">Làm mới</a>'
-                       if p.list_models_path else '<span class="muted" style="font-size:12px">—</span>')
+                       if p.list_models_path else '<span class="muted u-fs12">—</span>')
             rows += (f'<tr><td><span class="prov">{_prov_dot(p.id)}{escape(p.id)}</span></td>'
-                     f'<td class="mono muted" style="font-size:12px">{escape(p.auth_style)}</td>'
+                     f'<td class="mono muted u-fs12">{escape(p.auth_style)}</td>'
                      f'<td>{escape(", ".join(p.categories))}</td>'
-                     f'<td style="line-height:2">{ms}</td><td>{kind}</td><td>{refresh}</td></tr>')
+                     f'<td class="adm-o-chip">{ms}</td><td>{kind}</td><td>{refresh}</td></tr>')
         body = f"""<div class="adm-content">
 <div class="pagehead"><div><h1>Provider &amp; Models</h1>
 <p>Registry: <code>platform_core/providers.py</code>. Thêm provider/model = sửa file này.
@@ -1121,11 +1121,11 @@ class ModelsView(_AnTrongMenuSqlAdmin, BaseView):
             try: next(gen)
             except StopIteration: pass
         chips = " ".join(f'<span class="chip">{escape(m)}</span>' for m in models) \
-            or '<span class="muted" style="font-size:12px">—</span>'
-        body = f"""<div class="adm-content" style="max-width:760px">
+            or '<span class="muted u-fs12">—</span>'
+        body = f"""<div class="adm-content adm-hep-760">
 <div class="pagehead"><div><h1>Model sống — {escape(prov_id)}</h1><p>{note}</p></div>
 <div class="actions"><a class="btn ghost" href="/admin/api-models">&larr; Models</a></div></div>
-<div class="ui-card" style="line-height:2.2">{chips}</div></div>"""
+<div class="ui-card adm-o-chip-rong">{chips}</div></div>"""
         return HTMLResponse(_admin_shell("Model sống", "models", body))
 
 
@@ -1203,31 +1203,31 @@ class RevenueView(_AnTrongMenuSqlAdmin, BaseView):
                         f'{escape(_e)}</a></td>'
                         f'<td class="tnum">{_vnd(o.price_vnd)}</td>'
                         f'<td class="tnum">{_vnd(o.credits, " credit")}</td>'
-                        f'<td class="muted" style="font-size:12px">{cot_cuoi}</td></tr>')
+                        f'<td class="muted u-fs12">{cot_cuoi}</td></tr>')
 
             rows = "".join(_dong(o, f"{o.paid_at:%d/%m %H:%M}")
                            for o in gan_day if o.paid_at)
             rows_cho = "".join(_dong(o, f"{o.created_at:%d/%m %H:%M}")
                                for o in cho_xu)
             rows_tien = "".join(
-                f'<tr><td class="muted" style="font-size:12px">'
+                f'<tr><td class="muted u-fs12">'
                 f'{n.created_at:%d/%m %H:%M}</td>'
                 f'<td>{escape(n.hanh_dong)}</td>'
-                f'<td class="mono muted" style="font-size:12px">'
+                f'<td class="mono muted u-fs12">'
                 f'{escape((n.doi_tuong or "")[:40])}</td>'
-                f'<td class="muted" style="font-size:12px">'
+                f'<td class="muted u-fs12">'
                 f'{escape(n.admin_email)}</td></tr>' for n in tien_gan_day)
         finally:
             try: next(gen)
             except StopIteration: pass
         cards = (
-            f'<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px">'
+            f'<div class="grid adm-luoi-tai-chinh">'
             f'<div class="ui-card"><div class="dim">Tổng đã thu</div>'
-            f'<div style="font-size:26px;font-weight:700">{_vnd(dt["vnd"])}</div></div>'
+            f'<div class="tnum adm-so-lon">{_vnd(dt["vnd"])}</div></div>'
             f'<div class="ui-card"><div class="dim">Credit đã bán</div>'
-            f'<div style="font-size:26px;font-weight:700">{_vnd(dt["credits"], "")}</div></div>'
+            f'<div class="tnum adm-so-lon">{_vnd(dt["credits"], "")}</div></div>'
             f'<div class="ui-card"><div class="dim">Đơn đã trả</div>'
-            f'<div style="font-size:26px;font-weight:700">{_vnd(dt["orders"], "")}</div></div></div>')
+            f'<div class="tnum adm-so-lon">{_vnd(dt["orders"], "")}</div></div></div>')
         body = (f'<div class="adm-content"><div class="pagehead"><div>'
                 f'<h1>Tổng quan tài chính</h1>'
                 f'<p>Chỉ tính đơn đã trả (đi qua sổ credit H3). Tiền hiện bằng đ, '
@@ -1235,23 +1235,23 @@ class RevenueView(_AnTrongMenuSqlAdmin, BaseView):
                 f'<div class="actions"><a class="btn ghost" href="/admin/goi">💠 Gói nạp</a>'
                 f'<a class="btn ghost" href="/admin/don">🧾 Đơn hàng</a></div></div>'
                 f'{cards}'
-                f'<h2 style="margin:22px 0 10px">Đơn cần xử lý</h2>'
+                f'<h2 class="u-tieu-muc">Đơn cần xử lý</h2>'
                 f'<p class="adm-dan">Đơn đang chờ cổng thanh toán xác nhận. Xác '
                 f'nhận tay là đường dự phòng khi webhook không tới — thao tác đó '
                 f'ở <a href="/admin/don?st=pending">trang Đơn hàng</a>.</p>'
                 f'<div class="tablewrap" tabindex="0"><table class="ui-table"><thead><tr>'
                 f'<th>Mã đơn</th><th>Khách</th><th>Tiền</th><th>Credit</th><th>Tạo lúc</th>'
-                f'</tr></thead><tbody>{rows_cho or "<tr><td colspan=5 class=muted style=padding:20px;text-align:center>Không có đơn nào đang chờ.</td></tr>"}'
+                f'</tr></thead><tbody>{rows_cho or "<tr><td colspan=5 class='muted o-trong'><span class=o-trong-chu>Không có đơn nào đang chờ.</span></td></tr>"}'
                 f'</tbody></table></div>'
-                f'<h2 style="margin:22px 0 10px">Đơn đã trả gần đây</h2>'
+                f'<h2 class="u-tieu-muc">Đơn đã trả gần đây</h2>'
                 f'<div class="tablewrap" tabindex="0"><table class="ui-table"><thead><tr>'
                 f'<th>Mã đơn</th><th>Khách</th><th>Tiền</th><th>Credit</th><th>Trả lúc</th>'
-                f'</tr></thead><tbody>{rows or "<tr><td colspan=5 class=muted style=padding:20px;text-align:center>Chưa có đơn nào.</td></tr>"}'
+                f'</tr></thead><tbody>{rows or "<tr><td colspan=5 class='muted o-trong'><span class=o-trong-chu>Chưa có đơn nào.</span></td></tr>"}'
                 f'</tbody></table></div>'
-                f'<h2 style="margin:22px 0 10px">Hành động tiền của admin gần đây</h2>'
+                f'<h2 class="u-tieu-muc">Hành động tiền của admin gần đây</h2>'
                 f'<div class="tablewrap" tabindex="0"><table class="ui-table"><thead><tr>'
                 f'<th>Lúc</th><th>Hành động</th><th>Đối tượng</th><th>Ai làm</th>'
-                f'</tr></thead><tbody>{rows_tien or "<tr><td colspan=4 class=muted style=padding:20px;text-align:center>Chưa có thao tác tiền nào của admin.</td></tr>"}'
+                f'</tr></thead><tbody>{rows_tien or "<tr><td colspan=4 class='muted o-trong'><span class=o-trong-chu>Chưa có thao tác tiền nào của admin.</span></td></tr>"}'
                 f'</tbody></table></div></div>')
         return HTMLResponse(_admin_shell("Tổng quan tài chính", "tai_chinh", body))
 
@@ -1307,11 +1307,11 @@ class PackagesView(_AnTrongMenuSqlAdmin, BaseView):
                 on = ('<span class="badge b-ok"><span class="dot"></span>bật</span>' if p.active
                       else '<span class="badge b-grey"><span class="dot"></span>tắt</span>')
                 def act(op, label):
-                    return (f'<form method="post" action="/admin/goi/action" style="display:inline">'
+                    return (f'<form method="post" action="/admin/goi/action" class="adm-form-inline">'
                             f'<input type="hidden" name="csrf_token" value="{escape(token)}">'
                             f'<input type="hidden" name="id" value="{escape(p.id)}">'
                             f'<input type="hidden" name="op" value="{op}">'
-                            f'<button class="btn ghost sm">{label}</button></form>')
+                            f'<button class="btn {"danger" if op == "delete" else "ghost"} sm">{label}</button></form>')
                 rows += (f'<tr><td class="tnum">{p.sort_order}</td><td>{escape(p.name)}</td>'
                          f'<td class="tnum">{_vnd(p.price_vnd)}</td>'
                          f'<td class="tnum">{_vnd(p.credits_base, "")}</td>'
@@ -1323,13 +1323,13 @@ class PackagesView(_AnTrongMenuSqlAdmin, BaseView):
             try: next(gen)
             except StopIteration: pass
         form_html = (
-            f'<div class="ui-card" style="max-width:640px;margin-bottom:18px"><form method="post">'
+            f'<div class="ui-card adm-the-form"><form method="post">'
             f'<input type="hidden" name="csrf_token" value="{escape(token)}">'
             f'<div class="field"><label for="f-name">Tên gói</label><input id="f-name" class="inp" name="name" placeholder="Gói 100k"></div>'
             f'<div class="field"><label for="f-price-vnd">Giá (VNĐ)</label><input id="f-price-vnd" class="inp tnum" name="price_vnd" type="number" required placeholder="100000"></div>'
             f'<div class="field"><label for="f-bonus-percent">Bonus (%)</label><input id="f-bonus-percent" class="inp tnum" name="bonus_percent" type="number" value="0"></div>'
             f'<div class="field"><label for="f-sort-order">Thứ tự hiện</label><input id="f-sort-order" class="inp tnum" name="sort_order" type="number" value="100"></div>'
-            f'<p class="dim" style="font-size:12px;margin:0 0 10px">Tỉ giá 1 credit = 100đ → credit gốc = giá // 100. Tổng = gốc + bonus%.</p>'
+            f'<p class="dim u-fs12 u-mb10">Tỉ giá 1 credit = 100đ → credit gốc = giá // 100. Tổng = gốc + bonus%.</p>'
             f'<button class="btn">＋ Thêm gói</button></form></div>')
         body = (f'<div class="adm-content"><div class="pagehead"><div><h1>Gói nạp</h1>'
                 f'<p>Khách thấy gói bật ở trang <code>/nap</code>. Đổi giá không ảnh hưởng đơn cũ.</p></div>'
@@ -1337,8 +1337,8 @@ class PackagesView(_AnTrongMenuSqlAdmin, BaseView):
                 f'<a class="btn ghost" href="/admin/don">🧾 Đơn hàng</a></div></div>{msg}{form_html}'
                 f'<div class="tablewrap" tabindex="0"><table class="ui-table"><thead><tr>'
                 f'<th>#</th><th>Tên</th><th>Giá</th><th>Gốc</th><th>Bonus</th><th>Tổng</th>'
-                f'<th>Trạng thái</th><th style="text-align:right">Thao tác</th></tr></thead>'
-                f'<tbody>{rows or "<tr><td colspan=8 class=muted style=padding:22px;text-align:center>Chưa có gói. Thêm ở trên.</td></tr>"}'
+                f'<th>Trạng thái</th><th class="u-phai">Thao tác</th></tr></thead>'
+                f'<tbody>{rows or "<tr><td colspan=8 class='muted o-trong'><span class=o-trong-chu>Chưa có gói. Thêm ở trên.</span></td></tr>"}'
                 f'</tbody></table></div></div>')
         return HTMLResponse(_admin_shell("Gói nạp", "goi_nap", body), status_code=status)
 
@@ -1407,7 +1407,7 @@ class OrdersView(_AnTrongMenuSqlAdmin, BaseView):
                     # cộng đôi — nhưng "không hỏng" khác với "cố ý".
                     xn = (f"Xác nhận đơn #{o.order_code} ĐÃ ĐƯỢC TRẢ? "
                           f"Khách sẽ được cộng {o.credits:,} credit.")
-                    markpaid = (f'<form method="post" action="/admin/don/action" style="display:inline">'
+                    markpaid = (f'<form method="post" action="/admin/don/action" class="adm-form-inline">'
                                 f'<input type="hidden" name="csrf_token" value="{escape(token)}">'
                                 f'<input type="hidden" name="order_code" value="{o.order_code}">'
                                 f'<button class="btn ghost sm" '
@@ -1423,8 +1423,8 @@ class OrdersView(_AnTrongMenuSqlAdmin, BaseView):
                          f'<td class="tnum">{_vnd(o.price_vnd)}</td>'
                          f'<td class="tnum">{_vnd(o.credits, "")}{(" +%d%%" % o.bonus_percent) if o.bonus_percent else ""}</td>'
                          f'<td>{_order_badge(o.status)}</td>'
-                         f'<td class="muted" style="font-size:12px">{escape(o.gateway or "-")}</td>'
-                         f'<td class="muted" style="font-size:12px">{o.created_at:%m-%d %H:%M}</td>'
+                         f'<td class="muted u-fs12">{escape(o.gateway or "-")}</td>'
+                         f'<td class="muted u-fs12">{o.created_at:%m-%d %H:%M}</td>'
                          f'<td><div class="rowactions">{markpaid}'
                          + (f'<a class="btn ghost sm" href="/admin/credit-entry/list'
                             f'?search={escape(o.user_id)}">Sổ credit</a>'
@@ -1445,8 +1445,8 @@ class OrdersView(_AnTrongMenuSqlAdmin, BaseView):
                 f'<div class="tabs">{tabs}</div>'
                 f'<div class="tablewrap" tabindex="0"><table class="ui-table"><thead><tr>'
                 f'<th>Mã đơn</th><th>User</th><th>Tiền</th><th>Credit</th><th>Trạng thái</th>'
-                f'<th>Cổng</th><th>Tạo lúc</th><th style="text-align:right">Thao tác</th></tr></thead>'
-                f'<tbody>{rows or "<tr><td colspan=8 class=muted style=padding:22px;text-align:center>Chưa có đơn.</td></tr>"}'
+                f'<th>Cổng</th><th>Tạo lúc</th><th class="u-phai">Thao tác</th></tr></thead>'
+                f'<tbody>{rows or "<tr><td colspan=8 class='muted o-trong'><span class=o-trong-chu>Chưa có đơn.</span></td></tr>"}'
                 f'</tbody></table></div></div>')
         return HTMLResponse(_admin_shell(
             "Đơn hàng", "don_hang", body,

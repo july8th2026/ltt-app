@@ -8,15 +8,14 @@
 {# Mot nut thao tac tren khoa. Khac `m.nut_kem_ly_do` o cho: thao tac NGUY HIEM
    o day con doi mot o tich xac nhan, vi no lam hong tich hop DANG CHAY. #}
 {% macro nut(op, nhan, nguy_hiem) %}
-<form method="post" action="/admin/api-khoa-action"
-      style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px">
+<form method="post" action="/admin/api-khoa-action" class="adm-form-hang">
   <input type="hidden" name="csrf_token" value="{{ token }}">
   <input type="hidden" name="key_id" value="{{ k.key_id }}">
   <input type="hidden" name="op" value="{{ op }}">
   <input name="reason" placeholder="Lý do (bắt buộc, ≥ {{ min_reason }} ký tự)"
          minlength="{{ min_reason }}" required aria-label="Lý do cho thao tác {{ nhan }}">
   {%- if nguy_hiem %}
-  <label class="muted" style="display:block;margin:6px 0">
+  <label class="muted adm-xac-nhan">
     <input type="checkbox" name="confirm" value="1"> Tôi hiểu thao tác này
     không đảo ngược được và sẽ làm hỏng tích hợp đang chạy của khách.</label>
   {%- endif %}
@@ -82,7 +81,7 @@
           <td class="mono muted">{{ r.code or "" }}</td>
         </tr>
         {% else %}
-        <tr><td colspan="4" class="muted">Khoá này chưa có lời gọi nào được ghi.</td></tr>
+        <tr><td colspan="4" class="muted o-trong"><span class="o-trong-chu">Khoá này chưa có lời gọi nào được ghi.</span></td></tr>
         {% endfor %}
       </tbody>
     </table></div>

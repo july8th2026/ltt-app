@@ -26,7 +26,7 @@
   {% if not q %}
   {# Chua tra gi thi khong hien gi — mot bang rong o day doc nhu "khong tim thay". #}
   {% elif not found.found %}
-  <p class="muted" style="padding:26px">Không tìm thấy gì khớp. Correlation id chỉ
+  <p class="muted o-trong">Không tìm thấy gì khớp. Correlation id chỉ
     được lưu cho lời gọi hỏng và lời gọi ghi dữ liệu (EXT-09).</p>
   {% else %}
   <p class="muted">Khớp theo <code>{{ found.matched_by }}</code>.</p>
@@ -103,7 +103,7 @@
           <td class="muted">{{ ((e.details or "")|string)[:160] }}</td>
         </tr>
         {% else %}
-        <tr><td colspan="5" class="muted">Không có sự kiện.</td></tr>
+        <tr><td colspan="5" class="muted o-trong"><span class="o-trong-chu">Không có sự kiện.</span></td></tr>
         {% endfor %}
       </tbody>
     </table></div>
@@ -112,7 +112,7 @@
   <section>
     <h2 class="u-tieu-muc">Lỗi thô</h2>
     <p class="muted">Khách được xem một bản đã làm sạch (Q76). Bản gốc ở đây.</p>
-    <pre class="mono" style="white-space:pre-wrap">{{ j.error[:2000] }}</pre>
+    <pre class="mono u-pre-wrap">{{ j.error[:2000] }}</pre>
   </section>
   {% endif %}
   {% endif %}

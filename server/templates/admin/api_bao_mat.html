@@ -70,7 +70,7 @@
           {% endfor %}
           {% if not (bat_thuong.khoa_thu_hoi or bat_thuong.chi_tieu_vot
                      or bat_thuong.scope_bi_tu_choi) %}
-          <tr><td colspan="4" class="muted">Không có dấu hiệu bất thường nào trong khoảng này.</td></tr>
+          <tr><td colspan="4" class="muted o-trong"><span class="o-trong-chu">Không có dấu hiệu bất thường nào trong khoảng này.</span></td></tr>
           {% endif %}
         </tbody>
       </table></div>
@@ -88,7 +88,7 @@
           {% for ip, so in data.top_ips %}
           <tr><td class="mono">{{ ip }}</td><td class="tnum">{{ so }}</td></tr>
           {% else %}
-          <tr><td colspan="2" class="muted">Không có.</td></tr>
+          <tr><td colspan="2" class="muted o-trong"><span class="o-trong-chu">Không có.</span></td></tr>
           {% endfor %}
         </tbody>
       </table></div>
@@ -113,7 +113,7 @@
       <option value="{{ k }}"{{ " selected" if k == kind }}>{{ k }}</option>
       {% endfor %}
     </select>
-    <input name="hours" value="{{ hours }}" style="width:90px" aria-label="Số giờ gần nhất">
+    <input name="hours" value="{{ hours }}" class="adm-w90" aria-label="Số giờ gần nhất">
     <button class="btn ghost sm">Lọc</button>
   </form>
 
@@ -133,7 +133,7 @@
         <td class="mono muted"><a href="/admin/api-trace?q={{ r.request_id }}">{{ r.request_id[:12] }}</a></td>
       </tr>
       {% else %}
-      <tr><td colspan="6" class="muted o-trong">Không có sự kiện nào. Đó là trạng thái bình thường.</td></tr>
+      <tr><td colspan="6" class="muted o-trong"><span class="o-trong-chu">Không có sự kiện nào. Đó là trạng thái bình thường.</span></td></tr>
       {% endfor %}
     </tbody>
   </table></div>

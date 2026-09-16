@@ -4035,3 +4035,27 @@ button.lv-the-song.nghe-loi,.lv-chon-nghe.nghe-loi{
 .vps-cs-bao[hidden]{display:none}
 .vps-cs-bao-chu{margin:0;font-size:var(--fs-section);font-weight:600;color:var(--text-primary)}
 .vps-cs-bao p{max-width:46ch}
+/* Admin tự dựng — trạng thái rỗng trong bảng cuộn: chữ dính mép trái vùng nhìn thấy,
+   không nằm giữa một colspan rộng 680px rồi bị cắt ("Chưa có thao tác ti…" @390). */
+.o-trong-chu{display:block;position:sticky;left:var(--space-3);max-width:calc(100vw - 88px);white-space:normal}
+@media (max-width:720px){.tablewrap td.o-trong{text-align:left!important;padding:18px var(--space-3)!important}}
+/* Admin — thay style="" trong admin.py / templates/admin */
+.adm-form-inline{display:inline}
+.adm-hep-600{max-width:600px}.adm-hep-640{max-width:640px}.adm-hep-760{max-width:760px}
+.adm-mb8{margin:0 0 8px}.adm-mt8{margin:8px 0 0}
+.adm-chi-tiet-loi{margin:0;font-size:12.5px;word-break:break-word}
+.adm-o-chip{line-height:2}.adm-o-chip-rong{line-height:2.2}
+/* Model đang bật: chip trung tính — trước là nền đỏ brand, đọc như lỗi cạnh badge. */
+.chip.adm-chip-model{background:var(--surface-interactive);color:var(--text-primary);border-color:var(--border-strong)}
+.adm-luoi-tai-chinh{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+.adm-so-lon{font-size:26px;font-weight:700;line-height:var(--lh-tight)}
+.adm-the-form{max-width:640px;margin-bottom:18px}
+.adm-the-trong{padding:26px}
+.adm-chu-thuong{font-weight:400}
+.adm-truong{display:inline-flex;flex-direction:column;gap:4px;margin:0 12px 8px 0;
+  font-size:var(--fs-label);color:var(--text-secondary)}
+.adm-w90{width:90px}.adm-w110{width:110px}.adm-w130{width:130px}.adm-w180{width:180px}.adm-w190{width:190px}
+.adm-w90,.adm-w110,.adm-w130,.adm-w180,.adm-w190{max-width:100%}
+.adm-form-hang{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 10px}
+.adm-xac-nhan{display:block;margin:6px 0}
+@media (max-width:560px){.adm-truong{margin-right:8px}.adm-w180,.adm-w190{width:100%}}

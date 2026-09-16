@@ -101,7 +101,7 @@
             <td class="tnum">{{ so }}</td>
           </tr>
           {% else %}
-          <tr><td colspan="2" class="muted">Không có lời gọi nào hỏng trong khoảng này.</td></tr>
+          <tr><td colspan="2" class="muted o-trong"><span class="o-trong-chu">Không có lời gọi nào hỏng trong khoảng này.</span></td></tr>
           {% endfor %}
         </tbody>
       </table></div>
@@ -124,7 +124,7 @@
             <td class="tnum" style="color:{{ ERR if r.error else OK }}">{{ r.error }}</td>
           </tr>
           {% else %}
-          <tr><td colspan="3" class="muted">Chưa có job nào trong khoảng này.</td></tr>
+          <tr><td colspan="3" class="muted o-trong"><span class="o-trong-chu">Chưa có job nào trong khoảng này.</span></td></tr>
           {% endfor %}
         </tbody>
       </table></div>
